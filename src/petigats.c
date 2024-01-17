@@ -51,7 +51,22 @@ PetscErrorCode IGAComputeIFunction(IGA iga,
     if(iga->side10)    {ierr = IGASetBoundaryValue(iga,1,0,0,iga->BC_value);CHKERRQ(ierr);}
     if(iga->side11)    {ierr = IGASetBoundaryValue(iga,1,1,0,iga->BC_value);CHKERRQ(ierr);}
   }
-
+  //-------------- Aquifer
+  if(iga->dim==1){
+    if(iga->BCaquif) {ierr = IGASetBoundaryValue(iga,0,1,3,iga->tice_topBC);CHKERRQ(ierr);}
+    if(iga->BCaquifB) {ierr = IGASetBoundaryValue(iga,0,0,3,iga->tice_botBC);CHKERRQ(ierr);}
+  } else if (iga->dim==2){
+    if(iga->BCaquif) {ierr = IGASetBoundaryValue(iga,1,1,3,iga->tice_topBC);CHKERRQ(ierr);}
+    if(iga->BCaquifB) {ierr = IGASetBoundaryValue(iga,1,0,3,iga->tice_botBC);CHKERRQ(ierr);}
+  }
+  //-------------- Metamorphism
+  if(iga->BCmetam){
+    ierr = IGASetBoundaryValue(iga,0,0,2,iga->Temp_metam);CHKERRQ(ierr);
+    ierr = IGASetBoundaryValue(iga,0,1,2,iga->Temp_metam);CHKERRQ(ierr);
+    ierr = IGASetBoundaryValue(iga,1,0,2,iga->Temp_metam);CHKERRQ(ierr);
+    ierr = IGASetBoundaryValue(iga,1,1,2,iga->Temp_metam);CHKERRQ(ierr);
+  }
+  
   /* Clear global vector F */
   ierr = VecZeroEntries(vecF);CHKERRQ(ierr);
 
@@ -121,6 +136,29 @@ PetscErrorCode IGAComputeIJacobian(IGA iga,
   IGACheckSetUp(iga,1);
   IGACheckFormOp(iga,1,IJacobian);
 
+  //Boundary Conditions
+  if(iga->BBCC0){
+    if(iga->side00)    {ierr = IGASetBoundaryValue(iga,0,0,0,iga->BC_value);CHKERRQ(ierr);}
+    if(iga->side01)    {ierr = IGASetBoundaryValue(iga,0,1,0,iga->BC_value);CHKERRQ(ierr);}
+    if(iga->side10)    {ierr = IGASetBoundaryValue(iga,1,0,0,iga->BC_value);CHKERRQ(ierr);}
+    if(iga->side11)    {ierr = IGASetBoundaryValue(iga,1,1,0,iga->BC_value);CHKERRQ(ierr);}
+  }
+  //----------------- Aquifer
+  if(iga->dim==1){
+    if(iga->BCaquif) {ierr = IGASetBoundaryValue(iga,0,1,3,iga->tice_topBC);CHKERRQ(ierr);}
+    if(iga->BCaquifB) {ierr = IGASetBoundaryValue(iga,0,0,3,iga->tice_botBC);CHKERRQ(ierr);}
+  } else if (iga->dim==2){
+    if(iga->BCaquif) {ierr = IGASetBoundaryValue(iga,1,1,3,iga->tice_topBC);CHKERRQ(ierr);}
+    if(iga->BCaquifB) {ierr = IGASetBoundaryValue(iga,1,0,3,iga->tice_botBC);CHKERRQ(ierr);}
+  }
+  //-------------- Metamorphism
+  if(iga->BCmetam){
+    ierr = IGASetBoundaryValue(iga,0,0,2,iga->Temp_metam);CHKERRQ(ierr);
+    ierr = IGASetBoundaryValue(iga,0,1,2,iga->Temp_metam);CHKERRQ(ierr);
+    ierr = IGASetBoundaryValue(iga,1,0,2,iga->Temp_metam);CHKERRQ(ierr);
+    ierr = IGASetBoundaryValue(iga,1,1,2,iga->Temp_metam);CHKERRQ(ierr);
+  }
+  
   /* Clear global matrix J*/
   ierr = MatZeroEntries(matJ);CHKERRQ(ierr);
 

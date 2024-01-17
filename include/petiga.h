@@ -354,17 +354,20 @@ struct _p_IGA {
   PetscInt  proc_sizes[3];
   PetscInt  proc_ranks[3];
 
-  PetscInt  elem_sizes[3];
+//elements
+  PetscInt  elem_sizes[3];    //total number of elements
   PetscInt  elem_start[3];
-  PetscInt  elem_width[3];
+  PetscInt  elem_width[3];    //local number of elements
 
-  PetscInt  geom_sizes[3];
-  PetscInt  geom_lstart[3];
-  PetscInt  geom_lwidth[3];
-  PetscInt  geom_gstart[3];
-  PetscInt  geom_gwidth[3];
+//basis functions: geometry
+  PetscInt  geom_sizes[3];    //total number of BFs
+  PetscInt  geom_lstart[3];   //start in global number
+  PetscInt  geom_lwidth[3];   //local number of BFs
+  PetscInt  geom_gstart[3];   //start in global number??
+  PetscInt  geom_gwidth[3];   //local number of BFs, including adjacent for parallelization
 
-  PetscInt  node_shift[3];
+//basis functions: (in general, idem as geometry)
+  PetscInt  node_shift[3];    //??
   PetscInt  node_sizes[3];
   PetscInt  node_lstart[3];
   PetscInt  node_lwidth[3];
@@ -382,7 +385,8 @@ struct _p_IGA {
 
 //BoundaryConditions:
   PetscInt BBCC0, side00, side01, side10, side11;
-  PetscReal BC_value;
+  PetscInt BCaquif, BCaquifB, BCmetam;
+  PetscReal BC_value,tice_topBC,tice_botBC, Temp_metam;
 
   DM elem_dm;
   DM geom_dm;

@@ -63,6 +63,12 @@ PetscErrorCode IGACreate(MPI_Comm comm,IGA *newiga)
   iga->BBCC0 = 0;
   iga->side00 = iga->side01 = iga->side10 = iga->side11 = 0;
   iga->BC_value = 0.0;
+  iga->BCaquif = 0;
+  iga->BCaquifB = 0;
+  iga->BCmetam = 0;
+  iga->tice_topBC = 0.0;
+  iga->tice_botBC = 0.0;
+  iga->Temp_metam = 0.0;
 
   PetscFunctionReturn(0);
 }
