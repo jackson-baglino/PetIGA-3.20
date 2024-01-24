@@ -15,10 +15,10 @@ typedef struct {
     PetscInt  Nx,Ny,p,C,dim; // mesh
     PetscReal norm0_0,norm0_1,norm0_2,norm0_3,norm0_4;
     PetscInt  flag_it0, flag_rainfall, flag_rad_Ks, flag_rad_hcap, *flag_bot; // flags
-    PetscInt  outp,printmin,printwarn,linu,linT; 
-    PetscReal sat_SSA,por_SSA,por_max,por_lim,sat_war,t_out,t_interv,prev_time;
+    PetscInt  outp,printmin,printwarn,linu,linT, step_restart; 
+    PetscReal sat_SSA,por_SSA,por_max,por_lim,sat_war,t_out,t_interv;
     PetscScalar *u_flow, *u_time, *T_surf, *T_time, *beta_s, *h_c;
-    PetscReal flux_prevt, flux_prevflux, flux_accum, u_lim, u_topR;
+    PetscReal flux_prevt, flux_prevflux, flux_accum, u_lim, u_topR, t_restart;
 } AppCtx;
 
 
@@ -292,11 +292,13 @@ void InterpolateBCs(AppCtx *user, PetscReal t,PetscScalar *u_top, PetscScalar *t
     if(tice_top)   (*tice_top) = 0.0;
     if(u_top)      (*u_top) = 0.0;
 
+    PetscReal time = t + user->t_restart;
+
     PetscInt jj, interv_u=0, interv_T=0;
 
     if (u_top) {
         for(jj=0; jj<user->linu; jj++){
-          if (user->u_time[jj] > t) {
+          if (user->u_time[jj] > time) {
             interv_u = jj-1;
             break;
           }
@@ -309,13 +311,13 @@ void InterpolateBCs(AppCtx *user, PetscReal t,PetscScalar *u_top, PetscScalar *t
         u0 = user->u_flow[interv_u]; 
         u1 = user->u_flow[interv_u+1]; 
  
-        (*u_top) = u0 + (u1-u0)/(t1u-t0u)*(t-t0u);
+        (*u_top) = u0 + (u1-u0)/(t1u-t0u)*(time-t0u);
     }
 
     if(tice_top){
 
         for(jj=0; jj<user->linT; jj++){
-          if (user->T_time[jj] > t) {
+          if (user->T_time[jj] > time) {
             interv_T = jj-1;
             break;
           }
@@ -328,7 +330,7 @@ void InterpolateBCs(AppCtx *user, PetscReal t,PetscScalar *u_top, PetscScalar *t
         tem0 = user->T_surf[interv_T];
         tem1 = user->T_surf[interv_T+1];
 
-        (*tice_top) = tem0 + (tem1-tem0)/(t1T-t0T)*(t-t0T);
+        (*tice_top) = tem0 + (tem1-tem0)/(t1T-t0T)*(time-t0T);
     }
 
 
@@ -881,7 +883,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     ierr = MPI_Allreduce(&flux,&tot_flux,1,MPI_DOUBLE,MPI_SUM,PETSC_COMM_WORLD);CHKERRQ(ierr);
     //PetscPrintf(PETSC_COMM_SELF,"flux %e tot_flux %e \n",flux, tot_flux);
 
-    user->flux_accum += 0.5*(user->flux_prevflux+tot_flux)*(t-user->flux_prevt); 
+    if(step>0) user->flux_accum += 0.5*(user->flux_prevflux+tot_flux)*(t-user->flux_prevt); 
 
     user->flux_prevt = t;
     user->flux_prevflux = tot_flux;
@@ -989,7 +991,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
  //-------------- output information   
     if(step==0) PetscPrintf(PETSC_COMM_WORLD,"TIME    TIME_STEP    POROS      TOT_SAT    TOT_WSSA    TOT_TICE    TOT_WAT    Tint\n");
     PetscPrintf(PETSC_COMM_WORLD,"\n%.3f d   %.4f h     %.5f    %.5f    %.5f    %.5f    %.5f    %.5f\n",
-                (t/24.0/3600.0),   dt/3600.0, poros,tot_sat,Wssa,tice,twat,Tint);
+                ((t+user->t_restart)/24.0/3600.0),   dt/3600.0, poros,tot_sat,Wssa,tice,twat,Tint);
     
     PetscInt print=0;
     if(user->outp > 0) {
@@ -1000,6 +1002,8 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     
    if(print==1) {
 
+        PetscPrintf(PETSC_COMM_WORLD,"RESTART: step %d, time %e, flux_accum %e, flux_prevflux %e \n",step+user->step_restart, t+user->t_restart, user->flux_accum,user->flux_prevflux);
+
         char filedata[256];
         sprintf(filedata,"/Users/amoure/Simulation_results/aquif_results/Data.dat");
         PetscViewer       view;
@@ -1007,7 +1011,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         PetscViewerSetType(view,PETSCVIEWERASCII);
         if (step==0) PetscViewerFileSetMode(view,FILE_MODE_WRITE); else PetscViewerFileSetMode(view,FILE_MODE_APPEND);
         PetscViewerFileSetName(view,filedata);
-        PetscViewerASCIIPrintf(view," %d %e %e %e %e %e \n",step,t,dt,tot_flux,user->flux_accum,-table_height);
+        PetscViewerASCIIPrintf(view," %d %e %e %e %e %e \n",step+user->step_restart,t+user->t_restart,dt,tot_flux,user->flux_accum,-table_height);
         PetscViewerDestroy(&view);
     }
 
@@ -1025,7 +1029,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         if (step==0) PetscViewerFileSetMode(viewt,FILE_MODE_WRITE); else PetscViewerFileSetMode(viewt,FILE_MODE_APPEND);
         PetscViewerFileSetName(viewi,fileice);
         PetscViewerFileSetName(viewt,filetim);
-        PetscViewerASCIIPrintf(viewt,"%e \n",t);
+        PetscViewerASCIIPrintf(viewt,"%e \n",t+user->t_restart);
         for(ii=0;ii<ncp_gl;ii++) {PetscViewerASCIIPrintf(viewi,"%e ",Tice_samp[ii]);}
         PetscViewerASCIIPrintf(viewi,"\n");
         PetscViewerDestroy(&viewi);
@@ -1059,7 +1063,7 @@ PetscErrorCode OutputMonitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD,"OUTPUT save files \n");
 
     char  filename[256];
-    sprintf(filename,"/Users/amoure/Simulation_results/aquif_results/sol%d.dat",step);
+    sprintf(filename,"/Users/amoure/Simulation_results/aquif_results/sol%d.dat",step+user->step_restart);
     ierr = IGAWriteVec(user->iga,U,filename);CHKERRQ(ierr);
     }
     
@@ -1329,6 +1333,13 @@ int main(int argc, char *argv[]) {
 
     ierr = Read_files(&user);CHKERRQ(ierr);
 
+    //---------------------- restart variables (last output of previous simulation)
+    user.step_restart   = 1625;
+    user.t_restart      = 5.034340e+06; //time
+    user.flux_accum     = 2.353801e-13;
+    user.flux_prevflux  = 4.142222e-20;
+
+
     //--------------------- physical/kinetic properties
     user.latheat    = 3.34e5;
     user.cp_ice     = 1.96e3;
@@ -1367,10 +1378,7 @@ int main(int argc, char *argv[]) {
 
     user.flag_it0       = 0;
     user.printmin       = 0;
-    user.prev_time      = 0.0;
     user.flux_prevt     = 0.0;
-    user.flux_prevflux  = 0.0;
-    user.flux_accum     = 0.0;
     
     //initial conditions
     user.por0    = 0.5924;
@@ -1399,7 +1407,7 @@ int main(int argc, char *argv[]) {
     
     //time step
     PetscReal delt_t = 0.1;
-    PetscReal t_final = user.u_time[user.linu-1];
+    PetscReal t_final = user.u_time[user.linu-1] - user.t_restart;
 
     //output_time
     user.outp = 0;  // if outp>0: output files saved every "outp" steps;     if outp=0: output files saved every "t_interv" seconds
