@@ -7,7 +7,7 @@
 
 typedef struct {
   IGA       iga;
-  Vec       Sed;
+  
   PetscReal eps;
   PetscReal mob_sub,mav,Etai,Etam,Etaa,alph_sub,Lambd, beta_sub0,d0_sub0;
   PetscReal thcond_ice,thcond_met,thcond_air,cp_ice,cp_met,cp_air,rho_ice,\
@@ -1659,8 +1659,8 @@ int main(int argc, char *argv[]) {
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
   //domain and mesh characteristics
-  PetscReal Lx=1.0e-4,  Ly=1.0e-4,  Lz=1.0e-4;
-  PetscInt  Nx=300,     Ny=300,     Nz=300; 
+  PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=1.0e-3;
+  PetscInt  Nx=800,     Ny=800,     Nz=300; 
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
@@ -1668,13 +1668,13 @@ int main(int argc, char *argv[]) {
 
   // grains!
   flag_sedgrav    = 0; 
-  user.NCsed      = 15; //less than 200, otherwise update in user
+  user.NCsed      = 0; //less than 200, otherwise update in user
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 
-  user.NCice      = 15; //less than 200, otherwise update in user
-  user.RCice      = 0.9e-5;
-  user.RCice_dev  = 0.4;
+  user.NCice      = 25; //less than 200, otherwise update in user
+  user.RCice      = 0.2e-4;
+  user.RCice_dev  = 0.5;
 
   //initial conditions
   user.hum0         = 0.98; //initial rel humidity
@@ -1690,7 +1690,7 @@ int main(int argc, char *argv[]) {
 
   //time specs
   PetscReal delt_t = 1.0;//1.0e-4;
-  PetscReal t_final = 30.0*24.0*3600.0;
+  PetscReal t_final = 1.0;//30.0*24.0*3600.0;
   //output
   user.outp = 0; // if 0 -> output according to t_interv
   user.t_out = 0.0;    user.t_interv = 2.0;
@@ -1846,17 +1846,22 @@ int main(int argc, char *argv[]) {
 
     Vec S;
     ierr = IGACreateVec(igaS,&S);CHKERRQ(ierr);
-    ierr = IGACreateVec(igaS,&user.Sed);CHKERRQ(ierr);
+    //ierr = IGACreateVec(igaS,&user.Sed);CHKERRQ(ierr);
     if(dim==2) {ierr = FormInitialSoil2D(igaS,S,&user);CHKERRQ(ierr);}
     else {ierr = FormInitialSoil3D(igaS,S,&user);CHKERRQ(ierr);}
-    ierr = VecCopy(S,user.Sed);CHKERRQ(ierr);
+    //ierr = VecCopy(S,user.Sed);CHKERRQ(ierr);
 
     ierr = IGAWrite(igaS,"/Users/amoure/Simulation_results/metamorph_results/igasoil.dat");CHKERRQ(ierr);
     ierr = IGAWriteVec(igaS,S,"/Users/amoure/Simulation_results/metamorph_results/soil.dat");CHKERRQ(ierr);
 
     ierr = VecDestroy(&S);CHKERRQ(ierr);
     ierr = IGADestroy(&igaS);CHKERRQ(ierr);
+  } else {
+    PetscPrintf(PETSC_COMM_WORLD,"No sed grains\n\n");
+    user.n_actsed= 0;
   }
+
+  ierr = InitialIceGrains(iga,&user);CHKERRQ(ierr);
 
   PetscReal t=0; Vec U;
   ierr = IGACreateVec(iga,&U);CHKERRQ(ierr);
@@ -1866,7 +1871,7 @@ int main(int argc, char *argv[]) {
 
   ierr = TSSolve(ts,U);CHKERRQ(ierr);
 
-  ierr = VecDestroy(&user.Sed);CHKERRQ(ierr);
+  //ierr = VecDestroy(&user.Sed);CHKERRQ(ierr);
   ierr = VecDestroy(&U);CHKERRQ(ierr);
   ierr = TSDestroy(&ts);CHKERRQ(ierr);
   ierr = IGADestroy(&iga);CHKERRQ(ierr);
