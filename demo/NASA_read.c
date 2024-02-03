@@ -12,7 +12,6 @@ typedef struct {
 
   PetscReal eps;
   PetscReal nucleat;
-  //PetscScalar *gpert,variance;
   PetscReal mob_sol,mob_sub,mob_eva,mav,Etai,Etaw,Etaa,alph_sol,alph_sub,\
             alph_eva,Lambd;
   PetscReal thcond_ice,thcond_wat,thcond_air,cp_ice,cp_wat,cp_air,rho_ice,\

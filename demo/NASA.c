@@ -656,9 +656,11 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
   AppCtx *user = (AppCtx *)mctx;  
 
   if(step==0) {
+    const char *env = "folder"; char *dir; dir = getenv(env);
+    char fileiga[256];
 
-    ierr = IGAWrite(user->iga,"/Users/amoure/Simulation_results/metamorph_results/igasol.dat");CHKERRQ(ierr);
-
+    sprintf(fileiga, "%s/igasol.dat", dir);
+    ierr = IGAWrite(user->iga,fileiga);CHKERRQ(ierr);
   }
 
   PetscInt print=0;
@@ -670,11 +672,11 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 
   if(print==1) {
     PetscPrintf(PETSC_COMM_WORLD,"OUTPUT print!\n");
-    
     user->t_out += user->t_interv;
 
-    char  filename[256];
-    sprintf(filename,"/Users/amoure/Simulation_results/metamorph_results/sol%d.dat",step);
+    const char *env = "folder"; char *dir; dir = getenv(env);
+    char filename[256];
+    sprintf(filename,"%s/sol%d.dat",dir,step);
     ierr = IGAWriteVec(user->iga,U,filename);CHKERRQ(ierr);
 
   }
@@ -1660,8 +1662,8 @@ int main(int argc, char *argv[]) {
 
   //domain and mesh characteristics
   PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=1.0e-3;
-  PetscInt  Nx=800,     Ny=800,     Nz=300; 
-  PetscInt  l,m, p=1, C=0, dim=2;
+  PetscInt  Nx=200,     Ny=200,     Nz=200; 
+  PetscInt  l,m, p=1, C=0, dim=3;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
   user.Nx=Nx; user.Ny=Ny; user.Nz=Nz;
@@ -1851,8 +1853,13 @@ int main(int argc, char *argv[]) {
     else {ierr = FormInitialSoil3D(igaS,S,&user);CHKERRQ(ierr);}
     //ierr = VecCopy(S,user.Sed);CHKERRQ(ierr);
 
-    ierr = IGAWrite(igaS,"/Users/amoure/Simulation_results/metamorph_results/igasoil.dat");CHKERRQ(ierr);
-    ierr = IGAWriteVec(igaS,S,"/Users/amoure/Simulation_results/metamorph_results/soil.dat");CHKERRQ(ierr);
+    const char *env="folder"; char *dir; dir=getenv(env);
+    char filename[256],filevect[256];
+    sprintf(filename, "%s/igasoil.dat", dir);
+    ierr=IGAWrite(igaS,filename);CHKERRQ(ierr);
+    
+    sprintf(filevect, "%s/soil.dat", dir);
+    ierr=IGAWriteVec(igaS,S,filevect);CHKERRQ(ierr);
 
     ierr = VecDestroy(&S);CHKERRQ(ierr);
     ierr = IGADestroy(&igaS);CHKERRQ(ierr);
