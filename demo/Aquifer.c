@@ -14,10 +14,10 @@ typedef struct {
     PetscReal Lx,Ly,max_dt; // mesh
     PetscInt  Nx,Ny,p,C,dim; // mesh
     PetscReal norm0_0,norm0_1,norm0_2,norm0_3,norm0_4;
-    PetscInt  flag_it0, flag_rainfall, flag_rad_Ks, flag_rad_hcap, *flag_bot; // flags
-    PetscInt  outp,printmin,printwarn,linu,linT, step_restart; 
+    PetscInt  flag_it0, flag_rainfall, flag_rad_Ks, flag_rad_hcap, *flag_bot, periodicX, flag_BC_bot; // flags
+    PetscInt  outp,printmin,printwarn,linu,linT,linB, step_restart; 
     PetscReal sat_SSA,por_SSA,por_max,por_lim,sat_war,t_out,t_interv;
-    PetscScalar *u_flow, *u_time, *T_surf, *T_time, *beta_s, *h_c;
+    PetscScalar *u_flow, *u_time, *T_surf, *T_time, *T_bott, *Tb_time, *beta_s, *h_c;
     PetscReal flux_prevt, flux_prevflux, flux_accum, u_lim, u_topR, t_restart;
 } AppCtx;
 
@@ -81,7 +81,7 @@ PetscErrorCode SNESDOFConvergence(SNES snes,PetscInt it_number,PetscReal xnorm,P
 
 void Porosity0(AppCtx *user, PetscReal y, PetscScalar *por0)
 {
-    PetscReal z = 15.0-y;//user->Ly - y;
+    PetscReal z = user->Ly - y;
 
     if(por0) (*por0) = (1.5265e-5)*pow((31.6750-z),3) + (-4.2661e-5)*pow((31.6750-z),2) + (0.0043)*(31.6750-z) + 0.0252;
 
@@ -337,6 +337,32 @@ void InterpolateBCs(AppCtx *user, PetscReal t,PetscScalar *u_top, PetscScalar *t
     return;
 }
 
+void BottomTemp(AppCtx *user, PetscReal t,PetscScalar *tice_bot)
+{
+    if(tice_bot)   (*tice_bot) = 0.0;
+
+    PetscInt jj, interv_T=0;
+
+    if(tice_bot){
+        for(jj=0; jj<user->linB; jj++){
+          if (user->Tb_time[jj] > t) {
+            interv_T = jj-1;
+            break;
+          }
+        }
+        if(jj==user->linB) interv_T = jj-2;
+
+        PetscReal t0T,t1T,tem0,tem1;
+        t0T = user->Tb_time[interv_T];
+        t1T = user->Tb_time[interv_T+1];
+        tem0 = user->T_bott[interv_T];
+        tem1 = user->T_bott[interv_T+1];
+
+        (*tice_bot) = tem0 + (tem1-tem0)/(t1T-t0T)*(t-t0T);
+    }
+
+    return;
+}
 
 
 PetscErrorCode Residual(IGAPoint pnt,
@@ -965,15 +991,14 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     
 
 //------------------- Time-dependent BC
-    PetscReal u_top,tice_top;
+    PetscReal u_top, tice_top, tice_bot;
     InterpolateBCs(user, t+2.0/3.0*dt, &u_top, &tice_top);
+    if(user->flag_BC_bot==1) BottomTemp(user, t+2.0/3.0*dt, &tice_bot);
+    else tice_bot=0.0;
     user->iga->tice_topBC = tice_top;
-    PetscPrintf(PETSC_COMM_WORLD,"utop %.3e  Tice_top %.4e \n",u_top,tice_top);
+    user->iga->tice_botBC = tice_bot;
+    PetscPrintf(PETSC_COMM_WORLD,"utop %.3e  Tice_top %.4e  Tice_bot %.4e \n",u_top,tice_top,tice_bot);
     if(u_top>user->u_lim) PetscPrintf(PETSC_COMM_WORLD,"MELT!! \n");
-
-    //user->iga->tice_topBC = 0.5 + 0.5*tanh(10.0*(t/24.0/3600.0 - 28.0));
-    //user->iga->tice_topBC *= -0.5;
-    //if(t>8.0*24.0*3600.0) user->iga->tice_topBC = -0.5;
 
 
 //-------------- control max_dt
@@ -1000,12 +1025,15 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         if (t>= user->t_out) print=1;
     }
     
-   if(print==1) {
+    //const char *env = "folder"; char *dir; dir = getenv(env);
+
+    if(print==1) {
 
         PetscPrintf(PETSC_COMM_WORLD,"RESTART: step %d, time %e, flux_accum %e, flux_prevflux %e \n",step+user->step_restart, t+user->t_restart, user->flux_accum,user->flux_prevflux);
 
         char filedata[256];
         sprintf(filedata,"/Users/amoure/Simulation_results/aquif_results/Data.dat");
+        //sprintf(filedata,"%s/Data.dat",dir);
         PetscViewer       view;
         PetscViewerCreate(PETSC_COMM_WORLD,&view);
         PetscViewerSetType(view,PETSCVIEWERASCII);
@@ -1019,6 +1047,8 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         char fileice[256],filetim[256];
         sprintf(fileice,"/Users/amoure/Simulation_results/aquif_results/Ice.dat");
         sprintf(filetim,"/Users/amoure/Simulation_results/aquif_results/Time.dat");
+        //sprintf(fileice,"%s/Ice.dat",dir);
+        //sprintf(filetim,"%s/Time.dat",dir);
         PetscViewer       viewi;
         PetscViewer       viewt;
         PetscViewerCreate(PETSC_COMM_WORLD,&viewi);
@@ -1047,7 +1077,12 @@ PetscErrorCode OutputMonitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     AppCtx *user = (AppCtx *)mctx;
     
     if(step==0) {
-        ierr = IGAWrite(user->iga,"/Users/amoure/Simulation_results/aquif_results/igasol.dat");CHKERRQ(ierr);
+        //const char *env = "folder"; char *dir; dir = getenv(env);
+        //PetscPrintf(PETSC_COMM_WORLD,"folder %s \n",dir);
+        char  fileiga[256];
+        sprintf(fileiga,"/Users/amoure/Simulation_results/aquif_results/igasol.dat");
+        //sprintf(fileiga,"%s/igasol.dat",dir);
+        ierr = IGAWrite(user->iga,fileiga);CHKERRQ(ierr);
     }
     
     PetscInt print=0;
@@ -1062,8 +1097,10 @@ PetscErrorCode OutputMonitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
     PetscPrintf(PETSC_COMM_WORLD,"OUTPUT save files \n");
 
+    //const char *env = "folder"; char *dir; dir = getenv(env);
     char  filename[256];
     sprintf(filename,"/Users/amoure/Simulation_results/aquif_results/sol%d.dat",step+user->step_restart);
+    //sprintf(filename,"%s/sol%d.dat",dir,step+user->step_restart);
     ierr = IGAWriteVec(user->iga,U,filename);CHKERRQ(ierr);
     }
     
@@ -1181,6 +1218,8 @@ PetscErrorCode Read_files(AppCtx *user)
 
     PetscInt linesu=0,linest=0,ii;
     FILE *fp;
+
+//----------------------------------------------------- Flow read files
     char c; char filename[PETSC_MAX_PATH_LEN] = {0};
     //sprintf(filename,"Riley_data/flow_upd.csv");
     sprintf(filename,"Riley_data/flow_upd.dat");
@@ -1240,7 +1279,7 @@ PetscErrorCode Read_files(AppCtx *user)
     }
     fclose(DataFileut);
 
-//------------------------------------------ Temp read files
+//------------------------------------------ Temp_top read files
     linesu=0;linest=0;
     //sprintf(filename,"Riley_data/temp_upd.csv");
     sprintf(filename,"Riley_data/temp_upd.dat");
@@ -1300,21 +1339,87 @@ PetscErrorCode Read_files(AppCtx *user)
     }
     fclose(DataFileTt);
 
+//-------------------------- Temp_bot read files
+    if(user->flag_BC_bot==1){
+        linesu=0;linest=0;
+        sprintf(filename,"Riley_data/tempbot_upd.dat");
+        fp=fopen(filename,"r");
+        for(c=getc(fp);c!=EOF;c=getc(fp)){
+            if (c == '\n') linesu++;
+        }
+        fclose(fp);
+        sprintf(filename,"Riley_data/time_tempbot.dat");
+        fp=fopen(filename,"r");
+        for(c=getc(fp);c!=EOF;c=getc(fp)){
+            if (c == '\n') linest++;
+        }
+        fclose(fp);
+        PetscPrintf(PETSC_COMM_WORLD,"T_bottom: linest %d linesu %d \n\n",linest,linesu);
+        if(linest!=linesu) {PetscPrintf(PETSC_COMM_WORLD,"ERROR in the input files\n"); return 1;}
+        user->linB = linesu;
+
+        ierr = PetscMalloc(sizeof(PetscScalar)*(linesu),&user->T_bott);CHKERRQ(ierr);
+        ierr = PetscMemzero(user->T_bott,sizeof(PetscScalar)*(linesu));CHKERRQ(ierr);
+        ierr = PetscMalloc(sizeof(PetscScalar)*(linesu),&user->Tb_time);CHKERRQ(ierr);
+        ierr = PetscMemzero(user->Tb_time,sizeof(PetscScalar)*(linesu));CHKERRQ(ierr);
+
+        PetscPrintf(PETSC_COMM_WORLD,"Tbot input \n");
+        count = 0;
+        FILE *DataFileB = fopen("Riley_data/tempbot_upd.dat", "r");
+        if (DataFileB == NULL) {
+            PetscPrintf(PETSC_COMM_WORLD,"Could not open file! \n");
+            return 1;
+        }
+        while (fgets(buffer, 1024, DataFileB)) {
+            char *token = strtok(buffer, ",");
+            while (token) {
+                sscanf(token, "%lf", &user->T_bott[count]);
+                count++;
+                token = strtok(NULL, ",");
+            }
+        }
+        fclose(DataFileB);
+
+        count = 0;
+        FILE *DataFileBt = fopen("Riley_data/time_tempbot.dat", "r");
+        if (DataFileBt == NULL) {
+            PetscPrintf(PETSC_COMM_WORLD,"Could not open time file! \n");
+            return 1;
+        }
+        while (fgets(buffer, 1024, DataFileBt)) {
+            char *token = strtok(buffer, ",");
+            while (token) {
+                sscanf(token, "%lf", &user->Tb_time[count]);
+                count++;
+                token = strtok(NULL, ",");
+            }
+        }
+        fclose(DataFileBt);
+    }
+//------------------------ save values
     user->linu--;
     user->linT--;
+    if(user->flag_BC_bot==1) user->linB--;
     for (ii=0;ii<user->linu;ii++) {
-        user->u_time[ii] = user->u_time[ii+1]*60.0;
-        user->u_flow[ii] = user->u_flow[ii+1]*1.0e-3/3600.0;
+        user->u_time[ii] = user->u_time[ii+1]*60.0;  //min->sec
+        user->u_flow[ii] = user->u_flow[ii+1]*1.0e-3/3600.0; //mm/h -> m/s
     }
     for (ii=0;ii<user->linT;ii++) {
         user->T_time[ii] = user->T_time[ii+1]*60.0; //min->sec
-        user->T_surf[ii] = user->T_surf[ii+1];  //mm/h -> m/s
+        user->T_surf[ii] = user->T_surf[ii+1];  
+    }
+    if(user->flag_BC_bot==1){
+        for (ii=0;ii<user->linB;ii++) {
+            user->Tb_time[ii] = user->Tb_time[ii+1];
+            user->T_bott[ii] = user->T_bott[ii+1];
+        }
     }
     for (ii=0;ii<3;ii++) PetscPrintf(PETSC_COMM_WORLD," line %d TIME %e Flow %e \n",ii,user->u_time[ii],user->u_flow[ii]);
     for (ii=user->linu-3;ii<user->linu;ii++) PetscPrintf(PETSC_COMM_WORLD," line %d TIME %e Flow %e \n",ii,user->u_time[ii],user->u_flow[ii]);
     for (ii=0;ii<3;ii++) PetscPrintf(PETSC_COMM_WORLD," line %d TIME %e temp %e \n",ii,user->T_time[ii],user->T_surf[ii]);
     for (ii=user->linT-3;ii<user->linT;ii++) PetscPrintf(PETSC_COMM_WORLD," line %d TIME %e temp %e \n",ii,user->T_time[ii],user->T_surf[ii]);
-
+    if(user->flag_BC_bot==1) for (ii=0;ii<3;ii++) PetscPrintf(PETSC_COMM_WORLD," line %d time %e Tbot %e \n",ii,user->Tb_time[ii],user->T_bott[ii]);
+    if(user->flag_BC_bot==1) for (ii=user->linB-3;ii<user->linB;ii++) PetscPrintf(PETSC_COMM_WORLD," line %d time %e Tbot %e \n",ii,user->Tb_time[ii],user->T_bott[ii]);
 
     PetscFunctionReturn(0); 
 }
@@ -1331,13 +1436,11 @@ int main(int argc, char *argv[]) {
     
     AppCtx user;
 
-    ierr = Read_files(&user);CHKERRQ(ierr);
-
     //---------------------- restart variables (last output of previous simulation)
-    user.step_restart   = 1625;
-    user.t_restart      = 5.034340e+06; //time
-    user.flux_accum     = 2.353801e-13;
-    user.flux_prevflux  = 4.142222e-20;
+    user.step_restart   = 0;
+    user.t_restart      = 0.0;//5.034340e+06; //time
+    user.flux_accum     = 0.0;//2.353801e-13;
+    user.flux_prevflux  = 0.0;//4.142222e-20;
 
 
     //--------------------- physical/kinetic properties
@@ -1389,28 +1492,36 @@ int main(int argc, char *argv[]) {
     user.twat0   = user.Tmelt + 0.0;
     
     //boundary conditions
-    user.flag_rainfall   = 1;  // 0 if heat influx
-    PetscReal flag_ti_bo = 1;  // 1 if imposed bottom T_ice 
-    PetscReal flag_BBCC  = 1;  // 1 if time-dependent surface (top) T_ice
+    user.flag_rainfall     = 1;  // 0 if heat influx
+    PetscReal flag_ti_bot  = 0;  // 1 if imposed fixed bottom T_ice = 0 C (melting point)
+    user.flag_BC_bot       = 1;  // 1 if time-dependent bottom T_ice 
+    PetscReal flag_BC_top  = 1;  // if 1, time-dependent surface T_ice (top)
+    user.periodicX         = 1;
+    if(flag_ti_bot==1 && user.flag_BC_bot==1) user.flag_BC_bot=0; //fixed bottom T_ice dominates
+
     user.u_top           = 0.0; //7.5e-6;
     user.twat_top        = user.Tmelt + 0.0;
     user.heat_in         = 139.0;  // heat
     user.tice_top        = user.Tmelt - 0.0;
-    user.tice_bottom     = user.Tmelt - 0.0;//user.tice0;
+    user.tice_bottom     = user.Tmelt - 0.0;  //user.tice0;
+
+    ierr = Read_files(&user);CHKERRQ(ierr);
     
     //domain and mesh characteristics
-    PetscInt  Nx = 160, Ny=3000;
-    PetscReal Lx = 0.8, Ly=15.0;
-    PetscInt  p=1, C=0, dim =1;  
+    PetscInt  Nx = 160, Ny=1000;
+    PetscReal Lx = 0.8, Ly=5.0;
+    PetscInt  p=1, C=0, dim =2;  
     user.p = p; user.C=C; user.dim=dim;
     user.Lx=Lx; user.Ly=Ly; user.Nx=Nx; user.Ny=Ny;
+    if(Ly<15.0 && user.flag_BC_bot==0) PetscPrintf(PETSC_COMM_WORLD,"ERROR: time-dependent bottom BC(flag_BC_bot) should be active when depth(Ly)<15 m \n");
+    if(Ly>14.99 && user.flag_BC_bot==1) PetscPrintf(PETSC_COMM_WORLD,"ERROR: if depth(Ly)=15 m, time-dependent bottom BC(flag_BC_bot) should not be active  \n");
     
     //time step
     PetscReal delt_t = 0.1;
     PetscReal t_final = user.u_time[user.linu-1] - user.t_restart;
 
     //output_time
-    user.outp = 0;  // if outp>0: output files saved every "outp" steps;     if outp=0: output files saved every "t_interv" seconds
+    user.outp = 1;  // if outp>0: output files saved every "outp" steps;     if outp=0: output files saved every "t_interv" seconds
     user.t_out = 0.0;   user.t_interv = 6.0*60.0*60.0; // 6 hours
     
     //adaptive time stepping
@@ -1453,6 +1564,7 @@ int main(int argc, char *argv[]) {
         ierr = IGAAxisInitUniform(axis0,Ny,0.0,Ly,C);CHKERRQ(ierr);
     } else if(dim==2){
         ierr = IGAGetAxis(iga,0,&axis0);CHKERRQ(ierr);
+        if(user.periodicX==1) {ierr = IGAAxisSetPeriodic(axis0,PETSC_TRUE);CHKERRQ(ierr);}
         ierr = IGAAxisSetDegree(axis0,p);CHKERRQ(ierr);
         ierr = IGAAxisInitUniform(axis0,Nx,0.0,Lx,C);CHKERRQ(ierr);
         ierr = IGAGetAxis(iga,1,&axis1);CHKERRQ(ierr);
@@ -1462,7 +1574,8 @@ int main(int argc, char *argv[]) {
     
     ierr = IGASetFromOptions(iga);CHKERRQ(ierr);
     ierr = IGASetUp(iga);CHKERRQ(ierr);
-    iga->BCaquif = flag_BBCC;
+    iga->BCaquif = flag_BC_top;
+    iga->BCaquifB = user.flag_BC_bot;
     user.iga = iga;
     
     PetscInt nmb_ele=1, nmb = iga->elem_width[0]*(p+1); //local
@@ -1494,7 +1607,7 @@ int main(int argc, char *argv[]) {
     if(user.flag_rainfall == 1){
         ierr = IGASetBoundaryValue(iga,axisBC,1,4,user.twat_top);CHKERRQ(ierr); //top, temperature
     }
-    if(flag_ti_bo == 1){
+    if(flag_ti_bot == 1){
         ierr = IGASetBoundaryValue(iga,axisBC,0,3,user.tice_bottom);CHKERRQ(ierr);
     }
     
@@ -1539,6 +1652,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscFree(user.u_time);CHKERRQ(ierr);
     ierr = PetscFree(user.T_surf);CHKERRQ(ierr);
     ierr = PetscFree(user.T_time);CHKERRQ(ierr);
+    if(user.flag_BC_bot==1) {ierr = PetscFree(user.T_bott);CHKERRQ(ierr);}
+    if(user.flag_BC_bot==1) {ierr = PetscFree(user.Tb_time);CHKERRQ(ierr);}
     ierr = PetscFree(user.beta_s);CHKERRQ(ierr);
     ierr = PetscFree(user.h_c);CHKERRQ(ierr);
     ierr = PetscFree(user.flag_bot);CHKERRQ(ierr);
