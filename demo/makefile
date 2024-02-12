@@ -1,6 +1,12 @@
 TARGETS = \
+Solid3ph_flow \
+NASA \
+Metamorph \
+Permafrost \
+Aquifer \
 Carbon \
 Meltwater \
+Flowmetam \
 Poisson1D Poisson2D Poisson3D \
 L2Projection AdaptiveL2Projection \
 Laplace BoundaryIntegral \
@@ -41,10 +47,28 @@ PETIGA_DIR ?= $(topdir)
 include $(PETIGA_DIR)/lib/petiga/conf/variables
 include $(PETIGA_DIR)/lib/petiga/conf/rules
 
+Solid3ph_flow: Solid3ph_flow.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+NASA: NASA.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+Metamorph: Metamorph.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+Permafrost: Permafrost.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+Aquifer: Aquifer.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
 Meltwater: Meltwater.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 Carbon: Carbon.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+Flowmetam: Flowmetam.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 Poisson1D: Poisson1D.o
