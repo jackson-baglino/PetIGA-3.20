@@ -191,7 +191,7 @@ void HydCond(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *cond, 
   PetscReal cond_sed = user->pen_fl*cond_wat;
   PetscReal cond_ice = cond_sed;
   if(cond)      (*cond)  = ice*cond_ice + wat*cond_wat + sed*cond_sed;
-  if(dcond_ice)    (*dcond_ice) = cond_ice*dice-cond_wat*dwat;
+  if(dcond_ice)    (*dcond_ice) = cond_ice*dice - cond_wat*dwat;
 
   return;
 }
@@ -528,6 +528,7 @@ PetscErrorCode Jacobian(IGAPoint pnt,
         J[a][1][b][0] += rho*dcp_ice*N0[b]*N0[a]*tem_t;
 
         if(user->flag_flux==1){ 
+          
           J[a][1][b][0] -= drho_ice*N0[b]*cp*(N1[a][0]*u[0] + N1[a][1]*u[1])*tem;
           J[a][1][b][0] -= rho*dcp_ice*N0[b]*(N1[a][0]*u[0] + N1[a][1]*u[1])*tem;
           J[a][1][b][0] += rho*cp*(N1[a][0]*u[0] + N1[a][1]*u[1])/hydcond*dhydcond_ice*N0[b]*tem;
@@ -990,14 +991,22 @@ PetscErrorCode InitialSedGrains(IGA iga,AppCtx *user)
     ierr = IGAElementBeginPoint(element,&point);CHKERRQ(ierr);
     while (IGAElementNextPoint(element,point)) {
         sed=0.0;
+        sed_x=0.0;
+        sed_y=0.0;
         for(aa=0;aa<user->n_actsed;aa++){
           dist=0.0;
           for(l=0;l<dim;l++) dist += SQ(point->mapX[0][l]-user->centsed[l][aa]);
           dist = sqrt(dist);
-          if(dist<1.0e-8) dist_eps = 1.0e-8;
-          else dist_eps=dist;
-          dx = (point->mapX[0][0]-user->centsed[0][aa])/dist_eps;
-          dy = (point->mapX[0][1]-user->centsed[1][aa])/dist_eps;
+          if(dist<1.0e-10) {
+            if(point->mapX[0][0]-user->centsed[0][aa]>=0.0) dx = 1.0;
+            else dx=-1.0;
+            if(point->mapX[0][1]-user->centsed[1][aa]>=0.0) dy = 1.0;
+            else dy=-1.0;
+          } else {
+            //dist_eps=dist;
+            dx = (point->mapX[0][0]-user->centsed[0][aa])/dist;
+            dy = (point->mapX[0][1]-user->centsed[1][aa])/dist;
+          }
           tan = tanh(0.5/user->eps*(dist-user->radiussed[aa]));
           sed += 0.5-0.5*tan;
           sed_x += -0.5*(1.0-tan*tan)*0.5/user->eps*dx;
@@ -1008,7 +1017,7 @@ PetscErrorCode InitialSedGrains(IGA iga,AppCtx *user)
           sed_x = 0.0;
           sed_y = 0.0;
         }
-        //PetscPrintf(PETSC_COMM_SELF," sed %.3f \n",sed);
+        //PetscPrintf(PETSC_COMM_WORLD," sed %.3f \n",sed);
         user->Sed[ind] = sed;
         user->Sed_x[ind] = sed_x;
         user->Sed_y[ind] = sed_y;
@@ -1341,7 +1350,7 @@ int main(int argc, char *argv[]) {
 
   //initial conditions
   user.temp0      = -2.0;
-  user.grad_temp0[0] = 0.1/0.2e-3;     user.grad_temp0[1] = 0.0;
+  user.grad_temp0[0] = -0.1/0.2e-3;     user.grad_temp0[1] = 0.0;
 
   //boundary conditions : "flux" >> "periodic" >> "fixed-T" 
   user.flag_flux    = 1;    // flow
@@ -1455,6 +1464,8 @@ int main(int argc, char *argv[]) {
     ierr = IGASetBoundaryValue(iga,1,1,1,Ttop);CHKERRQ(ierr);
   }
   if(user.flag_flux==1){
+    PetscReal Tlef = user.temp0 - user.grad_temp0[0]*0.5*Lx;
+    ierr = IGASetBoundaryValue(iga,0,0,1,Tlef);CHKERRQ(ierr);
     ierr = IGASetBoundaryValue(iga,0,1,2,0.0);CHKERRQ(ierr);
   }
 
@@ -1487,7 +1498,7 @@ int main(int argc, char *argv[]) {
   ierr = InitialIceGrains(iga,&user);CHKERRQ(ierr);
 
 //create auxiliary IGA with 1 dof
-  IGA igaS;   IGAAxis axis0S, axis1S, axis2S;
+  IGA igaS;   IGAAxis axis0S, axis1S;
   ierr = IGACreate(PETSC_COMM_WORLD,&igaS);CHKERRQ(ierr);
   ierr = IGASetDim(igaS,dim);CHKERRQ(ierr);
   ierr = IGASetDof(igaS,1);CHKERRQ(ierr);
