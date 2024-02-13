@@ -1,5 +1,6 @@
 from PIL import Image
 
+import glob
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -24,10 +25,13 @@ the same distribution as the provided data set.
 
 # Check if the correct number of command-line arguments is provided
 if len(sys.argv) == 1:
-    outDir = "/Users/jacksonbaglino/Documents/scorpion/Academics/Research/" \
-        "PhaseFieldDEM/LSDEM_Fluid_2D/input/"
-    grainOut = "/Users/jacksonbaglino/Documents/scorpion/Academics/Research/" \
-        "PhaseFieldDEM/LSDEM_Fluid_2D/input/"
+    # outDir = "/Users/jacksonbaglino/Documents/scorpion/Academics/Research/" \
+    #     "PhaseFieldDEM/LSDEM_Fluid_2D/input/"
+    # grainOut = "/Users/jacksonbaglino/Documents/scorpion/Academics/Research/" \
+    #     "PhaseFieldDEM/LSDEM_Fluid_2D/input/"
+
+    outDir          = "/Users/jacksonbaglino/LSDEM/LSDEM_Fluid_2D/input/"
+    grainOut        = "/Users/jacksonbaglino/LSDEM/LSDEM_Fluid_2D/input/"
     
 elif len(sys.argv) != 3:
     print("Usage: python my_python_program.py <input> <outDir>")
@@ -45,16 +49,20 @@ inFilePath = outDir + inFile
 
 fitParams = []
 
-N =         160
-Lx =        6*2e-3
+N =         20
+Lx =        4e-3
+# Lx =        2e-3
 Ly =        2e-3
-Nx =        6*200
+Nx =        400
+# Nx =        200
 Ny =        200
-numPoints = 50
+numPoints = 55
+
+ratio = Nx/Lx
 
 
 # Grain properties 
-rho = 0.910
+rho = 0.10
 kn = 6e6 #Eice=6 GPa
 ks = 5.4e6
 mu = 0.99  #(Between 0.7 and 0.8)
@@ -76,7 +84,7 @@ radius =    np.zeros((N, 1))
 padding = 15
 theta = np.linspace(0, 2*np.pi, numPoints)
 
-np.random.seed(21)
+np.random.seed(10)
 
 
 # Define functions
@@ -146,22 +154,22 @@ def initializeParticles(inFilePath):
         # Ensure the particle is found in our domain
         flag = 1
 
-        if xc-rc < 0:
+        if xc-1.1*rc < 0:
             flag = 0
-        elif yc+rc > Ly:      # Note that we allow particles to start 3x
+        elif yc+1.1*rc > Ly:      # Note that we allow particles to start 3x
                                 # higher than Ly. This is so we can allow for a 
                                 # more accuare pluvation experiment.
             flag = 0
-        elif xc+rc > Lx:
+        elif xc+1.1*rc > Lx:
             flag = 0
-        elif yc-rc < 0:
+        elif yc-1.1*rc < 0:
             flag = 0
 
         # Ensure particles do not overlap
         if flag == 1:
             for j in range(n_act):
                 dist = np.sqrt(np.square(xc-centX[j]) + np.square(yc-centY[j]))
-                if dist < rc+radius[j]:
+                if dist < 1.1*(rc+radius[j]):
                     flag = 0
         
         # If flag == 1, write the particle information to the propery variables
@@ -268,13 +276,16 @@ def main():
     # print(f"Image saved as {outFile}.")
 
     # Now we want to generate our level-sets
-    # Check if the directory exists
-    if os.path.exists(grainOut):
-        # Use shutil.rmtree to remove the entire directory
-        shutil.rmtree(grainOut)
+    # Get a list of all files that begin with 'grainproperty'
+    grain_files = glob.glob(os.path.join(grainOut, 'grainproperty*'))
+
+    # Iterate over the list and remove each file
+    for file in grain_files:
+        if os.path.isfile(file):
+            os.remove(file)
         
-    # Recreate the directory to start fresh
-    os.mkdir(grainOut)
+    if not os.path.exists(grainOut):
+        os.mkdir(grainOut)
 
     # Set up file for writing positions
     g = open(grainOut + "positions.dat", 'w')
@@ -293,8 +304,6 @@ def main():
         print(f"Particle {i+1} has a level-set array of size ({dim}, {dim}).")
 
         # Initialize the level set
-        noise = (2*rd.random()()-1)*radius[i]/15
-        radius[i] = radius[i] + noise
         phi0 = np.zeros((dim, dim))
 
         xspan = np.linspace(-dim/2*dx, dim/2*dx, dim)
@@ -307,16 +316,21 @@ def main():
 
         phi0 = phi0/dx
 
-        noisey_radius = radius[i]
+        noise = np.random.uniform(-1, 1, numPoints)/ratio
+
+        noisey_radius = radius[i] + 2000*noise*radius[i]
         # noisey_radius = radius[i]
 
-        xp = (noisey_radius * np.cos(theta))/dx
-        yp = (noisey_radius * np.sin(theta))/dy
+        # xp = (noisey_radius * np.cos(theta))/dx
+        # yp = (noisey_radius * np.sin(theta))/dy
+
+        xp = np.multiply(noisey_radius, np.cos(theta))/dx
+        yp = np.multiply(noisey_radius, np.sin(theta))/dy
 
         bpointsCM = np.column_stack((xp, yp))
 
         # Display the level-set arrays
-        if N < 15:
+        if N < 4:
             plt.figure()
             plt.imshow(phi0, cmap='twilight_shifted')
             plt.colorbar()
@@ -327,7 +341,7 @@ def main():
             plt.title("Level Set image file")
             plt.gca().invert_yaxis()
             plt.show()
-        elif N - i < 10:
+        elif N - i < 4:
             plt.figure()
             plt.imshow(phi0, cmap='twilight_shifted')
             plt.colorbar()
@@ -371,7 +385,7 @@ def main():
 
         # Write properties to grainProp file
         f.write('%5.3f'% m + '\n')                           # mass
-        f.write('%5.3f'% I + '\n')                           # moment of inertia
+        f.write('%5.3f'% I*1000 + '\n')                           # moment of inertia
         f.write('%5.3f' % cx + ' ' + '%5.3f'% cy + '\n')     # center of mass
         f.write('%d' % numPoints + '\n')                     # # boundary points
         f.write(" ".join('%5.6f' % x for x in bpointsCM.ravel().tolist())+'\n') 

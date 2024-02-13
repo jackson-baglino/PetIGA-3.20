@@ -9,12 +9,11 @@ import scipy.stats as stats
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-input = "./input/DIWICE-147-000_20x_Diameters.xlsx"
-outDir = "/Users/jacksonbaglino/Documents/scorpion/Academics/Research/" \
-    "PhaseFieldDEM/LSDEM_Fluid_2D/input/"
+input           = "./input/DIWICE-147-000_20x_Diameters.xlsx"
+outDir          = "/Users/jacksonbaglino/LSDEM/LSDEM_Fluid_2D/input/"
 
-outFile = 'fitParams.dat'
-outFilePath = outDir + outFile
+outFile         = 'fitParams.dat'
+outFilePath     = outDir + outFile
 
 plotFlag = 1
 
