@@ -45,26 +45,28 @@ for infile in glob.glob("sol*.dat"):
 
     print("Created: " + root + ".\n")
 
-# Import sediment grains:
-nrb2 = PetIGA().read("igasoil.dat")
+nrb2 = None
+if os.path.exists("igasoil.dat"):
+    # Import sediment grains:
+    nrb2 = PetIGA().read("igasoil.dat")
 
-# Create a list to store the field names
-field_names = ['SedPhase']
+    # Create a list to store the field names
+    field_names = ['SedPhase']
 
-for infile in glob.glob("soil*.dat"):
-    name = infile.split(".")[0]
-    number = name.split("l")[1]
-    root = os.path.join(csv_dir, 'soilV' + number + '.csv')
+    for infile in glob.glob("soil*.dat"):
+        name = infile.split(".")[0]
+        number = name.split("l")[1]
+        root = os.path.join(csv_dir, 'soilV' + number + '.csv')
 
-    sol = PetIGA().read_vec(infile, nrb2)
-    
-    with open(root, 'w', newline='') as csv_file:
-        csv_writer = csv.writer(csv_file)
-        csv_writer.writerow(field_names)  # Write the header
+        sol = PetIGA().read_vec(infile, nrb2)
         
-        for i in range(sol.shape[1]):
-            row_data = sol[:, i]  # Extract the data for a single field
-            csv_writer.writerow(row_data)
+        with open(root, 'w', newline='') as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow(field_names)  # Write the header
             
-    print("Created: " + root + ".\n")
+            for i in range(sol.shape[1]):
+                row_data = sol[:, i]  # Extract the data for a single field
+                csv_writer.writerow(row_data)
+                
+        print("Created: " + root + ".\n")
 

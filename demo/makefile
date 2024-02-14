@@ -1,5 +1,6 @@
 TARGETS = \
 NASA \
+NASA_panda \
 Carbon \
 Meltwater \
 Poisson1D Poisson2D Poisson3D \
@@ -43,6 +44,9 @@ include $(PETIGA_DIR)/lib/petiga/conf/variables
 include $(PETIGA_DIR)/lib/petiga/conf/rules
 
 NASA: NASA.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+NASA_panda: NASA_panda.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 Meltwater: Meltwater.o
