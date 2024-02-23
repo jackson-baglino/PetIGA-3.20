@@ -1,6 +1,7 @@
 TARGETS = \
 NASA \
 NASA_panda \
+localGrains \
 Carbon \
 Meltwater \
 Poisson1D Poisson2D Poisson3D \
@@ -47,6 +48,9 @@ NASA: NASA.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 NASA_panda: NASA_panda.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+localGrains: localGrains.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 Meltwater: Meltwater.o
