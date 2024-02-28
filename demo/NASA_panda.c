@@ -1274,16 +1274,16 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     PetscReal theta2 = 2.0*PETSC_PI/3.0;
 
     // Define raddi
-    radius[0] = 120e-6;
-    radius[1] = (1.0/3.0)*radius[0];
-    radius[2] = (1.0/3.0)*radius[0];
+    radius[0] = (1.0/3.0)*user->Lx*0.99;
+    radius[1] = (1.0/3.0)*radius[0]*0.99;
+    radius[2] = (1.0/3.0)*radius[0]*0.99;
 
     PetscPrintf(PETSC_COMM_WORLD,"user->Lx %.2e \n",user->Lx);
 
     // Particle 0
-    centX[0][0] = 0.5*user->Lx;       // x-position
-    centX[1][0] = 0.4125*user->Ly;    // y-position
-    centX[2][0] = 0.5*user->Lz;       // z-position
+    centX[0][0] = 0.5*user->Lx;   
+    centX[1][0] = 0.45*user->Ly;   
+    centX[2][0] = 0.5*user->Lz;
     
     // Particle 1
     centX[0][1] = centX[0][0] + (radius[0]+radius[1])*cos(theta1);
@@ -1678,7 +1678,7 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
-  user.eps        = 5.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
+  user.eps        = 2.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
   user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
@@ -1707,8 +1707,8 @@ int main(int argc, char *argv[]) {
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
   //domain and mesh characteristics
-  PetscReal Lx=400e-6,  Ly=320e-6,  Lz=150e-6;
-  PetscInt  Nx=400,     Ny=320,     Nz=150; 
+  PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=0.2e-3;
+  PetscInt  Nx=200,     Ny=200,     Nz=200; 
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
@@ -1726,7 +1726,7 @@ int main(int argc, char *argv[]) {
 
   //initial conditions
   user.hum0         = 0.98; //initial rel humidity
-  user.temp0        = -70.0;
+  user.temp0        = -20.0;
   user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 0.0010/Ly;  user.grad_temp0[2] = 0.0/Lz;
 
   //boundary conditions
@@ -1738,11 +1738,11 @@ int main(int argc, char *argv[]) {
 
   //time specs
   PetscReal delt_t = 1.0e-4;
-  // PetscReal t_final = 1*24*60*60;
-  PetscReal t_final = 10.0*delt_t;
+  // PetscReal t_final = 1*18*60*60;
+  PetscReal t_final = 10*delt_t;
   //output
   user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0.0;    user.t_interv = 2.0;
+  user.t_out = 0.0;    user.t_interv = 600.0;
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;

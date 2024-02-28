@@ -2,6 +2,7 @@ TARGETS = \
 NASA \
 NASA_panda \
 localGrains \
+Solid3ph_flow \
 Carbon \
 Meltwater \
 Poisson1D Poisson2D Poisson3D \
@@ -53,6 +54,9 @@ NASA_panda: NASA_panda.o
 localGrains: localGrains.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+Solid3ph_flow: Solid3ph_flow.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
 Meltwater: Meltwater.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
@@ -68,7 +72,6 @@ Poisson2D: Poisson2D.o
 Poisson3D: Poisson3D.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
-
 L2Projection: L2Projection.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<

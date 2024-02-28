@@ -1441,10 +1441,11 @@ int main(int argc, char *argv[]) {
   ierr = TSGetSNES(ts,&nonlin);CHKERRQ(ierr);
   ierr = SNESSetConvergenceTest(nonlin,SNESDOFConvergence,&user,NULL);CHKERRQ(ierr);
 
+  // sed and ice particles (circular)
   ierr = InitialSedGrains(iga,&user);CHKERRQ(ierr);
   ierr = InitialIceGrains(iga,&user);CHKERRQ(ierr);
 
-
+  //create auxiliary IGA with 1 dof
   IGA igaS;   IGAAxis axis0S;  IGAAxis axis1S;
   ierr = IGACreate(PETSC_COMM_WORLD,&igaS);CHKERRQ(ierr);
   ierr = IGASetDim(igaS,2);CHKERRQ(ierr);
@@ -1457,18 +1458,61 @@ int main(int argc, char *argv[]) {
   ierr = IGAAxisInitUniform(axis1S,Ny,0.0,Ly,C);CHKERRQ(ierr);
   ierr = IGASetFromOptions(igaS);CHKERRQ(ierr);
   ierr = IGASetUp(igaS);CHKERRQ(ierr);
+
+  // Create a vector U and set it to zero
+  PetscReal t=0; 
+  Vec U;
+  ierr = IGACreateVec(iga,&U);CHKERRQ(ierr);
+  ierr = VecZeroEntries(U);CHKERRQ(ierr);
+
+  // Set the initial condition for U
+  ierr = FormInitialCondition(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+
+  // Solve the time-stepping problem using the TSSolve function
+  ierr = TSSolve(ts,U);CHKERRQ(ierr);
+
+  // Destroy the vector U and the TS object ts
+  ierr = VecDestroy(&U);CHKERRQ(ierr);
+  ierr = TSDestroy(&ts);CHKERRQ(ierr);
+
+  // Destroy the IGA object iga
+  ierr = IGADestroy(&iga);CHKERRQ(ierr);
+
+  // Free the memory allocated for the Phi_sed array
+  ierr = PetscFree(user.Phi_sed);CHKERRQ(ierr);
+
+  // Measure and print the computation time
+  PetscLogDouble ltim,tim;
+  ierr = PetscTime(&ltim); CHKERRQ(ierr);
+  tim = ltim-itim;
+  PetscPrintf(PETSC_COMM_WORLD," comp time %e sec  =  %.2f min \n\n",tim,tim/60.0);
+
+  // Finalize PETSc
+  ierr = PetscFinalize();CHKERRQ(ierr);
+  return 0;
+  }
+
+  // Create a vector S and set it to zero
   Vec S;
   ierr = IGACreateVec(igaS,&S);CHKERRQ(ierr);
+  ierr = VecZeroEntries(S);CHKERRQ(ierr);
+
+  // Set the initial condition for the soil vector S
   ierr = FormInitialSoil(igaS,S,&user);CHKERRQ(ierr);
 
-  const char *env="folder"; char *dir; dir=getenv(env);
+  // Write the IGA object igaS to a file
+  const char *env="folder"; 
+  char *dir; 
+  dir=getenv(env);
   char filename[256],filevect[256];
   sprintf(filename, "%s/igasoil.dat", dir);
   ierr=IGAWrite(igaS,filename);CHKERRQ(ierr);
 
+  // Write the vector S to a file
   sprintf(filevect, "%s/soil.dat", dir);
   ierr=IGAWriteVec(igaS,S,filevect);CHKERRQ(ierr);
 
+  // Destroy the vector S and the IGA object igaS
   ierr = VecDestroy(&S);CHKERRQ(ierr);
   ierr = IGADestroy(&igaS);CHKERRQ(ierr);
 
