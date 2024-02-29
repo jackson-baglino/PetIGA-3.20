@@ -1344,12 +1344,12 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"SOLID: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n",tau_sol,lambda_sol,user.mob_sol,user.alph_sol);
 
 //sed grains ------------- if NCsed=0, no inert phase
-  user.NCsed      = 10;      //less than 200, otherwise update in user
+  user.NCsed      = 25;      //less than 200, otherwise update in user
   user.RCsed      = 1.0e-5;
   user.RCsed_dev  = 0.4;
 
 //ice grains
-  user.NCice      = 5; //less than 200, otherwise update in user
+  user.NCice      = 25; //less than 200, otherwise update in user
   user.RCice      = 1.0e-5;
   user.RCice_dev  = 0.5;
   user.overl      = 1.0;
@@ -1357,7 +1357,7 @@ int main(int argc, char *argv[]) {
 
   //initial conditions
   user.temp0      = -2.0;
-  user.grad_temp0[0] = 4.0/0.2e-3;     user.grad_temp0[1] = 4.0/0.2e-3;  //-0.1/0.2e-3;0.0;
+  user.grad_temp0[0] = 0.0/0.2e-3;     user.grad_temp0[1] = 4.0/0.2e-3;  //-0.1/0.2e-3;0.0;
 
   //boundary conditions : "flux" >> "periodic" >> "fixed-T" 
   user.flag_flux    = 0;    // flow
@@ -1518,7 +1518,7 @@ int main(int argc, char *argv[]) {
   ierr = IGAGetAxis(igaS,1,&axis1S);CHKERRQ(ierr);
 
   if(user.periodic==1) {ierr = IGAAxisSetPeriodic(axis1S,PETSC_TRUE);CHKERRQ(ierr);}
-  
+
   ierr = IGAAxisSetDegree(axis1S,p);CHKERRQ(ierr);
   ierr = IGAAxisInitUniform(axis1S,Ny,0.0,Ly,C);CHKERRQ(ierr);
   ierr = IGASetFromOptions(igaS);CHKERRQ(ierr);
@@ -1529,6 +1529,19 @@ int main(int argc, char *argv[]) {
   ierr = IGACreateVec(igaS,&S);CHKERRQ(ierr);
   ierr = IGACreateVec(igaS,&user.SedV);CHKERRQ(ierr);
   ierr = FormInitialSoil2D(igaS,S,&user);CHKERRQ(ierr);
+
+  // Write the IGA object igaS to a file
+  const char *env="folder"; 
+  char *dir; 
+  dir=getenv(env);
+  char filename[256],filevect[256];
+  sprintf(filename, "%s/igasoil.dat", dir);
+  ierr=IGAWrite(igaS,filename);CHKERRQ(ierr);
+
+  // Write the vector S to a file
+  sprintf(filevect, "%s/soil.dat", dir);
+  ierr=IGAWriteVec(igaS,S,filevect);CHKERRQ(ierr);
+
   ierr = VecCopy(S,user.SedV);CHKERRQ(ierr);
   ierr = VecDestroy(&S);CHKERRQ(ierr);
 

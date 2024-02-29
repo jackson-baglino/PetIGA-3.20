@@ -1707,8 +1707,8 @@ int main(int argc, char *argv[]) {
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
   //domain and mesh characteristics
-  PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=0.2e-3;
-  PetscInt  Nx=200,     Ny=200,     Nz=200; 
+  PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=0.15e-3;
+  PetscInt  Nx=256,     Ny=256,     Nz=192; 
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
@@ -1738,8 +1738,8 @@ int main(int argc, char *argv[]) {
 
   //time specs
   PetscReal delt_t = 1.0e-4;
-  // PetscReal t_final = 1*18*60*60;
-  PetscReal t_final = 10*delt_t;
+  // PetscReal t_final = 10*delt_t;
+  PetscReal t_final = 1*18*60*60;
   //output
   user.outp = 0; // if 0 -> output according to t_interv
   user.t_out = 0.0;    user.t_interv = 600.0;

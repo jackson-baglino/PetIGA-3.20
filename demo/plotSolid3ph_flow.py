@@ -24,10 +24,10 @@ for infile in glob.glob("sol*.dat"):
 
 # Import sediment grains:
 nrb2 = None
-if os.path.exists("igasolS.dat"):
+if os.path.exists("igasoil.dat"):
     nrb2 = PetIGA().read("igasoil.dat")
 
-    for infile in glob.glob("soil*.dat"):
+    for infile in glob.glob("soil.dat"):
         name = infile.split(".")[0]
         number = name.split("l")[1]
         root = './soilV'+number+'.vtk'
