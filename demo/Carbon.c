@@ -14,7 +14,7 @@ typedef struct {
   PetscReal oxyg_in_accum,carb_in_accum,carb_flux_prevt,oxyg_flux_prevt;
   PetscReal RC,RCdev;
   PetscInt  NC,n_act,lin;
-  PetscInt  Nx,Ny,p,C; // mesh
+  PetscInt  Nx,Ny,p,C; // mesh, basis functions
   PetscReal norm0_0,norm0_1,norm0_2,norm0_3;
   PetscInt  flag_it0,outp,flag_distr, flag_flow; // flags
   PetscInt left, right, bot, top;
