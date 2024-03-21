@@ -1223,6 +1223,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
+  PetscPrintf(PETSC_COMM_WORLD,"\n\n\n");
   PetscPrintf(PETSC_COMM_WORLD,"--------------------- ICE GRAINS --------------------------\n");
 
   if(user->NCice==0) {
@@ -1233,8 +1234,10 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
 
   PetscReal rad = user->RCice;
   PetscReal rad_dev = user->RCice_dev;
-  PetscInt  numb_clust = user->NCice, ii,jj,tot=10000;
-  PetscInt  l, dim=user->dim, n_act=0,flag,seed=14, testFlag = 1;
+  PetscInt  numb_clust = user->NCice, ii=0, jj=0, tot=10000, c;
+  PetscInt  l, dim=user->dim, n_act=0,flag,seed=14, testFlag = 1, readFlag = 0;
+
+  PetscReal data[numb_clust][4];
 
 //----- cluster info
   PetscReal centX[3][numb_clust], radius[numb_clust];
@@ -1269,6 +1272,9 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
   xc[0] = xc[1] = xc[2] = 0.0;
 
   // Generate 3 particles at specific locations for testing (Panda) purposes.
+
+  if (readFlag==1) {testFlag = 0;}
+  
   if(testFlag==1) {
     PetscReal theta1 = PETSC_PI/3.0;
     PetscReal theta2 = 2.0*PETSC_PI/3.0;
@@ -1299,14 +1305,160 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
 
     for (size_t i = 0; i < n_act; i++)
     {
-      PetscPrintf(PETSC_COMM_WORLD," new ice grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n",i,centX[0][i],centX[1][i],centX[2][i],radius[i]);
+      PetscPrintf(PETSC_COMM_WORLD," new ice grain %zu!!  x %.2e  y %.2e  z %.2e  r %.2e \n",i,centX[0][i],centX[1][i],centX[2][i],radius[i]);
     }
-    
-  } else {
-    // This for loop generates random coordinates and radii for potential new ice grains.
-    // It checks if the generated coordinates and radii overlap with existing ice grains or sediment grains.
-    // If there is no overlap, a new ice grain is created with the generated coordinates and radii.
-    // The loop terminates when the maximum number of ice grains is reached or when all potential positions have been checked.
+
+  }
+  else if (readFlag==1)
+  {
+    // Initialize necessary variables
+    // This is a different branch of the code (READ)
+    FILE *file;
+    PetscInt i;
+    PetscReal x, y, rad;
+    PetscInt nrows, ncols;
+    char c;
+    int type;
+
+    const char *filename = "./input/grainReadFile-50.dat";
+    PetscPrintf(PETSC_COMM_WORLD, "Attempting to open file: %s\n", filename);
+
+    // Open the file
+    file = fopen(filename, "r");
+    if (!file) {
+        PetscPrintf(PETSC_COMM_WORLD, "Failed to open file: %s\n", filename);
+        SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Failed to open file");
+    }
+    PetscPrintf(PETSC_COMM_WORLD, "Successfully opened file: %s\n", filename);
+
+    // Read file content
+    PetscPrintf(PETSC_COMM_WORLD, "Attempting to READ file: %s\n", filename);
+    for (i = 0; i < numb_clust; i++) {
+        if (fscanf(file, "%lf,%lf,%lf,%d\n", &x, &y, &rad, &type) != 4) {
+            // Handle error or unexpected file format
+            fclose(file);
+            PetscPrintf(PETSC_COMM_WORLD, "Error reading line %d from the file.\n", i + 1);
+            SETERRQ(PETSC_COMM_SELF, PETSC_ERR_LIB, "File format error or unexpected end of file.");
+        }        
+
+        PetscPrintf(PETSC_COMM_WORLD, "[%zu] READING file: %s\n", i, filename);
+
+        // Assign read values to arrays
+        centX[0][i] = x;
+        centX[1][i] = y;
+        radius[i] = rad;
+    }
+
+    // Clean up
+    fclose(file);
+
+    for (size_t i = 0; i < n_act; i++) {
+      PetscPrintf(PETSC_COMM_WORLD," new ice grain %zu!!  x %.2e  y %.2e  z %.2e  r %.2e \n",i,centX[0][i],centX[1][i],centX[2][i],radius[i]);
+    }
+    // Read the data from the CSV file
+
+    // Count the number of rows and columns in the CSV file
+    nrows = 0;
+    ncols = 0;
+
+    while ((c = fgetc(file)) != EOF) {
+        if (c == ',')
+            ncols++;
+        else if (c == '\n') {
+            nrows++;
+            break;
+        }
+    }
+    ncols++;  // Increment ncols by 1 to account for the last column
+    while ((c = fgetc(file)) != EOF) {
+        if (c == '\n')
+            nrows++;
+    }
+
+    nrows++; // Increme nrows by 1 to account for the last row
+
+    // PetscPrintf(PETSC_COMM_WORLD, "Number of rows: %d, Number of columns: %d\n", nrows, ncols);
+
+    // Reset the file pointer to the beginning
+    rewind(file);
+
+    // Allocate memory for the data
+    double **file_data = (double **)malloc(nrows * sizeof(double *));
+    if (file_data == NULL) {
+        printf("Failed to allocate memory for file_data\n");
+        fclose(file);
+        return -1;
+    }
+
+    for (int i = 0; i < nrows; i++) {
+        file_data[i] = (double *)malloc(ncols * sizeof(double));
+        if (file_data[i] == NULL) {
+            printf("Failed to allocate memory for file_data\n");
+            for (int j = 0; j < i; j++) {
+                free(file_data[j]);
+            }
+            free(file_data);
+            fclose(file);
+            return -1;
+        }
+    }
+
+    // Read the data from the CSV file
+    for (int i = 0; i < nrows; i++) {
+        for (int j = 0; j < ncols; j++) {
+            fscanf(file, "%lf", &file_data[i][j]);
+            if (j < ncols - 1)
+                fgetc(file);  // Skip the comma
+        }
+    }
+
+    // Close the file
+    fclose(file);
+
+    // Count the number of ice grains
+    PetscInt numb_clust = 0;
+    for (i = 0; i < nrows; i++) {
+      if (file_data[i][3] == 0) {
+        numb_clust++;
+      }
+    }
+
+    // Initialize pointer vector to show where sed particles are in csv file
+    PetscInt *indexVector;
+    PetscInt idx;
+    ierr = PetscMalloc1(numb_clust, &indexVector);CHKERRQ(ierr);
+
+    PetscInt numZeros = 0;
+    for (i = 0; i < nrows; i++) {
+      if (file_data[i][3] == 0){  //file_data[i][3] = 0, if i corresponds to ice
+        indexVector[numZeros] = i;
+        numZeros++;
+      }
+    }
+
+    // PetscReal scale_factor = (2e-3)/200;
+    PetscReal scale_factor = 1.0;
+    for (size_t i = 0; i < numb_clust; i++) {
+      idx = indexVector[i];
+
+      centX[0][i] = file_data[idx][0]*scale_factor;
+      centX[1][i] = file_data[idx][1]*scale_factor;
+      centX[2][i] = 0;
+
+      radius[i] = file_data[idx][2]*scale_factor;
+    }
+
+    n_act = numb_clust;
+
+  }
+  else 
+  {
+    // This for loop generates random coordinates and radii for potential new 
+    // ice grains. It checks if the generated coordinates and radii overlap with 
+    // existing ice grains or sediment grains. If there is no overlap, a new ice 
+    // grain is created with the generated coordinates and radii. The loop 
+    // terminates when the maximum number of ice grains is reached or when all 
+    // potential positions have been checked.
     for(ii=0;ii<tot*numb_clust;ii++) 
     {
         ierr=PetscRandomGetValue(randcX,&xc[0]);CHKERRQ(ierr);
@@ -1346,13 +1498,14 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
         }
     }
 
+
+    ierr = PetscRandomDestroy(&randcX);CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randcY);CHKERRQ(ierr);
+    if(dim==3) {ierr = PetscRandomDestroy(&randcZ);CHKERRQ(ierr);}
+    ierr = PetscRandomDestroy(&randcR);CHKERRQ(ierr);
+
     if(n_act != numb_clust) PetscPrintf(PETSC_COMM_WORLD," %d ice grains in maximum number of iterations allowed (%d) \n\n", n_act, ii);
   } // End of if(numb_clust==3) else
-
-  ierr = PetscRandomDestroy(&randcX);CHKERRQ(ierr);
-  ierr = PetscRandomDestroy(&randcY);CHKERRQ(ierr);
-  if(dim==3) {ierr = PetscRandomDestroy(&randcZ);CHKERRQ(ierr);}
-  ierr = PetscRandomDestroy(&randcR);CHKERRQ(ierr);
 
   // Broadcast the cluster centers, radii, and the number of active clusters to 
   // all processes in PETSC_COMM_WORLD.
@@ -1707,8 +1860,8 @@ int main(int argc, char *argv[]) {
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
   //domain and mesh characteristics
-  PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=0.15e-3;
-  PetscInt  Nx=256,     Ny=256,     Nz=192; 
+  PetscReal Lx=2.0e-3,  Ly=1.2e-3,  Lz=0.6e-3;
+  PetscInt  Nx=400,     Ny=400,     Nz=400; 
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
@@ -1738,8 +1891,8 @@ int main(int argc, char *argv[]) {
 
   //time specs
   PetscReal delt_t = 1.0e-4;
-  // PetscReal t_final = 10*delt_t;
-  PetscReal t_final = 1*18*60*60;
+  PetscReal t_final = 3*delt_t;
+  // PetscReal t_final = 1*18*60*60;
   //output
   user.outp = 0; // if 0 -> output according to t_interv
   user.t_out = 0.0;    user.t_interv = 600.0;
@@ -1911,7 +2064,7 @@ int main(int argc, char *argv[]) {
     ierr = VecDestroy(&S);CHKERRQ(ierr);
     ierr = IGADestroy(&igaS);CHKERRQ(ierr);
   } else {
-    PetscPrintf(PETSC_COMM_WORLD,"No sed grains\n\n");
+    // PetscPrintf(PETSC_COMM_WORLD,"No sed grains\n\n");
     user.n_actsed= 0;
   }
 
