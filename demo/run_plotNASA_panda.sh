@@ -21,12 +21,12 @@ if [[ -n $1 ]]; then
     echo "Executing python script"
     echo " "
 
-    python3 ~/SimulationResults/DrySed_Metamorphism/NASA_panda/$1/plotNASA.py
-    python3 ~/SimulationResults/DrySed_Metamorphism/NASA_panda/$1/writeNASA2CSV.py
+    python3.11 ~/SimulationResults/DrySed_Metamorphism/NASA_panda/$1/plotNASA.py
+    python3.11 ~/SimulationResults/DrySed_Metamorphism/NASA_panda/$1/writeNASA2CSV.py
 else
     echo "No inputs are given. Assume we are already in the results folder"
     echo " "
-    python3 plotNASA.py
-    python3 writeNASA2CSV.py
+    python3.11 plotNASA.py
+    python3.11 writeNASA2CSV.py
 fi
 
