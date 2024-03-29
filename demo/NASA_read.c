@@ -762,7 +762,7 @@ PetscErrorCode InitialSedGrains(IGA iga,AppCtx *user)
       }
   }
   // Increment nrows by 1 to account for the last row if it's not empty
-    // Same for ncols...
+  // Same for ncols...
   if (ncols > 0) {
       nrows++;
       ncols++;

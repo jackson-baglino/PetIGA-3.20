@@ -1663,7 +1663,7 @@ int main(int argc, char *argv[]) {
   //domain and mesh characteristics
   PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=1.0e-3;
   PetscInt  Nx=200,     Ny=200,     Nz=200; 
-  PetscInt  l,m, p=1, C=0, dim=3;
+  PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
   user.Nx=Nx; user.Ny=Ny; user.Nz=Nz;
@@ -1674,7 +1674,7 @@ int main(int argc, char *argv[]) {
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 
-  user.NCice      = 25; //less than 200, otherwise update in user
+  user.NCice      = 255; //less than 200, otherwise update in user
   user.RCice      = 0.2e-4;
   user.RCice_dev  = 0.5;
 

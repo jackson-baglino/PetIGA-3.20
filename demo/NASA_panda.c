@@ -24,6 +24,9 @@ typedef struct {
   PetscInt  NCice, NCsed, n_act, n_actsed;
   PetscReal *Phi_sed, *alph, *mob; 
 
+  // Define variables needed for reading grain file
+  PetscInt  readFlag;
+
 } AppCtx;
 
 PetscErrorCode SNESDOFConvergence(SNES snes,PetscInt it_number,PetscReal xnorm, 
@@ -703,7 +706,7 @@ PetscErrorCode InitialSedGrains(IGA iga,AppCtx *user)
   PetscInt  numb_clust = user->NCsed,ii,jj,tot=10000;
   PetscInt  l, n_act=0, flag, dim=user->dim, seed=13;
 
-//----- cluster info
+  //----- cluster info
   PetscReal centX[3][numb_clust], radius[numb_clust];
   PetscRandom randcX,randcY,randcZ,randcR;
   ierr = PetscRandomCreate(PETSC_COMM_WORLD,&randcX);CHKERRQ(ierr);
@@ -765,9 +768,9 @@ PetscErrorCode InitialSedGrains(IGA iga,AppCtx *user)
   ierr = PetscRandomDestroy(&randcR);CHKERRQ(ierr);
   if(dim==3) {ierr = PetscRandomDestroy(&randcZ);CHKERRQ(ierr);}
 
-//PetscPrintf(PETSC_COMM_SELF,"before  %.4f %.4f %.4f \n",centX[0],centY[0],radius[0]);
+  //PetscPrintf(PETSC_COMM_SELF,"before  %.4f %.4f %.4f \n",centX[0],centY[0],radius[0]);
 
-//----- communication
+  //----- communication
   for(l=0;l<dim;l++){ierr = MPI_Bcast(centX[l],numb_clust,MPI_DOUBLE,0,PETSC_COMM_WORLD);CHKERRQ(ierr);}
   ierr = MPI_Bcast(radius,numb_clust,MPI_DOUBLE,0,PETSC_COMM_WORLD);CHKERRQ(ierr);
   ierr = MPI_Bcast(&n_act,1,MPI_INT,0,PETSC_COMM_WORLD);CHKERRQ(ierr);
@@ -1231,145 +1234,192 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     PetscFunctionReturn(0);
   }
 
-  PetscReal rad = user->RCice;
-  PetscReal rad_dev = user->RCice_dev;
-  PetscInt  numb_clust = user->NCice, ii,jj,tot=10000;
-  PetscInt  l, dim=user->dim, n_act=0,flag,seed=14, testFlag = 1;
+  PetscInt      readFlag = user->readFlag;
 
-//----- cluster info
+  PetscReal     rad = user->RCice;
+  PetscReal     rad_dev = user->RCice_dev;
+  PetscInt      numb_clust = user->NCice, ii,jj,tot=10000;
+  PetscInt      l, dim=user->dim, n_act=0,flag,seed=14;
+
   PetscReal centX[3][numb_clust], radius[numb_clust];
-  PetscRandom randcX,randcY,randcZ,randcR;
-  ierr = PetscRandomCreate(PETSC_COMM_WORLD,&randcX);CHKERRQ(ierr);
-  ierr = PetscRandomCreate(PETSC_COMM_WORLD,&randcY);CHKERRQ(ierr);
-  ierr = PetscRandomCreate(PETSC_COMM_WORLD,&randcR);CHKERRQ(ierr);
-  ierr = PetscRandomSetInterval(randcX,0.0,user->Lx);CHKERRQ(ierr);
-  ierr = PetscRandomSetInterval(randcY,0.0,user->Ly);CHKERRQ(ierr);
-  ierr = PetscRandomSetInterval(randcR,rad*(1.0-rad_dev),rad*(1.0+rad_dev));CHKERRQ(ierr);
-  ierr = PetscRandomSetSeed(randcX,seed+24+9*iga->elem_start[0]+11*iga->elem_start[1]);CHKERRQ(ierr);
-  ierr = PetscRandomSetSeed(randcY,seed+numb_clust*35+5*iga->elem_start[1]+3*iga->elem_start[0]);CHKERRQ(ierr);
-  ierr = PetscRandomSetSeed(randcR,seed*numb_clust+6*iga->proc_ranks[1]+5*iga->elem_start[0]+9);CHKERRQ(ierr);
-  ierr = PetscRandomSeed(randcX);CHKERRQ(ierr);
-  ierr = PetscRandomSeed(randcY);CHKERRQ(ierr);
-  ierr = PetscRandomSeed(randcR);CHKERRQ(ierr);
-  ierr = PetscRandomSetFromOptions(randcX);CHKERRQ(ierr);
-  ierr = PetscRandomSetFromOptions(randcY);CHKERRQ(ierr);
-  ierr = PetscRandomSetFromOptions(randcR);CHKERRQ(ierr);
 
-  // If the dimension is 3, create and initialize the random number generator 
-  // for the z-coordinate.
-  if(dim==3){
-    ierr = PetscRandomCreate(PETSC_COMM_WORLD,&randcZ);CHKERRQ(ierr);
-    ierr = PetscRandomSetInterval(randcZ,0.0,user->Lz);CHKERRQ(ierr);
-    ierr = PetscRandomSetSeed(randcZ,seed+iga->elem_width[2]+5*iga->elem_start[0]);CHKERRQ(ierr);
-    ierr = PetscRandomSeed(randcZ);CHKERRQ(ierr);
-    ierr = PetscRandomSetFromOptions(randcZ);CHKERRQ(ierr);
-  }
+  // If readFlag == 0, we generate new ice grains of random size and position.
+  if (readFlag==0)
+  {
+    //----- cluster info
+    // PetscReal centX[3][numb_clust], radius[numb_clust];
+    PetscRandom randcX,randcY,randcZ,randcR;
+    ierr = PetscRandomCreate(PETSC_COMM_WORLD,&randcX);CHKERRQ(ierr);
+    ierr = PetscRandomCreate(PETSC_COMM_WORLD,&randcY);CHKERRQ(ierr);
+    ierr = PetscRandomCreate(PETSC_COMM_WORLD,&randcR);CHKERRQ(ierr);
+    ierr = PetscRandomSetInterval(randcX,0.0,user->Lx);CHKERRQ(ierr);
+    ierr = PetscRandomSetInterval(randcY,0.0,user->Ly);CHKERRQ(ierr);
+    ierr = PetscRandomSetInterval(randcR,rad*(1.0-rad_dev),rad*(1.0+rad_dev));CHKERRQ(ierr);
+    ierr = PetscRandomSetSeed(randcX,seed+24+9*iga->elem_start[0]+11*iga->elem_start[1]);CHKERRQ(ierr);
+    ierr = PetscRandomSetSeed(randcY,seed+numb_clust*35+5*iga->elem_start[1]+3*iga->elem_start[0]);CHKERRQ(ierr);
+    ierr = PetscRandomSetSeed(randcR,seed*numb_clust+6*iga->proc_ranks[1]+5*iga->elem_start[0]+9);CHKERRQ(ierr);
+    ierr = PetscRandomSeed(randcX);CHKERRQ(ierr);
+    ierr = PetscRandomSeed(randcY);CHKERRQ(ierr);
+    ierr = PetscRandomSeed(randcR);CHKERRQ(ierr);
+    ierr = PetscRandomSetFromOptions(randcX);CHKERRQ(ierr);
+    ierr = PetscRandomSetFromOptions(randcY);CHKERRQ(ierr);
+    ierr = PetscRandomSetFromOptions(randcR);CHKERRQ(ierr);
 
-  PetscReal xc[3], rc=0.0, dist=0.0;
-  xc[0] = xc[1] = xc[2] = 0.0;
-
-  // Generate 3 particles at specific locations for testing (Panda) purposes.
-  if(testFlag==1) {
-    PetscReal theta1 = PETSC_PI/3.0;
-    PetscReal theta2 = 2.0*PETSC_PI/3.0;
-
-    // Define raddi
-    radius[0] = (1.0/3.0)*user->Lx*0.99;
-    radius[1] = (1.0/3.0)*radius[0]*0.99;
-    radius[2] = (1.0/3.0)*radius[0]*0.99;
-
-    PetscPrintf(PETSC_COMM_WORLD,"user->Lx %.2e \n",user->Lx);
-
-    // Particle 0
-    centX[0][0] = 0.5*user->Lx;   
-    centX[1][0] = 0.45*user->Ly;   
-    centX[2][0] = 0.5*user->Lz;
-    
-    // Particle 1
-    centX[0][1] = centX[0][0] + (radius[0]+radius[1])*cos(theta1);
-    centX[1][1] = centX[1][0] + (radius[0]+radius[1])*sin(theta1);
-    centX[2][1] = 0.5*user->Lz;
-    
-    // Particle 2
-    centX[0][2] = centX[0][0] + (radius[0]+radius[2])*cos(theta2);
-    centX[1][2] = centX[1][0] + (radius[0]+radius[2])*sin(theta2);
-    centX[2][2] = 0.5*user->Lz;
-
-    n_act = 3;
-
-    for (size_t i = 0; i < n_act; i++)
-    {
-      PetscPrintf(PETSC_COMM_WORLD," new ice grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n",i,centX[0][i],centX[1][i],centX[2][i],radius[i]);
+    if(dim==3){
+      ierr = PetscRandomCreate(PETSC_COMM_WORLD,&randcZ);CHKERRQ(ierr);
+      ierr = PetscRandomSetInterval(randcZ,0.0,user->Lz);CHKERRQ(ierr);
+      ierr = PetscRandomSetSeed(randcZ,seed+iga->elem_width[2]+5*iga->elem_start[0]);CHKERRQ(ierr);
+      ierr = PetscRandomSeed(randcZ);CHKERRQ(ierr);
+      ierr = PetscRandomSetFromOptions(randcZ);CHKERRQ(ierr);
     }
-    
-  } else {
-    // This for loop generates random coordinates and radii for potential new ice grains.
-    // It checks if the generated coordinates and radii overlap with existing ice grains or sediment grains.
-    // If there is no overlap, a new ice grain is created with the generated coordinates and radii.
-    // The loop terminates when the maximum number of ice grains is reached or when all potential positions have been checked.
-    for(ii=0;ii<tot*numb_clust;ii++) 
+
+    PetscReal xc[3], rc=0.0, dist=0.0;
+    xc[0] = xc[1] = xc[2] = 0.0;
+
+    for(ii=0;ii<tot*numb_clust;ii++)
     {
-        ierr=PetscRandomGetValue(randcX,&xc[0]);CHKERRQ(ierr);
-        ierr=PetscRandomGetValue(randcY,&xc[1]);CHKERRQ(ierr);
-        ierr=PetscRandomGetValue(randcR,&rc);CHKERRQ(ierr);
-
-        if(dim==3) {ierr=PetscRandomGetValue(randcZ,&xc[2]);CHKERRQ(ierr);}
-        flag=1;
-        
-        for(jj=0;jj<user->n_actsed;jj++){
-            dist = 0.0;
-            for(l=0;l<dim;l++) dist += SQ(xc[l]-user->centsed[l][jj]);
-            dist = sqrt(dist);
-            if(dist< (rc+user->radiussed[jj]) ) flag = 0;
+      ierr=PetscRandomGetValue(randcX,&xc[0]);CHKERRQ(ierr);
+      ierr=PetscRandomGetValue(randcY,&xc[1]);CHKERRQ(ierr);
+      ierr=PetscRandomGetValue(randcR,&rc);CHKERRQ(ierr);
+      if(dim==3) {ierr=PetscRandomGetValue(randcZ,&xc[2]);CHKERRQ(ierr);}
+      //PetscPrintf(PETSC_COMM_WORLD,"  %.4f %.4f %.4f \n",xc,yc,rc);
+      flag=1;
+      
+      for(jj=0;jj<user->n_actsed;jj++){
+        dist = 0.0;
+        for(l=0;l<dim;l++) dist += SQ(xc[l]-user->centsed[l][jj]);
+        dist = sqrt(dist);
+        if(dist< (rc+user->radiussed[jj]) ) flag = 0;
+      }
+      if(flag==1){
+        for(jj=0;jj<n_act;jj++){
+          dist = 0.0;
+          for(l=0;l<dim;l++) dist += SQ(xc[l]-centX[l][jj]);
+          dist = sqrt(dist);
+          if(dist< (rc+radius[jj]) ) flag = 0;
         }
-
-        if(flag==1){
-            for(jj=0;jj<n_act;jj++){
-                dist = 0.0;
-                for(l=0;l<dim;l++) dist += SQ(xc[l]-centX[l][jj]);
-                dist = sqrt(dist);
-                if(dist< (rc+radius[jj]) ) flag = 0;
-            }
-        }
-
-        if(flag==1){
-            if(dim==3) PetscPrintf(PETSC_COMM_WORLD," new ice grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n",n_act,xc[0],xc[1],xc[2],rc);
-            else PetscPrintf(PETSC_COMM_WORLD," new ice grain %d!!  x %.2e  y %.2e  r %.2e \n",n_act,xc[0],xc[1],rc);
-            for(l=0;l<dim;l++) centX[l][n_act] = xc[l];
-            radius[n_act] = rc;
-            n_act++;
-        }
-
-        if(n_act==numb_clust) {
-            PetscPrintf(PETSC_COMM_WORLD," %d ice grains in %d iterations \n\n", n_act,ii+1);
-            ii=tot*numb_clust;
-        }
+      }
+      if(flag==1){
+        if(dim==3) PetscPrintf(PETSC_COMM_WORLD," new ice grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n",n_act,xc[0],xc[1],xc[2],rc);
+        else PetscPrintf(PETSC_COMM_WORLD," new ice grain %d!!  x %.2e  y %.2e  r %.2e \n",n_act,xc[0],xc[1],rc);
+        for(l=0;l<dim;l++) centX[l][n_act] = xc[l];
+        radius[n_act] = rc;
+        n_act++;
+      }
+      if(n_act==numb_clust) {
+        PetscPrintf(PETSC_COMM_WORLD," %d ice grains in %d iterations \n\n", n_act,ii+1);
+        ii=tot*numb_clust;
+      }
     }
 
     if(n_act != numb_clust) PetscPrintf(PETSC_COMM_WORLD," %d ice grains in maximum number of iterations allowed (%d) \n\n", n_act, ii);
-  } // End of if(numb_clust==3) else
 
-  ierr = PetscRandomDestroy(&randcX);CHKERRQ(ierr);
-  ierr = PetscRandomDestroy(&randcY);CHKERRQ(ierr);
-  if(dim==3) {ierr = PetscRandomDestroy(&randcZ);CHKERRQ(ierr);}
-  ierr = PetscRandomDestroy(&randcR);CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randcX);CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randcY);CHKERRQ(ierr);
+    if(dim==3) {ierr = PetscRandomDestroy(&randcZ);CHKERRQ(ierr);}
+    ierr = PetscRandomDestroy(&randcR);CHKERRQ(ierr);
+  }
+  // If readFlag == 1, we read the ice grain positions and sizes from a file.
+  else if (readFlag==1)
+  {
+    // Read the ice grain positions and sizes from a .dat file
+    FILE          *file;
+    char          filename[PETSC_MAX_PATH_LEN];
+    PetscInt      nrows, ncols, ii, jj;
 
-  // Broadcast the cluster centers, radii, and the number of active clusters to 
-  // all processes in PETSC_COMM_WORLD.
+    // Assign filename the path to data file
+    PetscStrcpy(filename,"./input/grainReadFile-47.dat");
+    PetscPrintf(PETSC_COMM_WORLD,"Reading ice grain positions and sizes from"
+      " file %s\n",filename);
+
+    // Open the file
+    file = fopen(filename,"r");
+    if (file == NULL) SETERRQ(PETSC_COMM_WORLD,1,"File not found");
+
+    // Determine the size of the data file
+    nrows = 0;
+    ncols = 0;
+    char    c;
+
+    while ((c = fgetc(file)) != EOF) {
+      if (c == ' ' && nrows == 0)
+      {
+        ncols++;
+      }
+      else if (c == '\n')
+      {
+        nrows++;
+      }
+    }
+
+    // Increment nrows by 1 to account for the last row if it's not empty
+    // Same for ncols...
+    if (ncols > 0) {
+      // nrows++;
+      ncols++;
+    }
+
+    // Assign the number of grains (same as number of rows)
+    numb_clust = nrows;
+
+    PetscPrintf(PETSC_COMM_WORLD,"Number of rows: %d\n",nrows);
+    PetscPrintf(PETSC_COMM_WORLD,"Number of columns: %d\n",ncols);
+
+    if (ncols != dim+1) {
+      PetscPrintf(PETSC_COMM_WORLD,"Incorrect number of columns in data file\n");
+      SETERRQ(PETSC_COMM_WORLD,1,"Incorrect number of columns in data file");
+    }
+
+    // Reset the file pointer to the beginning
+    rewind(file);
+
+    // Read the data from the file
+    PetscReal data[nrows][ncols];
+
+    for(ii=0;ii<nrows;ii++) {
+      for(jj=0;jj<ncols;jj++) fscanf(file,"%lf,",&data[ii][jj]);
+    }
+
+    // Close the file
+    fclose(file);
+
+    // Assign the ice grain positions and sizes to the centX, centY, and radius 
+    // arrays.
+    numb_clust  = nrows;        // Number of ice grains
+    n_act       = numb_clust;   // Number of active ice grains
+
+    PetscPrintf(PETSC_COMM_WORLD,"\n\n");
+    for(ii=0;ii<nrows;ii++) // Loop over the number of ice grains
+    {
+      for(jj=0;jj<ncols-1;jj++) // Loop over the number of dimensions (and rad)
+      {
+        centX[jj][ii] = data[ii][jj];
+      }
+      radius[ii] = data[ii][ncols-1];
+
+      if (dim==3) PetscPrintf(PETSC_COMM_WORLD," --- New ice grain %d!  X %.2e  Y %.2e Z %.2e R %.2e \n",ii,centX[0][ii],centX[1][ii],centX[2][ii],radius[ii]);
+      else PetscPrintf(PETSC_COMM_WORLD," --- New ice grain %d!  X %.2e  Y %.2e  R %.2e \n",ii,centX[0][ii],centX[1][ii],radius[ii]);
+     
+    }
+    PetscPrintf(PETSC_COMM_WORLD,"\n\n");
+
+  } // end of readFlag==1
+  
+//----- communication
   for(l=0;l<dim;l++) {ierr = MPI_Bcast(centX[l],numb_clust,MPI_DOUBLE,0,PETSC_COMM_WORLD);CHKERRQ(ierr);}
   ierr = MPI_Bcast(radius,numb_clust,MPI_DOUBLE,0,PETSC_COMM_WORLD);CHKERRQ(ierr);
   ierr = MPI_Bcast(&n_act,1,MPI_INT,0,PETSC_COMM_WORLD);CHKERRQ(ierr);
 
-  // Store the number of grains and the grain centers and radii in the user context.
   user->n_act = n_act;
   for(jj=0;jj<n_act;jj++){
     for(l=0;l<dim;l++) user->cent[l][jj] = centX[l][jj];
     user->radius[jj] = radius[jj];
+    // PetscPrintf(PETSC_COMM_SELF,"Ice grains: points %.4f %.4f %.4f \n",centX[jj],centY[jj],radius[jj]);
   }
 
 
   PetscFunctionReturn(0); 
-} // End of InitialIceGrains
+}
 
 
 typedef struct {
@@ -1707,8 +1757,9 @@ int main(int argc, char *argv[]) {
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
   //domain and mesh characteristics
-  PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=0.15e-3;
-  PetscInt  Nx=256,     Ny=256,     Nz=192; 
+  // PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=1.0e-3;
+  PetscReal Lx=1.4e-3,  Ly=1.4e-3,  Lz=1.0e-3;
+  PetscInt  Nx=1500,     Ny=1500,     Nz=200; 
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
@@ -1720,9 +1771,12 @@ int main(int argc, char *argv[]) {
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 
-  user.NCice      = 3; //less than 200, otherwise update in user
+  user.NCice      = 255; //less than 200, otherwise update in user
   user.RCice      = 0.2e-4;
   user.RCice_dev  = 0.5;
+
+  user.readFlag   = 1; // 0 -> generate new ice grains; 1 -> read ice grains from file
+  // user.datafile   = "./input/grainReadFile-2.csv";
 
   //initial conditions
   user.hum0         = 0.98; //initial rel humidity
@@ -1738,11 +1792,11 @@ int main(int argc, char *argv[]) {
 
   //time specs
   PetscReal delt_t = 1.0e-4;
-  // PetscReal t_final = 10*delt_t;
-  PetscReal t_final = 1*18*60*60;
+  PetscReal t_final = 1.0*delt_t;
+  // PetscReal t_final = 1.0*24.0*3600.0;
   //output
   user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0.0;    user.t_interv = 600.0;
+  user.t_out = 0.0;    user.t_interv = 2.0;
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;
