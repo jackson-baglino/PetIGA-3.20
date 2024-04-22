@@ -1,12 +1,11 @@
 TARGETS = \
-Solid3ph_flow \
 NASA \
-Metamorph \
-Permafrost \
-Aquifer \
+NASAv2 \
+NASA_panda \
+localGrains \
+Solid3ph_flow \
 Carbon \
 Meltwater \
-Flowmetam \
 Poisson1D Poisson2D Poisson3D \
 L2Projection AdaptiveL2Projection \
 Laplace BoundaryIntegral \
@@ -33,8 +32,8 @@ ALL: $(TARGETS)
 clean::
 	-@$(RM) $(TARGETS)
 
-CFLAGS    = #-g3 -Wall -Wextra -Wno-unused-parameter #-Wconversion
-FFLAGS    = #-g3 -Wall -Wextra -fcheck=all
+CFLAGS    = -g3 -Wall -Wextra -Wno-unused-parameter #-Wconversion
+FFLAGS    = -g3 -Wall -Wextra -fcheck=all
 CPPFLAGS  =
 FPPFLAGS  =
 LOCDIR    = demo/
@@ -47,28 +46,25 @@ PETIGA_DIR ?= $(topdir)
 include $(PETIGA_DIR)/lib/petiga/conf/variables
 include $(PETIGA_DIR)/lib/petiga/conf/rules
 
-Solid3ph_flow: Solid3ph_flow.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
 NASA: NASA.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
-Metamorph: Metamorph.o
+NASAv2: NASAv2.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
-Permafrost: Permafrost.o
+NASA_panda: NASA_panda.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
-Aquifer: Aquifer.o
+localGrains: localGrains.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+Solid3ph_flow: Solid3ph_flow.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 Meltwater: Meltwater.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 Carbon: Carbon.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-Flowmetam: Flowmetam.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 Poisson1D: Poisson1D.o
@@ -80,7 +76,6 @@ Poisson2D: Poisson2D.o
 Poisson3D: Poisson3D.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
-
 L2Projection: L2Projection.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<

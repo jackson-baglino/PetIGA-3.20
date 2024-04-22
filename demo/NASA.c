@@ -657,8 +657,14 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 
   if(step==0) {
 
-    ierr = IGAWrite(user->iga,"/Users/amoure/Simulation_results/metamorph_results/igasol.dat");CHKERRQ(ierr);
+    const char *env = "folder";
+    char *dir;
+    dir = getenv(env);
 
+    char fileiga[256];
+    sprintf(fileiga, "%s/igasol.dat", dir);
+
+    ierr = IGAWrite(user->iga, fileiga);CHKERRQ(ierr);
   }
 
   PetscInt print=0;
@@ -673,9 +679,18 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
     
     user->t_out += user->t_interv;
 
-    char  filename[256];
-    sprintf(filename,"/Users/amoure/Simulation_results/metamorph_results/sol%d.dat",step);
-    ierr = IGAWriteVec(user->iga,U,filename);CHKERRQ(ierr);
+    // Get the directory path from the environment variable
+    const char *env = "folder";
+    char *dir;
+    dir = getenv(env);
+
+    // Create the filename for the output file
+    char filename[256];
+    sprintf(filename, "%s/sol%d.dat", dir, step);
+
+    // Write the vector U to the output file
+    ierr = IGAWriteVec(user->iga, U, filename);
+    CHKERRQ(ierr);
 
   }
 
@@ -1630,7 +1645,7 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
-  user.eps        = 2.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
+  user.eps        = 8.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
   user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
@@ -1656,7 +1671,8 @@ int main(int argc, char *argv[]) {
   user.d0_sub0    = 1.0e-9; 
   user.beta_sub0  = 1.4e5;    
   PetscReal gamma_im = 0.033, gamma_iv = 0.109, gamma_mv = 0.056; //76
-  PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
+  // PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
+  PetscReal rho_rhovs = 5.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
   //domain and mesh characteristics
   PetscReal Lx=0.2e-3,  Ly=0.2e-3,  Lz=1.0e-3;
@@ -1672,28 +1688,28 @@ int main(int argc, char *argv[]) {
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 
-  user.NCice      = 25; //less than 200, otherwise update in user
+  user.NCice      = 35; //less than 200, otherwise update in user
   user.RCice      = 0.2e-4;
   user.RCice_dev  = 0.5;
 
   //initial conditions
-  user.hum0         = 0.98; //initial rel humidity
-  user.temp0        = -70.0;
-  user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 0.0010/Ly;  user.grad_temp0[2] = 0.0/Lz;
+  user.hum0         = 0.98; (before) //initial rel humidity
+  user.temp0        = -20.0;
+  user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 2e-3/Ly;  user.grad_temp0[2] = 0.0/Lz;
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
-  flag_BC_Tfix    = 0;
+  flag_BC_Tfix    = 1; // 0;
   flag_BC_rhovfix = 0;
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
 
   //time specs
-  PetscReal delt_t = 1.0;//1.0e-4;
-  PetscReal t_final = 1.0;//30.0*24.0*3600.0;
+  PetscReal delt_t = 1.0e-4;
+  PetscReal t_final = 10.0*3600.0;
   //output
   user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0.0;    user.t_interv = 2.0;
+  user.t_out = 0.0;    user.t_interv = 10.0;
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;
@@ -1702,6 +1718,10 @@ int main(int argc, char *argv[]) {
   if(dtmax>0.5*user.t_interv) PetscPrintf(PETSC_COMM_WORLD,"OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval \n\n");
   PetscInt max_rej = 10;
   if(adap==1) PetscPrintf(PETSC_COMM_WORLD,"Adapative time stepping scheme: NR_iter %d-%d  factor %.3f  dt0 %.2e  dt_range %.2e-%.2e  \n\n",NRmin,NRmax,factor,delt_t,dtmin,dtmax);
+
+  PetscInt size;
+  MPI_Comm_size(PETSC_COMM_WORLD, &size);
+  PetscPrintf(PETSC_COMM_WORLD, "Running on %d processes.\n\n\n", size);
 
   // G-T kinetic parameters
   user.diff_sub = 0.5*(user.thcond_air/user.rho_air/user.cp_air + user.thcond_ice/user.rho_ice/user.cp_ice);
@@ -1851,8 +1871,13 @@ int main(int argc, char *argv[]) {
     else {ierr = FormInitialSoil3D(igaS,S,&user);CHKERRQ(ierr);}
     //ierr = VecCopy(S,user.Sed);CHKERRQ(ierr);
 
-    ierr = IGAWrite(igaS,"/Users/amoure/Simulation_results/metamorph_results/igasoil.dat");CHKERRQ(ierr);
-    ierr = IGAWriteVec(igaS,S,"/Users/amoure/Simulation_results/metamorph_results/soil.dat");CHKERRQ(ierr);
+    const char *env="folder"; char *dir; dir=getenv(env);
+    char filename[256],filevect[256];
+    sprintf(filename, "%s/igasoil.dat", dir);
+    ierr=IGAWrite(igaS,filename);CHKERRQ(ierr);
+    
+    sprintf(filevect, "%s/soil.dat", dir);
+    ierr=IGAWriteVec(igaS,S,filevect);CHKERRQ(ierr);
 
     ierr = VecDestroy(&S);CHKERRQ(ierr);
     ierr = IGADestroy(&igaS);CHKERRQ(ierr);
