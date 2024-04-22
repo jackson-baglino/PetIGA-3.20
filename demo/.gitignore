@@ -1,5 +1,9 @@
-MAC_SILICON-M2-OMPI-5.0.3_PETSC-3.20/
-MAC_SILICON-M2-OMPI-5.0.3_PETSC-3.20-debug/
+MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20/
+MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20-debug/
 mac-optimal-mpi-3.20/
 mac-studio-optimal/
 test/
+.vscode/
+input/
+Original/
+.DS_Store
