@@ -1693,7 +1693,7 @@ int main(int argc, char *argv[]) {
   user.RCice_dev  = 0.5;
 
   //initial conditions
-  user.hum0         = 0.98; (before) //initial rel humidity
+  user.hum0         = 0.98; //initial rel humidity
   user.temp0        = -20.0;
   user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 2e-3/Ly;  user.grad_temp0[2] = 0.0/Lz;
 
