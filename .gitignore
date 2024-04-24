@@ -7,6 +7,9 @@ test/
 input/
 Original/
 .DS_Store
+NASA.o
 NASA
+NASA_panda.o
 NASA_panda
+NASAv2.o
 NASAv2
