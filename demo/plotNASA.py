@@ -5,7 +5,7 @@ from igakit.io import PetIGA, VTK
 from numpy import linspace
 
 nrb = PetIGA().read("igasol.dat")
-uniform = lambda U: linspace(U[0], U[-1], 720)
+uniform = lambda U: linspace(U[0], U[-1], 400)
 
 # Import ice grains:
 counter = 0

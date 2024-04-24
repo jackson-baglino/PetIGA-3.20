@@ -1790,7 +1790,7 @@ int main(int argc, char *argv[]) {
   // PetscInt  Nx=1800,     Ny=1800,     Nz=300;        // 47-grain simulation
 
   PetscReal Lx=0.2e-3,  Ly=0.1e-3,  Lz=1.0e-3;     // 2-grain simulation
-  PetscInt  Nx=600,     Ny=600,     Nz=300;        // 2-grain simulation
+  PetscInt  Nx=400,     Ny=200,     Nz=300;        // 2-grain simulation
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
@@ -1807,8 +1807,8 @@ int main(int argc, char *argv[]) {
   user.RCice_dev  = 0.5;
 
   //initial conditions
-  user.hum0         = 0.98; //initial rel humidity
-  user.temp0        = -10.0;
+  user.hum0          = 0.98; //initial rel humidity
+  user.temp0         = -10.0;
   user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 10.0*Ly/Ly;  user.grad_temp0[2] = 0.0/Lz;
 
   //boundary conditions
@@ -1823,7 +1823,7 @@ int main(int argc, char *argv[]) {
   PetscReal t_final = 2.0*24.0*3600.0;
   //output
   user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0.0;    user.t_interv = 200.0;
+  user.t_out = 0.0;    user.t_interv = 20.0;
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;
