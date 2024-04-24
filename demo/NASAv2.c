@@ -1296,7 +1296,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     char          grainDataFile[PETSC_MAX_PATH_LEN];
 
     // Copy the file path to the grainDataFile variable
-    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-47.dat");
+    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-2.dat");
     PetscPrintf(PETSC_COMM_WORLD,"Reading grains from %s\n\n\n", grainDataFile);
 
     // Function to read ice grains from file:
@@ -1753,7 +1753,9 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
-  user.eps        = 9.0e-7;  // 2.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
+  // user.eps        = 9.0e-7;  // 2.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
+  user.eps        = 9.0e-7;  // Used for 47-grain simulation
+  user.eps        = 2.0e-7;  // Used for 2-grain simulation
   user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
@@ -1784,11 +1786,11 @@ int main(int argc, char *argv[]) {
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
   //domain and mesh characteristics
-  PetscReal Lx=1.6e-3,  Ly=1.6e-3,  Lz=1.0e-3;     // 47-grain simulation
-  PetscInt  Nx=1800,     Ny=1800,     Nz=300;        // 47-grain simulation
+  // PetscReal Lx=1.6e-3,  Ly=1.6e-3,  Lz=1.0e-3;       // 47-grain simulation
+  // PetscInt  Nx=1800,     Ny=1800,     Nz=300;        // 47-grain simulation
 
-  // PetscReal Lx=0.2e-3,  Ly=0.1e-3,  Lz=1.0e-3;     // 2-grain simulation
-  // PetscInt  Nx=800,     Ny=800,     Nz=300;        // 2-grain simulation
+  PetscReal Lx=0.2e-3,  Ly=0.1e-3,  Lz=1.0e-3;     // 2-grain simulation
+  PetscInt  Nx=600,     Ny=600,     Nz=300;        // 2-grain simulation
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
@@ -1807,11 +1809,11 @@ int main(int argc, char *argv[]) {
   //initial conditions
   user.hum0         = 0.98; //initial rel humidity
   user.temp0        = -10.0;
-  user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 1.0/Ly;  user.grad_temp0[2] = 0.0/Lz;
+  user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 10.0*Ly/Ly;  user.grad_temp0[2] = 0.0/Lz;
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
-  flag_BC_Tfix    = 0;
+  flag_BC_Tfix    = 1;
   flag_BC_rhovfix = 0;
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
