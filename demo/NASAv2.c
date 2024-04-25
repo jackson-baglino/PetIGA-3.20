@@ -1778,7 +1778,7 @@ int main(int argc, char *argv[]) {
   user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
-  user.flag_Tdep  = 1;        //temperature-dependent GT parameters; pretty unstable, need to check implementation!!!
+  user.flag_Tdep  = 0;        //temperature-dependent GT parameters; pretty unstable, need to check implementation!!!
 
   user.d0_sub0    = 1.0e-9; 
   user.beta_sub0  = 1.4e5;    
@@ -1823,7 +1823,7 @@ int main(int argc, char *argv[]) {
   PetscReal t_final = 2.0*24.0*3600.0;
   //output
   user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0.0;    user.t_interv = 20.0;
+  user.t_out = 0.0;    user.t_interv = 2000.0;
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;

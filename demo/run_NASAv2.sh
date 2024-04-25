@@ -25,7 +25,7 @@ echo " "
 echo "Calling ./NASAv2"
 echo " "
 
-mpiexec -np 4 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000  -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor -snes_linesearch_type basic | tee /Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/outp.txt
+mpiexec -np 6 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000  -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor -snes_linesearch_type basic | tee /Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/outp.txt
 
 echo " "
 echo "making directory" $folder
