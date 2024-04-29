@@ -603,6 +603,9 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     ierr = MPI_Allreduce(&bet_max,&B_max,1,MPI_DOUBLE,MPI_MAX,PETSC_COMM_WORLD);CHKERRQ(ierr);
     ierr = MPI_Allreduce(&bet_min,&B_min,1,MPI_DOUBLE,MPI_MIN,PETSC_COMM_WORLD);CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD," b_min %.2e b_max %.2e\n",B_min,B_max);
+
+    // After computing beta_sub, we set the flag to 0...
+    user->flag_Tdep = 0;
   }
 
 
@@ -1297,7 +1300,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     char          grainDataFile[PETSC_MAX_PATH_LEN];
 
     // Copy the file path to the grainDataFile variable
-    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-2_Molaro.dat");
+    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-2.dat");
     PetscPrintf(PETSC_COMM_WORLD,"Reading grains from %s\n\n\n", grainDataFile);
 
     // Function to read ice grains from file:
@@ -1777,7 +1780,7 @@ int main(int argc, char *argv[]) {
   user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
-  user.flag_Tdep  = 0;        //temperature-dependent GT parameters; pretty unstable, need to check implementation!!!
+  user.flag_Tdep  = 1;        //temperature-dependent GT parameters; pretty unstable, need to check implementation!!!
 
   user.d0_sub0    = 1.0e-9; 
   user.beta_sub0  = 1.4e5;    
@@ -1788,11 +1791,11 @@ int main(int argc, char *argv[]) {
   // PetscReal Lx=1.6e-3,  Ly=1.6e-3,  Lz=1.0e-3;       // 47-grain simulation
   // PetscInt  Nx=1750,     Ny=1750,     Nz=300;        // 47-grain simulation
 
-  // PetscReal Lx=0.2e-3,  Ly=0.18e-3,  Lz=1.0e-3;    // 2-grain simulation
-  // PetscInt  Nx=400,     Ny=360,     Nz=300;        // 2-grain simulation
+  PetscReal Lx=0.2e-3,  Ly=0.1e-3,  Lz=1.0e-3;    // 2-grain simulation
+  PetscInt  Nx=400,     Ny=200,     Nz=300;        // 2-grain simulation
 
-  PetscReal Lx=420e-6,  Ly=420e-6,  Lz=1.0e-3;    // 2-grain Molaro simulation
-  PetscInt  Nx=475,     Ny=475,     Nz=300;        // 2-grain Molaro simulation
+  // PetscReal Lx=420e-6,  Ly=420e-6,  Lz=1.0e-3;    // 2-grain Molaro simulation
+  // PetscInt  Nx=475,     Ny=475,     Nz=300;        // 2-grain Molaro simulation
 
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
@@ -1823,8 +1826,8 @@ int main(int argc, char *argv[]) {
 
   //time specs
   PetscReal delt_t = 1.0e-4;
-  // PetscReal t_final = 2.0*24.0*3600.0;
-  PetscReal t_final = 57*60;
+  PetscReal t_final = 1.0*24.0*3600.0;
+
   //output
   user.outp = 0; // if 0 -> output according to t_interv
   user.t_out = 0;    user.t_interv = t_final/25.0;

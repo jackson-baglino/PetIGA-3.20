@@ -33,6 +33,7 @@ echo " "
 
 # mv $dir/*.dat $folder
 mv $dir/outp.txt $folder
+cp NASAv2.c $folder
 cp run_plotNASAv2.sh $folder
 
 echo "Queing plotNASA.py"
