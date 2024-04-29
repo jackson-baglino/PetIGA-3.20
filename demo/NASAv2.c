@@ -676,9 +676,10 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 
   // Check if it's time to print output
   PetscInt print = 0;
-  if (user->outp > 0) { // Print output every user->outp steps
+  if (user->outp > 0) {   // Print output every user->outp steps
     if (step % user->outp == 0) print = 1;
-  } else { // Print output every user->t_interv seconds
+  } 
+  else {                  // Print output every user->t_interv seconds
     if (t >= user->t_out) print = 1;
   }
 
@@ -1296,7 +1297,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     char          grainDataFile[PETSC_MAX_PATH_LEN];
 
     // Copy the file path to the grainDataFile variable
-    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-2.dat");
+    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-2_Molaro.dat");
     PetscPrintf(PETSC_COMM_WORLD,"Reading grains from %s\n\n\n", grainDataFile);
 
     // Function to read ice grains from file:
@@ -1753,9 +1754,7 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
-  // user.eps        = 9.0e-7;  // 2.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
-  user.eps        = 9.0e-7;  // Used for 47-grain simulation
-  user.eps        = 2.0e-7;  // Used for 2-grain simulation
+  user.eps        = 9.0e-7;  // 2.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
   user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
@@ -1787,10 +1786,14 @@ int main(int argc, char *argv[]) {
 
   //domain and mesh characteristics
   // PetscReal Lx=1.6e-3,  Ly=1.6e-3,  Lz=1.0e-3;       // 47-grain simulation
-  // PetscInt  Nx=1800,     Ny=1800,     Nz=300;        // 47-grain simulation
+  // PetscInt  Nx=1750,     Ny=1750,     Nz=300;        // 47-grain simulation
 
-  PetscReal Lx=0.2e-3,  Ly=0.1e-3,  Lz=1.0e-3;     // 2-grain simulation
-  PetscInt  Nx=400,     Ny=200,     Nz=300;        // 2-grain simulation
+  // PetscReal Lx=0.2e-3,  Ly=0.18e-3,  Lz=1.0e-3;    // 2-grain simulation
+  // PetscInt  Nx=400,     Ny=360,     Nz=300;        // 2-grain simulation
+
+  PetscReal Lx=420e-6,  Ly=420e-6,  Lz=1.0e-3;    // 2-grain Molaro simulation
+  PetscInt  Nx=475,     Ny=475,     Nz=300;        // 2-grain Molaro simulation
+
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
@@ -1808,8 +1811,8 @@ int main(int argc, char *argv[]) {
 
   //initial conditions
   user.hum0          = 0.98; //initial rel humidity
-  user.temp0         = -10.0;
-  user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 10.0*Ly/Ly;  user.grad_temp0[2] = 0.0/Lz;
+  user.temp0         = -20.0;
+  user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 1e-3*Ly/Ly;  user.grad_temp0[2] = 0.0/Lz;
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
@@ -1820,10 +1823,11 @@ int main(int argc, char *argv[]) {
 
   //time specs
   PetscReal delt_t = 1.0e-4;
-  PetscReal t_final = 2.0*24.0*3600.0;
+  // PetscReal t_final = 2.0*24.0*3600.0;
+  PetscReal t_final = 57*60;
   //output
   user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0.0;    user.t_interv = 2000.0;
+  user.t_out = 0;    user.t_interv = t_final/25.0;
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;
