@@ -1300,7 +1300,8 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     char          grainDataFile[PETSC_MAX_PATH_LEN];
 
     // Copy the file path to the grainDataFile variable
-    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/circles-identified.dat");
+    // PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-51A.dat");s
+    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-135_s1-10_s2-30.dat");
     PetscPrintf(PETSC_COMM_WORLD,"Reading grains from %s\n\n\n", grainDataFile);
 
     // Function to read ice grains from file:
@@ -1788,17 +1789,17 @@ int main(int argc, char *argv[]) {
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
   //domain and mesh characteristics
-  PetscReal Lx=1.2e-3,  Ly=1.85e-3,  Lz=1.0e-3;       // 47-grain simulation
-  PetscInt  Nx=1320,     Ny=2034,     Nz=300;        // 47-grain simulation
+  PetscReal Lx=3.2e-3,   Ly=3.2e-3,   Lz=1.0e-3;     // 135-grain simulation
+  PetscInt  Nx=1760,     Ny=1760,     Nz=300;        // 135-grain simulation
 
   // PetscReal Lx=1.6e-3,  Ly=1.6e-3,  Lz=1.0e-3;       // Experimental images
-  // PetscInt  Nx=1760,     Ny=1760,     Nz=300;        // Experimental images
+  // PetscInt  Nx=880,     Ny=880,     Nz=300;          // Experimental images
 
   // PetscReal Lx=0.2e-3,  Ly=0.1e-3,  Lz=1.0e-3;    // 2-grain simulation
-  // PetscInt  Nx=230,     Ny=115,     Nz=115;        // 2-grain simulation
+  // PetscInt  Nx=230,     Ny=115,     Nz=115;       // 2-grain simulation
 
   // PetscReal Lx=420e-6,  Ly=420e-6,  Lz=1.0e-3;    // 2-grain Molaro simulation
-  // PetscInt  Nx=475,     Ny=475,     Nz=300;        // 2-grain Molaro simulation
+  // PetscInt  Nx=475,     Ny=475,     Nz=300;       // 2-grain Molaro simulation
 
   PetscInt  l,m, p=1, C=0, dim=2;
   user.p=p; user.C=C;  user.dim=dim;
@@ -1817,8 +1818,8 @@ int main(int argc, char *argv[]) {
 
   //initial conditions
   user.hum0          = 0.98; //initial rel humidity
-  user.temp0         = -20.0;
-  user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 10*Ly/Ly;  user.grad_temp0[2] = 0.0/Lz;
+  user.temp0         = -30.0;
+  user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 3.0*Ly/Ly;  user.grad_temp0[2] = 0.0/Lz;
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
@@ -1829,12 +1830,12 @@ int main(int argc, char *argv[]) {
 
   //time specs
   PetscReal delt_t = 1.0e-4;
-  // PetscReal t_final = 3.0*24.0*3600.0;
-  PetscReal t_final = 5.0*delt_t;
+  PetscReal t_final = 3.0*24.0*3600.0;
+  // PetscReal t_final = 5.0*delt_t;
 
   //output
   user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0;    user.t_interv = t_final/350.0;
+  user.t_out = 0;    user.t_interv = t_final/149.0;
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;
