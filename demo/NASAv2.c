@@ -1301,7 +1301,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
 
     // Copy the file path to the grainDataFile variable
     // PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-51A.dat");s
-    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-135_s1-10_s2-30.dat");
+    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-165_s1-10_s2-30.dat");
     PetscPrintf(PETSC_COMM_WORLD,"Reading grains from %s\n\n\n", grainDataFile);
 
     // Function to read ice grains from file:
