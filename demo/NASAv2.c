@@ -1300,8 +1300,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     char          grainDataFile[PETSC_MAX_PATH_LEN];
 
     // Copy the file path to the grainDataFile variable
-    // PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-51A.dat");s
-    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-165_s1-10_s2-30.dat");
+    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-18_s1-10.dat");
     PetscPrintf(PETSC_COMM_WORLD,"Reading grains from %s\n\n\n", grainDataFile);
 
     // Function to read ice grains from file:
@@ -1788,9 +1787,10 @@ int main(int argc, char *argv[]) {
   PetscReal gamma_im = 0.033, gamma_iv = 0.109, gamma_mv = 0.056; //76
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
-  //domain and mesh characteristics
-  PetscReal Lx=3.2e-3,   Ly=3.2e-3,   Lz=1.0e-3;     // 135-grain simulation
-  PetscInt  Nx=1760,     Ny=1760,     Nz=300;        // 135-grain simulation
+  /*
+    //domain and mesh characteristics
+  // PetscReal Lx=3.2e-3,   Ly=3.2e-3,   Lz=1.0e-3;     // 135-grain simulation
+  // PetscInt  Nx=1760,     Ny=1760,     Nz=300;        // 135-grain simulation
 
   // PetscReal Lx=1.6e-3,  Ly=1.6e-3,  Lz=1.0e-3;       // Experimental images
   // PetscInt  Nx=880,     Ny=880,     Nz=300;          // Experimental images
@@ -1800,8 +1800,86 @@ int main(int argc, char *argv[]) {
 
   // PetscReal Lx=420e-6,  Ly=420e-6,  Lz=1.0e-3;    // 2-grain Molaro simulation
   // PetscInt  Nx=475,     Ny=475,     Nz=300;       // 2-grain Molaro simulation
+  */
 
-  PetscInt  l,m, p=1, C=0, dim=2;
+  // Unpack environment variables
+  const char *Nx_str          = getenv("Nx");
+  const char *Ny_str          = getenv("Ny");
+  const char *Nz_str          = getenv("Nz");
+
+  const char *Lx_str          = getenv("Lx");
+  const char *Ly_str          = getenv("Ly");
+  const char *Lz_str          = getenv("Lz");
+
+  const char *delt_t_str      = getenv("delt_t");
+  const char *t_final_str     = getenv("t_final");
+
+  const char *humidity_str    = getenv("humidity");
+  const char *temp_str        = getenv("temp");
+
+  const char *grad_temp0X_str = getenv("grad_temp0X");
+  const char *grad_temp0Y_str = getenv("grad_temp0Y");
+  const char *grad_temp0Z_str = getenv("grad_temp0Z");
+
+  const char *dim_str         = getenv("dim");
+
+  if (!Nx_str || !Ny_str || !Nz_str || !Lx_str || !Ly_str || !Lz_str || 
+      !delt_t_str || !t_final_str || !humidity_str || !temp_str || 
+      !grad_temp0X_str || !grad_temp0Y_str || !grad_temp0Z_str || !dim_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: One or more environment variables are not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  }
+
+  char *endptr;
+  PetscInt Nx          = strtod(Nx_str, &endptr);
+  PetscInt Ny          = strtod(Ny_str, &endptr);
+  PetscInt Nz          = strtod(Nz_str, &endptr);
+
+  PetscReal Lx          = strtod(Lx_str, &endptr);
+  PetscReal Ly          = strtod(Ly_str, &endptr);
+  PetscReal Lz          = strtod(Lz_str, &endptr);
+
+  PetscReal delt_t      = strtod(delt_t_str, &endptr);
+  PetscReal t_final     = strtod(t_final_str, &endptr);
+
+  PetscReal humidity    = strtod(humidity_str, &endptr);
+  PetscReal temp        = strtod(temp_str, &endptr);
+
+  PetscReal grad_temp0X = strtod(grad_temp0X_str, &endptr);
+  PetscReal grad_temp0Y = strtod(grad_temp0Y_str, &endptr);
+  PetscReal grad_temp0Z = strtod(grad_temp0Z_str, &endptr);
+
+  PetscInt dim          = strtod(dim_str, &endptr);
+
+  // Verify that conversion was successful
+  if (*endptr != '\0') {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: One or more environment variables contain invalid values.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  }
+
+  // Assign environment variables to simulation parameters
+  // PetscInt Nx                 = atoi(Nx_str);
+  // PetscInt Ny                 = atoi(Ny_str);
+  // PetscInt Nz                 = atoi(Nz_str);
+
+  // PetscReal Lx                = atoi(Lx_str);
+  // PetscReal Ly                = atoi(Ly_str);
+  // PetscReal Lz                = atoi(Lz_str);
+
+  // PetscReal delt_t            = atoi(delt_t_str);
+  // PetscReal t_final           = atoi(t_final_str);
+
+  // PetscReal humidity          = atoi(humidity_str);
+  // PetscReal temp              = atoi(temp_str);
+
+  // PetscReal grad_temp0X       = atoi(grad_temp0X_str);
+  // PetscReal grad_temp0Y       = atoi(grad_temp0Y_str);
+  // PetscReal grad_temp0Z       = atoi(grad_temp0Z_str);
+
+  // Define the polynomial order of basis functions and global continuity order
+  PetscInt  l,m, p=1, C=0; //dim=2;
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
   user.Nx=Nx; user.Ny=Ny; user.Nz=Nz;
@@ -1817,9 +1895,10 @@ int main(int argc, char *argv[]) {
   user.RCice_dev  = 0.5;
 
   //initial conditions
-  user.hum0          = 0.98; //initial rel humidity
-  user.temp0         = -30.0;
-  user.grad_temp0[0] = 0.0/Lx;  user.grad_temp0[1] = 3.0*Ly/Ly;  user.grad_temp0[2] = 0.0/Lz;
+  user.hum0          = humidity;
+  user.temp0         = temp;
+  user.grad_temp0[0] = grad_temp0X;  user.grad_temp0[1] = grad_temp0Y;  user.grad_temp0[2] = grad_temp0Z;
+
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
@@ -1828,9 +1907,10 @@ int main(int argc, char *argv[]) {
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
 
+
   //time specs
-  PetscReal delt_t = 1.0e-4;
-  PetscReal t_final = 3.0*24.0*3600.0;
+  // PetscReal delt_t = 1.0e-4;
+  // // PetscReal t_final = 3.0*24.0*3600.0;
   // PetscReal t_final = 5.0*delt_t;
 
   //output
@@ -2014,6 +2094,22 @@ int main(int argc, char *argv[]) {
   }
 
   ierr = InitialIceGrains(iga,&user);CHKERRQ(ierr);
+
+  // Print the variables
+  PetscPrintf(PETSC_COMM_WORLD, "Nx: %f\n", user.Nx);
+  PetscPrintf(PETSC_COMM_WORLD, "Ny: %f\n", user.Ny);
+  PetscPrintf(PETSC_COMM_WORLD, "Nz: %f\n", user.Nz);
+  PetscPrintf(PETSC_COMM_WORLD, "Lx: %f\n", user.Lx);
+  PetscPrintf(PETSC_COMM_WORLD, "Ly: %f\n", user.Ly);
+  PetscPrintf(PETSC_COMM_WORLD, "Lz: %f\n", user.Lz);
+  PetscPrintf(PETSC_COMM_WORLD, "delt_t: %f\n", delt_t);
+  PetscPrintf(PETSC_COMM_WORLD, "t_final: %f\n", t_final);
+  PetscPrintf(PETSC_COMM_WORLD, "humidity: %f\n", humidity);
+  PetscPrintf(PETSC_COMM_WORLD, "temp: %f\n", user.temp0);
+  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0X: %f\n", user.grad_temp0[0]);
+  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %f\n", user.grad_temp0[1]);
+  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Z: %f\n", user.grad_temp0[2]);
+  PetscPrintf(PETSC_COMM_WORLD, "dim: %d\n", user.dim);
 
   PetscReal t=0; Vec U;
   ierr = IGACreateVec(iga,&U);CHKERRQ(ierr);
