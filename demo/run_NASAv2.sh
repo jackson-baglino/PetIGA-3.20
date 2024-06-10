@@ -24,8 +24,8 @@ filename=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
 
 # Simulation parameters
 # Domain sizes
-Lx=3.2e-03                    # Domain size X
-Ly=3.2e-03                    # Domain size Y
+Lx=0.8e-03                    # Domain size X
+Ly=0.8e-03                    # Domain size Y
 Lz=1.35e-04                   # Domain size Z
 
 # Convert scientific notation to decimal using bc
@@ -40,7 +40,7 @@ Nz=75                         # Number of elements in Z
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=1.0e-3                # Final time
+t_final=3600                # Final time
 
 # Convert scientific notation to decimal using bc
 delt_t=$(echo "$delt_t" | bc -l)
