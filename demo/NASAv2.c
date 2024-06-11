@@ -632,9 +632,9 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
   //------printf information
   if(step%10==0) {
-    PetscPrintf(PETSC_COMM_WORLD,"\nTIME          TIME_STEP     TOT_ICE      TOT_AIR       TEMP      TOT_RHOV     I-A interf   Tripl_junct \n");
-    PetscPrintf(PETSC_COMM_WORLD,"\n(%.0f) %.3e    %.3e   %.3e   %.3e   %.3e   %.3e   %.3e   %.3e \n\n",
-                t,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
+    PetscPrintf(PETSC_COMM_WORLD,"\nTIME & STEP          TIME_STEP     TOT_ICE      TOT_AIR       TEMP      TOT_RHOV     I-A interf   Tripl_junct \n");
+    PetscPrintf(PETSC_COMM_WORLD,"\n(%.0f --  %.0d) %.3e    %.3e   %.3e   %.3e   %.3e   %.3e   %.3e   %.3e \n\n",
+                t,step,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
   }
 
   // if(step%10==0) {
@@ -1300,7 +1300,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     char          grainDataFile[PETSC_MAX_PATH_LEN];
 
     // Copy the file path to the grainDataFile variable
-    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-18_s1-10.dat");
+    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-10_s1-10.dat");
     PetscPrintf(PETSC_COMM_WORLD,"Reading grains from %s\n\n\n", grainDataFile);
 
     // Function to read ice grains from file:
@@ -1318,6 +1318,17 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
         }
         user->cent[0][grainCount] = x;
         user->cent[1][grainCount] = y;
+        
+        if (dim == 3) {
+          // At some point, come  back and fix this--should be able to read in 
+          // 3D data, need to update MATLAB script
+          // PetscReal z;
+          // fscanf(file, "%lf", &z);
+
+          PetscReal z = user->Lz/2.0;
+
+          user->cent[2][grainCount] = z;
+        }
         user->radius[grainCount] = r;
         grainCount++;
 
@@ -1813,6 +1824,7 @@ int main(int argc, char *argv[]) {
 
   const char *delt_t_str      = getenv("delt_t");
   const char *t_final_str     = getenv("t_final");
+  const char *n_out_str       = getenv("n_out");
 
   const char *humidity_str    = getenv("humidity");
   const char *temp_str        = getenv("temp");
@@ -1842,6 +1854,7 @@ int main(int argc, char *argv[]) {
 
   PetscReal delt_t      = strtod(delt_t_str, &endptr);
   PetscReal t_final     = strtod(t_final_str, &endptr);
+  PetscInt n_out        = strtod(n_out_str, &endptr);
 
   PetscReal humidity    = strtod(humidity_str, &endptr);
   PetscReal temp        = strtod(temp_str, &endptr);
@@ -1858,25 +1871,6 @@ int main(int argc, char *argv[]) {
       PetscFinalize();
       return EXIT_FAILURE;
   }
-
-  // Assign environment variables to simulation parameters
-  // PetscInt Nx                 = atoi(Nx_str);
-  // PetscInt Ny                 = atoi(Ny_str);
-  // PetscInt Nz                 = atoi(Nz_str);
-
-  // PetscReal Lx                = atoi(Lx_str);
-  // PetscReal Ly                = atoi(Ly_str);
-  // PetscReal Lz                = atoi(Lz_str);
-
-  // PetscReal delt_t            = atoi(delt_t_str);
-  // PetscReal t_final           = atoi(t_final_str);
-
-  // PetscReal humidity          = atoi(humidity_str);
-  // PetscReal temp              = atoi(temp_str);
-
-  // PetscReal grad_temp0X       = atoi(grad_temp0X_str);
-  // PetscReal grad_temp0Y       = atoi(grad_temp0Y_str);
-  // PetscReal grad_temp0Z       = atoi(grad_temp0Z_str);
 
   // Define the polynomial order of basis functions and global continuity order
   PetscInt  l,m, p=1, C=0; //dim=2;
@@ -1899,7 +1893,6 @@ int main(int argc, char *argv[]) {
   user.temp0         = temp;
   user.grad_temp0[0] = grad_temp0X;  user.grad_temp0[1] = grad_temp0Y;  user.grad_temp0[2] = grad_temp0Z;
 
-
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
   flag_BC_Tfix    = 1;
@@ -1907,15 +1900,9 @@ int main(int argc, char *argv[]) {
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
 
-
-  //time specs
-  // PetscReal delt_t = 1.0e-4;
-  // // PetscReal t_final = 3.0*24.0*3600.0;
-  // PetscReal t_final = 5.0*delt_t;
-
   //output
-  user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0;    user.t_interv = t_final/149.0;
+  user.outp = 10; // if 0 -> output according to t_interv
+  user.t_out = 0;    user.t_interv = t_final/(n_out-1); //output every t_interv
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;

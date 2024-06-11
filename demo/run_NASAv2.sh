@@ -22,11 +22,17 @@ input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
 filename=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
 
 
-# Simulation parameters
+    # Simulation parameters  <--------------------------------------------------
+# Define dimensions
+dim=2
+
+# Converty scientic notation to decimal using bc if needed
+dim=$(echo "$dim" | bc -l)
+
 # Domain sizes
-Lx=0.8e-03                    # Domain size X
-Ly=0.8e-03                    # Domain size Y
-Lz=1.35e-04                   # Domain size Z
+Lx=0.5e-03                    # Domain size X
+Ly=0.5e-03                    # Domain size Y
+Lz=1.101e-04                  # Domain size Z
 
 # Convert scientific notation to decimal using bc
 Lx=$(echo "$Lx" | bc -l)
@@ -34,17 +40,20 @@ Ly=$(echo "$Ly" | bc -l)
 Lz=$(echo "$Lz" | bc -l)
 
 # Number of elements
-Nx=440                        # Number of elements in X
-Ny=440                        # Number of elements in Y
-Nz=75                         # Number of elements in Z
+Nx=275                        # Number of elements in X
+Ny=275                        # Number of elements in Y
+Nz=61                         # Number of elements in Z
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=3600                # Final time
+t_final=8*60*60                 # Final time
+# t_final=1.0e-4                 # Final time
+n_out=50                      # Number of output files
 
 # Convert scientific notation to decimal using bc
 delt_t=$(echo "$delt_t" | bc -l)
 t_final=$(echo "$t_final" | bc -l)
+n_out=$(echo "$n_out" | bc -l)
 
 # Other parameters
 humidity=0.98                 # Relative humidity
@@ -60,14 +69,8 @@ grad_temp0X=$(echo "$grad_temp0X" | bc -l)
 grad_temp0Y=$(echo "$grad_temp0Y" | bc -l)
 grad_temp0Z=$(echo "$grad_temp0Z" | bc -l)
 
-# Define dimensions
-dim=3
-
-# Converty scientic notation to decimal using bc if needed
-dim=$(echo "$dim" | bc -l)
-
-export folder input_dir filename Lx Ly Lz Nx Ny Nz delt_t t_final humidity \
-  temp grad_temp0X grad_temp0Y grad_temp0Z dim
+export folder input_dir filename Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
+    humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim
 
 
 cp NASAv2.c$folder
@@ -78,7 +81,11 @@ echo "Calling ./NASAv2"
 echo " "
 
 
-mpiexec -np 12 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000  -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor -snes_linesearch_type basic | tee /Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/outp.txt
+mpiexec -np 12 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
+-snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000  \
+-ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
+-snes_linesearch_type basic | \
+tee /Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/outp.txt
 
 
 echo " "
@@ -95,6 +102,47 @@ cp run_plotNASAv2.sh $folder
 echo "Queing plotNASA.py"
 ./run_plotNASAv2.sh $name
 
+# Create descriptive file
+echo "----- SIMULATION PARAMETERS -----" > $folder/sim_params.dat
+
+echo " " >> $folder/sim_params.dat
+
+echo "Dimensions:" >> $folder/sim_params.dat
+echo "dim = $dim" >> $folder/sim_params.dat
+
+echo " " >> $folder/sim_params.dat
+
+echo "Domain sizes:" >> $folder/sim_params.dat
+echo "Lx = $Lx" >> $folder/sim_params.dat
+echo "Ly = $Ly" >> $folder/sim_params.dat
+echo "Lz = $Lz" >> $folder/sim_params.dat
+
+echo " " >> $folder/sim_params.dat
+
+
+echo "Number of elements:" >> $folder/sim_params.dat
+echo "Nx = $Nx" >> $folder/sim_params.dat
+echo "Ny = $Ny" >> $folder/sim_params.dat
+echo "Nz = $Nz" >> $folder/sim_params.dat
+
+echo " " >> $folder/sim_params.dat
+
+echo "Time parameters:" >> $folder/sim_params.dat
+echo "delt_t = $delt_t" >> $folder/sim_params.dat
+echo "t_final = $t_final" >> $folder/sim_params.dat
+
+echo " " >> $folder/sim_params.dat
+
+echo "State parameters:" >> $folder/sim_params.dat
+echo "humidity = $humidity" >> $folder/sim_params.dat
+echo "temp = $temp" >> $folder/sim_params.dat
+
+echo " " >> $folder/sim_params.dat
+
+echo "Initial temperature gradients:" >> $folder/sim_params.dat
+echo "grad_temp0X = $grad_temp0X" >> $folder/sim_params.dat
+echo "grad_temp0Y = $grad_temp0Y" >> $folder/sim_params.dat
+echo "grad_temp0Z = $grad_temp0Z" >> $folder/sim_params.dat
 
 echo "-------------------------------------------------------------------------"
 echo "Done!"
