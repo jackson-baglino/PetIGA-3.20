@@ -546,8 +546,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscFunctionBegin;
   AppCtx *user = (AppCtx *)mctx;
 
-//-------- compute beta_sub
-
+  //-------- compute beta_sub
   Vec localU;
   const PetscScalar *arrayU;
   IGAElement element;
@@ -609,7 +608,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   }
 
 
-//-------- domain integrals
+  //-------- domain integrals
   PetscScalar stats[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
   ierr = IGAComputeScalar(user->iga,U,6,&stats[0],Integration,mctx);CHKERRQ(ierr);
   PetscReal tot_ice     = PetscRealPart(stats[0]);
@@ -637,22 +636,35 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
                 t,step,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
   }
 
-  // if(step%10==0) {
-  //   char filedata[256];
-  //   const char *env = "folder"; char *dir; dir = getenv(env);
+  PetscInt print=0;
+  if(user->outp > 0) {
+    if(step % user->outp == 0) print=1;
+  } else {
+    if (t>= user->t_out) print=1;
+  }
 
-  //   sprintf(filedata,"%s/Data.dat",dir);
-  //   PetscViewer       view;
-  //   PetscViewerCreate(PETSC_COMM_WORLD,&view);
-  //   PetscViewerSetType(view,PETSCVIEWERASCII);
+  if(print==1) 
+  {
+    char filedata[256];
+    const char *env = "folder"; char *dir; dir = getenv(env);
 
-  //   if (step==0) PetscViewerFileSetMode(view,FILE_MODE_WRITE); else PetscViewerFileSetMode(view,FILE_MODE_APPEND);
+    sprintf(filedata,"%s/SSA_evo.dat",dir);
+    PetscViewer       view;
+    PetscViewerCreate(PETSC_COMM_WORLD,&view);
+    PetscViewerSetType(view,PETSCVIEWERASCII);
 
-  //   PetscViewerFileSetName(view,filedata);
-  //   PetscViewerASCIIPrintf(view," %d %e %e %e %e \n",step,t,dt,tot_trip,sol_interf);
+    if (step==0){
+      PetscViewerFileSetMode(view,FILE_MODE_WRITE);
+    } else {
+      PetscViewerFileSetMode(view,FILE_MODE_APPEND);
+    }
 
-  //   PetscViewerDestroy(&view);
-  // }
+    PetscViewerFileSetName(view,filedata);
+    PetscViewerASCIIPrintf(view,"%e %e %e \n",sub_interf, tot_ice, t);
+
+    PetscViewerDestroy(&view);
+
+  }
 
   PetscFunctionReturn(0);
 }
