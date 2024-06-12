@@ -7,11 +7,7 @@ filename = "SSA_evo.dat"
 
 # Read in environment variables
 dim = os.getenv("dim")
-
-# inputFile = os.getenv("inputFile")
-inputFile = "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-165_s1-10_s2-30.dat"
-
-print(f"inputFile = {inputFile}")
+inputFile = os.getenv("inputFile")
 
 # Read in the grain data
 grain_data = np.loadtxt(inputFile, delimiter=' ', usecols=(2,))
@@ -34,26 +30,22 @@ if c == 0:
 
 ssa_data = ssa_data / c
 
-# print(f"ssa_data = {ssa_data}")
-
 normalized_ssa_data = ssa_data
 normalized_ssa_data = normalized_ssa_data[1:]
 
 # Create a time array (assuming data points are equally spaced)
-# time = range(1, len(normalized_ssa_data) + 1)
-time = np.linspace(1, 18, len(normalized_ssa_data))
+time = input_array[:, 2]/60/60
 
 # Plotting the data
 plt.figure(figsize=(10, 6))
 plt.plot(time, normalized_ssa_data, label='Surface Area Evolution')
-plt.xlabel('Time [days]', fontsize=18)
+plt.xlabel('Time [hours]', fontsize=18)
 plt.ylabel('Surface Area', fontsize=18)
 plt.title('Surface Area Evolution', fontsize=24)
 
 plt.xticks(fontsize=14)
 plt.yticks(fontsize=14)
 plt.grid(False)
-
 
 # Save the plot as an image file
 output_file = "ssa_evolution_plot.png"

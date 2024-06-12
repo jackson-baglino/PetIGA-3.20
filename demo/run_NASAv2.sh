@@ -54,9 +54,9 @@ Nz=100
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=3*24*60*60            # Final time
+t_final=24*60*60            # Final time
 # t_final=1.0e1               # Final time
-n_out=700                     # Number of output files
+n_out=100                     # Number of output files
 
 # Convert scientific notation to decimal using bc
 delt_t=$(echo "$delt_t" | bc -l)
