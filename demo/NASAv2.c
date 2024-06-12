@@ -535,7 +535,7 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
   S[2]  = air;
   S[3]  = temp;
   S[4]  = rhov*air;
-  S[5]  = met*met*ice*ice;
+  S[5]  = air*air*ice*ice;
 
   PetscFunctionReturn(0);
 }
@@ -660,7 +660,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     }
 
     PetscViewerFileSetName(view,filedata);
-    PetscViewerASCIIPrintf(view,"%e %e %e \n",sub_interf, tot_ice, t);
+    PetscViewerASCIIPrintf(view,"%e %e %e \n",sub_interf/user->eps, tot_ice, t);
 
     PetscViewerDestroy(&view);
 
@@ -1312,7 +1312,10 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     char          grainDataFile[PETSC_MAX_PATH_LEN];
 
     // Copy the file path to the grainDataFile variable
-    PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-10_s1-10.dat");
+    const char *inputFile          = getenv("inputFile");
+    PetscStrcpy(grainDataFile, inputFile);
+
+    // PetscStrcpy(grainDataFile, "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-10_s1-10.dat");
     PetscPrintf(PETSC_COMM_WORLD,"Reading grains from %s\n\n\n", grainDataFile);
 
     // Function to read ice grains from file:
@@ -1913,7 +1916,7 @@ int main(int argc, char *argv[]) {
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
 
   //output
-  user.outp = 10; // if 0 -> output according to t_interv
+  user.outp = 0; // if 0 -> output according to t_interv
   user.t_out = 0;    user.t_interv = t_final/(n_out-1); //output every t_interv
 
   PetscInt adap = 1;

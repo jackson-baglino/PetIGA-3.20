@@ -1,39 +1,40 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 # Read data from the file
 filename = "SSA_evo.dat"
-grainFile = "/Users/jacksonbaglino/PetIGA/demo/input/grainReadFile.csv"
 
-try:
-    with open(filename, 'r') as file:
-        # Assuming the file contains one column of numbers representing SSA values over time
-        ssa_data = [float(line.strip()) for line in file.readlines()]
-except FileNotFoundError:
-    print(f"Error: File '{filename}' not found.")
-    exit()
-except Exception as e:
-    print(f"Error reading data from '{filename}': {e}")
-    exit()
+# Read in environment variables
+dim = os.getenv("dim")
 
-try:
-    # Assuming grainFile is a CSV file with 150 rows and 4 columns
-    grain_data = np.loadtxt(grainFile, delimiter=',', usecols=(2,))
-except FileNotFoundError:
-    print(f"Error: File '{grainFile}' not found.")
-    exit()
-except Exception as e:
-    print(f"Error reading data from '{grainFile}': {e}")
-    exit()
+# inputFile = os.getenv("inputFile")
+inputFile = "/Users/jacksonbaglino/PetIGA-3.20/demo/input/grainReadFile-165_s1-10_s2-30.dat"
 
-grain_data = grain_data*np.sqrt(2*(2e-3)**2)/np.sqrt(2*(200)**2)
+print(f"inputFile = {inputFile}")
+
+# Read in the grain data
+grain_data = np.loadtxt(inputFile, delimiter=' ', usecols=(2,))
+
+with open(filename, 'r') as file:
+  input_data = file.read()
+  # Parse the input data into a numpy array
+  input_array = np.array([line.split() for line in input_data.split('\n') if line.strip()])
+  # Convert the array elements to float
+  input_array = input_array.astype(float)
+
+ssa_data = input_array[:, 0]
 
 SSA0 = np.sum(2*np.pi*grain_data)
-print(f"SSA0 = {SSA0}")
 
 # Normalize SSA data by the third column of grain data
 c = ssa_data[0] / SSA0
+if c == 0:
+    c = 1
+
 ssa_data = ssa_data / c
+
+# print(f"ssa_data = {ssa_data}")
 
 normalized_ssa_data = ssa_data
 normalized_ssa_data = normalized_ssa_data[1:]
@@ -60,3 +61,4 @@ plt.savefig(output_file)
 
 # Display the plot
 plt.show()
+plt.close()

@@ -25,13 +25,19 @@ if [[ -n $1 ]]; then
 
     python3.11 ~/SimulationResults/DrySed_Metamorphism/NASAv2/$1/plotNASA.py
     python3.11 ~/SimulationResults/DrySed_Metamorphism/NASAv2/$1/writeNASA2CSV.py
+
+    python3.11 ~/SimulationResults/DrySed_Metamorphism/NASAv2/$1/plotSSA.py
+    python3.11 ~/SimulationResults/DrySed_Metamorphism/NASAv2/$1/plotPorosity.py
 else
     echo "No inputs are given. Assume we are already in the results folder"
     echo " "
 
-    mkdir vtkOut
+    # mkdir vtkOut
+    # python3.11 plotNASA.py
 
-    python3.11 plotNASA.py
-    python3.11 writeNASA2CSV.py
+    # python3.11 writeNASA2CSV.py
+
+    python3.11 plotSSA.py
+    # python3.11 plotPorosity.py
 fi
 
