@@ -31,7 +31,7 @@ if c == 0:
 ssa_data = ssa_data / c
 
 normalized_ssa_data = ssa_data
-normalized_ssa_data = normalized_ssa_data[1:]
+normalized_ssa_data = normalized_ssa_data[0:]
 
 # Create a time array (assuming data points are equally spaced)
 time = input_array[:, 2]/60/60
@@ -52,5 +52,5 @@ output_file = "ssa_evolution_plot.png"
 plt.savefig(output_file)
 
 # Display the plot
-plt.show()
+# plt.show()
 plt.close()
