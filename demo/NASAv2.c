@@ -635,7 +635,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD,"\n(%.0f) %.3e    %.3e   %.3e   %.3e   %.3e   %.3e   %.3e   %.3e \n\n",
                 t,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
   }
-ƒ
+
   PetscInt print=0;
   if(user->outp > 0) {
     if(step % user->outp == 0) print=1;
