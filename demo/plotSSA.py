@@ -8,6 +8,7 @@ filename = "SSA_evo.dat"
 # Read in environment variables
 dim = os.getenv("dim")
 inputFile = os.getenv("inputFile")
+print("inputFile: ", inputFile)
 
 # Read in the grain data
 grain_data = np.loadtxt(inputFile, delimiter=' ', usecols=(2,))
@@ -52,5 +53,5 @@ output_file = "ssa_evolution_plot.png"
 plt.savefig(output_file)
 
 # Display the plot
-# plt.show()
+plt.show()
 plt.close()
