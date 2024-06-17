@@ -13,7 +13,7 @@ counter = 0
 for infile in glob.glob("sol*.dat"):
     name = infile.split(".")[0]
     number = name.split("l")[1]
-    root = './vtkOut/solV'+str(number)+'.vtk'
+    root = './vtkOut/solV_'+str(number)+'.vtk'
 
     sol = PetIGA().read_vec(infile,nrb)
     if os.path.exists(root):
