@@ -1806,7 +1806,8 @@ int main(int argc, char *argv[]) {
   user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
-  user.flag_Tdep  = 1;        //temperature-dependent GT parameters; pretty unstable, need to check implementation!!!
+  user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
+                              // pretty unstable, need to check implementation!!!
 
   user.d0_sub0    = 1.0e-9; 
   user.beta_sub0  = 1.4e5;    
@@ -1814,21 +1815,23 @@ int main(int argc, char *argv[]) {
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
   /*
-    //domain and mesh characteristics
-  // PetscReal Lx=3.2e-3,   Ly=3.2e-3,   Lz=1.0e-3;     // 135-grain simulation
-  // PetscInt  Nx=1760,     Ny=1760,     Nz=300;        // 135-grain simulation
+  // Domain and mesh characteristics
+  PetscReal Lx=3.2e-3,   Ly=3.2e-3,   Lz=1.0e-3;  // 135-grain simulation
+  PetscInt  Nx=1760,     Ny=1760,     Nz=300;     // 135-grain simulation
 
-  // PetscReal Lx=1.6e-3,  Ly=1.6e-3,  Lz=1.0e-3;       // Experimental images
-  // PetscInt  Nx=880,     Ny=880,     Nz=300;          // Experimental images
+  PetscReal Lx=1.6e-3,  Ly=1.6e-3,  Lz=1.0e-3;    // Experimental images
+  PetscInt  Nx=880,     Ny=880,     Nz=300;       // Experimental images
 
-  // PetscReal Lx=0.2e-3,  Ly=0.1e-3,  Lz=1.0e-3;    // 2-grain simulation
-  // PetscInt  Nx=230,     Ny=115,     Nz=115;       // 2-grain simulation
+  PetscReal Lx=0.2e-3,  Ly=0.1e-3,  Lz=1.0e-3;    // 2-grain simulation
+  PetscInt  Nx=230,     Ny=115,     Nz=115;       // 2-grain simulation
 
-  // PetscReal Lx=420e-6,  Ly=420e-6,  Lz=1.0e-3;    // 2-grain Molaro simulation
-  // PetscInt  Nx=475,     Ny=475,     Nz=300;       // 2-grain Molaro simulation
+  PetscReal Lx=420e-6,  Ly=420e-6,  Lz=1.0e-3;    // 2-grain Molaro simulation
+  PetscInt  Nx=475,     Ny=475,     Nz=300;       // 2-grain Molaro simulation
   */
 
   // Unpack environment variables
+  PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");
+
   const char *Nx_str          = getenv("Nx");
   const char *Ny_str          = getenv("Ny");
   const char *Nz_str          = getenv("Nz");
@@ -1856,6 +1859,23 @@ int main(int argc, char *argv[]) {
       PetscPrintf(PETSC_COMM_WORLD, "Error: One or more environment variables are not set.\n");
       PetscFinalize();
       return EXIT_FAILURE;
+  } else {
+      PetscPrintf(PETSC_COMM_WORLD, "Environment variables successfully set.\n");
+      PetscPrintf(PETSC_COMM_WORLD, "Nx: %s\n", Nx_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Ny: %s\n", Ny_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Nz: %s\n", Nz_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Lx: %s\n", Lx_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Ly: %s\n", Ly_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Lz: %s\n", Lz_str);
+      PetscPrintf(PETSC_COMM_WORLD, "delt_t: %s\n", delt_t_str);
+      PetscPrintf(PETSC_COMM_WORLD, "t_final: %s\n", t_final_str);
+      PetscPrintf(PETSC_COMM_WORLD, "n_out: %s\n", n_out_str);
+      PetscPrintf(PETSC_COMM_WORLD, "humidity: %s\n", humidity_str);
+      PetscPrintf(PETSC_COMM_WORLD, "temp: %s\n", temp_str);
+      PetscPrintf(PETSC_COMM_WORLD, "grad_temp0X: %s\n", grad_temp0X_str);
+      PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %s\n", grad_temp0Y_str);
+      PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Z: %s\n", grad_temp0Z_str);
+      PetscPrintf(PETSC_COMM_WORLD, "dim: %s\n", dim_str);
   }
 
   char *endptr;
