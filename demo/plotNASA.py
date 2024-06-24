@@ -4,8 +4,18 @@ import os
 from igakit.io import PetIGA, VTK
 from numpy import linspace
 
+Nx = os.getenv("Nx")
+Ny = os.getenv("Ny")
+Nz = os.getenv("Nz")
+
+if Nx is not None and Ny is not None and Nz is not None:
+    num_points = max(int(Nx), int(Ny), int(Nz))
+else:
+    print("Nx, Ny, Nz not set, using default value of 400.")
+    num_points = 400
+
 nrb = PetIGA().read("igasol.dat")
-uniform = lambda U: linspace(U[0], U[-1], 400)
+uniform = lambda U: linspace(U[0], U[-1], num_points)
 
 # Import ice grains:
 counter = 0

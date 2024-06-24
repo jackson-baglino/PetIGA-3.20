@@ -22,24 +22,29 @@ mkdir $folder/
 input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
 # inputFile=$input_dir"grainReadFile-88_s1-10_s2-21.dat"
 # inputFile=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
-inputFile=$input_dir"grainReadFile-5_s1-10.dat"
-
+# inputFile=$input_dir"grainReadFile-5_s1-10.dat"
+# inputFile=$input_dir"grainReadFile-10_s1-10.dat"
+inputFile=$input_dir"grainReadFile-37_s1-10_s2-21.dat"
 
 # Define simulation parameters -------------------------------------------------
 # Define dimensions
-dim=3
+dim=2
 
 # Converty scientic notation to decimal using bc if needed
 dim=$(echo "$dim" | bc -l)
 
 # Domain sizes
-Lx=0.35e-03                   # Domain size X -- 5 Grain
-Ly=0.35e-03                   # Domain size Y -- 5 Grain
-Lz=1.101e-04                  # Domain size Z -- 5 Grain
+# Lx=0.35e-03                   # Domain size X -- 5 Grain
+# Ly=0.35e-03                   # Domain size Y -- 5 Grain
+# Lz=2.202e-04                  # Domain size Z -- 5 Grain
 
 # Lx=0.5e-03                    # Domain size X -- 10 Grain
 # Ly=0.5e-03                    # Domain size Y -- 10 Grain
 # Lz=1.101e-04                  # Domain size Z -- 10 Grain
+
+Lx=0.5e-03                    # Domain size X -- 10 Grain
+Ly=0.5e-03                    # Domain size Y -- 10 Grain
+Lz=1.101e-04                  # Domain size Z -- 10 Grain
 
 # Lx=2.0e-3                     # Domain size X -- 88 Grain
 # Ly=2.0e-3                     # Domain size Y -- 88 Grain
@@ -55,13 +60,13 @@ Ly=$(echo "$Ly" | bc -l)
 Lz=$(echo "$Lz" | bc -l)
 
 # Number of elements
-Nx=193                       # Number of elements in X -- 5 Grain
-Ny=193                       # Number of elements in Y -- 5 Grain
-Nz=61                        # Number of elements in Z -- 5 Grain
+# Nx=193                       # Number of elements in X -- 5 Grain
+# Ny=193                       # Number of elements in Y -- 5 Grain
+# Nz=122                        # Number of elements in Z -- 5 Grain
 
-# Nx=275                        # Number of elements in X -- 10 Grain
-# Ny=275                        # Number of elements in Y -- 10 Grain
-# Nz=61                         # Number of elements in Z -- 10 Grain
+Nx=275                        # Number of elements in X -- 10 Grain
+Ny=275                        # Number of elements in Y -- 10 Grain
+Nz=61                         # Number of elements in Z -- 10 Grain
 
 # Nx=1100                       # Number of elements in X -- 88 Grain
 # Ny=1100                       # Number of elements in Y -- 88 Grain
@@ -73,7 +78,7 @@ Nz=61                        # Number of elements in Z -- 5 Grain
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=24*60*60              # Final time
+t_final=48*60*60              # Final time
 n_out=100                     # Number of output files
 
 # Convert scientific notation to decimal using bc

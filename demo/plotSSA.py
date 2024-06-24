@@ -29,7 +29,7 @@ c = ssa_data[0] / SSA0
 if c == 0:
     c = 1
 
-ssa_data = ssa_data / c
+ssa_data = ssa_data / ssa_data[0]
 
 normalized_ssa_data = ssa_data
 normalized_ssa_data = normalized_ssa_data[0:]
@@ -53,5 +53,6 @@ output_file = "ssa_evolution_plot.png"
 plt.savefig(output_file)
 
 # Display the plot
-plt.show()
+plt.show(block=False)
+plt.pause(5)
 plt.close()
