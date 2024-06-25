@@ -11,4 +11,4 @@ mkdir -p "$dir/stlOut"
 inputDir=$dir"/vtkOut"
 outputDir=$dir"/stlOut"
 
-python3.11 vtk2stl.py $inputDir $outputDir
+python3.11 plotNASA.py $inputDir $outputDir
