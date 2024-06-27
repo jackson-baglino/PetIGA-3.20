@@ -11,11 +11,11 @@ install()
 
 def create_vtk_files():
     """
-    Creates VTK files for ice and sediment grains and converts them to STL files.
+    Creates VTK files for ice grains and converts them to STL files.
 
     Reads input data files and generates VTK files for visualization.
-    The VTK files contain information about the ice and sediment grains,
-    including ice phase, temperature, vapor density, and sediment phase.
+    The VTK files contain information about the ice grains,
+    including ice phase, temperature, and vapor density phase.
     """
 
     # Get the values of Nx, Ny, Nz from environment variables
