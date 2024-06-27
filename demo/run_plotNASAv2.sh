@@ -36,9 +36,10 @@ else
     echo "No inputs are given. Assume we are already in the results folder"
     echo " "
 
-    # mkdir vtkOut
+    mkdir -p vtkOut
+    mkdir -p stlOut
     python3.11 plotNASA.py
-
+    
     # python3.11 writeNASA2CSV.py
 
     python3.11 plotSSA.py
