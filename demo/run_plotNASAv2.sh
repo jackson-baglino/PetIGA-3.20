@@ -41,7 +41,7 @@ else
     
     mkdir -p vtkOut
     mkdir -p stlOut
-    cp -r -p stlOut stl_Out-copy
+    cp -r -p stlOut stlOut-copy
 
     python3.11 plotNASA.py
     
