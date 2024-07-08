@@ -643,8 +643,6 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     if (t>= user->t_out) print=1;
   }
 
-  // if(print==1) 
-  // {
   char filedata[256];
   const char *env = "folder"; char *dir; dir = getenv(env);
 
@@ -653,18 +651,18 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscViewerCreate(PETSC_COMM_WORLD,&view);
   PetscViewerSetType(view,PETSCVIEWERASCII);
 
-  if (step==0){
-    PetscViewerFileSetMode(view,FILE_MODE_WRITE);
-  } else {
-    PetscViewerFileSetMode(view,FILE_MODE_APPEND);
+  if(print==1) {
+    if (step==0){
+      PetscViewerFileSetMode(view,FILE_MODE_WRITE);
+    } else {
+      PetscViewerFileSetMode(view,FILE_MODE_APPEND);
+    }
+
+    PetscViewerFileSetName(view,filedata);
+    PetscViewerASCIIPrintf(view,"%e %e %e \n",sub_interf/user->eps, tot_ice, t);
+
+    PetscViewerDestroy(&view);
   }
-
-  PetscViewerFileSetName(view,filedata);
-  PetscViewerASCIIPrintf(view,"%e %e %e \n",sub_interf/user->eps, tot_ice, t);
-
-  PetscViewerDestroy(&view);
-
-  // }
 
   PetscFunctionReturn(0);
 }
