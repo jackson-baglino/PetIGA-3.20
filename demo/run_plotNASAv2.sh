@@ -46,7 +46,7 @@ else
     python3.11 plotNASA.py
     
     python3.11 plotSSA.py
-    python3.11 plotPorosity.py
+#     python3.11 plotPorosity.py
 
     python3.11 rename_STL_files.py
 fi
