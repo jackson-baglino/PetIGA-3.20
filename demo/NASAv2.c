@@ -1342,7 +1342,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
 
           user->cent[2][grainCount] = z;
         }
-        user->radius[grainCount] = r;
+        user->radius[grainCount] = r*0.9;
         grainCount++;
 
         if (rank == 0)

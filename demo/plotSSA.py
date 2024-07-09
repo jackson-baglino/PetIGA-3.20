@@ -22,7 +22,12 @@ with open(filename, 'r') as file:
 
 ssa_data = input_array[:, 0]
 
-SSA0 = np.sum(2*np.pi*grain_data)
+if dim == "2":
+    # Calculate the SSA0 value
+    SSA0 = np.sum(2*np.pi*grain_data)
+elif dim == "3":
+    # Calculate the SSA0 value
+    SSA0 = np.sum(4*np.pi*grain_data)
 
 # Normalize SSA data by the third column of grain data
 c = ssa_data[0] / SSA0
