@@ -21,9 +21,9 @@ mkdir $folder/
   # File names
 input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
 # inputFile=$input_dir"grainReadFile-88_s1-10_s2-21.dat"
-# inputFile=$input_dir"grainReadFile-135_s1-10_s2-21.dat"
+inputFile=$input_dir"grainReadFile-135_s1-10_s2-21.dat"
 # inputFile=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
-inputFile=$input_dir"grainReadFile-5_s1-10.dat"
+# inputFile=$input_dir"grainReadFile-5_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-2.dat"
 # inputFile=$input_dir"grainReadFile-10_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-37_s1-10_s2-21.dat"
@@ -44,17 +44,17 @@ dim=$(echo "$dim" | bc -l)
 # Ly=0.35e-03                    # Domain size Y -- 5 Grain
 # Lz=2.6424e-04                  # Domain size Z -- 5 Grain
 
-Lx=0.5e-03                    # Domain size X -- 10 Grain
-Ly=0.5e-03                    # Domain size Y -- 10 Grain
-Lz=2.202e-04                  # Domain size Z -- 10 Grain
+# Lx=0.5e-03                    # Domain size X -- 10 Grain
+# Ly=0.5e-03                    # Domain size Y -- 10 Grain
+# Lz=2.202e-04                  # Domain size Z -- 10 Grain
 
 # Lx=2.0e-3                     # Domain size X -- 88 Grain
 # Ly=2.0e-3                     # Domain size Y -- 88 Grain
 # Lz=2.509e-04                  # Domain size Z -- 88 Grain
 
-# Lx=3.2e-3                     # Domain size X -- 135/165 Grain
-# Ly=3.2e-3                     # Domain size Y -- 135/165 Grain
-# Lz=1.0e-3                     # Domain size Z -- 135/165 Grain
+Lx=3.2e-3                     # Domain size X -- 135/165 Grain
+Ly=3.2e-3                     # Domain size Y -- 135/165 Grain
+Lz=1.0e-3                     # Domain size Z -- 135/165 Grain
 
 # Convert scientific notation to decimal using bc
 Lx=$(echo "$Lx" | bc -l)
@@ -84,9 +84,9 @@ Nz=100                        # Number of elements in Z -- 135/165 Grain
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=7*24*60*60           # Final time
+t_final=2*24*60*60           # Final time
 # t_final=1.0e-4                # Final time
-n_out=750                     # Number of output files
+n_out=500                     # Number of output files
 # n_out=2                       # Number of output files
 
 
