@@ -36,6 +36,7 @@ dim=2
 dim=$(echo "$dim" | bc -l)
 
 # Domain sizes
+<<<<<<< HEAD
 # Lx=488.4e-6                    # Domain size X -- 2 Grain
 # Ly=244.2e-6                    # Domain size Y -- 2 Grain
 # Lz=244.2e-6                    # Domain size Z -- 2 Grain
@@ -43,6 +44,19 @@ dim=$(echo "$dim" | bc -l)
 # Lx=0.35e-03                    # Domain size X -- 5 Grain
 # Ly=0.35e-03                    # Domain size Y -- 5 Grain
 # Lz=2.6424e-04                  # Domain size Z -- 5 Grain
+=======
+Lx=0.35e-03                   # Domain size X -- 5 Grain
+Ly=0.35e-03                   # Domain size Y -- 5 Grain
+Lz=2.202e-04                  # Domain size Z -- 5 Grain
+
+# Lx=488.4e-6                    # Domain size X -- 2 Grain
+# Ly=244.2e-6                    # Domain size Y -- 2 Grain
+# Lz=244.2e-6                    # Domain size Z -- 2 Grain
+
+# Lx=0.5e-03                    # Domain size X -- 10 Grain
+# Ly=0.5e-03                    # Domain size Y -- 10 Grain
+# Lz=1.101e-04                  # Domain size Z -- 10 Grain
+>>>>>>> 9ff017a (Refactor domain size and number of elements in run_NASAv2.sh script)
 
 # Lx=0.5e-03                    # Domain size X -- 10 Grain
 # Ly=0.5e-03                    # Domain size Y -- 10 Grain
@@ -62,6 +76,7 @@ Ly=$(echo "$Ly" | bc -l)
 Lz=$(echo "$Lz" | bc -l)
 
 # Number of elements
+<<<<<<< HEAD
 # Nx=264                        # Number of elements in X -- 2 Grain
 # Ny=132                        # Number of elements in Y -- 2 Grain
 # Nz=132                        # Number of elements in Z -- 2 Grain
@@ -69,11 +84,23 @@ Lz=$(echo "$Lz" | bc -l)
 # Nx=190                       # Number of elements in X -- 5 Grain
 # Ny=190                       # Number of elements in Y -- 5 Grain
 # Nz=143                       # Number of elements in Z -- 5 Grain
+=======
+Nx=193                       # Number of elements in X -- 5 Grain
+Ny=193                       # Number of elements in Y -- 5 Grain
+Nz=122                        # Number of elements in Z -- 5 Grain
+>>>>>>> 9ff017a (Refactor domain size and number of elements in run_NASAv2.sh script)
 
 # Nx=275                        # Number of elements in X -- 10 Grain
 # Ny=275                        # Number of elements in Y -- 10 Grain
 # Nz=122                        # Number of elements in Z -- 10 Grain
 
+<<<<<<< HEAD
+=======
+# Nx=264                        # Number of elements in X -- 2 Grain
+# Ny=132                        # Number of elements in Y -- 2 Grain
+# Nz=132                        # Number of elements in Z -- 2 Grain
+
+>>>>>>> 9ff017a (Refactor domain size and number of elements in run_NASAv2.sh script)
 # Nx=1100                       # Number of elements in X -- 88 Grain
 # Ny=1100                       # Number of elements in Y -- 88 Grain
 # Nz=138                        # Number of elements in Z -- 88 Grain
@@ -84,10 +111,16 @@ Nz=100                        # Number of elements in Z -- 135/165 Grain
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
+<<<<<<< HEAD
 t_final=2*24*60*60           # Final time
 # t_final=1.0e-4                # Final time
 n_out=500                     # Number of output files
 # n_out=2                       # Number of output files
+=======
+t_final=1
+# t_final=48*60*60              # Final time
+n_out=10                     # Number of output files
+>>>>>>> 9ff017a (Refactor domain size and number of elements in run_NASAv2.sh script)
 
 
 # Convert scientific notation to decimal using bc
