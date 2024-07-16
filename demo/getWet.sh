@@ -3,12 +3,12 @@
 echo " "
 echo "compiling"
 echo " "
-make NASAv2
+make Wetamorphism
 
 # add name folder accordinglu --------------------------------------------------
 title=getWet_GEOM_DIM_TIME
 name=$title_$(date +%Y-%m-%d__%H.%M.%S)
-dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2
+dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/wetamorph
 folder=$dir/$name
 
 if [ ! -d "$dir" ]; then
@@ -122,41 +122,41 @@ export folder input_dir inputFile Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
     humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim
 
 
-# Copy files to folder ---------------------------------------------------------
-cp NASAv2.c$folder
-cp run_NASAv2.sh $folder
+# Copy files to folder 
+cp Wetamorphism.c$folder
+cp getWet.sh $folder
 
 echo " "
-echo "Calling ./NASAv2"
+echo "Calling ./Wetamorphism"
 echo " "
 
 
-# Run the simulation -----------------------------------------------------------
-mpiexec -np 12 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
+# Run the simulation
+mpiexec -np 12 ./Wetamorphism -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
 -snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000  \
 -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
 -snes_linesearch_type basic | \
-tee /Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/outp.txt
+tee /Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/Wetamorphism/outp.txt
 
 
-# ------------------------------------------------------------------------------ 
-# Move output file to folder ---------------------------------------------------
+# Move output file to folder 
 echo " "
 echo "making directory" $folder
 echo " "
 
 mv $dir/outp.txt $folder
-cp NASAv2.c $folder
-cp run_plotNASAv2.sh $folder
+cp Wetamorphism.c $folder
+cp run_plotWetamorphism.sh $folder
 
 cp plotSSA.py $folder
 cp plotPorosity.py $folder
 
-# Plot the results -------------------------------------------------------------
-echo "Queing plotNASA.py"
-./run_plotNASAv2.sh $name
+# Plot the results
+echo "Queing plotWetamorphism.py"
+./run_plotWetamorphism.sh $name
 
-# Create descriptive file ------------------------------------------------------
+
+# Create descriptive file 
 echo "----- SIMULATION PARAMETERS -----" > $folder/sim_params.dat
 echo "Input file: $inputFile" >> $folder/sim_params.dat
 
