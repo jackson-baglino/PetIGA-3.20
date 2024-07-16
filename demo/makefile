@@ -2,6 +2,7 @@ TARGETS = \
 NASA \
 NASAv2 \
 NASA_panda \
+Wetamorphism \
 localGrains \
 Solid3ph_flow \
 Carbon \
@@ -53,6 +54,9 @@ NASAv2: NASAv2.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 NASA_panda: NASA_panda.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+Wetamorphism: Wetamorphism.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 localGrains: localGrains.o
