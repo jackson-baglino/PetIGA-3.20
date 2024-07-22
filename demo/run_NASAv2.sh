@@ -23,8 +23,8 @@ input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
 # inputFile=$input_dir"grainReadFile-88_s1-10_s2-21.dat"
 # inputFile=$input_dir"grainReadFile-135_s1-10_s2-21.dat"
 # inputFile=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
-inputFile=$input_dir"grainReadFile-5_s1-10.dat"
-# inputFile=$input_dir"grainReadFile-2.dat"
+# inputFile=$input_dir"grainReadFile-5_s1-10.dat"
+inputFile=$input_dir"grainReadFile-2.dat"
 # inputFile=$input_dir"grainReadFile-10_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-37_s1-10_s2-21.dat"
 
@@ -36,17 +36,17 @@ dim=2
 dim=$(echo "$dim" | bc -l)
 
 # Domain sizes
-# Lx=488.4e-6                    # Domain size X -- 2 Grain
-# Ly=244.2e-6                    # Domain size Y -- 2 Grain
-# Lz=244.2e-6                    # Domain size Z -- 2 Grain
+Lx=488.4e-6                    # Domain size X -- 2 Grain
+Ly=244.2e-6                    # Domain size Y -- 2 Grain
+Lz=244.2e-6                    # Domain size Z -- 2 Grain
 
 # Lx=0.35e-03                    # Domain size X -- 5 Grain
 # Ly=0.35e-03                    # Domain size Y -- 5 Grain
 # Lz=2.6424e-04                  # Domain size Z -- 5 Grain
 
-Lx=0.35e-03                   # Domain size X -- 5 Grain
-Ly=0.35e-03                   # Domain size Y -- 5 Grain
-Lz=2.202e-04                  # Domain size Z -- 5 Grain
+# Lx=0.35e-03                   # Domain size X -- 5 Grain
+# Ly=0.35e-03                   # Domain size Y -- 5 Grain
+# Lz=2.202e-04                  # Domain size Z -- 5 Grain
 
 # Lx=488.4e-6                    # Domain size X -- 2 Grain
 # Ly=244.2e-6                    # Domain size Y -- 2 Grain
@@ -74,17 +74,17 @@ Ly=$(echo "$Ly" | bc -l)
 Lz=$(echo "$Lz" | bc -l)
 
 # Number of elements
-# Nx=264                        # Number of elements in X -- 2 Grain
-# Ny=132                        # Number of elements in Y -- 2 Grain
-# Nz=132                        # Number of elements in Z -- 2 Grain
+Nx=264                        # Number of elements in X -- 2 Grain
+Ny=132                        # Number of elements in Y -- 2 Grain
+Nz=132                        # Number of elements in Z -- 2 Grain
 
 # Nx=190                       # Number of elements in X -- 5 Grain
 # Ny=190                       # Number of elements in Y -- 5 Grain
 # Nz=143                       # Number of elements in Z -- 5 Grain
 
-Nx=193                       # Number of elements in X -- 5 Grain
-Ny=193                       # Number of elements in Y -- 5 Grain
-Nz=122                        # Number of elements in Z -- 5 Grain
+# Nx=193                       # Number of elements in X -- 5 Grain
+# Ny=193                       # Number of elements in Y -- 5 Grain
+# Nz=122                        # Number of elements in Z -- 5 Grain
 
 # Nx=275                        # Number of elements in X -- 10 Grain
 # Ny=275                        # Number of elements in Y -- 10 Grain

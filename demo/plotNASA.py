@@ -43,26 +43,6 @@ def create_vtk_files():
         else:
             print(f"File already exists: {vtk_root}")
 
-# def convert_vtk_to_stl(vtk_file, stl_file):
-#     mesh = pv.read(vtk_file)
-
-#     if 'IcePhase' in mesh.array_names:
-#         ice_phase = mesh['IcePhase']
-#         mesh.point_data['scalars'] = ice_phase
-#         mesh.set_active_scalars('scalars')
-
-#         threshold = 0.5
-#         thresholded_mesh = mesh.threshold(threshold, scalars='scalars')
-
-#         poly_data = thresholded_mesh.extract_surface()
-#         smoothed_mesh = poly_data.smooth(n_iter=50, relaxation_factor=0.1)
-
-#         print(f"Writing: {stl_file}....................", end="")
-#         smoothed_mesh.save(stl_file)
-#         print(" Complete!\n")
-#     else:
-#         print(f"Error: 'IcePhase' field not found in {vtk_file}")
-
 def verify_vtk_fields(vtk_file):
     reader = vtk.vtkStructuredGridReader()
     reader.SetFileName(vtk_file)
@@ -131,3 +111,4 @@ if __name__ == '__main__':
     
     create_vtk_files()
     process_files(input_folder, output_folder, field_name, threshold_value)
+
