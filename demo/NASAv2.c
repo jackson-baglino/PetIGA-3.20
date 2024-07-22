@@ -642,16 +642,18 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   } else {
     if (t>= user->t_out) print=1;
   }
-
-  char filedata[256];
-  const char *env = "folder"; char *dir; dir = getenv(env);
-
-  sprintf(filedata,"%s/SSA_evo.dat",dir);
-  PetscViewer       view;
-  PetscViewerCreate(PETSC_COMM_WORLD,&view);
-  PetscViewerSetType(view,PETSCVIEWERASCII);
+  
+  print = 1;
 
   if(print==1) {
+    char filedata[256];
+    const char *env = "folder"; char *dir; dir = getenv(env);
+
+    sprintf(filedata,"%s/SSA_evo.dat",dir);
+    PetscViewer       view;
+    PetscViewerCreate(PETSC_COMM_WORLD,&view);
+    PetscViewerSetType(view,PETSCVIEWERASCII);
+
     if (step==0){
       PetscViewerFileSetMode(view,FILE_MODE_WRITE);
     } else {
@@ -1781,8 +1783,9 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
-  user.eps        = 9.1e-7;  // 2.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
-  user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
+  // user.eps        = 9.1e-7;  // 2.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
+// 	user.eps				= eps;
+	user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
 
@@ -1812,20 +1815,6 @@ int main(int argc, char *argv[]) {
   PetscReal gamma_im = 0.033, gamma_iv = 0.109, gamma_mv = 0.056; //76
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
-  /*
-  // Domain and mesh characteristics
-  PetscReal Lx=3.2e-3,   Ly=3.2e-3,   Lz=1.0e-3;  // 135-grain simulation
-  PetscInt  Nx=1760,     Ny=1760,     Nz=300;     // 135-grain simulation
-
-  PetscReal Lx=1.6e-3,  Ly=1.6e-3,  Lz=1.0e-3;    // Experimental images
-  PetscInt  Nx=880,     Ny=880,     Nz=300;       // Experimental images
-
-  PetscReal Lx=0.2e-3,  Ly=0.1e-3,  Lz=1.0e-3;    // 2-grain simulation
-  PetscInt  Nx=230,     Ny=115,     Nz=115;       // 2-grain simulation
-
-  PetscReal Lx=420e-6,  Ly=420e-6,  Lz=1.0e-3;    // 2-grain Molaro simulation
-  PetscInt  Nx=475,     Ny=475,     Nz=300;       // 2-grain Molaro simulation
-  */
 
   // Unpack environment variables
   PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");
@@ -1850,10 +1839,12 @@ int main(int argc, char *argv[]) {
   const char *grad_temp0Z_str = getenv("grad_temp0Z");
 
   const char *dim_str         = getenv("dim");
-
+	
+	const char *eps_str 				= getenv("eps");
+	
   if (!Nx_str || !Ny_str || !Nz_str || !Lx_str || !Ly_str || !Lz_str || 
       !delt_t_str || !t_final_str || !humidity_str || !temp_str || 
-      !grad_temp0X_str || !grad_temp0Y_str || !grad_temp0Z_str || !dim_str) {
+      !grad_temp0X_str || !grad_temp0Y_str || !grad_temp0Z_str || !dim_str || !eps_str) {
       PetscPrintf(PETSC_COMM_WORLD, "Error: One or more environment variables are not set.\n");
       PetscFinalize();
       return EXIT_FAILURE;
@@ -1874,6 +1865,7 @@ int main(int argc, char *argv[]) {
       PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %s\n", grad_temp0Y_str);
       PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Z: %s\n", grad_temp0Z_str);
       PetscPrintf(PETSC_COMM_WORLD, "dim: %s\n", dim_str);
+      PetscPrintf(PETSC_COMM_WORLD, "eps: %s\n", eps_str);
   }
 
   char *endptr;
@@ -1897,6 +1889,8 @@ int main(int argc, char *argv[]) {
   PetscReal grad_temp0Z = strtod(grad_temp0Z_str, &endptr);
 
   PetscInt dim          = strtod(dim_str, &endptr);
+  
+	PetscReal eps          = strtod(eps_str, &endptr);
 
   // Verify that conversion was successful
   if (*endptr != '\0') {
@@ -1910,6 +1904,7 @@ int main(int argc, char *argv[]) {
   user.p=p; user.C=C;  user.dim=dim;
   user.Lx=Lx; user.Ly=Ly; user.Lz=Lz; 
   user.Nx=Nx; user.Ny=Ny; user.Nz=Nz;
+  user.eps=eps;
 
   // grains!
   flag_sedgrav    = 0; 
@@ -2130,6 +2125,7 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %f\n", user.grad_temp0[1]);
   PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Z: %f\n", user.grad_temp0[2]);
   PetscPrintf(PETSC_COMM_WORLD, "dim: %d\n", user.dim);
+  PetscPrintf(PETSC_COMM_WORLD, "eps: %f\n", user.eps);
 
   PetscReal t=0; Vec U;
   ierr = IGACreateVec(iga,&U);CHKERRQ(ierr);

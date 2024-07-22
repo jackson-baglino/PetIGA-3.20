@@ -102,6 +102,8 @@ Nz=122                        # Number of elements in Z -- 5 Grain
 # Ny=1760                       # Number of elements in Y -- 135/165 Grain
 # Nz=100                        # Number of elements in Z -- 135/165 Grain
 
+eps=9.28146307269926e-07			# Interface width
+
 # Time parameters
 delt_t=1.0e-4                 # Time step
 t_final=2*24*60*60           # Final time
@@ -120,7 +122,7 @@ n_out=$(echo "$n_out" | bc -l)
 
 # Other parameters
 humidity=0.98                 # Relative humidity
-temp=-3.0                    # Temperature
+temp=0.5                    # Temperature
 
 # Initial temperature gradients
 grad_temp0X=0.0               # Initial temperature gradient X
@@ -134,7 +136,7 @@ grad_temp0Z=$(echo "$grad_temp0Z" | bc -l)
 
 # Export variables
 export folder input_dir inputFile Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
-    humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim
+    humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps
 
 
 # Copy files to folder ---------------------------------------------------------
@@ -174,19 +176,20 @@ echo "Queing plotNASA.py"
 # Create descriptive file ------------------------------------------------------
 echo "----- SIMULATION PARAMETERS -----" > $folder/sim_params.dat
 echo "Input file: $inputFile" >> $folder/sim_params.dat
-
 echo " " >> $folder/sim_params.dat
 
 echo "Dimensions:" >> $folder/sim_params.dat
 echo "dim = $dim" >> $folder/sim_params.dat
+echo " " >> $folder/sim_params.dat
 
+echo "Interface wiedth:" >> $folder/sim_params.dat
+echo "eps = $eps" >> $folder/sim_params.dat
 echo " " >> $folder/sim_params.dat
 
 echo "Domain sizes:" >> $folder/sim_params.dat
 echo "Lx = $Lx" >> $folder/sim_params.dat
 echo "Ly = $Ly" >> $folder/sim_params.dat
 echo "Lz = $Lz" >> $folder/sim_params.dat
-
 echo " " >> $folder/sim_params.dat
 
 
@@ -194,19 +197,16 @@ echo "Number of elements:" >> $folder/sim_params.dat
 echo "Nx = $Nx" >> $folder/sim_params.dat
 echo "Ny = $Ny" >> $folder/sim_params.dat
 echo "Nz = $Nz" >> $folder/sim_params.dat
-
 echo " " >> $folder/sim_params.dat
 
 echo "Time parameters:" >> $folder/sim_params.dat
 echo "delt_t = $delt_t" >> $folder/sim_params.dat
 echo "t_final = $t_final" >> $folder/sim_params.dat
-
 echo " " >> $folder/sim_params.dat
 
 echo "State parameters:" >> $folder/sim_params.dat
 echo "humidity = $humidity" >> $folder/sim_params.dat
 echo "temp = $temp" >> $folder/sim_params.dat
-
 echo " " >> $folder/sim_params.dat
 
 echo "Initial temperature gradients:" >> $folder/sim_params.dat
