@@ -87,7 +87,7 @@ elements. In this case, elements are perfectly balanced.
 We can also learn about which solver was utilized by running the code
 with the following command::
 
-    ./Lapace -iga_dim 3 -ksp_view
+    ./Laplace -iga_dim 3 -ksp_view
 
 which generates::
 
