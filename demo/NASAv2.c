@@ -32,8 +32,18 @@ typedef struct {
 } AppCtx;
 
 PetscErrorCode SNESDOFConvergence(SNES snes,PetscInt it_number,PetscReal xnorm, 
-    PetscReal gnorm,PetscReal fnorm,SNESConvergedReason *reason,void *cctx)
+   PetscReal gnorm,PetscReal fnorm,SNESConvergedReason *reason,void *cctx)
 {
+  /* ***************************************************************************
+  * This function is called to check the convergence of the SNES solver at each 
+  * iteration.
+  * It calculates the norms of the residual vector and the solution update 
+  * vector, and prints them along with the iteration number and the function 
+  * norm.
+  * It also checks if the convergence criteria are met and updates the 
+  * convergence reason accordingly. 
+  *************************************************************************** */
+
   PetscFunctionBegin;
   PetscErrorCode ierr;
   AppCtx *user = (AppCtx *)cctx;
@@ -47,17 +57,17 @@ PetscErrorCode SNESDOFConvergence(SNES snes,PetscInt it_number,PetscReal xnorm,
   ierr = VecStrideNorm(Res,1,NORM_2,&n2dof1);CHKERRQ(ierr);
   ierr = VecStrideNorm(Res,2,NORM_2,&n2dof2);CHKERRQ(ierr);
   if(user->flag_tIC == 1){
-    ierr = SNESGetSolution(snes,&Sol);CHKERRQ(ierr);
-    ierr = VecStrideNorm(Sol,2,NORM_2,&solv);CHKERRQ(ierr);
-    ierr = SNESGetSolutionUpdate(snes,&Sol_upd);CHKERRQ(ierr);
-    ierr = VecStrideNorm(Sol_upd,2,NORM_2,&solupdv);CHKERRQ(ierr);
+   ierr = SNESGetSolution(snes,&Sol);CHKERRQ(ierr);
+   ierr = VecStrideNorm(Sol,2,NORM_2,&solv);CHKERRQ(ierr);
+   ierr = SNESGetSolutionUpdate(snes,&Sol_upd);CHKERRQ(ierr);
+   ierr = VecStrideNorm(Sol_upd,2,NORM_2,&solupdv);CHKERRQ(ierr);
   }
 
   if(it_number==0) {
-    user->norm0_0 = n2dof0;
-    user->norm0_1 = n2dof1;
-    user->norm0_2 = n2dof2;
-    if(user->flag_tIC == 1) solupdv = solv;  
+   user->norm0_0 = n2dof0;
+   user->norm0_1 = n2dof1;
+   user->norm0_2 = n2dof2;
+   if(user->flag_tIC == 1) solupdv = solv;  
   }
 
   PetscPrintf(PETSC_COMM_WORLD,"    IT_NUMBER: %d ", it_number);
@@ -73,21 +83,21 @@ PetscErrorCode SNESDOFConvergence(SNES snes,PetscInt it_number,PetscReal xnorm,
   if(snes->prev_dt_red ==1) rtol *= 10.0;
 
   if(user->flag_it0 == 1){
-    atol = 1.0e-12;
-    if ( (n2dof0 <= rtol*user->norm0_0 || n2dof0 < atol) 
-      && (n2dof1 <= rtol*user->norm0_1 || n2dof1 < atol)  
-      && (n2dof2 <= rtol*user->norm0_2 || n2dof2 < atol) ) {
+   atol = 1.0e-12;
+   if ( (n2dof0 <= rtol*user->norm0_0 || n2dof0 < atol) 
+    && (n2dof1 <= rtol*user->norm0_1 || n2dof1 < atol)  
+    && (n2dof2 <= rtol*user->norm0_2 || n2dof2 < atol) ) {
 
-      *reason = SNES_CONVERGED_FNORM_RELATIVE;
-    }    
+    *reason = SNES_CONVERGED_FNORM_RELATIVE;
+   }    
   } else {
-    atol = 1.0e-20;
-    if ( (n2dof0 <= rtol*user->norm0_0 || n2dof0 < atol) 
-      && (n2dof1 <= rtol*user->norm0_1 || n2dof1 < atol)  
-      && (n2dof2 <= rtol*user->norm0_2 || n2dof2 < atol) ) {
+   atol = 1.0e-20;
+   if ( (n2dof0 <= rtol*user->norm0_0 || n2dof0 < atol) 
+    && (n2dof1 <= rtol*user->norm0_1 || n2dof1 < atol)  
+    && (n2dof2 <= rtol*user->norm0_2 || n2dof2 < atol) ) {
 
-      *reason = SNES_CONVERGED_FNORM_RELATIVE;
-    }     
+    *reason = SNES_CONVERGED_FNORM_RELATIVE;
+   }     
   }
 
   PetscFunctionReturn(0);
@@ -2063,7 +2073,7 @@ int main(int argc, char *argv[]) {
       }
     } else {ierr = InitialSedGrains(iga,&user);CHKERRQ(ierr);}
 
-//output sediment/metal in OutputMonitor function --> single file for all variables
+    //output sediment/metal in OutputMonitor function --> single file for all variables
 
     IGA igaS;   IGAAxis axis0S, axis1S, axis2S;
     ierr = IGACreate(PETSC_COMM_WORLD,&igaS);CHKERRQ(ierr);
