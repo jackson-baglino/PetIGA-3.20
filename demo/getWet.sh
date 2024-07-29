@@ -98,6 +98,11 @@ t_final=2*24*60*60            # Final time
 n_out=10                      # Number of output files
 
 
+# Model parameters
+ angl=0                       # contact angle: 0->real  1->120degrees
+ aa=0		                      # 1->alpha_j=0
+ mm=0		                      # 1->constant mobility
+
 # Convert scientific notation to decimal using bc
 delt_t=$(echo "$delt_t" | bc -l)
 t_final=$(echo "$t_final" | bc -l)
@@ -119,7 +124,7 @@ grad_temp0Z=$(echo "$grad_temp0Z" | bc -l)
 
 # Export variables
 export folder input_dir inputFile Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
-    humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim
+    humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim angl aa mm
 
 
 # Copy files to folder 

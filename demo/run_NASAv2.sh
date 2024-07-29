@@ -6,7 +6,8 @@ echo " "
 make NASAv2
 
 # add name folder accordinglu --------------------------------------------------
-name=res_$(date +%Y-%m-%d__%H.%M.%S)
+title=getWet_GEOM_DIM_TIME
+name=$title_$(date +%Y-%m-%d__%H.%M.%S)
 dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2
 folder=$dir/$name
 

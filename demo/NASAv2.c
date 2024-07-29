@@ -1900,7 +1900,7 @@ int main(int argc, char *argv[]) {
 
   PetscInt dim          = strtod(dim_str, &endptr);
   
-	PetscReal eps          = strtod(eps_str, &endptr);
+	PetscReal eps         = strtod(eps_str, &endptr);
 
   // Verify that conversion was successful
   if (*endptr != '\0') {

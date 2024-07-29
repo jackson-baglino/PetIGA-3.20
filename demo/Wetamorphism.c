@@ -1198,15 +1198,105 @@ int main(int argc, char *argv[]) {
   user.alph_sub   = lambda_sub/tau_sub;
   user.alph_eva   = lambda_eva/tau_eva; 
 
-  const char *env1 = "angl"; const char *env2 = "aa"; const char *env3 = "mm";
-  char *angl1, *aa1, *mm1; 
-  angl1 = getenv(env1); aa1 = getenv(env2); mm1 = getenv(env3);
-  angle = atoi(angl1); aaa = atoi(aa1); mmm = atoi(mm1);
-  PetscPrintf(PETSC_COMM_WORLD,"Options: angle:%d alph:%d mobil:%d \n",angle,aaa,mmm);
+  // Initialize all envorinment variables
+  PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");~
 
+  const char *Nx_str          = getenv("Nx");
+  const char *Ny_str          = getenv("Ny");
+  const char *Nz_str          = getenv("Nz");
+
+  const char *Lx_str          = getenv("Lx");
+  const char *Ly_str          = getenv("Ly");
+  const char *Lz_str          = getenv("Lz");
+
+  const char *delt_t_str      = getenv("delt_t");
+  const char *t_final_str     = getenv("t_final");
+  const char *n_out_str       = getenv("n_out");
+
+  const char *humidity_str    = getenv("humidity");
+  const char *temp_str        = getenv("temp");
+
+  const char *grad_temp0X_str = getenv("grad_temp0X");
+  const char *grad_temp0Y_str = getenv("grad_temp0Y");
+  const char *grad_temp0Z_str = getenv("grad_temp0Z");
+
+  const char *dim_str         = getenv("dim");
+	
+	const char *eps_str 				= getenv("eps");
+
+  const char *angle_str        = getenv("angl");
+  const char *aa_str           = getenv("aa");
+  const char *mm_str           = getenv("mm");
+
+  if (!Nx_str || !Ny_str || !Nz_str || !Lx_str || !Ly_str || !Lz_str || 
+      !delt_t_str || !t_final_str || !humidity_str || !temp_str || 
+      !grad_temp0X_str || !grad_temp0Y_str || !grad_temp0Z_str || !dim_str || !eps_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: One or more environment variables are not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else {
+      PetscPrintf(PETSC_COMM_WORLD, "Environment variables successfully set.\n");
+      PetscPrintf(PETSC_COMM_WORLD, "Nx: %s\n", Nx_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Ny: %s\n", Ny_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Nz: %s\n", Nz_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Lx: %s\n", Lx_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Ly: %s\n", Ly_str);
+      PetscPrintf(PETSC_COMM_WORLD, "Lz: %s\n", Lz_str);
+      PetscPrintf(PETSC_COMM_WORLD, "delt_t: %s\n", delt_t_str);
+      PetscPrintf(PETSC_COMM_WORLD, "t_final: %s\n", t_final_str);
+      PetscPrintf(PETSC_COMM_WORLD, "n_out: %s\n", n_out_str);
+      PetscPrintf(PETSC_COMM_WORLD, "humidity: %s\n", humidity_str);
+      PetscPrintf(PETSC_COMM_WORLD, "temp: %s\n", temp_str);
+      PetscPrintf(PETSC_COMM_WORLD, "grad_temp0X: %s\n", grad_temp0X_str);
+      PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %s\n", grad_temp0Y_str);
+      PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Z: %s\n", grad_temp0Z_str);
+      PetscPrintf(PETSC_COMM_WORLD, "dim: %s\n", dim_str);
+      PetscPrintf(PETSC_COMM_WORLD, "eps: %s\n", eps_str);
+      PetscPrintf(PETSC_COMM_WORLD, "angle: %s\n", angle_str);
+      PetscPrintf(PETSC_COMM_WORLD, "aa: %s\n", aa_str);
+      PetscPrintf(PETSC_COMM_WORLD, "mm: %s\n", mm_str);
+  }
+
+  char *endptr;
+  PetscInt Nx          = strtod(Nx_str, &endptr);
+  PetscInt Ny          = strtod(Ny_str, &endptr);
+  PetscInt Nz          = strtod(Nz_str, &endptr);
+
+  PetscReal Lx          = strtod(Lx_str, &endptr);
+  PetscReal Ly          = strtod(Ly_str, &endptr);
+  PetscReal Lz          = strtod(Lz_str, &endptr);
+
+  PetscReal delt_t      = strtod(delt_t_str, &endptr);
+  PetscReal t_final     = strtod(t_final_str, &endptr);
+  PetscInt n_out        = strtod(n_out_str, &endptr);
+
+  PetscReal humidity    = strtod(humidity_str, &endptr);
+  PetscReal temp        = strtod(temp_str, &endptr);
+
+  PetscReal grad_temp0X = strtod(grad_temp0X_str, &endptr);
+  PetscReal grad_temp0Y = strtod(grad_temp0Y_str, &endptr);
+  PetscReal grad_temp0Z = strtod(grad_temp0Z_str, &endptr);
+
+  PetscInt dim          = strtod(dim_str, &endptr);
+  
+	PetscReal eps         = strtod(eps_str, &endptr);
+
+  PetscReal angle       = strtod(angle_str, &endptr);
+  PetscReal aaa         = strtod(aa_str, &endptr);
+  PetscReal mmm         = strtod(mm_str, &endptr);
+
+  // Verify that conversion was successful
+  if (*endptr != '\0') {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: One or more environment variables contain invalid values.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  }
+
+  // Assign mobilities and kinetic parameters based on flags
   if(mmm==1) user.mob_sol=user.mob_sub=user.mob_eva=user.mav;
   if(aaa==1) user.alph_sol = user.alph_sub = user.alph_eva = 0.0;
 
+  // Assign contact angle based on flags
   if(angle==1) gamma_iv = gamma_iw = gamma_wv; // 120 degrees
   user.Etai       = gamma_iv + gamma_iw - gamma_wv;
   user.Etaw       = gamma_wv + gamma_iw - gamma_iv;
