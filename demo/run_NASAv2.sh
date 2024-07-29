@@ -30,7 +30,7 @@ inputFile=$input_dir"grainReadFile-2.dat"
 
 # Define simulation parameters -------------------------------------------------
 # Define dimensions
-dim=2
+dim=3
 
 # Converty scientic notation to decimal using bc if needed
 dim=$(echo "$dim" | bc -l)
@@ -98,7 +98,7 @@ Nz=132                        # Number of elements in Z -- 2 Grain
 # Ny=1100                       # Number of elements in Y -- 88 Grain
 # Nz=138                        # Number of elements in Z -- 88 Grain
 
-# Nx=1760                       # Number of elements in X -- 135/165 Grain
+# Nx=1760                  69/     # Number of elements in X -- 135/165 Grain
 # Ny=1760                       # Number of elements in Y -- 135/165 Grain
 # Nz=100                        # Number of elements in Z -- 135/165 Grain
 
@@ -106,13 +106,8 @@ eps=9.28146307269926e-07			# Interface width
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=2*24*60*60           # Final time
-# t_final=1.0e-4                # Final time
-# n_out=500                     # Number of output files
-# n_out=2                       # Number of output files
-t_final=1
-# t_final=48*60*60              # Final time
-n_out=10                     # Number of output files
+t_final=1*60*60               # Final time
+n_out=100                     # Number of output files
 
 
 # Convert scientific notation to decimal using bc
@@ -122,11 +117,11 @@ n_out=$(echo "$n_out" | bc -l)
 
 # Other parameters
 humidity=0.98                 # Relative humidity
-temp=0.5                    # Temperature
+temp=-20.0                    # Temperature
 
 # Initial temperature gradients
 grad_temp0X=0.0               # Initial temperature gradient X
-grad_temp0Y=3.0            # Initial temperature gradient Y
+grad_temp0Y=1.0            # Initial temperature gradient Y
 grad_temp0Z=0.0               # Initial temperature gradient Z
 
 # Convert scientific notation gradients to decimal using bc if needed
