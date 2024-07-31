@@ -477,7 +477,6 @@ PetscErrorCode Jacobian(IGAPoint pnt,
 
         if(user->flag_tIC==1){
 
-
         } else {
         
         //ice
@@ -811,9 +810,9 @@ PetscErrorCode InitialSedGrains(IGA iga,AppCtx *user)
   ierr = PetscRandomDestroy(&randcR);CHKERRQ(ierr);
   if(dim==3) {ierr = PetscRandomDestroy(&randcZ);CHKERRQ(ierr);}
 
-//PetscPrintf(PETSC_COMM_SELF,"before  %.4f %.4f %.4f \n",centX[0],centY[0],radius[0]);
+  //PetscPrintf(PETSC_COMM_SELF,"before  %.4f %.4f %.4f \n",centX[0],centY[0],radius[0]);
 
-//----- communication
+  //----- communication
   for(l=0;l<dim;l++){ierr = MPI_Bcast(centX[l],numb_clust,MPI_DOUBLE,0,PETSC_COMM_WORLD);CHKERRQ(ierr);}
   ierr = MPI_Bcast(radius,numb_clust,MPI_DOUBLE,0,PETSC_COMM_WORLD);CHKERRQ(ierr);
   ierr = MPI_Bcast(&n_act,1,MPI_INT,0,PETSC_COMM_WORLD);CHKERRQ(ierr);
@@ -826,7 +825,7 @@ PetscErrorCode InitialSedGrains(IGA iga,AppCtx *user)
     //PetscPrintf(PETSC_COMM_SELF,"Sed grains: points %.4f %.4f %.4f \n",centX[jj],centY[jj],radius[jj]);
   }
 
-//-------- define the Phi_sed values
+  //-------- define the Phi_sed values
 
   IGAElement element;
   IGAPoint point;

@@ -21,7 +21,7 @@ if [[ -n $1 ]]; then
     echo "Executing python script"
     echo " "
 
-    mkdir $dir/vtuOut
+    mkdir $dir/vtkOut
     mkdir $dir/stlOut
 
     python3.11 ~/SimulationResults/DrySed_Metamorphism/NASAv2/$1/plotNASA.py
@@ -43,7 +43,7 @@ else
     echo "Creating vtkOut and stlOut directories"
     echo " "
     
-    mkdir -p vtuOut
+    mkdir -p vtkOut
     mkdir -p stlOut
 
     python3.11 plotNASA.py
