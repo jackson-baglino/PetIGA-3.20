@@ -1015,7 +1015,42 @@ PetscErrorCode ReadIceGrainData(AppCtx *user, const char *filename)
   if (!file) {
       SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Cannot open ice grain data file");
   }
-  
+
+    PetscInt grainCount = 0;
+    PetscReal x, y, r;
+    while (fscanf(file, "%lf %lf %lf", &x, &y, &r) == 3) 
+    {
+        if (grainCount >= 200) {
+            fclose(file);  // Make sure to close the file before returning
+            SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE, "Exceeds maximum number of grains");
+        }
+        user->cent[0][grainCount] = x;
+        user->cent[1][grainCount] = y;
+        
+        if (dim == 3) {
+          // At some point, come  back and fix this--should be able to read in 
+          // 3D data, need to update MATLAB script
+          // PetscReal z;
+          // fscanf(file, "%lf", &z);
+
+          PetscReal z = user->Lz/2.0;
+
+          user->cent[2][grainCount] = z;
+        }
+        user->radius[grainCount] = r;
+        grainCount++;
+
+        if (rank == 0)
+        {
+          PetscPrintf(PETSC_COMM_WORLD," new ice grain %d!!  x %.2e  y %.2e  r %.2e \n",grainCount,x,y,r);
+        }
+    }
+
+    // Close the file and set number of ice grains
+    fclose(file);
+    user->NCice = grainCount;
+    user->n_act = grainCount;
+    PetscFunctionReturn(0);
 }
 
 

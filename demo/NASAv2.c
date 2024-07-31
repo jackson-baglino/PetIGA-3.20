@@ -1335,7 +1335,8 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
 
     PetscInt grainCount = 0;
     PetscReal x, y, r;
-    while (fscanf(file, "%lf %lf %lf", &x, &y, &r) == 3) {
+    while (fscanf(file, "%lf %lf %lf", &x, &y, &r) == 3) 
+    {
         if (grainCount >= 200) {
             fclose(file);  // Make sure to close the file before returning
             SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE, "Exceeds maximum number of grains");
@@ -1360,11 +1361,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
         {
           PetscPrintf(PETSC_COMM_WORLD," new ice grain %d!!  x %.2e  y %.2e  r %.2e \n",grainCount,x,y,r);
         }
-        
-
     }
-
-
 
     fclose(file);
     user->NCice = grainCount;  // Assuming this is for ice grains
