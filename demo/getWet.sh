@@ -94,13 +94,14 @@ Nz=143                        # Number of elements in Z -- 5 Grain
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=2*24*60*60            # Final time
+# t_final=2*24*60*60            # Final time
+t_final=1                     # Final time
 n_out=10                      # Number of output files
 
 
 # Model parameters
  angl=0                       # contact angle: 0->real  1->120degrees
- aa=0		                      # 1->alpha_j=0
+ aa=0		                      # 1->alpha_j=0 
  mm=0		                      # 1->constant mobility
 
 # Convert scientific notation to decimal using bc
@@ -110,7 +111,7 @@ n_out=$(echo "$n_out" | bc -l)
 
 # Other parameters
 humidity=0.98                 # Relative humidity
-temp=-3.0                    # Temperature
+temp=-1.0                    # Temperature
 
 # Initial temperature gradients
 grad_temp0X=0.0               # Initial temperature gradient X
@@ -122,9 +123,12 @@ grad_temp0X=$(echo "$grad_temp0X" | bc -l)
 grad_temp0Y=$(echo "$grad_temp0Y" | bc -l)
 grad_temp0Z=$(echo "$grad_temp0Z" | bc -l)
 
+# Interface width
+eps=9.28146307269926e-07			# Interface width
+
 # Export variables
 export folder input_dir inputFile Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
-    humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim angl aa mm
+    humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps angl aa mm
 
 
 # Copy files to folder 
@@ -141,7 +145,7 @@ mpiexec -np 12 ./Wetamorphism -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
 -snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000  \
 -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
 -snes_linesearch_type basic | \
-tee /Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/Wetamorphism/outp.txt
+tee /Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/wetamorph/outp.txt
 
 
 # Move output file to folder 

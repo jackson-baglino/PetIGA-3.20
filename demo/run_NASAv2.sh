@@ -5,7 +5,7 @@ echo "compiling"
 echo " "
 make NASAv2
 
-# add name folder accordinglu --------------------------------------------------
+# add name folder accordingly --------------------------------------------------
 title=getWet_GEOM_DIM_TIME
 name=$title_$(date +%Y-%m-%d__%H.%M.%S)
 dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2
@@ -31,7 +31,7 @@ inputFile=$input_dir"grainReadFile-2.dat"
 
 # Define simulation parameters -------------------------------------------------
 # Define dimensions
-dim=3
+dim=2
 
 # Converty scientic notation to decimal using bc if needed
 dim=$(echo "$dim" | bc -l)
@@ -99,7 +99,7 @@ Nz=132                        # Number of elements in Z -- 2 Grain
 # Ny=1100                       # Number of elements in Y -- 88 Grain
 # Nz=138                        # Number of elements in Z -- 88 Grain
 
-# Nx=1760                  69/     # Number of elements in X -- 135/165 Grain
+# Nx=1760                       # Number of elements in X -- 135/165 Grain
 # Ny=1760                       # Number of elements in Y -- 135/165 Grain
 # Nz=100                        # Number of elements in Z -- 135/165 Grain
 

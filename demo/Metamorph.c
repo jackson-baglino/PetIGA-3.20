@@ -11,19 +11,16 @@ typedef struct {
   PetscReal mob_sol,mob_sub,mob_eva,mav,Etai,Etaw,Etaa,alph_sol,alph_sub,alph_eva,Lambd;
   PetscReal thcond_ice,thcond_wat,thcond_air,cp_ice,cp_wat,cp_air,rho_ice,rho_wat,rho_air,dif_vap,lat_sol,lat_sub;
   PetscReal phi_L,air_lim,xi_v,xi_T;
-  PetscReal T_melt,temp0, hum0, grad_temp0[3],tem_nucl,temp_m_ampl,temp_m_fre,costhet;
-  PetscReal Lx,Ly,Lz,Nx,Ny,Nz;
+  PetscReal T_melt,temp0,grad_temp0[2],tem_nucl,temp_m_ampl,temp_m_fre,costhet;
+  PetscReal Lx,Ly,Nx,Ny;
   PetscReal norm0_0,norm0_1,norm0_2,norm0_3;
-  PetscInt  flag_it0, flag_tIC, outp, nsteps_IC,flag_xiT,flag_contang,readFlag;
+  PetscInt  flag_it0, flag_tIC, outp, nsteps_IC,flag_xiT,flag_contang;
   PetscInt  xiT_count;
-  PetscInt  p,C, periodic,BC_Tfix,BC_Tvar,dim;
+  PetscInt  p,C, periodic,BC_Tfix,BC_Tvar;
   PetscReal t_out,t_interv,t_IC;
   PetscInt  *FlagMob;
   PetscInt  NCice, n_act, seed;
-  PetscReal cent[3][200], radius[200], overl, RCice, RCice_dev;
-
-  const char *inputFile;
-
+  PetscReal cent[2][200], radius[200], overl, RCice, RCice_dev;
 } AppCtx;
 
 PetscErrorCode SNESDOFConvergence(SNES snes,PetscInt it_number,PetscReal xnorm,PetscReal gnorm,PetscReal fnorm,SNESConvergedReason *reason,void *cctx)
@@ -772,7 +769,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscInt ii,act;
   if(step % 1 == 0) {
     Vec localU;
-    const PetscScalar *arrayU; 
+    const PetscScalar *arrayU;
     IGAElement element;
     IGAPoint point;
     PetscScalar *UU;
@@ -915,7 +912,7 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,void *mctx
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode RandomIceGrains(IGA iga,AppCtx *user)
+PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
 {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -1003,90 +1000,9 @@ PetscErrorCode RandomIceGrains(IGA iga,AppCtx *user)
 }
 
 
-PetscErrorCode ReadIceGrainData(AppCtx *user) 
-{
-  // Begin function
-  PetscFunctionBegin;
-
-  PetscInt rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-  PetscPrintf(PETSC_COMM_WORLD,"--------------------- ICE GRAINS --------------------------\n");
-
-  // Intialize variables
-  const char *filename = user->inputFile;
-
-  PetscPrintf(PETSC_COMM_WORLD,"Reading ice grain data from file %s\n", filename);
-
-  FILE *file = fopen(filename, "r");
-
-  // Read the file containing the ice grain data
-  if (!file) {
-      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Cannot open ice grain data file");
-  }
-
-    PetscInt grainCount = 0;
-    PetscReal x, y, r;
-    while (fscanf(file, "%lf %lf %lf", &x, &y, &r) == 3) 
-    {
-        if (grainCount >= 200) {
-            fclose(file);  // Make sure to close the file before returning
-            SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE, "Exceeds maximum number of grains");
-        }
-        user->cent[0][grainCount] = x;
-        user->cent[1][grainCount] = y;
-        
-        if (user->dim == 3) {
-          // At some point, come  back and fix this--should be able to read in 
-          // 3D data, need to update MATLAB script
-          // PetscReal z;
-          // fscanf(file, "%lf", &z);
-          PetscReal z = user->Lz/2.0;
-          user->cent[2][grainCount] = z;
-        }
-
-        // Set the radius of the ice grain
-        user->radius[grainCount] = r;
-        grainCount++;
-
-        if (rank==0)
-        {
-          PetscPrintf(PETSC_COMM_WORLD," new ice grain %d!!  x %.2e  y %.2e  r %.2e \n",grainCount,x,y,r);
-        }
-    }
-
-    // Close the file and set number of ice grains
-    fclose(file);
-    user->NCice = grainCount;
-    user->n_act = grainCount;
-    PetscFunctionReturn(0);
-}
-
-
-PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
-{
-  // Begin function
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-
-  // Determine if ice grains are random or read
-  if (user->readFlag==1)
-  {
-   ierr = ReadIceGrainData(user);CHKERRQ(ierr);
-
-  } else if(user->readFlag==0){ 
-    ierr = RandomIceGrains(iga,user);CHKERRQ(ierr);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "ERROR, NO ICE GRAINS DEFINED \n");
-  }
-
-  PetscFunctionReturn(0);  
-}
-
-
 typedef struct {
   PetscScalar ice,air,tem,rhov;
 } Field;
-
 
 PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const char datafile[],const char dataPF[])
 {
@@ -1146,7 +1062,7 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
         u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
         PetscScalar rho_vs, temp=u[j][i].tem;
         RhoVS_I(user,temp,&rho_vs,NULL);
-        u[j][i].rhov = user->hum0*rho_vs;
+        u[j][i].rhov = rho_vs;
       }
     }
     ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
@@ -1173,7 +1089,7 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
         //PetscReal lef_ver = 0.5 - 0.5*tanh(0.5/user->eps*(x-0.5*user->Lx));
         //PetscReal rig_ver = 0.5 - 0.5*tanh(0.5/user->eps*(x-0.5*user->Lx));
 
-   /*  	PetscReal xc[4],yc[4],Rc[4],arg, ice=0.0, wat=0.0;
+ /*     	PetscReal xc[4],yc[4],Rc[4],arg, ice=0.0, wat=0.0;
       	xc[0]=6.5e-5 ; yc[0]=7.0e-5 ; Rc[0]=4.2e-5 ;
       	xc[1]=1.35e-4 ; yc[1]=6.5e-5 ; Rc[1]=2.7e-5 ;
       	xc[2]=1.2e-4 ; yc[2]=1.23e-4 ; Rc[2]=3.2e-5 ;
@@ -1184,7 +1100,7 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
 	  arg = sqrt(SQ(x-xc[m])+SQ(y-yc[m]))-Rc[m];
 	  wat += 0.5-0.5*tanh(0.5/user->eps*arg);
       	}
-  */
+*/
 	PetscReal dist, small=0.0, big=0.0, alp_i=0.0, alp_e=0.16;
 	for(m=0;m<user->n_act;m++){
 	   dist=sqrt(SQ(x-user->cent[0][m])+SQ(y-user->cent[1][m]));
@@ -1202,7 +1118,7 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
         u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
         PetscScalar rho_vs, temp=u[j][i].tem;
         RhoVS_I(user,temp,&rho_vs,NULL);
-        u[j][i].rhov = user->hum0*rho_vs;
+        u[j][i].rhov = rho_vs;
       }
     }
     ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
@@ -1231,14 +1147,17 @@ int main(int argc, char *argv[]) {
   PetscReal d0_sub, d0_eva, beta_sub, beta_eva;
   d0_sub = d0_sub0/rho_rhovs; d0_eva = d0_eva0/rho_rhovs; beta_sub = beta_sub0/rho_rhovs; beta_eva = beta_eva0/rho_rhovs;
 
+  PetscInt angle = 0; // 0:real,  1:120deg,
+  PetscInt mmm   = 0; // 1 if constant mobility
+  PetscInt aaa   = 0; // 1 if no alpha (sol,sub,eva)
+
   user.xi_v       = 1.0e-3; //can be used safely all time
   user.xi_T       = 1.0e-2;
   user.flag_xiT   = 0;
   user.flag_it0   = 1; 
   user.flag_tIC   = 0;
-  user.readFlag   = 0;
 
-  // user.eps        = 2.0e-7;
+  user.eps        = 2.0e-7;
   user.nucleat    = 2.5;//5.0e6;
   user.Lambd      = 1.0;
   user.air_lim    = 1.0e-6;
@@ -1279,112 +1198,15 @@ int main(int argc, char *argv[]) {
   user.alph_sub   = lambda_sub/tau_sub;
   user.alph_eva   = lambda_eva/tau_eva; 
 
-  // Initialize all envorinment variables
-  PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");
+  const char *env1 = "angl"; const char *env2 = "aa"; const char *env3 = "mm";
+  char *angl1, *aa1, *mm1; 
+  angl1 = getenv(env1); aa1 = getenv(env2); mm1 = getenv(env3);
+  angle = atoi(angl1); aaa = atoi(aa1); mmm = atoi(mm1);
+  PetscPrintf(PETSC_COMM_WORLD,"Options: angle:%d alph:%d mobil:%d \n",angle,aaa,mmm);
 
-  const char *inputFile        = getenv("inputFile");
-
-  const char *Nx_str          = getenv("Nx");
-  const char *Ny_str          = getenv("Ny");
-  const char *Nz_str          = getenv("Nz");
-
-  const char *Lx_str          = getenv("Lx");
-  const char *Ly_str          = getenv("Ly");
-  const char *Lz_str          = getenv("Lz");
-
-  const char *delt_t_str      = getenv("delt_t");
-  const char *t_final_str     = getenv("t_final");
-  const char *n_out_str       = getenv("n_out");
-
-  const char *humidity_str    = getenv("humidity");
-  const char *temp_str        = getenv("temp");
-
-  const char *grad_temp0X_str = getenv("grad_temp0X");
-  const char *grad_temp0Y_str = getenv("grad_temp0Y");
-  const char *grad_temp0Z_str = getenv("grad_temp0Z");
-
-  const char *dim_str         = getenv("dim");
-	
-	const char *eps_str 				= getenv("eps");
-
-  const char *angle_str        = getenv("angl");
-  const char *aa_str           = getenv("aa");
-  const char *mm_str           = getenv("mm");
-
-  if (!Nx_str || !Ny_str || !Nz_str || !Lx_str || !Ly_str || !Lz_str || 
-      !delt_t_str || !t_final_str || !humidity_str || !temp_str || 
-      !grad_temp0X_str || !grad_temp0Y_str || !grad_temp0Z_str || !dim_str || 
-      !eps_str || !angle_str || !aa_str || !mm_str || !inputFile) {
-      PetscPrintf(PETSC_COMM_WORLD, "Error: One or more environment variables are not set.\n");
-      PetscFinalize();
-      return EXIT_FAILURE;
-  } else {
-      PetscPrintf(PETSC_COMM_WORLD, "Environment variables successfully set.\n");
-      PetscPrintf(PETSC_COMM_WORLD, "inputFile: %s\n", inputFile);
-      PetscPrintf(PETSC_COMM_WORLD, "Nx: %s\n", Nx_str);
-      PetscPrintf(PETSC_COMM_WORLD, "Ny: %s\n", Ny_str);
-      PetscPrintf(PETSC_COMM_WORLD, "Nz: %s\n", Nz_str);
-      PetscPrintf(PETSC_COMM_WORLD, "Lx: %s\n", Lx_str);
-      PetscPrintf(PETSC_COMM_WORLD, "Ly: %s\n", Ly_str);
-      PetscPrintf(PETSC_COMM_WORLD, "Lz: %s\n", Lz_str);
-      PetscPrintf(PETSC_COMM_WORLD, "delt_t: %s\n", delt_t_str);
-      PetscPrintf(PETSC_COMM_WORLD, "t_final: %s\n", t_final_str);
-      PetscPrintf(PETSC_COMM_WORLD, "n_out: %s\n", n_out_str);
-      PetscPrintf(PETSC_COMM_WORLD, "humidity: %s\n", humidity_str);
-      PetscPrintf(PETSC_COMM_WORLD, "temp: %s\n", temp_str);
-      PetscPrintf(PETSC_COMM_WORLD, "grad_temp0X: %s\n", grad_temp0X_str);
-      PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %s\n", grad_temp0Y_str);
-      PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Z: %s\n", grad_temp0Z_str);
-      PetscPrintf(PETSC_COMM_WORLD, "dim: %s\n", dim_str);
-      PetscPrintf(PETSC_COMM_WORLD, "eps: %s\n", eps_str);
-      PetscPrintf(PETSC_COMM_WORLD, "angle: %s\n", angle_str);
-      PetscPrintf(PETSC_COMM_WORLD, "aa: %s\n", aa_str);
-      PetscPrintf(PETSC_COMM_WORLD, "mm: %s\n", mm_str);
-  }
-
-  char *endptr;
-  PetscInt Nx          = strtod(Nx_str, &endptr);
-  PetscInt Ny          = strtod(Ny_str, &endptr);
-  PetscInt Nz          = strtod(Nz_str, &endptr);
-
-  PetscReal Lx          = strtod(Lx_str, &endptr);
-  PetscReal Ly          = strtod(Ly_str, &endptr);
-  PetscReal Lz          = strtod(Lz_str, &endptr);
-
-  PetscReal delt_t      = strtod(delt_t_str, &endptr);
-  PetscReal t_final     = strtod(t_final_str, &endptr);
-  PetscInt n_out        = strtod(n_out_str, &endptr);
-
-  PetscReal humidity    = strtod(humidity_str, &endptr);
-  PetscReal temp        = strtod(temp_str, &endptr);
-
-  PetscReal grad_temp0X = strtod(grad_temp0X_str, &endptr);
-  PetscReal grad_temp0Y = strtod(grad_temp0Y_str, &endptr);
-  PetscReal grad_temp0Z = strtod(grad_temp0Z_str, &endptr);
-
-  PetscInt dim          = strtod(dim_str, &endptr);
-  
-	PetscReal eps         = strtod(eps_str, &endptr);
-
-  PetscReal angle       = strtod(angle_str, &endptr);
-  PetscReal aaa         = strtod(aa_str, &endptr);
-  PetscReal mmm         = strtod(mm_str, &endptr);
-
-  // Set inputFile to user
-  user.inputFile = inputFile;
-
-  // Verify that conversion was successful
-  if (*endptr != '\0') {
-      PetscPrintf(PETSC_COMM_WORLD, "Error: One or more environment variables contain invalid values.\n");
-      PetscFinalize();
-      return EXIT_FAILURE;
-  }
-
-  // Assign mobilities and kinetic parameters based on flags
   if(mmm==1) user.mob_sol=user.mob_sub=user.mob_eva=user.mav;
   if(aaa==1) user.alph_sol = user.alph_sub = user.alph_eva = 0.0;
 
-  // Assign contact angle based on flags
   if(angle==1) gamma_iv = gamma_iw = gamma_wv; // 120 degrees
   user.Etai       = gamma_iv + gamma_iw - gamma_wv;
   user.Etaw       = gamma_wv + gamma_iw - gamma_iv;
@@ -1395,16 +1217,15 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"EVAPO: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n",tau_eva,lambda_eva,user.mob_eva,user.alph_eva);
 
 //ice grains
-  user.NCice      = 2;//9; //less than 200, otherwise update in user
+  user.NCice      = 35;//9; //less than 200, otherwise update in user
   user.RCice      = 0.2e-4;//0.18e-4;
   user.RCice_dev  = 0.5;
   user.overl      = 0.9;
   user.seed       = 108;//129;
 
   //initial conditions
-  user.hum0       = humidity;
-  user.temp0      = temp;
-  user.grad_temp0[0] = grad_temp0X;     user.grad_temp0[1] = grad_temp0Y;    user.grad_temp0[2] = grad_temp0Z;
+  user.temp0      = 0.0;
+  user.grad_temp0[0] = 0.0;     user.grad_temp0[1] = 0.0;
 
   //boundary conditions : "periodic" >> "fixed-T" >> "variable-T"
   user.BC_Tfix      = 1;    //fixed T on boundary
@@ -1418,19 +1239,18 @@ int main(int argc, char *argv[]) {
   user.costhet = 0.0; // wall-wat wall-ice contact angle; activate flag_contan; (sin, not cos)
 
   //domain and mesh characteristics
-  PetscInt  p=1, C=0; //, dim=2;
+  PetscReal Lx=0.2e-3, Ly=0.2e-3;
+  PetscInt  Nx=800, Ny=800;
+  PetscInt  p=1, C=0, dim=2;
+  user.Lx=Lx; user.Ly=Ly; user.Nx=Nx; user.Ny=Ny;
   user.p=p; user.C=C;
-  user.Lx=Lx; user.Ly=Ly; user.Lz=Lz;
-  user.Nx=Nx; user.Ny=Ny; user.Nz=Nz;
-  user.eps = eps;
 
   //time stepping
-  // PetscReal delt_t = 1.0e-5;
-  // PetscReal t_final = 262.0;
-
+  PetscReal delt_t = 1.0e-5;
+  PetscReal t_final = 262.0;
   //output
-  user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0;    user.t_interv = t_final/(n_out-1); //output every t_interv
+  user.outp = 0;    //--------------------- if !=0 : output save every 'outp'
+  user.t_out = 0.0;    user.t_interv = 1.0;
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 4;

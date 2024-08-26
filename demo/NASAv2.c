@@ -1344,7 +1344,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
         user->cent[0][grainCount] = x;
         user->cent[1][grainCount] = y;
         
-        if (dim == 3) {
+        if (user->dim==3) {
           // At some point, come  back and fix this--should be able to read in 
           // 3D data, need to update MATLAB script
           // PetscReal z;
@@ -1368,9 +1368,8 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     user->n_act = grainCount;
     PetscFunctionReturn(0);
 
-  }
-  else
-  { // Generate ice grains
+  } else { 
+    // Generate ice grains
     PetscPrintf(PETSC_COMM_WORLD,"Generating ice grains\n\n\n");
     if(user->NCice==0) {
       user->n_act = 0;

@@ -3,6 +3,7 @@ NASA \
 NASAv2 \
 NASA_panda \
 Wetamorphism \
+Metamorph \
 localGrains \
 Solid3ph_flow \
 Carbon \
@@ -57,6 +58,9 @@ NASA_panda: NASA_panda.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 Wetamorphism: Wetamorphism.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+Metamorph: Metamorph.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 localGrains: localGrains.o
