@@ -31,7 +31,7 @@ inputFile=$input_dir"grainReadFile-2.dat"
 
 # Define simulation parameters -------------------------------------------------
 # Define dimensions
-dim=2
+dim=3
 
 # Converty scientic notation to decimal using bc if needed
 dim=$(echo "$dim" | bc -l)
