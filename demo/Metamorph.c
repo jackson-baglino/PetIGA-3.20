@@ -12,7 +12,7 @@ typedef struct {
   PetscReal thcond_ice,thcond_wat,thcond_air,cp_ice,cp_wat,cp_air,rho_ice,rho_wat,rho_air,dif_vap,lat_sol,lat_sub;
   PetscReal phi_L,air_lim,xi_v,xi_T;
   PetscReal T_melt,temp0,grad_temp0[2],tem_nucl,temp_m_ampl,temp_m_fre,costhet;
-  PetscReal Lx,Ly,Nx,Ny;
+  PetscReal Lx,Ly,Lz,Nx,Ny,Nz;
   PetscReal norm0_0,norm0_1,norm0_2,norm0_3;
   PetscInt  flag_it0, flag_tIC, outp, nsteps_IC,flag_xiT,flag_contang;
   PetscInt  xiT_count;
@@ -1144,9 +1144,180 @@ int main(int argc, char *argv[]) {
   PetscReal d0_sub, d0_eva, beta_sub, beta_eva;
   d0_sub = d0_sub0/rho_rhovs; d0_eva = d0_eva0/rho_rhovs; beta_sub = beta_sub0/rho_rhovs; beta_eva = beta_eva0/rho_rhovs;
 
-  PetscInt angle = 0; // 0:real,  1:120deg,
-  PetscInt mmm   = 0; // 1 if constant mobility
-  PetscInt aaa   = 0; // 1 if no alpha (sol,sub,eva)
+  // PetscInt angle = 0; // 0:real,  1:120deg,
+  // PetscInt mmm   = 0; // 1 if constant mobility
+  // PetscInt aaa   = 0; // 1 if no alpha (sol,sub,eva)
+
+// Import all environmnetal variables
+  PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");
+
+  const char *angle_str       = getenv("angl");
+  const char *mmm_str         = getenv("mm");
+  const char *aaa_str         = getenv("aa");
+
+  const char *Nx_str          = getenv("Nx");
+  const char *Ny_str          = getenv("Ny");
+  const char *Nz_str          = getenv("Nz");
+
+  const char *Lx_str          = getenv("Lx");
+  const char *Ly_str          = getenv("Ly");
+  const char *Lz_str          = getenv("Lz");
+
+  const char *delt_t_str      = getenv("delt_t");
+  const char *t_final_str     = getenv("t_final");
+  const char *n_out_str       = getenv("n_out");
+
+  const char *temp_str        = getenv("temp");
+
+  const char *grad_temp0X_str = getenv("grad_temp0X");
+  const char *grad_temp0Y_str = getenv("grad_temp0Y");
+  const char *grad_temp0Z_str = getenv("grad_temp0Z");
+
+  const char *dim_str         = getenv("dim");
+	
+	const char *eps_str 				= getenv("eps");
+	
+  // Verify that all environment variables are set
+  if (!angle_str) {
+    PetscPrintf(PETSC_COMM_WORLD, "Error: angl environment variable is not set.\n");
+    PetscFinalize();
+    return EXIT_FAILURE;
+  } else if (!mmm_str) {
+    PetscPrintf(PETSC_COMM_WORLD, "Error: mm environment variable is not set.\n");
+    PetscFinalize();
+    return EXIT_FAILURE;
+  } else if (!aaa_str) {
+    PetscPrintf(PETSC_COMM_WORLD, "Error: aa environment variable is not set.\n");
+    PetscFinalize();
+    return EXIT_FAILURE;
+  } else if (!Nx_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: Nx_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!Ny_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: Ny_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!Nz_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: Nz_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!Lx_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: Lx_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!Ly_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: Ly_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!Lz_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: Lz_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!delt_t_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: delt_t_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!t_final_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: t_final_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!temp_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: temp_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!grad_temp0X_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: grad_temp0X_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!grad_temp0Y_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: grad_temp0Y_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!grad_temp0Z_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: grad_temp0Z_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!dim_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: dim_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  } else if (!eps_str) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: eps_str environment variable is not set.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  }
+
+  // Convert environment variables to appropriate types
+  char *endptr;
+  PetscInt angle       = strtod(angle_str, &endptr);
+  PetscInt mmm         = strtod(mmm_str, &endptr);
+  PetscInt aaa         = strtod(aaa_str, &endptr);
+
+  PetscInt Nx          = strtod(Nx_str, &endptr);
+  PetscInt Ny          = strtod(Ny_str, &endptr);
+  PetscInt Nz          = strtod(Nz_str, &endptr);
+
+  PetscReal Lx          = strtod(Lx_str, &endptr);
+  PetscReal Ly          = strtod(Ly_str, &endptr);
+  PetscReal Lz          = strtod(Lz_str, &endptr);
+
+  PetscReal delt_t      = strtod(delt_t_str, &endptr);
+  PetscReal t_final     = strtod(t_final_str, &endptr);
+  PetscInt n_out        = strtod(n_out_str, &endptr);
+
+  // PetscReal humidity    = strtod(humidity_str, &endptr);
+  PetscReal temp        = strtod(temp_str, &endptr);
+
+  PetscReal grad_temp0X = strtod(grad_temp0X_str, &endptr);
+  PetscReal grad_temp0Y = strtod(grad_temp0Y_str, &endptr);
+  PetscReal grad_temp0Z = strtod(grad_temp0Z_str, &endptr);
+
+  PetscInt dim          = strtod(dim_str, &endptr);
+  
+	PetscReal eps         = strtod(eps_str, &endptr);
+
+  // Verify that conversion was successful
+  if (*endptr != '\0') {
+      PetscPrintf(PETSC_COMM_WORLD, "Error: One or more environment variables contain invalid values.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  }
+
+  // Print out the environment variables
+  PetscPrintf(PETSC_COMM_WORLD, "Environment variables successfully set.\n");
+  PetscPrintf(PETSC_COMM_WORLD, "angle: %d\n", angle);
+  PetscPrintf(PETSC_COMM_WORLD, "mmm: %d\n", mmm);
+  PetscPrintf(PETSC_COMM_WORLD, "aaa: %d\n", aaa);
+  PetscPrintf(PETSC_COMM_WORLD, "Nx: %d\n", Nx);
+  PetscPrintf(PETSC_COMM_WORLD, "Ny: %d\n", Ny);
+  PetscPrintf(PETSC_COMM_WORLD, "Nz: %d\n", Nz);
+  PetscPrintf(PETSC_COMM_WORLD, "Lx: %f\n", Lx);
+  PetscPrintf(PETSC_COMM_WORLD, "Ly: %f\n", Ly);
+  PetscPrintf(PETSC_COMM_WORLD, "Lz: %f\n", Lz);
+  PetscPrintf(PETSC_COMM_WORLD, "delt_t: %f\n", delt_t);
+  PetscPrintf(PETSC_COMM_WORLD, "t_final: %f\n", t_final);
+  PetscPrintf(PETSC_COMM_WORLD, "temp: %f\n", user.temp0);
+  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0X: %f\n", user.grad_temp0[0]);
+  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %f\n", user.grad_temp0[1]);
+  PetscPrintf(PETSC_COMM_WORLD, "dim: %d\n", dim);
+  PetscPrintf(PETSC_COMM_WORLD, "eps: %e\n", eps);
+
+  // Assign necessary variables to user struct
+  user.Nx = Nx;
+  user.Ny = Ny;
+  user.Nz = Nz;
+
+  user.Lx = Lx;
+  user.Ly = Ly;
+  user.Lz = Lz;
+
+  user.temp0 = temp;
+  user.grad_temp0[0] = grad_temp0X;
+  user.grad_temp0[1] = grad_temp0Y;
+
+  user.eps = eps;
+
 
   user.xi_v       = 1.0e-3; //can be used safely all time
   user.xi_T       = 1.0e-2;
@@ -1154,7 +1325,7 @@ int main(int argc, char *argv[]) {
   user.flag_it0   = 1; 
   user.flag_tIC   = 0;
 
-  user.eps        = 2.0e-7;
+  // user.eps        = 2.0e-7;
   user.nucleat    = 2.5;//5.0e6;
   user.Lambd      = 1.0;
   user.air_lim    = 1.0e-6;
@@ -1195,11 +1366,11 @@ int main(int argc, char *argv[]) {
   user.alph_sub   = lambda_sub/tau_sub;
   user.alph_eva   = lambda_eva/tau_eva; 
 
-  const char *env1 = "angl"; const char *env2 = "aa"; const char *env3 = "mm";
-  char *angl1, *aa1, *mm1; 
-  angl1 = getenv(env1); aa1 = getenv(env2); mm1 = getenv(env3);
-  angle = atoi(angl1); aaa = atoi(aa1); mmm = atoi(mm1);
-  PetscPrintf(PETSC_COMM_WORLD,"Options: angle:%d alph:%d mobil:%d \n",angle,aaa,mmm);
+  // const char *env1 = "angl"; const char *env2 = "aa"; const char *env3 = "mm";
+  // char *angl1, *aa1, *mm1; 
+  // angl1 = getenv(env1); aa1 = getenv(env2); mm1 = getenv(env3);
+  // angle = atoi(angl1); aaa = atoi(aa1); mmm = atoi(mm1);
+  // PetscPrintf(PETSC_COMM_WORLD,"Options: angle:%d alph:%d mobil:%d \n",angle,aaa,mmm);
 
   if(mmm==1) user.mob_sol=user.mob_sub=user.mob_eva=user.mav;
   if(aaa==1) user.alph_sol = user.alph_sub = user.alph_eva = 0.0;
@@ -1220,10 +1391,6 @@ int main(int argc, char *argv[]) {
   user.overl      = 0.9;
   user.seed       = 108;//129;
 
-  //initial conditions
-  user.temp0      = 0.0;
-  user.grad_temp0[0] = 0.0;     user.grad_temp0[1] = 0.0;
-
   //boundary conditions : "periodic" >> "fixed-T" >> "variable-T"
   user.BC_Tfix      = 1;    //fixed T on boundary
   user.BC_Tvar      = 0;    //variable T on boundary
@@ -1236,18 +1403,19 @@ int main(int argc, char *argv[]) {
   user.costhet = 0.0; // wall-wat wall-ice contact angle; activate flag_contan; (sin, not cos)
 
   //domain and mesh characteristics
-  PetscReal Lx=0.2e-3, Ly=0.2e-3;
-  PetscInt  Nx=800, Ny=800;
-  PetscInt  p=1, C=0, dim=2;
-  user.Lx=Lx; user.Ly=Ly; user.Nx=Nx; user.Ny=Ny;
+  PetscInt  p=1, C=0;
   user.p=p; user.C=C;
 
+  //initial conditions
+  // user.temp0      = temp;
+  // user.grad_temp0[0] = grad_temp0X;
+  // user.grad_temp0[1] = grad_temp0Y;
+  // user.grad_temp0[2] = grad_temp0Z;
+
   //time stepping
-  PetscReal delt_t = 1.0e-5;
-  PetscReal t_final = 262.0;
   //output
   user.outp = 0;    //--------------------- if !=0 : output save every 'outp'
-  user.t_out = 0.0;    user.t_interv = 1.0;
+  user.t_out = 0.0;  user.t_interv = t_final/(n_out-1); //output every t_interv
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 4;

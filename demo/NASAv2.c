@@ -1788,8 +1788,7 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
-  // user.eps        = 9.1e-7;  // 2.0e-7;       //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
-// 	user.eps				= eps;
+  // user.eps        = 9.1e-7;      //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
 	user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;

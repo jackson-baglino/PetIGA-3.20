@@ -18,6 +18,8 @@ mkdir $folder/
 
 # Define variable names to be exported -----------------------------------------
   # File names
+  input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
+  inputFile=$input_dir"grainReadFile-2.dat"
 
   # Simulation parameters
   angl=0                      # contact angle: 0->real  1->120degrees
@@ -25,13 +27,46 @@ mkdir $folder/
   mm=0		                    # 1->constant mobility
 
   # Define domain sizes
+  dim=2
+
+  Lx=0.2e-3                      # Domain size X -- TEST
+  Ly=0.2e-3                      # Domain size Y -- TEST
+  Lz=0.2e-3                      # Domain size Z -- TEST
 
   # Number of elements
+  Nx=800                        # Number of elements in X -- TEST
+  Ny=800                        # Number of elements in Y -- TEST
+  Nz=132                        # Number of elements in Z -- TEST
 
   # Define simulation parameters
+  eps=2.0e-07	              		# Interface width
+
+  temp=0.0                      # Temperature
+
+  grad_temp0X=0.0               # Initial temperature gradient X
+  grad_temp0Y=0.0               # Initial temperature gradient Y
+  grad_temp0Z=0.0               # Initial temperature gradient Z
+
+  delt_t=1.0e-5                 # Time step
+  t_final=1e-4                  # Final time
+  n_out=10                      # Number of output files
+
+  # Convert the necessary variables to scientific notation
+  Lx=$(echo "$Lx" | bc -l)
+  Ly=$(echo "$Ly" | bc -l)
+  Lz=$(echo "$Lz" | bc -l)
+
+  grad_temp0X=$(echo "$grad_temp0X" | bc -l)
+  grad_temp0Y=$(echo "$grad_temp0Y" | bc -l)
+  grad_temp0Z=$(echo "$grad_temp0Z" | bc -l)
+
+  delt_t=$(echo "$delt_t" | bc -l)
+  t_final=$(echo "$t_final" | bc -l)
+  n_out=$(echo "$n_out" | bc -l)
 
   # Export variables
-  export folder angl aa mm
+  export folder angl aa mm input_dir inputFile Lx Ly Lz Nx Ny Nz delt_t \
+    t_final n_out temp grad_temp0X grad_temp0Y grad_temp0Z dim eps
 
 
 # Copy files to folder
