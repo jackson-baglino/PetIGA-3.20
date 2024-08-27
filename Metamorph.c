@@ -857,6 +857,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
   if(step % 2 == 0) {
     const char *env = "folder"; char *dir; dir = getenv(env);
+    //char dir[256]; sprintf(dir,"/Users/amoure/Simulation_results/metamorph_results");
     char  filedata[256];
     sprintf(filedata,"%s/Data.dat",dir);
     PetscViewer       view;
@@ -881,6 +882,7 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,void *mctx
   if(step==0) {
    
     const char *env = "folder"; char *dir; dir = getenv(env);
+    //char dir[256]; sprintf(dir,"/Users/amoure/Simulation_results/metamorph_results");
     char  fileiga[256],  filename[256];
     PetscPrintf(PETSC_COMM_WORLD,"folder %s \n",dir);
     sprintf(fileiga,"%s/igasol.dat",dir);
@@ -902,6 +904,7 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,void *mctx
     user->t_out += user->t_interv;
 
     const char *env = "folder"; char *dir; dir = getenv(env);
+    //char dir[256]; sprintf(dir,"/Users/amoure/Simulation_results/metamorph_results");
     char   filename[256];
     sprintf(filename,"%s/sol%d.dat",dir,step);
     ierr = IGAWriteVec(user->iga,U,filename);CHKERRQ(ierr);

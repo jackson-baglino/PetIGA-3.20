@@ -6,8 +6,8 @@ echo " "
 make NASAv2
 
 # add name folder accordingly --------------------------------------------------
-title=getWet_GEOM_DIM_TIME
-name=$title_$(date +%Y-%m-%d__%H.%M.%S)
+title=dry_2G_2D_24h_
+name=$title$(date +%Y-%m-%d__%H.%M.%S)
 dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2
 folder=$dir/$name
 
@@ -107,8 +107,8 @@ eps=9.28146307269926e-07			# Interface width
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=24*60*60               # Final time
-n_out=100                     # Number of output files
+t_final=12*7*24*60*60               # Final time
+n_out=1000                     # Number of output files
 
 
 # Convert scientific notation to decimal using bc
@@ -148,16 +148,11 @@ echo " "
 mpiexec -np 12 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
 -snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000  \
 -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
--snes_linesearch_type basic | \
-tee /Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/outp.txt
+-snes_linesearch_type basic | tee $folder/outp.txt
 
 
 # ------------------------------------------------------------------------------ 
 # Move output file to folder ---------------------------------------------------
-echo " "
-echo "making directory" $folder
-echo " "
-
 mv $dir/outp.txt $folder
 cp NASAv2.c $folder
 cp run_plotNASAv2.sh $folder
