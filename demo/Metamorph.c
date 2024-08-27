@@ -11,7 +11,7 @@ typedef struct {
   PetscReal mob_sol,mob_sub,mob_eva,mav,Etai,Etaw,Etaa,alph_sol,alph_sub,alph_eva,Lambd;
   PetscReal thcond_ice,thcond_wat,thcond_air,cp_ice,cp_wat,cp_air,rho_ice,rho_wat,rho_air,dif_vap,lat_sol,lat_sub;
   PetscReal phi_L,air_lim,xi_v,xi_T;
-  PetscReal T_melt,temp0,grad_temp0[2],tem_nucl,temp_m_ampl,temp_m_fre,costhet;
+  PetscReal T_melt,temp0,grad_temp0[3],tem_nucl,temp_m_ampl,temp_m_fre,costhet;
   PetscReal Lx,Ly,Lz,Nx,Ny,Nz;
   PetscReal norm0_0,norm0_1,norm0_2,norm0_3;
   PetscInt  flag_it0, flag_tIC, outp, nsteps_IC,flag_xiT,flag_contang;
@@ -21,6 +21,7 @@ typedef struct {
   PetscInt  *FlagMob;
   PetscInt  NCice, n_act, seed;
   PetscReal cent[2][200], radius[200], overl, RCice, RCice_dev;
+  PetscInt  dim;
 } AppCtx;
 
 PetscErrorCode SNESDOFConvergence(SNES snes,PetscInt it_number,PetscReal xnorm,PetscReal gnorm,PetscReal fnorm,SNESConvergedReason *reason,void *cctx)
@@ -925,7 +926,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
   PetscReal rad = user->RCice;
   PetscReal rad_dev = user->RCice_dev;
   PetscInt  numb_clust = user->NCice, ii,jj,tot=10000;
-  PetscInt  l, dim=2, n_act=0,flag,seed=user->seed;
+  PetscInt  l, dim=user->dim, n_act=0,flag,seed=user->seed;
 
   PetscReal centX[dim][numb_clust], radius[numb_clust];
   PetscRandom randcX,randcY,randcR;
@@ -1300,6 +1301,7 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD, "temp: %f\n", user.temp0);
   PetscPrintf(PETSC_COMM_WORLD, "grad_temp0X: %f\n", user.grad_temp0[0]);
   PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %f\n", user.grad_temp0[1]);
+  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Z: %f\n", user.grad_temp0[2]);
   PetscPrintf(PETSC_COMM_WORLD, "dim: %d\n", dim);
   PetscPrintf(PETSC_COMM_WORLD, "eps: %e\n", eps);
 
@@ -1313,11 +1315,13 @@ int main(int argc, char *argv[]) {
   user.Lz = Lz;
 
   user.temp0 = temp;
+
   user.grad_temp0[0] = grad_temp0X;
   user.grad_temp0[1] = grad_temp0Y;
+  user.grad_temp0[2] = grad_temp0Z;
 
+  user.dim = dim;
   user.eps = eps;
-
 
   user.xi_v       = 1.0e-3; //can be used safely all time
   user.xi_T       = 1.0e-2;
