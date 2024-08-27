@@ -31,7 +31,7 @@ inputFile=$input_dir"grainReadFile-2.dat"
 
 # Define simulation parameters -------------------------------------------------
 # Define dimensions
-dim=3
+dim=2
 
 # Converty scientic notation to decimal using bc if needed
 dim=$(echo "$dim" | bc -l)
@@ -107,7 +107,7 @@ eps=9.28146307269926e-07			# Interface width
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=1*60*60               # Final time
+t_final=24*60*60               # Final time
 n_out=100                     # Number of output files
 
 
