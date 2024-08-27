@@ -1,11 +1,11 @@
 #!/bin/zsh
 
 if [[ -n $1 ]]; then
-    echo "Copying run_plotWetamorphism.py to: $1"
-    dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/Wetamorphism/$1
-    cp plotNASA.py $dir
+    echo "Copying run_plotMetam.py to: $1"
+    dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/wetamorph/$1
+    cp plotMetam.py $dir
 
-    exec_dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/Wetamorphism/$1/
+    exec_dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/wetamorph/$1/
 
     echo " "
     echo $exec_dir
@@ -22,13 +22,13 @@ if [[ -n $1 ]]; then
 
     mkdir $dir/vtkOut
 
-    python3.11 ~/SimulationResults/DrySed_Metamorphism/Wetamorphism/$1/plotNASA.py
+    python3.11 ~/SimulationResults/DrySed_Metamorphism/wetamorph/$1/plotMetam.py
 
     echo "Plotting SSA and Porosity"
     echo " "
     echo "Calling from: $1"
 
-    python3.11 ~/SimulationResults/DrySed_Metamorphism/Wetamorphism/$1/plotSSA.py
+    python3.11 ~/SimulationResults/DrySed_Metamorphism/wetamorph/$1/plotSSA.py
 else
     echo "No inputs are given. Assume we are already in the results folder"
     echo " "
@@ -39,7 +39,7 @@ else
     mkdir -p vtkOut
     mkdir -p stlOut
 
-    python3.11 plotNASA.py
+    python3.11 plotMetam.py
     
     python3.11 plotSSA.py
 

@@ -34,8 +34,8 @@ mkdir $folder/
   Lz=0.2e-3                      # Domain size Z -- TEST
 
   # Number of elements
-  Nx=800                        # Number of elements in X -- TEST
-  Ny=800                        # Number of elements in Y -- TEST
+  Nx=400                        # Number of elements in X -- TEST
+  Ny=400                        # Number of elements in Y -- TEST
   Nz=132                        # Number of elements in Z -- TEST
 
   # Define simulation parameters
@@ -94,7 +94,7 @@ cp plotSSA.py $folder/
 cp plotPorosity.py $folder/
 
 # echo "Queing plotMetam.py"                  # Need to create this file 
-# ./run_plotMetam.sh $name
+./run_plotMetam.sh $name
 
 
 # Create descriptive file

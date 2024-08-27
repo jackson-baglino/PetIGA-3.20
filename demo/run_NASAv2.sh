@@ -31,15 +31,19 @@ inputFile=$input_dir"grainReadFile-2.dat"
 
 # Define simulation parameters -------------------------------------------------
 # Define dimensions
-dim=2
+dim=3
 
 # Converty scientic notation to decimal using bc if needed
 dim=$(echo "$dim" | bc -l)
 
 # Domain sizes
-Lx=488.4e-6                    # Domain size X -- 2 Grain
-Ly=244.2e-6                    # Domain size Y -- 2 Grain
-Lz=244.2e-6                    # Domain size Z -- 2 Grain
+# Lx=488.4e-6                    # Domain size X -- 2 Grain
+# Ly=244.2e-6                    # Domain size Y -- 2 Grain
+# Lz=244.2e-6                    # Domain size Z -- 2 Grain
+
+Lx=3.0300e-04                   # Domain size X -- 2 Grain (Molaro)
+Ly=3.8280e-04                   # Domain size Y -- 2 Grain (Molaro)
+Lz=3.0300e-04                   # Domain size Z -- 2 Grain (Molaro)
 
 # Lx=0.35e-03                    # Domain size X -- 5 Grain
 # Ly=0.35e-03                    # Domain size Y -- 5 Grain
@@ -75,16 +79,20 @@ Ly=$(echo "$Ly" | bc -l)
 Lz=$(echo "$Lz" | bc -l)
 
 # Number of elements
-Nx=264                        # Number of elements in X -- 2 Grain
-Ny=132                        # Number of elements in Y -- 2 Grain
-Nz=132                        # Number of elements in Z -- 2 Grain
+# Nx=264                        # Number of elements in X -- 2 Grain
+# Ny=132                        # Number of elements in Y -- 2 Grain
+# Nz=132                        # Number of elements in Z -- 2 Grain
 
-# Nx=190                       # Number of elements in X -- 5 Grain
-# Ny=190                       # Number of elements in Y -- 5 Grain
-# Nz=143                       # Number of elements in Z -- 5 Grain
+Nx=167                        # Domain size X -- 2 Grain (Molaro)
+Ny=211                        # Domain size Y -- 2 Grain (Molaro)
+Nz=167                        # Domain size Z -- 2 Grain (Molaro)
 
-# Nx=193                       # Number of elements in X -- 5 Grain
-# Ny=193                       # Number of elements in Y -- 5 Grain
+# Nx=190                        # Number of elements in X -- 5 Grain
+# Ny=190                        # Number of elements in Y -- 5 Grain
+# Nz=143                        # Number of elements in Z -- 5 Grain
+
+# Nx=193                        # Number of elements in X -- 5 Grain
+# Ny=193                        # Number of elements in Y -- 5 Grain
 # Nz=122                        # Number of elements in Z -- 5 Grain
 
 # Nx=275                        # Number of elements in X -- 10 Grain
@@ -103,12 +111,13 @@ Nz=132                        # Number of elements in Z -- 2 Grain
 # Ny=1760                       # Number of elements in Y -- 135/165 Grain
 # Nz=100                        # Number of elements in Z -- 135/165 Grain
 
-eps=9.28146307269926e-07			# Interface width
+# eps=9.28146307269926e-07			# Interface width
+eps=9.096e-07                   # Interface width
 
 # Time parameters
 delt_t=1.0e-4                 # Time step
-t_final=12*7*24*60*60               # Final time
-n_out=1000                     # Number of output files
+t_final=57*60               # Final time
+n_out=100                     # Number of output files
 
 
 # Convert scientific notation to decimal using bc
@@ -122,7 +131,7 @@ temp=-20.0                    # Temperature
 
 # Initial temperature gradients
 grad_temp0X=0.0               # Initial temperature gradient X
-grad_temp0Y=1.0            # Initial temperature gradient Y
+grad_temp0Y=0.1            # Initial temperature gradient Y
 grad_temp0Z=0.0               # Initial temperature gradient Z
 
 # Convert scientific notation gradients to decimal using bc if needed
