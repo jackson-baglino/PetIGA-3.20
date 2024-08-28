@@ -25,7 +25,9 @@ input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
 # inputFile=$input_dir"grainReadFile-135_s1-10_s2-21.dat"
 # inputFile=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
 # inputFile=$input_dir"grainReadFile-5_s1-10.dat"
-inputFile=$input_dir"grainReadFile-2.dat"
+# inputFile=$input_dir"grainReadFile-2.dat"
+inputFile=$input_dir"grainReadFile-2_Molaro.dat"
+# inputFile=$input_dir"grainReadFile_3D-42_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-10_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-37_s1-10_s2-21.dat"
 
@@ -44,6 +46,10 @@ dim=$(echo "$dim" | bc -l)
 Lx=3.0300e-04                   # Domain size X -- 2 Grain (Molaro)
 Ly=3.8280e-04                   # Domain size Y -- 2 Grain (Molaro)
 Lz=3.0300e-04                   # Domain size Z -- 2 Grain (Molaro)
+
+# Lx=0.5e-03                     # Domain size X -- 30 Grain (3D)
+# Ly=0.5e-03                     # Domain size Y -- 30 Grain (3D)
+# Lz=0.5e-03                     # Domain size Z -- 30 Grain (3D)
 
 # Lx=0.35e-03                    # Domain size X -- 5 Grain
 # Ly=0.35e-03                    # Domain size Y -- 5 Grain
@@ -87,6 +93,10 @@ Nx=167                        # Domain size X -- 2 Grain (Molaro)
 Ny=211                        # Domain size Y -- 2 Grain (Molaro)
 Nz=167                        # Domain size Z -- 2 Grain (Molaro)
 
+# Nx=275                        # Number of elements in X -- 30 Grain (3D)
+# Ny=275                        # Number of elements in Y -- 30 Grain (3D)
+# Nz=275                        # Number of elements in Z -- 30 Grain (3D)
+
 # Nx=190                        # Number of elements in X -- 5 Grain
 # Ny=190                        # Number of elements in Y -- 5 Grain
 # Nz=143                        # Number of elements in Z -- 5 Grain
@@ -115,9 +125,9 @@ Nz=167                        # Domain size Z -- 2 Grain (Molaro)
 eps=9.096e-07                   # Interface width
 
 # Time parameters
-delt_t=1.0e-4                 # Time step
-t_final=57*60               # Final time
-n_out=100                     # Number of output files
+delt_t=1.0e-4                   # Time step
+t_final=24*60*60                   # Final time
+n_out=100                       # Number of output files
 
 
 # Convert scientific notation to decimal using bc

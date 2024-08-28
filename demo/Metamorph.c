@@ -1087,7 +1087,7 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
         //PetscReal lef_ver = 0.5 - 0.5*tanh(0.5/user->eps*(x-0.5*user->Lx));
         //PetscReal rig_ver = 0.5 - 0.5*tanh(0.5/user->eps*(x-0.5*user->Lx));
 
- /*     	PetscReal xc[4],yc[4],Rc[4],arg, ice=0.0, wat=0.0;
+        /* PetscReal xc[4],yc[4],Rc[4],arg, ice=0.0, wat=0.0;
       	xc[0]=6.5e-5 ; yc[0]=7.0e-5 ; Rc[0]=4.2e-5 ;
       	xc[1]=1.35e-4 ; yc[1]=6.5e-5 ; Rc[1]=2.7e-5 ;
       	xc[2]=1.2e-4 ; yc[2]=1.23e-4 ; Rc[2]=3.2e-5 ;
@@ -1095,15 +1095,15 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
       	for(m=0;m<4;m++){
       	  arg = sqrt(SQ(x-xc[m])+SQ(y-yc[m]))-(Rc[m]- 0.3e-5 );
       	  ice += 0.5-0.5*tanh(0.5/user->eps*arg);
-	  arg = sqrt(SQ(x-xc[m])+SQ(y-yc[m]))-Rc[m];
-	  wat += 0.5-0.5*tanh(0.5/user->eps*arg);
+	      arg = sqrt(SQ(x-xc[m])+SQ(y-yc[m]))-Rc[m];
+	      wat += 0.5-0.5*tanh(0.5/user->eps*arg);
       	}
-*/
+         */
 	PetscReal dist, small=0.0, big=0.0, alp_i=0.0, alp_e=0.16;
 	for(m=0;m<user->n_act;m++){
 	   dist=sqrt(SQ(x-user->cent[0][m])+SQ(y-user->cent[1][m]));
-           small += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] - alp_i*user->RCice)));
-	   big += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] + alp_e*user->RCice)));
+    small += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] - alp_i*user->RCice)));
+	   big  += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] + alp_e*user->RCice)));
 	}
 
       	if(small>1.0) small=1.0;
@@ -1149,7 +1149,7 @@ int main(int argc, char *argv[]) {
   // PetscInt mmm   = 0; // 1 if constant mobility
   // PetscInt aaa   = 0; // 1 if no alpha (sol,sub,eva)
 
-// Import all environmnetal variables
+  // Import all environmnetal variables
   PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");
 
   const char *angle_str       = getenv("angl");
