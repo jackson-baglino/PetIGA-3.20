@@ -962,7 +962,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
         dist = 0.0;
         for(l=0;l<dim;l++) dist += SQ(xc[l]-centX[l][jj]);
         dist = sqrt(dist);
-        if(dist< user->overl*(rc+radius[jj]) ) flag = 0;
+        if(dist < user->overl*(rc+radius[jj]) ) flag = 0;
         if(dist> 1.02*(rc+radius[jj]) && dist< 1.15*(rc+radius[jj]) ) flag = 0;
       }
     }
@@ -1007,9 +1007,23 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
+  /* Note: 
+    * The difference between datafile and dataPF will be that datafile will
+      contain the entirity of an intialized simulation.
+
+    * datafile will likely be used if we wish to use a previous output file as 
+      an initail conditoin. This option can be set when the executable is called 
+      (e.g., -initial_PFgeom sol#.dat).
+
+    * dataPF will contain the initial condition of the phase field variables. 
+      This option can be set when the executable is called (e.g., 
+      -initial_PFgeom geomFile.dat).
+  * */
+
   if (datafile[0] != 0) { /* initial condition from datafile */
     MPI_Comm comm;
     PetscViewer viewer;
+
     ierr = PetscObjectGetComm((PetscObject)U,&comm);CHKERRQ(ierr);
     ierr = PetscViewerBinaryOpen(comm,datafile,FILE_MODE_READ,&viewer);CHKERRQ(ierr);
     ierr = VecLoad(U,viewer);CHKERRQ(ierr);
@@ -1020,19 +1034,23 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
     ierr = IGACreate(PETSC_COMM_WORLD,&igaPF);CHKERRQ(ierr);
     ierr = IGASetDim(igaPF,2);CHKERRQ(ierr);
     ierr = IGASetDof(igaPF,1);CHKERRQ(ierr);
+
     IGAAxis axisPF0;
     ierr = IGAGetAxis(igaPF,0,&axisPF0);CHKERRQ(ierr);
     ierr = IGAAxisSetDegree(axisPF0,user->p);CHKERRQ(ierr);
     ierr = IGAAxisInitUniform(axisPF0,user->Nx,0.0,user->Lx,user->C);CHKERRQ(ierr);
+
     IGAAxis axisPF1;
     ierr = IGAGetAxis(igaPF,1,&axisPF1);CHKERRQ(ierr);
     ierr = IGAAxisSetDegree(axisPF1,user->p);CHKERRQ(ierr);
     ierr = IGAAxisInitUniform(axisPF1,user->Ny,0.0,user->Ly,user->C);CHKERRQ(ierr);
     ierr = IGASetFromOptions(igaPF);CHKERRQ(ierr);
     ierr = IGASetUp(igaPF);CHKERRQ(ierr);
+
     Vec PF;
     ierr = IGACreateVec(igaPF,&PF);CHKERRQ(ierr);
     MPI_Comm comm;
+
     PetscViewer viewer;
     ierr = PetscObjectGetComm((PetscObject)PF,&comm);CHKERRQ(ierr);
     ierr = PetscViewerBinaryOpen(comm,dataPF,FILE_MODE_READ,&viewer);CHKERRQ(ierr);
@@ -1044,10 +1062,13 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
 
     DM da;
     ierr = IGACreateNodeDM(iga,4,&da);CHKERRQ(ierr);
+
     Field **u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
+
     DMDALocalInfo info;
     ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
+
     PetscInt i,j,k=-1;
     if(user->periodic==1) k=user->p -1;
     for(i=info.xs;i<info.xs+info.xm;i++){
@@ -1063,10 +1084,11 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
         u[j][i].rhov = rho_vs;
       }
     }
+
     ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
     ierr = DMDestroy(&da);;CHKERRQ(ierr);
-
-  } else {
+    
+  } else { // Generate touching, non-overlapping grains
 
     DM da;
     ierr = IGACreateNodeDM(iga,4,&da);CHKERRQ(ierr);
@@ -1079,34 +1101,25 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
 
     PetscInt i,j,m,k=-1;
     if(user->periodic==1) k=user->p -1;
+    /* Loop over the subdomain that has been allocated to a specific processor. 
+     * info.xs and info.ys are the starting indices of the subdomain handleed by 
+       the current processor.
+     * info.xm and info.ym are the number of grid points in the x and y 
+       directions, respectively, that are handled by the current processor.
+     * info.mx and info.my are the total number of grid points in domain in the 
+        x and y directions, respectively.
+    */
     for(i=info.xs;i<info.xs+info.xm;i++){
       for(j=info.ys;j<info.ys+info.ym;j++){
         PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+k) );
         PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+k) );
 
-        //PetscReal bot_hor = 0.5 - 0.5*tanh(0.5/user->eps*(y-0.5*user->Ly));
-        //PetscReal top_hor = 0.5 + 0.5*tanh(0.5/user->eps*(y-0.5*user->Ly));
-        //PetscReal lef_ver = 0.5 - 0.5*tanh(0.5/user->eps*(x-0.5*user->Lx));
-        //PetscReal rig_ver = 0.5 - 0.5*tanh(0.5/user->eps*(x-0.5*user->Lx));
-
-        /* PetscReal xc[4],yc[4],Rc[4],arg, ice=0.0, wat=0.0;
-      	xc[0]=6.5e-5 ; yc[0]=7.0e-5 ; Rc[0]=4.2e-5 ;
-      	xc[1]=1.35e-4 ; yc[1]=6.5e-5 ; Rc[1]=2.7e-5 ;
-      	xc[2]=1.2e-4 ; yc[2]=1.23e-4 ; Rc[2]=3.2e-5 ;
-      	xc[3]=5.0e-5 ; yc[3]=1.34e-4 ; Rc[3]=2.3e-5 ;
-      	for(m=0;m<4;m++){
-      	  arg = sqrt(SQ(x-xc[m])+SQ(y-yc[m]))-(Rc[m]- 0.3e-5 );
-      	  ice += 0.5-0.5*tanh(0.5/user->eps*arg);
-	      arg = sqrt(SQ(x-xc[m])+SQ(y-yc[m]))-Rc[m];
-	      wat += 0.5-0.5*tanh(0.5/user->eps*arg);
-      	}
-        */
-	      // PetscReal dist, small=0.0, big=0.0, alp_i=0.0, alp_e=0.16;
-        PetscReal dist, small=0.0, big=0.0, alp_i=-0.5, alp_e=1.0;
+        PetscReal dist, small=0.0, big=1.0, alp_i=-0.5;// alp_e=1.0;
+        // ice = small, air = 1 - big, water = big - small.
         for(m=0;m<user->n_act;m++){
           dist=sqrt(SQ(x-user->cent[0][m])+SQ(y-user->cent[1][m]));
           small += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] - alp_i*user->RCice)));
-          big += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] + alp_e*user->RCice)));
+          // big   += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] + alp_e*user->RCice)));
         }
 
       	if(small>1.0) small=1.0;
@@ -1118,14 +1131,78 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
         u[j][i].ice = small;     //bot_hor;
         u[j][i].air = 1.0-big; //top_hor*lef_ver;
         u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
+
         PetscScalar rho_vs, temp=u[j][i].tem;
+
         RhoVS_I(user,temp,&rho_vs,NULL);
         u[j][i].rhov = rho_vs;
       }
     }
+
     ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
     ierr = DMDestroy(&da);;CHKERRQ(ierr); 
+
+  // } else { // Adrian's random grain generator code
+
+  //   DM da;
+  //   ierr = IGACreateNodeDM(iga,4,&da);CHKERRQ(ierr);
+
+  //   Field **u;
+  //   ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
+
+  //   DMDALocalInfo info;
+  //   ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
+
+  //   PetscInt i,j,m,k=-1;
+  //   if(user->periodic==1) k=user->p -1;
+  //   for(i=info.xs;i<info.xs+info.xm;i++){
+  //     for(j=info.ys;j<info.ys+info.ym;j++){
+  //       PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+k) );
+  //       PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+k) );
+
+  //       //PetscReal bot_hor = 0.5 - 0.5*tanh(0.5/user->eps*(y-0.5*user->Ly));
+  //       //PetscReal top_hor = 0.5 + 0.5*tanh(0.5/user->eps*(y-0.5*user->Ly));
+  //       //PetscReal lef_ver = 0.5 - 0.5*tanh(0.5/user->eps*(x-0.5*user->Lx));
+  //       //PetscReal rig_ver = 0.5 - 0.5*tanh(0.5/user->eps*(x-0.5*user->Lx));
+
+  //       /* PetscReal xc[4],yc[4],Rc[4],arg, ice=0.0, wat=0.0;
+  //     	xc[0]=6.5e-5 ; yc[0]=7.0e-5 ; Rc[0]=4.2e-5 ;
+  //     	xc[1]=1.35e-4 ; yc[1]=6.5e-5 ; Rc[1]=2.7e-5 ;
+  //     	xc[2]=1.2e-4 ; yc[2]=1.23e-4 ; Rc[2]=3.2e-5 ;
+  //     	xc[3]=5.0e-5 ; yc[3]=1.34e-4 ; Rc[3]=2.3e-5 ;
+  //     	for(m=0;m<4;m++){
+  //     	  arg = sqrt(SQ(x-xc[m])+SQ(y-yc[m]))-(Rc[m]- 0.3e-5 );
+  //     	  ice += 0.5-0.5*tanh(0.5/user->eps*arg);
+	//         arg = sqrt(SQ(x-xc[m])+SQ(y-yc[m]))-Rc[m];
+	//         at += 0.5-0.5*tanh(0.5/user->eps*arg);
+  //     	}
+  //       */
+	//       // PetscReal dist, small=0.0, big=0.0, alp_i=0.0, alp_e=0.16;
+  //       PetscReal dist, small=0.0, big=0.0, alp_i=-0.5, alp_e=1.0;
+  //       for(m=0;m<user->n_act;m++){
+  //         dist=sqrt(SQ(x-user->cent[0][m])+SQ(y-user->cent[1][m]));
+  //         small += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] - alp_i*user->RCice)));
+  //         big += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] + alp_e*user->RCice)));
+  //       }
+
+  //     	if(small>1.0) small=1.0;
+  //     	if(small<0.0) small=0.0;
+
+  //       if(big>1.0) big=1.0;
+  //       if(big<0.0) big=0.0;
+
+  //       u[j][i].ice = small;     //bot_hor;
+  //       u[j][i].air = 1.0-big; //top_hor*lef_ver;
+  //       u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
+  //       PetscScalar rho_vs, temp=u[j][i].tem;
+  //       RhoVS_I(user,temp,&rho_vs,NULL);
+  //       u[j][i].rhov = rho_vs;
+  //     }
+  //   }
+  //   ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
+  //   ierr = DMDestroy(&da);;CHKERRQ(ierr); 
   }
+  
   PetscFunctionReturn(0); 
 }
 
@@ -1393,10 +1470,10 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD,"EVAPO: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n",tau_eva,lambda_eva,user.mob_eva,user.alph_eva);
 
 //ice grains
-  user.NCice      = 35;//9; //less than 200, otherwise update in user
+  user.NCice      = 100;//9; //less than 200, otherwise update in user
   user.RCice      = 0.2e-4;//0.18e-4;
   user.RCice_dev  = 0.5;
-  user.overl      = 0.9;
+  user.overl      = 1.0;
   user.seed       = 108;//129;
 
   //boundary conditions : "periodic" >> "fixed-T" >> "variable-T"
