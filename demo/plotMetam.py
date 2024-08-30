@@ -11,7 +11,7 @@ for infile in glob.glob("sol*.dat"):
 	root = './solV'+number+'.vtk'
 	if not os.path.isfile(root):
 		sol = PetIGA().read_vec(infile,nrb)
-		outfile = root 
+		outfile = './vtkOut/solV'+number+'.vtk' 
 		VTK().write(outfile,  
 	            nrb,             
 	            fields=sol,     

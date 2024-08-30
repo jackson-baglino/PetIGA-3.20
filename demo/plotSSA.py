@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Read data from the file
-filename = "/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/2024-07-29__16.47.33/SSA_evo.dat"
+filename = "./SSA_evo.dat"
 
 # Read in environment variables
 dim = os.getenv("dim")

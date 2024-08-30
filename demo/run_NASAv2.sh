@@ -6,7 +6,7 @@ echo " "
 make NASAv2
 
 # add name folder accordingly --------------------------------------------------
-title=dry_2G_2D_24h_
+title=dry_2G-Molaro_2D_24h_
 name=$title$(date +%Y-%m-%d__%H.%M.%S)
 dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2
 folder=$dir/$name

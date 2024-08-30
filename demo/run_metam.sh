@@ -7,7 +7,7 @@ echo " "
 make Metamorph
 
 # add name folder accordingly --------------------------------------------------
-title=dry_2G_2D_24h_
+title=WET_2G_2D_TEST_
 name=$title$(date +%Y-%m-%d__%H.%M.%S)
 dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/wetamorph
 folder=$dir/$name
@@ -29,13 +29,13 @@ mkdir $folder/
   # Define domain sizes
   dim=2
 
-  Lx=0.2e-3                      # Domain size X -- TEST
-  Ly=0.2e-3                      # Domain size Y -- TEST
-  Lz=0.2e-3                      # Domain size Z -- TEST
+  Lx=488.4e-6                    # Domain size X -- TEST
+  Ly=244.2e-6                    # Domain size Y -- TEST
+  Lz=244.2e-6                    # Domain size Z -- TEST
 
   # Number of elements
-  Nx=400                        # Number of elements in X -- TEST
-  Ny=400                        # Number of elements in Y -- TEST
+  Nx=528                        # Number of elements in X -- TEST
+  Ny=264                        # Number of elements in Y -- TEST
   Nz=132                        # Number of elements in Z -- TEST
 
   # Define simulation parameters

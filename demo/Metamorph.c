@@ -1070,8 +1070,10 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
 
     DM da;
     ierr = IGACreateNodeDM(iga,4,&da);CHKERRQ(ierr);
+
     Field **u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
+
     DMDALocalInfo info;
     ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
 
@@ -1098,18 +1100,20 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
 	      arg = sqrt(SQ(x-xc[m])+SQ(y-yc[m]))-Rc[m];
 	      wat += 0.5-0.5*tanh(0.5/user->eps*arg);
       	}
-         */
-	PetscReal dist, small=0.0, big=0.0, alp_i=0.0, alp_e=0.16;
-	for(m=0;m<user->n_act;m++){
-	   dist=sqrt(SQ(x-user->cent[0][m])+SQ(y-user->cent[1][m]));
-    small += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] - alp_i*user->RCice)));
-	   big  += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] + alp_e*user->RCice)));
-	}
+        */
+	      // PetscReal dist, small=0.0, big=0.0, alp_i=0.0, alp_e=0.16;
+        PetscReal dist, small=0.0, big=0.0, alp_i=-0.5, alp_e=1.0;
+        for(m=0;m<user->n_act;m++){
+          dist=sqrt(SQ(x-user->cent[0][m])+SQ(y-user->cent[1][m]));
+          small += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] - alp_i*user->RCice)));
+          big += 0.5-0.5*tanh(0.5/user->eps*(dist-(user->radius[m] + alp_e*user->RCice)));
+        }
 
       	if(small>1.0) small=1.0;
       	if(small<0.0) small=0.0;
-	if(big>1.0) big=1.0;
-	if(big<0.0) big=0.0;
+
+        if(big>1.0) big=1.0;
+        if(big<0.0) big=0.0;
 
         u[j][i].ice = small;     //bot_hor;
         u[j][i].air = 1.0-big; //top_hor*lef_ver;
