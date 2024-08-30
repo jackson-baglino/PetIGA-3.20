@@ -1007,8 +1007,6 @@ PetscErrorCode FormInitialCondition(IGA iga,PetscReal t,Vec U,AppCtx *user,const
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  // This comment is a test for merging branches...
-
   if (datafile[0] != 0) { /* initial condition from datafile */
     MPI_Comm comm;
     PetscViewer viewer;
