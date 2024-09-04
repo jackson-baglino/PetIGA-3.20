@@ -6,7 +6,7 @@ echo " "
 make NASAv2
 
 # add name folder accordingly --------------------------------------------------
-title=dry_2G-Molaro_2D_24h_
+title=dry_2G-Molaro_2D_57m_
 name=$title$(date +%Y-%m-%d__%H.%M.%S)
 dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2
 folder=$dir/$name
@@ -23,17 +23,17 @@ mkdir $folder/
 input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
 # inputFile=$input_dir"grainReadFile-88_s1-10_s2-21.dat"
 # inputFile=$input_dir"grainReadFile-135_s1-10_s2-21.dat"
-# inputFile=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
+inputFile=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
 # inputFile=$input_dir"grainReadFile-5_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-2.dat"
-inputFile=$input_dir"grainReadFile-2_Molaro.dat"
+# inputFile=$input_dir"grainReadFile-2_Molaro.dat"
 # inputFile=$input_dir"grainReadFile_3D-42_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-10_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-37_s1-10_s2-21.dat"
 
 # Define simulation parameters -------------------------------------------------
 # Define dimensions
-dim=3
+dim=2
 
 # Converty scientic notation to decimal using bc if needed
 dim=$(echo "$dim" | bc -l)
@@ -126,7 +126,7 @@ eps=9.096e-07                   # Interface width
 
 # Time parameters
 delt_t=1.0e-4                   # Time step
-t_final=24*60*60                   # Final time
+t_final=57*60                   # Final time
 n_out=100                       # Number of output files
 
 
