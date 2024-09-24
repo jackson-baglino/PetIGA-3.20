@@ -8,6 +8,7 @@ filename = "./SSA_evo.dat"
 # Read in environment variables
 dim = os.getenv("dim")
 inputFile = os.getenv("inputFile")
+title = os.getenv("title")
 print("inputFile: ", inputFile)
 
 # Read in the grain data
@@ -57,7 +58,7 @@ plt.grid(False)
 
 # Save the plot as an image file
 outputfolder = os.getenv("outputfolder")
-output_file = "ssa_evolution_plotTEST.png"
+output_file = "ssa_evolution_plot_"+title+".png"
 plt.savefig(output_file)
 
 # Display the plot

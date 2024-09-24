@@ -6,7 +6,7 @@ echo " "
 make NASAv2
 
 # add name folder accordingly --------------------------------------------------
-title=dry_2G-Molaro_2D_24h_
+title=NASAv2-2G-3D-48h-T20-hum98__
 name=$title$(date +%Y-%m-%d__%H.%M.%S)
 dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2
 folder=$dir/$name
@@ -27,6 +27,7 @@ input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
 # inputFile=$input_dir"grainReadFile-5_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-2.dat"
 inputFile=$input_dir"grainReadFile-2_Molaro.dat"
+# inputFile=$input_dir"grainReadFile-27_MOLARO_s2-10.dat"
 # inputFile=$input_dir"grainReadFile_3D-42_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-10_s1-10.dat"
 # inputFile=$input_dir"grainReadFile-37_s1-10_s2-21.dat"
@@ -71,6 +72,10 @@ Lz=3.0300e-04                   # Domain size Z -- 2 Grain (Molaro)
 # Ly=0.5e-03                    # Domain size Y -- 10 Grain
 # Lz=2.202e-04                  # Domain size Z -- 10 Grain
 
+# Lx=0.75e-03                   # Domain size X -- 27 Grain
+# Ly=0.75e-03                   # Domain size Y -- 27 Grain
+# Lz=0.000242175903182621       # Domain size Z -- 27 Grain
+
 # Lx=2.0e-3                     # Domain size X -- 88 Grain
 # Ly=2.0e-3                     # Domain size Y -- 88 Grain
 # Lz=2.509e-04                  # Domain size Z -- 88 Grain
@@ -113,6 +118,10 @@ Nz=167                        # Domain size Z -- 2 Grain (Molaro)
 # Ny=132                        # Number of elements in Y -- 2 Grain
 # Nz=132                        # Number of elements in Z -- 2 Grain
 
+# Nx=413                        # Number of elements in X -- 27 Grain
+# Ny=413                        # Number of elements in Y -- 27 Grain
+# Nz=134                        # Number of elements in Z -- 27 Grain
+
 # Nx=1100                       # Number of elements in X -- 88 Grain
 # Ny=1100                       # Number of elements in Y -- 88 Grain
 # Nz=138                        # Number of elements in Z -- 88 Grain
@@ -126,9 +135,10 @@ eps=9.096e-07                   # Interface width
 
 # Time parameters
 delt_t=1.0e-4                   # Time step
-t_final=24*60*60                   # Final time
+t_final=2*24*60*60                   # Final time
 n_out=100                       # Number of output files
-
+# t_final=1.0
+# n_out=5
 
 # Convert scientific notation to decimal using bc
 delt_t=$(echo "$delt_t" | bc -l)
@@ -141,7 +151,7 @@ temp=-20.0                    # Temperature
 
 # Initial temperature gradients
 grad_temp0X=0.0               # Initial temperature gradient X
-grad_temp0Y=0.1            # Initial temperature gradient Y
+grad_temp0Y=0.0            # Initial temperature gradient Y
 grad_temp0Z=0.0               # Initial temperature gradient Z
 
 # Convert scientific notation gradients to decimal using bc if needed
@@ -150,7 +160,7 @@ grad_temp0Y=$(echo "$grad_temp0Y" | bc -l)
 grad_temp0Z=$(echo "$grad_temp0Z" | bc -l)
 
 # Export variables
-export folder input_dir inputFile Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
+export folder input_dir inputFile title Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
     humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps
 
 
