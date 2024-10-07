@@ -670,7 +670,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     }
 
     PetscViewerFileSetName(view,filedata);
-    PetscViewerASCIIPrintf(view,"%e %e %e \n",sub_interf/user->eps, tot_ice, t);
+    PetscViewerASCIIPrintf(view,"%e %e %e %d\n",sub_interf/user->eps, tot_ice, t, step);
 
     PetscViewerDestroy(&view);
   }
@@ -1934,7 +1934,7 @@ int main(int argc, char *argv[]) {
 
   //output
   user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0;    user.t_interv = t_final/(n_out-1); //output every t_interv
+  user.t_out = 0;    user.t_interv = t_final/(n_out); //output every t_interv
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;
