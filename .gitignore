@@ -24,3 +24,4 @@ demo/ssa_evolution_plotTEST.png
 demo/Metamorph
 .venv/*
 MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0_64-bit/*
+demo/Oldfiles/*

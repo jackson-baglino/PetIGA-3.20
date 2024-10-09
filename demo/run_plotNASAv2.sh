@@ -1,50 +1,55 @@
 #!/bin/zsh
 
-if [[ -n $1 ]]; then
-    echo "Copying run_plotNASAv2.py to: $1"
-    dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/$1
-    echo " "
-    echo " "
-    echo " --- Current directory is: $(pwd)"
-    echo " "
-    echo " "
-    cp writeNASA2CSV.py $dir
- 
-    exec_dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/$1/
+# Function to copy files to the target directory
+copy_files_to_directory() {
+    local target_dir=$1
+    echo "Copying necessary files to: $target_dir"
+    cp writeNASA2CSV.py $target_dir
+    cp ~/PetIGA-3.20/demo/rename_STL_files.py $target_dir
+}
 
+# Function to change to the target directory and print status
+change_to_directory() {
+    local target_dir=$1
     echo " "
-    echo $exec_dir
-    echo " "
+    echo "Changing to directory: $target_dir"
+    cd $target_dir || { echo "Failed to change directory to $target_dir"; exit 1; }
+    echo "Directory changed to: $(pwd)"
+}
 
-    cd $exec_dir
-    echo " "
-    echo "Directory changed"
-    echo " "
-    echo "Working directory: $(pwd)"
-    echo " "
-    echo "Executing python script"
-    echo " "
-
-    python3.11 ~/SimulationResults/DrySed_Metamorphism/NASAv2/$1/plotNASA.py
-    # python3.11 ~/SimulationResults/DrySed_Metamorphism/NASAv2/$1/writeNASA2CSV.py
-
-    echo "Plotting SSA and Porosity"
-    echo " "
-    echo "Calling from: $1"
-
-    python3.11 ~/SimulationResults/DrySed_Metamorphism/NASAv2/$1/plotSSA.py
-    # python3.11 ~/SimulationResults/DrySed_Metamorphism/NASAv2/$1/plotPorosity.py
-
-
-    cp ~/PetIGA-3.20/demo/rename_STL_files.py $dir
-else
-    echo "No inputs are given. Assume we are already in the results folder"
-    echo " "
-
-    echo "Creating vtkOut and stlOut directories"
-    echo " "
-
-    python3.11 plotNASA.py
+# Function to execute Python scripts for plotting
+execute_python_scripts() {
+    local dir=$1
+    echo "Executing plotNASA.py in directory: $dir"
+    python3.11 $dir/plotNASA.py
     
+    echo "Plotting SSA and Porosity"
+    python3.11 $dir/plotSSA.py
+    # Uncomment the line below if you want to include Porosity plotting
+    # python3.11 $dir/plotPorosity.py
+}
+
+# Main script logic
+if [[ -n $1 ]]; then
+    echo "Starting process for directory: $1"
+    dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/$1
+
+    # Copy files and switch to the target directory
+    copy_files_to_directory $dir
+    change_to_directory $dir
+
+    # Execute plotting scripts
+    execute_python_scripts $dir
+else
+    echo "No inputs provided. Assuming we are already in the results folder."
+    
+    echo "Creating vtkOut and stlOut directories"
+    mkdir -p vtkOut stlOut
+
+    # Execute Python scripts in the current directory
+    echo "Executing plotNASA.py and plotSSA.py in the current directory"
+    python3.11 plotNASA.py
     python3.11 plotSSA.py
+    # Uncomment if you need to execute plotPorosity.py in the current directory
+    # python3.11 plotPorosity.py
 fi

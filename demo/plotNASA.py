@@ -1,193 +1,81 @@
-# import numpy as np
-# import glob
-# import os
-# from igakit.io import PetIGA, VTK
-# from numpy import linspace
-# from skimage import measure
-# import pyvista as pv
-# import vtk
-
-# from rich.traceback import install
-# install()
-
-# def create_vtk_files():
-#     maxNum = 300
-#     numX = int(os.getenv("Nx", maxNum))
-#     numY = int(os.getenv("Ny", maxNum))
-#     numZ = int(os.getenv("Nz", maxNum))
-
-#     num_points = max(numX, numY, numZ)
-#     print(f"Number of points: {num_points}.\n")
-
-#     nrb = PetIGA().read("igasol.dat")
-#     uniform = lambda U: linspace(U[0], U[-1], num_points)
-
-#     for infile in glob.glob("sol*.dat"):
-#         name = infile.split(".")[0]
-#         number = name.split("l")[1]
-#         vtk_root = f'./vtkOut/solV_{number}.vtk'
-#         # stl_root = f'./stlOut/IcePhase_{number}.stl'
-
-#         if not os.path.exists(vtk_root):
-#             sol = PetIGA().read_vec(infile, nrb)
-            
-#             VTK().write(vtk_root,
-#                         nrb, fields=sol, 
-#                         sampler=uniform, 
-#                         scalars={'IcePhase': 0, 'Temperature': 1, 'VaporDensity': 2})
-#             print(f"Created: {vtk_root}.\n")
-
-#             verify_vtk_fields(vtk_root)
-#             # convert_vtk_to_stl(vtk_root, stl_root)
-#             # print(f"Converted: {vtk_root} to {stl_root}.\n")
-#         else:
-#             print(f"File already exists: {vtk_root}")
-
-# def verify_vtk_fields(vtk_file):
-#     reader = vtk.vtkStructuredGridReader()
-#     reader.SetFileName(vtk_file)
-#     reader.Update()
-#     vtk_data = reader.GetOutput()
-
-#     cell_data = vtk_data.GetCellData()
-#     point_data = vtk_data.GetPointData()
-    
-#     print(f"Fields in {vtk_file}:")
-#     print("Cell Data Fields:")
-#     for i in range(cell_data.GetNumberOfArrays()):
-#         print(f"  {cell_data.GetArrayName(i)}")
-        
-#     print("Point Data Fields:")
-#     for i in range(point_data.GetNumberOfArrays()):
-#         print(f"  {point_data.GetArrayName(i)}")
-
-# def apply_contour_filter(vtk_data, field_name, threshold_value, vtk_file):
-#     if field_name not in [vtk_data.GetPointData().GetArrayName(i) for i in range(vtk_data.GetPointData().GetNumberOfArrays())]:
-#         print(f"Field '{field_name}' not found in the VTK file.")
-#         verify_vtk_fields(vtk_file)
-#         return None
-
-#     print("Applying contour filter...")
-#     contour_filter = vtk.vtkContourFilter()
-#     contour_filter.SetInputData(vtk_data)
-#     contour_filter.SetValue(0, threshold_value)
-#     contour_filter.SetInputArrayToProcess(0, 0, 0, vtk.vtkDataObject.FIELD_ASSOCIATION_POINTS, field_name)
-#     contour_filter.Update()
-#     return contour_filter.GetOutput()
-
-# def save_vtk_file(vtk_data, output_filename):
-#     writer = vtk.vtkXMLPolyDataWriter()
-#     writer.SetFileName(output_filename)
-#     writer.SetInputData(vtk_data)
-#     writer.Write()
-
-# def process_files(input_folder, output_folder, field_name, threshold_value):
-#     if not os.path.exists(output_folder):
-#         os.makedirs(output_folder)
-    
-#     vtk_files = glob.glob(os.path.join(input_folder, '*.vtk'))
-    
-#     for vtk_file in vtk_files:
-#         print(f'Processing {vtk_file}...')
-#         reader = vtk.vtkStructuredGridReader()
-#         reader.SetFileName(vtk_file)
-#         reader.Update()
-#         vtk_data = reader.GetOutput()
-
-#         contour_data = apply_contour_filter(vtk_data, field_name, threshold_value, vtk_file)
-        
-#         if contour_data is not None:
-#             output_filename = os.path.join(output_folder, os.path.basename(vtk_file).replace('.vtk', '_contour.vtp'))
-#             save_vtk_file(contour_data, output_filename)
-#             print(f'Saved contour to {output_filename}')
-#         else:
-#             print(f"Error processing {vtk_file}")
-
-# if __name__ == '__main__':
-#     input_folder = './vtkOut/'
-#     output_folder = './stlOut/'
-#     field_name = 'IcePhase'
-#     threshold_value = 0.5
-    
-#     create_vtk_files()
-#     process_files(input_folder, output_folder, field_name, threshold_value)
-
-
-import numpy as np
+from igakit.io import PetIGA
 import glob
 import os
-from igakit.io import PetIGA
-from numpy import linspace
-from rich.traceback import install
+import numpy as np
+from scipy.interpolate import RegularGridInterpolator
 
-install()
+def read_nrb(file_path):
+    """Reads the IGA solution file."""
+    return PetIGA().read(file_path)
 
-# Define user-defined variables
-tempFlag = 0
-vaporFlag = 0
+def interpolate_data(data, x_dim, y_dim):
+    """Optional interpolation of data using RegularGridInterpolator."""
+    # Original grid coordinates (assuming regular spacing)
+    x = np.linspace(0, 1, data.shape[0])
+    y = np.linspace(0, 1, data.shape[1])
 
-def create_dat_files():
-    maxNum = 300
-    numX = int(os.getenv("Nx", maxNum))
-    numY = int(os.getenv("Ny", maxNum))
-    numZ = int(os.getenv("Nz", maxNum))
+    # Create an interpolator for the regular grid
+    interpolator = RegularGridInterpolator((x, y), data)
 
-    num_points = (numX, numY, numZ)
-    print(f"Number of points: {num_points}.\n")
+    # New grid coordinates for interpolation
+    xnew = np.linspace(0, 1, x_dim)
+    ynew = np.linspace(0, 1, y_dim)
+    Xnew, Ynew = np.meshgrid(xnew, ynew)
 
-    nrb = PetIGA().read("igasol.dat")
-    uniform = lambda U: linspace(U[0], U[-1], num_points[0])
+    # Perform the interpolation
+    interpolated_data = interpolator((Xnew, Ynew))
 
-    # Ensure directories exist
-    if not os.path.exists('output/icePhase/'):
-        os.makedirs('output/icePhase/')
+    return interpolated_data
+
+def write_dat_file(output_dir, field_name, sequence_number, data):
+    """Writes a .dat file for a specific field."""
+    os.makedirs(output_dir, exist_ok=True)  # Ensure directory exists
+    file_name = f'{output_dir}/{field_name}_{sequence_number:04d}.dat'
+    print(f"Writing {file_name}")
     
-    if tempFlag:
-        if not os.path.exists('output/Temperature/'):
-            os.makedirs('output/Temperature/')
+    np.savetxt(file_name, data, fmt='%.6e')
+
+def process_solution_files(nrb, input_pattern="sol*.dat", output_dir="./output", interpolate=False, x_dim=None, y_dim=None):
+    """Processes all solution files and saves .dat files with optional interpolation."""
     
-    if vaporFlag:
-        if not os.path.exists('output/VaporDensity/'):
-            os.makedirs('output/VaporDensity/')
+    # Create output directories for each field
+    ice_phase_dir = os.path.join(output_dir, "IcePhase")
+    temp_dir = os.path.join(output_dir, "Temperature")
+    vapor_dir = os.path.join(output_dir, "VaporDensity")
+    
+    os.makedirs(ice_phase_dir, exist_ok=True)
+    os.makedirs(temp_dir, exist_ok=True)
+    os.makedirs(vapor_dir, exist_ok=True)
+    
+    # Sort input files to maintain order
+    input_files = sorted(glob.glob(input_pattern), key=lambda x: int(x.split("l")[1].split(".")[0]))
 
-    for infile in glob.glob("sol*.dat"):
-        name = infile.split(".")[0]
-        number = name.split("l")[1]
+    # Sequential numbering for output (0001, 0002, 0003, ...)
+    for sequence_number, infile in enumerate(input_files, start=1):
+        print(f"Processing {infile}...")
 
-        # Read the solution (assuming this is a 3D field)
+        # Read the solution vector from the .dat file
         sol = PetIGA().read_vec(infile, nrb)
 
-        # Extract fields (assume 3D array)
-        icePhase = sol[..., 0]  # Assuming IcePhase is the first field
+        # Extract the fields
+        ice_phase_data = sol[:, :, 0]  # Assuming IcePhase is field 0
+        temperature_data = sol[:, :, 1]  # Assuming Temperature is field 1
+        vapor_density_data = sol[:, :, 2]  # Assuming VaporDensity is field 2
+        
+        # Optionally interpolate the data
+        if interpolate and x_dim is not None and y_dim is not None:
+            ice_phase_data = interpolate_data(ice_phase_data, x_dim, y_dim)
+            temperature_data = interpolate_data(temperature_data, x_dim, y_dim)
+            vapor_density_data = interpolate_data(vapor_density_data, x_dim, y_dim)
+        
+        # Write the .dat files for each field
+        write_dat_file(ice_phase_dir, "IcePhase", sequence_number, ice_phase_data)
+        write_dat_file(temp_dir, "Temperature", sequence_number, temperature_data)
+        write_dat_file(vapor_dir, "VaporDensity", sequence_number, vapor_density_data)
 
-        if tempFlag:
-            temperature = sol[..., 1]  # Assuming Temperature is the second field
-
-        if vaporFlag:
-            vaporDensity = sol[..., 2]  # Assuming VaporDensity is the third field
-
-        # Save 3D fields to .dat files with coordinates
-        save_field_to_dat_3D(icePhase, num_points, f'output/icePhase/icePhase_{number}.dat')
-
-        if tempFlag:
-            save_field_to_dat_3D(temperature, num_points, f'output/Temperature/Temperature_{number}.dat')
-        if vaporFlag:
-             save_field_to_dat_3D(vaporDensity, num_points, f'output/VaporDensity/VaporDensity_{number}.dat')
-
-        print(f"Created .dat files for sol{number}.\n")
-
-def save_field_to_dat_3D(field_data, num_points, output_filename):
-    """ Save the 3D field data to a .dat file with coordinates (x, y, z, value). """
+if __name__ == "__main__":
+    nrb_file = "igasol.dat"
+    nrb = read_nrb(nrb_file)
     
-    numX, numY, numZ = num_points
-    with open(output_filename, 'w') as f:
-        for i in range(numX):
-            for j in range(numY):
-                for k in range(numZ):
-                    # Save coordinates and corresponding value from the field
-                    f.write(f"{i}, {j}, {k}, {field_data[i, j, k]}\n")
-    
-    print(f"Saved: {output_filename}.\n")
-
-if __name__ == '__main__':
-    create_dat_files()
+    # Example of running the script with interpolation and dimensions (optional)
+    process_solution_files(nrb, interpolate=True, x_dim=500, y_dim=500)

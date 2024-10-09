@@ -1,246 +1,208 @@
 #!/bin/zsh
 
+# Function to create a timestamped results folder
+create_folder() {
+    name="$title$(date +%Y-%m-%d__%H.%M.%S)"
+    dir="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2"
+    folder="$dir/$name"
+
+    if [ ! -d "$dir" ]; then
+        mkdir -p "$dir"
+    fi
+
+    mkdir -p "$folder"
+}
+
+# Function to compile the code
+compile_code() {
+    echo "Compiling..."
+    make NASAv2
+}
+
+# Function to set simulation parameters
+set_parameters() {
+    input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
+
+    # Select input file
+    inputFile="${input_dir}${filename}"  # Default file
+
+    # Set the domain sizes and number of elements based on the input file ------
+    if [[ $inputFile == *"grainReadFile-2.dat"* ]]; then
+        Lx=488.4e-6
+        Ly=244.2e-6
+        Lz=244.2e-6
+
+        Nx=269
+        Ny=135
+        Nz=135
+
+        eps=9.096e-07
+
+    elif [[ $inputFile == *"grainReadFile-2_Molaro.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+
+        Lx=3.0300e-04
+        Ly=3.8280e-04
+        Lz=3.0300e-04
+
+        Nx=167
+        Ny=211
+        Nz=167
+
+        eps=9.096e-07
+
+    elif [[ $inputFile == *"grainReadFile-10_s1-10.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+
+        Lx=0.5e-03
+        Ly=0.5e-03
+        Lz=2.202e-04
+
+        Nx=275
+        Ny=275
+        Nz=122
+
+        eps=9.096e-07
+
+    elif [[ $inputFile == *"grainReadFile-27_MOLARO_s2-10.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+
+        Lx=0.75e-03
+        Ly=0.75e-03 
+        Lz=0.000242175903182621 
+
+        Nx=413
+        Ny=413
+        Nz=134
+
+        eps=9.096e-07
+
+    elif [[ $inputFile == *"grainReadFile_3D-30_s1-10.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+
+        # Check that dim = 3
+        if [[ $dim -ne 3 ]]; then
+            echo "Error: Dimension mismatch. Expected dim = 3 for input file: $inputFile"
+            exit 1
+        fi
+        
+        Lx=0.5e-03
+        Ly=0.5e-03
+        Lz=0.5e-03
+
+        Nx=275
+        Ny=275
+        Nz=275
+
+        eps=9.096e-07
+
+    else
+        echo "Error: Unknown input file."
+        exit 1
+    fi
+
+    # Exporting variables after determining the configuration
+    export folder input_dir inputFile title Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
+        humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps
+}
+
+# Function to run the simulation
+run_simulation() {
+    echo "Running simulation..."
+    mpiexec -np 12 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
+    -snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000 \
+    -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
+    -snes_linesearch_type basic | tee $folder/outp.txt
+}
+
+# Function to copy files and generate the descriptive file
+finalize_results() {
+    echo "Finalizing results..."
+    
+    # Copy necessary files to results folder
+    cp NASAv2.c run_NASAv2.sh plotNASA.py plotSSA.py plotPorosity.py $folder
+    
+    # Save simulation parameters
+    cat << EOF > $folder/sim_params.dat
+----- SIMULATION PARAMETERS -----
+Input file: $inputFile
+
+Dimensions:
+dim = $dim
+
+Interface width:
+eps = $eps
+
+Domain sizes:
+Lx = $Lx
+Ly = $Ly
+Lz = $Lz
+
+Number of elements:
+Nx = $Nx
+Ny = $Ny
+Nz = $Nz
+
+Time parameters:
+delt_t = $delt_t
+t_final = $t_final
+
+State parameters:
+humidity = $humidity
+temp = $temp
+
+Initial temperature gradients:
+grad_temp0X = $grad_temp0X
+grad_temp0Y = $grad_temp0Y
+grad_temp0Z = $grad_temp0Z
+EOF
+}
+
+# Function to run plotting scripts
+run_plotting() {
+    echo "Queuing plotNASA.py"
+    ./run_plotNASAv2.sh $name
+}
+
+# Main execution starts here
 echo " "
-echo "compiling"
+echo "Starting NASAv2 simulation workflow"
 echo " "
-make NASAv2
 
-# add name folder accordingly --------------------------------------------------
-title=NASAv2-27G-48h-T20-hum98__
-# title=NASAv2--TEST
-name=$title$(date +%Y-%m-%d__%H.%M.%S)
-dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2
-folder=$dir/$name
-
-if [ ! -d "$dir" ]; then
-  mkdir -p "$dir"
-fi
-
-mkdir $folder/
+# Define filename and title
+filename="grainReadFile_3D-30_s1-10.dat"
+title="NASAv2-TEST__"
 
 
-# Define variable names to be exported -----------------------------------------
-  # File names
-input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
-# inputFile=$input_dir"grainReadFile-88_s1-10_s2-21.dat"
-# inputFile=$input_dir"grainReadFile-135_s1-10_s2-21.dat"
-# inputFile=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
-# inputFile=$input_dir"grainReadFile-5_s1-10.dat"
-# inputFile=$input_dir"grainReadFile-2.dat"
-# inputFile=$input_dir"grainReadFile-2_Molaro.dat"
-inputFile=$input_dir"grainReadFile-27_MOLARO_s2-10.dat"
-# inputFile=$input_dir"grainReadFile_3D-42_s1-10.dat"
-# inputFile=$input_dir"grainReadFile-10_s1-10.dat"
-# inputFile=$input_dir"grainReadFile-37_s1-10_s2-21.dat"
+compile_code
+create_folder
 
-# Define simulation parameters -------------------------------------------------
-# Define dimensions
-dim=3
+# Define default time and physical parameters here
+delt_t=1.0e-4
+t_final=1
+n_out=2
 
-# Converty scientic notation to decimal using bc if needed
-dim=$(echo "$dim" | bc -l)
-
-# Domain sizes
-# Lx=488.4e-6                    # Domain size X -- 2 Grain
-# Ly=244.2e-6                    # Domain size Y -- 2 Grain
-# Lz=244.2e-6                    # Domain size Z -- 2 Grain
-
-# Lx=3.0300e-04                   # Domain size X -- 2 Grain (Molaro)
-# Ly=3.8280e-04                   # Domain size Y -- 2 Grain (Molaro)
-# Lz=3.0300e-04                   # Domain size Z -- 2 Grain (Molaro)
-
-# Lx=0.5e-03                     # Domain size X -- 30 Grain (3D)
-# Ly=0.5e-03                     # Domain size Y -- 30 Grain (3D)
-# Lz=0.5e-03                     # Domain size Z -- 30 Grain (3D)
-
-# Lx=0.35e-03                    # Domain size X -- 5 Grain
-# Ly=0.35e-03                    # Domain size Y -- 5 Grain
-# Lz=2.6424e-04                  # Domain size Z -- 5 Grain
-
-# Lx=0.35e-03                   # Domain size X -- 5 Grain
-# Ly=0.35e-03                   # Domain size Y -- 5 Grain
-# Lz=2.202e-04                  # Domain size Z -- 5 Grain
-
-# Lx=488.4e-6                    # Domain size X -- 2 Grain
-# Ly=244.2e-6                    # Domain size Y -- 2 Grain
-# Lz=244.2e-6                    # Domain size Z -- 2 Grain
-
-# Lx=0.5e-03                    # Domain size X -- 10 Grain
-# Ly=0.5e-03                    # Domain size Y -- 10 Grain
-# Lz=1.101e-04                  # Domain size Z -- 10 Grain
-
-# Lx=0.5e-03                    # Domain size X -- 10 Grain
-# Ly=0.5e-03                    # Domain size Y -- 10 Grain
-# Lz=2.202e-04                  # Domain size Z -- 10 Grain
-
-Lx=0.75e-03                   # Domain size X -- 27 Grain
-Ly=0.75e-03                   # Domain size Y -- 27 Grain
-Lz=0.000242175903182621       # Domain size Z -- 27 Grain
-
-# Lx=2.0e-3                     # Domain size X -- 88 Grain
-# Ly=2.0e-3                     # Domain size Y -- 88 Grain
-# Lz=2.509e-04                  # Domain size Z -- 88 Grain
-
-# Lx=3.2e-3                     # Domain size X -- 135/165 Grain
-# Ly=3.2e-3                     # Domain size Y -- 135/165 Grain
-# Lz=1.0e-3                     # Domain size Z -- 135/165 Grain
-
-# Convert scientific notation to decimal using bc
-Lx=$(echo "$Lx" | bc -l)
-Ly=$(echo "$Ly" | bc -l)
-Lz=$(echo "$Lz" | bc -l)
-
-# Number of elements
-# Nx=264                        # Number of elements in X -- 2 Grain
-# Ny=132                        # Number of elements in Y -- 2 Grain
-# Nz=132                        # Number of elements in Z -- 2 Grain
-
-# Nx=167                        # Domain size X -- 2 Grain (Molaro)
-# Ny=211                        # Domain size Y -- 2 Grain (Molaro)
-# Nz=167                        # Domain size Z -- 2 Grain (Molaro)
-
-# Nx=275                        # Number of elements in X -- 30 Grain (3D)
-# Ny=275                        # Number of elements in Y -- 30 Grain (3D)
-# Nz=275                        # Number of elements in Z -- 30 Grain (3D)
-
-# Nx=190                        # Number of elements in X -- 5 Grain
-# Ny=190                        # Number of elements in Y -- 5 Grain
-# Nz=143                        # Number of elements in Z -- 5 Grain
-
-# Nx=193                        # Number of elements in X -- 5 Grain
-# Ny=193                        # Number of elements in Y -- 5 Grain
-# Nz=122                        # Number of elements in Z -- 5 Grain
-
-# Nx=275                        # Number of elements in X -- 10 Grain
-# Ny=275                        # Number of elements in Y -- 10 Grain
-# Nz=122                        # Number of elements in Z -- 10 Grain
-
-# Nx=264                        # Number of elements in X -- 2 Grain
-# Ny=132                        # Number of elements in Y -- 2 Grain
-# Nz=132                        # Number of elements in Z -- 2 Grain
-
-# Nx=413                        # Number of elements in X -- 27 Grain
-# Ny=413                        # Number of elements in Y -- 27 Grain
-# Nz=134                        # Number of elements in Z -- 27 Grain
-
-Nx=275                        # Number of elements in X -- 27 Grain (TEST)
-Ny=275                        # Number of elements in Y -- 27 Grain (TEST)
-Nz=90                        # Number of elements in Z -- 27 Grain (TEST)
-
-# Nx=1100                       # Number of elements in X -- 88 Grain
-# Ny=1100                       # Number of elements in Y -- 88 Grain
-# Nz=138                        # Number of elements in Z -- 88 Grain
-
-# Nx=1760                       # Number of elements in X -- 135/165 Grain
-# Ny=1760                       # Number of elements in Y -- 135/165 Grain
-# Nz=100                        # Number of elements in Z -- 135/165 Grain
-
-# eps=9.28146307269926e-07			# Interface width
-eps=9.096e-07                   # Interface width
-
-# Time parameters
-delt_t=1.0e-4                   # Time step
-t_final=2*24*60*60                   # Final time
-n_out=200                       # Number of output files
-# t_final=57*60
-# n_out=100
-
-# Convert scientific notation to decimal using bc
-delt_t=$(echo "$delt_t" | bc -l)
 t_final=$(echo "$t_final" | bc -l)
-n_out=$(echo "$n_out" | bc -l)
 
-# Other parameters
-humidity=0.98                 # Relative humidity
-temp=-20.0                    # Temperature
+humidity=0.98
+temp=-20.0
+grad_temp0X=0.0
+grad_temp0Y=3.0
+grad_temp0Z=0.0
 
-# Initial temperature gradients
-grad_temp0X=0.0               # Initial temperature gradient X
-grad_temp0Y=3.0            # Initial temperature gradient Y
-grad_temp0Z=0.0               # Initial temperature gradient Z
+dim=3
+filename="grainReadFile-2.dat"
+title="NASAv2-TEST__"
 
-# Convert scientific notation gradients to decimal using bc if needed
-grad_temp0X=$(echo "$grad_temp0X" | bc -l)
-grad_temp0Y=$(echo "$grad_temp0Y" | bc -l)
-grad_temp0Z=$(echo "$grad_temp0Z" | bc -l)
-
-# Export variables
-export folder input_dir inputFile title Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
-    humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps
-
-
-# Copy files to folder ---------------------------------------------------------
-cp NASAv2.c$folder
-cp run_NASAv2.sh $folder
-
-echo " "
-echo "Calling ./NASAv2"
-echo " "
-
-
-# Run the simulation -----------------------------------------------------------
-mpiexec -np 12 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
--snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000  \
--ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
--snes_linesearch_type basic | tee $folder/outp.txt
-
-
-# ------------------------------------------------------------------------------ 
-# Move output file to folder ---------------------------------------------------
-mv $dir/outp.txt $folder
-cp NASAv2.c $folder
-cp run_plotNASAv2.sh $folder
-
-cp plotNASA.py $folder
-cp plotSSA.py $folder
-cp plotPorosity.py $folder
-
-# Plot the results -------------------------------------------------------------
-echo "Queing plotNASA.py"
-./run_plotNASAv2.sh $name
-
-# Create descriptive file ------------------------------------------------------
-echo "----- SIMULATION PARAMETERS -----" > $folder/sim_params.dat
-echo "Input file: $inputFile" >> $folder/sim_params.dat
-echo " " >> $folder/sim_params.dat
-
-echo "Dimensions:" >> $folder/sim_params.dat
-echo "dim = $dim" >> $folder/sim_params.dat
-echo " " >> $folder/sim_params.dat
-
-echo "Interface wiedth:" >> $folder/sim_params.dat
-echo "eps = $eps" >> $folder/sim_params.dat
-echo " " >> $folder/sim_params.dat
-
-echo "Domain sizes:" >> $folder/sim_params.dat
-echo "Lx = $Lx" >> $folder/sim_params.dat
-echo "Ly = $Ly" >> $folder/sim_params.dat
-echo "Lz = $Lz" >> $folder/sim_params.dat
-echo " " >> $folder/sim_params.dat
-
-
-echo "Number of elements:" >> $folder/sim_params.dat
-echo "Nx = $Nx" >> $folder/sim_params.dat
-echo "Ny = $Ny" >> $folder/sim_params.dat
-echo "Nz = $Nz" >> $folder/sim_params.dat
-echo " " >> $folder/sim_params.dat
-
-echo "Time parameters:" >> $folder/sim_params.dat
-echo "delt_t = $delt_t" >> $folder/sim_params.dat
-echo "t_final = $t_final" >> $folder/sim_params.dat
-echo " " >> $folder/sim_params.dat
-
-echo "State parameters:" >> $folder/sim_params.dat
-echo "humidity = $humidity" >> $folder/sim_params.dat
-echo "temp = $temp" >> $folder/sim_params.dat
-echo " " >> $folder/sim_params.dat
-
-echo "Initial temperature gradients:" >> $folder/sim_params.dat
-echo "grad_temp0X = $grad_temp0X" >> $folder/sim_params.dat
-echo "grad_temp0Y = $grad_temp0Y" >> $folder/sim_params.dat
-echo "grad_temp0Z = $grad_temp0Z" >> $folder/sim_params.dat
+set_parameters
+run_simulation
+finalize_results
+run_plotting
 
 echo "-------------------------------------------------------------------------"
 echo "Done!"
 echo " "
-
