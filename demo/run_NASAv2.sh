@@ -183,7 +183,7 @@ create_folder
 
 # Define default time and physical parameters here
 delt_t=1.0e-4
-t_final=1
+t_final=$delt_t
 n_out=2
 
 t_final=$(echo "$t_final" | bc -l)
