@@ -38,6 +38,9 @@ if [[ -n $1 ]]; then
     copy_files_to_directory $dir
     change_to_directory $dir
 
+    echo "Creating vtkOut and stlOut directories"
+    mkdir -p vtkOut stlOut
+
     # Execute plotting scripts
     execute_python_scripts $dir
 else

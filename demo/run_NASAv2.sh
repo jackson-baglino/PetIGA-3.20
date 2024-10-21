@@ -183,8 +183,8 @@ create_folder
 
 # Define default time and physical parameters here
 delt_t=1.0e-4
-t_final=$delt_t
-n_out=2
+t_final=1.0
+n_out=10
 
 t_final=$(echo "$t_final" | bc -l)
 
@@ -194,7 +194,7 @@ grad_temp0X=0.0
 grad_temp0Y=3.0
 grad_temp0Z=0.0
 
-dim=3
+dim=2
 filename="grainReadFile-2.dat"
 title="NASAv2-TEST__"
 
