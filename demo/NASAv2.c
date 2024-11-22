@@ -719,7 +719,7 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 
     // Create the filename for the output file
     char filename[256];
-    sprintf(filename, "%s/sol%d.dat", dir, step);
+    sprintf(filename, "%s/sol_%05d.dat", dir, step);
 
     // Write the vector U to the output file
     ierr = IGAWriteVec(user->iga, U, filename);
@@ -1933,8 +1933,9 @@ int main(int argc, char *argv[]) {
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
 
   //output
-  user.outp = 0; // if 0 -> output according to t_interv
-  user.t_out = 0;    user.t_interv = t_final/(n_out); //output every t_interv
+  user.outp = 2; // if 0 -> output according to t_interv
+  user.t_out = 0;    // user.t_interv = t_final/(n_out-1); //output every t_interv
+  user.t_interv =  36.0; //output every t_interv
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;
@@ -1960,8 +1961,8 @@ int main(int argc, char *argv[]) {
   lambda_sub    = a1*user.eps/d0_sub;
   tau_sub       = user.eps*lambda_sub*(beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
 
-  user.mob_sub    = user.eps/3.0/tau_sub; 
-  user.alph_sub   = lambda_sub/tau_sub;
+  user.mob_sub    = 4*user.eps/3.0/tau_sub; 
+  user.alph_sub   = 0.1*lambda_sub/tau_sub;
   if(user.flag_Tdep==0) PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
   else PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
   

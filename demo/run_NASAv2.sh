@@ -26,6 +26,9 @@ set_parameters() {
     # Select input file
     inputFile="${input_dir}${filename}"  # Default file
 
+    # Copy inputFile to results folder
+    cp $inputFile $folder
+
     # Set the domain sizes and number of elements based on the input file ------
     if [[ $inputFile == *"grainReadFile-2.dat"* ]]; then
         Lx=488.4e-6
@@ -41,14 +44,74 @@ set_parameters() {
     elif [[ $inputFile == *"grainReadFile-2_Molaro.dat"* ]]; then
         echo "Using file $inputFile"
         echo " "
+        Lx=0.0002424
+        Ly=0.0003884
+        Lz=0.0002424
 
-        Lx=3.0300e-04
-        Ly=3.8280e-04
-        Lz=3.0300e-04
+        Nx=134
+        Ny=214
+        Nz=134
 
-        Nx=167
-        Ny=211
-        Nz=167
+        eps=9.096e-07
+    elif [[ $inputFile == *"grainReadFile-2_Molaro_0p05.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+        Lx=0.0002121;
+        Ly=0.0003581;
+        Lz=0.0002121;
+
+        # Nx=117
+        # Ny=196
+        # Nz=117
+
+        Nx=234
+        Ny=392
+        Nz=234
+
+        eps=9.096e-07
+    elif [[ $inputFile == *"grainReadFile-2_Molaro_0p2.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+        Lx=0.0002424;
+        Ly=0.0003884;
+        Lz=0.0002424;
+
+        # Nx=134
+        # Ny=214
+        # Nz=134
+
+        Nx=268
+        Ny=428
+        Nz=268
+
+        eps=9.096e-07
+    elif [[ $inputFile == *"grainReadFile-2_Molaro_0p3.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+        Lx=0.0002828;
+        Ly=0.0004288;
+        Lz=0.0002828;
+
+        Nx=290
+        Ny=450
+        Nz=290
+
+        eps=9.096e-07
+
+    elif [[ $inputFile == *"grainReadFile-2_Molaro_0p5.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+        Lx=0.000303;
+        Ly=0.000449;
+        Lz=0.000303;
+
+        # Nx=167
+        # Ny=247
+        # Nz=167
+
+        Nx=334
+        Ny=494
+        Nz=334
 
         eps=9.096e-07
 
@@ -174,8 +237,8 @@ echo "Starting NASAv2 simulation workflow"
 echo " "
 
 # Define filename and title
-filename="grainReadFile_3D-30_s1-10.dat"
-title="NASAv2-TEST__"
+filename="grainReadFile-2_Molaro.dat"
+title="NASAv2-Molaro_TEST_"
 
 
 compile_code
@@ -183,20 +246,19 @@ create_folder
 
 # Define default time and physical parameters here
 delt_t=1.0e-4
-t_final=1.0
-n_out=10
+t_final=2*60*60
+n_out=100
 
 t_final=$(echo "$t_final" | bc -l)
 
-humidity=0.98
+humidity=1.0
 temp=-20.0
+
 grad_temp0X=0.0
-grad_temp0Y=3.0
+grad_temp0Y=0.0001
 grad_temp0Z=0.0
 
 dim=2
-filename="grainReadFile-2.dat"
-title="NASAv2-TEST__"
 
 set_parameters
 run_simulation
