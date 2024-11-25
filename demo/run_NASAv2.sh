@@ -236,14 +236,6 @@ echo " "
 echo "Starting NASAv2 simulation workflow"
 echo " "
 
-# Define filename and title
-filename="grainReadFile-2_Molaro.dat"
-title="NASAv2-Molaro_TEST_"
-
-
-compile_code
-create_folder
-
 # Define default time and physical parameters here
 delt_t=1.0e-4
 t_final=2*60*60
@@ -252,13 +244,20 @@ n_out=100
 t_final=$(echo "$t_final" | bc -l)
 
 humidity=1.0
-temp=-20.0
+temp=-05.0
 
 grad_temp0X=0.0
 grad_temp0Y=0.0001
 grad_temp0Z=0.0
 
 dim=2
+
+# Define filename and title
+filename="grainReadFile-2_Molaro.dat"
+title="NASAv2-Molaro"$dim"D_T"$temp"_hum"$himidty"_"
+
+compile_code
+create_folder
 
 set_parameters
 run_simulation

@@ -1961,8 +1961,8 @@ int main(int argc, char *argv[]) {
   lambda_sub    = a1*user.eps/d0_sub;
   tau_sub       = user.eps*lambda_sub*(beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
 
-  user.mob_sub    = 4*user.eps/3.0/tau_sub; 
-  user.alph_sub   = 0.1*lambda_sub/tau_sub;
+  user.mob_sub    = 20*user.eps/3.0/tau_sub; 
+  user.alph_sub   = 12*lambda_sub/tau_sub;
   if(user.flag_Tdep==0) PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
   else PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
   
