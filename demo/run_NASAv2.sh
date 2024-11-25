@@ -244,7 +244,7 @@ n_out=100
 t_final=$(echo "$t_final" | bc -l)
 
 humidity=1.0
-temp=-05.0
+temp=-20.0
 
 grad_temp0X=0.0
 grad_temp0Y=0.0001
