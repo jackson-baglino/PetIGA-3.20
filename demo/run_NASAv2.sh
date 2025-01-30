@@ -243,8 +243,8 @@ n_out=100
 
 t_final=$(echo "$t_final" | bc -l)
 
-humidity=1.0
-temp=-20.0
+humidity=0.70
+temp=-05.0
 
 grad_temp0X=0.0
 grad_temp0Y=0.0001
@@ -254,7 +254,7 @@ dim=2
 
 # Define filename and title
 filename="grainReadFile-2_Molaro.dat"
-title="NASAv2-Molaro"$dim"D_T"$temp"_hum"$himidty"_"
+title="NASAv2-Molaro"$dim"D_T"$temp"_hum"$humidity"_"
 
 compile_code
 create_folder

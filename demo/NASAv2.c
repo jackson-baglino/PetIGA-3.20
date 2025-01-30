@@ -26,6 +26,7 @@ typedef struct {
   PetscReal t_out, t_interv, t_IC;
   PetscInt  NCice, NCsed, n_act, n_actsed;
   PetscReal *Phi_sed, *alph, *mob;
+  PetscReal rho_rhovs;
 
   PetscInt  readFlag;
 
@@ -578,6 +579,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
             RhoVS_I(user,solS[1],&rhovs,NULL);
             sigm_surf=fabs(solS[2]-rhovs)/rhovs;
             rho_rhovs = user->rho_ice/rhovs;
+            user->rho_rhovs = rho_rhovs;
 
             arg_kin = 1.38e-23*(solS[1]+273.15)/(2.0*3.14159*3.0e-26);
             v_kin = pow(arg_kin,0.5)/rho_rhovs;
@@ -1788,7 +1790,6 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
-  // user.eps        = 9.1e-7;      //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
 	user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
@@ -1924,6 +1925,13 @@ int main(int argc, char *argv[]) {
   user.hum0          = humidity;
   user.temp0         = temp;
   user.grad_temp0[0] = grad_temp0X;  user.grad_temp0[1] = grad_temp0Y;  user.grad_temp0[2] = grad_temp0Z;
+  
+  // Define rho_rhovs
+  if (user.temp0 == -5.0) {
+    rho_rhovs = 2.7754e5;
+  } else {
+    rho_rhovs = 10.8285e5;
+  }
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
@@ -1961,8 +1969,8 @@ int main(int argc, char *argv[]) {
   lambda_sub    = a1*user.eps/d0_sub;
   tau_sub       = user.eps*lambda_sub*(beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
 
-  user.mob_sub    = 1*user.eps/3.0/tau_sub; 
-  user.alph_sub   = 10*lambda_sub/tau_sub;
+  user.mob_sub    = 5.5*user.eps/3.0/tau_sub; 
+  user.alph_sub   = 0.0075*lambda_sub/tau_sub;
   if(user.flag_Tdep==0) PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
   else PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
   
