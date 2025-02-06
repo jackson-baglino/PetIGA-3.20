@@ -26,7 +26,7 @@ typedef struct {
   PetscReal t_out, t_interv, t_IC;
   PetscInt  NCice, NCsed, n_act, n_actsed;
   PetscReal *Phi_sed, *alph, *mob;
-  PetscReal rho_rhovs;
+  PetscReal rho_rhovs, Patm;
 
   PetscInt  readFlag;
 
@@ -175,10 +175,12 @@ void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs,
 {
 
   PetscReal rho_air = user->rho_air;
+  PetscReal Patm = user->Patm;
   PetscReal K0,K1,K2,K3,K4,K5;
   K0 = -0.5865*1.0e4;   K1 = 0.2224*1.0e2;    K2 = 0.1375*1.0e-1;
   K3 = -0.3403*1.0e-4;  K4 = 0.2697*1.0e-7;   K5 = 0.6918;
-  PetscReal Patm = 101325.0;
+  // PetscReal Patm = 101325.0;
+  // PetscReal Patm = 10.1325; // 101325;
   PetscReal bb = 0.62;
   PetscReal temK = tem+273.15;
   PetscReal Pvs = exp(K0*pow(temK,-1.0)+K1+K2*pow(temK,1.0)+K3*pow(temK,2.0)+K4*pow(temK,3.0)+K5*log(temK));
@@ -243,7 +245,7 @@ void Sigma0(PetscScalar temp, PetscScalar *sigm0)
   sig[0] = 3.0e-3;  sig[1] = 4.1e-3;  sig[2] = 5.5e-3; sig[3] = 8.0e-3; sig[4] = 4.0e-3;
   tem[0] = -0.0001;     tem[1] = -2.0;    tem[2] = -4.0;   tem[3] = -6.0;   tem[4] = -7.0;
   sig[5] = 6.0e-3;  sig[6] = 3.5e-2;  sig[7] = 7.0e-2; sig[8] = 1.1e-1; sig[9] = 0.75; 
-  tem[5] = -10.0;   tem[6] = -20.0;   tem[7] = -30.0;  tem[8] = -40.0;  tem[9] = -100.0;
+  tem[5] = -10.0;   tem[6] = -20.0;   tem[7] = -30.0;  tem[8] = -40.0;  tem[9] = -200.0;
 
   PetscInt ii, interv=0;
   PetscReal t0, t1, s0, s1;
@@ -1339,7 +1341,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     PetscReal x, y, z, r;
     int readCount;
     while ((readCount = fscanf(file, "%lf %lf %lf %lf", &x, &y, &z, &r)) >= 3) {
-        if (grainCount >= 200) {
+        if (grainCount >= 700) {
             fclose(file);  // Make sure to close the file before returning
             SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE, "Exceeds maximum number of grains");
         }
@@ -1809,6 +1811,8 @@ int main(int argc, char *argv[]) {
   user.flag_it0   = 1;
   user.flag_tIC   = 0;
 
+  user.Patm       = 1.013250;
+
   user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
@@ -1927,15 +1931,30 @@ int main(int argc, char *argv[]) {
   user.grad_temp0[0] = grad_temp0X;  user.grad_temp0[1] = grad_temp0Y;  user.grad_temp0[2] = grad_temp0Z;
   
   // Define rho_rhovs
-  if (user.temp0 == -5.0) {
-    rho_rhovs = 2.7754e5;
-  } else {
-    rho_rhovs = 10.8285e5;
-  }
+  PetscReal rho_vs;
+  PetscReal K0,K1,K2,K3,K4,K5;
+  PetscReal Patm = user.Patm;
+  PetscReal rho_air = user.rho_air;
+  K0 = -0.5865*1.0e4;   K1 = 0.2224*1.0e2;    K2 = 0.1375*1.0e-1;
+  K3 = -0.3403*1.0e-4;  K4 = 0.2697*1.0e-7;   K5 = 0.6918;
+  PetscReal bb = 0.62;
+  PetscReal temK = temp+273.15;
+  PetscReal Pvs = exp(K0*pow(temK,-1.0)+K1+K2*pow(temK,1.0)+K3*pow(temK,2.0)+K4*pow(temK,3.0)+K5*log(temK));
+
+  rho_vs  = rho_air*bb*Pvs/(Patm-Pvs);
+  rho_rhovs = user.rho_ice/rho_vs;
+  
+  // if (user.temp0 == -5.0) {
+  //   rho_rhovs = 2.7754e5;
+  // } else if (user.temp0 == -188.0) {
+  //   rho_rhovs = 4.11200199023974e+21;
+  // } else {
+  //   rho_rhovs = 10.8285e5;
+  // }
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
-  flag_BC_Tfix    = 1;
+  flag_BC_Tfix    = 0;
   flag_BC_rhovfix = 0;
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;

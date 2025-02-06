@@ -1,9 +1,5 @@
 #!/bin/zsh
 
-################################################################################
-############################### DEFINE FUNCTIONS ###############################
-################################################################################
-
 # Function to create a timestamped results folder
 create_folder() {
     name="$title$(date +%Y-%m-%d__%H.%M.%S)"
@@ -21,32 +17,6 @@ create_folder() {
 compile_code() {
     echo "Compiling..."
     make NASAv2
-}
-
-# Function to write parameters to CSV file
-write_parameters_to_csv() {
-    csv_file="$folder/simulation_parameters.csv"
-    echo "Variable,Value" > "$csv_file"
-    echo "folder,$folder" >> "$csv_file"
-    echo "input_dir,$input_dir" >> "$csv_file"
-    echo "inputFile,$inputFile" >> "$csv_file"
-    echo "title,$title" >> "$csv_file"
-    echo "Lx,$Lx" >> "$csv_file"
-    echo "Ly,$Ly" >> "$csv_file"
-    echo "Lz,$Lz" >> "$csv_file"
-    echo "Nx,$Nx" >> "$csv_file"
-    echo "Ny,$Ny" >> "$csv_file"
-    echo "Nz,$Nz" >> "$csv_file"
-    echo "delt_t,$delt_t" >> "$csv_file"
-    echo "t_final,$t_final" >> "$csv_file"
-    echo "n_out,$n_out" >> "$csv_file"
-    echo "humidity,$humidity" >> "$csv_file"
-    echo "temp,$temp" >> "$csv_file"
-    echo "grad_temp0X,$grad_temp0X" >> "$csv_file"
-    echo "grad_temp0Y,$grad_temp0Y" >> "$csv_file"
-    echo "grad_temp0Z,$grad_temp0Z" >> "$csv_file"
-    echo "dim,$dim" >> "$csv_file"
-    echo "eps,$eps" >> "$csv_file"
 }
 
 # Function to set simulation parameters
@@ -272,12 +242,13 @@ run_simulation() {
     -snes_linesearch_type basic | tee $folder/outp.txt
 }
 
-# Function to finalize results
+# Function to copy files and generate the descriptive file
 finalize_results() {
     echo "Finalizing results..."
+    
+    # Copy necessary files to results folder
     cp NASAv2.c run_NASAv2.sh plotNASA.py plotSSA.py plotPorosity.py $folder
-    write_parameters_to_csv
-
+    
     # Save simulation parameters
     cat << EOF > $folder/sim_params.dat
 ----- SIMULATION PARAMETERS -----
@@ -320,32 +291,38 @@ run_plotting() {
     ./run_plotNASAv2.sh $name
 }
 
-################################################################################
-########################## Main execution starts here ##########################
-################################################################################
-
+# Main execution starts here
 echo " "
 echo "Starting NASAv2 simulation workflow"
 echo " "
 
+# Define default time and physical parameters here
 delt_t=1.0e-4
 t_final=2*60*60
-n_out=10 #100
+n_out=100
+
 t_final=$(echo "$t_final" | bc -l)
+
 humidity=0.70
 temp=-188.0
+
 grad_temp0X=0.0
-grad_temp0Y=0.1
+grad_temp0Y=0.0001
 grad_temp0Z=0.0
-dim=3
-filename="grainReadFile-2_Molaro.dat"
-title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
+
+dim=2
+
+# Define filename and title
+# filename="grainReadFile-2_Molaro.dat"
+filename="grainReadFile_3D-500_s1-10.dat"
+title="NASAv2-42G"$dim"D_T"$temp"_hum"$humidity"_"
 
 compile_code
 create_folder
+
 set_parameters
-finalize_results
 run_simulation
+finalize_results
 run_plotting
 
 echo "-------------------------------------------------------------------------"
