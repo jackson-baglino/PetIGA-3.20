@@ -9,26 +9,80 @@
 
 
 typedef struct {
-  IGA       iga;
-  
-  PetscReal eps;
-  PetscReal mob_sub,mav,Etai,Etam,Etaa,alph_sub,Lambd, beta_sub0,d0_sub0;
-  PetscReal thcond_ice,thcond_met,thcond_air,cp_ice,cp_met,cp_air,rho_ice,\
-            rho_met,rho_air,dif_vap,lat_sub, diff_sub;
-  PetscReal air_lim, xi_v, xi_T;
-  PetscReal T_melt, temp0, hum0, grad_temp0[3];
-  PetscReal Lx, Ly, Lz, Nx, Ny, Nz;
-  PetscReal RCice, RCsed, RCice_dev, RCsed_dev;
-  PetscReal cent[3][200],radius[200], centsed[3][200],radiussed[200];
-  PetscReal norm0_0,norm0_1,norm0_2;
-  PetscInt  flag_it0, flag_tIC, outp, nsteps_IC, flag_xiT, flag_Tdep;
-  PetscInt  p, C, dim, periodic;
-  PetscReal t_out, t_interv, t_IC;
-  PetscInt  NCice, NCsed, n_act, n_actsed;
-  PetscReal *Phi_sed, *alph, *mob;
-  PetscReal rho_rhovs, Patm;
+  IGA       iga;  // Isogeometric analysis (IGA) structure for managing geometry and basis functions
 
-  PetscInt  readFlag;
+  // Physical parameters related to phase field and thermodynamics
+  PetscReal eps;  // Interface width parameter for phase field method
+  PetscReal mob_sub, mav;  // Mobility parameters for phase evolution
+  PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, metal, air)
+  PetscReal alph_sub;  // Substrate interaction coefficient
+  PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
+  PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
+
+  // Thermophysical properties of different phases
+  PetscReal thcond_ice, thcond_met, thcond_air;  // Thermal conductivities of ice, metal, and air
+  PetscReal cp_ice, cp_met, cp_air;  // Specific heat capacities of ice, metal, and air
+  PetscReal rho_ice, rho_met, rho_air;  // Densities of ice, metal, and air
+  PetscReal dif_vap;  // Vapor diffusivity in air
+  PetscReal lat_sub;  // Latent heat of sublimation
+  PetscReal diff_sub;  // Diffusivity related to sublimation
+
+  // Environmental conditions and threshold parameters
+  PetscReal air_lim;  // Air phase fraction limit (threshold to distinguish between ice/air)
+  PetscReal xi_v, xi_T;  // Characteristic non-dimensional parameters for vapor and temperature
+
+  // Initial and boundary condition parameters
+  PetscReal T_melt;  // Melting temperature of ice
+  PetscReal temp0, hum0;  // Initial temperature and humidity
+  PetscReal grad_temp0[3];  // Initial temperature gradient in x, y, and z directions
+
+  // Domain size and resolution
+  PetscReal Lx, Ly, Lz;  // Physical domain dimensions in x, y, and z
+  PetscReal Nx, Ny, Nz;  // Number of grid points in x, y, and z directions
+
+  // Radius of curvature parameters (possibly for computing capillary effects)
+  PetscReal RCice, RCsed;  // Mean radius of curvature for ice and sediment grains
+  PetscReal RCice_dev, RCsed_dev;  // Standard deviation of radius of curvature for ice and sediment
+
+  // Arrays storing geometry information for ice and sediment grains
+  PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
+  PetscReal radius[200];  // Radii of individual ice grains
+  PetscReal centsed[3][200];  // Coordinates of sediment grain centers (3D array for x, y, z positions)
+  PetscReal radiussed[200];  // Radii of individual sediment grains
+
+  // Initial normal vector components (possibly for a structured interface)
+  PetscReal norm0_0, norm0_1, norm0_2;  // Normal vector components (x, y, z)
+
+  // Flags for controlling different simulation options
+  PetscInt flag_it0;  // Flag for iteration control at initialization
+  PetscInt flag_tIC;  // Flag for setting initial conditions
+  PetscInt outp;  // Output control flag (defines what to output)
+  PetscInt nsteps_IC;  // Number of initial condition timesteps
+  PetscInt flag_xiT;  // Flag for including temperature-dependent terms in the model
+  PetscInt flag_Tdep;  // Flag for temperature dependence of specific properties
+
+  // Numerical method and discretization parameters
+  PetscInt p;  // Polynomial degree of basis functions (for IGA)
+  PetscInt C;  // Continuity of basis functions
+  PetscInt dim;  // Spatial dimension of the problem (2D or 3D)
+  PetscInt periodic;  // Periodicity flag (0 = non-periodic, 1 = periodic boundaries)
+
+  // Time stepping parameters
+  PetscReal t_out;  // Output time interval
+  PetscReal t_interv;  // Intermediate time step interval
+  PetscReal t_IC;  // Total duration for initial condition phase
+
+  // Counters for active ice and sediment grains
+  PetscInt NCice, NCsed;  // Number of ice and sediment grains
+  PetscInt n_act, n_actsed;  // Number of currently active grains (ice and sediment)
+
+  // Arrays for field variables
+  PetscReal *Phi_sed;  // Phase field for sediment grains
+  PetscReal *alph;  // Alpha field, possibly phase fraction or related property
+  PetscReal *mob;  // Mobility field, spatially varying
+
+  // Flag for reading input files
+  PetscInt readFlag;  // Flag to indicate whether initial data should be read from a file
 
 } AppCtx;
 
@@ -175,12 +229,10 @@ void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs,
 {
 
   PetscReal rho_air = user->rho_air;
-  PetscReal Patm = user->Patm;
   PetscReal K0,K1,K2,K3,K4,K5;
   K0 = -0.5865*1.0e4;   K1 = 0.2224*1.0e2;    K2 = 0.1375*1.0e-1;
   K3 = -0.3403*1.0e-4;  K4 = 0.2697*1.0e-7;   K5 = 0.6918;
-  // PetscReal Patm = 101325.0;
-  // PetscReal Patm = 10.1325; // 101325;
+  PetscReal Patm = 101325.0;
   PetscReal bb = 0.62;
   PetscReal temK = tem+273.15;
   PetscReal Pvs = exp(K0*pow(temK,-1.0)+K1+K2*pow(temK,1.0)+K3*pow(temK,2.0)+K4*pow(temK,3.0)+K5*log(temK));
@@ -245,7 +297,7 @@ void Sigma0(PetscScalar temp, PetscScalar *sigm0)
   sig[0] = 3.0e-3;  sig[1] = 4.1e-3;  sig[2] = 5.5e-3; sig[3] = 8.0e-3; sig[4] = 4.0e-3;
   tem[0] = -0.0001;     tem[1] = -2.0;    tem[2] = -4.0;   tem[3] = -6.0;   tem[4] = -7.0;
   sig[5] = 6.0e-3;  sig[6] = 3.5e-2;  sig[7] = 7.0e-2; sig[8] = 1.1e-1; sig[9] = 0.75; 
-  tem[5] = -10.0;   tem[6] = -20.0;   tem[7] = -30.0;  tem[8] = -40.0;  tem[9] = -200.0;
+  tem[5] = -10.0;   tem[6] = -20.0;   tem[7] = -30.0;  tem[8] = -40.0;  tem[9] = -100.0;
 
   PetscInt ii, interv=0;
   PetscReal t0, t1, s0, s1;
@@ -581,7 +633,6 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
             RhoVS_I(user,solS[1],&rhovs,NULL);
             sigm_surf=fabs(solS[2]-rhovs)/rhovs;
             rho_rhovs = user->rho_ice/rhovs;
-            user->rho_rhovs = rho_rhovs;
 
             arg_kin = 1.38e-23*(solS[1]+273.15)/(2.0*3.14159*3.0e-26);
             v_kin = pow(arg_kin,0.5)/rho_rhovs;
@@ -1341,7 +1392,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     PetscReal x, y, z, r;
     int readCount;
     while ((readCount = fscanf(file, "%lf %lf %lf %lf", &x, &y, &z, &r)) >= 3) {
-        if (grainCount >= 700) {
+        if (grainCount >= 200) {
             fclose(file);  // Make sure to close the file before returning
             SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE, "Exceeds maximum number of grains");
         }
@@ -1792,6 +1843,7 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
+  // user.eps        = 9.1e-7;      //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
 	user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
@@ -1810,8 +1862,6 @@ int main(int argc, char *argv[]) {
   user.T_melt     = 0.0;
   user.flag_it0   = 1;
   user.flag_tIC   = 0;
-
-  user.Patm       = 1.013250;
 
   user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
@@ -1929,32 +1979,10 @@ int main(int argc, char *argv[]) {
   user.hum0          = humidity;
   user.temp0         = temp;
   user.grad_temp0[0] = grad_temp0X;  user.grad_temp0[1] = grad_temp0Y;  user.grad_temp0[2] = grad_temp0Z;
-  
-  // Define rho_rhovs
-  PetscReal rho_vs;
-  PetscReal K0,K1,K2,K3,K4,K5;
-  PetscReal Patm = user.Patm;
-  PetscReal rho_air = user.rho_air;
-  K0 = -0.5865*1.0e4;   K1 = 0.2224*1.0e2;    K2 = 0.1375*1.0e-1;
-  K3 = -0.3403*1.0e-4;  K4 = 0.2697*1.0e-7;   K5 = 0.6918;
-  PetscReal bb = 0.62;
-  PetscReal temK = temp+273.15;
-  PetscReal Pvs = exp(K0*pow(temK,-1.0)+K1+K2*pow(temK,1.0)+K3*pow(temK,2.0)+K4*pow(temK,3.0)+K5*log(temK));
-
-  rho_vs  = rho_air*bb*Pvs/(Patm-Pvs);
-  rho_rhovs = user.rho_ice/rho_vs;
-  
-  // if (user.temp0 == -5.0) {
-  //   rho_rhovs = 2.7754e5;
-  // } else if (user.temp0 == -188.0) {
-  //   rho_rhovs = 4.11200199023974e+21;
-  // } else {
-  //   rho_rhovs = 10.8285e5;
-  // }
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
-  flag_BC_Tfix    = 0;
+  flag_BC_Tfix    = 1;
   flag_BC_rhovfix = 0;
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
@@ -1988,8 +2016,8 @@ int main(int argc, char *argv[]) {
   lambda_sub    = a1*user.eps/d0_sub;
   tau_sub       = user.eps*lambda_sub*(beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
 
-  user.mob_sub    = 5.5*user.eps/3.0/tau_sub; 
-  user.alph_sub   = 0.0075*lambda_sub/tau_sub;
+  user.mob_sub    = 1*user.eps/3.0/tau_sub; 
+  user.alph_sub   = 10*lambda_sub/tau_sub;
   if(user.flag_Tdep==0) PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
   else PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
   
