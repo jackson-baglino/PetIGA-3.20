@@ -1,30 +1,46 @@
-MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20
-MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20-debug
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0-64bit
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0/*
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0--64bit/
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0-test/
-mac-optimal-mpi-3.20
-mac-studio-optimal
-test
-.vscode
-input
-Original
+# System files
 .DS_Store
-NASA.o
+
+# IDE and Editor files
+.vscode/
+.venv/
+
+# General test and temporary files
+test/
+input/
+Original/
+
+# Binary files and object files
 NASA
-NASA_panda.o
+NASA.o
 NASA_panda
-NASAv2.o
+NASA_panda.o
 NASAv2
+NASAv2.o
 Wetamorphism
+
+# Demo-related files
 demo/Laplace*
 demo/ssa_evolution_plotTEST.png
 demo/Metamorph
-.venv/*
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0_64-bit/*
 demo/Oldfiles/*
 demo/effective_k_ice.c
+
+# PETSc and MPI builds
+MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20
+MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20-debug
+
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0-64bit
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0--64bit/
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0-test/
+
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0/*
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0_64-bit/*
+
 MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.22-GCC-12.4.0_DEBUG/*
 MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-GCC-12.4.0_DEBUG
+
+# Miscellaneous build directories
+mac-optimal-mpi-3.20
+mac-studio-optimal
