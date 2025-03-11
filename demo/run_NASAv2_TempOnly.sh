@@ -7,7 +7,7 @@
 # Function to create a timestamped results folder
 create_folder() {
     name="$title$(date +%Y-%m-%d__%H.%M.%S)"
-    dir="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2"
+    dir="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2_TempOnly"
     folder="$dir/$name"
 
     if [ ! -d "$dir" ]; then
@@ -266,7 +266,7 @@ set_parameters() {
 # Function to run the simulation
 run_simulation() {
     echo "Running simulation..."
-    mpiexec -np 12 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
+    mpiexec -np 12 ./NASAv2_TempOnly -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
     -snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000 \
     -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
     -snes_linesearch_type basic | tee $folder/outp.txt
@@ -333,12 +333,12 @@ t_final=2*60*60
 n_out=10 #100
 t_final=$(echo "$t_final" | bc -l)
 humidity=0.70
-temp=-20.0
+temp=-188.0
 grad_temp0X=0.0
-grad_temp0Y=0.1
+grad_temp0Y=1.0
 grad_temp0Z=0.0
 dim=2
-filename="grainReadFile-10_s1-10.dat"
+filename="grainReadFile-2_Molaro.dat"
 title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
 
 compile_code

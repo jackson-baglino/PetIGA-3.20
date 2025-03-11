@@ -1,6 +1,9 @@
 TARGETS = \
 NASA \
 NASAv2 \
+effective_k_ice \
+NASAv2_TempOnly \
+SolveTemperature_demo \
 NASA_panda \
 Wetamorphism \
 Metamorph \
@@ -34,8 +37,10 @@ ALL: $(TARGETS)
 clean::
 	-@$(RM) $(TARGETS)
 
-CFLAGS    = -g3 -Wall -Wextra -Wno-unused-parameter #-Wconversion
-FFLAGS    = -g3 -Wall -Wextra -fcheck=all
+# CFLAGS    = -g3 -Wall -Wextra -Wno-unused-parameter #-Wconversion
+# FFLAGS    = -g3 -Wall -Wextra -fcheck=all
+CFLAGS    = -g3 -O0 -Wall -Wextra -Wno-unused-parameter
+FFLAGS    = -g3 -O0 -Wall -Wextra -fcheck=all
 CPPFLAGS  =
 FPPFLAGS  =
 LOCDIR    = demo/
@@ -54,9 +59,21 @@ NASA: NASA.o
 NASAv2: NASAv2.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+effective_k_ice: effective_k_ice.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<
+# effective_k_ice: effective_k_ice.o
+# 	$(CLINKER) -o $@ $< $(PETIGA_LIB) -g3 -O0
+# 	$(RM) -f $<	
 NASA_panda: NASA_panda.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+NASAv2_TempOnly: NASAv2_TempOnly.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<	
+SolveTemperature_demo: SolveTemperature_demo.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+	$(RM) -f $<	
 Wetamorphism: Wetamorphism.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<

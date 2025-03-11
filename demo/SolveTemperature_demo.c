@@ -9,674 +9,393 @@
 
 
 typedef struct {
-  IGA       iga;  // Isogeometric analysis (IGA) structure for managing geometry and basis functions
+  IGA       iga;
+  
+  PetscReal eps;
+  PetscReal mob_sub,mav,Etai,Etam,Etaa,alph_sub,Lambd, beta_sub0,d0_sub0;
+  PetscReal thcond_ice,thcond_met,thcond_air,cp_ice,cp_met,cp_air,rho_ice,\
+            rho_met,rho_air,dif_vap,lat_sub, diff_sub;
+  PetscReal air_lim, xi_v, xi_T;
+  PetscReal T_melt, temp0, hum0, grad_temp0[3];
+  PetscReal Lx, Ly, Lz, Nx, Ny, Nz;
+  PetscReal RCice, RCsed, RCice_dev, RCsed_dev;
+  PetscReal cent[3][200],radius[200], centsed[3][200],radiussed[200];
+  PetscReal norm0_0,norm0_1,norm0_2;
+  PetscInt  flag_it0, flag_tIC, outp, nsteps_IC, flag_xiT, flag_Tdep;
+  PetscInt  p, C, dim, periodic;
+  PetscReal t_out, t_interv, t_IC;
+  PetscInt  NCice, NCsed, n_act, n_actsed;
+  PetscReal *Phi_sed, *alph, *mob;
+  PetscReal *ice;
+  PetscReal rho_rhovs, Patm;
 
-  // Physical parameters related to phase field and thermodynamics
-  PetscReal eps;  // Interface width parameter for phase field method
-  PetscReal mob_sub, mav;  // Mobility parameters for phase evolution
-  PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, metal, air)
-  PetscReal alph_sub;  // Substrate interaction coefficient
-  PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
-  PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
-
-  // Thermophysical properties of different phases
-  PetscReal thcond_ice, thcond_met, thcond_air;  // Thermal conductivities of ice, metal, and air
-  PetscReal cp_ice, cp_met, cp_air;  // Specific heat capacities of ice, metal, and air
-  PetscReal rho_ice, rho_met, rho_air;  // Densities of ice, metal, and air
-  PetscReal dif_vap;  // Vapor diffusivity in air
-  PetscReal lat_sub;  // Latent heat of sublimation
-  PetscReal diff_sub;  // Diffusivity related to sublimation
-
-  // Environmental conditions and threshold parameters
-  PetscReal air_lim;  // Air phase fraction limit (threshold to distinguish between ice/air)
-  PetscReal xi_v, xi_T;  // Characteristic non-dimensional parameters for vapor and temperature
-
-  // Initial and boundary condition parameters
-  PetscReal T_melt;  // Melting temperature of ice
-  PetscReal temp0, hum0;  // Initial temperature and humidity
-  PetscReal grad_temp0[3];  // Initial temperature gradient in x, y, and z directions
-
-  // Domain size and resolution
-  PetscReal Lx, Ly, Lz;  // Physical domain dimensions in x, y, and z
-  PetscReal Nx, Ny, Nz;  // Number of grid points in x, y, and z directions
-
-  // Radius of curvature parameters (possibly for computing capillary effects)
-  PetscReal RCice, RCsed;  // Mean radius of curvature for ice and sediment grains
-  PetscReal RCice_dev, RCsed_dev;  // Standard deviation of radius of curvature for ice and sediment
-
-  // Arrays storing geometry information for ice and sediment grains
-  PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
-  PetscReal radius[200];  // Radii of individual ice grains
-  PetscReal centsed[3][200];  // Coordinates of sediment grain centers (3D array for x, y, z positions)
-  PetscReal radiussed[200];  // Radii of individual sediment grains
-
-  // Initial normal vector components (possibly for a structured interface)
-  PetscReal norm0_0, norm0_1, norm0_2;  // Normal vector components (x, y, z)
-
-  // Flags for controlling different simulation options
-  PetscInt flag_it0;  // Flag for iteration control at initialization
-  PetscInt flag_tIC;  // Flag for setting initial conditions
-  PetscInt outp;  // Output control flag (defines what to output)
-  PetscInt nsteps_IC;  // Number of initial condition timesteps
-  PetscInt flag_xiT;  // Flag for including temperature-dependent terms in the model
-  PetscInt flag_Tdep;  // Flag for temperature dependence of specific properties
-
-  // Numerical method and discretization parameters
-  PetscInt p;  // Polynomial degree of basis functions (for IGA)
-  PetscInt C;  // Continuity of basis functions
-  PetscInt dim;  // Spatial dimension of the problem (2D or 3D)
-  PetscInt periodic;  // Periodicity flag (0 = non-periodic, 1 = periodic boundaries)
-
-  // Time stepping parameters
-  PetscReal t_out;  // Output time interval
-  PetscReal t_interv;  // Intermediate time step interval
-  PetscReal t_IC;  // Total duration for initial condition phase
-
-  // Counters for active ice and sediment grains
-  PetscInt NCice, NCsed;  // Number of ice and sediment grains
-  PetscInt n_act, n_actsed;  // Number of currently active grains (ice and sediment)
-
-  // Arrays for field variables
-  PetscReal *Phi_sed;  // Phase field for sediment grains
-  PetscReal *alph;  // Alpha field, possibly phase fraction or related property
-  PetscReal *mob;  // Mobility field, spatially varying
-
-  // Flag for reading input files
-  PetscInt readFlag;  // Flag to indicate whether initial data should be read from a file
+  PetscInt  readFlag;
 
 } AppCtx;
 
-PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm, 
-  PetscReal gnorm, PetscReal fnorm, SNESConvergedReason *reason, void *cctx)
+PetscErrorCode SNESDOFConvergence(SNES snes,PetscInt it_number,PetscReal xnorm, 
+   PetscReal gnorm,PetscReal fnorm,SNESConvergedReason *reason,void *cctx)
 {
- /* ***************************************************************************
- * Custom convergence check for SNES solver.
- * 
- * This function monitors convergence by computing:
- * - The L2 norm of each component of the residual vector.
- * - (Optional) The L2 norm of the solution vector and update vector.
- * - Checks convergence criteria based on relative and absolute tolerances.
- * 
- * Inputs:
- * - snes: SNES solver context.
- * - it_number: Current iteration number.
- * - xnorm: Norm of the solution vector (unused here).
- * - gnorm: Norm of the gradient (unused here).
- * - fnorm: Norm of the function (residual norm).
- * - reason: Pointer to the convergence status.
- * - cctx: Pointer to user-defined application context (AppCtx).
- *
- * Outputs:
- * - Updates `reason` if convergence is achieved.
- *************************************************************************** */
+  /* ***************************************************************************
+  * This function is called to check the convergence of the SNES solver at each 
+  * iteration.
+  * It calculates the norms of the residual vector and the solution update 
+  * vector, and prints them along with the iteration number and the function 
+  * norm.
+  * It also checks if the convergence criteria are met and updates the 
+  * convergence reason accordingly. 
+  *************************************************************************** */
 
- PetscFunctionBegin;  // Marks function entry for PETSc error handling.
- PetscErrorCode ierr;
- AppCtx *user = (AppCtx *)cctx; // Cast context to user-defined struct.
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  AppCtx *user = (AppCtx *)cctx;
 
- // Define vectors for residual, solution, and solution update
- Vec Res, Sol, Sol_upd;
- PetscScalar n2dof0, n2dof1, n2dof2; // Norms of the residual vector components
- PetscScalar solv, solupdv;          // Norms of the solution and update vector
+  Vec Res,Sol,Sol_upd;
+  PetscScalar n2dof0,n2dof1,n2dof2;
+  PetscScalar solv,solupdv;
 
- // Retrieve the residual vector from SNES and compute its component norms.
- ierr = SNESGetFunction(snes, &Res, 0, 0);CHKERRQ(ierr);
- ierr = VecStrideNorm(Res, 0, NORM_2, &n2dof0);CHKERRQ(ierr);
- ierr = VecStrideNorm(Res, 1, NORM_2, &n2dof1);CHKERRQ(ierr);
- ierr = VecStrideNorm(Res, 2, NORM_2, &n2dof2);CHKERRQ(ierr);
+  ierr = SNESGetFunction(snes,&Res,0,0);CHKERRQ(ierr);
+  ierr = VecStrideNorm(Res,0,NORM_2,&n2dof0);CHKERRQ(ierr);
+  // ierr = VecStrideNorm(Res,1,NORM_2,&n2dof1);CHKERRQ(ierr);
+  // ierr = VecStrideNorm(Res,2,NORM_2,&n2dof2);CHKERRQ(ierr);
+  if(user->flag_tIC == 1){
+   ierr = SNESGetSolution(snes,&Sol);CHKERRQ(ierr);
+   ierr = VecStrideNorm(Sol,2,NORM_2,&solv);CHKERRQ(ierr);
+   ierr = SNESGetSolutionUpdate(snes,&Sol_upd);CHKERRQ(ierr);
+   ierr = VecStrideNorm(Sol_upd,2,NORM_2,&solupdv);CHKERRQ(ierr);
+  }
 
- // If temperature-dependent initial conditions are active, compute solution and update norms.
- if (user->flag_tIC == 1) {
-   ierr = SNESGetSolution(snes, &Sol);CHKERRQ(ierr);
-   ierr = VecStrideNorm(Sol, 2, NORM_2, &solv);CHKERRQ(ierr);  // Norm of DOF 2 solution
-   ierr = SNESGetSolutionUpdate(snes, &Sol_upd);CHKERRQ(ierr);
-   ierr = VecStrideNorm(Sol_upd, 2, NORM_2, &solupdv);CHKERRQ(ierr); // Norm of DOF 2 update
- }
-
- // Store initial residual norms at the first iteration for relative convergence checks.
- if (it_number == 0) {
+  if(it_number==0) {
    user->norm0_0 = n2dof0;
-   user->norm0_1 = n2dof1;
-   user->norm0_2 = n2dof2;
-   if (user->flag_tIC == 1) solupdv = solv;  // Initialize update norm to solution norm.
- }
+  //  user->norm0_1 = n2dof1;
+  //  user->norm0_2 = n2dof2;
+   if(user->flag_tIC == 1) solupdv = solv;  
+  }
 
- // Print iteration information and norm values for debugging.
- PetscPrintf(PETSC_COMM_WORLD, "    IT_NUMBER: %d ", it_number);
- PetscPrintf(PETSC_COMM_WORLD, "    fnorm: %.4e \n", fnorm);
- PetscPrintf(PETSC_COMM_WORLD, "    n0: %.2e r %.1e ", n2dof0, n2dof0 / user->norm0_0);
- PetscPrintf(PETSC_COMM_WORLD, "  n1: %.2e r %.1e ", n2dof1, n2dof1 / user->norm0_1);
- if (user->flag_tIC == 1)
-   PetscPrintf(PETSC_COMM_WORLD, "  x2: %.2e s %.1e \n", solv, solupdv / solv);
- else
-   PetscPrintf(PETSC_COMM_WORLD, "  n2: %.2e r %.1e \n", n2dof2, n2dof2 / user->norm0_2);
+  PetscPrintf(PETSC_COMM_WORLD,"    IT_NUMBER: %d ", it_number);
+  PetscPrintf(PETSC_COMM_WORLD,"    fnorm: %.4e \n", fnorm);
+  PetscPrintf(PETSC_COMM_WORLD,"    n0: %.2e r %.1e ", n2dof0, n2dof0/user->norm0_0);
+  // PetscPrintf(PETSC_COMM_WORLD,"  n1: %.2e r %.1e ", n2dof1, n2dof1/user->norm0_1);
+  if(user->flag_tIC == 1) PetscPrintf(PETSC_COMM_WORLD,"  x2: %.2e s %.1e \n", solv, solupdv/solv);
+  // else PetscPrintf(PETSC_COMM_WORLD,"  n2: %.2e r %.1e \n", n2dof2, n2dof2/user->norm0_2);
 
- // Retrieve SNES solver tolerances (absolute, relative, step-size)
- PetscScalar atol, rtol, stol;
- PetscInt maxit, maxf;
- ierr = SNESGetTolerances(snes, &atol, &rtol, &stol, &maxit, &maxf);CHKERRQ(ierr);
- 
- // If a previous timestep required reduction, increase relative tolerance.
- if (snes->prev_dt_red == 1) rtol *= 10.0;
+  PetscScalar atol, rtol, stol;
+  PetscInt maxit, maxf;
+  ierr = SNESGetTolerances(snes,&atol,&rtol,&stol,&maxit,&maxf);
+  if(snes->prev_dt_red ==1) rtol *= 10.0;
 
- // Convergence check based on flag_it0 setting
- if (user->flag_it0 == 1) {
-   atol = 1.0e-12;  // Set absolute tolerance
- } else {
-   atol = 1.0e-20;  // More strict absolute tolerance
- }
+  if(user->flag_it0 == 1){
+   atol = 1.0e-12;
+   if ( (n2dof0 <= rtol*user->norm0_0 || n2dof0 < atol) 
+    // && (n2dof1 <= rtol*user->norm0_1 || n2dof1 < atol)  
+    // && (n2dof2 <= rtol*user->norm0_2 || n2dof2 < atol) 
+    ) {
 
- // Check for convergence using relative and absolute norms
- if ((n2dof0 <= rtol * user->norm0_0 || n2dof0 < atol) &&
-     (n2dof1 <= rtol * user->norm0_1 || n2dof1 < atol) &&
-     (n2dof2 <= rtol * user->norm0_2 || n2dof2 < atol)) {
-   *reason = SNES_CONVERGED_FNORM_RELATIVE;
- }
+    *reason = SNES_CONVERGED_FNORM_RELATIVE;
+   }    
+  } else {
+   atol = 1.0e-20;
+   if ( (n2dof0 <= rtol*user->norm0_0 || n2dof0 < atol) 
+    //&& (n2dof1 <= rtol*user->norm0_1 || n2dof1 < atol)  
+    //&& (n2dof2 <= rtol*user->norm0_2 || n2dof2 < atol) 
+    )  {
 
- PetscFunctionReturn(0);  // Exit function safely.
+    *reason = SNES_CONVERGED_FNORM_RELATIVE;
+   }     
+  }
+
+  PetscFunctionReturn(0);
 }
 
-/**
- * @brief Computes the effective thermal conductivity based on phase fractions.
- * 
- * This function calculates the thermal conductivity of a material as a weighted 
- * sum of the thermal conductivities of ice, metal, and air phases. It also computes 
- * the derivative of conductivity with respect to the ice fraction.
- *
- * @param user Pointer to the application context containing material properties.
- * @param ice Fraction of the ice phase (0 to 1).
- * @param met Fraction of the metal phase (0 to 1).
- * @param cond Pointer to store the computed thermal conductivity.
- * @param dcond_ice Pointer to store the derivative of conductivity with respect to ice fraction.
- */
+
 void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar met, 
-                 PetscScalar *cond, PetscScalar *dcond_ice)
+                  PetscScalar *cond, PetscScalar *dcond_ice)
 {
-    // Define derivatives (initialized to 1.0, modified if phase fractions are negative)
-    PetscReal dice = 1.0, dair = 1.0;
+  PetscReal dice=1.0, dair=1.0;
+  PetscReal air = 1.0-met-ice;
+  if(met<0.0) {met=0.0;}
+  if(ice<0.0) {ice=0.0;dice=0.0;}
+  if(air<0.0) {air=0.0;dair=0.0;}
+  PetscReal cond_ice = user->thcond_ice;
+  PetscReal cond_met = user->thcond_met;
+  PetscReal cond_air = user->thcond_air;
+  if(cond)      (*cond)  = ice*cond_ice + met*cond_met + air*cond_air;
+  if(dcond_ice)    (*dcond_ice) = cond_ice*dice-cond_air*dair;
 
-    // Compute air fraction (air = 1 - ice - metal)
-    PetscReal air = 1.0 - met - ice;
-
-    // Ensure phase fractions are non-negative (corrects numerical issues)
-    if (met < 0.0) met = 0.0;
-    if (ice < 0.0) { 
-        ice = 0.0; 
-        dice = 0.0; // If ice fraction is zero, its derivative should also be zero
-    }
-    if (air < 0.0) { 
-        air = 0.0; 
-        dair = 0.0; // If air fraction is zero, its derivative should also be zero
-    }
-
-    // Retrieve material thermal conductivities from the user context
-    PetscReal cond_ice = user->thcond_ice;
-    PetscReal cond_met = user->thcond_met;
-    PetscReal cond_air = user->thcond_air;
-
-    // Compute the effective thermal conductivity as a weighted sum
-    if (cond) 
-        (*cond) = ice * cond_ice + met * cond_met + air * cond_air;
-
-    // Compute the derivative of thermal conductivity with respect to ice fraction
-    if (dcond_ice) 
-        (*dcond_ice) = cond_ice * dice - cond_air * dair;
-
-    return; // Explicit return statement for clarity
+  return;
 }
 
-/**
- * @brief Computes the effective heat capacity and its derivative with respect to ice.
- * 
- * This function calculates the heat capacity as a weighted sum of contributions 
- * from ice, metal, and air. It also computes the derivative of heat capacity 
- * with respect to the ice fraction.
- *
- * @param user Pointer to the application context containing material properties.
- * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
- * @param cp Pointer to store computed heat capacity.
- * @param dcp_ice Pointer to store derivative of heat capacity with respect to ice.
- */
 void HeatCap(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *cp, 
-  PetscScalar *dcp_ice)
+              PetscScalar *dcp_ice)
 {
-PetscReal dice = 1.0, dair = 1.0;
-PetscReal air = 1.0 - met - ice;
+  PetscReal dice=1.0, dair=1.0;
+  PetscReal air = 1.0-met-ice;
+  if(met<0.0) {met=0.0;}
+  if(ice<0.0) {ice=0.0;dice=0.0;}
+  if(air<0.0) {air=0.0;dair=0.0;}
+  PetscReal cp_ice = user->cp_ice;
+  PetscReal cp_met = user->cp_met;
+  PetscReal cp_air = user->cp_air;
+  if(cp)     (*cp)  = ice*cp_ice + met*cp_met + air*cp_air;
+  if(dcp_ice)    (*dcp_ice) = cp_ice*dice-cp_air*dair;
 
-// Ensure phase fractions are non-negative
-if (met < 0.0) met = 0.0;
-if (ice < 0.0) { ice = 0.0; dice = 0.0; }
-if (air < 0.0) { air = 0.0; dair = 0.0; }
-
-// Retrieve heat capacities
-PetscReal cp_ice = user->cp_ice;
-PetscReal cp_met = user->cp_met;
-PetscReal cp_air = user->cp_air;
-
-// Compute effective heat capacity
-if (cp) 
-(*cp) = ice * cp_ice + met * cp_met + air * cp_air;
-
-// Compute derivative with respect to ice
-if (dcp_ice) 
-(*dcp_ice) = cp_ice * dice - cp_air * dair;
-
-return;
+  return;
 }
 
-/**
- * @brief Computes the effective density and its derivative with respect to ice.
- *
- * This function calculates the density as a weighted sum of contributions 
- * from ice, metal, and air. It also computes the derivative of density 
- * with respect to the ice fraction.
- *
- * @param user Pointer to the application context containing material properties.
- * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
- * @param rho Pointer to store computed density.
- * @param drho_ice Pointer to store derivative of density with respect to ice.
- */
 void Density(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *rho, 
-  PetscScalar *drho_ice)
+              PetscScalar *drho_ice)
 {
-PetscReal dice = 1.0, dair = 1.0;
-PetscReal air = 1.0 - met - ice;
+  PetscReal dice=1.0, dair=1.0;
+  PetscReal air = 1.0-met-ice;
+  if(met<0.0) {met=0.0;}
+  if(ice<0.0) {ice=0.0;dice=0.0;}
+  if(air<0.0) {air=0.0;dair=0.0;}
+  PetscReal rho_ice = user->rho_ice;
+  PetscReal rho_met = user->rho_met;
+  PetscReal rho_air = user->rho_air;
+  if(rho)     (*rho)  = ice*rho_ice + met*rho_met + air*rho_air;
+  if(drho_ice)    (*drho_ice) = rho_ice*dice-rho_air*dair;
 
-// Ensure phase fractions are non-negative
-if (met < 0.0) met = 0.0;
-if (ice < 0.0) { ice = 0.0; dice = 0.0; }
-if (air < 0.0) { air = 0.0; dair = 0.0; }
-
-// Retrieve densities
-PetscReal rho_ice = user->rho_ice;
-PetscReal rho_met = user->rho_met;
-PetscReal rho_air = user->rho_air;
-
-// Compute effective density
-if (rho) 
-(*rho) = ice * rho_ice + met * rho_met + air * rho_air;
-
-// Compute derivative with respect to ice
-if (drho_ice) 
-(*drho_ice) = rho_ice * dice - rho_air * dair;
-
-return;
+  
+  return;
 }
 
-/**
- * @brief Computes vapor diffusivity and its derivative with respect to temperature.
- * 
- * @param user Pointer to the application context containing material properties.
- * @param tem Temperature in Celsius.
- * @param difvap Pointer to store computed vapor diffusivity.
- * @param d_difvap Pointer to store derivative of vapor diffusivity with respect to ice.
- */
-void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap, 
-  PetscScalar *d_difvap)
-{
-PetscReal dif_vap = user->dif_vap;
-PetscReal Kratio = (tem + 273.15) / 273.15; // Convert temperature to Kelvin ratio
-PetscReal aa = 1.81;
+// // // void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap, 
+// // //                   PetscScalar *d_difvap)
+// // // {
 
-// Compute vapor diffusivity
-if (difvap) 
-(*difvap) = dif_vap * pow(Kratio, aa);
+// // //   PetscReal dif_vap = user->dif_vap;
+// // //   PetscReal Kratio = (tem+273.15)/273.15;
+// // //   PetscReal aa = 1.81;
+// // //   if(difvap)     (*difvap)  = dif_vap*pow(Kratio,aa);
+// // //   if(d_difvap)    (*d_difvap) = dif_vap*aa*pow(Kratio,aa-1.0)/273.15;
+  
+// // //   return;
+// // // }
 
-// Compute derivative with respect to temperature
-if (d_difvap) 
-(*d_difvap) = dif_vap * aa * pow(Kratio, aa - 1.0) / 273.15;
+// // void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs, 
+// //               PetscScalar *d_rhovs)
+// // {
 
-return;
-}
+// //   PetscReal rho_air = user->rho_air;
+// //   PetscReal Patm = user->Patm;
+// //   PetscReal K0,K1,K2,K3,K4,K5;
+// //   K0 = -0.5865*1.0e4;   K1 = 0.2224*1.0e2;    K2 = 0.1375*1.0e-1;
+// //   K3 = -0.3403*1.0e-4;  K4 = 0.2697*1.0e-7;   K5 = 0.6918;
+// //   // PetscReal Patm = 101325.0;
+// //   // PetscReal Patm = 10.1325; // 101325;
+// //   PetscReal bb = 0.62;
+// //   PetscReal temK = tem+273.15;
+// //   PetscReal Pvs = exp(K0*pow(temK,-1.0)+K1+K2*pow(temK,1.0)+K3*pow(temK,2.0)+K4*pow(temK,3.0)+K5*log(temK));
+// //   PetscReal Pvs_T = Pvs*(-K0*pow(temK,-2.0)+K2+2.0*K3*pow(temK,1.0)+3.0*K4*pow(temK,2.0)+K5/temK);
 
-/**
- * @brief Computes the saturation vapor density and its derivative with respect to temperature.
- * 
- * @param user Pointer to the application context containing material properties.
- * @param tem Temperature in Celsius.
- * @param rho_vs Pointer to store computed saturation vapor density.
- * @param d_rhovs Pointer to store derivative of saturation vapor density with respect to temperature.
- */
-void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs, 
-  PetscScalar *d_rhovs)
-{
-PetscReal rho_air = user->rho_air;
-PetscReal Patm = 101325.0;
-PetscReal bb = 0.62;
-PetscReal temK = tem + 273.15; // Convert temperature to Kelvin
+// //   if(rho_vs)     (*rho_vs)  = rho_air*bb*Pvs/(Patm-Pvs);
+// //   if(d_rhovs)  (*d_rhovs) = rho_air*bb*(Pvs_T*(Patm-Pvs)+Pvs*Pvs_T)/(Patm-Pvs)/(Patm-Pvs);
+  
+// //   return;
+// // }
 
-// Empirical coefficients for saturation pressure
-PetscReal K0 = -0.5865e4, K1 = 0.2224e2, K2 = 0.1375e-1;
-PetscReal K3 = -0.3403e-4, K4 = 0.2697e-7, K5 = 0.6918;
+// void Fice(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fice, 
+//           PetscScalar *dfice_ice)
+// {
 
-// Compute saturation vapor pressure
-PetscReal Pvs = exp(K0 * pow(temK, -1.0) + K1 + K2 * temK + 
-             K3 * pow(temK, 2.0) + K4 * pow(temK, 3.0) + 
-             K5 * log(temK));
+//   PetscReal Lambd = user->Lambd;
+//   PetscReal etai  = user->Etai;
+//   PetscReal air = 1.0-met-ice;
+//   if(fice)     (*fice)  = etai*ice*(1.0-ice)*(1.0-2.0*ice) + 2.0*Lambd*ice*met*met*air*air;
+//   if(dfice_ice)    (*dfice_ice) = etai*(1.0-6.0*ice+6.0*ice*ice) + \
+//                     2.0*Lambd*met*met*air*air - 2.0*Lambd*ice*met*met*2.0*air;
+  
+//   return;
+// }
 
-// Compute derivative of vapor pressure with respect to temperature
-PetscReal Pvs_T = Pvs * (-K0 * pow(temK, -2.0) + K2 + 
-                  2.0 * K3 * temK + 3.0 * K4 * pow(temK, 2.0) + 
-                  K5 / temK);
+// void Fwat(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fwat, 
+//           PetscScalar *dfwat_ice)
+// {
 
-// Compute saturation vapor density
-if (rho_vs) 
-(*rho_vs) = rho_air * bb * Pvs / (Patm - Pvs);
+//   PetscReal Lambd = user->Lambd;
+//   PetscReal etam  = user->Etam;
+//   PetscReal air = 1.0-met-ice;
+//   if(fwat)     (*fwat)  = etam*(met)*(1.0-met)*(1.0-2.0*met) + 2.0*Lambd*ice*ice*met*air*air;
+//   if(dfwat_ice)    {
+//     (*dfwat_ice)  = 2.0*Lambd*2.0*ice*met*air*air - 2.0*Lambd*ice*ice*met*2.0*air;
 
-// Compute derivative with respect to temperature
-if (d_rhovs) 
-(*d_rhovs) = rho_air * bb * (Pvs_T * (Patm - Pvs) + Pvs * Pvs_T) / 
-          ((Patm - Pvs) * (Patm - Pvs));
+//   }
 
-return;
-}
+  
+//   return;
+// }
 
-/**
- * @brief Computes the free energy function for the ice phase.
- * 
- * This function calculates the free energy contribution of the ice phase in the 
- * phase-field model. It also computes the derivative of this energy with 
- * respect to the ice fraction.
- *
- * @param user Pointer to the application context containing material properties.
- * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
- * @param fice Pointer to store the computed free energy for the ice phase.
- * @param dfice_ice Pointer to store the derivative of fice with respect to ice.
- */
-void Fice(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fice, 
-  PetscScalar *dfice_ice)
-{
-// Retrieve material parameters from user context
-PetscReal Lambd = user->Lambd;
-PetscReal etai  = user->Etai;
+// void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair, 
+//           PetscScalar *dfair_ice)
+// {
 
-// Compute the air fraction
-PetscReal air = 1.0 - met - ice;
+//   PetscReal Lambd = user->Lambd;
+//   PetscReal etaa  = user->Etaa;
+//   PetscReal air = 1.0-met-ice;
+//   if(fair)     (*fair)  = etaa*air*(1.0-air)*(1.0-2.0*air) + 2.0*Lambd*ice*ice*met*met*air;
+//   if(dfair_ice)    {
+//     (*dfair_ice)  = -etaa*(1.0-air)*(1.0-2.0*air) + etaa*air*(1.0-2.0*air) + etaa*air*(1.0-air)*2.0;
+//     (*dfair_ice) += 2.0*Lambd*2.0*ice*met*met*air - 2.0*Lambd*ice*ice*met*met;
+//   }
+  
+//   return;
+// }
 
-// Compute the free energy function for the ice phase
-if (fice) 
-(*fice) = etai * ice * (1.0 - ice) * (1.0 - 2.0 * ice) + 
-          2.0 * Lambd * ice * met * met * air * air;
-
-// Compute the derivative with respect to the ice fraction
-if (dfice_ice) 
-(*dfice_ice) = etai * (1.0 - 6.0 * ice + 6.0 * ice * ice) + 
-              2.0 * Lambd * met * met * air * air - 
-              2.0 * Lambd * ice * met * met * 2.0 * air;
-
-return;
-}
-
-/**
- * @brief Computes the phase evolution function for the water phase (metal fraction).
- * 
- * This function models the free energy contribution of the water (metal) phase 
- * in a phase-field simulation. It also computes the derivative with respect to 
- * the ice fraction.
- *
- * @param user Pointer to the application context containing material properties.
- * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
- * @param fwat Pointer to store the computed phase function for water.
- * @param dfwat_ice Pointer to store the derivative of fwat with respect to ice.
- */
-void Fwat(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fwat, 
-          PetscScalar *dfwat_ice)
-{
-    // Retrieve material parameters from user context
-    PetscReal Lambd = user->Lambd;
-    PetscReal etam  = user->Etam;
-
-    // Compute the air fraction
-    PetscReal air = 1.0 - met - ice;
-
-    // Compute the phase evolution function for the water phase
-    if (fwat) 
-        (*fwat) = etam * met * (1.0 - met) * (1.0 - 2.0 * met) + 
-                  2.0 * Lambd * ice * ice * met * air * air;
-
-    // Compute the derivative with respect to the ice fraction
-    if (dfwat_ice) {
-        (*dfwat_ice) = 2.0 * Lambd * 2.0 * ice * met * air * air 
-                     - 2.0 * Lambd * ice * ice * met * 2.0 * air;
-    }
-
-    return;
-}
-
-/**
- * @brief Computes the phase evolution function for the air phase.
- * 
- * This function models the free energy contribution of the air phase in a 
- * phase-field simulation. It also computes the derivative with respect to 
- * the ice fraction.
- *
- * @param user Pointer to the application context containing material properties.
- * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
- * @param fair Pointer to store the computed phase function for air.
- * @param dfair_ice Pointer to store the derivative of fair with respect to ice.
- */
-void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair, 
-          PetscScalar *dfair_ice)
-{
-    // Retrieve material parameters from user context
-    PetscReal Lambd = user->Lambd;
-    PetscReal etaa  = user->Etaa;
-
-    // Compute the air fraction
-    PetscReal air = 1.0 - met - ice;
-
-    // Compute the phase evolution function for the air phase
-    if (fair) 
-        (*fair) = etaa * air * (1.0 - air) * (1.0 - 2.0 * air) + 
-                  2.0 * Lambd * ice * ice * met * met * air;
-
-    // Compute the derivative with respect to the ice fraction
-    if (dfair_ice) {
-        (*dfair_ice)  = -etaa * (1.0 - air) * (1.0 - 2.0 * air) 
-                      + etaa * air * (1.0 - 2.0 * air) 
-                      + etaa * air * (1.0 - air) * 2.0;
-        (*dfair_ice) += 2.0 * Lambd * 2.0 * ice * met * met * air 
-                      - 2.0 * Lambd * ice * ice * met * met;
-    }
-
-    return;
-}
-
-/**
- * @brief Computes σ₀ (sigma zero) as a function of temperature using lookup tables and interpolation.
- * 
- * This function determines the value of σ₀ based on predefined temperature values 
- * using a logarithmic interpolation technique. If the temperature is out of range, 
- * a warning is printed, and the function assigns the closest available value.
- *
- * @param temp Temperature in Celsius.
- * @param sigm0 Pointer to store the computed σ₀ value.
- */
 void Sigma0(PetscScalar temp, PetscScalar *sigm0)
 {
-    // Lookup table for σ₀ values at different temperatures
-    PetscReal sig[10], tem[10];
+  PetscReal sig[10], tem[10];
+  sig[0] = 3.0e-3;  sig[1] = 4.1e-3;  sig[2] = 5.5e-3; sig[3] = 8.0e-3; sig[4] = 4.0e-3;
+  tem[0] = -0.0001;     tem[1] = -2.0;    tem[2] = -4.0;   tem[3] = -6.0;   tem[4] = -7.0;
+  sig[5] = 6.0e-3;  sig[6] = 3.5e-2;  sig[7] = 7.0e-2; sig[8] = 1.1e-1; sig[9] = 0.75; 
+  tem[5] = -10.0;   tem[6] = -20.0;   tem[7] = -30.0;  tem[8] = -40.0;  tem[9] = -200.0;
 
-    // Predefined values for σ₀ corresponding to specific temperatures
-    sig[0] = 3.0e-3;  sig[1] = 4.1e-3;  sig[2] = 5.5e-3;  sig[3] = 8.0e-3;  sig[4] = 4.0e-3;
-    sig[5] = 6.0e-3;  sig[6] = 3.5e-2;  sig[7] = 7.0e-2;  sig[8] = 1.1e-1;  sig[9] = 0.75;
+  PetscInt ii, interv=0;
+  PetscReal t0, t1, s0, s1;
+  if(temp>tem[0] || temp<tem[9]) PetscPrintf(PETSC_COMM_WORLD,"Temperature out of range: Sigma_0 \n");
 
-    // Corresponding temperature values (in Celsius)
-    tem[0] = -0.0001;  tem[1] = -2.0;   tem[2] = -4.0;   tem[3] = -6.0;   tem[4] = -7.0;
-    tem[5] = -10.0;    tem[6] = -20.0;  tem[7] = -30.0;  tem[8] = -40.0;  tem[9] = -100.0;
+  for(ii=0;ii<10;ii++){
+    if(temp<=tem[ii]) interv = ii;
+  }
+  if(temp>tem[0]) interv = -1;
 
-    PetscInt ii, interv = 0;
-    PetscReal t0, t1, s0, s1;
+  if(interv ==-1) (*sigm0) = sig[0];
+  else if (interv==9) (*sigm0) = sig[9];
+  else{
+    t0=fabs(tem[interv]), t1=fabs(tem[interv+1]);
+    s0=sig[interv], s1=sig[interv+1];
 
-    // Warn user if temperature is outside the valid range
-    if (temp > tem[0] || temp < tem[9]) 
-        PetscPrintf(PETSC_COMM_WORLD, "Warning: Temperature out of range in Sigma0 function.\n");
+    (*sigm0) = pow(10.0, log10(s0) + (log10(s1)-log10(s0))/(log10(t1)-log10(t0))*(log10(fabs(temp))-log10(t0)) );
+  }
 
-    // Find the interval in which `temp` falls
-    for (ii = 0; ii < 10; ii++) {
-        if (temp <= tem[ii]) 
-            interv = ii;
-    }
+  
 
-    // If temperature is above the highest defined value, use the first table value
-    if (temp > tem[0]) 
-        interv = -1;
-
-    // Assign σ₀ based on the identified interval
-    if (interv == -1) {
-        *sigm0 = sig[0];  // Assign σ₀ at highest temperature
-    }
-    else if (interv == 9) {
-        *sigm0 = sig[9];  // Assign σ₀ at lowest temperature
-    }
-    else {
-        // Get the bounding temperature and σ₀ values
-        t0 = fabs(tem[interv]); 
-        t1 = fabs(tem[interv + 1]);
-        s0 = sig[interv]; 
-        s1 = sig[interv + 1];
-
-        // Compute logarithmic interpolation for σ₀
-        *sigm0 = pow(10.0, log10(s0) + 
-                          (log10(s1) - log10(s0)) / (log10(t1) - log10(t0)) * 
-                          (log10(fabs(temp)) - log10(t0)));
-    }
-
-    return;
+  return;
 }
 
 PetscErrorCode Residual(IGAPoint pnt,
-                        PetscReal shift, const PetscScalar *V,
-                        PetscReal t, const PetscScalar *U,
-                        PetscScalar *Re, void *ctx) {
-    AppCtx *user = (AppCtx*) ctx;
+                        PetscReal shift,const PetscScalar *V,
+                        PetscReal t,const PetscScalar *U,
+                        PetscScalar *Re,void *ctx)
+{
+  AppCtx *user = (AppCtx*) ctx;
 
-    // Extract user-defined parameters
-    PetscInt l, dim = user->dim;
-    PetscReal eps = user->eps;
-    PetscReal Etai = user->Etai;
-    PetscReal Etam = user->Etam;
-    PetscReal Etaa = user->Etaa;
-    PetscReal ETA = Etaa * Etai + Etaa * Etam + Etam * Etai;
-    PetscReal rho_ice = user->rho_ice;
-    PetscReal lat_sub = user->lat_sub;
-    PetscReal air_lim = user->air_lim;
-    PetscReal xi_v = user->xi_v;
-    PetscReal xi_T = user->xi_T;
-    PetscReal rhoSE = rho_ice;
+  PetscInt l, dim = user->dim;
+  PetscReal eps = user->eps;
+  PetscReal Etai = user->Etai;
+  PetscReal Etam = user->Etam;
+  PetscReal Etaa = user->Etaa;
+  PetscReal ETA = Etaa*Etai + Etaa*Etam + Etam*Etai; 
+  PetscReal rho_ice = user->rho_ice;
+  PetscReal lat_sub = user->lat_sub;
+  PetscReal air_lim = user->air_lim;
+  PetscReal xi_v = user->xi_v;
+  PetscReal xi_T = user->xi_T;
+  PetscReal rhoSE = rho_ice;
+  PetscInt indGP = pnt->index + pnt->count *pnt->parent->index;
+  PetscReal mob, alph_sub;
+  if(user->flag_Tdep==1) {
+    mob = user->mob[indGP];
+    alph_sub = user->alph[indGP];
+  } else {
+    mob = user->mob_sub;
+    alph_sub = user->alph_sub;
+  }
+  PetscReal met = user->Phi_sed[indGP];
 
-    // Compute the global index of the current Gauss point
-    PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
+  if(pnt->atboundary){
     
-    // Mobility and sublimation coefficient (temperature dependent or fixed)
-    PetscReal mob, alph_sub;
-    if (user->flag_Tdep == 1) {
-        mob = user->mob[indGP];
-        alph_sub = user->alph[indGP];
-    } else {
-        mob = user->mob_sub;
-        alph_sub = user->alph_sub;
+  } else  {
+    
+    PetscScalar sol_t[1],sol[1];
+    PetscScalar grad_sol[1][dim];
+    IGAPointFormValue(pnt,V,&sol_t[0]);
+    IGAPointFormValue(pnt,U,&sol[0]);
+    IGAPointFormGrad (pnt,U,&grad_sol[0][0]);
+
+    // PetscScalar ice, ice_t, grad_ice[dim];
+    // ice          = sol[0]; 
+    // ice_t        = sol_t[0]; 
+    // for(l=0;l<dim;l++) grad_ice[l]  = grad_sol[0][l];
+
+
+    // PetscScalar air, air_t;
+    // air          = 1.0-met-ice;
+    // air_t        = -ice_t;
+
+    PetscScalar tem, tem_t, grad_tem[dim];
+    tem          = sol[0];
+    tem_t        = sol_t[0];
+    for(l=0;l<dim;l++) grad_tem[l]  = grad_sol[0][l];
+
+    // PetscScalar rhov, rhov_t, grad_rhov[dim];
+    // rhov           = sol[2];
+    // rhov_t         = sol_t[2];
+    // for(l=0;l<dim;l++) grad_rhov[l]   = grad_sol[2][l];
+
+    PetscReal thcond,cp,rho,difvap,rhoI_vs,fice,fmet,fair;
+    ThermalCond(user,*user->ice,met,&thcond,NULL);
+    HeatCap(user,*user->ice,met,&cp,NULL);
+    Density(user,*user->ice,met,&rho,NULL);
+    // VaporDiffus(user,tem,&difvap,NULL);
+    // RhoVS_I(user,tem,&rhoI_vs,NULL);
+    // Fice(user,ice,met,&fice,NULL);
+    // Fwat(user,ice,met,&fmet,NULL);
+    // Fair(user,ice,met,&fair,NULL);
+
+    const PetscReal *N0,(*N1)[dim]; 
+    IGAPointGetShapeFuns(pnt,0,(const PetscReal**)&N0);
+    IGAPointGetShapeFuns(pnt,1,(const PetscReal**)&N1);
+    
+    PetscScalar (*R)[1] = (PetscScalar (*)[1])Re;
+    PetscInt a,nen=pnt->nen;
+    for(a=0; a<nen; a++) {
+      
+      PetscReal R_ice,R_tem,R_vap;
+
+      if(user->flag_tIC==1){
+
+        // R_ice  = 0.0;//N0[a]*ice_t;
+
+        R_tem  =  0.0;//rho*cp*N0[a]*tem_t;
+        R_tem +=  0.0;//thcond*(N1[a][0]*grad_tem[0] + N1[a][1]*grad_tem[1]);
+
+        // R_vap  =  0.0;//N0[a]*rhov;
+        // R_vap -=  0.0;//N0[a]*rhoI_vs;
+
+      } else {
+
+        // R_ice  = N0[a]*ice_t; 
+        // for(l=0;l<dim;l++) R_ice += 3.0*mob*eps*(N1[a][l]*grad_ice[l]);
+        // R_ice += N0[a]*mob*3.0/eps/ETA*((Etam+Etaa)*fice - Etaa*fmet - Etam*fair);
+        // R_ice -= N0[a]*alph_sub*ice*ice*air*air*(rhov-rhoI_vs)/rho_ice;        
+
+        R_tem  = rho*cp*N0[a]*tem_t;
+        for(l=0;l<dim;l++) R_tem += xi_T*thcond*(N1[a][l]*grad_tem[l]);
+        // R_tem += xi_T*rho*lat_sub*N0[a]*air_t;
+
+        // R_vap  = N0[a]*rhov*air_t;
+        // if(air>air_lim){
+        //   R_vap += N0[a]*air*rhov_t;
+        //   for(l=0;l<dim;l++) R_vap += xi_v*difvap*air*(N1[a][l]*grad_rhov[l] );
+        // } else {
+        //   R_vap += N0[a]*air_lim*rhov_t;
+        //   for(l=0;l<dim;l++) R_vap += xi_v*difvap*air_lim*(N1[a][l]*grad_rhov[l] );
+        // }
+        // R_vap -=  xi_v*N0[a]*rhoSE*air_t;        
+
+      }
+
+      // R[a][0] = R_ice;
+      // R[a][1] = R_tem;
+      // R[a][2] = R_vap;
+      R[a][0] = R_tem;
     }
-
-    // Sediment phase fraction
-    PetscReal met = user->Phi_sed[indGP];
-
-    // Boundary condition handling (if applicable)
-    if (pnt->atboundary) {
-        return 0; // No residual calculation at boundaries (modify as needed)
-    }
-
-    // Solution values at Gauss points
-    PetscScalar sol_t[3], sol[3];
-    PetscScalar grad_sol[3][dim];
-    IGAPointFormValue(pnt, V, &sol_t[0]);
-    IGAPointFormValue(pnt, U, &sol[0]);
-    IGAPointFormGrad(pnt, U, &grad_sol[0][0]);
-
-    // Extract phase field variables and their gradients
-    PetscScalar ice = sol[0], ice_t = sol_t[0];
-    PetscScalar grad_ice[dim];
-    for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
     
-    // Air phase (complementary to ice and sediment)
-    PetscScalar air = 1.0 - met - ice;
-    PetscScalar air_t = -ice_t;
-    
-    // Temperature field
-    PetscScalar tem = sol[1], tem_t = sol_t[1];
-    PetscScalar grad_tem[dim];
-    for (l = 0; l < dim; l++) grad_tem[l] = grad_sol[1][l];
-    
-    // Vapor density field
-    PetscScalar rhov = sol[2], rhov_t = sol_t[2];
-    PetscScalar grad_rhov[dim];
-    for (l = 0; l < dim; l++) grad_rhov[l] = grad_sol[2][l];
-    
-    // Compute material properties based on ice and sediment fractions
-    PetscReal thcond, cp, rho, difvap, rhoI_vs, fice, fmet, fair;
-    ThermalCond(user, ice, met, &thcond, NULL);
-    HeatCap(user, ice, met, &cp, NULL);
-    Density(user, ice, met, &rho, NULL);
-    VaporDiffus(user, tem, &difvap, NULL);
-    RhoVS_I(user, tem, &rhoI_vs, NULL);
-    Fice(user, ice, met, &fice, NULL);
-    Fwat(user, ice, met, &fmet, NULL);
-    Fair(user, ice, met, &fair, NULL);
+  }
 
-    // Retrieve shape functions
-    const PetscReal *N0, (*N1)[dim];
-    IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
-    IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
-    
-    // Residual contributions
-    PetscScalar (*R)[3] = (PetscScalar (*)[3])Re;
-    PetscInt a, nen = pnt->nen;
-    for (a = 0; a < nen; a++) {
-        PetscReal R_ice = 0.0, R_tem = 0.0, R_vap = 0.0;
-
-        if (user->flag_tIC == 1) {
-            // If initial condition flag is set, residuals are zeroed (modify if needed)
-            R_ice = 0.0;
-            R_tem = 0.0;
-            R_vap = 0.0;
-        } else {
-            // Phase field residual
-            R_ice = N0[a] * ice_t;
-            for (l = 0; l < dim; l++) R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-            R_ice += N0[a] * mob * 3.0 / eps / ETA * ((Etam + Etaa) * fice - Etaa * fmet - Etam * fair);
-            R_ice -= N0[a] * alph_sub * ice * ice * air * air * (rhov - rhoI_vs) / rho_ice;
-
-            // Energy equation residual (temperature)
-            R_tem = rho * cp * N0[a] * tem_t;
-            for (l = 0; l < dim; l++) R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
-            R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
-
-            // Vapor transport residual
-            R_vap = N0[a] * rhov * air_t;
-            if (air > air_lim) {
-                R_vap += N0[a] * air * rhov_t;
-                for (l = 0; l < dim; l++) R_vap += xi_v * difvap * air * (N1[a][l] * grad_rhov[l]);
-            } else {
-                R_vap += N0[a] * air_lim * rhov_t;
-                for (l = 0; l < dim; l++) R_vap += xi_v * difvap * air_lim * (N1[a][l] * grad_rhov[l]);
-            }
-            R_vap -= xi_v * N0[a] * rhoSE * air_t;
-        }
-
-        // Assign computed residuals
-        R[a][0] = R_ice;
-        R[a][1] = R_tem;
-        R[a][2] = R_vap;
-    }
-
-    return 0;
+  return 0;
 }
-
 
 PetscErrorCode Jacobian(IGAPoint pnt,
                         PetscReal shift,const PetscScalar *V,
@@ -712,54 +431,54 @@ PetscErrorCode Jacobian(IGAPoint pnt,
 
   } else {
 
-    PetscScalar sol_t[3],sol[3];
-    PetscScalar grad_sol[3][dim];
+    PetscScalar sol_t[1],sol[1];
+    PetscScalar grad_sol[1][dim];
     IGAPointFormValue(pnt,V,&sol_t[0]);
     IGAPointFormValue(pnt,U,&sol[0]);
     IGAPointFormGrad (pnt,U,&grad_sol[0][0]);
 
-    PetscScalar ice, ice_t, grad_ice[dim];
-    ice          = sol[0]; 
-    ice_t        = sol_t[0]; 
-    for(l=0;l<dim;l++) grad_ice[l]  = grad_sol[0][l];
+    // PetscScalar ice, ice_t, grad_ice[dim];
+    // ice          = sol[0]; 
+    // ice_t        = sol_t[0]; 
+    // for(l=0;l<dim;l++) grad_ice[l]  = grad_sol[0][l];
 
-    PetscScalar air, air_t;
-    air          = 1.0-met-ice;
-    air_t        = -ice_t;
+    // PetscScalar air, air_t;
+    // air          = 1.0-met-ice;
+    // air_t        = -ice_t;
 
     PetscScalar tem, tem_t, grad_tem[dim];
-    tem          = sol[1];
-    tem_t        = sol_t[1];
-    for(l=0;l<dim;l++) grad_tem[l]  = grad_sol[1][l];
+    tem          = sol[0];
+    tem_t        = sol_t[0];
+    for(l=0;l<dim;l++) grad_tem[l]  = grad_sol[0][l];
 
-    PetscScalar rhov, rhov_t, grad_rhov[dim];
-    rhov           = sol[2];
-    rhov_t         = sol_t[2];
-    for(l=0;l<dim;l++) grad_rhov[l]   = grad_sol[2][l];
+    // PetscScalar rhov, rhov_t, grad_rhov[dim];
+    // rhov           = sol[2];
+    // rhov_t         = sol_t[2];
+    // for(l=0;l<dim;l++) grad_rhov[l]   = grad_sol[2][l];
 
     PetscReal thcond,dthcond_ice;
-    ThermalCond(user,ice,met,&thcond,&dthcond_ice);
+    ThermalCond(user,*user->ice,met,&thcond,&dthcond_ice);
     PetscReal cp,dcp_ice;
-    HeatCap(user,ice,met,&cp,&dcp_ice);
+    HeatCap(user,*user->ice,met,&cp,&dcp_ice);
     PetscReal rho,drho_ice;
-    Density(user,ice,met,&rho,&drho_ice);
-    PetscReal difvap,d_difvap;
-    VaporDiffus(user,tem,&difvap,&d_difvap);
-    PetscReal rhoI_vs,drhoI_vs;
-    RhoVS_I(user,tem,&rhoI_vs,&drhoI_vs);
-    PetscReal fice_ice;
-    Fice(user,ice,met,NULL,&fice_ice);
-    PetscReal fmet_ice;
-    Fwat(user,ice,met,NULL,&fmet_ice);
-    PetscReal fair_ice;
-    Fair(user,ice,met,NULL,&fair_ice);
+    Density(user,*user->ice,met,&rho,&drho_ice);
+    // PetscReal difvap,d_difvap;
+    // VaporDiffus(user,tem,&difvap,&d_difvap);
+    // PetscReal rhoI_vs,drhoI_vs;
+    // RhoVS_I(user,tem,&rhoI_vs,&drhoI_vs);
+    // PetscReal fice_ice;
+    // Fice(user,ice,met,NULL,&fice_ice);
+    // PetscReal fmet_ice;
+    // Fwat(user,ice,met,NULL,&fmet_ice);
+    // PetscReal fair_ice;
+    // Fair(user,ice,met,NULL,&fair_ice);
 
     const PetscReal *N0,(*N1)[dim]; 
     IGAPointGetShapeFuns(pnt,0,(const PetscReal**)&N0);
     IGAPointGetShapeFuns(pnt,1,(const PetscReal**)&N1);
  
     PetscInt a,b,nen=pnt->nen;
-    PetscScalar (*J)[3][nen][3] = (PetscScalar (*)[3][nen][3])Je;
+    PetscScalar (*J)[1][nen][1] = (PetscScalar (*)[1][nen][1])Je;
     for(a=0; a<nen; a++) {
       for(b=0; b<nen; b++) {
 
@@ -767,41 +486,41 @@ PetscErrorCode Jacobian(IGAPoint pnt,
 
         } else {
         
-        //ice
-          J[a][0][b][0] += shift*N0[a]*N0[b];
-          for(l=0;l<dim;l++) J[a][0][b][0] += 3.0*mob*eps*(N1[a][l]*N1[b][l]);
+        // //ice
+        //   J[a][0][b][0] += shift*N0[a]*N0[b];
+        //   for(l=0;l<dim;l++) J[a][0][b][0] += 3.0*mob*eps*(N1[a][l]*N1[b][l]);
 
-          J[a][0][b][0] += N0[a]*mob*3.0/eps/ETA*((Etam+Etaa)*fice_ice - Etaa*fmet_ice - Etam*fair_ice)*N0[b];
-          J[a][0][b][0] -= N0[a]*alph_sub*2.0*ice*N0[b]*air*air*(rhov-rhoI_vs)/rho_ice;
-          J[a][0][b][0] += N0[a]*alph_sub*ice*ice*2.0*air*N0[b]*(rhov-rhoI_vs)/rho_ice;
-          J[a][0][b][1] += N0[a]*alph_sub*ice*ice*air*air*drhoI_vs*N0[b]/rho_ice;
-          J[a][0][b][2] -= N0[a]*alph_sub*ice*ice*air*air*N0[b]/rho_ice;
+        //   J[a][0][b][0] += N0[a]*mob*3.0/eps/ETA*((Etam+Etaa)*fice_ice - Etaa*fmet_ice - Etam*fair_ice)*N0[b];
+        //   J[a][0][b][0] -= N0[a]*alph_sub*2.0*ice*N0[b]*air*air*(rhov-rhoI_vs)/rho_ice;
+        //   J[a][0][b][0] += N0[a]*alph_sub*ice*ice*2.0*air*N0[b]*(rhov-rhoI_vs)/rho_ice;
+        //   J[a][0][b][1] += N0[a]*alph_sub*ice*ice*air*air*drhoI_vs*N0[b]/rho_ice;
+        //   J[a][0][b][2] -= N0[a]*alph_sub*ice*ice*air*air*N0[b]/rho_ice;
 
 
         //temperature
-          J[a][1][b][1] += shift*rho*cp*N0[a]*N0[b];
-          J[a][1][b][0] += drho_ice*N0[b]*cp*N0[a]*tem_t;
-          J[a][1][b][0] += rho*dcp_ice*N0[b]*N0[a]*tem_t;
-          for(l=0;l<dim;l++) J[a][1][b][0] += xi_T*dthcond_ice*N0[b]*(N1[a][l]*grad_tem[l]);
-          for(l=0;l<dim;l++) J[a][1][b][1] += xi_T*thcond*(N1[a][l]*N1[b][l]);
-          J[a][1][b][0] += xi_T*drho_ice*N0[b]*lat_sub*N0[a]*air_t;
-          J[a][1][b][0] -= xi_T*rho*lat_sub*N0[a]*shift*N0[b];
+          J[a][0][b][0] += shift*rho*cp*N0[a]*N0[b];
+          // J[a][1][b][0] += drho_ice*N0[b]*cp*N0[a]*tem_t;
+          // J[a][1][b][0] += rho*dcp_ice*N0[b]*N0[a]*tem_t;
+          // for(l=0;l<dim;l++) J[a][1][b][0] += xi_T*dthcond_ice*N0[b]*(N1[a][l]*grad_tem[l]);
+          for(l=0;l<dim;l++) J[a][0][b][0] += xi_T*thcond*(N1[a][l]*N1[b][l]);
+          // J[a][1][b][0] += xi_T*drho_ice*N0[b]*lat_sub*N0[a]*air_t;
+          // J[a][1][b][0] -= xi_T*rho*lat_sub*N0[a]*shift*N0[b];
 
-        //vapor density
-          J[a][2][b][0] -= N0[a]*rhov*shift*N0[b];
-          J[a][2][b][2] += N0[a]*N0[b]*air_t;
-          if(air>air_lim){
-            J[a][2][b][0] -= N0[a]*N0[b]*rhov_t;
-            J[a][2][b][2] += N0[a]*air*shift*N0[b];
-            for(l=0;l<dim;l++) J[a][2][b][0] -= xi_v*difvap*N0[b]*(N1[a][l]*grad_rhov[l]);
-            for(l=0;l<dim;l++) J[a][2][b][1] += xi_v*d_difvap*N0[b]*air*(N1[a][l]*grad_rhov[l]);
-            for(l=0;l<dim;l++) J[a][2][b][2] += xi_v*difvap*air*(N1[a][l]*N1[b][l]);        
-          } else {
-            J[a][2][b][2] += N0[a]*air_lim*shift*N0[b];
-            for(l=0;l<dim;l++) J[a][2][b][1] += xi_v*d_difvap*N0[b]*air_lim*(N1[a][l]*grad_rhov[l] );
-            for(l=0;l<dim;l++) J[a][2][b][2] += xi_v*difvap*air_lim*(N1[a][l]*N1[b][l]);
-          }
-          J[a][2][b][0] += xi_v*N0[a]*rhoSE*shift*N0[b];
+        // //vapor density
+        //   J[a][2][b][0] -= N0[a]*rhov*shift*N0[b];
+        //   J[a][2][b][2] += N0[a]*N0[b]*air_t;
+        //   if(air>air_lim){
+        //     J[a][2][b][0] -= N0[a]*N0[b]*rhov_t;
+        //     J[a][2][b][2] += N0[a]*air*shift*N0[b];
+        //     for(l=0;l<dim;l++) J[a][2][b][0] -= xi_v*difvap*N0[b]*(N1[a][l]*grad_rhov[l]);
+        //     for(l=0;l<dim;l++) J[a][2][b][1] += xi_v*d_difvap*N0[b]*air*(N1[a][l]*grad_rhov[l]);
+        //     for(l=0;l<dim;l++) J[a][2][b][2] += xi_v*difvap*air*(N1[a][l]*N1[b][l]);        
+        //   } else {
+        //     J[a][2][b][2] += N0[a]*air_lim*shift*N0[b];
+        //     for(l=0;l<dim;l++) J[a][2][b][1] += xi_v*d_difvap*N0[b]*air_lim*(N1[a][l]*grad_rhov[l] );
+        //     for(l=0;l<dim;l++) J[a][2][b][2] += xi_v*difvap*air_lim*(N1[a][l]*N1[b][l]);
+        //   }
+        //   J[a][2][b][0] += xi_v*N0[a]*rhoSE*shift*N0[b];
 
         }
       }
@@ -817,22 +536,22 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
 {
   PetscFunctionBegin;
   AppCtx *user = (AppCtx *)ctx;
-  PetscScalar sol[3];
+  PetscScalar sol[1];
   IGAPointFormValue(pnt,U,&sol[0]);
 
-  PetscReal ice     = sol[0]; 
-  PetscReal met     = user->Phi_sed[pnt->index + pnt->count *pnt->parent->index];
-  PetscReal air     = 1.0-met-ice;
-  PetscReal temp    = sol[1];
-  PetscReal rhov    = sol[2];
-  PetscReal triple  = SQ(air)*SQ(met)*SQ(ice);
+  // PetscReal ice     = sol[0]; 
+  // PetscReal met     = user->Phi_sed[pnt->index + pnt->count *pnt->parent->index];
+  // PetscReal air     = 1.0-met-ice;
+  PetscReal temp    = sol[0];
+  // PetscReal rhov    = sol[2];
+  // PetscReal triple  = SQ(air)*SQ(met)*SQ(ice);
 
-  S[0]  = ice;
-  S[1]  = triple;
-  S[2]  = air;
-  S[3]  = temp;
-  S[4]  = rhov*air;
-  S[5]  = air*air*ice*ice;
+  // S[0]  = ice;
+  // S[1]  = triple;
+  // S[2]  = air;
+  S[0]  = temp;
+  // S[4]  = rhov*air;
+  // S[5]  = air*air*ice*ice;
 
   PetscFunctionReturn(0);
 }
@@ -861,11 +580,12 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         ierr = IGAElementGetValues(element,arrayU,&UU);CHKERRQ(ierr);
         ierr = IGAElementBeginPoint(element,&point);CHKERRQ(ierr);
         while (IGAElementNextPoint(element,point)) {
-            PetscScalar solS[3];
+            PetscScalar solS[1];
             ierr = IGAPointFormValue(point,UU,&solS[0]);CHKERRQ(ierr);
-            RhoVS_I(user,solS[1],&rhovs,NULL);
+            // RhoVS_I(user,solS[1],&rhovs,NULL);
             sigm_surf=fabs(solS[2]-rhovs)/rhovs;
             rho_rhovs = user->rho_ice/rhovs;
+            user->rho_rhovs = rho_rhovs;
 
             arg_kin = 1.38e-23*(solS[1]+273.15)/(2.0*3.14159*3.0e-26);
             v_kin = pow(arg_kin,0.5)/rho_rhovs;
@@ -906,14 +626,14 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
 
   //-------- domain integrals
-  PetscScalar stats[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
-  ierr = IGAComputeScalar(user->iga,U,6,&stats[0],Integration,mctx);CHKERRQ(ierr);
-  PetscReal tot_ice     = PetscRealPart(stats[0]);
-  PetscReal tot_trip    = PetscRealPart(stats[1]);
-  PetscReal tot_air     = PetscRealPart(stats[2]);
-  PetscReal tot_temp    = PetscRealPart(stats[3]);
-  PetscReal tot_rhov    = PetscRealPart(stats[4]);
-  PetscReal sub_interf  = PetscRealPart(stats[5]); 
+  PetscScalar stats[1] = {0.0}; // ,0.0,0.0,0.0,0.0,0.0};
+  ierr = IGAComputeScalar(user->iga,U,1,&stats[0],Integration,mctx);CHKERRQ(ierr);
+  // PetscReal tot_ice     = PetscRealPart(stats[0]);
+  // PetscReal tot_trip    = PetscRealPart(stats[1]);
+  // PetscReal tot_air     = PetscRealPart(stats[2]);
+  PetscReal tot_temp    = PetscRealPart(stats[0]);
+  // PetscReal tot_rhov    = PetscRealPart(stats[4]);
+  // PetscReal sub_interf  = PetscRealPart(stats[5]); 
  
   //------------- 
   PetscReal dt;
@@ -927,11 +647,11 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   }
 
   //------printf information
-  if(step%10==0) {
-    PetscPrintf(PETSC_COMM_WORLD,"\nTIME               TIME_STEP     TOT_ICE      TOT_AIR       TEMP      TOT_RHOV     I-A interf   Tripl_junct \n");
-    PetscPrintf(PETSC_COMM_WORLD,"\n(%.0f) %.3e    %.3e   %.3e   %.3e   %.3e   %.3e   %.3e   %.3e \n\n",
-                t,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
-  }
+  // if(step%10==0) {
+  //   PetscPrintf(PETSC_COMM_WORLD,"\nTIME               TIME_STEP     TOT_ICE      TOT_AIR       TEMP      TOT_RHOV     I-A interf   Tripl_junct \n");
+  //   PetscPrintf(PETSC_COMM_WORLD,"\n(%.0f) %.3e    %.3e   %.3e   %.3e   %.3e   %.3e   %.3e   %.3e \n\n",
+  //               t,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
+  // }
 
   PetscInt print=0;
   if(user->outp > 0) {
@@ -958,7 +678,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     }
 
     PetscViewerFileSetName(view,filedata);
-    PetscViewerASCIIPrintf(view,"%e %e %e %d\n",sub_interf/user->eps, tot_ice, t, step);
+    // PetscViewerASCIIPrintf(view,"%e %e %e %d\n",sub_interf/user->eps, tot_ice, t, step);
 
     PetscViewerDestroy(&view);
   }
@@ -1113,7 +833,7 @@ PetscErrorCode InitialSedGrains(IGA iga,AppCtx *user)
     //PetscPrintf(PETSC_COMM_SELF,"Sed grains: points %.4f %.4f %.4f \n",centX[jj],centY[jj],radius[jj]);
   }
 
-  //-------- define the Phi_sed values (Useful for )
+  //-------- define the Phi_sed values
 
   IGAElement element;
   IGAPoint point;
@@ -1121,9 +841,9 @@ PetscErrorCode InitialSedGrains(IGA iga,AppCtx *user)
   PetscInt  aa,ind=0;
 
   ierr = IGABeginElement(user->iga,&element);CHKERRQ(ierr);
-  while (IGANextElement(user->iga,element)) { // Loop over elements
+  while (IGANextElement(user->iga,element)) {
     ierr = IGAElementBeginPoint(element,&point);CHKERRQ(ierr);
-    while (IGAElementNextPoint(element,point)) { // Loop over element quadrature points
+    while (IGAElementNextPoint(element,point)) {
         sed=0.0;
         for(aa=0;aa<user->n_actsed;aa++){
           dist=0.0;
@@ -1625,7 +1345,7 @@ PetscErrorCode InitialIceGrains(IGA iga,AppCtx *user)
     PetscReal x, y, z, r;
     int readCount;
     while ((readCount = fscanf(file, "%lf %lf %lf %lf", &x, &y, &z, &r)) >= 3) {
-        if (grainCount >= 200) {
+        if (grainCount >= 700) {
             fclose(file);  // Make sure to close the file before returning
             SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE, "Exceeds maximum number of grains");
         }
@@ -1843,7 +1563,7 @@ PetscErrorCode FormInitialSoil3D(IGA igaS,Vec S,AppCtx *user)
 
 
 typedef struct {
-  PetscScalar ice,tem,rhov;
+  PetscScalar tem;
 } Field;
 
 PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user, 
@@ -1889,7 +1609,7 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
     ierr = IGADestroy(&igaPF);CHKERRQ(ierr);
 
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,1,&da);CHKERRQ(ierr);
     Field **u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -1902,9 +1622,10 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
         PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+k) );
 
         u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
-        PetscScalar rho_vs, temp=u[j][i].tem;
-        RhoVS_I(user,temp,&rho_vs,NULL);
-        u[j][i].rhov = user->hum0*rho_vs;
+        // PetscScalar rho_vs,
+        PetscScalar temp=u[j][i].tem;
+        // RhoVS_I(user,temp,&rho_vs,NULL);
+        // u[j][i].rhov = user->hum0*rho_vs;
       }
     }
     ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
@@ -1912,7 +1633,7 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
 
   } else {
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,1,&da);CHKERRQ(ierr);
     Field **u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -1933,11 +1654,12 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
         }
         if(ice>1.0) ice=1.0;
 
-        u[j][i].ice = ice;    
+        user->ice = &ice;    
         u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
-        PetscScalar rho_vs, temp=u[j][i].tem;
-        RhoVS_I(user,temp,&rho_vs,NULL);
-        u[j][i].rhov = user->hum0*rho_vs;
+        // PetscScalar rho_vs
+        PetscScalar temp=u[j][i].tem;
+        // RhoVS_I(user,temp,&rho_vs,NULL);
+        // u[j][i].rhov = user->hum0*rho_vs;
       }
     }
     ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
@@ -1993,7 +1715,7 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user,
     ierr = IGADestroy(&igaPF);CHKERRQ(ierr);
 
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,1,&da);CHKERRQ(ierr);
     Field ***u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -2008,9 +1730,10 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user,
           PetscReal z = user->Lz*(PetscReal)k / ( (PetscReal)(info.mz+l) );
 
           u[k][j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly) + user->grad_temp0[2]*(z-0.5*user->Lz);
-          PetscScalar rho_vs, temp=u[k][j][i].tem;
-          RhoVS_I(user,temp,&rho_vs,NULL);
-          u[k][j][i].rhov = user->hum0*rho_vs;
+          // PetscScalar rho_vs, 
+          PetscScalar temp=u[k][j][i].tem;
+          // RhoVS_I(user,temp,&rho_vs,NULL);
+          // u[k][j][i].rhov = user->hum0*rho_vs;
         }
       }
     }
@@ -2019,7 +1742,7 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user,
 
   } else {
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,1,&da);CHKERRQ(ierr);
     Field ***u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -2042,11 +1765,11 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user,
           }
           if(ice>1.0) ice=1.0;
 
-          u[k][j][i].ice = ice;    
+          // u[k][j][i].ice = ice;    
           u[k][j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly) + user->grad_temp0[2]*(z-0.5*user->Lz);
           PetscScalar rho_vs, temp=u[k][j][i].tem;
-          RhoVS_I(user,temp,&rho_vs,NULL);
-          u[k][j][i].rhov = user->hum0*rho_vs;
+          // RhoVS_I(user,temp,&rho_vs,NULL);
+          // u[k][j][i].rhov = user->hum0*rho_vs;
         }
       }
     }
@@ -2076,7 +1799,6 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
-  // user.eps        = 9.1e-7;      //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
 	user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
@@ -2096,10 +1818,12 @@ int main(int argc, char *argv[]) {
   user.flag_it0   = 1;
   user.flag_tIC   = 0;
 
-  user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
+  user.Patm       = 1.013250;
+
+  user.readFlag   = 0; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
-  user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
+  user.flag_Tdep  = 0;        // Temperature-dependent GT parameters; 
                               // pretty unstable, need to check implementation!!!
 
   user.d0_sub0    = 1.0e-9; 
@@ -2204,7 +1928,7 @@ int main(int argc, char *argv[]) {
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 
-  user.NCice      = 2; //less than 200, otherwise update in user
+  user.NCice      = 0; //less than 200, otherwise update in user
   user.RCice      = 0.2e-4;
   user.RCice_dev  = 0.5;
 
@@ -2212,10 +1936,32 @@ int main(int argc, char *argv[]) {
   user.hum0          = humidity;
   user.temp0         = temp;
   user.grad_temp0[0] = grad_temp0X;  user.grad_temp0[1] = grad_temp0Y;  user.grad_temp0[2] = grad_temp0Z;
+  
+  // Define rho_rhovs
+  PetscReal rho_vs;
+  PetscReal K0,K1,K2,K3,K4,K5;
+  PetscReal Patm = user.Patm;
+  PetscReal rho_air = user.rho_air;
+  K0 = -0.5865*1.0e4;   K1 = 0.2224*1.0e2;    K2 = 0.1375*1.0e-1;
+  K3 = -0.3403*1.0e-4;  K4 = 0.2697*1.0e-7;   K5 = 0.6918;
+  PetscReal bb = 0.62;
+  PetscReal temK = temp+273.15;
+  PetscReal Pvs = exp(K0*pow(temK,-1.0)+K1+K2*pow(temK,1.0)+K3*pow(temK,2.0)+K4*pow(temK,3.0)+K5*log(temK));
+
+  rho_vs  = rho_air*bb*Pvs/(Patm-Pvs);
+  rho_rhovs = user.rho_ice/rho_vs;
+  
+  // if (user.temp0 == -5.0) {
+  //   rho_rhovs = 2.7754e5;
+  // } else if (user.temp0 == -188.0) {
+  //   rho_rhovs = 4.11200199023974e+21;
+  // } else {
+  //   rho_rhovs = 10.8285e5;
+  // }
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
-  flag_BC_Tfix    = 1;
+  flag_BC_Tfix    = 0;
   flag_BC_rhovfix = 0;
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
@@ -2249,8 +1995,8 @@ int main(int argc, char *argv[]) {
   lambda_sub    = a1*user.eps/d0_sub;
   tau_sub       = user.eps*lambda_sub*(beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
 
-  user.mob_sub    = 1*user.eps/3.0/tau_sub; 
-  user.alph_sub   = 10*lambda_sub/tau_sub;
+  user.mob_sub    = 5.5*user.eps/3.0/tau_sub; 
+  user.alph_sub   = 0.0075*lambda_sub/tau_sub;
   if(user.flag_Tdep==0) PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
   else PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
   
@@ -2272,10 +2018,10 @@ int main(int argc, char *argv[]) {
   IGA iga;
   ierr = IGACreate(PETSC_COMM_WORLD,&iga);CHKERRQ(ierr);
   ierr = IGASetDim(iga,dim);CHKERRQ(ierr);
-  ierr = IGASetDof(iga,3);CHKERRQ(ierr);
-  ierr = IGASetFieldName(iga,0,"phaseice"); CHKERRQ(ierr);
-  ierr = IGASetFieldName(iga,1,"temperature"); CHKERRQ(ierr);
-  ierr = IGASetFieldName(iga,2,"vap_density"); CHKERRQ(ierr);
+  ierr = IGASetDof(iga,1);CHKERRQ(ierr);
+  ierr = IGASetFieldName(iga,0,"temperature"); CHKERRQ(ierr);
+  // ierr = IGASetFieldName(iga,1,"temperature"); CHKERRQ(ierr);
+  // ierr = IGASetFieldName(iga,2,"vap_density"); CHKERRQ(ierr);
 
   IGAAxis axis0, axis1, axis2;
   ierr = IGAGetAxis(iga,0,&axis0);CHKERRQ(ierr);
@@ -2297,9 +2043,8 @@ int main(int argc, char *argv[]) {
   ierr = IGASetUp(iga);CHKERRQ(ierr);
   user.iga = iga;
 
-  // Use this to set the initial condition
   PetscInt nmb = iga->elem_width[0]*iga->elem_width[1]*SQ(p+1);
-  if(dim==3) nmb = iga->elem_width[0]*iga->elem_width[1]*iga->elem_width[2]*CU(p+1); // Gets the number of elements in a single core!
+  if(dim==3) nmb = iga->elem_width[0]*iga->elem_width[1]*iga->elem_width[2]*CU(p+1);
   ierr = PetscMalloc(sizeof(PetscReal)*(nmb),&user.Phi_sed);CHKERRQ(ierr);
   ierr = PetscMemzero(user.Phi_sed,sizeof(PetscReal)*(nmb));CHKERRQ(ierr);
   ierr = PetscMalloc(sizeof(PetscReal)*(nmb),&user.alph);CHKERRQ(ierr);
@@ -2312,11 +2057,11 @@ int main(int argc, char *argv[]) {
   ierr = IGASetFormIJacobian(iga,Jacobian,&user);CHKERRQ(ierr);
 
   //Boundary Condition
-  if(flag_BC_rhovfix==1){
-    PetscReal rho0_vs;
-    RhoVS_I(&user,user.temp0,&rho0_vs,NULL);
-    for(l=0;l<dim;l++) for(m=0;m<2;m++) ierr = IGASetBoundaryValue(iga,l,m,2,user.hum0*rho0_vs);CHKERRQ(ierr);
-  }
+  // if(flag_BC_rhovfix==1){
+  //   PetscReal rho0_vs;
+  //   RhoVS_I(&user,user.temp0,&rho0_vs,NULL);
+  //   for(l=0;l<dim;l++) for(m=0;m<2;m++) ierr = IGASetBoundaryValue(iga,l,m,2,user.hum0*rho0_vs);CHKERRQ(ierr);
+  // }
   if(flag_BC_Tfix==1){
     PetscReal T_BC[dim][2], LL[dim];
     LL[0] = Lx; LL[1]=Ly; LL[2]=Lz;

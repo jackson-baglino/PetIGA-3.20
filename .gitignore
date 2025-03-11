@@ -47,3 +47,4 @@ MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.22-GCC-12.4.0/
 # Miscellaneous build directories
 mac-optimal-mpi-3.20
 mac-studio-optimal
+demo/effective_k_ice

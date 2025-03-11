@@ -111,7 +111,7 @@ def main():
                 print(f"Data was not loaded correctly.")
 
             # Optional: Display array shapes
-            print(f"IcePhase shape: {phi_i.shape}")
+            print(f"\nIcePhase shape: {phi_i.shape}")
             print(f"AirPhase shape: {rho_v.shape}")
             print(f"Temp shape: {T.shape}")
 
