@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 
 # Define the file path
 filename = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/"\
-    "ThermalSim_2025-03-11__12.51.25" \
+    "ThermalSim_2025-03-12__12.23.34" \
     "/ice_field.bin"
 
 # Load binary data (Big Endian 64-bit float)
 data = np.fromfile(filename, dtype='>f8')
 
 # Grid size (adjust as necessary)
-Nx, Ny = 1000, 1000  # Ensure these match your simulation settings
+Nx, Ny = 128, 128  # Ensure these match your simulation settings
 
 # Reshape data to 2D array
 while data.size > Nx * Ny:

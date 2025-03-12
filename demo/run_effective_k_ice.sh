@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ========== SET ENVIRONMENT VARIABLES ==========
-export Nx=10        # Number of elements in x-direction
-export Ny=10        # Number of elements in y-direction
+export Nx=16        # Number of elements in x-direction
+export Ny=16        # Number of elements in y-direction
 export Nz=1        # Number of elements in z-direction (only used if dim=3)
 
 export Lx=1.0      # Length in x-direction (meters)
