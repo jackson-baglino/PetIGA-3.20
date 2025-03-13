@@ -38,8 +38,37 @@ echo "Compilation successful."
 # ========== RUN SIMULATION IN LLDB ==========
 echo "Running effective_k_ice simulation with $NUM_PROCS processes in LLDB..."
 
-# ./effective_k_ice -snes_monitor -snes_converged_reason -ksp_monitor -log_view
+# Set debugging environment variables if needed
+export PETSC_OPTIONS="-start_in_debugger -malloc_debug -malloc_dump -log_view"
 
-lldb --batch --one-line "target create ./effective_k_ice" \
-     --one-line "settings set -- target.run-args -ksp_monitor" \
-     --one-line "run"
+# Run the PETSc simulation with debugging flags
+mpiexec -np 1 ./effective_k_ice -malloc_debug -log_view
+
+
+# mpiexec -np 1 ./effective_k_ice \
+#     -ksp_view \
+#     -ksp_monitor \
+#     -log_view \
+#     -options_left \
+#     -info \
+#     -malloc_debug \
+#     -malloc_log \
+#     -check_pointer_intensity 1
+
+# lldb --batch -o "breakpoint set --name KSPSetFromOptions" \
+#      -o "run" \
+#      -o "p *ksp" \
+#      -o "bt" \
+#      -o "quit" -- ./effective_k_ice
+
+# lldb --batch --one-line "target create ./effective_k_ice" \
+#      --one-line "settings set -- target.run-args -ksp_monitor" \
+#      --one-line "run"
+
+echo "Simulation completed. Check logs for debugging output."
+
+# If running on macOS, check for crash logs
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "Checking for macOS crash logs..."
+    log show --predicate 'process == "effective_k_ice"' --info --last 5m | tee crash_log.txt
+fi

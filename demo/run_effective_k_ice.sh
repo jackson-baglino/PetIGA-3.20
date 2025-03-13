@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ========== SET ENVIRONMENT VARIABLES ==========
-export Nx=16        # Number of elements in x-direction
-export Ny=16        # Number of elements in y-direction
+export Nx=256        # Number of elements in x-direction
+export Ny=256        # Number of elements in y-direction
 export Nz=1        # Number of elements in z-direction (only used if dim=3)
 
 export Lx=1.0      # Length in x-direction (meters)
@@ -45,7 +45,7 @@ compile_code() {
 # ========== FUNCTION: RUN THE SIMULATION ==========
 run_simulation() {
     echo "Running effective_k_ice simulation with $NUM_PROCS processes..."
-    mpiexec -np $NUM_PROCS ./effective_k_ice -ksp_monitor -log_view
+    mpiexec -np 1 ./effective_k_ice -ksp_view -ksp_monitor -log_view
 }
 
 
