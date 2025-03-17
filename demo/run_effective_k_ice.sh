@@ -3,16 +3,32 @@
 # ========== SET ENVIRONMENT VARIABLES ==========
 export Nx=256        # Number of elements in x-direction
 export Ny=256        # Number of elements in y-direction
-export Nz=1        # Number of elements in z-direction (only used if dim=3)
+export Nz=1          # Number of elements in z-direction (only used if dim=3)
 
-export Lx=1.0      # Length in x-direction (meters)
-export Ly=1.0      # Length in y-direction (meters)
-export Lz=1.0      # Length in z-direction (meters) (only used if dim=3)
+export Lx=1.0        # Length in x-direction (meters)
+export Ly=1.0        # Length in y-direction (meters)
+export Lz=1.0        # Length in z-direction (meters) (only used if dim=3)
 
-export temp=268.15  # Initial temperature (Kelvin)
+export temp=268.15   # Initial temperature (Kelvin)
+
+# Temperature gradients (currently unused in the code)
 export grad_temp0X=0.01  # Temperature gradient in x-direction (K/m)
-export grad_temp0Y=0   # Temperature gradient in y-direction (K/m)
-export grad_temp0Z=0   # Temperature gradient in z-direction (K/m)
+export grad_temp0Y=0     # Temperature gradient in y-direction (K/m)
+export grad_temp0Z=0     # Temperature gradient in z-direction (K/m)
+
+# ========== BOUNDARY CONDITIONS ==========
+# Define whether to use fixed temperature or prescribed flux at boundaries
+
+# Bottom boundary
+export TEMP_BOTTOM=265.15  # Fixed temperature (Kelvin) at bottom boundary
+export FLUX_BOTTOM=0.01    # Set this if prescribing heat flux instead of temperature
+
+# Top boundary
+export TEMP_TOP=270.15     # Fixed temperature (Kelvin) at top boundary
+export FLUX_TOP=0.01       # Set this if prescribing heat flux instead of temperature
+
+# Interface width (meters)
+export eps=$(awk "BEGIN {print ($Lx/$Nx < $Ly/$Ny) ? $Lx/$Nx : $Ly/$Ny}")
 
 export dim=2   # Set dimension (2 for 2D, 3 for 3D)
 
@@ -45,15 +61,13 @@ compile_code() {
 # ========== FUNCTION: RUN THE SIMULATION ==========
 run_simulation() {
     echo "Running effective_k_ice simulation with $NUM_PROCS processes..."
-    mpiexec -np 1 ./effective_k_ice -ksp_view -ksp_monitor -log_view
+    mpiexec -np $NUM_PROCS ./effective_k_ice -ksp_view -ksp_monitor -log_view
 }
-
 
 # ========== FUNCTION: MOVE OUTPUT FILES ==========
 move_output_files() {
     if [ -d "$OUTPUT_DIR" ]; then
-        # Move VTK and binary files only if they exist
-        # mv *.vtk "$OUTPUT_DIR" 2>/dev/null || echo "No VTK files to move."
+        # Move binary files only if they exist
         mv *.bin "$OUTPUT_DIR" 2>/dev/null || echo "No binary files to move."
         echo "Output files moved to $OUTPUT_DIR"
     fi

@@ -14,7 +14,7 @@ export grad_temp0X=0.01  # Temperature gradient in x-direction (K/m)
 export grad_temp0Y=0   # Temperature gradient in y-direction (K/m)
 export grad_temp0Z=0   # Temperature gradient in z-direction (K/m)
 
-export dim=2   # Set dimension (2 for 2D, 3 for 3D)
+export dim=3   # Set dimension (2 for 2D, 3 for 3D)
 
 # ========== OPTIONAL SETTINGS ==========
 export OUTPUT_VTK=1    # Set to 1 to enable VTK output
@@ -42,7 +42,7 @@ echo "Running effective_k_ice simulation with $NUM_PROCS processes in LLDB..."
 export PETSC_OPTIONS="-start_in_debugger -malloc_debug -malloc_dump -log_view"
 
 # Run the PETSc simulation with debugging flags
-mpiexec -np 1 ./effective_k_ice -malloc_debug -log_view
+# mpiexec -np 1 ./effective_k_ice -malloc_debug -log_view
 
 
 # mpiexec -np 1 ./effective_k_ice \
@@ -61,9 +61,9 @@ mpiexec -np 1 ./effective_k_ice -malloc_debug -log_view
 #      -o "bt" \
 #      -o "quit" -- ./effective_k_ice
 
-# lldb --batch --one-line "target create ./effective_k_ice" \
-#      --one-line "settings set -- target.run-args -ksp_monitor" \
-#      --one-line "run"
+lldb --batch --one-line "target create ./effective_k_ice" \
+     --one-line "settings set -- target.run-args -ksp_monitor" \
+     --one-line "run"
 
 echo "Simulation completed. Check logs for debugging output."
 
