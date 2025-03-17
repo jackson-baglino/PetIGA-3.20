@@ -24,7 +24,7 @@ demo/Laplace*
 demo/ssa_evolution_plotTEST.png
 demo/Metamorph
 demo/Oldfiles/*
-demo/effective_k_ice.c
+demo/effective_k_ice
 
 # PETSc and MPI builds
 MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20
