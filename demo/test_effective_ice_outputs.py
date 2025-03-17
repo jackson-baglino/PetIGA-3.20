@@ -4,7 +4,7 @@ from scipy.ndimage import zoom
 
 # Define the base directory
 base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/"\
-           "ThermalSim_2025-03-14__13.44.40"
+           "ThermalSim_2025-03-17__15.45.21"
 
 # File paths for temperature and ice phase fields
 temp_file = f"{base_dir}/temperature.bin"

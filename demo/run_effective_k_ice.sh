@@ -21,16 +21,19 @@ export grad_temp0Z=0     # Temperature gradient in z-direction (K/m)
 
 # Bottom boundary
 export TEMP_BOTTOM=265.15  # Fixed temperature (Kelvin) at bottom boundary
-export FLUX_BOTTOM=0.01    # Set this if prescribing heat flux instead of temperature
+export FLUX_BOTTOM=0.3    # Set this if prescribing heat flux instead of temperature
 
 # Top boundary
-export TEMP_TOP=270.15     # Fixed temperature (Kelvin) at top boundary
-export FLUX_TOP=0.01       # Set this if prescribing heat flux instead of temperature
+export TEMP_TOP=240.15     # Fixed temperature (Kelvin) at top boundary
+export FLUX_TOP=10.0       # Set this if prescribing heat flux instead of temperature
 
 # Interface width (meters)
 export eps=$(awk "BEGIN {print ($Lx/$Nx < $Ly/$Ny) ? $Lx/$Nx : $Ly/$Ny}")
 
 export dim=2   # Set dimension (2 for 2D, 3 for 3D)
+
+# ========== INITIAL CONDTIONS ==========
+INIT_MODE="circle"  # Initial condition mode (e.g., "circle", "square", etc.)
 
 # ========== OPTIONAL SETTINGS ==========
 export OUTPUT_VTK=1    # Set to 1 to enable VTK output
@@ -61,7 +64,7 @@ compile_code() {
 # ========== FUNCTION: RUN THE SIMULATION ==========
 run_simulation() {
     echo "Running effective_k_ice simulation with $NUM_PROCS processes..."
-    mpiexec -np $NUM_PROCS ./effective_k_ice -ksp_view -ksp_monitor -log_view
+    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode $INIT_MODE #-ksp_view -ksp_monitor -log_view
 }
 
 # ========== FUNCTION: MOVE OUTPUT FILES ==========
