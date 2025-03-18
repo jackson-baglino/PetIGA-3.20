@@ -7,8 +7,16 @@
 # VS Code workspace settings
 .vscode/
 
-# Virtual environment directory
+# Virtual environment folder
 .venv/
+venv/
+env/
+
+# Python environment cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # ================================
 # 🔍 Test, Temporary, & Input Files
