@@ -1,16 +1,25 @@
-# System files
+# ================================
+# 🖥️ System & Editor Files
+# ================================
+# macOS system files
 .DS_Store
 
-# IDE and Editor files
+# VS Code workspace settings
 .vscode/
+
+# Virtual environment directory
 .venv/
 
-# General test and temporary files
+# ================================
+# 🔍 Test, Temporary, & Input Files
+# ================================
 test/
 input/
 Original/
 
-# Binary files and object files
+# ================================
+# 🏗️ Compiled Binary & Object Files
+# ================================
 NASA
 NASA.o
 NASA_panda
@@ -19,32 +28,40 @@ NASAv2
 NASAv2.o
 Wetamorphism
 
-# Demo-related files
+# ================================
+# 🛠️ Demo Files & Outputs
+# ================================
 demo/Laplace*
 demo/ssa_evolution_plotTEST.png
 demo/Metamorph
-demo/Oldfiles/*
+demo/Oldfiles/
 demo/effective_k_ice
+demo/venv/
 
-# PETSc and MPI builds
-MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20
-MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20-debug
+# ================================
+# 🏗️ PETSc & MPI Build Directories
+# ================================
 
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0-64bit
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0--64bit/
+# OpenMPI PETSc Builds
+MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20/
+MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20-debug/
+
+# MPICH PETSc Builds (various versions)
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0/
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0-64bit/
 MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0-test/
-
 MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0/
 MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0_64-bit/
-
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-GCC-12.4.0_DEBUG/
 MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.22-GCC-12.4.0_DEBUG/
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-GCC-12.4.0_DEBUG
+MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0--64bit/
+MAC_SILICON-M2_OPT_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0/
 
-# Ensure this PETSc configuration is fully ignored
+# Latest PETSc version being used
 MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.22-GCC-12.4.0/
 
-# Miscellaneous build directories
+# ================================
+# 📂 Miscellaneous Build Directories
+# ================================
 mac-optimal-mpi-3.20
 mac-studio-optimal
-demo/effective_k_ice
