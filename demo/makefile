@@ -1,52 +1,60 @@
 TARGETS = \
-NASA \
-NASAv2 \
-effective_k_ice \
-NASAv2_TempOnly \
-SolveTemperature_demo \
-NASA_panda \
-Wetamorphism \
-Metamorph \
-localGrains \
-Solid3ph_flow \
-Carbon \
-Meltwater \
-Poisson1D Poisson2D Poisson3D \
-L2Projection AdaptiveL2Projection \
-Laplace BoundaryIntegral \
-Poisson LoggChallenge \
-Neumann \
-NitscheMethod \
-AdvectionDiffusion \
-Bratu \
-PatternFormation \
-CahnHilliard2D \
-CahnHilliard3D \
-NavierStokesKorteweg2D \
-NavierStokesVMS \
-Elasticity \
-Elasticity3D \
-HyperElasticity \
-Richards \
-TwoPhaseTwoComponent \
-ShallowWater \
-ClassicalShell \
-ElasticRod
+    NASA \
+    NASAv2 \
+    effective_k_ice \
+    NASAv2_TempOnly \
+    SolveTemperature_demo \
+    NASA_panda \
+    Wetamorphism \
+    Metamorph \
+    localGrains \
+    Solid3ph_flow \
+    Carbon \
+    Meltwater \
+    Poisson1D \
+    Poisson2D \
+    Poisson3D \
+    L2Projection \
+    AdaptiveL2Projection \
+    Laplace \
+    BoundaryIntegral \
+    Poisson \
+    LoggChallenge \
+    Neumann \
+    NitscheMethod \
+    AdvectionDiffusion \
+    Bratu \
+    PatternFormation \
+    CahnHilliard2D \
+    CahnHilliard3D \
+    NavierStokesKorteweg2D \
+    NavierStokesVMS \
+    Elasticity \
+    Elasticity3D \
+    HyperElasticity \
+    Richards \
+    TwoPhaseTwoComponent \
+    ShallowWater \
+    ClassicalShell \
+    ElasticRod
 
 ALL: $(TARGETS)
-clean::
-	-@$(RM) $(TARGETS)
 
-# CFLAGS    = -g3 -Wall -Wextra -Wno-unused-parameter #-Wconversion
-# FFLAGS    = -g3 -Wall -Wextra -fcheck=all
-CFLAGS    = -g3 -O0 -Wall -Wextra -Wno-unused-parameter
-FFLAGS    = -g3 -O0 -Wall -Wextra -fcheck=all
-CPPFLAGS  =
-FPPFLAGS  =
-LOCDIR    = demo/
+clean::
+	-@$(RM) $(TARGETS) setup_thermal.o solver.o env_config.o io_thermal.o material_properties.o
+
+CFLAGS = -g3 -O0 -Wall -Wextra -Wno-unused-parameter \
+         -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/petsc/private \
+         -I$(PETIGA_DIR)/include
+FFLAGS = -g3 -O0 -Wall -Wextra -fcheck=all
+CPPFLAGS =
+FPPFLAGS =
+LOCDIR = demo/
 EXAMPLESC =
 EXAMPLESF =
-MANSEC    = IGA
+MANSEC = IGA
+INCLUDES = -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/petsc/private -I$(PETIGA_DIR)/include
+CFLAGS += $(INCLUDES)
 
 topdir := $(shell cd .. && pwd)
 PETIGA_DIR ?= $(topdir)
@@ -56,122 +64,156 @@ include $(PETIGA_DIR)/lib/petiga/conf/rules
 NASA: NASA.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 NASAv2: NASAv2.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
-effective_k_ice: effective_k_ice.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
+
+effective_k_ice: effective_k_ice.o setup_thermal.o solver.o env_config.o io_thermal.o material_properties.o
+	$(CLINKER) -o $@ $^ $(PETIGA_LIB) $(PETSC_LIB)
 	$(RM) -f $<
-# effective_k_ice: effective_k_ice.o
-# 	$(CLINKER) -o $@ $< $(PETIGA_LIB) -g3 -O0
-# 	$(RM) -f $<	
+
 NASA_panda: NASA_panda.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 NASAv2_TempOnly: NASAv2_TempOnly.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<	
+
 SolveTemperature_demo: SolveTemperature_demo.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<	
+
 Wetamorphism: Wetamorphism.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Metamorph: Metamorph.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 localGrains: localGrains.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Solid3ph_flow: Solid3ph_flow.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Meltwater: Meltwater.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Carbon: Carbon.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Poisson1D: Poisson1D.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Poisson2D: Poisson2D.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Poisson3D: Poisson3D.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 L2Projection: L2Projection.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 AdaptiveL2Projection: AdaptiveL2Projection.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Laplace: Laplace.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 BoundaryIntegral: BoundaryIntegral.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Poisson: Poisson.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 LoggChallenge: LoggChallenge.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Neumann: Neumann.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 NitscheMethod: NitscheMethod.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Bratu: Bratu.o BratuFJ.o
 	$(CLINKER) -o $@ $< BratuFJ.o $(PETIGA_LIB)
 	$(RM) -f $< BratuFJ.o bratufj.mod
+
 AdvectionDiffusion: AdvectionDiffusion.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 PatternFormation: PatternFormation.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 CahnHilliard2D: CahnHilliard2D.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 CahnHilliard3D: CahnHilliard3D.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 NavierStokesKorteweg2D: NavierStokesKorteweg2D.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 NavierStokesVMS: NavierStokesVMS.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 ShallowWater: ShallowWater.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 ClassicalShell: ClassicalShell.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 ElasticRod: ElasticRod.o ElasticRodFJ.o
 	$(CLINKER) -o $@ $< ElasticRodFJ.o $(PETIGA_LIB)
 	$(RM) -f $< ElasticRodFJ.o elasticrodfj.mod
+
 Elasticity: Elasticity.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Elasticity3D: Elasticity3D.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 HyperElasticity: HyperElasticity.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 Richards: Richards.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
+
 TwoPhaseTwoComponent: TwoPhaseTwoComponent.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 
-OPTS=-nox -malloc_debug -malloc_dump
+OPTS = -nox -malloc_debug -malloc_dump
 
 runex1:
 	$(run-test-begin)
@@ -188,11 +230,13 @@ runex2-1d:
 	@$(call mpiexec,1) ./Poisson1D $(OPTS)
 	@$(call mpiexec,4) ./Poisson1D $(OPTS)
 	$(run-test-end)
+
 runex2-2d:
 	$(run-test-begin)
 	@$(call mpiexec,1) ./Poisson2D $(OPTS)
 	@$(call mpiexec,4) ./Poisson2D $(OPTS)
 	$(run-test-end)
+
 runex2-3d:
 	$(run-test-begin)
 	@$(call mpiexec,1) ./Poisson3D $(OPTS)
@@ -242,10 +286,10 @@ runex6:
 	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color
 	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -iga_fd
 	@$(call mpiexec,4) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -iga_fd         -steady false -ts_max_steps 2
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color  -steady false -ts_max_steps 2
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -iga_fd	       -steady false -ts_max_steps 2
-	@$(call mpiexec,4) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color  -steady false -ts_max_steps 2
+	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -iga_fd -steady false -ts_max_steps 2
+	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color -steady false -ts_max_steps 2
+	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -iga_fd -steady false -ts_max_steps 2
+	@$(call mpiexec,4) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color -steady false -ts_max_steps 2
 	$(run-test-end)
 
 runex7:
@@ -271,7 +315,6 @@ runex9:
 	@$(call mpiexec,4) ./NitscheMethod $(OPTS) -check_error 1e-6 -iga_dim 2 -iga_degree 2 -ksp_type cg -ksp_rtol 1e-7
 	$(run-test-end)
 
-
 L2Projection := L2Projection.PETSc runex1 L2Projection.rm
 Laplace := Laplace.PETSc runex3 Laplace.rm
 Poisson1D := Poisson1D.PETSc runex2-1d Poisson1D.rm
@@ -283,7 +326,7 @@ NitscheMethod := NitscheMethod.PETSc runex9 NitscheMethod.rm
 Bratu := Bratu.PETSc runex6 Bratu.rm
 CahnHilliard2D := CahnHilliard2D.PETSc runex4 CahnHilliard2D.rm
 CahnHilliard3D := CahnHilliard3D.PETSc CahnHilliard3D.rm
-CahnHilliard   := $(CahnHilliard2D) $(CahnHilliard3D)
+CahnHilliard := $(CahnHilliard2D) $(CahnHilliard3D)
 PatternFormation := PatternFormation.PETSc runex5 PatternFormation.rm
 ElasticRod := ElasticRod.PETSc runex8 ElasticRod.rm
 
@@ -292,7 +335,21 @@ TESTEXAMPLES := $(L2Projection) $(Laplace) $(Poisson) $(Neumann) $(NitscheMethod
 .PHONY: test
 test: $(TESTEXAMPLES)
 
+setup_thermal.o: setup_thermal.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-runex-%: ; $(OMAKE) $($*)
+solver.o: solver.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+env_config.o: env_config.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+io_thermal.o: io_thermal.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+material_properties.o: material_properties.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+runex-%: ; $(OMAKE) $(*)
 
 include $(PETIGA_DIR)/lib/petiga/conf/test
