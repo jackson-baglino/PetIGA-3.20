@@ -83,8 +83,6 @@ mac-optimal-mpi-3.20
 mac-studio-optimal
 mac-optimal-mpi-3.22
 demo/env_config.o
-.gitignore
-.gitignore
 demo/setup_thermal.o
 demo/io_thermal.o
 demo/material_properties.o
