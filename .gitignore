@@ -86,3 +86,5 @@ demo/env_config.o
 .gitignore
 .gitignore
 demo/setup_thermal.o
+demo/io_thermal.o
+demo/material_properties.o

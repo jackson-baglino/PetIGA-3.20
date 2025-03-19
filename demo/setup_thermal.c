@@ -88,9 +88,9 @@ PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
     /* ===========================
        ZERO-FLUX (NEUMANN) BCs on SIDES
        =========================== */
-    ierr = IGASetBoundaryForm(iga, 0, 0, PETSC_TRUE); CHKERRQ(ierr);  // x = 0
-    ierr = IGASetBoundaryForm(iga, 0, 1, PETSC_TRUE); CHKERRQ(ierr);  // x = Lx
-    PetscPrintf(PETSC_COMM_WORLD, "  - Zero-flux (Neumann) BCs applied at x = 0 and x = Lx\n");
+    // ierr = IGASetBoundaryForm(iga, 0, 0, PETSC_TRUE); CHKERRQ(ierr);  // x = 0
+    // ierr = IGASetBoundaryForm(iga, 0, 1, PETSC_TRUE); CHKERRQ(ierr);  // x = Lx
+    // PetscPrintf(PETSC_COMM_WORLD, "  - Zero-flux (Neumann) BCs applied at x = 0 and x = Lx\n");
 
     /* ===========================
        ZERO-FLUX (NEUMANN) BCs on Z-AXIS (ONLY IF 3D)
