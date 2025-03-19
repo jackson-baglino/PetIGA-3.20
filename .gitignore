@@ -82,3 +82,7 @@ MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.22-GCC-12.4.0/
 mac-optimal-mpi-3.20
 mac-studio-optimal
 mac-optimal-mpi-3.22
+demo/env_config.o
+.gitignore
+.gitignore
+demo/setup_thermal.o
