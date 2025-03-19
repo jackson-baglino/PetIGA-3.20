@@ -4,7 +4,7 @@ from scipy.ndimage import zoom
 
 # Define the base directory
 base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/"\
-           "ThermalSim_2025-03-19__13.31.05"
+           "ThermalSim_2025-03-19__14.12.05"
 
 # File paths for temperature and ice phase fields
 temp_file = f"{base_dir}/temperature.bin"
@@ -15,7 +15,7 @@ temperature = np.fromfile(temp_file, dtype='>f8')
 # ice_field = np.fromfile(ice_file, dtype='>f8')
 
 # Grid size (Ensure these match the simulation settings)
-Nx, Ny = 128, 128
+Nx, Ny = 64, 64
 Nx_temp, Ny_temp = Nx + 1, Ny + 1  # Structured grid (Temperature)
 Nx_ice,  Ny_ice  = Nx + 1, Ny + 1     # Staggered grid (Ice field)
 
@@ -46,7 +46,7 @@ fig, axes = plt.subplots(1, 2, figsize=(12, 5), dpi=150)
 
 # Plot Ice Field
 ax1 = axes[0]
-# im1 = ax1.imshow(ice_field, cmap='Blues', origin='lower', interpolation="nearest")
+# im1 = ax1.imshow(ice_field, cmap='Blues', origin='lower', interpolation="nearest", aspect='auto', extent=[0, Nx, 0, Ny])
 # fig.colorbar(im1, ax=ax1, label="Ice Phase")
 ax1.set_xlabel("X Index")
 ax1.set_ylabel("Y Index")
@@ -54,7 +54,7 @@ ax1.set_title("Ice Phase Field")
 
 # Plot Temperature Field with Ice Contour
 ax2 = axes[1]
-im2 = ax2.imshow(temperature, cmap='magma', origin='lower', interpolation="nearest")
+im2 = ax2.imshow(temperature, cmap='magma', origin='lower', interpolation="nearest", aspect='auto', extent=[0, Nx, 0, Ny])
 fig.colorbar(im2, ax=ax2, label="Temperature (K)")
 ax2.set_xlabel("X Index")
 ax2.set_ylabel("Y Index")
@@ -62,8 +62,8 @@ ax2.set_title("Temperature Field with Ice Contour")
 
 # Overlay the ice phase contour at 0.5
 contour_levels = [0.5]  # Contour at IcePhase = 0.5
-# ax2.contour(ice_interp, levels=contour_levels, colors='white', linewidths=1.5)
+# ax2.contour(ice_interp, levels=contour_levels, colors='white', linewidths=1.5, extent=[0, Nx, 0, Ny])
 
-# Show both plots
+# Show both plots without extra padding
 plt.tight_layout()
 plt.show()

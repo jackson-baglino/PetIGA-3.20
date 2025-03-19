@@ -48,9 +48,6 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
             } else {
                 PetscPrintf(PETSC_COMM_SELF, "Assiming init_mode is file path.\n");
                 PetscPrintf(PETSC_COMM_SELF, "Reading ice field from %s\n", user->init_mode);
-                
-                
-                
             }
 
             // Apply phase field function to compute ice phase
@@ -101,7 +98,6 @@ PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
     if (user->dim == 3) {
         ierr = IGASetBoundaryForm(iga, 2, 0, PETSC_TRUE); CHKERRQ(ierr);  // z = 0
         ierr = IGASetBoundaryForm(iga, 2, 1, PETSC_TRUE); CHKERRQ(ierr);  // z = Lz
-        PetscPrintf(PETSC_COMM_WORLD, "  - Zero-flux (Neumann) BCs applied at z = 0 and z = Lz (3D case)\n");
     }
 
     PetscFunctionReturn(0);

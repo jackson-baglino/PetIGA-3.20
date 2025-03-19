@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ========== SET ENVIRONMENT VARIABLES ==========
-export Nx=128        # Number of elements in x-direction
-export Ny=128        # Number of elements in y-direction
+export Nx=64        # Number of elements in x-direction
+export Ny=64        # Number of elements in y-direction
 export Nz=1          # Number of elements in z-direction (only used if dim=3)
 
 export Lx=1.0e-3        # Length in x-direction (meters)
@@ -21,7 +21,7 @@ export grad_temp0Z=0     # Temperature gradient in z-direction (K/m)
 
 # Bottom boundary
 export TEMP_BOTTOM=265.15  # Fixed temperature (Kelvin) at bottom boundary
-export FLUX_BOTTOM=1.0    # Set this if prescribing heat flux instead of temperature
+export FLUX_BOTTOM=0.1    # Set this if prescribing heat flux instead of temperature
 
 # Top boundary
 export TEMP_TOP=240.15     # Fixed temperature (Kelvin) at top boundary
