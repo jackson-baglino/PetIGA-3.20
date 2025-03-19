@@ -4,7 +4,7 @@ from scipy.ndimage import zoom
 
 # Define the base directory
 base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/"\
-           "ThermalSim_2025-03-17__15.45.21"
+           "ThermalSim_2025-03-18__17.57.22"
 
 # File paths for temperature and ice phase fields
 temp_file = f"{base_dir}/temperature.bin"
@@ -15,7 +15,7 @@ temperature = np.fromfile(temp_file, dtype='>f8')
 # ice_field = np.fromfile(ice_file, dtype='>f8')
 
 # Grid size (Ensure these match the simulation settings)
-Nx, Ny = 256, 256
+Nx, Ny = 128, 128
 Nx_temp, Ny_temp = Nx + 1, Ny + 1  # Structured grid (Temperature)
 Nx_ice,  Ny_ice  = Nx + 1, Ny + 1     # Staggered grid (Ice field)
 

@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # ========== SET ENVIRONMENT VARIABLES ==========
-export Nx=256        # Number of elements in x-direction
-export Ny=256        # Number of elements in y-direction
+export Nx=128        # Number of elements in x-direction
+export Ny=128        # Number of elements in y-direction
 export Nz=1          # Number of elements in z-direction (only used if dim=3)
 
-export Lx=1.0        # Length in x-direction (meters)
-export Ly=1.0        # Length in y-direction (meters)
-export Lz=1.0        # Length in z-direction (meters) (only used if dim=3)
+export Lx=1.0e-3        # Length in x-direction (meters)
+export Ly=1.0e-3        # Length in y-direction (meters)
+export Lz=1.0e-3        # Length in z-direction (meters) (only used if dim=3)
 
 export temp=268.15   # Initial temperature (Kelvin)
 
@@ -21,7 +21,7 @@ export grad_temp0Z=0     # Temperature gradient in z-direction (K/m)
 
 # Bottom boundary
 export TEMP_BOTTOM=265.15  # Fixed temperature (Kelvin) at bottom boundary
-export FLUX_BOTTOM=0.3    # Set this if prescribing heat flux instead of temperature
+export FLUX_BOTTOM=1.0    # Set this if prescribing heat flux instead of temperature
 
 # Top boundary
 export TEMP_TOP=240.15     # Fixed temperature (Kelvin) at top boundary
@@ -79,6 +79,9 @@ move_output_files() {
 # ========== EXECUTE WORKFLOW ==========
 echo " "
 echo "Starting Thermal Conductivity Simulation Workflow"
+echo " "
+echo "Calculated interface width (eps): $eps"
+echo " "
 echo " "
 
 compile_code

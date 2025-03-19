@@ -154,6 +154,8 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
                 // Initialize ice field in a circular region
                 dist = PetscSqrtReal(SQ(point->mapX[0][0] - user->Lx / 2.0) + 
                                      SQ(point->mapX[0][1] - user->Ly / 2.0)) - radius;
+
+                // PetscPrintf(PETSC_COMM_SELF, "Circle radius: %g, dist: %g\n", radius, dist);
             } else if (strcmp(user->init_mode, "layered") == 0) {
                 // Initialize ice field in a layered manner
                 dist = point->mapX[0][1] - user->Ly / 2.0;
@@ -166,7 +168,7 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
             }
 
             // Apply phase field function to compute ice phase
-            ice = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
+            ice = 0.5 - 0.5 * PetscTanhReal(2.0 / user->eps * dist);
             ice = PetscMax(0.0, PetscMin(1.0, ice)); // Clamp between [0,1]
 
             // Store computed ice field values 
@@ -255,7 +257,7 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
     if (pnt->atboundary && pnt->boundary_id == 2 ) {  // Check if the Gauss point is on a boundary
         // Boundary in y-direction (dir = 1) and bottom side (side = 0)
         for (a = 0; a < nen; a++) {
-            F[a] -= N0[a] * user->q_bottom; // Apply flux as a Neumann condition
+            F[a] -= N0[a] * user->q_bottom / user->Lx; // Apply flux as a Neumann condition
         }
     } else {
         // Loop over test functions (a) and trial functions (b)
@@ -427,8 +429,6 @@ int main (int argc, char *argv[]) {
     user.cp_air                 = 1.044e3;  // Specific heat capacity of air
     user.rho_ice                = 919.0;    // Density of ice
     user.rho_air                = 1.341;    // Density of air
-
-    user.eps                    = 2.0*user.Ly/user.Ny; // Interface width parameter for phase field method
 
     // Basis functions order and continuity
     PetscInt p = 1, C = 0;
