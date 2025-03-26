@@ -86,3 +86,7 @@ demo/env_config.o
 demo/setup_thermal.o
 demo/io_thermal.o
 demo/material_properties.o
+projects/effective_thermal_cond/effective_k_ice
+projects/effective_thermal_cond/env_config.o
+projects/effective_thermal_cond/io_thermal.o
+.gitignore
