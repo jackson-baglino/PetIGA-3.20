@@ -2,6 +2,7 @@ TARGETS = \
     NASA \
     NASAv2 \
     effective_k_ice \
+	test_load_icefield \
     NASAv2_TempOnly \
     SolveTemperature_demo \
     NASA_panda \
@@ -71,6 +72,10 @@ NASAv2: NASAv2.o
 
 effective_k_ice: effective_k_ice.o setup_thermal.o solver.o env_config.o io_thermal.o material_properties.o
 	$(CLINKER) -o $@ $^ $(PETIGA_LIB) $(PETSC_LIB)
+	$(RM) -f $<
+
+test_load_icefield: test_load_icefield.o
+	$(CLINKER) -o $@ $< $(PETIGA_LIB)
 	$(RM) -f $<
 
 NASA_panda: NASA_panda.o

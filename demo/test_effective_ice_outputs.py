@@ -1,60 +1,81 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.ndimage import zoom
+import os
 
-# Define the base directory
-base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/"\
-           "ThermalSim_2025-03-19__14.25.06"
+# ============================
+# 🔧 User-Defined Paths (Hardcoded)
+# ============================
+base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-25__09.33.52"
+save_dir = "/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO"
+ice_field_file = "/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/ice_field.dat"  # Ice field output from Python script
 
-# File paths for temperature and ice phase fields
-temp_file = f"{base_dir}/temperature.bin"
-# ice_file = f"{base_dir}/ice_field.bin"
+# Ensure save directory exists
+os.makedirs(save_dir, exist_ok=True)
 
-# Load binary data (Big Endian 64-bit float)
-temperature = np.fromfile(temp_file, dtype='>f8')
-# ice_field = np.fromfile(ice_file, dtype='>f8')
+# ============================
+# 📂 File Paths
+# ============================
+temp_file = os.path.join(base_dir, "temperature.bin")
+
+# ============================
+# 📥 Load Temperature Data
+# ============================
+temperature = np.fromfile(temp_file, dtype=">f8")
 
 # Grid size (Ensure these match the simulation settings)
-Nx, Ny = 64, 64
-Nx_temp, Ny_temp = Nx + 1, Ny + 1  # Structured grid (Temperature)
-Nx_ice,  Ny_ice  = Nx + 1, Ny + 1     # Staggered grid (Ice field)
+Nx, Ny = 276, 276
+Nx_temp, Ny_temp = 276, 276  # Structured grid (Temperature)
 
-# Print the number of data points for debugging
+# Debugging: Print number of data points
 print(f"Temperature data points: {temperature.size}")
-# print(f"Ice field data points: {ice_field.size}")
 
 # Ensure data sizes match expected grid dimensions
 while temperature.size > Nx_temp * Ny_temp:
     temperature = temperature[1:]  # Remove extra points if needed
     print("Removed extra data point from temperature")
 
-# while ice_field.size > Nx_ice * Ny_ice:
-#     ice_field = ice_field[1:]  # Remove extra points if needed
-#     print("Removed extra data point from ice field")
-
-# Reshape to 2D arrays
+# Reshape temperature data into 2D array
 temperature = temperature.reshape((Ny_temp, Nx_temp))
-# ice_field = ice_field.reshape((Ny_ice, Nx_ice))
 
-# Interpolate ice field to match temperature grid resolution
-scale_x = Nx_temp / Nx_ice
-scale_y = Ny_temp / Ny_ice
-# ice_interp = zoom(ice_field, (scale_y, scale_x), order=1)  # Linear interpolation
+# ============================
+# 📥 Load Ice Field Data from .dat File
+# ============================
+try:
+    ice_field = np.loadtxt(ice_field_file)  # Read from space-separated .dat file
+except Exception as e:
+    print(f"❌ Error reading ice field file: {e}")
+    exit(1)
 
-# Create figure with two subplots
+# Debugging: Print shape of ice field
+print(f"Ice field raw shape: {ice_field.shape}")
+
+# Ensure the ice field is reshaped into a 2D array (Ny, Nx)
+ice_field = ice_field.reshape((Ny, Nx))
+
+# Debugging: Print the reshaped ice field
+print(f"Ice field reshaped to: {ice_field.shape}")
+
+# ============================
+# 📊 Generate and Save Plots
+# ============================
 fig, axes = plt.subplots(1, 2, figsize=(12, 5), dpi=150)
 
-# Plot Ice Field
+# 🌊 Ice Phase Field
 ax1 = axes[0]
-# im1 = ax1.imshow(ice_field, cmap='Blues', origin='lower', interpolation="nearest", aspect='auto', extent=[0, Nx, 0, Ny])
-# fig.colorbar(im1, ax=ax1, label="Ice Phase")
+im1 = ax1.imshow(ice_field, cmap="Blues", origin="lower", interpolation="nearest", aspect="auto", extent=[0, Nx, 0, Ny])
+fig.colorbar(im1, ax=ax1, label="Ice Phase")
 ax1.set_xlabel("X Index")
 ax1.set_ylabel("Y Index")
 ax1.set_title("Ice Phase Field")
 
-# Plot Temperature Field with Ice Contour
+# Save Ice Phase plot
+ice_plot_path = os.path.join(save_dir, "ice_phase.png")
+fig.savefig(ice_plot_path, dpi=150, bbox_inches="tight")
+print(f"✅ Ice phase plot saved: {ice_plot_path}")
+
+# 🔥 Temperature Field with Ice Contour
 ax2 = axes[1]
-im2 = ax2.imshow(temperature, cmap='magma', origin='lower', interpolation="nearest", aspect='auto', extent=[0, Nx, 0, Ny])
+im2 = ax2.imshow(temperature, cmap="magma", origin="lower", interpolation="nearest", aspect="auto", extent=[0, Nx, 0, Ny])
 fig.colorbar(im2, ax=ax2, label="Temperature (K)")
 ax2.set_xlabel("X Index")
 ax2.set_ylabel("Y Index")
@@ -62,8 +83,11 @@ ax2.set_title("Temperature Field with Ice Contour")
 
 # Overlay the ice phase contour at 0.5
 contour_levels = [0.5]  # Contour at IcePhase = 0.5
-# ax2.contour(ice_interp, levels=contour_levels, colors='white', linewidths=1.5, extent=[0, Nx, 0, Ny])
+ax2.contour(ice_field, levels=contour_levels, colors="red", linewidths=1.5, extent=[0, Nx, 0, Ny])
 
-# Show both plots without extra padding
-plt.tight_layout()
-plt.show()
+# Save Temperature plot
+temp_plot_path = os.path.join(save_dir, "temperature_field.png")
+fig.savefig(temp_plot_path, dpi=150, bbox_inches="tight")
+print(f"✅ Temperature plot saved: {temp_plot_path}")
+
+plt.close(fig)  # Close figure to free memory

@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # ========== SET ENVIRONMENT VARIABLES ==========
-export Nx=64        # Number of elements in x-direction
-export Ny=64        # Number of elements in y-direction
+export Nx=275        # Number of elements in x-direction
+export Ny=275        # Number of elements in y-direction
 export Nz=1          # Number of elements in z-direction (only used if dim=3)
 
-export Lx=1.0e-3        # Length in x-direction (meters)
-export Ly=1.0e-3        # Length in y-direction (meters)
-export Lz=1.0e-3        # Length in z-direction (meters) (only used if dim=3)
+export Lx=0.5e-3        # Length in x-direction (meters)
+export Ly=0.5e-3        # Length in y-direction (meters)
+export Lz=2.02e-4        # Length in z-direction (meters) (only used if dim=3)
 
 export temp=268.15   # Initial temperature (Kelvin)
 
@@ -21,7 +21,7 @@ export grad_temp0Z=0     # Temperature gradient in z-direction (K/m)
 
 # Bottom boundary
 export TEMP_BOTTOM=265.15  # Fixed temperature (Kelvin) at bottom boundary
-export FLUX_BOTTOM=0.1    # Set this if prescribing heat flux instead of temperature
+export FLUX_BOTTOM=1.0    # Set this if prescribing heat flux instead of temperature
 
 # Top boundary
 export TEMP_TOP=240.15     # Fixed temperature (Kelvin) at top boundary
@@ -33,7 +33,8 @@ export eps=$(awk "BEGIN {print ($Lx/$Nx < $Ly/$Ny) ? $Lx/$Nx : $Ly/$Ny}")
 export dim=2   # Set dimension (2 for 2D, 3 for 3D)
 
 # ========== INITIAL CONDTIONS ==========
-INIT_MODE="circle"  # Initial condition mode (e.g., "circle", "square", etc.)
+# INIT_MODE="circle"  # Initial condition mode (e.g., "circle", "square", etc.)
+INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/ice_field.dat"  # Path to initial condition file
 
 # ========== OPTIONAL SETTINGS ==========
 export OUTPUT_VTK=1    # Set to 1 to enable VTK output
@@ -64,7 +65,7 @@ compile_code() {
 # ========== FUNCTION: RUN THE SIMULATION ==========
 run_simulation() {
     echo "Running effective_k_ice simulation with $NUM_PROCS processes..."
-    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode $INIT_MODE #-ksp_view -ksp_monitor -log_view
+    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode $INIT_MODE -ksp_view -ksp_monitor -log_view
 }
 
 # ========== FUNCTION: MOVE OUTPUT FILES ==========
