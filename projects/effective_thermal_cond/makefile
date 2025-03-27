@@ -1,360 +1,120 @@
-TARGETS = \
-    NASA \
-    NASAv2 \
-    effective_k_ice \
-		test_load_icefield \
-    NASAv2_TempOnly \
-    SolveTemperature_demo \
-    NASA_panda \
-    Wetamorphism \
-    Metamorph \
-    localGrains \
-    Solid3ph_flow \
-    Carbon \
-    Meltwater \
-    Poisson1D \
-    Poisson2D \
-    Poisson3D \
-    L2Projection \
-    AdaptiveL2Projection \
-    Laplace \
-    BoundaryIntegral \
-    Poisson \
-    LoggChallenge \
-    Neumann \
-    NitscheMethod \
-    AdvectionDiffusion \
-    Bratu \
-    PatternFormation \
-    CahnHilliard2D \
-    CahnHilliard3D \
-    NavierStokesKorteweg2D \
-    NavierStokesVMS \
-    Elasticity \
-    Elasticity3D \
-    HyperElasticity \
-    Richards \
-    TwoPhaseTwoComponent \
-    ShallowWater \
-    ClassicalShell \
-    ElasticRod
+# =============================
+# 🔹 Project Configuration
+# =============================
 
-ALL: $(TARGETS)
+# Define the main target (executable name)
+TARGETS = effective_k_ice
 
-clean::
-	-@$(RM) $(TARGETS) setup_thermal.o solver.o env_config.o io_thermal.o material_properties.o
+# Define the directory structure
+SRC_DIR = src         # Directory for source files (.c)
+OBJ_DIR = obj         # Directory for compiled object files (.o)
+INC_DIR = include     # Directory for header files (.h)
+SCRIPT_DIR = scripts  # Directory for scripts (e.g., shell scripts)
 
+# =============================
+# 🔹 Compiler & Linker Configuration
+# =============================
+
+# Compiler flags
 CFLAGS = -g3 -O0 -Wall -Wextra -Wno-unused-parameter \
          -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/petsc/private \
-         -I$(PETIGA_DIR)/include
-FFLAGS = -g3 -O0 -Wall -Wextra -fcheck=all
-CPPFLAGS =
-FPPFLAGS =
-LOCDIR = demo/
-EXAMPLESC =
-EXAMPLESF =
-MANSEC = IGA
-INCLUDES = -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/petsc/private -I$(PETIGA_DIR)/include
+         -I$(PETIGA_DIR)/include -I$(INC_DIR)
+
+# Include paths (modularized for easy modification)
+INCLUDES = -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/petsc/private \
+           -I$(PETIGA_DIR)/include -I$(INC_DIR)
 CFLAGS += $(INCLUDES)
 
-topdir := $(shell cd .. && pwd)
-PETIGA_DIR ?= $(topdir)
+# Explanation of CFLAGS:
+# - `-g3`     : Enables debugging information.
+# - `-O0`     : Disables optimization (useful for debugging).
+# - `-Wall`   : Enables most warnings.
+# - `-Wextra` : Enables extra warnings.
+# - `-Wno-unused-parameter` : Suppresses warnings about unused function parameters.
+# - `-I...`   : Specifies directories to search for header files.
+
+# Linker flags - specify library paths and libraries to link
+LDFLAGS = -L$(PETSC_DIR)/$(PETSC_ARCH)/lib -lpetsc -L$(PETIGA_DIR)/lib -lpetiga
+
+# Explanation of LDFLAGS:
+# - `-L<dir>` : Specifies directories where libraries are located.
+# - `-lpetsc` : Links the PETSc library.
+# - `-lpetiga` : Links the PetIGA library.
+
+# Include configuration files from PetIGA (these set up additional variables and rules)
 include $(PETIGA_DIR)/lib/petiga/conf/variables
 include $(PETIGA_DIR)/lib/petiga/conf/rules
 
-NASA: NASA.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# =============================
+# 🔹 Source & Object Files
+# =============================
 
-NASAv2: NASAv2.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Find all .c files in the source directory
+SRCS := $(wildcard $(SRC_DIR)/*.c)
 
-effective_k_ice: effective_k_ice.o setup_thermal.o solver.o env_config.o io_thermal.o material_properties.o
-	$(CLINKER) -o $@ $^ $(PETIGA_LIB) $(PETSC_LIB)
-	$(RM) -f $<
+# Replace the source file paths with corresponding object file paths
+OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
 
-test_load_icefield: test_load_icefield.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# =============================
+# 🔹 Build Rules
+# =============================
 
-NASA_panda: NASA_panda.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Ensure object directory exists before building
+all: $(OBJ_DIR) $(TARGETS)
 
-NASAv2_TempOnly: NASAv2_TempOnly.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<	
+# $(OBJ_DIR):
+# 	@mkdir -p $(OBJ_DIR)
 
-SolveTemperature_demo: SolveTemperature_demo.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<	
+# Compile each .c file into an .o file
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-Wetamorphism: Wetamorphism.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Explanation:
+# - `$<` : The input file (source file).
+# - `$@` : The output file (object file).
+# - `$(CC)` : Uses the default C compiler.
 
-Metamorph: Metamorph.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Link all object files to create the final executable
+$(TARGETS): $(OBJS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-localGrains: localGrains.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Explanation:
+# - `$@` : The output file (the final executable).
+# - `$^` : All prerequisites (object files).
 
-Solid3ph_flow: Solid3ph_flow.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# =============================
+# 🔹 Utility Commands
+# =============================
 
-Meltwater: Meltwater.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+.PHONY: all clean run scripts
 
-Carbon: Carbon.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Clean up compiled files
+clean:
+	-@$(RM) $(TARGETS)
+	-@$(RM) $(OBJ_DIR)/*.o
+	@rmdir $(OBJ_DIR) 2>/dev/null || true
 
-Poisson1D: Poisson1D.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Explanation:
+# - `.PHONY: clean` : Ensures `make clean` always runs, even if there's a file named "clean".
+# - `$(RM)` : Removes files (typically `rm -f`).
+# - `$(OBJ_DIR)/*.o` : Deletes all compiled object files.
+# - `@rmdir $(OBJ_DIR) 2>/dev/null || true` : Silently remove `obj/` if empty.
 
-Poisson2D: Poisson2D.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Run the simulation (calls a shell script)
+run: all
+	bash $(SCRIPT_DIR)/run_simulation.sh
 
-Poisson3D: Poisson3D.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Explanation:
+# - Ensures the code is compiled before running the simulation.
+# - Executes a shell script that sets up and runs the simulation.
 
-L2Projection: L2Projection.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
+# Execute all scripts in the scripts directory
+scripts:
+	@for script in $(wildcard $(SCRIPT_DIR)/*.sh); do \
+		bash $$script; \
+	done
 
-AdaptiveL2Projection: AdaptiveL2Projection.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-Laplace: Laplace.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-BoundaryIntegral: BoundaryIntegral.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-Poisson: Poisson.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-LoggChallenge: LoggChallenge.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-Neumann: Neumann.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-NitscheMethod: NitscheMethod.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-Bratu: Bratu.o BratuFJ.o
-	$(CLINKER) -o $@ $< BratuFJ.o $(PETIGA_LIB)
-	$(RM) -f $< BratuFJ.o bratufj.mod
-
-AdvectionDiffusion: AdvectionDiffusion.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-PatternFormation: PatternFormation.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-CahnHilliard2D: CahnHilliard2D.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-CahnHilliard3D: CahnHilliard3D.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-NavierStokesKorteweg2D: NavierStokesKorteweg2D.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-NavierStokesVMS: NavierStokesVMS.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-ShallowWater: ShallowWater.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-ClassicalShell: ClassicalShell.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-ElasticRod: ElasticRod.o ElasticRodFJ.o
-	$(CLINKER) -o $@ $< ElasticRodFJ.o $(PETIGA_LIB)
-	$(RM) -f $< ElasticRodFJ.o elasticrodfj.mod
-
-Elasticity: Elasticity.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-Elasticity3D: Elasticity3D.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-HyperElasticity: HyperElasticity.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-Richards: Richards.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-TwoPhaseTwoComponent: TwoPhaseTwoComponent.o
-	$(CLINKER) -o $@ $< $(PETIGA_LIB)
-	$(RM) -f $<
-
-OPTS = -nox -malloc_debug -malloc_dump
-
-runex1:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./L2Projection $(OPTS) -check_error -d 1
-	@$(call mpiexec,4) ./L2Projection $(OPTS) -check_error -d 1
-	@$(call mpiexec,1) ./L2Projection $(OPTS) -check_error -d 2
-	@$(call mpiexec,4) ./L2Projection $(OPTS) -check_error -d 2
-	@$(call mpiexec,1) ./L2Projection $(OPTS) -check_error -d 3 -p 1
-	@$(call mpiexec,4) ./L2Projection $(OPTS) -check_error -d 3 -p 1
-	$(run-test-end)
-
-runex2-1d:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./Poisson1D $(OPTS)
-	@$(call mpiexec,4) ./Poisson1D $(OPTS)
-	$(run-test-end)
-
-runex2-2d:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./Poisson2D $(OPTS)
-	@$(call mpiexec,4) ./Poisson2D $(OPTS)
-	$(run-test-end)
-
-runex2-3d:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./Poisson3D $(OPTS)
-	@$(call mpiexec,4) ./Poisson3D $(OPTS)
-	$(run-test-end)
-
-runex3:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./Laplace $(OPTS) -check_error -iga_dim 1
-	@$(call mpiexec,4) ./Laplace $(OPTS) -check_error -iga_dim 1
-	@$(call mpiexec,1) ./Laplace $(OPTS) -check_error -iga_dim 2
-	@$(call mpiexec,4) ./Laplace $(OPTS) -check_error -iga_dim 2
-	@$(call mpiexec,1) ./Laplace $(OPTS) -check_error -iga_dim 3 -iga_elements 8
-	@$(call mpiexec,4) ./Laplace $(OPTS) -check_error -iga_dim 3 -iga_elements 8
-	@$(call mpiexec,1) ./Laplace $(OPTS) -check_error -iga_dim 1 -iga_collocation -iga_degree 2
-	@$(call mpiexec,4) ./Laplace $(OPTS) -check_error -iga_dim 2 -iga_collocation -iga_degree 4,6
-	$(run-test-end)
-
-runex4:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./CahnHilliard2D $(OPTS) -ts_max_steps 2
-	@$(call mpiexec,4) ./CahnHilliard2D $(OPTS) -ts_max_steps 2
-	$(run-test-end)
-
-runex5:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./PatternFormation $(OPTS) -ts_max_steps 2
-	@$(call mpiexec,4) ./PatternFormation $(OPTS) -ts_max_steps 2
-	@$(call mpiexec,1) ./PatternFormation $(OPTS) -ts_max_steps 2 -implicit
-	@$(call mpiexec,4) ./PatternFormation $(OPTS) -ts_max_steps 2 -implicit
-	$(run-test-end)
-
-runex6:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 1 -lambda 1.0
-	@$(call mpiexec,2) ./Bratu $(OPTS) -iga_dim 1 -lambda 1.0 -steady false -ts_max_steps 2
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2
-	@$(call mpiexec,4) ./Bratu $(OPTS) -iga_dim 2
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -steady false -ts_max_steps 2
-	@$(call mpiexec,4) ./Bratu $(OPTS) -iga_dim 2 -steady false -ts_max_steps 2
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -steady true -iga_collocation
-	@$(call mpiexec,2) ./Bratu $(OPTS) -iga_dim 2 -steady true -iga_collocation
-	@$(call mpiexec,4) ./Bratu $(OPTS) -iga_dim 2 -steady true -iga_collocation
-	@$(call mpiexec,6) ./Bratu $(OPTS) -iga_dim 2 -steady true -iga_collocation
-	@$(call mpiexec,8) ./Bratu $(OPTS) -iga_dim 2 -steady true -iga_collocation
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -iga_fd
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -iga_fd
-	@$(call mpiexec,4) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -iga_fd -steady false -ts_max_steps 2
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color -steady false -ts_max_steps 2
-	@$(call mpiexec,1) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -iga_fd -steady false -ts_max_steps 2
-	@$(call mpiexec,4) ./Bratu $(OPTS) -iga_dim 2 -iga_degree 1 -lambda 1.0 -snes_fd_color -steady false -ts_max_steps 2
-	$(run-test-end)
-
-runex7:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./Neumann $(OPTS) -check_error -iga_dim 1 -pc_type icc
-	@$(call mpiexec,4) ./Neumann $(OPTS) -check_error -iga_dim 1 -sub_pc_type icc
-	@$(call mpiexec,1) ./Neumann $(OPTS) -check_error -iga_dim 2 -pc_type icc
-	@$(call mpiexec,4) ./Neumann $(OPTS) -check_error -iga_dim 2 -sub_pc_type icc
-	@$(call mpiexec,4) ./Neumann $(OPTS) -check_error -iga_dim 3 -sub_pc_type icc
-	@$(call mpiexec,1) ./Neumann $(OPTS) -check_error -iga_dim 1 -iga_collocation -iga_degree 4 -pc_factor_shift_type nonzero
-	@$(call mpiexec,4) ./Neumann $(OPTS) -check_error -iga_dim 2 -iga_collocation -iga_degree 6
-	$(run-test-end)
-
-runex8:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./ElasticRod $(OPTS) -ts_max_steps 10
-	@$(call mpiexec,4) ./ElasticRod $(OPTS) -ts_max_steps 10
-	$(run-test-end)
-
-runex9:
-	$(run-test-begin)
-	@$(call mpiexec,1) ./NitscheMethod $(OPTS) -check_error 1e-6 -iga_dim 1 -iga_degree 2 -ksp_type cg -ksp_rtol 1e-7 -pc_type none
-	@$(call mpiexec,4) ./NitscheMethod $(OPTS) -check_error 1e-6 -iga_dim 2 -iga_degree 2 -ksp_type cg -ksp_rtol 1e-7
-	$(run-test-end)
-
-L2Projection := L2Projection.PETSc runex1 L2Projection.rm
-Laplace := Laplace.PETSc runex3 Laplace.rm
-Poisson1D := Poisson1D.PETSc runex2-1d Poisson1D.rm
-Poisson2D := Poisson2D.PETSc runex2-2d Poisson2D.rm
-Poisson3D := Poisson3D.PETSc runex2-3d Poisson3D.rm
-Poisson := $(Poisson1D) $(Poisson2D) $(Poisson3D)
-Neumann := Neumann.PETSc runex7 Neumann.rm
-NitscheMethod := NitscheMethod.PETSc runex9 NitscheMethod.rm
-Bratu := Bratu.PETSc runex6 Bratu.rm
-CahnHilliard2D := CahnHilliard2D.PETSc runex4 CahnHilliard2D.rm
-CahnHilliard3D := CahnHilliard3D.PETSc CahnHilliard3D.rm
-CahnHilliard := $(CahnHilliard2D) $(CahnHilliard3D)
-PatternFormation := PatternFormation.PETSc runex5 PatternFormation.rm
-ElasticRod := ElasticRod.PETSc runex8 ElasticRod.rm
-
-TESTEXAMPLES := $(L2Projection) $(Laplace) $(Poisson) $(Neumann) $(NitscheMethod) $(Bratu) $(CahnHilliard) $(PatternFormation) $(ElasticRod)
-
-.PHONY: test
-test: $(TESTEXAMPLES)
-
-setup_thermal.o: setup_thermal.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-
-solver.o: solver.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-
-env_config.o: env_config.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-
-io_thermal.o: io_thermal.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-
-material_properties.o: material_properties.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-
-runex-%: ; $(OMAKE) $(*)
-
-include $(PETIGA_DIR)/lib/petiga/conf/test
+# Explanation:
+# - `$(wildcard $(SCRIPT_DIR)/*.sh)` : Finds all `.sh` scripts.
+# - `bash $$script` : Runs each script found.
+# - The `@` suppresses echoing of the command itself.

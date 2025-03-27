@@ -5,9 +5,9 @@ import os
 # ============================
 # 🔧 User-Defined Paths (Hardcoded)
 # ============================
-base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-25__09.33.52"
+base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-26__17.06.25"
 save_dir = "/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO"
-ice_field_file = "/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/ice_field.dat"  # Ice field output from Python script
+ice_field_file = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-26__17.06.25/ice_field.dat"  # Ice field output from Python script
 
 # Ensure save directory exists
 os.makedirs(save_dir, exist_ok=True)
@@ -23,8 +23,8 @@ temp_file = os.path.join(base_dir, "temperature.bin")
 temperature = np.fromfile(temp_file, dtype=">f8")
 
 # Grid size (Ensure these match the simulation settings)
-Nx, Ny = 276, 276
-Nx_temp, Ny_temp = 276, 276  # Structured grid (Temperature)
+Nx, Ny = 235, 393
+Nx_temp, Ny_temp = 235, 393  # Structured grid (Temperature)
 
 # Debugging: Print number of data points
 print(f"Temperature data points: {temperature.size}")
@@ -69,7 +69,7 @@ ax1.set_ylabel("Y Index")
 ax1.set_title("Ice Phase Field")
 
 # Save Ice Phase plot
-ice_plot_path = os.path.join(save_dir, "ice_phase.png")
+ice_plot_path = os.path.join(save_dir, "ice_phase_TS.png")
 fig.savefig(ice_plot_path, dpi=150, bbox_inches="tight")
 print(f"✅ Ice phase plot saved: {ice_plot_path}")
 
@@ -86,7 +86,7 @@ contour_levels = [0.5]  # Contour at IcePhase = 0.5
 ax2.contour(ice_field, levels=contour_levels, colors="red", linewidths=1.5, extent=[0, Nx, 0, Ny])
 
 # Save Temperature plot
-temp_plot_path = os.path.join(save_dir, "temperature_field.png")
+temp_plot_path = os.path.join(save_dir, "temperature_field_TS.png")
 fig.savefig(temp_plot_path, dpi=150, bbox_inches="tight")
 print(f"✅ Temperature plot saved: {temp_plot_path}")
 

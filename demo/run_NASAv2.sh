@@ -328,139 +328,9 @@ echo " "
 echo "Starting NASAv2 simulation workflow"
 echo " "
 
-<<<<<<< HEAD
 delt_t=1.0e-4
 t_final=2*60*60
 n_out=10 #100
-=======
-# add name folder accordingly --------------------------------------------------
-title=dry_2G-Molaro_2D_57m_
-name=$title$(date +%Y-%m-%d__%H.%M.%S)
-dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2
-folder=$dir/$name
-
-if [ ! -d "$dir" ]; then
-  mkdir -p "$dir"
-fi
-
-mkdir $folder/
-
-
-# Define variable names to be exported -----------------------------------------
-  # File names
-input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
-# inputFile=$input_dir"grainReadFile-88_s1-10_s2-21.dat"
-# inputFile=$input_dir"grainReadFile-135_s1-10_s2-21.dat"
-inputFile=$input_dir"grainReadFile-165_s1-10_s2-30.dat"
-# inputFile=$input_dir"grainReadFile-5_s1-10.dat"
-# inputFile=$input_dir"grainReadFile-2.dat"
-# inputFile=$input_dir"grainReadFile-2_Molaro.dat"
-# inputFile=$input_dir"grainReadFile_3D-42_s1-10.dat"
-# inputFile=$input_dir"grainReadFile-10_s1-10.dat"
-# inputFile=$input_dir"grainReadFile-37_s1-10_s2-21.dat"
-
-# Define simulation parameters -------------------------------------------------
-# Define dimensions
-dim=2
-
-# Converty scientic notation to decimal using bc if needed
-dim=$(echo "$dim" | bc -l)
-
-# Domain sizes
-# Lx=488.4e-6                    # Domain size X -- 2 Grain
-# Ly=244.2e-6                    # Domain size Y -- 2 Grain
-# Lz=244.2e-6                    # Domain size Z -- 2 Grain
-
-Lx=3.0300e-04                   # Domain size X -- 2 Grain (Molaro)
-Ly=3.8280e-04                   # Domain size Y -- 2 Grain (Molaro)
-Lz=3.0300e-04                   # Domain size Z -- 2 Grain (Molaro)
-
-# Lx=0.5e-03                     # Domain size X -- 30 Grain (3D)
-# Ly=0.5e-03                     # Domain size Y -- 30 Grain (3D)
-# Lz=0.5e-03                     # Domain size Z -- 30 Grain (3D)
-
-# Lx=0.35e-03                    # Domain size X -- 5 Grain
-# Ly=0.35e-03                    # Domain size Y -- 5 Grain
-# Lz=2.6424e-04                  # Domain size Z -- 5 Grain
-
-# Lx=0.35e-03                   # Domain size X -- 5 Grain
-# Ly=0.35e-03                   # Domain size Y -- 5 Grain
-# Lz=2.202e-04                  # Domain size Z -- 5 Grain
-
-# Lx=488.4e-6                    # Domain size X -- 2 Grain
-# Ly=244.2e-6                    # Domain size Y -- 2 Grain
-# Lz=244.2e-6                    # Domain size Z -- 2 Grain
-
-# Lx=0.5e-03                    # Domain size X -- 10 Grain
-# Ly=0.5e-03                    # Domain size Y -- 10 Grain
-# Lz=1.101e-04                  # Domain size Z -- 10 Grain
-
-# Lx=0.5e-03                    # Domain size X -- 10 Grain
-# Ly=0.5e-03                    # Domain size Y -- 10 Grain
-# Lz=2.202e-04                  # Domain size Z -- 10 Grain
-
-# Lx=2.0e-3                     # Domain size X -- 88 Grain
-# Ly=2.0e-3                     # Domain size Y -- 88 Grain
-# Lz=2.509e-04                  # Domain size Z -- 88 Grain
-
-# Lx=3.2e-3                     # Domain size X -- 135/165 Grain
-# Ly=3.2e-3                     # Domain size Y -- 135/165 Grain
-# Lz=1.0e-3                     # Domain size Z -- 135/165 Grain
-
-# Convert scientific notation to decimal using bc
-Lx=$(echo "$Lx" | bc -l)
-Ly=$(echo "$Ly" | bc -l)
-Lz=$(echo "$Lz" | bc -l)
-
-# Number of elements
-# Nx=264                        # Number of elements in X -- 2 Grain
-# Ny=132                        # Number of elements in Y -- 2 Grain
-# Nz=132                        # Number of elements in Z -- 2 Grain
-
-Nx=167                        # Domain size X -- 2 Grain (Molaro)
-Ny=211                        # Domain size Y -- 2 Grain (Molaro)
-Nz=167                        # Domain size Z -- 2 Grain (Molaro)
-
-# Nx=275                        # Number of elements in X -- 30 Grain (3D)
-# Ny=275                        # Number of elements in Y -- 30 Grain (3D)
-# Nz=275                        # Number of elements in Z -- 30 Grain (3D)
-
-# Nx=190                        # Number of elements in X -- 5 Grain
-# Ny=190                        # Number of elements in Y -- 5 Grain
-# Nz=143                        # Number of elements in Z -- 5 Grain
-
-# Nx=193                        # Number of elements in X -- 5 Grain
-# Ny=193                        # Number of elements in Y -- 5 Grain
-# Nz=122                        # Number of elements in Z -- 5 Grain
-
-# Nx=275                        # Number of elements in X -- 10 Grain
-# Ny=275                        # Number of elements in Y -- 10 Grain
-# Nz=122                        # Number of elements in Z -- 10 Grain
-
-# Nx=264                        # Number of elements in X -- 2 Grain
-# Ny=132                        # Number of elements in Y -- 2 Grain
-# Nz=132                        # Number of elements in Z -- 2 Grain
-
-# Nx=1100                       # Number of elements in X -- 88 Grain
-# Ny=1100                       # Number of elements in Y -- 88 Grain
-# Nz=138                        # Number of elements in Z -- 88 Grain
-
-# Nx=1760                       # Number of elements in X -- 135/165 Grain
-# Ny=1760                       # Number of elements in Y -- 135/165 Grain
-# Nz=100                        # Number of elements in Z -- 135/165 Grain
-
-# eps=9.28146307269926e-07			# Interface width
-eps=9.096e-07                   # Interface width
-
-# Time parameters
-delt_t=1.0e-4                   # Time step
-t_final=57*60                   # Final time
-n_out=100                       # Number of output files
-
-
-# Convert scientific notation to decimal using bc
-delt_t=$(echo "$delt_t" | bc -l)
->>>>>>> main
 t_final=$(echo "$t_final" | bc -l)
 humidity=0.70
 temp=-20.0
@@ -468,7 +338,7 @@ grad_temp0X=0.0
 grad_temp0Y=0.1
 grad_temp0Z=0.0
 dim=2
-filename="grainReadFile-10_s1-10.dat"
+filename="grainReadFile-2_Molaro_0p05.dat"
 title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
 
 compile_code

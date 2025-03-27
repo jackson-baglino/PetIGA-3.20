@@ -4,8 +4,8 @@
 # 🔹 Environment Variables
 # =============================
 
-export Nx=234
-export Ny=392
+export Nx=275
+export Ny=275
 export Nz=1  # Set to 1 for 2D simulations
 
 export Lx=0.5e-3
@@ -85,7 +85,6 @@ move_output_files() {
     echo "📂 Moving output files..."
     if [ -d "$OUTPUT_DIR" ]; then
         mv *.bin "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No binary files to move."
-        mv *.dat "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No binary files to move."
         echo "✅ Output files moved to $OUTPUT_DIR"
     fi
 }

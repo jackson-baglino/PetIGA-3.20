@@ -59,8 +59,10 @@ CFLAGS += $(INCLUDES)
 
 topdir := $(shell cd .. && pwd)
 PETIGA_DIR ?= $(topdir)
+
 include $(PETIGA_DIR)/lib/petiga/conf/variables
 include $(PETIGA_DIR)/lib/petiga/conf/rules
+include $(PETIGA_DIR)/lib/petiga/conf/test
 
 NASA: NASA.o
 	$(CLINKER) -o $@ $< $(PETIGA_LIB)
@@ -356,5 +358,3 @@ material_properties.o: material_properties.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 runex-%: ; $(OMAKE) $(*)
-
-include $(PETIGA_DIR)/lib/petiga/conf/test
