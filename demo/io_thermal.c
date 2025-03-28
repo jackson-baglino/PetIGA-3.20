@@ -115,7 +115,7 @@ PetscErrorCode WriteOutput(AppCtx *user, Vec x, const char *filename) {
 // Function to write the ice field to a .dat file
 PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
     FILE *file;
-    PetscInt num_points = (user->Nx+1) * (user->Ny+1) * (user->dim == 3 ?user->Nz : 1);
+    PetscInt num_points = (user->Nx) * (user->Ny) * (user->dim == 3 ?user->Nz : 1);
     
     PetscFunctionBegin; // PETSc standard error handling start
     

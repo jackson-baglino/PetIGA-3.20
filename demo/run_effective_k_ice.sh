@@ -4,8 +4,8 @@
 # 🔹 Environment Variables
 # =============================
 
-export Nx=234
-export Ny=392
+export Nx=64
+export Ny=64
 export Nz=1  # Set to 1 for 2D simulations
 
 export Lx=0.5e-3
@@ -40,7 +40,8 @@ export dim=2  # Set 2 for 2D, 3 for 3D
 # 🔹 Initial Conditions
 # =============================
 
-INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/ice_field.dat"
+# INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/circle_phase_field.dat"
+INIT_MODE="circle"
 
 # =============================
 # 🔹 Output Settings
@@ -78,7 +79,7 @@ compile_code() {
 
 run_simulation() {
     echo "🚀 Running effective_k_ice simulation with $NUM_PROCS processes..."
-    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode "$INIT_MODE" -ksp_view -ksp_monitor -log_view
+    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode "$INIT_MODE" # -ksp_view -ksp_monitor -log_view
 }
 
 move_output_files() {

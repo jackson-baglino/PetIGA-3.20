@@ -73,8 +73,8 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
     // =============================
     // 3. COMPUTE ICE FIELD AT NODES IF NOT LOADING FROM FILE
     // =============================
+    PetscInt num_points = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
     if (!loadFromFile) {
-        PetscInt num_points = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
 
         // Allocate memory if needed
         if (!user->ice) {
@@ -103,11 +103,6 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
                 // Apply phase field function to compute ice phase
                 user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(2.0 / user->eps * dist);
                 user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx])); // Clamp between [0,1]
-                
-                // Debugging output for first 10 values
-                if (idx < 10) {
-                    PetscPrintf(PETSC_COMM_WORLD, "DEBUG: Assigned ice[%d] = %f\n", idx, user->ice[idx]);
-                }
 
                 idx++;
             }
@@ -115,6 +110,9 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
         }
         ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
     }
+
+    PetscPrintf(PETSC_COMM_WORLD, "Ice field has %d points.\n", idx);
+    PetscPrintf(PETSC_COMM_WORLD, "There are %d elements total.\n", num_points);
 
     // =============================
     // 4. SAVE ICE FIELD TO FILE (IF CIRCLE MODE)

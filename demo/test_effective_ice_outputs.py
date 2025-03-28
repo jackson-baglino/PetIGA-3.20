@@ -5,9 +5,9 @@ import os
 # ============================
 # 🔧 User-Defined Paths (Hardcoded)
 # ============================
-base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-26__17.06.25"
+base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-26__18.19.56"
 save_dir = "/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO"
-ice_field_file = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-26__17.06.25/ice_field.dat"  # Ice field output from Python script
+ice_field_file = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-26__18.19.56/ice_field.dat"  # Ice field output from Python script
 
 # Ensure save directory exists
 os.makedirs(save_dir, exist_ok=True)
@@ -23,8 +23,8 @@ temp_file = os.path.join(base_dir, "temperature.bin")
 temperature = np.fromfile(temp_file, dtype=">f8")
 
 # Grid size (Ensure these match the simulation settings)
-Nx, Ny = 235, 393
-Nx_temp, Ny_temp = 235, 393  # Structured grid (Temperature)
+Nx, Ny = 64, 64
+Nx_temp, Ny_temp = 65, 65  # Structured grid (Temperature)
 
 # Debugging: Print number of data points
 print(f"Temperature data points: {temperature.size}")
