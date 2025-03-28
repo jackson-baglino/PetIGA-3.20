@@ -11,9 +11,6 @@ void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar *cond,
     PetscReal cond_air = user->thcond_air;  
     if(cond)      (*cond)  = ice*cond_ice + air*cond_air;
     if(dcond_ice)    (*dcond_ice) = cond_ice*dice-cond_air*dair;
-
-    // PetscPrintf(PETSC_COMM_WORLD, "Thermal conductivity: ice = %g, cond = %g\n", 
-    //     (double)ice, (double)(*cond));
   
     return;
 }

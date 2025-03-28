@@ -4,8 +4,8 @@
 # 🔹 Environment Variables
 # =============================
 
-export Nx=64
-export Ny=64
+export Nx=32
+export Ny=32
 export Nz=1  # Set to 1 for 2D simulations
 
 export Lx=0.5e-3
@@ -40,8 +40,8 @@ export dim=2  # Set 2 for 2D, 3 for 3D
 # 🔹 Initial Conditions
 # =============================
 
-# INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/circle_phase_field.dat"
-INIT_MODE="circle"
+INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/circle_phase_field.dat"
+# INIT_MODE="circle"
 
 # =============================
 # 🔹 Output Settings

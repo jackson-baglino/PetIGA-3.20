@@ -44,8 +44,8 @@ def generate_circle_phase_field(Lx, Ly, Nx, Ny, radius, filename="circle_phase_f
 generate_circle_phase_field(
     Lx=0.5e-3,  # 0.5 mm domain
     Ly=0.5e-3,  # 0.5 mm domain
-    Nx=256,     # 100 grid points
-    Ny=256,     # 100 grid points
+    Nx=32,     # 100 grid points
+    Ny=32,     # 100 grid points
     radius=0.1e-3,  # 0.2 mm circle
     filename="/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/circle_phase_field.dat"
 )

@@ -23,6 +23,7 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
     IGAElement element;
     IGAPoint point;
     PetscReal dist;
+    PetscReal *ice_temp = NULL;
     PetscInt idx = 0;
     PetscBool loadFromFile = PETSC_FALSE;
     FILE *file = NULL;
@@ -49,15 +50,16 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
 
         // Determine expected size
         PetscInt num_points = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
-
+        
         // Allocate memory if needed
-        if (!user->ice) {
-            ierr = PetscMalloc1(num_points, &user->ice); CHKERRQ(ierr);
+        if (!ice_temp) {
+            PetscPrintf(PETSC_COMM_WORLD, "Allocating memory for ice field with %d points.\n", num_points);
+            ierr = PetscMalloc1(num_points, &ice_temp); CHKERRQ(ierr);
         }
 
         // Read file values into user->ice
         for (PetscInt i = 0; i < num_points; i++) {
-            if (fscanf(file, "%lf", &user->ice[i]) != 1) {
+            if (fscanf(file, "%lf", &ice_temp[i]) != 1) {
                 fclose(file);
                 SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_READ, 
                          "Error reading ice field file at index %D. Expected %D values.", i, num_points);
@@ -67,7 +69,62 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
         // Close the file
         fclose(file);
 
+        // Interpolate ice field to match Gauss points
+        PetscInt num_gauss_points = (user->p + 1) * user->dim * num_points;
+        PetscReal *ice_interpolated;
+        ierr = PetscMalloc1(num_gauss_points, &ice_interpolated); CHKERRQ(ierr);
+
+        PetscInt i;
+        PetscReal alpha;
+        PetscInt num_points_per_dir = (PetscInt)PetscSqrtReal((PetscReal)num_gauss_points); // Assuming 2D structured grid
+
+        for (i = 0; i < num_gauss_points; i++) {
+            PetscInt row = i / num_points_per_dir;
+            PetscInt col = i % num_points_per_dir;
+
+            // Compute interpolation weights
+            PetscReal x_frac = (PetscReal)col / (num_points_per_dir - 1);
+            PetscReal y_frac = (PetscReal)row / (num_points_per_dir - 1);
+
+            // Bilinear interpolation
+            PetscInt x0 = PetscMin(col, num_points_per_dir - 2);
+            PetscInt x1 = x0 + 1;
+            PetscInt y0 = PetscMin(row, num_points_per_dir - 2);
+            PetscInt y1 = y0 + 1;
+
+            PetscReal q11 = ice_temp[y0 * num_points_per_dir + x0];
+            PetscReal q12 = ice_temp[y1 * num_points_per_dir + x0];
+            PetscReal q21 = ice_temp[y0 * num_points_per_dir + x1];
+            PetscReal q22 = ice_temp[y1 * num_points_per_dir + x1];
+
+            alpha = (1.0 - x_frac) * (1.0 - y_frac) * q11 +
+                    (1.0 - x_frac) * y_frac * q12 +
+                    x_frac * (1.0 - y_frac) * q21 +
+                    x_frac * y_frac * q22;
+
+            ice_interpolated[i] = alpha;
+
+        }
+
+        // Assign interpolated values to user->ice
+        ierr = PetscMalloc1(num_gauss_points, &user->ice); CHKERRQ(ierr);
+        ierr = PetscMemcpy(user->ice, ice_interpolated, num_gauss_points * sizeof(PetscReal)); CHKERRQ(ierr);
+
+        // Free temporary memory
+        ierr = PetscFree(ice_interpolated); CHKERRQ(ierr);
+
+        // Print the interpolated ice field as a 2D array
+        PetscPrintf(PETSC_COMM_WORLD, "Interpolated Ice Field (size: %d x %d):\n", num_points_per_dir, num_points_per_dir);
+
+        for (PetscInt row = 0; row < num_points_per_dir; row++) {
+            for (PetscInt col = 0; col < num_points_per_dir; col++) {
+                PetscPrintf(PETSC_COMM_WORLD, "%.4f ", user->ice[row * num_points_per_dir + col]);
+            }
+            PetscPrintf(PETSC_COMM_WORLD, "\n");
+        }
+
         PetscPrintf(PETSC_COMM_WORLD, "✅ Ice field successfully loaded from file.\n");
+        PetscPrintf(PETSC_COMM_WORLD, "----- Ice field has %d points.\n", num_gauss_points);
     }
 
     // =============================
@@ -109,10 +166,10 @@ PetscErrorCode FormInitialCondition(AppCtx *user) {
             ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
         }
         ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
-    }
 
-    PetscPrintf(PETSC_COMM_WORLD, "Ice field has %d points.\n", idx);
-    PetscPrintf(PETSC_COMM_WORLD, "There are %d elements total.\n", num_points);
+        PetscPrintf(PETSC_COMM_WORLD, "Ice field has %d points.\n", idx);
+        PetscPrintf(PETSC_COMM_WORLD, "There are %d elements total.\n", num_points);
+    }
 
     // =============================
     // 4. SAVE ICE FIELD TO FILE (IF CIRCLE MODE)
