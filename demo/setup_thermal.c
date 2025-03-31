@@ -1,254 +1,305 @@
 #include "thermal_solver.h"
 
+/*-----------------------------------------------------------
+   Function: InitializeUserContext
+   Purpose:  Initialize the application context (AppCtx) with default
+             material properties and discretization parameters.
+   Parameters:
+     - user: Pointer to the AppCtx structure to be initialized.
+   Returns:
+     - void.
+-----------------------------------------------------------*/
 void InitializeUserContext(AppCtx *user) {
-    // Set material properties
+    /* Set material properties */
     user->thcond_ice = 2.29;  
     user->thcond_air = 0.02;  
-    user->cp_ice = 1.96e3;   
-    user->cp_air = 1.044e3;  
-    user->rho_ice = 919.0;  
-    user->rho_air = 1.341;  
+    user->cp_ice     = 1.96e3;   
+    user->cp_air     = 1.044e3;  
+    user->rho_ice    = 919.0;  
+    user->rho_air    = 1.341;  
 
-    // Set default polynomial order and continuity
+    /* Set default polynomial order and continuity */
     user->p = 1;
     user->C = 0;
 
     PetscPrintf(PETSC_COMM_WORLD, "User context initialized.\n");
 }
 
-PetscErrorCode FormInitialCondition(AppCtx *user) {
-    PetscFunctionBegin;
-    
-    PetscErrorCode ierr;
-    IGAElement element;
-    IGAPoint point;
-    PetscReal dist;
-    PetscReal *ice_temp = NULL;
-    PetscInt idx = 0;
-    PetscBool loadFromFile = PETSC_FALSE;
-    FILE *file = NULL;
+/*-----------------------------------------------------------
+   Function: ReadInputFile
+   Purpose:  Opens a text file specified by user->init_mode, reads raw
+             ice field values into a dynamically allocated array, and
+             returns the number of points read.
+   Parameters:
+     - user: Pointer to the AppCtx structure containing grid parameters.
+     - iceField: Address of a pointer that will hold the raw ice field data.
+     - nPoints: Pointer to a PetscInt to store the number of points read.
+   Returns:
+     - PetscErrorCode (0 on success).
+-----------------------------------------------------------*/
+static PetscErrorCode ReadInputFile(AppCtx *user, PetscReal **iceField, PetscInt *nPoints)
+{
+  PetscErrorCode ierr;
+  FILE *file = fopen(user->init_mode, "r");
+  if (!file) {
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Error opening ice field file: %s", user->init_mode);
+  }
 
-    // =============================
-    // 1. CHECK IF READING FROM FILE
-    // =============================
-    if (strcmp(user->init_mode, "circle") != 0 && strcmp(user->init_mode, "layered") != 0) {
-        PetscPrintf(PETSC_COMM_WORLD, "Assuming init_mode is a file path.\n");
-        PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from %s\n", user->init_mode);
-        loadFromFile = PETSC_TRUE;
+  /* Expected number of points */
+  PetscInt total = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
+  ierr = PetscMalloc1(total, iceField); CHKERRQ(ierr);
+
+  for (PetscInt i = 0; i < total; i++) {
+    if (fscanf(file, "%lf", &((*iceField)[i])) != 1) {
+      fclose(file);
+      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_READ, "Error reading ice field file at index %D", i);
     }
-
-    // =============================
-    // 2. LOAD ICE FIELD FROM .dat FILE (IF NEEDED)
-    // =============================
-    if (loadFromFile) {
-        PetscPrintf(PETSC_COMM_WORLD, "Loading ice field from file...\n");
-
-        file = fopen(user->init_mode, "r");
-        if (!file) {
-            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Error opening ice field file: %s", user->init_mode);
-        }
-
-        // Determine expected size
-        PetscInt num_points = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
-        
-        // Allocate memory if needed
-        if (!ice_temp) {
-            PetscPrintf(PETSC_COMM_WORLD, "Allocating memory for ice field with %d points.\n", num_points);
-            ierr = PetscMalloc1(num_points, &ice_temp); CHKERRQ(ierr);
-        }
-
-        // Read file values into user->ice
-        for (PetscInt i = 0; i < num_points; i++) {
-            if (fscanf(file, "%lf", &ice_temp[i]) != 1) {
-                fclose(file);
-                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_READ, 
-                         "Error reading ice field file at index %D. Expected %D values.", i, num_points);
-            }
-        }
-
-        // Close the file
-        fclose(file);
-
-        // Interpolate ice field to match Gauss points
-        PetscInt num_gauss_points = (user->p + 1) * user->dim * num_points;
-        PetscReal *ice_interpolated;
-        ierr = PetscMalloc1(num_gauss_points, &ice_interpolated); CHKERRQ(ierr);
-
-        PetscInt i;
-        PetscReal alpha;
-        PetscInt num_points_per_dir = (PetscInt)PetscSqrtReal((PetscReal)num_gauss_points); // Assuming 2D structured grid
-
-        for (i = 0; i < num_gauss_points; i++) {
-            PetscInt row = i / num_points_per_dir;
-            PetscInt col = i % num_points_per_dir;
-
-            // Compute interpolation weights
-            PetscReal x_frac = (PetscReal)col / (num_points_per_dir - 1);
-            PetscReal y_frac = (PetscReal)row / (num_points_per_dir - 1);
-
-            // Bilinear interpolation
-            PetscInt x0 = PetscMin(col, num_points_per_dir - 2);
-            PetscInt x1 = x0 + 1;
-            PetscInt y0 = PetscMin(row, num_points_per_dir - 2);
-            PetscInt y1 = y0 + 1;
-
-            PetscReal q11 = ice_temp[y0 * num_points_per_dir + x0];
-            PetscReal q12 = ice_temp[y1 * num_points_per_dir + x0];
-            PetscReal q21 = ice_temp[y0 * num_points_per_dir + x1];
-            PetscReal q22 = ice_temp[y1 * num_points_per_dir + x1];
-
-            alpha = (1.0 - x_frac) * (1.0 - y_frac) * q11 +
-                    (1.0 - x_frac) * y_frac * q12 +
-                    x_frac * (1.0 - y_frac) * q21 +
-                    x_frac * y_frac * q22;
-
-            ice_interpolated[i] = alpha;
-
-        }
-
-        // Assign interpolated values to user->ice
-        ierr = PetscMalloc1(num_gauss_points, &user->ice); CHKERRQ(ierr);
-        ierr = PetscMemcpy(user->ice, ice_interpolated, num_gauss_points * sizeof(PetscReal)); CHKERRQ(ierr);
-
-        // Free temporary memory
-        ierr = PetscFree(ice_interpolated); CHKERRQ(ierr);
-
-        // Print the interpolated ice field as a 2D array
-        PetscPrintf(PETSC_COMM_WORLD, "Interpolated Ice Field (size: %d x %d):\n", num_points_per_dir, num_points_per_dir);
-
-        for (PetscInt row = 0; row < num_points_per_dir; row++) {
-            for (PetscInt col = 0; col < num_points_per_dir; col++) {
-                PetscPrintf(PETSC_COMM_WORLD, "%.4f ", user->ice[row * num_points_per_dir + col]);
-            }
-            PetscPrintf(PETSC_COMM_WORLD, "\n");
-        }
-
-        PetscPrintf(PETSC_COMM_WORLD, "✅ Ice field successfully loaded from file.\n");
-        PetscPrintf(PETSC_COMM_WORLD, "----- Ice field has %d points.\n", num_gauss_points);
-    }
-
-    // =============================
-    // 3. COMPUTE ICE FIELD AT NODES IF NOT LOADING FROM FILE
-    // =============================
-    PetscInt num_points = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
-    if (!loadFromFile) {
-
-        // Allocate memory if needed
-        if (!user->ice) {
-            ierr = PetscMalloc1(num_points, &user->ice); CHKERRQ(ierr);
-        }
-
-        ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
-        while (IGANextElement(user->iga, element)) {
-            ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
-            while (IGAElementNextPoint(element, point)) {
-                // ===========================
-                // COMPUTE INITIAL ICE FIELD AT NODES
-                // ===========================
-                if (strcmp(user->init_mode, "circle") == 0) {
-                    PetscReal radius = PetscMin(user->Lx / 6.0, user->Ly / 6.0);
-
-                    // Compute distance from the circle center
-                    dist = PetscSqrtReal(SQ(point->mapX[0][0] - user->Lx / 2.0) + 
-                                         SQ(point->mapX[0][1] - user->Ly / 2.0)) - radius;
-                } 
-                else if (strcmp(user->init_mode, "layered") == 0) {
-                    // Initialize ice field in a layered manner
-                    dist = point->mapX[0][1] - user->Ly / 2.0;
-                }
-
-                // Apply phase field function to compute ice phase
-                user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(2.0 / user->eps * dist);
-                user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx])); // Clamp between [0,1]
-
-                idx++;
-            }
-            ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
-        }
-        ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
-
-        PetscPrintf(PETSC_COMM_WORLD, "Ice field has %d points.\n", idx);
-        PetscPrintf(PETSC_COMM_WORLD, "There are %d elements total.\n", num_points);
-    }
-
-    // =============================
-    // 4. SAVE ICE FIELD TO FILE (IF CIRCLE MODE)
-    // =============================
-    if (!loadFromFile && strcmp(user->init_mode, "circle") == 0) {
-        char circle_output_file[256];
-        snprintf(circle_output_file, sizeof(circle_output_file), "/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/circle_ice_field.dat");
-
-        FILE *circle_file = fopen(circle_output_file, "w");
-        if (!circle_file) {
-            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Error opening output file for writing ice field.");
-        }
-
-        for (PetscInt i = 0; i < idx; i++) {
-            fprintf(circle_file, "%.8e\n", user->ice[i]);
-        }
-
-        fclose(circle_file);
-        PetscPrintf(PETSC_COMM_WORLD, "✅ Ice field written to %s\n", circle_output_file);
-    }
-
-    PetscPrintf(PETSC_COMM_WORLD, "✅ Ice field initialized with %d nodal points.\n", idx);
-
-    PetscFunctionReturn(0);
+  }
+  fclose(file);
+  *nPoints = total;
+  return 0;
 }
 
+/*-----------------------------------------------------------
+   Function: InterpolateIceField
+   Purpose:  Interpolates raw ice field data (inputField) to match the
+             Gauss points used in the discretization. Here a structured
+             2D grid is assumed.
+   Parameters:
+     - inputField: Array of raw ice field values.
+     - numInput: Number of points in the raw inputField.
+     - user: Pointer to the AppCtx structure (used for discretization info).
+     - iceFieldOut: Address of a pointer to store the interpolated field.
+     - nGaussPoints: Pointer to a PetscInt to store the number of Gauss points.
+   Returns:
+     - PetscErrorCode (0 on success).
+-----------------------------------------------------------*/
+static PetscErrorCode InterpolateIceField(PetscReal *inputField, PetscInt numInput,
+                                          AppCtx *user, PetscReal **iceFieldOut, PetscInt *nGaussPoints)
+{
+  PetscErrorCode ierr;
+  /* For simplicity, assume the number of Gauss points is computed as follows.
+     (In practice, adjust this to your discretization.) */
+  PetscInt nGauss = (user->p + 1) * user->dim * numInput;
+  ierr = PetscMalloc1(nGauss, iceFieldOut); CHKERRQ(ierr);
+
+  /* Assume a structured 2D grid for interpolation */
+  PetscInt numPtsPerDir = (PetscInt) PetscSqrtReal((PetscReal)nGauss);
+  for (PetscInt i = 0; i < nGauss; i++) {
+    PetscInt row = i / numPtsPerDir;
+    PetscInt col = i % numPtsPerDir;
+    PetscReal x_frac = (PetscReal) col / (numPtsPerDir - 1);
+    PetscReal y_frac = (PetscReal) row / (numPtsPerDir - 1);
+    PetscInt x0 = PetscMin(col, numPtsPerDir - 2);
+    PetscInt x1 = x0 + 1;
+    PetscInt y0 = PetscMin(row, numPtsPerDir - 2);
+    PetscInt y1 = y0 + 1;
+    PetscReal q11 = inputField[y0 * numPtsPerDir + x0];
+    PetscReal q12 = inputField[y1 * numPtsPerDir + x0];
+    PetscReal q21 = inputField[y0 * numPtsPerDir + x1];
+    PetscReal q22 = inputField[y1 * numPtsPerDir + x1];
+    PetscReal alpha = (1.0 - x_frac) * (1.0 - y_frac) * q11 +
+                      (1.0 - x_frac) * y_frac * q12 +
+                      x_frac * (1.0 - y_frac) * q21 +
+                      x_frac * y_frac * q22;
+    (*iceFieldOut)[i] = alpha;
+  }
+  *nGaussPoints = nGauss;
+  return 0;
+}
+
+/*-----------------------------------------------------------
+   Function: ComputeCircleIceField
+   Purpose:  Computes the initial ice field using a circular profile.
+             The field is computed at each nodal point based on the distance
+             from the center of the domain, with a smooth transition defined
+             by a hyperbolic tangent function.
+   Parameters:
+     - user: Pointer to the AppCtx structure containing grid and simulation parameters.
+   Returns:
+     - PetscErrorCode (0 on success).
+-----------------------------------------------------------*/
+static PetscErrorCode ComputeCircleIceField(AppCtx *user)
+{
+  PetscErrorCode ierr;
+  IGAElement element;
+  IGAPoint point;
+  PetscReal dist;
+  PetscInt idx = 0;
+  PetscInt total = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
+
+  ierr = PetscMalloc1(total, &user->ice); CHKERRQ(ierr);
+  ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
+  while (IGANextElement(user->iga, element)) {
+    ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
+    while (IGAElementNextPoint(element, point)) {
+      PetscReal radius = PetscMin(user->Lx / 6.0, user->Ly / 6.0);
+      /* Compute distance from the circle center */
+      dist = PetscSqrtReal(SQ(point->mapX[0][0] - user->Lx / 2.0) +
+                           SQ(point->mapX[0][1] - user->Ly / 2.0)) - radius;
+      /* Compute ice phase using a hyperbolic tangent transition */
+      user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(2.0 / user->eps * dist);
+      user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx])); /* Clamp [0,1] */
+      idx++;
+    }
+    ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
+  }
+  ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD, "Circle mode: ice field computed with %d points.\n", idx);
+  return 0;
+}
+
+/*-----------------------------------------------------------
+   Function: ComputeLayeredIceField
+   Purpose:  Computes the initial ice field using a layered (vertical)
+             profile. The field is computed by varying only in the y-direction.
+   Parameters:
+     - user: Pointer to the AppCtx structure containing grid parameters.
+   Returns:
+     - PetscErrorCode (0 on success).
+-----------------------------------------------------------*/
+static PetscErrorCode ComputeLayeredIceField(AppCtx *user)
+{
+  PetscErrorCode ierr;
+  IGAElement element;
+  IGAPoint point;
+  PetscReal dist;
+  PetscInt idx = 0;
+  PetscInt total = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
+
+  ierr = PetscMalloc1(total, &user->ice); CHKERRQ(ierr);
+  ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
+  while (IGANextElement(user->iga, element)) {
+    ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
+    while (IGAElementNextPoint(element, point)) {
+      /* For layered mode, assume variation in the y-direction only */
+      dist = point->mapX[0][1] - user->Ly / 2.0;
+      user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(2.0 / user->eps * dist);
+      user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx])); /* Clamp [0,1] */
+      idx++;
+    }
+    ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
+  }
+  ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD, "Layered mode: ice field computed with %d points.\n", idx);
+  return 0;
+}
+
+/*-----------------------------------------------------------
+   Function: FormInitialCondition
+   Purpose:  Determines the initialization mode and calls the
+             appropriate helper function:
+               - "circle": Calls ComputeCircleIceField.
+               - "layered": Calls ComputeLayeredIceField.
+               - Otherwise: Assumes user->init_mode is a file path,
+                 reads raw data using ReadInputFile, interpolates it using
+                 InterpolateIceField, and stores the result.
+   Parameters:
+     - user: Pointer to the AppCtx structure.
+   Returns:
+     - PetscErrorCode (0 on success).
+-----------------------------------------------------------*/
+PetscErrorCode FormInitialCondition(AppCtx *user)
+{
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+
+  if (strcmp(user->init_mode, "circle") == 0) {
+    ierr = ComputeCircleIceField(user); CHKERRQ(ierr);
+  } else if (strcmp(user->init_mode, "layered") == 0) {
+    ierr = ComputeLayeredIceField(user); CHKERRQ(ierr);
+  } else {
+    /* File mode: read raw data then interpolate */
+    PetscReal *rawField = NULL, *interpField = NULL;
+    PetscInt nRaw = 0, nGauss = 0;
+
+    PetscPrintf(PETSC_COMM_WORLD, "Assuming init_mode is a file path.\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from %s\n", user->init_mode);
+    ierr = ReadInputFile(user, &rawField, &nRaw); CHKERRQ(ierr);
+
+    ierr = InterpolateIceField(rawField, nRaw, user, &interpField, &nGauss); CHKERRQ(ierr);
+    ierr = PetscFree(rawField); CHKERRQ(ierr);
+
+    ierr = PetscMalloc1(nGauss, &user->ice); CHKERRQ(ierr);
+    ierr = PetscMemcpy(user->ice, interpField, nGauss * sizeof(PetscReal)); CHKERRQ(ierr);
+    ierr = PetscFree(interpField); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD, "File mode: ice field loaded and interpolated to %d points.\n", nGauss);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+/*-----------------------------------------------------------
+   Function: ApplyBoundaryConditions
+   Purpose:  Applies boundary conditions for the thermal model.
+             It sets a fixed temperature at the top, prescribed flux at
+             the bottom, and, for 3D problems, zero-flux conditions on the z-axis.
+   Parameters:
+     - iga: The IGA object representing the discretization.
+     - user: Pointer to the AppCtx structure containing boundary parameters.
+   Returns:
+     - PetscErrorCode (0 on success).
+-----------------------------------------------------------*/
 PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
     PetscPrintf(PETSC_COMM_WORLD, "Applying boundary conditions...\n");
 
-    /* ===========================
-       FIXED TEMPERATURE AT THE TOP
-       =========================== */
+    /* Fixed temperature at the top */
     ierr = IGASetBoundaryValue(iga, 1, 1, 0, user->T_top); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD, "  - Fixed temperature applied at top: T = %g K\n", user->T_top);
 
-    /* ===========================
-       PRESCRIBED FLUX AT THE BOTTOM
-       =========================== */
+    /* Prescribed flux at the bottom */
     ierr = IGASetBoundaryForm(iga, 1, 0, PETSC_TRUE); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD, "  - Prescribed flux at bottom: q = %g W/m²\n", user->q_bottom);
 
-    /* ===========================
-       ZERO-FLUX (NEUMANN) BCs on SIDES
-       =========================== */
-    // ierr = IGASetBoundaryForm(iga, 0, 0, PETSC_TRUE); CHKERRQ(ierr);  // x = 0
-    // ierr = IGASetBoundaryForm(iga, 0, 1, PETSC_TRUE); CHKERRQ(ierr);  // x = Lx
-    // PetscPrintf(PETSC_COMM_WORLD, "  - Zero-flux (Neumann) BCs applied at x = 0 and x = Lx\n");
-
-    /* ===========================
-       ZERO-FLUX (NEUMANN) BCs on Z-AXIS (ONLY IF 3D)
-       =========================== */
+    /* Zero-flux (Neumann) conditions on the z-axis (if 3D) */
     if (user->dim == 3) {
-        ierr = IGASetBoundaryForm(iga, 2, 0, PETSC_TRUE); CHKERRQ(ierr);  // z = 0
-        ierr = IGASetBoundaryForm(iga, 2, 1, PETSC_TRUE); CHKERRQ(ierr);  // z = Lz
+        ierr = IGASetBoundaryForm(iga, 2, 0, PETSC_TRUE); CHKERRQ(ierr);
+        ierr = IGASetBoundaryForm(iga, 2, 1, PETSC_TRUE); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
 }
 
+/*-----------------------------------------------------------
+   Function: InitializeFields
+   Purpose:  Allocates memory for the ice field and initializes it
+             by calling FormInitialCondition.
+   Parameters:
+     - user: Pointer to the AppCtx structure.
+     - iga: The IGA object.
+   Returns:
+     - PetscErrorCode (0 on success).
+-----------------------------------------------------------*/
 PetscErrorCode InitializeFields(AppCtx *user, IGA iga) {
     PetscErrorCode ierr;
     PetscInt nmb = iga->elem_width[0] * iga->elem_width[1] * SQ(user->p + 1);
 
     PetscFunctionBegin;
 
-    // Allocate memory for ice field
+    /* Allocate memory for ice field and zero it out */
     ierr = PetscMalloc1(nmb, &user->ice); CHKERRQ(ierr);
     ierr = PetscMemzero(user->ice, nmb * sizeof(PetscReal)); CHKERRQ(ierr);
 
-    // Call function to initialize ice field values
+    /* Initialize the ice field using the chosen strategy */
     ierr = FormInitialCondition(user); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD, "Field variables initialized.\n");
     PetscFunctionReturn(0);
 }
 
+/*-----------------------------------------------------------
+   Function: SetupIGA
+   Purpose:  Sets up the IGA object by defining the problem domain,
+             degrees of freedom, field names, and the uniform grid.
+   Parameters:
+     - user: Pointer to the AppCtx structure containing grid and simulation parameters.
+     - iga: Address of the IGA object pointer to be created and configured.
+   Returns:
+     - PetscErrorCode (0 on success).
+-----------------------------------------------------------*/
 PetscErrorCode SetupIGA(AppCtx *user, IGA *iga) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -258,7 +309,7 @@ PetscErrorCode SetupIGA(AppCtx *user, IGA *iga) {
     ierr = IGASetDof(*iga, 1); CHKERRQ(ierr);
     ierr = IGASetFieldName(*iga, 0, "temperature"); CHKERRQ(ierr);
 
-    // Set up uniform grid along each axis
+    /* Set up uniform grid along each axis */
     IGAAxis axisX, axisY, axisZ;
     ierr = IGAGetAxis(*iga, 0, &axisX); CHKERRQ(ierr);
     ierr = IGAAxisSetDegree(axisX, user->p); CHKERRQ(ierr);
@@ -268,14 +319,14 @@ PetscErrorCode SetupIGA(AppCtx *user, IGA *iga) {
         ierr = IGAGetAxis(*iga, 2, &axisZ); CHKERRQ(ierr);
     }
     
-    // Initialize each axis
+    /* Initialize each axis */
     ierr = IGAAxisInitUniform(axisX, user->Nx, 0.0, user->Lx, user->C); CHKERRQ(ierr);
     ierr = IGAAxisInitUniform(axisY, user->Ny, 0.0, user->Ly, user->C); CHKERRQ(ierr);
     if (user->dim == 3) {
         ierr = IGAAxisInitUniform(axisZ, user->Nz, 0.0, user->Lz, user->C); CHKERRQ(ierr);
     }
 
-    // Finalize IGA setup
+    /* Finalize IGA setup */
     ierr = IGASetFromOptions(*iga); CHKERRQ(ierr);
     ierr = IGASetUp(*iga); CHKERRQ(ierr);
 
@@ -283,6 +334,17 @@ PetscErrorCode SetupIGA(AppCtx *user, IGA *iga) {
     PetscFunctionReturn(0);
 }
 
+/*-----------------------------------------------------------
+   Function: SetupAndSolve
+   Purpose:  Assembles the system matrix and right-hand side vector,
+             computes the initial condition for the temperature field,
+             and solves the resulting linear system using KSP.
+   Parameters:
+     - user: Pointer to the AppCtx structure.
+     - iga: The IGA object representing the discretization.
+   Returns:
+     - PetscErrorCode (0 on success).
+-----------------------------------------------------------*/
 PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
     PetscErrorCode ierr;
     Mat A;
@@ -295,11 +357,14 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
     ierr = IGACreateVec(iga, &user->T_sol); CHKERRQ(ierr);
     ierr = IGACreateVec(iga, &b); CHKERRQ(ierr);
 
+    /* Assemble the system */
     ierr = IGASetFormSystem(iga, AssembleStiffnessMatrix, user); CHKERRQ(ierr);
     ierr = IGAComputeSystem(iga, A, b); CHKERRQ(ierr);
 
+    /* Compute initial condition for the temperature field */
     ierr = ComputeInitialCondition(user->T_sol, user); CHKERRQ(ierr);
 
+    /* Create and configure the KSP solver */
     ierr = IGACreateKSP(iga, &ksp); CHKERRQ(ierr);
     ierr = KSPSetOperators(ksp, A, A); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
