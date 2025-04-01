@@ -23,10 +23,23 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
     PetscInt nen = pnt->nen, dim = user->dim;
     const PetscScalar *N0, (*N1)[dim];
 
-    // Get the ice phase value and compute thermal conductivity
-    PetscReal ice, thcond;
-    PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
-    ice = user->ice[indGP];
+    // Get the ice phase value from the PETSc Vec
+    PetscScalar ice;
+    {
+      const PetscScalar *iceArray;
+      ierr = VecGetArrayRead(user->ice, &iceArray); CHKERRQ(ierr);
+      /* 
+         Compute an index for the Gauss point. Note: If the ice field is stored on the nodal grid,
+         then a proper projection or interpolation might be necessary. Here we assume that the nodal 
+         value corresponding to the Gauss point index is acceptable.
+      */
+      PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
+      ice = iceArray[indGP];
+      ierr = VecRestoreArrayRead(user->ice, &iceArray); CHKERRQ(ierr);
+    }
+
+    // Compute thermal conductivity based on the ice phase
+    PetscReal thcond;
     ThermalCond(user, ice, &thcond, NULL);
 
     // Get basis functions
@@ -36,7 +49,7 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
     /* ===================================================
        APPLY FLUX BC AT THE BOTTOM BOUNDARY (y=0)
        =================================================== */
-    if (pnt->atboundary && pnt->boundary_id == 2 ) {  // Check if the Gauss point is on a boundary
+    if (pnt->atboundary && pnt->boundary_id == 2) {  // Check if the Gauss point is on a boundary
         // Boundary in y-direction (dir = 1) and bottom side (side = 0)
         for (a = 0; a < nen; a++) {
             F[a] -= N0[a] * user->q_bottom / user->Lx; // Apply flux as a Neumann condition

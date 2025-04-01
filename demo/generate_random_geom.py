@@ -30,7 +30,7 @@ def generate_circle_phase_field(Lx, Ly, Nx, Ny, radius, filename="circle_phase_f
     for j in range(Ny):
         for i in range(Nx):
             d = np.sqrt((x[i] - xc)**2 + (y[j] - yc)**2) - radius
-            phase_field[j, i] = 0.5 * (1 - np.tanh(2.0 * d / epsilon))  # Smooth transition using tanh
+            phase_field[j, i] = 0.5 - 0.5 * np.tanh(0.5 * d / epsilon)  # Smooth transition using tanh
     
     # Save to .dat file
     with open(filename, "w") as f:
@@ -44,8 +44,8 @@ def generate_circle_phase_field(Lx, Ly, Nx, Ny, radius, filename="circle_phase_f
 generate_circle_phase_field(
     Lx=0.5e-3,  # 0.5 mm domain
     Ly=0.5e-3,  # 0.5 mm domain
-    Nx=32,     # 100 grid points
-    Ny=32,     # 100 grid points
+    Nx=128,     # 100 grid points
+    Ny=128,     # 100 grid points
     radius=0.1e-3,  # 0.2 mm circle
     filename="/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/circle_phase_field.dat"
 )

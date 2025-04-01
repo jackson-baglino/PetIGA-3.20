@@ -4,8 +4,8 @@
 # 🔹 Environment Variables
 # =============================
 
-export Nx=32
-export Ny=32
+export Nx=128
+export Ny=128
 export Nz=1  # Set to 1 for 2D simulations
 
 export Lx=0.5e-3

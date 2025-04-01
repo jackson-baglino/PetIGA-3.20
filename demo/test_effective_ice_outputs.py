@@ -5,9 +5,10 @@ import os
 # ============================
 # 🔧 User-Defined Paths (Hardcoded)
 # ============================
-base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-28__09.13.15"
+folder = "ThermalSim_2025-04-01__11.39.27"
+base_dir = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/" + folder
 save_dir = "/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO"
-ice_field_file = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_2025-03-28__09.13.15/ice_field.dat"  # Ice field output from Python script
+ice_field_file = "/Users/jacksonbaglino/SimulationResults/ThermalConductivity/"+ folder + "/ice_field.dat"  # Ice field output from Python script
 
 # Ensure save directory exists
 os.makedirs(save_dir, exist_ok=True)
@@ -23,7 +24,7 @@ temp_file = os.path.join(base_dir, "temperature.bin")
 temperature = np.fromfile(temp_file, dtype=">f8")
 
 # Grid size (Ensure these match the simulation settings)
-Nx, Ny = 32, 32
+Nx, Ny = 128, 128
 Nx_temp, Ny_temp = Nx+1, Ny+1  # Structured grid (Temperature)
 
 # Debugging: Print number of data points
@@ -42,6 +43,7 @@ temperature = temperature.reshape((Ny_temp, Nx_temp))
 # ============================
 try:
     ice_field = np.loadtxt(ice_field_file)  # Read from space-separated .dat file
+    print(f"The size of the ice field data: {ice_field.size}")
 except Exception as e:
     print(f"❌ Error reading ice field file: {e}")
     exit(1)

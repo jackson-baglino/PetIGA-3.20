@@ -30,43 +30,23 @@ PetscErrorCode LoadIceField(AppCtx *user, const char *iga_filename, const char *
 
     PetscInt num_points = N / dof;
 
-    // Assign to user->ice (assuming ice phase is stored in DOF index 0)
+    // Create a new Vec for user->ice
+    ierr = VecCreate(PETSC_COMM_WORLD, &user->ice); CHKERRQ(ierr);
+    ierr = VecSetSizes(user->ice, num_points, PETSC_DECIDE); CHKERRQ(ierr);
+    ierr = VecSetFromOptions(user->ice); CHKERRQ(ierr);
+
+    // Fill user->ice with the first DOF values
+    PetscScalar *ice_array;
+    ierr = VecGetArray(user->ice, &ice_array); CHKERRQ(ierr);
     for (PetscInt i = 0; i < num_points; i++) {
-        user->ice[i] = array[i * dof]; // Extracting first DOF (phase ice field)
+        ice_array[i] = array[i * dof]; // Extracting first DOF (phase ice field)
     }
+    ierr = VecRestoreArray(user->ice, &ice_array); CHKERRQ(ierr);
 
     // Restore and clean up
     ierr = VecRestoreArray(U, &array); CHKERRQ(ierr);
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = IGADestroy(&iga_input); CHKERRQ(ierr);
-
-    PetscFunctionReturn(0);
-}
-
-
-PetscErrorCode WriteBinaryFile(Vec field, const char *filename) {
-    PetscErrorCode ierr;
-    PetscViewer viewer;
-    PetscBool fileExists;
-    
-    PetscFunctionBegin;
-
-    ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename, FILE_MODE_WRITE, &viewer);CHKERRQ(ierr);
-
-    // Debug: Check if the vector is valid before writing
-    PetscScalar norm;
-    ierr = VecNorm(field, NORM_2, &norm);CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD, "Norm of vector %s before writing: %g\n", filename, (double)norm);
-
-    ierr = VecView(field, viewer);CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
-
-    ierr = PetscTestFile(filename, 'r', &fileExists);CHKERRQ(ierr);
-    if (!fileExists) {
-        PetscPrintf(PETSC_COMM_WORLD, "Warning: Binary output file %s was not created!\n", filename);
-    } else {
-        PetscPrintf(PETSC_COMM_WORLD, "Binary output successfully written to %s\n", filename);
-    }
 
     PetscFunctionReturn(0);
 }
@@ -78,14 +58,19 @@ PetscErrorCode ComputeAndStoreThermalConductivity(AppCtx *user, Vec K) {
 
     N = user->Nx * user->Ny; // Total number of grid points
 
+    // Access read-only array from user->ice
+    const PetscScalar *ice_array;
+    ierr = VecGetArrayRead(user->ice, &ice_array); CHKERRQ(ierr);
+
     for (i = 0; i < N; i++) {
-        ice = user->ice[i];
+        ice = ice_array[i];
         ThermalCond(user, ice, &cond, &dcond_ice);
 
         // Store thermal conductivity value in K
         ierr = VecSetValue(K, i, cond, INSERT_VALUES); CHKERRQ(ierr);
     }
 
+    ierr = VecRestoreArrayRead(user->ice, &ice_array); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(K); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(K); CHKERRQ(ierr);
 
@@ -109,9 +94,6 @@ PetscErrorCode WriteOutput(AppCtx *user, Vec x, const char *filename) {
     PetscFunctionReturn(0);
 }
 
-#include <petscsys.h>
-#include <petscviewer.h>
-
 // Function to write the ice field to a .dat file
 PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
     FILE *file;
@@ -125,18 +107,50 @@ PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Error opening file for writing: %s", filename);
     }
 
+    // Access read-only array from user->ice
+    const PetscScalar *ice_array;
+    PetscErrorCode ierr = VecGetArrayRead(user->ice, &ice_array); CHKERRQ(ierr);
+
     // Write each value to the file, one per line
     for (PetscInt i = 0; i < num_points; i++) {
-        if (fprintf(file, "%.16e\n", user->ice[i]) < 0) {
+        if (fprintf(file, "%.16e\n", ice_array[i]) < 0) {
             fclose(file);
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_WRITE, "Error writing to ice field file.");
         }
     }
 
-    // Close the file
+    // Restore array and close the file
+    ierr = VecRestoreArrayRead(user->ice, &ice_array); CHKERRQ(ierr);
     fclose(file);
 
     PetscPrintf(PETSC_COMM_WORLD, "✅ Ice field successfully written to file: %s\n", filename);
     
     PetscFunctionReturn(0); // PETSc standard return
+}
+
+PetscErrorCode WriteBinaryFile(Vec field, const char *filename) {
+    PetscErrorCode ierr;
+    PetscViewer viewer;
+    PetscBool fileExists;
+    
+    PetscFunctionBegin;
+
+    ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
+
+    /* Debug: Check if the vector is valid before writing */
+    PetscScalar norm;
+    ierr = VecNorm(field, NORM_2, &norm); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD, "Norm of vector %s before writing: %g\n", filename, (double)norm);
+
+    ierr = VecView(field, viewer); CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+    ierr = PetscTestFile(filename, 'r', &fileExists); CHKERRQ(ierr);
+    if (!fileExists) {
+        PetscPrintf(PETSC_COMM_WORLD, "Warning: Binary output file %s was not created!\n", filename);
+    } else {
+        PetscPrintf(PETSC_COMM_WORLD, "Binary output successfully written to %s\n", filename);
+    }
+
+    PetscFunctionReturn(0);
 }
