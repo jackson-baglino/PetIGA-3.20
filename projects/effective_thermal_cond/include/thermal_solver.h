@@ -7,6 +7,9 @@
 #include <math.h>
 #include <mpi.h>
 
+#include <petscsys.h>
+#include <petscviewer.h>
+
 #define SQ(x) ((x)*(x))
 #define CU(x) ((x)*(x)*(x))
 
@@ -25,7 +28,7 @@ typedef struct {
     // **Initial conditions**
     PetscReal temp0;            // Initial temperature (K)
     PetscReal grad_temp0[3];    // Initial temperature gradient (x, y, z components)
-    PetscReal *ice;             // Ice phase variable
+    Vec ice;             // Ice phase variable
     Vec T_sol;                  // Solution vector for temperature
 
 
@@ -76,6 +79,7 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga);
 // ** File I/O and Data Storage **
 PetscErrorCode ComputeAndStoreThermalConductivity(AppCtx *user, Vec K);
 PetscErrorCode WriteBinaryFile(Vec field, const char *filename);
-PetscErrorCode WriteOutput(AppCtx *user, Vec x);
+PetscErrorCode WriteOutput(AppCtx *user, Vec x, const char *filename);
+PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user);
 
 #endif /* THERMAL_SOLVER_H */

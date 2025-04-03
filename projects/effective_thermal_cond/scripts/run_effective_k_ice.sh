@@ -4,8 +4,8 @@
 # 🔹 Environment Variables
 # =============================
 
-export Nx=275
-export Ny=275
+export Nx=128
+export Ny=128
 export Nz=1  # Set to 1 for 2D simulations
 
 export Lx=0.5e-3
@@ -40,7 +40,8 @@ export dim=2  # Set 2 for 2D, 3 for 3D
 # 🔹 Initial Conditions
 # =============================
 
-INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/demo/input/Thermal_IO/ice_field.dat"
+# INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/circle_phase_field.dat"
+INIT_MODE="circle"
 
 # =============================
 # 🔹 Output Settings
@@ -78,13 +79,14 @@ compile_code() {
 
 run_simulation() {
     echo "🚀 Running effective_k_ice simulation with $NUM_PROCS processes..."
-    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode "$INIT_MODE" -ksp_view -ksp_monitor -log_view
+    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode "$INIT_MODE" # -ksp_view -ksp_monitor -log_view
 }
 
 move_output_files() {
     echo "📂 Moving output files..."
     if [ -d "$OUTPUT_DIR" ]; then
         mv *.bin "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No binary files to move."
+        mv *.dat "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No binary files to move."
         echo "✅ Output files moved to $OUTPUT_DIR"
     fi
 }

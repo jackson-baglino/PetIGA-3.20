@@ -1,120 +1,118 @@
-# =============================
-# 🔹 Project Configuration
-# =============================
+###############################################################################
+# Makefile for effective_k_ice
+#
+# This makefile compiles the effective_k_ice executable using PETSc and PetIGA.
+# It includes configuration files from PetIGA which set additional variables
+# (such as CLINKER, PETIGA_LIB, PETSC_LIB) required for proper linking.
+#
+# Build Modes:
+#   Optimized Build (default):
+#     make all         - Compiles with high optimization flags (e.g., -O3)
+#
+#   Debug Build:
+#     make debug       - Compiles with debugging flags (e.g., -g3 -O0)
+#
+# Clean:
+#   make clean         - Removes the executable and all object files.
+#
+# Ensure that the following environment variables are set:
+#   PETSC_DIR, PETSC_ARCH, PETIGA_DIR
+###############################################################################
 
-# Define the main target (executable name)
+# Target executable name
 TARGETS = effective_k_ice
 
-# Define the directory structure
-SRC_DIR = src         # Directory for source files (.c)
-OBJ_DIR = obj         # Directory for compiled object files (.o)
-INC_DIR = include     # Directory for header files (.h)
-SCRIPT_DIR = scripts  # Directory for scripts (e.g., shell scripts)
+# Default target: build the executable
+all: $(TARGETS)
+.PHONY: all
 
-# =============================
-# 🔹 Compiler & Linker Configuration
-# =============================
+###############################################################################
+# Build Mode: Debug vs. Optimized
+#
+# Use "make debug" to compile with debugging flags.
+# Otherwise, the default build mode is optimized.
+###############################################################################
+ifeq ($(BUILD),debug)
+  # Debug mode: maximum debugging information, no optimization.
+  CFLAGS = -g3 -O0 -Wall -Wextra -Wno-unused-parameter $(INCLUDES)
+  FFLAGS = -g3 -O0 -Wall -Wextra -fcheck=all
+else
+  # Optimized mode: high optimization for performance.
+  CFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter $(INCLUDES)
+  FFLAGS = -O3 -Wall -Wextra
+endif
 
-# Compiler flags
-CFLAGS = -g3 -O0 -Wall -Wextra -Wno-unused-parameter \
-         -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/petsc/private \
-         -I$(PETIGA_DIR)/include -I$(INC_DIR)
+###############################################################################
+# Compiler and Linker Settings
+###############################################################################
+# Use the MPI compiler wrapper.
+CC = mpicc
 
-# Include paths (modularized for easy modification)
-INCLUDES = -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/petsc/private \
-           -I$(PETIGA_DIR)/include -I$(INC_DIR)
+# Linker flags: Link against PETSc, PetIGA, and additional dependencies.
+LDFLAGS = -L$(PETSC_DIR)/$(PETSC_ARCH)/lib -lpetsc \
+          -L$(PETIGA_DIR)/$(PETSC_ARCH)/lib -lpetiga -lmpi -lmetis -lparmetis -lsuperlu_dist
+
+###############################################################################
+# Include Paths
+#
+# Add paths for PETSc (including private headers), PetIGA, and local headers.
+###############################################################################
+INCLUDES = -I$(PETSC_DIR)/include \
+           -I$(PETSC_DIR)/include/petsc/private \
+           -I$(PETIGA_DIR)/include \
+           -I./include
 CFLAGS += $(INCLUDES)
 
-# Explanation of CFLAGS:
-# - `-g3`     : Enables debugging information.
-# - `-O0`     : Disables optimization (useful for debugging).
-# - `-Wall`   : Enables most warnings.
-# - `-Wextra` : Enables extra warnings.
-# - `-Wno-unused-parameter` : Suppresses warnings about unused function parameters.
-# - `-I...`   : Specifies directories to search for header files.
-
-# Linker flags - specify library paths and libraries to link
-LDFLAGS = -L$(PETSC_DIR)/$(PETSC_ARCH)/lib -lpetsc -L$(PETIGA_DIR)/lib -lpetiga
-
-# Explanation of LDFLAGS:
-# - `-L<dir>` : Specifies directories where libraries are located.
-# - `-lpetsc` : Links the PETSc library.
-# - `-lpetiga` : Links the PetIGA library.
-
-# Include configuration files from PetIGA (these set up additional variables and rules)
+###############################################################################
+# Include PetIGA Configuration Files
+#
+# These files define additional variables needed for linking:
+#  - CLINKER : The linker command to use.
+#  - PETIGA_LIB : Additional PetIGA libraries.
+#  - PETSC_LIB : Additional PETSc libraries.
+###############################################################################
 include $(PETIGA_DIR)/lib/petiga/conf/variables
 include $(PETIGA_DIR)/lib/petiga/conf/rules
+include $(PETIGA_DIR)/lib/petiga/conf/test
 
-# =============================
-# 🔹 Source & Object Files
-# =============================
+###############################################################################
+# Source and Object Files
+#
+# List all .c files in the "src" directory and define corresponding object files in "obj".
+###############################################################################
+SRCS := $(wildcard src/*.c)
+OBJS := $(patsubst src/%.c, obj/%.o, $(SRCS))
 
-# Find all .c files in the source directory
-SRCS := $(wildcard $(SRC_DIR)/*.c)
-
-# Replace the source file paths with corresponding object file paths
-OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
-
-# =============================
-# 🔹 Build Rules
-# =============================
-
-# Ensure object directory exists before building
-all: $(OBJ_DIR) $(TARGETS)
-
-# $(OBJ_DIR):
-# 	@mkdir -p $(OBJ_DIR)
-
-# Compile each .c file into an .o file
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+###############################################################################
+# Build Rules
+###############################################################################
+# Compile rule: Build an object file from a source file.
+obj/%.o: src/%.c
+	@mkdir -p obj
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Explanation:
-# - `$<` : The input file (source file).
-# - `$@` : The output file (object file).
-# - `$(CC)` : Uses the default C compiler.
-
-# Link all object files to create the final executable
+# Linking rule: Link all object files to create the executable.
+# Uses $(CLINKER) (set by the included configuration files) and appends the extra
+# libraries from $(PETIGA_LIB) and $(PETSC_LIB).
 $(TARGETS): $(OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(CLINKER) -o $@ $^ $(PETIGA_LIB) $(PETSC_LIB)
 
-# Explanation:
-# - `$@` : The output file (the final executable).
-# - `$^` : All prerequisites (object files).
+###############################################################################
+# Clean Rule
+###############################################################################
+# Remove the executable and all object files in the "obj" directory.
+###############################################################################
+clean::
+	@echo "Cleaning up..."
+	@rm -f $(TARGETS)
+	@find obj -type f -name '*.o' -delete
+	@echo "Clean"
 
-# =============================
-# 🔹 Utility Commands
-# =============================
-
-.PHONY: all clean run scripts
-
-# Clean up compiled files
-clean:
-	-@$(RM) $(TARGETS)
-	-@$(RM) $(OBJ_DIR)/*.o
-	@rmdir $(OBJ_DIR) 2>/dev/null || true
-
-# Explanation:
-# - `.PHONY: clean` : Ensures `make clean` always runs, even if there's a file named "clean".
-# - `$(RM)` : Removes files (typically `rm -f`).
-# - `$(OBJ_DIR)/*.o` : Deletes all compiled object files.
-# - `@rmdir $(OBJ_DIR) 2>/dev/null || true` : Silently remove `obj/` if empty.
-
-# Run the simulation (calls a shell script)
-run: all
-	bash $(SCRIPT_DIR)/run_simulation.sh
-
-# Explanation:
-# - Ensures the code is compiled before running the simulation.
-# - Executes a shell script that sets up and runs the simulation.
-
-# Execute all scripts in the scripts directory
-scripts:
-	@for script in $(wildcard $(SCRIPT_DIR)/*.sh); do \
-		bash $$script; \
-	done
-
-# Explanation:
-# - `$(wildcard $(SCRIPT_DIR)/*.sh)` : Finds all `.sh` scripts.
-# - `bash $$script` : Runs each script found.
-# - The `@` suppresses echoing of the command itself.
+###############################################################################
+# Debug Build Target
+#
+# Use "make debug" to compile with debug flags.
+###############################################################################
+debug:
+	$(MAKE) BUILD=debug all
+.PHONY: debug

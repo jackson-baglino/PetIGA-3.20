@@ -1,33 +1,37 @@
-# ================================
+###############################################################################
 # 🖥️ System & Editor Files
-# ================================
+###############################################################################
 # macOS system files
 .DS_Store
 
 # VS Code workspace settings
 .vscode/
 
-# Virtual environment folder
+###############################################################################
+# Virtual Environment & Python Cache
+###############################################################################
+# Virtual environments (Python)
 .venv/
 venv/
 env/
 
-# Python environment cache files
+# Python bytecode and cache files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# ================================
-# 🔍 Test, Temporary, & Input Files
-# ================================
+###############################################################################
+# Test, Temporary, & Input Files
+###############################################################################
+# Test and temporary folders
 test/
 input/
 Original/
 
-# ================================
-# 🏗️ Compiled Binary & Object Files
-# ================================
+###############################################################################
+# Compiled Binary & Object Files (Direct Targets)
+###############################################################################
 NASA
 NASA.o
 NASA_panda
@@ -35,61 +39,35 @@ NASA_panda.o
 NASAv2
 NASAv2.o
 Wetamorphism
-solver
-solver.o
-setup_thermal
-setup_thermal.o
 
-# ================================
-# 🛠️ Demo Files & Outputs
-# ================================
+###############################################################################
+# Demo Files & Outputs
+###############################################################################
+# Demo executables and output files (generated during demos)
 demo/Laplace*
 demo/ssa_evolution_plotTEST.png
 demo/Metamorph
 demo/Oldfiles/
-demo/effective_k_ice
 demo/venv/
-demo/setup_thermal
-demo/solver
-demo/setup_thermal.o
-demo/solver.o
 
-# ================================
-# 🏗️ PETSc & MPI Build Directories
-# ================================
-
-# OpenMPI PETSc Builds
-MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20/
-MAC_SILICON-M2_OMPI-5.0.3_PETSC-3.20-debug/
-
-# MPICH PETSc Builds (various versions)
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0/
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0-64bit/
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0-test/
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0/
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0_64-bit/
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-GCC-12.4.0_DEBUG/
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.22-GCC-12.4.0_DEBUG/
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.20-gcc-12.3.0--64bit/
-MAC_SILICON-M2_OPT_MPICH-4.2.1_PETSC-3.20-gcc-12.4.0/
-
-# Latest PETSc version being used
-MAC_SILICON-M2_MPICH-4.2.1_PETSC-3.22-GCC-12.4.0/
-
-# ================================
-# 📂 Miscellaneous Build Directories
-# ================================
-mac-optimal-mpi-3.20
-mac-studio-optimal
-mac-optimal-mpi-3.22
-demo/env_config.o
-demo/setup_thermal.o
-demo/io_thermal.o
-demo/material_properties.o
+###############################################################################
+# Effective Thermal Cond Project Build Files
+###############################################################################
+# Executable and object files for the effective_thermal_cond project
 projects/effective_thermal_cond/effective_k_ice
 projects/effective_thermal_cond/env_config.o
 projects/effective_thermal_cond/io_thermal.o
 projects/effective_thermal_cond/material_properties.o
+
+###############################################################################
+# PETSc & MPI Build Directories
+###############################################################################
 MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0/
 MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/
 MAC_Si-M2_MPICH-4.3.0_PETSC-3.22_GCC-12.4.0/
+
+###############################################################################
+# Miscellaneous Build Directories & Files
+###############################################################################
+projects/effective_thermal_cond/obj/*
+projects/effective_thermal_cond/inputs/*

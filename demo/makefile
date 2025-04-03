@@ -44,9 +44,7 @@ ALL: $(TARGETS)
 clean::
 	-@$(RM) $(TARGETS) setup_thermal.o solver.o env_config.o io_thermal.o material_properties.o
 
-CFLAGS = -g3 -O0 -Wall -Wextra -Wno-unused-parameter \
-         -I$(PETSC_DIR)/include -I$(PETSC_DIR)/include/petsc/private \
-         -I$(PETIGA_DIR)/include
+CFLAGS = -g3 -O0 -Wall -Wextra -Wno-unused-parameter
 FFLAGS = -g3 -O0 -Wall -Wextra -fcheck=all
 CPPFLAGS =
 FPPFLAGS =

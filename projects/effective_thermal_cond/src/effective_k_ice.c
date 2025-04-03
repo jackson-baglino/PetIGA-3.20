@@ -42,11 +42,24 @@ int main (int argc, char *argv[]) {
     ierr = ApplyBoundaryConditions(iga, &user); CHKERRQ(ierr);
 
     /* ------------------ Set Up KSP Solver ------------------ */
+    PetscInt num_ice_points; // Initialize the number of points in the ice field
+    // Determine the number of points in the ice field
+    for (num_ice_points = 0; num_ice_points < user.dim * (user.p + 1) * user.Nx * user.Ny; num_ice_points++) {
+        // This loop counts the total number of points in the ice field
+        
+
+    }
+
+    // Debugging: Print pointer value and size
+    PetscPrintf(PETSC_COMM_WORLD, "Ice field pointer: %p\n", (void*)user.ice);
+    PetscPrintf(PETSC_COMM_WORLD, "Number of points in the ice field: %d\n", num_ice_points);
+
     // Creat KSP solver
     ierr = SetupAndSolve(&user, iga); CHKERRQ(ierr); // Set up and solve the system
 
     /* ------------------ Write Output ------------------ */
-    ierr = WriteOutput(&user, user.T_sol); CHKERRQ(ierr); // Write the solution to file
+    ierr = WriteOutput(&user, user.T_sol, "temperature.bin"); CHKERRQ(ierr); // Write the solution to file
+    ierr = WriteIceFieldToFile("ice_field.dat", &user); CHKERRQ(ierr); // Write the ice field to a .dat file
 
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     ierr = PetscFree(user.ice); CHKERRQ(ierr);
