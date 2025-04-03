@@ -56,6 +56,7 @@ demo/venv/
 # Executable and object files for the effective_thermal_cond project
 projects/effective_thermal_cond/obj/*
 projects/effective_thermal_cond/inputs/*
+projects/effective_thermal_cond/effective_k_ice
 
 ###############################################################################
 # PETSc & MPI Build Directories
