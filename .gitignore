@@ -54,10 +54,8 @@ demo/venv/
 # Effective Thermal Cond Project Build Files
 ###############################################################################
 # Executable and object files for the effective_thermal_cond project
-projects/effective_thermal_cond/effective_k_ice
-projects/effective_thermal_cond/env_config.o
-projects/effective_thermal_cond/io_thermal.o
-projects/effective_thermal_cond/material_properties.o
+projects/effective_thermal_cond/obj/*
+projects/effective_thermal_cond/inputs/*
 
 ###############################################################################
 # PETSc & MPI Build Directories
@@ -65,9 +63,3 @@ projects/effective_thermal_cond/material_properties.o
 MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0/
 MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/
 MAC_Si-M2_MPICH-4.3.0_PETSC-3.22_GCC-12.4.0/
-
-###############################################################################
-# Miscellaneous Build Directories & Files
-###############################################################################
-projects/effective_thermal_cond/obj/*
-projects/effective_thermal_cond/inputs/*
