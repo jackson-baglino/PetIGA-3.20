@@ -14,6 +14,9 @@
 .venv/
 venv/
 env/
+projects/dry_snow_metamorphism/venv_DSM/
+projects/effective_thermal_cond/venv_EffK/
+
 
 # Python bytecode and cache files
 __pycache__/
