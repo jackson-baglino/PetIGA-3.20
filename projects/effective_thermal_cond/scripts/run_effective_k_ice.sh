@@ -96,6 +96,7 @@ move_output_files() {
     if [ -d "$OUTPUT_DIR" ]; then
         mv *.bin "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No .bin files to move."
         mv *.dat "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No .dat files to move."
+        mv *.info "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No .info files to move."
         echo "✅ Output files moved to $OUTPUT_DIR"
     else
         echo "⚠️ Output directory not found."
