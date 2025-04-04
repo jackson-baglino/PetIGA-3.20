@@ -1,4 +1,9 @@
-#include "thermal_solver.h"
+#include "user_context.h"
+#include "setup_thermal.h"
+#include "solver.h"
+#include "io_thermal.h"
+#include "material_properties.h"
+#include "env_config.h"
 
 int main (int argc, char *argv[]) {
     AppCtx              user;

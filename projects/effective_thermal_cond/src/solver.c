@@ -1,4 +1,5 @@
-#include "thermal_solver.h"
+#include "solver.h"
+#include "material_properties.h"
 
 /**
  * @brief Assembles the stiffness matrix for the finite element method.

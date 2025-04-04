@@ -1,4 +1,4 @@
-#include "thermal_solver.h"
+#include "io_thermal.h"
 
 PetscErrorCode LoadIceField(AppCtx *user, const char *iga_filename, const char *vec_filename) {
     PetscErrorCode ierr;

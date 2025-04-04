@@ -1,4 +1,6 @@
-#include "thermal_solver.h"
+#include "setup_thermal.h"
+#include "solver.h"
+
 
 /*-----------------------------------------------------------
    Function: InitializeUserContext

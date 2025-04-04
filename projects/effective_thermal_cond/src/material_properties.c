@@ -1,4 +1,4 @@
-#include "thermal_solver.h"
+#include "material_properties.h"
 
 void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar *cond, 
     PetscScalar *dcond_ice)

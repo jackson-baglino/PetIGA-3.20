@@ -1,10 +1,14 @@
 #!/bin/zsh
 
 ################################################################################
-############################### DEFINE FUNCTIONS ###############################
+# NASAv2 Dry Snow Metamorphism Simulation Script
+# This script compiles and runs the NASAv2 model with user-defined inputs,
+# creates output directories, saves metadata, and post-processes results.
 ################################################################################
 
-# Function to create a timestamped results folder
+################################################################################
+# Create output folder based on timestamp and title
+################################################################################
 create_folder() {
     name="$title$(date +%Y-%m-%d__%H.%M.%S)"
     dir="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2"
@@ -17,13 +21,17 @@ create_folder() {
     mkdir -p "$folder"
 }
 
-# Function to compile the code
+################################################################################
+# Compile simulation code
+################################################################################
 compile_code() {
     echo "Compiling..."
     make NASAv2
 }
 
-# Function to write parameters to CSV file
+################################################################################
+# Export simulation parameters to CSV file
+################################################################################
 write_parameters_to_csv() {
     csv_file="$folder/simulation_parameters.csv"
     echo "Variable,Value" > "$csv_file"
@@ -49,7 +57,9 @@ write_parameters_to_csv() {
     echo "eps,$eps" >> "$csv_file"
 }
 
-# Function to set simulation parameters
+################################################################################
+# Load input file and set grid size, domain, and epsilon based on selected input
+################################################################################
 set_parameters() {
     input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
 
@@ -58,6 +68,7 @@ set_parameters() {
 
     # Copy inputFile to results folder
     cp $inputFile $folder
+    echo "Selected input file: $inputFile"
 
     # Set the domain sizes and number of elements based on the input file ------
     if [[ $inputFile == *"grainReadFile-2.dat"* ]]; then
@@ -263,7 +274,9 @@ set_parameters() {
         humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps
 }
 
-# Function to run the simulation
+################################################################################
+# Run the simulation using MPI
+################################################################################
 run_simulation() {
     echo "Running simulation..."
     mpiexec -np 12 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
@@ -272,7 +285,9 @@ run_simulation() {
     -snes_linesearch_type basic | tee $folder/outp.txt
 }
 
-# Function to finalize results
+################################################################################
+# Copy relevant scripts to folder and save summary parameters to .dat and CSV
+################################################################################
 finalize_results() {
     echo "Finalizing results..."
     cp NASAv2.c run_NASAv2.sh plotNASA.py plotSSA.py plotPorosity.py $folder
@@ -314,16 +329,17 @@ grad_temp0Z = $grad_temp0Z
 EOF
 }
 
-# Function to run plotting scripts
+################################################################################
+# Run post-processing plotting script
+################################################################################
 run_plotting() {
     echo "Queuing plotNASA.py"
     ./run_plotNASAv2.sh $name
 }
 
 ################################################################################
-########################## Main execution starts here ##########################
+# USER-DEFINED SIMULATION SETTINGS
 ################################################################################
-
 echo " "
 echo "Starting NASAv2 simulation workflow"
 echo " "
@@ -342,12 +358,19 @@ filename="grainReadFile-2_Molaro.dat"
 title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
 
 compile_code
+
 create_folder
+
 set_parameters
+
 finalize_results
+
 run_simulation
+
 run_plotting
 
 echo "-------------------------------------------------------------------------"
-echo "Done!"
+echo " "
+echo "✅ Done with NASAv2 simulation!"
+echo "-------------------------------------------------------------------------"
 echo " "
