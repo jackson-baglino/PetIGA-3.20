@@ -2,6 +2,7 @@
 #define GRAIN_INITIALIZATION_H
 
 #include "NASA_types.h"
+#include <math.h>
 
 /* Initialize sediment grains (general and gravity-based approaches) */
 PetscErrorCode InitialSedGrains(IGA iga, AppCtx *user);
