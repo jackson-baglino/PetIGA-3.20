@@ -277,3 +277,135 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user,
   }
   PetscFunctionReturn(0); 
 }
+
+/* Create a 2D System that has an ice grain-pack sitting above a solid block of 
+   ice with air inclusions inside of it.
+   Note: If we call this function, we assume that the ice grain-pack is already 
+   intialized only in the top half of the domain. Here we will assign the 
+   phase-field values for those grains and for the top of the domain. The last 
+   thing we do is remove ice 'grains' for the inclusions.
+   The best way to initialize ice grains in the top half will be to read it form
+   a file. We should do the same for the inclusions. The data for the ice grains
+   and the data for the inclusions should be in the same file. The defining 
+   difference will be that the inclusions will have coordinates that are below 
+   Ly/2 and the ice grains will have coordinates that are above Ly/2.
+*/
+PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U, 
+                                            AppCtx *user, const char datafile[],
+                                            const char dataPF[])
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  if (datafile[0] != 0) { /* initial condition from datafile */
+    MPI_Comm comm;
+    PetscViewer viewer;
+    ierr = PetscObjectGetComm((PetscObject)U,&comm);CHKERRQ(ierr);
+    ierr = PetscViewerBinaryOpen(comm,datafile,FILE_MODE_READ,&viewer);CHKERRQ(ierr);
+    ierr = VecLoad(U,viewer);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&viewer);
+
+  } else if (dataPF[0] != 0){
+    IGA igaPF;
+    ierr = IGACreate(PETSC_COMM_WORLD,&igaPF);CHKERRQ(ierr);
+    ierr = IGASetDim(igaPF,2);CHKERRQ(ierr);
+    ierr = IGASetDof(igaPF,1);CHKERRQ(ierr);
+    IGAAxis axisPF0,axisPF1;
+    ierr = IGAGetAxis(igaPF,0,&axisPF0);CHKERRQ(ierr);
+    if(user->periodic==1) {ierr = IGAAxisSetPeriodic(axisPF0,PETSC_TRUE);CHKERRQ(ierr);}
+    ierr = IGAAxisSetDegree(axisPF0,user->p);CHKERRQ(ierr);
+    ierr = IGAAxisInitUniform(axisPF0,user->Nx,0.0,user->Lx,user->C);CHKERRQ(ierr);
+    ierr = IGAGetAxis(igaPF,1,&axisPF1);CHKERRQ(ierr);
+    if(user->periodic==1) {ierr = IGAAxisSetPeriodic(axisPF1,PETSC_TRUE);CHKERRQ(ierr);}
+    ierr = IGAAxisSetDegree(axisPF1,user->p);CHKERRQ(ierr);
+    ierr = IGAAxisInitUniform(axisPF1,user->Ny,0.0,user->Ly,user->C);CHKERRQ(ierr);
+    ierr = IGASetFromOptions(igaPF);CHKERRQ(ierr);
+    ierr = IGASetUp(igaPF);CHKERRQ(ierr);
+    Vec PF;
+    ierr = IGACreateVec(igaPF,&PF);CHKERRQ(ierr);
+    MPI_Comm comm;
+    PetscViewer viewer;
+    ierr = PetscObjectGetComm((PetscObject)PF,&comm);CHKERRQ(ierr);
+    ierr = PetscViewerBinaryOpen(comm,dataPF,FILE_MODE_READ,&viewer);CHKERRQ(ierr);
+    ierr = VecLoad(PF,viewer);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&viewer);
+    ierr = VecStrideScatter(PF,0,U,INSERT_VALUES);
+    ierr = VecDestroy(&PF);CHKERRQ(ierr);
+    ierr = IGADestroy(&igaPF);CHKERRQ(ierr);
+
+    DM da;
+    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
+    PetscInt i,j, k=-1;
+    if(user->periodic==1) k=user->p -1;
+    for(i=info.xs;i<info.xs+info.xm;i++){
+      for(j=info.ys;j<info.ys+info.ym;j++){
+        PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+k) );
+        PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+k) );
+
+        u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
+        PetscScalar rho_vs, temp=u[j][i].tem;
+        RhoVS_I(user,temp,&rho_vs,NULL);
+        u[j][i].rhov = user->hum0*rho_vs;
+      }
+    }
+    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
+    ierr = DMDestroy(&da);;CHKERRQ(ierr); 
+
+  } else {
+    DM da;
+    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
+
+    /* Initialize the bottom half of the domain with solid ice. */
+    PetscInt i,j,k=-1;
+    if(user->periodic==1) k=user->p -1;
+    // Loop over the domain
+    for(i=info.xs;i<info.xs+info.xm;i++){
+      for(j=info.ys;j<info.ys+info.ym;j++){
+        // Define the coordinates
+        PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+k) );
+        PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+k) );
+
+        // Initialize the ice phase-field variable for the top (air) and bottom 
+        // (ice) layers.
+        PetscReal dist,ice=0.0;
+        dist = user->Ly/2.0 - y;
+        ice = 0.5-0.5*tanh(0.5/user->eps*(dist-user->radius[0]));
+
+        // Remove the air inclusions
+        PetscInt aa;
+        for(aa=0;aa<user->n_act;aa++){
+          if (user->cent[1][aa] < user->Ly/2.0) {
+            PetscPrintf(PETSC_COMM_SELF,"Removing air inclusion %d at (%.2e, %.2e)\n", aa, user->cent[0][aa], user->cent[1][aa]);
+            dist=sqrt(SQ(x-user->cent[0][aa])+SQ(y-user->cent[1][aa]));
+
+            if(user->cent[1][aa] < user->Ly/2.0){
+              // Remove the air inclusion
+              ice -= 0.5-0.5*tanh(0.5/user->eps*(dist-user->radius[aa]));
+            } else {
+              ice += 0.5-0.5*tanh(0.5/user->eps*(dist-user->radius[aa]));
+            }
+          }
+        }
+        if(ice>1.0) ice=1.0;
+
+        u[j][i].ice = ice;    
+        u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
+        PetscScalar rho_vs, temp=u[j][i].tem;
+        RhoVS_I(user,temp,&rho_vs,NULL);
+        u[j][i].rhov = user->hum0*rho_vs;
+      }
+    }
+
+    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
+    ierr = DMDestroy(&da);;CHKERRQ(ierr); 
+  }
+  PetscFunctionReturn(0); 
+}

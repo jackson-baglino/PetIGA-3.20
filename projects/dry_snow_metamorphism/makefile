@@ -1,5 +1,4 @@
 TARGETS = \
-    NASA \
     NASAv2 \
 
 # Default target: build the executable

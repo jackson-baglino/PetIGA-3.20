@@ -61,7 +61,8 @@ write_parameters_to_csv() {
 # Load input file and set grid size, domain, and epsilon based on selected input
 ################################################################################
 set_parameters() {
-    input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
+    # input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
+    input_dir="/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
 
     # Select input file
     inputFile="${input_dir}${filename}"  # Default file
@@ -264,6 +265,26 @@ set_parameters() {
 
         eps=1.56979924263831e-06
 
+    elif [[ $inputFile == *"circle_data.csv"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+
+        # Check that dim = 3
+        if [[ $dim -ne 3 ]]; then
+            echo "Error: Dimension mismatch. Expected dim = 3 for input file: $inputFile"
+            exit 1
+        fi
+        
+        Lx=1.0e-03
+        Ly=1.0e-03
+        Lz=1.0e-03
+
+        Nx=550
+        Ny=550
+        Nz=550
+
+        eps=9.09629658751972e-07
+
     else
         echo "Error: Unknown input file."
         exit 1
@@ -354,7 +375,8 @@ grad_temp0X=0.0
 grad_temp0Y=0.1
 grad_temp0Z=0.0
 dim=2
-filename="grainReadFile-2_Molaro.dat"
+# filename="grainReadFile-2_Molaro.dat"
+filename="circle_data.csv"
 title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
 
 compile_code

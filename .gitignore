@@ -62,6 +62,7 @@ projects/dry_snow_metamorphism/obj/*
 projects/effective_thermal_cond/inputs/*
 projects/dry_snow_metamorphism/inputs/*
 projects/effective_thermal_cond/postprocess/*
+projects/dry_snow_metamorphism/outputs/*
 
 # Temporary files
 projects/effective_thermal_cond/effective_k_ice

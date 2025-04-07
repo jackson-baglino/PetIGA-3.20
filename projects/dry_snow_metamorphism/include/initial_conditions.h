@@ -10,6 +10,9 @@ PetscErrorCode FormInitialSoil3D(IGA igaS, Vec S, AppCtx *user);
 /* Form initial condition for the primary field variables in 2D and 3D */
 PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U, AppCtx *user,
                                       const char datafile[], const char dataPF[]);
+PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U, 
+                                            AppCtx *user, const char datafile[],
+                                            const char dataPF[]);
 PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U, AppCtx *user,
                                       const char datafile[], const char dataPF[]);
 

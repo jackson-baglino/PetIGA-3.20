@@ -285,7 +285,10 @@ int main(int argc, char *argv[]) {
   PetscReal t=0; Vec U;
   ierr = IGACreateVec(iga,&U);CHKERRQ(ierr);
   ierr = VecZeroEntries(U);CHKERRQ(ierr);
-  if(dim==2) {ierr = FormInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);}
+  if(dim==2) {
+    ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+    // ierr = FormInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+  }
   else {ierr = FormInitialCondition3D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);}
 
   ierr = TSSolve(ts,U);CHKERRQ(ierr);
