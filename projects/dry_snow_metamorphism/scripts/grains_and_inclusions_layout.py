@@ -163,11 +163,11 @@ def write_circle_data(filename, ice_grains, air_inclusions, nested_ice):
     with open(filename, "w") as f:
         # f.write("type,x,y,r\n")
         for (x, y, r) in ice_grains:
-            f.write(f"{x},{y},{Lx/3.0}{r}\n")
+            f.write(f"{x} {y} {Lx/3.0} {r}\n")
         for (x, y, r) in air_inclusions:
-            f.write(f"{x},{y},{Lx/3.0}{r}\n")
+            f.write(f"{x} {y} {Lx/3.0} {r}\n")
         for (x, y, r) in nested_ice:
-            f.write(f"{x},{y},{Lx/3.0}{r}\n")
+            f.write(f"{x} {y} {Lx/3.0} {r}\n")
     print(f"Circle data written to {filename}")
 
 if __name__ == '__main__':

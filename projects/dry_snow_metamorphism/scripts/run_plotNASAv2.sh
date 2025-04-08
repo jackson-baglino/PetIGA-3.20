@@ -4,8 +4,8 @@
 copy_files_to_directory() {
     local target_dir=$1
     echo "Copying necessary files to: $target_dir"
-    cp writeNASA2CSV.py $target_dir
-    cp ~/PetIGA-3.20/demo/rename_STL_files.py $target_dir
+    cp ./scripts/writeNASA2CSV.py $target_dir
+    cp ./scripts/rename_STL_files.py $target_dir
 }
 
 # Function to change to the target directory and print status
@@ -21,7 +21,7 @@ change_to_directory() {
 execute_python_scripts() {
     local dir=$1
     echo "Executing plotNASA.py in directory: $dir"
-    python3.11 $dir/plotNASA.py
+    python $dir/plotNASA.py
     
     echo "Plotting SSA and Porosity"
     python3.11 $dir/plotSSA.py

@@ -26,7 +26,7 @@ create_folder() {
 ################################################################################
 compile_code() {
     echo "Compiling..."
-    make NASAv2
+    make all
 }
 
 ################################################################################
@@ -62,7 +62,7 @@ write_parameters_to_csv() {
 ################################################################################
 set_parameters() {
     # input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
-    input_dir="/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
+    input_dir="/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/"
 
     # Select input file
     inputFile="${input_dir}${filename}"  # Default file
@@ -270,7 +270,7 @@ set_parameters() {
         echo " "
 
         # Check that dim = 3
-        if [[ $dim -ne 3 ]]; then
+        if [[ $dim -ne 2 ]]; then
             echo "Error: Dimension mismatch. Expected dim = 3 for input file: $inputFile"
             exit 1
         fi
@@ -311,7 +311,11 @@ run_simulation() {
 ################################################################################
 finalize_results() {
     echo "Finalizing results..."
-    cp NASAv2.c run_NASAv2.sh plotNASA.py plotSSA.py plotPorosity.py $folder
+    cd ./scripts
+    cp run_NASAv2.sh plotNASA.py plotSSA.py plotPorosity.py $folder
+    cd ../src
+    cp NASAv2.c $folder
+    cd ../
     write_parameters_to_csv
 
     # Save simulation parameters
@@ -355,7 +359,7 @@ EOF
 ################################################################################
 run_plotting() {
     echo "Queuing plotNASA.py"
-    ./run_plotNASAv2.sh $name
+    ./scripts/run_plotNASAv2.sh $name
 }
 
 ################################################################################
@@ -366,7 +370,7 @@ echo "Starting NASAv2 simulation workflow"
 echo " "
 
 delt_t=1.0e-4
-t_final=2*60*60
+t_final=12*60*60
 n_out=10 #100
 t_final=$(echo "$t_final" | bc -l)
 humidity=0.70
@@ -377,7 +381,8 @@ grad_temp0Z=0.0
 dim=2
 # filename="grainReadFile-2_Molaro.dat"
 filename="circle_data.csv"
-title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
+title="TEST_LAYERED_2D_"
+# title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
 
 compile_code
 
