@@ -6,7 +6,7 @@ static PetscErrorCode GetIceAtGaussPoint(IGAPoint pnt, AppCtx *user, PetscScalar
 
 /*------------------------------------------------------------------------------
   Function: AssembleStiffnessMatrix
-Assemble FEM stiffness matrix and apply bottom flux BC.
+  Purpose: Assemble FEM stiffness matrix and apply bottom flux BC.
 ------------------------------------------------------------------------------*/
 PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar *F, void *ctx) {
   PetscErrorCode ierr;
@@ -21,7 +21,7 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
   // Retrieve basis functions
   ierr = IGAPointGetShapeFuns(pnt, 0, &N0); CHKERRQ(ierr);
   ierr = IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1); CHKERRQ(ierr);
-  
+
   // Get ice phase at Gauss point
   PetscScalar ice;
   ierr = GetIceAtGaussPoint(pnt, user, &ice); CHKERRQ(ierr);
@@ -49,8 +49,8 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
 }
 
 /*------------------------------------------------------------------------------
-Function: ComputeInitialCondition
-// Set initial temperature using linear profile from BCs.
+  Function: ComputeInitialCondition
+  Purpose: Set initial temperature using linear profile from BCs.
 ------------------------------------------------------------------------------*/
 PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
   PetscErrorCode ierr;
@@ -79,8 +79,8 @@ PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
 }
 
 /*------------------------------------------------------------------------------
-// Function: GetIceAtGaussPoint -- CONSIDERING MOVING THIS TO A SCRIPT OF HELPER FUNCTIONS
-// Helper: retrieve ice field value at Gauss point index.
+  Function: GetIceAtGaussPoint -- CONSIDERING MOVING THIS TO A SCRIPT OF HELPER FUNCTIONS
+  Helper: retrieve ice field value at Gauss point index.
 ------------------------------------------------------------------------------*/
 static PetscErrorCode GetIceAtGaussPoint(IGAPoint pnt, AppCtx *user, PetscScalar *ice) {
   PetscErrorCode ierr;
@@ -92,10 +92,10 @@ static PetscErrorCode GetIceAtGaussPoint(IGAPoint pnt, AppCtx *user, PetscScalar
   return 0;
 }
 
-/*-----------------------------------------------------------
+/*------------------------------------------------------------------------------
   Function: ApplyBoundaryConditions
-  Set top temperature, bottom flux, and side zero-flux BCs.
------------------------------------------------------------*/
+  Purpose: Set top temperature, bottom flux, and side zero-flux BCs.
+------------------------------------------------------------------------------*/
 PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -116,5 +116,44 @@ PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
       ierr = IGASetBoundaryForm(iga, 2, 1, PETSC_TRUE); CHKERRQ(ierr);
   }
 
+  PetscFunctionReturn(0);
+}
+
+/*------------------------------------------------------------------------------
+  Function: SetupIGA
+  Purpose:  Sets up the IGA object by defining the problem domain, degrees of 
+            freedom, field names, and the uniform grid.
+------------------------------------------------------------------------------*/
+PetscErrorCode SetupIGA(AppCtx *user, IGA *iga) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  ierr = IGACreate(PETSC_COMM_WORLD, iga); CHKERRQ(ierr);
+  ierr = IGASetDim(*iga, user->dim); CHKERRQ(ierr);
+  ierr = IGASetDof(*iga, 1); CHKERRQ(ierr);
+  ierr = IGASetFieldName(*iga, 0, "temperature"); CHKERRQ(ierr);
+
+  /* Set up uniform grid along each axis */
+  IGAAxis axisX, axisY, axisZ;
+  ierr = IGAGetAxis(*iga, 0, &axisX); CHKERRQ(ierr);
+  ierr = IGAAxisSetDegree(axisX, user->p); CHKERRQ(ierr);
+  ierr = IGAGetAxis(*iga, 1, &axisY); CHKERRQ(ierr);
+  ierr = IGAAxisSetDegree(axisY, user->p); CHKERRQ(ierr);
+  if (user->dim == 3) {
+      ierr = IGAGetAxis(*iga, 2, &axisZ); CHKERRQ(ierr);
+  }
+  
+  /* Initialize each axis */
+  ierr = IGAAxisInitUniform(axisX, user->Nx, 0.0, user->Lx, user->C); CHKERRQ(ierr);
+  ierr = IGAAxisInitUniform(axisY, user->Ny, 0.0, user->Ly, user->C); CHKERRQ(ierr);
+  if (user->dim == 3) {
+      ierr = IGAAxisInitUniform(axisZ, user->Nz, 0.0, user->Lz, user->C); CHKERRQ(ierr);
+  }
+
+  /* Finalize IGA setup */
+  ierr = IGASetFromOptions(*iga); CHKERRQ(ierr);
+  ierr = IGASetUp(*iga); CHKERRQ(ierr);
+
+  PetscPrintf(PETSC_COMM_WORLD, "IGA setup complete.\n");
   PetscFunctionReturn(0);
 }
