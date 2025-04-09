@@ -370,7 +370,7 @@ echo "Starting NASAv2 simulation workflow"
 echo " "
 
 delt_t=1.0e-4
-t_final=12*60*60
+t_final=$delt_t # 12*60*60
 n_out=10 #100
 t_final=$(echo "$t_final" | bc -l)
 humidity=0.70
@@ -380,8 +380,9 @@ grad_temp0Y=0.1
 grad_temp0Z=0.0
 dim=2
 # filename="grainReadFile-2_Molaro.dat"
-filename="circle_data.csv"
-title="TEST_LAYERED_2D_"
+# filename="circle_data.csv"
+filename="grainReadFile-10_s1-10.dat" # Note: Right now, the code is set to create random grains. We are just using the 10_s1-10.dat file for the domain size.
+title="TEST_SINGLE-GRAIN_2D_"
 # title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
 
 compile_code

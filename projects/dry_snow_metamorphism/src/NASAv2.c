@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   user.flag_it0   = 1;
   user.flag_tIC   = 0;
 
-  user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
+  user.readFlag   = 0; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
   user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
@@ -70,9 +70,9 @@ int main(int argc, char *argv[]) {
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 
-  user.NCice      = 2; //less than 200, otherwise update in user
-  user.RCice      = 0.2e-4;
-  user.RCice_dev  = 0.5;
+  user.NCice      = 1; //less than 200, otherwise update in user
+  user.RCice      = 1.5e-4;
+  user.RCice_dev  = 0.55;
 
   //boundary conditions
   user.periodic   = 0;          // periodic >> Dirichlet   
@@ -286,8 +286,8 @@ int main(int argc, char *argv[]) {
   ierr = IGACreateVec(iga,&U);CHKERRQ(ierr);
   ierr = VecZeroEntries(U);CHKERRQ(ierr);
   if(dim==2) {
-    ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
-    // ierr = FormInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+    // ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+    ierr = FormInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
   }
   else {ierr = FormInitialCondition3D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);}
 

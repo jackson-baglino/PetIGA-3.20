@@ -87,6 +87,7 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
     ierr = IGACreate(PETSC_COMM_WORLD,&igaPF);CHKERRQ(ierr);
     ierr = IGASetDim(igaPF,2);CHKERRQ(ierr);
     ierr = IGASetDof(igaPF,1);CHKERRQ(ierr);
+
     IGAAxis axisPF0,axisPF1;
     ierr = IGAGetAxis(igaPF,0,&axisPF0);CHKERRQ(ierr);
     if(user->periodic==1) {ierr = IGAAxisSetPeriodic(axisPF0,PETSC_TRUE);CHKERRQ(ierr);}
@@ -98,8 +99,10 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
     ierr = IGAAxisInitUniform(axisPF1,user->Ny,0.0,user->Ly,user->C);CHKERRQ(ierr);
     ierr = IGASetFromOptions(igaPF);CHKERRQ(ierr);
     ierr = IGASetUp(igaPF);CHKERRQ(ierr);
+
     Vec PF;
     ierr = IGACreateVec(igaPF,&PF);CHKERRQ(ierr);
+    
     MPI_Comm comm;
     PetscViewer viewer;
     ierr = PetscObjectGetComm((PetscObject)PF,&comm);CHKERRQ(ierr);
