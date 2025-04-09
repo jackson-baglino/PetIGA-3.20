@@ -1,6 +1,6 @@
 #include "user_context.h"
 #include "setup_thermal.h"
-#include "solver.h"
+#include "assembly.h"
 #include "io_thermal.h"
 #include "material_properties.h"
 #include "env_config.h"
@@ -13,6 +13,8 @@ int main (int argc, char *argv[]) {
     ierr = PetscInitialize(&argc, &argv, NULL, NULL); CHKERRQ(ierr);
 
     /* ------------------ Set options ------------------ */
+    // Look into all of these options. See if there are other options that can be set.
+    // These options are set in the command line when running the program.
     PetscBool print_error = PETSC_TRUE;
     PetscBool check_error = PETSC_FALSE;
     PetscBool save = PETSC_FALSE;
@@ -31,9 +33,6 @@ int main (int argc, char *argv[]) {
     /* ------------------ Define user context ------------------ */
     InitializeUserContext(&user);
 
-    /* Define user context */
-    PetscPrintf(PETSC_COMM_WORLD, "Initializing thermal diffusion model...\n\n");
-
     /* ------------------ Initialize IGA ------------------ */
     IGA iga;
     ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
@@ -47,20 +46,8 @@ int main (int argc, char *argv[]) {
     ierr = ApplyBoundaryConditions(iga, &user); CHKERRQ(ierr);
 
     /* ------------------ Set Up KSP Solver ------------------ */
-    PetscInt num_ice_points; // Initialize the number of points in the ice field
-    // Determine the number of points in the ice field
-    for (num_ice_points = 0; num_ice_points < user.dim * (user.p + 1) * user.Nx * user.Ny; num_ice_points++) {
-        // This loop counts the total number of points in the ice field
-        
-
-    }
-
-    // Debugging: Print pointer value and size
-    PetscPrintf(PETSC_COMM_WORLD, "Ice field pointer: %p\n", (void*)user.ice);
-    PetscPrintf(PETSC_COMM_WORLD, "Number of points in the ice field: %d\n", num_ice_points);
-
     // Creat KSP solver
-    ierr = SetupAndSolve(&user, iga); CHKERRQ(ierr); // Set up and solve the system
+    ierr = SetupAndSolve(&user, iga); CHKERRQ(ierr);
 
     /* ------------------ Write Output ------------------ */
     ierr = WriteOutput(&user, user.T_sol, "temperature.bin"); CHKERRQ(ierr); // Write the solution to file

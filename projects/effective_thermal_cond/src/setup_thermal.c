@@ -1,71 +1,45 @@
 #include "setup_thermal.h"
-#include "solver.h"
+#include "assembly.h"
 
-
-/*-----------------------------------------------------------
-   Function: InitializeUserContext
-   Purpose:  Initialize the application context (AppCtx) with default
-             material properties and discretization parameters.
-   Parameters:
-     - user: Pointer to the AppCtx structure to be initialized.
-   Returns:
-     - void.
------------------------------------------------------------*/
-void InitializeUserContext(AppCtx *user) {
-    /* Set material properties */
-    user->thcond_ice = 2.29;  
-    user->thcond_air = 0.02;  
-    user->cp_ice     = 1.96e3;   
-    user->cp_air     = 1.044e3;  
-    user->rho_ice    = 919.0;  
-    user->rho_air    = 1.341;  
-
-    /* Set default polynomial order and continuity */
-    user->p = 1;
-    user->C = 0;
-
-    PetscPrintf(PETSC_COMM_WORLD, "User context initialized.\n");
-}
-
-/*-----------------------------------------------------------
-   Function: ReadInputFile
-   Purpose:  Opens a text file specified by user->init_mode, reads raw
-             ice field values into a dynamically allocated array, and
-             returns the number of points read.
-   Parameters:
-     - user: Pointer to the AppCtx structure containing grid parameters.
-     - iceField: Address of a pointer that will hold the raw ice field data.
-     - nPoints: Pointer to a PetscInt to store the number of points read.
-   Returns:
-     - PetscErrorCode (0 on success).
------------------------------------------------------------*/
-static PetscErrorCode ReadInputFile(AppCtx *user, PetscReal **iceField, IGA *iga_DSM)
-{
-    PetscErrorCode ierr;
-    Vec DSM_sol;
-    FILE *file = fopen(user->init_mode, "r");
-    if (!file) {
-        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Error opening ice field file: %s", user->init_mode);
-    }
+// /*-----------------------------------------------------------
+//    Function: ReadInputFile
+//    Purpose:  Opens a text file specified by user->init_mode, reads raw
+//              ice field values into a dynamically allocated array, and
+//              returns the number of points read.
+//    Parameters:
+//      - user: Pointer to the AppCtx structure containing grid parameters.
+//      - iceField: Address of a pointer that will hold the raw ice field data.
+//      - nPoints: Pointer to a PetscInt to store the number of points read.
+//    Returns:
+//      - PetscErrorCode (0 on success).
+// -----------------------------------------------------------*/
+// static PetscErrorCode ReadInputFile(AppCtx *user, PetscReal **iceField, IGA *iga_DSM)
+// {
+//     PetscErrorCode ierr;
+//     Vec DSM_sol;
+//     FILE *file = fopen(user->init_mode, "r");
+//     if (!file) {
+//         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Error opening ice field file: %s", user->init_mode);
+//     }
 
 
     
-    IGAReadVec(iga_DSM, DSM_sol, user->init_mode);
+//     IGAReadVec(iga_DSM, DSM_sol, user->init_mode);
 
-    // /* Expected number of points */
-    // PetscInt total = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
-    // ierr = PetscMalloc1(total, iceField); CHKERRQ(ierr);
+//     // /* Expected number of points */
+//     // PetscInt total = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
+//     // ierr = PetscMalloc1(total, iceField); CHKERRQ(ierr);
 
-    // for (PetscInt i = 0; i < total; i++) {
-    //     if (fscanf(file, "%lf", &((*iceField)[i])) != 1) {
-    //         fclose(file);
-    //         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_READ, "Error reading ice field file at index %D", i);
-    //     }
-    // }
-    // fclose(file);
-    // *nPoints = total;
-    return 0;
-}
+//     // for (PetscInt i = 0; i < total; i++) {
+//     //     if (fscanf(file, "%lf", &((*iceField)[i])) != 1) {
+//     //         fclose(file);
+//     //         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_READ, "Error reading ice field file at index %D", i);
+//     //     }
+//     // }
+//     // fclose(file);
+//     // *nPoints = total;
+//     return 0;
+// }
 
 /*-----------------------------------------------------------
    Function: ComputeCircleIceField
@@ -203,109 +177,75 @@ PetscErrorCode FormInitialCondition(AppCtx *user)
     } else if (strcmp(user->init_mode, "layered") == 0) {
         ierr = ComputeLayeredIceField(user); CHKERRQ(ierr);
     } else {
-        /* File mode: read nodal data then interpolate to integration (Gauss) points */
-        PetscReal *rawField = NULL;
-        PetscInt nRaw = 0;
+        // /* File mode: read nodal data then interpolate to integration (Gauss) points */
+        // PetscReal *rawField = NULL;
+        // PetscInt nRaw = 0;
 
-        PetscPrintf(PETSC_COMM_WORLD, "Assuming init_mode is a file path.\n");
-        PetscPrintf(PETSC_COMM_WORLD, "Reading nodal ice field from %s\n", user->init_mode);
-        ierr = ReadInputFile(user, &rawField, &nRaw); CHKERRQ(ierr);
+        // PetscPrintf(PETSC_COMM_WORLD, "Assuming init_mode is a file path.\n");
+        // PetscPrintf(PETSC_COMM_WORLD, "Reading nodal ice field from %s\n", user->init_mode);
+        // ierr = ReadInputFile(user, &rawField, &nRaw); CHKERRQ(ierr);
 
-        /* Determine total number of integration (Gauss) points by looping over all elements */
-        PetscInt total_gp = 0;
-        IGAElement element;
-        IGAPoint point;
-        ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
-        while (IGANextElement(user->iga, element)) {
-            ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
-            while (IGAElementNextPoint(element, point)) {
-                total_gp++;
-            }
-            ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
-        }
-        ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
+        // /* Determine total number of integration (Gauss) points by looping over all elements */
+        // PetscInt total_gp = 0;
+        // IGAElement element;
+        // IGAPoint point;
+        // ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
+        // while (IGANextElement(user->iga, element)) {
+        //     ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
+        //     while (IGAElementNextPoint(element, point)) {
+        //         total_gp++;
+        //     }
+        //     ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
+        // }
+        // ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
 
-        /* Create a Vec to hold the ice field at integration points */
-        Vec ice;
-        ierr = VecCreate(PETSC_COMM_WORLD, &ice); CHKERRQ(ierr);
-        ierr = VecSetSizes(ice, PETSC_DECIDE, total_gp); CHKERRQ(ierr);
-        ierr = VecSetFromOptions(ice); CHKERRQ(ierr);
+        // /* Create a Vec to hold the ice field at integration points */
+        // Vec ice;
+        // ierr = VecCreate(PETSC_COMM_WORLD, &ice); CHKERRQ(ierr);
+        // ierr = VecSetSizes(ice, PETSC_DECIDE, total_gp); CHKERRQ(ierr);
+        // ierr = VecSetFromOptions(ice); CHKERRQ(ierr);
 
-        PetscInt idx = 0;
-        ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
-        while (IGANextElement(user->iga, element)) {
-            /* Get nodal connectivity for the element using the five-argument version */
-            PetscInt imin, imax, nen;
-            const PetscInt *rowmap, *colmap;
-            ierr = IGAElementGetIndices(element, &imin, &imax, &rowmap, &nen); CHKERRQ(ierr);
+        // PetscInt idx = 0;
+        // ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
+        // while (IGANextElement(user->iga, element)) {
+        //     /* Get nodal connectivity for the element using the five-argument version */
+        //     PetscInt imin, imax, nen;
+        //     const PetscInt *rowmap, *colmap;
+        //     ierr = IGAElementGetIndices(element, &imin, &imax, &rowmap, &nen); CHKERRQ(ierr);
  
-            /* Allocate temporary array to hold nodal values for this element */
-            PetscReal *nodalVals;
-            ierr = PetscMalloc1(nen, &nodalVals); CHKERRQ(ierr);
-            for (PetscInt a = 0; a < nen; a++) {
-                if (rowmap[a] < nRaw) {
-                    nodalVals[a] = rawField[rowmap[a]];
-                } else {
-                    nodalVals[a] = 0.0;
-                }
-            }
+        //     /* Allocate temporary array to hold nodal values for this element */
+        //     PetscReal *nodalVals;
+        //     ierr = PetscMalloc1(nen, &nodalVals); CHKERRQ(ierr);
+        //     for (PetscInt a = 0; a < nen; a++) {
+        //         if (rowmap[a] < nRaw) {
+        //             nodalVals[a] = rawField[rowmap[a]];
+        //         } else {
+        //             nodalVals[a] = 0.0;
+        //         }
+        //     }
  
-            ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
-            while (IGAElementNextPoint(element, point)) {
-                const PetscScalar *N0;
-                ierr = IGAPointGetShapeFuns(point, 0, &N0); CHKERRQ(ierr);
-                PetscReal value = 0.0;
-                for (PetscInt a = 0; a < nen; a++) {
-                    value += PetscRealPart(N0[a]) * nodalVals[a];
-                }
-                ierr = VecSetValue(ice, idx, value, INSERT_VALUES); CHKERRQ(ierr);
-                idx++;
-            }
-            ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
-            ierr = PetscFree(nodalVals); CHKERRQ(ierr);
-        }
-        ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
+        //     ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
+        //     while (IGAElementNextPoint(element, point)) {
+        //         const PetscScalar *N0;
+        //         ierr = IGAPointGetShapeFuns(point, 0, &N0); CHKERRQ(ierr);
+        //         PetscReal value = 0.0;
+        //         for (PetscInt a = 0; a < nen; a++) {
+        //             value += PetscRealPart(N0[a]) * nodalVals[a];
+        //         }
+        //         ierr = VecSetValue(ice, idx, value, INSERT_VALUES); CHKERRQ(ierr);
+        //         idx++;
+        //     }
+        //     ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
+        //     ierr = PetscFree(nodalVals); CHKERRQ(ierr);
+        // }
+        // ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
  
-        ierr = VecAssemblyBegin(ice); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(ice); CHKERRQ(ierr);
-        ierr = PetscFree(rawField); CHKERRQ(ierr);
+        // ierr = VecAssemblyBegin(ice); CHKERRQ(ierr);
+        // ierr = VecAssemblyEnd(ice); CHKERRQ(ierr);
+        // ierr = PetscFree(rawField); CHKERRQ(ierr);
  
-        PetscPrintf(PETSC_COMM_WORLD, "File mode: ice field interpolated to integration points (%d points).\n", total_gp);
-        user->ice = ice;
-    }
-
-    PetscFunctionReturn(0);
-}
-
-/*-----------------------------------------------------------
-   Function: ApplyBoundaryConditions
-   Purpose:  Applies boundary conditions for the thermal model.
-             It sets a fixed temperature at the top, prescribed flux at
-             the bottom, and, for 3D problems, zero-flux conditions on the z-axis.
-   Parameters:
-     - iga: The IGA object representing the discretization.
-     - user: Pointer to the AppCtx structure containing boundary parameters.
-   Returns:
-     - PetscErrorCode (0 on success).
------------------------------------------------------------*/
-PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-
-    PetscPrintf(PETSC_COMM_WORLD, "Applying boundary conditions...\n");
-
-    /* Fixed temperature at the top */
-    ierr = IGASetBoundaryValue(iga, 1, 1, 0, user->T_top); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD, "  - Fixed temperature applied at top: T = %g K\n", user->T_top);
-
-    /* Prescribed flux at the bottom */
-    ierr = IGASetBoundaryForm(iga, 1, 0, PETSC_TRUE); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD, "  - Prescribed flux at bottom: q = %g W/m²\n", user->q_bottom);
-
-    /* Zero-flux (Neumann) conditions on the z-axis (if 3D) */
-    if (user->dim == 3) {
-        ierr = IGASetBoundaryForm(iga, 2, 0, PETSC_TRUE); CHKERRQ(ierr);
-        ierr = IGASetBoundaryForm(iga, 2, 1, PETSC_TRUE); CHKERRQ(ierr);
+        // PetscPrintf(PETSC_COMM_WORLD, "File mode: ice field interpolated to integration points (%d points).\n", total_gp);
+        // user->ice = ice;
     }
 
     PetscFunctionReturn(0);

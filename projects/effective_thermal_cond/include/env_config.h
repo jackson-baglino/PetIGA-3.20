@@ -5,5 +5,6 @@
 
 // ========================= Function Declarations =========================
 PetscErrorCode GetEnvironment(AppCtx *user);
+void InitializeUserContext(AppCtx *user);
 
 #endif // ENV_CONFIG_H

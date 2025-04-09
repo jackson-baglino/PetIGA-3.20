@@ -4,9 +4,7 @@
 #include "user_context.h"
 
 // ========================= Function Declarations =========================
-void InitializeUserContext(AppCtx *user);
 PetscErrorCode FormInitialCondition(AppCtx *user);
-PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user);
 PetscErrorCode InitializeFields(AppCtx *user, IGA iga);
 PetscErrorCode SetupIGA(AppCtx *user, IGA *iga);
 PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga);
