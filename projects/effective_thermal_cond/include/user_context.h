@@ -16,6 +16,7 @@
 // Structure to hold application-specific parameters and data
 typedef struct {
     IGA iga;  // Isogeometric Analysis (IGA) object for managing the finite element discretization
+    IGA iga_input;  // IGA object for reading input data
 
     // **Material properties**
     PetscReal thcond_ice;   // Thermal conductivity of ice (W/mK)
@@ -28,7 +29,7 @@ typedef struct {
     // **Initial conditions**
     PetscReal temp0;            // Initial temperature (K)
     PetscReal grad_temp0[3];    // Initial temperature gradient (x, y, z components)
-    Vec ice;             // Ice phase variable
+    PetscReal *ice;             // Ice phase variable
     Vec T_sol;                  // Solution vector for temperature
 
 

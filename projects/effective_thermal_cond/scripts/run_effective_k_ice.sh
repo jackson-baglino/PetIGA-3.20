@@ -50,8 +50,8 @@ export dim=2                  # Set 2 for 2D, 3 for 3D
 # 🔹 Initial Conditions
 # =============================
 # Set the initial mode. Uncomment and modify the path if using a file.
-# INIT_MODE="/path/to/your/inputs/circle_phase_field.dat"
-INIT_MODE="circle"
+INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat"
+# INIT_MODE="circle"
 
 # =============================
 # 🔹 Output Settings

@@ -1,5 +1,6 @@
 #include "setup_thermal.h"
 #include "assembly.h"
+#include "utils.h"
 
 // /*-----------------------------------------------------------
 //    Function: ReadInputFile
@@ -52,53 +53,35 @@
    Returns:
      - PetscErrorCode (0 on success).
 -----------------------------------------------------------*/
-static PetscErrorCode ComputeCircleIceField(AppCtx *user)
-{
+static PetscErrorCode ComputeCircleIceField(AppCtx *user) {
     PetscErrorCode ierr;
+    PetscFunctionBegin;
+
     IGAElement element;
     IGAPoint point;
     PetscReal dist;
     PetscInt idx = 0;
-    PetscInt total = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
 
-    /* Create a PETSc Vec to hold the ice field at integration (Gauss) points */
-    Vec ice;
-    ierr = VecCreate(PETSC_COMM_WORLD, &ice); CHKERRQ(ierr);
-    ierr = VecSetSizes(ice, PETSC_DECIDE, total); CHKERRQ(ierr);
-    ierr = VecSetFromOptions(ice); CHKERRQ(ierr);
-
-    /* Get array pointer for direct access */
-    PetscScalar *iceArray;
-    ierr = VecGetArray(ice, &iceArray); CHKERRQ(ierr);
+    // Allocate memory for user->ice (if not already allocated)
+    ierr = AllocateAppCtxFields(user->iga, user, &user->ice); CHKERRQ(ierr);
 
     ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
     while (IGANextElement(user->iga, element)) {
         ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
         while (IGAElementNextPoint(element, point)) {
             PetscReal radius = PetscMin(user->Lx / 6.0, user->Ly / 6.0);
-            /* Compute distance from the circle center */
             dist = PetscSqrtReal(SQ(point->mapX[0][0] - user->Lx / 2.0) +
                                  SQ(point->mapX[0][1] - user->Ly / 2.0)) - radius;
-            /* Compute ice phase using a hyperbolic tangent transition */
-            iceArray[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
-            iceArray[idx] = PetscMax(0.0, PetscMin(1.0, iceArray[idx])); /* Clamp [0,1] */
+            user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
+            user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx]));
             idx++;
-            /* For debugging */
-            if (idx > total) {
-                PetscPrintf(PETSC_COMM_WORLD, "There are %d points in ice Vec. Originally set to %d.\n", idx, total);
-            }
         }
         ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
     }
     ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
-    ierr = VecRestoreArray(ice, &iceArray); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD, "Circle mode: ice field computed with %d points.\n", idx);
-    PetscPrintf(PETSC_COMM_WORLD, "Ice field is %g times larger than expected.\n", (PetscReal)idx / (PetscReal)total);
-
-    /* Assign the computed Vec to user->ice */
-    user->ice = ice;
-    return 0;
+    PetscFunctionReturn(0);
 }
 
 /*-----------------------------------------------------------
@@ -111,45 +94,33 @@ static PetscErrorCode ComputeCircleIceField(AppCtx *user)
    Returns:
      - PetscErrorCode (0 on success).
 -----------------------------------------------------------*/
-static PetscErrorCode ComputeLayeredIceField(AppCtx *user)
-{
+static PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
     PetscErrorCode ierr;
+    PetscFunctionBegin;
+
     IGAElement element;
     IGAPoint point;
     PetscReal dist;
     PetscInt idx = 0;
-    PetscInt total = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
 
-    /* Create a PETSc Vec to hold the ice field */
-    Vec ice;
-    ierr = VecCreate(PETSC_COMM_WORLD, &ice); CHKERRQ(ierr);
-    ierr = VecSetSizes(ice, PETSC_DECIDE, total); CHKERRQ(ierr);
-    ierr = VecSetFromOptions(ice); CHKERRQ(ierr);
-
-    /* Get array pointer for direct access */
-    PetscScalar *iceArray;
-    ierr = VecGetArray(ice, &iceArray); CHKERRQ(ierr);
+    // Allocate memory for user->ice (if not already allocated)
+    ierr = AllocateAppCtxFields(user->iga, user, &user->ice); CHKERRQ(ierr);
 
     ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
     while (IGANextElement(user->iga, element)) {
         ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
         while (IGAElementNextPoint(element, point)) {
-            /* For layered mode, assume variation in the y-direction only */
             dist = point->mapX[0][1] - user->Ly / 2.0;
-            iceArray[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
-            iceArray[idx] = PetscMax(0.0, PetscMin(1.0, iceArray[idx])); /* Clamp [0,1] */
+            user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
+            user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx]));
             idx++;
         }
         ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
     }
     ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
-    ierr = VecRestoreArray(ice, &iceArray); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD, "Layered mode: ice field computed with %d points.\n", idx);
-
-    /* Assign the computed Vec to user->ice */
-    user->ice = ice;
-    return 0;
+    PetscFunctionReturn(0);
 }
 
 /*-----------------------------------------------------------
@@ -169,86 +140,19 @@ static PetscErrorCode ComputeLayeredIceField(AppCtx *user)
 -----------------------------------------------------------*/
 PetscErrorCode FormInitialCondition(AppCtx *user)
 {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
 
-    if (strcmp(user->init_mode, "circle") == 0) {
-        ierr = ComputeCircleIceField(user); CHKERRQ(ierr);
-    } else if (strcmp(user->init_mode, "layered") == 0) {
-        ierr = ComputeLayeredIceField(user); CHKERRQ(ierr);
-    } else {
-        // /* File mode: read nodal data then interpolate to integration (Gauss) points */
-        // PetscReal *rawField = NULL;
-        // PetscInt nRaw = 0;
+  if (strcmp(user->init_mode, "circle") == 0) {
+    ierr = ComputeCircleIceField(user); CHKERRQ(ierr);
+  } else if (strcmp(user->init_mode, "layered") == 0) {
+    ierr = ComputeLayeredIceField(user); CHKERRQ(ierr);
+  } else {
+    // NEEDS TO BE CORRECTED!
+    ierr = ReadSolutionVec(user->init_mode, user->init_mode, &user->iga_input, &user->ice, user); CHKERRQ(ierr);
+  }
 
-        // PetscPrintf(PETSC_COMM_WORLD, "Assuming init_mode is a file path.\n");
-        // PetscPrintf(PETSC_COMM_WORLD, "Reading nodal ice field from %s\n", user->init_mode);
-        // ierr = ReadInputFile(user, &rawField, &nRaw); CHKERRQ(ierr);
-
-        // /* Determine total number of integration (Gauss) points by looping over all elements */
-        // PetscInt total_gp = 0;
-        // IGAElement element;
-        // IGAPoint point;
-        // ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
-        // while (IGANextElement(user->iga, element)) {
-        //     ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
-        //     while (IGAElementNextPoint(element, point)) {
-        //         total_gp++;
-        //     }
-        //     ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
-        // }
-        // ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
-
-        // /* Create a Vec to hold the ice field at integration points */
-        // Vec ice;
-        // ierr = VecCreate(PETSC_COMM_WORLD, &ice); CHKERRQ(ierr);
-        // ierr = VecSetSizes(ice, PETSC_DECIDE, total_gp); CHKERRQ(ierr);
-        // ierr = VecSetFromOptions(ice); CHKERRQ(ierr);
-
-        // PetscInt idx = 0;
-        // ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
-        // while (IGANextElement(user->iga, element)) {
-        //     /* Get nodal connectivity for the element using the five-argument version */
-        //     PetscInt imin, imax, nen;
-        //     const PetscInt *rowmap, *colmap;
-        //     ierr = IGAElementGetIndices(element, &imin, &imax, &rowmap, &nen); CHKERRQ(ierr);
- 
-        //     /* Allocate temporary array to hold nodal values for this element */
-        //     PetscReal *nodalVals;
-        //     ierr = PetscMalloc1(nen, &nodalVals); CHKERRQ(ierr);
-        //     for (PetscInt a = 0; a < nen; a++) {
-        //         if (rowmap[a] < nRaw) {
-        //             nodalVals[a] = rawField[rowmap[a]];
-        //         } else {
-        //             nodalVals[a] = 0.0;
-        //         }
-        //     }
- 
-        //     ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
-        //     while (IGAElementNextPoint(element, point)) {
-        //         const PetscScalar *N0;
-        //         ierr = IGAPointGetShapeFuns(point, 0, &N0); CHKERRQ(ierr);
-        //         PetscReal value = 0.0;
-        //         for (PetscInt a = 0; a < nen; a++) {
-        //             value += PetscRealPart(N0[a]) * nodalVals[a];
-        //         }
-        //         ierr = VecSetValue(ice, idx, value, INSERT_VALUES); CHKERRQ(ierr);
-        //         idx++;
-        //     }
-        //     ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
-        //     ierr = PetscFree(nodalVals); CHKERRQ(ierr);
-        // }
-        // ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
- 
-        // ierr = VecAssemblyBegin(ice); CHKERRQ(ierr);
-        // ierr = VecAssemblyEnd(ice); CHKERRQ(ierr);
-        // ierr = PetscFree(rawField); CHKERRQ(ierr);
- 
-        // PetscPrintf(PETSC_COMM_WORLD, "File mode: ice field interpolated to integration points (%d points).\n", total_gp);
-        // user->ice = ice;
-    }
-
-    PetscFunctionReturn(0);
+  PetscFunctionReturn(0);
 }
 
 /*-----------------------------------------------------------

@@ -83,12 +83,10 @@ PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
   Helper: retrieve ice field value at Gauss point index.
 ------------------------------------------------------------------------------*/
 static PetscErrorCode GetIceAtGaussPoint(IGAPoint pnt, AppCtx *user, PetscScalar *ice) {
-  PetscErrorCode ierr;
-  const PetscScalar *iceArray;
-  ierr = VecGetArrayRead(user->ice, &iceArray); CHKERRQ(ierr);
+
   PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
-  *ice = iceArray[indGP];
-  ierr = VecRestoreArrayRead(user->ice, &iceArray); CHKERRQ(ierr);
+  *ice = user->ice[indGP];
+
   return 0;
 }
 
