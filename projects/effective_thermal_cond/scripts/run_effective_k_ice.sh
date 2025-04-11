@@ -16,8 +16,8 @@
 # =============================
 # 🔹 Environment Variables
 # =============================
-export Nx=275
-export Ny=275
+export Nx=550
+export Ny=550
 export Nz=1                    # Set to 1 for 2D simulations
 
 export Lx=0.5e-3
@@ -35,10 +35,10 @@ export grad_temp0Z=0
 # 🔹 Boundary Conditions
 # =============================
 export TEMP_BOTTOM=265.15
-export FLUX_BOTTOM=1.0
+export FLUX_BOTTOM=10.0
 
 export TEMP_TOP=240.15
-export FLUX_TOP=10.0
+export FLUX_TOP=20.0
 
 # =============================
 # 🔹 Interface Width Calculation
@@ -50,7 +50,8 @@ export dim=2                  # Set 2 for 2D, 3 for 3D
 # 🔹 Initial Conditions
 # =============================
 # Set the initial mode. Uncomment and modify the path if using a file.
-INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat"
+# INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00444.dat"
+INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/LayeredSystem/NoInclusions1/sol_00778.dat"
 # INIT_MODE="circle"
 
 # =============================

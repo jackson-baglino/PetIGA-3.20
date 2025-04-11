@@ -380,15 +380,15 @@ PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U,
         // Initialize the ice phase-field variable for the top (air) and bottom 
         // (ice) layers.
         PetscReal dist, ice=0.0;
-        // dist = y - (user->Ly/2.0);
-        // ice = 0.5-0.5*tanh(0.5/user->eps*dist);
+        dist = y - (user->Ly/2.0);
+        ice = 0.5-0.5*tanh(0.5/user->eps*dist);
 
         // Remove the air inclusions
         PetscInt aa;
         for(aa=0;aa<user->n_act;aa++){
           dist=sqrt(SQ(x-user->cent[0][aa])+SQ(y-user->cent[1][aa]));
 
-          if(user->cent[1][aa] > user->Ly/2.0){
+          if((user->cent[1][aa] - 0.9*user->radius[aa]) < user->Ly/2.0){
             // Remove the air inclusion
             // ice -= 0.5-0.5*tanh(0.5/user->eps*(dist-user->radius[aa]));
             // PetscPrintf(PETSC_COMM_WORLD, "Intialized air inclusion %d at (%.2e, %.2e)\n", aa, user->cent[0][aa], user->cent[1][aa]);

@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   user.flag_it0   = 1;
   user.flag_tIC   = 0;
 
-  user.readFlag   = 0; // 0: generate ice grains, 1: read ice grains from file
+  user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
   user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   user.RCsed_dev  = 0.4;
 
   user.NCice      = 200; //less than 200, otherwise update in user
-  user.RCice      = 0.35e-4;
+  user.RCice      = 0.3e-4;
   user.RCice_dev  = 0.55;
 
   //boundary conditions
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   //output
   user.outp = 2; // if 0 -> output according to t_interv
   user.t_out = 0;    // user.t_interv = t_final/(n_out-1); //output every t_interv
-  user.t_interv =  36.0; //output every t_interv
+  user.t_interv =  600.0; //output every t_interv
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;

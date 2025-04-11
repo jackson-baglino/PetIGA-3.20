@@ -638,7 +638,7 @@ static PetscErrorCode GenerateIceGrainsRandomly(IGA iga, AppCtx *user)
     return 0;
   }
 
-  PetscInt numb_clust = user->NCice, tot = 100000;
+  PetscInt numb_clust = user->NCice, tot = 1000000;
   PetscInt ii, jj, l, n_act = 0, flag, dim = user->dim, seed = 21;
 
   /* Temporary arrays to store grain data */
