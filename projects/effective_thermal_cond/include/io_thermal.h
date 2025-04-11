@@ -6,7 +6,7 @@
 
 /* -------------------------- Function Declarations ------------------------- */
 PetscErrorCode ReadSolutionVec(const char *iga_file, const char *vec_file, IGA *iga_out, 
-                               Vec *vec_out, AppCtx *user);
+                              AppCtx *user);
 PetscErrorCode LoadIceField(AppCtx *user, const char *iga_filename, const char *vec_filename);
 PetscErrorCode ComputeAndStoreThermalConductivity(AppCtx *user, Vec K);
 PetscErrorCode WriteOutput(AppCtx *user, Vec x, const char *filename);

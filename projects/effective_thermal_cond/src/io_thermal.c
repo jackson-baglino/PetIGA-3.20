@@ -66,7 +66,7 @@ static PetscErrorCode EvaluateFieldAtGaussPoints(AppCtx *user, IGA iga, Vec vec_
     - vec_out: Pointer to loaded solution vector (before destruction).
 --------------------------------------------------------------------------------------------------*/
 PetscErrorCode ReadSolutionVec(const char *iga_file, const char *vec_file, 
-                               IGA *iga_out, Vec *vec_out, AppCtx *user) {
+                               IGA *iga_out, AppCtx *user) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
@@ -75,7 +75,7 @@ PetscErrorCode ReadSolutionVec(const char *iga_file, const char *vec_file,
   // Create the IGA object (NOTE: WE CAN PROBABLY REPLACE ALL THIS WITH A PREDEFINED FUNCTION)
   ierr = IGACreate(PETSC_COMM_WORLD, &iga_input); CHKERRQ(ierr);
   ierr = IGASetDim(iga_input, user->dim); CHKERRQ(ierr);
-  ierr = IGASetDof(iga_input, 1); CHKERRQ(ierr);
+  ierr = IGASetDof(iga_input, 3); CHKERRQ(ierr);
 
   // Set up the axes
   IGAAxis axis0, axis1, axis2;
@@ -181,8 +181,8 @@ PetscErrorCode LoadIceField(AppCtx *user, const char *iga_filename, const char *
   ierr = IGAReadVec(iga_input, U, vec_filename); CHKERRQ(ierr);
 
   // Get DOF from the loaded IGA and extract the ice field
-  PetscInt dof;
-  ierr = IGAGetDof(iga_input, &dof); CHKERRQ(ierr);
+  PetscInt dof = 3;
+  // ierr = IGAGetDof(iga_input, &dof); CHKERRQ(ierr);
   ierr = ExtractIceField(U, dof, user->ice);
 
   ierr = VecDestroy(&U); CHKERRQ(ierr);

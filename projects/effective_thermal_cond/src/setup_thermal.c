@@ -1,6 +1,7 @@
 #include "setup_thermal.h"
 #include "assembly.h"
 #include "utils.h"
+#include "io_thermal.h"
 
 // /*-----------------------------------------------------------
 //    Function: ReadInputFile
@@ -149,7 +150,10 @@ PetscErrorCode FormInitialCondition(AppCtx *user)
     ierr = ComputeLayeredIceField(user); CHKERRQ(ierr);
   } else {
     // NEEDS TO BE CORRECTED!
-    ierr = ReadSolutionVec(user->init_mode, user->init_mode, &user->iga_input, &user->ice, user); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from file: %s\n", user->init_mode);
+    const char *iga_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/igasol.dat";
+    // const char *vec_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat";
+    ierr = ReadSolutionVec(iga_file, user->init_mode, &user->iga_input, user); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);

@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 
-  user.NCice      = 1; //less than 200, otherwise update in user
-  user.RCice      = 1.5e-4;
+  user.NCice      = 200; //less than 200, otherwise update in user
+  user.RCice      = 0.35e-4;
   user.RCice_dev  = 0.55;
 
   //boundary conditions
@@ -286,8 +286,8 @@ int main(int argc, char *argv[]) {
   ierr = IGACreateVec(iga,&U);CHKERRQ(ierr);
   ierr = VecZeroEntries(U);CHKERRQ(ierr);
   if(dim==2) {
-    // ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
-    ierr = FormInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+    ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+    // ierr = FormInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
   }
   else {ierr = FormInitialCondition3D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);}
 
