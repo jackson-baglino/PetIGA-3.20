@@ -16,8 +16,8 @@
 # =============================
 # 🔹 Environment Variables
 # =============================
-export Nx=550
-export Ny=550
+export Nx=275
+export Ny=275
 export Nz=1                    # Set to 1 for 2D simulations
 
 export Lx=0.5e-3
@@ -34,12 +34,9 @@ export grad_temp0Z=0
 # =============================
 # 🔹 Boundary Conditions
 # =============================
-export TEMP_BOTTOM=265.15
-export FLUX_BOTTOM=10.0
-
+export FLUX_BOTTOM=20.0
 export TEMP_TOP=240.15
-export FLUX_TOP=20.0
-
+\
 # =============================
 # 🔹 Interface Width Calculation
 # =============================
@@ -51,8 +48,9 @@ export dim=2                  # Set 2 for 2D, 3 for 3D
 # =============================
 # Set the initial mode. Uncomment and modify the path if using a file.
 # INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00444.dat"
-INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/LayeredSystem/NoInclusions1/sol_00778.dat"
+# INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/LayeredSystem/NoInclusions1/sol_00778.dat"
 # INIT_MODE="circle"
+INIT_MODE="layered"
 
 # =============================
 # 🔹 Output Settings
@@ -62,7 +60,8 @@ export OUTPUT_BINARY=1
 
 # Create a timestamp and define the output directory (change the path as needed)
 timestamp=$(date +%Y-%m-%d__%H.%M.%S)
-export OUTPUT_DIR="/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_$timestamp"
+# export OUTPUT_DIR="/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_$timestamp"
+export OUTPUT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/outputs/ThermalSim_$timestamp"
 
 # Ensure the output directory exists
 mkdir -p "$OUTPUT_DIR"

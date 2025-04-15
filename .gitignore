@@ -68,6 +68,9 @@ projects/dry_snow_metamorphism/outputs/*
 projects/effective_thermal_cond/effective_k_ice
 projects/effective_thermal_cond/crash_log.txt
 projects/effective_thermal_cond/temperature.bin.info
+projects/effective_thermal_cond/scratch.c
+projects/effective_thermal_cond/outputs/*
+
 
 ###############################################################################
 # PETSc & MPI Build Directories

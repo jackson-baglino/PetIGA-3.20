@@ -111,9 +111,10 @@ static PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
     while (IGANextElement(user->iga, element)) {
         ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
         while (IGAElementNextPoint(element, point)) {
-            dist = point->mapX[0][1] - user->Ly / 2.0;
-            user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
-            user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx]));
+            // dist = point->mapX[0][1] - user->Ly / 2.0;
+            // user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
+            // user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx]));
+            user->ice[idx] = 1.0;
             idx++;
         }
         ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
@@ -152,6 +153,9 @@ PetscErrorCode FormInitialCondition(AppCtx *user)
     // NEEDS TO BE CORRECTED!
     PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from file: %s\n", user->init_mode);
     const char *iga_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/igasol.dat";
+    PetscPrintf(PETSC_COMM_WORLD, "[WARNING] May need to update path to IGA object.\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Reading solution vector from file: %s\n", iga_file);
+
     // const char *vec_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat";
     ierr = ReadSolutionVec(iga_file, user->init_mode, &user->iga_input, user); CHKERRQ(ierr);
   }
