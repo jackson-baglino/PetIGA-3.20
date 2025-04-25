@@ -33,7 +33,7 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE); CHKERRQ(ierr);
   ierr = KSPSolve(ksp, b, user->T_sol); CHKERRQ(ierr);
 
-  PetscPrintf(PETSC_COMM_WORLD, "KSP solve complete.\n");
+  PetscPrintf(PETSC_COMM_WORLD, "KSP solve complete.\n\n");
 
   // Clean up
   ierr = KSPDestroy(&ksp); CHKERRQ(ierr);

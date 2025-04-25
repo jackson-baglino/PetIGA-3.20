@@ -7,8 +7,7 @@ from scipy.spatial import cKDTree
 np.random.seed(42)
 
 def generate_circle_packing_kd(region, num_circles, size_range, Lx, Ly, 
-  max_attempts=100000, gap=1e-6, extra_circles=None,
-  update_interval=50):
+  max_attempts=100000, gap=1e-6, extra_circles=None):
   """
   Generate a packing of circles (each represented as (x, y, r)) whose centers lie in
   the allowed 'region' using a cKDTree for fast neighbor queries.
@@ -25,7 +24,6 @@ def generate_circle_packing_kd(region, num_circles, size_range, Lx, Ly,
     max_attempts  : maximum number of candidate attempts.
     gap           : enforced gap between circles.
     extra_circles : list of circles (tuples) that must not be overlapped.
-    update_interval: number of accepted circles between kd-tree updates.
     
   Returns:
     circles: list of tuples (x, y, r).
@@ -35,12 +33,10 @@ def generate_circle_packing_kd(region, num_circles, size_range, Lx, Ly,
   
   xmin, xmax, ymin, ymax = region
   circles = []       # Accepted circles (each as (x, y, r))
-  centers = []       # List of accepted circle centers, for kd-tree.
+  centers = []       # List of accepted circle centers.
   radii = []         # List of accepted radii.
-  kd_tree = None
-  attempts = 0
 
-  # Build a kd-tree for extra circles, if provided.
+  # Build kd-tree data for extra circles if any.
   if extra_circles:
     extra_centers = np.array([[c[0], c[1]] for c in extra_circles])
     extra_radii = np.array([c[2] for c in extra_circles])
@@ -48,6 +44,7 @@ def generate_circle_packing_kd(region, num_circles, size_range, Lx, Ly,
     extra_centers = np.empty((0, 2))
     extra_radii = np.empty((0,))
 
+  attempts = 0
   while len(circles) < num_circles and attempts < max_attempts:
     attempts += 1
     r_new = np.random.uniform(*size_range)
@@ -62,12 +59,11 @@ def generate_circle_packing_kd(region, num_circles, size_range, Lx, Ly,
       continue
 
     valid = True
-    # Check against circles already accepted via kd-tree.
+    # Check against already accepted circles.
     if centers:
-      # Update the kd-tree periodically.
-      if kd_tree is None or len(circles) % update_interval == 0:
-        kd_tree = cKDTree(np.array(centers))
-      # Define a search radius as: candidate radius + maximum accepted radius + gap.
+      # Rebuild kd-tree every time to include all accepted circles.
+      kd_tree = cKDTree(np.array(centers))
+      # Set search radius as candidate radius + maximum accepted radius + gap.
       search_radius = r_new + max(radii) + gap
       nearby_idx = kd_tree.query_ball_point([x, y], search_radius)
       for idx in nearby_idx:
@@ -76,12 +72,12 @@ def generate_circle_packing_kd(region, num_circles, size_range, Lx, Ly,
         if np.hypot(x - xi, y - yi) < (r_new + ri + gap):
           valid = False
           break
-    # Check against extra circles (if any) in a vectorized manner.
+    # Check against extra circles if any.
     if valid and extra_centers.size:
       dists = np.hypot(extra_centers[:,0] - x, extra_centers[:,1] - y)
       if np.any(dists < (r_new + extra_radii + gap)):
         valid = False
-    
+
     if valid:
       circles.append(candidate)
       centers.append([x, y])
@@ -123,7 +119,7 @@ def save_vectorized_and_binary_images(top_circles, bottom_circles, Lx, Ly, resol
   
   # ----- Binary Raster Image -----
   nx = resolution
-  ny = resolution
+  ny = int(Ly / Lx) * resolution
   x_lin = np.linspace(0, Lx, nx)
   y_lin = np.linspace(0, Ly, ny)
   xv, yv = np.meshgrid(x_lin, y_lin)
@@ -188,9 +184,9 @@ if __name__ == '__main__':
   # Desired numbers and parameters.
   num_bottom = 900    # Generate bottom-half circles first.
   num_top = 9000      # Then generate top-half circles.
-  max_attempts = int(1e7)
+  max_attempts = int(1e6)
   gap_top = 0.05e-3        # Minimum gap between circles.
-  gap_bottom = 0.25e-3     # Minimum gap between circles.
+  gap_bottom = 0.15e-3     # Minimum gap between circles.
 
   print("Generating bottom-half circles...")
   bottom_circles = generate_circle_packing_kd(bottom_region, num_bottom, bottom_size_range, Lx, Ly, max_attempts, gap_bottom)

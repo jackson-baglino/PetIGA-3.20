@@ -72,6 +72,7 @@ echo "Compilation successful."
 # 🔹 Running the Simulation in LLDB
 ###############################################################################
 echo "Running effective_k_ice simulation with $NUM_PROCS process(es) in LLDB..."
+echo "Using mesh size: Nx=$Nx, Ny=$Ny, Nz=$Nz"
 
 # Run the simulation under LLDB with custom run arguments. You can modify the 
 # LLDB commands as needed. Here, we set a breakpoint on the function "KSPSetFromOptions"

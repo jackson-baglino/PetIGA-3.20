@@ -3,46 +3,6 @@
 #include "utils.h"
 #include "io_thermal.h"
 
-// /*-----------------------------------------------------------
-//    Function: ReadInputFile
-//    Purpose:  Opens a text file specified by user->init_mode, reads raw
-//              ice field values into a dynamically allocated array, and
-//              returns the number of points read.
-//    Parameters:
-//      - user: Pointer to the AppCtx structure containing grid parameters.
-//      - iceField: Address of a pointer that will hold the raw ice field data.
-//      - nPoints: Pointer to a PetscInt to store the number of points read.
-//    Returns:
-//      - PetscErrorCode (0 on success).
-// -----------------------------------------------------------*/
-// static PetscErrorCode ReadInputFile(AppCtx *user, PetscReal **iceField, IGA *iga_DSM)
-// {
-//     PetscErrorCode ierr;
-//     Vec DSM_sol;
-//     FILE *file = fopen(user->init_mode, "r");
-//     if (!file) {
-//         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Error opening ice field file: %s", user->init_mode);
-//     }
-
-
-    
-//     IGAReadVec(iga_DSM, DSM_sol, user->init_mode);
-
-//     // /* Expected number of points */
-//     // PetscInt total = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
-//     // ierr = PetscMalloc1(total, iceField); CHKERRQ(ierr);
-
-//     // for (PetscInt i = 0; i < total; i++) {
-//     //     if (fscanf(file, "%lf", &((*iceField)[i])) != 1) {
-//     //         fclose(file);
-//     //         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_READ, "Error reading ice field file at index %D", i);
-//     //     }
-//     // }
-//     // fclose(file);
-//     // *nPoints = total;
-//     return 0;
-// }
-
 /*-----------------------------------------------------------
    Function: ComputeCircleIceField
    Purpose:  Computes the initial ice field using a circular profile.
@@ -111,7 +71,7 @@ static PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
     while (IGANextElement(user->iga, element)) {
         ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
         while (IGAElementNextPoint(element, point)) {
-            // dist = point->mapX[0][1] - user->Ly / 2.0;
+            // dist = point->mapX[0][0] - user->Lx / 2.0;
             // user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
             // user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx]));
             user->ice[idx] = 1.0;
@@ -121,7 +81,7 @@ static PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
     }
     ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
 
-    PetscPrintf(PETSC_COMM_WORLD, "Layered mode: ice field computed with %d points.\n", idx);
+    PetscPrintf(PETSC_COMM_WORLD, "--- Layered mode. ---\n\n");
     PetscFunctionReturn(0);
 }
 
@@ -179,6 +139,6 @@ PetscErrorCode InitializeFields(AppCtx *user, IGA iga) {
 
     ierr = FormInitialCondition(user); CHKERRQ(ierr);
 
-    PetscPrintf(PETSC_COMM_WORLD, "Field variables initialized.\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Field variables initialized.\n\n");
     PetscFunctionReturn(0);
 }

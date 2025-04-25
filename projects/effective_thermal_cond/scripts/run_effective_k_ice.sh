@@ -16,12 +16,14 @@
 # =============================
 # 🔹 Environment Variables
 # =============================
-export Nx=275
-export Ny=275
+export Nx=512
+export Ny=512
 export Nz=1                    # Set to 1 for 2D simulations
 
-export Lx=0.5e-3
-export Ly=0.5e-3
+export Lx=1.0
+export Ly=1.0
+# export Lx=0.5e-3
+# export Ly=0.5e-3
 export Lz=2.02e-4              # Only used in 3D mode
 
 export temp=268.15
@@ -34,7 +36,7 @@ export grad_temp0Z=0
 # =============================
 # 🔹 Boundary Conditions
 # =============================
-export FLUX_BOTTOM=20.0
+export FLUX_BOTTOM=15.0
 export TEMP_TOP=240.15
 \
 # =============================
@@ -77,7 +79,6 @@ NUM_PROCS=1   # Adjust the number of MPI processes as needed
 
 compile_code() {
     echo "🔨 Compiling the code..."
-    make clean
     if make all; then
         echo "✅ Compilation successful."
     else
@@ -87,17 +88,19 @@ compile_code() {
 }
 
 run_simulation() {
-    echo "🚀 Running effective_k_ice simulation with $NUM_PROCS process(es)..."
+    echo "Running effective_k_ice simulation with $NUM_PROCS process(es)..."
+    echo " "
     mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode "$INIT_MODE" # Additional flags can be added here
 }
 
 move_output_files() {
     echo "📂 Moving output files..."
+    echo " "
     if [ -d "$OUTPUT_DIR" ]; then
-        mv *.bin "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No .bin files to move."
-        mv *.dat "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No .dat files to move."
-        mv *.info "$OUTPUT_DIR" 2>/dev/null || echo "⚠️ No .info files to move."
-        echo "✅ Output files moved to $OUTPUT_DIR"
+        mv *.bin "$OUTPUT_DIR" 2>/dev/null || echo "  ⚠️ No .bin files to move."
+        mv *.info "$OUTPUT_DIR" 2>/dev/null || echo " ⚠️ No .info files to move."
+        echo "  ✅ Output files moved to $OUTPUT_DIR"
+        echo " "
     else
         echo "⚠️ Output directory not found."
     fi
@@ -124,4 +127,4 @@ move_output_files
 # python postprocess_script.py "$OUTPUT_DIR"
 # echo "✅ Post-processing complete."
 
-echo -e "\n✅ Simulation complete."
+echo -e "Simulation complete."

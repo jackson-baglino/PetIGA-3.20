@@ -235,7 +235,7 @@ PetscErrorCode WriteOutput(AppCtx *user, Vec x, const char *filename) {
   PetscFunctionBegin;
 
   if (user->outputBinary) {
-    PetscPrintf(PETSC_COMM_WORLD, "Writing binary output...\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Writing binary output...\n\n");
     ierr = VecAssemblyBegin(x); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(x); CHKERRQ(ierr);
     ierr = WriteBinaryFile(x, filename); CHKERRQ(ierr);
@@ -289,18 +289,13 @@ PetscErrorCode WriteBinaryFile(Vec field, const char *filename) {
   PetscFunctionBegin;
   ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD, filename, FILE_MODE_WRITE, &viewer); CHKERRQ(ierr);
 
-  PetscScalar norm;
-  ierr = VecNorm(field, NORM_2, &norm); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD, "Norm of vector before writing: %g\n", (double)norm);
-
   ierr = VecView(field, viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   ierr = PetscTestFile(filename, 'r', &fileExists); CHKERRQ(ierr);
   if (!fileExists) {
     PetscPrintf(PETSC_COMM_WORLD, "Warning: Binary output file %s was not created!\n", filename);
-  } else {
-    PetscPrintf(PETSC_COMM_WORLD, "Binary output successfully written to %s\n", filename);
   }
+  
   PetscFunctionReturn(0);
 }

@@ -24,7 +24,7 @@ void InitializeUserContext(AppCtx *user) {
     user->p = 1; // Polynomial order
     user->C = 0; // Inter-element continuity
 
-    PetscPrintf(PETSC_COMM_WORLD, "✅ User context initialized.\n");
+    PetscPrintf(PETSC_COMM_WORLD, "User context initialized.\n\n");
 }
 
 /*------------------------------------------------------------------------------
@@ -34,7 +34,7 @@ void InitializeUserContext(AppCtx *user) {
 PetscErrorCode GetEnvironment(AppCtx *user) {
     PetscFunctionBegin;
 
-    PetscPrintf(PETSC_COMM_WORLD, "\n🔧 Reading simulation parameters from environment variables...\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Reading simulation parameters from environment variables...\n\n");
 
     // Step 1: Check for required environment variables
     PetscErrorCode ierr = CheckRequiredEnvVars();
@@ -89,7 +89,7 @@ static void ParseDomainAndMesh(AppCtx *user, char *endptr) {
     user->Ly  = strtod(getenv("Ly"), &endptr);
     user->Lz  = strtod(getenv("Lz"), &endptr);
 
-    PetscPrintf(PETSC_COMM_WORLD, "📐 Domain: Lx = %g, Ly = %g, Lz = %g\n", user->Lx, user->Ly, user->Lz);
+    PetscPrintf(PETSC_COMM_WORLD, "Domain: Lx = %g, Ly = %g, Lz = %g\n\n", user->Lx, user->Ly, user->Lz);
 }
 
 /*------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ static PetscErrorCode ParseBoundaryConditions(AppCtx *user, char *endptr) {
 
     if (temp_top_str) {
         user->T_top = strtod(temp_top_str, &endptr);
-        PetscPrintf(PETSC_COMM_WORLD, "📌 Top boundary temperature: %g K\n", user->T_top);
+        PetscPrintf(PETSC_COMM_WORLD, "Top boundary temperature: %g K\n\n", user->T_top);
     } else {
         PetscPrintf(PETSC_COMM_WORLD, "❌ Error: TEMP_TOP is required.\n");
         PetscFinalize();
@@ -131,7 +131,7 @@ static PetscErrorCode ParseBoundaryConditions(AppCtx *user, char *endptr) {
 
     if (flux_bottom_str) {
         user->q_bottom = strtod(flux_bottom_str, &endptr);
-        PetscPrintf(PETSC_COMM_WORLD, "📌 Bottom boundary flux: %g W/m²·K\n", user->q_bottom);
+        PetscPrintf(PETSC_COMM_WORLD, "Bottom boundary flux: %g W/m²·K\n\n", user->q_bottom);
     } else {
         PetscPrintf(PETSC_COMM_WORLD, "❌ Error: FLUX_BOTTOM is required.\n");
         PetscFinalize();

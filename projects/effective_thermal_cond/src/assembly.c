@@ -30,23 +30,42 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
   PetscReal thcond;
   ThermalCond(user, ice, &thcond, NULL);
 
-  // Apply bottom Neumann flux BC (boundary_id 2 = y=0)
-  if (pnt->atboundary && pnt->boundary_id == 2) {
-    for (a = 0; a < nen; a++) {
-      F[a] -= N0[a] * user->q_bottom / user->Lx;
+  PetscReal W = *pnt->weight;
+
+  for (a = 0; a < nen; a++) {
+    if (pnt->atboundary && pnt->boundary_id == 2) {
+      F[a] -= N0[a] * user->q_bottom * W;
     }
-  } else {
-    for (a = 0; a < nen; a++) {
-      for (b = 0; b < nen; b++) {
-          for (l = 0; l < dim; l++) {
-            K[a * nen + b] += thcond * N1[a][l] * N1[b][l];
-          }
+    
+    for (b = 0; b < nen; b++) {
+      for (l = 0; l < dim; l++) {
+        K[a * nen + b] += thcond * N1[a][l] * N1[b][l];
       }
     }
   }
-
   PetscFunctionReturn(0);
 }
+
+/*------------------------------------------------------------------------------
+  Function: ApplyBoundaryConditions
+  Purpose: Set top temperature, bottom flux, and side zero-flux BCs.
+------------------------------------------------------------------------------*/
+PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+  
+    PetscPrintf(PETSC_COMM_WORLD, "Applying boundary conditions...\n");
+  
+    /* Fixed temperature at the top */
+    ierr = IGASetBoundaryValue(iga, 1, 1, 0, user->T_top); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD, "  - Fixed temperature applied at top: T = %g K\n\n", user->T_top);
+
+    /* Prescribed flux at the bottom */
+    ierr = IGASetBoundaryForm(iga, 1, 0, PETSC_TRUE); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD, "  - Prescribed flux at bottom: q = %g W/m²\n", user->q_bottom);
+  
+    PetscFunctionReturn(0);
+  }
 
 /*------------------------------------------------------------------------------
   Function: ComputeInitialCondition
@@ -91,33 +110,6 @@ static PetscErrorCode GetIceAtGaussPoint(IGAPoint pnt, AppCtx *user, PetscScalar
 }
 
 /*------------------------------------------------------------------------------
-  Function: ApplyBoundaryConditions
-  Purpose: Set top temperature, bottom flux, and side zero-flux BCs.
-------------------------------------------------------------------------------*/
-PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-
-  PetscPrintf(PETSC_COMM_WORLD, "Applying boundary conditions...\n");
-
-  /* Fixed temperature at the top */
-  ierr = IGASetBoundaryValue(iga, 1, 1, 0, user->T_top); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD, "  - Fixed temperature applied at top: T = %g K\n", user->T_top);
-
-  /* Prescribed flux at the bottom */
-  ierr = IGASetBoundaryForm(iga, 1, 0, PETSC_TRUE); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD, "  - Prescribed flux at bottom: q = %g W/m²\n", user->q_bottom);
-
-  /* Zero-flux (Neumann) conditions on the z-axis (if 3D) */
-  if (user->dim == 3) {
-      ierr = IGASetBoundaryForm(iga, 2, 0, PETSC_TRUE); CHKERRQ(ierr);
-      ierr = IGASetBoundaryForm(iga, 2, 1, PETSC_TRUE); CHKERRQ(ierr);
-  }
-
-  PetscFunctionReturn(0);
-}
-
-/*------------------------------------------------------------------------------
   Function: SetupIGA
   Purpose:  Sets up the IGA object by defining the problem domain, degrees of 
             freedom, field names, and the uniform grid.
@@ -152,6 +144,6 @@ PetscErrorCode SetupIGA(AppCtx *user, IGA *iga) {
   ierr = IGASetFromOptions(*iga); CHKERRQ(ierr);
   ierr = IGASetUp(*iga); CHKERRQ(ierr);
 
-  PetscPrintf(PETSC_COMM_WORLD, "IGA setup complete.\n");
+  PetscPrintf(PETSC_COMM_WORLD, "IGA setup complete.\n\n");
   PetscFunctionReturn(0);
 }
