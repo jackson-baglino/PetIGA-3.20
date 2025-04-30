@@ -28,18 +28,22 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
 
   // Evaluate thermal conductivity
   PetscReal thcond;
-  ThermalCond(user, ice, &thcond, NULL);
+  PetscReal dcond;
+  ThermalCond(user, ice, &thcond, &dcond);
+
+   
 
   PetscReal W = *pnt->weight;
 
   for (a = 0; a < nen; a++) {
-    if (pnt->atboundary && pnt->boundary_id == 2) {
-      F[a] -= N0[a] * user->q_bottom * W;
+    if (pnt->atboundary) {
+      if (pnt->boundary_id == 2) {
+        F[a] -= N0[a] * user->q_bottom * W;
+      }
     }
-    
     for (b = 0; b < nen; b++) {
       for (l = 0; l < dim; l++) {
-        K[a * nen + b] += thcond * N1[a][l] * N1[b][l];
+        K[a * nen + b] += thcond * N1[a][l] * N1[b][l] * W;
       }
     }
   }
@@ -63,6 +67,11 @@ PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
     /* Prescribed flux at the bottom */
     ierr = IGASetBoundaryForm(iga, 1, 0, PETSC_TRUE); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD, "  - Prescribed flux at bottom: q = %g W/m²\n", user->q_bottom);
+
+    // /* Insulated side boundaries */
+    // ierr = IGASetBoundaryForm(iga, 0, 0, PETSC_TRUE); CHKERRQ(ierr);
+    // ierr = IGASetBoundaryForm(iga, 0, 1, PETSC_TRUE); CHKERRQ(ierr);
+    // PetscPrintf(PETSC_COMM_WORLD, "  - Insulated side boundaries applied\n");
   
     PetscFunctionReturn(0);
   }
@@ -101,7 +110,9 @@ PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
   Function: GetIceAtGaussPoint -- CONSIDERING MOVING THIS TO A SCRIPT OF HELPER FUNCTIONS
   Helper: retrieve ice field value at Gauss point index.
 ------------------------------------------------------------------------------*/
-static PetscErrorCode GetIceAtGaussPoint(IGAPoint pnt, AppCtx *user, PetscScalar *ice) {
+static PetscErrorCode GetIceAtGaussPoint(IGAPoint pnt, AppCtx *user, PetscScalar *ice) {\
+
+  // IGAPointFormValue(pnt, user->ice, ice);
 
   PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
   *ice = user->ice[indGP];

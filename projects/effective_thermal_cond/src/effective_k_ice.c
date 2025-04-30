@@ -51,6 +51,7 @@ int main (int argc, char *argv[]) {
 
     /* ------------------ Write Output ------------------ */
     ierr = WriteOutput(&user, user.T_sol, "temperature.bin"); CHKERRQ(ierr); // Write the solution to file
+    ierr = WriteIceFieldToFile("ice_data.dat", &user); CHKERRQ(ierr); // Write the ice field to a .dat file
     // ierr = WriteOutput(&user, user.ice, "ice_field.dat"); CHKERRQ(ierr); // Write the ice field to file
     // ierr = WriteIceFieldToFile("ice_field.dat", &user); CHKERRQ(ierr); // Write the ice field to a .dat file
 

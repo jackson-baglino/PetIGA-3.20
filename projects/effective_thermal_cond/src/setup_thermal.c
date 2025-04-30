@@ -30,12 +30,13 @@ static PetscErrorCode ComputeCircleIceField(AppCtx *user) {
     while (IGANextElement(user->iga, element)) {
         ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
         while (IGAElementNextPoint(element, point)) {
-            PetscReal radius = PetscMin(user->Lx / 6.0, user->Ly / 6.0);
-            dist = PetscSqrtReal(SQ(point->mapX[0][0] - user->Lx / 2.0) +
-                                 SQ(point->mapX[0][1] - user->Ly / 2.0)) - radius;
-            user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
-            user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx]));
-            idx++;
+          idx = point->index + point->count * point->parent->index;
+
+          PetscReal radius = PetscMin(user->Lx / 6.0, user->Ly / 6.0);
+          dist = PetscSqrtReal(SQ(point->mapX[0][0] - user->Lx / 2.0) +
+                                SQ(point->mapX[0][1] - user->Ly / 2.0)) - radius;
+          user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
+          user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx]));
         }
         ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
     }
@@ -62,7 +63,7 @@ static PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
     IGAElement element;
     IGAPoint point;
     PetscReal dist;
-    PetscInt idx = 0;
+    PetscInt indGP;
 
     // Allocate memory for user->ice (if not already allocated)
     ierr = AllocateAppCtxFields(user->iga, user, &user->ice); CHKERRQ(ierr);
@@ -71,11 +72,15 @@ static PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
     while (IGANextElement(user->iga, element)) {
         ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
         while (IGAElementNextPoint(element, point)) {
-            // dist = point->mapX[0][0] - user->Lx / 2.0;
-            // user->ice[idx] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
-            // user->ice[idx] = PetscMax(0.0, PetscMin(1.0, user->ice[idx]));
-            user->ice[idx] = 1.0;
-            idx++;
+          indGP = point->index + point->count * point->parent->index;
+
+          // Find distance from the center of the domain--above midline is air, below is ice
+          dist = point->mapX[0][1] - user->Ly / 2.0;
+
+          user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
+          user->ice[indGP] = PetscMax(0.0, PetscMin(1.0, user->ice[indGP]));   
+
+          // user->ice[indGP] = 1.0;
         }
         ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
     }

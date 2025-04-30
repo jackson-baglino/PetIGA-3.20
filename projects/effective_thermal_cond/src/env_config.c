@@ -58,8 +58,7 @@ PetscErrorCode GetEnvironment(AppCtx *user) {
 ------------------------------------------------------------------------------*/
 static PetscErrorCode CheckRequiredEnvVars(void) {
     const char *required_vars[] = {
-        "Nx", "Ny", "Nz", "Lx", "Ly", "Lz", "temp",
-        "grad_temp0X", "grad_temp0Y", "grad_temp0Z",
+        "Nx", "Ny", "Nz", "Lx", "Ly", "Lz",
         "dim", "OUTPUT_BINARY", "eps", "TEMP_TOP", "FLUX_BOTTOM"
     };
 
@@ -97,10 +96,6 @@ static void ParseDomainAndMesh(AppCtx *user, char *endptr) {
   Purpose : Set initial temperature and its gradient field.
 ------------------------------------------------------------------------------*/
 static void ParseTemperatureSettings(AppCtx *user, char *endptr) {
-    user->temp0         = strtod(getenv("temp"), &endptr);
-    user->grad_temp0[0] = strtod(getenv("grad_temp0X"), &endptr);
-    user->grad_temp0[1] = strtod(getenv("grad_temp0Y"), &endptr);
-    user->grad_temp0[2] = strtod(getenv("grad_temp0Z"), &endptr);
     user->eps           = strtod(getenv("eps"), &endptr);
 }
 

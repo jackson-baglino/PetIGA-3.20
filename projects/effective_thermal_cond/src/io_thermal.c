@@ -252,22 +252,32 @@ PetscErrorCode WriteOutput(AppCtx *user, Vec x, const char *filename) {
 --------------------------------------------------------------------------------------------------*/
 PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
   FILE *file;
-  PetscInt num_points = user->Nx * user->Ny * (user->dim == 3 ? user->Nz : 1);
   PetscFunctionBegin;
+  PetscErrorCode ierr;
+  IGAElement element;
+  IGAPoint point;
+  PetscInt indGP;
+  PetscReal ice_val;
 
   file = fopen(filename, "w");
   if (!file) {
       SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Error opening file for writing: %s", filename);
   }
 
-  const PetscScalar *ice_array = user->ice;
+  ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
+  while (IGANextElement(user->iga, element)) {
+      ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
+      while (IGAElementNextPoint(element, point)) {
+        indGP = point->index + point->count * point->parent->index;
 
-  for (PetscInt i = 0; i < num_points; i++) {
-      if (fprintf(file, "%.16e\n", ice_array[i]) < 0) {
-          fclose(file);
-          SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_WRITE, "Error writing to ice field file.");
+        ice_val = user->ice[indGP];
+        fprintf(file, "%g %g %g %g\n", point->mapX[0][0], point->mapX[0][1], point->mapX[0][2], ice_val);
+
+        // user->ice[indGP] = 1.0;
       }
+      ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
   }
+  ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
 
   fclose(file);
   PetscPrintf(PETSC_COMM_WORLD, "Ice field successfully written to file: %s\n", filename);

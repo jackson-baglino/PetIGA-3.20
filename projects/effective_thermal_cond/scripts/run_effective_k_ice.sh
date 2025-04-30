@@ -16,8 +16,8 @@
 # =============================
 # 🔹 Environment Variables
 # =============================
-export Nx=512
-export Ny=512
+export Nx=$((2**8))
+export Ny=$((2**8))
 export Nz=1                    # Set to 1 for 2D simulations
 
 export Lx=1.0
@@ -26,23 +26,16 @@ export Ly=1.0
 # export Ly=0.5e-3
 export Lz=2.02e-4              # Only used in 3D mode
 
-export temp=268.15
-
-# Temperature Gradients (currently unused)
-export grad_temp0X=0.01
-export grad_temp0Y=0
-export grad_temp0Z=0
-
 # =============================
 # 🔹 Boundary Conditions
 # =============================
-export FLUX_BOTTOM=15.0
-export TEMP_TOP=240.15
-\
+export FLUX_BOTTOM=1.0
+export TEMP_TOP=$((273.15-30))
+
 # =============================
 # 🔹 Interface Width Calculation
 # =============================
-export eps=$(awk "BEGIN {print ($Lx/$Nx < $Ly/$Ny) ? $Lx/$Nx : $Ly/$Ny}")
+export eps=$(awk "BEGIN {print (($Lx/$Nx < $Ly/$Ny) ? $Lx/$Nx : $Ly/$Ny)}")
 export dim=2                  # Set 2 for 2D, 3 for 3D
 
 # =============================
@@ -63,7 +56,8 @@ export OUTPUT_BINARY=1
 # Create a timestamp and define the output directory (change the path as needed)
 timestamp=$(date +%Y-%m-%d__%H.%M.%S)
 # export OUTPUT_DIR="/Users/jacksonbaglino/SimulationResults/ThermalConductivity/ThermalSim_$timestamp"
-export OUTPUT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/outputs/ThermalSim_$timestamp"
+OUT_FOLDER="ThermalSim_$timestamp"
+export OUTPUT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/outputs/$OUT_FOLDER"
 
 # Ensure the output directory exists
 mkdir -p "$OUTPUT_DIR"
@@ -90,13 +84,14 @@ compile_code() {
 run_simulation() {
     echo "Running effective_k_ice simulation with $NUM_PROCS process(es)..."
     echo " "
-    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode "$INIT_MODE" # Additional flags can be added here
+    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode "$INIT_MODE" -ksp_monitor # Additional flags can be added here
 }
 
 move_output_files() {
     echo "📂 Moving output files..."
     echo " "
     if [ -d "$OUTPUT_DIR" ]; then
+        mv *.dat "$OUTPUT_DIR" 2>/dev/null || echo "  ⚠️ No .dat files to move."
         mv *.bin "$OUTPUT_DIR" 2>/dev/null || echo "  ⚠️ No .bin files to move."
         mv *.info "$OUTPUT_DIR" 2>/dev/null || echo " ⚠️ No .info files to move."
         echo "  ✅ Output files moved to $OUTPUT_DIR"
@@ -123,8 +118,8 @@ move_output_files
 # Uncomment and modify the commands below to perform any post-processing on
 # your simulation output (e.g., plotting, data conversion, analysis).
 ###############################################################################
-# echo "🔍 Running post-processing..."
-# python postprocess_script.py "$OUTPUT_DIR"
-# echo "✅ Post-processing complete."
+echo "🔍 Running post-processing..."
+python postprocess/plot_layered_sys.py "$OUT_FOLDER"
+echo "✅ Post-processing complete."
 
 echo -e "Simulation complete."
