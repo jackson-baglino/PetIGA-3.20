@@ -23,6 +23,12 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   ierr = IGASetFormSystem(iga, AssembleStiffnessMatrix, user); CHKERRQ(ierr);
   ierr = IGAComputeSystem(iga, A, b); CHKERRQ(ierr);
 
+
+  PetscScalar RHSsum;
+  VecSum(b, &RHSsum);
+  PetscPrintf(PETSC_COMM_WORLD,
+            "Global RHS (sum of Neumann loads)  ΣF = %g\n", RHSsum);
+
   // Set initial condition for temperature field
   ierr = ComputeInitialCondition(user->T_sol, user); CHKERRQ(ierr);
 

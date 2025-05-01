@@ -12,6 +12,7 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
+  // Retrieve user context and defiene variables
   AppCtx *user = (AppCtx *)ctx;
   PetscInt a, b, l;
   PetscInt nen = pnt->nen, dim = user->dim;
@@ -28,25 +29,25 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
 
   // Evaluate thermal conductivity
   PetscReal thcond;
-  PetscReal dcond;
-  ThermalCond(user, ice, &thcond, &dcond);
+  ThermalCond(user, ice, &thcond, NULL);
 
-   
-
+  // Get the weight of the Gauss point
   PetscReal W = *pnt->weight;
 
+  // Initialize stiffness matrix and force vector
   for (a = 0; a < nen; a++) {
-    if (pnt->atboundary) {
-      if (pnt->boundary_id == 2) {
-        F[a] -= N0[a] * user->q_bottom * W;
-      }
-    }
     for (b = 0; b < nen; b++) {
       for (l = 0; l < dim; l++) {
+        // Assemble stiffness matrix
         K[a * nen + b] += thcond * N1[a][l] * N1[b][l] * W;
       }
     }
+    // Apply Neumann boundary condition for bottom flux
+    if (pnt->boundary_id == 2) {
+      F[a] += N0[a] * user->q_bottom * W;
+    }
   }
+    
   PetscFunctionReturn(0);
 }
 
@@ -64,6 +65,10 @@ PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
     ierr = IGASetBoundaryValue(iga, 1, 1, 0, user->T_top); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD, "  - Fixed temperature applied at top: T = %g K\n\n", user->T_top);
 
+    // /* Fixed temperature at the top */
+    // ierr = IGASetBoundaryValue(iga, 1, 0, 0, user->T_top-3.0); CHKERRQ(ierr);
+    // PetscPrintf(PETSC_COMM_WORLD, "  - Fixed temperature applied at top: T = %g K\n\n", user->T_top);
+
     /* Prescribed flux at the bottom */
     ierr = IGASetBoundaryForm(iga, 1, 0, PETSC_TRUE); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD, "  - Prescribed flux at bottom: q = %g W/m²\n", user->q_bottom);
@@ -77,7 +82,7 @@ PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user) {
   }
 
 /*------------------------------------------------------------------------------
-  Function: ComputeInitialCondition
+  Function: InitialCondition
   Purpose: Set initial temperature using linear profile from BCs.
 ------------------------------------------------------------------------------*/
 PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
@@ -111,8 +116,6 @@ PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
   Helper: retrieve ice field value at Gauss point index.
 ------------------------------------------------------------------------------*/
 static PetscErrorCode GetIceAtGaussPoint(IGAPoint pnt, AppCtx *user, PetscScalar *ice) {\
-
-  // IGAPointFormValue(pnt, user->ice, ice);
 
   PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
   *ice = user->ice[indGP];

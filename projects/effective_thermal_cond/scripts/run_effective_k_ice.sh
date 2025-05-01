@@ -29,7 +29,7 @@ export Lz=2.02e-4              # Only used in 3D mode
 # =============================
 # 🔹 Boundary Conditions
 # =============================
-export FLUX_BOTTOM=1.0
+export FLUX_BOTTOM=$((1.0))
 export TEMP_TOP=$((273.15-30))
 
 # =============================
@@ -84,7 +84,7 @@ compile_code() {
 run_simulation() {
     echo "Running effective_k_ice simulation with $NUM_PROCS process(es)..."
     echo " "
-    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode "$INIT_MODE" -ksp_monitor # Additional flags can be added here
+    mpiexec -np $NUM_PROCS ./effective_k_ice -init_mode "$INIT_MODE" # -ksp_monitor # Additional flags can be added here
 }
 
 move_output_files() {
