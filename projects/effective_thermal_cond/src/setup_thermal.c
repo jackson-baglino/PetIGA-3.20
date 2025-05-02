@@ -75,12 +75,12 @@ static PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
           indGP = point->index + point->count * point->parent->index;
 
           // Find distance from the center of the domain--above midline is air, below is ice
-          // dist = point->mapX[0][1] - user->Ly / 2.0;
+          dist = point->mapX[0][1] - user->Ly / 2.0;
 
-          // user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
-          // user->ice[indGP] = PetscMax(0.0, PetscMin(1.0, user->ice[indGP]));   
+          user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
+          user->ice[indGP] = PetscMax(0.0, PetscMin(1.0, user->ice[indGP]));   
 
-          user->ice[indGP] = 1.0;
+          // user->ice[indGP] = 1.0;
         }
         ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
     }

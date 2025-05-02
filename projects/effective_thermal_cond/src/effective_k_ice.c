@@ -16,7 +16,7 @@ int main (int argc, char *argv[]) {
     // Look into all of these options. See if there are other options that can be set.
     // These options are set in the command line when running the program.
     PetscBool print_error = PETSC_TRUE;
-    PetscBool check_error = PETSC_FALSE;
+    PetscBool check_error = PETSC_TRUE;
     PetscBool save = PETSC_FALSE;
     PetscBool draw = PETSC_FALSE;
     PetscOptionsBegin(PETSC_COMM_WORLD,"","Laplace Options","IGA");CHKERRQ(ierr);

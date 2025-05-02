@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   user.flag_it0   = 1;
   user.flag_tIC   = 0;
 
-  user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
+  user.readFlag   = 0; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
   user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
   // grains!
   flag_sedgrav    = 0; 
-  user.NCsed      = 0; //less than 200, otherwise update in user
+  user.NCsed      = 20; //less than 200, otherwise update in user
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 

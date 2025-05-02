@@ -370,7 +370,7 @@ echo "Starting NASAv2 simulation workflow"
 echo " "
 
 delt_t=1.0e-4
-t_final=48*60*60
+t_final=0.0 # 48*60*60
 n_out=10 #100
 t_final=$(echo "$t_final" | bc -l)
 humidity=0.70

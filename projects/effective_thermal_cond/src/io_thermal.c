@@ -191,37 +191,6 @@ PetscErrorCode LoadIceField(AppCtx *user, const char *iga_filename, const char *
   PetscFunctionReturn(0);
 }
 
-// PROBABLY WANT TO DELETE THIS FUNCTION
-// /*--------------------------------------------------------------------------------------------------
-//   Function: ComputeAndStoreThermalConductivity
-//   Purpose: Computes the thermal conductivity field based on the ice field and stores it in Vec K.
-//   Inputs:
-//     - user: Application context with ice field.
-//   Outputs:
-//     - K: PETSc Vec to store the thermal conductivity values.
-// --------------------------------------------------------------------------------------------------*/
-// PetscErrorCode ComputeAndStoreThermalConductivity(AppCtx *user, Vec K) {
-//   PetscErrorCode ierr;
-//   PetscInt i, N = user->Nx * user->Ny;
-//   PetscScalar ice, cond, dcond_ice;
-
-//   PetscFunctionBegin;
-//   const PetscScalar *ice_array = user->ice;
-
-//   for (i = 0; i < N; i++) {
-//     ice = ice_array[i];
-//     ThermalCond(user, ice, &cond, &dcond_ice);
-//     ierr = VecSetValue(K, i, cond, INSERT_VALUES); CHKERRQ(ierr);
-//   }
-
-//   ierr = VecRestoreArrayRead(user->ice, &ice_array); CHKERRQ(ierr);
-//   ierr = VecAssemblyBegin(K); CHKERRQ(ierr);
-//   ierr = VecAssemblyEnd(K); CHKERRQ(ierr);
-
-//   PetscPrintf(PETSC_COMM_WORLD, "Thermal conductivity field computed and stored.\n");
-//   PetscFunctionReturn(0);
-// }
-
 /*--------------------------------------------------------------------------------------------------
   Function: WriteOutput
   Purpose: Writes the given PETSc vector to file in binary format if user->outputBinary is set.
