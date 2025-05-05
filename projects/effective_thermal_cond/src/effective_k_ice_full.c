@@ -282,9 +282,12 @@ PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
   IGAPoint point;
   PetscReal dist;
   PetscInt indGP;
+  PetscInt counts = 0;
 
   // Allocate memory for user->ice (if not already allocated)
   ierr = AllocateAppCtxFields(user->iga, user, &user->ice); CHKERRQ(ierr);
+
+  PetscInt nmb = user->iga->elem_width[0] * user->iga->elem_width[1] * SQ(user->p + 1);
 
   ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
   while (IGANextElement(user->iga, element)) {
@@ -295,14 +298,20 @@ PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
         // Find distance from the center of the domain--above midline is air, below is ice
         dist = point->mapX[0][1] - user->Ly / 2.0;
 
-        user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
+        user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(1.0 / user->eps * dist);
         user->ice[indGP] = PetscMax(0.0, PetscMin(1.0, user->ice[indGP]));   
+
+        counts++;
 
       //   user->ice[indGP] = 1.0;
       }
       ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
   }
   ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
+
+  if (counts != nmb) {
+    PetscPrintf(PETSC_COMM_WORLD, "⚠️ Warning: Assigned %d Gauss point values, expected %d\n", counts, nmb);
+  }
 
   PetscPrintf(PETSC_COMM_WORLD, "--- Layered mode. ---\n\n");
   PetscFunctionReturn(0);
@@ -585,19 +594,23 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt, PetscScalar *K, PetscScalar
   ThermalCond(user, ice, &thcond, NULL);
 
   // Get the weight of the Gauss point
-  PetscReal W = *pnt->weight;
+  // PetscReal W = *pnt->weight;
+
+  for (a = 0; a < nen; a++) {
+    F[a] += 0;
+  }
 
   // Initialize stiffness matrix and force vector
   for (a = 0; a < nen; a++) {
     for (b = 0; b < nen; b++) {
       for (l = 0; l < dim; l++) {
         // Assemble stiffness matrix
-        K[a * nen + b] += thcond * N1[a][l] * N1[b][l] * W;
+        K[a * nen + b] += thcond * N1[a][l] * N1[b][l];
       }
     }
     // Apply Neumann boundary condition for bottom flux
     if (pnt->boundary_id == 2) {
-      F[a] += N0[a] * user->q_bottom * W;
+      F[a] += N0[a] * user->q_bottom;
     }
   }
     
@@ -624,6 +637,7 @@ PetscPrintf(PETSC_COMM_WORLD, "  - Fixed temperature applied at top: T = %g K\n\
 
 /* Prescribed flux at the bottom */
 ierr = IGASetBoundaryForm(iga, 1, 0, PETSC_TRUE); CHKERRQ(ierr);
+// ierr = IGASetBoundaryLoad(iga, 1, 0, 0, -user->q_bottom); CHKERRQ(ierr);
 PetscPrintf(PETSC_COMM_WORLD, "  - Prescribed flux at bottom: q = %g W/m²\n", user->q_bottom);
 
 // /* Insulated side boundaries */
@@ -656,7 +670,8 @@ PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
     PetscReal T_init = T_top - (q_bottom / k_eff) * (Ly - y);
     for (PetscInt i = 0; i <= Nx; i++) {
       PetscInt idx = j * (Nx + 1) + i;
-      T_array[idx] = T_init;
+      // T_array[idx] = T_init;
+      T_array[idx] = 240.15;
     }
   }
 
@@ -673,8 +688,9 @@ PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
 PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   PetscErrorCode ierr;
   Mat A;
-  Vec b;
+  Vec b, u;
   KSP ksp;
+  PC pc;
 
   PetscFunctionBegin;
 
@@ -687,22 +703,34 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   ierr = IGASetFormSystem(iga, AssembleStiffnessMatrix, user); CHKERRQ(ierr);
   ierr = IGAComputeSystem(iga, A, b); CHKERRQ(ierr);
 
-
-  PetscScalar RHSsum;
-  VecSum(b, &RHSsum);
-  PetscPrintf(PETSC_COMM_WORLD,
-            "Global RHS (sum of Neumann loads)  ΣF = %g\n", RHSsum);
-
   // Set initial condition for temperature field
   ierr = ComputeInitialCondition(user->T_sol, user); CHKERRQ(ierr);
+  // VecZeroEntries(user->T_sol);
+
+  /* Change solver type to direct solver */
 
   // Solve the linear system using KSP
   ierr = IGACreateKSP(iga, &ksp); CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp, A, A); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+  // Set solver tolerances
+  // ierr = KSPSetTolerances(ksp, 1.0e-8, 1.0e-05, PETSC_DEFAULT, 4000); CHKERRQ(ierr); // rtol, abstol, dtol, maxits
   ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE); CHKERRQ(ierr);
-  ierr = KSPSolve(ksp, b, user->T_sol); CHKERRQ(ierr);
 
+  // Specify solver type (e.g., GMRES, CG, etc.)
+  ierr = KSPSetType(ksp, KSPGMRES); CHKERRQ(ierr); // Replace KSPGMRES with desired solver type
+
+  // Configure preconditioner
+  ierr = KSPGetPC(ksp, &pc); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCLU); CHKERRQ(ierr); // Use LU preconditioner
+
+#if defined(PETSC_HAVE_MUMPS)
+  if (size > 1) PetscCall(PCFactorSetMatSolverType(pc, MATSOLVERMUMPS));
+#endif
+  // ierr = PCFactorSetZeroPivot(pc, 1.0e-50); CHKERRQ(ierr);
+
+  // Solve the system
+  ierr = KSPSolve(ksp, b, user->T_sol); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD, "KSP solve complete.\n\n");
 
   // Clean up
@@ -831,9 +859,21 @@ int main (int argc, char *argv[]) {
 
   /* ------------------ Read Environment Variables ------------------ */
   ierr = GetEnvironment(&user); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD, "Domain: Lx = %g, Ly = %g, Lz = %g\n\n", user.Lx, user.Ly, user.Lz);
+  PetscPrintf(PETSC_COMM_WORLD, "eps = %g\n", user.eps);
+  PetscPrintf(PETSC_COMM_WORLD, "dim = %d\n", user.dim);
+  PetscPrintf(PETSC_COMM_WORLD, "TEMP_TOP = %g\n", user.T_top);
+  PetscPrintf(PETSC_COMM_WORLD, "FLUX_BOTTOM = %g\n", user.q_bottom);
 
   /* ------------------ Define user context ------------------ */
   InitializeUserContext(&user);
+  PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity ice = %g W/m·K\n", user.thcond_ice);
+  PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity air = %g W/m·K\n", user.thcond_air);
+  PetscPrintf(PETSC_COMM_WORLD, "Specific heat ice = %g J/kg·K\n", user.cp_ice);
+  PetscPrintf(PETSC_COMM_WORLD, "Specific heat air = %g J/kg·K\n", user.cp_air);
+  PetscPrintf(PETSC_COMM_WORLD, "Density ice = %g kg/m³\n", user.rho_ice);
+  PetscPrintf(PETSC_COMM_WORLD, "Density air = %g kg/m³\n", user.rho_air);
+  PetscPrintf(PETSC_COMM_WORLD, "User context initialized.\n\n");
 
   /* ------------------ Initialize IGA ------------------ */
   IGA iga;
