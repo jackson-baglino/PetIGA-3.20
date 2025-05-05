@@ -298,7 +298,7 @@ PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
         // Find distance from the center of the domain--above midline is air, below is ice
         dist = point->mapX[0][1] - user->Ly / 2.0;
 
-        user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(1.0 / user->eps * dist);
+        user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
         user->ice[indGP] = PetscMax(0.0, PetscMin(1.0, user->ice[indGP]));   
 
         counts++;
@@ -688,7 +688,7 @@ PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
 PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   PetscErrorCode ierr;
   Mat A;
-  Vec b, u;
+  Vec b;
   KSP ksp;
   PC pc;
 
@@ -714,7 +714,7 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   ierr = KSPSetOperators(ksp, A, A); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
   // Set solver tolerances
-  // ierr = KSPSetTolerances(ksp, 1.0e-8, 1.0e-05, PETSC_DEFAULT, 4000); CHKERRQ(ierr); // rtol, abstol, dtol, maxits
+  ierr = KSPSetTolerances(ksp, PETSC_SMALL, PETSC_SMALL, PETSC_DEFAULT, 4000); CHKERRQ(ierr); // rtol, abstol, dtol, maxits
   ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE); CHKERRQ(ierr);
 
   // Specify solver type (e.g., GMRES, CG, etc.)
@@ -783,7 +783,7 @@ PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
   PetscErrorCode ierr;
   IGAElement element;
   IGAPoint point;
-  PetscInt indGP;
+  PetscInt indGP, idx = 0; 
   PetscReal ice_val;
 
   file = fopen(filename, "w");
@@ -797,7 +797,10 @@ PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
       while (IGAElementNextPoint(element, point)) {
         indGP = point->index + point->count * point->parent->index;
 
-        ice_val = user->ice[indGP];
+        // ice_val = user->ice[indGP];
+        ice_val = user->ice[idx];
+        idx++;
+
         fprintf(file, "%g %g %g %g\n", point->mapX[0][0], point->mapX[0][1], point->mapX[0][2], ice_val);
 
         // user->ice[indGP] = 1.0;
