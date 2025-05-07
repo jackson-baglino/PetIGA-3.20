@@ -16,6 +16,7 @@ venv/
 env/
 projects/dry_snow_metamorphism/venv_DSM/
 projects/effective_thermal_cond/venv_EffK/
+projects/permafrost/venv_permafrost/
 
 
 # Python bytecode and cache files
@@ -59,10 +60,13 @@ demo/venv/
 # Executable and object files for the effective_thermal_cond project
 projects/effective_thermal_cond/obj/*
 projects/dry_snow_metamorphism/obj/*
+projects/permafrost/obj/*
 projects/effective_thermal_cond/inputs/*
 projects/dry_snow_metamorphism/inputs/*
-projects/effective_thermal_cond/postprocess/*
+projects/permafrost/inputs/*
+projects/effective_thermal_cond/outputs/*
 projects/dry_snow_metamorphism/outputs/*
+projects/permafrost/outputs/*
 
 # Temporary files
 projects/effective_thermal_cond/effective_k_ice

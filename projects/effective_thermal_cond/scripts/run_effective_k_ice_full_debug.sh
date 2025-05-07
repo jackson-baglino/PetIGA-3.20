@@ -18,10 +18,10 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 # =============================
 # 🔹 Environment Variables
 # =============================
-export Nx=$((2**4))
-export Ny=$((2**4))
-# export Nx=550
-# export Ny=550
+# export Nx=$((2**8))
+# export Ny=$((2**8))
+export Nx=550
+export Ny=550
 export Nz=1                    # 1 for 2D
 
 export Lx=1.0
@@ -33,27 +33,27 @@ export Lz=2.02e-4              # only used if dim=3
 # =============================
 # 🔹 Boundary Conditions
 # =============================
-# export FLUX_BOTTOM=-0.1
+export FLUX_BOTTOM=-0.1
 export TEMP_TOP=$((273.15-30))
 
-export FLUX_BOTTOM=1.0
-export TEMP_TOP=$((273.15-4))
+# export FLUX_BOTTOM=1.0
+# export TEMP_TOP=$((273.15-4))
 
 # =============================
 # 🔹 Interface Width Calculation
 # =============================
-export eps=$(awk "BEGIN {print (($Lx/$Nx < $Ly/$Ny) ? $Lx/$Nx : $Ly/$Ny)}")
+# export eps=$(awk "BEGIN {print (($Lx/$Nx < $Ly/$Ny) ? $Lx/$Nx : $Ly/$Ny)}")
 # export eps=9.09629658751972e-04
-# export eps=1e-4
+export eps=1e-4
 export dim=2                   # 2 for 2D, 3 for 3D
 
 # =============================
 # 🔹 Initial Conditions
 # =============================
 # INIT_MODE can be "circle", "layered", or a path to .dat
-INIT_MODE="layered"
+# INIT_MODE="layered"
 # INIT_MODE="circle"
-# INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat"
+INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat"
 
 # =============================
 # 🔹 Output Settings
