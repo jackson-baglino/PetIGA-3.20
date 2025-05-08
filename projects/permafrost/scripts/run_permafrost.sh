@@ -69,12 +69,12 @@ set_parameters() {
     cp "$inputFile" "$folder"
     echo "Selected input file: $inputFile"
 
-    Lx=1.0e-03
-    Ly=1.0e-03
-    Lz=1.0e-03
-    Nx=550
-    Ny=550
-    Nz=550
+    Lx=0.5e-03
+    Ly=0.5e-03
+    Lz=0.5e-03
+    Nx=275
+    Ny=275
+    Nz=275
     eps=9.09629658751972e-07
 
     export folder inputFile title Lx Ly Lz Nx Ny Nz delt_t t_final n_out \
@@ -179,7 +179,7 @@ if [[ $# -gt 0 && $1 == "debug" ]]; then
 fi
 
 delt_t=1.0e-4
-t_final=2*24*60*60
+t_final=10*$delt_t # 4*7*24*60*60
 n_out=100
 t_final=$(echo "$t_final" | bc -l)
 
@@ -191,7 +191,7 @@ fi
 humidity=0.70
 temp=-20.0
 grad_temp0X=0.0
-grad_temp0Y=0.1
+grad_temp0Y=3.0
 grad_temp0Z=0.0
 dim=2
 filename="circle_data.csv"
