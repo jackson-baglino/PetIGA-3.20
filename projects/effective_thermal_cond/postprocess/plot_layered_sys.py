@@ -25,7 +25,7 @@ Nx, Ny = N + 1, N + 1
 # -------------------------------------
 plot_profile_flag     = 1
 plot_raw_curve        = 1
-plot_analytical_curve = 1
+plot_analytical_curve = 0
 plot_fitted_curve     = 0   # enable piecewise linear fit overlay
 
 legend_outside        = 0  # Set to False to keep legend inside plot

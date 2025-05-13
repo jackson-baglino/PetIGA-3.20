@@ -370,7 +370,7 @@ echo "Starting NASAv2 simulation workflow"
 echo " "
 
 delt_t=1.0e-4
-t_final=0.0 # 48*60*60
+t_final=12*60*60
 n_out=10 #100
 t_final=$(echo "$t_final" | bc -l)
 humidity=0.70
@@ -382,7 +382,7 @@ dim=2
 # filename="grainReadFile-2_Molaro.dat"
 # filename="circle_data.csv"
 filename="circle_data.csv" # Note: Right now, the code is set to create random grains. We are just using the 10_s1-10.dat file for the domain size.
-title="FreshOverSintered_2D_"
+title="CourseOverfine_2D_"
 # title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
 
 # initial_geom="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/FreshOverSintered_2D_2025-04-11__09.56.59/sol_02474.dat"

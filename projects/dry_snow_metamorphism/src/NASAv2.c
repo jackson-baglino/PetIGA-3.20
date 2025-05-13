@@ -70,8 +70,8 @@ int main(int argc, char *argv[]) {
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 
-  user.NCice      = 200; //less than 200, otherwise update in user
-  user.RCice      = 0.3e-4;
+  user.NCice      = 140; //less than 200, otherwise update in user
+  user.RCice      = 0.9e-4;
   user.RCice_dev  = 0.55;
 
   //boundary conditions

@@ -27,7 +27,9 @@
 # ----------------------------------------------------------------------------
 # List of executables to build
 # ----------------------------------------------------------------------------
-TARGETS = effective_k_ice effective_k_ice_full
+TARGETS = effective_k_ice \
+					effective_k_ice_full \
+					effective_k_ice_homog
 
 all: $(TARGETS)
 .PHONY: all
@@ -88,7 +90,8 @@ SRCS         := $(wildcard src/*.c)
 # ----------------------------------------------------------------------------
 # Exclude the two main programs from the common object list
 SRCS_COMMON  := $(filter-out src/effective_k_ice.c  \
-                             src/effective_k_ice_full.c, $(SRCS))
+                             src/effective_k_ice_full.c \
+														 src/effective_k_ice_homog.c, $(SRCS))
 OBJS_COMMON  := $(patsubst src/%.c, obj/%.o, $(SRCS_COMMON))
 
 # ----------------------------------------------------------------------------
@@ -97,6 +100,7 @@ OBJS_COMMON  := $(patsubst src/%.c, obj/%.o, $(SRCS_COMMON))
 # Object files for each main program
 OBJ_MAIN_ICE := obj/effective_k_ice.o
 OBJ_MAIN_FULL := obj/effective_k_ice_full.o
+OBJ_MAIN_HOMOG := obj/effective_k_ice_homog.o
 
 OBJS_ICE     := $(OBJ_MAIN_ICE)   $(OBJS_COMMON)
 OBJS_FULL    := $(OBJ_MAIN_FULL)  # standalone, contains all code already
@@ -117,6 +121,9 @@ effective_k_ice:   $(OBJS_ICE)
 	$(CLINKER) -o $@ $^ $(PETIGA_LIB) $(PETSC_LIB)
 
 effective_k_ice_full: $(OBJS_FULL)
+	$(CLINKER) -o $@ $^ $(PETIGA_LIB) $(PETSC_LIB)
+
+effective_k_ice_homog: $(OBJ_MAIN_HOMOG)
 	$(CLINKER) -o $@ $^ $(PETIGA_LIB) $(PETSC_LIB)
 
 # ----------------------------------------------------------------------------
