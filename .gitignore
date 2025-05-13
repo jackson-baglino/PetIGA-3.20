@@ -71,6 +71,7 @@ projects/permafrost/outputs/*
 # Temporary files
 projects/effective_thermal_cond/effective_k_ice
 projects/effective_thermal_cond/effective_k_ice_full
+projects/effective_thermal_cond/effective_k_ice_homog
 projects/permafrost/permafrost
 projects/effective_thermal_cond/crash_log.txt
 projects/effective_thermal_cond/temperature.bin.info
