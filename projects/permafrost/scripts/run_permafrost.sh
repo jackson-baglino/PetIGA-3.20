@@ -179,7 +179,7 @@ if [[ $# -gt 0 && $1 == "debug" ]]; then
 fi
 
 delt_t=1.0e-4
-t_final=10*$delt_t # 4*7*24*60*60
+t_final=52*24*60*60
 n_out=100
 t_final=$(echo "$t_final" | bc -l)
 

@@ -11,6 +11,8 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   Mat A;
   Vec b;
   KSP ksp;
+  PC pc;
+
 
   PetscFunctionBegin;
 
@@ -32,13 +34,28 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   // Set initial condition for temperature field
   ierr = ComputeInitialCondition(user->T_sol, user); CHKERRQ(ierr);
 
-  // Solve the linear system using KSP
+ // Solve the linear system using KSP
   ierr = IGACreateKSP(iga, &ksp); CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp, A, A); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+  // Set solver tolerances
+  ierr = KSPSetTolerances(ksp, PETSC_SMALL, PETSC_SMALL, PETSC_DEFAULT, 4000); CHKERRQ(ierr); // rtol, abstol, dtol, maxits
   ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE); CHKERRQ(ierr);
-  ierr = KSPSolve(ksp, b, user->T_sol); CHKERRQ(ierr);
 
+  // Specify solver type (e.g., GMRES, CG, etc.)
+  ierr = KSPSetType(ksp, KSPGMRES); CHKERRQ(ierr); // Replace KSPGMRES with desired solver type
+
+  // Configure preconditioner
+  ierr = KSPGetPC(ksp, &pc); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCLU); CHKERRQ(ierr); // Use LU preconditioner
+
+#if defined(PETSC_HAVE_MUMPS)
+  if (size > 1) PetscCall(PCFactorSetMatSolverType(pc, MATSOLVERMUMPS));
+#endif
+  // ierr = PCFactorSetZeroPivot(pc, 1.0e-50); CHKERRQ(ierr);
+
+  // Solve the system
+  ierr = KSPSolve(ksp, b, user->T_sol); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD, "KSP solve complete.\n\n");
 
   // Clean up

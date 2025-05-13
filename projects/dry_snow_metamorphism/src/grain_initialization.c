@@ -638,7 +638,7 @@ static PetscErrorCode GenerateIceGrainsRandomly(IGA iga, AppCtx *user)
     return 0;
   }
 
-  PetscInt numb_clust = user->NCice, tot = 1000000;
+  PetscInt numb_clust = user->NCice, tot = 100000;
   PetscInt ii, jj, l, n_act = 0, flag, dim = user->dim, seed = 21;
 
   /* Temporary arrays to store grain data */
@@ -655,7 +655,13 @@ static PetscErrorCode GenerateIceGrainsRandomly(IGA iga, AppCtx *user)
   for (ii = 0; ii < tot * numb_clust; ii++) {
     ierr = PetscRandomGetValue(randcX, &xc[0]); CHKERRQ(ierr);
     ierr = PetscRandomGetValue(randcY, &xc[1]); CHKERRQ(ierr);
-    ierr = PetscRandomGetValue(randcR, &rc); CHKERRQ(ierr);
+
+    if (xc[1] < user->Ly / 2.0) {
+      ierr = PetscRandomGetValue(randcR, &rc); CHKERRQ(ierr);
+      rc = rc / 2.0;
+    } else {
+      ierr = PetscRandomGetValue(randcR, &rc); CHKERRQ(ierr);
+    }
     if (dim == 3) {
       ierr = PetscRandomGetValue(randcZ, &xc[2]); CHKERRQ(ierr);
     }

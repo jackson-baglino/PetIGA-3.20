@@ -53,7 +53,9 @@ export dim=2                   # 2 for 2D, 3 for 3D
 # INIT_MODE can be "circle", "layered", or a path to .dat
 # INIT_MODE="layered"
 # INIT_MODE="circle"
-INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat"
+# INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat"
+# export INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/NASAv2_10G_2D_T-20.0_hum0.70_2025-03-13__14.20.59/sol_00444.dat"
+export INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/CourseOverfine_2D_2025-05-09__11.56.18/sol_00258.dat"
 
 # =============================
 # 🔹 Output Settings

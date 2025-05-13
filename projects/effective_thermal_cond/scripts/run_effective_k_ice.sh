@@ -29,7 +29,7 @@ export Lz=2.02e-4              # Only used in 3D mode
 # =============================
 # 🔹 Boundary Conditions
 # =============================
-export FLUX_BOTTOM=$((1.0))
+export FLUX_BOTTOM=$((-1.0))
 export TEMP_TOP=$((273.15-30))
 
 # =============================

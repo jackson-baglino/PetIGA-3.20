@@ -344,7 +344,9 @@ PetscErrorCode FormInitialCondition(AppCtx *user)
   } else {
     // NEEDS TO BE CORRECTED!
     PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from file: %s\n", user->init_mode);
-    const char *iga_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/igasol.dat";
+    // const char *iga_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/igasol.dat";
+    // const char *iga_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/NASAv2_10G_2D_T-20.0_hum0.70_2025-03-13__14.20.59/igasol.dat";
+    const char *iga_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/CourseOverfine_2D_2025-05-09__11.56.18/igasol.dat";
     PetscPrintf(PETSC_COMM_WORLD, "[WARNING] May need to update path to IGA object.\n");
     PetscPrintf(PETSC_COMM_WORLD, "Reading solution vector from file: %s\n", iga_file);
 
@@ -660,18 +662,18 @@ PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user) {
   ierr = VecGetArray(T, &T_array); CHKERRQ(ierr);
 
   PetscInt Nx = user->Nx, Ny = user->Ny;
-  PetscReal Ly = user->Ly;
+  // PetscReal Ly = user->Ly;
   PetscReal T_top = user->T_top;
-  PetscReal q_bottom = user->q_bottom;
-  PetscReal k_eff = 0.5 * (user->thcond_ice + user->thcond_air);
+  // PetscReal q_bottom = user->q_bottom;
+  // PetscReal k_eff = 0.5 * (user->thcond_ice + user->thcond_air);
 
   for (PetscInt j = 0; j <= Ny; j++) {
-    PetscReal y = (PetscReal)j * Ly / (PetscReal)Ny;
-    PetscReal T_init = T_top - (q_bottom / k_eff) * (Ly - y);
+    // PetscReal y = (PetscReal)j * Ly / (PetscReal)Ny;
+    // PetscReal T_init = T_top - (q_bottom / k_eff) * (Ly - y);
     for (PetscInt i = 0; i <= Nx; i++) {
       PetscInt idx = j * (Nx + 1) + i;
       // T_array[idx] = T_init;
-      T_array[idx] = 240.15;
+      T_array[idx] = T_top;
     }
   }
 
@@ -707,18 +709,14 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   ierr = ComputeInitialCondition(user->T_sol, user); CHKERRQ(ierr);
   // VecZeroEntries(user->T_sol);
 
-  /* Change solver type to direct solver */
-
   // Solve the linear system using KSP
   ierr = IGACreateKSP(iga, &ksp); CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp, A, A); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+
   // Set solver tolerances
   ierr = KSPSetTolerances(ksp, PETSC_SMALL, PETSC_SMALL, PETSC_DEFAULT, 4000); CHKERRQ(ierr); // rtol, abstol, dtol, maxits
   ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE); CHKERRQ(ierr);
-
-  // Specify solver type (e.g., GMRES, CG, etc.)
-  ierr = KSPSetType(ksp, KSPGMRES); CHKERRQ(ierr); // Replace KSPGMRES with desired solver type
 
   // Configure preconditioner
   ierr = KSPGetPC(ksp, &pc); CHKERRQ(ierr);
@@ -727,7 +725,6 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
 #if defined(PETSC_HAVE_MUMPS)
   if (size > 1) PetscCall(PCFactorSetMatSolverType(pc, MATSOLVERMUMPS));
 #endif
-  // ierr = PCFactorSetZeroPivot(pc, 1.0e-50); CHKERRQ(ierr);
 
   // Solve the system
   ierr = KSPSolve(ksp, b, user->T_sol); CHKERRQ(ierr);
@@ -783,7 +780,7 @@ PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
   PetscErrorCode ierr;
   IGAElement element;
   IGAPoint point;
-  PetscInt indGP, idx = 0; 
+  PetscInt indGP; 
   PetscReal ice_val;
 
   file = fopen(filename, "w");
@@ -797,10 +794,7 @@ PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
       while (IGAElementNextPoint(element, point)) {
         indGP = point->index + point->count * point->parent->index;
 
-        // ice_val = user->ice[indGP];
-        ice_val = user->ice[idx];
-        idx++;
-
+        ice_val = user->ice[indGP];
         fprintf(file, "%g %g %g %g\n", point->mapX[0][0], point->mapX[0][1], point->mapX[0][2], ice_val);
 
         // user->ice[indGP] = 1.0;
