@@ -100,7 +100,7 @@ run_simulation() {
         echo "Launching MPI under gdb..."
         mpiexec -n 1 xterm -e gdb --args ./permafrost -initial_PFgeom -temp_initial
     else
-        mpiexec -np 12 ./permafrost -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
+        mpiexec -np 8 ./permafrost -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
         -snes_stol 1e-6 -snes_max_it 7 -ksp_gmres_restart 150 -ksp_max_it 1000 \
         -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
         -snes_linesearch_type basic | tee "$folder/outp.txt"
@@ -179,7 +179,7 @@ if [[ $# -gt 0 && $1 == "debug" ]]; then
 fi
 
 delt_t=1.0e-4
-t_final=52*24*60*60
+t_final=100*24*60*60
 n_out=100
 t_final=$(echo "$t_final" | bc -l)
 

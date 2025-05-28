@@ -9,7 +9,7 @@ The binary file contains 2·Nx·Ny float64 values (big‑endian):
 
 Usage
 -----
-    python plot_vector_field.py  <output_folder>  [Nx] [Ny]
+    python plot_vector_field.py  <output_folder>  [Nx] [Ny] [Lx] [Ly]
 
 If Nx,Ny are omitted the script assumes N=32 → Nx=Ny=32.
 """
@@ -122,14 +122,16 @@ def compute_keff(tx, ty, ice, Lx=1.0, Ly=1.0, order=4):
 # ---------- main ---------------------------------------------------
 def main():
     if len(sys.argv) < 2:
-        sys.exit("Usage: python plot_vector_field.py <folder> [Nx] [Ny]")
+        sys.exit("Usage: python plot_vector_field.py <folder> [Nx] [Ny] [Lx] [Ly]")
 
     folder = sys.argv[1]
     Nx = int(sys.argv[2]) if len(sys.argv) > 2 else 32
     Ny = int(sys.argv[3]) if len(sys.argv) > 3 else Nx
+    Lx = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
+    Ly = float(sys.argv[5]) if len(sys.argv) > 5 else 1.0
 
     base = f"./outputs/homog/{folder}"
-    binfile = os.path.join(base, "temperature.dat")
+    binfile = os.path.join(base, "t_vec.dat")
     if not os.path.isfile(binfile):
         sys.exit(f"{binfile} not found")
 
@@ -151,26 +153,26 @@ def main():
 
     # save images
     os.makedirs(os.path.join(base, "plots"), exist_ok=True)
-    imsave(t_x, os.path.join(base, "plots", "t_x.svg"))
-    imsave(t_y, os.path.join(base, "plots", "t_y.svg"))
+    imsave(t_x, os.path.join(base, "plots", "t_x.svg"), Lx, Ly)
+    imsave(t_y, os.path.join(base, "plots", "t_y.svg"), Lx, Ly)
 
     # --- optional ice field -------------------------------------------------
     icefile = os.path.join(base, "ice_data.dat")
     if os.path.isfile(icefile):
         ice_svg = os.path.join(base, "plots", "ice_field.svg")
-        plot_ice_field(icefile, Nx, Ny, ice_svg)
+        plot_ice_field(icefile, Nx, Ny, ice_svg, Lx, Ly)
 
     if os.path.isfile(icefile):
         ice_grid = np.loadtxt(icefile)[:,-1]    # quick 1‑D read
         # Re‑interpolate to grid matching t_x
         x_pts = np.loadtxt(icefile)[:,0]
         y_pts = np.loadtxt(icefile)[:,1]
-        grid_x = np.linspace(0, 1.0, Nx, endpoint=True)
-        grid_y = np.linspace(0, 1.0, Ny, endpoint=True)
+        grid_x = np.linspace(0, Lx, Nx, endpoint=True)
+        grid_y = np.linspace(0, Ly, Ny, endpoint=True)
         grid_X, grid_Y = np.meshgrid(grid_x, grid_y)
         ice_grid = griddata((x_pts, y_pts), ice_grid, (grid_X, grid_Y),
                             method='linear', fill_value=0.0)
-        kxx, kyy = compute_keff(t_x, t_y, ice_grid)
+        kxx, kyy = compute_keff(t_x, t_y, ice_grid, Lx, Ly)
         print(f"Estimated k_eff_xx = {float(kxx):.6f}, k_eff_yy = {float(kyy):.6f}")
     else:
         print("No ice_data.dat — k_eff not computed.")

@@ -242,13 +242,15 @@ PetscErrorCode ComputeCircleIceField(AppCtx *user) {
   PetscInt idx = 0;
 
   /* Four grains, one in each quadrant */
-  enum {NUM_GRAINS = 4};
+  enum {NUM_GRAINS = 1};
   PetscInt  grainID;
   // const PetscReal centX[NUM_GRAINS] = {user->Lx/2, user->Lx/2};
   // const PetscReal centY[NUM_GRAINS] = {0.0,        user->Ly};
-  const PetscReal centX[NUM_GRAINS] = {0.0,        0.0,        user->Lx, user->Lx};
-  const PetscReal centY[NUM_GRAINS] = {0.0,        user->Ly,   0.0,      user->Ly};
-  PetscReal radius = PetscMin(user->Lx / 6.0, user->Ly / 6.0);
+  // const PetscReal centX[NUM_GRAINS] = {0.0,        0.0,        user->Lx, user->Lx};
+  // const PetscReal centY[NUM_GRAINS] = {0.0,        user->Ly,   0.0,      user->Ly};
+  const PetscReal centX[NUM_GRAINS] = {user->Lx / 2.0};
+  const PetscReal centY[NUM_GRAINS] = {user->Ly / 2.0};
+  PetscReal radius = PetscMin(user->Lx / 16.0, user->Ly / 16.0);
   // PetscReal radius = user->Ly*0.6;/
 
   // Allocate memory for user->ice (if not already allocated)
@@ -291,7 +293,7 @@ PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
 
   IGAElement element;
   IGAPoint point;
-  // PetscReal dist;
+  PetscReal dist;
   PetscInt indGP;
   PetscInt counts = 0;
 
@@ -311,7 +313,7 @@ PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
 
         // user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
         // user->ice[indGP] = PetscMax(0.0, PetscMin(1.0, user->ice[indGP]));   
-        user->ice[indGP] = 1.0; // Initialize to ice
+        user->ice[indGP] = 0.5 + 0.5 * cos(2*M_PI*point->mapX[0][1]/(user->Ly/2)); // Assign ice phase value
 
         counts++;
 
@@ -856,6 +858,10 @@ PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
         ice_val = user->ice[indGP];
         fprintf(file, "%g %g %g %g\n", point->mapX[0][0], point->mapX[0][1], point->mapX[0][2], ice_val);
 
+        if (point->atboundary) {
+          PetscPrintf(PETSC_COMM_WORLD, "Warning: Gauss point %d is at the boundary!\n", indGP);
+        }
+
         // user->ice[indGP] = 1.0;
       }
       ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
@@ -950,7 +956,7 @@ int main (int argc, char *argv[]) {
   /* Compute homogenized effective thermal conductivity*/
 
   /* ------------------ Write Output ------------------ */
-  ierr = WriteOutput(&user, user.T_sol, "temperature.dat"); CHKERRQ(ierr); // Write the solution to file
+  ierr = WriteOutput(&user, user.T_sol, "t_vec.dat"); CHKERRQ(ierr); // Write the solution to file
   ierr = WriteIceFieldToFile("ice_data.dat", &user); CHKERRQ(ierr); // Write the ice field to a .dat file
 
   /* ------------------ Clean Up ------------------ */
