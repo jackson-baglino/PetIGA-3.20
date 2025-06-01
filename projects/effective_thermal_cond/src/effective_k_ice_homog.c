@@ -594,7 +594,7 @@ PetscErrorCode SetupIGA(AppCtx *user, IGA *iga) {
 
   /* Write IGA object to file */
   char filename[256];
-  sprintf(filename, "./igaice.dat");
+  sprintf(filename, "%s/igaice.dat", user->output_dir);
   ierr=IGAWrite(*iga,filename);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -1099,11 +1099,15 @@ int main (int argc, char *argv[]) {
     /* ------------------ Write Output ------------------ */
     if (rank == 0) {
       // Write the solution vector to a file
-      ierr = WriteOutput(&user, user.T_sol, "t_vec.dat"); CHKERRQ(ierr);
+      char t_vec_file[PETSC_MAX_PATH_LEN];
+      sprintf(t_vec_file, "%s/t_vec.dat", user.output_dir);
+      ierr = WriteOutput(&user, user.T_sol, t_vec_file); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote solution vector to t_vec.dat\n");
 
       // Write ice field to file
-      ierr = WriteIceFieldToFile("ice_data.dat", &user); CHKERRQ(ierr);
+      char iceFile[PETSC_MAX_PATH_LEN];
+      sprintf(iceFile, "%s/ice_data.dat", user.output_dir);
+      ierr = WriteIceFieldToFile(iceFile, &user); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote ice field to ice_data.dat\n");
 
       // Write the effective thermal conductivity to a CSV file
@@ -1201,14 +1205,14 @@ int main (int argc, char *argv[]) {
       if (rank == 0) {
         // Write the solution vector to a file
         char t_vec_file[PETSC_MAX_PATH_LEN];
-        sprintf(t_vec_file, "%s/t_vec.dat", user.output_dir, user.sol_index);
-        ierr = WriteOutput(&user, user.T_sol, "t_vec.dat"); CHKERRQ(ierr);
+        sprintf(t_vec_file, "%s/t_vec.dat", user.output_dir);
+        ierr = WriteOutput(&user, user.T_sol, t_vec_file); CHKERRQ(ierr);
         PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote solution vector to t_vec.dat\n");
 
         // Write ice field to file
         char iceFile[PETSC_MAX_PATH_LEN];
         sprintf(iceFile, "%s/ice_data.dat", user.output_dir);
-        ierr = WriteIceFieldToFile("ice_data.dat", &user); CHKERRQ(ierr);
+        ierr = WriteIceFieldToFile(iceFile, &user); CHKERRQ(ierr);
         PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote ice field to ice_data.dat\n");
 
         // Write the effective thermal conductivity to a CSV file
