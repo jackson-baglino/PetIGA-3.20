@@ -4,8 +4,12 @@
 #include <math.h>
 #include <mpi.h>
 
+#include <sys/stat.h>  // For file existence checking
 #include <petscsys.h>
 #include <petscviewer.h>
+
+#include <regex.h>   // POSIX regex for matching filenames
+#include <stdlib.h>  // qsort
 
 #include <dirent.h>
 #include <string.h>
@@ -56,6 +60,8 @@ typedef struct {
 
   // **Output options**
   PetscBool outputBinary; // Flag for binary output
+  PetscInt sol_index; // -1 means loop over all, otherwise specific index
+  const char *output_dir; // Directory for output files
 
 } AppCtx;
 
@@ -98,6 +104,10 @@ void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar *cond, PetscScalar *
 
     if (cond)       (*cond)      = ice * cond_ice + air * cond_air;
     if (dcond_ice)  (*dcond_ice) = cond_ice * dice - cond_air * dair;
+
+    // if (*cond > cond_ice - 0.1) {
+    //   PetscPrintf(PETSC_COMM_WORLD, "ice = %g, thcond = %g \n", ice, *cond);
+    // }
 
     return;
 }
@@ -151,8 +161,6 @@ PetscErrorCode EvaluateFieldAtGaussPoints(AppCtx *user, IGA iga, Vec vec_phase) 
   ierr = IGAEndElement(iga, &element); CHKERRQ(ierr);
 
   ierr = IGARestoreLocalVecArray(iga, vec_phase, &localU, &arrayU); CHKERRQ(ierr);
-
-  PetscPrintf(PETSC_COMM_WORLD, "✅ Gauss point ice field computed with %d values.\n", idx);
 
   PetscFunctionReturn(0);
 }
@@ -313,11 +321,10 @@ PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
         indGP = point->index + point->count * point->parent->index;
 
         // Find distance from the center of the domain--above midline is air, below is ice
-        // dist = point->mapX[0][1] - user->Ly / 2.0;
+        dist = point->mapX[0][1] - user->Ly / 2.0;
 
-        // user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
-        // user->ice[indGP] = PetscMax(0.0, PetscMin(1.0, user->ice[indGP]));   
-        user->ice[indGP] = 0.5 + 0.5 * cos(2*M_PI*point->mapX[0][1]/(user->Ly/2)); // Assign ice phase value
+        user->ice[indGP] = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
+        user->ice[indGP] = PetscMax(0.0, PetscMin(1.0, user->ice[indGP]));   
 
         counts++;
 
@@ -336,19 +343,15 @@ PetscErrorCode ComputeLayeredIceField(AppCtx *user) {
 }
 
 /*-----------------------------------------------------------
-   Function: FormInitialCondition
-   Purpose:  Determines the initialization mode and calls the
-             appropriate helper function:
-               - "circle": Calls ComputeCircleIceField.
-               - "layered": Calls ComputeLayeredIceField.
-               - Otherwise: Assumes user->init_mode is a file path (nodal data),
-                 reads raw nodal data using ReadInputFile, and then interpolates
-                 these nodal values onto the integration (Gauss) points using
-                 the element’s shape functions.
-   Parameters:
-     - user: Pointer to the AppCtx structure.
-   Returns:
-     - PetscErrorCode (0 on success).
+  Function: FormInitialCondition
+  Purpose : Initializes the ice field in user->ice according to the mode specified in user->init_mode.
+         - "circle"  : Calls ComputeCircleIceField to generate a circular grain.
+         - "layered" : Calls ComputeLayeredIceField for a vertical layer profile.
+         - Otherwise : Assumes file-based initialization, reads solution from files in user->init_dir.
+  Parameters:
+    - user: Pointer to the AppCtx structure.
+  Returns:
+    - PetscErrorCode (0 on success).
 -----------------------------------------------------------*/
 PetscErrorCode FormInitialCondition(AppCtx *user)
 {
@@ -356,19 +359,25 @@ PetscErrorCode FormInitialCondition(AppCtx *user)
   PetscErrorCode ierr;
 
   if (strcmp(user->init_mode, "circle") == 0) {
-    ierr = ComputeCircleIceField(user); CHKERRQ(ierr);
+   // Generate a circular grain ice field
+   ierr = ComputeCircleIceField(user); CHKERRQ(ierr);
   } else if (strcmp(user->init_mode, "layered") == 0) {
-    ierr = ComputeLayeredIceField(user); CHKERRQ(ierr);
+   // Generate a layered (vertical) ice field
+   ierr = ComputeLayeredIceField(user); CHKERRQ(ierr);
   } else {
-    // NEEDS TO BE CORRECTED!
-    PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from file: %s\n", user->init_mode);
-    char iga_file[PETSC_MAX_PATH_LEN];
-    sprintf(iga_file, "%s/igasol.dat", user->init_dir);
-    PetscPrintf(PETSC_COMM_WORLD, "[WARNING] May need to update path to IGA object.\n");
-    PetscPrintf(PETSC_COMM_WORLD, "Reading solution vector from file: %s\n", iga_file);
+   // File-based initialization: read IGA and solution vector from files
+   char iga_file[PETSC_MAX_PATH_LEN];
+   char sol_file[PETSC_MAX_PATH_LEN];
 
-    // const char *vec_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat";
-    ierr = ReadSolutionVec(iga_file, user->init_mode, &user->iga_input, user); CHKERRQ(ierr);
+   // Construct file paths for IGA and solution vector
+   snprintf(iga_file, sizeof(iga_file), "%s/igasol.dat", user->init_dir);
+   snprintf(sol_file, sizeof(sol_file), "%s/sol_%05d.dat", user->init_dir, user->sol_index);
+
+   PetscPrintf(PETSC_COMM_WORLD, "Reading IGA from file: %s\n", iga_file);
+   PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from file: %s\n", sol_file);
+
+   // Read the solution vector and evaluate the field at Gauss points
+   ierr = ReadSolutionVec(iga_file, sol_file, &user->iga_input, user); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
@@ -412,8 +421,6 @@ void ParseDomainAndMesh(AppCtx *user, char *endptr) {
   user->Lx  = strtod(getenv("Lx"), &endptr);
   user->Ly  = strtod(getenv("Ly"), &endptr);
   user->Lz  = strtod(getenv("Lz"), &endptr);
-
-  PetscPrintf(PETSC_COMM_WORLD, "Domain: Lx = %g, Ly = %g, Lz = %g\n\n", user->Lx, user->Ly, user->Lz);
 }
 
 /*------------------------------------------------------------------------------
@@ -442,7 +449,6 @@ PetscErrorCode ParseBoundaryConditions(AppCtx *user, char *endptr) {
 
   if (temp_top_str) {
       user->T_top = strtod(temp_top_str, &endptr);
-      PetscPrintf(PETSC_COMM_WORLD, "Top boundary temperature: %g K\n\n", user->T_top);
   } else {
       PetscPrintf(PETSC_COMM_WORLD, "❌ Error: TEMP_TOP is required.\n");
       PetscFinalize();
@@ -451,7 +457,6 @@ PetscErrorCode ParseBoundaryConditions(AppCtx *user, char *endptr) {
 
   if (flux_bottom_str) {
       user->q_bottom = strtod(flux_bottom_str, &endptr);
-      PetscPrintf(PETSC_COMM_WORLD, "Bottom boundary flux: %g W/m²·K\n\n", user->q_bottom);
   } else {
       PetscPrintf(PETSC_COMM_WORLD, "❌ Error: FLUX_BOTTOM is required.\n");
       PetscFinalize();
@@ -489,18 +494,19 @@ PetscErrorCode GetEnvironment(AppCtx *user) {
   user->Ly  = strtod(getenv("Ly"), &endptr);
   user->Lz  = strtod(getenv("Lz"), &endptr);
 
-  PetscPrintf(PETSC_COMM_WORLD, "Domain: Lx = %g, Ly = %g, Lz = %g\n\n", user->Lx, user->Ly, user->Lz);
-
   user->eps           = strtod(getenv("eps"), &endptr);
 
   user->outputBinary = (PetscBool)strtol(getenv("OUTPUT_BINARY"), &endptr, 10);
+  user->sol_index = (PetscInt)strtol(getenv("SOL_INDEX"), &endptr, 10);
 
   const char *temp_top_str    = getenv("TEMP_TOP");
   const char *flux_bottom_str = getenv("FLUX_BOTTOM");
 
+  const char *output_dir_str = getenv("OUTPUT_DIR");
+  user->output_dir = output_dir_str;
+
   if (temp_top_str) {
       user->T_top = strtod(temp_top_str, &endptr);
-      PetscPrintf(PETSC_COMM_WORLD, "Top boundary temperature: %g K\n\n", user->T_top);
   } else {
       PetscPrintf(PETSC_COMM_WORLD, "❌ Error: TEMP_TOP is required.\n");
       PetscFinalize();
@@ -509,7 +515,6 @@ PetscErrorCode GetEnvironment(AppCtx *user) {
 
   if (flux_bottom_str) {
       user->q_bottom = strtod(flux_bottom_str, &endptr);
-      PetscPrintf(PETSC_COMM_WORLD, "Bottom boundary flux: %g W/m²·K\n\n", user->q_bottom);
   } else {
       PetscPrintf(PETSC_COMM_WORLD, "❌ Error: FLUX_BOTTOM is required.\n");
       PetscFinalize();
@@ -542,8 +547,6 @@ void InitializeUserContext(AppCtx *user) {
   // Discretization order and continuity
   user->p = 1; // Polynomial order
   user->C = 0; // Inter-element continuity
-
-  PetscPrintf(PETSC_COMM_WORLD, "User context initialized.\n\n");
 }
 
 /*------------------------------------------------------------------------------
@@ -897,11 +900,122 @@ PetscErrorCode WriteOutput(AppCtx *user, Vec x, const char *filename) {
   PetscFunctionBegin;
 
   if (user->outputBinary) {
-    PetscPrintf(PETSC_COMM_WORLD, "Writing binary output...\n\n");
     ierr = VecAssemblyBegin(x); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(x); CHKERRQ(ierr);
     ierr = WriteBinaryFile(x, filename); CHKERRQ(ierr);
   }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ComputeKeffIntegrand(IGAPoint p, const PetscScalar *U,
+                                    PetscInt n, PetscScalar *S, void *ctx)
+{
+  PetscFunctionBegin;
+
+  // Define user context and retrieve necessary variables
+  AppCtx *user = (AppCtx *)ctx;
+
+  // Initialize variables
+  PetscInt       i, j;             // Loop indices
+  PetscReal      Iij;              // Identity delta
+  PetscReal      dV;               // Differential volume
+
+  PetscInt       dim = user->dim;  // Problem dimension (2 or 3)
+  PetscReal      grad_t[dim][dim]; // ∇t: dim x dim
+
+  // PetscInt       indGP = p->index + p->count * p->parent->index; // Gauss point index
+  PetscReal      thcond; // Thermal conductivity
+
+  // Safety chck
+  if (!p->atboundary) {
+    // U has dim components at each point
+    // Compute the gradient of t vector field
+    IGAPointFormGrad(p, U, &grad_t[0][0]);
+
+    // Get the index of the Gauss point and thermal conductivity
+    PetscInt indGP = p->index + p->count * p->parent->index;
+    PetscReal ice = user->ice[indGP];
+    ThermalCond(user, ice, &thcond, NULL);
+
+    // Compute the differential volume
+    dV = *(p->weight) * (*(p->detX));
+
+    // Compute the integrand for the effective thermal conductivity
+    if (user->dim == 2) {
+      for (i = 0; i < dim; i++) {
+        for (j = 0; j < dim; j++) {
+          Iij = (i == j) ? 1.0 : 0.0; // Identity delta
+          S[i * dim + j] += (thcond * (grad_t[i][j] + Iij) * dV) / (user->Lx * user->Ly);
+        }
+      }
+    } else if (user->dim == 3) {
+      for (i = 0; i < dim; i++) {
+        for (j = 0; j < dim; j++) {
+          Iij = (i == j) ? 1.0 : 0.0; // Identity delta
+          S[i * dim + j] += (thcond * (grad_t[i][j] + Iij) * dV) / (user->Lx * user->Ly * user->Lz);
+        }
+      }
+    } else {
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Invalid dimension: %d", user->dim);
+    }
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ComputeKeffective(IGA iga, Vec t_vec, PetscReal *keff, AppCtx *user)
+{
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  PetscInt dim = user->dim;
+  
+  // Initialize keff to zero
+  ierr = PetscMemzero(keff, sizeof(PetscReal) * dim * dim); CHKERRQ(ierr);
+
+  // Call IGAComputeScalar to integrate
+  PetscPrintf(PETSC_COMM_WORLD, "Computing effective thermal conductivity...\n");
+  ierr = IGAComputeScalar(iga, t_vec, dim * dim, keff, ComputeKeffIntegrand, (void*)user); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+// Helper to check if a file exists
+PetscBool file_exists(const char *filename)
+{
+  struct stat buffer;
+  return (stat(filename, &buffer) == 0) ? PETSC_TRUE : PETSC_FALSE;
+}
+
+// Write keff to CSV, add header if file doesn't exist
+PetscErrorCode WriteKeffToCSV(const char *filename, PetscInt dim, const PetscReal *keff)
+{
+  PetscFunctionBegin;
+  FILE *fp;
+  PetscBool exists = file_exists(filename);
+
+  // Open file in append mode
+  fp = fopen(filename, "a");
+  if (!fp) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Cannot open file: %s", filename);
+
+  // If file didn't exist, write header
+  if (!exists) {
+    for (PetscInt i = 0; i < dim; i++) {
+      for (PetscInt j = 0; j < dim; j++) {
+        if (i > 0 || j > 0) fprintf(fp, ","); // Commas between columns
+        fprintf(fp, "k_%d%d", i, j); // Column names: k_00, k_01, ..., k_22
+      }
+    }
+    fprintf(fp, "\n");
+  }
+
+  // Write keff matrix entries row-major
+  for (PetscInt i = 0; i < dim * dim; i++) {
+    if (i > 0) fprintf(fp, ","); // Commas between columns
+    fprintf(fp, "%.12e", keff[i]);
+  }
+
+  fprintf(fp, "\n"); // End of line
+  fclose(fp);
   PetscFunctionReturn(0);
 }
 
@@ -915,9 +1029,10 @@ int main (int argc, char *argv[]) {
   /* ------------------ Initialize PETSc ------------------ */
   ierr = PetscInitialize(&argc, &argv, NULL, NULL); CHKERRQ(ierr);
 
+  PetscMPIInt rank;
+  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
   /* ------------------ Set options ------------------ */
-  // Look into all of these options. See if there are other options that can be set.
-  // These options are set in the command line when running the program.
   PetscBool print_error = PETSC_TRUE;
   PetscBool check_error = PETSC_FALSE;
   PetscBool save = PETSC_FALSE;
@@ -933,46 +1048,187 @@ int main (int argc, char *argv[]) {
 
   /* ------------------ Read Environment Variables ------------------ */
   ierr = GetEnvironment(&user); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD, "Domain: Lx = %g, Ly = %g, Lz = %g\n\n", user.Lx, user.Ly, user.Lz);
+  PetscPrintf(PETSC_COMM_WORLD, "Domain: Lx = %g, Ly = %g, Lz = %g\n", user.Lx, user.Ly, user.Lz);
   PetscPrintf(PETSC_COMM_WORLD, "eps = %g\n", user.eps);
   PetscPrintf(PETSC_COMM_WORLD, "dim = %d\n", user.dim);
   PetscPrintf(PETSC_COMM_WORLD, "TEMP_TOP = %g\n", user.T_top);
   PetscPrintf(PETSC_COMM_WORLD, "FLUX_BOTTOM = %g\n", user.q_bottom);
 
-  /* ------------------ Define user context ------------------ */
-  InitializeUserContext(&user);
-  PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity ice = %g W/m·K\n", user.thcond_ice);
-  PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity air = %g W/m·K\n", user.thcond_air);
-  PetscPrintf(PETSC_COMM_WORLD, "Specific heat ice = %g J/kg·K\n", user.cp_ice);
-  PetscPrintf(PETSC_COMM_WORLD, "Specific heat air = %g J/kg·K\n", user.cp_air);
-  PetscPrintf(PETSC_COMM_WORLD, "Density ice = %g kg/m³\n", user.rho_ice);
-  PetscPrintf(PETSC_COMM_WORLD, "Density air = %g kg/m³\n", user.rho_air);
-  PetscPrintf(PETSC_COMM_WORLD, "User context initialized.\n\n");
+  // Initialize keff array
+  PetscReal keff[user.dim * user.dim];
+  ierr = PetscMemzero(keff, sizeof(PetscReal) * user.dim * user.dim); CHKERRQ(ierr);
 
-  /* ------------------ Initialize IGA ------------------ */
-  IGA iga;
-  ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
-  user.iga = iga;
+  // Check if sol_indx > 0
+  PetscPrintf(PETSC_COMM_WORLD, "SOL_INDEX = %d\n\n", user.sol_index);
+  if (user.sol_index > 0) {
+    /* ------------------ Define user context ------------------ */
+    InitializeUserContext(&user);
+    PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity ice = %g W/m·K\n", user.thcond_ice);
+    PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity air = %g W/m·K\n", user.thcond_air);
+    PetscPrintf(PETSC_COMM_WORLD, "Specific heat ice = %g J/kg·K\n", user.cp_ice);
+    PetscPrintf(PETSC_COMM_WORLD, "Specific heat air = %g J/kg·K\n", user.cp_air);
+    PetscPrintf(PETSC_COMM_WORLD, "Density ice = %g kg/m³\n", user.rho_ice);
+    PetscPrintf(PETSC_COMM_WORLD, "Density air = %g kg/m³\n", user.rho_air);
+    PetscPrintf(PETSC_COMM_WORLD, "User context initialized.\n\n");
 
-  /* ------------------ Initialize Field Variables ------------------ */
-  ierr = FormInitialCondition(&user); CHKERRQ(ierr); // Initialize the ice field
+    /* ------------------ Initialize IGA ------------------ */
+    IGA iga;
+    ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
+    user.iga = iga;
 
-  /* ------------------ Define Boundary Conditions ------------------ */
-  // Apply the boundary conditions
-  ierr = ApplyBoundaryConditions(iga, &user); CHKERRQ(ierr);
+    /* ------------------ Initialize Field Variables ------------------ */
+    ierr = FormInitialCondition(&user); CHKERRQ(ierr); // Initialize the ice field
 
-  /* ------------------ Set Up KSP Solver ------------------ */
-  // Creat KSP solver
-  ierr = SetupAndSolve(&user, iga); CHKERRQ(ierr);
+    /* ------------------ Define Boundary Conditions ------------------ */
+    // Apply the boundary conditions
+    ierr = ApplyBoundaryConditions(iga, &user); CHKERRQ(ierr);
 
-  /* ------------------ Write Output ------------------ */
-  ierr = WriteOutput(&user, user.T_sol, "t_vec.dat"); CHKERRQ(ierr); // Write the solution to file
-  ierr = WriteIceFieldToFile("ice_data.dat", &user); CHKERRQ(ierr); // Write the ice field to a .dat file
+    /* ------------------ Set Up KSP Solver ------------------ */
+    // Creat KSP solver
+    ierr = SetupAndSolve(&user, iga); CHKERRQ(ierr);
 
-  /* ------------------ Clean Up ------------------ */
-  ierr = IGADestroy(&iga); CHKERRQ(ierr);
-  ierr = PetscFree(user.ice); CHKERRQ(ierr);
+    /* ------------------ Compute Effective Thermal Conductivity ------------------ */
+    ierr = ComputeKeffective(iga, user.T_sol, keff, &user); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD, "Effective thermal conductivity computed:\n");
+    for (PetscInt i = 0; i < user.dim; i++) {
+      for (PetscInt j = 0; j < user.dim; j++) {
+        PetscPrintf(PETSC_COMM_WORLD, "k_eff[%d][%d] = %.12e\n", i, j, keff[i * user.dim + j]);
+      }
+    }
+
+    /* ------------------ Write Output ------------------ */
+    if (rank == 0) {
+      // Write the solution vector to a file
+      ierr = WriteOutput(&user, user.T_sol, "t_vec.dat"); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote solution vector to t_vec.dat\n");
+
+      // Write ice field to file
+      ierr = WriteIceFieldToFile("ice_data.dat", &user); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote ice field to ice_data.dat\n");
+
+      // Write the effective thermal conductivity to a CSV file
+      char csvFile[PETSC_MAX_PATH_LEN];
+      sprintf(csvFile, "%s/k_eff.csv", user.output_dir);
+      ierr = WriteKeffToCSV(csvFile, user.dim, keff); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD, "Effective thermal conductivity written to k_eff.csv\n");
+
+      PetscPrintf(PETSC_COMM_WORLD, "Wrote output files.\n\n");
+    }
+
+    /* ------------------ Clean Up ------------------ */
+    ierr = IGADestroy(&iga); CHKERRQ(ierr);
+    ierr = PetscFree(user.ice); CHKERRQ(ierr);
+    ierr = PetscFinalize(); CHKERRQ(ierr);
+  } else {
+    PetscPrintf(PETSC_COMM_WORLD, "SOL_INDEX < 0. Looping over entire solution folder.\n");
+
+    // Open the directory
+    DIR *dir;
+    struct dirent *entry;
+    dir = opendir(user.init_dir);
+    if (!dir) {
+      PetscPrintf(PETSC_COMM_WORLD, "Error opening directory: %s\n", user.init_dir);
+      PetscFinalize();
+      return EXIT_FAILURE;
+    }
+
+    // Create a dynamic array to store all file indices
+    PetscInt file_indices[10000]; // Adjust size as needed
+    PetscInt num_files = 0;
+
+    // Regex to match file names
+    regex_t regex;
+    regcomp(&regex, "^sol_([0-9]+)\\.dat$", REG_EXTENDED);
+
+    while ((entry = readdir(dir)) != NULL) {
+      // Check if the file name matches the regex
+      if (regexec(&regex, entry->d_name, 0, NULL, 0) == 0) {
+        // Extract the index from the file name
+        int index;
+        sscanf(entry->d_name, "sol_%05d.dat", &index);
+        file_indices[num_files++] = index; // Store the index
+      }
+    }
+    closedir(dir);
+    regfree(&regex); // Free the regex resources
+
+    // Sort the file indices
+    PetscSortInt(num_files, file_indices);
+    PetscPrintf(PETSC_COMM_WORLD, "Found %d solution files in directory %s\n\n", num_files, user.init_dir);
+
+    for (PetscInt i = 0; i < num_files; i++)
+    {
+      // Update sol_index
+      user.sol_index = file_indices[i];
+
+      PetscPrintf(PETSC_COMM_WORLD, "Processing sol_index = %05d\n\n", user.sol_index);
+
+      /* ------------------ Define user context ------------------ */
+      InitializeUserContext(&user);
+      PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity ice = %g W/m·K\n", user.thcond_ice);
+      PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity air = %g W/m·K\n", user.thcond_air);
+      PetscPrintf(PETSC_COMM_WORLD, "Specific heat ice = %g J/kg·K\n", user.cp_ice);
+      PetscPrintf(PETSC_COMM_WORLD, "Specific heat air = %g J/kg·K\n", user.cp_air);
+      PetscPrintf(PETSC_COMM_WORLD, "Density ice = %g kg/m³\n", user.rho_ice);
+      PetscPrintf(PETSC_COMM_WORLD, "Density air = %g kg/m³\n\n", user.rho_air);
+
+      /* ------------------ Initialize IGA ------------------ */
+      IGA iga;
+      ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
+      user.iga = iga;
+
+      /* ------------------ Initialize Field Variables ------------------ */
+      ierr = FormInitialCondition(&user); CHKERRQ(ierr); // Initialize the ice field
+
+      /* ------------------ Define Boundary Conditions ------------------ */
+      // Apply the boundary conditions
+      ierr = ApplyBoundaryConditions(iga, &user); CHKERRQ(ierr);
+
+      /* ------------------ Set Up KSP Solver ------------------ */
+      // Creat KSP solver
+      ierr = SetupAndSolve(&user, iga); CHKERRQ(ierr);
+
+      /* ------------------ Compute Effective Thermal Conductivity ------------------ */
+      ierr = ComputeKeffective(iga, user.T_sol, keff, &user); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD, "Effective thermal conductivity computed:\n");
+      for (PetscInt i = 0; i < user.dim; i++) {
+        for (PetscInt j = 0; j < user.dim; j++) {
+          PetscPrintf(PETSC_COMM_WORLD, "k_eff[%d][%d] = %.12e\n", i, j, keff[i * user.dim + j]);
+        }
+      }
+
+      /* ------------------ Write Output ------------------ */
+      if (rank == 0) {
+        // Write the solution vector to a file
+        char t_vec_file[PETSC_MAX_PATH_LEN];
+        sprintf(t_vec_file, "%s/t_vec.dat", user.output_dir, user.sol_index);
+        ierr = WriteOutput(&user, user.T_sol, "t_vec.dat"); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote solution vector to t_vec.dat\n");
+
+        // Write ice field to file
+        char iceFile[PETSC_MAX_PATH_LEN];
+        sprintf(iceFile, "%s/ice_data.dat", user.output_dir);
+        ierr = WriteIceFieldToFile("ice_data.dat", &user); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote ice field to ice_data.dat\n");
+
+        // Write the effective thermal conductivity to a CSV file
+        char csvFile[PETSC_MAX_PATH_LEN];
+        sprintf(csvFile, "%s/k_eff.csv", user.output_dir);
+        ierr = WriteKeffToCSV(csvFile, user.dim, keff); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD, "Effective thermal conductivity written to k_eff.csv\n");
+
+        PetscPrintf(PETSC_COMM_WORLD, "Wrote output files.\n\n");
+      }
+
+      /* ------------------ Clean Up ------------------ */
+      ierr = IGADestroy(&iga); CHKERRQ(ierr);
+      ierr = PetscFree(user.ice); CHKERRQ(ierr);
+    } // End of while loop
+
+  }
+
   ierr = PetscFinalize(); CHKERRQ(ierr);
+
 
   return 0;
 }

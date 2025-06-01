@@ -907,7 +907,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
   //-------- domain integrals
   PetscScalar stats[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
-  ierr = IGAComputeScalar(user->iga,U,6,&stats[0],Integration,mctx);CHKERRQ(ierr);
+  ierr = IGAComputeScalar(user->iga, U, 6, &stats[0], Integration, mctx);CHKERRQ(ierr);
   PetscReal tot_ice     = PetscRealPart(stats[0]);
   PetscReal tot_trip    = PetscRealPart(stats[1]);
   PetscReal tot_air     = PetscRealPart(stats[2]);
