@@ -7,6 +7,9 @@
 #include <petscsys.h>
 #include <petscviewer.h>
 
+#include <dirent.h>
+#include <string.h>
+
 #define SQ(x) ((x)*(x))
 #define CU(x) ((x)*(x)*(x))
 
@@ -49,6 +52,7 @@ typedef struct {
 
   // **Input options**
   char init_mode[256]; // Mode for initializing the ice field 
+  char init_dir[256];  // Directory for initial condition files
 
   // **Output options**
   PetscBool outputBinary; // Flag for binary output
@@ -358,7 +362,8 @@ PetscErrorCode FormInitialCondition(AppCtx *user)
   } else {
     // NEEDS TO BE CORRECTED!
     PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from file: %s\n", user->init_mode);
-    const char *iga_file = "/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/igasol.dat";
+    char iga_file[PETSC_MAX_PATH_LEN];
+    sprintf(iga_file, "%s/igasol.dat", user->init_dir);
     PetscPrintf(PETSC_COMM_WORLD, "[WARNING] May need to update path to IGA object.\n");
     PetscPrintf(PETSC_COMM_WORLD, "Reading solution vector from file: %s\n", iga_file);
 
@@ -687,6 +692,9 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   KSP ksp;
   PC pc;
 
+  PetscInt dim = user->dim;           /* 2 or 3 components            */
+
+
   PetscFunctionBegin;
 
   // Create system matrix and vectors
@@ -704,7 +712,6 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
 
   /* ---------- constant-mode null-space (one per component) ---------- */
   {
-    PetscInt dim = user->dim;           /* 2 or 3 components            */
     PetscInt rows;
     Vec      basis[3];                  /* up to 3 constant vectors     */
     MatNullSpace nsp;
@@ -791,6 +798,8 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
     ierr = VecRestoreArray(user->T_sol,&y); CHKERRQ(ierr);
   }
 
+  PetscPrintf(PETSC_COMM_WORLD, "Zero-mean enforced per component.\n\n");
+
   // Clean up
   ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
   ierr = MatDestroy(&A); CHKERRQ(ierr);
@@ -798,6 +807,8 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
 
   PetscFunctionReturn(0);
 }
+
+
 
 //------------------------------------------------------------------------------
 // 8) Output routines
@@ -917,6 +928,7 @@ int main (int argc, char *argv[]) {
   ierr = PetscOptionsBool("-save","Save the solution to file",__FILE__,save,&save,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsBool("-draw","If dim <= 2, then draw the solution to the screen",__FILE__,draw,&draw,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsString("-init_mode", "Set initial ice field mode (circle, layered, file)", __FILE__, "circle", user.init_mode, sizeof(user.init_mode), NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsString("-init_dir", "Directory for initial condition files", __FILE__, ".", user.init_dir, sizeof(user.init_dir), NULL); CHKERRQ(ierr);
   PetscOptionsEnd();CHKERRQ(ierr);
 
   /* ------------------ Read Environment Variables ------------------ */
@@ -952,8 +964,6 @@ int main (int argc, char *argv[]) {
   /* ------------------ Set Up KSP Solver ------------------ */
   // Creat KSP solver
   ierr = SetupAndSolve(&user, iga); CHKERRQ(ierr);
-
-  /* Compute homogenized effective thermal conductivity*/
 
   /* ------------------ Write Output ------------------ */
   ierr = WriteOutput(&user, user.T_sol, "t_vec.dat"); CHKERRQ(ierr); // Write the solution to file

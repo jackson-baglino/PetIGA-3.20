@@ -61,16 +61,16 @@ def plot_ice_field(datapath, nx, ny, save_path, Lx=1.0, Ly=1.0):
 
 def compute_keff(tx, ty, ice, Lx=1.0, Ly=1.0, order=4):
     """
-    Estimate k_eff_xx and k_eff_yy with global 2‑D Gauss‑Legendre quadrature.
+    Estimate full k_eff tensor with global 2‑D Gauss‑Legendre quadrature.
 
     * tx, ty, ice are Ny×Nx arrays on a uniform grid.
     * order = number of Gauss points per direction (default 4).
     """
-    # fill NaNs in ice
+    # Fill NaNs in ice
     if np.isnan(ice).any():
         from scipy import ndimage
         mask = np.isnan(ice)
-        ice  = ice.copy()
+        ice = ice.copy()
         ice[mask] = ndimage.distance_transform_edt(mask,
                         return_distances=False,
                         return_indices=True)[0][mask]
@@ -79,45 +79,57 @@ def compute_keff(tx, ty, ice, Lx=1.0, Ly=1.0, order=4):
     dx = Lx / (nx - 1)
     dy = Ly / (ny - 1)
 
-    # central finite‑difference gradients on grid
-    dtx_dx = np.gradient(tx, dx, axis=1)
-    dty_dy = np.gradient(ty, dy, axis=0)
+    # Finite-difference gradients on grid
+    dtx_dx = np.gradient(tx, dx, axis=1)  # ∂t_x/∂x
+    dtx_dy = np.gradient(tx, dy, axis=0)  # ∂t_x/∂y
+    dty_dx = np.gradient(ty, dx, axis=1)  # ∂t_y/∂x
+    dty_dy = np.gradient(ty, dy, axis=0)  # ∂t_y/∂y
 
-    # material conductivity on grid
-    k_grid = K_ICE*ice + K_AIR*(1.0 - ice)
+    # Material conductivity on grid
+    k_grid = K_ICE * ice + K_AIR * (1.0 - ice)
 
-    # integrand values on grid
-    f_x_grid = k_grid * (dtx_dx + 1.0)
-    f_y_grid = k_grid * (dty_dy + 1.0)
+    # Integrand values on grid
+    f_xx_grid = k_grid * (dtx_dx + 1.0)
+    f_yy_grid = k_grid * (dty_dy + 1.0)
+    f_xy_grid = k_grid * dtx_dy
+    f_yx_grid = k_grid * dty_dx
 
-    # build bilinear interpolators
+    # Build bilinear interpolators
     x_nodes = np.linspace(0, Lx, nx)
     y_nodes = np.linspace(0, Ly, ny)
-    fx_interp = RegularGridInterpolator((y_nodes, x_nodes), f_x_grid)
-    fy_interp = RegularGridInterpolator((y_nodes, x_nodes), f_y_grid)
+    fx_interp = RegularGridInterpolator((y_nodes, x_nodes), f_xx_grid)
+    fy_interp = RegularGridInterpolator((y_nodes, x_nodes), f_yy_grid)
+    fxy_interp = RegularGridInterpolator((y_nodes, x_nodes), f_xy_grid)
+    fyx_interp = RegularGridInterpolator((y_nodes, x_nodes), f_yx_grid)
 
-    # Gauss‑Legendre nodes (ξ∈[‑1,1]) and weights
+    # Gauss-Legendre nodes and weights
     gxi, gwi = leggauss(order)
-    # map to [0,Lx] or [0,Ly]
-    x_gl = 0.5*Lx*(gxi + 1.0)
-    y_gl = 0.5*Ly*(gxi + 1.0)  # reuse same nodes/order
-    wx   = 0.5*Lx * gwi        # incorporate Jacobian
-    wy   = 0.5*Ly * gwi
+    x_gl = 0.5 * Lx * (gxi + 1.0)
+    y_gl = 0.5 * Ly * (gxi + 1.0)
+    wx = 0.5 * Lx * gwi
+    wy = 0.5 * Ly * gwi
 
-    # tensor‑product quadrature
-    I_x = 0.0
-    I_y = 0.0
+    # Tensor-product quadrature
+    I_xx = 0.0
+    I_yy = 0.0
+    I_xy = 0.0
+    I_yx = 0.0
     for j, y in enumerate(y_gl):
         for i, x in enumerate(x_gl):
             w = wx[i] * wy[j]
             pt = np.array([y, x])
-            I_x += w * fx_interp(pt).item()
-            I_y += w * fy_interp(pt).item()
+            I_xx += w * fx_interp(pt).item()
+            I_yy += w * fy_interp(pt).item()
+            I_xy += w * fxy_interp(pt).item()
+            I_yx += w * fyx_interp(pt).item()
 
     area = Lx * Ly
-    keff_xx = I_x / area
-    keff_yy = I_y / area
-    return keff_xx, keff_yy
+    keff_xx = I_xx / area
+    keff_yy = I_yy / area
+    keff_xy = I_xy / area
+    keff_yx = I_yx / area
+
+    return keff_xx, keff_yy, keff_xy, keff_yx
 
 # ---------- main ---------------------------------------------------
 def main():
@@ -172,8 +184,9 @@ def main():
         grid_X, grid_Y = np.meshgrid(grid_x, grid_y)
         ice_grid = griddata((x_pts, y_pts), ice_grid, (grid_X, grid_Y),
                             method='linear', fill_value=0.0)
-        kxx, kyy = compute_keff(t_x, t_y, ice_grid, Lx, Ly)
-        print(f"Estimated k_eff_xx = {float(kxx):.6f}, k_eff_yy = {float(kyy):.6f}")
+        kxx, kyy, kxy, kyx = compute_keff(t_x, t_y, ice_grid, Lx, Ly)
+        print(f"Estimated k_eff_xx = {float(kxx):.6f}, k_eff_yy = {float(kyy):.6f}, "
+              f"k_eff_xy = {float(kxy):.6f}, k_eff_yx = {float(kyx):.6f}")
     else:
         print("No ice_data.dat — k_eff not computed.")
 

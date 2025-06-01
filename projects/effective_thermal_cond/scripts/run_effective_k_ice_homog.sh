@@ -27,7 +27,11 @@ export dim=2         # 2 = 2-D, 3 = 3-D
 
 # Initial ice-field mode: "circle" | "layered" | /path/to/file.dat
 # INIT_MODE="circle"
-INIT_MODE="layered"
+# INIT_MODE="layered"
+INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/"\
+"NASAv2_10G_2D_T-20.0_hum0.70_2025-03-13__14.20.59/sol_00444.dat"
+INIT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/"\
+"NASAv2_10G_2D_T-20.0_hum0.70_2025-03-13__14.20.59/"
 
 # Output flags
 export OUTPUT_VTK=1
@@ -53,7 +57,7 @@ compile_code() {
 run_simulation() {
     echo "🏃 Running with $NUM_PROCS MPI proc(s)…"
     mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
-        -init_mode "$INIT_MODE"
+        -init_mode "$INIT_MODE" -init_dir "$INIT_DIR"
 }
 
 collect_outputs() {

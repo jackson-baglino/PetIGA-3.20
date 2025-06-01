@@ -88,7 +88,8 @@ run_simulation() {
         -init_mode "$INIT_MODE" \
         -ksp_monitor \
         -ksp_converged_reason \
-        -log_summary
+        -log_summary \
+        -on_error_attach_debugger
         # add any other -log_view or PETSc debug flags here
 }
 
