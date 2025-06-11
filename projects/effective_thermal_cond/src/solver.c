@@ -13,8 +13,11 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   KSP ksp;
   PC pc;
 
+  PetscMPIInt size;
 
   PetscFunctionBegin;
+
+  MPI_Comm_size(PETSC_COMM_WORLD, &size);
 
   // Create system matrix and vectors
   ierr = IGACreateMat(iga, &A); CHKERRQ(ierr);

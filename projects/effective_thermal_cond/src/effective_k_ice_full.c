@@ -696,6 +696,9 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
 
   PetscFunctionBegin;
 
+  PetscMPIInt size;
+  ierr = MPI_Comm_size(PETSC_COMM_WORLD, &size); CHKERRQ(ierr);
+
   // Create system matrix and vectors
   ierr = IGACreateMat(iga, &A); CHKERRQ(ierr);
   ierr = IGACreateVec(iga, &user->T_sol); CHKERRQ(ierr);

@@ -2221,9 +2221,9 @@ int main(int argc, char *argv[]) {
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
 
   //output
-  user.outp = 2; // if 0 -> output according to t_interv
-  user.t_out = 0;    // user.t_interv = t_final/(n_out-1); //output every t_interv
-  user.t_interv =  1024.0; //output every t_interv
+  user.outp = 0; // if 0 -> output according to t_interv
+  user.t_out = 0;     user.t_interv = t_final/(n_out-1); //output every t_interv
+  // user.t_interv =  4096.0; //output every t_interv
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;

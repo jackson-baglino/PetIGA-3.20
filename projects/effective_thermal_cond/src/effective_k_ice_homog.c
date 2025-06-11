@@ -1,16 +1,17 @@
+//------------------------------------------------------------------------------
+// 0) Includes, macros, and system headers
+//------------------------------------------------------------------------------
+#include "petiga.h"
 #include <petsc/private/tsimpl.h>
 #include <petsc/private/snesimpl.h>
-#include "petiga.h"
-#include <math.h>
-#include <mpi.h>
-
-#include <sys/stat.h>  // For file existence checking
+#include <petsctime.h>
 #include <petscsys.h>
 #include <petscviewer.h>
-
-#include <regex.h>   // POSIX regex for matching filenames
-#include <stdlib.h>  // qsort
-
+#include <math.h>
+#include <mpi.h>
+#include <sys/stat.h>
+#include <regex.h>
+#include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
 
@@ -695,10 +696,12 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   KSP ksp;
   PC pc;
 
-  PetscInt dim = user->dim;           /* 2 or 3 components            */
-
+  PetscInt dim = user->dim;
+  PetscMPIInt size;
 
   PetscFunctionBegin;
+
+  MPI_Comm_size(PETSC_COMM_WORLD, &size);
 
   // Create system matrix and vectors
   ierr = IGACreateMat(iga, &A); CHKERRQ(ierr);
@@ -754,19 +757,20 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   // Solve the linear system using KSP
   ierr = IGACreateKSP(iga, &ksp); CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp, A, A); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-
-  // Set solver tolerances
-  ierr = KSPSetTolerances(ksp, PETSC_SMALL, PETSC_SMALL, PETSC_DEFAULT, 4000); CHKERRQ(ierr); // rtol, abstol, dtol, maxits
-  ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE); CHKERRQ(ierr);
 
   // Configure preconditioner
   ierr = KSPGetPC(ksp, &pc); CHKERRQ(ierr);
   ierr = PCSetType(pc, PCLU); CHKERRQ(ierr); // Use LU preconditioner
 
-#if defined(PETSC_HAVE_MUMPS)
-  if (size > 1) PetscCall(PCFactorSetMatSolverType(pc, MATSOLVERMUMPS));
-#endif
+  #if defined(PETSC_HAVE_MUMPS)
+    if (size > 1) PetscCall(PCFactorSetMatSolverType(pc, MATSOLVERMUMPS));
+  #endif
+
+  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
+
+  // Set solver tolerances
+  ierr = KSPSetTolerances(ksp, PETSC_SMALL, PETSC_SMALL, PETSC_DEFAULT, 4000); CHKERRQ(ierr); // rtol, abstol, dtol, maxits
+  ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE); CHKERRQ(ierr);
 
   // Solve the system
   ierr = KSPSolve(ksp, b, user->T_sol); CHKERRQ(ierr);
@@ -941,22 +945,11 @@ PetscErrorCode ComputeKeffIntegrand(IGAPoint p, const PetscScalar *U,
     dV = *(p->weight) * (*(p->detX));
 
     // Compute the integrand for the effective thermal conductivity
-    if (user->dim == 2) {
-      for (i = 0; i < dim; i++) {
-        for (j = 0; j < dim; j++) {
-          Iij = (i == j) ? 1.0 : 0.0; // Identity delta
-          S[i * dim + j] += (thcond * (grad_t[i][j] + Iij) * dV) / (user->Lx * user->Ly);
-        }
+    for (i = 0; i < dim; i++) {
+      for (j = 0; j < dim; j++) {
+        Iij = (i == j) ? 1.0 : 0.0; // Identity delta
+        S[i * dim + j] += (thcond * (grad_t[i][j] + Iij) * dV);
       }
-    } else if (user->dim == 3) {
-      for (i = 0; i < dim; i++) {
-        for (j = 0; j < dim; j++) {
-          Iij = (i == j) ? 1.0 : 0.0; // Identity delta
-          S[i * dim + j] += (thcond * (grad_t[i][j] + Iij) * dV) / (user->Lx * user->Ly * user->Lz);
-        }
-      }
-    } else {
-      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Invalid dimension: %d", user->dim);
     }
   }
 
@@ -975,6 +968,16 @@ PetscErrorCode ComputeKeffective(IGA iga, Vec t_vec, PetscReal *keff, AppCtx *us
   // Call IGAComputeScalar to integrate
   PetscPrintf(PETSC_COMM_WORLD, "Computing effective thermal conductivity...\n");
   ierr = IGAComputeScalar(iga, t_vec, dim * dim, keff, ComputeKeffIntegrand, (void*)user); CHKERRQ(ierr);
+
+
+  // Divide by total domain volume
+  PetscReal volume = (user->dim == 2) 
+                     ? user->Lx * user->Ly 
+                     : user->Lx * user->Ly * user->Lz;
+
+  for (PetscInt i = 0; i < dim * dim; i++) {
+    keff[i] /= volume;
+  }
 
   PetscFunctionReturn(0);
 }
@@ -1022,7 +1025,7 @@ PetscErrorCode WriteKeffToCSV(const char *filename, PetscInt dim, const PetscRea
 //------------------------------------------------------------------------------
 // 9) Main
 //------------------------------------------------------------------------------
-int main (int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
   AppCtx              user;
   PetscErrorCode      ierr;
 
@@ -1031,6 +1034,10 @@ int main (int argc, char *argv[]) {
 
   PetscMPIInt rank;
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+  // Set up timer
+  PetscLogDouble t_start, t_1, t_end;
+  ierr = PetscTime(&t_start); CHKERRQ(ierr);
 
   /* ------------------ Set options ------------------ */
   PetscBool print_error = PETSC_TRUE;
@@ -1086,6 +1093,8 @@ int main (int argc, char *argv[]) {
     /* ------------------ Set Up KSP Solver ------------------ */
     // Creat KSP solver
     ierr = SetupAndSolve(&user, iga); CHKERRQ(ierr);
+    PetscTime(&t_1); // Record time after solving
+    PetscPrintf(PETSC_COMM_WORLD, "KSP solve completed in %.2f seconds.\n\n", t_1 - t_start);
 
     /* ------------------ Compute Effective Thermal Conductivity ------------------ */
     ierr = ComputeKeffective(iga, user.T_sol, keff, &user); CHKERRQ(ierr);
@@ -1122,7 +1131,6 @@ int main (int argc, char *argv[]) {
     /* ------------------ Clean Up ------------------ */
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     ierr = PetscFree(user.ice); CHKERRQ(ierr);
-    ierr = PetscFinalize(); CHKERRQ(ierr);
   } else {
     PetscPrintf(PETSC_COMM_WORLD, "SOL_INDEX < 0. Looping over entire solution folder.\n");
 
@@ -1160,26 +1168,36 @@ int main (int argc, char *argv[]) {
     PetscSortInt(num_files, file_indices);
     PetscPrintf(PETSC_COMM_WORLD, "Found %d solution files in directory %s\n\n", num_files, user.init_dir);
 
-    for (PetscInt i = 0; i < num_files; i++)
+    /* ------------------ Define user context ------------------ */
+    InitializeUserContext(&user);
+    PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity ice = %g W/m·K\n", user.thcond_ice);
+    PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity air = %g W/m·K\n", user.thcond_air);
+    PetscPrintf(PETSC_COMM_WORLD, "Specific heat ice = %g J/kg·K\n", user.cp_ice);
+    PetscPrintf(PETSC_COMM_WORLD, "Specific heat air = %g J/kg·K\n", user.cp_air);
+    PetscPrintf(PETSC_COMM_WORLD, "Density ice = %g kg/m³\n", user.rho_ice);
+    PetscPrintf(PETSC_COMM_WORLD, "Density air = %g kg/m³\n\n", user.rho_air);
+
+    /* ------------------ Initialize IGA ------------------ */
+    IGA iga;
+    ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
+    user.iga = iga;
+
+    PetscInt num_files_analyze = 40;
+
+    // Create a list of indices from 0 to num_files-1, evenly spaced with num_files_analyze entries
+    PetscInt analyze_indices[num_files_analyze];
+    for (PetscInt i = 0; i < num_files_analyze; i++) {
+      PetscReal pos = ((PetscReal)i) * (num_files - 1) / (num_files_analyze - 1);
+      analyze_indices[i] = file_indices[(PetscInt)(pos + 0.5)]; // round to nearest integer
+    }
+
+    for (PetscInt i = 0; i < num_files_analyze; i++)
     {
       // Update sol_index
-      user.sol_index = file_indices[i];
+    //   user.sol_index = file_indices[i];
+      user.sol_index = analyze_indices[i];
 
       PetscPrintf(PETSC_COMM_WORLD, "Processing sol_index = %05d\n\n", user.sol_index);
-
-      /* ------------------ Define user context ------------------ */
-      InitializeUserContext(&user);
-      PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity ice = %g W/m·K\n", user.thcond_ice);
-      PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity air = %g W/m·K\n", user.thcond_air);
-      PetscPrintf(PETSC_COMM_WORLD, "Specific heat ice = %g J/kg·K\n", user.cp_ice);
-      PetscPrintf(PETSC_COMM_WORLD, "Specific heat air = %g J/kg·K\n", user.cp_air);
-      PetscPrintf(PETSC_COMM_WORLD, "Density ice = %g kg/m³\n", user.rho_ice);
-      PetscPrintf(PETSC_COMM_WORLD, "Density air = %g kg/m³\n\n", user.rho_air);
-
-      /* ------------------ Initialize IGA ------------------ */
-      IGA iga;
-      ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
-      user.iga = iga;
 
       /* ------------------ Initialize Field Variables ------------------ */
       ierr = FormInitialCondition(&user); CHKERRQ(ierr); // Initialize the ice field
@@ -1203,6 +1221,7 @@ int main (int argc, char *argv[]) {
 
       /* ------------------ Write Output ------------------ */
       if (rank == 0) {
+        PetscPrintf(PETSC_COMM_WORLD, "Writing output for sol_index = %05d\n", user.sol_index);
         // Write the solution vector to a file
         char t_vec_file[PETSC_MAX_PATH_LEN];
         sprintf(t_vec_file, "%s/t_vec.dat", user.output_dir);
@@ -1224,15 +1243,20 @@ int main (int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD, "Wrote output files.\n\n");
       }
 
-      /* ------------------ Clean Up ------------------ */
-      ierr = IGADestroy(&iga); CHKERRQ(ierr);
-      ierr = PetscFree(user.ice); CHKERRQ(ierr);
-    } // End of while loop
+    } // End of for loop
+
+    /* ------------------ Clean Up ------------------ */
+    ierr = IGADestroy(&iga); CHKERRQ(ierr);
+    ierr = PetscFree(user.ice); CHKERRQ(ierr);
 
   }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  // Calculate total elapsed time
+  ierr = PetscTime(&t_end); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD, "Total elapsed time: %.2f seconds\n", t_end - t_start);
+  PetscPrintf(PETSC_COMM_WORLD, "Program completed successfully.\n");
 
+  ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;
 }

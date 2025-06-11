@@ -263,7 +263,7 @@ set_parameters() {
             exit 1
         fi
 
-        Lx=2.03e-03; Ly=2.03e-03; Lz=2.03e-03
+        Lx=2.0e-03; Ly=2.0e-03; Lz=2.00e-03
         Nx=1100; Ny=1100; Nz=1100
         eps=9.09629658751972e-07
     elif [[ $inputFile == *"grainReadFile-96_s1-10.dat"* ]]; then
@@ -277,6 +277,19 @@ set_parameters() {
         fi
 
         Lx=2.03e-03; Ly=2.03e-03; Lz=2.03e-03
+        Nx=1100; Ny=1100; Nz=1100
+        eps=9.09629658751972e-07    
+    elif [[ $inputFile == *"grainReadFile-30_s1-10.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+
+        # Check that dim = 2
+        if [[ $dim -ne 2 ]]; then
+            echo "Error: Dimension mismatch. Expected dim = 2 for input file: $inputFile"
+            exit 1
+        fi
+
+        Lx=2.0e-03; Ly=2.0e-03; Lz=2.0e-03
         Nx=1100; Ny=1100; Nz=1100
         eps=9.09629658751972e-07
 
@@ -356,17 +369,17 @@ echo "Starting NASAv2 simulation workflow"
 echo " "
 
 delt_t=1.0e-4
-t_final=7*24*60*60
-n_out=10 #100
+t_final=14*24*60*60
+n_out=40 #100
 t_final=$(echo "$t_final" | bc -l)
 humidity=0.70
-temp=-20.0
+temp=-80.0
 grad_temp0X=0.0
 grad_temp0Y=3.0e-4
 grad_temp0Z=0.0
 dim=2
-filename="grainReadFile-96_s1-10.dat"
-title="NASAv2_96G-${dim}D_T${temp}_hum${humidity}_"
+filename="grainReadFile-30_s1-10.dat"
+title="NASAv2_30G-${dim}D_T${temp}_hum${humidity}_"
 
 compile_code
 create_folder

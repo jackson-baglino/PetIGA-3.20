@@ -8,15 +8,17 @@
 # • Still honours the same environment variables / paths
 ###############################################################################
 
+start_time=$(date +%s)  # seconds since epoch
+
 # ----------------------------
 # 🔹  Simulation parameters
 # ----------------------------
-export Nx=275
-export Ny=275
+export Nx=1100
+export Ny=1100
 export Nz=1          # 1 for 2-D
 
-export Lx=0.5e-3
-export Ly=0.5e-3
+export Lx=2.03e-3
+export Ly=2.03e-3
 export Lz=2.02e-4    # ignored when dim=2
 
 export FLUX_BOTTOM=-0.1
@@ -29,8 +31,9 @@ export dim=2         # 2 = 2-D, 3 = 3-D
 # INIT_MODE="circle"
 # INIT_MODE="layered"
 INIT_MODE="FILE"
-INIT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/"\
-"NASAv2_10G_2D_T-20.0_hum0.70_2025-03-13__14.20.59"
+# INIT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/"\
+# "NASAv2_96G-2D_T-20.0_hum0.70_2025-05-31__18.55.56"
+INIT_DIR="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/NASAv2_30G-2D_T-80.0_hum0.70_2025-06-09__16.04.46"
 
 # Output flags
 export OUTPUT_VTK=1
@@ -45,6 +48,7 @@ mkdir -p "$OUTPUT_DIR"
 
 # MPI ranks (override by exporting NUM_PROCS beforehand)
 NUM_PROCS=${NUM_PROCS:-1}
+# NUM_PROCS=4
 
 # ----------------------------
 # 🔹  Helpers
@@ -58,7 +62,8 @@ run_simulation() {
     echo " "
     echo "Running with $NUM_PROCS MPI proc(s)…"
     mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
-        -init_mode "$INIT_MODE" -init_dir "$INIT_DIR"
+        -init_mode "$INIT_MODE" \
+        -init_dir "$INIT_DIR" \
 }
 
 collect_outputs() {
@@ -80,3 +85,9 @@ echo "📈 Post-processing…"
 python3 postprocess/plot_vector_field.py "$OUT_FOLDER" "$Nx" "$Ny" "$Lx" "$Ly"
 
 echo "✅ Finished. Outputs in: $OUTPUT_DIR"
+
+end_time=$(date +%s)
+
+elapsed=$(( end_time - start_time ))
+
+echo "Simulation completed in $elapsed seconds."
