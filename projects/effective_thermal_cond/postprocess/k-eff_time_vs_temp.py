@@ -3,18 +3,19 @@ import re
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 # --- Parameters ---
 parent_dir = '/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/'
-folder_pattern = r'NASAv2_30G-2D_T([-\d.]+)_hum[\d.]+_'
-save_figures = False  # Skip plotting for now
+folder_pattern = r'NASAv2_2G-Molaro-2D_T([-\d.]+)_hum[\d.]+_'
+save_figures = False  # If True, save plots to disk; if False, show plots interactively
 scatter_step = 10
 dpi = 300
 
 # --- Storage for global data ---
 collected_data = []  # Will hold dicts with 'T', 'time', 'k_xx'
 
-# --- Plot Settings (still useful if you re-enable plots) ---
+# --- Plot Settings ---
 plt.rcParams.update({
     'font.size': 14,
     'axes.labelsize': 16,
@@ -59,24 +60,24 @@ for subfolder in sorted(os.listdir(parent_dir)):
     ssa_time_steps = ssa_data[:, 3]
     ssa_values = ssa_data[:, 0]
 
-    # Step 2: Load k_eff
+    # Step 2: Load k_eff (now includes a "step" column!)
     k_eff_df = pd.read_csv(k_eff_file)
     k_xx = k_eff_df['k_00'].values
+    steps = k_eff_df['sol_index'].values  # This column should match SSA steps
 
-    # Step 3: Get time steps from sol_#.dat files
-    sol_files = [f for f in os.listdir(folder_path) if re.match(r'sol_\d+\.dat', f)]
-    time_steps = sorted([int(re.findall(r'\d+', f)[0]) for f in sol_files])
-
-    # Step 4: Match time and k_eff
+    # Step 3: Build a lookup from SSA time step → time
     time_step_to_time = {int(ts): t for ts, t in zip(ssa_time_steps, ssa_time)}
+
+    # Step 4: Match times using step column from k_eff.csv
     matched_times = []
     matched_kxx = []
-    for ts in time_steps[:len(k_xx)]:
-        if ts in time_step_to_time:
-            matched_times.append(time_step_to_time[ts])
-            matched_kxx.append(k_xx[len(matched_times)-1])
+
+    for i, step in enumerate(steps):
+        if step in time_step_to_time:
+            matched_times.append(time_step_to_time[step])
+            matched_kxx.append(k_xx[i])
         else:
-            print(f"Time step {ts} not found in SSA_evo.dat for {subfolder}")
+            print(f"Step {step} not found in SSA data for folder {subfolder}")
 
     matched_times = np.array(matched_times)
     matched_kxx = np.array(matched_kxx)
@@ -88,36 +89,57 @@ for subfolder in sorted(os.listdir(parent_dir)):
         'k_xx': matched_kxx
     })
 
-print(f"\n✅ Done collecting data from {len(collected_data)} simulations.")
+    # Step 6: Plot and save/show individual plot
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(matched_times, matched_kxx, marker='o', lw=1.5)
+    ax.set_xlabel('Time')
+    ax.set_ylabel(r'$k_{xx}$ (W/m·K)')
+    ax.set_title(f'T = {temperature} K')
+    beautify_axes(ax)
+    fig.tight_layout()
 
-# Optional: show structure of collected_data
+    if save_figures:
+        fig_path = os.path.join(folder_path, 'kxx_vs_time.png')
+        fig.savefig(fig_path, dpi=dpi, bbox_inches='tight', transparent=True)
+        plt.close(fig)
+    else:
+        plt.show()
+
+# --- Summary Output ---
+print(f"\n✅ Done collecting data from {len(collected_data)} simulations.")
 for entry in collected_data:
     print(f"T={entry['temperature']} K | timesteps={len(entry['time'])} | k_xx range=({entry['k_xx'].min():.3g}, {entry['k_xx'].max():.3g})")
 
-import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
+# --- Step 7: Build masked heatmap with per-simulation extents ---
 
-# --- Step 1: Sort data by temperature ---
+# Sort by temperature
 collected_data.sort(key=lambda d: d['temperature'])
 temperatures = np.array([d['temperature'] for d in collected_data])
 
-# --- Step 2: Create a common time grid ---
-# Use union of all time points, or uniform linspace over global min/max time
-all_times = np.concatenate([d['time'] for d in collected_data])
-t_min, t_max = all_times.min(), all_times.max()
-Nt = 200  # resolution in time
+# Create common time grid (but we won't force all data to fill it)
+final_times = np.array([d['time'][-1] for d in collected_data])
+start_times = np.array([d['time'][0] for d in collected_data])
+t_min = max(start_times)
+t_max = min(final_times)
+Nt = 200
 common_time = np.linspace(t_min, t_max, Nt)
 
-# --- Step 3: Interpolate k_xx to common time for each simulation ---
-k_map = []  # rows: different temperatures, columns: interpolated k_xx over common_time
+# Interpolate to common time with masking
+k_map = []
+mask = []
+
 for d in collected_data:
     f_interp = interp1d(d['time'], d['k_xx'], bounds_error=False, fill_value=np.nan)
     k_interp = f_interp(common_time)
     k_map.append(k_interp)
 
-k_map = np.array(k_map)  # shape: (n_temperatures, Nt)
+    valid_mask = np.isfinite(f_interp(common_time))
+    mask.append(valid_mask)
 
-# --- Step 4: Plot colormap ---
+k_map = np.ma.array(k_map, mask=~np.array(mask))  # Mask invalid entries
+k_map = np.ma.masked_invalid(k_map)
+
+# --- Plot masked heatmap ---
 fig, ax = plt.subplots(figsize=(10, 6))
 c = ax.pcolormesh(temperatures, common_time, k_map.T, shading='auto', cmap='plasma')
 cb = fig.colorbar(c, ax=ax, label=r'$k_{xx}$ (W/m·K)')
@@ -127,5 +149,27 @@ ax.set_ylabel('Time')
 ax.set_title('Effective Thermal Conductivity $k_{xx}$ vs Temperature and Time')
 beautify_axes(ax)
 fig.tight_layout()
-fig.savefig('./outputs/homog/kxx_colormap.png', dpi=300, bbox_inches='tight', transparent=True)
+fig.savefig('./outputs/homog/kxx_colormap_masked.png', dpi=300, bbox_inches='tight', transparent=True)
 plt.show()
+
+# --- Plot all k_xx vs time curves together ---
+fig, ax = plt.subplots(figsize=(10, 6))
+
+for entry in collected_data:
+    ax.plot(entry['time'], entry['k_xx'], label=f"T = {entry['temperature']} K")
+
+ax.set_xlabel('Time')
+ax.set_ylabel(r'$k_{xx}$ (W/m·K)')
+ax.set_title(r'Effective Thermal Conductivity $k_{xx}$ for All Simulations')
+beautify_axes(ax)
+ax.legend(title='Temperature', loc='center left', bbox_to_anchor=(1, 0.5))
+fig.tight_layout()
+
+# Save to the parent_dir (one level above the subfolders)
+multi_plot_path = os.path.join(parent_dir, 'kxx_vs_time_all.png')
+fig.savefig(multi_plot_path, dpi=dpi, bbox_inches='tight', transparent=True)
+
+if not save_figures:
+    plt.show()
+else:
+    plt.close(fig)

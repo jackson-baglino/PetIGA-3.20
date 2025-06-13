@@ -13,9 +13,12 @@ start_time=$(date +%s)  # seconds since epoch
 # ----------------------------
 # 🔹  Simulation parameters
 # ----------------------------
-export Nx=1100
-export Ny=1100
+# export Nx=1100
+# export Ny=1100
 export Nz=1          # 1 for 2-D
+
+export Nx=134
+export Ny=214
 
 export Lx=2.03e-3
 export Ly=2.03e-3
@@ -33,16 +36,29 @@ export dim=2         # 2 = 2-D, 3 = 3-D
 INIT_MODE="FILE"
 # INIT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/"\
 # "NASAv2_96G-2D_T-20.0_hum0.70_2025-05-31__18.55.56"
-INIT_DIR="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/NASAv2_30G-2D_T-80.0_hum0.70_2025-06-09__16.04.46"
+INIT_DIR="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/NASAv2_2G-Molaro-2D_T-20.0_hum1.00_2025-06-13__09.52.50"
+
+# Extract base folder name
+base_folder=$(basename "$INIT_DIR")
+
+grains=2
+dims=2
+temp=-20.0
+hum=1.00
+
+# Timestamped output folder name
+timestamp=$(date +%Y-%m-%d__%H.%M.%S)
+OUT_FOLDER="ThermalSim_homog_${grains}G_${dims}D_T${temp}_hum${hum}_$timestamp"
+
+echo "✅ OUT_FOLDER: $OUT_FOLDER"
+
+echo "✅ OUT_FOLDER: $OUT_FOLDER"
 
 # Output flags
 export OUTPUT_VTK=1
 export OUTPUT_BINARY=1
 export SOL_INDEX=-1
 
-# Time-stamped output directory
-timestamp=$(date +%Y-%m-%d__%H.%M.%S)
-OUT_FOLDER="ThermalSim_homog_$timestamp"
 export OUTPUT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/outputs/homog/$OUT_FOLDER"
 mkdir -p "$OUTPUT_DIR"
 

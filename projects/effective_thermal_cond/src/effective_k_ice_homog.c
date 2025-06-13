@@ -990,7 +990,7 @@ PetscBool file_exists(const char *filename)
 }
 
 // Write keff to CSV, add header if file doesn't exist
-PetscErrorCode WriteKeffToCSV(const char *filename, PetscInt dim, const PetscReal *keff)
+PetscErrorCode WriteKeffToCSV(AppCtx *user, const char *filename, PetscInt dim, const PetscReal *keff)
 {
   PetscFunctionBegin;
   FILE *fp;
@@ -1004,7 +1004,11 @@ PetscErrorCode WriteKeffToCSV(const char *filename, PetscInt dim, const PetscRea
   if (!exists) {
     for (PetscInt i = 0; i < dim; i++) {
       for (PetscInt j = 0; j < dim; j++) {
-        if (i > 0 || j > 0) fprintf(fp, ","); // Commas between columns
+        if (i > 0 || j > 0) {
+          fprintf(fp, ","); // Commas between columns
+        } else {
+          fprintf(fp, "sol_index,"); // First column header
+        }
         fprintf(fp, "k_%d%d", i, j); // Column names: k_00, k_01, ..., k_22
       }
     }
@@ -1013,7 +1017,11 @@ PetscErrorCode WriteKeffToCSV(const char *filename, PetscInt dim, const PetscRea
 
   // Write keff matrix entries row-major
   for (PetscInt i = 0; i < dim * dim; i++) {
-    if (i > 0) fprintf(fp, ","); // Commas between columns
+    if (i > 0) {
+      fprintf(fp, ","); // Commas between columns
+    } else {
+      fprintf(fp, "%d,", user->sol_index); // First column header
+    }
     fprintf(fp, "%.12e", keff[i]);
   }
 
@@ -1122,7 +1130,7 @@ int main(int argc, char *argv[]) {
       // Write the effective thermal conductivity to a CSV file
       char csvFile[PETSC_MAX_PATH_LEN];
       sprintf(csvFile, "%s/k_eff.csv", user.output_dir);
-      ierr = WriteKeffToCSV(csvFile, user.dim, keff); CHKERRQ(ierr);
+      ierr = WriteKeffToCSV(&user, csvFile, user.dim, keff); CHKERRQ(ierr);
       PetscPrintf(PETSC_COMM_WORLD, "Effective thermal conductivity written to k_eff.csv\n");
 
       PetscPrintf(PETSC_COMM_WORLD, "Wrote output files.\n\n");
@@ -1237,7 +1245,7 @@ int main(int argc, char *argv[]) {
         // Write the effective thermal conductivity to a CSV file
         char csvFile[PETSC_MAX_PATH_LEN];
         sprintf(csvFile, "%s/k_eff.csv", user.output_dir);
-        ierr = WriteKeffToCSV(csvFile, user.dim, keff); CHKERRQ(ierr);
+        ierr = WriteKeffToCSV(&user, csvFile, user.dim, keff); CHKERRQ(ierr);
         PetscPrintf(PETSC_COMM_WORLD, "Effective thermal conductivity written to k_eff.csv\n");
 
         PetscPrintf(PETSC_COMM_WORLD, "Wrote output files.\n\n");
