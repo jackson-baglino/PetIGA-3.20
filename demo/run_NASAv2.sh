@@ -378,7 +378,7 @@ grad_temp0X=0.0
 grad_temp0Y=3.0e-4
 grad_temp0Z=0.0
 dim=2
-filename="grainReadFile-2_Molaro.dat"
+filename="grainReadFile-30_s1-10.dat"
 title="NASAv2_30G-${dim}D_T${temp}_hum${humidity}_"
 
 compile_code

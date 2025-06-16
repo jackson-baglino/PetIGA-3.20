@@ -1,14 +1,10 @@
 #!/bin/zsh
 
 ################################################################################
-# NASAv2 Dry Snow Metamorphism Simulation Script
-# This script compiles and runs the NASAv2 model with user-defined inputs,
-# creates output directories, saves metadata, and post-processes results.
+############################### DEFINE FUNCTIONS ###############################
 ################################################################################
 
-################################################################################
-# Create output folder based on timestamp and title
-################################################################################
+# Function to create a timestamped results folder
 create_folder() {
     name="$title$(date +%Y-%m-%d__%H.%M.%S)"
     dir="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2"
@@ -21,17 +17,13 @@ create_folder() {
     mkdir -p "$folder"
 }
 
-################################################################################
-# Compile simulation code
-################################################################################
+# Function to compile the code
 compile_code() {
     echo "Compiling..."
-    make all
+    make NASAv2
 }
 
-################################################################################
-# Export simulation parameters to CSV file
-################################################################################
+# Function to write parameters to CSV file
 write_parameters_to_csv() {
     csv_file="$folder/simulation_parameters.csv"
     echo "Variable,Value" > "$csv_file"
@@ -57,19 +49,15 @@ write_parameters_to_csv() {
     echo "eps,$eps" >> "$csv_file"
 }
 
-################################################################################
-# Load input file and set grid size, domain, and epsilon based on selected input
-################################################################################
+# Function to set simulation parameters
 set_parameters() {
-    # input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
-    input_dir="/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/"
+    input_dir="/Users/jacksonbaglino/PetIGA-3.20/demo/input/"
 
     # Select input file
     inputFile="${input_dir}${filename}"  # Default file
 
     # Copy inputFile to results folder
     cp $inputFile $folder
-    echo "Selected input file: $inputFile"
 
     # Set the domain sizes and number of elements based on the input file ------
     if [[ $inputFile == *"grainReadFile-2.dat"* ]]; then
@@ -265,24 +253,44 @@ set_parameters() {
 
         eps=1.56979924263831e-06
 
-    elif [[ $inputFile == *"circle_data.csv"* ]]; then
+    elif [[ $inputFile == *"grainReadFile-118_s1-10.dat"* ]]; then
         echo "Using file $inputFile"
         echo " "
 
-        # Check that dim = 3
+        # Check that dim = 2
         if [[ $dim -ne 2 ]]; then
-            echo "Error: Dimension mismatch. Expected dim = 3 for input file: $inputFile"
+            echo "Error: Dimension mismatch. Expected dim = 2 for input file: $inputFile"
             exit 1
         fi
-        
-        Lx=1.0e-03
-        Ly=1.0e-03
-        Lz=1.0e-03
 
-        Nx=550
-        Ny=550
-        Nz=550
+        Lx=2.0e-03; Ly=2.0e-03; Lz=2.00e-03
+        Nx=1100; Ny=1100; Nz=1100
+        eps=9.09629658751972e-07
+    elif [[ $inputFile == *"grainReadFile-96_s1-10.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
 
+        # Check that dim = 2
+        if [[ $dim -ne 2 ]]; then
+            echo "Error: Dimension mismatch. Expected dim = 2 for input file: $inputFile"
+            exit 1
+        fi
+
+        Lx=2.03e-03; Ly=2.03e-03; Lz=2.03e-03
+        Nx=1100; Ny=1100; Nz=1100
+        eps=9.09629658751972e-07    
+    elif [[ $inputFile == *"grainReadFile-30_s1-10.dat"* ]]; then
+        echo "Using file $inputFile"
+        echo " "
+
+        # Check that dim = 2
+        if [[ $dim -ne 2 ]]; then
+            echo "Error: Dimension mismatch. Expected dim = 2 for input file: $inputFile"
+            exit 1
+        fi
+
+        Lx=2.0e-03; Ly=2.0e-03; Lz=2.0e-03
+        Nx=1100; Ny=1100; Nz=1100
         eps=9.09629658751972e-07
 
     else
@@ -295,9 +303,7 @@ set_parameters() {
         humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps
 }
 
-################################################################################
-# Run the simulation using MPI
-################################################################################
+# Function to run the simulation
 run_simulation() {
     echo "Running simulation..."
     mpiexec -np 12 ./NASAv2 -initial_PFgeom -temp_initial -snes_rtol 1e-3 \
@@ -306,16 +312,10 @@ run_simulation() {
     -snes_linesearch_type basic | tee $folder/outp.txt
 }
 
-################################################################################
-# Copy relevant scripts to folder and save summary parameters to .dat and CSV
-################################################################################
+# Function to finalize results
 finalize_results() {
     echo "Finalizing results..."
-    cd ./scripts
-    cp run_NASAv2.sh plotNASA.py plotSSA.py plotPorosity.py $folder
-    cd ../src
-    cp NASAv2.c $folder
-    cd ../
+    cp NASAv2.c run_NASAv2.sh plotNASA.py plotSSA.py plotPorosity.py $folder
     write_parameters_to_csv
 
     # Save simulation parameters
@@ -354,53 +354,40 @@ grad_temp0Z = $grad_temp0Z
 EOF
 }
 
-################################################################################
-# Run post-processing plotting script
-################################################################################
+# Function to run plotting scripts
 run_plotting() {
     echo "Queuing plotNASA.py"
-    ./scripts/run_plotNASAv2.sh $name
+    ./run_plotNASAv2.sh $name
 }
 
 ################################################################################
-# USER-DEFINED SIMULATION SETTINGS
+########################## Main execution starts here ##########################
 ################################################################################
+
 echo " "
 echo "Starting NASAv2 simulation workflow"
 echo " "
 
 delt_t=1.0e-4
-t_final=12*60*60
-n_out=10 #100
+t_final=14*24*60*60
+n_out=40 #100
 t_final=$(echo "$t_final" | bc -l)
-humidity=0.70
-temp=-20.0
+humidity=1.00
+temp=-80.0
 grad_temp0X=0.0
-grad_temp0Y=0.1
+grad_temp0Y=3.0e-4
 grad_temp0Z=0.0
 dim=2
-# filename="grainReadFile-2_Molaro.dat"
-# filename="circle_data.csv"
-filename="circle_data.csv" # Note: Right now, the code is set to create random grains. We are just using the 10_s1-10.dat file for the domain size.
-title="CourseOverfine_2D_"
-# title="NASAv2_2G-Molaro_${dim}D_T${temp}_hum${humidity}_"
-
-# initial_geom="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/FreshOverSintered_2D_2025-04-11__09.56.59/sol_02474.dat"
+filename="grainReadFile-30_s1-10.dat"
+title="NASAv2_30G-${dim}D_T${temp}_hum${humidity}_"
 
 compile_code
-
 create_folder
-
 set_parameters
-
 finalize_results
-
 run_simulation
-
 run_plotting
 
 echo "-------------------------------------------------------------------------"
-echo " "
-echo "✅ Done with NASAv2 simulation!"
-echo "-------------------------------------------------------------------------"
+echo "Done!"
 echo " "
