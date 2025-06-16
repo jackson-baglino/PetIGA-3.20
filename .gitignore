@@ -8,33 +8,31 @@
 .vscode/
 
 ###############################################################################
-# Virtual Environment & Python Cache
+# 🐍 Virtual Environments & Python Caches
 ###############################################################################
-# Virtual environments (Python)
+# Virtual environments (common names)
 .venv/
 venv/
 env/
+
+# Project-specific venvs
 projects/dry_snow_metamorphism/venv_DSM/
 projects/effective_thermal_cond/venv_EffK/
 projects/permafrost/venv_permafrost/
 
-
-# Python bytecode and cache files
+# Python bytecode and cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 
 ###############################################################################
-# Test, Temporary, & Input Files
+# 🧪 Test, Temporary, & Input Files
 ###############################################################################
-# Test and temporary folders
 test/
 input/
 Original/
 
 ###############################################################################
-# Compiled Binary & Object Files (Direct Targets)
+# ⚙️ Compiled Binary & Object Files
 ###############################################################################
 NASA
 NASA.o
@@ -45,43 +43,44 @@ NASAv2.o
 Wetamorphism
 
 ###############################################################################
-# Demo Files & Outputs
+# 🧪 Demo Files & Outputs
 ###############################################################################
-# Demo executables and output files (generated during demos)
-demo/Laplace*
+# demo/Laplace*
 demo/ssa_evolution_plotTEST.png
 demo/Metamorph
 demo/Oldfiles/
 demo/venv/
 
 ###############################################################################
-# Effective Thermal Cond Project Build Files
+# ❄️ Effective Thermal Conductivity Project Outputs
 ###############################################################################
-# Executable and object files for the effective_thermal_cond project
-projects/effective_thermal_cond/obj/*
-projects/dry_snow_metamorphism/obj/*
-projects/permafrost/obj/*
-projects/effective_thermal_cond/inputs/*
-projects/dry_snow_metamorphism/inputs/*
-projects/permafrost/inputs/*
-projects/effective_thermal_cond/outputs/*
-projects/dry_snow_metamorphism/outputs/*
-projects/permafrost/outputs/*
-
-# Temporary files
+projects/effective_thermal_cond/obj/
+projects/effective_thermal_cond/inputs/
+projects/effective_thermal_cond/outputs/
 projects/effective_thermal_cond/effective_k_ice
 projects/effective_thermal_cond/effective_k_ice_full
 projects/effective_thermal_cond/effective_k_ice_homog
-projects/permafrost/permafrost
 projects/effective_thermal_cond/crash_log.txt
 projects/effective_thermal_cond/temperature.bin.info
 projects/effective_thermal_cond/scratch.c
-projects/effective_thermal_cond/outputs/*
-
 
 ###############################################################################
-# PETSc & MPI Build Directories
+# 🌨️ Dry Snow Metamorphism Project Outputs
+###############################################################################
+projects/dry_snow_metamorphism/obj/
+projects/dry_snow_metamorphism/inputs/
+projects/dry_snow_metamorphism/outputs/
+
+###############################################################################
+# 🧊 Permafrost Project Outputs
+###############################################################################
+projects/permafrost/obj/
+projects/permafrost/inputs/
+projects/permafrost/outputs/
+projects/permafrost/permafrost
+
+###############################################################################
+# 🧱 PETSc & MPI Build Directories
 ###############################################################################
 MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0/
 MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/
-MAC_Si-M2_MPICH-4.3.0_PETSC-3.22_GCC-12.4.0/
