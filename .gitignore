@@ -55,7 +55,6 @@ demo/venv/
 # ❄️ Effective Thermal Conductivity Project Outputs
 ###############################################################################
 projects/effective_thermal_cond/obj/
-projects/effective_thermal_cond/inputs/
 projects/effective_thermal_cond/outputs/
 projects/effective_thermal_cond/effective_k_ice
 projects/effective_thermal_cond/effective_k_ice_full
@@ -68,14 +67,12 @@ projects/effective_thermal_cond/scratch.c
 # 🌨️ Dry Snow Metamorphism Project Outputs
 ###############################################################################
 projects/dry_snow_metamorphism/obj/
-projects/dry_snow_metamorphism/inputs/
 projects/dry_snow_metamorphism/outputs/
 
 ###############################################################################
 # 🧊 Permafrost Project Outputs
 ###############################################################################
 projects/permafrost/obj/
-projects/permafrost/inputs/
 projects/permafrost/outputs/
 projects/permafrost/permafrost
 

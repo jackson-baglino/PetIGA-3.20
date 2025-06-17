@@ -8,7 +8,7 @@ from scipy.interpolate import interp1d
 # --- Parameters ---
 parent_dir = '/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/'
 folder_pattern = r'NASAv2_2G-Molaro-2D_T([-\d.]+)_hum[\d.]+_'
-save_figures = False  # If True, save plots to disk; if False, show plots interactively
+save_figures = True  # If True, save plots to disk; if False, show plots interactively
 scatter_step = 10
 dpi = 300
 
