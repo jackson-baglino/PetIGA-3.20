@@ -16,8 +16,8 @@ inputFile="$input_dir/$filename"
 readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-t_final=1e-2
-# t_final=$((14 * 24 * 60 * 60))  # 14 days in seconds
+# t_final=1e-4
+t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
 n_out=40
 humidity=1.00
 temp=-80.0
@@ -41,14 +41,13 @@ else
     eps=9.00e-07
 fi
 
-# title="NASAv2_30G-${dim}D_T${temp}_hum${humidity}"
 clean_name="${filename#grainReadFile-}"
 clean_name="${clean_name%.dat}"
 
 title="drysnow_${clean_name}_${dim}D_Tm${temp/-}_hum$(printf "%.0f" "$(echo "$humidity * 100" | bc -l)")_tf$(echo "$t_final / 86400" | bc)d_"
 SETTINGS_FILE="$BASE_DIR/configs/${filename%.dat}.env"
 
-NUM_PROCS=1  # Number of MPI processes
+NUM_PROCS=12  # Number of MPI processes
 
 # =======================================
 # Timestamped result folder
@@ -156,7 +155,7 @@ write_parameters_to_dat
 # =======================================
 # Run the simulation
 # =======================================
-echo "[INFO] Launching NASAv2 simulation..."
+echo "[INFO] Launching DRY SNOW METAMORPHISM simulation..."
 mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom -temp_initial \
   -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
   -ksp_gmres_restart 150 -ksp_max_it 1000 \
@@ -166,8 +165,10 @@ mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom -temp_initial \
 # =======================================
 # Finalize
 # =======================================
-cp "$exec_file.c" scripts/run_NASAv2.sh scripts/plotNASA.py scripts/plotSSA.py scripts/plotPorosity.py "$folder"
-./run_plotNASAv2.sh "$title"  # Optional if plotting is scripted
+echo " "
+echo "[INFO] Simulation completed."
+cp src/dry_snow_metamorphism.c scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder"
+./scripts/run_plotDSM.sh
 
 echo "✅ Simulation complete. Results stored in:"
 echo "$folder"
