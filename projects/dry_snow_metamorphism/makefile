@@ -1,5 +1,5 @@
 TARGETS = \
-    NASAv2 \
+    dry_snow_metamorphism \
 
 # Default target: build the executable
 all: $(TARGETS)

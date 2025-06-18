@@ -32,17 +32,6 @@ input/
 Original/
 
 ###############################################################################
-# ⚙️ Compiled Binary & Object Files
-###############################################################################
-NASA
-NASA.o
-NASA_panda
-NASA_panda.o
-NASAv2
-NASAv2.o
-Wetamorphism
-
-###############################################################################
 # 🧪 Demo Files & Outputs
 ###############################################################################
 # demo/Laplace*
@@ -69,6 +58,7 @@ projects/effective_thermal_cond/scratch.c
 projects/dry_snow_metamorphism/obj/
 projects/dry_snow_metamorphism/outputs/
 projects/dry_snow_metamorphism/output_files/ 
+projects/dry_snow_metamorphism/dry_snow_metamorphism
 
 
 ###############################################################################
