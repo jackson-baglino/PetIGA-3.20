@@ -5,17 +5,19 @@
 # =======================================
 BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
 input_dir="$BASE_DIR/inputs"
-output_dir="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2"
-exec_file="${BASE_DIR}/NASAv2"
+output_dir="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch"
+exec_file="${BASE_DIR}/dry_snow_metamorphism"
 
 # =======================================
 # Define simulation parameters
 # =======================================
-filename="grainReadFile-2_Molaro_tight.dat"
+filename="grainReadFile-2G_Molaro_tight.dat"
 inputFile="$input_dir/$filename"
+readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-t_final=$((14 * 24 * 60 * 60))  # 14 days in seconds
+t_final=1e-2
+# t_final=$((14 * 24 * 60 * 60))  # 14 days in seconds
 n_out=40
 humidity=1.00
 temp=-80.0
@@ -24,11 +26,29 @@ grad_temp0Y=3.0e-4
 grad_temp0Z=0.0
 dim=2
 
+if [[ readFlag -eq 1 ]]; then
+    echo "[INFO] Reading grain file: $inputFile"
+else
+    echo "[INFO] Generating grains instead of reading from file."
+    Lx=0.5e-3
+    Ly=0.5e-3
+    Lz=0.5e-3
+
+    Nx=275
+    Ny=275
+    Nz=275
+
+    eps=9.00e-07
+fi
+
 # title="NASAv2_30G-${dim}D_T${temp}_hum${humidity}"
-title="drysnow_30g_dim${dim}_Tm${temp/-/m}_hum$(printf "%.0f" "$(echo "$humidity * 100" | bc -l)")_dt${delt_t}_tf$(echo "$t_final / 86400" | bc)d_"
+clean_name="${filename#grainReadFile-}"
+clean_name="${clean_name%.dat}"
+
+title="drysnow_${clean_name}_${dim}D_Tm${temp/-}_hum$(printf "%.0f" "$(echo "$humidity * 100" | bc -l)")_tf$(echo "$t_final / 86400" | bc)d_"
 SETTINGS_FILE="$BASE_DIR/configs/${filename%.dat}.env"
 
-NUM_PROCS=12  # Number of MPI processes
+NUM_PROCS=1  # Number of MPI processes
 
 # =======================================
 # Timestamped result folder
@@ -44,7 +64,10 @@ cp "$inputFile" "$folder"
 # Build and run setup
 # =======================================
 cd "$BASE_DIR" || exit 1
-make NASAv2
+make dry_snow_metamorphism || {
+    echo "[ERROR] Build failed. Please check the Makefile and dependencies."
+    exit 1
+}
 
 # Generate env file if missing
 if [ ! -f "$SETTINGS_FILE" ]; then
@@ -58,9 +81,9 @@ source "$SETTINGS_FILE"
 set +a
 
 # Export simulation parameters
-export folder input_dir inputFile filename title \
-       delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim \
-       Lx Ly Lz Nx Ny Nz eps
+export folder input_dir inputFile filename title
+export delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim
+export readFlag Lx Ly Lz Nx Ny Nz eps
 
 # =======================================
 # Save simulation metadata
@@ -143,7 +166,7 @@ mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom -temp_initial \
 # =======================================
 # Finalize
 # =======================================
-cp "$exec_file.c" run_NASAv2.sh plotNASA.py plotSSA.py plotPorosity.py "$folder"
+cp "$exec_file.c" scripts/run_NASAv2.sh scripts/plotNASA.py scripts/plotSSA.py scripts/plotPorosity.py "$folder"
 ./run_plotNASAv2.sh "$title"  # Optional if plotting is scripted
 
 echo "✅ Simulation complete. Results stored in:"
