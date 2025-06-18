@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH -J NASAv2-job
+#SBATCH -J DSM-T=-80_hum=0.90
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=10
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=50
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
 #SBATCH -e "output_files/%x.e%j"
@@ -17,11 +17,12 @@
 ##############################################
 
 # Set input filename (only the filename, not full path)
-inputFile="grainReadFile-96_s1-10.dat"
+inputFile="grainReadFile-2_Molaro_tight.dat"
 
 # Define physical & environmental parameters
-temp=-20.0
-humidity=0.70
+temp=-80.0
+humidity=0.90
+dim=2
 grad_temp0X=0.0
 grad_temp0Y=3.0e-5
 grad_temp0Z=0.0
@@ -94,10 +95,10 @@ cp "$BASE_DIR/src/NASAv2.c" "$folder/"
 cp "$0" "$folder/run_script_copy.sh"
 
 # Run simulation
-# mpiexec "$exec_file" -initial_cond -initial_PFgeom \
-#   -snes_rtol 1e-3 -snes_stol 1e-3 -snes_max_it 6 \
-#   -ksp_gmres_restart 150 -ksp_max_it 500 -ksp_converged_maxits 1 \
-#   -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
-#   -snes_linesearch_type basic | tee "$folder/outp.txt"
+mpiexec "$exec_file" -initial_cond -initial_PFgeom \
+  -snes_rtol 1e-3 -snes_stol 1e-3 -snes_max_it 6 \
+  -ksp_gmres_restart 150 -ksp_max_it 500 -ksp_converged_maxits 1 \
+  -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
+  -snes_linesearch_type basic | tee "$folder/outp.txt"
 
 echo "[INFO] Simulation completed on $(date)"
