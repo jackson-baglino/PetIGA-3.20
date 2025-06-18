@@ -65,8 +65,12 @@ int main(int argc, char *argv[]) {
   user.p=p; user.C=C;  user.dim=dim;
 
   // grains!
-  flag_sedgrav    = 0; 
-  user.NCsed      = 20; //less than 200, otherwise update in user
+  if (user.readFlag==0) {
+    user.NCsed      = 20; //less than 200, otherwise update in user
+  } else {
+    user.NCsed      = 0; //less than 200, otherwise update in user
+  }
+  flag_sedgrav    = 0;
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
 

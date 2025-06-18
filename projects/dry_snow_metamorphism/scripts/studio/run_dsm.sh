@@ -16,11 +16,11 @@ inputFile="$input_dir/$filename"
 readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-# t_final=1e-4
+t_final=1e-4
 t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
 n_out=40
 humidity=1.00
-temp=-80.0
+temp=-20.0
 grad_temp0X=0.0
 grad_temp0Y=3.0e-4
 grad_temp0Z=0.0
