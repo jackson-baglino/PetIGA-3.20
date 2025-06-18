@@ -68,6 +68,8 @@ projects/effective_thermal_cond/scratch.c
 ###############################################################################
 projects/dry_snow_metamorphism/obj/
 projects/dry_snow_metamorphism/outputs/
+projects/dry_snow_metamorphism/output_files/ 
+
 
 ###############################################################################
 # 🧊 Permafrost Project Outputs
