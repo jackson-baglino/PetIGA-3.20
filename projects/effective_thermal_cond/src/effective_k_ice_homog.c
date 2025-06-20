@@ -1190,7 +1190,7 @@ int main(int argc, char *argv[]) {
     ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
     user.iga = iga;
 
-    PetscInt num_files_analyze = 40;
+    PetscInt num_files_analyze = num_files; // Default to all files, but can be adjusted
 
     // Create a list of indices from 0 to num_files-1, evenly spaced with num_files_analyze entries
     PetscInt analyze_indices[num_files_analyze];

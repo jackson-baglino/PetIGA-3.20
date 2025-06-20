@@ -3,27 +3,28 @@
 # =======================================
 # Base directory and file setup
 # =======================================
-BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
+BASE_DIR="${PETIGA_DIR}/projects/permafrost"
 input_dir="$BASE_DIR/inputs"
-output_dir="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch"
-exec_file="${BASE_DIR}/dry_snow_metamorphism"
+output_dir="/Users/jacksonbaglino/SimulationResults/permafrost/scratch"
+exec_file="${BASE_DIR}/permafrost"
 
 # =======================================
 # Define simulation parameters
 # =======================================
-# filename="grainReadFile-2G_Molaro_tight.dat"
-filename="grainReadFile-18FCC.dat"
+filename="grainReadFile-2G_Molaro_tight.dat"
 inputFile="$input_dir/$filename"
-readFlag=1  # Set to 1 to read grain file, 0 to generate grains
+readFlag=0  # Set to 1 to read grain file, 0 to generate grains
+
+# NOTE: Add files to read from in order to have readFlag=1!!!
 
 delt_t=1.0e-4
 t_final=1e-4
 t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
 n_out=40
 humidity=1.00
-temp=-20.0
+temp=-80.0
 grad_temp0X=0.0
-grad_temp0Y=3.0e0
+grad_temp0Y=3.0e-4
 grad_temp0Z=0.0
 dim=2
 
@@ -45,10 +46,10 @@ fi
 clean_name="${filename#grainReadFile-}"
 clean_name="${clean_name%.dat}"
 
-title="drysnow_${clean_name}_${dim}D_Tm${temp/-}_hum$(printf "%.0f" "$(echo "$humidity * 100" | bc -l)")_tf$(echo "$t_final / 86400" | bc)d_"
+title="permafrost_${clean_name}_${dim}D_Tm${temp/-}_hum$(printf "%.0f" "$(echo "$humidity * 100" | bc -l)")_tf$(echo "$t_final / 86400" | bc)d_"
 SETTINGS_FILE="$BASE_DIR/configs/${filename%.dat}.env"
 
-NUM_PROCS=12  # Number of MPI processes
+NUM_PROCS=1  # Number of MPI processes
 
 # =======================================
 # Timestamped result folder
@@ -64,7 +65,7 @@ cp "$inputFile" "$folder"
 # Build and run setup
 # =======================================
 cd "$BASE_DIR" || exit 1
-make dry_snow_metamorphism || {
+make permafrost || {
     echo "[ERROR] Build failed. Please check the Makefile and dependencies."
     exit 1
 }
@@ -168,8 +169,8 @@ mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom -temp_initial \
 # =======================================
 echo " "
 echo "[INFO] Simulation completed."
-cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder"
-./scripts/run_plotDSM.sh
+cp -r src scripts/studio/run_permafrost.sh postprocess/plotpermafrost.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder"
+./scripts/run_plotpermafrost.sh
 
 echo "✅ Simulation complete. Results stored in:"
 echo "$folder"

@@ -39,8 +39,6 @@ int main(int argc, char *argv[]) {
   user.flag_it0   = 1;
   user.flag_tIC   = 0;
 
-  user.readFlag   = 0; // 0: generate ice grains, 1: read ice grains from file
-
   //---------Gibbs-Thomson parameters 
   user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
                               // pretty unstable, need to check implementation!!!
@@ -53,13 +51,13 @@ int main(int argc, char *argv[]) {
 
   // Unpack environment variables
   PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");
-  PetscInt Nx, Ny, Nz, n_out, dim;
+  PetscInt Nx, Ny, Nz, n_out, dim, readFlag;
   PetscReal Lx, Ly, Lz, delt_t, t_final, humidity, temp, eps;
   PetscReal grad_temp0[3];
   ierr = ParseEnvironment(&user, &Nx, &Ny, &Nz, &Lx, &Ly, &Lz,
                             &delt_t, &t_final, &n_out,
                             &humidity, &temp, grad_temp0,
-                            &dim, &eps); CHKERRQ(ierr);
+                            &dim, &eps, &readFlag); CHKERRQ(ierr);
   // Define the polynomial order of basis functions and global continuity order
   PetscInt  l,m, p=1, C=0; //dim=2;
   user.p=p; user.C=C;  user.dim=dim;

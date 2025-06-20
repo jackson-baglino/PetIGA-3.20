@@ -2,6 +2,7 @@ cmocean==4.0.3
 contourpy==1.3.0
 cycler==0.12.1
 fonttools==4.56.0
+igakit @ https://github.com/dalcinl/igakit/archive/refs/heads/master.zip#sha256=014ca9e15ac9a5ca29b87634a0de8587d81caf28c32790a1b39f407084030854
 importlib_resources==6.5.2
 kiwisolver==1.4.7
 matplotlib==3.9.4

@@ -10,6 +10,6 @@ PetscErrorCode ParseEnvironment(AppCtx *user,
                                 PetscReal *delt_t, PetscReal *t_final, PetscInt *n_out,
                                 PetscReal *humidity, PetscReal *temp,
                                 PetscReal grad_temp0[3],
-                                PetscInt *dim, PetscReal *eps);
+                                PetscInt *dim, PetscReal *eps, PetscInt *readFlag);
 
 #endif // ENV_HELPER_H

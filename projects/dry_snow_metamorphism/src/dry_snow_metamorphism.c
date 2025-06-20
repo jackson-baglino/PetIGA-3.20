@@ -310,7 +310,23 @@ int main(int argc, char *argv[]) {
   PetscLogDouble ltim,tim;
   ierr = PetscTime(&ltim); CHKERRQ(ierr);
   tim = ltim-itim;
-  PetscPrintf(PETSC_COMM_WORLD," comp time %e sec  =  %.2f min \n\n",tim,tim/60.0);
+
+  int days = (int)(tim / 86400);
+  int hours = (int)((tim - days * 86400) / 3600);
+  int minutes = (int)((tim - days * 86400 - hours * 3600) / 60);
+  double seconds = tim - days * 86400 - hours * 3600 - minutes * 60;
+
+  // Print computation time in bold if terminal supports ANSI escape codes
+  PetscPrintf(PETSC_COMM_WORLD, "\033[1mcomp time: ");
+  if (days > 0)
+    PetscPrintf(PETSC_COMM_WORLD, "%d day%s ", days, days == 1 ? "" : "s");
+  if (hours > 0)
+    PetscPrintf(PETSC_COMM_WORLD, "%d hour%s ", hours, hours == 1 ? "" : "s");
+  if (minutes > 0)
+    PetscPrintf(PETSC_COMM_WORLD, "%d min%s ", minutes, minutes == 1 ? "" : "s");
+  if (seconds > 0 || (days == 0 && hours == 0 && minutes == 0))
+    PetscPrintf(PETSC_COMM_WORLD, "%.2f sec", seconds);
+  PetscPrintf(PETSC_COMM_WORLD, "\033[0m\n\n");
 
   ierr = PetscFinalize();CHKERRQ(ierr);
   return 0;

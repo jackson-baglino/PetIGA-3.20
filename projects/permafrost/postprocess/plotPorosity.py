@@ -1,117 +1,84 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import argparse
+import os
+import sys
 
-# Read data from the file
-filename = "/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/" \
-    "NASA_read/res_2023-12-12__22.19.37/SSA_evo.dat"
-grainFile = "/Users/jacksonbaglino/PetIGA/demo/input/grainReadFile.csv"
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Plot SSA and porosity evolution from simulation results."
+    )
+    parser.add_argument("ssa_file", help="Path to SSA_evo.dat file")
+    parser.add_argument("grain_file", help="Path to grainReadFile.csv")
+    parser.add_argument("--outdir", default=".", help="Directory to save plots (default: current dir)")
+    return parser.parse_args()
 
-try:
-    # Use genfromtxt for more flexible data loading
-    data = np.genfromtxt(filename, delimiter=' ', dtype=float, comments='#', filling_values=np.nan)
-    # Drop rows with NaN values
-    data = data[~np.isnan(data).any(axis=1)]
-    ssa_data = data[200:-1, 0]
-    porosity = data[200:-1, 1]
-except FileNotFoundError:
-    print(f"Error: File '{filename}' not found.")
-    exit()
-except Exception as e:
-    print(f"Error reading data from '{filename}': {e}")
-    exit()
+def load_ssa_and_porosity(filename):
+    try:
+        data = np.genfromtxt(filename, delimiter=' ', dtype=float, comments='#', filling_values=np.nan)
+        data = data[~np.isnan(data).any(axis=1)]  # Drop rows with NaNs
+        ssa = data[200:-1, 0]
+        porosity = data[200:-1, 1]
+        return ssa, porosity
+    except Exception as e:
+        print(f"[ERROR] Could not read SSA file: {e}")
+        sys.exit(1)
 
-print("Loaded data from SSA_evo.dat:")
-# print(data)
+def load_grain_data(filename):
+    try:
+        grain_data = np.loadtxt(filename, delimiter=',', usecols=(2,))
+        return grain_data
+    except Exception as e:
+        print(f"[ERROR] Could not read grain file: {e}")
+        sys.exit(1)
 
-try:
-    # Assuming grainFile is a CSV file with columns for grain data and porosity
-    grain_data = np.loadtxt(grainFile, delimiter=',', usecols=(2,))
-except FileNotFoundError:
-    print(f"Error: File '{grainFile}' not found.")
-    exit()
-except Exception as e:
-    print(f"Error reading data from '{grainFile}': {e}")
-    exit()
+def normalize_ssa(ssa_raw, grain_data):
+    # Normalize SSA based on analytical surface area from grains
+    effective_grain_radius = np.sqrt(2 * (2e-3)**2)
+    scaled_grains = grain_data * effective_grain_radius / np.sqrt(2 * 200**2)
+    SSA0 = np.sum(2 * np.pi * scaled_grains)
+    scale_factor = ssa_raw[0] / SSA0
+    return ssa_raw / scale_factor / 10  # Final units in [m]
 
-grain_data = grain_data * np.sqrt(2 * (2e-3)**2) / np.sqrt(2 * (200)**2)
+def normalize_porosity(porosity_raw):
+    domain_volume = 2e-3 * 1.583e-3
+    return porosity_raw / domain_volume
 
-SSA0 = np.sum(2 * np.pi * grain_data)
-print(f"SSA0 = {SSA0}")
+def main():
+    args = parse_args()
+    ssa_raw, porosity_raw = load_ssa_and_porosity(args.ssa_file)
+    grain_data = load_grain_data(args.grain_file)
 
-# Normalize SSA data by the third column of grain data
-c = ssa_data[0] / SSA0
-normalized_ssa_data = ssa_data / c / 10
+    normalized_ssa = normalize_ssa(ssa_raw, grain_data)
+    normalized_porosity = normalize_porosity(porosity_raw)
 
-# Compute initial porosity
-domain = 2e-3*1.583e-3
+    time = np.linspace(1, 3, len(normalized_ssa))  # Placeholder: adjust if needed
 
-porosity = porosity/domain
+    os.makedirs(args.outdir, exist_ok=True)
 
-# Create a time array (assuming data points are equally spaced)
-time = np.linspace(1, 3, len(normalized_ssa_data))
+    # Create dual-axis plot
+    plt.figure(figsize=(10, 6))
+    ax1 = plt.gca()
+    line1, = ax1.plot(time, normalized_ssa, 'b-', label='Surface Area Evolution')
+    ax1.set_xlabel('Time [days]', fontsize=18)
+    ax1.set_ylabel('Surface Area [m]', fontsize=18, color='b')
+    ax1.tick_params(axis='y', labelcolor='b')
+    ax1.grid(False)
+    ax1.set_title('Evolution of Surface Area and Porosity', fontsize=24)
 
+    ax2 = ax1.twinx()
+    line2, = ax2.plot(time, normalized_porosity, 'r-', label='Porosity Evolution')
+    ax2.set_ylabel('Porosity', fontsize=18, color='r')
+    ax2.tick_params(axis='y', labelcolor='r')
 
+    ax1.tick_params(axis='both', labelsize=14)
+    ax2.tick_params(axis='both', labelsize=14)
 
+    # Save figure
+    fig_path = os.path.join(args.outdir, "combined_evolution_dual_y_axis.png")
+    plt.savefig(fig_path, bbox_inches="tight")
+    print(f"[INFO] Plot saved to: {fig_path}")
+    plt.show()
 
-# Create the main figure and axis for Surface Area Evolution
-plt.figure(figsize=(10, 6))
-ax1 = plt.gca()  # Get current axis
-line1, = ax1.plot(time, normalized_ssa_data, 'b-', label='Surface Area Evolution')  # 'b-' for blue line
-ax1.set_xlabel('Time [days]', fontsize=18)
-ax1.set_ylabel(r'Surface Area [m]', fontsize=18, color='b')  # Blue color for the left y-axis
-ax1.tick_params(axis='y', labelcolor='b')
-ax1.set_title('Evolution of Surface Area and Porosity', fontsize=24)
-ax1.grid(False)
-
-# Create the second axis for Porosity Evolution
-ax2 = ax1.twinx()  # Create a twin y-axis sharing the same x-axis
-line2, = ax2.plot(time, porosity, 'r-', label='Porosity Evolution')  # 'r-' for red line
-ax2.set_ylabel('Porosity', fontsize=18, color='r')  # Red color for the right y-axis
-ax2.tick_params(axis='y', labelcolor='r')
-
-# Set font sizes for tick labels
-ax1.tick_params(axis='both', which='major', labelsize=14)
-ax2.tick_params(axis='both', which='major', labelsize=14)
-
-# # Create a combined legend
-# lines = [line1, line2]
-# labels = [l.get_label() for l in lines]
-# ax1.legend(lines, labels, loc='upper right')
-
-# Save and show the plot
-plt.savefig("combined_evolution_N-150_dual_y_axis.png")
-plt.show()
-
-
-
-
-
-
-
-
-
-# # Plotting the Surface Area data
-# plt.figure(figsize=(10, 6))
-# plt.plot(time, normalized_ssa_data, label='Surface Area Evolution')
-# plt.xlabel('Time [days]', fontsize=18)
-# plt.ylabel('Surface Area', fontsize=18)
-# plt.title('Surface Area Evolution', fontsize=24)
-# plt.xticks(fontsize=14)
-# plt.yticks(fontsize=14)
-# plt.grid(True)
-# plt.legend()
-# plt.savefig("ssa_evolution_N-150.png")
-# plt.show()
-
-# # Plotting the second column from "filename"
-# plt.figure(figsize=(10, 6))
-# plt.plot(time, porosity, label='Porosity')
-# plt.xlabel('Time [days]', fontsize=18)
-# plt.ylabel('Porosity', fontsize=18)
-# plt.title('Porosity Evolution', fontsize=24)
-# plt.xticks(fontsize=14)
-# plt.yticks(fontsize=14)
-# plt.grid(True)
-# plt.legend()
-# plt.savefig("poroposity_evolution_N-150.png")
-# plt.show()
+if __name__ == "__main__":
+    main()
