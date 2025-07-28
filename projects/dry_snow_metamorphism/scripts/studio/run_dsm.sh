@@ -15,14 +15,13 @@ filename="grainReadFile-2G_Molaro_tight.dat"
 # filename="grainReadFile-18FCC.dat"
 # filename="grainReadFile-30G_s1-10.dat"
 inputFile="$input_dir/$filename"
-readFlag=1  # Set to 1 to read grain file, 0 to generate grains
+readFlag=0  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-# t_final=$((60 * 24 * 60 * 60))  # 60 days in seconds (2 months)
-t_final=0
+t_final=$((1 * 7 * 24 * 60 * 60))  # 60 days in seconds (2 months)
 n_out=40
-humidity=1.0  # Relative humidity in fraction (0.0 to 1.0)
-temp=-80.0
+humidity=0.5  # Relative humidity in fraction (0.0 to 1.0)
+temp=-10.0
 grad_temp0X=0.0
 grad_temp0Y=3.0e-5
 grad_temp0Z=0.0
@@ -166,11 +165,35 @@ write_metadata_json
 # Run the simulation
 # =======================================
 echo "[INFO] Launching DRY SNOW METAMORPHISM simulation..."
-mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom -temp_initial \
+mpiexec -np "$NUM_PROCS" "$exec_file" \
   -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
   -ksp_gmres_restart 150 -ksp_max_it 1000 \
   -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
   -snes_linesearch_type basic | tee "$folder/outp.txt"
+
+
+# mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom -temp_initial \
+#   -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
+#   -ksp_gmres_restart 150 -ksp_max_it 1000 \
+#   -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
+#   -snes_linesearch_type basic | tee "$folder/outp.txt"
+
+# For debugging...
+# mpiexec -np "$NUM_PROCS" "$exec_file" \
+#   -snes_rtol 1e-5 \
+#   -snes_stol 1e-10 \
+#   -snes_max_it 30 \
+#   -snes_monitor_short \
+#   -snes_monitor_solution draw \
+#   -snes_converged_reason \
+#   -ksp_monitor_true_residual \
+#   -ksp_monitor_short \
+#   -ksp_converged_reason \
+#   -ksp_view \
+#   -snes_linesearch_monitor \
+#   -info \
+#   -log_view | tee "$folder/outp.txt"
+
 
 # =======================================
 # Finalize

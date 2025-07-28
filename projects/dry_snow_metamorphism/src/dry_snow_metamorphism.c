@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
   user.RCice_dev  = 0.55;
 
   //boundary conditions
-  user.periodic   = 0;          // periodic >> Dirichlet   
-  flag_BC_Tfix    = 1;
+  user.periodic   = 1;          // periodic >> Dirichlet   
+  flag_BC_Tfix    = 0;
   flag_BC_rhovfix = 0;
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;

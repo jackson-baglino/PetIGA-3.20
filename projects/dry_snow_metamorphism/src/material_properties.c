@@ -324,16 +324,37 @@ void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair,
  */
 void Sigma0(PetscScalar temp, PetscScalar *sigm0)
 {
-    // Lookup table for σ₀ values at different temperatures
-    PetscReal sig[10], tem[10];
+    // Lookup table for σ₀ values at different (negative) temperatures [°C]
+    PetscReal tem[15], sig[15];
 
-    // Predefined values for σ₀ corresponding to specific temperatures
-    sig[0] = 3.0e-3;  sig[1] = 4.1e-3;  sig[2] = 5.5e-3;  sig[3] = 8.0e-3;  sig[4] = 4.0e-3;
-    sig[5] = 6.0e-3;  sig[6] = 3.5e-2;  sig[7] = 7.0e-2;  sig[8] = 1.1e-1;  sig[9] = 0.75;
+    // Temperatures (negated from input)
+    tem[0]  = -2.0662284513557885;   tem[1]  = -4.138849483297185;    tem[2]  = -5.323308309678149;
+    tem[3]  = -6.203550141721592;    tem[4]  = -7.204643971446396;    tem[5]  = -8.575858332006952;
+    tem[6]  = -10.339056175102106;   tem[7]  = -11.39213060745516;    tem[8]  = -12.477159925905502;
+    tem[9]  = -13.504294635360388;   tem[10] = -15.513046129354148;   tem[11] = -20.806359097398456;
+    tem[12] = -31.253004787164496;   tem[13] = -40.757870820038875;
 
-    // Corresponding temperature values (in Celsius)
-    tem[0] = -0.0001;  tem[1] = -2.0;   tem[2] = -4.0;   tem[3] = -6.0;   tem[4] = -7.0;
-    tem[5] = -10.0;    tem[6] = -20.0;  tem[7] = -30.0;  tem[8] = -40.0;  tem[9] = -100.0;
+    // Corresponding σ₀ values
+    sig[0]  = 0.004214474496253623;  sig[1]  = 0.0054980285416265295; sig[2]  = 0.007521232999978934;
+    sig[3]  = 0.007379749932627774;  sig[4]  = 0.004019064140763167;  sig[5]  = 0.004723107309565331;
+    sig[6]  = 0.006220353575957829;  sig[7]  = 0.013045585034418642;  sig[8]  = 0.019438327725533045;
+    sig[9]  = 0.015042465999957863;  sig[10] = 0.020000000000000014;  sig[11] = 0.0360329075195012;
+    sig[12] = 0.07004194652678876;   sig[13] = 0.1298370424308925;
+
+    // // Linear interpolation
+    // int i;
+    // for (i = 0; i < 13; i++) {
+    //     if (temp <= tem[i] && temp > tem[i+1]) {
+    //         PetscReal m = (sig[i+1] - sig[i]) / (tem[i+1] - tem[i]);
+    //         PetscReal b = sig[i] - m * tem[i];
+    //         *sigm0 = m * temp + b;
+    //         return;
+    //     }
+    // }
+
+    // // If out of range: use lowest or highest value
+    // if (temp > tem[0]) *sigm0 = sig[0];
+    // else               *sigm0 = sig[13];
 
     PetscInt ii, interv = 0;
     PetscReal t0, t1, s0, s1;
