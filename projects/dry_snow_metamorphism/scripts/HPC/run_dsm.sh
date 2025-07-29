@@ -16,7 +16,10 @@
 # USER-MODIFIABLE SIMULATION SETTINGS
 ##############################################
 
+# Set input filename (only the filename, not full path)
 inputFile="grainReadFile-2_Molaro_tight.dat"
+
+# Define physical & environmental parameters
 temp=-80.0
 humidity=0.90
 dim=2
@@ -46,11 +49,11 @@ fi
 
 # Generate .env file if missing
 if [[ ! -f "$SETTINGS_FILE" ]]; then
-  echo "[INFO] .env file not found. Generating..."
+  echo "[INFO] .env file not found for $inputFile. Generating..."
   python3 "$BASE_DIR/scripts/generate_env_from_input.py" "$inputFile" "$SETTINGS_FILE" || exit 1
 fi
 
-# Load .env
+# Load simulation parameters from .env
 echo "[INFO] Loading settings from $SETTINGS_FILE"
 source "$SETTINGS_FILE"
 
@@ -59,7 +62,7 @@ folder="$output_dir/${SLURM_JOB_NAME}_${SLURM_JOB_ID:0:9}"
 mkdir -p "$folder"
 echo "[INFO] Output directory created: $folder"
 
-# Export environment vars for simulation
+# Export for simulation
 export Lx Ly Lz Nx Ny Nz eps delt_t t_final n_out dim \
        grad_temp0X grad_temp0Y grad_temp0Z humidity temp inputFile folder
 
@@ -72,76 +75,30 @@ if [[ ! -x "$exec_file" ]]; then
   cd "$BASE_DIR/src" || { echo "[ERROR] Failed to enter src directory."; exit 1; }
   make NASAv2
   [[ $? -ne 0 ]] && { echo "[ERROR] Compilation failed. Exiting."; exit 1; }
+  echo "[INFO] Compilation successful."
 else
   echo "[INFO] Using existing executable: $exec_file"
 fi
 
 ##############################################
-# WRITE METADATA
+# RUN SIMULATION
 ##############################################
 
-# Attempt to extract number of grains from input file name
-if [[ "$inputFile" =~ grainReadFile-([0-9]+) ]]; then
-  num_grains="${BASH_REMATCH[1]}"
-else
-  num_grains="unknown"
-fi
+echo "[INFO] Starting simulation on $(date)"
+echo "[INFO] Input file: $(basename "$inputFile")"
+echo "[INFO] Temperature = $temp°C, Humidity = $humidity"
+echo "[INFO] Domain: ($Lx x $Ly x $Lz), Grid: ($Nx x $Ny x $Nz)"
 
-json_file="$folder/metadata.json"
-echo "[INFO] Writing metadata to: $json_file"
-
-cat << EOF > "$json_file"
-{
-  "folder_name": "$(basename "$folder")",
-  "run_time": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-  "executed_on": "$(hostname)",
-  "user": "$(whoami)",
-  "project": "dry_snow_metamorphism",
-  "sim_dimension": $dim,
-  "input_file": "$(basename "$inputFile")",
-  "env_file_used": "${SETTINGS_FILE:-"none"}",
-  "temperature_C": $temp,
-  "humidity": $humidity,
-  "num_grains": "$num_grains",
-  "grad_temp": {
-    "x": $grad_temp0X,
-    "y": $grad_temp0Y,
-    "z": $grad_temp0Z
-  },
-  "domain_size_m": {
-    "Lx": $Lx,
-    "Ly": $Ly,
-    "Lz": $Lz
-  },
-  "mesh_resolution": {
-    "Nx": $Nx,
-    "Ny": $Ny,
-    "Nz": $Nz
-  },
-  "interface_width_eps": $eps,
-  "delt_t": $delt_t,
-  "t_final": $t_final,
-  "n_out": $n_out
-}
-EOF
-
-##############################################
-# BACKUP INPUTS
-##############################################
-
+# Backup inputs to output folder
 cp "$inputFile" "$folder/"
 cp "$BASE_DIR/src/NASAv2.c" "$folder/"
 cp "$0" "$folder/run_script_copy.sh"
 
-##############################################
-# RUN SIMULATION
-##############################################
-
-echo "[INFO] Launching simulation at $(date)"
+# Run simulation
 mpiexec "$exec_file" -initial_cond -initial_PFgeom \
   -snes_rtol 1e-3 -snes_stol 1e-3 -snes_max_it 6 \
   -ksp_gmres_restart 150 -ksp_max_it 500 -ksp_converged_maxits 1 \
   -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
   -snes_linesearch_type basic | tee "$folder/outp.txt"
 
-echo "[INFO] Simulation completed at $(date)"
+echo "[INFO] Simulation completed on $(date)"

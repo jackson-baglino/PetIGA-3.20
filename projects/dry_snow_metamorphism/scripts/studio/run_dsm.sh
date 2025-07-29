@@ -14,6 +14,7 @@ exec_file="${BASE_DIR}/dry_snow_metamorphism"
 filename="grainReadFile-2G_Molaro.dat"
 # filename="grainReadFile-18FCC.dat"
 # filename="grainReadFile-30G_s1-10.dat"
+# filename="grainReadFile-2G_Molaro_tight.dat"
 inputFile="$input_dir/$filename"
 readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
@@ -28,7 +29,7 @@ n_out=40
 humidity=0.5  # Relative humidity in fraction (0.0 to 1.0)
 temp=-10.0
 grad_temp0X=0.0
-grad_temp0Y=3.0e-5
+grad_temp0Y=3.0e0
 grad_temp0Z=0.0
 dim=2
 
@@ -120,25 +121,18 @@ EOF
 write_metadata_json() {
     json_file="$folder/metadata.json"
 
-    # Extract number of grains from filename (e.g., grainReadFile-2G_Molaro_tight.dat)
-    if [[ "$filename" =~ grainReadFile-([0-9]+)G ]]; then
-        num_grains="${match[1]}"
-    else
-        num_grains="unknown"
-    fi
-
     cat << EOF > "$json_file"
 {
   "folder_name": "$(basename "$folder")",
-  "run_time": "$(date +"%Y-%m-%dT%H:%M:%S%z")",
+  "run_time": "$(date --iso-8601=seconds)",
   "executed_on": "$(hostname)",
   "user": "$(whoami)",
   "project": "dry_snow_metamorphism",
   "sim_dimension": $dim,
   "input_file": "$inputFile",
+  "env_file_used": "${SETTINGS_FILE:-"none"}",
   "temperature_C": $temp,
   "humidity": $humidity,
-  "number_of_grains": $num_grains,
   "grad_temp": {
     "x": $grad_temp0X,
     "y": $grad_temp0Y,
@@ -164,7 +158,6 @@ EOF
 
 write_parameters_to_csv
 write_parameters_to_dat
-write_metadata_json
 
 # =======================================
 # Run the simulation

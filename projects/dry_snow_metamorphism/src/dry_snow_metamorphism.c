@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
   user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
                                   //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
 
+  // user.eps        = 9.1e-7;      //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
 	user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
@@ -47,14 +48,7 @@ int main(int argc, char *argv[]) {
   user.d0_sub0    = 1.0e-9; 
   user.beta_sub0  = 1.4e5;    
   PetscReal gamma_im = 0.033, gamma_iv = 0.109, gamma_mv = 0.056; //76
-
-  PetscReal rho0_vs;
-  RhoVS_I(&user,user.temp0,&rho0_vs,NULL);
-
-  PetscPrintf(PETSC_COMM_WORLD, "\n   rho0_vs: %f\n\n", rho0_vs);
-
-  PetscReal rho_rhovs = user.rho_ice/rho0_vs;
-  // PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
+  PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
 
   // Unpack environment variables
@@ -94,7 +88,7 @@ int main(int argc, char *argv[]) {
   //output
   user.outp = 0;                        // if 0 -> output according to t_interv
   user.t_out = 0;                       // if 0 -> output according to t_interv    
-  user.t_interv = t_final/(n_out);    //output every t_interv
+  user.t_interv = t_final/(n_out-1);    //output every t_interv
   // user.t_interv =  600.0;               //output every t_interv
 
   PetscInt adap = 1;
@@ -123,15 +117,8 @@ int main(int argc, char *argv[]) {
 
   user.mob_sub    = 1*user.eps/3.0/tau_sub; 
   user.alph_sub   = 10*lambda_sub/tau_sub;
-
-  if(user.flag_Tdep==0) {
-    PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
-  } else {
-    PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS\n");
-    PetscPrintf(PETSC_COMM_WORLD,"d0_sub %.4e  beta_sub %.4e  lambda_sub %.4e  tau_sub %.4e  M0 %.4e  alpha %.4e \n\n",
-                d0_sub, beta_sub, lambda_sub, tau_sub, user.mob_sub, user.alph_sub);
-  }
-
+  if(user.flag_Tdep==0) PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
+  else PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
   
 
   PetscBool output=PETSC_TRUE,monitor=PETSC_TRUE;

@@ -48,6 +48,13 @@ typedef struct {
   PetscInt  p;         // Polynomial orders for basis functions
   PetscInt  C;         // Global continuity order
 
+  // **Dirichlet BC (Fixed Temperature at Top & Bottom)**
+  PetscReal T_top;    // Temperature at y = Ly
+
+  // **Neumann BC (Constant flux at top or bottom)**
+  PetscReal q_bottom; // Heat flux at y = 0
+  PetscBool useFluxBottom; // If true, apply flux at bottom boundary
+
   // **Input options**
   char init_mode[256]; // Mode for initializing the ice field 
   char init_dir[256];  // Directory for initial condition files
@@ -387,7 +394,8 @@ PetscErrorCode FormInitialCondition(AppCtx *user)
 PetscErrorCode CheckRequiredEnvVars(void) {
   const char *required_vars[] = {
       "Nx", "Ny", "Nz", "Lx", "Ly", "Lz",
-      "dim", "OUTPUT_BINARY", "eps"};
+      "dim", "OUTPUT_BINARY", "eps", "TEMP_TOP", "FLUX_BOTTOM"
+  };
 
   int num_vars = sizeof(required_vars) / sizeof(required_vars[0]);
   for (int i = 0; i < num_vars; i++) {
@@ -433,6 +441,33 @@ void ParseOutputSettings(AppCtx *user, char *endptr) {
 }
 
 /*------------------------------------------------------------------------------
+Function: ParseBoundaryConditions
+Purpose : Set boundary condition values for top and bottom of the domain.
+------------------------------------------------------------------------------*/
+PetscErrorCode ParseBoundaryConditions(AppCtx *user, char *endptr) {
+  const char *temp_top_str    = getenv("TEMP_TOP");
+  const char *flux_bottom_str = getenv("FLUX_BOTTOM");
+
+  if (temp_top_str) {
+      user->T_top = strtod(temp_top_str, &endptr);
+  } else {
+      PetscPrintf(PETSC_COMM_WORLD, "❌ Error: TEMP_TOP is required.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  }
+
+  if (flux_bottom_str) {
+      user->q_bottom = strtod(flux_bottom_str, &endptr);
+  } else {
+      PetscPrintf(PETSC_COMM_WORLD, "❌ Error: FLUX_BOTTOM is required.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  }
+
+  return 0;
+}
+
+/*------------------------------------------------------------------------------
   Function: GetEnvironment
   Purpose : Read and parse environment variables into AppCtx.
 ------------------------------------------------------------------------------*/
@@ -465,8 +500,31 @@ PetscErrorCode GetEnvironment(AppCtx *user) {
   user->outputBinary = (PetscBool)strtol(getenv("OUTPUT_BINARY"), &endptr, 10);
   user->sol_index = (PetscInt)strtol(getenv("SOL_INDEX"), &endptr, 10);
 
+  const char *temp_top_str    = getenv("TEMP_TOP");
+  const char *flux_bottom_str = getenv("FLUX_BOTTOM");
+
   const char *output_dir_str = getenv("OUTPUT_DIR");
   user->output_dir = output_dir_str;
+
+  if (temp_top_str) {
+      user->T_top = strtod(temp_top_str, &endptr);
+  } else {
+      PetscPrintf(PETSC_COMM_WORLD, "❌ Error: TEMP_TOP is required.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  }
+
+  if (flux_bottom_str) {
+      user->q_bottom = strtod(flux_bottom_str, &endptr);
+  } else {
+      PetscPrintf(PETSC_COMM_WORLD, "❌ Error: FLUX_BOTTOM is required.\n");
+      PetscFinalize();
+      return EXIT_FAILURE;
+  }
+
+
+  // // Step 3: Parse boundary conditions
+  // ierr = ParseBoundaryConditions(user, endptr); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -1008,6 +1066,8 @@ int main(int argc, char *argv[]) {
   PetscPrintf(PETSC_COMM_WORLD, "Domain: Lx = %g, Ly = %g, Lz = %g\n", user.Lx, user.Ly, user.Lz);
   PetscPrintf(PETSC_COMM_WORLD, "eps = %g\n", user.eps);
   PetscPrintf(PETSC_COMM_WORLD, "dim = %d\n", user.dim);
+  PetscPrintf(PETSC_COMM_WORLD, "TEMP_TOP = %g\n", user.T_top);
+  PetscPrintf(PETSC_COMM_WORLD, "FLUX_BOTTOM = %g\n", user.q_bottom);
 
   // Initialize keff array
   PetscReal keff[user.dim * user.dim];

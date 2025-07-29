@@ -23,22 +23,10 @@ with open(filename, 'r') as file:
   input_array = input_array.astype(float)
 
 
-  area_data   = input_array[:, 0]
-  volume_data = input_array[:, 1]
-  time_data_s = input_array[:, 2]  # time in seconds
-
-  # Decide on time units
-  max_time = np.max(time_data_s)
-
-  if max_time < 3600:
-      time_data = time_data_s / 60          # seconds → minutes
-      time_units = "Minutes"
-  elif max_time < 4 * 24 * 3600:
-      time_data = time_data_s / 3600        # seconds → hours
-      time_units = "Hours"
-  else:
-      time_data = time_data_s / (24 * 3600) # seconds → days
-      time_units = "Days"
+# Unpack the input array into separate arrays
+area_data       = input_array[:, 0]
+volume_data     = input_array[:, 1]
+time_data       = input_array[:, 2]/60/60   # Convert time from seconds to hours
 
 print(f"The number of time_data points is: {len(time_data)}")
 
