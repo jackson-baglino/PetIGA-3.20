@@ -107,7 +107,7 @@ def compute_d0(temp_C):
     temp_C = np.asarray(temp_C)
     c_i = RHO_I / M_MOL
     d0 = GAMMA_IA / (c_i * K_BOLTZ * (temp_C + 273.15))
-    print(f"Coefficient is: {GAMMA_IA / (c_i * K_BOLTZ)}")
+    print(f"First temperature: {temp_C[0]}°C, d0: {d0[0]:.3e} m")
     return d0
 
 def compute_alpha_basal(temp_C, sigma0):

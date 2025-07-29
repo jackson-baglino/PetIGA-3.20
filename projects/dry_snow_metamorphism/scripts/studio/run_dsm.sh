@@ -11,14 +11,19 @@ exec_file="${BASE_DIR}/dry_snow_metamorphism"
 # =======================================
 # Define simulation parameters
 # =======================================
-filename="grainReadFile-2G_Molaro_tight.dat"
+filename="grainReadFile-2G_Molaro.dat"
 # filename="grainReadFile-18FCC.dat"
 # filename="grainReadFile-30G_s1-10.dat"
 inputFile="$input_dir/$filename"
-readFlag=0  # Set to 1 to read grain file, 0 to generate grains
+readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-t_final=$((1 * 7 * 24 * 60 * 60))  # 60 days in seconds (2 months)
+# Define simulation end time in weeks, days, hours, and seconds
+weeks=0
+days=0
+hours=1
+seconds=0
+t_final=$((weeks * 7 * 24 * 60 * 60 + days * 24 * 60 * 60 + hours * 60 * 60 + seconds))
 n_out=40
 humidity=0.5  # Relative humidity in fraction (0.0 to 1.0)
 temp=-10.0

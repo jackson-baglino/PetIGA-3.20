@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   // user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
-  user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
+  user.flag_Tdep  = 0;        // Temperature-dependent GT parameters; 
                               // pretty unstable, need to check implementation!!!
 
   user.d0_sub0    = 1.0e-9; 
@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
   user.RCice_dev  = 0.55;
 
   //boundary conditions
-  user.periodic   = 1;          // periodic >> Dirichlet   
-  flag_BC_Tfix    = 0;
+  user.periodic   = 0;          // periodic >> Dirichlet   
+  flag_BC_Tfix    = 1;
   flag_BC_rhovfix = 0;
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;

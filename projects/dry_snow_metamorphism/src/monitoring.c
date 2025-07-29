@@ -68,7 +68,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD," b_min %.2e b_max %.2e\n",B_min,B_max);
 
     // After computing beta_sub, we set the flag to 0...
-    // user->flag_Tdep = 0;
+    user->flag_Tdep = 0;
   }
 
 
