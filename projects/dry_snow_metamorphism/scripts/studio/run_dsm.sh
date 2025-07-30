@@ -11,20 +11,14 @@ exec_file="${BASE_DIR}/dry_snow_metamorphism"
 # =======================================
 # Define simulation parameters
 # =======================================
-<<<<<<< HEAD
 filename="grainReadFile-2G_Molaro.dat"
 # filename="grainReadFile-18FCC.dat"
 # filename="grainReadFile-30G_s1-10.dat"
 # filename="grainReadFile-2G_Molaro_tight.dat"
-=======
-# filename="grainReadFile-2G_Molaro_tight.dat"
-filename="grainReadFile-18FCC.dat"
->>>>>>> parent of b85b434 (Refactor simulation scripts and update metadata handling for effective thermal conductivity calculations)
 inputFile="$input_dir/$filename"
 readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-<<<<<<< HEAD
 # Define simulation end time in weeks, days, hours, and seconds
 weeks=0
 days=0
@@ -35,13 +29,6 @@ n_out=10
 humidity=0.5  # Relative humidity in fraction (0.0 to 1.0)
 temp=-10.0
 
-=======
-t_final=1e-4
-t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
-n_out=40
-humidity=1.00
-temp=-20.0
->>>>>>> parent of b85b434 (Refactor simulation scripts and update metadata handling for effective thermal conductivity calculations)
 grad_temp0X=0.0
 grad_temp0Y=3.0e0
 grad_temp0Z=0.0
