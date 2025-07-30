@@ -48,6 +48,8 @@ int main(int argc, char *argv[]) {
   user.d0_sub0    = 1.0e-9; 
   user.beta_sub0  = 1.4e5;    
   PetscReal gamma_im = 0.033, gamma_iv = 0.109, gamma_mv = 0.056; //76
+
+  // Redo this so that it is not hardcoded!!!!!!
   PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
 
 
