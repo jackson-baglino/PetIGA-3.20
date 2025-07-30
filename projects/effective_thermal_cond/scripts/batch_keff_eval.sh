@@ -9,12 +9,12 @@
 # ----------------------------
 # 🔹  Simulation parameters
 # ----------------------------
-export Nx=269
-export Ny=135
+export Nx=1100
+export Ny=1100
 export Nz=1          # 1 for 2-D
 
-export Lx=0.000202
-export Ly=0.000348
+export Lx=2.0e-3
+export Ly=2.0e-3
 export Lz=2.02e-4    # ignored when dim=2
 
 export FLUX_BOTTOM=-0.1
@@ -23,8 +23,8 @@ export TEMP_TOP=$((273.15-30))
 export eps=$((9.09629658751972e-07))
 export dim=2         # 2 = 2-D, 3 = 3-D
 
-INPUT_DIR="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch/drysnow_2G_Molaro_tight_2D_Tm20.0_hum100_tf28d__2025-06-18__15.17.12"
-OUTPUT_BASE="/Users/jacksonbaglino/SimulationResults/thermal_conductivity/scratch"
+INPUT_DIR="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/NASAv2_118G_2D_T-20.0_hum0.70_2025-05-31__09.50.53"
+OUTPUT_BASE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/outputs/homog"
 timestamp=$(date +%Y-%m-%d__%H.%M.%S)
 OUT_FOLDER="ThermalSim_homog_$timestamp"
 export OUTPUT_DIR="$OUTPUT_BASE/$OUT_FOLDER"

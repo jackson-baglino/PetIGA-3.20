@@ -30,7 +30,7 @@ humidity=0.5  # Relative humidity in fraction (0.0 to 1.0)
 temp=-10.0
 
 grad_temp0X=0.0
-grad_temp0Y=3.0e0
+grad_temp0Y=3.0e-4
 grad_temp0Z=0.0
 dim=2
 
@@ -199,7 +199,7 @@ mpiexec -np "$NUM_PROCS" "$exec_file" \
 # =======================================
 echo " "
 echo "[INFO] Simulation completed."
-cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder"
+cp src/dry_snow_metamorphism.c scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder"
 ./scripts/run_plotDSM.sh
 
 echo "✅ Simulation complete. Results stored in:"
