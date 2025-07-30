@@ -22,12 +22,13 @@ delt_t=1.0e-4
 # Define simulation end time in weeks, days, hours, and seconds
 weeks=0
 days=0
-hours=1
-seconds=0
+hours=0
+seconds=100
 t_final=$((weeks * 7 * 24 * 60 * 60 + days * 24 * 60 * 60 + hours * 60 * 60 + seconds))
-n_out=40
+n_out=10
 humidity=0.5  # Relative humidity in fraction (0.0 to 1.0)
 temp=-10.0
+
 grad_temp0X=0.0
 grad_temp0Y=3.0e0
 grad_temp0Z=0.0
