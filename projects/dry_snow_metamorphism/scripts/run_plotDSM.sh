@@ -36,5 +36,7 @@ echo "Executing plotDSM.py and plotSSA.py in the current directory"
 
 mkdir -p vtkOut
 
+echo "Python version is $(python3 --version 2>&1)"
+
 python plotDSM.py
 python plotSSA.py

@@ -324,8 +324,8 @@ void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair,
  */
 void Sigma0(PetscScalar temp, PetscScalar *sigm0)
 {
-    // Lookup table for σ₀ values at different (negative) temperatures [°C]
-    PetscReal tem[15], sig[15];
+    // Lookup table for σ₀ values at different temperatures
+    PetscReal sig[10], tem[10];
 
     // Predefined values for σ₀ corresponding to specific temperatures
     sig[0] = 3.0e-3;  sig[1] = 4.1e-3;  sig[2] = 5.5e-3;  sig[3] = 8.0e-3;  sig[4] = 4.0e-3;

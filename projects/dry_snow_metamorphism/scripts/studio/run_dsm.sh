@@ -13,24 +13,17 @@ exec_file="${BASE_DIR}/dry_snow_metamorphism"
 # =======================================
 filename="grainReadFile-2G_Molaro.dat"
 # filename="grainReadFile-18FCC.dat"
-# filename="grainReadFile-30G_s1-10.dat"
-# filename="grainReadFile-2G_Molaro_tight.dat"
 inputFile="$input_dir/$filename"
 readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-# Define simulation end time in weeks, days, hours, and seconds
-weeks=0
-days=0
-hours=0
-seconds=100
-t_final=$((weeks * 7 * 24 * 60 * 60 + days * 24 * 60 * 60 + hours * 60 * 60 + seconds))
+# t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
+t_final=600
 n_out=10
-humidity=0.5  # Relative humidity in fraction (0.0 to 1.0)
-temp=-10.0
-
+humidity=1.00
+temp=-20.0
 grad_temp0X=0.0
-grad_temp0Y=3.0e-4
+grad_temp0Y=3.0e0
 grad_temp0Z=0.0
 dim=2
 
@@ -164,42 +157,22 @@ write_parameters_to_dat
 # Run the simulation
 # =======================================
 echo "[INFO] Launching DRY SNOW METAMORPHISM simulation..."
-mpiexec -np "$NUM_PROCS" "$exec_file" \
+mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom -temp_initial \
   -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
   -ksp_gmres_restart 150 -ksp_max_it 1000 \
   -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
   -snes_linesearch_type basic | tee "$folder/outp.txt"
-
-
-# mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom -temp_initial \
-#   -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
-#   -ksp_gmres_restart 150 -ksp_max_it 1000 \
-#   -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
-#   -snes_linesearch_type basic | tee "$folder/outp.txt"
-
-# For debugging...
-# mpiexec -np "$NUM_PROCS" "$exec_file" \
-#   -snes_rtol 1e-5 \
-#   -snes_stol 1e-10 \
-#   -snes_max_it 30 \
-#   -snes_monitor_short \
-#   -snes_monitor_solution draw \
-#   -snes_converged_reason \
-#   -ksp_monitor_true_residual \
-#   -ksp_monitor_short \
-#   -ksp_converged_reason \
-#   -ksp_view \
-#   -snes_linesearch_monitor \
-#   -info \
-#   -log_view | tee "$folder/outp.txt"
-
 
 # =======================================
 # Finalize
 # =======================================
 echo " "
 echo "[INFO] Simulation completed."
-cp src/dry_snow_metamorphism.c scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder"
+cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder"
+echo "Copied files to $folder"
+
+echo " "
+echo "Running plotting scripts..."
 ./scripts/run_plotDSM.sh
 
 echo "✅ Simulation complete. Results stored in:"

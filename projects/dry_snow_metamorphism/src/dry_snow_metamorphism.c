@@ -42,16 +42,16 @@ int main(int argc, char *argv[]) {
   // user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
-  user.flag_Tdep  = 0;        // Temperature-dependent GT parameters; 
+  user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
                               // pretty unstable, need to check implementation!!!
 
   user.d0_sub0    = 1.0e-9; 
   user.beta_sub0  = 1.4e5;    
   PetscReal gamma_im = 0.033, gamma_iv = 0.109, gamma_mv = 0.056; //76
-
-  // Redo this so that it is not hardcoded!!!!!!
-  PetscReal rho_rhovs = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
-
+  
+  PetscReal rho_rhovs, rhoI_vs, d_rhovs; // = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
+  RhoVS_I(&user, user.temp0, &rhoI_vs, &d_rhovs);
+  rho_rhovs = user.rho_ice / rhoI_vs;
 
   // Unpack environment variables
   PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");
@@ -312,7 +312,23 @@ int main(int argc, char *argv[]) {
   PetscLogDouble ltim,tim;
   ierr = PetscTime(&ltim); CHKERRQ(ierr);
   tim = ltim-itim;
-  PetscPrintf(PETSC_COMM_WORLD," comp time %e sec  =  %.2f min \n\n",tim,tim/60.0);
+
+  int days = (int)(tim / 86400);
+  int hours = (int)((tim - days * 86400) / 3600);
+  int minutes = (int)((tim - days * 86400 - hours * 3600) / 60);
+  double seconds = tim - days * 86400 - hours * 3600 - minutes * 60;
+
+  // Print computation time in bold if terminal supports ANSI escape codes
+  PetscPrintf(PETSC_COMM_WORLD, "\033[1mcomp time: ");
+  if (days > 0)
+    PetscPrintf(PETSC_COMM_WORLD, "%d day%s ", days, days == 1 ? "" : "s");
+  if (hours > 0)
+    PetscPrintf(PETSC_COMM_WORLD, "%d hour%s ", hours, hours == 1 ? "" : "s");
+  if (minutes > 0)
+    PetscPrintf(PETSC_COMM_WORLD, "%d min%s ", minutes, minutes == 1 ? "" : "s");
+  if (seconds > 0 || (days == 0 && hours == 0 && minutes == 0))
+    PetscPrintf(PETSC_COMM_WORLD, "%.2f sec", seconds);
+  PetscPrintf(PETSC_COMM_WORLD, "\033[0m\n\n");
 
   ierr = PetscFinalize();CHKERRQ(ierr);
   return 0;

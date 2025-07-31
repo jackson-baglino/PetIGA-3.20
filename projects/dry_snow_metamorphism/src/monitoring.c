@@ -40,11 +40,9 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
             if(sigm_surf < sigm0/69.0775) alp = 1.0e-30;
             else alp = exp(-sigm0/sigm_surf);
 
-            if(alp*v_kin<1.0e-10) bet0 = 1.0e10;  // 30 --> 10
+            if(alp*v_kin<1.0e-30) bet0 = 1.0e30;
             else bet0 = 1.0/(alp*v_kin);
             d0 = 2.548e-7/(solS[1]+273.15);
-
-
 
             if(bet0>bet_max) bet_max = bet0;
             if(bet0<bet_min) bet_min = bet0;
