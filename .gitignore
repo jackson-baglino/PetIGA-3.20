@@ -54,7 +54,7 @@ projects/effective_thermal_cond/temperature.bin.info
 ###############################################################################
 # 🌨️ Dry Snow Metamorphism Project Outputs
 ###############################################################################
-projects/dry_snow_metamorphism/configs_scratch
+projects/dry_snow_metamorphism/configs/configs_scratch
 projects/dry_snow_metamorphism/dry_snow_metamorphism
 projects/dry_snow_metamorphism/inputs/scratch
 projects/dry_snow_metamorphism/obj/

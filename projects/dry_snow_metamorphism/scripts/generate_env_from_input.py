@@ -89,9 +89,10 @@ eps = min(eps1, eps2, eps3) * 0.975
 # -----------------------------
 # Compute Nx, Ny, Nz
 # -----------------------------
-Nx = int(np.ceil(Lx / eps / 2))
-Ny = int(np.ceil(Ly / eps / 2))
-Nz = int(np.ceil(Lz / eps / 2))
+factor = 1  # Factor to ensure domain size is a multiple of eps
+Nx = int(np.ceil(Lx / eps / factor))
+Ny = int(np.ceil(Ly / eps / factor))
+Nz = int(np.ceil(Lz / eps / factor))
 
 # -----------------------------
 # Write to .env file
