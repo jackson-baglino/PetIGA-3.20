@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   // user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
-  user.flag_Tdep  = 0;        // Temperature-dependent GT parameters; 
+  user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
                               // pretty unstable, need to check implementation!!!
 
   user.d0_sub0    = 1.0e-9; 

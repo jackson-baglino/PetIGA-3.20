@@ -11,19 +11,19 @@ exec_file="${BASE_DIR}/dry_snow_metamorphism"
 # =======================================
 # Define simulation parameters
 # =======================================
-filename="grainReadFile-2G_Molaro_0p25R1.dat"
+filename="grainReadFile-2G_Molaro_0p25R1_HIGHRES.dat"
 # filename="grainReadFile-18FCC.dat"
 inputFile="$input_dir/$filename"
 readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
 # t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
-t_final=1
-n_out=3
-humidity=0.95
-temp=-10.0
+t_final=$((2 * 60 * 60))  # 2 hours in seconds
+n_out=40
+humidity=0.5
+temp=-5.0
 grad_temp0X=0.0
-grad_temp0Y=3.0e-2
+grad_temp0Y=3.0e-5
 grad_temp0Z=0.0
 dim=2
 
@@ -48,7 +48,7 @@ clean_name="${clean_name%.dat}"
 title="drysnow_${clean_name}_${dim}D_Tm${temp/-}_hum$(printf "%.0f" "$(echo "$humidity * 100" | bc -l)")_tf$(echo "$t_final / 86400" | bc)d_"
 SETTINGS_FILE="$BASE_DIR/configs/${filename%.dat}.env"
 
-NUM_PROCS=1  # Number of MPI processes
+NUM_PROCS=12  # Number of MPI processes
 
 # =======================================
 # Timestamped result folder
