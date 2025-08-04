@@ -89,7 +89,7 @@ eps = min(eps1, eps2, eps3) * 0.975
 # -----------------------------
 # Compute Nx, Ny, Nz
 # -----------------------------
-factor = 1  # Factor to ensure domain size is a multiple of eps
+factor = 2  # Factor to ensure domain size is a multiple of eps
 Nx = int(np.ceil(Lx / eps / factor))
 Ny = int(np.ceil(Ly / eps / factor))
 Nz = int(np.ceil(Lz / eps / factor))
