@@ -579,7 +579,6 @@ PetscErrorCode InitialSedGrainsGravity(IGA iga,AppCtx *user)
 static PetscErrorCode ReadIceGrainsFromFile(AppCtx *user)
 {
   PetscInt rank;
-
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
   FILE *file;
   char grainDataFile[PETSC_MAX_PATH_LEN];
@@ -590,9 +589,41 @@ static PetscErrorCode ReadIceGrainsFromFile(AppCtx *user)
   if (!file)
     SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "Failed to open file: %s", grainDataFile);
 
+  // Read the first line and check number of tokens
+  char firstline[4096];
+  if (fgets(firstline, sizeof(firstline), file) == NULL) {
+    fclose(file);
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN, "File is empty: %s", grainDataFile);
+  }
+
+  int tokenCount = 0;
+  char *token = strtok(firstline, " \t\r\n");
+  while (token) {
+    tokenCount++;
+    token = strtok(NULL, " \t\r\n");
+  }
+
+  if (tokenCount != 3 && tokenCount != 4) {
+    fclose(file);
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_UNEXPECTED, "Unexpected number of values in the first row of %s", grainDataFile);
+  }
+
+  if (tokenCount == 4) {
+    rewind(file); // we want to keep this line, so rewind the stream
+  }
+  // else, tokenCount == 3: skip the first line (already read)
+
   PetscInt grainCount = 0;
   PetscReal x, y, z, r;
   int readCount;
+  // If we already read a 3-value line, skip it (domain dimensions)
+  if (tokenCount == 3) {
+    // first line already read, so nothing to do here
+    // start reading from next line
+  } else if (tokenCount == 4) {
+    // rewound, so will read all lines including first
+  }
+  // Now, read grain data from file
   while ((readCount = fscanf(file, "%lf %lf %lf %lf", &x, &y, &z, &r)) >= 3) {
     if (grainCount >= 200) {
       fclose(file);

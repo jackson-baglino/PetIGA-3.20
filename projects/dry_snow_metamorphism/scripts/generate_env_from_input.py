@@ -24,12 +24,17 @@ Rave = 8.2883e-05
 # -----------------------------
 # Input Args
 # -----------------------------
-if len(sys.argv) < 3:
-    print("Usage: python generate_env_from_input.py <input_file> <output_env_path>")
+if len(sys.argv) < 5:
+    print("Usage: python generate_env_from_input.py <input_file> <output_env_path> <Lx> <Ly> [Lz]")
     sys.exit(1)
 
 input_path = sys.argv[1]
 output_path = sys.argv[2]
+Lx = float(sys.argv[3])
+Ly = float(sys.argv[4])
+Lz = None
+if len(sys.argv) >= 6:
+    Lz = float(sys.argv[5])
 
 print(f"[INFO] Reading grain centers from {input_path}")
 print(f"[INFO] Writing .env file to {output_path}")
@@ -41,7 +46,7 @@ def read_grain_centers(filepath):
     centers = []
     with open(filepath, 'r') as f:
         for line in f:
-            parts = line.strip().split(',')
+            parts = line.replace(',', ' ').split()
             if len(parts) >= 3:
                 try:
                     x, y, z = float(parts[0]), float(parts[1]), float(parts[2])
@@ -53,26 +58,14 @@ def read_grain_centers(filepath):
 centers = read_grain_centers(input_path)
 
 # -----------------------------
-# Ask for Lx, Ly, Lz or auto-detect
+# Determine Lz
 # -----------------------------
-print("[INFO] You have 90 seconds to input Lx, Ly, and Lz (in meters). Press Enter to auto-detect.")
-start = time()
-user_input = ''
-while time() - start < 90:
-    if sys.stdin in select.select([sys.stdin], [], [], 1)[0]:
-        user_input = input("Enter Lx Ly Lz (space separated): ").strip()
-        break
-
-if user_input:
-    try:
-        Lx, Ly, Lz = map(float, user_input.split())
-    except ValueError:
-        print("[ERROR] Invalid input. Exiting.")
-        sys.exit(1)
-else:
+if Lz is None:
     max_coords = centers.max(axis=0)
-    Lx, Ly, Lz = max_coords[0], max_coords[1], max_coords[2]
-    print(f"[INFO] Auto-detected domain size: Lx={Lx:.2e}, Ly={Ly:.2e}, Lz={Lz:.2e}")
+    Lz = max_coords[2]
+    print(f"[INFO] Auto-detected Lz: {Lz:.2e}")
+else:
+    print(f"[INFO] Using user-specified Lz: {Lz:.2e}")
 
 # -----------------------------
 # Compute epsilon

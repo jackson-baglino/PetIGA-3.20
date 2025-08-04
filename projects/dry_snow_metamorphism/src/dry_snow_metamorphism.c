@@ -42,13 +42,13 @@ int main(int argc, char *argv[]) {
   // user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
 
   //---------Gibbs-Thomson parameters 
-  user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
+  user.flag_Tdep  = 0;        // Temperature-dependent GT parameters; 
                               // pretty unstable, need to check implementation!!!
 
   user.d0_sub0    = 1.0e-9; 
   user.beta_sub0  = 1.4e5;    
   PetscReal gamma_im = 0.033, gamma_iv = 0.109, gamma_mv = 0.056; //76
-  
+
   PetscReal rho_rhovs, rhoI_vs, d_rhovs; // = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
   RhoVS_I(&user, user.temp0, &rhoI_vs, &d_rhovs);
   rho_rhovs = user.rho_ice / rhoI_vs;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
   tau_sub       = user.eps*lambda_sub*(beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
 
   user.mob_sub    = 1*user.eps/3.0/tau_sub; 
-  user.alph_sub   = 10*lambda_sub/tau_sub;
+  user.alph_sub   = 1*lambda_sub/tau_sub;
   if(user.flag_Tdep==0) PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
   else PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
   
