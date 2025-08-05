@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J DSM-T=-80_hum=0.90
+#SBATCH -J DSM-T=-40_hum=0.50
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
 #SBATCH --nodes=4
@@ -17,11 +17,12 @@
 ##############################################
 
 # Set input filename (only the filename, not full path)
-inputFile="grainReadFile-2_Molaro_tight.dat"
+# inputFile="grainReadFile-2_Molaro_tight.dat"
+inputFile="grainReadFile-35_s1-10.dat"
 
 # Define physical & environmental parameters
-temp=-80.0
-humidity=0.90
+temp=-40.0
+humidity=0.50
 dim=2
 grad_temp0X=0.0
 grad_temp0Y=3.0e-5
