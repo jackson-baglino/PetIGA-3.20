@@ -168,7 +168,8 @@ void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs,
   PetscScalar *d_rhovs)
 {
 PetscReal rho_air = user->rho_air;
-PetscReal Patm = 101325.0;
+PetscReal Patm = 101325.0;  // Atmospheric pressure on Earth [Pa]
+// PetscReal Patm = 5000.0;    // Atmospheric pressure on Enceladus [Pa]
 PetscReal bb = 0.62;
 PetscReal temK = tem + 273.15; // Convert temperature to Kelvin
 

@@ -9,11 +9,11 @@ seed = 10
 np.random.seed(seed)
 
 plotFlag = True
-datFlag = False
+datFlag = True
 
-N = 30
-Lx, Ly = 2.0e-3, 2.0e-3
-lx, ly = 2.0e-3, 2.0e-3
+N = 35
+Lx, Ly = 1.0e-3, 1.0e-3
+lx, ly = 1.0e-3, 1.0e-3
 rad = 90e-6
 
 # ----------------------
@@ -111,7 +111,26 @@ if plotFlag:
 # Save to file
 # ----------------------
 if datFlag:
+    import subprocess
+
     os.makedirs("geomFiles", exist_ok=True)
     filename = f"grainReadFile-{num_grain}_s1-{seed}"
     output = np.column_stack([xC, yC, (Lz / 2) * np.ones_like(radius), radius])
-    np.savetxt(f"inputs/{filename}.dat", output, fmt='%.6e')
+    filepath = f"inputs/{filename}.dat"
+    with open(filepath, 'w') as f:
+        f.write(f"{Lx:.6e} {Ly:.6e} {Lz:.6e}\n")
+        np.savetxt(f, output, fmt='%.6e')
+
+    input_file = filepath
+    output_env_path = f"configs/{filename}.env"
+
+    cmd = [
+        'python',
+        'scripts/generate_env_from_input.py',
+        input_file,
+        output_env_path,
+        str(Lx),
+        str(Ly)
+    ]
+    print("[INFO] Running generate_env_from_input.py...")
+    subprocess.run(cmd, check=True)

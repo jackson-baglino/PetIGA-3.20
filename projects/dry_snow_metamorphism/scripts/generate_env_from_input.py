@@ -19,7 +19,6 @@ Dv0 = 2.178e-5  # m^2/s
 Kj = [-0.5865e4, 0.2224e2, 0.1375e-1, -0.3403e-4, 0.2697e-7, 0.6918]
 Patm = 1.013250
 rhoatm = 1.341
-Rave = 8.2883e-05
 
 # -----------------------------
 # Input Args
@@ -44,25 +43,30 @@ print(f"[INFO] Writing .env file to {output_path}")
 # -----------------------------
 def read_grain_centers(filepath):
     centers = []
+    radii = []
     with open(filepath, 'r') as f:
         for line in f:
             parts = line.replace(',', ' ').split()
-            if len(parts) >= 3:
+            if len(parts) >= 4:
                 try:
-                    x, y, z = float(parts[0]), float(parts[1]), float(parts[2])
+                    x, y, z, r = float(parts[0]), float(parts[1]), float(parts[2]), float(parts[3])
                     centers.append((abs(x), abs(y), abs(z)))
+                    radii.append(abs(r))
                 except ValueError:
                     continue
-    return np.array(centers)
+    return np.array(centers), np.array(radii)
 
-centers = read_grain_centers(input_path)
+centers, radii = read_grain_centers(input_path)
+
+print(f"[INFO] First row of radii: {radii[0] if len(radii) > 0 else 'No data'}")
+Rave = np.mean(radii)
 
 # -----------------------------
 # Determine Lz
 # -----------------------------
 if Lz is None:
     max_coords = centers.max(axis=0)
-    Lz = max_coords[2]
+    Lz = 2 * max_coords[2]
     print(f"[INFO] Auto-detected Lz: {Lz:.2e}")
 else:
     print(f"[INFO] Using user-specified Lz: {Lz:.2e}")
@@ -70,7 +74,7 @@ else:
 # -----------------------------
 # Compute epsilon
 # -----------------------------
-T0 = 253.15  # K (default for T = -20 C)
+T0 = 273.15  # K (default for T = -0 C--lower temperatures will give a larger eps)
 
 PvsT = sum(Kj[i] * T0**(i - 1) for i in range(5))
 PvsT = np.exp(PvsT + Kj[-1] * np.log(T0))
