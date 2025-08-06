@@ -2,8 +2,8 @@
 #SBATCH -J DSM-T=-40_hum=0.50
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
-#SBATCH --nodes=4
-#SBATCH --ntasks-per-node=50
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
 #SBATCH -e "output_files/%x.e%j"
@@ -11,6 +11,9 @@
 #SBATCH --mem-per-cpu=1G
 #SBATCH --mail-user=jbaglino@caltech.edu
 #SBATCH --mail-type=END,FAIL,TIME_LIMIT
+
+# module load mpi
+# module load mpich
 
 ##############################################
 # USER-MODIFIABLE SIMULATION SETTINGS
@@ -38,7 +41,7 @@ n_out=56
 BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
 input_dir="$BASE_DIR/inputs"
 output_dir="/resnick/scratch/jbaglino"
-exec_file="${BASE_DIR}/NASAv2"
+exec_file="${BASE_DIR}/dry_snow_metamorphism"
 SETTINGS_FILE="$BASE_DIR/configs/${inputFile%.dat}.env"
 inputFile="$input_dir/$inputFile"
 
@@ -73,8 +76,8 @@ export Lx Ly Lz Nx Ny Nz eps delt_t t_final n_out dim \
 
 if [[ ! -x "$exec_file" ]]; then
   echo "[INFO] Executable not found. Attempting to compile..."
-  cd "$BASE_DIR/src" || { echo "[ERROR] Failed to enter src directory."; exit 1; }
-  make NASAv2
+  make dry_snow_metamorphism
+  echo "[INFO] Compilation complete."
   [[ $? -ne 0 ]] && { echo "[ERROR] Compilation failed. Exiting."; exit 1; }
   echo "[INFO] Compilation successful."
 else
@@ -92,7 +95,7 @@ echo "[INFO] Domain: ($Lx x $Ly x $Lz), Grid: ($Nx x $Ny x $Nz)"
 
 # Backup inputs to output folder
 cp "$inputFile" "$folder/"
-cp "$BASE_DIR/src/NASAv2.c" "$folder/"
+cp "$BASE_DIR/src/dry_snow_metamorphism.c" "$folder/"
 cp "$0" "$folder/run_script_copy.sh"
 
 # Run simulation
