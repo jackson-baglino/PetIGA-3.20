@@ -2,8 +2,8 @@
 #SBATCH -J DSM-T=-40_hum=0.50
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=6
+#SBATCH --ntasks-per-node=40
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
 #SBATCH -e "output_files/%x.e%j"
@@ -20,8 +20,11 @@
 ##############################################
 
 # Set input filename (only the filename, not full path)
-# inputFile="grainReadFile-2_Molaro_tight.dat"
+# inputFile="grainReadFile-2G_Molaro_0p25R1.dat"
 inputFile="grainReadFile-35_s1-10.dat"
+
+readFlag=1  # Set to 1 to read grain file, 0 to generate grains
+
 
 # Define physical & environmental parameters
 temp=-40.0
@@ -68,7 +71,7 @@ echo "[INFO] Output directory created: $folder"
 
 # Export for simulation
 export Lx Ly Lz Nx Ny Nz eps delt_t t_final n_out dim \
-       grad_temp0X grad_temp0Y grad_temp0Z humidity temp inputFile folder
+       grad_temp0X grad_temp0Y grad_temp0Z humidity temp inputFile folder readFlag
 
 ##############################################
 # COMPILE EXECUTABLE IF NEEDED
