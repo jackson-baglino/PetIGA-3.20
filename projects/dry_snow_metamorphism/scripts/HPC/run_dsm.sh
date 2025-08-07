@@ -27,15 +27,15 @@ readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 
 # Define physical & environmental parameters
-temp=-40.0
-humidity=0.50
+# temp=-40.0
+humidity=0.98
 dim=2
 grad_temp0X=0.0
-grad_temp0Y=3.0e-5
+grad_temp0Y=3.0e-6
 grad_temp0Z=0.0
 delt_t=1.0e-4
 t_final=$(echo "28*24*60*60" | bc -l)
-n_out=56
+n_out=200
 
 ##############################################
 # ENVIRONMENT AND FILE PATH SETUP

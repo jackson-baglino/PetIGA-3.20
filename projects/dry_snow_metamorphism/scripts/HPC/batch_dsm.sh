@@ -9,19 +9,22 @@ RUN_SCRIPT="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 # Set a base config name
 CONFIG_BASENAME="grainReadFile-35_s1-10"
 
+# Base env file path
+ENV_FILE="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${CONFIG_BASENAME}.env"
+
 # Loop through each temperature and submit the job
 for temp in "${temperatures[@]}"; do
   echo "Submitting job for temperature: $temp°C"
 
   # Create a temporary .env file specific to this temperature
-  ENV_FILE="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${CONFIG_BASENAME}_T${temp}.env"
-  cp "/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${CONFIG_BASENAME}.env" "$ENV_FILE"
+  # ENV_FILE="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${CONFIG_BASENAME}_T${temp}.env"
+  # cp "/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${CONFIG_BASENAME}.env" "$ENV_FILE"
 
   # Replace temperature value in the env file
-  sed -i "s/^temp=.*/temp=${temp}/" "$ENV_FILE"
+  # sed -i "s/^temp=.*/temp=${temp}/" "$ENV_FILE"
 
   # Submit the job with SLURM, overriding SLURM_JOB_NAME to embed the temperature
   sbatch --job-name="DSM-T=${temp}_hum=0.50" \
-         --export=ALL,ENV_FILE_OVERRIDE="$ENV_FILE" \
+         --export=ALL,ENV_FILE_OVERRIDE="$ENV_FILE",temp="$temp" \
          "$RUN_SCRIPT"
 done
