@@ -28,17 +28,18 @@ endif
 CC = mpicc
 
 # Linker flags: Link against PETSc, PetIGA, and additional dependencies.
-LDFLAGS = -L$(PETSC_DIR)/$(PETSC_ARCH)/lib -lpetsc \
-          -L$(PETIGA_DIR)/$(PETSC_ARCH)/lib -lpetiga -lmpi -lmetis -lparmetis -lsuperlu_dist
+LDFLAGS = -L${PETSC_DIR}/${PETSC_ARCH}/lib -lpetsc \
+          -L${PETIGA_DIR}/${PETSC_ARCH}/lib -lpetiga -lmpi -lmetis -lparmetis -lsuperlu_dist
 
 ###############################################################################
 # Include Paths
 #
 # Add paths for PETSc (including private headers), PetIGA, and local headers.
 ###############################################################################
-INCLUDES = -I$(PETSC_DIR)/include \
-           -I$(PETSC_DIR)/include/petsc/private \
-           -I$(PETIGA_DIR)/include \
+INCLUDES = -I${PETSC_DIR}/include \
+           -I${PETSC_DIR}/include/petsc/private \
+           -I${PETIGA_DIR}/include \
+					 -I${PETIGA_DIR}/projects/dry_snow_metamorphism/include \
            -I./include
 CFLAGS += $(INCLUDES)
 
@@ -50,9 +51,9 @@ CFLAGS += $(INCLUDES)
 #  - PETIGA_LIB : Additional PetIGA libraries.
 #  - PETSC_LIB : Additional PETSc libraries.
 ###############################################################################
-include $(PETIGA_DIR)/lib/petiga/conf/variables
-include $(PETIGA_DIR)/lib/petiga/conf/rules
-include $(PETIGA_DIR)/lib/petiga/conf/test
+include ${PETIGA_DIR}/lib/petiga/conf/variables
+include ${PETIGA_DIR}/lib/petiga/conf/rules
+include ${PETIGA_DIR}/lib/petiga/conf/test
 
 ###############################################################################
 # Source and Object Files
@@ -68,6 +69,9 @@ OBJS := $(patsubst src/%.c, obj/%.o, $(SRCS))
 # Compile rule: Build an object file from a source file.
 obj/%.o: src/%.c
 	@mkdir -p obj
+	@echo "=== Building $< ==="
+	@echo "  INCLUDES: $(INCLUDES)"
+	@echo "  CFLAGS:   $(CFLAGS)"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Linking rule: Link all object files to create the executable.
@@ -95,3 +99,7 @@ clean::
 debug:
 	$(MAKE) BUILD=debug all
 .PHONY: debug
+
+# print-includes:
+# 	@echo "INCLUDES: $(INCLUDES)"
+# .PHONY: print-includes

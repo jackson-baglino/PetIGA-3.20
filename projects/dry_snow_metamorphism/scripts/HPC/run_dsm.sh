@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH -J DSM-T=-40_hum=0.50
+#SBATCH -J DSM-T=-40_hum=0.98
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
-#SBATCH --nodes=4
-#SBATCH --ntasks-per-node=50
+#SBATCH --nodes=6
+#SBATCH --ntasks-per-node=40
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
 #SBATCH -e "output_files/%x.e%j"
@@ -12,24 +12,30 @@
 #SBATCH --mail-user=jbaglino@caltech.edu
 #SBATCH --mail-type=END,FAIL,TIME_LIMIT
 
+# module load mpi
+# module load mpich
+
 ##############################################
 # USER-MODIFIABLE SIMULATION SETTINGS
 ##############################################
 
 # Set input filename (only the filename, not full path)
-# inputFile="grainReadFile-2_Molaro_tight.dat"
+# inputFile="grainReadFile-2G_Molaro_0p25R1.dat"
 inputFile="grainReadFile-35_s1-10.dat"
 
+readFlag=1  # Set to 1 to read grain file, 0 to generate grains
+
+
 # Define physical & environmental parameters
-temp=-40.0
-humidity=0.50
+# temp=-40.0
+humidity=0.98
 dim=2
 grad_temp0X=0.0
-grad_temp0Y=3.0e-5
+grad_temp0Y=3.0e-6
 grad_temp0Z=0.0
 delt_t=1.0e-4
 t_final=$(echo "28*24*60*60" | bc -l)
-n_out=56
+n_out=200
 
 ##############################################
 # ENVIRONMENT AND FILE PATH SETUP
@@ -38,7 +44,7 @@ n_out=56
 BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
 input_dir="$BASE_DIR/inputs"
 output_dir="/resnick/scratch/jbaglino"
-exec_file="${BASE_DIR}/NASAv2"
+exec_file="${BASE_DIR}/dry_snow_metamorphism"
 SETTINGS_FILE="$BASE_DIR/configs/${inputFile%.dat}.env"
 inputFile="$input_dir/$inputFile"
 
@@ -65,7 +71,7 @@ echo "[INFO] Output directory created: $folder"
 
 # Export for simulation
 export Lx Ly Lz Nx Ny Nz eps delt_t t_final n_out dim \
-       grad_temp0X grad_temp0Y grad_temp0Z humidity temp inputFile folder
+       grad_temp0X grad_temp0Y grad_temp0Z humidity temp inputFile folder readFlag
 
 ##############################################
 # COMPILE EXECUTABLE IF NEEDED
@@ -73,8 +79,8 @@ export Lx Ly Lz Nx Ny Nz eps delt_t t_final n_out dim \
 
 if [[ ! -x "$exec_file" ]]; then
   echo "[INFO] Executable not found. Attempting to compile..."
-  cd "$BASE_DIR/src" || { echo "[ERROR] Failed to enter src directory."; exit 1; }
-  make NASAv2
+  make dry_snow_metamorphism
+  echo "[INFO] Compilation complete."
   [[ $? -ne 0 ]] && { echo "[ERROR] Compilation failed. Exiting."; exit 1; }
   echo "[INFO] Compilation successful."
 else
@@ -92,7 +98,7 @@ echo "[INFO] Domain: ($Lx x $Ly x $Lz), Grid: ($Nx x $Ny x $Nz)"
 
 # Backup inputs to output folder
 cp "$inputFile" "$folder/"
-cp "$BASE_DIR/src/NASAv2.c" "$folder/"
+cp "$BASE_DIR/src/dry_snow_metamorphism.c" "$folder/"
 cp "$0" "$folder/run_script_copy.sh"
 
 # Run simulation
