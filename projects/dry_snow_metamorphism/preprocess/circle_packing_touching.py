@@ -5,7 +5,7 @@ import os
 # ----------------------
 # Parameters
 # ----------------------
-seed = 10
+seed = 21
 np.random.seed(seed)
 
 plotFlag = True
