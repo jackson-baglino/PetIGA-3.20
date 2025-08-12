@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J DSM-T=-40_hum=0.50
+#SBATCH -J DSM-T=-40_hum=0.98
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
 #SBATCH --nodes=6
