@@ -5,7 +5,7 @@
 # ============================
 
 # Define arrays of values
-temps=(-2.0 -4.0 -6.0 -8.0 -10.0)
+temps=(-12 -14 -16 -18 -20 -22 -24 -26 -28 -30)
 humidities=(0.98 0.90 0.50 0.05)
 input_files=(
   "grainReadFile-2G_Molaro_0p25R1_HIGHRES.dat"
@@ -14,6 +14,8 @@ input_files=(
 
 # Path to run_dsm.sh
 RUN_SCRIPT="/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/scripts/studio/run_dsm.sh"
+
+start_time=$(date +%s)
 
 # Loop over combinations
 for temp in "${temps[@]}"; do
@@ -36,3 +38,7 @@ for temp in "${temps[@]}"; do
     done
   done
 done
+
+end_time=$(date +%s)
+total_time=$((end_time - start_time))
+echo "Total batch runtime: ${total_time} seconds"
