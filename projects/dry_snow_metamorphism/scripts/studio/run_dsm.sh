@@ -49,7 +49,7 @@ clean_name="${clean_name%.dat}"
 title="DSM${clean_name}_${dim}D_Tm${temp/-}_hum$(printf "%.0f" "$(echo "$humidity * 100" | bc -l)")_tf$(echo "$t_final / 86400" | bc)d_"
 SETTINGS_FILE="$BASE_DIR/configs/${filename%.dat}.env"
 
-NUM_PROCS=12  # Number of MPI processes
+NUM_PROCS=10  # Number of MPI processes
 
 # =======================================
 # Timestamped result folder
