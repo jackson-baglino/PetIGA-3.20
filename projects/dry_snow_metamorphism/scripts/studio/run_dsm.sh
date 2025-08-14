@@ -60,6 +60,7 @@ mkdir -p "$folder"
 
 # Copy input file to results folder
 cp "$inputFile" "$folder"
+cp "$SETTINGS_FILE" "$folder"
 
 # =======================================
 # Build and run setup

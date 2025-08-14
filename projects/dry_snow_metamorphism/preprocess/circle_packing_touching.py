@@ -11,9 +11,9 @@ np.random.seed(seed)
 plotFlag = True
 datFlag = True
 
-N = 35
-Lx, Ly = 1.0e-3, 1.0e-3
-lx, ly = 1.0e-3, 1.0e-3
+N = 70
+Lx, Ly = 1.5e-3, 1.5e-3
+lx, ly = 1.5e-3, 1.5e-3
 rad = 90e-6
 
 # ----------------------
