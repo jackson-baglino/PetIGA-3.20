@@ -2,7 +2,7 @@
 #SBATCH -J DSM-T=-40_hum=0.98
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
-#SBATCH --nodes=6
+#SBATCH --nodes=1
 #SBATCH --ntasks-per-node=40
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
@@ -19,23 +19,22 @@
 # USER-MODIFIABLE SIMULATION SETTINGS
 ##############################################
 
-# Set input filename (only the filename, not full path)
-# inputFile="grainReadFile-2G_Molaro_0p25R1.dat"
-inputFile="grainReadFile-35_s1-10.dat"
+# inputFile default (can be overridden by env)
+: "${inputFile:=grainReadFile-35_s1-10.dat}"
 
-readFlag=1  # Set to 1 to read grain file, 0 to generate grains
+: "${readFlag:=1}"
 
+# Defaults (can be overridden by env or sbatch --export)
+: "${temp:=-40.0}"
+: "${humidity:=0.98}"
 
-# Define physical & environmental parameters
-# temp=-40.0
-humidity=0.98
-dim=2
-grad_temp0X=0.0
-grad_temp0Y=3.0e-6
-grad_temp0Z=0.0
-delt_t=1.0e-4
-t_final=$(echo "28*24*60*60" | bc -l)
-n_out=200
+: "${dim:=2}"
+: "${grad_temp0X:=0.0}"
+: "${grad_temp0Y:=3.0e-6}"
+: "${grad_temp0Z:=0.0}"
+: "${delt_t:=1.0e-4}"
+: "${t_final:=$(echo "28*24*60*60" | bc -l)}"
+: "${n_out:=200}"
 
 ##############################################
 # ENVIRONMENT AND FILE PATH SETUP
@@ -45,8 +44,18 @@ BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
 input_dir="$BASE_DIR/inputs"
 output_dir="/resnick/scratch/jbaglino"
 exec_file="${BASE_DIR}/dry_snow_metamorphism"
-SETTINGS_FILE="$BASE_DIR/configs/${inputFile%.dat}.env"
-inputFile="$input_dir/$inputFile"
+
+# Settings file: allow override via ENV_FILE_OVERRIDE, else derive from inputFile basename
+if [[ -n "${ENV_FILE_OVERRIDE:-}" ]]; then
+  SETTINGS_FILE="$ENV_FILE_OVERRIDE"
+else
+  SETTINGS_FILE="$BASE_DIR/configs/$(basename "${inputFile%.dat}").env"
+fi
+
+# If inputFile is not absolute, assume it is in $input_dir
+if [[ "${inputFile:0:1}" != "/" ]]; then
+  inputFile="$input_dir/$inputFile"
+fi
 
 # Validate input file
 if [[ ! -f "$inputFile" ]]; then
@@ -54,10 +63,11 @@ if [[ ! -f "$inputFile" ]]; then
   exit 1
 fi
 
-# Generate .env file if missing
+# Require the .env file to exist (no auto-generation here)
 if [[ ! -f "$SETTINGS_FILE" ]]; then
-  echo "[INFO] .env file not found for $inputFile. Generating..."
-  python3 "$BASE_DIR/scripts/generate_env_from_input.py" "$inputFile" "$SETTINGS_FILE" || exit 1
+  echo "[ERROR] Settings file not found: $SETTINGS_FILE"
+  echo "        Provide ENV_FILE_OVERRIDE=<path/to.env> or create $SETTINGS_FILE."
+  exit 1
 fi
 
 # Load simulation parameters from .env

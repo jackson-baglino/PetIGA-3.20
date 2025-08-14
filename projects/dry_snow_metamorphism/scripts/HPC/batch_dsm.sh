@@ -1,30 +1,40 @@
 #!/bin/bash
 
 # List of temperatures to simulate (you can add more values here)
-temperatures=(-80 -75 -70 -65 -60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10)
+temperatures=(-40)
+humidities=(0.98)
 
 # Set the path to your run script
 RUN_SCRIPT="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/scripts/HPC/run_dsm.sh"
 
-# Set a base config name
-CONFIG_BASENAME="grainReadFile-35_s1-10"
+# Set base config names
+FILE_BASENAMES=("grainReadFile-35_s1-10"
+                "grainReadFile-35_s1-11"
+                "grainReadFile-35_s1-12"
+                "grainReadFile-35_s1-13"
+                "grainReadFile-35_s1-14"
+                "grainReadFile-35_s1-15"
+                "grainReadFile-35_s1-16"
+                "grainReadFile-35_s1-17"
+                "grainReadFile-35_s1-18"
+                "grainReadFile-35_s1-19"
+                "grainReadFile-35_s1-20"
+                "grainReadFile-35_s1-21"
+         ) 
 
-# Base env file path
-ENV_FILE="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${CONFIG_BASENAME}.env"
+# Loop through each filename, temperature, and humidity and submit the job
+for basename in "${FILE_BASENAMES[@]}"; do
+  ENV_FILE="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${basename}.env"
+  INPUT_FILE="${basename}.dat"
 
-# Loop through each temperature and submit the job
-for temp in "${temperatures[@]}"; do
-  echo "Submitting job for temperature: $temp°C"
+  for temp in "${temperatures[@]}"; do
+    for hum in "${humidities[@]}"; do
+      hum_tag="${hum/./p}"
+      echo "Submitting job for file: $basename, T=${temp}C, RH=${hum}"
 
-  # Create a temporary .env file specific to this temperature
-  # ENV_FILE="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${CONFIG_BASENAME}_T${temp}.env"
-  # cp "/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${CONFIG_BASENAME}.env" "$ENV_FILE"
-
-  # Replace temperature value in the env file
-  # sed -i "s/^temp=.*/temp=${temp}/" "$ENV_FILE"
-
-  # Submit the job with SLURM, overriding SLURM_JOB_NAME to embed the temperature
-  sbatch --job-name="DSM-T=${temp}_hum=0.50" \
-         --export=ALL,ENV_FILE_OVERRIDE="$ENV_FILE",temp="$temp" \
-         "$RUN_SCRIPT"
+      sbatch --job-name="DSM-${basename}-T=${temp}_hum=${hum_tag}" \
+             --export=ALL,ENV_FILE_OVERRIDE="$ENV_FILE",temp="$temp",humidity="$hum",inputFile="$INPUT_FILE" \
+             "$RUN_SCRIPT"
+    done
+  done
 done
