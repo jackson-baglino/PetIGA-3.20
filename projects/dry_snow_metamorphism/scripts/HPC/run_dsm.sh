@@ -2,13 +2,14 @@
 #SBATCH -J DSM-T=-40_hum=0.98
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
+
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=40
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
 #SBATCH -e "output_files/%x.e%j"
 #SBATCH --partition=expansion
-#SBATCH --mem-per-cpu=1G
+#SBATCH --mem-per-cpu=0.31G
 #SBATCH --mail-user=jbaglino@caltech.edu
 #SBATCH --mail-type=END,FAIL,TIME_LIMIT
 
@@ -109,6 +110,7 @@ echo "[INFO] Domain: ($Lx x $Ly x $Lz), Grid: ($Nx x $Ny x $Nz)"
 # Backup inputs to output folder
 cp "$inputFile" "$folder/"
 cp "$BASE_DIR/src/dry_snow_metamorphism.c" "$folder/"
+cp "$SETTINGS_FILE" "$folder/"
 cp "$0" "$folder/run_script_copy.sh"
 
 # Run simulation
