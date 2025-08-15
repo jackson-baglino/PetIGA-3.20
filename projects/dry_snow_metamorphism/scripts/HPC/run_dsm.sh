@@ -3,18 +3,15 @@
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
 
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=40
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=36
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
 #SBATCH -e "output_files/%x.e%j"
 #SBATCH --partition=expansion
-#SBATCH --mem-per-cpu=0.31G
+#SBATCH --mem-per-cpu=1G
 #SBATCH --mail-user=jbaglino@caltech.edu
 #SBATCH --mail-type=END,FAIL,TIME_LIMIT
-
-# module load mpi
-# module load mpich
 
 ##############################################
 # USER-MODIFIABLE SIMULATION SETTINGS
