@@ -36,7 +36,7 @@ TEMP_TOP=$((273.15-30))
 INIT_MODE="FILE"
 # INIT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/"\
 # "NASAv2_96G-2D_T-20.0_hum0.70_2025-05-31__18.55.56"
-INIT_DIR="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch/DSM2G_Molaro_0p25R1_2D_Tm12_hum5_tf0d__2025-08-07__18.59.47"
+# INIT_DIR="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch/DSM2G_Molaro_0p25R1_2D_Tm12_hum5_tf0d__2025-08-07__18.59.47"
 
 # Locate and source .env file (portable across bash/zsh)
 if [[ -z "$ENV_FILE" ]]; then

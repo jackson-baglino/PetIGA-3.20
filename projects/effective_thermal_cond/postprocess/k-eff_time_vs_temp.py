@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 # --- Parameters ---
-parent_dir = '/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/NASAv2/'
-folder_pattern = r'NASAv2_2G-Molaro-2D_T([-\d.]+)_hum[\d.]+_'
+parent_dir = '/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/outputs/homog'
+# folder_pattern = r'NASAv2_2G-Molaro-2D_T([-\d.]+)_hum[\d.]+_'
+folder_pattern = r'ThermalSim_homog_2G_2D_T([-\d.]+)_hum[\d.]+_'
 save_figures = True  # If True, save plots to disk; if False, show plots interactively
 scatter_step = 10
 dpi = 300
