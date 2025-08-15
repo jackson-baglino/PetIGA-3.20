@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/30G_microstructures/jbaglino"
+PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/DSM-grainReadFile-70/"
 
 for dir in "$PARENT_DIR"/*; do
     if [ -d "$dir" ]; then
