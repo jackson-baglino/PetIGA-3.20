@@ -69,6 +69,10 @@ INIT_MODE="FILE"
 # "NASAv2_96G-2D_T-20.0_hum0.70_2025-05-31__18.55.56"
 # INIT_DIR="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch/DSM2G_Molaro_0p25R1_2D_Tm12_hum5_tf0d__2025-08-07__18.59.47"
 
+# Prefer JSON parameters from a DSM run directory if available
+METADATA_JSON="$INIT_DIR/metadata.json"
+
+if [[ ! -f "$METADATA_JSON" ]]; then
 # Locate and source .env file (portable across bash/zsh)
 # Priority:
 #  1) If ENV_FILE is set, use it directly
@@ -114,6 +118,36 @@ if [[ -n "$ENV_FILE" ]]; then
     fi
     source "$ENV_FILE"
 fi
+fi
+
+# If metadata.json is present, read parameters from it (preferred)
+if [[ -f "$METADATA_JSON" ]]; then
+    echo "🧾 Using parameters from: $METADATA_JSON"
+
+    json_get() {
+        # Usage: json_get dotted.key.path
+        python3 - "$METADATA_JSON" "$1" <<'PY'
+import json,sys
+path = sys.argv[2].split('.')
+with open(sys.argv[1]) as f:
+    d = json.load(f)
+for p in path:
+    d = d[p]
+# Print scalar as-is; for safety cast to str
+print(d)
+PY
+    }
+
+    # Populate variables only if they are not already set in the environment
+    : ${dim:=$(json_get sim_dimension)}
+    : ${Nx:=$(json_get mesh_resolution.Nx)}
+    : ${Ny:=$(json_get mesh_resolution.Ny)}
+    : ${Nz:=$(json_get mesh_resolution.Nz)}
+    : ${Lx:=$(json_get domain_size_m.Lx)}
+    : ${Ly:=$(json_get domain_size_m.Ly)}
+    : ${Lz:=$(json_get domain_size_m.Lz)}
+    : ${eps:=$(json_get interface_width_eps)}
+fi
 
 # Set dim default if not provided anywhere
 if [[ -z "$dim" ]]; then
@@ -142,11 +176,9 @@ dims=2
 temp=-20.0
 hum=1.00
 
-# Timestamped output folder name
-timestamp=$(date +%Y-%m-%d__%H.%M.%S)
-OUT_FOLDER="ThermalSim_homog_${grains}G_${dims}D_T${temp}_hum${hum}_$timestamp"
-
-echo "✅ OUT_FOLDER: $OUT_FOLDER"
+# Output folder: write results alongside the input directory
+OUT_FOLDER="k_eff_output"
+echo "✅ OUT subfolder: $OUT_FOLDER"
 
 echo "Loaded parameters from .env:"
 echo "  dim=$dim, Nx=$Nx, Ny=$Ny, Nz=$Nz, Lx=$Lx, Ly=$Ly, Lz=$Lz, eps=$eps, TEMP_TOP=$TEMP_TOP"
@@ -156,7 +188,7 @@ export OUTPUT_VTK=1
 export OUTPUT_BINARY=1
 export SOL_INDEX=-1
 
-export OUTPUT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/outputs/homog/$OUT_FOLDER"
+export OUTPUT_DIR="$INIT_DIR/$OUT_FOLDER"
 mkdir -p "$OUTPUT_DIR"
 
 # MPI ranks (override by exporting NUM_PROCS beforehand)
@@ -195,7 +227,7 @@ run_simulation || { echo "❌ simulation failed"; exit 1; }
 collect_outputs
 
 echo "📈 Post-processing…"
-python3 postprocess/plot_vector_field.py "$OUT_FOLDER" "$Nx" "$Ny" "$Lx" "$Ly"
+python3 postprocess/plot_vector_field.py "$OUTPUT_DIR" "$Nx" "$Ny" "$Lx" "$Ly"
 
 echo "✅ Finished. Outputs in: $OUTPUT_DIR"
 
