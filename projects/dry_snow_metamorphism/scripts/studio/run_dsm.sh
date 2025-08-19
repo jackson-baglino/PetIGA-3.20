@@ -115,7 +115,7 @@ hum_tag=${hum_tag:0:2}
 # Note: keep existing day count in suffix
 ndays=$(awk "BEGIN{printf \"%d\", $t_final/86400}")
 
-title="SCRATCH_DSM${clean_name}_${dim}D_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d_"
+title="DSM${clean_name}_${dim}D_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d_"
 SETTINGS_FILE="$BASE_DIR/configs/${filename%.dat}.env"
 
 # MPI ranks used for this run (override here or export before calling)

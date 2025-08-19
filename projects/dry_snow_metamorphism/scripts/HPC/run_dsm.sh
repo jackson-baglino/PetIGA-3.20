@@ -31,7 +31,7 @@
 ##############################################
 
 # inputFile default (can be overridden by env)
-: "${inputFile:=grainReadFile-35_s1-10.dat}"
+: "${inputFile:=grainReadFile-2G_Molaro_0p25R10.dat}"
 
 : "${readFlag:=1}"
 

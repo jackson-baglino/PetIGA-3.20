@@ -17,7 +17,8 @@
 #   - Change PARENT_DIR to point to your parent input directory.
 ###############################################################################
 
-PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/DSM-grainReadFile-70/"
+# PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/DSM-grainReadFile-70/"
+PARENT_DIR="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch"
 
 for dir in "$PARENT_DIR"/*; do
     if [ -d "$dir" ]; then

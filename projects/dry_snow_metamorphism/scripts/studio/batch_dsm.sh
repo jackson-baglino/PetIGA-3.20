@@ -25,11 +25,21 @@
 # ============================
 
 # Define arrays of values
-temps=(-12 -14 -16 -18 -20 -22 -24 -26 -28 -30)
-humidities=(0.98 0.90 0.50 0.05)
+temps=(-30)
+humidities=(0.98)
 input_files=(
-  "grainReadFile-2G_Molaro_0p25R1_HIGHRES.dat"
-  "grainReadFile-2G_Molaro_0p25R1.dat"
+  "grainReadFile-35_s1-10.dat"
+  "grainReadFile-35_s1-11.dat"
+  "grainReadFile-35_s1-12.dat"
+  "grainReadFile-35_s1-13.dat"
+  "grainReadFile-35_s1-14.dat"
+  "grainReadFile-35_s1-15.dat"
+  "grainReadFile-35_s1-16.dat"
+  "grainReadFile-35_s1-17.dat"
+  "grainReadFile-35_s1-18.dat"
+  "grainReadFile-35_s1-19.dat"
+  "grainReadFile-35_s1-20.dat"
+  "grainReadFile-35_s1-21.dat"
 )
 
 # Absolute path to the single-run driver script
