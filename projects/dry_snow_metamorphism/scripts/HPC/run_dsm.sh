@@ -13,6 +13,19 @@
 #SBATCH --mail-user=jbaglino@caltech.edu
 #SBATCH --mail-type=END,FAIL,TIME_LIMIT
 
+###############################################################################
+# Script: run_dsm.sh (HPC)
+# Model: Dry Snow Metamorphism (DSM)
+# Purpose:
+#   Configure and launch a single DSM simulation on the cluster, snapshot the
+#   fully-resolved parameters used, and write machine-readable metadata.
+#
+# Notes:
+#   - Parameters can be overridden via environment variables or `sbatch --export=...`.
+#   - A compact RUN_LABEL using two-digit temp/RH tags is included in the output
+#     folder name for easy scanning.
+###############################################################################
+
 ##############################################
 # USER-MODIFIABLE SIMULATION SETTINGS
 ##############################################
@@ -72,14 +85,24 @@ fi
 echo "[INFO] Loading settings from $SETTINGS_FILE"
 source "$SETTINGS_FILE"
 
-# Output folder
-folder="$output_dir/${SLURM_JOB_NAME}_${SLURM_JOB_ID:0:9}"
-mkdir -p "$folder"
-echo "[INFO] Output directory created: $folder"
-
 # Export for simulation
 export Lx Ly Lz Nx Ny Nz eps delt_t t_final n_out dim \
        grad_temp0X grad_temp0Y grad_temp0Z humidity temp inputFile folder readFlag
+
+# Build compact two-digit tags for temperature and RH for easier folder scanning
+temp_int=$(printf "%.0f" "$temp")
+if [[ "$temp_int" == -* ]]; then
+  temp_tag=${temp_int:0:3}   # e.g., -12, -9
+else
+  temp_tag=${temp_int:0:2}   # e.g., 15, 7
+fi
+hum_int=$(awk "BEGIN{printf \"%d\", $humidity*100}")
+hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
+
+RUN_LABEL="DSM_${dim}D_Tm${temp_tag}_hum${hum_tag}"
+folder="$output_dir/${RUN_LABEL}_${SLURM_JOB_NAME}_${SLURM_JOB_ID:0:9}"
+mkdir -p "$folder"
+echo "[INFO] Output directory created: $folder"
 
 ##############################################
 # COMPILE EXECUTABLE IF NEEDED
@@ -95,11 +118,58 @@ else
   echo "[INFO] Using existing executable: $exec_file"
 fi
 
+# --- Write machine-readable metadata.json ---
+write_metadata_json() {
+  json_file="$folder/metadata.json"
+  cat > "$json_file" <<EOF
+{
+  "schema_version": "1.0",
+  "project": "dry_snow_metamorphism",
+  "run_time": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "executed_on": "$(hostname)",
+  "user": "$(whoami)",
+  "slurm": {
+    "job_id": "${SLURM_JOB_ID}",
+    "job_name": "${SLURM_JOB_NAME}",
+    "nodes": "${SLURM_JOB_NUM_NODES:-}",
+    "ntasks": "${SLURM_NTASKS:-}",
+    "cpus_per_task": "${SLURM_CPUS_PER_TASK:-}"
+  },
+  "run_label": "${RUN_LABEL}",
+  "input_file": "$(basename "$inputFile")",
+  "env_file_used": "$(basename "$SETTINGS_FILE")",
+  "sim_dimension": ${dim},
+  "temperature_C": ${temp},
+  "humidity": ${humidity},
+  "grad_temp": {"x": ${grad_temp0X}, "y": ${grad_temp0Y}, "z": ${grad_temp0Z}},
+  "domain_size_m": {"Lx": ${Lx}, "Ly": ${Ly}, "Lz": ${Lz}},
+  "mesh_resolution": {"Nx": ${Nx}, "Ny": ${Ny}, "Nz": ${Nz}},
+  "interface_width_eps": ${eps},
+  "delt_t": ${delt_t},
+  "t_final": ${t_final},
+  "n_out": ${n_out}
+}
+EOF
+}
+
+# --- Write resolved_params.env snapshot ---
+write_env_snapshot() {
+  snapshot="$folder/resolved_params.env"
+  {
+    echo "# Auto-generated resolved parameters for this run"
+    echo "# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    for var in RUN_LABEL folder inputFile Lx Ly Lz Nx Ny Nz delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps readFlag; do
+      eval "val=\${$var}"
+      echo "$var=$val"
+    done
+  } > "$snapshot"
+}
+
 ##############################################
 # RUN SIMULATION
 ##############################################
 
-echo "[INFO] Starting simulation on $(date)"
+echo "[INFO] Starting simulation on $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 echo "[INFO] Input file: $(basename "$inputFile")"
 echo "[INFO] Temperature = $temp°C, Humidity = $humidity"
 echo "[INFO] Domain: ($Lx x $Ly x $Lz), Grid: ($Nx x $Ny x $Nz)"
@@ -110,6 +180,22 @@ cp "$BASE_DIR/src/dry_snow_metamorphism.c" "$folder/"
 cp "$SETTINGS_FILE" "$folder/"
 cp "$0" "$folder/run_script_copy.sh"
 
+# Write metadata and resolved env snapshots
+write_metadata_json
+write_env_snapshot
+
+# Append resolved parameters to the copied settings file for a self-contained record
+COPIED_ENV_FILE="$folder/$(basename "$SETTINGS_FILE")"
+{
+  echo ""
+  echo "# ---- Resolved run-time parameters (auto-generated) ----"
+  echo "# Note: Values below reflect the actual run configuration (after overrides)."
+  for var in RUN_LABEL folder inputFile Lx Ly Lz Nx Ny Nz delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps readFlag; do
+    eval "val=\${$var}"
+    echo "$var=$val"
+  done
+} >> "$COPIED_ENV_FILE"
+
 # Run simulation
 mpiexec "$exec_file" -initial_cond -initial_PFgeom \
   -snes_rtol 1e-3 -snes_stol 1e-3 -snes_max_it 6 \
@@ -117,4 +203,4 @@ mpiexec "$exec_file" -initial_cond -initial_PFgeom \
   -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
   -snes_linesearch_type basic | tee "$folder/outp.txt"
 
-echo "[INFO] Simulation completed on $(date)"
+echo "[INFO] Simulation completed on $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
