@@ -1,5 +1,36 @@
 #!/bin/zsh
 ###############################################################################
+# Script: run_effective_k_ice_homog.sh
+# Purpose:
+#   Compile and run the homogeneous effective thermal conductivity simulation
+#   (PetIGA/PETSc), collect outputs, and run a quick post-processing plot.
+#
+# Usage:
+#   ./run_effective_k_ice_homog.sh \
+#       [with environment variables exported beforehand as needed]
+#
+# Key env vars (export before running or load via .env):
+#   Nx, Ny, Nz           Grid resolution
+#   Lx, Ly, Lz           Domain sizes (m)
+#   eps                  Interface width
+#   dim                  2 for 2D, 3 for 3D (defaults to 2 if unset)
+#   TEMP_TOP             Prescribed top temperature (K)
+#   FLUX_BOTTOM          Prescribed bottom heat flux (W/m^2)
+#   INIT_MODE            "circle" | "layered" | "FILE"
+#   INIT_DIR             Directory containing initial condition files (.dat) and a .env
+#   ENV_FILE             Explicit path to a .env to source (overrides INIT_DIR search)
+#   NUM_PROCS            MPI ranks (default: 1)
+#
+# Outputs:
+#   Creates a timestamped folder under outputs/homog/ and moves *.dat, *.bin,
+#   *.info, *.csv there. Then runs postprocess/plot_vector_field.py.
+#
+# Notes:
+#   - This script intentionally avoids set -euo pipefail and heavy tracing.
+#   - For INIT_MODE=FILE, either INIT_DIR must point to a directory containing
+#     a single .env OR ENV_FILE must be provided explicitly.
+###############################################################################
+###############################################################################
 # run_effective_k_ice_full.sh
 #
 # • No verbose tracing, no pipefail, no trap on every error
@@ -39,9 +70,24 @@ INIT_MODE="FILE"
 # INIT_DIR="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch/DSM2G_Molaro_0p25R1_2D_Tm12_hum5_tf0d__2025-08-07__18.59.47"
 
 # Locate and source .env file (portable across bash/zsh)
-if [[ -z "$ENV_FILE" ]]; then
+# Priority:
+#  1) If ENV_FILE is set, use it directly
+#  2) Else if INIT_MODE=="FILE" and INIT_DIR is set, search for a single .env in INIT_DIR
+#  3) Else, if INIT_MODE=="FILE" but neither ENV_FILE nor INIT_DIR is provided, fail with guidance
+
+if [[ -n "$ENV_FILE" ]]; then
+    echo "✅ Using env file (explicit): $ENV_FILE"
+elif [[ "$INIT_MODE" == "FILE" ]]; then
+    if [[ -z "$INIT_DIR" ]]; then
+        echo "❌ INIT_MODE is 'FILE' but neither ENV_FILE nor INIT_DIR is set."
+        echo "   Provide ENV_FILE=/path/to/.env or INIT_DIR=/path/to/dir containing a single .env."
+        exit 1
+    fi
+    if [[ ! -d "$INIT_DIR" ]]; then
+        echo "❌ INIT_DIR is not a directory: $INIT_DIR"
+        exit 1
+    fi
     echo "🔎 Searching for .env in: $INIT_DIR"
-    # Use find so we don't rely on shell globs/nullglob behavior
     env_files=( $(find "$INIT_DIR" -maxdepth 1 -type f -name '*.env' 2>/dev/null) )
     env_count=${#env_files[@]}
     if [[ -z "$env_count" || "$env_count" -eq 0 ]]; then
@@ -54,25 +100,24 @@ if [[ -z "$ENV_FILE" ]]; then
         exit 1
     else
         ENV_FILE="${env_files[1]}"
+        echo "✅ Using env file (discovered): $ENV_FILE"
     fi
+else
+    echo "ℹ️  No ENV_FILE provided and INIT_MODE != 'FILE'. Proceeding without sourcing .env."
 fi
 
-if [[ ! -f "$ENV_FILE" ]]; then
-    echo "❌ .env file not found: $ENV_FILE"
-    exit 1
+# If an env file was resolved, source it
+if [[ -n "$ENV_FILE" ]]; then
+    if [[ ! -f "$ENV_FILE" ]]; then
+        echo "❌ .env file not found: $ENV_FILE"
+        exit 1
+    fi
+    source "$ENV_FILE"
 fi
 
-# Diagnostic: show which env file is used
-echo "✅ Using env file: $ENV_FILE"
-
-# Source the .env file to get variables
-source "$ENV_FILE"
-
-# Set dim if not already set in script
+# Set dim default if not provided anywhere
 if [[ -z "$dim" ]]; then
-    if [[ -z "$dim" ]]; then
-        dim=2
-    fi
+    dim=2
 fi
 
 # Export variables for simulation
@@ -88,7 +133,9 @@ export FLUX_BOTTOM
 export dim
 
 # Extract base folder name
-base_folder=$(basename "$INIT_DIR")
+if [[ -n "$INIT_DIR" ]]; then
+    base_folder=$(basename "$INIT_DIR")
+fi
 
 grains=2
 dims=2
@@ -129,7 +176,7 @@ run_simulation() {
     echo "Running with $NUM_PROCS MPI proc(s)…"
     mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
         -init_mode "$INIT_MODE" \
-        -init_dir "$INIT_DIR" \
+        -init_dir "$INIT_DIR"
 }
 
 collect_outputs() {

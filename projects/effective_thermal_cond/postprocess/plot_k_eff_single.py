@@ -85,6 +85,7 @@ def load_match_data(sim_dir):
         ssa = ssa.reshape(1, -1)
     if ssa.shape[1] < 4:
         raise ValueError(f"SSA_evo.dat has {ssa.shape[1]} columns; expected at least 4.")
+    ssa_val  = ssa[:, 0]
     ssa_time = ssa[:, 2]
     ssa_step = ssa[:, 3].astype(int)
 
@@ -99,11 +100,13 @@ def load_match_data(sim_dir):
 
     # --- Build mapping from step -> time using SSA ---
     step_to_time = {int(s): float(t) for s, t in zip(ssa_step, ssa_time)}
+    step_to_ssa  = {int(s): float(v) for s, v in zip(ssa_step, ssa_val)}
 
     # --- Align times for k_eff rows using step ---
     times = []
     kxx_m = []
     kyy_m = []
+    ssa_m = []
     missing = 0
     for i, st in enumerate(steps.astype(int)):
         t = step_to_time.get(st)
@@ -113,6 +116,7 @@ def load_match_data(sim_dir):
         times.append(t)
         kxx_m.append(k_xx[i])
         kyy_m.append(k_yy[i])
+        ssa_m.append(step_to_ssa[st])
 
     if not times:
         raise RuntimeError("No overlapping steps between SSA_evo.dat and k_eff.csv.")
@@ -124,8 +128,9 @@ def load_match_data(sim_dir):
     # Sort by time in case CSV order differs
     order = np.argsort(times)
     times, kxx_m, kyy_m = times[order], kxx_m[order], kyy_m[order]
+    ssa_m = np.array(ssa_m)[order]
 
-    return times, kxx_m, kyy_m, missing
+    return times, kxx_m, kyy_m, ssa_m, missing
 
 def autoscale_time_axis(times):
     """Return scaled_times and an appropriate label with units."""
@@ -163,22 +168,23 @@ def main():
     ap.add_argument("--no-save", dest="save", action="store_false", help="Show interactively instead of saving")
     ap.add_argument("--dpi", type=int, default=300, help="Figure DPI when saving")
     ap.add_argument("--normalize", action="store_true", help="Normalize k_xx and k_yy by their respective maximum values")
+    ap.add_argument("--plot-ssa", action="store_true", help="Also plot k_xx and k_yy against SSA (from SSA_evo.dat)")
     args = ap.parse_args()
 
     sim_dir = os.path.abspath(args.dir)
     title = os.path.basename(sim_dir.rstrip("/"))
 
-    times, kxx, kyy, missing = load_match_data(sim_dir)
+    times, kxx, kyy, ssa_vals, missing = load_match_data(sim_dir)
 
     # Optional second dataset
     sim_dir2 = None
     title2 = None
-    times2 = kxx2 = kyy2 = None
+    times2 = kxx2 = kyy2 = ssa_vals2 = None
     missing2 = 0
     if args.dir2:
         sim_dir2 = os.path.abspath(args.dir2)
         title2 = os.path.basename(sim_dir2.rstrip("/"))
-        times2, kxx2, kyy2, missing2 = load_match_data(sim_dir2)
+        times2, kxx2, kyy2, ssa_vals2, missing2 = load_match_data(sim_dir2)
 
     # Optional normalization (per-dataset)
     if args.normalize:
@@ -230,12 +236,27 @@ def main():
     fig2.suptitle("")
     fig2.tight_layout()
 
+    if args.plot_ssa:
+        fig_ssa, ax_ssa = plt.subplots(figsize=(3.5, 2.4))
+        ax_ssa.plot(ssa_vals, kxx, marker='o', ms=3.0, lw=1.0, label=r"$k_{xx}$")
+        ax_ssa.plot(ssa_vals, kyy, marker='s', ms=3.0, lw=1.0, label=r"$k_{yy}$")
+        if sim_dir2 is not None:
+            ax_ssa.plot(ssa_vals2, kxx2, marker='o', ms=3.0, lw=1.0, linestyle='--', label=rf"{title2} $k_{{xx}}$")
+            ax_ssa.plot(ssa_vals2, kyy2, marker='s', ms=3.0, lw=1.0, linestyle='--', label=rf"{title2} $k_{{yy}}$")
+        ax_ssa.set_xlabel("SSA")
+        ax_ssa.set_ylabel(r"$k$ (W m$^{-1}$ K$^{-1}$)")
+        ax_ssa.legend(loc="best", ncols=1 if sim_dir2 is not None else 2, handlelength=1.4, columnspacing=0.8)
+        beautify_axes(ax_ssa)
+        fig_ssa.tight_layout()
+
     if args.save:
         suffix = "_overlay" if sim_dir2 is not None else ""
         out1_png = os.path.join(sim_dir, f"k_eff_vs_time_xy{suffix}.png")
         out2_png = os.path.join(sim_dir, f"k_eff_vs_time_stacked{suffix}.png")
         out1_pdf = os.path.join(sim_dir, f"k_eff_vs_time_xy{suffix}.pdf")
         out2_pdf = os.path.join(sim_dir, f"k_eff_vs_time_stacked{suffix}.pdf")
+        out_ssa_png = os.path.join(sim_dir, f"k_eff_vs_ssa_xy{suffix}.png")
+        out_ssa_pdf = os.path.join(sim_dir, f"k_eff_vs_ssa_xy{suffix}.pdf")
         for path in (out1_png, out2_png):
             plt.gcf().set_facecolor('white')
         fig1.savefig(out1_png, dpi=args.dpi, bbox_inches="tight", transparent=True)
@@ -243,8 +264,16 @@ def main():
         # Vector versions for publication
         fig1.savefig(out1_pdf, bbox_inches="tight", transparent=True)
         fig2.savefig(out2_pdf, bbox_inches="tight", transparent=True)
-        print("✅ Saved:\n  {}\n  {}\n  {}\n  {}".format(out1_png, out2_png, out1_pdf, out2_pdf))
+        if args.plot_ssa:
+            fig_ssa.savefig(out_ssa_png, dpi=args.dpi, bbox_inches="tight", transparent=True)
+            fig_ssa.savefig(out_ssa_pdf, bbox_inches="tight", transparent=True)
+        saved_list = [out1_png, out2_png, out1_pdf, out2_pdf]
+        if args.plot_ssa:
+            saved_list.extend([out_ssa_png, out_ssa_pdf])
+        print("✅ Saved:\n  " + "\n  ".join(saved_list))
         plt.close(fig1); plt.close(fig2)
+        if args.plot_ssa:
+            plt.close(fig_ssa)
     else:
         plt.show()
 
