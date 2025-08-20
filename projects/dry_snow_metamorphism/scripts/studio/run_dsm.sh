@@ -14,10 +14,8 @@
 #
 # Key Variables:
 #   BASE_DIR      Project root for DSM model
-#   input_dir     Directory with input grain files (*.dat)
-#   output_dir    Parent directory to store run outputs (timestamped subfolder)
-#   exec_file     DSM executable to run
-#   filename      (When readFlag=1) The grain input file name in input_dir
+#   input_dir     Directory with input grain files (expects *.dat under $BASE_DIR/inputs/dat)
+#   filename      (When readFlag=1) The grain input file name (basename only, e.g. grainReadFile-35_ps-7_p038.dat)
 #   readFlag      1=read grain file; 0=procedural generation
 #   t_final       Total simulated time [s]
 #   n_out         Number of output frames (approx.)
@@ -32,8 +30,7 @@
 #
 # Notes:
 #   - This script avoids deleting any user comments.
-#   - If `readFlag=1`, ensure `filename` is set to a valid file in $input_dir.
-#   - Settings file is loaded from $BASE_DIR/configs/${filename%.dat}.env.
+#   - If readFlag=1, ensure the .dat file exists under $BASE_DIR/inputs/dat/
 ###############################################################################
 
 # =======================================
@@ -41,25 +38,37 @@
 # =======================================
 BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
 input_dir="$BASE_DIR/inputs"
+dat_subdir="$input_dir/dat"
 output_dir="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch"
 exec_file="${BASE_DIR}/dry_snow_metamorphism"
 
 # =======================================
 # Define simulation parameters
 # =======================================
-# filename="grainReadFile-2G_Molaro_0p25R1_HIGHRES.dat"
-# Batch override precedence: if $filename is exported, use it; else use this default
 : ${filename:="grainReadFile-2G_Molaro_0p25R1.dat"}
-inputFile="$input_dir/$filename"
+# Allow user to provide with or without .dat extension
+case "$filename" in
+  *.dat) fname="$filename" ;;
+  *)     fname="$filename.dat" ;;
+esac
+inputFile="$dat_subdir/$fname"
 
 # --- Basic validation (only when reading a grain file) ---
 if [[ "${readFlag:-1}" -eq 1 ]]; then
   if [[ -z "$filename" ]]; then
-    echo "[ERROR] readFlag=1 but 'filename' is not set. Set it above (e.g., filename=\"grainReadFile-...dat\")."
+    echo "[ERROR] readFlag=1 but 'filename' is not set. Set it above (e.g., filename=\"grainReadFile-...\")."
+    exit 1
+  fi
+  if [[ ! -d "$dat_subdir" ]]; then
+    echo "[ERROR] Input data directory not found: $dat_subdir"
+    echo "        Expected all inputs under: $BASE_DIR/inputs/dat/"
     exit 1
   fi
   if [[ ! -f "$inputFile" ]]; then
     echo "[ERROR] Input file not found: $inputFile"
+    echo "        Searched in: $dat_subdir"
+    echo "        Available .dat files:"
+    ls -1 "$dat_subdir"/*.dat 2>/dev/null | sed 's|.*/||' || echo "          (none found)"
     exit 1
   fi
 fi
@@ -80,7 +89,7 @@ grad_temp0Z=0.0
 dim=2
 
 if [[ readFlag -eq 1 ]]; then
-    echo "[INFO] Reading grain file: $inputFile"
+    echo "[INFO] Reading grain file from inputs/dat: $inputFile"
 else
     echo "[INFO] Generating grains instead of reading from file."
     Lx=0.5e-3
