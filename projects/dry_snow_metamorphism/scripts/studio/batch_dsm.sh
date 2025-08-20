@@ -3,82 +3,65 @@
 # Script: batch_dsm.sh
 # Model: Dry Snow Metamorphism (DSM)
 # Purpose:
-#   Sweep over temperature(s), humidity(ies), and input file(s), calling the
-#   single-run script (run_dsm.sh) sequentially — one job at a time.
-#
-# Usage:
-#   ./scripts/studio/batch_dsm.sh
-#
-# Precedence of parameters:
-#   - This script exports env vars (temp, humidity, filename) before each call.
-#   - The run script should use these exported values if set; otherwise it falls
-#     back to its own internal defaults. (We will update run_dsm.sh accordingly.)
-#
-# Notes:
-#   - Adjust the arrays below to choose the sweep set.
-#   - Optionally export NUM_PROCS before running to override MPI ranks.
-#   - All existing comments remain unchanged by design.
+#   Iterate over all input .dat files in ./inputs/porespy/dat and call
+#   run_dsm.sh for each file (and for each temp/RH combo defined below).
 ###############################################################################
 
-# ============================
-# Batch run configuration
-# ============================
+set -o errexit
+set -o nounset
+set -o pipefail
 
-# Define arrays of values
-temps=(-12 -14 -16 -18 -20 -22 -24 -26 -28 -30)
-humidities=(0.98)
-input_files=(
-  "grainReadFile-35_s1-10.dat"
-  "grainReadFile-35_s1-11.dat"
-  "grainReadFile-35_s1-12.dat"
-  "grainReadFile-35_s1-13.dat"
-  "grainReadFile-35_s1-14.dat"
-  "grainReadFile-35_s1-15.dat"
-  "grainReadFile-35_s1-16.dat"
-  "grainReadFile-35_s1-17.dat"
-  "grainReadFile-35_s1-18.dat"
-  "grainReadFile-35_s1-19.dat"
-  "grainReadFile-35_s1-20.dat"
-  "grainReadFile-35_s1-21.dat"
-)
+# Enable zsh glob qualifiers like (N) and avoid errors on empty globs
+setopt extended_glob null_glob
 
-# Absolute path to the single-run driver script
-# Path to run_dsm.sh
-RUN_SCRIPT="/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/scripts/studio/run_dsm.sh"
+# Project roots
+: ${PETIGA_DIR:="/Users/jacksonbaglino/PetIGA-3.20"}
+BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
+INPUT_ROOT="$BASE_DIR/inputs"
+RUN_SCRIPT="$BASE_DIR/scripts/studio/run_dsm.sh"
 
-if [[ ! -f "$RUN_SCRIPT" ]]; then
-  echo "[ERROR] run script not found: $RUN_SCRIPT"
+# Sweeps (edit as needed)
+temps=( -30 )
+humidities=( 0.98 )
+
+# Collect all files in ./inputs/porespy/dat (use glob first; fallback to find)
+input_glob="$INPUT_ROOT/porespy/dat/*.dat"
+input_files=( $input_glob(N) )
+
+if (( ${#input_files[@]} == 0 )); then
+  echo "[WARN] Glob found 0 files in: $input_glob"
+  if [[ -d "$INPUT_ROOT/porespy/dat" ]]; then
+    echo "[INFO] Directory exists. Listing to help debug:"; ls -l "$INPUT_ROOT/porespy/dat" || true
+  else
+    echo "[ERROR] Directory does not exist: $INPUT_ROOT/porespy/dat"
+  fi
+  # Fallback: find
+  input_files=( ${(f)"$(command -v find >/dev/null 2>&1 && find "$INPUT_ROOT/porespy/dat" -type f -name '*.dat' -print 2>/dev/null)"} )
+fi
+
+if (( ${#input_files[@]} == 0 )); then
+  echo "[ERROR] No .dat files found under: $INPUT_ROOT/porespy/dat/"
   exit 1
 fi
 
-start_time=$(date +%s)
 echo "Starting DSM batch: ${#temps[@]} temps × ${#humidities[@]} humidities × ${#input_files[@]} files"
+echo "=================================================="
 
-# Loop over combinations
-for temp in "${temps[@]}"; do
-  for hum in "${humidities[@]}"; do
-    for input_file in "${input_files[@]}"; do
-      echo "=================================================="
-      echo "Starting simulation with T=${temp}, RH=${hum}, file=${input_file}"
-      
-      # Export variables to be picked up by run_dsm.sh
-      export temp=$temp
-      export humidity=$hum
-      export filename=$input_file
-
-      # Call the main run script
-      per_run_start=$(date +%s)
+for fpath in ${input_files[@]}; do
+  fname=$(basename -- "$fpath")
+  for t in ${temps[@]}; do
+    for rh in ${humidities[@]}; do
+      echo "Starting simulation with T=$t, RH=$rh, file=$fname"
+      export temp=$t
+      export humidity=$rh
+      export filename="$fname"                # basename only
+      export FILE_SUBDIR="porespy/dat"        # tell run_dsm.sh which subdir to use
       zsh "$RUN_SCRIPT"
-      per_run_end=$(date +%s)
-      echo "Run elapsed: $((per_run_end - per_run_start)) s"
-      
-      echo "Finished simulation with T=${temp}, RH=${hum}, file=${input_file}"
+      echo "Finished simulation with T=$t, RH=$rh, file=$fname"
       echo "=================================================="
-      echo ""
     done
   done
+
 done
 
-end_time=$(date +%s)
-total_time=$((end_time - start_time))
-echo "Total batch runtime: ${total_time} seconds"
+exit 0

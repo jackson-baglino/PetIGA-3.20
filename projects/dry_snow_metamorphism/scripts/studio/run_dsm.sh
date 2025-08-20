@@ -41,7 +41,7 @@
 # =======================================
 BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
 input_dir="$BASE_DIR/inputs"
-output_dir="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch"
+output_dir="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch/DSMporespy"
 exec_file="${BASE_DIR}/dry_snow_metamorphism"
 
 # =======================================
@@ -50,7 +50,8 @@ exec_file="${BASE_DIR}/dry_snow_metamorphism"
 # filename="grainReadFile-2G_Molaro_0p25R1_HIGHRES.dat"
 # Batch override precedence: if $filename is exported, use it; else use this default
 : ${filename:="grainReadFile-2G_Molaro_0p25R1.dat"}
-inputFile="$input_dir/dat/$filename"
+file_subdir="${FILE_SUBDIR:-dat}"
+inputFile="$input_dir/$file_subdir/$filename"
 
 # --- Basic validation (only when reading a grain file) ---
 if [[ "${readFlag:-1}" -eq 1 ]]; then
@@ -67,8 +68,8 @@ fi
 readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-# t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
-t_final=$((12 * 60 * 60))  # 2 hours in seconds
+t_final=$((28 * 24 * 60 * 60))  # 28 days in seconds
+# t_final=$((12 * 60 * 60))  # 2 hours in seconds
 # t_final=10
 n_out=100
 # Batch override precedence: use exported values if provided; otherwise defaults
@@ -130,7 +131,6 @@ mkdir -p "$folder"
 
 # Copy input file to results folder
 cp "$inputFile" "$folder"
-cp "$SETTINGS_FILE" "$folder"
 
 # =======================================
 # Build and run setup
@@ -143,10 +143,62 @@ make dry_snow_metamorphism || {
     exit 1
 }
 
-# Generate env file if missing
+# Generate env file if missing (infer Lx/Ly from metadata under sibling 'meta' dir)
 if [ ! -f "$SETTINGS_FILE" ]; then
-    echo "[INFO] .env file not found. Generating from input..."
-    python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE"
+    echo "[INFO] .env not found, attempting to derive Lx/Ly from metadata..."
+    dat_dir=$(dirname "$inputFile")
+    base_no_ext=$(basename "${inputFile%.dat}")
+    meta_dir="${dat_dir%/dat}/meta"
+    meta_path="$meta_dir/${base_no_ext}.txt"
+    echo "[DEBUG] Expecting metadata at: $meta_path"
+
+    Lx_from_meta=""; Ly_from_meta=""
+    if [ -f "$meta_path" ]; then
+        echo "[INFO] Found metadata: $meta_path"
+        # Extract the 'Command line:' content and parse --Lx/--Ly
+        cmdline=$(awk '
+        {
+          if ($0 ~ /^Command line:/) {
+            line = $0
+            sub(/^Command line:[[:space:]]*/, "", line)
+            if (length(line) > 0) {
+              print line
+              exit
+            } else {
+              getnext = 1
+              next
+            }
+          }
+          if (getnext && NF > 0) {
+            print $0
+            exit
+          }
+        }
+        END { if (!getnext) {} }' "$meta_path" 2>/dev/null || true)
+        if [ -n "$cmdline" ]; then
+            Lx_from_meta=$(echo "$cmdline" | awk '{for(i=1;i<=NF;i++){if($i=="--Lx"){print $(i+1); exit}}}')
+            Ly_from_meta=$(echo "$cmdline" | awk '{for(i=1;i<=NF;i++){if($i=="--Ly"){print $(i+1); exit}}}')
+        else
+            echo "[ERROR] Could not locate a 'Command line:' line in metadata."
+        fi
+    else
+        echo "[ERROR] Metadata file not found for $(basename "$inputFile"): $meta_path"
+    fi
+
+    if [ -n "$Lx_from_meta" ] && [ -n "$Ly_from_meta" ]; then
+        echo "[INFO] Inferred domain: Lx=$Lx_from_meta, Ly=$Ly_from_meta"
+        python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" "$Lx_from_meta" "$Ly_from_meta" || {
+            echo "[ERROR] Failed to generate .env with inferred Lx/Ly."; exit 1; }
+    else
+        echo "[ERROR] Could not infer Lx/Ly from metadata; aborting to avoid running with unset environment."
+        echo "        Ensure metadata exists at: $meta_path and contains a 'Command line:' with --Lx and --Ly."
+        exit 1
+    fi
+fi
+
+# Copy settings file into the results folder now that it exists
+if [ -f "$SETTINGS_FILE" ]; then
+    cp "$SETTINGS_FILE" "$folder"
 fi
 
 # Load run-time physical/mesh parameters from the settings .env
