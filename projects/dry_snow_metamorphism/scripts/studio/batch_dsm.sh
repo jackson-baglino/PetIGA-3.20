@@ -27,20 +27,10 @@
 # Define arrays of values
 temps=(-30)
 humidities=(0.98)
-input_files=(
-  "grainReadFile-35_s1-10.dat"
-  "grainReadFile-35_s1-11.dat"
-  "grainReadFile-35_s1-12.dat"
-  "grainReadFile-35_s1-13.dat"
-  "grainReadFile-35_s1-14.dat"
-  "grainReadFile-35_s1-15.dat"
-  "grainReadFile-35_s1-16.dat"
-  "grainReadFile-35_s1-17.dat"
-  "grainReadFile-35_s1-18.dat"
-  "grainReadFile-35_s1-19.dat"
-  "grainReadFile-35_s1-20.dat"
-  "grainReadFile-35_s1-21.dat"
-)
+
+# Automatically collect all .dat files from the inputs/dat/ directory
+# This replaces the previously hardcoded input_files array
+input_files=(inputs/porespy1mm/dat/*.dat)
 
 # Absolute path to the single-run driver script
 # Path to run_dsm.sh
@@ -59,12 +49,14 @@ for temp in "${temps[@]}"; do
   for hum in "${humidities[@]}"; do
     for input_file in "${input_files[@]}"; do
       echo "=================================================="
-      echo "Starting simulation with T=${temp}, RH=${hum}, file=${input_file}"
+      # Build path relative to inputs/dat so subfolders (e.g., porespy/) are preserved
+      relpath="${input_file#inputs/dat/}"
+      echo "Starting simulation with T=${temp}, RH=${hum}, file=${relpath}"
       
       # Export variables to be picked up by run_dsm.sh
       export temp=$temp
       export humidity=$hum
-      export filename=$input_file
+      export filename="$relpath"
 
       # Call the main run script
       per_run_start=$(date +%s)

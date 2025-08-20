@@ -46,10 +46,16 @@ exec_file="${BASE_DIR}/dry_snow_metamorphism"
 # Define simulation parameters
 # =======================================
 : ${filename:="grainReadFile-2G_Molaro_0p25R1.dat"}
-# Allow user to provide with or without .dat extension
-case "$filename" in
-  *.dat) fname="$filename" ;;
-  *)     fname="$filename.dat" ;;
+# Sanitize path: keep subpath relative to inputs/dat, strip leading prefixes if provided
+fname="$filename"
+fname="${fname#./}"
+fname="${fname#inputs/}"
+fname="${fname#dat/}"
+fname="${fname#inputs/dat/}"
+# Ensure .dat extension
+case "$fname" in
+  *.dat) ;; 
+  *)     fname="$fname.dat" ;;
 esac
 inputFile="$dat_subdir/$fname"
 
@@ -68,7 +74,12 @@ if [[ "${readFlag:-1}" -eq 1 ]]; then
     echo "[ERROR] Input file not found: $inputFile"
     echo "        Searched in: $dat_subdir"
     echo "        Available .dat files:"
-    ls -1 "$dat_subdir"/*.dat 2>/dev/null | sed 's|.*/||' || echo "          (none found)"
+    if command -v find >/dev/null 2>&1; then
+        find "$dat_subdir" -type f -name '*.dat' -print 2>/dev/null | sed "s|$dat_subdir/||" || echo "          (none found)"
+    else
+        # Fallback: print nothing if shell globbing fails
+        print -rl -- "$dat_subdir"/*.dat 2>/dev/null | sed 's|.*/||' || echo "          (none found)"
+    fi
     exit 1
   fi
 fi
@@ -76,10 +87,10 @@ fi
 readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-# t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
-t_final=$((12 * 60 * 60))  # 2 hours in seconds
+t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
+# t_final=$((12 * 60 * 60))  # 2 hours in seconds
 # t_final=10
-n_out=100
+n_out=200
 # Batch override precedence: use exported values if provided; otherwise defaults
 : ${humidity:=0.95}
 : ${temp:=-2.0}
@@ -128,7 +139,7 @@ title="DSM${clean_name}_${dim}D_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d_"
 SETTINGS_FILE="$BASE_DIR/configs/${filename%.dat}.env"
 
 # MPI ranks used for this run (override here or export before calling)
-NUM_PROCS=10  # Number of MPI processes
+NUM_PROCS=12  # Number of MPI processes
 
 # =======================================
 # Timestamped result folder
@@ -155,7 +166,7 @@ make dry_snow_metamorphism || {
 # Generate env file if missing
 if [ ! -f "$SETTINGS_FILE" ]; then
     echo "[INFO] .env file not found. Generating from input..."
-    python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE"
+    python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" $Lx $Ly
 fi
 
 # Load run-time physical/mesh parameters from the settings .env
