@@ -14,8 +14,10 @@
 #
 # Key Variables:
 #   BASE_DIR      Project root for DSM model
-#   input_dir     Directory with input grain files (expects *.dat under $BASE_DIR/inputs/dat)
-#   filename      (When readFlag=1) The grain input file name (basename only, e.g. grainReadFile-35_ps-7_p038.dat)
+#   input_dir     Directory with input grain files (*.dat)
+#   output_dir    Parent directory to store run outputs (timestamped subfolder)
+#   exec_file     DSM executable to run
+#   filename      (When readFlag=1) The grain input file name in input_dir
 #   readFlag      1=read grain file; 0=procedural generation
 #   t_final       Total simulated time [s]
 #   n_out         Number of output frames (approx.)
@@ -30,7 +32,8 @@
 #
 # Notes:
 #   - This script avoids deleting any user comments.
-#   - If readFlag=1, ensure the .dat file exists under $BASE_DIR/inputs/dat/
+#   - If `readFlag=1`, ensure `filename` is set to a valid file in $input_dir.
+#   - Settings file is loaded from $BASE_DIR/configs/${filename%.dat}.env.
 ###############################################################################
 
 # =======================================
@@ -38,48 +41,25 @@
 # =======================================
 BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
 input_dir="$BASE_DIR/inputs"
-dat_subdir="$input_dir/dat"
 output_dir="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch"
 exec_file="${BASE_DIR}/dry_snow_metamorphism"
 
 # =======================================
 # Define simulation parameters
 # =======================================
+# filename="grainReadFile-2G_Molaro_0p25R1_HIGHRES.dat"
+# Batch override precedence: if $filename is exported, use it; else use this default
 : ${filename:="grainReadFile-2G_Molaro_0p25R1.dat"}
-# Sanitize path: keep subpath relative to inputs/dat, strip leading prefixes if provided
-fname="$filename"
-fname="${fname#./}"
-fname="${fname#inputs/}"
-fname="${fname#dat/}"
-fname="${fname#inputs/dat/}"
-# Ensure .dat extension
-case "$fname" in
-  *.dat) ;; 
-  *)     fname="$fname.dat" ;;
-esac
-inputFile="$dat_subdir/$fname"
+inputFile="$input_dir/dat/$filename"
 
 # --- Basic validation (only when reading a grain file) ---
 if [[ "${readFlag:-1}" -eq 1 ]]; then
   if [[ -z "$filename" ]]; then
-    echo "[ERROR] readFlag=1 but 'filename' is not set. Set it above (e.g., filename=\"grainReadFile-...\")."
-    exit 1
-  fi
-  if [[ ! -d "$dat_subdir" ]]; then
-    echo "[ERROR] Input data directory not found: $dat_subdir"
-    echo "        Expected all inputs under: $BASE_DIR/inputs/dat/"
+    echo "[ERROR] readFlag=1 but 'filename' is not set. Set it above (e.g., filename=\"grainReadFile-...dat\")."
     exit 1
   fi
   if [[ ! -f "$inputFile" ]]; then
     echo "[ERROR] Input file not found: $inputFile"
-    echo "        Searched in: $dat_subdir"
-    echo "        Available .dat files:"
-    if command -v find >/dev/null 2>&1; then
-        find "$dat_subdir" -type f -name '*.dat' -print 2>/dev/null | sed "s|$dat_subdir/||" || echo "          (none found)"
-    else
-        # Fallback: print nothing if shell globbing fails
-        print -rl -- "$dat_subdir"/*.dat 2>/dev/null | sed 's|.*/||' || echo "          (none found)"
-    fi
     exit 1
   fi
 fi
@@ -87,10 +67,10 @@ fi
 readFlag=1  # Set to 1 to read grain file, 0 to generate grains
 
 delt_t=1.0e-4
-t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
-# t_final=$((12 * 60 * 60))  # 2 hours in seconds
+# t_final=$((28 * 24 * 60 * 60))  # 14 days in seconds
+t_final=$((12 * 60 * 60))  # 2 hours in seconds
 # t_final=10
-n_out=200
+n_out=100
 # Batch override precedence: use exported values if provided; otherwise defaults
 : ${humidity:=0.95}
 : ${temp:=-2.0}
@@ -100,7 +80,7 @@ grad_temp0Z=0.0
 dim=2
 
 if [[ readFlag -eq 1 ]]; then
-    echo "[INFO] Reading grain file from inputs/dat: $inputFile"
+    echo "[INFO] Reading grain file: $inputFile"
 else
     echo "[INFO] Generating grains instead of reading from file."
     Lx=0.5e-3
@@ -139,7 +119,7 @@ title="DSM${clean_name}_${dim}D_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d_"
 SETTINGS_FILE="$BASE_DIR/configs/${filename%.dat}.env"
 
 # MPI ranks used for this run (override here or export before calling)
-NUM_PROCS=12  # Number of MPI processes
+NUM_PROCS=10  # Number of MPI processes
 
 # =======================================
 # Timestamped result folder
@@ -166,7 +146,7 @@ make dry_snow_metamorphism || {
 # Generate env file if missing
 if [ ! -f "$SETTINGS_FILE" ]; then
     echo "[INFO] .env file not found. Generating from input..."
-    python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" $Lx $Ly
+    python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE"
 fi
 
 # Load run-time physical/mesh parameters from the settings .env
