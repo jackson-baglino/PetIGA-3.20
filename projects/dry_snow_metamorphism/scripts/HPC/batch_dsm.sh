@@ -18,7 +18,7 @@
 set -euo pipefail
 
 # --- Sweep settings ---
-temperatures=(-80)
+temperatures=(-30)
 humidities=(0.98)
 
 # --- Paths ---
