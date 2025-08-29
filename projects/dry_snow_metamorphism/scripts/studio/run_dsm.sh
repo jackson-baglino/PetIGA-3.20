@@ -120,7 +120,7 @@ title="DSM${clean_name}_${dim}D_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d_"
 SETTINGS_FILE="$BASE_DIR/configs/${filename%.dat}.env"
 
 # MPI ranks used for this run (override here or export before calling)
-NUM_PROCS=10  # Number of MPI processes
+NUM_PROCS=12  # Number of MPI processes
 
 # =======================================
 # Timestamped result folder
