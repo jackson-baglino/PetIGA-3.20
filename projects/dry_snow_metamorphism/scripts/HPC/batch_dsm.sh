@@ -1,4 +1,3 @@
-
 ###############################################################################
 # Script: batch_dsm.sh (HPC)
 # Model: Dry Snow Metamorphism (DSM)
@@ -23,25 +22,29 @@ humidities=(0.98)
 # Set the path to your run script
 RUN_SCRIPT="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/scripts/HPC/run_dsm.sh"
 
-# Set base config names
-FILE_BASENAMES=("grainReadFile-70_s1-10")
-        #         "grainReadFile-70_s1-11"
-        #         "grainReadFile-70_s1-12"
-        #         "grainReadFile-70_s1-13"
-        #         "grainReadFile-70_s1-14"
-        #         "grainReadFile-70_s1-15"
-        #         "grainReadFile-70_s1-16"
-        #         "grainReadFile-70_s1-17"
-        #         "grainReadFile-70_s1-18"
-        #         "grainReadFile-70_s1-19"
-        #         "grainReadFile-70_s1-20"
-        #         "grainReadFile-70_s1-21"
-        #  ) 
+INPUT_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/porespy2"
+CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/porespy2"
 
-# Loop through each filename, temperature, and humidity and submit the job
-for basename in "${FILE_BASENAMES[@]}"; do
-  ENV_FILE="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/${basename}.env"
-  INPUT_FILE="${basename}.dat"
+shopt -s nullglob
+dat_files=("$INPUT_DIR"/*.dat)
+shopt -u nullglob
+
+if [ ${#dat_files[@]} -eq 0 ]; then
+  echo "No .dat files found in $INPUT_DIR"
+  exit 1
+fi
+
+for dat_file in "${dat_files[@]}"; do
+  basename=$(basename "$dat_file" .dat)
+  env_file="$CONFIG_DIR/$basename.env"
+  if [ ! -f "$env_file" ]; then
+    echo "Warning: Env file $env_file not found for $dat_file, skipping."
+    continue
+  fi
+  ENV_FILE="$env_file"
+  INPUT_FILE="$dat_file"
+
+  echo "Submitting job for basename: $basename, input file: $INPUT_FILE, env file: $ENV_FILE"
 
   for temp in "${temperatures[@]}"; do
     for hum in "${humidities[@]}"; do
