@@ -18,7 +18,7 @@
 ###############################################################################
 
 # PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/DSM-grainReadFile-70/"
-PARENT_DIR="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch"
+PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/porspy2_out"
 
 for dir in "$PARENT_DIR"/*; do
     if [ -d "$dir" ]; then

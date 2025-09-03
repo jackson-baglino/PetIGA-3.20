@@ -176,9 +176,9 @@ dims=2
 temp=-20.0
 hum=1.00
 
-# Output folder: write results alongside the input directory
-OUT_FOLDER="k_eff_output"
-echo "✅ OUT subfolder: $OUT_FOLDER"
+OUT_ROOT="/Users/jacksonbaglino/SimulationResults/effective_thermal_cond/scratch"
+
+echo "✅ Output root: $OUT_ROOT"
 
 echo "Loaded parameters from .env:"
 echo "  dim=$dim, Nx=$Nx, Ny=$Ny, Nz=$Nz, Lx=$Lx, Ly=$Ly, Lz=$Lz, eps=$eps, TEMP_TOP=$TEMP_TOP"
@@ -188,7 +188,7 @@ export OUTPUT_VTK=1
 export OUTPUT_BINARY=1
 export SOL_INDEX=-1
 
-export OUTPUT_DIR="$INIT_DIR/$OUT_FOLDER"
+export OUTPUT_DIR="$OUT_ROOT/$base_folder"
 mkdir -p "$OUTPUT_DIR"
 
 # MPI ranks (override by exporting NUM_PROCS beforehand)
