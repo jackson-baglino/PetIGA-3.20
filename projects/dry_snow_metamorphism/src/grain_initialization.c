@@ -625,9 +625,13 @@ static PetscErrorCode ReadIceGrainsFromFile(AppCtx *user)
   }
   // Now, read grain data from file
   while ((readCount = fscanf(file, "%lf %lf %lf %lf", &x, &y, &z, &r)) >= 3) {
-    if (grainCount >= 1000) {
+    PetscInt max_grains = 1000;
+    if (grainCount >= max_grains) {
       fclose(file);
-      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE, "Exceeds maximum number of grains");
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE,
+        "Too many grains in input file %s: read %d grains, "
+        "but maximum allowed is %d. Increase max_grains or "
+        "reduce the file size.", grainDataFile, grainCount+1, max_grains);
     }
     user->cent[0][grainCount] = x;
     user->cent[1][grainCount] = y;
