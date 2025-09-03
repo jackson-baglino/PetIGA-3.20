@@ -176,9 +176,9 @@ echo "[INFO] Domain: ($Lx x $Ly x $Lz), Grid: ($Nx x $Ny x $Nz)"
 
 # Backup inputs to output folder
 cp "$inputFile" "$folder/"
-cp "$BASE_DIR/src/dry_snow_metamorphism.c" "$folder/"
+cp -r "$BASE_DIR"/src/* "$folder/"
 cp "$SETTINGS_FILE" "$folder/"
-cp "$0" "$folder/run_script_copy.sh"
+cp "$0" "$folder/run_dsm.sh"
 
 # Write metadata and resolved env snapshots
 write_metadata_json

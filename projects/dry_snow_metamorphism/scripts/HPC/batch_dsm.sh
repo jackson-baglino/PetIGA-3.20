@@ -23,8 +23,8 @@ humidities=(0.98)
 
 # --- Paths ---
 RUN_SCRIPT="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/scripts/HPC/run_dsm.sh"
-INPUT_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/porespy2"
-CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/porespy2"
+INPUT_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/porespy2/to_run"
+CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/porespy2/to_run"
 
 # --- Resource tuning knobs (override by exporting before running) ---
 : "${MIN_TASKS_PER_NODE:=35}"       # lower bound for cores/node
