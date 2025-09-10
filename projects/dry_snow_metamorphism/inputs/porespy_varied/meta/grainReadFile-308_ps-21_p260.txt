@@ -1,7 +1,0 @@
-Command line:
-generateCircularGrains.py --mode nonoverlap_poly --shape 1024 1024 --Lx 2.0e-3 --Ly 2.0e-3 --porosity 0.26 --mean_r_m 45e-6 --sigma_ln 0.5 --radius_clip_frac 01.0 --contact_gap_m 0.0 --allow_cross_boundary --enforce_tangency --touch_tol_m 0.0 --tries_per_circle 200 --max_attempts 200000 --seed 21
-
-Number of grains: 308
-Target porosity: 0.26
-Achieved porosity: 0.260
-Timestamp: 20250821_170823
