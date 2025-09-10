@@ -45,10 +45,10 @@ typedef struct {
   PetscReal RCice_dev, RCsed_dev;  // Standard deviation of radius of curvature for ice and sediment
 
   // Arrays storing geometry information for ice and sediment grains
-  PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
-  PetscReal radius[200];  // Radii of individual ice grains
-  PetscReal centsed[3][200];  // Coordinates of sediment grain centers (3D array for x, y, z positions)
-  PetscReal radiussed[200];  // Radii of individual sediment grains
+  PetscReal cent[3][1000];  // Coordinates of ice grain centers (3D array for x, y, z positions)
+  PetscReal radius[1000];  // Radii of individual ice grains
+  PetscReal centsed[3][1000];  // Coordinates of sediment grain centers (3D array for x, y, z positions)
+  PetscReal radiussed[1000];  // Radii of individual sediment grains
 
   // Initial normal vector components (possibly for a structured interface)
   PetscReal norm0_0, norm0_1, norm0_2;  // Normal vector components (x, y, z)

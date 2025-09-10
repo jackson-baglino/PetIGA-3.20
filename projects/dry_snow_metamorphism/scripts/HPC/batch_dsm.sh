@@ -41,6 +41,7 @@ if [ ${#dat_files[@]} -eq 0 ]; then
   exit 1
 fi
 
+make clean && make all
 for dat_file in "${dat_files[@]}"; do
   basename=$(basename "$dat_file" .dat)
   env_file="$CONFIG_DIR/$basename.env"

@@ -108,15 +108,22 @@ echo "[INFO] Output directory created: $folder"
 # COMPILE EXECUTABLE IF NEEDED
 ##############################################
 
+# Always attempt to compile the executable before running
+# echo "[INFO] Forcing compilation of executable..."
+# if ! make -C "$BASE_DIR" dry_snow_metamorphism; then
+#   echo "[ERROR] Compilation failed. Exiting."
+#   exit 1
+# fi
+
+make all
+
+# Verify the executable exists and is runnable
 if [[ ! -x "$exec_file" ]]; then
-  echo "[INFO] Executable not found. Attempting to compile..."
-  make dry_snow_metamorphism
-  echo "[INFO] Compilation complete."
-  [[ $? -ne 0 ]] && { echo "[ERROR] Compilation failed. Exiting."; exit 1; }
-  echo "[INFO] Compilation successful."
-else
-  echo "[INFO] Using existing executable: $exec_file"
+  echo "[ERROR] Expected executable not found or not executable at: $exec_file"
+  exit 1
 fi
+
+echo "[INFO] Compilation successful. Using executable: $exec_file"
 
 # --- Write machine-readable metadata.json ---
 write_metadata_json() {
