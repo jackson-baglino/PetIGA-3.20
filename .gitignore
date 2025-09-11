@@ -1,5 +1,5 @@
 ###############################################################################
-# 🖥️ System & Editor Files
+# System & Editor Files
 ###############################################################################
 # macOS system files
 .DS_Store
@@ -8,7 +8,7 @@
 .vscode/
 
 ###############################################################################
-# 🐍 Virtual Environments & Python Caches
+# Virtual Environments & Python Caches
 ###############################################################################
 # Virtual environments (common names)
 .venv/
@@ -25,14 +25,19 @@ __pycache__/
 *.py[cod]
 
 ###############################################################################
-# 🧪 Test, Temporary, & Input Files
+# Test, Temporary, & Input Files
 ###############################################################################
 Original/
 input/
 test/
 
 ###############################################################################
-# 🧪 Demo Files & Outputs
+# Image Files
+###############################################################################
+*.png
+
+###############################################################################
+# Demo Files & Outputs
 ###############################################################################
 demo/Metamorph
 demo/Oldfiles/
@@ -40,7 +45,7 @@ demo/ssa_evolution_plotTEST.png
 demo/venv/
 
 ###############################################################################
-# ❄️ Effective Thermal Conductivity Project Outputs
+# Effective Thermal Conductivity Project Outputs
 ###############################################################################
 projects/effective_thermal_cond/crash_log.txt
 projects/effective_thermal_cond/effective_k_ice
@@ -52,7 +57,7 @@ projects/effective_thermal_cond/scratch.c
 projects/effective_thermal_cond/temperature.bin.info
 
 ###############################################################################
-# 🌨️ Dry Snow Metamorphism Project Outputs
+# Dry Snow Metamorphism Project Outputs
 ###############################################################################
 projects/dry_snow_metamorphism/configs/configs_scratch
 projects/dry_snow_metamorphism/dry_snow_metamorphism
@@ -63,14 +68,14 @@ projects/dry_snow_metamorphism/outputs/
 projects/dry_snow_metamorphism_scrap/*
 
 ###############################################################################
-# 🧊 Permafrost Project Outputs
+# Permafrost Project Outputs
 ###############################################################################
 projects/permafrost/obj/
 projects/permafrost/outputs/
 projects/permafrost/permafrost
 
 ###############################################################################
-# 🧱 PETSc & MPI Build Directories
+# PETSc & MPI Build Directories
 ###############################################################################
 # Local Builds
 MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0/
@@ -79,3 +84,4 @@ MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/
 # HPC Builds
 HPC_Petsc-3.20
 projects/dry_snow_metamorphism/scratch/*
+projects/dry_snow_metamorphism/metadata/*

@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH -J DSM-T=-40_hum=0.98
+#SBATCH -J DSM_Tm-30_hum98
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
 
-#SBATCH --nodes=5
-#SBATCH --ntasks-per-node=40
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=10
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
 #SBATCH -e "output_files/%x.e%j"
@@ -20,194 +20,268 @@
 #   Configure and launch a single DSM simulation on the cluster, snapshot the
 #   fully-resolved parameters used, and write machine-readable metadata.
 #
-# Notes:
-#   - Parameters can be overridden via environment variables or `sbatch --export=...`.
-#   - A compact RUN_LABEL using two-digit temp/RH tags is included in the output
-#     folder name for easy scanning.
+# This mirrors the desktop runner, but uses SLURM-safe launch and paths.
 ###############################################################################
 
-##############################################
-# USER-MODIFIABLE SIMULATION SETTINGS
-##############################################
+set -euo pipefail
 
-# inputFile default (can be overridden by env)
-: "${inputFile:=grainReadFile-2G_Molaro_0p25R10.dat}"
+# =======================================
+# User configuration (edit here or override via environment)
+# =======================================
+# Paths
+: "${PETIGA_DIR:=/Users/jacksonbaglino/PetIGA-3.20}"
+BASE_DIR="${BASE_DIR:-${PETIGA_DIR}/projects/dry_snow_metamorphism}"
+input_dir="${input_dir:-$BASE_DIR/inputs}"
+output_dir="${output_dir:-/resnick/scratch/jbaglino}"
+exec_file="${exec_file:-$BASE_DIR/dry_snow_metamorphism}"
 
-: "${readFlag:=1}"
+# Grain selection (relative path under $input_dir)
+filename="${filename:-grains__phi=0.24__Lxmm=1__Lymm=1__seed=7/grains.dat}"
+readFlag=${readFlag:-1}   # 1=read grains from file; 0=procedural generation (not used here)
 
-# Defaults (can be overridden by env or sbatch --export)
-: "${temp:=-40.0}"
-: "${humidity:=0.98}"
+# Physics & numerics
+delt_t=${delt_t:-1.0e-4}
+# t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
+t_final=${t_final:-$((1))}  # 1 second for quick test
+# n_out=${n_out:-100}
+n_out=${n_out:-2} # Reduced for quick test
+humidity=${humidity:-0.95}
+temp=${temp:--2.0}
+grad_temp0X=${grad_temp0X:-0.0}
+grad_temp0Y=${grad_temp0Y:-3.0e-6}
+grad_temp0Z=${grad_temp0Z:-0.0}
+dim=${dim:-2}
 
-: "${dim:=2}"
-: "${grad_temp0X:=0.0}"
-: "${grad_temp0Y:=3.0e-6}"
-: "${grad_temp0Z:=0.0}"
-: "${delt_t:=1.0e-4}"
-: "${t_final:=$(echo "100*24*60*60" | bc -l)}"
-: "${n_out:=200}"
-
-##############################################
-# ENVIRONMENT AND FILE PATH SETUP
-##############################################
-
-BASE_DIR="${PETIGA_DIR}/projects/dry_snow_metamorphism"
-input_dir="$BASE_DIR/inputs"
-output_dir="/resnick/scratch/jbaglino"
-exec_file="${BASE_DIR}/dry_snow_metamorphism"
-
-# Settings file: allow override via ENV_FILE_OVERRIDE, else derive from inputFile basename
-if [[ -n "${ENV_FILE_OVERRIDE:-}" ]]; then
-  SETTINGS_FILE="$ENV_FILE_OVERRIDE"
+# Parallel / MPI
+# Prefer SLURM-provided task count; fallback to explicit override; final fallback to 40
+if [[ -n "${SLURM_NTASKS:-}" ]]; then
+  NUM_PROCS="$SLURM_NTASKS"
 else
-  SETTINGS_FILE="$BASE_DIR/configs/$(basename "${inputFile%.dat}").env"
+  NUM_PROCS="${NUM_PROCS:-40}"
 fi
 
-# If inputFile is not absolute, assume it is in $input_dir
-if [[ "${inputFile:0:1}" != "/" ]]; then
-  inputFile="$input_dir/$inputFile"
+# Derived
+inputFile="$input_dir/$filename"
+
+# =======================================
+# Define simulation parameters & basic validation
+# =======================================
+if [[ "${readFlag}" -eq 1 ]]; then
+  echo "[INFO] Reading grain file: $inputFile"
+  if [[ -z "$filename" ]]; then
+    echo "[ERROR] readFlag=1 but 'filename' is not set." >&2; exit 1
+  fi
+  if [[ ! -f "$inputFile" ]]; then
+    echo "[ERROR] Input file not found: $inputFile" >&2; exit 1
+  fi
+else
+  echo "[INFO] Generating grains instead of reading from file."
 fi
 
-# Validate input file
-if [[ ! -f "$inputFile" ]]; then
-  echo "[ERROR] Input file '$inputFile' not found. Exiting."
-  exit 1
-fi
+# Build a descriptive run title encoding key parameters for easier indexing
+clean_name="${filename#grainReadFile-}"
+clean_name="${clean_name%.dat}"
 
-# Require the .env file to exist (no auto-generation here)
-if [[ ! -f "$SETTINGS_FILE" ]]; then
-  echo "[ERROR] Settings file not found: $SETTINGS_FILE"
-  echo "        Provide ENV_FILE_OVERRIDE=<path/to.env> or create $SETTINGS_FILE."
-  exit 1
-fi
-
-# Load simulation parameters from .env
-echo "[INFO] Loading settings from $SETTINGS_FILE"
-source "$SETTINGS_FILE"
-
-# Export for simulation
-export Lx Ly Lz Nx Ny Nz eps delt_t t_final n_out dim \
-       grad_temp0X grad_temp0Y grad_temp0Z humidity temp inputFile folder readFlag
-
-# Build compact two-digit tags for temperature and RH for easier folder scanning
+# Compact two-digit tags for temperature (°C) and humidity (%)
 temp_int=$(printf "%.0f" "$temp")
 if [[ "$temp_int" == -* ]]; then
-  temp_tag=${temp_int:0:3}   # e.g., -12, -9
+  temp_tag=${temp_int:0:3}
 else
-  temp_tag=${temp_int:0:2}   # e.g., 15, 7
+  temp_tag=${temp_int:0:2}
 fi
 hum_int=$(awk "BEGIN{printf \"%d\", $humidity*100}")
 hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 
-RUN_LABEL="DSM_${dim}D_Tm${temp_tag}_hum${hum_tag}"
-folder="$output_dir/${RUN_LABEL}_${SLURM_JOB_NAME}_${SLURM_JOB_ID:0:9}"
+# Title and settings path
+ndays=$(awk "BEGIN{printf \"%d\", $t_final/86400}")
+title="DSM${clean_name}_${dim}D_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d_"
+SETTINGS_FILE="$BASE_DIR/inputs/${filename%.dat}.env"
+
+# =======================================
+# Timestamped result folder
+# =======================================
+timestamp=$(date +%Y-%m-%d__%H.%M.%S)
+folder="$output_dir/${title}_$timestamp"
 mkdir -p "$folder"
-echo "[INFO] Output directory created: $folder"
 
-##############################################
-# COMPILE EXECUTABLE IF NEEDED
-##############################################
+# Copy input file to results folder (provenance)
+cp "$inputFile" "$folder"
 
-# Always attempt to compile the executable before running
-# echo "[INFO] Forcing compilation of executable..."
-# if ! make -C "$BASE_DIR" dry_snow_metamorphism; then
-#   echo "[ERROR] Compilation failed. Exiting."
-#   exit 1
-# fi
+# =======================================
+# Build and run setup
+# =======================================
+cd "$BASE_DIR"
 
-make all
+# Compile the DSM executable (requires PETSc/PetIGA set up)
+make dry_snow_metamorphism || { echo "[ERROR] Build failed." >&2; exit 1; }
 
-# Verify the executable exists and is runnable
-if [[ ! -x "$exec_file" ]]; then
-  echo "[ERROR] Expected executable not found or not executable at: $exec_file"
-  exit 1
+# Ensure .env exists (generate if missing)
+if [[ ! -f "$SETTINGS_FILE" ]]; then
+  echo "[INFO] .env not found at $SETTINGS_FILE; generating via scripts/generate_env_from_input.py ..."
+  python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" || {
+    echo "[ERROR] Failed to generate $SETTINGS_FILE" >&2; exit 1; }
 fi
 
-echo "[INFO] Compilation successful. Using executable: $exec_file"
+# Copy settings file into the results folder
+cp "$SETTINGS_FILE" "$folder"
 
-# --- Write machine-readable metadata.json ---
+# Load run-time physical/mesh parameters from the settings .env
+set -a
+source "$SETTINGS_FILE"
+set +a
+
+echo "Settings file loaded: $SETTINGS_FILE"
+echo "Lx = $Lx  Ly = $Ly  Lz = $Lz"
+echo "----------------------------------------------"
+
+# Ensure grid variables are defined; if missing, generate and reload
+missing=()
+for v in Nx Ny Nz eps; do
+  eval "val=\${$v:-}"
+  [[ -n "$val" ]] || missing+=("$v")
+done
+
+if (( ${#missing[@]} > 0 )); then
+  echo "[INFO] Missing variables in .env: ${missing[*]}"
+  echo "[INFO] Running scripts/generate_env_from_input.py to populate them..."
+  python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" "$Lx" "$Ly" || {
+    echo "[ERROR] Failed to generate missing variables in $SETTINGS_FILE" >&2; exit 1; }
+  set -a; source "$SETTINGS_FILE"; set +a
+  for v in Nx Ny Nz eps; do
+    eval "val=\${$v:-}"
+    if [[ -z "$val" ]]; then
+      echo "[ERROR] Variable $v is still undefined in $SETTINGS_FILE after generation." >&2; exit 1
+    fi
+  done
+  echo "[OK] .env updated: Nx=$Nx Ny=$Ny Nz=$Nz eps=$eps"
+else
+  echo "[OK] .env already defines grid variables: Nx=$Nx Ny=$Ny Nz=$Nz eps=$eps"
+fi
+
+# Export simulation parameters (for downstream tools / postprocess)
+export folder input_dir inputFile filename title
+export delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim
+export readFlag Lx Ly Lz Nx Ny Nz eps
+
+# =======================================
+# Save simulation metadata (copy + augment)
+# =======================================
 write_metadata_json() {
-  json_file="$folder/metadata.json"
-  cat > "$json_file" <<EOF
-{
-  "schema_version": "1.0",
-  "project": "dry_snow_metamorphism",
-  "run_time": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-  "executed_on": "$(hostname)",
-  "user": "$(whoami)",
-  "slurm": {
-    "job_id": "${SLURM_JOB_ID}",
-    "job_name": "${SLURM_JOB_NAME}",
-    "nodes": "${SLURM_JOB_NUM_NODES:-}",
-    "ntasks": "${SLURM_NTASKS:-}",
-    "cpus_per_task": "${SLURM_CPUS_PER_TASK:-}"
-  },
-  "run_label": "${RUN_LABEL}",
-  "input_file": "$(basename "$inputFile")",
-  "env_file_used": "$(basename "$SETTINGS_FILE")",
-  "sim_dimension": ${dim},
-  "temperature_C": ${temp},
-  "humidity": ${humidity},
-  "grad_temp": {"x": ${grad_temp0X}, "y": ${grad_temp0Y}, "z": ${grad_temp0Z}},
-  "domain_size_m": {"Lx": ${Lx}, "Ly": ${Ly}, "Lz": ${Lz}},
-  "mesh_resolution": {"Nx": ${Nx}, "Ny": ${Ny}, "Nz": ${Nz}},
-  "interface_width_eps": ${eps},
-  "delt_t": ${delt_t},
-  "t_final": ${t_final},
-  "n_out": ${n_out}
-}
-EOF
+  # Require jq for safe JSON merge
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "[ERROR] jq is required to write/augment metadata.json" >&2
+    return 1
+  fi
+  local grain_dir src_meta dst_meta augment tmp
+  grain_dir="$(dirname "$inputFile")"
+  src_meta="$grain_dir/metadata.json"
+  dst_meta="$folder/metadata.json"
+  if [[ ! -f "$src_meta" ]]; then
+    echo "[ERROR] Source metadata not found: $src_meta" >&2
+    return 1
+  fi
+  cp "$src_meta" "$dst_meta"
+  augment=$(jq -n \
+    --arg run_time "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+    --arg host     "$(hostname)" \
+    --arg user     "$(whoami)" \
+    --arg input    "$inputFile" \
+    --arg env_path "$SETTINGS_FILE" \
+    --argjson dim  "${dim:-null}" \
+    --argjson dt   "${delt_t:-null}" \
+    --argjson tf   "${t_final:-null}" \
+    --argjson nout "${n_out:-null}" \
+    --argjson temp "${temp:-null}" \
+    --argjson hum  "${humidity:-null}" \
+    --argjson gx   "${grad_temp0X:-null}" \
+    --argjson gy   "${grad_temp0Y:-null}" \
+    --argjson gz   "${grad_temp0Z:-null}" \
+    --argjson Lx_v "${Lx:-null}" \
+    --argjson Ly_v "${Ly:-null}" \
+    --argjson Lz_v "${Lz:-null}" \
+    --argjson Nx_v "${Nx:-null}" \
+    --argjson Ny_v "${Ny:-null}" \
+    --argjson Nz_v "${Nz:-null}" \
+    --argjson eps_v "${eps:-null}" \
+    --arg slurm_job   "${SLURM_JOB_ID:-}" \
+    --arg slurm_name  "${SLURM_JOB_NAME:-}" \
+    --arg slurm_nodes "${SLURM_JOB_NUM_NODES:-}" \
+    --arg slurm_ntasks "${SLURM_NTASKS:-}" \
+    --arg slurm_cpt   "${SLURM_CPUS_PER_TASK:-}" \
+    '{
+       dsm_run: {
+         run_time_utc: $run_time,
+         executed_on: $host,
+         user: $user,
+         inputs: { grains_dat: $input, env_file: $env_path },
+         parameters: {
+           sim_dimension: $dim,
+           delt_t: $dt, t_final: $tf, n_out: $nout,
+           temperature_C: $temp, humidity: $hum,
+           grad_temp: { x: $gx, y: $gy, z: $gz }
+         },
+         domain_size_m: { Lx: $Lx_v, Ly: $Ly_v, Lz: $Lz_v },
+         mesh_resolution: { Nx: $Nx_v, Ny: $Ny_v, Nz: $Nz_v },
+         interface_width_eps: $eps_v,
+         slurm: { job_id: $slurm_job, job_name: $slurm_name,
+                  nodes: $slurm_nodes, ntasks: $slurm_ntasks, cpus_per_task: $slurm_cpt }
+       }
+     }')
+  tmp="$(mktemp)"; jq --argjson add "$augment" '. * $add' "$dst_meta" > "$tmp" && mv "$tmp" "$dst_meta"
+  echo "[OK] metadata augmented: $dst_meta"
 }
 
-# --- Write resolved_params.env snapshot ---
+# Write a fully-resolved .env-style snapshot for reproducibility
 write_env_snapshot() {
-  snapshot="$folder/resolved_params.env"
+  local snapshot="$folder/resolved_params.env"
   {
     echo "# Auto-generated resolved parameters for this run"
     echo "# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    for var in RUN_LABEL folder inputFile Lx Ly Lz Nx Ny Nz delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps readFlag; do
+    for var in folder inputFile title Lx Ly Lz Nx Ny Nz delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps readFlag; do
       eval "val=\${$var}"
       echo "$var=$val"
     done
   } > "$snapshot"
 }
 
-##############################################
-# RUN SIMULATION
-##############################################
-
-echo "[INFO] Starting simulation on $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-echo "[INFO] Input file: $(basename "$inputFile")"
-echo "[INFO] Temperature = $temp°C, Humidity = $humidity"
-echo "[INFO] Domain: ($Lx x $Ly x $Lz), Grid: ($Nx x $Ny x $Nz)"
-
-# Backup inputs to output folder
-cp "$inputFile" "$folder/"
-cp -r "$BASE_DIR"/src/* "$folder/"
-cp "$SETTINGS_FILE" "$folder/"
-cp "$0" "$folder/run_dsm.sh"
-
-# Write metadata and resolved env snapshots
+# Also write machine-readable metadata and a resolved .env snapshot
 write_metadata_json
 write_env_snapshot
 
-# Append resolved parameters to the copied settings file for a self-contained record
-COPIED_ENV_FILE="$folder/$(basename "$SETTINGS_FILE")"
-{
-  echo ""
-  echo "# ---- Resolved run-time parameters (auto-generated) ----"
-  echo "# Note: Values below reflect the actual run configuration (after overrides)."
-  for var in RUN_LABEL folder inputFile Lx Ly Lz Nx Ny Nz delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps readFlag; do
-    eval "val=\${$var}"
-    echo "$var=$val"
-  done
-} >> "$COPIED_ENV_FILE"
+# =======================================
+# Run the simulation (SLURM-friendly)
+# =======================================
 
-# Run simulation
-mpiexec "$exec_file" -initial_cond -initial_PFgeom \
-  -snes_rtol 1e-3 -snes_stol 1e-3 -snes_max_it 6 \
-  -ksp_gmres_restart 150 -ksp_max_it 500 -ksp_converged_maxits 1 \
-  -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
-  -snes_linesearch_type basic | tee "$folder/outp.txt"
+echo "[INFO] Launching DRY SNOW METAMORPHISM simulation..."
+# Use srun if available (preferred on SLURM), otherwise mpiexec with -n $NUM_PROCS
+if command -v srun >/dev/null 2>&1; then
+  srun "$exec_file" -initial_PFgeom \
+    -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
+    -ksp_gmres_restart 150 -ksp_max_it 1000 \
+    -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
+    -snes_linesearch_type basic | tee "$folder/outp.txt"
+else
+  mpiexec -n "$NUM_PROCS" "$exec_file" -initial_PFgeom \
+    -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
+    -ksp_gmres_restart 150 -ksp_max_it 1000 \
+    -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
+    -snes_linesearch_type basic | tee "$folder/outp.txt"
+fi
 
-echo "[INFO] Simulation completed on $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+# =======================================
+# Finalize
+# =======================================
+echo
+echo "[INFO] Simulation completed."
+cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder" || true
+
+# echo
+# echo "Running plotting scripts (if available)..."
+# if [[ -x ./scripts/run_plotDSM.sh ]]; then
+#   ./scripts/run_plotDSM.sh || true
+# else
+#   echo "[info] ./scripts/run_plotDSM.sh not found or not executable; skipping."
+# fi
+
+# echo "Simulation complete. Results stored in:"
+# echo "$folder"

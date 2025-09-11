@@ -1,71 +1,102 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import os
+import re
+import numpy as np
+import matplotlib.pyplot as plt
 
-# Read data from the file
-filename = "./SSA_evo.dat"
-
-# Read in environment variables
-dim = os.getenv("dim")
+# ----------------------------
+# Configuration from environment
+# ----------------------------
+# Required: inputFile (path to grains.dat)
 inputFile = os.getenv("inputFile")
-title = os.getenv("title")
-print("inputFile: ", inputFile)
+# Optional: dim ("2" or "3"), title for figure name, output folder
+dim = os.getenv("dim", "2").strip()
+title = os.getenv("title", "").strip() or "run"
+outputfolder = os.getenv("outputfolder")
 
-# Read in the grain data
-grain_data = np.loadtxt(inputFile, delimiter=' ', usecols=(2,))
+print(f"inputFile:  {inputFile}")
 
-with open(filename, 'r') as file:
-  input_data = file.read()
-  # Parse the input data into a numpy array
-  input_array = np.array([line.split() for line in input_data.split('\n') if line.strip()])
+# ----------------------------
+# Resolve output path & safe filename
+# ----------------------------
+safe_title = re.sub(r"[\\/]+", "_", title).strip() or "run"
+output_dir = outputfolder if outputfolder else os.getcwd()
+os.makedirs(output_dir, exist_ok=True)
+output_path = os.path.join(output_dir, f"ssa_evolution_plot_{safe_title}.png")
 
-  # Convert the array elements to float
-  input_array = input_array.astype(float)
+# ----------------------------
+# Load SSA evolution data
+# Expected columns: area, volume, time(sec)
+# ----------------------------
+ssa_path = os.path.join(os.getcwd(), "SSA_evo.dat")
+try:
+    ssa = np.loadtxt(ssa_path)
+except Exception as e:
+    raise RuntimeError(f"Failed to read SSA data from {ssa_path}: {e}")
 
+if ssa.ndim != 2 or ssa.shape[1] < 3:
+    raise ValueError(f"SSA_evo.dat must have at least 3 columns (area, volume, time[sec]). Got shape {ssa.shape}.")
 
-# Unpack the input array into separate arrays
-area_data       = input_array[:, 0]
-volume_data     = input_array[:, 1]
-time_data       = input_array[:, 2]/60/60   # Convert time from seconds to hours
-
+area_data = ssa[:, 0]
+volume_data = ssa[:, 1]
+time_data = ssa[:, 2] / 3600.0  # seconds -> hours
 print(f"The number of time_data points is: {len(time_data)}")
 
-# Calculate the initial area value
+# ----------------------------
+# Load grain radii from grains.dat
+# The generator writes a header line (Lx Ly Lz) then rows of centers/radius.
+# We read the LAST column as radius, and skip the first header row.
+# Works for either 3-col (x y r) or 4-col (x y z r) formats.
+# ----------------------------
+if not inputFile or not os.path.isfile(inputFile):
+    raise FileNotFoundError(f"grains.dat not found at: {inputFile}")
+
+try:
+    radii = np.loadtxt(inputFile, comments="#", usecols=(-1,), ndmin=1, skiprows=1)
+except Exception:
+    # Fallback without skipping header in case file lacks header
+    radii = np.loadtxt(inputFile, comments="#", usecols=(-1,), ndmin=1)
+
+if radii.size == 0:
+    raise ValueError("No radii parsed from grains.dat; check file format.")
+
+# ----------------------------
+# Compute initial area/volume for normalization
+# ----------------------------
 if dim == "2":
-    area0 = np.sum(2*np.pi*grain_data)
-    volume0 = np.sum(np.pi*grain_data**2)
+    area0 = np.sum(2.0 * np.pi * radii)
+    volume0 = np.sum(np.pi * radii ** 2)
 elif dim == "3":
-    area0 = np.sum(4*np.pi*grain_data**2)
-    volume0 = np.sum(4/3*np.pi*grain_data**3)
+    area0 = np.sum(4.0 * np.pi * radii ** 2)
+    volume0 = np.sum((4.0 / 3.0) * np.pi * radii ** 3)
+else:
+    raise ValueError(f"Unsupported dim={dim}. Expected '2' or '3'.")
 
+if area0 <= 0 or volume0 <= 0:
+    raise ValueError(f"Non-positive area0/volume0 (area0={area0}, volume0={volume0}). Check radii.")
 
-# Normalize the area and volume data by the initial area and volume values
-area_data = area_data / area0
-volume_data = volume_data / volume0
-
-# Compute the specific surface area (SSA) data
-ssa_data = area_data / volume_data
+# ----------------------------
+# Normalize and compute SSA
+# ----------------------------
+area_norm = area_data / area0
+volume_norm = volume_data / volume0
+ssa_data = area_norm / volume_norm
 ssa_data = ssa_data / ssa_data[0]
 
-# Plotting the data
+# ----------------------------
+# Plot
+# ----------------------------
 plt.figure(figsize=(10, 6))
-plt.plot(time_data, ssa_data, label='Surface Area Evolution')
-# plt.loglog(time_data, ssa_data, label='Surface Area Evolution')
-# Plot the slow
-plt.xlabel('Time [hours]', fontsize=18)
-plt.ylabel('Surface Area', fontsize=18)
-plt.title('Surface Area Evolution', fontsize=24)
+plt.plot(time_data, ssa_data, label="Specific Surface Area (normalized)")
+plt.xlabel("Time [hours]", fontsize=14)
+plt.ylabel("SSA / SSA$_0$", fontsize=14)
+plt.title("Surface Area Evolution", fontsize=18)
+plt.grid(True, alpha=0.25)
+plt.legend()
+plt.tight_layout()
 
-plt.xticks(fontsize=14)
-plt.yticks(fontsize=14)
-plt.grid(False)
+# Save figure
+plt.savefig(output_path)
+print(f"[ok] Wrote: {output_path}")
 
-# Save the plot as an image file
-outputfolder = os.getenv("outputfolder")
-output_file = "ssa_evolution_plot_"+title+".png"
-plt.savefig(output_file)
-
-# Display the plot
-plt.show(block=False)
-plt.pause(5)
+# Non-blocking close (safe in headless runs)
 plt.close()

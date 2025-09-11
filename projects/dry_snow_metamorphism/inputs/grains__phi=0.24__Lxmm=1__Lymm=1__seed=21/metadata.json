@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-09-10T15:03:12.490208-07:00",
+  "generator": {
+    "name": "porespy",
+    "script": "generateCircularGrains.py",
+    "mode": "nonoverlap_poly",
+    "seed": 21
+  },
+  "domain": {
+    "Lx": 0.001,
+    "Ly": 0.001,
+    "Lz": 0.00019765625000000002
+  },
+  "structure": {
+    "porosity_target": 0.24,
+    "porosity_achieved": 0.2385692596435547,
+    "mean_r_m": 4.5e-05,
+    "sigma_ln": 0.5
+  },
+  "artifacts": {
+    "grains_dat": "grains.dat",
+    "env_file": "grains.env",
+    "preview_png": "preview.png"
+  },
+  "pixel_scale_m": 9.765625e-07,
+  "radii": {
+    "distribution": "lognormal",
+    "mean_r_m": 4.5e-05,
+    "sigma_ln": 0.5,
+    "rmin_m": 0.0,
+    "rmax_m": 9e-05
+  },
+  "packing": {
+    "mode": "nonoverlap_poly",
+    "contact_gap_m": 0.0,
+    "allow_cross_boundary": true,
+    "enforce_tangency": true,
+    "touch_tol_m": 0.0,
+    "tries_per_circle": 20000,
+    "max_attempts": 2000000
+  },
+  "counts": {
+    "num_grains": 73
+  },
+  "artifacts_abs": {
+    "inputs_dir": "/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/grains__phi=0.24__Lxmm=1__Lymm=1__seed=21",
+    "metadata_dir": "/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/grains__phi=0.24__Lxmm=1__Lymm=1__seed=21",
+    "grains_dat": "/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/grains__phi=0.24__Lxmm=1__Lymm=1__seed=21/grains.dat",
+    "env_file": "/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/grains__phi=0.24__Lxmm=1__Lymm=1__seed=21/grains.env",
+    "preview_png": "/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/grains__phi=0.24__Lxmm=1__Lymm=1__seed=21/preview.png"
+  }
+}
