@@ -44,27 +44,27 @@ start_time=$(date +%s)  # seconds since epoch
 # ----------------------------
 # 🔹  Simulation parameters
 # ----------------------------
-# export Nx=1100
-# export Ny=1100
-# export Nz=1          # 1 for 2-D
+export Nx=150
+export Ny=150
+export Nz=150          # 1 for 2-D
 
 # export Nx=134
 # export Ny=214
 
-# export Lx=2.03e-3
-# export Ly=2.03e-3
-# export Lz=2.02e-4    # ignored when dim=2
+export Lx=0.20e-03
+export Ly=0.20e-03
+export Lz=0.20e-03    # ignored when dim=2
 
 FLUX_BOTTOM=-0.1
 TEMP_TOP=$((273.15-30))
 
-# export eps=$((9.09629658751972e-07))
-# export dim=2         # 2 = 2-D, 3 = 3-D
+export eps=$((9.09629658751972e-07))
+export dim=2         # 2 = 2-D, 3 = 3-D
 
 # Initial ice-field mode: "circle" | "layered" | /path/to/file.dat
 # INIT_MODE="circle"
-# INIT_MODE="layered"
-INIT_MODE="FILE"
+INIT_MODE="layered"
+# INIT_MODE="FILE"
 # INIT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/"\
 # "NASAv2_96G-2D_T-20.0_hum0.70_2025-05-31__18.55.56"
 # INIT_DIR="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch/DSM2G_Molaro_0p25R1_2D_Tm12_hum5_tf0d__2025-08-07__18.59.47"
@@ -166,9 +166,30 @@ export TEMP_TOP
 export FLUX_BOTTOM
 export dim
 
-# Extract base folder name
+# Extract or synthesize base folder name for outputs
 if [[ -n "$INIT_DIR" ]]; then
     base_folder=$(basename "$INIT_DIR")
+else
+    # Build a seed-free, reproducible-ish name for procedural modes
+    ts=$(date +%Y%m%dT%H%M%S)
+    Lx_mm=$(python3 - <<'PY'
+import sys
+try:
+    v=float(sys.argv[1]); print(f"{v*1e3:g}")
+except Exception:
+    print("NA")
+PY
+"$Lx")
+    Ly_mm=$(python3 - <<'PY'
+import sys
+try:
+    v=float(sys.argv[1]); print(f"{v*1e3:g}")
+except Exception:
+    print("NA")
+PY
+"$Ly")
+    mode_tag=${INIT_MODE:-unknown}
+    base_folder="homog_${mode_tag}__Lxmm=${Lx_mm}__Lymm=${Ly_mm}__dim=${dim}__${ts}"
 fi
 
 grains=2
@@ -186,13 +207,13 @@ echo "  dim=$dim, Nx=$Nx, Ny=$Ny, Nz=$Nz, Lx=$Lx, Ly=$Ly, Lz=$Lz, eps=$eps, TEMP
 # Output flags
 export OUTPUT_VTK=1
 export OUTPUT_BINARY=1
-export SOL_INDEX=-1
+export SOL_INDEX=1
 
 export OUTPUT_DIR="$OUT_ROOT/$base_folder"
 mkdir -p "$OUTPUT_DIR"
 
 # MPI ranks (override by exporting NUM_PROCS beforehand)
-NUM_PROCS=${NUM_PROCS:-1}
+NUM_PROCS=${NUM_PROCS:-4}
 # NUM_PROCS=4
 
 # ----------------------------
@@ -206,9 +227,14 @@ compile_code() {
 run_simulation() {
     echo " "
     echo "Running with $NUM_PROCS MPI proc(s)…"
-    mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
-        -init_mode "$INIT_MODE" \
-        -init_dir "$INIT_DIR"
+    if [[ -n "$INIT_DIR" ]]; then
+        mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
+            -init_mode "$INIT_MODE" \
+            -init_dir "$INIT_DIR"
+    else
+        mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
+            -init_mode "$INIT_MODE"
+    fi
 }
 
 collect_outputs() {

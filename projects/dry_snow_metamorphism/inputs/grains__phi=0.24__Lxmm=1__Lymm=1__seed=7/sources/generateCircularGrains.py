@@ -289,7 +289,7 @@ with open(env_path, "w") as fenv:
     fenv.write(f"Lx={args.Lx:.6e}\n")
     fenv.write(f"Ly={args.Ly:.6e}\n")
     fenv.write(f"Lz={Lz:.6e}\n")
-print(f"Saved .env to {env_path}")
+print(f"Saved grains.env to {env_path}")
 
 # Construct void mask for consistency with earlier logic
 im = ~solid_mask

@@ -8,11 +8,12 @@
 #   bash batch_generate_grains.sh
 
 # === PARAMETERS YOU CAN EDIT ===
-pairs=(
-  "1.0e-3 1.0e-3"
-  "1.5e-3 1.5e-3"
-  "2.0e-3 2.0e-3"
-)
+# pairs=(
+#   "1.0e-3 1.0e-3"
+#   "1.5e-3 1.5e-3"
+#   "2.0e-3 2.0e-3"
+# )
+pairs=("3.0e-3 3.0e-3")
 
 seeds=(7 21 22)
 
@@ -56,7 +57,8 @@ for pair in "${pairs[@]}"; do
         --porosity ${porosity} \
         --mean_r_m ${mean_r_m} --sigma_ln ${sigma_ln} \
         --radius_clip_frac ${radius_clip_frac} \
-        --seed ${seed}
+        --seed ${seed} \
+        --require_connectivity
 
       # --- Write informative metadata JSON for this run ---
       # Compute grid spacings and timestamp

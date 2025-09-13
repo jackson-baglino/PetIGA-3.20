@@ -142,7 +142,7 @@ def main():
     Lx = float(sys.argv[4]) if len(sys.argv) > 4 else 1.0
     Ly = float(sys.argv[5]) if len(sys.argv) > 5 else 1.0
 
-    base = f"./outputs/homog/{folder}"
+    base = f"{folder}"
     binfile = os.path.join(base, "t_vec.dat")
     if not os.path.isfile(binfile):
         sys.exit(f"{binfile} not found")

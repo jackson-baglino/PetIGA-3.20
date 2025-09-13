@@ -27,8 +27,8 @@
 # ----------------------------------------------------------------------------
 # List of executables to build
 # ----------------------------------------------------------------------------
-TARGETS = effective_k_ice \
-					effective_k_ice_full \
+TARGETS = effective_k_ice_homog
+# 					effective_k_ice_full \
 					effective_k_ice_homog
 
 all: $(TARGETS)

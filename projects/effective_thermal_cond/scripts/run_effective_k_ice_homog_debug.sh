@@ -1,118 +1,231 @@
 #!/bin/zsh
 ###############################################################################
-# run_effective_k_ice_full_debug.sh
-#
-# Debug version of run_effective_k_ice_full.sh:
-# - verbose tracing of every command
-# - pipefail and immediate exit on error
-# - compiles with debug flags (BUILD=debug)
-# - runs with extra PETSc debug monitors & log viewers
+# Script: run_effective_k_ice_homog_debug.sh
+# Purpose:
+#   DEBUG-ORIENTED runner for the homogeneous effective thermal conductivity
+#   simulation (PetIGA/PETSc). Compiles with debug flags, adds verbose tracing,
+#   enables PETSc debug options, captures detailed logs, and runs a quick plot.
 #
 # Usage:
-#   ./run_effective_k_ice_full_debug.sh
+#   ./scripts/run_effective_k_ice_homog_debug.sh
+#   (override any exports below as needed, or export in your shell)
 ###############################################################################
 
-set -euxo pipefail
-trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
+# --- Shell debug hygiene ------------------------------------------------------
+set -Eeuo pipefail
+setopt PROMPT_SUBST
+# Use prompt escapes for timestamp to avoid relying on $EPOCHREALTIME under set -u
+export PS4='[%D{%H:%M:%S}] %N:%i > '
+set -x
 
-# =============================
-# 🔹 Environment Variables
-# =============================
-# export Nx=$((2**7))
-# export Ny=$((2**7))
-export Nx=550
-export Ny=550
-export Nz=1                    # 1 for 2D
+start_time=$(date +%s)
 
-export Lx=1.0
-export Ly=1.0
-# export Lx=0.5e-3
-# export Ly=0.5e-3
-export Lz=2.02e-4              # only used if dim=3
+# ----------------------------
+# 🔹  Simulation parameters (EDIT ME)
+# ----------------------------
+export Nx=${Nx:-150}
+export Ny=${Ny:-150}
+export Nz=${Nz:-150}          # 1 for 2-D
 
-# =============================
-# 🔹 Boundary Conditions
-# =============================
-export FLUX_BOTTOM=-0.1
-export TEMP_TOP=$((273.15-30))
+export Lx=${Lx:-0.20e-03}
+export Ly=${Ly:-0.20e-03}
+export Lz=${Lz:-0.20e-03}     # ignored when dim=2
 
-# export FLUX_BOTTOM=1.0
-# export TEMP_TOP=$((273.15-4))
+export eps=${eps:-9.09629658751972e-07}
+export dim=${dim:-2}          # 2 = 2-D, 3 = 3-D
+# Required by the executable at startup
+export OUTPUT_VTK=${OUTPUT_VTK:-1}
+export OUTPUT_BINARY=${OUTPUT_BINARY:-1}
+export SOL_INDEX=${SOL_INDEX:-1}
 
-# =============================
-# 🔹 Interface Width Calculation
-# =============================
-# export eps=$(awk "BEGIN {print (($Lx/$Nx < $Ly/$Ny) ? $Lx/$Nx : $Ly/$Ny)}")
-# export eps=9.09629658751972e-04
-export eps=$((1e-3))
-export dim=2                   # 2 for 2D, 3 for 3D
+# Boundary / physics knobs (recorded into provenance; solver reads its own opts)
+FLUX_BOTTOM=${FLUX_BOTTOM:--0.1}
+TEMP_TOP=${TEMP_TOP:-$((273.15-30))}
 
-# =============================
-# 🔹 Initial Conditions
-# =============================
-# INIT_MODE can be "circle", "layered", or a path to .dat
-# INIT_MODE="layered"
-# INIT_MODE="circle"    # Good for periodic boundary conditions!!!
-INIT_MODE="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/sol_00000.dat"
+# Initial ice-field mode: "circle" | "layered" | "FILE"
+INIT_MODE=${INIT_MODE:-layered}
+INIT_DIR=${INIT_DIR:-}         # required only when INIT_MODE=FILE
+ENV_FILE=${ENV_FILE:-}         # optional explicit .env path when INIT_MODE=FILE
 
-# =============================
-# 🔹 Output Settings
-# =============================
-export OUTPUT_VTK=1
-export OUTPUT_BINARY=1
+# Output roots
+OUT_ROOT=${OUT_ROOT:-/Users/jacksonbaglino/SimulationResults/effective_thermal_cond/scratch}
 
-# timestamped output directory
-timestamp=$(date +%Y-%m-%d__%H.%M.%S)
-OUT_FOLDER="ThermalSim_homog_debug_$timestamp"
-export OUTPUT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/outputs/homog/$OUT_FOLDER"
+# MPI ranks
+NUM_PROCS=${NUM_PROCS:-1}
+
+# PETSc debug options (tweak freely). Applied to ALL ranks.
+# Note: keep concise to avoid massive logs; add -info if needed.
+PETSC_DEBUG_OPTS=${PETSC_DEBUG_OPTS:--malloc_debug -malloc_test -on_error_abort -snes_converged_reason -ksp_converged_reason}
+
+# --- Project root & build target ---------------------------------------------
+BASE_DIR=${BASE_DIR:-${PETIGA_DIR:-/Users/jacksonbaglino/PetIGA-3.20}/projects/effective_thermal_cond}
+cd "$BASE_DIR"
+
+# ----------------------------
+# 🔹  Optional parameter import from metadata.json / .env
+# ----------------------------
+METADATA_JSON="${INIT_DIR:+$INIT_DIR/metadata.json}"
+
+if [[ -n "$METADATA_JSON" && -f "$METADATA_JSON" ]]; then
+  echo "[info] Using parameters from: $METADATA_JSON"
+  json_get() {
+    # Usage: json_get dotted.key.path
+    python3 - "$METADATA_JSON" "$1" <<'PY'
+import json,sys
+path = sys.argv[2].split('.')
+with open(sys.argv[1]) as f:
+    d = json.load(f)
+for p in path:
+    d = d[p]
+print(d)
+PY
+  }
+  : ${dim:=$(json_get sim_dimension)}
+  : ${Nx:=$(json_get mesh_resolution.Nx)}
+  : ${Ny:=$(json_get mesh_resolution.Ny)}
+  : ${Nz:=$(json_get mesh_resolution.Nz)}
+  : ${Lx:=$(json_get domain_size_m.Lx)}
+  : ${Ly:=$(json_get domain_size_m.Ly)}
+  : ${Lz:=$(json_get domain_size_m.Lz)}
+  : ${eps:=$(json_get interface_width_eps)}
+elif [[ "$INIT_MODE" == "FILE" ]]; then
+  if [[ -n "$ENV_FILE" ]]; then
+    echo "[info] Using env file (explicit): $ENV_FILE"
+    source "$ENV_FILE"
+  elif [[ -n "$INIT_DIR" ]]; then
+    echo "[info] Searching for single .env in: $INIT_DIR"
+    typeset -a env_files
+    env_files=( $(find "$INIT_DIR" -maxdepth 1 -type f -name '*.env' 2>/dev/null) )
+    if (( ${#env_files[@]} == 1 )); then
+      ENV_FILE="${env_files[1]}"; echo "[info] Using env file (found): $ENV_FILE"; source "$ENV_FILE"
+    else
+      echo "[error] Need exactly one .env in $INIT_DIR (found ${#env_files[@]})."; exit 1
+    fi
+  else
+    echo "[error] INIT_MODE=FILE but neither ENV_FILE nor INIT_DIR provided."; exit 1
+  fi
+else
+  echo "[info] No metadata/.env import needed for procedural mode ($INIT_MODE)."
+fi
+
+# Defaults if still empty
+: ${dim:=2}
+: ${Nx:=150} ; : ${Ny:=150} ; : ${Nz:=150}
+: ${Lx:=0.20e-03} ; : ${Ly:=0.20e-03} ; : ${Lz:=0.20e-03}
+: ${eps:=9.09629658751972e-07}
+
+# Export variables for simulation
+export Nx Ny Nz Lx Ly Lz eps dim TEMP_TOP FLUX_BOTTOM
+
+# ----------------------------
+# 🔹  Output folder synthesis (handles layered/circle too)
+# ----------------------------
+if [[ -n "$INIT_DIR" ]]; then
+  base_folder=$(basename "$INIT_DIR")
+else
+  ts=$(date +%Y%m%dT%H%M%S)
+  Lx_mm=$(python3 - "$Lx" <<'PY'
+import sys
+try:
+    v=float(sys.argv[1]); print(f"{v*1e3:g}")
+except Exception:
+    print("NA")
+PY
+  )
+  
+  Ly_mm=$(python3 - "$Ly" <<'PY'
+import sys
+try:
+    v=float(sys.argv[1]); print(f"{v*1e3:g}")
+except Exception:
+    print("NA")
+PY
+  )
+  mode_tag=${INIT_MODE:-unknown}
+  base_folder="homog_${mode_tag}__Lxmm=${Lx_mm}__Lymm=${Ly_mm}__dim=${dim}__${ts}"
+fi
+
+OUT_ROOT=${OUT_ROOT%/}
+export OUTPUT_DIR="$OUT_ROOT/$base_folder"
 mkdir -p "$OUTPUT_DIR"
 
-# =============================
-# 🔹 MPI Settings
-# =============================
-NUM_PROCS=${NUM_PROCS:-1}      # override by exporting before calling
+# record resolved parameters (helps when debugging)
+{
+  echo "# resolved debug params"
+  echo "when=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "pwd=$(pwd)"
+  echo "INIT_MODE=$INIT_MODE"
+  echo "INIT_DIR=${INIT_DIR:-}"
+  echo "ENV_FILE=${ENV_FILE:-}"
+  echo "dim=$dim Nx=$Nx Ny=$Ny Nz=$Nz"
+  echo "Lx=$Lx Ly=$Ly Lz=$Lz eps=$eps"
+  echo "TEMP_TOP=$TEMP_TOP FLUX_BOTTOM=$FLUX_BOTTOM"
+  echo "NUM_PROCS=$NUM_PROCS"
+  echo "PETSC_DEBUG_OPTS=$PETSC_DEBUG_OPTS"
+} > "$OUTPUT_DIR/run.debug.env"
 
-# =============================
-# 🔹 Functions
-# =============================
+# ----------------------------
+# 🔹  Build (DEBUG)
+# ----------------------------
 compile_code() {
-    echo "🔨 [DEBUG] Compiling effective_k_ice_homog with debug flags..."
-    make BUILD=debug effective_k_ice_homog
-    echo "✅ Compilation (debug) successful."
+  echo "Compiling (debug)…"
+  make BUILD=debug effective_k_ice_homog
 }
 
+# ----------------------------
+# 🔹  Run with PETSc debug options
+# ----------------------------
 run_simulation() {
-    echo "🏃 [DEBUG] Running effective_k_ice_homog with $NUM_PROCS MPI proc(s)..."
-    echo
-    mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
-        -init_mode "$INIT_MODE" \
-        -ksp_monitor \
-        -ksp_converged_reason \
-        -log_summary \
-        -on_error_attach_debugger
-        # add any other -log_view or PETSc debug flags here
+  printf '\nRunning with %s MPI proc(s)…\n' "$NUM_PROCS"
+  # Rank-labeled stdout; keep complete logs
+  local log_out="$OUTPUT_DIR/run.stdout"
+  local log_err="$OUTPUT_DIR/run.stderr"
+
+  # PETSc options can be passed via environment (affects all ranks)
+  export PETSC_OPTIONS="$PETSC_DEBUG_OPTS"
+
+  if [[ -n "$INIT_DIR" ]]; then
+    mpiexec -l -np $NUM_PROCS ./effective_k_ice_homog \
+      -init_mode "$INIT_MODE" \
+      -init_dir "$INIT_DIR" \
+      1> >(tee "$log_out") 2> >(tee "$log_err" >&2)
+  else
+    mpiexec -l -np $NUM_PROCS ./effective_k_ice_homog \
+      -init_mode "$INIT_MODE" \
+      1> >(tee "$log_out") 2> >(tee "$log_err" >&2)
+  fi
 }
 
-move_output_files() {
-    echo "📂 [DEBUG] Moving output files to $OUTPUT_DIR..."
-    mv *.dat  "$OUTPUT_DIR" 2>/dev/null || echo "  ⚠️ No .dat files."
-    mv *.bin  "$OUTPUT_DIR" 2>/dev/null || echo "  ⚠️ No .bin files."
-    mv *.info "$OUTPUT_DIR" 2>/dev/null || echo "  ⚠️ No .info files."
-    echo "✅ Files moved."
+# ----------------------------
+# 🔹  Collect outputs
+# ----------------------------
+collect_outputs() {
+  echo "Moving output files to $OUTPUT_DIR"
+  mv *.dat  "$OUTPUT_DIR" 2>/dev/null || true
+  mv *.bin  "$OUTPUT_DIR" 2>/dev/null || true
+  mv *.info "$OUTPUT_DIR" 2>/dev/null || true
+  mv *.csv  "$OUTPUT_DIR" 2>/dev/null || true
 }
 
-# =============================
-# 🔹 Main Workflow
-# =============================
-echo -e "\n🛠 [DEBUG] Starting debug workflow for effective_k_ice_homog"
-echo " interface width (eps) = $eps"
-echo -e "\n----------------------------------------\n"
+# ----------------------------
+# 🔹  Post-process (vector field heatmaps + k_eff)
+# ----------------------------
+postprocess() {
+  echo "Post-processing…"
+  python3 postprocess/plot_vector_field.py "$OUTPUT_DIR" "$Nx" "$Ny" "$Lx" "$Ly" || {
+    echo "[warn] postprocess/plot_vector_field.py failed" >&2
+  }
+}
 
+# ----------------------------
+# 🔹  Main
+# ----------------------------
 compile_code
 run_simulation
-move_output_files
+collect_outputs
+postprocess
 
-echo "Plotting output files..."
-python3 postprocess/plot_vector_field.py $OUT_FOLDER $Nx $Ny
+end_time=$(date +%s)
+elapsed=$(( end_time - start_time ))
 
-echo -e "\n🎉 [DEBUG] Simulation (debug) complete. Results in:$OUTPUT_DIR\n"
+echo "Finished. Outputs in: $OUTPUT_DIR (elapsed ${elapsed}s)"
