@@ -23,8 +23,8 @@ humidities=(0.98)
 
 # --- Paths ---
 RUN_SCRIPT="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/scripts/HPC/run_dsm.sh"
-INPUT_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/porespy2/to_run"
-CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/configs/porespy2/to_run"
+INPUT_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
+CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
 
 # --- Resource tuning knobs (override by exporting before running) ---
 : "${MIN_TASKS_PER_NODE:=35}"       # lower bound for cores/node
@@ -33,7 +33,7 @@ CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 : "${MEM_PER_CPU_DEFAULT:=1G}"      # memory request per CPU
 
 shopt -s nullglob
-dat_files=("$INPUT_DIR"/*.dat)
+dat_files=("$INPUT_DIR"/grains__phi=0.24__Lxmm=3__Lymm=3__seed=*/grains.dat)
 shopt -u nullglob
 
 if [ ${#dat_files[@]} -eq 0 ]; then
@@ -44,9 +44,15 @@ fi
 make clean && make all
 for dat_file in "${dat_files[@]}"; do
   basename=$(basename "$dat_file" .dat)
-  env_file="$CONFIG_DIR/$basename.env"
-  if [ ! -f "$env_file" ]; then
-    echo "Warning: Env file $env_file not found for $dat_file, skipping."
+  env_dir="$(dirname "$dat_file")"
+
+  # Prefer the generator’s default name; fall back to basename.env if you ever use that
+  if   [ -f "$env_dir/grains.env" ]; then
+    env_file="$env_dir/grains.env"
+  elif [ -f "$env_dir/$basename.env" ]; then
+    env_file="$env_dir/$basename.env"
+  else
+    echo "Warning: No .env found next to $dat_file (looked for grains.env or $basename.env). Skipping."
     continue
   fi
 
