@@ -46,15 +46,15 @@ output_dir="${output_dir:-/Users/jacksonbaglino/SimulationResults/dry_snow_metam
 exec_file="${exec_file:-$BASE_DIR/dry_snow_metamorphism}"
 
 # Grain selection (relative path under $input_dir)
-filename="${filename:-grains__phi=0.24__Lxmm=3__Lymm=3__seed=22/grains.dat}"
+filename="${filename:-grains__phi=0.24__Lxmm=1.5__Lymm=1.5__seed=21/grains.dat}"
 readFlag=${readFlag:-1}   # 1=read grains from file; 0=procedural generation (not used here)
 
 # Physics & numerics
 delt_t=${delt_t:-1.0e-4}
-# t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
-# n_out=${n_out:-100}
-t_final=${t_final:-$((1))}  # 1 second for quick test
-n_out=${n_out:-10}
+t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
+n_out=${n_out:-100}
+# t_final=${t_final:-$((1))}  # 1 second for quick test
+# n_out=${n_out:-10}
 humidity=${humidity:-0.95}
 temp=${temp:--2.0}
 grad_temp0X=${grad_temp0X:-0.0}
