@@ -86,4 +86,4 @@ HPC_Petsc-3.20
 projects/dry_snow_metamorphism/scratch/*
 projects/dry_snow_metamorphism/metadata/*
 projects/dry_snow_metamorphism/inputs/latest
-projects/dry_snow_metamorphism/inputs/manifest.csv
+projects/dry_snow_metamorphism/inputs/manifest*
