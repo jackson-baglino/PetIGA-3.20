@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-10T15:04:00.617894-07:00",
+  "timestamp": "2025-09-15T16:21:21.216103-07:00",
   "generator": {
     "name": "porespy",
     "script": "generateCircularGrains.py",
@@ -13,7 +13,7 @@
   },
   "structure": {
     "porosity_target": 0.24,
-    "porosity_achieved": 0.23891515952775477,
+    "porosity_achieved": 0.23996356452251966,
     "mean_r_m": 4.5e-05,
     "sigma_ln": 0.5
   },
@@ -40,7 +40,7 @@
     "max_attempts": 2000000
   },
   "counts": {
-    "num_grains": 168
+    "num_grains": 245
   },
   "artifacts_abs": {
     "inputs_dir": "/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/grains__phi=0.24__Lxmm=1.5__Lymm=1.5__seed=21",
