@@ -117,8 +117,14 @@ int main(int argc, char *argv[]) {
   lambda_sub    = a1*user.eps/d0_sub;
   tau_sub       = user.eps*lambda_sub*(beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
 
-  user.mob_sub    = 1.0*user.eps/3.0/tau_sub;  // Molaro fit: 5.0*user.eps/3.0/tau_sub; 
-  user.alph_sub   = 1.0*lambda_sub/tau_sub;    // Molaro fit: 0.01*lambda_sub/tau_sub;
+  // Parameters tuned from Molaro experiments
+  user.mob_sub    = 5.0*user.eps/3.0/tau_sub;
+  user.alph_sub   = 0.01*lambda_sub/tau_sub;
+
+  // // Untuned parameters
+  // user.mob_sub    = 1.0*user.eps/3.0/tau_sub;
+  // user.alph_sub   = 1.0*lambda_sub/tau_sub;
+
   if(user.flag_Tdep==0) PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
   else PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
   
