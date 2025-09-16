@@ -3,8 +3,8 @@
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
 
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=10
+#SBATCH --nodes=22
+#SBATCH --ntasks-per-node=40
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
 #SBATCH -e "output_files/%x.e%j"
@@ -36,7 +36,7 @@ output_dir="${output_dir:-/resnick/scratch/jbaglino}"
 exec_file="${exec_file:-$BASE_DIR/dry_snow_metamorphism}"
 
 # Grain selection (relative path under $input_dir)
-filename="${filename:-grains__phi=0.24__Lxmm=1__Lymm=1__seed=7/grains.dat}"
+filename="${filename:-grains__phi=0.24__Lxmm=3__Lymm=3__seed=21/grains.dat}"
 readFlag=${readFlag:-1}   # 1=read grains from file; 0=procedural generation (not used here)
 
 # Physics & numerics

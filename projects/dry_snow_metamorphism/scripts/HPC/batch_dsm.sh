@@ -18,7 +18,7 @@
 set -euo pipefail
 
 # --- Sweep settings ---
-temperatures=(-30)
+temperatures=(-20 -25 -30 -35 -40)
 humidities=(0.98)
 
 # --- Paths ---
@@ -33,7 +33,7 @@ CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 : "${MEM_PER_CPU_DEFAULT:=1G}"      # memory request per CPU
 
 shopt -s nullglob
-dat_files=("$INPUT_DIR"/grains__phi=0.24__Lxmm=3__Lymm=3__seed=*/grains.dat)
+dat_files=("$INPUT_DIR"/grains__phi=0.24__Lxmm=1.5__Lymm=1.5__seed=*/grains.dat)
 shopt -u nullglob
 
 if [ ${#dat_files[@]} -eq 0 ]; then
@@ -167,8 +167,9 @@ for dat_file in "${dat_files[@]}"; do
              --ntasks-per-node="$TASKS_PER_NODE" \
              --cpus-per-task="$CPUS_PER_TASK" \
              --mem-per-cpu="$MEM_PER_CPU" \
-             --export=ALL,ENV_FILE_OVERRIDE="$ENV_FILE",temp="$temp",humidity="$hum",inputFile="$INPUT_FILE" \
-             "$RUN_SCRIPT"
+             --export=ALL,ENV_FILE_OVERRIDE="$ENV_FILE",temp="$temp",humidity="$hum",inputFile="$INPUT_FILE",filename="$basename" \
+             "$RUN_SCRIPT" \
+             --kill-on-bad-exit=1
     done
   done
 done
