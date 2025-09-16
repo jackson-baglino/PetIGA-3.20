@@ -44,16 +44,16 @@ start_time=$(date +%s)  # seconds since epoch
 # ----------------------------
 # 🔹  Simulation parameters
 # ----------------------------
-export Nx=150
-export Ny=150
-export Nz=150          # 1 for 2-D
+export Nx=571
+export Ny=571
+export Nz=1          # 1 for 2-D
 
 # export Nx=134
 # export Ny=214
 
-export Lx=0.20e-03
-export Ly=0.20e-03
-export Lz=0.20e-03    # ignored when dim=2
+export Lx=1.00e-03
+export Ly=1.00e-03
+export Lz=1.00e-03    # ignored when dim=2
 
 FLUX_BOTTOM=-0.1
 TEMP_TOP=$((273.15-30))
@@ -63,7 +63,7 @@ export dim=2         # 2 = 2-D, 3 = 3-D
 
 # Initial ice-field mode: "circle" | "layered" | /path/to/file.dat
 # INIT_MODE="circle"
-INIT_MODE="layered"
+# INIT_MODE="layered"
 # INIT_MODE="FILE"
 # INIT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/"\
 # "NASAv2_96G-2D_T-20.0_hum0.70_2025-05-31__18.55.56"
@@ -192,6 +192,50 @@ PY
     base_folder="homog_${mode_tag}__Lxmm=${Lx_mm}__Lymm=${Ly_mm}__dim=${dim}__${ts}"
 fi
 
+# Resolve which sol_XXXXX.dat to load; prefer requested SOL_INDEX, else auto-detect
+resolve_sol_index() {
+    # If INIT_DIR is set, try to locate sol_*.dat files
+    if [[ -n "${INIT_DIR:-}" && -d "$INIT_DIR" ]]; then
+        # If SOL_INDEX is set, verify the file exists; otherwise try common fallbacks
+        if [[ -n "${SOL_INDEX:-}" ]]; then
+            local try="$INIT_DIR/sol_$(printf '%05d' "$SOL_INDEX").dat"
+            if [[ -f "$try" ]]; then
+                echo "✅ Using SOL_INDEX=$SOL_INDEX ($try)"
+                return 0
+            fi
+            echo "⚠️  Requested SOL_INDEX=$SOL_INDEX not found at $try; attempting auto-detect…"
+        fi
+        # Try 00000 then 00001, then pick the smallest available index
+        if [[ -f "$INIT_DIR/sol_00000.dat" ]]; then
+            export SOL_INDEX=0; echo "✅ Auto-detected SOL_INDEX=0"; return 0
+        fi
+        if [[ -f "$INIT_DIR/sol_00001.dat" ]]; then
+            export SOL_INDEX=1; echo "✅ Auto-detected SOL_INDEX=1"; return 0
+        fi
+        # General scan for sol_*.dat; choose the lowest index present
+        local first
+        first=$(ls "$INIT_DIR"/sol_*.dat 2>/dev/null | sed -E 's#.*/sol_([0-9]{5})\.dat#\1#' | sort | head -n1 || true)
+        if [[ -n "$first" ]]; then
+            export SOL_INDEX=$((10#$first))
+            echo "✅ Auto-detected SOL_INDEX=$SOL_INDEX"
+            return 0
+        fi
+        echo "❌ No sol_XXXXX.dat files found in $INIT_DIR" >&2
+        return 1
+    fi
+    return 0
+}
+
+# If INIT_DIR is provided, default INIT_MODE to FILE unless already set
+if [[ -n "${INIT_DIR:-}" && -z "${INIT_MODE:-}" ]]; then
+    INIT_MODE="FILE"
+fi
+
+# If we are in FILE mode, resolve the solution index to avoid missing-file errors
+if [[ "${INIT_MODE:-}" == "FILE" ]]; then
+    resolve_sol_index || true
+fi
+
 grains=2
 dims=2
 temp=-20.0
@@ -207,13 +251,12 @@ echo "  dim=$dim, Nx=$Nx, Ny=$Ny, Nz=$Nz, Lx=$Lx, Ly=$Ly, Lz=$Lz, eps=$eps, TEMP
 # Output flags
 export OUTPUT_VTK=1
 export OUTPUT_BINARY=1
-export SOL_INDEX=1
 
 export OUTPUT_DIR="$OUT_ROOT/$base_folder"
 mkdir -p "$OUTPUT_DIR"
 
 # MPI ranks (override by exporting NUM_PROCS beforehand)
-NUM_PROCS=${NUM_PROCS:-4}
+NUM_PROCS=${NUM_PROCS:-1}
 # NUM_PROCS=4
 
 # ----------------------------
@@ -227,13 +270,22 @@ compile_code() {
 run_simulation() {
     echo " "
     echo "Running with $NUM_PROCS MPI proc(s)…"
-    if [[ -n "$INIT_DIR" ]]; then
-        mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
-            -init_mode "$INIT_MODE" \
-            -init_dir "$INIT_DIR"
+    if [[ -n "${INIT_DIR:-}" ]]; then
+        if [[ -n "${INIT_MODE:-}" ]]; then
+            mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
+                -init_mode "$INIT_MODE" \
+                -init_dir "$INIT_DIR"
+        else
+            mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
+                -init_dir "$INIT_DIR"
+        fi
     else
-        mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
-            -init_mode "$INIT_MODE"
+        if [[ -n "${INIT_MODE:-}" ]]; then
+            mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
+                -init_mode "$INIT_MODE"
+        else
+            mpiexec -np $NUM_PROCS ./effective_k_ice_homog
+        fi
     fi
 }
 

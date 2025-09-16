@@ -46,7 +46,7 @@ output_dir="${output_dir:-/Users/jacksonbaglino/SimulationResults/dry_snow_metam
 exec_file="${exec_file:-$BASE_DIR/dry_snow_metamorphism}"
 
 # Grain selection (relative path under $input_dir)
-filename="${filename:-grains__phi=0.24__Lxmm=1.5__Lymm=1.5__seed=21/grains.dat}"
+filename="${filename:-grains__phi=0.24__Lxmm=1__Lymm=1__seed=22/grains.dat}"
 readFlag=${readFlag:-1}   # 1=read grains from file; 0=procedural generation (not used here)
 
 # Physics & numerics
