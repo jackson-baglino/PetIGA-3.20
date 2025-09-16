@@ -15,9 +15,9 @@
 # )
 pairs=("1.5e-3 1.5e-3")
 
-seeds=(7 21)
+seeds=(7 21 22)
 
-porosities=(0.24)
+porosities=(0.26 0.28 0.30)
 
 shape_x=1024
 shape_y=1024
