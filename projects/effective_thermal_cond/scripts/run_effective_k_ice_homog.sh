@@ -252,7 +252,7 @@ echo "  dim=$dim, Nx=$Nx, Ny=$Ny, Nz=$Nz, Lx=$Lx, Ly=$Ly, Lz=$Lz, eps=$eps, TEMP
 export OUTPUT_VTK=1
 export OUTPUT_BINARY=1
 
-export OUTPUT_DIR="$OUT_ROOT/$base_folder"
+export OUTPUT_DIR="$OUT_ROOT/${base_folder}"
 mkdir -p "$OUTPUT_DIR"
 
 # MPI ranks (override by exporting NUM_PROCS beforehand)

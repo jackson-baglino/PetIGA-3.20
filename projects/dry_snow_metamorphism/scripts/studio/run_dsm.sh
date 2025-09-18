@@ -36,6 +36,56 @@
 #   - Settings file is loaded from $BASE_DIR/configs/${filename%.dat}.env.
 ###############################################################################
 
+set -euo pipefail
+
+# ------------ helpers ------------
+log()  { printf "[INFO] %s\n" "$*"; }
+warn() { printf "[WARN] %s\n" "$*"; }
+err()  { printf "[ERROR] %s\n" "$*" 1>&2; }
+die()  { err "$*"; exit 1; }
+require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"; }
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [options]
+
+Options (env vars also supported):
+  -f, --filename PATH   Grain input path relative to \$input_dir (default: env/var)
+  -r, --read {0|1}      readFlag; 1=read grains, 0=generate (default: 1)
+  -t, --temp C          Temperature in °C (default: -2.0)
+  -h, --humidity H      Relative humidity [0-1] (default: 0.95)
+  -p, --procs N         MPI ranks (default: 12)
+  --no-build            Skip rebuilding the executable
+  --dry-run             Print actions without running the simulation
+  -?, --help            Show this help and exit
+EOF
+}
+
+# light arg parse (zsh/bash compatible)
+NO_BUILD=0
+DRY_RUN=0
+if [[ ${#@} -gt 0 ]]; then
+  while [[ ${#} -gt 0 ]]; do
+    case "${1}" in
+      -f|--filename) filename="${2:-}"; shift 2;;
+      -r|--read)     readFlag="${2:-}"; shift 2;;
+      -t|--temp)     temp="${2:-}"; shift 2;;
+      -h|--humidity) humidity="${2:-}"; shift 2;;
+      -p|--procs)    NUM_PROCS="${2:-}"; shift 2;;
+      --no-build)    NO_BUILD=1; shift;;
+      --dry-run)     DRY_RUN=1; shift;;
+      -\?|--help|-help|-h) usage; exit 0;;
+      --) shift; break;;
+      *) warn "Ignoring unknown arg: ${1}"; shift;;
+    esac
+  done
+fi
+
+# trap helpful errors
+TRAPERR() { err "An error occurred on line $1"; }
+set -E
+trap 'TRAPERR $LINENO' ERR
+
 # =======================================
 # User configuration (override via env or edit here)
 # =======================================
@@ -46,7 +96,7 @@ output_dir="${output_dir:-/Users/jacksonbaglino/SimulationResults/dry_snow_metam
 exec_file="${exec_file:-$BASE_DIR/dry_snow_metamorphism}"
 
 # Grain selection (relative path under $input_dir)
-filename="${filename:-grains__phi=0.24__Lxmm=1__Lymm=1__seed=22/grains.dat}"
+filename="${filename:-grains__phi=0.24__Lxmm=3__Lymm=3__seed=22/grains.dat}"
 readFlag=${readFlag:-1}   # 1=read grains from file; 0=procedural generation (not used here)
 
 # Physics & numerics
@@ -68,28 +118,16 @@ NUM_PROCS=${NUM_PROCS:-12}
 # Derived
 inputFile="$input_dir/$filename"
 
+[[ -d "$input_dir" ]] || die "input_dir does not exist: $input_dir"
+mkdir -p "$output_dir" || die "Could not create output_dir: $output_dir"
+
 # =======================================
 # Base directory and file setup
 # =======================================
-
-# =======================================
-# Define simulation parameters
-# =======================================
-# filename="grainReadFile-2G_Molaro_0p25R1_HIGHRES.dat"
-# Batch override precedence: if $filename is exported, use it; else use this default
-# : ${filename:="grains__phi=0.24__Lxmm=1__Lymm=1__seed=7/grains.dat"}
-# inputFile="$input_dir/$filename"
-
 # --- Basic validation (only when reading a grain file) ---
 if [[ "${readFlag:-1}" -eq 1 ]]; then
-  if [[ -z "$filename" ]]; then
-    echo "[ERROR] readFlag=1 but 'filename' is not set. Set it above (e.g., filename=\"grainReadFile-...dat\")."
-    exit 1
-  fi
-  if [[ ! -f "$inputFile" ]]; then
-    echo "[ERROR] Input file not found: $inputFile"
-    exit 1
-  fi
+  [[ -n "${filename:-}" ]] || die "readFlag=1 but 'filename' is not set. (e.g., filename=\"grains__.../grains.dat\")"
+  [[ -f "$inputFile" ]]    || die "Input file not found: $inputFile"
 fi
 
 # readFlag=1  # Set to 1 to read grain file, 0 to generate grains
@@ -107,10 +145,10 @@ fi
 # grad_temp0Z=0.0
 # dim=2
 
-if [[ readFlag -eq 1 ]]; then
-    echo "[INFO] Reading grain file: $inputFile"
+if [[ ${readFlag:-1} -eq 1 ]]; then
+    log "Reading grain file: $inputFile"
 else
-    echo "[INFO] Generating grains instead of reading from file."
+    log "Generating grains instead of reading from file."
 fi
 
 # Build a descriptive run title encoding key parameters for easier indexing
@@ -157,21 +195,35 @@ cp "$inputFile" "$folder"
 cd "$BASE_DIR" || exit 1
 
 # Compile the DSM executable (requires PETSc/PetIGA set up)
-make dry_snow_metamorphism || {
-    echo "[ERROR] Build failed. Please check the Makefile and dependencies."
-    exit 1
-}
+if [[ "$NO_BUILD" -eq 0 ]]; then
+  require_cmd make
+  log "Building executable..."
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "(dry-run) make dry_snow_metamorphism"
+  else
+    make dry_snow_metamorphism || die "Build failed. Please check the Makefile and dependencies."
+  fi
+else
+  warn "Skipping build as requested (--no-build)."
+fi
 
 # Generate env file if missing (infer Lx/Ly from metadata under sibling 'meta' dir)
 if [ ! -f "$SETTINGS_FILE" ]; then
-    echo "[INFO] .env not found at $SETTINGS_FILE; generating it with scripts/generate_env_from_input.py ..."
-    python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" || {
-        echo "[ERROR] Failed to generate $SETTINGS_FILE"; exit 1; }
+    log ".env not found at $SETTINGS_FILE; generating via scripts/generate_env_from_input.py ..."
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      log "(dry-run) python3 scripts/generate_env_from_input.py \"$inputFile\" \"$SETTINGS_FILE\""
+    else
+      python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" || die "Failed to generate $SETTINGS_FILE"
+    fi
 fi
 
 # Copy settings file into the results folder now that it exists
 if [ -f "$SETTINGS_FILE" ]; then
-    cp "$SETTINGS_FILE" "$folder"
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      log "(dry-run) cp \"$SETTINGS_FILE\" \"$folder\""
+    else
+      cp "$SETTINGS_FILE" "$folder"
+    fi
 fi
 
 # Load run-time physical/mesh parameters from the settings .env
@@ -180,9 +232,9 @@ set -a
 source "$SETTINGS_FILE"
 set +a
 
-echo "Settings file loaded: $SETTINGS_FILE"
-echo "Lx = $Lx  Ly = $Ly Lz = $Lz"
-echo "----------------------------------------------"
+log "Settings file loaded: $SETTINGS_FILE"
+log "Lx = $Lx  Ly = $Ly Lz = $Lz"
+log "----------------------------------------------"
 
 # Ensure grid variables are defined; if missing, generate and reload
 typeset -a MISSING_VARS
@@ -194,25 +246,24 @@ for v in Nx Ny Nz eps; do
 done
 
 if (( ${#MISSING_VARS} > 0 )); then
-    echo "[INFO] Missing variables in .env: ${MISSING_VARS[*]}"
-    echo "[INFO] Running scripts/generate_env_from_input.py to populate them..."
-    python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" "$Lx" "$Ly" || {
-        echo "[ERROR] Failed to generate missing variables in $SETTINGS_FILE"; exit 1; }
+    warn "Missing variables in .env: ${MISSING_VARS[*]}"
+    log  "Populating via scripts/generate_env_from_input.py ..."
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      log "(dry-run) python3 scripts/generate_env_from_input.py \"$inputFile\" \"$SETTINGS_FILE\" \"$Lx\" \"$Ly\""
+    else
+      python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" "$Lx" "$Ly" || die "Failed to generate missing variables in $SETTINGS_FILE"
+    fi
 
-    # Re-load and re-validate
-    set -a
-    source "$SETTINGS_FILE"
-    set +a
+    set -a; source "$SETTINGS_FILE"; set +a
 
     for v in Nx Ny Nz eps; do
       if [[ -z "${(P)v:-}" ]]; then
-        echo "[ERROR] Variable $v is still undefined in $SETTINGS_FILE after generation.";
-        exit 1
+        die "Variable $v is still undefined in $SETTINGS_FILE after generation."
       fi
     done
-    echo "[OK] .env updated: Nx=$Nx Ny=$Ny Nz=$Nz eps=$eps"
+    log "[OK] .env updated: Nx=$Nx Ny=$Ny Nz=$Nz eps=$eps"
 else
-    echo "[OK] .env already defines grid variables: Nx=$Nx Ny=$Ny Nz=$Nz eps=$eps"
+    log "[OK] .env already defines grid variables: Nx=$Nx Ny=$Ny Nz=$Nz eps=$eps"
 fi
 
 # Export simulation parameters
@@ -227,27 +278,21 @@ export readFlag Lx Ly Lz Nx Ny Nz eps
 # Function to write metadata.json: copy from input folder, then append DSM run info
 write_metadata_json() {
     # Require jq for safe JSON merge
-    if ! command -v jq >/dev/null 2>&1; then
-        echo "[ERROR] jq is required to write/augment metadata.json" >&2
-        return 1
-    fi
+    require_cmd jq
 
-    # Source (from grain input folder) and destination (output folder)
-    local grain_dir
+    local grain_dir src_meta dst_meta augment tmp
     grain_dir="$(dirname "$inputFile")"
-    local src_meta="$grain_dir/metadata.json"
-    local dst_meta="$folder/metadata.json"
+    src_meta="$grain_dir/metadata.json"
+    dst_meta="$folder/metadata.json"
 
-    if [[ ! -f "$src_meta" ]]; then
-        echo "[ERROR] Source metadata not found: $src_meta" >&2
-        return 1
+    [[ -f "$src_meta" ]] || die "Source metadata not found: $src_meta"
+
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      log "(dry-run) cp \"$src_meta\" \"$dst_meta\""
+    else
+      cp "$src_meta" "$dst_meta"
     fi
 
-    # Copy the original packing metadata
-    cp "$src_meta" "$dst_meta"
-
-    # Build a DSM run augmentation object
-    local augment
     augment=$(jq -n \
         --arg run_time "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
         --arg host     "$(hostname)" \
@@ -270,39 +315,38 @@ write_metadata_json() {
         --argjson Ny_v "${Ny:-null}" \
         --argjson Nz_v "${Nz:-null}" \
         --argjson eps_v "${eps:-null}" \
-        '{
-           dsm_run: {
-             run_time_utc: $run_time,
-             executed_on: $host,
-             user: $user,
-             inputs: { grains_dat: $input, env_file: $env_path },
-             parameters: {
-               sim_dimension: $dim,
-               delt_t: $dt, t_final: $tf, n_out: $nout,
-               temperature_C: $temp, humidity: $hum,
-               grad_temp: { x: $gx, y: $gy, z: $gz }
-             },
-             domain_size_m: { Lx: $Lx_v, Ly: $Ly_v, Lz: $Lz_v },
-             mesh_resolution: { Nx: $Nx_v, Ny: $Ny_v, Nz: $Nz_v },
-             interface_width_eps: $eps_v
-           }
-         }')
+        '{ dsm_run: { run_time_utc: $run_time, executed_on: $host, user: $user,
+           inputs: { grains_dat: $input, env_file: $env_path },
+           parameters: { sim_dimension: $dim, delt_t: $dt, t_final: $tf, n_out: $nout,
+                         temperature_C: $temp, humidity: $hum, grad_temp: { x: $gx, y: $gy, z: $gz } },
+           domain_size_m: { Lx: $Lx_v, Ly: $Ly_v, Lz: $Lz_v },
+           mesh_resolution: { Nx: $Nx_v, Ny: $Ny_v, Nz: $Nz_v },
+           interface_width_eps: $eps_v } }')
 
-    # Merge augmentation into the copied metadata
-    local tmp
     tmp="$(mktemp)"
-    jq --argjson add "$augment" '. * $add' "$dst_meta" > "$tmp" && mv "$tmp" "$dst_meta"
-    echo "[OK] metadata augmented: $dst_meta"
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      log "(dry-run) jq --slurpfile add <augment> '. * $add' \"$dst_meta\" > \"$tmp\" && mv \"$tmp\" \"$dst_meta\""
+      rm -f "$tmp"
+    else
+      jq --argjson add "$augment" '. * $add' "$dst_meta" > "$tmp" && mv "$tmp" "$dst_meta"
+      log "[OK] metadata augmented: $dst_meta"
+    fi
 }
 
 # Write a fully-resolved .env-style snapshot for reproducibility
 write_env_snapshot() {
     snapshot="$folder/resolved_params.env"
-    echo "# Auto-generated resolved parameters for this run" > "$snapshot"
-    echo "# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$snapshot"
-    for var in folder inputFile title Lx Ly Lz Nx Ny Nz delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps readFlag; do
-        echo "$var=${(P)var}" >> "$snapshot"
-    done
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      log "(dry-run) write snapshot to $snapshot"
+      return 0
+    fi
+    {
+      echo "# Auto-generated resolved parameters for this run"
+      echo "# Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+      for var in folder inputFile title Lx Ly Lz Nx Ny Nz delt_t t_final n_out humidity temp grad_temp0X grad_temp0Y grad_temp0Z dim eps readFlag; do
+          echo "$var=${(P)var}"
+      done
+    } > "$snapshot"
 }
 
 # Also write machine-readable metadata and a resolved .env snapshot
@@ -314,28 +358,39 @@ write_env_snapshot
 # =======================================
 
 # Solver tolerances and options are set here
-echo "[INFO] Launching DRY SNOW METAMORPHISM simulation..."
-mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom \
-  -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
-  -ksp_gmres_restart 150 -ksp_max_it 1000 \
-  -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
-  -snes_linesearch_type basic | tee "$folder/outp.txt"
+log "Launching DRY SNOW METAMORPHISM simulation..."
+require_cmd mpiexec
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  log "(dry-run) mpiexec -np \"$NUM_PROCS\" \"$exec_file\" -initial_PFgeom [..opts..] | tee \"$folder/outp.txt\""
+else
+  mpiexec -np "$NUM_PROCS" "$exec_file" -initial_PFgeom \
+    -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
+    -ksp_gmres_restart 150 -ksp_max_it 1000 \
+    -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
+    -snes_linesearch_type basic | tee "$folder/outp.txt"
+fi
 
 # =======================================
 # Finalize
 # =======================================
-echo " "
-echo "[INFO] Simulation completed."
-cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder"
-echo "Copied files to $folder"
-
-echo " "
-echo "Running plotting scripts (if available)..."
-if [[ -x ./scripts/run_plotDSM.sh ]]; then
-  ./scripts/run_plotDSM.sh
+log "Simulation completed."
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  log "(dry-run) cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py \"$folder\""
 else
-  echo "[info] ./scripts/run_plotDSM.sh not found or not executable; skipping."
+  cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder"
+fi
+log "Copied files to $folder"
+
+log "Running plotting scripts (if available)..."
+if [[ -x ./scripts/run_plotDSM.sh ]]; then
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "(dry-run) ./scripts/run_plotDSM.sh"
+  else
+    ./scripts/run_plotDSM.sh
+  fi
+else
+  warn "./scripts/run_plotDSM.sh not found or not executable; skipping."
 fi
 
-echo "Simulation complete. Results stored in:"
-echo "$folder"
+log "Simulation complete. Results stored in:"
+printf "%s\n" "$folder"

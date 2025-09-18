@@ -118,8 +118,11 @@ make dry_snow_metamorphism || { echo "[ERROR] Build failed." >&2; exit 1; }
 # Ensure .env exists (generate if missing)
 if [[ ! -f "$SETTINGS_FILE" ]]; then
   echo "[INFO] .env not found at $SETTINGS_FILE; generating via scripts/generate_env_from_input.py ..."
-  python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" || {
-    echo "[ERROR] Failed to generate $SETTINGS_FILE" >&2; exit 1; }
+  if command -v srun >/dev/null 2>&1; then
+    srun -N1 -n1 --cpus-per-task=1 python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" || { echo "[ERROR] Failed to generate $SETTINGS_FILE" >&2; exit 1; }
+  else
+    python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" || { echo "[ERROR] Failed to generate $SETTINGS_FILE" >&2; exit 1; }
+  fi
 fi
 
 # Copy settings file into the results folder
@@ -144,8 +147,11 @@ done
 if (( ${#missing[@]} > 0 )); then
   echo "[INFO] Missing variables in .env: ${missing[*]}"
   echo "[INFO] Running scripts/generate_env_from_input.py to populate them..."
-  python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" "$Lx" "$Ly" || {
-    echo "[ERROR] Failed to generate missing variables in $SETTINGS_FILE" >&2; exit 1; }
+  if command -v srun >/dev/null 2>&1; then
+    srun -N1 -n1 --cpus-per-task=1 python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" "$Lx" "$Ly" || { echo "[ERROR] Failed to generate missing variables in $SETTINGS_FILE" >&2; exit 1; }
+  else
+    python3 scripts/generate_env_from_input.py "$inputFile" "$SETTINGS_FILE" "$Lx" "$Ly" || { echo "[ERROR] Failed to generate missing variables in $SETTINGS_FILE" >&2; exit 1; }
+  fi
   set -a; source "$SETTINGS_FILE"; set +a
   for v in Nx Ny Nz eps; do
     eval "val=\${$v:-}"
@@ -274,6 +280,18 @@ fi
 echo
 echo "[INFO] Simulation completed."
 cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder" || true
+
+# Run SSA plotting on a single core
+if [[ -f "$BASE_DIR/postprocess/plotSSA.py" ]]; then
+  echo "[INFO] Running SSA plotting script..."
+  if command -v srun >/dev/null 2>&1; then
+    srun -N1 -n1 --cpus-per-task=1 python3 "$BASE_DIR/postprocess/plotSSA.py" "$folder" || true
+  else
+    python3 "$BASE_DIR/postprocess/plotSSA.py" "$folder" || true
+  fi
+else
+  echo "[WARN] plotSSA.py not found at $BASE_DIR/postprocess/plotSSA.py; skipping."
+fi
 
 # echo
 # echo "Running plotting scripts (if available)..."
