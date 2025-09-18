@@ -29,23 +29,21 @@ RUN_SCRIPT="$BASE_DIR/scripts/studio/run_dsm.sh"
 # ==========================
 # Temperatures (°C)
 temps=( -25 )
-# Relative humidities (0..1)
 humidities=( 0.98 )
-# Temperature gradient components (K/m)
 grad_xs=( 0.0 )
 grad_ys=( 3.0e-6 )
 grad_zs=( 0.0 )
 
 # MPI/launch overrides (optional)
-: ${NTASKS:=8}
-: ${LAUNCHER:=mpirun}
+: ${NTASKS:=12}
+: ${LAUNCHER:=mpiexec}
 : ${OUT_ROOT:="$BASE_DIR/outputs"}
 
 # ==========================
 # Discover grain directories
 # ==========================
 # Default pattern picks seed-stable names like grains__phi=...__Lxmm=...__seed=...
-pattern="$INPUT_ROOT/grains__*"
+pattern="$INPUT_ROOT/grains__*__Lxmm=2__Lymm=2__*"
 # (N) => null glob (no error if empty), (/) => only directories
 grain_dirs=( $~pattern(N/) )
 

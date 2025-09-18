@@ -53,6 +53,8 @@ parser.add_argument("--radius_clip_frac", type=float, default=0.5, help="Limit r
 parser.add_argument("--eps", type=float, default=None,
                     help="Interface width epsilon (meters) to write into generated .env; default uses 0.5*dx")
 parser.add_argument("--no_progress", action="store_true", help="Disable fancy progress bars (tqdm)")
+parser.add_argument("--require_connectivity", action="store_true",
+                    help="Only accept placements that make contact with existing grains; ensures a single connected solid cluster.")
 #
 # Default roots: resolve relative to the project root (one level above script if in ./preprocess/)
 default_project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -151,11 +153,14 @@ def place_nonoverlap_polydisperse(nx, ny, target_solid_frac, rng, mu_ln, sigma_l
     cx_list, cy_list, r_list = [], [], []
     solid_area_target = target_solid_frac * (nx * ny)
     area_now = 0.0
+    if getattr(args, 'require_connectivity', False):
+        print("[CONNECTIVITY] Enforcing contact: every new grain must touch the existing solid (single connected cluster).")
     attempts = 0
     print(f"Stopping conditions: reach target solids (area≥{solid_area_target:.0f} px) OR attempts≥{max_attempts}.")
     use_pb = (tqdm is not None) and (not args.no_progress)
     pbar_attempts = tqdm(total=max_attempts, desc="Attempts", unit="try", dynamic_ncols=True, leave=False) if use_pb else None
     pbar_solids = tqdm(total=int(solid_area_target), desc="Solid area", unit="px", dynamic_ncols=True, leave=False) if use_pb else None
+    # Note: we use floor() after subtracting touch_tol_px when computing r_needed to avoid micro-overlaps from rounding
     # Pre-allocate mask at the end for speed; use vector checks for overlap during placement
     while area_now < solid_area_target and attempts < max_attempts:
         if pbar_attempts:
@@ -202,25 +207,62 @@ def place_nonoverlap_polydisperse(nx, ny, target_solid_frac, rng, mu_ln, sigma_l
             dxs = np.array(cx_list) - x
             dys = np.array(cy_list) - y
             d2 = dxs*dxs + dys*dys
-            min_allowed = (np.array(r_list) + r_px + gap_px)**2
+            min_allowed = (np.array(r_list) + r_px + gap_px) ** 2
             if np.all(d2 >= min_allowed):
-                # Optionally expand radius to touch nearest neighbor (without overlap)
-                if enforce_tangency and cx_list:
+                # We tentatively have a non-overlapping center for the current r_px.
+                # If connectivity/tangency is requested, compute the radius needed to touch the *nearest* grain.
+                r_px_final = int(r_px)
+                if cx_list:
                     dists = np.sqrt(d2)
-                    r_allowed = np.min(dists - (np.array(r_list) + gap_px))
-                    r_target = int(max(1, round(r_allowed - touch_tol_px)))
+                    idx_min = int(np.argmin(dists))
+                    r_needed_raw = dists[idx_min] - (r_list[idx_min] + gap_px)
+                    # Pixel rounding tends to overshoot; subtract touch tolerance
+                    r_needed = int(max(1, np.floor(r_needed_raw - touch_tol_px)))
+
+                    # Respect boundary if not allowed to cross
                     if not allow_cross_boundary:
-                        r_target = min(r_target, x, y, nx - 1 - x, ny - 1 - y)
-                    # Clamp to requested radius bounds
-                    r_target = max(rmin_px, min(r_target, rmax_px))
-                    r_px = max(r_px, r_target)
+                        r_needed = min(r_needed, x, y, nx - 1 - x, ny - 1 - y)
+
+                    # Enforce radius limits
+                    r_needed = max(rmin_px, min(r_needed, rmax_px))
+
+                    if getattr(args, 'require_connectivity', False):
+                        # Must be able to truly *touch* the nearest neighbor. If clamping made it too small, reject.
+                        # (Compare to the unclamped raw requirement with tolerance.)
+                        if r_needed + touch_tol_px < r_needed_raw:
+                            # cannot achieve contact without violating bounds -> try a new center
+                            continue
+                        r_px_final = r_needed
+                    elif enforce_tangency:
+                        # Optional: grow toward tangency when possible, but only if it keeps non-overlap with *all* grains
+                        r_px_candidate = max(r_px_final, r_needed)
+                        # Re-check non-overlap for the grown radius
+                        min_allowed_grown = (np.array(r_list) + r_px_candidate + gap_px) ** 2
+                        if np.all(d2 >= min_allowed_grown):
+                            # Also respect boundary limit if not crossing
+                            if not allow_cross_boundary:
+                                r_px_candidate = min(r_px_candidate, x, y, nx - 1 - x, ny - 1 - y)
+                            r_px_final = int(r_px_candidate)
+                        # else: keep original r_px_final (do not grow if it would overlap someone else)
+
+                # FINAL SAFETY: ensure the chosen radius does not overlap with any existing grain
+                min_allowed_final = (np.array(r_list) + r_px_final + gap_px) ** 2 if cx_list else None
+                if cx_list and not np.all(d2 >= min_allowed_final):
+                    # Growth caused overlap with a non-nearest neighbor; reject this center
+                    continue
+
                 # Rasterize this grain and increment area using clipped area (respects boundary)
-                rr, cc = disk((x, y), int(r_px), shape=(nx, ny))
+                rr, cc = disk((x, y), int(r_px_final), shape=(nx, ny))
                 before = solid.sum()
+                # As an extra guard against aliasing overlaps, ensure we don't overwrite existing True pixels
+                if solid[rr, cc].any():
+                    # Overlap on the pixel grid due to discretization/rounding; reject placement
+                    continue
+
                 solid[rr, cc] = True
                 added = solid.sum() - before
                 placed = True
-                cx_list.append(x); cy_list.append(y); r_list.append(int(r_px))
+                cx_list.append(x); cy_list.append(y); r_list.append(int(r_px_final))
                 area_now += added
                 if pbar_solids:
                     pbar_solids.update(int(added))
@@ -229,7 +271,7 @@ def place_nonoverlap_polydisperse(nx, ny, target_solid_frac, rng, mu_ln, sigma_l
                 else:
                     progress = min(1.0, area_now / solid_area_target) if solid_area_target > 0 else 0.0
                     achieved_porosity = 1.0 - (solid.sum() / (nx * ny))
-                    print(f"Placed grain #{len(r_list)} at ({x}, {y}) with radius {int(r_px)} | progress: {progress*100:.1f}% of target solids | achieved porosity ≈ {achieved_porosity:.4f}")
+                    print(f"Placed grain #{len(r_list)} at ({x}, {y}) with radius {int(r_px_final)} | progress: {progress*100:.1f}% of target solids | achieved porosity ≈ {achieved_porosity:.4f}")
                 break
         if not placed:
             continue
@@ -242,6 +284,14 @@ def place_nonoverlap_polydisperse(nx, ny, target_solid_frac, rng, mu_ln, sigma_l
         pbar_attempts.close()
     if pbar_solids:
         pbar_solids.close()
+    if getattr(args, 'require_connectivity', False):
+        try:
+            import scipy.ndimage as ndi
+            labels, ncomp = ndi.label(solid)
+            if ncomp > 1:
+                print(f"[CONNECTIVITY][WARN] Final solid has {ncomp} connected components (expected 1). Consider increasing tries_per_circle or max_attempts.")
+        except Exception:
+            pass
     return np.array(cx_list), np.array(cy_list), np.array(r_list), solid
 
 print(f"Generating {MODE} circular grains with shape={shape}, porosity={args.porosity}, seed={args.seed}")

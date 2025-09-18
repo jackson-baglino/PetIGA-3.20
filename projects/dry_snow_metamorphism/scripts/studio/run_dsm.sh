@@ -101,12 +101,12 @@ readFlag=${readFlag:-1}   # 1=read grains from file; 0=procedural generation (no
 
 # Physics & numerics
 delt_t=${delt_t:-1.0e-4}
-t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
-n_out=${n_out:-100}
-# t_final=${t_final:-$((1))}  # 1 second for quick test
-# n_out=${n_out:-10}
-humidity=${humidity:-0.95}
-temp=${temp:--2.0}
+# t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
+# n_out=${n_out:-100}
+t_final=${t_final:-$((2 * 60 * 60))}  # 2 hours in seconds
+n_out=${n_out:-10}
+humidity=${humidity:-0.98}
+temp=${temp:--25.0}
 grad_temp0X=${grad_temp0X:-0.0}
 grad_temp0Y=${grad_temp0Y:-3.0e-6}
 grad_temp0Z=${grad_temp0Z:-0.0}
