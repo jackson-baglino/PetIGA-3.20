@@ -34,10 +34,9 @@ grad_xs=( 0.0 )
 grad_ys=( 3.0e-6 )
 grad_zs=( 0.0 )
 
-# MPI/launch overrides (optional)
-: ${NTASKS:=12}
-: ${LAUNCHER:=mpiexec}
-: ${OUT_ROOT:="$BASE_DIR/outputs"}
+# MPI/output overrides (optional) — match run_dsm.sh
+: ${NUM_PROCS:=12}
+: ${output_dir:="$BASE_DIR/outputs"}
 
 # ==========================
 # Discover grain directories
@@ -68,16 +67,22 @@ for GRAIN_DIR in ${grain_dirs[@]}; do
       for gx in ${grad_xs[@]}; do
         for gy in ${grad_ys[@]}; do
           for gz in ${grad_zs[@]}; do
+            # Note: in run_dsm.sh, `-h` flag is for humidity; help is `-?` or `--help`.
             echo "[run] T=$t°C RH=$rh G=($gx,$gy,$gz) dir=$(basename "$GRAIN_DIR")"
-            # Pass parameters as flags to the new grain-dir runner
-            NTASKS="$NTASKS" LAUNCHER="$LAUNCHER" OUT_ROOT="$OUT_ROOT" \
+            # Build filename relative to input_dir for run_dsm.sh
+            rel_path="${GRAIN_DIR#${INPUT_ROOT}/}"
+            filename_rel="$rel_path/grains.dat"
+
+            # Export variables expected by run_dsm.sh and pass compatible flags
+            NUM_PROCS="$NUM_PROCS" \
+            output_dir="$output_dir" \
+            input_dir="$INPUT_ROOT" \
+            grad_temp0X="$gx" grad_temp0Y="$gy" grad_temp0Z="$gz" \
             "$RUN_SCRIPT" \
-              --grain-dir "$GRAIN_DIR" \
-              --temp-c "$t" \
-              --humidity "$rh" \
-              --grad-x "$gx" \
-              --grad-y "$gy" \
-              --grad-z "$gz"
+              -f "$filename_rel" \
+              -t "$t" \
+              -h "$rh" \
+              -p "$NUM_PROCS"
             echo "[done] T=$t°C RH=$rh G=($gx,$gy,$gz) dir=$(basename "$GRAIN_DIR")"
             echo "--------------------------------------------------------------------------------"
           done
