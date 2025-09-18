@@ -161,8 +161,23 @@ for dat_file in "${dat_files[@]}"; do
       hum_int=$(awk "BEGIN{printf \"%d\", $hum*100}")
       hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 
+      # Build descriptive job name and log destinations
+      nx_tag=${Nx:-NA}
+      ny_tag=${Ny:-NA}
+      nz_tag=${Nz:-}
+      if [[ -n "$nz_tag" ]]; then
+        grid_tag="${nx_tag}x${ny_tag}x${nz_tag}"
+      else
+        grid_tag="${nx_tag}x${ny_tag}"
+      fi
+      job_base="DSM-${basename}_Tm${temp_tag}_hum${hum_tag}_grid${grid_tag}"
+      log_dir="$env_dir/slurm"
+      mkdir -p "$log_dir"
+
       echo "Submitting job for file: $basename, T=${temp_tag}C, RH=${hum_tag}%"
-      sbatch --job-name="DSM-${basename}_Tm${temp_tag}_hum${hum_tag}" \
+      sbatch --job-name="$job_base" \
+             --output="$log_dir/%x__%j.out" \
+             --error="$log_dir/%x__%j.err" \
              --nodes="$NODES" \
              --ntasks-per-node="$TASKS_PER_NODE" \
              --cpus-per-task="$CPUS_PER_TASK" \
