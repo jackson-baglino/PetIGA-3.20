@@ -3,8 +3,8 @@
 #SBATCH -A rubyfu
 #SBATCH -t 5-00:00:00
 
-#SBATCH --nodes=22
-#SBATCH --ntasks-per-node=40
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=10
 #SBATCH --cpus-per-task=1
 #SBATCH -o "output_files/%x.o%j"
 #SBATCH -e "output_files/%x.e%j"
