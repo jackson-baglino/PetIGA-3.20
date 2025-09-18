@@ -18,7 +18,7 @@
 set -euo pipefail
 
 # --- Sweep settings ---
-temperatures=(-20 -25 -30 -35 -40)
+temperatures=(-25)
 humidities=(0.98)
 
 # --- Paths ---
@@ -33,7 +33,7 @@ CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 : "${MEM_PER_CPU_DEFAULT:=1G}"      # memory request per CPU
 
 shopt -s nullglob
-dat_files=("$INPUT_DIR"/grains__phi=0.24__Lxmm=1.5__Lymm=1.5__seed=*/grains.dat)
+dat_files=("$INPUT_DIR"/grains__phi=*__Lxmm=2__Lymm=2__seed=*/grains.dat)
 shopt -u nullglob
 
 if [ ${#dat_files[@]} -eq 0 ]; then
