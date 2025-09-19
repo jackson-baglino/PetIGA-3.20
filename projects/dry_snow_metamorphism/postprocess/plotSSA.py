@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -17,9 +18,11 @@ print(f"inputFile:  {inputFile}")
 
 # ----------------------------
 # Resolve output path & safe filename
+# Priority: CLI arg (argv[1]) > env outputfolder > CWD
 # ----------------------------
 safe_title = re.sub(r"[\\/]+", "_", title).strip() or "run"
-output_dir = outputfolder if outputfolder else os.getcwd()
+arg_output = sys.argv[1] if len(sys.argv) > 1 else None
+output_dir = arg_output or outputfolder or os.getcwd()
 os.makedirs(output_dir, exist_ok=True)
 output_path = os.path.join(output_dir, f"ssa_evolution_plot_{safe_title}.png")
 
@@ -27,7 +30,9 @@ output_path = os.path.join(output_dir, f"ssa_evolution_plot_{safe_title}.png")
 # Load SSA evolution data
 # Expected columns: area, volume, time(sec)
 # ----------------------------
-ssa_path = os.path.join(os.getcwd(), "SSA_evo.dat")
+ssa_path = os.path.join(output_dir, "SSA_evo.dat")
+if not os.path.isfile(ssa_path):
+    raise FileNotFoundError(f"{ssa_path} not found. (CWD: {os.getcwd()})")
 try:
     ssa = np.loadtxt(ssa_path)
 except Exception as e:
