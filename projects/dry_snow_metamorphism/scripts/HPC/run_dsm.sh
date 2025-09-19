@@ -80,6 +80,7 @@ if [[ "${readFlag}" -eq 1 ]]; then
   if [[ ! -f "$inputFile" ]]; then
     echo "[ERROR] Input file not found: $inputFile" >&2; exit 1
   fi
+  echo "[INFO] Using inputFile: $inputFile"
 else
   echo "[INFO] Generating grains instead of reading from file."
 fi
@@ -101,7 +102,17 @@ hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 # Title and settings path
 ndays=$(awk "BEGIN{printf \"%d\", $t_final/86400}")
 title="DSM${clean_name}_${dim}D_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d_"
-SETTINGS_FILE="$BASE_DIR/inputs/${filename%.dat}.env"
+
+# Resolve settings file adjacent to inputFile (prefer grains.env, then basename.env)
+env_dir="$(dirname "$inputFile")"
+if [[ -f "$env_dir/grains.env" ]]; then
+  SETTINGS_FILE="$env_dir/grains.env"
+elif [[ -f "$env_dir/${filename%.dat}.env" ]]; then
+  SETTINGS_FILE="$env_dir/${filename%.dat}.env"
+else
+  # Target path for generation if none exist yet
+  SETTINGS_FILE="$env_dir/grains.env"
+fi
 
 # =======================================
 # Timestamped result folder
