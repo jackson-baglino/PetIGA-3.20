@@ -209,11 +209,20 @@ for dat_file in "${dat_files[@]}"; do
       hum_int=$(awk "BEGIN{printf \"%d\", $hum*100}")
       hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 
-      # Build descriptive job name using physical parameters instead of grid size
-      phi_tag=$(echo "$basename" | sed -n 's/.*phi=\([0-9.]*\).*/\1/p')
-      Lx_tag=$(echo "$basename" | sed -n 's/.*Lxmm=\([0-9.]*\).*/\1/p')
-      seed_tag=$(echo "$basename" | sed -n 's/.*seed=\([0-9]*\).*/\1/p')
-      job_base="DSM_phi${phi_tag}_Lx${Lx_tag}_seed${seed_tag}_Tm${temp_tag}_hum${hum_tag}"
+      # Build descriptive job name using physical parameters from the directory name
+      dirbase="$(basename "$env_dir")"
+      phi_tag="$(echo "$dirbase" | sed -n 's/.*phi=\([0-9.]*\).*/\1/p')"
+      Lx_tag="$(echo "$dirbase" | sed -n 's/.*Lxmm=\([0-9.]*\).*/\1/p')"
+      Ly_tag="$(echo "$dirbase" | sed -n 's/.*Lymm=\([0-9.]*\).*/\1/p')"
+      seed_tag="$(echo "$dirbase" | sed -n 's/.*seed=\([0-9]*\).*/\1/p')"
+      # Fallbacks if parsing fails
+      [[ -z "$phi_tag"  ]] && phi_tag="NA"
+      if [[ -z "$Lx_tag" && -n "${Lx:-}" ]]; then Lx_tag="$(awk -v v="$Lx" 'BEGIN{printf "%.3g", v*1000}')"; fi
+      if [[ -z "$Ly_tag" && -n "${Ly:-}" ]]; then Ly_tag="$(awk -v v="$Ly" 'BEGIN{printf "%.3g", v*1000}')"; fi
+      [[ -z "$Lx_tag"  ]] && Lx_tag="NA"
+      [[ -z "$Ly_tag"  ]] && Ly_tag="NA"
+      [[ -z "$seed_tag" ]] && seed_tag="NA"
+      job_base="DSM_phi${phi_tag}_Lx${Lx_tag}_Ly${Ly_tag}_seed${seed_tag}_Tm${temp_tag}_hum${hum_tag}"
 
       echo "Submitting job for file: $basename, T=${temp_tag}C, RH=${hum_tag}%"
       sbatch --job-name="$job_base" \
