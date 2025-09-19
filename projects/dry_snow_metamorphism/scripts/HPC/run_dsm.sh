@@ -25,6 +25,14 @@
 
 set -euo pipefail
 
+cleanup_on_err() {
+  echo "[ERROR] Aborting due to an error (line $1)." >&2
+  if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+    scancel "$SLURM_JOB_ID" >/dev/null 2>&1 || true
+  fi
+}
+trap 'cleanup_on_err $LINENO' ERR
+
 # =======================================
 # User configuration (edit here or override via environment)
 # =======================================
@@ -278,24 +286,40 @@ write_env_snapshot
 echo "[INFO] Launching DRY SNOW METAMORPHISM simulation..."
 # Use srun if available (preferred on SLURM), otherwise mpiexec with -n $NUM_PROCS
 if command -v srun >/dev/null 2>&1; then
-  srun "$exec_file" -initial_PFgeom \
+  set +e
+  srun --kill-on-bad-exit=1 "$exec_file" -initial_PFgeom \
     -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
     -ksp_gmres_restart 150 -ksp_max_it 1000 \
     -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
-    -snes_linesearch_type basic | tee "$folder/outp.txt"
+    -snes_linesearch_type basic 2>&1 | tee "$folder/outp.txt"
+  rc=${PIPESTATUS[0]}
+  set -e
 else
+  set +e
   mpiexec -n "$NUM_PROCS" "$exec_file" -initial_PFgeom \
     -snes_rtol 1e-3 -snes_stol 1e-6 -snes_max_it 7 \
     -ksp_gmres_restart 150 -ksp_max_it 1000 \
     -ksp_converged_reason -snes_converged_reason -snes_linesearch_monitor \
-    -snes_linesearch_type basic | tee "$folder/outp.txt"
+    -snes_linesearch_type basic 2>&1 | tee "$folder/outp.txt"
+  rc=${PIPESTATUS[0]}
+  set -e
+fi
+
+# Abort immediately on simulation failure
+if [[ ${rc:-0} -ne 0 ]]; then
+  echo "[ERROR] Simulation failed with exit code $rc — terminating job." >&2
+  # Best-effort cancel of the remaining allocation (if still active)
+  if [[ -n "${SLURM_JOB_ID:-}" ]]; then
+    scancel "$SLURM_JOB_ID" >/dev/null 2>&1 || true
+  fi
+  exit "$rc"
 fi
 
 # =======================================
-# Finalize
+# Finalize (only if simulation succeeded)
 # =======================================
 echo
-echo "[INFO] Simulation completed."
+echo "[INFO] Simulation completed successfully."
 cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder" || true
 
 # Run SSA plotting on a single core
