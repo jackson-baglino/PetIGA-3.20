@@ -90,8 +90,22 @@ trap 'TRAPERR $LINENO' ERR
 # User configuration (override via env or edit here)
 # =======================================
 # Paths
+# Defaults (already in your script)
 BASE_DIR="${BASE_DIR:-${PETIGA_DIR}/projects/dry_snow_metamorphism}"
 input_dir="${input_dir:-$BASE_DIR/inputs}"
+filename="${filename:-grains__phi=0.24__Lxmm=2__Lymm=2__seed=22/grains.dat}"
+
+# --- OVERRIDES FROM BATCH (do not change anything else) ---
+# If batch passed a full path inputFile, use it and keep it.
+if [[ -n "${inputFile:-}" ]]; then
+  input_dir="$(cd "$(dirname "$inputFile")" && pwd)"
+  filename="$(basename "$inputFile")"
+fi
+
+# Derived inputFile: only set if not already provided by batch
+: "${inputFile:="$input_dir/$filename"}"
+
+
 output_dir="${output_dir:-/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch}"
 exec_file="${exec_file:-$BASE_DIR/dry_snow_metamorphism}"
 
@@ -101,10 +115,10 @@ readFlag=${readFlag:-1}   # 1=read grains from file; 0=procedural generation (no
 
 # Physics & numerics
 delt_t=${delt_t:-1.0e-4}
-# t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
-# n_out=${n_out:-100}
-t_final=${t_final:-$((10 * $delt_t))}  # 10 time steps
-n_out=${n_out:-1}
+t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
+n_out=${n_out:-100}
+# t_final=${t_final:-$((2 * 60 * 60))}  # 2 hours in seconds
+# n_out=${n_out:-10}
 humidity=${humidity:-0.98}
 temp=${temp:--25.0}
 grad_temp0X=${grad_temp0X:-0.0}
@@ -115,8 +129,11 @@ dim=${dim:-2}
 # Parallel / MPI
 NUM_PROCS=${NUM_PROCS:-12}
 
-# Derived
-inputFile="$input_dir/$filename"
+#
+# Derived (preserve batch-passed absolute inputFile if provided)
+if [[ -z "${inputFile:-}" ]]; then
+  inputFile="$input_dir/$filename"
+fi
 
 [[ -d "$input_dir" ]] || die "input_dir does not exist: $input_dir"
 mkdir -p "$output_dir" || die "Could not create output_dir: $output_dir"
@@ -126,8 +143,8 @@ mkdir -p "$output_dir" || die "Could not create output_dir: $output_dir"
 # =======================================
 # --- Basic validation (only when reading a grain file) ---
 if [[ "${readFlag:-1}" -eq 1 ]]; then
-  [[ -n "${filename:-}" ]] || die "readFlag=1 but 'filename' is not set. (e.g., filename=\"grains__.../grains.dat\")"
-  [[ -f "$inputFile" ]]    || die "Input file not found: $inputFile"
+  [[ -n "${inputFile:-}" ]] || die "readFlag=1 but 'inputFile' is unset."
+  [[ -f "$inputFile" ]]     || die "Input file not found: $inputFile"
 fi
 
 # readFlag=1  # Set to 1 to read grain file, 0 to generate grains

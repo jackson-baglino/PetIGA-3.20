@@ -17,13 +17,47 @@
 
 set -euo pipefail
 
+# --- Lightweight CLI parsing / overrides ---
+# Usage examples:
+#   sbatch batch_dsm.sh --input-dir=/path/to/inputs
+#   sbatch batch_dsm.sh /path/to/inputs
+#   DSM_TEST=1 sbatch batch_dsm.sh
+FORCE_TEST=1
+# Allow INPUT_DIR override via arg or env var INPUT_DIR_OVERRIDE
+if [[ -n "${INPUT_DIR_OVERRIDE:-}" ]]; then
+  INPUT_DIR="$INPUT_DIR_OVERRIDE"
+fi
+# Parse args
+for arg in "$@"; do
+  case "$arg" in
+    --test) FORCE_TEST=1 ;;
+    --input-dir=*) INPUT_DIR="${arg#*=}" ;;
+    -i) shift; INPUT_DIR="${1:-$INPUT_DIR}" ;;
+    --) shift; break ;;
+    -h|--help)
+      echo "Usage: sbatch batch_dsm.sh [--test] [--input-dir=/path] [INPUT_DIR]"
+      exit 0
+      ;;
+    *)
+      # If it's a path and exists, treat as INPUT_DIR (positional)
+      if [[ -d "$arg" ]]; then
+        INPUT_DIR="$arg"
+      fi
+      ;;
+  esac
+done
+if [[ -z "${INPUT_DIR:-}" || ! -d "$INPUT_DIR" ]]; then
+  echo "[ERROR] INPUT_DIR not set or does not exist: '${INPUT_DIR:-unset}'"
+  exit 1
+fi
+
 # --- Sweep settings ---
 temperatures=(-25)
 humidities=(0.98)
 
 # --- Paths ---
 RUN_SCRIPT="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/scripts/HPC/run_dsm.sh"
-INPUT_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
+INPUT_DIR="${INPUT_DIR:-/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs}"
 CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
 
 # --- Resource tuning knobs (override by exporting before running) ---
@@ -32,12 +66,13 @@ CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 : "${TASKS_PER_NODE_DEFAULT:=40}"   # preferred packing per node (will be clamped to [MIN,MAX])
 : "${MEM_PER_CPU_DEFAULT:=1G}"      # memory request per CPU
 
-shopt -s nullglob
-dat_files=("$INPUT_DIR"/grains__phi=*__Lxmm=2__Lymm=2__seed=*/grains.dat)
-shopt -u nullglob
+shopt -s nullglob globstar
+# Recursively find any grains.dat under INPUT_DIR
+dat_files=("$INPUT_DIR"/**/grains.dat)
+shopt -u globstar nullglob
 
 if [ ${#dat_files[@]} -eq 0 ]; then
-  echo "No .dat files found in $INPUT_DIR"
+  echo "[ERROR] No grains.dat files found under INPUT_DIR (searched recursively): $INPUT_DIR"
   exit 1
 fi
 
@@ -119,6 +154,12 @@ for dat_file in "${dat_files[@]}"; do
     fi
   fi
 
+  # --- Optional test mode: force 1 node and 10 cores total ---
+  if [[ "${DSM_TEST:-0}" == "1" || "$FORCE_TEST" -eq 1 ]]; then
+    NODES=1
+    TASKS_PER_NODE=10
+  fi
+
   CPUS_PER_TASK=1
   MEM_PER_CPU="$MEM_PER_CPU_DEFAULT"
 
@@ -137,6 +178,9 @@ for dat_file in "${dat_files[@]}"; do
   echo " Input:    $INPUT_FILE"
   echo " Config:   $ENV_FILE"
   echo " Basename: $basename"
+  if [[ "${DSM_TEST:-0}" == "1" || "$FORCE_TEST" -eq 1 ]]; then
+    echo " Mode:     TEST (forcing 1 node, 10 cores)"
+  fi
   echo
   echo " Parsed from .env:"
   echo "   Nx = ${Nx:-unset}"
@@ -171,20 +215,16 @@ for dat_file in "${dat_files[@]}"; do
         grid_tag="${nx_tag}x${ny_tag}"
       fi
       job_base="DSM-${basename}_Tm${temp_tag}_hum${hum_tag}_grid${grid_tag}"
-      log_dir="$env_dir/slurm"
-      mkdir -p "$log_dir"
 
       echo "Submitting job for file: $basename, T=${temp_tag}C, RH=${hum_tag}%"
       sbatch --job-name="$job_base" \
-             --output="$log_dir/%x__%j.out" \
-             --error="$log_dir/%x__%j.err" \
-             --nodes="$NODES" \
-             --ntasks-per-node="$TASKS_PER_NODE" \
-             --cpus-per-task="$CPUS_PER_TASK" \
-             --mem-per-cpu="$MEM_PER_CPU" \
-             --export=ALL,ENV_FILE_OVERRIDE="$ENV_FILE",temp="$temp",humidity="$hum",inputFile="$INPUT_FILE",filename="$basename" \
-             "$RUN_SCRIPT" \
-             --kill-on-bad-exit=1
+            --nodes="$NODES" \
+            --ntasks-per-node="$TASKS_PER_NODE" \
+            --cpus-per-task="$CPUS_PER_TASK" \
+            --mem-per-cpu="$MEM_PER_CPU" \
+            --kill-on-bad-exit=1 \
+            --export=ALL,inputFile="$INPUT_FILE",temp="$temp",humidity="$hum" \
+            "$RUN_SCRIPT"
     done
   done
 done

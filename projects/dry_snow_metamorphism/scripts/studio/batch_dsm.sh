@@ -36,7 +36,7 @@ grad_zs=( 0.0 )
 
 # MPI/output overrides (optional) — match run_dsm.sh
 : ${NUM_PROCS:=12}
-: ${output_dir:="$BASE_DIR/outputs"}
+: ${output_dir:="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch"}
 
 # ==========================
 # Discover grain directories
