@@ -47,10 +47,10 @@ fi
 
 # Physics & numerics
 delt_t=${delt_t:-1.0e-4}
-# t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
-t_final=${t_final:-$((2 * 60 * 60))}  # 2 hours for quick test
-# n_out=${n_out:-100}
-n_out=${n_out:-10} # Reduced for quick test
+t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
+# t_final=${t_final:-$((2 * 60 * 60))}  # 2 hours for quick test
+n_out=${n_out:-100}
+# n_out=${n_out:-10} # Reduced for quick test
 humidity=${humidity:-0.95}
 temp=${temp:--30.0}
 grad_temp0X=${grad_temp0X:-0.0}
