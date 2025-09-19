@@ -209,16 +209,11 @@ for dat_file in "${dat_files[@]}"; do
       hum_int=$(awk "BEGIN{printf \"%d\", $hum*100}")
       hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 
-      # Build descriptive job name and log destinations
-      nx_tag=${Nx:-NA}
-      ny_tag=${Ny:-NA}
-      nz_tag=${Nz:-}
-      if [[ -n "$nz_tag" ]]; then
-        grid_tag="${nx_tag}x${ny_tag}x${nz_tag}"
-      else
-        grid_tag="${nx_tag}x${ny_tag}"
-      fi
-      job_base="DSM-${basename}_Tm${temp_tag}_hum${hum_tag}_grid${grid_tag}"
+      # Build descriptive job name using physical parameters instead of grid size
+      phi_tag=$(echo "$basename" | sed -n 's/.*phi=\([0-9.]*\).*/\1/p')
+      Lx_tag=$(echo "$basename" | sed -n 's/.*Lxmm=\([0-9.]*\).*/\1/p')
+      seed_tag=$(echo "$basename" | sed -n 's/.*seed=\([0-9]*\).*/\1/p')
+      job_base="DSM_phi${phi_tag}_Lx${Lx_tag}_seed${seed_tag}_Tm${temp_tag}_hum${hum_tag}"
 
       echo "Submitting job for file: $basename, T=${temp_tag}C, RH=${hum_tag}%"
       sbatch --job-name="$job_base" \
