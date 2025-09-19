@@ -72,7 +72,7 @@ CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 
 shopt -s nullglob globstar
 # Recursively find any grains.dat under INPUT_DIR
-dat_files=("$INPUT_DIR"/**/grains.dat)
+dat_files=("$INPUT_DIR"/grains__phi=*__Lxmm=2__Lymm=2__seed=*/grains.dat)
 shopt -u globstar nullglob
 
 if [ ${#dat_files[@]} -eq 0 ]; then
@@ -226,7 +226,6 @@ for dat_file in "${dat_files[@]}"; do
             --ntasks-per-node="$TASKS_PER_NODE" \
             --cpus-per-task="$CPUS_PER_TASK" \
             --mem-per-cpu="$MEM_PER_CPU" \
-            --kill-on-bad-exit=1 \
             --export=ALL,inputFile="$INPUT_FILE",temp="$temp",humidity="$hum" \
             "$RUN_SCRIPT"
     done
