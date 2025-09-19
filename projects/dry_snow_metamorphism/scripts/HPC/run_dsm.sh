@@ -39,6 +39,12 @@ exec_file="${exec_file:-$BASE_DIR/dry_snow_metamorphism}"
 filename="${filename:-grains__phi=0.24__Lxmm=3__Lymm=3__seed=21/grains.dat}"
 readFlag=${readFlag:-1}   # 1=read grains from file; 0=procedural generation (not used here)
 
+# If batch passed a full path inputFile, prefer it and derive input_dir/filename from it
+if [[ -n "${inputFile:-}" ]]; then
+  input_dir="$(cd "$(dirname "$inputFile")" && pwd)"
+  filename="$(basename "$inputFile")"
+fi
+
 # Physics & numerics
 delt_t=${delt_t:-1.0e-4}
 # t_final=${t_final:-$((28 * 24 * 60 * 60))}  # 28 days in seconds
@@ -60,17 +66,17 @@ else
   NUM_PROCS="${NUM_PROCS:-40}"
 fi
 
-# Derived
-inputFile="$input_dir/$filename"
+# Derived (preserve batch-passed absolute inputFile if provided)
+: "${inputFile:="$input_dir/$filename"}"
 
 # =======================================
 # Define simulation parameters & basic validation
 # =======================================
 if [[ "${readFlag}" -eq 1 ]]; then
-  echo "[INFO] Reading grain file: $inputFile"
-  if [[ -z "$filename" ]]; then
-    echo "[ERROR] readFlag=1 but 'filename' is not set." >&2; exit 1
+  if [[ -z "${inputFile:-}" ]]; then
+    echo "[ERROR] readFlag=1 but 'inputFile' is unset." >&2; exit 1
   fi
+  echo "[INFO] Reading grain file: $inputFile"
   if [[ ! -f "$inputFile" ]]; then
     echo "[ERROR] Input file not found: $inputFile" >&2; exit 1
   fi
