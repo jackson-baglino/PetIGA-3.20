@@ -15,7 +15,12 @@
 #   - Adjust INPUT_DIR / CONFIG_DIR, temperatures, humidities below as needed.
 ###############################################################################
 
+
 set -euo pipefail
+
+# Default INPUT_DIR (can be overridden by env var, INPUT_DIR_OVERRIDE, or CLI args)
+DEFAULT_INPUT_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
+INPUT_DIR="${INPUT_DIR:-$DEFAULT_INPUT_DIR}"
 
 # --- Lightweight CLI parsing / overrides ---
 # Usage examples:
@@ -57,7 +62,6 @@ humidities=(0.98)
 
 # --- Paths ---
 RUN_SCRIPT="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/scripts/HPC/run_dsm.sh"
-INPUT_DIR="${INPUT_DIR:-/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs}"
 CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
 
 # --- Resource tuning knobs (override by exporting before running) ---
