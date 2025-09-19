@@ -161,7 +161,7 @@ for dat_file in "${dat_files[@]}"; do
   # --- Optional test mode: force 1 node and 10 cores total ---
   if [[ "${DSM_TEST:-0}" == "1" || "$FORCE_TEST" -eq 1 ]]; then
     NODES=1
-    TASKS_PER_NODE=10
+    TASKS_PER_NODE=5
   fi
 
   CPUS_PER_TASK=1
