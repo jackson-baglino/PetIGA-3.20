@@ -226,7 +226,6 @@ for dat_file in "${dat_files[@]}"; do
             --ntasks-per-node="$TASKS_PER_NODE" \
             --cpus-per-task="$CPUS_PER_TASK" \
             --mem-per-cpu="$MEM_PER_CPU" \
-            --kill-on-bad-exit=1 \
             --export=ALL,inputFile="$INPUT_FILE",temp="$temp",humidity="$hum" \
             "$RUN_SCRIPT"
     done
