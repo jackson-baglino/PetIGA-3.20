@@ -19,7 +19,7 @@
 set -euo pipefail
 
 # Default INPUT_DIR (can be overridden by env var, INPUT_DIR_OVERRIDE, or CLI args)
-DEFAULT_INPUT_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
+DEFAULT_INPUT_DIR="$PETIGA_DIR/projects/dry_snow_metamorphism/inputs"
 INPUT_DIR="${INPUT_DIR:-$DEFAULT_INPUT_DIR}"
 
 # --- Lightweight CLI parsing / overrides ---
