@@ -111,7 +111,12 @@ hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 
 # Title and settings path
 ndays=$(awk "BEGIN{printf \"%d\", $t_final/86400}")
-title="DSM${clean_name}_${dim}D_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d_"
+phi_tag=$(awk -v phi="$phi" 'BEGIN{printf "phi%.2f", phi}')
+Lx_tag=$(awk -v v="$Lx" 'BEGIN{printf "Lx%.0fmm", v*1000}')
+Ly_tag=$(awk -v v="$Ly" 'BEGIN{printf "Ly%.0fmm", v*1000}')
+temp_tag=$(printf "Tm%d" "$(printf "%.0f" "$temp")")
+
+title="DSM_phi${phi_tag}_Lx${Lx_tag}_Ly${Ly_tag}_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d"
 
 # Resolve settings file adjacent to inputFile (prefer grains.env, then basename.env)
 env_dir="$(dirname "$inputFile")"
