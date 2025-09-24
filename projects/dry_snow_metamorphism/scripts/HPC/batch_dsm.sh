@@ -57,7 +57,7 @@ if [[ -z "${INPUT_DIR:-}" || ! -d "$INPUT_DIR" ]]; then
 fi
 
 # --- Sweep settings ---
-temperatures=(-24)
+temperatures=(-20 -25 -30 -35 -40)
 humidities=(0.98)
 
 # --- Paths ---
@@ -72,7 +72,7 @@ CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 
 shopt -s nullglob globstar
 # Recursively find any grains.dat under INPUT_DIR
-dat_files=("$INPUT_DIR"/grains__phi=*__Lxmm=2__Lymm=2__seed=*/grains.dat)
+dat_files=("$INPUT_DIR"/grains__phi=*__Lxmm=2__Lymm=2__seed=21/grains.dat)
 shopt -u globstar nullglob
 
 if [ ${#dat_files[@]} -eq 0 ]; then
