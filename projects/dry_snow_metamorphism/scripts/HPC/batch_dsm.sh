@@ -57,7 +57,7 @@ if [[ -z "${INPUT_DIR:-}" || ! -d "$INPUT_DIR" ]]; then
 fi
 
 # --- Sweep settings ---
-temperatures=(-25)
+temperatures=(-24)
 humidities=(0.98)
 
 # --- Paths ---
@@ -65,9 +65,9 @@ RUN_SCRIPT="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs"
 
 # --- Resource tuning knobs (override by exporting before running) ---
-: "${MIN_TASKS_PER_NODE:=35}"       # lower bound for cores/node
-: "${MAX_TASKS_PER_NODE:=50}"       # upper bound for cores/node
-: "${TASKS_PER_NODE_DEFAULT:=40}"   # preferred packing per node (will be clamped to [MIN,MAX])
+: "${MIN_TASKS_PER_NODE:=28}"       # lower bound for cores/node
+: "${MAX_TASKS_PER_NODE:=32}"       # upper bound for cores/node
+: "${TASKS_PER_NODE_DEFAULT:=32}"   # preferred packing per node (will be clamped to [MIN,MAX])
 : "${MEM_PER_CPU_DEFAULT:=1G}"      # memory request per CPU
 
 shopt -s nullglob globstar
@@ -114,7 +114,7 @@ for dat_file in "${dat_files[@]}"; do
     # Target total cores so that elements/core ~ 10,000 with 3 fields:
     #   target_cores = ceil( 3*Nx*Ny / 10000 )
     target_cores=$(awk -v Nx="$Nx" -v Ny="$Ny" 'BEGIN{
-      v=3*Nx*Ny/10000.0; 
+      v=3*Nx*Ny/14000.0; 
       if (v<1) v=1;
       print (v==int(v)?v:int(v)+1)
     }')
@@ -191,7 +191,7 @@ for dat_file in "${dat_files[@]}"; do
   echo "   Ny = ${Ny:-unset}"
   echo "   Nz = ${Nz:-unset}"
   echo
-  echo " Resource plan (targets ~10k pts/core, 35–50 cores/node):"
+  echo " Resource plan (targets ~14k pts/core, 35–50 cores/node):"
   echo "   target_cores = ${target_cores:-unknown}"
   echo "   NODES        = ${NODES}"
   echo "   TASKS/Node   = ${TASKS_PER_NODE}  (band: ${MIN_TASKS_PER_NODE}-${MAX_TASKS_PER_NODE})"
@@ -223,6 +223,9 @@ for dat_file in "${dat_files[@]}"; do
       [[ -z "$Ly_tag"  ]] && Ly_tag="NA"
       [[ -z "$seed_tag" ]] && seed_tag="NA"
       job_base="DSM_phi${phi_tag}_Lx${Lx_tag}_Ly${Ly_tag}_seed${seed_tag}_Tm${temp_tag}_hum${hum_tag}"
+
+      # Define okay architectures if not already set
+      : "${ARCH_OK:='icelake|skylake|cascadelake&!cascadelake_lowmem'}"
 
       echo "Submitting job for file: $basename, T=${temp_tag}C, RH=${hum_tag}%"
       sbatch --job-name="$job_base" \
