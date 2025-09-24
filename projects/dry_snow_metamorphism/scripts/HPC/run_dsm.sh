@@ -322,7 +322,7 @@ fi
 # =======================================
 echo
 echo "[INFO] Simulation completed successfully."
-cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py "$folder" || true
+cp -r src scripts/studio/run_dsm.sh postprocess/plotDSM.py postprocess/plotSSA.py postprocess/plotPorosity.py scripts/run_plotDSM.sh "$folder" || true
 
 # Run SSA plotting on a single core
 if [[ -f "$BASE_DIR/postprocess/plotSSA.py" ]]; then
