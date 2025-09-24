@@ -12,7 +12,8 @@
 #SBATCH --mem-per-cpu=1G
 #SBATCH --mail-user=jbaglino@caltech.edu
 #SBATCH --mail-type=END,FAIL,TIME_LIMIT
-#SBATCH --constraint=skylake
+#SBATCH --constraint='icelake|skylake|cascadelake'
+
 
 ###############################################################################
 # Script: run_dsm.sh (HPC)
