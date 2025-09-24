@@ -589,6 +589,12 @@ PetscErrorCode SetupIGA(AppCtx *user, IGA *iga) {
       ierr = IGAAxisInitUniform(axisZ, user->Nz, 0.0, user->Lz, user->C); CHKERRQ(ierr);
   }
 
+  /* Prefer AIJ storage so algebraic multigrid can be used.
+     Users can still override with -iga_mat_type & -mat_type at runtime. */
+#if defined(MATAIJ)
+    ierr = IGASetMatType(*iga, MATAIJ); CHKERRQ(ierr);
+#endif
+
   /* Finalize IGA setup */
   ierr = IGASetFromOptions(*iga); CHKERRQ(ierr);
   ierr = IGASetUp(*iga); CHKERRQ(ierr);
@@ -714,6 +720,17 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   ierr = IGASetFormSystem(iga, AssembleStiffnessMatrix, user); CHKERRQ(ierr);
   ierr = IGAComputeSystem(iga, A, b); CHKERRQ(ierr);
 
+  /* Ensure matrix is AIJ so AMG (GAMG/HYPRE) can build a graph.
+     GAMG/HYPRE do not support creategraph on BAIJ in PETSc 3.20 */
+  {
+    PetscBool isSeqBAIJ = PETSC_FALSE, isMPIBAIJ = PETSC_FALSE;
+    ierr = PetscObjectTypeCompare((PetscObject)A, MATSEQBAIJ, &isSeqBAIJ); CHKERRQ(ierr);
+    ierr = PetscObjectTypeCompare((PetscObject)A, MATMPIBAIJ, &isMPIBAIJ); CHKERRQ(ierr);
+    if (isSeqBAIJ || isMPIBAIJ) {
+      ierr = MatConvert(A, MATAIJ, MAT_INPLACE_MATRIX, &A); CHKERRQ(ierr);
+    }
+  }
+
   /* ---------- constant-mode null-space (one per component) ---------- */
   {
     PetscInt rows;
@@ -752,33 +769,33 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   ierr = ComputeInitialCondition(user->T_sol, user); CHKERRQ(ierr);
   // VecZeroEntries(user->T_sol);
 
-  // Solve the linear system using KSP
+  // Solve the linear system using KSP (default: iterative + AMG)
   ierr = IGACreateKSP(iga, &ksp); CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp, A, A); CHKERRQ(ierr);
 
-  // Configure preconditioner
+  // For Laplacian-like operators, the matrix is symmetric positive definite.
+  // Hint PETSc so CG is valid and efficient; users can still override via -ksp_type.
+  ierr = MatSetOption(A, MAT_SYMMETRIC, PETSC_TRUE); CHKERRQ(ierr);
+
+  // Choose a fast Krylov method and AMG preconditioner by default.
+  ierr = KSPSetType(ksp, KSPCG); CHKERRQ(ierr);
   ierr = KSPGetPC(ksp, &pc); CHKERRQ(ierr);
-  ierr = PCSetType(pc, PCLU); CHKERRQ(ierr); // Use LU preconditioner
+#if defined(PETSC_HAVE_HYPRE)
+  ierr = PCSetType(pc, PCHYPRE); CHKERRQ(ierr);
+  ierr = PCHYPRESetType(pc, "boomeramg"); CHKERRQ(ierr);
+#else
+  ierr = PCSetType(pc, PCGAMG); CHKERRQ(ierr);
+#endif
 
-  #if defined(PETSC_HAVE_MUMPS)
-    if (size > 1) PetscCall(PCFactorSetMatSolverType(pc, MATSOLVERMUMPS));
-  #endif
-
-  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-  // Set solver tolerances
-  ierr = KSPSetTolerances(ksp, PETSC_SMALL, PETSC_SMALL, PETSC_DEFAULT, 4000); CHKERRQ(ierr); // rtol, abstol, dtol, maxits
+  // Reasonable default tolerances (looser than PETSC_SMALL for speed)
+  ierr = KSPSetTolerances(ksp, 1e-9, PETSC_SMALL, PETSC_DEFAULT, 200); CHKERRQ(ierr);
   ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE); CHKERRQ(ierr);
 
-  // Start timing
-  PetscLogDouble t1, t2;
-  ierr = PetscTime(&t1); CHKERRQ(ierr);
+  // Allow full control from the command line if desired (overrides the above)
+  ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
 
   // Solve the system
   ierr = KSPSolve(ksp, b, user->T_sol); CHKERRQ(ierr);
-
-  // End timing
-  ierr = PetscTime(&t2); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD, "KSP solve completed in %.2f seconds.\n\n", t2 - t1);
 
   /* ----- enforce zero–mean per component ----- */
   {
@@ -878,7 +895,14 @@ PetscErrorCode WriteIceFieldToFile(const char *filename, AppCtx *user) {
         indGP = point->index + point->count * point->parent->index;
 
         ice_val = user->ice[indGP];
-        fprintf(file, "%g %g %g %g\n", point->mapX[0][0], point->mapX[0][1], point->mapX[0][2], ice_val);
+        // fprintf(file, "%g %g %g %g\n", point->mapX[0][0], point->mapX[0][1], point->mapX[0][2], ice_val);
+        if (user->dim == 2) {
+          fprintf(file, "%g %g %g\n",
+                  point->mapX[0][0], point->mapX[0][1], ice_val);
+        } else { // dim == 3
+          fprintf(file, "%g %g %g %g\n",
+                  point->mapX[0][0], point->mapX[0][1], point->mapX[0][2], ice_val);
+        }
 
         if (point->atboundary) {
           PetscPrintf(PETSC_COMM_WORLD, "Warning: Gauss point %d is at the boundary!\n", indGP);
@@ -1048,8 +1072,9 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
 
   // Set up timer
-  PetscLogDouble t_start, t_1, t_end;
+  PetscLogDouble t_start, t_1, t_2, t_end;
   ierr = PetscTime(&t_start); CHKERRQ(ierr);
+
 
   /* ------------------ Set options ------------------ */
   PetscBool print_error = PETSC_TRUE;
@@ -1080,6 +1105,7 @@ int main(int argc, char *argv[]) {
   // Check if sol_indx > 0
   PetscPrintf(PETSC_COMM_WORLD, "SOL_INDEX = %d\n\n", user.sol_index);
   if (user.sol_index > 0) {
+    ierr = PetscTime(&t_1); CHKERRQ(ierr);
     /* ------------------ Define user context ------------------ */
     InitializeUserContext(&user);
     PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity ice = %g W/m·K\n", user.thcond_ice);
@@ -1105,8 +1131,8 @@ int main(int argc, char *argv[]) {
     /* ------------------ Set Up KSP Solver ------------------ */
     // Creat KSP solver
     ierr = SetupAndSolve(&user, iga); CHKERRQ(ierr);
-    PetscTime(&t_1); // Record time after solving
-    PetscPrintf(PETSC_COMM_WORLD, "KSP solve completed in %.2f seconds.\n\n", t_1 - t_start);
+    PetscTime(&t_2); // Record time after solving
+    PetscPrintf(PETSC_COMM_WORLD, "KSP solve completed in %.2f seconds.\n\n", t_2 - t_1);
 
     /* ------------------ Compute Effective Thermal Conductivity ------------------ */
     ierr = ComputeKeffective(iga, user.T_sol, keff, &user); CHKERRQ(ierr);
@@ -1145,6 +1171,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscFree(user.ice); CHKERRQ(ierr);
   } else {
     PetscPrintf(PETSC_COMM_WORLD, "SOL_INDEX < 0. Looping over entire solution folder.\n");
+    ierr = PetscTime(&t_start); CHKERRQ(ierr);
 
     // Open the directory
     DIR *dir;
@@ -1194,7 +1221,11 @@ int main(int argc, char *argv[]) {
     ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
     user.iga = iga;
 
-    PetscInt num_files_analyze = 40;
+    PetscInt num_files_analyze = 100;
+    if (num_files < num_files_analyze) {
+      num_files_analyze = num_files;
+    }
+    PetscPrintf(PETSC_COMM_WORLD, "Analyzing %d files evenly spaced from the %d available files.\n\n", num_files_analyze, num_files);
 
     // Create a list of indices from 0 to num_files-1, evenly spaced with num_files_analyze entries
     PetscInt analyze_indices[num_files_analyze];
@@ -1205,8 +1236,10 @@ int main(int argc, char *argv[]) {
 
     for (PetscInt i = 0; i < num_files_analyze; i++)
     {
+      // Start timing for this file
+      ierr = PetscTime(&t_1); CHKERRQ(ierr);
+
       // Update sol_index
-    //   user.sol_index = file_indices[i];
       user.sol_index = analyze_indices[i];
 
       PetscPrintf(PETSC_COMM_WORLD, "Processing sol_index = %05d\n\n", user.sol_index);
@@ -1254,6 +1287,10 @@ int main(int argc, char *argv[]) {
 
         PetscPrintf(PETSC_COMM_WORLD, "Wrote output files.\n\n");
       }
+
+      // Determine amount of time elapsed to process this file
+      PetscTime(&t_2);
+      PetscPrintf(PETSC_COMM_WORLD, "Time to process sol_index = %05d: %.2f seconds\n\n", user.sol_index, t_2 - t_1);
 
     } // End of for loop
 

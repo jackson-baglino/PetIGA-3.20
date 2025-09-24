@@ -180,6 +180,14 @@ else
   fi
 fi
 
+# Copy SSA_eva.dat from input directory to output directory if it exists
+if [[ -f "$INIT_DIR/SSA_eva.dat" ]]; then
+  cp "$INIT_DIR/SSA_eva.dat" "$OUTPUT_DIR/"
+  echo "[Collect] Copied SSA_eva.dat to output directory."
+else
+  echo "[Collect] SSA_eva.dat not found in INIT_DIR; skipping copy."
+fi
+
 # Total runtime reporting
 __t1__=$(date +%s)
 echo "[Done] Completed in $(( __t1__ - __t0__ )) s"
