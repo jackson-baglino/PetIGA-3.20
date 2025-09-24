@@ -1,316 +1,185 @@
-#!/bin/zsh
-###############################################################################
-# Script: run_effective_k_ice_homog.sh
-# Purpose:
-#   Compile and run the homogeneous effective thermal conductivity simulation
-#   (PetIGA/PETSc), collect outputs, and run a quick post-processing plot.
+#!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# run_effective_k_ice_homog.sh
 #
-# Usage:
-#   ./run_effective_k_ice_homog.sh \
-#       [with environment variables exported beforehand as needed]
+# Goal: Keep this script as simple as possible. The batch script discovers
+#       directories and exports env vars (Nx, Ny, Nz, Lx, Ly, Lz, eps, INIT_DIR).
+#       This script:
+#         0) validates inputs,
+#         1) compiles (minimal),
+#         2) runs the simulation,
+#         3) collects outputs,
+#         4) runs post-processing (optional).
 #
-# Key env vars (export before running or load via .env):
-#   Nx, Ny, Nz           Grid resolution
-#   Lx, Ly, Lz           Domain sizes (m)
-#   eps                  Interface width
-#   dim                  2 for 2D, 3 for 3D (defaults to 2 if unset)
-#   TEMP_TOP             Prescribed top temperature (K)
-#   FLUX_BOTTOM          Prescribed bottom heat flux (W/m^2)
-#   INIT_MODE            "circle" | "layered" | "FILE"
-#   INIT_DIR             Directory containing initial condition files (.dat) and a .env
-#   ENV_FILE             Explicit path to a .env to source (overrides INIT_DIR search)
-#   NUM_PROCS            MPI ranks (default: 1)
-#
-# Outputs:
-#   Creates a timestamped folder under outputs/homog/ and moves *.dat, *.bin,
-#   *.info, *.csv there. Then runs postprocess/plot_vector_field.py.
-#
-# Notes:
-#   - This script intentionally avoids set -euo pipefail and heavy tracing.
-#   - For INIT_MODE=FILE, either INIT_DIR must point to a directory containing
-#     a single .env OR ENV_FILE must be provided explicitly.
-###############################################################################
-###############################################################################
-# run_effective_k_ice_full.sh
-#
-# • No verbose tracing, no pipefail, no trap on every error
-# • Compiles with *release* flags (BUILD=release)
-# • Runs without PETSc debug monitors
-# • Still honours the same environment variables / paths
-###############################################################################
+# Assumptions:
+#   - Called as: ./scripts/run_effective_k_ice_homog.sh <init_dir>
+#   - The caller (batch script) has already exported: Nx Ny Nz Lx Ly Lz eps
+#   - Optional env with defaults here: dim (2), NUM_PROCS (1),
+#     TEMP_TOP (273.15-30), FLUX_BOTTOM (-0.1)
+#   - Global dry run: set DRY_RUN=1 to print Steps 2–5 and exit without changes.
+# -----------------------------------------------------------------------------
 
-start_time=$(date +%s)  # seconds since epoch
+# Record start time for total runtime reporting
+__t0__=$(date +%s)
 
-# ----------------------------
-# 🔹  Simulation parameters
-# ----------------------------
-export Nx=571
-export Ny=571
-export Nz=1          # 1 for 2-D
+# Bash safety + predictable word splitting/globbing
+set -euo pipefail
+IFS=$'\n\t'
+shopt -s nullglob
 
-# export Nx=134
-# export Ny=214
+# --- Step 0: Resolve arguments and minimal defaults --------------------------
+if [[ $# -lt 1 ]]; then
+  echo "Usage: $0 <INIT_DIR>"
+  exit 1
+fi
 
-export Lx=1.00e-03
-export Ly=1.00e-03
-export Lz=1.00e-03    # ignored when dim=2
+INIT_DIR="$1"   # directory with initial condition files / metadata
+if [[ ! -d "$INIT_DIR" ]]; then
+  echo "ERROR: INIT_DIR is not a directory: $INIT_DIR"
+  exit 1
+fi
 
-FLUX_BOTTOM=-0.1
-TEMP_TOP=$((273.15-30))
+# Optional knobs (kept here, not in the batch script)
+: "${dim:=2}"                  # 2D by default
+: "${NUM_PROCS:=1}"            # single-rank default
+: "${TEMP_TOP:=$(awk 'BEGIN{print 273.15-30}')}"; # top BC (K)
+: "${FLUX_BOTTOM:=-0.1}"  # bottom BC (W/m^2)
+: "${OUTPUT_BINARY:=1}"      # whether to output binary files (0/1)
+: "${SOL_INDEX:=0}"        # which solid phase to use (0-based index, default 0)
 
-export eps=$((9.09629658751972e-07))
-export dim=2         # 2 = 2-D, 3 = 3-D
+# Resolve the output directory early so the solver can read it via getenv()
+OUT_ROOT="${OUT_ROOT:-/Users/jacksonbaglino/SimulationResults/effective_thermal_cond/scratch}"
+base="$(basename "$INIT_DIR")"
+OUTPUT_DIR="$OUT_ROOT/${base}"
+export OUT_ROOT OUTPUT_DIR
 
-# Initial ice-field mode: "circle" | "layered" | /path/to/file.dat
-# INIT_MODE="circle"
-# INIT_MODE="layered"
-# INIT_MODE="FILE"
-# INIT_DIR="/Users/jacksonbaglino/PetIGA-3.20/projects/effective_thermal_cond/inputs/"\
-# "NASAv2_96G-2D_T-20.0_hum0.70_2025-05-31__18.55.56"
-# INIT_DIR="/Users/jacksonbaglino/SimulationResults/dry_snow_metamorphism/scratch/DSM2G_Molaro_0p25R1_2D_Tm12_hum5_tf0d__2025-08-07__18.59.47"
+# --- Step 1: Validate required env set by the batch script -------------------
+missing=()
+for v in Nx Ny Nz Lx Ly Lz eps; do
+  if [[ -z "${!v:-}" ]]; then missing+=("$v"); fi
+done
+if (( ${#missing[@]} > 0 )); then
+  echo "ERROR: missing required environment variable(s): ${missing[*]}"
+  echo "Hint: ensure the batch script sourced grains.env and exported these."
+  exit 1
+fi
 
-# Prefer JSON parameters from a DSM run directory if available
-METADATA_JSON="$INIT_DIR/metadata.json"
-
-if [[ ! -f "$METADATA_JSON" ]]; then
-# Locate and source .env file (portable across bash/zsh)
-# Priority:
-#  1) If ENV_FILE is set, use it directly
-#  2) Else if INIT_MODE=="FILE" and INIT_DIR is set, search for a single .env in INIT_DIR
-#  3) Else, if INIT_MODE=="FILE" but neither ENV_FILE nor INIT_DIR is provided, fail with guidance
-
-if [[ -n "$ENV_FILE" ]]; then
-    echo "✅ Using env file (explicit): $ENV_FILE"
-elif [[ "$INIT_MODE" == "FILE" ]]; then
-    if [[ -z "$INIT_DIR" ]]; then
-        echo "❌ INIT_MODE is 'FILE' but neither ENV_FILE nor INIT_DIR is set."
-        echo "   Provide ENV_FILE=/path/to/.env or INIT_DIR=/path/to/dir containing a single .env."
-        exit 1
-    fi
-    if [[ ! -d "$INIT_DIR" ]]; then
-        echo "❌ INIT_DIR is not a directory: $INIT_DIR"
-        exit 1
-    fi
-    echo "🔎 Searching for .env in: $INIT_DIR"
-    env_files=( $(find "$INIT_DIR" -maxdepth 1 -type f -name '*.env' 2>/dev/null) )
-    env_count=${#env_files[@]}
-    if [[ -z "$env_count" || "$env_count" -eq 0 ]]; then
-        echo "❌ No .env file found in $INIT_DIR"
-        exit 1
-    elif [[ "$env_count" -gt 1 ]]; then
-        echo "❌ Multiple .env files found in $INIT_DIR:";
-        for f in "${env_files[@]}"; do echo "  $f"; done
-        echo "   Set ENV_FILE=/path/to.env to choose one."
-        exit 1
-    else
-        ENV_FILE="${env_files[1]}"
-        echo "✅ Using env file (discovered): $ENV_FILE"
-    fi
+# Compact summary (safe under -u because we just validated)
+echo "=== Effective k (homog) – run configuration ==="
+echo "INIT_DIR     : $INIT_DIR"
+if (( dim == 2 )); then
+  echo "Grid         : Nx=$Nx, Ny=$Ny (dim=$dim)"
+  echo "Domain (m)   : Lx=$Lx, Ly=$Ly, eps=$eps"
 else
-    echo "ℹ️  No ENV_FILE provided and INIT_MODE != 'FILE'. Proceeding without sourcing .env."
+  echo "Grid         : Nx=$Nx, Ny=$Ny, Nz=$Nz (dim=$dim)"
+  echo "Domain (m)   : Lx=$Lx, Ly=$Ly, Lz=$Lz, eps=$eps"
+fi
+echo "BCs / Params : TEMP_TOP=$TEMP_TOP, FLUX_BOTTOM=$FLUX_BOTTOM"
+echo "MPI          : NUM_PROCS=$NUM_PROCS"
+
+# -----------------------------------------------------------------------------
+# Global dry-run: print intended actions for Steps 2–5 and exit.
+#   - Set DRY_RUN=1 in environment to enable.
+# -----------------------------------------------------------------------------
+if [[ "${DRY_RUN:-0}" == "1" ]]; then
+  echo "[DRY-RUN] Build : make BUILD=release effective_k_ice_homog"
+
+  if (( NUM_PROCS > 1 )); then
+    echo "[DRY-RUN] Run   : mpiexec -np \"$NUM_PROCS\" ./effective_k_ice_homog -init_dir \"$INIT_DIR\""
+  else
+    echo "[DRY-RUN] Run   : ./effective_k_ice_homog -init_dir \"$INIT_DIR\""
+  fi
+
+  echo "[DRY-RUN] Collect -> $OUTPUT_DIR (move: *.dat *.bin *.info *.csv)"
+
+  POST_SCRIPT="${POST_SCRIPT:-postprocess/plot_vector_field.py}"
+  echo "[DRY-RUN] Post  : python3 \"$POST_SCRIPT\" \"$OUTPUT_DIR\" \"$Nx\" \"$Ny\" \"$Lx\" \"$Ly\""
+
+  exit 0
 fi
 
-# If an env file was resolved, source it
-if [[ -n "$ENV_FILE" ]]; then
-    if [[ ! -f "$ENV_FILE" ]]; then
-        echo "❌ .env file not found: $ENV_FILE"
-        exit 1
-    fi
-    source "$ENV_FILE"
-fi
-fi
-
-# If metadata.json is present, read parameters from it (preferred)
-if [[ -f "$METADATA_JSON" ]]; then
-    echo "🧾 Using parameters from: $METADATA_JSON"
-
-    json_get() {
-        # Usage: json_get dotted.key.path
-        python3 - "$METADATA_JSON" "$1" <<'PY'
-import json,sys
-path = sys.argv[2].split('.')
-with open(sys.argv[1]) as f:
-    d = json.load(f)
-for p in path:
-    d = d[p]
-# Print scalar as-is; for safety cast to str
-print(d)
-PY
-    }
-
-    # Populate variables only if they are not already set in the environment
-    : ${dim:=$(json_get sim_dimension)}
-    : ${Nx:=$(json_get mesh_resolution.Nx)}
-    : ${Ny:=$(json_get mesh_resolution.Ny)}
-    : ${Nz:=$(json_get mesh_resolution.Nz)}
-    : ${Lx:=$(json_get domain_size_m.Lx)}
-    : ${Ly:=$(json_get domain_size_m.Ly)}
-    : ${Lz:=$(json_get domain_size_m.Lz)}
-    : ${eps:=$(json_get interface_width_eps)}
-fi
-
-# Set dim default if not provided anywhere
-if [[ -z "$dim" ]]; then
-    dim=2
-fi
-
-# Export variables for simulation
-export Nx
-export Ny
-export Nz
-export Lx
-export Ly
-export Lz
-export eps
-export TEMP_TOP
-export FLUX_BOTTOM
-export dim
-
-# Extract or synthesize base folder name for outputs
-if [[ -n "$INIT_DIR" ]]; then
-    base_folder=$(basename "$INIT_DIR")
+# -----------------------------------------------------------------------------
+# Step 2: Compile (minimal)
+#   - Uses Makefile target `effective_k_ice_homog` with BUILD=release.
+#   - `make` is incremental; it will skip if everything is up-to-date.
+#   - Set NO_BUILD=1 to skip compilation (useful for quick re-runs).
+# -----------------------------------------------------------------------------
+if [[ "${NO_BUILD:-0}" != "1" ]]; then
+  echo "[Build] make BUILD=release effective_k_ice_homog"
+  make BUILD=release effective_k_ice_homog
 else
-    # Build a seed-free, reproducible-ish name for procedural modes
-    ts=$(date +%Y%m%dT%H%M%S)
-    Lx_mm=$(python3 - <<'PY'
-import sys
-try:
-    v=float(sys.argv[1]); print(f"{v*1e3:g}")
-except Exception:
-    print("NA")
-PY
-"$Lx")
-    Ly_mm=$(python3 - <<'PY'
-import sys
-try:
-    v=float(sys.argv[1]); print(f"{v*1e3:g}")
-except Exception:
-    print("NA")
-PY
-"$Ly")
-    mode_tag=${INIT_MODE:-unknown}
-    base_folder="homog_${mode_tag}__Lxmm=${Lx_mm}__Lymm=${Ly_mm}__dim=${dim}__${ts}"
+  echo "[Build] Skipping compilation because NO_BUILD=1"
 fi
 
-# Resolve which sol_XXXXX.dat to load; prefer requested SOL_INDEX, else auto-detect
-resolve_sol_index() {
-    # If INIT_DIR is set, try to locate sol_*.dat files
-    if [[ -n "${INIT_DIR:-}" && -d "$INIT_DIR" ]]; then
-        # If SOL_INDEX is set, verify the file exists; otherwise try common fallbacks
-        if [[ -n "${SOL_INDEX:-}" ]]; then
-            local try="$INIT_DIR/sol_$(printf '%05d' "$SOL_INDEX").dat"
-            if [[ -f "$try" ]]; then
-                echo "✅ Using SOL_INDEX=$SOL_INDEX ($try)"
-                return 0
-            fi
-            echo "⚠️  Requested SOL_INDEX=$SOL_INDEX not found at $try; attempting auto-detect…"
-        fi
-        # Try 00000 then 00001, then pick the smallest available index
-        if [[ -f "$INIT_DIR/sol_00000.dat" ]]; then
-            export SOL_INDEX=0; echo "✅ Auto-detected SOL_INDEX=0"; return 0
-        fi
-        if [[ -f "$INIT_DIR/sol_00001.dat" ]]; then
-            export SOL_INDEX=1; echo "✅ Auto-detected SOL_INDEX=1"; return 0
-        fi
-        # General scan for sol_*.dat; choose the lowest index present
-        local first
-        first=$(ls "$INIT_DIR"/sol_*.dat 2>/dev/null | sed -E 's#.*/sol_([0-9]{5})\.dat#\1#' | sort | head -n1 || true)
-        if [[ -n "$first" ]]; then
-            export SOL_INDEX=$((10#$first))
-            echo "✅ Auto-detected SOL_INDEX=$SOL_INDEX"
-            return 0
-        fi
-        echo "❌ No sol_XXXXX.dat files found in $INIT_DIR" >&2
-        return 1
-    fi
-    return 0
-}
+# -----------------------------------------------------------------------------
+# Step 3: Run the simulation (minimal)
+#   - Use mpiexec only if NUM_PROCS > 1.
+#   - Pass only the minimal flag: the INIT_DIR we were given.
+#   - Set NO_RUN=1 to skip execution (useful for testing builds).
+# -----------------------------------------------------------------------------
+# Finish exporting any remaining env vars needed.
+export INIT_DIR dim TEMP_TOP FLUX_BOTTOM NUM_PROCS OUTPUT_BINARY SOL_INDEX OUTPUT_DIR
 
-# If INIT_DIR is provided, default INIT_MODE to FILE unless already set
-if [[ -n "${INIT_DIR:-}" && -z "${INIT_MODE:-}" ]]; then
-    INIT_MODE="FILE"
-fi
+# Ensure output directory exists (solver won't create it)
+# Ensure the output root exists (OUTPUT_DIR was computed earlier)
+mkdir -p "${OUT_ROOT}"
 
-# If we are in FILE mode, resolve the solution index to avoid missing-file errors
-if [[ "${INIT_MODE:-}" == "FILE" ]]; then
-    resolve_sol_index || true
-fi
-
-grains=2
-dims=2
-temp=-20.0
-hum=1.00
-
-OUT_ROOT="/Users/jacksonbaglino/SimulationResults/effective_thermal_cond/scratch"
-
-echo "✅ Output root: $OUT_ROOT"
-
-echo "Loaded parameters from .env:"
-echo "  dim=$dim, Nx=$Nx, Ny=$Ny, Nz=$Nz, Lx=$Lx, Ly=$Ly, Lz=$Lz, eps=$eps, TEMP_TOP=$TEMP_TOP"
-
-# Output flags
-export OUTPUT_VTK=1
-export OUTPUT_BINARY=1
-
-export OUTPUT_DIR="$OUT_ROOT/${base_folder}"
 mkdir -p "$OUTPUT_DIR"
 
-# MPI ranks (override by exporting NUM_PROCS beforehand)
-NUM_PROCS=${NUM_PROCS:-1}
-# NUM_PROCS=4
+if [[ "${NO_RUN:-0}" == "1" ]]; then
+  echo "[Run] Skipping execution because NO_RUN=1"
+else
+  # Ensure the binary exists before trying to run it.
+  if [[ ! -x ./effective_k_ice_homog ]]; then
+    echo "ERROR: ./effective_k_ice_homog not found (or not executable). Did the build succeed?"
+    exit 1
+  fi
 
-# ----------------------------
-# 🔹  Helpers
-# ----------------------------
-compile_code() {
-    echo "Compiling (release)…"
-    make BUILD=release effective_k_ice_homog
-}
+  echo "[Run] Launching simulation (NUM_PROCS=$NUM_PROCS)"
+  if (( NUM_PROCS > 1 )); then
+    mpiexec -np "$NUM_PROCS" ./effective_k_ice_homog -init_dir "$INIT_DIR"
+  else
+    ./effective_k_ice_homog -init_dir "$INIT_DIR"
+  fi
+fi
 
-run_simulation() {
-    echo " "
-    echo "Running with $NUM_PROCS MPI proc(s)…"
-    if [[ -n "${INIT_DIR:-}" ]]; then
-        if [[ -n "${INIT_MODE:-}" ]]; then
-            mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
-                -init_mode "$INIT_MODE" \
-                -init_dir "$INIT_DIR"
-        else
-            mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
-                -init_dir "$INIT_DIR"
-        fi
-    else
-        if [[ -n "${INIT_MODE:-}" ]]; then
-            mpiexec -np $NUM_PROCS ./effective_k_ice_homog \
-                -init_mode "$INIT_MODE"
-        else
-            mpiexec -np $NUM_PROCS ./effective_k_ice_homog
-        fi
-    fi
-}
+# -----------------------------------------------------------------------------
+# Step 4: Collect outputs to a simple OUTPUT_DIR
+#   - Predictable root (override with OUT_ROOT env if you like)
+#   - Folder name uses only the init-dir basename
+#   - Moves: *.dat *.bin *.info *.csv (if present)
+# -----------------------------------------------------------------------------
+echo "[Collect] Moving outputs to: $OUTPUT_DIR"
 
-collect_outputs() {
-    echo "📂 Moving output files to $OUTPUT_DIR"
-    mv *.dat  "$OUTPUT_DIR" 2>/dev/null
-    mv *.bin  "$OUTPUT_DIR" 2>/dev/null
-    mv *.info "$OUTPUT_DIR" 2>/dev/null
-    mv *.csv  "$OUTPUT_DIR" 2>/dev/null
-}
+# Collect matches and move only if non-empty.
+# - Arrays avoid word-splitting problems; `--` protects against leading '-' in filenames.
+dat=( *.dat );  (( ${#dat[@]}  ))  && mv -- "${dat[@]}"  "$OUTPUT_DIR"
+bin=( *.bin );  (( ${#bin[@]}  ))  && mv -- "${bin[@]}"  "$OUTPUT_DIR"
+inf=( *.info ); (( ${#inf[@]}  ))  && mv -- "${inf[@]}"  "$OUTPUT_DIR"
+csv=( *.csv );  (( ${#csv[@]}  ))  && mv -- "${csv[@]}"  "$OUTPUT_DIR"
 
-# ----------------------------
-# 🔹  Main
-# ----------------------------
-compile_code   || { echo "❌ compile failed"; exit 1; }
-run_simulation || { echo "❌ simulation failed"; exit 1; }
-collect_outputs
+echo "[Collect] Done. Output dir: $OUTPUT_DIR"
+echo "[Collect] Contents:"
+ls -lh "$OUTPUT_DIR" || true
 
-echo "📈 Post-processing…"
-python3 postprocess/plot_vector_field.py "$OUTPUT_DIR" "$Nx" "$Ny" "$Lx" "$Ly"
+# -----------------------------------------------------------------------------
+# Step 5: Post-process (optional)
+#   - Default script: postprocess/plot_vector_field.py
+#   - Args: OUTPUT_DIR, Nx, Ny, Lx, Ly (adjust to your script’s signature)
+#   - Set NO_POST=1 to skip. Set POST_SCRIPT to override the script path.
+# -----------------------------------------------------------------------------
+if [[ "${NO_POST:-0}" == "1" ]]; then
+  echo "[Post] Skipping post-processing because NO_POST=1"
+else
+  POST_SCRIPT="${POST_SCRIPT:-postprocess/plot_vector_field.py}"
+  if [[ -f "$POST_SCRIPT" ]]; then
+    echo "[Post] python3 \"$POST_SCRIPT\" \"$OUTPUT_DIR\" \"$Nx\" \"$Ny\" \"$Lx\" \"$Ly\""
+    python3 "$POST_SCRIPT" "$OUTPUT_DIR" "$Nx" "$Ny" "$Lx" "$Ly"
+  else
+    echo "[Post] WARNING: Post-process script not found: $POST_SCRIPT (skipping)"
+  fi
+fi
 
-echo "✅ Finished. Outputs in: $OUTPUT_DIR"
-
-end_time=$(date +%s)
-
-elapsed=$(( end_time - start_time ))
-
-echo "Simulation completed in $elapsed seconds."
+# Total runtime reporting
+__t1__=$(date +%s)
+echo "[Done] Completed in $(( __t1__ - __t0__ )) s"

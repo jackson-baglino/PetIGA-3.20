@@ -506,6 +506,8 @@ PetscErrorCode GetEnvironment(AppCtx *user) {
   const char *output_dir_str = getenv("OUTPUT_DIR");
   user->output_dir = output_dir_str;
 
+  PetscPrintf(PETSC_COMM_WORLD, "Output directory: %s\n", user->output_dir);
+
   if (temp_top_str) {
       user->T_top = strtod(temp_top_str, &endptr);
   } else {
@@ -712,10 +714,6 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   ierr = IGASetFormSystem(iga, AssembleStiffnessMatrix, user); CHKERRQ(ierr);
   ierr = IGAComputeSystem(iga, A, b); CHKERRQ(ierr);
 
-  /* Assemble system matrix and RHS vector */
-  ierr = IGASetFormSystem(iga, AssembleStiffnessMatrix, user); CHKERRQ(ierr);
-  ierr = IGAComputeSystem(iga, A, b); CHKERRQ(ierr);
-
   /* ---------- constant-mode null-space (one per component) ---------- */
   {
     PetscInt rows;
@@ -767,14 +765,20 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
   #endif
 
   ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
-
   // Set solver tolerances
   ierr = KSPSetTolerances(ksp, PETSC_SMALL, PETSC_SMALL, PETSC_DEFAULT, 4000); CHKERRQ(ierr); // rtol, abstol, dtol, maxits
   ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE); CHKERRQ(ierr);
 
+  // Start timing
+  PetscLogDouble t1, t2;
+  ierr = PetscTime(&t1); CHKERRQ(ierr);
+
   // Solve the system
   ierr = KSPSolve(ksp, b, user->T_sol); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD, "KSP solve complete.\n\n");
+
+  // End timing
+  ierr = PetscTime(&t2); CHKERRQ(ierr);
+  PetscPrintf(PETSC_COMM_WORLD, "KSP solve completed in %.2f seconds.\n\n", t2 - t1);
 
   /* ----- enforce zero–mean per component ----- */
   {

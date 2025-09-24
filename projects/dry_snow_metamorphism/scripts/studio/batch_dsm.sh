@@ -28,7 +28,7 @@ RUN_SCRIPT="$BASE_DIR/scripts/studio/run_dsm.sh"
 # Sweeps (edit as needed)
 # ==========================
 # Temperatures (°C)
-temps=( -25 )
+temps=( -20 -30 -35 -40 )
 humidities=( 0.98 )
 grad_xs=( 0.0 )
 grad_ys=( 3.0e-6 )
@@ -42,7 +42,7 @@ grad_zs=( 0.0 )
 # Discover grain directories
 # ==========================
 # Default pattern picks seed-stable names like grains__phi=...__Lxmm=...__seed=...
-pattern="$INPUT_ROOT/grains__*__Lxmm=2__Lymm=2__*"
+pattern="$INPUT_ROOT/grains__phi=0.24__Lxmm=2__Lymm=2__seed=21"
 # (N) => null glob (no error if empty), (/) => only directories
 grain_dirs=( $~pattern(N/) )
 

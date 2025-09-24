@@ -20,16 +20,16 @@ Adjust the parameters below (folder_path, plotting options) as needed.
 """
 
 # --- Parameters ---
-folder_path = '/Users/jacksonbaglino/SimulationResults/effective_thermal_cond/scratch/grains_2D_Tm-15_hum95_tf28d__2025-09-16__09.34.10'
+folder_path = '/Users/jacksonbaglino/SimulationResults/effective_thermal_cond/scratch/DSMgrains_2D_Tm-25_hum98_tf28d__2025-09-19__13.22.58'
 ssa_file = os.path.join(folder_path, 'SSA_evo.dat')
 k_eff_file = os.path.join(folder_path, 'k_eff.csv')  # CSV file with header
 
 # --- Plotting Options ---
 use_scatter_for_ssa = True    # Set True for scatter plots, False for line plots
-scatter_step = 1             # Plot every Nth point if using scatter
+scatter_step = 2             # Plot every Nth point if using scatter
 save_figures = True           # Save figures to disk
 dpi = 600                     # DPI for saved figures
-normalize_values = False       # If True, normalize SSA and k_eff by initial values
+normalize_values = True       # If True, normalize SSA and k_eff by initial values
 
 # --- Output Directory Setup ---
 parent_folder_name = os.path.basename(os.path.normpath(folder_path))

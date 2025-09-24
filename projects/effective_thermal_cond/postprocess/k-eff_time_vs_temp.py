@@ -3,11 +3,13 @@ import re
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import json
 from scipy.interpolate import interp1d
+import numbers
 
 # --- Parameters ---
 parent_dir = os.path.expanduser('/Users/jacksonbaglino/SimulationResults/effective_thermal_cond/scratch')
-folder_pattern = r'^grains_2D_Tm([+-]?\d+(?:\.\d+)?)_hum\d+_tf[^_]+__\d{4}-\d{2}-\d{2}__\d{2}\.\d{2}(?:\.\d{2})?$'
+folder_pattern = r'^DSMgrains_2D_Tm([+-]?\d+(?:\.\d+)?)_hum98_tf28d__\d{4}-\d{2}-\d{2}__\d{2}\.\d{2}\.\d{2}$'
 save_figures = True   # If True, save plots to disk; if False, show plots interactively
 dpi = 600             # DPI for saved figures
 normalize_values = True   # Plot relative quantities: normalize k_xx, k_yy, and SSA by their initial values per simulation
@@ -57,6 +59,84 @@ def beautify_axes(ax):
     # Remove dotted grid lines
     ax.grid(False)
     return ax
+
+# --- Robust metadata utilities ---
+
+def _iter_items(obj, prefix=""):
+    """Yield (path, key, value) for all terminal items in a nested dict/list."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            p = f"{prefix}.{k}" if prefix else str(k)
+            if isinstance(v, (dict, list)):
+                yield from _iter_items(v, p)
+            else:
+                yield (p, k, v)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            p = f"{prefix}[{i}]"
+            if isinstance(v, (dict, list)):
+                yield from _iter_items(v, p)
+            else:
+                yield (p, str(i), v)
+
+
+def find_in_meta(meta, keys=None, substrings=None, want_numeric=False):
+    """Search meta recursively.
+    - If `keys` provided: try exact (case-insensitive) key matches first.
+    - Else if `substrings` provided: find first key containing any substring (ci).
+    - If `want_numeric`, coerce to float when reasonable (numbers or numeric strings).
+    Returns the first matching value or None.
+    """
+    if not isinstance(meta, (dict, list)):
+        return None
+
+    # Exact key match (case-insensitive)
+    if keys:
+        keyset = {k.lower() for k in keys}
+        for _, k, v in _iter_items(meta):
+            if k.lower() in keyset:
+                return _coerce_numeric(v) if want_numeric else v
+
+    # Substring match (case-insensitive)
+    if substrings:
+        subs = [s.lower() for s in substrings]
+        for _, k, v in _iter_items(meta):
+            kl = k.lower()
+            if any(s in kl for s in subs):
+                return _coerce_numeric(v) if want_numeric else v
+
+    return None
+
+
+def _coerce_numeric(v):
+    if isinstance(v, numbers.Number):
+        return float(v)
+    if isinstance(v, str):
+        s = v.strip()
+        # remove common decorations like %, units, etc.
+        s = s.replace('%', '')
+        try:
+            return float(s)
+        except Exception:
+            pass
+    return None
+
+# --- Legend label helper using metadata ---
+def legend_label_from_meta(d):
+    T = d.get('temperature', None)
+    por = d.get('porosity', None)
+    seed = d.get('seed', None)
+    parts = []
+    if T is not None:
+        try:
+            parts.append(f"{float(T):g} K")
+        except Exception:
+            parts.append(f"{T} K")
+    if por is not None and np.isfinite(por):
+        parts.append(f"φ={por:.3f}")
+    if seed is not None:
+        parts.append(f"seed={seed}")
+    return ", ".join(parts) if parts else "run"
 
 # --- Legend/SSA helpers ---
 from typing import Sequence, Tuple
@@ -135,6 +215,35 @@ for subfolder in sorted(os.listdir(parent_dir)):
     folder_path = os.path.join(parent_dir, subfolder)
     print(f'Processing {subfolder} at T = {temperature} K')
 
+    # Optional: load metadata for temperature/porosity/seed
+    meta = {}
+    for name in ("metadata.json", "Metadata.json", "meta.json", "config.json"):
+        meta_path = os.path.join(folder_path, name)
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, 'r') as f:
+                    meta = json.load(f)
+                break
+            except Exception as e:
+                print(f"Warning: failed to read {meta_path}: {e}")
+
+    # Prefer temperature from metadata if present (exact keys), else substring search
+    temp_meta = find_in_meta(meta, keys=["temperature_C", "temp", "T", "Temperature"], want_numeric=True)
+    if temp_meta is None:
+        temp_meta = find_in_meta(meta, substrings=["temp"], want_numeric=True)
+    if temp_meta is not None:
+        temperature = temp_meta
+
+    # Extract porosity (various key spellings), prefer numeric
+    porosity = find_in_meta(meta, keys=["porosity", "phi0", "initial_porosity", "phi"], want_numeric=True)
+    if porosity is None:
+        porosity = find_in_meta(meta, substrings=["poros", "phi"], want_numeric=True)
+
+    # Extract random seed
+    seed = find_in_meta(meta, keys=["seed", "random_seed", "rng_seed"], want_numeric=False)
+    if seed is None:
+        seed = find_in_meta(meta, substrings=["seed"], want_numeric=False)
+
     ssa_file = os.path.join(folder_path, 'SSA_evo.dat')
     k_eff_file = os.path.join(folder_path, 'k_eff.csv')
 
@@ -202,6 +311,9 @@ for subfolder in sorted(os.listdir(parent_dir)):
         'k_xx': matched_kxx,
         'k_yy': matched_kyy,
         'ssa': matched_ssa,
+        'porosity': porosity,
+        'seed': seed,
+        'metadata': meta,
     })
 
     # Plot and save/show individual plot
@@ -245,7 +357,9 @@ for subfolder in sorted(os.listdir(parent_dir)):
 
     # Combined k_xx and k_yy vs Time (dual y-axes)
     fig, ax1 = plt.subplots(figsize=(11.28, 4.0))
-    ln1 = ax1.plot(scaled_times, matched_kxx, marker='o', lw=1.5, label=r'$k_{xx}$')
+    col_xx = color_for(0)
+    col_yy = color_for(1)
+    ln1 = ax1.plot(scaled_times, matched_kxx, marker='o', lw=1.5, label=r'$k_{xx}$', color=col_xx)
     ax1.set_xlabel(f'Time ({time_unit_label})')
     if normalize_values:
         ax1.set_ylabel(r'$k_{xx}/k_{xx,0}$')
@@ -256,7 +370,7 @@ for subfolder in sorted(os.listdir(parent_dir)):
     beautify_axes(ax1)
 
     ax2 = ax1.twinx()
-    ln2 = ax2.plot(scaled_times, matched_kyy, marker='s', lw=1.5, label=r'$k_{yy}$')
+    ln2 = ax2.plot(scaled_times, matched_kyy, marker='s', lw=1.5, label=r'$k_{yy}$', color=col_yy)
     if normalize_values:
         ax2.set_ylabel(r'$k_{yy}/k_{yy,0}$')
     else:
@@ -368,8 +482,10 @@ for subfolder in sorted(os.listdir(parent_dir)):
     valid_yy = np.isfinite(matched_ssa) & np.isfinite(matched_kyy)
 
     any_series = False
+    col_xx = color_for(0)
+    col_yy = color_for(1)
     if np.count_nonzero(valid_xx) > 0:
-        ln1 = ax1.plot(matched_ssa[valid_xx], matched_kxx[valid_xx], 'o-', lw=1.5, label=r'$k_{xx}$')
+        ln1 = ax1.plot(matched_ssa[valid_xx], matched_kxx[valid_xx], 'o-', lw=1.5, label=r'$k_{xx}$', color=col_xx)
         any_series = True
     else:
         ln1 = []
@@ -385,7 +501,7 @@ for subfolder in sorted(os.listdir(parent_dir)):
 
     ax2 = ax1.twinx()
     if np.count_nonzero(valid_yy) > 0:
-        ln2 = ax2.plot(matched_ssa[valid_yy], matched_kyy[valid_yy], 's-', lw=1.5, label=r'$k_{yy}$')
+        ln2 = ax2.plot(matched_ssa[valid_yy], matched_kyy[valid_yy], 's-', lw=1.5, label=r'$k_{yy}$', color=col_yy)
         any_series = True
     else:
         ln2 = []
@@ -423,7 +539,19 @@ if len(collected_data) == 0:
 print(f"\n✅ Done collecting data from {len(collected_data)} simulations.")
 for entry in collected_data:
     label = 'k/k0' if normalize_values else 'k (W/m·K)'
-    print(f"T={entry['temperature']} K | timesteps={len(entry['time'])} | range({label})=({np.nanmin(entry['k_yy']):.3g}, {np.nanmax(entry['k_yy']):.3g})")
+    por = entry.get('porosity')
+    seed = entry.get('seed')
+    extra = []
+    if por is not None and np.isfinite(por):
+        extra.append(f"φ={por:.3f}")
+    else:
+        extra.append("φ=?")
+    if seed is not None:
+        extra.append(f"seed={seed}")
+    else:
+        extra.append("seed=?")
+    extra_str = " | " + ", ".join(extra)
+    print(f"T={entry['temperature']} K{extra_str} | timesteps={len(entry['time'])} | range({label})=({np.nanmin(entry['k_yy']):.3g}, {np.nanmax(entry['k_yy']):.3g})")
 
 # --- Step 7: Build masked heatmaps (k_xx and k_yy) with per-simulation extents ---
 
@@ -565,7 +693,7 @@ component_handles = [
     Line2D([0], [0], color='black', lw=2.0, linestyle='--', marker='s', ms=6, label=r'$k_{yy}$')
 ]
 temp_handles = [
-    Line2D([0], [0], color=color_for(i), lw=2.0, linestyle='-', label=f"{d['temperature']} K")
+    Line2D([0], [0], color=color_for(i), lw=2.0, linestyle='-', label=legend_label_from_meta(d))
     for i, d in enumerate(collected_data)
 ]
 all_handles = component_handles + temp_handles
@@ -578,8 +706,78 @@ out_path = os.path.join(parent_dir, 'kxx_kyy_vs_ssa_and_time_all.png')
 fig.savefig(out_path, dpi=dpi, bbox_inches='tight', transparent=True)
 plt.close(fig)
 
+
 print("\n✅ Generated outputs:")
 print("  •", os.path.join(parent_dir, 'kyy_colormap_masked.png'))
 if Nt > 0 and has_kxx:
     print("  •", os.path.join(parent_dir, 'kxx_colormap_masked.png'))
 print("  •", os.path.join(parent_dir, 'kxx_kyy_vs_ssa_and_time_all.png'))
+
+# --- Step 9: Additional grouping plots by porosity/seed ---
+
+# Group collected_data by porosity
+from collections import defaultdict
+by_porosity = defaultdict(list)
+for d in collected_data:
+    por = d.get('porosity')
+    if por is not None and np.isfinite(por):
+        by_porosity[round(por, 3)].append(d)
+
+# For each porosity, plot multiple seeds
+for por, runs in by_porosity.items():
+    if len(runs) < 2:
+        continue  # skip porosities with only one run
+    fig, ax = plt.subplots(figsize=(11.28, 4.2))
+    for idx, d in enumerate(runs):
+        col = color_for(idx)
+        t = d['time_scaled']
+        valid = np.isfinite(t) & np.isfinite(d['k_yy'])
+        if np.count_nonzero(valid) > 0:
+            seed = d.get('seed')
+            label = f"seed={seed}" if seed is not None else f"run{idx+1}"
+            ax.plot(t[valid], d['k_yy'][valid], lw=2.0, marker='o', ms=4,
+                    markevery=2, color=col, label=label)
+    ax.set_xlabel(f"Time ({runs[0]['time_unit']})")
+    ax.set_ylabel(r'$k_{yy}/k_{yy,0}$' if normalize_values else r'$k_{yy}$ (W/m·K)')
+    ax.set_title(f"Porosity φ={por:.3f}: k_yy vs Time (different seeds)")
+    beautify_axes(ax)
+    ax.legend()
+    fig.tight_layout()
+    out_path = os.path.join(parent_dir, f'kyy_vs_time_por{por:.3f}_seeds.png')
+    fig.savefig(out_path, dpi=dpi, bbox_inches='tight', transparent=True)
+    plt.close(fig)
+
+# Plot across multiple porosities (aggregate)
+if len(by_porosity) > 1:
+    fig, ax = plt.subplots(figsize=(11.28, 4.2))
+    for idx, (por, runs) in enumerate(sorted(by_porosity.items())):
+        # Prefer seed == 7 if present; otherwise use the first run
+        chosen = None
+        for r in runs:
+            sd = r.get('seed')
+            if sd == 7 or (isinstance(sd, str) and sd.strip() == '7'):
+                chosen = r
+                break
+        if chosen is None:
+            chosen = runs[0]
+        d = chosen
+        col = color_for(idx)
+        t = d['time_scaled']
+        valid = np.isfinite(t) & np.isfinite(d['k_yy'])
+        if np.count_nonzero(valid) > 0:
+            sd = d.get('seed')
+            if sd is not None:
+                label = f"φ={por:.3f}, seed={sd}"
+            else:
+                label = f"φ={por:.3f}"
+            ax.plot(t[valid], d['k_yy'][valid], lw=2.0, marker='o', ms=4,
+                    markevery=2, color=col, label=label)
+    ax.set_xlabel(f"Time ({collected_data[0]['time_unit']})")
+    ax.set_ylabel(r'$k_{yy}/k_{yy,0}$' if normalize_values else r'$k_{yy}$ (W/m·K)')
+    ax.set_title("k_yy vs Time across different porosities")
+    beautify_axes(ax)
+    ax.legend()
+    fig.tight_layout()
+    out_path = os.path.join(parent_dir, 'kyy_vs_time_multiple_porosities.png')
+    fig.savefig(out_path, dpi=dpi, bbox_inches='tight', transparent=True)
+    plt.close(fig)
