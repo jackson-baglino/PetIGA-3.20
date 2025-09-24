@@ -109,6 +109,11 @@ fi
 hum_int=$(awk "BEGIN{printf \"%d\", $humidity*100}")
 hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 
+# Inserted code to read phi from metadata.json if it exists
+if [[ -f "$env_dir/metadata.json" ]]; then
+  phi=$(jq -r '.porosity' "$env_dir/metadata.json")
+fi
+
 # Title and settings path
 ndays=$(awk "BEGIN{printf \"%d\", $t_final/86400}")
 phi_tag=$(awk -v phi="$phi" 'BEGIN{printf "phi%.2f", phi}')
