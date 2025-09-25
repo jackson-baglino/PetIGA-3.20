@@ -27,7 +27,7 @@ INPUT_DIR="${INPUT_DIR:-$DEFAULT_INPUT_DIR}"
 #   sbatch batch_dsm.sh --input-dir=/path/to/inputs
 #   sbatch batch_dsm.sh /path/to/inputs
 #   DSM_TEST=1 sbatch batch_dsm.sh
-FORCE_TEST=1
+FORCE_TEST=0
 # Allow INPUT_DIR override via arg or env var INPUT_DIR_OVERRIDE
 if [[ -n "${INPUT_DIR_OVERRIDE:-}" ]]; then
   INPUT_DIR="$INPUT_DIR_OVERRIDE"

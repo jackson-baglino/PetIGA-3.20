@@ -110,6 +110,7 @@ hum_int=$(awk "BEGIN{printf \"%d\", $humidity*100}")
 hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 
 # Inserted code to read phi from metadata.json if it exists
+env_dir="$(dirname "$inputFile")"
 if [[ -f "$env_dir/metadata.json" ]]; then
   phi=$(jq -r '.porosity' "$env_dir/metadata.json")
 fi
@@ -121,10 +122,9 @@ Lx_tag=$(awk -v v="$Lx" 'BEGIN{printf "Lx%.0fmm", v*1000}')
 Ly_tag=$(awk -v v="$Ly" 'BEGIN{printf "Ly%.0fmm", v*1000}')
 temp_tag=$(printf "Tm%d" "$(printf "%.0f" "$temp")")
 
-title="DSM_phi${phi_tag}_Lx${Lx_tag}_Ly${Ly_tag}_Tm${temp_tag}_hum${hum_tag}_tf${ndays}d"
+title="DSM_${phi_tag}_${Lx_tag}_${Ly_tag}_${temp_tag}_hum${hum_tag}_tf${ndays}d"
 
 # Resolve settings file adjacent to inputFile (prefer grains.env, then basename.env)
-env_dir="$(dirname "$inputFile")"
 if [[ -f "$env_dir/grains.env" ]]; then
   SETTINGS_FILE="$env_dir/grains.env"
 elif [[ -f "$env_dir/${filename%.dat}.env" ]]; then
