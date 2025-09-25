@@ -113,16 +113,18 @@ hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 env_dir="$(dirname "$inputFile")"
 if [[ -f "$env_dir/metadata.json" ]]; then
   phi=$(jq -r 'porosity_target' "$env_dir/metadata.json")
+  seed=$(jq -r 'seed' "$env_dir/metadata.json")
 fi
 
 # Title and settings path
 ndays=$(awk "BEGIN{printf \"%d\", $t_final/86400}")
 phi_tag=$(awk -v phi="$phi" 'BEGIN{printf "phi%.2f", phi}')
+seed_tag=$(awk -v s="$seed" 'BEGIN{printf "seed%d", s}')
 Lx_tag=$(awk -v v="$Lx" 'BEGIN{printf "Lx%.0fmm", v*1000}')
 Ly_tag=$(awk -v v="$Ly" 'BEGIN{printf "Ly%.0fmm", v*1000}')
 temp_tag=$(printf "Tm%d" "$(printf "%.0f" "$temp")")
 
-title="DSM_${phi_tag}_${Lx_tag}_${Ly_tag}_${temp_tag}_hum${hum_tag}_tf${ndays}d"
+title="DSM_${phi_tag}_${Lx_tag}_${Ly_tag}_${seed_tag}_${temp_tag}_hum${hum_tag}_tf${ndays}d"
 
 # Resolve settings file adjacent to inputFile (prefer grains.env, then basename.env)
 if [[ -f "$env_dir/grains.env" ]]; then

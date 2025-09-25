@@ -27,7 +27,7 @@ INPUT_DIR="${INPUT_DIR:-$DEFAULT_INPUT_DIR}"
 #   sbatch batch_dsm.sh --input-dir=/path/to/inputs
 #   sbatch batch_dsm.sh /path/to/inputs
 #   DSM_TEST=1 sbatch batch_dsm.sh
-FORCE_TEST=0
+FORCE_TEST=1
 # Allow INPUT_DIR override via arg or env var INPUT_DIR_OVERRIDE
 if [[ -n "${INPUT_DIR_OVERRIDE:-}" ]]; then
   INPUT_DIR="$INPUT_DIR_OVERRIDE"
@@ -57,7 +57,7 @@ if [[ -z "${INPUT_DIR:-}" || ! -d "$INPUT_DIR" ]]; then
 fi
 
 # --- Sweep settings ---
-temperatures=(-20 -25 -30 -35 -40)
+temperatures=(-25)
 humidities=(0.98)
 
 # --- Paths ---
@@ -72,7 +72,7 @@ CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 
 shopt -s nullglob globstar
 # Recursively find any grains.dat under INPUT_DIR
-dat_files=("$INPUT_DIR"/grains__phi=*__Lxmm=2__Lymm=2__seed=21/grains.dat)
+dat_files=("$INPUT_DIR"/grains__phi=0.28__Lxmm=2__Lymm=2__seed=21/grains.dat)
 shopt -u globstar nullglob
 
 if [ ${#dat_files[@]} -eq 0 ]; then
@@ -206,23 +206,50 @@ for dat_file in "${dat_files[@]}"; do
     for hum in "${humidities[@]}"; do
       temp_int=$(printf "%.0f" "$temp")
       if [[ "$temp_int" == -* ]]; then temp_tag=${temp_int:0:3}; else temp_tag=${temp_int:0:2}; fi
-      hum_int=$(awk "BEGIN{printf \"%d\", $hum*100}")
-      hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
+        hum_int=$(awk "BEGIN{printf \"%d\", $hum*100}")
+        hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 
-      # Build descriptive job name using physical parameters from the directory name
-      dirbase="$(basename "$env_dir")"
-      phi_tag="$(echo "$dirbase" | sed -n 's/.*phi=\([0-9.]*\).*/\1/p')"
-      Lx_tag="$(echo "$dirbase" | sed -n 's/.*Lxmm=\([0-9.]*\).*/\1/p')"
-      Ly_tag="$(echo "$dirbase" | sed -n 's/.*Lymm=\([0-9.]*\).*/\1/p')"
-      seed_tag="$(echo "$dirbase" | sed -n 's/.*seed=\([0-9]*\).*/\1/p')"
-      # Fallbacks if parsing fails
-      [[ -z "$phi_tag"  ]] && phi_tag="NA"
-      if [[ -z "$Lx_tag" && -n "${Lx:-}" ]]; then Lx_tag="$(awk -v v="$Lx" 'BEGIN{printf "%.3g", v*1000}')"; fi
-      if [[ -z "$Ly_tag" && -n "${Ly:-}" ]]; then Ly_tag="$(awk -v v="$Ly" 'BEGIN{printf "%.3g", v*1000}')"; fi
-      [[ -z "$Lx_tag"  ]] && Lx_tag="NA"
-      [[ -z "$Ly_tag"  ]] && Ly_tag="NA"
-      [[ -z "$seed_tag" ]] && seed_tag="NA"
-      job_base="DSM_phi${phi_tag}_Lx${Lx_tag}_Ly${Ly_tag}_seed${seed_tag}_Tm${temp_tag}_hum${hum_tag}"
+        # Build descriptive job name using physical parameters from the directory name
+        dirbase="$(basename "$env_dir")"
+
+        # Extract from directory name if present
+        phi_tag="$(echo "$dirbase" | sed -n 's/.*phi=\([0-9.]*\).*/\1/p')"
+        Lx_tag="$(echo "$dirbase" | sed -n 's/.*Lxmm=\([0-9.]*\).*/\1/p')"
+        Ly_tag="$(echo "$dirbase" | sed -n 's/.*Lymm=\([0-9.]*\).*/\1/p')"
+        seed_tag="$(echo "$dirbase" | sed -n 's/.*seed=\([0-9]*\).*/\1/p')"
+
+        # Fallbacks if parsing fails → format with 2 sig figs
+        if [[ -z "$phi_tag" && -n "${phi:-}" ]]; then
+          phi_tag=$(awk -v v="$phi" 'BEGIN{
+            s=sprintf("%.2g", v);
+            # ensure trailing .0 if only 1 decimal place
+            if (index(s,".")==0) s=s".0";
+            print s
+          }')
+        fi
+
+        if [[ -z "$Lx_tag" && -n "${Lx:-}" ]]; then
+          Lx_tag=$(awk -v v="$Lx" 'BEGIN{
+            s=sprintf("%.2g", v*1000);
+            if (index(s,".")==0) s=s".0";
+            print s
+          }')
+        fi
+
+        if [[ -z "$Ly_tag" && -n "${Ly:-}" ]]; then
+          Ly_tag=$(awk -v v="$Ly" 'BEGIN{
+            s=sprintf("%.2g", v*1000);
+            if (index(s,".")==0) s=s".0";
+            print s
+          }')
+        fi
+
+        [[ -z "$phi_tag"  ]] && phi_tag="NA"
+        [[ -z "$Lx_tag"   ]] && Lx_tag="NA"
+        [[ -z "$Ly_tag"   ]] && Ly_tag="NA"
+        [[ -z "$seed_tag" ]] && seed_tag="NA"
+
+        job_base="DSM_phi${phi_tag}_Lx${Lx_tag}_Ly${Ly_tag}_seed${seed_tag}_Tm${temp_tag}_hum${hum_tag}"
 
       # Define okay architectures if not already set
       : "${ARCH_OK:='icelake|skylake|cascadelake&!cascadelake_lowmem'}"
