@@ -112,8 +112,8 @@ hum_tag=$(printf "%02d" "$hum_int"); hum_tag=${hum_tag:0:2}
 # Inserted code to read phi from metadata.json if it exists
 env_dir="$(dirname "$inputFile")"
 if [[ -f "$env_dir/metadata.json" ]]; then
-  phi=$(jq -r 'porosity_target' "$env_dir/metadata.json")
-  seed=$(jq -r 'seed' "$env_dir/metadata.json")
+  phi=$(jq -r '.structure.porosity_target' "$env_dir/metadata.json")
+  seed=$(jq -r '.generator.seed' "$env_dir/metadata.json")
 fi
 
 # Title and settings path
