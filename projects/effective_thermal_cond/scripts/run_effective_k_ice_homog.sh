@@ -180,12 +180,20 @@ else
   fi
 fi
 
-# Copy SSA_eva.dat from input directory to output directory if it exists
-if [[ -f "$INIT_DIR/SSA_eva.dat" ]]; then
-  cp "$INIT_DIR/SSA_eva.dat" "$OUTPUT_DIR/"
-  echo "[Collect] Copied SSA_eva.dat to output directory."
+# Copy SSA_evo.dat from input directory to output directory if it exists
+if [[ -f "$INIT_DIR/SSA_evo.dat" ]]; then
+  cp "$INIT_DIR/SSA_evo.dat" "$OUTPUT_DIR/"
+  echo "[Collect] Copied SSA_evo.dat to output directory."
 else
-  echo "[Collect] SSA_eva.dat not found in INIT_DIR; skipping copy."
+  echo "[Collect] SSA_evo.dat not found in INIT_DIR; skipping copy."
+fi
+
+# Copy metadata.json from input directory to output directory if it exists
+if [[ -f "$INIT_DIR/metadata.json" ]]; then
+  cp "$INIT_DIR/metadata.json" "$OUTPUT_DIR/"
+  echo "[Collect] Copied metadata.json to output directory."
+else
+  echo "[Collect] metadata.json not found in INIT_DIR; skipping copy."
 fi
 
 # Total runtime reporting

@@ -374,8 +374,8 @@ PetscErrorCode FormInitialCondition(AppCtx *user)
    snprintf(iga_file, sizeof(iga_file), "%s/igasol.dat", user->init_dir);
    snprintf(sol_file, sizeof(sol_file), "%s/sol_%05d.dat", user->init_dir, user->sol_index);
 
-   PetscPrintf(PETSC_COMM_WORLD, "Reading IGA from file: %s\n", iga_file);
-   PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from file: %s\n", sol_file);
+   PetscPrintf(PETSC_COMM_WORLD, "Reading IGA from file:       %s\n", iga_file);
+   PetscPrintf(PETSC_COMM_WORLD, "Reading ice field from file: %s\n\n", sol_file);
 
    // Read the solution vector and evaluate the field at Gauss points
    ierr = ReadSolutionVec(iga_file, sol_file, &user->iga_input, user); CHKERRQ(ierr);
@@ -599,8 +599,6 @@ PetscErrorCode SetupIGA(AppCtx *user, IGA *iga) {
   ierr = IGASetFromOptions(*iga); CHKERRQ(ierr);
   ierr = IGASetUp(*iga); CHKERRQ(ierr);
 
-  PetscPrintf(PETSC_COMM_WORLD, "IGA setup complete.\n\n");
-
   /* Write IGA object to file */
   char filename[256];
   sprintf(filename, "%s/igaice.dat", user->output_dir);
@@ -673,9 +671,9 @@ PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt,
 PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user)
 {
   PetscFunctionBegin;
-  PetscPrintf(PETSC_COMM_WORLD,
-      "Periodic boundary conditions activated in all %d directions — no "
-      "Dirichlet or Neumann BCs applied.\n\n", user->dim);
+  // PetscPrintf(PETSC_COMM_WORLD,
+  //     "Periodic boundary conditions activated in all %d directions — no "
+  //     "Dirichlet or Neumann BCs applied.\n\n", user->dim);
   PetscFunctionReturn(0);
 }
 
@@ -826,7 +824,7 @@ PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga) {
     ierr = VecRestoreArray(user->T_sol,&y); CHKERRQ(ierr);
   }
 
-  PetscPrintf(PETSC_COMM_WORLD, "Zero-mean enforced per component.\n\n");
+  // PetscPrintf(PETSC_COMM_WORLD, "Zero-mean enforced per component.\n\n");
 
   // Clean up
   ierr = KSPDestroy(&ksp); CHKERRQ(ierr);
@@ -994,7 +992,6 @@ PetscErrorCode ComputeKeffective(IGA iga, Vec t_vec, PetscReal *keff, AppCtx *us
   ierr = PetscMemzero(keff, sizeof(PetscReal) * dim * dim); CHKERRQ(ierr);
 
   // Call IGAComputeScalar to integrate
-  PetscPrintf(PETSC_COMM_WORLD, "Computing effective thermal conductivity...\n");
   ierr = IGAComputeScalar(iga, t_vec, dim * dim, keff, ComputeKeffIntegrand, (void*)user); CHKERRQ(ierr);
 
 
@@ -1108,13 +1105,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscTime(&t_1); CHKERRQ(ierr);
     /* ------------------ Define user context ------------------ */
     InitializeUserContext(&user);
-    PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity ice = %g W/m·K\n", user.thcond_ice);
-    PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity air = %g W/m·K\n", user.thcond_air);
-    PetscPrintf(PETSC_COMM_WORLD, "Specific heat ice = %g J/kg·K\n", user.cp_ice);
-    PetscPrintf(PETSC_COMM_WORLD, "Specific heat air = %g J/kg·K\n", user.cp_air);
-    PetscPrintf(PETSC_COMM_WORLD, "Density ice = %g kg/m³\n", user.rho_ice);
-    PetscPrintf(PETSC_COMM_WORLD, "Density air = %g kg/m³\n", user.rho_air);
-    PetscPrintf(PETSC_COMM_WORLD, "User context initialized.\n\n");
 
     /* ------------------ Initialize IGA ------------------ */
     IGA iga;
@@ -1126,7 +1116,7 @@ int main(int argc, char *argv[]) {
 
     /* ------------------ Define Boundary Conditions ------------------ */
     // Apply the boundary conditions
-    ierr = ApplyBoundaryConditions(iga, &user); CHKERRQ(ierr);
+    // ierr = ApplyBoundaryConditions(iga, &user); CHKERRQ(ierr);
 
     /* ------------------ Set Up KSP Solver ------------------ */
     // Creat KSP solver
@@ -1139,9 +1129,10 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "Effective thermal conductivity computed:\n");
     for (PetscInt i = 0; i < user.dim; i++) {
       for (PetscInt j = 0; j < user.dim; j++) {
-        PetscPrintf(PETSC_COMM_WORLD, "k_eff[%d][%d] = %.12e\n", i, j, keff[i * user.dim + j]);
+        PetscPrintf(PETSC_COMM_WORLD, "   k_eff[%d][%d] = %.12e\n", i, j, keff[i * user.dim + j]);
       }
     }
+    PetscPrintf(PETSC_COMM_WORLD, "\n\n");
 
     /* ------------------ Write Output ------------------ */
     if (rank == 0) {
@@ -1149,19 +1140,16 @@ int main(int argc, char *argv[]) {
       char t_vec_file[PETSC_MAX_PATH_LEN];
       sprintf(t_vec_file, "%s/t_vec.dat", user.output_dir);
       ierr = WriteOutput(&user, user.T_sol, t_vec_file); CHKERRQ(ierr);
-      PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote solution vector to t_vec.dat\n");
 
       // Write ice field to file
       char iceFile[PETSC_MAX_PATH_LEN];
       sprintf(iceFile, "%s/ice_data.dat", user.output_dir);
       ierr = WriteIceFieldToFile(iceFile, &user); CHKERRQ(ierr);
-      PetscPrintf(PETSC_COMM_WORLD, "Successfully wrote ice field to ice_data.dat\n");
 
       // Write the effective thermal conductivity to a CSV file
       char csvFile[PETSC_MAX_PATH_LEN];
       sprintf(csvFile, "%s/k_eff.csv", user.output_dir);
       ierr = WriteKeffToCSV(&user, csvFile, user.dim, keff); CHKERRQ(ierr);
-      PetscPrintf(PETSC_COMM_WORLD, "Effective thermal conductivity written to k_eff.csv\n");
 
       PetscPrintf(PETSC_COMM_WORLD, "Wrote output files.\n\n");
     }
@@ -1209,19 +1197,13 @@ int main(int argc, char *argv[]) {
 
     /* ------------------ Define user context ------------------ */
     InitializeUserContext(&user);
-    PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity ice = %g W/m·K\n", user.thcond_ice);
-    PetscPrintf(PETSC_COMM_WORLD, "thermal conductivity air = %g W/m·K\n", user.thcond_air);
-    PetscPrintf(PETSC_COMM_WORLD, "Specific heat ice = %g J/kg·K\n", user.cp_ice);
-    PetscPrintf(PETSC_COMM_WORLD, "Specific heat air = %g J/kg·K\n", user.cp_air);
-    PetscPrintf(PETSC_COMM_WORLD, "Density ice = %g kg/m³\n", user.rho_ice);
-    PetscPrintf(PETSC_COMM_WORLD, "Density air = %g kg/m³\n\n", user.rho_air);
 
     /* ------------------ Initialize IGA ------------------ */
     IGA iga;
     ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
     user.iga = iga;
 
-    PetscInt num_files_analyze = 100;
+    PetscInt num_files_analyze = 50;
     if (num_files < num_files_analyze) {
       num_files_analyze = num_files;
     }
@@ -1249,7 +1231,7 @@ int main(int argc, char *argv[]) {
 
       /* ------------------ Define Boundary Conditions ------------------ */
       // Apply the boundary conditions
-      ierr = ApplyBoundaryConditions(iga, &user); CHKERRQ(ierr);
+      // ierr = ApplyBoundaryConditions(iga, &user); CHKERRQ(ierr);
 
       /* ------------------ Set Up KSP Solver ------------------ */
       // Creat KSP solver
@@ -1291,6 +1273,7 @@ int main(int argc, char *argv[]) {
       // Determine amount of time elapsed to process this file
       PetscTime(&t_2);
       PetscPrintf(PETSC_COMM_WORLD, "Time to process sol_index = %05d: %.2f seconds\n\n", user.sol_index, t_2 - t_1);
+      PetscPrintf(PETSC_COMM_WORLD, "---------------------------------------------------------\n\n");
 
     } // End of for loop
 
