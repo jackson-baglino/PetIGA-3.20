@@ -60,7 +60,7 @@ load_grains_env() {
 ###############################################################################
 
 # Default parent directory containing subdirectories to process
-PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/all_results"
+PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/3mm_results"
 OUT_ROOT="${OUT_ROOT:-/Users/jacksonbaglino/SimulationResults/effective_thermal_cond/scratch}"
 
 
