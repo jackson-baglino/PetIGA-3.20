@@ -1,0 +1,65 @@
+{
+  "timestamp": "2025-10-23T12:48:19.158004-07:00",
+  "generator": {
+    "name": "porespy",
+    "script": "generateCircularGrains.py",
+    "mode": "nonoverlap_poly",
+    "seed": 7
+  },
+  "domain": {
+    "Lx": 0.002,
+    "Ly": 0.002,
+    "Lz": 0.00019765625000000002
+  },
+  "structure": {
+    "porosity_target": 0.3,
+    "porosity_achieved": 0.2993192672729492,
+    "mean_r_m_ice": 4.5e-05,
+    "sigma_ln_ice": 0.5,
+    "mean_r_m_soil": 4.5e-05,
+    "sigma_ln_soil": 0.5,
+    "soil_frac_solid": 0.5
+  },
+  "artifacts": {
+    "grains_ice_dat": "grains_ice.dat",
+    "grains_soil_dat": "grains_soil.dat",
+    "env_file": "grains.env",
+    "preview_png": "preview.png"
+  },
+  "pixel_scale_m": 1.953125e-06,
+  "radii_ice": {
+    "distribution": "lognormal",
+    "mean_r_m": 4.5e-05,
+    "sigma_ln": 0.5,
+    "rmin_m": 0.0,
+    "rmax_m": 9e-05
+  },
+  "radii_soil": {
+    "distribution": "lognormal",
+    "mean_r_m": 4.5e-05,
+    "sigma_ln": 0.5,
+    "rmin_m": 0.0,
+    "rmax_m": 9e-05
+  },
+  "packing": {
+    "mode": "nonoverlap_poly",
+    "contact_gap_m": 0.0,
+    "allow_cross_boundary": true,
+    "enforce_tangency": true,
+    "touch_tol_m": 0.0,
+    "tries_per_circle": 20000,
+    "max_attempts": 2000000
+  },
+  "counts": {
+    "num_grains_ice": 114,
+    "num_grains_soil": 186
+  },
+  "artifacts_abs": {
+    "inputs_dir": "/Users/jacksonbaglino/PetIGA-3.20/projects/permafrost/inputs/grains__phi=0.3__Lxmm=2__Lymm=2__seed=7",
+    "metadata_dir": "/Users/jacksonbaglino/PetIGA-3.20/projects/permafrost/inputs/grains__phi=0.3__Lxmm=2__Lymm=2__seed=7",
+    "grains_ice_dat": "/Users/jacksonbaglino/PetIGA-3.20/projects/permafrost/inputs/grains__phi=0.3__Lxmm=2__Lymm=2__seed=7/grains_ice.dat",
+    "grains_soil_dat": "/Users/jacksonbaglino/PetIGA-3.20/projects/permafrost/inputs/grains__phi=0.3__Lxmm=2__Lymm=2__seed=7/grains_soil.dat",
+    "env_file": "/Users/jacksonbaglino/PetIGA-3.20/projects/permafrost/inputs/grains__phi=0.3__Lxmm=2__Lymm=2__seed=7/grains.env",
+    "preview_png": "/Users/jacksonbaglino/PetIGA-3.20/projects/permafrost/inputs/grains__phi=0.3__Lxmm=2__Lymm=2__seed=7/preview.png"
+  }
+}

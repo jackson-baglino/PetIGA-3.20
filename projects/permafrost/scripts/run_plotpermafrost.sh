@@ -23,15 +23,15 @@ execute_python_scripts() {
     python $dir/plotpermafrost.py
     
     echo "Plotting SSA and Porosity"
-    python3.11 $dir/plotSSA.py
+    python $dir/plotSSA.py
     # Uncomment the line below if you want to include Porosity plotting
-    # python3.11 $dir/plotPorosity.py
+    # python $dir/plotPorosity.py
 }
 
 # Main script logic
 if [[ -n $1 ]]; then
     echo "Starting process for directory: $1"
-    dir=/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/permafrost/$1
+    dir=/Users/jacksonbaglino/SimulationResults/permafrost/scratch/$1
 
     # Copy files and switch to the target directory
     copy_files_to_directory $dir
@@ -50,8 +50,8 @@ else
 
     # Execute Python scripts in the current directory
     echo "Executing plotpermafrost.py and plotSSA.py in the current directory"
-    python3.11 plotpermafrost.py
-    python3.11 plotSSA.py
+    python plotpermafrost.py
+    python plotSSA.py
     # Uncomment if you need to execute plotPorosity.py in the current directory
-    # python3.11 plotPorosity.py
+    # python plotPorosity.py
 fi

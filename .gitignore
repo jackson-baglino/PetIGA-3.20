@@ -88,3 +88,4 @@ projects/dry_snow_metamorphism/metadata/*
 projects/dry_snow_metamorphism/inputs/latest
 projects/dry_snow_metamorphism/inputs/manifest.csv
 projects/effective_thermal_cond/MATLAB/matlab_ekeff
+projects/permafrost/inputs/latest

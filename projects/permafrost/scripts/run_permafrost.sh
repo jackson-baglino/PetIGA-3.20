@@ -4,7 +4,7 @@ set -euo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 ################################################################################
-# permafrost Dry Snow Metamorphism Simulation Script
+# permafrost/lunar regolith Script
 # This script compiles and runs the permafrost model with user-defined inputs,
 # creates output directories, saves metadata, and post-processes results.
 ################################################################################
@@ -14,7 +14,7 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 ################################################################################
 create_folder() {
     name="$title$(date +%Y-%m-%d__%H.%M.%S)"
-    dir="/Users/jacksonbaglino/SimulationResults/DrySed_Metamorphism/permafrost"
+    dir="/Users/jacksonbaglino/SimulationResults/permafrost/scratch"
     folder="$dir/$name"
 
     if [ ! -d "$dir" ]; then
@@ -63,7 +63,7 @@ write_parameters_to_csv() {
 # Load input file and set grid size, domain, and epsilon based on selected input
 ################################################################################
 set_parameters() {
-    input_dir="/Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/"
+    input_dir="/Users/jacksonbaglino/PetIGA-3.20/projects/permafrost/inputs/"
     inputFile="${input_dir}${filename}"
 
     cp "$inputFile" "$folder"
@@ -179,7 +179,7 @@ if [[ $# -gt 0 && $1 == "debug" ]]; then
 fi
 
 delt_t=1.0e-4
-t_final=100*24*60*60
+t_final=2*24*3600  # 2 days in seconds
 n_out=100
 t_final=$(echo "$t_final" | bc -l)
 
