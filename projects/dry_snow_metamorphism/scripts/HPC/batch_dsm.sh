@@ -72,7 +72,7 @@ CONFIG_DIR="/resnick/groups/rubyfu/jbaglino/PetIGA-3.20/projects/dry_snow_metamo
 
 shopt -s nullglob globstar
 # Recursively find any grains.dat under INPUT_DIR
-dat_files=("$INPUT_DIR"/grains__phi=0.28__Lxmm=2__Lymm=2__seed=21/grains.dat)
+dat_files=("$INPUT_DIR"/grains__phi=*__Lxmm=3__Lymm=3__seed=*/grains.dat)
 shopt -u globstar nullglob
 
 if [ ${#dat_files[@]} -eq 0 ]; then
