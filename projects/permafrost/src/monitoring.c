@@ -67,6 +67,10 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
     // After computing beta_sub, we set the flag to 0...
     user->flag_Tdep = 0;
+
+    // Print the new mobility and alpha values for verification
+    PetscPrintf(PETSC_COMM_WORLD, "M0_sub new: %.6e\n", user->mob_sub);
+    PetscPrintf(PETSC_COMM_WORLD, "alpha_sub new: %.6e\n", user->alph_sub);
   }
 
 

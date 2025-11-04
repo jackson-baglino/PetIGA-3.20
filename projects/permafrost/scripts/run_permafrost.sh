@@ -179,7 +179,7 @@ if [[ $# -gt 0 && $1 == "debug" ]]; then
 fi
 
 delt_t=1.0e-4
-t_final=2*24*3600  # 2 days in seconds
+t_final=60*24*3600  # 60 days in seconds
 n_out=100
 t_final=$(echo "$t_final" | bc -l)
 
