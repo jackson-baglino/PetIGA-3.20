@@ -85,6 +85,8 @@ typedef struct {
 
   // Flag for reading input files
   PetscInt readFlag;  // Flag to indicate whether initial data should be read from a file
+  PetscBool readSedFromFile;  // Boolean flag to indicate reading sediment data from file
+  char sedFile[PETSC_MAX_PATH_LEN];  // Filename for sediment grain data
 
 } AppCtx;
 
