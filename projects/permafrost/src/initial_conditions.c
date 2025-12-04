@@ -588,8 +588,9 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
         PetscReal ice_in = PetscRealPart(ain[base + ice_in_comp]);
         PetscReal sed_in = PetscRealPart(ain[base + sed_in_comp]);
 
-        /* Clamp sediment to [0,1] */
+        /* Clamp ice and sediment to [0,1] */
         PetscReal sed_clamped = PetscMin(PetscMax(sed_in, 0.0), 1.0);
+        ice_in = PetscMin(PetscMax(ice_in, 0.0), 1.0);
 
         /* Copy ice phase */
         aout[base + ice_out_comp]  = (PetscScalar)ice_in;
