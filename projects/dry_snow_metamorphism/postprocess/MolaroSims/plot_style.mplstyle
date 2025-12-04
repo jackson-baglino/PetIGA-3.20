@@ -1,0 +1,44 @@
+# ===== Fonts and text =====
+font.family           : sans-serif
+font.size             : 12
+axes.titlesize        : 13
+axes.labelsize        : 12
+xtick.labelsize       : 11
+ytick.labelsize       : 11
+legend.fontsize       : 11
+
+mathtext.fontset      : dejavusans
+axes.unicode_minus    : True
+
+# ===== Lines and markers =====
+lines.linewidth       : 2.0
+lines.markersize      : 5
+
+# ===== Axes =====
+axes.spines.top       : False
+axes.spines.right     : False
+axes.grid             : False
+axes.formatter.use_mathtext : True
+
+# ===== Ticks =====
+xtick.direction       : in
+ytick.direction       : in
+xtick.major.size      : 4
+ytick.major.size      : 4
+
+# ===== Figure layout =====
+figure.figsize        : 6, 4
+figure.dpi            : 120
+savefig.dpi           : 300
+savefig.bbox          : tight
+savefig.pad_inches    : 0.02
+savefig.transparent   : False
+
+# ===== Color cycle & colormaps =====
+image.cmap            : viridis
+axes.prop_cycle       : cycler(color=['tab:blue', 'tab:red', 'tab:green', 'tab:orange'])
+
+# ===== Legend =====
+legend.frameon        : False
+legend.handlelength   : 2
+legend.borderaxespad  : 0.5

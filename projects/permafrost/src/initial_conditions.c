@@ -3,69 +3,69 @@
 
 PetscErrorCode FormInitialSoil2D(IGA igaS,Vec S,AppCtx *user)
 {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  DM da;
-  ierr = IGACreateNodeDM(igaS,1,&da);CHKERRQ(ierr);
-  FieldS **u;
-  ierr = DMDAVecGetArray(da,S,&u);CHKERRQ(ierr);
-  DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
-  PetscReal dist=0.0,value;
-  PetscInt i,j,kk, l=-1;
-  if(user->periodic==1) l=user->p-1;
-  for(i=info.xs;i<info.xs+info.xm;i++){
-    for(j=info.ys;j<info.ys+info.ym;j++){
-      PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+l) );
-      PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+l) );
-      value=0.0;
-      for(kk=0;kk<user->n_actsed;kk++){
-        dist = sqrt(SQ(x-user->centsed[0][kk])+SQ(y-user->centsed[1][kk]));
-        value += 0.5-0.5*tanh(0.5/user->eps*(dist-user->radiussed[kk]));
-      }
-      if(value>1.0) value=1.0;
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    DM da;
+    ierr = IGACreateNodeDM(igaS,1,&da);CHKERRQ(ierr);
+    FieldS **u;
+    ierr = DMDAVecGetArray(da,S,&u);CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
+    PetscReal dist=0.0,value;
+    PetscInt i,j,kk, l=-1;
+    if(user->periodic==1) l=user->p-1;
+    for(i=info.xs;i<info.xs+info.xm;i++){
+        for(j=info.ys;j<info.ys+info.ym;j++){
+            PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+l) );
+            PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+l) );
+            value=0.0;
+            for(kk=0;kk<user->n_actsed;kk++){
+                dist = sqrt(SQ(x-user->centsed[0][kk])+SQ(y-user->centsed[1][kk]));
+                value += 0.5-0.5*tanh(0.5/user->eps*(dist-user->radiussed[kk]));
+            }
+            if(value>1.0) value=1.0;
 
-      u[j][i].soil = value;
+            u[j][i].soil = value;
+        }
     }
-  }
-  ierr = DMDAVecRestoreArray(da,S,&u);CHKERRQ(ierr);
-  ierr = DMDestroy(&da);;CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+    ierr = DMDAVecRestoreArray(da,S,&u);CHKERRQ(ierr);
+    ierr = DMDestroy(&da);;CHKERRQ(ierr);
+    PetscFunctionReturn(0);
 }
 
 PetscErrorCode FormInitialSoil3D(IGA igaS,Vec S,AppCtx *user)
 {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  DM da;
-  ierr = IGACreateNodeDM(igaS,1,&da);CHKERRQ(ierr);
-  FieldS ***u;
-  ierr = DMDAVecGetArray(da,S,&u);CHKERRQ(ierr);
-  DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
-  PetscReal dist=0.0,value;
-  PetscInt i,j,k, kk, l=-1;
-  if(user->periodic==1) l=user->p-1;
-  for(i=info.xs;i<info.xs+info.xm;i++){
-    for(j=info.ys;j<info.ys+info.ym;j++){
-      for(k=info.zs;k<info.zs+info.zm;k++){
-        PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+l) );
-        PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+l) );
-        PetscReal z = user->Lz*(PetscReal)k / ( (PetscReal)(info.mz+l) );
-        value=0.0;
-        for(kk=0;kk<user->n_actsed;kk++){
-          dist = sqrt(SQ(x-user->centsed[0][kk])+SQ(y-user->centsed[1][kk])+SQ(z-user->centsed[2][kk]));
-          value += 0.5-0.5*tanh(0.5/user->eps*(dist-user->radiussed[kk]));
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    DM da;
+    ierr = IGACreateNodeDM(igaS,1,&da);CHKERRQ(ierr);
+    FieldS ***u;
+    ierr = DMDAVecGetArray(da,S,&u);CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
+    PetscReal dist=0.0,value;
+    PetscInt i,j,k, kk, l=-1;
+    if(user->periodic==1) l=user->p-1;
+    for(i=info.xs;i<info.xs+info.xm;i++){
+        for(j=info.ys;j<info.ys+info.ym;j++){
+            for(k=info.zs;k<info.zs+info.zm;k++){
+                PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+l) );
+                PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+l) );
+                PetscReal z = user->Lz*(PetscReal)k / ( (PetscReal)(info.mz+l) );
+                value=0.0;
+                for(kk=0;kk<user->n_actsed;kk++){
+                    dist = sqrt(SQ(x-user->centsed[0][kk])+SQ(y-user->centsed[1][kk])+SQ(z-user->centsed[2][kk]));
+                    value += 0.5-0.5*tanh(0.5/user->eps*(dist-user->radiussed[kk]));
+                }
+                if(value>1.0) value=1.0;
+                
+                u[k][j][i].soil = value;
+            }
         }
-        if(value>1.0) value=1.0;
-        
-        u[k][j][i].soil = value;
-      }
     }
-  }
-  ierr = DMDAVecRestoreArray(da,S,&u);CHKERRQ(ierr);
-  ierr = DMDestroy(&da);;CHKERRQ(ierr);
-  PetscFunctionReturn(0);
+    ierr = DMDAVecRestoreArray(da,S,&u);CHKERRQ(ierr);
+    ierr = DMDestroy(&da);;CHKERRQ(ierr);
+    PetscFunctionReturn(0);
 }
 
 PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user, 
@@ -461,4 +461,222 @@ PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U,
   //   ierr = DMDestroy(&da);;CHKERRQ(ierr); 
   // }
   PetscFunctionReturn(0); 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* 
+   LoadInputSolutionVec:
+   - Loads Sthavishtha's solution Vec from file
+*/
+PetscErrorCode LoadInputSolutionVec(const char *filename, Vec *U_in_seq)
+{
+  PetscErrorCode ierr;
+  PetscViewer    viewer;
+  PetscFunctionBegin;
+
+  if (!filename || filename[0] == '\0') {
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
+            "LoadInputSolutionVec: filename is empty");
+  }
+
+  /* This is rank-0 only, so use PETSC_COMM_SELF */
+  ierr = PetscViewerBinaryOpen(PETSC_COMM_SELF, filename,
+                               FILE_MODE_READ, &viewer);CHKERRQ(ierr);
+  ierr = VecCreate(PETSC_COMM_SELF, U_in_seq);CHKERRQ(ierr);
+  ierr = VecLoad(*U_in_seq, viewer);CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+/* 
+   InitializeFromInputSolution:
+   - Reads Sthavishtha's solution Vec (ice, sediment, temp)
+   - Sets your U (ice, temp, rhov)
+   - Fills user->Phi_sed with sediment
+*/
+PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const char *solutionFile = user->initial_cond;
+    if (!solutionFile || solutionFile[0] == '\0') {
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                "InitializeFromInputSolution: user->initial_cond is empty");
+    }
+
+    /* 1) Load Sthavishtha's solution Vec in parallel (same IGA, same layout) */
+    MPI_Comm   comm;
+    Vec        U_in;
+    PetscInt   Nloc_in, Nloc_out, Nloc_s, dof_out;
+
+    ierr = PetscObjectGetComm((PetscObject)U, &comm);CHKERRQ(ierr);
+
+    ierr = IGACreateVec(iga, &U_in);CHKERRQ(ierr);
+
+    PetscViewer viewer;
+    ierr = PetscViewerBinaryOpen(comm, solutionFile, FILE_MODE_READ, &viewer);CHKERRQ(ierr);
+    ierr = VecLoad(U_in, viewer);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
+
+    /* 2) Sanity checks on sizes and dofs */
+    ierr = VecGetLocalSize(U_in, &Nloc_in);CHKERRQ(ierr);
+    ierr = VecGetLocalSize(U,    &Nloc_out);CHKERRQ(ierr);
+    ierr = IGAGetDof(iga,        &dof_out);CHKERRQ(ierr); /* should be 3 (ice, tem, rhov) */
+
+    if (Nloc_in != Nloc_out) {
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                "InitializeFromInputSolution: local sizes mismatch: in = %d, out = %d",
+                (int)Nloc_in, (int)Nloc_out);
+    }
+    if (Nloc_out % dof_out != 0) {
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                "InitializeFromInputSolution: Nloc_out = %d not divisible by dof_out = %d",
+                (int)Nloc_out, (int)dof_out);
+    }
+
+    PetscInt nNodeLocal = Nloc_out / dof_out;
+
+    ierr = VecGetLocalSize(S, &Nloc_s);CHKERRQ(ierr);
+    if (Nloc_s != nNodeLocal) {
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                "InitializeFromInputSolution: S local size %d != nNodeLocal %d",
+                (int)Nloc_s, (int)nNodeLocal);
+    }
+
+    /* 3) Access arrays: input solution, output solution, sediment Vec */
+    const PetscScalar *ain  = NULL;
+    PetscScalar       *aout = NULL;
+    PetscScalar       *s_arr = NULL;
+
+    ierr = VecGetArrayRead(U_in, &ain);CHKERRQ(ierr);
+    ierr = VecGetArray(U,       &aout);CHKERRQ(ierr);
+    ierr = VecGetArray(S,       &s_arr);CHKERRQ(ierr);
+
+    /* 4) Precompute uniform rhov0 used as initial guess */
+    PetscReal rho_vs, d_rhovs;
+    RhoVS_I(user, user->temp0, &rho_vs, &d_rhovs);
+    PetscReal rhov0 = user->hum0 * rho_vs;
+
+    /* Input component mapping (Sthavishtha): [0]=ice, [1]=sediment, [2]=temperature */
+    const PetscInt ice_in_comp = 0;
+    const PetscInt sed_in_comp = 1;
+    /* const PetscInt temp_in_comp = 2;  <-- currently ignored */
+
+    /* Output mapping: [0]=ice, [1]=temp, [2]=rhov */
+    const PetscInt ice_out_comp  = 0;
+    const PetscInt rhov_out_comp = 2;
+
+    /* 5) Loop over local nodes and map phases */
+    for (PetscInt inode = 0; inode < nNodeLocal; inode++) {
+        PetscInt base = inode * dof_out; /* local base index in both ain and aout */
+
+        PetscReal ice_in = PetscRealPart(ain[base + ice_in_comp]);
+        PetscReal sed_in = PetscRealPart(ain[base + sed_in_comp]);
+
+        /* Clamp sediment to [0,1] */
+        PetscReal sed_clamped = PetscMin(PetscMax(sed_in, 0.0), 1.0);
+
+        /* Copy ice phase */
+        aout[base + ice_out_comp]  = (PetscScalar)ice_in;
+
+        /* Set vapor density to uniform rhov0 for now;
+           we will overwrite based on T(x) below. */
+        aout[base + rhov_out_comp] = (PetscScalar)rhov0;
+
+        /* Store sediment in S and in user->Phi_sed */
+        s_arr[inode]        = (PetscScalar)sed_clamped;
+        user->Phi_sed[inode] = sed_clamped;
+    }
+
+    ierr = VecRestoreArrayRead(U_in, &ain);CHKERRQ(ierr);
+    ierr = VecRestoreArray(U,       &aout);CHKERRQ(ierr);
+    ierr = VecRestoreArray(S,       &s_arr);CHKERRQ(ierr);
+
+    ierr = VecDestroy(&U_in);CHKERRQ(ierr);
+
+    user->n_actsed = user->NCsed;
+
+    /* 6) Overwrite temperature and rhov based on temp0 + grad*(x-0.5L) */
+    DM            da;
+    DMDALocalInfo info;
+
+    if (user->dim == 2) {
+        Field **u;
+        PetscInt k = -1;
+
+        ierr = IGACreateNodeDM(iga, 3, &da);CHKERRQ(ierr);
+        ierr = DMDAGetLocalInfo(da, &info);CHKERRQ(ierr);
+        ierr = DMDAVecGetArray(da, U, &u);CHKERRQ(ierr);
+
+        if (user->periodic == 1) k = user->p - 1;
+
+        for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+            for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+                PetscReal x = user->Lx * (PetscReal)i / (PetscReal)(info.mx + k);
+                PetscReal y = user->Ly * (PetscReal)j / (PetscReal)(info.my + k);
+
+                u[j][i].tem =
+                    user->temp0
+                    + user->grad_temp0[0] * (x - 0.5 * user->Lx)
+                    + user->grad_temp0[1] * (y - 0.5 * user->Ly);
+
+                PetscScalar rho_vs_loc, temp_loc = u[j][i].tem;
+                RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
+                u[j][i].rhov = user->hum0 * rho_vs_loc;
+            }
+        }
+
+        ierr = DMDAVecRestoreArray(da, U, &u);CHKERRQ(ierr);
+        ierr = DMDestroy(&da);CHKERRQ(ierr);
+
+    } else if (user->dim == 3) {
+        Field ***u;
+        PetscInt l = -1;
+
+        ierr = IGACreateNodeDM(iga, 3, &da);CHKERRQ(ierr);
+        ierr = DMDAGetLocalInfo(da, &info);CHKERRQ(ierr);
+        ierr = DMDAVecGetArray(da, U, &u);CHKERRQ(ierr);
+
+        if (user->periodic == 1) l = user->p - 1;
+
+        for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+            for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+                for (PetscInt k = info.zs; k < info.zs + info.zm; k++) {
+                    PetscReal x = user->Lx * (PetscReal)i / (PetscReal)(info.mx + l);
+                    PetscReal y = user->Ly * (PetscReal)j / (PetscReal)(info.my + l);
+                    PetscReal z = user->Lz * (PetscReal)k / (PetscReal)(info.mz + l);
+
+                    u[k][j][i].tem =
+                        user->temp0
+                        + user->grad_temp0[0] * (x - 0.5 * user->Lx)
+                        + user->grad_temp0[1] * (y - 0.5 * user->Ly)
+                        + user->grad_temp0[2] * (z - 0.5 * user->Lz);
+
+                    PetscScalar rho_vs_loc, temp_loc = u[k][j][i].tem;
+                    RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
+                    u[k][j][i].rhov = user->hum0 * rho_vs_loc;
+                }
+            }
+        }
+
+        ierr = DMDAVecRestoreArray(da, U, &u);CHKERRQ(ierr);
+        ierr = DMDestroy(&da);CHKERRQ(ierr);
+    }
+
+    PetscFunctionReturn(0);
 }

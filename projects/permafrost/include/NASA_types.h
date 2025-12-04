@@ -13,7 +13,7 @@ typedef struct {
 
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
-  PetscReal mob_sub, mav;  // Mobility parameters for phase evolution
+  PetscReal mob_sub;  // Mobility parameters for phase evolution
   PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, metal, air)
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
@@ -85,6 +85,11 @@ typedef struct {
 
   // Flag for reading input files
   PetscInt readFlag;  // Flag to indicate whether initial data should be read from a file
+
+  // Output file path
+  char output_path[PETSC_MAX_PATH_LEN];  // Path for output files
+  char initial_cond[PETSC_MAX_PATH_LEN];  // Path for initial condition file
+  char initial_PFgeom[PETSC_MAX_PATH_LEN];  // Path for initial geometry file
 
 } AppCtx;
 

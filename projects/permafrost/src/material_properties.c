@@ -340,7 +340,7 @@ void Sigma0(PetscScalar temp, PetscScalar *sigm0)
 
     // Warn user if temperature is outside the valid range
     if (temp > tem[0] || temp < tem[9]) 
-        PetscPrintf(PETSC_COMM_WORLD, "Warning: Temperature out of range in Sigma0 function.\n");
+        PetscPrintf(PETSC_COMM_WORLD, "Warning: Temperature (%g) out of range in Sigma0 function.\n", temp);
 
     // Find the interval in which `temp` falls
     for (ii = 0; ii < 10; ii++) {

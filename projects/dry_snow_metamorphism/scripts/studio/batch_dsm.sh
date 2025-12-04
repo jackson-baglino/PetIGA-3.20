@@ -28,7 +28,7 @@ RUN_SCRIPT="$BASE_DIR/scripts/studio/run_dsm.sh"
 # Sweeps (edit as needed)
 # ==========================
 # Temperatures (°C)
-temps=( -20 -30 -35 -40 )
+temps=( -20 -5 )
 humidities=( 0.98 )
 grad_xs=( 0.0 )
 grad_ys=( 3.0e-6 )
