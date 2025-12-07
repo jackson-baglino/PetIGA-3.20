@@ -74,7 +74,6 @@ def set_theme(theme: str):
             'axes.edgecolor': 'white',
             'xtick.color': 'white',
             'ytick.color': 'white',
-            'grid.color': '0.35',
         })
     else:  # light
         plt.rcParams.update({
@@ -86,7 +85,6 @@ def set_theme(theme: str):
             'axes.edgecolor': 'black',
             'xtick.color': 'black',
             'ytick.color': 'black',
-            'grid.color': '0.7',
         })
     plt.rcParams.update({
         'font.family': 'DejaVu Sans',
@@ -387,7 +385,6 @@ def plot_lines_k_vs_ssa(runs: List[Dict[str, Any]],
         if phi_text:
             title += f" — {phi_text}"
         ax.set_title(title)
-        ax.grid(True, alpha=0.35)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         if any_series:
@@ -489,7 +486,6 @@ def plot_lines_vs_time(runs: List[Dict[str, Any]],
         if phi_text:
             title += f" — {phi_text}"
         ax.set_title(title)
-        ax.grid(True, alpha=0.35)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
 

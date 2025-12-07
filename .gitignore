@@ -14,6 +14,8 @@
 .venv/
 env/
 venv/
+projects/permafrost/venv_pf311/*
+
 
 # Project-specific venvs
 projects/dry_snow_metamorphism/venv_DSM/
@@ -73,6 +75,7 @@ projects/dry_snow_metamorphism_scrap/*
 projects/permafrost/obj/
 projects/permafrost/outputs/
 projects/permafrost/permafrost
+projects/permafrost/inputs/tests/*
 
 ###############################################################################
 # PETSc & MPI Build Directories

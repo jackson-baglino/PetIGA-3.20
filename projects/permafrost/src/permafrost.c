@@ -1,7 +1,6 @@
-// #include "NASA_main.h"
+// #include "NASA_main.h" // Need to change name later
 
 // int main(int argc, char *argv[]) {
-
 //   // Petsc Initialization rite of passage 
 //   PetscErrorCode  ierr;
 //   ierr = PetscInitialize(&argc,&argv,NULL,NULL);CHKERRQ(ierr);

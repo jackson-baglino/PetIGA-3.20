@@ -121,8 +121,8 @@ int main(int argc, char *argv[]) {
     /* Get simulation parameters from CLI .txt file (PETSc options) */
     PetscBool output  = PETSC_TRUE;                    /* Output flag */
     PetscBool monitor = PETSC_TRUE;                    /* Monitor flag */
-    char      initial[PETSC_MAX_PATH_LEN] = "";        /* Initial condition file */
-    char      PFgeom[PETSC_MAX_PATH_LEN]  = "";        /* Initial ice geometry file */
+    char      initial[PETSC_MAX_PATH_LEN] = {0};       /* Initial condition file */
+    char      PFgeom[PETSC_MAX_PATH_LEN]  = {0};       /* Initial ice geometry file */
 
     PetscOptionsBegin(PETSC_COMM_WORLD, "", "Permafrost options", "IGA");
     /* --- Geometry & discretization --------------------------------------- */
@@ -132,15 +132,12 @@ int main(int argc, char *argv[]) {
     if (dim == 3) {
         ierr = PetscOptionsInt("-Nz", "Number of elements in z direction", "", Nz, &Nz, NULL); CHKERRQ(ierr);
     }
-
     PetscInt ngrad = dim; /* Number of grad_temp0 components to read */
-
     ierr = PetscOptionsReal("-Lx", "Domain length in x direction", "", Lx, &Lx, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-Ly", "Domain length in y direction", "", Ly, &Ly, NULL); CHKERRQ(ierr);
     if (dim == 3) {
         ierr = PetscOptionsReal("-Lz", "Domain length in z direction", "", Lz, &Lz, NULL); CHKERRQ(ierr);
     }
-
     ierr = PetscOptionsInt("-p", "Polynomial order", "", p, &p, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-C", "Global continuity order", "", C, &C, NULL); CHKERRQ(ierr);
 
@@ -229,7 +226,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "\nTime step: delt_t = %.2e sec, t_final = %.2e sec, n_out = %d \n", delt_t, t_final, n_out);
     PetscPrintf(PETSC_COMM_WORLD, "Initial conditions: temp0 = %.2f C, humidity = %.2f \n", temp, humidity);
     PetscPrintf(PETSC_COMM_WORLD, "Interface width: eps = %.2e m \n", eps);
-    PetscPrintf(PETSC_COMM_WORLD, "Tempperature gradient: dT/dx = %.2e C/m, dT/dy = %.2e C/m", grad_temp0[0], grad_temp0[1]);
+    PetscPrintf(PETSC_COMM_WORLD, "Temperature gradient: dT/dx = %.2e C/m, dT/dy = %.2e C/m", grad_temp0[0], grad_temp0[1]);
     if (dim == 3) {
         PetscPrintf(PETSC_COMM_WORLD, ", dT/dz = %.2e C/m", grad_temp0[2]);
     }
@@ -263,8 +260,8 @@ int main(int argc, char *argv[]) {
     /* If adaptive time stepping is enabled, print parameters */
     if (adap == 1) {
         PetscPrintf(PETSC_COMM_WORLD, "Adaptive time stepping is ON \n");
-        PetscPrintf(PETSC_COMM_WORLD, "  NRmin = %d, NRmax = %d, factor = %.4f \n", NRmin, NRmax, factor);
-        PetscPrintf(PETSC_COMM_WORLD, "  dtmin = %.2e sec, dtmax = %.2e sec \n\n", dtmin, dtmax);
+        PetscPrintf(PETSC_COMM_WORLD, "    NRmin = %d, NRmax = %d, factor = %.4f \n", NRmin, NRmax, factor);
+        PetscPrintf(PETSC_COMM_WORLD, "    dtmin = %.2e sec, dtmax = %.2e sec \n\n", dtmin, dtmax);
     }
 
     /* Gibbs-Thomson kinetic parameters */
@@ -343,7 +340,7 @@ int main(int argc, char *argv[]) {
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
     ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
 
-    /* Boundary conditions */
+    /* Boundary conditions (could 'functionalize' this at some point) */
     // Set vapor density BCs
     if (flag_BC_rhovfix == 1) {
         PetscReal rho0_vs;
@@ -402,6 +399,7 @@ int main(int argc, char *argv[]) {
     ierr = IGASetDof(igaS, 1); CHKERRQ(ierr);
     ierr = IGASetFieldName(igaS, 0, "Sediment Phase"); CHKERRQ(ierr);
 
+    // Set up axes for sediment phase
     IGAAxis axis0S, axis1S, axis2S;
     ierr = IGAGetAxis(igaS, 0, &axis0S);
     if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis0S, PETSC_TRUE); CHKERRQ(ierr); }
@@ -420,13 +418,39 @@ int main(int argc, char *argv[]) {
     ierr = IGASetFromOptions(igaS); CHKERRQ(ierr);
     ierr = IGASetUp(igaS); CHKERRQ(ierr);
 
+    /* Create solution vectors for ice, temp, and air (U) and sediment phase (S) */
     Vec U, S;
     ierr = IGACreateVec(iga, &U); CHKERRQ(ierr);
     ierr = IGACreateVec(igaS, &S); CHKERRQ(ierr);
     ierr = VecZeroEntries(U); CHKERRQ(ierr);
     ierr = VecZeroEntries(S); CHKERRQ(ierr);
-    ierr = InitializeFromInputSolution(iga, U, S, &user); CHKERRQ(ierr);
 
+    // Check if PFgeom is set, and initialize sediment phase accordingly
+    PetscPrintf(PETSC_COMM_WORLD, "user.initial: %s \n", user.initial_cond);
+    if (user.initial_cond[0] != '\0') {
+        PetscPrintf(PETSC_COMM_WORLD, "Loading initial sediment geometry from file: %s \n", user.initial_cond);
+        ierr = InitializeFromInputSolution(iga, U, S, &user); CHKERRQ(ierr);
+    } else {
+        // Initialize sediment phase randomly
+        PetscPrintf(PETSC_COMM_WORLD, "Generating random sediment geometry \n");
+        if (user.dim ==2) {
+            /* Need to implement code to randomly assign sediment and ice grains */
+            // Error message for now
+            // PetscPrintf(PETSC_COMM_WORLD, "ERROR: 2D random sediment grain generation not implemented yet. Please provide initial condition file. \n");
+            // return -1; 
+            // Check implementation below: !!!!!!!
+            PetscReal t = 0.0;
+            ierr = InitialIceGrains(iga, &user); CHKERRQ(ierr);
+            if (dim == 2) {
+                ierr = FormInitialSoil2D(igaS,S,&user);CHKERRQ(ierr);
+            } else if (dim == 3) {
+                ierr = FormInitialSoil3D(igaS,S,&user);CHKERRQ(ierr);
+            }
+            ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+        }
+    }
+
+    /* Write initial sediment phase to file */
     char filename_sed[256], filevect_sed[256];
     sprintf(filename_sed, "%s/igasoil.dat", user.output_path);
     ierr = IGAWrite(igaS, filename_sed); CHKERRQ(ierr);
@@ -440,8 +464,10 @@ int main(int argc, char *argv[]) {
     /* Cleanup Resources */
     // Destroy vectors and TS
     ierr = VecDestroy(&U); CHKERRQ(ierr);
+    ierr = VecDestroy(&S); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
+    ierr = IGADestroy(&igaS); CHKERRQ(ierr);
 
     // Free allocated memory for sediment phase and parameters
     ierr = PetscFree(user.Phi_sed); CHKERRQ(ierr);
