@@ -684,7 +684,8 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
 
 PetscReal SmoothHeaviside(PetscReal phi, PetscReal eps)
 {
-    return  0.5 + 0.5 * tanh(0.5 * phi / eps);
+    // return 0.5 * (1.0 + tanh(phi/eps));
+    return 0.5 + 0.5 * tanh(0.5 * phi / eps);
 }
 
 PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
@@ -693,29 +694,40 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
     PetscInt       i, j;
     PetscFunctionBegin;
 
+    /* --- Fields for main phase-field vector U --- */
     DM             da;
-    ierr = IGACreateNodeDM(iga, 3, &da); CHKERRQ(ierr);
     Field          **u;
-    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
     DMDALocalInfo  info;
-    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
 
-    DM             da_soil;
-    ierr = IGACreateNodeDM(igaS, 1, &da_soil); CHKERRQ(ierr);
-    FieldS         **u_soil;
-    ierr = DMDAVecGetArray(da_soil, S, &u_soil); CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga, 3, &da);CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);CHKERRQ(ierr);
+
+    /* --- Fields for soil vector S (may have zero local size on some ranks) --- */
+    PetscInt       nlocS;
+    DM             da_soil = NULL;
+    FieldS         **u_soil = NULL;
     DMDALocalInfo  info_soil;
-    ierr = DMDAGetLocalInfo(da_soil, &info_soil); CHKERRQ(ierr);
+
+    ierr = VecGetLocalSize(S, &nlocS);CHKERRQ(ierr);
+
+    if (nlocS > 0) {
+        /* Only map S to a DMDA on ranks that actually own entries */
+        ierr = IGACreateNodeDM(igaS, 1, &da_soil);CHKERRQ(ierr);
+        ierr = DMDAVecGetArray(da_soil, S, &u_soil);CHKERRQ(ierr);
+        ierr = DMDAGetLocalInfo(da_soil, &info_soil);CHKERRQ(ierr);
+        (void)info_soil; /* currently unused but kept for possible future checks */
+    }
 
     PetscReal Lx = user->Lx;
     PetscReal Ly = user->Ly;
 
-    PetscReal R        = user->R1;   /* grain radius          */
-    PetscReal x_offset = 0.5 * Lx;   /* Lx/2                  */
-    PetscReal y_offset = 0.5 * Ly;   /* Ly/2                  */
-    PetscReal Y_center = 0.25 * Ly;  /* half distance between grain centers */
+    PetscReal R        = user->R1;      /* grain radius          */
+    PetscReal x_offset = 0.5 * Lx;      /* Lx/2                  */
+    PetscReal y_offset = 0.5 * Ly;      /* Ly/2                  */
+    PetscReal Y_center = 0.25 * Ly;     /* half distance between grain centers */
 
-    // PetscReal separation = (2.0*Y_center) - (2.0*R); /* not used, but here if needed */
+    // PetscReal separation = (2.0 * Y_center) - (2.0 * R); /* not used */
 
     PetscReal contact_angle_deg = 20.0;
     PetscReal filling_angle_deg = 45.0;
@@ -773,8 +785,8 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
             PetscReal x_right_local = Cx - sqrt_term;
             PetscReal x_left_local  = -Cx + sqrt_term;
 
-            PetscReal d_left  = Xloc - x_left_local;   /* >=0 if right of left arc  */
-            PetscReal d_right = x_right_local - Xloc;  /* >=0 if left of right arc  */
+            PetscReal d_left  = Xloc - x_left_local;   /* >= 0 if right of left arc  */
+            PetscReal d_right = x_right_local - Xloc;  /* >= 0 if left of right arc  */
 
             PetscBool inside_x = (d_left >= 0.0 && d_right >= 0.0) ? PETSC_TRUE : PETSC_FALSE;
 
@@ -803,25 +815,22 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
             /* remove overlap with solid grain */
             phi_bridge *= (1.0 - phi_solid);
 
-            u_soil[j][i].soil = phi_solid;
-            u[j][i].ice = phi_bridge;
-
-            // Clamp u_soil (use real part if PetscScalar is complex) and assign to user context
-            {
-                PetscReal soil_val = PetscRealPart(u_soil[j][i].soil);
-                if (soil_val > 1.0) soil_val = 1.0;
-                if (soil_val < 0.0) soil_val = 0.0;
-                u_soil[j][i].soil = (PetscScalar)soil_val;
-                user->Phi_sed[j * info_soil.mx + i] = soil_val;
+            /* Store solid fraction in soil Vec if we actually mapped it on this rank */
+            if (u_soil) {
+                u_soil[j][i].soil = phi_solid;
             }
+
+            /* Store bridge phase in ice field */
+            u[j][i].ice = phi_bridge;
 
             /* Set temperature and rhov based on temp0 + grad*(x-0.5L) */
             PetscReal x_phys = user->Lx * (PetscReal)i / (PetscReal)(info.mx + k);
             PetscReal y_phys = user->Ly * (PetscReal)j / (PetscReal)(info.my + k);
 
-            u[j][i].tem = user->temp0
-                          + user->grad_temp0[0] * (x_phys - 0.5 * user->Lx)
-                          + user->grad_temp0[1] * (y_phys - 0.5 * user->Ly);
+            u[j][i].tem =
+                user->temp0
+                + user->grad_temp0[0] * (x_phys - 0.5 * user->Lx)
+                + user->grad_temp0[1] * (y_phys - 0.5 * user->Ly);
 
             PetscScalar rho_vs_loc, temp_loc = u[j][i].tem;
             RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
@@ -829,10 +838,14 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
         }
     }
 
-    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
-    ierr = DMDestroy(&da); CHKERRQ(ierr);
-    ierr = DMDAVecRestoreArray(da_soil, S, &u_soil); CHKERRQ(ierr);
-    ierr = DMDestroy(&da_soil); CHKERRQ(ierr);
+    /* Restore arrays and destroy DMs */
+    ierr = DMDAVecRestoreArray(da, U, &u);CHKERRQ(ierr);
+    ierr = DMDestroy(&da);CHKERRQ(ierr);
+
+    if (u_soil) {
+        ierr = DMDAVecRestoreArray(da_soil, S, &u_soil);CHKERRQ(ierr);
+        ierr = DMDestroy(&da_soil);CHKERRQ(ierr);
+    }
 
     PetscFunctionReturn(0);
 }
