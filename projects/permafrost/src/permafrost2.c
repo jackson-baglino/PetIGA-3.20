@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
         PetscReal T_BC[dim][2], LL[dim];
         LL[0] = user.Lx;
         LL[1] = user.Ly;
-        LL[2] = user.Lz;
+        if (dim == 3) {LL[2] = user.Lz; }
         for (PetscInt l = 0; l < dim; l++) {
             for (PetscInt m = 0; m < 2; m++) {
                 T_BC[l][m] = user.temp0 + (2.0 * m - 1.0) * user.grad_temp0[l] * LL[l] / 2.0;

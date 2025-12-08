@@ -8,7 +8,7 @@
 -p 1
 -C 0
 -delt_t 1.0e-4
--t_final 0
+-t_final 10
 -n_out 20
 -humidity 0.95
 -temp -20.0
