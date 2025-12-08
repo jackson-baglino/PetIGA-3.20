@@ -9,7 +9,7 @@
 -C 0
 -delt_t 1.0e-4
 -t_final 10
--n_out 20
+-n_out 3
 -humidity 0.95
 -temp -20.0
 -grad_temp0 0.0,1.0e-6,0.0
@@ -19,6 +19,5 @@
 -flag_BC_rhovfix 0
 -Permafrost_output 1
 -Permafrost_monitor 1
--ic_type capillary
 -initial_cond ./inputs/tests/SthavisthaInputs/AssemblePhase_reinit.dat
 -R1 1.01e-4

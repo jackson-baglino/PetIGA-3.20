@@ -14,20 +14,20 @@ typedef struct {
 typedef struct {
   PetscScalar ice,tem,rhov;
 } Field;
-typedef enum {
-    IC_GEOM_RANDOM          = 0,
-    IC_GEOM_FILE            = 1,
-    IC_GEOM_CAPILLARY       = 2,
-    IC_GEOM_LAYERED         = 3,
-    IC_GEOM_ENCLOSED        = 4,
-    /* add more as needed */
-} ICGeomType;
+// typedef enum {
+//     IC_GEOM_RANDOM          = 0,
+//     IC_GEOM_FILE            = 1,
+//     IC_GEOM_CAPILLARY       = 2,
+//     IC_GEOM_LAYERED         = 3,
+//     IC_GEOM_ENCLOSED        = 4,
+//     /* add more as needed */
+// } ICGeomType;
 
 /* Application context structure */
 typedef struct {
   IGA       iga;  // Isogeometric analysis (IGA) structure for managing geometry and basis functions
 
-  ICGeomType ic_type;  // Type of initial condition geometry (enum defined elsewhere)
+//   ICGeomType ic_type;  // Type of initial condition geometry (enum defined elsewhere)
 
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
