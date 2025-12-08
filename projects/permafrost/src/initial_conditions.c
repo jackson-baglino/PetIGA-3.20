@@ -1,6 +1,179 @@
 #include "initial_conditions.h"
 #include "material_properties.h"
 
+PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+                "--------------------- INITIAL CONDITIONS (Layered Permafrost 2D) --------------------------\n");
+
+    /* --- Report grain counts / ratio --- */
+    PetscInt  nIceGrains = user->n_act;
+    PetscInt  nSedGrains = user->n_actsed;
+    PetscReal grain_ratio = 1.0;
+    if (nSedGrains > 0) {
+        grain_ratio = ((PetscReal)nIceGrains) / ((PetscReal)nSedGrains);
+    }
+    PetscPrintf(PETSC_COMM_WORLD,
+                "FormInitialLayeredPermafrost2D: nIceGrains = %D, nSedGrains = %D, ratio ≈ %.3f\n",
+                nIceGrains, nSedGrains, (double)grain_ratio);
+
+    /* --- Main phase-field vector U (ice, tem, rhov) --- */
+    DM            daU;
+    Field         **u;
+    DMDALocalInfo infoU;
+
+    ierr = IGACreateNodeDM(iga, 3, &daU);CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(daU, U, &u);CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(daU, &infoU);CHKERRQ(ierr);
+
+    /* --- Soil vector S (sediment phase). Might be empty on some ranks. --- */
+    PetscInt      nlocS;
+    DM            daS = NULL;
+    FieldS        **uS = NULL;
+    DMDALocalInfo infoS;
+
+    ierr = VecGetLocalSize(S, &nlocS);CHKERRQ(ierr);
+    if (nlocS > 0) {
+        ierr = IGACreateNodeDM(igaS, 1, &daS);CHKERRQ(ierr);
+        ierr = DMDAVecGetArray(daS, S, &uS);CHKERRQ(ierr);
+        ierr = DMDAGetLocalInfo(daS, &infoS);CHKERRQ(ierr);
+    }
+
+    /* --- Geometry / interface parameters --- */
+    const PetscReal Lx = user->Lx;
+    const PetscReal Ly = user->Ly;
+    const PetscReal eps = user->eps;
+
+    /* Vertical layering:
+       - y < y_bottomIce : solid ice block (permafrost)
+       - y_sedLayer <= y <= y_iceCap : sediment-only band
+       - y > y_iceCap : thin ice cap
+    */
+    const PetscReal y_bottomIce = 0.25 * Ly;
+    const PetscReal y_sedLayer  = 0.75 * Ly;
+    const PetscReal y_iceCap    = 0.95 * Ly;
+
+    PetscInt k_periodic = -1;
+    if (user->periodic == 1) {
+        k_periodic = user->p - 1;
+    }
+
+    for (PetscInt i = infoU.xs; i < infoU.xs + infoU.xm; i++) {
+        for (PetscInt j = infoU.ys; j < infoU.ys + infoU.ym; j++) {
+
+            /* Geometry coordinates for phase fields (0..Lx, 0..Ly) */
+            PetscReal x_geom = 0.0, y_geom = 0.0;
+            if (infoU.mx > 1) x_geom = ((PetscReal)i / (PetscReal)(infoU.mx - 1)) * Lx;
+            if (infoU.my > 1) y_geom = ((PetscReal)j / (PetscReal)(infoU.my - 1)) * Ly;
+
+            /* Physical coordinates used for temperature gradient (consistent with other ICs) */
+            PetscReal x_phys = Lx * (PetscReal)i / (PetscReal)(infoU.mx + k_periodic);
+            PetscReal y_phys = Ly * (PetscReal)j / (PetscReal)(infoU.my + k_periodic);
+
+            /* --------- Temperature and vapor density --------- */
+            u[j][i].tem =
+                user->temp0
+                + user->grad_temp0[0] * (x_phys - 0.5 * Lx)
+                + user->grad_temp0[1] * (y_phys - 0.5 * Ly);
+
+            PetscScalar rho_vs_loc, temp_loc = u[j][i].tem;
+            RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
+            u[j][i].rhov = user->hum0 * rho_vs_loc;
+
+            /* --------- Ice grains (from user->cent, user->radius) --------- */
+            PetscReal phi_ice_grains = 0.0;
+            for (PetscInt aa = 0; aa < user->n_act; aa++) {
+                PetscReal dx = x_geom - user->cent[0][aa];
+                PetscReal dy = y_geom - user->cent[1][aa];
+                PetscReal dist = PetscSqrtReal(dx * dx + dy * dy) - user->radius[aa];
+                phi_ice_grains += 0.5 - 0.5 * PetscTanhReal(0.5 * dist / eps);
+            }
+            if (phi_ice_grains > 1.0) phi_ice_grains = 1.0;
+            if (phi_ice_grains < 0.0) phi_ice_grains = 0.0;
+
+            /* --------- Sediment grains (from user->centsed, user->radiussed) --------- */
+            PetscReal phi_sed_grains = 0.0;
+            for (PetscInt aa = 0; aa < user->n_actsed; aa++) {
+                PetscReal dx = x_geom - user->centsed[0][aa];
+                PetscReal dy = y_geom - user->centsed[1][aa];
+                PetscReal dist = PetscSqrtReal(dx * dx + dy * dy) - user->radiussed[aa];
+                phi_sed_grains += 0.5 - 0.5 * PetscTanhReal(0.5 * dist / eps);
+            }
+            if (phi_sed_grains > 1.0) phi_sed_grains = 1.0;
+            if (phi_sed_grains < 0.0) phi_sed_grains = 0.0;
+
+            /* --------- Bottom solid ice block (permafrost-style layer) --------- */
+            PetscReal d_bottom   = y_geom - y_bottomIce;   /* negative below interface */
+            PetscReal H_bottom   = 0.5 + 0.5 * PetscTanhReal(0.5 * d_bottom / eps);
+            PetscReal phi_bottom = 1.0 - H_bottom;         /* ~1 below, ~0 above */
+
+            /* --------- Top ice cap --------- */
+            PetscReal d_cap   = y_geom - y_iceCap;         /* negative below cap start */
+            PetscReal H_cap   = 0.5 + 0.5 * PetscTanhReal(0.5 * d_cap / eps);
+            PetscReal phi_cap = 1.0 - H_cap;               /* ~1 above, ~0 below */
+
+            /* --------- Combine into final ice phase --------- */
+            PetscReal phi_ice = phi_bottom;
+            if (phi_ice_grains > phi_ice) phi_ice = phi_ice_grains;
+            if (phi_cap        > phi_ice) phi_ice = phi_cap;
+
+            /* Sediment-only band between y_sedLayer and y_iceCap:
+               no ice in this region (overridden by cap above). */
+            if (y_geom >= y_sedLayer && y_geom <= y_iceCap) {
+                phi_ice = 0.0;
+            }
+
+            /* Carve out sediment grains from the ice field */
+            phi_ice *= (1.0 - phi_sed_grains);
+
+            if (phi_ice > 1.0) phi_ice = 1.0;
+            if (phi_ice < 0.0) phi_ice = 0.0;
+
+            u[j][i].ice = phi_ice;
+
+            /* --------- Soil / sediment field in S (if present on this rank) --------- */
+            if (uS) {
+                /* Build a simple soil phase:
+                   - In sediment-only band: soil = 1
+                   - Elsewhere: soil = sediment grains only
+                   - In the very top ice cap: soil = 0
+                */
+                PetscReal phi_soil = phi_sed_grains;
+
+                if (y_geom >= y_sedLayer && y_geom <= y_iceCap) {
+                    phi_soil = 1.0;
+                }
+                if (y_geom > y_iceCap) {
+                    phi_soil = 0.0;
+                }
+
+                if (phi_soil > 1.0) phi_soil = 1.0;
+                if (phi_soil < 0.0) phi_soil = 0.0;
+
+                /* Only write where the soil DM actually has this (i,j) */
+                if (i >= infoS.xs && i < infoS.xs + infoS.xm &&
+                    j >= infoS.ys && j < infoS.ys + infoS.ym) {
+                    uS[j][i].soil = phi_soil;
+                }
+            }
+        }
+    }
+
+    /* --- Restore arrays and destroy DMs --- */
+    ierr = DMDAVecRestoreArray(daU, U, &u);CHKERRQ(ierr);
+    ierr = DMDestroy(&daU);CHKERRQ(ierr);
+
+    if (uS) {
+        ierr = DMDAVecRestoreArray(daS, S, &uS);CHKERRQ(ierr);
+        ierr = DMDestroy(&daS);CHKERRQ(ierr);
+    }
+
+    PetscFunctionReturn(0);
+}
+
 PetscErrorCode FormInitialSoil2D(IGA igaS,Vec S,AppCtx *user)
 {
     PetscErrorCode ierr;

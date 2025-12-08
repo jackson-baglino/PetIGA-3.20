@@ -4,6 +4,7 @@
 #include "NASA_types.h"
 
 /* Form initial soil distribution for 2D and 3D problems */
+PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user);
 PetscErrorCode FormInitialSoil2D(IGA igaS, Vec S, AppCtx *user);
 PetscErrorCode FormInitialSoil3D(IGA igaS, Vec S, AppCtx *user);
 
