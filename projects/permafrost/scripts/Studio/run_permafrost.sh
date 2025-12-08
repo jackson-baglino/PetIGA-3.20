@@ -61,7 +61,7 @@ run_simulation() {
 finalize_results() {
     echo "Finalizing results..."
     cd ./scripts
-    cp run_permafrost.sh plotpermafrost.py plotSSA.py plotPorosity.py $folder
+    cp Studio/run_permafrost.sh plotpermafrost.py plotSSA.py plotPorosity.py $folder
     cd ../src
     cp permafrost.c $folder
     cd ../

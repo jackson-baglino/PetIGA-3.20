@@ -21,6 +21,17 @@ int main(int argc, char *argv[]) {
     PetscInt flag_BC_Tfix;               /* Flag for temperature boundary condition */
     PetscInt flag_BC_rhovfix;            /* Flag for fixed rho_v boundary condition */
 
+    // Define initial condition type / geometry type
+    static const char *ICGeomTypeNames[] = {
+        "RANDOM",
+        "FILE",
+        "CAPILLARY",
+        "LAYERED",
+        "ENCLOSED",
+        NULL
+    };
+    PetscEnum ic_type_opt = (PetscEnum)IC_GEOM_RANDOM; /* Default initial condition geometry type */
+
     user.xi_v       = 1.0e-5;   /* Time scaling parameter for vapor */
     user.xi_T       = 1.0e-4;   /* Time scaling parameter for temperature */
     user.flag_xiT   = 1;        /* Flag for temperature */
@@ -187,13 +198,15 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-dtmax", "Maximum time step size", "", dtmax, &dtmax, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-max_rej", "Maximum number of rejected steps", "", max_rej, &max_rej, NULL); CHKERRQ(ierr);
 
+    /* --- Initial condition geometry type -------------------------------- */
+    ierr = PetscOptionsEnum("-ic_type", "Initial condition geometry type", "", ICGeomTypeNames, (PetscEnum)ic_type_opt, (PetscEnum *)&ic_type_opt, NULL); CHKERRQ(ierr);
+
     /* --- Restart / initialization files --------------------------------- */
     ierr = PetscOptionsString("-initial_cond", "Load initial solution from file", "", initial, initial, sizeof(initial), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
 
     /* --- Capillarly neck parameters ------------------------------------- */
     ierr = PetscOptionsReal("-R1", "Radius of capillary neck", "", user.R1, &user.R1, NULL); CHKERRQ(ierr);
-    // ierr = PetscOptionsReal("-neck_length", "Length of capillary neck", "", user.neck_length, &user.neck_length, NULL); CHKERRQ(ierr);
 
     PetscOptionsEnd();
 
@@ -213,6 +226,7 @@ int main(int argc, char *argv[]) {
     user.grad_temp0[1] = grad_temp0[1];
     user.grad_temp0[2] = grad_temp0[2];
     user.hum0 = humidity;
+    user.ic_type = (ICGeomType)ic_type_opt;
     PetscStrncpy(user.initial_cond, initial, PETSC_MAX_PATH_LEN);
     PetscStrncpy(user.initial_PFgeom, PFgeom, PETSC_MAX_PATH_LEN);
 
@@ -429,38 +443,104 @@ int main(int argc, char *argv[]) {
     ierr = VecZeroEntries(U); CHKERRQ(ierr);
     ierr = VecZeroEntries(S); CHKERRQ(ierr);
 
-    // Check if PFgeom is set, and initialize sediment phase accordingly
-    PetscPrintf(PETSC_COMM_WORLD, "user.initial: %s \n", user.initial_cond);
-    if (user.initial_cond[0] != '\0') {
-        PetscPrintf(PETSC_COMM_WORLD, "[Pretneding to Load] Loading initial sediment geometry from file: %s \n", user.initial_cond);
-        // ierr = InitializeFromInputSolution(iga, U, S, &user); CHKERRQ(ierr);
-        ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
-    } else {
-        // Initialize sediment phase randomly
-        PetscPrintf(PETSC_COMM_WORLD, "Generating random sediment geometry \n");
-        if (user.dim ==2) {
-            /* Need to implement code to randomly assign sediment and ice grains */
-            // Error message for now
-            // PetscPrintf(PETSC_COMM_WORLD, "ERROR: 2D random sediment grain generation not implemented yet. Please provide initial condition file. \n");
-            // return -1; 
-            // Check implementation below: !!!!!!!
+    PetscPrintf(PETSC_COMM_WORLD, "Setting up initial conditions... \n");
+    PetscPrintf(PETSC_COMM_WORLD, "Initial condition type: %s \n", ICGeomTypeNames[ic_type_opt]);
+
+    switch (user.ic_type) {
+    case IC_GEOM_RANDOM:
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "IC type: random  (generating random ice + sediment grains)\n");
+        {
             PetscReal t = 0.0;
             ierr = InitialIceGrains(iga, &user); CHKERRQ(ierr);
+
             if (dim == 2) {
-                ierr = FormInitialSoil2D(igaS,S,&user);CHKERRQ(ierr);
+                ierr = FormInitialSoil2D(igaS, S, &user); CHKERRQ(ierr);
+                ierr = FormLayeredInitialCondition2D(iga, t, U, &user,
+                                                     initial, PFgeom); CHKERRQ(ierr);
             } else if (dim == 3) {
-                ierr = FormInitialSoil3D(igaS,S,&user);CHKERRQ(ierr);
+                ierr = FormInitialSoil3D(igaS, S, &user); CHKERRQ(ierr);
+                /* TODO: 3D ice IC if needed */
             }
-            ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
         }
+        break;
+
+    case IC_GEOM_FILE:
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "IC type: file  (loading solution from %s)\n",
+                    user.initial_cond);
+        if (user.initial_cond[0] == '\0') {
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_USER,
+                    "ic_type=file but -initial_cond was not provided");
+        }
+        ierr = InitializeFromInputSolution(iga, U, S, &user); CHKERRQ(ierr);
+        break;
+
+    case IC_GEOM_CAPILLARY:  // DONE!
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "IC type: capillary  (using analytic capillary neck geometry)\n");
+        ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
+        break;
+
+    case IC_GEOM_LAYERED:
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "IC type: layered  (using layered geometry)\n");
+        {
+            // PetscReal t = 0.0;
+            if (dim == 2) {
+                // ierr = FormLayeredInitialCondition2D(iga, t, U, &user,
+                //                                      initial, PFgeom); CHKERRQ(ierr);
+            } else if (dim == 3) { 
+                // ierr = FormLayeredInitialCondition3D(iga, t, U, &user,
+                //                                      initial, PFgeom); CHKERRQ(ierr);
+            }
+        }
+        break;
+
+    case IC_GEOM_ENCLOSED:
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "IC type: enclosed  (using enclosed geometry)\n");
+        // ierr = FormIC_enclosed(iga, U, igaS, S, &user); CHKERRQ(ierr);
+        break;
+
+    default:
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Unknown ic_type enum value");
     }
 
+    // // Check if PFgeom is set, and initialize sediment phase accordingly
+    // PetscPrintf(PETSC_COMM_WORLD, "user.initial: %s \n", user.initial_cond);
+    // if (user.initial_cond[0] != '\0') {
+    //     PetscPrintf(PETSC_COMM_WORLD, "[Pretneding to Load] Loading initial sediment geometry from file: %s \n", user.initial_cond);
+    //     // ierr = InitializeFromInputSolution(iga, U, S, &user); CHKERRQ(ierr);
+    //     ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
+    // } else {
+    //     // Initialize sediment phase randomly
+    //     PetscPrintf(PETSC_COMM_WORLD, "Generating random sediment geometry \n");
+    //     if (user.dim ==2) {
+    //         /* Need to implement code to randomly assign sediment and ice grains */
+    //         // Error message for now
+    //         // PetscPrintf(PETSC_COMM_WORLD, "ERROR: 2D random sediment grain generation not implemented yet. Please provide initial condition file. \n");
+    //         // return -1; 
+    //         // Check implementation below: !!!!!!!
+    //         PetscReal t = 0.0;
+    //         ierr = InitialIceGrains(iga, &user); CHKERRQ(ierr);
+    //         if (dim == 2) {
+    //             ierr = FormInitialSoil2D(igaS,S,&user);CHKERRQ(ierr);
+    //         } else if (dim == 3) {
+    //             ierr = FormInitialSoil3D(igaS,S,&user);CHKERRQ(ierr);
+    //         }
+    //         ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+    //     }
+    // }
+
     /* Write initial sediment phase to file */
-    char filename_sed[256], filevect_sed[256];
-    sprintf(filename_sed, "%s/igasoil.dat", user.output_path);
+    char filename_sed[PETSC_MAX_PATH_LEN], filevect_sed[PETSC_MAX_PATH_LEN];
+
+    ierr = PetscSNPrintf(filename_sed, sizeof(filename_sed), "%s/igasoil.dat", user.output_path); CHKERRQ(ierr);
     ierr = IGAWrite(igaS, filename_sed); CHKERRQ(ierr);
 
-    sprintf(filevect_sed, "%s/soil.dat", user.output_path);
+    ierr = PetscSNPrintf(filevect_sed, sizeof(filevect_sed), "%s/soil.dat", user.output_path); CHKERRQ(ierr);
     ierr = IGAWriteVec(igaS, S, filevect_sed); CHKERRQ(ierr);
 
     /* Solve the system */
