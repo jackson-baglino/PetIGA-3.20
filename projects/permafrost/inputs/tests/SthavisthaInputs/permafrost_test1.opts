@@ -8,8 +8,8 @@
 -p 1
 -C 0
 -delt_t 1.0e-4
--t_final 600
--n_out 5
+-t_final 86400
+-n_out 20
 -humidity 0.95
 -temp -20.0
 -grad_temp0 0.0,1.0e-6,0.0
