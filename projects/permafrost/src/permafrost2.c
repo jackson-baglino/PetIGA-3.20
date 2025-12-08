@@ -21,17 +21,6 @@ int main(int argc, char *argv[]) {
     PetscInt flag_BC_Tfix;               /* Flag for temperature boundary condition */
     PetscInt flag_BC_rhovfix;            /* Flag for fixed rho_v boundary condition */
 
-    // Define initial condition type / geometry type
-    // static const char *ICGeomTypeNames[] = {
-    //     "RANDOM",
-    //     "FILE",
-    //     "CAPILLARY",
-    //     "LAYERED",
-    //     "ENCLOSED",
-    //     NULL
-    // };
-    // PetscEnum ic_type_opt = (PetscEnum)IC_GEOM_RANDOM; /* Default initial condition geometry type */
-
     user.xi_v       = 1.0e-5;   /* Time scaling parameter for vapor */
     user.xi_T       = 1.0e-4;   /* Time scaling parameter for temperature */
     user.flag_xiT   = 1;        /* Flag for temperature */
@@ -198,9 +187,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-dtmax", "Maximum time step size", "", dtmax, &dtmax, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-max_rej", "Maximum number of rejected steps", "", max_rej, &max_rej, NULL); CHKERRQ(ierr);
 
-    /* --- Initial condition geometry type -------------------------------- */
-    // ierr = PetscOptionsEnum("-ic_type", "Initial condition geometry type", "", ICGeomTypeNames, (PetscEnum)ic_type_opt, (PetscEnum *)&ic_type_opt, NULL); CHKERRQ(ierr);
-
     /* --- Restart / initialization files --------------------------------- */
     ierr = PetscOptionsString("-initial_cond", "Load initial solution from file", "", initial, initial, sizeof(initial), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
@@ -226,7 +212,6 @@ int main(int argc, char *argv[]) {
     user.grad_temp0[1] = grad_temp0[1];
     user.grad_temp0[2] = grad_temp0[2];
     user.hum0 = humidity;
-    // user.ic_type = (ICGeomType)ic_type_opt;
     PetscStrncpy(user.initial_cond, initial, PETSC_MAX_PATH_LEN);
     PetscStrncpy(user.initial_PFgeom, PFgeom, PETSC_MAX_PATH_LEN);
 
