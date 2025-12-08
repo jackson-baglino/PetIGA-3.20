@@ -432,7 +432,7 @@ int main(int argc, char *argv[]) {
     // Check if PFgeom is set, and initialize sediment phase accordingly
     PetscPrintf(PETSC_COMM_WORLD, "user.initial: %s \n", user.initial_cond);
     if (user.initial_cond[0] != '\0') {
-        PetscPrintf(PETSC_COMM_WORLD, "Loading initial sediment geometry from file: %s \n", user.initial_cond);
+        PetscPrintf(PETSC_COMM_WORLD, "[Pretneding to Load] Loading initial sediment geometry from file: %s \n", user.initial_cond);
         // ierr = InitializeFromInputSolution(iga, U, S, &user); CHKERRQ(ierr);
         ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
     } else {
