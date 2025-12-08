@@ -681,3 +681,158 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
 
     PetscFunctionReturn(0);
 }
+
+PetscReal SmoothHeaviside(PetscReal phi, PetscReal eps)
+{
+    return  0.5 + 0.5 * tanh(0.5 * phi / eps);
+}
+
+PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscInt       i, j;
+    PetscFunctionBegin;
+
+    DM             da;
+    ierr = IGACreateNodeDM(iga, 3, &da); CHKERRQ(ierr);
+    Field          **u;
+    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
+    DMDALocalInfo  info;
+    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
+
+    DM             da_soil;
+    ierr = IGACreateNodeDM(igaS, 1, &da_soil); CHKERRQ(ierr);
+    FieldS         **u_soil;
+    ierr = DMDAVecGetArray(da_soil, S, &u_soil); CHKERRQ(ierr);
+    DMDALocalInfo  info_soil;
+    ierr = DMDAGetLocalInfo(da_soil, &info_soil); CHKERRQ(ierr);
+
+    PetscReal Lx = user->Lx;
+    PetscReal Ly = user->Ly;
+
+    PetscReal R        = user->R1;   /* grain radius          */
+    PetscReal x_offset = 0.5 * Lx;   /* Lx/2                  */
+    PetscReal y_offset = 0.5 * Ly;   /* Ly/2                  */
+    PetscReal Y_center = 0.25 * Ly;  /* half distance between grain centers */
+
+    // PetscReal separation = (2.0*Y_center) - (2.0*R); /* not used, but here if needed */
+
+    PetscReal contact_angle_deg = 20.0;
+    PetscReal filling_angle_deg = 45.0;
+
+    PetscReal theta = contact_angle_deg * PETSC_PI / 180.0;
+    PetscReal beta  = filling_angle_deg * PETSC_PI / 180.0;
+
+    PetscReal Px = R * PetscSinReal(beta);
+    PetscReal Py = Y_center - R * PetscCosReal(beta);
+    PetscReal alpha    = beta + theta;
+    PetscReal Cx       = Px + Py * PetscTanReal(alpha);
+    PetscReal R_bridge = PetscSqrtReal((Cx - Px) * (Cx - Px) + Py * Py);
+    PetscReal eps_factor = 0.005;
+    PetscReal eps        = eps_factor * R;
+
+    PetscInt k = -1;
+    if (user->periodic == 1) k = user->p - 1;
+
+    for (i = info.xs; i < info.xs + info.xm; i++) {
+        for (j = info.ys; j < info.ys + info.ym; j++) {
+
+            /* Map indices to physical coordinates (same as Python grid) */
+            PetscReal x = 0.0, y = 0.0;
+            if (info.mx > 1) x = ((PetscReal)i / (PetscReal)(info.mx - 1)) * Lx;
+            if (info.my > 1) y = ((PetscReal)j / (PetscReal)(info.my - 1)) * Ly;
+
+            /* -------- GRAINS: diffuse -------- */
+            PetscReal dx_top = x - x_offset;
+            PetscReal dy_top = y - (y_offset + Y_center);
+            PetscReal dx_bot = x - x_offset;
+            PetscReal dy_bot = y - (y_offset - Y_center);
+
+            PetscReal d_top = PetscSqrtReal(dx_top * dx_top + dy_top * dy_top) - R;
+            PetscReal d_bot = PetscSqrtReal(dx_bot * dx_bot + dy_bot * dy_bot) - R;
+
+            PetscReal H_top   = SmoothHeaviside(d_top, eps);
+            PetscReal H_bot   = SmoothHeaviside(d_bot, eps);
+            PetscReal phi_top = 1.0 - H_top;
+            PetscReal phi_bot = 1.0 - H_bot;
+
+            PetscReal phi_solid = phi_top + phi_bot;
+            if (phi_solid > 1.0) phi_solid = 1.0;
+            if (phi_solid < 0.0) phi_solid = 0.0;
+
+            /* -------- BRIDGE: SDF between arcs, intersect vertical strip -------- */
+            PetscReal Xloc = x - x_offset;
+            PetscReal Yloc = y - y_offset;
+            PetscReal Yabs = PetscAbsReal(Yloc);
+
+            PetscReal Rb2 = R_bridge * R_bridge;
+            PetscReal tmp = Rb2 - Yloc * Yloc;
+            if (tmp < 0.0) tmp = 0.0;
+            PetscReal sqrt_term = PetscSqrtReal(tmp);
+
+            PetscReal x_right_local = Cx - sqrt_term;
+            PetscReal x_left_local  = -Cx + sqrt_term;
+
+            PetscReal d_left  = Xloc - x_left_local;   /* >=0 if right of left arc  */
+            PetscReal d_right = x_right_local - Xloc;  /* >=0 if left of right arc  */
+
+            PetscBool inside_x = (d_left >= 0.0 && d_right >= 0.0) ? PETSC_TRUE : PETSC_FALSE;
+
+            PetscReal dist_to_left  = PetscAbsReal(Xloc - x_left_local);
+            PetscReal dist_to_right = PetscAbsReal(Xloc - x_right_local);
+
+            PetscReal d_A;
+            if (inside_x) {
+                d_A = -PetscMin(d_left, d_right);       /* negative inside neck       */
+            } else {
+                d_A = PetscMin(dist_to_left, dist_to_right); /* positive outside      */
+            }
+
+            PetscReal d_B;
+            if (Yabs <= Py) {
+                d_B = -(Py - Yabs);                     /* inside vertical strip      */
+            } else {
+                d_B = Yabs - Py;                        /* outside                    */
+            }
+
+            PetscReal d_bridge = PetscMax(d_A, d_B);
+
+            PetscReal H_bridge   = SmoothHeaviside(d_bridge, eps);
+            PetscReal phi_bridge = 1.0 - H_bridge;
+
+            /* remove overlap with solid grain */
+            phi_bridge *= (1.0 - phi_solid);
+
+            u_soil[j][i].soil = phi_solid;
+            u[j][i].ice = phi_bridge;
+
+            // Clamp u_soil (use real part if PetscScalar is complex) and assign to user context
+            {
+                PetscReal soil_val = PetscRealPart(u_soil[j][i].soil);
+                if (soil_val > 1.0) soil_val = 1.0;
+                if (soil_val < 0.0) soil_val = 0.0;
+                u_soil[j][i].soil = (PetscScalar)soil_val;
+                user->Phi_sed[j * info_soil.mx + i] = soil_val;
+            }
+
+            /* Set temperature and rhov based on temp0 + grad*(x-0.5L) */
+            PetscReal x_phys = user->Lx * (PetscReal)i / (PetscReal)(info.mx + k);
+            PetscReal y_phys = user->Ly * (PetscReal)j / (PetscReal)(info.my + k);
+
+            u[j][i].tem = user->temp0
+                          + user->grad_temp0[0] * (x_phys - 0.5 * user->Lx)
+                          + user->grad_temp0[1] * (y_phys - 0.5 * user->Ly);
+
+            PetscScalar rho_vs_loc, temp_loc = u[j][i].tem;
+            RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
+            u[j][i].rhov = user->hum0 * rho_vs_loc;
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArray(da_soil, S, &u_soil); CHKERRQ(ierr);
+    ierr = DMDestroy(&da_soil); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+}

@@ -91,6 +91,9 @@ typedef struct {
   char initial_cond[PETSC_MAX_PATH_LEN];  // Path for initial condition file
   char initial_PFgeom[PETSC_MAX_PATH_LEN];  // Path for initial geometry file
 
+  // Capillary neck parameters
+  PetscReal R1;  // Radius of capillary neck
+
 } AppCtx;
 
 /* Field definitions for node data */

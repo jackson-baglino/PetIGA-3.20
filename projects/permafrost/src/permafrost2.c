@@ -191,6 +191,10 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsString("-initial_cond", "Load initial solution from file", "", initial, initial, sizeof(initial), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
 
+    /* --- Capillarly neck parameters ------------------------------------- */
+    ierr = PetscOptionsReal("-R1", "Radius of capillary neck", "", user.R1, &user.R1, NULL); CHKERRQ(ierr);
+    // ierr = PetscOptionsReal("-neck_length", "Length of capillary neck", "", user.neck_length, &user.neck_length, NULL); CHKERRQ(ierr);
+
     PetscOptionsEnd();
 
     /* Assign parameters to user context */
@@ -397,7 +401,7 @@ int main(int argc, char *argv[]) {
     ierr = IGACreate(PETSC_COMM_WORLD, &igaS); CHKERRQ(ierr);
     ierr = IGASetDim(igaS, dim); CHKERRQ(ierr);
     ierr = IGASetDof(igaS, 1); CHKERRQ(ierr);
-    ierr = IGASetFieldName(igaS, 0, "Sediment Phase"); CHKERRQ(ierr);
+    // ierr = IGASetFieldName(igaS, 0, "Sediment Phase"); CHKERRQ(ierr);
 
     // Set up axes for sediment phase
     IGAAxis axis0S, axis1S, axis2S;
@@ -429,7 +433,8 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "user.initial: %s \n", user.initial_cond);
     if (user.initial_cond[0] != '\0') {
         PetscPrintf(PETSC_COMM_WORLD, "Loading initial sediment geometry from file: %s \n", user.initial_cond);
-        ierr = InitializeFromInputSolution(iga, U, S, &user); CHKERRQ(ierr);
+        // ierr = InitializeFromInputSolution(iga, U, S, &user); CHKERRQ(ierr);
+        ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
     } else {
         // Initialize sediment phase randomly
         PetscPrintf(PETSC_COMM_WORLD, "Generating random sediment geometry \n");

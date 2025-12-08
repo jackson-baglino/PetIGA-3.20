@@ -1,6 +1,6 @@
 -dim 2
--Nx 434
--Ny 868
+-Nx 217
+-Ny 434
 -Nz 1
 -Lx 4.04e-04
 -Ly 8.08e-04
@@ -8,8 +8,8 @@
 -p 1
 -C 0
 -delt_t 1.0e-4
--t_final 120
--n_out 5
+-t_final 86400
+-n_out 100
 -humidity 0.95
 -temp -20.0
 -grad_temp0 0.0,1.0e-6,0.0
@@ -20,3 +20,4 @@
 -Permafrost_output 1
 -Permafrost_monitor 1
 -initial_cond ./inputs/tests/SthavisthaInputs/AssemblePhase_reinit.dat
+-R1 1.01e-4
