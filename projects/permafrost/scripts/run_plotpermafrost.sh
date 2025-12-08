@@ -22,8 +22,8 @@ execute_python_scripts() {
     echo "Executing plotpermafrost.py in directory: $dir"
     python $dir/plotpermafrost.py
     
-    echo "Plotting SSA and Porosity"
-    python $dir/plotSSA.py
+    # echo "Plotting SSA and Porosity"
+    # python $dir/plotSSA.py
     # Uncomment the line below if you want to include Porosity plotting
     # python $dir/plotPorosity.py
 }
@@ -51,7 +51,7 @@ else
     # Execute Python scripts in the current directory
     echo "Executing plotpermafrost.py and plotSSA.py in the current directory"
     python plotpermafrost.py
-    python plotSSA.py
+    # python plotSSA.py
     # Uncomment if you need to execute plotPorosity.py in the current directory
     # python plotPorosity.py
 fi
