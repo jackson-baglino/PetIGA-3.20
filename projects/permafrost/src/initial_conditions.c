@@ -915,7 +915,7 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
             if (phi_solid < 0.0) phi_solid = 0.0;
 
             /* Buffered solid mask: pretend grains are slightly larger when removing bridge */
-            const PetscReal R_buffer_factor = 1.0 + 2.0 * user->eps; /* 5% larger radius for exclusion */
+            const PetscReal R_buffer_factor = 1.0 + 10.0 * user->eps; /* 5% larger radius for exclusion */
             PetscReal       R_buf           = R * R_buffer_factor;
 
             PetscReal d_top_buf = PetscSqrtReal(dx_top * dx_top + dy_top * dy_top) - R_buf;
