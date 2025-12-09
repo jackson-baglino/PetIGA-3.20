@@ -1,0 +1,24 @@
+-dim 2
+-Nx 217
+-Ny 434
+-Nz 1
+-Lx 4.04e-04
+-Ly 8.08e-04
+-Lz 0
+-p 1
+-C 0
+-delt_t 1.0e-4
+-t_final 7200
+-n_out 5
+-humidity 0.95
+-temp -20.0
+-grad_temp0 0.0,1.0e-6,0.0
+-eps 9.3e-7
+-NCsed 25
+-NCice 100
+-periodic 0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 0
+-Permafrost_output 1
+-Permafrost_monitor 1
+-R1 

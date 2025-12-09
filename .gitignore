@@ -75,7 +75,7 @@ projects/dry_snow_metamorphism_scrap/*
 projects/permafrost/obj/
 projects/permafrost/outputs/
 projects/permafrost/permafrost
-projects/permafrost/inputs/tests/*
+projects/permafrost/inputs/tests/SthavisthaInputs/Assemble*
 
 ###############################################################################
 # PETSc & MPI Build Directories
