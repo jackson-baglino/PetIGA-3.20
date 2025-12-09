@@ -97,43 +97,44 @@
 //     PetscReal xc_ice[3] = {0.0, 0.0, 0.0}, rc_ice = 0.0;
 
 //     /* Generate ice and sediment grains while avoiding overlaps */
-//     // for (ii = 0; ii < tot * numb_clus_total) {
-//     //     ierr = PetscRandomGetValue(randcX_sed, &xc_sed[0]); CHKERRQ(ierr);
-//     //     ierr = PetscRandomGetValue(randcY_sed, &xc_sed[1]); CHKERRQ(ierr);
-//     //     ierr = PetscRandomGetValue(randcR_sed, &rc_sed); CHKERRQ(ierr);
-//     //     if (dim == 3) { ierr = PetscRandomGetValue(randcZ_sed, &xc_sed[2]); CHKERRQ(ierr); }
+//     for (ii = 0; ii < tot * numb_clus_total) {
+//         ierr = PetscRandomGetValue(randcX_sed, &xc_sed[0]); CHKERRQ(ierr);
+//         ierr = PetscRandomGetValue(randcY_sed, &xc_sed[1]); CHKERRQ(ierr);
+//         ierr = PetscRandomGetValue(randcR_sed, &rc_sed); CHKERRQ(ierr);
+//         if (dim == 3) { ierr = PetscRandomGetValue(randcZ_sed, &xc_sed[2]); CHKERRQ(ierr); }
 
-//     //     ierr = PetscRandomGetValue(randcX_ice, &xc_ice[0]); CHKERRQ(ierr);
-//     //     ierr = PetscRandomGetValue(randcY_ice, &xc_ice[1]); CHKERRQ(ierr);
-//     //     ierr = PetscRandomGetValue(randcR_ice, &rc_ice); CHKERRQ(ierr);
-//     //     if (dim == 3) { ierr = PetscRandomGetValue(randcZ_ice, &xc_ice[2]); CHKERRQ(ierr); }
+//         ierr = PetscRandomGetValue(randcX_ice, &xc_ice[0]); CHKERRQ(ierr);
+//         ierr = PetscRandomGetValue(randcY_ice, &xc_ice[1]); CHKERRQ(ierr);
+//         ierr = PetscRandomGetValue(randcR_ice, &rc_ice); CHKERRQ(ierr);
+//         if (dim == 3) { ierr = PetscRandomGetValue(randcZ_ice, &xc_ice[2]); CHKERRQ(ierr); }
 
-//     //     flag = 1;
+//         flag = 1;
 //         // Check sediment grain overlaps
-//         // for (jj = 0; jj < n_act_sed; jj++) {
-//         //     if (ComputeDistance(xc_sed, (PetscReal[]){centX_sed[0][jj], centX_sed[1][jj], (dim==3 ? centX_sed[2][jj] : 0.0)}, dim)
-//         //         < (rc_sed + radius_sed[jj])) {
-//         //         flag = 0;
-//         //         break;
-//         //     }
-//         // }
+//         for (jj = 0; jj < n_act_sed; jj++) {
+//             if (ComputeDistance(xc_sed, (PetscReal[]){centX_sed[0][jj], centX_sed[1][jj], (dim==3 ? centX_sed[2][jj] : 0.0)}, dim)
+//                 < (rc_sed + radius_sed[jj])) {
+//                 flag = 0;
+//                 break;
+//             }
+//         }
 
-//         // // Check ice grain overlaps
-//         // for (jj = 0; jj < n_act_ice; jj++) {
-//         //     if (ComputeDistance(xc_ice, (PetscReal[]){centX_ice[0][jj], centX_ice[1][jj], (dim==3 ? centX_ice[2][jj] : 0.0)}, dim)
-//         //         < (rc_ice + radius_ice[jj])) {
-//         //         flag = 0;
-//         //         break;
-//         //     }
-//         // }
+//         // Check ice grain overlaps
+//         for (jj = 0; jj < n_act_ice; jj++) {
+//             if (ComputeDistance(xc_ice, (PetscReal[]){centX_ice[0][jj], centX_ice[1][jj], (dim==3 ? centX_ice[2][jj] : 0.0)}, dim)
+//                 < (rc_ice + radius_ice[jj])) {
+//                 flag = 0;
+//                 break;
+//             }
+//         }
 
-//         // if (flag) {
-//         //     if (dim == 3) {
-//         //         PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], xc_sed[2], rc_sed);
-//         //     } else {
-//         //         PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], rc_sed);
-//         //     }
-//         // }
+//         if (flag) {
+//             if (dim == 3) {
+//                 PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], xc_sed[2], rc_sed);
+//             } else {
+//                 PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], rc_sed);
+//             }
+//         }
+//     }
 
 
 
@@ -913,6 +914,20 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
             if (phi_solid > 1.0) phi_solid = 1.0;
             if (phi_solid < 0.0) phi_solid = 0.0;
 
+            /* Buffered solid mask: pretend grains are slightly larger when removing bridge */
+            const PetscReal R_buffer_factor = 1.0 + 2.0 * user->eps; /* 5% larger radius for exclusion */
+            PetscReal       R_buf           = R * R_buffer_factor;
+
+            PetscReal d_top_buf = PetscSqrtReal(dx_top * dx_top + dy_top * dy_top) - R_buf;
+            PetscReal d_bot_buf = PetscSqrtReal(dx_bot * dx_bot + dy_bot * dy_bot) - R_buf;
+
+            PetscReal H_top_buf   = SmoothHeaviside(d_top_buf, eps);
+            PetscReal H_bot_buf   = SmoothHeaviside(d_bot_buf, eps);
+            PetscReal phi_solid_buf = (1.0 - H_top_buf) + (1.0 - H_bot_buf);
+
+            if (phi_solid_buf > 1.0) phi_solid_buf = 1.0;
+            if (phi_solid_buf < 0.0) phi_solid_buf = 0.0;
+
             /* -------- BRIDGE: SDF between arcs, intersect vertical strip -------- */
             PetscReal Xloc = x - x_offset;
             PetscReal Yloc = y - y_offset;
@@ -953,8 +968,8 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
             PetscReal H_bridge   = SmoothHeaviside(d_bridge, eps);
             PetscReal phi_bridge = 1.0 - H_bridge;
 
-            /* remove overlap with solid grain */
-            phi_bridge *= (1.0 - phi_solid);
+            /* remove overlap with (slightly inflated) solid grain to create a buffer */
+            phi_bridge *= (1.0 - phi_solid_buf);
 
             /* Store solid fraction in soil Vec if we actually mapped it on this rank.
                Treat user->Phi_sed as a local array of length nNodeLocal, indexed by inode. */
