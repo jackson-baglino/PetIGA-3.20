@@ -431,9 +431,12 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "Setting up initial conditions... \n");
     // PetscPrintf(PETSC_COMM_WORLD, "Initial condition type: %s \n", ICGeomTypeNames[ic_type_opt]);
 
-    PetscPrintf(PETSC_COMM_WORLD,
-            "IC type: capillary  (using analytic capillary neck geometry)\n");
-    ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
+    // PetscPrintf(PETSC_COMM_WORLD,
+    //         "IC type: capillary  (using analytic capillary neck geometry)\n");
+    // ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
+
+    PetscPrintf(PETSC_COMM_WORLD, "IC type: layered  (using layered geometry)\n");
+    ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* Optional statements for varying input types (e.g., capillary, layered, etc.) */
 

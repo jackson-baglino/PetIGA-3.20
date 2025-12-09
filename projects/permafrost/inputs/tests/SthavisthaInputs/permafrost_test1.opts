@@ -7,10 +7,10 @@
 -Lz 0
 -p 1
 -C 0
--NCsed 100
--NCice 100
+-NCsed 200
+-NCice 20
 -delt_t 1.0e-4
--t_final 3600
+-t_final 0
 -n_out 20
 -humidity 0.95
 -temp -20.0

@@ -1,145 +1,367 @@
 #include "initial_conditions.h"
 #include "material_properties.h"
 
-// PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
-// {
-//     PetscErrorCode ierr;
-//     PetscFunctionBegin;
+/* 
+   Helper function: Compute Euclidean distance between two points in 'dim' dimensions.
+*/
+static inline PetscReal ComputeDistance(const PetscReal *a, const PetscReal *b, PetscInt dim)
+{
+  PetscReal sum = 0.0;
+  for (PetscInt i = 0; i < dim; i++){
+    sum += SQ(a[i] - b[i]);
+  }
+  return sqrt(sum);
+}
 
-//     PetscPrintf(PETSC_COMM_WORLD,
-//                 "--------------------- INITIAL CONDITIONS (Layered Permafrost 2D) --------------------------\n");
 
-//     /* --- Main phase-field vector U (ice, tem, rhov) --- */
-//     DM            daU;
-//     Field         **u;
-//     DMDALocalInfo infoU;
+/*
+   Helper function: Create and configure a PETSc random generator.
+*/
+static PetscErrorCode CreateRandomGenerator(MPI_Comm comm, PetscRandom *rand, PetscReal lower, PetscReal upper, PetscInt seed)
+{
+  PetscErrorCode ierr;
+  ierr = PetscRandomCreate(comm, rand); CHKERRQ(ierr);
+  ierr = PetscRandomSetInterval(*rand, lower, upper); CHKERRQ(ierr);
+  ierr = PetscRandomSetSeed(*rand, seed); CHKERRQ(ierr);
+  ierr = PetscRandomSeed(*rand); CHKERRQ(ierr);
+  ierr = PetscRandomSetFromOptions(*rand); CHKERRQ(ierr);
+  return 0;
+}
 
-//     ierr = IGACreateNodeDM(iga, 3, &daU);CHKERRQ(ierr);
-//     ierr = DMDAVecGetArray(daU, U, &u);CHKERRQ(ierr);
-//     ierr = DMDAGetLocalInfo(daU, &infoU);CHKERRQ(ierr);
+PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
 
-//     /* --- Soil vector S (sediment phase). Might be empty on some ranks. --- */
-//     PetscInt      nlocS;
-//     DM            daS  = NULL;
-//     FieldS        **uS = NULL;
-//     DMDALocalInfo infoS;
+    PetscPrintf(PETSC_COMM_WORLD,
+                "--------------------- INITIAL CONDITIONS (Layered Permafrost 2D) --------------------------\n");
 
-//     ierr = VecGetLocalSize(S, &nlocS);CHKERRQ(ierr);
-//     if (nlocS > 0) {
-//         ierr = IGACreateNodeDM(igaS, 1, &daS);CHKERRQ(ierr);
-//         ierr = DMDAVecGetArray(daS, S, &uS);CHKERRQ(ierr);
-//         ierr = DMDAGetLocalInfo(daS, &infoS);CHKERRQ(ierr);
-//     }
 
-//     /* --- Geometry / interface parameters --- */
-//     const PetscReal Lx    = user->Lx;
-//     const PetscReal Ly    = user->Ly;
-//     const PetscReal eps   = user->eps;
-//     const PetscReal Rmean = user->R1;   /* target mean grain radius (from opts) */
+    /* --- Soil vector S (sediment phase). Might be empty on some ranks. --- */
+    PetscInt      nlocS;
+    DM            daS  = NULL;
+    FieldS        **uS = NULL;
+    DMDALocalInfo infoS;
 
-//     const PetscReal y_mid = 0.5 * Ly;   /* bottom half: 0..y_mid       */
-//     const PetscReal y_cap = 0.9 * Ly;   /* solid ice cap: y >= y_cap    */
+    ierr = VecGetLocalSize(S, &nlocS);CHKERRQ(ierr);
+    if (nlocS > 0) {
+        ierr = IGACreateNodeDM(igaS, 1, &daS);CHKERRQ(ierr);
+        ierr = DMDAVecGetArray(daS, S, &uS);CHKERRQ(ierr);
+        ierr = DMDAGetLocalInfo(daS, &infoS);CHKERRQ(ierr);
+    }
 
-//     /* --- Number of grains from options --- */
-//     const PetscInt NCice = user->NCice;
-//     const PetscInt NCsed = user->NCsed;
-//     const PetscInt Nbot  = NCice + NCsed;
+    /* --- Geometry / interface parameters --- */
+    const PetscReal Lx    = user->Lx;
+    const PetscReal Ly    = user->Ly;
+    const PetscReal eps   = user->eps;
+    // const PetscReal Rmean = user->R1;   /* target mean grain radius (from opts) */
 
-//     /* --- Generate non-overlapping ice and sediment grains --- */
-//     PetscPrintf(PETSC_COMM_WORLD, "---------------- Grain Initialization ----------------\n");
+    const PetscReal y_mid = 0.5 * Ly;   /* bottom half: 0..y_mid       */
+    const PetscReal y_cap = 0.9 * Ly;   /* solid ice cap: y >= y_cap    */
 
-//     if (user->NCsed == 0) {
-//         user->n_actsed = 0;
-//         PetscPrintf(PETSC_COMM_WORLD, "No sed grains\n\n");
-//         PetscFunctionReturn(0);
-//     }
+    // Number of grains to generate from options
+    // const PetscInt NCice = user->NCice;
+    // const PetscInt NCsed = user->NCsed;
+    // const PetscInt Nbot  = NCice + NCsed;
 
-//     if (user->NCice == 0) {
-//         user->n_act = 0;
-//         PetscPrintf(PETSC_COMM_WORLD, "No ice grains\n\n");
-//         PetscFunctionReturn(0);
-//     }
+    /* --- Generate non-overlapping ice and sediment grains --- */
+    PetscPrintf(PETSC_COMM_WORLD, "---------------- Grain Initialization ----------------\n");
+
+    if (user->NCsed == 0) {
+        user->n_actsed = 0;
+        PetscPrintf(PETSC_COMM_WORLD, "No sed grains\n\n");
+        PetscFunctionReturn(0);
+    }
+
+    if (user->NCice == 0) {
+        user->n_act = 0;
+        PetscPrintf(PETSC_COMM_WORLD, "No ice grains\n\n");
+        PetscFunctionReturn(0);
+    }
 
     
-//     PetscReal rad_sed = user->RCsed, rad_sed_dev = user->RCsed_dev;
-//     PetscInt numb_clust_sed = user->NCsed, tot = 10000;
-//     PetscInt ii, jj, l, n_act_sed = 0, flag, dim = user->dim, seed = 13;
+    PetscReal rad_sed = user->RCsed, rad_sed_dev = user->RCsed_dev;
+    PetscInt numb_clust_sed = user->NCsed, tot = 10000;
+    PetscInt ii, jj, l, n_act_sed = 0, flag, flag_sed=1, flag_ice=1, dim = user->dim, seed_sed = 13, seed_ice = 21;
 
-//     PetscReal rad_ice = user->RCice, rad_ice_dev = user->RCice_dev;
-//     PetscInt numb_clust_ice = user->NCice;
-//     PetscInt n_act_ice = 0;
+    PetscReal rad_ice = user->RCice, rad_ice_dev = user->RCice_dev;
+    PetscInt numb_clust_ice = user->NCice;
+    PetscInt n_act_ice = 0;
 
-//     PetscInt numb_clus_total = numb_clust_sed + numb_clust_ice;
+    PetscInt numb_clus_total = numb_clust_sed + numb_clust_ice;
 
-//     /* Arrays to store cluster centers and radii */
-//     PetscReal centX_sed[3][numb_clust_sed], radius_sed[numb_clust_sed];
-//     PetscRandom randcX_sed, randcY_sed, randcR_sed, randcZ_sed = NULL;
-//     PetscReal centX_ice[3][numb_clust_ice], radius_ice[numb_clust_ice];
-//     PetscRandom randcX_ice, randcY_ice, randcR_ice, randcZ_ice = NULL;
+    /* Arrays to store cluster centers and radii */
+    PetscReal centX_sed[3][numb_clust_sed], radius_sed[numb_clust_sed];
+    PetscRandom randcX_sed, randcY_sed, randcR_sed, randcZ_sed = NULL;
+    PetscReal centX_ice[3][numb_clust_ice], radius_ice[numb_clust_ice];
+    PetscRandom randcX_ice, randcY_ice, randcR_ice, randcZ_ice = NULL;
 
-//     /* Create random generators for sediment grains (in lower 90% of domain) */
-//     ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcX_sed, 0.0, Lx, seed + 2 + 8*iga->elem_start[0] + 11*iga->elem_start[1]); CHKERRQ(ierr);
-//     ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcY_sed, 0.0, 0.9*Ly, seed + numb_clust_sed*34 + 5*iga->elem_start[1] + 4*iga->elem_start[0]); CHKERRQ(ierr);
-//     ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcR_sed, rad_sed*(1.0 - rad_sed_dev), rad_sed*(1.0 + rad_sed_dev), seed*numb_clust_sed + 5*iga->proc_ranks[1] + 8*iga->elem_start[0] + 2); CHKERRQ(ierr);
-//     if (dim == 3) { 
-//         ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcZ_sed, 0.0, user->Lz, seed*3 + iga->elem_width[1] + 6); CHKERRQ(ierr);
-//     }
+    /* Create random generators for sediment grains (in lower 90% of domain) */
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcX_sed, 0.0, Lx, seed_sed + 2 + 8*iga->elem_start[0] + 11*iga->elem_start[1]); CHKERRQ(ierr);
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcY_sed, 0.0, y_cap, seed_sed + numb_clust_sed*34 + 5*iga->elem_start[1] + 4*iga->elem_start[0]); CHKERRQ(ierr);
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcR_sed, rad_sed*(1.0 - rad_sed_dev), rad_sed*(1.0 + rad_sed_dev), seed_sed*numb_clust_sed + 5*iga->proc_ranks[1] + 8*iga->elem_start[0] + 2); CHKERRQ(ierr);
+    if (dim == 3) { 
+        ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcZ_sed, 0.0, user->Lz, seed_sed*3 + iga->elem_width[1] + 6); CHKERRQ(ierr);
+    }
 
-//     /* Create random generators for ice grains (in lower half of domain) */
-//     ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcX_ice, 0.0, Lx, seed + 24 + 9*iga->elem_start[0] + 11*iga->elem_start[1]); CHKERRQ(ierr);
-//     ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcY_ice, 0.0, 0.5*Ly, seed + numb_clust_ice*35 + 5*iga->elem_start[1] + 3*iga->elem_start[0]); CHKERRQ(ierr);
-//     ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcR_ice, rad_ice*(1.0 - rad_ice_dev), rad_ice*(1.0 + rad_ice_dev), seed*numb_clust_ice + 6*iga->proc_ranks[1] + 5*iga->elem_start[0] + 9); CHKERRQ(ierr);
-//     if (dim == 3) {
-//         ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcZ_ice, 0.0, user->Lz, seed + iga->elem_width[2] + 5*iga->elem_start[0]); CHKERRQ(ierr);
-//     }
+    /* Create random generators for ice grains (in lower half of domain) */
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcX_ice, 0.0, Lx, seed_ice + 24 + 9*iga->elem_start[0] + 11*iga->elem_start[1]); CHKERRQ(ierr);
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcY_ice, 0.0, y_mid, seed_ice + numb_clust_ice*35 + 5*iga->elem_start[1] + 3*iga->elem_start[0]); CHKERRQ(ierr);
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcR_ice, rad_ice*(1.0 - rad_ice_dev), rad_ice*(1.0 + rad_ice_dev), seed_ice*numb_clust_ice + 6*iga->proc_ranks[1] + 5*iga->elem_start[0] + 9); CHKERRQ(ierr);
+    if (dim == 3) {
+        ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcZ_ice, 0.0, user->Lz, seed_ice + iga->elem_width[2] + 5*iga->elem_start[0]); CHKERRQ(ierr);
+    }
 
-//     PetscReal xc_sed[3] = {0.0, 0.0, 0.0}, rc_sed = 0.0;
-//     PetscReal xc_ice[3] = {0.0, 0.0, 0.0}, rc_ice = 0.0;
+    PetscReal xc_sed[3] = {0.0, 0.0, 0.0}, rc_sed = 0.0;
+    PetscReal xc_ice[3] = {0.0, 0.0, 0.0}, rc_ice = 0.0;
 
-//     /* Generate ice and sediment grains while avoiding overlaps */
-//     for (ii = 0; ii < tot * numb_clus_total) {
-//         ierr = PetscRandomGetValue(randcX_sed, &xc_sed[0]); CHKERRQ(ierr);
-//         ierr = PetscRandomGetValue(randcY_sed, &xc_sed[1]); CHKERRQ(ierr);
-//         ierr = PetscRandomGetValue(randcR_sed, &rc_sed); CHKERRQ(ierr);
-//         if (dim == 3) { ierr = PetscRandomGetValue(randcZ_sed, &xc_sed[2]); CHKERRQ(ierr); }
+    /* Generate ice and sediment grains while avoiding overlaps */
+    for (ii = 0; ii < tot * numb_clus_total; ii++) {
+        ierr = PetscRandomGetValue(randcX_sed, &xc_sed[0]); CHKERRQ(ierr);
+        ierr = PetscRandomGetValue(randcY_sed, &xc_sed[1]); CHKERRQ(ierr);
+        ierr = PetscRandomGetValue(randcR_sed, &rc_sed); CHKERRQ(ierr);
+        if (dim == 3) { ierr = PetscRandomGetValue(randcZ_sed, &xc_sed[2]); CHKERRQ(ierr); }
 
-//         ierr = PetscRandomGetValue(randcX_ice, &xc_ice[0]); CHKERRQ(ierr);
-//         ierr = PetscRandomGetValue(randcY_ice, &xc_ice[1]); CHKERRQ(ierr);
-//         ierr = PetscRandomGetValue(randcR_ice, &rc_ice); CHKERRQ(ierr);
-//         if (dim == 3) { ierr = PetscRandomGetValue(randcZ_ice, &xc_ice[2]); CHKERRQ(ierr); }
+        ierr = PetscRandomGetValue(randcX_ice, &xc_ice[0]); CHKERRQ(ierr);
+        ierr = PetscRandomGetValue(randcY_ice, &xc_ice[1]); CHKERRQ(ierr);
+        ierr = PetscRandomGetValue(randcR_ice, &rc_ice); CHKERRQ(ierr);
+        if (dim == 3) { ierr = PetscRandomGetValue(randcZ_ice, &xc_ice[2]); CHKERRQ(ierr); }
 
-//         flag = 1;
-//         // Check sediment grain overlaps
-//         for (jj = 0; jj < n_act_sed; jj++) {
-//             if (ComputeDistance(xc_sed, (PetscReal[]){centX_sed[0][jj], centX_sed[1][jj], (dim==3 ? centX_sed[2][jj] : 0.0)}, dim)
-//                 < (rc_sed + radius_sed[jj])) {
-//                 flag = 0;
-//                 break;
-//             }
-//         }
+        flag = 1;
+        // Check if new sediment grain overlaps new ice grain
+        if (ComputeDistance(xc_sed, xc_ice, dim) < (rc_sed + rc_ice)) {
+            flag = 0;
+        }
 
-//         // Check ice grain overlaps
-//         for (jj = 0; jj < n_act_ice; jj++) {
-//             if (ComputeDistance(xc_ice, (PetscReal[]){centX_ice[0][jj], centX_ice[1][jj], (dim==3 ? centX_ice[2][jj] : 0.0)}, dim)
-//                 < (rc_ice + radius_ice[jj])) {
-//                 flag = 0;
-//                 break;
-//             }
-//         }
+        // Check sediment grain overlaps with existing sediment grains
+        for (jj = 0; jj < n_act_sed; jj++) {
+            if (ComputeDistance(xc_sed,
+                                (PetscReal[]){centX_sed[0][jj], centX_sed[1][jj], (dim==3 ? centX_sed[2][jj] : 0.0)},
+                                dim)
+                < (rc_sed + radius_sed[jj])) {
+                flag = 0;
+                break;
+            }
+        }
 
-//         if (flag) {
-//             if (dim == 3) {
-//                 PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], xc_sed[2], rc_sed);
-//             } else {
-//                 PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], rc_sed);
-//             }
-//         }
-//     }
+        // Check ice grain overlaps with existing ice grains
+        for (jj = 0; jj < n_act_ice; jj++) {
+            if (ComputeDistance(xc_ice,
+                                (PetscReal[]){centX_ice[0][jj], centX_ice[1][jj], (dim==3 ? centX_ice[2][jj] : 0.0)},
+                                dim)
+                < (rc_ice + radius_ice[jj])) {
+                flag = 0;
+                break;
+            }
+        }
+
+        // Check new ice grain does not overlap existing sediment grains
+        for (jj = 0; jj < n_act_sed; jj++) {
+            if (ComputeDistance(xc_ice,
+                                (PetscReal[]){centX_sed[0][jj], centX_sed[1][jj], (dim==3 ? centX_sed[2][jj] : 0.0)},
+                                dim)
+                < (rc_ice + radius_sed[jj])) {
+                flag = 0;
+                break;
+            }
+        }
+
+        // Check new sediment grain does not overlap existing ice grains
+        for (jj = 0; jj < n_act_ice; jj++) {
+            if (ComputeDistance(xc_sed,
+                                (PetscReal[]){centX_ice[0][jj], centX_ice[1][jj], (dim==3 ? centX_ice[2][jj] : 0.0)},
+                                dim)
+                < (rc_sed + radius_ice[jj])) {
+                flag = 0;
+                break;
+            }
+        }
+
+        // Check to see if sed grains overlap y_cap
+        if (xc_sed[1] - rc_sed < 0.0 || xc_sed[1] + rc_sed > y_cap) {
+            flag = 0;
+        }
+        // Check to see if ice grains stay within bottom half [0, y_mid]
+        if (xc_ice[1] - rc_ice < 0.0 || xc_ice[1] + rc_ice > y_mid) {
+            flag = 0;
+        }
 
 
+        // If no overlaps, accept the grains and store their data
+        if (flag) {
+            if (dim == 3) {
+                PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], xc_sed[2], rc_sed);
+            } else {
+                PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], rc_sed);
+            }
 
-//     PetscFunctionReturn(0);
-// }
+            if (flag_sed == 1) {
+                for (l = 0; l < dim; l++)
+                    centX_sed[l][n_act_sed] = xc_sed[l];
+                radius_sed[n_act_sed] = rc_sed;
+                n_act_sed++;
+            }
+
+            if (flag_ice == 1) {
+                for (l = 0; l < dim; l++)
+                    centX_ice[l][n_act_ice] = xc_ice[l];
+                radius_ice[n_act_ice] = rc_ice;
+                n_act_ice++;
+            }
+
+            if (n_act_sed >= numb_clust_sed) {flag_sed = 0;}
+            if (n_act_ice >= numb_clust_ice) {flag_ice = 0;}
+        }
+    }
+
+    PetscPrintf(PETSC_COMM_WORLD, " %d sed grains and %d ice grains in %d iterations \n\n", n_act_sed, n_act_ice, ii);
+
+    // Clean up random generators
+    ierr = PetscRandomDestroy(&randcX_sed); CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randcY_sed); CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randcR_sed); CHKERRQ(ierr);
+    if (dim == 3 && randcZ_sed) { ierr = PetscRandomDestroy(&randcZ_sed); CHKERRQ(ierr); }
+    ierr = PetscRandomDestroy(&randcX_ice); CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randcY_ice); CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randcR_ice); CHKERRQ(ierr);
+    if (dim == 3 && randcZ_ice) { ierr = PetscRandomDestroy(&randcZ_ice); CHKERRQ(ierr); }
+
+    /* Broadcast the generated sediment grain data */
+    for (l = 0; l < dim; l++){
+        ierr = MPI_Bcast(centX_sed[l], numb_clust_sed, MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+        ierr = MPI_Bcast(centX_ice[l], numb_clust_ice, MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    }
+    ierr = MPI_Bcast(radius_sed, numb_clust_sed, MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(radius_ice, numb_clust_ice, MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&n_act_sed, 1, MPI_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr); 
+    ierr = MPI_Bcast(&n_act_ice, 1, MPI_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+
+    user->n_actsed = n_act_sed;
+    for (jj = 0; jj < n_act_sed; jj++){
+        for (l = 0; l < dim; l++){
+            user->centsed[l][jj] = centX_sed[l][jj];
+        }
+        user->radiussed[jj] = radius_sed[jj];
+    }
+
+    user->n_act = n_act_ice;
+    for (jj = 0; jj < n_act_ice; jj++){
+        for (l = 0; l < dim; l++){
+            user->cent[l][jj] = centX_ice[l][jj];
+        }
+        user->radius[jj] = radius_ice[jj];
+    }
+
+    /* Initialize the ice and sediemnt phases from grain data */
+    IGAElement element;
+    IGAPoint   point;
+    PetscInt   ind = 0, aa;
+    PetscReal  sed, dist;
+
+    ierr = IGABeginElement(iga, &element); CHKERRQ(ierr);
+    while (IGANextElement(iga, element)) {
+        ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
+        while (IGAElementNextPoint(element, point)) {
+            // Set sediment phase
+            sed = 0.0;
+            for (aa = 0; aa < user->n_actsed; aa++) {
+                dist = 0.0;
+                for (l = 0; l < user->dim; l++) {
+                    dist += SQ(point->mapX[0][l] - user->centsed[l][aa]);
+                }
+                dist = sqrt(dist);
+                sed += 0.5 - 0.5 * tanh(0.5 / eps * (dist - user->radiussed[aa]));
+            }
+
+            // sed = PetscMax(PetscMin(sed, 1.0), 0.0);
+            if (sed > 1.0) sed = 1.0;
+            if (sed < 0.0) sed = 0.0;
+            user->Phi_sed[ind++] = sed;
+        }
+        ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
+    }
+    ierr = IGAEndElement(iga, &element); CHKERRQ(ierr);
+
+    /* Map sediment phase to soil vector S (nodal DMDA representation) */
+    if (nlocS > 0) {
+        PetscInt iS, jS, kk, lS = -1;
+        PetscReal distS, valueS;
+
+        if (user->periodic == 1) lS = user->p - 1;
+
+        for (iS = infoS.xs; iS < infoS.xs + infoS.xm; iS++) {
+            for (jS = infoS.ys; jS < infoS.ys + infoS.ym; jS++) {
+                PetscReal xS = user->Lx * (PetscReal)iS / (PetscReal)(infoS.mx + lS);
+                PetscReal yS = user->Ly * (PetscReal)jS / (PetscReal)(infoS.my + lS);
+
+                valueS = 0.0;
+                for (kk = 0; kk < user->n_actsed; kk++) {
+                    distS = sqrt(SQ(xS - user->centsed[0][kk]) +
+                                 SQ(yS - user->centsed[1][kk]));
+                    valueS += 0.5 - 0.5 * tanh(0.5 / user->eps *
+                                               (distS - user->radiussed[kk]));
+                }
+                if (valueS > 1.0) valueS = 1.0;
+
+                uS[jS][iS].soil = valueS;
+            }
+        }
+    }
+
+    DM da;
+    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
+
+    PetscInt i,j,k=-1;
+    if(user->periodic==1) k=user->p -1;
+    for(i=info.xs;i<info.xs+info.xm;i++){
+      for(j=info.ys;j<info.ys+info.ym;j++){
+        PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+k) );
+        PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+k) );
+
+        /* Compute diffuse ice grains as before */
+        PetscReal dist, ice_grain = 0.0;
+        PetscInt aa;
+        for (aa = 0; aa < user->n_act; aa++) {
+          dist = sqrt(SQ(x - user->cent[0][aa]) + SQ(y - user->cent[1][aa]));
+          ice_grain += 0.5 - 0.5 * tanh(0.5 / user->eps * (dist - user->radius[aa]));
+        }
+        if (ice_grain > 1.0) ice_grain = 1.0;
+
+        /* Solid ice block in the top 10% of the domain (y >= y_cap) */
+        PetscReal dist_cap = y_cap - y;
+        PetscReal ice_cap  = 0.5 - 0.5 * tanh(0.5 / user->eps * dist_cap);
+
+        /* Combine grain ice and cap ice, clamp to [0,1] */
+        PetscReal ice = ice_grain + ice_cap;
+        if (ice > 1.0) ice = 1.0;
+        if (ice < 0.0) ice = 0.0;
+
+        u[j][i].ice = ice;
+
+        /* Temperature and vapor density initial conditions */
+        u[j][i].tem = user->temp0
+                      + user->grad_temp0[0] * (x - 0.5 * user->Lx)
+                      + user->grad_temp0[1] * (y - 0.5 * user->Ly);
+        PetscScalar rho_vs, temp = u[j][i].tem;
+        RhoVS_I(user, temp, &rho_vs, NULL);
+        u[j][i].rhov = user->hum0 * rho_vs;
+      }
+    }
+    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
+    ierr = DMDestroy(&da);;CHKERRQ(ierr); 
+
+    /* Properly clean up the soil DM if present */
+    if (nlocS > 0) {
+        ierr = DMDAVecRestoreArray(daS, S, &uS);CHKERRQ(ierr);
+        ierr = DMDestroy(&daS);CHKERRQ(ierr);
+    }
+
+    PetscFunctionReturn(0);
+}
 
 PetscErrorCode FormInitialSoil2D(IGA igaS,Vec S,AppCtx *user)
 {
@@ -915,7 +1137,7 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
             if (phi_solid < 0.0) phi_solid = 0.0;
 
             /* Buffered solid mask: pretend grains are slightly larger when removing bridge */
-            const PetscReal R_buffer_factor = 1.0 + 40000.0 * user->eps; /* 5% larger radius for exclusion */
+            const PetscReal R_buffer_factor = 1.0 + 5000.0 * user->eps; /* 5% larger radius for exclusion */
             PetscReal       R_buf           = R * R_buffer_factor;
 
             PetscReal d_top_buf = PetscSqrtReal(dx_top * dx_top + dy_top * dy_top) - R_buf;
