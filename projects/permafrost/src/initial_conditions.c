@@ -843,7 +843,7 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
     ierr = DMDAGetLocalInfo(da, &info);CHKERRQ(ierr);
 
     /* --- Fields for soil vector S (may have zero local size on some ranks) --- */
-    PetscInt       nlocS;
+    PetscInt       nlocS, nNodeLocal = 0, inode = 0;
     DM             da_soil = NULL;
     FieldS         **u_soil = NULL;
     DMDALocalInfo  info_soil;
@@ -855,6 +855,8 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
         ierr = IGACreateNodeDM(igaS, 1, &da_soil);CHKERRQ(ierr);
         ierr = DMDAVecGetArray(da_soil, S, &u_soil);CHKERRQ(ierr);
         ierr = DMDAGetLocalInfo(da_soil, &info_soil);CHKERRQ(ierr);
+        nNodeLocal = nlocS;
+        inode      = 0;
         (void)info_soil; /* currently unused but kept for possible future checks */
     }
 
@@ -954,10 +956,18 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
             /* remove overlap with solid grain */
             phi_bridge *= (1.0 - phi_solid);
 
-            /* Store solid fraction in soil Vec if we actually mapped it on this rank */
+            /* Store solid fraction in soil Vec if we actually mapped it on this rank.
+               Treat user->Phi_sed as a local array of length nNodeLocal, indexed by inode. */
             if (u_soil) {
                 u_soil[j][i].soil = phi_solid;
-                user->Phi_sed[j * info.mx + i] = phi_solid;
+
+                if (inode >= nNodeLocal) {
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                            "FormIC_grain_ana: inode=%" PetscInt_FMT " >= nNodeLocal=%" PetscInt_FMT,
+                            inode, nNodeLocal);
+                }
+
+                user->Phi_sed[inode++] = phi_solid;
             }
 
             /* Store bridge phase in ice field */
@@ -976,6 +986,13 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
             RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
             u[j][i].rhov = user->hum0 * rho_vs_loc;
         }
+    }
+
+    /* Sanity check: on ranks that own soil entries, inode should match nNodeLocal */
+    if (u_soil && inode != nNodeLocal) {
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                "FormIC_grain_ana: inode=%" PetscInt_FMT " != nNodeLocal=%" PetscInt_FMT,
+                inode, nNodeLocal);
     }
 
     /* Restore arrays and destroy DMs */
