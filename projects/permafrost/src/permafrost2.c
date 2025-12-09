@@ -435,8 +435,14 @@ int main(int argc, char *argv[]) {
     //         "IC type: capillary  (using analytic capillary neck geometry)\n");
     // ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
 
-    PetscPrintf(PETSC_COMM_WORLD, "IC type: layered  (using layered geometry)\n");
-    ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    // PetscPrintf(PETSC_COMM_WORLD, "IC type: layered  (using layered geometry)\n");
+    // ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+
+    // PetscPrintf(PETSC_COMM_WORLD, "IC type: enclosed grains  (using enclosed grain geometry)\n");
+    // ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+
+    PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
+    ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* Optional statements for varying input types (e.g., capillary, layered, etc.) */
 

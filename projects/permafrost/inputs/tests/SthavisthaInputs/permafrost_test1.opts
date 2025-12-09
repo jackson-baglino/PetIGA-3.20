@@ -7,11 +7,11 @@
 -Lz 0
 -p 1
 -C 0
--NCsed 40
--RCsed 0.3e-4
+-NCsed 35
+-RCsed 0.25e-4
 -RCsed_dev 0.55
--NCice 30
--RCice 0.3e-4
+-NCice 35
+-RCice 0.45e-4
 -RCice_dev 0.55
 -delt_t 1.0e-4
 -t_final 0
