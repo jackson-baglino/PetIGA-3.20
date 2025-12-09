@@ -93,8 +93,7 @@ PetscErrorCode InitialSedGrains(IGA iga, AppCtx *user)
   /* Create random generators for x, y, and radius */
   ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcX, 0.0, user->Lx, seed + 2 + 8*iga->elem_start[0] + 11*iga->elem_start[1]); CHKERRQ(ierr);
   ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcY, 0.0, user->Ly, seed + numb_clust*34 + 5*iga->elem_start[1] + 4*iga->elem_start[0]); CHKERRQ(ierr);
-  ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcR, rad*(1.0 - rad_dev), rad*(1.0 + rad_dev),
-                               seed*numb_clust + 5*iga->proc_ranks[1] + 8*iga->elem_start[0] + 2); CHKERRQ(ierr);
+  ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcR, rad*(1.0 - rad_dev), rad*(1.0 + rad_dev),seed*numb_clust + 5*iga->proc_ranks[1] + 8*iga->elem_start[0] + 2); CHKERRQ(ierr);
   if (dim == 3) {
     ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randcZ, 0.0, user->Lz, seed*3 + iga->elem_width[1] + 6); CHKERRQ(ierr);
   }

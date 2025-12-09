@@ -435,34 +435,7 @@ int main(int argc, char *argv[]) {
             "IC type: capillary  (using analytic capillary neck geometry)\n");
     ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
 
-    // Check if PFgeom is set, and initialize sediment phase accordingly
-    // PetscPrintf(PETSC_COMM_WORLD, "user.initial: %s \n", user.initial_cond);
-    // if (user.initial_cond[0] != '\0') {
-    //     PetscPrintf(PETSC_COMM_WORLD, "[Pretneding to Load] Loading initial sediment geometry from file: %s \n", user.initial_cond);
-    //     // ierr = InitializeFromInputSolution(iga, U, S, &user); CHKERRQ(ierr);
-
-    //     // ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
-
-    //     // ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
-    // } else {
-    //     // Initialize sediment phase randomly
-    //     PetscPrintf(PETSC_COMM_WORLD, "Generating random sediment geometry \n");
-    //     if (user.dim ==2) {
-    //         /* Need to implement code to randomly assign sediment and ice grains */
-    //         // Error message for now
-    //         // PetscPrintf(PETSC_COMM_WORLD, "ERROR: 2D random sediment grain generation not implemented yet. Please provide initial condition file. \n");
-    //         // return -1; 
-    //         // Check implementation below: !!!!!!!
-    //         PetscReal t = 0.0;
-    //         ierr = InitialIceGrains(iga, &user); CHKERRQ(ierr);
-    //         if (dim == 2) {
-    //             ierr = FormInitialSoil2D(igaS,S,&user);CHKERRQ(ierr);
-    //         } else if (dim == 3) {
-    //             ierr = FormInitialSoil3D(igaS,S,&user);CHKERRQ(ierr);
-    //         }
-    //         ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
-    //     }
-    // }
+    /* Optional statements for varying input types (e.g., capillary, layered, etc.) */
 
     /* Write initial sediment phase to file */
     char filename_sed[PETSC_MAX_PATH_LEN], filevect_sed[PETSC_MAX_PATH_LEN];
