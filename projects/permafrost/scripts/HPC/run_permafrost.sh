@@ -3,7 +3,7 @@
 #SBATCH -A rubyfu
 #SBATCH -t 0-4:00:00
 
-#SBATCH --nodes=1
+#SBATCH --nodes=8
 #SBATCH --ntasks-per-node=30
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=expansion
