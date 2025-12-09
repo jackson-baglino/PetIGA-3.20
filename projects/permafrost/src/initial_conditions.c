@@ -56,7 +56,7 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
     const PetscReal eps   = user->eps;
     // const PetscReal Rmean = user->R1;   /* target mean grain radius (from opts) */
 
-    const PetscReal y_mid = 0.5 * Ly;   /* bottom half: 0..y_mid       */
+    const PetscReal y_mid = 0.65 * Ly;   /* bottom half: 0..y_mid       */
     const PetscReal y_cap = 0.8 * Ly;   /* solid ice cap: y >= y_cap    */
 
     // Number of grains to generate from options
@@ -81,7 +81,7 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
 
     
     PetscReal rad_sed = user->RCsed, rad_sed_dev = user->RCsed_dev;
-    PetscInt numb_clust_sed = user->NCsed, tot = 100000;
+    PetscInt numb_clust_sed = user->NCsed, tot = 10000;
     PetscInt ii, jj, l, n_act_sed = 0, flag, flag_sed=1, flag_ice=1, dim = user->dim, seed_sed = 13, seed_ice = 21;
 
     PetscReal rad_ice = user->RCice, rad_ice_dev = user->RCice_dev;
@@ -189,17 +189,17 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
 
         // If no overlaps, accept the grains and store their data
         if (flag) {
-            if (dim == 3) {
-                PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], xc_sed[2], rc_sed);
-            } else {
-                PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], rc_sed);
-            }
-
             if (flag_sed == 1) {
                 for (l = 0; l < dim; l++)
                     centX_sed[l][n_act_sed] = xc_sed[l];
                 radius_sed[n_act_sed] = rc_sed;
                 n_act_sed++;
+
+                if (dim == 3) {
+                    PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], xc_sed[2], rc_sed);
+                } else {
+                    PetscPrintf(PETSC_COMM_WORLD, " new sed grain %d!!  x %.2e  y %.2e  r %.2e \n", n_act_sed, xc_sed[0], xc_sed[1], rc_sed);
+                }
             }
 
             if (flag_ice == 1) {
@@ -207,6 +207,12 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
                     centX_ice[l][n_act_ice] = xc_ice[l];
                 radius_ice[n_act_ice] = rc_ice;
                 n_act_ice++;
+
+                if (dim == 3) {
+                    PetscPrintf(PETSC_COMM_WORLD, " new ice grain %d!!  x %.2e  y %.2e  z %.2e  r %.2e \n", n_act_ice, xc_ice[0], xc_ice[1], xc_ice[2], rc_ice);
+                } else {
+                    PetscPrintf(PETSC_COMM_WORLD, " new ice grain %d!!  x %.2e  y %.2e  r %.2e \n", n_act_ice, xc_ice[0], xc_ice[1], rc_ice);
+                }
             }
 
             if (n_act_sed >= numb_clust_sed) {flag_sed = 0;}
