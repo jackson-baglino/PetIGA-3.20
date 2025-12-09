@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     user.RCsed_dev   = 0.55;    /* Std dev of radius */
 
     user.NCice       = 50;      /* Number of ice grains */
-    user.RCice       = 0.5e-4;  /* Mean radius */
+    user.RCice       = 0.3e-4;  /* Mean radius */
     user.RCice_dev   = 0.55;    /* Std dev of radius */
 
     /* Define boundary condition flags (can be overridden by PETSc options) */

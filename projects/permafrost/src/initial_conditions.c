@@ -57,7 +57,7 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
     // const PetscReal Rmean = user->R1;   /* target mean grain radius (from opts) */
 
     const PetscReal y_mid = 0.5 * Ly;   /* bottom half: 0..y_mid       */
-    const PetscReal y_cap = 0.9 * Ly;   /* solid ice cap: y >= y_cap    */
+    const PetscReal y_cap = 0.8 * Ly;   /* solid ice cap: y >= y_cap    */
 
     // Number of grains to generate from options
     // const PetscInt NCice = user->NCice;
@@ -81,7 +81,7 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
 
     
     PetscReal rad_sed = user->RCsed, rad_sed_dev = user->RCsed_dev;
-    PetscInt numb_clust_sed = user->NCsed, tot = 10000;
+    PetscInt numb_clust_sed = user->NCsed, tot = 100000;
     PetscInt ii, jj, l, n_act_sed = 0, flag, flag_sed=1, flag_ice=1, dim = user->dim, seed_sed = 13, seed_ice = 21;
 
     PetscReal rad_ice = user->RCice, rad_ice_dev = user->RCice_dev;
