@@ -31,7 +31,7 @@ execute_python_scripts() {
 # Main script logic
 if [[ -n $1 ]]; then
     echo "Starting process for directory: $1"
-    dir=$SCRATCH/permafrost/$1
+    dir=/Users/jacksonbaglino/SimulationResults/permafrost/scratch/$1
 
     # Copy files and switch to the target directory
     copy_files_to_directory $dir

@@ -9,17 +9,6 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
     PetscPrintf(PETSC_COMM_WORLD,
                 "--------------------- INITIAL CONDITIONS (Layered Permafrost 2D) --------------------------\n");
 
-    /* --- Report grain counts / ratio --- */
-    PetscInt  nIceGrains = user->n_act;
-    PetscInt  nSedGrains = user->n_actsed;
-    PetscReal grain_ratio = 1.0;
-    if (nSedGrains > 0) {
-        grain_ratio = ((PetscReal)nIceGrains) / ((PetscReal)nSedGrains);
-    }
-    PetscPrintf(PETSC_COMM_WORLD,
-                "FormInitialLayeredPermafrost2D: nIceGrains = %D, nSedGrains = %D, ratio ≈ %.3f\n",
-                nIceGrains, nSedGrains, (double)grain_ratio);
-
     /* --- Main phase-field vector U (ice, tem, rhov) --- */
     DM            daU;
     Field         **u;
@@ -31,7 +20,7 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
 
     /* --- Soil vector S (sediment phase). Might be empty on some ranks. --- */
     PetscInt      nlocS;
-    DM            daS = NULL;
+    DM            daS  = NULL;
     FieldS        **uS = NULL;
     DMDALocalInfo infoS;
 
@@ -43,24 +32,200 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
     }
 
     /* --- Geometry / interface parameters --- */
-    const PetscReal Lx = user->Lx;
-    const PetscReal Ly = user->Ly;
-    const PetscReal eps = user->eps;
+    const PetscReal Lx    = user->Lx;
+    const PetscReal Ly    = user->Ly;
+    const PetscReal eps   = user->eps;
+    const PetscReal Rmean = user->R1;   /* target mean grain radius (from opts) */
 
-    /* Vertical layering:
-       - y < y_bottomIce : solid ice block (permafrost)
-       - y_sedLayer <= y <= y_iceCap : sediment-only band
-       - y > y_iceCap : thin ice cap
-    */
-    const PetscReal y_bottomIce = 0.25 * Ly;
-    const PetscReal y_sedLayer  = 0.75 * Ly;
-    const PetscReal y_iceCap    = 0.95 * Ly;
+    const PetscReal y_mid = 0.5 * Ly;   /* bottom half: 0..y_mid       */
+    const PetscReal y_cap = 0.9 * Ly;   /* solid ice cap: y >= y_cap    */
+
+    /* --- Number of grains from options --- */
+    const PetscInt NCice = user->NCice;
+    const PetscInt NCsed = user->NCsed;
+    const PetscInt Nbot  = NCice + NCsed;
+
+    if (Nbot <= 0) {
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                "FormInitialLayeredPermafrost2D: NCice + NCsed must be > 0");
+    }
+
+    PetscPrintf(PETSC_COMM_WORLD,
+                "FormInitialLayeredPermafrost2D: NCice=%D, NCsed=%D, Nbot=%D, R1=%g\n",
+                NCice, NCsed, Nbot, (double)Rmean);
+
+    /* --- Radius control: keep grains small relative to the domain --- */
+    const PetscReal Lmin     = PetscMin(Lx, y_mid);
+    const PetscReal R_geom   = 0.10 * Lmin;  /* geometric cap ~ 10% of min dimension */
+    PetscReal       R_base   = (Rmean > 0.0) ? PetscMin(Rmean, R_geom) : 0.05 * Lmin;
+    const PetscReal R_min    = 0.5  * R_base;  /* radii in [0.5, 1.5] * R_base */
+    const PetscReal R_max    = 1.5  * R_base;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+                "FormInitialLayeredPermafrost2D: R_base=%g, R_min=%g, R_max=%g (geom cap=%g)\n",
+                (double)R_base, (double)R_min, (double)R_max, (double)R_geom);
+
+    /* --- Allocate arrays for bottom grains --- */
+    PetscReal *xc_bot = NULL, *yc_bot = NULL, *R_bot = NULL;
+    PetscInt  *type_bot = NULL;  /* 1 = ice, 0 = sediment */
+
+    ierr = PetscMalloc1(Nbot, &xc_bot);CHKERRQ(ierr);
+    ierr = PetscMalloc1(Nbot, &yc_bot);CHKERRQ(ierr);
+    ierr = PetscMalloc1(Nbot, &R_bot);CHKERRQ(ierr);
+    ierr = PetscMalloc1(Nbot, &type_bot);CHKERRQ(ierr);
+
+    /* First NCice grains are ice, rest are sediment */
+    for (PetscInt k = 0; k < Nbot; k++) {
+        type_bot[k] = (k < NCice) ? 1 : 0;
+    }
+
+    /* --- Deterministic "random" helper (no RNG state needed) --- */
+    #define RAND01(tag1, tag2, attempt) \
+        (0.5 * (1.0 + PetscSinReal((PetscReal)((tag1) * (tag2) + 37 * (attempt) + 11))))
+
+    /* --- Place non-overlapping bottom grains in 0..y_mid --- */
+    PetscInt nFailed = 0;
+    for (PetscInt k = 0; k < Nbot; k++) {
+        PetscBool placed = PETSC_FALSE;
+
+        for (PetscInt attempt = 0; attempt < 80 && !placed; attempt++) {
+
+            /* Radius ~ U[0.5,1.5] * R_base */
+            PetscReal xiR = RAND01(17 + k, 23 + k, attempt);
+            PetscReal Rk  = R_min + (R_max - R_min) * xiR;
+
+            /* Random-ish center, but keep grain fully in bottom half (wrt radius) */
+            PetscReal xiX = RAND01(31 + k, 13 + k, attempt);
+            PetscReal xiY = RAND01(29 + k, 19 + k, attempt);
+
+            PetscReal xc = Rk + xiX * (Lx   - 2.0 * Rk);
+            PetscReal yc = Rk + xiY * (y_mid - 2.0 * Rk);
+
+            /* Overlap check with previously placed grains */
+            PetscBool overlap = PETSC_FALSE;
+            for (PetscInt g = 0; g < k; g++) {
+                if (R_bot[g] <= 0.0) continue; /* skip inactive grains */
+                PetscReal dx      = xc - xc_bot[g];
+                PetscReal dy      = yc - yc_bot[g];
+                PetscReal minDist = Rk + R_bot[g] + 2.0 * eps;
+                PetscReal dist2   = dx*dx + dy*dy;
+                if (dist2 < minDist * minDist) {
+                    overlap = PETSC_TRUE;
+                    break;
+                }
+            }
+
+            if (!overlap) {
+                xc_bot[k] = xc;
+                yc_bot[k] = yc;
+                R_bot[k]  = Rk;
+                placed    = PETSC_TRUE;
+            }
+        }
+
+        if (!placed) {
+            /* Deactivate grain k: it will not contribute to the IC */
+            xc_bot[k] = 0.0;
+            yc_bot[k] = 0.0;
+            R_bot[k]  = 0.0;
+            nFailed++;
+        }
+    }
+
+    PetscPrintf(PETSC_COMM_WORLD,
+                "FormInitialLayeredPermafrost2D: placed %D bottom grains (failed to place %D)\n",
+                Nbot - nFailed, nFailed);
+
+    /* --- Precompute non-overlapping top-band sediment grains (y_mid .. y_cap) --- */
+    const PetscInt  nRows_top = 3;
+    const PetscInt  nCols_top = 10;
+    const PetscReal dy_top    = (y_cap - y_mid) / (PetscReal)nRows_top;
+    const PetscReal dx_top    = Lx / (PetscReal)nCols_top;
+
+    const PetscReal R_top_base = 0.6 * R_base;           /* slightly smaller than bottom grains */
+    const PetscReal R_top_min  = 0.5 * R_top_base;
+    const PetscReal R_top_max  = 1.5 * R_top_base;
+
+    const PetscInt  Ntop = nRows_top * nCols_top;
+
+    PetscReal *xc_top = NULL, *yc_top = NULL, *R_top = NULL;
+    ierr = PetscMalloc1(Ntop, &xc_top);CHKERRQ(ierr);
+    ierr = PetscMalloc1(Ntop, &yc_top);CHKERRQ(ierr);
+    ierr = PetscMalloc1(Ntop, &R_top);CHKERRQ(ierr);
+
+    PetscInt nTopFailed = 0;
+    for (PetscInt k = 0; k < Ntop; k++) {
+        PetscBool placed = PETSC_FALSE;
+
+        for (PetscInt attempt = 0; attempt < 80 && !placed; attempt++) {
+            /* Radius ~ U[0.5,1.5] * R_top_base */
+            PetscReal xiR = RAND01(101 + k, 113 + k, attempt);
+            PetscReal Rk  = R_top_min + (R_top_max - R_top_min) * xiR;
+
+            /* Random-ish center, but keep grain fully in top band and away from ice cap */
+            PetscReal xiX = RAND01(131 + k, 137 + k, attempt);
+            PetscReal xiY = RAND01(129 + k, 139 + k, attempt);
+
+            PetscReal xc = Rk + xiX * (Lx - 2.0 * Rk);
+            PetscReal yc = (y_mid + Rk) + xiY * ((y_cap - Rk) - (y_mid + Rk));
+
+            PetscBool overlap = PETSC_FALSE;
+
+            /* Check overlap with bottom grains */
+            for (PetscInt g = 0; g < Nbot; g++) {
+                if (R_bot[g] <= 0.0) continue;
+                PetscReal dx      = xc - xc_bot[g];
+                PetscReal dy      = yc - yc_bot[g];
+                PetscReal minDist = Rk + R_bot[g] + 2.0 * eps;
+                PetscReal dist2   = dx*dx + dy*dy;
+                if (dist2 < minDist * minDist) {
+                    overlap = PETSC_TRUE;
+                    break;
+                }
+            }
+
+            /* Check overlap with already placed top grains */
+            if (!overlap) {
+                for (PetscInt g = 0; g < k; g++) {
+                    if (R_top[g] <= 0.0) continue;
+                    PetscReal dx      = xc - xc_top[g];
+                    PetscReal dy      = yc - yc_top[g];
+                    PetscReal minDist = Rk + R_top[g] + 2.0 * eps;
+                    PetscReal dist2   = dx*dx + dy*dy;
+                    if (dist2 < minDist * minDist) {
+                        overlap = PETSC_TRUE;
+                        break;
+                    }
+                }
+            }
+
+            if (!overlap) {
+                xc_top[k] = xc;
+                yc_top[k] = yc;
+                R_top[k]  = Rk;
+                placed    = PETSC_TRUE;
+            }
+        }
+
+        if (!placed) {
+            xc_top[k] = 0.0;
+            yc_top[k] = 0.0;
+            R_top[k]  = 0.0;
+            nTopFailed++;
+        }
+    }
+
+    PetscPrintf(PETSC_COMM_WORLD,
+                "FormInitialLayeredPermafrost2D: placed %D top grains (failed to place %D)\n",
+                Ntop - nTopFailed, nTopFailed);
 
     PetscInt k_periodic = -1;
     if (user->periodic == 1) {
         k_periodic = user->p - 1;
     }
 
+
+    /* --- Loop over physical grid --- */
     for (PetscInt i = infoU.xs; i < infoU.xs + infoU.xm; i++) {
         for (PetscInt j = infoU.ys; j < infoU.ys + infoU.ym; j++) {
 
@@ -83,77 +248,90 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
             RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
             u[j][i].rhov = user->hum0 * rho_vs_loc;
 
-            /* --------- Ice grains (from user->cent, user->radius) --------- */
-            PetscReal phi_ice_grains = 0.0;
-            for (PetscInt aa = 0; aa < user->n_act; aa++) {
-                PetscReal dx = x_geom - user->cent[0][aa];
-                PetscReal dy = y_geom - user->cent[1][aa];
-                PetscReal dist = PetscSqrtReal(dx * dx + dy * dy) - user->radius[aa];
-                phi_ice_grains += 0.5 - 0.5 * PetscTanhReal(0.5 * dist / eps);
-            }
-            if (phi_ice_grains > 1.0) phi_ice_grains = 1.0;
-            if (phi_ice_grains < 0.0) phi_ice_grains = 0.0;
+            /* --------- Initialize phase fields --------- */
+            PetscReal phi_ice  = 0.0;
+            PetscReal phi_soil = 0.0;
 
-            /* --------- Sediment grains (from user->centsed, user->radiussed) --------- */
-            PetscReal phi_sed_grains = 0.0;
-            for (PetscInt aa = 0; aa < user->n_actsed; aa++) {
-                PetscReal dx = x_geom - user->centsed[0][aa];
-                PetscReal dy = y_geom - user->centsed[1][aa];
-                PetscReal dist = PetscSqrtReal(dx * dx + dy * dy) - user->radiussed[aa];
-                phi_sed_grains += 0.5 - 0.5 * PetscTanhReal(0.5 * dist / eps);
-            }
-            if (phi_sed_grains > 1.0) phi_sed_grains = 1.0;
-            if (phi_sed_grains < 0.0) phi_sed_grains = 0.0;
+            /* =======================
+               1) Bottom half: 0 .. y_mid (ice + soil grains)
+               ======================= */
+            if (y_geom < y_mid) {
+                for (PetscInt k = 0; k < Nbot; k++) {
+                    if (R_bot[k] <= 0.0) continue; /* skip inactive grains */
 
-            /* --------- Bottom solid ice block (permafrost-style layer) --------- */
-            PetscReal d_bottom   = y_geom - y_bottomIce;   /* negative below interface */
-            PetscReal H_bottom   = 0.5 + 0.5 * PetscTanhReal(0.5 * d_bottom / eps);
-            PetscReal phi_bottom = 1.0 - H_bottom;         /* ~1 below, ~0 above */
+                    PetscReal xc  = xc_bot[k];
+                    PetscReal yc  = yc_bot[k];
+                    PetscReal Rk  = R_bot[k];
 
-            /* --------- Top ice cap --------- */
-            PetscReal d_cap   = y_geom - y_iceCap;         /* negative below cap start */
-            PetscReal H_cap   = 0.5 + 0.5 * PetscTanhReal(0.5 * d_cap / eps);
-            PetscReal phi_cap = 1.0 - H_cap;               /* ~1 above, ~0 below */
+                    PetscReal dx = x_geom - xc;
+                    PetscReal dy = y_geom - yc;
 
-            /* --------- Combine into final ice phase --------- */
-            PetscReal phi_ice = phi_bottom;
-            if (phi_ice_grains > phi_ice) phi_ice = phi_ice_grains;
-            if (phi_cap        > phi_ice) phi_ice = phi_cap;
+                    /* Skip far-away points quickly */
+                    if (PetscAbsReal(dx) > Rk + 2.0 * eps) continue;
+                    if (PetscAbsReal(dy) > Rk + 2.0 * eps) continue;
 
-            /* Sediment-only band between y_sedLayer and y_iceCap:
-               no ice in this region (overridden by cap above). */
-            if (y_geom >= y_sedLayer && y_geom <= y_iceCap) {
-                phi_ice = 0.0;
+                    PetscReal r       = PetscSqrtReal(dx*dx + dy*dy) - Rk;
+                    PetscReal phi_loc = 0.5 - 0.5 * PetscTanhReal(0.5 * r / eps);
+                    if (phi_loc <= 0.0) continue;
+
+                    if (type_bot[k] == 1) {
+                        /* Ice grain: take the maximum contribution to keep grains spherical */
+                        phi_ice = PetscMax(phi_ice, phi_loc);
+                    } else {
+                        /* Sediment grain: maximum contribution for clean circular grains */
+                        phi_soil = PetscMax(phi_soil, phi_loc);
+                    }
+                }
             }
 
-            /* Carve out sediment grains from the ice field */
-            phi_ice *= (1.0 - phi_sed_grains);
+            /* ====================================
+               2) Top band: y_mid .. y_cap (soil only, non-overlapping)
+               ==================================== */
+            if (y_geom >= y_mid && y_geom < y_cap) {
+                for (PetscInt k = 0; k < Ntop; k++) {
+                    if (R_top[k] <= 0.0) continue;
 
-            if (phi_ice > 1.0) phi_ice = 1.0;
-            if (phi_ice < 0.0) phi_ice = 0.0;
+                    PetscReal dx = x_geom - xc_top[k];
+                    PetscReal dy = y_geom - yc_top[k];
+
+                    if (PetscAbsReal(dx) > R_top[k] + 2.0 * eps) continue;
+                    if (PetscAbsReal(dy) > R_top[k] + 2.0 * eps) continue;
+
+                    PetscReal r       = PetscSqrtReal(dx*dx + dy*dy) - R_top[k];
+                    PetscReal phi_loc = 0.5 - 0.5 * PetscTanhReal(0.5 * r / eps);
+                    if (phi_loc <= 0.0) continue;
+
+                    /* Use max to keep each grain circular; no overlapping phases */
+                    phi_soil = PetscMax(phi_soil, phi_loc);
+                }
+            }
+
+            /* =======================================
+               3) Solid ice block at top: y >= y_cap
+               ======================================= */
+            if (y_geom >= y_cap) {
+                phi_ice  = 1.0;
+                phi_soil = 0.0;
+            }
+
+            /* Enforce non-overlap between ice and soil at each point */
+            if (phi_ice > 0.0 && phi_soil > 0.0) {
+                if (phi_ice >= phi_soil) {
+                    phi_soil = 0.0;
+                } else {
+                    phi_ice = 0.0;
+                }
+            }
+
+            /* Clamp to [0,1] */
+            if (phi_ice  > 1.0) phi_ice  = 1.0;
+            if (phi_ice  < 0.0) phi_ice  = 0.0;
+            if (phi_soil > 1.0) phi_soil = 1.0;
+            if (phi_soil < 0.0) phi_soil = 0.0;
 
             u[j][i].ice = phi_ice;
 
-            /* --------- Soil / sediment field in S (if present on this rank) --------- */
             if (uS) {
-                /* Build a simple soil phase:
-                   - In sediment-only band: soil = 1
-                   - Elsewhere: soil = sediment grains only
-                   - In the very top ice cap: soil = 0
-                */
-                PetscReal phi_soil = phi_sed_grains;
-
-                if (y_geom >= y_sedLayer && y_geom <= y_iceCap) {
-                    phi_soil = 1.0;
-                }
-                if (y_geom > y_iceCap) {
-                    phi_soil = 0.0;
-                }
-
-                if (phi_soil > 1.0) phi_soil = 1.0;
-                if (phi_soil < 0.0) phi_soil = 0.0;
-
-                /* Only write where the soil DM actually has this (i,j) */
                 if (i >= infoS.xs && i < infoS.xs + infoS.xm &&
                     j >= infoS.ys && j < infoS.ys + infoS.ym) {
                     uS[j][i].soil = phi_soil;
@@ -170,6 +348,14 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
         ierr = DMDAVecRestoreArray(daS, S, &uS);CHKERRQ(ierr);
         ierr = DMDestroy(&daS);CHKERRQ(ierr);
     }
+
+    ierr = PetscFree(xc_bot);CHKERRQ(ierr);
+    ierr = PetscFree(yc_bot);CHKERRQ(ierr);
+    ierr = PetscFree(R_bot);CHKERRQ(ierr);
+    ierr = PetscFree(type_bot);CHKERRQ(ierr);
+    ierr = PetscFree(xc_top);CHKERRQ(ierr);
+    ierr = PetscFree(yc_top);CHKERRQ(ierr);
+    ierr = PetscFree(R_top);CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
 }
