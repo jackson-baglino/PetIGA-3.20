@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J permafrost_60day_enclosed_pair_hum80
+#SBATCH -J permafrost_60day_random_grains
 #SBATCH -A rubyfu
 #SBATCH -t 0-12:00:00
 

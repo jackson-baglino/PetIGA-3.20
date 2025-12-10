@@ -16,7 +16,7 @@
 -delt_t 1.0e-4
 -t_final 5184000
 -n_out 200
--humidity 0.80
+-humidity 0.97
 -temp -20.0
 -grad_temp0 0.0,1.0e-6,0.0
 -eps 9.3e-7
