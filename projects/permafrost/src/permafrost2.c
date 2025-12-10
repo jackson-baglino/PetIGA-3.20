@@ -448,6 +448,11 @@ int main(int argc, char *argv[]) {
     // PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
     // ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
+    /* 5.) Random packed grains IC */
+    PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");
+    ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+
+
     /* Optional statements for varying input types (e.g., capillary, layered, etc.) */
 
     /* Write initial sediment phase to file */
