@@ -96,3 +96,4 @@ projects/dry_snow_metamorphism.zip
 projects/permafrost.zip
 projects/permafrost/scratch/*
 projects/permafrost/output_files/*
+projects/permafrost/postprocess/plotTripleWell.py
