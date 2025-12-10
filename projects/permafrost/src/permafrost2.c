@@ -431,18 +431,22 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "Setting up initial conditions... \n");
     // PetscPrintf(PETSC_COMM_WORLD, "Initial condition type: %s \n", ICGeomTypeNames[ic_type_opt]);
 
+    /* 1.) Capillary IC */
     // PetscPrintf(PETSC_COMM_WORLD,
     //         "IC type: capillary  (using analytic capillary neck geometry)\n");
     // ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
 
+    /* 2.) Layered IC */
     // PetscPrintf(PETSC_COMM_WORLD, "IC type: layered  (using layered geometry)\n");
     // ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
-    // PetscPrintf(PETSC_COMM_WORLD, "IC type: enclosed grains  (using enclosed grain geometry)\n");
-    // ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    /* 3.) Enclosed grain pair IC */
+    PetscPrintf(PETSC_COMM_WORLD, "IC type: enclosed grain pair  (using enclosed grain geometry)\n");
+    ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
-    PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
-    ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    /* 4.) Random enclosed grains IC */
+    // PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
+    // ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* Optional statements for varying input types (e.g., capillary, layered, etc.) */
 

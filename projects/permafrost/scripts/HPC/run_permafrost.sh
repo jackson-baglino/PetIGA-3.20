@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -J permafrost_Tm-20_hum98
+#SBATCH -J permafrost_60day_enclosed_pair_hum80
 #SBATCH -A rubyfu
-#SBATCH -t 0-4:00:00
+#SBATCH -t 0-12:00:00
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=30

@@ -14,11 +14,11 @@
 -RCice 0.45e-4
 -RCice_dev 0.55
 -delt_t 1.0e-4
--t_final 0
+-t_final 5184000
 -n_out 200
--humidity 0.95
+-humidity 0.80
 -temp -20.0
--grad_temp0 0.0,-1.0,0.0
+-grad_temp0 0.0,1.0e-6,0.0
 -eps 9.3e-7
 -periodic 0
 -flag_BC_Tfix 1
