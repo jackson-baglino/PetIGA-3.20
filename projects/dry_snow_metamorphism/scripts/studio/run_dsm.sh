@@ -93,7 +93,7 @@ trap 'TRAPERR $LINENO' ERR
 # Defaults (already in your script)
 BASE_DIR="${BASE_DIR:-${PETIGA_DIR}/projects/dry_snow_metamorphism}"
 input_dir="${input_dir:-$BASE_DIR/inputs}"
-filename="${filename:-grains__phi=0.24__Lxmm=2__Lymm=2__seed=22/grains.dat}"
+filename="${filename:-grains__MOLARO_simulation/grains.dat}"
 
 # --- OVERRIDES FROM BATCH (do not change anything else) ---
 # If batch passed a full path inputFile, use it and keep it.
@@ -115,16 +115,16 @@ readFlag=${readFlag:-1}   # 1=read grains from file; 0=procedural generation (no
 
 # Physics & numerics
 delt_t=${delt_t:-1.0e-4}
-t_final=${t_final:-$((1 * 2 * 60 * 60))}  # 2 hours in seconds
+t_final=${t_final:-$((1 * 1 * 57 * 60))}  # 57 minutes in seconds
 n_out=${n_out:-100}
 # t_final=${t_final:-$((2 * 60 * 60))}  # 2 hours in seconds
 # n_out=${n_out:-10}
-humidity=${humidity:-0.98}
-temp=${temp:--25.0}
+humidity=${humidity:-0.97}
+temp=${temp:--20.0}
 grad_temp0X=${grad_temp0X:-0.0}
 grad_temp0Y=${grad_temp0Y:-3.0e-6}
 grad_temp0Z=${grad_temp0Z:-0.0}
-dim=${dim:-2}
+dim=${dim:-3}
 
 # Parallel / MPI
 NUM_PROCS=${NUM_PROCS:-12}
@@ -367,7 +367,7 @@ write_env_snapshot() {
 }
 
 # Also write machine-readable metadata and a resolved .env snapshot
-write_metadata_json
+# write_metadata_json
 write_env_snapshot
 
 # =======================================

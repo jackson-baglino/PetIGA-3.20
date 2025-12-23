@@ -18,7 +18,7 @@ Data read per run:
       porosity: prefers structure.porosity_target, else structure.porosity_achieved
 
 Output:
-  - Creates <parent_dir>/output_plots/
+  - Creates <parent_dir>/output_plots/ (or <parent_dir>/log_output_plots/ when --log_plots is enabled)
   - Saves 2 figures (x2 if --theme=both):
       lines_kxx_vs_time_by_temp_[light|dark].png
       lines_kyy_vs_time_by_temp_[light|dark].png
@@ -46,6 +46,52 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# ------------------------ Global plot styling ------------------------ #
+# Target figure size (inches)
+FIG_W_IN = 6.0
+FIG_H_IN = 3.5
+
+# Font sizes (tuned for 6"x3.5" figures)
+TITLE_FONTSIZE = 16
+AXIS_FONTSIZE = 18
+TICK_FONTSIZE = 10
+LEGEND_FONTSIZE = 10
+
+# A small negative-time pad so axes don't look "cut off" at t=0
+
+TIME_AXIS_PAD_FRACTION = 0.02
+
+# ------------------------ Axis label wrapping helpers ------------------------ #
+# Keep axis labels compact so they fit within the figure bounds
+MAX_XLABEL_CHARS = 34
+MAX_YLABEL_CHARS = 26
+
+def _wrap_label(text: str, max_chars: int) -> str:
+    """Soft-wrap a label by inserting a newline at the last space before max_chars."""
+    if text is None:
+        return ""
+    s = str(text)
+    if len(s) <= max_chars or "\n" in s:
+        return s
+    # Try to break on the last space before max_chars
+    cut = s.rfind(" ", 0, max_chars + 1)
+    if cut == -1:
+        return s
+    return s[:cut].rstrip() + "\n" + s[cut + 1 :].lstrip()
+
+def set_compact_axis_labels(ax: plt.Axes, xlabel: str, ylabel: str):
+    """Set labels with wrapping so they stay within the figure bounds."""
+    xl = _wrap_label(xlabel, MAX_XLABEL_CHARS)
+    yl = _wrap_label(ylabel, MAX_YLABEL_CHARS)
+    ax.set_xlabel(xl)
+    ax.set_ylabel(yl)
+    # Enable wrapping for backends that respect it
+    try:
+        ax.xaxis.label.set_wrap(True)
+        ax.yaxis.label.set_wrap(True)
+    except Exception:
+        pass
+
 # ------------------------ Small helpers ------------------------ #
 
 def autoscale_time(arr: np.ndarray) -> Tuple[np.ndarray, str]:
@@ -61,40 +107,108 @@ def autoscale_time(arr: np.ndarray) -> Tuple[np.ndarray, str]:
         return arr / 60.0, "minutes"
     return arr, "seconds"
 
-def set_theme(theme: str):
-    """Apply a light or dark Matplotlib theme."""
+# ------------------------ Normalization & formatting helpers ------------------------ #
+
+def _is_normalized_series(arr: np.ndarray) -> bool:
+    """Return True if arr is non-empty, finite at index 0, and abs(arr[0] - 1.0) < 1e-6."""
+    if arr is None or not hasattr(arr, "size") or arr.size == 0:
+        return False
+    if not np.isfinite(arr[0]):
+        return False
+    return abs(float(arr[0]) - 1.0) < 1e-6
+
+def _fmt_temp_phi(tempC: Optional[float], por: Optional[float]) -> str:
+    """Return string like 'T=-20.0 °C, φ=0.24' using unicode phi. Only include finite values."""
+    bits = []
+    if tempC is not None and np.isfinite(tempC):
+        bits.append(f"T={tempC:.1f} °C")
+    if por is not None and np.isfinite(por):
+        bits.append(f"φ={por:.2f}")
+    return ", ".join(bits)
+
+def set_theme(theme: str, use_cmocean_thermal: bool = False, n_colors: int = 10):
+    """Apply a consistent Matplotlib theme.
+
+    Requirements:
+      - No grid
+      - No background (transparent)
+      - Title 28pt, axes labels 24pt
+      - Optional cmocean thermal color scheme
+    """
     plt.rcParams.update(plt.rcParamsDefault)
+
+    # Transparent backgrounds (no plot/figure background)
+    plt.rcParams.update({
+        'figure.facecolor': 'none',
+        'axes.facecolor': 'none',
+        'savefig.facecolor': 'none',
+        'savefig.transparent': True,
+    })
+
+    # Foreground colors (light vs dark) for text/spines/ticks
     if theme == "dark":
-        plt.rcParams.update({
-            'figure.facecolor': '#000000',
-            'axes.facecolor': '#000000',
-            'savefig.facecolor': '#000000',
-            'text.color': 'white',
-            'axes.labelcolor': 'white',
-            'axes.edgecolor': 'white',
-            'xtick.color': 'white',
-            'ytick.color': 'white',
-        })
-    else:  # light
-        plt.rcParams.update({
-            'figure.facecolor': 'white',
-            'axes.facecolor': 'white',
-            'savefig.facecolor': 'white',
-            'text.color': 'black',
-            'axes.labelcolor': 'black',
-            'axes.edgecolor': 'black',
-            'xtick.color': 'black',
-            'ytick.color': 'black',
-        })
+        fg = 'white'
+        plt.rcParams.update({'text.color': fg, 'axes.labelcolor': fg, 'axes.edgecolor': fg, 'xtick.color': fg, 'ytick.color': fg})
+    else:
+        fg = 'black'
+        plt.rcParams.update({'text.color': fg, 'axes.labelcolor': fg, 'axes.edgecolor': fg, 'xtick.color': fg, 'ytick.color': fg})
+
+    # Typography + axes
     plt.rcParams.update({
         'font.family': 'DejaVu Sans',
-        'font.size': 14,
+        'axes.titlesize': TITLE_FONTSIZE,
+        'axes.labelsize': AXIS_FONTSIZE,
+        'xtick.labelsize': TICK_FONTSIZE,
+        'ytick.labelsize': TICK_FONTSIZE,
+        'legend.fontsize': LEGEND_FONTSIZE,
         'axes.linewidth': 1.2,
-        'xtick.direction': 'in', 'ytick.direction': 'in',
-        'xtick.major.size': 6,   'ytick.major.size': 6,
-        'xtick.major.width': 1.2,'ytick.major.width': 1.2,
-        'legend.fontsize': 12,
+        'axes.grid': False,
+        'xtick.direction': 'in',
+        'ytick.direction': 'in',
+        'xtick.major.size': 6,
+        'ytick.major.size': 6,
+        'xtick.major.width': 1.2,
+        'ytick.major.width': 1.2,
     })
+
+    # Note: we intentionally do NOT set a color cycle here when using cmocean.
+    # We instead map each run's temperature to a color spanning the full colormap
+    # range (coldest -> warmest) inside the plotting functions.
+    if use_cmocean_thermal:
+        try:
+            import cmocean  # noqa: F401
+        except Exception as e:
+            print(f"[WARN] Could not import cmocean ({e}); falling back to Matplotlib defaults.")
+# ------------------------ Temperature colormap helpers ------------------------ #
+
+def get_temp_colormap(use_cmocean_thermal: bool):
+    """Return a colormap for temperature-based coloring."""
+    if use_cmocean_thermal:
+        try:
+            import cmocean
+            return cmocean.cm.thermal
+        except Exception:
+            # Fallback that exists in Matplotlib
+            return plt.get_cmap("plasma")
+    return None
+
+
+def temp_to_color(tempC: float, tmin: float, tmax: float, cmap) -> Optional[Tuple[float, float, float, float]]:
+    """Map temperature to a color spanning the full colormap range.
+
+    coldest (tmin) -> cmap(0.0)
+    warmest (tmax) -> cmap(1.0)
+    """
+    if cmap is None or tempC is None:
+        return None
+    if not np.isfinite(tempC) or not np.isfinite(tmin) or not np.isfinite(tmax):
+        return None
+    if tmax == tmin:
+        u = 0.5
+    else:
+        u = (float(tempC) - float(tmin)) / (float(tmax) - float(tmin))
+    u = float(np.clip(u, 0.0, 1.0))
+    return cmap(u)
 
 # ------------------------ φ summarization helper ------------------------ #
 def summarize_phi_for_title(runs: List[Dict[str, Any]]) -> Optional[str]:
@@ -347,17 +461,25 @@ def plot_lines_k_vs_ssa(runs: List[Dict[str, Any]],
                         outdir: str,
                         base_name: str,
                         theme: str,
-                        dpi: int):
+                        dpi: int,
+                        use_cmocean_thermal: bool = False,
+                        log_plots: bool = False):
     """
     Plot normalized k (k/k0) vs normalized SSA (SSA/SSA0) for each run, lines colored by temperature.
     Requires SSA_evo.dat to be present (ssa in run dict). Runs lacking SSA are skipped.
     """
     def do_plot(theme_name: str, suffix: str):
-        set_theme(theme_name)
-        fig, ax = plt.subplots(figsize=(10.0, 4.4))
+        set_theme(theme_name, use_cmocean_thermal=use_cmocean_thermal)
+        fig, ax = plt.subplots(figsize=(FIG_W_IN, FIG_H_IN))
         runs_sorted = sorted(runs, key=lambda d: d["tempC"])
-        phi_text = summarize_phi_for_title(runs_sorted)
+        temps = [float(d["tempC"]) for d in runs_sorted if d.get("tempC") is not None and np.isfinite(d.get("tempC"))]
+        tmin = float(np.nanmin(temps)) if temps else np.nan
+        tmax = float(np.nanmax(temps)) if temps else np.nan
+        cmap = get_temp_colormap(use_cmocean_thermal)
         any_series = False
+        if log_plots:
+            ax.set_xscale('log')
+            ax.set_yscale('log')
         for d in runs_sorted:
             ssa = d.get("ssa")
             y = d.get(which)
@@ -366,6 +488,8 @@ def plot_lines_k_vs_ssa(runs: List[Dict[str, Any]],
             ssa = np.asarray(ssa, dtype=float)
             y = np.asarray(y, dtype=float)
             valid = np.isfinite(ssa) & np.isfinite(y)
+            if log_plots:
+                valid = valid & (ssa > 0) & (y > 0)
             if np.count_nonzero(valid) < 2:
                 continue
             ssa = ssa[valid]
@@ -375,25 +499,36 @@ def plot_lines_k_vs_ssa(runs: List[Dict[str, Any]],
                 continue
             ssa_n = ssa / ssa[0]
             y_n = y / y[0]
+            if log_plots:
+                mpos = (ssa_n > 0) & (y_n > 0)
+                ssa_n = ssa_n[mpos]
+                y_n = y_n[mpos]
+                if ssa_n.size < 2:
+                    continue
             lab = f"{d['tempC']:.1f} °C"
-            ax.plot(ssa_n, y_n, lw=2.0, marker='o', ms=3,
-                    markevery=max(1, len(ssa_n)//18), label=lab)
+            color = temp_to_color(d["tempC"], tmin, tmax, cmap)
+            ax.plot(ssa_n, y_n, lw=2.0, label=lab, color=color)
             any_series = True
-        ax.set_xlabel(r"SSA/SSA$_0$")
-        ax.set_ylabel(y_label_norm)
-        title = f"{y_label_norm} vs SSA/SSA$_0$"
-        if phi_text:
-            title += f" — {phi_text}"
+        set_compact_axis_labels(
+            ax,
+            "Normalized Specific Surface Area",
+            "Normalized Effective Thermal Conductivity",
+        )
+        # Title: two lines (no component in title)
+        title = "Normalized Effective Thermal Conductivity\nvs. Normalized Specific Surface Area"
         ax.set_title(title)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
+        ax.grid(False)
         if any_series:
             if len(runs) > 6:
+                # Many entries: keep legend outside
                 fig.legend(loc="center right", bbox_to_anchor=(1.02, 0.5))
                 fig.subplots_adjust(right=0.84)
                 fig.tight_layout(rect=[0.0, 0.0, 0.84, 1.0])
             else:
-                ax.legend()
+                # Use Matplotlib's "best" placement and a slightly smaller legend font
+                ax.legend(loc="best", fontsize=max(8, LEGEND_FONTSIZE - 1))
                 fig.tight_layout()
         out_path = os.path.join(outdir, base_name.replace('.png', f'_{suffix}.png'))
         fig.savefig(out_path, dpi=dpi, bbox_inches='tight', transparent=True)
@@ -455,47 +590,86 @@ def plot_lines_vs_time(runs: List[Dict[str, Any]],
                        outdir: str,
                        base_name: str,
                        theme: str,
-                       dpi: int):
+                       dpi: int,
+                       use_cmocean_thermal: bool = False,
+                       log_plots: bool = False):
     """
     Make a line plot of 'which' in {'kxx','kyy'} vs time, with one line per temperature.
-    Legend includes temperature only (φ in title if appropriate).
+    Legend includes temperature only.
     """
     unit = choose_global_time_unit(runs)
 
     def do_plot(theme_name: str, suffix: str):
-        set_theme(theme_name)
-        fig, ax = plt.subplots(figsize=(10.0, 4.4))
+        set_theme(theme_name, use_cmocean_thermal=use_cmocean_thermal)
+        fig, ax = plt.subplots(figsize=(FIG_W_IN, FIG_H_IN))
 
         # Sort by temperature for legend order
         runs_sorted = sorted(runs, key=lambda d: d["tempC"])
-        phi_text = summarize_phi_for_title(runs_sorted)
+        temps = [float(d["tempC"]) for d in runs_sorted if d.get("tempC") is not None and np.isfinite(d.get("tempC"))]
+        tmin = float(np.nanmin(temps)) if temps else np.nan
+        tmax = float(np.nanmax(temps)) if temps else np.nan
+        cmap = get_temp_colormap(use_cmocean_thermal)
+
+        # Decide normalization for y-axis label and title (use first run with data)
+        normalized = False
+        if runs_sorted and which in runs_sorted[0]:
+            arr = runs_sorted[0][which]
+            if isinstance(arr, np.ndarray) and _is_normalized_series(arr):
+                normalized = True
+
+        # Y-axis label, compact with line break
+        if normalized:
+            ylab = "Normalized\nEffective Thermal Conductivity"
+        else:
+            ylab = "Effective\nThermal Conductivity"
+
+        # Title: two lines (no component in title)
+        norm_prefix = "Normalized " if normalized else ""
+        title = f"{norm_prefix}Effective Thermal Conductivity\nvs. Time"
+
+        if log_plots:
+            ax.set_xscale('log')
+            ax.set_yscale('log')
 
         for d in runs_sorted:
             t = scale_to_unit(d["time"], unit)
             y = d[which]
             if t.size == 0 or y.size == 0:
                 continue
-            # Legend label with temp only (never φ)
             lab = f"{d['tempC']:.1f} °C"
-            ax.plot(t, y, lw=2.0, marker='o', ms=3,
-                    markevery=max(1, len(t)//18), label=lab)
+            color = temp_to_color(d["tempC"], tmin, tmax, cmap)
+            if log_plots:
+                m = np.isfinite(t) & np.isfinite(y) & (t > 0) & (y > 0)
+                t_plot = t[m]
+                y_plot = y[m]
+            else:
+                t_plot = t
+                y_plot = y
+            if t_plot.size < 2:
+                continue
+            ax.plot(t_plot, y_plot, lw=2.0, label=lab, color=color)
 
-        ax.set_xlabel(f"Time ({unit})")
-        ax.set_ylabel(y_label)
-        title = f"{y_label} vs Time"
-        if phi_text:
-            title += f" — {phi_text}"
+        set_compact_axis_labels(ax, f"Time ({unit})", ylab)
         ax.set_title(title)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
+        ax.grid(False)
+        # Extend x-axis slightly before 0 so it doesn't look cut off (skip for log-x)
+        if not log_plots:
+            if t.size > 0 and np.isfinite(t).any():
+                xmin, xmax = np.nanmin(t), np.nanmax(t)
+                pad = TIME_AXIS_PAD_FRACTION * (xmax - xmin if xmax > xmin else 1.0)
+                ax.set_xlim(xmin - pad, xmax)
 
         # Place legend
         if len(runs) > 6:
+            # Many entries: keep legend outside
             fig.legend(loc="center right", bbox_to_anchor=(1.02, 0.5))
             fig.subplots_adjust(right=0.84)
             fig.tight_layout(rect=[0.0, 0.0, 0.84, 1.0])
         else:
-            ax.legend()
+            # Use Matplotlib's "best" placement and a slightly smaller legend font
+            ax.legend(loc="best", fontsize=max(8, LEGEND_FONTSIZE - 1))
             fig.tight_layout()
 
         out_path = os.path.join(outdir, base_name.replace(".png", f"_{suffix}.png"))
@@ -507,6 +681,164 @@ def plot_lines_vs_time(runs: List[Dict[str, Any]],
         do_plot("light", "light")
     if theme in ("dark", "both"):
         do_plot("dark", "dark")
+
+
+# ------------------------ Per-run plotting helper ------------------------ #
+def plot_individual_runs(runs: List[Dict[str, Any]],
+                         outdir: str,
+                         theme: str,
+                         dpi: int,
+                         use_cmocean_thermal: bool = False,
+                         log_plots: bool = False):
+    """Save per-run plots (overlaying kxx and kyy vs time) into output_plots/<run_name>/.
+
+    For each run:
+      - Creates output_plots/<run_name>/
+      - Saves k_eff_vs_time_[light|dark].png (overlaying kxx and kyy)
+    """
+
+    def _safe_name(s: str) -> str:
+        # Keep folder names stable and filesystem-friendly
+        return re.sub(r"[^A-Za-z0-9._-]+", "_", s).strip("_") or "run"
+
+    def _plot_both(run: Dict[str, Any], unit: str, theme_name: str, out_path: str):
+        # Always use default color cycle for individual overlays, do not use cmocean thermal
+        set_theme(theme_name, use_cmocean_thermal=False)
+        fig, ax = plt.subplots(figsize=(FIG_W_IN, FIG_H_IN))
+        t = scale_to_unit(run["time"], unit)
+        kxx = np.asarray(run.get("kxx", np.array([])), dtype=float)
+        kyy = np.asarray(run.get("kyy", np.array([])), dtype=float)
+        if log_plots:
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+        # Plot both kxx and kyy, filtering nonpositive for log if needed
+        if log_plots:
+            mxx = np.isfinite(t) & np.isfinite(kxx) & (t > 0) & (kxx > 0)
+            myy = np.isfinite(t) & np.isfinite(kyy) & (t > 0) & (kyy > 0)
+            ax.plot(t[mxx], kxx[mxx], lw=2.2, label=r"$k_{xx}$")
+            ax.plot(t[myy], kyy[myy], lw=2.2, label=r"$k_{yy}$")
+        else:
+            ax.plot(t, kxx, lw=2.2, label=r"$k_{xx}$")
+            ax.plot(t, kyy, lw=2.2, label=r"$k_{yy}$")
+        # Decide y-label based on normalization (use kxx as heuristic)
+        if _is_normalized_series(kxx):
+            ylab = "Normalized\nEffective Thermal Conductivity"
+            main_title = "Normalized Effective Thermal Conductivity\nvs. Time"
+        else:
+            ylab = "Effective\nThermal Conductivity"
+            main_title = "Effective Thermal Conductivity\nvs. Time"
+        set_compact_axis_labels(ax, f"Time ({unit})", ylab)
+        # Subtitle: run metadata (temp, phi)
+        tempC = run.get("tempC", None)
+        por = run.get("porosity", None)
+        subtitle = _fmt_temp_phi(tempC, por)
+        if subtitle:
+            ax.set_title(f"{main_title}\n{subtitle}")
+        else:
+            ax.set_title(main_title)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.grid(False)
+        # Extend x-axis slightly before 0 so it doesn't look cut off (skip for log-x)
+        if not log_plots:
+            if t.size > 0 and np.isfinite(t).any():
+                xmin, xmax = np.nanmin(t), np.nanmax(t)
+                pad = TIME_AXIS_PAD_FRACTION * (xmax - xmin if xmax > xmin else 1.0)
+                ax.set_xlim(xmin - pad, xmax)
+        ax.legend(loc="best", fontsize=max(8, LEGEND_FONTSIZE - 1))
+        fig.tight_layout()
+        fig.savefig(out_path, dpi=dpi, bbox_inches='tight', transparent=True)
+        plt.close(fig)
+
+    def _plot_both_vs_ssa(run: Dict[str, Any], theme_name: str, out_path: str):
+        """Plot normalized kxx and kyy vs normalized SSA for a single run."""
+        # Always use default color cycle for individual overlays, do not use cmocean thermal
+        set_theme(theme_name, use_cmocean_thermal=False)
+        fig, ax = plt.subplots(figsize=(FIG_W_IN, FIG_H_IN))
+
+        ssa = run.get("ssa")
+        if ssa is None:
+            plt.close(fig)
+            return
+
+        ssa = np.asarray(ssa, dtype=float)
+        kxx = np.asarray(run.get("kxx", np.array([])), dtype=float)
+        kyy = np.asarray(run.get("kyy", np.array([])), dtype=float)
+
+        valid = np.isfinite(ssa) & np.isfinite(kxx) & np.isfinite(kyy)
+        if np.count_nonzero(valid) < 2:
+            plt.close(fig)
+            return
+
+        ssa = ssa[valid]
+        kxx = kxx[valid]
+        kyy = kyy[valid]
+
+        # Normalize both axes (matches multi-temperature SSA plots)
+        if ssa.size == 0 or ssa[0] == 0 or kxx.size == 0 or kxx[0] == 0 or kyy.size == 0 or kyy[0] == 0:
+            plt.close(fig)
+            return
+
+        ssa_n = ssa / ssa[0]
+        kxx_n = kxx / kxx[0]
+        kyy_n = kyy / kyy[0]
+
+        if log_plots:
+            ax.set_xscale('log')
+            ax.set_yscale('log')
+            mxx = np.isfinite(ssa_n) & np.isfinite(kxx_n) & (ssa_n > 0) & (kxx_n > 0)
+            myy = np.isfinite(ssa_n) & np.isfinite(kyy_n) & (ssa_n > 0) & (kyy_n > 0)
+            if np.count_nonzero(mxx) >= 2:
+                ax.plot(ssa_n[mxx], kxx_n[mxx], lw=2.2, label=r"$k_{xx}$")
+            if np.count_nonzero(myy) >= 2:
+                ax.plot(ssa_n[myy], kyy_n[myy], lw=2.2, label=r"$k_{yy}$")
+        else:
+            ax.plot(ssa_n, kxx_n, lw=2.2, label=r"$k_{xx}$")
+            ax.plot(ssa_n, kyy_n, lw=2.2, label=r"$k_{yy}$")
+
+        set_compact_axis_labels(
+            ax,
+            "Normalized Specific Surface Area",
+            "Normalized Effective Thermal Conductivity",
+        )
+
+        main_title = "Normalized Effective Thermal Conductivity\nvs. Normalized Specific Surface Area"
+        tempC = run.get("tempC", None)
+        por = run.get("porosity", None)
+        subtitle = _fmt_temp_phi(tempC, por)
+        if subtitle:
+            ax.set_title(f"{main_title}\n{subtitle}")
+        else:
+            ax.set_title(main_title)
+
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.grid(False)
+        ax.legend(loc="best", fontsize=max(8, LEGEND_FONTSIZE - 1))
+        fig.tight_layout()
+        fig.savefig(out_path, dpi=dpi, bbox_inches='tight', transparent=True)
+        plt.close(fig)
+
+    for run in runs:
+        run_dir = os.path.join(outdir, _safe_name(run.get("name", "run")))
+        os.makedirs(run_dir, exist_ok=True)
+        _, unit = autoscale_time(run["time"])
+
+        def _emit(theme_name: str, suffix: str):
+            out_path = os.path.join(run_dir, f"k_eff_vs_time_{suffix}.png")
+            _plot_both(run, unit, theme_name, out_path)
+            print("[OK]", out_path)
+
+            # Also save normalized k vs normalized SSA, if SSA is available
+            out_path_ssa = os.path.join(run_dir, f"k_eff_vs_ssa_norm_{suffix}.png")
+            _plot_both_vs_ssa(run, theme_name, out_path_ssa)
+            if os.path.exists(out_path_ssa):
+                print("[OK]", out_path_ssa)
+
+        if theme in ("light", "both"):
+            _emit("light", "light")
+        if theme in ("dark", "both"):
+            _emit("dark", "dark")
 
 # ------------------------ Main ------------------------ #
 
@@ -520,6 +852,10 @@ def main():
     ap.add_argument("--theme", choices=["light", "dark", "both"], default="both",
                     help="Color theme for saved plots.")
     ap.add_argument("--dpi", type=int, default=300, help="Output DPI.")
+    ap.add_argument("--use_thermal_cmocean", action="store_true",
+                    help="Use cmocean 'thermal' colormap as the line color cycle (requires cmocean).")
+    ap.add_argument("--log_plots", action="store_true",
+                    help="Save log-scale versions of all plots (log y-axis). Output goes to log_output_plots.")
     args = ap.parse_args()
 
     parent = os.path.abspath(os.path.expanduser(args.parent_dir))
@@ -542,24 +878,26 @@ def main():
         print(f"[ERROR] No valid runs in {parent}. Ensure each folder has k_eff.csv and (optionally) SSA_evo.dat & metadata.json.")
         sys.exit(1)
 
-    outdir = os.path.join(parent, "output_plots")
+    outdir_name = "log_output_plots" if args.log_plots else "output_plots"
+    outdir = os.path.join(parent, outdir_name)
     os.makedirs(outdir, exist_ok=True)
 
-    if args.normalize:
-        ylab_xx = r"$k_{xx}/k_{xx,0}$"
-        ylab_yy = r"$k_{yy}/k_{yy,0}$"
-    else:
-        ylab_xx = r"$k_{xx}$ (W m$^{-1}$ K$^{-1}$)"
-        ylab_yy = r"$k_{yy}$ (W m$^{-1}$ K$^{-1}$)"
+    plot_lines_vs_time(runs, "kxx", "", outdir, "lines_kxx_vs_time_by_temp.png", args.theme, args.dpi,
+                       use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
+    plot_lines_vs_time(runs, "kyy", "", outdir, "lines_kyy_vs_time_by_temp.png", args.theme, args.dpi,
+                       use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
 
-    plot_lines_vs_time(runs, "kxx", ylab_xx, outdir, "lines_kxx_vs_time_by_temp.png", args.theme, args.dpi)
-    plot_lines_vs_time(runs, "kyy", ylab_yy, outdir, "lines_kyy_vs_time_by_temp.png", args.theme, args.dpi)
+    # Per-run plots (saved into output_plots/<run_name>/)
+    plot_individual_runs(runs, outdir, args.theme, args.dpi,
+                         use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
 
     # Also plot normalized k vs normalized SSA (always normalized)
     ylab_xx_norm = r"$k_{xx}/k_{xx,0}$"
     ylab_yy_norm = r"$k_{yy}/k_{yy,0}$"
-    plot_lines_k_vs_ssa(runs, "kxx", ylab_xx_norm, outdir, "lines_kxx_vs_ssa_by_temp.png", args.theme, args.dpi)
-    plot_lines_k_vs_ssa(runs, "kyy", ylab_yy_norm, outdir, "lines_kyy_vs_ssa_by_temp.png", args.theme, args.dpi)
+    plot_lines_k_vs_ssa(runs, "kxx", ylab_xx_norm, outdir, "lines_kxx_vs_ssa_by_temp.png", args.theme, args.dpi,
+                        use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
+    plot_lines_k_vs_ssa(runs, "kyy", ylab_yy_norm, outdir, "lines_kyy_vs_ssa_by_temp.png", args.theme, args.dpi,
+                        use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
 
     print("\n✅ Done.")
 

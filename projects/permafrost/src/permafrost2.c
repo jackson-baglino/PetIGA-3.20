@@ -445,12 +445,12 @@ int main(int argc, char *argv[]) {
     // ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* 4.) Random enclosed grains IC */
-    PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
-    ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    // PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
+    // ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* 5.) Random packed grains IC */
-    // PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");
-    // ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");
+    ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
 
     /* Optional statements for varying input types (e.g., capillary, layered, etc.) */

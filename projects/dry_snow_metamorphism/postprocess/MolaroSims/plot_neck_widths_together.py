@@ -453,8 +453,9 @@ def main() -> None:
     label2_base = LABEL_2 or PARENT_DIR_2.name
     temp1 = extract_temp_from_folder(PARENT_DIR_1.name)
     temp2 = extract_temp_from_folder(PARENT_DIR_2.name)
-    label1 = f"Simulation, T={abs(temp1):.0f}°C" if temp1 is not None else label1_base
-    label2 = f"Simulation, T={abs(temp2):.0f}°C" if temp2 is not None else label2_base
+    # Keep the sign (negative temperatures should display as negative)
+    label1 = f"Simulation, T={temp1:.0f}°C" if temp1 is not None else label1_base
+    label2 = f"Simulation, T={temp2:.0f}°C" if temp2 is not None else label2_base
 
     # Assign colors for each simulation based on temperature
     def _color_for_temp(temp: Optional[float]) -> Optional[str]:
@@ -503,7 +504,7 @@ def main() -> None:
             else:
                 t_exp_max = max(t_exp_max, float(t5_shift.max()))
 
-            exp_curves.append((t5_shift, w5, err5, "Experimental, T=5°C"))
+            exp_curves.append((t5_shift, w5, err5, "Experimental, T=-5°C"))
 
         # -20 °C experimental data
         if USE_EXP_20 and EXP_TIME_20_MIN.size > 0:
@@ -529,7 +530,7 @@ def main() -> None:
             else:
                 t_exp_max = max(t_exp_max, float(t20_shift.max()))
 
-            exp_curves.append((t20_shift, w20, err20, "Experimental, T=20°C"))
+            exp_curves.append((t20_shift, w20, err20, "Experimental, T=-20°C"))
 
     # ---------- Figure 1: limited to experimental duration ----------
     if exp_curves and t_exp_max is not None:
@@ -549,9 +550,9 @@ def main() -> None:
 
         for t_exp, w_exp_um, err_exp_um, lbl in exp_curves:
             # Match experimental color to the corresponding simulation temperature
-            if "5°C" in lbl:
+            if "-5°C" in lbl:
                 c = COLOR_5C
-            elif "20°C" in lbl:
+            elif "-20°C" in lbl:
                 c = COLOR_20C
             else:
                 c = None
@@ -592,8 +593,8 @@ def main() -> None:
         from matplotlib.lines import Line2D
 
         legend_elements = [
-            Line2D([0], [0], color=COLOR_5C, lw=2, label="T=5°C"),
-            Line2D([0], [0], color=COLOR_20C, lw=2, label="T=20°C"),
+            Line2D([0], [0], color=COLOR_5C, lw=2, label="T=-5°C"),
+            Line2D([0], [0], color=COLOR_20C, lw=2, label="T=-20°C"),
         ]
 
         ax1.legend(
@@ -601,7 +602,7 @@ def main() -> None:
             frameon=True,
             loc="best",
         )
-        ax1.grid(True, which="both", linestyle="--", alpha=0.3)
+        # ax1.grid(False, which="both", linestyle="--", alpha=0.3)
 
         fig1.tight_layout()
         out_path1 = Path(__file__).with_name("neck_widths_comparison_expWindow.png")
@@ -626,9 +627,9 @@ def main() -> None:
 
     for t_exp, w_exp_um, err_exp_um, lbl in exp_curves:
         # Match experimental color to the corresponding simulation temperature
-        if "5°C" in lbl:
+        if "-5°C" in lbl:
             c = COLOR_5C
-        elif "20°C" in lbl:
+        elif "-20°C" in lbl:
             c = COLOR_20C
         else:
             c = None
@@ -669,8 +670,8 @@ def main() -> None:
     from matplotlib.lines import Line2D
 
     legend_elements = [
-        Line2D([0], [0], color=COLOR_5C, lw=2, label="T=5°C"),
-        Line2D([0], [0], color=COLOR_20C, lw=2, label="T=20°C"),
+        Line2D([0], [0], color=COLOR_5C, lw=2, label="T=-5°C"),
+        Line2D([0], [0], color=COLOR_20C, lw=2, label="T=-20°C"),
     ]
 
     ax2.legend(
@@ -678,7 +679,7 @@ def main() -> None:
         frameon=True,
         loc="best",
     )
-    ax2.grid(True, which="both", linestyle="--", alpha=0.3)
+    # ax2.grid(False, which="both", linestyle="--", alpha=0.3)
 
     fig2.tight_layout()
     out_path2 = Path(__file__).with_name("neck_widths_comparison_simWindow.png")
