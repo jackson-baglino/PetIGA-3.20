@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Tuple, List, Dict, Optional
 
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 import numpy as np
 import pandas as pd
 import re
@@ -55,8 +56,40 @@ LABEL_2 = None
 # Path to your Matplotlib style file (same one used in plot_neck_width.py)
 STYLE_FILE = Path(__file__).with_name("plot_style.mplstyle")
 
+
 # Output figure name
 OUTPUT_FIG = "neck_widths_comparison.png"
+
+#
+# Output formats are organized into subfolders by format.
+OUTPUT_FORMATS = ["pdf", "svg"]
+
+# Output directory structure:
+#   <SCRIPT_DIR>/plots/pdf/
+#   <SCRIPT_DIR>/plots/svg/
+PLOTS_DIR = Path(__file__).with_name("plots")
+PDF_DIR = PLOTS_DIR / "pdf"
+SVG_DIR = PLOTS_DIR / "svg"
+
+# Save two variants of each plot:
+#   - with title
+#   - without title
+SAVE_WITH_TITLE = True
+SAVE_NO_TITLE = True
+
+
+# Preferred font family for all plot text. Falls back to a default sans-serif if unavailable.
+FONT_FAMILY = "Montserrat"
+
+# Optional: directory containing local font files (*.ttf, *.otf).
+# If you downloaded Montserrat from Google Fonts, copy the extracted folder
+# (or just the .ttf files) into a folder named `fonts/` next to this script.
+# Example:
+#   postprocess/MolaroSims/fonts/Montserrat-Regular.ttf
+FONT_DIR = Path(__file__).with_name("fonts")
+
+# If True, attempt to register fonts from FONT_DIR before applying rcParams.
+REGISTER_LOCAL_FONTS = True
 
 PLOT_EXPERIMENTAL = True
 
@@ -151,9 +184,120 @@ EXP_TIME_SHIFT_5 = 0.0   # shift for the -5 °C experimental data
 EXP_TIME_SHIFT_20 = 0.0  # shift for the -20 °C experimental data
 
 
+
+
 # ============================
 # HELPER FUNCTIONS
 # ============================
+
+def _ensure_output_dirs() -> None:
+    """Create output directories for vector formats."""
+    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+    PDF_DIR.mkdir(parents=True, exist_ok=True)
+    SVG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _save_fig_variants(fig: plt.Figure, ax: plt.Axes, stem: str) -> None:
+    """Save the figure in per-format subfolders, with and without a title."""
+    _ensure_output_dirs()
+
+    title_text = ax.get_title()
+
+    def _format_dir(fmt: str) -> Path:
+        fmt = fmt.lower()
+        if fmt == "pdf":
+            return PDF_DIR
+        if fmt == "svg":
+            return SVG_DIR
+        # fallback: save under plots/<fmt>
+        d = PLOTS_DIR / fmt
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    # Save WITH title
+    if SAVE_WITH_TITLE:
+        if title_text:
+            ax.set_title(title_text)
+        for fmt in OUTPUT_FORMATS:
+            out_path = _format_dir(fmt) / f"{stem}.{fmt}"
+            fig.savefig(out_path, bbox_inches="tight", transparent=True)
+
+    # Save WITHOUT title
+    if SAVE_NO_TITLE:
+        ax.set_title("")
+        for fmt in OUTPUT_FORMATS:
+            out_path = _format_dir(fmt) / f"{stem}_noTitle.{fmt}"
+            fig.savefig(out_path, bbox_inches="tight", transparent=True)
+        # Restore
+        ax.set_title(title_text)
+
+
+def _register_local_fonts(font_dir: Optional[Path]) -> None:
+    """Register local .ttf/.otf fonts with Matplotlib's font manager."""
+    if not font_dir:
+        return
+    try:
+        font_dir = Path(font_dir)
+    except Exception:
+        return
+
+    if not font_dir.exists():
+        return
+
+    # Register any TTF/OTF fonts found in this directory (recursively).
+    font_files = list(font_dir.rglob("*.ttf")) + list(font_dir.rglob("*.otf"))
+    if not font_files:
+        return
+
+    added = 0
+    for fp in font_files:
+        try:
+            font_manager.fontManager.addfont(str(fp))
+            added += 1
+        except Exception:
+            # Skip fonts that Matplotlib cannot load.
+            continue
+
+    if added > 0:
+        # Trigger font list refresh (best-effort; different Matplotlib versions behave differently).
+        try:
+            font_manager._get_font.cache_clear()  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
+
+def _pick_font_family(preferred: str) -> str:
+    """Return preferred font family if installed (or locally registered), else fall back safely."""
+    # Try to register local fonts first (so the preferred family can become available).
+    if REGISTER_LOCAL_FONTS:
+        _register_local_fonts(FONT_DIR)
+
+    try:
+        available = {f.name for f in font_manager.fontManager.ttflist}
+        if preferred in available:
+            return preferred
+    except Exception:
+        # If font discovery fails for any reason, fall back.
+        pass
+    return "DejaVu Sans"
+
+
+def _apply_font_settings(preferred: str) -> None:
+    """Apply global Matplotlib font settings."""
+    if REGISTER_LOCAL_FONTS:
+        _register_local_fonts(FONT_DIR)
+    chosen = _pick_font_family(preferred)
+    if chosen != preferred:
+        print(f"[WARN] Font '{preferred}' not found. Falling back to {chosen}.")
+
+    # Use a list so Matplotlib can fall back to other sans-serif fonts if needed.
+    plt.rcParams["font.family"] = [chosen]
+    plt.rcParams["font.sans-serif"] = [chosen, "DejaVu Sans", "Arial", "Helvetica"]
+
+    # Keep vector outputs text as text (not paths) where possible.
+    plt.rcParams["pdf.fonttype"] = 42
+    plt.rcParams["ps.fonttype"] = 42
+    plt.rcParams["svg.fonttype"] = "none"
 
 def _parse_label_radius_temp(label: str) -> Tuple[Optional[float], Optional[float]]:
     """
@@ -434,6 +578,10 @@ def main() -> None:
     if STYLE_FILE.is_file():
         plt.style.use(STYLE_FILE)
 
+    # Apply font settings after style so they take precedence
+    _apply_font_settings(FONT_FAMILY)
+    _ensure_output_dirs()
+
     # Load data for both simulations
     t1_min, w1_um = _load_neck_data(PARENT_DIR_1)
     t2_min, w2_um = _load_neck_data(PARENT_DIR_2)
@@ -586,9 +734,9 @@ def main() -> None:
 
         left1 = -0.02 * t_exp_max if t_exp_max > 0 else -0.1
         ax1.set_xlim(left=left1, right=t_exp_max * 1.05)
-        ax1.set_xlabel("Time (min)", fontweight="bold")
-        ax1.set_ylabel("Neck width (µm)", fontweight="bold")
-        ax1.set_title("Neck width evolution", fontweight="bold")
+        ax1.set_xlabel("Time (min)")
+        ax1.set_ylabel("Neck width (µm)")
+        ax1.set_title("Neck width evolution")
 
         from matplotlib.lines import Line2D
 
@@ -605,9 +753,8 @@ def main() -> None:
         # ax1.grid(False, which="both", linestyle="--", alpha=0.3)
 
         fig1.tight_layout()
-        out_path1 = Path(__file__).with_name("neck_widths_comparison_expWindow.png")
-        fig1.savefig(out_path1, dpi=300, bbox_inches="tight")
-        print(f"Saved experimental-window comparison figure to: {out_path1}")
+        _save_fig_variants(fig1, ax1, stem="neck_widths_comparison_expWindow")
+        print(f"Saved experimental-window comparison figures to: {PLOTS_DIR}")
         plt.close(fig1)
 
     # ---------- Figure 2: full simulation duration ----------
@@ -663,9 +810,9 @@ def main() -> None:
 
     left2 = -0.02 * t_sim_max if t_sim_max > 0 else -0.1
     ax2.set_xlim(left=left2, right=t_sim_max * 1.05)
-    ax2.set_xlabel("Time (min)", fontweight="bold")
-    ax2.set_ylabel("Neck width (µm)", fontweight="bold")
-    ax2.set_title("Neck width evolution", fontweight="bold")
+    ax2.set_xlabel("Time (min)")
+    ax2.set_ylabel("Neck width (µm)")
+    ax2.set_title("Neck width evolution")
 
     from matplotlib.lines import Line2D
 
@@ -682,9 +829,8 @@ def main() -> None:
     # ax2.grid(False, which="both", linestyle="--", alpha=0.3)
 
     fig2.tight_layout()
-    out_path2 = Path(__file__).with_name("neck_widths_comparison_simWindow.png")
-    fig2.savefig(out_path2, dpi=300, bbox_inches="tight")
-    print(f"Saved simulation-window comparison figure to: {out_path2}")
+    _save_fig_variants(fig2, ax2, stem="neck_widths_comparison_simWindow")
+    print(f"Saved simulation-window comparison figures to: {PLOTS_DIR}")
     plt.close(fig2)
 
 
