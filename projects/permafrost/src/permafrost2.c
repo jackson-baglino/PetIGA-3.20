@@ -171,6 +171,23 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_BC_Tfix", "Temperature BC flag", "", flag_BC_Tfix, &flag_BC_Tfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_BC_rhovfix", "Vapor density BC flag", "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
 
+    /* --- Thermophysical properties --------------------------------------- */
+    ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-thcond_met", "Thermal conductivity of inert phase", "", user.thcond_met, &user.thcond_met, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-thcond_air", "Thermal conductivity of air", "", user.thcond_air, &user.thcond_air, NULL); CHKERRQ(ierr);
+
+    ierr = PetscOptionsReal("-cp_ice", "Specific heat capacity of ice", "", user.cp_ice, &user.cp_ice, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-cp_met", "Specific heat capacity of inert phase", "", user.cp_met, &user.cp_met, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-cp_air", "Specific heat capacity of air", "", user.cp_air, &user.cp_air, NULL); CHKERRQ(ierr);
+
+    ierr = PetscOptionsReal("-rho_ice", "Density of ice", "", user.rho_ice, &user.rho_ice, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-rho_met", "Density of inert phase", "", user.rho_met, &user.rho_met, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);
+
+    ierr = PetscOptionsReal("-gamma_im", "Surface energy ice-inert phase", "", gamma_im, &gamma_im, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-gamma_iv", "Surface energy ice-vapor", "", gamma_iv, &gamma_iv, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-gamma_mv", "Surface energy inert phase-vapor", "", gamma_mv, &gamma_mv, NULL); CHKERRQ(ierr);
+
     /* --- Output control -------------------------------------------------- */
     ierr = PetscOptionsInt("-outp", "Output control flag", "", user.outp, &user.outp, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_interv", "Output interval", "", user.t_interv, &user.t_interv, NULL); CHKERRQ(ierr);
@@ -445,12 +462,12 @@ int main(int argc, char *argv[]) {
     // ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* 4.) Random enclosed grains IC */
-    // PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
-    // ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
+    ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* 5.) Random packed grains IC */
-    PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");
-    ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    // PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");
+    // ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
 
     /* Optional statements for varying input types (e.g., capillary, layered, etc.) */
