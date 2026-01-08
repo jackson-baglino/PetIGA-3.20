@@ -21,4 +21,4 @@
 -flag_BC_rhovfix 0
 -Permafrost_output 1
 -Permafrost_monitor 1
--R1 
+-R1 1.0e-04

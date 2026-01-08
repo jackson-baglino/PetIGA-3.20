@@ -391,14 +391,18 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
 
     /* --- Initialize grains --- */
     // Check that radii are reasonable
-    if (2.0 * rad_ice >= PetscMin(Lx, Ly) || 2.0 * rad_ice >= PetscMax(Ly, Lx)/2.0) {
+    if (2.0 * rad_ice >= PetscMin(Lx, Ly) || 2.0 * rad_ice >= PetscMax(Ly, Lx)) {
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                "Ice grain radius too large for enclosed permafrost domain");
+                "Ice grain radius too large for enclosed permafrost domain.\n"
+                "Radius is %.2e but must be less than %.2e",
+                rad_ice, PetscMin(Lx, Ly)/2.0);
     }
 
     if (rad_sed >= rad_ice) {
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                "Sediment grain radius must be smaller than ice grain radius for enclosed permafrost");
+                "Sediment grain radius must be smaller than ice grain radius for enclosed permafrost. \n"
+                "Sediment radius: %.2e, Ice radius: %.2e",
+                rad_sed, rad_ice);
     }
 
     PetscReal cent_ice[user->dim][2];

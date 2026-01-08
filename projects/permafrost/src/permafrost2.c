@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     user.xi_T       = 1.0e-4;   /* Time scaling parameter for temperature */
     user.flag_xiT   = 1;        /* Flag for temperature */
 
-    user.Lambd      = 1.0;      /* Model parameter Lambda */
+    user.Lambd      = 3.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC  = 10;       /* Number of initial condition steps (???) */
 
@@ -458,12 +458,12 @@ int main(int argc, char *argv[]) {
     // ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* 3.) Enclosed grain pair IC */
-    // PetscPrintf(PETSC_COMM_WORLD, "IC type: enclosed grain pair  (using enclosed grain geometry)\n");
-    // ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD, "IC type: enclosed grain pair  (using enclosed grain geometry)\n");
+    ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* 4.) Random enclosed grains IC */
-    PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
-    ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    // PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
+    // ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     /* 5.) Random packed grains IC */
     // PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");

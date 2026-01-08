@@ -8,13 +8,13 @@
 -p 1
 -C 0
 -NCsed 0
--RCsed 1.5e-4
+-RCsed 0.35e-4
 -RCsed_dev 0.55
 -NCice 1
--RCice 1.5e-4
+-RCice 0.75e-4
 -RCice_dev 0.55
 -delt_t 1.0e-4
--t_final 0
+-t_final 2419200
 -n_out 200
 -humidity 0.97
 -temp -20.0
@@ -26,4 +26,3 @@
 -Permafrost_output 1
 -Permafrost_monitor 1
 -initial_cond ./inputs/tests/SthavisthaInputs/AssemblePhase_reinit.dat
--R1 1.01e-4
