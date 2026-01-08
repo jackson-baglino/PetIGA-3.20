@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH -J permafrost_60day_random_grains
+#SBATCH -J permafrost_60day_enclosed_grain_packing
 #SBATCH -A rubyfu
-#SBATCH -t 0-12:00:00
+#SBATCH -t 0-24:00:00
 
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=30
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=32
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=expansion
 #SBATCH --mem-per-cpu=1G

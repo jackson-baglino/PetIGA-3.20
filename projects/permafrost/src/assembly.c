@@ -54,6 +54,10 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscScalar grad_ice[dim];
     for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
     
+    // Check that ice is within bounds [0,1]
+    if (ice < 0.0) ice = 0.0;
+    if (ice > 1.0) ice = 1.0;
+
     // Air phase (complementary to ice and sediment)
     PetscScalar air = 1.0 - met - ice;
     PetscScalar air_t = -ice_t;
@@ -173,6 +177,10 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     ice          = sol[0]; 
     ice_t        = sol_t[0]; 
     for(l=0;l<dim;l++) grad_ice[l]  = grad_sol[0][l];
+
+    // Check that ice is within bounds [0,1]
+    if (ice < 0.0) ice = 0.0;
+    if (ice > 1.0) ice = 1.0;
 
     PetscScalar air, air_t;
     air          = 1.0-met-ice;
