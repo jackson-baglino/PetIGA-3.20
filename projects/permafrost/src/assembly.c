@@ -57,6 +57,9 @@ PetscErrorCode Residual(IGAPoint pnt,
     // Air phase (complementary to ice and sediment)
     PetscScalar air = 1.0 - met - ice;
     PetscScalar air_t = -ice_t;
+
+    if (air < 0.0) air = 0.0;
+    if (air > 1.0) air = 1.0;
     
     // Temperature field
     PetscScalar tem = sol[1], tem_t = sol_t[1];
@@ -104,8 +107,8 @@ PetscErrorCode Residual(IGAPoint pnt,
 
             // Energy equation residual (temperature)
             R_tem = rho * cp * N0[a] * tem_t;
-            for (l = 0; l < dim; l++) R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
-            R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
+            // for (l = 0; l < dim; l++) R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
+            // R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
             // Vapor transport residual
             R_vap = N0[a] * rhov * air_t;
