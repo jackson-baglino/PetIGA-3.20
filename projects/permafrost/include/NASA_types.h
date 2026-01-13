@@ -58,7 +58,7 @@ typedef struct {
   PetscReal radiussed[200];  // Radii of individual sediment grains
 
   // Initial normal vector components (possibly for a structured interface)
-  PetscReal norm0_0, norm0_1, norm0_2;  // Normal vector components (x, y, z)
+  PetscReal norm0[3];  // Normal vector components (x, y, z)
 
   // Flags for controlling different simulation options
   PetscInt flag_it0;  // Flag for iteration control at initialization
