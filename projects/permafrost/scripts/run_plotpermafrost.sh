@@ -1,12 +1,5 @@
 #!/bin/zsh
 
-# Function to copy files to the target directory
-copy_files_to_directory() {
-    local target_dir=$1
-    echo "Copying necessary files to: $target_dir"
-    cp ./scripts/writepermafrost2CSV.py $target_dir
-}
-
 # Function to change to the target directory and print status
 change_to_directory() {
     local target_dir=$1
@@ -34,7 +27,6 @@ if [[ -n $1 ]]; then
     dir=/Users/jacksonbaglino/SimulationResults/permafrost/scratch/$1
 
     # Copy files and switch to the target directory
-    copy_files_to_directory $dir
     change_to_directory $dir
 
     echo "Creating vtkOut directory"

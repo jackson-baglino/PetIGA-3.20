@@ -13,7 +13,7 @@ void HeatCap(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *cp, Pe
 void Density(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *rho, PetscScalar *drho_ice);
 
 /* Computes vapor diffusivity and its temperature derivative */
-void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap, PetscScalar *d_difvap);
+void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar ice, PetscScalar *difvap, PetscScalar *d_difvap);
 
 /* Computes the saturation vapor density and its derivative */
 void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs, PetscScalar *d_rhovs);

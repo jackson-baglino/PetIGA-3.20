@@ -121,11 +121,11 @@ PetscReal rho_air = user->rho_air;
 
 // Compute effective density
 if (rho) 
-(*rho) = rho_ice; //ice * rho_ice + met * rho_met + air * rho_air;
+(*rho) = rho_ice; // ice * rho_ice + met * rho_met + air * rho_air;
 
 // Compute derivative with respect to ice
 if (drho_ice) 
-(*drho_ice) = 0.0; //rho_ice * dice - rho_air * dair;
+(*drho_ice) = 0.0; // rho_ice * dice - rho_air * dair;
 return;
 }
 
@@ -137,12 +137,16 @@ return;
  * @param difvap Pointer to store computed vapor diffusivity.
  * @param d_difvap Pointer to store derivative of vapor diffusivity with respect to ice.
  */
-void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap, 
+void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar ice, PetscScalar *difvap,
   PetscScalar *d_difvap)
 {
 PetscReal dif_vap = user->dif_vap;
-PetscReal Kratio = (user->temp0 + 273.15) / 273.15; // Convert temperature to Kelvin ratio
+PetscReal mean_temp = user->temp0;
+PetscReal Kratio = (mean_temp + 273.15) / 273.15;
+// PetscReal Kratio = (tem + 273.15) / 273.15;
 PetscReal aa = 1.81;
+PetscReal sed = *user->Phi_sed;
+PetscReal air = 1.0 - ice - sed;
 
 // Compute vapor diffusivity
 if (difvap) 
@@ -150,7 +154,7 @@ if (difvap)
 
 // Compute derivative with respect to temperature
 if (d_difvap) 
-(*d_difvap) = dif_vap * aa * pow(Kratio, aa - 1.0) / 273.15;
+(*d_difvap) = (dif_vap * aa * pow(Kratio, aa - 1.0) / 273.15);
 
 return;
 }

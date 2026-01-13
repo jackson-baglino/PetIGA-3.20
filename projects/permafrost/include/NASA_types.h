@@ -57,9 +57,6 @@ typedef struct {
   PetscReal centsed[3][200];  // Coordinates of sediment grain centers (3D array for x, y, z positions)
   PetscReal radiussed[200];  // Radii of individual sediment grains
 
-  // Initial normal vector components (possibly for a structured interface)
-  PetscReal norm0_0, norm0_1, norm0_2;  // Normal vector components (x, y, z)
-
   // Flags for controlling different simulation options
   PetscInt flag_it0;  // Flag for iteration control at initialization
   PetscInt flag_tIC;  // Flag for setting initial conditions
@@ -75,6 +72,9 @@ typedef struct {
   PetscInt C;  // Continuity of basis functions
   PetscInt dim;  // Spatial dimension of the problem (2D or 3D)
   PetscInt periodic;  // Periodicity flag (0 = non-periodic, 1 = periodic boundaries)
+
+  // Initial normal vector components (possibly for a structured interface)
+  PetscReal norm0[3];  // Normal vector components (x, y, z)
 
   // Time stepping parameters
   PetscReal t_out;  // Output time interval

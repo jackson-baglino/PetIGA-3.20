@@ -96,10 +96,10 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   }
 
   //------printf information
-  if(step%10==0) {
-    PetscPrintf(PETSC_COMM_WORLD,"\nTIME               TIME_STEP     TOT_ICE      TOT_AIR       TEMP      TOT_RHOV     I-A interf   Tripl_junct \n");
-    PetscPrintf(PETSC_COMM_WORLD,"\n(%.0f) %.3e    %.3e   %.3e   %.3e   %.3e   %.3e   %.3e   %.3e \n\n",
-                t,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
+  if(step%1==0) {
+    PetscPrintf(PETSC_COMM_WORLD,"\nTIME                TIME_STEP      TOT_ICE      TOT_AIR          TEMP        TOT_RHOV      I-A interf   Tripl_junct \n");
+    PetscPrintf(PETSC_COMM_WORLD,"\n(%d) %.3e  |  %.3e  |  %.3e  |  %.3e  |  %.3e  |  %.3e  |  %.3e  |  %.3e \n\n",
+                step,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
   }
 
   PetscInt print=0;

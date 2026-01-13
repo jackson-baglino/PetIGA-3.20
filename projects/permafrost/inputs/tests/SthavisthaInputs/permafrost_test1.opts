@@ -1,28 +1,59 @@
+# ---------- Domain ----------
 -dim 2
--Nx 270
--Ny 270
+-Nx 105
+-Ny 210
 -Nz 1
--Lx 5.0e-04
--Ly 5.0e-04
+-Lx 1.25e-04
+-Ly 2.5e-04
 -Lz 0
+
+# ---------- Element continuity ----------
 -p 1
 -C 0
+
+# ---------- Grain Data ----------
 -NCsed 0
--RCsed 0.35e-4
+-RCsed 0.175e-4
 -RCsed_dev 0.55
 -NCice 1
--RCice 0.75e-4
+-RCice 0.375e-4
 -RCice_dev 0.55
+
+# ---------- Time Stepping & Output Frequency ----------
 -delt_t 1.0e-4
--t_final 2419200
--n_out 200
--humidity 0.97
+-t_final 60
+-n_out 0
+-outp 1
+-Permafrost_output 1
+-Permafrost_monitor 1
+
+# ---------- Model Parameters ----------
+-humidity 1.00
 -temp -20.0
--grad_temp0 0.0,1.0e-6,0.0
--eps 9.3e-7
+-grad_temp0 0.0,1.0e-06,0.0
+-eps 9.32e-07
 -periodic 0
 -flag_BC_Tfix 1
 -flag_BC_rhovfix 0
--Permafrost_output 1
--Permafrost_monitor 1
+
+# ---------- Initial Conditions ----------
 -initial_cond ./inputs/tests/SthavisthaInputs/AssemblePhase_reinit.dat
+
+# ---------- SNES ----------
+-snes_type newtonls
+-snes_max_it 8
+-snes_rtol 1e-3
+-snes_atol 1e-6
+-snes_stol 1e-6
+-snes_converged_reason
+
+# ---------- Line search ----------
+-snes_linesearch_type bt
+-snes_linesearch_monitor
+
+# ---------- KSP ----------
+# -ksp_type gmres
+-ksp_rtol 1e-18
+-ksp_max_it 1000
+-ksp_gmres_restart 150
+-ksp_converged_reason

@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     user.xi_T       = 1.0e-4;   /* Time scaling parameter for temperature */
     user.flag_xiT   = 1;        /* Flag for temperature */
 
-    user.Lambd      = 3.0;      /* Model parameter Lambda */
+    user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC  = 10;       /* Number of initial condition steps (???) */
 
@@ -43,6 +43,11 @@ int main(int argc, char *argv[]) {
     user.rho_met    = 7753.0;   /* Density of metal (UPDATE!) */
     user.rho_air    = 1.341;    /* Density of air */
 
+    // Compute averages of thermophysical properties to use for DEBUGGING
+    user.thcond_ice = (user.thcond_ice + user.thcond_air + user.thcond_met) / 3.0;
+    user.cp_ice     = (user.cp_ice + user.cp_air + user.cp_met) / 3.0;
+    user.rho_ice    = (user.rho_ice + user.rho_air + user.rho_met) / 3.0;
+
     user.dif_vap    = 2.178e-5; /* Vapor diffusivity in air */
 
     user.T_melt     = 0.0;      /* Melting temperature of ice */
@@ -51,7 +56,7 @@ int main(int argc, char *argv[]) {
     user.flag_tIC   = 0;        /* Initial condition flag */
     user.readFlag   = 0;        /* Flag to read ice grains from file (UPDATE IMPLEMENTATION!) */
 
-    user.flag_Tdep  = 1;        /* Temperature-dependent Gibbs-Thomson parameters */
+    user.flag_Tdep  = 0;        /* Temperature-dependent Gibbs-Thomson parameters */
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
     user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
 
@@ -97,7 +102,7 @@ int main(int argc, char *argv[]) {
 
     /* Define boundary condition flags (can be overridden by PETSc options) */
     user.periodic    = 0;       /* Periodic boundary condition flag */
-    flag_BC_Tfix     = 1;       /* Temperature BC flag */
+    flag_BC_Tfix     = 0;       /* Temperature BC flag */
     flag_BC_rhovfix  = 0;       /* Vapor density BC flag */
 
     /* Define output parameters (can be overridden by PETSc options) */
@@ -259,8 +264,14 @@ int main(int argc, char *argv[]) {
     rho_rhovs = user.rho_ice / rhoI_vs; /* Compute ratio */
 
     /* Adjust boundary condition flags for periodic case */
-    if (user.periodic == 1 && flag_BC_Tfix == 1) flag_BC_Tfix = 0;
-    if (user.periodic == 1 && flag_BC_rhovfix == 1) flag_BC_rhovfix = 0;
+    if (user.periodic == 1 && flag_BC_Tfix == 1) {
+        flag_BC_Tfix = 0;
+        PetscPrintf(PETSC_COMM_WORLD, "[WARNING] Periodic BCs enabled: Fixed temperature BCs disabled. \n");
+    }
+    if (user.periodic == 1 && flag_BC_rhovfix == 1) {
+        flag_BC_rhovfix = 0;
+        PetscPrintf(PETSC_COMM_WORLD, "[WARNING] Periodic BCs enabled: Fixed vapor density BCs disabled. \n");
+    }
 
     /* Time stepping parameters */
     if (n_out > 1) {
@@ -302,7 +313,8 @@ int main(int argc, char *argv[]) {
     lambda_sub = a1 * user.eps / d0_sub;
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
-    user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter */
+    // user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter  (tuned)*/
+    user.alph_sub = lambda_sub / tau_sub;  /* Phase change rate parameter */
 
     if (user.flag_Tdep == 0) {
         PetscPrintf(PETSC_COMM_WORLD,
@@ -361,19 +373,28 @@ int main(int argc, char *argv[]) {
     ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
 
     /* Boundary conditions (could 'functionalize' this at some point) */
+    // Set temperature BCs
+    if (flag_BC_Tfix == 1) {
+        PetscReal T_BC[dim][2], LL[dim];
+        LL[0] = user.Lx;
+        LL[1] = user.Ly;
+        if (dim == 3) {LL[2] = user.Lz; }
+        for (PetscInt l = 0; l < dim; l++) {  // Loop over dimensions
+            for (PetscInt m = 0; m < 2; m++) {  // Loop over min/max
+                T_BC[l][m] = user.temp0 + (2.0 * m - 1.0) * user.grad_temp0[l] * LL[l] / 2.0;
+                ierr = IGASetBoundaryValue(iga, l, m, 1, T_BC[l][m]); CHKERRQ(ierr);
+                PetscPrintf(PETSC_COMM_WORLD, " --- Fixed temperature BC at %s-%s: T = %.2f C \n",
+                            (l == 0) ? "x" : (l == 1) ? "y" : "z",
+                            (m == 0) ? "min" : "max",
+                            T_BC[l][m]);
+            }
+        }
+        PetscPrintf(PETSC_COMM_WORLD, "\n");
+    }
+
     // Set vapor density BCs
     if (flag_BC_rhovfix == 1) {
         PetscReal rho0_vs;
-        RhoVS_I(&user, user.temp0, &rho0_vs, NULL);
-        for (PetscInt l = 0; l < dim; l++) {
-            for (PetscInt m = 0; m < 2; m++) {
-                ierr = IGASetBoundaryValue(iga, l, m, 2, user.hum0 * rho0_vs); CHKERRQ(ierr);
-            }
-        }
-    }
-
-    // Set temperature BCs
-    if (flag_BC_Tfix == 1) {
         PetscReal T_BC[dim][2], LL[dim];
         LL[0] = user.Lx;
         LL[1] = user.Ly;
@@ -381,9 +402,16 @@ int main(int argc, char *argv[]) {
         for (PetscInt l = 0; l < dim; l++) {
             for (PetscInt m = 0; m < 2; m++) {
                 T_BC[l][m] = user.temp0 + (2.0 * m - 1.0) * user.grad_temp0[l] * LL[l] / 2.0;
-                ierr = IGASetBoundaryValue(iga, l, m, 1, T_BC[l][m]); CHKERRQ(ierr);
+                RhoVS_I(&user, T_BC[l][m], &rho0_vs, &d_rhovs);
+                // ierr = IGASetBoundaryValue(iga, l, m, 2, user.hum0 * rho0_vs); CHKERRQ(ierr);
+                ierr = IGASetBoundaryValue(iga, l, m, 2, 1.00 * rho0_vs); CHKERRQ(ierr);
+                PetscPrintf(PETSC_COMM_WORLD, " --- Fixed vapor density BC at %s-%s: rho_v = %.2e kg/m^3 \n",
+                            (l == 0) ? "x" : (l == 1) ? "y" : "z",
+                            (m == 0) ? "min" : "max",
+                            user.hum0 * rho0_vs);
             }
         }
+        PetscPrintf(PETSC_COMM_WORLD, "\n");
     }
 
     /* Set up TS */

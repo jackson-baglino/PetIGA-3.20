@@ -58,6 +58,11 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscScalar air = 1.0 - met - ice;
     PetscScalar air_t = -ice_t;
 
+    // Ensure ice fraction is within physical bounds
+    if (ice < 0.0) ice = 0.0;
+    if (ice > 1.0) ice = 1.0;
+
+    // Ensure air fraction is within physical bounds
     if (air < 0.0) air = 0.0;
     if (air > 1.0) air = 1.0;
     
@@ -76,11 +81,15 @@ PetscErrorCode Residual(IGAPoint pnt,
     ThermalCond(user, ice, met, &thcond, NULL);
     HeatCap(user, ice, met, &cp, NULL);
     Density(user, ice, met, &rho, NULL);
-    VaporDiffus(user, tem, &difvap, NULL);
+    VaporDiffus(user, tem, ice, &difvap, NULL);
     RhoVS_I(user, tem, &rhoI_vs, NULL);
     Fice(user, ice, met, &fice, NULL);
     Fwat(user, ice, met, &fmet, NULL);
     Fair(user, ice, met, &fair, NULL);
+
+    // Make sure rhov is within physical bounds
+    if (rhov < 0.0) rhov = 0.0;
+    if (rhov > rhoI_vs) rhov = rhoI_vs;
 
     // Retrieve shape functions
     const PetscReal *N0, (*N1)[dim];
@@ -103,7 +112,7 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_ice = N0[a] * ice_t;
             for (l = 0; l < dim; l++) R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
             R_ice += N0[a] * mob * 3.0 / eps / ETA * ((Etam + Etaa) * fice - Etaa * fmet - Etam * fair);
-            R_ice -= N0[a] * alph_sub * ice * ice * air * air * (rhov - rhoI_vs) / rho_ice;
+            // R_ice -= N0[a] * alph_sub * ice * ice * air * air * (rhov - rhoI_vs) / rho_ice;
 
             // Energy equation residual (temperature)
             R_tem = rho * cp * N0[a] * tem_t;
@@ -112,20 +121,24 @@ PetscErrorCode Residual(IGAPoint pnt,
 
             // Vapor transport residual
             R_vap = N0[a] * rhov * air_t;
+
+            // R_vap += N0[a] * air * rhov_t;
+            // for (l = 0; l < dim; l++) R_vap += xi_v * difvap * air * (N1[a][l] * grad_rhov[l]);
+            
             if (air > air_lim) {
                 R_vap += N0[a] * air * rhov_t;
-                for (l = 0; l < dim; l++) R_vap += xi_v * difvap * air * (N1[a][l] * grad_rhov[l]);
+                // for (l = 0; l < dim; l++) R_vap += xi_v * difvap * air * (N1[a][l] * grad_rhov[l]);
             } else {
                 R_vap += N0[a] * air_lim * rhov_t;
-                for (l = 0; l < dim; l++) R_vap += xi_v * difvap * air_lim * (N1[a][l] * grad_rhov[l]);
+                // for (l = 0; l < dim; l++) R_vap += xi_v * difvap * air_lim * (N1[a][l] * grad_rhov[l]);
             }
-            R_vap -= xi_v * N0[a] * rhoSE * air_t;
+            // R_vap -= xi_v * N0[a] * rhoSE * air_t;
         }
 
         // Assign computed residuals
         R[a][0] = R_ice;
         R[a][1] = R_tem;
-        R[a][2] = R_vap;
+        R[a][2] = R_vap;        
     }
 
     return 0;
@@ -181,6 +194,14 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     air          = 1.0-met-ice;
     air_t        = -ice_t;
 
+    // Ensure ice fraction is within physical bounds
+    if (ice < 0.0) ice = 0.0;
+    if (ice > 1.0) ice = 1.0;
+
+    // Ensure air fraction is within physical bounds
+    if (air < 0.0) air = 0.0;
+    if (air > 1.0) air = 1.0;
+
     PetscScalar tem, tem_t, grad_tem[dim];
     tem          = sol[1];
     tem_t        = sol_t[1];
@@ -191,23 +212,30 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     rhov_t         = sol_t[2];
     for(l=0;l<dim;l++) grad_rhov[l]   = grad_sol[2][l];
 
+    // // Make sure rhov is zero in the absence of air
+    // rhov = rhov * (1 - air);
+    // rhov_t = rhov_t * (1 - air);
+    // for (l = 0; l < dim; l++) grad_rhov[l] = grad_rhov[l] * (1 - air);
+
+    // // Make sure rhov is non-negative
+    // if (rhov < 0.0) rhov = 0.0;
+
     PetscReal thcond,dthcond_ice;
     ThermalCond(user,ice,met,&thcond,&dthcond_ice);
     PetscReal cp,dcp_ice;
     HeatCap(user,ice,met,&cp,&dcp_ice);
     PetscReal rho,drho_ice;
-    Density(user,ice,met,&rho,&drho_ice);
-    PetscReal difvap,d_difvap;
-    VaporDiffus(user,tem,&difvap,&d_difvap);
-    PetscReal rhoI_vs,drhoI_vs;
-    RhoVS_I(user,tem,&rhoI_vs,&drhoI_vs);
+    Density(user, ice, met, &rho, &drho_ice);
+    PetscReal difvap, d_difvap;
+    VaporDiffus(user, tem, ice, &difvap, &d_difvap);
+    PetscReal rhoI_vs, drhoI_vs;
+    RhoVS_I(user, tem, &rhoI_vs, &drhoI_vs);
     PetscReal fice_ice;
-    Fice(user,ice,met,NULL,&fice_ice);
+    Fice(user, ice, met, NULL, &fice_ice);
     PetscReal fmet_ice;
-    Fwat(user,ice,met,NULL,&fmet_ice);
+    Fwat(user, ice, met, NULL, &fmet_ice);
     PetscReal fair_ice;
-    Fair(user,ice,met,NULL,&fair_ice);
-
+    Fair(user, ice, met, NULL, &fair_ice);
     const PetscReal *N0,(*N1)[dim]; 
     IGAPointGetShapeFuns(pnt,0,(const PetscReal**)&N0);
     IGAPointGetShapeFuns(pnt,1,(const PetscReal**)&N1);
@@ -226,20 +254,20 @@ PetscErrorCode Jacobian(IGAPoint pnt,
           for(l=0;l<dim;l++) J[a][0][b][0] += 3.0*mob*eps*(N1[a][l]*N1[b][l]);
 
           J[a][0][b][0] += N0[a]*mob*3.0/eps/ETA*((Etam+Etaa)*fice_ice - Etaa*fmet_ice - Etam*fair_ice)*N0[b];
-          J[a][0][b][0] -= N0[a]*alph_sub*2.0*ice*N0[b]*air*air*(rhov-rhoI_vs)/rho_ice;
-          J[a][0][b][0] += N0[a]*alph_sub*ice*ice*2.0*air*N0[b]*(rhov-rhoI_vs)/rho_ice;
-          J[a][0][b][1] += N0[a]*alph_sub*ice*ice*air*air*drhoI_vs*N0[b]/rho_ice;
-          J[a][0][b][2] -= N0[a]*alph_sub*ice*ice*air*air*N0[b]/rho_ice;
+        //   J[a][0][b][0] -= N0[a]*alph_sub*2.0*ice*N0[b]*air*air*(rhov-rhoI_vs)/rho_ice;
+        //   J[a][0][b][0] += N0[a]*alph_sub*ice*ice*2.0*air*N0[b]*(rhov-rhoI_vs)/rho_ice;
+        //   J[a][0][b][1] += N0[a]*alph_sub*ice*ice*air*air*drhoI_vs*N0[b]/rho_ice;
+        //   J[a][0][b][2] -= N0[a]*alph_sub*ice*ice*air*air*N0[b]/rho_ice;
 
 
         //temperature
           J[a][1][b][1] += shift*rho*cp*N0[a]*N0[b];
           J[a][1][b][0] += drho_ice*N0[b]*cp*N0[a]*tem_t;
           J[a][1][b][0] += rho*dcp_ice*N0[b]*N0[a]*tem_t;
-          for(l=0;l<dim;l++) J[a][1][b][0] += xi_T*dthcond_ice*N0[b]*(N1[a][l]*grad_tem[l]);
-          for(l=0;l<dim;l++) J[a][1][b][1] += xi_T*thcond*(N1[a][l]*N1[b][l]);
-          J[a][1][b][0] += xi_T*drho_ice*N0[b]*lat_sub*N0[a]*air_t;
-          J[a][1][b][0] -= xi_T*rho*lat_sub*N0[a]*shift*N0[b];
+        //   for(l=0;l<dim;l++) J[a][1][b][0] += xi_T*dthcond_ice*N0[b]*(N1[a][l]*grad_tem[l]);
+        //   for(l=0;l<dim;l++) J[a][1][b][1] += xi_T*thcond*(N1[a][l]*N1[b][l]);
+        //   J[a][1][b][0] += xi_T*drho_ice*N0[b]*lat_sub*N0[a]*air_t;
+        //   J[a][1][b][0] -= xi_T*rho*lat_sub*N0[a]*shift*N0[b];
 
         //vapor density
           J[a][2][b][0] -= N0[a]*rhov*shift*N0[b];
@@ -247,15 +275,15 @@ PetscErrorCode Jacobian(IGAPoint pnt,
           if(air>air_lim){
             J[a][2][b][0] -= N0[a]*N0[b]*rhov_t;
             J[a][2][b][2] += N0[a]*air*shift*N0[b];
-            for(l=0;l<dim;l++) J[a][2][b][0] -= xi_v*difvap*N0[b]*(N1[a][l]*grad_rhov[l]);
-            for(l=0;l<dim;l++) J[a][2][b][1] += xi_v*d_difvap*N0[b]*air*(N1[a][l]*grad_rhov[l]);
-            for(l=0;l<dim;l++) J[a][2][b][2] += xi_v*difvap*air*(N1[a][l]*N1[b][l]);        
+            // for(l=0;l<dim;l++) J[a][2][b][0] -= xi_v*difvap*N0[b]*(N1[a][l]*grad_rhov[l]);
+            // for(l=0;l<dim;l++) J[a][2][b][1] += xi_v*d_difvap*N0[b]*air*(N1[a][l]*grad_rhov[l]);
+            // for(l=0;l<dim;l++) J[a][2][b][2] += xi_v*difvap*air*(N1[a][l]*N1[b][l]);        
           } else {
             J[a][2][b][2] += N0[a]*air_lim*shift*N0[b];
-            for(l=0;l<dim;l++) J[a][2][b][1] += xi_v*d_difvap*N0[b]*air_lim*(N1[a][l]*grad_rhov[l] );
-            for(l=0;l<dim;l++) J[a][2][b][2] += xi_v*difvap*air_lim*(N1[a][l]*N1[b][l]);
+            // for(l=0;l<dim;l++) J[a][2][b][1] += xi_v*d_difvap*N0[b]*air_lim*(N1[a][l]*grad_rhov[l] );
+            // for(l=0;l<dim;l++) J[a][2][b][2] += xi_v*difvap*air_lim*(N1[a][l]*N1[b][l]);
           }
-          J[a][2][b][0] += xi_v*N0[a]*rhoSE*shift*N0[b];
+        //   J[a][2][b][0] += xi_v*N0[a]*rhoSE*shift*N0[b];
 
         }
       }
