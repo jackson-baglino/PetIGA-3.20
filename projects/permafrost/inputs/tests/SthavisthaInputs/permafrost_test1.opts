@@ -14,8 +14,9 @@
 -RCice 0.75e-4
 -RCice_dev 0.55
 -delt_t 1.0e-4
--t_final 2419200
--n_out 200
+-t_final 10
+-n_out 0
+-outp 1
 -humidity 0.97
 -temp -20.0
 -grad_temp0 0.0,1.0e-6,0.0

@@ -45,10 +45,12 @@ run_simulation() {
         -options_file "$params_file" \
         -output_path "$folder" \
         -snes_rtol 1e-3 \
-        -snes_stol 1e-6 \
-        -snes_max_it 7 \
+        -snes_stol 1e-2 \
+        -snes_atol 1e-6 \
+        -snes_max_it 8 \
         -ksp_gmres_restart 150 \
         -ksp_max_it 1000 \
+        -ksp_rtol 1e-10 \
         -ksp_converged_reason \
         -snes_converged_reason \
         -snes_linesearch_monitor \

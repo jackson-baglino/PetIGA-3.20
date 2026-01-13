@@ -41,11 +41,11 @@ void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar met,
 
     // Compute the effective thermal conductivity as a weighted sum
     if (cond) 
-        (*cond) = ice * cond_ice + met * cond_met + air * cond_air;
+        (*cond) = (cond_ice + cond_air + cond_met) / 3.0; // ice * cond_ice + met * cond_met + air * cond_air;
 
     // Compute the derivative of thermal conductivity with respect to ice fraction
     if (dcond_ice) 
-        (*dcond_ice) = cond_ice * dice - cond_air * dair;
+        (*dcond_ice) = 0.0; // cond_ice * dice - cond_air * dair;
 
     return; // Explicit return statement for clarity
 }
@@ -81,12 +81,11 @@ PetscReal cp_air = user->cp_air;
 
 // Compute effective heat capacity
 if (cp) 
-(*cp) = ice * cp_ice + met * cp_met + air * cp_air;
+(*cp) = (cp_ice + cp_air + cp_met) / 3.0; //ice * cp_ice + met * cp_met + air * cp_air;
 
 // Compute derivative with respect to ice
 if (dcp_ice) 
-(*dcp_ice) = cp_ice * dice - cp_air * dair;
-
+(*dcp_ice) = 0.0; //cp_ice * dice - cp_air * dair;
 return;
 }
 
@@ -121,12 +120,11 @@ PetscReal rho_air = user->rho_air;
 
 // Compute effective density
 if (rho) 
-(*rho) = ice * rho_ice + met * rho_met + air * rho_air;
+(*rho) = (rho_ice + rho_air + rho_met) / 3.0; //ice * rho_ice + met * rho_met + air * rho_air;
 
 // Compute derivative with respect to ice
 if (drho_ice) 
-(*drho_ice) = rho_ice * dice - rho_air * dair;
-
+(*drho_ice) = 0.0; //rho_ice * dice - rho_air * dair;
 return;
 }
 
@@ -142,7 +140,8 @@ void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap,
   PetscScalar *d_difvap)
 {
 PetscReal dif_vap = user->dif_vap;
-PetscReal Kratio = (tem + 273.15) / 273.15; // Convert temperature to Kelvin ratio
+// PetscReal Kratio = (tem + 273.15) / 273.15; // Convert temperature to Kelvin ratio
+PetscReal meanT = user->temp0, Kratio = (meanT + 273.15) / 273.15;
 PetscReal aa = 1.81;
 
 // Compute vapor diffusivity
