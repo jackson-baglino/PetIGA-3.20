@@ -1,5 +1,32 @@
-set -euo pipefail
-trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
+
+set -uo pipefail
+
+###############################################################################
+# Usage / argument checking
+###############################################################################
+usage() {
+    echo ""
+    echo "Usage:"
+    echo "  ./run_permafrost.sh <PETSc_options_file> <run_name_prefix>"
+    echo ""
+    echo "Arguments:"
+    echo "  PETSc_options_file   Path to PETSc .opts file used to configure the run"
+    echo "  run_name_prefix      Prefix for the output folder name"
+    echo ""
+    echo "Example:"
+    echo "  ./run_permafrost.sh ./inputs/permafrost_test.opts capillary_bridge_"
+    echo ""
+}
+
+if [ "$#" -lt 2 ]; then
+    echo "❌ Error: Missing required command-line arguments."
+    usage
+    exit 1
+fi
+
+# Don't exit immediately on non-zero status; we want to keep going (e.g., run plotting)
+# even if the simulation fails.
+trap 'echo "❌ Script error on line $LINENO"' ERR
 
 ###############################################################################
 # Input arguments
@@ -7,7 +34,7 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 #   $2 : Title prefix for the run (used in folder name)
 ###############################################################################
 params_file="${1:-params.txt}"
-title="${2:-permafrost_}"
+title="${2:-permafrost_TESTING_}"
 
 ###############################################################################
 # Create output folder based on timestamp and title
@@ -22,6 +49,21 @@ create_folder() {
     fi
 
     mkdir -p "$folder"
+}
+
+################################################################################
+# Copy plotting / helper scripts to the output folder (before the simulation)
+################################################################################
+stage_output_folder() {
+    echo "Staging scripts into output folder..."
+
+    # Copy plotting and runner scripts
+    cd ./scripts
+    cp Studio/run_permafrost.sh plotpermafrost.py plotSSA.py plotPorosity.py "$folder"
+    cd ../
+
+    # Save a copy of the PETSc options file used for this run
+    cp "$params_file" "$folder/$(basename "$params_file")"
 }
 
 ###############################################################################
@@ -41,20 +83,20 @@ run_simulation() {
     # Export the output folder so the code can see it as an environment variable
     export folder="$folder"
 
+    # Run the simulation. If it fails, capture the exit code but continue.
+    sim_exit=0
+    set +e
     mpiexec -np 12 ./permafrost \
         -options_file "$params_file" \
         -output_path "$folder" \
-        -snes_rtol 1e-3 \
-        -snes_stol 1e-2 \
-        -snes_atol 1e-6 \
-        -snes_max_it 8 \
-        -ksp_gmres_restart 150 \
-        -ksp_max_it 1000 \
-        -ksp_rtol 1e-10 \
-        -ksp_converged_reason \
-        -snes_converged_reason \
-        -snes_linesearch_monitor \
-        -snes_linesearch_type basic | tee "$folder/outp.txt"
+        | tee "$folder/outp.txt"
+
+    sim_exit=${PIPESTATUS[0]}
+    set -e
+
+    if [ "$sim_exit" -ne 0 ]; then
+        echo "⚠️ Simulation exited with code $sim_exit (continuing to post-processing)"
+    fi
 }
 
 ################################################################################
@@ -62,14 +104,13 @@ run_simulation() {
 ################################################################################
 finalize_results() {
     echo "Finalizing results..."
-    cd ./scripts
-    cp Studio/run_permafrost.sh plotpermafrost.py plotSSA.py plotPorosity.py $folder
-    cd ../src
-    cp permafrost.c $folder
-    cd ../
 
-    # Save a copy of the PETSc options file used for this run
-    cp "$params_file" "$folder/$(basename "$params_file")"
+    # Save a full copy of the source code for reproducibility
+    if [ -d "./src" ]; then
+        cp -r ./src "$folder/"
+    else
+        echo "⚠️ Warning: src directory not found; source code not copied."
+    fi
 }
 
 ################################################################################
@@ -77,7 +118,13 @@ finalize_results() {
 ################################################################################
 run_plotting() {
     echo "Queuing plotpermafrost.py"
-    ./scripts/run_plotpermafrost.sh $name
+    set +e
+    ./scripts/run_plotpermafrost.sh "$name"
+    plot_exit=$?
+    set -e
+    if [ "$plot_exit" -ne 0 ]; then
+        echo "⚠️ Plotting script exited with code $plot_exit"
+    fi
 }
 
 ################################################################################
@@ -101,11 +148,16 @@ compile_code
 
 create_folder
 
+stage_output_folder
+
 run_simulation
 
 finalize_results
 
 run_plotting
+
+# Exit with the simulation exit code if it failed, otherwise 0.
+exit ${sim_exit:-0}
 
 echo "-------------------------------------------------------------------------"
 echo " "
