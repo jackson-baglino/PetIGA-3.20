@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
   RhoVS_I(&user, user.temp0, &rhoI_vs, &d_rhovs);
   rho_rhovs = user.rho_ice / rhoI_vs;
 
+  ierr = PetscPrintf(PETSC_COMM_WORLD, "rho_rhovs = %e \n", rho_rhovs);CHKERRQ(ierr);
   // Unpack environment variables
   PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");
   PetscInt Nx, Ny, Nz, n_out, dim, readFlag;
@@ -116,6 +117,8 @@ int main(int argc, char *argv[]) {
   d0_sub = user.d0_sub0/rho_rhovs;  beta_sub = user.beta_sub0/rho_rhovs; 
   lambda_sub    = a1*user.eps/d0_sub;
   tau_sub       = user.eps*lambda_sub*(beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD, "Beta_sub = %e \n", beta_sub);CHKERRQ(ierr);
 
   // // Parameters tuned from Molaro experiments
   // user.mob_sub    = 5.0*user.eps/3.0/tau_sub;

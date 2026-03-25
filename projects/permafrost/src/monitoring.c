@@ -1,6 +1,7 @@
 #include "monitoring.h"
 #include "assembly.h"
 #include "material_properties.h"
+#include <petscstring.h>
 
 PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 {
@@ -95,11 +96,54 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD,"INITIAL_CONDITION!!! \n");
   }
 
-  //------printf information
-  if(step%10==0) {
-    PetscPrintf(PETSC_COMM_WORLD,"\nTIME               TIME_STEP     TOT_ICE      TOT_AIR       TEMP      TOT_RHOV     I-A interf   Tripl_junct \n");
-    PetscPrintf(PETSC_COMM_WORLD,"\n(%.0f) %.3e    %.3e   %.3e   %.3e   %.3e   %.3e   %.3e   %.3e \n\n",
-                t,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
+  //------ printf information (robust table header + aligned columns)
+  {
+    const PetscInt headerEvery = 1;  // print header every step (can change to 10 later)
+    PetscErrorCode ierr2;
+
+    if ((step % headerEvery) == 0) {
+      // Build header line using the SAME fixed-width fields as the data row
+      char header[512];
+      ierr2 = PetscSNPrintf(header, sizeof(header),
+                            " %5s | %12s | %9s | %10s | %10s | %9s | %9s | %10s | %10s",
+                            "STEP",
+                            "TIME [s]",
+                            "DT [s]",
+                            "TOT_ICE",
+                            "TOT_AIR",
+                            "TEMP",
+                            "TOT_RHOV",
+                            "I-A INTERF",
+                            "TRIPL_JUNC");
+      CHKERRQ(ierr2);
+
+      // Separator line: exactly matches header length
+      PetscInt hlen = 0;
+      ierr2 = PetscStrlen(header, &hlen);
+      CHKERRQ(ierr2);
+
+      char sep[512];
+      PetscInt i;
+      for (i = 0; i < hlen && i < (PetscInt)sizeof(sep) - 1; i++) sep[i] = '-';
+      sep[i] = '\0';
+
+      PetscPrintf(PETSC_COMM_WORLD, "  ===============================================================================\n");
+      PetscPrintf(PETSC_COMM_WORLD, "  >>> DOMAIN INTEGRALS (PER TIME STEP)\n");
+      PetscPrintf(PETSC_COMM_WORLD, "  ===============================================================================\n");
+      PetscPrintf(PETSC_COMM_WORLD, "  %s\n", sep);
+      PetscPrintf(PETSC_COMM_WORLD, "  %s\n", header);
+      PetscPrintf(PETSC_COMM_WORLD, "  %s\n", sep);
+    }
+
+    // Data row: uses matching widths so it lines up under the header
+    PetscPrintf(PETSC_COMM_WORLD,
+                " %5d | %12.5e | %9.3e | %10.3e | %10.3e | %9.3e | %9.3e | %10.3e | %10.3e\n",
+                step, t, dt,
+                tot_ice, tot_air, tot_temp, tot_rhov,
+                sub_interf, tot_trip);
+
+    // Optional: add a blank line every N rows for readability (set to 0 to disable)
+    // if (step > 0 && (step % 25) == 0) PetscPrintf(PETSC_COMM_WORLD, "\n");
   }
 
   PetscInt print=0;

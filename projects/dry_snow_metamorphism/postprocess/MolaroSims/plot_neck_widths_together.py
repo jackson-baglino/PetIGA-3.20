@@ -8,24 +8,62 @@ Assumptions
 - Each simulation has already been processed by `plot_neck_width.py`
   (or a similar script) to produce a CSV file in the *parent* directory
   of the `vtkOut` folder.
-- That CSV file is named `neck_width_vs_time.csv` and contains at least:
+- That CSV file is named `neck_widths_vs_time.csv` by default and contains at least:
     - time in seconds or minutes   (columns like: time_s, time_min, or time)
     - neck width in meters or µm   (columns like: neck_width_m, neck_width_um)
-- If your column names differ, you can adjust the small helper function
+- If your column names differ, you can adjust the helper function
   `_extract_time_and_neck` below.
 
-How to use
-----------
-1. Set `PARENT_DIR_1` and `PARENT_DIR_2` to the parent directories of
-   the simulations you want to compare (the same directories that contain
-   `SSA_evo.dat` and `vtkOut/`).
-2. Optionally adjust `CSV_NAME` if your output file has a different name.
-3. Run:
-       python plot_neck_widths_together.py
+Command-line usage
+------------------
+Basic:
+    python plot_neck_widths_together.py \
+        --parent_dir_1 /path/to/sim1 \
+        --parent_dir_2 /path/to/sim2
+
+Optional arguments:
+    --output_dir PATH
+        Base output directory. Plots are saved into per-format subfolders:
+          <output_dir>/NeckWidthComparison_pdf/ and <output_dir>/NeckWidthComparison_svg/
+        Default: <script_dir>/plots
+
+    --csv_name NAME
+        Name of the neck-width CSV file inside each parent directory.
+        Default: neck_widths_vs_time.csv
+
+    --label_1 TEXT, --label_2 TEXT
+        Optional legend labels for each simulation. If omitted, folder names are used.
+
+    --formats FMT [FMT ...]
+        Output vector formats to save (e.g. pdf svg). Default: pdf svg
+
+    --save_with_title / --no_save_with_title
+        Save figures with the axes title. Default: enabled
+
+    --save_no_title / --no_save_no_title
+        Save figures without the axes title (suffix: _noTitle). Default: enabled
+
+    --font_family NAME
+        Preferred font family for plot text. Default: Helvetica
+
+    --register_local_fonts / --no_register_local_fonts
+        If enabled, attempt to register fonts from ./fonts before plotting.
+        Default: enabled
+
+    --plot_experimental / --no_plot_experimental
+        Toggle plotting of hard-coded experimental points.
+        Default: enabled
+
+Notes
+-----
+- This script saves two comparison figures:
+    1) An "experimental-window" view limited to the experimental time range (if experimental data are enabled)
+    2) A "simulation-window" view covering the full simulation duration
 """
 
 from pathlib import Path
 from typing import Tuple, List, Dict, Optional
+import argparse
 
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
@@ -53,8 +91,11 @@ CSV_NAME = "neck_widths_vs_time.csv"
 LABEL_1 = None
 LABEL_2 = None
 
-# Path to your Matplotlib style file (same one used in plot_neck_width.py)
+ # Path to your Matplotlib style file (same one used in plot_neck_width.py)
 STYLE_FILE = Path(__file__).with_name("plot_style.mplstyle")
+
+# Script directory constant
+SCRIPT_DIR = Path(__file__).resolve().parent
 
 
 # Output figure name
@@ -64,12 +105,15 @@ OUTPUT_FIG = "neck_widths_comparison.png"
 # Output formats are organized into subfolders by format.
 OUTPUT_FORMATS = ["pdf", "svg"]
 
-# Output directory structure:
-#   <SCRIPT_DIR>/plots/pdf/
-#   <SCRIPT_DIR>/plots/svg/
-PLOTS_DIR = Path(__file__).with_name("plots")
-PDF_DIR = PLOTS_DIR / "pdf"
-SVG_DIR = PLOTS_DIR / "svg"
+# Output directory structure (configurable via CLI):
+#   <output_dir>/NeckWidthComparison_pdf/
+#   <output_dir>/NeckWidthComparison_svg/
+DEFAULT_PLOTS_DIR = SCRIPT_DIR / "plots"
+
+# These are set at runtime from DEFAULT_PLOTS_DIR or --output_dir
+PLOTS_DIR: Path = DEFAULT_PLOTS_DIR
+PDF_DIR: Path = DEFAULT_PLOTS_DIR / "NeckWidthComparison_pdf"
+SVG_DIR: Path = DEFAULT_PLOTS_DIR / "NeckWidthComparison_svg"
 
 # Save two variants of each plot:
 #   - with title
@@ -79,10 +123,10 @@ SAVE_NO_TITLE = True
 
 
 # Preferred font family for all plot text. Falls back to a default sans-serif if unavailable.
-FONT_FAMILY = "Montserrat"
+FONT_FAMILY = "Helvetica"
 
 # Optional: directory containing local font files (*.ttf, *.otf).
-# If you downloaded Montserrat from Google Fonts, copy the extracted folder
+# If you downloaded a font (e.g., Helvetica alternatives) from an external source, copy the extracted folder
 # (or just the .ttf files) into a folder named `fonts/` next to this script.
 # Example:
 #   postprocess/MolaroSims/fonts/Montserrat-Regular.ttf
@@ -186,9 +230,105 @@ EXP_TIME_SHIFT_20 = 0.0  # shift for the -20 °C experimental data
 
 
 
-# ============================
+ # ============================
 # HELPER FUNCTIONS
 # ============================
+
+def _set_output_dirs(base_dir: Path) -> None:
+    """Set global output directories based on a base directory."""
+    global PLOTS_DIR, PDF_DIR, SVG_DIR
+    PLOTS_DIR = Path(base_dir)
+    PDF_DIR = PLOTS_DIR / "NeckWidthComparison_pdf"
+    SVG_DIR = PLOTS_DIR / "NeckWidthComparison_svg"
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    """Build command-line argument parser."""
+    p = argparse.ArgumentParser(
+        prog="plot_neck_widths_together.py",
+        description="Plot neck-width evolution for two simulations on the same axes.",
+    )
+
+    p.add_argument(
+        "--parent_dir_1",
+        type=str,
+        default=str(PARENT_DIR_1),
+        help="Parent directory for simulation 1 (contains SSA_evo.dat and vtkOut/).",
+    )
+    p.add_argument(
+        "--parent_dir_2",
+        type=str,
+        default=str(PARENT_DIR_2),
+        help="Parent directory for simulation 2 (contains SSA_evo.dat and vtkOut/).",
+    )
+    p.add_argument(
+        "--output_dir",
+        type=str,
+        default=str(DEFAULT_PLOTS_DIR),
+        help="Base output directory (plots saved into per-format subfolders).",
+    )
+    p.add_argument(
+        "--csv_name",
+        type=str,
+        default=CSV_NAME,
+        help="CSV file name inside each parent directory.",
+    )
+    p.add_argument(
+        "--label_1",
+        type=str,
+        default="" if LABEL_1 is None else str(LABEL_1),
+        help="Optional legend label for simulation 1.",
+    )
+    p.add_argument(
+        "--label_2",
+        type=str,
+        default="" if LABEL_2 is None else str(LABEL_2),
+        help="Optional legend label for simulation 2.",
+    )
+    p.add_argument(
+        "--formats",
+        nargs="+",
+        default=OUTPUT_FORMATS,
+        help="Output formats to save (e.g. pdf svg).",
+    )
+
+    p.add_argument(
+        "--save_with_title",
+        dest="save_with_title",
+        action=argparse.BooleanOptionalAction,
+        default=SAVE_WITH_TITLE,
+        help="Save figures with the axes title.",
+    )
+    p.add_argument(
+        "--save_no_title",
+        dest="save_no_title",
+        action=argparse.BooleanOptionalAction,
+        default=SAVE_NO_TITLE,
+        help="Save figures without the axes title (suffix: _noTitle).",
+    )
+
+    p.add_argument(
+        "--font_family",
+        type=str,
+        default=FONT_FAMILY,
+        help="Preferred font family for plot text.",
+    )
+    p.add_argument(
+        "--register_local_fonts",
+        dest="register_local_fonts",
+        action=argparse.BooleanOptionalAction,
+        default=REGISTER_LOCAL_FONTS,
+        help="Attempt to register fonts from ./fonts before plotting.",
+    )
+    p.add_argument(
+        "--plot_experimental",
+        dest="plot_experimental",
+        action=argparse.BooleanOptionalAction,
+        default=PLOT_EXPERIMENTAL,
+        help="Toggle plotting of hard-coded experimental points.",
+    )
+
+    return p
 
 def _ensure_output_dirs() -> None:
     """Create output directories for vector formats."""
@@ -298,6 +438,8 @@ def _apply_font_settings(preferred: str) -> None:
     plt.rcParams["pdf.fonttype"] = 42
     plt.rcParams["ps.fonttype"] = 42
     plt.rcParams["svg.fonttype"] = "none"
+
+    plt.rcParams["pdf.use14corefonts"] = True
 
 def _parse_label_radius_temp(label: str) -> Tuple[Optional[float], Optional[float]]:
     """
@@ -574,6 +716,29 @@ def _plot_simulation_curves(
 # ============================
 
 def main() -> None:
+    args = _build_arg_parser().parse_args()
+
+    # Apply CLI overrides
+    global PARENT_DIR_1, PARENT_DIR_2, CSV_NAME, LABEL_1, LABEL_2
+    global OUTPUT_FORMATS, SAVE_WITH_TITLE, SAVE_NO_TITLE
+    global FONT_FAMILY, REGISTER_LOCAL_FONTS, PLOT_EXPERIMENTAL
+
+    PARENT_DIR_1 = Path(args.parent_dir_1)
+    PARENT_DIR_2 = Path(args.parent_dir_2)
+    CSV_NAME = args.csv_name
+    LABEL_1 = args.label_1.strip() or None
+    LABEL_2 = args.label_2.strip() or None
+
+    OUTPUT_FORMATS = [str(f).lower() for f in args.formats]
+    SAVE_WITH_TITLE = bool(args.save_with_title)
+    SAVE_NO_TITLE = bool(args.save_no_title)
+
+    FONT_FAMILY = args.font_family
+    REGISTER_LOCAL_FONTS = bool(args.register_local_fonts)
+    PLOT_EXPERIMENTAL = bool(args.plot_experimental)
+
+    _set_output_dirs(Path(args.output_dir))
+
     # Apply common plot style if available
     if STYLE_FILE.is_file():
         plt.style.use(STYLE_FILE)

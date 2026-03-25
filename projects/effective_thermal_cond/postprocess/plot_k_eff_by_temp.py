@@ -26,16 +26,51 @@ Output:
       lines_kyy_vs_ssa_by_temp_[light|dark].png
 
 Usage:
-  python postprocess/plot_k_eff_by_temp.py PARENT_DIR
-     [--pattern REGEX]        # filter subfolder basenames with regex
-     [--normalize]            # divide each series by its first value
-     [--theme {light,dark,both}]  # default: both
-     [--dpi 300]
+  python postprocess/plot_k_eff_by_temp.py PARENT_DIR \
+      [--pattern REGEX]              # filter subfolder basenames with regex (match on folder name)
+      [--normalize]                  # normalize k_xx and k_yy by their initial values (per-run)
+      [--theme {light,dark,both}]    # color theme for saved plots (default: both)
+      [--dpi DPI]                    # output DPI (default: 300)
+      [--use_thermal_cmocean]        # color lines by temperature using cmocean 'thermal' (falls back if unavailable)
+      [--log_plots]                  # also save log-scale versions; outputs to <parent>/log_output_plots/
+      [--vector_format {svg,pdf,eps}]  # also save a vector version of each figure (in addition to PNG)
+      [--output_dir DIR]             # override default output directory (defaults to <parent_dir>/output_plots or log_output_plots)
+
+Notes:
+  - Output directory:
+      * default: <parent_dir>/output_plots/
+      * with --log_plots: <parent_dir>/log_output_plots/
+  - Saved figures (per theme):
+      * lines_kxx_vs_time_by_temp_[light|dark].png
+      * lines_kyy_vs_time_by_temp_[light|dark].png
+      * lines_kxx_vs_ssa_by_temp_[light|dark].png
+      * lines_kyy_vs_ssa_by_temp_[light|dark].png
+    Plus per-run plots saved under:
+      * <output_dir>/<run_name>/k_eff_vs_time_[light|dark].png
+      * <output_dir>/<run_name>/k_eff_vs_ssa_norm_[light|dark].png   (only when SSA data is available)
+  - When --vector_format is set, each PNG is also saved as a vector file (with the same basename and .svg/.pdf/.eps extension).
 
 Example:
   python postprocess/plot_k_eff_by_temp.py \
       ~/SimulationResults/effective_thermal_cond/const_porosity_varying_temp \
-      --pattern '^DSM_.*$' --normalize --theme both
+      --pattern '^DSM_.*$' \
+      --normalize \
+      --theme both \
+      --dpi 300 \
+      --use_thermal_cmocean
+
+Example (also save log-scale versions to log_output_plots/):
+  python postprocess/plot_k_eff_by_temp.py \
+      ~/SimulationResults/effective_thermal_cond/const_porosity_varying_temp \
+      --pattern '^DSM_.*$' \
+      --normalize \
+      --theme both \
+      --log_plots
+
+Example (also save vector figures as PDF):
+  python postprocess/plot_k_eff_by_temp.py \
+      ~/SimulationResults/effective_thermal_cond/const_porosity_varying_temp \
+      --vector_format pdf
 """
 
 from __future__ import annotations
@@ -91,6 +126,20 @@ def set_compact_axis_labels(ax: plt.Axes, xlabel: str, ylabel: str):
         ax.yaxis.label.set_wrap(True)
     except Exception:
         pass
+
+# ------------------------ Small helpers ------------------------ #
+
+def save_figure(fig: plt.Figure, out_png: str, dpi: int, vector_format: Optional[str] = None):
+    """Save PNG always; optionally also save a vector copy (.svg/.pdf/.eps) with the same basename."""
+    fig.savefig(out_png, dpi=dpi, bbox_inches='tight', transparent=True)
+    print("[OK]", out_png)
+
+    if vector_format:
+        vf = vector_format.lower().strip('.')
+        out_vec = os.path.splitext(out_png)[0] + f".{vf}"
+        # dpi is irrelevant for vector formats; keep bbox/transparent consistent
+        fig.savefig(out_vec, bbox_inches='tight', transparent=True)
+        print("[OK]", out_vec)
 
 # ------------------------ Small helpers ------------------------ #
 
@@ -155,7 +204,8 @@ def set_theme(theme: str, use_cmocean_thermal: bool = False, n_colors: int = 10)
 
     # Typography + axes
     plt.rcParams.update({
-        'font.family': 'DejaVu Sans',
+        'font.family': 'Helvetica',
+        'pdf.use14corefonts': True,
         'axes.titlesize': TITLE_FONTSIZE,
         'axes.labelsize': AXIS_FONTSIZE,
         'xtick.labelsize': TICK_FONTSIZE,
@@ -455,15 +505,18 @@ def load_run(folder: str, normalize: bool) -> Optional[Dict[str, Any]]:
         ssa=ssa_aligned,
     )
 # ------------------------ Plotting ------------------------ #
-def plot_lines_k_vs_ssa(runs: List[Dict[str, Any]],
-                        which: str,
-                        y_label_norm: str,
-                        outdir: str,
-                        base_name: str,
-                        theme: str,
-                        dpi: int,
-                        use_cmocean_thermal: bool = False,
-                        log_plots: bool = False):
+def plot_lines_k_vs_ssa(
+    runs: List[Dict[str, Any]],
+    which: str,
+    y_label_norm: str,
+    outdir: str,
+    base_name: str,
+    theme: str,
+    dpi: int,
+    use_cmocean_thermal: bool = False,
+    log_plots: bool = False,
+    vector_format: Optional[str] = None,
+):
     """
     Plot normalized k (k/k0) vs normalized SSA (SSA/SSA0) for each run, lines colored by temperature.
     Requires SSA_evo.dat to be present (ssa in run dict). Runs lacking SSA are skipped.
@@ -531,9 +584,8 @@ def plot_lines_k_vs_ssa(runs: List[Dict[str, Any]],
                 ax.legend(loc="best", fontsize=max(8, LEGEND_FONTSIZE - 1))
                 fig.tight_layout()
         out_path = os.path.join(outdir, base_name.replace('.png', f'_{suffix}.png'))
-        fig.savefig(out_path, dpi=dpi, bbox_inches='tight', transparent=True)
+        save_figure(fig, out_path, dpi=dpi, vector_format=vector_format)
         plt.close(fig)
-        print("[OK]", out_path)
 
     if theme in ("light", "both"):
         do_plot("light", "light")
@@ -584,15 +636,18 @@ def scale_to_unit(arr: np.ndarray, unit: str) -> np.ndarray:
 
 # ------------------------ Plotting ------------------------ #
 
-def plot_lines_vs_time(runs: List[Dict[str, Any]],
-                       which: str,
-                       y_label: str,
-                       outdir: str,
-                       base_name: str,
-                       theme: str,
-                       dpi: int,
-                       use_cmocean_thermal: bool = False,
-                       log_plots: bool = False):
+def plot_lines_vs_time(
+    runs: List[Dict[str, Any]],
+    which: str,
+    y_label: str,
+    outdir: str,
+    base_name: str,
+    theme: str,
+    dpi: int,
+    use_cmocean_thermal: bool = False,
+    log_plots: bool = False,
+    vector_format: Optional[str] = None,
+):
     """
     Make a line plot of 'which' in {'kxx','kyy'} vs time, with one line per temperature.
     Legend includes temperature only.
@@ -673,9 +728,8 @@ def plot_lines_vs_time(runs: List[Dict[str, Any]],
             fig.tight_layout()
 
         out_path = os.path.join(outdir, base_name.replace(".png", f"_{suffix}.png"))
-        fig.savefig(out_path, dpi=dpi, bbox_inches="tight", transparent=True)
+        save_figure(fig, out_path, dpi=dpi, vector_format=vector_format)
         plt.close(fig)
-        print("[OK]", out_path)
 
     if theme in ("light", "both"):
         do_plot("light", "light")
@@ -684,12 +738,15 @@ def plot_lines_vs_time(runs: List[Dict[str, Any]],
 
 
 # ------------------------ Per-run plotting helper ------------------------ #
-def plot_individual_runs(runs: List[Dict[str, Any]],
-                         outdir: str,
-                         theme: str,
-                         dpi: int,
-                         use_cmocean_thermal: bool = False,
-                         log_plots: bool = False):
+def plot_individual_runs(
+    runs: List[Dict[str, Any]],
+    outdir: str,
+    theme: str,
+    dpi: int,
+    use_cmocean_thermal: bool = False,
+    log_plots: bool = False,
+    vector_format: Optional[str] = None,
+):
     """Save per-run plots (overlaying kxx and kyy vs time) into output_plots/<run_name>/.
 
     For each run:
@@ -747,7 +804,7 @@ def plot_individual_runs(runs: List[Dict[str, Any]],
                 ax.set_xlim(xmin - pad, xmax)
         ax.legend(loc="best", fontsize=max(8, LEGEND_FONTSIZE - 1))
         fig.tight_layout()
-        fig.savefig(out_path, dpi=dpi, bbox_inches='tight', transparent=True)
+        save_figure(fig, out_path, dpi=dpi, vector_format=vector_format)
         plt.close(fig)
 
     def _plot_both_vs_ssa(run: Dict[str, Any], theme_name: str, out_path: str):
@@ -816,7 +873,7 @@ def plot_individual_runs(runs: List[Dict[str, Any]],
         ax.grid(False)
         ax.legend(loc="best", fontsize=max(8, LEGEND_FONTSIZE - 1))
         fig.tight_layout()
-        fig.savefig(out_path, dpi=dpi, bbox_inches='tight', transparent=True)
+        save_figure(fig, out_path, dpi=dpi, vector_format=vector_format)
         plt.close(fig)
 
     for run in runs:
@@ -827,13 +884,10 @@ def plot_individual_runs(runs: List[Dict[str, Any]],
         def _emit(theme_name: str, suffix: str):
             out_path = os.path.join(run_dir, f"k_eff_vs_time_{suffix}.png")
             _plot_both(run, unit, theme_name, out_path)
-            print("[OK]", out_path)
 
             # Also save normalized k vs normalized SSA, if SSA is available
             out_path_ssa = os.path.join(run_dir, f"k_eff_vs_ssa_norm_{suffix}.png")
             _plot_both_vs_ssa(run, theme_name, out_path_ssa)
-            if os.path.exists(out_path_ssa):
-                print("[OK]", out_path_ssa)
 
         if theme in ("light", "both"):
             _emit("light", "light")
@@ -856,6 +910,10 @@ def main():
                     help="Use cmocean 'thermal' colormap as the line color cycle (requires cmocean).")
     ap.add_argument("--log_plots", action="store_true",
                     help="Save log-scale versions of all plots (log y-axis). Output goes to log_output_plots.")
+    ap.add_argument("--vector_format", choices=["svg", "pdf", "eps"], default=None,
+                    help="Also save each figure as a vector file (.svg/.pdf/.eps) alongside the PNG.")
+    ap.add_argument("--output_dir", default=None,
+                    help="Optional output directory. Defaults to <parent_dir>/output_plots or log_output_plots.")
     args = ap.parse_args()
 
     parent = os.path.abspath(os.path.expanduser(args.parent_dir))
@@ -878,26 +936,39 @@ def main():
         print(f"[ERROR] No valid runs in {parent}. Ensure each folder has k_eff.csv and (optionally) SSA_evo.dat & metadata.json.")
         sys.exit(1)
 
-    outdir_name = "log_output_plots" if args.log_plots else "output_plots"
-    outdir = os.path.join(parent, outdir_name)
+    if args.output_dir:
+        outdir = os.path.abspath(os.path.expanduser(args.output_dir))
+    else:
+        outdir_name = "log_output_plots" if args.log_plots else "output_plots"
+        outdir = os.path.join(parent, outdir_name)
     os.makedirs(outdir, exist_ok=True)
 
-    plot_lines_vs_time(runs, "kxx", "", outdir, "lines_kxx_vs_time_by_temp.png", args.theme, args.dpi,
-                       use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
-    plot_lines_vs_time(runs, "kyy", "", outdir, "lines_kyy_vs_time_by_temp.png", args.theme, args.dpi,
-                       use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
+    plot_lines_vs_time(
+        runs, "kxx", "", outdir, "lines_kxx_vs_time_by_temp.png", args.theme, args.dpi,
+        use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots, vector_format=args.vector_format
+    )
+    plot_lines_vs_time(
+        runs, "kyy", "", outdir, "lines_kyy_vs_time_by_temp.png", args.theme, args.dpi,
+        use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots, vector_format=args.vector_format
+    )
 
     # Per-run plots (saved into output_plots/<run_name>/)
-    plot_individual_runs(runs, outdir, args.theme, args.dpi,
-                         use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
+    plot_individual_runs(
+        runs, outdir, args.theme, args.dpi,
+        use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots, vector_format=args.vector_format
+    )
 
     # Also plot normalized k vs normalized SSA (always normalized)
     ylab_xx_norm = r"$k_{xx}/k_{xx,0}$"
     ylab_yy_norm = r"$k_{yy}/k_{yy,0}$"
-    plot_lines_k_vs_ssa(runs, "kxx", ylab_xx_norm, outdir, "lines_kxx_vs_ssa_by_temp.png", args.theme, args.dpi,
-                        use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
-    plot_lines_k_vs_ssa(runs, "kyy", ylab_yy_norm, outdir, "lines_kyy_vs_ssa_by_temp.png", args.theme, args.dpi,
-                        use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots)
+    plot_lines_k_vs_ssa(
+        runs, "kxx", ylab_xx_norm, outdir, "lines_kxx_vs_ssa_by_temp.png", args.theme, args.dpi,
+        use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots, vector_format=args.vector_format
+    )
+    plot_lines_k_vs_ssa(
+        runs, "kyy", ylab_yy_norm, outdir, "lines_kyy_vs_ssa_by_temp.png", args.theme, args.dpi,
+        use_cmocean_thermal=args.use_thermal_cmocean, log_plots=args.log_plots, vector_format=args.vector_format
+    )
 
     print("\n✅ Done.")
 

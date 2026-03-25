@@ -18,10 +18,12 @@ Outputs:
   <outdir>/curves_kyy_norm_vs_SSA_normalized[_loglog][_light|_dark].png
   <outdir>/individual_plots/<run>/k_eff_vs_time[_normalized][_loglog][_light|_dark].png
   <outdir>/individual_plots/<run>/k_eff_vs_norm_SSA_normalized[_loglog][_light|_dark].png
+  If --vector_format is provided, each plot is also exported as a vector file with the same basename (e.g., .pdf/.svg/.eps).
 
 Usage:
   python postprocess/plot_k_eff_by_phi.py <PARENT_DIR> \
-    [--pattern 'REGEX'] [--outdir PATH] [--normalize true|false] [--dpi 300] [--theme light|dark|both]
+    [--pattern 'REGEX'] [--outdir PATH] [--normalize true|false] [--dpi 300] \
+    [--theme light|dark|both] [--loglog] [--legend_mode 1|2] [--vector_format svg|pdf|eps]
 
 Examples:
   # All subfolders:
@@ -31,6 +33,15 @@ Examples:
   python postprocess/plot_k_eff_by_phi.py ~/.../const_temp_varying_phi \
     --pattern '^DSM_phi[0-9]+\\.[0-9]+_Lx[0-9]+mm_Ly[0-9]+mm_seed[0-9]+_Tm-?[0-9]+_hum[0-9]+_tf[0-9]+d$'
 
+  # Export both light and dark themes, plus log-log versions:
+  python postprocess/plot_k_eff_by_phi.py ~/.../const_temp_varying_phi --theme both --loglog
+
+  # Save legend as a separate PNG (no legend over the curves):
+  python postprocess/plot_k_eff_by_phi.py ~/.../const_temp_varying_phi --legend_mode 2
+
+  # Also export vector versions (SVG/PDF/EPS) alongside PNG:
+  python postprocess/plot_k_eff_by_phi.py ~/.../const_temp_varying_phi --vector_format pdf
+
 Notes:
 - If SSA_evo.dat is missing or malformed, the script falls back to a synthetic
   monotonic "time" based on the k_eff row index (plots will still render).
@@ -38,6 +49,7 @@ Notes:
 - Theme: use --theme light (white background, dark text), --theme dark (dark background, light text), or --theme both to save both versions with _light/_dark suffixes.
 """
 
+# Move __future__ import right after docstring
 from __future__ import annotations
 
 import argparse
@@ -60,6 +72,18 @@ TICK_FS  = 14
 LEGEND_FS = 13
 LINE_W = 2.5
 SAVE_DPI = 300
+
+# --- Plot/vector export helper ---
+
+def _save_plot(fig, png_path: str, *, vector_format: str | None = None):
+    """Save PNG always; optionally also save a vector copy (.svg/.pdf/.eps) with the same basename."""
+    fig.savefig(png_path, dpi=SAVE_DPI, bbox_inches="tight", transparent=True)
+    if vector_format:
+        base, _ = os.path.splitext(png_path)
+        vec_path = f"{base}.{vector_format}"
+        # For vector formats, DPI is generally irrelevant; keep tight bbox and transparency where supported.
+        fig.savefig(vec_path, bbox_inches="tight", transparent=True)
+        print("[OK]", vec_path)
 
 # ----------------- Label wrapping helpers -----------------
 def _wrap_label(text: str) -> str:
@@ -210,11 +234,52 @@ def _set_titles(fig, ax, title: str, subtitle: str | None = None):
 def _finalize_layout(fig, ax, *, top: float = 0.90, max_passes: int = 8):
     fig.tight_layout(rect=[0.0, 0.0, 1.0, top])
 
+# ----------------- Y-axis padding for legend headroom -----------------
+
+def _pad_ylim_for_legend(ax, *, frac: float = 0.20):
+    """Add headroom above the current y-range so an in-axes legend can sit above curves."""
+    y0, y1 = ax.get_ylim()
+    if ax.get_yscale() == "log":
+        # Expand the upper bound upward by `frac` of the current log-range.
+        y0_pos = max(float(y0), np.finfo(float).tiny)
+        y1_pos = max(float(y1), np.finfo(float).tiny)
+        if y1_pos <= y0_pos:
+            return
+        dy = np.log10(y1_pos) - np.log10(y0_pos)
+        y1_new = 10 ** (np.log10(y1_pos) + dy * frac)
+        ax.set_ylim(y0_pos, y1_new)
+    else:
+        rng = float(y1) - float(y0)
+        if rng <= 0:
+            rng = abs(float(y1)) if float(y1) != 0 else 1.0
+        y1_new = float(y1) + frac * rng
+        ax.set_ylim(float(y0), y1_new)
+
+
+# --- Add a small bottom y-axis margin so curves don't sit on the x-axis ---
+def _pad_ylim_bottom(ax, *, frac: float = 0.12):
+    """Add a small margin below the current y-range so curves don't sit on the x-axis."""
+    y0, y1 = ax.get_ylim()
+    if ax.get_yscale() == "log":
+        y0_pos = max(float(y0), np.finfo(float).tiny)
+        y1_pos = max(float(y1), np.finfo(float).tiny)
+        if y1_pos <= y0_pos:
+            return
+        dy = np.log10(y1_pos) - np.log10(y0_pos)
+        y0_new = 10 ** (np.log10(y0_pos) - dy * frac)
+        ax.set_ylim(y0_new, y1_pos)
+    else:
+        rng = float(y1) - float(y0)
+        if rng <= 0:
+            rng = abs(float(y1)) if float(y1) != 0 else 1.0
+        y0_new = float(y0) - frac * rng
+        ax.set_ylim(y0_new, float(y1))
+
 #
 # ----------------- Legend placement helper -----------------
 def _place_legend_no_overlap(fig, ax, *, prefer: str = "best", title: str | None = None, legend_mode: int = 1):
     """
-    Place legend so it does not overlap plotted curves by expanding y-limits downward if needed.
+    Place legend so it does not overlap plotted curves by expanding y-limits upward if needed.
     Never moves legend outside axes or changes subplot paddings.
     """
     if legend_mode == 2:
@@ -223,7 +288,7 @@ def _place_legend_no_overlap(fig, ax, *, prefer: str = "best", title: str | None
     font_main = max(9, LEGEND_FS - 2)
     font_small = max(8, LEGEND_FS - 4)
     for attempt in range(8):
-        leg = ax.legend(loc=prefer, fontsize=font_main, frameon=True, title=title)
+        leg = ax.legend(loc=prefer, fontsize=font_main, frameon=True)
         if leg is None:
             return
         fig.canvas.draw()
@@ -242,26 +307,25 @@ def _place_legend_no_overlap(fig, ax, *, prefer: str = "best", title: str | None
                 continue
         if not overlap:
             return
-        # If overlap, expand y-limits downward (decrease lower limit)
+        # If overlap, expand y-limits upward (increase upper limit)
         y0, y1 = ax.get_ylim()
         if ax.get_yscale() == "log":
-            # Downward expansion by ~8% in log space
-            # Keep y0 > 0 (required for log scale)
+            # Upward expansion by ~10% in log space
             y0_pos = max(float(y0), np.finfo(float).tiny)
-            dy = np.log10(float(y1)) - np.log10(y0_pos)
-            # Move the lower bound down by 8% of the current log-range
-            y0_new = 10 ** (np.log10(y0_pos) - dy * 0.08)
-            ax.set_ylim(y0_new, y1)
+            y1_pos = max(float(y1), np.finfo(float).tiny)
+            dy = np.log10(y1_pos) - np.log10(y0_pos)
+            y1_new = 10 ** (np.log10(y1_pos) + dy * 0.10)
+            ax.set_ylim(y0_pos, y1_new)
         else:
-            # Downward expansion by 8% of the current range
+            # Upward expansion by 10% of the current range
             rng = float(y1) - float(y0)
             if rng <= 0:
                 rng = abs(float(y1)) if float(y1) != 0 else 1.0
-            y0_new = float(y0) - 0.08 * rng
-            ax.set_ylim(y0_new, y1)
+            y1_new = float(y1) + 0.10 * rng
+            ax.set_ylim(y0, y1_new)
         leg.remove()
     # Fallback: smaller font and "best" location
-    leg = ax.legend(loc="best", fontsize=font_small, frameon=True, title=title)
+    leg = ax.legend(loc="best", fontsize=font_small, frameon=True)
     fig.canvas.draw()
 
 
@@ -581,7 +645,19 @@ def main():
     ap.add_argument("--loglog", action="store_true", help="Also save log-log versions of the curve plots to <outdir>/../log_output_plots (or <parent_dir>/log_output_plots).")
     ap.add_argument("--legend_mode", type=int, choices=[1, 2], default=1,
                     help="Legend rendering mode: 1=draw on plot (default), 2=save legend as separate PNG")
+    ap.add_argument(
+        "--vector_format",
+        "--vector_fromat",  # common typo alias
+        dest="vector_format",
+        type=str,
+        default=None,
+        choices=["svg", "pdf", "eps"],
+        help="Also export vector copies of plots (svg/pdf/eps) alongside PNG outputs.",
+    )
     args = ap.parse_args()
+    # Warn if user used the common typo flag name.
+    if "--vector_fromat" in " ".join(os.sys.argv):
+        print("[WARN] You used --vector_fromat (typo). It is accepted, but prefer --vector_format.")
 
     parent_dir = os.path.abspath(os.path.expanduser(args.parent_dir))
     outdir = os.path.abspath(os.path.expanduser(args.outdir)) if args.outdir else os.path.join(parent_dir, "output_plots")
@@ -669,13 +745,14 @@ def main():
         if use_loglog:
             ax.set_xscale('log')
             ax.set_yscale('log')
+        _pad_ylim_bottom(ax, frac=0.24)
         _apply_label_wrap(ax)
         _ensure_axis_labels_fit(fig, ax)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         # Legend handling
         if args.legend_mode == 1:
-            _place_legend_no_overlap(fig, ax, prefer=legend_loc, title="Porosity", legend_mode=args.legend_mode)
+            _place_legend_no_overlap(fig, ax, prefer=legend_loc, legend_mode=args.legend_mode)
         else:
             # Remove any legend, save legend separately after plot is saved
             pass
@@ -688,11 +765,11 @@ def main():
         if normalized and "_normalized" not in base:
             base += "_normalized"
         out = os.path.join(out_base_dir, f"{base}{loglog_suffix}{suffix}{ext}")
-        fig.savefig(out, dpi=SAVE_DPI, bbox_inches="tight", transparent=True)
+        _save_plot(fig, out, vector_format=args.vector_format)
         # Save legend separately if legend_mode==2
         if args.legend_mode == 2:
             legend_out = os.path.join(out_base_dir, f"{base}{loglog_suffix}{suffix}_legend.png")
-            _save_legend_only(fig, ax, legend_out, title="Porosity")
+            _save_legend_only(fig, ax, legend_out, title=None)
         plt.close(fig)
         print("[OK]", out)
 
@@ -742,13 +819,17 @@ def main():
         if use_loglog:
             ax.set_xscale('log')
             ax.set_yscale('log')
+        _pad_ylim_bottom(ax, frac=0.24)
+        # Add headroom so the in-axes legend can sit above curves without crowding
+        if args.legend_mode == 1:
+            _pad_ylim_for_legend(ax, frac=0.25)
         _apply_label_wrap(ax)
         _ensure_axis_labels_fit(fig, ax)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         legend_loc = 'upper right'
         if args.legend_mode == 1:
-            _place_legend_no_overlap(fig, ax, prefer=legend_loc, title="Porosity", legend_mode=args.legend_mode)
+            _place_legend_no_overlap(fig, ax, prefer=legend_loc, legend_mode=args.legend_mode)
         else:
             pass
         _finalize_layout(fig, ax, top=0.88)
@@ -759,10 +840,10 @@ def main():
         if not base.endswith("_normalized"):
             base += "_normalized"
         out = os.path.join(out_base_dir, f"{base}{loglog_suffix}{suffix}{ext}")
-        fig.savefig(out, dpi=SAVE_DPI, bbox_inches="tight", transparent=True)
+        _save_plot(fig, out, vector_format=args.vector_format)
         if args.legend_mode == 2:
             legend_out = os.path.join(out_base_dir, f"{base}{loglog_suffix}{suffix}_legend.png")
-            _save_legend_only(fig, ax, legend_out, title="Porosity")
+            _save_legend_only(fig, ax, legend_out, title=None)
         plt.close(fig)
         print("[OK]", out)
 
@@ -818,6 +899,7 @@ def main():
         if use_loglog:
             ax.set_xscale('log')
             ax.set_yscale('log')
+        _pad_ylim_bottom(ax, frac=0.24)
         _apply_label_wrap(ax)
         _ensure_axis_labels_fit(fig, ax)
         ax.spines["top"].set_visible(False)
@@ -831,7 +913,7 @@ def main():
         # Add _normalized to filename if normalized
         norm_suffix = "_normalized" if normalize else ""
         out1 = os.path.join(run_dir, f"k_eff_vs_time{norm_suffix}{loglog_suffix}{'_'+theme if len(themes)>1 else ''}.png")
-        fig.savefig(out1, dpi=SAVE_DPI, bbox_inches="tight", transparent=True)
+        _save_plot(fig, out1, vector_format=args.vector_format)
         if args.legend_mode == 2:
             legend_out = os.path.join(run_dir, f"k_eff_vs_time{norm_suffix}{loglog_suffix}{'_'+theme if len(themes)>1 else ''}_legend.png")
             _save_legend_only(fig, ax, legend_out, title=r"$k_{xx}$/$k_{yy}$")
@@ -870,6 +952,10 @@ def main():
                 if use_loglog:
                     ax2.set_xscale('log')
                     ax2.set_yscale('log')
+                _pad_ylim_bottom(ax2, frac=0.24)
+                # Add headroom so the legend in the upper right doesn't crowd the curves
+                if args.legend_mode == 1:
+                    _pad_ylim_for_legend(ax2, frac=0.30)
                 _apply_label_wrap(ax2)
                 _ensure_axis_labels_fit(fig2, ax2)
                 ax2.spines["top"].set_visible(False)
@@ -882,7 +968,7 @@ def main():
                 loglog_suffix = "_loglog" if use_loglog else ""
                 # Always append _normalized to filename for these plots
                 out2 = os.path.join(run_dir, f"k_eff_vs_norm_SSA_normalized{loglog_suffix}{'_'+theme if len(themes)>1 else ''}.png")
-                fig2.savefig(out2, dpi=SAVE_DPI, bbox_inches="tight", transparent=True)
+                _save_plot(fig2, out2, vector_format=args.vector_format)
                 if args.legend_mode == 2:
                     legend_out = os.path.join(run_dir, f"k_eff_vs_norm_SSA_normalized{loglog_suffix}{'_'+theme if len(themes)>1 else ''}_legend.png")
                     _save_legend_only(fig2, ax2, legend_out, title=r"$k_{xx}$/$k_{yy}$")

@@ -1,4 +1,5 @@
 #include "snes_convergence.h"
+#include <petscstring.h>
 
 PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm, 
   PetscReal gnorm, PetscReal fnorm, SNESConvergedReason *reason, void *cctx)
@@ -9,9 +10,9 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
 
     // Define vectors for residual, solution, and solution update
     Vec Res, Sol, Sol_upd;
-    PetscInt i, dof=user->iga->dof;
-    PetscScalar n2dof[dof], sol_n2dof[dof], sol_update_n2dof[dof];      // Norms of the residual vector components
-    PetscScalar solv, solupdv;                                          // Norms of the solution and update vector
+    PetscInt  i, dof = user->iga->dof;
+    PetscReal n2dof[dof], sol_n2dof[dof], sol_update_n2dof[dof];  /* component-wise 2-norms */
+    PetscReal solv = 0.0, solupdv = 0.0;                          /* norms for DOF 2 when flag_tIC==1 */
 
     // Retrieve the residual vector from SNES and compute its component norms.
     ierr = SNESGetFunction(snes, &Res, 0, 0);CHKERRQ(ierr);
@@ -20,21 +21,16 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
     ierr = SNESGetSolution(snes, &Sol);CHKERRQ(ierr);
     ierr = SNESGetSolutionUpdate(snes, &Sol_upd);CHKERRQ(ierr);
 
-    // For debugging: print the norm of the solution update vector.
-    PetscReal upd_norm;
-    ierr = VecNorm(Sol_upd, NORM_2, &upd_norm);CHKERRQ(ierr);
-
+    /* Compute per-DOF norms of the solution and the solution update */
     for (i = 0; i < dof; i++) {
-        ierr = VecStrideNorm(Sol, i, NORM_2, &sol_n2dof[i]);CHKERRQ(ierr);
+        ierr = VecStrideNorm(Sol,     i, NORM_2, &sol_n2dof[i]);CHKERRQ(ierr);
         ierr = VecStrideNorm(Sol_upd, i, NORM_2, &sol_update_n2dof[i]);CHKERRQ(ierr);
     }
 
-    // If temperature-dependent initial conditions are active, compute solution and update norms.
-    if (user->flag_tIC == 1) {
-        ierr = SNESGetSolution(snes, &Sol);CHKERRQ(ierr);
-        ierr = SNESGetSolutionUpdate(snes, &Sol_upd);CHKERRQ(ierr);
-        ierr = VecStrideNorm(Sol, 2, NORM_2, &solv);CHKERRQ(ierr);  // Norm of DOF 2 solution
-        ierr = VecStrideNorm(Sol_upd, 2, NORM_2, &solupdv);CHKERRQ(ierr); // Norm of DOF 2 update
+    /* Optional special-case print helpers for DOF 2 */
+    if (user->flag_tIC == 1 && dof > 2) {
+        solv   = sol_n2dof[2];
+        solupdv = sol_update_n2dof[2];
     }
 
     // Store initial residual norms at the first iteration for relative convergence checks.
@@ -42,30 +38,95 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
         for (i = 0; i < dof; i++) {
             user->norm0[i] = n2dof[i];
             sol_n2dof[i] = sol_update_n2dof[i];
+            if (user->norm0[i] < 1.0e-30) user->norm0[i] = 1.0;  /* prevent division by zero later */
         }
-        if (user->flag_tIC == 1) solupdv = solv;  // Initialize update norm to solution norm.
     }
 
-    // Print iteration information and norm values for debugging.
-    PetscPrintf(PETSC_COMM_WORLD, "    IT_NUMBER: %d ", it_number);
-    PetscPrintf(PETSC_COMM_WORLD, "    fnorm: %.4e \n", fnorm);
+    // Print iteration information and norm values (readable, aligned table)
+    // Use identical fixed-width fields for header and data so columns line up.
+    // (Assumes a monospaced terminal output.)
 
-    for (i = 0; i < dof; i++) {
+    // Column widths must match the data-row format below
+    const PetscInt W_IT    = 2;
+    const PetscInt W_FNORM = 11;
+    const PetscInt W_N     = 11;
+    const PetscInt W_R     = 9;
+    const PetscInt W_S     = 9;
+
+    // Build the header using the SAME field widths as the data row
+    if (it_number == 0) {
+        // Total printed width of the table line (excluding the trailing newline)
+        // 4 spaces indent + (it) + 1 space + '|' separators and spaces
+        // We compute this from the literal header we print.
+        char header_line[512];
+        PetscInt nchar = 0;
+
+        PetscSNPrintf(header_line, sizeof(header_line),
+                      "    %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s",
+                      (int)W_IT,    "it",
+                      (int)W_FNORM, "fnorm",
+                      (int)W_N,     "n0",
+                      (int)W_R,     "r0",
+                      (int)W_S,     "s0",
+                      (int)W_N,     "n1",
+                      (int)W_R,     "r1",
+                      (int)W_S,     "s1",
+                      (int)W_N,     "n2",
+                      (int)W_R,     "r2",
+                      (int)W_S,     "s2");
+
+        PetscStrlen(header_line, (size_t*)&nchar);
+
+        PetscPrintf(PETSC_COMM_WORLD, "    SNES DOF norms (2-norm) and ratios\n");
+        // Print full-width separator lines matching the header length
+        PetscPrintf(PETSC_COMM_WORLD, "    %.*s\n", (int)nchar,
+                    "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+        PetscPrintf(PETSC_COMM_WORLD, "%s\n", header_line);
+        PetscPrintf(PETSC_COMM_WORLD, "    %.*s\n", (int)nchar,
+                    "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    }
+
+    // Compute per-DOF relative residual and step ratios (limit to first 3 DOFs)
+    PetscReal rel[3]  = {0.0, 0.0, 0.0};
+    PetscReal step[3] = {0.0, 0.0, 0.0};
+    PetscInt  nd_print = (dof < 3) ? dof : 3;
+
+    for (i = 0; i < nd_print; i++) {
+        rel[i] = (user->norm0[i] > 0.0) ? (n2dof[i] / user->norm0[i]) : 0.0;
+
+        // step = ||dX|| / ||X|| (per DOF), with DOF-2 special-case for flag_tIC
         if (user->flag_tIC == 1 && i == 2) {
-            PetscPrintf(PETSC_COMM_WORLD, "    x%d: %.2e s%d %.1e    ", i, n2dof[i], i, solupdv);
+            step[i] = (solv > 0.0) ? (solupdv / solv) : 0.0;
         } else {
-            PetscPrintf(PETSC_COMM_WORLD, "    n%d: %.2e r%d %.1e    ", i, n2dof[i], i, n2dof[i] / user->norm0[i]);
+            step[i] = (sol_n2dof[i] > 0.0) ? (sol_update_n2dof[i] / sol_n2dof[i]) : 0.0;
         }
     }
-    PetscPrintf(PETSC_COMM_WORLD, "\n");
+
+    // One compact, aligned line per nonlinear iteration
+    PetscPrintf(PETSC_COMM_WORLD,
+                "    %*d | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e\n",
+                (int)W_IT,    (int)it_number,
+                (int)W_FNORM, 4, (double)fnorm,
+                (int)W_N,     3, (double)((nd_print > 0) ? n2dof[0] : 0.0),
+                (int)W_R,     3, (double)((nd_print > 0) ? rel[0]  : 0.0),
+                (int)W_S,     3, (double)((nd_print > 0) ? step[0] : 0.0),
+                (int)W_N,     3, (double)((nd_print > 1) ? n2dof[1] : 0.0),
+                (int)W_R,     3, (double)((nd_print > 1) ? rel[1]  : 0.0),
+                (int)W_S,     3, (double)((nd_print > 1) ? step[1] : 0.0),
+                (int)W_N,     3, (double)((nd_print > 2) ? n2dof[2] : 0.0),
+                (int)W_R,     3, (double)((nd_print > 2) ? rel[2]  : 0.0),
+                (int)W_S,     3, (double)((nd_print > 2) ? step[2] : 0.0));
+
+    // Print a footer when we are about to return converged (i.e., last line before convergence report)
+    // NOTE: we don't know convergence yet at this point, so we don't print the footer here.
 
     // Retrieve SNES solver tolerances (absolute, relative, step-size)
     PetscScalar atol, rtol, stol;
     PetscInt maxit, maxf;
     ierr = SNESGetTolerances(snes, &atol, &rtol, &stol, &maxit, &maxf);CHKERRQ(ierr);
+    *reason = SNES_CONVERGED_ITERATING;
 
     if (it_number < 3) {
-        *reason = SNES_CONVERGED_ITERATING;
         PetscFunctionReturn(0);
     }
 
@@ -74,28 +135,21 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
         rtol *= 10.0;
     }
 
-    // Convergence check based on flag_it0 setting
-    if (user->flag_it0 == 1) {
-        atol = 1.0e-12;  // Set absolute tolerance
-    } else {
-        atol = 1.0e-20;  // More strict absolute tolerance
-    }
-
     PetscBool conv_rel[3], conv_abs[3], conv_stol[3], conv_dof[3];
-    PetscInt  d;
+    PetscInt  d, nd = (dof < 3) ? dof : 3;
 
     /* Evaluate convergence criteria per DOF */
-    for (d = 0; d < 3; d++) {
+    for (d = 0; d < nd; d++) {
         conv_rel[d]  = (n2dof[d] <= rtol * user->norm0[d]) ? PETSC_TRUE : PETSC_FALSE;
         conv_abs[d]  = (n2dof[d] < atol)                   ? PETSC_TRUE : PETSC_FALSE;
-        conv_stol[d] = (sol_update_n2dof[d] <= stol * n2dof[d]) ? PETSC_TRUE : PETSC_FALSE;
+        conv_stol[d] = (sol_update_n2dof[d] <= stol * sol_n2dof[d]) ? PETSC_TRUE : PETSC_FALSE;
 
         /* SAME logic as your original OR condition */
         conv_dof[d] = (conv_rel[d] || conv_abs[d] || conv_stol[d]) ? PETSC_TRUE : PETSC_FALSE;
     }
 
     /* SAME logic as your original AND condition */
-    if (conv_dof[0] && conv_dof[1] && conv_dof[2]) {
+    if (nd == 3 && conv_dof[0] && conv_dof[1] && conv_dof[2]) {
 
     PetscPrintf(PETSC_COMM_WORLD,
                 "  SNES converged via DOF-wise criteria:\n");
@@ -116,12 +170,11 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
     *reason = SNES_CONVERGED_FNORM_RELATIVE;
     }
 
-    //  // Check for convergence using relative and absolute norms
-    // if ((n2dof[0] <= rtol * user->norm0[0] || sol_update_n2dof[0] <= stol * sol_n2dof[0] || n2dof[0] < atol) &&
-    //     (n2dof[1] <= rtol * user->norm0[1] || sol_update_n2dof[1] <= stol * sol_n2dof[1] || n2dof[1] < atol) &&
-    //     (n2dof[2] <= rtol * user->norm0[2] || sol_update_n2dof[2] <= stol * sol_n2dof[2] || n2dof[2] < atol)) {
-    //     *reason = SNES_CONVERGED_FNORM_RELATIVE;
-    // }
+    if (*reason == SNES_CONVERGED_ITERATING) {
+        /* already iterating */
+    }
+    /* If we didn’t set a converged reason above, keep iterating */
+    if (*reason == 0) *reason = SNES_CONVERGED_ITERATING;
 
     PetscFunctionReturn(0);  // Exit function safely.
 }

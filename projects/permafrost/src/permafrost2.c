@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     user.flag_tIC   = 0;        /* Initial condition flag */
     user.readFlag   = 0;        /* Flag to read ice grains from file (UPDATE IMPLEMENTATION!) */
 
-    user.flag_Tdep  = 1;        /* Temperature-dependent Gibbs-Thomson parameters */
+    user.flag_Tdep  = 0;        /* Temperature-dependent Gibbs-Thomson parameters */
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
     user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
 
@@ -170,6 +170,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_sedgrav", "Sediment gravity flag", "", flag_sedgrav, &flag_sedgrav, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_BC_Tfix", "Temperature BC flag", "", flag_BC_Tfix, &flag_BC_Tfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_BC_rhovfix", "Vapor density BC flag", "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
 
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);
@@ -210,6 +211,8 @@ int main(int argc, char *argv[]) {
 
     /* --- Capillarly neck parameters ------------------------------------- */
     ierr = PetscOptionsReal("-R1", "Radius of capillary neck", "", user.R1, &user.R1, NULL); CHKERRQ(ierr);
+
+    /* --- Flags ---------------------------------------------------------- */
 
     PetscOptionsEnd();
 
@@ -358,7 +361,8 @@ int main(int argc, char *argv[]) {
 
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
-    ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
+    // ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
+    ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
 
     /* Boundary conditions (could 'functionalize' this at some point) */
     // Set vapor density BCs

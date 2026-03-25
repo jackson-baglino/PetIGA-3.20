@@ -548,8 +548,8 @@ void InitializeUserContext(AppCtx *user) {
   user->rho_air    = 1.341;      // kg/m³
 
   // Discretization order and continuity
-  user->p = 1; // Polynomial order
-  user->C = 0; // Inter-element continuity
+  user->p = 2; // Polynomial order
+  user->C = 1; // Inter-element continuity
 }
 
 /*------------------------------------------------------------------------------
@@ -1203,7 +1203,7 @@ int main(int argc, char *argv[]) {
     ierr = SetupIGA(&user, &iga); CHKERRQ(ierr); // Create and set up the IGA object
     user.iga = iga;
 
-    PetscInt num_files_analyze = 50;
+    PetscInt num_files_analyze = num_files;
     if (num_files < num_files_analyze) {
       num_files_analyze = num_files;
     }
