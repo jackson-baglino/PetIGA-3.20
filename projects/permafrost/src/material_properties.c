@@ -284,28 +284,53 @@ void Fwat(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fwat,
  * @param fair Pointer to store the computed phase function for air.
  * @param dfair_ice Pointer to store the derivative of fair with respect to ice.
  */
-void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair, 
+// void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair, 
+//           PetscScalar *dfair_ice)
+// {
+//     // Retrieve material parameters from user context
+//     PetscReal Lambd = user->Lambd;
+//     PetscReal etaa  = user->Etaa;
+
+//     // Compute the air fraction
+//     PetscReal air = 1.0 - met - ice;
+
+//     // Compute the phase evolution function for the air phase
+//     if (fair) 
+//         (*fair) = etaa * air * (1.0 - air) * (1.0 - 2.0 * air) + 
+//                   2.0 * Lambd * ice * ice * met * met * air;
+
+//     // Compute the derivative with respect to the ice fraction
+//     if (dfair_ice) {
+//         (*dfair_ice)  = -etaa * (1.0 - air) * (1.0 - 2.0 * air) 
+//                       + etaa * air * (1.0 - 2.0 * air) 
+//                       + etaa * air * (1.0 - air) * 2.0;
+//         (*dfair_ice) += 2.0 * Lambd * 2.0 * ice * met * met * air 
+//                       - 2.0 * Lambd * ice * ice * met * met;
+//     }
+
+//     return;
+// }
+// Note: This Fair function is for no Lagrange multiplier
+void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair,
           PetscScalar *dfair_ice)
 {
-    // Retrieve material parameters from user context
     PetscReal Lambd = user->Lambd;
     PetscReal etaa  = user->Etaa;
-
-    // Compute the air fraction
     PetscReal air = 1.0 - met - ice;
 
-    // Compute the phase evolution function for the air phase
-    if (fair) 
-        (*fair) = etaa * air * (1.0 - air) * (1.0 - 2.0 * air) + 
-                  2.0 * Lambd * ice * ice * met * met * air;
+    if (fair)
+        (*fair) = etaa * air*(1.0-air)*(1.0-2.0*air)
+                + 2.0*Lambd * ice*ice * met*met * air;
 
-    // Compute the derivative with respect to the ice fraction
     if (dfair_ice) {
-        (*dfair_ice)  = -etaa * (1.0 - air) * (1.0 - 2.0 * air) 
-                      + etaa * air * (1.0 - 2.0 * air) 
-                      + etaa * air * (1.0 - air) * 2.0;
-        (*dfair_ice) += 2.0 * Lambd * 2.0 * ice * met * met * air 
-                      - 2.0 * Lambd * ice * ice * met * met;
+        // Double-well part: d/dphi_i of etaa*phi_a*(1-phi_a)*(1-2*phi_a)
+        // Chain rule: dphi_a/dphi_i = -1, so result is -etaa*(1 - 6*air + 6*air^2)
+        (*dfair_ice) = -etaa * (1.0 - 6.0*air + 6.0*air*air);
+
+        // Lambda part: d/dphi_i of 2*Lambda*phi_i^2 * phi_s^2 * phi_a
+        // Two contributions: direct d/d(phi_i^2) term, and chain rule through phi_a
+        (*dfair_ice) += 4.0*Lambd * ice * met*met * air   // direct: 2*Lambda * 2*phi_i * phi_s^2 * phi_a
+                      - 2.0*Lambd * ice*ice * met*met;    // chain:  2*Lambda * phi_i^2 * phi_s^2 * (-1)
     }
 
     return;
