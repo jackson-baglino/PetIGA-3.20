@@ -153,7 +153,7 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscReal Etai = user->Etai;
     PetscReal Etam = user->Etam;
     PetscReal Etaa = user->Etaa;
-    PetscReal ETA = Etaa * Etai + Etaa * Etam + Etam * Etai;
+    // PetscReal ETA = Etaa * Etai + Etaa * Etam + Etam * Etai;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
     PetscReal air_lim = user->air_lim;
@@ -186,17 +186,17 @@ PetscErrorCode Residual(IGAPoint pnt,
     }
 
     // Initialize sediment phase fraction based on grain locations
-    PetscReal met = 0.0;
-    for (aa = 0; aa < 2; aa++) {
-        dist = 0.0;
-        for (PetscInt l = 0; l < user->dim; l++) {
-            dist += SQ(Coord[l] - cent_sed[l][aa]);
-        }
-        dist = sqrt(dist);
-        met += 0.5 - 0.5 * tanh(0.5 / eps * (dist - rad_sed));
-    }
-    if (met > 1.0) met = 1.0;
-    if  (met < 0.0) met = 0.0;
+    // PetscReal met = 0.0;
+    // for (aa = 0; aa < 2; aa++) {
+    //     dist = 0.0;
+    //     for (PetscInt l = 0; l < user->dim; l++) {
+    //         dist += SQ(Coord[l] - cent_sed[l][aa]);
+    //     }
+    //     dist = sqrt(dist);
+    //     met += 0.5 - 0.5 * tanh(0.5 / eps * (dist - rad_sed));
+    // }
+    // if (met > 1.0) met = 1.0;
+    // if  (met < 0.0) met = 0.0;
 
     // Compute the global index of the current Gauss point
     PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
@@ -212,7 +212,7 @@ PetscErrorCode Residual(IGAPoint pnt,
     }
 
     // Sediment phase fraction
-    // PetscReal met = user->Phi_sed[indGP];
+    PetscReal met = user->Phi_sed[indGP];
 
     // Boundary condition handling (if applicable)
     if (pnt->atboundary) {
@@ -288,7 +288,8 @@ PetscErrorCode Residual(IGAPoint pnt,
             // Phase field residual
             R_ice = N0[a] * ice_t;
             for (l = 0; l < dim; l++) R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-            R_ice += N0[a] * mob * 3.0 / eps / ETA * ((Etam + Etaa) * fice - Etaa * fmet - Etam * fair);
+            // R_ice += N0[a] * mob * 3.0 / eps / ETA * ((Etam + Etaa) * fice - Etaa * fmet - Etam * fair);
+            R_ice += N0[a] * mob * 3.0 / eps * (fice - ice);
             // R_ice -= N0[a] * alph_sub * ice * ice * air * air * (rhov - rhoI_vs) / rho_ice;
 
             // Energy equation residual (temperature)
@@ -330,7 +331,7 @@ PetscErrorCode Jacobian(IGAPoint pnt,
   PetscReal Etai = user->Etai;
   PetscReal Etam = user->Etam;
   PetscReal Etaa = user->Etaa;
-  PetscReal ETA = Etaa*Etai + Etaa*Etam + Etam*Etai; 
+//   PetscReal ETA = Etaa*Etai + Etaa*Etam + Etam*Etai; 
   PetscReal rho_ice = user->rho_ice;
   PetscReal lat_sub = user->lat_sub;
   PetscReal air_lim = user->air_lim;
@@ -421,7 +422,8 @@ PetscErrorCode Jacobian(IGAPoint pnt,
             //ice
             J[a][0][b][0] += shift*N0[a]*N0[b];
             for(l=0;l<dim;l++) J[a][0][b][0] += 3.0*mob*eps*(N1[a][l]*N1[b][l]);
-            J[a][0][b][0] += N0[a]*mob*3.0/eps/ETA*((Etam+Etaa)*fice_ice - Etaa*fmet_ice - Etam*fair_ice)*N0[b];
+            // J[a][0][b][0] += N0[a]*mob*3.0/eps/ETA*((Etam+Etaa)*fice_ice - Etaa*fmet_ice - Etam*fair_ice)*N0[b];
+            J[a][0][b][0] += N0[a]*mob*3.0/eps/Etai*(fice_ice - fair_ice)*N0[b];
             J[a][0][b][0] -= N0[a]*alph_sub*2.0*ice*N0[b]*air*air*(rhov-rhoI_vs)/rho_ice;
             J[a][0][b][0] += N0[a]*alph_sub*ice*ice*2.0*air*N0[b]*(rhov-rhoI_vs)/rho_ice;
             J[a][0][b][1] += N0[a]*alph_sub*ice*ice*air*air*drhoI_vs*N0[b]/rho_ice;
