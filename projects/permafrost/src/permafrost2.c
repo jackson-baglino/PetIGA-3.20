@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     user.xi_T       = 1.0e-4;   /* Time scaling parameter for temperature */
     user.flag_xiT   = 1;        /* Flag for temperature */
 
-    user.Lambd      = 3.0;      /* Model parameter Lambda */
+    user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC  = 10;       /* Number of initial condition steps (???) */
 

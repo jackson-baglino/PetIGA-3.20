@@ -517,8 +517,22 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
                       + user->grad_temp0[0] * (x - 0.5 * user->Lx)
                       + user->grad_temp0[1] * (y - 0.5 * user->Ly);
         PetscScalar rho_vs, temp = u[j][i].tem;
+
         RhoVS_I(user, temp, &rho_vs, NULL);
-        u[j][i].rhov = user->hum0 * rho_vs;
+        PetscReal sed_node = 0.0;
+        for (aa = 0; aa < 2; aa++) {
+            dist = sqrt(SQ(x - cent_sed[0][aa]) + SQ(y - cent_sed[1][aa]));
+            sed_node += 0.5 - 0.5 * tanh(0.5 / user->eps * (dist - rad_sed));
+        }
+        if (sed_node > 1.0) sed_node = 1.0;
+        if (sed_node < 0.0) sed_node = 0.0;
+
+        PetscReal air_node = 1.0 - ice_grain - sed_node;
+        if (air_node < 0.0) air_node = 0.0;
+
+        u[j][i].rhov = user->hum0 * rho_vs * air_node;
+        // RhoVS_I(user, temp, &rho_vs, NULL);
+        // u[j][i].rhov = user->hum0 * rho_vs * (1 - ice_grain);
       }
     }
     ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
