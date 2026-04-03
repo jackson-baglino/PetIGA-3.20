@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     user.xi_T       = 1.0e-4;   /* Time scaling parameter for temperature */
     user.flag_xiT   = 1;        /* Flag for temperature */
 
-    user.Lambd      = 1.0;      /* Model parameter Lambda */
+    user.Lambd      = 0.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC  = 10;       /* Number of initial condition steps (???) */
 
@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
     PetscInt  p   = 1;          /* Polynomial order */
     PetscInt  C   = 0;          /* Global continuity order */
 
+    PetscInt  dof = 3;          /* Degrees of freedom per node (ice, temperature, vapor) */
     PetscInt  dim = 2;          /* Problem dimension (2D or 3D) */
 
     PetscInt  Nx  = 64;         /* Number of elements in x direction */
@@ -126,6 +127,8 @@ int main(int argc, char *argv[]) {
 
     PetscOptionsBegin(PETSC_COMM_WORLD, "", "Permafrost options", "IGA");
     /* --- Geometry & discretization --------------------------------------- */
+
+    ierr = PetscOptionsInt("-dof", "Degrees of freedom per node", "", dof, &dof, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-dim", "Problem dimension (2 or 3)", "", dim, &dim, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-Nx", "Number of elements in x direction", "", Nx, &Nx, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-Ny", "Number of elements in y direction", "", Ny, &Ny, NULL); CHKERRQ(ierr);
@@ -220,6 +223,7 @@ int main(int argc, char *argv[]) {
     user.p = p;
     user.C = C;
     user.dim = dim;
+    user.dof = dof;
     user.Nx = Nx;
     user.Ny = Ny;
     user.Nz = Nz;
@@ -319,7 +323,7 @@ int main(int argc, char *argv[]) {
     IGA iga;
     ierr = IGACreate(PETSC_COMM_WORLD, &iga); CHKERRQ(ierr);
     ierr = IGASetDim(iga, dim); CHKERRQ(ierr);
-    ierr = IGASetDof(iga, 3); CHKERRQ(ierr);
+    ierr = IGASetDof(iga, dof); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 0, "phaseice"); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 1, "temperature"); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 2, "vap_density"); CHKERRQ(ierr);
@@ -353,9 +357,11 @@ int main(int argc, char *argv[]) {
         nmb = nmb * iga->elem_width[2] * (p + 1);
     }
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.Phi_sed); CHKERRQ(ierr);
+    ierr = PetscMalloc(sizeof(PetscReal) * nmb * dim, &user.grad_Phi_sed); CHKERRQ(ierr);
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.alph);    CHKERRQ(ierr);
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);     CHKERRQ(ierr);
     ierr = PetscMemzero(user.Phi_sed, sizeof(PetscReal) * nmb); CHKERRQ(ierr);
+    ierr = PetscMemzero(user.grad_Phi_sed, sizeof(PetscReal) * nmb * dim); CHKERRQ(ierr);
     ierr = PetscMemzero(user.alph,    sizeof(PetscReal) * nmb); CHKERRQ(ierr);
     ierr = PetscMemzero(user.mob,     sizeof(PetscReal) * nmb); CHKERRQ(ierr);
 
@@ -500,6 +506,7 @@ int main(int argc, char *argv[]) {
 
     // Free allocated memory for sediment phase and parameters
     ierr = PetscFree(user.Phi_sed); CHKERRQ(ierr);
+    ierr = PetscFree(user.grad_Phi_sed); CHKERRQ(ierr);
     ierr = PetscFree(user.alph); CHKERRQ(ierr);
     ierr = PetscFree(user.mob); CHKERRQ(ierr);
 

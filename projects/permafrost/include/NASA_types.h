@@ -74,6 +74,7 @@ typedef struct {
   PetscInt p;  // Polynomial degree of basis functions (for IGA)
   PetscInt C;  // Continuity of basis functions
   PetscInt dim;  // Spatial dimension of the problem (2D or 3D)
+  PetscInt dof;  // Degrees of freedom per node (e.g., ice, temperature, vapor)
   PetscInt periodic;  // Periodicity flag (0 = non-periodic, 1 = periodic boundaries)
 
   // Time stepping parameters
@@ -87,6 +88,7 @@ typedef struct {
 
   // Arrays for field variables
   PetscReal *Phi_sed;  // Phase field for sediment grains
+  PetscReal *grad_Phi_sed;  // Gradient of sediment phase field
   PetscReal *alph;  // Alpha field, possibly phase fraction or related property
   PetscReal *mob;  // Mobility field, spatially varying
 

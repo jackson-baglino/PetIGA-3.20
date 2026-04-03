@@ -11,12 +11,14 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscInt l, dim = user->dim;
     PetscReal eps     = user->eps;
     PetscReal Etai    = user->Etai;
+    PetscReal Etaa    = user->Etaa;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
     PetscReal air_lim = user->air_lim;
     PetscReal xi_v    = user->xi_v;
     PetscReal xi_T    = user->xi_T;
     PetscReal rhoSE   = rho_ice;
+    PetscReal lambda  = user->Lambd;
 
     PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
 
@@ -29,7 +31,11 @@ PetscErrorCode Residual(IGAPoint pnt,
         alph_sub = user->alph_sub;
     }
 
-    PetscReal met = user->Phi_sed[indGP];
+    // Sediment phase and its gradient — precomputed during initialization
+    PetscReal sed = user->Phi_sed[indGP];
+    PetscReal grad_sed[dim];
+    for (l = 0; l < dim; l++)
+        grad_sed[l] = user->grad_Phi_sed[indGP*dim + l];
 
     if (pnt->atboundary) return 0;
 
@@ -43,7 +49,7 @@ PetscErrorCode Residual(IGAPoint pnt,
     for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
 
     // Air: algebraic from constraint, no independent evolution equation
-    PetscScalar air   = 1.0 - met - ice;
+    PetscScalar air   = 1.0 - sed - ice;
     PetscScalar air_t = -ice_t;
 
     PetscScalar tem   = sol[1], tem_t = sol_t[1];
@@ -55,13 +61,13 @@ PetscErrorCode Residual(IGAPoint pnt,
     for (l = 0; l < dim; l++) grad_rhov[l] = grad_sol[2][l];
 
     PetscReal thcond, cp, rho, difvap, rhoI_vs, fice, fair;
-    ThermalCond(user, ice, met, &thcond,  NULL);
-    HeatCap    (user, ice, met, &cp,      NULL);
-    Density    (user, ice, met, &rho,     NULL);
+    ThermalCond(user, ice, sed, &thcond,  NULL);
+    HeatCap    (user, ice, sed, &cp,      NULL);
+    Density    (user, ice, sed, &rho,     NULL);
     VaporDiffus(user, tem,      &difvap,  NULL);
     RhoVS_I    (user, tem,      &rhoI_vs, NULL);
-    Fice(user, ice, met, &fice, NULL);
-    Fair(user, ice, met, &fair, NULL);
+    Fice(user, ice, sed, &fice, NULL);
+    Fair(user, ice, sed, &fair, NULL);
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
@@ -72,8 +78,8 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscScalar air_eff = (air > air_lim) ? air : air_lim;
 
     // Sublimation localization: nonzero only at ice-air interface,
-    // suppressed at ice-sediment interface by (1-met)^2
-    PetscReal loc = ice*ice * air*air * (1.0 - met)*(1.0 - met);
+    // suppressed at ice-sediment interface by (1-sed)^2
+    PetscReal loc = ice*ice * (1 - ice - sed)*(1 - ice - sed);
 
     PetscScalar (*R)[3] = (PetscScalar (*)[3])Re;
     PetscInt a, nen = pnt->nen;
@@ -84,25 +90,55 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_ice = 0.0; R_tem = 0.0; R_vap = 0.0;
         } else {
 
-            // Ice: Allen-Cahn, no Lagrange multiplier
-            R_ice  = N0[a] * ice_t;
+            // Ice: Allen-Cahn with Lagrange multiplier to enfroce \phi_i_t + \phi_a_t = 0
+            PetscReal C = 3.0 * mob / (Etai + Etaa);
+            // PetscReal C = 3.0 * mob / Etai;
+
+            PetscReal fi = Etai * ice * (1.0-ice) * (1.0-2.0*ice)
+                        + 2.0*lambda * ice * sed*sed * air*air;
+
+            PetscReal fa = Etaa * air * (1.0-air) * (1.0-2.0*air)
+                        + 2.0*lambda * ice*ice * sed*sed * air;
+
+            PetscReal loc = ice*ice * air*air;
+
+            R_ice = N0[a] * ice_t;
+
+            // Gradient penalty — phi_i
             for (l = 0; l < dim; l++)
                 R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-            R_ice += N0[a] * mob * 3.0 / eps / Etai * (fice - fair);
-            R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+
+            // Gradient penalty — phi_s (known field, contributes through constraint)
+            for (l = 0; l < dim; l++)
+                R_ice += C * Etaa * eps * (N1[a][l] * grad_sed[l]);
+
+            // Bulk driving force
+            R_ice += N0[a] * C / eps * (fi - fa);
+
+            // Sublimation source — disabled pending vapor equation validation
+            // R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+
+            // Ice: Allen-Cahn, no Lagrange multiplier
+            // R_ice  = N0[a] * ice_t;
+            // for (l = 0; l < dim; l++)
+            //     R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+            // R_ice += N0[a] * mob * 3.0 / eps / Etai * (fice - fair);
+            // R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
             // Energy
-            R_tem  = rho * cp * N0[a] * tem_t;
-            for (l = 0; l < dim; l++)
-                R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
-            R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
+            R_tem  = N0[a] * tem_t;
+            // R_tem  = rho * cp * N0[a] * tem_t;
+            // for (l = 0; l < dim; l++)
+            //     R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
+            // R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
             // Vapor: time derivative and diffusion use air_eff to prevent
             // negative diffusion coefficient; source from phase change via rhoSE
-            R_vap  = N0[a] * air_eff * rhov_t;
-            for (l = 0; l < dim; l++)
-                R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-            R_vap -= xi_v * N0[a] * rhoSE * air_t;
+            R_vap  = N0[a] * rhov_t;
+            // R_vap  = N0[a] * air_eff * rhov_t;
+            // for (l = 0; l < dim; l++)
+            //     R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+            // R_vap -= xi_v * N0[a] * rhoSE * air_t;
         }
 
         R[a][0] = R_ice;
@@ -142,7 +178,7 @@ PetscErrorCode Jacobian(IGAPoint pnt,
         alph_sub = user->alph_sub;
     }
 
-    PetscReal met = user->Phi_sed[indGP];
+    PetscReal sed = user->Phi_sed[indGP];
 
     if (pnt->atboundary) return 0;
 
@@ -155,7 +191,7 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     PetscScalar grad_ice[dim];
     for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
 
-    PetscScalar air   = 1.0 - met - ice;
+    PetscScalar air   = 1.0 - sed - ice;
     PetscScalar air_t = -ice_t;
 
     PetscScalar tem   = sol[1], tem_t = sol_t[1];
@@ -169,20 +205,20 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     PetscReal thcond, dthcond_ice, cp, dcp_ice, rho, drho_ice;
     PetscReal difvap, d_difvap, rhoI_vs, drhoI_vs;
     PetscReal fice_ice, fair_ice;
-    ThermalCond(user, ice, met, &thcond,  &dthcond_ice);
-    HeatCap    (user, ice, met, &cp,      &dcp_ice);
-    Density    (user, ice, met, &rho,     &drho_ice);
+    ThermalCond(user, ice, sed, &thcond,  &dthcond_ice);
+    HeatCap    (user, ice, sed, &cp,      &dcp_ice);
+    Density    (user, ice, sed, &rho,     &drho_ice);
     VaporDiffus(user, tem,      &difvap,  &d_difvap);
     RhoVS_I    (user, tem,      &rhoI_vs, &drhoI_vs);
-    Fice(user, ice, met, NULL, &fice_ice);
-    Fair(user, ice, met, NULL, &fair_ice);
+    Fice(user, ice, sed, NULL, &fice_ice);
+    Fair(user, ice, sed, NULL, &fair_ice);
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
     IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
 
-    PetscReal loc      = ice*ice * air*air * (1.0-met)*(1.0-met);
-    PetscReal dloc_ice = (2.0*ice*air*air - 2.0*ice*ice*air) * (1.0-met)*(1.0-met);
+    PetscReal loc      = ice*ice * air*air * (1.0-sed)*(1.0-sed);
+    PetscReal dloc_ice = (2.0*ice*air*air - 2.0*ice*ice*air) * (1.0-sed)*(1.0-sed);
 
     PetscInt a, b, nen = pnt->nen;
     PetscScalar (*J)[3][nen][3] = (PetscScalar (*)[3][nen][3])Je;
@@ -201,41 +237,43 @@ PetscErrorCode Jacobian(IGAPoint pnt,
             J[a][0][b][2] -= N0[a] * alph_sub * loc * N0[b] / rho_ice;
 
             // Temperature
-            J[a][1][b][1] += shift * rho * cp * N0[a] * N0[b];
-            J[a][1][b][0] += drho_ice * N0[b] * cp * N0[a] * tem_t;
-            J[a][1][b][0] += rho * dcp_ice * N0[b] * N0[a] * tem_t;
-            for (l = 0; l < dim; l++)
-                J[a][1][b][0] += xi_T * dthcond_ice * N0[b] * (N1[a][l] * grad_tem[l]);
-            for (l = 0; l < dim; l++)
-                J[a][1][b][1] += xi_T * thcond * (N1[a][l] * N1[b][l]);
-            J[a][1][b][0] += xi_T * drho_ice * N0[b] * lat_sub * N0[a] * air_t;
-            J[a][1][b][0] -= xi_T * rho * lat_sub * N0[a] * shift * N0[b];
+            J[a][1][b][1] += shift * N0[a] * N0[b];
+            // J[a][1][b][1] += shift * rho * cp * N0[a] * N0[b];
+            // J[a][1][b][0] += drho_ice * N0[b] * cp * N0[a] * tem_t;
+            // J[a][1][b][0] += rho * dcp_ice * N0[b] * N0[a] * tem_t;
+            // for (l = 0; l < dim; l++)
+            //     J[a][1][b][0] += xi_T * dthcond_ice * N0[b] * (N1[a][l] * grad_tem[l]);
+            // for (l = 0; l < dim; l++)
+            //     J[a][1][b][1] += xi_T * thcond * (N1[a][l] * N1[b][l]);
+            // J[a][1][b][0] += xi_T * drho_ice * N0[b] * lat_sub * N0[a] * air_t;
+            // J[a][1][b][0] -= xi_T * rho * lat_sub * N0[a] * shift * N0[b];
 
             // Vapor — time derivative
-            if (air > air_lim) {
-                J[a][2][b][2] += N0[a] * air * shift * N0[b];
-                J[a][2][b][0] -= N0[a] * rhov_t * N0[b];
-            } else {
-                J[a][2][b][2] += N0[a] * air_lim * shift * N0[b];
-            }
+            J[a][2][b][2] += shift * N0[a] * N0[b];
+            // if (air > air_lim) {
+            //     J[a][2][b][2] += N0[a] * air * shift * N0[b];
+            //     J[a][2][b][0] -= N0[a] * rhov_t * N0[b];
+            // } else {
+            //     J[a][2][b][2] += N0[a] * air_lim * shift * N0[b];
+            // }
 
-            // Vapor — diffusion (air_eff in both branches, consistent with residual)
-            if (air > air_lim) {
-                for (l = 0; l < dim; l++)
-                    J[a][2][b][0] -= xi_v * difvap * (N1[a][l] * grad_rhov[l]) * N0[b];
-                for (l = 0; l < dim; l++)
-                    J[a][2][b][2] += xi_v * difvap * air * (N1[a][l] * N1[b][l]);
-                for (l = 0; l < dim; l++)
-                    J[a][2][b][1] += xi_v * d_difvap * N0[b] * air * (N1[a][l] * grad_rhov[l]);
-            } else {
-                for (l = 0; l < dim; l++)
-                    J[a][2][b][2] += xi_v * difvap * air_lim * (N1[a][l] * N1[b][l]);
-                for (l = 0; l < dim; l++)
-                    J[a][2][b][1] += xi_v * d_difvap * N0[b] * air_lim * (N1[a][l] * grad_rhov[l]);
-            }
+            // // Vapor — diffusion (air_eff in both branches, consistent with residual)
+            // if (air > air_lim) {
+            //     for (l = 0; l < dim; l++)
+            //         J[a][2][b][0] -= xi_v * difvap * (N1[a][l] * grad_rhov[l]) * N0[b];
+            //     for (l = 0; l < dim; l++)
+            //         J[a][2][b][2] += xi_v * difvap * air * (N1[a][l] * N1[b][l]);
+            //     for (l = 0; l < dim; l++)
+            //         J[a][2][b][1] += xi_v * d_difvap * N0[b] * air * (N1[a][l] * grad_rhov[l]);
+            // } else {
+            //     for (l = 0; l < dim; l++)
+            //         J[a][2][b][2] += xi_v * difvap * air_lim * (N1[a][l] * N1[b][l]);
+            //     for (l = 0; l < dim; l++)
+            //         J[a][2][b][1] += xi_v * d_difvap * N0[b] * air_lim * (N1[a][l] * grad_rhov[l]);
+            // }
 
-            // Vapor — source term: -xi_v * rhoSE * air_t = +xi_v * rhoSE * ice_t
-            J[a][2][b][0] += N0[a] * xi_v * rhoSE * shift * N0[b];
+            // // Vapor — source term: -xi_v * rhoSE * air_t = +xi_v * rhoSE * ice_t
+            // J[a][2][b][0] += N0[a] * xi_v * rhoSE * shift * N0[b];
         }
     }
 
@@ -252,13 +290,13 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
     IGAPointFormValue(pnt, U, &sol[0]);
 
     PetscReal ice  = sol[0];
-    PetscReal met  = user->Phi_sed[pnt->index + pnt->count * pnt->parent->index];
-    PetscReal air  = 1.0 - met - ice;
+    PetscReal sed  = user->Phi_sed[pnt->index + pnt->count * pnt->parent->index];
+    PetscReal air  = 1.0 - sed - ice;
     PetscReal temp = sol[1];
     PetscReal rhov = sol[2];
 
     S[0] = ice;
-    S[1] = SQ(air) * SQ(met) * SQ(ice);
+    S[1] = SQ(air) * SQ(sed) * SQ(ice);
     S[2] = air;
     S[3] = temp;
     S[4] = rhov * air;
