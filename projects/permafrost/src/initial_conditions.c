@@ -363,6 +363,154 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
     PetscFunctionReturn(0);
 }
 
+PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx      = user->Lx;
+    const PetscReal Ly      = user->Ly;
+    const PetscReal eps     = user->eps;
+    const PetscInt  dim     = user->dim;
+    const PetscReal tc      = 1.0 / (sqrt(2.0) * eps);
+
+    // -------------------------------------------------------------------------
+    // Geometry parameters
+    // sed_frac: fraction of domain height occupied by flat sediment layer
+    // rad_cap:  radius of the hemispherical ice cap
+    // The cap sits centered horizontally, its flat base at the sediment surface
+    // -------------------------------------------------------------------------
+    const PetscReal sed_frac = 0.33;                    // bottom third is sediment
+    const PetscReal y_sed    = sed_frac * Ly;           // sediment surface height
+    const PetscReal rad_cap  = user->RCice;             // ice cap radius (reuse RCice)
+    const PetscReal cx       = 0.5 * Lx;               // cap center x (horizontal midpoint)
+    const PetscReal cy       = y_sed;                   // cap center y (at sediment surface)
+
+    // -------------------------------------------------------------------------
+    // Helper: diffuse Heaviside for flat sediment layer
+    // H(y) = 0.5*(1 - tanh(tc*(y - y_sed)))
+    // = 1 below y_sed (sediment), = 0 above y_sed (not sediment)
+    // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // Gauss-point loop: Phi_sed and grad_Phi_sed
+    // Sediment is a flat layer: phi_s(x,y) = H(y_sed - y)
+    // grad_phi_s = (0, -0.5*(1-tval^2)*tc) — only y-component nonzero
+    // -------------------------------------------------------------------------
+    IGAElement element;
+    IGAPoint   point;
+    PetscInt   ind = 0;
+
+    ierr = IGABeginElement(iga, &element); CHKERRQ(ierr);
+    while (IGANextElement(iga, element)) {
+        ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
+        while (IGAElementNextPoint(element, point)) {
+
+            PetscReal y    = point->mapX[0][1];
+            PetscReal tval = tanh(tc * (y - y_sed));
+
+            // phi_s = 0.5*(1 - tanh(tc*(y - y_sed)))
+            // = 1 below y_sed, 0 above
+            PetscReal sed  = 0.5 - 0.5*tval;
+            sed = PetscMax(0.0, PetscMin(1.0, sed));
+
+            user->Phi_sed[ind] = sed;
+
+            // grad_phi_s: x-component zero (flat layer), y-component from chain rule
+            user->grad_Phi_sed[ind*dim + 0] = 0.0;
+            user->grad_Phi_sed[ind*dim + 1] = -0.5*(1.0 - tval*tval)*tc;
+            ind++;
+        }
+        ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
+    }
+    ierr = IGAEndElement(iga, &element); CHKERRQ(ierr);
+
+    // -------------------------------------------------------------------------
+    // Nodal loop: ice, temperature, vapor density
+    // -------------------------------------------------------------------------
+    DM da;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+
+            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+
+            // Sediment: flat layer below y_sed
+            PetscReal tval_sed = tanh(tc * (y - y_sed));
+            PetscReal sed = PetscMax(0.0, PetscMin(1.0, 0.5 - 0.5*tval_sed));
+
+            // Ice cap: hemispherical profile centered at (cx, cy)
+            // Only the upper hemisphere (y > cy) contributes ice
+            // The diffuse profile is based on distance from cap center
+            PetscReal dist_cap = sqrt(SQ(x - cx) + SQ(y - cy));
+            PetscReal ice_cap  = 0.5 - 0.5*tanh(tc * (dist_cap - rad_cap));
+
+            // Mask the lower hemisphere: no ice below the sediment surface
+            // Use a smooth mask that transitions at y = y_sed
+            PetscReal mask = 0.5 + 0.5*tanh(tc * (y - y_sed));  // 0 below, 1 above
+            PetscReal ice  = ice_cap * mask;
+
+            // Ensure no ice inside sediment and partition is satisfied
+            ice = PetscMax(0.0, PetscMin(ice, 1.0 - sed));
+
+            // Air from partition constraint
+            PetscReal air = PetscMax(0.0, 1.0 - ice - sed);
+
+            // Temperature: isothermal initially
+            PetscReal tem = user->temp0;
+
+            // Vapor: equilibrium in pore space, zero inside solid phases
+            PetscReal rho_vs;
+            RhoVS_I(user, tem, &rho_vs, NULL);
+
+            u[j][i].ice  = ice;
+            u[j][i].tem  = tem;
+            u[j][i].rhov = user->hum0 * rho_vs * air;
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da); CHKERRQ(ierr);
+
+    // -------------------------------------------------------------------------
+    // Sediment DMDA vector S
+    // -------------------------------------------------------------------------
+    PetscInt nlocS;
+    ierr = VecGetLocalSize(S, &nlocS); CHKERRQ(ierr);
+
+    if (nlocS > 0) {
+        DM daS;
+        FieldS **uS;
+        DMDALocalInfo infoS;
+        ierr = IGACreateNodeDM(igaS, 1, &daS); CHKERRQ(ierr);
+        ierr = DMDAVecGetArray(daS, S, &uS); CHKERRQ(ierr);
+        ierr = DMDAGetLocalInfo(daS, &infoS); CHKERRQ(ierr);
+
+        PetscInt perS = (user->periodic == 1) ? user->p - 1 : -1;
+
+        for (PetscInt i = infoS.xs; i < infoS.xs + infoS.xm; i++) {
+            for (PetscInt j = infoS.ys; j < infoS.ys + infoS.ym; j++) {
+                PetscReal y = Ly * (PetscReal)j / (PetscReal)(infoS.my + perS);
+                PetscReal tval = tanh(tc * (y - y_sed));
+                uS[j][i].soil = PetscMax(0.0, PetscMin(1.0, 0.5 - 0.5*tval));
+            }
+        }
+
+        ierr = DMDAVecRestoreArray(daS, S, &uS); CHKERRQ(ierr);
+        ierr = DMDestroy(&daS); CHKERRQ(ierr);
+    }
+
+    PetscFunctionReturn(0);
+}
+
 PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
 {
     PetscErrorCode ierr;
@@ -375,9 +523,9 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
     const PetscReal rad_sed = user->RCsed;
     const PetscInt  dim     = user->dim;
 
-    // Equilibrium Allen-Cahn tanh coefficient: profile is tanh(d / (sqrt(2)*eps))
-    // const PetscReal tc = 1.0 / (sqrt(2.0) * eps);
-    const PetscReal tc = 0.5 / eps;  // steeper profile for better grain definition at coarse resolution
+    // Equilibrium Allen-Cahn tanh coefficient
+    // Matches the equilibrium profile phi = 0.5*(1 - tanh(x/(sqrt(2)*eps)))
+    const PetscReal tc = 1.0 / (sqrt(2.0) * eps);
 
     // -------------------------------------------------------------------------
     // Validate geometry
@@ -393,26 +541,26 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
                 rad_sed, rad_ice);
 
     // -------------------------------------------------------------------------
-    // Grain centers — two grains arranged along the longer axis
+    // Grain centers
+    // Two ice grains arranged along the longer domain axis,
+    // each containing a concentric sediment grain
     // -------------------------------------------------------------------------
-    PetscReal cent_ice[dim][2], cent_sed[dim][2];
+    PetscReal cent_ice[2][2], cent_sed[2][2];
 
     if (Ly >= Lx) {
-        // Vertical arrangement
         cent_ice[0][0] = 0.5*Lx;  cent_ice[1][0] = 0.5*Ly - rad_ice;
         cent_ice[0][1] = 0.5*Lx;  cent_ice[1][1] = 0.5*Ly + rad_ice;
     } else {
-        // Horizontal arrangement
         cent_ice[0][0] = 0.5*Lx - rad_ice;  cent_ice[1][0] = 0.5*Ly;
         cent_ice[0][1] = 0.5*Lx + rad_ice;  cent_ice[1][1] = 0.5*Ly;
     }
-    // Sediment grains are concentric with ice grains
     for (PetscInt g = 0; g < 2; g++)
         for (PetscInt d = 0; d < dim; d++)
             cent_sed[d][g] = cent_ice[d][g];
 
     // -------------------------------------------------------------------------
     // Gauss-point loop: compute and store Phi_sed and grad_Phi_sed
+    // Both are precomputed once here and read in Residual/Jacobian at runtime
     // -------------------------------------------------------------------------
     IGAElement element;
     IGAPoint   point;
@@ -424,8 +572,7 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
         while (IGAElementNextPoint(element, point)) {
 
             PetscReal sed = 0.0;
-            PetscReal grad_sed[dim];
-            for (PetscInt d = 0; d < dim; d++) grad_sed[d] = 0.0;
+            PetscReal grad_sed[3] = {0.0, 0.0, 0.0};
 
             for (PetscInt g = 0; g < 2; g++) {
                 PetscReal dist = 0.0;
@@ -436,18 +583,16 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
                 PetscReal tval = tanh(tc * (dist - rad_sed));
                 sed += 0.5 - 0.5*tval;
 
-                // Gradient of tanh profile via chain rule
-                // d(sed)/d(x_d) = -0.5*(1-tval^2)*tc*(x_d - cent_d)/dist
+                // Gradient: d(phi_s)/d(x_d) = -0.5*(1-tval^2)*tc*(x_d - c_d)/dist
                 if (dist > 1.0e-14) {
+                    PetscReal sech2 = 1.0 - tval*tval;
                     for (PetscInt d = 0; d < dim; d++)
-                        grad_sed[d] += -0.5*(1.0 - tval*tval)*tc
-                                       *(point->mapX[0][d] - cent_sed[d][g]) / dist;
+                        grad_sed[d] += -0.5 * sech2 * tc
+                                       * (point->mapX[0][d] - cent_sed[d][g]) / dist;
                 }
             }
 
-            sed = PetscMax(0.0, PetscMin(1.0, sed));
-
-            user->Phi_sed[ind] = sed;
+            user->Phi_sed[ind] = PetscMax(0.0, PetscMin(1.0, sed));
             for (PetscInt d = 0; d < dim; d++)
                 user->grad_Phi_sed[ind*dim + d] = grad_sed[d];
             ind++;
@@ -457,15 +602,19 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
     ierr = IGAEndElement(iga, &element); CHKERRQ(ierr);
 
     // -------------------------------------------------------------------------
-    // Nodal loop: set ice, temperature, and vapor density initial conditions
+    // Nodal loop: ice, temperature, vapor density initial conditions
     // -------------------------------------------------------------------------
     DM da;
-    ierr = IGACreateNodeDM(iga, 3, &da); CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
     Field **u;
     ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
     DMDALocalInfo info;
     ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
 
+    // Denominator for node coordinate mapping:
+    // Non-periodic: nodes 0..N map to [0,L] so denominator = N (= mx-1 since mx=N+1? check)
+    // Periodic: repeated control points reduce effective count by p
+    // per = -1 for non-periodic gives denominator = info.mx - 1, mapping node i in [0, Lx]
     PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
 
     for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
@@ -474,7 +623,7 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
             PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
             PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
 
-            // Ice: sum of two grain profiles minus sediment cores
+            // Ice: sum of grain profiles minus sediment cores (CSG subtraction)
             PetscReal ice = 0.0;
             for (PetscInt g = 0; g < 2; g++) {
                 PetscReal dist = sqrt(SQ(x - cent_ice[0][g]) + SQ(y - cent_ice[1][g]));
@@ -494,23 +643,21 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
             }
             sed = PetscMax(0.0, PetscMin(1.0, sed));
 
-            // Air: from partition constraint
+            // Air from partition constraint: phi_i + phi_s + phi_a = 1
             PetscReal air = PetscMax(0.0, 1.0 - ice - sed);
 
-            // Temperature: linear profile from user-specified gradient
+            // Temperature: linear profile with user-specified gradient
             PetscReal tem = user->temp0
                           + user->grad_temp0[0] * (x - 0.5*Lx)
                           + user->grad_temp0[1] * (y - 0.5*Ly);
 
-            // Vapor density: equilibrium value scaled by humidity and air fraction
-            // rhov = 0 inside ice and sediment, hum0*rho_vs in pore space
+            // Vapor density: equilibrium value scaled by humidity, zero inside solid phases
             PetscReal rho_vs;
             RhoVS_I(user, tem, &rho_vs, NULL);
-            PetscReal rhov = user->hum0 * rho_vs * air;
 
             u[j][i].ice  = ice;
             u[j][i].tem  = tem;
-            u[j][i].rhov = rhov;
+            u[j][i].rhov = user->hum0 * rho_vs;
         }
     }
 
@@ -518,7 +665,7 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
     ierr = DMDestroy(&da); CHKERRQ(ierr);
 
     // -------------------------------------------------------------------------
-    // Nodal loop for sediment vector S (DMDA representation)
+    // Sediment DMDA vector S — for visualization and postprocessing only
     // -------------------------------------------------------------------------
     PetscInt nlocS;
     ierr = VecGetLocalSize(S, &nlocS); CHKERRQ(ierr);

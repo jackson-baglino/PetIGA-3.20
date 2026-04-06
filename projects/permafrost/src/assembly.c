@@ -66,8 +66,8 @@ PetscErrorCode Residual(IGAPoint pnt,
     Density    (user, ice, sed, &rho,     NULL);
     VaporDiffus(user, tem,      &difvap,  NULL);
     RhoVS_I    (user, tem,      &rhoI_vs, NULL);
-    Fice(user, ice, sed, &fice, NULL);
-    Fair(user, ice, sed, &fair, NULL);
+    // Fice(user, ice, sed, &fice, NULL);
+    // Fair(user, ice, sed, &fair, NULL);
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
@@ -79,7 +79,7 @@ PetscErrorCode Residual(IGAPoint pnt,
 
     // Sublimation localization: nonzero only at ice-air interface,
     // suppressed at ice-sediment interface by (1-sed)^2
-    PetscReal loc = ice*ice * (1 - ice - sed)*(1 - ice - sed);
+    // PetscReal loc = ice*ice * (1 - ice - sed)*(1 - ice - sed);
 
     PetscScalar (*R)[3] = (PetscScalar (*)[3])Re;
     PetscInt a, nen = pnt->nen;
@@ -104,11 +104,11 @@ PetscErrorCode Residual(IGAPoint pnt,
 
             R_ice = N0[a] * ice_t;
 
-            // Gradient penalty — phi_i
+            // phi_i Laplacian mobility term
             for (l = 0; l < dim; l++)
                 R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
 
-            // Gradient penalty — phi_s (known field, contributes through constraint)
+            // phi_s Laplacian mobility term (known field, contributes through constraint)
             for (l = 0; l < dim; l++)
                 R_ice += C * Etaa * eps * (N1[a][l] * grad_sed[l]);
 
@@ -118,15 +118,8 @@ PetscErrorCode Residual(IGAPoint pnt,
             // Sublimation source — disabled pending vapor equation validation
             // R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
-            // Ice: Allen-Cahn, no Lagrange multiplier
-            // R_ice  = N0[a] * ice_t;
-            // for (l = 0; l < dim; l++)
-            //     R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-            // R_ice += N0[a] * mob * 3.0 / eps / Etai * (fice - fair);
-            // R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
-
             // Energy
-            R_tem  = N0[a] * tem_t;
+            R_tem  = N0[a] * tem_t;             // Does not solve temperature equation
             // R_tem  = rho * cp * N0[a] * tem_t;
             // for (l = 0; l < dim; l++)
             //     R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
@@ -134,7 +127,7 @@ PetscErrorCode Residual(IGAPoint pnt,
 
             // Vapor: time derivative and diffusion use air_eff to prevent
             // negative diffusion coefficient; source from phase change via rhoSE
-            R_vap  = N0[a] * rhov_t;
+            R_vap  = N0[a] * rhov_t;                // Does not solve vapor equation
             // R_vap  = N0[a] * air_eff * rhov_t;
             // for (l = 0; l < dim; l++)
             //     R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);

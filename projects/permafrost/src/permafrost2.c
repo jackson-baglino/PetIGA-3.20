@@ -21,11 +21,11 @@ int main(int argc, char *argv[]) {
     PetscInt flag_BC_Tfix;               /* Flag for temperature boundary condition */
     PetscInt flag_BC_rhovfix;            /* Flag for fixed rho_v boundary condition */
 
-    user.xi_v       = 1.0e-5;   /* Time scaling parameter for vapor */
-    user.xi_T       = 1.0e-4;   /* Time scaling parameter for temperature */
+    user.xi_v       = 1.0e-3; // 1.0e-5;   /* Time scaling parameter for vapor */
+    user.xi_T       = 1.0e-2; // 1.0e-4;   /* Time scaling parameter for temperature */
     user.flag_xiT   = 1;        /* Flag for temperature */
 
-    user.Lambd      = 0.0;      /* Model parameter Lambda */
+    user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC  = 10;       /* Number of initial condition steps (???) */
 
@@ -478,6 +478,10 @@ int main(int argc, char *argv[]) {
     /* 5.) Random packed grains IC */
     // PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");
     // ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+
+    /* 6.) Flat sediment ice cap IC */
+    // PetscPrintf(PETSC_COMM_WORLD, "IC type: flat sediment ice cap  (using flat sediment ice cap geometry)\n");
+    // ierr = FormInitialFlatSedIceCap2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
 
     /* Optional statements for varying input types (e.g., capillary, layered, etc.) */
