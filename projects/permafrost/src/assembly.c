@@ -17,7 +17,6 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscReal air_lim = user->air_lim;
     PetscReal xi_v    = user->xi_v;
     PetscReal xi_T    = user->xi_T;
-    PetscReal rhoSE   = rho_ice;
     PetscReal lambda  = user->Lambd;
 
     PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
@@ -116,22 +115,22 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_ice += N0[a] * C / eps * (fi - fa);
 
             // Sublimation source — disabled pending vapor equation validation
-            // R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+            R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
             // Energy
-            R_tem  = N0[a] * tem_t;             // Does not solve temperature equation
-            // R_tem  = rho * cp * N0[a] * tem_t;
-            // for (l = 0; l < dim; l++)
-            //     R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
-            // R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
+            // R_tem  = N0[a] * tem_t;             // Does not solve temperature equation
+            R_tem  = rho * cp * N0[a] * tem_t;
+            for (l = 0; l < dim; l++)
+                R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
+            R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
             // Vapor: time derivative and diffusion use air_eff to prevent
-            // negative diffusion coefficient; source from phase change via rhoSE
-            R_vap  = N0[a] * rhov_t;                // Does not solve vapor equation
-            // R_vap  = N0[a] * air_eff * rhov_t;
-            // for (l = 0; l < dim; l++)
-            //     R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-            // R_vap -= xi_v * N0[a] * rhoSE * air_t;
+            // negative diffusion coefficient; source from phase change via rho_ice
+            // R_vap  = N0[a] * rhov_t;                // Does not solve vapor equation
+            R_vap  = N0[a] * air_eff * rhov_t;
+            for (l = 0; l < dim; l++)
+                R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+            R_vap -= xi_v * N0[a] * rho_ice * air_t;
         }
 
         R[a][0] = R_ice;
@@ -158,7 +157,6 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     PetscReal air_lim = user->air_lim;
     PetscReal xi_v    = user->xi_v;
     PetscReal xi_T    = user->xi_T;
-    PetscReal rhoSE   = rho_ice;
 
     PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
 
@@ -204,7 +202,6 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     VaporDiffus(user, tem,      &difvap,  &d_difvap);
     RhoVS_I    (user, tem,      &rhoI_vs, &drhoI_vs);
     Fice(user, ice, sed, NULL, &fice_ice);
-    Fair(user, ice, sed, NULL, &fair_ice);
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
@@ -265,8 +262,8 @@ PetscErrorCode Jacobian(IGAPoint pnt,
             //         J[a][2][b][1] += xi_v * d_difvap * N0[b] * air_lim * (N1[a][l] * grad_rhov[l]);
             // }
 
-            // // Vapor — source term: -xi_v * rhoSE * air_t = +xi_v * rhoSE * ice_t
-            // J[a][2][b][0] += N0[a] * xi_v * rhoSE * shift * N0[b];
+            // // Vapor — source term: -xi_v * rho_ice * air_t = +xi_v * rho_ice * ice_t
+            // J[a][2][b][0] += N0[a] * xi_v * rho_ice * shift * N0[b];
         }
     }
 

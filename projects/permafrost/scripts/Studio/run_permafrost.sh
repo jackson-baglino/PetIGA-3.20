@@ -25,7 +25,8 @@ sim_exit=0
 # Script lives at: <project_root>/scripts/Studio/run_permafrost.sh
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="${PETIGA_DIR}/projects/permafrost"
 
 # Validate that we resolved the project root correctly
 if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then

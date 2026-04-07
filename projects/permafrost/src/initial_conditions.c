@@ -526,6 +526,7 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
     // Equilibrium Allen-Cahn tanh coefficient
     // Matches the equilibrium profile phi = 0.5*(1 - tanh(x/(sqrt(2)*eps)))
     const PetscReal tc = 1.0 / (sqrt(2.0) * eps);
+    // const PetscReal tc = 0.5 / eps;  // sharper transition for smaller grains, more diffuse for larger grains
 
     // -------------------------------------------------------------------------
     // Validate geometry
