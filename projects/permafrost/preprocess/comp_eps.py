@@ -24,10 +24,10 @@ Dv0     = 2.178e-5      # Vapor diffusion coefficient (m^2/s)
 # =========================================================================
 T0   = 273.15 - 20.0   # Mean temperature (K)
 Rave = 3.0e-5          # Representative grain radius (m)
-Lx   = 1.25e-4         # Domain size x (m)
-Ly   = 2.5e-4          # Domain size y (m)
-# Lx = 1.0e-4          # Domain size x (m)
-# Ly = 1.25e-4          # Domain size y (m)
+# Lx   = 1.25e-4         # Domain size x (m)
+# Ly   = 2.5e-4          # Domain size y (m)
+Lx = 1.0e-4          # Domain size x (m)
+Ly = 1.25e-4          # Domain size y (m)
 Lz   = 0.0             # Domain size z (m), 0 for 2D
 
 # =========================================================================

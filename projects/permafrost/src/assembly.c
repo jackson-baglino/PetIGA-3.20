@@ -51,6 +51,11 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscScalar air   = 1.0 - sed - ice;
     PetscScalar air_t = -ice_t;
 
+    if (ice < 0.0) ice = 0.0;  // Prevent negative ice from causing NaN diffusion coefficients
+    if (ice > 1.0) ice = 1.0;  // Prevent unphysical >100% ice from causing NaN diffusion coefficients
+    if (air < 0.0) air = 0.0;  // Prevent negative air from causing NaN diffusion coefficients
+    if (air > 1.0) air = 1.0;  // Prevent unphysical >100% air from causing NaN diffusion coefficients
+
     PetscScalar tem   = sol[1], tem_t = sol_t[1];
     PetscScalar grad_tem[dim];
     for (l = 0; l < dim; l++) grad_tem[l] = grad_sol[1][l];
