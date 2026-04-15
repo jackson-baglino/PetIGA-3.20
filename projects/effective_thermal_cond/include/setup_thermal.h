@@ -1,12 +1,21 @@
-#ifndef SETUP_THERMAL_H
-#define SETUP_THERMAL_H
+#ifndef SETUP_H
+#define SETUP_H
 
-#include "user_context.h"
+#include "app_ctx.h"
 
-// ========================= Function Declarations =========================
-PetscErrorCode FormInitialCondition(AppCtx *user);
-PetscErrorCode InitializeFields(AppCtx *user, IGA iga);
+/*
+ * InitializeUserContext — fill AppCtx with default material properties
+ * (thcond_ice, thcond_air, cp_*, rho_*) and discretization order (p, C).
+ * Must be called before SetupIGA.
+ */
+void InitializeUserContext(AppCtx *user);
+
+/*
+ * SetupIGA — create and configure the IGA object for the homogenization
+ * problem: dim DOFs (one per direction), fully periodic in all axes,
+ * uniform mesh of size Nx × Ny [× Nz] over [0,Lx] × [0,Ly] [× [0,Lz]].
+ * Writes igaice.dat to output_dir.
+ */
 PetscErrorCode SetupIGA(AppCtx *user, IGA *iga);
-PetscErrorCode SetupAndSolve(AppCtx *user, IGA iga);
 
-#endif // ENV_CONFIG_H
+#endif /* SETUP_H */
