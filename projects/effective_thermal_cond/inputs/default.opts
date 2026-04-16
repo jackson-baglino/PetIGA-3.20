@@ -1,0 +1,40 @@
+# ---------------------------------------------------------------
+# effective_k_ice_homog — default simulation options
+#
+# Usage:
+#   ./effective_k_ice_homog -options_file inputs/default.opts
+#
+# Any option can be overridden on the command line after -options_file:
+#   ./effective_k_ice_homog -options_file inputs/default.opts -Nx 128 -Ny 128
+# ---------------------------------------------------------------
+
+# Problem dimension (2 or 3)
+-dim          2
+
+# Mesh elements per direction
+-Nx           64
+-Ny           64
+-Nz           1
+
+# Domain physical lengths (m)
+-Lx           1.0e-3
+-Ly           1.0e-3
+-Lz           1.0e-3
+
+# Phase-field interface half-width (m)
+-eps          1.0e-4
+
+# Boundary conditions
+-temp_top     243.15
+-flux_bottom  -1.0
+
+# I/O
+-output_binary   true
+-sol_index       -1
+-output_dir      /tmp/keff_out
+-init_mode       layered
+-init_dir        .
+
+# KSP solver — direct LU (required for periodic homogenization with null space)
+-ksp_type        preonly
+-pc_type         lu

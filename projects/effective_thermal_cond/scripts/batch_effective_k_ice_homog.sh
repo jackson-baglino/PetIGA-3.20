@@ -54,14 +54,14 @@ load_grains_env() {
 #   ./scripts/batch_effective_k_ice_homog.sh [PARENT_DIR]
 #
 # Notes:
-#   - Do NOT pass ENV_FILE here; the runner will auto-discover a grains.env/.env
-#     inside INIT_DIR. We also explicitly unset ENV_FILE for safety.
-#   - If an argument is given, it overrides the default PARENT_DIR below.
+#   - PARENT_DIR can be given as a command-line argument or left as the default
+#     below (useful for local development on a known machine).
+#   - The runner (run_effective_k_ice_homog.sh) auto-discovers grains.opts or
+#     grains.env inside each INIT_DIR; no ENV_FILE passthrough is needed here.
 ###############################################################################
 
-# Default parent directory containing subdirectories to process
-# PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/unresolved_results/2mm_results3/"
-PARENT_DIR="/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/low_temp_N-grain_packing/"
+# Default parent directory — override by passing as first argument
+PARENT_DIR="${1:-/Users/jacksonbaglino/SimulationResults/HPC_results/dry_snow_metamorphism/low_temp_N-grain_packing/}"
 OUT_ROOT="${OUT_ROOT:-/Users/jacksonbaglino/SimulationResults/effective_thermal_cond/scratch}"
 
 
