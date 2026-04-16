@@ -11,6 +11,13 @@
   Assembled as a vector-valued system with dim DOFs per node:
     K[i*dim+m, j*dim+m] += k * ∑_g  ∂N_i/∂x_g * ∂N_j/∂x_g
     F[i*dim+m]           += -k * ∂N_i/∂x_m
+
+  NOTE ON QUADRATURE WEIGHTING
+  ─────────────────────────────
+  PetIGA calls this function once per Gauss point and then accumulates the
+  returned K and F via IGAPointAddMat / IGAPointAddVec, which internally
+  multiply by JW = detJac * weight.  The user function must therefore return
+  bare (un-weighted) integrand values — do NOT multiply by dV here.
 -----------------------------------------------------------------------------*/
 PetscErrorCode AssembleStiffnessMatrix(IGAPoint pnt,
                                        PetscScalar *K,
@@ -69,7 +76,11 @@ PetscErrorCode ApplyBoundaryConditions(IGA iga, AppCtx *user)
   ComputeKeffIntegrand
   IGA scalar integrand that accumulates the effective thermal conductivity
   tensor entry-by-entry:
-    S[i*dim + j] += k(x) * (∂t_i/∂x_j + δ_{ij}) * dV
+    S[i*dim + j] += k(x) * (∂t_i/∂x_j + δ_{ij})
+
+  IGAComputeScalar calls this function once per Gauss point and accumulates
+  the result via IGAPointAddArray, which multiplies by JW = detJac * weight.
+  The user function returns the bare integrand value — no dV multiplication.
 
   Here t_i is component i of the correction-temperature vector T_sol.
 -----------------------------------------------------------------------------*/
@@ -78,23 +89,25 @@ PetscErrorCode ComputeKeffIntegrand(IGAPoint p, const PetscScalar *U,
 {
   AppCtx   *user = (AppCtx *)ctx;
   PetscInt  dim  = user->dim;
-  PetscReal dV;
 
   PetscFunctionBegin;
 
   if (!p->atboundary) {
-    PetscReal grad_t[3][3] = {{0}};
-    IGAPointFormGrad(p, U, &grad_t[0][0]);
+    /* Flat buffer: grad_t[i*dim+j] = ∂T_i/∂x_j
+     * PetIGA fills this as grad[dof*dim + dir], so row-stride = dim.
+     * A fixed-size [3][3] array would have stride 3 and corrupt 2-D results. */
+    PetscReal grad_t[9] = {0.0};
+    IGAPointFormGrad(p, U, &grad_t[0]);
 
     PetscInt  indGP = p->index + p->count * p->parent->index;
     PetscReal thcond;
     ThermalCond(user, user->ice[indGP], &thcond, NULL);
 
-    dV = *(p->weight) * (*(p->detX));
-
+    /* No dV here — IGAPointAddArray (called by IGAComputeScalar internally)
+     * multiplies by JW = detJac * weight automatically. */
     for (PetscInt i = 0; i < dim; i++)
       for (PetscInt j = 0; j < dim; j++)
-        S[i * dim + j] += thcond * (grad_t[i][j] + (i == j ? 1.0 : 0.0)) * dV;
+        S[i * dim + j] += thcond * (grad_t[i * dim + j] + (i == j ? 1.0 : 0.0));
   }
 
   PetscFunctionReturn(0);

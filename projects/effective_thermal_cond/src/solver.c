@@ -3,8 +3,7 @@
 
 /*-----------------------------------------------------------------------------
   ComputeInitialCondition
-  Zero the solution vector before each solve (warm start is handled by
-  KSPSetInitialGuessNonzero — keeping T_sol non-zero between iterations).
+  Zero the solution vector (used on the very first call only).
 -----------------------------------------------------------------------------*/
 PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user)
 {
@@ -19,15 +18,25 @@ PetscErrorCode ComputeInitialCondition(Vec T, AppCtx *user)
   CreateSolverObjects
   Allocate Mat A, Vec b, and KSP ksp once — before the per-file loop.
 
-  KSP is configured with CG + GAMG (or HYPRE BoomerAMG when available).
-  All settings can be overridden at runtime via PETSc command-line options.
+  Default solver: PREONLY + LU (direct).  For parallel runs with more than
+  one MPI process, use SuperLU_DIST automatically if available.
+
+  The periodic homogenization system has one constant-mode null space per DOF
+  component.  We handle this by pinning one node per component with
+  MatZeroRowsColumns (see Solve), so the matrix is non-singular and direct LU
+  works cleanly.  Iterative solvers (CG, GMRES) are unreliable for this class
+  of problem and should be avoided.
+
+  All settings can be overridden at runtime via PETSc command-line options,
+  e.g.  -ksp_type preonly -pc_type lu
+        -ksp_type preonly -pc_type lu -pc_factor_mat_solver_type superlu_dist
 -----------------------------------------------------------------------------*/
 PetscErrorCode CreateSolverObjects(IGA iga, AppCtx *user,
                                    Mat *A, Vec *b, KSP *ksp)
 {
   PetscErrorCode ierr;
   PC             pc;
-  PetscInt       dim = user->dim;
+  PetscMPIInt    size;
 
   PetscFunctionBegin;
 
@@ -36,39 +45,21 @@ PetscErrorCode CreateSolverObjects(IGA iga, AppCtx *user,
   ierr = IGACreateVec(iga, &user->T_sol); CHKERRQ(ierr);
   ierr = IGACreateVec(iga, b); CHKERRQ(ierr);
 
-  /* Convert BAIJ → AIJ so AMG can build its graph (PETSc 3.20 limitation) */
-  {
-    PetscBool isBAIJ = PETSC_FALSE;
-    ierr = PetscObjectTypeCompare((PetscObject)*A, MATSEQBAIJ, &isBAIJ); CHKERRQ(ierr);
-    if (!isBAIJ)
-      ierr = PetscObjectTypeCompare((PetscObject)*A, MATMPIBAIJ, &isBAIJ); CHKERRQ(ierr);
-    if (isBAIJ) {
-      ierr = MatConvert(*A, MATAIJ, MAT_INPLACE_MATRIX, A); CHKERRQ(ierr);
-    }
-  }
-
-  /* Mark symmetric so CG is valid */
-  ierr = MatSetOption(*A, MAT_SYMMETRIC, PETSC_TRUE); CHKERRQ(ierr);
-
-  /* Create and configure KSP */
+  /* Create KSP and configure for direct solve */
   ierr = IGACreateKSP(iga, ksp); CHKERRQ(ierr);
-  ierr = KSPSetType(*ksp, KSPCG); CHKERRQ(ierr);
+  ierr = KSPSetType(*ksp, KSPPREONLY); CHKERRQ(ierr);
   ierr = KSPGetPC(*ksp, &pc); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCLU); CHKERRQ(ierr);
 
-#if defined(PETSC_HAVE_HYPRE)
-  ierr = PCSetType(pc, PCHYPRE); CHKERRQ(ierr);
-  ierr = PCHYPRESetType(pc, "boomeramg"); CHKERRQ(ierr);
-#else
-  ierr = PCSetType(pc, PCGAMG); CHKERRQ(ierr);
-#endif
-
-  ierr = KSPSetTolerances(*ksp, 1e-9, PETSC_SMALL, PETSC_DEFAULT, 200); CHKERRQ(ierr);
-  ierr = KSPSetInitialGuessNonzero(*ksp, PETSC_TRUE); CHKERRQ(ierr);
+  /* For parallel runs use SuperLU_DIST (available in this PETSc build) */
+  MPI_Comm_size(PETSC_COMM_WORLD, &size);
+  if (size > 1) {
+    ierr = PCFactorSetMatSolverType(pc, MATSOLVERSUPERLU_DIST); CHKERRQ(ierr);
+  }
 
   /* Allow full runtime override */
   ierr = KSPSetFromOptions(*ksp); CHKERRQ(ierr);
 
-  (void)dim; /* used implicitly through iga DOF count */
   PetscFunctionReturn(0);
 }
 
@@ -76,9 +67,18 @@ PetscErrorCode CreateSolverObjects(IGA iga, AppCtx *user,
   Solve
   For the current ice field in user->ice:
     1. Zero and reassemble A and b.
-    2. Build and attach constant-mode null space (one vector per DOF component).
-    3. Reset KSP operators and solve.
+    2. Pin one DOF per component at node 0 (MatZeroRowsColumns) to eliminate
+       the constant-mode null space and make the system non-singular.
+    3. Solve with the direct KSP.
     4. Enforce zero mean per component (parallel-safe via MPI_Allreduce).
+
+  Why DOF pinning instead of MatNullSpace?
+  ─────────────────────────────────────────
+  MatNullSpace works for iterative solvers but causes iterative methods (CG,
+  GMRES) to converge to a numerically polluted solution for this problem class.
+  DOF pinning makes the system uniquely solvable by any solver, including
+  direct LU.  After pinning, t_m(node 0) = 0 for each component m; the
+  zero-mean step below then centres the solution for good practice.
 -----------------------------------------------------------------------------*/
 PetscErrorCode Solve(AppCtx *user, IGA iga, Mat A, Vec b, KSP ksp)
 {
@@ -93,53 +93,26 @@ PetscErrorCode Solve(AppCtx *user, IGA iga, Mat A, Vec b, KSP ksp)
   ierr = IGASetFormSystem(iga, AssembleStiffnessMatrix, user); CHKERRQ(ierr);
   ierr = IGAComputeSystem(iga, A, b); CHKERRQ(ierr);
 
-  /* ---- Constant-mode null space (one vector per component) ----
+  /* ---- Pin one DOF per component to remove the constant-mode null space ----
    *
-   * PARALLEL-SAFE: use VecGetOwnershipRange to access only the LOCAL portion
-   * of the basis vectors.  Each rank sets the entries it owns.
+   * Global DOF layout (PetIGA interleaved): [c0_n0, c1_n0, c0_n1, c1_n1, ...]
+   * Component m at node 0 has global index m.
+   *
+   * MatZeroRowsColumns zeros row m and column m, puts diag=1 on the diagonal,
+   * and adjusts b.  Since T_sol = 0 at these DOFs, the adjustment to b is
+   * zero and we obtain b[m] = 0 (homogeneous Dirichlet for the pinned DOF).
+   *
+   * This operation is collective — all ranks call it with the same global
+   * row indices.
    */
   {
-    PetscInt  gsize, nnodes;
-    Vec       basis[3];
-    MatNullSpace nsp;
+    PetscInt rows[3];  /* at most dim = 3 pinned DOFs */
+    for (PetscInt m = 0; m < dim; m++) rows[m] = m;
 
-    ierr = VecGetSize(user->T_sol, &gsize); CHKERRQ(ierr);
-    nnodes = gsize / dim;
+    /* Zero T_sol at the pinned DOFs so the RHS adjustment is trivially zero */
+    ierr = VecSet(user->T_sol, 0.0); CHKERRQ(ierr);
 
-    for (PetscInt m = 0; m < dim; ++m) {
-      ierr = IGACreateVec(iga, &basis[m]); CHKERRQ(ierr);
-      ierr = VecSet(basis[m], 0.0); CHKERRQ(ierr);
-
-      /* Only touch the local portion */
-      PetscInt     lo, hi;
-      PetscScalar *y;
-      ierr = VecGetOwnershipRange(basis[m], &lo, &hi); CHKERRQ(ierr);
-      ierr = VecGetArray(basis[m], &y); CHKERRQ(ierr);
-      for (PetscInt idx = 0; idx < hi - lo; ++idx) {
-        if ((lo + idx) % dim == m) y[idx] = 1.0;
-      }
-      ierr = VecRestoreArray(basis[m], &y); CHKERRQ(ierr);
-      ierr = VecAssemblyBegin(basis[m]); CHKERRQ(ierr);
-      ierr = VecAssemblyEnd(basis[m]); CHKERRQ(ierr);
-      ierr = VecNormalize(basis[m], NULL); CHKERRQ(ierr);
-    }
-
-    ierr = MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_FALSE, dim, basis, &nsp); CHKERRQ(ierr);
-    ierr = MatSetNullSpace(A, nsp); CHKERRQ(ierr);
-    ierr = MatNullSpaceDestroy(&nsp); CHKERRQ(ierr);
-    for (PetscInt m = 0; m < dim; ++m) {
-      ierr = VecDestroy(&basis[m]); CHKERRQ(ierr);
-    }
-    (void)nnodes;
-  }
-
-  /* ---- Initial condition for T_sol (only on first call; later reuse) ---- */
-  {
-    PetscReal norm;
-    ierr = VecNorm(user->T_sol, NORM_2, &norm); CHKERRQ(ierr);
-    if (norm == 0.0) {
-      ierr = ComputeInitialCondition(user->T_sol, user); CHKERRQ(ierr);
-    }
+    ierr = MatZeroRowsColumns(A, dim, rows, 1.0, user->T_sol, b); CHKERRQ(ierr);
   }
 
   /* ---- Solve ---- */
@@ -148,8 +121,11 @@ PetscErrorCode Solve(AppCtx *user, IGA iga, Mat A, Vec b, KSP ksp)
 
   /* ---- Enforce zero mean per component (PARALLEL-SAFE) ----
    *
+   * The pinned-node solution has t_m(node 0) = 0 but a non-zero mean in
+   * general.  Subtracting the mean is a gauge choice that does not affect
+   * k_eff (which depends only on grad t), but it is conventional.
+   *
    * Accumulate local partial sums then reduce globally with MPI_Allreduce.
-   * Only the LOCAL portion of the vector is accessed via VecGetArray.
    */
   {
     PetscInt         gsize, lo, hi, local_n;

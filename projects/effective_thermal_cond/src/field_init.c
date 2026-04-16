@@ -158,8 +158,20 @@ PetscErrorCode ComputeCircleIceField(AppCtx *user)
 
 /*-----------------------------------------------------------------------------
   ComputeLayeredIceField
-  Populate user->ice with a horizontal layer: ice (phi=1) below y = Ly/2,
-  air (phi=0) above.  Interface width controlled by user->eps.
+  Populate user->ice with a PERIODIC horizontal ice stripe.
+
+  Two tanh interfaces at y = Ly/4 and y = 3*Ly/4 create an ice band in the
+  centre of the domain [Ly/4, 3*Ly/4] with air at the periodic boundaries:
+    phi(0) = phi(Ly) = 0  (air)
+    phi(Ly/2)           = 1  (ice)
+
+  This gives exactly 50 % ice fraction and is consistent with the periodic
+  boundary conditions imposed by the homogenisation cell problem.
+
+  A single-interface tanh (phi(0)=1, phi(Ly)=0) is NOT periodic and yields
+  incorrect effective conductivities.
+
+  Interface width is controlled by user->eps.
 -----------------------------------------------------------------------------*/
 PetscErrorCode ComputeLayeredIceField(AppCtx *user)
 {
@@ -172,20 +184,26 @@ PetscErrorCode ComputeLayeredIceField(AppCtx *user)
 
   ierr = AllocateAppCtxFields(user->iga, user, &user->ice); CHKERRQ(ierr);
 
+  const PetscReal a = 0.5 / user->eps;
+
   ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
   while (IGANextElement(user->iga, element)) {
     ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
     while (IGAElementNextPoint(element, point)) {
       indGP = point->index + point->count * point->parent->index;
-      PetscReal dist     = point->mapX[0][1] - user->Ly / 2.0;
-      PetscReal ice      = 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * dist);
-      user->ice[indGP]   = PetscMax(0.0, PetscMin(1.0, ice));
+      PetscReal y   = point->mapX[0][1];
+      /* Two rising/falling tanh transitions at Ly/4 and 3*Ly/4:
+         phi = 0 outside [Ly/4, 3*Ly/4], phi = 1 in the interior */
+      PetscReal ice = 0.5 * PetscTanhReal(a * (y - user->Ly / 4.0))
+                   - 0.5 * PetscTanhReal(a * (y - 3.0 * user->Ly / 4.0));
+      user->ice[indGP] = PetscMax(0.0, PetscMin(1.0, ice));
     }
     ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
   }
   ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
 
-  PetscPrintf(PETSC_COMM_WORLD, "Ice field: layered mode.\n");
+  PetscPrintf(PETSC_COMM_WORLD,
+              "Ice field: layered mode (periodic stripe, two interfaces at Ly/4 and 3Ly/4).\n");
   PetscFunctionReturn(0);
 }
 

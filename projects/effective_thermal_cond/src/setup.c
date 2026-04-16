@@ -59,6 +59,10 @@ PetscErrorCode SetupIGA(AppCtx *user, IGA *iga)
     ierr = IGAAxisInitUniform(axisZ, user->Nz, 0.0, user->Lz, user->C); CHKERRQ(ierr);
   }
 
+  /* Force AIJ storage so AMG (GAMG/HYPRE) can build its graph.
+     GAMG/HYPRE do not support creategraph on BAIJ in PETSc 3.20. */
+  ierr = IGASetMatType(*iga, MATAIJ); CHKERRQ(ierr);
+
   ierr = IGASetFromOptions(*iga); CHKERRQ(ierr);
   ierr = IGASetUp(*iga); CHKERRQ(ierr);
 
