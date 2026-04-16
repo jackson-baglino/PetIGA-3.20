@@ -2,23 +2,37 @@
 """
 plot1D_profiles.py  —  Visualize 1D permafrost simulation field profiles.
 
-Reads sol_*.dat files from a PetIGA 1D run and plots spatial profiles of:
-  - Ice phase field  φ_i(x)
-  - Temperature      T(x)
-  - Vapor density    ρ_v(x)
+Reads sol_*.dat files from a PetIGA 1D run and produces:
 
-Multiple time snapshots are overlaid in a single figure per field.
+  Per-step phase figures (default)
+    Three-panel figure per snapshot showing φ_i, φ_s, φ_a = 1−φ_i−φ_s.
+    Output: phase_step_NNNNN.png in --out-dir.
+
+  Thermal overlay (--thermal)
+    Two-panel figure with all snapshots overlaid for T and ρ_v,
+    using cmocean colormaps and a physical-time colorbar.
+    Output: thermal_overlay.png
+
+  GIF animation (--gif)
+    Animated GIF built from the per-step phase figures.
+    Output: phase_animation.gif (or a custom path)
+
+  Derived quantities (--derived)
+    Time-series of ice volume fraction, interface position, slab width.
 
 Usage
 -----
-  # Plot all snapshots in current directory
-  python plot1D_profiles.py
+  # Per-step phase PNGs + GIF + thermal overlay in one shot
+  python plot1D_profiles.py --dir /path/to/run --gif --thermal
 
-  # Specify output directory
-  python plot1D_profiles.py --dir /path/to/output
+  # Just per-step phase images
+  python plot1D_profiles.py --dir /path/to/run
 
-  # Limit to first 5 snapshots; save figure instead of showing
-  python plot1D_profiles.py --dir . --max-steps 5 --save profiles.png
+  # Legacy: limit snapshots, save thermal overlay to a specific path
+  python plot1D_profiles.py --dir . --max-steps 8 --thermal --save overlay.png
+
+  # Derived scalar quantities
+  python plot1D_profiles.py --dir . --derived --save derived.png
 """
 
 import argparse
@@ -27,23 +41,54 @@ import os
 import sys
 
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")          # safe for headless / HPC environments
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from matplotlib.animation import FuncAnimation, PillowWriter
 
 # ---------------------------------------------------------------------------
-# Try importing igakit; give a clear error if missing
+# Optional cmocean — fall back gracefully if not installed
 # ---------------------------------------------------------------------------
+try:
+    import cmocean
+    CMAP_THERMAL = cmocean.cm.thermal
+    CMAP_VAPOR   = cmocean.cm.balance   # diverging red-blue
+    _CMOCEAN     = True
+except ImportError:
+    CMAP_THERMAL = "hot"
+    CMAP_VAPOR   = "RdBu_r"
+    _CMOCEAN     = False
+
 try:
     from igakit.io import PetIGA
 except ImportError:
     sys.exit(
-        "ERROR: igakit is not installed in the active Python environment.\n"
+        "ERROR: igakit is not installed.\n"
         "Install it with:  pip install igakit"
     )
 
+# ---------------------------------------------------------------------------
+# Phase field display colours (ColorBrewer-safe, high contrast)
+#   ice  → steel blue  (cold / crystalline)
+#   sed  → warm brown  (mineral / earth)
+#   air  → muted green (pore space)
+# ---------------------------------------------------------------------------
+PHASE_COLORS = {
+    "ice": "#2166ac",
+    "sed": "#8c510a",
+    "air": "#4dac26",
+}
+
+PHASE_LABELS = {
+    "ice": r"$\phi_i$  (ice)",
+    "sed": r"$\phi_s$  (sediment)",
+    "air": r"$\phi_a$  (air)",
+}
+
 
 # ---------------------------------------------------------------------------
-# Helpers
+# I/O helpers
 # ---------------------------------------------------------------------------
 
 def load_geometry(iga_path: str):
@@ -52,204 +97,384 @@ def load_geometry(iga_path: str):
     return PetIGA().read(iga_path)
 
 
-def load_solution(sol_path: str, nrb):
-    return PetIGA().read_vec(sol_path, nrb)
-
-
 def get_x_coords(nrb) -> np.ndarray:
-    """Return physical x-coordinates of control points (1D uniform mesh)."""
-    ctrl = nrb.control  # shape (n, 2) for 1D: [x, w]
-    return ctrl[:, 0]
+    """Physical x-coordinates of IGA control points (1D mesh)."""
+    return nrb.control[:, 0]
 
 
 def step_number(path: str) -> int:
-    """Extract integer step number from sol_NNNNN.dat filename."""
-    base = os.path.splitext(os.path.basename(path))[0]  # 'sol_00010'
+    """Extract integer step from sol_NNNNN.dat filename."""
+    base   = os.path.splitext(os.path.basename(path))[0]
     digits = base.lstrip("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
     return int(digits) if digits else 0
 
 
+def load_times(run_dir: str) -> dict:
+    """Return {step: time_hours} from SSA_evo.dat. Empty dict if unavailable."""
+    path   = os.path.join(run_dir, "SSA_evo.dat")
+    times  = {}
+    if not os.path.isfile(path):
+        return times
+    try:
+        data = np.loadtxt(path)
+        if data.ndim == 1:
+            data = data[np.newaxis, :]
+        for row in data:
+            if row.shape[0] >= 4:
+                times[int(row[3])] = float(row[2]) / 3600.0   # s → h
+    except Exception:
+        pass
+    return times
+
+
+def load_sediment(run_dir: str, n_nodes: int) -> np.ndarray:
+    """
+    Load sediment phase field φ_s from soil.dat + igasoil.dat.
+    Returns zeros if files are not present (pure ice / air run).
+    """
+    iga_path = os.path.join(run_dir, "igasoil.dat")
+    dat_path = os.path.join(run_dir, "soil.dat")
+
+    if not os.path.isfile(iga_path) or not os.path.isfile(dat_path):
+        return np.zeros(n_nodes)
+
+    try:
+        nrb_s = PetIGA().read(iga_path)
+        sol_s = PetIGA().read_vec(dat_path, nrb_s)
+        if sol_s.ndim == 2:
+            phi_s = sol_s[:, 0]
+        else:
+            phi_s = sol_s
+        # Interpolate to match solution mesh length if needed
+        if len(phi_s) != n_nodes:
+            xi_s = np.linspace(0, 1, len(phi_s))
+            xi   = np.linspace(0, 1, n_nodes)
+            phi_s = np.interp(xi, xi_s, phi_s)
+        return np.clip(phi_s, 0.0, 1.0)
+    except Exception as e:
+        print(f"  WARNING: could not load soil.dat: {e} — using φ_s = 0")
+        return np.zeros(n_nodes)
+
+
 # ---------------------------------------------------------------------------
-# Saturation vapor density (Clausius-Clapeyron, matches material_properties.c)
+# Saturation vapor density (matches material_properties.c: RhoVS_I)
 # ---------------------------------------------------------------------------
 
 def rho_vs(T_C: np.ndarray) -> np.ndarray:
-    """
-    Saturation vapor density over ice [kg/m³] as a function of temperature.
-    Uses the same formula as RhoVS_I in material_properties.c:
-        ρ_vs = A * exp(B / (T_C + 273.15))
-    with A = 3.25e-3 kg/m³, B = -6150 K  (ice-vapor Clausius-Clapeyron).
-    """
-    T_K = T_C + 273.15
-    return 3.25e-3 * np.exp(-6150.0 / T_K)
+    """ρ_vs over ice [kg/m³] at temperature T_C [°C]."""
+    return 3.25e-3 * np.exp(-6150.0 / (T_C + 273.15))
 
 
 # ---------------------------------------------------------------------------
-# Main plotting routine
+# Helpers
 # ---------------------------------------------------------------------------
 
-def plot_profiles(run_dir: str, max_steps: int = None, save_path: str = None,
-                  iga_file: str = "igasol.dat"):
-    """
-    Read all solution files in run_dir and produce a 3-panel profile plot.
-    """
-    iga_path = os.path.join(run_dir, iga_file)
-    nrb = load_geometry(iga_path)
-    x   = get_x_coords(nrb)  # (n,)
+def _fmt_time(t_h: float) -> str:
+    """Human-readable time from hours."""
+    if t_h < 1.0 / 60.0:
+        return f"{t_h * 3600:.1f} s"
+    elif t_h < 1.0:
+        return f"{t_h * 60:.1f} min"
+    else:
+        return f"{t_h:.2f} h"
 
-    # Collect and sort solution files
-    pattern = os.path.join(run_dir, "sol_*.dat")
-    sol_files = sorted(glob.glob(pattern), key=step_number)
+
+def _find_crossings(x: np.ndarray, y: np.ndarray, level: float = 0.5) -> np.ndarray:
+    """Return x positions where y crosses `level` (linear interpolation)."""
+    crossings = []
+    for i in range(len(y) - 1):
+        y0, y1 = y[i], y[i + 1]
+        if (y0 - level) * (y1 - level) < 0:
+            t = (level - y0) / (y1 - y0)
+            crossings.append(x[i] + t * (x[i + 1] - x[i]))
+    return np.array(crossings)
+
+
+def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
+                        max_steps: int = None):
+    """
+    Load geometry, x-coords, sediment, all sol_*.dat files.
+    Returns (x_mm, phi_s, ice_list, tem_list, rhov_list, step_list, time_h_list).
+    time_h_list entries are float or None if SSA_evo not available.
+    """
+    nrb       = load_geometry(os.path.join(run_dir, iga_file))
+    x         = get_x_coords(nrb)
+    x_mm      = x * 1e3
+    times     = load_times(run_dir)
+
+    sol_files = sorted(
+        glob.glob(os.path.join(run_dir, "sol_*.dat")), key=step_number
+    )
     if not sol_files:
         sys.exit(f"No sol_*.dat files found in '{run_dir}'")
-
     if max_steps is not None:
         sol_files = sol_files[:max_steps]
 
-    n_steps  = len(sol_files)
-    colormap = cm.viridis(np.linspace(0, 1, n_steps))
-
-    print(f"Found {n_steps} solution file(s) in '{run_dir}'")
-
-    # ------------------------------------------------------------------
-    # Read SSA_evo.dat for time labels (optional)
-    # ------------------------------------------------------------------
-    times = {}  # step -> time (s)
-    ssa_path = os.path.join(run_dir, "SSA_evo.dat")
-    if os.path.isfile(ssa_path):
-        try:
-            ssa = np.loadtxt(ssa_path)
-            if ssa.ndim == 1:
-                ssa = ssa[np.newaxis, :]
-            # columns: sub_interf/eps  tot_ice  t  step
-            for row in ssa:
-                if row.shape[0] >= 4:
-                    times[int(row[3])] = row[2]
-        except Exception:
-            pass  # time labels are optional
-
-    # ------------------------------------------------------------------
-    # Load all solutions
-    # ------------------------------------------------------------------
-    ice_snaps  = []
-    tem_snaps  = []
-    rhov_snaps = []
-    step_labels = []
+    ice_list  = []
+    tem_list  = []
+    rhov_list = []
+    step_list = []
+    time_list = []
 
     for sf in sol_files:
         try:
-            sol = load_solution(sf, nrb)  # shape (nx, 3) for 1D
+            sol = PetIGA().read_vec(sf, nrb)
         except Exception as e:
-            print(f"  WARNING: Could not read {sf}: {e}")
+            print(f"  WARNING: skipping {sf}: {e}")
             continue
-
-        if sol.ndim == 1:
-            print(f"  WARNING: {sf} returned 1D array — skipping.")
+        if sol.ndim < 2 or sol.shape[1] < 3:
+            print(f"  WARNING: unexpected shape in {sf} — skipping.")
             continue
-
-        ice_snaps.append(sol[:, 0])
-        tem_snaps.append(sol[:, 1])
-        rhov_snaps.append(sol[:, 2])
 
         step = step_number(sf)
-        t    = times.get(step)
-        if t is not None:
-            label = f"step {step}  t={_fmt_time(t)}"
-        else:
-            label = f"step {step}"
-        step_labels.append(label)
+        ice_list.append(sol[:, 0])
+        tem_list.append(sol[:, 1])
+        rhov_list.append(sol[:, 2])
+        step_list.append(step)
+        time_list.append(times.get(step, None))
 
-    if not ice_snaps:
+    if not ice_list:
         sys.exit("No valid solution files could be read.")
 
-    n_valid = len(ice_snaps)
+    n_nodes = len(x)
+    phi_s   = load_sediment(run_dir, n_nodes)
 
-    # ------------------------------------------------------------------
-    # Figure: 3 rows × 1 column
-    # ------------------------------------------------------------------
-    fig, axes = plt.subplots(3, 1, figsize=(9, 10), sharex=True)
+    print(f"Loaded {len(ice_list)} snapshots from '{run_dir}'")
+    if not _CMOCEAN:
+        print("  NOTE: cmocean not installed — using fallback colormaps. "
+              "Install with: pip install cmocean")
 
-    x_mm = x * 1e3  # convert m → mm for display
-
-    for i in range(n_valid):
-        c = cm.viridis(i / max(n_valid - 1, 1))
-        lw = 1.5 if i not in (0, n_valid - 1) else 2.0
-
-        axes[0].plot(x_mm, ice_snaps[i],  color=c, lw=lw, label=step_labels[i])
-        axes[1].plot(x_mm, tem_snaps[i],  color=c, lw=lw)
-        axes[2].plot(x_mm, rhov_snaps[i], color=c, lw=lw)
-
-    # Also plot saturation vapor density at the mean temperature
-    if tem_snaps:
-        T_mean = np.mean(tem_snaps[-1])
-        rhoVS_mean = rho_vs(T_mean)
-        axes[2].axhline(rhoVS_mean, color="k", ls="--", lw=1.0,
-                        label=rf"$\rho_{{vs}}(T_{{mean}}={T_mean:.1f}°C)$")
-
-    # Formatting
-    axes[0].set_ylabel(r"Ice phase  $\phi_i$",      fontsize=13)
-    axes[1].set_ylabel("Temperature  [°C]",          fontsize=13)
-    axes[2].set_ylabel(r"Vapor density  [kg m$^{-3}$]", fontsize=13)
-    axes[2].set_xlabel("x  [mm]",                    fontsize=13)
-
-    axes[0].set_ylim(-0.05, 1.1)
-    axes[0].set_title(f"1D Permafrost — field profiles\n(dir: {run_dir})", fontsize=13)
-    axes[0].legend(fontsize=7, loc="upper right", ncol=2)
-    axes[2].legend(fontsize=9, loc="upper right")
-
-    for ax in axes:
-        ax.grid(True, alpha=0.3)
-        ax.tick_params(labelsize=11)
-
-    # Colorbar as time axis (only if > 1 snapshot)
-    if n_valid > 1:
-        sm = plt.cm.ScalarMappable(cmap="viridis",
-                                    norm=plt.Normalize(0, n_valid - 1))
-        sm.set_array([])
-        cbar = fig.colorbar(sm, ax=axes, orientation="vertical",
-                            fraction=0.02, pad=0.02)
-        cbar.set_label("Snapshot index (0 = earliest)", fontsize=10)
-
-    plt.tight_layout()
-
-    if save_path:
-        fig.savefig(save_path, dpi=150, bbox_inches="tight")
-        print(f"Figure saved to: {save_path}")
-    else:
-        plt.show()
+    return x_mm, phi_s, ice_list, tem_list, rhov_list, step_list, time_list
 
 
 # ---------------------------------------------------------------------------
-# Auxiliary: derived quantities plot (interface position + ice volume)
+# Mode A: per-step phase field figures
+# ---------------------------------------------------------------------------
+
+def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
+    """Return a 3-panel phase figure for one snapshot."""
+    fig, axes = plt.subplots(3, 1, figsize=(8, 8), sharex=True)
+
+    t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
+    fig.suptitle(f"Phase fields — step {step:d}{t_str}", fontsize=13)
+
+    data = [
+        (axes[0], phi_i, "ice"),
+        (axes[1], phi_s, "sed"),
+        (axes[2], phi_a, "air"),
+    ]
+    for ax, field, key in data:
+        ax.plot(x_mm, field, color=PHASE_COLORS[key], lw=2.0)
+        ax.set_ylabel(PHASE_LABELS[key], fontsize=12)
+        ax.set_ylim(-0.05, 1.1)
+        ax.grid(True, alpha=0.3)
+        ax.tick_params(labelsize=10)
+
+    axes[2].set_xlabel("x  [mm]", fontsize=12)
+    plt.tight_layout()
+    return fig
+
+
+def plot_phase_steps(run_dir: str, out_dir: str = None,
+                     iga_file: str = "igasol.dat",
+                     max_steps: int = None) -> list:
+    """
+    Save one PNG per snapshot showing φ_i, φ_s, φ_a.
+    Returns list of saved file paths (used by make_phase_gif).
+    """
+    if out_dir is None:
+        out_dir = run_dir
+    os.makedirs(out_dir, exist_ok=True)
+
+    x_mm, phi_s, ice_list, _, _, step_list, time_list = _collect_snapshots(
+        run_dir, iga_file, max_steps
+    )
+
+    saved = []
+    for phi_i, step, t_h in zip(ice_list, step_list, time_list):
+        phi_a = np.clip(1.0 - phi_i - phi_s, 0.0, 1.0)
+        fig   = _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h)
+        path  = os.path.join(out_dir, f"phase_step_{step:05d}.png")
+        fig.savefig(path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        saved.append(path)
+        print(f"  Saved: {os.path.relpath(path)}")
+
+    return saved
+
+
+# ---------------------------------------------------------------------------
+# Mode B: thermal overlay (all steps, time colorbar)
+# ---------------------------------------------------------------------------
+
+def plot_thermal_overlay(run_dir: str, save_path: str = None,
+                          iga_file: str = "igasol.dat",
+                          max_steps: int = None):
+    """
+    2-panel figure: T(x) and ρ_v(x) for all snapshots, with a single
+    physical-time colorbar.  Uses cmocean.thermal and cmocean.balance.
+    """
+    x_mm, _, _, tem_list, rhov_list, step_list, time_list = _collect_snapshots(
+        run_dir, iga_file, max_steps
+    )
+
+    n = len(tem_list)
+
+    # Build time array for the colorbar (fall back to step index if no times)
+    t_vals = np.array([
+        t if t is not None else float(s)
+        for s, t in zip(step_list, time_list)
+    ])
+    use_time  = any(t is not None for t in time_list)
+    cb_label  = "Time  [h]" if use_time else "Snapshot index"
+
+    t_min, t_max = t_vals[0], t_vals[-1]
+    if t_min == t_max:
+        t_max = t_min + 1.0
+
+    norm_t = plt.Normalize(vmin=t_min, vmax=t_max)
+
+    # Color each snapshot by its position in time using plasma
+    cmap_time = cm.plasma
+
+    fig, (ax_T, ax_rho) = plt.subplots(2, 1, figsize=(9, 8), sharex=True)
+
+    for i, (tem, rhov, tv) in enumerate(zip(tem_list, rhov_list, t_vals)):
+        c  = cmap_time(norm_t(tv))
+        lw = 2.0 if i in (0, n - 1) else 1.2
+        ax_T.plot(x_mm, tem,  color=c, lw=lw)
+        ax_rho.plot(x_mm, rhov, color=c, lw=lw)
+
+    # Reference saturation vapor density at the final mean temperature
+    T_mean   = np.mean(tem_list[-1])
+    rvs_mean = rho_vs(T_mean)
+    ax_rho.axhline(rvs_mean, color="k", ls="--", lw=1.2,
+                   label=rf"$\rho_{{vs}}(T={T_mean:.1f}°C)$")
+    ax_rho.legend(fontsize=9, loc="upper right")
+
+    ax_T.set_ylabel("Temperature  [°C]",             fontsize=12)
+    ax_rho.set_ylabel(r"Vapor density  [kg m$^{-3}$]", fontsize=12)
+    ax_rho.set_xlabel("x  [mm]",                      fontsize=12)
+
+    run_label = os.path.basename(run_dir.rstrip("/")) or run_dir
+    ax_T.set_title(f"1D Permafrost — thermal fields\n({run_label})", fontsize=13)
+
+    for ax in (ax_T, ax_rho):
+        ax.grid(True, alpha=0.3)
+        ax.tick_params(labelsize=10)
+
+    # Shared colorbar on the right
+    sm = plt.cm.ScalarMappable(cmap=cmap_time, norm=norm_t)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=[ax_T, ax_rho], orientation="vertical",
+                        fraction=0.025, pad=0.02)
+    cbar.set_label(cb_label, fontsize=11)
+
+    plt.tight_layout()
+
+    if save_path is None:
+        save_path = os.path.join(run_dir, "thermal_overlay.png")
+
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Thermal overlay saved to: {save_path}")
+
+
+# ---------------------------------------------------------------------------
+# Mode C: GIF animation
+# ---------------------------------------------------------------------------
+
+def make_phase_gif(run_dir: str, gif_path: str = None,
+                   iga_file: str = "igasol.dat",
+                   max_steps: int = None, fps: int = 4):
+    """
+    Build an animated GIF of phase field snapshots.
+    Requires Pillow: pip install Pillow
+    """
+    if gif_path is None:
+        gif_path = os.path.join(run_dir, "phase_animation.gif")
+
+    x_mm, phi_s, ice_list, _, _, step_list, time_list = _collect_snapshots(
+        run_dir, iga_file, max_steps
+    )
+
+    # Build the figure once; update it each frame
+    fig, axes = plt.subplots(3, 1, figsize=(8, 8), sharex=True)
+
+    lines = []
+    for ax, key in zip(axes, ["ice", "sed", "air"]):
+        ln, = ax.plot([], [], color=PHASE_COLORS[key], lw=2.0)
+        ax.set_xlim(x_mm[0], x_mm[-1])
+        ax.set_ylim(-0.05, 1.1)
+        ax.set_ylabel(PHASE_LABELS[key], fontsize=12)
+        ax.grid(True, alpha=0.3)
+        ax.tick_params(labelsize=10)
+        lines.append(ln)
+
+    axes[2].set_xlabel("x  [mm]", fontsize=12)
+    title = fig.suptitle("", fontsize=13)
+
+    def _init():
+        for ln in lines:
+            ln.set_data([], [])
+        return lines
+
+    def _update(frame_idx):
+        phi_i = ice_list[frame_idx]
+        phi_a = np.clip(1.0 - phi_i - phi_s, 0.0, 1.0)
+        fields = [phi_i, phi_s, phi_a]
+        for ln, field in zip(lines, fields):
+            ln.set_data(x_mm, field)
+        step = step_list[frame_idx]
+        t_h  = time_list[frame_idx]
+        t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
+        title.set_text(f"Phase fields — step {step:d}{t_str}")
+        return lines + [title]
+
+    anim = FuncAnimation(fig, _update, init_func=_init,
+                          frames=len(ice_list), interval=1000 // fps,
+                          blit=False)
+
+    try:
+        writer = PillowWriter(fps=fps)
+        anim.save(gif_path, writer=writer)
+        plt.close(fig)
+        print(f"GIF saved to: {gif_path}")
+    except Exception as e:
+        plt.close(fig)
+        print(f"  WARNING: could not save GIF: {e}")
+        print("  Install Pillow with:  pip install Pillow")
+
+
+# ---------------------------------------------------------------------------
+# Mode D: derived quantities (unchanged logic)
 # ---------------------------------------------------------------------------
 
 def plot_derived(run_dir: str, save_path: str = None,
                  iga_file: str = "igasol.dat"):
-    """
-    Plot derived 1D scalar quantities from all snapshots:
-      - Total ice volume fraction vs. snapshot index
-      - Interface position(s) vs. snapshot index (defined as φ_i = 0.5 contour)
-      - Ice slab width vs. snapshot index
-    """
-    iga_path = os.path.join(run_dir, iga_file)
-    nrb = load_geometry(iga_path)
+    """Time-series of ice volume fraction, interface positions, slab width."""
+    nrb = load_geometry(os.path.join(run_dir, iga_file))
     x   = get_x_coords(nrb)
     Lx  = x[-1] - x[0]
 
-    pattern  = os.path.join(run_dir, "sol_*.dat")
-    sol_files = sorted(glob.glob(pattern), key=step_number)
+    sol_files = sorted(
+        glob.glob(os.path.join(run_dir, "sol_*.dat")), key=step_number
+    )
     if not sol_files:
         sys.exit(f"No sol_*.dat files found in '{run_dir}'")
 
-    steps         = []
-    ice_volumes   = []
-    left_edges    = []
-    right_edges   = []
-    slab_widths   = []
+    times = load_times(run_dir)
+
+    steps       = []
+    t_h_arr     = []
+    ice_volumes = []
+    left_edges  = []
+    right_edges = []
+    slab_widths = []
 
     for sf in sol_files:
         try:
-            sol = load_solution(sf, nrb)
+            sol = PetIGA().read_vec(sf, nrb)
         except Exception:
             continue
         if sol.ndim < 2:
@@ -257,16 +482,15 @@ def plot_derived(run_dir: str, save_path: str = None,
 
         step = step_number(sf)
         ice  = sol[:, 0]
-
-        # Total ice volume fraction (trapz integration, normalised by Lx)
-        vol = np.trapz(ice, x) / Lx
-        ice_volumes.append(vol)
-        steps.append(step)
-
-        # Interface positions: interpolate φ_i = 0.5 crossings
+        vol  = np.trapz(ice, x) / Lx
         crossings = _find_crossings(x, ice, level=0.5)
+
+        steps.append(step)
+        t_h_arr.append(times.get(step, None))
+        ice_volumes.append(vol)
+
         if len(crossings) >= 2:
-            left_edges.append(crossings[0] * 1e3)
+            left_edges.append(crossings[0]  * 1e3)
             right_edges.append(crossings[-1] * 1e3)
             slab_widths.append((crossings[-1] - crossings[0]) * 1e3)
         elif len(crossings) == 1:
@@ -281,7 +505,15 @@ def plot_derived(run_dir: str, save_path: str = None,
     if not steps:
         sys.exit("No valid solutions found.")
 
-    steps       = np.array(steps)
+    # x-axis: physical time if available, else step index
+    use_time = any(t is not None for t in t_h_arr)
+    if use_time:
+        xdata  = np.array([t if t is not None else np.nan for t in t_h_arr])
+        xlabel = "Time  [h]"
+    else:
+        xdata  = np.array(steps, dtype=float)
+        xlabel = "Step index"
+
     ice_volumes = np.array(ice_volumes)
     left_edges  = np.array(left_edges)
     right_edges = np.array(right_edges)
@@ -289,59 +521,35 @@ def plot_derived(run_dir: str, save_path: str = None,
 
     fig, axes = plt.subplots(3, 1, figsize=(8, 9), sharex=True)
 
-    axes[0].plot(steps, ice_volumes, "o-", color="#1f77b4", ms=4)
-    axes[0].set_ylabel("Mean ice fraction  $\\langle\\phi_i\\rangle$", fontsize=13)
+    axes[0].plot(xdata, ice_volumes, "o-", color="#1f77b4", ms=4)
+    axes[0].set_ylabel(r"Mean ice fraction  $\langle\phi_i\rangle$", fontsize=12)
     axes[0].axhline(ice_volumes[0], color="gray", ls="--", lw=1, label="initial")
     axes[0].legend(fontsize=10)
 
-    axes[1].plot(steps, left_edges,  "s-", color="#2ca02c", ms=4, label="left edge")
-    axes[1].plot(steps, right_edges, "D-", color="#d62728", ms=4, label="right edge")
-    axes[1].set_ylabel("Interface position  [mm]", fontsize=13)
+    axes[1].plot(xdata, left_edges,  "s-", color="#2ca02c", ms=4, label="left edge")
+    axes[1].plot(xdata, right_edges, "D-", color="#d62728", ms=4, label="right edge")
+    axes[1].set_ylabel("Interface position  [mm]", fontsize=12)
     axes[1].legend(fontsize=10)
 
-    axes[2].plot(steps, slab_widths, "^-", color="#9467bd", ms=4)
-    axes[2].set_ylabel("Slab width  [mm]", fontsize=13)
-    axes[2].set_xlabel("Step index", fontsize=13)
+    axes[2].plot(xdata, slab_widths, "^-", color="#9467bd", ms=4)
+    axes[2].set_ylabel("Slab width  [mm]", fontsize=12)
+    axes[2].set_xlabel(xlabel, fontsize=12)
 
-    axes[0].set_title(f"1D Permafrost — derived quantities\n(dir: {run_dir})", fontsize=13)
+    run_label = os.path.basename(run_dir.rstrip("/")) or run_dir
+    axes[0].set_title(f"1D Permafrost — derived quantities\n({run_label})", fontsize=13)
 
     for ax in axes:
         ax.grid(True, alpha=0.3)
-        ax.tick_params(labelsize=11)
+        ax.tick_params(labelsize=10)
 
     plt.tight_layout()
 
     if save_path:
         fig.savefig(save_path, dpi=150, bbox_inches="tight")
-        print(f"Figure saved to: {save_path}")
+        plt.close(fig)
+        print(f"Derived figure saved to: {save_path}")
     else:
         plt.show()
-
-
-# ---------------------------------------------------------------------------
-# Small utilities
-# ---------------------------------------------------------------------------
-
-def _find_crossings(x: np.ndarray, y: np.ndarray, level: float = 0.5) -> np.ndarray:
-    """Return x positions where y crosses `level` (linear interpolation)."""
-    crossings = []
-    for i in range(len(y) - 1):
-        y0, y1 = y[i], y[i + 1]
-        if (y0 - level) * (y1 - level) < 0:
-            # linear interpolation
-            t = (level - y0) / (y1 - y0)
-            crossings.append(x[i] + t * (x[i + 1] - x[i]))
-    return np.array(crossings)
-
-
-def _fmt_time(t_sec: float) -> str:
-    """Human-readable time string."""
-    if t_sec < 60:
-        return f"{t_sec:.1f} s"
-    elif t_sec < 3600:
-        return f"{t_sec / 60:.1f} min"
-    else:
-        return f"{t_sec / 3600:.2f} h"
 
 
 # ---------------------------------------------------------------------------
@@ -349,23 +557,57 @@ def _fmt_time(t_sec: float) -> str:
 # ---------------------------------------------------------------------------
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Plot 1D permafrost field profiles.")
-    p.add_argument("--dir",        default=".",     help="Output directory with sol_*.dat files")
-    p.add_argument("--iga",        default="igasol.dat", help="IGA geometry file")
-    p.add_argument("--max-steps",  type=int, default=None, help="Maximum snapshots to load")
-    p.add_argument("--save",       default=None, help="Save figure to this path (omit to display)")
+    p = argparse.ArgumentParser(
+        description="Plot 1D permafrost field profiles.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+    p.add_argument("--dir",        default=".",
+                   help="Output directory with sol_*.dat files (default: .)")
+    p.add_argument("--iga",        default="igasol.dat",
+                   help="IGA geometry file (default: igasol.dat)")
+    p.add_argument("--max-steps",  type=int, default=None,
+                   help="Maximum number of snapshots to load")
+    p.add_argument("--out-dir",    default=None,
+                   help="Directory for per-step PNGs (default: same as --dir)")
+    p.add_argument("--gif",        nargs="?", const=True, default=False,
+                   metavar="PATH",
+                   help="Also produce a phase animation GIF "
+                        "(optional: custom output path)")
+    p.add_argument("--thermal",    action="store_true",
+                   help="Also produce the thermal overlay figure")
     p.add_argument("--derived",    action="store_true",
-                   help="Plot derived quantities (ice volume, interface positions) instead")
+                   help="Plot derived scalar quantities instead of field profiles")
+    p.add_argument("--save",       default=None,
+                   help="Save path for --thermal or --derived figure "
+                        "(default: auto-named in --dir)")
     return p.parse_args()
 
 
 def main():
-    args = parse_args()
+    args   = parse_args()
+    run_dir = args.dir
+    out_dir = args.out_dir or run_dir
+
     if args.derived:
-        plot_derived(args.dir, save_path=args.save, iga_file=args.iga)
-    else:
-        plot_profiles(args.dir, max_steps=args.max_steps,
-                      save_path=args.save, iga_file=args.iga)
+        plot_derived(run_dir, save_path=args.save, iga_file=args.iga)
+        return
+
+    # Default: always produce per-step phase PNGs
+    plot_phase_steps(run_dir, out_dir=out_dir,
+                     iga_file=args.iga, max_steps=args.max_steps)
+
+    # Optional: thermal overlay
+    if args.thermal:
+        save_thermal = args.save or os.path.join(out_dir, "thermal_overlay.png")
+        plot_thermal_overlay(run_dir, save_path=save_thermal,
+                             iga_file=args.iga, max_steps=args.max_steps)
+
+    # Optional: GIF
+    if args.gif is not False:
+        gif_path = args.gif if isinstance(args.gif, str) else None
+        make_phase_gif(run_dir, gif_path=gif_path,
+                       iga_file=args.iga, max_steps=args.max_steps)
 
 
 if __name__ == "__main__":
