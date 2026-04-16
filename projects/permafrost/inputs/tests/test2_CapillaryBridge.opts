@@ -1,3 +1,6 @@
+# ---------- Initial Condition ----------
+-ic_type capillary
+
 # ---------- Domain ----------
 -dim 2
 -dof 3

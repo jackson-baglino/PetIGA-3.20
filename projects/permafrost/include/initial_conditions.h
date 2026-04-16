@@ -9,6 +9,7 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
 PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user);
 PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user);
 PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user);
+PetscErrorCode FormInitialSoil1D(IGA igaS, Vec S, AppCtx *user);
 PetscErrorCode FormInitialSoil2D(IGA igaS, Vec S, AppCtx *user);
 PetscErrorCode FormInitialSoil3D(IGA igaS, Vec S, AppCtx *user);
 

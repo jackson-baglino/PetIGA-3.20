@@ -1893,17 +1893,55 @@ PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U,
 
 
 /**
+ * @brief 1D sediment initialization: place one diffuse sediment slab.
+ *
+ * Reads slab center and half-width from user->centsed[0][0] and
+ * user->radiussed[0].  Caller must set user->n_actsed before calling.
+ */
+PetscErrorCode FormInitialSoil1D(IGA igaS, Vec S, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    DM            da;
+    FieldS       *u;
+    DMDALocalInfo info;
+
+    ierr = IGACreateNodeDM(igaS, 1, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, S, &u);    CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);   CHKERRQ(ierr);
+
+    PetscInt k = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        PetscReal x   = user->Lx * (PetscReal)i / (PetscReal)(info.mx + k);
+        PetscReal val = 0.0;
+        for (PetscInt kk = 0; kk < user->n_actsed; kk++) {
+            PetscReal dist = PetscAbsReal(x - user->centsed[0][kk]);
+            val += 0.5 - 0.5 * PetscTanhReal(0.5 / user->eps * (dist - user->radiussed[kk]));
+        }
+        u[i].soil = PetscMin(1.0, PetscMax(0.0, val));
+    }
+
+    ierr = DMDAVecRestoreArray(da, S, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/**
  * @brief 1D initial condition: a centered ice slab surrounded by air.
  *
  * Sets up a diffuse-interface ice slab occupying [x_lo, x_hi] = [0.35*Lx, 0.65*Lx].
- * No sediment phase is present (S = 0, Phi_sed = 0).
+ * A sediment slab is placed adjacent to the ice (flag_tIC==0) or in the right half
+ * (flag_tIC==2) via FormInitialSoil1D.
  * Temperature and vapor density are initialized from user->temp0, grad_temp0, hum0.
  *
  * Two geometric variants are selected via user->flag_tIC:
  *   flag_tIC == 0  ->  centered slab (ice in [0.35 Lx, 0.65 Lx])
  *   flag_tIC == 2  ->  flat interface (ice in [0, 0.5 Lx], air in [0.5 Lx, Lx])
  *
- * Usage: call after setting up the 1D IGA; pass igaS for the (trivial) soil IGA.
+ * Usage: call after setting up the 1D IGA; pass igaS for the soil IGA.
  */
 PetscErrorCode FormInitialCondition1D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
 {
@@ -1913,11 +1951,19 @@ PetscErrorCode FormInitialCondition1D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *u
     PetscPrintf(PETSC_COMM_WORLD,
                 "--- INITIAL CONDITIONS (1D, dim=%d) ---\n", user->dim);
 
-    /* Zero out the sediment phase — no grains in the 1D tests */
-    ierr = VecZeroEntries(S); CHKERRQ(ierr);
-    user->n_actsed = 0;
+    /* Place one sediment slab; position depends on IC variant */
+    user->n_actsed = 1;
     user->n_act    = 0;
-    /* Phi_sed array is already zeroed in main; leave it. */
+    if (user->flag_tIC == 2) {
+        /* Flat interface: sediment fills the right half (no ice there) */
+        user->centsed[0][0] = 0.75 * user->Lx;
+        user->radiussed[0]  = 0.25 * user->Lx;
+    } else {
+        /* Centered slab: sediment slab immediately right of the ice */
+        user->centsed[0][0] = 0.75 * user->Lx;
+        user->radiussed[0]  = 0.10 * user->Lx;
+    }
+    ierr = FormInitialSoil1D(igaS, S, user); CHKERRQ(ierr);
 
     /* Build node DM for the primary field vector */
     DM            da;

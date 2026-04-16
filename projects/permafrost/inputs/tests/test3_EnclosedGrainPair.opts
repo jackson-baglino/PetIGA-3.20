@@ -1,3 +1,6 @@
+# ---------- Initial Condition ----------
+-ic_type enclosed
+
 # ---------- Domain ----------
 -dim 2
 -dof 3

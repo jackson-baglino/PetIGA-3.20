@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
     PetscBool monitor = PETSC_TRUE;                    /* Monitor flag */
     char      initial[PETSC_MAX_PATH_LEN] = {0};       /* Initial condition file */
     char      PFgeom[PETSC_MAX_PATH_LEN]  = {0};       /* Initial ice geometry file */
+    char      ic_type[64]                 = "enclosed"; /* IC geometry selector */
 
     PetscOptionsBegin(PETSC_COMM_WORLD, "", "Permafrost options", "IGA");
     /* --- Geometry & discretization --------------------------------------- */
@@ -215,6 +216,11 @@ int main(int argc, char *argv[]) {
     /* --- Restart / initialization files --------------------------------- */
     ierr = PetscOptionsString("-initial_cond", "Load initial solution from file", "", initial, initial, sizeof(initial), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsString("-ic_type",
+             "Initial condition geometry (enclosed|capillary|layered|"
+             "random_enclosed|random_packed|ice_cap)",
+             "permafrost2.c", ic_type, ic_type, sizeof(ic_type),
+             NULL); CHKERRQ(ierr);
 
     /* --- Capillarly neck parameters ------------------------------------- */
     ierr = PetscOptionsReal("-R1", "Radius of capillary neck", "", user.R1, &user.R1, NULL); CHKERRQ(ierr);
@@ -466,37 +472,31 @@ int main(int argc, char *argv[]) {
 
     if (dim == 1) {
         /* --- 1D Initial Conditions ---------------------------------------- */
-        /* Slab IC: centered ice slab (flag_tIC==0) or flat interface (flag_tIC==2). */
-        PetscPrintf(PETSC_COMM_WORLD, "IC type: 1D ice slab\n");
+        /* Variant selected by -flag_tIC: 0 = centered slab, 2 = flat interface */
+        PetscPrintf(PETSC_COMM_WORLD, "IC type: 1D ice slab (flag_tIC=%d)\n", user.flag_tIC);
         ierr = FormInitialCondition1D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
     } else {
-        /* --- 2D / 3D Initial Conditions ----------------------------------- */
+        /* --- 2D / 3D Initial Conditions — selected by -ic_type ------------ */
+        PetscPrintf(PETSC_COMM_WORLD, "IC type: %s\n", ic_type);
 
-        /* 1.) Capillary IC */
-        // PetscPrintf(PETSC_COMM_WORLD,
-        //         "IC type: capillary  (using analytic capillary neck geometry)\n");
-        // ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
-
-        /* 2.) Layered IC */
-        // PetscPrintf(PETSC_COMM_WORLD, "IC type: layered  (using layered geometry)\n");
-        // ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
-
-        /* 3.) Enclosed grain pair IC */
-        PetscPrintf(PETSC_COMM_WORLD, "IC type: enclosed grain pair  (using enclosed grain geometry)\n");
-        ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
-
-        /* 4.) Random enclosed grains IC */
-        // PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
-        // ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
-
-        /* 5.) Random packed grains IC */
-        // PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");
-        // ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
-
-        /* 6.) Flat sediment ice cap IC */
-        // PetscPrintf(PETSC_COMM_WORLD, "IC type: flat sediment ice cap  (using flat sediment ice cap geometry)\n");
-        // ierr = FormInitialFlatSedIceCap2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        if (strcmp(ic_type, "capillary") == 0) {
+            ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "layered") == 0) {
+            ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "enclosed") == 0) {
+            ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "random_enclosed") == 0) {
+            ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "random_packed") == 0) {
+            ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "ice_cap") == 0) {
+            ierr = FormInitialFlatSedIceCap2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        } else {
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                    "Unknown -ic_type. Valid: enclosed capillary layered "
+                    "random_enclosed random_packed ice_cap");
+        }
     }
 
 
