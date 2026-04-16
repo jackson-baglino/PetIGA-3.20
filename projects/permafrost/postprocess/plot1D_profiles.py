@@ -252,25 +252,23 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
 # ---------------------------------------------------------------------------
 
 def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
-    """Return a 3-panel phase figure for one snapshot."""
-    fig, axes = plt.subplots(3, 1, figsize=(8, 8), sharex=True)
+    """Return a single-panel phase figure with all phases overlaid."""
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
 
     t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
-    fig.suptitle(f"Phase fields — step {step:d}{t_str}", fontsize=13)
+    ax.set_title(f"Phase fields — step {step:d}{t_str}", fontsize=13)
 
-    data = [
-        (axes[0], phi_i, "ice"),
-        (axes[1], phi_s, "sed"),
-        (axes[2], phi_a, "air"),
-    ]
-    for ax, field, key in data:
-        ax.plot(x_mm, field, color=PHASE_COLORS[key], lw=2.0)
-        ax.set_ylabel(PHASE_LABELS[key], fontsize=12)
-        ax.set_ylim(-0.05, 1.1)
-        ax.grid(True, alpha=0.3)
-        ax.tick_params(labelsize=10)
+    ax.plot(x_mm, phi_i, color=PHASE_COLORS["ice"], lw=2.0, label=PHASE_LABELS["ice"])
+    ax.plot(x_mm, phi_s, color=PHASE_COLORS["sed"], lw=2.0, label=PHASE_LABELS["sed"])
+    ax.plot(x_mm, phi_a, color=PHASE_COLORS["air"], lw=2.0, label=PHASE_LABELS["air"])
 
-    axes[2].set_xlabel("x  [mm]", fontsize=12)
+    ax.set_ylabel("Volume fraction", fontsize=12)
+    ax.set_xlabel("x  [mm]", fontsize=12)
+    ax.set_ylim(-0.05, 1.1)
+    ax.legend(fontsize=11, loc="best")
+    ax.grid(True, alpha=0.3)
+    ax.tick_params(labelsize=10)
+
     plt.tight_layout()
     return fig
 
@@ -284,7 +282,8 @@ def plot_phase_steps(run_dir: str, out_dir: str = None,
     """
     if out_dir is None:
         out_dir = run_dir
-    os.makedirs(out_dir, exist_ok=True)
+    phases_dir = os.path.join(out_dir, "phases")
+    os.makedirs(phases_dir, exist_ok=True)
 
     x_mm, phi_s, ice_list, _, _, step_list, time_list = _collect_snapshots(
         run_dir, iga_file, max_steps
@@ -294,7 +293,7 @@ def plot_phase_steps(run_dir: str, out_dir: str = None,
     for phi_i, step, t_h in zip(ice_list, step_list, time_list):
         phi_a = np.clip(1.0 - phi_i - phi_s, 0.0, 1.0)
         fig   = _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h)
-        path  = os.path.join(out_dir, f"phase_step_{step:05d}.png")
+        path  = os.path.join(phases_dir, f"phase_step_{step:05d}.png")
         fig.savefig(path, dpi=150, bbox_inches="tight")
         plt.close(fig)
         saved.append(path)
@@ -373,7 +372,9 @@ def plot_thermal_overlay(run_dir: str, save_path: str = None,
     plt.tight_layout()
 
     if save_path is None:
-        save_path = os.path.join(run_dir, "thermal_overlay.png")
+        thermal_dir = os.path.join(run_dir, "thermal")
+        os.makedirs(thermal_dir, exist_ok=True)
+        save_path = os.path.join(thermal_dir, "thermal_overlay.png")
 
     fig.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
@@ -392,27 +393,30 @@ def make_phase_gif(run_dir: str, gif_path: str = None,
     Requires Pillow: pip install Pillow
     """
     if gif_path is None:
-        gif_path = os.path.join(run_dir, "phase_animation.gif")
+        phases_dir = os.path.join(run_dir, "phases")
+        os.makedirs(phases_dir, exist_ok=True)
+        gif_path = os.path.join(phases_dir, "phase_animation.gif")
 
     x_mm, phi_s, ice_list, _, _, step_list, time_list = _collect_snapshots(
         run_dir, iga_file, max_steps
     )
 
     # Build the figure once; update it each frame
-    fig, axes = plt.subplots(3, 1, figsize=(8, 8), sharex=True)
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+    ax.set_xlim(x_mm[0], x_mm[-1])
+    ax.set_ylim(-0.05, 1.1)
+    ax.set_ylabel("Volume fraction", fontsize=12)
+    ax.set_xlabel("x  [mm]", fontsize=12)
+    ax.grid(True, alpha=0.3)
+    ax.tick_params(labelsize=10)
 
     lines = []
-    for ax, key in zip(axes, ["ice", "sed", "air"]):
-        ln, = ax.plot([], [], color=PHASE_COLORS[key], lw=2.0)
-        ax.set_xlim(x_mm[0], x_mm[-1])
-        ax.set_ylim(-0.05, 1.1)
-        ax.set_ylabel(PHASE_LABELS[key], fontsize=12)
-        ax.grid(True, alpha=0.3)
-        ax.tick_params(labelsize=10)
+    for key in ["ice", "sed", "air"]:
+        ln, = ax.plot([], [], color=PHASE_COLORS[key], lw=2.0, label=PHASE_LABELS[key])
         lines.append(ln)
+    ax.legend(fontsize=11, loc="best")
 
-    axes[2].set_xlabel("x  [mm]", fontsize=12)
-    title = fig.suptitle("", fontsize=13)
+    title = ax.set_title("", fontsize=13)
 
     def _init():
         for ln in lines:
@@ -599,7 +603,7 @@ def main():
 
     # Optional: thermal overlay
     if args.thermal:
-        save_thermal = args.save or os.path.join(out_dir, "thermal_overlay.png")
+        save_thermal = args.save or None  # let plot_thermal_overlay handle subfolder
         plot_thermal_overlay(run_dir, save_path=save_thermal,
                              iga_file=args.iga, max_steps=args.max_steps)
 
