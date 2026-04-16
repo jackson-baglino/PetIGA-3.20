@@ -1,10 +1,29 @@
 # Post-processing Scripts
 
-All scripts require Python 3 with `numpy`, `matplotlib`, `scipy`, and `igakit`.
+All scripts require Python 3 with `numpy`, `matplotlib`, `scipy`, `igakit`,
+and `cmocean`.
 
 ```bash
-pip install numpy matplotlib scipy igakit
+pip install numpy matplotlib scipy igakit cmocean Pillow
 ```
+
+`cmocean` and `Pillow` are optional — the scripts fall back gracefully if they
+are not installed (alternative colormaps are used; GIF output is disabled).
+
+---
+
+## Automation
+
+When using the Studio or HPC run scripts, 1D post-processing runs automatically
+after the simulation completes.  For a run with `-dim 1` in the opts file the
+following files are written to the output folder:
+
+| Output file | Contents |
+|-------------|----------|
+| `phase_step_NNNNN.png` | Per-step phase field figure (one per output step) |
+| `phase_animation.gif`  | Animated GIF of all phase field steps |
+| `derived.png`           | Ice volume, interface position, slab width vs. time |
+| `scalars.png`           | Ice volume, Δice, interface density, Δt from SSA_evo.dat |
 
 ---
 
@@ -12,20 +31,50 @@ pip install numpy matplotlib scipy igakit
 
 ### `plot1D_profiles.py` — 1D field snapshots
 
-Reads `sol_*.dat` files from a 1D run and plots φ_i, T, ρ_v profiles across
-multiple time snapshots overlaid in one figure.  Pass `--derived` for a second
-figure showing ice volume fraction, interface position, and slab width over time.
+Reads `sol_*.dat` and (optionally) `soil.dat` from a 1D run and produces:
+
+- **Per-step phase PNGs** (default) — one figure per snapshot with three panels:
+  φ_i (ice, blue), φ_s (sediment, brown), φ_a = 1−φ_i−φ_s (air, green).
+  Saved as `phase_step_NNNNN.png` in `--out-dir`.
+
+- **Thermal overlay** (`--thermal`) — all snapshots of T and ρ_v overlaid on
+  two panels with a physical-time colorbar.  Uses `cmocean.thermal` for T and
+  `cmocean.balance` (diverging red–blue) for ρ_v.
+
+- **GIF animation** (`--gif`) — animated GIF of the phase fields over time.
+
+- **Derived quantities** (`--derived`) — ice volume fraction, interface position,
+  and slab width vs. physical time.
 
 ```bash
-# Field profiles (all snapshots)
+# Per-step phase PNGs (written to run directory)
 python plot1D_profiles.py --dir /path/to/run
 
-# Limit to 8 snapshots, save figure
-python plot1D_profiles.py --dir . --max-steps 8 --save profiles.png
+# Also produce GIF and thermal overlay
+python plot1D_profiles.py --dir /path/to/run --gif --thermal
 
-# Derived scalar quantities (interface tracking)
+# Write outputs to a separate directory
+python plot1D_profiles.py --dir /path/to/run --out-dir /path/to/figs --gif
+
+# Limit to 8 snapshots
+python plot1D_profiles.py --dir . --max-steps 8
+
+# Derived scalar quantities
 python plot1D_profiles.py --dir . --derived --save derived.png
 ```
+
+**Flags**
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--dir DIR` | `.` | Directory containing sol_*.dat files |
+| `--iga FILE` | `igasol.dat` | IGA geometry file |
+| `--max-steps N` | all | Limit number of snapshots loaded |
+| `--out-dir DIR` | same as `--dir` | Where to write per-step PNGs |
+| `--gif [PATH]` | off | Produce animated GIF (default name: `phase_animation.gif`) |
+| `--thermal` | off | Produce thermal overlay figure |
+| `--derived` | off | Plot derived scalar quantities instead of field profiles |
+| `--save PATH` | auto | Save path for `--thermal` or `--derived` figure |
 
 ---
 
