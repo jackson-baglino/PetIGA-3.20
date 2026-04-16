@@ -1888,67 +1888,85 @@ PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U,
     ierr = DMDestroy(&da);;CHKERRQ(ierr); 
   } 
 
-  /* The top half of the domain is initialized with ice grains. The bottom half of */
-  // } else {
-  //   DM da;
-  //   ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
-  //   Field **u;
-  //   ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
-  //   DMDALocalInfo info;
-  //   ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
-
-  //   /* Initialize the bottom half of the domain with solid ice. */
-  //   PetscInt i,j,k=-1;
-  //   if(user->periodic==1) k=user->p -1;
-  //   // Loop over the domain
-  //   for(i=info.xs;i<info.xs+info.xm;i++){
-  //     for(j=info.ys;j<info.ys+info.ym;j++){
-  //       // Define the coordinates
-  //       PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+k) );
-  //       PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+k) );
-
-  //       // Initialize the ice phase-field variable for the top (air) and bottom 
-  //       // (ice) layers.
-  //       PetscReal dist, ice=0.0;
-  //       dist = y - (user->Ly/2.0);
-  //       ice = 0.5-0.5*tanh(0.5/user->eps*dist);
-
-  //       // Remove the air inclusions
-  //       PetscInt aa;
-  //       for(aa=0;aa<user->n_act;aa++){
-  //         dist=sqrt(SQ(x-user->cent[0][aa])+SQ(y-user->cent[1][aa]));
-
-  //         if((user->cent[1][aa] - 0.9*user->radius[aa]) < user->Ly/2.0){
-  //           // Remove the air inclusion
-  //           // ice -= 0.5-0.5*tanh(0.5/user->eps*(dist-user->radius[aa]));
-  //           // PetscPrintf(PETSC_COMM_WORLD, "Intialized air inclusion %d at (%.2e, %.2e)\n", aa, user->cent[0][aa], user->cent[1][aa]);
-  //         } else {
-  //           ice += 0.5-0.5*tanh(0.5/user->eps*(dist-user->radius[aa]));
-  //           // PetscPrintf(PETSC_COMM_WORLD, "Intialized ice grain %d at (%.2e, %.2e)\n", aa, user->cent[0][aa], user->cent[1][aa]);
-  //         }
-  //       }
-  //       if(ice>1.0) ice=1.0;
-  //       if(ice<0.0) ice=0.0;
-
-  //       u[j][i].ice = ice;    
-  //       u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
-  //       PetscScalar rho_vs, temp=u[j][i].tem;
-  //       RhoVS_I(user,temp,&rho_vs,NULL);
-  //       u[j][i].rhov = user->hum0*rho_vs;
-  //     }
-  //   }
-
-  //   ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
-  //   ierr = DMDestroy(&da);;CHKERRQ(ierr); 
-  // }
-  PetscFunctionReturn(0); 
+  PetscFunctionReturn(0);
 }
 
 
+/**
+ * @brief 1D initial condition: a centered ice slab surrounded by air.
+ *
+ * Sets up a diffuse-interface ice slab occupying [x_lo, x_hi] = [0.35*Lx, 0.65*Lx].
+ * No sediment phase is present (S = 0, Phi_sed = 0).
+ * Temperature and vapor density are initialized from user->temp0, grad_temp0, hum0.
+ *
+ * Two geometric variants are selected via user->flag_tIC:
+ *   flag_tIC == 0  ->  centered slab (ice in [0.35 Lx, 0.65 Lx])
+ *   flag_tIC == 2  ->  flat interface (ice in [0, 0.5 Lx], air in [0.5 Lx, Lx])
+ *
+ * Usage: call after setting up the 1D IGA; pass igaS for the (trivial) soil IGA.
+ */
+PetscErrorCode FormInitialCondition1D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
 
+    PetscPrintf(PETSC_COMM_WORLD,
+                "--- INITIAL CONDITIONS (1D, dim=%d) ---\n", user->dim);
 
+    /* Zero out the sediment phase — no grains in the 1D tests */
+    ierr = VecZeroEntries(S); CHKERRQ(ierr);
+    user->n_actsed = 0;
+    user->n_act    = 0;
+    /* Phi_sed array is already zeroed in main; leave it. */
 
+    /* Build node DM for the primary field vector */
+    DM            da;
+    Field        *u;   /* 1D: plain pointer, not pointer-to-pointer */
+    DMDALocalInfo info;
 
+    ierr = IGACreateNodeDM(iga, 3, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);   CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);  CHKERRQ(ierr);
+
+    const PetscReal Lx  = user->Lx;
+    const PetscReal eps = user->eps;
+
+    /* Slab extents — choose variant based on flag_tIC */
+    PetscReal x_lo, x_hi;
+    if (user->flag_tIC == 2) {
+        /* Flat interface: left half is ice */
+        x_lo = 0.0;
+        x_hi = 0.5 * Lx;
+    } else {
+        /* Default: centered slab */
+        x_lo = 0.35 * Lx;
+        x_hi = 0.65 * Lx;
+    }
+
+    PetscInt k = -1;
+    if (user->periodic == 1) k = user->p - 1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + k);
+
+        /* Diffuse slab: tanh transition at x_lo and x_hi */
+        PetscReal ice = 0.5 * (tanh(0.5 * (x - x_lo) / eps)
+                              - tanh(0.5 * (x - x_hi) / eps));
+        ice = PetscMin(PetscMax(ice, 0.0), 1.0);
+
+        u[i].ice = ice;
+        u[i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
+
+        PetscScalar rho_vs_loc, temp_loc = u[i].tem;
+        RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
+        u[i].rhov = user->hum0 * rho_vs_loc;
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+}
 
 
 

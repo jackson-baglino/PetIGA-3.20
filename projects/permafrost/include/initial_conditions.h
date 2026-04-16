@@ -23,4 +23,8 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U, AppCtx *user,
 PetscErrorCode LoadInputSolutionVec(const char *filename, Vec *U_in_seq);
 PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user);
 PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user);
+
+/* 1D initial conditions */
+PetscErrorCode FormInitialCondition1D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user);
+
 #endif // INITIAL_CONDITIONS_H

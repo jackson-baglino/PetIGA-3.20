@@ -131,13 +131,17 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-dof", "Degrees of freedom per node", "", dof, &dof, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-dim", "Problem dimension (2 or 3)", "", dim, &dim, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-Nx", "Number of elements in x direction", "", Nx, &Nx, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-Ny", "Number of elements in y direction", "", Ny, &Ny, NULL); CHKERRQ(ierr);
+    if (dim >= 2) {
+        ierr = PetscOptionsInt("-Ny", "Number of elements in y direction", "", Ny, &Ny, NULL); CHKERRQ(ierr);
+    }
     if (dim == 3) {
         ierr = PetscOptionsInt("-Nz", "Number of elements in z direction", "", Nz, &Nz, NULL); CHKERRQ(ierr);
     }
     PetscInt ngrad = dim; /* Number of grad_temp0 components to read */
     ierr = PetscOptionsReal("-Lx", "Domain length in x direction", "", Lx, &Lx, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-Ly", "Domain length in y direction", "", Ly, &Ly, NULL); CHKERRQ(ierr);
+    if (dim >= 2) {
+        ierr = PetscOptionsReal("-Ly", "Domain length in y direction", "", Ly, &Ly, NULL); CHKERRQ(ierr);
+    }
     if (dim == 3) {
         ierr = PetscOptionsReal("-Lz", "Domain length in z direction", "", Lz, &Lz, NULL); CHKERRQ(ierr);
     }
@@ -242,21 +246,18 @@ int main(int argc, char *argv[]) {
     // Print simulation parameters
     PetscPrintf(PETSC_COMM_WORLD, "----- Simulation Parameters ----- \n");
     PetscPrintf(PETSC_COMM_WORLD, "Dimension: %dD \n", dim);
-    PetscPrintf(PETSC_COMM_WORLD, "Domain size: Lx = %.2e m, Ly = %.2e m", Lx, Ly);
-    if (dim == 3) {
-        PetscPrintf(PETSC_COMM_WORLD, ", Lz = %.2e m", Lz);
-    }
-    PetscPrintf(PETSC_COMM_WORLD, "\nElements: Nx = %d, Ny = %d", Nx, Ny);
-    if (dim == 3) {
-        PetscPrintf(PETSC_COMM_WORLD, ", Nz = %d", Nz);
-    }
+    PetscPrintf(PETSC_COMM_WORLD, "Domain size: Lx = %.2e m", Lx);
+    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ly = %.2e m", Ly);
+    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Lz = %.2e m", Lz);
+    PetscPrintf(PETSC_COMM_WORLD, "\nElements: Nx = %d", Nx);
+    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ny = %d", Ny);
+    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Nz = %d", Nz);
     PetscPrintf(PETSC_COMM_WORLD, "\nTime step: delt_t = %.2e sec, t_final = %.2e sec, n_out = %d \n", delt_t, t_final, n_out);
     PetscPrintf(PETSC_COMM_WORLD, "Initial conditions: temp0 = %.2f C, humidity = %.2f \n", temp, humidity);
     PetscPrintf(PETSC_COMM_WORLD, "Interface width: eps = %.2e m \n", eps);
-    PetscPrintf(PETSC_COMM_WORLD, "Temperature gradient: dT/dx = %.2e C/m, dT/dy = %.2e C/m", grad_temp0[0], grad_temp0[1]);
-    if (dim == 3) {
-        PetscPrintf(PETSC_COMM_WORLD, ", dT/dz = %.2e C/m", grad_temp0[2]);
-    }
+    PetscPrintf(PETSC_COMM_WORLD, "Temperature gradient: dT/dx = %.2e C/m", grad_temp0[0]);
+    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", dT/dy = %.2e C/m", grad_temp0[1]);
+    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", dT/dz = %.2e C/m", grad_temp0[2]);
 
     /* Compute saturation vapor density and its derivative based on initial temperature */
     PetscReal rho_rhovs;   /* Ratio of ice density to saturation vapor density */
@@ -335,10 +336,12 @@ int main(int argc, char *argv[]) {
     ierr = IGAAxisSetDegree(axis0, p); CHKERRQ(ierr);
     ierr = IGAAxisInitUniform(axis0, Nx, 0.0, Lx, C); CHKERRQ(ierr);
 
-    ierr = IGAGetAxis(iga, 1, &axis1); CHKERRQ(ierr);
-    if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis1, PETSC_TRUE); CHKERRQ(ierr); }
-    ierr = IGAAxisSetDegree(axis1, p); CHKERRQ(ierr);
-    ierr = IGAAxisInitUniform(axis1, Ny, 0.0, Ly, C); CHKERRQ(ierr);
+    if (dim >= 2) {
+        ierr = IGAGetAxis(iga, 1, &axis1); CHKERRQ(ierr);
+        if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis1, PETSC_TRUE); CHKERRQ(ierr); }
+        ierr = IGAAxisSetDegree(axis1, p); CHKERRQ(ierr);
+        ierr = IGAAxisInitUniform(axis1, Ny, 0.0, Ly, C); CHKERRQ(ierr);
+    }
 
     if (dim == 3) {
         ierr = IGAGetAxis(iga, 2, &axis2); CHKERRQ(ierr);
@@ -351,10 +354,14 @@ int main(int argc, char *argv[]) {
     ierr = IGASetUp(iga); CHKERRQ(ierr);
     user.iga = iga;
 
-    /* Setup Initial Conditions */
-    PetscInt nmb = iga->elem_width[0] * iga->elem_width[1] * SQ(p + 1);
-    if (dim == 3) {
-        nmb = nmb * iga->elem_width[2] * (p + 1);
+    /* Number of quadrature points on this rank (used for Phi_sed and mob arrays) */
+    PetscInt nmb;
+    if (dim == 1) {
+        nmb = iga->elem_width[0] * (p + 1);
+    } else if (dim == 2) {
+        nmb = iga->elem_width[0] * iga->elem_width[1] * SQ(p + 1);
+    } else {
+        nmb = iga->elem_width[0] * iga->elem_width[1] * iga->elem_width[2] * CU(p + 1);
     }
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.Phi_sed); CHKERRQ(ierr);
     ierr = PetscMalloc(sizeof(PetscReal) * nmb * dim, &user.grad_Phi_sed); CHKERRQ(ierr);
@@ -384,10 +391,8 @@ int main(int argc, char *argv[]) {
 
     // Set temperature BCs
     if (flag_BC_Tfix == 1) {
-        PetscReal T_BC[dim][2], LL[dim];
-        LL[0] = user.Lx;
-        LL[1] = user.Ly;
-        if (dim == 3) {LL[2] = user.Lz; }
+        PetscReal T_BC[3][2] = {{0}};
+        PetscReal LL[3]      = {user.Lx, user.Ly, user.Lz};
         for (PetscInt l = 0; l < dim; l++) {
             for (PetscInt m = 0; m < 2; m++) {
                 T_BC[l][m] = user.temp0 + (2.0 * m - 1.0) * user.grad_temp0[l] * LL[l] / 2.0;
@@ -435,10 +440,12 @@ int main(int argc, char *argv[]) {
     if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis0S, PETSC_TRUE); CHKERRQ(ierr); }
     ierr = IGAAxisSetDegree(axis0S, p); CHKERRQ(ierr);
     ierr = IGAAxisInitUniform(axis0S, Nx, 0.0, Lx, C); CHKERRQ(ierr);
-    ierr = IGAGetAxis(igaS, 1, &axis1S);
-    if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis1S, PETSC_TRUE); CHKERRQ(ierr); }
-    ierr = IGAAxisSetDegree(axis1S, p); CHKERRQ(ierr);
-    ierr = IGAAxisInitUniform(axis1S, Ny, 0.0, Ly, C); CHKERRQ(ierr);
+    if (dim >= 2) {
+        ierr = IGAGetAxis(igaS, 1, &axis1S);
+        if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis1S, PETSC_TRUE); CHKERRQ(ierr); }
+        ierr = IGAAxisSetDegree(axis1S, p); CHKERRQ(ierr);
+        ierr = IGAAxisInitUniform(axis1S, Ny, 0.0, Ly, C); CHKERRQ(ierr);
+    }
     if (dim == 3) {
         ierr = IGAGetAxis(igaS, 2, &axis2S);
         if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis2S, PETSC_TRUE); CHKERRQ(ierr); }
@@ -456,32 +463,41 @@ int main(int argc, char *argv[]) {
     ierr = VecZeroEntries(S); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD, "Setting up initial conditions... \n");
-    // PetscPrintf(PETSC_COMM_WORLD, "Initial condition type: %s \n", ICGeomTypeNames[ic_type_opt]);
 
-    /* 1.) Capillary IC */
-    PetscPrintf(PETSC_COMM_WORLD,
-            "IC type: capillary  (using analytic capillary neck geometry)\n");
-    ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
+    if (dim == 1) {
+        /* --- 1D Initial Conditions ---------------------------------------- */
+        /* Slab IC: centered ice slab (flag_tIC==0) or flat interface (flag_tIC==2). */
+        PetscPrintf(PETSC_COMM_WORLD, "IC type: 1D ice slab\n");
+        ierr = FormInitialCondition1D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
-    /* 2.) Layered IC */
-    // PetscPrintf(PETSC_COMM_WORLD, "IC type: layered  (using layered geometry)\n");
-    // ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    } else {
+        /* --- 2D / 3D Initial Conditions ----------------------------------- */
 
-    /* 3.) Enclosed grain pair IC */
-    // PetscPrintf(PETSC_COMM_WORLD, "IC type: enclosed grain pair  (using enclosed grain geometry)\n");
-    // ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        /* 1.) Capillary IC */
+        PetscPrintf(PETSC_COMM_WORLD,
+                "IC type: capillary  (using analytic capillary neck geometry)\n");
+        ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
 
-    /* 4.) Random enclosed grains IC */
-    // PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
-    // ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        /* 2.) Layered IC */
+        // PetscPrintf(PETSC_COMM_WORLD, "IC type: layered  (using layered geometry)\n");
+        // ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
-    /* 5.) Random packed grains IC */
-    // PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");
-    // ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        /* 3.) Enclosed grain pair IC */
+        // PetscPrintf(PETSC_COMM_WORLD, "IC type: enclosed grain pair  (using enclosed grain geometry)\n");
+        // ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
 
-    /* 6.) Flat sediment ice cap IC */
-    // PetscPrintf(PETSC_COMM_WORLD, "IC type: flat sediment ice cap  (using flat sediment ice cap geometry)\n");
-    // ierr = FormInitialFlatSedIceCap2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        /* 4.) Random enclosed grains IC */
+        // PetscPrintf(PETSC_COMM_WORLD, "IC type: random enclosed grains  (using random grain geometry)\n");
+        // ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+
+        /* 5.) Random packed grains IC */
+        // PetscPrintf(PETSC_COMM_WORLD, "IC type: random packed grains  (using random packed grain geometry)\n");
+        // ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+
+        /* 6.) Flat sediment ice cap IC */
+        // PetscPrintf(PETSC_COMM_WORLD, "IC type: flat sediment ice cap  (using flat sediment ice cap geometry)\n");
+        // ierr = FormInitialFlatSedIceCap2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+    }
 
 
     /* Optional statements for varying input types (e.g., capillary, layered, etc.) */

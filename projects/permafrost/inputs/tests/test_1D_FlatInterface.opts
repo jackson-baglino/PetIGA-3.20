@@ -1,0 +1,63 @@
+# =============================================================================
+# Test: 1D flat ice-air interface with temperature gradient
+# Purpose: Verify that a semi-infinite ice slab (left half ice, right half air)
+#          produces a steady-state planar interface and that the temperature
+#          gradient drives a net vapor flux from warm to cold.
+# Expected: phi_ice = 1 for x < 0.5 Lx, 0 for x > 0.5 Lx (diffuse transition);
+#           temperature varies linearly from T_left to T_right;
+#           vapor density increases toward warm end.
+# Notes:  Uses flag_tIC=2 variant of FormInitialCondition1D (flat interface).
+# =============================================================================
+
+# ---------- Domain ----------
+-dim 1
+-dof 3
+-Nx 256
+-Lx 2.0e-3
+
+# ---------- Element continuity ----------
+-p 2
+-C 1
+
+# ---------- Time Stepping & Output ----------
+-delt_t 1.0e-4
+-t_final 86400.0
+-n_out 20
+-outp 0
+-Permafrost_output 1
+-Permafrost_monitor 1
+
+# ---------- Model Parameters ----------
+-humidity 0.95
+-temp -20.0
+-grad_temp0 5.0e3
+-eps 9.3295e-06
+-periodic 0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 0
+-flag_Tdep 0
+
+# ---------- SNES ----------
+-snes_type newtonls
+-snes_max_it 10
+-snes_rtol 1e-06
+-snes_atol 1e-08
+-snes_stol 1e-06
+-snes_converged_reason
+
+# ---------- Line Search ----------
+-snes_linesearch_type bt
+-snes_linesearch_monitor
+
+# ---------- KSP ----------
+-ksp_type gmres
+-ksp_rtol 1e-05
+-ksp_atol 1e-08
+-ksp_max_it 500
+-ksp_gmres_restart 500
+-ksp_converged_reason
+
+# ---------- Preconditioner ----------
+-pc_type bjacobi
+-sub_pc_type ilu
+-sub_pc_factor_levels 1

@@ -1,0 +1,62 @@
+# =============================================================================
+# Test: 1D centered ice slab
+# Purpose: Verify that a diffuse ice slab in a 1D air domain produces the
+#          correct phase-field profile and that vapor/temperature fields
+#          initialize consistently with temp0 and hum0.
+# Expected: phi_ice peaks at 1.0 in the center [0.35 Lx, 0.65 Lx],
+#           decays to 0 at boundaries; temp = -20 C uniform;
+#           rhov = hum0 * rhoVS(-20).
+# =============================================================================
+
+# ---------- Domain ----------
+-dim 1
+-dof 3
+-Nx 128
+-Lx 1.0e-3
+
+# ---------- Element continuity ----------
+-p 2
+-C 1
+
+# ---------- Time Stepping & Output ----------
+-delt_t 1.0e-4
+-t_final 3600.0
+-n_out 10
+-outp 0
+-Permafrost_output 1
+-Permafrost_monitor 1
+
+# ---------- Model Parameters ----------
+-humidity 0.95
+-temp -20.0
+-grad_temp0 0.0
+-eps 9.3295e-06
+-periodic 0
+-flag_BC_Tfix 0
+-flag_BC_rhovfix 0
+-flag_Tdep 0
+
+# ---------- SNES ----------
+-snes_type newtonls
+-snes_max_it 10
+-snes_rtol 1e-06
+-snes_atol 1e-08
+-snes_stol 1e-06
+-snes_converged_reason
+
+# ---------- Line Search ----------
+-snes_linesearch_type bt
+-snes_linesearch_monitor
+
+# ---------- KSP ----------
+-ksp_type gmres
+-ksp_rtol 1e-05
+-ksp_atol 1e-08
+-ksp_max_it 500
+-ksp_gmres_restart 500
+-ksp_converged_reason
+
+# ---------- Preconditioner ----------
+-pc_type bjacobi
+-sub_pc_type ilu
+-sub_pc_factor_levels 1

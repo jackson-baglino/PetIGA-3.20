@@ -45,7 +45,7 @@ typedef struct {
 
   // Domain size and resolution
   PetscReal Lx, Ly, Lz;  // Physical domain dimensions in x, y, and z
-  PetscReal Nx, Ny, Nz;  // Number of grid points in x, y, and z directions
+  PetscInt  Nx, Ny, Nz;  // Number of elements in x, y, and z directions
 
   // Radius of curvature parameters (possibly for computing capillary effects)
   PetscReal RCice, RCsed;  // Mean radius of curvature for ice and sediment grains
