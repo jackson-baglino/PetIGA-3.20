@@ -12,8 +12,8 @@
 # ---------- Domain ----------
 -dim 1
 -dof 3
--Nx 256
--Lx 2.0e-3
+-Nx 143
+-Lx 1.25e-04
 
 # ---------- Element continuity ----------
 -p 2
@@ -31,7 +31,7 @@
 -humidity 0.95
 -temp -20.0
 -grad_temp0 5.0e3
--eps 9.3295e-06
+-eps 9.3295e-07
 -periodic 0
 -flag_BC_Tfix 1
 -flag_BC_rhovfix 0
