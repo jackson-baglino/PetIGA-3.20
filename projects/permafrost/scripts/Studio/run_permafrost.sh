@@ -259,6 +259,73 @@ run_plotting() {
     fi
 }
 
+# ---------------------------------------------------------------------------
+# run_1d_plotting
+# Detects 1D runs from the opts file and invokes the 1D Python post-processing
+# scripts automatically.  Silently skips for 2D/3D runs.
+# ---------------------------------------------------------------------------
+run_1d_plotting() {
+    # Extract the -dim value from the options file (default 2 if absent)
+    local dim
+    dim=$(awk '$1 == "-dim" { print $2 }' "$params_file" | head -n1)
+    dim=${dim:-2}
+
+    if [[ "$dim" != "1" ]]; then
+        return   # not a 1D run — nothing to do
+    fi
+
+    echo ""
+    echo "--- 1D post-processing ---"
+
+    local POSTPROCESS="$PROJECT_ROOT/postprocess"
+    local py_exit=0
+
+    if ! command -v python &>/dev/null && ! command -v python3 &>/dev/null; then
+        echo "⚠️  python not found — skipping 1D plots."
+        return
+    fi
+
+    local PYTHON
+    PYTHON=$(command -v python3 || command -v python)
+
+    set +e
+
+    # Per-step phase field PNGs + GIF
+    echo "  Generating phase field images and animation..."
+    "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
+        --dir "$folder" --out-dir "$folder" --gif \
+        2>&1 | sed 's/^/    /'
+    py_exit=$(( py_exit + $? ))
+
+    # Derived scalar time-series
+    echo "  Generating derived quantity plot..."
+    "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
+        --dir "$folder" --derived --save "$folder/derived.png" \
+        2>&1 | sed 's/^/    /'
+    py_exit=$(( py_exit + $? ))
+
+    # SSA scalar time-series
+    if [ -f "$folder/SSA_evo.dat" ]; then
+        echo "  Generating SSA scalar plot..."
+        "$PYTHON" "$POSTPROCESS/plot_scalars.py" \
+            --file "$folder/SSA_evo.dat" --save "$folder/scalars.png" \
+            2>&1 | sed 's/^/    /'
+        py_exit=$(( py_exit + $? ))
+    fi
+
+    set -e
+
+    if [ "$py_exit" -ne 0 ]; then
+        echo "⚠️  One or more 1D plots failed (exit sum $py_exit) — check output above."
+    else
+        echo "✅ 1D post-processing complete."
+        echo "   phase_step_*.png  →  $folder/"
+        echo "   phase_animation.gif  →  $folder/phase_animation.gif"
+        echo "   derived.png          →  $folder/derived.png"
+        echo "   scalars.png          →  $folder/scalars.png"
+    fi
+}
+
 # =============================================================================
 # Main workflow
 # =============================================================================
@@ -276,6 +343,7 @@ stage_output_folder
 run_simulation
 copy_source_code
 run_plotting
+run_1d_plotting
 
 echo ""
 echo "========================================================================="
