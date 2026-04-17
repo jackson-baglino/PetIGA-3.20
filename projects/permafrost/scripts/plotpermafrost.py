@@ -107,8 +107,6 @@ def convert_solution_files(
             combined_scalars = dict(scalar_map)
 
             if add_air:
-                if sol.ndim == 2:
-                    sol = sol[..., np.newaxis]
                 ice = sol[..., 0:1]
                 sed = sol[..., 3:4]
                 air = 1.0 - ice - sed
