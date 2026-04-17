@@ -235,9 +235,7 @@ def _plot_cuts(Xmm, Ymm, ice, tem, rhov, sed, step, run_dir, save_path):
     x_cut = Xmm[mid_row, :]
     y_cut = Ymm[:, mid_col]
 
-    air = np.clip(1.0 - ice - sed, 0.0, 1.0)
-
-    fig, axes = plt.subplots(2, 3, figsize=(14, 7))
+    fig, axes = plt.subplots(2, 4, figsize=(18, 7))
 
     def _cut_row(ax, field, title):
         ax.plot(x_cut, field[mid_row, :], lw=2)
@@ -251,13 +249,15 @@ def _plot_cuts(Xmm, Ymm, ice, tem, rhov, sed, step, run_dir, save_path):
         ax.set_title(f"{title}  (x = {Xmm[0, mid_col]:.2f} mm)", fontsize=11)
         ax.grid(True, alpha=0.3)
 
-    _cut_row(axes[0, 0], ice,  r"$\phi_i$")
-    _cut_row(axes[0, 1], tem,  r"$T$ [°C]")
-    _cut_row(axes[0, 2], rhov, r"$\rho_v$")
+    _cut_row(axes[0, 0], ice,  r"$\phi_i$  (ice)")
+    _cut_row(axes[0, 1], sed,  r"$\phi_s$  (sediment)")
+    _cut_row(axes[0, 2], tem,  r"$T$  [°C]")
+    _cut_row(axes[0, 3], rhov, r"$\rho_v$  [kg m$^{-3}$]")
 
-    _cut_col(axes[1, 0], ice,  r"$\phi_i$")
-    _cut_col(axes[1, 1], tem,  r"$T$ [°C]")
-    _cut_col(axes[1, 2], rhov, r"$\rho_v$")
+    _cut_col(axes[1, 0], ice,  r"$\phi_i$  (ice)")
+    _cut_col(axes[1, 1], sed,  r"$\phi_s$  (sediment)")
+    _cut_col(axes[1, 2], tem,  r"$T$  [°C]")
+    _cut_col(axes[1, 3], rhov, r"$\rho_v$  [kg m$^{-3}$]")
 
     fig.suptitle(f"Cross-section profiles — step {step}", fontsize=13)
     plt.tight_layout()

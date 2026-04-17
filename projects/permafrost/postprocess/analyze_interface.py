@@ -118,10 +118,12 @@ def analyze_1D(run_dir: str, eps: float = None,
         ice  = sol[:, 0]
         tem  = sol[:, 1]
         rhov = sol[:, 2]
+        sed  = np.clip(sol[:, 3], 0.0, 1.0) if sol.shape[1] > 3 else np.zeros_like(ice)
 
-        # Ice volume fraction (trapezoidal)
-        Lx      = x[-1] - x[0]
-        vol_frac = np.trapz(ice, x) / Lx
+        # Volume fractions (trapezoidal)
+        Lx        = x[-1] - x[0]
+        vol_frac  = np.trapz(ice, x) / Lx
+        sed_frac  = np.trapz(sed, x) / Lx
 
         # Interface positions (φ_i = 0.5 crossings)
         c05  = _crossings(x, ice, 0.5)
@@ -130,8 +132,8 @@ def analyze_1D(run_dir: str, eps: float = None,
 
         # Width: distance between outermost 0.1 and 0.9 crossings
         if len(c09) >= 1 and len(c01) >= 1:
-            width_left  = abs(c01[0]  - c09[0])   if len(c01) >= 1 and len(c09) >= 1 else np.nan
-            width_right = abs(c09[-1] - c01[-1])   if len(c01) >= 1 and len(c09) >= 1 else np.nan
+            width_left  = abs(c01[0]  - c09[0])
+            width_right = abs(c09[-1] - c01[-1])
             width_mean  = np.nanmean([width_left, width_right])
         else:
             width_left = width_right = width_mean = np.nan
@@ -139,8 +141,8 @@ def analyze_1D(run_dir: str, eps: float = None,
         # Interface count (number of 0.5 crossings)
         n_intf = len(c05)
 
-        # Vapor supersaturation: peak and mean over air region
-        air       = np.clip(1.0 - ice, 0.0, 1.0)
+        # Vapor supersaturation: peak and mean over air region (air = 1 - ice - sed)
+        air       = np.clip(1.0 - ice - sed, 0.0, 1.0)
         rvs       = rho_vs(tem)
         supersat  = np.where(rvs > 0, (rhov - rvs) / rvs, 0.0)
         ss_peak   = float(np.max(supersat))
@@ -154,6 +156,7 @@ def analyze_1D(run_dir: str, eps: float = None,
             "step":            step,
             "t_s":             t,
             "vol_frac":        vol_frac,
+            "sed_frac":        sed_frac,
             "n_interfaces":    n_intf,
             "x_left_mm":       c05[0]  * 1e3 if len(c05) >= 1 else np.nan,
             "x_right_mm":      c05[-1] * 1e3 if len(c05) >= 2 else np.nan,
@@ -230,7 +233,7 @@ def plot_1D_metrics(metrics: dict, save_path: str = None, title: str = ""):
     valid = ~np.isnan(t_h)
     t_h = t_h[valid]
 
-    fig, axes = plt.subplots(3, 2, figsize=(12, 10))
+    fig, axes = plt.subplots(4, 2, figsize=(12, 13))
 
     def _plot(ax, y, ylabel, color="tab:blue"):
         yv = y[valid]
@@ -239,12 +242,14 @@ def plot_1D_metrics(metrics: dict, save_path: str = None, title: str = ""):
         ax.grid(True, alpha=0.3)
         ax.tick_params(labelsize=10)
 
-    _plot(axes[0, 0], metrics["vol_frac"],       "Mean ice fraction",        "tab:blue")
-    _plot(axes[0, 1], metrics["n_interfaces"],   "Number of interfaces",     "tab:orange")
-    _plot(axes[1, 0], metrics["x_left_mm"],      "Left interface pos.  [mm]","tab:green")
-    _plot(axes[1, 1], metrics["x_right_mm"],     "Right interface pos. [mm]","tab:red")
-    _plot(axes[2, 0], metrics["width_mean_um"],  "Mean interface width  [μm]","tab:purple")
-    _plot(axes[2, 1], metrics["ss_peak"],        "Peak supersaturation",     "tab:brown")
+    _plot(axes[0, 0], metrics["vol_frac"],       r"Mean ice fraction $\langle\phi_i\rangle$",       "tab:blue")
+    _plot(axes[0, 1], metrics["sed_frac"],        r"Mean sediment fraction $\langle\phi_s\rangle$",  "tab:brown")
+    _plot(axes[1, 0], metrics["n_interfaces"],   "Number of interfaces",                             "tab:orange")
+    _plot(axes[1, 1], metrics["ss_peak"],        "Peak supersaturation",                             "tab:red")
+    _plot(axes[2, 0], metrics["x_left_mm"],      "Left interface pos.  [mm]",                        "tab:green")
+    _plot(axes[2, 1], metrics["x_right_mm"],     "Right interface pos. [mm]",                        "tab:red")
+    _plot(axes[3, 0], metrics["width_mean_um"],  "Mean interface width  [μm]",                       "tab:purple")
+    _plot(axes[3, 1], metrics["T_min_C"],        r"$T_{\min}$  [°C]",                               "tab:cyan")
 
     for row in axes:
         row[-1].set_xlabel("Time  [h]", fontsize=11)
