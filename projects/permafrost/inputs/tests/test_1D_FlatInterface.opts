@@ -11,7 +11,7 @@
 
 # ---------- Domain ----------
 -dim 1
--dof 3
+-dof 4
 -Nx 143
 -Lx 1.25e-04
 
@@ -21,16 +21,16 @@
 
 # ---------- Time Stepping & Output ----------
 -delt_t 1.0e-4
--t_final 86400.0
--n_out 20
--outp 0
+-t_final 604800.0
+-n_out 0
+-outp 1
 -Permafrost_output 1
 -Permafrost_monitor 1
 
 # ---------- Model Parameters ----------
 -humidity 0.95
 -temp -20.0
--grad_temp0 5.0e3
+-grad_temp0 0.0,0.0,0.0
 -eps 9.3295e-07
 -periodic 0
 -flag_BC_Tfix 1

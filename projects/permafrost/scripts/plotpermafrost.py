@@ -4,10 +4,8 @@ makevtk.py
 
 Convert PetIGA solution .dat files to VTK format.
 
-The sediment field (soil.dat / igasoil.dat) is read once and merged into
-every sol*.vtk output.  AirPhase = 1 - IcePhase - Sediment is also computed
-and embedded, so all four fields are available in ParaView on the time series
-with no additional filters needed.
+Sediment is now DOF 3 in the solution vector (ice=0, temp=1, rhov=2, sed=3).
+AirPhase = 1 - IcePhase - Sediment is computed and embedded automatically.
 
 Usage:
     python makevtk.py [--sol-pattern SOL_PATTERN] [--vtk-dir VTK_DIR] [--force]
@@ -61,58 +59,22 @@ def extract_number(filename: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Sediment loader
-# ---------------------------------------------------------------------------
-
-def load_sediment(soil_dat: str, igasoil_dat: str):
-    """
-    Read the static sediment field once.
-    Returns (nrb_soil, sol_soil), or (None, None) if either file is missing.
-    """
-    if not os.path.isfile(igasoil_dat):
-        print(f"  ⚠️  Sediment geometry not found: {igasoil_dat}  (Sediment will NOT be embedded)")
-        return None, None
-    if not os.path.isfile(soil_dat):
-        print(f"  ⚠️  Sediment solution not found: {soil_dat}  (Sediment will NOT be embedded)")
-        return None, None
-
-    print(f"\n--- Loading sediment field ---")
-    nrb_soil = read_nurbs(igasoil_dat)
-    sol_soil  = read_solution_vec(soil_dat, nrb_soil)
-    print(f"  ✅ Sediment field loaded from '{soil_dat}'")
-    print(f"  ℹ️  sol_soil shape: {sol_soil.shape}")
-    return nrb_soil, sol_soil
-
-
-# ---------------------------------------------------------------------------
 # Core conversion
 # ---------------------------------------------------------------------------
 
 def convert_solution_files(
-    nrb_path:      str,
-    pattern:       str,
-    scalar_map:    dict,
-    vtk_prefix:    str,
-    vtk_dir:       str        = "vtkOut",
-    force:         bool       = False,
-    sediment_sol:  np.ndarray = None,
+    nrb_path:   str,
+    pattern:    str,
+    scalar_map: dict,
+    vtk_prefix: str,
+    vtk_dir:    str  = "vtkOut",
+    force:      bool = False,
 ):
     """
     Convert solution .dat files matched by *pattern* to VTK.
 
-    If sediment_sol is provided it is appended to every output file as the
-    'Sediment' field, and AirPhase = 1 - IcePhase - Sediment is also written.
-    IcePhase is assumed to be component 0 of the primary solution (scalar_map).
-
-    Parameters
-    ----------
-    nrb_path     : path to the IGA geometry file for this solution set
-    pattern      : glob pattern for input .dat files
-    scalar_map   : {field_name: component_index} for the primary solution
-    vtk_prefix   : prefix for output VTK filenames
-    vtk_dir      : output directory
-    force        : if True, overwrite existing VTK files
-    sediment_sol : solution array from soil.dat (same mesh, may be 2D or 3D)
+    AirPhase = 1 - IcePhase - Sediment is appended automatically when both
+    IcePhase (comp 0) and Sediment (comp 3) are present in scalar_map.
     """
     print(f"\n--- Converting '{pattern}' ---")
 
@@ -124,20 +86,7 @@ def convert_solution_files(
     nrb = read_nurbs(nrb_path)
     os.makedirs(vtk_dir, exist_ok=True)
 
-    # Normalise sediment to (nx, ny, 1) once, outside the loop
-    sed_norm = None
-    if sediment_sol is not None:
-        if sediment_sol.ndim == 2:
-            # Single-field solution returned as (nx, ny) — add component axis
-            sed_norm = sediment_sol[..., np.newaxis]
-        elif sediment_sol.ndim == 3:
-            # Multi-field solution — Sediment is component 0
-            sed_norm = sediment_sol[..., 0:1]
-        else:
-            print(f"  ⚠️  Unexpected sediment_sol shape {sediment_sol.shape} — skipping embed.")
-
-        if sed_norm is not None:
-            print(f"  ℹ️  Normalised sediment shape: {sed_norm.shape}")
+    add_air = ("IcePhase" in scalar_map and "Sediment" in scalar_map)
 
     for infile in infiles:
         try:
@@ -157,23 +106,15 @@ def convert_solution_files(
 
             combined_scalars = dict(scalar_map)
 
-            if sed_norm is not None:
-                # Guarantee primary sol is 3D: (nx, ny, ncomp)
+            if add_air:
                 if sol.ndim == 2:
                     sol = sol[..., np.newaxis]
-
-                # print(f"    sol shape: {sol.shape}  |  sed shape: {sed_norm.shape}")
-
-                # IcePhase is component 0 of the primary solution
-                ice = sol[..., 0:1]         # (nx, ny, 1)
-                air = 1.0 - ice - sed_norm  # (nx, ny, 1)
-
+                ice = sol[..., 0:1]
+                sed = sol[..., 3:4]
+                air = 1.0 - ice - sed
                 ncomp = sol.shape[-1]
-                combined_scalars["Sediment"] = ncomp
-                combined_scalars["AirPhase"] = ncomp + 1
-
-                sol = np.concatenate([sol, sed_norm, air], axis=-1)
-                # print(f"    combined sol shape: {sol.shape}")
+                combined_scalars["AirPhase"] = ncomp
+                sol = np.concatenate([sol, air], axis=-1)
 
             VTK().write(outfile, nrb, fields=sol, scalars=combined_scalars)
             print(f"  ✅ Wrote: {outfile}")
@@ -188,7 +129,7 @@ def convert_solution_files(
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Convert PetIGA .dat files to VTK, embedding Sediment and AirPhase."
+        description="Convert PetIGA .dat files to VTK, embedding AirPhase."
     )
     parser.add_argument(
         "--sol-pattern", default="sol*.dat",
@@ -208,35 +149,16 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # ------------------------------------------------------------------
-    # 1. Load the static sediment field (once)
-    # ------------------------------------------------------------------
-    _nrb_soil, sol_soil = load_sediment(
-        soil_dat    = "soil.dat",
-        igasoil_dat = "igasoil.dat",
-    )
-
-    # ------------------------------------------------------------------
-    # 2. Convert time-series solution files, embedding Sediment + AirPhase
-    # ------------------------------------------------------------------
     convert_solution_files(
-        nrb_path     = "igasol.dat",
-        pattern      = args.sol_pattern,
-        scalar_map   = {"IcePhase": 0, "Temperature": 1, "VaporDensity": 2},
-        vtk_prefix   = "solV",
-        vtk_dir      = args.vtk_dir,
-        force        = args.force,
-        sediment_sol = sol_soil,
-    )
-
-    # ------------------------------------------------------------------
-    # 3. Write the standalone soil VTK for inspection
-    # ------------------------------------------------------------------
-    convert_solution_files(
-        nrb_path   = "igasoil.dat",
-        pattern    = "soil.dat",
-        scalar_map = {"Sediment": 0},
-        vtk_prefix = "soil",
+        nrb_path   = "igasol.dat",
+        pattern    = args.sol_pattern,
+        scalar_map = {
+            "IcePhase":    0,
+            "Temperature": 1,
+            "VaporDensity": 2,
+            "Sediment":    3,
+        },
+        vtk_prefix = "solV",
         vtk_dir    = args.vtk_dir,
         force      = args.force,
     )

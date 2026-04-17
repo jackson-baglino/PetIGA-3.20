@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     PetscInt  p   = 1;          /* Polynomial order */
     PetscInt  C   = 0;          /* Global continuity order */
 
-    PetscInt  dof = 3;          /* Degrees of freedom per node (ice, temperature, vapor) */
+    PetscInt  dof = 4;          /* Degrees of freedom per node (ice, temperature, vapor, sediment) */
     PetscInt  dim = 2;          /* Problem dimension (2D or 3D) */
 
     PetscInt  Nx  = 64;         /* Number of elements in x direction */
@@ -334,6 +334,7 @@ int main(int argc, char *argv[]) {
     ierr = IGASetFieldName(iga, 0, "phaseice"); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 1, "temperature"); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 2, "vap_density"); CHKERRQ(ierr);
+    ierr = IGASetFieldName(iga, 3, "sediment"); CHKERRQ(ierr);
 
     /* Set up axes */
     IGAAxis axis0, axis1, axis2;
@@ -369,12 +370,8 @@ int main(int argc, char *argv[]) {
     } else {
         nmb = iga->elem_width[0] * iga->elem_width[1] * iga->elem_width[2] * CU(p + 1);
     }
-    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.Phi_sed); CHKERRQ(ierr);
-    ierr = PetscMalloc(sizeof(PetscReal) * nmb * dim, &user.grad_Phi_sed); CHKERRQ(ierr);
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.alph);    CHKERRQ(ierr);
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);     CHKERRQ(ierr);
-    ierr = PetscMemzero(user.Phi_sed, sizeof(PetscReal) * nmb); CHKERRQ(ierr);
-    ierr = PetscMemzero(user.grad_Phi_sed, sizeof(PetscReal) * nmb * dim); CHKERRQ(ierr);
     ierr = PetscMemzero(user.alph,    sizeof(PetscReal) * nmb); CHKERRQ(ierr);
     ierr = PetscMemzero(user.mob,     sizeof(PetscReal) * nmb); CHKERRQ(ierr);
 
@@ -433,40 +430,10 @@ int main(int argc, char *argv[]) {
     ierr = TSGetSNES(ts, &nonlin); CHKERRQ(ierr);
     ierr = SNESSetConvergenceTest(nonlin, SNESDOFConvergence, &user, NULL); CHKERRQ(ierr);
 
-    /* Setup sediment phase */
-    IGA igaS;
-    ierr = IGACreate(PETSC_COMM_WORLD, &igaS); CHKERRQ(ierr);
-    ierr = IGASetDim(igaS, dim); CHKERRQ(ierr);
-    ierr = IGASetDof(igaS, 1); CHKERRQ(ierr);
-    // ierr = IGASetFieldName(igaS, 0, "Sediment Phase"); CHKERRQ(ierr);
-
-    // Set up axes for sediment phase
-    IGAAxis axis0S, axis1S, axis2S;
-    ierr = IGAGetAxis(igaS, 0, &axis0S);
-    if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis0S, PETSC_TRUE); CHKERRQ(ierr); }
-    ierr = IGAAxisSetDegree(axis0S, p); CHKERRQ(ierr);
-    ierr = IGAAxisInitUniform(axis0S, Nx, 0.0, Lx, C); CHKERRQ(ierr);
-    if (dim >= 2) {
-        ierr = IGAGetAxis(igaS, 1, &axis1S);
-        if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis1S, PETSC_TRUE); CHKERRQ(ierr); }
-        ierr = IGAAxisSetDegree(axis1S, p); CHKERRQ(ierr);
-        ierr = IGAAxisInitUniform(axis1S, Ny, 0.0, Ly, C); CHKERRQ(ierr);
-    }
-    if (dim == 3) {
-        ierr = IGAGetAxis(igaS, 2, &axis2S);
-        if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis2S, PETSC_TRUE); CHKERRQ(ierr); }
-        ierr = IGAAxisSetDegree(axis2S, p); CHKERRQ(ierr);
-        ierr = IGAAxisInitUniform(axis2S, Nz, 0.0, Lz, C); CHKERRQ(ierr);
-    }
-    ierr = IGASetFromOptions(igaS); CHKERRQ(ierr);
-    ierr = IGASetUp(igaS); CHKERRQ(ierr);
-
-    /* Create solution vectors for ice, temp, and air (U) and sediment phase (S) */
-    Vec U, S;
+    /* Create solution vector (ice, temperature, vapor, sediment) */
+    Vec U;
     ierr = IGACreateVec(iga, &U); CHKERRQ(ierr);
-    ierr = IGACreateVec(igaS, &S); CHKERRQ(ierr);
     ierr = VecZeroEntries(U); CHKERRQ(ierr);
-    ierr = VecZeroEntries(S); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD, "Setting up initial conditions... \n");
 
@@ -474,24 +441,24 @@ int main(int argc, char *argv[]) {
         /* --- 1D Initial Conditions ---------------------------------------- */
         /* Variant selected by -flag_tIC: 0 = centered slab, 2 = flat interface */
         PetscPrintf(PETSC_COMM_WORLD, "IC type: 1D ice slab (flag_tIC=%d)\n", user.flag_tIC);
-        ierr = FormInitialCondition1D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+        ierr = FormInitialCondition1D(iga, U, &user); CHKERRQ(ierr);
 
     } else {
         /* --- 2D / 3D Initial Conditions — selected by -ic_type ------------ */
         PetscPrintf(PETSC_COMM_WORLD, "IC type: %s\n", ic_type);
 
         if (strcmp(ic_type, "capillary") == 0) {
-            ierr = FormIC_grain_ana(iga, U, igaS, S, &user); CHKERRQ(ierr);
+            ierr = FormIC_grain_ana(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "layered") == 0) {
-            ierr = FormInitialLayeredPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+            ierr = FormInitialLayeredPermafrost2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "enclosed") == 0) {
-            ierr = FormInitialEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+            ierr = FormInitialEnclosedPermafrost2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "random_enclosed") == 0) {
-            ierr = FormInitialRandomEnclosedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+            ierr = FormInitialRandomEnclosedPermafrost2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "random_packed") == 0) {
-            ierr = FormInitialRandomPackedPermafrost2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+            ierr = FormInitialRandomPackedPermafrost2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "ice_cap") == 0) {
-            ierr = FormInitialFlatSedIceCap2D(iga, igaS, U, S, &user); CHKERRQ(ierr);
+            ierr = FormInitialFlatSedIceCap2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
                     "Unknown -ic_type. Valid: enclosed capillary layered "
@@ -500,33 +467,15 @@ int main(int argc, char *argv[]) {
     }
 
 
-    /* Optional statements for varying input types (e.g., capillary, layered, etc.) */
-
-    /* Write initial sediment phase to file */
-    char filename_sed[PETSC_MAX_PATH_LEN], filevect_sed[PETSC_MAX_PATH_LEN];
-
-    ierr = PetscSNPrintf(filename_sed, sizeof(filename_sed), "%s/igasoil.dat", user.output_path); CHKERRQ(ierr);
-    ierr = IGAWrite(igaS, filename_sed); CHKERRQ(ierr);
-
-    ierr = PetscSNPrintf(filevect_sed, sizeof(filevect_sed), "%s/soil.dat", user.output_path); CHKERRQ(ierr);
-    ierr = IGAWriteVec(igaS, S, filevect_sed); CHKERRQ(ierr);
-
     /* Solve the system */
     ierr = TSSolve(ts, U); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD, "Solution completed. \n");
 
     /* Cleanup Resources */
-    // Destroy vectors and TS
     ierr = VecDestroy(&U); CHKERRQ(ierr);
-    ierr = VecDestroy(&S); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
-    ierr = IGADestroy(&igaS); CHKERRQ(ierr);
-
-    // Free allocated memory for sediment phase and parameters
-    ierr = PetscFree(user.Phi_sed); CHKERRQ(ierr);
-    ierr = PetscFree(user.grad_Phi_sed); CHKERRQ(ierr);
     ierr = PetscFree(user.alph); CHKERRQ(ierr);
     ierr = PetscFree(user.mob); CHKERRQ(ierr);
 

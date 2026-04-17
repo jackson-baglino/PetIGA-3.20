@@ -164,7 +164,7 @@ def compare_1D_profiles(run_dirs: list, labels: list = None,
 
     colors = [cm.tab10(i / 10.0) for i in range(len(run_dirs))]
 
-    fig, axes = plt.subplots(3, 1, figsize=(9, 9), sharex=True)
+    fig, axes = plt.subplots(4, 1, figsize=(9, 11), sharex=True)
 
     any_data = False
     for i, (run_dir, label) in enumerate(zip(run_dirs, labels)):
@@ -211,19 +211,23 @@ def compare_1D_profiles(run_dirs: list, labels: list = None,
         axes[0].plot(x, sol[:, 0], color=c, lw=2.0, label=label)
         axes[1].plot(x, sol[:, 1], color=c, lw=2.0)
         axes[2].plot(x, sol[:, 2], color=c, lw=2.0)
+        if sol.shape[1] > 3:
+            axes[3].plot(x, sol[:, 3], color=c, lw=2.0)
 
     if not any_data:
         sys.exit("No valid 1D profiles could be loaded.")
 
-    axes[0].set_ylabel(r"$\phi_i$ (ice)",         fontsize=12)
-    axes[1].set_ylabel("Temperature  [°C]",        fontsize=12)
-    axes[2].set_ylabel(r"Vapor density  [kg/m³]",  fontsize=12)
-    axes[2].set_xlabel("x  [mm]",                  fontsize=12)
+    axes[0].set_ylabel(r"$\phi_i$ (ice)",          fontsize=12)
+    axes[1].set_ylabel("Temperature  [°C]",         fontsize=12)
+    axes[2].set_ylabel(r"Vapor density  [kg/m³]",   fontsize=12)
+    axes[3].set_ylabel(r"$\phi_s$ (sediment)",      fontsize=12)
+    axes[3].set_xlabel("x  [mm]",                   fontsize=12)
 
     snap_label = f"snapshot: {snapshot}"
     axes[0].set_title(f"1D profile comparison  ({snap_label})", fontsize=13)
     axes[0].legend(fontsize=9)
     axes[0].set_ylim(-0.05, 1.1)
+    axes[3].set_ylim(-0.05, 1.1)
 
     for ax in axes:
         ax.grid(True, alpha=0.3)

@@ -127,35 +127,6 @@ def load_times(run_dir: str) -> dict:
     return times
 
 
-def load_sediment(run_dir: str, n_nodes: int) -> np.ndarray:
-    """
-    Load sediment phase field φ_s from soil.dat + igasoil.dat.
-    Returns zeros if files are not present (pure ice / air run).
-    """
-    iga_path = os.path.join(run_dir, "igasoil.dat")
-    dat_path = os.path.join(run_dir, "soil.dat")
-
-    if not os.path.isfile(iga_path) or not os.path.isfile(dat_path):
-        return np.zeros(n_nodes)
-
-    try:
-        nrb_s = PetIGA().read(iga_path)
-        sol_s = PetIGA().read_vec(dat_path, nrb_s)
-        if sol_s.ndim == 2:
-            phi_s = sol_s[:, 0]
-        else:
-            phi_s = sol_s
-        # Interpolate to match solution mesh length if needed
-        if len(phi_s) != n_nodes:
-            xi_s = np.linspace(0, 1, len(phi_s))
-            xi   = np.linspace(0, 1, n_nodes)
-            phi_s = np.interp(xi, xi_s, phi_s)
-        return np.clip(phi_s, 0.0, 1.0)
-    except Exception as e:
-        print(f"  WARNING: could not load soil.dat: {e} — using φ_s = 0")
-        return np.zeros(n_nodes)
-
-
 # ---------------------------------------------------------------------------
 # Saturation vapor density (matches material_properties.c: RhoVS_I)
 # ---------------------------------------------------------------------------
@@ -193,8 +164,9 @@ def _find_crossings(x: np.ndarray, y: np.ndarray, level: float = 0.5) -> np.ndar
 def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
                         max_steps: int = None):
     """
-    Load geometry, x-coords, sediment, all sol_*.dat files.
-    Returns (x_mm, phi_s, ice_list, tem_list, rhov_list, step_list, time_h_list).
+    Load geometry, x-coords, all sol_*.dat files.
+    Returns (x_mm, sed_list, ice_list, tem_list, rhov_list, step_list, time_h_list).
+    sed_list[i] is φ_s extracted from sol[:,3] for snapshot i.
     time_h_list entries are float or None if SSA_evo not available.
     """
     nrb       = load_geometry(os.path.join(run_dir, iga_file))
@@ -211,6 +183,7 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
         sol_files = sol_files[:max_steps]
 
     ice_list  = []
+    sed_list  = []
     tem_list  = []
     rhov_list = []
     step_list = []
@@ -222,7 +195,7 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
         except Exception as e:
             print(f"  WARNING: skipping {sf}: {e}")
             continue
-        if sol.ndim < 2 or sol.shape[1] < 3:
+        if sol.ndim < 2 or sol.shape[1] < 4:
             print(f"  WARNING: unexpected shape in {sf} — skipping.")
             continue
 
@@ -230,21 +203,19 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
         ice_list.append(sol[:, 0])
         tem_list.append(sol[:, 1])
         rhov_list.append(sol[:, 2])
+        sed_list.append(np.clip(sol[:, 3], 0.0, 1.0))
         step_list.append(step)
         time_list.append(times.get(step, None))
 
     if not ice_list:
         sys.exit("No valid solution files could be read.")
 
-    n_nodes = len(x)
-    phi_s   = load_sediment(run_dir, n_nodes)
-
     print(f"Loaded {len(ice_list)} snapshots from '{run_dir}'")
     if not _CMOCEAN:
         print("  NOTE: cmocean not installed — using fallback colormaps. "
               "Install with: pip install cmocean")
 
-    return x_mm, phi_s, ice_list, tem_list, rhov_list, step_list, time_list
+    return x_mm, sed_list, ice_list, tem_list, rhov_list, step_list, time_list
 
 
 # ---------------------------------------------------------------------------
@@ -285,12 +256,12 @@ def plot_phase_steps(run_dir: str, out_dir: str = None,
     phases_dir = os.path.join(out_dir, "phases")
     os.makedirs(phases_dir, exist_ok=True)
 
-    x_mm, phi_s, ice_list, _, _, step_list, time_list = _collect_snapshots(
+    x_mm, sed_list, ice_list, _, _, step_list, time_list = _collect_snapshots(
         run_dir, iga_file, max_steps
     )
 
     saved = []
-    for phi_i, step, t_h in zip(ice_list, step_list, time_list):
+    for phi_i, phi_s, step, t_h in zip(ice_list, sed_list, step_list, time_list):
         phi_a = np.clip(1.0 - phi_i - phi_s, 0.0, 1.0)
         fig   = _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h)
         path  = os.path.join(phases_dir, f"phase_step_{step:05d}.png")
@@ -313,7 +284,7 @@ def plot_thermal_overlay(run_dir: str, save_path: str = None,
     2-panel figure: T(x) and ρ_v(x) for all snapshots, with a single
     physical-time colorbar.  Uses cmocean.thermal and cmocean.balance.
     """
-    x_mm, _, _, tem_list, rhov_list, step_list, time_list = _collect_snapshots(
+    x_mm, _sed, _, tem_list, rhov_list, step_list, time_list = _collect_snapshots(
         run_dir, iga_file, max_steps
     )
 
@@ -397,7 +368,7 @@ def make_phase_gif(run_dir: str, gif_path: str = None,
         os.makedirs(phases_dir, exist_ok=True)
         gif_path = os.path.join(phases_dir, "phase_animation.gif")
 
-    x_mm, phi_s, ice_list, _, _, step_list, time_list = _collect_snapshots(
+    x_mm, sed_list, ice_list, _, _, step_list, time_list = _collect_snapshots(
         run_dir, iga_file, max_steps
     )
 
@@ -425,6 +396,7 @@ def make_phase_gif(run_dir: str, gif_path: str = None,
 
     def _update(frame_idx):
         phi_i = ice_list[frame_idx]
+        phi_s = sed_list[frame_idx]
         phi_a = np.clip(1.0 - phi_i - phi_s, 0.0, 1.0)
         fields = [phi_i, phi_s, phi_a]
         for ln, field in zip(lines, fields):

@@ -28,27 +28,13 @@ static PetscErrorCode CreateRandomGenerator(MPI_Comm comm, PetscRandom *rand, Pe
   return 0;
 }
 
-PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
+PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
     PetscPrintf(PETSC_COMM_WORLD,
                 "--------------------- INITIAL CONDITIONS (Layered Permafrost 2D) --------------------------\n");
-
-
-    /* --- Soil vector S (sediment phase). Might be empty on some ranks. --- */
-    PetscInt      nlocS;
-    DM            daS  = NULL;
-    FieldS        **uS = NULL;
-    DMDALocalInfo infoS;
-
-    ierr = VecGetLocalSize(S, &nlocS);CHKERRQ(ierr);
-    if (nlocS > 0) {
-        ierr = IGACreateNodeDM(igaS, 1, &daS);CHKERRQ(ierr);
-        ierr = DMDAVecGetArray(daS, S, &uS);CHKERRQ(ierr);
-        ierr = DMDAGetLocalInfo(daS, &infoS);CHKERRQ(ierr);
-    }
 
     /* --- Geometry / interface parameters --- */
     const PetscReal Lx    = user->Lx;
@@ -252,64 +238,8 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
         user->radius[jj] = radius_ice[jj];
     }
 
-    /* Initialize the ice and sediemnt phases from grain data */
-    IGAElement element;
-    IGAPoint   point;
-    PetscInt   ind = 0, aa;
-    PetscReal  sed, dist;
-
-    ierr = IGABeginElement(iga, &element); CHKERRQ(ierr);
-    while (IGANextElement(iga, element)) {
-        ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
-        while (IGAElementNextPoint(element, point)) {
-            // Set sediment phase
-            sed = 0.0;
-            for (aa = 0; aa < user->n_actsed; aa++) {
-                dist = 0.0;
-                for (l = 0; l < user->dim; l++) {
-                    dist += SQ(point->mapX[0][l] - user->centsed[l][aa]);
-                }
-                dist = sqrt(dist);
-                sed += 0.5 - 0.5 * tanh(0.5 / eps * (dist - user->radiussed[aa]));
-            }
-
-            // sed = PetscMax(PetscMin(sed, 1.0), 0.0);
-            if (sed > 1.0) sed = 1.0;
-            if (sed < 0.0) sed = 0.0;
-            user->Phi_sed[ind++] = sed;
-        }
-        ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
-    }
-    ierr = IGAEndElement(iga, &element); CHKERRQ(ierr);
-
-    /* Map sediment phase to soil vector S (nodal DMDA representation) */
-    if (nlocS > 0) {
-        PetscInt iS, jS, kk, lS = -1;
-        PetscReal distS, valueS;
-
-        if (user->periodic == 1) lS = user->p - 1;
-
-        for (iS = infoS.xs; iS < infoS.xs + infoS.xm; iS++) {
-            for (jS = infoS.ys; jS < infoS.ys + infoS.ym; jS++) {
-                PetscReal xS = user->Lx * (PetscReal)iS / (PetscReal)(infoS.mx + lS);
-                PetscReal yS = user->Ly * (PetscReal)jS / (PetscReal)(infoS.my + lS);
-
-                valueS = 0.0;
-                for (kk = 0; kk < user->n_actsed; kk++) {
-                    distS = sqrt(SQ(xS - user->centsed[0][kk]) +
-                                 SQ(yS - user->centsed[1][kk]));
-                    valueS += 0.5 - 0.5 * tanh(0.5 / user->eps *
-                                               (distS - user->radiussed[kk]));
-                }
-                if (valueS > 1.0) valueS = 1.0;
-
-                uS[jS][iS].soil = valueS;
-            }
-        }
-    }
-
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga, user->dof, &da);CHKERRQ(ierr);
     Field **u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -342,6 +272,16 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
 
         u[j][i].ice = ice;
 
+        /* Sediment: sum of grain tanh profiles */
+        PetscReal sed_here = 0.0;
+        for (aa = 0; aa < user->n_actsed; aa++) {
+            PetscReal distS = sqrt(SQ(x - user->centsed[0][aa]) + SQ(y - user->centsed[1][aa]));
+            sed_here += 0.5 - 0.5 * tanh(0.5 / eps * (distS - user->radiussed[aa]));
+        }
+        if (sed_here > 1.0) sed_here = 1.0;
+        if (sed_here < 0.0) sed_here = 0.0;
+        u[j][i].sed = sed_here;
+
         /* Temperature and vapor density initial conditions */
         u[j][i].tem = user->temp0
                       + user->grad_temp0[0] * (x - 0.5 * user->Lx)
@@ -351,19 +291,13 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, A
         u[j][i].rhov = user->hum0 * rho_vs;
       }
     }
-    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
-    ierr = DMDestroy(&da);;CHKERRQ(ierr); 
-
-    /* Properly clean up the soil DM if present */
-    if (nlocS > 0) {
-        ierr = DMDAVecRestoreArray(daS, S, &uS);CHKERRQ(ierr);
-        ierr = DMDestroy(&daS);CHKERRQ(ierr);
-    }
+    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr);
+    ierr = DMDestroy(&da);CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
+PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -393,40 +327,7 @@ PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, IGA igaS, Vec U, Vec S, AppCt
     // -------------------------------------------------------------------------
 
     // -------------------------------------------------------------------------
-    // Gauss-point loop: Phi_sed and grad_Phi_sed
-    // Sediment is a flat layer: phi_s(x,y) = H(y_sed - y)
-    // grad_phi_s = (0, -0.5*(1-tval^2)*tc) — only y-component nonzero
-    // -------------------------------------------------------------------------
-    IGAElement element;
-    IGAPoint   point;
-    PetscInt   ind = 0;
-
-    ierr = IGABeginElement(iga, &element); CHKERRQ(ierr);
-    while (IGANextElement(iga, element)) {
-        ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
-        while (IGAElementNextPoint(element, point)) {
-
-            PetscReal y    = point->mapX[0][1];
-            PetscReal tval = tanh(tc * (y - y_sed));
-
-            // phi_s = 0.5*(1 - tanh(tc*(y - y_sed)))
-            // = 1 below y_sed, 0 above
-            PetscReal sed  = 0.5 - 0.5*tval;
-            sed = PetscMax(0.0, PetscMin(1.0, sed));
-
-            user->Phi_sed[ind] = sed;
-
-            // grad_phi_s: x-component zero (flat layer), y-component from chain rule
-            user->grad_Phi_sed[ind*dim + 0] = 0.0;
-            user->grad_Phi_sed[ind*dim + 1] = -0.5*(1.0 - tval*tval)*tc;
-            ind++;
-        }
-        ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
-    }
-    ierr = IGAEndElement(iga, &element); CHKERRQ(ierr);
-
-    // -------------------------------------------------------------------------
-    // Nodal loop: ice, temperature, vapor density
+    // Nodal loop: ice, temperature, vapor density, sediment
     // -------------------------------------------------------------------------
     DM da;
     ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
@@ -472,6 +373,7 @@ PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, IGA igaS, Vec U, Vec S, AppCt
             RhoVS_I(user, tem, &rho_vs, NULL);
 
             u[j][i].ice  = ice;
+            u[j][i].sed  = sed;
             u[j][i].tem  = tem;
             u[j][i].rhov = user->hum0 * rho_vs * air;
         }
@@ -480,38 +382,10 @@ PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, IGA igaS, Vec U, Vec S, AppCt
     ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
     ierr = DMDestroy(&da); CHKERRQ(ierr);
 
-    // -------------------------------------------------------------------------
-    // Sediment DMDA vector S
-    // -------------------------------------------------------------------------
-    PetscInt nlocS;
-    ierr = VecGetLocalSize(S, &nlocS); CHKERRQ(ierr);
-
-    if (nlocS > 0) {
-        DM daS;
-        FieldS **uS;
-        DMDALocalInfo infoS;
-        ierr = IGACreateNodeDM(igaS, 1, &daS); CHKERRQ(ierr);
-        ierr = DMDAVecGetArray(daS, S, &uS); CHKERRQ(ierr);
-        ierr = DMDAGetLocalInfo(daS, &infoS); CHKERRQ(ierr);
-
-        PetscInt perS = (user->periodic == 1) ? user->p - 1 : -1;
-
-        for (PetscInt i = infoS.xs; i < infoS.xs + infoS.xm; i++) {
-            for (PetscInt j = infoS.ys; j < infoS.ys + infoS.ym; j++) {
-                PetscReal y = Ly * (PetscReal)j / (PetscReal)(infoS.my + perS);
-                PetscReal tval = tanh(tc * (y - y_sed));
-                uS[j][i].soil = PetscMax(0.0, PetscMin(1.0, 0.5 - 0.5*tval));
-            }
-        }
-
-        ierr = DMDAVecRestoreArray(daS, S, &uS); CHKERRQ(ierr);
-        ierr = DMDestroy(&daS); CHKERRQ(ierr);
-    }
-
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
+PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -560,50 +434,7 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
             cent_sed[d][g] = cent_ice[d][g];
 
     // -------------------------------------------------------------------------
-    // Gauss-point loop: compute and store Phi_sed and grad_Phi_sed
-    // Both are precomputed once here and read in Residual/Jacobian at runtime
-    // -------------------------------------------------------------------------
-    IGAElement element;
-    IGAPoint   point;
-    PetscInt   ind = 0;
-
-    ierr = IGABeginElement(iga, &element); CHKERRQ(ierr);
-    while (IGANextElement(iga, element)) {
-        ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
-        while (IGAElementNextPoint(element, point)) {
-
-            PetscReal sed = 0.0;
-            PetscReal grad_sed[3] = {0.0, 0.0, 0.0};
-
-            for (PetscInt g = 0; g < 2; g++) {
-                PetscReal dist = 0.0;
-                for (PetscInt d = 0; d < dim; d++)
-                    dist += SQ(point->mapX[0][d] - cent_sed[d][g]);
-                dist = sqrt(dist);
-
-                PetscReal tval = tanh(tc * (dist - rad_sed));
-                sed += 0.5 - 0.5*tval;
-
-                // Gradient: d(phi_s)/d(x_d) = -0.5*(1-tval^2)*tc*(x_d - c_d)/dist
-                if (dist > 1.0e-14) {
-                    PetscReal sech2 = 1.0 - tval*tval;
-                    for (PetscInt d = 0; d < dim; d++)
-                        grad_sed[d] += -0.5 * sech2 * tc
-                                       * (point->mapX[0][d] - cent_sed[d][g]) / dist;
-                }
-            }
-
-            user->Phi_sed[ind] = PetscMax(0.0, PetscMin(1.0, sed));
-            for (PetscInt d = 0; d < dim; d++)
-                user->grad_Phi_sed[ind*dim + d] = grad_sed[d];
-            ind++;
-        }
-        ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
-    }
-    ierr = IGAEndElement(iga, &element); CHKERRQ(ierr);
-
-    // -------------------------------------------------------------------------
-    // Nodal loop: ice, temperature, vapor density initial conditions
+    // Nodal loop: ice, sediment, temperature, vapor density initial conditions
     // -------------------------------------------------------------------------
     DM da;
     ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
@@ -657,6 +488,7 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
             RhoVS_I(user, tem, &rho_vs, NULL);
 
             u[j][i].ice  = ice;
+            u[j][i].sed  = sed;
             u[j][i].tem  = tem;
             u[j][i].rhov = user->hum0 * rho_vs;
         }
@@ -665,60 +497,29 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, 
     ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
     ierr = DMDestroy(&da); CHKERRQ(ierr);
 
-    // -------------------------------------------------------------------------
-    // Sediment DMDA vector S — for visualization and postprocessing only
-    // -------------------------------------------------------------------------
-    PetscInt nlocS;
-    ierr = VecGetLocalSize(S, &nlocS); CHKERRQ(ierr);
-
-    if (nlocS > 0) {
-        DM daS;
-        FieldS **uS;
-        DMDALocalInfo infoS;
-        ierr = IGACreateNodeDM(igaS, 1, &daS); CHKERRQ(ierr);
-        ierr = DMDAVecGetArray(daS, S, &uS); CHKERRQ(ierr);
-        ierr = DMDAGetLocalInfo(daS, &infoS); CHKERRQ(ierr);
-
-        PetscInt perS = (user->periodic == 1) ? user->p - 1 : -1;
-
-        for (PetscInt i = infoS.xs; i < infoS.xs + infoS.xm; i++) {
-            for (PetscInt j = infoS.ys; j < infoS.ys + infoS.ym; j++) {
-                PetscReal x = Lx * (PetscReal)i / (PetscReal)(infoS.mx + perS);
-                PetscReal y = Ly * (PetscReal)j / (PetscReal)(infoS.my + perS);
-
-                PetscReal sed = 0.0;
-                for (PetscInt g = 0; g < 2; g++) {
-                    PetscReal dist = sqrt(SQ(x - cent_sed[0][g]) + SQ(y - cent_sed[1][g]));
-                    sed += 0.5 - 0.5*tanh(tc * (dist - rad_sed));
-                }
-                uS[j][i].soil = PetscMax(0.0, PetscMin(1.0, sed));
-            }
-        }
-
-        ierr = DMDAVecRestoreArray(daS, S, &uS); CHKERRQ(ierr);
-        ierr = DMDestroy(&daS); CHKERRQ(ierr);
-    }
-
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
+/* Placeholder: FormInitialSoil2D writes sediment into U (component 3).
+   Kept for backwards compatibility; real sediment init now happens inside
+   the primary IC functions. */
+PetscErrorCode FormInitialSoil2D(IGA iga, Vec U, AppCtx *user)
+{
+    (void)iga; (void)U; (void)user;
+    return 0;
+}
+
+/* Placeholder: same for 3D. */
+PetscErrorCode FormInitialSoil3D(IGA iga, Vec U, AppCtx *user)
+{
+    (void)iga; (void)U; (void)user;
+    return 0;
+}
+
+PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-
-    /* --- Soil vector S (sediment phase). Might be empty on some ranks. --- */
-    PetscInt      nlocS;
-    DM            daS  = NULL;
-    FieldS        **uS = NULL;
-    DMDALocalInfo infoS;
-
-    ierr = VecGetLocalSize(S, &nlocS);CHKERRQ(ierr);
-    if (nlocS > 0) {
-        ierr = IGACreateNodeDM(igaS, 1, &daS);CHKERRQ(ierr);
-        ierr = DMDAVecGetArray(daS, S, &uS);CHKERRQ(ierr);
-        ierr = DMDAGetLocalInfo(daS, &infoS);CHKERRQ(ierr);
-    }
 
     /* Geometry / parameters */
     const PetscReal Lx    = user->Lx;
@@ -940,70 +741,13 @@ PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, V
         user->radiussed[jj] = radius_sed[jj];
     }
 
-    /* --------- Build sediment phase Phi_sed (IGA param space) --------- */
-    {
-        IGAElement element;
-        IGAPoint   point;
-        PetscInt   ind = 0;
-        PetscReal  sed_val, dist;
-
-        ierr = IGABeginElement(iga, &element);CHKERRQ(ierr);
-        while (IGANextElement(iga, element)) {
-            ierr = IGAElementBeginPoint(element, &point);CHKERRQ(ierr);
-            while (IGAElementNextPoint(element, point)) {
-                sed_val = 0.0;
-                for (PetscInt aa = 0; aa < user->n_actsed; aa++) {
-                    dist = 0.0;
-                    for (PetscInt l = 0; l < dim; l++) {
-                        dist += SQ(point->mapX[0][l] - user->centsed[l][aa]);
-                    }
-                    dist = PetscSqrtReal(dist);
-                    sed_val += 0.5 - 0.5 * PetscTanhReal(0.5/eps * (dist - user->radiussed[aa]));
-                }
-                if (sed_val > 1.0) sed_val = 1.0;
-                if (sed_val < 0.0) sed_val = 0.0;
-
-                user->Phi_sed[ind++] = sed_val;
-            }
-            ierr = IGAElementEndPoint(element, &point);CHKERRQ(ierr);
-        }
-        ierr = IGAEndElement(iga, &element);CHKERRQ(ierr);
-    }
-
-    /* --------- Map sediment phase to S (nodal DMDA) --------- */
-    if (nlocS > 0) {
-        PetscInt  iS, jS, kk, lS = -1;
-        PetscReal distS, valueS;
-
-        if (user->periodic == 1) lS = user->p - 1;
-
-        for (iS = infoS.xs; iS < infoS.xs + infoS.xm; iS++) {
-            for (jS = infoS.ys; jS < infoS.ys + infoS.ym; jS++) {
-                PetscReal xS = user->Lx*(PetscReal)iS / (PetscReal)(infoS.mx + lS);
-                PetscReal yS = user->Ly*(PetscReal)jS / (PetscReal)(infoS.my + lS);
-
-                valueS = 0.0;
-                for (kk = 0; kk < user->n_actsed; kk++) {
-                    distS = PetscSqrtReal(SQ(xS - user->centsed[0][kk]) +
-                                          SQ(yS - user->centsed[1][kk]));
-                    valueS += 0.5 - 0.5 * PetscTanhReal(0.5/user->eps *
-                                                        (distS - user->radiussed[kk]));
-                }
-                if (valueS > 1.0) valueS = 1.0;
-                if (valueS < 0.0) valueS = 0.0;
-
-                uS[jS][iS].soil = valueS;
-            }
-        }
-    }
-
-    /* --------- Build ice + temperature + vapor fields in U --------- */
+    /* --------- Build ice + sediment + temperature + vapor fields in U --------- */
     {
         DM             da;
         Field        **u;
         DMDALocalInfo  info;
 
-        ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+        ierr = IGACreateNodeDM(iga, user->dof, &da);CHKERRQ(ierr);
         ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
         ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
 
@@ -1015,7 +759,7 @@ PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, V
                 PetscReal x = user->Lx*(PetscReal)i / (PetscReal)(info.mx + k);
                 PetscReal y = user->Ly*(PetscReal)j / (PetscReal)(info.my + k);
 
-                /* Sediment contribution at node (for carving out ice) */
+                /* Sediment contribution at node */
                 PetscReal sed_here = 0.0;
                 for (PetscInt kk = 0; kk < user->n_actsed; kk++) {
                     PetscReal distS = PetscSqrtReal(SQ(x - user->centsed[0][kk]) +
@@ -1023,8 +767,10 @@ PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, V
                     sed_here += 0.5 - 0.5 * PetscTanhReal(0.5/user->eps *
                                                           (distS - user->radiussed[kk]));
                 }
+                if (sed_here > 1.0) sed_here = 1.0;
+                if (sed_here < 0.0) sed_here = 0.0;
 
-                /* Ice grains (outer) */
+                /* Ice grains (outer), carved by sediment inclusions */
                 PetscReal ice_grain = 0.0;
                 for (PetscInt aa = 0; aa < user->n_act; aa++) {
                     PetscReal distI = PetscSqrtReal(SQ(x - user->cent[0][aa]) +
@@ -1032,18 +778,13 @@ PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, V
                     ice_grain += 0.5 - 0.5 * PetscTanhReal(0.5/user->eps *
                                                            (distI - user->radius[aa]));
                 }
-
-                /* Subtract sediment contribution to carve inclusions.
-                   For 'pure' sediment grains (not inside any ice), this just
-                   pushes ice toward 0 in those pockets, which is what we want. */
                 PetscReal ice = ice_grain - sed_here;
                 if (ice > 1.0) ice = 1.0;
                 if (ice < 0.0) ice = 0.0;
 
-                u[j][i].ice = ice;
-
-                /* Temperature and vapor density initial conditions */
-                u[j][i].tem = user->temp0
+                u[j][i].ice  = ice;
+                u[j][i].sed  = sed_here;
+                u[j][i].tem  = user->temp0
                               + user->grad_temp0[0] * (x - 0.5 * user->Lx)
                               + user->grad_temp0[1] * (y - 0.5 * user->Ly);
                 PetscScalar rho_vs, temp = u[j][i].tem;
@@ -1056,64 +797,14 @@ PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, IGA igaS, Vec U, V
         ierr = DMDestroy(&da);CHKERRQ(ierr);
     }
 
-    /* Clean up soil DM if present */
-    if (nlocS > 0) {
-        ierr = DMDAVecRestoreArray(daS, S, &uS);CHKERRQ(ierr);
-        ierr = DMDestroy(&daS);CHKERRQ(ierr);
-    }
-
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode FormInitialSoil2D(IGA igaS,Vec S,AppCtx *user)
+
+PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    DM da;
-    ierr = IGACreateNodeDM(igaS,1,&da);CHKERRQ(ierr);
-    FieldS **u;
-    ierr = DMDAVecGetArray(da,S,&u);CHKERRQ(ierr);
-    DMDALocalInfo info;
-    ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
-    PetscReal dist=0.0,value;
-    PetscInt i,j,kk, l=-1;
-    if(user->periodic==1) l=user->p-1;
-    for(i=info.xs;i<info.xs+info.xm;i++){
-        for(j=info.ys;j<info.ys+info.ym;j++){
-            PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+l) );
-            PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+l) );
-            value=0.0;
-            for(kk=0;kk<user->n_actsed;kk++){
-                dist = sqrt(SQ(x-user->centsed[0][kk])+SQ(y-user->centsed[1][kk]));
-                value += 0.5-0.5*tanh(0.5/user->eps*(dist-user->radiussed[kk]));
-            }
-            if(value>1.0) value=1.0;
-
-            u[j][i].soil = value;
-        }
-    }
-    ierr = DMDAVecRestoreArray(da,S,&u);CHKERRQ(ierr);
-    ierr = DMDestroy(&da);;CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
-{
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-
-    /* --- Soil vector S (sediment phase). Might be empty on some ranks. --- */
-    PetscInt      nlocS;
-    DM            daS  = NULL;
-    FieldS        **uS = NULL;
-    DMDALocalInfo infoS;
-
-    ierr = VecGetLocalSize(S, &nlocS);CHKERRQ(ierr);
-    if (nlocS > 0) {
-        ierr = IGACreateNodeDM(igaS, 1, &daS);CHKERRQ(ierr);
-        ierr = DMDAVecGetArray(daS, S, &uS);CHKERRQ(ierr);
-        ierr = DMDAGetLocalInfo(daS, &infoS);CHKERRQ(ierr);
-    }
 
     /* Geometry / parameters (2D assumed) */
     const PetscReal Lx    = user->Lx;
@@ -1136,7 +827,7 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec
             Field        **u;
             DMDALocalInfo  info;
 
-            ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+            ierr = IGACreateNodeDM(iga, user->dof, &da);CHKERRQ(ierr);
             ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
             ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
 
@@ -1149,7 +840,7 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec
                     PetscReal y = user->Ly*(PetscReal)j / (PetscReal)(info.my + k);
 
                     u[j][i].ice = 0.0;
-
+                    u[j][i].sed = 0.0;
                     u[j][i].tem = user->temp0
                                   + user->grad_temp0[0] * (x - 0.5 * user->Lx)
                                   + user->grad_temp0[1] * (y - 0.5 * user->Ly);
@@ -1161,12 +852,6 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec
 
             ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr);
             ierr = DMDestroy(&da);CHKERRQ(ierr);
-        }
-
-        /* Clean soil DM if present */
-        if (nlocS > 0) {
-            ierr = DMDAVecRestoreArray(daS, S, &uS);CHKERRQ(ierr);
-            ierr = DMDestroy(&daS);CHKERRQ(ierr);
         }
 
         PetscFunctionReturn(0);
@@ -1391,70 +1076,13 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec
         user->radiussed[jj] = radius_sed[jj];
     }
 
-    /* --------- Build sediment phase Phi_sed (IGA param space) --------- */
-    {
-        IGAElement element;
-        IGAPoint   point;
-        PetscInt   ind = 0;
-        PetscReal  sed_val, dist;
-
-        ierr = IGABeginElement(iga, &element);CHKERRQ(ierr);
-        while (IGANextElement(iga, element)) {
-            ierr = IGAElementBeginPoint(element, &point);CHKERRQ(ierr);
-            while (IGAElementNextPoint(element, point)) {
-                sed_val = 0.0;
-                for (PetscInt aa = 0; aa < user->n_actsed; aa++) {
-                    dist = 0.0;
-                    for (PetscInt l = 0; l < dim; l++) {
-                        dist += SQ(point->mapX[0][l] - user->centsed[l][aa]);
-                    }
-                    dist = PetscSqrtReal(dist);
-                    sed_val += 0.5 - 0.5 * PetscTanhReal(0.5/eps * (dist - user->radiussed[aa]));
-                }
-                if (sed_val > 1.0) sed_val = 1.0;
-                if (sed_val < 0.0) sed_val = 0.0;
-
-                user->Phi_sed[ind++] = sed_val;
-            }
-            ierr = IGAElementEndPoint(element, &point);CHKERRQ(ierr);
-        }
-        ierr = IGAEndElement(iga, &element);CHKERRQ(ierr);
-    }
-
-    /* --------- Map sediment phase to S (nodal DMDA) --------- */
-    if (nlocS > 0) {
-        PetscInt  iS, jS, kk, lS = -1;
-        PetscReal distS, valueS;
-
-        if (user->periodic == 1) lS = user->p - 1;
-
-        for (iS = infoS.xs; iS < infoS.xs + infoS.xm; iS++) {
-            for (jS = infoS.ys; jS < infoS.ys + infoS.ym; jS++) {
-                PetscReal xS = user->Lx*(PetscReal)iS / (PetscReal)(infoS.mx + lS);
-                PetscReal yS = user->Ly*(PetscReal)jS / (PetscReal)(infoS.my + lS);
-
-                valueS = 0.0;
-                for (kk = 0; kk < user->n_actsed; kk++) {
-                    distS = PetscSqrtReal(SQ(xS - user->centsed[0][kk]) +
-                                          SQ(yS - user->centsed[1][kk]));
-                    valueS += 0.5 - 0.5 * PetscTanhReal(0.5/user->eps *
-                                                        (distS - user->radiussed[kk]));
-                }
-                if (valueS > 1.0) valueS = 1.0;
-                if (valueS < 0.0) valueS = 0.0;
-
-                uS[jS][iS].soil = valueS;
-            }
-        }
-    }
-
-    /* --------- Build ice + temperature + vapor fields in U --------- */
+    /* --------- Build ice + sediment + temperature + vapor fields in U --------- */
     {
         DM             da;
         Field        **u;
         DMDALocalInfo  info;
 
-        ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+        ierr = IGACreateNodeDM(iga, user->dof, &da);CHKERRQ(ierr);
         ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
         ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
 
@@ -1489,10 +1117,9 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec
                 if (ice > 1.0) ice = 1.0;
                 if (ice < 0.0) ice = 0.0;
 
-                u[j][i].ice = ice;
-
-                /* Temperature and vapor density initial conditions */
-                u[j][i].tem = user->temp0
+                u[j][i].ice  = ice;
+                u[j][i].sed  = sed_here;
+                u[j][i].tem  = user->temp0
                               + user->grad_temp0[0] * (x - 0.5 * user->Lx)
                               + user->grad_temp0[1] * (y - 0.5 * user->Ly);
                 PetscScalar rho_vs, temp = u[j][i].tem;
@@ -1505,47 +1132,6 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, IGA igaS, Vec U, Vec
         ierr = DMDestroy(&da);CHKERRQ(ierr);
     }
 
-    /* Clean up soil DM if present */
-    if (nlocS > 0) {
-        ierr = DMDAVecRestoreArray(daS, S, &uS);CHKERRQ(ierr);
-        ierr = DMDestroy(&daS);CHKERRQ(ierr);
-    }
-
-    PetscFunctionReturn(0);
-}
-
-PetscErrorCode FormInitialSoil3D(IGA igaS,Vec S,AppCtx *user)
-{
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    DM da;
-    ierr = IGACreateNodeDM(igaS,1,&da);CHKERRQ(ierr);
-    FieldS ***u;
-    ierr = DMDAVecGetArray(da,S,&u);CHKERRQ(ierr);
-    DMDALocalInfo info;
-    ierr = DMDAGetLocalInfo(da,&info);CHKERRQ(ierr);
-    PetscReal dist=0.0,value;
-    PetscInt i,j,k, kk, l=-1;
-    if(user->periodic==1) l=user->p-1;
-    for(i=info.xs;i<info.xs+info.xm;i++){
-        for(j=info.ys;j<info.ys+info.ym;j++){
-            for(k=info.zs;k<info.zs+info.zm;k++){
-                PetscReal x = user->Lx*(PetscReal)i / ( (PetscReal)(info.mx+l) );
-                PetscReal y = user->Ly*(PetscReal)j / ( (PetscReal)(info.my+l) );
-                PetscReal z = user->Lz*(PetscReal)k / ( (PetscReal)(info.mz+l) );
-                value=0.0;
-                for(kk=0;kk<user->n_actsed;kk++){
-                    dist = sqrt(SQ(x-user->centsed[0][kk])+SQ(y-user->centsed[1][kk])+SQ(z-user->centsed[2][kk]));
-                    value += 0.5-0.5*tanh(0.5/user->eps*(dist-user->radiussed[kk]));
-                }
-                if(value>1.0) value=1.0;
-                
-                u[k][j][i].soil = value;
-            }
-        }
-    }
-    ierr = DMDAVecRestoreArray(da,S,&u);CHKERRQ(ierr);
-    ierr = DMDestroy(&da);;CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 
@@ -1595,7 +1181,7 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
     ierr = IGADestroy(&igaPF);CHKERRQ(ierr);
 
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,user->dof,&da);CHKERRQ(ierr);
     Field **u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -1618,7 +1204,7 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
 
   } else {
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,user->dof,&da);CHKERRQ(ierr);
     Field **u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -1699,7 +1285,7 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user,
     ierr = IGADestroy(&igaPF);CHKERRQ(ierr);
 
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,user->dof,&da);CHKERRQ(ierr);
     Field ***u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -1725,7 +1311,7 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user,
 
   } else {
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,user->dof,&da);CHKERRQ(ierr);
     Field ***u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -1819,7 +1405,7 @@ PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U,
     ierr = IGADestroy(&igaPF);CHKERRQ(ierr);
 
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,user->dof,&da);CHKERRQ(ierr);
     Field **u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -1845,7 +1431,7 @@ PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U,
   } else {
     /* Permafrost Intializatoin*/
     DM da;
-    ierr = IGACreateNodeDM(iga,3,&da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga,user->dof,&da);CHKERRQ(ierr);
     Field **u;
     ierr = DMDAVecGetArray(da,U,&u);CHKERRQ(ierr);
     DMDALocalInfo info;
@@ -1854,7 +1440,7 @@ PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U,
     PetscInt        i, j, k = -1, aa;
     PetscReal       dist, ice = 0.0;
 
-    ierr = IGACreateNodeDM(iga, 3, &da); CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
     ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
     ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
 
@@ -1943,7 +1529,7 @@ PetscErrorCode FormInitialSoil1D(IGA igaS, Vec S, AppCtx *user)
  *
  * Usage: call after setting up the 1D IGA; pass igaS for the soil IGA.
  */
-PetscErrorCode FormInitialCondition1D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *user)
+PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -1963,16 +1549,15 @@ PetscErrorCode FormInitialCondition1D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *u
         user->centsed[0][0] = 0.75 * user->Lx;
         user->radiussed[0]  = 0.10 * user->Lx;
     }
-    ierr = FormInitialSoil1D(igaS, S, user); CHKERRQ(ierr);
 
     /* Build node DM for the primary field vector */
     DM            da;
     Field        *u;   /* 1D: plain pointer, not pointer-to-pointer */
     DMDALocalInfo info;
 
-    ierr = IGACreateNodeDM(iga, 3, &da); CHKERRQ(ierr);
-    ierr = DMDAVecGetArray(da, U, &u);   CHKERRQ(ierr);
-    ierr = DMDAGetLocalInfo(da, &info);  CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
 
     const PetscReal Lx  = user->Lx;
     const PetscReal eps = user->eps;
@@ -2000,8 +1585,17 @@ PetscErrorCode FormInitialCondition1D(IGA iga, IGA igaS, Vec U, Vec S, AppCtx *u
                               - tanh(0.5 * (x - x_hi) / eps));
         ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
+        /* Sediment slab: tanh profile centered at centsed[0][0] with half-width radiussed[0] */
+        PetscReal sed = 0.0;
+        for (PetscInt kk = 0; kk < user->n_actsed; kk++) {
+            PetscReal dist = PetscAbsReal(x - user->centsed[0][kk]);
+            sed += 0.5 - 0.5 * PetscTanhReal(0.5 / eps * (dist - user->radiussed[kk]));
+        }
+        sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+
         u[i].ice = ice;
         u[i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
+        u[i].sed = sed;
 
         PetscScalar rho_vs_loc, temp_loc = u[i].tem;
         RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
@@ -2049,11 +1643,10 @@ PetscErrorCode LoadInputSolutionVec(const char *filename, Vec *U_in_seq)
 
 /* 
    InitializeFromInputSolution:
-   - Reads Sthavishtha's solution Vec (ice, sediment, temp)
-   - Sets your U (ice, temp, rhov)
-   - Fills user->Phi_sed with sediment
+   - Reads an external solution Vec (ice, sediment, temp layout)
+   - Sets U (ice, temp, rhov, sed) — 4 DOFs
 */
-PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
+PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -2064,10 +1657,10 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
                 "InitializeFromInputSolution: user->initial_cond is empty");
     }
 
-    /* 1) Load Sthavishtha's solution Vec in parallel (same IGA, same layout) */
+    /* 1) Load external solution Vec in parallel (same IGA, same layout) */
     MPI_Comm   comm;
     Vec        U_in;
-    PetscInt   Nloc_in, Nloc_out, Nloc_s, dof_out;
+    PetscInt   Nloc_in, Nloc_out, dof_out;
 
     ierr = PetscObjectGetComm((PetscObject)U, &comm);CHKERRQ(ierr);
 
@@ -2081,7 +1674,7 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
     /* 2) Sanity checks on sizes and dofs */
     ierr = VecGetLocalSize(U_in, &Nloc_in);CHKERRQ(ierr);
     ierr = VecGetLocalSize(U,    &Nloc_out);CHKERRQ(ierr);
-    ierr = IGAGetDof(iga,        &dof_out);CHKERRQ(ierr); /* should be 3 (ice, tem, rhov) */
+    ierr = IGAGetDof(iga,        &dof_out);CHKERRQ(ierr); /* 4: ice, tem, rhov, sed */
 
     if (Nloc_in != Nloc_out) {
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
@@ -2096,62 +1689,45 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
 
     PetscInt nNodeLocal = Nloc_out / dof_out;
 
-    ierr = VecGetLocalSize(S, &Nloc_s);CHKERRQ(ierr);
-    if (Nloc_s != nNodeLocal) {
-        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
-                "InitializeFromInputSolution: S local size %d != nNodeLocal %d",
-                (int)Nloc_s, (int)nNodeLocal);
-    }
-
-    /* 3) Access arrays: input solution, output solution, sediment Vec */
+    /* 3) Access arrays */
     const PetscScalar *ain  = NULL;
     PetscScalar       *aout = NULL;
-    PetscScalar       *s_arr = NULL;
 
     ierr = VecGetArrayRead(U_in, &ain);CHKERRQ(ierr);
     ierr = VecGetArray(U,       &aout);CHKERRQ(ierr);
-    ierr = VecGetArray(S,       &s_arr);CHKERRQ(ierr);
 
     /* 4) Precompute uniform rhov0 used as initial guess */
     PetscReal rho_vs, d_rhovs;
     RhoVS_I(user, user->temp0, &rho_vs, &d_rhovs);
     PetscReal rhov0 = user->hum0 * rho_vs;
 
-    /* Input component mapping (Sthavishtha): [0]=ice, [1]=sediment, [2]=temperature */
+    /* Input component mapping: [0]=ice, [1]=sediment, [2]=temperature */
     const PetscInt ice_in_comp = 0;
     const PetscInt sed_in_comp = 1;
     /* const PetscInt temp_in_comp = 2;  <-- currently ignored */
 
-    /* Output mapping: [0]=ice, [1]=temp, [2]=rhov */
+    /* Output mapping: [0]=ice, [1]=temp, [2]=rhov, [3]=sed */
     const PetscInt ice_out_comp  = 0;
     const PetscInt rhov_out_comp = 2;
+    const PetscInt sed_out_comp  = 3;
 
     /* 5) Loop over local nodes and map phases */
     for (PetscInt inode = 0; inode < nNodeLocal; inode++) {
-        PetscInt base = inode * dof_out; /* local base index in both ain and aout */
+        PetscInt base = inode * dof_out;
 
         PetscReal ice_in = PetscRealPart(ain[base + ice_in_comp]);
         PetscReal sed_in = PetscRealPart(ain[base + sed_in_comp]);
 
-        /* Clamp ice and sediment to [0,1] */
         PetscReal sed_clamped = PetscMin(PetscMax(sed_in, 0.0), 1.0);
         ice_in = PetscMin(PetscMax(ice_in, 0.0), 1.0);
 
-        /* Copy ice phase */
         aout[base + ice_out_comp]  = (PetscScalar)ice_in;
-
-        /* Set vapor density to uniform rhov0 for now;
-           we will overwrite based on T(x) below. */
         aout[base + rhov_out_comp] = (PetscScalar)rhov0;
-
-        /* Store sediment in S and in user->Phi_sed */
-        s_arr[inode]        = (PetscScalar)sed_clamped;
-        user->Phi_sed[inode] = sed_clamped;
+        aout[base + sed_out_comp]  = (PetscScalar)sed_clamped;
     }
 
     ierr = VecRestoreArrayRead(U_in, &ain);CHKERRQ(ierr);
     ierr = VecRestoreArray(U,       &aout);CHKERRQ(ierr);
-    ierr = VecRestoreArray(S,       &s_arr);CHKERRQ(ierr);
 
     ierr = VecDestroy(&U_in);CHKERRQ(ierr);
 
@@ -2165,7 +1741,7 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
         Field **u;
         PetscInt k = -1;
 
-        ierr = IGACreateNodeDM(iga, 3, &da);CHKERRQ(ierr);
+        ierr = IGACreateNodeDM(iga, user->dof, &da);CHKERRQ(ierr);
         ierr = DMDAGetLocalInfo(da, &info);CHKERRQ(ierr);
         ierr = DMDAVecGetArray(da, U, &u);CHKERRQ(ierr);
 
@@ -2194,7 +1770,7 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, Vec S, AppCtx *user)
         Field ***u;
         PetscInt l = -1;
 
-        ierr = IGACreateNodeDM(iga, 3, &da);CHKERRQ(ierr);
+        ierr = IGACreateNodeDM(iga, user->dof, &da);CHKERRQ(ierr);
         ierr = DMDAGetLocalInfo(da, &info);CHKERRQ(ierr);
         ierr = DMDAVecGetArray(da, U, &u);CHKERRQ(ierr);
 
@@ -2233,38 +1809,19 @@ PetscReal SmoothHeaviside(PetscReal phi, PetscReal eps)
     return 0.5 + 0.5 * tanh(0.5 * phi / eps);
 }
 
-PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
+PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscInt       i, j;
     PetscFunctionBegin;
 
-    /* --- Fields for main phase-field vector U --- */
     DM             da;
     Field          **u;
     DMDALocalInfo  info;
 
-    ierr = IGACreateNodeDM(iga, 3, &da);CHKERRQ(ierr);
+    ierr = IGACreateNodeDM(iga, user->dof, &da);CHKERRQ(ierr);
     ierr = DMDAVecGetArray(da, U, &u);CHKERRQ(ierr);
     ierr = DMDAGetLocalInfo(da, &info);CHKERRQ(ierr);
-
-    /* --- Fields for soil vector S (may have zero local size on some ranks) --- */
-    PetscInt       nlocS, nNodeLocal = 0, inode = 0;
-    DM             da_soil = NULL;
-    FieldS         **u_soil = NULL;
-    DMDALocalInfo  info_soil;
-
-    ierr = VecGetLocalSize(S, &nlocS);CHKERRQ(ierr);
-
-    if (nlocS > 0) {
-        /* Only map S to a DMDA on ranks that actually own entries */
-        ierr = IGACreateNodeDM(igaS, 1, &da_soil);CHKERRQ(ierr);
-        ierr = DMDAVecGetArray(da_soil, S, &u_soil);CHKERRQ(ierr);
-        ierr = DMDAGetLocalInfo(da_soil, &info_soil);CHKERRQ(ierr);
-        nNodeLocal = nlocS;
-        inode      = 0;
-        (void)info_soil; /* currently unused but kept for possible future checks */
-    }
 
     PetscReal Lx = user->Lx;
     PetscReal Ly = user->Ly;
@@ -2376,19 +1933,8 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
             /* remove overlap with (slightly inflated) solid grain to create a buffer */
             phi_bridge *= (1.0 - phi_solid_buf);
 
-            /* Store solid fraction in soil Vec if we actually mapped it on this rank.
-               Treat user->Phi_sed as a local array of length nNodeLocal, indexed by inode. */
-            if (u_soil) {
-                u_soil[j][i].soil = phi_solid;
-
-                if (inode >= nNodeLocal) {
-                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
-                            "FormIC_grain_ana: inode=%" PetscInt_FMT " >= nNodeLocal=%" PetscInt_FMT,
-                            inode, nNodeLocal);
-                }
-
-                user->Phi_sed[inode++] = phi_solid;
-            }
+            /* Store sediment as 4th DOF */
+            u[j][i].sed = phi_solid;
 
             /* Store bridge phase in ice field */
             u[j][i].ice = phi_bridge;
@@ -2408,21 +1954,8 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, IGA igaS, Vec S, AppCtx *user)
         }
     }
 
-    /* Sanity check: on ranks that own soil entries, inode should match nNodeLocal */
-    if (u_soil && inode != nNodeLocal) {
-        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
-                "FormIC_grain_ana: inode=%" PetscInt_FMT " != nNodeLocal=%" PetscInt_FMT,
-                inode, nNodeLocal);
-    }
-
-    /* Restore arrays and destroy DMs */
     ierr = DMDAVecRestoreArray(da, U, &u);CHKERRQ(ierr);
     ierr = DMDestroy(&da);CHKERRQ(ierr);
-
-    if (u_soil) {
-        ierr = DMDAVecRestoreArray(da_soil, S, &u_soil);CHKERRQ(ierr);
-        ierr = DMDestroy(&da_soil);CHKERRQ(ierr);
-    }
 
     PetscFunctionReturn(0);
 }

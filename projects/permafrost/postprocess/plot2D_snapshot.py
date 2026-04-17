@@ -5,7 +5,7 @@ plot2D_snapshot.py  —  2D field snapshots without ParaView/VTK.
 Reads a PetIGA 2D solution file and produces a multi-panel matplotlib figure
 showing all four fields evaluated on a regular grid:
   - Ice phase field  φ_i
-  - Sediment phase   φ_s  (from soil.dat)
+  - Sediment phase   φ_s  (DOF 3 of the solution vector)
   - Temperature      T
   - Vapor density    ρ_v
   - Air phase        φ_a = 1 − φ_i − φ_s  (derived)
@@ -86,7 +86,7 @@ def _load_2d(run_dir: str, step: int, nx_eval: int, ny_eval: int,
     ice        : (ny_eval, nx_eval)
     tem        : (ny_eval, nx_eval)
     rhov       : (ny_eval, nx_eval)
-    sed        : (ny_eval, nx_eval)  or zeros if soil.dat unavailable
+    sed        : (ny_eval, nx_eval)  from DOF 3 of the solution vector
     Lx, Ly     : domain extents [m]
     """
     iga_path = os.path.join(run_dir, iga_file)
@@ -119,17 +119,8 @@ def _load_2d(run_dir: str, step: int, nx_eval: int, ny_eval: int,
     Lx = float(Xe.max() - Xe.min())
     Ly = float(Ye.max() - Ye.min())
 
-    # Sediment ----------------------------------------------------------------
-    sed_e = np.zeros_like(ice_e)
-    soil_dat  = os.path.join(run_dir, "soil.dat")
-    igasoil   = os.path.join(run_dir, "igasoil.dat")
-    if os.path.isfile(soil_dat) and os.path.isfile(igasoil):
-        nrb_s   = PetIGA().read(igasoil)
-        sed_ctrl = PetIGA().read_vec(soil_dat, nrb_s)
-        sed_e   = _eval_field(nrb_s, sed_ctrl, u_vals, v_vals, comp=0)
-        print("  Sediment field loaded.")
-    else:
-        print("  soil.dat / igasoil.dat not found — sediment set to zero.")
+    # Sediment is DOF 3 in the solution vector
+    sed_e = _eval_field(nrb, sol_ctrl, u_vals, v_vals, comp=3)
 
     # Transpose to (ny, nx) for imshow convention (row = y, col = x)
     return (Xe.T, Ye.T,

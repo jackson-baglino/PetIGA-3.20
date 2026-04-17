@@ -30,15 +30,9 @@ PetscErrorCode Residual(IGAPoint pnt,
         alph_sub = user->alph_sub;
     }
 
-    // Sediment phase and its gradient — precomputed during initialization
-    PetscReal sed = user->Phi_sed[indGP];
-    PetscReal grad_sed[dim];
-    for (l = 0; l < dim; l++)
-        grad_sed[l] = user->grad_Phi_sed[indGP*dim + l];
-
     if (pnt->atboundary) return 0;
 
-    PetscScalar sol_t[3], sol[3], grad_sol[3][dim];
+    PetscScalar sol_t[4], sol[4], grad_sol[4][dim];
     IGAPointFormValue(pnt, V, &sol_t[0]);
     IGAPointFormValue(pnt, U, &sol[0]);
     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
@@ -47,9 +41,13 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscScalar grad_ice[dim];
     for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
 
+    PetscScalar sed   = sol[3], sed_t = sol_t[3];
+    PetscScalar grad_sed[dim];
+    for (l = 0; l < dim; l++) grad_sed[l] = grad_sol[3][l];
+
     // Air: algebraic from constraint, no independent evolution equation
     PetscScalar air   = 1.0 - sed - ice;
-    PetscScalar air_t = -ice_t;
+    PetscScalar air_t = -ice_t - sed_t;
 
     if (ice < 0.0) ice = 0.0;  // Prevent negative ice from causing NaN diffusion coefficients
     if (ice > 1.0) ice = 1.0;  // Prevent unphysical >100% ice from causing NaN diffusion coefficients
@@ -85,7 +83,7 @@ PetscErrorCode Residual(IGAPoint pnt,
     // suppressed at ice-sediment interface by (1-sed)^2
     // PetscReal loc = ice*ice * (1 - ice - sed)*(1 - ice - sed);
 
-    PetscScalar (*R)[3] = (PetscScalar (*)[3])Re;
+    PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
     PetscInt a, nen = pnt->nen;
     for (a = 0; a < nen; a++) {
         PetscReal R_ice = 0.0, R_tem = 0.0, R_vap = 0.0;
@@ -141,6 +139,7 @@ PetscErrorCode Residual(IGAPoint pnt,
         R[a][0] = R_ice;
         R[a][1] = R_tem;
         R[a][2] = R_vap;
+        R[a][3] = N0[a] * sed_t;   /* ∂sed/∂t = 0  (RHS to be added) */
     }
 
     return 0;
@@ -174,11 +173,9 @@ PetscErrorCode Jacobian(IGAPoint pnt,
         alph_sub = user->alph_sub;
     }
 
-    PetscReal sed = user->Phi_sed[indGP];
-
     if (pnt->atboundary) return 0;
 
-    PetscScalar sol_t[3], sol[3], grad_sol[3][dim];
+    PetscScalar sol_t[4], sol[4], grad_sol[4][dim];
     IGAPointFormValue(pnt, V, &sol_t[0]);
     IGAPointFormValue(pnt, U, &sol[0]);
     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
@@ -187,8 +184,10 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     PetscScalar grad_ice[dim];
     for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
 
+    PetscScalar sed   = sol[3], sed_t = sol_t[3];
+
     PetscScalar air   = 1.0 - sed - ice;
-    PetscScalar air_t = -ice_t;
+    PetscScalar air_t = -ice_t - sed_t;
 
     PetscScalar tem   = sol[1], tem_t = sol_t[1];
     PetscScalar grad_tem[dim];
@@ -216,7 +215,7 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     PetscReal dloc_ice = (2.0*ice*air*air - 2.0*ice*ice*air) * (1.0-sed)*(1.0-sed);
 
     PetscInt a, b, nen = pnt->nen;
-    PetscScalar (*J)[3][nen][3] = (PetscScalar (*)[3][nen][3])Je;
+    PetscScalar (*J)[4][nen][4] = (PetscScalar (*)[4][nen][4])Je;
 
     for (a = 0; a < nen; a++) {
         for (b = 0; b < nen; b++) {
@@ -245,6 +244,9 @@ PetscErrorCode Jacobian(IGAPoint pnt,
 
             // Vapor — time derivative
             J[a][2][b][2] += shift * N0[a] * N0[b];
+
+            // Sediment — time derivative only (RHS to be added)
+            J[a][3][b][3] += shift * N0[a] * N0[b];
             // if (air > air_lim) {
             //     J[a][2][b][2] += N0[a] * air * shift * N0[b];
             //     J[a][2][b][0] -= N0[a] * rhov_t * N0[b];
@@ -281,11 +283,11 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
 {
     PetscFunctionBegin;
     AppCtx *user = (AppCtx*)ctx;
-    PetscScalar sol[3];
+    PetscScalar sol[4];
     IGAPointFormValue(pnt, U, &sol[0]);
 
     PetscReal ice  = sol[0];
-    PetscReal sed  = user->Phi_sed[pnt->index + pnt->count * pnt->parent->index];
+    PetscReal sed  = sol[3];
     PetscReal air  = 1.0 - sed - ice;
     PetscReal temp = sol[1];
     PetscReal rhov = sol[2];
