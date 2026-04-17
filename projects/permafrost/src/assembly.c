@@ -21,12 +21,14 @@ PetscErrorCode Residual(IGAPoint pnt,
 
     PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
 
-    PetscReal mob, alph_sub;
+    PetscReal mob, mob_sed, alph_sub;
     if (user->flag_Tdep == 1) {
         mob      = user->mob[indGP];
+        mob_sed  = user->mob_sed_arr[indGP];
         alph_sub = user->alph[indGP];
     } else {
         mob      = user->mob_sub;
+        mob_sed  = user->mob_sed;
         alph_sub = user->alph_sub;
     }
 
@@ -83,6 +85,7 @@ PetscErrorCode Residual(IGAPoint pnt,
     // suppressed at ice-sediment interface by (1-sed)^2
     // PetscReal loc = ice*ice * (1 - ice - sed)*(1 - ice - sed);
 
+    (void)mob_sed;  /* reserved for sediment RHS */
     PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
     PetscInt a, nen = pnt->nen;
     for (a = 0; a < nen; a++) {
@@ -139,7 +142,7 @@ PetscErrorCode Residual(IGAPoint pnt,
         R[a][0] = R_ice;
         R[a][1] = R_tem;
         R[a][2] = R_vap;
-        R[a][3] = N0[a] * sed_t;   /* ∂sed/∂t = 0  (RHS to be added) */
+        R[a][3] = N0[a] * sed_t;   /* ∂sed/∂t = 0  (mob_sed available; full RHS to be added) */
     }
 
     return 0;
@@ -164,12 +167,14 @@ PetscErrorCode Jacobian(IGAPoint pnt,
 
     PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
 
-    PetscReal mob, alph_sub;
+    PetscReal mob, mob_sed, alph_sub;
     if (user->flag_Tdep == 1) {
         mob      = user->mob[indGP];
+        mob_sed  = user->mob_sed_arr[indGP];
         alph_sub = user->alph[indGP];
     } else {
         mob      = user->mob_sub;
+        mob_sed  = user->mob_sed;
         alph_sub = user->alph_sub;
     }
 
@@ -214,6 +219,7 @@ PetscErrorCode Jacobian(IGAPoint pnt,
     PetscReal loc      = ice*ice * air*air * (1.0-sed)*(1.0-sed);
     PetscReal dloc_ice = (2.0*ice*air*air - 2.0*ice*ice*air) * (1.0-sed)*(1.0-sed);
 
+    (void)mob_sed;  /* reserved for sediment Jacobian entries */
     PetscInt a, b, nen = pnt->nen;
     PetscScalar (*J)[4][nen][4] = (PetscScalar (*)[4][nen][4])Je;
 

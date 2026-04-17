@@ -337,7 +337,23 @@ void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair,
 }
 
 /**
- * @brief Computes σ₀ (sigma zero) as a function of temperature using lookup tables and interpolation.
+ * @brief Computes the phase dependent mobility for sublimation
+ * 
+ * this function determines the value of M_sub based on the phase field variables, using a simple 
+ * linear interpolation between the mobility in the ice phase and the mobility in the air phase, 
+ * weighted by the ice fraction.
+ */
+void MobilitySub(AppCtx *user, PetscScalar ice, PetscScalar sed,
+                 PetscScalar *mob_ice_out, PetscScalar *mob_sed_out)
+{
+    if (mob_ice_out) *mob_ice_out = user->mob_sub;
+    if (mob_sed_out) *mob_sed_out = user->mob_sed;
+}
+
+
+/**
+ * @brief Computes σ₀ (sigma zero) as a function of temperature using lookup tables and 
+ * interpolation.
  * 
  * This function determines the value of σ₀ based on predefined temperature values 
  * using a logarithmic interpolation technique. If the temperature is out of range, 

@@ -52,8 +52,9 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
             lambda_sub = a1*user->eps/d0_sub;
             tau_sub    = user->eps*lambda_sub*(beta_sub/a1 + a2*user->eps/user->diff_sub + a2*user->eps/user->dif_vap);
 
-            user->mob[indd] = user->eps/3.0/tau_sub; 
-            user->alph[indd] = lambda_sub/tau_sub; 
+            user->mob[indd]         = user->eps/3.0/tau_sub;
+            user->mob_sed_arr[indd] = user->mob_sed;  /* placeholder: update when sediment RHS is defined */
+            user->alph[indd]        = lambda_sub/tau_sub;
 
             indd ++;
         }

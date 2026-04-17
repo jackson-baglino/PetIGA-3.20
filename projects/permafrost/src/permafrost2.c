@@ -224,6 +224,7 @@ int main(int argc, char *argv[]) {
 
     /* --- Capillarly neck parameters ------------------------------------- */
     ierr = PetscOptionsReal("-R1", "Radius of capillary neck", "", user.R1, &user.R1, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-mob_sed", "Mobility for sediment phase evolution", "", user.mob_sed, &user.mob_sed, NULL); CHKERRQ(ierr);
 
     /* --- Flags ---------------------------------------------------------- */
 
@@ -317,6 +318,7 @@ int main(int argc, char *argv[]) {
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter */
+    user.mob_sed = user.mob_sub;  /* Default sediment mobility; override with -mob_sed */
 
     if (user.flag_Tdep == 0) {
         PetscPrintf(PETSC_COMM_WORLD,
@@ -370,10 +372,12 @@ int main(int argc, char *argv[]) {
     } else {
         nmb = iga->elem_width[0] * iga->elem_width[1] * iga->elem_width[2] * CU(p + 1);
     }
-    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.alph);    CHKERRQ(ierr);
-    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);     CHKERRQ(ierr);
-    ierr = PetscMemzero(user.alph,    sizeof(PetscReal) * nmb); CHKERRQ(ierr);
-    ierr = PetscMemzero(user.mob,     sizeof(PetscReal) * nmb); CHKERRQ(ierr);
+    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.alph);        CHKERRQ(ierr);
+    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);         CHKERRQ(ierr);
+    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob_sed_arr); CHKERRQ(ierr);
+    ierr = PetscMemzero(user.alph,        sizeof(PetscReal) * nmb); CHKERRQ(ierr);
+    ierr = PetscMemzero(user.mob,         sizeof(PetscReal) * nmb); CHKERRQ(ierr);
+    for (PetscInt i = 0; i < nmb; i++) user.mob_sed_arr[i] = user.mob_sed;
 
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
@@ -476,8 +480,9 @@ int main(int argc, char *argv[]) {
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
-    ierr = PetscFree(user.alph); CHKERRQ(ierr);
-    ierr = PetscFree(user.mob); CHKERRQ(ierr);
+    ierr = PetscFree(user.alph);        CHKERRQ(ierr);
+    ierr = PetscFree(user.mob);         CHKERRQ(ierr);
+    ierr = PetscFree(user.mob_sed_arr); CHKERRQ(ierr);
 
     /* End Timer */
     PetscLogDouble ltim, tim;

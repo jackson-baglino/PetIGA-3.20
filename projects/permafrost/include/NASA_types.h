@@ -20,7 +20,8 @@ typedef struct {
 
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
-  PetscReal mob_sub;  // Mobility parameters for phase evolution
+  PetscReal mob_sub;  // Mobility for ice phase evolution
+  PetscReal mob_sed;  // Mobility for sediment phase evolution equation
   PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, metal, air)
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
@@ -87,8 +88,9 @@ typedef struct {
   PetscInt n_act, n_actsed;  // Number of currently active grains (ice and sediment)
 
   // Arrays for field variables
-  PetscReal *alph;  // Alpha field, possibly phase fraction or related property
-  PetscReal *mob;  // Mobility field, spatially varying
+  PetscReal *alph;     // Alpha field, possibly phase fraction or related property
+  PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)
+  PetscReal *mob_sed_arr;  // Sediment mobility field, spatially varying (T-dependent)
 
   // Flag for reading input files
   PetscInt readFlag;  // Flag to indicate whether initial data should be read from a file
