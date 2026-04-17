@@ -46,6 +46,25 @@ Never force-push to `main`. Feature branches are fine.
 - Build system: Make (via PetIGA)
 - Main branch: `main`; active development on feature branches
 
+## Activity log
+
+**Before ending every session**, prepend a new entry to `.claude/ACTIVITY_LOG.md`. Format:
+
+```
+## YYYY-MM-DD — Short title
+
+- Bullet summary of what was done and why.
+- One bullet per meaningful task or change.
+
+---
+```
+
+- Newest entries go at the top (prepend, don't append).
+- Keep summaries factual and brief — focus on *what changed* and *why*.
+- If nothing meaningful was done (e.g., a read-only Q&A session), still add a one-liner entry.
+
+---
+
 ## Code style
 
 - C99: declare loop variables inside `for (PetscInt i = ...)`.
