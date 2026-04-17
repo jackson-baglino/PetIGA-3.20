@@ -77,14 +77,15 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
 
   //-------- domain integrals
-  PetscScalar stats[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
-  ierr = IGAComputeScalar(user->iga,U,6,&stats[0],Integration,mctx);CHKERRQ(ierr);
+  PetscScalar stats[7] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  ierr = IGAComputeScalar(user->iga,U,7,&stats[0],Integration,mctx);CHKERRQ(ierr);
   PetscReal tot_ice     = PetscRealPart(stats[0]);
   PetscReal tot_trip    = PetscRealPart(stats[1]);
   PetscReal tot_air     = PetscRealPart(stats[2]);
   PetscReal tot_temp    = PetscRealPart(stats[3]);
   PetscReal tot_rhov    = PetscRealPart(stats[4]);
-  PetscReal sub_interf  = PetscRealPart(stats[5]); 
+  PetscReal sub_interf  = PetscRealPart(stats[5]);
+  PetscReal tot_sed     = PetscRealPart(stats[6]);
  
   //------------- 
   PetscReal dt;
@@ -106,12 +107,13 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       // Build header line using the SAME fixed-width fields as the data row
       char header[512];
       ierr2 = PetscSNPrintf(header, sizeof(header),
-                            " %5s | %12s | %9s | %10s | %10s | %9s | %9s | %10s | %10s",
+                            " %5s | %12s | %9s | %10s | %10s | %10s | %9s | %9s | %10s | %10s",
                             "STEP",
                             "TIME [s]",
                             "DT [s]",
                             "TOT_ICE",
                             "TOT_AIR",
+                            "TOT_SED",
                             "TEMP",
                             "TOT_RHOV",
                             "I-A INTERF",
@@ -138,9 +140,9 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
     // Data row: uses matching widths so it lines up under the header
     PetscPrintf(PETSC_COMM_WORLD,
-                " %5d | %12.5e | %9.3e | %10.3e | %10.3e | %9.3e | %9.3e | %10.3e | %10.3e\n",
+                " %5d | %12.5e | %9.3e | %10.3e | %10.3e | %10.3e | %9.3e | %9.3e | %10.3e | %10.3e\n",
                 step, t, dt,
-                tot_ice, tot_air, tot_temp, tot_rhov,
+                tot_ice, tot_air, tot_sed, tot_temp, tot_rhov,
                 sub_interf, tot_trip);
 
     // Optional: add a blank line every N rows for readability (set to 0 to disable)

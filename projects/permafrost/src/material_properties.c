@@ -5,26 +5,26 @@
  * @brief Computes the effective thermal conductivity based on phase fractions.
  * 
  * This function calculates the thermal conductivity of a material as a weighted 
- * sum of the thermal conductivities of ice, metal, and air phases. It also computes 
+ * sum of the thermal conductivities of ice, sediment, and air phases. It also computes 
  * the derivative of conductivity with respect to the ice fraction.
  *
  * @param user Pointer to the application context containing material properties.
  * @param ice Fraction of the ice phase (0 to 1).
- * @param met Fraction of the metal phase (0 to 1).
+ * @param sed Fraction of the sediment phase (0 to 1).
  * @param cond Pointer to store the computed thermal conductivity.
  * @param dcond_ice Pointer to store the derivative of conductivity with respect to ice fraction.
  */
-void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar met, 
+void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar sed, 
                  PetscScalar *cond, PetscScalar *dcond_ice)
 {
     // Define derivatives (initialized to 1.0, modified if phase fractions are negative)
     PetscReal dice = 1.0, dair = 1.0;
 
-    // Compute air fraction (air = 1 - ice - metal)
-    PetscReal air = 1.0 - met - ice;
+    // Compute air fraction (air = 1 - ice - sediment)
+    PetscReal air = 1.0 - sed - ice;
 
     // Ensure phase fractions are non-negative (corrects numerical issues)
-    if (met < 0.0) met = 0.0;
+    if (sed < 0.0) sed = 0.0;
     if (ice < 0.0) { 
         ice = 0.0; 
         dice = 0.0; // If ice fraction is zero, its derivative should also be zero
@@ -36,12 +36,12 @@ void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar met,
 
     // Retrieve material thermal conductivities from the user context
     PetscReal cond_ice = user->thcond_ice;
-    PetscReal cond_met = user->thcond_met;
+    PetscReal cond_sed = user->thcond_sed;
     PetscReal cond_air = user->thcond_air;
 
     // Compute the effective thermal conductivity as a weighted sum
     if (cond) 
-        (*cond) = ice * cond_ice + met * cond_met + air * cond_air;
+        (*cond) = ice * cond_ice + sed * cond_sed + air * cond_air;
 
     // Compute the derivative of thermal conductivity with respect to ice fraction
     if (dcond_ice) 
@@ -54,34 +54,34 @@ void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar met,
  * @brief Computes the effective heat capacity and its derivative with respect to ice.
  * 
  * This function calculates the heat capacity as a weighted sum of contributions 
- * from ice, metal, and air. It also computes the derivative of heat capacity 
+ * from ice, sediment, and air. It also computes the derivative of heat capacity 
  * with respect to the ice fraction.
  *
  * @param user Pointer to the application context containing material properties.
  * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
+ * @param sed Fraction of the sediment phase.
  * @param cp Pointer to store computed heat capacity.
  * @param dcp_ice Pointer to store derivative of heat capacity with respect to ice.
  */
-void HeatCap(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *cp, 
+void HeatCap(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *cp, 
   PetscScalar *dcp_ice)
 {
 PetscReal dice = 1.0, dair = 1.0;
-PetscReal air = 1.0 - met - ice;
+PetscReal air = 1.0 - sed - ice;
 
 // Ensure phase fractions are non-negative
-if (met < 0.0) met = 0.0;
+if (sed < 0.0) sed = 0.0;
 if (ice < 0.0) { ice = 0.0; dice = 0.0; }
 if (air < 0.0) { air = 0.0; dair = 0.0; }
 
 // Retrieve heat capacities
 PetscReal cp_ice = user->cp_ice;
-PetscReal cp_met = user->cp_met;
+PetscReal cp_sed = user->cp_sed;
 PetscReal cp_air = user->cp_air;
 
 // Compute effective heat capacity
 if (cp) 
-(*cp) = ice * cp_ice + met * cp_met + air * cp_air;
+(*cp) = ice * cp_ice + sed * cp_sed + air * cp_air;
 
 // Compute derivative with respect to ice
 if (dcp_ice) 
@@ -93,34 +93,34 @@ return;
  * @brief Computes the effective density and its derivative with respect to ice.
  *
  * This function calculates the density as a weighted sum of contributions 
- * from ice, metal, and air. It also computes the derivative of density 
+ * from ice, sediment, and air. It also computes the derivative of density 
  * with respect to the ice fraction.
  *
  * @param user Pointer to the application context containing material properties.
  * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
+ * @param sed Fraction of the sediment phase.
  * @param rho Pointer to store computed density.
  * @param drho_ice Pointer to store derivative of density with respect to ice.
  */
-void Density(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *rho, 
+void Density(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *rho, 
   PetscScalar *drho_ice)
 {
 PetscReal dice = 1.0, dair = 1.0;
-PetscReal air = 1.0 - met - ice;
+PetscReal air = 1.0 - sed - ice;
 
 // Ensure phase fractions are non-negative
-if (met < 0.0) met = 0.0;
+if (sed < 0.0) sed = 0.0;
 if (ice < 0.0) { ice = 0.0; dice = 0.0; }
 if (air < 0.0) { air = 0.0; dair = 0.0; }
 
 // Retrieve densities
 PetscReal rho_ice = user->rho_ice;
-PetscReal rho_met = user->rho_met;
+PetscReal rho_sed = user->rho_sed;
 PetscReal rho_air = user->rho_air;
 
 // Compute effective density
 if (rho) 
-(*rho) = ice * rho_ice + met * rho_met + air * rho_air;
+(*rho) = ice * rho_ice + sed * rho_sed + air * rho_air;
 
 // Compute derivative with respect to ice
 if (drho_ice) 
@@ -206,11 +206,11 @@ return;
  *
  * @param user Pointer to the application context containing material properties.
  * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
+ * @param sed Fraction of the sediment phase.
  * @param fice Pointer to store the computed free energy for the ice phase.
  * @param dfice_ice Pointer to store the derivative of fice with respect to ice.
  */
-void Fice(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fice, 
+void Fice(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *fice, 
   PetscScalar *dfice_ice)
 {
 // Retrieve material parameters from user context
@@ -218,54 +218,54 @@ PetscReal Lambd = user->Lambd;
 PetscReal etai  = user->Etai;
 
 // Compute the air fraction
-PetscReal air = 1.0 - met - ice;
+PetscReal air = 1.0 - sed - ice;
 
 // Compute the free energy function for the ice phase
 if (fice) 
 (*fice) = etai * ice * (1.0 - ice) * (1.0 - 2.0 * ice) + 
-          2.0 * Lambd * ice * met * met * air * air;
+          2.0 * Lambd * ice * sed * sed * air * air;
 
 // Compute the derivative with respect to the ice fraction
 if (dfice_ice) 
 (*dfice_ice) = etai * (1.0 - 6.0 * ice + 6.0 * ice * ice) + 
-              2.0 * Lambd * met * met * air * air - 
-              2.0 * Lambd * ice * met * met * 2.0 * air;
+              2.0 * Lambd * sed * sed * air * air - 
+              2.0 * Lambd * ice * sed * sed * 2.0 * air;
 
 return;
 }
 
 /**
- * @brief Computes the phase evolution function for the water phase (metal fraction).
+ * @brief Computes the phase evolution function for the water phase (sediment fraction).
  * 
- * This function models the free energy contribution of the water (metal) phase 
+ * This function models the free energy contribution of the water (sediment) phase 
  * in a phase-field simulation. It also computes the derivative with respect to 
  * the ice fraction.
  *
  * @param user Pointer to the application context containing material properties.
  * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
- * @param fwat Pointer to store the computed phase function for water.
- * @param dfwat_ice Pointer to store the derivative of fwat with respect to ice.
+ * @param sed Fraction of the sediment phase.
+ * @param fsed Pointer to store the computed phase function for water.
+ * @param dfsed_ice Pointer to store the derivative of fsed with respect to ice.
  */
-void Fwat(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fwat, 
-          PetscScalar *dfwat_ice)
+void Fsed(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *fsed, 
+          PetscScalar *dfsed_ice)
 {
     // Retrieve material parameters from user context
     PetscReal Lambd = user->Lambd;
     PetscReal etam  = user->Etam;
 
     // Compute the air fraction
-    PetscReal air = 1.0 - met - ice;
+    PetscReal air = 1.0 - sed - ice;
 
     // Compute the phase evolution function for the water phase
-    if (fwat) 
-        (*fwat) = etam * met * (1.0 - met) * (1.0 - 2.0 * met) + 
-                  2.0 * Lambd * ice * ice * met * air * air;
+    if (fsed) 
+        (*fsed) = etam * sed * (1.0 - sed) * (1.0 - 2.0 * sed) + 
+                  2.0 * Lambd * ice * ice * sed * air * air;
 
     // Compute the derivative with respect to the ice fraction
-    if (dfwat_ice) {
-        (*dfwat_ice) = 2.0 * Lambd * 2.0 * ice * met * air * air 
-                     - 2.0 * Lambd * ice * ice * met * 2.0 * air;
+    if (dfsed_ice) {
+        (*dfsed_ice) = 2.0 * Lambd * 2.0 * ice * sed * air * air 
+                     - 2.0 * Lambd * ice * ice * sed * 2.0 * air;
     }
 
     return;
@@ -280,57 +280,32 @@ void Fwat(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fwat,
  *
  * @param user Pointer to the application context containing material properties.
  * @param ice Fraction of the ice phase.
- * @param met Fraction of the metal phase.
+ * @param sed Fraction of the sediment phase.
  * @param fair Pointer to store the computed phase function for air.
  * @param dfair_ice Pointer to store the derivative of fair with respect to ice.
  */
-// void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair, 
-//           PetscScalar *dfair_ice)
-// {
-//     // Retrieve material parameters from user context
-//     PetscReal Lambd = user->Lambd;
-//     PetscReal etaa  = user->Etaa;
-
-//     // Compute the air fraction
-//     PetscReal air = 1.0 - met - ice;
-
-//     // Compute the phase evolution function for the air phase
-//     if (fair) 
-//         (*fair) = etaa * air * (1.0 - air) * (1.0 - 2.0 * air) + 
-//                   2.0 * Lambd * ice * ice * met * met * air;
-
-//     // Compute the derivative with respect to the ice fraction
-//     if (dfair_ice) {
-//         (*dfair_ice)  = -etaa * (1.0 - air) * (1.0 - 2.0 * air) 
-//                       + etaa * air * (1.0 - 2.0 * air) 
-//                       + etaa * air * (1.0 - air) * 2.0;
-//         (*dfair_ice) += 2.0 * Lambd * 2.0 * ice * met * met * air 
-//                       - 2.0 * Lambd * ice * ice * met * met;
-//     }
-
-//     return;
-// }
-// Note: This Fair function is for no Lagrange multiplier
-void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair,
+void Fair(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *fair, 
           PetscScalar *dfair_ice)
 {
+    // Retrieve material parameters from user context
     PetscReal Lambd = user->Lambd;
     PetscReal etaa  = user->Etaa;
-    PetscReal air = 1.0 - met - ice;
 
-    if (fair)
-        (*fair) = etaa * air*(1.0-air)*(1.0-2.0*air)
-                + 2.0*Lambd * ice*ice * met*met * air;
+    // Compute the air fraction
+    PetscReal air = 1.0 - sed - ice;
 
+    // Compute the phase evolution function for the air phase
+    if (fair) 
+        (*fair) = etaa * air * (1.0 - air) * (1.0 - 2.0 * air) + 
+                  2.0 * Lambd * ice * ice * sed * sed * air;
+
+    // Compute the derivative with respect to the ice fraction
     if (dfair_ice) {
-        // Double-well part: d/dphi_i of etaa*phi_a*(1-phi_a)*(1-2*phi_a)
-        // Chain rule: dphi_a/dphi_i = -1, so result is -etaa*(1 - 6*air + 6*air^2)
-        (*dfair_ice) = -etaa * (1.0 - 6.0*air + 6.0*air*air);
-
-        // Lambda part: d/dphi_i of 2*Lambda*phi_i^2 * phi_s^2 * phi_a
-        // Two contributions: direct d/d(phi_i^2) term, and chain rule through phi_a
-        (*dfair_ice) += 4.0*Lambd * ice * met*met * air   // direct: 2*Lambda * 2*phi_i * phi_s^2 * phi_a
-                      - 2.0*Lambd * ice*ice * met*met;    // chain:  2*Lambda * phi_i^2 * phi_s^2 * (-1)
+        (*dfair_ice)  = -etaa * (1.0 - air) * (1.0 - 2.0 * air) 
+                      + etaa * air * (1.0 - 2.0 * air) 
+                      + etaa * air * (1.0 - air) * 2.0;
+        (*dfair_ice) += 2.0 * Lambd * 2.0 * ice * sed * sed * air 
+                      - 2.0 * Lambd * ice * ice * sed * sed;
     }
 
     return;
@@ -346,8 +321,8 @@ void Fair(AppCtx *user, PetscScalar ice, PetscScalar met, PetscScalar *fair,
 void MobilitySub(AppCtx *user, PetscScalar ice, PetscScalar sed,
                  PetscScalar *mob_ice_out, PetscScalar *mob_sed_out)
 {
-    if (mob_ice_out) *mob_ice_out = user->mob_sub;
-    if (mob_sed_out) *mob_sed_out = user->mob_sed;
+    if (mob_ice_out) *mob_ice_out = user->mob_sub * ice * (1.0 - ice);
+    if (mob_sed_out) *mob_sed_out = user->mob_sed * sed * (1.0 - sed);
 }
 
 

@@ -22,15 +22,15 @@ typedef struct {
   PetscReal eps;  // Interface width parameter for phase field method
   PetscReal mob_sub;  // Mobility for ice phase evolution
   PetscReal mob_sed;  // Mobility for sediment phase evolution equation
-  PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, metal, air)
+  PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, sediment, air)
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
 
   // Thermophysical properties of different phases
-  PetscReal thcond_ice, thcond_met, thcond_air;  // Thermal conductivities of ice, metal, and air
-  PetscReal cp_ice, cp_met, cp_air;  // Specific heat capacities of ice, metal, and air
-  PetscReal rho_ice, rho_met, rho_air;  // Densities of ice, metal, and air
+  PetscReal thcond_ice, thcond_sed, thcond_air;  // Thermal conductivities of ice, sediment, and air
+  PetscReal cp_ice, cp_sed, cp_air;  // Specific heat capacities of ice, sediment, and air
+  PetscReal rho_ice, rho_sed, rho_air;  // Densities of ice, sediment, and air
   PetscReal dif_vap;  // Vapor diffusivity in air
   PetscReal lat_sub;  // Latent heat of sublimation
   PetscReal diff_sub;  // Diffusivity related to sublimation
@@ -59,7 +59,7 @@ typedef struct {
   PetscReal radiussed[200];  // Radii of individual sediment grains
 
   // Initial normal vector components (possibly for a structured interface)
-  PetscReal norm0[3];  // Normal vector components (x, y, z)
+  PetscReal norm0[4];  // Per-DOF initial residual norms for SNES convergence check
 
   // Flags for controlling different simulation options
   PetscInt flag_it0;  // Flag for iteration control at initialization
