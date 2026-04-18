@@ -1,0 +1,44 @@
+# =============================================================================
+# T07: Bergeron process (temperature-gradient-driven vapor transport)
+# flag_tIC=2: ice on left (cold), air on right (warm).
+# grad_temp0 = 1e5 K/m in x  →  ΔT = 10 K across Lx = 1e-4 m.
+# T_left=-20°C (ice), T_right=-10°C (air) → rho_vs ratio ≈ 2.14e-3/8.8e-4 ≈ 2.4×
+# rhov initialised at local saturation: rhov(x) = hum * rho_vs(T(x)).
+# Expected: domain-averaged tot_rhov at t=0 is >10% higher than no-gradient case.
+# =============================================================================
+-dim 1
+-dof 4
+-Nx 152
+-Lx 1.00e-04
+-p 2
+-C 1
+-delt_t 1.0e-4
+-t_final 1.0e-2
+-n_out 0
+-outp 1
+-Permafrost_output 1
+-Permafrost_monitor 1
+-humidity 1.0
+-temp -20.0
+-grad_temp0 1.0e5,0.0,0.0
+-eps 9.3295e-07
+-periodic 0
+-flag_tIC 2
+-flag_BC_Tfix 0
+-flag_BC_rhovfix 0
+-flag_Tdep 0
+-snes_type newtonls
+-snes_max_it 10
+-snes_rtol 1e-06
+-snes_atol 1e-08
+-snes_stol 1e-06
+-snes_converged_reason
+-snes_linesearch_type bt
+-ksp_type gmres
+-ksp_rtol 1e-05
+-ksp_atol 1e-08
+-ksp_max_it 500
+-ksp_gmres_restart 500
+-pc_type bjacobi
+-sub_pc_type ilu
+-sub_pc_factor_levels 1

@@ -32,15 +32,15 @@ int main(int argc, char *argv[]) {
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
     user.thcond_ice = 2.29;     /* Thermal conductivity of ice */
-    user.thcond_met = 36.0;     /* Thermal conductivity of metal (UPDATE!) */
+    user.thcond_sed = 36.0;     /* Thermal conductivity of metal (UPDATE!) */
     user.thcond_air = 0.02;     /* Thermal conductivity of air */
 
     user.cp_ice     = 1.96e3;   /* Specific heat capacity of ice */
-    user.cp_met     = 4.86e2;   /* Specific heat capacity of metal (UPDATE!) */
+    user.cp_sed     = 4.86e2;   /* Specific heat capacity of metal (UPDATE!) */
     user.cp_air     = 1.044e3;  /* Specific heat capacity of air */
 
     user.rho_ice    = 919.0;    /* Density of ice */
-    user.rho_met    = 7753.0;   /* Density of metal (UPDATE!) */
+    user.rho_sed    = 7753.0;   /* Density of metal (UPDATE!) */
     user.rho_air    = 1.341;    /* Density of air */
 
     user.dif_vap    = 2.178e-5; /* Vapor diffusivity in air */
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
     user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
 
-    PetscReal gamma_im = 0.033; /* Surface energies for ice-metal interface */
+    PetscReal gamma_im = 0.33; // 0.033; /* Surface energies for ice-metal interface */
     PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
     PetscReal gamma_mv = 0.056; /* Surface energies for metal-vapor interface */
 
@@ -179,18 +179,19 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_BC_Tfix", "Temperature BC flag", "", flag_BC_Tfix, &flag_BC_Tfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_BC_rhovfix", "Vapor density BC flag", "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
 
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-thcond_met", "Thermal conductivity of inert phase", "", user.thcond_met, &user.thcond_met, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-thcond_sed", "Thermal conductivity of inert phase", "", user.thcond_sed, &user.thcond_sed, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-thcond_air", "Thermal conductivity of air", "", user.thcond_air, &user.thcond_air, NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsReal("-cp_ice", "Specific heat capacity of ice", "", user.cp_ice, &user.cp_ice, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-cp_met", "Specific heat capacity of inert phase", "", user.cp_met, &user.cp_met, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-cp_sed", "Specific heat capacity of inert phase", "", user.cp_sed, &user.cp_sed, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-cp_air", "Specific heat capacity of air", "", user.cp_air, &user.cp_air, NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsReal("-rho_ice", "Density of ice", "", user.rho_ice, &user.rho_ice, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-rho_met", "Density of inert phase", "", user.rho_met, &user.rho_met, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-rho_sed", "Density of inert phase", "", user.rho_sed, &user.rho_sed, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsReal("-gamma_im", "Surface energy ice-inert phase", "", gamma_im, &gamma_im, NULL); CHKERRQ(ierr);
@@ -224,7 +225,7 @@ int main(int argc, char *argv[]) {
 
     /* --- Capillarly neck parameters ------------------------------------- */
     ierr = PetscOptionsReal("-R1", "Radius of capillary neck", "", user.R1, &user.R1, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-mob_sed", "Mobility for sediment phase evolution", "", user.mob_sed, &user.mob_sed, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-mob_sed", "Sediment phase mobility (0 = inert)", "", user.mob_sed, &user.mob_sed, NULL); CHKERRQ(ierr);
 
     /* --- Flags ---------------------------------------------------------- */
 
@@ -318,7 +319,7 @@ int main(int argc, char *argv[]) {
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter */
-    user.mob_sed = user.mob_sub;  /* Default sediment mobility; override with -mob_sed */
+    user.mob_sed = 0.0;  /* Sediment is inert by default; override with -mob_sed */
 
     if (user.flag_Tdep == 0) {
         PetscPrintf(PETSC_COMM_WORLD,
@@ -372,12 +373,10 @@ int main(int argc, char *argv[]) {
     } else {
         nmb = iga->elem_width[0] * iga->elem_width[1] * iga->elem_width[2] * CU(p + 1);
     }
-    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.alph);        CHKERRQ(ierr);
-    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);         CHKERRQ(ierr);
-    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob_sed_arr); CHKERRQ(ierr);
-    ierr = PetscMemzero(user.alph,        sizeof(PetscReal) * nmb); CHKERRQ(ierr);
-    ierr = PetscMemzero(user.mob,         sizeof(PetscReal) * nmb); CHKERRQ(ierr);
-    for (PetscInt i = 0; i < nmb; i++) user.mob_sed_arr[i] = user.mob_sed;
+    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.alph);    CHKERRQ(ierr);
+    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);     CHKERRQ(ierr);
+    ierr = PetscMemzero(user.alph,    sizeof(PetscReal) * nmb); CHKERRQ(ierr);
+    ierr = PetscMemzero(user.mob,     sizeof(PetscReal) * nmb); CHKERRQ(ierr);
 
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
@@ -480,9 +479,8 @@ int main(int argc, char *argv[]) {
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
-    ierr = PetscFree(user.alph);        CHKERRQ(ierr);
-    ierr = PetscFree(user.mob);         CHKERRQ(ierr);
-    ierr = PetscFree(user.mob_sed_arr); CHKERRQ(ierr);
+    ierr = PetscFree(user.alph); CHKERRQ(ierr);
+    ierr = PetscFree(user.mob); CHKERRQ(ierr);
 
     /* End Timer */
     PetscLogDouble ltim, tim;

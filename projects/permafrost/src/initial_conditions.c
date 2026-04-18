@@ -305,7 +305,7 @@ PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal Lx      = user->Lx;
     const PetscReal Ly      = user->Ly;
     const PetscReal eps     = user->eps;
-    const PetscInt  dim     = user->dim;
+    // const PetscInt  dim     = user->dim;
     const PetscReal tc      = 1.0 / (sqrt(2.0) * eps);
 
     // -------------------------------------------------------------------------
@@ -476,7 +476,7 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
             sed = PetscMax(0.0, PetscMin(1.0, sed));
 
             // Air from partition constraint: phi_i + phi_s + phi_a = 1
-            PetscReal air = PetscMax(0.0, 1.0 - ice - sed);
+            // PetscReal air = PetscMax(0.0, 1.0 - ice - sed);
 
             // Temperature: linear profile with user-specified gradient
             PetscReal tem = user->temp0
@@ -524,7 +524,7 @@ PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *use
     /* Geometry / parameters */
     const PetscReal Lx    = user->Lx;
     const PetscReal Ly    = user->Ly;
-    const PetscReal eps   = user->eps;
+    // const PetscReal eps   = user->eps;
     const PetscInt  dim   = user->dim; /* should be 2 here */
 
     const PetscInt  NCice = user->NCice;
@@ -809,7 +809,7 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, Vec U, AppCtx *user)
     /* Geometry / parameters (2D assumed) */
     const PetscReal Lx    = user->Lx;
     const PetscReal Ly    = user->Ly;
-    const PetscReal eps   = user->eps;
+    // const PetscReal eps   = user->eps;
     const PetscInt  dim   = user->dim; /* should be 2 here */
 
     const PetscInt  NCice = user->NCice;
@@ -1537,15 +1537,14 @@ PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user)
     PetscPrintf(PETSC_COMM_WORLD,
                 "--- INITIAL CONDITIONS (1D, dim=%d) ---\n", user->dim);
 
-    /* Place one sediment slab; position depends on IC variant */
-    user->n_actsed = 1;
-    user->n_act    = 0;
+    /* Place sediment slab only for the centered-slab variant (flag_tIC==0).
+       For flag_tIC==2 (flat ice-air interface) there is no sediment so that
+       the right half is pure air, which is what T06/T07 require. */
+    user->n_act = 0;
     if (user->flag_tIC == 2) {
-        /* Flat interface: sediment fills the right half (no ice there) */
-        user->centsed[0][0] = 0.75 * user->Lx;
-        user->radiussed[0]  = 0.25 * user->Lx;
+        user->n_actsed = 0;
     } else {
-        /* Centered slab: sediment slab immediately right of the ice */
+        user->n_actsed = 1;
         user->centsed[0][0] = 0.75 * user->Lx;
         user->radiussed[0]  = 0.10 * user->Lx;
     }
