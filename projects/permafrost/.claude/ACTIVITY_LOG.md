@@ -1,4 +1,24 @@
 
+## 2026-04-19 — Extend test suite to T11–T17 (15/15 pass)
+
+- Added T11 (sublimation deceleration in finite domain), T12 (deposition at hum=1.5), T13 (temperature field consistency), T16 (mass conservation), T17 (Dirichlet temperature BC fix).
+- Created 3 new opts files: `test_T11_sublim_rate.opts` (1000 steps), `test_T12_deposition.opts` (hum=1.5), `test_T17_temp_bc.opts` (flag_BC_Tfix=1).
+- T11/T13/T16 share a single 1000-step sublimation run; T12 and T17 each have dedicated runs.
+- Diagnosed `temp` monitor column as ∫T dx [°C·m], not domain-average — fixed T13/T17 criteria accordingly.
+- Discovered and documented finite-domain vapour depletion: sublimation rate drops 21× over 0.1 s as accumulated vapour quenches the driving force.
+- Updated `test/TEST_ANALYSIS.md` with full descriptions for T11–T17, updated cross-test analysis and parameter tables.
+- All 15/15 tests pass.
+
+---
+
+**Session ended:** 2026-04-18 08:12:40
+
+
+---
+
+**Session ended:** 2026-04-18 08:05:57
+
+
 ## 2026-04-18 — Systematic test suite (T01–T10), all 10 pass
 
 - Rewrote `preprocess/comp_eps.py`: added `compute_params()`, `rho_vs_sat()`, `patch_opts()`, and full CLI (`--patch`, `--quiet`); eps and Nx now computed from domain geometry and Kaempfer & Plapp bounds.
