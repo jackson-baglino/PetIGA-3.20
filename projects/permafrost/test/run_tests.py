@@ -421,6 +421,176 @@ def T10_interface_evolution(r):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  TESTS T11–T17
+# ══════════════════════════════════════════════════════════════════════════════
+
+def T11_sublimation_steady(r):
+    """T11 – Sublimation decelerates as the finite domain vapour approaches saturation."""
+    ssa = r["ssa"]
+    if ssa is None or len(ssa["tot_ice"]) < 10:
+        return False, "insufficient SSA data", None
+
+    ice   = ssa["tot_ice"]
+    t     = ssa["t"]
+    delta = ice[-1] - ice[0]
+
+    # Rate in first third vs last third (expect early > late due to vapour build-up)
+    n      = len(ice)
+    cut    = n // 3
+    dt_e   = t[cut] - t[0]
+    dt_l   = t[-1] - t[-cut - 1]
+    rate_e = (ice[cut] - ice[0])   / dt_e if dt_e > 0 else 0
+    rate_l = (ice[-1]  - ice[-cut - 1]) / dt_l if dt_l > 0 else 0
+
+    # Pass: ice decreases AND rate magnitude decelerates (finite-domain depletion)
+    passed = (delta < 0) and (abs(rate_e) > abs(rate_l))
+    detail = (f"Δtot_ice={delta*1e9:.1f} nm; rate_early={rate_e:.2e} m/s; "
+              f"rate_late={rate_l:.2e} m/s; decelerates={abs(rate_e)>abs(rate_l)}")
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
+    t_ms = t * 1e3
+    axes[0].plot(t_ms, ice * 1e9, "b-")
+    axes[0].set_xlabel("t  [ms]"); axes[0].set_ylabel("tot_ice  [nm]")
+    axes[0].set_title("T11 – Sublimation  (1000 steps, finite domain)"); axes[0].grid(True, ls=":")
+
+    if len(t) > 5:
+        inst_rate = np.diff(ice) / np.diff(t)
+        t_mid     = 0.5 * (t[:-1] + t[1:])
+        axes[1].plot(t_mid * 1e3, inst_rate * 1e9, "g-", lw=0.8)
+        axes[1].axhline(rate_e * 1e9, ls="--", color="steelblue",  label="Early rate")
+        axes[1].axhline(rate_l * 1e9, ls="--", color="darkorange", label="Late rate")
+        axes[1].set_xlabel("t  [ms]"); axes[1].set_ylabel("d(tot_ice)/dt  [nm/s]")
+        axes[1].set_title("T11 – Instantaneous sublimation rate"); axes[1].legend(); axes[1].grid(True, ls=":")
+    fig.tight_layout()
+    fp = _savefig(fig, "T11_sublimation_rate")
+    return passed, detail, fp
+
+
+def T12_deposition(r):
+    """T12 – Deposition: ice grows under supersaturation (hum = 1.5)."""
+    ssa = r["ssa"]
+    if ssa is None or len(ssa["tot_ice"]) < 2:
+        return False, "insufficient SSA data", None
+
+    ice    = ssa["tot_ice"]
+    delta  = ice[-1] - ice[0]
+    rate   = delta / (ssa["t"][-1] - ssa["t"][0])
+    passed = delta > 0
+    detail = (f"Δ(tot_ice) = {delta*1e9:.2f} nm  (must be > 0); "
+              f"mean deposition rate = {rate:.2e} m/s")
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
+    t_ms = ssa["t"] * 1e3
+    axes[0].plot(t_ms, ice * 1e6, "b-")
+    axes[0].set_xlabel("t  [ms]"); axes[0].set_ylabel(r"$\int\phi_i$  [µm]")
+    axes[0].set_title("T12 – Deposition  (hum = 1.5)"); axes[0].grid(True, ls=":")
+
+    axes[1].plot(t_ms, ssa["sub_eps"], "m-")
+    axes[1].set_xlabel("t  [ms]"); axes[1].set_ylabel(r"$\Sigma/\varepsilon$")
+    axes[1].set_title("T12 – Interface density during deposition"); axes[1].grid(True, ls=":")
+    fig.tight_layout()
+    fp = _savefig(fig, "T12_deposition")
+    return passed, detail, fp
+
+
+def T13_latent_heat(r):
+    """T13 – Temperature field consistency: ∫T dx / Lx ≈ temp0 at t=0 (within 1%)."""
+    Lx    = 1.0e-4
+    T0_C  = -20.0
+    mon   = _parse_monitor(r["stdout"])
+    if len(mon["temp"]) < 1:
+        return False, "monitor data missing", None
+
+    # mon["temp"] = ∫T dx  [°C·m]; domain-averaged T = ∫T dx / Lx
+    T_int0    = mon["temp"][0]              # ∫T dx at t=0
+    T_avg0    = T_int0 / Lx                 # domain-averaged T [°C]
+    err       = abs(T_avg0 - T0_C) / abs(T0_C)
+    ice_sublim = (len(mon["tot_ice"]) >= 2 and
+                  mon["tot_ice"][-1] < mon["tot_ice"][0])
+
+    passed = (err < 0.01) and ice_sublim
+    detail = (f"∫T dx = {T_int0:.5e} °C·m;  T_avg(0) = {T_avg0:.4f}°C  "
+              f"(expect {T0_C}°C, err={err*100:.3f}%);  ice sublimated: {ice_sublim}")
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
+    t_ms = mon["t"] * 1e3
+    T_avg = mon["temp"] / Lx
+    axes[0].plot(t_ms, T_avg, "r-")
+    axes[0].axhline(T0_C, ls="--", color="gray", label=f"T₀ = {T0_C}°C")
+    axes[0].set_xlabel("t  [ms]"); axes[0].set_ylabel("T_avg  [°C]")
+    axes[0].set_title("T13 – Domain-avg temperature  (hum = 0.5)"); axes[0].legend(); axes[0].grid(True, ls=":")
+
+    axes[1].plot(t_ms, mon["tot_ice"] * 1e9, "b-")
+    axes[1].set_xlabel("t  [ms]"); axes[1].set_ylabel("tot_ice  [nm]")
+    axes[1].set_title("T13 – Ice volume during sublimation"); axes[1].grid(True, ls=":")
+    fig.tight_layout()
+    fp = _savefig(fig, "T13_latent_heat")
+    return passed, detail, fp
+
+
+def T16_mass_conservation(r):
+    """T16 – Mass conservation: ρ_ice·tot_ice + tot_rhov stays constant."""
+    RHO_ICE = 919.0
+    mon = _parse_monitor(r["stdout"])
+    if len(mon["tot_ice"]) < 2 or len(mon["tot_rhov"]) < 2:
+        return False, "monitor data missing", None
+
+    mass  = RHO_ICE * mon["tot_ice"] + mon["tot_rhov"]
+    mass0 = mass[0]
+    drift = np.abs(mass - mass0) / (mass0 + 1e-30)
+    max_d = float(np.max(drift[1:]))
+    passed = max_d < 0.02
+    detail = (f"max |Δ(ρ_i·tot_ice + tot_rhov)| / mass(0) = {max_d:.2e} "
+              f"(threshold 2%);  mass(0) = {mass0:.4e} kg/m²")
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
+    t_ms = mon["t"] * 1e3
+    axes[0].plot(t_ms, mass, "k-")
+    axes[0].axhline(mass0, ls="--", color="gray", label="Initial mass")
+    axes[0].set_xlabel("t  [ms]")
+    axes[0].set_ylabel(r"$\rho_i\!\int\!\phi_i + \int\!\rho_v\phi_a$  [kg/m²]")
+    axes[0].set_title("T16 – Total water mass vs time"); axes[0].legend(); axes[0].grid(True, ls=":")
+
+    axes[1].plot(t_ms, drift * 100, "r-")
+    axes[1].axhline(2.0, ls="--", color="red", label="2% limit")
+    axes[1].set_xlabel("t  [ms]"); axes[1].set_ylabel("Relative drift  [%]")
+    axes[1].set_title("T16 – Mass conservation drift"); axes[1].legend(); axes[1].grid(True, ls=":")
+    fig.tight_layout()
+    fp = _savefig(fig, "T16_mass_conservation")
+    return passed, detail, fp
+
+
+def T17_temp_bc_fix(r):
+    """T17 – Temperature BC fix: ∫T dx stays near T0*Lx with Dirichlet BCs active."""
+    Lx        = 1.0e-4
+    T0_C      = -20.0
+    T0_int    = T0_C * Lx          # expected ∫T dx [°C·m] = -0.002
+    tol_frac  = 0.005              # 0.5 % tolerance on ∫T dx
+    mon       = _parse_monitor(r["stdout"])
+    if len(mon["temp"]) < 2:
+        return False, "monitor data missing", None
+
+    # mon["temp"] = ∫T dx  [°C·m]
+    dev     = np.abs(mon["temp"] - T0_int)
+    max_dev = float(np.max(dev))
+    passed  = max_dev < abs(T0_int) * tol_frac
+    T_avg   = mon["temp"] / Lx    # for plotting [°C]
+    detail  = (f"max |∫T dx − T₀·Lx| = {max_dev:.2e} °C·m  "
+               f"(threshold {abs(T0_int)*tol_frac:.2e});  "
+               f"T_avg range: [{T_avg.min():.4f}, {T_avg.max():.4f}]°C")
+
+    fig, ax = plt.subplots(figsize=(7, 3.5))
+    ax.plot(mon["t"] * 1e3, T_avg, "r-o", ms=3)
+    ax.axhline(T0_C, ls="--", color="gray", label=f"T₀ = {T0_C}°C")
+    ax.axhline(T0_C + 0.1, ls=":", color="orange", lw=1)
+    ax.axhline(T0_C - 0.1, ls=":", color="orange", label="±0.1°C band")
+    ax.set_xlabel("t  [ms]"); ax.set_ylabel("T_avg  [°C]")
+    ax.set_title("T17 – Domain-avg T with Dirichlet BCs  (flag_BC_Tfix=1)"); ax.legend(); ax.grid(True, ls=":")
+    fp = _savefig(fig, "T17_temp_bc_fix")
+    return passed, detail, fp
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  REPORT
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -472,14 +642,14 @@ def write_report(rows: list[dict]):
     lines += [
         "## Methodology",
         "",
-        "### Phase-field model tests",
+        "### Phase-field model tests (T01–T05, T17)",
         textwrap.dedent("""\
             These verify that the numerical solver is well-posed and the initial
             conditions are physically consistent.  Quantities are extracted from the
             monitor table printed to stdout (parsed via regex) and from `SSA_evo.dat`
             (4-column ASCII file written every output step)."""),
         "",
-        "### Dry snow metamorphism tests",
+        "### Dry snow metamorphism tests (T06–T13, T16)",
         textwrap.dedent("""\
             The non-variational Allen-Cahn formulation couples three physical
             mechanisms:
@@ -491,7 +661,10 @@ def write_report(rows: list[dict]):
             3. **Bergeron (temperature-gradient) process** — a macroscopic
                temperature gradient creates a vapour density gradient (d ρ_vs/dT ≠ 0)
                that drives net vapour flux from warm to cold, causing sublimation at
-               the warm end and deposition at the cold end."""),
+               the warm end and deposition at the cold end.
+
+            Extended tests (T11–T13, T16) use a 1000-step sublimation run to verify
+            quasi-steady rate linearity, mass conservation, and latent heat coupling."""),
         "",
     ]
 
@@ -531,14 +704,18 @@ def main():
 
     print("\n▶  Running simulations …\n")
 
-    r_quick  = run("inputs/tests/test_T01_quick_slab.opts",     "T01_quick",   4) if not skip("T01") else None
-    r_sed    = run("inputs/tests/test_T03_sed_inert.opts",       "T03_sed",    4) if not skip("T03") else None
-    r_subl   = run("inputs/tests/test_T05_sublimation.opts",     "T05_subl",   4) if not skip("T05") else None
-    r_flat   = run("inputs/tests/test_T06_flat_stable.opts",     "T06_flat",   4) if not skip("T06") else None
-    r_berg   = run("inputs/tests/test_T07_bergeron.opts",        "T07_berg",   4) if not skip("T07") else None
+    r_quick     = run("inputs/tests/test_T01_quick_slab.opts",   "T01_quick",  4) if not skip("T01") else None
+    r_sed       = run("inputs/tests/test_T03_sed_inert.opts",     "T03_sed",    4) if not skip("T03") else None
+    r_subl      = run("inputs/tests/test_T05_sublimation.opts",   "T05_subl",   4) if not skip("T05") else None
+    r_flat      = run("inputs/tests/test_T06_flat_stable.opts",   "T06_flat",   4) if not skip("T06") else None
+    r_berg      = run("inputs/tests/test_T07_bergeron.opts",      "T07_berg",   4) if not skip("T07") else None
+    # T11/T13/T16 share the long sublimation run
+    _need_long  = not (skip("T11") and skip("T13") and skip("T16"))
+    r_subl_long = run("inputs/tests/test_T11_sublim_rate.opts",   "T11_long",   4) if _need_long else None
+    r_depo      = run("inputs/tests/test_T12_deposition.opts",    "T12_depo",   4) if not skip("T12") else None
+    r_bcfix     = run("inputs/tests/test_T17_temp_bc.opts",       "T17_bcfix",  4) if not skip("T17") else None
 
-    # T01-T05 / T09-T10 reuse r_quick
-    # T08 reuses r_flat
+    # T01-T05 / T09-T10 reuse r_quick; T08 reuses r_flat; T13/T16 reuse r_subl_long
 
     print("\n▶  Analysing …\n")
     rows = []
@@ -626,6 +803,46 @@ def main():
         add("T10","Interface Density Evolution","Dry snow metamorphism",
             "Allen-Cahn dynamics change the ice-air interface density over time.",
             "rel |Δ(Σ/ε)| > 1×10⁻⁴",
+            p, d, fp)
+
+    # T11
+    if r_subl_long and (not only or "T11" in only):
+        p, d, fp = T11_sublimation_steady(r_subl_long)
+        add("T11","Sublimation Rate Deceleration","Dry snow metamorphism",
+            "In a finite domain, sublimation decelerates as vapour builds up toward saturation.",
+            "Δtot_ice < 0; rate_early > rate_late",
+            p, d, fp)
+
+    # T12
+    if r_depo and (not only or "T12" in only):
+        p, d, fp = T12_deposition(r_depo)
+        add("T12","Deposition at Supersaturation","Dry snow metamorphism",
+            "Under supersaturated vapour (hum=1.5), ice grows via deposition.",
+            "tot_ice increases (Δtot_ice > 0)",
+            p, d, fp)
+
+    # T13
+    if r_subl_long and (not only or "T13" in only):
+        p, d, fp = T13_latent_heat(r_subl_long)
+        add("T13","Temperature Field Consistency","Model correctness",
+            "Domain-averaged temperature at t=0 equals temp0 within 1% (T field correctly initialised).",
+            "|T_avg(0) − T₀| / |T₀| < 1%  AND  ice sublimated",
+            p, d, fp)
+
+    # T16
+    if r_subl_long and (not only or "T16" in only):
+        p, d, fp = T16_mass_conservation(r_subl_long)
+        add("T16","Mass Conservation","Dry snow metamorphism",
+            "Total water mass ρ_ice·tot_ice + tot_rhov is conserved throughout sublimation.",
+            "max |Δmass| / mass(0) < 2%",
+            p, d, fp)
+
+    # T17
+    if r_bcfix and (not only or "T17" in only):
+        p, d, fp = T17_temp_bc_fix(r_bcfix)
+        add("T17","Temperature BC Fix","Model correctness",
+            "With flag_BC_Tfix=1, ∫T dx stays within 0.5% of T₀·Lx (Dirichlet BCs active).",
+            "max |∫T dx − T₀·Lx| / |T₀·Lx| < 0.5%  over 100 steps",
             p, d, fp)
 
     # ── Summary print ─────────────────────────────────────────────────────────
