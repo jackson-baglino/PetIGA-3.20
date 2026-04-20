@@ -1,6 +1,6 @@
 # Permafrost Phase-Field — Test Suite Report
 
-**Generated:** 2026-04-19 14:20:48  
+**Generated:** 2026-04-20 16:05:10  
 **Executable:** `/Users/jacksonbaglino/PetIGA-3.20/projects/permafrost/permafrost`  
 
 ## Summary
@@ -22,8 +22,10 @@
 | T13 | Temperature Field Consistency | **✅ PASS** | ∫T dx = -2.00000e-03 °C·m;  T_avg(0) = -20.0000°C  (expect - |
 | T16 | Mass Conservation | **✅ PASS** | max |Δ(ρ_i·tot_ice + tot_rhov)| / mass(0) = 6.62e-04 (thresh |
 | T17 | Temperature BC Fix | **✅ PASS** | max |∫T dx − T₀·Lx| = 6.00e-06 °C·m  (threshold 1.00e-05);   |
+| T18 | Contact-Sed 2D Smoke | **✅ PASS** | exit code=0 (want 0); SSA_evo.dat=found; NaN in tot_ice=no |
+| T19 | Contact-Sed 2D IC Accuracy | **✅ PASS** | tot_sed(0)=1.944e-09 m²  (expect ≈ 1.92e-09, err=1.0%); tot_ |
 
-**15 / 15 tests passed.**
+**17 / 17 tests passed.**
 
 ---
 
@@ -206,6 +208,30 @@
 **Detail:** max |∫T dx − T₀·Lx| = 6.00e-06 °C·m  (threshold 1.00e-05);  T_avg range: [-20.0600, -20.0000]°C
 
 ![T17 plot](plots/T17_temp_bc_fix.png)
+
+---
+
+### T18 — Contact-Sed 2D Smoke
+
+**Category:** Model correctness  
+**Purpose:** 2D contact-sed IC exits cleanly, output files written, no NaN.  
+**Pass criterion:** exit code = 0; SSA_evo.dat exists; no NaN in tot_ice  
+**Result:** **✅ PASS**  
+**Detail:** exit code=0 (want 0); SSA_evo.dat=found; NaN in tot_ice=no
+
+![T18 plot](plots/T18_contact_sed_smoke.png)
+
+---
+
+### T19 — Contact-Sed 2D IC Accuracy
+
+**Category:** Model correctness  
+**Purpose:** Ice and sediment areas at t=0 match the tanh-disc geometry (two grains in contact).  
+**Pass criterion:** vol_sed(0) ≈ 2π·r_s² ± 10%; vol_ice(0) ≈ 2π·(r_i²−r_s²) ± 10%; sum = Lx·Ly  
+**Result:** **✅ PASS**  
+**Detail:** tot_sed(0)=1.944e-09 m²  (expect ≈ 1.92e-09, err=1.0%); tot_ice(0)=4.318e-09 m²  (expect ≈ 4.27e-09, err=1.2%); sum=3.125e-08 m²  (expect 3.12e-08)
+
+![T19 plot](plots/T19_contact_sed_ic.png)
 
 ---
 

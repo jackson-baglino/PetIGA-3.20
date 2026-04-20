@@ -1,4 +1,19 @@
 
+## 2026-04-20 — Add contact_sed IC and T18/T19 tests; Mobility refactor; 17/17 pass
+
+- Replaced `MobilitySub` with `Mobility` (Hermite-interpolated blending of ice/sed/air mobilities); added `mob_air` to AppCtx.
+- Renamed parameter `met` → `sed` and `Fwat` → `Fsed` throughout headers and material_properties.c.
+- Removed dead `mob_sed` variable and commented-out `flag_Tdep` mobility block from assembly.c.
+- Added `FormInitialContactSedPermafrost2D`: two sediment grains just touching, each with a concentric ice shell; fixed SNES divergence at contact point by switching from additive sum to min-distance tanh union.
+- Changed `gamma_im` 0.33→0.07; set `mob_sed = mob_air = mob_sub` so all phases share equal mobility by default.
+- Added `test4_ContactSedPair.opts` (long run) and `test_T18_contact_sed_quick.opts` (10-step smoke run).
+- Added T18 (2D contact-sed smoke) and T19 (2D IC accuracy with lens-area corrected expected ice volume); all 17/17 tests pass.
+
+---
+
+**Session ended:** 2026-04-19 14:24:40
+
+
 ## 2026-04-19 — Extend test suite to T11–T17 (15/15 pass)
 
 - Added T11 (sublimation deceleration in finite domain), T12 (deposition at hum=1.5), T13 (temperature field consistency), T16 (mass conservation), T17 (Dirichlet temperature BC fix).
