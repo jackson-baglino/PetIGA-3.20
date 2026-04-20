@@ -590,6 +590,91 @@ def T17_temp_bc_fix(r):
     return passed, detail, fp
 
 
+#  TESTS T18–T19
+# ──────────────────────────────────────────────────────────────────────────────
+
+def T18_contact_sed_smoke(r):
+    """T18 – Smoke test: 2D contact-sediment IC exits 0, SSA written, no NaN."""
+    ok_rc  = (r["rc"] == 0)
+    ok_ssa = (r["ssa"] is not None)
+    ok_nan = ok_ssa and not np.any(np.isnan(r["ssa"]["tot_ice"]))
+
+    passed = ok_rc and ok_ssa and ok_nan
+    detail = (f"exit code={r['rc']} (want 0); "
+              f"SSA_evo.dat={'found' if ok_ssa else 'MISSING'}; "
+              f"NaN in tot_ice={'no' if ok_nan else 'YES'}")
+
+    fig, ax = plt.subplots(figsize=(6, 3))
+    if r["ssa"] is not None:
+        ax.plot(r["ssa"]["t"] * 1e3, r["ssa"]["tot_ice"] * 1e9, "b-o", ms=4)
+    ax.set_xlabel("t  [ms]"); ax.set_ylabel(r"$\int\phi_i\,dA$  [µm²]")
+    ax.set_title("T18 – 2D contact-sed smoke: ice area vs time")
+    ax.grid(True, ls=":")
+    fp = _savefig(fig, "T18_contact_sed_smoke")
+    return passed, detail, fp
+
+
+def T19_contact_sed_ic(r):
+    """T19 – IC accuracy: 2D contact-sed areas match tanh-disc geometry at t=0."""
+    rad_sed = 1.75e-5
+    rad_ice = 3.5e-5
+    Lx      = 1.25e-4
+    Ly      = 2.5e-4
+
+    # Sediment: two grains just touch (d = 2*r_sed), no overlap → exact union area
+    exp_sed = 2.0 * np.pi * rad_sed**2
+
+    # Ice: two discs of radius rad_ice with centre separation d = 2*r_sed = r_ice.
+    # The lens area of the overlapping ice discs is subtracted once (inclusion-exclusion).
+    d = 2.0 * rad_sed                                        # = rad_ice
+    lens_ice = (2.0 * rad_ice**2 * np.arccos(d / (2.0 * rad_ice))
+                - (d / 2.0) * np.sqrt(4.0 * rad_ice**2 - d**2))
+    ice_union = 2.0 * np.pi * rad_ice**2 - lens_ice
+    exp_ice  = ice_union - exp_sed
+    area     = Lx * Ly
+
+    mon = _parse_monitor(r["stdout"])
+    if len(mon["tot_ice"]) == 0:
+        return False, "monitor data not parsed", None
+
+    ice0  = mon["tot_ice"][0]
+    sed0  = mon["tot_sed"][0]
+    air0  = mon["tot_air"][0]
+    total = ice0 + sed0 + air0
+
+    tol = 0.10
+    ok_sed   = abs(sed0 - exp_sed) / exp_sed < tol
+    ok_ice   = abs(ice0 - exp_ice) / exp_ice < tol
+    ok_total = abs(total - area)   / area    < 1e-3
+
+    passed = ok_sed and ok_ice and ok_total
+    detail = (f"tot_sed(0)={sed0:.3e} m²  (expect ≈ {exp_sed:.2e}, err={100*abs(sed0-exp_sed)/exp_sed:.1f}%); "
+              f"tot_ice(0)={ice0:.3e} m²  (expect ≈ {exp_ice:.2e}, err={100*abs(ice0-exp_ice)/exp_ice:.1f}%); "
+              f"sum={total:.3e} m²  (expect {area:.2e})")
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
+    phases   = {"Ice": (ice0, exp_ice), "Sed": (sed0, exp_sed), "Air": (air0, area - exp_ice - exp_sed)}
+    xs = np.arange(len(phases))
+    axes[0].bar(xs, [v[0]*1e9 for v in phases.values()],
+                color=["steelblue","saddlebrown","lightyellow"], edgecolor="k", width=0.5, label="Measured")
+    axes[0].bar(xs, [v[1]*1e9 for v in phases.values()],
+                color="none", edgecolor="red", linewidth=2, width=0.5, label="Expected")
+    axes[0].set_xticks(xs); axes[0].set_xticklabels(list(phases.keys()))
+    axes[0].set_ylabel("Area  [µm²]"); axes[0].set_title("T19 – 2D contact-sed IC areas at t=0")
+    axes[0].legend(fontsize=8)
+
+    t_ms = mon["t"] * 1e3
+    axes[1].plot(t_ms, mon["tot_ice"] * 1e9, "b-",  label=r"$\phi_i$")
+    axes[1].plot(t_ms, mon["tot_sed"] * 1e9, "r--", label=r"$\phi_s$")
+    axes[1].plot(t_ms, mon["tot_air"] * 1e9, "g:",  label=r"$\phi_a$")
+    axes[1].set_xlabel("t  [ms]"); axes[1].set_ylabel("Area  [µm²]")
+    axes[1].set_title("T19 – 2D phase areas vs time"); axes[1].legend(fontsize=8)
+
+    fig.tight_layout()
+    fp = _savefig(fig, "T19_contact_sed_ic")
+    return passed, detail, fp
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  REPORT
 # ══════════════════════════════════════════════════════════════════════════════
@@ -714,8 +799,11 @@ def main():
     r_subl_long = run("inputs/tests/test_T11_sublim_rate.opts",   "T11_long",   4) if _need_long else None
     r_depo      = run("inputs/tests/test_T12_deposition.opts",    "T12_depo",   4) if not skip("T12") else None
     r_bcfix     = run("inputs/tests/test_T17_temp_bc.opts",       "T17_bcfix",  4) if not skip("T17") else None
+    # T18/T19 share the 2D contact-sed quick run
+    _need_contact = not (skip("T18") and skip("T19"))
+    r_contact   = run("inputs/tests/test_T18_contact_sed_quick.opts", "T18_contact", 4) if _need_contact else None
 
-    # T01-T05 / T09-T10 reuse r_quick; T08 reuses r_flat; T13/T16 reuse r_subl_long
+    # T01-T05 / T09-T10 reuse r_quick; T08 reuses r_flat; T13/T16 reuse r_subl_long; T18/T19 reuse r_contact
 
     print("\n▶  Analysing …\n")
     rows = []
@@ -843,6 +931,22 @@ def main():
         add("T17","Temperature BC Fix","Model correctness",
             "With flag_BC_Tfix=1, ∫T dx stays within 0.5% of T₀·Lx (Dirichlet BCs active).",
             "max |∫T dx − T₀·Lx| / |T₀·Lx| < 0.5%  over 100 steps",
+            p, d, fp)
+
+    # T18
+    if r_contact and (not only or "T18" in only):
+        p, d, fp = T18_contact_sed_smoke(r_contact)
+        add("T18","Contact-Sed 2D Smoke","Model correctness",
+            "2D contact-sed IC exits cleanly, output files written, no NaN.",
+            "exit code = 0; SSA_evo.dat exists; no NaN in tot_ice",
+            p, d, fp)
+
+    # T19
+    if r_contact and (not only or "T19" in only):
+        p, d, fp = T19_contact_sed_ic(r_contact)
+        add("T19","Contact-Sed 2D IC Accuracy","Model correctness",
+            "Ice and sediment areas at t=0 match the tanh-disc geometry (two grains in contact).",
+            "vol_sed(0) ≈ 2π·r_s² ± 10%; vol_ice(0) ≈ 2π·(r_i²−r_s²) ± 10%; sum = Lx·Ly",
             p, d, fp)
 
     # ── Summary print ─────────────────────────────────────────────────────────
