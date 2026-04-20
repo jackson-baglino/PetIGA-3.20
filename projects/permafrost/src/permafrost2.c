@@ -55,9 +55,13 @@ int main(int argc, char *argv[]) {
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
     user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
 
-    PetscReal gamma_im = 0.33; // 0.033; /* Surface energies for ice-metal interface */
+    // PetscReal gamma_im = 0.033; /* Surface energies for ice-metal interface */
+    // PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
+    // PetscReal gamma_mv = 0.056; /* Surface energies for metal-vapor interface */
+
+    PetscReal gamma_im = 0.030; /* Surface energies for ice-metal interface */
     PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
-    PetscReal gamma_mv = 0.056; /* Surface energies for metal-vapor interface */
+    PetscReal gamma_mv = 1.000; /* Surface energies for metal-vapor interface */
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 1;          /* Polynomial order */
@@ -319,7 +323,10 @@ int main(int argc, char *argv[]) {
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter */
-    user.mob_sed = 0.0;  /* Sediment is inert by default; override with -mob_sed */
+    user.mob_sed = 1.0 * user.mob_sub;  /* Sediment is inert by default; override with -mob_sed */
+    user.mob_air = user.mob_sub;
+
+    PetscPrintf(PETSC_COMM_WORLD, "Mobility terms: mob_sub = %.2e m^3/s, mob_sed = %.2e m^3/s \n", user.mob_sub, user.mob_sed);
 
     if (user.flag_Tdep == 0) {
         PetscPrintf(PETSC_COMM_WORLD,
@@ -456,6 +463,8 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialLayeredPermafrost2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "enclosed") == 0) {
             ierr = FormInitialEnclosedPermafrost2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "contact_sed") == 0) {
+            ierr = FormInitialContactSedPermafrost2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "random_enclosed") == 0) {
             ierr = FormInitialRandomEnclosedPermafrost2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "random_packed") == 0) {
@@ -464,7 +473,7 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialFlatSedIceCap2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
-                    "Unknown -ic_type. Valid: enclosed capillary layered "
+                    "Unknown -ic_type. Valid: enclosed contact_sed capillary layered "
                     "random_enclosed random_packed ice_cap");
         }
     }

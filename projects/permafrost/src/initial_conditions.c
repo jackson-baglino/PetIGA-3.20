@@ -425,13 +425,20 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
     if (Ly >= Lx) {
         cent_ice[0][0] = 0.5*Lx;  cent_ice[1][0] = 0.5*Ly - rad_ice;
         cent_ice[0][1] = 0.5*Lx;  cent_ice[1][1] = 0.5*Ly + rad_ice;
+
+        cent_sed[0][0] = cent_ice[0][0];  cent_sed[1][0] = cent_ice[1][0] + rad_ice - rad_sed;
+        cent_sed[0][1] = cent_ice[0][1];  cent_sed[1][1] = cent_ice[1][1] - rad_ice + rad_sed;
     } else {
         cent_ice[0][0] = 0.5*Lx - rad_ice;  cent_ice[1][0] = 0.5*Ly;
         cent_ice[0][1] = 0.5*Lx + rad_ice;  cent_ice[1][1] = 0.5*Ly;
+
+        cent_sed[0][0] = cent_ice[0][0] + rad_ice - rad_sed;  cent_sed[1][0] = cent_ice[1][0];
+        cent_sed[0][1] = cent_ice[0][1] - rad_ice + rad_sed;  cent_sed[1][1] = cent_ice[1][1];
     }
     for (PetscInt g = 0; g < 2; g++)
         for (PetscInt d = 0; d < dim; d++)
             cent_sed[d][g] = cent_ice[d][g];
+
 
     // -------------------------------------------------------------------------
     // Nodal loop: ice, sediment, temperature, vapor density initial conditions
@@ -456,24 +463,34 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
             PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
 
             // Ice: sum of grain profiles minus sediment cores (CSG subtraction)
-            PetscReal ice = 0.0;
+            PetscReal ice = 0.0, sed = 0.0;
             for (PetscInt g = 0; g < 2; g++) {
-                PetscReal dist = sqrt(SQ(x - cent_ice[0][g]) + SQ(y - cent_ice[1][g]));
-                ice += 0.5 - 0.5*tanh(tc * (dist - rad_ice));
-            }
-            for (PetscInt g = 0; g < 2; g++) {
-                PetscReal dist = sqrt(SQ(x - cent_sed[0][g]) + SQ(y - cent_sed[1][g]));
-                ice -= 0.5 - 0.5*tanh(tc * (dist - rad_sed));
-            }
-            ice = PetscMax(0.0, PetscMin(1.0, ice));
+                PetscReal distIcePlus  = sqrt(SQ(x - cent_ice[0][g]) + SQ(y - cent_ice[1][g]));
+                PetscReal distIceMinus = sqrt(SQ(x - cent_sed[0][g]) + SQ(y - cent_sed[1][g]));
 
-            // Sediment
-            PetscReal sed = 0.0;
-            for (PetscInt g = 0; g < 2; g++) {
-                PetscReal dist = sqrt(SQ(x - cent_sed[0][g]) + SQ(y - cent_sed[1][g]));
-                sed += 0.5 - 0.5*tanh(tc * (dist - rad_sed));
+                ice += 0.5 - 0.5*tanh(tc * (distIcePlus - rad_ice));
+                ice -= 0.5 - 0.5*tanh(tc * (distIceMinus - rad_sed));
+                sed += 0.5 - 0.5*tanh(tc * (distIceMinus - rad_sed));
             }
-            sed = PetscMax(0.0, PetscMin(1.0, sed));
+
+            if (ice > 1.0) ice = 1.0;
+            if (ice < 0.0) ice = 0.0;
+            if (sed > 1.0) sed = 1.0;
+            if (sed < 0.0) sed = 0.0;
+
+            // for (PetscInt g = 0; g < 2; g++) {
+            //     PetscReal dist = sqrt(SQ(x - cent_sed[0][g]) + SQ(y - cent_sed[1][g]));
+            //     ice -= 0.5 - 0.5*tanh(tc * (dist - rad_sed));
+            // }
+            // ice = PetscMax(0.0, PetscMin(1.0, ice));
+
+            // // Sediment
+            // PetscReal sed = 0.0;
+            // for (PetscInt g = 0; g < 2; g++) {
+            //     PetscReal dist = sqrt(SQ(x - cent_sed[0][g]) + SQ(y - cent_sed[1][g]));
+            //     sed += 0.5 - 0.5*tanh(tc * (dist - rad_sed));
+            // }
+            // sed = PetscMax(0.0, PetscMin(1.0, sed));
 
             // Air from partition constraint: phi_i + phi_s + phi_a = 1
             // PetscReal air = PetscMax(0.0, 1.0 - ice - sed);
@@ -484,6 +501,96 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
                           + user->grad_temp0[1] * (y - 0.5*Ly);
 
             // Vapor density: equilibrium value scaled by humidity, zero inside solid phases
+            PetscReal rho_vs;
+            RhoVS_I(user, tem, &rho_vs, NULL);
+
+            u[j][i].ice  = ice;
+            u[j][i].sed  = sed;
+            u[j][i].tem  = tem;
+            u[j][i].rhov = user->hum0 * rho_vs;
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+}
+
+/* Two sediment grains barely in contact (point tangency, high curvature),
+   each encapsulated by a concentric ice shell. The sediment centers are
+   separated by exactly 2*rad_sed so they just touch; ice grains share
+   the same centers with rad_ice > rad_sed. */
+PetscErrorCode FormInitialContactSedPermafrost2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx      = user->Lx;
+    const PetscReal Ly      = user->Ly;
+    const PetscReal eps     = user->eps;
+    const PetscReal rad_ice = user->RCice;
+    const PetscReal rad_sed = user->RCsed;
+    const PetscInt  dim     = user->dim;
+
+    const PetscReal tc = 1.0 / (sqrt(2.0) * eps);
+
+    if (rad_sed >= rad_ice)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Sediment radius %.2e must be smaller than ice radius %.2e",
+                rad_sed, rad_ice);
+    if (2.0 * (rad_sed + rad_ice) >= PetscMax(Lx, Ly))
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Domain too small: need max(Lx,Ly) > %.2e for two encapsulated grains",
+                2.0 * (rad_sed + rad_ice));
+
+    /* Sediment centers separated by 2*rad_sed (just touching).
+       Ice centers coincide with sediment centers. */
+    PetscReal cent_sed[2][2], cent_ice[2][2];
+    if (Ly >= Lx) {
+        cent_sed[0][0] = 0.5*Lx;  cent_sed[1][0] = 0.5*Ly - rad_sed;
+        cent_sed[0][1] = 0.5*Lx;  cent_sed[1][1] = 0.5*Ly + rad_sed;
+    } else {
+        cent_sed[0][0] = 0.5*Lx - rad_sed;  cent_sed[1][0] = 0.5*Ly;
+        cent_sed[0][1] = 0.5*Lx + rad_sed;  cent_sed[1][1] = 0.5*Ly;
+    }
+    for (PetscInt g = 0; g < 2; g++)
+        for (PetscInt d = 0; d < dim; d++)
+            cent_ice[d][g] = cent_sed[d][g];
+
+    DM da;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+
+            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+
+            /* Sediment: min-distance union avoids overshoot at the contact point.
+               Using sum would give φ_sed > 1 there, creating a steep clamped
+               gradient that causes SNES divergence on the first step. */
+            PetscReal dsed0 = sqrt(SQ(x - cent_sed[0][0]) + SQ(y - cent_sed[1][0]));
+            PetscReal dsed1 = sqrt(SQ(x - cent_sed[0][1]) + SQ(y - cent_sed[1][1]));
+            PetscReal sed   = 0.5 - 0.5*tanh(tc * (PetscMin(dsed0, dsed1) - rad_sed));
+            sed = PetscMax(0.0, PetscMin(1.0, sed));
+
+            /* Ice: min-distance union of ice shells, then subtract sediment cores */
+            PetscReal dice0 = sqrt(SQ(x - cent_ice[0][0]) + SQ(y - cent_ice[1][0]));
+            PetscReal dice1 = sqrt(SQ(x - cent_ice[0][1]) + SQ(y - cent_ice[1][1]));
+            PetscReal ice   = 0.5 - 0.5*tanh(tc * (PetscMin(dice0, dice1) - rad_ice));
+            ice = PetscMax(0.0, PetscMin(1.0, ice - sed));
+
+            PetscReal tem = user->temp0
+                          + user->grad_temp0[0] * (x - 0.5*Lx)
+                          + user->grad_temp0[1] * (y - 0.5*Ly);
+
             PetscReal rho_vs;
             RhoVS_I(user, tem, &rho_vs, NULL);
 

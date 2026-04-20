@@ -6,6 +6,7 @@
 /* Form initial soil distribution for 2D and 3D problems */
 PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, Vec U, AppCtx *user);
 PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user);
+PetscErrorCode FormInitialContactSedPermafrost2D(IGA iga, Vec U, AppCtx *user);
 PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, Vec U, AppCtx *user);
 PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user);
 PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, Vec U, AppCtx *user);
