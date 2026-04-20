@@ -311,18 +311,32 @@ void Fair(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *fair,
     return;
 }
 
-/**
- * @brief Computes the phase dependent mobility for sublimation
- * 
- * this function determines the value of M_sub based on the phase field variables, using a simple 
- * linear interpolation between the mobility in the ice phase and the mobility in the air phase, 
- * weighted by the ice fraction.
- */
-void MobilitySub(AppCtx *user, PetscScalar ice, PetscScalar sed,
-                 PetscScalar *mob_ice_out, PetscScalar *mob_sed_out)
+void Mobility(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *mob)
 {
-    if (mob_ice_out) *mob_ice_out = user->mob_sub * ice * (1.0 - ice);
-    if (mob_sed_out) *mob_sed_out = user->mob_sed * sed * (1.0 - sed);
+    /* Check bounds */
+    if (sed < 0.0) sed = 0.0;
+    if (ice < 0.0) ice = 0.0;
+    if (sed > 1.0) sed = 1.0;
+    if (ice > 1.0) ice = 1.0;
+
+    /* Compute the air fraction */
+    PetscScalar air = 1.0 - sed - ice;
+
+    /* Unpack mobility parameters from user context */
+    PetscReal mob_sub = user->mob_sub;
+    PetscReal mob_sed = user->mob_sed;
+    PetscReal mob_air = user->mob_air;
+
+    /* Define smooth interpolation functions */
+    PetscReal hi = ice*ice * (3.0 - 2.0 * ice); // Smooth interpolation function for ice
+    PetscReal hs = sed*sed * (3.0 - 2.0 * sed); // Smooth interpolation function for sediment
+    PetscReal ha = air*air * (3.0 - 2.0 * air); // Smooth interpolation function for air
+
+    /* Compute the mobility */
+    if (mob) 
+        (*mob) = mob_sub * hi + mob_sed * hs + mob_air * ha;    
+
+    return;
 }
 
 

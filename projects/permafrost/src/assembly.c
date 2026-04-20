@@ -22,16 +22,9 @@ PetscErrorCode Residual(IGAPoint pnt,
 
     PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
 
-    PetscReal mob, mob_sed, alph_sub;
-    if (user->flag_Tdep == 1) {
-        mob      = user->mob[indGP];
-        mob_sed  = user->mob_sed_arr[indGP];
-        alph_sub = user->alph[indGP];
-    } else {
-        mob      = user->mob_sub;
-        mob_sed  = user->mob_sed;
-        alph_sub = user->alph_sub;
-    }
+    PetscReal mob, alph_sub;
+
+    alph_sub = user->alph_sub;
 
     if (pnt->atboundary) return 0;
 
@@ -74,6 +67,7 @@ PetscErrorCode Residual(IGAPoint pnt,
     Fice(user, ice, sed, &fi, NULL);
     Fair(user, ice, sed, &fa, NULL);
     Fsed(user, ice, sed, &fs, NULL);
+    Mobility(user, ice, sed, &mob);
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
@@ -91,15 +85,13 @@ PetscErrorCode Residual(IGAPoint pnt,
     // PetscReal C = 3.0 * mob / (Etai + Etaa);
     // PetscReal C = 3.0 * mob / Etai;
 
-    // Phase-dependent effective mobilities: M(φ) = m₀ · φ · (1 − φ)
-    // Localizes diffusion to the diffuse interface; zero in bulk single-phase regions
-    PetscReal mob_eff     = mob     * ice * (1.0 - ice);
-    PetscReal mob_sed_eff = mob_sed * sed * (1.0 - sed);
+    // PetscReal mob_eff     = mob     * ice * (1.0 - ice);
+    // PetscReal mob_sed_eff = mob_sed * sed * (1.0 - sed);
 
-    // Ice: Allen-Cahn with Lagrange multiplier to enforce \phi_i_t + \phi_a_t + \phi_s_t = 0
-    // Separate C3 per phase so each uses its own effective mobility
-    PetscReal C3_ice = 3.0 * mob_eff     / (eps * EtaT);
-    PetscReal C3_sed = 3.0 * mob_sed_eff / (eps * EtaT);
+    // PetscReal C3     = 3.0 * mob_eff     / (eps * EtaT);
+    // PetscReal C3_sed = 3.0 * mob_sed_eff / (eps * EtaT);
+
+    PetscReal C3      = 3.0 * mob / (eps * EtaT);
 
     PetscReal loc = ice*ice * air*air;
     PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
@@ -134,10 +126,10 @@ PetscErrorCode Residual(IGAPoint pnt,
 
             // phi_i Laplacian term (phase-dependent mobility)
             for (l = 0; l < dim; l++)
-                R_ice += 3.0 * mob_eff * eps * (N1[a][l] * grad_ice[l]);
+                R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
 
             // Bulk driving force
-            R_ice += C3_ice*((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
+            R_ice += C3*((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
 
             // Sublimation source term
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
@@ -146,12 +138,12 @@ PetscErrorCode Residual(IGAPoint pnt,
             // Time derivative
             R_sed = N0[a] * sed_t;
 
-            // Laplacian term (phase-dependent mobility)
+            // Laplacian term (sediment mobility)
             for (l = 0; l < dim; l++)
-                R_sed += 3.0 * mob_sed_eff * eps * (N1[a][l] * grad_sed[l]);
+                R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
 
             // Bulk driving force
-            R_sed += C3_sed*(-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+            R_sed += C3*(-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
 
             /* Thermal energy balance */
             // Time derivative

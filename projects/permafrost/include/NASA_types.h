@@ -22,6 +22,7 @@ typedef struct {
   PetscReal eps;  // Interface width parameter for phase field method
   PetscReal mob_sub;  // Mobility for ice phase evolution
   PetscReal mob_sed;  // Mobility for sediment phase evolution equation
+  PetscReal mob_air; // Mobility for air phase evolution equation (if applicable)
   PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, sediment, air)
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
