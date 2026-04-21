@@ -20,6 +20,11 @@ Reads sol_*.dat files from a PetIGA 1D run and produces:
   Derived quantities (--derived)
     Time-series of ice volume fraction, interface position, slab width.
 
+  First/last comparison (--first-last)
+    Single figure with phi_i, phi_s, phi_a for the first and last snapshots
+    overlaid using solid (first) and dashed (last) lines.
+    Output: phase_first_last.png in --out-dir.
+
 Usage
 -----
   # Per-step phase PNGs + GIF + thermal overlay in one shot
@@ -27,6 +32,9 @@ Usage
 
   # Just per-step phase images
   python plot1D_profiles.py --dir /path/to/run
+
+  # First and last snapshot comparison on one plot
+  python plot1D_profiles.py --dir /path/to/run --first-last
 
   # Legacy: limit snapshots, save thermal overlay to a specific path
   python plot1D_profiles.py --dir . --max-steps 8 --thermal --save overlay.png
@@ -423,6 +431,64 @@ def make_phase_gif(run_dir: str, gif_path: str = None,
 
 
 # ---------------------------------------------------------------------------
+# Mode D-pre: first / last snapshot comparison
+# ---------------------------------------------------------------------------
+
+def plot_first_last(run_dir: str, save_path: str = None,
+                    iga_file: str = "igasol.dat"):
+    """
+    Single figure overlaying phi_i, phi_s, phi_a for the first and last
+    snapshots.  Solid lines = first step; dashed lines = last step.
+    """
+    x_mm, sed_list, ice_list, _, _, step_list, time_list = _collect_snapshots(
+        run_dir, iga_file
+    )
+
+    if len(ice_list) < 2:
+        print("WARNING: fewer than 2 snapshots found — nothing to compare.")
+        return
+
+    indices = [0, -1]
+    linestyles = ["-", "--"]
+    step_labels = ["first", "last"]
+
+    fig, ax = plt.subplots(1, 1, figsize=(9, 5))
+
+    for idx, ls, label in zip(indices, linestyles, step_labels):
+        phi_i = ice_list[idx]
+        phi_s = sed_list[idx]
+        phi_a = np.clip(1.0 - phi_i - phi_s, 0.0, 1.0)
+        step  = step_list[idx]
+        t_h   = time_list[idx]
+        t_str = f", t = {_fmt_time(t_h)}" if t_h is not None else f", step {step}"
+
+        ax.plot(x_mm, phi_i, color=PHASE_COLORS["ice"], lw=2.0, ls=ls,
+                label=rf"$\phi_i$ ({label}{t_str})")
+        ax.plot(x_mm, phi_s, color=PHASE_COLORS["sed"], lw=2.0, ls=ls,
+                label=rf"$\phi_s$ ({label}{t_str})")
+        ax.plot(x_mm, phi_a, color=PHASE_COLORS["air"], lw=2.0, ls=ls,
+                label=rf"$\phi_a$ ({label}{t_str})")
+
+    run_label = os.path.basename(run_dir.rstrip("/")) or run_dir
+    ax.set_title(f"Phase fields — first vs last snapshot\n({run_label})", fontsize=13)
+    ax.set_ylabel("Volume fraction", fontsize=12)
+    ax.set_xlabel("x  [mm]", fontsize=12)
+    ax.set_ylim(-0.05, 1.1)
+    ax.legend(fontsize=10, loc="best", ncol=2)
+    ax.grid(True, alpha=0.3)
+    ax.tick_params(labelsize=10)
+
+    plt.tight_layout()
+
+    if save_path is None:
+        save_path = os.path.join(run_dir, "phase_first_last.png")
+
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"First/last comparison saved to: {save_path}")
+
+
+# ---------------------------------------------------------------------------
 # Mode D: derived quantities (unchanged logic)
 # ---------------------------------------------------------------------------
 
@@ -552,8 +618,10 @@ def parse_args():
                         "(optional: custom output path)")
     p.add_argument("--thermal",    action="store_true",
                    help="Also produce the thermal overlay figure")
-    p.add_argument("--derived",    action="store_true",
+    p.add_argument("--derived",     action="store_true",
                    help="Plot derived scalar quantities instead of field profiles")
+    p.add_argument("--first-last", action="store_true",
+                   help="Plot phi_i, phi_s, phi_a for first and last steps on one figure")
     p.add_argument("--save",       default=None,
                    help="Save path for --thermal or --derived figure "
                         "(default: auto-named in --dir)")
@@ -567,6 +635,10 @@ def main():
 
     if args.derived:
         plot_derived(run_dir, save_path=args.save, iga_file=args.iga)
+        return
+
+    if args.first_last:
+        plot_first_last(run_dir, save_path=args.save, iga_file=args.iga)
         return
 
     # Default: always produce per-step phase PNGs
