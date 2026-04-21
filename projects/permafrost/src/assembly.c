@@ -47,6 +47,8 @@ PetscErrorCode Residual(IGAPoint pnt,
 
     if (ice < 0.0) ice = 0.0;  // Prevent negative ice from causing NaN diffusion coefficients
     if (ice > 1.0) ice = 1.0;  // Prevent unphysical >100% ice from causing NaN diffusion coefficients
+    if (sed < 0.0) sed = 0.0;  // Prevent negative sediment from causing NaN diffusion coefficients
+    if (sed > 1.0) sed = 1.0;  // Prevent unphysical >100% sediment from causing NaN diffusion coefficients
     if (air < 0.0) air = 0.0;  // Prevent negative air from causing NaN diffusion coefficients
     if (air > 1.0) air = 1.0;  // Prevent unphysical >100% air from causing NaN diffusion coefficients
 

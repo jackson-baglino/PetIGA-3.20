@@ -1,4 +1,14 @@
 
+---
+
+**Session ended:** 2026-04-21 07:35:59
+
+
+---
+
+**Session ended:** 2026-04-20 16:07:48
+
+
 ## 2026-04-20 — Add contact_sed IC and T18/T19 tests; Mobility refactor; 17/17 pass
 
 - Replaced `MobilitySub` with `Mobility` (Hermite-interpolated blending of ice/sed/air mobilities); added `mob_air` to AppCtx.
