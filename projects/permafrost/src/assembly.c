@@ -329,6 +329,8 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
     S[4] = rhov * air;
     S[5] = air*air * ice*ice;
     S[6] = sed;
+    S[7] = sed*sed * air*air;   // sed-air interface
+    S[8] = sed*sed * ice*ice;   // ice-sed interface
 
     PetscFunctionReturn(0);
 }

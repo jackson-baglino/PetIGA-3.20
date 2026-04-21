@@ -77,15 +77,17 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
 
   //-------- domain integrals
-  PetscScalar stats[7] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0};
-  ierr = IGAComputeScalar(user->iga,U,7,&stats[0],Integration,mctx);CHKERRQ(ierr);
-  PetscReal tot_ice     = PetscRealPart(stats[0]);
-  PetscReal tot_trip    = PetscRealPart(stats[1]);
-  PetscReal tot_air     = PetscRealPart(stats[2]);
-  PetscReal tot_temp    = PetscRealPart(stats[3]);
-  PetscReal tot_rhov    = PetscRealPart(stats[4]);
-  PetscReal sub_interf  = PetscRealPart(stats[5]);
-  PetscReal tot_sed     = PetscRealPart(stats[6]);
+  PetscScalar stats[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  ierr = IGAComputeScalar(user->iga,U,9,&stats[0],Integration,mctx);CHKERRQ(ierr);
+  PetscReal tot_ice        = PetscRealPart(stats[0]);
+  PetscReal tot_trip       = PetscRealPart(stats[1]);
+  PetscReal tot_air        = PetscRealPart(stats[2]);
+  PetscReal tot_temp       = PetscRealPart(stats[3]);
+  PetscReal tot_rhov       = PetscRealPart(stats[4]);
+  PetscReal sub_interf     = PetscRealPart(stats[5]);
+  PetscReal tot_sed        = PetscRealPart(stats[6]);
+  PetscReal sed_air_interf = PetscRealPart(stats[7]);
+  PetscReal ice_sed_interf = PetscRealPart(stats[8]);
  
   //------------- 
   PetscReal dt;
@@ -156,13 +158,39 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     // if (step > 0 && (step % 25) == 0) PetscPrintf(PETSC_COMM_WORLD, "\n");
   }
 
+  //-------- write per-step interface metrics for relaxation analysis
+  {
+    char relax_file[256];
+    const char *renv = "folder"; char *rdir; rdir = getenv(renv);
+    sprintf(relax_file, "%s/relax_monitor.dat", rdir);
+
+    PetscViewer rv;
+    PetscViewerCreate(PETSC_COMM_WORLD, &rv);
+    PetscViewerSetType(rv, PETSCVIEWERASCII);
+    if (step == 0) {
+      PetscViewerFileSetMode(rv, FILE_MODE_WRITE);
+      PetscViewerFileSetName(rv, relax_file);
+      PetscViewerASCIIPrintf(rv,
+          "# step  t  tot_ice  tot_sed  ice_air_interf  sed_air_interf  ice_sed_interf  tot_trip\n");
+    } else {
+      PetscViewerFileSetMode(rv, FILE_MODE_APPEND);
+      PetscViewerFileSetName(rv, relax_file);
+    }
+    PetscViewerASCIIPrintf(rv, "%d %e %e %e %e %e %e %e\n",
+        step, t,
+        tot_ice, tot_sed,
+        sub_interf, sed_air_interf, ice_sed_interf,
+        tot_trip);
+    PetscViewerDestroy(&rv);
+  }
+
   PetscInt print=0;
   if(user->outp > 0) {
     if(step % user->outp == 0) print=1;
   } else {
     if (t>= user->t_out) print=1;
   }
-  
+
   print = 1;
 
   if(print==1) {
