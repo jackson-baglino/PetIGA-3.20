@@ -98,6 +98,13 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD,"INITIAL_CONDITION!!! \n");
   }
 
+  //------------- sediment freeze
+  if (user->nsteps_sed > 0 && !user->flag_sed_frozen && step == user->nsteps_sed) {
+    user->flag_sed_frozen = 1;
+    PetscPrintf(PETSC_COMM_WORLD,
+        "SED FROZEN at step %d: switching to 2-phase ice formulation\n", step);
+  }
+
   //------ printf information (robust table header + aligned columns)
   {
     const PetscInt headerEvery = 1;  // print header every step (can change to 10 later)

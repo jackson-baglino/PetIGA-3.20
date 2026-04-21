@@ -103,73 +103,63 @@ PetscErrorCode Residual(IGAPoint pnt,
 
         if (user->flag_tIC == 1) {
             R_ice = 0.0; R_sed = 0.0; R_tem = 0.0; R_vap = 0.0;
-        } else {
-            /* Ice Evolution Equation (2-phase; with Lagrange multiplier to enfroce \phi_i_t + \phi_a_t = 0) */
-            // // Time derivative
-            // R_ice = N0[a] * ice_t;
+        } else if (user->flag_sed_frozen == 0) {
+            /* --- 3-phase: full system (relaxation phase) ---
+             * Lagrange multiplier enforces phi_i_t + phi_a_t + phi_s_t = 0 */
 
-            // // phi_i Laplacian mobility term
-            // for (l = 0; l < dim; l++)
-            //     R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-
-            // // phi_s Laplacian mobility term (known field, contributes through constraint)
-            // for (l = 0; l < dim; l++)
-            //     R_ice += C * Etaa * eps * (N1[a][l] * grad_sed[l]);
-
-            // // Bulk driving force
-            // R_ice += N0[a] * C / eps * (fi - fa);
-
-            // // Sublimation source — disabled pending vapor equation validation
-            // R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
-
-            /* Ice Evolution Equation (3-phase; with Lagrange multiplier to enforce \phi_i_t + \phi_a_t + \phi_s_t = 0) */
-            // Time derivative
+            /* Ice Evolution Equation */
             R_ice = N0[a] * ice_t;
-
-            // phi_i Laplacian term (phase-dependent mobility)
             for (l = 0; l < dim; l++)
                 R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-
-            // Bulk driving force
             R_ice += C3*((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
-
-            // Sublimation source term
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
             /* Sediment Evolution Equation */
-            // Time derivative
             R_sed = N0[a] * sed_t;
-
-            // Laplacian term (sediment mobility)
             for (l = 0; l < dim; l++)
                 R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
-
-            // Bulk driving force
             R_sed += C3*(-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
 
             /* Thermal energy balance */
-            // Time derivative
-            // R_tem  = N0[a] * tem_t;             // Does not solve temperature equation
             R_tem  = rho * cp * N0[a] * tem_t;
-
-            // Diffusion term with effective thermal conductivity
             for (l = 0; l < dim; l++)
                 R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
-
-            // Source term from phase change (sublimation latent heat)
             R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
-            // Vapor: time derivative and diffusion use air_eff to prevent
-            // negative diffusion coefficient; source from phase change via rho_ice
-            // Time derivative
-            // R_vap  = N0[a] * rhov_t;                // Does not solve vapor equation
+            /* Vapor */
             R_vap  = N0[a] * air_eff * rhov_t;
-
-            // Diffusion term with effective diffusivity
             for (l = 0; l < dim; l++)
                 R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-            
-            // Source term from phase change (sublimation/condensation)
+            R_vap -= xi_v * N0[a] * rho_ice * air_t;
+
+        } else {
+            /* --- 2-phase: phi_s frozen ---
+             * Lagrange multiplier enforces phi_i_t + phi_a_t = 0 (phi_s_t = 0).
+             * phi_s gradient enters the ice equation via the constraint. */
+            PetscReal C = 3.0 * mob / (Etai + Etaa);
+
+            /* Ice Evolution Equation */
+            R_ice = N0[a] * ice_t;
+            for (l = 0; l < dim; l++)
+                R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+            for (l = 0; l < dim; l++)
+                R_ice += C * Etaa * eps * (N1[a][l] * grad_sed[l]);
+            R_ice += N0[a] * C / eps * (fi - fa);
+            R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+
+            /* Sediment: trivial mass matrix only — no RHS forces sed_t = 0 */
+            R_sed = N0[a] * sed_t;
+
+            /* Thermal energy balance (identical to 3-phase; air_t = -ice_t) */
+            R_tem  = rho * cp * N0[a] * tem_t;
+            for (l = 0; l < dim; l++)
+                R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
+            R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
+
+            /* Vapor (identical to 3-phase; air_t = -ice_t) */
+            R_vap  = N0[a] * air_eff * rhov_t;
+            for (l = 0; l < dim; l++)
+                R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
             R_vap -= xi_v * N0[a] * rho_ice * air_t;
         }
 

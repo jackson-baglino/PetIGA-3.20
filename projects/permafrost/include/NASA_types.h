@@ -72,6 +72,9 @@ typedef struct {
   PetscInt flag_BC_Tfix;
   PetscInt flag_BC_rhovfix;
 
+  PetscInt nsteps_sed;        // relaxation steps before freezing phi_s
+  PetscInt flag_sed_frozen;   // 0 = full 3-phase; 1 = phi_s frozen (2-phase ice eq)
+
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)
   PetscInt C;  // Continuity of basis functions

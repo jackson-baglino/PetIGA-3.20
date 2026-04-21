@@ -27,7 +27,9 @@ int main(int argc, char *argv[]) {
 
     user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
-    user.nsteps_IC  = 10;       /* Number of initial condition steps (???) */
+    user.nsteps_IC       = 10;  /* Number of initial condition steps (???) */
+    user.nsteps_sed      = 0;   /* Relaxation steps before freezing phi_s (0 = never) */
+    user.flag_sed_frozen = 0;   /* 0 = full 3-phase; 1 = phi_s frozen */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -55,13 +57,13 @@ int main(int argc, char *argv[]) {
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
     user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
 
-    // PetscReal gamma_im = 0.033; /* Surface energies for ice-metal interface */
-    // PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
-    // PetscReal gamma_mv = 0.056; /* Surface energies for metal-vapor interface */
-
-    PetscReal gamma_im = 0.030; /* Surface energies for ice-metal interface */
+    PetscReal gamma_im = 0.033; /* Surface energies for ice-metal interface */
     PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
-    PetscReal gamma_mv = 0.130; /* Surface energies for metal-vapor interface */
+    PetscReal gamma_mv = 0.056; /* Surface energies for metal-vapor interface */
+
+    // PetscReal gamma_im = 0.030; /* Surface energies for ice-metal interface */
+    // PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
+    // PetscReal gamma_mv = 0.300; /* Surface energies for metal-vapor interface */
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 1;          /* Polynomial order */
@@ -184,6 +186,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_BC_rhovfix", "Vapor density BC flag", "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-nsteps_sed", "Relaxation steps before freezing phi_s (0 = never)", "", user.nsteps_sed, &user.nsteps_sed, NULL); CHKERRQ(ierr);
 
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);
