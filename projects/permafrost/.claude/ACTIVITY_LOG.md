@@ -1,4 +1,28 @@
 
+## 2026-04-22 — Interface relaxation analysis for test3_EnclosedGrainPair
+
+- Created `inputs/tests/test3_relax.opts`: copy of test3 with `nsteps_sed=0` and `t_final=100000` to run full 3-phase relaxation without sediment freezing.
+- Ran simulation (125 steps, t=0–100,409 s) to generate `relax_monitor.dat` with uninterrupted sediment evolution.
+- Analysis finding: `AssemblePhase_reinit.dat` IC is already fully relaxed — per-step changes in `ice_air_interf` and `ice_sed_interf` are <1e-7 from step 0, well below the 1e-3 threshold. Sediment freezing at `nsteps_sed=60` was overly conservative; sediment degrades numerically past ~step 100 (ice-sed interface drops to 6% of initial by step 124 without freezing).
+- Updated `nsteps_sed` in `test3_EnclosedGrainPair.opts`: 60 → 10 (safe conservative buffer, no performance penalty).
+- Enhanced `scripts/plot_relax.py` with `--slideshow`, `--outdir`, `--fmt` flags; generates 5 separate 16:9 high-DPI PNG files for slideshow use (combined, normalized, rate, early-zoom, physical-time axis); switched to `constrained_layout` to fix `twiny` compatibility.
+- Saved 5 slideshow plots to `SimulationResults/.../test3_relax_.../relax_plots/`.
+
+---
+
+**Session ended:** 2026-04-22 10:10:26
+
+
+---
+
+**Session ended:** 2026-04-21 13:52:54
+
+
+---
+
+**Session ended:** 2026-04-21 13:31:32
+
+
 ---
 
 **Session ended:** 2026-04-21 07:35:59
