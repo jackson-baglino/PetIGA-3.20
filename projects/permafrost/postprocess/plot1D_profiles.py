@@ -5,8 +5,13 @@ plot1D_profiles.py  —  Visualize 1D permafrost simulation field profiles.
 Reads sol_*.dat files from a PetIGA 1D run and produces:
 
   Per-step phase figures (default)
-    Three-panel figure per snapshot showing φ_i, φ_s, φ_a = 1−φ_i−φ_s.
-    Output: phase_step_NNNNN.png in --out-dir.
+    Single-panel figure per snapshot showing φ_i, φ_s, φ_a = 1−φ_i−φ_s
+    plus a dashed black line for their sum (partition-of-unity check).
+    Output: phase_step_NNNNN.png in --out-dir/phases/.
+
+  Per-step thermal figures (default)
+    Two-subplot figure per snapshot with T(x) and ρ_v(x) on individual panels.
+    Output: thermal_step_NNNNN.png in --out-dir/thermal_steps/.
 
   Thermal overlay (--thermal)
     Two-panel figure with all snapshots overlaid for T and ρ_v,
@@ -231,7 +236,7 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
 # ---------------------------------------------------------------------------
 
 def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
-    """Return a single-panel phase figure with all phases overlaid."""
+    """Return a single-panel phase figure with all phases overlaid and their sum."""
     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
 
     t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
@@ -240,6 +245,10 @@ def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
     ax.plot(x_mm, phi_i, color=PHASE_COLORS["ice"], lw=2.0, label=PHASE_LABELS["ice"])
     ax.plot(x_mm, phi_s, color=PHASE_COLORS["sed"], lw=2.0, label=PHASE_LABELS["sed"])
     ax.plot(x_mm, phi_a, color=PHASE_COLORS["air"], lw=2.0, label=PHASE_LABELS["air"])
+
+    phi_sum = phi_i + phi_s + phi_a
+    ax.plot(x_mm, phi_sum, color="black", lw=1.5, ls="--",
+            label=r"$\phi_i + \phi_s + \phi_a$")
 
     ax.set_ylabel("Volume fraction", fontsize=12)
     ax.set_xlabel("x  [mm]", fontsize=12)
@@ -250,6 +259,64 @@ def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
 
     plt.tight_layout()
     return fig
+
+
+# ---------------------------------------------------------------------------
+# Thermal step figure helper (T and ρ_v on individual subplots, per step)
+# ---------------------------------------------------------------------------
+
+_COLOR_T    = "#d62728"   # red for temperature
+_COLOR_RHOV = "#1f77b4"   # blue for vapor density
+
+
+def _make_thermal_step_fig(x_mm, tem, rhov, step, t_h):
+    """Return a 2-panel figure with T(x) and ρ_v(x) for one snapshot."""
+    fig, (ax_T, ax_rho) = plt.subplots(2, 1, figsize=(8, 7), sharex=True)
+
+    t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
+    fig.suptitle(f"Thermal fields — step {step:d}{t_str}", fontsize=13)
+
+    ax_T.plot(x_mm, tem, color=_COLOR_T, lw=2.0)
+    ax_T.set_ylabel("Temperature  [°C]", fontsize=12)
+    ax_T.grid(True, alpha=0.3)
+    ax_T.tick_params(labelsize=10)
+
+    ax_rho.plot(x_mm, rhov, color=_COLOR_RHOV, lw=2.0)
+    ax_rho.set_ylabel(r"Vapor density  [kg m$^{-3}$]", fontsize=12)
+    ax_rho.set_xlabel("x  [mm]", fontsize=12)
+    ax_rho.grid(True, alpha=0.3)
+    ax_rho.tick_params(labelsize=10)
+
+    plt.tight_layout()
+    return fig
+
+
+def plot_thermal_steps(run_dir: str, out_dir: str = None,
+                       iga_file: str = "igasol.dat",
+                       max_steps: int = None) -> list:
+    """
+    Save one PNG per snapshot with T(x) and ρ_v(x) on individual subplots.
+    Output goes to <out_dir>/thermal_steps/thermal_step_NNNNN.png.
+    """
+    if out_dir is None:
+        out_dir = run_dir
+    thermal_dir = os.path.join(out_dir, "thermal_steps")
+    os.makedirs(thermal_dir, exist_ok=True)
+
+    x_mm, _, _, tem_list, rhov_list, step_list, time_list = _collect_snapshots(
+        run_dir, iga_file, max_steps
+    )
+
+    saved = []
+    for tem, rhov, step, t_h in zip(tem_list, rhov_list, step_list, time_list):
+        fig  = _make_thermal_step_fig(x_mm, tem, rhov, step, t_h)
+        path = os.path.join(thermal_dir, f"thermal_step_{step:05d}.png")
+        fig.savefig(path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        saved.append(path)
+        print(f"  Saved: {os.path.relpath(path)}")
+
+    return saved
 
 
 def plot_phase_steps(run_dir: str, out_dir: str = None,
@@ -644,6 +711,10 @@ def main():
     # Default: always produce per-step phase PNGs
     plot_phase_steps(run_dir, out_dir=out_dir,
                      iga_file=args.iga, max_steps=args.max_steps)
+
+    # Default: always produce per-step thermal (T + ρ_v) PNGs
+    plot_thermal_steps(run_dir, out_dir=out_dir,
+                       iga_file=args.iga, max_steps=args.max_steps)
 
     # Optional: thermal overlay
     if args.thermal:

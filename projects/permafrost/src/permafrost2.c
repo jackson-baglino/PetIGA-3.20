@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC       = 10;  /* Number of initial condition steps (???) */
     user.nsteps_sed      = 0;   /* Relaxation steps before freezing phi_s (0 = never) */
-    user.flag_sed_frozen = 0;   /* 0 = full 3-phase; 1 = phi_s frozen */
+    user.flag_sed_frozen = 1;   /* 0 = full 3-phase; 1 = phi_s frozen */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -326,7 +326,7 @@ int main(int argc, char *argv[]) {
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter */
-    user.mob_sed = 1.0e-4 * user.mob_sub;  /* Sediment is inert by default; override with -mob_sed */
+    user.mob_sed = user.mob_sub;  /* Sediment is inert by default; override with -mob_sed */
     user.mob_air = user.mob_sub;
 
     PetscPrintf(PETSC_COMM_WORLD, "Mobility terms: mob_sub = %.2e m^3/s, mob_sed = %.2e m^3/s \n", user.mob_sub, user.mob_sed);
@@ -474,10 +474,12 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialRandomPackedPermafrost2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "ice_cap") == 0) {
             ierr = FormInitialFlatSedIceCap2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "ice_slab") == 0) {
+            ierr = FormInitialIceSlab2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
                     "Unknown -ic_type. Valid: enclosed contact_sed capillary layered "
-                    "random_enclosed random_packed ice_cap");
+                    "random_enclosed random_packed ice_cap ice_slab");
         }
     }
 

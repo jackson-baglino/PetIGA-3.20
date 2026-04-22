@@ -1715,11 +1715,86 @@ PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user)
 }
 
 
+/* -------------------------------------------------------------------------
+ * 2D Ice Slab Initial Condition
+ * Equivalent to the 1D flag_tIC=0 (centered slab) case:
+ *   - Ice slab: x in [0.35*Lx, 0.65*Lx], uniform across full Ly
+ *   - Sediment slab: centered at 0.75*Lx, half-width 0.10*Lx, uniform in y
+ *   - Temperature: temp0 + grad_temp0 * (r - 0.5*L)
+ *   - Vapor: hum0 * rho_vs(T)
+ * -------------------------------------------------------------------------*/
+PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
 
+    PetscPrintf(PETSC_COMM_WORLD,
+                "--- INITIAL CONDITIONS (2D Ice Slab, 1D-equivalent) ---\n");
 
+    const PetscReal Lx  = user->Lx;
+    const PetscReal Ly  = user->Ly;
+    const PetscReal eps = user->eps;
 
+    /* Ice slab extents in x; extends the full height Ly in y */
+    const PetscReal x_lo = 0.35 * Lx;
+    const PetscReal x_hi = 0.65 * Lx;
 
+    /* Sediment slab: center and half-width in x, full Ly in y */
+    const PetscReal x_sed_cen = 0.75 * Lx;
+    const PetscReal x_sed_hw  = 0.10 * Lx;
 
+    user->n_act    = 0;
+    user->n_actsed = 0;
+
+    DM            da;
+    Field       **u;
+    DMDALocalInfo info;
+
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+
+            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+
+            /* Diffuse ice slab: tanh profile in x, uniform in y */
+            PetscReal ice = 0.5 * (PetscTanhReal(0.5 * (x - x_lo) / eps)
+                                 - PetscTanhReal(0.5 * (x - x_hi) / eps));
+            ice = PetscMin(PetscMax(ice, 0.0), 1.0);
+
+            /* Diffuse sediment slab: tanh profile centred at x_sed_cen */
+            PetscReal dist_sed = PetscAbsReal(x - x_sed_cen);
+            PetscReal sed = 0.5 - 0.5 * PetscTanhReal(0.5 / eps * (dist_sed - x_sed_hw));
+            sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+
+            /* Resolve any ice/sediment overlap by renormalisation */
+            PetscReal total = ice + sed;
+            if (total > 1.0) { ice /= total; sed /= total; }
+
+            PetscReal tem = user->temp0
+                          + user->grad_temp0[0] * (x - 0.5 * Lx)
+                          + user->grad_temp0[1] * (y - 0.5 * Ly);
+
+            PetscScalar rho_vs_loc;
+            RhoVS_I(user, tem, &rho_vs_loc, NULL);
+
+            u[j][i].ice  = ice;
+            u[j][i].tem  = tem;
+            u[j][i].rhov = user->hum0 * rho_vs_loc;
+            u[j][i].sed  = sed;
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+}
 
 
 /* 
