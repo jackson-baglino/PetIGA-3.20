@@ -1,3 +1,15 @@
+## 2026-04-22 — 2D ice slab IC and improved 1D plotting
+
+- Added `FormInitialIceSlab2D` in `src/initial_conditions.c`: 2D equivalent of the 1D centered-slab IC (flag_tIC=0), using tanh profiles in x uniform across Ly.
+- Registered `ic_type = "ice_slab"` in `src/permafrost2.c` and declared in `include/initial_conditions.h`.
+- Created `inputs/tests/test_2D_IceSlab.opts`: thin 2D domain (114×23 nodes, Lx=1e-4 m, Ly=2e-5 m) matching the 1D slab parameters.
+- Updated `postprocess/plot1D_profiles.py`: added dashed black sum-of-phases line (φ_i+φ_s+φ_a) to per-step phase plots as a partition-of-unity diagnostic.
+- Added `plot_thermal_steps()` in plotting script: saves per-step T(x) and ρ_v(x) figures on individual subplots to `thermal_steps/` directory, running alongside phase images by default.
+
+---
+
+**Session ended:** 2026-04-22 10:54:16
+
 
 ## 2026-04-22 — Interface relaxation analysis for test3_EnclosedGrainPair
 
