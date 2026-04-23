@@ -72,17 +72,15 @@ PetscErrorCode Residual(IGAPoint pnt,
     Fsed(user, ice, sed, &fs, NULL);
     Mobility(user, ice, sed, &mob);
 
-    // Pentaly parameters for vapor equation to enforce rhov = rhov_eq at ice-air interface
+    // Penalty parameters — values are set via CLI (-difvap_pen, -k_pen, -k_sed_pen)
     PetscReal g_phia, g_phiiphis;
-    PetscReal difvap_pen = 1.0e-6;  // Penalized diffusivity in air to stabilize vapor diffusion across the interface (can be tuned for better convergence)
-    PetscReal k_pen = difvap_pen / (eps*eps);  // Penalty stiffness
-    PetscReal rhov_eq = ice * rhoI_vs + sed * rhoI_vs + air * rhov;  // Local equilibrium vapor density based on current phase fractions
-    SmoothHeavisidePoly(ice + sed, &g_phiiphis, NULL);  // Regularized indicator function for ice-air interface (where ice+sed transitions from 0 to 1)
-    SmoothHeavisidePoly(ice, &g_phia, NULL);  // Regularized indicator function for ice phase (where ice transitions from 0 to 1)
-    difvap = difvap * g_phia + difvap_pen * (1 - g_phia);  // Use physical diffusivity in ice and penalized diffusivity in air to stabilize vapor diffusion across the interface
-
-    // Pentalty parameters for sediment equation
-    PetscReal k_sed = difvap_pen / (eps*eps);  // Penalty stiffness for sediment relaxation towards Phi_sed0
+    PetscReal difvap_pen = user->difvap_pen;
+    PetscReal k_pen      = user->k_pen;
+    PetscReal k_sed      = user->k_sed_pen;
+    PetscReal rhov_eq = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
+    SmoothHeavisidePoly(ice + sed, &g_phiiphis, NULL);
+    SmoothHeavisidePoly(ice,       &g_phia,     NULL);
+    difvap = difvap * g_phia + difvap_pen * (1.0 - g_phia);
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
     IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
@@ -133,9 +131,9 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_sed += C3*(-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
             R_sed += k_sed * (sed - sed0) * N0[a];  // Penalty to relax sediment towards initial condition (can be tuned for better convergence)
 
-            if ((double)(k_sed * (sed - sed0) * N0[a]) > 1.0e-3) {
-                PetscPrintf(PETSC_COMM_SELF, "R_sed_pen at GP %d: %g (sed = %g, sed0 = %g)\n", indGP, k_sed * (sed - sed0) * N0[a], sed, sed0);  // Debug print for sediment residual
-            }
+            // if ((double)(k_sed * (sed - sed0) * N0[a]) > 1.0e-1) {
+            //     PetscPrintf(PETSC_COMM_SELF, "R_sed_pen at GP %d: %g (sed = %g, sed0 = %g)\n", indGP, k_sed * (sed - sed0) * N0[a], sed, sed0);  // Debug print for sediment residual
+            // }
 
             /* Thermal energy balance */
             R_tem  = rho * cp * N0[a] * tem_t;

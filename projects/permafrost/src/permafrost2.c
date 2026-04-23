@@ -54,6 +54,12 @@ int main(int argc, char *argv[]) {
     user.readFlag   = 0;        /* Flag to read ice grains from file (UPDATE IMPLEMENTATION!) */
 
     user.flag_Tdep  = 0;        /* Temperature-dependent Gibbs-Thomson parameters */
+
+    /* Penalty parameter defaults — match assembly.c hardcoded values.
+     * eps is not yet final here; will be overridden after PetscOptionsEnd. */
+    user.difvap_pen = 1.0e-3;
+    user.k_pen      = -1.0;    /* sentinel: computed from difvap_pen/eps² after options */
+    user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-3/eps² after options */
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
     user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
 
@@ -234,9 +240,27 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-R1", "Radius of capillary neck", "", user.R1, &user.R1, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-mob_sed", "Sediment phase mobility (0 = inert)", "", user.mob_sed, &user.mob_sed, NULL); CHKERRQ(ierr);
 
+    /* --- Penalty parameters --------------------------------------------- */
+    ierr = PetscOptionsReal("-difvap_pen",
+             "Penalised vapour diffusivity in the air phase [m²/s] "
+             "(default 1e-3; physical difvap = 2.178e-5)",
+             "", user.difvap_pen, &user.difvap_pen, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-k_pen",
+             "Vapour interface equilibrium stiffness "
+             "(default: difvap_pen/eps²; -1 = use default)",
+             "", user.k_pen, &user.k_pen, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-k_sed_pen",
+             "Sediment shape-restoring stiffness "
+             "(default: 1e-3/eps²; -1 = use default)",
+             "", user.k_sed_pen, &user.k_sed_pen, NULL); CHKERRQ(ierr);
+
     /* --- Flags ---------------------------------------------------------- */
 
     PetscOptionsEnd();
+
+    /* Resolve sentinel defaults using the final eps value */
+    if (user.k_pen     < 0.0) user.k_pen     = user.difvap_pen / (eps * eps);
+    if (user.k_sed_pen < 0.0) user.k_sed_pen = 1.0e-3          / (eps * eps);
 
     /* Assign parameters to user context */
     user.p = p;

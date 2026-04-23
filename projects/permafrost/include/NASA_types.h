@@ -92,6 +92,13 @@ typedef struct {
   PetscInt n_act, n_actsed;  // Number of currently active grains (ice and sediment)
 
   // Arrays for field variables
+  PetscScalar *Phi_sed0;  // Sediment phase field variable
+  PetscInt npoints;
+
+  /* Penalty parameters (tunable via CLI) */
+  PetscReal difvap_pen;   // effective vapour diffusivity in the air phase [m²/s]
+  PetscReal k_pen;        // vapour interface equilibrium stiffness [Pa·s/m² effectively]
+  PetscReal k_sed_pen;    // sediment shape-restoring stiffness
   PetscReal *alph;     // Alpha field, possibly phase fraction or related property
   PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)
   PetscReal *mob_sed_arr;  // Sediment mobility field, spatially varying (T-dependent)
