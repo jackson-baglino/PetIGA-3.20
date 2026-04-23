@@ -117,9 +117,11 @@ PetscErrorCode Residual(IGAPoint pnt,
 
         if (user->flag_tIC == 1) {
             R_ice = 0.0; R_sed = 0.0; R_tem = 0.0; R_vap = 0.0;
-        } else if (user->flag_sed_frozen == 0) {
-            /* --- 3-phase: full system (relaxation phase) ---
-             * Lagrange multiplier enforces phi_i_t + phi_a_t + phi_s_t = 0 */
+        } else {
+            /* --- 3-phase: full system, always used ---
+             * Ice equation never switches form; flag_sed_frozen only gates the
+             * sediment penalty below.  Lagrange multiplier enforces
+             * phi_i_t + phi_a_t + phi_s_t = 0 via the air = 1 - ice - sed constraint. */
 
             /* Ice Evolution Equation */
             R_ice = N0[a] * ice_t;
@@ -128,16 +130,18 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_ice += C3*((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
-            /* Sediment Evolution Equation */
+            /* Sediment Evolution Equation — 3-phase Allen-Cahn, always used */
             R_sed = N0[a] * sed_t;
             for (l = 0; l < dim; l++)
                 R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
             R_sed += C3*(-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
-            R_sed += k_sed * (sed - sed0) * N0[a];  // Penalty to relax sediment towards initial condition (can be tuned for better convergence)
-
-            // if ((double)(k_sed * (sed - sed0) * N0[a]) > 1.0e-1) {
-            //     PetscPrintf(PETSC_COMM_SELF, "R_sed_pen at GP %d: %g (sed = %g, sed0 = %g)\n", indGP, k_sed * (sed - sed0) * N0[a], sed, sed0);  // Debug print for sediment residual
-            // }
+            /* Sediment pinning: when flag_sed_frozen == 1, resist drift away from
+             * the initial field sed0.  The ice equation stays in its 3-phase form
+             * (above), so the equilibrium at the sediment boundary remains
+             * self-consistent — no spurious air or negative ice is generated.
+             * Strength k_sed = user->k_sed_pen, set via -k_sed_pen CLI option. */
+            if (user->flag_sed_frozen)
+                R_sed += k_sed * (sed - sed0) * N0[a];
 
             /* Thermal energy balance */
             R_tem  = rho * cp * N0[a] * tem_t;
@@ -160,45 +164,47 @@ PetscErrorCode Residual(IGAPoint pnt,
             //     R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
             // R_vap -= xi_v * N0[a] * rho_ice * air_t;
 
-        } else {
-            /* --- 2-phase: phi_s frozen ---
-             * Lagrange multiplier enforces phi_i_t + phi_a_t = 0 (phi_s_t = 0).
-             * phi_s gradient enters the ice equation via the constraint. */
-            PetscReal C = 3.0 * mob / (Etai + Etaa);
-
-            /* Ice Evolution Equation */
-            R_ice = N0[a] * ice_t;
-            for (l = 0; l < dim; l++)
-                R_ice += 3.0 * mob * eps * N_air * (N1[a][l] * grad_ice[l]);
-            for (l = 0; l < dim; l++)
-                R_ice += C * Etaa * eps * N_air * (N1[a][l] * grad_sed[l]);
-            R_ice += N0[a] * C * N_air / eps * (fi - fa);
-            R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
-
-            /* Sediment: mass matrix + same restoring penalty as 3-phase to prevent drift */
-            R_sed = N0[a] * sed_t;
-            R_sed += k_sed * (sed - sed0) * N0[a];
-
-            /* Thermal energy balance (identical to 3-phase; air_t = -ice_t) */
-            R_tem  = rho * cp * N0[a] * tem_t;
-            for (l = 0; l < dim; l++)
-                R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
-            R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
-
-            /* Vapor (identical to 3-phase; air_t = -ice_t) */
-            R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);               // Time derivative term
-            for (l = 0; l < dim; l++)                                         // Diffusion term
-                R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-
-            R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];                // Penalty term to enforce rhov = rhov_eq at ice-air interface
-            R_vap += xi_v * N0[a] * rho_ice * ice_t;                          // Source/sink term from ice mass change (sublimation/deposition)  
-
-            // R_vap  = N0[a] * air_eff * rhov_t;
-            // R_vap += N0[a] * air_t * rhov;
-            // for (l = 0; l < dim; l++)
-            //     R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-            // R_vap -= xi_v * N0[a] * rho_ice * air_t;
         }
+        /* =======================================================================
+         * 2-phase ice equation — DEPRECATED, kept for reference only.
+         *
+         * DO NOT RESTORE: switching the ice equation while sediment is frozen
+         * breaks 3-phase self-consistency.  The 3-phase ice equilibrium the
+         * system reaches during the initial nsteps_sed steps is different from
+         * the 2-phase equilibrium below; activating this branch forces ice to
+         * seek a new, inconsistent equilibrium against a frozen sediment
+         * boundary, generating spurious air phase and/or negative ice values.
+         *
+         * The sediment penalty in the 3-phase branch above (gated on
+         * flag_sed_frozen) is the correct replacement.
+         * =======================================================================
+         *
+         * } else {
+         *     PetscReal C = 3.0 * mob / (Etai + Etaa);
+         *
+         *     R_ice = N0[a] * ice_t;
+         *     for (l = 0; l < dim; l++)
+         *         R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+         *     for (l = 0; l < dim; l++)
+         *         R_ice += C * Etaa * eps * (N1[a][l] * grad_sed[l]);
+         *     R_ice += N0[a] * C / eps * (fi - fa);
+         *     R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+         *
+         *     R_sed  = N0[a] * sed_t;
+         *     R_sed += k_sed * (sed - sed0) * N0[a];
+         *
+         *     R_tem  = rho * cp * N0[a] * tem_t;
+         *     for (l = 0; l < dim; l++)
+         *         R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
+         *     R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
+         *
+         *     R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);
+         *     for (l = 0; l < dim; l++)
+         *         R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+         *     R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];
+         *     R_vap += xi_v * N0[a] * rho_ice * ice_t;
+         * }
+         */
 
         R[a][0] = R_ice;
         R[a][1] = R_tem;

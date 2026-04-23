@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
      * eps is not yet final here; will be overridden after PetscOptionsEnd. */
     user.difvap_pen = 3.0e-5;
     user.k_pen      = -1.0;    /* sentinel: computed from difvap_pen/eps² after options */
-    user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-3/eps² after options */
+    user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-7/eps² after options */
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
     user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
 
