@@ -1,4 +1,52 @@
 
+## 2026-04-23 — flag_sed_mode CLI option and 2-phase sediment drift fix
+
+- Added `-flag_sed_mode` to `AppCtx` and registered as a PETSc CLI option: `-1` = always 3-phase, `0` = always 2-phase, `1` (default) = switch after `nsteps_sed` steps.
+- Changed default `nsteps_sed` from 0 to 10 so mode 1 runs 10 relaxation steps before freezing sediment.
+- Fixed sediment drift bug in 2-phase mode (`assembly.c`): the 2-phase `R_sed` branch was missing the `k_sed*(sed-sed0)*N0[a]` restoring penalty, allowing numerical drift through SNES tolerance.
+- Updated `monitoring.c` freeze logic to only trigger when `flag_sed_mode == 1` (previously always triggered when `nsteps_sed > 0`, which prevented mode -1 from working).
+- Added `-nsteps_sed 10` and `-flag_sed_mode 1` to all 17 `.opts` files in `inputs/tests/`.
+
+---
+
+**Session ended:** 2026-04-23 12:38:28
+
+
+---
+
+**Session ended:** 2026-04-23 12:37:15
+
+
+---
+
+**Session ended:** 2026-04-23 12:22:25
+
+
+---
+
+**Session ended:** 2026-04-23 12:17:22
+
+
+---
+
+**Session ended:** 2026-04-23 12:12:31
+
+
+---
+
+**Session ended:** 2026-04-23 11:30:16
+
+
+---
+
+**Session ended:** 2026-04-23 11:25:51
+
+
+---
+
+**Session ended:** 2026-04-22 21:50:40
+
+
 ## 2026-04-22 — Penalty parameter tuning framework
 
 - Exposed `difvap_pen`, `k_pen`, and `k_sed_pen` as PETSc CLI options so parameter sweeps no longer require recompilation; defaults unchanged.
