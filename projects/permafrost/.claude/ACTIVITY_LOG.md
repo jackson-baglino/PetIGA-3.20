@@ -1,4 +1,20 @@
 
+---
+
+## 2026-04-23 — Fix phase-variable mismatch: always-3-phase ice equation with gated sediment penalty
+
+- Root cause identified: the old code changed **both** the ice equation and added a sediment penalty when `flag_sed_frozen` fired. This created an equilibrium discontinuity — the 3-phase ice equilibrium is incompatible with the 2-phase ice equation, causing spurious air and negative ice at the ice-sediment interface.
+- Fix in `assembly.c`: widened `else if (flag_sed_frozen == 0)` to a plain `else` so the 3-phase ice equation is always used. The sediment penalty `R_sed += k_sed*(sed-sed0)*N0[a]` is now gated on `flag_sed_frozen` inside the 3-phase branch — it activates when sediment needs pinning but never changes the ice residual form.
+- Deprecated 2-phase ice branch preserved as a commented block with explanation of why it must not be restored.
+- Fixed stale comment in `permafrost2.c`: default `k_sed_pen` is `1e-7/eps²`, not `1e-3/eps²`.
+- Updated `test_2D_IceSlab.opts`: changed `flag_sed_mode 0` (always-frozen, no relaxation) to `flag_sed_mode 1` (10-step free relaxation before penalty activates).
+- This change also addresses vanishing sediment and grain sintering in 3-phase mode: once the penalty activates, each grain is pinned near its initial shape (`sed0`), preventing Gibbs-Thomson shrinkage and grain-grain merging.
+
+---
+
+**Session ended:** 2026-04-23 14:58:52
+
+
 ## 2026-04-23 — flag_sed_mode CLI option and 2-phase sediment drift fix
 
 - Added `-flag_sed_mode` to `AppCtx` and registered as a PETSc CLI option: `-1` = always 3-phase, `0` = always 2-phase, `1` (default) = switch after `nsteps_sed` steps.
