@@ -40,6 +40,7 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscScalar sed   = sol[3], sed_t = sol_t[3];
     PetscScalar grad_sed[dim];
     for (l = 0; l < dim; l++) grad_sed[l] = grad_sol[3][l];
+    PetscScalar sed0 = user->Phi_sed0[indGP];  // Initial sediment phase field at this quadrature point
 
     // Air: algebraic from constraint, no independent evolution equation
     PetscScalar air   = 1.0 - sed - ice;
@@ -71,6 +72,17 @@ PetscErrorCode Residual(IGAPoint pnt,
     Fsed(user, ice, sed, &fs, NULL);
     Mobility(user, ice, sed, &mob);
 
+    // Pentaly parameters for vapor equation to enforce rhov = rhov_eq at ice-air interface
+    PetscReal g_phia, g_phiiphis;
+    PetscReal difvap_pen = 1.0e-6;  // Penalized diffusivity in air to stabilize vapor diffusion across the interface (can be tuned for better convergence)
+    PetscReal k_pen = difvap_pen / (eps*eps);  // Penalty stiffness
+    PetscReal rhov_eq = ice * rhoI_vs + sed * rhoI_vs + air * rhov;  // Local equilibrium vapor density based on current phase fractions
+    SmoothHeavisidePoly(ice + sed, &g_phiiphis, NULL);  // Regularized indicator function for ice-air interface (where ice+sed transitions from 0 to 1)
+    SmoothHeavisidePoly(ice, &g_phia, NULL);  // Regularized indicator function for ice phase (where ice transitions from 0 to 1)
+    difvap = difvap * g_phia + difvap_pen * (1 - g_phia);  // Use physical diffusivity in ice and penalized diffusivity in air to stabilize vapor diffusion across the interface
+
+    // Pentalty parameters for sediment equation
+    PetscReal k_sed = difvap_pen / (eps*eps);  // Penalty stiffness for sediment relaxation towards Phi_sed0
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
     IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
@@ -119,6 +131,11 @@ PetscErrorCode Residual(IGAPoint pnt,
             for (l = 0; l < dim; l++)
                 R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
             R_sed += C3*(-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+            R_sed += k_sed * (sed - sed0) * N0[a];  // Penalty to relax sediment towards initial condition (can be tuned for better convergence)
+
+            if ((double)(k_sed * (sed - sed0) * N0[a]) > 1.0e-3) {
+                PetscPrintf(PETSC_COMM_SELF, "R_sed_pen at GP %d: %g (sed = %g, sed0 = %g)\n", indGP, k_sed * (sed - sed0) * N0[a], sed, sed0);  // Debug print for sediment residual
+            }
 
             /* Thermal energy balance */
             R_tem  = rho * cp * N0[a] * tem_t;
@@ -127,10 +144,19 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
             /* Vapor */
-            R_vap  = N0[a] * air_eff * rhov_t;
-            for (l = 0; l < dim; l++)
+            R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);         // Time derivative term
+            for (l = 0; l < dim; l++)                                         // Diffusion term
                 R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+
+            R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];  // Penalty term to enforce rhov = rhov_eq at ice-air interface
             R_vap -= xi_v * N0[a] * rho_ice * air_t;
+
+
+            // R_vap  = N0[a] * air_eff * rhov_t;
+            // R_vap += N0[a] * air_t * rhov;
+            // for (l = 0; l < dim; l++)
+            //     R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+            // R_vap -= xi_v * N0[a] * rho_ice * air_t;
 
         } else {
             /* --- 2-phase: phi_s frozen ---
@@ -157,10 +183,18 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
             /* Vapor (identical to 3-phase; air_t = -ice_t) */
-            R_vap  = N0[a] * air_eff * rhov_t;
-            for (l = 0; l < dim; l++)
+            R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);               // Time derivative term
+            for (l = 0; l < dim; l++)                                         // Diffusion term
                 R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-            R_vap -= xi_v * N0[a] * rho_ice * air_t;
+
+            R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];                // Penalty term to enforce rhov = rhov_eq at ice-air interface
+            R_vap += xi_v * N0[a] * rho_ice * ice_t;                          // Source/sink term from ice mass change (sublimation/deposition)  
+
+            // R_vap  = N0[a] * air_eff * rhov_t;
+            // R_vap += N0[a] * air_t * rhov;
+            // for (l = 0; l < dim; l++)
+            //     R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+            // R_vap -= xi_v * N0[a] * rho_ice * air_t;
         }
 
         R[a][0] = R_ice;

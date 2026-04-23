@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC       = 10;  /* Number of initial condition steps (???) */
     user.nsteps_sed      = 0;   /* Relaxation steps before freezing phi_s (0 = never) */
-    user.flag_sed_frozen = 1;   /* 0 = full 3-phase; 1 = phi_s frozen */
+    user.flag_sed_frozen = 0;   /* 0 = full 3-phase; 1 = phi_s frozen */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -255,6 +255,7 @@ int main(int argc, char *argv[]) {
     user.grad_temp0[1] = grad_temp0[1];
     user.grad_temp0[2] = grad_temp0[2];
     user.hum0 = humidity;
+    user.npoints = Nx * Ny * Nz; /* Total number of grid points (for allocating arrays in user context) */
     PetscStrncpy(user.initial_cond, initial, PETSC_MAX_PATH_LEN);
     PetscStrncpy(user.initial_PFgeom, PFgeom, PETSC_MAX_PATH_LEN);
 
@@ -385,8 +386,10 @@ int main(int argc, char *argv[]) {
     }
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.alph);    CHKERRQ(ierr);
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);     CHKERRQ(ierr);
+    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.Phi_sed0); CHKERRQ(ierr);
     ierr = PetscMemzero(user.alph,    sizeof(PetscReal) * nmb); CHKERRQ(ierr);
     ierr = PetscMemzero(user.mob,     sizeof(PetscReal) * nmb); CHKERRQ(ierr);
+    ierr = PetscMemzero(user.Phi_sed0, sizeof(PetscReal) * nmb); CHKERRQ(ierr);
 
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
@@ -483,6 +486,33 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* Snapshot the initial sediment field at every quadrature point.
+     * Phi_sed0[indGP] is indexed identically to alph[] and mob[] so that
+     * the Residual function can look it up with the same indGP expression. */
+    {
+        Vec            localU;
+        const PetscScalar *arrayU;
+        IGAElement     element;
+        IGAPoint       point;
+        PetscScalar   *UU;
+        PetscInt       indd = 0;
+
+        ierr = IGAGetLocalVecArray(iga, U, &localU, &arrayU); CHKERRQ(ierr);
+        ierr = IGABeginElement(iga, &element);                CHKERRQ(ierr);
+        while (IGANextElement(iga, element)) {
+            ierr = IGAElementGetValues(element, arrayU, &UU); CHKERRQ(ierr);
+            ierr = IGAElementBeginPoint(element, &point);     CHKERRQ(ierr);
+            while (IGAElementNextPoint(element, point)) {
+                PetscScalar sol[4];
+                ierr = IGAPointFormValue(point, UU, &sol[0]); CHKERRQ(ierr);
+                user.Phi_sed0[indd] = PetscRealPart(sol[3]);  /* DOF 3 = sediment */
+                indd++;
+            }
+            ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
+        }
+        ierr = IGAEndElement(iga, &element);                          CHKERRQ(ierr);
+        ierr = IGARestoreLocalVecArray(iga, U, &localU, &arrayU);    CHKERRQ(ierr);
+    }
 
     /* Solve the system */
     ierr = TSSolve(ts, U); CHKERRQ(ierr);
@@ -495,7 +525,7 @@ int main(int argc, char *argv[]) {
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     ierr = PetscFree(user.alph); CHKERRQ(ierr);
     ierr = PetscFree(user.mob); CHKERRQ(ierr);
-
+    ierr = PetscFree(user.Phi_sed0); CHKERRQ(ierr);
     /* End Timer */
     PetscLogDouble ltim, tim;
     ierr = PetscTime(&ltim); CHKERRQ(ierr);
