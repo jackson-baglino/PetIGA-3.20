@@ -223,10 +223,14 @@ def run_sweep(binary, opts_vpa, opts_vpb, out_dir, values, param_name,
         rows_b  = _parse_monitor(stdout_b)
         iters_b = _parse_max_snes_iters(stdout_b)
 
-        sublim_rate = None
-        if len(rows_b) >= 11:
-            sublim_rate = (rows_b[10]["tot_ice"] - rows_b[0]["tot_ice"]) / (
-                           rows_b[10]["time"]  - rows_b[0]["time"]  + 1e-300)
+        # VP-B sublimation signal: rhov should INCREASE when starting undersaturated
+        # (ice sublimes → releases vapour → tot_rhov rises).  Ice volume change is
+        # unmeasurable at millisecond timescales, so we use the vapour accumulation
+        # rate instead.
+        rhov_increase = None
+        if len(rows_b) >= 2:
+            dt_run = rows_b[-1]["time"] - rows_b[0]["time"] + 1e-300
+            rhov_increase = (rows_b[-1]["tot_rhov"] - rows_b[0]["tot_rhov"]) / dt_run
 
         # ---- VP-C: in-ice rhov error from sol files -------------------------
         T_ref = -20.0
@@ -236,32 +240,32 @@ def run_sweep(binary, opts_vpa, opts_vpb, out_dir, values, param_name,
         max_iters = max(i for i in [iters_a, iters_b] if i >= 0) if any(i >= 0 for i in [iters_a, iters_b]) else -1
 
         # ---- Pass/fail -------------------------------------------------------
-        pass_rhov  = (rhov_drift_pct is not None) and (rhov_drift_pct < PASS_RHOV_DRIFT)
-        pass_sublim = (sublim_rate is not None) and (sublim_rate < 0)
-        pass_iters  = (max_iters   >= 0)         and (max_iters   <= PASS_SNES_ITERS)
-        pass_ice    = (ice_err_pct is None)       or  (ice_err_pct < PASS_ICE_ERR_PCT)
+        pass_rhov    = (rhov_drift_pct is not None) and (rhov_drift_pct < PASS_RHOV_DRIFT)
+        pass_sublim  = (rhov_increase  is not None) and (rhov_increase  > 0)   # vapour rises → sublimation active
+        pass_iters   = (max_iters      >= 0)         and (max_iters      <= PASS_SNES_ITERS)
+        pass_ice     = (ice_err_pct    is None)       or  (ice_err_pct    < PASS_ICE_ERR_PCT)
         passed = pass_rhov and pass_sublim and pass_iters and pass_ice
 
         row = {
-            "param":          param_name,
-            "value":          val,
-            "rc_a":           rc_a,
-            "rc_b":           rc_b,
-            "rhov_drift_pct": rhov_drift_pct,
-            "sublim_rate":    sublim_rate,
-            "max_snes_iters": max_iters,
+            "param":            param_name,
+            "value":            val,
+            "rc_a":             rc_a,
+            "rc_b":             rc_b,
+            "rhov_drift_pct":   rhov_drift_pct,
+            "rhov_increase":    rhov_increase,
+            "max_snes_iters":   max_iters,
             "ice_rhov_err_pct": ice_err_pct,
-            "pass_rhov":      pass_rhov,
-            "pass_sublim":    pass_sublim,
-            "pass_iters":     pass_iters,
-            "pass_ice":       pass_ice,
-            "PASS":           passed,
+            "pass_rhov":        pass_rhov,
+            "pass_sublim":      pass_sublim,
+            "pass_iters":       pass_iters,
+            "pass_ice":         pass_ice,
+            "PASS":             passed,
         }
         results.append(row)
 
         verdict = "PASS" if passed else "FAIL"
         print(f"  rhov drift:  {rhov_drift_pct:.3f}%" if rhov_drift_pct is not None else "  rhov drift:  N/A")
-        print(f"  sublim rate: {sublim_rate:.3e} m/s" if sublim_rate is not None else "  sublim rate: N/A")
+        print(f"  rhov incr:   {rhov_increase:.3e} /s" if rhov_increase is not None else "  rhov incr:   N/A")
         print(f"  max SNES it: {max_iters}")
         print(f"  in-ice err:  {ice_err_pct:.2f}%" if ice_err_pct is not None else "  in-ice err:  N/A")
         print(f"  → {verdict}")
@@ -371,14 +375,14 @@ def parse_args():
 def _print_summary(results, param_name, param_label):
     print(f"\n{'─'*70}")
     print(f"  SUMMARY — {param_label} sweep")
-    print(f"  {'Value':>12}  {'rhov drift%':>12}  {'sublim<0':>8}  "
+    print(f"  {'Value':>12}  {'rhov drift%':>12}  {'rhov incr>0':>11}  "
           f"{'SNES its':>8}  {'ice err%':>9}  {'PASS':>6}")
-    print(f"  {'─'*60}")
+    print(f"  {'─'*62}")
     for r in results:
         rstr = f"{r['rhov_drift_pct']:.3f}" if r['rhov_drift_pct'] is not None else "N/A"
         estr = f"{r['ice_rhov_err_pct']:.2f}" if r['ice_rhov_err_pct'] is not None else "N/A"
         print(f"  {r['value']:>12.2e}  {rstr:>12}  "
-              f"{'YES' if r['pass_sublim'] else 'NO':>8}  "
+              f"{'YES' if r['pass_sublim'] else 'NO':>11}  "
               f"{r['max_snes_iters']:>8}  {estr:>9}  "
               f"{'✓' if r['PASS'] else '✗':>6}")
     passed = [r for r in results if r["PASS"]]
