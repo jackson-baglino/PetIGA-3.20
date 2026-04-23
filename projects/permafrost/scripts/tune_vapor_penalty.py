@@ -69,7 +69,13 @@ PASS_ICE_ERR_PCT = 5.0    # % — VP-C: max|rhov − ρ_vs| / ρ_vs inside ice
 # Saturation vapour density (matches material_properties.c: RhoVS_I)
 # ---------------------------------------------------------------------------
 def rho_vs(T_C):
-    return 3.25e-3 * np.exp(-6150.0 / (T_C + 273.15))
+    """Saturated vapour density [kg/m³] — matches RhoVS_I() in material_properties.c."""
+    T = T_C + 273.15
+    K0, K1, K2 = -0.5865e4, 0.2224e2, 0.1375e-1
+    K3, K4, K5 = -0.3403e-4, 0.2697e-7, 0.6918
+    Patm, bb, rho_air = 101325.0, 0.62, 1.341
+    Pvs = np.exp(K0/T + K1 + K2*T + K3*T**2 + K4*T**3 + K5*np.log(T))
+    return rho_air * bb * Pvs / (Patm - Pvs)
 
 
 # ---------------------------------------------------------------------------
