@@ -161,7 +161,8 @@ def _run(binary, opts_file, extra_flags, run_dir, timeout=400):
 # Sweep engine
 # ---------------------------------------------------------------------------
 
-def run_sweep(binary, opts_file, out_dir, prefactors, eps, timeout=400):
+def run_sweep(binary, opts_file, out_dir, prefactors, eps, timeout=400,
+              extra_base_flags=None):
     os.makedirs(out_dir, exist_ok=True)
     results = []
 
@@ -175,7 +176,7 @@ def run_sweep(binary, opts_file, out_dir, prefactors, eps, timeout=400):
         run_dir_sp = os.path.join(out_dir, f"SP_{label}")
         os.makedirs(run_dir_sp, exist_ok=True)
 
-        extra = ["-k_sed_pen", str(k_val)]
+        extra = list(extra_base_flags or []) + ["-k_sed_pen", str(k_val)]
         stdout, rc = _run(binary, opts_file, extra, run_dir_sp, timeout)
 
         rows    = _parse_monitor(stdout)

@@ -174,7 +174,7 @@ def _in_ice_rhov_error(phi_ice, rhov, T_C=-20.0, threshold=0.5):
 # ---------------------------------------------------------------------------
 
 def run_sweep(binary, opts_vpa, opts_vpb, out_dir, values, param_name,
-              eps, timeout=300):
+              eps, timeout=300, extra_vpa_flags=None, extra_vpb_flags=None):
     """
     Sweep a single penalty parameter over `values`.
     Returns a list of result dicts.
@@ -189,12 +189,14 @@ def run_sweep(binary, opts_vpa, opts_vpb, out_dir, values, param_name,
         print(f"{'='*60}")
 
         # Build extra flags depending on which parameter we're sweeping
+        _base_a = list(extra_vpa_flags or [])
+        _base_b = list(extra_vpb_flags or [])
         if param_name == "difvap_pen":
-            extra_a = ["-difvap_pen", str(val)]
-            extra_b = ["-difvap_pen", str(val)]
+            extra_a = _base_a + ["-difvap_pen", str(val)]
+            extra_b = _base_b + ["-difvap_pen", str(val)]
         else:  # k_pen
-            extra_a = ["-k_pen", str(val)]
-            extra_b = ["-k_pen", str(val)]
+            extra_a = _base_a + ["-k_pen", str(val)]
+            extra_b = _base_b + ["-k_pen", str(val)]
 
         # ---- VP-A: flat saturated (hum=1.0) --------------------------------
         run_dir_a = os.path.join(out_dir, f"VPA_{label}")
