@@ -75,40 +75,32 @@ def rho_vs(T_C):
 # ---------------------------------------------------------------------------
 # Run helpers
 # ---------------------------------------------------------------------------
+_NUM = r"[-+]?[eE\d.]+(?:[eE][+-]?\d+)?"
 _MONITOR_RE = re.compile(
-    r"^\s*(\d+)\s+"          # STEP
-    r"([\d.eE+\-]+)\s+"      # TIME
-    r"([\d.eE+\-]+)\s+"      # DT
-    r"([\d.eE+\-]+)\s+"      # TOT_ICE
-    r"([\d.eE+\-]+)\s+"      # TOT_AIR
-    r"([\d.eE+\-]+)\s+"      # TOT_SED
-    r"([\d.eE+\-]+)\s+"      # TEMP
-    r"([\d.eE+\-]+)\s+"      # TOT_RHOV
-    r"([\d.eE+\-]+)\s+"      # I-A INTERF
-    r"([\d.eE+\-]+)"         # TRIPL_JUNC
+    r"^\s+(\d+)\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"
+    r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"
+    r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"
+    r"\s*(" + _NUM + r")\s*$",
+    re.MULTILINE,
 )
-_SNES_RE = re.compile(r"SNES Object.*?Number of iterations\s+(\d+)", re.S)
-_SNES_ITER_LINE = re.compile(r"Nonlinear solve converged.*?iterations\s+(\d+)")
 
 
 def _parse_monitor(stdout: str):
     """Return list of dicts with monitor row data."""
     rows = []
-    for line in stdout.splitlines():
-        m = _MONITOR_RE.match(line)
-        if m:
-            rows.append({
-                "step":      int(m.group(1)),
-                "time":      float(m.group(2)),
-                "dt":        float(m.group(3)),
-                "tot_ice":   float(m.group(4)),
-                "tot_air":   float(m.group(5)),
-                "tot_sed":   float(m.group(6)),
-                "temp":      float(m.group(7)),
-                "tot_rhov":  float(m.group(8)),
-                "ia_interf": float(m.group(9)),
-                "trip_junc": float(m.group(10)),
-            })
+    for m in _MONITOR_RE.finditer(stdout):
+        rows.append({
+            "step":      int(m.group(1)),
+            "time":      float(m.group(2)),
+            "dt":        float(m.group(3)),
+            "tot_ice":   float(m.group(4)),
+            "tot_air":   float(m.group(5)),
+            "tot_sed":   float(m.group(6)),
+            "temp":      float(m.group(7)),
+            "tot_rhov":  float(m.group(8)),
+            "ia_interf": float(m.group(9)),
+            "trip_junc": float(m.group(10)),
+        })
     return rows
 
 
@@ -126,10 +118,11 @@ def _parse_max_snes_iters(stdout: str) -> int:
 def _run(binary, opts_file, extra_flags, run_dir, timeout=300):
     """Run the permafrost binary, return (stdout, returncode)."""
     cmd = ["mpirun", "-n", "1", binary,
-           "-options_file", os.path.abspath(opts_file),
-           "-output_path", run_dir] + extra_flags
+           "-options_file", os.path.abspath(opts_file)] + extra_flags
+    env = os.environ.copy()
+    env["folder"] = run_dir   # monitoring.c reads getenv("folder") for output dir
     result = subprocess.run(
-        cmd, capture_output=True, text=True,
+        cmd, capture_output=True, text=True, env=env,
         timeout=timeout, cwd=os.path.dirname(os.path.abspath(binary)) or "."
     )
     return result.stdout + result.stderr, result.returncode

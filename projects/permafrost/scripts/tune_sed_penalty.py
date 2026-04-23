@@ -61,24 +61,25 @@ PASS_ICE_DRIFT_PCT  = 5.0    # % — max |Δtot_ice| / tot_ice(0)
 # ---------------------------------------------------------------------------
 # Monitor parser (same pattern as tune_vapor_penalty.py)
 # ---------------------------------------------------------------------------
+_NUM = r"[-+]?[eE\d.]+(?:[eE][+-]?\d+)?"
 _MONITOR_RE = re.compile(
-    r"^\s*(\d+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+"
-    r"([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+"
-    r"([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)"
+    r"^\s+(\d+)\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"
+    r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"
+    r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"
+    r"\s*(" + _NUM + r")\s*$",
+    re.MULTILINE,
 )
 
 
 def _parse_monitor(stdout):
     rows = []
-    for line in stdout.splitlines():
-        m = _MONITOR_RE.match(line)
-        if m:
-            rows.append({
-                "step":     int(m.group(1)),
-                "time":     float(m.group(2)),
-                "tot_ice":  float(m.group(4)),
-                "tot_sed":  float(m.group(6)),
-            })
+    for m in _MONITOR_RE.finditer(stdout):
+        rows.append({
+            "step":     int(m.group(1)),
+            "time":     float(m.group(2)),
+            "tot_ice":  float(m.group(4)),
+            "tot_sed":  float(m.group(6)),
+        })
     return rows
 
 
@@ -148,10 +149,11 @@ def _max_shape_error(sed_list):
 
 def _run(binary, opts_file, extra_flags, run_dir, timeout=400):
     cmd = ["mpirun", "-n", "1", binary,
-           "-options_file", os.path.abspath(opts_file),
-           "-output_path", run_dir] + extra_flags
+           "-options_file", os.path.abspath(opts_file)] + extra_flags
+    env = os.environ.copy()
+    env["folder"] = run_dir   # monitoring.c reads getenv("folder") for output dir
     result = subprocess.run(
-        cmd, capture_output=True, text=True,
+        cmd, capture_output=True, text=True, env=env,
         timeout=timeout, cwd=os.path.dirname(os.path.abspath(binary)) or "."
     )
     return result.stdout + result.stderr, result.returncode
