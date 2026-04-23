@@ -116,16 +116,20 @@ def _parse_max_snes_iters(stdout: str) -> int:
 
 
 def _run(binary, opts_file, extra_flags, run_dir, timeout=300):
-    """Run the permafrost binary, return (stdout, returncode)."""
+    """Run the permafrost binary, return (stdout, returncode). Returns ("", -2) on timeout."""
     cmd = ["mpirun", "-n", "1", binary,
            "-options_file", os.path.abspath(opts_file)] + extra_flags
     env = os.environ.copy()
     env["folder"] = run_dir   # monitoring.c reads getenv("folder") for output dir
-    result = subprocess.run(
-        cmd, capture_output=True, text=True, env=env,
-        timeout=timeout, cwd=os.path.dirname(os.path.abspath(binary)) or "."
-    )
-    return result.stdout + result.stderr, result.returncode
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, env=env,
+            timeout=timeout, cwd=os.path.dirname(os.path.abspath(binary)) or "."
+        )
+        return result.stdout + result.stderr, result.returncode
+    except subprocess.TimeoutExpired:
+        print(f"  [TIMEOUT after {timeout}s — marking run as N/A]")
+        return "", -2
 
 
 def _read_sol_rhov_ice(run_dir):

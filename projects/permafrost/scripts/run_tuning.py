@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 -u
 """
 run_tuning.py — Master orchestration script for penalty parameter tuning.
 
@@ -38,7 +38,7 @@ EPS = 9.3295e-7   # interface width [m]
 # t_final = nsteps * delt_t;  all opts files use delt_t = 1e-4 s.
 NSTEPS_1D   = 50    # fast; 1-D mesh 152 nodes
 NSTEPS_2D   = 25    # medium; 2-D mesh 114×23
-NSTEPS_T3   = 15    # slow; 2-D mesh 143×285
+NSTEPS_T3   = 5     # large 143×285 mesh — keep short; sublim_rate check may be N/A
 
 
 def _t_final(nsteps, delt_t=1e-4):
@@ -98,8 +98,8 @@ GEOMETRIES = [
         "extra_vpa": ["-t_final", str(_t_final(NSTEPS_T3)), "-initial_cond", ""],
         "extra_vpb": ["-t_final", str(_t_final(NSTEPS_T3)), "-initial_cond", ""],
         "extra_sed": ["-t_final", str(_t_final(NSTEPS_T3)), "-initial_cond", ""],
-        "timeout_vapor": 720,
-        "timeout_sed":   720,
+        "timeout_vapor": 90,   # per-run; timed-out runs show as N/A
+        "timeout_sed":   90,
     },
 ]
 

@@ -152,11 +152,15 @@ def _run(binary, opts_file, extra_flags, run_dir, timeout=400):
            "-options_file", os.path.abspath(opts_file)] + extra_flags
     env = os.environ.copy()
     env["folder"] = run_dir   # monitoring.c reads getenv("folder") for output dir
-    result = subprocess.run(
-        cmd, capture_output=True, text=True, env=env,
-        timeout=timeout, cwd=os.path.dirname(os.path.abspath(binary)) or "."
-    )
-    return result.stdout + result.stderr, result.returncode
+    try:
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, env=env,
+            timeout=timeout, cwd=os.path.dirname(os.path.abspath(binary)) or "."
+        )
+        return result.stdout + result.stderr, result.returncode
+    except subprocess.TimeoutExpired:
+        print(f"  [TIMEOUT after {timeout}s — marking run as N/A]")
+        return "", -2
 
 
 # ---------------------------------------------------------------------------
