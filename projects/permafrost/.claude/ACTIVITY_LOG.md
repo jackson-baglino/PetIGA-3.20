@@ -1,3 +1,19 @@
+
+## 2026-04-22 — Penalty parameter tuning framework
+
+- Exposed `difvap_pen`, `k_pen`, and `k_sed_pen` as PETSc CLI options so parameter sweeps no longer require recompilation; defaults unchanged.
+- Added `scripts/tune_vapor_penalty.py`: sweeps `difvap_pen` and `k_pen` independently; measures rhov drift, sublimation rate, SNES iters, in-ice rhov error; outputs CSV + PNG.
+- Added `scripts/tune_sed_penalty.py`: sweeps `k_sed_pen` prefactor over 7 decades; measures sediment drift, spatial shape error, SNES iters; outputs CSV + PNG.
+
+---
+
+**Session ended:** 2026-04-22 18:04:13
+
+
+---
+
+**Session ended:** 2026-04-22 16:17:23
+
 ## 2026-04-22 — 2D ice slab IC and improved 1D plotting
 
 - Added `FormInitialIceSlab2D` in `src/initial_conditions.c`: 2D equivalent of the 1D centered-slab IC (flag_tIC=0), using tanh profiles in x uniform across Ly.
