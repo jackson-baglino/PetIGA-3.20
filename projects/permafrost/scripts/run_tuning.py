@@ -134,11 +134,14 @@ def _intersect_ranges(ranges):
 
 def _recommended(lo, hi):
     """Pick a round recommended value near the low end of the passing range."""
-    if lo is None:
+    if lo is None or hi is None:
         return None
     import math
+    if lo <= 0:
+        # lo=0 means "no penalty still passes"; recommend a small but non-zero value
+        return hi if hi > 0 else 0
     # geometric midpoint, rounded to one significant figure
-    mid = math.sqrt(lo * hi) if hi else lo
+    mid = math.sqrt(lo * hi)
     exp = math.floor(math.log10(mid))
     return round(mid / 10**exp) * 10**exp
 

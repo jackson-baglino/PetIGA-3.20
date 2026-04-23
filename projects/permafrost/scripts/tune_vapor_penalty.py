@@ -154,6 +154,10 @@ def _read_sol_rhov_ice(run_dir):
         return None, None
     nrb = PetIGA().read(iga_path)
     sol = PetIGA().read_vec(sol_files[-1], nrb)
+    # igakit returns (nx, n_dof) for 1D or (nx, ny, n_dof) for 2D.
+    # Flatten spatial dims so indexing is always (n_nodes, n_dof).
+    if sol.ndim == 3:
+        sol = sol.reshape(-1, sol.shape[-1])
     phi_ice = sol[:, 0]
     rhov    = sol[:, 2]
     return phi_ice, rhov
