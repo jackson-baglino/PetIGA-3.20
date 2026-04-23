@@ -74,6 +74,7 @@ typedef struct {
 
   PetscInt nsteps_sed;        // relaxation steps before freezing phi_s
   PetscInt flag_sed_frozen;   // 0 = full 3-phase; 1 = phi_s frozen (2-phase ice eq)
+  PetscInt flag_sed_mode;     // -1 = always 3-phase; 0 = always 2-phase; 1 = switch after nsteps_sed
 
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)

@@ -100,11 +100,25 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD,"INITIAL_CONDITION!!! \n");
   }
 
-  //------------- sediment freeze
-  if (user->nsteps_sed > 0 && !user->flag_sed_frozen && step == user->nsteps_sed) {
+  //------------- sediment freeze (only in mode 1: switch after nsteps_sed steps)
+  if (user->flag_sed_mode == 1 && !user->flag_sed_frozen && step == user->nsteps_sed) {
     user->flag_sed_frozen = 1;
+    // Reset time step size
+    TSSetTimeStep(ts, 1.0e-4);  // Reduce time step after sediment is frozen to improve stability (adjust factor as needed)
     PetscPrintf(PETSC_COMM_WORLD,
-        "SED FROZEN at step %d: switching to 2-phase ice formulation\n", step);
+        "\n"
+        "%s",  /* Start blue text */
+        "\033[34m");  /* ANSI blue color code */
+    PetscPrintf(PETSC_COMM_WORLD,
+        "╔════════════════════════════════════════════════════════════╗\n"
+        "║                    🔶 SEDIMENT FROZEN 🔶                   ║\n"
+        "║         Switching to 2-phase ice formulation               ║\n"
+        "╠════════════════════════════════════════════════════════════╣\n"
+        "║  Step: %-5d                                                ║\n"
+        "║  New time step: %.2e s                                      ║\n"
+        "╚════════════════════════════════════════════════════════════╝\n"
+        "%s\n",
+        step, dt, "\033[0m");  /* Reset color after */
   }
 
   //------ printf information (robust table header + aligned columns)

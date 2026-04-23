@@ -24,6 +24,8 @@
 -flag_BC_Tfix 0
 -flag_BC_rhovfix 0
 -flag_Tdep 0
+-nsteps_sed 10
+-flag_sed_mode 1
 -snes_type newtonls
 -snes_max_it 10
 -snes_rtol 1e-06

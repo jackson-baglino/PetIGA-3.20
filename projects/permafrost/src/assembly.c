@@ -89,6 +89,10 @@ PetscErrorCode Residual(IGAPoint pnt,
     // Prevents negative diffusion coefficient when air goes slightly negative
     PetscScalar air_eff = (air > air_lim) ? air : air_lim;
 
+    // Define the Allen-Cahn scaling term from Yang et al. (2023)
+    PetscScalar xi_N = 3.1;  // Non-dimensional scaling factor for nucleation barrier (tunable)
+    PetscScalar N_air = air*air * (1 + 2 * (1 - air) + xi_N * (1 - air)*(1 - air));  // Effective "coordination number" for air phase, capturing nucleation barrier effects
+
     // Sublimation localization: nonzero only at ice-air interface,
     // suppressed at ice-sediment interface by (1-sed)^2
     // PetscReal loc = ice*ice * (1 - ice - sed)*(1 - ice - sed);
@@ -165,14 +169,15 @@ PetscErrorCode Residual(IGAPoint pnt,
             /* Ice Evolution Equation */
             R_ice = N0[a] * ice_t;
             for (l = 0; l < dim; l++)
-                R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+                R_ice += 3.0 * mob * eps * N_air * (N1[a][l] * grad_ice[l]);
             for (l = 0; l < dim; l++)
-                R_ice += C * Etaa * eps * (N1[a][l] * grad_sed[l]);
-            R_ice += N0[a] * C / eps * (fi - fa);
+                R_ice += C * Etaa * eps * N_air * (N1[a][l] * grad_sed[l]);
+            R_ice += N0[a] * C * N_air / eps * (fi - fa);
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
-            /* Sediment: trivial mass matrix only — no RHS forces sed_t = 0 */
+            /* Sediment: mass matrix + same restoring penalty as 3-phase to prevent drift */
             R_sed = N0[a] * sed_t;
+            R_sed += k_sed * (sed - sed0) * N0[a];
 
             /* Thermal energy balance (identical to 3-phase; air_t = -ice_t) */
             R_tem  = rho * cp * N0[a] * tem_t;

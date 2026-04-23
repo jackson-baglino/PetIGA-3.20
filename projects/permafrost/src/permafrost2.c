@@ -28,8 +28,9 @@ int main(int argc, char *argv[]) {
     user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC       = 10;  /* Number of initial condition steps (???) */
-    user.nsteps_sed      = 0;   /* Relaxation steps before freezing phi_s (0 = never) */
-    user.flag_sed_frozen = 0;   /* 0 = full 3-phase; 1 = phi_s frozen */
+    user.nsteps_sed      = 10;  /* Relaxation steps before freezing phi_s */
+    user.flag_sed_mode   = 1;   /* -1=always 3-phase; 0=always 2-phase; 1=switch after nsteps_sed */
+    user.flag_sed_frozen = 0;   /* Set below based on flag_sed_mode */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]) {
 
     /* Penalty parameter defaults — match assembly.c hardcoded values.
      * eps is not yet final here; will be overridden after PetscOptionsEnd. */
-    user.difvap_pen = 1.0e-3;
+    user.difvap_pen = 3.0e-5;
     user.k_pen      = -1.0;    /* sentinel: computed from difvap_pen/eps² after options */
     user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-3/eps² after options */
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
@@ -192,7 +193,10 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_BC_rhovfix", "Vapor density BC flag", "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-nsteps_sed", "Relaxation steps before freezing phi_s (0 = never)", "", user.nsteps_sed, &user.nsteps_sed, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-nsteps_sed", "Relaxation steps before switching sediment mode", "", user.nsteps_sed, &user.nsteps_sed, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-flag_sed_mode",
+             "Sediment mode: -1=always 3-phase, 0=always 2-phase, 1=switch after nsteps_sed steps",
+             "", user.flag_sed_mode, &user.flag_sed_mode, NULL); CHKERRQ(ierr);
 
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);
@@ -260,7 +264,15 @@ int main(int argc, char *argv[]) {
 
     /* Resolve sentinel defaults using the final eps value */
     if (user.k_pen     < 0.0) user.k_pen     = user.difvap_pen / (eps * eps);
-    if (user.k_sed_pen < 0.0) user.k_sed_pen = 1.0e-3          / (eps * eps);
+    if (user.k_sed_pen < 0.0) user.k_sed_pen = 1.0e-7          / (eps * eps);
+
+    /* Set initial flag_sed_frozen from flag_sed_mode:
+     *   mode  0 → always 2-phase: freeze sediment immediately
+     *   mode  1 → switch after nsteps_sed: start 3-phase (monitoring.c will flip at step nsteps_sed)
+     *   mode -1 → always 3-phase: never freeze */
+    if      (user.flag_sed_mode == 0)  user.flag_sed_frozen = 1;
+    else if (user.flag_sed_mode == -1) user.flag_sed_frozen = 0;
+    else                               user.flag_sed_frozen = 0;  /* mode 1: start 3-phase */
 
     /* Assign parameters to user context */
     user.p = p;
