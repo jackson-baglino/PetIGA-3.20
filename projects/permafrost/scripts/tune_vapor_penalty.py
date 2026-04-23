@@ -280,7 +280,7 @@ def run_sweep(binary, opts_vpa, opts_vpb, out_dir, values, param_name,
 def _plot_sweep(results, out_dir, param_name, param_label):
     vals          = [r["value"] for r in results]
     rhov_drift    = [r["rhov_drift_pct"] for r in results]
-    sublim        = [abs(r["sublim_rate"]) if r["sublim_rate"] is not None else np.nan for r in results]
+    rhov_incr     = [r["rhov_increase"] if r["rhov_increase"] is not None else np.nan for r in results]
     snes          = [r["max_snes_iters"] if r["max_snes_iters"] >= 0 else np.nan for r in results]
     ice_err       = [r["ice_rhov_err_pct"] if r["ice_rhov_err_pct"] is not None else np.nan for r in results]
 
@@ -308,9 +308,8 @@ def _plot_sweep(results, out_dir, param_name, param_label):
     _plot_panel(axes[0, 0], rhov_drift,
                 r"$|\Delta\rho_v|/\rho_{v,0}$  [%]",
                 PASS_RHOV_DRIFT)
-    _plot_panel(axes[0, 1],
-                [abs(r["sublim_rate"]) if r["sublim_rate"] is not None else np.nan for r in results],
-                r"$|d(\phi_i)/dt|$  [m/s]",
+    _plot_panel(axes[0, 1], rhov_incr,
+                r"$d(\rho_{v,tot})/dt$  [kg/m³·s⁻¹]  (sublimation signal)",
                 None)
     _plot_panel(axes[1, 0], snes,
                 "Max SNES Newton iters / step",
