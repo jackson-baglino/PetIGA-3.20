@@ -213,10 +213,10 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
             continue
 
         step = step_number(sf)
-        ice_list.append(sol[:, 0])
+        ice_list.append(sol[:, 0])          # raw — can be slightly < 0 or > 1 at nodes
         tem_list.append(sol[:, 1])
         rhov_list.append(sol[:, 2])
-        sed_list.append(np.clip(sol[:, 3], 0.0, 1.0))
+        sed_list.append(sol[:, 3])           # raw — clipping removed so violations are visible
         step_list.append(step)
         time_list.append(times.get(step, None))
 
@@ -236,7 +236,12 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
 # ---------------------------------------------------------------------------
 
 def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
-    """Return a single-panel phase figure with all phases overlaid and their sum."""
+    """Return a single-panel phase figure.
+
+    phi_a is passed in as the RAW air = 1 - phi_i - phi_s (no clipping).
+    Where phi_a < 0 the partition-of-unity constraint is violated; those regions
+    are shaded red so they are immediately obvious.
+    """
     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
 
     t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
@@ -244,15 +249,24 @@ def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
 
     ax.plot(x_mm, phi_i, color=PHASE_COLORS["ice"], lw=2.0, label=PHASE_LABELS["ice"])
     ax.plot(x_mm, phi_s, color=PHASE_COLORS["sed"], lw=2.0, label=PHASE_LABELS["sed"])
-    ax.plot(x_mm, phi_a, color=PHASE_COLORS["air"], lw=2.0, label=PHASE_LABELS["air"])
+    ax.plot(x_mm, phi_a, color=PHASE_COLORS["air"], lw=2.0,
+            label=r"$\phi_a = 1 - \phi_i - \phi_s$  (raw)")
 
-    phi_sum = phi_i + phi_s + phi_a
-    ax.plot(x_mm, phi_sum, color="black", lw=1.5, ls="--",
-            label=r"$\phi_i + \phi_s + \phi_a$")
+    # Shade any region where the partition-of-unity is violated (phi_a < 0)
+    violation = phi_a < 0.0
+    if np.any(violation):
+        ax.fill_between(x_mm, phi_a, 0.0, where=violation,
+                        color="red", alpha=0.25, label="constraint violation  (air < 0)")
+
+    # Reference lines
+    ax.axhline(0.0, color="gray", lw=0.8, ls=":")
+    ax.axhline(1.0, color="gray", lw=0.8, ls=":")
 
     ax.set_ylabel("Volume fraction", fontsize=12)
     ax.set_xlabel("x  [mm]", fontsize=12)
-    ax.set_ylim(-0.05, 1.1)
+    # Expand y-range downward to show negative air clearly
+    y_lo = min(-0.05, np.min(phi_a) - 0.02)
+    ax.set_ylim(y_lo, 1.1)
     ax.legend(fontsize=11, loc="best")
     ax.grid(True, alpha=0.3)
     ax.tick_params(labelsize=10)
@@ -337,7 +351,7 @@ def plot_phase_steps(run_dir: str, out_dir: str = None,
 
     saved = []
     for phi_i, phi_s, step, t_h in zip(ice_list, sed_list, step_list, time_list):
-        phi_a = np.clip(1.0 - phi_i - phi_s, 0.0, 1.0)
+        phi_a = 1.0 - phi_i - phi_s   # raw, unclipped — violations show as negative
         fig   = _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h)
         path  = os.path.join(phases_dir, f"phase_step_{step:05d}.png")
         fig.savefig(path, dpi=150, bbox_inches="tight")
@@ -472,7 +486,7 @@ def make_phase_gif(run_dir: str, gif_path: str = None,
     def _update(frame_idx):
         phi_i = ice_list[frame_idx]
         phi_s = sed_list[frame_idx]
-        phi_a = np.clip(1.0 - phi_i - phi_s, 0.0, 1.0)
+        phi_a = 1.0 - phi_i - phi_s   # raw, unclipped — violations show as negative
         fields = [phi_i, phi_s, phi_a]
         for ln, field in zip(lines, fields):
             ln.set_data(x_mm, field)
@@ -524,7 +538,7 @@ def plot_first_last(run_dir: str, save_path: str = None,
     for idx, ls, label in zip(indices, linestyles, step_labels):
         phi_i = ice_list[idx]
         phi_s = sed_list[idx]
-        phi_a = np.clip(1.0 - phi_i - phi_s, 0.0, 1.0)
+        phi_a = 1.0 - phi_i - phi_s   # raw, unclipped
         step  = step_list[idx]
         t_h   = time_list[idx]
         t_str = f", t = {_fmt_time(t_h)}" if t_h is not None else f", step {step}"
@@ -534,13 +548,16 @@ def plot_first_last(run_dir: str, save_path: str = None,
         ax.plot(x_mm, phi_s, color=PHASE_COLORS["sed"], lw=2.0, ls=ls,
                 label=rf"$\phi_s$ ({label}{t_str})")
         ax.plot(x_mm, phi_a, color=PHASE_COLORS["air"], lw=2.0, ls=ls,
-                label=rf"$\phi_a$ ({label}{t_str})")
+                label=rf"$\phi_a = 1-\phi_i-\phi_s$ ({label}{t_str})")
 
     run_label = os.path.basename(run_dir.rstrip("/")) or run_dir
     ax.set_title(f"Phase fields — first vs last snapshot\n({run_label})", fontsize=13)
     ax.set_ylabel("Volume fraction", fontsize=12)
     ax.set_xlabel("x  [mm]", fontsize=12)
-    ax.set_ylim(-0.05, 1.1)
+    y_lo_all = min(-0.05, ax.get_ylim()[0])
+    ax.set_ylim(y_lo_all, 1.1)
+    ax.axhline(0.0, color="gray", lw=0.8, ls=":")
+    ax.axhline(1.0, color="gray", lw=0.8, ls=":")
     ax.legend(fontsize=10, loc="best", ncol=2)
     ax.grid(True, alpha=0.3)
     ax.tick_params(labelsize=10)

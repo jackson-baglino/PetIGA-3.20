@@ -100,26 +100,41 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD,"INITIAL_CONDITION!!! \n");
   }
 
-  //------------- sediment freeze (only in mode 1: switch after nsteps_sed steps)
-  if (user->flag_sed_mode == 1 && !user->flag_sed_frozen && step == user->nsteps_sed) {
-    user->flag_sed_frozen = 1;
-    // Reset time step size
-    TSSetTimeStep(ts, 1.0e-4);  // Reduce time step after sediment is frozen to improve stability (adjust factor as needed)
-    PetscPrintf(PETSC_COMM_WORLD,
-        "\n"
-        "%s",  /* Start blue text */
-        "\033[34m");  /* ANSI blue color code */
-    PetscPrintf(PETSC_COMM_WORLD,
-        "╔════════════════════════════════════════════════════════════╗\n"
-        "║                    🔶 SEDIMENT FROZEN 🔶                   ║\n"
-        "║         Switching to 2-phase ice formulation               ║\n"
-        "╠════════════════════════════════════════════════════════════╣\n"
-        "║  Step: %-5d                                                ║\n"
-        "║  New time step: %.2e s                                      ║\n"
-        "╚════════════════════════════════════════════════════════════╝\n"
-        "%s\n",
-        step, dt, "\033[0m");  /* Reset color after */
+  //------------- sediment freeze (mode 1: triggered by interface stability OR nsteps_sed fallback)
+  if (user->flag_sed_mode == 1 && !user->flag_sed_frozen) {
+    /* Compute relative per-step change in ice-sed interface integral.
+     * When this drops below sed_freeze_tol the interface has relaxed to the
+     * 3-phase equilibrium and the sediment penalty can safely be activated. */
+    PetscReal delta_icesd = PetscAbsReal(ice_sed_interf - user->prev_ice_sed_interf);
+    PetscReal rel_change  = (user->prev_ice_sed_interf > 0.0)
+                             ? delta_icesd / user->prev_ice_sed_interf
+                             : 1.0;   /* not yet initialized — skip until step > 1 */
+
+    PetscBool interface_stable = (step > 1 && rel_change < user->sed_freeze_tol);
+    PetscBool fallback_reached = (step >= user->nsteps_sed);
+
+    if (interface_stable || fallback_reached) {
+      user->flag_sed_frozen = 1;
+      const char *reason = interface_stable ? "interface stabilized" : "nsteps_sed fallback";
+
+      if (dt > 1.0e-2) {
+        TSSetTimeStep(ts, 1.0e-2);
+      }
+      PetscPrintf(PETSC_COMM_WORLD, "\033[34m"
+          "╔════════════════════════════════════════════════════════════╗\n"
+          "║              SEDIMENT PENALTY ACTIVATED                    ║\n"
+          "║  3-phase ice eq. unchanged; sediment pinned to sed0        ║\n"
+          "╠════════════════════════════════════════════════════════════╣\n"
+          "║  Step: %-5d  Reason: %-30s   ║\n"
+          "║  Rel. change in ice-sed interface: %.2e                    ║\n"
+          "║  New time step: %.2e s                                      ║\n"
+          "╚════════════════════════════════════════════════════════════╝\n"
+          "\033[0m\n",
+          step, reason, rel_change, dt);
+    }
   }
+  /* Always update the previous interface value for next step's comparison */
+  user->prev_ice_sed_interf = ice_sed_interf;
 
   //------ printf information (robust table header + aligned columns)
   {

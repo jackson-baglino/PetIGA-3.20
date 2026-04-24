@@ -28,9 +28,11 @@ int main(int argc, char *argv[]) {
     user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC       = 10;  /* Number of initial condition steps (???) */
-    user.nsteps_sed      = 10;  /* Relaxation steps before freezing phi_s */
-    user.flag_sed_mode   = 1;   /* -1=always 3-phase; 0=always 2-phase; 1=switch after nsteps_sed */
-    user.flag_sed_frozen = 0;   /* Set below based on flag_sed_mode */
+    user.nsteps_sed         = 10;   /* Fallback max steps before forcing sediment freeze */
+    user.flag_sed_mode      = 1;    /* -1=always 3-phase; 0=always pinned; 1=stability-triggered */
+    user.flag_sed_frozen    = 0;    /* Set below based on flag_sed_mode */
+    user.prev_ice_sed_interf = 0.0; /* Initialized to 0; first real value set at step 1 */
+    user.sed_freeze_tol     = 1.0e-3; /* Relative per-step change in ice-sed interface that triggers freeze */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -193,10 +195,15 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_BC_rhovfix", "Vapor density BC flag", "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-nsteps_sed", "Relaxation steps before switching sediment mode", "", user.nsteps_sed, &user.nsteps_sed, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-nsteps_sed",
+             "Fallback max relaxation steps before forcing sediment freeze (mode 1 only)",
+             "", user.nsteps_sed, &user.nsteps_sed, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_sed_mode",
-             "Sediment mode: -1=always 3-phase, 0=always 2-phase, 1=switch after nsteps_sed steps",
+             "Sediment mode: -1=always 3-phase, 0=always pinned, 1=stability-triggered (primary) + nsteps_sed fallback",
              "", user.flag_sed_mode, &user.flag_sed_mode, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-sed_freeze_tol",
+             "Relative per-step change in ice-sed interface integral below which the sediment penalty activates (mode 1, default 1e-3)",
+             "", user.sed_freeze_tol, &user.sed_freeze_tol, NULL); CHKERRQ(ierr);
 
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);
