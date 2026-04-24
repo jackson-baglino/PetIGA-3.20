@@ -117,9 +117,34 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       user->flag_sed_frozen = 1;
       const char *reason = interface_stable ? "interface stabilized" : "nsteps_sed fallback";
 
-      if (dt > 1.0e-2) {
-        TSSetTimeStep(ts, 1.0e-2);
+      /* Snapshot the relaxed sediment field as the penalty reference.
+       * Phi_sed0[] was populated at init from the tanh IC (poorly-defined
+       * interface).  Overwrite it now with the current 3-phase equilibrium
+       * profile so the penalty k_sed*(sed - sed_ref) drives sediment back
+       * toward its properly-relaxed state, not the original IC. */
+      {
+        Vec localU_snap; const PetscScalar *arrayU_snap;
+        IGAElement element_snap; IGAPoint point_snap; PetscScalar *UU_snap;
+        PetscInt indd_snap = 0;
+        ierr = IGAGetLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
+        ierr = IGABeginElement(user->iga, &element_snap); CHKERRQ(ierr);
+        while (IGANextElement(user->iga, element_snap)) {
+          ierr = IGAElementGetValues(element_snap, arrayU_snap, &UU_snap); CHKERRQ(ierr);
+          ierr = IGAElementBeginPoint(element_snap, &point_snap); CHKERRQ(ierr);
+          while (IGAElementNextPoint(element_snap, point_snap)) {
+            PetscScalar sol_snap[4];
+            ierr = IGAPointFormValue(point_snap, UU_snap, &sol_snap[0]); CHKERRQ(ierr);
+            user->Phi_sed0[indd_snap] = PetscRealPart(sol_snap[3]);
+            indd_snap++;
+          }
+          ierr = IGAElementEndPoint(element_snap, &point_snap); CHKERRQ(ierr);
+        }
+        ierr = IGAEndElement(user->iga, &element_snap); CHKERRQ(ierr);
+        ierr = IGARestoreLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD, "  sed0 reference updated to relaxed profile (%d quadrature points)\n", indd_snap);
       }
+
+      TSSetTimeStep(ts, 1.0e-2);
       PetscPrintf(PETSC_COMM_WORLD, "\033[34m"
           "╔════════════════════════════════════════════════════════════╗\n"
           "║              SEDIMENT PENALTY ACTIVATED                    ║\n"
