@@ -111,11 +111,11 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
                              : 1.0;   /* not yet initialized — skip until step > 1 */
 
     PetscBool interface_stable = (step > 1 && rel_change < user->sed_freeze_tol);
-    PetscBool fallback_reached = (step >= user->nsteps_sed);
+    PetscBool fallback_reached = (t >= user->t_sed_freeze);
 
     if (interface_stable || fallback_reached) {
       user->flag_sed_frozen = 1;
-      const char *reason = interface_stable ? "interface stabilized" : "nsteps_sed fallback";
+      const char *reason = interface_stable ? "interface stabilized" : "t_sed_freeze reached";
 
       /* Snapshot the relaxed sediment field as the penalty reference.
        * Phi_sed0[] was populated at init from the tanh IC (poorly-defined

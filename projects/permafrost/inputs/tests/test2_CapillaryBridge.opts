@@ -40,7 +40,7 @@
 -flag_BC_Tfix 0
 -flag_BC_rhovfix 0
 -flag_Tdep 0
--nsteps_sed 200
+-t_sed_freeze 1.0
 -flag_sed_mode 1
 -sed_freeze_tol 1.0e-3  # relative per-step change threshold for ice-sed interface stability
 

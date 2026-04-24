@@ -72,7 +72,7 @@ typedef struct {
   PetscInt flag_BC_Tfix;
   PetscInt flag_BC_rhovfix;
 
-  PetscInt  nsteps_sed;            // fallback max steps before forcing sediment freeze
+  PetscReal t_sed_freeze;          // fallback simulated time (s) before forcing sediment freeze
   PetscInt  flag_sed_frozen;       // 0 = full 3-phase; 1 = phi_s pinned by penalty
   PetscInt  flag_sed_mode;         // -1 = always 3-phase; 0 = always pinned; 1 = stability-triggered
   PetscReal prev_ice_sed_interf;   // ice-sed interface integral from previous step (for change detection)

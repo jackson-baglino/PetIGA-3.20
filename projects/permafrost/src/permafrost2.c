@@ -25,10 +25,10 @@ int main(int argc, char *argv[]) {
     user.xi_T       = 1.0e-2; // 1.0e-4;   /* Time scaling parameter for temperature */
     user.flag_xiT   = 1;        /* Flag for temperature */
 
-    user.Lambd      = 1.0;      /* Model parameter Lambda */
+    user.Lambd      = 3.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC       = 10;  /* Number of initial condition steps (???) */
-    user.nsteps_sed         = 10;   /* Fallback max steps before forcing sediment freeze */
+    user.t_sed_freeze       = 1.0;  /* Fallback simulated time (s) before forcing sediment freeze */
     user.flag_sed_mode      = 1;    /* -1=always 3-phase; 0=always pinned; 1=stability-triggered */
     user.flag_sed_frozen    = 0;    /* Set below based on flag_sed_mode */
     user.prev_ice_sed_interf = 0.0; /* Initialized to 0; first real value set at step 1 */
@@ -195,11 +195,11 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_BC_rhovfix", "Vapor density BC flag", "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-nsteps_sed",
-             "Fallback max relaxation steps before forcing sediment freeze (mode 1 only)",
-             "", user.nsteps_sed, &user.nsteps_sed, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-t_sed_freeze",
+             "Fallback simulated time (s) before forcing sediment freeze (mode 1 only)",
+             "", user.t_sed_freeze, &user.t_sed_freeze, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_sed_mode",
-             "Sediment mode: -1=always 3-phase, 0=always pinned, 1=stability-triggered (primary) + nsteps_sed fallback",
+             "Sediment mode: -1=always 3-phase, 0=always pinned, 1=stability-triggered (primary) + t_sed_freeze fallback",
              "", user.flag_sed_mode, &user.flag_sed_mode, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-sed_freeze_tol",
              "Relative per-step change in ice-sed interface integral below which the sediment penalty activates (mode 1, default 1e-3)",
