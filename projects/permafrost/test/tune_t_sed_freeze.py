@@ -68,7 +68,9 @@ POST_FREEZE_DUR = 20.0     # s  — how long after freeze to run the validation
 
 PASS_SED_DRIFT_PCT  = 0.5   # % max sediment drift
 PASS_ICE_DRIFT_PCT  = 5.0   # % max ice drift
-PASS_SNES_ITERS     = 8     # max Newton iters / step
+# SNES threshold is generous here because the sweep uses probe_dt (default 1e-2 s)
+# which is 100× larger than production dt (1e-4 s) — expect ~2× more Newton iters.
+PASS_SNES_ITERS     = 20    # max Newton iters / step at probe_dt
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -196,26 +198,35 @@ def run_probe(binary, opts_file, probe_dt, probe_tfinal, out_dir, timeout) -> di
 
     # t_sinter: first time tot_sed drops by > SINTER_TOL_PCT from its initial value
     sed0 = tot_sed[0]
+    sinter_observed = False
     if sed0 > 0:
         sinter_mask = (sed0 - tot_sed) / sed0 * 100.0 > SINTER_TOL_PCT
-        t_sinter = float(t[sinter_mask][0]) if np.any(sinter_mask) else float(t[-1])
+        if np.any(sinter_mask):
+            t_sinter = float(t[sinter_mask][0])
+            sinter_observed = True
+        else:
+            t_sinter = float(t[-1])   # sentinel: no sintering in probe window
     else:
         t_sinter = float(t[-1])
 
     print(f"\n  Probe results:")
     print(f"    t_stable  = {t_stable:.3f} s  (ice-sed rel change < {SED_FREEZE_TOL:.0e})")
-    print(f"    t_sinter  = {t_sinter:.3f} s  (tot_sed drop > {SINTER_TOL_PCT:.1f}%)")
+    if sinter_observed:
+        print(f"    t_sinter  = {t_sinter:.3f} s  (tot_sed drop > {SINTER_TOL_PCT:.1f}%)")
+    else:
+        print(f"    t_sinter  > {t[-1]:.1f} s  (no sintering detected in probe window)")
     if t_sinter > t_stable:
         print(f"    Optimal window: [{t_stable:.2f}, {t_sinter:.2f}] s")
     else:
         print(f"    WARNING: t_sinter ≤ t_stable — sintering may precede stabilization")
 
     return {
-        "rd":         rd,
-        "t_stable":   t_stable,
-        "t_sinter":   t_sinter,
-        "rel_change": rel_change,
-        "run_dir":    run_dir,
+        "rd":              rd,
+        "t_stable":        t_stable,
+        "t_sinter":        t_sinter,
+        "sinter_observed": sinter_observed,
+        "rel_change":      rel_change,
+        "run_dir":         run_dir,
     }
 
 
@@ -431,9 +442,13 @@ def _save_csv(results: list[dict], out_dir: str):
 def _print_summary(results: list[dict], probe: dict | None):
     print(f"\n{'─'*72}")
     print("  SUMMARY — t_sed_freeze sweep")
+    print(f"  NOTE: SNES threshold = {PASS_SNES_ITERS} iters (elevated because sweep uses")
+    print(f"        probe_dt >> production dt; more iters per step is expected at large dt)")
     if probe:
-        print(f"  Probe found:  t_stable = {probe['t_stable']:.3f} s,  "
-              f"t_sinter = {probe['t_sinter']:.3f} s")
+        t_stable_str = f"{probe['t_stable']:.3f} s"
+        t_sinter_str = (f"{probe['t_sinter']:.3f} s" if probe.get("sinter_observed")
+                        else f"> {probe['rd']['t'][-1]:.1f} s (not observed)")
+        print(f"  Probe found:  t_stable = {t_stable_str},  t_sinter = {t_sinter_str}")
         if probe["t_sinter"] > probe["t_stable"]:
             print(f"  Optimal range: [{probe['t_stable']:.2f}, {probe['t_sinter']:.2f}] s")
     print(f"\n  {'t_sed_freeze':>14}  {'sed_drift%':>10}  {'ice_drift%':>10}  "
