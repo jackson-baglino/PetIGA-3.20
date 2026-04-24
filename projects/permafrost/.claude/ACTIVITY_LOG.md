@@ -1,6 +1,24 @@
 
 ---
 
+## 2026-04-23 — Propagate stability-triggered sediment freeze to all opts files
+
+- Added `-sed_freeze_tol 1.0e-3` to all 17 `.opts` files in `inputs/tests/` to make the default explicit.
+- Raised `-nsteps_sed` from 10/45 → 200 on long production runs with ice-sed contact (1D/2D IceSlab, EnclosedGrainPair, IceCap, CapillaryBridge, ContactSedPair, T05, T11, T12); quick 10-20 step regression tests and no-sediment flat-interface tests keep `nsteps_sed 10`.
+- Changed `test3_relax.opts` to `flag_sed_mode -1` (never freeze), consistent with its purpose of studying unrestricted 3-phase relaxation.
+
+---
+
+**Session ended:** 2026-04-23 17:11:54
+
+
+---
+
+**Session ended:** 2026-04-23 16:47:08
+
+
+---
+
 ## 2026-04-23 — Fix phase-variable mismatch: always-3-phase ice equation with gated sediment penalty
 
 - Root cause identified: the old code changed **both** the ice equation and added a sediment penalty when `flag_sed_frozen` fired. This created an equilibrium discontinuity — the 3-phase ice equilibrium is incompatible with the 2-phase ice equation, causing spurious air and negative ice at the ice-sediment interface.
