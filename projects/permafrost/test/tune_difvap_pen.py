@@ -57,7 +57,8 @@ BINARY_DEFAULT = str(ROOT / "permafrost")
 OPTS_A_DEFAULT = str(ROOT / "inputs" / "tests" / "test_T06_flat_stable.opts")
 OPTS_B_DEFAULT = str(ROOT / "inputs" / "tests" / "test_T05_sublimation.opts")
 OUTDIR_DEFAULT = str(ROOT / "test" / "tune_difvap")
-TIMEOUT_DEFAULT = 300   # s wall-clock per run
+TIMEOUT_DEFAULT = 3600  # s wall-clock per run
+T_FINAL_DEFAULT = 86400.0  # s simulated time
 
 SWEEP_DEFAULT = [0.0] + [10.0 ** e for e in range(-10, 1)]
 
@@ -122,13 +123,15 @@ def _run(binary: str, opts_file: str, extra_flags: list[str],
 
 def run_sweep(binary: str, opts_a: str, opts_b: str,
               sweep: list[float], out_dir: str,
-              timeout: int, skip_b: bool) -> list[dict]:
+              timeout: int, skip_b: bool,
+              t_final: float = T_FINAL_DEFAULT) -> list[dict]:
     results = []
 
     for val in sweep:
         label    = f"difvap_{val:.2e}" if val > 0 else "difvap_0"
         k_pen    = val / (EPS_DEFAULT ** 2) if val > 0 else 0.0
-        pen_flag = ["-difvap_pen", str(val), "-k_pen", str(k_pen)]
+        pen_flag = ["-difvap_pen", str(val), "-k_pen", str(k_pen),
+                    "-t_final", str(t_final)]
 
         print(f"\n{'='*60}")
         print(f"  difvap_pen = {val:.2e}   (k_pen = {k_pen:.3e})")
@@ -323,6 +326,8 @@ def parse_args():
                    help="Output directory for results")
     p.add_argument("--sweep",     nargs="+", type=float, default=SWEEP_DEFAULT,
                    help="difvap_pen values to test (0 = no penalty)")
+    p.add_argument("--t-final",   type=float, default=T_FINAL_DEFAULT,
+                   help="Simulated end time [s] (default: 86400)")
     p.add_argument("--timeout",   type=int, default=TIMEOUT_DEFAULT,
                    help="Wall-clock timeout per run (s)")
     p.add_argument("--skip-runB", action="store_true",
@@ -342,12 +347,14 @@ def main():
         print(f"  opts B:  {args.opts_b}")
     print(f"  out_dir: {args.out_dir}")
     print(f"  sweep:   {args.sweep}")
+    print(f"  t_final: {args.t_final:.4g} s")
     print(f"  timeout: {args.timeout} s per run")
     print("=" * 65)
 
     results = run_sweep(
         args.binary, args.opts_a, args.opts_b,
         args.sweep, args.out_dir, args.timeout, args.skip_runB,
+        t_final=args.t_final,
     )
 
     _print_summary(results)
