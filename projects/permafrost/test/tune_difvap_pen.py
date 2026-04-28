@@ -1,0 +1,361 @@
+#!/usr/bin/env python3
+"""
+tune_difvap_pen.py — Sweep the vapor diffusion penalty parameter difvap_pen.
+
+For each value the script runs two short simulations:
+
+  Run A  (flat saturated, hum=1.0, T06):
+    Measures rhov conservation — the total vapour mass must not drift when
+    the domain is already at saturation.  Metric: |Δtot_rhov| / tot_rhov(0).
+
+  Run B  (sublimation, hum=0.5, T05):
+    Measures the sublimation signal and SNES solver health.
+    Metrics: d(tot_rhov)/dt > 0 (ice sublimes → vapour released),
+             max SNES Newton iters ≤ threshold.
+
+Sweep values (default)
+  difvap_pen = 0  (no penalty — baseline)
+               then 1e-10 to 1e0 in decade steps
+
+Usage
+-----
+  cd <project_root>
+  python test/tune_difvap_pen.py
+
+  # Custom sweep:
+  python test/tune_difvap_pen.py --sweep 0 1e-8 1e-6 1e-4 1e-2 1
+
+  # Skip the sublimation run:
+  python test/tune_difvap_pen.py --skip-runB
+
+  # Use a non-default binary or opts:
+  python test/tune_difvap_pen.py \\
+      --binary ./permafrost \\
+      --opts-a inputs/tests/test_T06_flat_stable.opts \\
+      --opts-b inputs/tests/test_T05_sublimation.opts \\
+      --out-dir test/tune_difvap
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import os
+import re
+import subprocess
+from pathlib import Path
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+# ── project root (one level up from test/) ───────────────────────────────────
+ROOT = Path(__file__).parent.parent.resolve()
+
+# ── defaults ─────────────────────────────────────────────────────────────────
+BINARY_DEFAULT = str(ROOT / "permafrost")
+OPTS_A_DEFAULT = str(ROOT / "inputs" / "tests" / "test_T06_flat_stable.opts")
+OPTS_B_DEFAULT = str(ROOT / "inputs" / "tests" / "test_T05_sublimation.opts")
+OUTDIR_DEFAULT = str(ROOT / "test" / "tune_difvap")
+TIMEOUT_DEFAULT = 300   # s wall-clock per run
+
+SWEEP_DEFAULT = [0.0] + [10.0 ** e for e in range(-10, 1)]
+
+# Pass/fail thresholds
+PASS_RHOV_DRIFT_PCT = 1.0    # %  — Run A: max |Δtot_rhov| / tot_rhov(0)
+PASS_SNES_ITERS     = 7      # —  — both runs
+EPS_DEFAULT         = 9.3295e-7   # m  (used only to report k_pen)
+
+
+# ── monitor line parser ───────────────────────────────────────────────────────
+_NUM = r"[-+]?[eE\d.]+(?:[eE][+-]?\d+)?"
+_MROW = re.compile(
+    r"^\s+(\d+)\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"
+    r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"
+    r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"
+    r"\s*(" + _NUM + r")\s*$",
+    re.MULTILINE,
+)
+
+
+def _parse_monitor(stdout: str) -> list[dict]:
+    rows = []
+    for m in _MROW.finditer(stdout):
+        rows.append({
+            "step":     int(m.group(1)),
+            "time":     float(m.group(2)),
+            "tot_ice":  float(m.group(4)),
+            "tot_rhov": float(m.group(8)),
+        })
+    return rows
+
+
+def _parse_snes_iters(stdout: str) -> int:
+    iters = [int(m.group(1))
+             for line in stdout.splitlines()
+             for m in [re.search(r"converged.*?iterations\s+(\d+)", line, re.I)]
+             if m]
+    return max(iters) if iters else -1
+
+
+# ── run helper ────────────────────────────────────────────────────────────────
+
+def _run(binary: str, opts_file: str, extra_flags: list[str],
+         run_dir: str, timeout: int) -> tuple[str, int]:
+    cmd = [
+        "mpiexec", "-np", "4", binary,
+        "-options_file", os.path.abspath(opts_file),
+    ] + extra_flags
+    env = os.environ.copy()
+    env["folder"] = run_dir
+    os.makedirs(run_dir, exist_ok=True)
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, env=env,
+                           timeout=timeout, cwd=str(ROOT))
+        return r.stdout + r.stderr, r.returncode
+    except subprocess.TimeoutExpired:
+        print(f"    [TIMEOUT after {timeout}s]")
+        return "", -2
+
+
+# ── sweep engine ──────────────────────────────────────────────────────────────
+
+def run_sweep(binary: str, opts_a: str, opts_b: str,
+              sweep: list[float], out_dir: str,
+              timeout: int, skip_b: bool) -> list[dict]:
+    results = []
+
+    for val in sweep:
+        label    = f"difvap_{val:.2e}" if val > 0 else "difvap_0"
+        k_pen    = val / (EPS_DEFAULT ** 2) if val > 0 else 0.0
+        pen_flag = ["-difvap_pen", str(val), "-k_pen", str(k_pen)]
+
+        print(f"\n{'='*60}")
+        print(f"  difvap_pen = {val:.2e}   (k_pen = {k_pen:.3e})")
+        print(f"{'='*60}")
+
+        # ── Run A: flat saturated (hum = 1.0) ────────────────────────────────
+        dir_a = os.path.join(out_dir, f"A_{label}")
+        stdout_a, rc_a = _run(binary, opts_a, pen_flag, dir_a, timeout)
+        rows_a   = _parse_monitor(stdout_a)
+        iters_a  = _parse_snes_iters(stdout_a)
+
+        rhov_drift_pct = None
+        if rows_a:
+            rhov0 = rows_a[0]["tot_rhov"]
+            if rhov0 != 0:
+                rhov_drift_pct = max(
+                    abs(r["tot_rhov"] - rhov0) / abs(rhov0) * 100.0
+                    for r in rows_a
+                )
+
+        # ── Run B: sublimation (hum = 0.5) ───────────────────────────────────
+        iters_b       = -1
+        rhov_increase = None
+        rc_b          = None
+
+        if not skip_b:
+            dir_b = os.path.join(out_dir, f"B_{label}")
+            stdout_b, rc_b = _run(binary, opts_b, pen_flag, dir_b, timeout)
+            rows_b  = _parse_monitor(stdout_b)
+            iters_b = _parse_snes_iters(stdout_b)
+
+            if len(rows_b) >= 2:
+                dt_run = rows_b[-1]["time"] - rows_b[0]["time"] + 1e-300
+                rhov_increase = (rows_b[-1]["tot_rhov"] - rows_b[0]["tot_rhov"]) / dt_run
+
+        # ── Metrics ──────────────────────────────────────────────────────────
+        iters_all = [i for i in [iters_a, iters_b] if i >= 0]
+        max_snes  = max(iters_all) if iters_all else -1
+
+        pass_drift  = rhov_drift_pct is not None and rhov_drift_pct < PASS_RHOV_DRIFT_PCT
+        pass_sublim = skip_b or (rhov_increase is not None and rhov_increase > 0)
+        pass_iters  = max_snes >= 0 and max_snes <= PASS_SNES_ITERS
+        passed      = pass_drift and pass_sublim and pass_iters
+
+        row = {
+            "difvap_pen":      val,
+            "k_pen":           k_pen,
+            "rc_a":            rc_a,
+            "rc_b":            rc_b,
+            "rhov_drift_pct":  rhov_drift_pct,
+            "rhov_increase":   rhov_increase,
+            "max_snes_iters":  max_snes,
+            "pass_drift":      pass_drift,
+            "pass_sublim":     pass_sublim,
+            "pass_iters":      pass_iters,
+            "PASS":            passed,
+        }
+        results.append(row)
+
+        drift_str = f"{rhov_drift_pct:.3f}%" if rhov_drift_pct is not None else "N/A"
+        incr_str  = (f"{rhov_increase:.3e} kg/m³·s" if rhov_increase is not None
+                     else ("skipped" if skip_b else "N/A"))
+        print(f"  rhov drift (A): {drift_str}   threshold < {PASS_RHOV_DRIFT_PCT}%")
+        print(f"  rhov incr  (B): {incr_str}")
+        print(f"  max SNES iters: {max_snes}   threshold ≤ {PASS_SNES_ITERS}")
+        print(f"  → {'PASS' if passed else 'FAIL'}")
+
+    return results
+
+
+# ── plotting ──────────────────────────────────────────────────────────────────
+
+def _plot(results: list[dict], out_dir: str):
+    nonzero = [r for r in results if r["difvap_pen"] > 0]
+    zero    = next((r for r in results if r["difvap_pen"] == 0), None)
+
+    if not nonzero:
+        print("  No nonzero difvap_pen values — skipping plot.")
+        return
+
+    vals   = np.array([r["difvap_pen"] for r in nonzero])
+    drift  = np.array([r["rhov_drift_pct"] if r["rhov_drift_pct"] is not None else np.nan
+                       for r in nonzero])
+    incr   = np.array([r["rhov_increase"] if r["rhov_increase"] is not None else np.nan
+                       for r in nonzero])
+    snes   = np.array([r["max_snes_iters"] if r["max_snes_iters"] >= 0 else np.nan
+                       for r in nonzero])
+    colors = ["green" if r["PASS"] else "red" for r in nonzero]
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    fig.suptitle("difvap_pen sweep", fontsize=13)
+
+    def _panel(ax, ydata, ylabel, threshold, pass_above=False):
+        ax.semilogx(vals, ydata, "-", color="steelblue", lw=2, zorder=2)
+        for xi, yi, c in zip(vals, ydata, colors):
+            ax.plot(xi, yi, "o", color=c, ms=9, zorder=3)
+        if threshold is not None:
+            ax.axhline(threshold, color="gray", ls="--", lw=1.2,
+                       label=f"threshold = {threshold}")
+            ax.legend(fontsize=9)
+        # annotate baseline (difvap_pen = 0)
+        if zero is not None:
+            z_val = zero.get(ylabel.split("[")[0].strip(), None)
+            # use a text box instead of a point since log-scale can't show 0
+            baseline_txt = ""
+            if "drift" in ylabel.lower() and zero["rhov_drift_pct"] is not None:
+                baseline_txt = f"difvap=0: {zero['rhov_drift_pct']:.2f}%"
+            elif "snes" in ylabel.lower() and zero["max_snes_iters"] >= 0:
+                baseline_txt = f"difvap=0: {zero['max_snes_iters']}"
+            elif "rhov" in ylabel.lower() and zero["rhov_increase"] is not None:
+                baseline_txt = f"difvap=0: {zero['rhov_increase']:.2e}"
+            if baseline_txt:
+                ax.text(0.03, 0.97, baseline_txt, transform=ax.transAxes,
+                        fontsize=8, va="top", ha="left",
+                        bbox=dict(boxstyle="round,pad=0.3", fc="lightyellow", ec="gray", alpha=0.8))
+        ax.set_xlabel("difvap_pen [m²/s]", fontsize=11)
+        ax.set_ylabel(ylabel, fontsize=11)
+        ax.grid(True, alpha=0.3)
+        ax.tick_params(labelsize=9)
+
+    _panel(axes[0], drift, r"|$\Delta\rho_{v,tot}$| / $\rho_{v,tot,0}$  [%]",
+           PASS_RHOV_DRIFT_PCT)
+    _panel(axes[1], incr,  r"$d\rho_{v,tot}/dt$  [kg/m³·s⁻¹]  (B: sublimation signal)",
+           None)
+    _panel(axes[2], snes,  "Max SNES Newton iters / step",
+           PASS_SNES_ITERS)
+
+    plt.tight_layout()
+    path = os.path.join(out_dir, "sweep_difvap_pen.png")
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"\n  Plot saved to: {path}")
+
+
+# ── CSV + summary ─────────────────────────────────────────────────────────────
+
+def _save_csv(results: list[dict], out_dir: str):
+    if not results:
+        return
+    path = os.path.join(out_dir, "sweep_difvap_pen.csv")
+    with open(path, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=results[0].keys())
+        w.writeheader()
+        w.writerows(results)
+    print(f"  CSV saved to:  {path}")
+
+
+def _print_summary(results: list[dict]):
+    print(f"\n{'─'*78}")
+    print("  SUMMARY — difvap_pen sweep")
+    print(f"  {'difvap_pen':>12}  {'k_pen':>12}  {'rhov_drift%':>12}  "
+          f"{'rhov_incr':>12}  {'SNES its':>8}  {'PASS':>6}")
+    print(f"  {'─'*70}")
+    for r in results:
+        dstr = f"{r['rhov_drift_pct']:.3f}" if r["rhov_drift_pct"] is not None else "N/A"
+        istr = (f"{r['rhov_increase']:.2e}" if r["rhov_increase"] is not None
+                else "N/A")
+        print(f"  {r['difvap_pen']:>12.2e}  {r['k_pen']:>12.3e}  {dstr:>12}  "
+              f"{istr:>12}  {r['max_snes_iters']:>8}  "
+              f"{'✓' if r['PASS'] else '✗':>6}")
+
+    passed = [r for r in results if r["PASS"]]
+    if passed:
+        nz_pass = [r for r in passed if r["difvap_pen"] > 0]
+        if nz_pass:
+            lo = min(r["difvap_pen"] for r in nz_pass)
+            hi = max(r["difvap_pen"] for r in nz_pass)
+            print(f"\n  Recommended range: {lo:.2e} – {hi:.2e}  "
+                  f"({len(passed)}/{len(results)} pass)")
+        else:
+            print(f"\n  Only difvap_pen = 0 passed all criteria.")
+    else:
+        print("\n  No values passed all criteria — consider relaxing thresholds.")
+    print(f"{'─'*78}")
+
+
+# ── CLI ───────────────────────────────────────────────────────────────────────
+
+def parse_args():
+    p = argparse.ArgumentParser(
+        description="Sweep difvap_pen (vapor diffusion penalty) for the permafrost solver.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+    p.add_argument("--binary",    default=BINARY_DEFAULT,
+                   help="Path to the permafrost binary")
+    p.add_argument("--opts-a",    default=OPTS_A_DEFAULT,
+                   help="Opts file for run A (flat saturated, hum=1.0)")
+    p.add_argument("--opts-b",    default=OPTS_B_DEFAULT,
+                   help="Opts file for run B (sublimation, hum=0.5)")
+    p.add_argument("--out-dir",   default=OUTDIR_DEFAULT,
+                   help="Output directory for results")
+    p.add_argument("--sweep",     nargs="+", type=float, default=SWEEP_DEFAULT,
+                   help="difvap_pen values to test (0 = no penalty)")
+    p.add_argument("--timeout",   type=int, default=TIMEOUT_DEFAULT,
+                   help="Wall-clock timeout per run (s)")
+    p.add_argument("--skip-runB", action="store_true",
+                   help="Skip the sublimation run (run A only)")
+    return p.parse_args()
+
+
+def main():
+    args = parse_args()
+    os.makedirs(args.out_dir, exist_ok=True)
+
+    print("=" * 65)
+    print("  difvap_pen SWEEP")
+    print(f"  binary:  {args.binary}")
+    print(f"  opts A:  {args.opts_a}")
+    if not args.skip_runB:
+        print(f"  opts B:  {args.opts_b}")
+    print(f"  out_dir: {args.out_dir}")
+    print(f"  sweep:   {args.sweep}")
+    print(f"  timeout: {args.timeout} s per run")
+    print("=" * 65)
+
+    results = run_sweep(
+        args.binary, args.opts_a, args.opts_b,
+        args.sweep, args.out_dir, args.timeout, args.skip_runB,
+    )
+
+    _print_summary(results)
+    _save_csv(results, args.out_dir)
+    _plot(results, args.out_dir)
+
+    print(f"\n  All output saved to: {args.out_dir}")
+
+
+if __name__ == "__main__":
+    main()
