@@ -54,8 +54,8 @@ ROOT = Path(__file__).parent.parent.resolve()
 
 # ── defaults ─────────────────────────────────────────────────────────────────
 BINARY_DEFAULT = str(ROOT / "permafrost")
-OPTS_A_DEFAULT = str(ROOT / "inputs" / "tests" / "test_T06_flat_stable.opts")
-OPTS_B_DEFAULT = str(ROOT / "inputs" / "tests" / "test_T05_sublimation.opts")
+OPTS_A_DEFAULT = str(ROOT / "inputs" / "tests" / "test_1D_IceSlab.opts")
+OPTS_B_DEFAULT = str(ROOT / "inputs" / "tests" / "test_2D_IceSlab.opts")
 OUTDIR_DEFAULT = str(ROOT / "test" / "tune_difvap")
 TIMEOUT_DEFAULT = 3600  # s wall-clock per run
 T_FINAL_DEFAULT = 86400.0  # s simulated time
@@ -99,6 +99,62 @@ def _parse_snes_iters(stdout: str) -> int:
     return max(iters) if iters else -1
 
 
+# ── post-processing scripts ───────────────────────────────────────────────────
+SCRIPT_VTK     = str(ROOT / "scripts"     / "plotpermafrost.py")
+SCRIPT_SCALARS = str(ROOT / "postprocess" / "plot_scalars.py")
+SCRIPT_PROFS   = str(ROOT / "postprocess" / "plot1D_profiles.py")
+
+
+def _postprocess(run_dir: str, label: str = "") -> None:
+    """Run the standard post-processing suite on a completed run directory."""
+    if not os.path.isfile(os.path.join(run_dir, "igasol.dat")):
+        print(f"  [post] No igasol.dat in {run_dir} — skipping post-processing.")
+        return
+
+    tag = f" [{label}]" if label else ""
+    print(f"  [post]{tag} Running post-processing in {run_dir}")
+
+    def _sp(cmd: list[str], desc: str) -> None:
+        try:
+            r = subprocess.run(
+                cmd, capture_output=True, text=True,
+                cwd=run_dir, timeout=300,
+            )
+            if r.returncode != 0:
+                print(f"    [post] WARNING: {desc} exited {r.returncode}")
+                if r.stderr.strip():
+                    print(f"      {r.stderr.strip()[:300]}")
+            else:
+                print(f"    [post] {desc} done.")
+        except subprocess.TimeoutExpired:
+            print(f"    [post] WARNING: {desc} timed out after 300 s.")
+        except FileNotFoundError as e:
+            print(f"    [post] WARNING: {desc} could not start: {e}")
+
+    # 1. Convert sol_*.dat → VTK
+    os.makedirs(os.path.join(run_dir, "vtkOut"), exist_ok=True)
+    _sp(["python", SCRIPT_VTK, "--vtk-dir", "vtkOut"],
+        "VTK conversion (plotpermafrost.py)")
+
+    # 2. Scalar time-series from SSA_evo.dat
+    if os.path.isfile(os.path.join(run_dir, "SSA_evo.dat")):
+        _sp(["python", SCRIPT_SCALARS,
+             "--file", "SSA_evo.dat",
+             "--time-unit", "h",
+             "--save", "scalars.png"],
+            "Scalar time-series (plot_scalars.py)")
+    else:
+        print("    [post] No SSA_evo.dat — skipping scalar plot.")
+
+    # 3. 1D field profiles: per-step phase/thermal PNGs, first/last, derived
+    _sp(["python", SCRIPT_PROFS,
+         "--dir", ".",
+         "--first-last",
+         "--thermal",
+         "--derived", "--save", "derived.png"],
+        "1D profiles (plot1D_profiles.py)")
+
+
 # ── run helper ────────────────────────────────────────────────────────────────
 
 def _run(binary: str, opts_file: str, extra_flags: list[str],
@@ -124,7 +180,8 @@ def _run(binary: str, opts_file: str, extra_flags: list[str],
 def run_sweep(binary: str, opts_a: str, opts_b: str,
               sweep: list[float], out_dir: str,
               timeout: int, skip_b: bool,
-              t_final: float = T_FINAL_DEFAULT) -> list[dict]:
+              t_final: float = T_FINAL_DEFAULT,
+              skip_postprocess: bool = False) -> list[dict]:
     results = []
 
     for val in sweep:
@@ -142,6 +199,8 @@ def run_sweep(binary: str, opts_a: str, opts_b: str,
         stdout_a, rc_a = _run(binary, opts_a, pen_flag, dir_a, timeout)
         rows_a   = _parse_monitor(stdout_a)
         iters_a  = _parse_snes_iters(stdout_a)
+        if not skip_postprocess:
+            _postprocess(dir_a, label=f"A difvap={val:.2e}")
 
         rhov_drift_pct = None
         if rows_a:
@@ -162,6 +221,8 @@ def run_sweep(binary: str, opts_a: str, opts_b: str,
             stdout_b, rc_b = _run(binary, opts_b, pen_flag, dir_b, timeout)
             rows_b  = _parse_monitor(stdout_b)
             iters_b = _parse_snes_iters(stdout_b)
+            if not skip_postprocess:
+                _postprocess(dir_b, label=f"B difvap={val:.2e}")
 
             if len(rows_b) >= 2:
                 dt_run = rows_b[-1]["time"] - rows_b[0]["time"] + 1e-300
@@ -332,6 +393,8 @@ def parse_args():
                    help="Wall-clock timeout per run (s)")
     p.add_argument("--skip-runB", action="store_true",
                    help="Skip the sublimation run (run A only)")
+    p.add_argument("--skip-postprocess", action="store_true",
+                   help="Skip post-processing (VTK, scalars, 1D profiles) after each run")
     return p.parse_args()
 
 
@@ -349,12 +412,14 @@ def main():
     print(f"  sweep:   {args.sweep}")
     print(f"  t_final: {args.t_final:.4g} s")
     print(f"  timeout: {args.timeout} s per run")
+    print(f"  post-processing: {'disabled' if args.skip_postprocess else 'enabled'}")
     print("=" * 65)
 
     results = run_sweep(
         args.binary, args.opts_a, args.opts_b,
         args.sweep, args.out_dir, args.timeout, args.skip_runB,
         t_final=args.t_final,
+        skip_postprocess=args.skip_postprocess,
     )
 
     _print_summary(results)
