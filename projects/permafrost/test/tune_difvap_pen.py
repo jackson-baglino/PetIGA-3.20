@@ -211,6 +211,27 @@ def _postprocess(run_dir: str, dim: int = 1, label: str = "") -> None:
             print("    [post] No sol_*.dat files found for 2D plotting.")
 
 
+# ── build helper ─────────────────────────────────────────────────────────────
+
+def _build(root: Path, skip_clean: bool = False) -> None:
+    """Run make clean && make in *root*, streaming output. Aborts on failure."""
+    targets = (["make", "clean"], ["make"]) if not skip_clean else (["make"],)
+    for cmd in targets:
+        label = " ".join(cmd)
+        print(f"\n  [build] {label}")
+        proc = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, cwd=str(root),
+        )
+        for line in proc.stdout:
+            sys.stdout.write(f"    {line}")
+            sys.stdout.flush()
+        proc.wait()
+        if proc.returncode != 0:
+            sys.exit(f"\n  [build] ERROR: '{label}' failed (exit {proc.returncode}). Aborting sweep.")
+    print("  [build] Build successful.")
+
+
 # ── run helper ────────────────────────────────────────────────────────────────
 
 def _run(binary: str, opts_file: str, extra_flags: list[str],
@@ -489,6 +510,8 @@ def parse_args():
                    help="Skip the sublimation run (run A only)")
     p.add_argument("--skip-postprocess", action="store_true",
                    help="Skip post-processing (VTK, scalars, 1D profiles) after each run")
+    p.add_argument("--skip-build", action="store_true",
+                   help="Skip 'make clean && make' before the sweep (use existing binary)")
     return p.parse_args()
 
 
@@ -507,7 +530,11 @@ def main():
     print(f"  t_final: {args.t_final:.4g} s")
     print(f"  timeout: {args.timeout} s per run")
     print(f"  post-processing: {'disabled' if args.skip_postprocess else 'enabled'}")
+    print(f"  build:           {'skipped' if args.skip_build else 'make clean && make'}")
     print("=" * 65)
+
+    if not args.skip_build:
+        _build(ROOT)
 
     results = run_sweep(
         args.binary, args.opts_a, args.opts_b,
