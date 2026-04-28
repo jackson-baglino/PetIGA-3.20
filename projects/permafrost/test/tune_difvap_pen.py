@@ -42,6 +42,8 @@ import csv
 import os
 import re
 import subprocess
+import sys
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -194,6 +196,7 @@ def _postprocess(run_dir: str, dim: int = 1, label: str = "") -> None:
 
 def _run(binary: str, opts_file: str, extra_flags: list[str],
          run_dir: str, timeout: int) -> tuple[str, int]:
+    """Run the permafrost binary, streaming output to terminal and outp.txt."""
     cmd = [
         "mpiexec", "-np", "4", binary,
         "-options_file", os.path.abspath(opts_file),
@@ -201,13 +204,40 @@ def _run(binary: str, opts_file: str, extra_flags: list[str],
     env = os.environ.copy()
     env["folder"] = run_dir
     os.makedirs(run_dir, exist_ok=True)
+    outp_path = os.path.join(run_dir, "outp.txt")
+    collected: list[str] = []
+
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, env=env,
-                           timeout=timeout, cwd=str(ROOT))
-        return r.stdout + r.stderr, r.returncode
-    except subprocess.TimeoutExpired:
-        print(f"    [TIMEOUT after {timeout}s]")
-        return "", -2
+        with open(outp_path, "w") as f:
+            proc = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, env=env, cwd=str(ROOT),
+            )
+
+            def _reader():
+                for line in proc.stdout:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
+                    f.write(line)
+                    f.flush()
+                    collected.append(line)
+
+            t = threading.Thread(target=_reader, daemon=True)
+            t.start()
+            try:
+                proc.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                t.join(timeout=5)
+                print(f"\n    [TIMEOUT after {timeout}s]")
+                return "".join(collected), -2
+            t.join()
+
+        return "".join(collected), proc.returncode
+
+    except Exception as e:
+        print(f"    [ERROR launching process: {e}]")
+        return "", -3
 
 
 # ── sweep engine ──────────────────────────────────────────────────────────────
