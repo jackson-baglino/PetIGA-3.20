@@ -130,18 +130,22 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_ice += C3*((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
-            /* Sediment Evolution Equation — 3-phase Allen-Cahn, always used */
-            R_sed = N0[a] * sed_t;
-            for (l = 0; l < dim; l++)
-                R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
-            R_sed += C3*(-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
-            /* Sediment pinning: when flag_sed_frozen == 1, resist drift away from
-             * the initial field sed0.  The ice equation stays in its 3-phase form
-             * (above), so the equilibrium at the sediment boundary remains
-             * self-consistent — no spurious air or negative ice is generated.
-             * Strength k_sed = user->k_sed_pen, set via -k_sed_pen CLI option. */
-            if (user->flag_sed_frozen)
+            /* Sediment Evolution Equation
+             * Three-phase (flag_sed_frozen == 0): full Allen-Cahn — sediment
+             *   evolves freely under its own free energy.
+             * Two-phase   (flag_sed_frozen == 1): penalty only — sediment is
+             *   pinned to its frozen reference field sed0.  The ice equation
+             *   stays in its 3-phase form above so the ice-sediment boundary
+             *   equilibrium remains self-consistent. */
+            if (!user->flag_sed_frozen) {
+                R_sed = N0[a] * sed_t;
+                for (l = 0; l < dim; l++)
+                    R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
+                R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+            } else {
+                R_sed = N0[a] * sed_t;
                 R_sed += k_sed * (sed - sed0) * N0[a];
+            }
 
             /* Thermal energy balance */
             R_tem  = rho * cp * N0[a] * tem_t;
