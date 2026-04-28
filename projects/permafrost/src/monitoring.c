@@ -138,9 +138,17 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
                      Gfa_min < user->phase_lo || Gfa_max > user->phase_hi);
     if (oob) {
       PetscPrintf(PETSC_COMM_WORLD,
-          "\033[31m[ABORT] Phase field out of bounds [%.2f, %.2f] at step %d — stopping TS.\033[0m\n",
-          user->phase_lo, user->phase_hi, step);
-      ierr = TSSetConvergedReason(ts, TS_DIVERGED_NONLINEAR_SOLVE); CHKERRQ(ierr);
+          "\033[31m[ABORT] Phase field out of bounds [%.2f, %.2f] at step %d\n"
+          "  phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\033[0m\n",
+          user->phase_lo, user->phase_hi, step,
+          Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max);
+      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_NOT_CONVERGED,
+              "Phase field out of bounds at step %" PetscInt_FMT
+              " — phi_ice [%.4g, %.4g]  phi_sed [%.4g, %.4g]  phi_air [%.4g, %.4g]"
+              "  (bounds [%.2g, %.2g])",
+              step,
+              Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max,
+              user->phase_lo, user->phase_hi);
     }
   }
 
