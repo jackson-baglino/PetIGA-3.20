@@ -89,7 +89,51 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscReal sed_air_interf = PetscRealPart(stats[7]);
   PetscReal ice_sed_interf = PetscRealPart(stats[8]);
  
-  //------------- 
+  //-------- phase-field min/max bounds (printed every step for out-of-bounds detection)
+  {
+    PetscReal phi_ice_min =  1.0e30, phi_ice_max = -1.0e30;
+    PetscReal phi_sed_min =  1.0e30, phi_sed_max = -1.0e30;
+    PetscReal phi_air_min =  1.0e30, phi_air_max = -1.0e30;
+
+    Vec localUb; const PetscScalar *arrayUb;
+    IGAElement elementb; IGAPoint pointb; PetscScalar *UUb;
+    ierr = IGAGetLocalVecArray(user->iga, U, &localUb, &arrayUb); CHKERRQ(ierr);
+    ierr = IGABeginElement(user->iga, &elementb); CHKERRQ(ierr);
+    while (IGANextElement(user->iga, elementb)) {
+      ierr = IGAElementGetValues(elementb, arrayUb, &UUb); CHKERRQ(ierr);
+      ierr = IGAElementBeginPoint(elementb, &pointb); CHKERRQ(ierr);
+      while (IGAElementNextPoint(elementb, pointb)) {
+        PetscScalar solb[4];
+        ierr = IGAPointFormValue(pointb, UUb, &solb[0]); CHKERRQ(ierr);
+        PetscReal fi = PetscRealPart(solb[0]);
+        PetscReal fs = PetscRealPart(solb[3]);
+        PetscReal fa = 1.0 - fi - fs;
+        if (fi < phi_ice_min) phi_ice_min = fi;
+        if (fi > phi_ice_max) phi_ice_max = fi;
+        if (fs < phi_sed_min) phi_sed_min = fs;
+        if (fs > phi_sed_max) phi_sed_max = fs;
+        if (fa < phi_air_min) phi_air_min = fa;
+        if (fa > phi_air_max) phi_air_max = fa;
+      }
+      ierr = IGAElementEndPoint(elementb, &pointb); CHKERRQ(ierr);
+    }
+    ierr = IGAEndElement(user->iga, &elementb); CHKERRQ(ierr);
+    ierr = IGARestoreLocalVecArray(user->iga, U, &localUb, &arrayUb); CHKERRQ(ierr);
+
+    PetscReal Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max;
+    ierr = MPI_Allreduce(&phi_ice_min, &Gfi_min, 1, MPI_DOUBLE, MPI_MIN, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_ice_max, &Gfi_max, 1, MPI_DOUBLE, MPI_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_sed_min, &Gfs_min, 1, MPI_DOUBLE, MPI_MIN, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_sed_max, &Gfs_max, 1, MPI_DOUBLE, MPI_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_air_min, &Gfa_min, 1, MPI_DOUBLE, MPI_MIN, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_air_max, &Gfa_max, 1, MPI_DOUBLE, MPI_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "  BOUNDS: phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\n",
+        Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max);
+  }
+
+  //-------------
   PetscReal dt;
   TSGetTimeStep(ts,&dt);
   if(step==1) user->flag_it0 = 0;

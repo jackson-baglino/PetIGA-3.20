@@ -59,7 +59,7 @@ BINARY_DEFAULT = str(ROOT / "permafrost")
 OPTS_A_DEFAULT = str(ROOT / "inputs" / "tests" / "test_1D_IceSlab.opts")
 OPTS_B_DEFAULT = str(ROOT / "inputs" / "tests" / "test_2D_IceSlab.opts")
 OUTDIR_DEFAULT = str(ROOT / "test" / "tune_difvap")
-TIMEOUT_DEFAULT = 3600  # s wall-clock per run
+TIMEOUT_DEFAULT = 300  # s wall-clock per run
 T_FINAL_DEFAULT = 86400.0  # s simulated time
 
 SWEEP_DEFAULT = [0.0] + [10.0 ** e for e in range(-10, 1)]
@@ -91,6 +91,25 @@ def _parse_monitor(stdout: str) -> list[dict]:
             "tot_rhov": float(m.group(8)),
         })
     return rows
+
+
+_BOUNDS_LINE = re.compile(
+    r"BOUNDS:\s+phi_ice\s+\[(" + _NUM + r"),\s*(" + _NUM + r")\]"
+    r"\s+phi_sed\s+\[(" + _NUM + r"),\s*(" + _NUM + r")\]"
+    r"\s+phi_air\s+\[(" + _NUM + r"),\s*(" + _NUM + r")\]"
+)
+
+PHASE_LO = -0.25
+PHASE_HI =  1.25
+
+
+def _parse_bounds_violation(stdout: str) -> bool:
+    """Return True if any phase field is reported outside [PHASE_LO, PHASE_HI]."""
+    for m in _BOUNDS_LINE.finditer(stdout):
+        vals = [float(m.group(i)) for i in range(1, 7)]
+        if any(v < PHASE_LO or v > PHASE_HI for v in vals):
+            return True
+    return False
 
 
 def _parse_snes_iters(stdout: str) -> int:
@@ -299,10 +318,14 @@ def run_sweep(binary: str, opts_a: str, opts_b: str,
         iters_all = [i for i in [iters_a, iters_b] if i >= 0]
         max_snes  = max(iters_all) if iters_all else -1
 
+        bounds_viol_a = _parse_bounds_violation(stdout_a)
+        bounds_viol_b = False if skip_b else _parse_bounds_violation(stdout_b)
+
         pass_drift  = rhov_drift_pct is not None and rhov_drift_pct < PASS_RHOV_DRIFT_PCT
         pass_sublim = skip_b or (rhov_increase is not None and rhov_increase > 0)
         pass_iters  = max_snes >= 0 and max_snes <= PASS_SNES_ITERS
-        passed      = pass_drift and pass_sublim and pass_iters
+        pass_bounds = not bounds_viol_a and not bounds_viol_b
+        passed      = pass_drift and pass_sublim and pass_iters and pass_bounds
 
         row = {
             "difvap_pen":      val,
@@ -315,6 +338,7 @@ def run_sweep(binary: str, opts_a: str, opts_b: str,
             "pass_drift":      pass_drift,
             "pass_sublim":     pass_sublim,
             "pass_iters":      pass_iters,
+            "pass_bounds":     pass_bounds,
             "PASS":            passed,
         }
         results.append(row)
@@ -322,9 +346,11 @@ def run_sweep(binary: str, opts_a: str, opts_b: str,
         drift_str = f"{rhov_drift_pct:.3f}%" if rhov_drift_pct is not None else "N/A"
         incr_str  = (f"{rhov_increase:.3e} kg/m³·s" if rhov_increase is not None
                      else ("skipped" if skip_b else "N/A"))
+        bounds_str = "OK" if pass_bounds else f"VIOLATION (A={bounds_viol_a}, B={bounds_viol_b})"
         print(f"  rhov drift (A): {drift_str}   threshold < {PASS_RHOV_DRIFT_PCT}%")
         print(f"  rhov incr  (B): {incr_str}")
         print(f"  max SNES iters: {max_snes}   threshold ≤ {PASS_SNES_ITERS}")
+        print(f"  phase bounds:   {bounds_str}  [{PHASE_LO}, {PHASE_HI}]")
         print(f"  → {'PASS' if passed else 'FAIL'}")
 
     return results
@@ -408,17 +434,18 @@ def _save_csv(results: list[dict], out_dir: str):
 
 
 def _print_summary(results: list[dict]):
-    print(f"\n{'─'*78}")
+    print(f"\n{'─'*88}")
     print("  SUMMARY — difvap_pen sweep")
     print(f"  {'difvap_pen':>12}  {'k_pen':>12}  {'rhov_drift%':>12}  "
-          f"{'rhov_incr':>12}  {'SNES its':>8}  {'PASS':>6}")
-    print(f"  {'─'*70}")
+          f"{'rhov_incr':>12}  {'SNES its':>8}  {'bounds':>7}  {'PASS':>6}")
+    print(f"  {'─'*80}")
     for r in results:
         dstr = f"{r['rhov_drift_pct']:.3f}" if r["rhov_drift_pct"] is not None else "N/A"
         istr = (f"{r['rhov_increase']:.2e}" if r["rhov_increase"] is not None
                 else "N/A")
+        bstr = "✓" if r["pass_bounds"] else "✗ OOB"
         print(f"  {r['difvap_pen']:>12.2e}  {r['k_pen']:>12.3e}  {dstr:>12}  "
-              f"{istr:>12}  {r['max_snes_iters']:>8}  "
+              f"{istr:>12}  {r['max_snes_iters']:>8}  {bstr:>7}  "
               f"{'✓' if r['PASS'] else '✗':>6}")
 
     passed = [r for r in results if r["PASS"]]
