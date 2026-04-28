@@ -64,7 +64,7 @@ SWEEP_DEFAULT = [0.0] + [10.0 ** e for e in range(-10, 1)]
 
 # Pass/fail thresholds
 PASS_RHOV_DRIFT_PCT = 1.0    # %  — Run A: max |Δtot_rhov| / tot_rhov(0)
-PASS_SNES_ITERS     = 7      # —  — both runs
+PASS_SNES_ITERS     = 450      # —  — both runs
 EPS_DEFAULT         = 9.3295e-7   # m  (used only to report k_pen)
 
 
@@ -102,17 +102,31 @@ def _parse_snes_iters(stdout: str) -> int:
 # ── post-processing scripts ───────────────────────────────────────────────────
 SCRIPT_VTK     = str(ROOT / "scripts"     / "plotpermafrost.py")
 SCRIPT_SCALARS = str(ROOT / "postprocess" / "plot_scalars.py")
-SCRIPT_PROFS   = str(ROOT / "postprocess" / "plot1D_profiles.py")
+SCRIPT_PROFS1D = str(ROOT / "postprocess" / "plot1D_profiles.py")
+SCRIPT_PROFS2D = str(ROOT / "postprocess" / "plot2D_snapshot.py")
 
 
-def _postprocess(run_dir: str, label: str = "") -> None:
+def _get_dim(opts_file: str) -> int:
+    """Parse -dim N from an opts file; returns 1 if not found."""
+    try:
+        with open(opts_file) as f:
+            for line in f:
+                m = re.match(r"^\s*-dim\s+(\d+)", line)
+                if m:
+                    return int(m.group(1))
+    except OSError:
+        pass
+    return 1
+
+
+def _postprocess(run_dir: str, dim: int = 1, label: str = "") -> None:
     """Run the standard post-processing suite on a completed run directory."""
     if not os.path.isfile(os.path.join(run_dir, "igasol.dat")):
         print(f"  [post] No igasol.dat in {run_dir} — skipping post-processing.")
         return
 
     tag = f" [{label}]" if label else ""
-    print(f"  [post]{tag} Running post-processing in {run_dir}")
+    print(f"  [post]{tag} Running post-processing in {run_dir} (dim={dim})")
 
     def _sp(cmd: list[str], desc: str) -> None:
         try:
@@ -146,13 +160,34 @@ def _postprocess(run_dir: str, label: str = "") -> None:
     else:
         print("    [post] No SSA_evo.dat — skipping scalar plot.")
 
-    # 3. 1D field profiles: per-step phase/thermal PNGs, first/last, derived
-    _sp(["python", SCRIPT_PROFS,
-         "--dir", ".",
-         "--first-last",
-         "--thermal",
-         "--derived", "--save", "derived.png"],
-        "1D profiles (plot1D_profiles.py)")
+    # 3. Field profiles — branched on dimensionality
+    if dim == 1:
+        # plot1D_profiles.py uses early-exit flags, so each mode needs its own call.
+        _sp(["python", SCRIPT_PROFS1D, "--dir", ".", "--thermal"],
+            "1D phase+thermal step PNGs + thermal overlay")
+        _sp(["python", SCRIPT_PROFS1D, "--dir", ".", "--first-last"],
+            "1D first/last comparison")
+        _sp(["python", SCRIPT_PROFS1D, "--dir", ".", "--derived",
+             "--save", "derived.png"],
+            "1D derived quantities")
+    else:
+        # For 2D: plot every sol_*.dat snapshot that exists
+        import glob as _glob
+        sol_files = sorted(_glob.glob(os.path.join(run_dir, "sol_*.dat")))
+        steps = []
+        for sf in sol_files:
+            base   = os.path.splitext(os.path.basename(sf))[0]
+            digits = base.lstrip("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
+            if digits:
+                steps.append(int(digits))
+        if steps:
+            for step in steps:
+                _sp(["python", SCRIPT_PROFS2D,
+                     "--dir", ".", "--step", str(step),
+                     "--save", f"snap_{step:05d}.png"],
+                    f"2D snapshot step {step}")
+        else:
+            print("    [post] No sol_*.dat files found for 2D plotting.")
 
 
 # ── run helper ────────────────────────────────────────────────────────────────
@@ -195,12 +230,13 @@ def run_sweep(binary: str, opts_a: str, opts_b: str,
         print(f"{'='*60}")
 
         # ── Run A: flat saturated (hum = 1.0) ────────────────────────────────
-        dir_a = os.path.join(out_dir, f"A_{label}")
+        dir_a  = os.path.join(out_dir, f"A_{label}")
+        dim_a  = _get_dim(opts_a)
         stdout_a, rc_a = _run(binary, opts_a, pen_flag, dir_a, timeout)
         rows_a   = _parse_monitor(stdout_a)
         iters_a  = _parse_snes_iters(stdout_a)
         if not skip_postprocess:
-            _postprocess(dir_a, label=f"A difvap={val:.2e}")
+            _postprocess(dir_a, dim=dim_a, label=f"A difvap={val:.2e}")
 
         rhov_drift_pct = None
         if rows_a:
@@ -217,12 +253,13 @@ def run_sweep(binary: str, opts_a: str, opts_b: str,
         rc_b          = None
 
         if not skip_b:
-            dir_b = os.path.join(out_dir, f"B_{label}")
+            dir_b  = os.path.join(out_dir, f"B_{label}")
+            dim_b  = _get_dim(opts_b)
             stdout_b, rc_b = _run(binary, opts_b, pen_flag, dir_b, timeout)
             rows_b  = _parse_monitor(stdout_b)
             iters_b = _parse_snes_iters(stdout_b)
             if not skip_postprocess:
-                _postprocess(dir_b, label=f"B difvap={val:.2e}")
+                _postprocess(dir_b, dim=dim_b, label=f"B difvap={val:.2e}")
 
             if len(rows_b) >= 2:
                 dt_run = rows_b[-1]["time"] - rows_b[0]["time"] + 1e-300
