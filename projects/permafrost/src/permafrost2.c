@@ -63,6 +63,8 @@ int main(int argc, char *argv[]) {
     user.difvap_pen = 3.0e-5;
     user.k_pen      = -1.0;    /* sentinel: computed from difvap_pen/eps² after options */
     user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-7/eps² after options */
+    user.phase_lo   = -0.25;   /* lower bound: phi below this → abort */
+    user.phase_hi   =  1.25;   /* upper bound: phi above this → abort */
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
     user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
 
@@ -264,6 +266,14 @@ int main(int argc, char *argv[]) {
              "Sediment shape-restoring stiffness "
              "(default: 1e-3/eps²; -1 = use default)",
              "", user.k_sed_pen, &user.k_sed_pen, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-phase_lo",
+             "Lower bound for phase fields phi_ice, phi_sed, phi_air "
+             "(simulation aborts if any phi falls below this; default -0.25)",
+             "", user.phase_lo, &user.phase_lo, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-phase_hi",
+             "Upper bound for phase fields phi_ice, phi_sed, phi_air "
+             "(simulation aborts if any phi exceeds this; default 1.25)",
+             "", user.phase_hi, &user.phase_hi, NULL); CHKERRQ(ierr);
 
     /* --- Flags ---------------------------------------------------------- */
 
@@ -271,7 +281,7 @@ int main(int argc, char *argv[]) {
 
     /* Resolve sentinel defaults using the final eps value */
     if (user.k_pen     < 0.0) user.k_pen     = user.difvap_pen / (eps * eps);
-    if (user.k_sed_pen < 0.0) user.k_sed_pen = 1.0e-7          / (eps * eps);
+    if (user.k_sed_pen < 0.0) user.k_sed_pen = 1.0e-4          / (eps * eps);
 
     /* Set initial flag_sed_frozen from flag_sed_mode:
      *   mode  0 → always 2-phase: freeze sediment immediately

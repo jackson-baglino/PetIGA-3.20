@@ -102,6 +102,10 @@ typedef struct {
   PetscReal difvap_pen;   // effective vapour diffusivity in the air phase [m²/s]
   PetscReal k_pen;        // vapour interface equilibrium stiffness [Pa·s/m² effectively]
   PetscReal k_sed_pen;    // sediment shape-restoring stiffness
+
+  /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */
+  PetscReal phase_lo;     // lower bound for phi_ice, phi_sed, phi_air (default -0.25)
+  PetscReal phase_hi;     // upper bound for phi_ice, phi_sed, phi_air (default  1.25)
   PetscReal *alph;     // Alpha field, possibly phase fraction or related property
   PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)
   PetscReal *mob_sed_arr;  // Sediment mobility field, spatially varying (T-dependent)
