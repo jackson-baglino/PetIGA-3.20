@@ -37,9 +37,8 @@
 -grad_temp0 0.0,0.0e-03,0.0
 -eps 9.3295e-07
 -periodic 0
--t_sed_freeze 1.0
+-t_sed_freeze 300
 -flag_sed_mode 1
--sed_freeze_tol 1.0e-3  # relative per-step change threshold for ice-sed interface stability
 -flag_BC_Tfix 0
 -flag_BC_rhovfix 0
 -flag_Tdep 0

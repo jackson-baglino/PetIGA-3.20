@@ -72,11 +72,9 @@ typedef struct {
   PetscInt flag_BC_Tfix;
   PetscInt flag_BC_rhovfix;
 
-  PetscReal t_sed_freeze;          // fallback simulated time (s) before forcing sediment freeze
+  PetscReal t_sed_freeze;          // simulated time (s) at which sediment switches from 3-phase to pinned
   PetscInt  flag_sed_frozen;       // 0 = full 3-phase; 1 = phi_s pinned by penalty
-  PetscInt  flag_sed_mode;         // -1 = always 3-phase; 0 = always pinned; 1 = stability-triggered
-  PetscReal prev_ice_sed_interf;   // ice-sed interface integral from previous step (for change detection)
-  PetscReal sed_freeze_tol;        // relative per-step change threshold that triggers the sediment penalty
+  PetscInt  flag_sed_mode;         // -1 = always 3-phase; 0 = always pinned; 1 = switch at t_sed_freeze
 
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)

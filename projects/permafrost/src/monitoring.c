@@ -163,66 +163,47 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD,"INITIAL_CONDITION!!! \n");
   }
 
-  //------------- sediment freeze (mode 1: triggered by interface stability OR nsteps_sed fallback)
-  if (user->flag_sed_mode == 1 && !user->flag_sed_frozen) {
-    /* Compute relative per-step change in ice-sed interface integral.
-     * When this drops below sed_freeze_tol the interface has relaxed to the
-     * 3-phase equilibrium and the sediment penalty can safely be activated. */
-    PetscReal delta_icesd = PetscAbsReal(ice_sed_interf - user->prev_ice_sed_interf);
-    PetscReal rel_change  = (user->prev_ice_sed_interf > 0.0)
-                             ? delta_icesd / user->prev_ice_sed_interf
-                             : 1.0;   /* not yet initialized — skip until step > 1 */
+  //------------- sediment freeze (mode 1: switch to two-phase at t_sed_freeze)
+  if (user->flag_sed_mode == 1 && !user->flag_sed_frozen && t >= user->t_sed_freeze) {
+    user->flag_sed_frozen = 1;
 
-    PetscBool interface_stable = (step > 1 && rel_change < user->sed_freeze_tol);
-    PetscBool fallback_reached = (t >= user->t_sed_freeze);
-
-    if (interface_stable || fallback_reached) {
-      user->flag_sed_frozen = 1;
-      const char *reason = interface_stable ? "interface stabilized" : "t_sed_freeze reached";
-
-      /* Snapshot the relaxed sediment field as the penalty reference.
-       * Phi_sed0[] was populated at init from the tanh IC (poorly-defined
-       * interface).  Overwrite it now with the current 3-phase equilibrium
-       * profile so the penalty k_sed*(sed - sed_ref) drives sediment back
-       * toward its properly-relaxed state, not the original IC. */
-      {
-        Vec localU_snap; const PetscScalar *arrayU_snap;
-        IGAElement element_snap; IGAPoint point_snap; PetscScalar *UU_snap;
-        PetscInt indd_snap = 0;
-        ierr = IGAGetLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
-        ierr = IGABeginElement(user->iga, &element_snap); CHKERRQ(ierr);
-        while (IGANextElement(user->iga, element_snap)) {
-          ierr = IGAElementGetValues(element_snap, arrayU_snap, &UU_snap); CHKERRQ(ierr);
-          ierr = IGAElementBeginPoint(element_snap, &point_snap); CHKERRQ(ierr);
-          while (IGAElementNextPoint(element_snap, point_snap)) {
-            PetscScalar sol_snap[4];
-            ierr = IGAPointFormValue(point_snap, UU_snap, &sol_snap[0]); CHKERRQ(ierr);
-            user->Phi_sed0[indd_snap] = PetscRealPart(sol_snap[3]);
-            indd_snap++;
-          }
-          ierr = IGAElementEndPoint(element_snap, &point_snap); CHKERRQ(ierr);
+    /* Snapshot the relaxed sediment field as the penalty reference.
+     * Overwrite Phi_sed0[] with the current 3-phase profile so the penalty
+     * k_sed*(sed - sed_ref) drives sediment back toward its relaxed state. */
+    {
+      Vec localU_snap; const PetscScalar *arrayU_snap;
+      IGAElement element_snap; IGAPoint point_snap; PetscScalar *UU_snap;
+      PetscInt indd_snap = 0;
+      ierr = IGAGetLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
+      ierr = IGABeginElement(user->iga, &element_snap); CHKERRQ(ierr);
+      while (IGANextElement(user->iga, element_snap)) {
+        ierr = IGAElementGetValues(element_snap, arrayU_snap, &UU_snap); CHKERRQ(ierr);
+        ierr = IGAElementBeginPoint(element_snap, &point_snap); CHKERRQ(ierr);
+        while (IGAElementNextPoint(element_snap, point_snap)) {
+          PetscScalar sol_snap[4];
+          ierr = IGAPointFormValue(point_snap, UU_snap, &sol_snap[0]); CHKERRQ(ierr);
+          user->Phi_sed0[indd_snap] = PetscRealPart(sol_snap[3]);
+          indd_snap++;
         }
-        ierr = IGAEndElement(user->iga, &element_snap); CHKERRQ(ierr);
-        ierr = IGARestoreLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
-        PetscPrintf(PETSC_COMM_WORLD, "  sed0 reference updated to relaxed profile (%d quadrature points)\n", indd_snap);
+        ierr = IGAElementEndPoint(element_snap, &point_snap); CHKERRQ(ierr);
       }
-
-      TSSetTimeStep(ts, 1.0e-2);
-      PetscPrintf(PETSC_COMM_WORLD, "\033[34m"
-          "╔════════════════════════════════════════════════════════════╗\n"
-          "║              SEDIMENT PENALTY ACTIVATED                    ║\n"
-          "║  3-phase ice eq. unchanged; sediment pinned to sed0        ║\n"
-          "╠════════════════════════════════════════════════════════════╣\n"
-          "║  Step: %-5d  Reason: %-30s   ║\n"
-          "║  Rel. change in ice-sed interface: %.2e                    ║\n"
-          "║  New time step: %.2e s                                      ║\n"
-          "╚════════════════════════════════════════════════════════════╝\n"
-          "\033[0m\n",
-          step, reason, rel_change, dt);
+      ierr = IGAEndElement(user->iga, &element_snap); CHKERRQ(ierr);
+      ierr = IGARestoreLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD, "  sed0 reference updated to relaxed profile (%d quadrature points)\n", indd_snap);
     }
+
+    TSSetTimeStep(ts, 1.0e-2);
+    PetscPrintf(PETSC_COMM_WORLD, "\033[34m"
+        "╔════════════════════════════════════════════════════════════╗\n"
+        "║              SEDIMENT PENALTY ACTIVATED                    ║\n"
+        "║  3-phase ice eq. unchanged; sediment pinned to sed0        ║\n"
+        "╠════════════════════════════════════════════════════════════╣\n"
+        "║  Step: %-5d  t_sed_freeze = %.4g s reached                 ║\n"
+        "║  New time step: %.2e s                                      ║\n"
+        "╚════════════════════════════════════════════════════════════╝\n"
+        "\033[0m\n",
+        step, user->t_sed_freeze, dt);
   }
-  /* Always update the previous interface value for next step's comparison */
-  user->prev_ice_sed_interf = ice_sed_interf;
 
   //------ printf information (robust table header + aligned columns)
   {

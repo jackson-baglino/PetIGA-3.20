@@ -32,8 +32,9 @@
 -grad_temp0 0.0,0.0,0.0
 -eps 9.3295e-07
 -periodic 0
--flag_sed_mode 0        # -1=always 3-phase; 0=always pinned (two-phase); 1=switch at t_sed_freeze
--k_sed_pen 1.0e-03
+-flag_sed_mode 1        # -1=always 3-phase; 0=always pinned (two-phase); 1=switch at t_sed_freeze
+-t_sed_freeze 300
+-k_sed_pen -1
 -flag_BC_Tfix 0
 -flag_BC_rhovfix 0
 -flag_Tdep 0

@@ -26,9 +26,8 @@
 -flag_BC_Tfix 1
 -flag_BC_rhovfix 0
 -flag_Tdep 0
--t_sed_freeze 1.0e-3
+-t_sed_freeze 300
 -flag_sed_mode 1
--sed_freeze_tol 1.0e-3  # relative per-step change threshold for ice-sed interface stability
 -snes_type newtonls
 -snes_max_it 10
 -snes_rtol 1e-06

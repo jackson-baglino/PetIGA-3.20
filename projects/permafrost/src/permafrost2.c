@@ -31,8 +31,6 @@ int main(int argc, char *argv[]) {
     user.t_sed_freeze       = 1.0;  /* Fallback simulated time (s) before forcing sediment freeze */
     user.flag_sed_mode      = 1;    /* -1=always 3-phase; 0=always pinned; 1=stability-triggered */
     user.flag_sed_frozen    = 0;    /* Set below based on flag_sed_mode */
-    user.prev_ice_sed_interf = 0.0; /* Initialized to 0; first real value set at step 1 */
-    user.sed_freeze_tol     = 1.0e-3; /* Relative per-step change in ice-sed interface that triggers freeze */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -198,14 +196,11 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_sed_freeze",
-             "Fallback simulated time (s) before forcing sediment freeze (mode 1 only)",
+             "Simulated time (s) at which sediment switches from 3-phase to pinned (mode 1 only)",
              "", user.t_sed_freeze, &user.t_sed_freeze, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_sed_mode",
-             "Sediment mode: -1=always 3-phase, 0=always pinned, 1=stability-triggered (primary) + t_sed_freeze fallback",
+             "Sediment mode: -1=always 3-phase, 0=always pinned, 1=switch to pinned at t_sed_freeze",
              "", user.flag_sed_mode, &user.flag_sed_mode, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-sed_freeze_tol",
-             "Relative per-step change in ice-sed interface integral below which the sediment penalty activates (mode 1, default 1e-3)",
-             "", user.sed_freeze_tol, &user.sed_freeze_tol, NULL); CHKERRQ(ierr);
 
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);
