@@ -52,9 +52,8 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
             lambda_sub = a1*user->eps/d0_sub;
             tau_sub    = user->eps*lambda_sub*(beta_sub/a1 + a2*user->eps/user->diff_sub + a2*user->eps/user->dif_vap);
 
-            user->mob[indd]         = user->eps/3.0/tau_sub;
-            user->mob_sed_arr[indd] = user->mob_sed;  /* placeholder: update when sediment RHS is defined */
-            user->alph[indd]        = lambda_sub/tau_sub;
+            user->mob[indd]  = user->eps/3.0/tau_sub;
+            user->alph[indd] = lambda_sub/tau_sub;
 
             indd ++;
         }
@@ -155,16 +154,14 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   //-------------
   PetscReal dt;
   TSGetTimeStep(ts,&dt);
-  if(step==1) user->flag_it0 = 0;
-
   //------------- initial condition
   if(user->flag_tIC==1) if(step==user->nsteps_IC) {
     user->flag_tIC = 0; user->t_IC = t; //user->flag_rtol = 1;
     PetscPrintf(PETSC_COMM_WORLD,"INITIAL_CONDITION!!! \n");
   }
 
-  //------------- sediment freeze (mode 1: switch to two-phase at t_sed_freeze)
-  if ((user->flag_sed_mode == 1 || user->flag_sed_mode == 2) && !user->flag_sed_frozen && t >= user->t_sed_freeze) {
+  //------------- sediment freeze (mode 1: switch at t_sed_freeze)
+  if (user->flag_sed_mode == 1 && !user->flag_sed_frozen && t >= user->t_sed_freeze) {
     user->flag_sed_frozen = 1;
 
     /* Snapshot the relaxed sediment field as the penalty reference.

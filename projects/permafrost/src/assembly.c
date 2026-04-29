@@ -1,12 +1,57 @@
 #include "assembly.h"
 #include "material_properties.h"
 
-PetscErrorCode Residual(IGAPoint pnt,
-                        PetscReal shift, const PetscScalar *V,
-                        PetscReal t, const PetscScalar *U,
-                        PetscScalar *Re, void *ctx)
+/* =========================================================================
+ * Helper: derivatives of fi, fs, fa w.r.t. sediment
+ * (the material_properties.c functions only provide derivatives w.r.t. ice;
+ * these are needed for the Cahn-Hilliard gradient term in Avenue 3)
+ * ========================================================================= */
+static void ChemPot_dsed(AppCtx *user,
+                          PetscReal ice, PetscReal sed,
+                          PetscReal *dfi_dsed_out,
+                          PetscReal *dfs_dsed_out,
+                          PetscReal *dfa_dsed_out)
 {
-    AppCtx *user = (AppCtx*) ctx;
+    PetscReal Etaa   = user->Etaa;
+    PetscReal Etased = user->Etam;
+    PetscReal Lambd  = user->Lambd;
+    PetscReal air    = 1.0 - ice - sed;
+
+    /* fi = Etai*i*(1-i)*(1-2i) + 2L*i*s²*a²
+     * ∂fi/∂s = 4L*i*s*a*(a - s) */
+    if (dfi_dsed_out)
+        *dfi_dsed_out = 4.0 * Lambd * ice * sed * air * (air - sed);
+
+    /* fs = Etam*s*(1-s)*(1-2s) + 2L*i²*s*a²
+     * ∂fs/∂s = Etam*(1-6s+6s²) + 2L*i²*a*(a - 2s) */
+    if (dfs_dsed_out)
+        *dfs_dsed_out = Etased * (1.0 - 6.0*sed + 6.0*sed*sed)
+                      + 2.0 * Lambd * ice*ice * air * (air - 2.0*sed);
+
+    /* fa = Etaa*a*(1-a)*(1-2a) + 2L*i²*s²*a
+     * ∂fa/∂s = -Etaa*(1-6a+6a²) + 2L*i²*s*(2a - s)   [∂air/∂s = -1] */
+    if (dfa_dsed_out)
+        *dfa_dsed_out = -Etaa * (1.0 - 6.0*air + 6.0*air*air)
+                      + 2.0 * Lambd * ice*ice * sed * (2.0*air - sed);
+}
+
+
+/* =========================================================================
+ * Avenue 1: Allen-Cahn + penalty vapor; after t_sed_freeze: sediment RHS = 0
+ *
+ * Before t_sed_freeze: full 3-phase AC for both ice and sediment;
+ *   vapor uses penalised diffusivity (difvap_pen) and interface equilibrium (k_pen).
+ * After t_sed_freeze (flag_sed_frozen = 1): sediment RHS is zeroed so that
+ *   phi_sed is effectively frozen in place.  The ice equation stays in its
+ *   3-phase form by default; set flag_2ph_ice = 1 to switch to the 2-phase
+ *   form, which pins ice explicitly to the frozen sediment boundary.
+ * ========================================================================= */
+PetscErrorCode Residual_A1(IGAPoint pnt,
+                            PetscReal shift, const PetscScalar *V,
+                            PetscReal t, const PetscScalar *U,
+                            PetscScalar *Re, void *ctx)
+{
+    AppCtx *user = (AppCtx*)ctx;
 
     PetscInt l, dim = user->dim;
     PetscReal eps     = user->eps;
@@ -19,12 +64,7 @@ PetscErrorCode Residual(IGAPoint pnt,
     PetscReal air_lim = user->air_lim;
     PetscReal xi_v    = user->xi_v;
     PetscReal xi_T    = user->xi_T;
-
-    PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
-
-    PetscReal mob, alph_sub;
-
-    alph_sub = user->alph_sub;
+    PetscReal alph_sub = user->alph_sub;
 
     if (pnt->atboundary) return 0;
 
@@ -33,35 +73,34 @@ PetscErrorCode Residual(IGAPoint pnt,
     IGAPointFormValue(pnt, U, &sol[0]);
     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
 
-    PetscScalar ice   = sol[0], ice_t = sol_t[0];
+    PetscScalar ice = sol[0], ice_t = sol_t[0];
     PetscScalar grad_ice[dim];
     for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
 
-    PetscScalar sed   = sol[3], sed_t = sol_t[3];
+    PetscScalar sed = sol[3], sed_t = sol_t[3];
     PetscScalar grad_sed[dim];
     for (l = 0; l < dim; l++) grad_sed[l] = grad_sol[3][l];
-    PetscScalar sed0 = user->Phi_sed0[indGP];  // Initial sediment phase field at this quadrature point
+    /* sed0 not needed in A1: sediment is frozen by zeroing the RHS, not by penalty */
 
-    // Air: algebraic from constraint, no independent evolution equation
     PetscScalar air   = 1.0 - sed - ice;
     PetscScalar air_t = -ice_t - sed_t;
 
-    if (ice < 0.0) ice = 0.0;  // Prevent negative ice from causing NaN diffusion coefficients
-    if (ice > 1.0) ice = 1.0;  // Prevent unphysical >100% ice from causing NaN diffusion coefficients
-    if (sed < 0.0) sed = 0.0;  // Prevent negative sediment from causing NaN diffusion coefficients
-    if (sed > 1.0) sed = 1.0;  // Prevent unphysical >100% sediment from causing NaN diffusion coefficients
-    if (air < 0.0) air = 0.0;  // Prevent negative air from causing NaN diffusion coefficients
-    if (air > 1.0) air = 1.0;  // Prevent unphysical >100% air from causing NaN diffusion coefficients
+    if (ice < 0.0) ice = 0.0;
+    if (ice > 1.0) ice = 1.0;
+    if (sed < 0.0) sed = 0.0;
+    if (sed > 1.0) sed = 1.0;
+    if (air < 0.0) air = 0.0;
+    if (air > 1.0) air = 1.0;
 
-    PetscScalar tem   = sol[1], tem_t = sol_t[1];
+    PetscScalar tem  = sol[1], tem_t = sol_t[1];
     PetscScalar grad_tem[dim];
     for (l = 0; l < dim; l++) grad_tem[l] = grad_sol[1][l];
 
-    PetscScalar rhov  = sol[2], rhov_t = sol_t[2];
+    PetscScalar rhov = sol[2], rhov_t = sol_t[2];
     PetscScalar grad_rhov[dim];
     for (l = 0; l < dim; l++) grad_rhov[l] = grad_sol[2][l];
 
-    PetscReal thcond, cp, rho, difvap, rhoI_vs, fi, fa, fs;
+    PetscReal thcond, cp, rho, difvap, rhoI_vs, fi, fa, fs, mob;
     ThermalCond(user, ice, sed, &thcond,  NULL);
     HeatCap    (user, ice, sed, &cp,      NULL);
     Density    (user, ice, sed, &rho,     NULL);
@@ -72,322 +111,450 @@ PetscErrorCode Residual(IGAPoint pnt,
     Fsed(user, ice, sed, &fs, NULL);
     Mobility(user, ice, sed, &mob);
 
-    // Penalty parameters — values are set via CLI (-difvap_pen, -k_pen, -k_sed_pen)
     PetscReal g_phia, g_phiiphis;
     PetscReal difvap_pen = user->difvap_pen;
     PetscReal k_pen      = user->k_pen;
-    PetscReal k_sed      = user->k_sed_pen;
-    PetscReal rhov_eq = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
+    PetscReal rhov_eq    = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
     SmoothHeavisidePoly(ice + sed, &g_phiiphis, NULL);
     SmoothHeavisidePoly(ice,       &g_phia,     NULL);
     difvap = difvap * g_phia + difvap_pen * (1.0 - g_phia);
+
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
     IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
 
-    // air_eff: regularized air for vapor mass matrix and diffusion
-    // Prevents negative diffusion coefficient when air goes slightly negative
     PetscScalar air_eff = (air > air_lim) ? air : air_lim;
-
-    // Define the Allen-Cahn scaling term from Yang et al. (2023)
-    PetscScalar xi_N = 3.1;  // Non-dimensional scaling factor for nucleation barrier (tunable)
-    PetscScalar N_air = air*air * (1 + 2 * (1 - air) + xi_N * (1 - air)*(1 - air));  // Effective "coordination number" for air phase, capturing nucleation barrier effects
-
-    // Sublimation localization: nonzero only at ice-air interface,
-    // suppressed at ice-sediment interface by (1-sed)^2
-    // PetscReal loc = ice*ice * (1 - ice - sed)*(1 - ice - sed);
-
-    // Ice: Allen-Cahn with Lagrange multiplier to enfroce \phi_i_t + \phi_a_t = 0
-    // PetscReal C = 3.0 * mob / (Etai + Etaa);
-    // PetscReal C = 3.0 * mob / Etai;
-
-    // PetscReal mob_eff     = mob     * ice * (1.0 - ice);
-    // PetscReal mob_sed_eff = mob_sed * sed * (1.0 - sed);
-
-    // PetscReal C3     = 3.0 * mob_eff     / (eps * EtaT);
-    // PetscReal C3_sed = 3.0 * mob_sed_eff / (eps * EtaT);
-
-    PetscReal C3      = 3.0 * mob / (eps * EtaT);
-
+    PetscReal C3  = 3.0 * mob / (eps * EtaT);
     PetscReal loc = ice*ice * air*air;
+
     PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
     PetscInt a, nen = pnt->nen;
     for (a = 0; a < nen; a++) {
         PetscReal R_ice = 0.0, R_sed = 0.0, R_tem = 0.0, R_vap = 0.0;
 
         if (user->flag_tIC == 1) {
-            R_ice = 0.0; R_sed = 0.0; R_tem = 0.0; R_vap = 0.0;
+            /* Zero everything during initial-condition relaxation steps */
         } else {
-            /* --- 3-phase: full system, always used ---
-             * Ice equation never switches form; flag_sed_frozen only gates the
-             * sediment penalty below.  Lagrange multiplier enforces
-             * phi_i_t + phi_a_t + phi_s_t = 0 via the air = 1 - ice - sed constraint. */
 
-            /* Ice Evolution Equation */
+            /* --- Ice: 3-phase Allen-Cahn (always) --- */
             R_ice = N0[a] * ice_t;
             for (l = 0; l < dim; l++)
                 R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-            R_ice += C3*((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
+            R_ice += C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
-            /* Mode 2: overwrite with clean 2-phase ice equation after freeze */
-            if (user->flag_sed_frozen && user->flag_sed_mode == 2) {
-                PetscReal C2ph = 3.0 * mob / (Etai + Etaa);
+            /* --- Optional: 2-phase ice after freeze (flag_2ph_ice = 1) ---
+             * Replaces the 3-phase ice equation above with a 2-phase form
+             * that pins ice to the frozen sediment boundary. */
+            if (user->flag_sed_frozen && user->flag_2ph_ice) {
+                PetscReal C2 = 3.0 * mob / (Etai + Etaa);
                 R_ice = N0[a] * ice_t;
                 for (l = 0; l < dim; l++)
                     R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
                 for (l = 0; l < dim; l++)
-                    R_ice += C2ph * Etaa * eps * (N1[a][l] * grad_sed[l]);
-                R_ice += N0[a] * C2ph / eps * (fi - fa);
+                    R_ice += C2 * Etaa * eps * (N1[a][l] * grad_sed[l]);
+                R_ice += N0[a] * C2 / eps * (fi - fa);
                 R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
             }
 
-            /* Sediment Evolution Equation
-             * Three-phase (flag_sed_frozen == 0): full Allen-Cahn — sediment
-             *   evolves freely under its own free energy.
-             * Two-phase   (flag_sed_frozen == 1): penalty only — sediment is
-             *   pinned to its frozen reference field sed0.  The ice equation
-             *   stays in its 3-phase form above so the ice-sediment boundary
-             *   equilibrium remains self-consistent. */            
+            /* --- Sediment: 3-phase Allen-Cahn before freeze; RHS = 0 after --- */
             if (!user->flag_sed_frozen) {
                 R_sed = N0[a] * sed_t;
                 for (l = 0; l < dim; l++)
                     R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
                 R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
             } else {
-                if (user->flag_sed_mode == 2) {
-                    /* Mode 2: sediment completely frozen — time derivative only, no dynamics */
-                    R_sed = N0[a] * sed_t;
-                } else {
-                    /* Mode 1: Allen-Cahn + penalty to pin sediment to reference field */
-                    R_sed = N0[a] * sed_t;
-                    for (l = 0; l < dim; l++)
-                        R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
-                    R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
-                    R_sed += k_sed * (sed - sed0) * N0[a];
-                }
+                /* Sediment frozen: only time derivative — phi_sed evolves toward 0 */
+                R_sed = N0[a] * sed_t;
             }
 
-            /* Thermal energy balance */
+            /* --- Thermal energy balance --- */
             R_tem  = rho * cp * N0[a] * tem_t;
             for (l = 0; l < dim; l++)
                 R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
             R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
-            /* Vapor */
-            if (user->flag_sed_frozen && user->flag_sed_mode == 2) {
-                /* Mode 2: clean 2-phase vapor — standard diffusion, no penalty, +ice_t source */
-                R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);
-                for (l = 0; l < dim; l++)
-                    R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-                R_vap += xi_v * N0[a] * rho_ice * ice_t;
-            } else {
-                R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);         // Time derivative term
-                for (l = 0; l < dim; l++)                                     // Diffusion term
-                    R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-                R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];  // Penalty: rhov = rhov_eq at interface
-                R_vap -= xi_v * N0[a] * rho_ice * air_t;
-            }
-
-
-            // R_vap  = N0[a] * air_eff * rhov_t;
-            // R_vap += N0[a] * air_t * rhov;
-            // for (l = 0; l < dim; l++)
-            //     R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-            // R_vap -= xi_v * N0[a] * rho_ice * air_t;
-
+            /* --- Vapor: penalised diffusivity + interface equilibrium penalty --- */
+            R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);
+            for (l = 0; l < dim; l++)
+                R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+            R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];
+            R_vap -= xi_v * N0[a] * rho_ice * air_t;
         }
-        /* =======================================================================
-         * 2-phase ice equation — DEPRECATED, kept for reference only.
-         *
-         * DO NOT RESTORE: switching the ice equation while sediment is frozen
-         * breaks 3-phase self-consistency.  The 3-phase ice equilibrium the
-         * system reaches during the initial nsteps_sed steps is different from
-         * the 2-phase equilibrium below; activating this branch forces ice to
-         * seek a new, inconsistent equilibrium against a frozen sediment
-         * boundary, generating spurious air phase and/or negative ice values.
-         *
-         * The sediment penalty in the 3-phase branch above (gated on
-         * flag_sed_frozen) is the correct replacement.
-         * =======================================================================
-         *
-         * } else {
-         *     PetscReal C = 3.0 * mob / (Etai + Etaa);
-         *
-         *     R_ice = N0[a] * ice_t;
-         *     for (l = 0; l < dim; l++)
-         *         R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-         *     for (l = 0; l < dim; l++)
-         *         R_ice += C * Etaa * eps * (N1[a][l] * grad_sed[l]);
-         *     R_ice += N0[a] * C / eps * (fi - fa);
-         *     R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
-         *
-         *     R_sed  = N0[a] * sed_t;
-         *     R_sed += k_sed * (sed - sed0) * N0[a];
-         *
-         *     R_tem  = rho * cp * N0[a] * tem_t;
-         *     for (l = 0; l < dim; l++)
-         *         R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
-         *     R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
-         *
-         *     R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);
-         *     for (l = 0; l < dim; l++)
-         *         R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-         *     R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];
-         *     R_vap += xi_v * N0[a] * rho_ice * ice_t;
-         * }
-         */
 
         R[a][0] = R_ice;
         R[a][1] = R_tem;
         R[a][2] = R_vap;
-        R[a][3] = R_sed;   /* ∂sed/∂t = 0  (mob_sed available; full RHS to be added) */
+        R[a][3] = R_sed;
     }
-
     return 0;
 }
 
 
+/* =========================================================================
+ * Avenue 2: Allen-Cahn + penalty vapor; after t_sed_freeze: sediment penalty
+ *
+ * Before t_sed_freeze: identical to Avenue 1.
+ * After t_sed_freeze (flag_sed_frozen = 1): sediment continues to evolve via
+ *   full Allen-Cahn but a restoring penalty k_sed*(phi_s - phi_s0) is added,
+ *   discouraging the sediment from moving away from its relaxed reference state.
+ *   Set flag_2ph_ice = 1 to optionally switch ice to the 2-phase form.
+ * ========================================================================= */
+PetscErrorCode Residual_A2(IGAPoint pnt,
+                            PetscReal shift, const PetscScalar *V,
+                            PetscReal t, const PetscScalar *U,
+                            PetscScalar *Re, void *ctx)
+{
+    AppCtx *user = (AppCtx*)ctx;
+
+    PetscInt l, dim = user->dim;
+    PetscReal eps     = user->eps;
+    PetscReal Etai    = user->Etai;
+    PetscReal Etaa    = user->Etaa;
+    PetscReal Etased  = user->Etam;
+    PetscReal EtaT    = Etai*Etased + Etai*Etaa + Etased*Etaa;
+    PetscReal rho_ice = user->rho_ice;
+    PetscReal lat_sub = user->lat_sub;
+    PetscReal air_lim = user->air_lim;
+    PetscReal xi_v    = user->xi_v;
+    PetscReal xi_T    = user->xi_T;
+    PetscReal alph_sub = user->alph_sub;
+
+    if (pnt->atboundary) return 0;
+
+    PetscScalar sol_t[4], sol[4], grad_sol[4][dim];
+    IGAPointFormValue(pnt, V, &sol_t[0]);
+    IGAPointFormValue(pnt, U, &sol[0]);
+    IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
+
+    PetscScalar ice = sol[0], ice_t = sol_t[0];
+    PetscScalar grad_ice[dim];
+    for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
+
+    PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
+    PetscScalar sed = sol[3], sed_t = sol_t[3];
+    PetscScalar grad_sed[dim];
+    for (l = 0; l < dim; l++) grad_sed[l] = grad_sol[3][l];
+    PetscScalar sed0 = user->Phi_sed0[indGP];
+
+    PetscScalar air   = 1.0 - sed - ice;
+    PetscScalar air_t = -ice_t - sed_t;
+
+    if (ice < 0.0) ice = 0.0;
+    if (ice > 1.0) ice = 1.0;
+    if (sed < 0.0) sed = 0.0;
+    if (sed > 1.0) sed = 1.0;
+    if (air < 0.0) air = 0.0;
+    if (air > 1.0) air = 1.0;
+
+    PetscScalar tem  = sol[1], tem_t = sol_t[1];
+    PetscScalar grad_tem[dim];
+    for (l = 0; l < dim; l++) grad_tem[l] = grad_sol[1][l];
+
+    PetscScalar rhov = sol[2], rhov_t = sol_t[2];
+    PetscScalar grad_rhov[dim];
+    for (l = 0; l < dim; l++) grad_rhov[l] = grad_sol[2][l];
+
+    PetscReal thcond, cp, rho, difvap, rhoI_vs, fi, fa, fs, mob;
+    ThermalCond(user, ice, sed, &thcond,  NULL);
+    HeatCap    (user, ice, sed, &cp,      NULL);
+    Density    (user, ice, sed, &rho,     NULL);
+    VaporDiffus(user, tem,      &difvap,  NULL);
+    RhoVS_I    (user, tem,      &rhoI_vs, NULL);
+    Fice(user, ice, sed, &fi, NULL);
+    Fair(user, ice, sed, &fa, NULL);
+    Fsed(user, ice, sed, &fs, NULL);
+    Mobility(user, ice, sed, &mob);
+
+    PetscReal g_phia, g_phiiphis;
+    PetscReal difvap_pen = user->difvap_pen;
+    PetscReal k_pen      = user->k_pen;
+    PetscReal k_sed      = user->k_sed_pen;
+    PetscReal rhov_eq    = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
+    SmoothHeavisidePoly(ice + sed, &g_phiiphis, NULL);
+    SmoothHeavisidePoly(ice,       &g_phia,     NULL);
+    difvap = difvap * g_phia + difvap_pen * (1.0 - g_phia);
+
+    const PetscReal *N0, (*N1)[dim];
+    IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
+    IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
+
+    PetscScalar air_eff = (air > air_lim) ? air : air_lim;
+    PetscReal C3  = 3.0 * mob / (eps * EtaT);
+    PetscReal loc = ice*ice * air*air;
+
+    PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
+    PetscInt a, nen = pnt->nen;
+    for (a = 0; a < nen; a++) {
+        PetscReal R_ice = 0.0, R_sed = 0.0, R_tem = 0.0, R_vap = 0.0;
+
+        if (user->flag_tIC == 1) {
+            /* Zero everything during initial-condition relaxation steps */
+        } else {
+
+            /* --- Ice: 3-phase Allen-Cahn (always) --- */
+            R_ice = N0[a] * ice_t;
+            for (l = 0; l < dim; l++)
+                R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+            R_ice += C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
+            R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+
+            /* --- Optional: 2-phase ice after freeze (flag_2ph_ice = 1) ---
+             * Replaces the 3-phase ice equation with a 2-phase form. */
+            if (user->flag_sed_frozen && user->flag_2ph_ice) {
+                PetscReal C2 = 3.0 * mob / (Etai + Etaa);
+                R_ice = N0[a] * ice_t;
+                for (l = 0; l < dim; l++)
+                    R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+                for (l = 0; l < dim; l++)
+                    R_ice += C2 * Etaa * eps * (N1[a][l] * grad_sed[l]);
+                R_ice += N0[a] * C2 / eps * (fi - fa);
+                R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+            }
+
+            /* --- Sediment: 3-phase AC before freeze; AC + penalty after --- */
+            R_sed = N0[a] * sed_t;
+            for (l = 0; l < dim; l++)
+                R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
+            R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+            if (user->flag_sed_frozen)
+                R_sed += k_sed * (sed - sed0) * N0[a];
+
+            /* --- Thermal energy balance --- */
+            R_tem  = rho * cp * N0[a] * tem_t;
+            for (l = 0; l < dim; l++)
+                R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
+            R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
+
+            /* --- Vapor: penalised diffusivity + interface equilibrium penalty --- */
+            R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);
+            for (l = 0; l < dim; l++)
+                R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+            R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];
+            R_vap -= xi_v * N0[a] * rho_ice * air_t;
+        }
+
+        R[a][0] = R_ice;
+        R[a][1] = R_tem;
+        R[a][2] = R_vap;
+        R[a][3] = R_sed;
+    }
+    return 0;
+}
+
+
+/* =========================================================================
+ * Avenue 3: Cahn-Hilliard phase-field evolution (no penalty parameters)
+ *
+ * PDE (conservative, mass-conserving):
+ *   ∂φ/∂t = ∇·(M ∇μ),   μ = (C3/ε)·f_drv(φ) − ε·∇²φ
+ *
+ * Weak form (biharmonic splitting, integrated by parts twice):
+ *   R = N·φ_t + C3·∇N·∇f_drv + 3M·ε·ΔN·Δφ = 0
+ *
+ * where ΔN = Σₗ ∂²N/∂xₗ² (requires p ≥ 2, C ≥ 1) and
+ *       Δφ = Σₗ ∂²φ/∂xₗ² (from IGAPointFormHess).
+ *
+ * Vapor: standard diffusion, no penalties.
+ * Sediment: no freeze mechanism (always evolving).
+ * ========================================================================= */
+PetscErrorCode Residual_A3(IGAPoint pnt,
+                            PetscReal shift, const PetscScalar *V,
+                            PetscReal t, const PetscScalar *U,
+                            PetscScalar *Re, void *ctx)
+{
+    PetscErrorCode ierr;
+    AppCtx *user = (AppCtx*)ctx;
+
+    PetscInt l, dim = user->dim;
+    PetscReal eps     = user->eps;
+    PetscReal Etai    = user->Etai;
+    PetscReal Etaa    = user->Etaa;
+    PetscReal Etased  = user->Etam;
+    PetscReal EtaT    = Etai*Etased + Etai*Etaa + Etased*Etaa;
+    PetscReal rho_ice = user->rho_ice;
+    PetscReal lat_sub = user->lat_sub;
+    PetscReal air_lim = user->air_lim;
+    PetscReal xi_v    = user->xi_v;
+    PetscReal xi_T    = user->xi_T;
+    PetscReal alph_sub = user->alph_sub;
+
+    if (pnt->atboundary) return 0;
+
+    PetscScalar sol_t[4], sol[4], grad_sol[4][dim];
+    IGAPointFormValue(pnt, V, &sol_t[0]);
+    IGAPointFormValue(pnt, U, &sol[0]);
+    IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
+
+    /* Solution Hessian — flat layout: hess[k*dim*dim + l*dim + m] = ∂²sol_k/∂x_l∂x_m */
+    PetscScalar hess_flat[4 * 3 * 3];
+    ierr = IGAPointFormHess(pnt, U, hess_flat); CHKERRQ(ierr);
+
+    PetscScalar ice = sol[0], ice_t = sol_t[0];
+    PetscScalar grad_ice[dim];
+    for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
+
+    PetscScalar sed = sol[3], sed_t = sol_t[3];
+    PetscScalar grad_sed[dim];
+    for (l = 0; l < dim; l++) grad_sed[l] = grad_sol[3][l];
+
+    PetscScalar air   = 1.0 - sed - ice;
+    PetscScalar air_t = -ice_t - sed_t;
+
+    if (ice < 0.0) ice = 0.0;
+    if (ice > 1.0) ice = 1.0;
+    if (sed < 0.0) sed = 0.0;
+    if (sed > 1.0) sed = 1.0;
+    if (air < 0.0) air = 0.0;
+    if (air > 1.0) air = 1.0;
+
+    PetscScalar tem  = sol[1], tem_t = sol_t[1];
+    PetscScalar grad_tem[dim];
+    for (l = 0; l < dim; l++) grad_tem[l] = grad_sol[1][l];
+
+    PetscScalar rhov = sol[2], rhov_t = sol_t[2];
+    PetscScalar grad_rhov[dim];
+    for (l = 0; l < dim; l++) grad_rhov[l] = grad_sol[2][l];
+
+    PetscReal thcond, cp, rho, difvap, rhoI_vs, fi, fa, fs, mob;
+    ThermalCond(user, ice, sed, &thcond,  NULL);
+    HeatCap    (user, ice, sed, &cp,      NULL);
+    Density    (user, ice, sed, &rho,     NULL);
+    VaporDiffus(user, tem,      &difvap,  NULL);
+    RhoVS_I    (user, tem,      &rhoI_vs, NULL);
+    Fice(user, ice, sed, &fi, NULL);
+    Fair(user, ice, sed, &fa, NULL);
+    Fsed(user, ice, sed, &fs, NULL);
+    Mobility(user, ice, sed, &mob);
+
+    /* Shape functions: values, gradients, Hessians */
+    const PetscReal *N0, (*N1)[dim], (*N2)[dim][dim];
+    IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
+    IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
+    IGAPointGetShapeFuns(pnt, 2, (const PetscReal**)&N2);
+
+    PetscScalar air_eff = (air > air_lim) ? air : air_lim;
+    PetscReal C3  = 3.0 * mob / (eps * EtaT);
+    PetscReal loc = ice*ice * air*air;
+
+    /* Laplacians of ice and sediment fields (trace of Hessian) */
+    PetscReal lap_ice = 0.0, lap_sed = 0.0;
+    for (l = 0; l < dim; l++) {
+        lap_ice += hess_flat[0*dim*dim + l*dim + l];   /* DOF 0 = ice */
+        lap_sed += hess_flat[3*dim*dim + l*dim + l];   /* DOF 3 = sed */
+    }
+
+    /* Derivatives of fi, fs, fa w.r.t. ice (for ∇f_drv via chain rule) */
+    PetscReal dfi_dice, dfs_dice, dfa_dice;
+    Fice(user, ice, sed, NULL, &dfi_dice);
+    Fsed(user, ice, sed, NULL, &dfs_dice);   /* returns ∂fs/∂ice */
+    Fair(user, ice, sed, NULL, &dfa_dice);
+
+    /* Derivatives of fi, fs, fa w.r.t. sediment */
+    PetscReal dfi_dsed, dfs_dsed, dfa_dsed;
+    ChemPot_dsed(user, ice, sed, &dfi_dsed, &dfs_dsed, &dfa_dsed);
+
+    /* Driving force gradient coefficients:
+     *   ice driving force:  f_drv_i = (Etas+Etaa)*fi - Etaa*fs - Etas*fa
+     *   sed driving force:  f_drv_s = -Etaa*fi - Etai*fa + (Etai+Etaa)*fs  */
+    PetscReal df_drv_i_dice = (Etased+Etaa)*dfi_dice - Etaa*dfs_dice - Etased*dfa_dice;
+    PetscReal df_drv_i_dsed = (Etased+Etaa)*dfi_dsed - Etaa*dfs_dsed - Etased*dfa_dsed;
+    PetscReal df_drv_s_dice = -Etaa*dfi_dice - Etai*dfa_dice + (Etai+Etaa)*dfs_dice;
+    PetscReal df_drv_s_dsed = -Etaa*dfi_dsed - Etai*dfa_dsed + (Etai+Etaa)*dfs_dsed;
+
+    PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
+    PetscInt a, nen = pnt->nen;
+    for (a = 0; a < nen; a++) {
+        PetscReal R_ice = 0.0, R_sed = 0.0, R_tem = 0.0, R_vap = 0.0;
+
+        if (user->flag_tIC == 1) {
+            /* Zero everything during initial-condition relaxation steps */
+        } else {
+            /* Laplacian of test function (nonzero when p ≥ 2, C ≥ 1) */
+            PetscReal lap_Na = 0.0;
+            for (l = 0; l < dim; l++) lap_Na += N2[a][l][l];
+
+            /* --- Ice: Cahn-Hilliard (biharmonic form) ---
+             * R = N·φ_t + C3·∇N·∇f_drv_i + 3M·ε·ΔN·Δφ_ice − sublimation */
+            R_ice = N0[a] * ice_t;
+            for (l = 0; l < dim; l++)
+                R_ice += C3 * N1[a][l] * (df_drv_i_dice * grad_ice[l]
+                                         + df_drv_i_dsed * grad_sed[l]);
+            R_ice += 3.0 * mob * eps * lap_Na * lap_ice;
+            R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+
+            /* --- Sediment: Cahn-Hilliard (biharmonic form) ---
+             * R = N·φ_t + C3·∇N·∇f_drv_s + 3M·ε·ΔN·Δφ_sed */
+            R_sed = N0[a] * sed_t;
+            for (l = 0; l < dim; l++)
+                R_sed += C3 * N1[a][l] * (df_drv_s_dice * grad_ice[l]
+                                         + df_drv_s_dsed * grad_sed[l]);
+            R_sed += 3.0 * mob * eps * lap_Na * lap_sed;
+
+            /* --- Thermal energy balance --- */
+            R_tem  = rho * cp * N0[a] * tem_t;
+            for (l = 0; l < dim; l++)
+                R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
+            R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
+
+            /* --- Vapor: standard diffusion, no penalties --- */
+            R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);
+            for (l = 0; l < dim; l++)
+                R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+            R_vap -= xi_v * N0[a] * rho_ice * air_t;
+        }
+
+        R[a][0] = R_ice;
+        R[a][1] = R_tem;
+        R[a][2] = R_vap;
+        R[a][3] = R_sed;
+    }
+    return 0;
+}
+
+
+/* =========================================================================
+ * Dispatcher: routes to the avenue selected by user->flag_avenue
+ *   1 = Avenue 1 (AC, penalty vapor, freeze → zero RHS)
+ *   2 = Avenue 2 (AC, penalty vapor, freeze → penalty) [default]
+ *   3 = Avenue 3 (Cahn-Hilliard, no penalties)
+ * ========================================================================= */
+PetscErrorCode Residual(IGAPoint pnt,
+                        PetscReal shift, const PetscScalar *V,
+                        PetscReal t, const PetscScalar *U,
+                        PetscScalar *Re, void *ctx)
+{
+    AppCtx *user = (AppCtx*)ctx;
+    switch (user->flag_avenue) {
+        case 1:  return Residual_A1(pnt, shift, V, t, U, Re, ctx);
+        case 2:  return Residual_A2(pnt, shift, V, t, U, Re, ctx);
+        case 3:  return Residual_A3(pnt, shift, V, t, U, Re, ctx);
+        default:
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                    "Unknown -flag_avenue %d (valid: 1, 2, 3)", user->flag_avenue);
+    }
+}
+
+
+/* =========================================================================
+ * Jacobian — analytical Jacobian not implemented; FD approximation is used.
+ * ========================================================================= */
 PetscErrorCode Jacobian(IGAPoint pnt,
                         PetscReal shift, const PetscScalar *V,
                         PetscReal t, const PetscScalar *U,
                         PetscScalar *Je, void *ctx)
 {
-//     AppCtx *user = (AppCtx*) ctx;
-
-//     PetscInt l, dim = user->dim;
-//     PetscReal eps     = user->eps;
-//     PetscReal Etai    = user->Etai;
-//     PetscReal rho_ice = user->rho_ice;
-//     PetscReal lat_sub = user->lat_sub;
-//     PetscReal air_lim = user->air_lim;
-//     PetscReal xi_v    = user->xi_v;
-//     PetscReal xi_T    = user->xi_T;
-
-//     PetscInt indGP = pnt->index + pnt->count * pnt->parent->index;
-
-//     PetscReal mob, mob_sed, alph_sub;
-//     if (user->flag_Tdep == 1) {
-//         mob      = user->mob[indGP];
-//         mob_sed  = user->mob_sed_arr[indGP];
-//         alph_sub = user->alph[indGP];
-//     } else {
-//         mob      = user->mob_sub;
-//         mob_sed  = user->mob_sed;
-//         alph_sub = user->alph_sub;
-//     }
-
-//     if (pnt->atboundary) return 0;
-
-//     PetscScalar sol_t[4], sol[4], grad_sol[4][dim];
-//     IGAPointFormValue(pnt, V, &sol_t[0]);
-//     IGAPointFormValue(pnt, U, &sol[0]);
-//     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
-
-//     PetscScalar ice   = sol[0], ice_t = sol_t[0];
-//     PetscScalar grad_ice[dim];
-//     for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
-
-//     PetscScalar sed   = sol[3], sed_t = sol_t[3];
-
-//     PetscScalar air   = 1.0 - sed - ice;
-//     PetscScalar air_t = -ice_t - sed_t;
-
-//     PetscScalar tem   = sol[1], tem_t = sol_t[1];
-//     PetscScalar grad_tem[dim];
-//     for (l = 0; l < dim; l++) grad_tem[l] = grad_sol[1][l];
-
-//     PetscScalar rhov  = sol[2], rhov_t = sol_t[2];
-//     PetscScalar grad_rhov[dim];
-//     for (l = 0; l < dim; l++) grad_rhov[l] = grad_sol[2][l];
-
-//     PetscReal thcond, dthcond_ice, cp, dcp_ice, rho, drho_ice;
-//     PetscReal difvap, d_difvap, rhoI_vs, drhoI_vs;
-//     PetscReal fice_ice, fair_ice;
-//     ThermalCond(user, ice, sed, &thcond,  &dthcond_ice);
-//     HeatCap    (user, ice, sed, &cp,      &dcp_ice);
-//     Density    (user, ice, sed, &rho,     &drho_ice);
-//     VaporDiffus(user, tem,      &difvap,  &d_difvap);
-//     RhoVS_I    (user, tem,      &rhoI_vs, &drhoI_vs);
-//     Fice(user, ice, sed, NULL, &fice_ice);
-
-//     const PetscReal *N0, (*N1)[dim];
-//     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
-//     IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
-
-//     PetscReal loc      = ice*ice * air*air * (1.0-sed)*(1.0-sed);
-//     PetscReal dloc_ice = (2.0*ice*air*air - 2.0*ice*ice*air) * (1.0-sed)*(1.0-sed);
-
-//     (void)mob_sed;  /* reserved for sediment Jacobian entries */
-//     PetscInt a, b, nen = pnt->nen;
-//     PetscScalar (*J)[4][nen][4] = (PetscScalar (*)[4][nen][4])Je;
-
-//     for (a = 0; a < nen; a++) {
-//         for (b = 0; b < nen; b++) {
-//             if (user->flag_tIC == 1) continue;
-
-//             // Ice
-//             J[a][0][b][0] += shift * N0[a] * N0[b];
-//             for (l = 0; l < dim; l++)
-//                 J[a][0][b][0] += 3.0 * mob * eps * (N1[a][l] * N1[b][l]);
-//             J[a][0][b][0] += N0[a] * mob * 3.0/eps/Etai * (fice_ice - fair_ice) * N0[b];
-//             J[a][0][b][0] -= N0[a] * alph_sub * dloc_ice * N0[b] * (rhov - rhoI_vs) / rho_ice;
-//             J[a][0][b][1] += N0[a] * alph_sub * loc * drhoI_vs * N0[b] / rho_ice;
-//             J[a][0][b][2] -= N0[a] * alph_sub * loc * N0[b] / rho_ice;
-
-//             // Temperature
-//             J[a][1][b][1] += shift * N0[a] * N0[b];
-//             // J[a][1][b][1] += shift * rho * cp * N0[a] * N0[b];
-//             // J[a][1][b][0] += drho_ice * N0[b] * cp * N0[a] * tem_t;
-//             // J[a][1][b][0] += rho * dcp_ice * N0[b] * N0[a] * tem_t;
-//             // for (l = 0; l < dim; l++)
-//             //     J[a][1][b][0] += xi_T * dthcond_ice * N0[b] * (N1[a][l] * grad_tem[l]);
-//             // for (l = 0; l < dim; l++)
-//             //     J[a][1][b][1] += xi_T * thcond * (N1[a][l] * N1[b][l]);
-//             // J[a][1][b][0] += xi_T * drho_ice * N0[b] * lat_sub * N0[a] * air_t;
-//             // J[a][1][b][0] -= xi_T * rho * lat_sub * N0[a] * shift * N0[b];
-
-//             // Vapor — time derivative
-//             J[a][2][b][2] += shift * N0[a] * N0[b];
-
-//             // Sediment — time derivative only (RHS to be added)
-//             J[a][3][b][3] += shift * N0[a] * N0[b];
-//             // if (air > air_lim) {
-//             //     J[a][2][b][2] += N0[a] * air * shift * N0[b];
-//             //     J[a][2][b][0] -= N0[a] * rhov_t * N0[b];
-//             // } else {
-//             //     J[a][2][b][2] += N0[a] * air_lim * shift * N0[b];
-//             // }
-
-//             // // Vapor — diffusion (air_eff in both branches, consistent with residual)
-//             // if (air > air_lim) {
-//             //     for (l = 0; l < dim; l++)
-//             //         J[a][2][b][0] -= xi_v * difvap * (N1[a][l] * grad_rhov[l]) * N0[b];
-//             //     for (l = 0; l < dim; l++)
-//             //         J[a][2][b][2] += xi_v * difvap * air * (N1[a][l] * N1[b][l]);
-//             //     for (l = 0; l < dim; l++)
-//             //         J[a][2][b][1] += xi_v * d_difvap * N0[b] * air * (N1[a][l] * grad_rhov[l]);
-//             // } else {
-//             //     for (l = 0; l < dim; l++)
-//             //         J[a][2][b][2] += xi_v * difvap * air_lim * (N1[a][l] * N1[b][l]);
-//             //     for (l = 0; l < dim; l++)
-//             //         J[a][2][b][1] += xi_v * d_difvap * N0[b] * air_lim * (N1[a][l] * grad_rhov[l]);
-//             // }
-
-//             // // Vapor — source term: -xi_v * rho_ice * air_t = +xi_v * rho_ice * ice_t
-//             // J[a][2][b][0] += N0[a] * xi_v * rho_ice * shift * N0[b];
-//         }
-//     }
-
     return 0;
 }
 
 
+/* =========================================================================
+ * Integration — computes per-element scalar integrals for monitoring
+ * ========================================================================= */
 PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
                             PetscScalar *S, void *ctx)
 {
     PetscFunctionBegin;
-    // AppCtx *user = (AppCtx*)ctx;
     PetscScalar sol[4];
     IGAPointFormValue(pnt, U, &sol[0]);
 
@@ -404,8 +571,8 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
     S[4] = rhov * air;
     S[5] = air*air * ice*ice;
     S[6] = sed;
-    S[7] = sed*sed * air*air;   // sed-air interface
-    S[8] = sed*sed * ice*ice;   // ice-sed interface
+    S[7] = sed*sed * air*air;   /* sed-air interface */
+    S[8] = sed*sed * ice*ice;   /* ice-sed interface */
 
     PetscFunctionReturn(0);
 }

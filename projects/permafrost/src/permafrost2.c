@@ -17,20 +17,20 @@ int main(int argc, char *argv[]) {
     /* Define simulation specific parameters */
     AppCtx user;                         /* User-defined application context */
     PetscMemzero(&user, sizeof(AppCtx)); /* Initialize user context to zero */
-    PetscInt flag_sedgrav;               /* Flag for sediment gravity */
     PetscInt flag_BC_Tfix;               /* Flag for temperature boundary condition */
     PetscInt flag_BC_rhovfix;            /* Flag for fixed rho_v boundary condition */
 
     user.xi_v       = 1.0e-3; // 1.0e-5;   /* Time scaling parameter for vapor */
     user.xi_T       = 1.0e-2; // 1.0e-4;   /* Time scaling parameter for temperature */
-    user.flag_xiT   = 1;        /* Flag for temperature */
 
     user.Lambd      = 3.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC       = 10;  /* Number of initial condition steps (???) */
-    user.t_sed_freeze       = 1.0;  /* Fallback simulated time (s) before forcing sediment freeze */
-    user.flag_sed_mode      = 1;    /* -1=always 3-phase; 0=always pinned; 1=stability-triggered */
-    user.flag_sed_frozen    = 0;    /* Set below based on flag_sed_mode */
+    user.t_sed_freeze    = 1.0;  /* Fallback simulated time (s) before forcing sediment freeze */
+    user.flag_sed_mode   = 1;    /* -1=never freeze; 0=always pinned; 1=freeze at t_sed_freeze */
+    user.flag_sed_frozen = 0;    /* Set below based on flag_sed_mode */
+    user.flag_avenue     = 2;    /* Default: Avenue 2 (AC + penalty) */
+    user.flag_2ph_ice    = 0;    /* Default: keep 3-phase ice after freeze */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -50,7 +50,6 @@ int main(int argc, char *argv[]) {
 
     user.T_melt     = 0.0;      /* Melting temperature of ice */
 
-    user.flag_it0   = 1;        /* Initialization flag */
     user.flag_tIC   = 0;        /* Initial condition flag */
     user.readFlag   = 0;        /* Flag to read ice grains from file (UPDATE IMPLEMENTATION!) */
 
@@ -102,7 +101,6 @@ int main(int argc, char *argv[]) {
     PetscReal eps = 9.0e-7;     /* Interface width parameter */
 
     /* Define grain parameters (can be overridden by PETSc options) */
-    flag_sedgrav     = 0;       /* Sediment gravity flag */
     user.NCsed       = 30;      /* Number of sediment grains */
     user.RCsed       = 0.2e-4;  /* Mean radius */
     user.RCsed_dev   = 0.55;    /* Std dev of radius */
@@ -190,7 +188,6 @@ int main(int argc, char *argv[]) {
 
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-flag_sedgrav", "Sediment gravity flag", "", flag_sedgrav, &flag_sedgrav, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_BC_Tfix", "Temperature BC flag", "", flag_BC_Tfix, &flag_BC_Tfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_BC_rhovfix", "Vapor density BC flag", "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
@@ -199,8 +196,14 @@ int main(int argc, char *argv[]) {
              "Simulated time (s) at which sediment switches from 3-phase to pinned (mode 1 only)",
              "", user.t_sed_freeze, &user.t_sed_freeze, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_sed_mode",
-             "Sediment mode: -1=always 3-phase, 0=always pinned, 1=switch to pinned+penalty at t_sed_freeze, 2=switch to clean 2-phase (no penalty) at t_sed_freeze",
+             "Sediment freeze mode: -1=never freeze, 0=always frozen, 1=freeze at t_sed_freeze",
              "", user.flag_sed_mode, &user.flag_sed_mode, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-flag_avenue",
+             "Residual formulation: 1=AC+vapor penalty+freeze→zero, 2=AC+vapor penalty+freeze→penalty (default), 3=Cahn-Hilliard (no penalties)",
+             "", user.flag_avenue, &user.flag_avenue, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-flag_2ph_ice",
+             "0=keep 3-phase ice after freeze (default), 1=switch to 2-phase ice after freeze",
+             "", user.flag_2ph_ice, &user.flag_2ph_ice, NULL); CHKERRQ(ierr);
 
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);

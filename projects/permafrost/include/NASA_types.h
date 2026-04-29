@@ -63,18 +63,23 @@ typedef struct {
   PetscReal norm0[4];  // Per-DOF initial residual norms for SNES convergence check
 
   // Flags for controlling different simulation options
-  PetscInt flag_it0;  // Flag for iteration control at initialization
   PetscInt flag_tIC;  // Flag for setting initial conditions
   PetscInt outp;  // Output control flag (defines what to output)
   PetscInt nsteps_IC;  // Number of initial condition timesteps
-  PetscInt flag_xiT;  // Flag for including temperature-dependent terms in the model
   PetscInt flag_Tdep;  // Flag for temperature dependence of specific properties
   PetscInt flag_BC_Tfix;
   PetscInt flag_BC_rhovfix;
 
-  PetscReal t_sed_freeze;          // simulated time (s) at which sediment switches from 3-phase to pinned
-  PetscInt  flag_sed_frozen;       // 0 = full 3-phase; 1 = phi_s pinned by penalty
-  PetscInt  flag_sed_mode;         // -1 = always 3-phase; 0 = always pinned; 1 = switch at t_sed_freeze
+  /* Residual avenue selector:
+   *   1 = Allen-Cahn, penalty vapor, freeze sed → zero RHS after t_sed_freeze
+   *   2 = Allen-Cahn, penalty vapor, freeze sed → k_sed penalty (default)
+   *   3 = Cahn-Hilliard, no penalties (requires p ≥ 2, C ≥ 1) */
+  PetscInt flag_avenue;
+
+  PetscReal t_sed_freeze;    // simulated time (s) at which sediment switches (modes 1+2)
+  PetscInt  flag_sed_frozen; // 0 = full 3-phase active; 1 = freeze triggered
+  PetscInt  flag_sed_mode;   // -1 = never freeze; 0 = always frozen; 1 = freeze at t_sed_freeze
+  PetscInt  flag_2ph_ice;    // 0 = keep 3-phase ice after freeze; 1 = switch to 2-phase ice
 
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)
@@ -106,7 +111,6 @@ typedef struct {
   PetscReal phase_hi;     // upper bound for phi_ice, phi_sed, phi_air (default  1.25)
   PetscReal *alph;     // Alpha field, possibly phase fraction or related property
   PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)
-  PetscReal *mob_sed_arr;  // Sediment mobility field, spatially varying (T-dependent)
 
   // Flag for reading input files
   PetscInt readFlag;  // Flag to indicate whether initial data should be read from a file
