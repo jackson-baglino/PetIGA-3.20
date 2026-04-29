@@ -60,6 +60,7 @@ EPS_DEFAULT = 9.3295e-7  # m — interface width (k_sed_pen = prefactor / eps²)
 
 T_SED_FREEZE_DEFAULT    = [10.0, 50.0, 100.0, 300.0, 900.0]
 K_SED_PREFACTOR_DEFAULT = [1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
+DIFVAP_PEN_DEFAULT      = 0.0   # m²/s — set >0 to re-enable vapor diffusion penalty
 
 PASS_AIR_DRIFT_DEFAULT  = 5e-6   # absolute |Δtot_air| [m in 1-D]
 PASS_ICESD_DROP_DEFAULT = 20.0   # % drop in ice_sed_interf after freeze
@@ -260,6 +261,7 @@ def run_sweep(binary: str, opts_file: str,
               k_prefactor_vals: list[float],
               out_dir: str, timeout: int, t_final: float,
               eps: float,
+              difvap_pen: float,
               pass_air_drift: float,
               pass_icesd_drop: float,
               skip_postprocess: bool = False) -> list[dict]:
@@ -279,10 +281,10 @@ def run_sweep(binary: str, opts_file: str,
             print(f"{'='*68}")
 
             extra_flags = [
-                "-t_sed_freeze", str(t_freeze),
-                "-k_sed_pen",    str(k_sed_pen),
-                "-difvap_pen",   "0.0",
-                "-t_final",      str(t_final),
+                "-t_sed_freeze",  str(t_freeze),
+                "-k_sed_pen",     str(k_sed_pen),
+                "-difvap_pen",    str(difvap_pen),
+                "-t_final",       str(t_final),
                 "-flag_sed_mode", "1",
             ]
             run_dir = os.path.join(out_dir, label)
@@ -474,6 +476,8 @@ def parse_args():
     p.add_argument("--t-final",         type=float, default=T_FINAL_DEFAULT)
     p.add_argument("--timeout",         type=int,   default=TIMEOUT_DEFAULT)
     p.add_argument("--eps",             type=float, default=EPS_DEFAULT)
+    p.add_argument("--difvap-pen",       type=float, default=DIFVAP_PEN_DEFAULT,
+                   help="Vapor diffusion penalty [m²/s] (default: 0.0 = no penalty)")
     p.add_argument("--pass-air-drift",  type=float, default=PASS_AIR_DRIFT_DEFAULT)
     p.add_argument("--pass-icesd-drop", type=float, default=PASS_ICESD_DROP_DEFAULT)
     p.add_argument("--skip-build",        action="store_true",
@@ -489,12 +493,13 @@ def main():
 
     total = len(args.t_freeze) * len(args.k_prefactor)
     print("=" * 68)
-    print("  SEDIMENT PENALTY SWEEP  (difvap_pen = 0)")
+    print("  SEDIMENT PENALTY SWEEP")
     print(f"  binary:          {args.binary}")
     print(f"  opts:            {args.opts}")
     print(f"  out_dir:         {args.out_dir}")
     print(f"  t_sed_freeze:    {args.t_freeze}")
     print(f"  k_prefactor:     {args.k_prefactor}")
+    print(f"  difvap_pen:      {args.difvap_pen:.2e}")
     print(f"  t_final:         {args.t_final:.4g} s")
     print(f"  timeout:         {args.timeout} s/run")
     print(f"  total runs:      {total}")
@@ -512,6 +517,7 @@ def main():
         args.t_freeze, args.k_prefactor,
         args.out_dir, args.timeout, args.t_final,
         eps=args.eps,
+        difvap_pen=args.difvap_pen,
         pass_air_drift=args.pass_air_drift,
         pass_icesd_drop=args.pass_icesd_drop,
         skip_postprocess=args.skip_postprocess,
