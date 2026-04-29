@@ -1,4 +1,130 @@
 
+## 2026-04-29 — Three-avenue modular residual refactor + unused flag cleanup
+
+- Rewrote `assembly.c` with three distinct, self-contained residual functions (`Residual_A1`, `Residual_A2`, `Residual_A3`) plus a `Residual` dispatcher.
+  - **Avenue 1**: Allen-Cahn + penalty vapor; after `t_sed_freeze`, sediment RHS = 0 (frozen by inertia); optional 2-phase ice switch via `flag_2ph_ice`.
+  - **Avenue 2** (default): Allen-Cahn + penalty vapor; after `t_sed_freeze`, sediment Allan-Cahn + restoring penalty `k_sed*(phi_s - phi_s0)`; optional 2-phase ice via `flag_2ph_ice`.
+  - **Avenue 3**: Cahn-Hilliard biharmonic form for ice and sediment (uses `IGAPointFormHess` + `N2` shape function Hessians; requires p≥2, C≥1); standard vapor diffusion, no penalty parameters.
+- Added `ChemPot_dsed` static helper — computes `∂fi/∂sed`, `∂fs/∂sed`, `∂fa/∂sed` analytically for the CH gradient term in A3.
+- Added `flag_avenue` (1/2/3) and `flag_2ph_ice` (0/1) to `AppCtx` (NASA_types.h) and registered as CLI options in `permafrost2.c`.
+- Removed unused flags/fields: `flag_xiT`, `flag_it0`, `mob_sed_arr` from `AppCtx` and all source files; removed `flag_sedgrav` CLI option (was a no-op local variable).
+- Simplified `flag_sed_mode`: removed mode 2 (was the old Avenue 1 experiment); only -1/0/1 remain.
+- Updated `monitoring.c`: removed `mob_sed_arr` assignment, removed `flag_it0` reset, restored freeze trigger to mode-1-only check.
+- Updated `assembly.h` to declare all three avenue functions.
+- Updated `test_2D_IceSlab.opts` to use `flag_avenue 1`, `flag_sed_mode 1`, `flag_2ph_ice 1` (equivalent to prior `flag_sed_mode 2` experiment).
+- Build: clean, zero errors.
+
+---
+
+**Session ended:** 2026-04-29 10:54:06
+
+
+---
+
+**Session ended:** 2026-04-29 10:07:10
+
+
+---
+
+**Session ended:** 2026-04-28 17:14:42
+
+
+---
+
+**Session ended:** 2026-04-28 17:04:45
+
+
+---
+
+**Session ended:** 2026-04-28 16:40:27
+
+
+---
+
+**Session ended:** 2026-04-28 16:12:21
+
+
+---
+
+**Session ended:** 2026-04-28 16:04:47
+
+
+---
+
+**Session ended:** 2026-04-28 15:50:35
+
+
+---
+
+**Session ended:** 2026-04-28 15:43:47
+
+
+---
+
+**Session ended:** 2026-04-28 15:41:14
+
+
+## 2026-04-28 — Add phase-field out-of-bounds detection for difvap sweep
+
+- `monitoring.c`: added a quadrature-point loop each monitor step that computes global min/max of `phi_ice`, `phi_sed`, and `phi_air` via `MPI_Allreduce`, then prints a `BOUNDS:` line to stdout/`outp.txt`.
+- `tune_difvap_pen.py`: added `_parse_bounds_violation()` that scans the captured output for any reported phase value outside `[-0.25, 1.25]`; wired `pass_bounds` into the per-run `PASS` logic and added a `bounds` column to the summary table.
+- Rebuilt binary cleanly (no new errors).
+
+---
+
+**Session ended:** 2026-04-28 15:26:17
+
+
+---
+
+**Session ended:** 2026-04-28 15:15:56
+
+
+---
+
+**Session ended:** 2026-04-28 15:07:14
+
+
+---
+
+**Session ended:** 2026-04-28 14:55:47
+
+
+---
+
+**Session ended:** 2026-04-28 14:47:27
+
+
+---
+
+**Session ended:** 2026-04-28 13:18:23
+
+
+---
+
+**Session ended:** 2026-04-28 11:51:27
+
+
+---
+
+**Session ended:** 2026-04-23 18:23:33
+
+
+---
+
+**Session ended:** 2026-04-23 18:11:34
+
+
+---
+
+**Session ended:** 2026-04-23 17:33:56
+
+
+---
+
+**Session ended:** 2026-04-23 17:20:21
+
+
 ---
 
 ## 2026-04-23 — Propagate stability-triggered sediment freeze to all opts files
