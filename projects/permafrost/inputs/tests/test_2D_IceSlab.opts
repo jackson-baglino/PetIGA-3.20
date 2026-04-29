@@ -41,7 +41,7 @@
 -eps 9.3295e-07
 -periodic 0
 -t_sed_freeze 300
--flag_sed_mode 1
+-flag_sed_mode 2
 -flag_BC_Tfix 0
 -flag_BC_rhovfix 0
 -flag_Tdep 0

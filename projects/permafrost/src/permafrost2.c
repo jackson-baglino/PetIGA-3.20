@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
              "Simulated time (s) at which sediment switches from 3-phase to pinned (mode 1 only)",
              "", user.t_sed_freeze, &user.t_sed_freeze, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_sed_mode",
-             "Sediment mode: -1=always 3-phase, 0=always pinned, 1=switch to pinned at t_sed_freeze",
+             "Sediment mode: -1=always 3-phase, 0=always pinned, 1=switch to pinned+penalty at t_sed_freeze, 2=switch to clean 2-phase (no penalty) at t_sed_freeze",
              "", user.flag_sed_mode, &user.flag_sed_mode, NULL); CHKERRQ(ierr);
 
     /* --- Thermophysical properties --------------------------------------- */

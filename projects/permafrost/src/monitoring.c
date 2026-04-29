@@ -164,7 +164,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   }
 
   //------------- sediment freeze (mode 1: switch to two-phase at t_sed_freeze)
-  if (user->flag_sed_mode == 1 && !user->flag_sed_frozen && t >= user->t_sed_freeze) {
+  if ((user->flag_sed_mode == 1 || user->flag_sed_mode == 2) && !user->flag_sed_frozen && t >= user->t_sed_freeze) {
     user->flag_sed_frozen = 1;
 
     /* Snapshot the relaxed sediment field as the penalty reference.

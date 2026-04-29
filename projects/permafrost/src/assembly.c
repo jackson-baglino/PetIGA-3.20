@@ -130,21 +130,42 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_ice += C3*((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
+            /* Mode 2: overwrite with clean 2-phase ice equation after freeze */
+            if (user->flag_sed_frozen && user->flag_sed_mode == 2) {
+                PetscReal C2ph = 3.0 * mob / (Etai + Etaa);
+                R_ice = N0[a] * ice_t;
+                for (l = 0; l < dim; l++)
+                    R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+                for (l = 0; l < dim; l++)
+                    R_ice += C2ph * Etaa * eps * (N1[a][l] * grad_sed[l]);
+                R_ice += N0[a] * C2ph / eps * (fi - fa);
+                R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+            }
+
             /* Sediment Evolution Equation
              * Three-phase (flag_sed_frozen == 0): full Allen-Cahn — sediment
              *   evolves freely under its own free energy.
              * Two-phase   (flag_sed_frozen == 1): penalty only — sediment is
              *   pinned to its frozen reference field sed0.  The ice equation
              *   stays in its 3-phase form above so the ice-sediment boundary
-             *   equilibrium remains self-consistent. */
+             *   equilibrium remains self-consistent. */            
             if (!user->flag_sed_frozen) {
                 R_sed = N0[a] * sed_t;
                 for (l = 0; l < dim; l++)
                     R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
                 R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
             } else {
-                R_sed = N0[a] * sed_t;
-                R_sed += k_sed * (sed - sed0) * N0[a];
+                if (user->flag_sed_mode == 2) {
+                    /* Mode 2: sediment completely frozen — time derivative only, no dynamics */
+                    R_sed = N0[a] * sed_t;
+                } else {
+                    /* Mode 1: Allen-Cahn + penalty to pin sediment to reference field */
+                    R_sed = N0[a] * sed_t;
+                    for (l = 0; l < dim; l++)
+                        R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
+                    R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+                    R_sed += k_sed * (sed - sed0) * N0[a];
+                }
             }
 
             /* Thermal energy balance */
@@ -154,12 +175,19 @@ PetscErrorCode Residual(IGAPoint pnt,
             R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
             /* Vapor */
-            R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);         // Time derivative term
-            for (l = 0; l < dim; l++)                                         // Diffusion term
-                R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-
-            R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];  // Penalty term to enforce rhov = rhov_eq at ice-air interface
-            R_vap -= xi_v * N0[a] * rho_ice * air_t;
+            if (user->flag_sed_frozen && user->flag_sed_mode == 2) {
+                /* Mode 2: clean 2-phase vapor — standard diffusion, no penalty, +ice_t source */
+                R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);
+                for (l = 0; l < dim; l++)
+                    R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+                R_vap += xi_v * N0[a] * rho_ice * ice_t;
+            } else {
+                R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);         // Time derivative term
+                for (l = 0; l < dim; l++)                                     // Diffusion term
+                    R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+                R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];  // Penalty: rhov = rhov_eq at interface
+                R_vap -= xi_v * N0[a] * rho_ice * air_t;
+            }
 
 
             // R_vap  = N0[a] * air_eff * rhov_t;
