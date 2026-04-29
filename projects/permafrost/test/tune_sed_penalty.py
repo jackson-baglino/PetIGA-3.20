@@ -64,6 +64,11 @@ K_SED_PREFACTOR_DEFAULT = [1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2]
 PASS_AIR_DRIFT_DEFAULT  = 5e-6   # absolute |Δtot_air| [m in 1-D]
 PASS_ICESD_DROP_DEFAULT = 20.0   # % drop in ice_sed_interf after freeze
 
+# ── post-processing scripts ───────────────────────────────────────────────────
+SCRIPT_VTK     = str(ROOT / "scripts"     / "plotpermafrost.py")
+SCRIPT_SCALARS = str(ROOT / "postprocess" / "plot_scalars.py")
+SCRIPT_PROFS1D = str(ROOT / "postprocess" / "plot1D_profiles.py")
+
 
 # ── monitor / bounds parsers ──────────────────────────────────────────────────
 _NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?"
@@ -148,6 +153,53 @@ def _compute_metrics(rows: list[dict], relax_rows: list[dict],
     return {"delta_tot_air": delta_tot_air, "ice_sed_drop_pct": ice_sed_drop_pct}
 
 
+# ── post-processing ───────────────────────────────────────────────────────────
+def _postprocess(run_dir: str, label: str = "") -> None:
+    """Run the standard 1D post-processing suite on a completed run directory."""
+    if not os.path.isfile(os.path.join(run_dir, "igasol.dat")):
+        print(f"  [post] No igasol.dat in {run_dir} — skipping.")
+        return
+
+    tag = f" [{label}]" if label else ""
+    print(f"  [post]{tag} Post-processing {run_dir}")
+
+    def _sp(cmd: list[str], desc: str) -> None:
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True,
+                               cwd=run_dir, timeout=300)
+            if r.returncode != 0:
+                print(f"    [post] WARNING: {desc} exited {r.returncode}")
+                if r.stderr.strip():
+                    print(f"      {r.stderr.strip()[:300]}")
+            else:
+                print(f"    [post] {desc} done.")
+        except subprocess.TimeoutExpired:
+            print(f"    [post] WARNING: {desc} timed out.")
+        except FileNotFoundError as e:
+            print(f"    [post] WARNING: {desc} not found: {e}")
+
+    # 1. Convert sol_*.dat → VTK
+    os.makedirs(os.path.join(run_dir, "vtkOut"), exist_ok=True)
+    _sp(["python", SCRIPT_VTK, "--vtk-dir", "vtkOut"],
+        "VTK conversion")
+
+    # 2. Scalar time-series from SSA_evo.dat
+    if os.path.isfile(os.path.join(run_dir, "SSA_evo.dat")):
+        _sp(["python", SCRIPT_SCALARS,
+             "--file", "SSA_evo.dat", "--time-unit", "h", "--save", "scalars.png"],
+            "Scalar time-series")
+    else:
+        print("    [post] No SSA_evo.dat — skipping scalar plot.")
+
+    # 3. 1D phase profiles — three separate calls (each flag triggers early return)
+    _sp(["python", SCRIPT_PROFS1D, "--dir", ".", "--thermal"],
+        "1D thermal profiles")
+    _sp(["python", SCRIPT_PROFS1D, "--dir", ".", "--first-last"],
+        "1D first/last comparison")
+    _sp(["python", SCRIPT_PROFS1D, "--dir", ".", "--derived", "--save", "derived.png"],
+        "1D derived quantities")
+
+
 # ── build / run helpers ───────────────────────────────────────────────────────
 def _build(root: Path) -> None:
     for cmd in (["make", "clean"], ["make"]):
@@ -209,7 +261,8 @@ def run_sweep(binary: str, opts_file: str,
               out_dir: str, timeout: int, t_final: float,
               eps: float,
               pass_air_drift: float,
-              pass_icesd_drop: float) -> list[dict]:
+              pass_icesd_drop: float,
+              skip_postprocess: bool = False) -> list[dict]:
     results = []
     total  = len(t_freeze_vals) * len(k_prefactor_vals)
     run_no = 0
@@ -234,6 +287,9 @@ def run_sweep(binary: str, opts_file: str,
             ]
             run_dir = os.path.join(out_dir, label)
             stdout, rc = _run(binary, opts_file, extra_flags, run_dir, timeout)
+
+            if not skip_postprocess:
+                _postprocess(run_dir, label=label)
 
             rows       = _parse_monitor_rows(stdout)
             relax_rows = _parse_relax_monitor(run_dir)
@@ -420,8 +476,10 @@ def parse_args():
     p.add_argument("--eps",             type=float, default=EPS_DEFAULT)
     p.add_argument("--pass-air-drift",  type=float, default=PASS_AIR_DRIFT_DEFAULT)
     p.add_argument("--pass-icesd-drop", type=float, default=PASS_ICESD_DROP_DEFAULT)
-    p.add_argument("--skip-build",      action="store_true",
+    p.add_argument("--skip-build",        action="store_true",
                    help="Skip 'make clean && make'")
+    p.add_argument("--skip-postprocess",  action="store_true",
+                   help="Skip VTK conversion, scalar plots, and 1D profile plots")
     return p.parse_args()
 
 
@@ -443,6 +501,7 @@ def main():
     print(f"  pass_air_drift:  {args.pass_air_drift:.1e}")
     print(f"  pass_icesd_drop: {args.pass_icesd_drop:.0f} %")
     print(f"  build:           {'skipped' if args.skip_build else 'make clean && make'}")
+    print(f"  post-processing: {'disabled' if args.skip_postprocess else 'enabled'}")
     print("=" * 68)
 
     if not args.skip_build:
@@ -455,6 +514,7 @@ def main():
         eps=args.eps,
         pass_air_drift=args.pass_air_drift,
         pass_icesd_drop=args.pass_icesd_drop,
+        skip_postprocess=args.skip_postprocess,
     )
 
     _print_summary(results, args.pass_air_drift, args.pass_icesd_drop)
