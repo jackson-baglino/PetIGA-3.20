@@ -1,4 +1,17 @@
 
+---
+
+## 2026-04-29 — Add inline comments to all .opts files
+
+- Annotated all 17 `.opts` files in `inputs/tests/` with inline `#` comments on every parameter line.
+- Comments explain the purpose/units of each flag: domain params (`-dim`, `-dof`, `-Nx`, `-Lx`), element continuity (`-p`, `-C`), time stepping, model flags (`-flag_sed_mode`, `-flag_avenue`, `-flag_2ph_ice`, `-flag_tIC`, `-flag_BC_Tfix`), SNES/KSP/PC solver settings, and grain geometry params (`-NCsed`, `-RCsed`, etc.).
+- No parameter values changed — comments only.
+
+---
+
+**Session ended:** 2026-04-29 15:47:34
+
+
 ## 2026-04-29 — Three-avenue modular residual refactor + unused flag cleanup
 
 - Rewrote `assembly.c` with three distinct, self-contained residual functions (`Residual_A1`, `Residual_A2`, `Residual_A3`) plus a `Residual` dispatcher.
