@@ -1,6 +1,23 @@
 
 ---
 
+## 2026-04-30 — Rewrite tune_difvap_pen.py as independent 2D penalty sweep
+
+- Replaced 1D `difvap_pen`-only sweep (with derived `k_pen = difvap_pen/eps²`) with an independent 2D grid sweep over `difvap_pen × k_pen` using `itertools.product`.
+- Only `-difvap_pen` and `-k_pen` are passed as CLI overrides to the binary; `t_final`, `t_sed_freeze`, and all physics flags come from the opts file (`test_2D_IceSlab.opts`) unchanged.
+- Removed two-run A/B structure (flat-saturated + sublimation); replaced with a single run per grid point.
+- Ported metrics from `tune_sed_params.py`: `delta_tot_air` (primary spurious-air metric), `ice_sed_drop_pct`, `max_snes_iters`, phase bounds check.
+- Added `_get_t_sed_freeze(opts_file)` helper to parse freeze time from opts so the script can locate the freeze event in monitor output.
+- New outputs: `sweep_penalty2d.csv` and `sweep_penalty2d.png` (4-panel 2D heatmap on log-scale axes).
+- Default sweep: 5×5 = 25 runs; timeout 600 s/run.
+
+---
+
+**Session ended:** 2026-04-30 13:49:28
+
+
+---
+
 ## 2026-04-29 — Add inline comments to all .opts files
 
 - Annotated all 17 `.opts` files in `inputs/tests/` with inline `#` comments on every parameter line.
