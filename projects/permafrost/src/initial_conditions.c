@@ -1785,7 +1785,7 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
 
             u[j][i].ice  = ice;
             u[j][i].tem  = tem;
-            u[j][i].rhov = user->hum0 * rho_vs_loc;
+            u[j][i].rhov = user->hum0 * rho_vs_loc * (1.0 - ice - sed) + rho_vs_loc * (ice + sed);
             u[j][i].sed  = sed;
         }
     }
