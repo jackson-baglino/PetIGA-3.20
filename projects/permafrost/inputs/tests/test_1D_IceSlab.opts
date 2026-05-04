@@ -35,6 +35,10 @@
 -flag_sed_mode 1                        # sediment mode: -1=always 3-phase; 0=always frozen; 1=freeze at t_sed_freeze
 -t_sed_freeze 900                       # simulated time (s) at which sediment evolution is frozen
 -k_sed_pen -1                           # sediment penalty stiffness (-1 = auto-choose; >0 = explicit value)
+-flag_avenue 1                          # residual formulation: 1=A1 (AC, no penalty); 2=A2 (AC+penalty); 3=A3 (CH)
+-flag_2ph_ice 1                         # after freeze: 0=keep 3-phase ice; 1=switch to 2-phase ice formulation
+-difvap_pen 1e-5                        # penalised vapour diffusivity in the air phase [m²/s]
+-k_pen 1e7                              # vapour interface equilibrium stiffness
 -flag_BC_Tfix 0                         # fix temperature at boundaries (0=no, 1=yes)
 -flag_BC_rhovfix 0                      # fix vapor density at boundaries (0=no, 1=yes)
 -flag_Tdep 0                            # temperature-dependent material properties (0=off, 1=on)
