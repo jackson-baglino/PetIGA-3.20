@@ -37,7 +37,7 @@
 # ---------- Model Parameters ----------
 -humidity 0.95                          # relative humidity (fraction; <1.0 = undersaturated)
 -temp -20.0                             # background temperature (°C)
--grad_temp0 0.0,0.0,0.0                # imposed temperature gradient (K/m; x,y,z); 0 = isothermal
+-grad_temp0 0.0,0.0,0.0                 # imposed temperature gradient (K/m; x,y,z); 0 = isothermal
 -eps 9.3295e-07                         # diffuse interface half-width (m)
 -periodic 0                             # periodic BCs (0=no, 1=yes)
 -t_sed_freeze 300                       # simulated time (s) at which sediment evolution is frozen
@@ -47,6 +47,8 @@
 -flag_BC_Tfix 0                         # fix temperature at boundaries (0=no, 1=yes)
 -flag_BC_rhovfix 0                      # fix vapor density at boundaries (0=no, 1=yes)
 -flag_Tdep 0                            # temperature-dependent material properties (0=off, 1=on)
+-difvap_pen 1e-5                        # Penalised vapour diffusivity in the air phase [m²/s]
+-k_pen 1e7                              # Vapour interface equilibrium stiffness
 
 # ---------- SNES ----------
 -snes_type newtonls                     # nonlinear solver: Newton with line search
