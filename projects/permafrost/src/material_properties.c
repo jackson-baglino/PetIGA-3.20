@@ -134,7 +134,7 @@ return;
  * @param user Pointer to the application context containing material properties.
  * @param tem Temperature in Celsius.
  * @param difvap Pointer to store computed vapor diffusivity.
- * @param d_difvap Pointer to store derivative of vapor diffusivity with respect to ice.
+ * @param d_difvap Pointer to store derivative of vapor diffusivity with respect to temperature.
  */
 void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap, 
   PetscScalar *d_difvap)
@@ -153,6 +153,38 @@ if (d_difvap)
 (*d_difvap) = dif_vap * aa * pow(Kratio, aa - 1.0) / 273.15;
 
 return;
+}
+
+/**
+ * @brief Computes a smooth approximation of the Heaviside step function.
+ *
+ * This function evaluates a smooth polynomial approximation of the Heaviside
+ * step function, commonly used in phase-field and level-set methods to provide
+ * a differentiable transition instead of a sharp discontinuity.
+ *
+ * The smooth Heaviside function is defined as:
+ * H(φ) = φ³(3 - 2φ)
+ *
+ * This provides a smooth transition from 0 to 1 over the interval [0, 1].
+ *
+ * @param[in]  phi  Input scalar value (typically a phase field or level-set value)
+ * @param[out] g    Pointer to output scalar where the result is stored.
+ *                  If NULL, computation is skipped.
+ * @param[out] dg_dphi Pointer to output scalar where the derivative of g with respect to phi is 
+ *                     stored. If NULL, computation is skipped.
+ *
+ * @return void
+ *
+ * @note The function assumes phi is bounded within [0, 1] for meaningful results.
+ *       Values outside this range will produce results outside [0, 1].
+ */
+void SmoothHeavisidePoly(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi)
+{
+    if (g) 
+        (*g) = phi*phi*phi * (3 - 2*phi); // Smooth approximation of Heaviside function
+    if (dg_dphi) 
+        (*dg_dphi) = 6*phi*phi * (1 - phi); // Derivative of the smooth Heaviside function with respect to phi
+    return;
 }
 
 /**
@@ -328,9 +360,9 @@ void Mobility(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *mob)
     PetscReal mob_air = user->mob_air;
 
     /* Define smooth interpolation functions */
-    PetscReal hi = ice*ice * (3.0 - 2.0 * ice); // Smooth interpolation function for ice
-    PetscReal hs = sed*sed * (3.0 - 2.0 * sed); // Smooth interpolation function for sediment
-    PetscReal ha = air*air * (3.0 - 2.0 * air); // Smooth interpolation function for air
+    PetscReal hi = ice; //ice*ice * (3.0 - 2.0 * ice); // Smooth interpolation function for ice
+    PetscReal hs = sed; //sed*sed * (3.0 - 2.0 * sed); // Smooth interpolation function for sediment
+    PetscReal ha = air; //air*air * (3.0 - 2.0 * air); // Smooth interpolation function for air
 
     /* Compute the mobility */
     if (mob) 

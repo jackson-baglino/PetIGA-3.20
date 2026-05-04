@@ -15,6 +15,9 @@ void Density(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *rho, P
 /* Computes vapor diffusivity and its temperature derivative */
 void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap, PetscScalar *d_difvap);
 
+/* Computes the smooth Heaviside function and its derivative*/
+void SmoothHeavisidePoly(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi);
+
 /* Computes the saturation vapor density and its derivative */
 void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs, PetscScalar *d_rhovs);
 
