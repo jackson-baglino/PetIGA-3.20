@@ -1,6 +1,21 @@
 
 ---
 
+## 2026-05-04 — Physics fixes and postprocessing rewrite
+
+- `assembly.c`: Simplified A1 vapor residual time term from `N0[a] * (air_eff * rhov_t + air_t * rhov)` to `N0[a] * rhov_t` — removes the air-phase weighting on the vapor mass time derivative to reduce spurious coupling with phase evolution.
+- `initial_conditions.c`: Fixed 2D ice-slab rhov IC to blend saturation density inside ice/sed regions (`rho_vs`) with undersaturated air (`hum0 * rho_vs`), improving physical consistency at initialization.
+- `material_properties.c` + `.h`: Added `SmoothHeavisidePoly()` utility (extracted from inline Mobility code). Changed `Mobility()` to use linear interpolation (hi=ice, hs=sed, ha=air) instead of cubic Hermite.
+- `test_2D_IceSlab.opts`: Added `-difvap_pen 1e-5` and `-k_pen 1e7` as defaults so the sweep script's opts file is self-contained.
+- `postprocess/plot1D_profiles.py`: Major rewrite — twin y-axes for thermal plots (T + ρ_v on one panel), first/last comparison always produced (no flag needed), removed GIF/animation support, removed cmocean colormap variables (just checks availability), cleaner helper structure.
+
+---
+
+**Session ended:** 2026-04-30 15:03:44
+
+
+---
+
 ## 2026-04-30 — Rewrite tune_difvap_pen.py as independent 2D penalty sweep
 
 - Replaced 1D `difvap_pen`-only sweep (with derived `k_pen = difvap_pen/eps²`) with an independent 2D grid sweep over `difvap_pen × k_pen` using `itertools.product`.
