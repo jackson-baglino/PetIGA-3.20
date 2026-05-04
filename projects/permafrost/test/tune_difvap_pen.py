@@ -235,6 +235,7 @@ def _get_dim(opts_file: str) -> int:
 # ── post-processing scripts ───────────────────────────────────────────────────
 SCRIPT_VTK      = str(ROOT / "scripts"     / "plotpermafrost.py")
 SCRIPT_SCALARS  = str(ROOT / "postprocess" / "plot_scalars.py")
+SCRIPT_PROFS1D  = str(ROOT / "postprocess" / "plot1D_profiles.py")
 SCRIPT_PROFS2D  = str(ROOT / "postprocess" / "plot2D_snapshot.py")
 
 
@@ -265,7 +266,11 @@ def _postprocess(run_dir: str, dim: int = 2) -> None:
              "--file", "SSA_evo.dat", "--time-unit", "s", "--save", "scalars.png"],
             "Scalar time-series")
 
-    if dim >= 2:
+    if dim == 1:
+        _sp(["python", SCRIPT_PROFS1D, "--dir", "."],
+            "1D profiles (phase + thermal + first/last)")
+
+    elif dim >= 2:
         import glob as _glob
         sol_files = sorted(_glob.glob(os.path.join(run_dir, "sol_*.dat")))
         steps = []
