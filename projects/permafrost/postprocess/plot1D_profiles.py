@@ -4,48 +4,42 @@ plot1D_profiles.py  —  Visualize 1D permafrost simulation field profiles.
 
 Reads sol_*.dat files from a PetIGA 1D run and produces:
 
-  Per-step phase figures (default)
+  Per-step phase figures (always)
     Single-panel figure per snapshot showing φ_i, φ_s, φ_a = 1−φ_i−φ_s
-    plus a dashed black line for their sum (partition-of-unity check).
+    plus shading where partition-of-unity is violated (air < 0).
     Output: phase_step_NNNNN.png in --out-dir/phases/.
 
-  Per-step thermal figures (default)
-    Two-subplot figure per snapshot with T(x) and ρ_v(x) on individual panels.
+  Per-step thermal figures (always)
+    Single-panel figure per snapshot with T(x) on the left y-axis and
+    ρ_v(x) on the right y-axis (twin axes).
     Output: thermal_step_NNNNN.png in --out-dir/thermal_steps/.
 
-  Thermal overlay (--thermal)
-    Two-panel figure with all snapshots overlaid for T and ρ_v,
-    using cmocean colormaps and a physical-time colorbar.
-    Output: thermal_overlay.png
+  First/last comparison (always)
+    Single figure with φ_i, φ_s, φ_a for the first and last snapshots
+    overlaid using solid (first) and dashed (last) lines.
+    Output: phase_first_last.png in --out-dir.
 
-  GIF animation (--gif)
-    Animated GIF built from the per-step phase figures.
-    Output: phase_animation.gif (or a custom path)
+  Thermal overlay (--thermal)
+    Single-panel twin-axis figure with all snapshots overlaid:
+    T(x) on the left axis, ρ_v(x) on the right axis, color-coded by time.
+    Output: thermal_overlay.png
 
   Derived quantities (--derived)
     Time-series of ice volume fraction, interface position, slab width.
 
-  First/last comparison (--first-last)
-    Single figure with phi_i, phi_s, phi_a for the first and last snapshots
-    overlaid using solid (first) and dashed (last) lines.
-    Output: phase_first_last.png in --out-dir.
-
 Usage
 -----
-  # Per-step phase PNGs + GIF + thermal overlay in one shot
-  python plot1D_profiles.py --dir /path/to/run --gif --thermal
-
-  # Just per-step phase images
+  # Default: per-step phase PNGs + thermal PNGs + first/last comparison
   python plot1D_profiles.py --dir /path/to/run
 
-  # First and last snapshot comparison on one plot
-  python plot1D_profiles.py --dir /path/to/run --first-last
+  # Also produce the thermal overlay (all steps overlaid on one plot)
+  python plot1D_profiles.py --dir /path/to/run --thermal
 
-  # Legacy: limit snapshots, save thermal overlay to a specific path
-  python plot1D_profiles.py --dir . --max-steps 8 --thermal --save overlay.png
-
-  # Derived scalar quantities
+  # Derived scalar quantities only
   python plot1D_profiles.py --dir . --derived --save derived.png
+
+  # First and last snapshot only
+  python plot1D_profiles.py --dir . --first-last
 """
 
 import argparse
@@ -58,20 +52,15 @@ import matplotlib
 matplotlib.use("Agg")          # safe for headless / HPC environments
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from matplotlib.animation import FuncAnimation, PillowWriter
 
 # ---------------------------------------------------------------------------
 # Optional cmocean — fall back gracefully if not installed
 # ---------------------------------------------------------------------------
 try:
     import cmocean
-    CMAP_THERMAL = cmocean.cm.thermal
-    CMAP_VAPOR   = cmocean.cm.balance   # diverging red-blue
-    _CMOCEAN     = True
+    _CMOCEAN = True
 except ImportError:
-    CMAP_THERMAL = "hot"
-    CMAP_VAPOR   = "RdBu_r"
-    _CMOCEAN     = False
+    _CMOCEAN = False
 
 try:
     from igakit.io import PetIGA
@@ -98,6 +87,9 @@ PHASE_LABELS = {
     "sed": r"$\phi_s$  (sediment)",
     "air": r"$\phi_a$  (air)",
 }
+
+_COLOR_T    = "#d62728"   # red for temperature
+_COLOR_RHOV = "#1f77b4"   # blue for vapor density
 
 
 # ---------------------------------------------------------------------------
@@ -179,8 +171,6 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
     """
     Load geometry, x-coords, all sol_*.dat files.
     Returns (x_mm, sed_list, ice_list, tem_list, rhov_list, step_list, time_h_list).
-    sed_list[i] is φ_s extracted from sol[:,3] for snapshot i.
-    time_h_list entries are float or None if SSA_evo not available.
     """
     nrb       = load_geometry(os.path.join(run_dir, iga_file))
     x         = get_x_coords(nrb)
@@ -213,10 +203,10 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
             continue
 
         step = step_number(sf)
-        ice_list.append(sol[:, 0])          # raw — can be slightly < 0 or > 1 at nodes
+        ice_list.append(sol[:, 0])
         tem_list.append(sol[:, 1])
         rhov_list.append(sol[:, 2])
-        sed_list.append(sol[:, 3])           # raw — clipping removed so violations are visible
+        sed_list.append(sol[:, 3])
         step_list.append(step)
         time_list.append(times.get(step, None))
 
@@ -225,22 +215,20 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
 
     print(f"Loaded {len(ice_list)} snapshots from '{run_dir}'")
     if not _CMOCEAN:
-        print("  NOTE: cmocean not installed — using fallback colormaps. "
-              "Install with: pip install cmocean")
+        print("  NOTE: cmocean not installed — using fallback colormaps.")
 
     return x_mm, sed_list, ice_list, tem_list, rhov_list, step_list, time_list
 
 
 # ---------------------------------------------------------------------------
-# Mode A: per-step phase field figures
+# Phase figure — all three phases on one panel
 # ---------------------------------------------------------------------------
 
 def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
-    """Return a single-panel phase figure.
+    """Single-panel figure with φ_i, φ_s, φ_a overlaid.
 
-    phi_a is passed in as the RAW air = 1 - phi_i - phi_s (no clipping).
-    Where phi_a < 0 the partition-of-unity constraint is violated; those regions
-    are shaded red so they are immediately obvious.
+    phi_a is RAW (= 1 − φ_i − φ_s, no clipping). Regions where phi_a < 0
+    are shaded red to flag partition-of-unity violations.
     """
     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
 
@@ -252,19 +240,16 @@ def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
     ax.plot(x_mm, phi_a, color=PHASE_COLORS["air"], lw=2.0,
             label=r"$\phi_a = 1 - \phi_i - \phi_s$  (raw)")
 
-    # Shade any region where the partition-of-unity is violated (phi_a < 0)
     violation = phi_a < 0.0
     if np.any(violation):
         ax.fill_between(x_mm, phi_a, 0.0, where=violation,
                         color="red", alpha=0.25, label="constraint violation  (air < 0)")
 
-    # Reference lines
     ax.axhline(0.0, color="gray", lw=0.8, ls=":")
     ax.axhline(1.0, color="gray", lw=0.8, ls=":")
 
     ax.set_ylabel("Volume fraction", fontsize=12)
     ax.set_xlabel("x  [mm]", fontsize=12)
-    # Expand y-range downward to show negative air clearly
     y_lo = min(-0.05, np.min(phi_a) - 0.02)
     ax.set_ylim(y_lo, 1.1)
     ax.legend(fontsize=11, loc="best")
@@ -276,42 +261,73 @@ def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
 
 
 # ---------------------------------------------------------------------------
-# Thermal step figure helper (T and ρ_v on individual subplots, per step)
+# Thermal figure — T and ρ_v on twin y-axes, single panel
 # ---------------------------------------------------------------------------
 
-_COLOR_T    = "#d62728"   # red for temperature
-_COLOR_RHOV = "#1f77b4"   # blue for vapor density
-
-
 def _make_thermal_step_fig(x_mm, tem, rhov, step, t_h):
-    """Return a 2-panel figure with T(x) and ρ_v(x) for one snapshot."""
-    fig, (ax_T, ax_rho) = plt.subplots(2, 1, figsize=(8, 7), sharex=True)
+    """Single-panel figure with T(x) on the left y-axis and ρ_v(x) on the right."""
+    fig, ax_T = plt.subplots(1, 1, figsize=(8, 5))
+    ax_rho = ax_T.twinx()
 
     t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
-    fig.suptitle(f"Thermal fields — step {step:d}{t_str}", fontsize=13)
+    ax_T.set_title(f"Thermal fields — step {step:d}{t_str}", fontsize=13)
 
-    ax_T.plot(x_mm, tem, color=_COLOR_T, lw=2.0)
-    ax_T.set_ylabel("Temperature  [°C]", fontsize=12)
+    ln_T,   = ax_T.plot(x_mm, tem,  color=_COLOR_T,    lw=2.0,
+                        label="Temperature  [°C]")
+    ln_rho, = ax_rho.plot(x_mm, rhov, color=_COLOR_RHOV, lw=2.0,
+                           label=r"Vapor density  [kg m$^{-3}$]")
+
+    ax_T.set_xlabel("x  [mm]", fontsize=12)
+    ax_T.set_ylabel("Temperature  [°C]", fontsize=12, color=_COLOR_T)
+    ax_rho.set_ylabel(r"Vapor density  [kg m$^{-3}$]", fontsize=12, color=_COLOR_RHOV)
+    ax_T.tick_params(axis="y", labelcolor=_COLOR_T, labelsize=10)
+    ax_rho.tick_params(axis="y", labelcolor=_COLOR_RHOV, labelsize=10)
+    ax_T.tick_params(axis="x", labelsize=10)
+
+    # Combined legend
+    ax_T.legend([ln_T, ln_rho],
+                [ln_T.get_label(), ln_rho.get_label()],
+                fontsize=11, loc="best")
+
     ax_T.grid(True, alpha=0.3)
-    ax_T.tick_params(labelsize=10)
-
-    ax_rho.plot(x_mm, rhov, color=_COLOR_RHOV, lw=2.0)
-    ax_rho.set_ylabel(r"Vapor density  [kg m$^{-3}$]", fontsize=12)
-    ax_rho.set_xlabel("x  [mm]", fontsize=12)
-    ax_rho.grid(True, alpha=0.3)
-    ax_rho.tick_params(labelsize=10)
-
     plt.tight_layout()
     return fig
+
+
+# ---------------------------------------------------------------------------
+# Per-step plot functions
+# ---------------------------------------------------------------------------
+
+def plot_phase_steps(run_dir: str, out_dir: str = None,
+                     iga_file: str = "igasol.dat",
+                     max_steps: int = None) -> list:
+    """Save one PNG per snapshot showing φ_i, φ_s, φ_a on a single panel."""
+    if out_dir is None:
+        out_dir = run_dir
+    phases_dir = os.path.join(out_dir, "phases")
+    os.makedirs(phases_dir, exist_ok=True)
+
+    x_mm, sed_list, ice_list, _, _, step_list, time_list = _collect_snapshots(
+        run_dir, iga_file, max_steps
+    )
+
+    saved = []
+    for phi_i, phi_s, step, t_h in zip(ice_list, sed_list, step_list, time_list):
+        phi_a = 1.0 - phi_i - phi_s
+        fig   = _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h)
+        path  = os.path.join(phases_dir, f"phase_step_{step:05d}.png")
+        fig.savefig(path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        saved.append(path)
+        print(f"  Saved: {os.path.relpath(path)}")
+
+    return saved
 
 
 def plot_thermal_steps(run_dir: str, out_dir: str = None,
                        iga_file: str = "igasol.dat",
                        max_steps: int = None) -> list:
-    """
-    Save one PNG per snapshot with T(x) and ρ_v(x) on individual subplots.
-    Output goes to <out_dir>/thermal_steps/thermal_step_NNNNN.png.
-    """
+    """Save one PNG per snapshot with T(x) and ρ_v(x) on twin y-axes."""
     if out_dir is None:
         out_dir = run_dir
     thermal_dir = os.path.join(out_dir, "thermal_steps")
@@ -333,193 +349,15 @@ def plot_thermal_steps(run_dir: str, out_dir: str = None,
     return saved
 
 
-def plot_phase_steps(run_dir: str, out_dir: str = None,
-                     iga_file: str = "igasol.dat",
-                     max_steps: int = None) -> list:
-    """
-    Save one PNG per snapshot showing φ_i, φ_s, φ_a.
-    Returns list of saved file paths (used by make_phase_gif).
-    """
-    if out_dir is None:
-        out_dir = run_dir
-    phases_dir = os.path.join(out_dir, "phases")
-    os.makedirs(phases_dir, exist_ok=True)
-
-    x_mm, sed_list, ice_list, _, _, step_list, time_list = _collect_snapshots(
-        run_dir, iga_file, max_steps
-    )
-
-    saved = []
-    for phi_i, phi_s, step, t_h in zip(ice_list, sed_list, step_list, time_list):
-        phi_a = 1.0 - phi_i - phi_s   # raw, unclipped — violations show as negative
-        fig   = _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h)
-        path  = os.path.join(phases_dir, f"phase_step_{step:05d}.png")
-        fig.savefig(path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
-        saved.append(path)
-        print(f"  Saved: {os.path.relpath(path)}")
-
-    return saved
-
-
 # ---------------------------------------------------------------------------
-# Mode B: thermal overlay (all steps, time colorbar)
-# ---------------------------------------------------------------------------
-
-def plot_thermal_overlay(run_dir: str, save_path: str = None,
-                          iga_file: str = "igasol.dat",
-                          max_steps: int = None):
-    """
-    2-panel figure: T(x) and ρ_v(x) for all snapshots, with a single
-    physical-time colorbar.  Uses cmocean.thermal and cmocean.balance.
-    """
-    x_mm, _sed, _, tem_list, rhov_list, step_list, time_list = _collect_snapshots(
-        run_dir, iga_file, max_steps
-    )
-
-    n = len(tem_list)
-
-    # Build time array for the colorbar (fall back to step index if no times)
-    t_vals = np.array([
-        t if t is not None else float(s)
-        for s, t in zip(step_list, time_list)
-    ])
-    use_time  = any(t is not None for t in time_list)
-    cb_label  = "Time  [h]" if use_time else "Snapshot index"
-
-    t_min, t_max = t_vals[0], t_vals[-1]
-    if t_min == t_max:
-        t_max = t_min + 1.0
-
-    norm_t = plt.Normalize(vmin=t_min, vmax=t_max)
-
-    # Color each snapshot by its position in time using plasma
-    cmap_time = cm.plasma
-
-    fig, (ax_T, ax_rho) = plt.subplots(2, 1, figsize=(9, 8), sharex=True)
-
-    for i, (tem, rhov, tv) in enumerate(zip(tem_list, rhov_list, t_vals)):
-        c  = cmap_time(norm_t(tv))
-        lw = 2.0 if i in (0, n - 1) else 1.2
-        ax_T.plot(x_mm, tem,  color=c, lw=lw)
-        ax_rho.plot(x_mm, rhov, color=c, lw=lw)
-
-    # Reference saturation vapor density at the final mean temperature
-    T_mean   = np.mean(tem_list[-1])
-    rvs_mean = rho_vs(T_mean)
-    ax_rho.axhline(rvs_mean, color="k", ls="--", lw=1.2,
-                   label=rf"$\rho_{{vs}}(T={T_mean:.1f}°C)$")
-    ax_rho.legend(fontsize=9, loc="upper right")
-
-    ax_T.set_ylabel("Temperature  [°C]",             fontsize=12)
-    ax_rho.set_ylabel(r"Vapor density  [kg m$^{-3}$]", fontsize=12)
-    ax_rho.set_xlabel("x  [mm]",                      fontsize=12)
-
-    run_label = os.path.basename(run_dir.rstrip("/")) or run_dir
-    ax_T.set_title(f"1D Permafrost — thermal fields\n({run_label})", fontsize=13)
-
-    for ax in (ax_T, ax_rho):
-        ax.grid(True, alpha=0.3)
-        ax.tick_params(labelsize=10)
-
-    # Shared colorbar on the right
-    sm = plt.cm.ScalarMappable(cmap=cmap_time, norm=norm_t)
-    sm.set_array([])
-    cbar = fig.colorbar(sm, ax=[ax_T, ax_rho], orientation="vertical",
-                        fraction=0.025, pad=0.02)
-    cbar.set_label(cb_label, fontsize=11)
-
-    plt.tight_layout()
-
-    if save_path is None:
-        thermal_dir = os.path.join(run_dir, "thermal")
-        os.makedirs(thermal_dir, exist_ok=True)
-        save_path = os.path.join(thermal_dir, "thermal_overlay.png")
-
-    fig.savefig(save_path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Thermal overlay saved to: {save_path}")
-
-
-# ---------------------------------------------------------------------------
-# Mode C: GIF animation
-# ---------------------------------------------------------------------------
-
-def make_phase_gif(run_dir: str, gif_path: str = None,
-                   iga_file: str = "igasol.dat",
-                   max_steps: int = None, fps: int = 4):
-    """
-    Build an animated GIF of phase field snapshots.
-    Requires Pillow: pip install Pillow
-    """
-    if gif_path is None:
-        phases_dir = os.path.join(run_dir, "phases")
-        os.makedirs(phases_dir, exist_ok=True)
-        gif_path = os.path.join(phases_dir, "phase_animation.gif")
-
-    x_mm, sed_list, ice_list, _, _, step_list, time_list = _collect_snapshots(
-        run_dir, iga_file, max_steps
-    )
-
-    # Build the figure once; update it each frame
-    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-    ax.set_xlim(x_mm[0], x_mm[-1])
-    ax.set_ylim(-0.05, 1.1)
-    ax.set_ylabel("Volume fraction", fontsize=12)
-    ax.set_xlabel("x  [mm]", fontsize=12)
-    ax.grid(True, alpha=0.3)
-    ax.tick_params(labelsize=10)
-
-    lines = []
-    for key in ["ice", "sed", "air"]:
-        ln, = ax.plot([], [], color=PHASE_COLORS[key], lw=2.0, label=PHASE_LABELS[key])
-        lines.append(ln)
-    ax.legend(fontsize=11, loc="best")
-
-    title = ax.set_title("", fontsize=13)
-
-    def _init():
-        for ln in lines:
-            ln.set_data([], [])
-        return lines
-
-    def _update(frame_idx):
-        phi_i = ice_list[frame_idx]
-        phi_s = sed_list[frame_idx]
-        phi_a = 1.0 - phi_i - phi_s   # raw, unclipped — violations show as negative
-        fields = [phi_i, phi_s, phi_a]
-        for ln, field in zip(lines, fields):
-            ln.set_data(x_mm, field)
-        step = step_list[frame_idx]
-        t_h  = time_list[frame_idx]
-        t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
-        title.set_text(f"Phase fields — step {step:d}{t_str}")
-        return lines + [title]
-
-    anim = FuncAnimation(fig, _update, init_func=_init,
-                          frames=len(ice_list), interval=1000 // fps,
-                          blit=False)
-
-    try:
-        writer = PillowWriter(fps=fps)
-        anim.save(gif_path, writer=writer)
-        plt.close(fig)
-        print(f"GIF saved to: {gif_path}")
-    except Exception as e:
-        plt.close(fig)
-        print(f"  WARNING: could not save GIF: {e}")
-        print("  Install Pillow with:  pip install Pillow")
-
-
-# ---------------------------------------------------------------------------
-# Mode D-pre: first / last snapshot comparison
+# First / last snapshot comparison
 # ---------------------------------------------------------------------------
 
 def plot_first_last(run_dir: str, save_path: str = None,
                     iga_file: str = "igasol.dat"):
     """
-    Single figure overlaying phi_i, phi_s, phi_a for the first and last
-    snapshots.  Solid lines = first step; dashed lines = last step.
+    Overlay φ_i, φ_s, φ_a for the first (solid) and last (dashed) snapshots
+    on a single panel.
     """
     x_mm, sed_list, ice_list, _, _, step_list, time_list = _collect_snapshots(
         run_dir, iga_file
@@ -529,16 +367,12 @@ def plot_first_last(run_dir: str, save_path: str = None,
         print("WARNING: fewer than 2 snapshots found — nothing to compare.")
         return
 
-    indices = [0, -1]
-    linestyles = ["-", "--"]
-    step_labels = ["first", "last"]
-
     fig, ax = plt.subplots(1, 1, figsize=(9, 5))
 
-    for idx, ls, label in zip(indices, linestyles, step_labels):
+    for idx, ls, label in zip([0, -1], ["-", "--"], ["first", "last"]):
         phi_i = ice_list[idx]
         phi_s = sed_list[idx]
-        phi_a = 1.0 - phi_i - phi_s   # raw, unclipped
+        phi_a = 1.0 - phi_i - phi_s
         step  = step_list[idx]
         t_h   = time_list[idx]
         t_str = f", t = {_fmt_time(t_h)}" if t_h is not None else f", step {step}"
@@ -548,10 +382,10 @@ def plot_first_last(run_dir: str, save_path: str = None,
         ax.plot(x_mm, phi_s, color=PHASE_COLORS["sed"], lw=2.0, ls=ls,
                 label=rf"$\phi_s$ ({label}{t_str})")
         ax.plot(x_mm, phi_a, color=PHASE_COLORS["air"], lw=2.0, ls=ls,
-                label=rf"$\phi_a = 1-\phi_i-\phi_s$ ({label}{t_str})")
+                label=rf"$\phi_a$ ({label}{t_str})")
 
     run_label = os.path.basename(run_dir.rstrip("/")) or run_dir
-    ax.set_title(f"Phase fields — first vs last snapshot\n({run_label})", fontsize=13)
+    ax.set_title(f"Phase fields — first vs. last snapshot\n({run_label})", fontsize=13)
     ax.set_ylabel("Volume fraction", fontsize=12)
     ax.set_xlabel("x  [mm]", fontsize=12)
     y_lo_all = min(-0.05, ax.get_ylim()[0])
@@ -573,7 +407,92 @@ def plot_first_last(run_dir: str, save_path: str = None,
 
 
 # ---------------------------------------------------------------------------
-# Mode D: derived quantities (unchanged logic)
+# Thermal overlay — all snapshots, twin y-axes, time colorbar
+# ---------------------------------------------------------------------------
+
+def plot_thermal_overlay(run_dir: str, save_path: str = None,
+                          iga_file: str = "igasol.dat",
+                          max_steps: int = None):
+    """
+    Single-panel twin-axis figure with all snapshots overlaid:
+    T(x) on the left y-axis (solid lines), ρ_v(x) on the right y-axis
+    (dashed lines), both color-coded by simulation time.
+    """
+    x_mm, _, _, tem_list, rhov_list, step_list, time_list = _collect_snapshots(
+        run_dir, iga_file, max_steps
+    )
+
+    n = len(tem_list)
+
+    t_vals = np.array([
+        t if t is not None else float(s)
+        for s, t in zip(step_list, time_list)
+    ])
+    use_time = any(t is not None for t in time_list)
+    cb_label = "Time  [h]" if use_time else "Snapshot index"
+
+    t_min, t_max = t_vals[0], t_vals[-1]
+    if t_min == t_max:
+        t_max = t_min + 1.0
+
+    norm_t   = plt.Normalize(vmin=t_min, vmax=t_max)
+    cmap_time = cm.plasma
+
+    fig, ax_T = plt.subplots(1, 1, figsize=(10, 6))
+    ax_rho = ax_T.twinx()
+
+    for i, (tem, rhov, tv) in enumerate(zip(tem_list, rhov_list, t_vals)):
+        c  = cmap_time(norm_t(tv))
+        lw = 2.0 if i in (0, n - 1) else 1.2
+        ax_T.plot(x_mm, tem,  color=c, lw=lw, ls="-")
+        ax_rho.plot(x_mm, rhov, color=c, lw=lw, ls="--")
+
+    # Reference saturation vapor density at the final mean temperature
+    T_mean   = float(np.mean(tem_list[-1]))
+    rvs_mean = rho_vs(np.array([T_mean]))[0]
+    ax_rho.axhline(rvs_mean, color="k", ls=":", lw=1.2,
+                   label=rf"$\rho_{{vs}}(T={T_mean:.1f}°C) = {rvs_mean:.3e}$ kg/m³")
+    ax_rho.legend(fontsize=9, loc="upper right")
+
+    # Proxy artists for line-style legend
+    from matplotlib.lines import Line2D
+    proxy_T   = Line2D([0], [0], color="gray", lw=2.0, ls="-",  label="Temperature  [°C]")
+    proxy_rho = Line2D([0], [0], color="gray", lw=2.0, ls="--", label=r"Vapor density  [kg m$^{-3}$]")
+    ax_T.legend(handles=[proxy_T, proxy_rho], fontsize=11, loc="upper left")
+
+    ax_T.set_xlabel("x  [mm]", fontsize=12)
+    ax_T.set_ylabel("Temperature  [°C]", fontsize=12, color=_COLOR_T)
+    ax_rho.set_ylabel(r"Vapor density  [kg m$^{-3}$]", fontsize=12, color=_COLOR_RHOV)
+    ax_T.tick_params(axis="y", labelcolor=_COLOR_T, labelsize=10)
+    ax_rho.tick_params(axis="y", labelcolor=_COLOR_RHOV, labelsize=10)
+    ax_T.tick_params(axis="x", labelsize=10)
+
+    run_label = os.path.basename(run_dir.rstrip("/")) or run_dir
+    ax_T.set_title(f"1D Permafrost — thermal fields (all snapshots)\n({run_label})",
+                   fontsize=13)
+    ax_T.grid(True, alpha=0.3)
+
+    # Shared time colorbar
+    sm = plt.cm.ScalarMappable(cmap=cmap_time, norm=norm_t)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=[ax_T], orientation="vertical",
+                        fraction=0.025, pad=0.10)
+    cbar.set_label(cb_label, fontsize=11)
+
+    plt.tight_layout()
+
+    if save_path is None:
+        thermal_dir = os.path.join(run_dir, "thermal")
+        os.makedirs(thermal_dir, exist_ok=True)
+        save_path = os.path.join(thermal_dir, "thermal_overlay.png")
+
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Thermal overlay saved to: {save_path}")
+
+
+# ---------------------------------------------------------------------------
+# Derived quantities (time-series)
 # ---------------------------------------------------------------------------
 
 def plot_derived(run_dir: str, save_path: str = None,
@@ -631,7 +550,6 @@ def plot_derived(run_dir: str, save_path: str = None,
     if not steps:
         sys.exit("No valid solutions found.")
 
-    # x-axis: physical time if available, else step index
     use_time = any(t is not None for t in t_h_arr)
     if use_time:
         xdata  = np.array([t if t is not None else np.nan for t in t_h_arr])
@@ -689,31 +607,26 @@ def parse_args():
         epilog=__doc__,
     )
     p.add_argument("--dir",        default=".",
-                   help="Output directory with sol_*.dat files (default: .)")
+                   help="Run directory with sol_*.dat files (default: .)")
     p.add_argument("--iga",        default="igasol.dat",
                    help="IGA geometry file (default: igasol.dat)")
     p.add_argument("--max-steps",  type=int, default=None,
                    help="Maximum number of snapshots to load")
     p.add_argument("--out-dir",    default=None,
                    help="Directory for per-step PNGs (default: same as --dir)")
-    p.add_argument("--gif",        nargs="?", const=True, default=False,
-                   metavar="PATH",
-                   help="Also produce a phase animation GIF "
-                        "(optional: custom output path)")
     p.add_argument("--thermal",    action="store_true",
-                   help="Also produce the thermal overlay figure")
-    p.add_argument("--derived",     action="store_true",
-                   help="Plot derived scalar quantities instead of field profiles")
+                   help="Also produce the thermal overlay (all steps on one twin-axis plot)")
+    p.add_argument("--derived",    action="store_true",
+                   help="Plot derived scalar quantities (ice volume, interface position, width)")
     p.add_argument("--first-last", action="store_true",
-                   help="Plot phi_i, phi_s, phi_a for first and last steps on one figure")
+                   help="Only produce the first/last comparison figure (skip per-step PNGs)")
     p.add_argument("--save",       default=None,
-                   help="Save path for --thermal or --derived figure "
-                        "(default: auto-named in --dir)")
+                   help="Save path for --thermal or --derived figure")
     return p.parse_args()
 
 
 def main():
-    args   = parse_args()
+    args    = parse_args()
     run_dir = args.dir
     out_dir = args.out_dir or run_dir
 
@@ -725,25 +638,19 @@ def main():
         plot_first_last(run_dir, save_path=args.save, iga_file=args.iga)
         return
 
-    # Default: always produce per-step phase PNGs
+    # Default: per-step phase PNGs + per-step thermal PNGs + first/last comparison
     plot_phase_steps(run_dir, out_dir=out_dir,
                      iga_file=args.iga, max_steps=args.max_steps)
 
-    # Default: always produce per-step thermal (T + ρ_v) PNGs
     plot_thermal_steps(run_dir, out_dir=out_dir,
                        iga_file=args.iga, max_steps=args.max_steps)
 
-    # Optional: thermal overlay
-    if args.thermal:
-        save_thermal = args.save or None  # let plot_thermal_overlay handle subfolder
-        plot_thermal_overlay(run_dir, save_path=save_thermal,
-                             iga_file=args.iga, max_steps=args.max_steps)
+    plot_first_last(run_dir, iga_file=args.iga)
 
-    # Optional: GIF
-    if args.gif is not False:
-        gif_path = args.gif if isinstance(args.gif, str) else None
-        make_phase_gif(run_dir, gif_path=gif_path,
-                       iga_file=args.iga, max_steps=args.max_steps)
+    # Optional: thermal overlay (all snapshots on one twin-axis figure)
+    if args.thermal:
+        plot_thermal_overlay(run_dir, save_path=args.save,
+                             iga_file=args.iga, max_steps=args.max_steps)
 
 
 if __name__ == "__main__":
