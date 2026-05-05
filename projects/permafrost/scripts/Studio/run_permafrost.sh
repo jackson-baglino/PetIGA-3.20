@@ -355,6 +355,16 @@ copy_source_code
 run_plotting
 run_1d_plotting
 
+# Time step diagnostic — always generated from outp.txt (all dims)
+if [ -f "$folder/outp.txt" ]; then
+    PYTHON=$(command -v python3 || command -v python)
+    echo ""
+    echo "--- Time step diagnostic ---"
+    "$PYTHON" "$PROJECT_ROOT/postprocess/plot_timestep.py" \
+        --dir "$folder" --save "$folder/timestep.png" \
+        2>&1 | sed 's/^/    /'
+fi
+
 echo ""
 echo "========================================================================="
 if [ "${sim_exit:-0}" -ne 0 ]; then
