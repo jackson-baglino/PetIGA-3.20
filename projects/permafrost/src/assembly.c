@@ -135,8 +135,29 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     for (a = 0; a < nen; a++) {
         PetscReal R_ice = 0.0, R_sed = 0.0, R_tem = 0.0, R_vap = 0.0;
 
-        if (user->flag_tIC == 1) {
-            /* Zero everything during initial-condition relaxation steps */
+        if (user->flag_relax) {
+
+            /* ================================================================
+             * RELAXATION MODE  (step < n_relax)
+             * Run 3-phase Allen-Cahn ONLY — no temperature, no vapor coupling.
+             * The sublimation source is dropped so no phase change occurs.
+             * Purpose: let diffuse interfaces settle from IC tanh profiles
+             * before full physics starts.
+             * R_tem = 0, R_vap = 0 — fields held at IC values.
+             * ================================================================ */
+
+            /* Ice: 3-phase AC, no sublimation */
+            R_ice = N0[a] * ice_t;
+            for (l = 0; l < dim; l++)
+                R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+            R_ice += C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
+
+            /* Sediment: 3-phase AC */
+            R_sed = N0[a] * sed_t;
+            for (l = 0; l < dim; l++)
+                R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
+            R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+
         } else if (!user->flag_sed_frozen) {
 
             /* ================================================================
@@ -164,8 +185,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
              * TWO-PHASE FORMULATION  (sediment frozen, t >= t_sed_freeze)
              * Sediment RHS is zeroed: only the time-derivative term remains,
              * which forces phi_sed_t = 0 (sediment stationary).
-             * Ice evolves under 3-phase AC by default; set flag_2ph_ice = 1
-             * to use the 2-phase form that pins ice to the frozen sediment
+             * Ice evolves under 2-phase AC pinned to the frozen sediment
              * boundary.
              * ================================================================ */
 
@@ -183,7 +203,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             R_sed = N0[a] * sed_t;
         }
 
-        if (user->flag_tIC != 1) {
+        if (!user->flag_relax) {
             /* --- Thermal energy balance (same in both formulations) --- */
             R_tem  = rho * cp * N0[a] * tem_t;
             for (l = 0; l < dim; l++)
@@ -307,8 +327,22 @@ PetscErrorCode Residual_A2(IGAPoint pnt,
     for (a = 0; a < nen; a++) {
         PetscReal R_ice = 0.0, R_sed = 0.0, R_tem = 0.0, R_vap = 0.0;
 
-        if (user->flag_tIC == 1) {
-            /* Zero everything during initial-condition relaxation steps */
+        if (user->flag_relax) {
+
+            /* ================================================================
+             * RELAXATION MODE  (step < n_relax)
+             * 3-phase AC for ice and sediment; no sublimation, no T/vapor.
+             * ================================================================ */
+            R_ice = N0[a] * ice_t;
+            for (l = 0; l < dim; l++)
+                R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+            R_ice += C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
+
+            R_sed = N0[a] * sed_t;
+            for (l = 0; l < dim; l++)
+                R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
+            R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+
         } else {
 
             /* --- Ice: 3-phase AC before freeze; 2-phase AC after freeze --- */
@@ -513,8 +547,9 @@ PetscErrorCode Residual_A3(IGAPoint pnt,
     for (a = 0; a < nen; a++) {
         PetscReal R_ice = 0.0, R_sed = 0.0, R_tem = 0.0, R_vap = 0.0;
 
-        if (user->flag_tIC == 1) {
-            /* Zero everything during IC relaxation */
+        if (user->flag_relax) {
+            /* RELAXATION MODE — Residual_A3 (Cahn-Hilliard) is not used
+             * during relaxation; zero all DOFs and skip CH assembly. */
         } else {
             // Laplacian of test function
             PetscReal lap_Na = 0.0;

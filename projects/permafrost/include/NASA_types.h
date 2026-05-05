@@ -63,9 +63,10 @@ typedef struct {
   PetscReal norm0[4];  // Per-DOF initial residual norms for SNES convergence check
 
   // Flags for controlling different simulation options
-  PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 1=IC relaxation, 2=flat interface
+  PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 2=flat interface
   PetscInt  outp;            // output control flag
-  PetscInt  nsteps_IC;       // number of initial-condition relaxation steps
+  PetscInt  n_relax;         // AC-only relaxation steps before full physics (0 = none)
+  PetscBool flag_relax;      // PETSC_TRUE while relaxation steps are active
   PetscBool flag_Tdep;       // temperature-dependent material properties
   PetscBool flag_sed_frozen; // PETSC_FALSE = 3-phase active; PETSC_TRUE = 2-phase (sediment frozen)
 

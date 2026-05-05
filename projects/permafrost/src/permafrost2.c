@@ -25,7 +25,8 @@ int main(int argc, char *argv[]) {
 
     user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
-    user.nsteps_IC       = 10;  /* Number of initial condition steps (???) */
+    user.n_relax    = 0;            /* AC relaxation steps before physics (0 = none) */
+    user.flag_relax = PETSC_FALSE;  /* set after option parsing */
     user.t_sed_freeze    = 1.0;        /* 3-phase duration (s); 0 = start immediately in 2-phase */
     user.flag_sed_frozen = PETSC_FALSE; /* set below from t_sed_freeze */
     user.flag_avenue     = 2;          /* default: Avenue 2 */
@@ -189,6 +190,10 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-n_relax",
+             "Allen-Cahn relaxation steps before full physics; phase fields settle with no "
+             "temperature/vapor coupling (0 = disabled, default)",
+             "", user.n_relax, &user.n_relax, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_sed_freeze",
              "Duration of 3-phase period (s). Set to 0 to start immediately in 2-phase "
              "(frozen sediment). Set > 0 to run 3-phase until this time, then switch.",
@@ -272,9 +277,13 @@ int main(int argc, char *argv[]) {
     /* Resolve sentinel defaults using the final eps value */
     if (user.k_sed_pen < 0.0) user.k_sed_pen = 1.0e-4 / (eps * eps);
 
+    /* Relaxation: if n_relax > 0, start in AC-only mode; monitoring.c flips flag_relax off at step n_relax */
+    user.flag_relax = (user.n_relax > 0) ? PETSC_TRUE : PETSC_FALSE;
+
     /* Determine initial freeze state from t_sed_freeze:
      *   t_sed_freeze <= 0 → start immediately in 2-phase (sediment frozen from t = 0)
-     *   t_sed_freeze >  0 → start in 3-phase; monitoring.c flips flag_sed_frozen at t = t_sed_freeze */
+     *   t_sed_freeze >  0 → start in 3-phase; monitoring.c flips flag_sed_frozen at t = t_sed_freeze
+     * Note: if relaxation is active, the freeze transition is deferred until after relaxation. */
     user.flag_sed_frozen = (user.t_sed_freeze <= 0.0) ? PETSC_TRUE : PETSC_FALSE;
 
     /* Assign parameters to user context */
@@ -313,6 +322,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "Temperature gradient: dT/dx = %.2e C/m", grad_temp0[0]);
     if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", dT/dy = %.2e C/m", grad_temp0[1]);
     if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", dT/dz = %.2e C/m", grad_temp0[2]);
+    PetscPrintf(PETSC_COMM_WORLD, "\n D_v(T) = %.5e m^2/s \n", user.dif_vap);
 
     /* Compute saturation vapor density and its derivative based on initial temperature */
     PetscReal rho_rhovs;   /* Ratio of ice density to saturation vapor density */

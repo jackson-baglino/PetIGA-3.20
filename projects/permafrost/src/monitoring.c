@@ -154,14 +154,17 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   //-------------
   PetscReal dt;
   TSGetTimeStep(ts,&dt);
-  //------------- initial condition
-  if(user->flag_tIC==1) if(step==user->nsteps_IC) {
-    user->flag_tIC = 0; user->t_IC = t; //user->flag_rtol = 1;
-    PetscPrintf(PETSC_COMM_WORLD,"INITIAL_CONDITION!!! \n");
+  //------------- relaxation → full physics transition
+  if (user->flag_relax && step >= user->n_relax) {
+    user->flag_relax = PETSC_FALSE;
+    user->t_IC = t;
+    PetscPrintf(PETSC_COMM_WORLD,
+        "Relaxation complete (step %d, t = %.4e s) — switching to full physics.\n",
+        step, t);
   }
 
-  //------------- sediment freeze (switch at t_sed_freeze)
-  if (!user->flag_sed_frozen && t >= user->t_sed_freeze) {
+  //------------- sediment freeze (switch at t_sed_freeze; deferred while relaxing)
+  if (!user->flag_relax && !user->flag_sed_frozen && t >= user->t_sed_freeze) {
     user->flag_sed_frozen = PETSC_TRUE;
 
     /* Snapshot the relaxed sediment field as the penalty reference.
@@ -195,7 +198,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         "║  3-phase ice eq. unchanged; sediment pinned to sed0        ║\n"
         "╠════════════════════════════════════════════════════════════╣\n"
         "║  Step: %-5d  t_sed_freeze = %.4g s reached                 ║\n"
-        "║  New time step: %.2e s                                      ║\n"
+        "║  New time step: %.2e s                                 ║\n"
         "╚════════════════════════════════════════════════════════════╝\n"
         "\033[0m\n",
         step, user->t_sed_freeze, dt);
