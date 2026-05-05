@@ -139,11 +139,11 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
             /* ================================================================
              * RELAXATION MODE  (step < n_relax)
-             * Run 3-phase Allen-Cahn ONLY — no temperature, no vapor coupling.
-             * The sublimation source is dropped so no phase change occurs.
-             * Purpose: let diffuse interfaces settle from IC tanh profiles
-             * before full physics starts.
-             * R_tem = 0, R_vap = 0 — fields held at IC values.
+             * Run 3-phase Allen-Cahn for ice and sediment — no sublimation,
+             * no thermal or vapor spatial coupling.
+             * T and rhov carry only their time-derivative terms so ∂T/∂t = 0
+             * and ∂rhov/∂t = 0, keeping the Jacobian non-singular while
+             * holding both fields stationary at IC values.
              * ================================================================ */
 
             /* Ice: 3-phase AC, no sublimation */
@@ -157,6 +157,11 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             for (l = 0; l < dim; l++)
                 R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
             R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+
+            /* Temperature and vapor: time-derivative only (forces ∂T/∂t = ∂rhov/∂t = 0)
+             * This keeps the Jacobian non-singular while the fields stay fixed. */
+            R_tem = rho * cp * N0[a] * tem_t;
+            R_vap = N0[a] * rhov_t;
 
         } else if (!user->flag_sed_frozen) {
 
@@ -331,7 +336,8 @@ PetscErrorCode Residual_A2(IGAPoint pnt,
 
             /* ================================================================
              * RELAXATION MODE  (step < n_relax)
-             * 3-phase AC for ice and sediment; no sublimation, no T/vapor.
+             * 3-phase AC for ice and sediment; no sublimation.
+             * T and rhov carry time-derivative only to keep Jacobian regular.
              * ================================================================ */
             R_ice = N0[a] * ice_t;
             for (l = 0; l < dim; l++)
@@ -342,6 +348,9 @@ PetscErrorCode Residual_A2(IGAPoint pnt,
             for (l = 0; l < dim; l++)
                 R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
             R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+
+            R_tem = rho * cp * N0[a] * tem_t;
+            R_vap = N0[a] * rhov_t;
 
         } else {
 

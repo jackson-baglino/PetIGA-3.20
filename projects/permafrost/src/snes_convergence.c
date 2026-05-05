@@ -48,6 +48,10 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
         char header_line[512];
         PetscInt nchar = 0;
 
+        if (user->flag_relax)
+            PetscPrintf(PETSC_COMM_WORLD,
+                "    [RELAXATION — 3-phase AC only; T and rhov held fixed]\n");
+
         PetscSNPrintf(header_line, sizeof(header_line),
                       "    %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s",
                       (int)W_IT,    "it",
@@ -114,8 +118,10 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
 
     *reason = SNES_CONVERGED_ITERATING;
 
-    // Enforce minimum of 3 Newton iterations before checking convergence
-    if (it_number < 3) {
+    /* During relaxation the AC-only system is simpler; allow convergence after
+     * 1 iteration.  Full physics still requires 3 to avoid premature exit. */
+    PetscInt min_it = user->flag_relax ? 1 : 3;
+    if (it_number < min_it) {
         PetscFunctionReturn(0);
     }
 
@@ -127,6 +133,8 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
     // -------------------------------------------------------------------------
     // Per-DOF convergence check
     // nd is clamped to actual dof count to avoid accessing uninitialized entries
+    // During relaxation DOF 1 (T) and DOF 2 (rhov) have zero residuals and are
+    // marked trivially converged so only the AC DOFs (0=ice, 3=sed) drive exit.
     // -------------------------------------------------------------------------
     PetscInt  nd = (dof < 4) ? dof : 4;
     PetscBool conv_rel[4]  = {PETSC_FALSE, PETSC_FALSE, PETSC_FALSE, PETSC_FALSE};
