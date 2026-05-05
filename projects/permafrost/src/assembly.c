@@ -371,7 +371,6 @@ PetscErrorCode Residual_A3(IGAPoint pnt,
     PetscReal Etai    = user->Etai;
     PetscReal Etaa    = user->Etaa;
     PetscReal Etased  = user->Etam;
-    PetscReal EtaT    = Etai*Etased + Etai*Etaa + Etased*Etaa;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
     PetscReal air_lim = user->air_lim;
@@ -386,7 +385,6 @@ PetscErrorCode Residual_A3(IGAPoint pnt,
     IGAPointFormValue(pnt, U, &sol[0]);
     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
 
-    /* Solution Hessian — flat layout: hess[k*dim*dim + l*dim + m] = ∂²sol_k/∂x_l∂x_m */
     PetscScalar hess_flat[4 * 3 * 3];
     ierr = IGAPointFormHess(pnt, U, hess_flat); CHKERRQ(ierr);
 
@@ -416,7 +414,8 @@ PetscErrorCode Residual_A3(IGAPoint pnt,
     PetscScalar grad_rhov[dim];
     for (l = 0; l < dim; l++) grad_rhov[l] = grad_sol[2][l];
 
-    PetscReal thcond, cp, rho, difvap, rhoI_vs, fi, fa, fs, mob;
+    PetscReal thcond, cp, rho, difvap, rhoI_vs;
+    PetscReal fi, fa, fs, mob;
     ThermalCond(user, ice, sed, &thcond,  NULL);
     HeatCap    (user, ice, sed, &cp,      NULL);
     Density    (user, ice, sed, &rho,     NULL);
@@ -427,40 +426,70 @@ PetscErrorCode Residual_A3(IGAPoint pnt,
     Fsed(user, ice, sed, &fs, NULL);
     Mobility(user, ice, sed, &mob);
 
-    /* Shape functions: values, gradients, Hessians */
     const PetscReal *N0, (*N1)[dim], (*N2)[dim][dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
     IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
     IGAPointGetShapeFuns(pnt, 2, (const PetscReal**)&N2);
 
     PetscScalar air_eff = (air > air_lim) ? air : air_lim;
-    PetscReal C3  = 3.0 * mob / (eps * EtaT);
     PetscReal loc = ice*ice * air*air;
 
-    /* Laplacians of ice and sediment fields (trace of Hessian) */
+    // ------------------------------------------------------------------
+    // Laplacians of ice and sediment fields (trace of Hessian)
+    // ------------------------------------------------------------------
     PetscReal lap_ice = 0.0, lap_sed = 0.0;
     for (l = 0; l < dim; l++) {
-        lap_ice += hess_flat[0*dim*dim + l*dim + l];   /* DOF 0 = ice */
-        lap_sed += hess_flat[3*dim*dim + l*dim + l];   /* DOF 3 = sed */
+        lap_ice += hess_flat[0*dim*dim + l*dim + l];
+        lap_sed += hess_flat[3*dim*dim + l*dim + l];
     }
 
-    /* Derivatives of fi, fs, fa w.r.t. ice (for ∇f_drv via chain rule) */
+    // ------------------------------------------------------------------
+    // Partial derivatives of free energy functions
+    // Fice, Fsed, Fair return value in first pointer and d/d(ice) in second
+    // ChemPot_dsed returns d/d(sed) for all three
+    // ------------------------------------------------------------------
     PetscReal dfi_dice, dfs_dice, dfa_dice;
     Fice(user, ice, sed, NULL, &dfi_dice);
-    Fsed(user, ice, sed, NULL, &dfs_dice);   /* returns ∂fs/∂ice */
+    Fsed(user, ice, sed, NULL, &dfs_dice);
     Fair(user, ice, sed, NULL, &dfa_dice);
 
-    /* Derivatives of fi, fs, fa w.r.t. sediment */
     PetscReal dfi_dsed, dfs_dsed, dfa_dsed;
     ChemPot_dsed(user, ice, sed, &dfi_dsed, &dfs_dsed, &dfa_dsed);
 
-    /* Driving force gradient coefficients:
-     *   ice driving force:  f_drv_i = (Etas+Etaa)*fi - Etaa*fs - Etas*fa
-     *   sed driving force:  f_drv_s = -Etaa*fi - Etai*fa + (Etai+Etaa)*fs  */
-    PetscReal df_drv_i_dice = (Etased+Etaa)*dfi_dice - Etaa*dfs_dice - Etased*dfa_dice;
-    PetscReal df_drv_i_dsed = (Etased+Etaa)*dfi_dsed - Etaa*dfs_dsed - Etased*dfa_dsed;
-    PetscReal df_drv_s_dice = -Etaa*dfi_dice - Etai*dfa_dice + (Etai+Etaa)*dfs_dice;
-    PetscReal df_drv_s_dsed = -Etaa*dfi_dsed - Etai*dfa_dsed + (Etai+Etaa)*dfs_dsed;
+    // ------------------------------------------------------------------
+    // Chemical potential differences (bulk driving forces)
+    //
+    // g_is = (3/eps) * (df/dphi_i - df/dphi_s)
+    // g_ia = (3/eps) * (df/dphi_i - df/dphi_a)
+    //
+    // These replace the old EtaT-weighted combinations from Allen-Cahn.
+    // The 3/eps factor is absorbed into the gradient terms below.
+    //
+    // Gradients of g_is and g_ia via chain rule:
+    //   nabla(g_is) = dg_is/d(ice)*nabla(ice) + dg_is/d(sed)*nabla(sed)
+    // ------------------------------------------------------------------
+    PetscReal dg_is_dice = (3.0/eps) * (dfi_dice - dfs_dice);
+    PetscReal dg_is_dsed = (3.0/eps) * (dfi_dsed - dfs_dsed);
+
+    PetscReal dg_ia_dice = (3.0/eps) * (dfi_dice - dfa_dice);
+    PetscReal dg_ia_dsed = (3.0/eps) * (dfi_dsed - dfa_dsed);
+
+    // ------------------------------------------------------------------
+    // Fourth-order surface energy coefficients (constant mobility M0)
+    // From the derived weak form with Mi = Ms = Ma = M0, MT = 3*M0:
+    //
+    // Ice equation:
+    //   phi_i coefficient: eps * M0 * (2*Etai + Etaa)
+    //   phi_s coefficient: eps * M0 * (Etased - Etaa)    [subtracted]
+    //
+    // Sed equation:
+    //   phi_i coefficient: eps * M0 * (Etai - Etaa)
+    //   phi_s coefficient: eps * M0 * (2*Etased + Etaa)  [subtracted]
+    // ------------------------------------------------------------------
+    PetscReal coeff_ii = eps * mob * (2.0*Etai   + Etaa);
+    PetscReal coeff_is = eps * mob * (Etased - Etaa);
+    PetscReal coeff_si = eps * mob * (Etai   - Etaa);
+    PetscReal coeff_ss = eps * mob * (2.0*Etased + Etaa);
 
     PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
     PetscInt a, nen = pnt->nen;
@@ -468,40 +497,79 @@ PetscErrorCode Residual_A3(IGAPoint pnt,
         PetscReal R_ice = 0.0, R_sed = 0.0, R_tem = 0.0, R_vap = 0.0;
 
         if (user->flag_tIC == 1) {
-            /* Zero everything during initial-condition relaxation steps */
+            /* Zero everything during IC relaxation */
         } else {
-            /* Laplacian of test function (nonzero when p ≥ 2, C ≥ 1) */
+            // Laplacian of test function
             PetscReal lap_Na = 0.0;
             for (l = 0; l < dim; l++) lap_Na += N2[a][l][l];
 
-            /* --- Ice: Cahn-Hilliard (biharmonic form) ---
-             * R = N·φ_t + C3·∇N·∇f_drv_i + 3M·ε·ΔN·Δφ_ice − sublimation */
+            // ----------------------------------------------------------
+            // Ice equation — Cahn-Hilliard weak form (W1)
+            //
+            // R_ice = N*phi_i_t
+            //       + (M0/3)*nabla(N)*nabla(g_is + g_ia)
+            //       + eps*M0*(2*Etai+Etaa)*lap(N)*lap(phi_i)
+            //       - eps*M0*(Etased-Etaa)*lap(N)*lap(phi_s)
+            //       - N*alph_sub*loc*(rhov-rhoI_vs)/rho_ice
+            // ----------------------------------------------------------
             R_ice = N0[a] * ice_t;
+
+            // Bulk gradient term: (M0/3) * nabla(N) . nabla(g_is + g_ia)
             for (l = 0; l < dim; l++)
-                R_ice += C3 * N1[a][l] * (df_drv_i_dice * grad_ice[l]
-                                         + df_drv_i_dsed * grad_sed[l]);
-            R_ice += 3.0 * mob * eps * lap_Na * lap_ice;
+                R_ice += (mob/3.0) * N1[a][l]
+                       * ((dg_is_dice + dg_ia_dice) * grad_ice[l]
+                        + (dg_is_dsed + dg_ia_dsed) * grad_sed[l]);
+
+            // Fourth-order terms: eps*M0*(2Etai+Etaa)*lap(N)*lap(phi_i)
+            //                   - eps*M0*(Etased-Etaa)*lap(N)*lap(phi_s)
+            R_ice += coeff_ii * lap_Na * lap_ice;
+            R_ice -= coeff_is * lap_Na * lap_sed;
+
+            // Sublimation source
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
-            /* --- Sediment: Cahn-Hilliard (biharmonic form) ---
-             * R = N·φ_t + C3·∇N·∇f_drv_s + 3M·ε·ΔN·Δφ_sed */
+            // ----------------------------------------------------------
+            // Sediment equation — Cahn-Hilliard weak form (W2)
+            //
+            // R_sed = N*phi_s_t
+            //       - (2*M0/3)*nabla(N)*nabla(g_is)
+            //       + (M0/3)*nabla(N)*nabla(g_ia)
+            //       + eps*M0*(Etai-Etaa)*lap(N)*lap(phi_i)
+            //       - eps*M0*(2*Etased+Etaa)*lap(N)*lap(phi_s)
+            // ----------------------------------------------------------
             R_sed = N0[a] * sed_t;
-            for (l = 0; l < dim; l++)
-                R_sed += C3 * N1[a][l] * (df_drv_s_dice * grad_ice[l]
-                                         + df_drv_s_dsed * grad_sed[l]);
-            R_sed += 3.0 * mob * eps * lap_Na * lap_sed;
 
-            /* --- Thermal energy balance --- */
+            // Bulk gradient terms: -(2M0/3)*nabla(N).nabla(g_is)
+            //                    + (M0/3)*nabla(N).nabla(g_ia)
+            for (l = 0; l < dim; l++)
+                R_sed += N1[a][l]
+                       * ((-2.0*mob/3.0) * (dg_is_dice * grad_ice[l]
+                                           + dg_is_dsed * grad_sed[l])
+                        + ( mob/3.0)     * (dg_ia_dice * grad_ice[l]
+                                           + dg_ia_dsed * grad_sed[l]));
+
+            // Fourth-order terms: eps*M0*(Etai-Etaa)*lap(N)*lap(phi_i)
+            //                   - eps*M0*(2Etased+Etaa)*lap(N)*lap(phi_s)
+            R_sed += coeff_si * lap_Na * lap_ice;
+            R_sed -= coeff_ss * lap_Na * lap_sed;
+
+            // ----------------------------------------------------------
+            // Thermal energy balance
+            // ----------------------------------------------------------
             R_tem  = rho * cp * N0[a] * tem_t;
             for (l = 0; l < dim; l++)
                 R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
             R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
-            /* --- Vapor: standard diffusion, no penalties --- */
-            R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);
+            // ----------------------------------------------------------
+            // Vapor transport
+            // Standard diffusion — xi_v scales diffusion only,
+            // not the phase change source term
+            // ----------------------------------------------------------
+            R_vap  = N0[a] * air_eff * rhov_t;
             for (l = 0; l < dim; l++)
                 R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-            R_vap -= xi_v * N0[a] * rho_ice * air_t;
+            R_vap -= N0[a] * rho_ice * air_t;
         }
 
         R[a][0] = R_ice;

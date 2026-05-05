@@ -189,7 +189,6 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       PetscPrintf(PETSC_COMM_WORLD, "  sed0 reference updated to relaxed profile (%d quadrature points)\n", indd_snap);
     }
 
-    TSSetTimeStep(ts, 1.0e-2);
     PetscPrintf(PETSC_COMM_WORLD, "\033[34m"
         "╔════════════════════════════════════════════════════════════╗\n"
         "║              SEDIMENT PENALTY ACTIVATED                    ║\n"

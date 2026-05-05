@@ -42,7 +42,7 @@
 -periodic 0                             # periodic BCs (0=no, 1=yes)
 -t_sed_freeze 300                       # simulated time (s) at which sediment evolution is frozen
 -flag_sed_mode 1                        # sediment mode: -1=always 3-phase; 0=always frozen; 1=freeze at t_sed_freeze
--flag_avenue 1                          # residual formulation: 1=A1 (AC, no penalty); 2=A2 (AC+penalty); 3=A3 (CH)
+-flag_avenue 2                          # residual formulation: 1=A1 (AC, no penalty); 2=A2 (AC+penalty); 3=A3 (CH)
 -flag_2ph_ice 1                         # after freeze: 0=keep 3-phase ice; 1=switch to 2-phase ice formulation
 -flag_BC_Tfix 0                         # fix temperature at boundaries (0=no, 1=yes)
 -flag_BC_rhovfix 0                      # fix vapor density at boundaries (0=no, 1=yes)

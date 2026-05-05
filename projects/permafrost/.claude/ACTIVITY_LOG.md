@@ -1,6 +1,31 @@
 
 ---
 
+**Session ended:** 2026-05-04 11:51:14
+
+
+---
+
+**Session ended:** 2026-05-04 11:25:20
+
+
+---
+
+**Session ended:** 2026-05-04 10:52:22
+
+
+---
+
+**Session ended:** 2026-05-04 10:41:15
+
+
+---
+
+**Session ended:** 2026-05-04 10:38:15
+
+
+---
+
 ## 2026-05-04 — Physics fixes and postprocessing rewrite
 
 - `assembly.c`: Simplified A1 vapor residual time term from `N0[a] * (air_eff * rhov_t + air_t * rhov)` to `N0[a] * rhov_t` — removes the air-phase weighting on the vapor mass time derivative to reduce spurious coupling with phase evolution.
