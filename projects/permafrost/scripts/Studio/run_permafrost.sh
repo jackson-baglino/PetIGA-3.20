@@ -214,12 +214,23 @@ run_simulation() {
     echo "Processes    : 12"
     echo ""
 
+    # Suppress VTK output for 1D runs — paraview can't usefully display 1D data
+    local dim
+    dim=$(awk '$1 == "-dim" { print $2 }' "$params_file" | head -n1)
+    dim=${dim:-2}
+    local vtk_flag=""
+    if [[ "$dim" == "1" ]]; then
+        vtk_flag="-Permafrost_output 0"
+        echo "  (1D run: VTK output suppressed)"
+    fi
+
     export folder
 
     set +e
     mpiexec -np 12 "$EXEC"              \
         -options_file "$params_file"    \
         -output_path  "$folder"         \
+        $vtk_flag                       \
         | tee "$folder/outp.txt"
 
     sim_exit=${PIPESTATUS[0]}
