@@ -1,4 +1,61 @@
 
+## 2026-05-05 — n_relax relaxation phase + Permafrost_output fix
+
+- Fixed missing `sol*.dat` output: `test_1D_IceSlab.opts` had `-Permafrost_output 0`, which prevented `OutputMonitor` from registering; restored to 1 and corrected the misleading "VTK" comment in all three opts files.
+- Added `n_relax` parameter: AC-only relaxation steps before full physics starts. Phase fields evolve under 3-phase Allen-Cahn (no sublimation, no T/vapor coupling) for first N steps, then full physics resumes.
+- Replaced defunct `flag_tIC == 1` / `nsteps_IC` mechanism with dedicated `flag_relax` (PetscBool) + `n_relax` (PetscInt) fields in AppCtx.
+- `flag_tIC` is now geometry-only (0=centered slab, 2=flat interface).
+- Sediment freeze transition (`t_sed_freeze`) is deferred until after relaxation completes, even if `t_sed_freeze = 0`.
+- Updated `test_1D_IceSlab.opts` with `-flag_tIC 0` and `-n_relax 0` (disabled by default).
+
+---
+
+**Session ended:** 2026-05-05 16:03:17
+
+
+---
+
+**Session ended:** 2026-05-05 15:57:25
+
+
+---
+
+**Session ended:** 2026-05-05 15:54:56
+
+
+---
+
+**Session ended:** 2026-05-05 15:48:48
+
+
+---
+
+**Session ended:** 2026-05-05 15:45:38
+
+
+---
+
+**Session ended:** 2026-05-05 15:37:18
+
+
+---
+
+**Session ended:** 2026-05-05 14:53:44
+
+
+---
+
+**Session ended:** 2026-05-05 14:52:19
+
+
+## 2026-05-05 — Avenue 1 restructure, D_pen fix, opts cleanup
+
+- Fixed `difvap_pen`: changed from absolute diffusivity to dimensionless factor so `D_pen = difvap_pen * difvap`; default changed from `3e-5` to `1e-5`; updated in both `Residual_A1` and `Residual_A2`.
+- Restructured `Residual_A1` into explicit THREE-PHASE and TWO-PHASE blocks; removed the nested `flag_2ph_ice` patch in favor of a clean top-level branch; thermal and vapor residuals are now clearly shared by both formulations.
+- Simplified sediment freeze logic: `t_sed_freeze <= 0` starts immediately in 2-phase; `flag_sed_mode` removed from opts parsing.
+- Removed `k_pen` sentinel (now has explicit default `1e7`); kept `k_sed_pen` sentinel for Avenue 2.
+- Cleaned up `test_1D_IceSlab.opts`: removed `flag_sed_mode` and `k_sed_pen`; updated `difvap_pen` to `1e-5` (factor); reorganised sections.
+
 ---
 
 **Session ended:** 2026-05-04 11:51:14
