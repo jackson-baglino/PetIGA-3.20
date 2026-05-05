@@ -76,9 +76,9 @@ typedef struct {
    *   3 = Cahn-Hilliard, no penalties (requires p ≥ 2, C ≥ 1) */
   PetscInt flag_avenue;
 
-  PetscReal t_sed_freeze;    // simulated time (s) at which sediment switches (modes 1+2)
-  PetscInt  flag_sed_frozen; // 0 = full 3-phase active; 1 = freeze triggered
-  PetscInt  flag_sed_mode;   // -1 = never freeze; 0 = always frozen; 1 = freeze at t_sed_freeze
+  PetscReal t_sed_freeze;    // duration of 3-phase period (s); 0 = start immediately in 2-phase
+  PetscInt  flag_sed_frozen; // 0 = 3-phase active; 1 = 2-phase (sediment frozen)
+  PetscInt  flag_sed_mode;   // retained for internal use; not read from opts
   PetscInt  flag_2ph_ice;    // 0 = keep 3-phase ice after freeze; 1 = switch to 2-phase ice
 
   // Numerical method and discretization parameters
@@ -102,8 +102,8 @@ typedef struct {
   PetscInt npoints;
 
   /* Penalty parameters (tunable via CLI) */
-  PetscReal difvap_pen;   // effective vapour diffusivity in the air phase [m²/s]
-  PetscReal k_pen;        // vapour interface equilibrium stiffness [Pa·s/m² effectively]
+  PetscReal difvap_pen;   // multiplicative factor: D_pen = difvap_pen * difvap (dimensionless)
+  PetscReal k_pen;        // vapour interface equilibrium stiffness
   PetscReal k_sed_pen;    // sediment shape-restoring stiffness
 
   /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */

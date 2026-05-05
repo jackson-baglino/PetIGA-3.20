@@ -111,13 +111,15 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     Fsed(user, ice, sed, &fs, NULL);
     Mobility(user, ice, sed, &mob);
 
+    /* D_pen = difvap_pen (factor) * difvap: penalised diffusivity in the air phase */
+    PetscReal D_pen = user->difvap_pen * difvap;
+    PetscReal k_pen = user->k_pen;
+
     PetscReal g_phia, g_phiiphis;
-    PetscReal difvap_pen = user->difvap_pen;
-    PetscReal k_pen      = user->k_pen;
-    PetscReal rhov_eq    = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
+    PetscReal rhov_eq = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
     SmoothHeavisidePoly(ice + sed, &g_phiiphis, NULL);
     SmoothHeavisidePoly(ice,       &g_phia,     NULL);
-    difvap = difvap * g_phia + difvap_pen * (1.0 - g_phia);
+    difvap = difvap * g_phia + D_pen * (1.0 - g_phia);
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
@@ -134,19 +136,47 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
         if (user->flag_tIC == 1) {
             /* Zero everything during initial-condition relaxation steps */
-        } else {
+        } else if (!user->flag_sed_frozen) {
 
-            /* --- Ice: 3-phase Allen-Cahn (always) --- */
+            /* ================================================================
+             * THREE-PHASE FORMULATION
+             * Active from t = 0 until t = t_sed_freeze (> 0).
+             * Both ice and sediment evolve under full 3-phase Allen-Cahn.
+             * ================================================================ */
+
+            /* Ice: 3-phase Allen-Cahn */
             R_ice = N0[a] * ice_t;
             for (l = 0; l < dim; l++)
                 R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
             R_ice += C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
-            /* --- Optional: 2-phase ice after freeze (flag_2ph_ice = 1) ---
-             * Replaces the 3-phase ice equation above with a 2-phase form
-             * that pins ice to the frozen sediment boundary. */
-            if (user->flag_sed_frozen && user->flag_2ph_ice) {
+            /* Sediment: 3-phase Allen-Cahn */
+            R_sed = N0[a] * sed_t;
+            for (l = 0; l < dim; l++)
+                R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
+            R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
+
+        } else {
+
+            /* ================================================================
+             * TWO-PHASE FORMULATION  (sediment frozen, t >= t_sed_freeze)
+             * Sediment RHS is zeroed: only the time-derivative term remains,
+             * which forces phi_sed_t = 0 (sediment stationary).
+             * Ice evolves under 3-phase AC by default; set flag_2ph_ice = 1
+             * to use the 2-phase form that pins ice to the frozen sediment
+             * boundary.
+             * ================================================================ */
+
+            if (!user->flag_2ph_ice) {
+                /* Ice: 3-phase Allen-Cahn (same as three-phase block above) */
+                R_ice = N0[a] * ice_t;
+                for (l = 0; l < dim; l++)
+                    R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+                R_ice += C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
+                R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+            } else {
+                /* Ice: 2-phase Allen-Cahn pinned to frozen sediment boundary */
                 PetscReal C2 = 3.0 * mob / (Etai + Etaa);
                 R_ice = N0[a] * ice_t;
                 for (l = 0; l < dim; l++)
@@ -157,24 +187,19 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
                 R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
             }
 
-            /* --- Sediment: 3-phase Allen-Cahn before freeze; RHS = 0 after --- */
-            if (!user->flag_sed_frozen) {
-                R_sed = N0[a] * sed_t;
-                for (l = 0; l < dim; l++)
-                    R_sed += 3.0 * mob * eps * (N1[a][l] * grad_sed[l]);
-                R_sed += C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs) * N0[a];
-            } else {
-                /* Sediment frozen: only time derivative — phi_sed evolves toward 0 */
-                R_sed = N0[a] * sed_t;
-            }
+            /* Sediment: RHS = 0 (time derivative only — forces phi_sed_t = 0) */
+            R_sed = N0[a] * sed_t;
+        }
 
-            /* --- Thermal energy balance --- */
+        if (user->flag_tIC != 1) {
+            /* --- Thermal energy balance (same in both formulations) --- */
             R_tem  = rho * cp * N0[a] * tem_t;
             for (l = 0; l < dim; l++)
                 R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
             R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
-            /* --- Vapor: penalised diffusivity + interface equilibrium penalty --- */
+            /* --- Vapor: penalised diffusivity + interface equilibrium penalty
+             *     (same in both formulations) --- */
             R_vap  = N0[a] * rhov_t;
             for (l = 0; l < dim; l++)
                 R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
@@ -266,14 +291,16 @@ PetscErrorCode Residual_A2(IGAPoint pnt,
     Fsed(user, ice, sed, &fs, NULL);
     Mobility(user, ice, sed, &mob);
 
+    /* D_pen = difvap_pen (factor) * difvap: penalised diffusivity in the air phase */
+    PetscReal D_pen  = user->difvap_pen * difvap;
+    PetscReal k_pen  = user->k_pen;
+    PetscReal k_sed  = user->k_sed_pen;
+
     PetscReal g_phia, g_phiiphis;
-    PetscReal difvap_pen = user->difvap_pen;
-    PetscReal k_pen      = user->k_pen;
-    PetscReal k_sed      = user->k_sed_pen;
-    PetscReal rhov_eq    = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
+    PetscReal rhov_eq = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
     SmoothHeavisidePoly(ice + sed, &g_phiiphis, NULL);
     SmoothHeavisidePoly(ice,       &g_phia,     NULL);
-    difvap = difvap * g_phia + difvap_pen * (1.0 - g_phia);
+    difvap = difvap * g_phia + D_pen * (1.0 - g_phia);
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);

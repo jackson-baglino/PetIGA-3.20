@@ -57,9 +57,9 @@ int main(int argc, char *argv[]) {
 
     /* Penalty parameter defaults — match assembly.c hardcoded values.
      * eps is not yet final here; will be overridden after PetscOptionsEnd. */
-    user.difvap_pen = 3.0e-5;
-    user.k_pen      = -1.0;    /* sentinel: computed from difvap_pen/eps² after options */
-    user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-7/eps² after options */
+    user.difvap_pen = 1.0e-5;  /* factor (dimensionless): D_pen = difvap_pen * difvap */
+    user.k_pen      = 1.0e7;   /* vapour interface equilibrium stiffness */
+    user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-4/eps² after options */
     user.phase_lo   = -0.25;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.25;   /* upper bound: phi above this → abort */
     user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
@@ -193,11 +193,9 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_sed_freeze",
-             "Simulated time (s) at which sediment switches from 3-phase to pinned (mode 1 only)",
+             "Duration of 3-phase period (s). Set to 0 to start immediately in 2-phase "
+             "(frozen sediment). Set > 0 to run 3-phase until this time, then switch.",
              "", user.t_sed_freeze, &user.t_sed_freeze, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-flag_sed_mode",
-             "Sediment freeze mode: -1=never freeze, 0=always frozen, 1=freeze at t_sed_freeze",
-             "", user.flag_sed_mode, &user.flag_sed_mode, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_avenue",
              "Residual formulation: 1=AC+vapor penalty+freeze→zero, 2=AC+vapor penalty+freeze→penalty (default), 3=Cahn-Hilliard (no penalties)",
              "", user.flag_avenue, &user.flag_avenue, NULL); CHKERRQ(ierr);
@@ -253,8 +251,8 @@ int main(int argc, char *argv[]) {
 
     /* --- Penalty parameters --------------------------------------------- */
     ierr = PetscOptionsReal("-difvap_pen",
-             "Penalised vapour diffusivity in the air phase [m²/s] "
-             "(default 1e-3; physical difvap = 2.178e-5)",
+             "Multiplicative factor for vapour diffusivity in air: D_pen = difvap_pen * difvap "
+             "(dimensionless; default 1e-5)",
              "", user.difvap_pen, &user.difvap_pen, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-k_pen",
              "Vapour interface equilibrium stiffness "
@@ -278,16 +276,12 @@ int main(int argc, char *argv[]) {
     PetscOptionsEnd();
 
     /* Resolve sentinel defaults using the final eps value */
-    if (user.k_pen     < 0.0) user.k_pen     = user.difvap_pen / (eps * eps);
-    if (user.k_sed_pen < 0.0) user.k_sed_pen = 1.0e-4          / (eps * eps);
+    if (user.k_sed_pen < 0.0) user.k_sed_pen = 1.0e-4 / (eps * eps);
 
-    /* Set initial flag_sed_frozen from flag_sed_mode:
-     *   mode  0 → always 2-phase: freeze sediment immediately
-     *   mode  1 → switch after nsteps_sed: start 3-phase (monitoring.c will flip at step nsteps_sed)
-     *   mode -1 → always 3-phase: never freeze */
-    if      (user.flag_sed_mode == 0)  user.flag_sed_frozen = 1;
-    else if (user.flag_sed_mode == -1) user.flag_sed_frozen = 0;
-    else                               user.flag_sed_frozen = 0;  /* mode 1: start 3-phase */
+    /* Determine initial freeze state from t_sed_freeze:
+     *   t_sed_freeze <= 0 → start immediately in 2-phase (sediment frozen from t = 0)
+     *   t_sed_freeze >  0 → start in 3-phase; monitoring.c flips flag_sed_frozen at t = t_sed_freeze */
+    user.flag_sed_frozen = (user.t_sed_freeze <= 0.0) ? 1 : 0;
 
     /* Assign parameters to user context */
     user.p = p;
