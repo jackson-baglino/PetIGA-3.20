@@ -17,8 +17,8 @@ int main(int argc, char *argv[]) {
     /* Define simulation specific parameters */
     AppCtx user;                         /* User-defined application context */
     PetscMemzero(&user, sizeof(AppCtx)); /* Initialize user context to zero */
-    PetscInt flag_BC_Tfix;               /* Flag for temperature boundary condition */
-    PetscInt flag_BC_rhovfix;            /* Flag for fixed rho_v boundary condition */
+    PetscBool flag_BC_Tfix;              /* fix temperature at boundaries */
+    PetscBool flag_BC_rhovfix;           /* fix vapor density at boundaries */
 
     user.xi_v       = 1.0e-3; // 1.0e-5;   /* Time scaling parameter for vapor */
     user.xi_T       = 1.0e-2; // 1.0e-4;   /* Time scaling parameter for temperature */
@@ -26,11 +26,9 @@ int main(int argc, char *argv[]) {
     user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
     user.nsteps_IC       = 10;  /* Number of initial condition steps (???) */
-    user.t_sed_freeze    = 1.0;  /* Fallback simulated time (s) before forcing sediment freeze */
-    user.flag_sed_mode   = 1;    /* -1=never freeze; 0=always pinned; 1=freeze at t_sed_freeze */
-    user.flag_sed_frozen = 0;    /* Set below based on flag_sed_mode */
-    user.flag_avenue     = 2;    /* Default: Avenue 2 (AC + penalty) */
-    user.flag_2ph_ice    = 0;    /* Default: keep 3-phase ice after freeze */
+    user.t_sed_freeze    = 1.0;        /* 3-phase duration (s); 0 = start immediately in 2-phase */
+    user.flag_sed_frozen = PETSC_FALSE; /* set below from t_sed_freeze */
+    user.flag_avenue     = 2;          /* default: Avenue 2 */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -50,10 +48,9 @@ int main(int argc, char *argv[]) {
 
     user.T_melt     = 0.0;      /* Melting temperature of ice */
 
-    user.flag_tIC   = 0;        /* Initial condition flag */
-    user.readFlag   = 0;        /* Flag to read ice grains from file (UPDATE IMPLEMENTATION!) */
-
-    user.flag_Tdep  = 0;        /* Temperature-dependent Gibbs-Thomson parameters */
+    user.flag_tIC   = 0;              /* IC variant: 0=centered slab, 2=flat interface */
+    user.readFlag   = PETSC_FALSE;    /* read initial field from file */
+    user.flag_Tdep  = PETSC_FALSE;    /* temperature-dependent material properties */
 
     /* Penalty parameter defaults — match assembly.c hardcoded values.
      * eps is not yet final here; will be overridden after PetscOptionsEnd. */
@@ -111,8 +108,8 @@ int main(int argc, char *argv[]) {
 
     /* Define boundary condition flags (can be overridden by PETSc options) */
     user.periodic    = 0;       /* Periodic boundary condition flag */
-    flag_BC_Tfix     = 1;       /* Temperature BC flag */
-    flag_BC_rhovfix  = 0;       /* Vapor density BC flag */
+    flag_BC_Tfix     = PETSC_TRUE;  /* fix temperature at boundaries by default */
+    flag_BC_rhovfix  = PETSC_FALSE;
 
     /* Define output parameters (can be overridden by PETSc options) */
     user.outp        = 0;       /* Output control flag (0: output according to t_interv) */
@@ -188,9 +185,9 @@ int main(int argc, char *argv[]) {
 
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-flag_BC_Tfix", "Temperature BC flag", "", flag_BC_Tfix, &flag_BC_Tfix, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-flag_BC_rhovfix", "Vapor density BC flag", "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-flag_Tdep", "Temperature-dependent Gibbs-Thomson parameters", "", user.flag_Tdep, &user.flag_Tdep, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_sed_freeze",
              "Duration of 3-phase period (s). Set to 0 to start immediately in 2-phase "
@@ -199,9 +196,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-flag_avenue",
              "Residual formulation: 1=AC+vapor penalty+freeze→zero, 2=AC+vapor penalty+freeze→penalty (default), 3=Cahn-Hilliard (no penalties)",
              "", user.flag_avenue, &user.flag_avenue, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-flag_2ph_ice",
-             "0=keep 3-phase ice after freeze (default), 1=switch to 2-phase ice after freeze",
-             "", user.flag_2ph_ice, &user.flag_2ph_ice, NULL); CHKERRQ(ierr);
 
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);
@@ -281,7 +275,7 @@ int main(int argc, char *argv[]) {
     /* Determine initial freeze state from t_sed_freeze:
      *   t_sed_freeze <= 0 → start immediately in 2-phase (sediment frozen from t = 0)
      *   t_sed_freeze >  0 → start in 3-phase; monitoring.c flips flag_sed_frozen at t = t_sed_freeze */
-    user.flag_sed_frozen = (user.t_sed_freeze <= 0.0) ? 1 : 0;
+    user.flag_sed_frozen = (user.t_sed_freeze <= 0.0) ? PETSC_TRUE : PETSC_FALSE;
 
     /* Assign parameters to user context */
     user.p = p;
@@ -328,8 +322,8 @@ int main(int argc, char *argv[]) {
     rho_rhovs = user.rho_ice / rhoI_vs; /* Compute ratio */
 
     /* Adjust boundary condition flags for periodic case */
-    if (user.periodic == 1 && flag_BC_Tfix == 1) flag_BC_Tfix = 0;
-    if (user.periodic == 1 && flag_BC_rhovfix == 1) flag_BC_rhovfix = 0;
+    if (user.periodic == 1 && flag_BC_Tfix)    flag_BC_Tfix    = PETSC_FALSE;
+    if (user.periodic == 1 && flag_BC_rhovfix) flag_BC_rhovfix = PETSC_FALSE;
 
     /* Time stepping parameters */
     if (n_out > 1) {
@@ -377,7 +371,7 @@ int main(int argc, char *argv[]) {
 
     PetscPrintf(PETSC_COMM_WORLD, "Mobility terms: mob_sub = %.2e m^3/s, mob_sed = %.2e m^3/s \n", user.mob_sub, user.mob_sed);
 
-    if (user.flag_Tdep == 0) {
+    if (!user.flag_Tdep) {
         PetscPrintf(PETSC_COMM_WORLD,
                     "FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",
                     tau_sub, lambda_sub, user.mob_sub, user.alph_sub);
@@ -443,7 +437,7 @@ int main(int argc, char *argv[]) {
 
     /* Boundary conditions (could 'functionalize' this at some point) */
     // Set vapor density BCs
-    if (flag_BC_rhovfix == 1) {
+    if (flag_BC_rhovfix) {
         PetscReal rho0_vs;
         RhoVS_I(&user, user.temp0, &rho0_vs, NULL);
         for (PetscInt l = 0; l < dim; l++) {
@@ -454,7 +448,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Set temperature BCs
-    if (flag_BC_Tfix == 1) {
+    if (flag_BC_Tfix) {
         PetscReal T_BC[3][2] = {{0}};
         PetscReal LL[3]      = {user.Lx, user.Ly, user.Lz};
         for (PetscInt l = 0; l < dim; l++) {

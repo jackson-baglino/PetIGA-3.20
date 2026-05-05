@@ -39,12 +39,14 @@ static void ChemPot_dsed(AppCtx *user,
 /* =========================================================================
  * Avenue 1: Allen-Cahn + penalty vapor; after t_sed_freeze: sediment RHS = 0
  *
- * Before t_sed_freeze: full 3-phase AC for both ice and sediment;
- *   vapor uses penalised diffusivity (difvap_pen) and interface equilibrium (k_pen).
- * After t_sed_freeze (flag_sed_frozen = 1): sediment RHS is zeroed so that
- *   phi_sed is effectively frozen in place.  The ice equation stays in its
- *   3-phase form by default; set flag_2ph_ice = 1 to switch to the 2-phase
- *   form, which pins ice explicitly to the frozen sediment boundary.
+ * THREE-PHASE (flag_sed_frozen = PETSC_FALSE):
+ *   Full 3-phase Allen-Cahn for both ice and sediment.
+ *   Vapor uses penalised diffusivity (D_pen = difvap_pen * difvap) and
+ *   interface equilibrium stiffness (k_pen).
+ *
+ * TWO-PHASE (flag_sed_frozen = PETSC_TRUE, t >= t_sed_freeze):
+ *   Sediment RHS is zeroed (phi_sed is stationary).
+ *   Ice uses the 2-phase Allen-Cahn form pinned to the frozen sediment boundary.
  * ========================================================================= */
 PetscErrorCode Residual_A1(IGAPoint pnt,
                             PetscReal shift, const PetscScalar *V,
@@ -80,7 +82,6 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscScalar sed = sol[3], sed_t = sol_t[3];
     PetscScalar grad_sed[dim];
     for (l = 0; l < dim; l++) grad_sed[l] = grad_sol[3][l];
-    /* sed0 not needed in A1: sediment is frozen by zeroing the RHS, not by penalty */
 
     PetscScalar air   = 1.0 - sed - ice;
     PetscScalar air_t = -ice_t - sed_t;
@@ -168,24 +169,15 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
              * boundary.
              * ================================================================ */
 
-            if (!user->flag_2ph_ice) {
-                /* Ice: 3-phase Allen-Cahn (same as three-phase block above) */
-                R_ice = N0[a] * ice_t;
-                for (l = 0; l < dim; l++)
-                    R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-                R_ice += C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
-                R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
-            } else {
-                /* Ice: 2-phase Allen-Cahn pinned to frozen sediment boundary */
-                PetscReal C2 = 3.0 * mob / (Etai + Etaa);
-                R_ice = N0[a] * ice_t;
-                for (l = 0; l < dim; l++)
-                    R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-                for (l = 0; l < dim; l++)
-                    R_ice += C2 * Etaa * eps * (N1[a][l] * grad_sed[l]);
-                R_ice += N0[a] * C2 / eps * (fi - fa);
-                R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
-            }
+            /* Ice: 2-phase Allen-Cahn pinned to the frozen sediment boundary */
+            PetscReal C2 = 3.0 * mob / (Etai + Etaa);
+            R_ice = N0[a] * ice_t;
+            for (l = 0; l < dim; l++)
+                R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+            for (l = 0; l < dim; l++)
+                R_ice += C2 * Etaa * eps * (N1[a][l] * grad_sed[l]);
+            R_ice += N0[a] * C2 / eps * (fi - fa);
+            R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
             /* Sediment: RHS = 0 (time derivative only — forces phi_sed_t = 0) */
             R_sed = N0[a] * sed_t;
@@ -319,16 +311,14 @@ PetscErrorCode Residual_A2(IGAPoint pnt,
             /* Zero everything during initial-condition relaxation steps */
         } else {
 
-            /* --- Ice: 3-phase Allen-Cahn (always) --- */
-            R_ice = N0[a] * ice_t;
-            for (l = 0; l < dim; l++)
-                R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-            R_ice += C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
-            R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
-
-            /* --- Optional: 2-phase ice after freeze (flag_2ph_ice = 1) ---
-             * Replaces the 3-phase ice equation with a 2-phase form. */
-            if (user->flag_sed_frozen && user->flag_2ph_ice) {
+            /* --- Ice: 3-phase AC before freeze; 2-phase AC after freeze --- */
+            if (!user->flag_sed_frozen) {
+                R_ice = N0[a] * ice_t;
+                for (l = 0; l < dim; l++)
+                    R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
+                R_ice += C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa) * N0[a];
+                R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+            } else {
                 PetscReal C2 = 3.0 * mob / (Etai + Etaa);
                 R_ice = N0[a] * ice_t;
                 for (l = 0; l < dim; l++)

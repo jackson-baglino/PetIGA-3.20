@@ -63,23 +63,19 @@ typedef struct {
   PetscReal norm0[4];  // Per-DOF initial residual norms for SNES convergence check
 
   // Flags for controlling different simulation options
-  PetscInt flag_tIC;  // Flag for setting initial conditions
-  PetscInt outp;  // Output control flag (defines what to output)
-  PetscInt nsteps_IC;  // Number of initial condition timesteps
-  PetscInt flag_Tdep;  // Flag for temperature dependence of specific properties
-  PetscInt flag_BC_Tfix;
-  PetscInt flag_BC_rhovfix;
+  PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 1=IC relaxation, 2=flat interface
+  PetscInt  outp;            // output control flag
+  PetscInt  nsteps_IC;       // number of initial-condition relaxation steps
+  PetscBool flag_Tdep;       // temperature-dependent material properties
+  PetscBool flag_sed_frozen; // PETSC_FALSE = 3-phase active; PETSC_TRUE = 2-phase (sediment frozen)
 
   /* Residual avenue selector:
    *   1 = Allen-Cahn, penalty vapor, freeze sed → zero RHS after t_sed_freeze
    *   2 = Allen-Cahn, penalty vapor, freeze sed → k_sed penalty (default)
    *   3 = Cahn-Hilliard, no penalties (requires p ≥ 2, C ≥ 1) */
-  PetscInt flag_avenue;
+  PetscInt  flag_avenue;
 
   PetscReal t_sed_freeze;    // duration of 3-phase period (s); 0 = start immediately in 2-phase
-  PetscInt  flag_sed_frozen; // 0 = 3-phase active; 1 = 2-phase (sediment frozen)
-  PetscInt  flag_sed_mode;   // retained for internal use; not read from opts
-  PetscInt  flag_2ph_ice;    // 0 = keep 3-phase ice after freeze; 1 = switch to 2-phase ice
 
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)
@@ -113,7 +109,7 @@ typedef struct {
   PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)
 
   // Flag for reading input files
-  PetscInt readFlag;  // Flag to indicate whether initial data should be read from a file
+  PetscBool readFlag; // read initial field data from file
 
   // Output file path
   char output_path[PETSC_MAX_PATH_LEN];  // Path for output files

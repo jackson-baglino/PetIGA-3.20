@@ -37,11 +37,9 @@
 -grad_temp0 0.0,0.0e-03,0.0            # imposed temperature gradient (K/m; x,y,z); 0 = isothermal
 -eps 9.3295e-07                         # diffuse interface half-width (m)
 -periodic 0                             # periodic BCs (0=no, 1=yes)
--t_sed_freeze 300                       # simulated time (s) to freeze sediment (when flag_sed_mode=1)
--flag_sed_mode 1                        # sediment mode: -1=always 3-phase; 0=always frozen; 1=freeze at t_sed_freeze
+-t_sed_freeze 300                       # 3-phase duration (s); 0 = start immediately in 2-phase
 -k_sed_pen -1                           # sediment penalty stiffness (-1 = auto-choose; >0 = explicit value)
--flag_avenue 2                          # residual formulation: 1=A1 (AC, no penalty); 2=A2 (AC+penalty); 3=A3 (CH)
--flag_2ph_ice 1                         # after freeze: 0=keep 3-phase ice; 1=switch to 2-phase ice formulation
+-flag_avenue 2                          # residual formulation: 1=A1, 2=A2 (AC+penalty), 3=A3 (CH)
 -difvap_pen 1e-7                        # penalised vapour diffusivity in the air phase [m²/s]
 -k_pen 1e7                              # vapour interface equilibrium stiffness
 -flag_BC_Tfix 0                         # fix temperature at boundaries (0=no, 1=yes)

@@ -30,8 +30,7 @@
 # ---------- Phase-Field Physics ----------
 -eps 9.3295e-07                         # diffuse interface half-width (m)
 -flag_avenue 1                          # formulation: 1=Avenue 1 (AC, penalty vapor)
--t_sed_freeze 900                       # 3-phase duration (s); set to 0 for immediate 2-phase
--flag_2ph_ice 1                         # after freeze: 0=3-phase ice; 1=2-phase ice
+-t_sed_freeze 0                         # 3-phase duration (s); 0 = start immediately in 2-phase
 
 # ---------- Vapor Penalty ----------
 -difvap_pen 1.0e-5                      # D_pen factor: D_pen = difvap_pen * difvap (dimensionless)

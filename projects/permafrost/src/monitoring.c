@@ -20,7 +20,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscReal a1=5.0, a2=0.1581, bet_max=0.0, bet_min=1.0e30;
   PetscReal bet0, d0, rho_rhovs, d0_sub,  beta_sub, lambda_sub, tau_sub;
 
-  if(user->flag_Tdep==1){
+  if (user->flag_Tdep) {
     ierr = IGAGetLocalVecArray(user->iga,U,&localU,&arrayU);CHKERRQ(ierr);
     ierr = IGABeginElement(user->iga,&element);CHKERRQ(ierr);
     while (IGANextElement(user->iga,element)) {
@@ -67,7 +67,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD," b_min %.2e b_max %.2e\n",B_min,B_max);
 
     // After computing beta_sub, we set the flag to 0...
-    user->flag_Tdep = 0;
+    user->flag_Tdep = PETSC_FALSE;
 
     // Print the new mobility and alpha values for verification
     PetscPrintf(PETSC_COMM_WORLD, "M0_sub new: %.6e\n", user->mob_sub);
@@ -160,9 +160,9 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD,"INITIAL_CONDITION!!! \n");
   }
 
-  //------------- sediment freeze (mode 1: switch at t_sed_freeze)
-  if (user->flag_sed_mode == 1 && !user->flag_sed_frozen && t >= user->t_sed_freeze) {
-    user->flag_sed_frozen = 1;
+  //------------- sediment freeze (switch at t_sed_freeze)
+  if (!user->flag_sed_frozen && t >= user->t_sed_freeze) {
+    user->flag_sed_frozen = PETSC_TRUE;
 
     /* Snapshot the relaxed sediment field as the penalty reference.
      * Overwrite Phi_sed0[] with the current 3-phase profile so the penalty
