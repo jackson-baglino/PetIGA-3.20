@@ -290,10 +290,10 @@ run_1d_plotting() {
 
     set +e
 
-    # Per-step phase field PNGs + GIF
-    echo "  Generating phase field images and animation..."
+    # Per-step phase field PNGs
+    echo "  Generating phase field images..."
     "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
-        --dir "$folder" --out-dir "$folder" --gif \
+        --dir "$folder" --out-dir "$folder" \
         2>&1 | sed 's/^/    /'
     py_exit=$(( py_exit + $? ))
 
@@ -320,8 +320,7 @@ run_1d_plotting() {
     else
         echo "✅ 1D post-processing complete."
         echo "   phase_step_*.png  →  $folder/"
-        echo "   phase_animation.gif  →  $folder/phase_animation.gif"
-        echo "   derived.png          →  $folder/derived.png"
+        echo "   derived.png       →  $folder/derived.png"
         echo "   scalars.png          →  $folder/scalars.png"
     fi
 }
