@@ -24,7 +24,7 @@
 -t_final 86400.0                        # total simulation time (s) — 1 day
 -n_out 0                                # number of output snapshots (0 = use -outp)
 -outp 1                                 # write output every N time steps
--Permafrost_output 1                    # enable VTK field output
+-Permafrost_output 1                    # enable sol*.dat field output (0 = disable)
 -Permafrost_monitor 1                   # enable monitor table output
 
 # ---------- Phase-Field Physics ----------
@@ -33,7 +33,7 @@
 -t_sed_freeze 0                         # 3-phase duration (s); 0 = start immediately in 2-phase
 
 # ---------- Vapor Penalty ----------
--difvap_pen 1.0e-5                      # D_pen factor: D_pen = difvap_pen * difvap (dimensionless)
+-difvap_pen 1.0e-6                      # D_pen factor: D_pen = difvap_pen * difvap (dimensionless)
 -k_pen 1e7                              # vapor interface equilibrium stiffness
 
 # ---------- Thermal & Boundary Conditions ----------
