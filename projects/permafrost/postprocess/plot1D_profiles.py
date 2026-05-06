@@ -221,87 +221,19 @@ def _collect_snapshots(run_dir: str, iga_file: str = "igasol.dat",
 
 
 # ---------------------------------------------------------------------------
-# Phase figure — all three phases on one panel
-# ---------------------------------------------------------------------------
-
-def _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h):
-    """Single-panel figure with φ_i, φ_s, φ_a overlaid.
-
-    phi_a is RAW (= 1 − φ_i − φ_s, no clipping). Regions where phi_a < 0
-    are shaded red to flag partition-of-unity violations.
-    """
-    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-
-    t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
-    ax.set_title(f"Phase fields — step {step:d}{t_str}", fontsize=13)
-
-    ax.plot(x_mm, phi_i, color=PHASE_COLORS["ice"], lw=2.0, label=PHASE_LABELS["ice"])
-    ax.plot(x_mm, phi_s, color=PHASE_COLORS["sed"], lw=2.0, label=PHASE_LABELS["sed"])
-    ax.plot(x_mm, phi_a, color=PHASE_COLORS["air"], lw=2.0,
-            label=r"$\phi_a = 1 - \phi_i - \phi_s$  (raw)")
-
-    violation = phi_a < 0.0
-    if np.any(violation):
-        ax.fill_between(x_mm, phi_a, 0.0, where=violation,
-                        color="red", alpha=0.25, label="constraint violation  (air < 0)")
-
-    ax.axhline(0.0, color="gray", lw=0.8, ls=":")
-    ax.axhline(1.0, color="gray", lw=0.8, ls=":")
-
-    ax.set_ylabel("Volume fraction", fontsize=12)
-    ax.set_xlabel("x  [mm]", fontsize=12)
-    y_lo = min(-0.05, np.min(phi_a) - 0.02)
-    ax.set_ylim(y_lo, 1.1)
-    ax.legend(fontsize=11, loc="best")
-    ax.grid(True, alpha=0.3)
-    ax.tick_params(labelsize=10)
-
-    plt.tight_layout()
-    return fig
-
-
-# ---------------------------------------------------------------------------
-# Thermal figure — T and ρ_v on twin y-axes, single panel
-# ---------------------------------------------------------------------------
-
-def _make_thermal_step_fig(x_mm, tem, rhov, step, t_h):
-    """Single-panel figure with T(x) on the left y-axis and ρ_v(x) on the right."""
-    fig, ax_T = plt.subplots(1, 1, figsize=(8, 5))
-    ax_rho = ax_T.twinx()
-
-    t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
-    ax_T.set_title(f"Thermal fields — step {step:d}{t_str}", fontsize=13)
-
-    ln_T,   = ax_T.plot(x_mm, tem,  color=_COLOR_T,    lw=2.0,
-                        label="Temperature  [°C]")
-    ln_rho, = ax_rho.plot(x_mm, rhov, color=_COLOR_RHOV, lw=2.0,
-                           label=r"Vapor density  [kg m$^{-3}$]")
-
-    ax_T.set_xlabel("x  [mm]", fontsize=12)
-    ax_T.set_ylabel("Temperature  [°C]", fontsize=12, color=_COLOR_T)
-    ax_rho.set_ylabel(r"Vapor density  [kg m$^{-3}$]", fontsize=12, color=_COLOR_RHOV)
-    ax_T.tick_params(axis="y", labelcolor=_COLOR_T, labelsize=10)
-    ax_rho.tick_params(axis="y", labelcolor=_COLOR_RHOV, labelsize=10)
-    ax_T.tick_params(axis="x", labelsize=10)
-
-    # Combined legend
-    ax_T.legend([ln_T, ln_rho],
-                [ln_T.get_label(), ln_rho.get_label()],
-                fontsize=11, loc="best")
-
-    ax_T.grid(True, alpha=0.3)
-    plt.tight_layout()
-    return fig
-
-
-# ---------------------------------------------------------------------------
-# Per-step plot functions
+# Per-step plot functions  (figure reuse for speed)
 # ---------------------------------------------------------------------------
 
 def plot_phase_steps(run_dir: str, out_dir: str = None,
                      iga_file: str = "igasol.dat",
                      max_steps: int = None) -> list:
-    """Save one PNG per snapshot showing φ_i, φ_s, φ_a on a single panel."""
+    """Save one PNG per snapshot showing φ_i, φ_s, φ_a on a single panel.
+
+    Speed optimisation: a single Figure/Axes is created once and reused
+    across all steps.  Line data is updated with set_data(); the
+    fill_between violation patch is the only artist rebuilt each step.
+    Avoids plt.subplots() + tight_layout() + bbox_inches='tight' per step.
+    """
     if out_dir is None:
         out_dir = run_dir
     phases_dir = os.path.join(out_dir, "phases")
@@ -311,23 +243,67 @@ def plot_phase_steps(run_dir: str, out_dir: str = None,
         run_dir, iga_file, max_steps
     )
 
+    # Global y lower-bound (worst-case air constraint violation across all steps)
+    phi_a_all = [1.0 - phi_i - phi_s for phi_i, phi_s in zip(ice_list, sed_list)]
+    y_lo = min(-0.05, min(float(np.min(a)) - 0.02 for a in phi_a_all))
+
+    # Create figure once with fixed margins (no tight_layout overhead per step)
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+    fig.subplots_adjust(left=0.13, right=0.96, top=0.92, bottom=0.13)
+
+    ln_i, = ax.plot(x_mm, ice_list[0],  color=PHASE_COLORS["ice"], lw=2.0,
+                    label=PHASE_LABELS["ice"])
+    ln_s, = ax.plot(x_mm, sed_list[0],  color=PHASE_COLORS["sed"], lw=2.0,
+                    label=PHASE_LABELS["sed"])
+    ln_a, = ax.plot(x_mm, phi_a_all[0], color=PHASE_COLORS["air"], lw=2.0,
+                    label=r"$\phi_a = 1 - \phi_i - \phi_s$  (raw)")
+    ax.axhline(0.0, color="gray", lw=0.8, ls=":")
+    ax.axhline(1.0, color="gray", lw=0.8, ls=":")
+
+    ax.set_xlim(x_mm[0], x_mm[-1])
+    ax.set_ylim(y_lo, 1.1)
+    ax.set_ylabel("Volume fraction", fontsize=12)
+    ax.set_xlabel("x  [mm]", fontsize=12)
+    ax.legend(fontsize=11, loc="best")
+    ax.grid(True, alpha=0.3)
+    ax.tick_params(labelsize=10)
+
     saved = []
-    for phi_i, phi_s, step, t_h in zip(ice_list, sed_list, step_list, time_list):
-        phi_a = 1.0 - phi_i - phi_s
-        fig   = _make_phase_fig(x_mm, phi_i, phi_s, phi_a, step, t_h)
-        path  = os.path.join(phases_dir, f"phase_step_{step:05d}.png")
-        fig.savefig(path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
+    for phi_i, phi_s, phi_a, step, t_h in zip(
+            ice_list, sed_list, phi_a_all, step_list, time_list):
+
+        ln_i.set_data(x_mm, phi_i)
+        ln_s.set_data(x_mm, phi_s)
+        ln_a.set_data(x_mm, phi_a)
+
+        # Remove previous violation patch(es) and redraw if needed
+        for coll in list(ax.collections):
+            coll.remove()
+        if np.any(phi_a < 0.0):
+            ax.fill_between(x_mm, phi_a, 0.0, where=(phi_a < 0.0),
+                            color="red", alpha=0.25)
+
+        t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
+        ax.set_title(f"Phase fields — step {step:d}{t_str}", fontsize=13)
+
+        path = os.path.join(phases_dir, f"phase_step_{step:05d}.png")
+        fig.savefig(path, dpi=150)
         saved.append(path)
         print(f"  Saved: {os.path.relpath(path)}")
 
+    plt.close(fig)
     return saved
 
 
 def plot_thermal_steps(run_dir: str, out_dir: str = None,
                        iga_file: str = "igasol.dat",
                        max_steps: int = None) -> list:
-    """Save one PNG per snapshot with T(x) and ρ_v(x) on twin y-axes."""
+    """Save one PNG per snapshot with T(x) and ρ_v(x) on twin y-axes.
+
+    Axes limits are fixed to the global min/max across the entire time
+    series so that each frame uses a consistent scale.  The figure is
+    reused across all steps for speed (same technique as plot_phase_steps).
+    """
     if out_dir is None:
         out_dir = run_dir
     thermal_dir = os.path.join(out_dir, "thermal_steps")
@@ -337,15 +313,55 @@ def plot_thermal_steps(run_dir: str, out_dir: str = None,
         run_dir, iga_file, max_steps
     )
 
+    # Global limits across the full time series
+    T_min   = min(float(np.min(t)) for t in tem_list)
+    T_max   = max(float(np.max(t)) for t in tem_list)
+    rho_min = min(float(np.min(r)) for r in rhov_list)
+    rho_max = max(float(np.max(r)) for r in rhov_list)
+
+    T_pad   = max((T_max   - T_min)   * 0.05, 1e-10)
+    rho_pad = max((rho_max - rho_min) * 0.05, 1e-30)
+    T_lim   = (T_min   - T_pad,   T_max   + T_pad)
+    rho_lim = (rho_min - rho_pad, rho_max + rho_pad)
+
+    # Create figure once with fixed margins
+    fig, ax_T = plt.subplots(1, 1, figsize=(8, 5))
+    ax_rho    = ax_T.twinx()
+    fig.subplots_adjust(left=0.13, right=0.87, top=0.92, bottom=0.13)
+
+    ln_T,   = ax_T.plot(x_mm,  tem_list[0],  color=_COLOR_T,    lw=2.0,
+                         label="Temperature  [°C]")
+    ln_rho, = ax_rho.plot(x_mm, rhov_list[0], color=_COLOR_RHOV, lw=2.0,
+                           label=r"Vapor density  [kg m$^{-3}$]")
+
+    ax_T.set_xlim(x_mm[0], x_mm[-1])
+    ax_T.set_ylim(T_lim)
+    ax_rho.set_ylim(rho_lim)
+
+    ax_T.set_xlabel("x  [mm]", fontsize=12)
+    ax_T.set_ylabel("Temperature  [°C]", fontsize=12, color=_COLOR_T)
+    ax_rho.set_ylabel(r"Vapor density  [kg m$^{-3}$]", fontsize=12, color=_COLOR_RHOV)
+    ax_T.tick_params(axis="y", labelcolor=_COLOR_T,    labelsize=10)
+    ax_rho.tick_params(axis="y", labelcolor=_COLOR_RHOV, labelsize=10)
+    ax_T.tick_params(axis="x", labelsize=10)
+    ax_T.legend([ln_T, ln_rho], [ln_T.get_label(), ln_rho.get_label()],
+                fontsize=11, loc="best")
+    ax_T.grid(True, alpha=0.3)
+
     saved = []
     for tem, rhov, step, t_h in zip(tem_list, rhov_list, step_list, time_list):
-        fig  = _make_thermal_step_fig(x_mm, tem, rhov, step, t_h)
+        ln_T.set_data(x_mm, tem)
+        ln_rho.set_data(x_mm, rhov)
+
+        t_str = f"  (t = {_fmt_time(t_h)})" if t_h is not None else ""
+        ax_T.set_title(f"Thermal fields — step {step:d}{t_str}", fontsize=13)
+
         path = os.path.join(thermal_dir, f"thermal_step_{step:05d}.png")
-        fig.savefig(path, dpi=150, bbox_inches="tight")
-        plt.close(fig)
+        fig.savefig(path, dpi=150)
         saved.append(path)
         print(f"  Saved: {os.path.relpath(path)}")
 
+    plt.close(fig)
     return saved
 
 
@@ -435,8 +451,16 @@ def plot_thermal_overlay(run_dir: str, save_path: str = None,
     if t_min == t_max:
         t_max = t_min + 1.0
 
-    norm_t   = plt.Normalize(vmin=t_min, vmax=t_max)
+    norm_t    = plt.Normalize(vmin=t_min, vmax=t_max)
     cmap_time = cm.plasma
+
+    # Global axis limits (consistent with per-step thermal figures)
+    T_min   = min(float(np.min(t)) for t in tem_list)
+    T_max   = max(float(np.max(t)) for t in tem_list)
+    rho_min = min(float(np.min(r)) for r in rhov_list)
+    rho_max = max(float(np.max(r)) for r in rhov_list)
+    T_pad   = max((T_max   - T_min)   * 0.05, 1e-10)
+    rho_pad = max((rho_max - rho_min) * 0.05, 1e-30)
 
     fig, ax_T = plt.subplots(1, 1, figsize=(10, 6))
     ax_rho = ax_T.twinx()
@@ -446,6 +470,9 @@ def plot_thermal_overlay(run_dir: str, save_path: str = None,
         lw = 2.0 if i in (0, n - 1) else 1.2
         ax_T.plot(x_mm, tem,  color=c, lw=lw, ls="-")
         ax_rho.plot(x_mm, rhov, color=c, lw=lw, ls="--")
+
+    ax_T.set_ylim(T_min   - T_pad,   T_max   + T_pad)
+    ax_rho.set_ylim(rho_min - rho_pad, rho_max + rho_pad)
 
     # Reference saturation vapor density at the final mean temperature
     T_mean   = float(np.mean(tem_list[-1]))
