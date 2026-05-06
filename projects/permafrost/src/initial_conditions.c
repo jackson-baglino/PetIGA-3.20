@@ -1729,19 +1729,22 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
     PetscFunctionBegin;
 
     PetscPrintf(PETSC_COMM_WORLD,
-                "--- INITIAL CONDITIONS (2D Ice Slab, 1D-equivalent) ---\n");
+                "--- INITIAL CONDITIONS (2D Ice Slab, curved interface R=1.5*Ly) ---\n");
 
     const PetscReal Lx  = user->Lx;
     const PetscReal Ly  = user->Ly;
     const PetscReal eps = user->eps;
 
-    /* Ice slab extents in x; extends the full height Ly in y */
-    const PetscReal x_lo = 0.35 * Lx;
-    const PetscReal x_hi = 0.65 * Lx;
+    /* Circular ice blob: radius R centred in the domain.
+     * With R = 1.5*Ly the circle overflows the thin y-extent, giving a
+     * curved ice-air interface across the full domain height. */
+    const PetscReal R       = 1.5 * Ly;
+    const PetscReal x_ice_c = 0.5 * Lx;
+    const PetscReal y_ice_c = 0.5 * Ly;
 
-    /* Sediment slab: center and half-width in x, full Ly in y */
-    const PetscReal x_sed_cen = 0.75 * Lx;
-    const PetscReal x_sed_hw  = 0.10 * Lx;
+    /* Sediment slab: pushed right to clear the ice circle (max x = 0.5*Lx + R) */
+    const PetscReal x_sed_cen = 0.90 * Lx;
+    const PetscReal x_sed_hw  = 0.07 * Lx;
 
     user->n_act    = 0;
     user->n_actsed = 0;
@@ -1762,9 +1765,11 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
             PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
             PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
 
-            /* Diffuse ice slab: tanh profile in x, uniform in y */
-            PetscReal ice = 0.5 * (PetscTanhReal(0.5 * (x - x_lo) / eps)
-                                 - PetscTanhReal(0.5 * (x - x_hi) / eps));
+            /* Signed distance from the circle (negative inside = ice region) */
+            PetscReal dx   = x - x_ice_c;
+            PetscReal dy   = y - y_ice_c;
+            PetscReal dist = PetscSqrtReal(dx*dx + dy*dy) - R;
+            PetscReal ice  = 0.5 - 0.5 * PetscTanhReal(0.5 * dist / eps);
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
             /* Diffuse sediment slab: tanh profile centred at x_sed_cen */
