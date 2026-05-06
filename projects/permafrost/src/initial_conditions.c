@@ -1735,15 +1735,14 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal Ly  = user->Ly;
     const PetscReal eps = user->eps;
 
-    /* Circular ice blob centred in the domain.
+    /* Circular ice blob, shifted left to widen the sediment slab.
      * Sediment occupies the right side only: left boundary follows the curved
      * ice surface (dist_ice = 0); right boundary is a flat vertical wall at
-     * x = x_ice_c + R + sed_thick.  Air fills the rest. */
+     * x_sed_right.  Air fills the rest. */
     const PetscReal R           = Ly;
-    const PetscReal x_ice_c     = 0.5 * Lx;
+    const PetscReal x_ice_c     = 0.40 * Lx;   /* shifted left; was 0.5*Lx */
     const PetscReal y_ice_c     = 0.5 * Ly;
-    const PetscReal sed_thick   = 0.5 * Ly;              /* radial thickness of sed slab */
-    const PetscReal x_sed_right = x_ice_c + R + sed_thick; /* flat air-sed interface */
+    const PetscReal x_sed_right = 0.80 * Lx;   /* flat air-sed interface (fixed) */
 
     user->n_act    = 0;
     user->n_actsed = 0;
