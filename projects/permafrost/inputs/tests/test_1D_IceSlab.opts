@@ -32,7 +32,7 @@
 -flag_avenue 1                          # formulation: 1=Avenue 1 (AC, penalty vapor)
 -t_sed_freeze 0                         # 3-phase duration (s); 0 = start immediately in 2-phase
 -flag_tIC 0                             # IC geometry variant: 0=centered slab, 2=flat interface
--n_relax 0                              # AC-only relaxation steps before full physics (0 = disabled)
+-n_relax 12                             # AC-only relaxation steps before full physics (0 = disabled)
 
 # ---------- Vapor Penalty ----------
 -difvap_pen 1.0e-7                      # D_pen factor: D_pen = difvap_pen * difvap (dimensionless)
