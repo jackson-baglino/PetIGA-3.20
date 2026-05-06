@@ -1,4 +1,22 @@
 
+## 2026-05-06 — tune_sed_freeze.py sweep script + n_relax smoke test
+
+- Added `scripts/tune_sed_freeze.py`: 2-D parameter sweep over `t_sed_freeze × k_pen` to find the minimum sediment-freeze delay that avoids spurious air generation at the ice-sediment boundary.
+- Metrics: `dt_final`, `dt_growth_frac`, `ice_sed_chg_pct` (from `relax_monitor.dat`), `air_growth_pct` (from `outp.txt`), `max_snes_iters` (nonlinear only); outputs ASCII table, CSV, and 6-panel heatmap.
+- Smoke-tested (2 runs) and ran full 5×5 sweep (25 runs) — all PASS on 1D slab test (expected: 1D geometry has no ice-sediment contact, so metrics don't differentiate; real discrimination requires 2D grain-pair case).
+- Set `n_relax 12` in `test_1D_IceSlab.opts` (was `0`).
+- Fixed `run_permafrost.sh`: `make clean && make all` to prevent stale object files.
+
+---
+
+**Session ended:** 2026-05-05 16:38:34
+
+
+---
+
+**Session ended:** 2026-05-05 16:27:51
+
+
 ## 2026-05-05 — n_relax relaxation phase + Permafrost_output fix
 
 - Fixed missing `sol*.dat` output: `test_1D_IceSlab.opts` had `-Permafrost_output 0`, which prevented `OutputMonitor` from registering; restored to 1 and corrected the misleading "VTK" comment in all three opts files.
