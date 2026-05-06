@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-tune_difvap_pen.py — Independent 2D sweep of difvap_pen × k_pen.
+tune_difvap_pen.py — 3D sweep of difvap_pen × k_pen × t_sed_freeze.
 
-For each (difvap_pen, k_pen) grid point the script runs one simulation using
-test_2D_IceSlab.opts (or a user-supplied opts file).  Only the two penalty
-parameters are overridden on the command line; t_final, t_sed_freeze, physics
-flags, and everything else come from the opts file unchanged.
+For each grid point the script runs one simulation using test_2D_IceSlab.opts
+(or a user-supplied opts file).  Only the three swept parameters are overridden
+on the command line; t_final, physics flags, and everything else come from the
+opts file unchanged.
 
 Goal: find parameter combinations that suppress spurious air generation at the
 ice–sediment interface after the sediment freeze event.
@@ -26,7 +26,14 @@ Usage
   cd <project_root>
   python test/tune_difvap_pen.py [--skip-build]
 
-  # Custom sweep ranges:
+  # 3D sweep (difvap_pen × k_pen × t_sed_freeze):
+  python test/tune_difvap_pen.py --skip-build \\
+      --sweep-difvap  1e-7 1e-6 1e-5 \\
+      --sweep-kpen    1e7 1e8 1e9 \\
+      --sweep-tsf     0.0 1e-4 1e-3 1e-2 \\
+      --timeout 600
+
+  # 2D sweep (t_sed_freeze fixed at opts value):
   python test/tune_difvap_pen.py \\
       --sweep-difvap 1e-6 1e-5 1e-4 \\
       --sweep-kpen   1e6  1e7  1e8  \\
@@ -43,8 +50,8 @@ Usage
 Note on simulation length
   This script passes NO -t_final override.  For the sweep to run in reasonable
   wall-clock time AND capture spurious air after the freeze, set t_final in the
-  opts file to approximately t_sed_freeze + 300*delt_t.  The --timeout flag
-  provides a hard wall-clock cutoff per run.
+  opts file to approximately max(t_sed_freeze) + 300*delt_t.  The --timeout
+  flag provides a hard wall-clock cutoff per run.
 """
 from __future__ import annotations
 
@@ -72,9 +79,10 @@ OPTS_DEFAULT   = str(ROOT / "inputs" / "tests" / "test_2D_IceSlab.opts")
 OUTDIR_DEFAULT = str(ROOT / "test" / "tune_penalty2d")
 TIMEOUT_DEFAULT = 600  # s wall-clock per run
 
-# Default 5×5 sweep grid (25 runs total)
+# Default sweep grids
 DIFVAP_SWEEP_DEFAULT = [1e-7, 1e-6, 1e-5, 1e-4, 1e-3]
 KPEN_SWEEP_DEFAULT   = [1e5,  1e6,  1e7,  1e8,  1e9]
+TSF_SWEEP_DEFAULT    = None  # None → read t_sed_freeze from opts file (no tsf sweep)
 
 # Pass/fail thresholds
 PASS_AIR_DRIFT_DEFAULT   = 5e-6   # absolute |Δtot_air| [m in 1-D, m² in 2-D]
@@ -357,32 +365,34 @@ def _run(binary: str, opts_file: str, extra_flags: list[str],
 def run_sweep(binary: str, opts_file: str,
               difvap_sweep: list[float],
               kpen_sweep: list[float],
+              tsf_sweep: list[float],
               out_dir: str, timeout: int,
               pass_air_drift: float,
               pass_icesd_drop: float,
               skip_postprocess: bool) -> list[dict]:
 
     dim          = _get_dim(opts_file)
-    t_sed_freeze = _get_t_sed_freeze(opts_file)
+    multi_tsf    = len(tsf_sweep) > 1
 
     print(f"  opts file:      {opts_file}")
-    print(f"  dim={dim}  t_sed_freeze={t_sed_freeze:.4g} s  (parsed from opts)")
+    print(f"  dim={dim}  t_sed_freeze sweep: {tsf_sweep}")
 
     results = []
-    total   = len(difvap_sweep) * len(kpen_sweep)
+    total   = len(difvap_sweep) * len(kpen_sweep) * len(tsf_sweep)
     run_no  = 0
 
-    for d, k in product(difvap_sweep, kpen_sweep):
+    for d, k, tsf in product(difvap_sweep, kpen_sweep, tsf_sweep):
         run_no += 1
-        label   = f"d{d:.2e}_k{k:.2e}".replace("+", "")
+        # Include tsf in directory name only when multiple values are swept
+        tsf_tag = f"_t{tsf:.2e}".replace("+", "") if multi_tsf else ""
+        label   = f"d{d:.2e}_k{k:.2e}{tsf_tag}".replace("+", "")
         run_dir = os.path.join(out_dir, label)
 
         print(f"\n{'='*70}")
-        print(f"  Run {run_no}/{total}: difvap_pen={d:.2e}  k_pen={k:.2e}")
+        print(f"  Run {run_no}/{total}: difvap_pen={d:.2e}  k_pen={k:.2e}  t_sed_freeze={tsf:.2e}")
         print(f"{'='*70}")
 
-        # Only these two parameters are overridden from the opts file
-        flags = ["-difvap_pen", str(d), "-k_pen", str(k)]
+        flags = ["-difvap_pen", str(d), "-k_pen", str(k), "-t_sed_freeze", str(tsf)]
 
         stdout, rc = _run(binary, opts_file, flags, run_dir, timeout)
 
@@ -390,7 +400,7 @@ def run_sweep(binary: str, opts_file: str,
         relax_rows  = _parse_relax_monitor(run_dir)
         bounds_viol = _parse_bounds_violation(stdout)
         max_snes    = _parse_snes_iters(stdout)
-        metrics     = _compute_metrics(rows, relax_rows, t_sed_freeze)
+        metrics     = _compute_metrics(rows, relax_rows, tsf)
 
         delta_tot_air    = metrics.get("delta_tot_air")
         ice_sed_drop_pct = metrics.get("ice_sed_drop_pct")
@@ -405,6 +415,7 @@ def run_sweep(binary: str, opts_file: str,
         passed      = pass_exit and pass_bounds and pass_air and pass_icesd and pass_iters
 
         row = {
+            "t_sed_freeze":     tsf,
             "difvap_pen":       d,
             "k_pen":            k,
             "rc":               rc,
@@ -420,7 +431,7 @@ def run_sweep(binary: str, opts_file: str,
         }
         results.append(row)
 
-        dstr  = (f"{delta_tot_air:.4e}"    if delta_tot_air    is not None else "N/A")
+        dstr  = (f"{delta_tot_air:.4e}"     if delta_tot_air    is not None else "N/A")
         idstr = (f"{ice_sed_drop_pct:.1f}%" if ice_sed_drop_pct is not None else "N/A")
         print(f"  rc={rc}  Δtot_air={dstr}  ice_sed_drop={idstr}  "
               f"SNES_max={max_snes}  bounds={'OK' if pass_bounds else 'VIOLATION'}")
@@ -434,47 +445,47 @@ def run_sweep(binary: str, opts_file: str,
 
 # ── 2D heatmap plotting ───────────────────────────────────────────────────────
 
-def _plot(results: list[dict], difvap_sweep: list[float],
-          kpen_sweep: list[float], out_dir: str,
-          pass_air_drift: float, pass_icesd_drop: float) -> None:
+def _plot_slice(results_slice: list[dict], difvap_sweep: list[float],
+                kpen_sweep: list[float], out_dir: str,
+                pass_air_drift: float, pass_icesd_drop: float,
+                title_extra: str, fname: str) -> None:
     """
-    Four-panel 2D heatmap: difvap_pen (y, log) × k_pen (x, log).
+    Four-panel 2D heatmap for one t_sed_freeze slice:
+    difvap_pen (y) × k_pen (x).
     Panels: |Δtot_air|, ice_sed_drop_pct, max_snes_iters, PASS mask.
     """
     nd = len(difvap_sweep)
     nk = len(kpen_sweep)
 
-    # Index maps
     di = {v: i for i, v in enumerate(difvap_sweep)}
     ki = {v: i for i, v in enumerate(kpen_sweep)}
 
-    # Grids — rows = difvap (y), cols = k_pen (x)
     air_grid   = np.full((nd, nk), np.nan)
     icesd_grid = np.full((nd, nk), np.nan)
     snes_grid  = np.full((nd, nk), np.nan)
     pass_grid  = np.zeros((nd, nk), dtype=bool)
 
-    for r in results:
+    for r in results_slice:
         i = di.get(r["difvap_pen"])
         j = ki.get(r["k_pen"])
         if i is None or j is None:
             continue
         if r["delta_tot_air"] is not None:
-            air_grid[i, j]  = abs(r["delta_tot_air"])
+            air_grid[i, j]   = abs(r["delta_tot_air"])
         if r["ice_sed_drop_pct"] is not None:
             icesd_grid[i, j] = r["ice_sed_drop_pct"]
         if r["max_snes_iters"] >= 0:
             snes_grid[i, j]  = r["max_snes_iters"]
         pass_grid[i, j] = r["PASS"]
 
-    # Tick labels (log scale)
     x_labels = [f"{k:.1e}" for k in kpen_sweep]
     y_labels  = [f"{d:.1e}" for d in difvap_sweep]
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    fig.suptitle("difvap_pen × k_pen sweep — spurious air diagnostics", fontsize=13)
+    fig.suptitle(f"difvap_pen × k_pen sweep — spurious air diagnostics{title_extra}",
+                 fontsize=13)
 
-    def _heatmap(ax, data, title, vmin, vmax, cmap, fmt, threshold_label=""):
+    def _hm(ax, data, title, vmin, vmax, cmap, fmt):
         im = ax.imshow(data, aspect="auto", cmap=cmap, vmin=vmin, vmax=vmax,
                        origin="upper", interpolation="nearest")
         plt.colorbar(im, ax=ax)
@@ -487,30 +498,24 @@ def _plot(results: list[dict], difvap_sweep: list[float],
             for jj in range(nk):
                 v = data[ii, jj]
                 txt = (fmt % v) if not np.isnan(v) else "N/A"
-                ax.text(jj, ii, txt, ha="center", va="center",
-                        fontsize=7, color="black")
+                ax.text(jj, ii, txt, ha="center", va="center", fontsize=7, color="black")
 
-    # Panel 1: |Δtot_air| — lower is better
-    _heatmap(axes[0, 0], air_grid,
-             f"|Δtot_air|  (threshold = {pass_air_drift:.1e})",
-             0, pass_air_drift * 5, "RdYlGn_r", "%.2e")
+    _hm(axes[0, 0], air_grid,
+        f"|Δtot_air|  (threshold = {pass_air_drift:.1e})",
+        0, pass_air_drift * 5, "RdYlGn_r", "%.2e")
+    _hm(axes[0, 1], icesd_grid,
+        f"ice-sed interface drop [%]  (threshold = {pass_icesd_drop:.0f}%)",
+        0, pass_icesd_drop * 2, "RdYlGn_r", "%.1f%%")
+    _hm(axes[1, 0], snes_grid,
+        f"Max SNES iters / step  (threshold = {PASS_SNES_ITERS})",
+        0, PASS_SNES_ITERS * 1.2, "RdYlGn_r", "%d")
 
-    # Panel 2: ice_sed_drop_pct — lower is better
-    _heatmap(axes[0, 1], icesd_grid,
-             f"ice-sed interface drop [%]  (threshold = {pass_icesd_drop:.0f}%)",
-             0, pass_icesd_drop * 2, "RdYlGn_r", "%.1f%%")
-
-    # Panel 3: max SNES iters — lower is better
-    _heatmap(axes[1, 0], snes_grid,
-             f"Max SNES iters / step  (threshold = {PASS_SNES_ITERS})",
-             0, PASS_SNES_ITERS * 1.2, "RdYlGn_r", "%d")
-
-    # Panel 4: PASS mask — binary
     pass_float = pass_grid.astype(float)
     im4 = axes[1, 1].imshow(pass_float, aspect="auto", cmap="RdYlGn",
                              vmin=0, vmax=1, origin="upper", interpolation="nearest")
     plt.colorbar(im4, ax=axes[1, 1])
-    axes[1, 1].set_xticks(range(nk)); axes[1, 1].set_xticklabels(x_labels, rotation=35, ha="right", fontsize=8)
+    axes[1, 1].set_xticks(range(nk))
+    axes[1, 1].set_xticklabels(x_labels, rotation=35, ha="right", fontsize=8)
     axes[1, 1].set_yticks(range(nd)); axes[1, 1].set_yticklabels(y_labels, fontsize=8)
     axes[1, 1].set_xlabel("k_pen", fontsize=10)
     axes[1, 1].set_ylabel("difvap_pen  [m²/s]", fontsize=10)
@@ -523,10 +528,28 @@ def _plot(results: list[dict], difvap_sweep: list[float],
                             color="white" if pass_grid[ii, jj] else "black")
 
     plt.tight_layout()
-    path = os.path.join(out_dir, "sweep_penalty2d.png")
+    path = os.path.join(out_dir, fname)
     fig.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"\n  Plot saved to: {path}")
+
+
+def _plot(results: list[dict], difvap_sweep: list[float],
+          kpen_sweep: list[float], tsf_sweep: list[float],
+          out_dir: str, pass_air_drift: float, pass_icesd_drop: float) -> None:
+    """Produce one heatmap per t_sed_freeze slice."""
+    if len(tsf_sweep) == 1:
+        _plot_slice(results, difvap_sweep, kpen_sweep, out_dir,
+                    pass_air_drift, pass_icesd_drop,
+                    title_extra="", fname="sweep_penalty2d.png")
+    else:
+        for tsf in tsf_sweep:
+            slc = [r for r in results if r["t_sed_freeze"] == tsf]
+            tag = f"{tsf:.2e}".replace("+", "")
+            _plot_slice(slc, difvap_sweep, kpen_sweep, out_dir,
+                        pass_air_drift, pass_icesd_drop,
+                        title_extra=f"  |  t_sed_freeze = {tsf:.2e} s",
+                        fname=f"sweep_penalty2d_tsf{tag}.png")
 
 
 # ── CSV + summary ─────────────────────────────────────────────────────────────
@@ -544,17 +567,17 @@ def _save_csv(results: list[dict], out_dir: str) -> None:
 
 def _print_summary(results: list[dict], pass_air_drift: float,
                    pass_icesd_drop: float) -> None:
-    print(f"\n{'─'*96}")
-    print("  SUMMARY — difvap_pen × k_pen independent sweep")
-    print(f"  {'difvap_pen':>12}  {'k_pen':>12}  {'Δtot_air':>12}  "
+    print(f"\n{'─'*110}")
+    print("  SUMMARY — difvap_pen × k_pen × t_sed_freeze sweep")
+    print(f"  {'t_sed_frz':>10}  {'difvap_pen':>12}  {'k_pen':>12}  {'Δtot_air':>12}  "
           f"{'icesd_drop':>11}  {'SNES':>5}  {'bnd':>4}  {'PASS':>5}")
-    print(f"  {'─'*88}")
+    print(f"  {'─'*102}")
     for r in results:
-        dstr  = (f"{r['delta_tot_air']:.3e}"    if r["delta_tot_air"]    is not None else "N/A")
+        dstr  = (f"{r['delta_tot_air']:.3e}"     if r["delta_tot_air"]    is not None else "N/A")
         idstr = (f"{r['ice_sed_drop_pct']:.1f}%" if r["ice_sed_drop_pct"] is not None else "N/A")
         snes  = r["max_snes_iters"] if r["max_snes_iters"] >= 0 else -1
-        print(f"  {r['difvap_pen']:>12.2e}  {r['k_pen']:>12.3e}  {dstr:>12}  "
-              f"{idstr:>11}  {snes:>5}  "
+        print(f"  {r['t_sed_freeze']:>10.2e}  {r['difvap_pen']:>12.2e}  {r['k_pen']:>12.3e}  "
+              f"{dstr:>12}  {idstr:>11}  {snes:>5}  "
               f"{'✓' if r['bounds_ok'] else '✗':>4}  "
               f"{'✓' if r['PASS'] else '✗':>5}")
 
@@ -562,14 +585,14 @@ def _print_summary(results: list[dict], pass_air_drift: float,
     if passed:
         best = min(passed, key=lambda r: abs(r["delta_tot_air"] or 1e30))
         print(f"\n  Best (smallest |Δtot_air| among passing):")
-        print(f"    difvap_pen={best['difvap_pen']:.2e}  k_pen={best['k_pen']:.3e}  "
-              f"Δtot_air={best['delta_tot_air']:.3e}")
+        print(f"    t_sed_freeze={best['t_sed_freeze']:.2e}  difvap_pen={best['difvap_pen']:.2e}"
+              f"  k_pen={best['k_pen']:.3e}  Δtot_air={best['delta_tot_air']:.3e}")
         print(f"  {len(passed)}/{len(results)} combinations passed "
               f"(|Δtot_air|<{pass_air_drift:.1e}, ice_sed_drop<{pass_icesd_drop:.0f}%).")
     else:
         print("\n  No combinations passed all criteria. "
               "Consider relaxing --pass-air-drift or --pass-icesd-drop.")
-    print(f"{'─'*96}")
+    print(f"{'─'*110}")
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
@@ -592,6 +615,9 @@ def parse_args():
     p.add_argument("--sweep-kpen",      nargs="+", type=float,
                    default=KPEN_SWEEP_DEFAULT, metavar="K",
                    help="k_pen values (default: 1e5 1e6 1e7 1e8 1e9)")
+    p.add_argument("--sweep-tsf",       nargs="+", type=float,
+                   default=TSF_SWEEP_DEFAULT, metavar="T",
+                   help="t_sed_freeze values [s] (default: read single value from opts file)")
     p.add_argument("--timeout",         type=int,   default=TIMEOUT_DEFAULT,
                    help="Wall-clock timeout per run [s] (default: 600)")
     p.add_argument("--pass-air-drift",  type=float, default=PASS_AIR_DRIFT_DEFAULT,
@@ -609,14 +635,20 @@ def main():
     args = parse_args()
     os.makedirs(args.out_dir, exist_ok=True)
 
-    total = len(args.sweep_difvap) * len(args.sweep_kpen)
+    # Resolve t_sed_freeze sweep: CLI values take precedence; fall back to opts file
+    tsf_sweep = (sorted(set(args.sweep_tsf))
+                 if args.sweep_tsf is not None
+                 else [_get_t_sed_freeze(args.opts)])
+
+    total = len(args.sweep_difvap) * len(args.sweep_kpen) * len(tsf_sweep)
     print("=" * 70)
-    print("  difvap_pen × k_pen INDEPENDENT SWEEP")
+    print("  difvap_pen × k_pen × t_sed_freeze SWEEP")
     print(f"  binary:          {args.binary}")
     print(f"  opts:            {args.opts}")
     print(f"  out_dir:         {args.out_dir}")
     print(f"  difvap_pen:      {args.sweep_difvap}")
     print(f"  k_pen:           {args.sweep_kpen}")
+    print(f"  t_sed_freeze:    {tsf_sweep}")
     print(f"  total runs:      {total}")
     print(f"  timeout:         {args.timeout} s/run")
     print(f"  pass_air_drift:  {args.pass_air_drift:.1e}")
@@ -630,7 +662,7 @@ def main():
 
     results = run_sweep(
         args.binary, args.opts,
-        args.sweep_difvap, args.sweep_kpen,
+        args.sweep_difvap, args.sweep_kpen, tsf_sweep,
         args.out_dir, args.timeout,
         pass_air_drift=args.pass_air_drift,
         pass_icesd_drop=args.pass_icesd_drop,
@@ -639,8 +671,8 @@ def main():
 
     _print_summary(results, args.pass_air_drift, args.pass_icesd_drop)
     _save_csv(results, args.out_dir)
-    _plot(results, args.sweep_difvap, args.sweep_kpen, args.out_dir,
-          args.pass_air_drift, args.pass_icesd_drop)
+    _plot(results, args.sweep_difvap, args.sweep_kpen, tsf_sweep,
+          args.out_dir, args.pass_air_drift, args.pass_icesd_drop)
 
     print(f"\n  All output saved to: {args.out_dir}")
 
