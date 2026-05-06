@@ -1,9 +1,17 @@
+# =============================================================================
+# Test 3: 2D enclosed ice grain with two sediment inclusions
+# Purpose: Study sublimation and phase redistribution around a pair of
+#          sediment grains enclosed in ice.
+# Physics parameters match test_1D_IceSlab.opts; avenue 2 (AC + k_sed
+# penalty) is used since this is a 2D simulation with sediment penalty.
+# =============================================================================
+
 # ---------- Initial Condition ----------
 -ic_type enclosed                       # IC geometry: ice grain enclosing two sediment grains
 
 # ---------- Domain ----------
 -dim 2                                  # spatial dimension (1, 2, or 3)
--dof 4                                  # DOFs per node: 4 = ice / temperature / vapor / sediment
+-dof 4                                  # DOFs per node: ice / temperature / vapor / sediment
 -Nx 143                                 # elements in x
 -Ny 285                                 # elements in y
 -Nz 1                                   # elements in z (unused for dim < 3)
@@ -11,9 +19,10 @@
 -Ly 2.5e-04                             # domain length in y (m)
 -Lz 0                                   # domain length in z (unused for dim < 3)
 
-# ---------- Element continuity ----------
+# ---------- Discretization ----------
 -p 2                                    # B-spline polynomial order
--C 1                                    # B-spline continuity order (C^1 for p=2, C=1)
+-C 0                                    # B-spline continuity (C^0)
+-periodic 0                             # periodic BCs (0=no)
 
 # ---------- Grain Data ----------
 -NCsed 2                                # number of sediment grain centers
@@ -23,53 +32,58 @@
 -RCice 0.375e-4                         # mean ice grain radius (m)
 -RCice_dev 0.55                         # ice radius deviation factor
 
-# ---------- Time Stepping & Output Frequency ----------
+# ---------- Time Stepping & Output ----------
 -delt_t 1.0e-4                          # time step size (s)
--t_final 604800.0                       # total simulation time (s); 604800 s = 1 week
--n_out 0                                # number of output snapshots (0 = use -outp interval)
+-t_final 604800.0                       # total simulation time (s) — 1 week
+-n_out 0                                # number of output snapshots (0 = use -outp)
 -outp 1                                 # write output every N time steps
 -Permafrost_output 1                    # enable sol*.dat field output (0 = disable)
--Permafrost_monitor 1                   # enable monitor table output (1=on)
+-Permafrost_monitor 1                   # enable monitor table output
 
-# ---------- Model Parameters ----------
--humidity 1.00                          # relative humidity (fraction; 1.0 = fully saturated)
--temp -20.0                             # background temperature (°C)
--grad_temp0 0.0,0.0e-03,0.0            # imposed temperature gradient (K/m; x,y,z); 0 = isothermal
+# ---------- Phase-Field Physics ----------
 -eps 9.3295e-07                         # diffuse interface half-width (m)
--periodic 0                             # periodic BCs (0=no, 1=yes)
--t_sed_freeze 300                       # 3-phase duration (s); 0 = start immediately in 2-phase
--k_sed_pen -1                           # sediment penalty stiffness (-1 = auto-choose; >0 = explicit value)
--flag_avenue 2                          # residual formulation: 1=A1, 2=A2 (AC+penalty), 3=A3 (CH)
--difvap_pen 1e-7                        # penalised vapour diffusivity in the air phase [m²/s]
--k_pen 1e7                              # vapour interface equilibrium stiffness
--flag_BC_Tfix 0                         # fix temperature at boundaries (0=no, 1=yes)
--flag_BC_rhovfix 0                      # fix vapor density at boundaries (0=no, 1=yes)
--flag_Tdep 0                            # temperature-dependent material properties (0=off, 1=on)
+-flag_avenue 2                          # formulation: 2=Avenue 2 (AC + k_sed penalty)
+-t_sed_freeze 60                        # 3-phase duration (s); 0 = start immediately frozen
+-flag_tIC 0                             # IC geometry variant: 0=centered slab
+-n_relax 1                              # AC-only relaxation steps before full physics (0 = disabled)
 
-# ---------- Initial Conditions ----------
--initial_cond ./inputs/tests/SthavisthaInputs/AssemblePhase_reinit.dat  # path to binary IC data file
+# ---------- Vapor Penalty ----------
+-difvap_pen 1.0e-7                      # D_pen factor: D_pen = difvap_pen * difvap (dimensionless)
+-k_pen 1e9                              # vapor interface equilibrium stiffness
 
-## ---------- SNES ----------
--snes_type newtonls                     # nonlinear solver: Newton with line search
+# ---------- Sediment Penalty (Avenue 2 only) ----------
+-k_sed_pen -1                           # restoring penalty stiffness (-1 = auto-choose)
+
+# ---------- Thermal & Boundary Conditions ----------
+-humidity 0.95                          # relative humidity (fraction; <1 = undersaturated)
+-temp -20.0                             # background temperature (°C)
+-grad_temp0 0.0,0.0,0.0                 # imposed temperature gradient (K/m; x,y,z); 0 = isothermal
+-flag_BC_Tfix 0                         # fix temperature at boundaries (0=no)
+-flag_BC_rhovfix 0                      # fix vapor density at boundaries (0=no)
+-flag_Tdep 0                            # temperature-dependent material properties (0=off)
+
+# ---------- Initial Condition File ----------
+-initial_cond ./inputs/tests/SthavisthaInputs/AssemblePhase_reinit.dat
+
+# ---------- Nonlinear Solver (SNES) ----------
+-snes_type newtonls                     # Newton with line search
 -snes_max_it 10                         # max Newton iterations per time step
--snes_rtol 1e-06                        # relative residual tolerance for SNES convergence
--snes_atol 1e-08                        # absolute residual tolerance for SNES convergence
--snes_stol 1e-06                        # step tolerance for SNES convergence
--snes_converged_reason                  # print reason for SNES convergence/divergence
+-snes_rtol 1e-06                        # relative residual tolerance
+-snes_atol 1e-08                        # absolute residual tolerance
+-snes_stol 1e-06                        # step tolerance
+-snes_converged_reason                  # print convergence reason
+-snes_linesearch_type bt                # backtracking line search
+-snes_linesearch_monitor                # print line search progress
 
-# ---------- Line search ----------
--snes_linesearch_type bt                # backtracking line search (ensures residual decrease)
--snes_linesearch_monitor                # print line search progress each Newton iteration
-
-# ---------- KSP ----------
--ksp_type gmres                         # Krylov solver: GMRES
--ksp_rtol 1e-05                         # relative residual tolerance for linear solve
--ksp_atol 1e-08                         # absolute residual tolerance for linear solve
--ksp_max_it 500                         # max GMRES iterations per linear solve
--ksp_gmres_restart 500                  # GMRES restart interval (keep full Krylov space)
--ksp_converged_reason                   # print reason for KSP convergence/divergence
+# ---------- Linear Solver (KSP) ----------
+-ksp_type gmres                         # GMRES
+-ksp_rtol 1e-05                         # relative residual tolerance
+-ksp_atol 1e-08                         # absolute residual tolerance
+-ksp_max_it 500                         # max GMRES iterations
+-ksp_gmres_restart 500                  # GMRES restart interval
+-ksp_converged_reason                   # print convergence reason
 
 # ---------- Preconditioner ----------
--pc_type bjacobi                        # block Jacobi preconditioner (one block per MPI rank)
--sub_pc_type ilu                        # ILU(k) for each block
+-pc_type bjacobi                        # block Jacobi (one block per MPI rank)
+-sub_pc_type ilu                        # ILU(k) per block
 -sub_pc_factor_levels 1                 # fill level k for ILU(k)
