@@ -278,21 +278,6 @@ def _postprocess(run_dir: str, dim: int = 2) -> None:
         _sp(["python", SCRIPT_PROFS1D, "--dir", "."],
             "1D profiles (phase + thermal + first/last)")
 
-    elif dim >= 2:
-        import glob as _glob
-        sol_files = sorted(_glob.glob(os.path.join(run_dir, "sol_*.dat")))
-        steps = []
-        for sf in sol_files:
-            base = os.path.splitext(os.path.basename(sf))[0]
-            digits = base.lstrip("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_")
-            if digits:
-                steps.append(int(digits))
-        for step in steps:
-            _sp(["python", SCRIPT_PROFS2D,
-                 "--dir", ".", "--step", str(step),
-                 "--save", f"snap_{step:05d}.png"],
-                f"2D snapshot step {step}")
-
 
 # ── build helper ──────────────────────────────────────────────────────────────
 
