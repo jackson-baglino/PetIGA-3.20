@@ -1729,22 +1729,20 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
     PetscFunctionBegin;
 
     PetscPrintf(PETSC_COMM_WORLD,
-                "--- INITIAL CONDITIONS (2D Ice Slab, curved interface R=1.5*Ly) ---\n");
+                "--- INITIAL CONDITIONS (2D Ice Slab, curved interface R=Ly) ---\n");
 
     const PetscReal Lx  = user->Lx;
     const PetscReal Ly  = user->Ly;
     const PetscReal eps = user->eps;
 
     /* Circular ice blob: radius R centred in the domain.
-     * With R = 1.5*Ly the circle overflows the thin y-extent, giving a
-     * curved ice-air interface across the full domain height. */
-    const PetscReal R       = 1.5 * Ly;
-    const PetscReal x_ice_c = 0.5 * Lx;
-    const PetscReal y_ice_c = 0.5 * Ly;
-
-    /* Sediment slab: pushed right to clear the ice circle (max x = 0.5*Lx + R) */
-    const PetscReal x_sed_cen = 0.90 * Lx;
-    const PetscReal x_sed_hw  = 0.07 * Lx;
+     * Sediment forms an annular ring of thickness sed_thick directly outside
+     * the ice surface (hugging the ice-sediment interface).  Air fills
+     * everything beyond the sediment ring. */
+    const PetscReal R         = Ly;
+    const PetscReal x_ice_c   = 0.5 * Lx;
+    const PetscReal y_ice_c   = 0.5 * Ly;
+    const PetscReal sed_thick = 0.5 * Ly;   /* ~10 eps; well-resolved ring */
 
     user->n_act    = 0;
     user->n_actsed = 0;
@@ -1765,16 +1763,19 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
             PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
             PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
 
-            /* Signed distance from the circle (negative inside = ice region) */
-            PetscReal dx   = x - x_ice_c;
-            PetscReal dy   = y - y_ice_c;
-            PetscReal dist = PetscSqrtReal(dx*dx + dy*dy) - R;
-            PetscReal ice  = 0.5 - 0.5 * PetscTanhReal(0.5 * dist / eps);
+            /* Signed distance from the ice surface (negative inside ice) */
+            PetscReal dx       = x - x_ice_c;
+            PetscReal dy       = y - y_ice_c;
+            PetscReal dist_ice = PetscSqrtReal(dx*dx + dy*dy) - R;
+
+            /* Ice: interior of the circle */
+            PetscReal ice = 0.5 - 0.5 * PetscTanhReal(0.5 * dist_ice / eps);
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
-            /* Diffuse sediment slab: tanh profile centred at x_sed_cen */
-            PetscReal dist_sed = PetscAbsReal(x - x_sed_cen);
-            PetscReal sed = 0.5 - 0.5 * PetscTanhReal(0.5 / eps * (dist_sed - x_sed_hw));
+            /* Sediment: annular ring of thickness sed_thick immediately
+             * outside the ice surface — hugs the ice-sediment interface. */
+            PetscReal sed = 0.5 * (PetscTanhReal(0.5 *  dist_ice              / eps)
+                                 - PetscTanhReal(0.5 * (dist_ice - sed_thick) / eps));
             sed = PetscMin(PetscMax(sed, 0.0), 1.0);
 
             /* Resolve any ice/sediment overlap by renormalisation */
