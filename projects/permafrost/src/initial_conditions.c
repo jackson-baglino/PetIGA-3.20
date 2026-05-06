@@ -1729,20 +1729,21 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
     PetscFunctionBegin;
 
     PetscPrintf(PETSC_COMM_WORLD,
-                "--- INITIAL CONDITIONS (2D Ice Slab, curved interface R=Ly) ---\n");
+                "--- INITIAL CONDITIONS (2D Ice Slab, R=Ly, right sediment slab) ---\n");
 
     const PetscReal Lx  = user->Lx;
     const PetscReal Ly  = user->Ly;
     const PetscReal eps = user->eps;
 
-    /* Circular ice blob: radius R centred in the domain.
-     * Sediment forms an annular ring of thickness sed_thick directly outside
-     * the ice surface (hugging the ice-sediment interface).  Air fills
-     * everything beyond the sediment ring. */
-    const PetscReal R         = Ly;
-    const PetscReal x_ice_c   = 0.5 * Lx;
-    const PetscReal y_ice_c   = 0.5 * Ly;
-    const PetscReal sed_thick = 0.5 * Ly;   /* ~10 eps; well-resolved ring */
+    /* Circular ice blob centred in the domain.
+     * Sediment occupies the right side only: left boundary follows the curved
+     * ice surface (dist_ice = 0); right boundary is a flat vertical wall at
+     * x = x_ice_c + R + sed_thick.  Air fills the rest. */
+    const PetscReal R           = Ly;
+    const PetscReal x_ice_c     = 0.5 * Lx;
+    const PetscReal y_ice_c     = 0.5 * Ly;
+    const PetscReal sed_thick   = 0.5 * Ly;              /* radial thickness of sed slab */
+    const PetscReal x_sed_right = x_ice_c + R + sed_thick; /* flat air-sed interface */
 
     user->n_act    = 0;
     user->n_actsed = 0;
@@ -1772,10 +1773,13 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
             PetscReal ice = 0.5 - 0.5 * PetscTanhReal(0.5 * dist_ice / eps);
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
-            /* Sediment: annular ring of thickness sed_thick immediately
-             * outside the ice surface — hugs the ice-sediment interface. */
-            PetscReal sed = 0.5 * (PetscTanhReal(0.5 *  dist_ice              / eps)
-                                 - PetscTanhReal(0.5 * (dist_ice - sed_thick) / eps));
+            /* Sediment: right of ice circle, left of flat wall.
+             * Three tanh factors: (1) outside ice, (2) x > x_ice_c (right half),
+             * (3) x < x_sed_right (flat air-sed interface). */
+            PetscReal phi_out_ice   = 0.5 + 0.5 * PetscTanhReal(0.5 *  dist_ice              / eps);
+            PetscReal phi_right     = 0.5 + 0.5 * PetscTanhReal(0.5 * (x - x_ice_c)         / eps);
+            PetscReal phi_flat_wall = 0.5 - 0.5 * PetscTanhReal(0.5 * (x - x_sed_right)     / eps);
+            PetscReal sed = phi_out_ice * phi_right * phi_flat_wall;
             sed = PetscMin(PetscMax(sed, 0.0), 1.0);
 
             /* Resolve any ice/sediment overlap by renormalisation */
