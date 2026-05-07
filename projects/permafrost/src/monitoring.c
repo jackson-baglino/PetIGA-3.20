@@ -198,7 +198,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         "║  3-phase ice eq. unchanged; sediment pinned to sed0        ║\n"
         "╠════════════════════════════════════════════════════════════╣\n"
         "║  Step: %-5d  t_sed_freeze = %.4g s reached                 ║\n"
-        "║  New time step: %.2e s                                 ║\n"
+        "║  New time step: %.2e s                                  ║\n"
         "╚════════════════════════════════════════════════════════════╝\n"
         "\033[0m\n",
         step, user->t_sed_freeze, dt);
@@ -306,7 +306,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     }
 
     PetscViewerFileSetName(view,filedata);
-    PetscViewerASCIIPrintf(view,"%e %e %e %d\n",sub_interf/user->eps, tot_ice, t, step);
+    PetscViewerASCIIPrintf(view,"%e %e %e %d %e\n",sub_interf/user->eps, tot_ice, t, step, dt);
 
     PetscViewerDestroy(&view);
   }
