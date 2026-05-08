@@ -2,6 +2,9 @@
 # Test 3: 2D enclosed ice grain with two sediment inclusions
 # Purpose: Study sublimation and phase redistribution around a pair of
 #          sediment grains enclosed in ice.
+# Domain halved from original (Lx=1.25e-4, Ly=2.5e-4) to reduce element
+# count from ~163k to ~72k while keeping ≥8 elements across the diffuse
+# interface (eps=9.33e-7 m, dx≈3.3e-7 m → ~8 elements across w=2√2*eps).
 # Physics parameters match test_1D_IceSlab.opts; avenue 2 (AC + k_sed
 # penalty) is used since this is a 2D simulation with sediment penalty.
 # =============================================================================
@@ -12,11 +15,11 @@
 # ---------- Domain ----------
 -dim 2                                  # spatial dimension (1, 2, or 3)
 -dof 4                                  # DOFs per node: ice / temperature / vapor / sediment
--Nx 143                                 # elements in x
--Ny 285                                 # elements in y
+-Nx 190                                 # elements in x
+-Ny 380                                 # elements in y
 -Nz 1                                   # elements in z (unused for dim < 3)
--Lx 1.25e-04                            # domain length in x (m)
--Ly 2.5e-04                             # domain length in y (m)
+-Lx 6.25e-05                            # domain length in x (m)
+-Ly 1.25e-04                            # domain length in y (m)
 -Lz 0                                   # domain length in z (unused for dim < 3)
 
 # ---------- Discretization ----------
@@ -26,15 +29,15 @@
 
 # ---------- Grain Data ----------
 -NCsed 2                                # number of sediment grain centers
--RCsed 0.175e-4                         # mean sediment grain radius (m)
+-RCsed 8.75e-6                          # mean sediment grain radius (m)  [halved from 1.75e-5]
 -RCsed_dev 0.55                         # sediment radius deviation factor (for polydispersity)
 -NCice 1                                # number of ice grain centers
--RCice 0.375e-4                         # mean ice grain radius (m)
+-RCice 1.875e-5                         # mean ice grain radius (m)  [halved from 3.75e-5]
 -RCice_dev 0.55                         # ice radius deviation factor
 
 # ---------- Time Stepping & Output ----------
 -delt_t 1.0e-4                          # time step size (s)
--t_final 604800.0                       # total simulation time (s) — 1 week
+-t_final 86400.0                       # total simulation time (s) — 1 week
 -n_out 0                                # number of output snapshots (0 = use -outp)
 -outp 1                                 # write output every N time steps
 -Permafrost_output 1                    # enable sol*.dat field output (0 = disable)
@@ -42,14 +45,14 @@
 
 # ---------- Phase-Field Physics ----------
 -eps 9.3295e-07                         # diffuse interface half-width (m)
--flag_avenue 2                          # formulation: 2=Avenue 2 (AC + k_sed penalty)
--t_sed_freeze 60                        # 3-phase duration (s); 0 = start immediately frozen
+-flag_avenue 1                          # formulation: 2=Avenue 2 (AC + k_sed penalty)
+-t_sed_freeze 300                        # 3-phase duration (s); 0 = start immediately frozen
 -flag_tIC 0                             # IC geometry variant: 0=centered slab
 -n_relax 1                              # AC-only relaxation steps before full physics (0 = disabled)
 
 # ---------- Vapor Penalty ----------
 -difvap_pen 1.0e-7                      # D_pen factor: D_pen = difvap_pen * difvap (dimensionless)
--k_pen 1e9                              # vapor interface equilibrium stiffness
+-k_pen 1e8                              # vapor interface equilibrium stiffness
 
 # ---------- Sediment Penalty (Avenue 2 only) ----------
 -k_sed_pen -1                           # restoring penalty stiffness (-1 = auto-choose)
@@ -61,9 +64,6 @@
 -flag_BC_Tfix 0                         # fix temperature at boundaries (0=no)
 -flag_BC_rhovfix 0                      # fix vapor density at boundaries (0=no)
 -flag_Tdep 0                            # temperature-dependent material properties (0=off)
-
-# ---------- Initial Condition File ----------
--initial_cond ./inputs/tests/SthavisthaInputs/AssemblePhase_reinit.dat
 
 # ---------- Nonlinear Solver (SNES) ----------
 -snes_type newtonls                     # Newton with line search
