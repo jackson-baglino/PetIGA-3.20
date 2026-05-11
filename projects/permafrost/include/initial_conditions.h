@@ -27,6 +27,7 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, AppCtx *user);
 
 /* 1D initial conditions */
 PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user);
+PetscErrorCode FormInitialEnclosed1D(IGA iga, Vec U, AppCtx *user);
 
 /* 2D Ice Slab — 1D-equivalent centered slab, uniform in y */
 PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user);

@@ -20,8 +20,8 @@ int main(int argc, char *argv[]) {
     PetscBool flag_BC_Tfix;              /* fix temperature at boundaries */
     PetscBool flag_BC_rhovfix;           /* fix vapor density at boundaries */
 
-    user.xi_v       = 1.0e-3; // 1.0e-5;   /* Time scaling parameter for vapor */
-    user.xi_T       = 1.0e-2; // 1.0e-4;   /* Time scaling parameter for temperature */
+    user.xi_v       = 1.0; //e-3; // 1.0e-5;   /* Time scaling parameter for vapor */
+    user.xi_T       = 1.0; //e-2; // 1.0e-4;   /* Time scaling parameter for temperature */
 
     user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
@@ -309,20 +309,24 @@ int main(int argc, char *argv[]) {
 
     // Print simulation parameters
     PetscPrintf(PETSC_COMM_WORLD, "----- Simulation Parameters ----- \n");
-    PetscPrintf(PETSC_COMM_WORLD, "Dimension: %dD \n", dim);
-    PetscPrintf(PETSC_COMM_WORLD, "Domain size: Lx = %.2e m", Lx);
+    PetscPrintf(PETSC_COMM_WORLD, "Dimension:                    %dD \n", dim);
+    PetscPrintf(PETSC_COMM_WORLD, "Domain size:                  Lx = %.2e m", Lx);
     if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ly = %.2e m", Ly);
     if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Lz = %.2e m", Lz);
-    PetscPrintf(PETSC_COMM_WORLD, "\nElements: Nx = %d", Nx);
+    PetscPrintf(PETSC_COMM_WORLD, "\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Elements:                     Nx = %d", Nx);
     if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ny = %d", Ny);
     if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Nz = %d", Nz);
-    PetscPrintf(PETSC_COMM_WORLD, "\nTime step: delt_t = %.2e sec, t_final = %.2e sec, n_out = %d \n", delt_t, t_final, n_out);
-    PetscPrintf(PETSC_COMM_WORLD, "Initial conditions: temp0 = %.2f C, humidity = %.2f \n", temp, humidity);
-    PetscPrintf(PETSC_COMM_WORLD, "Interface width: eps = %.2e m \n", eps);
-    PetscPrintf(PETSC_COMM_WORLD, "Temperature gradient: dT/dx = %.2e C/m", grad_temp0[0]);
-    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", dT/dy = %.2e C/m", grad_temp0[1]);
-    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", dT/dz = %.2e C/m", grad_temp0[2]);
-    PetscPrintf(PETSC_COMM_WORLD, "\n D_v(T) = %.5e m^2/s \n", user.dif_vap);
+    PetscPrintf(PETSC_COMM_WORLD, "\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Time stepping:                delt_t = %.2e s, t_final = %.2e s, n_out = %d \n", delt_t, t_final, n_out);
+    PetscPrintf(PETSC_COMM_WORLD, "Initial conditions:           T = %.2f °C, humidity = %.2f \n", temp, humidity);
+    PetscPrintf(PETSC_COMM_WORLD, "Interface width:              eps = %.2e m \n", eps);
+    PetscPrintf(PETSC_COMM_WORLD, "Temperature gradient:         dT/dx = %.2e °C/m", grad_temp0[0]);
+    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", dT/dy = %.2e °C/m", grad_temp0[1]);
+    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", dT/dz = %.2e °C/m", grad_temp0[2]);
+    PetscPrintf(PETSC_COMM_WORLD, "\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Vapor diffusivity:            D_v = %.5e m²/s \n", user.dif_vap);
+    PetscPrintf(PETSC_COMM_WORLD, "k_sed_pen:                    %.2e \n", user.k_sed_pen);
 
     /* Compute saturation vapor density and its derivative based on initial temperature */
     PetscReal rho_rhovs;   /* Ratio of ice density to saturation vapor density */
@@ -503,10 +507,14 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "Setting up initial conditions... \n");
 
     if (dim == 1) {
-        /* --- 1D Initial Conditions ---------------------------------------- */
-        /* Variant selected by -flag_tIC: 0 = centered slab, 2 = flat interface */
-        PetscPrintf(PETSC_COMM_WORLD, "IC type: 1D ice slab (flag_tIC=%d)\n", user.flag_tIC);
-        ierr = FormInitialCondition1D(iga, U, &user); CHKERRQ(ierr);
+        /* --- 1D Initial Conditions — selected by -ic_type ----------------- */
+        PetscPrintf(PETSC_COMM_WORLD, "IC type: %s (1D)\n", ic_type);
+        if (strcmp(ic_type, "enclosed") == 0) {
+            ierr = FormInitialEnclosed1D(iga, U, &user); CHKERRQ(ierr);
+        } else {
+            /* Default: centered slab or flat interface, variant via -flag_tIC */
+            ierr = FormInitialCondition1D(iga, U, &user); CHKERRQ(ierr);
+        }
 
     } else {
         /* --- 2D / 3D Initial Conditions — selected by -ic_type ------------ */

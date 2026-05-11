@@ -1716,6 +1716,95 @@ PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user)
 
 
 /* -------------------------------------------------------------------------
+ * 1D Enclosed Grain Pair Initial Condition
+ *
+ * 1D cross-section equivalent of FormInitialEnclosedPermafrost2D taken along
+ * a vertical line through the centre of the 2D domain.  The geometry is:
+ *
+ *   Two concentric ice-shell / sediment-core pairs arranged symmetrically
+ *   about x = 0.5*Lx with centres at x = 0.5*Lx ± RCice:
+ *
+ *     grain 0 centre: xc0 = 0.5*Lx - RCice
+ *     grain 1 centre: xc1 = 0.5*Lx + RCice
+ *
+ *   For each grain g:
+ *     phi_ice_g = tanh_outer(RCice) - tanh_inner(RCsed)   [ice shell]
+ *     phi_sed_g = tanh_inner(RCsed)                       [sediment core]
+ *
+ *   where tanh_outer/inner use the equilibrium Allen-Cahn coefficient
+ *     tc = 1 / (sqrt(2) * eps)
+ *
+ * The two grains are tangent to each other at x = 0.5*Lx (2*RCice apart).
+ * Air occupies x < xc0-RCice and x > xc1+RCice.
+ *
+ * Parameters read from user: Lx, eps, RCice, RCsed, temp0, grad_temp0, hum0.
+ * -------------------------------------------------------------------------*/
+PetscErrorCode FormInitialEnclosed1D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx      = user->Lx;
+    const PetscReal eps     = user->eps;
+    const PetscReal RCice   = user->RCice;
+    const PetscReal RCsed   = user->RCsed;
+    const PetscReal tc      = 1.0 / (PetscSqrtReal(2.0) * eps);
+
+    const PetscReal xc[2] = { 0.5*Lx - RCice, 0.5*Lx + RCice };
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (1D enclosed grain pair) ---\n"
+        "  grain 0 centre: x = %.4e m,  grain 1 centre: x = %.4e m\n"
+        "  RCice = %.4e m,  RCsed = %.4e m\n",
+        xc[0], xc[1], RCice, RCsed);
+
+    if (RCsed >= RCice)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "RCsed (%.2e) must be smaller than RCice (%.2e)", RCsed, RCice);
+    if (xc[0] <= 0.0 || xc[1] >= Lx)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Ice grain centres fall outside domain — reduce RCice or increase Lx");
+
+    DM            da;
+    Field        *u;
+    DMDALocalInfo info;
+
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
+
+    PetscInt k = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + k);
+
+        PetscReal ice = 0.0, sed = 0.0;
+        for (PetscInt g = 0; g < 2; g++) {
+            PetscReal dist = PetscAbsReal(x - xc[g]);
+            PetscReal phi_outer = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCice));
+            PetscReal phi_inner = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCsed));
+            ice += phi_outer - phi_inner;
+            sed += phi_inner;
+        }
+        ice = PetscMin(PetscMax(ice, 0.0), 1.0);
+        sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+
+        u[i].ice = ice;
+        u[i].sed = sed;
+        u[i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
+
+        PetscScalar rho_vs, temp_loc = u[i].tem;
+        RhoVS_I(user, temp_loc, &rho_vs, NULL);
+        u[i].rhov = user->hum0 * rho_vs;
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/* -------------------------------------------------------------------------
  * 2D Ice Slab Initial Condition
  * Equivalent to the 1D flag_tIC=0 (centered slab) case:
  *   - Ice slab: x in [0.35*Lx, 0.65*Lx], uniform across full Ly
