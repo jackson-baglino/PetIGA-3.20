@@ -473,10 +473,10 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
                 sed += 0.5 - 0.5*tanh(tc * (distIceMinus - rad_sed));
             }
 
-            if (ice > 1.0) ice = 1.0;
-            if (ice < 0.0) ice = 0.0;
-            if (sed > 1.0) sed = 1.0;
-            if (sed < 0.0) sed = 0.0;
+            ice = PetscMax(0.0, PetscMin(1.0, ice));
+            sed = PetscMax(0.0, PetscMin(1.0, sed));
+            /* Enforce phi_i + phi_s <= 1 (no spurious air gap at ice-sed contact) */
+            { PetscReal _tot = ice + sed; if (_tot > 1.0) { ice /= _tot; sed /= _tot; } }
 
             // for (PetscInt g = 0; g < 2; g++) {
             //     PetscReal dist = sqrt(SQ(x - cent_sed[0][g]) + SQ(y - cent_sed[1][g]));
@@ -1788,6 +1788,8 @@ PetscErrorCode FormInitialEnclosed1D(IGA iga, Vec U, AppCtx *user)
         }
         ice = PetscMin(PetscMax(ice, 0.0), 1.0);
         sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+        /* Enforce phi_i + phi_s <= 1 (no spurious air gap at ice-sed contact) */
+        { PetscReal _tot = ice + sed; if (_tot > 1.0) { ice /= _tot; sed /= _tot; } }
 
         u[i].ice = ice;
         u[i].sed = sed;

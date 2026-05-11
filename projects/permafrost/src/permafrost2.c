@@ -20,8 +20,8 @@ int main(int argc, char *argv[]) {
     PetscBool flag_BC_Tfix;              /* fix temperature at boundaries */
     PetscBool flag_BC_rhovfix;           /* fix vapor density at boundaries */
 
-    user.xi_v       = 1.0; //e-3; // 1.0e-5;   /* Time scaling parameter for vapor */
-    user.xi_T       = 1.0; //e-2; // 1.0e-4;   /* Time scaling parameter for temperature */
+    user.xi_v       = 1.0e-4; // 1.0e-5;   /* Time scaling parameter for vapor */
+    user.xi_T       = 1.0e-2; // 1.0e-4;   /* Time scaling parameter for temperature */
 
     user.Lambd      = 1.0;      /* Model parameter Lambda */
     user.air_lim    = 1.0e-6;   /* Air phase fraction */
@@ -261,6 +261,10 @@ int main(int argc, char *argv[]) {
              "Sediment shape-restoring stiffness "
              "(default: 1e-3/eps²; -1 = use default)",
              "", user.k_sed_pen, &user.k_sed_pen, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Lambda",
+             "Triple-junction penalty strength in the free energy "
+             "(larger values suppress spurious phases at binary interfaces; default 1.0)",
+             "", user.Lambd, &user.Lambd, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-phase_lo",
              "Lower bound for phase fields phi_ice, phi_sed, phi_air "
              "(simulation aborts if any phi falls below this; default -0.25)",

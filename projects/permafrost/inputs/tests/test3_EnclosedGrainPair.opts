@@ -13,7 +13,7 @@
 -ic_type enclosed                       # IC geometry: ice grain enclosing two sediment grains
 
 # ---------- Domain ----------
--dim 2                                  # spatial dimension (1, 2, or 3)
+-dim 1                                  # spatial dimension (1, 2, or 3)
 -dof 4                                  # DOFs per node: ice / temperature / vapor / sediment
 -Nx 190                                 # elements in x
 -Ny 380                                 # elements in y
@@ -36,7 +36,7 @@
 -RCice_dev 0.55                         # ice radius deviation factor
 
 # ---------- Time Stepping & Output ----------
--delt_t 1.0e-4                          # time step size (s)
+-delt_t 1.0e-2                          # time step size (s)
 -t_final 86400.0                       # total simulation time (s) — 1 week
 -n_out 0                                # number of output snapshots (0 = use -outp)
 -outp 1                                 # write output every N time steps
@@ -44,15 +44,21 @@
 -Permafrost_monitor 1                   # enable monitor table output
 
 # ---------- Phase-Field Physics ----------
--eps 9.3295e-07                         # diffuse interface half-width (m)
+-eps 4.8295e-07                         # diffuse interface half-width (m)
 -flag_avenue 1                          # formulation: 2=Avenue 2 (AC + k_sed penalty)
 -t_sed_freeze 300                        # 3-phase duration (s); 0 = start immediately frozen
 -flag_tIC 0                             # IC geometry variant: 0=centered slab
 -n_relax 1                              # AC-only relaxation steps before full physics (0 = disabled)
 
 # ---------- Vapor Penalty ----------
--difvap_pen 1.0e-7                      # D_pen factor: D_pen = difvap_pen * difvap (dimensionless)
--k_pen 1e8                              # vapor interface equilibrium stiffness
+-difvap_pen 1.0e-4                      # D_pen factor: D_pen = difvap_pen * difvap  [raised from 1e-6 to reduce stiffness]
+-k_pen 1e6                              # vapor interface equilibrium stiffness  [reduced from 1e8 to reduce stiffness]
+
+# ---------- Triple-Junction Penalty ----------
+-Lambda 5.0                             # triple-junction penalty strength (suppresses spurious air at ice-sed contacts)
+
+# ---------- Adaptive Time Stepping ----------
+-NRmax 8                                # max Newton iters before dt reduction  [raised from 5 to tolerate stiff periods]
 
 # ---------- Sediment Penalty (Avenue 2 only) ----------
 -k_sed_pen -1                           # restoring penalty stiffness (-1 = auto-choose)

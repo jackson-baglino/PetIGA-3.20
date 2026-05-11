@@ -50,8 +50,14 @@
 -n_relax 1                              # AC-only relaxation steps before full physics
 
 # ---------- Vapor Penalty ----------
--difvap_pen 1.0e-7                      # D_pen factor: D_pen = difvap_pen * difvap
--k_pen 1e8                              # vapor interface equilibrium stiffness
+-difvap_pen 1.0e-4                      # D_pen factor: D_pen = difvap_pen * difvap  [raised from 1e-7 to reduce stiffness]
+-k_pen 1e6                              # vapor interface equilibrium stiffness  [reduced from 1e8 to reduce stiffness]
+
+# ---------- Triple-Junction Penalty ----------
+-Lambda 5.0                             # triple-junction penalty strength (suppresses spurious air at ice-sed contacts)
+
+# ---------- Adaptive Time Stepping ----------
+-NRmax 8                                # max Newton iters before dt reduction  [raised from 5 to tolerate stiff periods]
 
 # ---------- Thermal & Boundary Conditions ----------
 -humidity 0.95                          # relative humidity (fraction; <1 = undersaturated)
