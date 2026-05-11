@@ -8,20 +8,23 @@
 #           rhov = hum0 * rhoVS(-20).
 # =============================================================================
 
+# ---------- Initial Condition ----------
+-ic_type ice_slab                       # IC geometry: centered ice slab with right-side sediment
+
 # ---------- Domain ----------
 -dim 1                                  # spatial dimension
 -dof 4                                  # DOFs per node: ice / temperature / vapor / sediment
--Nx 114                                 # elements in x
+-Nx 228                                 # elements in x
 -Lx 1.00e-04                            # domain length in x (m)
 
 # ---------- Discretization ----------
 -p 2                                    # B-spline polynomial order
--C 1                                    # B-spline continuity (C^1)
+-C 0                                    # B-spline continuity (C^1)
 -periodic 0                             # periodic BCs (0=no)
 
 # ---------- Time Stepping & Output ----------
 -delt_t 1.0e-4                          # time step size (s)
--t_final 86400.0                        # total simulation time (s) — 1 day
+-t_final 864000.0                        # total simulation time (s) — 1 day
 -n_out 0                                # number of output snapshots (0 = use -outp)
 -outp 1                                 # write output every N time steps
 -Permafrost_output 1                    # enable sol*.dat field output (0 = disable)
@@ -30,16 +33,16 @@
 # ---------- Phase-Field Physics ----------
 -eps 9.3295e-07                         # diffuse interface half-width (m)
 -flag_avenue 1                          # formulation: 1=Avenue 1 (AC, penalty vapor)
--t_sed_freeze 0                         # 3-phase duration (s); 0 = start immediately in 2-phase
+-t_sed_freeze 60                         # 3-phase duration (s); 0 = start immediately in 2-phase
 -flag_tIC 0                             # IC geometry variant: 0=centered slab, 2=flat interface
--n_relax 12                             # AC-only relaxation steps before full physics (0 = disabled)
+-n_relax 1                              # AC-only relaxation steps before full physics (0 = disabled)
 
 # ---------- Vapor Penalty ----------
 -difvap_pen 1.0e-7                      # D_pen factor: D_pen = difvap_pen * difvap (dimensionless)
 -k_pen 1e9                              # vapor interface equilibrium stiffness
 
 # ---------- Thermal & Boundary Conditions ----------
--humidity 0.5                           # relative humidity (fraction; <1 = undersaturated)
+-humidity 0.95                           # relative humidity (fraction; <1 = undersaturated)
 -temp -20.0                             # background temperature (°C)
 -grad_temp0 0.0,0.0,0.0               # imposed temperature gradient (K/m); 0 = isothermal
 -flag_BC_Tfix 0                         # fix temperature at boundaries (0=no)
