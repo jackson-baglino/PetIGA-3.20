@@ -288,7 +288,8 @@ PetscErrorCode FormInitialLayeredPermafrost2D(IGA iga, Vec U, AppCtx *user)
                       + user->grad_temp0[1] * (y - 0.5 * user->Ly);
         PetscScalar rho_vs, temp = u[j][i].tem;
         RhoVS_I(user, temp, &rho_vs, NULL);
-        u[j][i].rhov = user->hum0 * rho_vs;
+        PetscReal _phi_air291 = PetscMax(0.0, 1.0 - ice - sed_here);
+        u[j][i].rhov = rho_vs * (user->hum0 * _phi_air291 + (1.0 - _phi_air291));
       }
     }
     ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr);
@@ -375,7 +376,7 @@ PetscErrorCode FormInitialFlatSedIceCap2D(IGA iga, Vec U, AppCtx *user)
             u[j][i].ice  = ice;
             u[j][i].sed  = sed;
             u[j][i].tem  = tem;
-            u[j][i].rhov = user->hum0 * rho_vs * air;
+            u[j][i].rhov = rho_vs * (user->hum0 * air + (1.0 - air));
         }
     }
 
@@ -504,10 +505,11 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
             PetscReal rho_vs;
             RhoVS_I(user, tem, &rho_vs, NULL);
 
+            PetscReal _phi_air510 = PetscMax(0.0, 1.0 - ice - sed);
             u[j][i].ice  = ice;
             u[j][i].sed  = sed;
             u[j][i].tem  = tem;
-            u[j][i].rhov = user->hum0 * rho_vs;
+            u[j][i].rhov = rho_vs * (user->hum0 * _phi_air510 + (1.0 - _phi_air510));
         }
     }
 
@@ -594,10 +596,11 @@ PetscErrorCode FormInitialContactSedPermafrost2D(IGA iga, Vec U, AppCtx *user)
             PetscReal rho_vs;
             RhoVS_I(user, tem, &rho_vs, NULL);
 
+            PetscReal _phi_air600 = PetscMax(0.0, 1.0 - ice - sed);
             u[j][i].ice  = ice;
             u[j][i].sed  = sed;
             u[j][i].tem  = tem;
-            u[j][i].rhov = user->hum0 * rho_vs;
+            u[j][i].rhov = rho_vs * (user->hum0 * _phi_air600 + (1.0 - _phi_air600));
         }
     }
 
@@ -889,6 +892,7 @@ PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *use
                 if (ice > 1.0) ice = 1.0;
                 if (ice < 0.0) ice = 0.0;
 
+                PetscReal _phi_air899 = PetscMax(0.0, 1.0 - ice - sed_here);
                 u[j][i].ice  = ice;
                 u[j][i].sed  = sed_here;
                 u[j][i].tem  = user->temp0
@@ -896,7 +900,7 @@ PetscErrorCode FormInitialRandomEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *use
                               + user->grad_temp0[1] * (y - 0.5 * user->Ly);
                 PetscScalar rho_vs, temp = u[j][i].tem;
                 RhoVS_I(user, temp, &rho_vs, NULL);
-                u[j][i].rhov = user->hum0 * rho_vs;
+                u[j][i].rhov = rho_vs * (user->hum0 * _phi_air899 + (1.0 - _phi_air899));
             }
         }
 
@@ -953,7 +957,7 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, Vec U, AppCtx *user)
                                   + user->grad_temp0[1] * (y - 0.5 * user->Ly);
                     PetscScalar rho_vs, temp = u[j][i].tem;
                     RhoVS_I(user, temp, &rho_vs, NULL);
-                    u[j][i].rhov = user->hum0 * rho_vs;
+                    u[j][i].rhov = user->hum0 * rho_vs; /* all air: phi_air = 1 */
                 }
             }
 
@@ -1224,6 +1228,7 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, Vec U, AppCtx *user)
                 if (ice > 1.0) ice = 1.0;
                 if (ice < 0.0) ice = 0.0;
 
+                PetscReal _phi_air1234 = PetscMax(0.0, 1.0 - ice - sed_here);
                 u[j][i].ice  = ice;
                 u[j][i].sed  = sed_here;
                 u[j][i].tem  = user->temp0
@@ -1231,7 +1236,7 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, Vec U, AppCtx *user)
                               + user->grad_temp0[1] * (y - 0.5 * user->Ly);
                 PetscScalar rho_vs, temp = u[j][i].tem;
                 RhoVS_I(user, temp, &rho_vs, NULL);
-                u[j][i].rhov = user->hum0 * rho_vs;
+                u[j][i].rhov = rho_vs * (user->hum0 * _phi_air1234 + (1.0 - _phi_air1234));
             }
         }
 
@@ -1303,11 +1308,12 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
         u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
         PetscScalar rho_vs, temp=u[j][i].tem;
         RhoVS_I(user,temp,&rho_vs,NULL);
-        u[j][i].rhov = user->hum0*rho_vs;
+        { PetscReal _pa = PetscMax(0.0, 1.0 - (PetscReal)u[j][i].ice - (PetscReal)u[j][i].sed);
+          u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
       }
     }
-    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
-    ierr = DMDestroy(&da);;CHKERRQ(ierr); 
+    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr);
+    ierr = DMDestroy(&da);;CHKERRQ(ierr);
 
   } else {
     DM da;
@@ -1332,17 +1338,18 @@ PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
         }
         if(ice>1.0) ice=1.0;
 
-        u[j][i].ice = ice;    
+        u[j][i].ice = ice;
         u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
         PetscScalar rho_vs, temp=u[j][i].tem;
         RhoVS_I(user,temp,&rho_vs,NULL);
-        u[j][i].rhov = user->hum0*rho_vs;
+        { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
+          u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
       }
     }
-    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
-    ierr = DMDestroy(&da);;CHKERRQ(ierr); 
+    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr);
+    ierr = DMDestroy(&da);;CHKERRQ(ierr);
   }
-  PetscFunctionReturn(0); 
+  PetscFunctionReturn(0);
 }
 
 PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user, 
@@ -1409,12 +1416,13 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user,
           u[k][j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly) + user->grad_temp0[2]*(z-0.5*user->Lz);
           PetscScalar rho_vs, temp=u[k][j][i].tem;
           RhoVS_I(user,temp,&rho_vs,NULL);
-          u[k][j][i].rhov = user->hum0*rho_vs;
+          { PetscReal _pa = PetscMax(0.0, 1.0 - (PetscReal)u[k][j][i].ice - (PetscReal)u[k][j][i].sed);
+            u[k][j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
         }
       }
     }
-    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
-    ierr = DMDestroy(&da);;CHKERRQ(ierr); 
+    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr);
+    ierr = DMDestroy(&da);;CHKERRQ(ierr);
 
   } else {
     DM da;
@@ -1441,11 +1449,12 @@ PetscErrorCode FormInitialCondition3D(IGA iga, PetscReal t, Vec U,AppCtx *user,
           }
           if(ice>1.0) ice=1.0;
 
-          u[k][j][i].ice = ice;    
+          u[k][j][i].ice = ice;
           u[k][j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly) + user->grad_temp0[2]*(z-0.5*user->Lz);
           PetscScalar rho_vs, temp=u[k][j][i].tem;
           RhoVS_I(user,temp,&rho_vs,NULL);
-          u[k][j][i].rhov = user->hum0*rho_vs;
+          { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
+            u[k][j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
         }
       }
     }
@@ -1527,11 +1536,12 @@ PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U,
         u[j][i].tem = user->temp0 + user->grad_temp0[0]*(x-0.5*user->Lx) + user->grad_temp0[1]*(y-0.5*user->Ly);
         PetscScalar rho_vs, temp=u[j][i].tem;
         RhoVS_I(user,temp,&rho_vs,NULL);
-        u[j][i].rhov = user->hum0*rho_vs;
+        { PetscReal _pa = PetscMax(0.0, 1.0 - (PetscReal)u[j][i].ice - (PetscReal)u[j][i].sed);
+          u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
       }
     }
-    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr); 
-    ierr = DMDestroy(&da);;CHKERRQ(ierr); 
+    ierr = DMDAVecRestoreArray(da,U,&u);CHKERRQ(ierr);
+    ierr = DMDestroy(&da);;CHKERRQ(ierr);
 
 
 
@@ -1558,22 +1568,22 @@ PetscErrorCode FormLayeredInitialCondition2D(IGA iga, PetscReal t, Vec U,
         PetscReal x = user->Lx * (PetscReal)i / ((PetscReal)(info.mx + k));
         PetscReal y = user->Ly * (PetscReal)j / ((PetscReal)(info.my + k));
 
-        // Initialize temperature and density fields
-        u[j][i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * user->Lx) + user->grad_temp0[1] * (y - 0.5 * user->Ly);
-        PetscScalar rho_vs, temp = u[j][i].tem;
-        RhoVS_I(user, temp, &rho_vs, NULL);
-        u[j][i].rhov = user->hum0 * rho_vs;
-
         // Initialize phase-field variable for ice
         ice = 0.0;
         for(aa = 0; aa < user->n_act; aa++) {
           dist = sqrt(SQ(x - user->cent[0][aa]) + SQ(y - user->cent[1][aa]));
           ice += 0.5 - 0.5 * tanh(0.5 / user->eps * (dist - user->radius[aa]));
         }
-        
-        ice = PetscMin(PetscMax(ice, 0.0), 1.0); // Clamp ice value between 0 and 1
+        ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
         u[j][i].ice = ice;
+
+        // Initialize temperature and density fields
+        u[j][i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * user->Lx) + user->grad_temp0[1] * (y - 0.5 * user->Ly);
+        PetscScalar rho_vs, temp = u[j][i].tem;
+        RhoVS_I(user, temp, &rho_vs, NULL);
+        { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
+          u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
       }
     }
 
@@ -1705,7 +1715,8 @@ PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user)
 
         PetscScalar rho_vs_loc, temp_loc = u[i].tem;
         RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
-        u[i].rhov = user->hum0 * rho_vs_loc;
+        { PetscReal _pa = PetscMax(0.0, 1.0 - ice - sed);
+          u[i].rhov = rho_vs_loc * (user->hum0 * _pa + (1.0 - _pa)); }
     }
 
     ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
@@ -1797,7 +1808,8 @@ PetscErrorCode FormInitialEnclosed1D(IGA iga, Vec U, AppCtx *user)
 
         PetscScalar rho_vs, temp_loc = u[i].tem;
         RhoVS_I(user, temp_loc, &rho_vs, NULL);
-        u[i].rhov = user->hum0 * rho_vs;
+        { PetscReal _pa = PetscMax(0.0, 1.0 - ice - sed);
+          u[i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
     }
 
     ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
@@ -2040,7 +2052,8 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, AppCtx *user)
 
                 PetscScalar rho_vs_loc, temp_loc = u[j][i].tem;
                 RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
-                u[j][i].rhov = user->hum0 * rho_vs_loc;
+                { PetscReal _pa = PetscMax(0.0, 1.0 - (PetscReal)u[j][i].ice - (PetscReal)u[j][i].sed);
+                  u[j][i].rhov = rho_vs_loc * (user->hum0 * _pa + (1.0 - _pa)); }
             }
         }
 
@@ -2072,7 +2085,8 @@ PetscErrorCode InitializeFromInputSolution(IGA iga, Vec U, AppCtx *user)
 
                     PetscScalar rho_vs_loc, temp_loc = u[k][j][i].tem;
                     RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
-                    u[k][j][i].rhov = user->hum0 * rho_vs_loc;
+                    { PetscReal _pa = PetscMax(0.0, 1.0 - (PetscReal)u[k][j][i].ice - (PetscReal)u[k][j][i].sed);
+                      u[k][j][i].rhov = rho_vs_loc * (user->hum0 * _pa + (1.0 - _pa)); }
                 }
             }
         }
@@ -2231,7 +2245,8 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, AppCtx *user)
 
             PetscScalar rho_vs_loc, temp_loc = u[j][i].tem;
             RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
-            u[j][i].rhov = user->hum0 * rho_vs_loc;
+            { PetscReal _pa = PetscMax(0.0, 1.0 - (PetscReal)u[j][i].ice - (PetscReal)u[j][i].sed);
+              u[j][i].rhov = rho_vs_loc * (user->hum0 * _pa + (1.0 - _pa)); }
         }
     }
 
