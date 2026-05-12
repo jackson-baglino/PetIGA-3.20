@@ -24,6 +24,7 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 ###############################################################################
 params_file="${1:-params.txt}"
 title="${2:-permafrost_}"
+UNIVERSAL_OPTS="./inputs/universal.opts"
 
 ###############################################################################
 # Create output folder based on timestamp and title
@@ -136,7 +137,11 @@ run_simulation() {
         echo "SLURM_CPUS_PER_TASK = ${SLURM_CPUS_PER_TASK:-unknown}"
         echo "Using NPROCS        = ${NPROCS}"
 
+        local universal_arg=""
+        [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
+
         srun -n "${NPROCS}" ./permafrost \
+            $universal_arg \
             -options_file "$params_file" \
             -output_path "$folder" \
             -snes_rtol 1e-3 \
@@ -152,7 +157,11 @@ run_simulation() {
         echo "No SLURM environment detected; running locally with mpiexec."
         echo "Using NPROCS = ${NPROCS}"
 
+        local universal_arg=""
+        [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
+
         mpiexec -n "${NPROCS}" ./permafrost \
+            $universal_arg \
             -options_file "$params_file" \
             -output_path "$folder" \
             -snes_rtol 1e-3 \
@@ -177,7 +186,8 @@ finalize_results() {
     cp ./scripts/plotpermafrost.py ./scripts/plotSSA.py ./scripts/plotPorosity.py "$folder" 2>/dev/null || true
     cp ./src/permafrost.c "$folder" 2>/dev/null || true
 
-    # Save a copy of the PETSc options file used for this run
+    # Save copies of the universal and simulation-specific opts files
+    [ -f "$UNIVERSAL_OPTS" ] && cp "$UNIVERSAL_OPTS" "$folder/"
     cp "$params_file" "$folder/$(basename "$params_file")"
 }
 

@@ -42,6 +42,7 @@ SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/permafrost/scratch"
+UNIVERSAL_OPTS="$INPUTS_DIR/universal.opts"
 
 # ---------------------------------------------------------------------------
 # Usage
@@ -134,7 +135,8 @@ stage_output_folder() {
     echo ""
     echo "--- Staging output folder ---"
 
-    # Copy the options file used for this run
+    # Copy the universal opts and the simulation-specific opts used for this run
+    [ -f "$UNIVERSAL_OPTS" ] && cp "$UNIVERSAL_OPTS" "$folder/"
     cp "$params_file" "$folder/$(basename "$params_file")"
 
     # Copy post-processing scripts if they exist
@@ -209,6 +211,7 @@ run_simulation() {
     echo ""
     echo "--- Running simulation ---"
     echo "Executable   : $EXEC"
+    echo "Universal    : ${UNIVERSAL_OPTS}"
     echo "Options file : $params_file"
     echo "Output path  : $folder"
     echo "Processes    : 12"
@@ -216,8 +219,12 @@ run_simulation() {
 
     export folder
 
+    local universal_arg=""
+    [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
+
     set +e
     mpiexec -np 12 "$EXEC"              \
+        $universal_arg                  \
         -options_file "$params_file"    \
         -output_path  "$folder"         \
         | tee "$folder/outp.txt"

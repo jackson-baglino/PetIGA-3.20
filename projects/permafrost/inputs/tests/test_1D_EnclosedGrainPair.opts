@@ -1,91 +1,49 @@
 # =============================================================================
-# Test: 1D enclosed grain pair (cross-section equivalent)
-# Purpose: 1D cross-section of test3_EnclosedGrainPair.opts taken along a
-#          vertical line through the domain centre (x = 0.5*Lx_2D).
+# test_1D_EnclosedGrainPair.opts — 1D enclosed grain pair (cross-section)
 #
-# Geometry: Two concentric ice-shell / sediment-core pairs arranged
-#   symmetrically about the midpoint of the 1D domain, with centres at
-#     xc0 = 0.5*Lx - RCice  (left grain)
-#     xc1 = 0.5*Lx + RCice  (right grain)
-#   The two grains are tangent to each other at x = 0.5*Lx.
+# Purpose: 1D cross-section of the 2D enclosed grain pair taken along a
+#          vertical line through x = 0.5*Lx_2D. Two concentric ice-shell /
+#          sediment-core pairs centred at 0.5*Lx ± RCice (tangent at midpoint).
+#          Domain length Lx = Ly of the 2D test; mesh Nx = Ny of the 2D test.
 #
-# Domain length Lx = Ly of the 2D test (1.25e-4 m).
-# Mesh Nx = Ny of the 2D test (380 elements).
-# Grain radii match the 2D test (halved from original).
+# Usage:
+#   mpiexec -np N ./permafrost \
+#       -options_file inputs/universal.opts \
+#       -options_file inputs/tests/test_1D_EnclosedGrainPair.opts
+#
+# Solver/penalty defaults are in inputs/universal.opts; overrides below.
 # =============================================================================
 
 # ---------- Initial Condition ----------
 -ic_type enclosed                       # 1D enclosed grain pair IC
 
 # ---------- Domain ----------
--dim 1                                  # spatial dimension
--dof 4                                  # DOFs per node: ice / temperature / vapor / sediment
--Nx 380                                 # elements in x (= Ny of 2D test)
--Lx 1.25e-04                            # domain length in x (m) (= Ly of 2D test)
+-dim 1
+-Nx 380                                 # = Ny of 2D test
+-Lx 1.25e-04                            # = Ly of 2D test (m)
 
-# ---------- Discretization ----------
--p 2                                    # B-spline polynomial order
--C 0                                    # B-spline continuity (C^0)
--periodic 0                             # periodic BCs (0=no)
+# ---------- Grain Radii (used by FormInitialEnclosed1D) ----------
+-RCice 1.875e-5                         # ice shell outer radius (m)
+-RCsed 8.75e-6                          # sediment core radius (m)
 
-# ---------- Grain Data ----------
--NCsed 2                                # number of sediment grains
--RCsed 8.75e-6                          # sediment grain radius (m)
--NCice 2                                # number of ice grains
--RCice 1.875e-5                         # ice grain radius (m)
-
-# ---------- Time Stepping & Output ----------
--delt_t 1.0e-4                          # time step size (s)
+# ---------- Time Stepping ----------
+-delt_t 1.0e-2                          # initial time step (s)
 -t_final 86400.0                        # total simulation time (s) — 1 day
--n_out 0                                # number of output snapshots (0 = use -outp)
--outp 1                                 # write output every N time steps
--Permafrost_output 1                    # enable sol*.dat field output (0 = disable)
--Permafrost_monitor 1                   # enable monitor table output
 
 # ---------- Phase-Field Physics ----------
 -eps 9.3295e-07                         # diffuse interface half-width (m)
--flag_avenue 1                          # formulation: 1=Avenue 1 (AC + penalty vapor)
--t_sed_freeze 300                       # 3-phase duration (s); 0 = start immediately frozen
--flag_tIC 0                             # IC geometry variant (unused for ic_type=enclosed)
--n_relax 1                              # AC-only relaxation steps before full physics
+-flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
+-t_sed_freeze 300                       # 3-phase duration (s) before sediment freezes
 
-# ---------- Vapor Penalty ----------
--difvap_pen 1.0e-4                      # D_pen factor: D_pen = difvap_pen * difvap  [raised from 1e-7 to reduce stiffness]
--k_pen 1e6                              # vapor interface equilibrium stiffness  [reduced from 1e8 to reduce stiffness]
+# ---------- Thermal & Humidity ----------
+-humidity 0.95
+-temp -20.0
+-grad_temp0 0.0,0.0,0.0
 
-# ---------- Triple-Junction Penalty ----------
--Lambda 5.0                             # triple-junction penalty strength (suppresses spurious air at ice-sed contacts)
+# ---------- Penalty overrides (stiffer geometry requires softer penalties) ----------
+-difvap_pen 1.0e-5                      # raised from 1e-7 to reduce Newton stiffness
+-k_pen 1e6                              # reduced from 1e9 to reduce algebraic stiffness
+-Lambda 1.0e2                           # raised from 1.0 to suppress spurious air at ice-sed contact
 
-# ---------- Adaptive Time Stepping ----------
--NRmax 8                                # max Newton iters before dt reduction  [raised from 5 to tolerate stiff periods]
-
-# ---------- Thermal & Boundary Conditions ----------
--humidity 0.95                          # relative humidity (fraction; <1 = undersaturated)
--temp -20.0                             # background temperature (°C)
--grad_temp0 0.0,0.0,0.0                 # imposed temperature gradient (K/m); 0 = isothermal
--flag_BC_Tfix 0                         # fix temperature at boundaries (0=no)
--flag_BC_rhovfix 0                      # fix vapor density at boundaries (0=no)
--flag_Tdep 0                            # temperature-dependent material properties (0=off)
-
-# ---------- Nonlinear Solver (SNES) ----------
--snes_type newtonls                     # Newton with line search
--snes_max_it 10                         # max Newton iterations per time step
--snes_rtol 1e-06                        # relative residual tolerance
--snes_atol 1e-08                        # absolute residual tolerance
--snes_stol 1e-06                        # step tolerance
--snes_converged_reason                  # print convergence reason
--snes_linesearch_type bt                # backtracking line search
--snes_linesearch_monitor                # print line search progress
-
-# ---------- Linear Solver (KSP) ----------
--ksp_type gmres                         # GMRES
--ksp_rtol 1e-05                         # relative residual tolerance
--ksp_atol 1e-08                         # absolute residual tolerance
--ksp_max_it 500                         # max GMRES iterations
--ksp_gmres_restart 500                  # GMRES restart interval
--ksp_converged_reason                   # print convergence reason
-
-# ---------- Preconditioner ----------
--pc_type bjacobi                        # block Jacobi (one block per MPI rank)
--sub_pc_type ilu                        # ILU(k) per block
--sub_pc_factor_levels 1                 # fill level k for ILU(k)
+# ---------- TS override ----------
+-NRmax 8                                # raised from 5 to tolerate stiff transients

@@ -1,0 +1,68 @@
+# =============================================================================
+# universal.opts — shared defaults for all permafrost simulations
+#
+# Load this file BEFORE the simulation-specific opts file so that any
+# parameter defined here can be overridden by the simulation-specific file:
+#
+#   mpiexec -np N ./permafrost \
+#       -options_file inputs/universal.opts \
+#       -options_file inputs/tests/<sim>.opts
+#
+# PETSc processes -options_file flags left-to-right; later entries win.
+# =============================================================================
+
+# ---------- DOFs & discretization (fixed for all permafrost sims) ----------
+-dof 4                                  # ice / temperature / vapor / sediment
+-p 2                                    # B-spline polynomial order
+-C 0                                    # B-spline continuity (C^0)
+-periodic 0                             # periodic BCs off
+
+# ---------- Output ----------
+-n_out 0                                # use -outp instead of fixed snapshot count
+-outp 1                                 # write output every N time steps
+-Permafrost_output 1                    # enable sol*.dat field output
+-Permafrost_monitor 1                   # enable monitor table output
+
+# ---------- Phase-field defaults ----------
+-flag_tIC 0                             # IC variant: 0=centered slab, 2=flat interface
+-n_relax 1                              # AC-only relaxation steps before full physics
+
+# ---------- Boundary condition defaults ----------
+-flag_BC_Tfix 0                         # do not fix T at boundaries
+-flag_BC_rhovfix 0                      # do not fix rhov at boundaries
+-flag_Tdep 0                            # temperature-independent material properties
+
+# ---------- Penalty defaults (override per simulation as needed) ----------
+-difvap_pen 1.0e-7                      # D_pen = difvap_pen * difvap (in ice/sed)
+-k_pen 1e9                              # vapor interface equilibrium stiffness
+-k_sed_pen -1                           # sediment restoring stiffness (-1 = auto: 1e-4/eps^2)
+-Lambda 1.0                             # triple-junction free-energy penalty strength
+
+# ---------- Adaptive time stepping ----------
+-adap 1                                 # enable adaptive dt
+-NRmin 3                                # min Newton iters → dt grows
+-NRmax 5                                # max Newton iters before dt shrinks
+-max_rej 10                             # max rejected steps before abort
+
+# ---------- Nonlinear solver (SNES) ----------
+-snes_type newtonls                     # Newton with line search
+-snes_max_it 10                         # max Newton iterations per time step
+-snes_rtol 1e-06                        # relative residual tolerance
+-snes_atol 1e-08                        # absolute residual tolerance
+-snes_stol 1e-06                        # step tolerance
+-snes_converged_reason                  # print convergence reason each step
+-snes_linesearch_type bt                # backtracking line search
+-snes_linesearch_monitor                # print line search progress
+
+# ---------- Linear solver (KSP) ----------
+-ksp_type gmres                         # GMRES
+-ksp_rtol 1e-05                         # relative residual tolerance
+-ksp_atol 1e-08                         # absolute residual tolerance
+-ksp_max_it 500                         # max GMRES iterations
+-ksp_gmres_restart 500                  # GMRES restart interval
+-ksp_converged_reason                   # print convergence reason each step
+
+# ---------- Preconditioner ----------
+-pc_type bjacobi                        # block Jacobi (one block per MPI rank)
+-sub_pc_type ilu                        # ILU(k) per block
+-sub_pc_factor_levels 1                 # fill level k for ILU(k)
