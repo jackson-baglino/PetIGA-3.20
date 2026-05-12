@@ -19,29 +19,79 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 ###############################################################################
 # Input arguments
-#   $1 : PETSc options file (e.g., params.txt)
+#   $1 : PETSc options file (e.g., inputs/tests/test3_EnclosedGrainPair.opts)
 #   $2 : Title prefix for the run (used in folder name)
 ###############################################################################
-params_file="${1:-params.txt}"
+params_file="${1:-inputs/tests/test3_EnclosedGrainPair.opts}"
 title="${2:-permafrost_}"
-UNIVERSAL_OPTS="./inputs/universal.opts"
+
+###############################################################################
+# Resolve project root
+# Script lives at: <project_root>/scripts/HPC/run_permafrost.sh
+###############################################################################
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
+    echo "❌ Error: Could not find makefile in resolved project root: $PROJECT_ROOT"
+    exit 1
+fi
+
+EXEC="$PROJECT_ROOT/permafrost"
+SRC_DIR="$PROJECT_ROOT/src"
+SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+INPUTS_DIR="$PROJECT_ROOT/inputs"
+UNIVERSAL_OPTS="$INPUTS_DIR/universal.opts"
+
+# Resolve params_file relative to project root if not absolute
+if [[ "$params_file" != /* ]]; then
+    params_file="$PROJECT_ROOT/$params_file"
+fi
+
+if [ ! -f "$params_file" ]; then
+    echo "❌ Error: Options file not found: $params_file"
+    exit 1
+fi
+
+# Global state
+folder=""
+name=""
+sim_exit=0
+
+###############################################################################
+# Compile simulation code
+###############################################################################
+compile_code() {
+    echo ""
+    echo "--- Compiling ---"
+    echo "Project root: $PROJECT_ROOT"
+
+    cd "$PROJECT_ROOT"
+    make clean && make all
+
+    if [ ! -f "$EXEC" ]; then
+        echo "❌ Executable not found after compilation: $EXEC"
+        exit 1
+    fi
+    echo "✅ Compilation successful."
+}
 
 ###############################################################################
 # Create output folder based on timestamp and title
 ###############################################################################
 create_folder() {
+    echo ""
+    echo "--- Creating output folder ---"
+
     local ts
     ts="$(date +%Y-%m-%d__%H.%M.%S)"
 
-    # Base scratch dir on Resnick
+    # Base scratch dir on Resnick; fall back to local scratch
     local base_dir="$SCRATCH/permafrost"
-
-    # If not on Resnick, fall back to a local scratch under the repo
-    if [[ ! -d "$base_dir" ]]; then
-        base_dir="$(pwd)/scratch"
+    if [[ ! -d "${SCRATCH:-}" ]]; then
+        base_dir="$PROJECT_ROOT/scratch"
     fi
 
-    # Differentiate SLURM vs local runs in the folder name
     if [[ "${SLURM_JOB_ID:-none}" != "none" ]]; then
         name="${title}${ts}_job${SLURM_JOB_ID}"
     else
@@ -50,34 +100,32 @@ create_folder() {
 
     folder="${base_dir}/${name}"
     mkdir -p "$folder"
-
     echo "Output folder: $folder"
 }
 
 ###############################################################################
-# Compile simulation code
+# Stage output folder — copy opts files and run script before the run
 ###############################################################################
-compile_code() {
-    echo "Compiling..."
-    make clean && make all
+stage_output_folder() {
+    echo ""
+    echo "--- Staging output folder ---"
+
+    [ -f "$UNIVERSAL_OPTS" ] && cp "$UNIVERSAL_OPTS" "$folder/"
+    cp "$params_file" "$folder/$(basename "$params_file")"
+    cp "${BASH_SOURCE[0]}" "$folder/run_permafrost.sh"
+
+    echo "✅ Staging complete."
 }
 
 ###############################################################################
-# Compute optimal number of MPI ranks from Nx, Ny, Nz and 3 DoFs
-# Strategy:
-#   total_dofs = 3 * Nx * Ny * Nz
-#   target_dofs_per_core ~ 10,000  (tweakable)
-#   NPROCS = ceil(total_dofs / target_dofs_per_core)
-#   Then cap by SLURM allocation (if present) or hardware (local).
+# Compute optimal number of MPI ranks from Nx, Ny, Nz and 4 DoFs
 ###############################################################################
 compute_optimal_nprocs() {
     local Nx Ny Nz
     local TARGET_DOFS_PER_CORE total_dofs
 
-    # Default target ~1e4 DoFs per core
     TARGET_DOFS_PER_CORE=10000
 
-    # Extract Nx, Ny, Nz from params_file; fall back to 1 if missing
     Nx=$(awk '$1=="-Nx"{print $2}' "$params_file" | head -n1)
     Ny=$(awk '$1=="-Ny"{print $2}' "$params_file" | head -n1)
     Nz=$(awk '$1=="-Nz"{print $2}' "$params_file" | head -n1)
@@ -86,38 +134,28 @@ compute_optimal_nprocs() {
     [[ -z "${Ny:-}" ]] && Ny=1
     [[ -z "${Nz:-}" ]] && Nz=1
 
-    # Integer arithmetic for total DoFs
-    total_dofs=$((3 * Nx * Ny * Nz))
+    total_dofs=$((4 * Nx * Ny * Nz))
 
-    # Ceil division: (total + TARGET - 1) / TARGET
     NPROCS=$(((total_dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE))
     (( NPROCS < 1 )) && NPROCS=1
 
-    # Cap NPROCS by SLURM allocation (if in batch job)
     if [[ "${SLURM_JOB_ID:-none}" != "none" ]]; then
         local nnodes ntpn max_procs
         nnodes=${SLURM_NNODES:-1}
         ntpn=${SLURM_NTASKS_PER_NODE:-1}
         max_procs=$((nnodes * ntpn))
-        if (( max_procs > 0 && NPROCS > max_procs )); then
-            NPROCS=$max_procs
-        fi
+        (( max_procs > 0 && NPROCS > max_procs )) && NPROCS=$max_procs
     else
-        # Local run: cap by hardware cores (or 12 if nproc isn't available)
         local hw
-        if command -v nproc >/dev/null 2>&1; then
-            hw=$(nproc)
-        else
-            hw=12
-        fi
+        hw=$(nproc 2>/dev/null || echo 12)
         (( NPROCS > hw )) && NPROCS=$hw
     fi
 
     echo "------------------------------------------------------------"
     echo "Grid from opts: Nx=${Nx}, Ny=${Ny}, Nz=${Nz}"
-    echo "Total DoFs:      3 * Nx * Ny * Nz = ${total_dofs}"
-    echo "Target/core:     ${TARGET_DOFS_PER_CORE} DoFs"
-    echo "Chosen NPROCS:   ${NPROCS}"
+    echo "Total DoFs:     4 * Nx * Ny * Nz = ${total_dofs}"
+    echo "Target/core:    ${TARGET_DOFS_PER_CORE} DoFs"
+    echo "Chosen NPROCS:  ${NPROCS}"
     echo "------------------------------------------------------------"
 }
 
@@ -125,10 +163,19 @@ compute_optimal_nprocs() {
 # Run the simulation using MPI (srun on SLURM, mpiexec locally)
 ###############################################################################
 run_simulation() {
-    echo "Running simulation..."
+    echo ""
+    echo "--- Running simulation ---"
+    echo "Executable   : $EXEC"
+    echo "Universal    : $UNIVERSAL_OPTS"
+    echo "Options file : $params_file"
+    echo "Output path  : $folder"
 
-    # Export the output folder so the code can see it as an environment variable
-    export folder="$folder"
+    export folder
+
+    local universal_arg=""
+    [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
+
+    set +e
 
     if [[ "${SLURM_JOB_ID:-none}" != "none" ]]; then
         echo "SLURM_JOB_ID        = ${SLURM_JOB_ID}"
@@ -137,146 +184,169 @@ run_simulation() {
         echo "SLURM_CPUS_PER_TASK = ${SLURM_CPUS_PER_TASK:-unknown}"
         echo "Using NPROCS        = ${NPROCS}"
 
-        local universal_arg=""
-        [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
-
-        srun -n "${NPROCS}" ./permafrost \
+        srun -n "${NPROCS}" "$EXEC" \
             $universal_arg \
             -options_file "$params_file" \
-            -output_path "$folder" \
-            -snes_rtol 1e-3 \
-            -snes_stol 1e-6 \
-            -snes_max_it 7 \
-            -ksp_gmres_restart 150 \
-            -ksp_max_it 1000 \
-            -ksp_converged_reason \
-            -snes_converged_reason \
-            -snes_linesearch_monitor \
-            -snes_linesearch_type basic | tee "$folder/outp.txt"
+            -output_path  "$folder" \
+            | tee "$folder/outp.txt"
     else
         echo "No SLURM environment detected; running locally with mpiexec."
         echo "Using NPROCS = ${NPROCS}"
 
-        local universal_arg=""
-        [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
-
-        mpiexec -n "${NPROCS}" ./permafrost \
+        mpiexec -n "${NPROCS}" "$EXEC" \
             $universal_arg \
             -options_file "$params_file" \
-            -output_path "$folder" \
-            -snes_rtol 1e-3 \
-            -snes_stol 1e-6 \
-            -snes_max_it 7 \
-            -ksp_gmres_restart 150 \
-            -ksp_max_it 1000 \
-            -ksp_converged_reason \
-            -snes_converged_reason \
-            -snes_linesearch_monitor \
-            -snes_linesearch_type basic | tee "$folder/outp.txt"
+            -output_path  "$folder" \
+            | tee "$folder/outp.txt"
+    fi
+
+    sim_exit=${PIPESTATUS[0]}
+    set -e
+
+    if [ "$sim_exit" -ne 0 ]; then
+        echo "⚠️  Simulation exited with code $sim_exit (continuing to post-processing)"
+    else
+        echo "✅ Simulation completed successfully."
     fi
 }
 
-################################################################################
-# Copy relevant scripts to folder and save summary parameters
-################################################################################
-finalize_results() {
-    echo "Finalizing results..."
-    # Copy some scripts and source for provenance
-    cp ./scripts/run_permafrost.sh "$folder" 2>/dev/null || true
-    cp ./scripts/plotpermafrost.py ./scripts/plotSSA.py ./scripts/plotPorosity.py "$folder" 2>/dev/null || true
-    cp ./src/permafrost.c "$folder" 2>/dev/null || true
+###############################################################################
+# Copy source files for reproducibility
+###############################################################################
+copy_source_code() {
+    echo ""
+    echo "--- Copying source code ---"
 
-    # Save copies of the universal and simulation-specific opts files
-    [ -f "$UNIVERSAL_OPTS" ] && cp "$UNIVERSAL_OPTS" "$folder/"
-    cp "$params_file" "$folder/$(basename "$params_file")"
+    local src_dest="$folder/src"
+    mkdir -p "$src_dest"
+    local found=0
+
+    if [ -d "$SRC_DIR" ]; then
+        for ext in "*.c" "*.h" "*.cpp" "*.hpp"; do
+            for f in "$SRC_DIR"/$ext; do
+                [ -f "$f" ] && cp "$f" "$src_dest/" && found=1
+            done
+        done
+    fi
+
+    [ -d "$PROJECT_ROOT/include" ] && cp -r "$PROJECT_ROOT/include" "$src_dest/" && found=1
+
+    for mf in makefile Makefile; do
+        if [ -f "$PROJECT_ROOT/$mf" ]; then
+            cp "$PROJECT_ROOT/$mf" "$src_dest/"
+            found=1
+            break
+        fi
+    done
+
+    [ "$found" -eq 0 ] && echo "⚠️  Warning: No source files found." \
+                       || echo "✅ Source code copied to $src_dest"
 }
 
-################################################################################
-# Run post-processing plotting script
-################################################################################
+###############################################################################
+# Run post-processing plotting script (2D/3D)
+###############################################################################
 run_plotting() {
-    echo "Queuing plotpermafrost.py"
-    # If you have a separate HPC plotting wrapper, call it here.
-    # For now, just call the existing script if it exists.
-    if [[ -x ./scripts/run_plotpermafrost.sh ]]; then
-        ./scripts/run_plotpermafrost.sh "$name"
+    echo ""
+    echo "--- Running post-processing ---"
+
+    local plot_script="$SCRIPTS_DIR/run_plotpermafrost.sh"
+    if [ ! -f "$plot_script" ]; then
+        echo "⚠️  Plotting script not found: $plot_script — skipping."
+        return
     fi
+
+    set +e
+    "$plot_script" "$name"
+    local plot_exit=$?
+    set -e
+
+    [ "$plot_exit" -ne 0 ] \
+        && echo "⚠️  Plotting script exited with code $plot_exit" \
+        || echo "✅ Post-processing complete."
 }
 
-################################################################################
-# run_1d_plotting
-# Automatically generates 1D visualisations when -dim 1 is set in the opts file.
-# Silently skips for 2D/3D runs.
-# On HPC nodes matplotlib uses the Agg backend (set inside plot1D_profiles.py),
-# so no display is required.
-################################################################################
+###############################################################################
+# 1D post-processing — skipped automatically for 2D/3D runs
+###############################################################################
 run_1d_plotting() {
     local dim
     dim=$(awk '$1 == "-dim" { print $2 }' "$params_file" | head -n1)
     dim=${dim:-2}
+    [[ "$dim" != "1" ]] && return
 
-    if [[ "$dim" != "1" ]]; then
-        return
-    fi
-
+    echo ""
     echo "--- 1D post-processing ---"
 
-    # On Resnick the Python environment may need a module load.
-    # Adjust the line below if a specific module is required, e.g.:
-    #   module load python/3.10 2>/dev/null || true
+    local POSTPROCESS="$PROJECT_ROOT/postprocess"
     local PYTHON
     PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "")
-
     if [[ -z "$PYTHON" ]]; then
-        echo "WARNING: python not found — skipping 1D plots."
+        echo "⚠️  python not found — skipping 1D plots."
         return
     fi
-
-    # Resolve postprocess directory relative to this script's location
-    local SCRIPT_DIR
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    local POSTPROCESS="${SCRIPT_DIR}/../../postprocess"
 
     set +e
 
-    # Per-step phase PNGs + animated GIF
     "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
         --dir "$folder" --out-dir "$folder" --gif \
         2>&1 | sed 's/^/  /'
 
-    # Derived scalar time-series
     "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
         --dir "$folder" --derived --save "$folder/derived.png" \
         2>&1 | sed 's/^/  /'
 
-    # SSA scalar time-series
-    if [[ -f "$folder/SSA_evo.dat" ]]; then
+    if [ -f "$folder/SSA_evo.dat" ]; then
         "$PYTHON" "$POSTPROCESS/plot_scalars.py" \
             --file "$folder/SSA_evo.dat" --save "$folder/scalars.png" \
             2>&1 | sed 's/^/  /'
     fi
 
     set -e
-    echo "1D post-processing complete."
+    echo "✅ 1D post-processing complete."
 }
 
-################################################################################
-# USER-DEFINED SIMULATION SETTINGS (currently unused but kept for reference)
-################################################################################
-echo " "
-echo "Starting permafrost simulation workflow"
-echo " "
+###############################################################################
+# Main workflow
+###############################################################################
+echo ""
+echo "========================================================================="
+echo "  Permafrost simulation workflow (HPC)"
+echo "  Project root : $PROJECT_ROOT"
+echo "  Options      : $params_file"
+echo "  Title        : $title"
+echo "========================================================================="
 
 compile_code
 create_folder
+stage_output_folder
 compute_optimal_nprocs
 run_simulation
-finalize_results
+copy_source_code
 run_plotting
 run_1d_plotting
 
-echo "-------------------------------------------------------------------------"
-echo " "
-echo "✅ Done with permafrost simulation!"
-echo "-------------------------------------------------------------------------"
-echo " "
+# Time step diagnostic — generated from outp.txt for all dims
+if [ -f "$folder/outp.txt" ]; then
+    PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "")
+    if [[ -n "$PYTHON" ]]; then
+        echo ""
+        echo "--- Time step diagnostic ---"
+        "$PYTHON" "$PROJECT_ROOT/postprocess/plot_timestep.py" \
+            --dir "$folder" --save "$folder/timestep.png" \
+            2>&1 | sed 's/^/    /'
+    fi
+fi
+
+echo ""
+echo "========================================================================="
+if [ "${sim_exit:-0}" -ne 0 ]; then
+    echo "  ⚠️  Workflow completed with simulation errors (exit code $sim_exit)"
+else
+    echo "  ✅ Workflow completed successfully"
+fi
+echo "  Results: $folder"
+echo "========================================================================="
+echo ""
+
+exit "${sim_exit:-0}"
