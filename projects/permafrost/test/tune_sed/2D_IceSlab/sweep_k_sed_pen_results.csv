@@ -1,0 +1,8 @@
+prefactor,k_sed_pen,rc,sed_drift_pct,shape_err,max_snes_iters,ice_drift_pct,pass_sed,pass_shape,pass_iters,pass_ice,PASS
+0.0,0.0,0,0.0,6.366656374000475e-05,9,0.0,True,True,False,True,False
+1e-09,1148.9027313987688,0,0.0,6.366656374001093e-05,8,0.0,True,True,False,True,False
+1e-07,114890.27313987685,0,0.0,6.36665637399745e-05,9,0.0,True,True,False,True,False
+1e-05,11489027.313987687,0,0.0,6.366656373998697e-05,9,0.0,True,True,False,True,False
+0.0001,114890273.13987687,0,0.0,6.36665637399823e-05,9,0.0,True,True,False,True,False
+0.001,1148902731.3987687,0,0.0,6.36665637399771e-05,9,0.0,True,True,False,True,False
+0.01,11489027313.987686,0,0.0,6.366656373998111e-05,9,0.0,True,True,False,True,False

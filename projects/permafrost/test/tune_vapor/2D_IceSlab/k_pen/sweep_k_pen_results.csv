@@ -1,0 +1,5 @@
+param,value,rc_a,rc_b,rhov_drift_pct,rhov_increase,max_snes_iters,ice_rhov_err_pct,pass_rhov,pass_sublim,pass_iters,pass_ice,PASS
+k_pen,1000.0,0,0,0.0,1.1885644451565067e-10,13,117729.2820425648,True,True,False,False,False
+k_pen,1000000.0,0,0,0.0,1.5596648173746513e-10,11,117729.28204248285,True,True,False,False,False
+k_pen,1000000000.0,0,0,0.0,1.5667440413426682e-10,10,117729.28203918743,True,True,False,False,False
+k_pen,100000000000.0,0,0,0.0,1.5667440413426682e-10,10,117729.2820391179,True,True,False,False,False

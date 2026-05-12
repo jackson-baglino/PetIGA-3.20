@@ -1,0 +1,70 @@
+# ---------- Initial Condition ----------
+# Two sediment grains barely in contact (point tangency), each encapsulated by ice.
+# Inverse of test3: sediment circles touch at the midpoint, ice encapsulates each.
+-ic_type contact_sed                    # IC geometry: sediment grains in contact, encapsulated by ice
+
+# ---------- Domain ----------
+-dim 2                                  # spatial dimension (1, 2, or 3)
+-dof 4                                  # DOFs per node: 4 = ice / temperature / vapor / sediment
+-Nx 143                                 # elements in x
+-Ny 285                                 # elements in y
+-Nz 1                                   # elements in z (unused for dim < 3)
+-Lx 1.25e-04                            # domain length in x (m)
+-Ly 2.5e-04                             # domain length in y (m)
+-Lz 0                                   # domain length in z (unused for dim < 3)
+
+# ---------- Element continuity ----------
+-p 2                                    # B-spline polynomial order
+-C 1                                    # B-spline continuity order (C^1 for p=2, C=1)
+
+# ---------- Grain Data ----------
+# rad_ice = 2 * rad_sed so ice fully encapsulates each sediment grain
+-NCsed 2                                # number of sediment grain centers
+-RCsed 1.75e-5                          # sediment grain radius (m)
+-NCice 1                                # number of ice grain centers
+-RCice 3.5e-5                           # ice grain radius (m); = 2 * RCsed
+
+# ---------- Time Stepping & Output Frequency ----------
+-delt_t 1.0e-4                          # time step size (s)
+-t_final 86400.0                        # total simulation time (s); 86400 s = 1 day
+-n_out 0                                # number of output snapshots (0 = use -outp interval)
+-outp 1                                 # write output every N time steps
+-Permafrost_output 1                    # enable VTK field output (1=on)
+-Permafrost_monitor 1                   # enable monitor table output (1=on)
+
+# ---------- Model Parameters ----------
+-humidity 1.00                          # relative humidity (fraction; 1.0 = fully saturated)
+-temp -20.0                             # background temperature (°C)
+-grad_temp0 0.0,1.0e-03,0.0            # imposed temperature gradient (K/m; x,y,z)
+-eps 9.3295e-07                         # diffuse interface half-width (m)
+-periodic 0                             # periodic BCs (0=no, 1=yes)
+-flag_BC_Tfix 0                         # fix temperature at boundaries (0=no, 1=yes)
+-flag_BC_rhovfix 0                      # fix vapor density at boundaries (0=no, 1=yes)
+-flag_Tdep 0                            # temperature-dependent material properties (0=off, 1=on)
+-t_sed_freeze 300                       # simulated time (s) to freeze sediment (when flag_sed_mode=1)
+-flag_sed_mode 1                        # sediment mode: -1=always 3-phase; 0=always frozen; 1=freeze at t_sed_freeze
+
+## ---------- SNES ----------
+-snes_type newtonls                     # nonlinear solver: Newton with line search
+-snes_max_it 10                         # max Newton iterations per time step
+-snes_rtol 1e-06                        # relative residual tolerance for SNES convergence
+-snes_atol 1e-08                        # absolute residual tolerance for SNES convergence
+-snes_stol 1e-06                        # step tolerance for SNES convergence
+-snes_converged_reason                  # print reason for SNES convergence/divergence
+
+# ---------- Line search ----------
+-snes_linesearch_type bt                # backtracking line search (ensures residual decrease)
+-snes_linesearch_monitor                # print line search progress each Newton iteration
+
+# ---------- KSP ----------
+-ksp_type gmres                         # Krylov solver: GMRES
+-ksp_rtol 1e-05                         # relative residual tolerance for linear solve
+-ksp_atol 1e-08                         # absolute residual tolerance for linear solve
+-ksp_max_it 500                         # max GMRES iterations per linear solve
+-ksp_gmres_restart 500                  # GMRES restart interval (keep full Krylov space)
+-ksp_converged_reason                   # print reason for KSP convergence/divergence
+
+# ---------- Preconditioner ----------
+-pc_type bjacobi                        # block Jacobi preconditioner (one block per MPI rank)
+-sub_pc_type ilu                        # ILU(k) for each block
+-sub_pc_factor_levels 1                 # fill level k for ILU(k)

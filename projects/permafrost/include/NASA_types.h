@@ -12,7 +12,7 @@ typedef struct {
   PetscScalar soil;
 } FieldS;
 typedef struct {
-  PetscScalar ice,tem,rhov;
+  PetscScalar ice, tem, rhov, sed;
 } Field;
 /* Application context structure */
 typedef struct {
@@ -20,16 +20,18 @@ typedef struct {
 
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
-  PetscReal mob_sub;  // Mobility parameters for phase evolution
-  PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, metal, air)
+  PetscReal mob_sub;  // Mobility for ice phase evolution
+  PetscReal mob_sed;  // Mobility for sediment phase evolution equation
+  PetscReal mob_air; // Mobility for air phase evolution equation (if applicable)
+  PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, sediment, air)
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
 
   // Thermophysical properties of different phases
-  PetscReal thcond_ice, thcond_met, thcond_air;  // Thermal conductivities of ice, metal, and air
-  PetscReal cp_ice, cp_met, cp_air;  // Specific heat capacities of ice, metal, and air
-  PetscReal rho_ice, rho_met, rho_air;  // Densities of ice, metal, and air
+  PetscReal thcond_ice, thcond_sed, thcond_air;  // Thermal conductivities of ice, sediment, and air
+  PetscReal cp_ice, cp_sed, cp_air;  // Specific heat capacities of ice, sediment, and air
+  PetscReal rho_ice, rho_sed, rho_air;  // Densities of ice, sediment, and air
   PetscReal dif_vap;  // Vapor diffusivity in air
   PetscReal lat_sub;  // Latent heat of sublimation
   PetscReal diff_sub;  // Diffusivity related to sublimation
@@ -45,11 +47,16 @@ typedef struct {
 
   // Domain size and resolution
   PetscReal Lx, Ly, Lz;  // Physical domain dimensions in x, y, and z
-  PetscReal Nx, Ny, Nz;  // Number of grid points in x, y, and z directions
+  PetscInt  Nx, Ny, Nz;  // Number of elements in x, y, and z directions
 
   // Radius of curvature parameters (possibly for computing capillary effects)
   PetscReal RCice, RCsed;  // Mean radius of curvature for ice and sediment grains
   PetscReal RCice_dev, RCsed_dev;  // Standard deviation of radius of curvature for ice and sediment
+
+  // Per-grain radii and separation for enclosed grain pair IC
+  PetscReal RCice0, RCice1;   /* Outer ice radius of grain 0 / grain 1 (default: RCice) */
+  PetscReal RCsed0, RCsed1;   /* Sediment core radius of grain 0 / grain 1 (default: RCsed) */
+  PetscReal grain_sep;         /* Air gap between outer ice surfaces (m); 0 = tangent */
 
   // Arrays storing geometry information for ice and sediment grains
   PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
@@ -58,22 +65,29 @@ typedef struct {
   PetscReal radiussed[200];  // Radii of individual sediment grains
 
   // Initial normal vector components (possibly for a structured interface)
-  PetscReal norm0_0, norm0_1, norm0_2;  // Normal vector components (x, y, z)
+  PetscReal norm0[4];  // Per-DOF initial residual norms for SNES convergence check
 
   // Flags for controlling different simulation options
-  PetscInt flag_it0;  // Flag for iteration control at initialization
-  PetscInt flag_tIC;  // Flag for setting initial conditions
-  PetscInt outp;  // Output control flag (defines what to output)
-  PetscInt nsteps_IC;  // Number of initial condition timesteps
-  PetscInt flag_xiT;  // Flag for including temperature-dependent terms in the model
-  PetscInt flag_Tdep;  // Flag for temperature dependence of specific properties
-  PetscInt flag_BC_Tfix;
-  PetscInt flag_BC_rhovfix;
+  PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 2=flat interface
+  PetscInt  outp;            // output control flag
+  PetscInt  n_relax;         // AC-only relaxation steps before full physics (0 = none)
+  PetscBool flag_relax;      // PETSC_TRUE while relaxation steps are active
+  PetscBool flag_Tdep;       // temperature-dependent material properties
+  PetscBool flag_sed_frozen; // PETSC_FALSE = 3-phase active; PETSC_TRUE = 2-phase (sediment frozen)
+
+  /* Residual avenue selector:
+   *   1 = Allen-Cahn, penalty vapor, freeze sed → zero RHS after t_sed_freeze
+   *   2 = Allen-Cahn, penalty vapor, freeze sed → k_sed penalty (default)
+   *   3 = Cahn-Hilliard, no penalties (requires p ≥ 2, C ≥ 1) */
+  PetscInt  flag_avenue;
+
+  PetscReal t_sed_freeze;    // duration of 3-phase period (s); 0 = start immediately in 2-phase
 
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)
   PetscInt C;  // Continuity of basis functions
   PetscInt dim;  // Spatial dimension of the problem (2D or 3D)
+  PetscInt dof;  // Degrees of freedom per node (ice, temperature, vapor, sediment)
   PetscInt periodic;  // Periodicity flag (0 = non-periodic, 1 = periodic boundaries)
 
   // Time stepping parameters
@@ -86,12 +100,22 @@ typedef struct {
   PetscInt n_act, n_actsed;  // Number of currently active grains (ice and sediment)
 
   // Arrays for field variables
-  PetscReal *Phi_sed;  // Phase field for sediment grains
-  PetscReal *alph;  // Alpha field, possibly phase fraction or related property
-  PetscReal *mob;  // Mobility field, spatially varying
+  PetscScalar *Phi_sed0;  // Sediment phase field variable
+  PetscInt npoints;
+
+  /* Penalty parameters (tunable via CLI) */
+  PetscReal difvap_pen;   // multiplicative factor: D_pen = difvap_pen * difvap (dimensionless)
+  PetscReal k_pen;        // vapour interface equilibrium stiffness
+  PetscReal k_sed_pen;    // sediment shape-restoring stiffness
+
+  /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */
+  PetscReal phase_lo;     // lower bound for phi_ice, phi_sed, phi_air (default -0.25)
+  PetscReal phase_hi;     // upper bound for phi_ice, phi_sed, phi_air (default  1.25)
+  PetscReal *alph;     // Alpha field, possibly phase fraction or related property
+  PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)
 
   // Flag for reading input files
-  PetscInt readFlag;  // Flag to indicate whether initial data should be read from a file
+  PetscBool readFlag; // read initial field data from file
 
   // Output file path
   char output_path[PETSC_MAX_PATH_LEN];  // Path for output files

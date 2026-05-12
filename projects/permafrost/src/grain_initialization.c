@@ -26,44 +26,6 @@ static PetscErrorCode CreateRandomGenerator(MPI_Comm comm, PetscRandom *rand, Pe
   return 0;
 }
 
-/*
-   Helper function: Compute Phi_sed values at each quadrature point.
-   'centers' is a 2D array of cluster coordinates (assumed to have 3 rows).
-   'radii' is an array of cluster radii.
-*/
-static PetscErrorCode ComputePhiSedValues(IGA iga, AppCtx *user, PetscInt n_actsed,
-                                            const PetscReal centers[3][n_actsed],
-                                            const PetscReal radii[])
-{
-  PetscErrorCode ierr;
-  IGAElement element;
-  IGAPoint point;
-  PetscInt ind = 0, aa, l;
-  PetscReal sed, dist;
-  
-  ierr = IGABeginElement(user->iga, &element); CHKERRQ(ierr);
-  while (IGANextElement(user->iga, element))
-  {
-    ierr = IGAElementBeginPoint(element, &point); CHKERRQ(ierr);
-    while (IGAElementNextPoint(element, point))
-    {
-      sed = 0.0;
-      for (aa = 0; aa < n_actsed; aa++){
-        dist = 0.0;
-        for (l = 0; l < user->dim; l++){
-          dist += SQ(point->mapX[0][l] - centers[l][aa]);
-        }
-        dist = sqrt(dist);
-        sed += 0.5 - 0.5*tanh(0.5/user->eps*(dist - radii[aa]));
-      }
-      if (sed > 1.0) sed = 1.0;
-      user->Phi_sed[ind++] = sed;
-    }
-    ierr = IGAElementEndPoint(element, &point); CHKERRQ(ierr);
-  }
-  ierr = IGAEndElement(user->iga, &element); CHKERRQ(ierr);
-  return 0;
-}
 
 /*
    Function: InitialSedGrains
@@ -154,9 +116,6 @@ PetscErrorCode InitialSedGrains(IGA iga, AppCtx *user)
     }
     user->radiussed[jj] = radius[jj];
   }
-
-  /* Compute the Phi_sed values at quadrature points */
-  ierr = ComputePhiSedValues(user->iga, user, user->n_actsed, centX, radius); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -543,32 +502,7 @@ PetscErrorCode InitialSedGrainsGravity(IGA iga,AppCtx *user)
   }
 
 
-  //-------- define the Phi_sed values
-  IGAElement element;
-  IGAPoint point;
-  PetscReal sed=0.0;
-  PetscInt aa,ind=0;
-
-  ierr = IGABeginElement(user->iga,&element);CHKERRQ(ierr);
-  while (IGANextElement(user->iga,element)) {
-    ierr = IGAElementBeginPoint(element,&point);CHKERRQ(ierr);
-    while (IGAElementNextPoint(element,point)) {
-        sed=0.0;
-        for(aa=0;aa<user->n_actsed;aa++){
-          dist=sqrt(SQ(point->mapX[0][0]-user->centsed[0][aa])+SQ(point->mapX[0][1]-user->centsed[1][aa]));
-          sed += 0.5-0.5*tanh(0.5/user->eps*(dist-user->radius[aa]));
-        }
-        if(sed>1.0) sed=1.0;
-        //PetscPrintf(PETSC_COMM_SELF," sed %.3f \n",sed);
-        user->Phi_sed[ind] = sed;
-        ind++;
-    }
-    ierr = IGAElementEndPoint(element,&point);CHKERRQ(ierr);
-  }
-  ierr = IGAEndElement(user->iga,&element);CHKERRQ(ierr);
-  //PetscPrintf(PETSC_COMM_SELF," ind  %d \n",ind);
-
-  PetscFunctionReturn(0); 
+  PetscFunctionReturn(0);
 }
 
 /*
@@ -761,72 +695,14 @@ PetscErrorCode InitializeSedimentFromInputSolution(IGA iga, AppCtx *user)
   /*---------------------------------------------------------------------*/
   /* 3. Extract sediment component into user->Phi_sed                    */
   /*---------------------------------------------------------------------*/
-  PetscInt       Nloc;
-  PetscScalar   *a_in = NULL;
-  PetscInt       dof_in, nNodeLocal;
-  PetscInt       sedComp = 0;  /* <<< TODO: set this to the correct component index */
-
-  /* For now we assume the input Vec has the same dof as this IGA */
-  ierr = IGAGetDof(iga, &dof_in);CHKERRQ(ierr);
-
-  ierr = VecGetLocalSize(U_in, &Nloc);CHKERRQ(ierr);
-  if (Nloc % dof_in != 0) {
-    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
-             "Local size %d is not divisible by dof_in %d; check mesh/Vec compatibility",
-             (int)Nloc, (int)dof_in);
-  }
-  nNodeLocal = Nloc / dof_in;
-
-  ierr = VecGetArray(U_in, &a_in);CHKERRQ(ierr);
-
-  /* 
-     Here we assume:
-       - global ordering of U_in is [node0_0, node0_1, ..., node0_(dof-1),
-                                     node1_0, ..., node1_(dof-1), ...]
-       - we want to copy component 'sedComp' at each node into user->Phi_sed
-         in the same local ordering.
-  */
-  for (PetscInt i = 0; i < nNodeLocal; i++) {
-    PetscScalar val = a_in[i*dof_in + sedComp];
-    /* If user->Phi_sed is PetscReal, cast the real part */
-    user->Phi_sed[i] = (PetscReal)PetscRealPart(val);
-  }
-
-  ierr = VecRestoreArray(U_in, &a_in);CHKERRQ(ierr);
-
-  /* Optionally clamp to [0,1] if this is a phase fraction */
-  for (PetscInt i = 0; i < nNodeLocal; i++) {
-    if (user->Phi_sed[i] < 0.0) user->Phi_sed[i] = 0.0;
-    if (user->Phi_sed[i] > 1.0) user->Phi_sed[i] = 1.0;
-  }
-
-  /* Write Phi_sed to output file  to verify initialization */
-  char filename[256];
-  sprintf(filename, "%s/phi_sed.dat", user->output_path);
-  FILE *file = fopen(filename, "w");
-  if (!file) {
-    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN, "Failed to open file for writing: %s", filename);
-  }
-  for (PetscInt i = 0; i < nNodeLocal; i++) {
-    fprintf(file, "%g\n", (double)user->Phi_sed[i]);
-  }
-  fclose(file);
-  PetscPrintf(PETSC_COMM_WORLD,
-              "  InitializeSedimentFromInputSolution: wrote Phi_sed to %s\n",
-              filename);
-              
-  /*---------------------------------------------------------------------*/
-  /* 4. Update metadata and clean up                                     */
-  /*---------------------------------------------------------------------*/
-  /* For now we just say all NCsed grains are "active".
-     Later you can define n_actsed in a more sophisticated way if needed. */
+  /* Sediment is now DOF 3 in the primary solution vector.
+     This function is a stub — actual sediment IC is set by FormInitialCondition*. */
   user->n_actsed = user->NCsed;
 
   ierr = VecDestroy(&U_in);CHKERRQ(ierr);
 
   PetscPrintf(PETSC_COMM_WORLD,
-              "  InitializeSedimentFromInputSolution: filled Phi_sed (local nodes = %d)\n",
-              (int)nNodeLocal);
+              "  InitializeSedimentFromInputSolution: sediment is now DOF 3 in U\n");
 
   PetscFunctionReturn(0);
 }

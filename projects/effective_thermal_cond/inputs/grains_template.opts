@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------
+# grains_template.opts — per-simulation options template
+#
+# Copy this file to your simulation input directory, rename it
+# grains.opts, and fill in the parameters from your grains.env
+# (or from the simulation metadata).
+#
+# Then run:
+#   ./effective_k_ice_homog -options_file /path/to/grains.opts \
+#     -init_dir /path/to/simulation_dir \
+#     -output_dir /path/to/output_dir
+# ---------------------------------------------------------------
+
+# Problem dimension
+-dim    2
+
+# Mesh (match the resolution of the phase-field simulation)
+-Nx     64
+-Ny     64
+-Nz     1
+
+# Domain physical lengths (m) — match the phase-field simulation
+-Lx     1.0e-3
+-Ly     1.0e-3
+-Lz     1.0e-3
+
+# Phase-field interface half-width (m) — match the phase-field simulation
+-eps    1.0e-4
+
+# I/O
+-output_binary  true
+-sol_index      -1
+-init_mode      file
+
+# Solver (direct LU — do not change for periodic homogenization)
+-ksp_type   preonly
+-pc_type    lu

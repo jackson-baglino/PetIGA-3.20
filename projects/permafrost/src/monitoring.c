@@ -1,6 +1,7 @@
 #include "monitoring.h"
 #include "assembly.h"
 #include "material_properties.h"
+#include <petscstring.h>
 
 PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 {
@@ -19,7 +20,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscReal a1=5.0, a2=0.1581, bet_max=0.0, bet_min=1.0e30;
   PetscReal bet0, d0, rho_rhovs, d0_sub,  beta_sub, lambda_sub, tau_sub;
 
-  if(user->flag_Tdep==1){
+  if (user->flag_Tdep) {
     ierr = IGAGetLocalVecArray(user->iga,U,&localU,&arrayU);CHKERRQ(ierr);
     ierr = IGABeginElement(user->iga,&element);CHKERRQ(ierr);
     while (IGANextElement(user->iga,element)) {
@@ -51,8 +52,8 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
             lambda_sub = a1*user->eps/d0_sub;
             tau_sub    = user->eps*lambda_sub*(beta_sub/a1 + a2*user->eps/user->diff_sub + a2*user->eps/user->dif_vap);
 
-            user->mob[indd] = user->eps/3.0/tau_sub; 
-            user->alph[indd] = lambda_sub/tau_sub; 
+            user->mob[indd]  = user->eps/3.0/tau_sub;
+            user->alph[indd] = lambda_sub/tau_sub;
 
             indd ++;
         }
@@ -66,7 +67,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     PetscPrintf(PETSC_COMM_WORLD," b_min %.2e b_max %.2e\n",B_min,B_max);
 
     // After computing beta_sub, we set the flag to 0...
-    user->flag_Tdep = 0;
+    user->flag_Tdep = PETSC_FALSE;
 
     // Print the new mobility and alpha values for verification
     PetscPrintf(PETSC_COMM_WORLD, "M0_sub new: %.6e\n", user->mob_sub);
@@ -75,31 +76,209 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
 
   //-------- domain integrals
-  PetscScalar stats[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
-  ierr = IGAComputeScalar(user->iga,U,6,&stats[0],Integration,mctx);CHKERRQ(ierr);
-  PetscReal tot_ice     = PetscRealPart(stats[0]);
-  PetscReal tot_trip    = PetscRealPart(stats[1]);
-  PetscReal tot_air     = PetscRealPart(stats[2]);
-  PetscReal tot_temp    = PetscRealPart(stats[3]);
-  PetscReal tot_rhov    = PetscRealPart(stats[4]);
-  PetscReal sub_interf  = PetscRealPart(stats[5]); 
+  PetscScalar stats[9] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+  ierr = IGAComputeScalar(user->iga,U,9,&stats[0],Integration,mctx);CHKERRQ(ierr);
+  PetscReal tot_ice        = PetscRealPart(stats[0]);
+  PetscReal tot_trip       = PetscRealPart(stats[1]);
+  PetscReal tot_air        = PetscRealPart(stats[2]);
+  PetscReal tot_temp       = PetscRealPart(stats[3]);
+  PetscReal tot_rhov       = PetscRealPart(stats[4]);
+  PetscReal sub_interf     = PetscRealPart(stats[5]);
+  PetscReal tot_sed        = PetscRealPart(stats[6]);
+  PetscReal sed_air_interf = PetscRealPart(stats[7]);
+  PetscReal ice_sed_interf = PetscRealPart(stats[8]);
  
-  //------------- 
-  PetscReal dt;
-  TSGetTimeStep(ts,&dt);
-  if(step==1) user->flag_it0 = 0;
+  //-------- phase-field min/max bounds (printed every step for out-of-bounds detection)
+  {
+    PetscReal phi_ice_min =  1.0e30, phi_ice_max = -1.0e30;
+    PetscReal phi_sed_min =  1.0e30, phi_sed_max = -1.0e30;
+    PetscReal phi_air_min =  1.0e30, phi_air_max = -1.0e30;
 
-  //------------- initial condition
-  if(user->flag_tIC==1) if(step==user->nsteps_IC) {
-    user->flag_tIC = 0; user->t_IC = t; //user->flag_rtol = 1;
-    PetscPrintf(PETSC_COMM_WORLD,"INITIAL_CONDITION!!! \n");
+    Vec localUb; const PetscScalar *arrayUb;
+    IGAElement elementb; IGAPoint pointb; PetscScalar *UUb;
+    ierr = IGAGetLocalVecArray(user->iga, U, &localUb, &arrayUb); CHKERRQ(ierr);
+    ierr = IGABeginElement(user->iga, &elementb); CHKERRQ(ierr);
+    while (IGANextElement(user->iga, elementb)) {
+      ierr = IGAElementGetValues(elementb, arrayUb, &UUb); CHKERRQ(ierr);
+      ierr = IGAElementBeginPoint(elementb, &pointb); CHKERRQ(ierr);
+      while (IGAElementNextPoint(elementb, pointb)) {
+        PetscScalar solb[4];
+        ierr = IGAPointFormValue(pointb, UUb, &solb[0]); CHKERRQ(ierr);
+        PetscReal fi = PetscRealPart(solb[0]);
+        PetscReal fs = PetscRealPart(solb[3]);
+        PetscReal fa = 1.0 - fi - fs;
+        if (fi < phi_ice_min) phi_ice_min = fi;
+        if (fi > phi_ice_max) phi_ice_max = fi;
+        if (fs < phi_sed_min) phi_sed_min = fs;
+        if (fs > phi_sed_max) phi_sed_max = fs;
+        if (fa < phi_air_min) phi_air_min = fa;
+        if (fa > phi_air_max) phi_air_max = fa;
+      }
+      ierr = IGAElementEndPoint(elementb, &pointb); CHKERRQ(ierr);
+    }
+    ierr = IGAEndElement(user->iga, &elementb); CHKERRQ(ierr);
+    ierr = IGARestoreLocalVecArray(user->iga, U, &localUb, &arrayUb); CHKERRQ(ierr);
+
+    PetscReal Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max;
+    ierr = MPI_Allreduce(&phi_ice_min, &Gfi_min, 1, MPI_DOUBLE, MPI_MIN, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_ice_max, &Gfi_max, 1, MPI_DOUBLE, MPI_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_sed_min, &Gfs_min, 1, MPI_DOUBLE, MPI_MIN, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_sed_max, &Gfs_max, 1, MPI_DOUBLE, MPI_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_air_min, &Gfa_min, 1, MPI_DOUBLE, MPI_MIN, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Allreduce(&phi_air_max, &Gfa_max, 1, MPI_DOUBLE, MPI_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "  BOUNDS: phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\n",
+        Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max);
+
+    /* Abort if any phase field exceeds the configured bounds */
+    PetscBool oob = (Gfi_min < user->phase_lo || Gfi_max > user->phase_hi ||
+                     Gfs_min < user->phase_lo || Gfs_max > user->phase_hi ||
+                     Gfa_min < user->phase_lo || Gfa_max > user->phase_hi);
+    if (oob) {
+      PetscPrintf(PETSC_COMM_WORLD,
+          "\033[31m[ABORT] Phase field out of bounds [%.2f, %.2f] at step %d\n"
+          "  phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\033[0m\n",
+          user->phase_lo, user->phase_hi, step,
+          Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max);
+      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_NOT_CONVERGED,
+              "Phase field out of bounds at step %" PetscInt_FMT
+              " — phi_ice [%.4g, %.4g]  phi_sed [%.4g, %.4g]  phi_air [%.4g, %.4g]"
+              "  (bounds [%.2g, %.2g])",
+              step,
+              Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max,
+              user->phase_lo, user->phase_hi);
+    }
   }
 
-  //------printf information
-  if(step%10==0) {
-    PetscPrintf(PETSC_COMM_WORLD,"\nTIME               TIME_STEP     TOT_ICE      TOT_AIR       TEMP      TOT_RHOV     I-A interf   Tripl_junct \n");
-    PetscPrintf(PETSC_COMM_WORLD,"\n(%.0f) %.3e    %.3e   %.3e   %.3e   %.3e   %.3e   %.3e   %.3e \n\n",
-                t,t,dt,tot_ice,tot_air,tot_temp,tot_rhov,sub_interf,tot_trip);
+  //-------------
+  PetscReal dt;
+  TSGetTimeStep(ts,&dt);
+  //------------- relaxation → full physics transition
+  if (user->flag_relax && step >= user->n_relax) {
+    user->flag_relax = PETSC_FALSE;
+    user->t_IC = t;
+    PetscPrintf(PETSC_COMM_WORLD,
+        "Relaxation complete (step %d, t = %.4e s) — switching to full physics.\n",
+        step, t);
+  }
+
+  //------------- sediment freeze (switch at t_sed_freeze; deferred while relaxing)
+  if (!user->flag_relax && !user->flag_sed_frozen && t >= user->t_sed_freeze) {
+    user->flag_sed_frozen = PETSC_TRUE;
+
+    /* Snapshot the relaxed sediment field as the penalty reference.
+     * Overwrite Phi_sed0[] with the current 3-phase profile so the penalty
+     * k_sed*(sed - sed_ref) drives sediment back toward its relaxed state. */
+    {
+      Vec localU_snap; const PetscScalar *arrayU_snap;
+      IGAElement element_snap; IGAPoint point_snap; PetscScalar *UU_snap;
+      PetscInt indd_snap = 0;
+      ierr = IGAGetLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
+      ierr = IGABeginElement(user->iga, &element_snap); CHKERRQ(ierr);
+      while (IGANextElement(user->iga, element_snap)) {
+        ierr = IGAElementGetValues(element_snap, arrayU_snap, &UU_snap); CHKERRQ(ierr);
+        ierr = IGAElementBeginPoint(element_snap, &point_snap); CHKERRQ(ierr);
+        while (IGAElementNextPoint(element_snap, point_snap)) {
+          PetscScalar sol_snap[4];
+          ierr = IGAPointFormValue(point_snap, UU_snap, &sol_snap[0]); CHKERRQ(ierr);
+          user->Phi_sed0[indd_snap] = PetscRealPart(sol_snap[3]);
+          indd_snap++;
+        }
+        ierr = IGAElementEndPoint(element_snap, &point_snap); CHKERRQ(ierr);
+      }
+      ierr = IGAEndElement(user->iga, &element_snap); CHKERRQ(ierr);
+      ierr = IGARestoreLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD, "  sed0 reference updated to relaxed profile (%d quadrature points)\n", indd_snap);
+    }
+
+    PetscPrintf(PETSC_COMM_WORLD, "\033[34m"
+        "╔════════════════════════════════════════════════════════════╗\n"
+        "║              SEDIMENT PENALTY ACTIVATED                    ║\n"
+        "║  3-phase ice eq. unchanged; sediment pinned to sed0        ║\n"
+        "╠════════════════════════════════════════════════════════════╣\n"
+        "║  Step: %-5d  t_sed_freeze = %.4g s reached                 ║\n"
+        "║  New time step: %.2e s                                  ║\n"
+        "╚════════════════════════════════════════════════════════════╝\n"
+        "\033[0m\n",
+        step, user->t_sed_freeze, dt);
+  }
+
+  //------ printf information (robust table header + aligned columns)
+  {
+    const PetscInt headerEvery = 1;  // print header every step (can change to 10 later)
+    PetscErrorCode ierr2;
+
+    if ((step % headerEvery) == 0) {
+      // Build header line using the SAME fixed-width fields as the data row
+      char header[512];
+      ierr2 = PetscSNPrintf(header, sizeof(header),
+                            " %5s | %12s | %9s | %10s | %10s | %10s | %9s | %9s | %10s | %10s",
+                            "STEP",
+                            "TIME [s]",
+                            "DT [s]",
+                            "TOT_ICE",
+                            "TOT_AIR",
+                            "TOT_SED",
+                            "TEMP",
+                            "TOT_RHOV",
+                            "I-A INTERF",
+                            "TRIPL_JUNC");
+      CHKERRQ(ierr2);
+
+      // Separator line: exactly matches header length
+      PetscInt hlen = 0;
+      ierr2 = PetscStrlen(header, &hlen);
+      CHKERRQ(ierr2);
+
+      char sep[512];
+      PetscInt i;
+      for (i = 0; i < hlen && i < (PetscInt)sizeof(sep) - 1; i++) sep[i] = '-';
+      sep[i] = '\0';
+
+      PetscPrintf(PETSC_COMM_WORLD, "  ===============================================================================\n");
+      PetscPrintf(PETSC_COMM_WORLD, "  >>> DOMAIN INTEGRALS (PER TIME STEP)\n");
+      PetscPrintf(PETSC_COMM_WORLD, "  ===============================================================================\n");
+      PetscPrintf(PETSC_COMM_WORLD, "  %s\n", sep);
+      PetscPrintf(PETSC_COMM_WORLD, "  %s\n", header);
+      PetscPrintf(PETSC_COMM_WORLD, "  %s\n", sep);
+    }
+
+    // Data row: uses matching widths so it lines up under the header
+    PetscPrintf(PETSC_COMM_WORLD,
+                " %5d | %12.5e | %9.3e | %10.3e | %10.3e | %10.3e | %9.3e | %9.3e | %10.3e | %10.3e\n",
+                step, t, dt,
+                tot_ice, tot_air, tot_sed, tot_temp, tot_rhov,
+                sub_interf, tot_trip);
+
+    // Optional: add a blank line every N rows for readability (set to 0 to disable)
+    // if (step > 0 && (step % 25) == 0) PetscPrintf(PETSC_COMM_WORLD, "\n");
+  }
+
+  //-------- write per-step interface metrics for relaxation analysis
+  {
+    char relax_file[256];
+    const char *renv = "folder"; char *rdir; rdir = getenv(renv);
+    sprintf(relax_file, "%s/relax_monitor.dat", rdir);
+
+    PetscViewer rv;
+    PetscViewerCreate(PETSC_COMM_WORLD, &rv);
+    PetscViewerSetType(rv, PETSCVIEWERASCII);
+    if (step == 0) {
+      PetscViewerFileSetMode(rv, FILE_MODE_WRITE);
+      PetscViewerFileSetName(rv, relax_file);
+      PetscViewerASCIIPrintf(rv,
+          "# step  t  tot_ice  tot_sed  ice_air_interf  sed_air_interf  ice_sed_interf  tot_trip\n");
+    } else {
+      PetscViewerFileSetMode(rv, FILE_MODE_APPEND);
+      PetscViewerFileSetName(rv, relax_file);
+    }
+    PetscViewerASCIIPrintf(rv, "%d %e %e %e %e %e %e %e\n",
+        step, t,
+        tot_ice, tot_sed,
+        sub_interf, sed_air_interf, ice_sed_interf,
+        tot_trip);
+    PetscViewerDestroy(&rv);
   }
 
   PetscInt print=0;
@@ -108,7 +287,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   } else {
     if (t>= user->t_out) print=1;
   }
-  
+
   print = 1;
 
   if(print==1) {
@@ -127,7 +306,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     }
 
     PetscViewerFileSetName(view,filedata);
-    PetscViewerASCIIPrintf(view,"%e %e %e %d\n",sub_interf/user->eps, tot_ice, t, step);
+    PetscViewerASCIIPrintf(view,"%e %e %e %d %e\n",sub_interf/user->eps, tot_ice, t, step, dt);
 
     PetscViewerDestroy(&view);
   }

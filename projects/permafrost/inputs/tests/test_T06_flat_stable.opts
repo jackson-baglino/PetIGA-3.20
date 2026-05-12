@@ -1,0 +1,44 @@
+# =============================================================================
+# T06: Flat interface stability (no spurious drift)
+# flag_tIC=2: ice fills left half [0, 0.5*Lx], air fills right half.
+# No temperature gradient, humidity = 1.0 (exactly at saturation).
+# Ice volume must remain constant within 0.5 % over 100 steps.
+# =============================================================================
+-dim 1                                  # spatial dimension (1D)
+-dof 4                                  # DOFs per node: 4 = ice / temperature / vapor / sediment
+-Nx 152                                 # elements in x
+-Lx 1.00e-04                            # domain length in x (m)
+-p 2                                    # B-spline polynomial order
+-C 1                                    # B-spline continuity order (C^1 for p=2, C=1)
+-delt_t 1.0e-4                          # time step size (s)
+-t_final 1.0e-2                         # total simulation time (s); 100 steps
+-n_out 0                                # number of output snapshots (0 = use -outp interval)
+-outp 1                                 # write output every N time steps
+-Permafrost_output 1                    # enable VTK field output (1=on)
+-Permafrost_monitor 1                   # enable monitor table output (1=on)
+-humidity 1.0                           # relative humidity (fraction; 1.0 = exactly saturated → no phase change)
+-temp -20.0                             # background temperature (°C)
+-grad_temp0 0.0,0.0,0.0                # imposed temperature gradient (K/m; x,y,z); 0 = isothermal
+-eps 9.3295e-07                         # diffuse interface half-width (m)
+-periodic 0                             # periodic BCs (0=no, 1=yes)
+-flag_tIC 2                             # IC variant: 2=flat interface (ice left half, air right half)
+-flag_BC_Tfix 0                         # fix temperature at boundaries (0=no, 1=yes)
+-flag_BC_rhovfix 0                      # fix vapor density at boundaries (0=no, 1=yes)
+-flag_Tdep 0                            # temperature-dependent material properties (0=off, 1=on)
+-t_sed_freeze 300                       # simulated time (s) at which sediment evolution is frozen
+-flag_sed_mode 1                        # sediment mode: -1=always 3-phase; 0=always frozen; 1=freeze at t_sed_freeze
+-snes_type newtonls                     # nonlinear solver: Newton with line search
+-snes_max_it 10                         # max Newton iterations per time step
+-snes_rtol 1e-06                        # relative residual tolerance for SNES convergence
+-snes_atol 1e-08                        # absolute residual tolerance for SNES convergence
+-snes_stol 1e-06                        # step tolerance for SNES convergence
+-snes_converged_reason                  # print reason for SNES convergence/divergence
+-snes_linesearch_type bt                # backtracking line search (ensures residual decrease)
+-ksp_type gmres                         # Krylov solver: GMRES
+-ksp_rtol 1e-05                         # relative residual tolerance for linear solve
+-ksp_atol 1e-08                         # absolute residual tolerance for linear solve
+-ksp_max_it 500                         # max GMRES iterations per linear solve
+-ksp_gmres_restart 500                  # GMRES restart interval (keep full Krylov space)
+-pc_type bjacobi                        # block Jacobi preconditioner (one block per MPI rank)
+-sub_pc_type ilu                        # ILU(k) for each block
+-sub_pc_factor_levels 1                 # fill level k for ILU(k)

@@ -1,0 +1,43 @@
+# =============================================================================
+# test_2D_IceSlab.opts — 2D curved ice slab with right-side sediment
+#
+# Purpose: Study curvature effects on sublimation. Ice is a circular disk of
+#          radius R = Ly centred at (0.40*Lx, 0.5*Ly); sediment occupies the
+#          right side of the domain (flat wall at 0.80*Lx).
+#
+# Usage:
+#   mpiexec -np N ./permafrost \
+#       -options_file inputs/universal.opts \
+#       -options_file inputs/tests/test_2D_IceSlab.opts
+#
+# Solver/penalty defaults are in inputs/universal.opts.
+# =============================================================================
+
+# ---------- Initial Condition ----------
+-ic_type ice_slab                       # circular ice blob + right-side sediment slab
+
+# ---------- Domain ----------
+-dim 2
+-Nx 228
+-Ny 46
+-Nz 1
+-Lx 1.00e-04                            # domain length in x (m)
+-Ly 2.00e-05                            # domain length in y (m); ice radius R = Ly
+-Lz 0
+
+# ---------- Time Stepping ----------
+-delt_t 1.0e-4                          # initial time step (s)
+-t_final 86400.0                        # total simulation time (s) — 1 day
+
+# ---------- Phase-Field Physics ----------
+-eps 9.3295e-07                         # diffuse interface half-width (m)
+-flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
+-t_sed_freeze 60                        # 3-phase duration (s) before sediment freezes
+
+# ---------- Thermal & Humidity ----------
+-humidity 0.95
+-temp -20.0
+-grad_temp0 0.0,0.0,0.0
+
+# ---------- Penalty overrides ----------
+-k_sed_pen 1e9                          # sediment restoring stiffness (override universal -1)

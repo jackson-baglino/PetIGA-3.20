@@ -24,6 +24,7 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 ###############################################################################
 params_file="${1:-params.txt}"
 title="${2:-permafrost_}"
+UNIVERSAL_OPTS="./inputs/universal.opts"
 
 ###############################################################################
 # Create output folder based on timestamp and title
@@ -58,7 +59,7 @@ create_folder() {
 ###############################################################################
 compile_code() {
     echo "Compiling..."
-    make all
+    make clean && make all
 }
 
 ###############################################################################
@@ -136,7 +137,11 @@ run_simulation() {
         echo "SLURM_CPUS_PER_TASK = ${SLURM_CPUS_PER_TASK:-unknown}"
         echo "Using NPROCS        = ${NPROCS}"
 
+        local universal_arg=""
+        [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
+
         srun -n "${NPROCS}" ./permafrost \
+            $universal_arg \
             -options_file "$params_file" \
             -output_path "$folder" \
             -snes_rtol 1e-3 \
@@ -152,7 +157,11 @@ run_simulation() {
         echo "No SLURM environment detected; running locally with mpiexec."
         echo "Using NPROCS = ${NPROCS}"
 
+        local universal_arg=""
+        [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
+
         mpiexec -n "${NPROCS}" ./permafrost \
+            $universal_arg \
             -options_file "$params_file" \
             -output_path "$folder" \
             -snes_rtol 1e-3 \
@@ -177,7 +186,8 @@ finalize_results() {
     cp ./scripts/plotpermafrost.py ./scripts/plotSSA.py ./scripts/plotPorosity.py "$folder" 2>/dev/null || true
     cp ./src/permafrost.c "$folder" 2>/dev/null || true
 
-    # Save a copy of the PETSc options file used for this run
+    # Save copies of the universal and simulation-specific opts files
+    [ -f "$UNIVERSAL_OPTS" ] && cp "$UNIVERSAL_OPTS" "$folder/"
     cp "$params_file" "$folder/$(basename "$params_file")"
 }
 
@@ -194,6 +204,63 @@ run_plotting() {
 }
 
 ################################################################################
+# run_1d_plotting
+# Automatically generates 1D visualisations when -dim 1 is set in the opts file.
+# Silently skips for 2D/3D runs.
+# On HPC nodes matplotlib uses the Agg backend (set inside plot1D_profiles.py),
+# so no display is required.
+################################################################################
+run_1d_plotting() {
+    local dim
+    dim=$(awk '$1 == "-dim" { print $2 }' "$params_file" | head -n1)
+    dim=${dim:-2}
+
+    if [[ "$dim" != "1" ]]; then
+        return
+    fi
+
+    echo "--- 1D post-processing ---"
+
+    # On Resnick the Python environment may need a module load.
+    # Adjust the line below if a specific module is required, e.g.:
+    #   module load python/3.10 2>/dev/null || true
+    local PYTHON
+    PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "")
+
+    if [[ -z "$PYTHON" ]]; then
+        echo "WARNING: python not found — skipping 1D plots."
+        return
+    fi
+
+    # Resolve postprocess directory relative to this script's location
+    local SCRIPT_DIR
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local POSTPROCESS="${SCRIPT_DIR}/../../postprocess"
+
+    set +e
+
+    # Per-step phase PNGs + animated GIF
+    "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
+        --dir "$folder" --out-dir "$folder" --gif \
+        2>&1 | sed 's/^/  /'
+
+    # Derived scalar time-series
+    "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
+        --dir "$folder" --derived --save "$folder/derived.png" \
+        2>&1 | sed 's/^/  /'
+
+    # SSA scalar time-series
+    if [[ -f "$folder/SSA_evo.dat" ]]; then
+        "$PYTHON" "$POSTPROCESS/plot_scalars.py" \
+            --file "$folder/SSA_evo.dat" --save "$folder/scalars.png" \
+            2>&1 | sed 's/^/  /'
+    fi
+
+    set -e
+    echo "1D post-processing complete."
+}
+
+################################################################################
 # USER-DEFINED SIMULATION SETTINGS (currently unused but kept for reference)
 ################################################################################
 echo " "
@@ -206,6 +273,7 @@ compute_optimal_nprocs
 run_simulation
 finalize_results
 run_plotting
+run_1d_plotting
 
 echo "-------------------------------------------------------------------------"
 echo " "

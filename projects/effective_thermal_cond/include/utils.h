@@ -1,9 +1,5 @@
+/* Thin compatibility shim — new code should include field_init.h directly. */
 #ifndef UTILS_H
 #define UTILS_H
-
-#include "user_context.h"
-
-PetscErrorCode AllocateAppCtxFields(IGA iga, AppCtx *user, PetscScalar **field);
-PetscErrorCode FreeAppCtxFields(PetscScalar **field);
-
-#endif // UTILS_H
+#include "field_init.h"
+#endif /* UTILS_H */

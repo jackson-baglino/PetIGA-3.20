@@ -1,0 +1,38 @@
+# =============================================================================
+# test_1D_IceSlab.opts — 1D centered ice slab
+#
+# Purpose: Verify that a diffuse ice slab in a 1D air domain produces the
+#          correct phase-field profile and that vapor/temperature fields
+#          initialize consistently with temp0 and hum0.
+# Expected: phi_ice peaks at 1.0 in [0.35 Lx, 0.65 Lx]; sediment slab at
+#           0.75 Lx; temp = -20 C uniform; rhov = hum0 * rhoVS(-20 C).
+#
+# Usage:
+#   mpiexec -np N ./permafrost \
+#       -options_file inputs/universal.opts \
+#       -options_file inputs/tests/test_1D_IceSlab.opts
+#
+# Solver/penalty defaults are in inputs/universal.opts.
+# =============================================================================
+
+# ---------- Initial Condition ----------
+-ic_type ice_slab                       # centered ice slab with right-side sediment
+
+# ---------- Domain ----------
+-dim 1
+-Nx 228
+-Lx 1.00e-04                            # domain length in x (m)
+
+# ---------- Time Stepping ----------
+-delt_t 1.0e-4                          # initial time step (s)
+-t_final 864000.0                       # total simulation time (s) — 10 days
+
+# ---------- Phase-Field Physics ----------
+-eps 9.3295e-07                         # diffuse interface half-width (m)
+-flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
+-t_sed_freeze 60                        # 3-phase duration (s) before sediment freezes
+
+# ---------- Thermal & Humidity ----------
+-humidity 0.95
+-temp -20.0
+-grad_temp0 0.0,0.0,0.0

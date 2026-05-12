@@ -1,137 +1,122 @@
 #include "env_config.h"
 
-// Function declarations (static = private to this file)
-static PetscErrorCode CheckRequiredEnvVars(void);
-static void ParseDomainAndMesh(AppCtx *user, char *endptr);
-static void ParseTemperatureSettings(AppCtx *user, char *endptr);
-static void ParseOutputSettings(AppCtx *user, char *endptr);
-static PetscErrorCode ParseBoundaryConditions(AppCtx *user, char *endptr);
+/*-----------------------------------------------------------------------------
+  ParseOptions
+  Read all simulation parameters from the PETSc options database into user.
+  Hardcoded defaults are applied first; any option can be overridden by a
+  -options_file or by explicit command-line flags.
 
-/*------------------------------------------------------------------------------
-  Function: InitializeUserContext
-  Purpose : Initialize AppCtx with default material properties and settings.
-------------------------------------------------------------------------------*/
-void InitializeUserContext(AppCtx *user) {
-    // Material properties
-    user->thcond_ice = 2.29;       // W/m·K
-    user->thcond_air = 0.02;       // W/m·K
-    user->cp_ice     = 1.96e3;     // J/kg·K
-    user->cp_air     = 1.044e3;    // J/kg·K
-    user->rho_ice    = 919.0;      // kg/m³
-    user->rho_air    = 1.341;      // kg/m³
+  Typical usage:
+    ./effective_k_ice_homog -options_file inputs/default.opts \
+        -Nx 128 -Ny 128 -init_mode layered
+-----------------------------------------------------------------------------*/
+PetscErrorCode ParseOptions(AppCtx *user)
+{
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
 
-    // Discretization order and continuity
-    user->p = 1; // Polynomial order
-    user->C = 0; // Inter-element continuity
+  /* ---- Hardcoded defaults ---- */
+  user->dim          = 2;
+  user->Nx           = 64;
+  user->Ny           = 64;
+  user->Nz           = 1;
+  user->Lx           = 1.0e-3;
+  user->Ly           = 1.0e-3;
+  user->Lz           = 1.0e-3;
+  user->eps          = 1.0e-4;
+  user->T_top        = 243.15;   /* 273.15 - 30 K */
+  user->q_bottom     = -1.0;     /* W/m² */
+  user->outputBinary = PETSC_TRUE;
+  user->sol_index    = -1;       /* -1 = loop over all files */
+  user->output_dir[0] = '\0';
+  strcpy(user->init_mode, "layered");
+  user->init_dir[0]  = '\0';
 
-    PetscPrintf(PETSC_COMM_WORLD, "User context initialized.\n\n");
-}
+  /* ---- Read from options database ---- */
+  PetscOptionsBegin(PETSC_COMM_WORLD, "",
+                    "Effective Thermal Conductivity (Homogenization)", "");
 
-/*------------------------------------------------------------------------------
-  Function: GetEnvironment
-  Purpose : Read and parse environment variables into AppCtx.
-------------------------------------------------------------------------------*/
-PetscErrorCode GetEnvironment(AppCtx *user) {
-    PetscFunctionBegin;
+  ierr = PetscOptionsInt("-dim",
+      "Problem dimension (2 or 3)",
+      __FILE__, user->dim, &user->dim, NULL); CHKERRQ(ierr);
 
-    PetscPrintf(PETSC_COMM_WORLD, "Reading simulation parameters from environment variables...\n\n");
+  ierr = PetscOptionsInt("-Nx",
+      "Number of elements in x",
+      __FILE__, user->Nx, &user->Nx, NULL); CHKERRQ(ierr);
 
-    // Step 1: Check for required environment variables
-    PetscErrorCode ierr = CheckRequiredEnvVars();
-    if (ierr) PetscFunctionReturn(ierr);
+  ierr = PetscOptionsInt("-Ny",
+      "Number of elements in y",
+      __FILE__, user->Ny, &user->Ny, NULL); CHKERRQ(ierr);
 
-    // Step 2: Parse all values into AppCtx
-    char *endptr = NULL;
-    ParseDomainAndMesh(user, endptr);
-    ParseTemperatureSettings(user, endptr);
-    ParseOutputSettings(user, endptr);
+  ierr = PetscOptionsInt("-Nz",
+      "Number of elements in z (3-D only)",
+      __FILE__, user->Nz, &user->Nz, NULL); CHKERRQ(ierr);
 
-    // Step 3: Parse boundary conditions
-    ierr = ParseBoundaryConditions(user, endptr); CHKERRQ(ierr);
+  ierr = PetscOptionsReal("-Lx",
+      "Domain length in x (m)",
+      __FILE__, user->Lx, &user->Lx, NULL); CHKERRQ(ierr);
 
-    PetscFunctionReturn(0);
-}
+  ierr = PetscOptionsReal("-Ly",
+      "Domain length in y (m)",
+      __FILE__, user->Ly, &user->Ly, NULL); CHKERRQ(ierr);
 
-/*------------------------------------------------------------------------------
-  Function: CheckRequiredEnvVars
-  Purpose : Ensure all required environment variables are defined.
-------------------------------------------------------------------------------*/
-static PetscErrorCode CheckRequiredEnvVars(void) {
-    const char *required_vars[] = {
-        "Nx", "Ny", "Nz", "Lx", "Ly", "Lz",
-        "dim", "OUTPUT_BINARY", "eps", "TEMP_TOP", "FLUX_BOTTOM"
-    };
+  ierr = PetscOptionsReal("-Lz",
+      "Domain length in z (m, 3-D only)",
+      __FILE__, user->Lz, &user->Lz, NULL); CHKERRQ(ierr);
 
-    int num_vars = sizeof(required_vars) / sizeof(required_vars[0]);
-    for (int i = 0; i < num_vars; i++) {
-        if (!getenv(required_vars[i])) {
-            PetscPrintf(PETSC_COMM_WORLD, "❌ Error: Missing required environment variable: %s\n", required_vars[i]);
-            PetscFinalize();
-            return EXIT_FAILURE;
-        }
-    }
+  ierr = PetscOptionsReal("-eps",
+      "Phase-field interface width (m)",
+      __FILE__, user->eps, &user->eps, NULL); CHKERRQ(ierr);
 
-    return 0;
-}
+  ierr = PetscOptionsReal("-temp_top",
+      "Temperature at the top boundary (K)",
+      __FILE__, user->T_top, &user->T_top, NULL); CHKERRQ(ierr);
 
-/*------------------------------------------------------------------------------
-  Function: ParseDomainAndMesh
-  Purpose : Set domain size, mesh resolution, and problem dimension.
-------------------------------------------------------------------------------*/
-static void ParseDomainAndMesh(AppCtx *user, char *endptr) {
-    user->dim = (PetscInt)strtol(getenv("dim"), &endptr, 10);
-    user->Nx  = (PetscInt)strtol(getenv("Nx"),  &endptr, 10);
-    user->Ny  = (PetscInt)strtol(getenv("Ny"),  &endptr, 10);
-    user->Nz  = (user->dim == 3) ? (PetscInt)strtol(getenv("Nz"), &endptr, 10) : 1;
+  ierr = PetscOptionsReal("-flux_bottom",
+      "Heat flux at the bottom boundary (W/m²)",
+      __FILE__, user->q_bottom, &user->q_bottom, NULL); CHKERRQ(ierr);
 
-    user->Lx  = strtod(getenv("Lx"), &endptr);
-    user->Ly  = strtod(getenv("Ly"), &endptr);
-    user->Lz  = strtod(getenv("Lz"), &endptr);
+  ierr = PetscOptionsBool("-output_binary",
+      "Write binary t_vec.dat solution output",
+      __FILE__, user->outputBinary, &user->outputBinary, NULL); CHKERRQ(ierr);
 
-    PetscPrintf(PETSC_COMM_WORLD, "Domain: Lx = %g, Ly = %g, Lz = %g\n\n", user->Lx, user->Ly, user->Lz);
-}
+  ierr = PetscOptionsInt("-sol_index",
+      "Solution file index to process (-1 = all files)",
+      __FILE__, user->sol_index, &user->sol_index, NULL); CHKERRQ(ierr);
 
-/*------------------------------------------------------------------------------
-  Function: ParseTemperatureSettings
-  Purpose : Set initial temperature and its gradient field.
-------------------------------------------------------------------------------*/
-static void ParseTemperatureSettings(AppCtx *user, char *endptr) {
-    user->eps           = strtod(getenv("eps"), &endptr);
-}
+  ierr = PetscOptionsString("-output_dir",
+      "Directory for output files",
+      __FILE__, user->output_dir, user->output_dir,
+      sizeof(user->output_dir), NULL); CHKERRQ(ierr);
 
-/*------------------------------------------------------------------------------
-  Function: ParseOutputSettings
-  Purpose : Set output format and settings.
-------------------------------------------------------------------------------*/
-static void ParseOutputSettings(AppCtx *user, char *endptr) {
-    user->outputBinary = (PetscBool)strtol(getenv("OUTPUT_BINARY"), &endptr, 10);
-}
+  ierr = PetscOptionsString("-init_mode",
+      "Ice field initialisation mode: circle | layered | file",
+      __FILE__, user->init_mode, user->init_mode,
+      sizeof(user->init_mode), NULL); CHKERRQ(ierr);
 
-/*------------------------------------------------------------------------------
-  Function: ParseBoundaryConditions
-  Purpose : Set boundary condition values for top and bottom of the domain.
-------------------------------------------------------------------------------*/
-static PetscErrorCode ParseBoundaryConditions(AppCtx *user, char *endptr) {
-    const char *temp_top_str    = getenv("TEMP_TOP");
-    const char *flux_bottom_str = getenv("FLUX_BOTTOM");
+  ierr = PetscOptionsString("-init_dir",
+      "Directory containing sol_*.dat input files (file mode)",
+      __FILE__, user->init_dir, user->init_dir,
+      sizeof(user->init_dir), NULL); CHKERRQ(ierr);
 
-    if (temp_top_str) {
-        user->T_top = strtod(temp_top_str, &endptr);
-        PetscPrintf(PETSC_COMM_WORLD, "Top boundary temperature: %g K\n\n", user->T_top);
-    } else {
-        PetscPrintf(PETSC_COMM_WORLD, "❌ Error: TEMP_TOP is required.\n");
-        PetscFinalize();
-        return EXIT_FAILURE;
-    }
+  PetscOptionsEnd();
 
-    if (flux_bottom_str) {
-        user->q_bottom = strtod(flux_bottom_str, &endptr);
-        PetscPrintf(PETSC_COMM_WORLD, "Bottom boundary flux: %g W/m²·K\n\n", user->q_bottom);
-    } else {
-        PetscPrintf(PETSC_COMM_WORLD, "❌ Error: FLUX_BOTTOM is required.\n");
-        PetscFinalize();
-        return EXIT_FAILURE;
-    }
+  /* ---- Basic validation ---- */
+  if (user->dim != 2 && user->dim != 3)
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+            "-dim must be 2 or 3 (got %d)", (int)user->dim);
 
-    return 0;
+  if (user->Nx < 1 || user->Ny < 1 || (user->dim == 3 && user->Nz < 1))
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+            "Mesh resolution must be >= 1 in every direction");
+
+  if (user->eps <= 0.0)
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+            "-eps must be positive (got %g)", (double)user->eps);
+
+  if (user->output_dir[0] == '\0')
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+            "-output_dir is required (no output directory specified)");
+
+  PetscFunctionReturn(0);
 }

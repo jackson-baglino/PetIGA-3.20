@@ -1,0 +1,31 @@
+# Build artifacts
+obj/
+*.o
+permafrost
+
+# macOS metadata
+.DS_Store
+.DS_Store?
+._*
+
+# Python virtual environments
+venv_*/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Simulation outputs (generated at runtime)
+outputs/
+scratch/
+
+# Editor/IDE files
+.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/

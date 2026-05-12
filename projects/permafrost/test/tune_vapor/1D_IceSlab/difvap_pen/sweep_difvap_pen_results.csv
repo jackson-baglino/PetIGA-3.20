@@ -1,0 +1,6 @@
+param,value,rc_a,rc_b,rhov_drift_pct,rhov_increase,max_snes_iters,ice_rhov_err_pct,pass_rhov,pass_sublim,pass_iters,pass_ice,PASS
+difvap_pen,1e-07,0,0,0.0,4.937167737358224e-07,6,0.03506918935117664,True,True,True,True,True
+difvap_pen,1e-05,0,0,0.0,1.5627885278881948e-06,3,0.024426728067491972,True,True,True,True,True
+difvap_pen,0.0001,0,0,0.0,3.3627166085156424e-06,3,0.02443083542096588,True,True,True,True,True
+difvap_pen,0.001,0,0,0.0,4.087741634513524e-06,3,0.024432413891394916,True,True,True,True,True
+difvap_pen,0.01,0,0,0.0,4.087741634513524e-06,3,0.024432853969677613,True,True,True,True,True
