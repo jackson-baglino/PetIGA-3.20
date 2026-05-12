@@ -1,97 +1,79 @@
-TARGETS = \
-    permafrost \
+TARGETS = permafrost
 
-# Default target: build the executable
 all: $(TARGETS)
-.PHONY: all
+.PHONY: all clean debug
 
 ###############################################################################
-# Build Mode: Debug vs. Optimized
-#
-# Use "make debug" to compile with debugging flags.
-# Otherwise, the default build mode is optimized.
-###############################################################################
-ifeq ($(BUILD),debug)
-  # Debug mode: maximum debugging information, no optimization.
-  CFLAGS = -g3 -O0 -Wall -Wextra -Wno-unused-parameter $(INCLUDES)
-  FFLAGS = -g3 -O0 -Wall -Wextra -fcheck=all
-else
-  # Optimized mode: high optimization for performance.
-  CFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter $(INCLUDES)
-  FFLAGS = -O3 -Wall -Wextra
-endif
-
-###############################################################################
-# Compiler and Linker Settings
-###############################################################################
-# Use the MPI compiler wrapper.
-CC = mpicc
-
-# Linker flags: Link against PETSc, PetIGA, and additional dependencies.
-LDFLAGS = -L$(PETSC_DIR)/$(PETSC_ARCH)/lib -lpetsc \
-          -L$(PETIGA_DIR)/$(PETSC_ARCH)/lib -lpetiga -lmpi -lmetis -lparmetis -lsuperlu_dist
-
-###############################################################################
-# Include Paths
-#
-# Add paths for PETSc (including private headers), PetIGA, and local headers.
-###############################################################################
-INCLUDES = -I$(PETSC_DIR)/include \
-           -I$(PETSC_DIR)/include/petsc/private \
-           -I$(PETIGA_DIR)/include \
-           -I./include
-CFLAGS += $(INCLUDES)
-
-###############################################################################
-# Include PetIGA Configuration Files
-#
-# These files define additional variables needed for linking:
-#  - CLINKER : The linker command to use.
-#  - PETIGA_LIB : Additional PetIGA libraries.
-#  - PETSC_LIB : Additional PETSc libraries.
+# Include PetIGA/PETSc configuration
+# Provides: PCC, CLINKER, PETIGA_LIB, PETSC_LIB, CCPPFLAGS, etc.
 ###############################################################################
 include $(PETIGA_DIR)/lib/petiga/conf/variables
 include $(PETIGA_DIR)/lib/petiga/conf/rules
 include $(PETIGA_DIR)/lib/petiga/conf/test
 
 ###############################################################################
-# Source and Object Files
-#
-# List all .c files in the "src" directory and define corresponding object files in "obj".
+# Include paths
+# petsc/private is required for tsimpl.h / snesimpl.h used in NASA_main.h
+###############################################################################
+INCLUDES = -I$(PETSC_DIR)/include \
+           -I$(PETSC_DIR)/include/petsc/private \
+           -I$(PETIGA_DIR)/include \
+           -I./include
+
+###############################################################################
+# Build mode
+#   make           — optimized (default)
+#   make debug     — full debug symbols, no optimisation
+#   make BUILD=debug <target>  — same as above
+###############################################################################
+ifeq ($(BUILD),debug)
+  OPT_FLAGS  = -g3 -O0
+  WARN_FLAGS = -Wall -Wextra -Wno-unused-parameter
+else
+  # -march=native / -mtune=native: enable all M2 NEON/SIMD instructions
+  # -funroll-loops: benefits tight Gauss-point loops in IGA assembly
+  # -fomit-frame-pointer: frees one callee-save register in hot paths
+  # -pipe: use pipes instead of temp files (faster compilation)
+  OPT_FLAGS  = -O3 -march=native -mtune=native -funroll-loops \
+               -fomit-frame-pointer -pipe
+  WARN_FLAGS = -Wall -Wextra -Wno-unused-parameter
+endif
+
+# -MMD -MP: emit a .d dependency file alongside each .o so that editing
+#           any header triggers the correct recompiles without make clean.
+CFLAGS = $(OPT_FLAGS) $(WARN_FLAGS) $(INCLUDES) -MMD -MP
+
+###############################################################################
+# Source and object files
 ###############################################################################
 SRCS := $(wildcard src/*.c)
 OBJS := $(patsubst src/%.c, obj/%.o, $(SRCS))
+DEPS := $(OBJS:.o=.d)
 
 ###############################################################################
-# Build Rules
+# Build rules
 ###############################################################################
-# Compile rule: Build an object file from a source file.
 obj/%.o: src/%.c
 	@mkdir -p obj
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(PCC) $(CFLAGS) -c $< -o $@
 
-# Linking rule: Link all object files to create the executable.
-# Uses $(CLINKER) (set by the included configuration files) and appends the extra
-# libraries from $(PETIGA_LIB) and $(PETSC_LIB).
 $(TARGETS): $(OBJS)
-	$(CLINKER) -o $@ $^ $(PETIGA_LIB) $(PETSC_LIB)
+	$(CLINKER) -o $@ $^ $(PETIGA_LIB)
+
+# Pull in auto-generated header dependencies (silently skipped if absent)
+-include $(DEPS)
 
 ###############################################################################
-# Clean Rule
-###############################################################################
-# Remove the executable and all object files in the "obj" directory.
+# Clean
 ###############################################################################
 clean::
-	@echo "Cleaning up..."
+	@echo "Cleaning..."
 	@rm -f $(TARGETS)
-	@find obj -type f -name '*.o' -delete
-	@echo "Clean"
+	@rm -rf obj
+	@echo "Done."
 
 ###############################################################################
-# Debug Build Target
-#
-# Use "make debug" to compile with debug flags.
+# Debug build shorthand
 ###############################################################################
 debug:
 	$(MAKE) BUILD=debug all
-.PHONY: debug

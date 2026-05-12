@@ -227,13 +227,13 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       CHKERRQ(ierr2);
 
       // Separator line: exactly matches header length
-      PetscInt hlen = 0;
+      size_t hlen = 0;
       ierr2 = PetscStrlen(header, &hlen);
       CHKERRQ(ierr2);
 
       char sep[512];
-      PetscInt i;
-      for (i = 0; i < hlen && i < (PetscInt)sizeof(sep) - 1; i++) sep[i] = '-';
+      size_t i;
+      for (i = 0; i < hlen && i < sizeof(sep) - 1; i++) sep[i] = '-';
       sep[i] = '\0';
 
       PetscPrintf(PETSC_COMM_WORLD, "  ===============================================================================\n");
