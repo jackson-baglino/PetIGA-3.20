@@ -205,7 +205,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             R_ice -= N0[a] * alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
 
             /* Sediment: RHS = 0 (time derivative only — forces phi_sed_t = 0) */
-            R_sed = N0[a] * sed_t;
+            R_sed = N0[a] * sed_t;          
         }
 
         if (!user->flag_relax) {
@@ -220,7 +220,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             R_vap  = N0[a] * rhov_t;
             for (l = 0; l < dim; l++)
                 R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
-            R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];
+            R_vap += xi_v *k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];
             R_vap -= xi_v * N0[a] * rho_ice * air_t;
         }
 
@@ -387,7 +387,7 @@ PetscErrorCode Residual_A2(IGAPoint pnt,
             R_tem += xi_T * rho * lat_sub * N0[a] * air_t;
 
             /* --- Vapor: penalised diffusivity + interface equilibrium penalty --- */
-            R_vap  = N0[a] * (air_eff * rhov_t + air_t * rhov);
+            R_vap  = N0[a] * rhov_t;
             for (l = 0; l < dim; l++)
                 R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
             R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];

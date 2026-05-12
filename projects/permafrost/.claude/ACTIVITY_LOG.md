@@ -1,4 +1,132 @@
 
+---
+
+**Session ended:** 2026-05-12 15:44:56
+
+
+---
+
+**Session ended:** 2026-05-12 15:01:48
+
+
+## 2026-05-12 — Fix rhov initialization to saturated vapor density in all IC functions
+
+- Updated all IC functions in `src/initial_conditions.c` to use the phase-weighted formula `rhov = rho_vs * (hum0 * phi_air + (1 - phi_air))` so vapor density equals `rho_vs` (saturated) inside ice/sediment and `hum0 * rho_vs` in air.
+- Previously all functions set `rhov = hum0 * rho_vs` uniformly, under-saturating solid regions at t=0 and potentially stiffening the first Newton step.
+- `FormInitialIceSlab2D` was already correct and left unchanged.
+- Functions fixed: FormInitialLayeredPermafrost2D, FormInitialFlatSedIceCap2D, FormInitialEnclosedPermafrost2D, FormInitialContactSedPermafrost2D, FormInitialRandomEnclosedPermafrost2D, FormInitialRandomPackedPermafrost2D, FormInitialCondition2D, FormInitialCondition3D, FormLayeredInitialCondition2D, FormInitialCondition1D, FormInitialEnclosed1D, InitializeFromInputSolution, FormIC_grain_ana.
+- Compiled cleanly.
+
+---
+
+**Session ended:** 2026-05-12 14:34:26
+
+
+---
+
+**Session ended:** 2026-05-11 12:11:26
+
+
+---
+
+**Session ended:** 2026-05-11 11:51:10
+
+
+---
+
+**Session ended:** 2026-05-11 11:10:29
+
+
+---
+
+**Session ended:** 2026-05-11 10:41:17
+
+
+---
+
+**Session ended:** 2026-05-08 08:17:50
+
+
+---
+
+**Session ended:** 2026-05-07 08:17:46
+
+
+---
+
+**Session ended:** 2026-05-06 16:18:58
+
+
+---
+
+**Session ended:** 2026-05-06 14:28:51
+
+
+---
+
+**Session ended:** 2026-05-06 14:18:20
+
+
+---
+
+**Session ended:** 2026-05-06 14:08:39
+
+
+---
+
+**Session ended:** 2026-05-06 14:01:55
+
+
+---
+
+**Session ended:** 2026-05-06 13:57:32
+
+
+---
+
+**Session ended:** 2026-05-06 13:54:42
+
+
+---
+
+**Session ended:** 2026-05-06 12:19:58
+
+
+---
+
+**Session ended:** 2026-05-06 12:19:53
+
+
+---
+
+**Session ended:** 2026-05-06 12:16:47
+
+
+---
+
+**Session ended:** 2026-05-06 12:16:16
+
+
+---
+
+**Session ended:** 2026-05-06 12:16:14
+
+
+---
+
+**Session ended:** 2026-05-06 11:21:10
+
+
+---
+
+**Session ended:** 2026-05-06 11:04:31
+
+
+---
+
+**Session ended:** 2026-05-06 10:40:05
+
+
 ## 2026-05-06 — tune_sed_freeze.py sweep script + n_relax smoke test
 
 - Added `scripts/tune_sed_freeze.py`: 2-D parameter sweep over `t_sed_freeze × k_pen` to find the minimum sediment-freeze delay that avoids spurious air generation at the ice-sediment boundary.
