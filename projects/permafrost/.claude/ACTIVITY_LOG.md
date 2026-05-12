@@ -1,4 +1,12 @@
 
+## 2026-05-12 — Merge feature branch, delete stale branches, modernize HPC script
+
+- Merged `feature/refactor-modular-parallel-clean` into `main` (already done at session resume).
+- Committed HPC run script modernization: project-root auto-resolution from script location, `compute_optimal_nprocs()` for auto-sizing MPI ranks from Nx/Ny/Nz, `run_1d_plotting()` for automatic 1D post-processing, `srun`/`mpiexec` dispatch.
+- Deleted local branch `feature/refactor-modular-parallel-clean` (merged).
+- Deleted stale remote branches: `feature/homogenization`, `feature/permafrost-io-system`, `safe_branch`, `feature/refactor-modular-parallel-clean`.
+- Repository now has a single branch: `main`.
+
 ---
 
 **Session ended:** 2026-05-12 16:01:29
