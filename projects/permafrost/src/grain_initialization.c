@@ -158,7 +158,7 @@ PetscErrorCode InitialSedGrainsGravity(IGA iga,AppCtx *user)
   ierr = PetscRandomSetFromOptions(randcR);CHKERRQ(ierr);
 
   PetscReal xc=0.0,yc=0.0,rc=0.0, dist=0.0, xcaux, xmax,xmin;
-  PetscInt lim=20, upp, n_cand=10, cand, cand_pick, init_cand, nst;
+  PetscInt lim=20, upp=0, n_cand=10, cand=0, cand_pick=0, init_cand=0, nst=0;
   PetscReal x1,x2, y1,y2, r1,r2, AA,BB,CC,EE,a_,b_,c_, x_can,y_can;
   PetscReal xc_cand[n_cand], yc_cand[n_cand];
   PetscReal xxst[lim],yyst[lim],rrst[lim], auxx,auxy,auxr;

@@ -535,7 +535,6 @@ PetscErrorCode FormInitialContactSedPermafrost2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal eps     = user->eps;
     const PetscReal rad_ice = user->RCice;
     const PetscReal rad_sed = user->RCsed;
-    const PetscInt  dim     = user->dim;
 
     const PetscReal tc = 1.0 / (sqrt(2.0) * eps);
 
@@ -558,9 +557,10 @@ PetscErrorCode FormInitialContactSedPermafrost2D(IGA iga, Vec U, AppCtx *user)
         cent_sed[0][0] = 0.5*Lx - rad_sed;  cent_sed[1][0] = 0.5*Ly;
         cent_sed[0][1] = 0.5*Lx + rad_sed;  cent_sed[1][1] = 0.5*Ly;
     }
-    for (PetscInt g = 0; g < 2; g++)
-        for (PetscInt d = 0; d < dim; d++)
-            cent_ice[d][g] = cent_sed[d][g];
+    for (PetscInt g = 0; g < 2; g++) {
+        cent_ice[0][g] = cent_sed[0][g];
+        cent_ice[1][g] = cent_sed[1][g];
+    }
 
     DM da;
     ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);

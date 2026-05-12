@@ -43,6 +43,22 @@ SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 UNIVERSAL_OPTS="$INPUTS_DIR/universal.opts"
 
+# Discover mpiexec: prefer the PETSC-bundled binary (always present when
+# PETSc downloaded MPICH), fall back to whatever is on PATH.
+MPIEXEC=""
+if [[ -n "${PETSC_DIR:-}" && -n "${PETSC_ARCH:-}" ]]; then
+    _petsc_mpi="$PETSC_DIR/$PETSC_ARCH/bin/mpiexec"
+    [[ -x "$_petsc_mpi" ]] && MPIEXEC="$_petsc_mpi"
+fi
+if [[ -z "$MPIEXEC" ]]; then
+    MPIEXEC=$(command -v mpiexec 2>/dev/null || command -v mpirun 2>/dev/null || echo "")
+fi
+if [[ -z "$MPIEXEC" ]]; then
+    echo "❌ Error: mpiexec/mpirun not found."
+    echo "   Set PETSC_DIR and PETSC_ARCH, or add mpiexec to PATH."
+    exit 1
+fi
+
 # Resolve params_file relative to project root if not absolute
 if [[ "$params_file" != /* ]]; then
     params_file="$PROJECT_ROOT/$params_file"
@@ -192,8 +208,9 @@ run_simulation() {
     else
         echo "No SLURM environment detected; running locally with mpiexec."
         echo "Using NPROCS = ${NPROCS}"
+        echo "MPIEXEC      = ${MPIEXEC}"
 
-        mpiexec -n "${NPROCS}" "$EXEC" \
+        "$MPIEXEC" -n "${NPROCS}" "$EXEC" \
             $universal_arg \
             -options_file "$params_file" \
             -output_path  "$folder" \
@@ -332,9 +349,11 @@ if [ -f "$folder/outp.txt" ]; then
     if [[ -n "$PYTHON" ]]; then
         echo ""
         echo "--- Time step diagnostic ---"
+        set +e
         "$PYTHON" "$PROJECT_ROOT/postprocess/plot_timestep.py" \
             --dir "$folder" --save "$folder/timestep.png" \
             2>&1 | sed 's/^/    /'
+        set -e
     fi
 fi
 
