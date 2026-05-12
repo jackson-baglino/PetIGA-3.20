@@ -1,4 +1,9 @@
 
+---
+
+**Session ended:** 2026-05-12 16:11:04
+
+
 ## 2026-05-12 — Merge feature branch, delete stale branches, modernize HPC script
 
 - Merged `feature/refactor-modular-parallel-clean` into `main` (already done at session resume).
