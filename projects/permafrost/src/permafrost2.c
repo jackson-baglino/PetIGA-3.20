@@ -184,6 +184,18 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-RCice", "Mean radius of ice grains", "", user.RCice, &user.RCice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-RCice_dev", "Std dev of radius of ice grains", "", user.RCice_dev, &user.RCice_dev, NULL); CHKERRQ(ierr);
 
+    /* --- Per-grain radii and separation (enclosed grain pair IC) ----------- */
+    user.RCice0    = user.RCice;
+    user.RCice1    = user.RCice;
+    user.RCsed0    = user.RCsed;
+    user.RCsed1    = user.RCsed;
+    user.grain_sep = 0.0;
+    ierr = PetscOptionsReal("-RCice0",    "Outer ice radius of grain 0 (enclosed IC)",       "", user.RCice0,    &user.RCice0,    NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-RCice1",    "Outer ice radius of grain 1 (enclosed IC)",       "", user.RCice1,    &user.RCice1,    NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-RCsed0",    "Sediment core radius of grain 0 (enclosed IC)",   "", user.RCsed0,    &user.RCsed0,    NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-RCsed1",    "Sediment core radius of grain 1 (enclosed IC)",   "", user.RCsed1,    &user.RCsed1,    NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-grain_sep", "Air gap between outer ice surfaces (enclosed IC)", "", user.grain_sep, &user.grain_sep, NULL); CHKERRQ(ierr);
+
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);

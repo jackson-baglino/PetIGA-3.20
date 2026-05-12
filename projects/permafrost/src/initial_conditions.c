@@ -391,54 +391,56 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    const PetscReal Lx      = user->Lx;
-    const PetscReal Ly      = user->Ly;
-    const PetscReal eps     = user->eps;
-    const PetscReal rad_ice = user->RCice;
-    const PetscReal rad_sed = user->RCsed;
-    const PetscInt  dim     = user->dim;
+    const PetscReal Lx         = user->Lx;
+    const PetscReal Ly         = user->Ly;
+    const PetscReal eps        = user->eps;
+    const PetscReal RCice_g[2] = { user->RCice0, user->RCice1 };
+    const PetscReal RCsed_g[2] = { user->RCsed0, user->RCsed1 };
+    const PetscReal sep        = user->grain_sep;
 
-    // Equilibrium Allen-Cahn tanh coefficient
-    // Matches the equilibrium profile phi = 0.5*(1 - tanh(x/(sqrt(2)*eps)))
     const PetscReal tc = 1.0 / (sqrt(2.0) * eps);
-    // const PetscReal tc = 0.5 / eps;  // sharper transition for smaller grains, more diffuse for larger grains
 
     // -------------------------------------------------------------------------
     // Validate geometry
     // -------------------------------------------------------------------------
-    if (2.0 * rad_ice >= PetscMin(Lx, Ly))
+    if (sep < 0.0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                "Ice grain radius %.2e too large for domain (max %.2e)",
-                rad_ice, PetscMin(Lx, Ly) / 2.0);
-
-    if (rad_sed >= rad_ice)
-        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                "Sediment radius %.2e must be smaller than ice radius %.2e",
-                rad_sed, rad_ice);
-
-    // -------------------------------------------------------------------------
-    // Grain centers
-    // Two ice grains arranged along the longer domain axis,
-    // each containing a concentric sediment grain
-    // -------------------------------------------------------------------------
-    PetscReal cent_ice[2][2], cent_sed[2][2];
-
-    if (Ly >= Lx) {
-        cent_ice[0][0] = 0.5*Lx;  cent_ice[1][0] = 0.5*Ly - rad_ice;
-        cent_ice[0][1] = 0.5*Lx;  cent_ice[1][1] = 0.5*Ly + rad_ice;
-
-        cent_sed[0][0] = cent_ice[0][0];  cent_sed[1][0] = cent_ice[1][0] + rad_ice - rad_sed;
-        cent_sed[0][1] = cent_ice[0][1];  cent_sed[1][1] = cent_ice[1][1] - rad_ice + rad_sed;
-    } else {
-        cent_ice[0][0] = 0.5*Lx - rad_ice;  cent_ice[1][0] = 0.5*Ly;
-        cent_ice[0][1] = 0.5*Lx + rad_ice;  cent_ice[1][1] = 0.5*Ly;
-
-        cent_sed[0][0] = cent_ice[0][0] + rad_ice - rad_sed;  cent_sed[1][0] = cent_ice[1][0];
-        cent_sed[0][1] = cent_ice[0][1] - rad_ice + rad_sed;  cent_sed[1][1] = cent_ice[1][1];
-    }
+                "grain_sep must be >= 0 (got %.2e)", sep);
     for (PetscInt g = 0; g < 2; g++)
-        for (PetscInt d = 0; d < dim; d++)
-            cent_sed[d][g] = cent_ice[d][g];
+        if (RCsed_g[g] >= RCice_g[g])
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "RCsed%d (%.2e) must be smaller than RCice%d (%.2e)",
+                    g, RCsed_g[g], g, RCice_g[g]);
+
+    // -------------------------------------------------------------------------
+    // Grain centres: symmetric about domain midpoint with air gap 'sep'.
+    // Arrangement axis: vertical (y) when Ly >= Lx, horizontal (x) otherwise.
+    // Sediment core is concentric with its host ice grain.
+    // -------------------------------------------------------------------------
+    PetscReal cent_ice[2][2]; /* [coord_index][grain_index] */
+    if (Ly >= Lx) {
+        cent_ice[0][0] = 0.5*Lx;  cent_ice[1][0] = 0.5*Ly - RCice_g[0] - 0.5*sep;
+        cent_ice[0][1] = 0.5*Lx;  cent_ice[1][1] = 0.5*Ly + RCice_g[1] + 0.5*sep;
+    } else {
+        cent_ice[0][0] = 0.5*Lx - RCice_g[0] - 0.5*sep;  cent_ice[1][0] = 0.5*Ly;
+        cent_ice[0][1] = 0.5*Lx + RCice_g[1] + 0.5*sep;  cent_ice[1][1] = 0.5*Ly;
+    }
+    /* Validate both grains fit inside the domain */
+    if (Ly >= Lx) {
+        if (cent_ice[1][0] - RCice_g[0] <= 0.0 || cent_ice[1][1] + RCice_g[1] >= Ly)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "Ice grains fall outside domain — reduce radii/sep or increase Ly");
+    } else {
+        if (cent_ice[0][0] - RCice_g[0] <= 0.0 || cent_ice[0][1] + RCice_g[1] >= Lx)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "Ice grains fall outside domain — reduce radii/sep or increase Lx");
+    }
+    /* Sediment cores are concentric with ice grains */
+    PetscReal cent_sed[2][2];
+    for (PetscInt g = 0; g < 2; g++) {
+        cent_sed[0][g] = cent_ice[0][g];
+        cent_sed[1][g] = cent_ice[1][g];
+    }
 
 
     // -------------------------------------------------------------------------
@@ -466,12 +468,12 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
             // Ice: sum of grain profiles minus sediment cores (CSG subtraction)
             PetscReal ice = 0.0, sed = 0.0;
             for (PetscInt g = 0; g < 2; g++) {
-                PetscReal distIcePlus  = sqrt(SQ(x - cent_ice[0][g]) + SQ(y - cent_ice[1][g]));
-                PetscReal distIceMinus = sqrt(SQ(x - cent_sed[0][g]) + SQ(y - cent_sed[1][g]));
+                PetscReal dIce = sqrt(SQ(x - cent_ice[0][g]) + SQ(y - cent_ice[1][g]));
+                PetscReal dSed = sqrt(SQ(x - cent_sed[0][g]) + SQ(y - cent_sed[1][g]));
 
-                ice += 0.5 - 0.5*tanh(tc * (distIcePlus - rad_ice));
-                ice -= 0.5 - 0.5*tanh(tc * (distIceMinus - rad_sed));
-                sed += 0.5 - 0.5*tanh(tc * (distIceMinus - rad_sed));
+                ice += 0.5 - 0.5*tanh(tc * (dIce - RCice_g[g]));
+                ice -= 0.5 - 0.5*tanh(tc * (dSed - RCsed_g[g]));
+                sed += 0.5 - 0.5*tanh(tc * (dSed - RCsed_g[g]));
             }
 
             ice = PetscMax(0.0, PetscMin(1.0, ice));
@@ -1755,26 +1757,38 @@ PetscErrorCode FormInitialEnclosed1D(IGA iga, Vec U, AppCtx *user)
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    const PetscReal Lx      = user->Lx;
-    const PetscReal eps     = user->eps;
-    const PetscReal RCice   = user->RCice;
-    const PetscReal RCsed   = user->RCsed;
-    const PetscReal tc      = 1.0 / (PetscSqrtReal(2.0) * eps);
+    const PetscReal Lx        = user->Lx;
+    const PetscReal eps       = user->eps;
+    const PetscReal RCice_g[2] = { user->RCice0, user->RCice1 };
+    const PetscReal RCsed_g[2] = { user->RCsed0, user->RCsed1 };
+    const PetscReal sep       = user->grain_sep;
+    const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps);
 
-    const PetscReal xc[2] = { 0.5*Lx - RCice, 0.5*Lx + RCice };
+    /* Grain centres placed symmetrically about the domain midpoint with gap sep */
+    const PetscReal xc[2] = {
+        0.5*Lx - RCice_g[0] - 0.5*sep,
+        0.5*Lx + RCice_g[1] + 0.5*sep
+    };
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (1D enclosed grain pair) ---\n"
-        "  grain 0 centre: x = %.4e m,  grain 1 centre: x = %.4e m\n"
-        "  RCice = %.4e m,  RCsed = %.4e m\n",
-        xc[0], xc[1], RCice, RCsed);
+        "  grain 0: centre = %.4e m,  RCice = %.4e m,  RCsed = %.4e m\n"
+        "  grain 1: centre = %.4e m,  RCice = %.4e m,  RCsed = %.4e m\n"
+        "  grain_sep = %.4e m\n",
+        xc[0], RCice_g[0], RCsed_g[0],
+        xc[1], RCice_g[1], RCsed_g[1], sep);
 
-    if (RCsed >= RCice)
+    if (sep < 0.0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                "RCsed (%.2e) must be smaller than RCice (%.2e)", RCsed, RCice);
-    if (xc[0] <= 0.0 || xc[1] >= Lx)
+                "grain_sep must be >= 0 (got %.2e)", sep);
+    for (PetscInt g = 0; g < 2; g++)
+        if (RCsed_g[g] >= RCice_g[g])
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "RCsed%d (%.2e) must be smaller than RCice%d (%.2e)",
+                    g, RCsed_g[g], g, RCice_g[g]);
+    if (xc[0] - RCice_g[0] <= 0.0 || xc[1] + RCice_g[1] >= Lx)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                "Ice grain centres fall outside domain — reduce RCice or increase Lx");
+                "Ice grains fall outside domain — reduce radii/sep or increase Lx");
 
     DM            da;
     Field        *u;
@@ -1791,9 +1805,9 @@ PetscErrorCode FormInitialEnclosed1D(IGA iga, Vec U, AppCtx *user)
 
         PetscReal ice = 0.0, sed = 0.0;
         for (PetscInt g = 0; g < 2; g++) {
-            PetscReal dist = PetscAbsReal(x - xc[g]);
-            PetscReal phi_outer = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCice));
-            PetscReal phi_inner = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCsed));
+            PetscReal dist      = PetscAbsReal(x - xc[g]);
+            PetscReal phi_outer = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCice_g[g]));
+            PetscReal phi_inner = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCsed_g[g]));
             ice += phi_outer - phi_inner;
             sed += phi_inner;
         }

@@ -53,6 +53,11 @@ typedef struct {
   PetscReal RCice, RCsed;  // Mean radius of curvature for ice and sediment grains
   PetscReal RCice_dev, RCsed_dev;  // Standard deviation of radius of curvature for ice and sediment
 
+  // Per-grain radii and separation for enclosed grain pair IC
+  PetscReal RCice0, RCice1;   /* Outer ice radius of grain 0 / grain 1 (default: RCice) */
+  PetscReal RCsed0, RCsed1;   /* Sediment core radius of grain 0 / grain 1 (default: RCsed) */
+  PetscReal grain_sep;         /* Air gap between outer ice surfaces (m); 0 = tangent */
+
   // Arrays storing geometry information for ice and sediment grains
   PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
   PetscReal radius[200];  // Radii of individual ice grains
