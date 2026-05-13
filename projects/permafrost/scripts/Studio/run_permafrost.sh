@@ -19,6 +19,8 @@ set -uo pipefail
 folder=""
 name=""
 sim_exit=0
+NPROCS=1
+MAX_LOCAL_CORES=12   # physical cores on this Mac
 
 # ---------------------------------------------------------------------------
 # Resolve project root — always two levels above this script's location
@@ -92,6 +94,41 @@ if (( $(echo "$t_final <= 0" | bc -l) )); then
     echo "❌ Error: t_final must be > 0. Got $t_final"
     exit 1
 fi
+
+# ---------------------------------------------------------------------------
+# compute_optimal_nprocs
+# Reads Nx/Ny/Nz from the opts file, targets ~10 000 DOFs/core, and caps at
+# MAX_LOCAL_CORES (12).  Sets the global NPROCS.
+# ---------------------------------------------------------------------------
+compute_optimal_nprocs() {
+    local Nx Ny Nz total_dofs
+    local TARGET_DOFS_PER_CORE=10000
+
+    Nx=$(awk '$1=="-Nx"{print $2}' "$params_file" | head -n1)
+    Ny=$(awk '$1=="-Ny"{print $2}' "$params_file" | head -n1)
+    Nz=$(awk '$1=="-Nz"{print $2}' "$params_file" | head -n1)
+
+    [[ -z "${Nx:-}" ]] && Nx=1
+    [[ -z "${Ny:-}" ]] && Ny=1
+    [[ -z "${Nz:-}" ]] && Nz=1
+
+    total_dofs=$((4 * Nx * Ny * Nz))
+    NPROCS=$(((total_dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE))
+    (( NPROCS < 1 )) && NPROCS=1
+
+    # On macOS use sysctl; fall back to nproc for Linux
+    local hw_cores
+    hw_cores=$(sysctl -n hw.logicalcpu 2>/dev/null || nproc 2>/dev/null || echo $MAX_LOCAL_CORES)
+    local cap=$(( hw_cores < MAX_LOCAL_CORES ? hw_cores : MAX_LOCAL_CORES ))
+    (( NPROCS > cap )) && NPROCS=$cap
+
+    echo "------------------------------------------------------------"
+    echo "Grid from opts: Nx=${Nx}, Ny=${Ny}, Nz=${Nz}"
+    echo "Total DoFs:     4 × Nx × Ny × Nz = ${total_dofs}"
+    echo "Target/core:    ${TARGET_DOFS_PER_CORE} DoFs"
+    echo "Chosen NPROCS:  ${NPROCS}  (cap: ${cap} logical cores)"
+    echo "------------------------------------------------------------"
+}
 
 # ---------------------------------------------------------------------------
 # compile_code
@@ -214,7 +251,7 @@ run_simulation() {
     echo "Universal    : ${UNIVERSAL_OPTS}"
     echo "Options file : $params_file"
     echo "Output path  : $folder"
-    echo "Processes    : 12"
+    echo "Processes    : $NPROCS"
     echo ""
 
     export folder
@@ -223,7 +260,7 @@ run_simulation() {
     [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
 
     set +e
-    mpiexec -np 12 "$EXEC"              \
+    mpiexec -np "$NPROCS" "$EXEC"       \
         $universal_arg                  \
         -options_file "$params_file"    \
         -output_path  "$folder"         \
@@ -343,6 +380,7 @@ echo "  Options      : $params_file"
 echo "  Title        : $title"
 echo "========================================================================="
 
+compute_optimal_nprocs
 compile_code
 create_folder
 stage_output_folder
