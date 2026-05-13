@@ -18,8 +18,8 @@
 -periodic 0                             # periodic BCs off
 
 # ---------- Output ----------
--n_out 0                                # use -outp instead of fixed snapshot count
--outp 1                                 # write output every N time steps
+-n_out 200                                # use -outp instead of fixed snapshot count
+-outp 0                                 # write output every N time steps
 -Permafrost_output 1                    # enable sol*.dat field output
 -Permafrost_monitor 1                   # enable monitor table output
 

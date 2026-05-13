@@ -39,7 +39,7 @@
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-2                          # initial time step (s)
--t_final 864000.0                       # total simulation time (s) — 10 days
+-t_final 1814400.0                      # total simulation time (s) — 21 days
 
 # ---------- Phase-Field Physics ----------
 -eps 3.56e-07                           # diffuse interface half-width (m)
@@ -47,7 +47,7 @@
 -t_sed_freeze 300                       # 3-phase duration (s) before sediment freezes
 
 # ---------- Thermal & Humidity ----------
--humidity 0.95
+-humidity 1.00
 -temp -20.0
 -grad_temp0 0.0,0.0,0.0
 
