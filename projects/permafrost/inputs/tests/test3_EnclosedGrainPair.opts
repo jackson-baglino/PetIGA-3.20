@@ -19,8 +19,8 @@
 
 # ---------- Domain ----------
 -dim 2
--Nx 95
--Ny 190
+-Nx 190
+-Ny 380
 -Nz 1
 -Lx 6.25e-05                            # domain length in x (m)
 -Ly 1.25e-04                            # domain length in y (m)
@@ -40,7 +40,7 @@
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-2                          # initial time step (s)
--t_final 1814400.0                      # total simulation time (s) — 21 days
+-t_final 15552000.0                      # total simulation time (s) — 180 days
 
 # ---------- Phase-Field Physics ----------
 -eps 3.56e-07                           # diffuse interface half-width (m)
