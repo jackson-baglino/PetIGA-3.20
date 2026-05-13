@@ -1,4 +1,28 @@
 
+## 2026-05-13 — Centralize penalty params in universal.opts; clean all test opts files
+
+- Moved `t_sed_freeze` (300 s), `difvap_pen` (1e-4), `k_pen` (1e5), and `Lambda` (1e2) from individual test opts files into `universal.opts`, using values from the working `test_1D_IceSlab.opts`.
+- Rewrote all 8 remaining test opts files (`test1–test5`, `test_1D_*`, `test_2D_IceSlab`) with consistent header blocks and section labels.
+- Added `-flag_avenue 1` to all files that were missing it.
+- Removed duplicate SNES/KSP/PC settings (already in `universal.opts`) from test1/test2/test4.
+- `test_2D_IceSlab.opts` retains `t_sed_freeze 60` as an explicit override (geometry needs shorter freeze than default 300 s).
+- `test1_IceCap.opts` retains `-dof 3` override (no sediment DOF for ice-cap geometry).
+
+---
+
+**Session ended:** 2026-05-13 12:19:11
+
+
+---
+
+**Session ended:** 2026-05-13 12:05:04
+
+
+---
+
+**Session ended:** 2026-05-13 11:45:35
+
+
 ## 2026-05-13 — Analytical Jacobian for Avenue 1 + speedups
 
 - Replaced `IGAFormIJacobianFD` with fully analytical `Jacobian_A1` in `src/assembly.c`.
