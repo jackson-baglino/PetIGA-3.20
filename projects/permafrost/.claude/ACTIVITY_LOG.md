@@ -1,4 +1,14 @@
 
+## 2026-05-13 — Analytical Jacobian for Avenue 1 + speedups
+
+- Replaced `IGAFormIJacobianFD` with fully analytical `Jacobian_A1` in `src/assembly.c`.
+- Jacobian covers all three Avenue 1 modes: relaxation, 3-phase pre-freeze, 2-phase frozen-sediment.
+- PETSc Jacobian checker confirms accuracy: `||J - Jfd||/||J|| = 1.9e-9` (relaxation), `1e-7–9e-6` (active physics).
+- Hoisted 8 loop-invariant scalars out of `Residual_A1`'s per-node loop.
+- Disabled Avenues 2 and 3 (bodies replaced with no-op stubs; dispatcher raises error with clear message).
+- Switched `permafrost2.c` to use analytical `Jacobian` instead of `IGAFormIJacobianFD`.
+- Compiles clean (zero warnings); Newton converges in 1–3 iterations per step.
+
 ---
 
 **Session ended:** 2026-05-13 11:07:12
