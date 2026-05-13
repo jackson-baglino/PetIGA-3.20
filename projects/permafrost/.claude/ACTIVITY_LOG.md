@@ -1,4 +1,14 @@
 
+## 2026-05-13 — Add slab_and_grains 2D initial condition for ice migration
+
+- Added `FormInitialSlabAndGrains2D` to `src/initial_conditions.c`: solid ice slab on the right (`x_slab_frac` fraction of Lx), random non-overlapping ice + sediment grains on the left, with grains placed using the same algorithm as `FormInitialRandomPackedPermafrost2D` but restricted to the grain region.
+- Used `PetscMalloc1`/`PetscFree` for grain arrays (no VLAs, per code style).
+- Added `x_slab_frac` field to `AppCtx` in `include/NASA_types.h` (default 0.175).
+- Registered `-x_slab_frac` option in `src/permafrost2.c`; added `"slab_and_grains"` to IC dispatch.
+- Declared function in `include/initial_conditions.h`.
+- Created `inputs/tests/test5_SlabAndGrains.opts` (500×250 mesh, 15 ice + 12 sed grains, eps=5e-7, 10-day run).
+- Verified with `mpiexec -n 4`: IC sets up correctly, phase bounds [0,1], SNES converges in 1-2 iterations.
+
 ---
 
 **Session ended:** 2026-05-13 08:13:34
