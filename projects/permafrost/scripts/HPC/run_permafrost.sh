@@ -26,14 +26,24 @@ params_file="${1:-inputs/tests/test3_EnclosedGrainPair.opts}"
 title="${2:-permafrost_}"
 
 ###############################################################################
-# Resolve project root
-# Script lives at: <project_root>/scripts/HPC/run_permafrost.sh
+# Resolve project root.
+#
+# When submitted via `sbatch`, SLURM copies the script to a temp path under
+# /var/spool/..., so BASH_SOURCE[0] no longer points to the source tree.
+# SLURM exports SLURM_SUBMIT_DIR = the directory where `sbatch` was called,
+# which must be the project root.  Fall back to BASH_SOURCE resolution when
+# running the script directly (local or interactive HPC session).
 ###############################################################################
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+if [[ -n "${SLURM_SUBMIT_DIR:-}" ]]; then
+    PROJECT_ROOT="$SLURM_SUBMIT_DIR"
+else
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+fi
 
 if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
     echo "❌ Error: Could not find makefile in resolved project root: $PROJECT_ROOT"
+    echo "   Run sbatch from the project root directory."
     exit 1
 fi
 
