@@ -22,6 +22,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# Load cost utilities (graceful no-op if missing)
+if [[ -f "$SCRIPT_DIR/hpc_cost.sh" ]]; then
+    # shellcheck source=scripts/HPC/hpc_cost.sh
+    source "$SCRIPT_DIR/hpc_cost.sh"
+else
+    hpc_cost_pre_submit() { :; }
+fi
+
 if [[ "$#" -lt 2 ]]; then
     echo "Usage: $0 <opts_file> <title_prefix> [extra_sbatch_flags...]"
     exit 1
@@ -73,6 +81,7 @@ echo "  Target   : ${TARGET_DOFS_PER_CORE} DoFs/core"
 echo "  NPROCS   : ${NPROCS}"
 echo "  Nodes    : ${NNODES}  (${NTASKS_PER_NODE} tasks/node)"
 echo "============================================================"
+hpc_cost_pre_submit "${NPROCS}"
 
 # ---------------------------------------------------------------------------
 # Submit — command-line flags override #SBATCH directives in run_permafrost.sh

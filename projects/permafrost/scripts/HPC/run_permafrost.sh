@@ -47,6 +47,15 @@ if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
     exit 1
 fi
 
+# Load cost utilities (graceful no-op if missing)
+_HPC_COST_SH="$PROJECT_ROOT/scripts/HPC/hpc_cost.sh"
+if [[ -f "$_HPC_COST_SH" ]]; then
+    # shellcheck source=scripts/HPC/hpc_cost.sh
+    source "$_HPC_COST_SH"
+else
+    hpc_cost_post_job() { :; }
+fi
+
 EXEC="$PROJECT_ROOT/permafrost"
 SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
@@ -336,6 +345,8 @@ run_1d_plotting() {
 ###############################################################################
 # Main workflow
 ###############################################################################
+JOB_START_TIME=$(date +%s)
+
 echo ""
 echo "========================================================================="
 echo "  Permafrost simulation workflow (HPC)"
@@ -377,5 +388,10 @@ fi
 echo "  Results: $folder"
 echo "========================================================================="
 echo ""
+
+hpc_cost_post_job \
+    "${NPROCS:-1}" \
+    "$(( $(date +%s) - JOB_START_TIME ))" \
+    "${SLURM_JOB_ID:-}"
 
 exit "${sim_exit:-0}"
