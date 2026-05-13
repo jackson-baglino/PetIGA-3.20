@@ -12,7 +12,7 @@
 #       -options_file inputs/universal.opts \
 #       -options_file inputs/tests/test_1D_IceSlab.opts
 #
-# Solver/penalty defaults are in inputs/universal.opts.
+# Penalty and solver defaults are in inputs/universal.opts.
 # =============================================================================
 
 # ---------- Initial Condition ----------
@@ -20,7 +20,7 @@
 
 # ---------- Domain ----------
 -dim 1
--Nx 228
+-Nx 152
 -Lx 1.00e-04                            # domain length in x (m)
 
 # ---------- Time Stepping ----------
@@ -28,9 +28,8 @@
 -t_final 864000.0                       # total simulation time (s) — 10 days
 
 # ---------- Phase-Field Physics ----------
--eps 9.3295e-07                         # diffuse interface half-width (m)
+-eps 4.6648e-07                         # diffuse interface half-width (m)
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
--t_sed_freeze 60                        # 3-phase duration (s) before sediment freezes
 
 # ---------- Thermal & Humidity ----------
 -humidity 0.95

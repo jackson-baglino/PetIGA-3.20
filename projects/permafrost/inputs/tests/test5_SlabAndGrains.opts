@@ -1,31 +1,52 @@
--ic_type slab_and_grains
+# =============================================================================
+# test5_SlabAndGrains.opts — 2D ice slab with random grain region
+#
+# Purpose: Study ice migration driven by sublimation from a solid ice slab
+#          into a region of randomly-packed ice and sediment grains. The slab
+#          occupies the rightmost x_slab_frac fraction of the domain; grains
+#          fill the left region.
+#
+# Usage:
+#   mpiexec -np N ./permafrost \
+#       -options_file inputs/universal.opts \
+#       -options_file inputs/tests/test5_SlabAndGrains.opts
+#
+# Penalty and solver defaults are in inputs/universal.opts.
+# =============================================================================
+
+# ---------- Initial Condition ----------
+-ic_type slab_and_grains                # ice slab on right, random grains on left
+
+# ---------- Domain ----------
 -dim 2
 -Nx 758
 -Ny 380
--Lx 2.5e-4
--Ly 1.25e-4
+-Nz 1
+-Lx 2.5e-4                             # domain length in x (m)
+-Ly 1.25e-4                            # domain length in y (m)
 -Lz 0
 
--NCice 15
--NCsed 12
--RCice 1.0e-5
--RCsed 1.3e-5
--RCice_dev 0.15
--RCsed_dev 0.15
--x_slab_frac 0.175
+# ---------- Grain Distribution ----------
+-NCice 15                               # number of ice grains in grain region
+-NCsed 12                               # number of sediment grains in grain region
+-RCice 1.0e-5                           # mean ice grain radius (m)
+-RCsed 1.3e-5                           # mean sediment grain radius (m); > RCice
+-RCice_dev 0.15                         # ice radius polydispersity (fractional std dev)
+-RCsed_dev 0.15                         # sediment radius polydispersity (fractional std dev)
+-x_slab_frac 0.175                      # fraction of Lx occupied by the right-side ice slab
 
--delt_t 1.0e-2
--t_final 1814400.0
+# ---------- Time Stepping ----------
+-delt_t 1.0e-2                          # initial time step (s)
+-t_final 1814400.0                      # total simulation time (s) — 21 days
 
--eps 3.5e-7
--flag_avenue 1
--t_sed_freeze 300
+# ---------- Phase-Field Physics ----------
+-eps 3.5e-7                             # diffuse interface half-width (m)
+-flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
 
+# ---------- Thermal & Humidity ----------
 -humidity 0.95
 -temp -20.0
 -grad_temp0 0.0,0.0,0.0
 
--difvap_pen 1.0e-4
--k_pen 1e5
--Lambda 1.0e2
--NRmax 8
+# ---------- Time Stepping Override ----------
+-NRmax 8                                # raised from 5 to tolerate stiff transients

@@ -14,29 +14,30 @@
 # ---------- DOFs & discretization (fixed for all permafrost sims) ----------
 -dof 4                                  # ice / temperature / vapor / sediment
 -p 2                                    # B-spline polynomial order
--C 0                                    # B-spline continuity (C^0)
+-C 1                                    # B-spline continuity (C^1 for p=2)
 -periodic 0                             # periodic BCs off
 
 # ---------- Output ----------
--n_out 200                                # use -outp instead of fixed snapshot count
--outp 0                                 # write output every N time steps
+-n_out 0                                # use -outp instead of fixed snapshot count
+-outp 1                                 # write output every N time steps
 -Permafrost_output 1                    # enable sol*.dat field output
 -Permafrost_monitor 1                   # enable monitor table output
 
 # ---------- Phase-field defaults ----------
 -flag_tIC 0                             # IC variant: 0=centered slab, 2=flat interface
 -n_relax 1                              # AC-only relaxation steps before full physics
+-t_sed_freeze 300                       # 3-phase duration (s) before sediment freezes
 
 # ---------- Boundary condition defaults ----------
 -flag_BC_Tfix 0                         # do not fix T at boundaries
 -flag_BC_rhovfix 0                      # do not fix rhov at boundaries
 -flag_Tdep 0                            # temperature-independent material properties
 
-# ---------- Penalty defaults (override per simulation as needed) ----------
--difvap_pen 1.0e-7                      # D_pen = difvap_pen * difvap (in ice/sed)
--k_pen 1e9                              # vapor interface equilibrium stiffness
+# ---------- Penalty defaults ----------
+-difvap_pen 1.0e-4                      # D_pen = difvap_pen * difvap (in ice/sed regions)
+-k_pen 1e5                              # vapor interface equilibrium stiffness
 -k_sed_pen -1                           # sediment restoring stiffness (-1 = auto: 1e-4/eps^2)
--Lambda 1.0                             # triple-junction free-energy penalty strength
+-Lambda 1.0e2                           # triple-junction free-energy penalty strength
 
 # ---------- Adaptive time stepping ----------
 -adap 1                                 # enable adaptive dt

@@ -1,9 +1,9 @@
 # =============================================================================
-# test_1D_EnclosedGrainPair.opts — 1D enclosed grain pair (cross-section)
+# test_1D_EnclosedGrainPair.opts — 1D cross-section of enclosed grain pair
 #
 # Purpose: 1D cross-section of the 2D enclosed grain pair taken along a
 #          vertical line through x = 0.5*Lx_2D. Two concentric ice-shell /
-#          sediment-core pairs centred at 0.5*Lx ± RCice (tangent at midpoint).
+#          sediment-core pairs centred at 0.5*Lx +/- RCice (tangent at midpoint).
 #          Domain length Lx = Ly of the 2D test; mesh Nx = Ny of the 2D test.
 #
 # Usage:
@@ -11,7 +11,7 @@
 #       -options_file inputs/universal.opts \
 #       -options_file inputs/tests/test_1D_EnclosedGrainPair.opts
 #
-# Solver/penalty defaults are in inputs/universal.opts; overrides below.
+# Penalty and solver defaults are in inputs/universal.opts.
 # =============================================================================
 
 # ---------- Initial Condition ----------
@@ -19,19 +19,19 @@
 
 # ---------- Domain ----------
 -dim 1
--Nx 380                                 # = Ny of 2D test
--Lx 1.25e-04                            # = Ly of 2D test (m)
+-Nx 190                                 # matches Ny of the 2D test
+-Lx 1.25e-04                            # matches Ly of the 2D test (m)
 
-# ---------- Grain Radii (used by FormInitialEnclosed1D) ----------
--RCice 1.875e-5                         # ice shell outer radius — shared default for both grains (m)
--RCsed 8.75e-6                          # sediment core radius — shared default for both grains (m)
-#
-# Per-grain overrides (uncomment and set to create asymmetric grains):
+# ---------- Grain Radii ----------
+-RCice 1.875e-5                         # ice shell outer radius — both grains (m)
+-RCsed 8.75e-6                          # sediment core radius — both grains (m)
+
+# Per-grain overrides (uncomment to create asymmetric grains):
 # -RCice0 1.2e-5                        # outer ice radius of grain 0 (default: RCice)
 # -RCice1 2.5e-5                        # outer ice radius of grain 1 (default: RCice)
 # -RCsed0 6.0e-6                        # sediment core radius of grain 0 (default: RCsed)
 # -RCsed1 6.0e-6                        # sediment core radius of grain 1 (default: RCsed)
-# -grain_sep 5.0e-6                     # air gap between outer ice surfaces; 0 = tangent (default)
+# -grain_sep 5.0e-6                     # air gap between outer ice surfaces; 0 = tangent
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-2                          # initial time step (s)
@@ -40,17 +40,11 @@
 # ---------- Phase-Field Physics ----------
 -eps 9.3295e-07                         # diffuse interface half-width (m)
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
--t_sed_freeze 300                       # 3-phase duration (s) before sediment freezes
 
 # ---------- Thermal & Humidity ----------
 -humidity 0.95
 -temp -20.0
 -grad_temp0 0.0,0.0,0.0
 
-# ---------- Penalty overrides (stiffer geometry requires softer penalties) ----------
--difvap_pen 1.0e-5                      # raised from 1e-7 to reduce Newton stiffness
--k_pen 1e6                              # reduced from 1e9 to reduce algebraic stiffness
--Lambda 1.0e2                           # raised from 1.0 to suppress spurious air at ice-sed contact
-
-# ---------- TS override ----------
+# ---------- Time Stepping Override ----------
 -NRmax 8                                # raised from 5 to tolerate stiff transients

@@ -10,7 +10,7 @@
 #       -options_file inputs/universal.opts \
 #       -options_file inputs/tests/test_2D_IceSlab.opts
 #
-# Solver/penalty defaults are in inputs/universal.opts.
+# Penalty and solver defaults are in inputs/universal.opts.
 # =============================================================================
 
 # ---------- Initial Condition ----------
@@ -32,12 +32,12 @@
 # ---------- Phase-Field Physics ----------
 -eps 9.3295e-07                         # diffuse interface half-width (m)
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
--t_sed_freeze 60                        # 3-phase duration (s) before sediment freezes
+-t_sed_freeze 60                        # override universal 300 s: shorter freeze for this geometry
 
 # ---------- Thermal & Humidity ----------
 -humidity 0.95
 -temp -20.0
 -grad_temp0 0.0,0.0,0.0
 
-# ---------- Penalty overrides ----------
--k_sed_pen 1e9                          # sediment restoring stiffness (override universal -1)
+# ---------- Penalty Override ----------
+-k_sed_pen 1e9                          # sediment restoring stiffness (override universal auto)
