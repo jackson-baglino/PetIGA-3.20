@@ -340,6 +340,8 @@ int main(int argc, char *argv[]) {
     if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ny = %d", Ny);
     if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Nz = %d", Nz);
     PetscPrintf(PETSC_COMM_WORLD, "\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Polynomial order:             p = %d \n", p);
+    PetscPrintf(PETSC_COMM_WORLD, "Continuity order:             C = %d \n", C);
     PetscPrintf(PETSC_COMM_WORLD, "Time stepping:                delt_t = %.2e s, t_final = %.2e s, n_out = %d \n", delt_t, t_final, n_out);
     PetscPrintf(PETSC_COMM_WORLD, "Initial conditions:           T = %.2f °C, humidity = %.2f \n", temp, humidity);
     PetscPrintf(PETSC_COMM_WORLD, "Interface width:              eps = %.2e m \n", eps);
@@ -468,8 +470,8 @@ int main(int argc, char *argv[]) {
 
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
-    // ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
-    ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
+    ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
+    // ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
 
     /* Boundary conditions (could 'functionalize' this at some point) */
     // Set vapor density BCs
