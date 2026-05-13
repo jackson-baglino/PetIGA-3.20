@@ -1,4 +1,9 @@
 
+---
+
+**Session ended:** 2026-05-13 10:34:57
+
+
 ## 2026-05-13 — Add slab_and_grains 2D initial condition for ice migration
 
 - Added `FormInitialSlabAndGrains2D` to `src/initial_conditions.c`: solid ice slab on the right (`x_slab_frac` fraction of Lx), random non-overlapping ice + sediment grains on the left, with grains placed using the same algorithm as `FormInitialRandomPackedPermafrost2D` but restricted to the grain region.

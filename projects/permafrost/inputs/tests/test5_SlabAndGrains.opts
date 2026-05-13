@@ -1,7 +1,7 @@
 -ic_type slab_and_grains
 -dim 2
--Nx 500
--Ny 250
+-Nx 758
+-Ny 380
 -Lx 2.5e-4
 -Ly 1.25e-4
 -Lz 0
@@ -15,7 +15,7 @@
 -x_slab_frac 0.175
 
 -delt_t 1.0e-2
--t_final 864000.0
+-t_final 0.0
 
 -eps 5.0e-7
 -flag_avenue 1

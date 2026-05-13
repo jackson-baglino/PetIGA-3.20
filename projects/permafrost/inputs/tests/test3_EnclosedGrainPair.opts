@@ -29,7 +29,7 @@
 # ---------- Grain Radii (used by FormInitialEnclosedPermafrost2D) ----------
 # -RCice 1.875e-5                         # ice shell outer radius — shared default for both grains (m)
 # -RCsed 8.75e-6                          # sediment core radius — shared default for both grains (m)
-#
+
 # Per-grain overrides (uncomment and set to create asymmetric grains):
 -RCice0 1.2e-5                        # outer ice radius of grain 0 (default: RCice)
 -RCice1 2.5e-5                        # outer ice radius of grain 1 (default: RCice)
