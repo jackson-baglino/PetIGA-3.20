@@ -176,14 +176,14 @@ stage_output_folder() {
     [ -f "$UNIVERSAL_OPTS" ] && cp "$UNIVERSAL_OPTS" "$folder/"
     cp "$params_file" "$folder/$(basename "$params_file")"
 
-    # Copy post-processing scripts if they exist
-    for script in plotpermafrost.py plotSSA.py plotPorosity.py; do
-        if [ -f "$SCRIPTS_DIR/$script" ]; then
-            cp "$SCRIPTS_DIR/$script" "$folder/"
-        else
-            echo "⚠️  Warning: $script not found in $SCRIPTS_DIR — skipping."
-        fi
-    done
+    # Post-processing scripts — copy the full postprocess/ directory
+    local POSTPROCESS="$PROJECT_ROOT/postprocess"
+    if [ -d "$POSTPROCESS" ]; then
+        cp -r "$POSTPROCESS" "$folder/postprocess"
+        echo "  Copied postprocess/ → $folder/postprocess/"
+    else
+        echo "⚠️  postprocess/ directory not found at $POSTPROCESS — skipping."
+    fi
 
     # Copy this run script itself
     cp "${BASH_SOURCE[0]}" "$folder/run_permafrost.sh"

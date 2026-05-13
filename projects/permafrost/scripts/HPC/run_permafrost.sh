@@ -139,15 +139,26 @@ create_folder() {
 }
 
 ###############################################################################
-# Stage output folder — copy opts files and run script before the run
+# Stage output folder — copy opts files, run script, and post-processing
 ###############################################################################
 stage_output_folder() {
     echo ""
     echo "--- Staging output folder ---"
 
+    # Opts files and this run script
     [ -f "$UNIVERSAL_OPTS" ] && cp "$UNIVERSAL_OPTS" "$folder/"
     cp "$params_file" "$folder/$(basename "$params_file")"
     cp "${BASH_SOURCE[0]}" "$folder/run_permafrost.sh"
+
+    # Post-processing scripts — copy the full postprocess/ directory so that
+    # results can be reproduced without access to the source tree
+    local POSTPROCESS="$PROJECT_ROOT/postprocess"
+    if [ -d "$POSTPROCESS" ]; then
+        cp -r "$POSTPROCESS" "$folder/postprocess"
+        echo "  Copied postprocess/ → $folder/postprocess/"
+    else
+        echo "⚠️  postprocess/ directory not found at $POSTPROCESS — skipping."
+    fi
 
     echo "✅ Staging complete."
 }
