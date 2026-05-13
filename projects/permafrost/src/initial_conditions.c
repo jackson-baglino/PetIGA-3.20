@@ -1255,7 +1255,273 @@ PetscErrorCode FormInitialRandomPackedPermafrost2D(IGA iga, Vec U, AppCtx *user)
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user, 
+
+/* -------------------------------------------------------------------------
+ * FormInitialSlabAndGrains2D
+ *
+ * 2D initial condition for ice-migration studies:
+ *   - Right portion of domain (x_slab = (1 - x_slab_frac)*Lx .. Lx): solid ice slab
+ *   - Left portion (0 .. x_slab): randomly placed, non-overlapping ice and sediment
+ *     grains in an air matrix; grains kept clear of the slab boundary.
+ *
+ * Reuses the same random placement algorithm as FormInitialRandomPackedPermafrost2D
+ * with the x-range restricted to [0, x_slab].  Uses PetscMalloc1/PetscFree (no VLAs).
+ * -------------------------------------------------------------------------*/
+PetscErrorCode FormInitialSlabAndGrains2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx         = user->Lx;
+    const PetscReal Ly         = user->Ly;
+    const PetscReal eps        = user->eps;
+    const PetscReal x_slab     = (1.0 - user->x_slab_frac) * Lx;
+
+    const PetscInt  NCice = user->NCice;
+    const PetscInt  NCsed = user->NCsed;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+                "----- Slab-and-Grains 2D -----\n"
+                "  NCice = %d, NCsed = %d\n"
+                "  x_slab_frac = %.4f  =>  x_slab = %.4e m\n",
+                NCice, NCsed, user->x_slab_frac, x_slab);
+
+    /* Grain arrays allocated on all ranks; only rank 0 fills them. */
+    PetscReal *xI = NULL, *yI = NULL, *rI_arr = NULL;
+    PetscReal *xS = NULL, *yS = NULL, *rS_arr = NULL;
+
+    ierr = PetscMalloc1(PetscMax(NCice, 1), &xI);    CHKERRQ(ierr);
+    ierr = PetscMalloc1(PetscMax(NCice, 1), &yI);    CHKERRQ(ierr);
+    ierr = PetscMalloc1(PetscMax(NCice, 1), &rI_arr);CHKERRQ(ierr);
+    ierr = PetscMalloc1(PetscMax(NCsed, 1), &xS);    CHKERRQ(ierr);
+    ierr = PetscMalloc1(PetscMax(NCsed, 1), &yS);    CHKERRQ(ierr);
+    ierr = PetscMalloc1(PetscMax(NCsed, 1), &rS_arr);CHKERRQ(ierr);
+
+    PetscInt n_act_ice = 0;
+    PetscInt n_act_sed = 0;
+
+    PetscReal rad_ice0 = user->RCice, rad_ice_dev = user->RCice_dev;
+    PetscReal rad_sed0 = user->RCsed, rad_sed_dev = user->RCsed_dev;
+
+    /* Random generators: x restricted to grain region [0, x_slab]. */
+    PetscRandom randX, randY, randR_ice, randR_sed;
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randX,
+                                 0.0, x_slab, 111); CHKERRQ(ierr);
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randY,
+                                 0.0, Ly, 222); CHKERRQ(ierr);
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randR_ice,
+                                 rad_ice0 * (1.0 - rad_ice_dev),
+                                 rad_ice0 * (1.0 + rad_ice_dev), 333); CHKERRQ(ierr);
+    ierr = CreateRandomGenerator(PETSC_COMM_WORLD, &randR_sed,
+                                 rad_sed0 * (1.0 - rad_sed_dev),
+                                 rad_sed0 * (1.0 + rad_sed_dev), 444); CHKERRQ(ierr);
+
+    PetscInt rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
+
+    const PetscInt maxIter = 50000 * (NCice + NCsed + 1);
+
+    if (rank == 0) {
+        PetscInt flag_ice = (NCice > 0) ? 1 : 0;
+        PetscInt flag_sed = (NCsed > 0) ? 1 : 0;
+
+        PetscReal xc_ice[3] = {0.0, 0.0, 0.0};
+        PetscReal xc_sed[3] = {0.0, 0.0, 0.0};
+        PetscReal rI = 0.0, rS = 0.0;
+
+        for (PetscInt iter = 0; (flag_ice || flag_sed) && iter < maxIter; iter++) {
+
+            if (flag_ice) {
+                ierr = PetscRandomGetValue(randX,     &xc_ice[0]); CHKERRQ(ierr);
+                ierr = PetscRandomGetValue(randY,     &xc_ice[1]); CHKERRQ(ierr);
+                ierr = PetscRandomGetValue(randR_ice, &rI);        CHKERRQ(ierr);
+                xc_ice[2] = 0.0;
+            }
+            if (flag_sed) {
+                ierr = PetscRandomGetValue(randX,     &xc_sed[0]); CHKERRQ(ierr);
+                ierr = PetscRandomGetValue(randY,     &xc_sed[1]); CHKERRQ(ierr);
+                ierr = PetscRandomGetValue(randR_sed, &rS);        CHKERRQ(ierr);
+                xc_sed[2] = 0.0;
+            }
+
+            PetscInt accept_ice = 0, accept_sed = 0;
+
+            /* Check ice candidate — must fit inside grain region */
+            if (flag_ice) {
+                PetscInt okI = 1;
+                if (xc_ice[0] - rI < 0.0 || xc_ice[0] + rI > x_slab ||
+                    xc_ice[1] - rI < 0.0 || xc_ice[1] + rI > Ly) okI = 0;
+
+                for (PetscInt jj = 0; okI && jj < n_act_ice; jj++) {
+                    PetscReal p[3] = {xI[jj], yI[jj], 0.0};
+                    if (ComputeDistance(xc_ice, p, 2) < (rI + rI_arr[jj])) okI = 0;
+                }
+                for (PetscInt jj = 0; okI && jj < n_act_sed; jj++) {
+                    PetscReal p[3] = {xS[jj], yS[jj], 0.0};
+                    if (ComputeDistance(xc_ice, p, 2) < (rI + rS_arr[jj])) okI = 0;
+                }
+                if (okI && flag_sed) {
+                    if (ComputeDistance(xc_ice, xc_sed, 2) < (rI + rS)) okI = 0;
+                }
+                if (okI) accept_ice = 1;
+            }
+
+            /* Check sediment candidate — must fit inside grain region */
+            if (flag_sed) {
+                PetscInt okS = 1;
+                if (xc_sed[0] - rS < 0.0 || xc_sed[0] + rS > x_slab ||
+                    xc_sed[1] - rS < 0.0 || xc_sed[1] + rS > Ly) okS = 0;
+
+                for (PetscInt jj = 0; okS && jj < n_act_sed; jj++) {
+                    PetscReal p[3] = {xS[jj], yS[jj], 0.0};
+                    if (ComputeDistance(xc_sed, p, 2) < (rS + rS_arr[jj])) okS = 0;
+                }
+                for (PetscInt jj = 0; okS && jj < n_act_ice; jj++) {
+                    PetscReal p[3] = {xI[jj], yI[jj], 0.0};
+                    if (ComputeDistance(xc_sed, p, 2) < (rS + rI_arr[jj])) okS = 0;
+                }
+                if (okS && flag_ice) {
+                    if (ComputeDistance(xc_sed, xc_ice, 2) < (rS + rI)) okS = 0;
+                }
+                if (okS) accept_sed = 1;
+            }
+
+            if (accept_ice) {
+                xI[n_act_ice]     = xc_ice[0];
+                yI[n_act_ice]     = xc_ice[1];
+                rI_arr[n_act_ice] = rI;
+                PetscPrintf(PETSC_COMM_WORLD,
+                            "  ice grain %d: (x=%.3e, y=%.3e, r=%.3e)\n",
+                            n_act_ice, xc_ice[0], xc_ice[1], rI);
+                n_act_ice++;
+                if (n_act_ice >= NCice) flag_ice = 0;
+            }
+            if (accept_sed) {
+                xS[n_act_sed]     = xc_sed[0];
+                yS[n_act_sed]     = xc_sed[1];
+                rS_arr[n_act_sed] = rS;
+                PetscPrintf(PETSC_COMM_WORLD,
+                            "  sed grain %d: (x=%.3e, y=%.3e, r=%.3e)\n",
+                            n_act_sed, xc_sed[0], xc_sed[1], rS);
+                n_act_sed++;
+                if (n_act_sed >= NCsed) flag_sed = 0;
+            }
+        }
+
+        if (n_act_ice < NCice || n_act_sed < NCsed) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  WARNING: only placed %d/%d ice grains and %d/%d sed grains "
+                        "(maxIter=%d)\n",
+                        n_act_ice, NCice, n_act_sed, NCsed, maxIter);
+        } else {
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  Placed %d ice grains and %d sed grains (non-overlapping)\n",
+                        n_act_ice, n_act_sed);
+        }
+    }
+
+    ierr = PetscRandomDestroy(&randX);    CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randY);    CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randR_ice);CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&randR_sed);CHKERRQ(ierr);
+
+    /* Broadcast grain positions to all ranks. */
+    ierr = MPI_Bcast(xI,     PetscMax(NCice, 1), MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(yI,     PetscMax(NCice, 1), MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(rI_arr, PetscMax(NCice, 1), MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(xS,     PetscMax(NCsed, 1), MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(yS,     PetscMax(NCsed, 1), MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(rS_arr, PetscMax(NCsed, 1), MPI_DOUBLE, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&n_act_ice, 1, MPI_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(&n_act_sed, 1, MPI_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+
+    user->n_act    = n_act_ice;
+    user->n_actsed = n_act_sed;
+    for (PetscInt jj = 0; jj < n_act_ice; jj++) {
+        user->cent[0][jj]   = xI[jj];
+        user->cent[1][jj]   = yI[jj];
+        user->radius[jj]    = rI_arr[jj];
+    }
+    for (PetscInt jj = 0; jj < n_act_sed; jj++) {
+        user->centsed[0][jj] = xS[jj];
+        user->centsed[1][jj] = yS[jj];
+        user->radiussed[jj]  = rS_arr[jj];
+    }
+
+    /* Interface width coefficient: tc = 1 / (sqrt(2) * eps) */
+    const PetscReal tc = 1.0 / (PetscSqrtReal(2.0) * eps);
+
+    /* Build phase fields at every node. */
+    {
+        DM            da;
+        Field       **u;
+        DMDALocalInfo info;
+
+        ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+        ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
+        ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
+
+        PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+        for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+            for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+
+                PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+                PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+
+                /* Sum grain contributions */
+                PetscReal ice_grains = 0.0;
+                for (PetscInt g = 0; g < n_act_ice; g++) {
+                    PetscReal d = PetscSqrtReal(SQ(x - xI[g]) + SQ(y - yI[g]));
+                    ice_grains += 0.5 - 0.5 * PetscTanhReal(tc * (d - rI_arr[g]));
+                }
+
+                PetscReal sed = 0.0;
+                for (PetscInt g = 0; g < n_act_sed; g++) {
+                    PetscReal d = PetscSqrtReal(SQ(x - xS[g]) + SQ(y - yS[g]));
+                    sed += 0.5 - 0.5 * PetscTanhReal(tc * (d - rS_arr[g]));
+                }
+
+                /* Ice slab: smooth step rising to 1 for x > x_slab */
+                PetscReal slab_ice = 0.5 + 0.5 * PetscTanhReal(tc * (x - x_slab));
+
+                /* Union: take max of slab and grain ice */
+                PetscReal ice = PetscMax(slab_ice, ice_grains);
+                ice = PetscMax(0.0, PetscMin(1.0, ice));
+                /* Sediment occupies only non-ice space */
+                sed = PetscMax(0.0, PetscMin(sed, 1.0 - ice));
+
+                PetscReal tem = user->temp0
+                              + user->grad_temp0[0] * (x - 0.5 * Lx)
+                              + user->grad_temp0[1] * (y - 0.5 * Ly);
+
+                PetscScalar rho_vs;
+                RhoVS_I(user, tem, &rho_vs, NULL);
+
+                PetscReal _pa = PetscMax(0.0, 1.0 - ice - sed);
+                u[j][i].ice  = ice;
+                u[j][i].sed  = sed;
+                u[j][i].tem  = tem;
+                u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa));
+            }
+        }
+
+        ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+        ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    }
+
+    ierr = PetscFree(xI);    CHKERRQ(ierr);
+    ierr = PetscFree(yI);    CHKERRQ(ierr);
+    ierr = PetscFree(rI_arr);CHKERRQ(ierr);
+    ierr = PetscFree(xS);    CHKERRQ(ierr);
+    ierr = PetscFree(yS);    CHKERRQ(ierr);
+    ierr = PetscFree(rS_arr);CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode FormInitialCondition2D(IGA iga, PetscReal t, Vec U,AppCtx *user,
                                     const char datafile[],const char dataPF[])
 {
   PetscErrorCode ierr;

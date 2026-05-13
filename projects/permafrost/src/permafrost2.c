@@ -106,6 +106,7 @@ int main(int argc, char *argv[]) {
     user.NCice       = 50;      /* Number of ice grains */
     user.RCice       = 0.3e-4;  /* Mean radius */
     user.RCice_dev   = 0.55;    /* Std dev of radius */
+    user.x_slab_frac = 0.175;   /* slab_and_grains IC: right ice slab fraction of Lx */
 
     /* Define boundary condition flags (can be overridden by PETSc options) */
     user.periodic    = 0;       /* Periodic boundary condition flag */
@@ -196,6 +197,11 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-RCsed1",    "Sediment core radius of grain 1 (enclosed IC)",   "", user.RCsed1,    &user.RCsed1,    NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-grain_sep", "Air gap between outer ice surfaces (enclosed IC)", "", user.grain_sep, &user.grain_sep, NULL); CHKERRQ(ierr);
 
+    /* --- Slab-and-grains IC ------------------------------------------------ */
+    ierr = PetscOptionsReal("-x_slab_frac",
+             "Fraction of Lx occupied by the right-side ice slab (slab_and_grains IC; default 0.175)",
+             "", user.x_slab_frac, &user.x_slab_frac, NULL); CHKERRQ(ierr);
+
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
@@ -252,7 +258,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-ic_type",
              "Initial condition geometry (enclosed|capillary|layered|"
-             "random_enclosed|random_packed|ice_cap)",
+             "random_enclosed|random_packed|ice_cap|ice_slab|slab_and_grains)",
              "permafrost2.c", ic_type, ic_type, sizeof(ic_type),
              NULL); CHKERRQ(ierr);
 
@@ -552,10 +558,12 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialFlatSedIceCap2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "ice_slab") == 0) {
             ierr = FormInitialIceSlab2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "slab_and_grains") == 0) {
+            ierr = FormInitialSlabAndGrains2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
                     "Unknown -ic_type. Valid: enclosed contact_sed capillary layered "
-                    "random_enclosed random_packed ice_cap ice_slab");
+                    "random_enclosed random_packed ice_cap ice_slab slab_and_grains");
         }
     }
 

@@ -57,6 +57,7 @@ typedef struct {
   PetscReal RCice0, RCice1;   /* Outer ice radius of grain 0 / grain 1 (default: RCice) */
   PetscReal RCsed0, RCsed1;   /* Sediment core radius of grain 0 / grain 1 (default: RCsed) */
   PetscReal grain_sep;         /* Air gap between outer ice surfaces (m); 0 = tangent */
+  PetscReal x_slab_frac;      /* Fraction of Lx occupied by the right-side ice slab (slab_and_grains IC) */
 
   // Arrays storing geometry information for ice and sediment grains
   PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
