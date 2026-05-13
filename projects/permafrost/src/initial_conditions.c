@@ -413,17 +413,23 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
                     g, RCsed_g[g], g, RCice_g[g]);
 
     // -------------------------------------------------------------------------
-    // Grain centres: symmetric about domain midpoint with air gap 'sep'.
+    // Grain centres — bounding-box centred in domain, air gap 'sep'.
     // Arrangement axis: vertical (y) when Ly >= Lx, horizontal (x) otherwise.
-    // Sediment core is concentric with its host ice grain.
+    //
+    // The gap midpoint is shifted by (R0 - R1) from the domain centre so that
+    // the outer extents of both grains are equidistant from the domain walls.
+    // For equal radii (R0 == R1) this reduces to the domain midpoint.
+    // Sediment cores are concentric with their host ice grain.
     // -------------------------------------------------------------------------
     PetscReal cent_ice[2][2]; /* [coord_index][grain_index] */
     if (Ly >= Lx) {
-        cent_ice[0][0] = 0.5*Lx;  cent_ice[1][0] = 0.5*Ly - RCice_g[0] - 0.5*sep;
-        cent_ice[0][1] = 0.5*Lx;  cent_ice[1][1] = 0.5*Ly + RCice_g[1] + 0.5*sep;
+        const PetscReal gap_y = 0.5*Ly - (RCice_g[1] - RCice_g[0]);
+        cent_ice[0][0] = 0.5*Lx;  cent_ice[1][0] = gap_y - RCice_g[0] - 0.5*sep;
+        cent_ice[0][1] = 0.5*Lx;  cent_ice[1][1] = gap_y + RCice_g[1] + 0.5*sep;
     } else {
-        cent_ice[0][0] = 0.5*Lx - RCice_g[0] - 0.5*sep;  cent_ice[1][0] = 0.5*Ly;
-        cent_ice[0][1] = 0.5*Lx + RCice_g[1] + 0.5*sep;  cent_ice[1][1] = 0.5*Ly;
+        const PetscReal gap_x = 0.5*Lx - (RCice_g[1] - RCice_g[0]);
+        cent_ice[0][0] = gap_x - RCice_g[0] - 0.5*sep;  cent_ice[1][0] = 0.5*Ly;
+        cent_ice[0][1] = gap_x + RCice_g[1] + 0.5*sep;  cent_ice[1][1] = 0.5*Ly;
     }
     /* Validate both grains fit inside the domain */
     if (Ly >= Lx) {
@@ -1764,10 +1770,12 @@ PetscErrorCode FormInitialEnclosed1D(IGA iga, Vec U, AppCtx *user)
     const PetscReal sep       = user->grain_sep;
     const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps);
 
-    /* Grain centres placed symmetrically about the domain midpoint with gap sep */
+    /* Gap midpoint shifted so the bounding box of both grains is centred in
+       the domain.  For equal radii gap_c == 0.5*Lx (unchanged). */
+    const PetscReal gap_c = 0.5*Lx - (RCice_g[1] - RCice_g[0]);
     const PetscReal xc[2] = {
-        0.5*Lx - RCice_g[0] - 0.5*sep,
-        0.5*Lx + RCice_g[1] + 0.5*sep
+        gap_c - RCice_g[0] - 0.5*sep,
+        gap_c + RCice_g[1] + 0.5*sep
     };
 
     PetscPrintf(PETSC_COMM_WORLD,
