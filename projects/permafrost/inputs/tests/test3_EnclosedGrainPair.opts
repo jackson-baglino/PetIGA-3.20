@@ -19,8 +19,8 @@
 
 # ---------- Domain ----------
 -dim 2
--Nx 190
--Ny 380
+-Nx 95
+-Ny 190
 -Nz 1
 -Lx 6.25e-05                            # domain length in x (m)
 -Ly 1.25e-04                            # domain length in y (m)
