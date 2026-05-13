@@ -15,9 +15,9 @@
 -x_slab_frac 0.175
 
 -delt_t 1.0e-2
--t_final 0.0
+-t_final 1814400.0
 
--eps 5.0e-7
+-eps 3.5e-7
 -flag_avenue 1
 -t_sed_freeze 300
 

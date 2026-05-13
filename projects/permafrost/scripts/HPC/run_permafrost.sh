@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J permafrost_60day_enclosed_grain_packing
+#SBATCH -J permafrost_SlabAndGrains
 #SBATCH -A rubyfu
 #SBATCH -t 0-24:00:00
 
