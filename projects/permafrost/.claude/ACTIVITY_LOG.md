@@ -1,4 +1,9 @@
 
+---
+
+**Session ended:** 2026-05-13 12:56:01
+
+
 ## 2026-05-13 — Centralize penalty params in universal.opts; clean all test opts files
 
 - Moved `t_sed_freeze` (300 s), `difvap_pen` (1e-4), `k_pen` (1e5), and `Lambda` (1e2) from individual test opts files into `universal.opts`, using values from the working `test_1D_IceSlab.opts`.
