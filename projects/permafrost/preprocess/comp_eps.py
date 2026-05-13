@@ -94,7 +94,7 @@ def compute_params(
     eps_heat  = (_K_I / _C_I) * rho_rat * beta0
     eps_vapor = _DV0           * rho_rat * beta0
     eps_geom  = Rave
-    eps_max   = min(eps_heat, eps_vapor, eps_geom)
+    eps_max   = min(eps_heat, eps_vapor, eps_geom) / 2.0  # add safety factor to ensure all constraints are satisfied
 
     # Actual interface width and element size
     w_actual = 2.0 * math.sqrt(2.0) * eps_max
