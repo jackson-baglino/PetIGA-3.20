@@ -1,31 +1,31 @@
 #!/bin/zsh
 
-# Function to copy files to the target directory
-copy_files_to_directory() {
-    local target_dir=$1
-    echo "Copying necessary files to: $target_dir"
-    cp ./scripts/writepermafrost2CSV.py $target_dir
-}
-
-# Function to change to the target directory and print status
-change_to_directory() {
-    local target_dir=$1
-    echo " "
-    echo "Changing to directory: $target_dir"
-    cd $target_dir || { echo "Failed to change directory to $target_dir"; exit 1; }
-    echo "Directory changed to: $(pwd)"
+# Locate plotpermafrost.py: prefer the staged postprocess/ subdirectory,
+# fall back to the root of the results folder for older result dirs.
+find_plot_script() {
+    local dir=$1
+    if [[ -f "$dir/postprocess/plotpermafrost.py" ]]; then
+        echo "$dir/postprocess/plotpermafrost.py"
+    elif [[ -f "$dir/plotpermafrost.py" ]]; then
+        echo "$dir/plotpermafrost.py"
+    else
+        echo ""
+    fi
 }
 
 # Function to execute Python scripts for plotting
 execute_python_scripts() {
     local dir=$1
-    echo "Executing plotpermafrost.py in directory: $dir"
-    python $dir/plotpermafrost.py
-    
-    # echo "Plotting SSA and Porosity"
-    # python $dir/plotSSA.py
-    # Uncomment the line below if you want to include Porosity plotting
-    # python $dir/plotPorosity.py
+    local plot_py
+    plot_py=$(find_plot_script "$dir")
+
+    if [[ -z "$plot_py" ]]; then
+        echo "⚠️  plotpermafrost.py not found in $dir or $dir/postprocess/ — skipping."
+        return 1
+    fi
+
+    echo "Executing: $plot_py"
+    python3 "$plot_py"
 }
 
 # Main script logic
@@ -33,25 +33,21 @@ if [[ -n $1 ]]; then
     echo "Starting process for directory: $1"
     dir=/Users/jacksonbaglino/SimulationResults/permafrost/scratch/$1
 
-    # Copy files and switch to the target directory
-    copy_files_to_directory $dir
-    change_to_directory $dir
+    echo "Creating vtkOut directory"
+    mkdir -p "$dir/vtkOut"
+
+    execute_python_scripts "$dir"
+else
+    echo "No inputs provided. Assuming we are already in the results folder."
 
     echo "Creating vtkOut directory"
     mkdir -p vtkOut
 
-    # Execute plotting scripts
-    execute_python_scripts $dir
-else
-    echo "No inputs provided. Assuming we are already in the results folder."
-    
-    echo "Creating vtkOut and directory"
-    mkdir -p vtkOut
-
-    # Execute Python scripts in the current directory
-    echo "Executing plotpermafrost.py and plotSSA.py in the current directory"
-    python plotpermafrost.py
-    # python plotSSA.py
-    # Uncomment if you need to execute plotPorosity.py in the current directory
-    # python plotPorosity.py
+    plot_py=$(find_plot_script "$(pwd)")
+    if [[ -z "$plot_py" ]]; then
+        echo "⚠️  plotpermafrost.py not found — skipping."
+        exit 1
+    fi
+    echo "Executing: $plot_py"
+    python3 "$plot_py"
 fi
