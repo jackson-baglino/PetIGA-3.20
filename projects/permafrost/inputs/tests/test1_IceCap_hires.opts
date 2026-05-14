@@ -2,7 +2,7 @@
 # test1_IceCap_hires.opts — 2D ice cap, high resolution
 #
 # Purpose: Same as test1_IceCap.opts but with eps=3.56e-07 m and mesh sized
-#          for 4 elements across the diffuse interface (Nx=398, Ny=497).
+#          at 2× standard resolution (Nx=304, Ny=380).
 #          See test1_IceCap.opts for the standard-resolution version.
 #
 # Usage:
@@ -19,8 +19,8 @@
 # ---------- Domain ----------
 -dim 2
 -dof 3                                  # override: ice / temperature / vapor (no sediment DOF)
--Nx 398
--Ny 497
+-Nx 304
+-Ny 380
 -Nz 1
 -Lx 1.0e-04                             # domain length in x (m)
 -Ly 1.25e-04                            # domain length in y (m)

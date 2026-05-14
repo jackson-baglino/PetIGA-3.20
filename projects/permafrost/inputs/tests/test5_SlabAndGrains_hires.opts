@@ -2,7 +2,7 @@
 # test5_SlabAndGrains_hires.opts — 2D ice slab with random grain region, high resolution
 #
 # Purpose: Same as test5_SlabAndGrains.opts but with eps=3.56e-07 m and mesh
-#          sized for 4 elements across the diffuse interface (Nx=994, Ny=497).
+#          sized at 2× standard resolution (Nx=758, Ny=380).
 #          See test5_SlabAndGrains.opts for the standard-resolution version.
 #
 # Usage:
@@ -18,8 +18,8 @@
 
 # ---------- Domain ----------
 -dim 2
--Nx 994
--Ny 497
+-Nx 758
+-Ny 380
 -Nz 1
 -Lx 2.5e-4                             # domain length in x (m)
 -Ly 1.25e-4                            # domain length in y (m)

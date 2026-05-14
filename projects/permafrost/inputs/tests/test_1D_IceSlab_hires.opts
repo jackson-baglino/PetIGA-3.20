@@ -2,7 +2,7 @@
 # test_1D_IceSlab_hires.opts — 1D centered ice slab, high resolution
 #
 # Purpose: Same as test_1D_IceSlab.opts but with eps=3.56e-07 m and mesh
-#          sized for 4 elements across the diffuse interface (Nx=398).
+#          sized at 2× standard resolution (Nx=304).
 #          Use for convergence studies or high-fidelity 1D benchmarks.
 #          See test_1D_IceSlab.opts for the standard-resolution version.
 #
@@ -19,7 +19,7 @@
 
 # ---------- Domain ----------
 -dim 1
--Nx 398
+-Nx 304
 -Lx 1.00e-04                            # domain length in x (m)
 
 # ---------- Time Stepping ----------

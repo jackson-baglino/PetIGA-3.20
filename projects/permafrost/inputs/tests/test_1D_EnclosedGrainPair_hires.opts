@@ -2,7 +2,7 @@
 # test_1D_EnclosedGrainPair_hires.opts — 1D enclosed grain pair, high resolution
 #
 # Purpose: Same as test_1D_EnclosedGrainPair.opts but with eps=3.56e-07 m
-#          and mesh sized for 4 elements across the diffuse interface (Nx=497).
+#          and mesh sized at 2× standard resolution (Nx=380).
 #          1D cross-section along x = 0.5*Lx_2D of the hi-res 2D test.
 #          See test_1D_EnclosedGrainPair.opts for the standard-resolution version.
 #          See test_2D_EnclosedGrainPair_hires.opts for the 2D hi-res version.
@@ -20,7 +20,7 @@
 
 # ---------- Domain ----------
 -dim 1
--Nx 497                                 # matches Ny of the hi-res 2D test
+-Nx 380                                 # matches Ny of the hi-res 2D test
 -Lx 1.25e-04                            # matches Ly of the hi-res 2D test (m)
 
 # ---------- Grain Radii ----------

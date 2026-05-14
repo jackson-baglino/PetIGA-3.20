@@ -2,7 +2,7 @@
 # test4_ContactSedPair_hires.opts — 2D sediment grain pair in contact, high resolution
 #
 # Purpose: Same as test4_ContactSedPair.opts but with eps=3.56e-07 m and
-#          mesh sized for 4 elements across the diffuse interface (Nx=497, Ny=994).
+#          mesh sized at 2× standard resolution (Nx=380, Ny=758).
 #          Inverse of test_2D_EnclosedGrainPair_hires: sediment circles tangent
 #          at midpoint, each enclosed in an ice shell.
 #          See test4_ContactSedPair.opts for the standard-resolution version.
@@ -20,8 +20,8 @@
 
 # ---------- Domain ----------
 -dim 2
--Nx 497
--Ny 994
+-Nx 380
+-Ny 758
 -Nz 1
 -Lx 1.25e-04                            # domain length in x (m)
 -Ly 2.5e-04                             # domain length in y (m)

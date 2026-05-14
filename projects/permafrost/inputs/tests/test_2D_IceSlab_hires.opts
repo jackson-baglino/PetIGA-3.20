@@ -2,7 +2,7 @@
 # test_2D_IceSlab_hires.opts — 2D ice slab with right-side sediment, high resolution
 #
 # Purpose: Same as test_2D_IceSlab.opts but with eps=3.56e-07 m and mesh
-#          sized for 4 elements across the diffuse interface (Nx=398, Ny=80).
+#          sized at 2× standard resolution (Nx=304, Ny=62).
 #          Use for convergence studies or high-fidelity 2D slab simulations.
 #          See test_2D_IceSlab.opts for the standard-resolution version.
 #
@@ -19,8 +19,8 @@
 
 # ---------- Domain ----------
 -dim 2
--Nx 398
--Ny 80
+-Nx 304
+-Ny 62
 -Nz 1
 -Lx 1.00e-04                            # domain length in x (m)
 -Ly 2.00e-05                            # domain length in y (m)

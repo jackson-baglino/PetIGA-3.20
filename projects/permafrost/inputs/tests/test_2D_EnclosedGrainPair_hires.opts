@@ -2,7 +2,7 @@
 # test_2D_EnclosedGrainPair_hires.opts — 2D enclosed grain pair, high resolution
 #
 # Purpose: Same geometry as test_2D_EnclosedGrainPair.opts but with eps=3.56e-07 m
-#          and mesh sized for 4 elements across the diffuse interface (Nx=249, Ny=497).
+#          and mesh sized at 2× standard resolution (Nx=190, Ny=380).
 #          See test_2D_EnclosedGrainPair.opts for the standard-resolution version.
 #          See test_1D_EnclosedGrainPair_hires.opts for the 1D hi-res cross-section.
 #
@@ -19,8 +19,8 @@
 
 # ---------- Domain ----------
 -dim 2
--Nx 249
--Ny 497
+-Nx 190
+-Ny 380
 -Nz 1
 -Lx 6.25e-05                            # domain length in x (m)
 -Ly 1.25e-04                            # domain length in y (m)
@@ -39,7 +39,7 @@
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-2                          # initial time step (s)
--t_final 1814400.0                      # total simulation time (s) — 21 days
+-t_final 1.0e-2                      # total simulation time (s) — 21 days
 
 # ---------- Phase-Field Physics ----------
 -eps 3.56e-07                           # diffuse interface half-width (m); 4 elements/interface
