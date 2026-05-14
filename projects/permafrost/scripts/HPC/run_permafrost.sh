@@ -314,68 +314,10 @@ copy_source_code() {
                        || echo "✅ Source code copied to $src_dest"
 }
 
-###############################################################################
-# Run post-processing plotting script (2D/3D)
-###############################################################################
-run_plotting() {
-    echo ""
-    echo "--- Running post-processing ---"
-
-    local plot_script="$SCRIPTS_DIR/run_plotpermafrost.sh"
-    if [ ! -f "$plot_script" ]; then
-        echo "⚠️  Plotting script not found: $plot_script — skipping."
-        return
-    fi
-
-    set +e
-    "$plot_script" "$name"
-    local plot_exit=$?
-    set -e
-
-    [ "$plot_exit" -ne 0 ] \
-        && echo "⚠️  Plotting script exited with code $plot_exit" \
-        || echo "✅ Post-processing complete."
-}
-
-###############################################################################
-# 1D post-processing — skipped automatically for 2D/3D runs
-###############################################################################
-run_1d_plotting() {
-    local dim
-    dim=$(awk '$1 == "-dim" { print $2 }' "$params_file" | head -n1)
-    dim=${dim:-2}
-    [[ "$dim" != "1" ]] && return
-
-    echo ""
-    echo "--- 1D post-processing ---"
-
-    local POSTPROCESS="$PROJECT_ROOT/postprocess"
-    local PYTHON
-    PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "")
-    if [[ -z "$PYTHON" ]]; then
-        echo "⚠️  python not found — skipping 1D plots."
-        return
-    fi
-
-    set +e
-
-    "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
-        --dir "$folder" --out-dir "$folder" --gif \
-        2>&1 | sed 's/^/  /'
-
-    "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
-        --dir "$folder" --derived --save "$folder/derived.png" \
-        2>&1 | sed 's/^/  /'
-
-    if [ -f "$folder/SSA_evo.dat" ]; then
-        "$PYTHON" "$POSTPROCESS/plot_scalars.py" \
-            --file "$folder/SSA_evo.dat" --save "$folder/scalars.png" \
-            2>&1 | sed 's/^/  /'
-    fi
-
-    set -e
-    echo "✅ 1D post-processing complete."
-}
+# Post-processing is intentionally omitted on HPC.
+# All output files are staged in $folder so the user can run
+#   bash <run_folder>/postprocess/run_postprocess.sh
+# locally after rsyncing the results.
 
 ###############################################################################
 # Main workflow
