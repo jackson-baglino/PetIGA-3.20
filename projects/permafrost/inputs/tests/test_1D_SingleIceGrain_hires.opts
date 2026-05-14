@@ -1,0 +1,39 @@
+# =============================================================================
+# test_1D_SingleIceGrain_hires.opts — 1D single ice grain, 2× standard resolution
+#
+# Purpose: Hi-res version of test_1D_SingleIceGrain.opts.
+#          Nx = 2× standard, eps = half standard (half interface width).
+#          See test_1D_SingleIceGrain.opts for the standard-resolution version.
+#
+# Usage:
+#   mpiexec -np N ./permafrost \
+#       -options_file inputs/universal.opts \
+#       -options_file inputs/tests/test_1D_SingleIceGrain_hires.opts
+# =============================================================================
+
+# ---------- Initial Condition ----------
+-ic_type single_ice
+
+# ---------- Domain ----------
+-dim 1
+-Nx 192                                 # 2× standard resolution
+-Lx 6.25e-05
+
+# ---------- Grain Radius ----------
+-RCice 1.875e-5
+
+# ---------- Time Stepping ----------
+-delt_t 1.0e-2
+-t_final 86400.0
+
+# ---------- Phase-Field Physics ----------
+-eps 3.56e-07                           # 2× standard resolution
+-flag_avenue 1
+
+# ---------- Thermal & Humidity ----------
+-humidity 0.95
+-temp -20.0
+-grad_temp0 0.0,0.0,0.0
+
+# ---------- Time Stepping Override ----------
+-NRmax 8

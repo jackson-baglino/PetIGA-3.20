@@ -171,6 +171,8 @@ derive_ic_subfolder() {
         capillary)       echo "CapillaryBridge" ;;
         slab_and_grains) echo "SlabAndGrains" ;;
         ice_cap)         echo "IceCap" ;;
+        single_ice)      echo "SingleIceGrain" ;;
+        ice_sed_pair)    echo "IceSedPair" ;;
         *)               echo "Other" ;;
     esac
 }

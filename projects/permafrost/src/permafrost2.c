@@ -258,7 +258,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-ic_type",
              "Initial condition geometry (enclosed|capillary|layered|"
-             "random_enclosed|random_packed|ice_cap|ice_slab|slab_and_grains)",
+             "random_enclosed|random_packed|ice_cap|ice_slab|slab_and_grains|"
+             "single_ice|ice_sed_pair)",
              "permafrost2.c", ic_type, ic_type, sizeof(ic_type),
              NULL); CHKERRQ(ierr);
 
@@ -535,6 +536,10 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD, "IC type: %s (1D)\n", ic_type);
         if (strcmp(ic_type, "enclosed") == 0) {
             ierr = FormInitialEnclosed1D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "single_ice") == 0) {
+            ierr = FormInitialSingleIceGrain1D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "ice_sed_pair") == 0) {
+            ierr = FormInitialIceSedPair1D(iga, U, &user); CHKERRQ(ierr);
         } else {
             /* Default: centered slab or flat interface, variant via -flag_tIC */
             ierr = FormInitialCondition1D(iga, U, &user); CHKERRQ(ierr);
@@ -562,10 +567,15 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialIceSlab2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "slab_and_grains") == 0) {
             ierr = FormInitialSlabAndGrains2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "single_ice") == 0) {
+            ierr = FormInitialSingleIceGrain2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "ice_sed_pair") == 0) {
+            ierr = FormInitialIceSedPair2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
                     "Unknown -ic_type. Valid: enclosed contact_sed capillary layered "
-                    "random_enclosed random_packed ice_cap ice_slab slab_and_grains");
+                    "random_enclosed random_packed ice_cap ice_slab slab_and_grains "
+                    "single_ice ice_sed_pair");
         }
     }
 

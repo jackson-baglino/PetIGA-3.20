@@ -1,0 +1,46 @@
+# =============================================================================
+# test_1D_IceSedPair.opts — 1D ice grain + sediment grain, evenly spaced
+#
+# Purpose: 1D test with one pure ice grain and one pure sediment grain,
+#          placed at x = Lx/4 and x = 3*Lx/4 respectively (evenly spaced
+#          with equal wall clearance). No ice shell around the sediment grain.
+#          Gap between grain surfaces = Ly/2 - 2*R ≈ 2.5e-5 m (~38 elements).
+#          Wall clearance = Lx/4 - R = 1.25e-5 m (~19 elements).
+#          See test_2D_IceSedPair.opts for the 2D version.
+#          See test_1D_SingleIceGrain.opts for the single-grain variant.
+#
+# Usage:
+#   mpiexec -np N ./permafrost \
+#       -options_file inputs/universal.opts \
+#       -options_file inputs/tests/test_1D_IceSedPair.opts
+#
+# Penalty and solver defaults are in inputs/universal.opts.
+# =============================================================================
+
+# ---------- Initial Condition ----------
+-ic_type ice_sed_pair                   # ice grain at Lx/4, sediment grain at 3*Lx/4
+
+# ---------- Domain ----------
+-dim 1
+-Nx 190                                 # standard resolution: dx ≈ 6.58e-7 m ≈ 0.92 eps
+-Lx 1.25e-04                            # domain length (m); matches Ly of 2D test
+
+# ---------- Grain Radii ----------
+-RCice 1.875e-5                         # pure ice grain radius (m)
+-RCsed 1.875e-5                         # pure sediment grain radius (m); equal-sized grains
+
+# ---------- Time Stepping ----------
+-delt_t 1.0e-2                          # initial time step (s)
+-t_final 86400.0                        # total simulation time (s) — 1 day
+
+# ---------- Phase-Field Physics ----------
+-eps 7.12e-07                           # diffuse interface half-width (m)
+-flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
+
+# ---------- Thermal & Humidity ----------
+-humidity 0.95
+-temp -20.0
+-grad_temp0 0.0,0.0,0.0
+
+# ---------- Time Stepping Override ----------
+-NRmax 8

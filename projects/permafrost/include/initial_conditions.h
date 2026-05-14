@@ -35,4 +35,12 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user);
 /* 2D Slab + random grains — ice slab on right, random ice/sed grains on left */
 PetscErrorCode FormInitialSlabAndGrains2D(IGA iga, Vec U, AppCtx *user);
 
+/* Single ice grain centred in the domain (no sediment) */
+PetscErrorCode FormInitialSingleIceGrain2D(IGA iga, Vec U, AppCtx *user);
+PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user);
+
+/* One pure ice grain + one pure sediment grain, evenly spaced */
+PetscErrorCode FormInitialIceSedPair2D(IGA iga, Vec U, AppCtx *user);
+PetscErrorCode FormInitialIceSedPair1D(IGA iga, Vec U, AppCtx *user);
+
 #endif // INITIAL_CONDITIONS_H
