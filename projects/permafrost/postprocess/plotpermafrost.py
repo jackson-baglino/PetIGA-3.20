@@ -2,11 +2,12 @@
 """
 plotpermafrost.py  —  Convert PetIGA sol_*.dat output to VTK files.
 
-Exports all four DOFs:
-  IcePhase     — φ_i  (DOF 0)
-  Temperature  — T    (DOF 1)
-  VaporDensity — ρ_v  (DOF 2)
-  SedPhase     — φ_s  (DOF 3)
+Exports four DOFs plus one derived field:
+  IcePhase     — φ_i          (DOF 0)
+  Temperature  — T            (DOF 1)
+  VaporDensity — ρ_v          (DOF 2)
+  SedPhase     — φ_s          (DOF 3)
+  AirPhase     — 1 − φ_i − φ_s  (derived, clipped to [0, 1])
 
 VTK files are written to ./vtkOut/ and skipped if already present.
 
@@ -20,6 +21,7 @@ import argparse
 import glob
 import os
 
+import numpy as np
 from igakit.io import PetIGA, VTK
 
 
@@ -59,6 +61,12 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
         # Only export DOFs present in the solution vector
         if sol.ndim < 2 or sol.shape[-1] < 4:
             scalars.pop("SedPhase")
+
+        # Append AirPhase = 1 - φ_i - φ_s as a derived field
+        if sol.ndim >= 2 and sol.shape[-1] >= 4:
+            air = np.clip(1.0 - sol[..., 0:1] - sol[..., 3:4], 0.0, 1.0)
+            sol = np.concatenate([sol, air], axis=-1)
+            scalars["AirPhase"] = sol.shape[-1] - 1
 
         VTK().write(outfile, nrb, fields=sol, scalars=scalars)
         print(f"  Written: {outfile}")
