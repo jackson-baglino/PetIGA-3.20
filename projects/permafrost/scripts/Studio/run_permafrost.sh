@@ -314,8 +314,16 @@ run_simulation() {
 # Calls the post-processing plotting script if it exists
 # ---------------------------------------------------------------------------
 run_plotting() {
+    # Skip VTK for 1D runs — not meaningful and the file format differs
+    local dim
+    dim=$(awk '$1 == "-dim" { print $2 }' "$params_file" | head -n1)
+    dim=${dim:-2}
+    if [[ "$dim" == "1" ]]; then
+        return
+    fi
+
     echo ""
-    echo "--- Running post-processing ---"
+    echo "--- Running post-processing (VTK) ---"
 
     local plot_script="$SCRIPTS_DIR/run_plotpermafrost.sh"
 
@@ -325,14 +333,15 @@ run_plotting() {
     fi
 
     set +e
-    "$plot_script" "$name"
+    # Pass the full output folder path so the script works regardless of subfolder depth
+    "$plot_script" "$folder"
     local plot_exit=$?
     set -e
 
     if [ "$plot_exit" -ne 0 ]; then
-        echo "⚠️  Plotting script exited with code $plot_exit"
+        echo "⚠️  VTK plotting exited with code $plot_exit"
     else
-        echo "✅ Post-processing complete."
+        echo "✅ VTK post-processing complete."
     fi
 }
 

@@ -62,19 +62,21 @@ echo "Detected dim = $dim"
 overall_exit=0
 
 # ---------------------------------------------------------------------------
-# VTK conversion (all dimensions)
+# VTK conversion (2D and 3D only — not meaningful for 1D)
 # ---------------------------------------------------------------------------
-if [[ -f "$RUN_DIR/igasol.dat" ]]; then
-    echo ""
-    echo "--- VTK conversion ---"
-    mkdir -p "$RUN_DIR/vtkOut"
-    set +e
-    "$PYTHON" "$POSTPROCESS_DIR/plotpermafrost.py" --dir "$RUN_DIR" \
-        2>&1 | sed 's/^/  /'
-    (( overall_exit += $? )) || true
-    set -e
-else
-    echo "⚠️  igasol.dat not found — skipping VTK conversion."
+if [[ "$dim" != "1" ]]; then
+    if [[ -f "$RUN_DIR/igasol.dat" ]]; then
+        echo ""
+        echo "--- VTK conversion ---"
+        mkdir -p "$RUN_DIR/vtkOut"
+        set +e
+        "$PYTHON" "$POSTPROCESS_DIR/plotpermafrost.py" --dir "$RUN_DIR" \
+            2>&1 | sed 's/^/  /'
+        (( overall_exit += $? )) || true
+        set -e
+    else
+        echo "⚠️  igasol.dat not found — skipping VTK conversion."
+    fi
 fi
 
 # ---------------------------------------------------------------------------
