@@ -1,4 +1,20 @@
 
+---
+
+**Session ended:** 2026-05-14 15:55:02
+
+
+## 2026-05-14 — add single_ice and ice_sed_pair initial conditions
+
+- Added FormInitialSingleIceGrain2D/1D: single pure ice grain centred in the domain (no sediment). Square domain Lx=Ly=6.25e-5 m, standard Nx=Ny=96, hi-res Nx=Ny=192.
+- Added FormInitialIceSedPair2D/1D: one ice grain at (Lx/2, Ly/4) and one sediment grain at (Lx/2, 3Ly/4), evenly spaced with equal wall clearance and grain-surface gap. Same 2:1 domain as TouchingGrainPair; standard 95×190, hi-res 190×380.
+- Both ic_types wired into permafrost2.c dispatch (1D and 2D); error message updated; -ic_type option string updated.
+- Created 8 new opts files: test_{1D,2D}_SingleIceGrain{,_hires}.opts and test_{1D,2D}_IceSedPair{,_hires}.opts.
+- Added single_ice→SingleIceGrain and ice_sed_pair→IceSedPair to subfolder mapping in both run scripts.
+- Compiles clean (zero warnings).
+
+---
+
 ## 2026-05-14 — add plot_mass.py phase mass tracking
 
 - Created postprocess/plot_mass.py: integrates ice, sediment, and vapor masses from sol_*.dat snapshots using first-order quadrature over the uniform mesh; plots all four curves (ice, sed, vap, total) with a vertical dashed line at t_sed_freeze marking the 3-phase → 2-phase model switch.
