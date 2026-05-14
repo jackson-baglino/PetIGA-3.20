@@ -22,8 +22,8 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 #   $1 : PETSc options file (e.g., inputs/tests/test3_EnclosedGrainPair.opts)
 #   $2 : Title prefix for the run (used in folder name)
 ###############################################################################
-params_file="${1:-inputs/tests/test3_EnclosedGrainPair.opts}"
-title="${2:-permafrost_}"
+params_file="${1:-inputs/tests/test_2D_TouchingGrainPair.opts}"
+title="${2:-}"
 
 ###############################################################################
 # Resolve project root.
@@ -112,28 +112,52 @@ compile_code() {
 }
 
 ###############################################################################
-# Create output folder based on timestamp and title
+# derive_ic_subfolder — maps -ic_type to a clean category folder name
+###############################################################################
+derive_ic_subfolder() {
+    local ic
+    ic=$(awk '$1=="-ic_type"{print $2}' "$params_file" | head -n1)
+    case "${ic:-}" in
+        ice_slab)        echo "IceSlab" ;;
+        enclosed)        echo "EnclosedGrainPair" ;;
+        contact_sed)     echo "ContactSed" ;;
+        capillary)       echo "CapillaryBridge" ;;
+        slab_and_grains) echo "SlabAndGrains" ;;
+        ice_cap)         echo "IceCap" ;;
+        *)               echo "Other" ;;
+    esac
+}
+
+###############################################################################
+# Create output folder: $SCRATCH/permafrost/<ic_category>/<opts_name>[_tag]_<ts>
 ###############################################################################
 create_folder() {
     echo ""
     echo "--- Creating output folder ---"
 
-    local ts
+    local subfolder ts opts_name tag job_suffix
+    subfolder=$(derive_ic_subfolder)
+    opts_name=$(basename "$params_file" .opts)
     ts="$(date +%Y-%m-%d__%H.%M.%S)"
+    tag="${title:+_${title}}"
+
+    if [[ "${SLURM_JOB_ID:-none}" != "none" ]]; then
+        job_suffix="_job${SLURM_JOB_ID}"
+    else
+        job_suffix=""
+    fi
+
+    name="${opts_name}${tag}_${ts}${job_suffix}"
 
     # Base scratch dir on Resnick; fall back to local scratch
-    local base_dir="$SCRATCH/permafrost"
-    if [[ ! -d "${SCRATCH:-}" ]]; then
+    local base_dir
+    if [[ -d "${SCRATCH:-}" ]]; then
+        base_dir="$SCRATCH/permafrost"
+    else
         base_dir="$PROJECT_ROOT/scratch"
     fi
 
-    if [[ "${SLURM_JOB_ID:-none}" != "none" ]]; then
-        name="${title}${ts}_job${SLURM_JOB_ID}"
-    else
-        name="${title}${ts}_joblocal"
-    fi
-
-    folder="${base_dir}/${name}"
+    folder="${base_dir}/${subfolder}/${name}"
     mkdir -p "$folder"
     echo "Output folder: $folder"
 }
@@ -372,22 +396,11 @@ stage_output_folder
 compute_optimal_nprocs
 run_simulation
 copy_source_code
-run_plotting
-run_1d_plotting
 
-# Time step diagnostic — generated from outp.txt for all dims
-if [ -f "$folder/outp.txt" ]; then
-    PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "")
-    if [[ -n "$PYTHON" ]]; then
-        echo ""
-        echo "--- Time step diagnostic ---"
-        set +e
-        "$PYTHON" "$PROJECT_ROOT/postprocess/plot_timestep.py" \
-            --dir "$folder" --save "$folder/timestep.png" \
-            2>&1 | sed 's/^/    /'
-        set -e
-    fi
-fi
+# Post-processing is intentionally skipped on HPC.
+# All required files (igasol.dat, sol_*.dat, SSA_evo.dat, outp.txt, postprocess/)
+# are staged in $folder. After rsyncing to your local machine, run:
+#   bash <run_folder>/postprocess/run_postprocess.sh
 
 echo ""
 echo "========================================================================="

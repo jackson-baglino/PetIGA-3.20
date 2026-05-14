@@ -3,17 +3,20 @@
 # submit_permafrost.sh — compute optimal MPI ranks and submit via sbatch
 #
 # Usage (run from project root):
-#   ./scripts/HPC/submit_permafrost.sh <opts_file> <title_prefix> [sbatch_overrides...]
+#   ./scripts/HPC/submit_permafrost.sh <opts_file> [tag] [sbatch_overrides...]
+#
+# The output folder name is auto-derived from the opts file (ic_type + basename).
+# An optional [tag] is appended to the run folder name for disambiguation.
 #
 # Examples:
 #   ./scripts/HPC/submit_permafrost.sh \
-#       inputs/tests/test3_EnclosedGrainPair.opts EnclosedGrainPair_
+#       inputs/tests/test_2D_TouchingGrainPair.opts
 #
 #   ./scripts/HPC/submit_permafrost.sh \
-#       inputs/tests/test3_EnclosedGrainPair.opts EnclosedGrainPair_ \
+#       inputs/tests/test_2D_TouchingGrainPair.opts sweep_a \
 #       --time=0-12:00:00 --partition=expansion
 #
-# Any extra arguments after the title are forwarded verbatim to sbatch and
+# Any extra arguments after the tag are forwarded verbatim to sbatch and
 # can override any of the computed or default resource flags.
 # =============================================================================
 
@@ -30,14 +33,20 @@ else
     hpc_cost_pre_submit() { :; }
 fi
 
-if [[ "$#" -lt 2 ]]; then
-    echo "Usage: $0 <opts_file> <title_prefix> [extra_sbatch_flags...]"
+if [[ "$#" -lt 1 ]]; then
+    echo "Usage: $0 <opts_file> [tag] [extra_sbatch_flags...]"
     exit 1
 fi
 
 opts_file="$1"
-title="$2"
-shift 2   # remaining args passed verbatim to sbatch
+shift 1   # remaining args: optional tag then sbatch overrides
+
+# Second arg is the optional tag (doesn't start with --); rest are sbatch flags
+title=""
+if [[ "${1:-}" != "" && "${1:-}" != --* ]]; then
+    title="$1"
+    shift 1
+fi
 
 # Resolve opts_file relative to project root if not absolute
 [[ "$opts_file" != /* ]] && opts_file="$PROJECT_ROOT/$opts_file"
@@ -86,11 +95,17 @@ hpc_cost_pre_submit "${NPROCS}"
 # ---------------------------------------------------------------------------
 # Submit — command-line flags override #SBATCH directives in run_permafrost.sh
 # ---------------------------------------------------------------------------
+job_name="$(basename "$opts_file" .opts)"
+
+# Build run_permafrost.sh args: always pass opts_file; pass title only if set
+run_args=("$opts_file")
+[[ -n "$title" ]] && run_args+=("$title")
+
 sbatch \
+    --job-name="$job_name" \
     --nodes="${NNODES}" \
     --ntasks="${NPROCS}" \
     --ntasks-per-node="${NTASKS_PER_NODE}" \
     "$@" \
     "$SCRIPT_DIR/run_permafrost.sh" \
-    "$opts_file" \
-    "$title"
+    "${run_args[@]}"

@@ -5,10 +5,14 @@
 # Location: $PETIGA_DIR/projects/permafrost/scripts/Studio/run_permafrost.sh
 #
 # Usage:
-#   ./scripts/Studio/run_permafrost.sh <PETSc_options_file> <run_name_prefix>
+#   ./scripts/Studio/run_permafrost.sh <PETSc_options_file> [tag]
+#
+# The output folder is auto-derived from the opts file's ic_type and basename:
+#   $RESULTS_BASE/<ic_category>/<opts_basename>[_tag]_<timestamp>/
 #
 # Example:
-#   ./scripts/Studio/run_permafrost.sh ./inputs/tests/test3.opts enclosed_grain_pair_
+#   ./scripts/Studio/run_permafrost.sh inputs/tests/test_2D_TouchingGrainPair.opts
+#   ./scripts/Studio/run_permafrost.sh inputs/tests/test_1D_IceSlab.opts sweep_a
 # =============================================================================
 
 set -uo pipefail
@@ -52,25 +56,29 @@ UNIVERSAL_OPTS="$INPUTS_DIR/universal.opts"
 usage() {
     echo ""
     echo "Usage:"
-    echo "  ./scripts/Studio/run_permafrost.sh <PETSc_options_file> <run_name_prefix>"
+    echo "  ./scripts/Studio/run_permafrost.sh <PETSc_options_file> [tag]"
     echo ""
     echo "Arguments:"
     echo "  PETSc_options_file   Path to PETSc .opts file (relative to project root)"
-    echo "  run_name_prefix      Prefix for the output folder name"
+    echo "  tag                  Optional label appended to the run folder name"
+    echo ""
+    echo "The output folder is derived automatically from the opts file:"
+    echo "  \$RESULTS_BASE/<ic_type_category>/<opts_basename>[_tag]_<timestamp>/"
     echo ""
     echo "Example:"
-    echo "  ./scripts/Studio/run_permafrost.sh ./inputs/tests/test3.opts enclosed_grain_"
+    echo "  ./scripts/Studio/run_permafrost.sh ./inputs/tests/test_2D_TouchingGrainPair.opts"
+    echo "  ./scripts/Studio/run_permafrost.sh ./inputs/tests/test_1D_IceSlab.opts sweep_a"
     echo ""
 }
 
-if [ "$#" -lt 2 ]; then
+if [ "$#" -lt 1 ]; then
     echo "❌ Error: Missing required arguments."
     usage
     exit 1
 fi
 
 params_file="$1"
-title="$2"
+title="${2:-}"
 
 # Resolve params_file relative to project root if not absolute
 if [[ "$params_file" != /* ]]; then
@@ -150,14 +158,37 @@ compile_code() {
 }
 
 # ---------------------------------------------------------------------------
+# derive_ic_subfolder
+# Reads -ic_type from the opts file and maps it to a clean category name
+# ---------------------------------------------------------------------------
+derive_ic_subfolder() {
+    local ic
+    ic=$(awk '$1=="-ic_type"{print $2}' "$params_file" | head -n1)
+    case "${ic:-}" in
+        ice_slab)        echo "IceSlab" ;;
+        enclosed)        echo "EnclosedGrainPair" ;;
+        contact_sed)     echo "ContactSed" ;;
+        capillary)       echo "CapillaryBridge" ;;
+        slab_and_grains) echo "SlabAndGrains" ;;
+        ice_cap)         echo "IceCap" ;;
+        *)               echo "Other" ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
 # create_folder
-# Creates a timestamped output directory
+# Creates an output directory under $RESULTS_BASE/<ic_category>/<opts_name>[_tag]_<ts>
 # ---------------------------------------------------------------------------
 create_folder() {
     echo ""
     echo "--- Creating output folder ---"
-    name="${title}$(date +%Y-%m-%d__%H.%M.%S)"
-    folder="$RESULTS_BASE/$name"
+    local subfolder ts opts_name tag
+    subfolder=$(derive_ic_subfolder)
+    opts_name=$(basename "$params_file" .opts)
+    ts=$(date +%Y-%m-%d__%H.%M.%S)
+    tag="${title:+_${title}}"
+    name="${opts_name}${tag}_${ts}"
+    folder="$RESULTS_BASE/$subfolder/$name"
 
     mkdir -p "$folder"
     echo "Output folder: $folder"
