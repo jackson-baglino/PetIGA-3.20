@@ -1,4 +1,10 @@
 
+## 2026-05-14 — add plot_mass.py phase mass tracking
+
+- Created postprocess/plot_mass.py: integrates ice, sediment, and vapor masses from sol_*.dat snapshots using first-order quadrature over the uniform mesh; plots all four curves (ice, sed, vap, total) with a vertical dashed line at t_sed_freeze marking the 3-phase → 2-phase model switch.
+- Time axis mapped from SSA_evo.dat; time units auto-selected by run length; mass units dimension-aware (kg m⁻² / kg m⁻¹ / kg).
+- Updated postprocess/run_postprocess.sh to call plot_mass.py automatically when igasol.dat and sol_*.dat are present.
+
 ---
 
 **Session ended:** 2026-05-14 15:43:21
