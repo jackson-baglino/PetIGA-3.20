@@ -126,6 +126,20 @@ if [[ -f "$RUN_DIR/outp.txt" ]]; then
     set -e
 fi
 
+# ---------------------------------------------------------------------------
+# Phase mass vs. time (igasol.dat + sol_*.dat required)
+# ---------------------------------------------------------------------------
+if [[ -f "$RUN_DIR/igasol.dat" ]] && ls "$RUN_DIR"/sol_*.dat &>/dev/null 2>&1; then
+    echo ""
+    echo "--- Phase mass vs. time ---"
+    set +e
+    "$PYTHON" "$POSTPROCESS_DIR/plot_mass.py" \
+        --dir "$RUN_DIR" --save "$RUN_DIR/mass.png" \
+        2>&1 | sed 's/^/  /'
+    (( overall_exit += $? )) || true
+    set -e
+fi
+
 echo ""
 echo "========================================================================="
 if [[ "$overall_exit" -ne 0 ]]; then
