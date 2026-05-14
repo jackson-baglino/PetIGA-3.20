@@ -1,0 +1,55 @@
+# =============================================================================
+# test_2D_SeparatedGrainPair_hires.opts — 2D separated grain pair, high resolution
+#
+# Purpose: Same geometry as test_2D_SeparatedGrainPair.opts but with eps=3.56e-07 m
+#          and mesh sized at 2× standard resolution (Nx=190, Ny=380).
+#          See test_2D_SeparatedGrainPair.opts for the standard-resolution version.
+#          See test_1D_SeparatedGrainPair_hires.opts for the 1D hi-res cross-section.
+#          See test_2D_TouchingGrainPair_hires.opts for the touching variant.
+#
+# Usage:
+#   mpiexec -np N ./permafrost \
+#       -options_file inputs/universal.opts \
+#       -options_file inputs/tests/test_2D_SeparatedGrainPair_hires.opts
+#
+# Penalty and solver defaults are in inputs/universal.opts.
+# =============================================================================
+
+# ---------- Initial Condition ----------
+-ic_type enclosed                       # ice grain enclosing two sediment grains
+
+# ---------- Domain ----------
+-dim 2
+-Nx 190
+-Ny 380
+-Nz 1
+-Lx 6.25e-05                            # domain length in x (m)
+-Ly 1.25e-04                            # domain length in y (m)
+-Lz 0
+
+# ---------- Grain Radii ----------
+-RCice 1.875e-5                         # ice shell outer radius — both grains (m)
+-RCsed 8.75e-6                          # sediment core radius — both grains (m)
+-grain_sep 5.0e-6                       # air gap between outer ice surfaces (m); ~7 interface widths
+
+# Per-grain overrides (uncomment to create asymmetric grains):
+# -RCice0 1.2e-5                        # outer ice radius of grain 0 (m)
+# -RCice1 2.5e-5                        # outer ice radius of grain 1 (m)
+# -RCsed0 6.0e-6                        # sediment core radius of grain 0 (m)
+# -RCsed1 6.0e-6                        # sediment core radius of grain 1 (m)
+
+# ---------- Time Stepping ----------
+-delt_t 1.0e-2                          # initial time step (s)
+-t_final 1.0e-2                         # total simulation time (s) — debug
+
+# ---------- Phase-Field Physics ----------
+-eps 3.56e-07                           # diffuse interface half-width (m); 2× standard resolution
+-flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
+
+# ---------- Thermal & Humidity ----------
+-humidity 1.00
+-temp -20.0
+-grad_temp0 0.0,0.0,0.0
+
+# ---------- Time Stepping Override ----------
+-NRmax 8                                # raised from 5 to tolerate stiff transients

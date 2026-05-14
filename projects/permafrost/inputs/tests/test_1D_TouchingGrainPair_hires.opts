@@ -1,16 +1,17 @@
 # =============================================================================
-# test_1D_EnclosedGrainPair_hires.opts — 1D enclosed grain pair, high resolution
+# test_1D_TouchingGrainPair_hires.opts — 1D touching grain pair, high resolution
 #
-# Purpose: Same as test_1D_EnclosedGrainPair.opts but with eps=3.56e-07 m
+# Purpose: Same as test_1D_TouchingGrainPair.opts but with eps=3.56e-07 m
 #          and mesh sized at 2× standard resolution (Nx=380).
 #          1D cross-section along x = 0.5*Lx_2D of the hi-res 2D test.
-#          See test_1D_EnclosedGrainPair.opts for the standard-resolution version.
-#          See test_2D_EnclosedGrainPair_hires.opts for the 2D hi-res version.
+#          See test_1D_TouchingGrainPair.opts for the standard-resolution version.
+#          See test_2D_TouchingGrainPair_hires.opts for the 2D hi-res version.
+#          See test_1D_SeparatedGrainPair_hires.opts for the non-touching variant.
 #
 # Usage:
 #   mpiexec -np N ./permafrost \
 #       -options_file inputs/universal.opts \
-#       -options_file inputs/tests/test_1D_EnclosedGrainPair_hires.opts
+#       -options_file inputs/tests/test_1D_TouchingGrainPair_hires.opts
 #
 # Penalty and solver defaults are in inputs/universal.opts.
 # =============================================================================
@@ -20,26 +21,26 @@
 
 # ---------- Domain ----------
 -dim 1
--Nx 380                                 # matches Ny of the hi-res 2D test
+-Nx 380                                 # 2× standard resolution; matches Ny of hi-res 2D test
 -Lx 1.25e-04                            # matches Ly of the hi-res 2D test (m)
 
 # ---------- Grain Radii ----------
 -RCice 1.875e-5                         # ice shell outer radius — both grains (m)
 -RCsed 8.75e-6                          # sediment core radius — both grains (m)
+-grain_sep 0                            # grains touch at a single point (tangent)
 
 # Per-grain overrides (uncomment to create asymmetric grains):
 # -RCice0 1.2e-5                        # outer ice radius of grain 0 (default: RCice)
 # -RCice1 2.5e-5                        # outer ice radius of grain 1 (default: RCice)
 # -RCsed0 6.0e-6                        # sediment core radius of grain 0 (default: RCsed)
 # -RCsed1 6.0e-6                        # sediment core radius of grain 1 (default: RCsed)
-# -grain_sep 5.0e-6                     # air gap between outer ice surfaces; 0 = tangent
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-2                          # initial time step (s)
 -t_final 86400.0                        # total simulation time (s) — 1 day
 
 # ---------- Phase-Field Physics ----------
--eps 3.56e-07                           # diffuse interface half-width (m); 4 elements/interface
+-eps 3.56e-07                           # diffuse interface half-width (m); 2× standard resolution
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
 
 # ---------- Thermal & Humidity ----------
