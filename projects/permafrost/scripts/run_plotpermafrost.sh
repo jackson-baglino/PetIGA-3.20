@@ -24,8 +24,8 @@ execute_python_scripts() {
         return 1
     fi
 
-    echo "Executing: $plot_py"
-    python3 "$plot_py"
+    echo "Executing: $plot_py --dir $dir"
+    python3 "$plot_py" --dir "$dir"
 }
 
 # Main script logic
@@ -43,11 +43,12 @@ else
     echo "Creating vtkOut directory"
     mkdir -p vtkOut
 
-    plot_py=$(find_plot_script "$(pwd)")
+    dir="$(pwd)"
+    plot_py=$(find_plot_script "$dir")
     if [[ -z "$plot_py" ]]; then
         echo "⚠️  plotpermafrost.py not found — skipping."
         exit 1
     fi
-    echo "Executing: $plot_py"
-    python3 "$plot_py"
+    echo "Executing: $plot_py --dir $dir"
+    python3 "$plot_py" --dir "$dir"
 fi
