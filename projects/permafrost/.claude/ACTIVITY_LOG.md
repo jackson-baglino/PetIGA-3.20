@@ -1,4 +1,14 @@
 
+## 2026-05-14 — opts eps/mesh cleanup, EnclosedGrainPair split, auto folder naming
+
+- Set eps=7.12e-07 in all 6 standard-resolution test opts files (mesh sizes unchanged).
+- Set Nx/Ny = 2× standard in all 8 hi-res opts files (eps=3.56e-07 unchanged); updated header comments.
+- Split 4 generic EnclosedGrainPair opts files into 8: 4 TouchingGrainPair (grain_sep=0) + 4 SeparatedGrainPair (grain_sep=5.0e-6); each has standard and hires companion.
+- Both run scripts (Studio + HPC): output folder auto-derived from ic_type → subfolder (IceSlab, EnclosedGrainPair, etc.) and opts basename + timestamp; second arg is now an optional tag.
+- HPC run script: removed all post-processing calls; results are staged for local post-processing after rsync.
+- submit_permafrost.sh: title arg made optional; SLURM --job-name set from opts basename.
+- Created postprocess/run_postprocess.sh: self-contained post-processing runner copied into every run folder; handles VTK, 1D profiles, scalars, and timestep diagnostic.
+
 ---
 
 **Session ended:** 2026-05-14 15:16:18
