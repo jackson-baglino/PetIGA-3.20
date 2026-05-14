@@ -1,4 +1,9 @@
 
+---
+
+**Session ended:** 2026-05-14 15:43:21
+
+
 ## 2026-05-14 — opts eps/mesh cleanup, EnclosedGrainPair split, auto folder naming
 
 - Set eps=7.12e-07 in all 6 standard-resolution test opts files (mesh sizes unchanged).
