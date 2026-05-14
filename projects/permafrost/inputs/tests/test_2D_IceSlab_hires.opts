@@ -1,14 +1,15 @@
 # =============================================================================
-# test_2D_IceSlab.opts — 2D curved ice slab with right-side sediment
+# test_2D_IceSlab_hires.opts — 2D ice slab with right-side sediment, high resolution
 #
-# Purpose: Study curvature effects on sublimation. Ice is a circular disk of
-#          radius R = Ly centred at (0.40*Lx, 0.5*Ly); sediment occupies the
-#          right side of the domain (flat wall at 0.80*Lx).
+# Purpose: Same as test_2D_IceSlab.opts but with eps=3.56e-07 m and mesh
+#          sized for 4 elements across the diffuse interface (Nx=398, Ny=80).
+#          Use for convergence studies or high-fidelity 2D slab simulations.
+#          See test_2D_IceSlab.opts for the standard-resolution version.
 #
 # Usage:
 #   mpiexec -np N ./permafrost \
 #       -options_file inputs/universal.opts \
-#       -options_file inputs/tests/test_2D_IceSlab.opts
+#       -options_file inputs/tests/test_2D_IceSlab_hires.opts
 #
 # Penalty and solver defaults are in inputs/universal.opts.
 # =============================================================================
@@ -18,11 +19,11 @@
 
 # ---------- Domain ----------
 -dim 2
--Nx 152
--Ny 31
+-Nx 398
+-Ny 80
 -Nz 1
 -Lx 1.00e-04                            # domain length in x (m)
--Ly 2.00e-05                            # domain length in y (m); ice radius R = Ly
+-Ly 2.00e-05                            # domain length in y (m)
 -Lz 0
 
 # ---------- Time Stepping ----------
@@ -30,7 +31,7 @@
 -t_final 86400.0                        # total simulation time (s) — 1 day
 
 # ---------- Phase-Field Physics ----------
--eps 9.3295e-07                         # diffuse interface half-width (m)
+-eps 3.56e-07                           # diffuse interface half-width (m); 4 elements/interface
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
 -t_sed_freeze 60                        # override universal 300 s: shorter freeze for this geometry
 

@@ -1,13 +1,14 @@
 # =============================================================================
-# test2_CapillaryBridge.opts — 2D capillary ice bridge between sediment grains
+# test2_CapillaryBridge_hires.opts — 2D capillary ice bridge, high resolution
 #
-# Purpose: Study formation and evolution of a capillary ice bridge linking
-#          two sediment grains. Initial condition from binary restart file.
+# Purpose: Same as test2_CapillaryBridge.opts but with eps=3.56e-07 m and
+#          mesh sized for 4 elements across the diffuse interface (Nx=497, Ny=994).
+#          See test2_CapillaryBridge.opts for the standard-resolution version.
 #
 # Usage:
 #   mpiexec -np N ./permafrost \
 #       -options_file inputs/universal.opts \
-#       -options_file inputs/tests/test2_CapillaryBridge.opts
+#       -options_file inputs/tests/test2_CapillaryBridge_hires.opts
 #
 # Penalty and solver defaults are in inputs/universal.opts.
 # =============================================================================
@@ -17,8 +18,8 @@
 
 # ---------- Domain ----------
 -dim 2
--Nx 190
--Ny 379
+-Nx 497
+-Ny 994
 -Nz 1
 -Lx 1.25e-04                            # domain length in x (m)
 -Ly 2.5e-04                             # domain length in y (m)
@@ -37,7 +38,7 @@
 -t_final 1.0                            # total simulation time (s)
 
 # ---------- Phase-Field Physics ----------
--eps 9.3295e-07                         # diffuse interface half-width (m)
+-eps 3.56e-07                           # diffuse interface half-width (m); 4 elements/interface
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
 -flag_sed_mode 1                        # sediment: freeze at t_sed_freeze (from universal)
 

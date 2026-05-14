@@ -1,13 +1,14 @@
 # =============================================================================
-# test1_IceCap.opts — 2D ice cap loaded from binary initial condition
+# test1_IceCap_hires.opts — 2D ice cap, high resolution
 #
-# Purpose: Study sublimation and redistribution of a pre-computed ice-cap
-#          geometry driven by a vertical temperature gradient.
+# Purpose: Same as test1_IceCap.opts but with eps=3.56e-07 m and mesh sized
+#          for 4 elements across the diffuse interface (Nx=398, Ny=497).
+#          See test1_IceCap.opts for the standard-resolution version.
 #
 # Usage:
 #   mpiexec -np N ./permafrost \
 #       -options_file inputs/universal.opts \
-#       -options_file inputs/tests/test1_IceCap.opts
+#       -options_file inputs/tests/test1_IceCap_hires.opts
 #
 # Penalty and solver defaults are in inputs/universal.opts.
 # =============================================================================
@@ -18,8 +19,8 @@
 # ---------- Domain ----------
 -dim 2
 -dof 3                                  # override: ice / temperature / vapor (no sediment DOF)
--Nx 152
--Ny 190
+-Nx 398
+-Ny 497
 -Nz 1
 -Lx 1.0e-04                             # domain length in x (m)
 -Ly 1.25e-04                            # domain length in y (m)
@@ -30,7 +31,7 @@
 -t_final 86400                          # total simulation time (s) — 1 day
 
 # ---------- Phase-Field Physics ----------
--eps 9.3295e-07                         # diffuse interface half-width (m)
+-eps 3.56e-07                           # diffuse interface half-width (m); 4 elements/interface
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
 -flag_sed_mode 1                        # sediment: freeze at t_sed_freeze (from universal)
 

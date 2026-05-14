@@ -1,15 +1,14 @@
 # =============================================================================
-# test5_SlabAndGrains.opts — 2D ice slab with random grain region
+# test5_SlabAndGrains_hires.opts — 2D ice slab with random grain region, high resolution
 #
-# Purpose: Study ice migration driven by sublimation from a solid ice slab
-#          into a region of randomly-packed ice and sediment grains. The slab
-#          occupies the rightmost x_slab_frac fraction of the domain; grains
-#          fill the left region.
+# Purpose: Same as test5_SlabAndGrains.opts but with eps=3.56e-07 m and mesh
+#          sized for 4 elements across the diffuse interface (Nx=994, Ny=497).
+#          See test5_SlabAndGrains.opts for the standard-resolution version.
 #
 # Usage:
 #   mpiexec -np N ./permafrost \
 #       -options_file inputs/universal.opts \
-#       -options_file inputs/tests/test5_SlabAndGrains.opts
+#       -options_file inputs/tests/test5_SlabAndGrains_hires.opts
 #
 # Penalty and solver defaults are in inputs/universal.opts.
 # =============================================================================
@@ -19,8 +18,8 @@
 
 # ---------- Domain ----------
 -dim 2
--Nx 379
--Ny 190
+-Nx 994
+-Ny 497
 -Nz 1
 -Lx 2.5e-4                             # domain length in x (m)
 -Ly 1.25e-4                            # domain length in y (m)
@@ -40,7 +39,7 @@
 -t_final 1814400.0                      # total simulation time (s) — 21 days
 
 # ---------- Phase-Field Physics ----------
--eps 9.3295e-07                         # diffuse interface half-width (m); 4 elements/interface
+-eps 3.56e-07                           # diffuse interface half-width (m); 4 elements/interface
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
 
 # ---------- Thermal & Humidity ----------

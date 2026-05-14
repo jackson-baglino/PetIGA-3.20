@@ -1,16 +1,15 @@
 # =============================================================================
-# test_1D_IceSlab.opts — 1D centered ice slab
+# test_1D_IceSlab_hires.opts — 1D centered ice slab, high resolution
 #
-# Purpose: Verify that a diffuse ice slab in a 1D air domain produces the
-#          correct phase-field profile and that vapor/temperature fields
-#          initialize consistently with temp0 and hum0.
-# Expected: phi_ice peaks at 1.0 in [0.35 Lx, 0.65 Lx]; sediment slab at
-#           0.75 Lx; temp = -20 C uniform; rhov = hum0 * rhoVS(-20 C).
+# Purpose: Same as test_1D_IceSlab.opts but with eps=3.56e-07 m and mesh
+#          sized for 4 elements across the diffuse interface (Nx=398).
+#          Use for convergence studies or high-fidelity 1D benchmarks.
+#          See test_1D_IceSlab.opts for the standard-resolution version.
 #
 # Usage:
 #   mpiexec -np N ./permafrost \
 #       -options_file inputs/universal.opts \
-#       -options_file inputs/tests/test_1D_IceSlab.opts
+#       -options_file inputs/tests/test_1D_IceSlab_hires.opts
 #
 # Penalty and solver defaults are in inputs/universal.opts.
 # =============================================================================
@@ -20,7 +19,7 @@
 
 # ---------- Domain ----------
 -dim 1
--Nx 152
+-Nx 398
 -Lx 1.00e-04                            # domain length in x (m)
 
 # ---------- Time Stepping ----------
@@ -28,7 +27,7 @@
 -t_final 864000.0                       # total simulation time (s) — 10 days
 
 # ---------- Phase-Field Physics ----------
--eps 9.3295e-07                         # diffuse interface half-width (m); 4 elements/interface
+-eps 3.56e-07                           # diffuse interface half-width (m); 4 elements/interface
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
 
 # ---------- Thermal & Humidity ----------
