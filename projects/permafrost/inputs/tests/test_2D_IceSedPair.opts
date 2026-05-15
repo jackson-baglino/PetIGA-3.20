@@ -37,13 +37,13 @@
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-2                          # initial time step (s)
--t_final 86400.0                        # total simulation time (s) — 1 day
+-t_final 86400.0                        # total simulation time (s) — 100 day
 
 # ---------- Phase-Field Physics ----------
 -eps 7.12e-07                           # diffuse interface half-width (m)
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
 
 # ---------- Thermal & Humidity ----------
--humidity 0.95
+-humidity 1.00
 -temp -20.0
 -grad_temp0 0.0,0.0,0.0

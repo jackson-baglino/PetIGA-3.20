@@ -26,7 +26,7 @@
 # ---------- Phase-field defaults ----------
 -flag_tIC 0                             # IC variant: 0=centered slab, 2=flat interface
 -n_relax 1                              # AC-only relaxation steps before full physics
--t_sed_freeze 1                       # 3-phase duration (s) before sediment freezes
+-t_sed_freeze 300                       # 3-phase duration (s) before sediment freezes
 
 # ---------- Boundary condition defaults ----------
 -flag_BC_Tfix 0                         # do not fix T at boundaries
@@ -34,10 +34,10 @@
 -flag_Tdep 0                            # temperature-independent material properties
 
 # ---------- Penalty defaults ----------
--difvap_pen 1.0e-4                      # D_pen = difvap_pen * difvap (in ice/sed regions)
--k_pen 1e5                              # vapor interface equilibrium stiffness
+-difvap_pen 1.0e-8                      # D_pen = difvap_pen * difvap (in ice/sed regions)
+-k_pen 1e7                              # vapor interface equilibrium stiffness
 -k_sed_pen -1                           # sediment restoring stiffness (-1 = auto: 1e-4/eps^2)
--Lambda 1.0e2                           # triple-junction free-energy penalty strength
+-Lambda 1.0e3                           # triple-junction free-energy penalty strength
 
 # ---------- Adaptive time stepping ----------
 -adap 1                                 # enable adaptive dt
@@ -48,17 +48,17 @@
 # ---------- Nonlinear solver (SNES) ----------
 -snes_type newtonls                     # Newton with line search
 -snes_max_it 15                         # max Newton iterations per time step (raised: phase-field needs room at stiff transients)
--snes_rtol 1e-06                        # relative residual tolerance
--snes_atol 1e-10                        # absolute residual tolerance (tightened: prevents false convergence near zero)
--snes_stol 1e-06                        # step tolerance
+-snes_rtol 1e-08                        # relative residual tolerance
+-snes_atol 1e-12                        # absolute residual tolerance (tightened: prevents false convergence near zero)
+-snes_stol 1e-08                        # step tolerance
 -snes_converged_reason                  # print convergence reason each step
 -snes_linesearch_type bt                # backtracking line search
 -snes_linesearch_monitor                # print line search progress
 
 # ---------- Linear solver (KSP) ----------
 -ksp_type gmres                         # GMRES — correct for the asymmetric 4-DOF system
--ksp_rtol 1e-06                         # relative residual tolerance (tightened: ensures Newton convergence rate)
--ksp_atol 1e-10                         # absolute residual tolerance (tightened: consistent with SNES atol)
+-ksp_rtol 1e-08                         # relative residual tolerance (tightened: ensures Newton convergence rate)
+-ksp_atol 1e-12                         # absolute residual tolerance (tightened: consistent with SNES atol)
 -ksp_max_it 500                         # max GMRES iterations
 -ksp_gmres_restart 200                  # GMRES restart interval (reduced from 500: saves ~60% memory)
 -ksp_converged_reason                   # print convergence reason each step
