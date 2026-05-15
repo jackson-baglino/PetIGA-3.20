@@ -1,4 +1,16 @@
 
+---
+
+**Session ended:** 2026-05-15 08:48:30
+
+
+## 2026-05-15 — model description document + t_sed_freeze tuning
+
+- Created docs/model_description.md: comprehensive model description covering governing equations, three-phase free energy, Allen-Cahn dynamics, vapor penalty scheme, sublimation kinetics, material properties, IGA/B-spline discretisation, generalized-α time integration, Newton-Krylov nonlinear solver, per-DOF convergence test, GMRES+ASM+ILU(2) linear solver, adaptive time stepping, and initial conditions. Includes analysis of why k_pen=1e9+FD Jacobian caused spurious air vs. the corrected k_pen=1e5+analytical Jacobian.
+- User changed t_sed_freeze 300 → 1 in universal.opts to more rapidly enter 2-phase mode.
+
+---
+
 ## 2026-05-15 — tighten solver tolerances and improve preconditioner
 
 - Switched preconditioner from bjacobi+ILU(1) to ASM+ILU(2) with pc_asm_overlap=1 in universal.opts; additive Schwarz with node overlap improves conditioning at MPI block boundaries for the 4-DOF coupled B-spline system.
