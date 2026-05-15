@@ -63,13 +63,20 @@ int main(int argc, char *argv[]) {
     user.d0_sub0    = 1.0e-11;   /* Parameter d0 for substrate */
     user.beta_sub0  = 1.0e-3; // 1.4e5;    /* Parameter beta for substrate */
 
-    PetscReal gamma_im = 0.033; /* Surface energies for ice-metal interface */
-    PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
-    PetscReal gamma_mv = 0.056; /* Surface energies for metal-vapor interface */
-
-    // PetscReal gamma_im = 0.030; /* Surface energies for ice-metal interface */
-    // PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
-    // PetscReal gamma_mv = 0.300; /* Surface energies for metal-vapor interface */
+    /* Surface energies [J/m²] — chosen so all Kim-Steinbach combination energies
+     * eta_i = gamma_iv+gamma_im-gamma_mv > 0,
+     * eta_s = gamma_mv+gamma_im-gamma_iv > 0,
+     * eta_a = gamma_iv+gamma_mv-gamma_im > 0.
+     * With the values below: eta_i=0.086, eta_s=0.028, eta_a=0.132,
+     * Young contact angle theta = arccos((gamma_mv-gamma_im)/gamma_iv) = 77.8 deg.
+     * gamma_im = 0.057 J/m² (ice on quartz, Israelachvili 2011)
+     * gamma_iv = 0.109 J/m² (ice-vapor, Petrenko & Whitworth 1999)
+     * gamma_mv = 0.080 J/m² (regolith-vapor, effective value that gives theta=77.8 deg
+     *                         and eta_s>0; physical silicate values ~0.3-0.5 J/m² violate
+     *                         eta_i>0 in the Kim-Steinbach model) */
+    PetscReal gamma_im = 0.057; /* ice–sediment surface energy [J/m²] */
+    PetscReal gamma_iv = 0.109; /* ice–vapor    surface energy [J/m²] */
+    PetscReal gamma_mv = 0.080; /* sediment–vapor surface energy [J/m²] */
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 1;          /* Polynomial order */
