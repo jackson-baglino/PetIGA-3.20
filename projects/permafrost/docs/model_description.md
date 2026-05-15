@@ -423,39 +423,203 @@ Full solution fields (φ_i, T, ρ_v, φ_s, φ_a) are written as binary PetIGA `s
 
 ## 13. Why the Current Model Eliminates Spurious Air
 
-Comparison with results from 2026-05-05 (run `test_1D_IceSlab_2Phase_difvappen1e-07_k_pen1e09`) reveals four root causes of spurious air that have since been corrected:
+A detailed comparison of the old run (`test_1D_IceSlab_2Phase_difvappen1e-07_k_pen1e09`, 2026-05-05) with the current code reveals **eight distinct errors**, each of which would individually degrade simulation quality, and which together created a catastrophic failure cascade that drove φ_i < 0 (spurious air) throughout the domain.
 
-### 13.1 Extreme Interface Equilibrium Stiffness (k_pen)
+### 13.0 Summary of All Changes
 
-**Old:** k_pen = 10⁹ Pa.  
-**Current:** k_pen = 10⁵ Pa.
+| Parameter / Code Element | Old | Current | Impact |
+|--------------------------|-----|---------|--------|
+| xi_v on k_pen in vapor residual | **absent** (bug) | `xi_v * k_pen` | Dominant: penalty 1000× too large |
+| Initial ρ_v inside solid | `h₀ ρ_vs` (wrong) | `ρ_vs` (correct) | Enormous t=0 disequilibrium |
+| Jacobian | FD (IGAFormIJacobianFD) | Analytical (Jacobian_A1) | O(10) errors in dominant blocks |
+| k_pen | 10⁹ | 10⁵ | 4 orders of magnitude |
+| ξ_v | 10⁻³ | 10⁻⁴ | Tighter time-scale separation |
+| difvap_pen (α_pen) | 10⁻⁷ | 10⁻⁴ | Near-discontinuity → smooth |
+| humidity (h₀) | 0.50 | 0.95 | 10× smaller initial driving force |
+| n_relax | 12 | 1 | Vapor/ice coupled from step 1 |
+| t_sed_freeze | 0 s | 1 s | Brief 3-phase equilibration |
+| snes_atol | 10⁻⁸ | 10⁻¹⁰ | False convergence at small residual |
+| ksp_rtol | 10⁻⁵ | 10⁻⁶ | Linear solve accuracy |
+| Preconditioner | bjacobi + ILU(1) | ASM + ILU(2), overlap=1 | Better conditioning |
 
-The penalty term k_pen H(φ_i+φ_s)(ρ_v − ρ_eq) enforces vapor equilibrium in solid phases. With k_pen = 10⁹, the vapor equation in the solid is dominated by a stiff algebraic constraint (residual ∼ 10⁹ × δρ_v). The Jacobian condition number scales with k_pen, making the linear system nearly singular and the Newton solver unreliable. The inaccurate linear solves caused Newton to converge to wrong roots, producing ρ_v values that overshoot or undershoot the equilibrium, which in turn drove the sublimation source term S_sub erratically. The Allen-Cahn equation for ice then received spurious driving forces, pushing φ_i below zero (creating spurious air) in regions where it should have remained solid.
+---
 
-With k_pen = 10⁵, the penalty is still strong enough to maintain near-equilibrium vapor in the solid (the mismatch |ρ_v − ρ_eq| < 10⁻⁵/k_pen kg m⁻³) but the linear system is well-conditioned and Newton converges cleanly.
+### 13.1 PRIMARY BUG: Missing ξ_v on the Vapor Penalty Residual
 
-### 13.2 Near-Discontinuous Diffusivity Transition (difvap_pen)
+This is the single most important error. In `src/assembly.c`, the vapor residual in the old code was:
 
-**Old:** α_pen = 10⁻⁷ (D_eff = D_v × 10⁻⁷ inside ice — seven orders of magnitude reduction).  
-**Current:** α_pen = 10⁻⁴ (four orders of magnitude reduction).
+```c
+/* OLD — INCORRECT */
+R_vap  = N0[a] * rhov_t;                                              // time deriv (unscaled)
+R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);        // diffusion (xi_v present)
+R_vap += k_pen * g_phiiphis * (rhov - rhov_eq) * N0[a];               // penalty (NO xi_v) ← BUG
+R_vap -= xi_v * N0[a] * rho_ice * air_t;                              // source (xi_v present)
+```
 
-The effective diffusivity D_eff transitions from D_v (in air) to α_pen × D_v (in ice) over the finite interface width. With α_pen = 10⁻⁷, the jump is so extreme that the smooth Heaviside H(φ_i) cannot adequately resolve it on the numerical mesh — individual Gauss points near the interface see wildly different diffusivity values depending on which side of the midpoint they fall. This creates a nearly-discontinuous coefficient in the vapor diffusion term, which the finite-difference Jacobian approximation (used in the old code) cannot handle accurately. The resulting Jacobian errors caused the linear solve to be inaccurate at the interface, allowing ρ_v gradients to develop that are inconsistent with the physical boundary condition, again driving spurious phase-field evolution.
+The current code fixes this as:
 
-### 13.3 Finite-Difference Jacobian → Analytical Jacobian
+```c
+/* NEW — CORRECT */
+PetscReal vap_pen = xi_v * k_pen * g_phiiphis * (rhov - rhov_eq);    // xi_v present
+PetscReal vap_src = xi_v * rho_ice * air_t;
+R_vap  = N0[a] * rhov_t;
+R_vap += xi_v * difvap * air_eff * (N1[a][l] * grad_rhov[l]);
+R_vap += vap_pen * N0[a];                                              // xi_v present ← FIXED
+R_vap -= vap_src * N0[a];
+```
 
-**Old:** `Jacobian()` returned 0, so PETSc computed the Jacobian by finite differences.  
-**Current:** Full analytical Jacobian_A1, including all 4 × 4 cross-coupling blocks.
+**Why this matters — quantitative analysis.**
 
-A finite-difference Jacobian perturbation δ ∼ √ε_machine ≈ 10⁻⁸ introduces O(ε_machine/δ) ≈ O(10⁻⁸) relative errors in each Jacobian entry. For entries scaled by k_pen = 10⁹, the absolute error in the [ρ_v, ρ_v] Jacobian block is O(10⁹ × 10⁻⁸) = O(10), which is comparable to the residual itself. Newton's convergence degrades from quadratic to linear or worse when the Jacobian contains O(1) errors in dominant entries.
+The vapor PDE has the physical form:
 
-The analytical Jacobian carries no such perturbation error. Newton converges quadratically once the linear solve is accurate, and the computed solution satisfies all four field equations simultaneously.
+$$\frac{\partial\rho_v}{\partial t} = \xi_v\left[-\nabla\cdot(D_{\mathrm{eff}}\nabla\rho_v) - k_{\mathrm{pen}} H(\phi_i+\phi_s)(\rho_v - \rho_{\mathrm{eq}}) + \rho_{\mathrm{ice}}\frac{\partial\phi_a}{\partial t}\right]$$
 
-### 13.4 Undersaturated Initial Condition
+Every spatial term carries the factor ξ_v, which separates the vapor time scale from the phase-field time scale. The penalty should be ξ_v × k_pen. In the old code, the penalty entered without ξ_v, making it effectively ξ_v⁻¹ times larger than intended.
 
-**Old:** humidity = 0.5 (50% of saturation).  
-**Current:** humidity = 0.95 (95% of saturation).
+With the old parameters (ξ_v = 10⁻³, k_pen = 10⁹):
 
-With h₀ = 0.5, the initial vapor density everywhere in the air phase is ρ_v = 0.5 ρ_vs, creating an immediate strong sublimation driving force (ρ_v − ρ_vs = −0.5 ρ_vs < 0) at every ice-air interface. With a poorly-conditioned solver, this large source term magnifies any Newton convergence error into a visible change in φ_i, and if φ_i overshoots downward (φ_i < 0) in any element, the subsequent time step inherits a corrupted initial condition. With h₀ = 0.95, the system is near equilibrium and the sublimation driving force is 10× smaller, giving the solver much more margin for error.
+| Term | Old magnitude | New magnitude (ξ_v = 10⁻⁴, k_pen = 10⁵) |
+|------|--------------|------------------------------------------|
+| Time derivative ∂ρ_v/∂t | ~ ρ_vs / Δt ≈ 3×10⁻⁵ / 10⁻⁴ = 0.3 | ~ 0.3 |
+| Diffusion ξ_v D ρ_v / ε² | ~ 10⁻³ × 2.2×10⁻⁵ × 3×10⁻⁵ / (7×10⁻⁷)² ≈ 1.4×10⁻³ | ~ 10⁻⁴ × same ≈ 1.4×10⁻⁴ |
+| Penalty (as written in old code) | **k_pen × δρ_v = 10⁹ × 3×10⁻⁵ ≈ 3×10⁴** | ξ_v × k_pen × δρ_v = 10⁻⁴ × 10⁵ × 3×10⁻⁵ ≈ 3×10⁻⁴ |
+
+The old penalty (3×10⁴) exceeded the time derivative (0.3) by **five orders of magnitude**. The vapor equation was not a PDE — it was a nearly algebraic constraint ρ_v = ρ_eq throughout the solid. The time derivative term was invisible. Any perturbation in φ_i instantly forced ρ_v to follow ρ_eq, regardless of physical plausibility.
+
+In the current model, the penalty (3×10⁻⁴) is smaller than the time derivative (0.3) by three orders of magnitude — the vapor field evolves dynamically with a penalty that gently nudges it toward equilibrium.
+
+---
+
+### 13.2 Wrong Vapor Initial Condition Inside Solid
+
+In `src/initial_conditions.c`, the old code set:
+
+```c
+/* OLD — INCORRECT for solid-phase points */
+u[j][i].rhov = user->hum0 * rho_vs;   /* applies h₀ everywhere, including inside ice */
+```
+
+The current code uses:
+
+```c
+/* NEW — CORRECT */
+u[j][i].rhov = rho_vs * (user->hum0 * _phi_air + (1.0 - _phi_air));
+/* = rho_vs * (h₀ φ_a + φ_i + φ_s)
+   → rho_vs   inside solid (φ_a ≈ 0)
+   → h₀ rho_vs in air (φ_a ≈ 1) */
+```
+
+**Why this matters.** The equilibrium vapor pressure inside a solid is ρ_vs (saturation). Setting ρ_v = h₀ ρ_vs inside the solid at t=0 means the initial condition is nowhere near equilibrium inside the ice. With h₀ = 0.5, the initial disequilibrium inside ice was:
+
+$$\rho_v - \rho_{\mathrm{eq}} = 0.5\,\rho_{vs} - \rho_{vs} = -0.5\,\rho_{vs} \approx -1.5 \times 10^{-5}\ \text{kg m}^{-3}$$
+
+Combined with the unscaled k_pen = 10⁹, the initial penalty residual inside the solid was:
+
+$$R_{\mathrm{vap}}^{(0)} = k_{\mathrm{pen}} \times (\rho_v - \rho_{\mathrm{eq}}) \approx 10^9 \times (-1.5 \times 10^{-5}) \approx -15\ \text{kg m}^{-3}\text{s}^{-1}$$
+
+This residual is enormous compared to the time derivative (≈ 0.3 kg m⁻³ s⁻¹). Newton's first step would try to reduce this 50× excess by adjusting ρ_v upward by ≈ 1.5×10⁻⁵ kg m⁻³, but with an inaccurate FD Jacobian, the step overshot dramatically. The resulting corrupted ρ_v field then drove the ice Allen-Cahn equation via the sublimation source term, pushing φ_i below zero at t = Δt.
+
+---
+
+### 13.3 Finite-Difference Jacobian Replaced by Analytical Jacobian
+
+**Old (`permafrost2.c`):**
+```c
+// ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
+ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
+```
+
+**Current:**
+```c
+ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
+// ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
+```
+
+PETSc's finite-difference Jacobian perturbs each DOF by δ ∼ √ε_machine ≈ 10⁻⁸ and differentiates the residual numerically. For residual entries that scale with k_pen = 10⁹, the absolute Jacobian error is:
+
+$$\Delta J \sim \frac{\varepsilon_{\mathrm{machine}}}{\delta} \cdot k_{\mathrm{pen}} \sim \frac{10^{-16}}{10^{-8}} \cdot 10^9 = O(10)$$
+
+This is comparable in magnitude to the actual residual (≈ 0.3–15 depending on location). Newton's convergence theory requires the Jacobian error to be small relative to the residual. When ΔJ ∼ R, the Newton step is qualitatively wrong — the correction may point in the wrong direction entirely. This explains why the old code showed Newton divergence or convergence to unphysical solutions.
+
+The current analytical Jacobian `Jacobian_A1` covers all 16 of the 4×4 cross-coupling blocks, including the critical [ρ_v, φ_i] and [φ_i, ρ_v] off-diagonal blocks (sublimation coupling) and the [ρ_v, ρ_v] diagonal block (penalty + diffusion). With no FD perturbation, Newton converges quadratically from the second iteration onward.
+
+---
+
+### 13.4 Extreme Interface Equilibrium Stiffness (k_pen = 10⁹ → 10⁵)
+
+Even with the xi_v bug fixed, k_pen = 10⁹ creates problems. The Jacobian condition number of the vapor block scales as:
+
+$$\kappa \sim \frac{\xi_v k_{\mathrm{pen}} + \xi_v D / \varepsilon^2}{1/\Delta t} \sim \xi_v k_{\mathrm{pen}} \Delta t$$
+
+With ξ_v = 10⁻³ and k_pen = 10⁹, κ ∼ 10⁶ × Δt. For Δt = 10⁻⁴ s, κ ∼ 100 — borderline acceptable. But with the bug present (no ξ_v on k_pen), κ ∼ k_pen × Δt = 10⁹ × 10⁻⁴ = 10⁵, which is beyond the effective range of ILU(1) preconditioning and GMRES with restart=500.
+
+The current k_pen = 10⁵ gives ξ_v × k_pen = 10⁻⁴ × 10⁵ = 10 — three orders of magnitude smaller than diffusion at the interface scale, making the linear system well-conditioned for iterative solvers.
+
+---
+
+### 13.5 Vapor Time-Scale Separation (ξ_v = 10⁻³ → 10⁻⁴)
+
+**Old:** ξ_v = 10⁻³ in `permafrost2.c`.  
+**Current:** ξ_v = 10⁻⁴.
+
+The ξ_v parameter controls the ratio of the vapor time scale to the phase-field time scale. A smaller ξ_v means vapor equilibrates more slowly relative to the phase field, giving the nonlinear solver more room to adjust both fields simultaneously without stiffness. The factor-of-10 reduction also means that the correctly-scaled penalty term ξ_v × k_pen is 10× smaller, further reducing the condition number of the vapor block.
+
+---
+
+### 13.6 Near-Discontinuous Diffusivity (difvap_pen = 10⁻⁷ → 10⁻⁴)
+
+**Old:** α_pen = 10⁻⁷ — seven orders of magnitude jump in D_eff from air to ice.  
+**Current:** α_pen = 10⁻⁴ — four orders of magnitude.
+
+The smooth Heaviside H(φ_i) spans ~4ε ≈ 3×10⁻⁶ m. With α_pen = 10⁻⁷, adjacent Gauss points within this band see D_eff values differing by up to 10⁷. Even the analytical Jacobian (let alone FD) cannot accurately represent such a sharp coefficient variation on a B-spline mesh with only 3 quadrature points across the interface. The result is a poorly-resolved diffusion term that generates spurious ρ_v gradients across the interface. With α_pen = 10⁻⁴, the jump is physically motivated (ice is still essentially impermeable to vapor) but numerically resolvable on the current mesh.
+
+---
+
+### 13.7 Undersaturated Initial Condition for Vapor (humidity = 0.50 → 0.95)
+
+**Old:** h₀ = 0.5, meaning ρ_v = 0.5 ρ_vs in the air phase at t=0.  
+**Current:** h₀ = 0.95.
+
+Lowering h₀ amplifies every other error. The sublimation driving force at each ice-air interface is proportional to (1 − h₀) ρ_vs. With h₀ = 0.5, the driving force is 10× larger than with h₀ = 0.95. Every Jacobian error, every convergence tolerance issue, every penalty imbalance is amplified by the same factor. Running near-equilibrium (h₀ = 0.95) is not just a physical convenience — it dramatically improves the effective tolerance of the nonlinear solver by shrinking the amplitude of all problematic source terms.
+
+---
+
+### 13.8 Excessive Allen-Cahn Relaxation (n_relax = 12 → 1) and Sediment Freeze Timing (t_sed_freeze = 0 → 1 s)
+
+**Old:** 12 Allen-Cahn relaxation steps before the first full physics step; sediment frozen immediately (t_sed_freeze = 0).  
+**Current:** 1 relaxation step; sediment frozen after 1 s.
+
+With n_relax = 12, the phase fields φ_i and φ_s underwent 12 full AC updates without any coupling to the vapor equation. This allowed the phase-field profiles to evolve into positions that were geometrically reasonable (smooth interfaces) but thermodynamically inconsistent with the current ρ_v field. When the first full-physics step then tried to satisfy all four equations simultaneously, the vapor equation saw large disequilibria (created by the 12 AC steps) and the stiff penalty responded with enormous residuals.
+
+With n_relax = 1, there is only a single AC equilibration step before full coupling begins. The initial disequilibrium is minimal, and the solver converges from a consistent starting point.
+
+With t_sed_freeze = 0 in the old code, the three-phase free energy was immediately replaced by the simpler two-phase (sediment-frozen) form without any relaxation of the sediment interface. Any mismatch between the initial φ_s profile and the two-phase energy minimum appeared as a sudden force at t=0. With t_sed_freeze = 1 s, the sediment has one second to equilibrate its interface shape under the full three-phase energy before freezing, eliminating this initial transient.
+
+---
+
+### 13.9 Cascade: How the Errors Amplified Each Other
+
+The errors did not act independently — they formed a destructive cascade:
+
+1. **t=0:** IC set ρ_v = 0.5 ρ_vs inside ice (should be ρ_vs). Penalty residual = 10⁹ × (−0.5 ρ_vs) ≈ −15 inside ice. Time derivative ≈ 0.3. **Penalty exceeds time derivative by 50×.**
+
+2. **FD Jacobian step:** PETSc perturbs ρ_v by 10⁻⁸ to compute ∂R/∂ρ_v. The dominant term is k_pen = 10⁹, so ΔJ ∼ 10⁹ × 10⁻⁸ = 10. But the residual is 15. **Jacobian error is comparable to residual.** The Newton correction is qualitatively wrong.
+
+3. **Newton step:** The solver applies a correction Δρ_v that is too large (the Jacobian underestimates the curvature). ρ_v overshoots ρ_eq on the other side, creating a positive disequilibrium. The penalty now has the opposite sign and pushes ρ_v back — but again, overshoots.
+
+4. **Sublimation coupling:** Each Newton iteration changes ρ_v by O(ρ_vs), which drives the sublimation source term S_sub = alph_sub × (ρ_v − ρ_vs) / ρ_ice. With ρ_v oscillating by O(ρ_vs), S_sub oscillates by O(alph_sub). The Allen-Cahn equation for φ_i receives this as a right-hand side forcing that pushes φ_i in alternating directions over successive Newton iterations.
+
+5. **Divergence or wrong root:** Newton either diverges (SNES reports diverged after max_it) or converges to a φ_i < 0 solution (a spurious local minimum of the 4-DOF residual that satisfies all convergence tolerances but is physically unphysical).
+
+6. **Time accumulation:** Once φ_i < 0 in any element at time t, the next time step starts from a corrupted initial condition. The interface reconstruction at t + Δt is inconsistent, creating new regions of spurious air that grow over time.
+
+The current code breaks this cascade at **every link**:
+- The IC formula ensures ρ_v = ρ_vs inside solid at t=0 → near-zero initial penalty residual.
+- The xi_v factor reduces the penalty by 1000× → penalty comparable to time derivative.
+- The analytical Jacobian eliminates FD errors → Newton converges quadratically.
+- k_pen = 10⁵ instead of 10⁹ → condition number 10⁴× lower.
+- h₀ = 0.95 → driving forces 10× smaller throughout.
+- n_relax = 1 → no pre-relaxation that creates vapor-field inconsistency.
 
 ---
 
