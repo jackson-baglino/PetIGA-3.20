@@ -265,6 +265,13 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None):
     ax.plot(t_plot, mass_vap,   color=COLOR_VAP,   lw=1.6, zorder=3,
             label=r"Vapor  ($\int \rho_v \, \phi_a \, dV$)")
 
+    # Dashed semi-opaque reference lines at the initial (t=0) mass values.
+    # These make it easy to see whether each phase is gaining or losing mass.
+    ax.axhline(mass_total[0], color=COLOR_TOTAL, lw=1.0, ls="--", alpha=0.45, zorder=2)
+    ax.axhline(mass_ice[0],   color=COLOR_ICE,   lw=1.0, ls="--", alpha=0.45, zorder=2)
+    ax.axhline(mass_sed[0],   color=COLOR_SED,   lw=1.0, ls="--", alpha=0.45, zorder=2)
+    ax.axhline(mass_vap[0],   color=COLOR_VAP,   lw=1.0, ls="--", alpha=0.45, zorder=2)
+
     # Vertical dashed line at t_sed_freeze
     if t_freeze is not None:
         xf = t_freeze / scale
