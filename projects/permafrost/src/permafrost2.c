@@ -60,8 +60,8 @@ int main(int argc, char *argv[]) {
     user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-4/eps² after options */
     user.phase_lo   = -0.25;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.25;   /* upper bound: phi above this → abort */
-    user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
-    user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
+    user.d0_sub0    = 1.0e-11;   /* Parameter d0 for substrate */
+    user.beta_sub0  = 1.0e-3; // 1.4e5;    /* Parameter beta for substrate */
 
     PetscReal gamma_im = 0.033; /* Surface energies for ice-metal interface */
     PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
