@@ -1,4 +1,17 @@
 
+## 2026-05-15 — deep root cause analysis of spurious air bug
+
+- Expanded docs/model_description.md §13 from 4 root causes to 8, with full quantitative analysis.
+- PRIMARY BUG identified: vapor penalty term in old assembly.c was missing the xi_v factor (`k_pen * g * drhov` instead of `xi_v * k_pen * g * drhov`). With xi_v=1e-3 and k_pen=1e9, this made the penalty 1000× too large, rendering the vapor equation essentially algebraic.
+- SECONDARY BUG: old IC set rhov = h0 * rho_vs everywhere, including inside solid. Correct formula is rhov = rho_vs * (h0 * phi_air + (1 - phi_air)), which gives rhov = rho_vs inside solid. With h0=0.5 and k_pen=1e9, the initial disequilibrium inside ice created a penalty residual 50× larger than the time derivative.
+- Documented cascade failure: IC bug → enormous t=0 residual → FD Jacobian errors of O(k_pen * eps_machine) = O(10) → Newton diverges or converges to wrong root → phi_i < 0 → spurious air accumulates over time.
+- Added quantitative table comparing all 12 changed parameters; added per-bug magnitude analysis and cascade walkthrough.
+
+---
+
+**Session ended:** 2026-05-15 09:24:34
+
+
 ---
 
 **Session ended:** 2026-05-15 08:48:30
