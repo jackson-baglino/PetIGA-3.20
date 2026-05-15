@@ -36,5 +36,6 @@
 -temp -20.0
 -grad_temp0 0.0,0.0,0.0
 
-# ---------- Time Stepping Override ----------
--NRmax 8
+# ---------- Linear solver override (1D: direct LU) ----------
+-ksp_type preonly                       # single application of the PC
+-pc_type lu                             # direct sparse LU

@@ -41,7 +41,7 @@
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-2                          # initial time step (s)
--t_final 1.0e-2                         # total simulation time (s) — debug
+-t_final 8640000                         # total simulation time (s) — debug
 
 # ---------- Phase-Field Physics ----------
 -eps 7.12e-07                           # diffuse interface half-width (m)
@@ -51,6 +51,3 @@
 -humidity 1.00
 -temp -20.0
 -grad_temp0 0.0,0.0,0.0
-
-# ---------- Time Stepping Override ----------
--NRmax 8                                # raised from 5 to tolerate stiff transients

@@ -42,28 +42,29 @@
 # ---------- Adaptive time stepping ----------
 -adap 1                                 # enable adaptive dt
 -NRmin 3                                # min Newton iters → dt grows
--NRmax 5                                # max Newton iters before dt shrinks
+-NRmax 8                                # max Newton iters before dt shrinks
 -max_rej 10                             # max rejected steps before abort
 
 # ---------- Nonlinear solver (SNES) ----------
 -snes_type newtonls                     # Newton with line search
--snes_max_it 10                         # max Newton iterations per time step
+-snes_max_it 15                         # max Newton iterations per time step (raised: phase-field needs room at stiff transients)
 -snes_rtol 1e-06                        # relative residual tolerance
--snes_atol 1e-08                        # absolute residual tolerance
+-snes_atol 1e-10                        # absolute residual tolerance (tightened: prevents false convergence near zero)
 -snes_stol 1e-06                        # step tolerance
 -snes_converged_reason                  # print convergence reason each step
 -snes_linesearch_type bt                # backtracking line search
 -snes_linesearch_monitor                # print line search progress
 
 # ---------- Linear solver (KSP) ----------
--ksp_type gmres                         # GMRES
--ksp_rtol 1e-05                         # relative residual tolerance
--ksp_atol 1e-08                         # absolute residual tolerance
+-ksp_type gmres                         # GMRES — correct for the asymmetric 4-DOF system
+-ksp_rtol 1e-06                         # relative residual tolerance (tightened: ensures Newton convergence rate)
+-ksp_atol 1e-10                         # absolute residual tolerance (tightened: consistent with SNES atol)
 -ksp_max_it 500                         # max GMRES iterations
--ksp_gmres_restart 500                  # GMRES restart interval
+-ksp_gmres_restart 200                  # GMRES restart interval (reduced from 500: saves ~60% memory)
 -ksp_converged_reason                   # print convergence reason each step
 
-# ---------- Preconditioner ----------
--pc_type bjacobi                        # block Jacobi (one block per MPI rank)
+# ---------- Preconditioner (2D / 3D default) ----------
+-pc_type asm                            # additive Schwarz with overlap (replaces bjacobi)
+-pc_asm_overlap 1                       # 1-node overlap between MPI blocks
 -sub_pc_type ilu                        # ILU(k) per block
--sub_pc_factor_levels 1                 # fill level k for ILU(k)
+-sub_pc_factor_levels 2                 # ILU(2): captures 4-DOF coupled B-spline stencil better than ILU(1)
