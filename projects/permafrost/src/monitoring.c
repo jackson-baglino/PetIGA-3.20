@@ -87,6 +87,14 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscReal tot_sed        = PetscRealPart(stats[6]);
   PetscReal sed_air_interf = PetscRealPart(stats[7]);
   PetscReal ice_sed_interf = PetscRealPart(stats[8]);
+
+  /* Store initial integrals at step 0 for later percentage reporting. */
+  if (step == 0) {
+    user->tot_ice_0  = tot_ice;
+    user->tot_air_0  = tot_air;
+    user->tot_sed_0  = tot_sed;
+    user->tot_rhov_0 = tot_rhov;
+  }
  
   //-------- phase-field min/max bounds (printed every step for out-of-bounds detection)
   {
@@ -250,6 +258,19 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
                 step, t, dt,
                 tot_ice, tot_air, tot_sed, tot_temp, tot_rhov,
                 sub_interf, tot_trip);
+
+    /* Percentage-change row (relative to initial values at step 0). */
+    if (step > 0 && user->tot_ice_0 > 0.0) {
+      PetscReal pct_ice  = (tot_ice  - user->tot_ice_0)  / user->tot_ice_0  * 100.0;
+      PetscReal pct_air  = (tot_air  - user->tot_air_0)  / user->tot_air_0  * 100.0;
+      PetscReal pct_sed  = (user->tot_sed_0  > 0.0)
+                           ? (tot_sed  - user->tot_sed_0)  / user->tot_sed_0  * 100.0 : 0.0;
+      PetscReal pct_rhov = (user->tot_rhov_0 > 0.0)
+                           ? (tot_rhov - user->tot_rhov_0) / user->tot_rhov_0 * 100.0 : 0.0;
+      PetscPrintf(PETSC_COMM_WORLD,
+                  "       |              |           | %+9.3f%% | %+9.3f%% | %+9.3f%% |           | %+8.3f%% |            |\n",
+                  pct_ice, pct_air, pct_sed, pct_rhov);
+    }
 
     // Optional: add a blank line every N rows for readability (set to 0 to disable)
     // if (step > 0 && (step % 25) == 0) PetscPrintf(PETSC_COMM_WORLD, "\n");

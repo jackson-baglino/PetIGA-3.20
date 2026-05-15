@@ -126,6 +126,12 @@ typedef struct {
   // Capillary neck parameters
   PetscReal R1;  // Radius of capillary neck
 
+  // Initial domain integrals (set at step 0, used for percentage reporting)
+  PetscReal tot_ice_0;   // initial ∫ φ_i dΩ
+  PetscReal tot_air_0;   // initial ∫ φ_a dΩ
+  PetscReal tot_sed_0;   // initial ∫ φ_s dΩ
+  PetscReal tot_rhov_0;  // initial ∫ ρ_v φ_a dΩ
+
 } AppCtx;/* Field definitions for node data */
 
 #endif // NASA_TYPES_H
