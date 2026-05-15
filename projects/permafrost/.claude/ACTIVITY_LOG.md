@@ -1,4 +1,29 @@
 
+## 2026-05-15 — tighten solver tolerances and improve preconditioner
+
+- Switched preconditioner from bjacobi+ILU(1) to ASM+ILU(2) with pc_asm_overlap=1 in universal.opts; additive Schwarz with node overlap improves conditioning at MPI block boundaries for the 4-DOF coupled B-spline system.
+- Tightened SNES atol 1e-8→1e-10 and raised snes_max_it 10→15 to prevent false convergence and handle stiff first timesteps.
+- Tightened KSP rtol 1e-5→1e-6 and atol 1e-8→1e-10 for consistency with SNES and to preserve Newton's quadratic convergence rate.
+- Reduced GMRES restart 500→200; the original restart=max_it meant unrestarted GMRES storing ~500 Krylov vectors; 200 sufficient for well-preconditioned problem.
+- Raised NRmax default 5→8 in universal.opts (consolidates per-file overrides from ~15 test files).
+- Added direct LU override (ksp_type preonly + pc_type lu) to all 10 1D test opts files; N≤760 DOFs so LU is trivially cheap and exact.
+- Removed redundant -NRmax 8 override blocks from all 21 test opts files.
+
+---
+
+**Session ended:** 2026-05-14 16:18:20
+
+
+---
+
+**Session ended:** 2026-05-14 16:12:24
+
+
+---
+
+**Session ended:** 2026-05-14 16:08:39
+
+
 ---
 
 **Session ended:** 2026-05-14 15:55:02
