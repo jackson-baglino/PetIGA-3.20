@@ -1,4 +1,46 @@
 
+## 2026-05-15 — Ice mass loss analysis, material parameters, and monitoring improvements
+
+- Diagnosed ice shrinkage as Allen-Cahn curvature coarsening (not sublimation): v_AC/v_phys ≈ 2.5×10⁸; proved via mass balance (ΔTOT_RHOV ≈ ρᵥₛ × ΔTOT_AIR, not ρᵢ × |ΔTOT_ICE|).
+- Created `docs/ice_mass_loss_analysis.md`: quantitative root-cause analysis, parameter recommendations, negative φᵢ at sed-air interface explanation.
+- Created `docs/material_parameters.md`: surface energies (γ_iv, γ_is, γ_sv), thermal properties, and grain geometry for water ice and lunar regolith with 14 literature citations.
+- Extended `AppCtx` in `include/NASA_types.h` with 4 initial-integral fields (tot_ice_0, tot_air_0, tot_sed_0, tot_rhov_0).
+- Updated `src/monitoring.c` to store initial integrals at step 0 and print percentage-change row after every domain-integral output.
+- Added dashed semi-opaque reference lines at initial mass values to `postprocess/plot_mass.py`.
+- Reduced `d0_sub0` (1e-9 → 1e-11) and `beta_sub0` in `src/permafrost2.c` to suppress Allen-Cahn coarsening.
+- Updated `inputs/universal.opts`: tightened solver tolerances (snes_atol 1e-12, ksp_atol 1e-12), raised k_pen (1e5→1e7), difvap_pen (1e-4→1e-8), Lambda (1e2→1e3), t_sed_freeze (1→300).
+- Updated `inputs/tests/test_2D_IceSedPair.opts`: humidity set to 1.00 for AC-coarsening diagnostic.
+
+---
+
+**Session ended:** 2026-05-15 12:19:43
+
+
+---
+
+**Session ended:** 2026-05-15 11:55:48
+
+
+---
+
+**Session ended:** 2026-05-15 11:24:23
+
+
+---
+
+**Session ended:** 2026-05-15 10:41:31
+
+
+---
+
+**Session ended:** 2026-05-15 10:32:44
+
+
+---
+
+**Session ended:** 2026-05-15 09:42:06
+
+
 ## 2026-05-15 — deep root cause analysis of spurious air bug
 
 - Expanded docs/model_description.md §13 from 4 root causes to 8, with full quantitative analysis.
