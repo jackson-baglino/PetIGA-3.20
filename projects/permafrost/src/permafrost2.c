@@ -412,7 +412,12 @@ int main(int argc, char *argv[]) {
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter */
-    user.mob_sed = user.mob_sub;  /* Sediment is inert by default; override with -mob_sed */
+    /* Sediment is inert by default: mob_sed defaults to 0 (set via PetscMemzero
+     * at program start), so the local mobility mob_sub*ice + mob_sed*sed +
+     * mob_air*air vanishes inside the sed grain and AC dynamics cannot dissolve
+     * the interior during pre-pin. Override via -mob_sed for a non-zero value.
+     * (Previous code unconditionally set mob_sed = mob_sub here, which
+     * silently overrode any -mob_sed CLI value and made the comment false.) */
     user.mob_air = user.mob_sub;
 
     PetscPrintf(PETSC_COMM_WORLD, "Mobility terms: mob_sub = %.2e m^3/s, mob_sed = %.2e m^3/s \n", user.mob_sub, user.mob_sed);
