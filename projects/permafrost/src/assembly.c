@@ -136,7 +136,13 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal sub_src      = alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
     PetscReal rho_lat_air_t = xi_T * rho * lat_sub * air_t;
     PetscReal vap_pen      = xi_v * k_pen * g_phiiphis * (rhov - rhov_eq);
-    PetscReal vap_src      = xi_v * rho_ice * air_t;
+    /* Mass-exchange source: when ice grows, vapor mass must drop by ρ_ice·Δice.
+     * No xi_v scaling here — that is the *physical* mass-balance closure
+     * (Stefan condition in the diffuse-interface limit). xi_v scales only the
+     * regularisation terms (diffusion and the equilibrium penalty) so that
+     * vapor responds slowly enough to be numerically tractable, but the
+     * conservative source must remain full strength. */
+    PetscReal vap_src      = rho_ice * air_t;
 
     PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
     PetscInt a, nen = pnt->nen;
@@ -527,8 +533,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 /* ==============================================================
                  * VAPOR (both 2-phase and 3-phase)
                  * ============================================================== */
-                /* [vap, ice]: shift from rho_ice*air_t; penalty + diffusivity variation */
-                J[a][2][b][0] += shift * xi_v * rho_ice * Na_Nb
+                /* [vap, ice]: shift from rho_ice*air_t (mass-balance source, no xi_v);
+                 *             penalty + diffusivity variation (regularisation, with xi_v) */
+                J[a][2][b][0] += shift * rho_ice * Na_Nb
                                + xi_v * k_pen * (dg_phiiphis * (rhov - rhov_eq)
                                                 - g_phiiphis * d_rhovel_dice) * Na_Nb
                                + xi_v * (d_difvap_eff_dice * air_eff
@@ -541,8 +548,8 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 J[a][2][b][2] += shift * Na_Nb
                                + xi_v * difvap * air_eff * N1a_N1b
                                + xi_v * k_pen * g_phiiphis * (1.0 - d_rhovel_drhov) * Na_Nb;
-                /* [vap, sed]: symmetric to vap-ice (same d_rhovel_dsed = rhoI_vs - rhov) */
-                J[a][2][b][3] += shift * xi_v * rho_ice * Na_Nb
+                /* [vap, sed]: symmetric to [vap, ice] (mass-balance source has no xi_v) */
+                J[a][2][b][3] += shift * rho_ice * Na_Nb
                                + xi_v * k_pen * (dg_phiiphis * (rhov - rhov_eq)
                                                 - g_phiiphis * d_rhovel_dsed) * Na_Nb
                                - (air_eff_active ? xi_v * difvap : 0.0)
