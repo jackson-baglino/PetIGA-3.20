@@ -137,9 +137,6 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal rho_lat_air_t = xi_T * rho * lat_sub * air_t;
     PetscReal vap_pen      = xi_v * k_pen * g_phiiphis * (rhov - rhov_eq);
     PetscReal vap_src      = xi_v * rho_ice * air_t;
-    /* Two-phase scalars (computed unconditionally; used only in the frozen-sed branch) */
-    PetscReal C2            = 3.0 * mob / (Etai + Etaa);
-    PetscReal AC2_ice_bulk  = C2 / eps * (fi - fa);
 
     PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
     PetscInt a, nen = pnt->nen;
@@ -198,20 +195,24 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
         } else {
 
             /* ================================================================
-             * TWO-PHASE FORMULATION  (sediment frozen, t >= t_sed_freeze)
-             * Sediment RHS is zeroed: only the time-derivative term remains,
-             * which forces phi_sed_t = 0 (sediment stationary).
-             * Ice evolves under 2-phase AC pinned to the frozen sediment
-             * boundary.
+             * FROZEN-SEDIMENT FORMULATION  (t >= t_sed_freeze)
+             *
+             * Sediment is held rigid: phi_sed_t = 0. The ice equation, however,
+             * keeps the full 3-phase Allen-Cahn form. The three-phase potential
+             * is symmetric in the (ice, sed, air) phases, so ice = 0 remains a
+             * stable equilibrium at a sed-air interface even when sed is frozen.
+             *
+             * (The prior 2-phase Kim-Steinbach form used here was derived under
+             *  the assumption that the frozen sed boundary always neighbours
+             *  ice; at sed-air boundaries it produced large spurious ice. The
+             *  3-phase ice eq above does not have that failure mode.)
              * ================================================================ */
 
-            /* Ice: 2-phase Allen-Cahn pinned to the frozen sediment boundary */
+            /* Ice: 3-phase Allen-Cahn (identical to the 3-phase branch) */
             R_ice = N0[a] * ice_t;
             for (l = 0; l < dim; l++)
                 R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-            for (l = 0; l < dim; l++)
-                R_ice += C2 * Etaa * eps * (N1[a][l] * grad_sed[l]);
-            R_ice += AC2_ice_bulk * N0[a];
+            R_ice += AC_ice_bulk * N0[a];
             R_ice -= sub_src * N0[a];
 
             /* Sediment: RHS = 0 (time derivative only — forces phi_sed_t = 0) */
@@ -378,7 +379,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscInt  air_eff_active = (air > air_lim);
 
     PetscReal C3  = 3.0 * mob / (eps * EtaT);
-    PetscReal C2  = 3.0 * mob / (Etai + Etaa);
     PetscReal loc = ice*ice * air*air;
 
     /* ---- Derivatives of material functions ---- */
@@ -489,20 +489,23 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
 
             } else {
                 /* ==============================================================
-                 * TWO-PHASE (frozen sediment, t >= t_sed_freeze)
+                 * FROZEN SEDIMENT (t >= t_sed_freeze)
+                 * Ice rows match the 3-phase branch exactly; only the sediment
+                 * row degenerates to the mass matrix that pins sed_t = 0.
                  * ============================================================== */
                 /* [ice, ice] */
                 J[a][0][b][0] += shift * Na_Nb
                                + 3.0*mob*eps * N1a_N1b
-                               + C2/eps * (dfi_dice - dfa_dice) * Na_Nb
+                               + C3 * ((Etased+Etaa)*dfi_dice - Etaa*dfs_dice
+                                       - Etased*dfa_dice) * Na_Nb
                                - alph_sub * dloc_dice * (rhov - rhoI_vs) / rho_ice * Na_Nb;
                 /* [ice, tem] */
                 J[a][0][b][1] += alph_sub * loc * d_rhovs / rho_ice * Na_Nb;
                 /* [ice, rhov] */
                 J[a][0][b][2] += -alph_sub * loc / rho_ice * Na_Nb;
-                /* [ice, sed]: gradient coupling + free energy derivative */
-                J[a][0][b][3] += C2 * Etaa * eps * N1a_N1b
-                               + C2/eps * (dfi_dsed - dfa_dsed) * Na_Nb
+                /* [ice, sed] */
+                J[a][0][b][3] += C3 * ((Etased+Etaa)*dfi_dsed - Etaa*dfs_dsed
+                                        - Etased*dfa_dsed) * Na_Nb
                                - alph_sub * dloc_dsed * (rhov - rhoI_vs) / rho_ice * Na_Nb;
                 /* [sed, sed]: mass matrix only — frozen sediment */
                 J[a][3][b][3] += shift * Na_Nb;
