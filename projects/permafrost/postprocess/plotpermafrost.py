@@ -14,7 +14,15 @@ Exports four DOFs plus one derived field:
   Temperature  — T                 (DOF 1)
   VaporDensity — ρ_v               (DOF 2)
   SedPhase     — φ_s               (DOF 3)
-  AirPhase     — 1 − φ_i − φ_s    (derived, clipped to [0, 1])
+  AirPhase     — 1 − φ_i − φ_s    (derived, NOT clipped — see note below)
+
+Note on AirPhase: previously this field was np.clip()-ed to [0, 1] before
+write. That hid small out-of-bound excursions (e.g. phi_air = -1e-3 from
+the B-spline overshoot at sharp ice-sed interfaces) and made the .vts
+inconsistent with the unclipped BOUNDS check printed by the simulation
+monitor. The clip has been removed so the .vts faithfully reflects the
+actual field; use ParaView's colormap range controls if you want a
+visually clean display.
 
 VTK files are written to ./vtkOut/ with extension .vts.  Existing files are
 skipped unless --force is given.  After conversion, permafrost.pvd is written
@@ -160,7 +168,7 @@ def _write_vts(outfile: str, nrb, sol: np.ndarray) -> None:
         fields["VaporDensity"] = sol[..., 2]
     if ndof >= 4:
         fields["SedPhase"]     = sol[..., 3]
-        fields["AirPhase"]     = np.clip(1.0 - sol[..., 0] - sol[..., 3], 0.0, 1.0)
+        fields["AirPhase"]     = 1.0 - sol[..., 0] - sol[..., 3]
 
     # Reorder each scalar field to VTK point order
     fields_vtk = {name: _vtk_scalar(arr) for name, arr in fields.items()}
