@@ -431,13 +431,23 @@ copy_source_code
 run_plotting
 run_1d_plotting
 
+PYTHON=$(command -v python3 || command -v python)
+
 # Time step diagnostic — always generated from outp.txt (all dims)
 if [ -f "$folder/outp.txt" ]; then
-    PYTHON=$(command -v python3 || command -v python)
     echo ""
     echo "--- Time step diagnostic ---"
     "$PYTHON" "$PROJECT_ROOT/postprocess/plot_timestep.py" \
         --dir "$folder" --save "$folder/timestep.png" \
+        2>&1 | sed 's/^/    /'
+fi
+
+# Phase mass plot — always generated when solution snapshots are present
+if ls "$folder"/sol_*.dat &>/dev/null; then
+    echo ""
+    echo "--- Phase mass plot ---"
+    "$PYTHON" "$PROJECT_ROOT/postprocess/plot_mass.py" \
+        --dir "$folder" --save "$folder/mass.png" \
         2>&1 | sed 's/^/    /'
 fi
 
