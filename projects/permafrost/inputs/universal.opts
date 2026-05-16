@@ -40,6 +40,7 @@
 -Lambda 1.0e4                           # triple-junction free-energy penalty strength
 
 # ---------- Adaptive time stepping ----------
+-dtmax 1.0e4                            # 10,000 s ≈ 3 hours; still huge for AC but ~100× safer
 -adap 1                                 # enable adaptive dt
 -NRmin 3                                # min Newton iters → dt grows
 -NRmax 8                                # max Newton iters before dt shrinks

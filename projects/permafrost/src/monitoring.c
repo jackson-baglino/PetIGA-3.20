@@ -2,6 +2,7 @@
 #include "assembly.h"
 #include "material_properties.h"
 #include <petscstring.h>
+#include <petsc/private/tsimpl.h>   /* for direct access to ts->dtmin */
 
 PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 {
@@ -139,23 +140,48 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         "  BOUNDS: phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\n",
         Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max);
 
-    /* Abort if any phase field exceeds the configured bounds */
+    /* If any phase field has left [phase_lo, phase_hi], roll the just-finished
+     * step back, halve dt, and let TS retry. Abort only if dt would fall below
+     * dtmin, or if the violation is at step 0 (i.e., a bad initial condition). */
     PetscBool oob = (Gfi_min < user->phase_lo || Gfi_max > user->phase_hi ||
                      Gfs_min < user->phase_lo || Gfs_max > user->phase_hi ||
                      Gfa_min < user->phase_lo || Gfa_max > user->phase_hi);
     if (oob) {
+      PetscReal cur_dt;
+      ierr = TSGetTimeStep(ts, &cur_dt); CHKERRQ(ierr);
+      PetscReal new_dt = cur_dt / 2.0;
+      PetscBool can_retry = (step > 0) && (new_dt >= ts->dtmin);
+
+      if (!can_retry) {
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\033[31m[ABORT] Phase field out of bounds [%.2f, %.2f] at step %d\n"
+            "  phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\n"
+            "  Cannot retry: %s\033[0m\n",
+            user->phase_lo, user->phase_hi, step,
+            Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max,
+            (step == 0) ? "bad initial condition (step 0)"
+                        : "dt already at dtmin");
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_NOT_CONVERGED,
+                "Phase field out of bounds at step %" PetscInt_FMT
+                " — phi_ice [%.4g, %.4g]  phi_sed [%.4g, %.4g]  phi_air [%.4g, %.4g]"
+                "  (bounds [%.2g, %.2g])",
+                step,
+                Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max,
+                user->phase_lo, user->phase_hi);
+      }
+
       PetscPrintf(PETSC_COMM_WORLD,
-          "\033[31m[ABORT] Phase field out of bounds [%.2f, %.2f] at step %d\n"
+          "\033[33m[WARN] Phase field out of bounds at step %d — "
+          "rolling back, dt %.3e -> %.3e\n"
           "  phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\033[0m\n",
-          user->phase_lo, user->phase_hi, step,
+          step, cur_dt, new_dt,
           Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max);
-      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_NOT_CONVERGED,
-              "Phase field out of bounds at step %" PetscInt_FMT
-              " — phi_ice [%.4g, %.4g]  phi_sed [%.4g, %.4g]  phi_air [%.4g, %.4g]"
-              "  (bounds [%.2g, %.2g])",
-              step,
-              Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max,
-              user->phase_lo, user->phase_hi);
+
+      ierr = TSRollBack(ts); CHKERRQ(ierr);
+      ierr = TSSetTimeStep(ts, new_dt); CHKERRQ(ierr);
+
+      /* Skip the rest of the monitor for this step (it's being undone). */
+      PetscFunctionReturn(0);
     }
   }
 
