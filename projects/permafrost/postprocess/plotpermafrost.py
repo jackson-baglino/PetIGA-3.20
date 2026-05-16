@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 """
-plotpermafrost.py  —  Convert PetIGA sol_*.dat output to VTK files and write
-a ParaView Data (.pvd) collection index so that ParaView understands the
-simulation time at each snapshot.
+plotpermafrost.py  —  Convert PetIGA sol_*.dat output to XML VTK structured-grid
+files (.vts) and write a ParaView Data (.pvd) collection so that ParaView
+understands the simulation time at each snapshot.
+
+The PVD reader in ParaView (vtkXMLCollectionReader) requires XML-format VTK
+datasets.  Legacy binary .vtk files are NOT supported inside a PVD collection.
+This script writes proper VTK XML Structured Grid (.vts) files, which the PVD
+reader can open without errors.
 
 Exports four DOFs plus one derived field:
-  IcePhase     — φ_i          (DOF 0)
-  Temperature  — T            (DOF 1)
-  VaporDensity — ρ_v          (DOF 2)
-  SedPhase     — φ_s          (DOF 3)
-  AirPhase     — 1 − φ_i − φ_s  (derived, clipped to [0, 1])
+  IcePhase     — φ_i               (DOF 0)
+  Temperature  — T                 (DOF 1)
+  VaporDensity — ρ_v               (DOF 2)
+  SedPhase     — φ_s               (DOF 3)
+  AirPhase     — 1 − φ_i − φ_s    (derived, clipped to [0, 1])
 
-VTK files are written to ./vtkOut/.  Existing files are skipped unless
---force is given.  After conversion, permafrost.pvd is written next to
-vtkOut/ so that opening it in ParaView gives a time-aware dataset.
+VTK files are written to ./vtkOut/ with extension .vts.  Existing files are
+skipped unless --force is given.  After conversion, permafrost.pvd is written
+next to vtkOut/ so that opening it in ParaView gives a time-aware dataset.
 
-Time values are read from outp.txt (the monitor table).  If outp.txt is
-absent, the PVD file uses the step index as a proxy for time.
+Time values are read from outp.txt (the monitor table).  If outp.txt is absent,
+the PVD file uses the step index as a proxy for time.
 
 Usage
 -----
@@ -26,12 +31,14 @@ Usage
 """
 
 import argparse
+import base64
 import glob
 import os
 import re
+import struct
 
 import numpy as np
-from igakit.io import PetIGA, VTK
+from igakit.io import PetIGA
 
 
 # ---------------------------------------------------------------------------
@@ -41,8 +48,8 @@ from igakit.io import PetIGA, VTK
 # outp.txt has two kinds of pipe-delimited rows:
 #   domain rows (9 fields):  STEP | TIME | DT | TOT_ICE | ... | TRIPL_JUNC
 #   SNES rows  (13 fields):  it   | fnorm | n0 | r0 | ...
-# We want only domain rows.
-_OUTP_ROW_RE   = re.compile(r"^\s*(\d+)\s*\|(.+)$")
+# We want only domain rows (exactly 9 pipe-delimited fields after the step).
+_OUTP_ROW_RE    = re.compile(r"^\s*(\d+)\s*\|(.+)$")
 _DOMAIN_NFIELDS = 9
 
 
@@ -57,15 +64,137 @@ def _load_time_map(outp_path: str) -> dict:
             if not m:
                 continue
             fields = m.group(2).split("|")
-            if len(fields) != _DOMAIN_NFIELDS:  # skip SNES/Newton rows
+            if len(fields) != _DOMAIN_NFIELDS:
                 continue
             try:
                 step = int(m.group(1))
-                t    = float(fields[0].strip())   # TIME [s]
+                t    = float(fields[0].strip())
                 time_map[step] = t
             except ValueError:
                 continue
     return time_map
+
+
+# ---------------------------------------------------------------------------
+# VTK XML writer helpers
+# ---------------------------------------------------------------------------
+
+def _b64_block(arr: np.ndarray) -> str:
+    """
+    Encode a numpy array as a base64 binary block for VTK XML format="binary".
+
+    Layout: [UInt64 byte-count header][raw float64 data], base64 encoded.
+    Matches header_type="UInt64" byte_order="LittleEndian" in the VTKFile tag.
+    """
+    data = np.ascontiguousarray(arr.ravel(), dtype='<f8').tobytes()
+    header = struct.pack('<Q', len(data))   # 8-byte little-endian uint64
+    return base64.b64encode(header + data).decode('ascii')
+
+
+def _vtk_scalar(arr: np.ndarray) -> np.ndarray:
+    """
+    Reorder a scalar field from igakit's (Nx[, Ny[, Nz]]) layout to VTK's
+    point linearisation where x (first index) varies fastest.
+
+    igakit stores points as arr[ix, iy] in C order, so a plain .ravel()
+    gives ix-slow, iy-fast — the opposite of VTK's expected ix-fast order.
+    Reversing the axis order before flattening corrects this.
+    """
+    ndim = arr.ndim
+    if ndim == 1:
+        return arr.ravel()
+    axes = list(range(ndim - 1, -1, -1))   # e.g. [1,0] for 2-D, [2,1,0] for 3-D
+    return np.ascontiguousarray(arr.transpose(axes)).ravel()
+
+
+def _vtk_coords(nrb) -> np.ndarray:
+    """
+    Return physical coordinates as (N_total, 3) in VTK point order (x fastest).
+
+    VTK requires points stored with x varying fastest.  igakit's nrb.points
+    has shape (Nx[, Ny[, Nz]], sdim) in C order, so the spatial axes must be
+    reversed before flattening.  The component axis (last) is kept last.
+    """
+    grid_shape = nrb.points.shape[:-1]
+    sdim       = nrb.points.shape[-1]
+    dim        = len(grid_shape)
+
+    coords = np.zeros((*grid_shape, 3))
+    coords[..., :sdim] = nrb.points[..., :sdim]
+
+    # Reverse only the spatial axes; keep component axis last.
+    spatial_axes = list(range(dim - 1, -1, -1))  # e.g. [1,0] for 2-D
+    axes = spatial_axes + [dim]                   # keep component last
+    return np.ascontiguousarray(coords.transpose(axes)).reshape(-1, 3)
+
+
+def _write_vts(outfile: str, nrb, sol: np.ndarray) -> None:
+    """
+    Write a VTK XML Structured Grid (.vts) file.
+
+    Parameters
+    ----------
+    outfile : path to write
+    nrb     : igakit NURBS geometry object (provides grid shape and coordinates)
+    sol     : solution array of shape (*grid_shape, ndof);
+              DOFs: 0=phi_i, 1=T, 2=rho_v, 3=phi_s
+    """
+    grid_shape = nrb.points.shape[:-1]   # (Nx,) or (Nx, Ny) or (Nx, Ny, Nz)
+    dim        = len(grid_shape)
+    ndof       = sol.shape[-1] if sol.ndim > dim else 1
+
+    Nx = grid_shape[0]
+    Ny = grid_shape[1] if dim >= 2 else 1
+    Nz = grid_shape[2] if dim >= 3 else 1
+
+    # --- Physical coordinates (always 3-component for VTK) -----------------
+    coords_vtk = _vtk_coords(nrb)    # (N_total, 3) in VTK point order
+
+    # --- Field scalars -------------------------------------------------------
+    fields = {}
+    if ndof >= 1:
+        fields["IcePhase"]     = sol[..., 0]
+    if ndof >= 2:
+        fields["Temperature"]  = sol[..., 1]
+    if ndof >= 3:
+        fields["VaporDensity"] = sol[..., 2]
+    if ndof >= 4:
+        fields["SedPhase"]     = sol[..., 3]
+        fields["AirPhase"]     = np.clip(1.0 - sol[..., 0] - sol[..., 3], 0.0, 1.0)
+
+    # Reorder each scalar field to VTK point order
+    fields_vtk = {name: _vtk_scalar(arr) for name, arr in fields.items()}
+
+    # --- XML assembly -------------------------------------------------------
+    extent = f"0 {Nx-1} 0 {Ny-1} 0 {Nz-1}"
+
+    lines = [
+        '<?xml version="1.0"?>',
+        '<VTKFile type="StructuredGrid" version="0.1" '
+        'byte_order="LittleEndian" header_type="UInt64">',
+        f'  <StructuredGrid WholeExtent="{extent}">',
+        f'    <Piece Extent="{extent}">',
+        '      <Points>',
+        '        <DataArray type="Float64" NumberOfComponents="3" format="binary">',
+        f'          {_b64_block(coords_vtk)}',
+        '        </DataArray>',
+        '      </Points>',
+        '      <PointData>',
+    ]
+    for name, arr in fields_vtk.items():
+        lines.append(
+            f'        <DataArray type="Float64" Name="{name}" format="binary">'
+            f'{_b64_block(arr)}</DataArray>'
+        )
+    lines += [
+        '      </PointData>',
+        '    </Piece>',
+        '  </StructuredGrid>',
+        '</VTKFile>',
+    ]
+
+    with open(outfile, 'w') as fh:
+        fh.write('\n'.join(lines) + '\n')
 
 
 # ---------------------------------------------------------------------------
@@ -113,55 +242,32 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
         print(f"No sol*.dat files found in '{run_dir}'")
         return
 
-    # Build step → time mapping from outp.txt (best-effort; falls back to
-    # step index if outp.txt is absent or a step is missing).
+    # Build step → time mapping from outp.txt.
     time_map = _load_time_map(os.path.join(run_dir, "outp.txt"))
     if not time_map:
         print("  Warning: outp.txt not found or empty — PVD will use step "
               "index as time proxy.")
 
-    pvd_entries = []   # (time, relative_vtk_path) for every VTK file
+    pvd_entries = []   # (time, relative_vts_path)
 
     for infile in sol_files:
         name    = os.path.splitext(os.path.basename(infile))[0]  # "sol_00042"
         number  = name.split("l")[1]                              # "_00042"
         step    = int(name.split("_")[1])                         # 42
-        outfile = os.path.join(out_dir, f"solV{number}.vtk")
+        outfile = os.path.join(out_dir, f"solV{number}.vts")      # XML format
+        rel_vts = os.path.join("vtkOut", f"solV{number}.vts")
 
-        # Relative path from run_dir (where the PVD will live) to the VTK file
-        rel_vtk = os.path.join("vtkOut", f"solV{number}.vtk")
-
-        # Time for this snapshot
-        t = time_map.get(step, float(step))   # fall back to step index
-        pvd_entries.append((t, rel_vtk))
+        t = time_map.get(step, float(step))
+        pvd_entries.append((t, rel_vts))
 
         if not force and os.path.isfile(outfile):
             print(f"  Skipping (exists): {outfile}")
             continue
 
         sol = PetIGA().read_vec(infile, nrb)
-
-        scalars = {
-            "IcePhase":    0,
-            "Temperature": 1,
-            "VaporDensity": 2,
-            "SedPhase":    3,
-        }
-        # Only export DOFs present in the solution vector
-        if sol.ndim < 2 or sol.shape[-1] < 4:
-            scalars.pop("SedPhase")
-
-        # Append AirPhase = 1 - φ_i - φ_s as a derived field
-        if sol.ndim >= 2 and sol.shape[-1] >= 4:
-            air = np.clip(1.0 - sol[..., 0:1] - sol[..., 3:4], 0.0, 1.0)
-            sol = np.concatenate([sol, air], axis=-1)
-            scalars["AirPhase"] = sol.shape[-1] - 1
-
-        VTK().write(outfile, nrb, fields=sol, scalars=scalars)
+        _write_vts(outfile, nrb, sol)
         print(f"  Written: {outfile}")
 
-    # Always (re)write the PVD so it covers all snapshots, including any that
-    # were already present and skipped above.
     if pvd_entries:
         pvd_path = os.path.join(run_dir, "permafrost.pvd")
         _write_pvd(pvd_path, pvd_entries)
@@ -173,7 +279,8 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Convert PetIGA output to VTK and write a PVD time index."
+        description="Convert PetIGA output to VTK XML (.vts) and write a "
+                    "PVD time-collection index for ParaView."
     )
     p.add_argument("--dir",   default=".",          help="Run directory (default: .)")
     p.add_argument("--iga",   default="igasol.dat", help="IGA geometry file")
