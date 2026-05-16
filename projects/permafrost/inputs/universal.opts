@@ -35,9 +35,9 @@
 
 # ---------- Penalty defaults ----------
 -difvap_pen 1.0e-8                      # D_pen = difvap_pen * difvap (in ice/sed regions)
--k_pen 1e7                              # vapor interface equilibrium stiffness
+-k_pen 1e5                              # vapor interface equilibrium stiffness
 -k_sed_pen -1                           # sediment restoring stiffness (-1 = auto: 1e-4/eps^2)
--Lambda 1.0e3                           # triple-junction free-energy penalty strength
+-Lambda 1.0e4                           # triple-junction free-energy penalty strength
 
 # ---------- Adaptive time stepping ----------
 -adap 1                                 # enable adaptive dt
