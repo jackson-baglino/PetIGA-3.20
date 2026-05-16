@@ -36,6 +36,6 @@
 -flag_avenue 1
 
 # ---------- Thermal & Humidity ----------
--humidity 0.95
+-humidity 1.00
 -temp -20.0
 -grad_temp0 0.0,0.0,0.0
