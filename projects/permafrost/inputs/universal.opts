@@ -28,6 +28,19 @@
 -n_relax 1                              # AC-only relaxation steps before full physics
 -t_sed_freeze 0                         # pin sed from t=0 (no pre-pin AC window)
 
+# ---------- Equation time-scaling ----------
+# xi_v, xi_T scale the diffusion + penalty + latent-heat source terms of the
+# vapor and temperature equations. xi_v=1 corresponds to the *physical* water-
+# vapor diffusivity in air; smaller values artificially throttle vapor
+# transport and push the model into a diffusion-limited regime (not what dry
+# snow metamorphism actually does). Dry snow lives in the mixed kinetics/
+# diffusion regime, so we want xi_v close to 1 and let the surface kinetics
+# (alph_sub) set the rate. Cost: stronger effective penalty (xi_v*k_pen)
+# stiffens the Jacobian at interfaces; dial down (e.g. 1e-2, 1e-3) if Newton
+# struggles.
+-xi_v 1.0                               # physical vapor diffusivity scaling
+-xi_T 1.0                               # physical thermal diffusivity scaling
+
 # ---------- Boundary condition defaults ----------
 -flag_BC_Tfix 0                         # do not fix T at boundaries
 -flag_BC_rhovfix 0                      # do not fix rhov at boundaries
