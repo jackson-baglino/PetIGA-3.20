@@ -299,6 +299,16 @@ int main(int argc, char *argv[]) {
              "Upper bound for phase fields phi_ice, phi_sed, phi_air "
              "(simulation aborts if any phi exceeds this; default 1.25)",
              "", user.phase_hi, &user.phase_hi, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-xi_v",
+             "Time-scaling for vapor equation: multiplies the diffusion term "
+             "and the rhov<->rhov_eq penalty (default 1e-4). xi_v=1 is "
+             "physically natural but stiff; smaller values trade diffusion "
+             "speed and penalty strength for Newton stability.",
+             "", user.xi_v, &user.xi_v, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-xi_T",
+             "Time-scaling for temperature equation: multiplies the thermal "
+             "diffusion and latent-heat source terms (default 1e-2).",
+             "", user.xi_T, &user.xi_T, NULL); CHKERRQ(ierr);
 
     /* --- Flags ---------------------------------------------------------- */
 
