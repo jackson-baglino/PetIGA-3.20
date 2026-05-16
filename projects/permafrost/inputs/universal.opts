@@ -26,7 +26,7 @@
 # ---------- Phase-field defaults ----------
 -flag_tIC 0                             # IC variant: 0=centered slab, 2=flat interface
 -n_relax 1                              # AC-only relaxation steps before full physics
--t_sed_freeze 300                       # 3-phase duration (s) before sediment freezes
+-t_sed_freeze 0                         # pin sed from t=0 (no pre-pin AC window)
 
 # ---------- Boundary condition defaults ----------
 -flag_BC_Tfix 0                         # do not fix T at boundaries
@@ -40,7 +40,7 @@
 -Lambda 1.0e4                           # triple-junction free-energy penalty strength
 
 # ---------- Adaptive time stepping ----------
--dtmax 1.0e4                            # 10,000 s ≈ 3 hours; still huge for AC but ~100× safer
+-dtmax 1.0e5                            # 100,000 s ≈ 28 hours; safety cap on adaptive growth
 -adap 1                                 # enable adaptive dt
 -NRmin 3                                # min Newton iters → dt grows
 -NRmax 8                                # max Newton iters before dt shrinks
