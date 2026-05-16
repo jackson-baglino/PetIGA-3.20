@@ -136,13 +136,17 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal sub_src      = alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
     PetscReal rho_lat_air_t = xi_T * rho * lat_sub * air_t;
     PetscReal vap_pen      = xi_v * k_pen * g_phiiphis * (rhov - rhov_eq);
-    /* Mass-exchange source: when ice grows, vapor mass must drop by ρ_ice·Δice.
-     * No xi_v scaling here — that is the *physical* mass-balance closure
-     * (Stefan condition in the diffuse-interface limit). xi_v scales only the
-     * regularisation terms (diffusion and the equilibrium penalty) so that
-     * vapor responds slowly enough to be numerically tractable, but the
-     * conservative source must remain full strength. */
-    PetscReal vap_src      = rho_ice * air_t;
+    /* Mass-exchange source: Stefan condition in the diffuse-interface limit.
+     * Couples vapor to *ice* motion only, not to sed motion. Sediment doesn't
+     * sublimate, so sed_t must not generate or consume vapor; using
+     *     vap_src = ρ_ice · air_t = -ρ_ice·(ice_t + sed_t)
+     * would (wrongly) treat sed-AC interface motion as a sublimation event.
+     * The form below is identical in the post-pin regime (sed_t = 0) and
+     * eliminates the spurious vapor source at the sed boundary during the
+     * pre-pin AC relaxation.
+     * No xi_v scaling — this is the physical mass-balance closure; xi_v
+     * scales only the regularisation terms (diffusion + equilibrium penalty). */
+    PetscReal vap_src      = -rho_ice * ice_t;
 
     PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
     PetscInt a, nen = pnt->nen;
@@ -548,9 +552,11 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 J[a][2][b][2] += shift * Na_Nb
                                + xi_v * difvap * air_eff * N1a_N1b
                                + xi_v * k_pen * g_phiiphis * (1.0 - d_rhovel_drhov) * Na_Nb;
-                /* [vap, sed]: symmetric to [vap, ice] (mass-balance source has no xi_v) */
-                J[a][2][b][3] += shift * rho_ice * Na_Nb
-                               + xi_v * k_pen * (dg_phiiphis * (rhov - rhov_eq)
+                /* [vap, sed]: vap_src = -ρ_ice * ice_t no longer depends on sed_t,
+                 *             so the shift contribution drops. Only the penalty
+                 *             derivative (via rhov_eq's sed dependence) and the
+                 *             diffusion's air = 1 - ice - sed dependence remain. */
+                J[a][2][b][3] += xi_v * k_pen * (dg_phiiphis * (rhov - rhov_eq)
                                                 - g_phiiphis * d_rhovel_dsed) * Na_Nb
                                - (air_eff_active ? xi_v * difvap : 0.0)
                                  * N1a_grad_rhov * N0[b];
