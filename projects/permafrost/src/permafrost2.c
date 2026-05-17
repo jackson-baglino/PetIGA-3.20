@@ -560,6 +560,8 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialEnclosed1D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "single_ice") == 0) {
             ierr = FormInitialSingleIceGrain1D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "single_sed") == 0) {
+            ierr = FormInitialSingleSedGrain1D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "ice_sed_pair") == 0) {
             ierr = FormInitialIceSedPair1D(iga, U, &user); CHKERRQ(ierr);
         } else {
@@ -591,13 +593,15 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialSlabAndGrains2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "single_ice") == 0) {
             ierr = FormInitialSingleIceGrain2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "single_sed") == 0) {
+            ierr = FormInitialSingleSedGrain2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "ice_sed_pair") == 0) {
             ierr = FormInitialIceSedPair2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
                     "Unknown -ic_type. Valid: enclosed contact_sed capillary layered "
                     "random_enclosed random_packed ice_cap ice_slab slab_and_grains "
-                    "single_ice ice_sed_pair");
+                    "single_ice single_sed ice_sed_pair");
         }
     }
 

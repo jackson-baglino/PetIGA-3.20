@@ -172,6 +172,7 @@ derive_ic_subfolder() {
         slab_and_grains) echo "SlabAndGrains" ;;
         ice_cap)         echo "IceCap" ;;
         single_ice)      echo "SingleIceGrain" ;;
+        single_sed)      echo "SingleSedGrain" ;;
         ice_sed_pair)    echo "IceSedPair" ;;
         *)               echo "Other" ;;
     esac

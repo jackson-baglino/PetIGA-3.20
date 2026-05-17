@@ -1,0 +1,44 @@
+# =============================================================================
+# test_2D_SingleSedGrain.opts — 2D single sediment grain, domain-centred
+#
+# Purpose: Minimal test of a single circular sediment grain in 2D air with no
+#          ice. Mirror of test_2D_SingleIceGrain.opts. With mob_sed=0 (default
+#          since the recent fix), the sediment should be perfectly stationary
+#          — useful as a direct verification of the inertness fix.
+#          The grain is centred at (Lx/2, Ly/2).
+#
+# Usage:
+#   mpiexec -np N ./permafrost \
+#       -options_file inputs/universal.opts \
+#       -options_file inputs/tests/test_2D_SingleSedGrain.opts
+#
+# Penalty and solver defaults are in inputs/universal.opts.
+# =============================================================================
+
+# ---------- Initial Condition ----------
+-ic_type single_sed                     # single sediment grain centred in domain
+
+# ---------- Domain ----------
+-dim 2
+-Nx 96                                  # standard resolution: dx ≈ 6.51e-7 m ≈ 0.91 eps
+-Ny 96
+-Nz 1
+-Lx 6.25e-05                            # domain length in x (m); 4 × RCsed
+-Ly 6.25e-05                            # domain length in y (m); square domain
+-Lz 0
+
+# ---------- Grain Radius ----------
+-RCsed 1.875e-5                         # sediment grain radius (m); padding = RCsed from each wall
+
+# ---------- Time Stepping ----------
+-delt_t 1.0e-2                          # initial time step (s)
+-t_final 86400.0                        # total simulation time (s) — 1 day
+
+# ---------- Phase-Field Physics ----------
+-eps 7.12e-07                           # diffuse interface half-width (m)
+-flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
+
+# ---------- Thermal & Humidity ----------
+-humidity 1.00
+-temp -20.0
+-grad_temp0 0.0,0.0,0.0
