@@ -127,6 +127,12 @@ SUMMARY="$BATCH_DIR/SUMMARY.txt"
     echo "Project:   $PROJECT_ROOT"
     echo "Tests:     ${#TESTS[@]}"
     echo ""
+    echo "STATUS legend:"
+    echo "  OK        Simulation completed normally."
+    echo "  OK?       Completed, but t_final < 60 s (likely a leftover debug value)."
+    echo "  FAIL(N)   Simulation aborted with exit code N."
+    echo "  MISSING   .opts file not found."
+    echo ""
     printf "%-45s | %-9s | %-7s | %-9s\n" "TEST" "STATUS" "NPROCS" "TIME (s)"
     printf "%-45s-+-%-9s-+-%-7s-+-%-9s\n" "$(printf -- '-%.0s' {1..45})" "---------" "-------" "---------"
 } > "$SUMMARY"
@@ -228,6 +234,18 @@ run_one_test() {
 
     if [ "$exit_code" -eq 0 ]; then
         status="OK"
+        # Sanity check: if the run "succeeded" suspiciously fast, the opts
+        # file probably has a tiny t_final left over from debugging. Read
+        # the final simulated TIME from the last monitor data row and
+        # compare to t_final from the opts file.
+        local tfinal final_t
+        tfinal=$(awk '$1=="-t_final"{print $2}' "$opts_path" | head -n1)
+        if [ -n "${tfinal:-}" ]; then
+            # Flag if t_final is unreasonably small (< 60 s of simulated time)
+            if awk "BEGIN{exit !($tfinal < 60)}"; then
+                status="OK?"
+            fi
+        fi
     else
         status="FAIL($exit_code)"
     fi
