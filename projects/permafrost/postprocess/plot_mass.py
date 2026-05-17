@@ -235,7 +235,49 @@ def compute_masses(run_dir: str):
 # Plotting
 # ---------------------------------------------------------------------------
 
-def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None):
+def _annotate_freeze(ax, t_freeze, scale, t_plot):
+    """Draw the vertical t_sed_freeze line on `ax` if it's inside the data range."""
+    if t_freeze is None:
+        return False
+    xf = t_freeze / scale
+    if not (t_plot[0] <= xf <= t_plot[-1] * 1.05):
+        return False
+    ax.axvline(x=xf, color="gray", ls="--", lw=1.2, zorder=2,
+               label=rf"$t_{{\rm freeze}}$ = {t_freeze:.0f} s")
+    ylim = ax.get_ylim()
+    ax.text(xf, ylim[1], r"$t_{\rm freeze}$",
+            ha="center", va="bottom", fontsize=9, color="gray")
+    return True
+
+
+def _per_phase_plot(t_plot, mass, color, label_math, xlabel, unit_suffix,
+                    title, save_path, t_freeze, scale):
+    """One self-contained plot for a single phase with its initial-value reference."""
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(t_plot, mass, color=color, lw=1.8, zorder=3, label=label_math)
+    ax.axhline(mass[0], color=color, lw=1.0, ls="--", alpha=0.45, zorder=2,
+               label=f"initial = {mass[0]:.3e}")
+    _annotate_freeze(ax, t_freeze, scale, t_plot)
+    ax.set_xlabel(xlabel, fontsize=12)
+    ax.set_ylabel(f"Mass  [{unit_suffix}]", fontsize=12)
+    ax.set_title(title, fontsize=13)
+    ax.legend(fontsize=10, loc="best")
+    ax.grid(True, alpha=0.3)
+    ax.tick_params(labelsize=10)
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
+              per_phase_dir: str = None):
+    """Generate the combined mass plot and (by default) per-phase subplots.
+
+    Per-phase plots go into <run_dir>/mass_plots/ unless `per_phase_dir` is
+    given. Each phase (total, ice, sed, vapor) gets its own PNG on its own
+    y-axis so subtle drifts that are hidden by the dominant-phase scale on
+    the combined plot become visible.
+    """
 
     times, mass_ice, mass_sed, mass_vap, dim = compute_masses(run_dir)
     mass_total = mass_ice + mass_sed + mass_vap
@@ -253,7 +295,7 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None):
     # Mass units label
     unit_suffix = {1: "kg m⁻²", 2: "kg m⁻¹", 3: "kg"}.get(dim, "kg")
 
-    # ── Figure ────────────────────────────────────────────────────────────
+    # ── Combined figure (unchanged behaviour) ─────────────────────────────
     fig, ax = plt.subplots(figsize=(8, 5))
 
     ax.plot(t_plot, mass_total, color=COLOR_TOTAL, lw=2.2, zorder=4,
@@ -272,16 +314,7 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None):
     ax.axhline(mass_sed[0],   color=COLOR_SED,   lw=1.0, ls="--", alpha=0.45, zorder=2)
     ax.axhline(mass_vap[0],   color=COLOR_VAP,   lw=1.0, ls="--", alpha=0.45, zorder=2)
 
-    # Vertical dashed line at t_sed_freeze
-    if t_freeze is not None:
-        xf = t_freeze / scale
-        if t_plot[0] <= xf <= t_plot[-1] * 1.05:
-            ax.axvline(x=xf, color="gray", ls="--", lw=1.2, zorder=2,
-                       label=rf"$t_{{\rm freeze}}$ = {t_freeze:.0f} s")
-            # Small annotation above the line
-            ylim = ax.get_ylim()
-            ax.text(xf, ylim[1], r"$t_{\rm freeze}$",
-                    ha="center", va="bottom", fontsize=9, color="gray")
+    _annotate_freeze(ax, t_freeze, scale, t_plot)
 
     ax.set_xlabel(xlabel, fontsize=12)
     ax.set_ylabel(f"Mass  [{unit_suffix}]", fontsize=12)
@@ -296,6 +329,28 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None):
     plt.close(fig)
     print(f"Figure saved to: {out}")
 
+    # ── Per-phase figures ─────────────────────────────────────────────────
+    pp_dir = per_phase_dir or os.path.join(run_dir, "mass_plots")
+    os.makedirs(pp_dir, exist_ok=True)
+
+    _per_phase_plot(t_plot, mass_total, COLOR_TOTAL, "Total",
+                    xlabel, unit_suffix, "Total mass vs. time",
+                    os.path.join(pp_dir, "total.png"), t_freeze, scale)
+    _per_phase_plot(t_plot, mass_ice, COLOR_ICE,
+                    r"Ice  ($\rho_i \int \phi_i \, dV$)",
+                    xlabel, unit_suffix, "Ice mass vs. time",
+                    os.path.join(pp_dir, "ice.png"), t_freeze, scale)
+    _per_phase_plot(t_plot, mass_sed, COLOR_SED,
+                    r"Sediment  ($\rho_s \int \phi_s \, dV$)",
+                    xlabel, unit_suffix, "Sediment mass vs. time",
+                    os.path.join(pp_dir, "sediment.png"), t_freeze, scale)
+    _per_phase_plot(t_plot, mass_vap, COLOR_VAP,
+                    r"Vapor  ($\int \rho_v \, \phi_a \, dV$)",
+                    xlabel, unit_suffix, "Vapor mass vs. time",
+                    os.path.join(pp_dir, "vapor.png"), t_freeze, scale)
+
+    print(f"Per-phase plots saved to: {pp_dir}/")
+
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -305,11 +360,13 @@ def parse_args():
     p = argparse.ArgumentParser(
         description="Plot integrated phase mass vs. time (1D/2D/3D)."
     )
-    p.add_argument("--dir",       default=".",
+    p.add_argument("--dir",            default=".",
                    help="Run folder containing igasol.dat and sol_*.dat (default: .)")
-    p.add_argument("--save",      default=None,
-                   help="Output PNG path (default: <dir>/mass.png)")
-    p.add_argument("--time-unit", default=None,
+    p.add_argument("--save",           default=None,
+                   help="Output PNG path for the combined plot (default: <dir>/mass.png)")
+    p.add_argument("--per-phase-dir",  default=None,
+                   help="Directory for per-phase plots (default: <dir>/mass_plots/)")
+    p.add_argument("--time-unit",      default=None,
                    choices=["s", "min", "h", "d"],
                    help="Time unit for x-axis (default: auto)")
     return p.parse_args()
@@ -318,7 +375,10 @@ def parse_args():
 def main():
     args = parse_args()
     run_dir = os.path.abspath(args.dir)
-    plot_mass(run_dir, time_unit=args.time_unit, save_path=args.save)
+    plot_mass(run_dir,
+              time_unit=args.time_unit,
+              save_path=args.save,
+              per_phase_dir=args.per_phase_dir)
 
 
 if __name__ == "__main__":

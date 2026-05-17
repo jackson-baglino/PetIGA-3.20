@@ -257,11 +257,14 @@ run_one_test() {
 
     set +e
     if [[ "$dim" != "1" ]]; then
-        # 2D/3D: VTK conversion if a plot script is present
-        local plot_script="$SCRIPTS_DIR/run_plotpermafrost.sh"
-        if [ -f "$plot_script" ]; then
+        # 2D/3D: VTK conversion. Call plotpermafrost.py directly from the
+        # project's postprocess/ — earlier this went through
+        # run_plotpermafrost.sh, which expects a per-run staged postprocess/
+        # subdirectory and silently exits 1 if it doesn't find one.
+        if [ -n "$PYTHON" ] && [ -f "$POSTPROCESS/plotpermafrost.py" ]; then
             echo "  Post-processing (VTK)..."
-            "$plot_script" "$test_out" 2>&1 | sed 's/^/    /' || true
+            "$PYTHON" "$POSTPROCESS/plotpermafrost.py" \
+                --dir "$test_out" 2>&1 | sed 's/^/    /' || true
         fi
     else
         # 1D: phase profile plots
