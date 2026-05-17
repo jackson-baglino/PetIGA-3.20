@@ -181,13 +181,16 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
       PetscPrintf(PETSC_COMM_WORLD,
           "\033[33m[WARN] Phase field out of bounds at step %d — "
-          "rolling back, dt %.3e -> %.3e\n"
+          "deferring rollback to next pre-step, dt %.3e -> %.3e\n"
           "  phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\033[0m\n",
           step, cur_dt, new_dt,
           Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max);
 
-      ierr = TSRollBack(ts); CHKERRQ(ierr);
-      ierr = TSSetTimeStep(ts, new_dt); CHKERRQ(ierr);
+      /* Can't call TSRollBack here — ts->vec_sol is read-locked inside
+       * TSMonitor. Defer to the BoundsRollbackPreStep callback, which
+       * fires before the next TSStep (when the vector is writable). */
+      user->bounds_violated = PETSC_TRUE;
+      user->bounds_new_dt   = new_dt;
 
       /* Skip the rest of the monitor for this step (it's being undone). */
       PetscFunctionReturn(0);
@@ -419,6 +422,36 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
     // Write the vector U to the output file
     ierr = IGAWriteVec(user->iga, U, filename);
     CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * BoundsRollbackPreStep
+ *
+ * TS pre-step callback. If Monitor() flagged a bounds violation on the last
+ * step, undo that step and shrink dt here — where ts->vec_sol is writable
+ * (it's read-locked during TSMonitor, so TSRollBack cannot be called there).
+ *
+ * Registered via TSSetPreStep() in permafrost2.c. The AppCtx pointer is
+ * retrieved via TSGetApplicationContext, which is set in main() with
+ * TSSetApplicationContext.
+ * ========================================================================= */
+PetscErrorCode BoundsRollbackPreStep(TS ts)
+{
+  PetscErrorCode ierr;
+  AppCtx *user;
+
+  PetscFunctionBegin;
+  ierr = TSGetApplicationContext(ts, &user); CHKERRQ(ierr);
+
+  if (user && user->bounds_violated) {
+    ierr = TSRollBack(ts); CHKERRQ(ierr);
+    ierr = TSSetTimeStep(ts, user->bounds_new_dt); CHKERRQ(ierr);
+    user->bounds_violated = PETSC_FALSE;
+    user->bounds_new_dt   = 0.0;
   }
 
   PetscFunctionReturn(0);

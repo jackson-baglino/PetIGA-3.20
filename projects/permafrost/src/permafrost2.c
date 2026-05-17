@@ -530,6 +530,12 @@ int main(int argc, char *argv[]) {
     ierr = TSAlphaSetRadius(ts, 0.5); CHKERRQ(ierr);
     if (monitor) { ierr = TSMonitorSet(ts, Monitor, &user, NULL); CHKERRQ(ierr); }
     if (output) { ierr = TSMonitorSet(ts, OutputMonitor, &user, NULL); CHKERRQ(ierr); }
+
+    /* Application context — so BoundsRollbackPreStep can fetch user via
+     * TSGetApplicationContext to consume deferred bounds-rollback requests. */
+    ierr = TSSetApplicationContext(ts, &user); CHKERRQ(ierr);
+    ierr = TSSetPreStep(ts, BoundsRollbackPreStep); CHKERRQ(ierr);
+
     ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
     ts->adap               = adap;

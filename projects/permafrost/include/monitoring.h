@@ -9,4 +9,7 @@ PetscErrorCode Monitor(TS ts, PetscInt step, PetscReal t, Vec U, void *mctx);
 /* Output monitor function for writing solution data */
 PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void *mctx);
 
+/* TS pre-step callback: consumes deferred bounds-rollback requests set by Monitor() */
+PetscErrorCode BoundsRollbackPreStep(TS ts);
+
 #endif // MONITORING_H

@@ -133,6 +133,13 @@ typedef struct {
   PetscReal tot_rhov_0;    // initial ∫ ρ_v φ_a dΩ (vapor mass in air phase)
   PetscReal tot_mass_0;    // initial ρ_ice·∫φ_i + ρ_sed·∫φ_s + ∫ρ_v·φ_a (total system mass)
 
+  // Deferred bounds-rollback request — set by Monitor() when phase fields go
+  // out of bounds, consumed by BoundsRollbackPreStep() before the next TSStep.
+  // We can't call TSRollBack inside Monitor because ts->vec_sol is read-locked
+  // there; the PreStep callback runs when the vector is writable.
+  PetscBool bounds_violated;
+  PetscReal bounds_new_dt;
+
 } AppCtx;/* Field definitions for node data */
 
 #endif // NASA_TYPES_H
