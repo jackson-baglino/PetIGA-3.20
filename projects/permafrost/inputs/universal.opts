@@ -26,7 +26,7 @@
 # ---------- Phase-field defaults ----------
 -flag_tIC 0                             # IC variant: 0=centered slab, 2=flat interface
 -n_relax 1                              # AC-only relaxation steps before full physics
--t_sed_freeze 0                         # pin sed from t=0 (no pre-pin AC window)
+-t_sed_freeze 10                         # pin sed from t=0 (no pre-pin AC window)
 
 # ---------- Equation time-scaling ----------
 # xi_v, xi_T scale the diffusion + penalty + latent-heat source terms of the
@@ -61,7 +61,7 @@
 
 # ---------- Nonlinear solver (SNES) ----------
 -snes_type newtonls                     # Newton with line search
--snes_max_it 15                         # max Newton iterations per time step (raised: phase-field needs room at stiff transients)
+-snes_max_it 25                         # max Newton iterations per time step (raised: stiff configs at xi_v=1 need more headroom)
 -snes_rtol 1e-08                        # relative residual tolerance
 -snes_atol 1e-12                        # absolute residual tolerance (tightened: prevents false convergence near zero)
 -snes_stol 1e-08                        # step tolerance
