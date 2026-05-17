@@ -58,7 +58,7 @@ from igakit.io import PetIGA
 #   SNES rows  (13 fields):  it   | fnorm | n0 | r0 | ...
 # We want only domain rows (exactly 9 pipe-delimited fields after the step).
 _OUTP_ROW_RE    = re.compile(r"^\s*(\d+)\s*\|(.+)$")
-_DOMAIN_NFIELDS = 9
+_DOMAIN_NFIELDS = 10  # TIME, DT, TOT_ICE, TOT_AIR, TOT_SED, TEMP, TOT_RHOV, I-A INTERF, TRIPL_JUNC, TOTAL_MASS
 
 
 def _load_time_map(outp_path: str) -> dict:

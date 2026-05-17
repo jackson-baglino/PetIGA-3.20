@@ -40,7 +40,7 @@ import matplotlib.pyplot as plt
 # We must match only domain-integral rows.  The reliable discriminator is
 # field count: domain rows have exactly _DOMAIN_NFIELDS fields after the step.
 _ROW_RE = re.compile(r"^\s*(\d+)\s*\|(.+)$")
-_DOMAIN_NFIELDS = 9   # TIME, DT, TOT_ICE, TOT_AIR, TOT_SED, TEMP, TOT_RHOV, I-A INTERF, TRIPL_JUNC
+_DOMAIN_NFIELDS = 10  # TIME, DT, TOT_ICE, TOT_AIR, TOT_SED, TEMP, TOT_RHOV, I-A INTERF, TRIPL_JUNC, TOTAL_MASS
 
 
 def _parse_float(s: str) -> float:
