@@ -89,12 +89,21 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscReal sed_air_interf = PetscRealPart(stats[7]);
   PetscReal ice_sed_interf = PetscRealPart(stats[8]);
 
+  /* Total system mass: only counts vapor in the air phase (TOT_RHOV is already
+   * weighted by phi_a). The rhov field has unphysical values in the solid where
+   * the penalty pins it to rhov_sat, but those don't contribute because phi_a=0
+   * there. This is the conservation quantity that should stay flat. */
+  PetscReal tot_mass = user->rho_ice * tot_ice
+                     + user->rho_sed * tot_sed
+                     + tot_rhov;
+
   /* Store initial integrals at step 0 for later percentage reporting. */
   if (step == 0) {
     user->tot_ice_0  = tot_ice;
     user->tot_air_0  = tot_air;
     user->tot_sed_0  = tot_sed;
     user->tot_rhov_0 = tot_rhov;
+    user->tot_mass_0 = tot_mass;
   }
  
   //-------- phase-field min/max bounds (printed every step for out-of-bounds detection)
@@ -247,7 +256,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       // Build header line using the SAME fixed-width fields as the data row
       char header[512];
       ierr2 = PetscSNPrintf(header, sizeof(header),
-                            " %5s | %12s | %9s | %10s | %10s | %10s | %9s | %9s | %10s | %10s",
+                            " %5s | %12s | %9s | %10s | %10s | %10s | %9s | %9s | %10s | %10s | %10s",
                             "STEP",
                             "TIME [s]",
                             "DT [s]",
@@ -257,7 +266,8 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
                             "TEMP",
                             "TOT_RHOV",
                             "I-A INTERF",
-                            "TRIPL_JUNC");
+                            "TRIPL_JUNC",
+                            "TOTAL_MASS");
       CHKERRQ(ierr2);
 
       // Separator line: exactly matches header length
@@ -280,10 +290,10 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
     // Data row: uses matching widths so it lines up under the header
     PetscPrintf(PETSC_COMM_WORLD,
-                " %5d | %12.5e | %9.3e | %10.3e | %10.3e | %10.3e | %9.3e | %9.3e | %10.3e | %10.3e\n",
+                " %5d | %12.5e | %9.3e | %10.3e | %10.3e | %10.3e | %9.3e | %9.3e | %10.3e | %10.3e | %10.3e\n",
                 step, t, dt,
                 tot_ice, tot_air, tot_sed, tot_temp, tot_rhov,
-                sub_interf, tot_trip);
+                sub_interf, tot_trip, tot_mass);
 
     /* Percentage-change row (relative to initial values at step 0). */
     if (step > 0 && user->tot_ice_0 > 0.0) {
@@ -293,9 +303,11 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
                            ? (tot_sed  - user->tot_sed_0)  / user->tot_sed_0  * 100.0 : 0.0;
       PetscReal pct_rhov = (user->tot_rhov_0 > 0.0)
                            ? (tot_rhov - user->tot_rhov_0) / user->tot_rhov_0 * 100.0 : 0.0;
+      PetscReal pct_mass = (user->tot_mass_0 > 0.0)
+                           ? (tot_mass - user->tot_mass_0) / user->tot_mass_0 * 100.0 : 0.0;
       PetscPrintf(PETSC_COMM_WORLD,
-                  "       |              |           | %+9.3f%% | %+9.3f%% | %+9.3f%% |           | %+8.3f%% |            |\n",
-                  pct_ice, pct_air, pct_sed, pct_rhov);
+                  "       |              |           | %+9.3f%% | %+9.3f%% | %+9.3f%% |           | %+8.3f%% |            |            | %+9.3f%%\n",
+                  pct_ice, pct_air, pct_sed, pct_rhov, pct_mass);
     }
 
     // Optional: add a blank line every N rows for readability (set to 0 to disable)

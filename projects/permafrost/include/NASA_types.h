@@ -127,10 +127,11 @@ typedef struct {
   PetscReal R1;  // Radius of capillary neck
 
   // Initial domain integrals (set at step 0, used for percentage reporting)
-  PetscReal tot_ice_0;   // initial ∫ φ_i dΩ
-  PetscReal tot_air_0;   // initial ∫ φ_a dΩ
-  PetscReal tot_sed_0;   // initial ∫ φ_s dΩ
-  PetscReal tot_rhov_0;  // initial ∫ ρ_v φ_a dΩ
+  PetscReal tot_ice_0;     // initial ∫ φ_i dΩ
+  PetscReal tot_air_0;     // initial ∫ φ_a dΩ
+  PetscReal tot_sed_0;     // initial ∫ φ_s dΩ
+  PetscReal tot_rhov_0;    // initial ∫ ρ_v φ_a dΩ (vapor mass in air phase)
+  PetscReal tot_mass_0;    // initial ρ_ice·∫φ_i + ρ_sed·∫φ_s + ∫ρ_v·φ_a (total system mass)
 
 } AppCtx;/* Field definitions for node data */
 
