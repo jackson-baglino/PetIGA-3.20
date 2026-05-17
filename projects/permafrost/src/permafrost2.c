@@ -115,10 +115,15 @@ int main(int argc, char *argv[]) {
     user.RCice_dev   = 0.55;    /* Std dev of radius */
     user.x_slab_frac = 0.175;   /* slab_and_grains IC: right ice slab fraction of Lx */
 
-    /* Define boundary condition flags (can be overridden by PETSc options) */
+    /* Define boundary condition flags (can be overridden by PETSc options).
+     * Default is INSULATING for both: no Dirichlet condition is registered,
+     * no surface form is assembled in Residual (see `pnt->atboundary` early
+     * return in assembly.c), so the natural BC ∂u/∂n = 0 is enforced — i.e.
+     * zero flux through the boundary for both T and rho_v. Override only if
+     * you actually want fixed-value Dirichlet conditions. */
     user.periodic    = 0;       /* Periodic boundary condition flag */
-    flag_BC_Tfix     = PETSC_TRUE;  /* fix temperature at boundaries by default */
-    flag_BC_rhovfix  = PETSC_FALSE;
+    flag_BC_Tfix     = PETSC_FALSE; /* insulating T (zero heat flux) — natural Neumann */
+    flag_BC_rhovfix  = PETSC_FALSE; /* insulating rho_v (zero vapor flux) — natural Neumann */
 
     /* Define output parameters (can be overridden by PETSc options) */
     user.outp        = 0;       /* Output control flag (0: output according to t_interv) */
@@ -380,6 +385,22 @@ int main(int argc, char *argv[]) {
     /* Adjust boundary condition flags for periodic case */
     if (user.periodic == 1 && flag_BC_Tfix)    flag_BC_Tfix    = PETSC_FALSE;
     if (user.periodic == 1 && flag_BC_rhovfix) flag_BC_rhovfix = PETSC_FALSE;
+
+    /* Resolved boundary-condition summary. Without IGASetBoundaryValue() and
+     * with the `if (pnt->atboundary) return 0;` guards in Residual_A1, the
+     * natural Neumann BC ∂u/∂n = 0 is what's enforced for any DOF that's not
+     * explicitly Dirichlet-fixed. Ice and sediment phase fields are always
+     * left at natural Neumann (no Dirichlet for them anywhere in this code). */
+    PetscPrintf(PETSC_COMM_WORLD, "----- Boundary conditions ----- \n");
+    PetscPrintf(PETSC_COMM_WORLD, "  ice (phi_i):   natural Neumann (zero gradient)\n");
+    PetscPrintf(PETSC_COMM_WORLD, "  sed (phi_s):   natural Neumann (zero gradient)\n");
+    PetscPrintf(PETSC_COMM_WORLD, "  temperature:   %s\n",
+                flag_BC_Tfix    ? "Dirichlet (fixed value at boundary)"
+                                : "natural Neumann (insulating, zero heat flux)");
+    PetscPrintf(PETSC_COMM_WORLD, "  vapor (rho_v): %s\n",
+                flag_BC_rhovfix ? "Dirichlet (fixed value at boundary)"
+                                : "natural Neumann (insulating, zero vapor flux)");
+    PetscPrintf(PETSC_COMM_WORLD, "\n");
 
     /* Time stepping parameters */
     if (n_out > 1) {
