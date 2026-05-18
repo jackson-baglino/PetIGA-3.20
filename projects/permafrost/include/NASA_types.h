@@ -17,6 +17,7 @@ typedef struct {
 /* Application context structure */
 typedef struct {
   IGA       iga;  // Isogeometric analysis (IGA) structure for managing geometry and basis functions
+  SNES      snes; // Nonlinear solver handle (cached so Residual can call SNESSetFunctionDomainError)
 
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method

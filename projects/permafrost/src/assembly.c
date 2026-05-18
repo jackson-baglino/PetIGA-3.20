@@ -86,6 +86,30 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscScalar air   = 1.0 - sed - ice;
     PetscScalar air_t = -ice_t - sed_t;
 
+    /* SNES domain check: if the *trial* Newton iterate has any phi outside
+     * [phase_lo, phase_hi], tell SNES the current line-search trial is in an
+     * invalid region. Line search will treat the residual norm as infinite,
+     * back off the step, and try a smaller update. Catches the dt-induced AC
+     * instability while Newton is still iterating — earlier and cheaper than
+     * the deferred-rollback safety net in Monitor(), which only fires after
+     * a step has been accepted.
+     *
+     * The check uses the *unclamped* values read straight from the trial
+     * iterate; the clamps below are only for downstream material-property
+     * arithmetic (so divisions by phi values don't NaN). */
+    {
+        PetscReal phi_i_un = PetscRealPart(sol[0]);
+        PetscReal phi_s_un = PetscRealPart(sol[3]);
+        PetscReal phi_a_un = 1.0 - phi_i_un - phi_s_un;
+        PetscReal lo = user->phase_lo, hi = user->phase_hi;
+        if (phi_i_un < lo || phi_i_un > hi ||
+            phi_s_un < lo || phi_s_un > hi ||
+            phi_a_un < lo || phi_a_un > hi) {
+            if (user->snes) SNESSetFunctionDomainError(user->snes);
+            return 0;
+        }
+    }
+
     if (ice < 0.0) ice = 0.0;
     if (ice > 1.0) ice = 1.0;
     if (sed < 0.0) sed = 0.0;

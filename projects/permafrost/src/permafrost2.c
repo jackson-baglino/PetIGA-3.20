@@ -591,6 +591,14 @@ int main(int argc, char *argv[]) {
     ierr = TSGetSNES(ts, &nonlin); CHKERRQ(ierr);
     ierr = SNESSetConvergenceTest(nonlin, SNESDOFConvergence, &user, NULL); CHKERRQ(ierr);
 
+    /* Cache the SNES handle on user so Residual() can call
+     * SNESSetFunctionDomainError() when a trial iterate has phi out of bounds.
+     * That tells SNES the current line-search trial is invalid; line search
+     * backtracks and Newton tries a smaller step. Catches dt-induced AC
+     * instabilities while they are still recoverable, before the resulting
+     * bad state is committed to ts->vec_sol. */
+    user.snes = nonlin;
+
     /* Create solution vector (ice, temperature, vapor, sediment) */
     Vec U;
     ierr = IGACreateVec(iga, &U); CHKERRQ(ierr);
