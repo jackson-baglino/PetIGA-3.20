@@ -443,6 +443,24 @@ int main(int argc, char *argv[]) {
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter */
+
+    /* Allow per-test override of mob_sub via -mob_sub <value>. Tests with
+     * very stiff geometries (touching/merging grains in 2D) can reduce
+     * mob_sub by ~10x to trade kinetics speed for AC stability. The
+     * physical value computed above is the default. */
+    {
+        PetscReal  mob_sub_cli = -1.0;
+        PetscBool  flg         = PETSC_FALSE;
+        ierr = PetscOptionsGetReal(NULL, NULL, "-mob_sub",
+                                   &mob_sub_cli, &flg); CHKERRQ(ierr);
+        if (flg && mob_sub_cli > 0.0) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  -mob_sub override: %.2e -> %.2e (factor %.1f)\n",
+                        user.mob_sub, mob_sub_cli, mob_sub_cli / user.mob_sub);
+            user.mob_sub = mob_sub_cli;
+        }
+    }
+
     /* Sediment is inert by default: mob_sed defaults to 0 (set via PetscMemzero
      * at program start), so the local mobility mob_sub*ice + mob_sed*sed +
      * mob_air*air vanishes inside the sed grain and AC dynamics cannot dissolve

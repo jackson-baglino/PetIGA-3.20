@@ -45,6 +45,15 @@
 # ---------- Phase-Field Physics ----------
 -eps 3.56e-07                           # diffuse interface half-width (m); 2× standard resolution
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
+-mob_sub 2.0e-10                        # 10× smaller than physical; the asymmetric pair
+                                        # with the smaller grain shrinking past resolution
+                                        # makes AC dynamics severely stiff.
+
+# ---------- Linear solver override ----------
+# Previous run was on a bad trajectory at xi_v=1 with default GMRES.
+# BCGS is more robust against the breakdowns seen in the touching pair
+# and gives a fair stress test of the linear solver at this resolution.
+-ksp_type bcgs
 
 # ---------- Thermal & Humidity ----------
 -humidity 1.00

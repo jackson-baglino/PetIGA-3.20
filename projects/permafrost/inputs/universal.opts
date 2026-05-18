@@ -46,6 +46,15 @@
 -flag_BC_rhovfix 0                      # do not fix rhov at boundaries
 -flag_Tdep 0                            # temperature-independent material properties
 
+# ---------- Phase-field bounds ----------
+# Trigger rollback/abort as soon as phi leaves the [phase_lo, phase_hi]
+# window. Tight bounds catch spurious-phase excursions early so the
+# monitor's rollback can recover before the bad state persists for many
+# steps; loose bounds let small transient overshoots slip through.
+# Source default is [-0.25, 1.25] (loose); we tighten to ±0.05.
+-phase_lo -0.05                         # abort/rollback if any phi falls below this
+-phase_hi  1.05                         # abort/rollback if any phi rises above this
+
 # ---------- Penalty defaults ----------
 -difvap_pen 1.0e-8                      # D_pen = difvap_pen * difvap (in ice/sed regions)
 -k_pen 1e5                              # vapor interface equilibrium stiffness

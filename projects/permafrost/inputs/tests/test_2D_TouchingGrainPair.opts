@@ -41,11 +41,14 @@
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-2                          # initial time step (s)
--t_final 86400.0                        # total simulation time (s) — debug
+-t_final 8640000.0                        # total simulation time (s) — debug
 
 # ---------- Phase-Field Physics ----------
 -eps 7.12e-07                           # diffuse interface half-width (m)
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
+-mob_sub 2.0e-10                        # 10× smaller than physical mob_sub at xi_v=1;
+                                        # touching geometry stresses AC dynamics, trades
+                                        # kinetics speed for stability through merge.
 
 # ---------- Thermal & Humidity ----------
 -humidity 1.00

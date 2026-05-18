@@ -45,6 +45,13 @@
 # ---------- Phase-Field Physics ----------
 -eps 3.56e-07                           # diffuse interface half-width (m); 2× standard resolution
 -flag_avenue 1                          # Avenue 1: AC + penalized vapor diffusion
+-mob_sub 2.0e-10                        # 10× smaller than physical; touching+hires stresses
+                                        # AC even harder, this was a hard FAIL(141) before.
+
+# ---------- Linear solver override ----------
+# Previous run hit repeated KSP DIVERGED_BREAKDOWN with GMRES. BCGS is
+# more robust against breakdowns in stiff asymmetric Jacobians.
+-ksp_type bcgs
 
 # ---------- Thermal & Humidity ----------
 -humidity 1.00
