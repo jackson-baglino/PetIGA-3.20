@@ -46,12 +46,14 @@ duplicating everything else. Geometry-specific tweaks (`-mob_sub` reductions,
 the geometry they applied to.
 
 **What happened.** Now a run is composed:
-```
+
+```bash
 mpiexec ./permafrost \
     -options_file inputs/solver.opts \
     -options_file inputs/geometry/<geom>.opts \
     -options_file inputs/experiment/<exp>.opts
 ```
+
 - `inputs/solver.opts` (renamed from `universal.opts`) holds 100% numerical settings.
 - `inputs/geometry/` has 21 files covering all the canonical 1D and 2D geometries × resolution variants.
 - `inputs/experiment/` has the environmental parameters (`t_final`, `t_sed_freeze`, `T`, `humidity`, `∇T`).
@@ -113,6 +115,7 @@ crashed with
 on the second rollback in a row.
 
 **What happened.** Final design:
+
 - `Monitor()` detects an out-of-bounds state and sets a flag (`user->bounds_violated`)
   plus the proposed new `dt` (`user->bounds_new_dt`). No `vec_sol` mutation.
 - A new `BoundsRollbackPreStep()` callback runs *before each TSStep*, where
