@@ -1,0 +1,12 @@
+# =============================================================================
+# geometry/1D_single_ice.opts — 1D single ice grain (no sediment)
+# =============================================================================
+-ic_type single_ice
+-dim 1
+-Nx 96
+-Lx 6.25e-05
+-RCice 1.875e-5
+-delt_t 1.0e-2
+-eps 7.12e-07
+-ksp_type preonly
+-pc_type lu

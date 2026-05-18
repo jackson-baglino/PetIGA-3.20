@@ -1,0 +1,23 @@
+# =============================================================================
+# geometry/2D_separated_grains.opts — 2D: two ice-shell grains with a 5 µm
+# air gap. Asymmetric grain sizes: small grain (RCice0=12 µm) shrinks via
+# Ostwald ripening, large grain (RCice1=25 µm) grows.
+# =============================================================================
+-ic_type enclosed
+-dim 2
+-Nx 95
+-Ny 190
+-Nz 1
+-Lx 6.25e-05
+-Ly 1.25e-04
+-Lz 0
+-grain_sep 5.0e-6
+
+# Per-grain radii — asymmetric configuration drives Ostwald ripening
+-RCice0 1.2e-5                          # small grain outer ice radius
+-RCice1 2.5e-5                          # large grain outer ice radius
+-RCsed0 6.0e-6                          # both sed cores same
+-RCsed1 6.0e-6
+
+-delt_t 1.0e-2
+-eps 7.12e-07

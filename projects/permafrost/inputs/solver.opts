@@ -1,14 +1,19 @@
 # =============================================================================
-# universal.opts — shared defaults for all permafrost simulations
+# solver.opts — numerical defaults shared by all permafrost simulations
 #
-# Load this file BEFORE the simulation-specific opts file so that any
-# parameter defined here can be overridden by the simulation-specific file:
+# Three-file opts architecture:
+#
+#   solver.opts          ← THIS FILE: numerical settings (solver, tolerances,
+#                          preconditioner, basis order, regularisation, bounds)
+#   geometry/<name>.opts ← IC type, mesh, domain, grain radii, eps, initial dt
+#   experiment/<name>.opts ← t_final, t_sed_freeze, T, humidity, ∇T
+#
+# Usage (PETSc processes -options_file left-to-right; later wins):
 #
 #   mpiexec -np N ./permafrost \
-#       -options_file inputs/universal.opts \
-#       -options_file inputs/tests/<sim>.opts
-#
-# PETSc processes -options_file flags left-to-right; later entries win.
+#       -options_file inputs/solver.opts \
+#       -options_file inputs/geometry/<geom>.opts \
+#       -options_file inputs/experiment/<exp>.opts
 # =============================================================================
 
 # ---------- DOFs & discretization (fixed for all permafrost sims) ----------
@@ -23,10 +28,10 @@
 -Permafrost_output 1                    # enable sol*.dat field output
 -Permafrost_monitor 1                   # enable monitor table output
 
-# ---------- Phase-field defaults ----------
--flag_tIC 0                             # IC variant: 0=centered slab, 2=flat interface
+# ---------- Phase-field / model defaults ----------
+-flag_avenue 1                          # AC + penalised vapor diffusion + freeze→zero sed
+-flag_tIC 0                             # 1D IC variant (0=centered slab, 2=flat interface)
 -n_relax 1                              # AC-only relaxation steps before full physics
--t_sed_freeze 10                         # pin sed from t=0 (no pre-pin AC window)
 
 # ---------- Equation time-scaling ----------
 # xi_v, xi_T scale the diffusion + penalty + latent-heat source terms of the
@@ -41,19 +46,23 @@
 -xi_v 1.0                               # physical vapor diffusivity scaling
 -xi_T 1.0                               # physical thermal diffusivity scaling
 
-# ---------- Boundary condition defaults ----------
+# ---------- Boundary condition defaults (insulating: zero flux) ----------
+# When these flags are 0 (default), no IGASetBoundaryValue is registered for
+# T or rho_v, and Residual_A1 returns 0 at boundary quadrature points, so the
+# natural Neumann BC ∂u/∂n = 0 is enforced (insulating: no flux of heat or
+# vapor through the boundary). Set to 1 only for tests that explicitly want
+# Dirichlet conditions.
 -flag_BC_Tfix 0                         # do not fix T at boundaries
 -flag_BC_rhovfix 0                      # do not fix rhov at boundaries
 -flag_Tdep 0                            # temperature-independent material properties
 
-# ---------- Phase-field bounds ----------
-# Trigger rollback/abort as soon as phi leaves the [phase_lo, phase_hi]
-# window. Tight bounds catch spurious-phase excursions early so the
-# monitor's rollback can recover before the bad state persists for many
-# steps; loose bounds let small transient overshoots slip through.
-# Source default is [-0.25, 1.25] (loose); we tighten to ±0.05.
--phase_lo -0.05                         # abort/rollback if any phi falls below this
--phase_hi  1.05                         # abort/rollback if any phi rises above this
+# ---------- Phase-field bounds (safety net) ----------
+# Trigger rollback in BoundsRollbackPreStep / SNESSetFunctionDomainError if
+# any phi leaves [phase_lo, phase_hi].  Tight bounds catch spurious-phase
+# excursions early so the safety net can recover before the bad state persists
+# for many steps; loose bounds let small transient overshoots slip through.
+-phase_lo -0.05                         # rollback if any phi falls below this
+-phase_hi  1.05                         # rollback if any phi rises above this
 
 # ---------- Penalty defaults ----------
 -difvap_pen 1.0e-8                      # D_pen = difvap_pen * difvap (in ice/sed regions)
@@ -70,9 +79,9 @@
 
 # ---------- Nonlinear solver (SNES) ----------
 -snes_type newtonls                     # Newton with line search
--snes_max_it 25                         # max Newton iterations per time step (raised: stiff configs at xi_v=1 need more headroom)
+-snes_max_it 25                         # max Newton iterations per time step
 -snes_rtol 1e-08                        # relative residual tolerance
--snes_atol 1e-12                        # absolute residual tolerance (tightened: prevents false convergence near zero)
+-snes_atol 1e-12                        # absolute residual tolerance
 -snes_stol 1e-08                        # step tolerance
 -snes_converged_reason                  # print convergence reason each step
 -snes_linesearch_type bt                # backtracking line search
@@ -80,14 +89,14 @@
 
 # ---------- Linear solver (KSP) ----------
 -ksp_type gmres                         # GMRES — correct for the asymmetric 4-DOF system
--ksp_rtol 1e-08                         # relative residual tolerance (tightened: ensures Newton convergence rate)
--ksp_atol 1e-12                         # absolute residual tolerance (tightened: consistent with SNES atol)
+-ksp_rtol 1e-08                         # relative residual tolerance
+-ksp_atol 1e-12                         # absolute residual tolerance
 -ksp_max_it 500                         # max GMRES iterations
--ksp_gmres_restart 200                  # GMRES restart interval (reduced from 500: saves ~60% memory)
+-ksp_gmres_restart 200                  # GMRES restart interval
 -ksp_converged_reason                   # print convergence reason each step
 
 # ---------- Preconditioner (2D / 3D default) ----------
--pc_type asm                            # additive Schwarz with overlap (replaces bjacobi)
+-pc_type asm                            # additive Schwarz with overlap
 -pc_asm_overlap 1                       # 1-node overlap between MPI blocks
 -sub_pc_type ilu                        # ILU(k) per block
--sub_pc_factor_levels 2                 # ILU(2): captures 4-DOF coupled B-spline stencil better than ILU(1)
+-sub_pc_factor_levels 2                 # ILU(2): captures 4-DOF coupled B-spline stencil

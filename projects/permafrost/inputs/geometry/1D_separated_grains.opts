@@ -1,0 +1,15 @@
+# =============================================================================
+# geometry/1D_separated_grains.opts — 1D: two ice-shell grains with a 5 µm
+# air gap between the outer ice surfaces (~ 7 interface widths).
+# =============================================================================
+-ic_type enclosed
+-dim 1
+-Nx 190
+-Lx 1.25e-04
+-RCice 1.875e-5
+-RCsed 8.75e-6
+-grain_sep 5.0e-6
+-delt_t 1.0e-2
+-eps 7.12e-07
+-ksp_type preonly
+-pc_type lu

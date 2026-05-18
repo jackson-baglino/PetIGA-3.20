@@ -1,0 +1,17 @@
+# =============================================================================
+# experiment/1day_T-20_h1.00.opts — 1 day at -20°C, saturated humidity
+#
+# Air exactly at saturation (humidity = 1.0). No bulk sublimation driving
+# force in the air; any kinetics come from curvature (Gibbs-Thomson) or
+# explicit gradients. Typical of the 2D multi-grain tests where Ostwald
+# ripening and sintering are the phenomena of interest.
+# =============================================================================
+
+# ---------- Simulation time ----------
+-t_final 86400.0                        # 1 day (s)
+-t_sed_freeze 10                        # pin sed at t=10s (very short pre-pin window)
+
+# ---------- Environmental conditions ----------
+-temp -20.0                             # initial temperature [°C]
+-humidity 1.00                          # initial relative humidity in air (saturated)
+-grad_temp0 0.0,0.0,0.0                 # no imposed temperature gradient

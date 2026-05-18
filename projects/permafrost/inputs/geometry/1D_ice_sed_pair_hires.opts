@@ -1,0 +1,13 @@
+# =============================================================================
+# geometry/1D_ice_sed_pair_hires.opts — 1D ice+sed pair, 2× resolution
+# =============================================================================
+-ic_type ice_sed_pair
+-dim 1
+-Nx 380
+-Lx 1.25e-04
+-RCice 1.875e-5
+-RCsed 1.875e-5
+-delt_t 1.0e-2
+-eps 3.56e-07
+-ksp_type preonly
+-pc_type lu
