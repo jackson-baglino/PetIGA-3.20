@@ -24,7 +24,7 @@
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-4                          # initial time step (s)
--t_final 864000.0                       # total simulation time (s) — 10 days
+-t_final 86400.0                        # total simulation time (s) — 1 day
 
 # ---------- Phase-Field Physics ----------
 -eps 3.56e-07                           # diffuse interface half-width (m); 4 elements/interface

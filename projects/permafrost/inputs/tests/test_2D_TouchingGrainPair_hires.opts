@@ -40,7 +40,7 @@
 
 # ---------- Time Stepping ----------
 -delt_t 1.0e-2                          # initial time step (s)
--t_final 8640000.0                      # total simulation time (s) — 100 days
+-t_final 86400.0                        # total simulation time (s) — 1 day
 
 # ---------- Phase-Field Physics ----------
 -eps 3.56e-07                           # diffuse interface half-width (m); 2× standard resolution
