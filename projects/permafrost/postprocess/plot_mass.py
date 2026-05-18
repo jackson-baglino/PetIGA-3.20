@@ -92,14 +92,26 @@ def auto_time_unit(t_max_sec: float) -> str:
 # ---------------------------------------------------------------------------
 
 def find_opts_files(run_dir: str):
-    """Return opts files in run_dir: [universal.opts, sim-specific.opts].
-    PETSc processes left-to-right so later entries override earlier ones."""
+    """Return opts files in run_dir in PETSc load order.
+
+    Modern layout: solver.opts + a geometry/<...>.opts + an experiment/<...>.opts
+    are all staged into the run directory at execution time. We load
+    solver.opts first (so its values are the base), then any other .opts
+    file (geometry, then experiment — but the order between them doesn't
+    matter because they cover disjoint parameter sets).
+
+    Legacy compat: if the run dir has universal.opts instead of
+    solver.opts (older runs from before the three-file refactor), load
+    that as the base.
+    """
     result = []
-    u = os.path.join(run_dir, "universal.opts")
-    if os.path.isfile(u):
-        result.append(u)
+    for base in ("solver.opts", "universal.opts"):
+        p = os.path.join(run_dir, base)
+        if os.path.isfile(p):
+            result.append(p)
+            break
     for f in sorted(os.listdir(run_dir)):
-        if f.endswith(".opts") and f != "universal.opts":
+        if f.endswith(".opts") and f not in ("solver.opts", "universal.opts"):
             result.append(os.path.join(run_dir, f))
     return result
 

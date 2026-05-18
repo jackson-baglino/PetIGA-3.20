@@ -48,7 +48,9 @@ SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/permafrost/scratch"
-UNIVERSAL_OPTS="$INPUTS_DIR/universal.opts"
+SOLVER_OPTS="$INPUTS_DIR/solver.opts"
+GEOMETRY_DIR="$INPUTS_DIR/geometry"
+EXPERIMENT_DIR="$INPUTS_DIR/experiment"
 
 # ---------------------------------------------------------------------------
 # Usage
@@ -56,39 +58,57 @@ UNIVERSAL_OPTS="$INPUTS_DIR/universal.opts"
 usage() {
     echo ""
     echo "Usage:"
-    echo "  ./scripts/Studio/run_permafrost.sh <PETSc_options_file> [tag]"
+    echo "  ./scripts/Studio/run_permafrost.sh <geometry> <experiment> [tag]"
     echo ""
     echo "Arguments:"
-    echo "  PETSc_options_file   Path to PETSc .opts file (relative to project root)"
-    echo "  tag                  Optional label appended to the run folder name"
+    echo "  geometry    Name (without .opts) of a file in inputs/geometry/"
+    echo "              e.g. 2D_touching_grains, 1D_ice_slab"
+    echo "  experiment  Name (without .opts) of a file in inputs/experiment/"
+    echo "              e.g. 1day_T-20_h1.00"
+    echo "  tag         Optional label appended to the run folder name"
     echo ""
-    echo "The output folder is derived automatically from the opts file:"
-    echo "  \$RESULTS_BASE/<ic_type_category>/<opts_basename>[_tag]_<timestamp>/"
+    echo "The output folder is:"
+    echo "  \$RESULTS_BASE/<ic_type_category>/<geom>__<exp>[_<tag>]_<timestamp>/"
     echo ""
     echo "Example:"
-    echo "  ./scripts/Studio/run_permafrost.sh ./inputs/tests/test_2D_TouchingGrainPair.opts"
-    echo "  ./scripts/Studio/run_permafrost.sh ./inputs/tests/test_1D_IceSlab.opts sweep_a"
+    echo "  ./scripts/Studio/run_permafrost.sh 2D_touching_grains 1day_T-20_h1.00"
+    echo "  ./scripts/Studio/run_permafrost.sh 1D_ice_slab 1day_T-20_h0.95 sweep_a"
     echo ""
 }
 
-if [ "$#" -lt 1 ]; then
+if [ "$#" -lt 2 ]; then
     echo "❌ Error: Missing required arguments."
     usage
     exit 1
 fi
 
-params_file="$1"
-title="${2:-}"
+geom_name="$1"
+exp_name="$2"
+title="${3:-}"
 
-# Resolve params_file relative to project root if not absolute
-if [[ "$params_file" != /* ]]; then
-    params_file="$PROJECT_ROOT/$params_file"
-fi
+GEOM_OPTS="$GEOMETRY_DIR/${geom_name}.opts"
+EXP_OPTS="$EXPERIMENT_DIR/${exp_name}.opts"
 
-if [ ! -f "$params_file" ]; then
-    echo "❌ Error: Options file not found: $params_file"
+if [ ! -f "$SOLVER_OPTS" ]; then
+    echo "❌ Error: Solver opts not found: $SOLVER_OPTS"
     exit 1
 fi
+if [ ! -f "$GEOM_OPTS" ]; then
+    echo "❌ Error: Geometry opts not found: $GEOM_OPTS"
+    echo "   Available geometries:"
+    ls "$GEOMETRY_DIR" 2>/dev/null | sed 's/\.opts$//' | sed 's/^/     /'
+    exit 1
+fi
+if [ ! -f "$EXP_OPTS" ]; then
+    echo "❌ Error: Experiment opts not found: $EXP_OPTS"
+    echo "   Available experiments:"
+    ls "$EXPERIMENT_DIR" 2>/dev/null | sed 's/\.opts$//' | sed 's/^/     /'
+    exit 1
+fi
+
+# For backward-compat with the rest of the script, treat the geometry opts
+# as the "params file" — Nx/Ny/Nz and ic_type live there.
+params_file="$GEOM_OPTS"
 
 trap 'echo "❌ Script error on line $LINENO"' ERR
 
@@ -185,12 +205,11 @@ derive_ic_subfolder() {
 create_folder() {
     echo ""
     echo "--- Creating output folder ---"
-    local subfolder ts opts_name tag
+    local subfolder ts tag
     subfolder=$(derive_ic_subfolder)
-    opts_name=$(basename "$params_file" .opts)
     ts=$(date +%Y-%m-%d__%H.%M.%S)
     tag="${title:+_${title}}"
-    name="${opts_name}${tag}_${ts}"
+    name="${geom_name}__${exp_name}${tag}_${ts}"
     folder="$RESULTS_BASE/$subfolder/$name"
 
     mkdir -p "$folder"
@@ -206,9 +225,10 @@ stage_output_folder() {
     echo ""
     echo "--- Staging output folder ---"
 
-    # Copy the universal opts and the simulation-specific opts used for this run
-    [ -f "$UNIVERSAL_OPTS" ] && cp "$UNIVERSAL_OPTS" "$folder/"
-    cp "$params_file" "$folder/$(basename "$params_file")"
+    # Copy all three opts used by this run
+    cp "$SOLVER_OPTS" "$folder/"
+    cp "$GEOM_OPTS"   "$folder/"
+    cp "$EXP_OPTS"    "$folder/"
 
     # Post-processing scripts — copy the full postprocess/ directory
     local POSTPROCESS="$PROJECT_ROOT/postprocess"
@@ -282,22 +302,21 @@ run_simulation() {
     echo ""
     echo "--- Running simulation ---"
     echo "Executable   : $EXEC"
-    echo "Universal    : ${UNIVERSAL_OPTS}"
-    echo "Options file : $params_file"
+    echo "Solver       : $SOLVER_OPTS"
+    echo "Geometry     : $GEOM_OPTS"
+    echo "Experiment   : $EXP_OPTS"
     echo "Output path  : $folder"
     echo "Processes    : $NPROCS"
     echo ""
 
     export folder
 
-    local universal_arg=""
-    [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
-
     set +e
-    mpiexec -np "$NPROCS" "$EXEC"       \
-        $universal_arg                  \
-        -options_file "$params_file"    \
-        -output_path  "$folder"         \
+    mpiexec -np "$NPROCS" "$EXEC"      \
+        -options_file "$SOLVER_OPTS"   \
+        -options_file "$GEOM_OPTS"     \
+        -options_file "$EXP_OPTS"      \
+        -output_path  "$folder"        \
         | tee "$folder/outp.txt"
 
     sim_exit=${PIPESTATUS[0]}
@@ -419,7 +438,8 @@ echo ""
 echo "========================================================================="
 echo "  Permafrost simulation workflow"
 echo "  Project root : $PROJECT_ROOT"
-echo "  Options      : $params_file"
+echo "  Geometry     : $geom_name  ($GEOM_OPTS)"
+echo "  Experiment   : $exp_name  ($EXP_OPTS)"
 echo "  Title        : $title"
 echo "========================================================================="
 

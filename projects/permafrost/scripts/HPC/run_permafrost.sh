@@ -19,11 +19,13 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 ###############################################################################
 # Input arguments
-#   $1 : PETSc options file (e.g., inputs/tests/test3_EnclosedGrainPair.opts)
-#   $2 : Title prefix for the run (used in folder name)
+#   $1 : geometry name (e.g. 2D_touching_grains)
+#   $2 : experiment name (e.g. 1day_T-20_h1.00)
+#   $3 : Title prefix for the run (used in folder name)
 ###############################################################################
-params_file="${1:-inputs/tests/test_2D_TouchingGrainPair.opts}"
-title="${2:-}"
+geom_name="${1:-2D_touching_grains}"
+exp_name="${2:-1day_T-20_h1.00}"
+title="${3:-}"
 
 ###############################################################################
 # Resolve project root.
@@ -60,7 +62,9 @@ EXEC="$PROJECT_ROOT/permafrost"
 SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
-UNIVERSAL_OPTS="$INPUTS_DIR/universal.opts"
+SOLVER_OPTS="$INPUTS_DIR/solver.opts"
+GEOM_OPTS="$INPUTS_DIR/geometry/${geom_name}.opts"
+EXP_OPTS="$INPUTS_DIR/experiment/${exp_name}.opts"
 
 # Discover mpiexec: prefer the PETSC-bundled binary (always present when
 # PETSc downloaded MPICH), fall back to whatever is on PATH.
@@ -78,15 +82,23 @@ if [[ -z "$MPIEXEC" ]]; then
     exit 1
 fi
 
-# Resolve params_file relative to project root if not absolute
-if [[ "$params_file" != /* ]]; then
-    params_file="$PROJECT_ROOT/$params_file"
-fi
-
-if [ ! -f "$params_file" ]; then
-    echo "❌ Error: Options file not found: $params_file"
+if [ ! -f "$SOLVER_OPTS" ]; then
+    echo "❌ Error: Solver opts not found: $SOLVER_OPTS"
     exit 1
 fi
+if [ ! -f "$GEOM_OPTS" ]; then
+    echo "❌ Error: Geometry opts not found: $GEOM_OPTS"
+    echo "   Pass a geometry from inputs/geometry/ as \$1 (without .opts)."
+    exit 1
+fi
+if [ ! -f "$EXP_OPTS" ]; then
+    echo "❌ Error: Experiment opts not found: $EXP_OPTS"
+    echo "   Pass an experiment from inputs/experiment/ as \$2 (without .opts)."
+    exit 1
+fi
+
+# For backward-compat with the rest of the script (Nx/Ny/Nz lookups, etc.)
+params_file="$GEOM_OPTS"
 
 # Global state
 folder=""
@@ -125,6 +137,7 @@ derive_ic_subfolder() {
         slab_and_grains) echo "SlabAndGrains" ;;
         ice_cap)         echo "IceCap" ;;
         single_ice)      echo "SingleIceGrain" ;;
+        single_sed)      echo "SingleSedGrain" ;;
         ice_sed_pair)    echo "IceSedPair" ;;
         *)               echo "Other" ;;
     esac
@@ -137,9 +150,8 @@ create_folder() {
     echo ""
     echo "--- Creating output folder ---"
 
-    local subfolder ts opts_name tag job_suffix
+    local subfolder ts tag job_suffix
     subfolder=$(derive_ic_subfolder)
-    opts_name=$(basename "$params_file" .opts)
     ts="$(date +%Y-%m-%d__%H.%M.%S)"
     tag="${title:+_${title}}"
 
@@ -149,7 +161,7 @@ create_folder() {
         job_suffix=""
     fi
 
-    name="${opts_name}${tag}_${ts}${job_suffix}"
+    name="${geom_name}__${exp_name}${tag}_${ts}${job_suffix}"
 
     # Base scratch dir on Resnick; fall back to local scratch
     local base_dir
@@ -171,9 +183,10 @@ stage_output_folder() {
     echo ""
     echo "--- Staging output folder ---"
 
-    # Opts files and this run script
-    [ -f "$UNIVERSAL_OPTS" ] && cp "$UNIVERSAL_OPTS" "$folder/"
-    cp "$params_file" "$folder/$(basename "$params_file")"
+    # Opts files (all three) and this run script
+    cp "$SOLVER_OPTS" "$folder/"
+    cp "$GEOM_OPTS"   "$folder/"
+    cp "$EXP_OPTS"    "$folder/"
     cp "${BASH_SOURCE[0]}" "$folder/run_permafrost.sh"
 
     # Post-processing scripts — copy the full postprocess/ directory so that
@@ -238,14 +251,12 @@ run_simulation() {
     echo ""
     echo "--- Running simulation ---"
     echo "Executable   : $EXEC"
-    echo "Universal    : $UNIVERSAL_OPTS"
-    echo "Options file : $params_file"
+    echo "Solver       : $SOLVER_OPTS"
+    echo "Geometry     : $GEOM_OPTS"
+    echo "Experiment   : $EXP_OPTS"
     echo "Output path  : $folder"
 
     export folder
-
-    local universal_arg=""
-    [ -f "$UNIVERSAL_OPTS" ] && universal_arg="-options_file $UNIVERSAL_OPTS"
 
     set +e
 
@@ -257,8 +268,9 @@ run_simulation() {
         echo "Using NPROCS        = ${NPROCS}"
 
         srun -n "${NPROCS}" "$EXEC" \
-            $universal_arg \
-            -options_file "$params_file" \
+            -options_file "$SOLVER_OPTS" \
+            -options_file "$GEOM_OPTS"   \
+            -options_file "$EXP_OPTS"    \
             -output_path  "$folder" \
             | tee "$folder/outp.txt"
     else
@@ -267,8 +279,9 @@ run_simulation() {
         echo "MPIEXEC      = ${MPIEXEC}"
 
         "$MPIEXEC" -n "${NPROCS}" "$EXEC" \
-            $universal_arg \
-            -options_file "$params_file" \
+            -options_file "$SOLVER_OPTS" \
+            -options_file "$GEOM_OPTS"   \
+            -options_file "$EXP_OPTS"    \
             -output_path  "$folder" \
             | tee "$folder/outp.txt"
     fi
