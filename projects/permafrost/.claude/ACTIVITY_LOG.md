@@ -1,4 +1,294 @@
 
+---
+
+**Session ended:** 2026-05-18 18:39:15
+
+
+---
+
+**Session ended:** 2026-05-18 18:21:00
+
+
+---
+
+**Session ended:** 2026-05-18 18:00:46
+
+
+---
+
+**Session ended:** 2026-05-18 17:34:04
+
+
+---
+
+**Session ended:** 2026-05-18 17:09:57
+
+
+---
+
+**Session ended:** 2026-05-18 16:54:13
+
+
+---
+
+**Session ended:** 2026-05-18 14:34:16
+
+
+---
+
+**Session ended:** 2026-05-18 14:33:37
+
+
+---
+
+**Session ended:** 2026-05-18 14:11:32
+
+
+---
+
+**Session ended:** 2026-05-18 11:53:02
+
+
+---
+
+**Session ended:** 2026-05-18 11:32:37
+
+
+---
+
+**Session ended:** 2026-05-18 11:16:45
+
+
+---
+
+**Session ended:** 2026-05-18 11:11:38
+
+
+---
+
+**Session ended:** 2026-05-18 10:15:16
+
+
+---
+
+**Session ended:** 2026-05-18 09:58:17
+
+
+---
+
+**Session ended:** 2026-05-18 09:45:37
+
+
+---
+
+**Session ended:** 2026-05-17 17:24:01
+
+
+---
+
+**Session ended:** 2026-05-17 17:17:52
+
+
+---
+
+**Session ended:** 2026-05-17 15:50:44
+
+
+---
+
+**Session ended:** 2026-05-17 10:51:13
+
+
+---
+
+**Session ended:** 2026-05-16 22:49:54
+
+
+---
+
+**Session ended:** 2026-05-16 22:40:53
+
+
+---
+
+**Session ended:** 2026-05-16 19:36:20
+
+
+---
+
+**Session ended:** 2026-05-16 19:12:18
+
+
+---
+
+**Session ended:** 2026-05-16 18:12:54
+
+
+---
+
+**Session ended:** 2026-05-16 18:06:41
+
+
+---
+
+**Session ended:** 2026-05-16 15:18:35
+
+
+---
+
+**Session ended:** 2026-05-16 14:57:44
+
+
+---
+
+**Session ended:** 2026-05-16 14:49:41
+
+
+---
+
+**Session ended:** 2026-05-16 14:30:12
+
+
+---
+
+**Session ended:** 2026-05-16 14:18:55
+
+
+---
+
+**Session ended:** 2026-05-16 14:07:08
+
+
+---
+
+**Session ended:** 2026-05-16 13:49:07
+
+
+---
+
+**Session ended:** 2026-05-16 13:34:36
+
+
+---
+
+**Session ended:** 2026-05-16 13:15:49
+
+
+---
+
+**Session ended:** 2026-05-16 11:42:42
+
+
+---
+
+**Session ended:** 2026-05-16 10:48:56
+
+
+---
+
+**Session ended:** 2026-05-16 10:10:47
+
+
+---
+
+**Session ended:** 2026-05-16 09:40:49
+
+
+---
+
+**Session ended:** 2026-05-16 09:14:45
+
+
+---
+
+**Session ended:** 2026-05-16 07:47:04
+
+
+---
+
+**Session ended:** 2026-05-16 07:41:22
+
+
+---
+
+**Session ended:** 2026-05-16 07:34:36
+
+
+---
+
+**Session ended:** 2026-05-15 20:25:41
+
+
+---
+
+**Session ended:** 2026-05-15 19:53:35
+
+
+---
+
+**Session ended:** 2026-05-15 19:42:56
+
+
+---
+
+**Session ended:** 2026-05-15 19:08:44
+
+
+---
+
+**Session ended:** 2026-05-15 19:00:51
+
+
+---
+
+**Session ended:** 2026-05-15 18:57:38
+
+
+---
+
+**Session ended:** 2026-05-15 18:12:00
+
+
+---
+
+**Session ended:** 2026-05-15 17:54:02
+
+
+---
+
+**Session ended:** 2026-05-15 17:47:16
+
+
+---
+
+**Session ended:** 2026-05-15 17:46:10
+
+
+---
+
+**Session ended:** 2026-05-15 17:26:11
+
+
+---
+
+**Session ended:** 2026-05-15 13:39:38
+
+
+---
+
+**Session ended:** 2026-05-15 13:25:47
+
+
+## 2026-05-18 — Localized vapor penalty + warmer-T Ostwald ripening experiment
+
+- Diagnosed why disabling `k_pen` left a numerical artifact: with no penalty anywhere, tiny ice motions near solid boundaries deposit cumulative vapor mass inside sed (vap_src = -ρ_ice·ice_t), and `difvap_pen=1e-8` is too small to redistribute it. This produced the negative ρ_v ~ -1e-1 the user observed in ParaView inside sediment, and explains most of the -60% TOT_RHOV drift (integral pulled down by negative values in solid, not real bulk depletion).
+- Implemented "option B" for the penalty: added `PenaltyWeight()` in `material_properties.{h,c}` — a SmoothHeaviside of `(ice+sed - 0.85) / 0.15` clamped to [0,1]. Zero at the diffuse ice-air interface (ice+sed ≈ 0.5) so Gibbs-Thomson can emerge; unity in solid interior (ice+sed → 1) so rhov stays pinned to rhov_eq.
+- Replaced `g_phiiphis` / `dg_phiiphis` with `g_pen` / `dg_pen` in the penalty terms of `Residual_A1` and `Jacobian_A1` only (the difvap_pen weighting still uses the original `g_phia`).
+- Restored `-k_pen 1.0e3` in `solver.opts` (was 0); strength is moderate but penalty is localized so it does not suppress GT.
+- Created `inputs/experiment/30day_T-5_h1.00.opts` for the warmer-T diagnostic — at -5°C, rho_v_sat is ~12× larger than at -20°C, giving the system a much bigger vapor budget for grain-to-grain transfer in the same 30-day window.
+
+---
+
 ## 2026-05-15 — Ice mass loss analysis, material parameters, and monitoring improvements
 
 - Diagnosed ice shrinkage as Allen-Cahn curvature coarsening (not sublimation): v_AC/v_phys ≈ 2.5×10⁸; proved via mass balance (ΔTOT_RHOV ≈ ρᵥₛ × ΔTOT_AIR, not ρᵢ × |ΔTOT_ICE|).

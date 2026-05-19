@@ -140,10 +140,13 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal D_pen = user->difvap_pen * difvap;
     PetscReal k_pen = user->k_pen;
 
-    PetscReal g_phia, g_phiiphis;
+    PetscReal g_phia, g_pen;
     PetscReal rhov_eq = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
-    SmoothHeavisidePoly(ice + sed, &g_phiiphis, NULL);
-    SmoothHeavisidePoly(ice,       &g_phia,     NULL);
+    /* g_pen: penalty weight concentrated near ice+sed = 1 (deep solid).
+     * Zero at the diffuse ice-air interface so Gibbs-Thomson can emerge there;
+     * unity in the solid interior so rhov stays pinned to rhov_eq. */
+    PenaltyWeight     (ice + sed, &g_pen,  NULL);
+    SmoothHeavisidePoly(ice,      &g_phia, NULL);
     difvap = difvap * g_phia + D_pen * (1.0 - g_phia);
 
     const PetscReal *N0, (*N1)[dim];
@@ -159,7 +162,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal AC_sed_bulk  = C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs);
     PetscReal sub_src      = alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
     PetscReal rho_lat_air_t = xi_T * rho * lat_sub * air_t;
-    PetscReal vap_pen      = xi_v * k_pen * g_phiiphis * (rhov - rhov_eq);
+    PetscReal vap_pen      = xi_v * k_pen * g_pen * (rhov - rhov_eq);
     /* Mass-exchange source: Stefan condition in the diffuse-interface limit.
      * Couples vapor to *ice* motion only, not to sed motion. Sediment doesn't
      * sublimate, so sed_t must not generate or consume vapor; using
@@ -403,9 +406,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     /* Effective (penalised) diffusivity — same formula as in Residual_A1 */
     PetscReal D_pen = user->difvap_pen * difvap_raw;
     PetscReal k_pen = user->k_pen;
-    PetscReal g_phia, g_phiiphis;
-    SmoothHeavisidePoly(ice,       &g_phia,      NULL);
-    SmoothHeavisidePoly(ice + sed, &g_phiiphis,  NULL);
+    PetscReal g_phia, g_pen;
+    SmoothHeavisidePoly(ice,       &g_phia, NULL);
+    PenaltyWeight     (ice + sed, &g_pen,  NULL);
     PetscReal difvap = difvap_raw * g_phia + D_pen * (1.0 - g_phia);
 
     PetscReal rhov_eq  = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
@@ -429,9 +432,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     VaporDiffus(user, tem,      NULL, &d_difvap_raw);
     RhoVS_I    (user, tem,      NULL, &d_rhovs);
 
-    PetscReal dg_phia, dg_phiiphis;
+    PetscReal dg_phia, dg_pen;
     SmoothHeavisidePoly(ice,       NULL, &dg_phia);
-    SmoothHeavisidePoly(ice + sed, NULL, &dg_phiiphis);
+    PenaltyWeight     (ice + sed, NULL, &dg_pen);
 
     /* d(difvap_eff)/d(ice) via the smoothed switch */
     PetscReal d_difvap_eff_dice = (difvap_raw - D_pen) * dg_phia;
@@ -564,24 +567,24 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 /* [vap, ice]: shift from rho_ice*air_t (mass-balance source, no xi_v);
                  *             penalty + diffusivity variation (regularisation, with xi_v) */
                 J[a][2][b][0] += shift * rho_ice * Na_Nb
-                               + xi_v * k_pen * (dg_phiiphis * (rhov - rhov_eq)
-                                                - g_phiiphis * d_rhovel_dice) * Na_Nb
+                               + xi_v * k_pen * (dg_pen * (rhov - rhov_eq)
+                                                - g_pen * d_rhovel_dice) * Na_Nb
                                + xi_v * (d_difvap_eff_dice * air_eff
                                         - (air_eff_active ? difvap : 0.0))
                                         * N1a_grad_rhov * N0[b];
                 /* [vap, tem]: from difvap(T) and rhoI_vs(T) in rhov_eq */
-                J[a][2][b][1] += xi_v * k_pen * g_phiiphis * (-d_rhovel_dtem) * Na_Nb
+                J[a][2][b][1] += xi_v * k_pen * g_pen * (-d_rhovel_dtem) * Na_Nb
                                + xi_v * d_difvap_eff_dtem * air_eff * N1a_grad_rhov * N0[b];
                 /* [vap, rhov]: shift + diffusion stiffness + penalty */
                 J[a][2][b][2] += shift * Na_Nb
                                + xi_v * difvap * air_eff * N1a_N1b
-                               + xi_v * k_pen * g_phiiphis * (1.0 - d_rhovel_drhov) * Na_Nb;
+                               + xi_v * k_pen * g_pen * (1.0 - d_rhovel_drhov) * Na_Nb;
                 /* [vap, sed]: vap_src = -ρ_ice * ice_t no longer depends on sed_t,
                  *             so the shift contribution drops. Only the penalty
                  *             derivative (via rhov_eq's sed dependence) and the
                  *             diffusion's air = 1 - ice - sed dependence remain. */
-                J[a][2][b][3] += xi_v * k_pen * (dg_phiiphis * (rhov - rhov_eq)
-                                                - g_phiiphis * d_rhovel_dsed) * Na_Nb
+                J[a][2][b][3] += xi_v * k_pen * (dg_pen * (rhov - rhov_eq)
+                                                - g_pen * d_rhovel_dsed) * Na_Nb
                                - (air_eff_active ? xi_v * difvap : 0.0)
                                  * N1a_grad_rhov * N0[b];
             }

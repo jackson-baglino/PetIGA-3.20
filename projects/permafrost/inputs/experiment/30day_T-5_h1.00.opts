@@ -1,0 +1,20 @@
+# =============================================================================
+# experiment/30day_T-5_h1.00.opts — 30 days at -5°C, saturated humidity
+#
+# Diagnostic experiment for Ostwald ripening visibility. At -5°C the saturation
+# vapor density rho_v_sat is roughly an order of magnitude larger than at -20°C
+# (Clausius-Clapeyron: exponential in 1/T), giving the system a much larger
+# vapor "budget" available for mass transfer between grains. The Gibbs-Thomson
+# driving force scales the same way, so on the same geometry we expect to see
+# ripening over the same 30-day window that produced essentially no signal at
+# -20°C (TOT_ICE +0.001%).
+#
+# Same geometry / IC as the -20°C run for direct comparison.
+# =============================================================================
+
+-t_final 2592000.0                      # 30 days (s)
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
