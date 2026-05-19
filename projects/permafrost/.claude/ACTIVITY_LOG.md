@@ -304,6 +304,14 @@
 **Session ended:** 2026-05-15 13:25:47
 
 
+## 2026-05-19 — Documented penalty + Ostwald-ripening arc in branch log
+
+- Added §23 to `docs/spurious_ice_sed_air_branch_log.md` covering the full arc of changes since the previous log: identifying that `k_pen` suppressed Gibbs-Thomson, the `PenaltyWeight()` localization experiment, discovering the localized penalty was still acting as a directional mass sink (manufacturing a counterfeit GT signal), settling on `k_pen = 0`, observing both Ostwald ripening and necking at -5°C on the narrow-gap geometry, the `grain_sep` 5→20 µm widening for clean LSW isolation, and the HPC regression sweep.
+- Extended the trajectory summary at the bottom of the branch log with a 4th stage ("Vapor-penalty refinement and Ostwald-ripening diagnostics") so the document can carry the narrative arc for slide preparation.
+- No code or opts changes today.
+
+---
+
 ## 2026-05-18 — Localized vapor penalty + warmer-T Ostwald ripening experiment
 
 - Diagnosed why disabling `k_pen` left a numerical artifact: with no penalty anywhere, tiny ice motions near solid boundaries deposit cumulative vapor mass inside sed (vap_src = -ρ_ice·ice_t), and `difvap_pen=1e-8` is too small to redistribute it. This produced the negative ρ_v ~ -1e-1 the user observed in ParaView inside sediment, and explains most of the -60% TOT_RHOV drift (integral pulled down by negative values in solid, not real bulk depletion).

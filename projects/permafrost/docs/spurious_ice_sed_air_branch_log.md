@@ -378,6 +378,157 @@ display.
 
 ---
 
+## 23 — Vapor-penalty refinement and Ostwald-ripening diagnostics   (`e40ab95`, `cf70046`, `cc50c23`, `b5e3e6a`)
+
+This is a self-contained second-phase of the branch — once stability was in
+hand (§1–22) the model was numerically robust but had never demonstrated
+clean Ostwald ripening. Diagnosing why led to a series of changes that
+fundamentally rewrote the role of the `k_pen` term.
+
+### 23a — Identifying that `k_pen` was suppressing Gibbs-Thomson   (`e40ab95`)
+
+**Why.** Running the asymmetric `2D_separated_grains` test (12 µm + 25 µm
+grains, 5 µm gap) at −20 °C for 30 days with `k_pen = 1e5` showed **no
+Ostwald ripening**: contour plots of `phi_ice = 0.5` at t = 0 and t = final
+were identical. Around the same time, ParaView showed an "outline of nearly-
+saturated vapor" hugging both grain surfaces — a strong hint that something
+was pinning rhov to its flat-interface equilibrium right where the curvature
+correction should have been expressed.
+
+The penalty form is
+`vap_pen = xi_v · k_pen · g(ice+sed) · (rhov − rhov_eq)`
+where `g(ice+sed)` is the standard smooth Heaviside. At the diffuse ice-air
+interface mid-thickness (`ice+sed ≈ 0.5`), `g ≈ 0.25`, so the effective
+penalty is `0.25 · k_pen = 2.5×10⁴`. That's strong enough at the *interface*
+— exactly where the curvature-dependent rhov_eq needs to emerge — to drive
+rhov back to its flat-interface value and erase the Gibbs-Thomson signal.
+
+The original justification for the penalty had been *mass conservation* for
+geometries with sediment cores enclosed in concentric ice shells, where
+vapor in the shell interior was prone to drift. That motivation no longer
+held with the post-§4 vapor equation (vap_src no longer coupled to sed
+motion).
+
+**What happened.** As a diagnostic, set `-k_pen 0` in `solver.opts`. Result
+on the −20 °C run: still no measurable ripening (`TOT_ICE` +0.001 %, no
+visible grain motion), but rhov inside the sediment interior drifted to
+order −10⁻¹ over 30 days — large in magnitude but isolated to a region with
+no physical effect (sub_src `∝ ice²·air² = 0` in pure solid). The diagnostic
+confirmed that the penalty *was* what suppressed GT, but exposed a cosmetic
+artifact in solid that needed addressing if the penalty was to stay
+disabled.
+
+### 23b — Localized penalty via `PenaltyWeight()`   (`cf70046`)
+
+**Why.** Goal: keep some penalty so rhov stays near saturation in solid
+interiors (no cosmetic drift), but turn it *off* at the diffuse ice-air
+interface so GT can emerge.
+
+**What happened.** Added `PenaltyWeight(phi)` in `material_properties.{h,c}`
+— a `SmoothHeavisidePoly` of the shifted variable `(ice+sed − 0.85)/0.15`,
+clamped to `[0, 1]`. This gives `g_pen = 0` for `ice+sed ≤ 0.85` (so zero
+through the entire diffuse interface, where `ice+sed ≤ 0.5` at midthickness
+and ramps to ~0.85 at the inner edge) and `g_pen = 1` for `ice+sed ≥ 1`
+(deep solid). The smooth-Heaviside form keeps `dg_pen/dphi` continuous.
+
+`Residual_A1` and `Jacobian_A1` now use `g_pen` / `dg_pen` for the *penalty*
+terms only; the existing `g_phia = SmoothHeavisidePoly(ice)` weighting for
+`difvap_pen` is untouched. `k_pen` restored to `1e3` (much weaker than the
+old `1e5`; the localization does the work).
+
+**Result on the −5 °C / 30-day run.** Sediment rhov well-behaved (no drift).
+TOT_ICE drifted **−0.518 %** — initially appeared to be GT-driven sublimation
+finally working. TOT_RHOV still drifted **−66 %**, no asymmetric grain
+motion visible.
+
+### 23c — Realizing the localized penalty was still a mass sink   (`b5e3e6a`)
+
+**Why.** Re-running with `-k_pen 0` (PenaltyWeight infrastructure still in
+place but the penalty contribution is zero) was supposed to be the
+*reference*: it should give the cosmetic rhov drift in sed and nothing else.
+Surprise result: TOT_ICE drift collapsed from −0.518 % to **+0.001 %**.
+
+That meant the −0.518 % ice loss in the localized-penalty run was *fake* —
+the penalty active at the inner edge of the interface (`ice+sed ∈ [0.85, 1]`)
+was draining vapor from a region where `vap_src = −ρ_ice · ice_t > 0` was
+adding it, creating a local `rhov < rhoI_vs` deficit that the bulk
+`sub_src = alph_sub · ice² · air² · (rhov − rhoI_vs) / ρ_ice` then
+"corrected" by sublimating ice. The penalty was, in effect, manufacturing a
+counterfeit Gibbs-Thomson signal by acting as a directional mass sink.
+
+**What happened.** Settled on `-k_pen 0` as the operating configuration.
+The `PenaltyWeight` infrastructure stays in the codebase, ready to re-enable
+if a future geometry exposes a real numerical need (e.g., the original
+concentric-shell-of-ice-around-sed configurations). For everything we run
+today the penalty is off and the model's intrinsic AC + Stefan + sub_src
+coupling has to carry the dynamics on its own.
+
+### 23d — Wide-separation geometry for clean LSW   (`cc50c23`)
+
+**Why.** With `k_pen = 0` at −5 °C on the existing `2D_separated_grains`
+geometry (`grain_sep = 5 µm`), running 30 days produced **both Ostwald
+ripening and a visible neck** between the two grains. The 5 µm gap is
+roughly twice the diffuse interface width (`~2·2eps ≈ 3 µm`) — the two
+grains' interfaces overlap, so vapor transport between them happens partly
+through the overlapping diffuse layer (Kuczynski-style sintering) rather
+than purely through bulk air diffusion (LSW Ostwald ripening). The
+combined-mode result is good evidence the model can produce both
+phenomena, but isolating LSW for diagnostic comparison needs the grains
+further apart.
+
+**What happened.** Bumped `grain_sep` from `5e-6` to `2e-5` (4× wider, ~7×
+the interface width). Domain `Ly = 125 µm` still fits the new geometry
+(grain centers at ±28.5 µm). With this spacing the two grains' diffuse
+interfaces are well-separated, so any mass transfer must traverse the bulk
+air gap — pure LSW.
+
+### 23e — Warmer-T diagnostic experiment   (`cf70046`)
+
+**Why.** Even with the penalty fixed, the −20 °C runs show essentially no
+ripening over 30 days. The bottleneck is the vapor budget: at −20 °C,
+`rho_v_sat ≈ 1 × 10⁻³ kg/m³`, giving a total vapor mass in the domain of
+~3.7 × 10⁻¹² kg/m. Even fully redistributed, that mass would only shift
+TOT_ICE by ~10⁻⁶ relative — below the integral-monitor's detection
+threshold for asymmetric ripening over 30 days.
+
+**What happened.** Added `inputs/experiment/30day_T-5_h1.00.opts` (same as
+the −20 °C variant but with `-temp -5.0`). At −5 °C, Clausius-Clapeyron
+gives `rho_v_sat` ≈ 12× larger — much bigger vapor budget for mass
+transfer in the same 30-day window. This is the experiment where the
+penalty-free run finally produced visible Ostwald ripening on the
+narrow-gap geometry, motivating §23d for clean LSW.
+
+### 23f — HPC regression sweep   (`cc50c23`)
+
+**Why.** With `k_pen` removed and `PenaltyWeight` infrastructure added,
+the other geometries (single grains, ice-sed pair, touching grains, 1D
+variants) need to be re-validated to confirm nothing else broke.
+
+**What happened.** Added `scripts/HPC/submit_regression.sh`, which fires
+nine geometries × `1day_T-20_h1.00` plus the wide-sep
+`2D_separated_grains × 30day_T-5_h1.00` diagnostic, in parallel via
+`sbatch`. Wraps `run_permafrost.sh` directly (the legacy
+`submit_permafrost.sh` still expects the pre-§2 single-opts-file format).
+The sweep covers `1D_*` (ice_sed_pair, ice_slab, separated_grains,
+single_ice, touching_grains) and `2D_{single_ice, single_sed,
+ice_sed_pair, touching_grains}` plus the LSW diagnostic.
+
+### Summary of the §23 arc
+
+Before §23: model was numerically stable but Ostwald ripening was being
+secretly suppressed by the `k_pen` penalty, which had been included for a
+mass-conservation reason that had since been fixed at a different layer.
+
+After §23: penalty is disabled (`k_pen = 0`); ParaView confirms that at
+−5 °C on the narrow-gap geometry the model produces **both** Ostwald
+ripening (small grain shrinks toward the larger one) **and** necking
+(diffuse interfaces meet and form a connecting bridge). Clean LSW
+isolation requires the wide-gap geometry. The `PenaltyWeight` machinery is
+retained in the codebase as an option for future geometries that genuinely
+need it.
+
+---
+
 ## 22 — Smaller fixes and configuration tweaks
 
 - `k_pen 1e7 → 1e5` and `Lambda 1e3 → 1e4` in solver defaults (`53f2f43`).
@@ -413,8 +564,24 @@ The model went through three identifiable stages on this branch:
    AirPhase), batch orchestration, and a clean three-axis opts
    architecture (solver × geometry × experiment).
 
+4. **Vapor-penalty refinement and Ostwald-ripening diagnostics** (§23,
+   commits `e40ab95`, `cf70046`, `cc50c23`, `b5e3e6a`): once stability
+   was in hand, the question shifted from *does the model run?* to
+   *does it produce the right physics?* The `k_pen` penalty — included
+   under an obsolete mass-conservation justification — turned out to be
+   suppressing Gibbs-Thomson at the diffuse ice-air interface, killing
+   Ostwald ripening. A localized-penalty experiment (`PenaltyWeight()`)
+   exposed a subtler failure mode: even confined to the inner interface,
+   the penalty was still manufacturing a counterfeit GT signal by
+   draining vapor where `vap_src` was adding it. Operating point settled
+   at `k_pen = 0`; ParaView now shows both ripening and necking on the
+   narrow-gap −5 °C run. A wide-gap geometry (`grain_sep` 5 → 20 µm) and
+   a warmer experiment file isolate LSW for clean comparison.
+
 The starting question — *why is spurious ice forming at sed-air interfaces?* —
 turned out to be downstream of a fundamental model-formulation choice in the
 frozen-sed branch of the residual. Once that was understood, the rest fell
 out as a series of independent improvements to model fidelity, numerical
-stability, and developer ergonomics.
+stability, developer ergonomics, and finally — after stability was
+guaranteed — model fidelity for the central physics phenomenon of dry-snow
+metamorphism, Ostwald ripening.
