@@ -66,12 +66,22 @@
 
 # ---------- Penalty defaults ----------
 -difvap_pen 1.0e-8                      # D_pen = difvap_pen * difvap (in ice/sed regions)
--k_pen 1e5                              # vapor interface equilibrium stiffness
+                                        # — keeps spurious-air-in-solid from migrating
+                                        #   (justified mechanism; Kaempfer-Plapp uses the same trick)
+-k_pen 0                                # vapor interface-equilibrium stiffness, DISABLED.
+                                        # Originally a "mass-conservation" penalty pulling rhov toward
+                                        # rhov_eq across the whole diffuse band; in practice it
+                                        # suppressed the Gibbs-Thomson curvature dependence and killed
+                                        # Ostwald ripening between different-curvature grains. Karma-Plapp
+                                        # asymptotic matching does not require this term — GT and Stefan
+                                        # conditions emerge from the AC + vapor coupling in the sharp-
+                                        # interface limit. Re-enable (e.g. 1e2 or 1e3) only if dropping
+                                        # it exposes a real numerical problem the safety nets can't catch.
 -k_sed_pen -1                           # sediment restoring stiffness (-1 = auto: 1e-4/eps^2)
 -Lambda 1.0e4                           # triple-junction free-energy penalty strength
 
 # ---------- Adaptive time stepping ----------
--dtmax 1.0e5                            # 100,000 s ≈ 28 hours; safety cap on adaptive growth
+-dtmax 1.0e4                            # 10,000 s ≈ 2.8 hours; safety cap on adaptive growth
 -adap 1                                 # enable adaptive dt
 -NRmin 3                                # min Newton iters → dt grows
 -NRmax 8                                # max Newton iters before dt shrinks
