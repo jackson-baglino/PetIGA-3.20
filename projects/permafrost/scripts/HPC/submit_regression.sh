@@ -2,9 +2,10 @@
 # =============================================================================
 # submit_regression.sh — submit the PenaltyWeight / k_pen=0 regression sweep.
 #
-# Submits every job in parallel via sbatch. Each job uses the standard
-# `run_permafrost.sh <geom> <exp> <tag>` interface and inherits the #SBATCH
-# directives at the top of that script.
+# Submits every job in parallel via sbatch. Each job sizes its allocation to
+# the geometry's actual problem size (target: TARGET_DOFS_PER_CORE DoFs/core),
+# overriding the default #SBATCH directives in run_permafrost.sh so 1D jobs
+# don't grab a full 64-core allocation.
 #
 # Run from project root:
 #   ./scripts/HPC/submit_regression.sh
@@ -19,6 +20,10 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 RUN_SCRIPT="$SCRIPT_DIR/run_permafrost.sh"
 
 TAG="${1:-kpen0_regression}"
+
+# Resource-sizing parameters — keep in sync with submit_permafrost.sh.
+TARGET_DOFS_PER_CORE=10000          # rule-of-thumb DoFs/core target
+MAX_TASKS_PER_NODE=32               # safe minimum across icelake|skylake|cascadelake
 
 # Quick regression: 1 day, -20°C, saturated. All geometries below should run
 # cleanly with k_pen=0 and the new PenaltyWeight() (active only deep in solid).
@@ -46,19 +51,59 @@ if [[ ! -f permafrost ]]; then
     exit 1
 fi
 
-echo "============================================================"
-echo "  Permafrost regression sweep"
-echo "  Tag        : $TAG"
-echo "  Regression : $REGRESSION_EXP  (${#REGRESSION_GEOMS[@]} jobs)"
-echo "  Diagnostic : $DIAGNOSTIC_EXP on $DIAGNOSTIC_GEOM"
-echo "============================================================"
+# Compute optimal (nprocs, nnodes, ntasks_per_node) for a geometry's grid size.
+# Echoes the three values space-separated; caller reads with `read`.
+compute_alloc() {
+    local geom_file="$1"
+    local nx ny nz
+    nx=$(awk '$1=="-Nx"{print $2}' "$geom_file" | head -n1); nx=${nx:-1}
+    ny=$(awk '$1=="-Ny"{print $2}' "$geom_file" | head -n1); ny=${ny:-1}
+    nz=$(awk '$1=="-Nz"{print $2}' "$geom_file" | head -n1); nz=${nz:-1}
+
+    local total_dofs=$((4 * nx * ny * nz))
+    local nprocs=$(( (total_dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE ))
+    (( nprocs < 1 )) && nprocs=1
+
+    # Cap tasks-per-node to nprocs so a 1-core 1D job doesn't reserve 32 slots.
+    local tasks_per_node=$nprocs
+    (( tasks_per_node > MAX_TASKS_PER_NODE )) && tasks_per_node=$MAX_TASKS_PER_NODE
+
+    local nnodes=$(( (nprocs + tasks_per_node - 1) / tasks_per_node ))
+    (( nnodes < 1 )) && nnodes=1
+
+    echo "$nprocs $nnodes $tasks_per_node $total_dofs"
+}
 
 submit_one() {
     local geom="$1" exp="$2" tag="$3"
+    local geom_file="$PROJECT_ROOT/inputs/geometry/${geom}.opts"
     local job_name="${geom}__${exp}"
-    echo "→ sbatch -J $job_name : geom=$geom exp=$exp tag=$tag"
-    sbatch --job-name="$job_name" "$RUN_SCRIPT" "$geom" "$exp" "$tag"
+
+    if [[ ! -f "$geom_file" ]]; then
+        echo "⚠ Skipping $geom — geometry file not found: $geom_file"
+        return
+    fi
+
+    local nprocs nnodes tasks_per_node total_dofs
+    read -r nprocs nnodes tasks_per_node total_dofs < <(compute_alloc "$geom_file")
+
+    printf "→ %-25s DoFs=%-8d nprocs=%-3d nodes=%-2d tasks/node=%d\n" \
+        "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node"
+
+    sbatch --job-name="$job_name" \
+           --nodes="$nnodes" \
+           --ntasks="$nprocs" \
+           --ntasks-per-node="$tasks_per_node" \
+           "$RUN_SCRIPT" "$geom" "$exp" "$tag"
 }
+
+echo "============================================================"
+echo "  Permafrost regression sweep"
+echo "  Tag        : $TAG"
+echo "  Target     : ${TARGET_DOFS_PER_CORE} DoFs/core (max ${MAX_TASKS_PER_NODE}/node)"
+echo "  Regression : $REGRESSION_EXP  (${#REGRESSION_GEOMS[@]} jobs)"
+echo "  Diagnostic : $DIAGNOSTIC_EXP on $DIAGNOSTIC_GEOM"
+echo "============================================================"
 
 for geom in "${REGRESSION_GEOMS[@]}"; do
     submit_one "$geom" "$REGRESSION_EXP" "$TAG"
