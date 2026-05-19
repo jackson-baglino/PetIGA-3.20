@@ -2,6 +2,7 @@
 #include "assembly.h"
 #include "material_properties.h"
 #include <petscstring.h>
+#include <petsc/private/tsimpl.h>   /* for direct access to ts->dtmin */
 
 PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 {
@@ -87,6 +88,23 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscReal tot_sed        = PetscRealPart(stats[6]);
   PetscReal sed_air_interf = PetscRealPart(stats[7]);
   PetscReal ice_sed_interf = PetscRealPart(stats[8]);
+
+  /* Total system mass: only counts vapor in the air phase (TOT_RHOV is already
+   * weighted by phi_a). The rhov field has unphysical values in the solid where
+   * the penalty pins it to rhov_sat, but those don't contribute because phi_a=0
+   * there. This is the conservation quantity that should stay flat. */
+  PetscReal tot_mass = user->rho_ice * tot_ice
+                     + user->rho_sed * tot_sed
+                     + tot_rhov;
+
+  /* Store initial integrals at step 0 for later percentage reporting. */
+  if (step == 0) {
+    user->tot_ice_0  = tot_ice;
+    user->tot_air_0  = tot_air;
+    user->tot_sed_0  = tot_sed;
+    user->tot_rhov_0 = tot_rhov;
+    user->tot_mass_0 = tot_mass;
+  }
  
   //-------- phase-field min/max bounds (printed every step for out-of-bounds detection)
   {
@@ -131,23 +149,51 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         "  BOUNDS: phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\n",
         Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max);
 
-    /* Abort if any phase field exceeds the configured bounds */
+    /* If any phase field has left [phase_lo, phase_hi], roll the just-finished
+     * step back, halve dt, and let TS retry. Abort only if dt would fall below
+     * dtmin, or if the violation is at step 0 (i.e., a bad initial condition). */
     PetscBool oob = (Gfi_min < user->phase_lo || Gfi_max > user->phase_hi ||
                      Gfs_min < user->phase_lo || Gfs_max > user->phase_hi ||
                      Gfa_min < user->phase_lo || Gfa_max > user->phase_hi);
     if (oob) {
+      PetscReal cur_dt;
+      ierr = TSGetTimeStep(ts, &cur_dt); CHKERRQ(ierr);
+      PetscReal new_dt = cur_dt / 2.0;
+      PetscBool can_retry = (step > 0) && (new_dt >= ts->dtmin);
+
+      if (!can_retry) {
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\033[31m[ABORT] Phase field out of bounds [%.2f, %.2f] at step %d\n"
+            "  phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\n"
+            "  Cannot retry: %s\033[0m\n",
+            user->phase_lo, user->phase_hi, step,
+            Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max,
+            (step == 0) ? "bad initial condition (step 0)"
+                        : "dt already at dtmin");
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_NOT_CONVERGED,
+                "Phase field out of bounds at step %" PetscInt_FMT
+                " — phi_ice [%.4g, %.4g]  phi_sed [%.4g, %.4g]  phi_air [%.4g, %.4g]"
+                "  (bounds [%.2g, %.2g])",
+                step,
+                Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max,
+                user->phase_lo, user->phase_hi);
+      }
+
       PetscPrintf(PETSC_COMM_WORLD,
-          "\033[31m[ABORT] Phase field out of bounds [%.2f, %.2f] at step %d\n"
+          "\033[33m[WARN] Phase field out of bounds at step %d — "
+          "deferring rollback to next pre-step, dt %.3e -> %.3e\n"
           "  phi_ice [%.4f, %.4f]  phi_sed [%.4f, %.4f]  phi_air [%.4f, %.4f]\033[0m\n",
-          user->phase_lo, user->phase_hi, step,
+          step, cur_dt, new_dt,
           Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max);
-      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_NOT_CONVERGED,
-              "Phase field out of bounds at step %" PetscInt_FMT
-              " — phi_ice [%.4g, %.4g]  phi_sed [%.4g, %.4g]  phi_air [%.4g, %.4g]"
-              "  (bounds [%.2g, %.2g])",
-              step,
-              Gfi_min, Gfi_max, Gfs_min, Gfs_max, Gfa_min, Gfa_max,
-              user->phase_lo, user->phase_hi);
+
+      /* Can't call TSRollBack here — ts->vec_sol is read-locked inside
+       * TSMonitor. Defer to the BoundsRollbackPreStep callback, which
+       * fires before the next TSStep (when the vector is writable). */
+      user->bounds_violated = PETSC_TRUE;
+      user->bounds_new_dt   = new_dt;
+
+      /* Skip the rest of the monitor for this step (it's being undone). */
+      PetscFunctionReturn(0);
     }
   }
 
@@ -213,7 +259,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       // Build header line using the SAME fixed-width fields as the data row
       char header[512];
       ierr2 = PetscSNPrintf(header, sizeof(header),
-                            " %5s | %12s | %9s | %10s | %10s | %10s | %9s | %9s | %10s | %10s",
+                            " %5s | %12s | %9s | %10s | %10s | %10s | %9s | %9s | %10s | %10s | %10s",
                             "STEP",
                             "TIME [s]",
                             "DT [s]",
@@ -223,7 +269,8 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
                             "TEMP",
                             "TOT_RHOV",
                             "I-A INTERF",
-                            "TRIPL_JUNC");
+                            "TRIPL_JUNC",
+                            "TOTAL_MASS");
       CHKERRQ(ierr2);
 
       // Separator line: exactly matches header length
@@ -246,10 +293,25 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
     // Data row: uses matching widths so it lines up under the header
     PetscPrintf(PETSC_COMM_WORLD,
-                " %5d | %12.5e | %9.3e | %10.3e | %10.3e | %10.3e | %9.3e | %9.3e | %10.3e | %10.3e\n",
+                " %5d | %12.5e | %9.3e | %10.3e | %10.3e | %10.3e | %9.3e | %9.3e | %10.3e | %10.3e | %10.3e\n",
                 step, t, dt,
                 tot_ice, tot_air, tot_sed, tot_temp, tot_rhov,
-                sub_interf, tot_trip);
+                sub_interf, tot_trip, tot_mass);
+
+    /* Percentage-change row (relative to initial values at step 0). */
+    if (step > 0 && user->tot_ice_0 > 0.0) {
+      PetscReal pct_ice  = (tot_ice  - user->tot_ice_0)  / user->tot_ice_0  * 100.0;
+      PetscReal pct_air  = (tot_air  - user->tot_air_0)  / user->tot_air_0  * 100.0;
+      PetscReal pct_sed  = (user->tot_sed_0  > 0.0)
+                           ? (tot_sed  - user->tot_sed_0)  / user->tot_sed_0  * 100.0 : 0.0;
+      PetscReal pct_rhov = (user->tot_rhov_0 > 0.0)
+                           ? (tot_rhov - user->tot_rhov_0) / user->tot_rhov_0 * 100.0 : 0.0;
+      PetscReal pct_mass = (user->tot_mass_0 > 0.0)
+                           ? (tot_mass - user->tot_mass_0) / user->tot_mass_0 * 100.0 : 0.0;
+      PetscPrintf(PETSC_COMM_WORLD,
+                  "       |              |           | %+9.3f%% | %+9.3f%% | %+9.3f%% |           | %+8.3f%% |            |            | %+9.3f%%\n",
+                  pct_ice, pct_air, pct_sed, pct_rhov, pct_mass);
+    }
 
     // Optional: add a blank line every N rows for readability (set to 0 to disable)
     // if (step > 0 && (step % 25) == 0) PetscPrintf(PETSC_COMM_WORLD, "\n");
@@ -360,6 +422,36 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
     // Write the vector U to the output file
     ierr = IGAWriteVec(user->iga, U, filename);
     CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * BoundsRollbackPreStep
+ *
+ * TS pre-step callback. If Monitor() flagged a bounds violation on the last
+ * step, undo that step and shrink dt here — where ts->vec_sol is writable
+ * (it's read-locked during TSMonitor, so TSRollBack cannot be called there).
+ *
+ * Registered via TSSetPreStep() in permafrost2.c. The AppCtx pointer is
+ * retrieved via TSGetApplicationContext, which is set in main() with
+ * TSSetApplicationContext.
+ * ========================================================================= */
+PetscErrorCode BoundsRollbackPreStep(TS ts)
+{
+  PetscErrorCode ierr;
+  AppCtx *user;
+
+  PetscFunctionBegin;
+  ierr = TSGetApplicationContext(ts, &user); CHKERRQ(ierr);
+
+  if (user && user->bounds_violated) {
+    ierr = TSRollBack(ts); CHKERRQ(ierr);
+    ierr = TSSetTimeStep(ts, user->bounds_new_dt); CHKERRQ(ierr);
+    user->bounds_violated = PETSC_FALSE;
+    user->bounds_new_dt   = 0.0;
   }
 
   PetscFunctionReturn(0);

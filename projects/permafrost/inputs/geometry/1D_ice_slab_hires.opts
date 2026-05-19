@@ -1,0 +1,11 @@
+# =============================================================================
+# geometry/1D_ice_slab_hires.opts — 1D centered ice slab, 2× resolution
+# =============================================================================
+-ic_type ice_slab
+-dim 1
+-Nx 304
+-Lx 1.00e-04
+-delt_t 1.0e-4
+-eps 3.56e-07
+-ksp_type preonly
+-pc_type lu

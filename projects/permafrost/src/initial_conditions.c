@@ -2543,3 +2543,406 @@ PetscErrorCode FormIC_grain_ana(IGA iga, Vec U, AppCtx *user)
 
     PetscFunctionReturn(0);
 }
+
+
+/* =========================================================================
+ * FormInitialSingleIceGrain2D
+ *
+ * Single pure ice circle (no sediment core) centered in the domain.
+ * Tanh profile with half-width eps.
+ *
+ * Parameters: user->RCice (grain radius), Lx, Ly, eps, temp0, hum0.
+ * =========================================================================*/
+PetscErrorCode FormInitialSingleIceGrain2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx    = user->Lx;
+    const PetscReal Ly    = user->Ly;
+    const PetscReal eps   = user->eps;
+    const PetscReal RCice = user->RCice;
+    const PetscReal tc    = 1.0 / (PetscSqrtReal(2.0) * eps);
+    const PetscReal cx    = 0.5 * Lx;
+    const PetscReal cy    = 0.5 * Ly;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (2D single ice grain) ---\n"
+        "  centre = (%.4e, %.4e) m,  RCice = %.4e m\n",
+        cx, cy, RCice);
+
+    if (RCice <= 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "RCice must be > 0 (got %.2e)", RCice);
+    if (RCice >= 0.5 * PetscMin(Lx, Ly))
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Grain radius %.2e exceeds half the domain — increase domain or reduce RCice", RCice);
+
+    DM da;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+
+            PetscReal dist = PetscSqrtReal(SQ(x - cx) + SQ(y - cy));
+            PetscReal ice  = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCice));
+            ice = PetscMin(PetscMax(ice, 0.0), 1.0);
+
+            u[j][i].ice = ice;
+            u[j][i].sed = 0.0;
+            u[j][i].tem = user->temp0
+                          + user->grad_temp0[0] * (x - 0.5 * Lx)
+                          + user->grad_temp0[1] * (y - 0.5 * Ly);
+
+            PetscScalar rho_vs, temp_loc = u[j][i].tem;
+            RhoVS_I(user, temp_loc, &rho_vs, NULL);
+            { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
+              u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * FormInitialSingleIceGrain1D
+ *
+ * 1D cross-section through the centre of a single ice grain.
+ * Ice block centered at x = 0.5*Lx with radius RCice.
+ * =========================================================================*/
+PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx    = user->Lx;
+    const PetscReal eps   = user->eps;
+    const PetscReal RCice = user->RCice;
+    const PetscReal tc    = 1.0 / (PetscSqrtReal(2.0) * eps);
+    const PetscReal cx    = 0.5 * Lx;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (1D single ice grain) ---\n"
+        "  centre = %.4e m,  RCice = %.4e m\n", cx, RCice);
+
+    if (RCice <= 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "RCice must be > 0 (got %.2e)", RCice);
+    if (RCice >= 0.5 * Lx)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Grain radius %.2e exceeds half the domain — increase Lx or reduce RCice", RCice);
+
+    DM da;
+    Field *u;
+    DMDALocalInfo info;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
+
+    PetscInt k = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        PetscReal x    = Lx * (PetscReal)i / (PetscReal)(info.mx + k);
+        PetscReal dist = PetscAbsReal(x - cx);
+        PetscReal ice  = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCice));
+        ice = PetscMin(PetscMax(ice, 0.0), 1.0);
+
+        u[i].ice = ice;
+        u[i].sed = 0.0;
+        u[i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
+
+        PetscScalar rho_vs, temp_loc = u[i].tem;
+        RhoVS_I(user, temp_loc, &rho_vs, NULL);
+        { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
+          u[i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * FormInitialSingleSedGrain2D
+ *
+ * Single pure sediment circle (no ice) centered in the domain.
+ * Tanh profile with half-width eps. Mirror of FormInitialSingleIceGrain2D
+ * with ice/sed swapped.
+ *
+ * Parameters: user->RCsed (grain radius), Lx, Ly, eps, temp0, hum0.
+ * =========================================================================*/
+PetscErrorCode FormInitialSingleSedGrain2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx    = user->Lx;
+    const PetscReal Ly    = user->Ly;
+    const PetscReal eps   = user->eps;
+    const PetscReal RCsed = user->RCsed;
+    const PetscReal tc    = 1.0 / (PetscSqrtReal(2.0) * eps);
+    const PetscReal cx    = 0.5 * Lx;
+    const PetscReal cy    = 0.5 * Ly;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (2D single sediment grain) ---\n"
+        "  centre = (%.4e, %.4e) m,  RCsed = %.4e m\n",
+        cx, cy, RCsed);
+
+    if (RCsed <= 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "RCsed must be > 0 (got %.2e)", RCsed);
+    if (RCsed >= 0.5 * PetscMin(Lx, Ly))
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Grain radius %.2e exceeds half the domain — increase domain or reduce RCsed", RCsed);
+
+    DM da;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+
+            PetscReal dist = PetscSqrtReal(SQ(x - cx) + SQ(y - cy));
+            PetscReal sed  = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCsed));
+            sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+
+            u[j][i].ice = 0.0;
+            u[j][i].sed = sed;
+            u[j][i].tem = user->temp0
+                          + user->grad_temp0[0] * (x - 0.5 * Lx)
+                          + user->grad_temp0[1] * (y - 0.5 * Ly);
+
+            PetscScalar rho_vs, temp_loc = u[j][i].tem;
+            RhoVS_I(user, temp_loc, &rho_vs, NULL);
+            { PetscReal _pa = PetscMax(0.0, 1.0 - sed);
+              u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * FormInitialSingleSedGrain1D
+ *
+ * 1D cross-section through the centre of a single sediment grain.
+ * =========================================================================*/
+PetscErrorCode FormInitialSingleSedGrain1D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx    = user->Lx;
+    const PetscReal eps   = user->eps;
+    const PetscReal RCsed = user->RCsed;
+    const PetscReal tc    = 1.0 / (PetscSqrtReal(2.0) * eps);
+    const PetscReal cx    = 0.5 * Lx;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (1D single sediment grain) ---\n"
+        "  centre = %.4e m,  RCsed = %.4e m\n", cx, RCsed);
+
+    if (RCsed <= 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "RCsed must be > 0 (got %.2e)", RCsed);
+    if (RCsed >= 0.5 * Lx)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Grain radius %.2e exceeds half the domain — increase Lx or reduce RCsed", RCsed);
+
+    DM da;
+    Field *u;
+    DMDALocalInfo info;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
+
+    PetscInt k = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        PetscReal x    = Lx * (PetscReal)i / (PetscReal)(info.mx + k);
+        PetscReal dist = PetscAbsReal(x - cx);
+        PetscReal sed  = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCsed));
+        sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+
+        u[i].ice = 0.0;
+        u[i].sed = sed;
+        u[i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
+
+        PetscScalar rho_vs, temp_loc = u[i].tem;
+        RhoVS_I(user, temp_loc, &rho_vs, NULL);
+        { PetscReal _pa = PetscMax(0.0, 1.0 - sed);
+          u[i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * FormInitialIceSedPair2D
+ *
+ * One pure ice grain at (Lx/2, Ly/4) and one pure sediment grain at
+ * (Lx/2, 3*Ly/4) — evenly spaced with equal clearance from all walls.
+ *
+ * Parameters: user->RCice (ice radius), user->RCsed (sediment radius).
+ * Both grains are placed on the vertical centreline of the domain.
+ * =========================================================================*/
+PetscErrorCode FormInitialIceSedPair2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx    = user->Lx;
+    const PetscReal Ly    = user->Ly;
+    const PetscReal eps   = user->eps;
+    const PetscReal R_ice = user->RCice;
+    const PetscReal R_sed = user->RCsed;
+    const PetscReal tc    = 1.0 / (PetscSqrtReal(2.0) * eps);
+
+    const PetscReal ice_cx = 0.5 * Lx,  ice_cy = 0.25 * Ly;
+    const PetscReal sed_cx = 0.5 * Lx,  sed_cy = 0.75 * Ly;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (2D ice+sediment grain pair) ---\n"
+        "  ice:  centre = (%.4e, %.4e) m,  R = %.4e m\n"
+        "  sed:  centre = (%.4e, %.4e) m,  R = %.4e m\n",
+        ice_cx, ice_cy, R_ice, sed_cx, sed_cy, R_sed);
+
+    if (ice_cy - R_ice <= 0.0 || sed_cy + R_sed >= Ly)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Grains fall outside domain — reduce radii or increase Ly");
+    if (0.5 * Lx - PetscMax(R_ice, R_sed) <= 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Grain radius exceeds Lx/2 — reduce radius or increase Lx");
+
+    DM da;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+
+            PetscReal d_ice = PetscSqrtReal(SQ(x - ice_cx) + SQ(y - ice_cy));
+            PetscReal d_sed = PetscSqrtReal(SQ(x - sed_cx) + SQ(y - sed_cy));
+
+            PetscReal ice = 0.5 - 0.5 * PetscTanhReal(tc * (d_ice - R_ice));
+            PetscReal sed = 0.5 - 0.5 * PetscTanhReal(tc * (d_sed - R_sed));
+            ice = PetscMin(PetscMax(ice, 0.0), 1.0);
+            sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+            { PetscReal _tot = ice + sed; if (_tot > 1.0) { ice /= _tot; sed /= _tot; } }
+
+            u[j][i].ice = ice;
+            u[j][i].sed = sed;
+            u[j][i].tem = user->temp0
+                          + user->grad_temp0[0] * (x - 0.5 * Lx)
+                          + user->grad_temp0[1] * (y - 0.5 * Ly);
+
+            PetscScalar rho_vs, temp_loc = u[j][i].tem;
+            RhoVS_I(user, temp_loc, &rho_vs, NULL);
+            { PetscReal _pa = PetscMax(0.0, 1.0 - ice - sed);
+              u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * FormInitialIceSedPair1D
+ *
+ * 1D version: ice grain at x = Lx/4, sediment grain at x = 3*Lx/4.
+ * Evenly spaced with equal wall clearance.
+ * =========================================================================*/
+PetscErrorCode FormInitialIceSedPair1D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx    = user->Lx;
+    const PetscReal eps   = user->eps;
+    const PetscReal R_ice = user->RCice;
+    const PetscReal R_sed = user->RCsed;
+    const PetscReal tc    = 1.0 / (PetscSqrtReal(2.0) * eps);
+
+    const PetscReal ice_c = 0.25 * Lx;
+    const PetscReal sed_c = 0.75 * Lx;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (1D ice+sediment grain pair) ---\n"
+        "  ice:  centre = %.4e m,  R = %.4e m\n"
+        "  sed:  centre = %.4e m,  R = %.4e m\n",
+        ice_c, R_ice, sed_c, R_sed);
+
+    if (ice_c - R_ice <= 0.0 || sed_c + R_sed >= Lx)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "Grains fall outside domain — reduce radii or increase Lx");
+
+    DM da;
+    Field *u;
+    DMDALocalInfo info;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
+
+    PetscInt k = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        PetscReal x     = Lx * (PetscReal)i / (PetscReal)(info.mx + k);
+        PetscReal d_ice = PetscAbsReal(x - ice_c);
+        PetscReal d_sed = PetscAbsReal(x - sed_c);
+
+        PetscReal ice = 0.5 - 0.5 * PetscTanhReal(tc * (d_ice - R_ice));
+        PetscReal sed = 0.5 - 0.5 * PetscTanhReal(tc * (d_sed - R_sed));
+        ice = PetscMin(PetscMax(ice, 0.0), 1.0);
+        sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+        { PetscReal _tot = ice + sed; if (_tot > 1.0) { ice /= _tot; sed /= _tot; } }
+
+        u[i].ice = ice;
+        u[i].sed = sed;
+        u[i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
+
+        PetscScalar rho_vs, temp_loc = u[i].tem;
+        RhoVS_I(user, temp_loc, &rho_vs, NULL);
+        { PetscReal _pa = PetscMax(0.0, 1.0 - ice - sed);
+          u[i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}

@@ -82,7 +82,8 @@ _MONITOR_ROW_RE = re.compile(
     r"^\s*(\d+)\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"   # step | t | dt
     r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"  # ice|air|sed
     r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"    # temp | rhov
-    r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*$",    # ia_interf | trip_junc
+    r"\s*(" + _NUM + r")\s*\|\s*(" + _NUM + r")\s*\|"    # ia_interf | trip_junc
+    r"\s*(" + _NUM + r")\s*$",                           # total_mass
     re.MULTILINE,
 )
 
@@ -95,16 +96,17 @@ def _parse_outp(path: str) -> list[dict]:
     rows = []
     for m in _MONITOR_ROW_RE.finditer(text):
         rows.append({
-            "step":      int(m.group(1)),
-            "t":         float(m.group(2)),
-            "dt":        float(m.group(3)),
-            "tot_ice":   float(m.group(4)),
-            "tot_air":   float(m.group(5)),
-            "tot_sed":   float(m.group(6)),
-            "temp":      float(m.group(7)),
-            "tot_rhov":  float(m.group(8)),
-            "ia_interf": float(m.group(9)),
-            "trip_junc": float(m.group(10)),
+            "step":       int(m.group(1)),
+            "t":          float(m.group(2)),
+            "dt":         float(m.group(3)),
+            "tot_ice":    float(m.group(4)),
+            "tot_air":    float(m.group(5)),
+            "tot_sed":    float(m.group(6)),
+            "temp":       float(m.group(7)),
+            "tot_rhov":   float(m.group(8)),
+            "ia_interf":  float(m.group(9)),
+            "trip_junc":  float(m.group(10)),
+            "total_mass": float(m.group(11)),
         })
     return rows
 

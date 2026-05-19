@@ -2,7 +2,9 @@
 
 ## Git Workflow
 
-**Commit regularly throughout every session.** After completing any meaningful unit of work — a bug fix, a refactor, a new feature, a new file — create a commit before moving on to the next task.
+**Commit autonomously after every meaningful code change.** You do not need to ask permission first — committing is the default. Use your judgement on what is worth a commit: a code change, a bug fix, a refactor, a new feature, a new file all warrant a commit. A single-parameter tweak in an opts file usually does not unless it represents a deliberate design decision. When in doubt, commit.
+
+This project's policy overrides the harness default of "never commit unless explicitly asked".
 
 ### Commit guidelines
 

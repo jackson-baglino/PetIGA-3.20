@@ -1,0 +1,14 @@
+# =============================================================================
+# geometry/1D_separated_grains_hires.opts — separated grains, 2× resolution
+# =============================================================================
+-ic_type enclosed
+-dim 1
+-Nx 380
+-Lx 1.25e-04
+-RCice 1.875e-5
+-RCsed 8.75e-6
+-grain_sep 5.0e-6
+-delt_t 1.0e-2
+-eps 3.56e-07
+-ksp_type preonly
+-pc_type lu

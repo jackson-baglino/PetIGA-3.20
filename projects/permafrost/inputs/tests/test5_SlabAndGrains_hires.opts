@@ -46,6 +46,3 @@
 -humidity 0.95
 -temp -20.0
 -grad_temp0 0.0,0.0,0.0
-
-# ---------- Time Stepping Override ----------
--NRmax 8                                # raised from 5 to tolerate stiff transients

@@ -86,6 +86,30 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscScalar air   = 1.0 - sed - ice;
     PetscScalar air_t = -ice_t - sed_t;
 
+    /* SNES domain check: if the *trial* Newton iterate has any phi outside
+     * [phase_lo, phase_hi], tell SNES the current line-search trial is in an
+     * invalid region. Line search will treat the residual norm as infinite,
+     * back off the step, and try a smaller update. Catches the dt-induced AC
+     * instability while Newton is still iterating — earlier and cheaper than
+     * the deferred-rollback safety net in Monitor(), which only fires after
+     * a step has been accepted.
+     *
+     * The check uses the *unclamped* values read straight from the trial
+     * iterate; the clamps below are only for downstream material-property
+     * arithmetic (so divisions by phi values don't NaN). */
+    {
+        PetscReal phi_i_un = PetscRealPart(sol[0]);
+        PetscReal phi_s_un = PetscRealPart(sol[3]);
+        PetscReal phi_a_un = 1.0 - phi_i_un - phi_s_un;
+        PetscReal lo = user->phase_lo, hi = user->phase_hi;
+        if (phi_i_un < lo || phi_i_un > hi ||
+            phi_s_un < lo || phi_s_un > hi ||
+            phi_a_un < lo || phi_a_un > hi) {
+            if (user->snes) SNESSetFunctionDomainError(user->snes);
+            return 0;
+        }
+    }
+
     if (ice < 0.0) ice = 0.0;
     if (ice > 1.0) ice = 1.0;
     if (sed < 0.0) sed = 0.0;
@@ -116,10 +140,13 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal D_pen = user->difvap_pen * difvap;
     PetscReal k_pen = user->k_pen;
 
-    PetscReal g_phia, g_phiiphis;
+    PetscReal g_phia, g_pen;
     PetscReal rhov_eq = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
-    SmoothHeavisidePoly(ice + sed, &g_phiiphis, NULL);
-    SmoothHeavisidePoly(ice,       &g_phia,     NULL);
+    /* g_pen: penalty weight concentrated near ice+sed = 1 (deep solid).
+     * Zero at the diffuse ice-air interface so Gibbs-Thomson can emerge there;
+     * unity in the solid interior so rhov stays pinned to rhov_eq. */
+    PenaltyWeight     (ice + sed, &g_pen,  NULL);
+    SmoothHeavisidePoly(ice,      &g_phia, NULL);
     difvap = difvap * g_phia + D_pen * (1.0 - g_phia);
 
     const PetscReal *N0, (*N1)[dim];
@@ -135,11 +162,18 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal AC_sed_bulk  = C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs);
     PetscReal sub_src      = alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
     PetscReal rho_lat_air_t = xi_T * rho * lat_sub * air_t;
-    PetscReal vap_pen      = xi_v * k_pen * g_phiiphis * (rhov - rhov_eq);
-    PetscReal vap_src      = xi_v * rho_ice * air_t;
-    /* Two-phase scalars (computed unconditionally; used only in the frozen-sed branch) */
-    PetscReal C2            = 3.0 * mob / (Etai + Etaa);
-    PetscReal AC2_ice_bulk  = C2 / eps * (fi - fa);
+    PetscReal vap_pen      = xi_v * k_pen * g_pen * (rhov - rhov_eq);
+    /* Mass-exchange source: Stefan condition in the diffuse-interface limit.
+     * Couples vapor to *ice* motion only, not to sed motion. Sediment doesn't
+     * sublimate, so sed_t must not generate or consume vapor; using
+     *     vap_src = ρ_ice · air_t = -ρ_ice·(ice_t + sed_t)
+     * would (wrongly) treat sed-AC interface motion as a sublimation event.
+     * The form below is identical in the post-pin regime (sed_t = 0) and
+     * eliminates the spurious vapor source at the sed boundary during the
+     * pre-pin AC relaxation.
+     * No xi_v scaling — this is the physical mass-balance closure; xi_v
+     * scales only the regularisation terms (diffusion + equilibrium penalty). */
+    PetscReal vap_src      = -rho_ice * ice_t;
 
     PetscScalar (*R)[4] = (PetscScalar (*)[4])Re;
     PetscInt a, nen = pnt->nen;
@@ -198,20 +232,24 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
         } else {
 
             /* ================================================================
-             * TWO-PHASE FORMULATION  (sediment frozen, t >= t_sed_freeze)
-             * Sediment RHS is zeroed: only the time-derivative term remains,
-             * which forces phi_sed_t = 0 (sediment stationary).
-             * Ice evolves under 2-phase AC pinned to the frozen sediment
-             * boundary.
+             * FROZEN-SEDIMENT FORMULATION  (t >= t_sed_freeze)
+             *
+             * Sediment is held rigid: phi_sed_t = 0. The ice equation, however,
+             * keeps the full 3-phase Allen-Cahn form. The three-phase potential
+             * is symmetric in the (ice, sed, air) phases, so ice = 0 remains a
+             * stable equilibrium at a sed-air interface even when sed is frozen.
+             *
+             * (The prior 2-phase Kim-Steinbach form used here was derived under
+             *  the assumption that the frozen sed boundary always neighbours
+             *  ice; at sed-air boundaries it produced large spurious ice. The
+             *  3-phase ice eq above does not have that failure mode.)
              * ================================================================ */
 
-            /* Ice: 2-phase Allen-Cahn pinned to the frozen sediment boundary */
+            /* Ice: 3-phase Allen-Cahn (identical to the 3-phase branch) */
             R_ice = N0[a] * ice_t;
             for (l = 0; l < dim; l++)
                 R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-            for (l = 0; l < dim; l++)
-                R_ice += C2 * Etaa * eps * (N1[a][l] * grad_sed[l]);
-            R_ice += AC2_ice_bulk * N0[a];
+            R_ice += AC_ice_bulk * N0[a];
             R_ice -= sub_src * N0[a];
 
             /* Sediment: RHS = 0 (time derivative only — forces phi_sed_t = 0) */
@@ -368,9 +406,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     /* Effective (penalised) diffusivity — same formula as in Residual_A1 */
     PetscReal D_pen = user->difvap_pen * difvap_raw;
     PetscReal k_pen = user->k_pen;
-    PetscReal g_phia, g_phiiphis;
-    SmoothHeavisidePoly(ice,       &g_phia,      NULL);
-    SmoothHeavisidePoly(ice + sed, &g_phiiphis,  NULL);
+    PetscReal g_phia, g_pen;
+    SmoothHeavisidePoly(ice,       &g_phia, NULL);
+    PenaltyWeight     (ice + sed, &g_pen,  NULL);
     PetscReal difvap = difvap_raw * g_phia + D_pen * (1.0 - g_phia);
 
     PetscReal rhov_eq  = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
@@ -378,7 +416,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscInt  air_eff_active = (air > air_lim);
 
     PetscReal C3  = 3.0 * mob / (eps * EtaT);
-    PetscReal C2  = 3.0 * mob / (Etai + Etaa);
     PetscReal loc = ice*ice * air*air;
 
     /* ---- Derivatives of material functions ---- */
@@ -395,9 +432,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     VaporDiffus(user, tem,      NULL, &d_difvap_raw);
     RhoVS_I    (user, tem,      NULL, &d_rhovs);
 
-    PetscReal dg_phia, dg_phiiphis;
+    PetscReal dg_phia, dg_pen;
     SmoothHeavisidePoly(ice,       NULL, &dg_phia);
-    SmoothHeavisidePoly(ice + sed, NULL, &dg_phiiphis);
+    PenaltyWeight     (ice + sed, NULL, &dg_pen);
 
     /* d(difvap_eff)/d(ice) via the smoothed switch */
     PetscReal d_difvap_eff_dice = (difvap_raw - D_pen) * dg_phia;
@@ -489,20 +526,23 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
 
             } else {
                 /* ==============================================================
-                 * TWO-PHASE (frozen sediment, t >= t_sed_freeze)
+                 * FROZEN SEDIMENT (t >= t_sed_freeze)
+                 * Ice rows match the 3-phase branch exactly; only the sediment
+                 * row degenerates to the mass matrix that pins sed_t = 0.
                  * ============================================================== */
                 /* [ice, ice] */
                 J[a][0][b][0] += shift * Na_Nb
                                + 3.0*mob*eps * N1a_N1b
-                               + C2/eps * (dfi_dice - dfa_dice) * Na_Nb
+                               + C3 * ((Etased+Etaa)*dfi_dice - Etaa*dfs_dice
+                                       - Etased*dfa_dice) * Na_Nb
                                - alph_sub * dloc_dice * (rhov - rhoI_vs) / rho_ice * Na_Nb;
                 /* [ice, tem] */
                 J[a][0][b][1] += alph_sub * loc * d_rhovs / rho_ice * Na_Nb;
                 /* [ice, rhov] */
                 J[a][0][b][2] += -alph_sub * loc / rho_ice * Na_Nb;
-                /* [ice, sed]: gradient coupling + free energy derivative */
-                J[a][0][b][3] += C2 * Etaa * eps * N1a_N1b
-                               + C2/eps * (dfi_dsed - dfa_dsed) * Na_Nb
+                /* [ice, sed] */
+                J[a][0][b][3] += C3 * ((Etased+Etaa)*dfi_dsed - Etaa*dfs_dsed
+                                        - Etased*dfa_dsed) * Na_Nb
                                - alph_sub * dloc_dsed * (rhov - rhoI_vs) / rho_ice * Na_Nb;
                 /* [sed, sed]: mass matrix only — frozen sediment */
                 J[a][3][b][3] += shift * Na_Nb;
@@ -524,24 +564,27 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 /* ==============================================================
                  * VAPOR (both 2-phase and 3-phase)
                  * ============================================================== */
-                /* [vap, ice]: shift from rho_ice*air_t; penalty + diffusivity variation */
-                J[a][2][b][0] += shift * xi_v * rho_ice * Na_Nb
-                               + xi_v * k_pen * (dg_phiiphis * (rhov - rhov_eq)
-                                                - g_phiiphis * d_rhovel_dice) * Na_Nb
+                /* [vap, ice]: shift from rho_ice*air_t (mass-balance source, no xi_v);
+                 *             penalty + diffusivity variation (regularisation, with xi_v) */
+                J[a][2][b][0] += shift * rho_ice * Na_Nb
+                               + xi_v * k_pen * (dg_pen * (rhov - rhov_eq)
+                                                - g_pen * d_rhovel_dice) * Na_Nb
                                + xi_v * (d_difvap_eff_dice * air_eff
                                         - (air_eff_active ? difvap : 0.0))
                                         * N1a_grad_rhov * N0[b];
                 /* [vap, tem]: from difvap(T) and rhoI_vs(T) in rhov_eq */
-                J[a][2][b][1] += xi_v * k_pen * g_phiiphis * (-d_rhovel_dtem) * Na_Nb
+                J[a][2][b][1] += xi_v * k_pen * g_pen * (-d_rhovel_dtem) * Na_Nb
                                + xi_v * d_difvap_eff_dtem * air_eff * N1a_grad_rhov * N0[b];
                 /* [vap, rhov]: shift + diffusion stiffness + penalty */
                 J[a][2][b][2] += shift * Na_Nb
                                + xi_v * difvap * air_eff * N1a_N1b
-                               + xi_v * k_pen * g_phiiphis * (1.0 - d_rhovel_drhov) * Na_Nb;
-                /* [vap, sed]: symmetric to vap-ice (same d_rhovel_dsed = rhoI_vs - rhov) */
-                J[a][2][b][3] += shift * xi_v * rho_ice * Na_Nb
-                               + xi_v * k_pen * (dg_phiiphis * (rhov - rhov_eq)
-                                                - g_phiiphis * d_rhovel_dsed) * Na_Nb
+                               + xi_v * k_pen * g_pen * (1.0 - d_rhovel_drhov) * Na_Nb;
+                /* [vap, sed]: vap_src = -ρ_ice * ice_t no longer depends on sed_t,
+                 *             so the shift contribution drops. Only the penalty
+                 *             derivative (via rhov_eq's sed dependence) and the
+                 *             diffusion's air = 1 - ice - sed dependence remain. */
+                J[a][2][b][3] += xi_v * k_pen * (dg_pen * (rhov - rhov_eq)
+                                                - g_pen * d_rhovel_dsed) * Na_Nb
                                - (air_eff_active ? xi_v * difvap : 0.0)
                                  * N1a_grad_rhov * N0[b];
             }

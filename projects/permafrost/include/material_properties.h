@@ -18,6 +18,14 @@ void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap, PetscScalar
 /* Computes the smooth Heaviside function and its derivative*/
 void SmoothHeavisidePoly(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi);
 
+/* Penalty weight: smooth Heaviside concentrated near phi = 1.
+ * Zero for phi <= PENALTY_PHI_LO, unity for phi >= PENALTY_PHI_HI,
+ * smooth ramp in between (via SmoothHeavisidePoly of the shifted variable).
+ * Used so the vapor interface-equilibrium penalty is active only deep in
+ * solid (phi = ice+sed close to 1) and OFF at the diffuse ice-air interface
+ * so Gibbs-Thomson curvature dependence can emerge. */
+void PenaltyWeight(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi);
+
 /* Computes the saturation vapor density and its derivative */
 void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs, PetscScalar *d_rhovs);
 

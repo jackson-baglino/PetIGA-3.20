@@ -1,0 +1,14 @@
+# =============================================================================
+# experiment/30day_T-20_h1.00.opts — 30 days at -20°C, saturated humidity
+#
+# Stress test of the new safety nets (SNES domain check + bounds rollback +
+# constant mobility) at the simulated-time horizon where earlier runs crashed
+# (around step 175, t ≈ 19 days in pre-Phase-1 runs).
+# =============================================================================
+
+-t_final 2592000.0                      # 30 days (s)
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0

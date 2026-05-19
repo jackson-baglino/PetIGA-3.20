@@ -1,0 +1,16 @@
+# =============================================================================
+# experiment/1day_T-20_h0.95.opts — 1 day at -20°C, humidity 0.95
+#
+# Slightly undersaturated air, isothermal at -20°C. Typical of the 1D test
+# suite and the simpler 2D geometries. Drives gentle sublimation everywhere
+# because rhov < rhov_sat in the air phase.
+# =============================================================================
+
+# ---------- Simulation time ----------
+-t_final 86400.0                        # 1 day (s)
+-t_sed_freeze 10                        # pin sed at t=10s (very short pre-pin window)
+
+# ---------- Environmental conditions ----------
+-temp -20.0                             # initial temperature [°C]
+-humidity 0.95                          # initial relative humidity in air
+-grad_temp0 0.0,0.0,0.0                 # no imposed temperature gradient

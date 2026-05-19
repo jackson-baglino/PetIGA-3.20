@@ -60,16 +60,23 @@ int main(int argc, char *argv[]) {
     user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-4/eps² after options */
     user.phase_lo   = -0.25;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.25;   /* upper bound: phi above this → abort */
-    user.d0_sub0    = 1.0e-9;   /* Parameter d0 for substrate */
-    user.beta_sub0  = 1.4e5;    /* Parameter beta for substrate */
+    user.d0_sub0    = 1.0e-9;    /* capillary length scale (physical) */
+    user.beta_sub0  = 1.4e5;     /* kinetic coefficient (physical) */
 
-    PetscReal gamma_im = 0.033; /* Surface energies for ice-metal interface */
-    PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
-    PetscReal gamma_mv = 0.056; /* Surface energies for metal-vapor interface */
-
-    // PetscReal gamma_im = 0.030; /* Surface energies for ice-metal interface */
-    // PetscReal gamma_iv = 0.109; /* Surface energies for ice-vapor interface */
-    // PetscReal gamma_mv = 0.300; /* Surface energies for metal-vapor interface */
+    /* Surface energies [J/m²] — chosen so all Kim-Steinbach combination energies
+     * eta_i = gamma_iv+gamma_im-gamma_mv > 0,
+     * eta_s = gamma_mv+gamma_im-gamma_iv > 0,
+     * eta_a = gamma_iv+gamma_mv-gamma_im > 0.
+     * With the values below: eta_i=0.086, eta_s=0.028, eta_a=0.132,
+     * Young contact angle theta = arccos((gamma_mv-gamma_im)/gamma_iv) = 77.8 deg.
+     * gamma_im = 0.057 J/m² (ice on quartz, Israelachvili 2011)
+     * gamma_iv = 0.109 J/m² (ice-vapor, Petrenko & Whitworth 1999)
+     * gamma_mv = 0.080 J/m² (regolith-vapor, effective value that gives theta=77.8 deg
+     *                         and eta_s>0; physical silicate values ~0.3-0.5 J/m² violate
+     *                         eta_i>0 in the Kim-Steinbach model) */
+    PetscReal gamma_im = 0.057; /* ice–sediment surface energy [J/m²] */
+    PetscReal gamma_iv = 0.109; /* ice–vapor    surface energy [J/m²] */
+    PetscReal gamma_mv = 0.080; /* sediment–vapor surface energy [J/m²] */
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 1;          /* Polynomial order */
@@ -108,10 +115,15 @@ int main(int argc, char *argv[]) {
     user.RCice_dev   = 0.55;    /* Std dev of radius */
     user.x_slab_frac = 0.175;   /* slab_and_grains IC: right ice slab fraction of Lx */
 
-    /* Define boundary condition flags (can be overridden by PETSc options) */
+    /* Define boundary condition flags (can be overridden by PETSc options).
+     * Default is INSULATING for both: no Dirichlet condition is registered,
+     * no surface form is assembled in Residual (see `pnt->atboundary` early
+     * return in assembly.c), so the natural BC ∂u/∂n = 0 is enforced — i.e.
+     * zero flux through the boundary for both T and rho_v. Override only if
+     * you actually want fixed-value Dirichlet conditions. */
     user.periodic    = 0;       /* Periodic boundary condition flag */
-    flag_BC_Tfix     = PETSC_TRUE;  /* fix temperature at boundaries by default */
-    flag_BC_rhovfix  = PETSC_FALSE;
+    flag_BC_Tfix     = PETSC_FALSE; /* insulating T (zero heat flux) — natural Neumann */
+    flag_BC_rhovfix  = PETSC_FALSE; /* insulating rho_v (zero vapor flux) — natural Neumann */
 
     /* Define output parameters (can be overridden by PETSc options) */
     user.outp        = 0;       /* Output control flag (0: output according to t_interv) */
@@ -258,7 +270,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-ic_type",
              "Initial condition geometry (enclosed|capillary|layered|"
-             "random_enclosed|random_packed|ice_cap|ice_slab|slab_and_grains)",
+             "random_enclosed|random_packed|ice_cap|ice_slab|slab_and_grains|"
+             "single_ice|ice_sed_pair)",
              "permafrost2.c", ic_type, ic_type, sizeof(ic_type),
              NULL); CHKERRQ(ierr);
 
@@ -291,6 +304,16 @@ int main(int argc, char *argv[]) {
              "Upper bound for phase fields phi_ice, phi_sed, phi_air "
              "(simulation aborts if any phi exceeds this; default 1.25)",
              "", user.phase_hi, &user.phase_hi, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-xi_v",
+             "Time-scaling for vapor equation: multiplies the diffusion term "
+             "and the rhov<->rhov_eq penalty (default 1e-4). xi_v=1 is "
+             "physically natural but stiff; smaller values trade diffusion "
+             "speed and penalty strength for Newton stability.",
+             "", user.xi_v, &user.xi_v, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-xi_T",
+             "Time-scaling for temperature equation: multiplies the thermal "
+             "diffusion and latent-heat source terms (default 1e-2).",
+             "", user.xi_T, &user.xi_T, NULL); CHKERRQ(ierr);
 
     /* --- Flags ---------------------------------------------------------- */
 
@@ -363,6 +386,22 @@ int main(int argc, char *argv[]) {
     if (user.periodic == 1 && flag_BC_Tfix)    flag_BC_Tfix    = PETSC_FALSE;
     if (user.periodic == 1 && flag_BC_rhovfix) flag_BC_rhovfix = PETSC_FALSE;
 
+    /* Resolved boundary-condition summary. Without IGASetBoundaryValue() and
+     * with the `if (pnt->atboundary) return 0;` guards in Residual_A1, the
+     * natural Neumann BC ∂u/∂n = 0 is what's enforced for any DOF that's not
+     * explicitly Dirichlet-fixed. Ice and sediment phase fields are always
+     * left at natural Neumann (no Dirichlet for them anywhere in this code). */
+    PetscPrintf(PETSC_COMM_WORLD, "----- Boundary conditions ----- \n");
+    PetscPrintf(PETSC_COMM_WORLD, "  ice (phi_i):   natural Neumann (zero gradient)\n");
+    PetscPrintf(PETSC_COMM_WORLD, "  sed (phi_s):   natural Neumann (zero gradient)\n");
+    PetscPrintf(PETSC_COMM_WORLD, "  temperature:   %s\n",
+                flag_BC_Tfix    ? "Dirichlet (fixed value at boundary)"
+                                : "natural Neumann (insulating, zero heat flux)");
+    PetscPrintf(PETSC_COMM_WORLD, "  vapor (rho_v): %s\n",
+                flag_BC_rhovfix ? "Dirichlet (fixed value at boundary)"
+                                : "natural Neumann (insulating, zero vapor flux)");
+    PetscPrintf(PETSC_COMM_WORLD, "\n");
+
     /* Time stepping parameters */
     if (n_out > 1) {
         user.t_interv = t_final / (n_out - 1); /* Output interval */
@@ -404,7 +443,30 @@ int main(int argc, char *argv[]) {
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter */
-    user.mob_sed = user.mob_sub;  /* Sediment is inert by default; override with -mob_sed */
+
+    /* Allow per-test override of mob_sub via -mob_sub <value>. Tests with
+     * very stiff geometries (touching/merging grains in 2D) can reduce
+     * mob_sub by ~10x to trade kinetics speed for AC stability. The
+     * physical value computed above is the default. */
+    {
+        PetscReal  mob_sub_cli = -1.0;
+        PetscBool  flg         = PETSC_FALSE;
+        ierr = PetscOptionsGetReal(NULL, NULL, "-mob_sub",
+                                   &mob_sub_cli, &flg); CHKERRQ(ierr);
+        if (flg && mob_sub_cli > 0.0) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  -mob_sub override: %.2e -> %.2e (factor %.1f)\n",
+                        user.mob_sub, mob_sub_cli, mob_sub_cli / user.mob_sub);
+            user.mob_sub = mob_sub_cli;
+        }
+    }
+
+    /* Sediment is inert by default: mob_sed defaults to 0 (set via PetscMemzero
+     * at program start), so the local mobility mob_sub*ice + mob_sed*sed +
+     * mob_air*air vanishes inside the sed grain and AC dynamics cannot dissolve
+     * the interior during pre-pin. Override via -mob_sed for a non-zero value.
+     * (Previous code unconditionally set mob_sed = mob_sub here, which
+     * silently overrode any -mob_sed CLI value and made the comment false.) */
     user.mob_air = user.mob_sub;
 
     PetscPrintf(PETSC_COMM_WORLD, "Mobility terms: mob_sub = %.2e m^3/s, mob_sed = %.2e m^3/s \n", user.mob_sub, user.mob_sed);
@@ -507,6 +569,12 @@ int main(int argc, char *argv[]) {
     ierr = TSAlphaSetRadius(ts, 0.5); CHKERRQ(ierr);
     if (monitor) { ierr = TSMonitorSet(ts, Monitor, &user, NULL); CHKERRQ(ierr); }
     if (output) { ierr = TSMonitorSet(ts, OutputMonitor, &user, NULL); CHKERRQ(ierr); }
+
+    /* Application context — so BoundsRollbackPreStep can fetch user via
+     * TSGetApplicationContext to consume deferred bounds-rollback requests. */
+    ierr = TSSetApplicationContext(ts, &user); CHKERRQ(ierr);
+    ierr = TSSetPreStep(ts, BoundsRollbackPreStep); CHKERRQ(ierr);
+
     ierr = TSSetFromOptions(ts); CHKERRQ(ierr);
 
     ts->adap               = adap;
@@ -523,6 +591,14 @@ int main(int argc, char *argv[]) {
     ierr = TSGetSNES(ts, &nonlin); CHKERRQ(ierr);
     ierr = SNESSetConvergenceTest(nonlin, SNESDOFConvergence, &user, NULL); CHKERRQ(ierr);
 
+    /* Cache the SNES handle on user so Residual() can call
+     * SNESSetFunctionDomainError() when a trial iterate has phi out of bounds.
+     * That tells SNES the current line-search trial is invalid; line search
+     * backtracks and Newton tries a smaller step. Catches dt-induced AC
+     * instabilities while they are still recoverable, before the resulting
+     * bad state is committed to ts->vec_sol. */
+    user.snes = nonlin;
+
     /* Create solution vector (ice, temperature, vapor, sediment) */
     Vec U;
     ierr = IGACreateVec(iga, &U); CHKERRQ(ierr);
@@ -535,6 +611,12 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD, "IC type: %s (1D)\n", ic_type);
         if (strcmp(ic_type, "enclosed") == 0) {
             ierr = FormInitialEnclosed1D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "single_ice") == 0) {
+            ierr = FormInitialSingleIceGrain1D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "single_sed") == 0) {
+            ierr = FormInitialSingleSedGrain1D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "ice_sed_pair") == 0) {
+            ierr = FormInitialIceSedPair1D(iga, U, &user); CHKERRQ(ierr);
         } else {
             /* Default: centered slab or flat interface, variant via -flag_tIC */
             ierr = FormInitialCondition1D(iga, U, &user); CHKERRQ(ierr);
@@ -562,10 +644,17 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialIceSlab2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "slab_and_grains") == 0) {
             ierr = FormInitialSlabAndGrains2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "single_ice") == 0) {
+            ierr = FormInitialSingleIceGrain2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "single_sed") == 0) {
+            ierr = FormInitialSingleSedGrain2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "ice_sed_pair") == 0) {
+            ierr = FormInitialIceSedPair2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
                     "Unknown -ic_type. Valid: enclosed contact_sed capillary layered "
-                    "random_enclosed random_packed ice_cap ice_slab slab_and_grains");
+                    "random_enclosed random_packed ice_cap ice_slab slab_and_grains "
+                    "single_ice single_sed ice_sed_pair");
         }
     }
 

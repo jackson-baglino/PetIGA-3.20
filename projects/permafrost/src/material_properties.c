@@ -180,11 +180,42 @@ return;
  */
 void SmoothHeavisidePoly(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi)
 {
-    if (g) 
+    if (g)
         (*g) = phi*phi*phi * (3 - 2*phi); // Smooth approximation of Heaviside function
-    if (dg_dphi) 
+    if (dg_dphi)
         (*dg_dphi) = 6*phi*phi * (1 - phi); // Derivative of the smooth Heaviside function with respect to phi
     return;
+}
+
+/* Penalty weight: SmoothHeavisidePoly applied to a shifted variable so the
+ * penalty is concentrated near phi = 1 (deep solid) rather than spread across
+ * the diffuse interface. Zero for phi <= PENALTY_PHI_LO, unity for
+ * phi >= PENALTY_PHI_HI, smooth in between. Width is small enough that the
+ * mid-thickness of a typical ice-air interface (ice+sed ≈ 0.5) falls fully in
+ * the zero region, so Gibbs-Thomson can emerge at the interface, while the
+ * solid interior (ice+sed → 1) still has its rhov pinned to rhov_eq. */
+#define PENALTY_PHI_LO 0.85
+#define PENALTY_PHI_HI 1.00
+void PenaltyWeight(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi)
+{
+    const PetscReal lo = PENALTY_PHI_LO;
+    const PetscReal hi = PENALTY_PHI_HI;
+    if (phi <= lo) {
+        if (g)       (*g)       = 0.0;
+        if (dg_dphi) (*dg_dphi) = 0.0;
+        return;
+    }
+    if (phi >= hi) {
+        if (g)       (*g)       = 1.0;
+        if (dg_dphi) (*dg_dphi) = 0.0;
+        return;
+    }
+    const PetscReal inv_w = 1.0 / (hi - lo);
+    PetscScalar u = (phi - lo) * inv_w;
+    PetscScalar g_u, dg_du;
+    SmoothHeavisidePoly(u, &g_u, &dg_du);
+    if (g)       (*g)       = g_u;
+    if (dg_dphi) (*dg_dphi) = dg_du * inv_w;
 }
 
 /**
@@ -345,30 +376,27 @@ void Fair(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *fair,
 
 void Mobility(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *mob)
 {
-    /* Check bounds */
-    if (sed < 0.0) sed = 0.0;
-    if (ice < 0.0) ice = 0.0;
-    if (sed > 1.0) sed = 1.0;
-    if (ice > 1.0) ice = 1.0;
-
-    /* Compute the air fraction */
-    PetscScalar air = 1.0 - sed - ice;
-
-    /* Unpack mobility parameters from user context */
-    PetscReal mob_sub = user->mob_sub;
-    PetscReal mob_sed = user->mob_sed;
-    PetscReal mob_air = user->mob_air;
-
-    /* Define smooth interpolation functions */
-    PetscReal hi = ice; //ice*ice * (3.0 - 2.0 * ice); // Smooth interpolation function for ice
-    PetscReal hs = sed; //sed*sed * (3.0 - 2.0 * sed); // Smooth interpolation function for sediment
-    PetscReal ha = air; //air*air * (3.0 - 2.0 * air); // Smooth interpolation function for air
-
-    /* Compute the mobility */
-    if (mob) 
-        (*mob) = mob_sub * hi + mob_sed * hs + mob_air * ha;    
-
-    return;
+    /* Constant, phase-independent mobility.
+     *
+     * The previous phase-weighted form
+     *      mob = mob_sub*ice + mob_sed*sed + mob_air*air
+     * gave a 0.5x slowdown at ice-sed interfaces. With mob_sed=0 (sediment
+     * inert by default) and mob_air=mob_sub, this collapsed to mob_sub*(1-sed)
+     * — i.e. full mobility in air/ice regions but half at ice-sed contacts.
+     *
+     * The slowdown was originally protective: it prevented AC from dissolving
+     * the sed interior during a 3-phase pre-pin window (t < t_sed_freeze).
+     * With t_sed_freeze=0 (the new default), sed is pinned by R_sed = sed_t = 0
+     * from t=0 and never has a 3-phase AC window, so the slowdown serves no
+     * purpose — it only unphysically reduced the ice AC rate at ice-sed
+     * contacts (slowing sintering near sediment grains).
+     *
+     * Now mob_sub everywhere. If t_sed_freeze > 0 is ever reintroduced for a
+     * legitimate AC pre-pin period, restore the phase-weighted form here.
+     */
+    (void)ice;  /* unused — kept in signature for callers */
+    (void)sed;  /* unused */
+    if (mob) (*mob) = user->mob_sub;
 }
 
 

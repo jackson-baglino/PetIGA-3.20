@@ -1,0 +1,25 @@
+# =============================================================================
+# geometry/2D_separated_grains_hires.opts — separated grains, 2× resolution
+# Note: hires variant uses *symmetric* grain sizes (vs the asymmetric std
+# variant). They probe different physics — the std test focuses on Ostwald
+# ripening between unequal grains; the hires test stress-tests the model at
+# higher resolution with equal grains.
+# =============================================================================
+-ic_type enclosed
+-dim 2
+-Nx 190
+-Ny 380
+-Nz 1
+-Lx 6.25e-05
+-Ly 1.25e-04
+-Lz 0
+-RCice 1.875e-5
+-RCsed 8.75e-6
+-grain_sep 5.0e-6
+
+-delt_t 1.0e-2
+-eps 3.56e-07
+
+# Stiff at hires; mob reduction + robust linear solver.
+-mob_sub 2.0e-10
+-ksp_type bcgs

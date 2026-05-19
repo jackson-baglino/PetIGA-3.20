@@ -1,6 +1,458 @@
 
 ---
 
+**Session ended:** 2026-05-19 12:36:45
+
+
+---
+
+**Session ended:** 2026-05-19 12:18:17
+
+
+---
+
+**Session ended:** 2026-05-19 09:41:27
+
+
+---
+
+**Session ended:** 2026-05-19 08:59:01
+
+
+---
+
+**Session ended:** 2026-05-19 08:49:38
+
+
+---
+
+**Session ended:** 2026-05-19 08:19:24
+
+
+---
+
+**Session ended:** 2026-05-18 20:15:07
+
+
+---
+
+**Session ended:** 2026-05-18 19:04:48
+
+
+---
+
+**Session ended:** 2026-05-18 18:39:15
+
+
+---
+
+**Session ended:** 2026-05-18 18:21:00
+
+
+---
+
+**Session ended:** 2026-05-18 18:00:46
+
+
+---
+
+**Session ended:** 2026-05-18 17:34:04
+
+
+---
+
+**Session ended:** 2026-05-18 17:09:57
+
+
+---
+
+**Session ended:** 2026-05-18 16:54:13
+
+
+---
+
+**Session ended:** 2026-05-18 14:34:16
+
+
+---
+
+**Session ended:** 2026-05-18 14:33:37
+
+
+---
+
+**Session ended:** 2026-05-18 14:11:32
+
+
+---
+
+**Session ended:** 2026-05-18 11:53:02
+
+
+---
+
+**Session ended:** 2026-05-18 11:32:37
+
+
+---
+
+**Session ended:** 2026-05-18 11:16:45
+
+
+---
+
+**Session ended:** 2026-05-18 11:11:38
+
+
+---
+
+**Session ended:** 2026-05-18 10:15:16
+
+
+---
+
+**Session ended:** 2026-05-18 09:58:17
+
+
+---
+
+**Session ended:** 2026-05-18 09:45:37
+
+
+---
+
+**Session ended:** 2026-05-17 17:24:01
+
+
+---
+
+**Session ended:** 2026-05-17 17:17:52
+
+
+---
+
+**Session ended:** 2026-05-17 15:50:44
+
+
+---
+
+**Session ended:** 2026-05-17 10:51:13
+
+
+---
+
+**Session ended:** 2026-05-16 22:49:54
+
+
+---
+
+**Session ended:** 2026-05-16 22:40:53
+
+
+---
+
+**Session ended:** 2026-05-16 19:36:20
+
+
+---
+
+**Session ended:** 2026-05-16 19:12:18
+
+
+---
+
+**Session ended:** 2026-05-16 18:12:54
+
+
+---
+
+**Session ended:** 2026-05-16 18:06:41
+
+
+---
+
+**Session ended:** 2026-05-16 15:18:35
+
+
+---
+
+**Session ended:** 2026-05-16 14:57:44
+
+
+---
+
+**Session ended:** 2026-05-16 14:49:41
+
+
+---
+
+**Session ended:** 2026-05-16 14:30:12
+
+
+---
+
+**Session ended:** 2026-05-16 14:18:55
+
+
+---
+
+**Session ended:** 2026-05-16 14:07:08
+
+
+---
+
+**Session ended:** 2026-05-16 13:49:07
+
+
+---
+
+**Session ended:** 2026-05-16 13:34:36
+
+
+---
+
+**Session ended:** 2026-05-16 13:15:49
+
+
+---
+
+**Session ended:** 2026-05-16 11:42:42
+
+
+---
+
+**Session ended:** 2026-05-16 10:48:56
+
+
+---
+
+**Session ended:** 2026-05-16 10:10:47
+
+
+---
+
+**Session ended:** 2026-05-16 09:40:49
+
+
+---
+
+**Session ended:** 2026-05-16 09:14:45
+
+
+---
+
+**Session ended:** 2026-05-16 07:47:04
+
+
+---
+
+**Session ended:** 2026-05-16 07:41:22
+
+
+---
+
+**Session ended:** 2026-05-16 07:34:36
+
+
+---
+
+**Session ended:** 2026-05-15 20:25:41
+
+
+---
+
+**Session ended:** 2026-05-15 19:53:35
+
+
+---
+
+**Session ended:** 2026-05-15 19:42:56
+
+
+---
+
+**Session ended:** 2026-05-15 19:08:44
+
+
+---
+
+**Session ended:** 2026-05-15 19:00:51
+
+
+---
+
+**Session ended:** 2026-05-15 18:57:38
+
+
+---
+
+**Session ended:** 2026-05-15 18:12:00
+
+
+---
+
+**Session ended:** 2026-05-15 17:54:02
+
+
+---
+
+**Session ended:** 2026-05-15 17:47:16
+
+
+---
+
+**Session ended:** 2026-05-15 17:46:10
+
+
+---
+
+**Session ended:** 2026-05-15 17:26:11
+
+
+---
+
+**Session ended:** 2026-05-15 13:39:38
+
+
+---
+
+**Session ended:** 2026-05-15 13:25:47
+
+
+## 2026-05-19 — Documented penalty + Ostwald-ripening arc in branch log
+
+- Added §23 to `docs/spurious_ice_sed_air_branch_log.md` covering the full arc of changes since the previous log: identifying that `k_pen` suppressed Gibbs-Thomson, the `PenaltyWeight()` localization experiment, discovering the localized penalty was still acting as a directional mass sink (manufacturing a counterfeit GT signal), settling on `k_pen = 0`, observing both Ostwald ripening and necking at -5°C on the narrow-gap geometry, the `grain_sep` 5→20 µm widening for clean LSW isolation, and the HPC regression sweep.
+- Extended the trajectory summary at the bottom of the branch log with a 4th stage ("Vapor-penalty refinement and Ostwald-ripening diagnostics") so the document can carry the narrative arc for slide preparation.
+- No code or opts changes today.
+
+---
+
+## 2026-05-18 — Localized vapor penalty + warmer-T Ostwald ripening experiment
+
+- Diagnosed why disabling `k_pen` left a numerical artifact: with no penalty anywhere, tiny ice motions near solid boundaries deposit cumulative vapor mass inside sed (vap_src = -ρ_ice·ice_t), and `difvap_pen=1e-8` is too small to redistribute it. This produced the negative ρ_v ~ -1e-1 the user observed in ParaView inside sediment, and explains most of the -60% TOT_RHOV drift (integral pulled down by negative values in solid, not real bulk depletion).
+- Implemented "option B" for the penalty: added `PenaltyWeight()` in `material_properties.{h,c}` — a SmoothHeaviside of `(ice+sed - 0.85) / 0.15` clamped to [0,1]. Zero at the diffuse ice-air interface (ice+sed ≈ 0.5) so Gibbs-Thomson can emerge; unity in solid interior (ice+sed → 1) so rhov stays pinned to rhov_eq.
+- Replaced `g_phiiphis` / `dg_phiiphis` with `g_pen` / `dg_pen` in the penalty terms of `Residual_A1` and `Jacobian_A1` only (the difvap_pen weighting still uses the original `g_phia`).
+- Restored `-k_pen 1.0e3` in `solver.opts` (was 0); strength is moderate but penalty is localized so it does not suppress GT.
+- Created `inputs/experiment/30day_T-5_h1.00.opts` for the warmer-T diagnostic — at -5°C, rho_v_sat is ~12× larger than at -20°C, giving the system a much bigger vapor budget for grain-to-grain transfer in the same 30-day window.
+
+---
+
+## 2026-05-15 — Ice mass loss analysis, material parameters, and monitoring improvements
+
+- Diagnosed ice shrinkage as Allen-Cahn curvature coarsening (not sublimation): v_AC/v_phys ≈ 2.5×10⁸; proved via mass balance (ΔTOT_RHOV ≈ ρᵥₛ × ΔTOT_AIR, not ρᵢ × |ΔTOT_ICE|).
+- Created `docs/ice_mass_loss_analysis.md`: quantitative root-cause analysis, parameter recommendations, negative φᵢ at sed-air interface explanation.
+- Created `docs/material_parameters.md`: surface energies (γ_iv, γ_is, γ_sv), thermal properties, and grain geometry for water ice and lunar regolith with 14 literature citations.
+- Extended `AppCtx` in `include/NASA_types.h` with 4 initial-integral fields (tot_ice_0, tot_air_0, tot_sed_0, tot_rhov_0).
+- Updated `src/monitoring.c` to store initial integrals at step 0 and print percentage-change row after every domain-integral output.
+- Added dashed semi-opaque reference lines at initial mass values to `postprocess/plot_mass.py`.
+- Reduced `d0_sub0` (1e-9 → 1e-11) and `beta_sub0` in `src/permafrost2.c` to suppress Allen-Cahn coarsening.
+- Updated `inputs/universal.opts`: tightened solver tolerances (snes_atol 1e-12, ksp_atol 1e-12), raised k_pen (1e5→1e7), difvap_pen (1e-4→1e-8), Lambda (1e2→1e3), t_sed_freeze (1→300).
+- Updated `inputs/tests/test_2D_IceSedPair.opts`: humidity set to 1.00 for AC-coarsening diagnostic.
+
+---
+
+**Session ended:** 2026-05-15 12:19:43
+
+
+---
+
+**Session ended:** 2026-05-15 11:55:48
+
+
+---
+
+**Session ended:** 2026-05-15 11:24:23
+
+
+---
+
+**Session ended:** 2026-05-15 10:41:31
+
+
+---
+
+**Session ended:** 2026-05-15 10:32:44
+
+
+---
+
+**Session ended:** 2026-05-15 09:42:06
+
+
+## 2026-05-15 — deep root cause analysis of spurious air bug
+
+- Expanded docs/model_description.md §13 from 4 root causes to 8, with full quantitative analysis.
+- PRIMARY BUG identified: vapor penalty term in old assembly.c was missing the xi_v factor (`k_pen * g * drhov` instead of `xi_v * k_pen * g * drhov`). With xi_v=1e-3 and k_pen=1e9, this made the penalty 1000× too large, rendering the vapor equation essentially algebraic.
+- SECONDARY BUG: old IC set rhov = h0 * rho_vs everywhere, including inside solid. Correct formula is rhov = rho_vs * (h0 * phi_air + (1 - phi_air)), which gives rhov = rho_vs inside solid. With h0=0.5 and k_pen=1e9, the initial disequilibrium inside ice created a penalty residual 50× larger than the time derivative.
+- Documented cascade failure: IC bug → enormous t=0 residual → FD Jacobian errors of O(k_pen * eps_machine) = O(10) → Newton diverges or converges to wrong root → phi_i < 0 → spurious air accumulates over time.
+- Added quantitative table comparing all 12 changed parameters; added per-bug magnitude analysis and cascade walkthrough.
+
+---
+
+**Session ended:** 2026-05-15 09:24:34
+
+
+---
+
+**Session ended:** 2026-05-15 08:48:30
+
+
+## 2026-05-15 — model description document + t_sed_freeze tuning
+
+- Created docs/model_description.md: comprehensive model description covering governing equations, three-phase free energy, Allen-Cahn dynamics, vapor penalty scheme, sublimation kinetics, material properties, IGA/B-spline discretisation, generalized-α time integration, Newton-Krylov nonlinear solver, per-DOF convergence test, GMRES+ASM+ILU(2) linear solver, adaptive time stepping, and initial conditions. Includes analysis of why k_pen=1e9+FD Jacobian caused spurious air vs. the corrected k_pen=1e5+analytical Jacobian.
+- User changed t_sed_freeze 300 → 1 in universal.opts to more rapidly enter 2-phase mode.
+
+---
+
+## 2026-05-15 — tighten solver tolerances and improve preconditioner
+
+- Switched preconditioner from bjacobi+ILU(1) to ASM+ILU(2) with pc_asm_overlap=1 in universal.opts; additive Schwarz with node overlap improves conditioning at MPI block boundaries for the 4-DOF coupled B-spline system.
+- Tightened SNES atol 1e-8→1e-10 and raised snes_max_it 10→15 to prevent false convergence and handle stiff first timesteps.
+- Tightened KSP rtol 1e-5→1e-6 and atol 1e-8→1e-10 for consistency with SNES and to preserve Newton's quadratic convergence rate.
+- Reduced GMRES restart 500→200; the original restart=max_it meant unrestarted GMRES storing ~500 Krylov vectors; 200 sufficient for well-preconditioned problem.
+- Raised NRmax default 5→8 in universal.opts (consolidates per-file overrides from ~15 test files).
+- Added direct LU override (ksp_type preonly + pc_type lu) to all 10 1D test opts files; N≤760 DOFs so LU is trivially cheap and exact.
+- Removed redundant -NRmax 8 override blocks from all 21 test opts files.
+
+---
+
+**Session ended:** 2026-05-14 16:18:20
+
+
+---
+
+**Session ended:** 2026-05-14 16:12:24
+
+
+---
+
+**Session ended:** 2026-05-14 16:08:39
+
+
+---
+
+**Session ended:** 2026-05-14 15:55:02
+
+
+## 2026-05-14 — add single_ice and ice_sed_pair initial conditions
+
+- Added FormInitialSingleIceGrain2D/1D: single pure ice grain centred in the domain (no sediment). Square domain Lx=Ly=6.25e-5 m, standard Nx=Ny=96, hi-res Nx=Ny=192.
+- Added FormInitialIceSedPair2D/1D: one ice grain at (Lx/2, Ly/4) and one sediment grain at (Lx/2, 3Ly/4), evenly spaced with equal wall clearance and grain-surface gap. Same 2:1 domain as TouchingGrainPair; standard 95×190, hi-res 190×380.
+- Both ic_types wired into permafrost2.c dispatch (1D and 2D); error message updated; -ic_type option string updated.
+- Created 8 new opts files: test_{1D,2D}_SingleIceGrain{,_hires}.opts and test_{1D,2D}_IceSedPair{,_hires}.opts.
+- Added single_ice→SingleIceGrain and ice_sed_pair→IceSedPair to subfolder mapping in both run scripts.
+- Compiles clean (zero warnings).
+
+---
+
+## 2026-05-14 — add plot_mass.py phase mass tracking
+
+- Created postprocess/plot_mass.py: integrates ice, sediment, and vapor masses from sol_*.dat snapshots using first-order quadrature over the uniform mesh; plots all four curves (ice, sed, vap, total) with a vertical dashed line at t_sed_freeze marking the 3-phase → 2-phase model switch.
+- Time axis mapped from SSA_evo.dat; time units auto-selected by run length; mass units dimension-aware (kg m⁻² / kg m⁻¹ / kg).
+- Updated postprocess/run_postprocess.sh to call plot_mass.py automatically when igasol.dat and sol_*.dat are present.
+
+---
+
 **Session ended:** 2026-05-14 15:43:21
 
 

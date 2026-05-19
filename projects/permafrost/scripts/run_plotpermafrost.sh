@@ -30,8 +30,13 @@ execute_python_scripts() {
 
 # Main script logic
 if [[ -n $1 ]]; then
-    echo "Starting process for directory: $1"
-    dir=/Users/jacksonbaglino/SimulationResults/permafrost/scratch/$1
+    # Accept a full absolute path or a bare run-folder name (legacy).
+    if [[ "$1" == /* ]]; then
+        dir="$1"
+    else
+        dir=/Users/jacksonbaglino/SimulationResults/permafrost/scratch/$1
+    fi
+    echo "Starting process for directory: $dir"
 
     echo "Creating vtkOut directory"
     mkdir -p "$dir/vtkOut"

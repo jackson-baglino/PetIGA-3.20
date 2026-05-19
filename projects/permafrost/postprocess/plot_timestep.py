@@ -26,9 +26,21 @@ import matplotlib.pyplot as plt
 # Parser for outp.txt monitor table
 # ---------------------------------------------------------------------------
 
-# Data rows look like:
-#      0 |  0.00000e+00 | 1.000e-04 |  6.912e-09 |  ...
+# outp.txt contains two kinds of pipe-delimited rows that both start with a
+# number followed by '|':
+#
+#   Domain-integral table (9 fields after the step number):
+#     STEP | TIME [s] | DT [s] | TOT_ICE | TOT_AIR | TOT_SED | TEMP | TOT_RHOV | I-A INTERF | TRIPL_JUNC
+#        0 |  0.00000e+00 | 1.000e-02 |  1.125e-09 |  ...
+#
+#   SNES/Newton iteration table (13 fields after the iteration number):
+#     it | fnorm | n0 | r0 | s0 | n1 | r1 | s1 | n2 | r2 | s2 | n3 | r3 | s3
+#      0 |  6.8134e-15 |   4.818e-15 | 1.000e+00 | ...
+#
+# We must match only domain-integral rows.  The reliable discriminator is
+# field count: domain rows have exactly _DOMAIN_NFIELDS fields after the step.
 _ROW_RE = re.compile(r"^\s*(\d+)\s*\|(.+)$")
+_DOMAIN_NFIELDS = 10  # TIME, DT, TOT_ICE, TOT_AIR, TOT_SED, TEMP, TOT_RHOV, I-A INTERF, TRIPL_JUNC, TOTAL_MASS
 
 
 def _parse_float(s: str) -> float:
@@ -54,7 +66,7 @@ def load_monitor(outp_path: str) -> np.ndarray:
                 continue
             step = int(m.group(1))
             fields = m.group(2).split("|")
-            if len(fields) < 2:
+            if len(fields) != _DOMAIN_NFIELDS:   # skip SNES/Newton iteration rows
                 continue
             t  = _parse_float(fields[0])   # TIME [s]
             dt = _parse_float(fields[1])   # DT [s]

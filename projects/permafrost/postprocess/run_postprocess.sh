@@ -62,19 +62,21 @@ echo "Detected dim = $dim"
 overall_exit=0
 
 # ---------------------------------------------------------------------------
-# VTK conversion (all dimensions)
+# VTK conversion (2D and 3D only — not meaningful for 1D)
 # ---------------------------------------------------------------------------
-if [[ -f "$RUN_DIR/igasol.dat" ]]; then
-    echo ""
-    echo "--- VTK conversion ---"
-    mkdir -p "$RUN_DIR/vtkOut"
-    set +e
-    "$PYTHON" "$POSTPROCESS_DIR/plotpermafrost.py" --dir "$RUN_DIR" \
-        2>&1 | sed 's/^/  /'
-    (( overall_exit += $? )) || true
-    set -e
-else
-    echo "⚠️  igasol.dat not found — skipping VTK conversion."
+if [[ "$dim" != "1" ]]; then
+    if [[ -f "$RUN_DIR/igasol.dat" ]]; then
+        echo ""
+        echo "--- VTK conversion ---"
+        mkdir -p "$RUN_DIR/vtkOut"
+        set +e
+        "$PYTHON" "$POSTPROCESS_DIR/plotpermafrost.py" --dir "$RUN_DIR" \
+            2>&1 | sed 's/^/  /'
+        (( overall_exit += $? )) || true
+        set -e
+    else
+        echo "⚠️  igasol.dat not found — skipping VTK conversion."
+    fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -121,6 +123,20 @@ if [[ -f "$RUN_DIR/outp.txt" ]]; then
     set +e
     "$PYTHON" "$POSTPROCESS_DIR/plot_timestep.py" \
         --dir "$RUN_DIR" --save "$RUN_DIR/timestep.png" \
+        2>&1 | sed 's/^/  /'
+    (( overall_exit += $? )) || true
+    set -e
+fi
+
+# ---------------------------------------------------------------------------
+# Phase mass vs. time (igasol.dat + sol_*.dat required)
+# ---------------------------------------------------------------------------
+if [[ -f "$RUN_DIR/igasol.dat" ]] && ls "$RUN_DIR"/sol_*.dat &>/dev/null 2>&1; then
+    echo ""
+    echo "--- Phase mass vs. time ---"
+    set +e
+    "$PYTHON" "$POSTPROCESS_DIR/plot_mass.py" \
+        --dir "$RUN_DIR" --save "$RUN_DIR/mass.png" \
         2>&1 | sed 's/^/  /'
     (( overall_exit += $? )) || true
     set -e
