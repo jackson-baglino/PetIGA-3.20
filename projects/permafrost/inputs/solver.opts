@@ -68,7 +68,7 @@
 -difvap_pen 1.0e-8                      # D_pen = difvap_pen * difvap (in ice/sed regions)
                                         # — keeps spurious-air-in-solid from migrating
                                         #   (justified mechanism; Kaempfer-Plapp uses the same trick)
--k_pen 1.0e3                            # vapor interface-equilibrium stiffness, ACTIVE BUT LOCALIZED.
+-k_pen 0.0                              # vapor interface-equilibrium stiffness, ACTIVE BUT LOCALIZED.
                                         # Penalty form: xi_v * k_pen * g_pen(ice+sed) * (rhov - rhov_eq)
                                         # where g_pen() is PenaltyWeight() — a SmoothHeaviside shifted to
                                         # be zero at the diffuse ice-air interface (ice+sed ≈ 0.5) and
