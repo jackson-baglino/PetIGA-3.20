@@ -110,6 +110,23 @@ sim_exit=0
 ###############################################################################
 compile_code() {
     echo ""
+    # Skip-compile path: required when multiple parallel jobs share the same
+    # project root, since `make clean && make all` in shared obj/ races between
+    # jobs and produces "Stale file handle" / "No space left on device" errors
+    # when one job's `make clean` deletes obj/*.o while another job is mid-write.
+    # Set SKIP_COMPILE=1 (e.g. via `sbatch --export=ALL,SKIP_COMPILE=1`) when the
+    # binary has already been built by the submitter before fanning out jobs.
+    if [[ "${SKIP_COMPILE:-0}" == "1" ]]; then
+        echo "--- Skipping compile (SKIP_COMPILE=1) ---"
+        if [ ! -f "$EXEC" ]; then
+            echo "❌ SKIP_COMPILE=1 but executable not found: $EXEC"
+            echo "   Build first on the submission host, then resubmit."
+            exit 1
+        fi
+        echo "Using existing executable: $EXEC"
+        return
+    fi
+
     echo "--- Compiling ---"
     echo "Project root: $PROJECT_ROOT"
 

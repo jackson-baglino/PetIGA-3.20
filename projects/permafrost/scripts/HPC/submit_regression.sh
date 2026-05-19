@@ -46,10 +46,21 @@ DIAGNOSTIC_GEOM="2D_separated_grains"
 
 cd "$PROJECT_ROOT"
 
-if [[ ! -f permafrost ]]; then
-    echo "❌ ./permafrost not found. Build first (make all)."
+# Build once on the submission host so the fanned-out jobs don't all race to
+# `make clean && make all` in the shared obj/ directory (which produces
+# "Stale file handle" / "No space left on device" errors when one job's
+# `make clean` deletes obj/*.o while another job is mid-write).
+echo ""
+echo "--- Building permafrost on submission host ---"
+if ! make all; then
+    echo "❌ Build failed. Fix the build before submitting jobs."
     exit 1
 fi
+if [[ ! -x ./permafrost ]]; then
+    echo "❌ ./permafrost still missing after make all."
+    exit 1
+fi
+echo "✅ Build complete: $(ls -la ./permafrost | awk '{print $5, $6, $7, $8}')"
 
 # Compute optimal (nprocs, nnodes, ntasks_per_node) for a geometry's grid size.
 # Echoes the three values space-separated; caller reads with `read`.
@@ -90,10 +101,13 @@ submit_one() {
     printf "→ %-25s DoFs=%-8d nprocs=%-3d nodes=%-2d tasks/node=%d\n" \
         "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node"
 
+    # --export=ALL,SKIP_COMPILE=1 forwards the submitter's environment and adds
+    # the skip-compile flag — see compile_code() in run_permafrost.sh.
     sbatch --job-name="$job_name" \
            --nodes="$nnodes" \
            --ntasks="$nprocs" \
            --ntasks-per-node="$tasks_per_node" \
+           --export=ALL,SKIP_COMPILE=1 \
            "$RUN_SCRIPT" "$geom" "$exp" "$tag"
 }
 
