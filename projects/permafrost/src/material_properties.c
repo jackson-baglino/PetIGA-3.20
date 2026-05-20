@@ -194,7 +194,7 @@ void SmoothHeavisidePoly(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi)
  * mid-thickness of a typical ice-air interface (ice+sed ≈ 0.5) falls fully in
  * the zero region, so Gibbs-Thomson can emerge at the interface, while the
  * solid interior (ice+sed → 1) still has its rhov pinned to rhov_eq. */
-#define PENALTY_PHI_LO 0.85
+#define PENALTY_PHI_LO 0.90
 #define PENALTY_PHI_HI 1.00
 void PenaltyWeight(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi)
 {

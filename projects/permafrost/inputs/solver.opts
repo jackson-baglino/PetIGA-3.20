@@ -68,16 +68,20 @@
 -difvap_pen 1.0e-8                      # D_pen = difvap_pen * difvap (in ice/sed regions)
                                         # — keeps spurious-air-in-solid from migrating
                                         #   (justified mechanism; Kaempfer-Plapp uses the same trick)
--k_pen 0.0                              # vapor interface-equilibrium stiffness, ACTIVE BUT LOCALIZED.
+-k_pen 1.0e3                            # vapor interface-equilibrium stiffness, ACTIVE BUT LOCALIZED.
                                         # Penalty form: xi_v * k_pen * g_pen(ice+sed) * (rhov - rhov_eq)
                                         # where g_pen() is PenaltyWeight() — a SmoothHeaviside shifted to
-                                        # be zero at the diffuse ice-air interface (ice+sed ≈ 0.5) and
-                                        # unity deep in solid (ice+sed → 1). This keeps rhov pinned to
-                                        # rhov_eq in the solid interior (so vapor doesn't drift to large
-                                        # spurious values where ice_t accumulates over time) WITHOUT
-                                        # suppressing Gibbs-Thomson at the ice-air interface where the
-                                        # phase-field curvature term needs free rhov to express the
-                                        # curvature-dependent equilibrium that drives Ostwald ripening.
+                                        # be zero for ice+sed < 0.90 (so the diffuse ice-air interface
+                                        # and the inner-band sub_src region are free of penalty) and
+                                        # unity deep in solid (ice+sed → 1). This pins rhov to rhov_eq
+                                        # in the solid interior to suppress the runaway vapor build-up
+                                        # that vap_src would otherwise drive there (vap_src is now
+                                        # paired with sub_src and is naturally localized to the
+                                        # ice-air diffuse band, but the inner edge of that band sits
+                                        # in slow-diffusion territory and accumulates rhov without the
+                                        # penalty as a sink). The Gibbs-Thomson curvature dependence
+                                        # at the ice-air interface midpoint is preserved because the
+                                        # penalty is zero there.
                                         # See src/material_properties.c::PenaltyWeight for the form.
 -k_sed_pen -1                           # sediment restoring stiffness (-1 = auto: 1e-4/eps^2)
 -Lambda 1.0e4                           # triple-junction free-energy penalty strength
