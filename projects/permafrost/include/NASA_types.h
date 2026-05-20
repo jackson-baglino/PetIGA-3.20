@@ -110,6 +110,14 @@ typedef struct {
   PetscReal k_pen;        // vapour interface equilibrium stiffness
   PetscReal k_sed_pen;    // sediment shape-restoring stiffness
 
+  /* Gibbs-Thomson curvature coupling: rhoI_vs_eff = rhoI_vs * (1 + d0_GT * kappa)
+   * d0_GT is the capillary length (γ·v_m / (R_g·T)) — for ice at -5°C, ~9.6e-10 m.
+   * Default 0 disables the GT correction (recovers flat-interface sub_src behavior).
+   * Setting d0_GT to the physical value enables explicit Gibbs-Thomson driving force
+   * for Ostwald ripening at the ice-air diffuse interface. Curvature kappa is
+   * computed from gradients of phi_ice via Curvature() in material_properties.c. */
+  PetscReal d0_GT;        // Gibbs-Thomson capillary length [m]; 0 = disabled
+
   /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */
   PetscReal phase_lo;     // lower bound for phi_ice, phi_sed, phi_air (default -0.25)
   PetscReal phase_hi;     // upper bound for phi_ice, phi_sed, phi_air (default  1.25)

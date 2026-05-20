@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
     user.difvap_pen = 1.0e-5;  /* factor (dimensionless): D_pen = difvap_pen * difvap */
     user.k_pen      = 1.0e7;   /* vapour interface equilibrium stiffness */
     user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-4/eps² after options */
+    user.d0_GT      = 0.0;     /* Gibbs-Thomson capillary length: 0 = disabled (default) */
     user.phase_lo   = -0.25;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.25;   /* upper bound: phi above this → abort */
     user.d0_sub0    = 1.0e-9;    /* capillary length scale (physical) */
@@ -292,6 +293,10 @@ int main(int argc, char *argv[]) {
              "Sediment shape-restoring stiffness "
              "(default: 1e-3/eps²; -1 = use default)",
              "", user.k_sed_pen, &user.k_sed_pen, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-d0_GT",
+             "Gibbs-Thomson capillary length [m]: rhoI_vs_eff = rhoI_vs * (1 + d0_GT * kappa). "
+             "Physical value ~9.6e-10 m for ice at -5°C. 0 (default) disables the GT correction.",
+             "", user.d0_GT, &user.d0_GT, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-Lambda",
              "Triple-junction penalty strength in the free energy "
              "(larger values suppress spurious phases at binary interfaces; default 1.0)",
@@ -374,6 +379,9 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "\n");
     PetscPrintf(PETSC_COMM_WORLD, "Vapor diffusivity:            D_v = %.5e m²/s \n", user.dif_vap);
     PetscPrintf(PETSC_COMM_WORLD, "k_sed_pen:                    %.2e \n", user.k_sed_pen);
+    PetscPrintf(PETSC_COMM_WORLD, "d0_GT (capillary length):     %.2e m  %s\n",
+                user.d0_GT,
+                (user.d0_GT == 0.0) ? "[Gibbs-Thomson DISABLED]" : "[GT active]");
 
     /* Compute saturation vapor density and its derivative based on initial temperature */
     PetscReal rho_rhovs;   /* Ratio of ice density to saturation vapor density */
