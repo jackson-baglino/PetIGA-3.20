@@ -1,0 +1,18 @@
+# =============================================================================
+# experiment/90day_T-5_h1.00.opts — 90 days at -5°C, saturated humidity
+#
+# Extended-time version of 30day_T-5_h1.00. The 30-day run on the wide-
+# separation (20 µm) 2D_separated_grains geometry showed no measurable
+# Ostwald-ripening signal in the integrals (TOT_ICE drift +0.001%). LSW
+# rate at -5°C with R_small=12 µm is intrinsically slow; tripling the
+# wall-clock budget tests whether a signal eventually emerges through
+# bulk-air vapor diffusion alone (no diffuse-interface overlap, since
+# the two grains are 20 µm apart vs ~3 µm interface width).
+# =============================================================================
+
+-t_final 7776000.0                      # 90 days (s)
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
