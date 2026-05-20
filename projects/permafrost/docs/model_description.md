@@ -103,25 +103,33 @@ so latent heat is released when air fraction decreases (ice or sediment grows) a
 
 The vapor density equation enforces two physical constraints:
 1. **Diffusive transport** of vapor through the air phase.
-2. **Local vapor equilibrium** at ice and sediment surfaces.
+2. **Local vapor equilibrium** in solid interiors (numerical sink, not a physical claim — see "Interface equilibrium penalty" below).
 
-$$\frac{\partial\rho_v}{\partial t} + \nabla\cdot\left(-D_{\mathrm{eff}}\,\phi_a^{\mathrm{eff}}\,\nabla\rho_v\right) + k_{\mathrm{pen}}\,H(\phi_i+\phi_s)\,(\rho_v - \rho_v^{\mathrm{eq}}) = \xi_v\,\rho_{\mathrm{ice}}\frac{\partial\phi_a}{\partial t}$$
+$$\frac{\partial\rho_v}{\partial t} \;-\; \nabla\cdot\!\left(\xi_v\, D_{\mathrm{eff}}(\phi)\,\phi_a^{\mathrm{eff}}\,\nabla\rho_v\right) \;+\; \xi_v\, k_{\mathrm{pen}}\, G_{\mathrm{pen}}(\phi_i+\phi_s)\,(\rho_v - \rho_v^{\mathrm{eq}}) \;=\; \rho_{\mathrm{ice}}\, S_{\mathrm{sub}}$$
 
-**Penalised diffusivity:** The effective vapor diffusivity transitions smoothly between the full air value and a reduced (penalised) value inside solid phases:
+where $S_{\mathrm{sub}}$ is the sublimation source term from the ice equation (§4) — the same expression appears on both sides of the ice/vapor pair, guaranteeing pointwise mass balance.
 
-$$D_{\mathrm{eff}} = D_v H(\phi_i) + D_{\mathrm{pen}}\left[1 - H(\phi_i)\right], \quad D_{\mathrm{pen}} = \alpha_{\mathrm{pen}} D_v$$
+**Penalised diffusivity:** The effective vapor diffusivity transitions smoothly between the full physical value in air and a reduced (penalised) value inside *solid phases* (ice or sediment):
 
-where H(φ) = φ³(3 − 2φ) is a smooth cubic Heaviside function and α_pen = 10⁻⁴ is the penalty factor. This reduces diffusivity by four orders of magnitude inside the ice phase while maintaining a smooth, differentiable transition.
+$$D_{\mathrm{eff}} = D_{\mathrm{pen}}\, H(\phi_i + \phi_s) \;+\; D_v\,\bigl[1 - H(\phi_i + \phi_s)\bigr], \quad D_{\mathrm{pen}} = \alpha_{\mathrm{pen}} D_v$$
 
-**Interface equilibrium penalty:** The term k_pen H(φ_i+φ_s)(ρ_v − ρ_v^eq) drives ρ_v toward the local thermodynamic equilibrium value inside solid phases, with k_pen = 10⁵ Pa (penalty stiffness):
+where H(φ) = φ³(3 − 2φ) is the smooth cubic Heaviside and α_pen = 10⁻⁸ is the penalty factor. The switch argument (φ_i + φ_s) puts the penalty on **both ice and sed**, leaving bulk air at full physical diffusivity. (An earlier version of the code used H(φ_i) here, which inverted the role of the penalty and crippled bulk-air vapor diffusion — see branch log §25.)
+
+**Interface equilibrium penalty:** The term $\xi_v\,k_{\mathrm{pen}}\,G_{\mathrm{pen}}(\phi_i+\phi_s)\,(\rho_v - \rho_v^{\mathrm{eq}})$ drives ρ_v toward the local equilibrium value, but only in **deep solid** where the diffuse interface has fully resolved. $G_{\mathrm{pen}}$ is *not* the bare cubic Heaviside; it is a *shifted* smooth Heaviside concentrated near the bulk-solid edge:
+
+$$G_{\mathrm{pen}}(\phi) = \begin{cases} 0 & \phi \le \phi_{\mathrm{lo}} \\ H\!\left(\dfrac{\phi - \phi_{\mathrm{lo}}}{\phi_{\mathrm{hi}} - \phi_{\mathrm{lo}}}\right) & \phi_{\mathrm{lo}} < \phi < \phi_{\mathrm{hi}} \\ 1 & \phi \ge \phi_{\mathrm{hi}} \end{cases}$$
+
+with $\phi_{\mathrm{lo}} = 0.90$, $\phi_{\mathrm{hi}} = 1.00$ (see `PenaltyWeight()` in `src/material_properties.c`). The penalty is *off* through the entire diffuse interface (so Gibbs-Thomson curvature dependence in §4 emerges freely) and *on* in the deep-solid edge of the band where vapor would otherwise drift to large values because the diffusion-starved zone there has no other sink.
+
+The reference field is
 
 $$\rho_v^{\mathrm{eq}} = (\phi_i + \phi_s)\,\rho_{vs}(T) + \phi_a\,\rho_v$$
 
-Here ρ_{vs}(T) is the saturation vapor density over ice (see §5), and H(φ_i+φ_s) activates the penalty only in solid regions.
+so the penalty in pure solid pulls ρ_v toward ρ_{vs}(T) (saturation), and in pure air becomes degenerate (ρ_v − ρ_v = 0). k_pen = 10³ s⁻¹.
 
-**Air fraction limit:** φ_a^eff = max(φ_a, φ_a^lim) with φ_a^lim = 10⁻⁶ prevents numerical singularity when φ_a → 0.
+**Air fraction limit:** $\phi_a^{\mathrm{eff}} = \max(\phi_a, \phi_a^{\mathrm{lim}})$ with $\phi_a^{\mathrm{lim}} = 10^{-6}$ prevents numerical singularity when $\phi_a \to 0$.
 
-**Mass conservation source:** The right-hand side ξ_v ρ_ice ∂φ_a/∂t = −ξ_v ρ_ice(∂φ_i/∂t + ∂φ_s/∂t) accounts for the change in vapor content due to phase-field evolution. A scaling factor ξ_v = 10⁻⁴ is applied to the spatial terms.
+**Mass-balance source:** The right-hand side $\rho_{\mathrm{ice}}\, S_{\mathrm{sub}}$ pairs the vapor equation directly with the sublimation term in the ice equation (§4). Using $S_{\mathrm{sub}}$ rather than $-\rho_{\mathrm{ice}}\,\partial\phi_i/\partial t$ avoids over-counting the Stefan condition: the latter would include AC interface motion (mass-neutral rearrangement), producing spurious vapor at ice-sed boundaries where ice can move without sublimating (branch log §26). No ξ_v factor appears on this term — it is the physical mass-balance closure, not a regularisation. ξ_v scales only the diffusion and equilibrium-penalty terms.
 
 ---
 
@@ -129,11 +137,25 @@ Here ρ_{vs}(T) is the saturation vapor density over ice (see §5), and H(φ_i+�
 
 The **Allen-Cahn equation for ice** includes a phase-change source term:
 
-$$S_{\mathrm{sub}} = \frac{\alpha_{\mathrm{sub}}\,\phi_i^2\phi_a^2}{\rho_{\mathrm{ice}}}\,(\rho_v - \rho_{vs})$$
+$$S_{\mathrm{sub}} = \frac{\alpha_{\mathrm{sub}}\,\phi_i^2\phi_a^2}{\rho_{\mathrm{ice}}}\,\bigl(\rho_v - \rho_{vs}^{\mathrm{eff}}\bigr)$$
 
-This term localises the phase change to ice-air interfaces (through the $\phi_i^2\phi_a^2$ factor, which peaks at the interface where both φ_i and φ_a are non-zero) and drives:
-- **Sublimation** when ρ_v < ρ_vs: ice decreases, φ_a increases.
-- **Condensation** when ρ_v > ρ_vs: ice grows, φ_a decreases.
+This term localises the phase change to ice-air interfaces (through the $\phi_i^2\phi_a^2$ factor, which peaks at the interface midpoint where both φ_i and φ_a are non-zero, and vanishes identically at ice-sed boundaries where φ_a = 0) and drives:
+- **Sublimation** when $\rho_v < \rho_{vs}^{\mathrm{eff}}$: ice decreases, φ_a increases.
+- **Condensation** when $\rho_v > \rho_{vs}^{\mathrm{eff}}$: ice grows, φ_a decreases.
+
+**Gibbs-Thomson curvature dependence.** The local equilibrium vapor density at a curved ice surface differs from the flat-interface saturation value $\rho_{vs}(T)$ by the Kelvin / Gibbs-Thomson correction:
+
+$$\rho_{vs}^{\mathrm{eff}} \;=\; \rho_{vs}(T)\,\bigl(1 + d_0^{\mathrm{GT}} \,\kappa \bigr), \qquad \kappa \;=\; -\nabla\!\cdot\!\left(\frac{\nabla\phi_i}{|\nabla\phi_i|}\right)$$
+
+where $d_0^{\mathrm{GT}} = \gamma_{iv} v_m / (R_g T)$ is the capillary length (~9.6 × 10⁻¹⁰ m for ice at −5 °C), and κ is the curvature of the iso-surfaces of φ_i computed from its gradient and Hessian via
+
+$$\kappa \;=\; -\frac{\nabla^2\phi_i}{|\nabla\phi_i|_{\mathrm{reg}}} \;+\; \frac{(\nabla\phi_i)^{\!\top}\!\mathbf H(\phi_i)\,(\nabla\phi_i)}{|\nabla\phi_i|_{\mathrm{reg}}^3}$$
+
+with $|\nabla\phi_i|_{\mathrm{reg}}^2 = |\nabla\phi_i|^2 + (0.01/\varepsilon)^2$ for stability in bulk regions where $|\nabla\phi_i| \to 0$. The implementation is in `Curvature()` in `src/material_properties.c`, and `Residual_A1` / `Jacobian_A1` use `IGAPointFormHess` to read the Hessian at each quadrature point. In 1D, κ ≡ 0 (no curvature exists in 1D); the function short-circuits to zero.
+
+The default `d0_GT = 0` recovers the flat-interface behavior identically. Setting `-d0_GT 9.6e-10` enables the physical Gibbs-Thomson coupling that drives Lifshitz-Slyozov-Wagner Ostwald ripening between grains of different curvature.
+
+**Mass conservation.** $S_{\mathrm{sub}}$ also appears on the right-hand side of the vapor equation (§3.4) as $\rho_{\mathrm{ice}}\,S_{\mathrm{sub}}$, so every gram of ice that grows comes from one gram of vapor (and vice versa) by construction at every quadrature point.
 
 The kinetic coefficient α_sub and mobility M are derived from the **Gibbs–Thomson relation** using capillary length d₀ and kinetic coefficient β:
 
@@ -400,28 +422,42 @@ Full solution fields (φ_i, T, ρ_v, φ_s, φ_a) are written as binary PetIGA `s
 
 | Parameter | Symbol | Value | Source |
 |-----------|--------|-------|--------|
-| B-spline degree | p | 2 | `universal.opts` |
-| B-spline continuity | C | 1 (C¹) | `universal.opts` |
-| Interface half-width (standard) | ε | 7.12 × 10⁻⁷ m | test opts |
-| Interface half-width (hi-res) | ε | 3.56 × 10⁻⁷ m | test opts |
+| B-spline degree | p | 2 | `inputs/solver.opts` |
+| B-spline continuity | C | 1 (C¹) | `inputs/solver.opts` |
+| Interface half-width (standard) | ε | 7.12 × 10⁻⁷ m | `inputs/geometry/*` |
+| Interface half-width (hi-res) | ε | 3.56 × 10⁻⁷ m | `inputs/geometry/*_hires.opts` |
 | Ice-vapor surface energy | γ_iv | 0.109 J m⁻² | `permafrost2.c` |
 | Ice-sediment surface energy | γ_is | 0.033 J m⁻² | `permafrost2.c` |
 | Sediment-vapor surface energy | γ_sv | 0.056 J m⁻² | `permafrost2.c` |
-| Triple-junction penalty | Λ | 1.0 | `permafrost2.c` |
+| Triple-junction penalty | Λ | 1.0 × 10⁴ | `inputs/solver.opts` |
 | Latent heat of sublimation | L_sub | 2.83 × 10⁶ J kg⁻¹ | `permafrost2.c` |
 | Air diffusivity floor | φ_a^lim | 10⁻⁶ | `permafrost2.c` |
-| Diffusivity penalty factor | α_pen | 10⁻⁴ | `universal.opts` |
-| Interface equilibrium stiffness | k_pen | 10⁵ Pa | `universal.opts` |
-| Vapor time scaling | ξ_v | 10⁻⁴ | `permafrost2.c` |
-| Thermal time scaling | ξ_T | 10⁻² | `permafrost2.c` |
-| Capillary length scale | d₀⁰ | 10⁻⁹ m | `permafrost2.c` |
+| Diffusivity penalty factor | α_pen | 10⁻⁸ | `inputs/solver.opts` |
+| Interface equilibrium stiffness | k_pen | 10³ s⁻¹ | `inputs/solver.opts` |
+| Penalty ramp band | [φ_lo, φ_hi] | [0.90, 1.00] | `src/material_properties.c::PenaltyWeight` |
+| Vapor time scaling | ξ_v | 1.0 | `inputs/solver.opts` |
+| Thermal time scaling | ξ_T | 1.0 | `inputs/solver.opts` |
+| Capillary length scale (mobility derivation) | d₀⁰ | 10⁻⁹ m | `permafrost2.c` |
+| Gibbs-Thomson capillary length (sub_src) | d₀^GT | 9.6 × 10⁻¹⁰ m (physical) or 0 (default) | `inputs/experiment/*.opts`, `-d0_GT` |
 | Kinetic coefficient | β⁰ | 1.4 × 10⁵ s m⁻¹ | `permafrost2.c` |
-| Relaxation steps | n_relax | 1 | `universal.opts` |
-| Sed. freeze time | t_sed_freeze | 1 s | `universal.opts` |
+| Relaxation steps | n_relax | 1 | `inputs/solver.opts` |
+| Sed. freeze time | t_sed_freeze | 10 s | `inputs/experiment/*.opts` |
 
 ---
 
 ## 13. Why the Current Model Eliminates Spurious Air
+
+> **Historical note.** This section documents the early-2026 cascade of
+> bugs that produced the spurious-air-in-ice failure on the 2-phase
+> formulation (run dated 2026-05-05). The fixes described here address
+> that *specific* failure. Several *further* model-level fixes were
+> made later on the `fix/spurious-ice-sed-air-penalty` branch — the
+> 3-phase ice equation under frozen sed, the diffusivity-penalty
+> direction inversion, the `vap_src ↔ sub_src` pairing, the
+> Gibbs-Thomson curvature dependence — and are documented narratively in
+> [`spurious_ice_sed_air_branch_log.md`](spurious_ice_sed_air_branch_log.md).
+> The formal model equations in §3–§5 reflect the *current* code
+> including those later fixes.
 
 A detailed comparison of the old run (`test_1D_IceSlab_2Phase_difvappen1e-07_k_pen1e09`, 2026-05-05) with the current code reveals **eight distinct errors**, each of which would individually degrade simulation quality, and which together created a catastrophic failure cascade that drove φ_i < 0 (spurious air) throughout the domain.
 

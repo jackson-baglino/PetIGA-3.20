@@ -456,12 +456,12 @@ adding it, creating a local `rhov < rhoI_vs` deficit that the bulk
 "corrected" by sublimating ice. The penalty was, in effect, manufacturing a
 counterfeit Gibbs-Thomson signal by acting as a directional mass sink.
 
-**What happened.** Settled on `-k_pen 0` as the operating configuration.
-The `PenaltyWeight` infrastructure stays in the codebase, ready to re-enable
-if a future geometry exposes a real numerical need (e.g., the original
-concentric-shell-of-ice-around-sed configurations). For everything we run
-today the penalty is off and the model's intrinsic AC + Stefan + sub_src
-coupling has to carry the dynamics on its own.
+**What happened.** Adopted `-k_pen 0` as a diagnostic configuration to
+isolate the "raw" model physics from any penalty artifact. The
+`PenaltyWeight` infrastructure stays in the codebase; it is later
+re-enabled at moderate strength in §26 once the diffusion-direction
+fix (§25) and `vap_src` reformulation (§26) exposed a real numerical
+need for a deep-solid sink that the penalty correctly provides.
 
 ### 23d — Wide-separation geometry for clean LSW   (`cc50c23`)
 
@@ -519,13 +519,169 @@ Before §23: model was numerically stable but Ostwald ripening was being
 secretly suppressed by the `k_pen` penalty, which had been included for a
 mass-conservation reason that had since been fixed at a different layer.
 
-After §23: penalty is disabled (`k_pen = 0`); ParaView confirms that at
-−5 °C on the narrow-gap geometry the model produces **both** Ostwald
-ripening (small grain shrinks toward the larger one) **and** necking
-(diffuse interfaces meet and form a connecting bridge). Clean LSW
-isolation requires the wide-gap geometry. The `PenaltyWeight` machinery is
-retained in the codebase as an option for future geometries that genuinely
-need it.
+After §23: the penalty is temporarily disabled (`k_pen = 0`) as a
+diagnostic and ParaView confirms that at −5 °C on the narrow-gap
+geometry the model produces **both** Ostwald ripening (small grain
+shrinks toward the larger one) **and** necking (diffuse interfaces meet
+and form a connecting bridge). Clean LSW isolation requires the wide-gap
+geometry. The `PenaltyWeight` machinery is retained; §26 re-enables it
+at a tighter band once §24–25 are in place.
+
+---
+
+## 24 — Explicit Gibbs-Thomson curvature dependence in `sub_src`   (`73aca7e`, `2c80a78`)
+
+**Why.** After §23 the model could ripen at narrow grain separation (5 µm
+gap), but the mechanism turned out to be sintering through overlapping
+diffuse interfaces (Kuczynski-style) rather than bulk-air LSW Ostwald
+ripening. At 20 µm separation no measurable mass transfer occurred even
+over 90 days at −5 °C. The reason: the existing `sub_src` closure used
+`(rhov − rhoI_vs)` with a flat-interface `rhoI_vs(T)`, so the local
+equilibrium at a curved ice surface had no curvature dependence. Without
+it, two grains of different curvature see *the same* equilibrium vapor
+density and there is nothing to drive vapor from one to the other.
+
+**What happened.** Added an explicit Gibbs-Thomson correction:
+
+```
+rhoI_vs_eff(x) = rhoI_vs(T) * (1 + d0_GT * kappa(x))
+sub_src        = alph_sub * ice^2 * air^2 * (rhov - rhoI_vs_eff) / rho_ice
+```
+
+where `kappa = -div(grad_ice / |grad_ice|)` is computed from the phase
+field's gradient and Hessian, and `d0_GT = γ_iv·v_m / (R_g·T)` is the
+capillary length (~9.6×10⁻¹⁰ m for ice at −5 °C).
+
+Implementation details:
+
+- `include/NASA_types.h`: `AppCtx.d0_GT` field (default 0 = disabled,
+  recovers flat-interface behavior bit-for-bit).
+- `src/permafrost2.c`: `-d0_GT` CLI option + startup printout
+  identifying whether GT is active.
+- `include/material_properties.h`, `src/material_properties.c`:
+  `Curvature()` function that returns `kappa` plus optional
+  `dkappa_dg[]` (length `dim`) and `dkappa_dH[]` (length `dim*dim`)
+  partials for the analytical Jacobian chain rule. Regularization
+  `|grad|^2 + (0.01/eps)^2` keeps `kappa` bounded in bulk regions
+  where `|grad_ice| → 0`. `dim == 1` short-circuits to `kappa = 0`
+  (curvature is identically zero in 1D).
+- `src/assembly.c::Residual_A1`: reads the Hessian via
+  `IGAPointFormHess` (which uses `p->shape[2]`; the IGA's default
+  `order` already matches the polynomial degree p=2 so no extra
+  setup is required), computes `kappa`, and uses `rhoI_vs_eff` in
+  `sub_src`.
+- `src/assembly.c::Jacobian_A1`: reads `N2` (second-derivative shape
+  functions) and `Curvature`'s partials, updates the existing
+  `[ice, *]` sub_src rows to use `rhoI_vs_eff` and `d_rhovs_eff_dtem`,
+  and adds a new analytical `J[ice, ice]` block coupling `phi_ice`
+  through `N1[b][l] * dkappa/dg_l + N2[b][k][l] * dkappa/dH_{kl}`.
+  (After §26 the same chain is wired into `J[vap, ice]` with the
+  opposite sign because `vap_src = -rho_ice * sub_src` couples
+  symmetrically.)
+
+A new pair of experiment files exercises GT in an A/B sweep:
+`inputs/experiment/30day_T-5_h1.00_GTphys.opts` (`-d0_GT 9.6e-10`,
+physical magnitude) and `30day_T-5_h1.00_GTamp.opts` (`-d0_GT 1.0e-8`,
+~10× amplified for an unambiguous diagnostic signal).
+
+The Jacobian is analytical (not FD) because finite-difference Jacobians
+have historically caused Newton convergence issues on this model — the
+`d0_GT * kappa` correction is ~10⁻⁴ relative to `rhoI_vs`, well below
+the FD step size noise.
+
+---
+
+## 25 — Vapor diffusivity penalty direction fix   (`436c1ac`)
+
+**Why.** Enabling §24 with `d0_GT` non-zero quickly showed that the
+diffuse-interface vapor field had a strange pattern in ParaView: a
+"ring" of saturated vapor pinned tightly to each grain that didn't
+diffuse outward across the bulk-air gap. Investigation revealed a
+long-standing bug in the diffusivity penalty: the switch was on
+`g(phi_ice)`, so the *penalty* (1e-8 × physical) applied in **air** and
+*full physical* diffusivity applied in **ice** — the opposite of what
+the `inputs/solver.opts` comment claimed, and the opposite of what is
+physical.
+
+Numerically, effective bulk-air vapor diffusion was ~3×10⁻¹³ m²/s
+versus the physical ~3×10⁻⁵ m²/s — 8 orders of magnitude too slow. So
+even with GT producing a curvature-dependent local equilibrium at each
+grain's interface, the vapor field had no bulk-air channel to carry
+mass from one grain to the other. LSW was throttled at the most basic
+transport step.
+
+**What happened.** In `Residual_A1` and `Jacobian_A1`, the diffusivity
+weighting was changed from `g(phi_ice)` to `g(phi_ice + phi_sed)`
+(renamed `g_phia → g_solid` for clarity), and the linear-combination
+coefficient ordering was swapped so the penalty `D_pen` now multiplies
+the solid-side weight and the full physical `difvap` multiplies the
+air-side weight:
+
+```
+difvap_eff = D_pen * g(ice + sed) + difvap_raw * (1 - g(ice + sed))
+```
+
+In pure air this gives the full physical `difvap`; in pure ice or pure
+sed it gives `D_pen = difvap_pen * difvap`; the diffuse interface gets
+a smooth ramp.
+
+The Jacobian's `d_difvap_eff_dice` and `d_difvap_eff_dtem` derivatives
+were updated to match, and a new `d_difvap_eff_dsed` term was added to
+the `[vap, sed]` block (previously zero because `g(phi_ice)` had no
+sed dependence). The `inputs/solver.opts` comment matches the code's
+behavior again.
+
+---
+
+## 26 — `vap_src` Stefan closure: pair with `sub_src`, restore localized penalty   (`8477df0`)
+
+**Why.** The §25 fix gave vapor a fast diffusion channel in bulk air,
+but exposed a second issue: `vap_src = −ρ_ice · ice_t` over-counts the
+Stefan condition. `ice_t` includes both `sub_src` (real mass exchange
+with vapor) and AC interface motion (mass-neutral rearrangement). At
+ice-sed boundaries the AC contribution is nonzero — ice can move along
+the boundary without sublimating — but it does not produce vapor
+physically. The old `vap_src` formula injected vapor at those boundaries.
+With §25's correct diffusivity, the inner edge of every ice-sed
+interface had nowhere to put that spurious vapor: `g_solid ≈ 1`,
+`air_eff` clamped to `air_lim = 10⁻⁶`, effective diffusion 3×10⁻¹⁹ m²/s.
+Runs on `2D_separated_grains` blew up within seconds; `phi_ice` and
+`phi_air` left bounds, `rhov` reached ~10⁴ kg/m³ inside the solid.
+
+**What happened.** Two changes that together restore stability:
+
+1. `vap_src = -rho_ice * sub_src` (replacing `-rho_ice * ice_t`).
+   Algebraically `-alph_sub * ice² · air² * (rhov - rhoI_vs_eff)`. This
+   pairs the vapor source directly with the sublimation closure, so:
+   - mass exchange between ice and vapor is exactly equal and opposite
+     by construction (pointwise mass balance);
+   - the `ice² · air²` factor naturally localizes `vap_src` to the
+     ice-air diffuse band and zeroes it at ice-sed boundaries (where
+     `air = 0`) and in bulk solid (`ice` or `air` = 0).
+
+   The Jacobian's `[vap, *]` block lost the old `shift * rho_ice * Na_Nb`
+   contribution (no `ice_t` dependence anymore) and gained sub_src-
+   derived `dloc_dice`, `dloc_dsed`, `d_rhovs_eff_dtem`, and (via GT)
+   `dkappa/dg`, `dkappa/dH` terms — mirroring the `[ice, *]` block
+   with opposite signs because `vap_src = -rho_ice * sub_src`.
+
+2. `PenaltyWeight` tightened (`PENALTY_PHI_LO`: 0.85 → 0.90) and
+   `-k_pen` restored from `0` to `1.0e3`. The new `vap_src`
+   localization fixes the ice-sed boundary issue, but a smaller
+   residual issue remains: the inner edge of the ice-air diffuse
+   interface (`ice + sed ∈ [0.9, 1.0]`) has small but nonzero
+   sub_src-driven source and very slow effective diffusion (it's
+   solid-side), so `rhov` could still drift to large values over long
+   integration windows. The penalty acts as a sink there, pinning
+   `rhov` to `rhov_eq`. With the ramp pushed to `ice + sed > 0.9` the
+   entire diffuse interface midpoint is *outside* the penalty support
+   so the GT signal still emerges; the penalty bites only in the
+   deep-solid edge of the diffuse band where there's no physics
+   that depends on a free `rhov`.
+
+Validates on the 30-day −5 °C wide-separation `2D_separated_grains`
+run: no blowup, clean phase bounds, finite-`d0_GT` runs progress
+normally.
 
 ---
 
@@ -573,15 +729,38 @@ The model went through three identifiable stages on this branch:
    Ostwald ripening. A localized-penalty experiment (`PenaltyWeight()`)
    exposed a subtler failure mode: even confined to the inner interface,
    the penalty was still manufacturing a counterfeit GT signal by
-   draining vapor where `vap_src` was adding it. Operating point settled
-   at `k_pen = 0`; ParaView now shows both ripening and necking on the
-   narrow-gap −5 °C run. A wide-gap geometry (`grain_sep` 5 → 20 µm) and
-   a warmer experiment file isolate LSW for clean comparison.
+   draining vapor where `vap_src` was adding it. The penalty was
+   *temporarily* disabled (`k_pen = 0`) as a diagnostic. ParaView
+   confirmed both ripening and necking on the narrow-gap −5 °C run.
+   The geometry was widened (`grain_sep` 5 → 20 µm) to isolate LSW.
+
+5. **Enabling Ostwald ripening as a first-class physics: GT closure
+   and the cascade of vapor-transport fixes it forced** (§24–26,
+   commits `73aca7e`, `2c80a78`, `436c1ac`, `8477df0`): the 90-day
+   wide-separation diagnostic showed no measurable LSW signal —
+   the model lacked explicit curvature dependence in the local
+   equilibrium. Adding it (§24) gave grains of different curvature
+   different `rhoI_vs_eff` values, the missing driving force for
+   bulk-air mass transfer. Turning it on immediately exposed two
+   pre-existing model bugs that the earlier configuration had been
+   masking: (a) the vapor diffusivity penalty was inverted — it
+   applied in air rather than solid, throttling bulk-air diffusion
+   by 8 orders of magnitude (§25); (b) `vap_src = -ρ_ice · ice_t`
+   over-counted the Stefan condition by including mass-neutral AC
+   interface motion, producing spurious vapor at ice-sed boundaries
+   (§26). Fix (a) was a one-line direction swap. Fix (b) replaced
+   `ice_t` with `sub_src` directly, so `vap_src` is paired
+   one-for-one with `sub_src` and inherits its `ice² · air²`
+   localizer. The `PenaltyWeight` infrastructure was then re-engaged
+   at moderate strength (`k_pen = 1e3`) with the ramp pushed deeper
+   into solid (`PENALTY_PHI_LO = 0.90`) to provide a numerical sink
+   in the inner-band diffusion-starved zone without intruding on
+   the GT-active midpoint of the diffuse interface.
 
 The starting question — *why is spurious ice forming at sed-air interfaces?* —
 turned out to be downstream of a fundamental model-formulation choice in the
 frozen-sed branch of the residual. Once that was understood, the rest fell
 out as a series of independent improvements to model fidelity, numerical
-stability, developer ergonomics, and finally — after stability was
-guaranteed — model fidelity for the central physics phenomenon of dry-snow
-metamorphism, Ostwald ripening.
+stability, developer ergonomics, the central physics phenomenon of dry-snow
+metamorphism (Ostwald ripening), and finally a cascade of formerly-hidden
+vapor-transport bugs that turning on real Ostwald ripening exposed.

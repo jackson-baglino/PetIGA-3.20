@@ -1,6 +1,66 @@
 
 ---
 
+**Session ended:** 2026-05-20 12:36:10
+
+
+---
+
+**Session ended:** 2026-05-20 11:58:41
+
+
+---
+
+**Session ended:** 2026-05-20 10:30:25
+
+
+---
+
+**Session ended:** 2026-05-20 09:44:45
+
+
+---
+
+**Session ended:** 2026-05-20 09:35:50
+
+
+---
+
+**Session ended:** 2026-05-20 08:37:02
+
+
+---
+
+**Session ended:** 2026-05-20 08:28:35
+
+
+---
+
+**Session ended:** 2026-05-20 07:35:04
+
+
+---
+
+**Session ended:** 2026-05-20 07:10:00
+
+
+---
+
+**Session ended:** 2026-05-19 21:50:42
+
+
+---
+
+**Session ended:** 2026-05-19 16:07:04
+
+
+---
+
+**Session ended:** 2026-05-19 14:28:45
+
+
+---
+
 **Session ended:** 2026-05-19 12:36:45
 
 
@@ -318,6 +378,15 @@
 
 **Session ended:** 2026-05-15 13:25:47
 
+
+## 2026-05-20 — Documented Gibbs-Thomson + vapor-transport fixes in branch log + model_description
+
+- Added §24 (Gibbs-Thomson curvature dependence with analytical Jacobian), §25 (vapor diffusivity penalty direction fix — was on phi_ice, should have been on phi_ice+phi_sed), and §26 (vap_src reformulation: pair with sub_src + restore localized k_pen) to `docs/spurious_ice_sed_air_branch_log.md`.
+- Updated §23c and the §23 arc summary to remove the now-stale claim that "k_pen=0 settled as the operating configuration" — that was a diagnostic config; the penalty was later re-engaged at moderate strength in §26.
+- Extended the trajectory summary at the bottom of the branch log with a 5th stage covering the GT enablement and the cascade of vapor-transport fixes it forced.
+- Updated `docs/model_description.md`: rewrote §3.4 (vapor density equation) and §4 (sublimation kinetics) to reflect the current model — GT-corrected rhoI_vs_eff in sub_src, vap_src paired with sub_src, diffusivity penalty switching on g(ice+sed), shifted PenaltyWeight band [0.90, 1.00]. Updated parameter summary table values (k_pen=1e3, α_pen=1e-8, ξ_v=1, ξ_T=1, t_sed_freeze=10, Λ=1e4) and added d0_GT row. Added forward-pointer at the top of §13 noting that the post-bug-cascade model fixes are documented in the branch log.
+
+---
 
 ## 2026-05-19 — Documented penalty + Ostwald-ripening arc in branch log
 
