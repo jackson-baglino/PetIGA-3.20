@@ -152,18 +152,25 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     Fsed(user, ice, sed, &fs, NULL);
     Mobility(user, ice, sed, &mob);
 
-    /* D_pen = difvap_pen (factor) * difvap: penalised diffusivity in the air phase */
+    /* D_pen = difvap_pen (factor) * difvap: penalised diffusivity in the
+     * SOLID phases (ice + sed). Vapor diffuses at the full physical rate in
+     * the air phase, and is throttled by difvap_pen wherever phi_ice + phi_sed
+     * is large. Without this, vapor in the solid interior would drift
+     * unboundedly via vap_src accumulated by tiny numerical ice motions. */
     PetscReal D_pen = user->difvap_pen * difvap;
     PetscReal k_pen = user->k_pen;
 
-    PetscReal g_phia, g_pen;
+    PetscReal g_solid, g_pen;
     PetscReal rhov_eq = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
     /* g_pen: penalty weight concentrated near ice+sed = 1 (deep solid).
      * Zero at the diffuse ice-air interface so Gibbs-Thomson can emerge there;
      * unity in the solid interior so rhov stays pinned to rhov_eq. */
     PenaltyWeight     (ice + sed, &g_pen,  NULL);
-    SmoothHeavisidePoly(ice,      &g_phia, NULL);
-    difvap = difvap * g_phia + D_pen * (1.0 - g_phia);
+    /* g_solid = g(ice + sed): smooth Heaviside that is 0 in pure air and 1 in
+     * either pure ice or pure sed. Used to select between full vapor
+     * diffusivity (in air) and the penalised D_pen (in solid). */
+    SmoothHeavisidePoly(ice + sed, &g_solid, NULL);
+    difvap = D_pen * g_solid + difvap * (1.0 - g_solid);
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
@@ -448,13 +455,15 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     Fsed(user, ice, sed, &fs, NULL);
     Mobility(user, ice, sed, &mob);
 
-    /* Effective (penalised) diffusivity — same formula as in Residual_A1 */
+    /* Effective (penalised) diffusivity — same formula as in Residual_A1.
+     * Penalty applies in solid (ice + sed); air retains full physical
+     * vapor diffusivity. */
     PetscReal D_pen = user->difvap_pen * difvap_raw;
     PetscReal k_pen = user->k_pen;
-    PetscReal g_phia, g_pen;
-    SmoothHeavisidePoly(ice,       &g_phia, NULL);
-    PenaltyWeight     (ice + sed, &g_pen,  NULL);
-    PetscReal difvap = difvap_raw * g_phia + D_pen * (1.0 - g_phia);
+    PetscReal g_solid, g_pen;
+    SmoothHeavisidePoly(ice + sed, &g_solid, NULL);
+    PenaltyWeight     (ice + sed, &g_pen,   NULL);
+    PetscReal difvap = D_pen * g_solid + difvap_raw * (1.0 - g_solid);
 
     PetscReal rhov_eq  = ice * rhoI_vs + sed * rhoI_vs + air * rhov;
     PetscReal air_eff  = (air > air_lim) ? air : air_lim;
@@ -477,8 +486,8 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     VaporDiffus(user, tem,      NULL, &d_difvap_raw);
     RhoVS_I    (user, tem,      NULL, &d_rhovs);
 
-    PetscReal dg_phia, dg_pen;
-    SmoothHeavisidePoly(ice,       NULL, &dg_phia);
+    PetscReal dg_solid, dg_pen;
+    SmoothHeavisidePoly(ice + sed, NULL, &dg_solid);
     PenaltyWeight     (ice + sed, NULL, &dg_pen);
 
     /* Gibbs-Thomson curvature correction — see Residual_A1 for the physics.
@@ -494,10 +503,17 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscReal rhoI_vs_eff      = rhoI_vs * (1.0 + user->d0_GT * (PetscReal)kappa);
     PetscReal d_rhovs_eff_dtem = d_rhovs * (1.0 + user->d0_GT * (PetscReal)kappa);
 
-    /* d(difvap_eff)/d(ice) via the smoothed switch */
-    PetscReal d_difvap_eff_dice = (difvap_raw - D_pen) * dg_phia;
-    /* d(difvap_eff)/d(tem) from difvap_raw(T): both branches scale linearly */
-    PetscReal d_difvap_eff_dtem = d_difvap_raw * (g_phia + user->difvap_pen * (1.0 - g_phia));
+    /* d(difvap_eff)/d(ice) and d(difvap_eff)/d(sed) via the smoothed switch
+     * on (ice + sed). Both are equal: g_solid = g(ice + sed), so
+     * d g_solid / d ice = d g_solid / d sed = dg_solid. Formula:
+     *   difvap_eff = D_pen * g_solid + difvap_raw * (1 - g_solid)
+     *   d/dphi    = (D_pen - difvap_raw) * dg_solid                  */
+    PetscReal d_difvap_eff_dice = (D_pen - difvap_raw) * dg_solid;
+    PetscReal d_difvap_eff_dsed = d_difvap_eff_dice;
+    /* d(difvap_eff)/d(tem). D_pen = difvap_pen * difvap_raw, both branches
+     * scale linearly with d_difvap_raw. */
+    PetscReal d_difvap_eff_dtem = d_difvap_raw * (user->difvap_pen * g_solid
+                                                  + (1.0 - g_solid));
 
     /* d(loc)/d(ice) = 2*ice*air*(air - ice),  d(loc)/d(sed) = -2*ice^2*air */
     PetscReal dloc_dice = 2.0*ice*air*(air - ice);
@@ -668,13 +684,16 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                                + xi_v * difvap * air_eff * N1a_N1b
                                + xi_v * k_pen * g_pen * (1.0 - d_rhovel_drhov) * Na_Nb;
                 /* [vap, sed]: vap_src = -ρ_ice * ice_t no longer depends on sed_t,
-                 *             so the shift contribution drops. Only the penalty
-                 *             derivative (via rhov_eq's sed dependence) and the
-                 *             diffusion's air = 1 - ice - sed dependence remain. */
+                 *             so the shift contribution drops. Three remaining
+                 *             contributions: (1) penalty derivative via dg_pen
+                 *             and rhov_eq's sed dependence; (2) difvap_eff
+                 *             depends on sed through g_solid = g(ice+sed);
+                 *             (3) air = 1 - ice - sed in the air_eff factor. */
                 J[a][2][b][3] += xi_v * k_pen * (dg_pen * (rhov - rhov_eq)
                                                 - g_pen * d_rhovel_dsed) * Na_Nb
-                               - (air_eff_active ? xi_v * difvap : 0.0)
-                                 * N1a_grad_rhov * N0[b];
+                               + xi_v * (d_difvap_eff_dsed * air_eff
+                                        - (air_eff_active ? difvap : 0.0))
+                                        * N1a_grad_rhov * N0[b];
             }
         }
     }
