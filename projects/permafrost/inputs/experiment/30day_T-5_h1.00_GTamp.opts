@@ -1,0 +1,20 @@
+# =============================================================================
+# experiment/30day_T-5_h1.00_GTamp.opts — 30 days at -5°C with amplified
+# Gibbs-Thomson coupling (d0_GT = 1.0e-8, ~10x the physical capillary length).
+#
+# Diagnostic A/B partner to 30day_T-5_h1.00_GTphys.opts. The amplified d0_GT
+# makes the GT signal 10x stronger than physical, so any LSW signature should
+# appear unambiguously. This confirms the implementation is producing the
+# expected physics, before interpreting the (smaller) signal in the physical
+# run. The signal should scale linearly with d0_GT in the small-correction
+# regime (d0_GT * kappa << 1).
+# =============================================================================
+
+-t_final 2592000.0                      # 30 days (s)
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-d0_GT 1.0e-8                           # amplified ~10x physical for diagnostic A/B
