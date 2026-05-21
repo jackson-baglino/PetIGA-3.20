@@ -20,7 +20,10 @@
 -dof 4                                  # ice / temperature / vapor / sediment
 -p 2                                    # B-spline polynomial order
 -C 1                                    # B-spline continuity (C^1 for p=2)
--periodic 0                             # periodic BCs off
+-periodic 1                             # periodic BCs on (closed system; vapor cannot
+                                        # leak through boundaries — needed for mass-balance
+                                        # diagnostics where bulk-air vapor would otherwise
+                                        # drain to insulating-Neumann boundaries)
 
 # ---------- Output ----------
 -n_out 0                                # use -outp instead of fixed snapshot count
