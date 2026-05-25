@@ -75,25 +75,9 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     IGAPointFormValue(pnt, U, &sol[0]);
     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
 
-    /* Hessian of all DOFs (needed for Gibbs-Thomson curvature of phi_ice).
-     * IGAPointFormHess fills hess_sol[dof][dim][dim] from the second
-     * derivatives of the basis at this quadrature point. Layout matches
-     * grad_sol: dof-major, then dim-major. With p=2 C^1 B-splines the
-     * Hessian exists in the interior of each element; quadrature points
-     * are interior so this is well-defined. */
-    PetscScalar hess_sol[4][dim][dim];
-    IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
-
     PetscScalar ice = sol[0], ice_t = sol_t[0];
     PetscScalar grad_ice[dim];
     for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
-    PetscScalar hess_ice[dim * dim];
-    {
-        PetscInt _k, _l;
-        for (_k = 0; _k < dim; _k++)
-            for (_l = 0; _l < dim; _l++)
-                hess_ice[_k * dim + _l] = hess_sol[0][_k][_l];
-    }
 
     PetscScalar sed = sol[3], sed_t = sol_t[3];
     PetscScalar grad_sed[dim];
@@ -186,24 +170,25 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal C3  = 3.0 * mob / (eps * EtaT);
     PetscReal loc = ice*ice * air*air;
 
-    /* Gibbs-Thomson curvature correction to the equilibrium vapor density.
-     * rhoI_vs_eff = rhoI_vs * (1 + d0_GT * kappa), where kappa = -div(grad_ice/|grad_ice|).
-     * The localizer ice^2 * air^2 in sub_src restricts the correction to the
-     * diffuse interface, so the (numerically uninteresting) bulk value of
-     * kappa doesn't matter physically. Regularization scale 0.01/eps keeps
-     * kappa bounded in bulk where |grad_ice| -> 0.
-     * Default d0_GT = 0 disables the correction (rhoI_vs_eff = rhoI_vs). */
-    PetscScalar kappa = 0.0;
-    if (user->d0_GT != 0.0) {
-        Curvature(dim, grad_ice, hess_ice, 0.01 / eps, &kappa, NULL, NULL);
-    }
-    PetscReal rhoI_vs_eff  = rhoI_vs * (1.0 + user->d0_GT * (PetscReal)kappa);
-
     /* Hoist loop-invariant scalars out of the per-node loop */
     PetscReal AC_ice_bulk  = C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa);
     PetscReal AC_sed_bulk  = C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs);
-    PetscReal sub_src      = alph_sub * loc * (rhov - rhoI_vs_eff) / rho_ice;
-    PetscReal rho_lat_air_t = xi_T * rho * lat_sub * air_t;
+    PetscReal sub_src      = alph_sub * loc * (rhov - rhoI_vs) / rho_ice;
+    /* Latent heat source for the temperature equation.
+     * Form: -xi_T * rho * lat_sub * sub_src.
+     * Pairs latent heat directly with sub_src (the real mass-exchange rate
+     * between ice and vapor) instead of with air_t = -(ice_t + sed_t).
+     * Using air_t conflates AC interface motion (mass-neutral) with real
+     * phase change, so AC-driven rearrangement of the interface during the
+     * initial relaxation spuriously generates/absorbs latent heat. With
+     * sub_src instead, latent heat is exchanged ONLY when ice and vapor
+     * actually exchange mass — consistent with the vap_src = -2*rho_ice*
+     * air*ice_t fix on the vapor side.
+     * Sign: sub_src > 0 means ice growing (deposition, vapor → ice), which
+     * physically releases latent heat (T increases). In R_tem the source
+     * appears as +source*N0[a] convention with the source value below
+     * giving R_tem the correct sign. */
+    PetscReal rho_lat_subsrc = -xi_T * rho * lat_sub * sub_src;
     PetscReal vap_pen      = xi_v * k_pen * g_pen * (rhov - rhov_eq);
     /* Mass-exchange source: Stefan condition in the diffuse-interface limit.
      * Form: vap_src = -2 * rho_ice * air * ice_t.
@@ -307,7 +292,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             R_tem  = rho * cp * N0[a] * tem_t;
             for (l = 0; l < dim; l++)
                 R_tem += xi_T * thcond * (N1[a][l] * grad_tem[l]);
-            R_tem += rho_lat_air_t * N0[a];
+            R_tem += rho_lat_subsrc * N0[a];
 
             /* --- Vapor: penalised diffusivity + interface equilibrium penalty
              *     (same in both formulations) --- */
@@ -421,12 +406,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     IGAPointFormValue(pnt, U, &sol[0]);
     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
 
-    /* Hessian of ice for the GT-curvature derivatives. Needed only when
-     * user->d0_GT != 0; cheap to read unconditionally and skip the
-     * derivative work below if disabled. */
-    PetscScalar hess_sol[4][dim][dim];
-    IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
-
     PetscScalar ice  = sol[0];
     PetscScalar sed  = sol[3];
     PetscScalar tem  = sol[1];
@@ -435,16 +414,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscScalar grad_tem[dim], grad_rhov[dim];
     for (l = 0; l < dim; l++) grad_tem[l]  = grad_sol[1][l];
     for (l = 0; l < dim; l++) grad_rhov[l] = grad_sol[2][l];
-
-    PetscScalar grad_ice[dim];
-    for (l = 0; l < dim; l++) grad_ice[l] = grad_sol[0][l];
-    PetscScalar hess_ice[dim * dim];
-    {
-        PetscInt _k, _l;
-        for (_k = 0; _k < dim; _k++)
-            for (_l = 0; _l < dim; _l++)
-                hess_ice[_k * dim + _l] = hess_sol[0][_k][_l];
-    }
 
     PetscScalar air = 1.0 - ice - sed;
 
@@ -509,19 +478,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     SmoothHeavisidePoly(ice + sed, NULL, &dg_solid);
     PenaltyWeight     (ice + sed, NULL, &dg_pen);
 
-    /* Gibbs-Thomson curvature correction — see Residual_A1 for the physics.
-     * We also need d kappa / d (grad_ice) and d kappa / d (hess_ice) here for
-     * the chain rule into the J[ice, ice] block. */
-    PetscScalar kappa = 0.0;
-    PetscScalar dkappa_dg[3] = {0.0, 0.0, 0.0};
-    PetscScalar dkappa_dH[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    if (user->d0_GT != 0.0) {
-        Curvature(dim, grad_ice, hess_ice, 0.01 / eps,
-                  &kappa, dkappa_dg, dkappa_dH);
-    }
-    PetscReal rhoI_vs_eff      = rhoI_vs * (1.0 + user->d0_GT * (PetscReal)kappa);
-    PetscReal d_rhovs_eff_dtem = d_rhovs * (1.0 + user->d0_GT * (PetscReal)kappa);
-
     /* d(difvap_eff)/d(ice) and d(difvap_eff)/d(sed) via the smoothed switch
      * on (ice + sed). Both are equal: g_solid = g(ice + sed), so
      * d g_solid / d ice = d g_solid / d sed = dg_solid. Formula:
@@ -544,12 +500,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscReal d_rhovel_drhov = 0.0;
     PetscReal d_rhovel_dtem  = user->hum0 * d_rhovs;
 
-    const PetscReal *N0, (*N1)[dim], (*N2)[dim][dim];
+    const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
     IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
-    /* N2 (second-derivative shape funs) is only needed for the Gibbs-Thomson
-     * curvature Jacobian; reading unconditionally is cheap. */
-    IGAPointGetShapeFuns(pnt, 2, (const PetscReal**)&N2);
 
     PetscInt a, b, nen = pnt->nen;
     PetscScalar (*J)[4][nen][4] = (PetscScalar (*)[4][nen][4])Je;
@@ -602,15 +555,15 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                                + 3.0*mob*eps * N1a_N1b
                                + C3 * ((Etased+Etaa)*dfi_dice - Etaa*dfs_dice
                                        - Etased*dfa_dice) * Na_Nb
-                               - alph_sub * dloc_dice * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb;
-                /* [ice, tem]: d(rhoI_vs_eff)/d(tem) in sublimation term */
-                J[a][0][b][1] += alph_sub * loc * d_rhovs_eff_dtem / rho_ice * Na_Nb;
+                               - alph_sub * dloc_dice * (rhov - rhoI_vs) / rho_ice * Na_Nb;
+                /* [ice, tem]: d(rhoI_vs)/d(tem) in sublimation term */
+                J[a][0][b][1] += alph_sub * loc * d_rhovs / rho_ice * Na_Nb;
                 /* [ice, rhov] */
                 J[a][0][b][2] += -alph_sub * loc / rho_ice * Na_Nb;
                 /* [ice, sed] */
                 J[a][0][b][3] += C3 * ((Etased+Etaa)*dfi_dsed - Etaa*dfs_dsed
                                         - Etased*dfa_dsed) * Na_Nb
-                               - alph_sub * dloc_dsed * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb;
+                               - alph_sub * dloc_dsed * (rhov - rhoI_vs) / rho_ice * Na_Nb;
                 /* [sed, ice] */
                 J[a][3][b][0] += C3 * (-Etaa*dfi_dice - Etai*dfa_dice
                                         + (Etai+Etaa)*dfs_dice) * Na_Nb;
@@ -631,58 +584,49 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                                + 3.0*mob*eps * N1a_N1b
                                + C3 * ((Etased+Etaa)*dfi_dice - Etaa*dfs_dice
                                        - Etased*dfa_dice) * Na_Nb
-                               - alph_sub * dloc_dice * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb;
+                               - alph_sub * dloc_dice * (rhov - rhoI_vs) / rho_ice * Na_Nb;
                 /* [ice, tem] */
-                J[a][0][b][1] += alph_sub * loc * d_rhovs_eff_dtem / rho_ice * Na_Nb;
+                J[a][0][b][1] += alph_sub * loc * d_rhovs / rho_ice * Na_Nb;
                 /* [ice, rhov] */
                 J[a][0][b][2] += -alph_sub * loc / rho_ice * Na_Nb;
                 /* [ice, sed] */
                 J[a][0][b][3] += C3 * ((Etased+Etaa)*dfi_dsed - Etaa*dfs_dsed
                                         - Etased*dfa_dsed) * Na_Nb
-                               - alph_sub * dloc_dsed * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb;
+                               - alph_sub * dloc_dsed * (rhov - rhoI_vs) / rho_ice * Na_Nb;
                 /* [sed, sed]: mass matrix only — frozen sediment */
                 J[a][3][b][3] += shift * Na_Nb;
-            }
-
-            /* ==============================================================
-             * Gibbs-Thomson correction to sub_src introduces a new dependence
-             * of sub_src on grad(phi_ice) and hess(phi_ice). Chain rule:
-             *   d sub_src / d phi_ice^b = ... (terms above)
-             *                          + alph_sub * loc * (-rhoI_vs * d0_GT)
-             *                            * (sum_l dkappa/dg_l * N1[b][l]
-             *                              + sum_kl dkappa/dH_{kl} * N2[b][k][l])
-             *                            / rho_ice
-             * Since R_ice -= sub_src * N0[a], the contribution to J[ice, ice]
-             * is the negative of d sub_src / d phi_ice^b times N0[a]:
-             *   J[a][0][b][0] += alph_sub * loc * rhoI_vs * d0_GT / rho_ice
-             *                  * N0[a] * (grad and hess parts).
-             * Active only when d0_GT != 0 and outside the relax window
-             * (sub_src isn't in the residual during relax). */
-            if (user->d0_GT != 0.0 && !user->flag_relax) {
-                PetscReal grad_part = 0.0;
-                for (l = 0; l < dim; l++)
-                    grad_part += (PetscReal)dkappa_dg[l] * N1[b][l];
-                PetscReal hess_part = 0.0;
-                PetscInt _k, _l;
-                for (_k = 0; _k < dim; _k++)
-                    for (_l = 0; _l < dim; _l++)
-                        hess_part += (PetscReal)dkappa_dH[_k * dim + _l] * N2[b][_k][_l];
-                J[a][0][b][0] += alph_sub * loc * rhoI_vs * user->d0_GT
-                              / rho_ice * N0[a] * (grad_part + hess_part);
             }
 
             if (!user->flag_relax) {
                 /* ==============================================================
                  * THERMAL (both 2-phase and 3-phase)
                  * ============================================================== */
-                /* [tem, ice]: shift from air_t = -ice_t; spatial from thcond(ice) */
-                J[a][1][b][0] += shift * (-xi_T * rho * lat_sub) * Na_Nb
+                /* THERMAL Jacobian. Latent heat term is now
+                 *   rho_lat_subsrc = -xi_T * rho * lat_sub * sub_src
+                 * (pair latent heat with the real ice<->vapor exchange rate
+                 *  sub_src, not with air_t = -(ice_t+sed_t), so AC interface
+                 *  motion doesn't spuriously generate/absorb latent heat).
+                 * R_tem += rho_lat_subsrc * N0[a], so the Jacobian gains
+                 *   -xi_T * rho * lat_sub * d(sub_src)/d(state) * Na_Nb
+                 * mirroring the sub_src rows of [ice, *] (sub_src appears
+                 * in R_ice with -sub_src*N0[a]). */
+                /* [tem, ice]: d(sub_src)/d(ice) via dloc_dice; conduction via dcond_ice. */
+                J[a][1][b][0] += -xi_T * rho * lat_sub
+                                 * alph_sub * dloc_dice * (rhov - rhoI_vs) / rho_ice * Na_Nb
                                + xi_T * dcond_ice * N1a_grad_tem * N0[b];
-                /* [tem, tem]: shift×rho*cp + thcond stiffness */
+                /* [tem, tem]: shift*rho*cp + thcond stiffness +
+                 *             d(sub_src)/d(tem) via d_rhovs in rhoI_vs(T). */
                 J[a][1][b][1] += shift * rho * cp * Na_Nb
-                               + xi_T * thcond * N1a_N1b;
-                /* [tem, sed]: shift from air_t = -sed_t */
-                J[a][1][b][3] += shift * (-xi_T * rho * lat_sub) * Na_Nb;
+                               + xi_T * thcond * N1a_N1b
+                               + -xi_T * rho * lat_sub
+                                 * alph_sub * loc * d_rhovs / rho_ice * Na_Nb;
+                /* [tem, rhov]: d(sub_src)/d(rhov) = +alph_sub*loc/rho_ice
+                 *              (sub_src = alph_sub*loc*(rhov-rhoI_vs)/rho_ice). */
+                J[a][1][b][2] += -xi_T * rho * lat_sub
+                                 * alph_sub * loc / rho_ice * Na_Nb;
+                /* [tem, sed]: d(sub_src)/d(sed) via dloc_dsed. */
+                J[a][1][b][3] += -xi_T * rho * lat_sub
+                                 * alph_sub * dloc_dsed * (rhov - rhoI_vs) / rho_ice * Na_Nb;
 
                 /* ==============================================================
                  * VAPOR (both 2-phase and 3-phase)

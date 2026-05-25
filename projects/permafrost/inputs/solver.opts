@@ -21,9 +21,8 @@
 -p 2                                    # B-spline polynomial order
 -C 1                                    # B-spline continuity (C^1 for p=2)
 -periodic 1                             # periodic BCs on (closed system; vapor cannot
-                                        # leak through boundaries — needed for mass-balance
-                                        # diagnostics where bulk-air vapor would otherwise
-                                        # drain to insulating-Neumann boundaries)
+                                        # leak through boundaries — needed for clean mass-
+                                        # balance diagnostics).
 
 # ---------- Output ----------
 -n_out 0                                # use -outp instead of fixed snapshot count
@@ -55,7 +54,8 @@
 # natural Neumann BC ∂u/∂n = 0 is enforced (insulating: no flux of heat or
 # vapor through the boundary). Set to 1 only for tests that explicitly want
 # Dirichlet conditions.
--flag_BC_Tfix 0                         # do not fix T at boundaries
+-flag_BC_Tfix 0                         # do not fix T at boundaries (periodic mode below
+                                        # overrides any BC fixing anyway)
 -flag_BC_rhovfix 0                      # do not fix rhov at boundaries
 -flag_Tdep 0                            # temperature-independent material properties
 
@@ -72,6 +72,13 @@
                                         # — keeps spurious-air-in-solid from migrating
                                         #   (justified mechanism; Kaempfer-Plapp uses the same trick)
 -k_pen 1.0e3                            # vapor interface-equilibrium stiffness, ACTIVE BUT LOCALIZED.
+                                        # k_pen=0 still crashes (DIVERGED_STEP_REJECTED at step 2)
+                                        # even with the thermal fix in place. Restored to 1e3 with
+                                        # PENALTY_PHI_LO bumped up (see material_properties.c) so
+                                        # the penalty acts only in the very deep solid (ice+sed
+                                        # very close to 1) and stays out of the diffuse interface
+                                        # where it was artificially pinning rhov to saturation
+                                        # and suppressing real sublimation physics.
                                         # Penalty form: xi_v * k_pen * g_pen(ice+sed) * (rhov - rhov_eq)
                                         # where g_pen() is PenaltyWeight() — a SmoothHeaviside shifted to
                                         # be zero for ice+sed < 0.90 (so the diffuse ice-air interface
