@@ -25,8 +25,14 @@
                                         # balance diagnostics).
 
 # ---------- Output ----------
--n_out 0                                # use -outp instead of fixed snapshot count
--outp 1                                 # write output every N time steps
+-n_out 1000                             # number of evenly-spaced output snapshots
+                                        # (t_interv = t_final / (n_out - 1)). For 1-day run
+                                        # this gives one snapshot every ~86 s; for 30 days
+                                        # every ~43 min. Caps total sol_*.dat files at 1000
+                                        # regardless of step count.
+-outp 0                                 # 0 = use n_out / t_interv (above) instead of
+                                        # per-step output. Set > 0 to override and output
+                                        # every N steps.
 -Permafrost_output 1                    # enable sol*.dat field output
 -Permafrost_monitor 1                   # enable monitor table output
 

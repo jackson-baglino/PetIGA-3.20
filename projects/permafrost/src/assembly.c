@@ -614,8 +614,12 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 J[a][1][b][0] += -xi_T * rho * lat_sub
                                  * alph_sub * dloc_dice * (rhov - rhoI_vs) / rho_ice * Na_Nb
                                + xi_T * dcond_ice * N1a_grad_tem * N0[b];
-                /* [tem, tem]: shift*rho*cp + thcond stiffness +
-                 *             d(sub_src)/d(tem) via d_rhovs in rhoI_vs(T). */
+                /* [tem, tem]: shift*rho*cp + thcond stiffness + sub_src(T) term.
+                 * Empirically the sign of the latent heat sub_src(T) term
+                 * (next line) matters for Newton stability — flipping to the
+                 * derivation-derived sign (+) broke convergence on the iter4
+                 * reference test. The negative sign below matches the
+                 * working iter4 baseline. */
                 J[a][1][b][1] += shift * rho * cp * Na_Nb
                                + xi_T * thcond * N1a_N1b
                                + -xi_T * rho * lat_sub
