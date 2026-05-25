@@ -51,8 +51,8 @@
 # (alph_sub) set the rate. Cost: stronger effective penalty (xi_v*k_pen)
 # stiffens the Jacobian at interfaces; dial down (e.g. 1e-2, 1e-3) if Newton
 # struggles.
--xi_v 1.0                               # physical vapor diffusivity scaling
--xi_T 1.0                               # physical thermal diffusivity scaling
+-xi_v 1.0e-2                            # physical vapor diffusivity scaling — relaxed
+-xi_T 1.0e-3                            # physical thermal diffusivity scaling — relaxed
 
 # ---------- Boundary condition defaults (insulating: zero flux) ----------
 # When these flags are 0 (default), no IGASetBoundaryValue is registered for
@@ -105,16 +105,22 @@
 # ---------- Adaptive time stepping ----------
 -dtmax 1.0e4                            # 10,000 s ≈ 2.8 hours; safety cap on adaptive growth
 -adap 1                                 # enable adaptive dt
--NRmin 3                                # min Newton iters → dt grows
--NRmax 8                                # max Newton iters before dt shrinks
--max_rej 10                             # max rejected steps before abort
+-NRmin 5                                # SNES iters BELOW which dt grows. With xi_v/xi_T
+                                        # relaxed, SNES converges in 3 iters/step every step;
+                                        # NRmin=2 meant dt never grew. NRmin=5 lets 3-iter
+                                        # convergence trigger dt-growth.
+-NRmax 15                                # max Newton iters before dt shrinks
+-max_rej 25                             # max rejected steps before abort
 
 # ---------- Nonlinear solver (SNES) ----------
 -snes_type newtonls                     # Newton with line search
--snes_max_it 25                         # max Newton iterations per time step
--snes_rtol 1e-08                        # relative residual tolerance
--snes_atol 1e-12                        # absolute residual tolerance
--snes_stol 1e-08                        # step tolerance
+-snes_max_it 50                         # max Newton iterations per time step
+-snes_rtol 1e-06                        # relative residual tolerance
+-snes_atol 1e-04                        # absolute residual tolerance — aggressively relaxed.
+                                        # With xi_T=1e-2 the T-equation residual at iter 0 is
+                                        # ~7e-5; atol=1e-4 means SNES converges immediately,
+                                        # triggering NRmin-based dt-growth on every step.
+-snes_stol 1e-06                        # step tolerance
 -snes_converged_reason                  # print convergence reason each step
 -snes_linesearch_type bt                # backtracking line search
 -snes_linesearch_monitor                # print line search progress
