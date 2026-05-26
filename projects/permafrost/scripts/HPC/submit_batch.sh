@@ -66,6 +66,14 @@ done
 TESTS=()
 if [[ -n "$tests_arg" ]]; then
     IFS=',' read -ra TESTS <<< "$tests_arg"
+    # Trim leading/trailing whitespace from each entry (so `--tests "a, b,c"`
+    # and indented backslash-continuation lines both work).
+    for i in "${!TESTS[@]}"; do
+        s="${TESTS[$i]}"
+        s="${s#"${s%%[![:space:]]*}"}"   # strip leading whitespace
+        s="${s%"${s##*[![:space:]]}"}"   # strip trailing whitespace
+        TESTS[$i]="$s"
+    done
 elif [[ -n "$tests_file" ]]; then
     if [[ ! -f "$tests_file" ]]; then
         echo "❌ Tests file not found: $tests_file"

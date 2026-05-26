@@ -128,6 +128,15 @@ if [[ -n "$oneshot_geom" || -n "$oneshot_exp" ]]; then
     TESTS+=("${oneshot_geom}:${oneshot_exp}")
 elif [[ -n "$custom_tests" ]]; then
     IFS=',' read -ra TESTS <<< "$custom_tests"
+    # Trim leading/trailing whitespace from each entry so indented backslash
+    # continuations and `"a, b, c"` style spaces don't break the geom:exp split.
+    for _i in "${!TESTS[@]}"; do
+        _s="${TESTS[$_i]}"
+        _s="${_s#"${_s%%[![:space:]]*}"}"
+        _s="${_s%"${_s##*[![:space:]]}"}"
+        TESTS[$_i]="$_s"
+    done
+    unset _i _s
 else
     for t in "${DEFAULT_TESTS[@]}"; do
         if $skip_1d && [[ "$t" == 1D_* ]]; then
