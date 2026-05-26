@@ -144,7 +144,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal D_pen = user->difvap_pen * difvap;
     PetscReal k_pen = user->k_pen;
 
-    PetscReal g_solid, g_pen;
+    PetscReal g_pen;
     /* Penalty reference: pull rhov toward the *initial-humidity* value
      * (hum0 * rhoI_vs(T)) rather than toward saturation. Using saturation
      * as the target made the penalty drain vapor into ice as a one-way
@@ -152,15 +152,21 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
      * initial humidity gives the penalty a stable anchor that conserves
      * the initial vapor mass over long integrations. */
     PetscReal rhov_eq = user->hum0 * rhoI_vs;
-    /* g_pen: penalty weight concentrated near ice+sed = 1 (deep solid).
-     * Zero at the diffuse ice-air interface so Gibbs-Thomson can emerge there;
-     * unity in the solid interior so rhov stays pinned to rhov_eq. */
-    PenaltyWeight     (ice + sed, &g_pen,  NULL);
-    /* g_solid = g(ice + sed): smooth Heaviside that is 0 in pure air and 1 in
-     * either pure ice or pure sed. Used to select between full vapor
-     * diffusivity (in air) and the penalised D_pen (in solid). */
-    SmoothHeavisidePoly(ice + sed, &g_solid, NULL);
-    difvap = D_pen * g_solid + difvap * (1.0 - g_solid);
+    /* g_pen: shifted smooth Heaviside (PenaltyWeight), zero for ice+sed
+     * below PENALTY_PHI_LO (=0.90), unity above PENALTY_PHI_HI (=1.00).
+     * Used as the SAME weighting for BOTH vapor-equation penalty terms:
+     *   (1) the rhov→rhov_eq equilibrium penalty (deep solid sink)
+     *   (2) the diffusivity penalty (D_pen vs difvap)
+     * Previously the diffusivity weighting used the bare smoothstep
+     * SmoothHeavisidePoly(ice+sed), which started ramping at ice+sed=0 and
+     * throttled D_eff to ~25% of physical at the diffuse interface midpoint
+     * (ice+sed=0.5). That caused the "halo" of elevated rhov around ice
+     * grains: sublimation vapor at the midpoint couldn't diffuse outward
+     * because diffusion was already 75% suppressed there. Sharing the
+     * penalty ramp keeps full physical diffusion through the entire diffuse
+     * interface and only throttles for ice+sed > 0.9. */
+    PenaltyWeight(ice + sed, &g_pen, NULL);
+    difvap = D_pen * g_pen + difvap * (1.0 - g_pen);
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
@@ -441,10 +447,11 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
      * vapor diffusivity. */
     PetscReal D_pen = user->difvap_pen * difvap_raw;
     PetscReal k_pen = user->k_pen;
-    PetscReal g_solid, g_pen;
-    SmoothHeavisidePoly(ice + sed, &g_solid, NULL);
-    PenaltyWeight     (ice + sed, &g_pen,   NULL);
-    PetscReal difvap = D_pen * g_solid + difvap_raw * (1.0 - g_solid);
+    PetscReal g_pen;
+    /* Use the SAME g_pen weighting for both the diffusivity penalty and the
+     * equilibrium penalty — see Residual_A1 comment for the rationale. */
+    PenaltyWeight(ice + sed, &g_pen, NULL);
+    PetscReal difvap = D_pen * g_pen + difvap_raw * (1.0 - g_pen);
 
     /* Penalty reference: pull rhov toward hum0 * rhoI_vs(T). See Residual_A1
      * for the rationale. With rhov_eq = hum0 * rhoI_vs (no phase-field
@@ -474,21 +481,20 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     VaporDiffus(user, tem,      NULL, &d_difvap_raw);
     RhoVS_I    (user, tem,      NULL, &d_rhovs);
 
-    PetscReal dg_solid, dg_pen;
-    SmoothHeavisidePoly(ice + sed, NULL, &dg_solid);
-    PenaltyWeight     (ice + sed, NULL, &dg_pen);
+    PetscReal dg_pen;
+    PenaltyWeight(ice + sed, NULL, &dg_pen);
 
-    /* d(difvap_eff)/d(ice) and d(difvap_eff)/d(sed) via the smoothed switch
-     * on (ice + sed). Both are equal: g_solid = g(ice + sed), so
-     * d g_solid / d ice = d g_solid / d sed = dg_solid. Formula:
-     *   difvap_eff = D_pen * g_solid + difvap_raw * (1 - g_solid)
-     *   d/dphi    = (D_pen - difvap_raw) * dg_solid                  */
-    PetscReal d_difvap_eff_dice = (D_pen - difvap_raw) * dg_solid;
+    /* d(difvap_eff)/d(ice) and d(difvap_eff)/d(sed) via the same penalty
+     * weighting now used for the diffusivity term. Both are equal because
+     * g_pen = g(ice + sed): d g_pen / d ice = d g_pen / d sed = dg_pen.
+     *   difvap_eff = D_pen * g_pen + difvap_raw * (1 - g_pen)
+     *   d/dphi    = (D_pen - difvap_raw) * dg_pen                       */
+    PetscReal d_difvap_eff_dice = (D_pen - difvap_raw) * dg_pen;
     PetscReal d_difvap_eff_dsed = d_difvap_eff_dice;
     /* d(difvap_eff)/d(tem). D_pen = difvap_pen * difvap_raw, both branches
      * scale linearly with d_difvap_raw. */
-    PetscReal d_difvap_eff_dtem = d_difvap_raw * (user->difvap_pen * g_solid
-                                                  + (1.0 - g_solid));
+    PetscReal d_difvap_eff_dtem = d_difvap_raw * (user->difvap_pen * g_pen
+                                                  + (1.0 - g_pen));
 
     /* d(loc)/d(ice) = 2*ice*air*(air - ice),  d(loc)/d(sed) = -2*ice^2*air */
     PetscReal dloc_dice = 2.0*ice*air*(air - ice);
