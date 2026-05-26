@@ -8,5 +8,3 @@
 -RCice 1.875e-5
 -delt_t 1.0e-2
 -eps 3.56e-07
--ksp_type preonly
--pc_type lu

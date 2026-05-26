@@ -7,5 +7,3 @@
 -Lx 1.00e-04
 -delt_t 1.0e-4
 -eps 3.56e-07
--ksp_type preonly
--pc_type lu

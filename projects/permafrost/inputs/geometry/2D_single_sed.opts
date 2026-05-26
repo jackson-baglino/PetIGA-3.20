@@ -11,5 +11,5 @@
 -Ly 6.25e-05
 -Lz 0
 -RCsed 1.875e-5
--delt_t 1.0e-2
+-delt_t 1.0e-4
 -eps 7.12e-07

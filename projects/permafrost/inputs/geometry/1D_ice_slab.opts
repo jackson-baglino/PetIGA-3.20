@@ -9,5 +9,3 @@
 -eps 7.12e-07
 
 # 1D problems are small enough for a direct LU solve (faster than GMRES+ILU).
--ksp_type preonly
--pc_type lu

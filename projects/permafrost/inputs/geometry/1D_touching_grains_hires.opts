@@ -8,7 +8,5 @@
 -RCice 1.875e-5
 -RCsed 8.75e-6
 -grain_sep 0
--delt_t 1.0e-2
+-delt_t 1.0e-4
 -eps 3.56e-07
--ksp_type preonly
--pc_type lu

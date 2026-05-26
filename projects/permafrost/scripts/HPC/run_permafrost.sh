@@ -167,6 +167,19 @@ create_folder() {
     echo ""
     echo "--- Creating output folder ---"
 
+    # Batch-mode path: when submit_batch.sh fans out a sweep, every job sets
+    # BATCH_OUT_DIR=$SCRATCH/permafrost/batch_<ts>[_<tag>]/, and we just write
+    # into a clean `<geom>__<exp>/` subfolder of that shared parent so the
+    # whole batch can be downloaded with a single rsync.
+    if [[ -n "${BATCH_OUT_DIR:-}" ]]; then
+        name="${geom_name}__${exp_name}"
+        folder="${BATCH_OUT_DIR}/${name}"
+        mkdir -p "$folder"
+        echo "Output folder (batch mode): $folder"
+        return
+    fi
+
+    # Single-run path: each invocation gets its own ic-category/timestamped folder.
     local subfolder ts tag job_suffix
     subfolder=$(derive_ic_subfolder)
     ts="$(date +%Y-%m-%d__%H.%M.%S)"
