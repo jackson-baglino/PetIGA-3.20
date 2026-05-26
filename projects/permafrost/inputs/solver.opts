@@ -121,9 +121,11 @@
                                         # ~7e-5; atol=1e-4 means SNES converges immediately,
                                         # triggering NRmin-based dt-growth on every step.
 -snes_stol 1e-06                        # step tolerance
--snes_converged_reason                  # print convergence reason each step
+#-snes_converged_reason                 # DISABLED — was generating 7GB outp.txt at -5C
+                                        # where Newton does many iterations per step.
+                                        # Re-enable per-test by passing -snes_converged_reason.
 -snes_linesearch_type bt                # backtracking line search
--snes_linesearch_monitor                # print line search progress
+#-snes_linesearch_monitor               # DISABLED — same reason as above
 
 # ---------- Linear solver (KSP) ----------
 -ksp_type gmres                         # GMRES — correct for the asymmetric 4-DOF system
@@ -131,7 +133,7 @@
 -ksp_atol 1e-12                         # absolute residual tolerance
 -ksp_max_it 500                         # max GMRES iterations
 -ksp_gmres_restart 200                  # GMRES restart interval
--ksp_converged_reason                   # print convergence reason each step
+#-ksp_converged_reason                  # DISABLED — output volume blow-up at -5C
 
 # ---------- Preconditioner (2D / 3D default) ----------
 -pc_type asm                            # additive Schwarz with overlap
