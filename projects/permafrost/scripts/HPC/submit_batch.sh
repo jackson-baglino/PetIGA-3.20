@@ -79,12 +79,23 @@ elif [[ -n "$tests_file" ]]; then
         echo "❌ Tests file not found: $tests_file"
         exit 1
     fi
-    # One "geom:exp" per line, ignore blank lines and # comments
+    # One "geom:exp" per line, ignore blank lines and # comments. Robustly
+    # strip leading/trailing whitespace, surrounding quotes, and trailing
+    # commas so the file format is forgiving (e.g. accidentally indented
+    # heredocs, copy-pasted backslash continuations, quoted EOF markers).
     while IFS= read -r line; do
-        line="${line%%#*}"
-        line="${line## }"
-        line="${line%% }"
-        [[ -n "$line" ]] && TESTS+=("$line")
+        line="${line%%#*}"                          # strip # comments
+        line="${line%$'\r'}"                        # strip CR (Windows line endings)
+        line="${line#"${line%%[![:space:]]*}"}"     # strip leading whitespace
+        line="${line%"${line##*[![:space:]]}"}"     # strip trailing whitespace
+        line="${line%,}"                            # strip trailing comma
+        # Strip a single pair of surrounding quotes if present
+        if [[ "$line" =~ ^\"(.*)\"$ ]]; then line="${BASH_REMATCH[1]}"; fi
+        if [[ "$line" =~ ^\'(.*)\'$ ]]; then line="${BASH_REMATCH[1]}"; fi
+        # Skip anything that isn't of the form geom:exp
+        [[ -z "$line" ]] && continue
+        [[ "$line" != *:* ]] && continue
+        TESTS+=("$line")
     done < "$tests_file"
 else
     echo "❌ Must supply --tests \"g1:e1,g2:e2,...\" or --tests-file <file>"
@@ -186,12 +197,15 @@ compute_alloc() {
 # Submit one job: sbatch run_permafrost.sh <geom> <exp> <tag>
 # with BATCH_OUT_DIR pointing at the shared parent so all jobs end up there.
 # ---------------------------------------------------------------------------
+N_SUBMITTED=0
+N_SKIPPED=0
 submit_one() {
     local spec="$1"
     local geom="${spec%%:*}"
     local exp="${spec##*:}"
     if [[ "$geom" == "$exp" || -z "$geom" || -z "$exp" ]]; then
         echo "⚠ Invalid test spec (expected geom:exp): $spec"
+        ((N_SKIPPED++)) || true
         return
     fi
 
@@ -199,10 +213,12 @@ submit_one() {
     local exp_file="$EXPERIMENT_DIR/${exp}.opts"
     if [[ ! -f "$geom_file" ]]; then
         echo "⚠ Skipping $spec — geometry file not found: $geom_file"
+        ((N_SKIPPED++)) || true
         return
     fi
     if [[ ! -f "$exp_file" ]]; then
         echo "⚠ Skipping $spec — experiment file not found: $exp_file"
+        ((N_SKIPPED++)) || true
         return
     fi
 
@@ -220,6 +236,7 @@ submit_one() {
            --export=ALL,SKIP_COMPILE=1,BATCH_OUT_DIR="$BATCH_PARENT" \
            "${sbatch_extra[@]}" \
            "$RUN_SCRIPT" "$geom" "$exp" "$tag"
+    ((N_SUBMITTED++)) || true
 }
 
 # ---------------------------------------------------------------------------
@@ -231,8 +248,10 @@ done
 
 echo ""
 echo "============================================================"
-echo "  Submitted ${#TESTS[@]} jobs to SLURM."
-echo "  Parent dir: $BATCH_PARENT"
+echo "  Parsed     : ${#TESTS[@]} test specs"
+echo "  Submitted  : $N_SUBMITTED jobs to SLURM"
+echo "  Skipped    : $N_SKIPPED (file-not-found or malformed)"
+echo "  Parent dir : $BATCH_PARENT"
 echo "  Check with: squeue -u \$USER"
 echo "  Once all jobs are done, download the parent dir, then run:"
 echo "    bash $BATCH_PARENT/run_batch_postprocess.sh"
