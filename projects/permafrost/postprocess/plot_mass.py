@@ -262,11 +262,36 @@ def _annotate_freeze(ax, t_freeze, scale, t_plot):
     return True
 
 
+def _pct_change(mass: np.ndarray) -> float:
+    """Final-vs-initial percent change of a mass time series.
+
+    Robust to mass[0] == 0 (returns NaN in that case so the formatter shows
+    "n/a" rather than dividing by zero).
+    """
+    if mass[0] == 0.0:
+        return float("nan")
+    return (mass[-1] - mass[0]) / mass[0] * 100.0
+
+
+def _fmt_pct(pct: float) -> str:
+    """Format a percent change like '+0.12%' / '-0.45e-5%' / 'n/a' (NaN)."""
+    if not np.isfinite(pct):
+        return "n/a"
+    if abs(pct) < 1e-3:
+        return f"{pct:+.3e} %"
+    return f"{pct:+.4f} %"
+
+
 def _per_phase_plot(t_plot, mass, color, label_math, xlabel, unit_suffix,
                     title, save_path, t_freeze, scale):
-    """One self-contained plot for a single phase with its initial-value reference."""
+    """One self-contained plot for a single phase with its initial-value reference.
+
+    Legend now reports the final-vs-initial percent change so the magnitude of
+    drift is visible without having to read the y-axis values."""
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(t_plot, mass, color=color, lw=1.8, zorder=3, label=label_math)
+    pct = _pct_change(mass)
+    ax.plot(t_plot, mass, color=color, lw=1.8, zorder=3,
+            label=f"{label_math}   Δ = {_fmt_pct(pct)}")
     ax.axhline(mass[0], color=color, lw=1.0, ls="--", alpha=0.45, zorder=2,
                label=f"initial = {mass[0]:.3e}")
     _annotate_freeze(ax, t_freeze, scale, t_plot)
@@ -275,6 +300,49 @@ def _per_phase_plot(t_plot, mass, color, label_math, xlabel, unit_suffix,
     ax.set_title(title, fontsize=13)
     ax.legend(fontsize=10, loc="best")
     ax.grid(True, alpha=0.3)
+    ax.tick_params(labelsize=10)
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _change_loglog_plot(times_sec, masses, labels, colors, save_path):
+    """Log-log plot of |mass(t) - mass(0)| / mass(0) vs time (in seconds).
+
+    Each entry in ``masses`` is a 1-D array (same length as ``times_sec``).
+    The y-axis is the *absolute relative change* so positive- and negative-going
+    drifts both appear on a log scale. Legend reports the *signed* final
+    percent change so the direction is preserved."""
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    # Drop t=0 since log(0) is undefined; keep only strictly positive times.
+    pos = times_sec > 0
+    if not np.any(pos):
+        plt.close(fig)
+        return
+    t = times_sec[pos]
+
+    plotted_any = False
+    for mass, label, color in zip(masses, labels, colors):
+        if mass[0] == 0.0:
+            continue   # nothing to normalize against
+        rel = np.abs(mass[pos] - mass[0]) / abs(mass[0])
+        # Hide exact zeros (which become -inf in log) by clipping a floor.
+        rel = np.where(rel > 0, rel, np.nan)
+        pct = _pct_change(mass)
+        ax.loglog(t, rel, color=color, lw=1.6, zorder=3,
+                  label=f"{label}   Δ = {_fmt_pct(pct)}")
+        plotted_any = True
+
+    if not plotted_any:
+        plt.close(fig)
+        return
+
+    ax.set_xlabel("Time  [s]", fontsize=12)
+    ax.set_ylabel(r"$|m(t) - m(0)| / |m(0)|$", fontsize=12)
+    ax.set_title("Relative change in mass vs. time (log-log)", fontsize=13)
+    ax.legend(fontsize=10, loc="best")
+    ax.grid(True, which="both", alpha=0.3)
     ax.tick_params(labelsize=10)
     fig.tight_layout()
     fig.savefig(save_path, dpi=150, bbox_inches="tight")
@@ -310,14 +378,19 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
     # ── Combined figure (unchanged behaviour) ─────────────────────────────
     fig, ax = plt.subplots(figsize=(8, 5))
 
+    pct_total = _pct_change(mass_total)
+    pct_ice   = _pct_change(mass_ice)
+    pct_sed   = _pct_change(mass_sed)
+    pct_vap   = _pct_change(mass_vap)
+
     ax.plot(t_plot, mass_total, color=COLOR_TOTAL, lw=2.2, zorder=4,
-            label="Total")
+            label=f"Total   Δ = {_fmt_pct(pct_total)}")
     ax.plot(t_plot, mass_ice,   color=COLOR_ICE,   lw=1.6, zorder=3,
-            label=r"Ice  ($\rho_i \int \phi_i \, dV$)")
+            label=fr"Ice  ($\rho_i \int \phi_i \, dV$)   Δ = {_fmt_pct(pct_ice)}")
     ax.plot(t_plot, mass_sed,   color=COLOR_SED,   lw=1.6, zorder=3,
-            label=r"Sediment  ($\rho_s \int \phi_s \, dV$)")
+            label=fr"Sediment  ($\rho_s \int \phi_s \, dV$)   Δ = {_fmt_pct(pct_sed)}")
     ax.plot(t_plot, mass_vap,   color=COLOR_VAP,   lw=1.6, zorder=3,
-            label=r"Vapor  ($\int \rho_v \, \phi_a \, dV$)")
+            label=fr"Vapor  ($\int \rho_v \, \phi_a \, dV$)   Δ = {_fmt_pct(pct_vap)}")
 
     # Dashed semi-opaque reference lines at the initial (t=0) mass values.
     # These make it easy to see whether each phase is gaining or losing mass.
@@ -362,6 +435,19 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
                     os.path.join(pp_dir, "vapor.png"), t_freeze, scale)
 
     print(f"Per-phase plots saved to: {pp_dir}/")
+
+    # ── Log-log relative-change plot ──────────────────────────────────────
+    _change_loglog_plot(
+        times_sec=times,
+        masses=[mass_total, mass_ice, mass_sed, mass_vap],
+        labels=["Total",
+                r"Ice  ($\rho_i \int \phi_i \, dV$)",
+                r"Sediment  ($\rho_s \int \phi_s \, dV$)",
+                r"Vapor  ($\int \rho_v \, \phi_a \, dV$)"],
+        colors=[COLOR_TOTAL, COLOR_ICE, COLOR_SED, COLOR_VAP],
+        save_path=os.path.join(pp_dir, "change_loglog.png"),
+    )
+    print(f"Log-log change plot saved to: {pp_dir}/change_loglog.png")
 
 
 # ---------------------------------------------------------------------------

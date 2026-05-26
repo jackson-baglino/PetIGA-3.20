@@ -51,8 +51,8 @@
 # (alph_sub) set the rate. Cost: stronger effective penalty (xi_v*k_pen)
 # stiffens the Jacobian at interfaces; dial down (e.g. 1e-2, 1e-3) if Newton
 # struggles.
--xi_v 1.0e-2                            # physical vapor diffusivity scaling — relaxed
--xi_T 1.0e-3                            # physical thermal diffusivity scaling — relaxed
+-xi_v 1.0                               # physical vapor diffusivity scaling
+-xi_T 1.0                               # physical thermal diffusivity scaling
 
 # ---------- Boundary condition defaults (insulating: zero flux) ----------
 # When these flags are 0 (default), no IGASetBoundaryValue is registered for
