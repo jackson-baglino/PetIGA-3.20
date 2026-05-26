@@ -1,0 +1,16 @@
+# =============================================================================
+# experiment/365day_T-5_h1.00.opts — 365 days at -5°C, saturated humidity
+#
+# Long-time Ostwald-ripening diagnostic. At -5°C the saturation vapor
+# density is ~12x larger than at -20°C (Clausius-Clapeyron), giving the
+# system a much larger vapor budget for grain-to-grain transfer. Combined
+# with the 365-day window, this should produce a clear LSW ripening
+# signature even at moderate grain curvature.
+# =============================================================================
+
+-t_final 31536000.0                     # 365 days (s) = 365 * 86400
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
