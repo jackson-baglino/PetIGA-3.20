@@ -1,3 +1,29 @@
+## 2026-05-27 — Penalty-off diagnostic + docs sync + HPC full-suite submitter
+
+- Added `inputs/experiment/30day_T-20_h1.00_nopenalty.opts` (k_pen=0, difvap_pen=1.0) to diagnose model behaviour with both vapor-equation penalties disabled. Result: cleaner phase bounds and vapor field than any configuration with penalties active.
+- Wrote `spurious_ice_sed_air_branch_log.md` §27 explaining why penalty-off is now the cleanest configuration — independent fixes (mass-conserving Stefan source §26, diffusivity-penalty direction §25, latent heat paired with `S_sub`, constant `rhov_eq` anchor, NRmin=5 dt unlock) collectively removed every job the penalties were originally compensating for.
+- Brought `docs/model_description.md` up to date with the current code: §3.3 latent heat pairing with `S_sub` (not `∂φ_a/∂t`), §3.4 vapor equation with `V_src = -2·ρ_ice·φ_a·∂φ_i/∂t` and constant anchor `rhov_eq = h₀·ρ_vs(T)`, §4 GT-disabled clarification, §9 solver param refresh (snes_atol=1e-4, NRmin=5, ksp_rtol=1e-8), §12 parameter table update.
+- Added `docs/model_description.md` §14 — self-contained LaTeX source block for the model equations (free energy, ice/sed AC, temperature, vapor, S_sub, D_eff, G_pen) plus §14a pointwise mass-balance derivation, paste-ready for manuscript prep.
+- Added "Status note (2026-05-27)" banners to `ice_mass_loss_analysis.md`, `spurious_air_bug_analysis.md`, and `material_parameters.md` so readers of these historical analyses are routed to the current branch-log §27 and model_description.md.
+- Added `scripts/HPC/submit_full_suite.sh` — thin wrapper around `submit_batch.sh` that mirrors `scripts/Studio/run_batch_tests.sh::DEFAULT_TESTS` byte-for-byte and supports `--skip-1d`, `--skip-hires`, `--dry-run`, and pass-through sbatch flags. Lets the same curated 21-test suite run on the cluster with one command.
+
+---
+
+
+---
+
+**Session ended:** 2026-05-26 20:23:20
+
+
+---
+
+**Session ended:** 2026-05-26 13:54:23
+
+
+---
+
+**Session ended:** 2026-05-26 13:45:05
+
 
 ---
 
