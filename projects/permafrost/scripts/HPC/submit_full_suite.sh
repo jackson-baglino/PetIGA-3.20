@@ -10,17 +10,23 @@
 #
 # Usage (run from project root):
 #
-#   ./scripts/HPC/submit_full_suite.sh                        # default suite
+#   ./scripts/HPC/submit_full_suite.sh                        # default 21-test suite
 #   ./scripts/HPC/submit_full_suite.sh --tag mylabel
 #   ./scripts/HPC/submit_full_suite.sh --skip-1d              # 2D only
 #   ./scripts/HPC/submit_full_suite.sh --skip-hires           # exclude *_hires geometries
 #   ./scripts/HPC/submit_full_suite.sh --tests "g1:e1,g2:e2"  # override list
 #   ./scripts/HPC/submit_full_suite.sh --dry-run              # print resolved list, do not submit
 #
+# Presets (named subsets of canonical geometries paired with a chosen experiment):
+#   ./scripts/HPC/submit_full_suite.sh --advisor-slides 30day_T-20_h1.00_nopenalty
+#                                                            # the 7 geometries used in the
+#                                                            # 2026-05-25 advisor_slides batches,
+#                                                            # paired with the named experiment.
+#
 # Append extra sbatch flags after --:
 #   ./scripts/HPC/submit_full_suite.sh --tag overnight -- --time=0-08:00:00
 #
-# Design note: the test list mirrors scripts/Studio/run_batch_tests.sh::DEFAULT_TESTS
+# Design note: the default test list mirrors scripts/Studio/run_batch_tests.sh::DEFAULT_TESTS
 # byte-for-byte. Keep both in sync when adding new canonical tests so the
 # local-vs-HPC workflows produce comparable results.
 # =============================================================================
@@ -69,31 +75,58 @@ DEFAULT_TESTS=(
 )
 
 # -----------------------------------------------------------------------------
+# Geometry presets — named subsets of canonical geometries that get paired
+# with a user-supplied experiment name at invocation time.
+#
+# ADVISOR_SLIDES_GEOMS mirrors the 7-geometry list used in the 2026-05-25
+# `advisor_slides_*` batches under $SCRATCH/permafrost. It's the smallest
+# curated subset that exercises the full range of physics relevant for
+# advisor-facing snapshot deliverables: ice-sed contact (2D_ice_sed_pair),
+# multi-grain ripening (2D_separated_grains, 2D_touching_grains), isolated
+# response (2D_single_ice, 2D_single_sed), and 1D high-res sanity checks
+# (1D_*_hires).
+# -----------------------------------------------------------------------------
+ADVISOR_SLIDES_GEOMS=(
+    "1D_separated_grains_hires"
+    "1D_touching_grains_hires"
+    "2D_ice_sed_pair"
+    "2D_separated_grains"
+    "2D_single_ice"
+    "2D_single_sed"
+    "2D_touching_grains"
+)
+
+# -----------------------------------------------------------------------------
 # Arg parsing
 # -----------------------------------------------------------------------------
 tag=""
 skip_1d=false
 skip_hires=false
 custom_tests=""
+advisor_exp=""
 dry_run=false
 sbatch_extra=()
 
-usage() { sed -n '2,30p' "$0"; exit 1; }
+usage() { sed -n '2,35p' "$0"; exit 1; }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --tag)         tag="$2"; shift 2 ;;
-        --tests)       custom_tests="$2"; shift 2 ;;
-        --skip-1d)     skip_1d=true; shift ;;
-        --skip-hires)  skip_hires=true; shift ;;
-        --dry-run)     dry_run=true; shift ;;
-        --)            shift; sbatch_extra=("$@"); break ;;
-        -h|--help)     usage ;;
-        *)             echo "Unknown argument: $1"; usage ;;
+        --tag)              tag="$2"; shift 2 ;;
+        --tests)            custom_tests="$2"; shift 2 ;;
+        --advisor-slides)   advisor_exp="$2"; shift 2 ;;
+        --skip-1d)          skip_1d=true; shift ;;
+        --skip-hires)       skip_hires=true; shift ;;
+        --dry-run)          dry_run=true; shift ;;
+        --)                 shift; sbatch_extra=("$@"); break ;;
+        -h|--help)          usage ;;
+        *)                  echo "Unknown argument: $1"; usage ;;
     esac
 done
 
-# Build the final list
+# Build the final list. Mutually-exclusive sources, evaluated in priority:
+#   1. --tests "..."         (explicit override)
+#   2. --advisor-slides EXP  (the 7-geom preset, paired with EXP)
+#   3. (default)             DEFAULT_TESTS, optionally filtered
 TESTS=()
 if [[ -n "$custom_tests" ]]; then
     IFS=',' read -ra TESTS <<< "$custom_tests"
@@ -102,6 +135,18 @@ if [[ -n "$custom_tests" ]]; then
         s="${s#"${s%%[![:space:]]*}"}"
         s="${s%"${s##*[![:space:]]}"}"
         TESTS[$i]="$s"
+    done
+elif [[ -n "$advisor_exp" ]]; then
+    # Validate that the experiment file exists before fanning out — saves a
+    # round-trip of "skipped: file-not-found" warnings from submit_batch.sh.
+    exp_path="$PROJECT_ROOT/inputs/experiment/${advisor_exp}.opts"
+    if [[ ! -f "$exp_path" ]]; then
+        echo "❌ --advisor-slides experiment file not found: $exp_path"
+        echo "   Pass a name that resolves to inputs/experiment/<name>.opts"
+        exit 1
+    fi
+    for g in "${ADVISOR_SLIDES_GEOMS[@]}"; do
+        TESTS+=("${g}:${advisor_exp}")
     done
 else
     for t in "${DEFAULT_TESTS[@]}"; do
