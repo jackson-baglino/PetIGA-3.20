@@ -3,6 +3,19 @@
 **Date:** 2026-05-15  
 **Run analyzed:** `test_2D_IceSedPair` (86400 s at T = −20 °C, h₀ = 0.95)
 
+> **Status note (2026-05-27).** This analysis predates the §27 vapor-equation
+> overhaul. The Allen-Cahn coarsening physics described here is unchanged,
+> but several of the recommendations below (notably the `d0_sub0` reduction
+> and `mob_sub_scale` knob) are no longer load-bearing: subsequent fixes —
+> a mass-conserving Stefan source $V_{\mathrm{src}} = -2\rho_{\mathrm{ice}}\phi_a\,\partial\phi_i/\partial t$
+> (branch log §26) and turning off both vapor-equation penalties (branch
+> log §27) — directly address the "mass disappears without entering vapor"
+> failure mode this document diagnoses. See
+> [`spurious_ice_sed_air_branch_log.md`](spurious_ice_sed_air_branch_log.md) §26–§27
+> and the §3.4 / §4 sections of
+> [`model_description.md`](model_description.md) for the current
+> state of the vapor closure.
+
 ---
 
 ## Observed Mass Change

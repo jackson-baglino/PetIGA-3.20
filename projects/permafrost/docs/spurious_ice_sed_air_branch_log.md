@@ -698,6 +698,95 @@ normally.
 
 ---
 
+## 27 — Diagnostic: both vapor-equation penalties OFF gives the cleanest results so far
+
+**Setup.** `2D_separated_grains` (20 µm separation), 30 days at T = −20 °C,
+h = 1.00, run with the new experiment file
+`inputs/experiment/30day_T-20_h1.00_nopenalty.opts` which overrides:
+
+```
+-k_pen 0.0          # equilibrium penalty OFF
+-difvap_pen 1.0     # D_pen = 1.0 * difvap_raw, so the diffusivity penalty
+                    # linear combination collapses to full physical D_v
+                    # everywhere, regardless of g_pen.
+```
+
+This was the first run with **no artificial stabilisers on the vapor field at
+all** — vapor sees full physical diffusion in air, in the diffuse interface,
+and inside solid; the rhov → rhov_eq equilibrium-sink term is zero
+everywhere.
+
+**Result.** Cleaner phase bounds, cleaner vapor field, no spurious migration,
+no halos, no inner-band rhov drift. Better behaviour than every prior
+configuration with either penalty active.
+
+**Why this is the case.** Several things have changed between the
+configurations that *needed* the penalties (§13–§23) and the current state of
+the residual that does not:
+
+1. **Mass-conserving `vap_src` (§26).** The original justification for
+   `k_pen` was that `vap_src = -ρ_ice · ice_t` over-injected vapor at
+   ice-sed boundaries (where AC motion is mass-neutral). The penalty was
+   needed as a sink. Replacing `vap_src` with `-2·ρ_ice·air·ice_t` localised
+   the source to the ice-air diffuse band and zeroed it at ice-sed
+   boundaries. Once `vap_src` is no longer over-counting the Stefan
+   condition, there is no spurious vapor for the penalty to sink.
+
+2. **Diffusivity-penalty direction fix (§25).** When the penalty was
+   inverted, bulk air had `D_eff ≈ 3×10⁻¹³` m²/s — eight orders of
+   magnitude too slow. Vapor had no way to escape the diffuse interface, so
+   it accumulated. The penalty looked load-bearing because it was draining
+   an accumulation the inverted-diffusivity bug was causing. Direction
+   fixed, bulk air now carries vapor at full physical `D_v`, accumulation
+   never builds up.
+
+3. **Latent heat paired with `sub_src` (this branch).** Pairing latent heat
+   with `air_t = -(ice_t + sed_t)` conflated AC interface motion (mass-
+   neutral) with real ice ↔ vapor exchange. That generated/absorbed
+   spurious latent heat during the initial relaxation, distorted T, and
+   shifted `ρ_vs(T)` and `rhov_eq`. With latent heat paired directly with
+   `sub_src` instead, T is no longer perturbed by AC interface motion;
+   `rhov_eq` and `ρ_vs` stay quiet at the diffuse interface, and the
+   penalty has nothing to chase.
+
+4. **NRmin=5 unlocked dt growth.** With dt stuck at ~0.013 s, the
+   adaptive scheme was integrating very early-time transients forever.
+   Many of those transients are exactly what the penalty was tuned to
+   suppress (sub-millisecond AC equilibration overshoots). Once dt can
+   grow into the seconds-to-hours range where the system is genuinely
+   quasi-static, there are no fast transients left for the penalty to act
+   on.
+
+5. **Constant-anchor `rhov_eq = hum0 · ρ_vs(T)`.** The earlier formulation
+   `rhov_eq = (ice+sed)·ρ_vs + air·rhov` was self-referential — the
+   penalty pulled `rhov` toward itself in air, and toward `ρ_vs` in solid.
+   That introduced a one-way drain from air-side to solid-side along the
+   diffuse band. Replacing with a constant anchor `hum0·ρ_vs(T)` removed
+   that drain, but also removed most of the penalty's purpose: there's no
+   strong physical reason to pin `rhov` toward the initial humidity inside
+   solid; the only motivation was numerical sink-of-last-resort for the
+   inner-band accumulation that no longer happens (item 1).
+
+**What this means.** Items 1–5 are independently-derived fixes for distinct
+underlying bugs. The two vapor penalties were each calibrated to mask one or
+more of those bugs. With all the bugs now fixed in their own right, the
+penalties have nothing left to do — and turning them on adds artificial
+weight to a vapor equation that is otherwise behaving correctly, which
+manifests as suppressed Gibbs-Thomson signal in the diffuse interface
+(see §23) and minor parasitic drains (§26).
+
+**Recommendation, pending broader confirmation.** Adopt `k_pen = 0`,
+`difvap_pen = 1.0` as the default in `solver.opts`. Keep the `PenaltyWeight`
+infrastructure in the code as dead code (zero cost: the penalty terms
+multiply by `k_pen = 0`) — both for clean revert in case of a not-yet-seen
+failure mode, and because the same machinery is the right place to plug a
+future *physical* surface-kinetics term if one is needed. Validate on the
+two-grain `2D_touching_grains` sintering test and the `1D_separated_grains`
+narrow-gap case before promoting it; those exercise different parts of the
+residual than the wide-gap test that exposed the win.
+
+---
+
 ## Summary trajectory
 
 The model went through three identifiable stages on this branch:
@@ -757,10 +846,24 @@ The model went through three identifiable stages on this branch:
    in the inner-band diffusion-starved zone without intruding on
    the GT-active midpoint of the diffuse interface.
 
+6. **Both vapor penalties retired** (§27): once the bugs the penalties were
+   masking were fixed independently (mass-conserving `vap_src`, correctly
+   directed diffusivity, latent heat paired with `sub_src`, dt-growth
+   unlocked, constant `rhov_eq` anchor), the penalties themselves became
+   counter-productive — suppressing real GT signal and adding parasitic
+   drains. The `2D_separated_grains` 30-day −20 °C diagnostic with
+   `k_pen = 0` and `difvap_pen = 1.0` produced cleaner results than any
+   prior configuration. The penalty infrastructure (`PenaltyWeight()`,
+   the residual/Jacobian wiring) stays in the code as dead code at zero
+   cost — useful both as a clean revert path and as the natural home for
+   any future *physical* surface-kinetics term.
+
 The starting question — *why is spurious ice forming at sed-air interfaces?* —
 turned out to be downstream of a fundamental model-formulation choice in the
 frozen-sed branch of the residual. Once that was understood, the rest fell
 out as a series of independent improvements to model fidelity, numerical
 stability, developer ergonomics, the central physics phenomenon of dry-snow
-metamorphism (Ostwald ripening), and finally a cascade of formerly-hidden
-vapor-transport bugs that turning on real Ostwald ripening exposed.
+metamorphism (Ostwald ripening), a cascade of formerly-hidden vapor-transport
+bugs that turning on real Ostwald ripening exposed, and finally the discovery
+that the two vapor-equation penalties — originally added to fight those
+hidden bugs — were no longer needed once the bugs themselves were fixed.

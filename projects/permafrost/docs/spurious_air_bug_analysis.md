@@ -4,6 +4,20 @@
 **Old run:** `test_1D_IceSlab_2Phase_difvappen1e-07_k_pen1e09` (2026-05-05)  
 **Reference files compared:** `src/assembly.c`, `src/permafrost2.c`, `src/initial_conditions.c`, `*.opts`
 
+> **Status note (2026-05-27).** This document analyses the original
+> 2026-05-05 failure cascade in the *legacy* 2-phase formulation. The eight
+> bugs catalogued here were all fixed before the start of the
+> `fix/spurious-ice-sed-air-penalty` branch. Several *further* model-level
+> fixes were made on that branch — the 3-phase ice equation under frozen
+> sediment (branch log §1), the vapor-diffusivity-penalty direction (§25),
+> the mass-conserving Stefan source `vap_src = -2*ρ_ice*φ_a*∂φ_i/∂t` (§26),
+> latent heat pairing with `S_sub` (§3.3 in `model_description.md`), and
+> finally turning off both vapor-equation penalties as the current
+> recommendation (§27). The model equations in
+> [`model_description.md`](model_description.md) reflect the **current**
+> code; this document is preserved as historical context for *why* the
+> original code failed, not as a description of the present model.
+
 ---
 
 ## Background

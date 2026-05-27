@@ -2,7 +2,7 @@
 
 > **Purpose:** Reference document for manuscript preparation.  
 > **Code:** `PetIGA-3.20/projects/permafrost/`  
-> **Last updated:** 2026-05-15
+> **Last updated:** 2026-05-27
 
 ---
 
@@ -85,51 +85,57 @@ This is enforced by zeroing the sediment residual to its time-derivative term on
 
 ### 3.3 Temperature — Thermal Energy Balance
 
-$$\rho c_p \frac{\partial T}{\partial t} = \nabla\cdot(\lambda\nabla T) - \rho L_{\mathrm{sub}}\frac{\partial\phi_a}{\partial t}$$
+$$\rho c_p \frac{\partial T}{\partial t} \;=\; \xi_T\,\nabla\cdot(\lambda\nabla T) \;+\; \xi_T\,\rho L_{\mathrm{sub}}\,S_{\mathrm{sub}}$$
 
 where:
 - ρ = weighted mixture density (kg m⁻³)
 - c_p = weighted mixture heat capacity (J kg⁻¹ K⁻¹)
 - λ = weighted mixture thermal conductivity (W m⁻¹ K⁻¹)
 - L_sub = 2.83 × 10⁶ J kg⁻¹ (latent heat of sublimation)
+- $S_{\mathrm{sub}}$ = sublimation source defined in §4
 
-Since φ_a = 1 − φ_i − φ_s, the latent heat source is:
+**Pairing latent heat with $S_{\mathrm{sub}}$ rather than with $\partial\phi_a/\partial t$.** The latent-heat source is paired *directly* with the sublimation rate $S_{\mathrm{sub}}$ (the real ice ↔ vapor mass-exchange term in the ice equation), **not** with $\partial\phi_a/\partial t = -\partial\phi_i/\partial t - \partial\phi_s/\partial t$. Using $\partial\phi_a/\partial t$ conflates Allen-Cahn interface motion — mass-neutral rearrangement of the diffuse interface during initial relaxation — with real phase change. With $S_{\mathrm{sub}}$ instead, latent heat is exchanged **only** when ice and vapor actually exchange mass. This pairing is the thermal-side counterpart of the §3.4 mass-balance closure, and was a critical fix for stability during the initial AC relaxation phase. Sign convention: $S_{\mathrm{sub}} > 0$ means ice is *growing* (deposition; vapor → ice), which physically *releases* latent heat (T increases) — matching the sign of the source term above.
 
-$$-\rho L_{\mathrm{sub}}\frac{\partial\phi_a}{\partial t} = \rho L_{\mathrm{sub}}\left(\frac{\partial\phi_i}{\partial t} + \frac{\partial\phi_s}{\partial t}\right)$$
+ξ_T = 1.0 by default (physical thermal time scaling).
 
-so latent heat is released when air fraction decreases (ice or sediment grows) and absorbed when ice melts or sublimes. A scaling factor ξ_T = 10⁻² is applied to the spatial (conduction + latent heat) terms to balance the time scales of thermal and phase-field dynamics.
+### 3.4 Vapor Density — Diffusion + Stefan Source (Penalties Optional)
 
-### 3.4 Vapor Density — Penalised Diffusion
+The vapor density equation has three terms in the residual: a diffusive transport term through air, an *optional* numerical penalty pulling $\rho_v$ toward an equilibrium anchor in deep solid, and a Stefan-condition mass-exchange source coupling ice and vapor:
 
-The vapor density equation enforces two physical constraints:
-1. **Diffusive transport** of vapor through the air phase.
-2. **Local vapor equilibrium** in solid interiors (numerical sink, not a physical claim — see "Interface equilibrium penalty" below).
+$$\frac{\partial\rho_v}{\partial t} \;-\; \nabla\cdot\!\left(\xi_v\, D_{\mathrm{eff}}(\phi)\,\phi_a^{\mathrm{eff}}\,\nabla\rho_v\right) \;+\; \xi_v\, k_{\mathrm{pen}}\, G_{\mathrm{pen}}(\phi_i+\phi_s)\,(\rho_v - \rho_v^{\mathrm{eq}}) \;=\; V_{\mathrm{src}}$$
 
-$$\frac{\partial\rho_v}{\partial t} \;-\; \nabla\cdot\!\left(\xi_v\, D_{\mathrm{eff}}(\phi)\,\phi_a^{\mathrm{eff}}\,\nabla\rho_v\right) \;+\; \xi_v\, k_{\mathrm{pen}}\, G_{\mathrm{pen}}(\phi_i+\phi_s)\,(\rho_v - \rho_v^{\mathrm{eq}}) \;=\; \rho_{\mathrm{ice}}\, S_{\mathrm{sub}}$$
+with $V_{\mathrm{src}} = -2\,\rho_{\mathrm{ice}}\,\phi_a\,\dfrac{\partial\phi_i}{\partial t}$.
 
-where $S_{\mathrm{sub}}$ is the sublimation source term from the ice equation (§4) — the same expression appears on both sides of the ice/vapor pair, guaranteeing pointwise mass balance.
+**Stefan-condition source $V_{\mathrm{src}}$.** The right-hand side is the diffuse-interface form of the Stefan condition:
 
-**Penalised diffusivity:** The effective vapor diffusivity transitions smoothly between the full physical value in air and a reduced (penalised) value inside *solid phases* (ice or sediment):
+$$V_{\mathrm{src}} \;=\; -\,2\,\rho_{\mathrm{ice}}\,\phi_a\,\frac{\partial\phi_i}{\partial t}$$
 
-$$D_{\mathrm{eff}} = D_{\mathrm{pen}}\, H(\phi_i + \phi_s) \;+\; D_v\,\bigl[1 - H(\phi_i + \phi_s)\bigr], \quad D_{\mathrm{pen}} = \alpha_{\mathrm{pen}} D_v$$
+The factor $2\phi_a$ is a localiser that:
+- **vanishes at ice-sed boundaries** ($\phi_a = 0$), so AC-driven motion of ice along sed boundaries does *not* generate spurious vapor — this fixed a long-standing failure mode where the inner edge of every ice-sed boundary accumulated unphysical vapor (branch log §26).
+- **integrates to 1 across the ice-air diffuse band** (since $\phi_a$ goes from 0 to 1 across the interface and $\partial\phi_i/\partial t$ is concentrated there), so the global mass balance $\frac{d}{dt}(\rho_{\mathrm{ice}}\!\int\!\phi_i\,d\Omega) + \frac{d}{dt}(\!\int\!\rho_v\,d\Omega) = 0$ is preserved exactly at every quadrature point.
+- **keeps AC-driven motion coupled to vapor along ice-air boundaries**, which is physically correct: when ice retreats into air, vapor must appear regardless of whether the motion is driven by the sublimation kinetic source $S_{\mathrm{sub}}$ or by curvature/AC. No $\xi_v$ factor appears on $V_{\mathrm{src}}$ — it is the physical Stefan closure, not a regularisation. $\xi_v$ scales only the diffusion and equilibrium-penalty terms.
 
-where H(φ) = φ³(3 − 2φ) is the smooth cubic Heaviside and α_pen = 10⁻⁸ is the penalty factor. The switch argument (φ_i + φ_s) puts the penalty on **both ice and sed**, leaving bulk air at full physical diffusivity. (An earlier version of the code used H(φ_i) here, which inverted the role of the penalty and crippled bulk-air vapor diffusion — see branch log §25.)
+**Effective diffusivity (penalty-weighted linear combination).** The vapor diffusivity transitions smoothly between full physical $D_v$ in air and a reduced "penalised" value in *solid phases* (ice or sediment):
 
-**Interface equilibrium penalty:** The term $\xi_v\,k_{\mathrm{pen}}\,G_{\mathrm{pen}}(\phi_i+\phi_s)\,(\rho_v - \rho_v^{\mathrm{eq}})$ drives ρ_v toward the local equilibrium value, but only in **deep solid** where the diffuse interface has fully resolved. $G_{\mathrm{pen}}$ is *not* the bare cubic Heaviside; it is a *shifted* smooth Heaviside concentrated near the bulk-solid edge:
+$$D_{\mathrm{eff}} \;=\; D_{\mathrm{pen}}\, G_{\mathrm{pen}}(\phi_i + \phi_s) \;+\; D_v\,\bigl[1 - G_{\mathrm{pen}}(\phi_i + \phi_s)\bigr], \qquad D_{\mathrm{pen}} = \alpha_{\mathrm{pen}} D_v$$
+
+with $G_{\mathrm{pen}}$ the shifted smooth Heaviside defined below and $\alpha_{\mathrm{pen}}$ a dimensionless penalty factor (`-difvap_pen`). The switch argument $(\phi_i+\phi_s)$ puts the penalty on **both ice and sed**, leaving bulk air and the entire diffuse interface at full physical diffusivity. **Setting $\alpha_{\mathrm{pen}} = 1$ collapses this to $D_{\mathrm{eff}} = D_v$ everywhere** (no diffusivity penalty).
+
+**Interface equilibrium penalty.** The term $\xi_v\,k_{\mathrm{pen}}\,G_{\mathrm{pen}}(\phi_i+\phi_s)\,(\rho_v - \rho_v^{\mathrm{eq}})$ drives $\rho_v$ toward a constant anchor in deep solid, but only where the diffuse interface has fully resolved. **Setting $k_{\mathrm{pen}} = 0$ disables this term entirely.** $G_{\mathrm{pen}}$ is a *shifted* smooth Heaviside concentrated near the bulk-solid edge:
 
 $$G_{\mathrm{pen}}(\phi) = \begin{cases} 0 & \phi \le \phi_{\mathrm{lo}} \\ H\!\left(\dfrac{\phi - \phi_{\mathrm{lo}}}{\phi_{\mathrm{hi}} - \phi_{\mathrm{lo}}}\right) & \phi_{\mathrm{lo}} < \phi < \phi_{\mathrm{hi}} \\ 1 & \phi \ge \phi_{\mathrm{hi}} \end{cases}$$
 
-with $\phi_{\mathrm{lo}} = 0.90$, $\phi_{\mathrm{hi}} = 1.00$ (see `PenaltyWeight()` in `src/material_properties.c`). The penalty is *off* through the entire diffuse interface (so Gibbs-Thomson curvature dependence in §4 emerges freely) and *on* in the deep-solid edge of the band where vapor would otherwise drift to large values because the diffusion-starved zone there has no other sink.
+with $\phi_{\mathrm{lo}} = 0.90$, $\phi_{\mathrm{hi}} = 1.00$ (`PenaltyWeight()` in `src/material_properties.c`) and $H(\xi) = \xi^3(3-2\xi)$ the smooth cubic Heaviside. The penalty is **off** through the entire diffuse interface (so curvature-driven phenomena emerge freely) and **on** only in the deep-solid edge of the band.
 
-The reference field is
+The reference anchor is a **constant** (in $\phi$):
 
-$$\rho_v^{\mathrm{eq}} = (\phi_i + \phi_s)\,\rho_{vs}(T) + \phi_a\,\rho_v$$
+$$\rho_v^{\mathrm{eq}}(T) \;=\; h_0\,\rho_{vs}(T)$$
 
-so the penalty in pure solid pulls ρ_v toward ρ_{vs}(T) (saturation), and in pure air becomes degenerate (ρ_v − ρ_v = 0). k_pen = 10³ s⁻¹.
+where $h_0$ is the initial humidity (`-humidity`) and $\rho_{vs}(T)$ is the flat-interface saturation vapor density over ice (§5.3). An earlier formulation used $\rho_v^{\mathrm{eq}} = (\phi_i+\phi_s)\rho_{vs} + \phi_a \rho_v$, which was self-referential in air and drained vapor from air into solid along the diffuse band; the constant anchor removes that pathology (branch log §27).
 
-**Air fraction limit:** $\phi_a^{\mathrm{eff}} = \max(\phi_a, \phi_a^{\mathrm{lim}})$ with $\phi_a^{\mathrm{lim}} = 10^{-6}$ prevents numerical singularity when $\phi_a \to 0$.
+**Air fraction limit.** $\phi_a^{\mathrm{eff}} = \max(\phi_a, \phi_a^{\mathrm{lim}})$ with $\phi_a^{\mathrm{lim}} = 10^{-6}$ prevents numerical singularity in pure solid where $\phi_a \to 0$.
 
-**Mass-balance source:** The right-hand side $\rho_{\mathrm{ice}}\, S_{\mathrm{sub}}$ pairs the vapor equation directly with the sublimation term in the ice equation (§4). Using $S_{\mathrm{sub}}$ rather than $-\rho_{\mathrm{ice}}\,\partial\phi_i/\partial t$ avoids over-counting the Stefan condition: the latter would include AC interface motion (mass-neutral rearrangement), producing spurious vapor at ice-sed boundaries where ice can move without sublimating (branch log §26). No ξ_v factor appears on this term — it is the physical mass-balance closure, not a regularisation. ξ_v scales only the diffusion and equilibrium-penalty terms.
+**Current recommendation: both penalties OFF.** Once the §3.3 latent-heat pairing fix, the §3.4 mass-conserving $V_{\mathrm{src}}$, the §3.4 constant-anchor $\rho_v^{\mathrm{eq}}$, and the §3.4 diffusivity-penalty direction (penalty on **solid**, not on air) were all in place, the two penalties had nothing physical left to do. Diagnostic runs on `2D_separated_grains` at T = −20 °C, 30 days show that setting $k_{\mathrm{pen}} = 0$ and $\alpha_{\mathrm{pen}} = 1$ gives **cleaner** behaviour than any prior configuration with the penalties active (branch log §27). The penalty infrastructure is retained in the source code (zero cost when $k_{\mathrm{pen}}=0$) for clean revertability and as the natural place to plug a future physical surface-kinetics term.
 
 ---
 
@@ -137,25 +143,23 @@ so the penalty in pure solid pulls ρ_v toward ρ_{vs}(T) (saturation), and in p
 
 The **Allen-Cahn equation for ice** includes a phase-change source term:
 
-$$S_{\mathrm{sub}} = \frac{\alpha_{\mathrm{sub}}\,\phi_i^2\phi_a^2}{\rho_{\mathrm{ice}}}\,\bigl(\rho_v - \rho_{vs}^{\mathrm{eff}}\bigr)$$
+$$S_{\mathrm{sub}} \;=\; \frac{\alpha_{\mathrm{sub}}\,\phi_i^2\,\phi_a^2}{\rho_{\mathrm{ice}}}\,\bigl(\rho_v - \rho_{vs}(T)\bigr)$$
 
-This term localises the phase change to ice-air interfaces (through the $\phi_i^2\phi_a^2$ factor, which peaks at the interface midpoint where both φ_i and φ_a are non-zero, and vanishes identically at ice-sed boundaries where φ_a = 0) and drives:
-- **Sublimation** when $\rho_v < \rho_{vs}^{\mathrm{eff}}$: ice decreases, φ_a increases.
-- **Condensation** when $\rho_v > \rho_{vs}^{\mathrm{eff}}$: ice grows, φ_a decreases.
+This term localises the phase change to ice-air interfaces through the $\phi_i^2\phi_a^2$ factor, which peaks at the interface midpoint (where both $\phi_i$ and $\phi_a$ are non-zero) and **vanishes identically at ice-sed boundaries** (where $\phi_a = 0$). It drives:
+- **Sublimation** when $\rho_v < \rho_{vs}(T)$: ice decreases, $\phi_a$ increases.
+- **Condensation** when $\rho_v > \rho_{vs}(T)$: ice grows, $\phi_a$ decreases.
 
-**Gibbs-Thomson curvature dependence.** The local equilibrium vapor density at a curved ice surface differs from the flat-interface saturation value $\rho_{vs}(T)$ by the Kelvin / Gibbs-Thomson correction:
+$S_{\mathrm{sub}}$ enters the ice residual (§3.1) as a negative contribution (subtracted from $R^i$) and the temperature residual (§3.3) as the latent-heat source.
+
+**Mass conservation.** The mass exchange between ice and vapor is enforced by the Stefan-condition source $V_{\mathrm{src}} = -2\,\rho_{\mathrm{ice}}\,\phi_a\,\partial\phi_i/\partial t$ on the vapor side (§3.4) and the $-S_{\mathrm{sub}}$ term on the ice side. Both are independently localised to the diffuse ice-air band ($V_{\mathrm{src}}$ by its $\phi_a$ factor, $S_{\mathrm{sub}}$ by its $\phi_i^2\phi_a^2$ factor), and the global balance $\frac{d}{dt}\!\int\rho_{\mathrm{ice}}\phi_i + \frac{d}{dt}\!\int\rho_v = 0$ holds by construction since $V_{\mathrm{src}}$ exactly closes the rate at which $\rho_{\mathrm{ice}}\phi_i$ is changing.
+
+**Gibbs-Thomson curvature dependence (currently disabled).** The local equilibrium vapor density at a curved ice surface physically differs from the flat-interface saturation value $\rho_{vs}(T)$ by the Kelvin / Gibbs-Thomson correction:
 
 $$\rho_{vs}^{\mathrm{eff}} \;=\; \rho_{vs}(T)\,\bigl(1 + d_0^{\mathrm{GT}} \,\kappa \bigr), \qquad \kappa \;=\; -\nabla\!\cdot\!\left(\frac{\nabla\phi_i}{|\nabla\phi_i|}\right)$$
 
-where $d_0^{\mathrm{GT}} = \gamma_{iv} v_m / (R_g T)$ is the capillary length (~9.6 × 10⁻¹⁰ m for ice at −5 °C), and κ is the curvature of the iso-surfaces of φ_i computed from its gradient and Hessian via
+where $d_0^{\mathrm{GT}} = \gamma_{iv} v_m / (R_g T)$ is the capillary length (~$9.6 \times 10^{-10}$ m for ice at −5 °C). This is the Lifshitz–Slyozov–Wagner (LSW) driving force for Ostwald ripening between grains of different curvature.
 
-$$\kappa \;=\; -\frac{\nabla^2\phi_i}{|\nabla\phi_i|_{\mathrm{reg}}} \;+\; \frac{(\nabla\phi_i)^{\!\top}\!\mathbf H(\phi_i)\,(\nabla\phi_i)}{|\nabla\phi_i|_{\mathrm{reg}}^3}$$
-
-with $|\nabla\phi_i|_{\mathrm{reg}}^2 = |\nabla\phi_i|^2 + (0.01/\varepsilon)^2$ for stability in bulk regions where $|\nabla\phi_i| \to 0$. The implementation is in `Curvature()` in `src/material_properties.c`, and `Residual_A1` / `Jacobian_A1` use `IGAPointFormHess` to read the Hessian at each quadrature point. In 1D, κ ≡ 0 (no curvature exists in 1D); the function short-circuits to zero.
-
-The default `d0_GT = 0` recovers the flat-interface behavior identically. Setting `-d0_GT 9.6e-10` enables the physical Gibbs-Thomson coupling that drives Lifshitz-Slyozov-Wagner Ostwald ripening between grains of different curvature.
-
-**Mass conservation.** $S_{\mathrm{sub}}$ also appears on the right-hand side of the vapor equation (§3.4) as $\rho_{\mathrm{ice}}\,S_{\mathrm{sub}}$, so every gram of ice that grows comes from one gram of vapor (and vice versa) by construction at every quadrature point.
+The Curvature-via-Hessian code was implemented (`Curvature()` in `material_properties.c`; Hessian reads in `Residual_A1` / `Jacobian_A1`) and tested at amplified `d0_GT` to confirm an LSW signal, but it has been **disabled in the current configuration** (`d0_GT = 0`; the `Curvature()` function and its Jacobian terms are not called from `Residual_A1`). The reason is that enabling it exposed and was partially masking a pair of independent bugs (vapor diffusivity direction §25 and the `vap_src` over-counting §26), and once those bugs were fixed in their own right the GT code path was kept dormant pending a clean re-introduction. See branch log §24–§27 for the full history. The current model is therefore a flat-interface sublimation model; restoring the GT curvature term is a near-term planned extension.
 
 The kinetic coefficient α_sub and mobility M are derived from the **Gibbs–Thomson relation** using capillary length d₀ and kinetic coefficient β:
 
@@ -333,11 +337,12 @@ $$J_n\,\delta U_n = -R(U_n), \quad U_{n+1} = U_n + \alpha_n\,\delta U_n$$
 
 where α_n ∈ (0,1] is a backtracking step size and J_n = ∂R/∂U + shift × ∂R/∂(dU/dt) is the Jacobian including the time-derivative contribution from the generalized-α scheme.
 
-**Solver parameters:**
-- snes_max_it = 15 (maximum Newton iterations)
+**Solver parameters** (defaults in `inputs/solver.opts`):
+- snes_max_it = 50 (maximum Newton iterations)
 - snes_rtol = 10⁻⁶ (relative residual tolerance)
-- snes_atol = 10⁻¹⁰ (absolute residual tolerance)
+- snes_atol = 10⁻⁴ (absolute residual tolerance — aggressively relaxed; the T-equation residual at iteration 0 is ~7×10⁻⁵ in the typical configuration, so atol = 10⁻⁴ means SNES converges immediately and triggers `NRmin`-based dt-growth on every step. See §9.8.)
 - snes_stol = 10⁻⁶ (step size tolerance)
+- snes_linesearch_type = bt (backtracking)
 
 ### 9.6 Per-DOF Convergence Test
 
@@ -354,7 +359,7 @@ for j ∈ {0=ice, 1=T, 2=ρ_v, 3=sed}. A minimum of 3 Newton iterations (1 durin
 Each Newton iteration requires solving the 4 × 4 block linear system J δU = −R. The linear solver stack is:
 
 - **Krylov method:** GMRES (Saad & Schultz 1986)
-  - ksp_rtol = 10⁻⁶, ksp_atol = 10⁻¹⁰
+  - ksp_rtol = 10⁻⁸, ksp_atol = 10⁻¹²
   - ksp_max_it = 500
   - ksp_gmres_restart = 200 (restart Krylov basis after 200 iterations)
   
@@ -377,12 +382,14 @@ The time step is adapted based on the number of Newton iterations required in th
 
 | Condition | Action |
 |-----------|--------|
-| Newton iters ≤ NRmin = 3 | Increase dt by factor f = 10^(1/8) ≈ 1.33 |
-| NRmin < Newton iters ≤ NRmax = 8 | Keep dt unchanged |
-| Newton iters > NRmax = 8 | Decrease dt by factor 1/f; reject and retry |
-| Rejected steps > max_rej = 10 | Abort simulation |
+| Newton iters < NRmin = 5 | Increase dt by factor $f = 10^{1/8} \approx 1.33$ |
+| NRmin ≤ Newton iters ≤ NRmax = 15 | Keep dt unchanged |
+| Newton iters > NRmax = 15 | Decrease dt by factor 1/f; reject and retry |
+| Rejected steps > max_rej = 25 | Abort simulation |
 
-The default step adjustment factor is f = 10^(1/8), providing slow growth and rapid reduction. The time step is bounded by dtmin = 0.01 × Δt₀ and dtmax = 0.5 × t_out (half the output interval, to ensure snapshots land exactly at output times).
+**Why NRmin = 5 (not the more common 3).** With the relaxed `xi_v = xi_T = 1.0` setting and `snes_atol = 10⁻⁴`, SNES converges in exactly **3** iterations on essentially every accepted step in the steady-cruise regime. With the more common `NRmin = 2`, the condition "Newton iters < NRmin" was never satisfied, so dt never grew above the initial value (~0.01 s). Setting `NRmin = 5` lets 3-iter convergence trigger dt-growth, which unlocks the dt → 10⁴ s adaptive ramp needed for multi-day integrations. This was the single largest performance unlock during the §27 stability-fix campaign.
+
+The time step is hard-capped at `dtmax = 10⁴ s` (~ 2.8 hours), and the adaptive scheme produces naturally log-spaced snapshots when output is set to every step (`-outp 1`).
 
 ---
 
@@ -432,16 +439,19 @@ Full solution fields (φ_i, T, ρ_v, φ_s, φ_a) are written as binary PetIGA `s
 | Triple-junction penalty | Λ | 1.0 × 10⁴ | `inputs/solver.opts` |
 | Latent heat of sublimation | L_sub | 2.83 × 10⁶ J kg⁻¹ | `permafrost2.c` |
 | Air diffusivity floor | φ_a^lim | 10⁻⁶ | `permafrost2.c` |
-| Diffusivity penalty factor | α_pen | 10⁻⁸ | `inputs/solver.opts` |
-| Interface equilibrium stiffness | k_pen | 10³ s⁻¹ | `inputs/solver.opts` |
+| Diffusivity penalty factor | α_pen | 10⁻⁸ (default, with penalty) / 1.0 (penalty off) | `inputs/solver.opts` |
+| Interface equilibrium stiffness | k_pen | 10³ s⁻¹ (default) / 0 (penalty off; current recommendation, §3.4) | `inputs/solver.opts` |
 | Penalty ramp band | [φ_lo, φ_hi] | [0.90, 1.00] | `src/material_properties.c::PenaltyWeight` |
-| Vapor time scaling | ξ_v | 1.0 | `inputs/solver.opts` |
-| Thermal time scaling | ξ_T | 1.0 | `inputs/solver.opts` |
+| Vapor time scaling | ξ_v | 1.0 (physical) | `inputs/solver.opts` |
+| Thermal time scaling | ξ_T | 1.0 (physical) | `inputs/solver.opts` |
 | Capillary length scale (mobility derivation) | d₀⁰ | 10⁻⁹ m | `permafrost2.c` |
-| Gibbs-Thomson capillary length (sub_src) | d₀^GT | 9.6 × 10⁻¹⁰ m (physical) or 0 (default) | `inputs/experiment/*.opts`, `-d0_GT` |
+| Gibbs-Thomson capillary length | d₀^GT | 0 (currently disabled, §4) | `inputs/experiment/*.opts`, `-d0_GT` |
 | Kinetic coefficient | β⁰ | 1.4 × 10⁵ s m⁻¹ | `permafrost2.c` |
 | Relaxation steps | n_relax | 1 | `inputs/solver.opts` |
 | Sed. freeze time | t_sed_freeze | 10 s | `inputs/experiment/*.opts` |
+| Adaptive-dt growth threshold | NRmin | 5 (Newton iters strictly *below* this trigger dt growth) | `inputs/solver.opts` |
+| Adaptive-dt shrink threshold | NRmax | 15 | `inputs/solver.opts` |
+| dt cap | dtmax | 10⁴ s (~2.8 h) | `inputs/solver.opts` |
 
 ---
 
@@ -659,7 +669,189 @@ The current code breaks this cascade at **every link**:
 
 ---
 
-## 14. References
+## 14. LaTeX source for the model equations
+
+The block below is a self-contained LaTeX source for the model equations,
+ready to paste into a manuscript. It assumes `amsmath` and uses standard
+notation throughout. Copy from `\begin{align}` to `\end{align}` for individual
+equations, or use the whole block as a model-description section.
+
+```latex
+% --------------------------------------------------------------------------
+% Permafrost three-phase Allen-Cahn + Stefan-coupled sublimation model.
+% Notation:
+%   phi_i, phi_s, phi_a : phase fields for ice, sediment, air (phi_a = 1 - phi_i - phi_s)
+%   T, rho_v            : temperature and vapor mass density
+%   M                   : Allen-Cahn mobility (m^3/s)
+%   epsilon             : diffuse-interface half-width (m)
+%   eta_k, Lambda       : phase-specific double-well coefficients and triple-junction penalty
+%   E_T                 : eta_i*eta_s + eta_i*eta_a + eta_s*eta_a
+%   f_i, f_s, f_a       : bulk driving-force functions (defined inline)
+%   rho, c_p, lambda    : volume-fraction-weighted mixture density, heat capacity, conductivity
+%   L_sub               : latent heat of sublimation
+%   D_v(T)              : vapor diffusivity in air (power law in T)
+%   rho_vs(T)           : flat-interface saturation vapor density over ice
+%   alpha_sub           : sublimation kinetic coefficient (derived; see §4)
+%   xi_T, xi_v          : optional time-scale separation factors (both 1.0 by default)
+%   k_pen, alpha_pen    : numerical penalty stiffness and diffusivity factor (both 0 / 1 by default)
+%   G_pen(.)            : shifted smooth Heaviside on [phi_lo, phi_hi] = [0.90, 1.00]
+%   h_0                 : initial relative humidity
+%   rho_ice             : ice mass density
+% --------------------------------------------------------------------------
+
+% --- Free-energy / driving-force functions -----------------------------
+\begin{align}
+  \Psi(\phi_i,\phi_s,\phi_a)
+    &= \sum_{k\in\{i,s,a\}} \eta_k\,\phi_k^2(1-\phi_k)^2
+       \;+\; \Lambda\,\phi_i^2\phi_s^2\phi_a^2, \\[4pt]
+  f_i(\phi_i,\phi_s)
+    &= \eta_i\phi_i(1-\phi_i)(1-2\phi_i)
+       + 2\Lambda\,\phi_i\phi_s^2\phi_a^2,\\
+  f_s(\phi_i,\phi_s)
+    &= \eta_s\phi_s(1-\phi_s)(1-2\phi_s)
+       + 2\Lambda\,\phi_i^2\phi_s\phi_a^2,\\
+  f_a(\phi_i,\phi_s)
+    &= \eta_a\phi_a(1-\phi_a)(1-2\phi_a)
+       + 2\Lambda\,\phi_i^2\phi_s^2\phi_a, \\[4pt]
+  E_T &= \eta_i\eta_s + \eta_i\eta_a + \eta_s\eta_a.
+\end{align}
+
+% --- Ice phase: Allen-Cahn with Stefan source --------------------------
+\begin{equation}
+  \frac{\partial \phi_i}{\partial t}
+    \;=\; M\!\left[\,
+       \varepsilon^{2}\nabla^{2}\phi_i
+       \;-\; \frac{1}{\varepsilon\,E_T}\bigl[(\eta_s+\eta_a)\,f_i
+                                            - \eta_a\,f_s
+                                            - \eta_s\,f_a\bigr]
+    \right]
+    \;+\; S_{\mathrm{sub}}.
+  \label{eq:ice-AC}
+\end{equation}
+
+% --- Sediment phase: Allen-Cahn (frozen after t = t_sed_freeze) --------
+\begin{equation}
+  \frac{\partial \phi_s}{\partial t}
+    \;=\; M\!\left[\,
+       \varepsilon^{2}\nabla^{2}\phi_s
+       \;+\; \frac{1}{\varepsilon\,E_T}\bigl[-\eta_a\,f_i
+                                             - \eta_i\,f_a
+                                             + (\eta_i+\eta_a)\,f_s\bigr]
+    \right],
+    \qquad
+    \frac{\partial \phi_s}{\partial t} = 0 \;\;\text{for}\;\; t \ge t_{\mathrm{sed,freeze}}.
+  \label{eq:sed-AC}
+\end{equation}
+
+% --- Temperature: energy balance, latent heat paired with S_sub --------
+\begin{equation}
+  \rho\,c_p\,\frac{\partial T}{\partial t}
+    \;=\; \xi_T\,\nabla\!\cdot(\lambda\,\nabla T)
+    \;+\; \xi_T\,\rho\,L_{\mathrm{sub}}\,S_{\mathrm{sub}}.
+  \label{eq:temperature}
+\end{equation}
+
+% --- Vapor density: diffusion + (optional) penalty + Stefan source -----
+\begin{equation}
+  \frac{\partial \rho_v}{\partial t}
+    \;-\; \nabla\!\cdot\!\bigl(\xi_v\,D_{\mathrm{eff}}\,\phi_a^{\mathrm{eff}}\,\nabla \rho_v\bigr)
+    \;+\; \xi_v\,k_{\mathrm{pen}}\,G_{\mathrm{pen}}(\phi_i+\phi_s)\bigl(\rho_v - \rho_v^{\mathrm{eq}}\bigr)
+    \;=\; V_{\mathrm{src}},
+  \label{eq:vapor}
+\end{equation}
+with the Stefan-condition source
+\begin{equation}
+  V_{\mathrm{src}} \;=\; -\,2\,\rho_{\mathrm{ice}}\,\phi_a\,\frac{\partial \phi_i}{\partial t},
+  \label{eq:vap-src}
+\end{equation}
+and constant equilibrium anchor
+\begin{equation}
+  \rho_v^{\mathrm{eq}}(T) \;=\; h_0\,\rho_{vs}(T).
+  \label{eq:rhov-eq}
+\end{equation}
+
+% --- Sublimation source: localised to ice-air diffuse band -------------
+\begin{equation}
+  S_{\mathrm{sub}}
+    \;=\; \frac{\alpha_{\mathrm{sub}}\,\phi_i^{2}\,\phi_a^{2}}{\rho_{\mathrm{ice}}}\,
+          \bigl(\rho_v - \rho_{vs}(T)\bigr).
+  \label{eq:S-sub}
+\end{equation}
+
+% --- Effective vapor diffusivity (penalty-weighted) --------------------
+\begin{equation}
+  D_{\mathrm{eff}}(\phi)
+    \;=\; D_{\mathrm{pen}}\,G_{\mathrm{pen}}(\phi_i + \phi_s)
+       \;+\; D_v(T)\,\bigl[1 - G_{\mathrm{pen}}(\phi_i + \phi_s)\bigr],
+  \qquad
+  D_{\mathrm{pen}} \;=\; \alpha_{\mathrm{pen}}\,D_v(T).
+  \label{eq:D-eff}
+\end{equation}
+
+% --- Shifted smooth Heaviside used in both penalty terms ---------------
+\begin{equation}
+  G_{\mathrm{pen}}(\phi) =
+  \begin{cases}
+    0 & \phi \le \phi_{\mathrm{lo}}, \\[2pt]
+    H\!\left(\dfrac{\phi - \phi_{\mathrm{lo}}}{\phi_{\mathrm{hi}} - \phi_{\mathrm{lo}}}\right)
+      & \phi_{\mathrm{lo}} < \phi < \phi_{\mathrm{hi}}, \\[6pt]
+    1 & \phi \ge \phi_{\mathrm{hi}},
+  \end{cases}
+  \qquad H(\xi) = \xi^{2}(3 - 2\xi).
+  \label{eq:G-pen}
+\end{equation}
+
+% --- Air-fraction floor ------------------------------------------------
+\begin{equation}
+  \phi_a^{\mathrm{eff}} \;=\; \max\!\bigl(\phi_a,\,\phi_a^{\mathrm{lim}}\bigr),
+  \qquad \phi_a^{\mathrm{lim}} = 10^{-6}.
+\end{equation}
+
+% --- Default-configuration note (current best practice) ----------------
+% The two numerical penalties in (\ref{eq:vapor}) and (\ref{eq:D-eff}) are
+% retained in the code for revertability but are currently disabled by
+% default:  k_pen = 0  and  alpha_pen = 1  (so D_eff = D_v(T) everywhere).
+% This collapses (\ref{eq:vapor}) to a plain advection-diffusion equation
+% with the Stefan source V_src as the only coupling to the phase field.
+```
+
+The `// removed` style comments at the bottom of the LaTeX block are
+informational; remove them before submission.
+
+---
+
+## 14a. Pointwise mass balance (manuscript-grade derivation)
+
+The Stefan source $V_{\mathrm{src}}$ in equation (\ref{eq:vap-src}) is constructed
+so that the global mass balance
+
+$$
+  \frac{d}{dt}\!\int_{\Omega} \rho_{\mathrm{ice}}\,\phi_i\,d\Omega
+  \;+\; \frac{d}{dt}\!\int_{\Omega} \rho_v\,d\Omega
+  \;=\; 0
+$$
+
+holds pointwise to leading order in the diffuse-interface width $\varepsilon$.
+Inserting (\ref{eq:vap-src}) into (\ref{eq:vapor}) and noting that the
+diffusive flux and the penalty integrate to zero (the latter under the
+recommendation $k_{\mathrm{pen}} = 0$), the vapor equation reads
+
+$$
+  \frac{\partial \rho_v}{\partial t}
+    \;=\; -\,2\,\rho_{\mathrm{ice}}\,\phi_a\,\frac{\partial \phi_i}{\partial t}.
+$$
+
+Integrating $V_{\mathrm{src}}$ over the diffuse interface, $\phi_a$ varies
+from 0 to 1 across a band of width $\sim\varepsilon$ while
+$\partial\phi_i/\partial t$ is concentrated in that band, and the factor 2
+normalises the integral $\int_0^1 2\phi_a\,d\phi_a = 1$, giving
+$\int V_{\mathrm{src}}\,d\Omega = -\rho_{\mathrm{ice}}\,\frac{d}{dt}\!\int\phi_i\,d\Omega$
+to leading order in $\varepsilon$. This is the diffuse-interface form of the
+Stefan condition and closes the mass balance exactly.
+
+---
+
+## 15. References
 
 - Balay, S. et al. (2023). *PETSc/TAO User's Manual*. Argonne National Laboratory.
 - Dalcin, L. et al. (2016). PetIGA: A framework for high-performance isogeometric analysis. *Comput. Methods Appl. Mech. Eng.* 308, 151–181.

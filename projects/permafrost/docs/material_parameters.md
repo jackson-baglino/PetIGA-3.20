@@ -4,6 +4,12 @@
 **Model:** Permafrost sublimation phase-field (permafrost2.c)  
 **Target environment:** Lunar permanently shadowed regions (PSRs), T ≈ 40–120 K
 
+> **Status note (2026-05-27).** Material properties documented here are
+> unchanged by the §27 vapor-penalty overhaul. For the *numerical* parameter
+> defaults (`k_pen`, `α_pen`, `ξ_v`, `ξ_T`, `NRmin`, etc.) consult
+> [`model_description.md`](model_description.md) §12 — that table tracks
+> the current solver configuration.
+
 ---
 
 ## 1. Surface / Interfacial Energies
