@@ -1,0 +1,28 @@
+# =============================================================================
+# experiment/30day_T-20_h1.00_nopenalty.opts — 30 days at -20°C, saturated,
+# with BOTH vapor-equation penalties disabled.
+#
+# Identical to 30day_T-20_h1.00.opts but overrides:
+#   -k_pen 0              disables the rhov -> rhov_eq equilibrium penalty
+#   -difvap_pen 1.0       sets D_pen = 1.0 * difvap = difvap everywhere, so
+#                         the diffusivity-penalty linear combination
+#                         D_pen*g_pen + difvap*(1-g_pen) collapses to difvap
+#                         regardless of g_pen — i.e. full physical vapor
+#                         diffusion in BOTH air and solid.
+#
+# Diagnostic purpose: see how the model behaves with no artificial vapor-
+# field stabilisers. Expected to either work cleanly (penalty was masking a
+# fixed-elsewhere issue) or to expose the underlying instabilities that
+# motivated each penalty originally (spurious vapor migration through solid,
+# runaway rhov accumulation at slow-diffusion interfaces).
+# =============================================================================
+
+-t_final 2592000.0                      # 30 days (s)
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-k_pen 0.0                              # equilibrium penalty OFF
+-difvap_pen 1.0                         # diffusivity penalty OFF (D_eff = difvap everywhere)
