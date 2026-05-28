@@ -1,0 +1,29 @@
+# =============================================================================
+# experiment/30day_T-20_h1.00_nopen_GT.opts — 30 days at -20°C, saturated,
+# BOTH vapor penalties OFF and Gibbs-Thomson curvature coupling ON.
+#
+# This is the configuration that fixes the "freeze after the initial AC burst"
+# seen in the 2026-05-27 advisor_T-20_nopen batch. Without Gibbs-Thomson every
+# grain shares one equilibrium vapor density rhoI_vs(T), so once the initial
+# Allen-Cahn interface relaxation completes there is no curvature driving force
+# left and the whole field goes static at saturation. Turning GT on gives
+# grains of different curvature different rhoI_vs_eff = rhoI_vs*(1 + d0_GT*kappa)
+# — the Lifshitz-Slyozov-Wagner driver of sustained Ostwald ripening.
+#
+# Pairs with the vap_src = -rho_ice*sub_src (Moure & Fu 2024) reformulation
+# and snes_atol = 1e-6 (both in the source / solver.opts as of the same change).
+# =============================================================================
+
+-t_final 2592000.0                      # 30 days (s)
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-k_pen 0.0                              # equilibrium penalty OFF
+-difvap_pen 1.0                         # diffusivity penalty OFF (D_eff = difvap everywhere)
+
+-d0_GT 9.6e-10                         # Gibbs-Thomson capillary length [m] (ice-vapor,
+                                        # ~physical; varies weakly with T, ~1e-9 at -20°C).
+                                        # rhoI_vs_eff = rhoI_vs * (1 + d0_GT * kappa).

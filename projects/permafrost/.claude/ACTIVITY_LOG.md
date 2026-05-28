@@ -1,3 +1,27 @@
+## 2026-05-28 — Diagnose advisor_T-20_nopen freeze; vap_src reformulation + GT re-enable + atol
+
+- Diagnosed why the 2026-05-27 advisor_T-20_nopen HPC batch froze: every 2D case did a brief Allen-Cahn relaxation burst (2D_touching_grains steps ~123-129) then went bit-for-bit static for 99.4% of the 30 simulated days. Root cause: Gibbs-Thomson disabled (d0_GT=0) → no curvature driving force → genuine steady state at saturation once AC relaxes. Loose snes_atol=1e-4 amplified it (vapor residual ~rhov/dt fell below atol at large dt). Confirmed penalties were genuinely off; the static-vapor look matched the penalty case only because the end state is identical.
+- Reformulated vap_src from -2*rho_ice*air*ice_t to -rho_ice*sub_src (Moure & Fu 2024): driven by the phase-change term only, so mass-neutral Allen-Cahn curvature motion no longer launders non-physical "mass loss" into spurious vapor (was ~0.6% TOTAL_MASS drift). Reverted Jacobian [vap,*] to the sub_src-derived rows; removed ice_t read.
+- Re-enabled Gibbs-Thomson: restored Hessian reads, Curvature() call, rhoI_vs_eff in sub_src, [ice,ice] + [vap,ice] GT Jacobian blocks, N2 shape funs, rhoI_vs_eff/d_rhovs_eff_dtem in [ice,*]/[tem,*]/[vap,*]. Gated on d0_GT (0=off). This is the LSW driver that prevents the freeze.
+- Tightened snes_atol 1e-4 → 1e-6 so weak cold-T vapor dynamics are resolved, not skipped at large dt.
+- Added experiment file 30day_T-20_h1.00_nopen_GT.opts (penalties off + d0_GT=9.6e-10) for the advisor-slides rerun.
+- Verified: clean build (no warnings), smoke test 2D_touching_grains T=-20 penalties-off d0_GT=9.6e-10 t_final=50s — clean exit, no NaN/divergence, mass conserved to display precision, dt grows normally under tighter atol.
+- Updated model_description.md (§3.4 V_src=-rho_ice*S_sub, §4 GT active, §12 table, §14 LaTeX) and branch log §28.
+
+---
+
+**Session ended:** 2026-05-28 14:15:43
+
+
+---
+
+**Session ended:** 2026-05-27 06:40:48
+
+
+---
+
+**Session ended:** 2026-05-27 06:32:03
+
 ## 2026-05-27 — Penalty-off diagnostic + docs sync + HPC full-suite submitter
 
 - Added `inputs/experiment/30day_T-20_h1.00_nopenalty.opts` (k_pen=0, difvap_pen=1.0) to diagnose model behaviour with both vapor-equation penalties disabled. Result: cleaner phase bounds and vapor field than any configuration with penalties active.

@@ -787,6 +787,79 @@ residual than the wide-gap test that exposed the win.
 
 ---
 
+## 28 — The penalty-off run froze: GT was off, and `vap_src` laundered AC mass loss
+
+**Symptom.** The `2026-05-27 advisor_T-20_nopen` HPC batch (penalties off, the
+§27 recommendation) was run on all seven advisor-slide geometries. Every 2D
+case did a brief Allen-Cahn relaxation burst (`2D_touching_grains`: steps
+≈123–129, t ≈ 3000–17000 s) — the touching grains forming a neck and the
+interfaces settling — and then **froze bit-for-bit** for the remaining 99.4 %
+of the 30 simulated days. `TOT_ICE`, `TOT_RHOV`, `TEMP` all constant to 7
+significant figures; dt pinned at `dtmax = 1e4`.
+
+**Diagnosis.** Two independent causes:
+
+1. **Gibbs-Thomson was disabled (`d0_GT = 0`).** §24 added GT; §26→ later
+   iterations (`9d9fdf4`) stripped it back out as a stability measure. With
+   GT off, every grain shares one equilibrium vapor density `rhoI_vs(T)`, so
+   there is *no curvature driving force* for vapor-mediated mass transfer.
+   The early "coarsening" the run showed was **not** Ostwald ripening — it was
+   one-time AC curvature relaxation of the initial condition, which is a
+   gradient flow that stops at its local minimum. At saturation (h = 1.00)
+   with GT off, `sub_src ≈ 0` once vapor equilibrates, so the frozen state is
+   a genuine steady state of the model as configured. (It *looked* like the
+   "no-diffusion-in-solid + active rhov_eq penalty" case because the end
+   state — static vapor at uniform saturation — is identical, but the cause is
+   the opposite: total absence of a driving force, not pinning.)
+
+2. **Loose `snes_atol = 1e-4` amplified it.** At T = −20 °C the vapor field is
+   O(`rho_vs`) ≈ 8.5e-4. Once dt grew to `dtmax`, the vapor residual
+   (~`rhov/dt`) fell below `atol`, so SNES declared "converged" without ever
+   resolving the slow dynamics — the snap to the static state was instant.
+
+**Concern raised about `vap_src`.** Separately, the `vap_src =
+-2·rho_ice·air·ice_t` form (from `f2c797b`) couples *all* ice motion to vapor,
+including the mass-neutral AC curvature relaxation. During the burst this
+laundered AC "mass loss" into spurious vapor — a measured ~0.6 % `TOTAL_MASS`
+drift. The AC mass change is a numerical artifact and should **not** be
+conserved by manufacturing vapor.
+
+**Fix (`70999f5`).** Three coupled changes:
+
+1. **`vap_src = -rho_ice · sub_src`** (Moure & Fu 2024). Driven by the
+   phase-change term only, so AC curvature motion produces no vapor and the
+   physical ice↔vapor exchange is exactly equal-and-opposite pointwise (the
+   `rho_ice` cancels the `1/rho_ice` in `sub_src`). This reverts the
+   `f2c797b` change and restores the §26 intent — but the §26 mass-leak worry
+   that motivated `2·air·ice_t` is now explicitly retired: that "leak" was
+   non-physical AC mass that should not be conserved. The Jacobian `[vap,*]`
+   block was reverted to the `sub_src`-derived rows + GT block; the `ice_t`
+   read in `Jacobian_A1` is gone.
+
+2. **Re-enabled Gibbs-Thomson.** Restored the Hessian reads, `Curvature()`
+   call, `rhoI_vs_eff = rhoI_vs·(1 + d0_GT·kappa)` in `sub_src`, the
+   `[ice,ice]` GT Jacobian block, `N2` shape funs, and `rhoI_vs_eff` /
+   `d_rhovs_eff_dtem` throughout the `[ice,*]` / `[tem,*]` / `[vap,*]` blocks.
+   Still gated on `d0_GT` (0 = off). This is the LSW driver that prevents the
+   freeze. New experiment file `30day_T-20_h1.00_nopen_GT.opts` sets
+   `d0_GT = 9.6e-10` with penalties off.
+
+3. **`snes_atol 1e-4 → 1e-6`** so weak cold-T vapor dynamics are resolved
+   instead of skipped at large dt.
+
+The thermal `[tem,*]` Jacobian keeps its modified-Newton approximation (no
+explicit GT-curvature term and the empirical `[tem,tem]` sign from `4a82338`);
+the GT correction there is a ~1e-4 relative perturbation of an already-small
+latent-heat term, so it doesn't affect convergence. The residual is fully
+GT-consistent.
+
+Smoke-tested `2D_touching_grains`, T = −20, penalties off, `d0_GT = 9.6e-10`,
+`t_final = 50 s`: clean exit, no NaN/divergence, `TOTAL_MASS` conserved to
+display precision, dt grows normally under the tighter atol. Long-run
+validation (does ripening actually proceed over 30 days?) is the next HPC step.
+
+---
+
 ## Summary trajectory
 
 The model went through three identifiable stages on this branch:

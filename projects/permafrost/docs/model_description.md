@@ -104,16 +104,18 @@ The vapor density equation has three terms in the residual: a diffusive transpor
 
 $$\frac{\partial\rho_v}{\partial t} \;-\; \nabla\cdot\!\left(\xi_v\, D_{\mathrm{eff}}(\phi)\,\phi_a^{\mathrm{eff}}\,\nabla\rho_v\right) \;+\; \xi_v\, k_{\mathrm{pen}}\, G_{\mathrm{pen}}(\phi_i+\phi_s)\,(\rho_v - \rho_v^{\mathrm{eq}}) \;=\; V_{\mathrm{src}}$$
 
-with $V_{\mathrm{src}} = -2\,\rho_{\mathrm{ice}}\,\phi_a\,\dfrac{\partial\phi_i}{\partial t}$.
+with $V_{\mathrm{src}} = -\rho_{\mathrm{ice}}\,S_{\mathrm{sub}}$.
 
-**Stefan-condition source $V_{\mathrm{src}}$.** The right-hand side is the diffuse-interface form of the Stefan condition:
+**Stefan-condition source $V_{\mathrm{src}}$ (Moure & Fu 2024 form).** The right-hand side is paired *directly* with the sublimation kinetic source $S_{\mathrm{sub}}$ (§4):
 
-$$V_{\mathrm{src}} \;=\; -\,2\,\rho_{\mathrm{ice}}\,\phi_a\,\frac{\partial\phi_i}{\partial t}$$
+$$V_{\mathrm{src}} \;=\; -\,\rho_{\mathrm{ice}}\,S_{\mathrm{sub}} \;=\; -\,\alpha_{\mathrm{sub}}\,\phi_i^2\,\phi_a^2\,\bigl(\rho_v - \rho_{vs}^{\mathrm{eff}}\bigr)$$
 
-The factor $2\phi_a$ is a localiser that:
-- **vanishes at ice-sed boundaries** ($\phi_a = 0$), so AC-driven motion of ice along sed boundaries does *not* generate spurious vapor — this fixed a long-standing failure mode where the inner edge of every ice-sed boundary accumulated unphysical vapor (branch log §26).
-- **integrates to 1 across the ice-air diffuse band** (since $\phi_a$ goes from 0 to 1 across the interface and $\partial\phi_i/\partial t$ is concentrated there), so the global mass balance $\frac{d}{dt}(\rho_{\mathrm{ice}}\!\int\!\phi_i\,d\Omega) + \frac{d}{dt}(\!\int\!\rho_v\,d\Omega) = 0$ is preserved exactly at every quadrature point.
-- **keeps AC-driven motion coupled to vapor along ice-air boundaries**, which is physically correct: when ice retreats into air, vapor must appear regardless of whether the motion is driven by the sublimation kinetic source $S_{\mathrm{sub}}$ or by curvature/AC. No $\xi_v$ factor appears on $V_{\mathrm{src}}$ — it is the physical Stefan closure, not a regularisation. $\xi_v$ scales only the diffusion and equilibrium-penalty terms.
+(the $\rho_{\mathrm{ice}}$ factor cancels the $1/\rho_{\mathrm{ice}}$ in $S_{\mathrm{sub}}$). This is driven by the **phase-change** term only, not by $\partial\phi_i/\partial t$. The reasons:
+- **Allen-Cahn curvature motion is mass-neutral.** $\partial\phi_i/\partial t$ contains both real phase change ($S_{\mathrm{sub}}$) *and* AC curvature relaxation of the diffuse interface. The latter is a numerical artifact of the gradient flow, not physical mass exchange. Coupling it to vapor — as the earlier $V_{\mathrm{src}} = -2\rho_{\mathrm{ice}}\phi_a\,\partial\phi_i/\partial t$ form did — launders AC "mass loss" into spurious vapor (a measured ~0.6 % `TOTAL_MASS` drift during the initial AC relaxation burst).
+- **Pairing with $S_{\mathrm{sub}}$ conserves the physical exchange exactly.** $R^i$ carries $-S_{\mathrm{sub}}$ and $R^v$ carries $-V_{\mathrm{src}} = +\rho_{\mathrm{ice}}S_{\mathrm{sub}}$, so every gram of ice that sublimates becomes exactly one gram of vapor, pointwise, at every quadrature point. The $\phi_i^2\phi_a^2$ localiser zeroes the source at ice-sed boundaries ($\phi_a=0$) and in bulk.
+- No $\xi_v$ factor appears on $V_{\mathrm{src}}$ — it is the physical Stefan closure, not a regularisation. $\xi_v$ scales only the diffusion and equilibrium-penalty terms.
+
+The earlier $2\phi_a\,\partial\phi_i/\partial t$ form was introduced to *conserve* the AC mass change (branch log §26→ later iterations); it is now retired because that AC mass change is non-physical and should not be conserved by manufacturing vapor. The right levers to limit AC mass drift are reducing the mobility $M$ (`-mob_sub`) and enabling Gibbs-Thomson (§4), not coupling AC motion to vapor (branch log §28).
 
 **Effective diffusivity (penalty-weighted linear combination).** The vapor diffusivity transitions smoothly between full physical $D_v$ in air and a reduced "penalised" value in *solid phases* (ice or sediment):
 
@@ -143,23 +145,23 @@ where $h_0$ is the initial humidity (`-humidity`) and $\rho_{vs}(T)$ is the flat
 
 The **Allen-Cahn equation for ice** includes a phase-change source term:
 
-$$S_{\mathrm{sub}} \;=\; \frac{\alpha_{\mathrm{sub}}\,\phi_i^2\,\phi_a^2}{\rho_{\mathrm{ice}}}\,\bigl(\rho_v - \rho_{vs}(T)\bigr)$$
+$$S_{\mathrm{sub}} \;=\; \frac{\alpha_{\mathrm{sub}}\,\phi_i^2\,\phi_a^2}{\rho_{\mathrm{ice}}}\,\bigl(\rho_v - \rho_{vs}^{\mathrm{eff}}\bigr)$$
 
-This term localises the phase change to ice-air interfaces through the $\phi_i^2\phi_a^2$ factor, which peaks at the interface midpoint (where both $\phi_i$ and $\phi_a$ are non-zero) and **vanishes identically at ice-sed boundaries** (where $\phi_a = 0$). It drives:
-- **Sublimation** when $\rho_v < \rho_{vs}(T)$: ice decreases, $\phi_a$ increases.
-- **Condensation** when $\rho_v > \rho_{vs}(T)$: ice grows, $\phi_a$ decreases.
+where $\rho_{vs}^{\mathrm{eff}}$ is the Gibbs-Thomson-corrected equilibrium vapor density (below). This term localises the phase change to ice-air interfaces through the $\phi_i^2\phi_a^2$ factor, which peaks at the interface midpoint (where both $\phi_i$ and $\phi_a$ are non-zero) and **vanishes identically at ice-sed boundaries** (where $\phi_a = 0$). It drives:
+- **Sublimation** when $\rho_v < \rho_{vs}^{\mathrm{eff}}$: ice decreases, $\phi_a$ increases.
+- **Condensation** when $\rho_v > \rho_{vs}^{\mathrm{eff}}$: ice grows, $\phi_a$ decreases.
 
 $S_{\mathrm{sub}}$ enters the ice residual (§3.1) as a negative contribution (subtracted from $R^i$) and the temperature residual (§3.3) as the latent-heat source.
 
-**Mass conservation.** The mass exchange between ice and vapor is enforced by the Stefan-condition source $V_{\mathrm{src}} = -2\,\rho_{\mathrm{ice}}\,\phi_a\,\partial\phi_i/\partial t$ on the vapor side (§3.4) and the $-S_{\mathrm{sub}}$ term on the ice side. Both are independently localised to the diffuse ice-air band ($V_{\mathrm{src}}$ by its $\phi_a$ factor, $S_{\mathrm{sub}}$ by its $\phi_i^2\phi_a^2$ factor), and the global balance $\frac{d}{dt}\!\int\rho_{\mathrm{ice}}\phi_i + \frac{d}{dt}\!\int\rho_v = 0$ holds by construction since $V_{\mathrm{src}}$ exactly closes the rate at which $\rho_{\mathrm{ice}}\phi_i$ is changing.
+**Mass conservation.** The mass exchange between ice and vapor is enforced by the Stefan-condition source $V_{\mathrm{src}} = -\rho_{\mathrm{ice}}\,S_{\mathrm{sub}}$ on the vapor side (§3.4) and the $-S_{\mathrm{sub}}$ term on the ice side. They are exactly equal and opposite pointwise (both carry the same $S_{\mathrm{sub}}$), so the global balance $\frac{d}{dt}\!\int\rho_{\mathrm{ice}}\phi_i + \frac{d}{dt}\!\int\rho_v = 0$ holds by construction for the physical phase change. Allen-Cahn curvature motion is deliberately *not* coupled to vapor (it is mass-neutral interface rearrangement, a numerical artifact — see §3.4).
 
-**Gibbs-Thomson curvature dependence (currently disabled).** The local equilibrium vapor density at a curved ice surface physically differs from the flat-interface saturation value $\rho_{vs}(T)$ by the Kelvin / Gibbs-Thomson correction:
+**Gibbs-Thomson curvature dependence (active when `d0_GT` > 0).** The local equilibrium vapor density at a curved ice surface differs from the flat-interface saturation value $\rho_{vs}(T)$ by the Kelvin / Gibbs-Thomson correction:
 
 $$\rho_{vs}^{\mathrm{eff}} \;=\; \rho_{vs}(T)\,\bigl(1 + d_0^{\mathrm{GT}} \,\kappa \bigr), \qquad \kappa \;=\; -\nabla\!\cdot\!\left(\frac{\nabla\phi_i}{|\nabla\phi_i|}\right)$$
 
-where $d_0^{\mathrm{GT}} = \gamma_{iv} v_m / (R_g T)$ is the capillary length (~$9.6 \times 10^{-10}$ m for ice at −5 °C). This is the Lifshitz–Slyozov–Wagner (LSW) driving force for Ostwald ripening between grains of different curvature.
+where $d_0^{\mathrm{GT}} = \gamma_{iv} v_m / (R_g T)$ is the capillary length (~$9.6 \times 10^{-10}$ m for ice; varies weakly with $T$). This is the Lifshitz–Slyozov–Wagner (LSW) driving force for Ostwald ripening: larger grains (smaller $\kappa$) have lower $\rho_{vs}^{\mathrm{eff}}$ than smaller grains, so vapor flows small → large and grains coarsen indefinitely.
 
-The Curvature-via-Hessian code was implemented (`Curvature()` in `material_properties.c`; Hessian reads in `Residual_A1` / `Jacobian_A1`) and tested at amplified `d0_GT` to confirm an LSW signal, but it has been **disabled in the current configuration** (`d0_GT = 0`; the `Curvature()` function and its Jacobian terms are not called from `Residual_A1`). The reason is that enabling it exposed and was partially masking a pair of independent bugs (vapor diffusivity direction §25 and the `vap_src` over-counting §26), and once those bugs were fixed in their own right the GT code path was kept dormant pending a clean re-introduction. See branch log §24–§27 for the full history. The current model is therefore a flat-interface sublimation model; restoring the GT curvature term is a near-term planned extension.
+The curvature $\kappa$ is computed from the gradient and Hessian of $\phi_i$ in `Curvature()` (`material_properties.c`); `Residual_A1` and `Jacobian_A1` read the Hessian via `IGAPointFormHess`. The correction enters $S_{\mathrm{sub}}$ through $\rho_{vs}^{\mathrm{eff}}$ and is analytically differentiated in the Jacobian (`[ice,ice]` and `[vap,ice]` GT blocks via $d\kappa/d(\nabla\phi_i)$ and $d\kappa/d(\nabla^2\phi_i)$). Setting `-d0_GT 0` disables it identically ($\rho_{vs}^{\mathrm{eff}} = \rho_{vs}(T)$, flat-interface model). **Without GT the model freezes after the initial Allen-Cahn relaxation** — all grains then share one $\rho_{vs}$ and there is no driving force for ripening (branch log §28). See branch log §24–§28 for the full history.
 
 The kinetic coefficient α_sub and mobility M are derived from the **Gibbs–Thomson relation** using capillary length d₀ and kinetic coefficient β:
 
@@ -445,7 +447,7 @@ Full solution fields (φ_i, T, ρ_v, φ_s, φ_a) are written as binary PetIGA `s
 | Vapor time scaling | ξ_v | 1.0 (physical) | `inputs/solver.opts` |
 | Thermal time scaling | ξ_T | 1.0 (physical) | `inputs/solver.opts` |
 | Capillary length scale (mobility derivation) | d₀⁰ | 10⁻⁹ m | `permafrost2.c` |
-| Gibbs-Thomson capillary length | d₀^GT | 0 (currently disabled, §4) | `inputs/experiment/*.opts`, `-d0_GT` |
+| Gibbs-Thomson capillary length | d₀^GT | 0 (off) / 9.6×10⁻¹⁰ m (physical, §4) | `inputs/experiment/*.opts`, `-d0_GT` |
 | Kinetic coefficient | β⁰ | 1.4 × 10⁵ s m⁻¹ | `permafrost2.c` |
 | Relaxation steps | n_relax | 1 | `inputs/solver.opts` |
 | Sed. freeze time | t_sed_freeze | 10 s | `inputs/experiment/*.opts` |
@@ -759,9 +761,11 @@ equations, or use the whole block as a model-description section.
     \;=\; V_{\mathrm{src}},
   \label{eq:vapor}
 \end{equation}
-with the Stefan-condition source
+with the Stefan-condition source (Moure \& Fu 2024; driven by the phase-change term)
 \begin{equation}
-  V_{\mathrm{src}} \;=\; -\,2\,\rho_{\mathrm{ice}}\,\phi_a\,\frac{\partial \phi_i}{\partial t},
+  V_{\mathrm{src}} \;=\; -\,\rho_{\mathrm{ice}}\,S_{\mathrm{sub}}
+                 \;=\; -\,\alpha_{\mathrm{sub}}\,\phi_i^{2}\,\phi_a^{2}\,
+                       \bigl(\rho_v - \rho_{vs}^{\mathrm{eff}}\bigr),
   \label{eq:vap-src}
 \end{equation}
 and constant equilibrium anchor
@@ -774,7 +778,11 @@ and constant equilibrium anchor
 \begin{equation}
   S_{\mathrm{sub}}
     \;=\; \frac{\alpha_{\mathrm{sub}}\,\phi_i^{2}\,\phi_a^{2}}{\rho_{\mathrm{ice}}}\,
-          \bigl(\rho_v - \rho_{vs}(T)\bigr).
+          \bigl(\rho_v - \rho_{vs}^{\mathrm{eff}}\bigr),
+  \qquad
+  \rho_{vs}^{\mathrm{eff}} \;=\; \rho_{vs}(T)\,\bigl(1 + d_0^{\mathrm{GT}}\,\kappa\bigr),
+  \quad
+  \kappa = -\nabla\!\cdot\!\frac{\nabla\phi_i}{|\nabla\phi_i|}.
   \label{eq:S-sub}
 \end{equation}
 
