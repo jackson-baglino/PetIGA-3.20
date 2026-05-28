@@ -117,10 +117,15 @@
 -snes_type newtonls                     # Newton with line search
 -snes_max_it 50                         # max Newton iterations per time step
 -snes_rtol 1e-06                        # relative residual tolerance
--snes_atol 1e-04                        # absolute residual tolerance — aggressively relaxed.
-                                        # With xi_T=1e-2 the T-equation residual at iter 0 is
-                                        # ~7e-5; atol=1e-4 means SNES converges immediately,
-                                        # triggering NRmin-based dt-growth on every step.
+-snes_atol 1e-06                        # absolute residual tolerance. Tightened from 1e-4:
+                                        # at T=-20C the vapor field is O(rho_vs)~8e-4, so once
+                                        # dt grew to dtmax the vapor residual (~rhov/dt) fell
+                                        # below 1e-4 and SNES declared "converged" without
+                                        # resolving the slow Ostwald-ripening dynamics — the
+                                        # solution froze for the rest of the run. 1e-6 forces
+                                        # the weak cold-T vapor dynamics to be resolved. Cost:
+                                        # SNES takes a few more iterations/step, so dt grows
+                                        # more conservatively (which is the intent here).
 -snes_stol 1e-06                        # step tolerance
 #-snes_converged_reason                 # DISABLED — was generating 7GB outp.txt at -5C
                                         # where Newton does many iterations per step.
