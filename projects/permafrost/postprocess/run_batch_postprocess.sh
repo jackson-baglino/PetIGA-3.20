@@ -104,6 +104,15 @@ for run in "$BATCH_DIR"/*/; do
         fi
     fi
 
+    # ── 1b. plot_energy.py (always) — phase-field free energy vs time ───
+    if [[ -f "$POSTPROCESS/plot_energy.py" ]]; then
+        echo "  plot_energy.py ..."
+        if ! "$PYTHON" "$POSTPROCESS/plot_energy.py" --dir "$run" 2>&1 | sed 's/^/    /'; then
+            echo "  ⚠ plot_energy.py failed"
+            failed_this=1
+        fi
+    fi
+
     # ── 2. dim-specific field plots ─────────────────────────────────────
     if [[ "$dim" == "1" ]]; then
         if [[ -f "$POSTPROCESS/plot1D_profiles.py" ]]; then

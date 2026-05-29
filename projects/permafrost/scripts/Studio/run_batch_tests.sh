@@ -343,6 +343,12 @@ run_one_test() {
         "$PYTHON" "$POSTPROCESS/plot_mass.py" \
             --dir "$test_out" --save "$test_out/mass.png" 2>&1 | sed 's/^/    /' || true
     fi
+
+    # Phase-field free-energy plot (any dim, if snapshots exist)
+    if [ -n "$PYTHON" ] && [ -f "$POSTPROCESS/plot_energy.py" ] && ls "$test_out"/sol_*.dat &>/dev/null; then
+        "$PYTHON" "$POSTPROCESS/plot_energy.py" \
+            --dir "$test_out" --save "$test_out/energy.png" 2>&1 | sed 's/^/    /' || true
+    fi
     set -e
 
     printf "%-45s | %-9s | %-7d | %-9d\n" "$test_name" "$status" "$nprocs" "$elapsed" >> "$SUMMARY"
