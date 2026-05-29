@@ -209,12 +209,18 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
      * channel). loc = ice^2*air^2 localizes it to the diffuse ice-air band and
      * zeroes it at ice-sed boundaries. Uses the GT-corrected rhoI_vs_eff. */
     PetscReal sub_src      = alph_sub * loc * (rhov - rhoI_vs_eff) / rho_ice;
-    /* Latent heat source for the temperature equation: -xi_T*rho*lat_sub*sub_src.
-     * Paired directly with sub_src (the real mass-exchange rate) rather than
-     * with air_t = -(ice_t+sed_t), so mass-neutral AC interface motion does not
+    /* Latent heat source for the temperature equation: -rho*lat_sub*sub_src.
+     * NO xi_T factor: latent heat released per unit mass sublimated is the
+     * physical constant L_sub. Scaling this source by xi_T (as we used to)
+     * makes the heat released != L_sub * mass-exchanged whenever xi_T != 1,
+     * violating thermal-energy conservation. xi_T is now confined to the
+     * conduction flux only (a divergence that conserves global energy on a
+     * closed insulated domain even when scaled).
+     * Paired with sub_src (the real ice<->vapor exchange rate), not with
+     * air_t = -(ice_t+sed_t), so mass-neutral AC interface motion does not
      * spuriously generate/absorb latent heat. Sign: sub_src > 0 (deposition,
      * vapor -> ice) releases latent heat (T rises). */
-    PetscReal rho_lat_subsrc = -xi_T * rho * lat_sub * sub_src;
+    PetscReal rho_lat_subsrc = -rho * lat_sub * sub_src;
     PetscReal vap_pen      = xi_v * k_pen * g_pen * (rhov - rhov_eq);
     /* Mass-exchange source on the vapor side (Moure & Fu 2024 formulation).
      * Form: vap_src = -rho_ice * sub_src = -alph_sub*ice^2*air^2*(rhov - rhoI_vs_eff).
@@ -678,16 +684,16 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                  * THERMAL (both 2-phase and 3-phase)
                  * ============================================================== */
                 /* THERMAL Jacobian. Latent heat term is now
-                 *   rho_lat_subsrc = -xi_T * rho * lat_sub * sub_src
+                 *   rho_lat_subsrc = -rho * lat_sub * sub_src
                  * (pair latent heat with the real ice<->vapor exchange rate
                  *  sub_src, not with air_t = -(ice_t+sed_t), so AC interface
                  *  motion doesn't spuriously generate/absorb latent heat).
                  * R_tem += rho_lat_subsrc * N0[a], so the Jacobian gains
-                 *   -xi_T * rho * lat_sub * d(sub_src)/d(state) * Na_Nb
+                 *   -rho * lat_sub * d(sub_src)/d(state) * Na_Nb
                  * mirroring the sub_src rows of [ice, *] (sub_src appears
                  * in R_ice with -sub_src*N0[a]). */
                 /* [tem, ice]: d(sub_src)/d(ice) via dloc_dice; conduction via dcond_ice. */
-                J[a][1][b][0] += -xi_T * rho * lat_sub
+                J[a][1][b][0] += -rho * lat_sub
                                  * alph_sub * dloc_dice * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb
                                + xi_T * dcond_ice * N1a_grad_tem * N0[b];
                 /* [tem, tem]: shift*rho*cp + thcond stiffness + sub_src(T) term.
@@ -698,14 +704,14 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                  * working iter4 baseline. */
                 J[a][1][b][1] += shift * rho * cp * Na_Nb
                                + xi_T * thcond * N1a_N1b
-                               + -xi_T * rho * lat_sub
+                               + -rho * lat_sub
                                  * alph_sub * loc * d_rhovs_eff_dtem / rho_ice * Na_Nb;
                 /* [tem, rhov]: d(sub_src)/d(rhov) = +alph_sub*loc/rho_ice
                  *              (sub_src = alph_sub*loc*(rhov-rhoI_vs)/rho_ice). */
-                J[a][1][b][2] += -xi_T * rho * lat_sub
+                J[a][1][b][2] += -rho * lat_sub
                                  * alph_sub * loc / rho_ice * Na_Nb;
                 /* [tem, sed]: d(sub_src)/d(sed) via dloc_dsed. */
-                J[a][1][b][3] += -xi_T * rho * lat_sub
+                J[a][1][b][3] += -rho * lat_sub
                                  * alph_sub * dloc_dsed * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb;
 
                 /* ==============================================================
