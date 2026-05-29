@@ -61,6 +61,10 @@ int main(int argc, char *argv[]) {
     user.d0_GT      = 0.0;     /* Gibbs-Thomson capillary length: 0 = disabled (default) */
     user.phase_lo   = -0.25;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.25;   /* upper bound: phi above this → abort */
+    /* Per-DOF tolerances: -1 = sentinel "use global -snes_atol/-snes_rtol +
+     * scalar -ts_atol/-ts_rtol", overridden per DOF via -atol_ice/-atol_T/
+     * -atol_rhov/-atol_sed and -rtol_*. See NASA_types.h for rationale. */
+    for (PetscInt i = 0; i < 4; i++) { user.atol_dof[i] = -1.0; user.rtol_dof[i] = -1.0; }
     user.d0_sub0    = 1.0e-9;    /* capillary length scale (physical) */
     user.beta_sub0  = 1.4e5;     /* kinetic coefficient (physical) */
 
@@ -309,6 +313,26 @@ int main(int argc, char *argv[]) {
              "Upper bound for phase fields phi_ice, phi_sed, phi_air "
              "(simulation aborts if any phi exceeds this; default 1.25)",
              "", user.phase_hi, &user.phase_hi, NULL); CHKERRQ(ierr);
+    /* Per-DOF tolerances. Negative = use the global -snes_atol / -snes_rtol
+     * / -ts_atol / -ts_rtol. Set positive to override per equation; downweights
+     * the equation in both the per-DOF SNES test and the TS LTE error norm. */
+    ierr = PetscOptionsReal("-atol_ice", "Per-DOF SNES/TS atol for phi_ice (sentinel -1 = global)",
+             "", user.atol_dof[0], &user.atol_dof[0], NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-atol_T",   "Per-DOF SNES/TS atol for temperature (sentinel -1 = global). "
+             "Recommended >> global atol to neutralise the rho*L_sub ~2.5e9 prefactor.",
+             "", user.atol_dof[1], &user.atol_dof[1], NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-atol_rhov","Per-DOF SNES/TS atol for vapor density (sentinel -1 = global)",
+             "", user.atol_dof[2], &user.atol_dof[2], NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-atol_sed", "Per-DOF SNES/TS atol for phi_sed (sentinel -1 = global)",
+             "", user.atol_dof[3], &user.atol_dof[3], NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-rtol_ice", "Per-DOF SNES/TS rtol for phi_ice (sentinel -1 = global)",
+             "", user.rtol_dof[0], &user.rtol_dof[0], NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-rtol_T",   "Per-DOF SNES/TS rtol for temperature (sentinel -1 = global)",
+             "", user.rtol_dof[1], &user.rtol_dof[1], NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-rtol_rhov","Per-DOF SNES/TS rtol for vapor density (sentinel -1 = global)",
+             "", user.rtol_dof[2], &user.rtol_dof[2], NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-rtol_sed", "Per-DOF SNES/TS rtol for phi_sed (sentinel -1 = global)",
+             "", user.rtol_dof[3], &user.rtol_dof[3], NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-xi_v",
              "Time-scaling for vapor equation: multiplies the diffusion term "
              "and the rhov<->rhov_eq penalty (default 1e-4). xi_v=1 is "
@@ -612,6 +636,41 @@ int main(int argc, char *argv[]) {
     ierr = IGACreateVec(iga, &U); CHKERRQ(ierr);
     ierr = VecZeroEntries(U); CHKERRQ(ierr);
 
+    /* Per-DOF TS LTE tolerances. If any per-DOF atol or rtol option was set
+     * on the CLI, build vector atol/rtol with the requested per-stride values
+     * (and the global SNES atol/rtol for unset entries). TSAlpha's TSAdaptBasic
+     * uses the weighted norm  ||err||_w = sqrt(sum_i (err_i / (atol_i + rtol_i |u_i|))^2),
+     * so a large atol on one stride downweights that DOF's contribution to
+     * the dt-control error estimate without changing the equations. The same
+     * per-DOF values are read by SNESDOFConvergence in snes_convergence.c.
+     * Vectors are held locally; TS retains its own reference via TSSetTolerances. */
+    Vec ts_vatol = NULL, ts_vrtol = NULL;
+    {
+        PetscBool any_set = PETSC_FALSE;
+        for (PetscInt i = 0; i < 4; i++) {
+            if (user.atol_dof[i] > 0.0 || user.rtol_dof[i] > 0.0) { any_set = PETSC_TRUE; break; }
+        }
+        if (any_set) {
+            PetscReal atol_g, rtol_g, stol_g; PetscInt maxit_g, maxf_g;
+            ierr = SNESGetTolerances(nonlin, &atol_g, &rtol_g, &stol_g, &maxit_g, &maxf_g); CHKERRQ(ierr);
+            ierr = VecDuplicate(U, &ts_vatol); CHKERRQ(ierr);
+            ierr = VecDuplicate(U, &ts_vrtol); CHKERRQ(ierr);
+            PetscPrintf(PETSC_COMM_WORLD, "Per-DOF tolerances (active):\n");
+            const char *dof_name[4] = {"ice ", "T   ", "rhov", "sed "};
+            for (PetscInt i = 0; i < 4; i++) {
+                PetscReal av = (user.atol_dof[i] > 0.0) ? user.atol_dof[i] : atol_g;
+                PetscReal rv = (user.rtol_dof[i] > 0.0) ? user.rtol_dof[i] : rtol_g;
+                ierr = VecStrideSet(ts_vatol, i, av); CHKERRQ(ierr);
+                ierr = VecStrideSet(ts_vrtol, i, rv); CHKERRQ(ierr);
+                PetscPrintf(PETSC_COMM_WORLD,
+                            "  DOF %d (%s): atol=%.3e  rtol=%.3e  %s\n",
+                            (int)i, dof_name[i], (double)av, (double)rv,
+                            (user.atol_dof[i] > 0.0 || user.rtol_dof[i] > 0.0) ? "[override]" : "[global]");
+            }
+            ierr = TSSetTolerances(ts, PETSC_DEFAULT, ts_vatol, PETSC_DEFAULT, ts_vrtol); CHKERRQ(ierr);
+        }
+    }
+
     PetscPrintf(PETSC_COMM_WORLD, "Setting up initial conditions... \n");
 
     if (dim == 1) {
@@ -701,6 +760,8 @@ int main(int argc, char *argv[]) {
 
     /* Cleanup Resources */
     ierr = VecDestroy(&U); CHKERRQ(ierr);
+    if (ts_vatol) { ierr = VecDestroy(&ts_vatol); CHKERRQ(ierr); }
+    if (ts_vrtol) { ierr = VecDestroy(&ts_vrtol); CHKERRQ(ierr); }
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     ierr = PetscFree(user.alph); CHKERRQ(ierr);

@@ -19,6 +19,20 @@ typedef struct {
   IGA       iga;  // Isogeometric analysis (IGA) structure for managing geometry and basis functions
   SNES      snes; // Nonlinear solver handle (cached so Residual can call SNESSetFunctionDomainError)
 
+  /* Per-DOF absolute/relative tolerances for SNES convergence + TS LTE adaptor.
+   * Index 0=ice, 1=temperature, 2=vapor (rhov), 3=sediment. A negative value
+   * is a sentinel meaning "fall back to the global -snes_atol / -snes_rtol /
+   * -ts_atol / -ts_rtol". The point is that this model's equations span ~10^9
+   * in residual magnitude (T equation carries rho*L_sub ~ 2.5e9), so a single
+   * global atol forces the dt control + Newton convergence to be dominated by
+   * whichever DOF has the largest absolute residual (temperature here, even
+   * though physically T is the passive byproduct of the ice/vapor coupling).
+   * Per-DOF tolerances reweight each equation's contribution to the SNES /
+   * TS-adaptor norms without changing the equations themselves. Set via
+   * -atol_ice/-atol_T/-atol_rhov/-atol_sed and -rtol_* options. */
+  PetscReal atol_dof[4];
+  PetscReal rtol_dof[4];
+
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
   PetscReal mob_sub;  // Mobility for ice phase evolution
