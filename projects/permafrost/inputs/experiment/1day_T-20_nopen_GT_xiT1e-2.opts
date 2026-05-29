@@ -1,0 +1,13 @@
+# dt-collapse sweep: as 1day_T-20_nopen_GT but xi_T=1e-2. Tests whether shrinking
+# the temperature-equation stiffness (its residual dominates fnorm, scaled by
+# xi_T*rho*L_sub ~ 2.5e9) lets dt grow past the GT cliff. At -20C with zero thermal
+# gradient T is nearly passive, so reducing xi_T is low physical cost.
+-t_final 86400.0
+-t_sed_freeze 10
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+-k_pen 0.0
+-difvap_pen 1.0
+-d0_GT 9.6e-10
+-xi_T 1.0e-2

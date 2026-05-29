@@ -1,0 +1,11 @@
+# 1-day diagnostic: penalties off + GT on. Baseline for the dt-collapse sweep
+# (xi_T=1.0, snes_atol from solver.opts=1e-6). 1 day is long enough to pass the
+# step~49 / t~400s dt cliff seen in the 30-day run and reveal whether dt recovers.
+-t_final 86400.0
+-t_sed_freeze 10
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+-k_pen 0.0
+-difvap_pen 1.0
+-d0_GT 9.6e-10

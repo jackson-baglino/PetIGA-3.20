@@ -1,0 +1,11 @@
+# dt-collapse sweep: as 1day_T-20_nopen_GT but snes_atol=1e-5 (one decade looser).
+# Tests how much of the dt ceiling is the tolerance vs intrinsic GT stiffness.
+-t_final 86400.0
+-t_sed_freeze 10
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+-k_pen 0.0
+-difvap_pen 1.0
+-d0_GT 9.6e-10
+-snes_atol 1.0e-5
