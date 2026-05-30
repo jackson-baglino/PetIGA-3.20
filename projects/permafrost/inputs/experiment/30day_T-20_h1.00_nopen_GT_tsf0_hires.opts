@@ -1,0 +1,18 @@
+# Hires-safe variant of 30day_T-20_h1.00_nopen_GT_tsf0. Caps dtmax low
+# enough to avoid the phi-overshoot bounds violations seen on the
+# 2026-05-30 rowscale_T batch (phi_ice -> -0.06 at dt ~ 1500s on hires).
+# Also slightly loosens the strict phase bounds so a small numerical
+# overshoot doesn't trigger the rollback safety net (material properties
+# are already clamped inside Residual_A1).
+-t_final 2592000.0                      # 30 days (s)
+-t_sed_freeze 0
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+-k_pen 0.0
+-difvap_pen 1.0
+-d0_GT 9.6e-10
+# hires-specific overrides
+-dtmax 1.0e3                            # cap dt at 1000 s (below the bounds-violation onset)
+-phase_lo -0.10                         # tolerate small numerical overshoot below 0
+-phase_hi  1.10                         # ... and above 1
