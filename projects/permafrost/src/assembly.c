@@ -68,6 +68,17 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal xi_T    = user->xi_T;
     PetscReal alph_sub = user->alph_sub;
 
+    /* T-equation row scale. The dimensional T residual is dominated by the
+     * latent-heat term rho*L_sub*sub_src whose coefficient rho_ice*L_sub
+     * (~2.5e9) is ~10^9 larger than the vapor/ice residual scales. The
+     * custom dt-adaptor in PetIGA's TSAlpha extension reacts to absolute
+     * residual magnitudes, so a huge T residual forces dt collapse even
+     * though physically T is the passive byproduct. Dividing R_tem (and the
+     * [tem,*] Jacobian row) by rho_ice*lat_sub is exact non-dimensionalisation
+     * — identical physics, identical solution, but the residual the adaptor
+     * sees is O(sub_src) instead of O(rho_ice*L_sub*sub_src). */
+    PetscReal S_T = 1.0 / (rho_ice * lat_sub);
+
     if (pnt->atboundary) return 0;
 
     PetscScalar sol_t[4], sol[4], grad_sol[4][dim];
@@ -333,7 +344,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
         }
 
         R[a][0] = R_ice;
-        R[a][1] = R_tem;
+        R[a][1] = S_T * R_tem;   /* row-scale: see S_T comment near function top */
         R[a][2] = R_vap;
         R[a][3] = R_sed;
     }
@@ -424,6 +435,11 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscReal xi_v     = user->xi_v;
     PetscReal xi_T     = user->xi_T;
     PetscReal alph_sub = user->alph_sub;
+
+    /* T-equation row scale (see Residual_A1 comment). Every J[a][1][b][*]
+     * contribution below is multiplied by S_T so the Jacobian row stays
+     * consistent with the row-scaled residual. */
+    PetscReal S_T = 1.0 / (rho_ice * lat_sub);
 
     if (pnt->atboundary) return 0;
 
@@ -590,8 +606,8 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 /* [ice, sed] */
                 J[a][0][b][3] += C3 * ((Etased+Etaa)*dfi_dsed - Etaa*dfs_dsed
                                         - Etased*dfa_dsed) * Na_Nb;
-                /* [tem, tem] */
-                J[a][1][b][1] += shift * rho * cp * Na_Nb;
+                /* [tem, tem] (row-scaled by S_T) */
+                J[a][1][b][1] += S_T * (shift * rho * cp * Na_Nb);
                 /* [vap, vap] */
                 J[a][2][b][2] += shift * Na_Nb;
                 /* [sed, ice] */
@@ -692,27 +708,29 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                  *   -rho * lat_sub * d(sub_src)/d(state) * Na_Nb
                  * mirroring the sub_src rows of [ice, *] (sub_src appears
                  * in R_ice with -sub_src*N0[a]). */
+                /* All [tem,*] contributions are row-scaled by S_T = 1/(rho_ice*lat_sub).
+                 * See the row-scale comment near the top of Jacobian_A1 / Residual_A1. */
                 /* [tem, ice]: d(sub_src)/d(ice) via dloc_dice; conduction via dcond_ice. */
-                J[a][1][b][0] += -rho * lat_sub
-                                 * alph_sub * dloc_dice * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb
-                               + xi_T * dcond_ice * N1a_grad_tem * N0[b];
+                J[a][1][b][0] += S_T * (-rho * lat_sub
+                                        * alph_sub * dloc_dice * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb
+                                      + xi_T * dcond_ice * N1a_grad_tem * N0[b]);
                 /* [tem, tem]: shift*rho*cp + thcond stiffness + sub_src(T) term.
                  * Empirically the sign of the latent heat sub_src(T) term
                  * (next line) matters for Newton stability — flipping to the
                  * derivation-derived sign (+) broke convergence on the iter4
                  * reference test. The negative sign below matches the
                  * working iter4 baseline. */
-                J[a][1][b][1] += shift * rho * cp * Na_Nb
-                               + xi_T * thcond * N1a_N1b
-                               + -rho * lat_sub
-                                 * alph_sub * loc * d_rhovs_eff_dtem / rho_ice * Na_Nb;
+                J[a][1][b][1] += S_T * (shift * rho * cp * Na_Nb
+                                      + xi_T * thcond * N1a_N1b
+                                      + -rho * lat_sub
+                                        * alph_sub * loc * d_rhovs_eff_dtem / rho_ice * Na_Nb);
                 /* [tem, rhov]: d(sub_src)/d(rhov) = +alph_sub*loc/rho_ice
                  *              (sub_src = alph_sub*loc*(rhov-rhoI_vs)/rho_ice). */
-                J[a][1][b][2] += -rho * lat_sub
-                                 * alph_sub * loc / rho_ice * Na_Nb;
+                J[a][1][b][2] += S_T * (-rho * lat_sub
+                                        * alph_sub * loc / rho_ice * Na_Nb);
                 /* [tem, sed]: d(sub_src)/d(sed) via dloc_dsed. */
-                J[a][1][b][3] += -rho * lat_sub
-                                 * alph_sub * dloc_dsed * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb;
+                J[a][1][b][3] += S_T * (-rho * lat_sub
+                                        * alph_sub * dloc_dsed * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb);
 
                 /* ==============================================================
                  * VAPOR (both 2-phase and 3-phase)
