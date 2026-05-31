@@ -19,4 +19,4 @@
 
 # Touching geometry is stiff for AC dynamics during sintering at the neck;
 # reduce mob_sub by 10× (trade kinetics speed for stability).
--mob_sub 2.0e-10
+-mob_sub 2.0e-11

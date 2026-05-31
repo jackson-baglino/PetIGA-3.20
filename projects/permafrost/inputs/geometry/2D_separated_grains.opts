@@ -35,4 +35,4 @@
 # over 30-day integrations once dt grows to dtmax (see batch_2026-05-30__
 # 11.28.56_advisor_T-20_tsf0 where TOT_ICE dropped 95%+ in single_ice /
 # ice_sed_pair before this fix).
--mob_sub 2.0e-10
+-mob_sub 2.0e-11
