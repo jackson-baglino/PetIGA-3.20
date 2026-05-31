@@ -13,3 +13,11 @@
 -RCsed 1.875e-5
 -delt_t 1.0e-4
 -eps 7.12e-07
+
+# AC mobility override (uniform across advisor-sweep geoms): brings this
+# geometry to the same reduced mob_sub as 2D_touching_grains.opts. Without
+# this override the default mob_sub ~1.9e-9 lets AC eat isolated grains
+# over 30-day integrations once dt grows to dtmax (see batch_2026-05-30__
+# 11.28.56_advisor_T-20_tsf0 where TOT_ICE dropped 95%+ in single_ice /
+# ice_sed_pair before this fix).
+-mob_sub 2.0e-10
