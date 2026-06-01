@@ -196,7 +196,23 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
 
     PetscScalar air_eff = (air > air_lim) ? air : air_lim;
-    PetscReal C3  = 3.0 * mob / (eps * EtaT);
+    /* Bulk driving-force normalisation. Two different denominators depending
+     * on the active constraint:
+     *   C3    = 3M/(eps * E_T)  with E_T = eta_i*eta_s + eta_i*eta_a + eta_s*eta_a
+     *           — the three-phase Kim-Steinbach constraint, dphi_i + dphi_s + dphi_a = 0.
+     *           Used in the relax phase (all three phases evolve) and in the
+     *           3-phase branch (before t_sed_freeze).
+     *   C3_2P = 3M/(eps * (eta_i + eta_a))
+     *           — the two-phase constraint, dphi_i + dphi_a = 0, dphi_s = 0.
+     *           Used in the frozen-sediment branch (t >= t_sed_freeze): the
+     *           ice driving force keeps the same symmetric numerator structure
+     *           (eta_s+eta_a)*f_i - eta_a*f_s - eta_s*f_a but the normalisation
+     *           reflects that sed is no longer one of the constrained variables.
+     * With the current surface energies (eta_i=0.086, eta_s=0.028, eta_a=0.132)
+     * the ratio (eta_i+eta_a)/E_T ~ 12.5, so reusing C3 in the frozen-sed
+     * branch (as we did before this fix) drove AC ~12x too hard there. */
+    PetscReal C3    = 3.0 * mob / (eps * EtaT);
+    PetscReal C3_2P = 3.0 * mob / (eps * (Etai + Etaa));
     PetscReal loc = ice*ice * air*air;
 
     /* Gibbs-Thomson curvature correction to the equilibrium vapor density.
@@ -213,9 +229,15 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
         Curvature(dim, grad_ice, hess_ice, 0.01 / eps, &kappa, NULL, NULL);
     PetscReal rhoI_vs_eff = rhoI_vs * (1.0 + user->d0_GT * (PetscReal)kappa);
 
-    /* Hoist loop-invariant scalars out of the per-node loop */
-    PetscReal AC_ice_bulk  = C3 * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa);
-    PetscReal AC_sed_bulk  = C3 * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs);
+    /* Hoist loop-invariant scalars out of the per-node loop.
+     * AC_ice_bulk    — three-phase ice driving force, used in relax + 3-phase branches.
+     * AC_ice_bulk_2P — same numerator, but normalised for the two-phase (frozen-sed)
+     *                  constraint. Used in the frozen-sed branch only.
+     * AC_sed_bulk    — three-phase sed driving force, used in relax + 3-phase branches.
+     *                  (Not needed in the frozen-sed branch where R_sed = N0*sed_t.) */
+    PetscReal AC_ice_bulk     = C3    * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa);
+    PetscReal AC_ice_bulk_2P  = C3_2P * ((Etased + Etaa)*fi - Etaa*fs - Etased*fa);
+    PetscReal AC_sed_bulk     = C3    * (-Etaa*fi - Etai*fa + (Etai + Etaa)*fs);
     /* Sublimation/condensation source (the ONLY true ice<->vapor phase-change
      * channel). loc = ice^2*air^2 localizes it to the diffuse ice-air band and
      * zeroes it at ice-sed boundaries. Uses the GT-corrected rhoI_vs_eff. */
@@ -305,22 +327,28 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             /* ================================================================
              * FROZEN-SEDIMENT FORMULATION  (t >= t_sed_freeze)
              *
-             * Sediment is held rigid: phi_sed_t = 0. The ice equation, however,
-             * keeps the full 3-phase Allen-Cahn form. The three-phase potential
-             * is symmetric in the (ice, sed, air) phases, so ice = 0 remains a
-             * stable equilibrium at a sed-air interface even when sed is frozen.
+             * Sediment is held rigid: phi_sed_t = 0. The ice equation keeps
+             * the same symmetric numerator structure as the 3-phase form
+             * ((eta_s+eta_a)*f_i - eta_a*f_s - eta_s*f_a) — this preserves
+             * the eta-symmetry so ice = 0 stays a stable equilibrium at
+             * sed-air interfaces (unlike the prior 2-phase Kim-Steinbach
+             * form, which was derived assuming sed always borders ice and
+             * produced spurious ice at sed-air boundaries).
              *
-             * (The prior 2-phase Kim-Steinbach form used here was derived under
-             *  the assumption that the frozen sed boundary always neighbours
-             *  ice; at sed-air boundaries it produced large spurious ice. The
-             *  3-phase ice eq above does not have that failure mode.)
+             * BUT the bulk-driving-force NORMALISATION must reflect the
+             * constraint actually in effect here: dphi_i + dphi_a = 0
+             * (sed frozen), NOT dphi_i + dphi_s + dphi_a = 0. So the
+             * denominator becomes eta_i + eta_a, not E_T. That's the only
+             * difference vs the 3-phase branch — same gradient term, same
+             * sub_src term, same time-derivative term, only AC_ice_bulk_2P
+             * in place of AC_ice_bulk.
              * ================================================================ */
 
-            /* Ice: 3-phase Allen-Cahn (identical to the 3-phase branch) */
+            /* Ice: symmetric 3-phase numerator, two-phase normalisation. */
             R_ice = N0[a] * ice_t;
             for (l = 0; l < dim; l++)
                 R_ice += 3.0 * mob * eps * (N1[a][l] * grad_ice[l]);
-            R_ice += AC_ice_bulk * N0[a];
+            R_ice += AC_ice_bulk_2P * N0[a];
             R_ice -= sub_src * N0[a];
 
             /* Sediment: RHS = 0 (time derivative only — forces phi_sed_t = 0) */
@@ -515,7 +543,11 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscReal air_eff  = (air > air_lim) ? air : air_lim;
     PetscInt  air_eff_active = (air > air_lim);
 
-    PetscReal C3  = 3.0 * mob / (eps * EtaT);
+    /* Bulk driving-force normalisations — see Residual_A1 comment for the
+     * rationale. C3 for three-phase (relax + 3P branches), C3_2P for the
+     * two-phase frozen-sed branch (constraint dphi_i + dphi_a = 0). */
+    PetscReal C3    = 3.0 * mob / (eps * EtaT);
+    PetscReal C3_2P = 3.0 * mob / (eps * (Etai + Etaa));
     PetscReal loc = ice*ice * air*air;
 
     /* ---- Derivatives of material functions ---- */
@@ -649,22 +681,25 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             } else {
                 /* ==============================================================
                  * FROZEN SEDIMENT (t >= t_sed_freeze)
-                 * Ice rows match the 3-phase branch exactly; only the sediment
-                 * row degenerates to the mass matrix that pins sed_t = 0.
+                 * Ice rows use the same symmetric numerator as the 3-phase
+                 * branch but the C3_2P normalisation, matching the residual's
+                 * two-phase constraint (dphi_i + dphi_a = 0, dphi_s = 0).
+                 * The sediment row degenerates to the mass matrix that pins
+                 * sed_t = 0.
                  * ============================================================== */
                 /* [ice, ice] */
                 J[a][0][b][0] += shift * Na_Nb
                                + 3.0*mob*eps * N1a_N1b
-                               + C3 * ((Etased+Etaa)*dfi_dice - Etaa*dfs_dice
-                                       - Etased*dfa_dice) * Na_Nb
+                               + C3_2P * ((Etased+Etaa)*dfi_dice - Etaa*dfs_dice
+                                          - Etased*dfa_dice) * Na_Nb
                                - alph_sub * dloc_dice * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb;
                 /* [ice, tem] */
                 J[a][0][b][1] += alph_sub * loc * d_rhovs_eff_dtem / rho_ice * Na_Nb;
                 /* [ice, rhov] */
                 J[a][0][b][2] += -alph_sub * loc / rho_ice * Na_Nb;
                 /* [ice, sed] */
-                J[a][0][b][3] += C3 * ((Etased+Etaa)*dfi_dsed - Etaa*dfs_dsed
-                                        - Etased*dfa_dsed) * Na_Nb
+                J[a][0][b][3] += C3_2P * ((Etased+Etaa)*dfi_dsed - Etaa*dfs_dsed
+                                          - Etased*dfa_dsed) * Na_Nb
                                - alph_sub * dloc_dsed * (rhov - rhoI_vs_eff) / rho_ice * Na_Nb;
                 /* [sed, sed]: mass matrix only — frozen sediment */
                 J[a][3][b][3] += shift * Na_Nb;
