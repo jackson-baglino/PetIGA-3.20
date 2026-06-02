@@ -1,3 +1,98 @@
+
+---
+
+**Session ended:** 2026-06-01 11:50:53
+
+
+---
+
+**Session ended:** 2026-06-01 11:37:25
+
+
+---
+
+**Session ended:** 2026-06-01 08:14:29
+
+
+---
+
+**Session ended:** 2026-05-31 07:06:39
+
+
+---
+
+**Session ended:** 2026-05-31 07:03:18
+
+
+---
+
+**Session ended:** 2026-05-31 06:48:08
+
+
+---
+
+**Session ended:** 2026-05-30 17:16:06
+
+
+---
+
+**Session ended:** 2026-05-30 11:27:19
+
+
+---
+
+**Session ended:** 2026-05-30 11:06:22
+
+
+---
+
+**Session ended:** 2026-05-30 11:05:37
+
+
+---
+
+**Session ended:** 2026-05-30 10:04:43
+
+
+---
+
+**Session ended:** 2026-05-29 15:39:52
+
+
+---
+
+**Session ended:** 2026-05-29 15:08:52
+
+
+---
+
+**Session ended:** 2026-05-29 14:45:55
+
+
+---
+
+**Session ended:** 2026-05-29 14:08:36
+
+
+---
+
+**Session ended:** 2026-05-29 13:48:52
+
+
+---
+
+**Session ended:** 2026-05-29 13:40:57
+
+
+---
+
+**Session ended:** 2026-05-29 13:23:15
+
+
+---
+
+**Session ended:** 2026-05-28 14:30:06
+
 ## 2026-05-28 — Diagnose advisor_T-20_nopen freeze; vap_src reformulation + GT re-enable + atol
 
 - Diagnosed why the 2026-05-27 advisor_T-20_nopen HPC batch froze: every 2D case did a brief Allen-Cahn relaxation burst (2D_touching_grains steps ~123-129) then went bit-for-bit static for 99.4% of the 30 simulated days. Root cause: Gibbs-Thomson disabled (d0_GT=0) → no curvature driving force → genuine steady state at saturation once AC relaxes. Loose snes_atol=1e-4 amplified it (vapor residual ~rhov/dt fell below atol at large dt). Confirmed penalties were genuinely off; the static-vapor look matched the penalty case only because the end state is identical.
