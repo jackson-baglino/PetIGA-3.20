@@ -398,7 +398,7 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal RCsed_g[2] = { user->RCsed0, user->RCsed1 };
     const PetscReal sep        = user->grain_sep;
 
-    const PetscReal tc = 1.0 / (sqrt(2.0) * eps);
+    const PetscReal tc = 1.0 / (2.0 * eps);
 
     // -------------------------------------------------------------------------
     // Validate geometry
@@ -542,7 +542,7 @@ PetscErrorCode FormInitialContactSedPermafrost2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal rad_ice = user->RCice;
     const PetscReal rad_sed = user->RCsed;
 
-    const PetscReal tc = 1.0 / (sqrt(2.0) * eps);
+    const PetscReal tc = 1.0 / (2.0 * eps);
 
     if (rad_sed >= rad_ice)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
@@ -1449,7 +1449,7 @@ PetscErrorCode FormInitialSlabAndGrains2D(IGA iga, Vec U, AppCtx *user)
     }
 
     /* Interface width coefficient: tc = 1 / (sqrt(2) * eps) */
-    const PetscReal tc = 1.0 / (PetscSqrtReal(2.0) * eps);
+    const PetscReal tc = 1.0 / (2.0 * eps);
 
     /* Build phase fields at every node. */
     {
@@ -2017,7 +2017,7 @@ PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user)
  *     phi_sed_g = tanh_inner(RCsed)                       [sediment core]
  *
  *   where tanh_outer/inner use the equilibrium Allen-Cahn coefficient
- *     tc = 1 / (sqrt(2) * eps)
+ *     tc = 1 / (2 * eps)
  *
  * The two grains are tangent to each other at x = 0.5*Lx (2*RCice apart).
  * Air occupies x < xc0-RCice and x > xc1+RCice.

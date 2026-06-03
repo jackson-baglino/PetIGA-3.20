@@ -200,55 +200,6 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   //-------------
   PetscReal dt;
   TSGetTimeStep(ts,&dt);
-  //------------- relaxation → full physics transition
-  if (user->flag_relax && step >= user->n_relax) {
-    user->flag_relax = PETSC_FALSE;
-    user->t_IC = t;
-    PetscPrintf(PETSC_COMM_WORLD,
-        "Relaxation complete (step %d, t = %.4e s) — switching to full physics.\n",
-        step, t);
-  }
-
-  //------------- sediment freeze (switch at t_sed_freeze; deferred while relaxing)
-  if (!user->flag_relax && !user->flag_sed_frozen && t >= user->t_sed_freeze) {
-    user->flag_sed_frozen = PETSC_TRUE;
-
-    /* Snapshot the relaxed sediment field as the penalty reference.
-     * Overwrite Phi_sed0[] with the current 3-phase profile so the penalty
-     * k_sed*(sed - sed_ref) drives sediment back toward its relaxed state. */
-    {
-      Vec localU_snap; const PetscScalar *arrayU_snap;
-      IGAElement element_snap; IGAPoint point_snap; PetscScalar *UU_snap;
-      PetscInt indd_snap = 0;
-      ierr = IGAGetLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
-      ierr = IGABeginElement(user->iga, &element_snap); CHKERRQ(ierr);
-      while (IGANextElement(user->iga, element_snap)) {
-        ierr = IGAElementGetValues(element_snap, arrayU_snap, &UU_snap); CHKERRQ(ierr);
-        ierr = IGAElementBeginPoint(element_snap, &point_snap); CHKERRQ(ierr);
-        while (IGAElementNextPoint(element_snap, point_snap)) {
-          PetscScalar sol_snap[4];
-          ierr = IGAPointFormValue(point_snap, UU_snap, &sol_snap[0]); CHKERRQ(ierr);
-          user->Phi_sed0[indd_snap] = PetscRealPart(sol_snap[3]);
-          indd_snap++;
-        }
-        ierr = IGAElementEndPoint(element_snap, &point_snap); CHKERRQ(ierr);
-      }
-      ierr = IGAEndElement(user->iga, &element_snap); CHKERRQ(ierr);
-      ierr = IGARestoreLocalVecArray(user->iga, U, &localU_snap, &arrayU_snap); CHKERRQ(ierr);
-      PetscPrintf(PETSC_COMM_WORLD, "  sed0 reference updated to relaxed profile (%d quadrature points)\n", indd_snap);
-    }
-
-    PetscPrintf(PETSC_COMM_WORLD, "\033[34m"
-        "╔════════════════════════════════════════════════════════════╗\n"
-        "║              SEDIMENT PENALTY ACTIVATED                    ║\n"
-        "║  3-phase ice eq. unchanged; sediment pinned to sed0        ║\n"
-        "╠════════════════════════════════════════════════════════════╣\n"
-        "║  Step: %-5d  t_sed_freeze = %.4g s reached                 ║\n"
-        "║  New time step: %.2e s                                  ║\n"
-        "╚════════════════════════════════════════════════════════════╝\n"
-        "\033[0m\n",
-        step, user->t_sed_freeze, dt);
-  }
 
   //------ printf information (robust table header + aligned columns)
   {

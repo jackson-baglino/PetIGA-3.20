@@ -1,148 +1,72 @@
 # =============================================================================
-# solver.opts — numerical defaults shared by all permafrost simulations
+# solver.opts — numerical defaults for the clean 2-phase permafrost model.
 #
-# Three-file opts architecture:
-#
-#   solver.opts          ← THIS FILE: numerical settings (solver, tolerances,
-#                          preconditioner, basis order, regularisation, bounds)
-#   geometry/<name>.opts ← IC type, mesh, domain, grain radii, eps, initial dt
-#   experiment/<name>.opts ← t_final, t_sed_freeze, T, humidity, ∇T
-#
-# Usage (PETSc processes -options_file left-to-right; later wins):
-#
-#   mpiexec -np N ./permafrost \
-#       -options_file inputs/solver.opts \
-#       -options_file inputs/geometry/<geom>.opts \
-#       -options_file inputs/experiment/<exp>.opts
+# Three-file opts architecture (loaded left-to-right, later overrides earlier):
+#   inputs/solver.opts          ← THIS FILE: numerical settings only
+#   inputs/geometry/<name>.opts ← mesh, domain, IC type, eps, initial dt
+#   inputs/experiment/<name>.opts ← t_final, T, humidity, gradient, etc.
 # =============================================================================
 
-# ---------- DOFs & discretization (fixed for all permafrost sims) ----------
+# ---------- DOFs & discretisation ---------------------------------------------
 -dof 4                                  # ice / temperature / vapor / sediment
 -p 2                                    # B-spline polynomial order
 -C 1                                    # B-spline continuity (C^1 for p=2)
--periodic 1                             # periodic BCs on (closed system; vapor cannot
-                                        # leak through boundaries — needed for clean mass-
-                                        # balance diagnostics).
+-periodic 1                             # periodic BCs (closed system; vapor cannot
+                                        # leak through boundaries — needed for clean
+                                        # mass-balance diagnostics).
 
-# ---------- Output ----------
--n_out 5000                             # number of evenly-spaced output snapshots
-                                        # — only used when -outp 0 below.
--outp 1                                 # output every N time steps. With the adaptive
-                                        # scheme growing dt from ~1e-4 sec to ~1e4 sec over
-                                        # a long run, -outp 1 produces naturally log-spaced
-                                        # snapshots in time: many outputs/sec when dt is
-                                        # tiny (early dynamics), few outputs/sec when dt is
-                                        # large (quasi-equilibrium). Set to 0 to use n_out
-                                        # uniform spacing instead.
+# ---------- Output ------------------------------------------------------------
+-n_out 5000                             # snapshots when -outp 0
+-outp 1                                 # output every N time steps; -outp 1 with the
+                                        # adaptive dt produces naturally log-spaced
+                                        # snapshots (dense early when dt is small,
+                                        # sparse later when dt is large).
 -Permafrost_output 1                    # enable sol*.dat field output
 -Permafrost_monitor 1                   # enable monitor table output
 
-# ---------- Phase-field / model defaults ----------
--flag_avenue 1                          # AC + penalised vapor diffusion + freeze→zero sed
--flag_tIC 0                             # 1D IC variant (0=centered slab, 2=flat interface)
--n_relax 1                              # AC-only relaxation steps before full physics
-
-# ---------- Equation time-scaling ----------
-# xi_v, xi_T scale the diffusion + penalty + latent-heat source terms of the
-# vapor and temperature equations. xi_v=1 corresponds to the *physical* water-
-# vapor diffusivity in air; smaller values artificially throttle vapor
-# transport and push the model into a diffusion-limited regime (not what dry
-# snow metamorphism actually does). Dry snow lives in the mixed kinetics/
-# diffusion regime, so we want xi_v close to 1 and let the surface kinetics
-# (alph_sub) set the rate. Cost: stronger effective penalty (xi_v*k_pen)
-# stiffens the Jacobian at interfaces; dial down (e.g. 1e-2, 1e-3) if Newton
-# struggles.
--xi_v 1.0                               # physical vapor diffusivity scaling
--xi_T 1.0                               # physical thermal diffusivity scaling
-
-# ---------- Boundary condition defaults (insulating: zero flux) ----------
-# When these flags are 0 (default), no IGASetBoundaryValue is registered for
-# T or rho_v, and Residual_A1 returns 0 at boundary quadrature points, so the
-# natural Neumann BC ∂u/∂n = 0 is enforced (insulating: no flux of heat or
-# vapor through the boundary). Set to 1 only for tests that explicitly want
-# Dirichlet conditions.
--flag_BC_Tfix 0                         # do not fix T at boundaries (periodic mode below
-                                        # overrides any BC fixing anyway)
--flag_BC_rhovfix 0                      # do not fix rhov at boundaries
+# ---------- Boundary conditions (Neumann everywhere unless overridden) --------
+-flag_BC_Tfix 0
+-flag_BC_rhovfix 0
 -flag_Tdep 0                            # temperature-independent material properties
 
-# ---------- Phase-field bounds (safety net) ----------
-# Trigger rollback in BoundsRollbackPreStep / SNESSetFunctionDomainError if
-# any phi leaves [phase_lo, phase_hi].  Tight bounds catch spurious-phase
-# excursions early so the safety net can recover before the bad state persists
-# for many steps; loose bounds let small transient overshoots slip through.
--phase_lo -0.05                         # rollback if any phi falls below this
--phase_hi  1.05                         # rollback if any phi rises above this
+# ---------- Phase-field bounds (safety net) -----------------------------------
+# Bounds-rollback fires when a Newton trial sees phi outside [phase_lo, phase_hi].
+# Loose enough to tolerate small overshoots during the initial AC relaxation
+# (the tanh IC is not an exact equilibrium of the 2-phase well shape and AC
+# transiently goes slightly past 0/1 before settling).
+-phase_lo -0.10
+-phase_hi  1.10
 
-# ---------- Penalty defaults ----------
--difvap_pen 1.0e-8                      # D_pen = difvap_pen * difvap (in ice/sed regions)
-                                        # — keeps spurious-air-in-solid from migrating
-                                        #   (justified mechanism; Kaempfer-Plapp uses the same trick)
--k_pen 1.0e3                            # vapor interface-equilibrium stiffness, ACTIVE BUT LOCALIZED.
-                                        # k_pen=0 still crashes (DIVERGED_STEP_REJECTED at step 2)
-                                        # even with the thermal fix in place. Restored to 1e3 with
-                                        # PENALTY_PHI_LO bumped up (see material_properties.c) so
-                                        # the penalty acts only in the very deep solid (ice+sed
-                                        # very close to 1) and stays out of the diffuse interface
-                                        # where it was artificially pinning rhov to saturation
-                                        # and suppressing real sublimation physics.
-                                        # Penalty form: xi_v * k_pen * g_pen(ice+sed) * (rhov - rhov_eq)
-                                        # where g_pen() is PenaltyWeight() — a SmoothHeaviside shifted to
-                                        # be zero for ice+sed < 0.90 (so the diffuse ice-air interface
-                                        # and the inner-band sub_src region are free of penalty) and
-                                        # unity deep in solid (ice+sed → 1). This pins rhov to rhov_eq
-                                        # in the solid interior to suppress the runaway vapor build-up
-                                        # that vap_src would otherwise drive there (vap_src is now
-                                        # paired with sub_src and is naturally localized to the
-                                        # ice-air diffuse band, but the inner edge of that band sits
-                                        # in slow-diffusion territory and accumulates rhov without the
-                                        # penalty as a sink). The Gibbs-Thomson curvature dependence
-                                        # at the ice-air interface midpoint is preserved because the
-                                        # penalty is zero there.
-                                        # See src/material_properties.c::PenaltyWeight for the form.
--k_sed_pen -1                           # sediment restoring stiffness (-1 = auto: 1e-4/eps^2)
--Lambda 1.0e4                           # triple-junction free-energy penalty strength
+# ---------- Vapor penalty parameters -----------------------------------------
+# D_eff(phi) = D_v(T) * g(phi_a) + D_pen * (1 - g(phi_a))
+#   where D_pen = difvap_pen * D_v(T)  and g(x) = x^3 (3 - 2x).
+# Penalty term in vapor eq: -k_pen * g(phi_i + phi_s) * (rho_v - rho_v_eq).
+-difvap_pen 1.0e-5
+-k_pen 1.0e3
+-Lambda 1.0e4                           # triple-junction penalty in F_tri
 
-# ---------- Adaptive time stepping ----------
--dtmax 1.0e4                            # 10,000 s ≈ 2.8 hours; safety cap on adaptive growth
--adap 1                                 # enable adaptive dt
--NRmin 5                                # SNES iters BELOW which dt grows. With xi_v/xi_T
-                                        # relaxed, SNES converges in 3 iters/step every step;
-                                        # NRmin=2 meant dt never grew. NRmin=5 lets 3-iter
-                                        # convergence trigger dt-growth.
--NRmax 15                                # max Newton iters before dt shrinks
--max_rej 25                             # max rejected steps before abort
+# ---------- Adaptive time stepping -------------------------------------------
+-dtmax 1.0e4                            # ~2.8 h; safety cap on adaptive growth
+-adap 1
+-NRmin 5                                # SNES iters strictly below this trigger dt growth
+-NRmax 15                               # SNES iters above this trigger dt shrink
+-max_rej 25
 
-# ---------- Nonlinear solver (SNES) ----------
--snes_type newtonls                     # Newton with line search
--snes_max_it 50                         # max Newton iterations per time step
--snes_rtol 1e-06                        # relative residual tolerance
--snes_atol 1e-06                        # absolute residual tolerance. Tightened from 1e-4:
-                                        # at T=-20C the vapor field is O(rho_vs)~8e-4, so once
-                                        # dt grew to dtmax the vapor residual (~rhov/dt) fell
-                                        # below 1e-4 and SNES declared "converged" without
-                                        # resolving the slow Ostwald-ripening dynamics — the
-                                        # solution froze for the rest of the run. 1e-6 forces
-                                        # the weak cold-T vapor dynamics to be resolved. Cost:
-                                        # SNES takes a few more iterations/step, so dt grows
-                                        # more conservatively (which is the intent here).
--snes_stol 1e-06                        # step tolerance
-#-snes_converged_reason                 # DISABLED — was generating 7GB outp.txt at -5C
-                                        # where Newton does many iterations per step.
-                                        # Re-enable per-test by passing -snes_converged_reason.
--snes_linesearch_type bt                # backtracking line search
-#-snes_linesearch_monitor               # DISABLED — same reason as above
+# ---------- Nonlinear solver (SNES) ------------------------------------------
+-snes_type newtonls
+-snes_max_it 50
+-snes_rtol 1e-06
+-snes_atol 1e-06
+-snes_stol 1e-06
+-snes_linesearch_type bt
 
-# ---------- Linear solver (KSP) ----------
--ksp_type gmres                         # GMRES — correct for the asymmetric 4-DOF system
--ksp_rtol 1e-08                         # relative residual tolerance
--ksp_atol 1e-12                         # absolute residual tolerance
--ksp_max_it 500                         # max GMRES iterations
--ksp_gmres_restart 200                  # GMRES restart interval
-#-ksp_converged_reason                  # DISABLED — output volume blow-up at -5C
-
-# ---------- Preconditioner (2D / 3D default) ----------
--pc_type asm                            # additive Schwarz with overlap
--pc_asm_overlap 1                       # 1-node overlap between MPI blocks
--sub_pc_type ilu                        # ILU(k) per block
--sub_pc_factor_levels 2                 # ILU(2): captures 4-DOF coupled B-spline stencil
+# ---------- Linear solver (KSP + preconditioner) -----------------------------
+-ksp_type gmres
+-ksp_rtol 1e-08
+-ksp_atol 1e-12
+-ksp_max_it 500
+-ksp_gmres_restart 200
+-pc_type asm
+-pc_asm_overlap 1
+-sub_pc_type ilu
+-sub_pc_factor_levels 2

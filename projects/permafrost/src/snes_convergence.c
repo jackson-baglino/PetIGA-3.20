@@ -48,10 +48,6 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
         char header_line[512];
         PetscInt nchar = 0;
 
-        if (user->flag_relax)
-            PetscPrintf(PETSC_COMM_WORLD,
-                "    [RELAXATION — 3-phase AC only; T and rhov held fixed]\n");
-
         PetscSNPrintf(header_line, sizeof(header_line),
                       "    %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s | %*s",
                       (int)W_IT,    "it",
@@ -118,10 +114,9 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
 
     *reason = SNES_CONVERGED_ITERATING;
 
-    /* During relaxation the AC-only system is simpler; allow convergence after
-     * 1 iteration.  Full physics still requires 3 to avoid premature exit. */
-    PetscInt min_it = user->flag_relax ? 1 : 3;
-    if (it_number < min_it) {
+    /* Require at least 3 Newton iterations before checking convergence — this
+     * avoids declaring success on an artificially small iter-0 residual. */
+    if (it_number < 3) {
         PetscFunctionReturn(0);
     }
 
@@ -143,14 +138,8 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
     PetscBool conv_dof[4]  = {PETSC_FALSE, PETSC_FALSE, PETSC_FALSE, PETSC_FALSE};
 
     for (i = 0; i < nd; i++) {
-        /* Per-DOF overrides if requested (positive sentinel) — see AppCtx.atol_dof.
-         * Lets one equation use a looser tolerance than the others so the SNES
-         * convergence test isn't held hostage to whichever DOF has the largest
-         * physical-constant prefactor (here: T, via rho*L_sub ~ 2.5e9). */
-        PetscReal at_i = (user->atol_dof[i] > 0.0) ? user->atol_dof[i] : (PetscReal)atol;
-        PetscReal rt_i = (user->rtol_dof[i] > 0.0) ? user->rtol_dof[i] : (PetscReal)rtol;
-        conv_rel[i]  = (n2dof[i] <= rt_i * user->norm0[i])          ? PETSC_TRUE : PETSC_FALSE;
-        conv_abs[i]  = (n2dof[i] <  at_i)                            ? PETSC_TRUE : PETSC_FALSE;
+        conv_rel[i]  = (n2dof[i] <= rtol * user->norm0[i])          ? PETSC_TRUE : PETSC_FALSE;
+        conv_abs[i]  = (n2dof[i] <  atol)                            ? PETSC_TRUE : PETSC_FALSE;
         conv_stol[i] = (sol_update_n2dof[i] <= stol * sol_n2dof[i]) ? PETSC_TRUE : PETSC_FALSE;
         conv_dof[i]  = (conv_rel[i] || conv_abs[i] || conv_stol[i]) ? PETSC_TRUE : PETSC_FALSE;
     }

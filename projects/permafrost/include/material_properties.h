@@ -18,37 +18,6 @@ void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap, PetscScalar
 /* Computes the smooth Heaviside function and its derivative*/
 void SmoothHeavisidePoly(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi);
 
-/* Penalty weight: smooth Heaviside concentrated near phi = 1.
- * Zero for phi <= PENALTY_PHI_LO, unity for phi >= PENALTY_PHI_HI,
- * smooth ramp in between (via SmoothHeavisidePoly of the shifted variable).
- * Used so the vapor interface-equilibrium penalty is active only deep in
- * solid (phi = ice+sed close to 1) and OFF at the diffuse ice-air interface
- * so Gibbs-Thomson curvature dependence can emerge. */
-void PenaltyWeight(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi);
-
-/* Curvature of an isosurface of phi, computed from its gradient and Hessian:
- *   kappa = -div(grad_phi / |grad_phi|)
- *         = -L/G + (g·H·g)/G^3
- * where g = grad_phi, H = Hessian, L = trace(H) (Laplacian), G = |g|_reg.
- * G is regularized: G^2 = |g|^2 + eps_reg^2, to keep kappa finite where
- * |g| -> 0 (bulk regions). The localizer ice^2*air^2 in sub_src kills the
- * (numerically uninteresting) bulk contribution.
- *
- * dim must match the spatial dimension; dim==1 returns kappa=0 (no curvature
- * in 1D, but the regularized formula would otherwise produce a small artifact).
- *
- * Pass NULL for any of kappa / dkappa_dg / dkappa_dH that you don't need.
- *   dkappa_dg[l]              = d kappa / d g_l          (length dim)
- *   dkappa_dH[k*dim + l]      = d kappa / d H_{kl}       (length dim*dim)
- */
-void Curvature(PetscInt dim,
-               const PetscScalar grad_phi[],
-               const PetscScalar hess_phi[],
-               PetscReal eps_reg,
-               PetscScalar *kappa,
-               PetscScalar dkappa_dg[],
-               PetscScalar dkappa_dH[]);
-
 /* Computes the saturation vapor density and its derivative */
 void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs, PetscScalar *d_rhovs);
 

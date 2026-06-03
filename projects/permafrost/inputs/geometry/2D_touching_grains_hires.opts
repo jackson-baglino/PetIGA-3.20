@@ -16,5 +16,4 @@
 -eps 3.56e-07
 
 # Even stiffer at hires; mob reduction + robust linear solver.
--mob_sub 2.0e-10
 -ksp_type bcgs                          # GMRES hit DIVERGED_BREAKDOWN previously

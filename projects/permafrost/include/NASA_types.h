@@ -19,20 +19,6 @@ typedef struct {
   IGA       iga;  // Isogeometric analysis (IGA) structure for managing geometry and basis functions
   SNES      snes; // Nonlinear solver handle (cached so Residual can call SNESSetFunctionDomainError)
 
-  /* Per-DOF absolute/relative tolerances for SNES convergence + TS LTE adaptor.
-   * Index 0=ice, 1=temperature, 2=vapor (rhov), 3=sediment. A negative value
-   * is a sentinel meaning "fall back to the global -snes_atol / -snes_rtol /
-   * -ts_atol / -ts_rtol". The point is that this model's equations span ~10^9
-   * in residual magnitude (T equation carries rho*L_sub ~ 2.5e9), so a single
-   * global atol forces the dt control + Newton convergence to be dominated by
-   * whichever DOF has the largest absolute residual (temperature here, even
-   * though physically T is the passive byproduct of the ice/vapor coupling).
-   * Per-DOF tolerances reweight each equation's contribution to the SNES /
-   * TS-adaptor norms without changing the equations themselves. Set via
-   * -atol_ice/-atol_T/-atol_rhov/-atol_sed and -rtol_* options. */
-  PetscReal atol_dof[4];
-  PetscReal rtol_dof[4];
-
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
   PetscReal mob_sub;  // Mobility for ice phase evolution
@@ -53,7 +39,6 @@ typedef struct {
 
   // Environmental conditions and threshold parameters
   PetscReal air_lim;  // Air phase fraction limit (threshold to distinguish between ice/air)
-  PetscReal xi_v, xi_T;  // Characteristic non-dimensional parameters for vapor and temperature
 
   // Initial and boundary condition parameters
   PetscReal T_melt;  // Melting temperature of ice
@@ -86,18 +71,19 @@ typedef struct {
   // Flags for controlling different simulation options
   PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 2=flat interface
   PetscInt  outp;            // output control flag
-  PetscInt  n_relax;         // AC-only relaxation steps before full physics (0 = none)
-  PetscBool flag_relax;      // PETSC_TRUE while relaxation steps are active
   PetscBool flag_Tdep;       // temperature-dependent material properties
-  PetscBool flag_sed_frozen; // PETSC_FALSE = 3-phase active; PETSC_TRUE = 2-phase (sediment frozen)
 
-  /* Residual avenue selector:
-   *   1 = Allen-Cahn, penalty vapor, freeze sed → zero RHS after t_sed_freeze
-   *   2 = Allen-Cahn, penalty vapor, freeze sed → k_sed penalty (default)
-   *   3 = Cahn-Hilliard, no penalties (requires p ≥ 2, C ≥ 1) */
-  PetscInt  flag_avenue;
-
-  PetscReal t_sed_freeze;    // duration of 3-phase period (s); 0 = start immediately in 2-phase
+  /* Three-phase relaxation period. n_relax > 0 runs the full 3-phase
+   * Kim-Steinbach AC for n_relax steps with T and rho_v pinned (mass-matrix-
+   * only residuals), allowing the IC tanh profiles to settle into a self-
+   * consistent ice/sed/air equilibrium that respects phi_i + phi_s + phi_a = 1.
+   * Without this transient, the new 2-phase ice equation's grad^2(phi_s)
+   * coupling can drive phi_air negative at the ice-sed contact line on step 1
+   * (the IC is built phase-by-phase and is only approximately constrained).
+   * After step n_relax, monitoring.c flips flag_relax to FALSE and the model
+   * switches to the clean 2-phase formulation for the rest of the run. */
+  PetscInt  n_relax;
+  PetscBool flag_relax;
 
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)
@@ -119,18 +105,9 @@ typedef struct {
   PetscScalar *Phi_sed0;  // Sediment phase field variable
   PetscInt npoints;
 
-  /* Penalty parameters (tunable via CLI) */
-  PetscReal difvap_pen;   // multiplicative factor: D_pen = difvap_pen * difvap (dimensionless)
-  PetscReal k_pen;        // vapour interface equilibrium stiffness
-  PetscReal k_sed_pen;    // sediment shape-restoring stiffness
-
-  /* Gibbs-Thomson curvature coupling: rhoI_vs_eff = rhoI_vs * (1 + d0_GT * kappa)
-   * d0_GT is the capillary length (γ·v_m / (R_g·T)) — for ice at -5°C, ~9.6e-10 m.
-   * Default 0 disables the GT correction (recovers flat-interface sub_src behavior).
-   * Setting d0_GT to the physical value enables explicit Gibbs-Thomson driving force
-   * for Ostwald ripening at the ice-air diffuse interface. Curvature kappa is
-   * computed from gradients of phi_ice via Curvature() in material_properties.c. */
-  PetscReal d0_GT;        // Gibbs-Thomson capillary length [m]; 0 = disabled
+  /* Vapor-equation penalty parameters (tunable via CLI) */
+  PetscReal difvap_pen;   // multiplicative factor: D_pen = difvap_pen * dif_vap (dimensionless)
+  PetscReal k_pen;        // vapour interface-equilibrium stiffness
 
   /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */
   PetscReal phase_lo;     // lower bound for phi_ice, phi_sed, phi_air (default -0.25)

@@ -20,16 +20,8 @@ int main(int argc, char *argv[]) {
     PetscBool flag_BC_Tfix;              /* fix temperature at boundaries */
     PetscBool flag_BC_rhovfix;           /* fix vapor density at boundaries */
 
-    user.xi_v       = 1.0e-4; // 1.0e-5;   /* Time scaling parameter for vapor */
-    user.xi_T       = 1.0e-2; // 1.0e-4;   /* Time scaling parameter for temperature */
-
-    user.Lambd      = 1.0;      /* Model parameter Lambda */
-    user.air_lim    = 1.0e-6;   /* Air phase fraction */
-    user.n_relax    = 0;            /* AC relaxation steps before physics (0 = none) */
-    user.flag_relax = PETSC_FALSE;  /* set after option parsing */
-    user.t_sed_freeze    = 1.0;        /* 3-phase duration (s); 0 = start immediately in 2-phase */
-    user.flag_sed_frozen = PETSC_FALSE; /* set below from t_sed_freeze */
-    user.flag_avenue     = 2;          /* default: Avenue 2 */
+    user.Lambd      = 1.0;      /* Model parameter Lambda (triple-junction penalty) */
+    user.air_lim    = 1.0e-6;   /* Air phase fraction floor */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -53,18 +45,14 @@ int main(int argc, char *argv[]) {
     user.readFlag   = PETSC_FALSE;    /* read initial field from file */
     user.flag_Tdep  = PETSC_FALSE;    /* temperature-dependent material properties */
 
-    /* Penalty parameter defaults — match assembly.c hardcoded values.
-     * eps is not yet final here; will be overridden after PetscOptionsEnd. */
-    user.difvap_pen = 1.0e-5;  /* factor (dimensionless): D_pen = difvap_pen * difvap */
-    user.k_pen      = 1.0e7;   /* vapour interface equilibrium stiffness */
-    user.k_sed_pen  = -1.0;    /* sentinel: computed from 1e-4/eps² after options */
-    user.d0_GT      = 0.0;     /* Gibbs-Thomson capillary length: 0 = disabled (default) */
-    user.phase_lo   = -0.25;   /* lower bound: phi below this → abort */
-    user.phase_hi   =  1.25;   /* upper bound: phi above this → abort */
-    /* Per-DOF tolerances: -1 = sentinel "use global -snes_atol/-snes_rtol +
-     * scalar -ts_atol/-ts_rtol", overridden per DOF via -atol_ice/-atol_T/
-     * -atol_rhov/-atol_sed and -rtol_*. See NASA_types.h for rationale. */
-    for (PetscInt i = 0; i < 4; i++) { user.atol_dof[i] = -1.0; user.rtol_dof[i] = -1.0; }
+    /* Vapor-equation penalty parameter defaults (CLI-overridable).
+     *   D_eff = D_v(T)*g(phi_a) + D_pen*(1 - g(phi_a))    where D_pen = difvap_pen * D_v(T)
+     *   penalty term = -k_pen * g(phi_i + phi_s) * (rho_v - rho_v_eq)
+     */
+    user.difvap_pen = 1.0e-5;
+    user.k_pen      = 1.0e7;
+    user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
+    user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
     user.d0_sub0    = 1.0e-9;    /* capillary length scale (physical) */
     user.beta_sub0  = 1.4e5;     /* kinetic coefficient (physical) */
 
@@ -225,18 +213,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-n_relax",
-             "Allen-Cahn relaxation steps before full physics; phase fields settle with no "
-             "temperature/vapor coupling (0 = disabled, default)",
-             "", user.n_relax, &user.n_relax, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-t_sed_freeze",
-             "Duration of 3-phase period (s). Set to 0 to start immediately in 2-phase "
-             "(frozen sediment). Set > 0 to run 3-phase until this time, then switch.",
-             "", user.t_sed_freeze, &user.t_sed_freeze, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsInt("-flag_avenue",
-             "Residual formulation: 1=AC+vapor penalty+freeze→zero, 2=AC+vapor penalty+freeze→penalty (default), 3=Cahn-Hilliard (no penalties)",
-             "", user.flag_avenue, &user.flag_avenue, NULL); CHKERRQ(ierr);
-
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-thcond_sed", "Thermal conductivity of inert phase", "", user.thcond_sed, &user.thcond_sed, NULL); CHKERRQ(ierr);
@@ -293,72 +269,22 @@ int main(int argc, char *argv[]) {
              "Vapour interface equilibrium stiffness "
              "(default: difvap_pen/eps²; -1 = use default)",
              "", user.k_pen, &user.k_pen, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-k_sed_pen",
-             "Sediment shape-restoring stiffness "
-             "(default: 1e-3/eps²; -1 = use default)",
-             "", user.k_sed_pen, &user.k_sed_pen, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-d0_GT",
-             "Gibbs-Thomson capillary length [m]: rhoI_vs_eff = rhoI_vs * (1 + d0_GT * kappa). "
-             "Physical value ~9.6e-10 m for ice at -5°C. 0 (default) disables the GT correction.",
-             "", user.d0_GT, &user.d0_GT, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-Lambda",
              "Triple-junction penalty strength in the free energy "
              "(larger values suppress spurious phases at binary interfaces; default 1.0)",
              "", user.Lambd, &user.Lambd, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-phase_lo",
              "Lower bound for phase fields phi_ice, phi_sed, phi_air "
-             "(simulation aborts if any phi falls below this; default -0.25)",
+             "(simulation aborts if any phi falls below this; default -0.05)",
              "", user.phase_lo, &user.phase_lo, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-phase_hi",
              "Upper bound for phase fields phi_ice, phi_sed, phi_air "
-             "(simulation aborts if any phi exceeds this; default 1.25)",
+             "(simulation aborts if any phi exceeds this; default 1.05)",
              "", user.phase_hi, &user.phase_hi, NULL); CHKERRQ(ierr);
-    /* Per-DOF tolerances. Negative = use the global -snes_atol / -snes_rtol
-     * / -ts_atol / -ts_rtol. Set positive to override per equation; downweights
-     * the equation in both the per-DOF SNES test and the TS LTE error norm. */
-    ierr = PetscOptionsReal("-atol_ice", "Per-DOF SNES/TS atol for phi_ice (sentinel -1 = global)",
-             "", user.atol_dof[0], &user.atol_dof[0], NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-atol_T",   "Per-DOF SNES/TS atol for temperature (sentinel -1 = global). "
-             "Recommended >> global atol to neutralise the rho*L_sub ~2.5e9 prefactor.",
-             "", user.atol_dof[1], &user.atol_dof[1], NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-atol_rhov","Per-DOF SNES/TS atol for vapor density (sentinel -1 = global)",
-             "", user.atol_dof[2], &user.atol_dof[2], NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-atol_sed", "Per-DOF SNES/TS atol for phi_sed (sentinel -1 = global)",
-             "", user.atol_dof[3], &user.atol_dof[3], NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-rtol_ice", "Per-DOF SNES/TS rtol for phi_ice (sentinel -1 = global)",
-             "", user.rtol_dof[0], &user.rtol_dof[0], NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-rtol_T",   "Per-DOF SNES/TS rtol for temperature (sentinel -1 = global)",
-             "", user.rtol_dof[1], &user.rtol_dof[1], NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-rtol_rhov","Per-DOF SNES/TS rtol for vapor density (sentinel -1 = global)",
-             "", user.rtol_dof[2], &user.rtol_dof[2], NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-rtol_sed", "Per-DOF SNES/TS rtol for phi_sed (sentinel -1 = global)",
-             "", user.rtol_dof[3], &user.rtol_dof[3], NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-xi_v",
-             "Time-scaling for vapor equation: multiplies the diffusion term "
-             "and the rhov<->rhov_eq penalty (default 1e-4). xi_v=1 is "
-             "physically natural but stiff; smaller values trade diffusion "
-             "speed and penalty strength for Newton stability.",
-             "", user.xi_v, &user.xi_v, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-xi_T",
-             "Time-scaling for temperature equation: multiplies the thermal "
-             "diffusion and latent-heat source terms (default 1e-2).",
-             "", user.xi_T, &user.xi_T, NULL); CHKERRQ(ierr);
 
     /* --- Flags ---------------------------------------------------------- */
 
     PetscOptionsEnd();
-
-    /* Resolve sentinel defaults using the final eps value */
-    if (user.k_sed_pen < 0.0) user.k_sed_pen = 1.0e-4 / (eps * eps);
-
-    /* Relaxation: if n_relax > 0, start in AC-only mode; monitoring.c flips flag_relax off at step n_relax */
-    user.flag_relax = (user.n_relax > 0) ? PETSC_TRUE : PETSC_FALSE;
-
-    /* Determine initial freeze state from t_sed_freeze:
-     *   t_sed_freeze <= 0 → start immediately in 2-phase (sediment frozen from t = 0)
-     *   t_sed_freeze >  0 → start in 3-phase; monitoring.c flips flag_sed_frozen at t = t_sed_freeze
-     * Note: if relaxation is active, the freeze transition is deferred until after relaxation. */
-    user.flag_sed_frozen = (user.t_sed_freeze <= 0.0) ? PETSC_TRUE : PETSC_FALSE;
 
     /* Assign parameters to user context */
     user.p = p;
@@ -402,10 +328,8 @@ int main(int argc, char *argv[]) {
     if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", dT/dz = %.2e °C/m", grad_temp0[2]);
     PetscPrintf(PETSC_COMM_WORLD, "\n");
     PetscPrintf(PETSC_COMM_WORLD, "Vapor diffusivity:            D_v = %.5e m²/s \n", user.dif_vap);
-    PetscPrintf(PETSC_COMM_WORLD, "k_sed_pen:                    %.2e \n", user.k_sed_pen);
-    PetscPrintf(PETSC_COMM_WORLD, "d0_GT (capillary length):     %.2e m  %s\n",
-                user.d0_GT,
-                (user.d0_GT == 0.0) ? "[Gibbs-Thomson DISABLED]" : "[GT active]");
+    PetscPrintf(PETSC_COMM_WORLD, "Vapor penalty:                k_pen = %.2e , difvap_pen = %.2e\n",
+                user.k_pen, user.difvap_pen);
 
     /* Compute saturation vapor density and its derivative based on initial temperature */
     PetscReal rho_rhovs;   /* Ratio of ice density to saturation vapor density */
@@ -636,41 +560,6 @@ int main(int argc, char *argv[]) {
     ierr = IGACreateVec(iga, &U); CHKERRQ(ierr);
     ierr = VecZeroEntries(U); CHKERRQ(ierr);
 
-    /* Per-DOF TS LTE tolerances. If any per-DOF atol or rtol option was set
-     * on the CLI, build vector atol/rtol with the requested per-stride values
-     * (and the global SNES atol/rtol for unset entries). TSAlpha's TSAdaptBasic
-     * uses the weighted norm  ||err||_w = sqrt(sum_i (err_i / (atol_i + rtol_i |u_i|))^2),
-     * so a large atol on one stride downweights that DOF's contribution to
-     * the dt-control error estimate without changing the equations. The same
-     * per-DOF values are read by SNESDOFConvergence in snes_convergence.c.
-     * Vectors are held locally; TS retains its own reference via TSSetTolerances. */
-    Vec ts_vatol = NULL, ts_vrtol = NULL;
-    {
-        PetscBool any_set = PETSC_FALSE;
-        for (PetscInt i = 0; i < 4; i++) {
-            if (user.atol_dof[i] > 0.0 || user.rtol_dof[i] > 0.0) { any_set = PETSC_TRUE; break; }
-        }
-        if (any_set) {
-            PetscReal atol_g, rtol_g, stol_g; PetscInt maxit_g, maxf_g;
-            ierr = SNESGetTolerances(nonlin, &atol_g, &rtol_g, &stol_g, &maxit_g, &maxf_g); CHKERRQ(ierr);
-            ierr = VecDuplicate(U, &ts_vatol); CHKERRQ(ierr);
-            ierr = VecDuplicate(U, &ts_vrtol); CHKERRQ(ierr);
-            PetscPrintf(PETSC_COMM_WORLD, "Per-DOF tolerances (active):\n");
-            const char *dof_name[4] = {"ice ", "T   ", "rhov", "sed "};
-            for (PetscInt i = 0; i < 4; i++) {
-                PetscReal av = (user.atol_dof[i] > 0.0) ? user.atol_dof[i] : atol_g;
-                PetscReal rv = (user.rtol_dof[i] > 0.0) ? user.rtol_dof[i] : rtol_g;
-                ierr = VecStrideSet(ts_vatol, i, av); CHKERRQ(ierr);
-                ierr = VecStrideSet(ts_vrtol, i, rv); CHKERRQ(ierr);
-                PetscPrintf(PETSC_COMM_WORLD,
-                            "  DOF %d (%s): atol=%.3e  rtol=%.3e  %s\n",
-                            (int)i, dof_name[i], (double)av, (double)rv,
-                            (user.atol_dof[i] > 0.0 || user.rtol_dof[i] > 0.0) ? "[override]" : "[global]");
-            }
-            ierr = TSSetTolerances(ts, PETSC_DEFAULT, ts_vatol, PETSC_DEFAULT, ts_vrtol); CHKERRQ(ierr);
-        }
-    }
-
     PetscPrintf(PETSC_COMM_WORLD, "Setting up initial conditions... \n");
 
     if (dim == 1) {
@@ -760,8 +649,6 @@ int main(int argc, char *argv[]) {
 
     /* Cleanup Resources */
     ierr = VecDestroy(&U); CHKERRQ(ierr);
-    if (ts_vatol) { ierr = VecDestroy(&ts_vatol); CHKERRQ(ierr); }
-    if (ts_vrtol) { ierr = VecDestroy(&ts_vrtol); CHKERRQ(ierr); }
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     ierr = PetscFree(user.alph); CHKERRQ(ierr);
