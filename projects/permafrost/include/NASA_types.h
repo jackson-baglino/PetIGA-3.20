@@ -73,16 +73,17 @@ typedef struct {
   PetscInt  outp;            // output control flag
   PetscBool flag_Tdep;       // temperature-dependent material properties
 
-  /* Three-phase relaxation window. n_relax > 0 evolves phi_i AND phi_s
-   * under the full Kim-Steinbach beta-eliminated AC (Sigma_T-weighted
-   * combination of dF/dphi_i, dF/dphi_a, dF/dphi_s; plain grad^2(phi_i)
-   * and grad^2(phi_s) — no cross-grad^2 coupling) for the first n_relax
-   * timesteps. T and rho_v use the corresponding 3-phase forms: latent
-   * heat sourced by ∂phi_a/∂t, vapor source by ∂phi_i/∂t. After step
-   * n_relax, monitoring.c flips flag_relax to FALSE and the model
-   * switches to the 2-phase post-relax form (sed frozen, latent heat
-   * sourced by S_sub, vapor source by S_sub). */
-  PetscInt  n_relax;
+  /* Three-phase relaxation window. While simulation time t < t_relax,
+   * phi_i and phi_s both evolve under the full Kim-Steinbach
+   * beta-eliminated AC (Sigma_T-weighted combination of dF/dphi_i,
+   * dF/dphi_a, dF/dphi_s; plain grad^2(phi_i) and grad^2(phi_s) — no
+   * cross-grad^2 coupling). T and rho_v use the corresponding 3-phase
+   * forms: latent heat sourced by ∂phi_a/∂t, vapor source by ∂phi_i/∂t.
+   * Once t >= t_relax, monitoring.c flips flag_relax to FALSE and the
+   * model switches to the 2-phase post-relax form (sed frozen, latent
+   * heat sourced by S_sub, vapor source by S_sub).
+   * Default t_relax = 0 = relaxation off. */
+  PetscReal t_relax;
   PetscBool flag_relax;
 
   // Numerical method and discretization parameters

@@ -54,14 +54,13 @@ int main(int argc, char *argv[]) {
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
 
-    /* Three-phase relaxation window. When n_relax > 0, the first n_relax
-     * timesteps evolve phi_s under a symmetric Kim-Steinbach AC equation
-     * (mirror of the ice equation, with the (fs - fa) chemical-potential
-     * difference and a grad^2(phi_i) cross-coupling); after step n_relax,
-     * R_sed collapses to N*sed_t and sediment is frozen. T and rho_v
-     * evolve under the standard heat/vapor equations during BOTH windows.
-     * Default 0 = relaxation off, sediment frozen from t=0. */
-    user.n_relax    = 0;
+    /* Three-phase relaxation window. While t < t_relax (simulation time),
+     * phi_i and phi_s both evolve under the full 3-phase beta-eliminated
+     * Kim-Steinbach AC, with T and rho_v on the corresponding 3-phase
+     * sources. After t >= t_relax, R_sed collapses to N*sed_t and the
+     * model switches to the 2-phase form (sed frozen, latent and vapor
+     * sources from S_sub). Default 0 = relaxation off, sed frozen from t=0. */
+    user.t_relax    = 0.0;
     user.flag_relax = PETSC_FALSE;
     user.d0_sub0    = 1.0e-9;    /* capillary length scale (physical) */
     user.beta_sub0  = 1.4e5;     /* kinetic coefficient (physical) */
@@ -293,18 +292,19 @@ int main(int argc, char *argv[]) {
              "", user.phase_hi, &user.phase_hi, NULL); CHKERRQ(ierr);
 
     /* --- Three-phase relaxation window ---------------------------------- */
-    ierr = PetscOptionsInt("-n_relax",
-             "Number of initial timesteps during which phi_s evolves under "
-             "Kim-Steinbach AC (mirror of phi_i equation). After step n_relax, "
-             "phi_s is frozen (R_sed = N*sed_t). Default 0 = sed frozen from t=0.",
-             "", user.n_relax, &user.n_relax, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-t_relax",
+             "Simulation time (s) during which phi_i AND phi_s evolve under the "
+             "full 3-phase beta-eliminated Kim-Steinbach AC. After t >= t_relax, "
+             "phi_s is frozen (R_sed = N*sed_t) and the model switches to the "
+             "2-phase form. Default 0 = sed frozen from t=0.",
+             "", user.t_relax, &user.t_relax, NULL); CHKERRQ(ierr);
 
     /* --- Flags ---------------------------------------------------------- */
 
     PetscOptionsEnd();
 
-    /* Activate relaxation window if n_relax > 0 */
-    user.flag_relax = (user.n_relax > 0) ? PETSC_TRUE : PETSC_FALSE;
+    /* Activate relaxation window if t_relax > 0 */
+    user.flag_relax = (user.t_relax > 0.0) ? PETSC_TRUE : PETSC_FALSE;
 
     /* Assign parameters to user context */
     user.p = p;
@@ -402,8 +402,9 @@ int main(int argc, char *argv[]) {
 
     if (user.flag_relax) {
         PetscPrintf(PETSC_COMM_WORLD,
-            "Three-phase relaxation window ON: phi_s evolves under K-S AC "
-            "for the first %d steps, then freezes.\n\n", user.n_relax);
+            "Three-phase relaxation window ON: phi_i and phi_s evolve under "
+            "K-S 3-phase AC for t < %.3e s, then sed freezes.\n\n",
+            user.t_relax);
     }
 
     /* Gibbs-Thomson kinetic parameters */
