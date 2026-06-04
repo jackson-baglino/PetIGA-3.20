@@ -53,6 +53,16 @@ int main(int argc, char *argv[]) {
     user.k_pen      = 1.0e7;
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
+
+    /* Three-phase relaxation window. When n_relax > 0, the first n_relax
+     * timesteps evolve phi_s under a symmetric Kim-Steinbach AC equation
+     * (mirror of the ice equation, with the (fs - fa) chemical-potential
+     * difference and a grad^2(phi_i) cross-coupling); after step n_relax,
+     * R_sed collapses to N*sed_t and sediment is frozen. T and rho_v
+     * evolve under the standard heat/vapor equations during BOTH windows.
+     * Default 0 = relaxation off, sediment frozen from t=0. */
+    user.n_relax    = 0;
+    user.flag_relax = PETSC_FALSE;
     user.d0_sub0    = 1.0e-9;    /* capillary length scale (physical) */
     user.beta_sub0  = 1.4e5;     /* kinetic coefficient (physical) */
 
@@ -282,9 +292,19 @@ int main(int argc, char *argv[]) {
              "(simulation aborts if any phi exceeds this; default 1.05)",
              "", user.phase_hi, &user.phase_hi, NULL); CHKERRQ(ierr);
 
+    /* --- Three-phase relaxation window ---------------------------------- */
+    ierr = PetscOptionsInt("-n_relax",
+             "Number of initial timesteps during which phi_s evolves under "
+             "Kim-Steinbach AC (mirror of phi_i equation). After step n_relax, "
+             "phi_s is frozen (R_sed = N*sed_t). Default 0 = sed frozen from t=0.",
+             "", user.n_relax, &user.n_relax, NULL); CHKERRQ(ierr);
+
     /* --- Flags ---------------------------------------------------------- */
 
     PetscOptionsEnd();
+
+    /* Activate relaxation window if n_relax > 0 */
+    user.flag_relax = (user.n_relax > 0) ? PETSC_TRUE : PETSC_FALSE;
 
     /* Assign parameters to user context */
     user.p = p;
@@ -378,6 +398,12 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD, "Adaptive time stepping is ON \n");
         PetscPrintf(PETSC_COMM_WORLD, "    NRmin = %d, NRmax = %d, factor = %.4f \n", NRmin, NRmax, factor);
         PetscPrintf(PETSC_COMM_WORLD, "    dtmin = %.2e sec, dtmax = %.2e sec \n\n", dtmin, dtmax);
+    }
+
+    if (user.flag_relax) {
+        PetscPrintf(PETSC_COMM_WORLD,
+            "Three-phase relaxation window ON: phi_s evolves under K-S AC "
+            "for the first %d steps, then freezes.\n\n", user.n_relax);
     }
 
     /* Gibbs-Thomson kinetic parameters */

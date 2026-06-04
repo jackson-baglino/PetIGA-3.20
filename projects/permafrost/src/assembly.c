@@ -2,12 +2,38 @@
 #include "material_properties.h"
 
 /* =========================================================================
- * Clean 2-phase formulation.
+ * Two formulations, switched by user->flag_relax.
  *
- * Strong form (sediment is identically frozen — dphi_s/dt = 0 — so dphi_a = -dphi_i):
+ * ---------- Three-phase relaxation window (flag_relax == TRUE) -------------
+ * Full beta-eliminated Kim-Steinbach AC: dphi_i + dphi_s + dphi_a = 0.
+ *
+ *   dphi_i/dt = -3 M_0 / (eps Sigma_T) [
+ *                  (Sigma_s + Sigma_a) dF/dphi_i
+ *                  - Sigma_s            dF/dphi_a
+ *                  - Sigma_a            dF/dphi_s ]
+ *             + 3 M_0 eps grad^2 phi_i  + S_sub
+ *
+ *   dphi_s/dt = -3 M_0 / (eps Sigma_T) [
+ *                  -Sigma_a            dF/dphi_i
+ *                  -Sigma_i            dF/dphi_a
+ *                  -(Sigma_i+Sigma_a)  dF/dphi_s ]
+ *             + 3 M_0 eps grad^2 phi_s
+ *
+ *   rho cp dT/dt = div(K grad T) - rho L_sub dphi_a/dt
+ *                = div(K grad T) + rho L_sub (dphi_i/dt + dphi_s/dt)
+ *
+ *   drho_v/dt = div(D_eff grad rho_v)
+ *             - k_pen g(phi_i + phi_s) (rho_v - rho_v_eq)
+ *             - rho_i dphi_i/dt
+ *
+ * Note: the 3-phase equations have NO grad^2(other phase) cross-coupling —
+ * that only emerges after beta-elimination under the 2-phase constraint.
+ *
+ * ---------- Two-phase post-relax window (flag_relax == FALSE) --------------
+ * Sediment is identically frozen (dphi_s/dt = 0), so dphi_a = -dphi_i.
  *
  *   dphi_i/dt = -3 M_0 / (eta_i + eta_a) [
- *                 (dF_tri/dphi_i - dF_tri/dphi_a) / eps
+ *                 (dF/dphi_i - dF/dphi_a) / eps
  *                 - (eta_i + eta_a) eps grad^2 phi_i
  *                 - eta_a            grad^2 phi_s ]
  *             + S_sub
@@ -20,12 +46,16 @@
  *             - k_pen g(phi_i + phi_s) (rho_v - rho_v_eq)
  *             - rho_ice S_sub
  *
+ * The grad^2(phi_s) cross-coupling in the post-relax ice equation is the
+ * algebraic trace of the 3-phase derivation under the dphi_s/dt = 0
+ * constraint.
+ *
+ * ---------- Common pieces ---------------------------------------------------
  *   D_eff(phi) = D_v(T) g(phi_a) + D_pen (1 - g(phi_a))
  *   g(x)       = x^3 (3 - 2x)         (plain SmoothHeavisidePoly)
  *   rho_v_eq   = (phi_i + phi_s) rho_vs(T) + phi_a rho_v
  *   S_sub      = alpha_sub * (phi_i*phi_a)^2 * (rho_v - rho_vs(T)) / rho_ice
- *
- *   phi_a = 1 - phi_i - phi_s
+ *   phi_a      = 1 - phi_i - phi_s
  *
  * Sign convention:
  *   S_sub > 0 = deposition (vapor -> ice). Ice gains (+S_sub),
@@ -88,6 +118,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscInt l, dim = user->dim;
     PetscReal eps     = user->eps;
     PetscReal Etai    = user->Etai;
+    PetscReal Etas    = user->Etam;   /* sediment eta (a.k.a. Etam) */
     PetscReal Etaa    = user->Etaa;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
@@ -138,7 +169,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     if (PetscRealPart(air_c) > 1.0) air_c = 1.0;
 
     /* Material properties */
-    PetscReal thcond, cp, rho, dif_vap, rho_vs, fi, fa, mob_sub;
+    PetscReal thcond, cp, rho, dif_vap, rho_vs, fi, fa, fs, mob_sub;
     ThermalCond(user, ice_c, sed_c, &thcond,  NULL);
     HeatCap    (user, ice_c, sed_c, &cp,      NULL);
     Density    (user, ice_c, sed_c, &rho,     NULL);
@@ -146,6 +177,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     RhoVS_I    (user, tem,           &rho_vs,  NULL);
     Fice       (user, ice_c, sed_c, &fi,      NULL);
     Fair       (user, ice_c, sed_c, &fa,      NULL);
+    Fsed       (user, ice_c, sed_c, &fs,      NULL);
     Mobility   (user, ice_c, sed_c, &mob_sub);
 
     /* Effective vapor diffusivity: D_eff = D_v g(phi_a) + D_pen (1 - g(phi_a)) */
@@ -166,8 +198,11 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
                     * PetscRealPart(air_c) * PetscRealPart(air_c);
     PetscReal S_sub = alph_sub * loc * (PetscRealPart(rhov) - rho_vs) / rho_ice;
 
-    /* Ice driving-force prefactor: K2P = 3 M_0 / (eta_i + eta_a). */
-    PetscReal K2P = 3.0 * mob_sub / (Etai + Etaa);
+    /* Two-phase ice prefactor: K2P = 3 M_0 / (eta_i + eta_a). */
+    PetscReal K2P    = 3.0 * mob_sub / (Etai + Etaa);
+    /* Three-phase prefactor (used only during relax): C3 = 3 M_0 / (eps * Sigma_T). */
+    PetscReal SigmaT = Etai + Etas + Etaa;
+    PetscReal C3     = 3.0 * mob_sub / (eps * SigmaT);
 
     /* T-equation row-scale (numerical preconditioning; no physics change). */
     PetscReal S_T = 1.0 / (rho_ice * lat_sub);
@@ -190,30 +225,65 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             grad_N_dot_grad_rhov += N1[a][l] * PetscRealPart(grad_rhov[l]);
         }
 
-        /* --- Ice ----------------------------------------------------- */
-        PetscScalar R_ice = N0[a] * ice_t
-                          + 3.0 * mob_sub * eps * grad_N_dot_grad_ice
-                          + K2P * Etaa      * grad_N_dot_grad_sed
-                          + (K2P / eps) * (fi - fa) * N0[a]
-                          - S_sub * N0[a];
+        PetscScalar R_ice, R_sed, R_tem, R_vap;
 
-        /* --- Sediment: identically frozen (R_sed = N0 * sed_t forces sed_t = 0) */
-        PetscScalar R_sed = N0[a] * sed_t;
+        if (user->flag_relax) {
+            /* ============ Three-phase relaxation (beta-eliminated) ============
+             * dphi_i/dt = -C3 [(Sigma_s+Sigma_a) fi - Sigma_s fa - Sigma_a fs]
+             *             + 3 M_0 eps grad^2(phi_i) + S_sub
+             * dphi_s/dt = -C3 [-Sigma_a fi - Sigma_i fa - (Sigma_i+Sigma_a) fs]
+             *             + 3 M_0 eps grad^2(phi_s)
+             * rho cp dT/dt = div(K grad T) - rho L_sub d phi_a/dt
+             *              = div(K grad T) + rho L_sub (ice_t + sed_t)
+             * drho_v/dt = div(D_eff grad rho_v)
+             *           - k_pen g(phi_i+phi_s) (rho_v - rho_v_eq)
+             *           - rho_ice d phi_i/dt
+             * No grad^2(other phase) cross-coupling in the 3-phase form — that
+             * only appears after beta-elimination under the 2-phase constraint. */
+            R_ice = N0[a] * ice_t
+                  + 3.0 * mob_sub * eps * grad_N_dot_grad_ice
+                  + C3 * ((Etas + Etaa) * fi - Etas * fa - Etaa * fs) * N0[a]
+                  - S_sub * N0[a];
 
-        /* --- Temperature (row-scaled by S_T) --------------------------
-         * Strong form: rho cp dT/dt = div(K grad T) + rho L_sub S_sub.
-         * Residual = LHS - RHS, so the latent-heat term enters with a MINUS sign.
-         * After IBP on the divergence: R_tem = N rho cp tem_t + K (grad_N . grad_T)
-         *                                   - rho L_sub S_sub N. */
-        PetscScalar R_tem = rho * cp * N0[a] * tem_t
-                          + thcond * grad_N_dot_grad_tem
-                          - rho * lat_sub * S_sub * N0[a];
+            R_sed = N0[a] * sed_t
+                  + 3.0 * mob_sub * eps * grad_N_dot_grad_sed
+                  + C3 * (-Etaa * fi - Etai * fa - (Etai + Etaa) * fs) * N0[a];
 
-        /* --- Vapor ---------------------------------------------------- */
-        PetscScalar R_vap = N0[a] * rhov_t
-                          + D_eff * grad_N_dot_grad_rhov
-                          + vap_pen * N0[a]
-                          + rho_ice * S_sub * N0[a];
+            R_tem = rho * cp * N0[a] * tem_t
+                  + thcond * grad_N_dot_grad_tem
+                  - rho * lat_sub * (ice_t + sed_t) * N0[a];
+
+            R_vap = N0[a] * rhov_t
+                  + D_eff * grad_N_dot_grad_rhov
+                  + vap_pen * N0[a]
+                  + rho_ice * ice_t * N0[a];
+        } else {
+            /* ============ Two-phase (sediment frozen) =========================
+             * dphi_i/dt = -K2P [(fi-fa)/eps - (Sigma_i+Sigma_a) eps grad^2(phi_i)
+             *                                - Sigma_a grad^2(phi_s)] + S_sub
+             * dphi_s/dt = 0
+             * rho cp dT/dt = div(K grad T) + rho L_sub S_sub
+             * drho_v/dt   = div(D_eff grad rho_v) - k_pen g(...)(rho_v - rho_v_eq)
+             *                                     - rho_ice S_sub
+             * The grad^2(phi_s) cross-coupling in R_ice is the algebraic trace of
+             * the 3-phase derivation under the dphi_s/dt = 0 constraint. */
+            R_ice = N0[a] * ice_t
+                  + 3.0 * mob_sub * eps * grad_N_dot_grad_ice
+                  + K2P * Etaa      * grad_N_dot_grad_sed
+                  + (K2P / eps) * (fi - fa) * N0[a]
+                  - S_sub * N0[a];
+
+            R_sed = N0[a] * sed_t;
+
+            R_tem = rho * cp * N0[a] * tem_t
+                  + thcond * grad_N_dot_grad_tem
+                  - rho * lat_sub * S_sub * N0[a];
+
+            R_vap = N0[a] * rhov_t
+                  + D_eff * grad_N_dot_grad_rhov
+                  + vap_pen * N0[a]
+                  + rho_ice * S_sub * N0[a];
+        }
 
         R[a][0] = R_ice;
         R[a][1] = S_T * R_tem;
@@ -261,6 +331,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscInt l, dim = user->dim;
     PetscReal eps     = user->eps;
     PetscReal Etai    = user->Etai;
+    PetscReal Etas    = user->Etam;  /* sediment eta */
     PetscReal Etaa    = user->Etaa;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
@@ -319,9 +390,10 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     VaporDiffus(user, tem, NULL, &d_dif_vap);
     RhoVS_I    (user, tem, NULL, &d_rho_vs);
 
-    PetscReal dfi_dice, dfa_dice;
+    PetscReal dfi_dice, dfa_dice, dfs_dice;
     Fice(user, ice_c, sed_c, NULL, &dfi_dice);
     Fair(user, ice_c, sed_c, NULL, &dfa_dice);
+    Fsed(user, ice_c, sed_c, NULL, &dfs_dice);  /* Lambda cross-term only */
 
     PetscReal dfi_dsed, dfs_dsed, dfa_dsed;
     ChemPot_dsed(user, PetscRealPart(ice_c), PetscRealPart(sed_c),
@@ -360,7 +432,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                         * PetscRealPart(air_c);
     PetscReal rho_v_minus_rho_vs = PetscRealPart(rhov) - rho_vs;
 
-    PetscReal K2P = 3.0 * mob_sub / (Etai + Etaa);
+    PetscReal K2P    = 3.0 * mob_sub / (Etai + Etaa);    /* used post-relax */
+    PetscReal SigmaT = Etai + Etas + Etaa;
+    PetscReal C3     = 3.0 * mob_sub / (eps * SigmaT);   /* used during relax */
     PetscReal S_T = 1.0 / (rho_ice * lat_sub);
     PetscReal k_pen = user->k_pen;
 
@@ -384,93 +458,112 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             PetscReal N1a_N1b = 0.0;
             for (l = 0; l < dim; l++) N1a_N1b += N1[a][l] * N1[b][l];
 
-            /* ====================== [ ice , * ] ====================== */
-            /* Time deriv + AC gradient + bulk drive + sub_src.
-             * dR_ice/dphi_i^b: shift mass + 3 M_0 eps grad_grad + (K2P/eps) (dfi-dfa) Na_Nb
-             *                  - alpha_sub dloc_dice (rho_v - rho_vs)/rho_ice Na_Nb */
-            J[a][0][b][0] += shift * Na_Nb
-                           + 3.0 * mob_sub * eps * N1a_N1b
-                           + (K2P / eps) * (dfi_dice - dfa_dice) * Na_Nb
-                           - alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb;
-
-            /* dR_ice/dT^b: through rho_vs(T) in sub_src (note sign — sub_src appears
-             *               in R_ice as -S_sub so d(-S_sub)/dT = +alpha_sub loc d_rho_vs/rho_ice) */
+            /* Common ice-equation derivatives that don't change between branches:
+             *   S_sub appears in R_ice as -S_sub, and S_sub = alpha_sub*loc*(rhov-rhovs)/rho_ice.
+             *   So [ice,T] gets +alpha_sub*loc*d_rho_vs/rho_ice, [ice,rhov] gets -alpha_sub*loc/rho_ice. */
             J[a][0][b][1] += alph_sub * loc * d_rho_vs / rho_ice * Na_Nb;
-
-            /* dR_ice/drho_v^b */
             J[a][0][b][2] += -alph_sub * loc / rho_ice * Na_Nb;
 
-            /* dR_ice/dphi_s^b: cross-coupling through (1) the grad^2(phi_s) term in
-             *                  the ice equation, (2) the (fi-fa) bulk via ChemPot_dsed,
-             *                  (3) sub_src through dloc_dsed. */
-            J[a][0][b][3] += K2P * Etaa * N1a_N1b
-                           + (K2P / eps) * (dfi_dsed - dfa_dsed) * Na_Nb
-                           - alph_sub * dloc_dsed * rho_v_minus_rho_vs / rho_ice * Na_Nb;
+            if (user->flag_relax) {
+                /* ============ Three-phase Jacobian =============================
+                 * No grad^2(other phase) cross-coupling in the AC blocks.
+                 * R_tem couples to ice_t + sed_t (time-derivative), giving
+                 * -rho*lat_sub*shift*N*N in [tem,ice] and [tem,sed].
+                 * R_vap couples to ice_t, giving +rho_ice*shift*N*N in [vap,ice]. */
+                J[a][0][b][0] += shift * Na_Nb
+                               + 3.0 * mob_sub * eps * N1a_N1b
+                               + C3 * ((Etas + Etaa) * dfi_dice
+                                       - Etas * dfa_dice
+                                       - Etaa * dfs_dice) * Na_Nb
+                               - alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb;
 
-            /* ====================== [ sed , * ] ====================== */
-            /* R_sed = N0 sed_t   =>   only [sed,sed] gets a mass-matrix contribution */
-            J[a][3][b][3] += shift * Na_Nb;
+                J[a][0][b][3] += C3 * ((Etas + Etaa) * dfi_dsed
+                                       - Etas * dfa_dsed
+                                       - Etaa * dfs_dsed) * Na_Nb
+                               - alph_sub * dloc_dsed * rho_v_minus_rho_vs / rho_ice * Na_Nb;
 
-            /* ====================== [ tem , * ] (row-scaled by S_T) =====
-             * R_tem has -rho*L_sub*S_sub * N, so d(R_tem)/d(state) for the latent
-             * heat enters with the same minus sign relative to the corresponding
-             * sub_src derivatives. */
-            /* dR_tem/dphi_i^b: conduction through dK/dphi_i + latent through dloc_dice */
-            J[a][1][b][0] += S_T * (
-                  dthcond_dice * grad_Na_dot_grad_tem * N0[b]
-                - rho * lat_sub * alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb
-            );
+                J[a][3][b][0] += C3 * (-Etaa * dfi_dice
+                                       - Etai * dfa_dice
+                                       - (Etai + Etaa) * dfs_dice) * Na_Nb;
+                J[a][3][b][3] += shift * Na_Nb
+                               + 3.0 * mob_sub * eps * N1a_N1b
+                               + C3 * (-Etaa * dfi_dsed
+                                       - Etai * dfa_dsed
+                                       - (Etai + Etaa) * dfs_dsed) * Na_Nb;
 
-            /* dR_tem/dT^b: shift mass + conduction stiffness + latent through d_rho_vs */
-            J[a][1][b][1] += S_T * (
-                  shift * rho * cp * Na_Nb
-                + thcond * N1a_N1b
-                + rho * lat_sub * alph_sub * loc * d_rho_vs / rho_ice * Na_Nb
-            );
+                J[a][1][b][0] += S_T * (
+                      dthcond_dice * grad_Na_dot_grad_tem * N0[b]
+                    - rho * lat_sub * shift * Na_Nb
+                );
+                J[a][1][b][1] += S_T * (
+                      shift * rho * cp * Na_Nb
+                    + thcond * N1a_N1b
+                );
+                /* J[a][1][b][2] = 0 — latent in 3-phase is rho*L_sub*(ice_t+sed_t), no rhov dependence */
+                J[a][1][b][3] += S_T * (
+                      dthcond_dsed * grad_Na_dot_grad_tem * N0[b]
+                    - rho * lat_sub * shift * Na_Nb
+                );
 
-            /* dR_tem/drho_v^b: latent through d(sub_src)/d(rhov) */
-            J[a][1][b][2] += S_T * (
-                - rho * lat_sub * alph_sub * loc / rho_ice * Na_Nb
-            );
+                J[a][2][b][0] += dDeff_dice * grad_Na_dot_grad_rhov * N0[b]
+                               + k_pen * (PetscReal)dg_solid * (PetscRealPart(rhov) - rhov_eq) * Na_Nb
+                               - k_pen * (PetscReal)g_solid  * d_rhoveq_dice * Na_Nb
+                               + rho_ice * shift * Na_Nb;
+                J[a][2][b][1] += dDeff_dtem * grad_Na_dot_grad_rhov * N0[b]
+                               - k_pen * (PetscReal)g_solid * d_rhoveq_dtem * Na_Nb;
+                J[a][2][b][2] += shift * Na_Nb
+                               + D_eff * N1a_N1b
+                               + k_pen * (PetscReal)g_solid * (1.0 - d_rhoveq_drv) * Na_Nb;
+                J[a][2][b][3] += dDeff_dsed * grad_Na_dot_grad_rhov * N0[b]
+                               + k_pen * (PetscReal)dg_solid * (PetscRealPart(rhov) - rhov_eq) * Na_Nb
+                               - k_pen * (PetscReal)g_solid  * d_rhoveq_dsed * Na_Nb;
+            } else {
+                /* ============ Two-phase Jacobian (sediment frozen) ============= */
+                J[a][0][b][0] += shift * Na_Nb
+                               + 3.0 * mob_sub * eps * N1a_N1b
+                               + (K2P / eps) * (dfi_dice - dfa_dice) * Na_Nb
+                               - alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb;
 
-            /* dR_tem/dphi_s^b: conduction through dK/dphi_s + latent through dloc_dsed */
-            J[a][1][b][3] += S_T * (
-                  dthcond_dsed * grad_Na_dot_grad_tem * N0[b]
-                - rho * lat_sub * alph_sub * dloc_dsed * rho_v_minus_rho_vs / rho_ice * Na_Nb
-            );
+                J[a][0][b][3] += K2P * Etaa * N1a_N1b
+                               + (K2P / eps) * (dfi_dsed - dfa_dsed) * Na_Nb
+                               - alph_sub * dloc_dsed * rho_v_minus_rho_vs / rho_ice * Na_Nb;
 
-            /* ====================== [ vap , * ] ====================== */
-            /* Diffusion through D_eff(phi_a, T), penalty through g_solid and rho_v_eq,
-             * sub_src source. */
-            /* dR_vap/dphi_i^b:
-             *   - dDeff/dphi_i changes the flux stiffness
-             *   - dg_solid/dphi_i affects penalty weight
-             *   - d(rho_v_eq)/dphi_i affects penalty value (= rho_vs - rho_v)
-             *   - sub_src term has +rho_ice S_sub, derivative is +alpha_sub*dloc_dice*(rho_v-rho_vs) Na_Nb
-             *     (the rho_ice cancels with the /rho_ice in S_sub).                       */
-            J[a][2][b][0] += dDeff_dice * grad_Na_dot_grad_rhov * N0[b]
-                           + k_pen * (PetscReal)dg_solid * (PetscRealPart(rhov) - rhov_eq) * Na_Nb
-                           - k_pen * (PetscReal)g_solid  * d_rhoveq_dice * Na_Nb
-                           + alph_sub * dloc_dice * rho_v_minus_rho_vs * Na_Nb;
+                /* R_sed = N0*sed_t — only [sed,sed] has shift mass */
+                J[a][3][b][3] += shift * Na_Nb;
 
-            /* dR_vap/dT^b: D_v(T) in diffusion; rho_vs(T) in penalty (via rho_v_eq);
-             *               rho_vs(T) in sub_src. */
-            J[a][2][b][1] += dDeff_dtem * grad_Na_dot_grad_rhov * N0[b]
-                           - k_pen * (PetscReal)g_solid * d_rhoveq_dtem * Na_Nb
-                           - alph_sub * loc * d_rho_vs * Na_Nb;
+                J[a][1][b][0] += S_T * (
+                      dthcond_dice * grad_Na_dot_grad_tem * N0[b]
+                    - rho * lat_sub * alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb
+                );
+                J[a][1][b][1] += S_T * (
+                      shift * rho * cp * Na_Nb
+                    + thcond * N1a_N1b
+                    + rho * lat_sub * alph_sub * loc * d_rho_vs / rho_ice * Na_Nb
+                );
+                J[a][1][b][2] += S_T * (
+                    - rho * lat_sub * alph_sub * loc / rho_ice * Na_Nb
+                );
+                J[a][1][b][3] += S_T * (
+                      dthcond_dsed * grad_Na_dot_grad_tem * N0[b]
+                    - rho * lat_sub * alph_sub * dloc_dsed * rho_v_minus_rho_vs / rho_ice * Na_Nb
+                );
 
-            /* dR_vap/drho_v^b: shift mass + diffusion stiffness + penalty (1 - phi_a) + sub_src linearity */
-            J[a][2][b][2] += shift * Na_Nb
-                           + D_eff * N1a_N1b
-                           + k_pen * (PetscReal)g_solid * (1.0 - d_rhoveq_drv) * Na_Nb
-                           + alph_sub * loc * Na_Nb;
-
-            /* dR_vap/dphi_s^b: same structural pattern as [vap, ice] (g_solid depends on
-             *                   phi_i+phi_s, D_eff on phi_a = 1-phi_i-phi_s). */
-            J[a][2][b][3] += dDeff_dsed * grad_Na_dot_grad_rhov * N0[b]
-                           + k_pen * (PetscReal)dg_solid * (PetscRealPart(rhov) - rhov_eq) * Na_Nb
-                           - k_pen * (PetscReal)g_solid  * d_rhoveq_dsed * Na_Nb
-                           + alph_sub * dloc_dsed * rho_v_minus_rho_vs * Na_Nb;
+                J[a][2][b][0] += dDeff_dice * grad_Na_dot_grad_rhov * N0[b]
+                               + k_pen * (PetscReal)dg_solid * (PetscRealPart(rhov) - rhov_eq) * Na_Nb
+                               - k_pen * (PetscReal)g_solid  * d_rhoveq_dice * Na_Nb
+                               + alph_sub * dloc_dice * rho_v_minus_rho_vs * Na_Nb;
+                J[a][2][b][1] += dDeff_dtem * grad_Na_dot_grad_rhov * N0[b]
+                               - k_pen * (PetscReal)g_solid * d_rhoveq_dtem * Na_Nb
+                               - alph_sub * loc * d_rho_vs * Na_Nb;
+                J[a][2][b][2] += shift * Na_Nb
+                               + D_eff * N1a_N1b
+                               + k_pen * (PetscReal)g_solid * (1.0 - d_rhoveq_drv) * Na_Nb
+                               + alph_sub * loc * Na_Nb;
+                J[a][2][b][3] += dDeff_dsed * grad_Na_dot_grad_rhov * N0[b]
+                               + k_pen * (PetscReal)dg_solid * (PetscRealPart(rhov) - rhov_eq) * Na_Nb
+                               - k_pen * (PetscReal)g_solid  * d_rhoveq_dsed * Na_Nb
+                               + alph_sub * dloc_dsed * rho_v_minus_rho_vs * Na_Nb;
+            }
         }
     }
     return 0;

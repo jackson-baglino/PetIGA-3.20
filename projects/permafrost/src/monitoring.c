@@ -105,7 +105,15 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     user->tot_rhov_0 = tot_rhov;
     user->tot_mass_0 = tot_mass;
   }
- 
+
+  /* End-of-relax transition: after step >= n_relax, freeze sediment. */
+  if (user->flag_relax && step >= user->n_relax) {
+    user->flag_relax = PETSC_FALSE;
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n[RELAX] Three-phase relaxation window complete (step %d). "
+        "Freezing sediment for the rest of the run.\n\n", step);
+  }
+
   //-------- phase-field min/max bounds (printed every step for out-of-bounds detection)
   {
     PetscReal phi_ice_min =  1.0e30, phi_ice_max = -1.0e30;

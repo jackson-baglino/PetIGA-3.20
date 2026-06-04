@@ -73,15 +73,15 @@ typedef struct {
   PetscInt  outp;            // output control flag
   PetscBool flag_Tdep;       // temperature-dependent material properties
 
-  /* Three-phase relaxation period. n_relax > 0 runs the full 3-phase
-   * Kim-Steinbach AC for n_relax steps with T and rho_v pinned (mass-matrix-
-   * only residuals), allowing the IC tanh profiles to settle into a self-
-   * consistent ice/sed/air equilibrium that respects phi_i + phi_s + phi_a = 1.
-   * Without this transient, the new 2-phase ice equation's grad^2(phi_s)
-   * coupling can drive phi_air negative at the ice-sed contact line on step 1
-   * (the IC is built phase-by-phase and is only approximately constrained).
-   * After step n_relax, monitoring.c flips flag_relax to FALSE and the model
-   * switches to the clean 2-phase formulation for the rest of the run. */
+  /* Three-phase relaxation window. n_relax > 0 evolves phi_i AND phi_s
+   * under the full Kim-Steinbach beta-eliminated AC (Sigma_T-weighted
+   * combination of dF/dphi_i, dF/dphi_a, dF/dphi_s; plain grad^2(phi_i)
+   * and grad^2(phi_s) — no cross-grad^2 coupling) for the first n_relax
+   * timesteps. T and rho_v use the corresponding 3-phase forms: latent
+   * heat sourced by ∂phi_a/∂t, vapor source by ∂phi_i/∂t. After step
+   * n_relax, monitoring.c flips flag_relax to FALSE and the model
+   * switches to the 2-phase post-relax form (sed frozen, latent heat
+   * sourced by S_sub, vapor source by S_sub). */
   PetscInt  n_relax;
   PetscBool flag_relax;
 
