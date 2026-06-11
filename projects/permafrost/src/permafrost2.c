@@ -444,6 +444,25 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* Allow CLI override of the phase-change rate alph_sub via -alph_sub <value>.
+     * Setting -alph_sub 0 fully decouples the phase-field equations from the
+     * vapor and temperature equations (S_sub = 0 everywhere), which is a useful
+     * diagnostic for isolating AC dynamics from coupling effects. Negative
+     * values are ignored. */
+    {
+        PetscReal  alph_sub_cli = -1.0;
+        PetscBool  flg          = PETSC_FALSE;
+        ierr = PetscOptionsGetReal(NULL, NULL, "-alph_sub",
+                                   &alph_sub_cli, &flg); CHKERRQ(ierr);
+        if (flg && alph_sub_cli >= 0.0) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  -alph_sub override: %.2e -> %.2e%s\n",
+                        user.alph_sub, alph_sub_cli,
+                        (alph_sub_cli == 0.0) ? " (phase-change coupling DISABLED)" : "");
+            user.alph_sub = alph_sub_cli;
+        }
+    }
+
     /* Sediment is inert by default: mob_sed defaults to 0 (set via PetscMemzero
      * at program start), so the local mobility mob_sub*ice + mob_sed*sed +
      * mob_air*air vanishes inside the sed grain and AC dynamics cannot dissolve
