@@ -4,34 +4,22 @@
 #include "NASA_types.h"
 
 /* Computes effective thermal conductivity and its derivative with respect to ice */
-void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *cond, PetscScalar *dcond_ice);
+void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar *cond, PetscScalar *dcond_ice);
 
 /* Computes effective heat capacity and its derivative with respect to ice */
-void HeatCap(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *cp, PetscScalar *dcp_ice);
+void HeatCap(AppCtx *user, PetscScalar ice, PetscScalar *cp, PetscScalar *dcp_ice);
 
 /* Computes effective density and its derivative with respect to ice */
-void Density(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *rho, PetscScalar *drho_ice);
+void Density(AppCtx *user, PetscScalar ice, PetscScalar *rho, PetscScalar *drho_ice);
 
 /* Computes vapor diffusivity and its temperature derivative */
 void VaporDiffus(AppCtx *user, PetscScalar tem, PetscScalar *difvap, PetscScalar *d_difvap);
 
-/* Computes the smooth Heaviside function and its derivative*/
-void SmoothHeavisidePoly(PetscScalar phi, PetscScalar *g, PetscScalar *dg_dphi);
-
 /* Computes the saturation vapor density and its derivative */
 void RhoVS_I(AppCtx *user, PetscScalar tem, PetscScalar *rho_vs, PetscScalar *d_rhovs);
 
-/* Computes the free energy function for the ice phase and its derivative */
-void Fice(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *fice, PetscScalar *dfice_ice);
-
-/* Computes the phase evolution function for the water phase and its derivative */
-void Fsed(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *fsed, PetscScalar *dfsed_ice);
-
-/* Computes the phase evolution function for the air phase and its derivative */
-void Fair(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *fair, PetscScalar *dfair_ice);
-
 /* computes the phase dependent mobility*/
-void Mobility(AppCtx *user, PetscScalar ice, PetscScalar sed, PetscScalar *mob);
+void Mobility(AppCtx *user, PetscScalar ice, PetscScalar *mob);
 
 /* Computes sigma0 using logarithmic interpolation based on temperature */
 void Sigma0(PetscScalar temp, PetscScalar *sigm0);
