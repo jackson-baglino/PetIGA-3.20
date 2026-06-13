@@ -39,6 +39,9 @@ PetscErrorCode FormInitialSlabAndGrains2D(IGA iga, Vec U, AppCtx *user);
 PetscErrorCode FormInitialSingleIceGrain2D(IGA iga, Vec U, AppCtx *user);
 PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user);
 
+/* Two ice semicircles centered on the x=0 and x=Lx boundaries (Ostwald ripening test) */
+PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user);
+
 /* Single sediment grain centred in the domain (no ice) */
 PetscErrorCode FormInitialSingleSedGrain2D(IGA iga, Vec U, AppCtx *user);
 PetscErrorCode FormInitialSingleSedGrain1D(IGA iga, Vec U, AppCtx *user);

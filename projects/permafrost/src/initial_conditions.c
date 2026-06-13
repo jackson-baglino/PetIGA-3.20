@@ -398,7 +398,26 @@ PetscErrorCode FormInitialEnclosedPermafrost2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal RCsed_g[2] = { user->RCsed0, user->RCsed1 };
     const PetscReal sep        = user->grain_sep;
 
-    const PetscReal tc = 1.0 / (2.0 * eps);
+    /* Initial-condition tanh width multiplier. Default 1.0 gives the standard
+     * width matching the (0,1)-well equilibrium; values > 1 widen the IC
+     * transition (lowering peak grad^2 amplitude), values < 1 narrow it.
+     * Diagnostic only — the AC dynamics will reshape the profile toward the
+     * equilibrium width regardless. */
+    PetscReal ic_width_mult = 1.0;
+    {
+        PetscBool flg = PETSC_FALSE;
+        ierr = PetscOptionsGetReal(NULL, NULL, "-ic_width_mult",
+                                   &ic_width_mult, &flg); CHKERRQ(ierr);
+        if (flg) {
+            if (ic_width_mult <= 0.0)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                        "-ic_width_mult must be > 0 (got %.2e)", ic_width_mult);
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  -ic_width_mult: IC tanh width %.2f * (2*eps) = %.2e m\n",
+                        ic_width_mult, 2.0 * eps * ic_width_mult);
+        }
+    }
+    const PetscReal tc = 1.0 / (2.0 * eps * ic_width_mult);
 
     // -------------------------------------------------------------------------
     // Validate geometry
@@ -2666,6 +2685,90 @@ PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user)
         RhoVS_I(user, temp_loc, &rho_vs, NULL);
         { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
           u[i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * FormInitialTwoIceGrainsBoundary2D
+ *
+ * Two ice semicircles centered ON the x=0 and x=Lx boundaries, vertically
+ * centered (y = 0.5*Ly). Grain 0 (radius RCice0, smaller) sits at x=0;
+ * grain 1 (radius RCice1, larger) sits at x=Lx. Each is a tanh distance
+ * profile; the two are summed and clamped to [0,1].
+ *
+ * Centering each grain exactly on its boundary makes the profile symmetric
+ * under reflection across that boundary, so it is automatically consistent
+ * with the natural-Neumann (zero-flux) BC on phi_i. The shared vapor pore
+ * spans the full domain width Lx, giving an Ostwald-ripening timescale
+ * test between the two grains of different curvature.
+ * =========================================================================*/
+PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx  = user->Lx;
+    const PetscReal Ly  = user->Ly;
+    const PetscReal eps = user->eps;
+    const PetscReal R0  = user->RCice0;   /* left grain (x=0), smaller  */
+    const PetscReal R1  = user->RCice1;   /* right grain (x=Lx), larger */
+    const PetscReal tc  = 1.0 / (PetscSqrtReal(2.0) * eps);
+
+    const PetscReal c0x = 0.0,  c0y = 0.5 * Ly;
+    const PetscReal c1x = Lx,   c1y = 0.5 * Ly;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (2D two ice grains, boundary-centered) ---\n"
+        "  grain 0: centre = (%.4e, %.4e) m,  RCice0 = %.4e m\n"
+        "  grain 1: centre = (%.4e, %.4e) m,  RCice1 = %.4e m\n",
+        c0x, c0y, R0, c1x, c1y, R1);
+
+    if (R0 <= 0.0 || R1 <= 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "RCice0 and RCice1 must be > 0 (got %.2e, %.2e)", R0, R1);
+    if (R0 >= Lx || R1 >= Lx)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "RCice0/RCice1 must be < Lx (got %.2e, %.2e, Lx=%.2e)", R0, R1, Lx);
+    if (R0 > 0.5 * Ly || R1 > 0.5 * Ly)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "RCice0/RCice1 must be <= Ly/2 (got %.2e, %.2e, Ly/2=%.2e)", R0, R1, 0.5*Ly);
+
+    DM da;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+
+            PetscReal d0 = PetscSqrtReal(SQ(x - c0x) + SQ(y - c0y));
+            PetscReal d1 = PetscSqrtReal(SQ(x - c1x) + SQ(y - c1y));
+
+            PetscReal ice0 = 0.5 - 0.5 * PetscTanhReal(tc * (d0 - R0));
+            PetscReal ice1 = 0.5 - 0.5 * PetscTanhReal(tc * (d1 - R1));
+            PetscReal ice  = PetscMin(PetscMax(ice0 + ice1, 0.0), 1.0);
+
+            u[j][i].ice = ice;
+            u[j][i].tem = user->temp0
+                          + user->grad_temp0[0] * (x - 0.5 * Lx)
+                          + user->grad_temp0[1] * (y - 0.5 * Ly);
+
+            PetscScalar rho_vs, temp_loc = u[j][i].tem;
+            RhoVS_I(user, temp_loc, &rho_vs, NULL);
+            { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
+              u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+        }
     }
 
     ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
