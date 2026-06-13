@@ -15,7 +15,6 @@
 #include "material_properties.h"
 #include "assembly.h"
 #include "monitoring.h"
-#include "grain_initialization.h"
 #include "initial_conditions.h"
 #include "snes_convergence.h"
 #include "env_helper.h"
