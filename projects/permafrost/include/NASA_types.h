@@ -12,7 +12,7 @@ typedef struct {
   PetscScalar soil;
 } FieldS;
 typedef struct {
-  PetscScalar ice, tem, rhov, sed;
+  PetscScalar ice, tem, rhov;
 } Field;
 /* Application context structure */
 typedef struct {
@@ -22,23 +22,21 @@ typedef struct {
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
   PetscReal mob_sub;  // Mobility for ice phase evolution
-  PetscReal mob_sed;  // Mobility for sediment phase evolution equation
-  PetscReal mob_air; // Mobility for air phase evolution equation (if applicable)
-  PetscReal Etai, Etam, Etaa;  // Activation energy terms for different phases (ice, sediment, air)
+  PetscReal Etai, Etam, Etaa;  // Surface energy terms: Sigma_i (ice-vapor), Etam (unused), Sigma_a (air-vapor side)
   PetscReal alph_sub;  // Substrate interaction coefficient
-  PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
+  PetscReal Lambd;  // Higher-order penalty coefficient Lambda in the double-well free energy
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
 
   // Thermophysical properties of different phases
-  PetscReal thcond_ice, thcond_sed, thcond_air;  // Thermal conductivities of ice, sediment, and air
-  PetscReal cp_ice, cp_sed, cp_air;  // Specific heat capacities of ice, sediment, and air
-  PetscReal rho_ice, rho_sed, rho_air;  // Densities of ice, sediment, and air
+  PetscReal thcond_ice, thcond_air;  // Thermal conductivities of ice and air
+  PetscReal cp_ice, cp_air;  // Specific heat capacities of ice and air
+  PetscReal rho_ice, rho_air;  // Densities of ice and air
   PetscReal dif_vap;  // Vapor diffusivity in air
   PetscReal lat_sub;  // Latent heat of sublimation
   PetscReal diff_sub;  // Diffusivity related to sublimation
 
   // Environmental conditions and threshold parameters
-  PetscReal air_lim;  // Air phase fraction limit (threshold to distinguish between ice/air)
+  PetscReal air_lim;  // Air phase fraction floor used in the vapor equation (avoids division/degeneracy as phi_a -> 0)
 
   // Initial and boundary condition parameters
   PetscReal T_melt;  // Melting temperature of ice
@@ -50,47 +48,29 @@ typedef struct {
   PetscInt  Nx, Ny, Nz;  // Number of elements in x, y, and z directions
 
   // Radius of curvature parameters (possibly for computing capillary effects)
-  PetscReal RCice, RCsed;  // Mean radius of curvature for ice and sediment grains
-  PetscReal RCice_dev, RCsed_dev;  // Standard deviation of radius of curvature for ice and sediment
+  PetscReal RCice;  // Mean radius of curvature for ice grains
+  PetscReal RCice_dev;  // Standard deviation of radius of curvature for ice grains
 
-  // Per-grain radii and separation for enclosed grain pair IC
+  // Per-grain radii for boundary-centered two-grain IC
   PetscReal RCice0, RCice1;   /* Outer ice radius of grain 0 / grain 1 (default: RCice) */
-  PetscReal RCsed0, RCsed1;   /* Sediment core radius of grain 0 / grain 1 (default: RCsed) */
-  PetscReal grain_sep;         /* Air gap between outer ice surfaces (m); 0 = tangent */
-  PetscReal x_slab_frac;      /* Fraction of Lx occupied by the right-side ice slab (slab_and_grains IC) */
 
-  // Arrays storing geometry information for ice and sediment grains
+  // Arrays storing geometry information for ice grains
   PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
   PetscReal radius[200];  // Radii of individual ice grains
-  PetscReal centsed[3][200];  // Coordinates of sediment grain centers (3D array for x, y, z positions)
-  PetscReal radiussed[200];  // Radii of individual sediment grains
 
   // Initial normal vector components (possibly for a structured interface)
-  PetscReal norm0[4];  // Per-DOF initial residual norms for SNES convergence check
+  PetscReal norm0[3];  // Per-DOF initial residual norms for SNES convergence check
 
   // Flags for controlling different simulation options
   PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 2=flat interface
   PetscInt  outp;            // output control flag
   PetscBool flag_Tdep;       // temperature-dependent material properties
 
-  /* Three-phase relaxation window. While simulation time t < t_relax,
-   * phi_i and phi_s both evolve under the full Kim-Steinbach
-   * beta-eliminated AC (Sigma_T-weighted combination of dF/dphi_i,
-   * dF/dphi_a, dF/dphi_s; plain grad^2(phi_i) and grad^2(phi_s) — no
-   * cross-grad^2 coupling). T and rho_v use the corresponding 3-phase
-   * forms: latent heat sourced by ∂phi_a/∂t, vapor source by ∂phi_i/∂t.
-   * Once t >= t_relax, monitoring.c flips flag_relax to FALSE and the
-   * model switches to the 2-phase post-relax form (sed frozen, latent
-   * heat sourced by S_sub, vapor source by S_sub).
-   * Default t_relax = 0 = relaxation off. */
-  PetscReal t_relax;
-  PetscBool flag_relax;
-
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)
   PetscInt C;  // Continuity of basis functions
   PetscInt dim;  // Spatial dimension of the problem (2D or 3D)
-  PetscInt dof;  // Degrees of freedom per node (ice, temperature, vapor, sediment)
+  PetscInt dof;  // Degrees of freedom per node (ice, temperature, vapor)
   PetscInt periodic;  // Periodicity flag (0 = non-periodic, 1 = periodic boundaries)
 
   // Time stepping parameters
@@ -98,21 +78,15 @@ typedef struct {
   PetscReal t_interv;  // Intermediate time step interval
   PetscReal t_IC;  // Total duration for initial condition phase
 
-  // Counters for active ice and sediment grains
-  PetscInt NCice, NCsed;  // Number of ice and sediment grains
-  PetscInt n_act, n_actsed;  // Number of currently active grains (ice and sediment)
+  // Counters for active ice grains
+  PetscInt NCice;  // Number of ice grains
+  PetscInt n_act;  // Number of currently active ice grains
 
-  // Arrays for field variables
-  PetscScalar *Phi_sed0;  // Sediment phase field variable
   PetscInt npoints;
 
-  /* Vapor-equation penalty parameters (tunable via CLI) */
-  PetscReal difvap_pen;   // multiplicative factor: D_pen = difvap_pen * dif_vap (dimensionless)
-  PetscReal k_pen;        // vapour interface-equilibrium stiffness
-
   /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */
-  PetscReal phase_lo;     // lower bound for phi_ice, phi_sed, phi_air (default -0.25)
-  PetscReal phase_hi;     // upper bound for phi_ice, phi_sed, phi_air (default  1.25)
+  PetscReal phase_lo;     // lower bound for phi_ice, phi_air (default -0.25)
+  PetscReal phase_hi;     // upper bound for phi_ice, phi_air (default  1.25)
   PetscReal *alph;     // Alpha field, possibly phase fraction or related property
   PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)
 
@@ -130,9 +104,8 @@ typedef struct {
   // Initial domain integrals (set at step 0, used for percentage reporting)
   PetscReal tot_ice_0;     // initial ∫ φ_i dΩ
   PetscReal tot_air_0;     // initial ∫ φ_a dΩ
-  PetscReal tot_sed_0;     // initial ∫ φ_s dΩ
   PetscReal tot_rhov_0;    // initial ∫ ρ_v φ_a dΩ (vapor mass in air phase)
-  PetscReal tot_mass_0;    // initial ρ_ice·∫φ_i + ρ_sed·∫φ_s + ∫ρ_v·φ_a (total system mass)
+  PetscReal tot_mass_0;    // initial ρ_ice·∫φ_i + ∫ρ_v·φ_a (total system mass)
 
   // Deferred bounds-rollback request — set by Monitor() when phase fields go
   // out of bounds, consumed by BoundsRollbackPreStep() before the next TSStep.
