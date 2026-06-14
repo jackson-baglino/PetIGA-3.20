@@ -1,3 +1,23 @@
+## 2026-06-14 — Trim two-grain boundary domain, relaunch 60-day run
+
+- User asked to shrink the 190x190 domain (excess empty space): reduce
+  Lx/Nx while keeping ~40 elements of vapor gap between the two grains
+  (to ensure coarsening is via vapor-diffusion Ostwald ripening, not
+  direct contact), and reduce Ly/Ny proportionally with ~20-element
+  margins above/below the larger grain.
+- Resized `inputs/geometry/2D_two_ice_grains_boundary.opts`: Lx=4.123140e-5
+  (Nx=125), Ly=5.079708e-5 (Ny=154), dx unchanged (3.2985e-7). Mesh
+  36100 -> 19250 nodes (~47% smaller).
+- Verified with a 28-step run: TOT_ICE stays exactly 6.921e-10 (-0.000%),
+  bounds in [0,1] -- matches the un-eroded K2P-fix baseline.
+- Relaunched the 60-day practice run (v3) on this geometry via
+  `./scripts/Studio/run_permafrost.sh 2D_two_ice_grains_boundary
+  60day_T-20_h0.95 practice60day_v3`.
+
+---
+
+**Session ended:** 2026-06-14 15:28:48
+
 ## 2026-06-14 — Fix ice double-well coefficient (K2P) causing grain erosion
 
 - User reported the v2 (190x190, eps/R~0.025) run's interface started at
