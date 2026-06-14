@@ -18,16 +18,24 @@
  * collapses to mob*3/eps*f1(ice) -- Sigma_i/Sigma_a/Lambda all cancel and
  * play no role in a true 2-phase (no third phase) system.
  *
+ * Temperature and vapor are sourced by the FULL d(phi_i)/dt = ice_t (not
+ * just the kinetic S_sub term) per Moure & Fu (2024), SI Eqs. (6)-(7) --
+ * the sublimation-equivalence reduction of the wet-snow model. ice_t
+ * already includes the AC curvature/double-well relaxation, so using it
+ * (rather than S_sub alone) makes the ice<->vapor mass exchange and the
+ * latent-heat release exact, regardless of mob_sub:
+ *
  * Temperature (row-scaled by S_T = 1/(rho_ice*lat_sub), numerical
  * preconditioning only):
- *   R_tem = rho*cp*N0[a]*tem_t + thcond*grad_N.grad_tem - rho*lat_sub*S_sub*N0[a]
+ *   R_tem = rho*cp*N0[a]*tem_t + thcond*grad_N.grad_tem - rho*lat_sub*ice_t*N0[a]
  *
- * Vapor (product rule, air_lim floor as in dry_snow_metamorphism):
- *   R_vap = N0[a]*rhov*(-ice_t) + N0[a]*air_eff*rhov_t
- *         + difvap*air_eff*grad_N.grad_rhov + rho_ice*S_sub*N0[a]
+ * Vapor (air_lim floor as in dry_snow_metamorphism):
+ *   R_vap = N0[a]*air_eff*rhov_t + difvap*air_eff*grad_N.grad_rhov
+ *         + N0[a]*(rho_ice - rhov)*ice_t
  *   air_eff = (air > air_lim) ? air : air_lim,   air = 1 - ice
  *
- * Phase-change source (S_sub > 0 = deposition, vapor -> ice):
+ * Phase-change source (S_sub > 0 = deposition, vapor -> ice; appears only
+ * in R_ice, which defines ice_t):
  *   loc = phi_i^2 * phi_a^2
  *   S_sub = alph_sub * loc * (rho_v - rho_vs(T)) / rho_ice
  * ========================================================================= */
@@ -144,12 +152,11 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
         PetscScalar R_tem = rho * cp * N0[a] * tem_t
                           + thcond * grad_N_dot_grad_tem
-                          - rho * lat_sub * S_sub * N0[a];
+                          - rho * lat_sub * ice_t * N0[a];
 
-        PetscScalar R_vap = N0[a] * rhov * (-ice_t)
-                          + N0[a] * air_eff * rhov_t
+        PetscScalar R_vap = N0[a] * air_eff * rhov_t
                           + dif_vap * air_eff * grad_N_dot_grad_rhov
-                          + rho_ice * S_sub * N0[a];
+                          + N0[a] * (rho_ice - rhov) * ice_t;
 
         R[a][0] = R_ice;
         R[a][1] = S_T * R_tem;
@@ -279,30 +286,23 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             /* ====================== [ tem , * ] (row-scaled by S_T) ========= */
             J[a][1][b][0] += S_T * (
                   dthcond_dice * grad_Na_dot_grad_tem * N0[b]
-                - rho * lat_sub * alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb
+                - rho * lat_sub * shift * Na_Nb
             );
             J[a][1][b][1] += S_T * (
                   shift * rho * cp * Na_Nb
                 + thcond * N1a_N1b
-                + rho * lat_sub * alph_sub * loc * d_rho_vs / rho_ice * Na_Nb
-            );
-            J[a][1][b][2] += S_T * (
-                - rho * lat_sub * alph_sub * loc / rho_ice * Na_Nb
             );
 
             /* ====================== [ vap , * ] ============================= */
-            J[a][2][b][0] += -shift * Na_Nb * PetscRealPart(rhov)
-                           + alph_sub * dloc_dice * rho_v_minus_rho_vs * Na_Nb;
+            J[a][2][b][0] += (rho_ice - PetscRealPart(rhov)) * shift * Na_Nb;
             if (air_above_lim) {
                 J[a][2][b][0] += -Na_Nb * PetscRealPart(rhov_t)
                                - dif_vap * N0[b] * grad_Na_dot_grad_rhov;
             }
-            J[a][2][b][1] += d_dif_vap * air_eff * grad_Na_dot_grad_rhov * N0[b]
-                           - alph_sub * loc * d_rho_vs * Na_Nb;
+            J[a][2][b][1] += d_dif_vap * air_eff * grad_Na_dot_grad_rhov * N0[b];
             J[a][2][b][2] += -Na_Nb * PetscRealPart(ice_t)
                            + air_eff * shift * Na_Nb
-                           + dif_vap * air_eff * N1a_N1b
-                           + alph_sub * loc * Na_Nb;
+                           + dif_vap * air_eff * N1a_N1b;
         }
     }
     return 0;
