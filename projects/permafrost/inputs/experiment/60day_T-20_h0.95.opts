@@ -1,0 +1,8 @@
+# =============================================================================
+# experiment/60day_T-20_h0.95.opts — 60 days at -20C, 95% relative humidity.
+# Practice run for the new 3-DOF (ice/temperature/vapor) model.
+# =============================================================================
+-t_final 5184000.0                      # 60 days (s)
+-temp -20.0
+-humidity 0.95
+-grad_temp0 0.0,0.0,0.0

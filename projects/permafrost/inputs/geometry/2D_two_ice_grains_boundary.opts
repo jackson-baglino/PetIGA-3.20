@@ -1,0 +1,27 @@
+# =============================================================================
+# geometry/2D_two_ice_grains_boundary.opts — 2D: two boundary-centered ice
+# grains (smaller at x=0, larger at x=Lx) connected through a shared vapor
+# pore of width Lx. Ostwald-ripening test for the 3-DOF (ice/T/vapor) model.
+#
+# eps and Nx/Ny computed via preprocess/comp_eps.py for this domain
+# (binding bound: heat-diffusion-in-ice, eq 42a of Kaempfer & Plapp 2009):
+#   python3 preprocess/comp_eps.py --Lx 2.6389e-5 --Ly 1.5833e-5 --Rave 5e-6 --T0 -20.0
+# -> eps=4.6648e-07, Nx=81, Ny=49 (4 elements across the diffuse interface)
+#
+# Natural-Neumann (zero-flux) BCs are required at x=0/x=Lx for this IC —
+# each grain is centered exactly on its boundary, so the profile is
+# symmetric under reflection there. Override solver.opts' -periodic 1.
+# =============================================================================
+-ic_type two_ice_grains_boundary
+-dim 2
+-Nx 81
+-Ny 49
+-Nz 1
+-Lx 2.6389e-5
+-Ly 1.5833e-5
+-Lz 0
+-RCice0 2.0e-6
+-RCice1 4.0e-6
+-delt_t 1.0e-8
+-eps 4.6648e-07
+-periodic 0
