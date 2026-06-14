@@ -86,7 +86,7 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
 
     // Print one line per Newton iteration
     PetscPrintf(PETSC_COMM_WORLD,
-                "    %*d | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e\n",
+                "    %*d | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e | %*.*e\n",
                 (int)W_IT,    (int)it_number,
                 (int)W_FNORM, 4, (double)fnorm,
                 (int)W_N,     3, (double)((nd_print > 0) ? n2dof[0]  : 0.0),
