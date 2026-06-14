@@ -1,3 +1,36 @@
+## 2026-06-14 — Fix mass-conservation bug: source T/vapor with d(phi_i)/dt, not S_sub
+
+- Diagnosed the v3 60-day run's 41% mass loss (TOT_ICE/TOTAL_MASS both
+  -41.331% by step 206/t=9938s) as a missing-term conservation bug, not
+  a humidity/domain/mobility issue: R_tem and R_vap were sourced only by
+  the kinetic term S_sub, while the Allen-Cahn double-well/curvature part
+  of dphi_i/dt was completely unbalanced in the T/vapor equations.
+- Cross-checked against Moure & Fu (2024) SI, Sec. 1.2 "Sublimation"
+  (the exact two-phase equivalence model this code implements), eqs.(6)-(7):
+  T and vapor must be sourced by the FULL dphi_i/dt (ice_t), not just S_sub.
+  Confirmed algebraically that with this change,
+  rho_ice*dphi_i/dt + d(phi_a*rho_v)/dt = -div(flux), which integrates to
+  zero with no-flux BCs -> exact mass conservation independent of mob_sub.
+- `src/assembly.c`: Residual_A1 R_tem/R_vap now use `ice_t` instead of
+  `S_sub`; Jacobian_A1 [tem,*] and [vap,*] blocks rewritten to match
+  (J[a][1][b][2] dropped, now zero). [ice,*] block (R_ice/S_sub) unchanged.
+  Updated module docstring to describe the new sourcing.
+- `src/permafrost2.c`: removed a stray `10x` factor in
+  `user.alph_sub = 10 * lambda_sub / tau_sub` -> `lambda_sub / tau_sub`,
+  matching eq.(9) exactly (mob_sub formula itself was already correct).
+- Verified `mob_sub = eps/(3*tau_sub)` is correctly derived from the
+  Gibbs-Thomson parameters `beta_sub0`/`d0_sub0` per eq.(9) -- answers
+  user's question about mobility definition; no change needed there.
+- Ran a verification diagnostic (`-t_final 10000`, 2-grain boundary IC):
+  TOT_ICE and TOTAL_MASS stayed EXACTLY unchanged (6.921e-10 / 6.361e-7,
+  0.000% drift) through t~42.7s (98 steps), vs. measurable drift by a
+  similar point in the old code. Bounds stayed in [0,1]. Adaptive dt
+  stalled near 1-1.3s (much smaller than v3's dt~100), so a full 60-day
+  run with this fix will be substantially more expensive -- flagged as a
+  follow-up to investigate (NR iteration counts / dtmax tuning).
+
+---
+
 ## 2026-06-14 — Trim two-grain boundary domain, relaunch 60-day run
 
 - User asked to shrink the 190x190 domain (excess empty space): reduce
