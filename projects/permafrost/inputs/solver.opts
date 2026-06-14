@@ -8,7 +8,7 @@
 # =============================================================================
 
 # ---------- DOFs & discretisation ---------------------------------------------
--dof 4                                  # ice / temperature / vapor / sediment
+-dof 3                                  # ice / temperature / vapor
 -p 2                                    # B-spline polynomial order
 -C 1                                    # B-spline continuity (C^1 for p=2)
 -periodic 1                             # periodic BCs (closed system; vapor cannot
@@ -37,12 +37,6 @@
 -phase_lo -0.10
 -phase_hi  1.10
 
-# ---------- Vapor penalty parameters -----------------------------------------
-# D_eff(phi) = D_v(T) * g(phi_a) + D_pen * (1 - g(phi_a))
-#   where D_pen = difvap_pen * D_v(T)  and g(x) = x^3 (3 - 2x).
-# Penalty term in vapor eq: -k_pen * g(phi_i + phi_s) * (rho_v - rho_v_eq).
--difvap_pen 1.0e-5
--k_pen 1.0e3
 -Lambda 1.0                             # triple-junction penalty in F_tri
                                         # (original physical value; was bumped to 1e4
                                         # under prior model to force bounds, but that
