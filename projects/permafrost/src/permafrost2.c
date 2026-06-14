@@ -339,7 +339,7 @@ int main(int argc, char *argv[]) {
     lambda_sub = a1 * user.eps / d0_sub;
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
-    user.alph_sub = 10 * lambda_sub / tau_sub;  /* Phase change rate parameter */
+    user.alph_sub = lambda_sub / tau_sub;  /* Phase change rate parameter, eq.(9) Moure & Fu (2024) SI */
 
     /* Allow per-test override of mob_sub via -mob_sub <value>. Tests with
      * very stiff geometries (touching/merging grains in 2D) can reduce
