@@ -1,3 +1,57 @@
+## 2026-06-14 — Fix disk-fill crash, resolve mesh/eps, run 60-day practice sim
+
+- Fixed `src/snes_convergence.c`: an extra `%*.*e` placeholder in the
+  per-iteration print (11 placeholders for 10 supplied values) caused
+  undefined-behavior padding-space output that filled `/tmp` to 322GB
+  and crashed a long run. Removed the extra placeholder (commit `824ac39`).
+- Diagnosed a phase-field bounds violation on the original 64x32/1mm
+  mesh: `eps=9.0e-7` was far smaller than `dx≈1.56e-5`, leaving the
+  diffuse interface unresolved. Used `preprocess/comp_eps.py` to size a
+  new domain (Lx=2.6389e-5, Ly=1.5833e-5, Nx=81, Ny=49, eps=4.6648e-07,
+  RCice0=2e-6, RCice1=4e-6) with ~4 elements across the interface.
+- Added `inputs/geometry/2D_two_ice_grains_boundary.opts` and
+  `inputs/experiment/60day_T-20_h0.95.opts` for a 60-day, -20C/95% RH
+  practice run via `run_permafrost.sh`.
+- Updated `inputs/solver.opts` to `-dof 3` and removed the orphaned
+  `-difvap_pen`/`-k_pen` vapor-penalty block left over from the dropped
+  sediment phase.
+- Ran the full 60-day simulation via `./scripts/Studio/run_permafrost.sh
+  2D_two_ice_grains_boundary 60day_T-20_h0.95 practice60day`. With
+  solver.opts' NRmin=5/NRmax=15, dt grew steadily from 1e-8 toward
+  dtmax=1e4 with no oscillation (previously observed oscillation was a
+  CLI-default NRmin/NRmax issue, resolved by using the proper opts file).
+  Both ice grains fully sublimated by ~4.4 days (consistent with the
+  Kelvin/Gibbs-Thomson effect on micron-scale grains under 95% RH).
+- Ported `postprocess/plot_mass.py` from the old 4-DOF (ice/T/vapor/sed)
+  format to 3-DOF (ice/T/vapor): removed sediment mass/series/plots and
+  the `-t_sed_freeze` annotation machinery; `sol_*.dat` now reshapes to
+  `(-1, 3)` and `phi_a = 1 - phi_i`. Verified `mass.png` and per-phase
+  plots generate correctly for the completed run.
+
+---
+
+**Session ended:** 2026-06-14 00:34:07
+
+
+---
+
+**Session ended:** 2026-06-14 00:16:47
+
+
+---
+
+**Session ended:** 2026-06-14 00:15:25
+
+
+---
+
+**Session ended:** 2026-06-14 00:15:17
+
+
+---
+
+**Session ended:** 2026-06-13 17:06:39
+
 ## 2026-06-13 — Complete 3-DOF hard fork (drop sediment phase)
 
 - Finished the 9-commit hard fork from the 4-DOF (ice/temperature/vapor/sediment)
