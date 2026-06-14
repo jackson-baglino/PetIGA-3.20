@@ -1,12 +1,18 @@
 # =============================================================================
 # geometry/2D_two_ice_grains_boundary.opts — 2D: two boundary-centered ice
 # grains (smaller at x=0, larger at x=Lx) connected through a shared vapor
-# pore of width Lx. Ostwald-ripening test for the 3-DOF (ice/T/vapor) model.
+# pore. Ostwald-ripening test for the 3-DOF (ice/T/vapor) model.
+#
+# Domain/mesh/radii mirror geometry/2D_touching_grains.opts (same eps, same
+# dx, RCice1 = that file's RCice = 1.875e-5; RCice0 = half of RCice1) so the
+# diffuse interface (w = 2*sqrt(2)*eps ~ 1.32e-6 m) is small relative to the
+# grain radii (eps/R ~ 0.025), unlike the earlier 2-6 micron version where
+# eps/R ~ 0.23 made the grains themselves diffuse blobs.
 #
 # eps and Nx/Ny computed via preprocess/comp_eps.py for this domain
 # (binding bound: heat-diffusion-in-ice, eq 42a of Kaempfer & Plapp 2009):
-#   python3 preprocess/comp_eps.py --Lx 2.6389e-5 --Ly 1.5833e-5 --Rave 5e-6 --T0 -20.0
-# -> eps=4.6648e-07, Nx=81, Ny=49 (4 elements across the diffuse interface)
+#   python3 preprocess/comp_eps.py --Lx 6.25e-5 --Ly 6.25e-5 --Rave 1.875e-5 --T0 -20.0
+# -> eps=4.6648e-07, Nx=190, Ny=190 (4 elements across the diffuse interface)
 #
 # Natural-Neumann (zero-flux) BCs are required at x=0/x=Lx for this IC —
 # each grain is centered exactly on its boundary, so the profile is
@@ -14,14 +20,14 @@
 # =============================================================================
 -ic_type two_ice_grains_boundary
 -dim 2
--Nx 81
--Ny 49
+-Nx 190
+-Ny 190
 -Nz 1
--Lx 2.6389e-5
--Ly 1.5833e-5
+-Lx 6.25e-5
+-Ly 6.25e-5
 -Lz 0
--RCice0 2.0e-6
--RCice1 4.0e-6
+-RCice0 9.375e-6
+-RCice1 1.875e-5
 -delt_t 1.0e-8
 -eps 4.6648e-07
 -periodic 0
