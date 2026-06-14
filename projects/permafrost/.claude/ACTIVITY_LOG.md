@@ -1,3 +1,26 @@
+## 2026-06-14 — Resize two-grain boundary IC interface/grain ratio
+
+- User flagged the diffuse interface as "way too diffuse" in the
+  practice run. Diagnosis: with eps=4.6648e-07 and RCice0/1=2e-6/4e-6,
+  eps/R ~ 0.23 — the interface width (~1.32e-6 m) was comparable to the
+  grain radii, so the grains themselves looked like diffuse blobs.
+- Resized `inputs/geometry/2D_two_ice_grains_boundary.opts` to mirror
+  `2D_touching_grains.opts`: same eps/dx, RCice1=1.875e-5 (that file's
+  RCice), RCice0=half of RCice1, domain Lx=Ly=6.25e-5, Nx=Ny=190 (via
+  comp_eps.py). Now eps/R ~ 0.025 — a sharp interface relative to grain
+  size, matching the established touching-grains setup.
+- Verified with a short run: phi_ice/phi_air stay in [0,1],
+  TOT_ICE/TOT_AIR/TOTAL_MASS conserved to ~0.000%.
+
+---
+
+**Session ended:** 2026-06-14 01:02:38
+
+
+---
+
+**Session ended:** 2026-06-14 00:47:16
+
 ## 2026-06-14 — Fix disk-fill crash, resolve mesh/eps, run 60-day practice sim
 
 - Fixed `src/snes_convergence.c`: an extra `%*.*e` placeholder in the
