@@ -1,3 +1,47 @@
+## 2026-06-14 — Fix ice double-well coefficient (K2P) causing grain erosion
+
+- User reported the v2 (190x190, eps/R~0.025) run's interface started at
+  ~10.5 elements wide and collapsed around step 60, eroding both grains.
+- Root cause: `K2P = 3*mob_sub*(Sigma_i+Sigma_a+2*Lambda)/Sigma_i` in
+  `(K2P/eps)*f1(phi_i)` (src/assembly.c). Compared against
+  dry_snow_metamorphism's 3-phase ice equation with met=0 (our true
+  2-phase case): ETA=Etaa*Etai, fmet=0, fice=Etai*f1(ice), so the whole
+  expression collapses to `mob*3/eps*f1(ice)` -- Sigma_i/Sigma_a/Lambda
+  cancel completely with no third phase. With current defaults
+  (Sigma_i=0.109, Sigma_a=0.132, Lambda=1.0) the old K2P was ~20.6x too
+  large, making the PDE's equilibrium interface ~4.5x narrower than the
+  eps-based IC -> collapse onto an unresolvable width.
+- Fixed: `K2P = 3*mob_sub` in both Residual_A1 and Jacobian_A1 (commit
+  `728ca51`). Removed now-unused Sigma_i/Sigma_a/Lambda locals.
+- Verified with a 62-step run: TOT_ICE and I-A INTERF stay essentially
+  constant (no decay) through t=1.69s, phi_ice/phi_air in [0,1].
+- Killed the in-flight v2 60-day run (invalid under the old K2P) and
+  cleaned up /tmp/pf_k2p_check*.
+
+---
+
+**Session ended:** 2026-06-14 15:25:51
+
+
+---
+
+**Session ended:** 2026-06-14 15:19:20
+
+
+---
+
+**Session ended:** 2026-06-14 15:01:50
+
+
+---
+
+**Session ended:** 2026-06-14 14:40:53
+
+
+---
+
+**Session ended:** 2026-06-14 13:23:42
+
 ## 2026-06-14 — Resize two-grain boundary IC interface/grain ratio
 
 - User flagged the diffuse interface as "way too diffuse" in the
