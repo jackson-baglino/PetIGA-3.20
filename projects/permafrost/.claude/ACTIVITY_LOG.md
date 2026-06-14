@@ -1,3 +1,145 @@
+## 2026-06-13 — Complete 3-DOF hard fork (drop sediment phase)
+
+- Finished the 9-commit hard fork from the 4-DOF (ice/temperature/vapor/sediment)
+  system to a 3-DOF (ice phi_i, temperature T, vapor density rho_v) system, with
+  phi_a = 1 - phi_i computed algebraically.
+- Commit 8 (`permafrost2.c`): dof=3, IGASetFieldName trimmed to
+  phaseice/temperature/vap_density, replaced the gamma_im/gamma_iv/gamma_mv
+  Kim-Steinbach derivation with direct -Sigma_i/-Sigma_a CLI params feeding
+  F_dub(phi_i) = C*phi_i^2(1-phi_i)^2, C=(Sigma_i+Sigma_a)/2+Lambda. Removed all
+  sediment CLI options/defaults (-NCsed, -RCsed*, -grain_sep, -x_slab_frac,
+  -mob_sed, -thcond_sed/-cp_sed/-rho_sed, -difvap_pen/-k_pen, -t_relax) and the
+  Phi_sed0 snapshot loop. -ic_type trimmed to
+  two_ice_grains_boundary (new default) | ice_slab | single_ice.
+- Commit 9 (`grain_initialization.c`/`.h`): removed entirely. All functions
+  (InitialSedGrains, InitialSedGrainsGravity, InitializeSedimentFromInputSolution,
+  InitialIceGrains, etc.) were unreferenced anywhere in the codebase, and the
+  sediment-grain helpers referenced AppCtx fields already removed in commit 1
+  (no longer compiled). Dropped the include from NASA_main.h.
+- Build verified clean (only a pre-existing unrelated format-string warning in
+  snes_convergence.c). Smoke-tested
+  `-ic_type two_ice_grains_boundary -dim 2 -Nx 64 -Ny 32 -Lx 1e-3 -Ly 0.5e-3
+  -RCice0 1e-4 -RCice1 2e-4 -t_final 4e-4`: bounds stay within [0,1] for
+  phi_ice/phi_air, SNES convergence table shows exactly 3 DOF columns, and
+  TOT_ICE/TOT_AIR/TOTAL_MASS are conserved to within rounding over 4 steps.
+- Follow-up (out of scope, flagged in the plan): postprocess/*.py and
+  scripts/*.py still assume the old 4-field (ndof=4, "sediment" field) output
+  format and will need updating before plotting new results.
+
+---
+
+**Session ended:** 2026-06-11 15:06:11
+
+
+---
+
+**Session ended:** 2026-06-11 15:02:38
+
+
+---
+
+**Session ended:** 2026-06-11 14:43:01
+
+
+---
+
+**Session ended:** 2026-06-11 14:18:51
+
+
+---
+
+**Session ended:** 2026-06-11 14:18:41
+
+
+---
+
+**Session ended:** 2026-06-11 14:18:36
+
+
+---
+
+**Session ended:** 2026-06-11 14:18:33
+
+
+---
+
+**Session ended:** 2026-06-11 14:18:29
+
+
+---
+
+**Session ended:** 2026-06-11 14:18:20
+
+
+---
+
+**Session ended:** 2026-06-11 14:18:14
+
+
+---
+
+**Session ended:** 2026-06-11 14:18:04
+
+
+---
+
+**Session ended:** 2026-06-11 14:18:01
+
+
+---
+
+**Session ended:** 2026-06-11 14:17:53
+
+
+---
+
+**Session ended:** 2026-06-11 14:12:08
+
+
+---
+
+**Session ended:** 2026-06-11 14:09:26
+
+
+---
+
+**Session ended:** 2026-06-11 13:23:15
+
+
+---
+
+**Session ended:** 2026-06-11 13:21:05
+
+
+---
+
+**Session ended:** 2026-06-11 13:18:39
+
+
+---
+
+**Session ended:** 2026-06-11 13:07:56
+
+
+---
+
+**Session ended:** 2026-06-11 12:49:04
+
+
+---
+
+**Session ended:** 2026-06-11 12:48:41
+
+
+---
+
+**Session ended:** 2026-06-11 12:01:01
+
+
+---
+
+**Session ended:** 2026-06-04 10:58:15
+
 
 ---
 
