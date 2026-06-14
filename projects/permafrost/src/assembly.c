@@ -5,15 +5,18 @@
  * 2-phase (ice / temperature / vapor) system. phi_a = 1 - phi_i is
  * computed algebraically; there is no sediment DOF.
  *
- * Free energy:
- *   F_dub(phi_i) = C * phi_i^2 (1-phi_i)^2,   C = (Sigma_i+Sigma_a)/2 + Lambda
- *   dF_dub/dphi_i = 2*C * phi_i*(1-phi_i)*(1-2*phi_i)
+ * Free energy: single double-well in phi_i,
+ *   f1(phi_i) = phi_i*(1-phi_i)*(1-2*phi_i)
  *
  * Ice (Allen-Cahn):
  *   R_ice = N0[a]*ice_t + 3*mob_sub*eps*grad_N.grad_ice
- *         + (K2P/eps)*f1(phi_i)*N0[a] - S_sub*N0[a]
- *   f1(phi_i)  = phi_i*(1-phi_i)*(1-2*phi_i)
- *   K2P = 3*mob_sub*(Sigma_i+Sigma_a+2*Lambda)/Sigma_i
+ *         + (3*mob_sub/eps)*f1(phi_i)*N0[a] - S_sub*N0[a]
+ *
+ * This is the met=0 reduction of dry_snow_metamorphism's 3-phase ice
+ * equation: R_ice += mob*3/eps/ETA * ((Etam+Etaa)*fice - Etaa*fmet - Etam*fair).
+ * With met=0, ETA=Etaa*Etai, fmet=0, fice=Etai*f1(ice), so the expression
+ * collapses to mob*3/eps*f1(ice) -- Sigma_i/Sigma_a/Lambda all cancel and
+ * play no role in a true 2-phase (no third phase) system.
  *
  * Temperature (row-scaled by S_T = 1/(rho_ice*lat_sub), numerical
  * preconditioning only):
@@ -50,9 +53,6 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
     PetscInt l, dim = user->dim;
     PetscReal eps     = user->eps;
-    PetscReal Sigma_i = user->Etai;
-    PetscReal Sigma_a = user->Etaa;
-    PetscReal Lambd   = user->Lambd;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
     PetscReal alph_sub= user->alph_sub;
@@ -118,9 +118,6 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
                     * air_r * air_r;
     PetscReal S_sub = alph_sub * loc * (PetscRealPart(rhov) - rho_vs) / rho_ice;
 
-    /* Ice prefactor: K2P = 3*mob_sub*(Sigma_i+Sigma_a+2*Lambda)/Sigma_i */
-    PetscReal K2P = 3.0 * mob_sub * (Sigma_i + Sigma_a + 2.0*Lambd) / Sigma_i;
-
     /* T-equation row-scale (numerical preconditioning; no physics change). */
     PetscReal S_T = 1.0 / (rho_ice * lat_sub);
 
@@ -142,7 +139,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
         PetscScalar R_ice = N0[a] * ice_t
                           + 3.0 * mob_sub * eps * grad_N_dot_grad_ice
-                          + (K2P / eps) * f1 * N0[a]
+                          + (3.0 * mob_sub / eps) * f1 * N0[a]
                           - S_sub * N0[a];
 
         PetscScalar R_tem = rho * cp * N0[a] * tem_t
@@ -191,9 +188,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
 
     PetscInt l, dim = user->dim;
     PetscReal eps     = user->eps;
-    PetscReal Sigma_i = user->Etai;
-    PetscReal Sigma_a = user->Etaa;
-    PetscReal Lambd   = user->Lambd;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
     PetscReal alph_sub= user->alph_sub;
@@ -252,7 +246,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscReal dloc_dice = 2.0 * PetscRealPart(ice_c) * air_r * (air_r - PetscRealPart(ice_c));
     PetscReal rho_v_minus_rho_vs = PetscRealPart(rhov) - rho_vs;
 
-    PetscReal K2P = 3.0 * mob_sub * (Sigma_i + Sigma_a + 2.0*Lambd) / Sigma_i;
     PetscReal S_T = 1.0 / (rho_ice * lat_sub);
 
     const PetscReal *N0, (*N1)[dim];
@@ -278,7 +271,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             /* ====================== [ ice , * ] ============================= */
             J[a][0][b][0] += shift * Na_Nb
                            + 3.0 * mob_sub * eps * N1a_N1b
-                           + (K2P / eps) * df1 * Na_Nb
+                           + (3.0 * mob_sub / eps) * df1 * Na_Nb
                            - alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb;
             J[a][0][b][1] += alph_sub * loc * d_rho_vs / rho_ice * Na_Nb;
             J[a][0][b][2] += -alph_sub * loc / rho_ice * Na_Nb;
