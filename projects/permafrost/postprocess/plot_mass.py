@@ -6,13 +6,8 @@ Reads sol_*.dat solution snapshots and computes the integrated mass of each
 phase over the simulation domain at every output step:
 
   mass_ice(t)   = rho_ice × ∫ φ_i(x,t) dV
-  mass_sed(t)   = rho_sed × ∫ φ_s(x,t) dV
-  mass_vap(t)   =           ∫ ρ_v(x,t) · (1 − φ_i − φ_s) dV
-  mass_total(t) = mass_ice + mass_sed + mass_vap
-
-A vertical dashed line is drawn at t = t_sed_freeze (the moment the model
-switches from the full three-phase formulation to the frozen-sediment two-phase
-formulation). t_sed_freeze is read from the .opts files in the run folder.
+  mass_vap(t)   =           ∫ ρ_v(x,t) · (1 − φ_i) dV
+  mass_total(t) = mass_ice + mass_vap
 
 Unit notes
 ----------
@@ -20,7 +15,7 @@ Unit notes
   2D run: masses are *per unit depth*                 [kg/m]
   3D run: masses are in kg
 
-Physical constants (rho_ice, rho_sed) must match src/permafrost2.c.
+Physical constant (rho_ice) must match src/permafrost2.c.
 
 Usage
 -----
@@ -55,14 +50,12 @@ except ImportError:
 # Physical constants — must match src/permafrost2.c
 # ---------------------------------------------------------------------------
 RHO_ICE = 919.0    # kg/m³  — density of ice
-RHO_SED = 7753.0   # kg/m³  — density of sediment (metal placeholder; update if needed)
 
 # ---------------------------------------------------------------------------
 # Plot colours (consistent with existing postprocess scripts)
 # ---------------------------------------------------------------------------
 COLOR_TOTAL = "black"
 COLOR_ICE   = "#2166ac"   # steel blue
-COLOR_SED   = "#8c510a"   # warm brown
 COLOR_VAP   = "#7b3294"   # purple
 
 # ---------------------------------------------------------------------------
@@ -85,50 +78,6 @@ def auto_time_unit(t_max_sec: float) -> str:
     if t_max_sec <= 3 * 86400:
         return "h"
     return "d"
-
-
-# ---------------------------------------------------------------------------
-# Opts-file helpers
-# ---------------------------------------------------------------------------
-
-def find_opts_files(run_dir: str):
-    """Return opts files in run_dir in PETSc load order.
-
-    Modern layout: solver.opts + a geometry/<...>.opts + an experiment/<...>.opts
-    are all staged into the run directory at execution time. We load
-    solver.opts first (so its values are the base), then any other .opts
-    file (geometry, then experiment — but the order between them doesn't
-    matter because they cover disjoint parameter sets).
-
-    Legacy compat: if the run dir has universal.opts instead of
-    solver.opts (older runs from before the three-file refactor), load
-    that as the base.
-    """
-    result = []
-    for base in ("solver.opts", "universal.opts"):
-        p = os.path.join(run_dir, base)
-        if os.path.isfile(p):
-            result.append(p)
-            break
-    for f in sorted(os.listdir(run_dir)):
-        if f.endswith(".opts") and f not in ("solver.opts", "universal.opts"):
-            result.append(os.path.join(run_dir, f))
-    return result
-
-
-def parse_opts_float(opts_files, key: str, default=None):
-    """Return the last value of -key found across opts_files (sim file wins)."""
-    value = default
-    for path in opts_files:
-        try:
-            with open(path) as fh:
-                for line in fh:
-                    tokens = line.split()
-                    if len(tokens) >= 2 and tokens[0] == key:
-                        value = float(tokens[1])
-        except (OSError, ValueError):
-            pass
-    return value
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +118,6 @@ def compute_masses(run_dir: str):
     Read all sol_*.dat files in run_dir and return:
       times      [s]       — 1-D array, length N
       mass_ice   [kg/m^k]  — 1-D array, length N   (k = 3-dim)
-      mass_sed   [kg/m^k]
       mass_vap   [kg/m^k]
       dim        int        — spatial dimension of the run
     """
@@ -224,43 +172,25 @@ def compute_masses(run_dir: str):
     # ── Integrate each snapshot ───────────────────────────────────────────
     n = len(times)
     mass_ice = np.zeros(n)
-    mass_sed = np.zeros(n)
     mass_vap = np.zeros(n)
 
     for k, sf in enumerate(sol_files[:n]):
         sol = PetIGA().read_vec(sf, nrb)
-        sol = sol.reshape(-1, 4)               # ensure (N_total, 4) even for 2D
+        sol = sol.reshape(-1, 3)               # ensure (N_total, 3) even for 2D
 
         phi_i = sol[:, 0].clip(0.0, 1.0)
-        phi_s = sol[:, 3].clip(0.0, 1.0)
         rho_v = sol[:, 2].clip(0.0)
-        phi_a = (1.0 - phi_i - phi_s).clip(0.0, 1.0)
+        phi_a = (1.0 - phi_i).clip(0.0, 1.0)
 
         mass_ice[k] = RHO_ICE * np.sum(phi_i) * dV
-        mass_sed[k] = RHO_SED * np.sum(phi_s) * dV
         mass_vap[k] = np.sum(rho_v * phi_a) * dV
 
-    return times, mass_ice, mass_sed, mass_vap, dim
+    return times, mass_ice, mass_vap, dim
 
 
 # ---------------------------------------------------------------------------
 # Plotting
 # ---------------------------------------------------------------------------
-
-def _annotate_freeze(ax, t_freeze, scale, t_plot):
-    """Draw the vertical t_sed_freeze line on `ax` if it's inside the data range."""
-    if t_freeze is None:
-        return False
-    xf = t_freeze / scale
-    if not (t_plot[0] <= xf <= t_plot[-1] * 1.05):
-        return False
-    ax.axvline(x=xf, color="gray", ls="--", lw=1.2, zorder=2,
-               label=rf"$t_{{\rm freeze}}$ = {t_freeze:.0f} s")
-    ylim = ax.get_ylim()
-    ax.text(xf, ylim[1], r"$t_{\rm freeze}$",
-            ha="center", va="bottom", fontsize=9, color="gray")
-    return True
-
 
 def _pct_change(mass: np.ndarray) -> float:
     """Final-vs-initial percent change of a mass time series.
@@ -283,7 +213,7 @@ def _fmt_pct(pct: float) -> str:
 
 
 def _per_phase_plot(t_plot, mass, color, label_math, xlabel, unit_suffix,
-                    title, save_path, t_freeze, scale):
+                    title, save_path):
     """One self-contained plot for a single phase with its initial-value reference.
 
     Legend now reports the final-vs-initial percent change so the magnitude of
@@ -294,7 +224,6 @@ def _per_phase_plot(t_plot, mass, color, label_math, xlabel, unit_suffix,
             label=f"{label_math}   Δ = {_fmt_pct(pct)}")
     ax.axhline(mass[0], color=color, lw=1.0, ls="--", alpha=0.45, zorder=2,
                label=f"initial = {mass[0]:.3e}")
-    _annotate_freeze(ax, t_freeze, scale, t_plot)
     ax.set_xlabel(xlabel, fontsize=12)
     ax.set_ylabel(f"Mass  [{unit_suffix}]", fontsize=12)
     ax.set_title(title, fontsize=13)
@@ -359,18 +288,14 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
     the combined plot become visible.
     """
 
-    times, mass_ice, mass_sed, mass_vap, dim = compute_masses(run_dir)
-    mass_total = mass_ice + mass_sed + mass_vap
+    times, mass_ice, mass_vap, dim = compute_masses(run_dir)
+    mass_total = mass_ice + mass_vap
 
     # Auto time unit if not given
     t_max = times[-1] if len(times) > 0 else 1.0
     unit = time_unit or auto_time_unit(t_max)
     scale, xlabel = TIME_SCALES.get(unit, (1.0, "Time  [s]"))
     t_plot = times / scale
-
-    # Parse t_sed_freeze
-    opts_files = find_opts_files(run_dir)
-    t_freeze = parse_opts_float(opts_files, "-t_sed_freeze")
 
     # Mass units label
     unit_suffix = {1: "kg m⁻²", 2: "kg m⁻¹", 3: "kg"}.get(dim, "kg")
@@ -380,15 +305,12 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
 
     pct_total = _pct_change(mass_total)
     pct_ice   = _pct_change(mass_ice)
-    pct_sed   = _pct_change(mass_sed)
     pct_vap   = _pct_change(mass_vap)
 
     ax.plot(t_plot, mass_total, color=COLOR_TOTAL, lw=2.2, zorder=4,
             label=f"Total   Δ = {_fmt_pct(pct_total)}")
     ax.plot(t_plot, mass_ice,   color=COLOR_ICE,   lw=1.6, zorder=3,
             label=fr"Ice  ($\rho_i \int \phi_i \, dV$)   Δ = {_fmt_pct(pct_ice)}")
-    ax.plot(t_plot, mass_sed,   color=COLOR_SED,   lw=1.6, zorder=3,
-            label=fr"Sediment  ($\rho_s \int \phi_s \, dV$)   Δ = {_fmt_pct(pct_sed)}")
     ax.plot(t_plot, mass_vap,   color=COLOR_VAP,   lw=1.6, zorder=3,
             label=fr"Vapor  ($\int \rho_v \, \phi_a \, dV$)   Δ = {_fmt_pct(pct_vap)}")
 
@@ -396,10 +318,7 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
     # These make it easy to see whether each phase is gaining or losing mass.
     ax.axhline(mass_total[0], color=COLOR_TOTAL, lw=1.0, ls="--", alpha=0.45, zorder=2)
     ax.axhline(mass_ice[0],   color=COLOR_ICE,   lw=1.0, ls="--", alpha=0.45, zorder=2)
-    ax.axhline(mass_sed[0],   color=COLOR_SED,   lw=1.0, ls="--", alpha=0.45, zorder=2)
     ax.axhline(mass_vap[0],   color=COLOR_VAP,   lw=1.0, ls="--", alpha=0.45, zorder=2)
-
-    _annotate_freeze(ax, t_freeze, scale, t_plot)
 
     ax.set_xlabel(xlabel, fontsize=12)
     ax.set_ylabel(f"Mass  [{unit_suffix}]", fontsize=12)
@@ -420,31 +339,26 @@ def plot_mass(run_dir: str, time_unit: str = None, save_path: str = None,
 
     _per_phase_plot(t_plot, mass_total, COLOR_TOTAL, "Total",
                     xlabel, unit_suffix, "Total mass vs. time",
-                    os.path.join(pp_dir, "total.png"), t_freeze, scale)
+                    os.path.join(pp_dir, "total.png"))
     _per_phase_plot(t_plot, mass_ice, COLOR_ICE,
                     r"Ice  ($\rho_i \int \phi_i \, dV$)",
                     xlabel, unit_suffix, "Ice mass vs. time",
-                    os.path.join(pp_dir, "ice.png"), t_freeze, scale)
-    _per_phase_plot(t_plot, mass_sed, COLOR_SED,
-                    r"Sediment  ($\rho_s \int \phi_s \, dV$)",
-                    xlabel, unit_suffix, "Sediment mass vs. time",
-                    os.path.join(pp_dir, "sediment.png"), t_freeze, scale)
+                    os.path.join(pp_dir, "ice.png"))
     _per_phase_plot(t_plot, mass_vap, COLOR_VAP,
                     r"Vapor  ($\int \rho_v \, \phi_a \, dV$)",
                     xlabel, unit_suffix, "Vapor mass vs. time",
-                    os.path.join(pp_dir, "vapor.png"), t_freeze, scale)
+                    os.path.join(pp_dir, "vapor.png"))
 
     print(f"Per-phase plots saved to: {pp_dir}/")
 
     # ── Log-log relative-change plot ──────────────────────────────────────
     _change_loglog_plot(
         times_sec=times,
-        masses=[mass_total, mass_ice, mass_sed, mass_vap],
+        masses=[mass_total, mass_ice, mass_vap],
         labels=["Total",
                 r"Ice  ($\rho_i \int \phi_i \, dV$)",
-                r"Sediment  ($\rho_s \int \phi_s \, dV$)",
                 r"Vapor  ($\int \rho_v \, \phi_a \, dV$)"],
-        colors=[COLOR_TOTAL, COLOR_ICE, COLOR_SED, COLOR_VAP],
+        colors=[COLOR_TOTAL, COLOR_ICE, COLOR_VAP],
         save_path=os.path.join(pp_dir, "change_loglog.png"),
     )
     print(f"Log-log change plot saved to: {pp_dir}/change_loglog.png")
