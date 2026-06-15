@@ -1,3 +1,30 @@
+## 2026-06-15 — IGARead integration smoke test; geometry folds at reflex corners
+
+- Confirmed `-p 1 -C 0` is intentional/correct (was raised from p=2/C=1
+  only during earlier debugging); restored it in `inputs/solver.opts`
+  (commit `85265d1`, after an earlier mistaken commit/revert cycle
+  `1bbd825`/`b7429d5` while waiting for confirmation).
+- `src/permafrost2.c`: added `-geom_file` option that loads an
+  igakit-generated `.dat` geometry via `IGARead`, overriding
+  `-p/-C/-Nx/-Ny/-Nz` axis setup. Per-axis degree is now read back from
+  the IGA (`IGAAxisGetDegree`) to size the `alph`/`mob` quadrature-point
+  arrays, since a loaded geometry's degree can differ from `-p`.
+- `preprocess/build_geometry_sediment_grain.py`: switched to
+  arc-length-based knot refinement (vs. uniform-in-parameter) and added
+  a legacy-VTK structured-grid export
+  (`preprocess/sediment_grain_geometry.vtk`) for ParaView inspection.
+- Smoke test (`2D_sediment_grain_test` + `smoke_short`, commit `85e50f0`):
+  IGARead + IC + assembly setup all ran correctly, but the solve failed
+  with "Non-positive det(Jacobian)" -- the single-Coons-patch geometry
+  folds near the two reflex corners where the semicircular bite meets
+  the bottom edge. This is a geometry-construction issue (a non-convex
+  domain can't be validly mapped by one tensor-product patch), not a
+  solver bug. Likely fix is multi-patch geometry (new infrastructure,
+  not yet started) or a different geometric approach -- discussed with
+  user, decision deferred to a future session.
+
+---
+
 ## 2026-06-14 — 2-day Ostwald run completes; start igakit geometry exploration
 
 - Ran the 2-day -20C/95% humidity Ostwald-ripening case
