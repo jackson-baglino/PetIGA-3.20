@@ -32,6 +32,11 @@
 #      sed bump field == 0 here)
 #   3: trough nucleus at (2.7e-5, 0), R = 4.0e-6 (gap between grains 1 and 2)
 # =============================================================================
+# DOF_GRID: 242 242
+# (control-point grid of multi_grain_test.dat: Nx+P = Ny+P = 240+2 -- used by
+# run_permafrost.sh's compute_optimal_nprocs() since -geom_file overrides
+# -Nx/-Ny and those default to 1. Update if Nx/Ny/P change in
+# build_geometry_multi_grain.py.)
 -geom_file inputs/geometry/multi_grain_test.dat
 -ic_type multi_grains
 -dim 2
