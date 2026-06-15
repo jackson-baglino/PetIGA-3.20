@@ -9,8 +9,8 @@
 
 # ---------- DOFs & discretisation ---------------------------------------------
 -dof 3                                  # ice / temperature / vapor
--p 1                                    # B-spline polynomial order
--C 0                                    # B-spline continuity (C^0 for p=1)
+-p 2                                    # B-spline polynomial order
+-C 1                                    # B-spline continuity (C^1 for p=2)
 -periodic 1                             # periodic BCs (closed system; vapor cannot
                                         # leak through boundaries — needed for clean
                                         # mass-balance diagnostics).
