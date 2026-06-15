@@ -26,8 +26,11 @@
  * latent-heat release exact, regardless of mob_sub:
  *
  * Temperature (row-scaled by S_T = 1/(rho_ice*lat_sub), numerical
- * preconditioning only):
- *   R_tem = rho*cp*N0[a]*tem_t + thcond*grad_N.grad_tem - rho*lat_sub*ice_t*N0[a]
+ * preconditioning only). The latent-heat source uses the constant rho_ice
+ * (mass of the converting ice phase, matching R_vap's rho_SE=rho_ice), NOT
+ * the local mixture density rho(phi_i) -- otherwise the energy exchanged
+ * is inconsistent with the mass exchanged in R_vap at the diffuse interface:
+ *   R_tem = rho*cp*N0[a]*tem_t + thcond*grad_N.grad_tem - rho_ice*lat_sub*ice_t*N0[a]
  *
  * Vapor (air_lim floor as in dry_snow_metamorphism):
  *   R_vap = N0[a]*air_eff*rhov_t + difvap*air_eff*grad_N.grad_rhov
@@ -152,7 +155,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
         PetscScalar R_tem = rho * cp * N0[a] * tem_t
                           + thcond * grad_N_dot_grad_tem
-                          - rho * lat_sub * ice_t * N0[a];
+                          - rho_ice * lat_sub * ice_t * N0[a];
 
         PetscScalar R_vap = N0[a] * air_eff * rhov_t
                           + dif_vap * air_eff * grad_N_dot_grad_rhov
@@ -286,7 +289,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             /* ====================== [ tem , * ] (row-scaled by S_T) ========= */
             J[a][1][b][0] += S_T * (
                   dthcond_dice * grad_Na_dot_grad_tem * N0[b]
-                - rho * lat_sub * shift * Na_Nb
+                - rho_ice * lat_sub * shift * Na_Nb
             );
             J[a][1][b][1] += S_T * (
                   shift * rho * cp * Na_Nb
