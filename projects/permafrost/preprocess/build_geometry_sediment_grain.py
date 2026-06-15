@@ -3,96 +3,86 @@
 build_geometry_sediment_grain.py — prototype non-square domain with igakit.
 
 Builds a single-patch NURBS surface for a rectangular domain [0,Lx]x[0,Ly]
-with a semicircular "bite" removed from the bottom edge, representing the
-footprint of a sediment grain. The boundary curves are:
+whose bottom edge has a smooth "bump" raised into the domain, representing
+the footprint of a sediment grain (a smoothed-out semicircular bite).
 
-    left    : line   (0,0)    -> (0,Ly)
-    right   : line   (Lx,0)   -> (Lx,Ly)
-    top     : line   (0,Ly)   -> (Lx,Ly)
-    bottom  : line   (0,0)    -> (Lx/2-R,0)
-              + arc   (Lx/2-R,0) -> (Lx/2+R,0)   (concave, center (Lx/2,0))
-              + line  (Lx/2+R,0) -> (Lx,0)
+Construction (avoids the Coons-patch folding seen with a sharp
+line-arc-line bite + cad.coons -- see git history for that attempt):
 
-The bottom curve is assembled with cad.join() and the four boundary curves
-are assembled into a 2D surface patch with cad.coons(). The result is
-refined to match the solver's discretization (p=2, C=1) at a target
-element count, plotted for a visual sanity check, and written out as a
-PetIGA-readable geometry file.
+    bottom(x) = a C-infinity bump function, zero (with all derivatives
+                vanishing) outside |x - Lx/2| < R_sed, rising smoothly to
+                height R_sed at the center -- NO cusps/reflex corners.
+    top(x)    = Ly  (flat)
+
+Both curves are parametrized directly by u = x/Lx (same knot vector,
+piecewise-linear, uniformly spaced control points), so
+cad.ruled(bottom, top) produces perfectly VERTICAL v-isolines at every x
+-- the Jacobian is guaranteed positive everywhere since bottom(x) < Ly.
+The v-direction (2 control points from ruled()) is then knot-refined to
+get Ny elements.
 
 This is a standalone prototype: it does not modify permafrost2.c or any
-solver input files. Run it and inspect the PNG before doing anything else.
+solver input files (beyond the already-committed -geom_file IGARead path).
+Run it and inspect the PNG/VTK before doing anything else.
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 from igakit import cad
+from igakit.nurbs import NURBS
 from igakit.io import PetIGA
 
 # ---------- domain parameters (same order of magnitude as
 # inputs/geometry/2D_two_ice_grains_boundary.opts) ----------
 Lx = 4.0e-5     # domain width  [m]
 Ly = 4.0e-5     # domain height [m]
-R_sed = 1.0e-5  # sediment-grain bite radius [m]
+R_sed = 1.0e-5  # sediment-grain bump half-width / height [m]
 
-# target element counts (the resulting geometry's own degree/continuity --
-# whatever cad.coons/cad.join produce, typically p=2 from the circular arc --
-# is read directly by IGARead and overrides solver.opts' -p/-C for this run)
+# target element counts -- the resulting geometry is degree (1,1) with
+# C0 interior knots, matching solver.opts' -p 1 -C 0; -geom_file/IGARead
+# reads this directly and overrides -p/-C/-Nx/-Ny for this run.
 Nx = 80   # elements in x
 Ny = 80   # elements in y
+
+
+def _bump(x, center, R, height):
+    """C-infinity bump: height*exp(1 - 1/(1-t^2)) for |t|<1 (t=(x-c)/R),
+    0 outside -- touches 0 with all derivatives at t=+-1 (no cusp)."""
+    t = (x - center) / R
+    out = np.zeros_like(x)
+    mask = np.abs(t) < 1.0
+    out[mask] = height * np.exp(1.0 - 1.0 / (1.0 - t[mask] ** 2))
+    return out
 
 
 def build_surface():
     xm = 0.5 * Lx
 
-    # --- bottom edge: line + concave arc + line ---
-    left_seg = cad.line((0.0, 0.0), (xm - R_sed, 0.0))
-    arc_seg = cad.circle(radius=R_sed, center=(xm, 0.0), angle=(np.pi, 0.0))
-    right_seg = cad.line((xm + R_sed, 0.0), (Lx, 0.0))
+    # bottom curve: graph y = bump(x), piecewise-linear B-spline through
+    # Nx+1 uniformly-spaced points -- since x_i are uniform and the knot
+    # vector is uniform/clamped, x(u) = u*Lx exactly.
+    x = np.linspace(0.0, Lx, Nx + 1)
+    y = _bump(x, xm, R_sed, R_sed)
+    ctrl_bottom = np.zeros((Nx + 1, 3))
+    ctrl_bottom[:, 0] = x
+    ctrl_bottom[:, 1] = y
+    interior = np.linspace(0.0, 1.0, Nx + 1)[1:-1]
+    U = np.concatenate([[0.0, 0.0], interior, [1.0, 1.0]])
+    bottom = NURBS([U], control=ctrl_bottom)
 
-    bottom = cad.join(cad.join(left_seg, arc_seg, axis=0), right_seg, axis=0)
-
-    # --- other three edges: straight lines ---
-    left = cad.line((0.0, 0.0), (0.0, Ly))
-    right = cad.line((Lx, 0.0), (Lx, Ly))
+    # top curve: flat line, same u <-> x parametrization
     top = cad.line((0.0, Ly), (Lx, Ly))
 
-    surf = cad.coons(((left, right), (bottom, top)))
+    surf = cad.ruled(bottom, top)  # v: bottom -> top, vertical isolines
     return surf
 
 
-def _arclength_knots(curve, breaks, n_elem, n_sample=2000):
-    """Interior knot values giving ~equal physical arc-length per element,
-    found by sampling `curve` densely and inverting cumulative arc length."""
-    u0, u1 = breaks[0], breaks[-1]
-    s = np.linspace(u0, u1, n_sample)
-    pts = curve(s)
-    seglen = np.linalg.norm(np.diff(pts[:, :2], axis=0), axis=1)
-    cum = np.concatenate([[0.0], np.cumsum(seglen)])
-    total = cum[-1]
-    targets_len = np.linspace(0.0, total, n_elem + 1)[1:-1]
-    targets_u = np.interp(targets_len, cum, s)
-    return np.setdiff1d(targets_u, breaks)
-
-
 def refine_surface(surf):
-    # bottom edge (v=0) is line/arc/line -> refine axis 0 by arc length
-    # along it so elements are roughly uniform in physical space across
-    # the line/arc/line transitions.
-    bottom_edge = surf.boundary(1, 0)  # curve at v = v_min, varies in u
-    breaks0 = surf.breaks(0)
-    new_u = _arclength_knots(bottom_edge, breaks0, Nx)
-    if new_u.size:
-        surf = surf.refine(0, new_u)
-
-    # left edge (u=0) is a straight line -> arc-length == uniform parameter,
-    # but compute it the same way for consistency.
-    left_edge = surf.boundary(0, 0)  # curve at u = u_min, varies in v
-    breaks1 = surf.breaks(1)
-    new_v = _arclength_knots(left_edge, breaks1, Ny)
-    if new_v.size:
-        surf = surf.refine(1, new_v)
-
+    # v-direction currently has 1 element (2 control points, degree 1);
+    # insert interior knots for Ny elements.
+    new_v = np.linspace(0.0, 1.0, Ny + 1)[1:-1]
+    surf = surf.refine(1, new_v)
     return surf
 
 
