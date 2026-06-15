@@ -1,3 +1,17 @@
+## 2026-06-15 — Verify fixes with fresh 2-day sediment-grain run (sedgeom_recheck)
+
+- Re-ran `2D_sediment_grain_test` + `2day_T-20_h0.95` (tag `sedgeom_recheck`)
+  with the updated `monitoring.c`/plotting scripts.
+- `mass.png` now matches `outp.txt` exactly: Total mass Δ = -4.87e-04%,
+  Ice Δ ≈ -4.9e-04% (effectively conserved), Vapor Δ = +5.05% (but vapor
+  mass is ~6.4e-13 kg/m, negligible in absolute terms).
+- `timestep.png` is a clean monotonic geometric dt growth (3e-8s → 6.05e3s,
+  133 steps, t up to 1.74e5s) -- both post-processing bugs confirmed fixed.
+
+---
+
+**Session ended:** 2026-06-15 11:00:46
+
 ## 2026-06-15 — Fix plot_timestep.py and plot_mass.py post-processing bugs
 
 - `plot_timestep.py`'s `_DOMAIN_NFIELDS = 10` was stale (left over from the
