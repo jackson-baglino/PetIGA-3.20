@@ -8,10 +8,10 @@
 # -geom_file overrides -p/-C/-Nx/-Ny axis setup with the geometry's own
 # (degree (1,1), C0 -- smooth-bump bottom edge, ruled to a flat top edge).
 #
-# IC reuses two_ice_grains_boundary (placed by index ratio in [0,Lx]x[0,Ly],
-# NOT physical coordinates from the geometry map -- a mechanics-only smoke
-# test, not a physically meaningful sediment-grain setup). Non-rectangular
-# domain cannot be periodic -> -periodic 0, natural (zero-flux) BCs.
+# IC reuses two_ice_grains_boundary, now placed using the same bump map as
+# the geometry itself (-geom_bump_R must match build_geometry_sediment_grain.py's
+# R_sed). Non-rectangular domain cannot be periodic -> -periodic 0, natural
+# (zero-flux) BCs.
 # =============================================================================
 -geom_file inputs/geometry/sediment_grain_test.dat
 -ic_type two_ice_grains_boundary
@@ -21,6 +21,7 @@
 -Lz 0
 -RCice0 9.375e-6
 -RCice1 1.875e-5
+-geom_bump_R 1.0e-5
 -delt_t 1.0e-8
 -eps 4.6648e-07
 -periodic 0

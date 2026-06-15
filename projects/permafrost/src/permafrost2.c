@@ -170,6 +170,10 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-RCice0", "Radius of grain 0 (x=0 boundary, two_ice_grains_boundary IC)", "", user.RCice0, &user.RCice0, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-RCice1", "Radius of grain 1 (x=Lx boundary, two_ice_grains_boundary IC)", "", user.RCice1, &user.RCice1, NULL); CHKERRQ(ierr);
 
+    /* --- Sediment-grain bump geometry (must match -geom_file) ------------- */
+    user.geom_bump_R = 0.0;
+    ierr = PetscOptionsReal("-geom_bump_R", "Sediment-grain bump half-width/height (must match build_geometry_sediment_grain.py's R_sed; 0 = flat domain)", "", user.geom_bump_R, &user.geom_bump_R, NULL); CHKERRQ(ierr);
+
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);

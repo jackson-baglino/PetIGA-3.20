@@ -54,6 +54,10 @@ typedef struct {
   // Per-grain radii for boundary-centered two-grain IC
   PetscReal RCice0, RCice1;   /* Outer ice radius of grain 0 / grain 1 (default: RCice) */
 
+  // Sediment-grain "bump" geometry parameter (must match -geom_file's
+  // build_geometry_sediment_grain.py R_sed; 0 => flat domain, no distortion)
+  PetscReal geom_bump_R;
+
   // Arrays storing geometry information for ice grains
   PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
   PetscReal radius[200];  // Radii of individual ice grains

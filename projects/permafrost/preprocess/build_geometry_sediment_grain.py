@@ -48,7 +48,12 @@ Ny = 80   # elements in y
 
 def _bump(x, center, R, height):
     """C-infinity bump: height*exp(1 - 1/(1-t^2)) for |t|<1 (t=(x-c)/R),
-    0 outside -- touches 0 with all derivatives at t=+-1 (no cusp)."""
+    0 outside -- touches 0 with all derivatives at t=+-1 (no cusp).
+
+    NOTE: duplicated in src/initial_conditions.c as SedimentBump() so the
+    -ic_type two_ice_grains_boundary IC can place grains at the correct
+    physical (x,y) on this geometry. Keep R_sed here in sync with
+    -geom_bump_R in inputs/geometry/2D_sediment_grain_test.opts."""
     t = (x - center) / R
     out = np.zeros_like(x)
     mask = np.abs(t) < 1.0

@@ -286,7 +286,26 @@ PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user)
  * with the natural-Neumann (zero-flux) BC on phi_i. The shared vapor pore
  * spans the full domain width Lx, giving an Ostwald-ripening timescale
  * test between the two grains of different curvature.
+ *
+ * Physical coordinates: for a plain rectangular domain (geom_bump_R == 0)
+ * node (i,j) maps to (Lx*i/mx, Ly*j/my) as usual. For the -geom_file
+ * sediment-grain geometry (build_geometry_sediment_grain.py), the bottom
+ * edge is raised by a C-infinity bump y=g(x) and the surface is ruled to
+ * the flat top edge, so y_phys = g(x) + (j/my)*(Ly - g(x)); x_phys = Lx*i/mx
+ * exactly by construction (both curves share the u<->x parametrization).
+ * geom_bump_R must match that script's R_sed (bump half-width == height)
+ * for the IC to align with the actual geometry.
  * =========================================================================*/
+
+/* C-infinity bump g(x) = height*exp(1 - 1/(1-t^2)) for |t|<1, t=(x-center)/R;
+ * 0 outside -- must match build_geometry_sediment_grain.py's _bump(). */
+static PetscReal SedimentBump(PetscReal x, PetscReal center, PetscReal R, PetscReal height)
+{
+    if (R <= 0.0) return 0.0;
+    PetscReal t = (x - center) / R;
+    if (PetscAbsReal(t) >= 1.0) return 0.0;
+    return height * PetscExpReal(1.0 - 1.0 / (1.0 - t * t));
+}
 PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
@@ -330,7 +349,9 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
     for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
         for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
             PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
-            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+            PetscReal v = (PetscReal)j / (PetscReal)(info.my + per);
+            PetscReal bump = SedimentBump(x, 0.5 * Lx, user->geom_bump_R, user->geom_bump_R);
+            PetscReal y = bump + v * (Ly - bump);
 
             PetscReal d0 = PetscSqrtReal(SQ(x - c0x) + SQ(y - c0y));
             PetscReal d1 = PetscSqrtReal(SQ(x - c1x) + SQ(y - c1y));
