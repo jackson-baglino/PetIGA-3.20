@@ -233,23 +233,35 @@ stage_output_folder() {
 }
 
 ###############################################################################
-# Compute optimal number of MPI ranks from Nx, Ny, Nz and 4 DoFs
+# Compute optimal number of MPI ranks from Nx, Ny, Nz and dof
 ###############################################################################
 compute_optimal_nprocs() {
-    local Nx Ny Nz
+    local Nx Ny Nz dof grid_src
     local TARGET_DOFS_PER_CORE total_dofs
 
     TARGET_DOFS_PER_CORE=10000
 
-    Nx=$(awk '$1=="-Nx"{print $2}' "$params_file" | head -n1)
-    Ny=$(awk '$1=="-Ny"{print $2}' "$params_file" | head -n1)
-    Nz=$(awk '$1=="-Nz"{print $2}' "$params_file" | head -n1)
+    dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" | head -n1)
+    [[ -z "${dof:-}" ]] && dof=4
+
+    # -geom_file meshes override -Nx/-Ny/-Nz; read the DOF count from the
+    # "# DOF_GRID: nx ny [nz]" comment written alongside -geom_file in the
+    # geometry opts -- otherwise Nx/Ny default to 1 and NPROCS collapses to 1.
+    if grep -q "^-geom_file" "$params_file"; then
+        read -r Nx Ny Nz <<< "$(awk '$1=="#" && $2=="DOF_GRID:"{print $3, $4, $5}' "$params_file" | head -n1)"
+        grid_src="DOF_GRID comment"
+    else
+        Nx=$(awk '$1=="-Nx"{print $2}' "$params_file" | head -n1)
+        Ny=$(awk '$1=="-Ny"{print $2}' "$params_file" | head -n1)
+        Nz=$(awk '$1=="-Nz"{print $2}' "$params_file" | head -n1)
+        grid_src="-Nx/-Ny/-Nz flags"
+    fi
 
     [[ -z "${Nx:-}" ]] && Nx=1
     [[ -z "${Ny:-}" ]] && Ny=1
     [[ -z "${Nz:-}" ]] && Nz=1
 
-    total_dofs=$((4 * Nx * Ny * Nz))
+    total_dofs=$((dof * Nx * Ny * Nz))
 
     NPROCS=$(((total_dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE))
     (( NPROCS < 1 )) && NPROCS=1
@@ -268,7 +280,8 @@ compute_optimal_nprocs() {
 
     echo "------------------------------------------------------------"
     echo "Grid from opts: Nx=${Nx}, Ny=${Ny}, Nz=${Nz}"
-    echo "Total DoFs:     4 * Nx * Ny * Nz = ${total_dofs}"
+    echo "Grid source:    ${grid_src}"
+    echo "Total DoFs:     ${dof} × Nx × Ny × Nz = ${total_dofs}"
     echo "Target/core:    ${TARGET_DOFS_PER_CORE} DoFs"
     echo "Chosen NPROCS:  ${NPROCS}"
     echo "------------------------------------------------------------"

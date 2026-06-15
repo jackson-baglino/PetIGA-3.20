@@ -1,3 +1,467 @@
+
+## 2026-06-15 — Mesh rebuild, basis revert, HPC prep
+
+- Diagnosed `-geom_file` + `-Nx/-Ny` conflict: `-geom_file` overrides `-Nx/-Ny` entirely; user was setting -Nx 488 which was ignored because the `.dat` file has 240x240 baked in.
+- Rebuilt P=1 mesh at 480x480 (doubled from 240) with eps halved to 9.72e-08.
+- Reverted to P=2/C1 basis functions (P=1 interfaces are inherently jagged regardless of resolution).
+- Resized P=2 mesh to 122x122 elements (comp_eps.py `--n 4` minimum) with eps=4.6648e-07; regenerated `multi_grain_test.dat`.
+- Fixed HPC `run_permafrost.sh` `compute_optimal_nprocs()` to read `# DOF_GRID:` comment and `-dof` from solver.opts (same fix applied earlier to Studio version; without it NPROCS collapses to 1 for -geom_file meshes).
+- Added `dt_ramp_test.opts` experiment file (20 s run for dt-ramp diagnostics).
+
+---
+
+**Session ended:** 2026-06-15 16:52:40
+
+
+---
+
+**Session ended:** 2026-06-15 16:33:13
+
+
+---
+
+**Session ended:** 2026-06-15 16:30:19
+
+
+---
+
+**Session ended:** 2026-06-15 16:05:58
+
+
+---
+
+**Session ended:** 2026-06-15 15:52:19
+
+
+---
+
+**Session ended:** 2026-06-15 15:48:55
+
+
+---
+
+**Session ended:** 2026-06-15 15:42:58
+
+
+---
+
+**Session ended:** 2026-06-15 15:16:44
+
+
+---
+
+**Session ended:** 2026-06-15 15:13:48
+
+
+---
+
+**Session ended:** 2026-06-15 15:11:17
+
+
+---
+
+**Session ended:** 2026-06-15 14:48:06
+
+
+---
+
+**Session ended:** 2026-06-15 14:43:31
+
+
+---
+
+**Session ended:** 2026-06-15 14:43:16
+
+
+---
+
+**Session ended:** 2026-06-15 14:42:59
+
+
+---
+
+**Session ended:** 2026-06-15 14:42:51
+
+
+---
+
+**Session ended:** 2026-06-15 14:42:29
+
+
+---
+
+**Session ended:** 2026-06-15 14:42:22
+
+
+---
+
+**Session ended:** 2026-06-15 14:42:12
+
+
+---
+
+**Session ended:** 2026-06-15 14:41:51
+
+
+---
+
+**Session ended:** 2026-06-15 14:41:35
+
+
+---
+
+**Session ended:** 2026-06-15 14:41:23
+
+
+---
+
+**Session ended:** 2026-06-15 14:40:59
+
+
+---
+
+**Session ended:** 2026-06-15 14:40:42
+
+
+---
+
+**Session ended:** 2026-06-15 14:40:28
+
+
+---
+
+**Session ended:** 2026-06-15 14:40:08
+
+
+---
+
+**Session ended:** 2026-06-15 14:28:05
+
+
+---
+
+**Session ended:** 2026-06-15 14:23:27
+
+
+---
+
+**Session ended:** 2026-06-15 14:23:10
+
+
+---
+
+**Session ended:** 2026-06-15 14:22:48
+
+
+---
+
+**Session ended:** 2026-06-15 14:22:38
+
+
+---
+
+**Session ended:** 2026-06-15 14:22:19
+
+
+---
+
+**Session ended:** 2026-06-15 14:22:01
+
+
+---
+
+**Session ended:** 2026-06-15 14:21:46
+
+
+---
+
+**Session ended:** 2026-06-15 14:21:43
+
+
+---
+
+**Session ended:** 2026-06-15 14:21:09
+
+
+---
+
+**Session ended:** 2026-06-15 14:20:49
+
+
+---
+
+**Session ended:** 2026-06-15 14:20:30
+
+
+---
+
+**Session ended:** 2026-06-15 14:20:13
+
+
+---
+
+**Session ended:** 2026-06-15 14:19:58
+
+
+---
+
+**Session ended:** 2026-06-15 14:19:42
+
+
+---
+
+**Session ended:** 2026-06-15 14:19:23
+
+
+---
+
+**Session ended:** 2026-06-15 14:19:04
+
+
+---
+
+**Session ended:** 2026-06-15 14:18:50
+
+
+---
+
+**Session ended:** 2026-06-15 14:18:37
+
+
+---
+
+**Session ended:** 2026-06-15 14:18:35
+
+
+---
+
+**Session ended:** 2026-06-15 14:17:57
+
+
+---
+
+**Session ended:** 2026-06-15 14:17:37
+
+
+---
+
+**Session ended:** 2026-06-15 14:17:22
+
+
+---
+
+**Session ended:** 2026-06-15 14:17:13
+
+
+---
+
+**Session ended:** 2026-06-15 14:17:11
+
+
+---
+
+**Session ended:** 2026-06-15 14:16:44
+
+
+---
+
+**Session ended:** 2026-06-15 14:16:25
+
+
+---
+
+**Session ended:** 2026-06-15 14:16:08
+
+
+---
+
+**Session ended:** 2026-06-15 14:15:57
+
+
+---
+
+**Session ended:** 2026-06-15 14:15:17
+
+
+---
+
+**Session ended:** 2026-06-15 14:14:59
+
+
+---
+
+**Session ended:** 2026-06-15 14:14:44
+
+
+---
+
+**Session ended:** 2026-06-15 14:14:29
+
+
+---
+
+**Session ended:** 2026-06-15 14:14:12
+
+
+---
+
+**Session ended:** 2026-06-15 14:13:51
+
+
+---
+
+**Session ended:** 2026-06-15 14:13:35
+
+
+---
+
+**Session ended:** 2026-06-15 14:13:20
+
+
+---
+
+**Session ended:** 2026-06-15 14:12:59
+
+
+---
+
+**Session ended:** 2026-06-15 14:12:41
+
+
+---
+
+**Session ended:** 2026-06-15 14:12:22
+
+
+---
+
+**Session ended:** 2026-06-15 14:12:03
+
+
+---
+
+**Session ended:** 2026-06-15 14:11:48
+
+
+---
+
+**Session ended:** 2026-06-15 14:11:33
+
+
+---
+
+**Session ended:** 2026-06-15 14:11:17
+
+
+---
+
+**Session ended:** 2026-06-15 14:11:04
+
+
+---
+
+**Session ended:** 2026-06-15 14:10:04
+
+
+---
+
+**Session ended:** 2026-06-15 14:09:11
+
+
+---
+
+**Session ended:** 2026-06-15 14:08:50
+
+
+---
+
+**Session ended:** 2026-06-15 14:08:30
+
+
+---
+
+**Session ended:** 2026-06-15 14:08:18
+
+
+---
+
+**Session ended:** 2026-06-15 14:08:06
+
+
+---
+
+**Session ended:** 2026-06-15 14:07:57
+
+
+---
+
+**Session ended:** 2026-06-15 14:07:50
+
+
+---
+
+**Session ended:** 2026-06-15 14:07:44
+
+
+---
+
+**Session ended:** 2026-06-15 14:07:38
+
+
+---
+
+**Session ended:** 2026-06-15 14:07:35
+
+
+---
+
+**Session ended:** 2026-06-15 14:07:25
+
+
+---
+
+**Session ended:** 2026-06-15 14:07:19
+
+
+---
+
+**Session ended:** 2026-06-15 14:07:10
+
+
+---
+
+**Session ended:** 2026-06-15 14:06:52
+
+
+---
+
+**Session ended:** 2026-06-15 14:06:37
+
+
+---
+
+**Session ended:** 2026-06-15 14:06:28
+
+
+---
+
+**Session ended:** 2026-06-15 14:06:24
+
+
+---
+
+**Session ended:** 2026-06-15 14:06:21
+
+
+---
+
+**Session ended:** 2026-06-15 14:05:38
+
+
+---
+
+**Session ended:** 2026-06-15 13:57:05
+
 ## 2026-06-15 — Greville-abscissa IC mapping, p=2/C1 geometry, eps/mesh fix, dt start
 
 - Added a degree-agnostic `GrevilleAbscissae()` helper in

@@ -1,0 +1,17 @@
+# =============================================================================
+# experiment/dt_ramp_test.opts — short run to observe adaptive-dt ramp
+# behavior (same temp/humidity as 2day_T-20_h0.95.opts, but t_final cut down
+# to the t~0-20s window where dt was seen oscillating at ~0.2-0.4s on the
+# P=2/C1 240x240 mesh).
+# =============================================================================
+
+# ---------- Simulation time ----------
+-t_final 20.0                           # 20 s -- covers the dt ramp/oscillation window
+
+# ---------- Environmental conditions ----------
+-temp -20.0                             # initial temperature [°C]
+-humidity 0.95                          # initial relative humidity in air
+-grad_temp0 0.0,0.0,0.0                 # no imposed temperature gradient
+
+# ---------- Output ----------
+-n_out 200                              # keep snapshot count modest for a short test
