@@ -5,14 +5,61 @@
 # Location: $PETIGA_DIR/projects/permafrost/scripts/Studio/run_permafrost.sh
 #
 # Usage:
-#   ./scripts/Studio/run_permafrost.sh <PETSc_options_file> [tag]
+#   ./scripts/Studio/run_permafrost.sh <geometry> <experiment> [tag]
 #
-# The output folder is auto-derived from the opts file's ic_type and basename:
-#   $RESULTS_BASE/<ic_category>/<opts_basename>[_tag]_<timestamp>/
+#   geometry    Name (without .opts) of a file in inputs/geometry/. Sets up
+#               the domain/mesh/IC: -dim, -Lx/-Ly/-Lz, -Nx/-Ny/-Nz (or
+#               -geom_file for an igakit-generated mesh), -ic_type and its
+#               grain/geometry parameters, -eps, -delt_t, etc.
+#   experiment  Name (without .opts) of a file in inputs/experiment/. Sets
+#               the run conditions: -t_final, -temp, -humidity,
+#               -grad_temp0, and (optionally) output cadence (-outp/-n_out).
+#   tag         Optional label appended to the run folder name.
 #
-# Example:
-#   ./scripts/Studio/run_permafrost.sh inputs/tests/test_2D_TouchingGrainPair.opts
-#   ./scripts/Studio/run_permafrost.sh inputs/tests/test_1D_IceSlab.opts sweep_a
+# Combining the two: the script concatenates solver.opts + the chosen
+# geometry .opts + the chosen experiment .opts (later files can override
+# earlier settings) and passes the result to `permafrost`.
+#
+# The output folder is auto-derived from the geometry opts' -ic_type and the
+# two opts basenames:
+#   $RESULTS_BASE/<ic_type_category>/<geometry>__<experiment>[_<tag>]_<timestamp>/
+#
+# Examples:
+#   ./scripts/Studio/run_permafrost.sh 2D_touching_grains 1day_T-20_h1.00
+#   ./scripts/Studio/run_permafrost.sh 1D_ice_slab 1day_T-20_h0.95 sweep_a
+#   ./scripts/Studio/run_permafrost.sh 2D_multi_grain_test 2day_T-20_h0.95 multigrain_2day
+#
+# -----------------------------------------------------------------------
+# Adding a new EXPERIMENT (run conditions)
+# -----------------------------------------------------------------------
+# Copy an existing file, e.g. inputs/experiment/2day_T-20_h0.95.opts, into
+# inputs/experiment/<my_experiment>.opts and edit -t_final/-temp/-humidity/
+# -grad_temp0 (and -outp/-n_out if you want non-default output cadence —
+# solver.opts defaults to -outp 1, i.e. a snapshot every time step). Then:
+#   ./scripts/Studio/run_permafrost.sh <geometry> my_experiment [tag]
+#
+# -----------------------------------------------------------------------
+# Adding a new GEOMETRY / initial condition
+# -----------------------------------------------------------------------
+# Option A — rectangular domain, existing -ic_type:
+#   Copy an existing file, e.g. inputs/geometry/2D_two_ice_grains_boundary.opts,
+#   into inputs/geometry/<my_geometry>.opts and edit -dim, -Lx/-Ly/-Lz,
+#   -Nx/-Ny/-Nz, -ic_type and its parameters (e.g. -ice_grain_cx/cy/R for
+#   -ic_type multi_grains), -eps, -delt_t.
+#
+# Option B — custom (non-rectangular) mesh via igakit:
+#   1. Write/adapt a preprocess/build_geometry_*.py script (see
+#      preprocess/build_geometry_multi_grain.py for a template) that writes
+#      an IGA mesh file under inputs/geometry/<name>.dat. Run it with:
+#        source venv_pf311/bin/activate && python3 preprocess/build_geometry_<name>.py
+#      (run from the project root — paths inside these scripts are relative
+#      to the project root, not preprocess/).
+#   2. Create inputs/geometry/<my_geometry>.opts with -geom_file pointing at
+#      that .dat file (this overrides -p/-C/-Nx/-Ny/-Nz), plus -ic_type and
+#      its parameters, -dim, -Lx/-Ly/-Lz, -eps, -delt_t, -periodic 0.
+#
+# Then run as usual:
+#   ./scripts/Studio/run_permafrost.sh my_geometry <experiment> [tag]
 # =============================================================================
 
 set -uo pipefail
