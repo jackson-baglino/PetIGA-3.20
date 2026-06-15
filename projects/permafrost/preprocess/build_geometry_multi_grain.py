@@ -55,10 +55,12 @@ SEDIMENT_GRAINS = [
     (3.4e-5, 0.6e-5),   # support [2.8e-5, 4.0e-5] -- touches x=Lx
 ]
 
-# target element counts. eps must scale with h=Lx/Nx to maintain ~7.5
-# elements across the diffuse interface -- see inputs/geometry/2D_multi_grain_test.opts.
-Nx = 160   # elements in x
-Ny = 160   # elements in y
+# target element counts. eps is fixed by physics (preprocess/comp_eps.py);
+# Nx/Ny set the number of elements across the diffuse interface -- see
+# inputs/geometry/2D_multi_grain_test.opts. 240x240 gives n~8 elements across
+# w_actual=2*sqrt(2)*eps (comp_eps.py --n 8 -> Nx=243), vs n~5.25 at 160x160.
+Nx = 240   # elements in x
+Ny = 240   # elements in y
 
 # basis-function degree; geometry is (P,P) with C^{P-1} (single interior
 # knots, maximal smoothness). P=2 gives quadratic, C1 basis functions --
