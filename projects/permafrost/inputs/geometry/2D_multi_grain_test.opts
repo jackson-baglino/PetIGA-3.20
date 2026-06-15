@@ -42,14 +42,20 @@
 -ice_grain_cx 0.0,4.0e-5,1.3e-5,2.7e-5
 -ice_grain_cy 2.0e-5,2.0e-5,0.0,0.0
 -ice_grain_R 6.0e-6,1.5e-5,4.0e-6,4.0e-6
-# eps is a purely numerical interface-width parameter (no physical meaning).
-# Target ~7.5 elements across the diffuse interface, i.e. eps/h ~ 1.166
-# (h = Lx/Nx = 4.0e-5/160 = 2.5e-7). The previous eps (4.6648e-07, eps/h~1.87)
-# gave ~12 elements across the interface (measured in
-# 2D_multi_grain_test__2day_T-20_h0.95_multigrain_refine_2day run) --
-# scaled down by 7.5/12 to 2.9155e-07.
-# If the mesh is refined further, scale eps proportionally with h to keep
-# eps/h ~ 1.166 (i.e. ~7.5 elements across the interface).
+# eps is a purely numerical interface-width parameter (no physical meaning),
+# but its value relative to h IS physically constrained: preprocess/comp_eps.py
+# computes the Kaempfer & Plapp (2009) physical upper bound on eps and the
+# minimum mesh resolution for n=4 elements across w_actual=2*sqrt(2)*eps:
+#   python3 preprocess/comp_eps.py --Lx 4.0e-5 --Ly 4.0e-5
+#     -> eps = 4.6648e-07, Nx = Ny = 122 (minimum), eps/h ~ 1.4229
+# Our mesh (160x160) exceeds this minimum, so eps is scaled DOWN proportionally
+# from the comp_eps baseline to preserve eps/h ~ 1.4229 (i.e. eps/h is set by
+# comp_eps; never use fewer elements than comp_eps's Nx for a given eps):
+#   eps_160 = eps_122 * (122/160) = 4.6648e-07 * 122/160 = 3.5569e-07
+# If the mesh is refined further (Nx > 160), recompute comp_eps for the new
+# Lx/Ly (it changes if the domain size changes) and scale eps by
+# (comp_eps Nx) / (actual Nx) from that baseline -- never go below the
+# comp_eps-recommended eps/h ratio just to run faster on a coarser mesh.
 -delt_t 1.0e-8
--eps 2.9155e-07
+-eps 3.5569e-07
 -periodic 0
