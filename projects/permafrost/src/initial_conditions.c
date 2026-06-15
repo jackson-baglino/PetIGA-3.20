@@ -2,6 +2,45 @@
 #include "material_properties.h"
 
 
+/* =========================================================================
+ * GrevilleAbscissae
+ *
+ * Fills `g[0..n-1]` with the Greville abscissae (parametric DOF locations,
+ * in [0,1]) of the given IGA axis: g_i = mean(U[i+1..i+p]) for the axis's
+ * knot vector U and degree p. For an open-uniform knot vector this reduces
+ * to g_i = i/N (degree 1) but is non-uniform for degree >= 2 -- this is
+ * the degree-agnostic replacement for the `i/(mx+per)` index mapping used
+ * by IC functions on -geom_file domains.
+ *
+ * Caller must PetscFree(*g).
+ * =========================================================================*/
+static PetscErrorCode GrevilleAbscissae(IGA iga, PetscInt dir, PetscReal **g, PetscInt *n)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    IGAAxis axis;
+    PetscInt p, m;
+    PetscReal *U;
+    ierr = IGAGetAxis(iga, dir, &axis);     CHKERRQ(ierr);
+    ierr = IGAAxisGetDegree(axis, &p);      CHKERRQ(ierr);
+    ierr = IGAAxisGetKnots(axis, &m, &U);   CHKERRQ(ierr);
+
+    PetscInt nb = m - p; /* number of basis functions / DOFs along this axis */
+    PetscReal *greville;
+    ierr = PetscMalloc1(nb, &greville); CHKERRQ(ierr);
+    for (PetscInt i = 0; i < nb; i++) {
+        PetscReal sum = 0.0;
+        for (PetscInt k = 1; k <= p; k++) sum += U[i + k];
+        greville[i] = sum / (PetscReal)p;
+    }
+
+    *g = greville;
+    *n = nb;
+    PetscFunctionReturn(0);
+}
+
+
 /**
  * @brief 1D initial condition: a centered ice slab surrounded by air.
  *
@@ -444,12 +483,20 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
     DMDALocalInfo info;
     ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
 
-    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+    PetscReal *gx, *gy;
+    PetscInt nbx, nby;
+    ierr = GrevilleAbscissae(iga, 0, &gx, &nbx); CHKERRQ(ierr);
+    ierr = GrevilleAbscissae(iga, 1, &gy, &nby); CHKERRQ(ierr);
+    if (nbx != info.mx || nby != info.my)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_PLIB,
+                "Greville abscissae count (%d,%d) != DOF grid size (%d,%d) "
+                "-- multi_grains IC does not support -periodic 1",
+                (int)nbx, (int)nby, (int)info.mx, (int)info.my);
 
     for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
         for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
-            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
-            PetscReal v = (PetscReal)j / (PetscReal)(info.my + per);
+            PetscReal x = Lx * gx[i];
+            PetscReal v = gy[j];
             PetscReal bump = SedimentBumpField(user, x);
             PetscReal y = bump + v * (Ly - bump);
 
@@ -474,5 +521,7 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
 
     ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
     ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    ierr = PetscFree(gx); CHKERRQ(ierr);
+    ierr = PetscFree(gy); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
