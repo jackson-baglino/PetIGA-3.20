@@ -1,3 +1,35 @@
+## 2026-06-14 — 2-day Ostwald run completes; start igakit geometry exploration
+
+- Ran the 2-day -20C/95% humidity Ostwald-ripening case
+  (`2D_two_ice_grains_boundary` + `2day_T-20_h0.95` + `ostwald_v1`) via
+  `run_permafrost.sh`, with time-equally-spaced output
+  (`-outp 0 -n_out 100`, new `inputs/experiment/2day_T-20_h0.95.opts`).
+  Completed cleanly in 134 steps, final t=1.738e5s (target 1.728e5s):
+  TOT_ICE/TOTAL_MASS drift -0.000%, TOT_RHOV +5.15% (consistent with the
+  earlier 1-day run, not a concern), dt grew up to 5.3e3s. Only 39
+  snapshots were actually written (not 100) because adaptive dt grew
+  past t_interv near the end -- acceptable for now, flagged as a future
+  refinement if denser late-time output is needed.
+- Found and fixed an uncommitted, previously-flagged change to
+  `inputs/solver.opts` (`-p 2/-C 1` -> `-p 1/-C 0`) that had never been
+  confirmed with the user. First mistakenly committed it with an
+  unverified justification (`1bbd825`); reverted that part back to
+  `-p 2/-C 1` in a follow-up commit (`b7429d5`) pending clarification.
+- Started exploring igakit's NURBS/CAD toolbox (`cad.line`, `cad.circle`,
+  `cad.join`, `cad.coons`, `igakit.io.PetIGA`) for building non-square
+  domains (rectangle with a semicircular "sediment grain" bite). Wrote
+  a standalone prototype `preprocess/build_geometry_sediment_grain.py`
+  that constructs such a geometry via line/arc/line `join()` + `coons()`,
+  plots it, and writes a PetIGA `.dat` geometry file. The boundary shape
+  is correct but the element grid is badly distorted near the arc
+  (uniform parameter-space knot refinement doesn't give uniform physical
+  element sizes across the line/arc/line transition) -- next step is
+  arc-length-based knot insertion. No changes to `permafrost2.c` yet;
+  that integration (switching from `IGAAxisInitUniform` to `IGARead`,
+  plus BCs on the curved sediment edge) is a separate follow-up.
+
+---
+
 ## 2026-06-14 — Fix latent-heat coefficient: rho_ice instead of mixture rho
 
 - Local 1-day test run (via `run_permafrost.sh`, 2-grain boundary IC) of
