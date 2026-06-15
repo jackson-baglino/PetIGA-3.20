@@ -10,7 +10,11 @@
 # 160x160 (h=2.5e-7) roughly doubles eps/h vs. the original 80x80 mesh,
 # which had h~eps and gave a jagged/under-resolved ice-air interface.
 # -geom_file overrides -p/-C/-Nx/-Ny axis setup with the geometry's own
-# (degree (1,1), C0 -- multi-bump bottom edge, ruled to a flat top edge).
+# (degree (2,2), C1 -- multi-bump bottom edge, ruled to a flat top edge).
+# Quadratic/C1 basis functions (vs. the original (1,1)/C0) give smoother
+# ice-air interfaces at the same element count; FormInitialMultiGrains2D
+# maps DOFs to physical (x,y) via Greville abscissae (GrevilleAbscissae() in
+# src/initial_conditions.c), so the IC stays consistent for any (P,C^{P-1}).
 #
 # -ic_type multi_grains places ice grains via -ice_grain_cx/cy/R, mapped to
 # physical (x,y) using the same -sed_grain_x/-sed_grain_R bump-field as the

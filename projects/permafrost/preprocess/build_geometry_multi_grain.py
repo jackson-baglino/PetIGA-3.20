@@ -7,15 +7,27 @@ from one bump to N.
 Builds a single-patch NURBS surface for a rectangular domain [0,Lx]x[0,Ly]
 whose bottom edge is the SUM of several C-infinity bump functions (one per
 sediment grain), each rising smoothly from 0 to its own height/half-width --
-no cusps/reflex corners, so cad.ruled(bottom, top) still produces a
-positive-Jacobian surface as long as bottom(x) < Ly everywhere.
+no cusps/reflex corners, so the surface has a positive Jacobian as long as
+bottom(x) < Ly everywhere.
 
     bottom(x) = sum_k bump(x; center_k, R_k)
     top(x)    = Ly  (flat)
 
-Both curves are parametrized directly by u = x/Lx (same knot vector,
-piecewise-linear, uniformly spaced control points), so x(u) = u*Lx exactly --
-same construction as build_geometry_sediment_grain.py.
+Geometry degree/continuity: (P, P) with C^{P-1} (single interior knots).
+Both axes use an open-uniform knot vector whose Greville abscissae g_i
+satisfy sum_i N_i(t) g_i = t exactly (B-splines reproduce linear functions
+at their Greville abscissae) -- so:
+  - x(u) = Lx * u exactly (control-point x-coords = Lx * g_i),
+  - the v-direction is an exact linear interpolation between the bottom and
+    top curves: y(u,v) = bottom_y(u) + v*(Ly - bottom_y(u)).
+  - bottom_y(u) = bump_field(Lx*u) is sampled at the Greville abscissae,
+    giving a high-order (not exact) approximation of the analytic bump
+    curve for P>1.
+
+src/initial_conditions.c's FormInitialMultiGrains2D() computes the matching
+physical (x,y) for each DOF via GrevilleAbscissae() (reads the actual knot
+vector from the IGA axis), so the IC stays consistent with this geometry for
+any (P, C^{P-1}) choice made here.
 
 NOTE: the SEDIMENT_GRAINS list below must match -sed_grain_x/-sed_grain_R in
 inputs/geometry/2D_multi_grain_test.opts, and _bump() here must match
@@ -25,7 +37,6 @@ SedimentBump() in src/initial_conditions.c (summed by SedimentBumpField()).
 import numpy as np
 import matplotlib.pyplot as plt
 
-from igakit import cad
 from igakit.nurbs import NURBS
 from igakit.io import PetIGA
 
@@ -44,14 +55,16 @@ SEDIMENT_GRAINS = [
     (3.4e-5, 0.6e-5),   # support [2.8e-5, 4.0e-5] -- touches x=Lx
 ]
 
-# target element counts -- the resulting geometry is degree (1,1) with
-# C0 interior knots, matching solver.opts' -p 1 -C 0; -geom_file/IGARead
-# reads this directly and overrides -p/-C/-Nx/-Ny for this run.
-# 160x160 (vs. 80x80) doubles eps/h to ~1.9 -- the previous 80x80 mesh had
-# eps (4.6648e-07) barely smaller than h (5.0e-7), giving a jagged,
-# under-resolved ice-air interface.
+# target element counts. eps must scale with h=Lx/Nx to maintain ~7.5
+# elements across the diffuse interface -- see inputs/geometry/2D_multi_grain_test.opts.
 Nx = 160   # elements in x
 Ny = 160   # elements in y
+
+# basis-function degree; geometry is (P,P) with C^{P-1} (single interior
+# knots, maximal smoothness). P=2 gives quadratic, C1 basis functions --
+# smoother ice-air interfaces than the previous P=1/C0 mesh at the same
+# element count.
+P = 2
 
 
 def _bump(x, center, R, height):
@@ -74,36 +87,40 @@ def _bump_field(x):
     return y
 
 
+def open_uniform_knots(N, p):
+    """Open-uniform knot vector for N elements, degree p, C^{p-1}
+    (single interior knots): p+1-fold end knots, N-1 single interior knots."""
+    interior = np.linspace(0.0, 1.0, N + 1)[1:-1]
+    return np.concatenate([np.zeros(p + 1), interior, np.ones(p + 1)])
+
+
+def greville_abscissae(U, p):
+    """g_i = mean(U[i+1 .. i+p]) for i = 0 .. (len(U)-p-2) -- matches
+    GrevilleAbscissae() in src/initial_conditions.c."""
+    n = len(U) - p - 1
+    return np.array([np.mean(U[i + 1:i + p + 1]) for i in range(n)])
+
+
 def build_surface():
-    # bottom curve: graph y = bump_field(x), piecewise-linear B-spline
-    # through Nx+1 uniformly-spaced points -- since x_i are uniform and the
-    # knot vector is uniform/clamped, x(u) = u*Lx exactly.
-    x = np.linspace(0.0, Lx, Nx + 1)
-    y = _bump_field(x)
+    Ux = open_uniform_knots(Nx, P)
+    Uy = open_uniform_knots(Ny, P)
+    gx = greville_abscissae(Ux, P)   # (Nx+P,) parametric x-DOF positions
+    gy = greville_abscissae(Uy, P)   # (Ny+P,) parametric y-DOF positions
 
-    if np.any(y >= Ly):
+    x = Lx * gx
+    bottom_y = _bump_field(x)
+
+    if np.any(bottom_y >= Ly):
         raise ValueError(f"bump field reaches/exceeds Ly={Ly:.3e} "
-                          f"(max={y.max():.3e}) -- reduce grain heights/Ly")
+                          f"(max={bottom_y.max():.3e}) -- reduce grain heights/Ly")
 
-    ctrl_bottom = np.zeros((Nx + 1, 3))
-    ctrl_bottom[:, 0] = x
-    ctrl_bottom[:, 1] = y
-    interior = np.linspace(0.0, 1.0, Nx + 1)[1:-1]
-    U = np.concatenate([[0.0, 0.0], interior, [1.0, 1.0]])
-    bottom = NURBS([U], control=ctrl_bottom)
+    nx, ny = len(gx), len(gy)
+    ctrl = np.zeros((nx, ny, 3))
+    for i in range(nx):
+        ctrl[i, :, 0] = x[i]
+        ctrl[i, :, 1] = bottom_y[i] + gy * (Ly - bottom_y[i])
 
-    # top curve: flat line, same u <-> x parametrization
-    top = cad.line((0.0, Ly), (Lx, Ly))
-
-    surf = cad.ruled(bottom, top)  # v: bottom -> top, vertical isolines
-    return surf
-
-
-def refine_surface(surf):
-    # v-direction currently has 1 element (2 control points, degree 1);
-    # insert interior knots for Ny elements.
-    new_v = np.linspace(0.0, 1.0, Ny + 1)[1:-1]
-    surf = surf.refine(1, new_v)
+    surf = NURBS([Ux, Uy], control=ctrl)
     return surf
 
 
@@ -179,7 +196,6 @@ def write_vtk(surf, fname, n_per_elem=4):
 
 def main():
     surf = build_surface()
-    surf = refine_surface(surf)
 
     print("degree:", surf.degree)
     print("shape (control points):", surf.shape)
