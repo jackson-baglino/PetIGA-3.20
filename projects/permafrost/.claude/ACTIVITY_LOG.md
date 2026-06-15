@@ -1,3 +1,40 @@
+## 2026-06-15 — Fix plot_timestep.py and plot_mass.py post-processing bugs
+
+- `plot_timestep.py`'s `_DOMAIN_NFIELDS = 10` was stale (left over from the
+  old 4-phase 9-column header). The current domain-integral rows have 8
+  fields after STEP, but SNES/Newton iteration rows coincidentally also have
+  10 fields, so the regex was matching those instead -- producing a chaotic
+  dt-vs-t plot (t spanning ~1e-20 to ~1e-8 s, "steps: 3") that looked like
+  the simulation moved backwards in time. Fixed to 8; replotting
+  `sedgeom_icfix_2day` now gives a correct monotonic geometric dt growth
+  from ~3e-8 s to ~6e3 s over 133 steps, t up to ~1.7e5 s.
+- `plot_mass.py` previously recomputed mass from `sol_*.dat` snapshots using
+  `dV = (bounding-box area)/(N control points)`, which overcounts the area
+  for the non-rectangular sediment-grain bump geometry (bounding box
+  includes area under the bump) and ignores non-uniform cell volumes. This
+  produced a spurious **+4.77% mass "gain"**, contradicting `outp.txt`'s
+  IGA-quadrature `TOTAL_MASS` (-0.000%). There was also a separate time-axis
+  bug: sparse `sol_*.dat` output (43 files) was positionally paired with the
+  first 43 rows of `SSA_evo.dat` (134 rows), truncating the plotted time
+  range to ~0.0053s instead of the real ~1.7e5s.
+- `monitoring.c` now appends `tot_air`, `tot_rhov`, `tot_mass` (already
+  computed via `IGAComputeScalar`) to every row of `SSA_evo.dat`.
+  `plot_mass.py` now prefers these per-step quadrature-correct values
+  directly (matching `outp.txt` exactly) for new runs; for older runs
+  without these columns it falls back to the `sol_*.dat` approach but
+  matches each snapshot to its `SSA_evo.dat` row by step number (parsed from
+  the filename) instead of positional slicing.
+- Confirmed for `sedgeom_icfix_2day` (old SSA format, fallback path): fixing
+  the time axis alone did NOT change the +4.77% figure, confirming the dV
+  approximation (not the time axis) is the source of the discrepancy --
+  `outp.txt`'s -0.000% is the trustworthy number. A fresh run with the
+  updated `monitoring.c` is needed to get a corrected `mass.png` for this
+  geometry.
+
+---
+
+**Session ended:** 2026-06-15 10:45:59
+
 ## 2026-06-15 — Fix non-circular IC grain on sediment-grain geometry; resolves ~3% mass drift
 
 - Confirmed via direct derivation that `R_vap`'s `(rho_ice - rhov)*ice_t`
