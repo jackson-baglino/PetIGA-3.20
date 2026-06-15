@@ -1,3 +1,8 @@
+
+---
+
+**Session ended:** 2026-06-15 11:32:01
+
 ## 2026-06-15 — Generalize sediment bumps and ice IC to N grains (multi-grain geometry)
 
 - Added `-sed_grain_x`/`-sed_grain_R` arrays (summed via new
@@ -15,9 +20,11 @@
   `inputs/geometry/2D_multi_grain_test.opts`.
 - Smoke test (`smoke_short`, t_final=1e-6): no `[ABORT]` bound violations,
   grains placed at expected coordinates, mass conserved to ~0.000%.
-- Launched a 2-day validation run (`2day_T-20_h0.95`, tag `multigrain_2day`)
-  to check mass conservation and IC quality on the new geometry over a
-  longer horizon.
+- Ran a 2-day validation run (`2day_T-20_h0.95`, tag `multigrain_2day`,
+  135 steps to t=1.74e5s): Total mass Δ=+0.0031%, no `[ABORT]` violations,
+  timestep history clean (geometric growth with a small dip/recovery near
+  t~1e4s, as seen on the single-bump geometry). Multi-grain mechanism
+  validated end-to-end.
 
 ---
 
