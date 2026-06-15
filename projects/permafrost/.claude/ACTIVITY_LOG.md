@@ -1,3 +1,37 @@
+## 2026-06-15 — 2-day run on sediment-grain geometry; fix stale opts comment
+
+- Fixed a stale comment in `inputs/geometry/2D_sediment_grain_test.opts`
+  claiming degree (2,1)/~83x80 elements from arc-length refinement --
+  the current geometry (from the smooth-bump rewrite, commit `c4098ad`)
+  is degree (1,1), C0, 80x80 elements (commit `9d8e0c5`).
+- Explained why grain 1 (the larger ice grain, RCice1=1.875e-5) looks
+  non-circular in the geometry smoke test: `FormInitialTwoIceGrainsBoundary2D`
+  places grains using index-ratio coordinates `(Lx*i/mx, Ly*j/my)`, treating
+  the parametric grid as uniform physical space. But the actual map is
+  `y_phys = bump(x) + v*(Ly - bump(x))`, which compresses y near the bump
+  (x in [1.0e-5, 3.0e-5]). Grain 1 extends from x=Lx inward to x~2.125e-5,
+  overlapping the bump region, so part of its "circle" gets squashed --
+  grain 0 (smaller, R0=9.375e-6) stays just outside the bump region and
+  looks circular. Purely an IC/smoke-test artifact, not a physics issue.
+- Ran a 2-day (-20C/95% humidity) simulation on the sediment-grain geometry
+  (`2D_sediment_grain_test` + `2day_T-20_h0.95`, tag `sedgeom_2day`):
+  completed 141 steps to t=1.728e5s (full target), 44 VTK snapshots.
+  TOT_ICE +0.006%, TOT_AIR -0.005%, TOTAL_MASS +0.006%, TOT_RHOV +5.06%
+  (consistent with prior rectangular-domain runs). Bounds stayed close to
+  [0,1] (phi_ice in [-0.0019, 1.0044], phi_air in [-0.0044, 1.0019]) for
+  the whole run. A transient bounds excursion around steps 117-120
+  (phi_air down to ~-0.44, likely AC-interface overshoot interacting with
+  the distorted mesh near the bump) was recovered automatically by the
+  existing rollback/dt-halving logic, and the run finished cleanly at
+  dtmax=8.625e3.
+
+---
+
+
+---
+
+**Session ended:** 2026-06-15 10:19:56
+
 ## 2026-06-15 — Fix geometry fold with smooth-bump ruled-graph patch
 
 - Verified numerically that the prior Coons-patch geometry had
