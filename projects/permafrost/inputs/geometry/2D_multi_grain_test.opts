@@ -52,6 +52,10 @@
 # n=4 minimum. If the mesh is refined further, KEEP eps=4.6648e-07 fixed --
 # just check comp_eps.py --Lx <Lx> --Ly <Ly> --n <target> for the
 # corresponding Nx (never use fewer elements than comp_eps's minimum Nx).
--delt_t 1.0e-8
+-delt_t 1.0e-4                          # adaptive dt ramps geometrically (~x1.333/step);
+                                        # starting at 1e-8 took ~51 steps (~8.5 min on the
+                                        # 240x240 mesh) just to reach 1.8e-2. 1e-4 is the
+                                        # smallest starting dt used in past runs and cuts
+                                        # ~32 of those ramp-up steps.
 -eps 4.6648e-07
 -periodic 0
