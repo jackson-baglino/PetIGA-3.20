@@ -34,6 +34,8 @@ inputs/geometry/2D_multi_grain_test.opts, and _bump() here must match
 SedimentBump() in src/initial_conditions.c (summed by SedimentBumpField()).
 """
 
+import argparse
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -59,13 +61,13 @@ SEDIMENT_GRAINS = [
 # Nx/Ny set the number of elements across the diffuse interface -- see
 # inputs/geometry/2D_multi_grain_test.opts. 240x240 gives n~8 elements across
 # w_actual=2*sqrt(2)*eps (comp_eps.py --n 8 -> Nx=243), vs n~5.25 at 160x160.
-Nx = 240   # elements in x
-Ny = 240   # elements in y
+Nx = 480   # elements in x
+Ny = 480   # elements in y
 
 # basis-function degree; geometry is (P,P) with C^{P-1} (single interior
 # knots, maximal smoothness). P=2 gives quadratic, C1 basis functions --
 # smoother ice-air interfaces than the previous P=1/C0 mesh at the same
-# element count.
+# element count. Override via --P (e.g. --P 1 for a P=1/C0 comparison mesh).
 P = 2
 
 
@@ -197,6 +199,20 @@ def write_vtk(surf, fname, n_per_elem=4):
 
 
 def main():
+    global P
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--P", type=int, default=P,
+                         help=f"basis-function degree (C^{{P-1}} continuity), default {P}")
+    parser.add_argument("--out", default="inputs/geometry/multi_grain_test.dat",
+                         help="output PetIGA mesh file")
+    parser.add_argument("--plot", default="preprocess/multi_grain_geometry.png",
+                         help="output control-mesh plot")
+    parser.add_argument("--vtk", default="preprocess/multi_grain_geometry.vtk",
+                         help="output VTK structured grid")
+    args = parser.parse_args()
+    P = args.P
+
     surf = build_surface()
 
     print("degree:", surf.degree)
@@ -204,12 +220,11 @@ def main():
     print("breaks axis0:", surf.breaks(0).size - 1, "elements")
     print("breaks axis1:", surf.breaks(1).size - 1, "elements")
 
-    plot_surface(surf, "preprocess/multi_grain_geometry.png")
-    write_vtk(surf, "preprocess/multi_grain_geometry.vtk")
+    plot_surface(surf, args.plot)
+    write_vtk(surf, args.vtk)
 
-    out = "inputs/geometry/multi_grain_test.dat"
-    PetIGA().write(out, surf)
-    print(f"wrote {out}")
+    PetIGA().write(args.out, surf)
+    print(f"wrote {args.out}")
 
 
 if __name__ == "__main__":
