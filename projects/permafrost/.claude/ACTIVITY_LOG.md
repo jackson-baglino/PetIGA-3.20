@@ -1,3 +1,34 @@
+## 2026-06-14 — Fix latent-heat coefficient: rho_ice instead of mixture rho
+
+- Local 1-day test run (via `run_permafrost.sh`, 2-grain boundary IC) of
+  the S_sub->ice_t fix showed TEMP integral dropping from -4.189e-08 to
+  -5.086e-08 (~4.3 degC domain-average cooling) within just t~30s, and
+  adaptive dt stalling near 1-2s -- both signs of a spurious energy source.
+- Root cause: R_tem's latent-heat term used the local mixture density
+  `rho(phi_i)` (919 in ice, 1.34 in air) for `-rho*lat_sub*ice_t`, while
+  R_vap's mass-exchange term correctly uses the constant `rho_ice`
+  (rho_SE per Moure & Fu 2024 eq.9). At the diffuse interface these
+  differ by up to ~700x, injecting far more "latent heat" than the mass
+  actually exchanged warranted. Since thermal diffusion equilibrates
+  this ~40um domain in ~1e-4s, any real net energy injection should show
+  up almost immediately as a near-uniform T shift -- the 4 degC/30s
+  drift was that shift.
+- Fixed `src/assembly.c`: R_tem and Jacobian_A1 [tem,ice] now use
+  `rho_ice * lat_sub * ice_t` (commit `fbde305`).
+- Re-ran the same local test: TEMP held at exactly -4.189e-08 (0.000%
+  drift) through t=12725s (14.7% of the 1-day target), dt grew properly
+  to ~4217s (toward dtmax=1e4, vs stuck at ~1-2s before). TOT_ICE/TOTAL_MASS
+  drifted only -0.10%/-0.11% (vs -41% by t=9938s in the old v3 run).
+  I-A_INTERF rose to a peak (+35%) around t~400s then began slowly
+  decreasing -- consistent with the AC interface profile overshooting
+  then relaxing to its equilibrium width. Bounds clean (phi_ice/phi_air
+  in [0,1]).
+- Noted (not yet resolved): `inputs/solver.opts` has an uncommitted
+  change from `-p 2 -C 1` to `-p 1 -C 0` with a stale comment still
+  referencing "C^1 for p=2" -- flagged to user, not yet addressed.
+
+---
+
 ## 2026-06-14 — Fix mass-conservation bug: source T/vapor with d(phi_i)/dt, not S_sub
 
 - Diagnosed the v3 60-day run's 41% mass loss (TOT_ICE/TOTAL_MASS both
