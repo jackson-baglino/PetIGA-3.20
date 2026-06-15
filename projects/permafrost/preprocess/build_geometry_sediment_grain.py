@@ -35,8 +35,9 @@ Lx = 4.0e-5     # domain width  [m]
 Ly = 4.0e-5     # domain height [m]
 R_sed = 1.0e-5  # sediment-grain bite radius [m]
 
-# target discretization (match solver.opts: p=2, C=1)
-p_target = 2
+# target element counts (the resulting geometry's own degree/continuity --
+# whatever cad.coons/cad.join produce, typically p=2 from the circular arc --
+# is read directly by IGARead and overrides solver.opts' -p/-C for this run)
 Nx = 80   # elements in x
 Ny = 80   # elements in y
 
@@ -60,21 +61,37 @@ def build_surface():
     return surf
 
 
-def refine_surface(surf):
-    # elevate to the target polynomial degree (lines/coons start at p=1)
-    for axis in (0, 1):
-        p_cur = surf.degree[axis]
-        if p_cur < p_target:
-            surf = surf.elevate(axis, p_target - p_cur)
+def _arclength_knots(curve, breaks, n_elem, n_sample=2000):
+    """Interior knot values giving ~equal physical arc-length per element,
+    found by sampling `curve` densely and inverting cumulative arc length."""
+    u0, u1 = breaks[0], breaks[-1]
+    s = np.linspace(u0, u1, n_sample)
+    pts = curve(s)
+    seglen = np.linalg.norm(np.diff(pts[:, :2], axis=0), axis=1)
+    cum = np.concatenate([[0.0], np.cumsum(seglen)])
+    total = cum[-1]
+    targets_len = np.linspace(0.0, total, n_elem + 1)[1:-1]
+    targets_u = np.interp(targets_len, cum, s)
+    return np.setdiff1d(targets_u, breaks)
 
-    # insert interior knots for the requested element counts
-    for axis, n_elem in ((0, Nx), (1, Ny)):
-        breaks = surf.breaks(axis)
-        u0, u1 = breaks[0], breaks[-1]
-        targets = np.linspace(u0, u1, n_elem + 1)[1:-1]
-        new_knots = np.setdiff1d(targets, breaks)
-        if new_knots.size:
-            surf = surf.refine(axis, new_knots)
+
+def refine_surface(surf):
+    # bottom edge (v=0) is line/arc/line -> refine axis 0 by arc length
+    # along it so elements are roughly uniform in physical space across
+    # the line/arc/line transitions.
+    bottom_edge = surf.boundary(1, 0)  # curve at v = v_min, varies in u
+    breaks0 = surf.breaks(0)
+    new_u = _arclength_knots(bottom_edge, breaks0, Nx)
+    if new_u.size:
+        surf = surf.refine(0, new_u)
+
+    # left edge (u=0) is a straight line -> arc-length == uniform parameter,
+    # but compute it the same way for consistency.
+    left_edge = surf.boundary(0, 0)  # curve at u = u_min, varies in v
+    breaks1 = surf.breaks(1)
+    new_v = _arclength_knots(left_edge, breaks1, Ny)
+    if new_v.size:
+        surf = surf.refine(1, new_v)
 
     return surf
 
@@ -114,6 +131,42 @@ def plot_surface(surf, fname):
     print(f"wrote {fname}")
 
 
+def write_vtk(surf, fname, n_per_elem=4):
+    """Write the physical mesh as a legacy VTK structured grid, sampling
+    n_per_elem points per element (in each direction) so curved element
+    edges (e.g. the arc) are visible, not just straight lines between
+    element corners."""
+    breaks0 = surf.breaks(0)
+    breaks1 = surf.breaks(1)
+
+    u = np.unique(np.concatenate([
+        np.linspace(breaks0[i], breaks0[i + 1], n_per_elem, endpoint=False)
+        for i in range(len(breaks0) - 1)
+    ] + [[breaks0[-1]]]))
+    v = np.unique(np.concatenate([
+        np.linspace(breaks1[i], breaks1[i + 1], n_per_elem, endpoint=False)
+        for i in range(len(breaks1) - 1)
+    ] + [[breaks1[-1]]]))
+
+    pts = surf(u, v)  # shape (nu, nv, 3)
+    nu, nv = pts.shape[0], pts.shape[1]
+
+    with open(fname, "w") as f:
+        f.write("# vtk DataFile Version 3.0\n")
+        f.write("sediment_grain_geometry\n")
+        f.write("ASCII\n")
+        f.write("DATASET STRUCTURED_GRID\n")
+        f.write(f"DIMENSIONS {nu} {nv} 1\n")
+        f.write(f"POINTS {nu * nv} float\n")
+        # VTK structured-grid point order: x fastest, then y, then z
+        for j in range(nv):
+            for i in range(nu):
+                x, y, _ = pts[i, j]
+                f.write(f"{x:.8e} {y:.8e} 0.0\n")
+
+    print(f"wrote {fname}")
+
+
 def main():
     surf = build_surface()
     surf = refine_surface(surf)
@@ -124,6 +177,7 @@ def main():
     print("breaks axis1:", surf.breaks(1).size - 1, "elements")
 
     plot_surface(surf, "preprocess/sediment_grain_geometry.png")
+    write_vtk(surf, "preprocess/sediment_grain_geometry.vtk")
 
     out = "inputs/geometry/sediment_grain_test.dat"
     PetIGA().write(out, surf)

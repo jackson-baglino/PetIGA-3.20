@@ -119,6 +119,7 @@ int main(int argc, char *argv[]) {
     PetscBool monitor = PETSC_TRUE;                    /* Monitor flag */
     char      initial[PETSC_MAX_PATH_LEN] = {0};       /* Initial condition file */
     char      PFgeom[PETSC_MAX_PATH_LEN]  = {0};       /* Initial ice geometry file */
+    char      geom_file[PETSC_MAX_PATH_LEN] = {0};     /* igakit-generated IGA geometry (.dat), overrides axis setup */
     char      ic_type[64]                 = "two_ice_grains_boundary"; /* IC geometry selector */
 
     PetscOptionsBegin(PETSC_COMM_WORLD, "", "Permafrost options", "IGA");
@@ -207,6 +208,10 @@ int main(int argc, char *argv[]) {
     /* --- Restart / initialization files --------------------------------- */
     ierr = PetscOptionsString("-initial_cond", "Load initial solution from file", "", initial, initial, sizeof(initial), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsString("-geom_file",
+             "Load an igakit-generated IGA geometry (.dat) via IGARead, "
+             "overriding -p/-C/-Nx/-Ny/-Nz axis setup with the geometry's own",
+             "", geom_file, geom_file, sizeof(geom_file), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-ic_type",
              "Initial condition geometry (two_ice_grains_boundary|ice_slab|single_ice)",
              "permafrost2.c", ic_type, ic_type, sizeof(ic_type),
@@ -396,39 +401,55 @@ int main(int argc, char *argv[]) {
     ierr = IGASetFieldName(iga, 1, "temperature"); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 2, "vap_density"); CHKERRQ(ierr);
 
-    /* Set up axes */
-    IGAAxis axis0, axis1, axis2;
-    ierr = IGAGetAxis(iga, 0, &axis0); CHKERRQ(ierr);
-    if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis0, PETSC_TRUE); CHKERRQ(ierr); }
-    ierr = IGAAxisSetDegree(axis0, p); CHKERRQ(ierr);
-    ierr = IGAAxisInitUniform(axis0, Nx, 0.0, Lx, C); CHKERRQ(ierr);
+    /* Set up axes: either from a custom igakit geometry (-geom_file), which
+     * defines its own dim/degree/knots/control-net and overrides -p/-C/-N*,
+     * or from a uniform tensor-product Cartesian patch (default). */
+    if (geom_file[0] != '\0') {
+        PetscPrintf(PETSC_COMM_WORLD, "Reading IGA geometry from %s\n", geom_file);
+        ierr = IGARead(iga, geom_file); CHKERRQ(ierr);
+    } else {
+        IGAAxis axis0, axis1, axis2;
+        ierr = IGAGetAxis(iga, 0, &axis0); CHKERRQ(ierr);
+        if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis0, PETSC_TRUE); CHKERRQ(ierr); }
+        ierr = IGAAxisSetDegree(axis0, p); CHKERRQ(ierr);
+        ierr = IGAAxisInitUniform(axis0, Nx, 0.0, Lx, C); CHKERRQ(ierr);
 
-    if (dim >= 2) {
-        ierr = IGAGetAxis(iga, 1, &axis1); CHKERRQ(ierr);
-        if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis1, PETSC_TRUE); CHKERRQ(ierr); }
-        ierr = IGAAxisSetDegree(axis1, p); CHKERRQ(ierr);
-        ierr = IGAAxisInitUniform(axis1, Ny, 0.0, Ly, C); CHKERRQ(ierr);
-    }
+        if (dim >= 2) {
+            ierr = IGAGetAxis(iga, 1, &axis1); CHKERRQ(ierr);
+            if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis1, PETSC_TRUE); CHKERRQ(ierr); }
+            ierr = IGAAxisSetDegree(axis1, p); CHKERRQ(ierr);
+            ierr = IGAAxisInitUniform(axis1, Ny, 0.0, Ly, C); CHKERRQ(ierr);
+        }
 
-    if (dim == 3) {
-        ierr = IGAGetAxis(iga, 2, &axis2); CHKERRQ(ierr);
-        if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis2, PETSC_TRUE); CHKERRQ(ierr); }
-        ierr = IGAAxisSetDegree(axis2, p); CHKERRQ(ierr);
-        ierr = IGAAxisInitUniform(axis2, Nz, 0.0, Lz, C); CHKERRQ(ierr);
+        if (dim == 3) {
+            ierr = IGAGetAxis(iga, 2, &axis2); CHKERRQ(ierr);
+            if (user.periodic == 1) { ierr = IGAAxisSetPeriodic(axis2, PETSC_TRUE); CHKERRQ(ierr); }
+            ierr = IGAAxisSetDegree(axis2, p); CHKERRQ(ierr);
+            ierr = IGAAxisInitUniform(axis2, Nz, 0.0, Lz, C); CHKERRQ(ierr);
+        }
     }
 
     ierr = IGASetFromOptions(iga); CHKERRQ(ierr);
     ierr = IGASetUp(iga); CHKERRQ(ierr);
     user.iga = iga;
 
-    /* Number of quadrature points on this rank (used for alph and mob arrays) */
+    /* Number of quadrature points on this rank (used for alph and mob arrays).
+     * Read the per-axis degree from the IGA itself (rather than trusting the
+     * CLI -p) since -geom_file can set a different degree than -p. */
+    PetscInt p_axis[3] = {p, p, p};
+    for (PetscInt d = 0; d < dim; d++) {
+        IGAAxis ax;
+        ierr = IGAGetAxis(iga, d, &ax); CHKERRQ(ierr);
+        ierr = IGAAxisGetDegree(ax, &p_axis[d]); CHKERRQ(ierr);
+    }
     PetscInt nmb;
     if (dim == 1) {
-        nmb = iga->elem_width[0] * (p + 1);
+        nmb = iga->elem_width[0] * (p_axis[0] + 1);
     } else if (dim == 2) {
-        nmb = iga->elem_width[0] * iga->elem_width[1] * SQ(p + 1);
+        nmb = iga->elem_width[0] * iga->elem_width[1] * (p_axis[0] + 1) * (p_axis[1] + 1);
     } else {
-        nmb = iga->elem_width[0] * iga->elem_width[1] * iga->elem_width[2] * CU(p + 1);
+        nmb = iga->elem_width[0] * iga->elem_width[1] * iga->elem_width[2]
+              * (p_axis[0] + 1) * (p_axis[1] + 1) * (p_axis[2] + 1);
     }
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.alph);    CHKERRQ(ierr);
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);     CHKERRQ(ierr);
