@@ -1,0 +1,20 @@
+# =============================================================================
+# experiment/2day_T-20_h0.95.opts — 2 days at -20C, 95% relative humidity.
+#
+# Same conditions as 1day_T-20_h0.95.opts, run twice as long. Outputs are
+# saved at 100 intervals equally spaced in TIME (not in time-step index),
+# which gives linear-time spacing for movies regardless of how adaptive dt
+# grows -- overrides solver.opts' -outp 1 (every-step) default.
+# =============================================================================
+
+# ---------- Simulation time ----------
+-t_final 172800.0                       # 2 days (s)
+
+# ---------- Environmental conditions ----------
+-temp -20.0                             # initial temperature [°C]
+-humidity 0.95                          # initial relative humidity in air
+-grad_temp0 0.0,0.0,0.0                 # no imposed temperature gradient
+
+# ---------- Output cadence ----------
+-outp 0                                 # time-based output (see t_interv = t_final/(n_out-1))
+-n_out 100                              # 100 snapshots, equally spaced in time
