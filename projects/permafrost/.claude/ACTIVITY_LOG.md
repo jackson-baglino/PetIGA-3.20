@@ -1,3 +1,95 @@
+## 2026-06-15 — Greville-abscissa IC mapping, p=2/C1 geometry, eps/mesh fix, dt start
+
+- Added a degree-agnostic `GrevilleAbscissae()` helper in
+  `src/initial_conditions.c` and switched `FormInitialMultiGrains2D` to map
+  DOFs to physical (x,y) via Greville abscissae (works for any (P, C^{P-1})).
+- Rewrote `preprocess/build_geometry_multi_grain.py` to build the multi-grain
+  geometry directly as degree-(2,2)/C1 NURBS via Greville-abscissa control
+  points (no more igakit `cad.ruled`/`refine_surface`); regenerated
+  `inputs/geometry/multi_grain_test.dat`.
+- Worked through eps/mesh-resolution relationship: eps is a fixed physical
+  bound from `comp_eps.py` (4.6648e-07 for this domain/T), independent of
+  mesh; two earlier attempts to rescale eps with mesh size (2.9155e-07,
+  3.5569e-07) were superseded. Final: eps fixed at 4.6648e-07, mesh refined
+  to 240x240 (n~8 elements across the diffuse interface) to fix a jagged
+  ice-air interface seen at 160x160.
+- Changed `-delt_t` in `inputs/geometry/2D_multi_grain_test.opts` from
+  1.0e-8 (unknown origin, ~51 ramp-up steps/~8.5 min on the 240x240 mesh)
+  to 1.0e-4 (historical minimum starting dt); validated clean via smoke
+  test with t_final=5e-4.
+- Launched `mesh240_2day` full run (240x240, degree(2,2)/C1, eps=4.6648e-07,
+  old delt_t=1e-8) — left running to completion; future runs benefit from
+  the new delt_t=1e-4 default.
+
+---
+
+**Session ended:** 2026-06-15 13:48:00
+
+
+---
+
+**Session ended:** 2026-06-15 13:42:20
+
+
+---
+
+**Session ended:** 2026-06-15 13:40:40
+
+
+---
+
+**Session ended:** 2026-06-15 13:21:43
+
+
+---
+
+**Session ended:** 2026-06-15 13:13:15
+
+
+---
+
+**Session ended:** 2026-06-15 13:07:38
+
+
+---
+
+**Session ended:** 2026-06-15 12:45:01
+
+
+---
+
+**Session ended:** 2026-06-15 12:40:39
+
+
+---
+
+**Session ended:** 2026-06-15 12:31:48
+
+
+---
+
+**Session ended:** 2026-06-15 12:30:47
+
+
+---
+
+**Session ended:** 2026-06-15 12:19:44
+
+
+---
+
+**Session ended:** 2026-06-15 12:18:38
+
+
+---
+
+**Session ended:** 2026-06-15 12:09:33
+
+
+---
+
+**Session ended:** 2026-06-15 11:58:43
+
 ## 2026-06-15 — Validate refined multi-grain mesh (160x160) over 2 days
 
 - Re-ran `2D_multi_grain_test` + `2day_T-20_h0.95` (tag `multigrain_refine_2day`)
