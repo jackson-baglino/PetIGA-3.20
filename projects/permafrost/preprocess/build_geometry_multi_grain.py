@@ -61,8 +61,8 @@ SEDIMENT_GRAINS = [
 # Nx/Ny set the number of elements across the diffuse interface -- see
 # inputs/geometry/2D_multi_grain_test.opts. 240x240 gives n~8 elements across
 # w_actual=2*sqrt(2)*eps (comp_eps.py --n 8 -> Nx=243), vs n~5.25 at 160x160.
-Nx = 480   # elements in x
-Ny = 480   # elements in y
+Nx = 122   # elements in x
+Ny = 122   # elements in y
 
 # basis-function degree; geometry is (P,P) with C^{P-1} (single interior
 # knots, maximal smoothness). P=2 gives quadratic, C1 basis functions --
