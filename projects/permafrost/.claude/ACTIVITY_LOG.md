@@ -1,3 +1,37 @@
+## 2026-06-15 — Validate refined multi-grain mesh (160x160) over 2 days
+
+- Re-ran `2D_multi_grain_test` + `2day_T-20_h0.95` (tag `multigrain_refine_2day`)
+  with the 160x160 mesh and enlarged LHS ice grain (R=6.0e-6) from commit
+  322d880.
+- 202 steps to t=1.74e5s, Total mass Delta=-0.001%, no [ABORT]/NaN.
+- Snapshots (step 141 and final step 202, via fixed plot2D_snapshot.py)
+  show smooth circular ice-air interfaces -- the jaggedness reported on the
+  old 80x80/R=0.9375e-6 setup is resolved. Small grains (LHS boundary +
+  2 trough nuclei) are nearly fully sublimated by t~1.74e5s via Ostwald
+  ripening, leaving only the large RHS grain (R=1.5e-5).
+- Also reverted 2day_T-20_h0.95.opts to every-step (-outp 1) output for
+  future runs, and expanded run_permafrost.sh's header comment with
+  instructions for adding new experiments/geometries.
+
+---
+
+**Session ended:** 2026-06-15 11:53:07
+
+
+---
+
+**Session ended:** 2026-06-15 11:50:28
+
+
+---
+
+**Session ended:** 2026-06-15 11:45:02
+
+
+---
+
+**Session ended:** 2026-06-15 11:33:23
+
 
 ---
 
