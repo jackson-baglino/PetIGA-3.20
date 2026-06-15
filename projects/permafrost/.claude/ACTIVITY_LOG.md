@@ -1,3 +1,50 @@
+## 2026-06-15 — Fix non-circular IC grain on sediment-grain geometry; resolves ~3% mass drift
+
+- Confirmed via direct derivation that `R_vap`'s `(rho_ice - rhov)*ice_t`
+  term already contains the product-rule `rho_v*air_t` piece (since
+  `air_t = -ice_t`) -- no missing term in `src/assembly.c`.
+- Root-caused the ~3% TOTAL_MASS increase seen in the prior 2-day
+  sediment-grain run (commit `051a4cc`): `FormInitialTwoIceGrainsBoundary2D`
+  placed grain centers/circles using index-ratio coordinates
+  `(Lx*i/mx, Ly*j/my)`, which only equals the true physical (x,y) for a
+  flat rectangular domain. On the `-geom_file` bump geometry, the real
+  map is `y_phys = bump(x) + v*(Ly - bump(x))`, so the larger grain
+  (R1=1.875e-5, which extends into the bump's x-range) came out visibly
+  non-circular -- an unphysical IC that the solver then had to relax away
+  over the first ~100 steps, injecting the mass drift.
+- Fixed `src/initial_conditions.c`: added `SedimentBump()` (duplicate of
+  `build_geometry_sediment_grain.py`'s `_bump()`) and a new
+  `-geom_bump_R` option (`include/NASA_types.h`, `src/permafrost2.c`,
+  default 0 = flat domain, no behavior change for other geometries). The
+  IC now computes each node's true physical (x,y) via the bump map before
+  building the tanh distance fields (commit `00fd2dd`). Set
+  `-geom_bump_R 1.0e-5` in `inputs/geometry/2D_sediment_grain_test.opts`
+  to match the geometry's `R_sed`.
+- Verified: smoke test (`smoke_short`) shows both grains now circular
+  (clipped only at domain edges as intended) with clean bounds
+  `phi_ice/phi_air in [0,1]` at step 0. Re-ran the full 2-day case
+  (`2day_T-20_h0.95`, tag `sedgeom_icfix_2day`): 133 steps to
+  t=1.739e5s, TOT_ICE -0.000%, TOT_AIR +0.000%, **TOTAL_MASS -0.000%**
+  (down from +~3% with the old IC), TOT_RHOV +5.05% (consistent with
+  prior runs). A few transient bounds excursions around steps 88-111
+  (phi_air up to ~1.37) recovered via the existing rollback/dt-halving
+  logic; final bounds clean at [0,1]. The IC fix alone resolved the mass
+  drift -- no further mesh/basis-order tuning needed.
+
+---
+
+**Session ended:** 2026-06-15 10:37:09
+
+
+---
+
+**Session ended:** 2026-06-15 10:30:34
+
+
+---
+
+**Session ended:** 2026-06-15 10:28:42
+
 ## 2026-06-15 — 2-day run on sediment-grain geometry; fix stale opts comment
 
 - Fixed a stale comment in `inputs/geometry/2D_sediment_grain_test.opts`
