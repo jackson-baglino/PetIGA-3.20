@@ -31,11 +31,12 @@
 
 # ---------- Phase-field bounds (safety net) -----------------------------------
 # Bounds-rollback fires when a Newton trial sees phi outside [phase_lo, phase_hi].
-# Loose enough to tolerate small overshoots during the initial AC relaxation
-# (the tanh IC is not an exact equilibrium of the 2-phase well shape and AC
-# transiently goes slightly past 0/1 before settling).
--phase_lo -0.10
--phase_hi  1.10
+# Tight enough to catch the large (~-0.25 to -0.6) ice undershoots seen when a
+# grain fully sublimates, while still tolerating the small overshoot during the
+# initial AC relaxation (the tanh IC is not an exact equilibrium of the 2-phase
+# well shape and AC transiently goes slightly past 0/1 before settling).
+-phase_lo -0.05
+-phase_hi  1.05
 
 -Lambda 1.0                             # triple-junction penalty in F_tri
                                         # (original physical value; was bumped to 1e4
