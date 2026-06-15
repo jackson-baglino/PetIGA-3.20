@@ -29,18 +29,18 @@ import matplotlib.pyplot as plt
 # outp.txt contains two kinds of pipe-delimited rows that both start with a
 # number followed by '|':
 #
-#   Domain-integral table (9 fields after the step number):
-#     STEP | TIME [s] | DT [s] | TOT_ICE | TOT_AIR | TOT_SED | TEMP | TOT_RHOV | I-A INTERF | TRIPL_JUNC
+#   Domain-integral table (8 fields after the step number):
+#     STEP | TIME [s] | DT [s] | TOT_ICE | TOT_AIR | TEMP | TOT_RHOV | I-A INTERF | TOTAL_MASS
 #        0 |  0.00000e+00 | 1.000e-02 |  1.125e-09 |  ...
 #
-#   SNES/Newton iteration table (13 fields after the iteration number):
-#     it | fnorm | n0 | r0 | s0 | n1 | r1 | s1 | n2 | r2 | s2 | n3 | r3 | s3
+#   SNES/Newton iteration table (10 fields after the iteration number):
+#     it | fnorm | n0 | r0 | s0 | n1 | r1 | s1 | n2 | r2 | s2
 #      0 |  6.8134e-15 |   4.818e-15 | 1.000e+00 | ...
 #
 # We must match only domain-integral rows.  The reliable discriminator is
 # field count: domain rows have exactly _DOMAIN_NFIELDS fields after the step.
 _ROW_RE = re.compile(r"^\s*(\d+)\s*\|(.+)$")
-_DOMAIN_NFIELDS = 10  # TIME, DT, TOT_ICE, TOT_AIR, TOT_SED, TEMP, TOT_RHOV, I-A INTERF, TRIPL_JUNC, TOTAL_MASS
+_DOMAIN_NFIELDS = 8  # TIME, DT, TOT_ICE, TOT_AIR, TEMP, TOT_RHOV, I-A INTERF, TOTAL_MASS
 
 
 def _parse_float(s: str) -> float:

@@ -85,7 +85,13 @@ def auto_time_unit(t_max_sec: float) -> str:
 # ---------------------------------------------------------------------------
 
 def load_ssa(path: str) -> np.ndarray:
-    """Load SSA_evo.dat → (N, 5) array [sub_interf/eps, tot_ice, t, step, dt]."""
+    """Load SSA_evo.dat → (N, >=5) array.
+
+    Columns: [sub_interf/eps, tot_ice, t, step, dt, tot_air, tot_rhov, tot_mass].
+    The last three columns (tot_air, tot_rhov, tot_mass) are written directly
+    from monitoring.c's IGA-quadrature integrals and are only present in runs
+    produced after that change; older runs have just the first 5 columns.
+    """
     if not os.path.isfile(path):
         return None
     try:
@@ -115,12 +121,42 @@ def load_ssa(path: str) -> np.ndarray:
 
 def compute_masses(run_dir: str):
     """
-    Read all sol_*.dat files in run_dir and return:
+    Return:
       times      [s]       — 1-D array, length N
       mass_ice   [kg/m^k]  — 1-D array, length N   (k = 3-dim)
       mass_vap   [kg/m^k]
       dim        int        — spatial dimension of the run
+
+    Preferred path: SSA_evo.dat written by monitoring.c carries tot_ice,
+    tot_air, and tot_rhov computed via proper IGA-quadrature integration
+    (matching outp.txt's TOTAL_MASS exactly) for *every* time step — so we
+    use those directly instead of recomputing from the sparsely-written
+    sol_*.dat snapshots. This avoids both (a) a step/time mismatch when
+    sol_*.dat is written less often than every step, and (b) a flawed
+    uniform-dV approximation that overcounts non-rectangular geometries.
+
+    Fallback (older runs without the extra SSA_evo.dat columns): recompute
+    from sol_*.dat with a uniform-dV approximation, matching each snapshot
+    to its SSA_evo.dat row by step number (parsed from the filename).
     """
+    ssa = load_ssa(os.path.join(run_dir, "SSA_evo.dat"))
+
+    if ssa is not None and ssa.shape[1] >= 8:
+        times    = ssa[:, 2]
+        tot_ice  = ssa[:, 1]
+        tot_rhov = ssa[:, 6]
+        mass_ice = RHO_ICE * tot_ice
+        mass_vap = tot_rhov
+
+        # dim: read from igasol.dat if available, else assume 2D.
+        geo_file = os.path.join(run_dir, "igasol.dat")
+        dim = 2
+        if os.path.isfile(geo_file):
+            dim = PetIGA().read(geo_file).dim
+
+        return times, mass_ice, mass_vap, dim
+
+    # ── Fallback: integrate sol_*.dat with uniform-dV approximation ────────
     geo_file = os.path.join(run_dir, "igasol.dat")
     if not os.path.isfile(geo_file):
         sys.exit(f"ERROR: IGA geometry file not found: {geo_file}")
@@ -148,26 +184,33 @@ def compute_masses(run_dir: str):
     N_total = int(np.prod(shape))
     dV = V_domain / N_total                    # approximate cell volume per ctrl point
 
-    # ── Time axis from SSA_evo.dat ────────────────────────────────────────
-    ssa = load_ssa(os.path.join(run_dir, "SSA_evo.dat"))
-
-    n_sol = len(sol_files)
+    # ── Time axis: match each sol_NNNNN.dat to its SSA_evo.dat row by step ──
     if ssa is not None:
+        ssa_steps = ssa[:, 3].astype(int)
         ssa_times = ssa[:, 2]
-        n_ssa = len(ssa_times)
-        if n_sol == n_ssa + 1:
-            # sol_00000 is the IC at t=0; SSA rows correspond to sol_00001 onward
-            times = np.concatenate([[0.0], ssa_times])
-        elif n_sol == n_ssa:
-            times = ssa_times
-        else:
-            # Mismatch: use what we can
-            n = min(n_sol, n_ssa)
-            times = ssa_times[:n]
-            sol_files = sol_files[:n]
+        step_to_time = dict(zip(ssa_steps, ssa_times))
+
+        times = []
+        matched_files = []
+        for sf in sol_files:
+            base = os.path.basename(sf)
+            digits = "".join(ch for ch in base if ch.isdigit())
+            if not digits:
+                continue
+            step = int(digits)
+            if step == 0 and step not in step_to_time:
+                t = 0.0
+            elif step in step_to_time:
+                t = step_to_time[step]
+            else:
+                continue  # no matching SSA row for this snapshot's step
+            times.append(t)
+            matched_files.append(sf)
+        times = np.array(times, dtype=float)
+        sol_files = matched_files
     else:
         # No SSA file: assume uniform dt, reconstruct from opts
-        times = np.arange(n_sol, dtype=float)  # step index as fallback
+        times = np.arange(len(sol_files), dtype=float)  # step index as fallback
 
     # ── Integrate each snapshot ───────────────────────────────────────────
     n = len(times)
