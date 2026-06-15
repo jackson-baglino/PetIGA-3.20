@@ -47,8 +47,11 @@ SEDIMENT_GRAINS = [
 # target element counts -- the resulting geometry is degree (1,1) with
 # C0 interior knots, matching solver.opts' -p 1 -C 0; -geom_file/IGARead
 # reads this directly and overrides -p/-C/-Nx/-Ny for this run.
-Nx = 80   # elements in x
-Ny = 80   # elements in y
+# 160x160 (vs. 80x80) doubles eps/h to ~1.9 -- the previous 80x80 mesh had
+# eps (4.6648e-07) barely smaller than h (5.0e-7), giving a jagged,
+# under-resolved ice-air interface.
+Nx = 160   # elements in x
+Ny = 160   # elements in y
 
 
 def _bump(x, center, R, height):

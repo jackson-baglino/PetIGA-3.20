@@ -2,13 +2,12 @@
 """
 plot2D_snapshot.py  —  2D field snapshots without ParaView/VTK.
 
-Reads a PetIGA 2D solution file and produces a multi-panel matplotlib figure
-showing all four fields evaluated on a regular grid:
+Reads a PetIGA 2D solution file (3-DOF: ice, temperature, vapor density) and
+produces a multi-panel matplotlib figure:
   - Ice phase field  φ_i
-  - Sediment phase   φ_s  (DOF 3 of the solution vector)
+  - Air phase        φ_a = 1 − φ_i  (derived)
   - Temperature      T
   - Vapor density    ρ_v
-  - Air phase        φ_a = 1 − φ_i − φ_s  (derived)
   - Vapor super-saturation  (ρ_v − ρ_vs(T)) / ρ_vs(T)
 
 Also optionally plots 1D cross-sectional profiles along a horizontal or
@@ -86,7 +85,6 @@ def _load_2d(run_dir: str, step: int, nx_eval: int, ny_eval: int,
     ice        : (ny_eval, nx_eval)
     tem        : (ny_eval, nx_eval)
     rhov       : (ny_eval, nx_eval)
-    sed        : (ny_eval, nx_eval)  from DOF 3 of the solution vector
     Lx, Ly     : domain extents [m]
     """
     iga_path = os.path.join(run_dir, iga_file)
@@ -101,13 +99,10 @@ def _load_2d(run_dir: str, step: int, nx_eval: int, ny_eval: int,
     # Evaluate on a regular grid ------------------------------------------
     u_vals = np.linspace(0, 1, nx_eval)
     v_vals = np.linspace(0, 1, ny_eval)
-    UV     = np.meshgrid(u_vals, v_vals, indexing="ij")  # both (nx_eval, ny_eval)
-    params = np.stack([UV[0].ravel(), UV[1].ravel()], axis=-1)  # (n, 2)
 
-    # Evaluate physical coordinates and solution fields
-    xyz  = nrb.evaluate(*[u_vals, v_vals])   # (nx_eval, ny_eval, ndim+1) or similar
-    # igakit NURBS.evaluate returns (nx, ny, physical_dim+1) for 2D:
-    # last axis is homogeneous weight; first ndim are x, y
+    # Evaluate physical coordinates by interpolating the control-point
+    # locations themselves (fields=None evaluates only weights, not x/y).
+    xyz = nrb.evaluate(fields=nrb.points[..., :2], u=u_vals, v=v_vals)
     Xe = xyz[..., 0]   # (nx_eval, ny_eval)
     Ye = xyz[..., 1]
 
@@ -119,12 +114,9 @@ def _load_2d(run_dir: str, step: int, nx_eval: int, ny_eval: int,
     Lx = float(Xe.max() - Xe.min())
     Ly = float(Ye.max() - Ye.min())
 
-    # Sediment is DOF 3 in the solution vector
-    sed_e = _eval_field(nrb, sol_ctrl, u_vals, v_vals, comp=3)
-
     # Transpose to (ny, nx) for imshow convention (row = y, col = x)
     return (Xe.T, Ye.T,
-            ice_e.T, tem_e.T, rhov_e.T, sed_e.T,
+            ice_e.T, tem_e.T, rhov_e.T,
             Lx, Ly)
 
 
@@ -168,15 +160,15 @@ def plot_snapshot(run_dir: str, step: int, nx_eval: int = 200, ny_eval: int = 20
                   save_path: str = None, do_cuts: bool = False,
                   iga_file: str = "igasol.dat"):
     """
-    6-panel figure: ice, sediment, air, temperature, vapor density,
+    5-panel figure: ice, air, temperature, vapor density,
     vapor supersaturation.
     """
-    X, Y, ice, tem, rhov, sed, Lx, Ly = _load_2d(
+    X, Y, ice, tem, rhov, Lx, Ly = _load_2d(
         run_dir, step, nx_eval, ny_eval, iga_file
     )
 
     # Derived fields
-    air   = np.clip(1.0 - ice - sed, 0.0, 1.0)
+    air   = np.clip(1.0 - ice, 0.0, 1.0)
     rvs   = rho_vs(tem)
     supersat = np.where(rvs > 0, (rhov - rvs) / rvs, 0.0)
 
@@ -186,7 +178,6 @@ def plot_snapshot(run_dir: str, step: int, nx_eval: int = 200, ny_eval: int = 20
 
     fields = [
         (ice,       r"$\phi_i$  (ice)",             "Blues",        (0, 1)),
-        (sed,       r"$\phi_s$  (sediment)",         "YlOrBr",       (0, 1)),
         (air,       r"$\phi_a$  (air)",              "Greens",       (0, 1)),
         (tem,       r"$T$  [°C]",                    "RdBu_r",       None),
         (rhov,      r"$\rho_v$  [kg m$^{-3}$]",     "viridis",      None),
@@ -213,6 +204,9 @@ def plot_snapshot(run_dir: str, step: int, nx_eval: int = 200, ny_eval: int = 20
         ax.set_aspect("equal")
         ax.tick_params(labelsize=9)
 
+    for ax in axes[len(fields):]:
+        ax.axis("off")
+
     run_label = os.path.basename(run_dir.rstrip("/")) or run_dir
     fig.suptitle(f"2D snapshot — step {step} — {run_label}", fontsize=13, y=1.01)
     plt.tight_layout()
@@ -224,10 +218,10 @@ def plot_snapshot(run_dir: str, step: int, nx_eval: int = 200, ny_eval: int = 20
         plt.show()
 
     if do_cuts:
-        _plot_cuts(Xmm, Ymm, ice, tem, rhov, sed, step, run_dir, save_path)
+        _plot_cuts(Xmm, Ymm, ice, tem, rhov, step, run_dir, save_path)
 
 
-def _plot_cuts(Xmm, Ymm, ice, tem, rhov, sed, step, run_dir, save_path):
+def _plot_cuts(Xmm, Ymm, ice, tem, rhov, step, run_dir, save_path):
     """Horizontal (y=Ly/2) and vertical (x=Lx/2) cross-section profiles."""
     mid_row = Ymm.shape[0] // 2
     mid_col = Xmm.shape[1] // 2
@@ -235,7 +229,7 @@ def _plot_cuts(Xmm, Ymm, ice, tem, rhov, sed, step, run_dir, save_path):
     x_cut = Xmm[mid_row, :]
     y_cut = Ymm[:, mid_col]
 
-    fig, axes = plt.subplots(2, 4, figsize=(18, 7))
+    fig, axes = plt.subplots(2, 3, figsize=(14, 7))
 
     def _cut_row(ax, field, title):
         ax.plot(x_cut, field[mid_row, :], lw=2)
@@ -250,14 +244,12 @@ def _plot_cuts(Xmm, Ymm, ice, tem, rhov, sed, step, run_dir, save_path):
         ax.grid(True, alpha=0.3)
 
     _cut_row(axes[0, 0], ice,  r"$\phi_i$  (ice)")
-    _cut_row(axes[0, 1], sed,  r"$\phi_s$  (sediment)")
-    _cut_row(axes[0, 2], tem,  r"$T$  [°C]")
-    _cut_row(axes[0, 3], rhov, r"$\rho_v$  [kg m$^{-3}$]")
+    _cut_row(axes[0, 1], tem,  r"$T$  [°C]")
+    _cut_row(axes[0, 2], rhov, r"$\rho_v$  [kg m$^{-3}$]")
 
     _cut_col(axes[1, 0], ice,  r"$\phi_i$  (ice)")
-    _cut_col(axes[1, 1], sed,  r"$\phi_s$  (sediment)")
-    _cut_col(axes[1, 2], tem,  r"$T$  [°C]")
-    _cut_col(axes[1, 3], rhov, r"$\rho_v$  [kg m$^{-3}$]")
+    _cut_col(axes[1, 1], tem,  r"$T$  [°C]")
+    _cut_col(axes[1, 2], rhov, r"$\rho_v$  [kg m$^{-3}$]")
 
     fig.suptitle(f"Cross-section profiles — step {step}", fontsize=13)
     plt.tight_layout()
