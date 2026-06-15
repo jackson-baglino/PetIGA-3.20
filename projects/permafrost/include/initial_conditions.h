@@ -16,4 +16,8 @@ PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user);
 /* Two ice semicircles centered on the x=0 and x=Lx boundaries (Ostwald ripening test) */
 PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user);
 
+/* N ice grains (centers/radii from -ice_grain_cx/-ice_grain_cy/-ice_grain_R)
+ * on an optionally multi-bump sediment geometry (-sed_grain_x/-sed_grain_R) */
+PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user);
+
 #endif // INITIAL_CONDITIONS_H

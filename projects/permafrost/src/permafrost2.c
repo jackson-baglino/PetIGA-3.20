@@ -121,6 +121,7 @@ int main(int argc, char *argv[]) {
     char      PFgeom[PETSC_MAX_PATH_LEN]  = {0};       /* Initial ice geometry file */
     char      geom_file[PETSC_MAX_PATH_LEN] = {0};     /* igakit-generated IGA geometry (.dat), overrides axis setup */
     char      ic_type[64]                 = "two_ice_grains_boundary"; /* IC geometry selector */
+    PetscBool flg = PETSC_FALSE;
 
     PetscOptionsBegin(PETSC_COMM_WORLD, "", "Permafrost options", "IGA");
     /* --- Geometry & discretization --------------------------------------- */
@@ -174,6 +175,55 @@ int main(int argc, char *argv[]) {
     user.geom_bump_R = 0.0;
     ierr = PetscOptionsReal("-geom_bump_R", "Sediment-grain bump half-width/height (must match build_geometry_sediment_grain.py's R_sed; 0 = flat domain)", "", user.geom_bump_R, &user.geom_bump_R, NULL); CHKERRQ(ierr);
 
+    /* --- Multi-grain geometry: sediment bumps + ice grains ---------------- */
+    user.n_sed_grains = 0;
+    {
+        PetscInt n = MAX_SED_GRAINS;
+        ierr = PetscOptionsRealArray("-sed_grain_x",
+                 "Sediment bump center x-positions [m]; the bottom edge of "
+                 "-geom_file is the sum of SedimentBump() humps at these "
+                 "centers (must match build_geometry_multi_grain.py's "
+                 "SEDIMENT_GRAINS). Overrides -geom_bump_R single-bump IC.",
+                 "", user.sed_grain_x, &n, &flg); CHKERRQ(ierr);
+        if (flg) {
+            user.n_sed_grains = n;
+            PetscInt nr = MAX_SED_GRAINS;
+            ierr = PetscOptionsRealArray("-sed_grain_R",
+                     "Sediment bump half-width/height [m], one per -sed_grain_x entry",
+                     "", user.sed_grain_R, &nr, NULL); CHKERRQ(ierr);
+            if (nr != n)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-sed_grain_x and -sed_grain_R must have the same length (%d vs %d)",
+                        (int)n, (int)nr);
+        }
+    }
+
+    /* --- Multi-grain ice IC (-ic_type multi_grains) ------------------------ */
+    user.n_act = 0;
+    {
+        PetscInt  n = 200;
+        PetscReal cx[200];
+        ierr = PetscOptionsRealArray("-ice_grain_cx",
+                 "Ice grain center x-positions [m] (-ic_type multi_grains)",
+                 "", cx, &n, &flg); CHKERRQ(ierr);
+        if (flg) {
+            PetscInt  ncy = 200, nr = 200;
+            PetscReal cy[200], rr[200];
+            ierr = PetscOptionsRealArray("-ice_grain_cy", "Ice grain center y-positions [m]", "", cy, &ncy, NULL); CHKERRQ(ierr);
+            ierr = PetscOptionsRealArray("-ice_grain_R",  "Ice grain radii [m]",               "", rr, &nr,  NULL); CHKERRQ(ierr);
+            if (ncy != n || nr != n)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-ice_grain_cx, -ice_grain_cy, -ice_grain_R must have the same length (%d, %d, %d)",
+                        (int)n, (int)ncy, (int)nr);
+            user.n_act = n;
+            for (PetscInt k = 0; k < n; k++) {
+                user.cent[0][k] = cx[k];
+                user.cent[1][k] = cy[k];
+                user.radius[k]  = rr[k];
+            }
+        }
+    }
+
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
@@ -217,7 +267,7 @@ int main(int argc, char *argv[]) {
              "overriding -p/-C/-Nx/-Ny/-Nz axis setup with the geometry's own",
              "", geom_file, geom_file, sizeof(geom_file), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-ic_type",
-             "Initial condition geometry (two_ice_grains_boundary|ice_slab|single_ice)",
+             "Initial condition geometry (two_ice_grains_boundary|ice_slab|single_ice|multi_grains)",
              "permafrost2.c", ic_type, ic_type, sizeof(ic_type),
              NULL); CHKERRQ(ierr);
 
@@ -556,9 +606,11 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialIceSlab2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "single_ice") == 0) {
             ierr = FormInitialSingleIceGrain2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "multi_grains") == 0) {
+            ierr = FormInitialMultiGrains2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
-                    "Unknown -ic_type. Valid: two_ice_grains_boundary ice_slab single_ice");
+                    "Unknown -ic_type. Valid: two_ice_grains_boundary ice_slab single_ice multi_grains");
         }
     }
 

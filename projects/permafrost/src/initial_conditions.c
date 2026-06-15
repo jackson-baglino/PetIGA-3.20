@@ -306,6 +306,23 @@ static PetscReal SedimentBump(PetscReal x, PetscReal center, PetscReal R, PetscR
     if (PetscAbsReal(t) >= 1.0) return 0.0;
     return height * PetscExpReal(1.0 - 1.0 / (1.0 - t * t));
 }
+
+/* Sum of SedimentBump() humps along the bottom edge. If -sed_grain_x/-R were
+ * not given (n_sed_grains == 0), falls back to the single-bump -geom_bump_R
+ * behavior (centered at Lx/2) for backward compatibility with
+ * build_geometry_sediment_grain.py / two_ice_grains_boundary. With
+ * -sed_grain_x/-sed_grain_R set, must match build_geometry_multi_grain.py's
+ * SEDIMENT_GRAINS list. */
+static PetscReal SedimentBumpField(const AppCtx *user, PetscReal x)
+{
+    if (user->n_sed_grains <= 0)
+        return SedimentBump(x, 0.5 * user->Lx, user->geom_bump_R, user->geom_bump_R);
+
+    PetscReal y = 0.0;
+    for (PetscInt k = 0; k < user->n_sed_grains; k++)
+        y += SedimentBump(x, user->sed_grain_x[k], user->sed_grain_R[k], user->sed_grain_R[k]);
+    return y;
+}
 PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
@@ -350,7 +367,7 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
         for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
             PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
             PetscReal v = (PetscReal)j / (PetscReal)(info.my + per);
-            PetscReal bump = SedimentBump(x, 0.5 * Lx, user->geom_bump_R, user->geom_bump_R);
+            PetscReal bump = SedimentBumpField(user, x);
             PetscReal y = bump + v * (Ly - bump);
 
             PetscReal d0 = PetscSqrtReal(SQ(x - c0x) + SQ(y - c0y));
@@ -359,6 +376,89 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
             PetscReal ice0 = 0.5 - 0.5 * PetscTanhReal(tc * (d0 - R0));
             PetscReal ice1 = 0.5 - 0.5 * PetscTanhReal(tc * (d1 - R1));
             PetscReal ice  = PetscMin(PetscMax(ice0 + ice1, 0.0), 1.0);
+
+            u[j][i].ice = ice;
+            u[j][i].tem = user->temp0
+                          + user->grad_temp0[0] * (x - 0.5 * Lx)
+                          + user->grad_temp0[1] * (y - 0.5 * Ly);
+
+            PetscScalar rho_vs, temp_loc = u[j][i].tem;
+            RhoVS_I(user, temp_loc, &rho_vs, NULL);
+            { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
+              u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * FormInitialMultiGrains2D
+ *
+ * N ice grains, each a tanh distance profile from a (cx,cy)/R given by
+ * -ice_grain_cx/-ice_grain_cy/-ice_grain_R, summed and clamped to [0,1] --
+ * the same construction as FormInitialTwoIceGrainsBoundary2D generalized
+ * to an arbitrary number of grains.
+ *
+ * Physical coordinates use SedimentBumpField(), i.e. the bottom edge is the
+ * sum of -sed_grain_x/-sed_grain_R bump humps (or the single -geom_bump_R
+ * bump if those aren't set), matching build_geometry_multi_grain.py /
+ * build_geometry_sediment_grain.py respectively.
+ * =========================================================================*/
+PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx  = user->Lx;
+    const PetscReal Ly  = user->Ly;
+    const PetscReal eps = user->eps;
+    const PetscReal tc  = 1.0 / (PetscSqrtReal(2.0) * eps);
+    const PetscInt  ng  = user->n_act;
+
+    if (ng <= 0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                "-ic_type multi_grains requires -ice_grain_cx/-ice_grain_cy/-ice_grain_R");
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (2D multi-grain) ---\n"
+        "  %d ice grain(s), %d sediment bump(s)\n",
+        (int)ng, (int)user->n_sed_grains);
+    for (PetscInt k = 0; k < ng; k++) {
+        PetscReal R = user->radius[k];
+        PetscPrintf(PETSC_COMM_WORLD,
+            "  ice grain %d: centre = (%.4e, %.4e) m,  R = %.4e m\n",
+            (int)k, user->cent[0][k], user->cent[1][k], R);
+        if (R <= 0.0)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "-ice_grain_R[%d] must be > 0 (got %.2e)", (int)k, R);
+    }
+
+    DM da;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    Field **u;
+    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal v = (PetscReal)j / (PetscReal)(info.my + per);
+            PetscReal bump = SedimentBumpField(user, x);
+            PetscReal y = bump + v * (Ly - bump);
+
+            PetscReal ice = 0.0;
+            for (PetscInt k = 0; k < ng; k++) {
+                PetscReal d = PetscSqrtReal(SQ(x - user->cent[0][k]) + SQ(y - user->cent[1][k]));
+                ice += 0.5 - 0.5 * PetscTanhReal(tc * (d - user->radius[k]));
+            }
+            ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
             u[j][i].ice = ice;
             u[j][i].tem = user->temp0

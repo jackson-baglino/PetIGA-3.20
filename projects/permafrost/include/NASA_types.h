@@ -58,6 +58,16 @@ typedef struct {
   // build_geometry_sediment_grain.py R_sed; 0 => flat domain, no distortion)
   PetscReal geom_bump_R;
 
+  // Multi-grain sediment "bump" geometry: the bottom edge of a -geom_file
+  // bump geometry is the sum of n_sed_grains individual SedimentBump()
+  // humps, each at sed_grain_x[k] with half-width/height sed_grain_R[k].
+  // Must match build_geometry_multi_grain.py's SEDIMENT_GRAINS list.
+  // n_sed_grains == 0 falls back to the single-bump geom_bump_R behavior.
+#define MAX_SED_GRAINS 16
+  PetscInt  n_sed_grains;
+  PetscReal sed_grain_x[MAX_SED_GRAINS];
+  PetscReal sed_grain_R[MAX_SED_GRAINS];
+
   // Arrays storing geometry information for ice grains
   PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
   PetscReal radius[200];  // Radii of individual ice grains
