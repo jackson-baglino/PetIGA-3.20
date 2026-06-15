@@ -1,3 +1,29 @@
+## 2026-06-15 — Fix geometry fold with smooth-bump ruled-graph patch
+
+- Verified numerically that the prior Coons-patch geometry had
+  ~0.16% of its parameter domain with det(J)<0, localized at the two
+  reflex corners where the sharp semicircular bite met the bottom
+  edge -- and that degree elevation (-p 2/-C 1) cannot fix this, since
+  elevation reproduces the identical geometric map/Jacobian field with
+  more control points.
+- Replaced the line-arc-line + `cad.coons` construction with a smooth
+  C-infinity "bump" function y=g(x) for the bottom boundary (zero, with
+  all derivatives vanishing, outside |x-Lx/2|<R_sed -- no cusps/reflex
+  corners). Both bottom and top curves share the same u<->x
+  parametrization, so `cad.ruled(bottom, top)` gives vertical
+  v-isolines and a Jacobian that is positive everywhere (checked: min
+  detJ > 0 over the whole parameter domain). Result is degree (1,1)
+  with C0 interior knots, matching `solver.opts`' `-p 1 -C 0` (commit
+  `c4098ad`).
+- Re-ran the `2D_sediment_grain_test` + `smoke_short` smoke test: now
+  completes (13 steps), TOT_ICE/TOTAL_MASS drift 0.000%, bounds clean
+  (phi_ice/phi_air in [0,1]). Multi-patch geometry is NOT needed for
+  this case.
+- Avoided rerunning the doomed `-p 2/-C 1` smoke test (would have
+  reproduced the same fold for the reason above).
+
+---
+
 ## 2026-06-15 — IGARead integration smoke test; geometry folds at reflex corners
 
 - Confirmed `-p 1 -C 0` is intentional/correct (was raised from p=2/C=1
