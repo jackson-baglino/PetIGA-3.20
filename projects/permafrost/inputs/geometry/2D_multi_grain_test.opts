@@ -38,6 +38,14 @@
 -ice_grain_cx 0.0,4.0e-5,1.3e-5,2.7e-5
 -ice_grain_cy 2.0e-5,2.0e-5,0.0,0.0
 -ice_grain_R 6.0e-6,1.5e-5,4.0e-6,4.0e-6
+# eps is a purely numerical interface-width parameter (no physical meaning).
+# Target ~7.5 elements across the diffuse interface, i.e. eps/h ~ 1.166
+# (h = Lx/Nx = 4.0e-5/160 = 2.5e-7). The previous eps (4.6648e-07, eps/h~1.87)
+# gave ~12 elements across the interface (measured in
+# 2D_multi_grain_test__2day_T-20_h0.95_multigrain_refine_2day run) --
+# scaled down by 7.5/12 to 2.9155e-07.
+# If the mesh is refined further, scale eps proportionally with h to keep
+# eps/h ~ 1.166 (i.e. ~7.5 elements across the interface).
 -delt_t 1.0e-8
--eps 4.6648e-07
+-eps 2.9155e-07
 -periodic 0
