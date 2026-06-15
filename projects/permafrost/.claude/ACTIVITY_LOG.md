@@ -1,3 +1,33 @@
+## 2026-06-15 — Generalize sediment bumps and ice IC to N grains (multi-grain geometry)
+
+- Added `-sed_grain_x`/`-sed_grain_R` arrays (summed via new
+  `SedimentBumpField()`) so the bottom-edge bump geometry supports N
+  sediment grains instead of a single `-geom_bump_R` hump. `n_sed_grains==0`
+  preserves the original single-bump behavior (`two_ice_grains_boundary`
+  unchanged).
+- Added `-ice_grain_cx`/`-ice_grain_cy`/`-ice_grain_R` arrays and new
+  `FormInitialMultiGrains2D` (`-ic_type multi_grains`), placing N ice grains
+  via summed/clamped tanh distance profiles, reusing the `cent`/`radius`
+  AppCtx fields.
+- New `preprocess/build_geometry_multi_grain.py` generates a 3-sediment-grain
+  geometry (`inputs/geometry/multi_grain_test.dat`) with 4 ice grains
+  (2 boundary grains + 2 nucleating in the inter-grain troughs), config in
+  `inputs/geometry/2D_multi_grain_test.opts`.
+- Smoke test (`smoke_short`, t_final=1e-6): no `[ABORT]` bound violations,
+  grains placed at expected coordinates, mass conserved to ~0.000%.
+- Launched a 2-day validation run (`2day_T-20_h0.95`, tag `multigrain_2day`)
+  to check mass conservation and IC quality on the new geometry over a
+  longer horizon.
+
+---
+
+**Session ended:** 2026-06-15 11:17:36
+
+
+---
+
+**Session ended:** 2026-06-15 11:04:51
+
 ## 2026-06-15 — Verify fixes with fresh 2-day sediment-grain run (sedgeom_recheck)
 
 - Re-ran `2D_sediment_grain_test` + `2day_T-20_h0.95` (tag `sedgeom_recheck`)
