@@ -58,11 +58,9 @@ SEDIMENT_GRAINS = [
 ]
 
 # target element counts. eps is fixed by physics (preprocess/comp_eps.py);
-# Nx/Ny set the number of elements across the diffuse interface -- see
-# inputs/geometry/2D_multi_grain_test.opts. 240x240 gives n~8 elements across
-# w_actual=2*sqrt(2)*eps (comp_eps.py --n 8 -> Nx=243), vs n~5.25 at 160x160.
-Nx = 122   # elements in x
-Ny = 122   # elements in y
+# Nx/Ny set the number of elements -- override via --Nx/--Ny on the CLI.
+Nx = 183   # elements in x
+Ny = 183   # elements in y
 
 # basis-function degree; geometry is (P,P) with C^{P-1} (single interior
 # knots, maximal smoothness). P=2 gives quadratic, C1 basis functions --
@@ -199,9 +197,13 @@ def write_vtk(surf, fname, n_per_elem=4):
 
 
 def main():
-    global P
+    global P, Nx, Ny
 
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--Nx", type=int, default=Nx,
+                         help=f"elements in x, default {Nx}")
+    parser.add_argument("--Ny", type=int, default=Ny,
+                         help=f"elements in y, default {Ny}")
     parser.add_argument("--P", type=int, default=P,
                          help=f"basis-function degree (C^{{P-1}} continuity), default {P}")
     parser.add_argument("--out", default="inputs/geometry/multi_grain_test.dat",
@@ -211,6 +213,8 @@ def main():
     parser.add_argument("--vtk", default="preprocess/multi_grain_geometry.vtk",
                          help="output VTK structured grid")
     args = parser.parse_args()
+    Nx = args.Nx
+    Ny = args.Ny
     P = args.P
 
     surf = build_surface()
