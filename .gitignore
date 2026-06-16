@@ -75,6 +75,9 @@ projects/dry_snow_metamorphism_scrap/*
 projects/permafrost/obj/
 projects/permafrost/outputs/
 projects/permafrost/permafrost
+# Generated geometry visualisation files (can be large; regenerate with
+# preprocess/build_geometry_*.py)
+projects/permafrost/preprocess/*.vtk
 projects/permafrost/inputs/tests/SthavisthaInputs/Assemble*
 
 ###############################################################################
