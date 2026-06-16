@@ -37,6 +37,8 @@
 # -Nx/-Ny and those default to 1. Update if Nx/Ny/P change in
 # build_geometry_multi_grain.py.)
 -geom_file inputs/geometry/multi_grain_test.dat
+-p 2                                    # must match degree in multi_grain_test.dat (P=2/C1)
+-C 1                                    # C^1 continuity; overrides solver.opts default p=1 C=0
 -ic_type multi_grains
 -dim 2
 -Lx 4.0e-5
