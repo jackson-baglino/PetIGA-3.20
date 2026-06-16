@@ -4,6 +4,42 @@ build_geometry_multi_grain.py — non-square domain with multiple sediment
 "bumps" along the bottom edge, generalizing build_geometry_sediment_grain.py
 from one bump to N.
 
+Usage
+-----
+Run from the project root (PetIGA-3.20/projects/permafrost/):
+
+    python3 preprocess/build_geometry_multi_grain.py [options]
+
+Options:
+    --Nx INT    Number of elements in x (default: 240)
+    --Ny INT    Number of elements in y (default: 240)
+    --P  INT    B-spline degree; continuity is C^{P-1} (default: 2)
+    --out PATH  Output PetIGA binary mesh file
+                  (default: inputs/geometry/multi_grain_test.dat)
+    --plot PATH Output control-mesh PNG plot
+                  (default: preprocess/multi_grain_geometry.png)
+    --vtk PATH  Output VTK structured grid for visualization
+                  (default: preprocess/multi_grain_geometry.vtk)
+
+Examples:
+    # Default 240x240, P=2/C1 mesh (the standard production geometry):
+    python3 preprocess/build_geometry_multi_grain.py
+
+    # Finer mesh for convergence study:
+    python3 preprocess/build_geometry_multi_grain.py --Nx 360 --Ny 360
+
+    # P=1/C0 comparison mesh written to a separate file:
+    python3 preprocess/build_geometry_multi_grain.py --P 1 \\
+        --out inputs/geometry/multi_grain_test_p1.dat \\
+        --plot preprocess/multi_grain_geometry_p1.png \\
+        --vtk  preprocess/multi_grain_geometry_p1.vtk
+
+After regenerating the .dat file, update two things in the matching
+inputs/geometry/*.opts file:
+    1. # DOF_GRID: X X  →  Nx+P in each direction (printed by this script
+                            as "shape (control points): (X, X)")
+    2. -eps VALUE        →  recompute via preprocess/comp_eps.py if needed
+
 Builds a single-patch NURBS surface for a rectangular domain [0,Lx]x[0,Ly]
 whose bottom edge is the SUM of several C-infinity bump functions (one per
 sediment grain), each rising smoothly from 0 to its own height/half-width --
