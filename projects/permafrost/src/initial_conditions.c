@@ -350,8 +350,8 @@ static PetscReal SedimentBump(PetscReal x, PetscReal center, PetscReal R, PetscR
  * not given (n_sed_grains == 0), falls back to the single-bump -geom_bump_R
  * behavior (centered at Lx/2) for backward compatibility with
  * build_geometry_sediment_grain.py / two_ice_grains_boundary. With
- * -sed_grain_x/-sed_grain_R set, must match build_geometry_multi_grain.py's
- * SEDIMENT_GRAINS list. */
+ * -sed_grain_x/-sed_grain_R/-sed_grain_h set, must match
+ * build_geometry_multi_grain.py's SEDIMENT_GRAINS list. */
 static PetscReal SedimentBumpField(const AppCtx *user, PetscReal x)
 {
     if (user->n_sed_grains <= 0)
@@ -359,7 +359,7 @@ static PetscReal SedimentBumpField(const AppCtx *user, PetscReal x)
 
     PetscReal y = 0.0;
     for (PetscInt k = 0; k < user->n_sed_grains; k++)
-        y += SedimentBump(x, user->sed_grain_x[k], user->sed_grain_R[k], user->sed_grain_R[k]);
+        y += SedimentBump(x, user->sed_grain_x[k], user->sed_grain_R[k], user->sed_grain_h[k]);
     return y;
 }
 PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)

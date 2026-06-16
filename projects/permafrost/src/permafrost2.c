@@ -189,12 +189,26 @@ int main(int argc, char *argv[]) {
             user.n_sed_grains = n;
             PetscInt nr = MAX_SED_GRAINS;
             ierr = PetscOptionsRealArray("-sed_grain_R",
-                     "Sediment bump half-width/height [m], one per -sed_grain_x entry",
+                     "Sediment bump half-widths [m], one per -sed_grain_x entry",
                      "", user.sed_grain_R, &nr, NULL); CHKERRQ(ierr);
             if (nr != n)
                 SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
                         "-sed_grain_x and -sed_grain_R must have the same length (%d vs %d)",
                         (int)n, (int)nr);
+            /* -sed_grain_h: peak heights [m]. Defaults to R if not provided. */
+            PetscInt nh = MAX_SED_GRAINS;
+            PetscBool hflg;
+            ierr = PetscOptionsRealArray("-sed_grain_h",
+                     "Sediment bump peak heights [m], one per -sed_grain_x entry "
+                     "(defaults to sed_grain_R if omitted)",
+                     "", user.sed_grain_h, &nh, &hflg); CHKERRQ(ierr);
+            if (!hflg) {
+                for (PetscInt k = 0; k < n; k++) user.sed_grain_h[k] = user.sed_grain_R[k];
+            } else if (nh != n) {
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-sed_grain_x and -sed_grain_h must have the same length (%d vs %d)",
+                        (int)n, (int)nh);
+            }
         }
     }
 

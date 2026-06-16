@@ -82,15 +82,22 @@ from igakit.io import PetIGA
 Lx = 4.0e-5     # domain width  [m]
 Ly = 4.0e-5     # domain height [m]
 
-# Sediment grains: (center_x [m], R [m]) -- each contributes a bump of
-# half-width == height R, centered at center_x. Keep supports
-# (center_x +/- R) within [0,Lx] and non-overlapping for distinct,
-# well-separated grains. Must match -sed_grain_x/-sed_grain_R in
-# inputs/geometry/2D_multi_grain_test.opts.
+# Sediment grains: (center_x [m], R [m], height [m])
+#   center_x : bump centre position along x
+#   R        : half-width (bump support is [center_x-R, center_x+R])
+#   height   : peak height of the bump (independent of R)
+# Keep supports within [0,Lx] and non-overlapping.
+# Must match -sed_grain_x / -sed_grain_R / -sed_grain_h in the .opts file.
+#
+# 5 bumps tiling [0, Lx] evenly (2R = Lx/5 = 8e-6 m):
+#   lower curvature (κ = 2·h/R² = 2·2e-6/(4e-6)² = 2.5e5 m⁻¹) vs.
+#   old 3-bump design (κ = 3.3e5 m⁻¹ with h=R=6e-6 m).
 SEDIMENT_GRAINS = [
-    (0.6e-5, 0.6e-5),   # support [0.0e-5, 1.2e-5] -- touches x=0
-    (2.0e-5, 0.6e-5),   # support [1.4e-5, 2.6e-5]
-    (3.4e-5, 0.6e-5),   # support [2.8e-5, 4.0e-5] -- touches x=Lx
+    (0.4e-5, 0.4e-5, 0.2e-5),   # support [0.0e-5, 0.8e-5] — touches x=0
+    (1.2e-5, 0.4e-5, 0.2e-5),   # support [0.8e-5, 1.6e-5]
+    (2.0e-5, 0.4e-5, 0.2e-5),   # support [1.6e-5, 2.4e-5]
+    (2.8e-5, 0.4e-5, 0.2e-5),   # support [2.4e-5, 3.2e-5]
+    (3.6e-5, 0.4e-5, 0.2e-5),   # support [3.2e-5, 4.0e-5] — touches x=Lx
 ]
 
 # target element counts. eps is fixed by physics (preprocess/comp_eps.py);
@@ -120,8 +127,8 @@ def _bump(x, center, R, height):
 def _bump_field(x):
     """Sum of all SEDIMENT_GRAINS bumps -- must match SedimentBumpField()."""
     y = np.zeros_like(x)
-    for center, R in SEDIMENT_GRAINS:
-        y = y + _bump(x, center, R, R)
+    for center, R, height in SEDIMENT_GRAINS:
+        y = y + _bump(x, center, R, height)
     return y
 
 
