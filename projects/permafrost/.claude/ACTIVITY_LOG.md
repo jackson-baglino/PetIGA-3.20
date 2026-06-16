@@ -1,4 +1,49 @@
 
+---
+
+**Session ended:** 2026-06-16 07:44:33
+
+
+---
+
+**Session ended:** 2026-06-16 07:33:59
+
+
+---
+
+**Session ended:** 2026-06-15 22:21:26
+
+
+---
+
+**Session ended:** 2026-06-15 22:19:15
+
+
+---
+
+**Session ended:** 2026-06-15 21:42:28
+
+
+---
+
+**Session ended:** 2026-06-15 19:09:23
+
+
+---
+
+**Session ended:** 2026-06-15 19:05:51
+
+
+---
+
+**Session ended:** 2026-06-15 17:02:34
+
+
+---
+
+**Session ended:** 2026-06-15 17:01:52
+
+
 ## 2026-06-15 — Mesh rebuild, basis revert, HPC prep
 
 - Diagnosed `-geom_file` + `-Nx/-Ny` conflict: `-geom_file` overrides `-Nx/-Ny` entirely; user was setting -Nx 488 which was ignored because the `.dat` file has 240x240 baked in.

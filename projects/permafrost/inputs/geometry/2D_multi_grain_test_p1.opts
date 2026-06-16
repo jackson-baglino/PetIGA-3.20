@@ -38,5 +38,5 @@
 -ice_grain_cy 2.0e-5,2.0e-5,0.0,0.0
 -ice_grain_R 6.0e-6,1.5e-5,4.0e-6,4.0e-6
 -delt_t 1.0e-4
--eps 3.11e-07
+-eps 1.845e-07
 -periodic 0
