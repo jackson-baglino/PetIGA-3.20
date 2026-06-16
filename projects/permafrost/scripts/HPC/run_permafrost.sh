@@ -293,11 +293,40 @@ compute_optimal_nprocs() {
 run_simulation() {
     echo ""
     echo "--- Running simulation ---"
+    echo "PROJECT_ROOT : $PROJECT_ROOT"
     echo "Executable   : $EXEC"
     echo "Solver       : $SOLVER_OPTS"
     echo "Geometry     : $GEOM_OPTS"
     echo "Experiment   : $EXP_OPTS"
     echo "Output path  : $folder"
+
+    # Validate the -geom_file .dat so stale/missing mesh files are caught
+    # before launching hundreds of MPI ranks.
+    if grep -q "^-geom_file" "$GEOM_OPTS"; then
+        local rel_dat abs_dat dat_bytes
+        rel_dat=$(awk '$1=="-geom_file"{print $2}' "$GEOM_OPTS" | head -n1)
+        abs_dat="$PROJECT_ROOT/$rel_dat"
+        echo "Geom .dat    : $abs_dat"
+        if [ ! -f "$abs_dat" ]; then
+            echo "❌ ERROR: geom_file not found: $abs_dat"
+            echo "   Run: python3 preprocess/build_geometry_multi_grain.py \\"
+            echo "          --out $rel_dat"
+            exit 1
+        fi
+        dat_bytes=$(wc -c < "$abs_dat")
+        echo "Geom .dat size: ${dat_bytes} bytes"
+        # A 122x122/P=2 mesh is ~371 KB; 64x64/P=2 is ~100 KB.
+        # Warn if the file looks too small for the DOF_GRID in this opts.
+        local dof_nx dof_ny
+        read -r dof_nx dof_ny <<< "$(awk '$1=="#" && $2=="DOF_GRID:"{print $3,$4}' "$GEOM_OPTS" | head -n1)"
+        local min_bytes=$(( ${dof_nx:-0} * ${dof_ny:-0} * 8 ))
+        if (( dat_bytes < min_bytes )); then
+            echo "⚠️  WARNING: geom .dat is ${dat_bytes} bytes but DOF_GRID ${dof_nx}x${dof_ny}"
+            echo "   suggests at least ${min_bytes} bytes. The mesh file may be stale."
+            echo "   Regenerate with: python3 preprocess/build_geometry_multi_grain.py \\"
+            echo "     --out $rel_dat"
+        fi
+    fi
 
     export folder
 
