@@ -318,12 +318,8 @@ int main(int argc, char *argv[]) {
     if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ly = %.2e m", Ly);
     if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Lz = %.2e m", Lz);
     PetscPrintf(PETSC_COMM_WORLD, "\n");
-    PetscPrintf(PETSC_COMM_WORLD, "Elements:                     Nx = %d", Nx);
-    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ny = %d", Ny);
-    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Nz = %d", Nz);
-    PetscPrintf(PETSC_COMM_WORLD, "\n");
-    PetscPrintf(PETSC_COMM_WORLD, "Polynomial order:             p = %d \n", p);
-    PetscPrintf(PETSC_COMM_WORLD, "Continuity order:             C = %d \n", C);
+    /* Elements/degree/continuity are printed after IGASetUp() below, where
+     * the true values are known (geom_file overrides CLI -Nx/-Ny/-p/-C). */
     PetscPrintf(PETSC_COMM_WORLD, "Time stepping:                delt_t = %.2e s, t_final = %.2e s, n_out = %d \n", delt_t, t_final, n_out);
     PetscPrintf(PETSC_COMM_WORLD, "Initial conditions:           T = %.2f °C, humidity = %.2f \n", temp, humidity);
     PetscPrintf(PETSC_COMM_WORLD, "Interface width:              eps = %.2e m \n", eps);
@@ -496,6 +492,29 @@ int main(int argc, char *argv[]) {
         ierr = IGAGetAxis(iga, d, &ax); CHKERRQ(ierr);
         ierr = IGAAxisGetDegree(ax, &p_axis[d]); CHKERRQ(ierr);
     }
+
+    /* When -geom_file is used, IGARead() sets the actual mesh size from the
+     * .dat file and overrides the CLI -Nx/-Ny/-Nz values.  Read the true
+     * element counts back from the IGA (node_sizes[d] = N_elements + p) so
+     * that user.Nx/Ny/Nz, user.npoints, and the printed header are correct. */
+    if (geom_file[0] != '\0') {
+        Nx = iga->node_sizes[0] - p_axis[0];
+        Ny = (dim >= 2) ? iga->node_sizes[1] - p_axis[1] : 1;
+        Nz = (dim == 3) ? iga->node_sizes[2] - p_axis[2] : 1;
+        user.Nx = Nx;  user.Ny = Ny;  user.Nz = Nz;
+        user.npoints = Nx * Ny * Nz;
+        p = p_axis[0];
+    }
+
+    PetscPrintf(PETSC_COMM_WORLD, "Elements:                     Nx = %d", Nx);
+    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ny = %d", Ny);
+    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Nz = %d", Nz);
+    if (geom_file[0] != '\0')
+        PetscPrintf(PETSC_COMM_WORLD, "  (from -geom_file; CLI -Nx/-Ny ignored)");
+    PetscPrintf(PETSC_COMM_WORLD, "\n");
+    PetscPrintf(PETSC_COMM_WORLD, "Polynomial order:             p = %d \n", p);
+    PetscPrintf(PETSC_COMM_WORLD, "Continuity order:             C = %d \n", C);
+
     PetscInt nmb;
     if (dim == 1) {
         nmb = iga->elem_width[0] * (p_axis[0] + 1);
