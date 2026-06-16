@@ -59,8 +59,8 @@ SEDIMENT_GRAINS = [
 
 # target element counts. eps is fixed by physics (preprocess/comp_eps.py);
 # Nx/Ny set the number of elements -- override via --Nx/--Ny on the CLI.
-Nx = 183   # elements in x
-Ny = 183   # elements in y
+Nx = 240   # elements in x
+Ny = 240   # elements in y
 
 # basis-function degree; geometry is (P,P) with C^{P-1} (single interior
 # knots, maximal smoothness). P=2 gives quadratic, C1 basis functions --
