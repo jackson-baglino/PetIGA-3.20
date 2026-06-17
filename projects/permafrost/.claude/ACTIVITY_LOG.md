@@ -1,4 +1,22 @@
 
+## 2026-06-16 — Add non-symmetric ceiling bumps to channel geometry
+
+- Added `TOP_GRAINS` (6 ceiling bumps of varied size/position, offset from floor bumps) to `build_geometry_multi_grain.py`; added `_top_bump_field()` and two-sided y-mapping in `build_surface()`.
+- Added `TopBumpField()` in `initial_conditions.c`; updated y-mapping in both IC functions to `y = y_bot + v*(Ly - top_bump - y_bot)`.
+- Added `n_top_grains`/`top_grain_x/R/h` to `NASA_types.h` and `-top_grain_x/-top_grain_R/-top_grain_h` CLI to `permafrost2.c`.
+- Updated `2D_multi_grain_test.opts` with ceiling bump parameters; regenerated `multi_grain_test.dat`.
+- Build clean; pushed to remote.
+
+---
+
+**Session ended:** 2026-06-16 17:31:50
+
+
+---
+
+**Session ended:** 2026-06-16 17:26:42
+
+
 ## 2026-06-16 — Complex channel geometry: Lx=1.0e-4, elliptical ice grains
 
 - Added `ice_grain_ax[200]` / `ice_grain_ay[200]` fields to `AppCtx` in `NASA_types.h`; bumped `MAX_SED_GRAINS` 16→24.
