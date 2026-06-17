@@ -161,9 +161,21 @@ def greville_abscissae(U, p):
 
 def build_surface():
     Ux = open_uniform_knots(Nx, P)
-    Uy = open_uniform_knots(Ny, P)
     gx = greville_abscissae(Ux, P)   # (Nx+P,) parametric x-DOF positions
-    gy = greville_abscissae(Uy, P)   # (Ny+P,) parametric y-DOF positions
+
+    # Non-uniform y knot vector: 2× denser boundary-layer zone near v=0 (floor)
+    # where bump slopes and grain interfaces live.
+    # Physical BL height = BL_frac * Ly = 0.20 * 4e-5 = 8 µm — covers all trough grains
+    # (R=3.5e-6, cy=0). h_BL = h_bulk/2 → eps/h_BL ≈ 5.6 vs 2.8 in bulk.
+    # Trough-grain interfaces are now better resolved; eps stays at physical value.
+    BL_frac     = 0.20
+    N_BL_unif   = int(round(Ny * BL_frac))     # elements at bulk density in [0, BL_frac]
+    N_BL_elems  = 2 * N_BL_unif               # 2× refinement → 96 elements in BL
+    N_blk_elems = Ny - N_BL_unif              # bulk: 192 elements, unchanged density
+    BL_knots    = np.linspace(0.0,    BL_frac, N_BL_elems  + 1)[1:]    # incl. BL_frac
+    bulk_knots  = np.linspace(BL_frac, 1.0,   N_blk_elems + 1)[1:-1]   # excl. endpoints
+    Uy = np.concatenate([np.zeros(P + 1), BL_knots, bulk_knots, np.ones(P + 1)])
+    gy = greville_abscissae(Uy, P)   # non-uniform parametric y-DOF positions
 
     x        = Lx * gx
     bottom_y = _bump_field(x)            # floor rises from 0
