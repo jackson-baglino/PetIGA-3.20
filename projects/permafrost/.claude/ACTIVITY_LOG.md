@@ -1,4 +1,32 @@
 
+## 2026-06-17 — Fix dt stall: lower SNES convergence guard; submit BL Phase 1 job
+
+- Diagnosed root cause of dt barrier at ~2.4e-02 s in job64369939 (600×240 5-bump):
+  - BT line search at Newton step 0 backtracks due to transient phi < phase_lo near trough
+    grain floor contacts; lands at ||G|| ~ 2e-17 (machine precision) with lambda very small.
+  - `SNESDOFConvergence` guard `it_number < 3` prevented convergence declaration at it=1,
+    forcing a 2nd Newton KSP solve.
+  - At dt >= 3.162e-02 s, the TSALPHA Jacobian J = M/(alpha_m*dt) + alpha_f² dF/dX1 is
+    insufficiently regularised: KSP (GMRES, max_it=500) diverges at the 2nd solve.
+  - `SNESCheckKSPSolve` exits `SNESSolve_NEWTONLS` with SNES_DIVERGED_LINEAR_SOLVE before
+    `SNESConverged` is called; TSAdaptCheckStage rejects → cascade back to dt=2.371e-02.
+- Fix: changed guard to `it_number < 1` in `src/snes_convergence.c`. The DOF convergence
+  criteria (rtol/atol/stol) still cannot fire at it=0 (rel[i]=1 by construction), so no
+  spurious early convergence is possible.
+- Secondary hardening: increased `ksp_max_it 500 → 1000` and `sub_pc_factor_levels 2 → 3`
+  in `inputs/solver.opts` to better handle intermediate-dt ill-conditioned Jacobians.
+- Committed both changes together: 4d33a89.
+
+---
+
+**Session ended:** 2026-06-17 09:51:10
+
+
+---
+
+**Session ended:** 2026-06-17 09:42:33
+
+
 ## 2026-06-17 — Phase 1 BL y-refinement implemented
 
 - Diagnosed root cause of dt stall across multiple 12-bump runs: touching-support bumps create
