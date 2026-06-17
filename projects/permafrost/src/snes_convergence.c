@@ -108,9 +108,16 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
 
     *reason = SNES_CONVERGED_ITERATING;
 
-    /* Require at least 3 Newton iterations before checking convergence — this
-     * avoids declaring success on an artificially small iter-0 residual. */
-    if (it_number < 3) {
+    /* Require at least 1 Newton iteration before checking convergence — this
+     * avoids declaring success on the iter-0 residual (which equals norm0 by
+     * construction, so rel[i]=1 and no criterion can fire).
+     *
+     * The old guard was it_number < 3, but that forced SNES to attempt a 2nd
+     * Newton step even when the BT line search at step 0 had already reduced
+     * ||G|| to machine precision.  At larger dt the TSALPHA Jacobian is less
+     * well-conditioned, causing KSP to diverge on that 2nd solve; the custom
+     * checker never got a chance to see the already-converged residual. */
+    if (it_number < 1) {
         PetscFunctionReturn(0);
     }
 

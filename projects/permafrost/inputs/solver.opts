@@ -63,9 +63,9 @@
 -ksp_type gmres
 -ksp_rtol 1e-08
 -ksp_atol 1e-12
--ksp_max_it 500
+-ksp_max_it 1000
 -ksp_gmres_restart 200
 -pc_type asm
 -pc_asm_overlap 1
 -sub_pc_type ilu
--sub_pc_factor_levels 2
+-sub_pc_factor_levels 3
