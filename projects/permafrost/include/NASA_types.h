@@ -64,7 +64,7 @@ typedef struct {
   // and peak height (sed_grain_h, defaults to sed_grain_R if not provided).
   // Must match build_geometry_multi_grain.py's SEDIMENT_GRAINS list.
   // n_sed_grains == 0 falls back to the single-bump geom_bump_R behavior.
-#define MAX_SED_GRAINS 16
+#define MAX_SED_GRAINS 24
   PetscInt  n_sed_grains;
   PetscReal sed_grain_x[MAX_SED_GRAINS];
   PetscReal sed_grain_R[MAX_SED_GRAINS];
@@ -72,7 +72,9 @@ typedef struct {
 
   // Arrays storing geometry information for ice grains
   PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
-  PetscReal radius[200];  // Radii of individual ice grains
+  PetscReal radius[200];   // Radii of individual ice grains (isotropic; used as default ax/ay)
+  PetscReal ice_grain_ax[200]; /* ellipse semi-axis in x; defaults to radius[k] if -ice_grain_ax not set */
+  PetscReal ice_grain_ay[200]; /* ellipse semi-axis in y; defaults to radius[k] if -ice_grain_ay not set */
 
   // Initial normal vector components (possibly for a structured interface)
   PetscReal norm0[3];  // Per-DOF initial residual norms for SNES convergence check
