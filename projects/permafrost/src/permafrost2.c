@@ -238,6 +238,33 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* --- Elliptical ice grain semi-axes (-ice_grain_ax / -ice_grain_ay) -- */
+    {
+        PetscInt  nax = 200, nay = 200;
+        PetscBool axflg, ayflg;
+        PetscReal tmp[200];
+        ierr = PetscOptionsRealArray("-ice_grain_ax",
+                 "Ice grain semi-axis in x [m] (elliptical grains; defaults to -ice_grain_R)",
+                 "", tmp, &nax, &axflg); CHKERRQ(ierr);
+        if (axflg) {
+            for (PetscInt k = 0; k < user.n_act; k++)
+                user.ice_grain_ax[k] = (k < nax) ? tmp[k] : user.radius[k];
+        } else {
+            for (PetscInt k = 0; k < user.n_act; k++)
+                user.ice_grain_ax[k] = user.radius[k];
+        }
+        ierr = PetscOptionsRealArray("-ice_grain_ay",
+                 "Ice grain semi-axis in y [m] (elliptical grains; defaults to -ice_grain_R)",
+                 "", tmp, &nay, &ayflg); CHKERRQ(ierr);
+        if (ayflg) {
+            for (PetscInt k = 0; k < user.n_act; k++)
+                user.ice_grain_ay[k] = (k < nay) ? tmp[k] : user.radius[k];
+        } else {
+            for (PetscInt k = 0; k < user.n_act; k++)
+                user.ice_grain_ay[k] = user.radius[k];
+        }
+    }
+
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
