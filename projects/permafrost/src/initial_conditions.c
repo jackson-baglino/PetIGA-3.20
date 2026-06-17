@@ -467,13 +467,14 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
         "  %d ice grain(s), %d sediment bump(s)\n",
         (int)ng, (int)user->n_sed_grains);
     for (PetscInt k = 0; k < ng; k++) {
-        PetscReal R = user->radius[k];
+        PetscReal ax = user->ice_grain_ax[k];
+        PetscReal ay = user->ice_grain_ay[k];
         PetscPrintf(PETSC_COMM_WORLD,
-            "  ice grain %d: centre = (%.4e, %.4e) m,  R = %.4e m\n",
-            (int)k, user->cent[0][k], user->cent[1][k], R);
-        if (R <= 0.0)
+            "  ice grain %d: centre = (%.4e, %.4e) m,  ax = %.4e m,  ay = %.4e m\n",
+            (int)k, user->cent[0][k], user->cent[1][k], ax, ay);
+        if (ax <= 0.0 || ay <= 0.0)
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                    "-ice_grain_R[%d] must be > 0 (got %.2e)", (int)k, R);
+                    "-ice_grain_ax/ay[%d] must be > 0 (got ax=%.2e, ay=%.2e)", (int)k, ax, ay);
     }
 
     DM da;
@@ -502,8 +503,13 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
 
             PetscReal ice = 0.0;
             for (PetscInt k = 0; k < ng; k++) {
-                PetscReal d = PetscSqrtReal(SQ(x - user->cent[0][k]) + SQ(y - user->cent[1][k]));
-                ice += 0.5 - 0.5 * PetscTanhReal(tc * (d - user->radius[k]));
+                PetscReal ax   = user->ice_grain_ax[k];
+                PetscReal ay   = user->ice_grain_ay[k];
+                PetscReal dx   = x - user->cent[0][k];
+                PetscReal dy   = y - user->cent[1][k];
+                PetscReal d    = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay)); /* =1 on ellipse boundary */
+                PetscReal tc_k = tc * PetscSqrtReal(ax * ay);              /* keeps interface width ~eps */
+                ice += 0.5 - 0.5 * PetscTanhReal(tc_k * (d - 1.0));
             }
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
