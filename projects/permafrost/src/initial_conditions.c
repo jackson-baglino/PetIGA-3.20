@@ -362,6 +362,17 @@ static PetscReal SedimentBumpField(const AppCtx *user, PetscReal x)
         y += SedimentBump(x, user->sed_grain_x[k], user->sed_grain_R[k], user->sed_grain_h[k]);
     return y;
 }
+
+/* Sum of ceiling bumps (-top_grain_x/-R/-h) pushing DOWN from Ly.
+ * Returns total downward displacement; caller computes y_top = Ly - TopBumpField().
+ * Must match build_geometry_multi_grain.py's TOP_GRAINS list. */
+static PetscReal TopBumpField(const AppCtx *user, PetscReal x)
+{
+    PetscReal h = 0.0;
+    for (PetscInt k = 0; k < user->n_top_grains; k++)
+        h += SedimentBump(x, user->top_grain_x[k], user->top_grain_R[k], user->top_grain_h[k]);
+    return h;
+}
 PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
@@ -404,10 +415,11 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
 
     for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
         for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
-            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
-            PetscReal v = (PetscReal)j / (PetscReal)(info.my + per);
-            PetscReal bump = SedimentBumpField(user, x);
-            PetscReal y = bump + v * (Ly - bump);
+            PetscReal x     = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal v     = (PetscReal)j / (PetscReal)(info.my + per);
+            PetscReal y_bot = SedimentBumpField(user, x);
+            PetscReal y_top = Ly - TopBumpField(user, x);
+            PetscReal y     = y_bot + v * (y_top - y_bot);
 
             PetscReal d0 = PetscSqrtReal(SQ(x - c0x) + SQ(y - c0y));
             PetscReal d1 = PetscSqrtReal(SQ(x - c1x) + SQ(y - c1y));
@@ -496,10 +508,11 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
 
     for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
         for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
-            PetscReal x = Lx * gx[i];
-            PetscReal v = gy[j];
-            PetscReal bump = SedimentBumpField(user, x);
-            PetscReal y = bump + v * (Ly - bump);
+            PetscReal x     = Lx * gx[i];
+            PetscReal v     = gy[j];
+            PetscReal y_bot = SedimentBumpField(user, x);
+            PetscReal y_top = Ly - TopBumpField(user, x);
+            PetscReal y     = y_bot + v * (y_top - y_bot);
 
             PetscReal ice = 0.0;
             for (PetscInt k = 0; k < ng; k++) {

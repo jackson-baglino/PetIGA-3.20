@@ -82,7 +82,7 @@ from igakit.io import PetIGA
 Lx = 1.0e-4     # domain width  [m]  (2.5× wider than old 4.0e-5 — channel geometry)
 Ly = 4.0e-5     # domain height [m]
 
-# Sediment grains: (center_x [m], R [m], height [m])
+# Bottom sediment grains: (center_x [m], R [m], height [m])
 #   center_x : bump centre position along x
 #   R        : half-width (bump support is [center_x-R, center_x+R])
 #   height   : peak height of the bump (independent of R)
@@ -104,6 +104,18 @@ SEDIMENT_GRAINS = [
     (7.6e-5, 0.4e-5, 0.15e-5),   # support [7.2e-5, 8.0e-5]
     (8.4e-5, 0.4e-5, 0.25e-5),   # support [8.0e-5, 8.8e-5]
     (9.2e-5, 0.4e-5, 0.15e-5),   # support [8.8e-5, 1.0e-4]
+]
+
+# Ceiling (top-wall) grains — same bump shape, but push DOWN from Ly.
+# Deliberately offset from floor bumps (non-symmetric), fewer and wider.
+# Must match -top_grain_x / -top_grain_R / -top_grain_h in the .opts file.
+TOP_GRAINS = [
+    (0.8e-5,  0.5e-5, 0.25e-5),   # support [0.3e-5, 1.3e-5]
+    (2.4e-5,  0.6e-5, 0.30e-5),   # support [1.8e-5, 3.0e-5]
+    (4.4e-5,  0.4e-5, 0.18e-5),   # support [4.0e-5, 4.8e-5]
+    (6.0e-5,  0.6e-5, 0.28e-5),   # support [5.4e-5, 6.6e-5]
+    (7.8e-5,  0.5e-5, 0.22e-5),   # support [7.3e-5, 8.3e-5]
+    (9.4e-5,  0.4e-5, 0.20e-5),   # support [9.0e-5, 9.8e-5]
 ]
 
 # target element counts. eps is fixed by physics (preprocess/comp_eps.py);
@@ -138,6 +150,14 @@ def _bump_field(x):
     return y
 
 
+def _top_bump_field(x):
+    """Sum of all TOP_GRAINS bumps (downward displacement from Ly) -- must match TopBumpField()."""
+    y = np.zeros_like(x)
+    for center, R, height in TOP_GRAINS:
+        y = y + _bump(x, center, R, height)
+    return y
+
+
 def open_uniform_knots(N, p):
     """Open-uniform knot vector for N elements, degree p, C^{p-1}
     (single interior knots): p+1-fold end knots, N-1 single interior knots."""
@@ -158,18 +178,25 @@ def build_surface():
     gx = greville_abscissae(Ux, P)   # (Nx+P,) parametric x-DOF positions
     gy = greville_abscissae(Uy, P)   # (Ny+P,) parametric y-DOF positions
 
-    x = Lx * gx
-    bottom_y = _bump_field(x)
+    x        = Lx * gx
+    bottom_y = _bump_field(x)            # floor rises from 0
+    top_y    = Ly - _top_bump_field(x)  # ceiling drops from Ly
 
     if np.any(bottom_y >= Ly):
-        raise ValueError(f"bump field reaches/exceeds Ly={Ly:.3e} "
-                          f"(max={bottom_y.max():.3e}) -- reduce grain heights/Ly")
+        raise ValueError(f"floor bump reaches/exceeds Ly={Ly:.3e} "
+                          f"(max={bottom_y.max():.3e}) -- reduce SEDIMENT_GRAINS heights")
+    if np.any(top_y <= 0):
+        raise ValueError(f"ceiling bump drops to/below 0 "
+                          f"(min top_y={top_y.min():.3e}) -- reduce TOP_GRAINS heights")
+    if np.any(top_y <= bottom_y):
+        raise ValueError(f"floor and ceiling cross "
+                          f"(min gap={( top_y - bottom_y).min():.3e}) -- bumps too large")
 
     nx, ny = len(gx), len(gy)
     ctrl = np.zeros((nx, ny, 3))
     for i in range(nx):
         ctrl[i, :, 0] = x[i]
-        ctrl[i, :, 1] = bottom_y[i] + gy * (Ly - bottom_y[i])
+        ctrl[i, :, 1] = bottom_y[i] + gy * (top_y[i] - bottom_y[i])
 
     surf = NURBS([Ux, Uy], control=ctrl)
     return surf

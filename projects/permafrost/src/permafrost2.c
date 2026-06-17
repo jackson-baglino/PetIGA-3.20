@@ -212,6 +212,39 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* --- Top-wall (ceiling) bump geometry ---------------------------------- */
+    user.n_top_grains = 0;
+    {
+        PetscInt n = MAX_SED_GRAINS;
+        ierr = PetscOptionsRealArray("-top_grain_x",
+                 "Ceiling bump center x-positions [m]; bumps push DOWN from Ly "
+                 "(must match TOP_GRAINS in build_geometry_multi_grain.py)",
+                 "", user.top_grain_x, &n, &flg); CHKERRQ(ierr);
+        if (flg) {
+            user.n_top_grains = n;
+            PetscInt nr = MAX_SED_GRAINS;
+            ierr = PetscOptionsRealArray("-top_grain_R",
+                     "Ceiling bump half-widths [m], one per -top_grain_x entry",
+                     "", user.top_grain_R, &nr, NULL); CHKERRQ(ierr);
+            if (nr != n)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-top_grain_x and -top_grain_R must have the same length (%d vs %d)",
+                        (int)n, (int)nr);
+            PetscInt nh = MAX_SED_GRAINS;
+            PetscBool hflg;
+            ierr = PetscOptionsRealArray("-top_grain_h",
+                     "Ceiling bump peak heights [m] (defaults to top_grain_R if omitted)",
+                     "", user.top_grain_h, &nh, &hflg); CHKERRQ(ierr);
+            if (!hflg) {
+                for (PetscInt k = 0; k < n; k++) user.top_grain_h[k] = user.top_grain_R[k];
+            } else if (nh != n) {
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-top_grain_x and -top_grain_h must have the same length (%d vs %d)",
+                        (int)n, (int)nh);
+            }
+        }
+    }
+
     /* --- Multi-grain ice IC (-ic_type multi_grains) ------------------------ */
     user.n_act = 0;
     {

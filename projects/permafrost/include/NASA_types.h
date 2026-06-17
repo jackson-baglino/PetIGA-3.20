@@ -70,6 +70,13 @@ typedef struct {
   PetscReal sed_grain_R[MAX_SED_GRAINS];
   PetscReal sed_grain_h[MAX_SED_GRAINS];  /* peak height; default = R */
 
+  // Top-wall (ceiling) bumps — same C∞ shape, push DOWN from Ly.
+  // Must match TOP_GRAINS in build_geometry_multi_grain.py.
+  PetscInt  n_top_grains;
+  PetscReal top_grain_x[MAX_SED_GRAINS];
+  PetscReal top_grain_R[MAX_SED_GRAINS];
+  PetscReal top_grain_h[MAX_SED_GRAINS];
+
   // Arrays storing geometry information for ice grains
   PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
   PetscReal radius[200];   // Radii of individual ice grains (isotropic; used as default ax/ay)
