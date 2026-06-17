@@ -11,8 +11,18 @@ well at phi=1 is pure ice.
 
 Produces two vector (SVG) versions, one for light slide backgrounds and one
 for dark slide backgrounds, both with a transparent canvas so they drop onto
-either directly. Text is kept as live, editable text (not outlined paths) so
-font size can still be tuned after import into Inkscape.
+either directly.
+
+All math (phi_i, F^dub, and the axis tick values) is set in mathtext's
+Computer-Modern fontset for a consistent LaTeX look. That font's symbol
+glyphs (e.g. \\phi) are NOT at standard Unicode codepoints, so they render
+correctly only where the same CM math font is installed -- which Inkscape
+does not ship by default. To stay portable, text is therefore baked to
+vector paths (svg.fonttype="path") rather than left as live, re-typeable
+text: the glyph shapes are then guaranteed correct everywhere, including
+in Inkscape. Resizing (the whole figure, or a selected label) still works
+normally in Inkscape; only retyping/changing the font family of a single
+text run does not.
 """
 
 import numpy as np
@@ -26,8 +36,8 @@ FONT_ANNOT = 20
 
 plt.rcParams.update({
     "font.family": "serif",
-    "mathtext.fontset": "cm",   # Computer-Modern-style math, no LaTeX needed
-    "svg.fonttype": "none",     # keep text as text, not paths, for Inkscape
+    "mathtext.fontset": "cm",   # Computer-Modern-style math, matches LaTeX
+    "svg.fonttype": "path",     # bake glyphs to paths -- see module docstring
 })
 
 THEMES = {
@@ -54,12 +64,6 @@ def make_plot(theme_name, out_path):
     ax.plot([0, 1], [0, 0], "o", color=c["accent"], markersize=8,
              zorder=5, clip_on=False)
 
-    # NOTE: "\phi" in mathtext's cm fontset does not map to the standard
-    # Unicode GREEK SMALL LETTER PHI codepoint -- with svg.fonttype="none"
-    # that breaks as soon as the SVG is opened in a viewer/editor (e.g.
-    # Inkscape) that doesn't have matplotlib's exact math font installed.
-    # Using the literal "φ" character as plain text (outside $...$)
-    # renders correctly everywhere.
     ax.annotate("air", xy=(0, 0), xytext=(0, -26),
                 textcoords="offset points", ha="center", va="top",
                 fontsize=FONT_ANNOT, color=c["ink"], annotation_clip=False)
@@ -72,16 +76,18 @@ def make_plot(theme_name, out_path):
                 textcoords="offset points", ha="center", va="bottom",
                 fontsize=FONT_CURVE, color=c["curve"])
 
-    phi_i = "φᵢ"  # phi_i, the ice phase fraction (assembly.c: `ice`)
-    ax.set_xlabel(phi_i, fontsize=FONT_LABEL, color=c["ink"])
-    ax.set_ylabel(r"$F^{\mathrm{dub}}$" + f"({phi_i})",
+    # phi_i: the ice phase fraction (assembly.c: `ice`); \phi_i throughout,
+    # matching docs/model_description.md (never \varphi).
+    ax.set_xlabel(r"$\phi_i$", fontsize=FONT_LABEL, color=c["ink"])
+    ax.set_ylabel(r"$F^{\mathrm{dub}}(\phi_i)$",
                   fontsize=FONT_LABEL, color=c["ink"])
 
     ax.set_xlim(phi.min(), phi.max())
     ax.set_ylim(0.0, peak * 1.55)
 
     ax.set_xticks([0, 0.5, 1])
-    ax.set_xticklabels(["0", "0.5", "1"], fontsize=FONT_TICK, color=c["ink"])
+    ax.set_xticklabels([r"$0$", r"$0.5$", r"$1$"],
+                        fontsize=FONT_TICK, color=c["ink"])
     ax.set_yticks([])
 
     for side in ("top", "right"):
