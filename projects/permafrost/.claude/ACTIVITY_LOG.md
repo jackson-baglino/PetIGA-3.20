@@ -1,4 +1,62 @@
 
+## 2026-06-17 — Phase 1 BL y-refinement implemented
+
+- Diagnosed root cause of dt stall across multiple 12-bump runs: touching-support bumps create
+  continuous distortion zones → constant phase-bound violations → dt can't grow past ~1 s.
+- Confirmed fix: 5 isolated bumps with 1.2e-5 m gaps (proven stable in job64345061). Reverted
+  Lx=1.0e-4 domain to 5-bump geometry.
+- Analysed colleague's igakit mesh scripts (MeshGenerate.py, test2_blayer_ref.py,
+  nsch_axisym_solidtopextra_cosine.py) — key technique: non-uniform knot refinement via
+  surf.refine() or direct Uy construction to densify elements near boundary.
+- Implemented Phase 1 BL refinement in preprocess/build_geometry_multi_grain.py:
+  - Replaced open_uniform_knots(Ny, P) with a two-zone non-uniform Uy built directly.
+  - BL zone [0, 8 µm]: 96 elements (h_BL = 8.33e-8 m, 2× finer than bulk).
+  - Bulk zone [8–40 µm]: 192 elements (h_bulk = 1.667e-7 m, unchanged).
+  - eps/h_BL = 5.6 in grain zone (up from 2.8), eps unchanged at thermodynamic bound.
+- Regenerated multi_grain_test.dat (602×290 control points; +694 kB).
+- Updated DOF_GRID comment in 2D_multi_grain_test.opts to 602 290.
+- Committed and pushed: 555f173.
+
+---
+
+**Session ended:** 2026-06-17 09:23:20
+
+
+---
+
+**Session ended:** 2026-06-17 09:13:11
+
+
+---
+
+**Session ended:** 2026-06-16 22:42:04
+
+
+---
+
+**Session ended:** 2026-06-16 22:23:33
+
+
+---
+
+**Session ended:** 2026-06-16 22:14:48
+
+
+---
+
+**Session ended:** 2026-06-16 19:10:35
+
+
+---
+
+**Session ended:** 2026-06-16 19:08:17
+
+
+---
+
+**Session ended:** 2026-06-16 19:03:29
+
+
 ---
 
 **Session ended:** 2026-06-16 17:34:04
