@@ -402,6 +402,7 @@ int main(int argc, char *argv[]) {
     if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", dT/dz = %.2e °C/m", grad_temp0[2]);
     PetscPrintf(PETSC_COMM_WORLD, "\n");
     PetscPrintf(PETSC_COMM_WORLD, "Vapor diffusivity:            D_v = %.5e m²/s \n", user.dif_vap);
+    PetscPrintf(PETSC_COMM_WORLD, "Lambda:                       %.2e \n", user.Lambd);
 
     /* Compute saturation vapor density and its derivative based on initial temperature */
     PetscReal rho_rhovs;   /* Ratio of ice density to saturation vapor density */

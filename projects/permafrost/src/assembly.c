@@ -45,9 +45,11 @@
 
 /* Double-well derivative f1(phi_i) = phi_i(1-phi_i)(1-2phi_i) and its
  * derivative df1/dphi_i = 1 - 6 phi_i + 6 phi_i^2. */
-static void DoubleWellDeriv(PetscReal ice, PetscReal *f1, PetscReal *df1)
+static void DoubleWellDeriv(AppCtx *user, PetscReal ice, PetscReal *f1, PetscReal *df1)
 {
-    if (f1)  *f1  = ice * (1.0 - ice) * (1.0 - 2.0 * ice);
+    PetscReal Lambda = user->Lambd;  /* Higher-order penalty coefficient Lambda in the double-well free energy */
+    PetscReal air = 1.0 - ice;
+    if (f1)  *f1  = ice * (1.0 - ice) * (1.0 - 2.0 * ice) + 2.0 * Lambda * ice * air*air;
     if (df1) *df1 = 1.0 - 6.0 * ice + 6.0 * ice * ice;
 }
 
@@ -118,7 +120,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     Mobility   (user, ice_c, &mob_sub);
 
     PetscReal f1;
-    DoubleWellDeriv(PetscRealPart(ice_c), &f1, NULL);
+    DoubleWellDeriv(user, PetscRealPart(ice_c), &f1, NULL);
 
     /* air_eff = max(air, air_lim) */
     PetscReal air_r = PetscRealPart(air_c);
@@ -244,7 +246,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     RhoVS_I    (user, tem, NULL, &d_rho_vs);
 
     PetscReal df1;
-    DoubleWellDeriv(PetscRealPart(ice_c), NULL, &df1);
+    DoubleWellDeriv(user, PetscRealPart(ice_c), NULL, &df1);
 
     /* air_eff = max(air, air_lim) */
     PetscReal air_r = PetscRealPart(air_c);

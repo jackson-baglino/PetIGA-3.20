@@ -1,4 +1,14 @@
 
+---
+
+**Session ended:** 2026-06-17 12:41:03
+
+
+---
+
+**Session ended:** 2026-06-17 11:56:44
+
+
 ## 2026-06-17 — Fix dt stall: lower SNES convergence guard; submit BL Phase 1 job
 
 - Diagnosed root cause of dt barrier at ~2.4e-02 s in job64369939 (600×240 5-bump):
