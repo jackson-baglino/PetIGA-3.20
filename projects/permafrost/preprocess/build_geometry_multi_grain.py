@@ -71,6 +71,9 @@ SedimentBump() in src/initial_conditions.c (summed by SedimentBumpField()).
 """
 
 import argparse
+import shutil
+import re
+from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -282,11 +285,18 @@ def main():
     parser.add_argument("--P", type=int, default=P,
                          help=f"basis-function degree (C^{{P-1}} continuity), default {P}")
     parser.add_argument("--out", default="inputs/geometry/multi_grain_test.dat",
-                         help="output PetIGA mesh file")
+                         help="output PetIGA mesh file (default: active mesh)")
     parser.add_argument("--plot", default="preprocess/multi_grain_geometry.png",
                          help="output control-mesh plot")
     parser.add_argument("--vtk", default="preprocess/multi_grain_geometry.vtk",
                          help="output VTK structured grid")
+    parser.add_argument("--variant", default=None,
+                         help=("archive name, e.g. 'BLphase1_5bump_600x288'. "
+                               "Creates inputs/geometry/multi_grain/<variant>/ with "
+                               "mesh.dat, mesh.opts, and build_geometry.py snapshot. "
+                               "Also writes the active inputs/geometry/multi_grain_test.dat."))
+    parser.add_argument("--opts", default="inputs/geometry/2D_multi_grain_test.opts",
+                         help="opts file to snapshot into the variant folder (default: active opts)")
     args = parser.parse_args()
     Nx = args.Nx
     Ny = args.Ny
@@ -294,16 +304,52 @@ def main():
 
     surf = build_surface()
 
+    n_elems_x = surf.breaks(0).size - 1
+    n_elems_y = surf.breaks(1).size - 1
+    n_cp_x, n_cp_y = surf.shape[:2]
     print("degree:", surf.degree)
-    print("shape (control points):", surf.shape)
-    print("breaks axis0:", surf.breaks(0).size - 1, "elements")
-    print("breaks axis1:", surf.breaks(1).size - 1, "elements")
+    print(f"shape (control points): ({n_cp_x}, {n_cp_y})")
+    print(f"breaks axis0: {n_elems_x} elements")
+    print(f"breaks axis1: {n_elems_y} elements")
 
     plot_surface(surf, args.plot)
     write_vtk(surf, args.vtk)
 
     PetIGA().write(args.out, surf)
     print(f"wrote {args.out}")
+
+    if args.variant:
+        vdir = Path(f"inputs/geometry/multi_grain/{args.variant}")
+        vdir.mkdir(parents=True, exist_ok=True)
+
+        # mesh.dat — copy from active output
+        shutil.copy(args.out, vdir / "mesh.dat")
+
+        # build_geometry.py — snapshot of this script
+        shutil.copy(__file__, vdir / "build_geometry.py")
+
+        # mesh.opts — copy opts file, update -geom_file to point into variant folder
+        opts_src = Path(args.opts)
+        if opts_src.exists():
+            text = opts_src.read_text()
+            text = re.sub(
+                r"^(-geom_file\s+)\S+",
+                rf"\1inputs/geometry/multi_grain/{args.variant}/mesh.dat",
+                text,
+                flags=re.MULTILINE,
+            )
+            # update DOF_GRID comment
+            text = re.sub(
+                r"(#\s*DOF_GRID:\s*)\d+\s+\d+",
+                rf"\g<1>{n_cp_x} {n_cp_y}",
+                text,
+            )
+            (vdir / "mesh.opts").write_text(text)
+            print(f"wrote {vdir}/mesh.opts")
+        else:
+            print(f"  (opts file {opts_src} not found — skipping mesh.opts)")
+
+        print(f"archived variant → {vdir}/")
 
 
 if __name__ == "__main__":
