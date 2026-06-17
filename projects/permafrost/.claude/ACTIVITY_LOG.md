@@ -1,4 +1,78 @@
 
+## 2026-06-16 — Complex channel geometry: Lx=1.0e-4, elliptical ice grains
+
+- Added `ice_grain_ax[200]` / `ice_grain_ay[200]` fields to `AppCtx` in `NASA_types.h`; bumped `MAX_SED_GRAINS` 16→24.
+- Added `-ice_grain_ax` / `-ice_grain_ay` CLI options in `permafrost2.c`; default to `radius[k]` for backward compatibility.
+- Rewrote grain distance loop in `FormInitialMultiGrains2D` to use elliptical normalized distance `sqrt((dx/ax)^2+(dy/ay)^2)` with `tc_k = tc*sqrt(ax*ay)` scaling; circular grains (ax=ay=R) produce identical output to the old code.
+- Scaled domain: `Lx 4.0e-5 → 1.0e-4 m`, `Nx 240 → 600` (h unchanged at 1.667e-7 m); 12 alternating-height bumps (was 5 uniform); 8 ice grains (was 6): 2 circular boundary + 6 elliptical trough puddles (ax=4.5e-6, ay=2.5e-6).
+- Regenerated `inputs/geometry/multi_grain_test.dat` (602×242 control points).
+- Build clean (no errors).
+
+---
+
+**Session ended:** 2026-06-16 16:53:57
+
+
+---
+
+**Session ended:** 2026-06-16 16:46:58
+
+
+---
+
+**Session ended:** 2026-06-16 16:38:51
+
+
+---
+
+**Session ended:** 2026-06-16 16:34:16
+
+
+---
+
+**Session ended:** 2026-06-16 15:48:48
+
+
+---
+
+**Session ended:** 2026-06-16 15:02:59
+
+
+---
+
+**Session ended:** 2026-06-16 14:54:55
+
+
+---
+
+**Session ended:** 2026-06-16 13:56:18
+
+
+---
+
+**Session ended:** 2026-06-16 12:33:15
+
+
+---
+
+**Session ended:** 2026-06-16 12:13:37
+
+
+---
+
+**Session ended:** 2026-06-16 12:11:53
+
+
+---
+
+**Session ended:** 2026-06-16 08:07:29
+
+
+---
+
+**Session ended:** 2026-06-16 07:59:09
+
+
 ---
 
 **Session ended:** 2026-06-16 07:44:33
