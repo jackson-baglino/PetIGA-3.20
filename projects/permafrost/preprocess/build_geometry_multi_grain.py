@@ -89,21 +89,21 @@ Ly = 4.0e-5     # domain height [m]
 # Keep supports within [0,Lx] and non-overlapping.
 # Must match -sed_grain_x / -sed_grain_R / -sed_grain_h in the .opts file.
 #
-# 12 bumps tiling [0, Lx] (2R = 0.8e-5 m, same density as before),
-# alternating tall (h=0.25e-5) / short (h=0.15e-5) for visual variety.
+# 12 bumps tiling [0, Lx] (2R = 0.8e-5 m, same density as proven 5-bump run),
+# uniform h=0.2e-5 (same height as proven 5-bump run; max slope ≈0.82, below 45°).
 SEDIMENT_GRAINS = [
-    (0.4e-5, 0.4e-5, 0.25e-5),   # support [0.0e-5, 0.8e-5]
-    (1.2e-5, 0.4e-5, 0.15e-5),   # support [0.8e-5, 1.6e-5]
-    (2.0e-5, 0.4e-5, 0.25e-5),   # support [1.6e-5, 2.4e-5]
-    (2.8e-5, 0.4e-5, 0.15e-5),   # support [2.4e-5, 3.2e-5]
-    (3.6e-5, 0.4e-5, 0.25e-5),   # support [3.2e-5, 4.0e-5]
-    (4.4e-5, 0.4e-5, 0.15e-5),   # support [4.0e-5, 4.8e-5]
-    (5.2e-5, 0.4e-5, 0.25e-5),   # support [4.8e-5, 5.6e-5]
-    (6.0e-5, 0.4e-5, 0.15e-5),   # support [5.6e-5, 6.4e-5]
-    (6.8e-5, 0.4e-5, 0.25e-5),   # support [6.4e-5, 7.2e-5]
-    (7.6e-5, 0.4e-5, 0.15e-5),   # support [7.2e-5, 8.0e-5]
-    (8.4e-5, 0.4e-5, 0.25e-5),   # support [8.0e-5, 8.8e-5]
-    (9.2e-5, 0.4e-5, 0.15e-5),   # support [8.8e-5, 1.0e-4]
+    (0.4e-5, 0.4e-5, 0.2e-5),    # support [0.0e-5, 0.8e-5]
+    (1.2e-5, 0.4e-5, 0.2e-5),    # support [0.8e-5, 1.6e-5]
+    (2.0e-5, 0.4e-5, 0.2e-5),    # support [1.6e-5, 2.4e-5]
+    (2.8e-5, 0.4e-5, 0.2e-5),    # support [2.4e-5, 3.2e-5]
+    (3.6e-5, 0.4e-5, 0.2e-5),    # support [3.2e-5, 4.0e-5]
+    (4.4e-5, 0.4e-5, 0.2e-5),    # support [4.0e-5, 4.8e-5]
+    (5.2e-5, 0.4e-5, 0.2e-5),    # support [4.8e-5, 5.6e-5]
+    (6.0e-5, 0.4e-5, 0.2e-5),    # support [5.6e-5, 6.4e-5]
+    (6.8e-5, 0.4e-5, 0.2e-5),    # support [6.4e-5, 7.2e-5]
+    (7.6e-5, 0.4e-5, 0.2e-5),    # support [7.2e-5, 8.0e-5]
+    (8.4e-5, 0.4e-5, 0.2e-5),    # support [8.0e-5, 8.8e-5]
+    (9.2e-5, 0.4e-5, 0.2e-5),    # support [8.8e-5, 1.0e-4]
 ]
 
 # Ceiling (top-wall) grains — empty: flat top, bumps on bottom only.
