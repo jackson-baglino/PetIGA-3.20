@@ -29,8 +29,8 @@
 -dim 2
 -Lx 4.0e-5
 -Ly 4.0e-5
--p 1
--C 0
+-p 2
+-C 1
 -Lz 0
 -sed_grain_x 0.6e-5,2.0e-5,3.4e-5
 -sed_grain_R 0.6e-5,0.6e-5,0.6e-5
