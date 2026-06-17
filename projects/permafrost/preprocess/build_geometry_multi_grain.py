@@ -106,17 +106,9 @@ SEDIMENT_GRAINS = [
     (9.2e-5, 0.4e-5, 0.15e-5),   # support [8.8e-5, 1.0e-4]
 ]
 
-# Ceiling (top-wall) grains — same bump shape, but push DOWN from Ly.
-# Deliberately offset from floor bumps (non-symmetric), fewer and wider.
-# Must match -top_grain_x / -top_grain_R / -top_grain_h in the .opts file.
-TOP_GRAINS = [
-    (0.8e-5,  0.5e-5, 0.25e-5),   # support [0.3e-5, 1.3e-5]
-    (2.4e-5,  0.6e-5, 0.30e-5),   # support [1.8e-5, 3.0e-5]
-    (4.4e-5,  0.4e-5, 0.18e-5),   # support [4.0e-5, 4.8e-5]
-    (6.0e-5,  0.6e-5, 0.28e-5),   # support [5.4e-5, 6.6e-5]
-    (7.8e-5,  0.5e-5, 0.22e-5),   # support [7.3e-5, 8.3e-5]
-    (9.4e-5,  0.4e-5, 0.20e-5),   # support [9.0e-5, 9.8e-5]
-]
+# Ceiling (top-wall) grains — empty: flat top, bumps on bottom only.
+# Set to a list of (center, R, height) tuples to add ceiling bumps.
+TOP_GRAINS = []
 
 # target element counts. eps is fixed by physics (preprocess/comp_eps.py);
 # Nx/Ny set the number of elements -- override via --Nx/--Ny on the CLI.
