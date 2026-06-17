@@ -73,3 +73,30 @@ Never force-push to `main`. Feature branches are fine.
 - No C99 variable-length arrays (VLAs) — use `PetscMalloc`/`PetscFree`.
 - Always `CHKERRQ(ierr)` immediately after every PETSc/MPI call.
 - Prefer `PetscMin`/`PetscMax`/`PetscSqrtReal`/`PetscTanhReal` over bare C math functions.
+
+---
+
+## Phase-field interface parameter (eps)
+
+`eps` (`-eps` in opts files, `user->eps` in code) is the **decay-length scale**
+of the diffuse-interface profile — it is NOT the width of the diffuse band you
+see in a ParaView contour plot. Conflating the two leads to "fixing" eps by the
+wrong multiplicative factor.
+
+The equilibrium 1D profile of this model's double well is logistic:
+`phi(x) = 1/(1 + exp(-x/eps))`. Its tails are long, so the band that visibly
+looks diffuse on screen spans several multiples of eps, not eps itself:
+
+- 5%–95% transition  ≈ 6·eps
+- 1%–99% transition  ≈ 9.2·eps
+
+So "N elements visibly diffuse in ParaView" corresponds to roughly
+`eps ≈ N·dx / 6` to `N·dx / 9` (depending on how sharp a cutoff you're
+eyeballing) — **not** `eps ≈ N·dx`.
+
+Always (re)compute `eps` with `preprocess/comp_eps.py` (Kaempfer & Plapp 2009
+sharp-interface bounds) for the actual domain/grain sizes/temperature in play.
+Never hand-tune `eps` by visually estimating the diffuse band width, and never
+reason "the interface looks 2x too wide/sharp, so halve/double eps" — that
+mixes up the scale parameter with the visible band, which differ by the ~6–9x
+factor above.
