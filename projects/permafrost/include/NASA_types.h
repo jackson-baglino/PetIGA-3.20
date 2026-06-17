@@ -24,7 +24,7 @@ typedef struct {
   PetscReal mob_sub;  // Mobility for ice phase evolution
   PetscReal Etai, Etam, Etaa;  // Surface energy terms: Sigma_i (ice-vapor), Etam (unused), Sigma_a (air-vapor side)
   PetscReal alph_sub;  // Substrate interaction coefficient
-  PetscReal Lambd;  // Higher-order penalty coefficient Lambda in the double-well free energy
+  PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
 
   // Thermophysical properties of different phases
