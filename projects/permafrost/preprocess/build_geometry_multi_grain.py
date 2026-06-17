@@ -89,21 +89,16 @@ Ly = 4.0e-5     # domain height [m]
 # Keep supports within [0,Lx] and non-overlapping.
 # Must match -sed_grain_x / -sed_grain_R / -sed_grain_h in the .opts file.
 #
-# 12 bumps tiling [0, Lx] (2R = 0.8e-5 m, same density as proven 5-bump run),
-# uniform h=0.2e-5 (same height as proven 5-bump run; max slope ≈0.82, below 45°).
+# 5 isolated bumps evenly spaced across Lx=1.0e-4 (centers at Lx/10 increments),
+# same shape (R=0.4e-5, h=0.2e-5) as the proven-stable 5-bump 240x240 run.
+# Bump-to-flat ratio ≈ 40% (vs 100% in the old touching-support case), giving
+# large flat regions between bumps and reducing phase-field stress at large dt.
 SEDIMENT_GRAINS = [
-    (0.4e-5, 0.4e-5, 0.2e-5),    # support [0.0e-5, 0.8e-5]
-    (1.2e-5, 0.4e-5, 0.2e-5),    # support [0.8e-5, 1.6e-5]
-    (2.0e-5, 0.4e-5, 0.2e-5),    # support [1.6e-5, 2.4e-5]
-    (2.8e-5, 0.4e-5, 0.2e-5),    # support [2.4e-5, 3.2e-5]
-    (3.6e-5, 0.4e-5, 0.2e-5),    # support [3.2e-5, 4.0e-5]
-    (4.4e-5, 0.4e-5, 0.2e-5),    # support [4.0e-5, 4.8e-5]
-    (5.2e-5, 0.4e-5, 0.2e-5),    # support [4.8e-5, 5.6e-5]
-    (6.0e-5, 0.4e-5, 0.2e-5),    # support [5.6e-5, 6.4e-5]
-    (6.8e-5, 0.4e-5, 0.2e-5),    # support [6.4e-5, 7.2e-5]
-    (7.6e-5, 0.4e-5, 0.2e-5),    # support [7.2e-5, 8.0e-5]
-    (8.4e-5, 0.4e-5, 0.2e-5),    # support [8.0e-5, 8.8e-5]
-    (9.2e-5, 0.4e-5, 0.2e-5),    # support [8.8e-5, 1.0e-4]
+    (1.0e-5, 0.4e-5, 0.2e-5),    # support [0.6e-5, 1.4e-5]
+    (3.0e-5, 0.4e-5, 0.2e-5),    # support [2.6e-5, 3.4e-5]
+    (5.0e-5, 0.4e-5, 0.2e-5),    # support [4.6e-5, 5.4e-5]
+    (7.0e-5, 0.4e-5, 0.2e-5),    # support [6.6e-5, 7.4e-5]
+    (9.0e-5, 0.4e-5, 0.2e-5),    # support [8.6e-5, 9.4e-5]
 ]
 
 # Ceiling (top-wall) grains — empty: flat top, bumps on bottom only.
