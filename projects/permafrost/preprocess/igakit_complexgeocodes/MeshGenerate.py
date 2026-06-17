@@ -90,7 +90,7 @@ scale = 3.0
 insert = [(Ux[p + 1]) / scale, 1.0 - (1.0 - Ux[-2 - p]) / scale]
 
 # Along the arc: dense interior (coarse) + fine cluster near the wall end
-insert_y  = np.linspace(0, 1.0 - 5e-2, N * Angle)[1:]      # coarse interior
+insert_y  = np.linspace(0, 1.0 - 5e-2, int(N * Angle))[1:]  # coarse interior
 insert_y2 = np.linspace(1.0 - 5e-2, 1.0, 512)[1:-1]         # fine near wall
 
 srf.refine(0, insert)
