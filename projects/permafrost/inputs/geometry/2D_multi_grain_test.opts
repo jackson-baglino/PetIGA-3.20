@@ -20,7 +20,7 @@
 #   2-5: trough grains at x=2.0e-5,4.0e-5,6.0e-5,8.0e-5 (midpoints between bumps),
 #        cy=0 (half-circle on floor via zero-flux BC mirror), R=3.5e-6
 # =============================================================================
-# DOF_GRID: 602 290
+# DOF_GRID: 602 242
 -geom_file inputs/geometry/multi_grain_test.dat
 -p 2
 -C 1
