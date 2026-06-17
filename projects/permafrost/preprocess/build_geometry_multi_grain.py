@@ -79,7 +79,7 @@ from igakit.nurbs import NURBS
 from igakit.io import PetIGA
 
 # ---------- domain parameters (same as build_geometry_sediment_grain.py) ----------
-Lx = 4.0e-5     # domain width  [m]
+Lx = 1.0e-4     # domain width  [m]  (2.5× wider than old 4.0e-5 — channel geometry)
 Ly = 4.0e-5     # domain height [m]
 
 # Sediment grains: (center_x [m], R [m], height [m])
@@ -89,20 +89,26 @@ Ly = 4.0e-5     # domain height [m]
 # Keep supports within [0,Lx] and non-overlapping.
 # Must match -sed_grain_x / -sed_grain_R / -sed_grain_h in the .opts file.
 #
-# 5 bumps tiling [0, Lx] evenly (2R = Lx/5 = 8e-6 m):
-#   lower curvature (κ = 2·h/R² = 2·2e-6/(4e-6)² = 2.5e5 m⁻¹) vs.
-#   old 3-bump design (κ = 3.3e5 m⁻¹ with h=R=6e-6 m).
+# 12 bumps tiling [0, Lx] (2R = 0.8e-5 m, same density as before),
+# alternating tall (h=0.25e-5) / short (h=0.15e-5) for visual variety.
 SEDIMENT_GRAINS = [
-    (0.4e-5, 0.4e-5, 0.2e-5),   # support [0.0e-5, 0.8e-5] — touches x=0
-    (1.2e-5, 0.4e-5, 0.2e-5),   # support [0.8e-5, 1.6e-5]
-    (2.0e-5, 0.4e-5, 0.2e-5),   # support [1.6e-5, 2.4e-5]
-    (2.8e-5, 0.4e-5, 0.2e-5),   # support [2.4e-5, 3.2e-5]
-    (3.6e-5, 0.4e-5, 0.2e-5),   # support [3.2e-5, 4.0e-5] — touches x=Lx
+    (0.4e-5, 0.4e-5, 0.25e-5),   # support [0.0e-5, 0.8e-5]
+    (1.2e-5, 0.4e-5, 0.15e-5),   # support [0.8e-5, 1.6e-5]
+    (2.0e-5, 0.4e-5, 0.25e-5),   # support [1.6e-5, 2.4e-5]
+    (2.8e-5, 0.4e-5, 0.15e-5),   # support [2.4e-5, 3.2e-5]
+    (3.6e-5, 0.4e-5, 0.25e-5),   # support [3.2e-5, 4.0e-5]
+    (4.4e-5, 0.4e-5, 0.15e-5),   # support [4.0e-5, 4.8e-5]
+    (5.2e-5, 0.4e-5, 0.25e-5),   # support [4.8e-5, 5.6e-5]
+    (6.0e-5, 0.4e-5, 0.15e-5),   # support [5.6e-5, 6.4e-5]
+    (6.8e-5, 0.4e-5, 0.25e-5),   # support [6.4e-5, 7.2e-5]
+    (7.6e-5, 0.4e-5, 0.15e-5),   # support [7.2e-5, 8.0e-5]
+    (8.4e-5, 0.4e-5, 0.25e-5),   # support [8.0e-5, 8.8e-5]
+    (9.2e-5, 0.4e-5, 0.15e-5),   # support [8.8e-5, 1.0e-4]
 ]
 
 # target element counts. eps is fixed by physics (preprocess/comp_eps.py);
 # Nx/Ny set the number of elements -- override via --Nx/--Ny on the CLI.
-Nx = 240   # elements in x
+Nx = 600   # elements in x (Lx/Nx = 1.667e-7 m, same h as old 240x240 on 4.0e-5)
 Ny = 240   # elements in y
 
 # basis-function degree; geometry is (P,P) with C^{P-1} (single interior
