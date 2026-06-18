@@ -579,6 +579,19 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                 PetscReal tc_shell = tc * ts;
                 ice += 0.5 - 0.5 * PetscTanhReal(tc_shell * (dn - 1.0));
             }
+            for (PetscInt k = 0; k < user->n_ice_flats; k++) {
+                PetscReal xf   = user->ice_flat_x[k];
+                PetscReal Rf   = user->ice_flat_R[k];
+                PetscReal Hf   = user->ice_flat_height[k];
+                PetscReal dlat = PetscAbsReal(x - xf) / Rf;             /* lateral window: =1 at edge */
+                PetscReal tc_lat = tc * Rf;
+                PetscReal w    = 0.5 - 0.5 * PetscTanhReal(tc_lat * (dlat - 1.0));
+                PetscReal flat = 0.5 - 0.5 * PetscTanhReal(tc * (y - Hf)); /* flat threshold, same
+                                                                             * interface width as
+                                                                             * everywhere else (no
+                                                                             * R-dependent sharpening) */
+                ice += w * flat;
+            }
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
             u[j][i].ice = ice;

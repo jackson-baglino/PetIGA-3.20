@@ -276,6 +276,38 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* --- Flat ice layer encapsulating a floor bump -------------------------- */
+    user.n_ice_flats = 0;
+    {
+        PetscInt n = MAX_SED_GRAINS;
+        ierr = PetscOptionsRealArray("-ice_flat_x",
+                 "Flat-ice-layer lateral center x-positions [m]; ice fills "
+                 "everything below the ABSOLUTE height -ice_flat_height (not "
+                 "relative to the bump's own surface like -ice_shell_thickness), "
+                 "windowed to [x-R, x+R] -- gives a flat, non-rounded ice-air "
+                 "interface burying the bump instead of a domed/conformal cap",
+                 "", user.ice_flat_x, &n, &flg); CHKERRQ(ierr);
+        if (flg) {
+            user.n_ice_flats = n;
+            PetscInt nr = MAX_SED_GRAINS;
+            ierr = PetscOptionsRealArray("-ice_flat_R",
+                     "Flat-ice-layer lateral half-widths [m], one per -ice_flat_x entry",
+                     "", user.ice_flat_R, &nr, NULL); CHKERRQ(ierr);
+            if (nr != n)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-ice_flat_x and -ice_flat_R must have the same length (%d vs %d)",
+                        (int)n, (int)nr);
+            PetscInt nh = MAX_SED_GRAINS;
+            ierr = PetscOptionsRealArray("-ice_flat_height",
+                     "Flat-ice-layer absolute top height [m], one per -ice_flat_x entry",
+                     "", user.ice_flat_height, &nh, NULL); CHKERRQ(ierr);
+            if (nh != n)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-ice_flat_x and -ice_flat_height must have the same length (%d vs %d)",
+                        (int)n, (int)nh);
+        }
+    }
+
     /* --- Multi-grain ice IC (-ic_type multi_grains) ------------------------ */
     user.n_act = 0;
     {

@@ -83,16 +83,28 @@ typedef struct {
   PetscReal ice_grain_ax[200]; /* ellipse semi-axis in x; defaults to radius[k] if -ice_grain_ax not set */
   PetscReal ice_grain_ay[200]; /* ellipse semi-axis in y; defaults to radius[k] if -ice_grain_ay not set */
 
-  // Ice "shell" capping a floor bump at constant vertical thickness, instead
-  // of an ellipse: a smooth band between SedimentBumpField(x) and
-  // SedimentBumpField(x)+ice_shell_thickness[k], windowed laterally to
-  // [ice_shell_x[k]-ice_shell_R[k], ice_shell_x[k]+ice_shell_R[k]] so it
+  // Ice "shell" capping a floor bump at constant thickness, conformal to
+  // the bump's own surface (true distance to the SedimentBumpField(x)
+  // curve, not just a vertical offset -- see SedimentBumpFieldDeriv() and
+  // the -ice_shell_x loop in FormInitialMultiGrains2D), windowed laterally
+  // to [ice_shell_x[k]-ice_shell_R[k], ice_shell_x[k]+ice_shell_R[k]] so it
   // only covers the bump itself, not the whole floor. Added on top of the
-  // ice_grain_* ellipses in FormInitialMultiGrains2D, not a replacement.
+  // ice_grain_* ellipses, not a replacement.
   PetscInt  n_ice_shells;
   PetscReal ice_shell_x[MAX_SED_GRAINS];
   PetscReal ice_shell_R[MAX_SED_GRAINS];
   PetscReal ice_shell_thickness[MAX_SED_GRAINS];
+
+  // Flat ice layer encapsulating a floor bump: ice fills everything below
+  // the ABSOLUTE height ice_flat_height[k] (not relative to the bump's own
+  // surface, unlike ice_shell_*), windowed laterally to
+  // [ice_flat_x[k]-ice_flat_R[k], ice_flat_x[k]+ice_flat_R[k]]. Gives a flat
+  // (non-rounded) ice-air interface burying the bump, instead of a domed
+  // cap or a conformal coating. Added on top of ice_grain_*/ice_shell_*.
+  PetscInt  n_ice_flats;
+  PetscReal ice_flat_x[MAX_SED_GRAINS];
+  PetscReal ice_flat_R[MAX_SED_GRAINS];
+  PetscReal ice_flat_height[MAX_SED_GRAINS];
 
   // Initial normal vector components (possibly for a structured interface)
   PetscReal norm0[3];  // Per-DOF initial residual norms for SNES convergence check
