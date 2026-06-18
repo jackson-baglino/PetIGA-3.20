@@ -1,3 +1,39 @@
+## 2026-06-18 — Constant-thickness ice-shell primitive for the bump-cap case
+
+- Diagnosed an HPC "Stale file handle" build failure: 3 jobs submitted
+  together each ran `make clean && make all` concurrently against the same
+  shared `obj/` directory and raced. `run_permafrost.sh` already has a
+  documented `SKIP_COMPILE=1` escape hatch for this; pointed the user at
+  building once on the login node then resubmitting with
+  `--export=ALL,SKIP_COMPILE=1`.
+- All 3 sanity-case simulations ran and looked good. Follow-up request: make
+  the case-3 "ice cap" a true constant-thickness shell wrapping the bump,
+  not the ellipse approximation from the previous session.
+- Added a new IC primitive (`-ice_shell_x/-ice_shell_R/-ice_shell_thickness`)
+  to `FormInitialMultiGrains2D` (`src/initial_conditions.c`): a smooth band
+  of fixed vertical thickness sitting directly on `SedimentBumpField(x)` —
+  i.e. it literally follows the bump's own floor curve — windowed laterally
+  via a second tanh so it only covers the bump, not the whole floor. New
+  `AppCtx` fields in `include/NASA_types.h`, options parsing in
+  `src/permafrost2.c` (mirrors the existing `-sed_grain_x` array pattern).
+  Added on top of the existing `-ice_grain_*` ellipse summation, not a
+  replacement for it elsewhere.
+- Updated `inputs/geometry/2D_single_bump_ice_cap.opts` to use the new
+  shell (R=0.5e-5, thickness=0.1e-5) in place of the old ellipse grain.
+  Verified locally with `-t_final 0`: the ice now visibly wraps the bump at
+  constant thickness, with small rounded bulges at the lateral edges
+  (expected smoothing artifact of the two combined tanh windows). Committed
+  (f748487) and pushed.
+
+---
+
+**Session ended:** 2026-06-18 14:04:32
+
+
+---
+
+**Session ended:** 2026-06-18 13:59:46
+
 ## 2026-06-18 — 3 simple sanity-case geometries; fix GrevilleAbscissae bug
 
 - Diagnosed why the HPC run still used 44 CPUs after the eps/mesh resize: the
