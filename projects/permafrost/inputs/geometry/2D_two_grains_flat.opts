@@ -1,0 +1,40 @@
+# =============================================================================
+# geometry/2D_two_grains_flat.opts — simple sanity case: flat rectangular
+# domain (no sediment bumps), 4 ice grains:
+#   1 large grain at the right boundary, 1 medium grain at the left boundary,
+#   2 small grains along the bottom.
+#
+# No -geom_file: -ic_type multi_grains does not require a custom igakit mesh
+# when there are no sediment/top bumps (SedimentBumpField()/TopBumpField()
+# both return 0 with no -sed_grain_*/-top_grain_* given, reproducing a flat
+# rectangle exactly). src/permafrost2.c builds a plain uniform Cartesian
+# patch directly from -Nx/-Ny/-p/-C/-Lx/-Ly in that case.
+#
+# Same domain (Lx=1.0e-4, Ly=4.0e-5), mesh resolution (304x122, P=2/C1), and
+# eps (3.68274e-07) as the current production 2D_multi_grain_test.opts, for
+# direct comparability. Same temperature/humidity (inputs/experiment/
+# 2day_T-20_h0.95.opts) and solver settings (inputs/solver.opts) as before.
+#
+# Ice grains (reusing production's own size vocabulary):
+#   0: right boundary (large, Ostwald-attractor-sized): cx=Lx,  cy=Ly/2, R=1.5e-5
+#   1: left boundary  (medium):                          cx=0,   cy=Ly/2, R=6.0e-6
+#   2-3: bottom (small), away from boundary-grain footprints:
+#        cx=3.5e-5, cx=6.5e-5, cy=0, R=3.5e-6
+# =============================================================================
+-p 2
+-C 1
+-Nx 304
+-Ny 122
+-ic_type multi_grains
+-dim 2
+-Lx 1.0e-4
+-Ly 4.0e-5
+-Lz 0
+-ice_grain_cx 1.0e-4,0.0,3.5e-5,6.5e-5
+-ice_grain_cy 2.0e-5,2.0e-5,0.0,0.0
+-ice_grain_R  1.5e-5,6.0e-6,3.5e-6,3.5e-6
+-ice_grain_ax 1.5e-5,6.0e-6,3.5e-6,3.5e-6
+-ice_grain_ay 1.5e-5,6.0e-6,3.5e-6,3.5e-6
+-delt_t 1.0e-4
+-eps 3.68274e-07
+-periodic 0
