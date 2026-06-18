@@ -1,3 +1,45 @@
+## 2026-06-18 — Iterated case-3 ice cap to a true distance-to-surface shell
+
+- User wanted the bump (a sediment grain intruding into the domain) coated
+  in roughly-constant-thickness ice, all the way down to where the grain
+  meets the floor — not a cap sitting on top.
+- v3 (single ellipse, tight-fit + thickness=1/2 bump height): pinches to a
+  point at the bump's edges, leaving no ice near y=0 right at the
+  intrusion points — looked like a frozen droplet on top of the bump, per
+  explicit feedback.
+- v4 (constant-thickness band, `-ice_shell_x/-R/-thickness`, with R fixed
+  to match the bump's own R=0.4e-5 exactly): much closer, but the lateral
+  and vertical windows are independent tanh functions multiplied together,
+  so right at the bump's edge both sit at half-strength and their product
+  (0.25) falls under the ice=0.5 contour — a small residual notch right at
+  the intrusion point. Asked the user whether this was good enough or
+  worth fixing properly; they chose to fix it.
+- v5 (final): replaced the two-window product with an actual distance-to-
+  the-floor-curve calculation in `FormInitialMultiGrains2D`
+  (`src/initial_conditions.c`): perpendicular distance to the local
+  tangent line inside the shell's footprint (using a new
+  `SedimentBumpFieldDeriv()`, the analytic derivative of
+  `SedimentBumpField()`), and Euclidean distance to the footprint's fixed
+  endpoint outside it (naturally rounding the coating's lateral ends). The
+  two pieces agree exactly at the segment boundary (slope and bump height
+  both vanish there), so the result is continuous with no seam and no
+  corner notch — verified locally: the ice=0.5 contour now reaches y=0 at
+  both of the bump's edges. Committed (8ba2018, dc3db33) and pushed.
+- Also fixed an HPC "Stale file handle" build race: 3 jobs submitted
+  together all ran `make clean && make all` concurrently against the same
+  shared `obj/`. Pointed the user at the existing `SKIP_COMPILE=1` escape
+  hatch in `run_permafrost.sh` (build once on the login node, then
+  `--export=ALL,SKIP_COMPILE=1` on each submission).
+
+---
+
+**Session ended:** 2026-06-18 16:03:14
+
+
+---
+
+**Session ended:** 2026-06-18 15:52:53
+
 ## 2026-06-18 — Constant-thickness ice-shell primitive for the bump-cap case
 
 - Diagnosed an HPC "Stale file handle" build failure: 3 jobs submitted
