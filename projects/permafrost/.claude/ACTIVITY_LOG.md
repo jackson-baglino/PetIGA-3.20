@@ -1,3 +1,120 @@
+## 2026-06-17 — Diagnose HPC crash, resize mesh via comp_eps.py, rescale eps
+
+- Diagnosed job64387928 (eps_model75, 600x240, eps=1.8659e-07) crash:
+  `TSStep failed due to DIVERGED_STEP_REJECTED` -> MPI_Abort (exit 137).
+  Last accepted step (STEP 69, t~1.11e4 s) showed phase bounds widening
+  to [-0.0255, 1.0255] just before the failure cascade as dt grew past
+  ~1.3e3 s; every retry showed identical it=0 fnorm (SNES "converging"
+  trivially) while the bounds/rollback check kept rejecting anyway,
+  geometrically shrinking dt until `-max_rej 25` was exhausted. Root
+  cause: `eps_model = 0.75*eps` (introduced to fix interface growth)
+  made the AC reaction term too stiff at the old, manually-shrunk
+  eps=1.8659e-07, on top of pre-existing bump-flank mesh shear.
+- Re-derived eps and mesh size from `comp_eps.py` for the actual domain
+  (Lx=1.0e-4, Ly=4.0e-5, Rave=3.5e-6, T0=-20, --n 4): eps=4.6648e-07
+  (full Kaempfer & Plapp bound, not manually shrunk), Nx=304, Ny=122
+  (down from 600x240) -- confirmed the earlier 600x240 mesh size was
+  driven by a ParaView control-point-rendering artifact, not a real
+  resolution requirement (see prior session's plot_permafrost_highres.py).
+- Added `--C` continuity option to `build_geometry_multi_grain.py`
+  (previously hardcoded to C=P-1); used to verify a P=2/C0 mesh, then
+  rebuilt the production mesh at the intended P=2/C=1.
+- Ran a local `-t_final 0` sanity check on the new 304x122 mesh (commit
+  75a414e), converted with both `plotpermafrost.py` and
+  `plot_permafrost_highres.py`, confirmed clean IC. Discovered
+  `monitoring.c` reads the output directory from a `folder` env var
+  (set by `run_permafrost.sh`'s `export folder`), not `-output_path`
+  directly -- not a bug, just missed when invoking the binary by hand.
+- User measured ~9.5 elements across the 1%-99% diffuse band on this
+  mesh in ParaView (target ~7.5); rescaled eps by 7.5/9.5 to
+  eps=3.68274e-07 (commit 423a051), still below comp_eps.py's ceiling.
+- Archived the mesh/opts as `inputs/geometry/multi_grain/compEps_304x122/`
+  via `build_geometry_multi_grain.py --variant`.
+- Handed off the HPC submission command
+  (`./scripts/HPC/submit_permafrost.sh 2D_multi_grain_test 2day_T-20_h0.95 compEps304x122`)
+  for a full t_final=172800 (2-day) run to check whether the new mesh/eps
+  avoids the dt-rejection-cascade crash and keeps the interface width
+  stable over time.
+
+---
+
+**Session ended:** 2026-06-17 18:34:04
+
+
+---
+
+**Session ended:** 2026-06-17 18:27:20
+
+
+---
+
+**Session ended:** 2026-06-17 18:03:09
+
+
+---
+
+**Session ended:** 2026-06-17 17:46:12
+
+
+---
+
+**Session ended:** 2026-06-17 17:35:35
+
+
+---
+
+**Session ended:** 2026-06-17 17:24:06
+
+
+---
+
+**Session ended:** 2026-06-17 17:18:08
+
+
+---
+
+**Session ended:** 2026-06-17 16:48:15
+
+
+---
+
+**Session ended:** 2026-06-17 16:46:21
+
+
+---
+
+**Session ended:** 2026-06-17 16:33:40
+
+
+---
+
+**Session ended:** 2026-06-17 16:26:53
+
+
+---
+
+**Session ended:** 2026-06-17 16:13:28
+
+
+---
+
+**Session ended:** 2026-06-17 16:12:40
+
+
+---
+
+**Session ended:** 2026-06-17 16:06:44
+
+
+---
+
+**Session ended:** 2026-06-17 15:34:34
+
+
+---
+
+**Session ended:** 2026-06-17 15:20:47
+
 
 ---
 
