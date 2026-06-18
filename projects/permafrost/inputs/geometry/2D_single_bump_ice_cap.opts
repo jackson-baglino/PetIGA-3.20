@@ -1,26 +1,31 @@
 # =============================================================================
 # geometry/2D_single_bump_ice_cap.opts — simple sanity case: one floor bump
-# at domain center, 1 large ice grain at the right boundary, and an ice
-# "shell" of constant thickness wrapping the bump.
+# at domain center, 1 large ice grain at the right boundary, and an ice cap
+# approximating the bump's shape with a single ellipse.
 #
-# v1 approximated the cap with a short ice ellipse (-ice_grain_ax/ay); it
-# floated visibly above the flat floor away from the bump (an ellipse's
-# lower curve decays much slower than the bump's C-infinity profile) and
-# couldn't give a true constant-thickness shell. Replaced with a new
-# -ice_shell_x/-ice_shell_R/-ice_shell_thickness mechanism (src/
-# initial_conditions.c, FormInitialMultiGrains2D): a smooth band of fixed
-# vertical thickness sitting directly on SedimentBumpField(x) -- i.e. it
-# literally follows the bump's own floor curve -- windowed laterally to
-# [x-R, x+R] so it only covers the bump, not the whole floor.
+# v1 used an ellipse that floated above the flat floor away from the bump.
+# v2 replaced it with a new -ice_shell_x/-R/-thickness band that follows
+# SedimentBumpField(x) exactly (still available, see src/initial_conditions.c
+# FormInitialMultiGrains2D) -- but its lateral window tapered into visible
+# bulges that stuck out past the bump's own footprint.
+# v3 (this version): back to a single ellipse, but sized to match the bump
+# closely instead of floating: ax = bump's own R = 0.4e-5 exactly (same
+# footprint, no lateral overhang/stick-out), and the ellipse's vertical
+# extent (2*ay) = bump height + an added thickness on top, with cy=ay so
+# the ellipse's bottom touches y=0 (matching the bump's own base) instead
+# of floating. Chose thickness = 1/2 the bump's own height (0.1e-5 on top
+# of 0.2e-5) rather than 1/3 -- the user asked for "a little thicker" than
+# the v2 shell, and 1/2 reads as a clearly visible cap without the ellipse
+# starting to dominate over the bump's own shape; drop to 1/3 (ay=0.1333e-5)
+# if it still looks too thick once seen in ParaView.
 #
 # Same geometry file/bump as 2D_single_bump_two_grains.opts (no new mesh
 # needed). Same domain, mesh resolution, eps, temperature/humidity, and
 # solver settings as the other two simple cases.
 #
-# Ice:
-#   grain 0: right boundary (large): cx=Lx, cy=Ly/2, R=1.5e-5
-#   shell 0: x=5.0e-5 (bump center), R=0.5e-5 (slightly past the bump's own
-#            R=0.4e-5), thickness=0.1e-5 (half the bump's own height 0.2e-5)
+# Ice grains:
+#   0: right boundary (large): cx=Lx,     cy=Ly/2,   R=1.5e-5
+#   1: ice cap:                 cx=5.0e-5, cy=0.15e-5, ax=0.4e-5, ay=0.15e-5
 # =============================================================================
 # DOF_GRID: 306 124
 -geom_file inputs/geometry/single_bump_test.dat
@@ -34,14 +39,11 @@
 -sed_grain_x 5.0e-5
 -sed_grain_R 0.4e-5
 -sed_grain_h 0.2e-5
--ice_grain_cx 1.0e-4
--ice_grain_cy 2.0e-5
--ice_grain_R  1.5e-5
--ice_grain_ax 1.5e-5
--ice_grain_ay 1.5e-5
--ice_shell_x 5.0e-5
--ice_shell_R 0.5e-5
--ice_shell_thickness 0.1e-5
+-ice_grain_cx 1.0e-4,5.0e-5
+-ice_grain_cy 2.0e-5,0.15e-5
+-ice_grain_R  1.5e-5,0.4e-5
+-ice_grain_ax 1.5e-5,0.4e-5
+-ice_grain_ay 1.5e-5,0.15e-5
 -delt_t 1.0e-4
 -eps 3.68274e-07
 -periodic 0
