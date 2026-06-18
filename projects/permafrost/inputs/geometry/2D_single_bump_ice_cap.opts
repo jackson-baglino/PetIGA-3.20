@@ -16,10 +16,18 @@
 # ice_shell_R=0.5e-5, WIDER than the bump's own R=0.4e-5, so the shell's
 # lateral window hadn't decayed to 0 yet at the bump's actual edge and the
 # ice spilled out flat past the bump (the reported "bulge").
-# v4 (this version): same shell mechanism, ice_shell_R set EXACTLY to the
-# bump's own R=0.4e-5 so the lateral window tracks the bump's actual
-# footprint -- ice now extends down to the bump's edges (the intrusion
-# points) instead of stopping short of them or overshooting past them.
+# v4: same shell mechanism, ice_shell_R set EXACTLY to the bump's own
+# R=0.4e-5 so the lateral window tracks the bump's actual footprint --
+# much closer, but the two independent (lateral x vertical) windows are
+# each at half-strength right at the bump's edge, so their product (0.25)
+# still left a small notch under the ice=0.5 contour exactly at the
+# intrusion point.
+# v5 (this version): replaced the two windows with an actual distance-to-
+# the-floor-curve calculation (perpendicular distance to the local tangent
+# line inside the bump's footprint, Euclidean distance to the footprint's
+# endpoint outside it -- see SedimentBumpFieldDeriv()/the -ice_shell_x loop
+# in FormInitialMultiGrains2D). No more product-of-windows corner: the
+# ice=0.5 contour now reaches y=0 exactly at both of the bump's edges.
 #
 # Same geometry file/bump as 2D_single_bump_two_grains.opts (no new mesh
 # needed). Same domain, mesh resolution, eps, temperature/humidity, and
