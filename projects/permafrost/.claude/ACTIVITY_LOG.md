@@ -1,3 +1,59 @@
+## 2026-06-18 — 3 simple sanity-case geometries; fix GrevilleAbscissae bug
+
+- Diagnosed why the HPC run still used 44 CPUs after the eps/mesh resize: the
+  resize commits (75a414e..f846c33) were never pushed to GitHub, so the
+  HPC-side `git pull` had nothing new to fetch. Pushed them (commit range now
+  on `origin/rewrite/2phase-from-equations`).
+- Planned (plan mode) and shelved a full-coverage random-bumpy-floor geometry
+  design for later; the full design is in the conversation transcript if
+  needed again (the plan file itself was reused/overwritten for the plan
+  below, per this session's plan-mode workflow).
+- Per a request to validate simpler cases before more geometry complexity,
+  planned and built 3 new sanity-case geometries, none touching the active
+  production `multi_grain_test.dat`/`2D_multi_grain_test.opts` (live HPC run
+  in flight): (1) `2D_two_grains_flat.opts` — flat domain, no `-geom_file`,
+  4 ice grains (1 large/1 medium boundary + 2 small bottom); (2)
+  `2D_single_bump_two_grains.opts` — one floor bump + 2 boundary grains; (3)
+  `2D_single_bump_ice_cap.opts` — same bump + 1 boundary grain + an
+  approximate ice-cap ellipse draped over the bump.
+- Found and fixed a real latent bug while building case 1: `GrevilleAbscissae()`
+  in `src/initial_conditions.c` returned un-normalized parametric values.
+  This happened to work for `-geom_file` meshes (whose knots already span
+  [0,1] by the igakit builder's convention) but silently broke for the
+  default (`-Nx/-Ny`, no `-geom_file`) axis, whose knots span `[0,Lx]/[0,Ly]`
+  directly — `FormInitialMultiGrains2D` multiplied by Lx/Ly a second time,
+  collapsing every sample point into a tiny corner near (0,0) and leaving
+  ice phase exactly 0 everywhere. `multi_grains` had only ever been run with
+  `-geom_file` before, so this was never exercised. Fixed by normalizing by
+  the knot span in `GrevilleAbscissae()` (commit 69dd1fa).
+- Added a `--bumps "cx,R,h;..."` CLI override to
+  `preprocess/build_geometry_multi_grain.py` so a one-off bump layout (the
+  shared single-bump mesh for cases 2/3) doesn't require hand-editing the
+  script's hardcoded `SEDIMENT_GRAINS` list; default behavior unchanged.
+- Verified all 3 cases locally with `-t_final 0` + `plot_permafrost_highres.py`;
+  the ice-cap ellipse needed one retuning pass (ax/ay/cy) after the first
+  attempt floated visibly above the flat floor away from the bump. Committed
+  (8fabe59).
+
+---
+
+**Session ended:** 2026-06-18 13:16:00
+
+
+---
+
+**Session ended:** 2026-06-17 18:49:48
+
+
+---
+
+**Session ended:** 2026-06-17 18:45:22
+
+
+---
+
+**Session ended:** 2026-06-17 18:40:48
+
 ## 2026-06-17 — Diagnose HPC crash, resize mesh via comp_eps.py, rescale eps
 
 - Diagnosed job64387928 (eps_model75, 600x240, eps=1.8659e-07) crash:
