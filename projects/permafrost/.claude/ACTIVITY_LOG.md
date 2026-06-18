@@ -1,3 +1,41 @@
+## 2026-06-18 — Flat ice layer to fully encapsulate the bump (case 3 final)
+
+- Bumped `-ice_shell_thickness` from 0.1e-5 to 0.2e-5 (= bump's own height)
+  on user feedback that the v5 distance-to-surface shell still read as too
+  thin. Same shape/mechanism, just a bigger thickness.
+- User then clarified the actual desired picture: a sediment grain fully
+  ENCAPSULATED in ice with a FLAT (non-rounded) ice-air interface, not a
+  domed conformal coating — suggested approximating it with a giant circle
+  poking up from below the domain. Recognized that idea is mathematically
+  equivalent to a flat height threshold, but a literal giant-radius ellipse
+  would also blow up the existing tc_k=tc*sqrt(ax*ay) interface-sharpness
+  scaling (ultra-sharp, non-physical transition) — implemented a dedicated
+  primitive instead.
+- Added `-ice_flat_x/-ice_flat_R/-ice_flat_height` (`include/NASA_types.h`,
+  `src/permafrost2.c` parsing, `FormInitialMultiGrains2D` in
+  `src/initial_conditions.c`): ice fills everything below an absolute
+  height (unlike `-ice_shell_thickness`, which is relative to the bump's
+  own surface), windowed laterally the same way as `-ice_shell_*`, using
+  the same `tc=1/(sqrt(2)*eps)` scaling as everywhere else (no artificial
+  sharpening). Updated `inputs/geometry/2D_single_bump_ice_cap.opts`
+  (R=0.4e-5 matching the bump, height=0.4e-5 = 2x the bump's height).
+- Verified locally: the bump is now fully buried, ice reaches the floor at
+  both edges (no gap at the intrusion points), and the top is flat with
+  rounded corners only at the lateral edges — matches the requested
+  picture. Committed (91e973a) and pushed. The `-ice_shell_*` conformal-
+  coating mechanism from the previous session stays in the C code,
+  unused by this opts file now but available if a true coating is wanted
+  elsewhere.
+
+---
+
+**Session ended:** 2026-06-18 16:32:44
+
+
+---
+
+**Session ended:** 2026-06-18 16:18:13
+
 ## 2026-06-18 — Iterated case-3 ice cap to a true distance-to-surface shell
 
 - User wanted the bump (a sediment grain intruding into the domain) coated
