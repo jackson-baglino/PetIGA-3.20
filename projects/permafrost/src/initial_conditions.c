@@ -531,6 +531,19 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                 PetscReal tc_k = tc * PetscSqrtReal(ax * ay);              /* keeps interface width ~eps */
                 ice += 0.5 - 0.5 * PetscTanhReal(tc_k * (d - 1.0));
             }
+            for (PetscInt k = 0; k < user->n_ice_shells; k++) {
+                PetscReal xs   = user->ice_shell_x[k];
+                PetscReal Rs   = user->ice_shell_R[k];
+                PetscReal ts   = user->ice_shell_thickness[k];
+                PetscReal dlat = PetscAbsReal(x - xs) / Rs;                 /* lateral window: =1 at edge */
+                PetscReal tc_lat = tc * Rs;
+                PetscReal w    = 0.5 - 0.5 * PetscTanhReal(tc_lat * (dlat - 1.0));
+                PetscReal yc   = y_bot + 0.5 * ts;                          /* band center, follows the bump */
+                PetscReal dvert = PetscAbsReal(y - yc) / (0.5 * ts);        /* vertical band: =1 at edge */
+                PetscReal tc_vert = tc * 0.5 * ts;
+                PetscReal band = 0.5 - 0.5 * PetscTanhReal(tc_vert * (dvert - 1.0));
+                ice += w * band;
+            }
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
             u[j][i].ice = ice;

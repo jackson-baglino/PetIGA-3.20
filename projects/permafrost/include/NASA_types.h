@@ -83,6 +83,17 @@ typedef struct {
   PetscReal ice_grain_ax[200]; /* ellipse semi-axis in x; defaults to radius[k] if -ice_grain_ax not set */
   PetscReal ice_grain_ay[200]; /* ellipse semi-axis in y; defaults to radius[k] if -ice_grain_ay not set */
 
+  // Ice "shell" capping a floor bump at constant vertical thickness, instead
+  // of an ellipse: a smooth band between SedimentBumpField(x) and
+  // SedimentBumpField(x)+ice_shell_thickness[k], windowed laterally to
+  // [ice_shell_x[k]-ice_shell_R[k], ice_shell_x[k]+ice_shell_R[k]] so it
+  // only covers the bump itself, not the whole floor. Added on top of the
+  // ice_grain_* ellipses in FormInitialMultiGrains2D, not a replacement.
+  PetscInt  n_ice_shells;
+  PetscReal ice_shell_x[MAX_SED_GRAINS];
+  PetscReal ice_shell_R[MAX_SED_GRAINS];
+  PetscReal ice_shell_thickness[MAX_SED_GRAINS];
+
   // Initial normal vector components (possibly for a structured interface)
   PetscReal norm0[3];  // Per-DOF initial residual norms for SNES convergence check
 

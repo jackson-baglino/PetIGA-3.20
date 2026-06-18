@@ -1,26 +1,26 @@
 # =============================================================================
 # geometry/2D_single_bump_ice_cap.opts — simple sanity case: one floor bump
-# at domain center, 1 large ice grain at the right boundary, and an
-# approximate "ice cap" draped over the bump.
+# at domain center, 1 large ice grain at the right boundary, and an ice
+# "shell" of constant thickness wrapping the bump.
 #
-# No exact bump-conformal ice-cap ic_type exists (would need new C code in
-# src/initial_conditions.c); approximating instead with a short ice ellipse
-# (-ice_grain_ax slightly > bump R) using the EXISTING multi_grains ellipse
-# machinery. First attempt used ax=1.0e-5/ay=0.3e-5/cy=0.5e-5, which floated
-# visibly above the flat floor away from the bump (an ellipse's lower curve
-# decays much slower than the bump's C-infinity profile, opening an air gap
-# under most of the ellipse's width). Tightened: ax close to the bump's own
-# R=0.4e-5 (less overhang past the bump's footprint) and cy-ay=0 (bottom of
-# the ellipse touches the flat floor baseline at its center), so the ice
-# sits down at/near the actual floor instead of hovering above it.
+# v1 approximated the cap with a short ice ellipse (-ice_grain_ax/ay); it
+# floated visibly above the flat floor away from the bump (an ellipse's
+# lower curve decays much slower than the bump's C-infinity profile) and
+# couldn't give a true constant-thickness shell. Replaced with a new
+# -ice_shell_x/-ice_shell_R/-ice_shell_thickness mechanism (src/
+# initial_conditions.c, FormInitialMultiGrains2D): a smooth band of fixed
+# vertical thickness sitting directly on SedimentBumpField(x) -- i.e. it
+# literally follows the bump's own floor curve -- windowed laterally to
+# [x-R, x+R] so it only covers the bump, not the whole floor.
 #
 # Same geometry file/bump as 2D_single_bump_two_grains.opts (no new mesh
 # needed). Same domain, mesh resolution, eps, temperature/humidity, and
 # solver settings as the other two simple cases.
 #
-# Ice "grains":
-#   0: right boundary (large): cx=Lx,    cy=Ly/2,   R=1.5e-5
-#   1: ice-cap ellipse:         cx=5.0e-5, cy=0.3e-5, ax=0.5e-5, ay=0.3e-5
+# Ice:
+#   grain 0: right boundary (large): cx=Lx, cy=Ly/2, R=1.5e-5
+#   shell 0: x=5.0e-5 (bump center), R=0.5e-5 (slightly past the bump's own
+#            R=0.4e-5), thickness=0.1e-5 (half the bump's own height 0.2e-5)
 # =============================================================================
 # DOF_GRID: 306 124
 -geom_file inputs/geometry/single_bump_test.dat
@@ -34,11 +34,14 @@
 -sed_grain_x 5.0e-5
 -sed_grain_R 0.4e-5
 -sed_grain_h 0.2e-5
--ice_grain_cx 1.0e-4,5.0e-5
--ice_grain_cy 2.0e-5,0.3e-5
--ice_grain_R  1.5e-5,0.5e-5
--ice_grain_ax 1.5e-5,0.5e-5
--ice_grain_ay 1.5e-5,0.3e-5
+-ice_grain_cx 1.0e-4
+-ice_grain_cy 2.0e-5
+-ice_grain_R  1.5e-5
+-ice_grain_ax 1.5e-5
+-ice_grain_ay 1.5e-5
+-ice_shell_x 5.0e-5
+-ice_shell_R 0.5e-5
+-ice_shell_thickness 0.1e-5
 -delt_t 1.0e-4
 -eps 3.68274e-07
 -periodic 0

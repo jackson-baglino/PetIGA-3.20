@@ -245,6 +245,37 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* --- Ice "shell" capping a floor bump at constant thickness ------------ */
+    user.n_ice_shells = 0;
+    {
+        PetscInt n = MAX_SED_GRAINS;
+        ierr = PetscOptionsRealArray("-ice_shell_x",
+                 "Ice-shell lateral center x-positions [m]; a smooth band of "
+                 "constant vertical thickness sitting on SedimentBumpField(x), "
+                 "windowed to [x-R, x+R] so it only covers the bump under it "
+                 "(added on top of -ice_grain_* ellipses, not a replacement)",
+                 "", user.ice_shell_x, &n, &flg); CHKERRQ(ierr);
+        if (flg) {
+            user.n_ice_shells = n;
+            PetscInt nr = MAX_SED_GRAINS;
+            ierr = PetscOptionsRealArray("-ice_shell_R",
+                     "Ice-shell lateral half-widths [m], one per -ice_shell_x entry",
+                     "", user.ice_shell_R, &nr, NULL); CHKERRQ(ierr);
+            if (nr != n)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-ice_shell_x and -ice_shell_R must have the same length (%d vs %d)",
+                        (int)n, (int)nr);
+            PetscInt nt = MAX_SED_GRAINS;
+            ierr = PetscOptionsRealArray("-ice_shell_thickness",
+                     "Ice-shell constant vertical thickness [m], one per -ice_shell_x entry",
+                     "", user.ice_shell_thickness, &nt, NULL); CHKERRQ(ierr);
+            if (nt != n)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-ice_shell_x and -ice_shell_thickness must have the same length (%d vs %d)",
+                        (int)n, (int)nt);
+        }
+    }
+
     /* --- Multi-grain ice IC (-ic_type multi_grains) ------------------------ */
     user.n_act = 0;
     {
