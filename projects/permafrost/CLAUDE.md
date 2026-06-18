@@ -94,6 +94,21 @@ So "N elements visibly diffuse in ParaView" corresponds to roughly
 `eps ≈ N·dx / 6` to `N·dx / 9` (depending on how sharp a cutoff you're
 eyeballing) — **not** `eps ≈ N·dx`.
 
+**There is also a second, easy-to-confuse "width": the Karma-Plapp convention
+`w_karma = 2√2·eps`** used inside `comp_eps.py` to size `dx` from a target
+`n_per_interface`. `w_karma` is ~3.25x *narrower* than the 1%-99% band
+(`w_karma · ln(99)/√2 ≈ w_1_99`) — it is a pure analytic device for relating
+`eps` to physical material parameters in the sharp-interface-limit
+derivation, NOT a visual or resolution-adequacy metric. **When checking
+whether the mesh adequately resolves the interface, count elements across
+the directly-observed phi=0.01-to-0.99 band (or measure it in ParaView the
+way the user does — contour at phi=0.01 and phi=0.99, count elements between
+them with Surface With Edges) — never against `n_per_interface`/Karma-width
+element counts.** `comp_eps.py`'s own `--n` default (4 Karma-elements) is
+calibrated to land around ~7.5-10 elements across the 1%-99% band; quoting
+the Karma-element count on its own (e.g. "only 2.4 elements!") will look
+alarmingly low even when the real, visible interface is adequately resolved.
+
 Always (re)compute `eps` with `preprocess/comp_eps.py` (Kaempfer & Plapp 2009
 sharp-interface bounds) for the actual domain/grain sizes/temperature in play.
 Never hand-tune `eps` by visually estimating the diffuse band width, and never
