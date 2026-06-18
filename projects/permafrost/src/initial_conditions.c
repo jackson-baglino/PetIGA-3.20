@@ -370,6 +370,30 @@ static PetscReal SedimentBumpField(const AppCtx *user, PetscReal x)
     return y;
 }
 
+/* d/dx of SedimentBump(): g'(x) = g(x) * (-2t)/(R*(1-t^2)^2), t=(x-center)/R.
+ * Vanishes at |t|->1 along with g() itself (C-infinity, compact support). */
+static PetscReal SedimentBumpDeriv(PetscReal x, PetscReal center, PetscReal R, PetscReal height)
+{
+    if (R <= 0.0) return 0.0;
+    PetscReal t = (x - center) / R;
+    if (PetscAbsReal(t) >= 1.0) return 0.0;
+    PetscReal g = SedimentBump(x, center, R, height);
+    return g * (-2.0 * t) / (R * SQ(1.0 - t * t));
+}
+
+/* d/dx of SedimentBumpField() -- local slope of the actual floor curve,
+ * used by the ice-shell distance-to-surface calculation below. */
+static PetscReal SedimentBumpFieldDeriv(const AppCtx *user, PetscReal x)
+{
+    if (user->n_sed_grains <= 0)
+        return SedimentBumpDeriv(x, 0.5 * user->Lx, user->geom_bump_R, user->geom_bump_R);
+
+    PetscReal dy = 0.0;
+    for (PetscInt k = 0; k < user->n_sed_grains; k++)
+        dy += SedimentBumpDeriv(x, user->sed_grain_x[k], user->sed_grain_R[k], user->sed_grain_h[k]);
+    return dy;
+}
+
 /* Sum of ceiling bumps (-top_grain_x/-R/-h) pushing DOWN from Ly.
  * Returns total downward displacement; caller computes y_top = Ly - TopBumpField().
  * Must match build_geometry_multi_grain.py's TOP_GRAINS list. */
@@ -532,17 +556,28 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                 ice += 0.5 - 0.5 * PetscTanhReal(tc_k * (d - 1.0));
             }
             for (PetscInt k = 0; k < user->n_ice_shells; k++) {
-                PetscReal xs   = user->ice_shell_x[k];
-                PetscReal Rs   = user->ice_shell_R[k];
-                PetscReal ts   = user->ice_shell_thickness[k];
-                PetscReal dlat = PetscAbsReal(x - xs) / Rs;                 /* lateral window: =1 at edge */
-                PetscReal tc_lat = tc * Rs;
-                PetscReal w    = 0.5 - 0.5 * PetscTanhReal(tc_lat * (dlat - 1.0));
-                PetscReal yc   = y_bot + 0.5 * ts;                          /* band center, follows the bump */
-                PetscReal dvert = PetscAbsReal(y - yc) / (0.5 * ts);        /* vertical band: =1 at edge */
-                PetscReal tc_vert = tc * 0.5 * ts;
-                PetscReal band = 0.5 - 0.5 * PetscTanhReal(tc_vert * (dvert - 1.0));
-                ice += w * band;
+                PetscReal xs = user->ice_shell_x[k];
+                PetscReal Rs = user->ice_shell_R[k];
+                PetscReal ts = user->ice_shell_thickness[k];
+                PetscReal dist;
+                if (x < xs - Rs) {
+                    /* left of the shell's segment: distance to its fixed
+                     * endpoint (the floor curve is exactly 0 there) -- gives
+                     * a naturally rounded cap, not a sharp/independent window */
+                    dist = PetscSqrtReal(SQ(x - (xs - Rs)) + SQ(y));
+                } else if (x > xs + Rs) {
+                    dist = PetscSqrtReal(SQ(x - (xs + Rs)) + SQ(y));
+                } else {
+                    /* inside the segment: perpendicular distance to the floor
+                     * curve's local tangent line (good approximation for a
+                     * gently-curving bump); matches the endpoint formula
+                     * continuously at x=xs+-Rs since slope->0 there too */
+                    PetscReal slope = SedimentBumpFieldDeriv(user, x);
+                    dist = (y - y_bot) / PetscSqrtReal(1.0 + SQ(slope));
+                }
+                PetscReal dn      = dist / ts;
+                PetscReal tc_shell = tc * ts;
+                ice += 0.5 - 0.5 * PetscTanhReal(tc_shell * (dn - 1.0));
             }
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 
