@@ -32,7 +32,7 @@
 #        cy=0 (half-circle on floor via zero-flux BC mirror), R=3.5e-6
 # =============================================================================
 # DOF_GRID: 306 124
--geom_file inputs/geometry/multi_grain_test.dat
+-geom_file inputs/geometry/multi_grain/compEps_304x122/mesh.dat
 -p 2
 -C 1
 -ic_type multi_grains
