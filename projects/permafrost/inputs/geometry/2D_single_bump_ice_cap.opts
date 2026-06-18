@@ -36,7 +36,10 @@
 # Ice:
 #   grain 0: right boundary (large): cx=Lx, cy=Ly/2, R=1.5e-5
 #   shell 0: x=5.0e-5 (bump center), R=0.4e-5 (= bump's own R, exact
-#            footprint match), thickness=0.1e-5 (1/2 the bump's own height)
+#            footprint match), thickness=0.2e-5 (= the bump's own height;
+#            bumped up from 0.1e-5 (1/2 height) since that still read as
+#            too thin -- same shape/distance-to-surface mechanism, just a
+#            bigger thickness parameter)
 # =============================================================================
 # DOF_GRID: 306 124
 -geom_file inputs/geometry/single_bump_test.dat
@@ -57,7 +60,7 @@
 -ice_grain_ay 1.5e-5
 -ice_shell_x 5.0e-5
 -ice_shell_R 0.4e-5
--ice_shell_thickness 0.1e-5
+-ice_shell_thickness 0.2e-5
 -delt_t 1.0e-4
 -eps 3.68274e-07
 -periodic 0
