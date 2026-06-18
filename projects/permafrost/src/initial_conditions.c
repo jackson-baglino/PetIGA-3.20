@@ -26,13 +26,20 @@ static PetscErrorCode GrevilleAbscissae(IGA iga, PetscInt dir, PetscReal **g, Pe
     ierr = IGAAxisGetDegree(axis, &p);      CHKERRQ(ierr);
     ierr = IGAAxisGetKnots(axis, &m, &U);   CHKERRQ(ierr);
 
+    /* Normalize to [0,1]: a -geom_file axis's knots already span [0,1] (the
+     * igakit builder's convention), but the default (-Nx/-Ny, no -geom_file)
+     * axis built by IGAAxisInitUniform() spans [0,Lx]/[0,Ly] directly -- callers
+     * (FormInitialMultiGrains2D) multiply the returned abscissae by Lx/Ly
+     * themselves, so this must always return [0,1] regardless of which path
+     * built the axis, or physical coordinates get scaled by Lx/Ly twice. */
+    PetscReal Ui = U[0], Uf = U[m];
     PetscInt nb = m - p; /* number of basis functions / DOFs along this axis */
     PetscReal *greville;
     ierr = PetscMalloc1(nb, &greville); CHKERRQ(ierr);
     for (PetscInt i = 0; i < nb; i++) {
         PetscReal sum = 0.0;
         for (PetscInt k = 1; k <= p; k++) sum += U[i + k];
-        greville[i] = sum / (PetscReal)p;
+        greville[i] = (sum / (PetscReal)p - Ui) / (Uf - Ui);
     }
 
     *g = greville;
