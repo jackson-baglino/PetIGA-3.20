@@ -63,7 +63,10 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     AppCtx *user = (AppCtx*)ctx;
 
     PetscInt l, dim = user->dim;
-    PetscReal eps     = user->eps;
+    /* Quick-and-dirty: model eps < IC eps (75%) to counter observed
+     * post-IC interface growth/coarsening. TODO: split into a proper
+     * user->eps_model field if this sticks. */
+    PetscReal eps     = 0.75 * user->eps;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
     PetscReal alph_sub= user->alph_sub;
@@ -197,7 +200,8 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     AppCtx *user = (AppCtx*)ctx;
 
     PetscInt l, dim = user->dim;
-    PetscReal eps     = user->eps;
+    /* Quick-and-dirty: model eps < IC eps (75%), matches Residual_A1. */
+    PetscReal eps     = 0.75 * user->eps;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
     PetscReal alph_sub= user->alph_sub;
