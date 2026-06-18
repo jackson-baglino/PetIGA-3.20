@@ -113,11 +113,14 @@ TOP_GRAINS = []
 Nx = 600   # elements in x (Lx/Nx = 1.667e-7 m, same h as old 240x240 on 4.0e-5)
 Ny = 240   # elements in y
 
-# basis-function degree; geometry is (P,P) with C^{P-1} (single interior
-# knots, maximal smoothness). P=2 gives quadratic, C1 basis functions --
-# smoother ice-air interfaces than the previous P=1/C0 mesh at the same
-# element count. Override via --P (e.g. --P 1 for a P=1/C0 comparison mesh).
+# basis-function degree; geometry is (P,P) with continuity C (default
+# C=P-1, single interior knots, maximal smoothness). P=2/C=1 gives
+# quadratic, C1 basis functions -- smoother ice-air interfaces than a
+# P=1/C0 mesh at the same element count. Override via --P/--C (e.g.
+# --P 1 --C 0 for a classic-FEM-style P=1/C0 comparison mesh, or
+# --P 2 --C 0 for a quadratic but only C0-continuous mesh).
 P = 2
+C = None   # None -> defaults to P-1 (maximal continuity) in open_uniform_knots()
 
 
 def _bump(x, center, R, height):
@@ -148,10 +151,17 @@ def _top_bump_field(x):
     return y
 
 
-def open_uniform_knots(N, p):
-    """Open-uniform knot vector for N elements, degree p, C^{p-1}
-    (single interior knots): p+1-fold end knots, N-1 single interior knots."""
-    interior = np.linspace(0.0, 1.0, N + 1)[1:-1]
+def open_uniform_knots(N, p, c=None):
+    """Open-uniform knot vector for N elements, degree p, continuity c
+    (default: c=p-1, maximal smoothness / single interior knots).
+    Interior knot multiplicity = p - c, so c=0 repeats each interior
+    knot p times (classic-FEM-style C0 elements)."""
+    if c is None:
+        c = p - 1
+    mult = p - c
+    assert 1 <= mult <= p, f"continuity c={c} invalid for degree p={p}"
+    interior_unique = np.linspace(0.0, 1.0, N + 1)[1:-1]
+    interior = np.repeat(interior_unique, mult)
     return np.concatenate([np.zeros(p + 1), interior, np.ones(p + 1)])
 
 
@@ -163,8 +173,8 @@ def greville_abscissae(U, p):
 
 
 def build_surface():
-    Ux = open_uniform_knots(Nx, P)
-    Uy = open_uniform_knots(Ny, P)
+    Ux = open_uniform_knots(Nx, P, C)
+    Uy = open_uniform_knots(Ny, P, C)
     gx = greville_abscissae(Ux, P)   # (Nx+P,) parametric x-DOF positions
     gy = greville_abscissae(Uy, P)   # (Ny+P,) parametric y-DOF positions
 
@@ -263,7 +273,7 @@ def write_vtk(surf, fname, n_per_elem=4):
 
 
 def main():
-    global P, Nx, Ny
+    global P, C, Nx, Ny
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--Nx", type=int, default=Nx,
@@ -271,7 +281,10 @@ def main():
     parser.add_argument("--Ny", type=int, default=Ny,
                          help=f"elements in y, default {Ny}")
     parser.add_argument("--P", type=int, default=P,
-                         help=f"basis-function degree (C^{{P-1}} continuity), default {P}")
+                         help=f"basis-function degree, default {P}")
+    parser.add_argument("--C", type=int, default=None,
+                         help="continuity (default: P-1, maximal smoothness); "
+                              "--C 0 gives classic-FEM-style C0 elements at degree P")
     parser.add_argument("--out", default="inputs/geometry/multi_grain_test.dat",
                          help="output PetIGA mesh file (default: active mesh)")
     parser.add_argument("--plot", default="preprocess/multi_grain_geometry.png",
@@ -289,6 +302,7 @@ def main():
     Nx = args.Nx
     Ny = args.Ny
     P = args.P
+    C = args.C
 
     surf = build_surface()
 
