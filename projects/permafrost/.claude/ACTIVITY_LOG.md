@@ -1,3 +1,27 @@
+## 2026-06-19 — Generated first real movie; bounded highres disk cost
+
+- User asked to actually run the new movie pipeline on job64410270's
+  real output (5564 snapshots). Discovered plot_permafrost_highres.py's
+  dense VTS output is ~70MB/file at n_per_elem=4 on this 608x122-element
+  mesh -- converting all 5564 snapshots would be ~400GB, and even the
+  ~1199 unique steps make_movie.py's default 600-frame, evenly-spaced-in-
+  time sampling actually needs would be ~82GB, too close to the ~88GB
+  free on disk at the time.
+- Added `postprocess/select_movie_frames.py`: computes the same target
+  times make_movie.py uses internally, finds the real snapshot(s)
+  bracketing each one, and converts only that union via
+  plot_permafrost_highres.py --steps -- run with matching --n-frames so
+  the two scripts' target times line up exactly.
+- Generated job64410270's first movie at --n-per-elem 2 (~20.5GB, safe
+  margin) instead of the default 4: 600 frames, 1218x246, 20s @ 30fps,
+  tightly cropped, with matching ice/vapor SVG colorbars. Cleaned up the
+  ~21GB of intermediate highres VTS afterward (the movie itself is only
+  ~105KB). Committed (a3fd664) and pushed.
+
+---
+
+**Session ended:** 2026-06-19 14:01:50
+
 ## 2026-06-19 — Fixed movie resolution, cropping, and added vector colorbars
 
 - User reported `make_movie.py`'s frames were too low-res, not cropped
