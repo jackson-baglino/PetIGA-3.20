@@ -1,3 +1,31 @@
+## 2026-06-19 — Redesigned ice cap as concentric circle-fit encapsulation
+
+- User clarified the actual physical intent behind the "ice cap" case,
+  after every prior attempt (ellipse, conformal shell, flat layer) still
+  looked wrong: the bump represents a sediment grain intruding from the
+  domain boundary (modeled as a boundary bump, not a separate phase
+  field, since direct phase-field modeling of sediment caused numerical
+  issues months ago) and the ice around it should look like the grain is
+  truly encapsulated, not coated/draped.
+- User's own proposed design: fit a circle to the bump (through its two
+  edges and peak), then use a second, concentric, larger circle (radius
+  + thickness) as the ice region. Confirmed this is implementable with
+  ZERO new C code -- it's just the existing -ice_grain_cx/cy/ax/ay circle
+  mechanism with ax=ay and the center placed below the domain.
+- Added `preprocess/comp_ice_encapsulation.py` implementing the sagitta/
+  circular-segment fit formula. Updated
+  `inputs/geometry/2D_single_bump_ice_cap.opts` (R_sed=5.0e-6,
+  cy_sed=-3.0e-6, R_ice=7.0e-6 for the existing R=0.4e-5/H=0.2e-5 bump,
+  thickness=0.2e-5). Verified locally: phi_ice stays in [0,1] exactly,
+  uniform-thickness band wrapping the bump with no notch at the
+  intrusion points, sediment grain itself renders as the correct
+  no-data region below the domain boundary. Committed (0974838) and
+  pushed.
+
+---
+
+**Session ended:** 2026-06-19 14:16:27
+
 ## 2026-06-19 — Generated first real movie; bounded highres disk cost
 
 - User asked to actually run the new movie pipeline on job64410270's
