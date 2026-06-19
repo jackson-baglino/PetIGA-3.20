@@ -1,3 +1,34 @@
+## 2026-06-19 — ParaView movie script with linear-time playback
+
+- Added `postprocess/make_movie.py` (run via pvpython) and
+  `postprocess/make_cmocean_preset.py` (run via the regular venv, which
+  has cmocean) to automate the user's manual ParaView workflow: IsoVolume
+  of IcePhase in `[0.5,1.1]` colored by IcePhase (cmocean "ice" preset,
+  exported to JSON once since pvpython's embedded Python lacks cmocean),
+  plus a second IsoVolume in `[-0.1,0.5]` (air, since air=1-ice) colored
+  by VaporDensity with an auto-computed (percentile-based, fixed for the
+  whole movie) or manually set colorbar range.
+- Addressed the non-linear-playback problem directly: adaptive dt makes
+  raw per-snapshot frames dense early/sparse late, so a naive
+  frame-per-snapshot movie crawls early and speeds up late. The script
+  instead samples `--n-frames` evenly spaced in actual simulated time
+  across `[t-start, t-end]`, with an optional `TemporalInterpolator` (on
+  by default) so frames between sparse late snapshots blend smoothly.
+  Documented in the script's docstring that this can't un-skip dense
+  early dynamics under strictly linear time -- that's an inherent
+  tradeoff of the request, not a bug; flagged a variable-speed
+  two-segment mode as a follow-up if the user wants it later.
+- Verified end-to-end against job64410270's `permafrost.pvd` (5564 real
+  snapshots). Committed (5f65166) and pushed.
+- Gave the user `submit_permafrost.sh` commands to rerun the three 2-day
+  simple-case sanity sims (`2D_two_grains_flat`,
+  `2D_single_bump_two_grains`, `2D_single_bump_ice_cap`, all still
+  present and unchanged) with `2day_T-20_h0.95`.
+
+---
+
+**Session ended:** 2026-06-19 12:37:45
+
 ## 2026-06-19 — Diagnosed dt oscillation in job64410270; widened phase bounds
 
 - User ran the 30-day retry (`job64410270`, `random_bumpy_floor_v2`) to let
