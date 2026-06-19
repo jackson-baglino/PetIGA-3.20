@@ -22,32 +22,23 @@
 # each at half-strength right at the bump's edge, so their product (0.25)
 # still left a small notch under the ice=0.5 contour exactly at the
 # intrusion point.
-# v5: replaced the two windows with an actual distance-to-the-floor-curve
-# calculation (perpendicular distance to the local tangent line inside the
-# bump's footprint, Euclidean distance to the footprint's endpoint outside
-# it -- see SedimentBumpFieldDeriv()/the -ice_shell_x loop in
-# FormInitialMultiGrains2D). No more product-of-windows corner: the
-# ice=0.5 contour reached y=0 exactly at both of the bump's edges -- but
-# the result is necessarily DOMED (conformal/constant-thickness above a
-# curved surface is itself curved), not flat.
-# v6 (this version): the user actually wants the grain fully ENCAPSULATED
-# in ice with a FLAT (non-rounded) ice-air interface -- i.e. the bump is
-# buried under a flat layer, not wearing a conformal coating. Added a new,
-# separate mechanism for this: -ice_flat_x/-R/-height (FormInitialMultiGrains2D)
-# fills everything below an ABSOLUTE height (not relative to the bump's own
-# surface), windowed laterally the same way as -ice_shell_*. The -ice_shell_*
-# mechanism is left in place in the C code (useful for an actual conformal
-# coating elsewhere) but unused by this opts file now.
+# v5/v6 tried a conformal distance-to-surface shell and then a flat
+# absolute-height layer (both via dedicated -ice_shell_*/-ice_flat_*
+# mechanisms in FormInitialMultiGrains2D, still available in the C code).
+# Neither matched what was wanted -- reverted to the plain -ice_grain_*
+# ellipse definition used everywhere else in this project (same as
+# 2D_single_bump_two_grains.opts / 2D_two_grains_flat.opts), sized to
+# approximate the bump: ax = bump's own R (no lateral overhang), cy=ay so
+# the ellipse's bottom touches y=0 (matching the bump's base) instead of
+# floating above it.
 #
 # Same geometry file/bump as 2D_single_bump_two_grains.opts (no new mesh
 # needed). Same domain, mesh resolution, eps, temperature/humidity, and
 # solver settings as the other two simple cases.
 #
-# Ice:
-#   grain 0: right boundary (large): cx=Lx, cy=Ly/2, R=1.5e-5
-#   flat  0: x=5.0e-5 (bump center), R=0.4e-5 (bump's own R), height=0.4e-5
-#            (twice the bump's own height 0.2e-5, so the bump sits fully
-#            submerged under the flat ice top, not just barely covered)
+# Ice grains:
+#   0: right boundary (large): cx=Lx,     cy=Ly/2,   R=1.5e-5
+#   1: ice cap:                 cx=5.0e-5, cy=0.15e-5, ax=0.4e-5, ay=0.15e-5
 # =============================================================================
 # DOF_GRID: 306 124
 -geom_file inputs/geometry/single_bump_test.dat
@@ -61,14 +52,11 @@
 -sed_grain_x 5.0e-5
 -sed_grain_R 0.4e-5
 -sed_grain_h 0.2e-5
--ice_grain_cx 1.0e-4
--ice_grain_cy 2.0e-5
--ice_grain_R  1.5e-5
--ice_grain_ax 1.5e-5
--ice_grain_ay 1.5e-5
--ice_flat_x 5.0e-5
--ice_flat_R 0.4e-5
--ice_flat_height 0.4e-5
+-ice_grain_cx 1.0e-4,5.0e-5
+-ice_grain_cy 2.0e-5,0.15e-5
+-ice_grain_R  1.5e-5,0.4e-5
+-ice_grain_ax 1.5e-5,0.4e-5
+-ice_grain_ay 1.5e-5,0.15e-5
 -delt_t 1.0e-4
 -eps 3.68274e-07
 -periodic 0
