@@ -56,9 +56,30 @@ that window), or ask about a variable-speed two-segment mode instead of
 truly linear time -- that's a bigger script change, not implemented here.
 
 ------------------------------------------------------------------------
+Resolution, cropping, and colorbars
+------------------------------------------------------------------------
+Frames render at the underlying data's own point resolution by default
+(read straight from the reader -- whatever density plot_permafrost_highres.py
+sampled at, e.g. ~2432x488 for a 608x122-element mesh at n_per_elem=4), not
+some fixed/capped video size. Use --supersample for extra antialiasing or
+--resolution WxH to override outright.
+
+The camera is set explicitly to the data's bounding box with zero margin
+(not ResetCamera's default padding), so frames are cropped tight to the
+geometry -- no background border. In-frame scalar bars are hidden (they
+were eating into that crop and don't antialias/scale well baked into video
+anyway); use --no-colorbars to skip exporting the standalone ones below.
+
+Each run also exports two standalone vector colorbars next to the movie
+(<out>_ice_colorbar.svg, <out>_vapor_colorbar.svg) reconstructed directly
+from the actual ParaView transfer functions used for rendering (so they're
+guaranteed to match), as SVG for easy resizing/relabeling in Inkscape.
+
+------------------------------------------------------------------------
 Usage examples
 ------------------------------------------------------------------------
-  # Full run, 600 frames linear in simulated time, 30 fps, auto vapor range
+  # Full run, 600 frames linear in simulated time, 30 fps, auto vapor range,
+  # native resolution, separate vector colorbars
   pvpython postprocess/make_movie.py --dir /path/to/run
 
   # Fixed vapor colorbar bounds instead of auto-detecting
@@ -67,6 +88,9 @@ Usage examples
   # Only the first 2 days, denser sampling, no temporal interpolation
   pvpython postprocess/make_movie.py --dir /path/to/run --t-end 172800 \\
       --n-frames 900 --no-interpolate
+
+  # 2x supersampled frames for a crisper video
+  pvpython postprocess/make_movie.py --dir /path/to/run --supersample 2
 """
 
 import argparse
@@ -78,11 +102,39 @@ import subprocess
 from paraview.simple import (
     OpenDataFile, IsoVolume, TemporalInterpolator, Show, ColorBy,
     GetColorTransferFunction, GetActiveViewOrCreate, GetAnimationScene,
-    Render, SaveScreenshot, ResetCamera,
+    Render, SaveScreenshot,
 )
 from paraview import servermanager
 from vtk.numpy_interface import dataset_adapter as dsa
 import numpy as np
+
+
+def save_vector_colorbar(lut, label, out_path):
+    """Export a standalone vertical colorbar as SVG, reconstructed from the
+    actual ParaView transfer function (lut.RGBPoints) so it's guaranteed to
+    match what's rendered in the frames -- regardless of whether the LUT
+    came from a named built-in preset or a custom JSON import."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap, Normalize
+    from matplotlib.colorbar import ColorbarBase
+
+    pts = list(lut.RGBPoints)
+    n = len(pts) // 4
+    values = [pts[4 * i] for i in range(n)]
+    colors = [(pts[4 * i + 1], pts[4 * i + 2], pts[4 * i + 3]) for i in range(n)]
+    lo, hi = values[0], values[-1]
+    positions = [(v - lo) / (hi - lo) if hi > lo else 0.0 for v in values]
+    cmap = LinearSegmentedColormap.from_list("custom", list(zip(positions, colors)), N=256)
+
+    fig, ax = plt.subplots(figsize=(1.4, 6))
+    cb = ColorbarBase(ax, cmap=cmap, norm=Normalize(vmin=lo, vmax=hi), orientation="vertical")
+    cb.set_label(label, fontsize=14)
+    cb.ax.tick_params(labelsize=12)
+    fig.savefig(out_path, format="svg", bbox_inches="tight", transparent=True)
+    plt.close(fig)
+    print(f"  wrote {out_path}  (range [{lo:.4g}, {hi:.4g}])")
 
 
 def find_pvd(run_dir: str) -> str:
@@ -148,8 +200,17 @@ def main():
     p.add_argument("--vapor-range-samples", type=int, default=40,
                    help="number of timesteps sampled for auto vapor range (default: 40)")
     p.add_argument("--resolution", default=None,
-                   help="WxH output resolution (default: auto from data aspect ratio, "
-                        "capped at 1600 wide)")
+                   help="WxH output resolution (default: native -- the reader's own "
+                        "point grid resolution, e.g. matching plot_permafrost_highres.py's "
+                        "dense sampling 1:1)")
+    p.add_argument("--supersample", type=float, default=1.0,
+                   help="multiply the native resolution by this factor (default: 1.0)")
+    p.add_argument("--max-width", type=int, default=4096,
+                   help="safety cap on output width in pixels; native/supersampled "
+                        "resolution is downscaled proportionally if it would exceed "
+                        "this (default: 4096)")
+    p.add_argument("--no-colorbars", action="store_true",
+                   help="skip exporting the standalone SVG colorbars")
     p.add_argument("--keep-frames", action="store_true",
                    help="keep the rendered PNG frame sequence after muxing")
     args = p.parse_args()
@@ -161,6 +222,7 @@ def main():
 
     print(f"Reading {pvd_path}")
     reader = OpenDataFile(pvd_path)
+    reader.UpdatePipeline(0.0)
     timestep_values = list(reader.TimestepValues)
     if not timestep_values:
         raise RuntimeError("No timesteps found in the PVD file")
@@ -216,19 +278,49 @@ def main():
     else:
         vapor_lut.ApplyPreset(args.vapor_colormap, True)
     vapor_lut.RescaleTransferFunction(vmin, vmax)
-    air_display.SetScalarBarVisibility(view, True)
 
-    ResetCamera(view)
+    # In-frame legends off: they eat into the tight crop below and don't
+    # scale/antialias well baked into video. Standalone vector colorbars
+    # (matching these exact LUTs) are exported separately further down.
+    ice_display.SetScalarBarVisibility(view, False)
+    air_display.SetScalarBarVisibility(view, False)
 
+    # ---- resolution: native data point grid by default, not a fixed cap ----
     if args.resolution:
         w, h = (int(v) for v in args.resolution.split("x"))
     else:
-        b = reader.GetDataInformation().GetBounds()
-        lx, ly = b[1] - b[0], b[3] - b[2]
-        w = 1600
-        h = max(200, int(round(w * ly / lx)))
+        ext = reader.GetDataInformation().GetExtent()
+        nx, ny = ext[1] - ext[0] + 1, ext[3] - ext[2] + 1
+        w = int(round(nx * args.supersample))
+        h = int(round(ny * args.supersample))
+    if w > args.max_width:
+        scale = args.max_width / w
+        w, h = args.max_width, max(1, int(round(h * scale)))
+        print(f"  (downscaled to stay under --max-width {args.max_width})")
+    w, h = w + (w % 2), h + (h % 2)  # libx264/yuv420p needs even dimensions
     view.ViewSize = [w, h]
     print(f"Render resolution: {w}x{h}")
+
+    # ---- tight crop: explicit camera on the data bounds, zero margin -------
+    # ParaView auto-resets the camera (fit-to-data, with padding) on the
+    # FIRST render after new representations are shown -- render once now
+    # to absorb that reset, then override the camera explicitly. Setting
+    # the camera before this first Render() is silently undone.
+    Render(view)
+    b = reader.GetDataInformation().GetBounds()
+    xmid, ymid = 0.5 * (b[0] + b[1]), 0.5 * (b[2] + b[3])
+    cam = view.GetActiveCamera()
+    cam.SetParallelProjection(1)
+    cam.SetFocalPoint(xmid, ymid, 0.0)
+    cam.SetPosition(xmid, ymid, 1.0)
+    cam.SetViewUp(0.0, 1.0, 0.0)
+    cam.SetParallelScale(0.5 * (b[3] - b[2]))
+
+    # ---- standalone vector colorbars (match the LUTs exactly) --------------
+    if not args.no_colorbars:
+        base, _ = os.path.splitext(out_path)
+        save_vector_colorbar(ice_lut, "Ice phase", base + "_ice_colorbar.svg")
+        save_vector_colorbar(vapor_lut, "Vapor density", base + "_vapor_colorbar.svg")
 
     # ---- frame loop: evenly spaced in simulated time, not in snapshot index --
     frame_dir = out_path + "_frames"
