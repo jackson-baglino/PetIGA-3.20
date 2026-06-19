@@ -1,3 +1,26 @@
+## 2026-06-19 — Fixed movie resolution, cropping, and added vector colorbars
+
+- User reported `make_movie.py`'s frames were too low-res, not cropped
+  tight to the geometry, and wanted colorbars as separate vector images
+  for Inkscape editing rather than baked into the frames.
+- Resolution now defaults to the reader's own native point grid (read
+  from the data extent) instead of a fixed 1600px cap, with
+  `--supersample`/`--max-width` controls.
+- Root-caused the cropping bug: ParaView silently resets the camera (fit
+  with padding) on the FIRST `Render()` of a newly-shown representation,
+  undoing any camera settings applied earlier. Fixed by rendering once
+  first to absorb that reset, then setting the explicit zero-margin
+  camera afterward. Verified frames now fill edge to edge.
+- Hid in-frame scalar bars; added standalone SVG colorbar export
+  (`<out>_ice_colorbar.svg`/`_vapor_colorbar.svg`) reconstructed directly
+  from the actual `lut.RGBPoints` so they're guaranteed to match the
+  rendered frames. Also fixed an odd-pixel-dimension bug breaking
+  libx264 encoding. Committed (9fdfbda) and pushed.
+
+---
+
+**Session ended:** 2026-06-19 13:42:10
+
 ## 2026-06-19 — ParaView movie script with linear-time playback
 
 - Added `postprocess/make_movie.py` (run via pvpython) and
