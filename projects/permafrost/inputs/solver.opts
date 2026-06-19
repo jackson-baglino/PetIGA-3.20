@@ -29,31 +29,33 @@
 -flag_BC_rhovfix 0
 -flag_Tdep 0                            # temperature-independent material properties
 
-# ---------- Phase-field bounds (safety net) -----------------------------------
-# Bounds-rollback fires when a Newton trial sees phi outside [phase_lo, phase_hi].
-# Tight enough to catch the large (~-0.25 to -0.6) ice undershoots seen when a
-# grain fully sublimates, while still tolerating the small overshoot during the
-# initial AC relaxation (the tanh IC is not an exact equilibrium of the 2-phase
-# well shape and AC transiently goes slightly past 0/1 before settling).
+# ---------- Phase-field bounds (defensive backstop only) ----------------------
+# The real bound enforcement is now structural: permafrost2.c sets
+# SNESVISetVariableBounds(0<=ice<=1) on the SNES (see -snes_type vinewtonssls
+# below), so the Newton DOF itself can't leave [0,1] -- and since the field at
+# any quadrature point is a convex combination of nearby DOFs, that also keeps
+# the evaluated field in [0,1] everywhere, with no retry/rollback needed.
 #
-# Widened -0.05/1.05 -> -0.15/1.15 after job64410270 (random_bumpy_floor_v2,
-# 30-day run): a fully-extinct floor cap (x=6.09e-5) settled at a static
-# phi_ice ~ -0.0004 (never anywhere near -0.05) but kept rejecting any dt
-# above ~3-6 s, because assembly.c's SNESSetFunctionDomainError trips on the
-# UNDAMPED trial Newton iterate near that near-singular point, not the final
-# accepted value -- at larger dt the trial swing crosses -0.05 before line
-# search can pull it back, the stage gets rejected, dt shrinks, and since the
-# rest of the domain had already reached steady state (TOT_ICE/TOT_AIR/TEMP/
-# TOT_RHOV/TOTAL_MASS all flat) every retry trivially "converges" in 1
-# iteration and the grow-heuristic immediately pushes dt back up past the
-# same ceiling -- a genuine limit cycle, not a crash (dtmax/max_rej from
-# job64406550 correctly prevented the crash, just not this oscillation).
-# Widening the gate lets the line search find a damped, in-bounds step at
-# larger dt instead; doesn't change the physical answer since material
-# properties are still hard-clamped to [0,1] downstream (assembly.c, ice_c/
-# air_c) regardless of this bound, and every observed FINAL accepted
-# violation across both incidents has stayed under 0.3% -- nowhere near
-# either the old or new gate.
+# -phase_lo/-phase_hi below now only guard assembly.c's older, pointwise
+# domain-error check and monitoring.c's bounds-rollback (BoundsRollbackPreStep)
+# -- both should never fire anymore now that VI keeps the DOF itself in [0,1],
+# but they're left in place as a cheap backstop for anything VI doesn't catch
+# (e.g. KSP inexactness in the projected Newton step producing a tiny,
+# floating-point-scale overshoot).
+#
+# History (now resolved by the VI switch, kept for context): job64406550
+# (random_bumpy_floor_v1) needed -dtmax capped at 2.0e3 after dt grew into a
+# floating grain's full-sublimation singularity; job64410270
+# (random_bumpy_floor_v2) needed the gate widened -0.05/1.05 -> -0.15/1.15
+# because a fully-extinct floor cap's UNDAMPED trial Newton iterate tripped
+# the domain-error check every retry, even though the final accepted state
+# was fine, causing a dt limit cycle. The 2D_single_bump_ice_cap case
+# (job64415277) then showed the underlying problem directly: even with
+# dt-halving retries, an encapsulating ice ring fully sublimating produced
+# real (not just transient) field-level undershoots of -0.10 to -0.18 before
+# the gate accepted them -- dt-shrinking has diminishing returns right at a
+# genuine AC-extinction singularity. Switching to a bound-constrained solve
+# fixes the underlying issue instead of tuning dt/gate width around it.
 -phase_lo -0.15
 -phase_hi  1.15
 
@@ -85,7 +87,18 @@
                                         # consecutive halvings and ran out at 25)
 
 # ---------- Nonlinear solver (SNES) ------------------------------------------
--snes_type newtonls
+# vinewtonssls: semismooth variational-inequality Newton -- required for the
+# 0<=ice<=1 SNESVISetVariableBounds() call in permafrost2.c to actually be
+# enforced (plain newtonls would silently ignore the bounds). Tried
+# vinewtonrsls (reduced-space active-set) first: it hit a PETSc-internal
+# parallel bug at the very first active-set change (MatCreateSubMatrix_
+# MPIBAIJ "Nonconforming object sizes" inside SNESSolve_VINEWTONRSLS, with
+# -n 6) -- a PETSc/MPIBAIJ limitation, not anything in this code. vinewtonssls
+# uses a semismooth reformulation instead of explicit active-set submatrices,
+# so it doesn't hit that path, and cleared the 2D_single_bump_ice_cap
+# extinction window (job64415277 steps 61-71, formerly -0.10 to -0.41) with
+# phi_ice bounds at machine-zero.
+-snes_type vinewtonssls
 -snes_max_it 50
 -snes_rtol 1e-06
 -snes_atol 1e-06

@@ -736,6 +736,26 @@ int main(int argc, char *argv[]) {
      * bad state is committed to ts->vec_sol. */
     user.snes = nonlin;
 
+    /* Bound-constrained Newton solve: enforce 0 <= ice <= 1 directly on the
+     * DOF vector via a variational-inequality SNES (-snes_type vinewtonrsls
+     * in solver.opts). Field values at quadrature points are a convex
+     * combination of nearby DOFs, so bounding the DOFs themselves also
+     * bounds the field everywhere -- this replaces chasing AC-extinction
+     * overshoots after the fact (dt rollback + the -phase_lo/-phase_hi
+     * monitoring gate) with a solve that cannot produce an out-of-bounds
+     * ice DOF in the first place. Temperature and vapor density are left
+     * unconstrained. */
+    Vec Xl, Xu;
+    ierr = IGACreateVec(iga, &Xl); CHKERRQ(ierr);
+    ierr = IGACreateVec(iga, &Xu); CHKERRQ(ierr);
+    ierr = VecStrideSet(Xl, 0, 0.0);             CHKERRQ(ierr);
+    ierr = VecStrideSet(Xu, 0, 1.0);             CHKERRQ(ierr);
+    ierr = VecStrideSet(Xl, 1, PETSC_NINFINITY); CHKERRQ(ierr);
+    ierr = VecStrideSet(Xu, 1, PETSC_INFINITY);  CHKERRQ(ierr);
+    ierr = VecStrideSet(Xl, 2, PETSC_NINFINITY); CHKERRQ(ierr);
+    ierr = VecStrideSet(Xu, 2, PETSC_INFINITY);  CHKERRQ(ierr);
+    ierr = SNESVISetVariableBounds(nonlin, Xl, Xu); CHKERRQ(ierr);
+
     /* Create solution vector (ice, temperature, vapor) */
     Vec U;
     ierr = IGACreateVec(iga, &U); CHKERRQ(ierr);
@@ -778,6 +798,8 @@ int main(int argc, char *argv[]) {
 
     /* Cleanup Resources */
     ierr = VecDestroy(&U); CHKERRQ(ierr);
+    ierr = VecDestroy(&Xl); CHKERRQ(ierr);
+    ierr = VecDestroy(&Xu); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     ierr = PetscFree(user.alph); CHKERRQ(ierr);
