@@ -25,20 +25,35 @@
 # v5/v6 tried a conformal distance-to-surface shell and then a flat
 # absolute-height layer (both via dedicated -ice_shell_*/-ice_flat_*
 # mechanisms in FormInitialMultiGrains2D, still available in the C code).
-# Neither matched what was wanted -- reverted to the plain -ice_grain_*
-# ellipse definition used everywhere else in this project (same as
-# 2D_single_bump_two_grains.opts / 2D_two_grains_flat.opts), sized to
-# approximate the bump: ax = bump's own R (no lateral overhang), cy=ay so
-# the ellipse's bottom touches y=0 (matching the bump's base) instead of
-# floating above it.
+# v7 (plain ellipse, ax=bump's own R, cy=ay touching y=0) was still just an
+# oval sitting ON the bump, not a coating -- not what "a sediment grain
+# encapsulated in ice" means.
+#
+# v8 (this version): the sediment grain intruding from the boundary IS the
+# bump (SedimentBump() -- the actual mesh geometry already models it that
+# way, since direct phase-field modeling of the sediment caused numerical
+# issues months ago). To encapsulate it: fit a circle through the bump's
+# two edges and its peak (sagitta formula -- see
+# preprocess/comp_ice_encapsulation.py), then use a SECOND circle, same
+# center, radius enlarged by the desired ice thickness, as a plain
+# -ice_grain_cx/cy/ax/ay circle. Concentric circles -> uniform radial ice
+# thickness on every exposed side, no separate lateral window -> no notch,
+# no overhang, no new C code (reuses the existing ellipse IC mechanism with
+# ax=ay and a center placed below the domain).
+#
+#   python3 preprocess/comp_ice_encapsulation.py --cx 5.0e-5 \
+#       --R 0.4e-5 --H 0.2e-5 --thickness 0.2e-5
+#   -> R_sed=5.0e-6 (sediment-fit circle, unused directly -- the actual
+#      mesh boundary is still the smooth SedimentBump() curve, this fit is
+#      only for placing the ice), cy_sed=-3.0e-6, R_ice=7.0e-6
 #
 # Same geometry file/bump as 2D_single_bump_two_grains.opts (no new mesh
 # needed). Same domain, mesh resolution, eps, temperature/humidity, and
 # solver settings as the other two simple cases.
 #
 # Ice grains:
-#   0: right boundary (large): cx=Lx,     cy=Ly/2,   R=1.5e-5
-#   1: ice cap:                 cx=5.0e-5, cy=0.15e-5, ax=0.4e-5, ay=0.15e-5
+#   0: right boundary (large):  cx=Lx,     cy=Ly/2,    R=1.5e-5
+#   1: encapsulating ice:       cx=5.0e-5, cy=-3.0e-6, ax=ay=7.0e-6
 # =============================================================================
 # DOF_GRID: 306 124
 -geom_file inputs/geometry/single_bump_test.dat
@@ -53,10 +68,10 @@
 -sed_grain_R 0.4e-5
 -sed_grain_h 0.2e-5
 -ice_grain_cx 1.0e-4,5.0e-5
--ice_grain_cy 2.0e-5,0.15e-5
--ice_grain_R  1.5e-5,0.4e-5
--ice_grain_ax 1.5e-5,0.4e-5
--ice_grain_ay 1.5e-5,0.15e-5
+-ice_grain_cy 2.0e-5,-3.0e-6
+-ice_grain_R  1.5e-5,7.0e-6
+-ice_grain_ax 1.5e-5,7.0e-6
+-ice_grain_ay 1.5e-5,7.0e-6
 -delt_t 1.0e-4
 -eps 3.68274e-07
 -periodic 0
