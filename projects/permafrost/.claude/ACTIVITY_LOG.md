@@ -1,3 +1,39 @@
+## 2026-06-18 — Diagnosed job64406550 failure; raised dtmax/max_rej cap, more floor caps
+
+- Investigated why `2D_random_bumpy_floor__...__job64406550` died at step
+  716 of a 2-day run. `outp.txt` showed no explicit error (it just stops),
+  but `TOT_ICE` flat while `I-A INTERF` steadily shrinks through steps
+  650-716 pointed to Ostwald ripening, and rendering the field confirmed
+  the floating ice grain at `cx=6.0e-5,cy=1.0e-5` fully sublimates away by
+  step 690. dt had grown to 4-7k s during that quiet stretch; right as the
+  grain finished disappearing, the AC reaction term went singular at that
+  point, so no damped Newton step stayed within `[phase_lo,phase_hi]` --
+  SNES failed before even reaching the convergence test. Counted exactly
+  26 consecutive "Reduce time step" rejections after the last accepted
+  step, one more than `-max_rej 25` -- PETSc's TS gave up and errored
+  (to stderr, not the synced `outp.txt`, hence no visible error locally).
+- Answered the user's question directly: tightening the SNES convergence
+  criterion (rtol/atol/stol) would NOT have helped -- the failure happens
+  before SNES ever reaches the convergence check, so it's a step-size/
+  stiffness problem, not an accuracy problem.
+- Fix in `inputs/solver.opts`: `-dtmax` 1.0e4 -> 2.0e3 (keeps dt from
+  growing into the stiff regime at all), `-max_rej` 25 -> 50 (extra
+  margin for the existing halving-recovery mechanism).
+- Added 15 more floor-touching ice caps (cy=0, R=3.0-4.0e-6) along the
+  bumpy floor per request, greedily spaced with clearance from each other
+  and the existing 7 grains -- `2D_random_bumpy_floor.opts` now has 22
+  ice grains total. Verified locally with `-t_final 0`. Committed
+  (e17371c) and pushed.
+
+---
+
+**Session ended:** 2026-06-18 19:25:27
+
+
+---
+
+**Session ended:** 2026-06-18 17:16:18
+
 ## 2026-06-18 — Reverted ice cap; new full-coverage random bumpy floor geometry
 
 - Neither the conformal shell nor the flat-height layer matched what the
