@@ -1,3 +1,33 @@
+## 2026-06-19 — Diagnosed dt oscillation in job64410270; widened phase bounds
+
+- User ran the 30-day retry (`job64410270`, `random_bumpy_floor_v2`) to let
+  the small grains finish sublimating, then reported the timestep
+  oscillating around a small value again. This time it wasn't a crash --
+  the `dtmax`/`max_rej` fix from `job64406550` worked -- but a genuine
+  limit cycle: `TOT_ICE`/`TOT_AIR`/`TEMP`/`TOT_RHOV`/`TOTAL_MASS` were all
+  flat from step ~3000 onward (bulk system at steady state by t~9.8e5s,
+  ~11.3 of 30 days), while one floor cap at `x=6.09e-5` had fully
+  sublimated and settled at a static `phi_ice ~ -0.0004` -- never near the
+  `-0.05` bound, but the *undamped* trial Newton step there swings much
+  further before line search damps it, crossing `-0.05` at larger dt and
+  tripping `SNESSetFunctionDomainError`. Every retry then trivially
+  "converged" in 1 iteration (nothing else changing), so the growth
+  heuristic immediately pushed dt back up past the same ceiling --
+  oscillating ~2-6s forever instead of escaping.
+- User chose to kill the job and resubmit fresh rather than let it ride
+  out the plateau. (Turned out the job had already ended on its own by
+  the time I asked, so no cancellation was needed.)
+- Fix: widened `-phase_lo/-phase_hi` from `-0.05/1.05` to `-0.15/1.15` in
+  `inputs/solver.opts` -- gives line search room to find a damped,
+  in-bounds step at larger dt without changing the physical answer
+  (material properties are still clamped to `[0,1]` downstream
+  regardless, and every observed final accepted violation across both
+  incidents has stayed under 0.3%). Committed (b735c6b) and pushed.
+
+---
+
+**Session ended:** 2026-06-18 19:32:52
+
 ## 2026-06-18 — Diagnosed job64406550 failure; raised dtmax/max_rej cap, more floor caps
 
 - Investigated why `2D_random_bumpy_floor__...__job64406550` died at step
