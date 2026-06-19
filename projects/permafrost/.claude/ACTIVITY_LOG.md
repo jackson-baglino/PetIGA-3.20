@@ -1,3 +1,34 @@
+## 2026-06-18 — Reverted ice cap; new full-coverage random bumpy floor geometry
+
+- Neither the conformal shell nor the flat-height layer matched what the
+  user wanted for the ice cap case — reverted
+  `inputs/geometry/2D_single_bump_ice_cap.opts` to a plain `-ice_grain_*`
+  ellipse (same style as the other simple cases). The `-ice_shell_*`/
+  `-ice_flat_*` C-code mechanisms stay available but unused.
+- Picked back up the earlier-shelved "random bumpy floor" idea: user asked
+  for a new, larger geometry with the entire bottom bumpy and ice grains
+  placed within the domain. Confirmed via AskUserQuestion: domain ~2x
+  wider (Lx=2.0e-4 m, Ly unchanged at 4.0e-5 m), 5-8 ice grains scattered
+  independently of bump positions (not one-per-bump).
+- Added `generate_random_bumps()`/`validate_bump_field()` to
+  `preprocess/build_geometry_multi_grain.py`: sequential left-to-right walk
+  (each bump's center pulled toward the previous one by a randomized
+  overlap fraction) guarantees full coverage with no flat gaps, unlike
+  evenly-spaced bumps with troughs between them. Also exposed `--Lx/--Ly`
+  on the CLI (previously hardcoded globals). New
+  `inputs/geometry/2D_random_bumpy_floor.opts`: 24 bumps (MAX_SED_GRAINS
+  cap) spanning the full 2.0e-4 m width, R in [5e-6,7e-6] m, same dx/eps
+  as production (608x122 mesh). 7 ice grains of varying size (2 boundary,
+  5 interior — mix of floor-touching and floating) scattered across the
+  domain.
+- Verified locally with `-t_final 0`: full floor coverage, no gaps, all 7
+  grains at expected positions, floor grains nucleate naturally into the
+  local bump shape. Committed (83f86df) and pushed.
+
+---
+
+**Session ended:** 2026-06-18 16:56:22
+
 ## 2026-06-18 — Flat ice layer to fully encapsulate the bump (case 3 final)
 
 - Bumped `-ice_shell_thickness` from 0.1e-5 to 0.2e-5 (= bump's own height)
