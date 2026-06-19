@@ -35,8 +35,27 @@
 # grain fully sublimates, while still tolerating the small overshoot during the
 # initial AC relaxation (the tanh IC is not an exact equilibrium of the 2-phase
 # well shape and AC transiently goes slightly past 0/1 before settling).
--phase_lo -0.05
--phase_hi  1.05
+#
+# Widened -0.05/1.05 -> -0.15/1.15 after job64410270 (random_bumpy_floor_v2,
+# 30-day run): a fully-extinct floor cap (x=6.09e-5) settled at a static
+# phi_ice ~ -0.0004 (never anywhere near -0.05) but kept rejecting any dt
+# above ~3-6 s, because assembly.c's SNESSetFunctionDomainError trips on the
+# UNDAMPED trial Newton iterate near that near-singular point, not the final
+# accepted value -- at larger dt the trial swing crosses -0.05 before line
+# search can pull it back, the stage gets rejected, dt shrinks, and since the
+# rest of the domain had already reached steady state (TOT_ICE/TOT_AIR/TEMP/
+# TOT_RHOV/TOTAL_MASS all flat) every retry trivially "converges" in 1
+# iteration and the grow-heuristic immediately pushes dt back up past the
+# same ceiling -- a genuine limit cycle, not a crash (dtmax/max_rej from
+# job64406550 correctly prevented the crash, just not this oscillation).
+# Widening the gate lets the line search find a damped, in-bounds step at
+# larger dt instead; doesn't change the physical answer since material
+# properties are still hard-clamped to [0,1] downstream (assembly.c, ice_c/
+# air_c) regardless of this bound, and every observed FINAL accepted
+# violation across both incidents has stayed under 0.3% -- nowhere near
+# either the old or new gate.
+-phase_lo -0.15
+-phase_hi  1.15
 
 -Lambda 1.0                             # triple-junction penalty in F_tri
                                         # (original physical value; was bumped to 1e4
