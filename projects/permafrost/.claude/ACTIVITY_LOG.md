@@ -1,32 +1,66 @@
 
 ---
 
-**Session ended:** 2026-06-19 15:18:09
+## 2026-06-19 — Bound-constrained (VI) Newton solve replaces dt/gate heuristics for phase bounds
 
-
----
-
-**Session ended:** 2026-06-19 15:15:16
-
-
----
-
-**Session ended:** 2026-06-19 15:13:42
-
-
----
-
-**Session ended:** 2026-06-19 15:10:43
-
-
----
-
-**Session ended:** 2026-06-19 15:07:25
-
-
----
-
-**Session ended:** 2026-06-19 14:30:13
+- User reported that job64415277 (2D_single_bump_ice_cap, the v8 circle-fit
+  encapsulation) saw phi_ice undershoot to -0.18 and -0.196 at steps 63/70,
+  voiding those results -- much worse than the small (~-0.004), expected/
+  tolerated overshoot seen by the end of the run. Traced every BOUNDS/WARN
+  line in outp.txt: the violence was concentrated in steps 61-71 (the
+  encapsulating ring's full extinction), where the existing rollback-and-
+  retry (-phase_lo/-phase_hi, dt halving) fired repeatedly and still only
+  got the violation down to -0.10 to -0.18 before accepting it -- confirmed
+  via dense-evaluated (not just raw-DOF) fields that this was a genuine
+  field-level undershoot, not a spline-coefficient artifact. dt-shrinking
+  had diminishing returns: a signature of genuine AC-extinction stiffness,
+  not just "dt was too big."
+- Root fix: bound-constrained Newton solve. `permafrost2.c` now builds
+  per-DOF bound vectors (Xl, Xu) via `IGACreateVec`/`VecStrideSet` and
+  calls `SNESVISetVariableBounds(nonlin, Xl, Xu)` enforcing 0<=ice<=1
+  exactly (temperature/vapor left unconstrained) -- since the field at any
+  quadrature point is a convex combination of nearby DOFs, bounding the
+  DOFs also bounds the field everywhere, with no retry/rollback needed.
+  `-phase_lo`/`-phase_hi` and the rollback mechanism are left in
+  `solver.opts` as a defensive backstop only.
+- Tried `-snes_type vinewtonrsls` (reduced-space active-set) first: hit a
+  PETSc-internal bug at the very first active-set change
+  (`MatCreateSubMatrix_MPIBAIJ` "Nonconforming object sizes", with -n 6) --
+  a PETSc/MPIBAIJ parallel limitation, not anything in this code. Switched
+  to `-snes_type vinewtonssls` (semismooth reformulation, no active-set
+  submatrix extraction): clean.
+- Validated locally (`scripts/Studio/run_batch_tests.sh --tag
+  vinewtonssls_validation`, full 2-day runs into
+  `SimulationResults/permafrost/scratch/`): both
+  `2D_single_bump_ice_cap:2day_T-20_h0.95` and
+  `2D_single_bump_two_grains:2day_T-20_h0.95` (regression check on normal,
+  non-extinction sintering dynamics) completed OK with zero WARNs and
+  every BOUNDS line at machine-zero.
+- Unexpected, important finding: with the fix, the ice-cap's encapsulating
+  ring no longer fully sublimates within 2 days (I-A interfacial area only
+  -3.7%, smooth and continuous) -- whereas the old, unconstrained run had
+  it vanish completely (-23% interfacial area, but in a sudden cliff during
+  exactly the steps 61-71 violation window, then completely flat for the
+  remaining ~150,000 s of simulated time). Root cause: the AC residual's
+  curvature/diffusion term (`3*mob_sub*eps*grad_N_dot_grad_ice` in
+  assembly.c) uses the *raw*, unclamped ice gradient, not the bound-clamped
+  copy used for material properties/reaction rate -- so the old run's
+  -0.1 to -0.41 Newton-trial excursions created an artificially steep local
+  gradient that injected spurious extra curvature-driven shrinkage. The
+  old "full sublimation" was a numerical artifact, not real physics; the
+  new, much slower rate is the physically trustworthy one.
+- Restored `-dtmax` from 2.0e3 back to its pre-job64406550 default of
+  1.0e4 in `solver.opts`: the original reason for capping it (dt growing
+  into a full-sublimation AC singularity under the old unconstrained
+  newtonls solve) is now structurally impossible under VI, regardless of
+  dt. Added `inputs/experiment/21day_T-20_h0.95.opts` to test, on the HPC,
+  whether the encapsulating ring fully sublimates given enough time at the
+  now-correct (slower) rate.
+- Note: an earlier autonomous commit on this branch (dadb7b0, already
+  pushed) accidentally swept in unrelated pre-existing untracked files
+  (`preprocess/igakit_complexgeocodes/random_bump_channel.*`) alongside
+  the VI-solver fix -- flagged to the user, follow-up cleanup commit
+  removes them from tracking (kept on disk).
 
 ## 2026-06-19 — Redesigned ice cap as concentric circle-fit encapsulation
 

@@ -66,17 +66,20 @@
                                         # ice-sed contact under frozen sed — see commit log)
 
 # ---------- Adaptive time stepping -------------------------------------------
--dtmax 2.0e3                            # ~33 min; lowered from 1.0e4 after job64406550
-                                        # (random_bumpy_floor_v1): dt grew to 4-7k s during
-                                        # a quiet Ostwald-ripening stretch, then a small
-                                        # floating ice grain finished fully sublimating and
-                                        # the AC reaction term went singular right at that
-                                        # extinction point -- at that large dt, no damped
-                                        # Newton step could stay within [phase_lo,phase_hi],
-                                        # SNES failed before even reaching the convergence
-                                        # test, and -max_rej 25 ran out before dt shrank
-                                        # enough to recover. Capping dtmax keeps the solver
-                                        # from ever growing dt into that stiff regime.
+-dtmax 1.0e4                            # ~2.8 hr; restored to its pre-job64406550 default
+                                        # now that the VI bound-constrained solve (see
+                                        # -snes_type vinewtonssls above) makes the original
+                                        # reason for capping it at 2.0e3 structurally
+                                        # impossible: that incident (random_bumpy_floor_v1)
+                                        # was dt growing into a full-sublimation AC
+                                        # singularity with no damped Newton step able to
+                                        # stay within [phase_lo,phase_hi] under the old
+                                        # unconstrained newtonls solve. With ice DOF-bounded
+                                        # to [0,1] by construction, that failure mode can't
+                                        # recur regardless of dt -- the NRmin/NRmax growth/
+                                        # shrink heuristic below still self-limits dt based on
+                                        # Newton iteration count, so this is a ceiling that's
+                                        # only reached during genuinely easy, quiet stretches.
 -adap 1
 -NRmin 5                                # SNES iters strictly below this trigger dt growth
 -NRmax 15                               # SNES iters above this trigger dt shrink
