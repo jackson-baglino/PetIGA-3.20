@@ -147,27 +147,15 @@ compile_code() {
 }
 
 ###############################################################################
-# derive_ic_subfolder — maps -ic_type to a clean category folder name
-###############################################################################
-derive_ic_subfolder() {
-    local ic
-    ic=$(awk '$1=="-ic_type"{print $2}' "$params_file" | head -n1)
-    case "${ic:-}" in
-        ice_slab)        echo "IceSlab" ;;
-        enclosed)        echo "EnclosedGrainPair" ;;
-        contact_sed)     echo "ContactSed" ;;
-        capillary)       echo "CapillaryBridge" ;;
-        slab_and_grains) echo "SlabAndGrains" ;;
-        ice_cap)         echo "IceCap" ;;
-        single_ice)      echo "SingleIceGrain" ;;
-        single_sed)      echo "SingleSedGrain" ;;
-        ice_sed_pair)    echo "IceSedPair" ;;
-        *)               echo "Other" ;;
-    esac
-}
-
-###############################################################################
-# Create output folder: $SCRATCH/permafrost/<ic_category>/<opts_name>[_tag]_<ts>
+# Create output folder:
+#   $SCRATCH/permafrost/<geometry>/<timestamp>_<experiment>[_<tag>][_job<id>]
+#
+# One subfolder per distinct geometry (geom_name itself, not the old
+# -ic_type category bucket, which lumped unrelated geometries that happen to
+# share an IC type together -- e.g. every multi_grains-based geometry landed
+# in the same "Other" folder). The timestamp leads the run-folder name so a
+# plain `ls` (alphabetical) sort is also chronological -- no need to parse a
+# timestamp out of the middle of a long name to find the most recent run.
 ###############################################################################
 create_folder() {
     echo ""
@@ -185,9 +173,8 @@ create_folder() {
         return
     fi
 
-    # Single-run path: each invocation gets its own ic-category/timestamped folder.
-    local subfolder ts tag job_suffix
-    subfolder=$(derive_ic_subfolder)
+    # Single-run path: one subfolder per geometry, timestamp-led run names.
+    local ts tag job_suffix
     ts="$(date +%Y-%m-%d__%H.%M.%S)"
     tag="${title:+_${title}}"
 
@@ -197,7 +184,7 @@ create_folder() {
         job_suffix=""
     fi
 
-    name="${geom_name}__${exp_name}${tag}_${ts}${job_suffix}"
+    name="${ts}_${exp_name}${tag}${job_suffix}"
 
     # Base scratch dir on Resnick; fall back to local scratch
     local base_dir
@@ -207,7 +194,7 @@ create_folder() {
         base_dir="$PROJECT_ROOT/scratch"
     fi
 
-    folder="${base_dir}/${subfolder}/${name}"
+    folder="${base_dir}/${geom_name}/${name}"
     mkdir -p "$folder"
     echo "Output folder: $folder"
 }

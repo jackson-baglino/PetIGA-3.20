@@ -20,9 +20,10 @@
 # geometry .opts + the chosen experiment .opts (later files can override
 # earlier settings) and passes the result to `permafrost`.
 #
-# The output folder is auto-derived from the geometry opts' -ic_type and the
-# two opts basenames:
-#   $RESULTS_BASE/<ic_type_category>/<geometry>__<experiment>[_<tag>]_<timestamp>/
+# The output folder is auto-derived from the geometry name and the two opts
+# basenames, one subfolder per distinct geometry, timestamp leading the run
+# name so a plain `ls` sort is also chronological:
+#   $RESULTS_BASE/<geometry>/<timestamp>_<experiment>[_<tag>]/
 #
 # Examples:
 #   ./scripts/Studio/run_permafrost.sh 2D_touching_grains 1day_T-20_h1.00
@@ -115,7 +116,7 @@ usage() {
     echo "  tag         Optional label appended to the run folder name"
     echo ""
     echo "The output folder is:"
-    echo "  \$RESULTS_BASE/<ic_type_category>/<geom>__<exp>[_<tag>]_<timestamp>/"
+    echo "  \$RESULTS_BASE/<geom>/<timestamp>_<exp>[_<tag>]/"
     echo ""
     echo "Example:"
     echo "  ./scripts/Studio/run_permafrost.sh 2D_touching_grains 1day_T-20_h1.00"
@@ -238,39 +239,23 @@ compile_code() {
 }
 
 # ---------------------------------------------------------------------------
-# derive_ic_subfolder
-# Reads -ic_type from the opts file and maps it to a clean category name
-# ---------------------------------------------------------------------------
-derive_ic_subfolder() {
-    local ic
-    ic=$(awk '$1=="-ic_type"{print $2}' "$params_file" | head -n1)
-    case "${ic:-}" in
-        ice_slab)        echo "IceSlab" ;;
-        enclosed)        echo "EnclosedGrainPair" ;;
-        contact_sed)     echo "ContactSed" ;;
-        capillary)       echo "CapillaryBridge" ;;
-        slab_and_grains) echo "SlabAndGrains" ;;
-        ice_cap)         echo "IceCap" ;;
-        single_ice)      echo "SingleIceGrain" ;;
-        single_sed)      echo "SingleSedGrain" ;;
-        ice_sed_pair)    echo "IceSedPair" ;;
-        *)               echo "Other" ;;
-    esac
-}
-
-# ---------------------------------------------------------------------------
 # create_folder
-# Creates an output directory under $RESULTS_BASE/<ic_category>/<opts_name>[_tag]_<ts>
+# Creates an output directory under
+#   $RESULTS_BASE/<geometry>/<timestamp>_<experiment>[_<tag>]
+#
+# One subfolder per distinct geometry (geom_name itself, not the old
+# -ic_type category bucket, which lumped unrelated geometries that happen to
+# share an IC type together). The timestamp leads the run-folder name so a
+# plain `ls` (alphabetical) sort is also chronological.
 # ---------------------------------------------------------------------------
 create_folder() {
     echo ""
     echo "--- Creating output folder ---"
-    local subfolder ts tag
-    subfolder=$(derive_ic_subfolder)
+    local ts tag
     ts=$(date +%Y-%m-%d__%H.%M.%S)
     tag="${title:+_${title}}"
-    name="${geom_name}__${exp_name}${tag}_${ts}"
-    folder="$RESULTS_BASE/$subfolder/$name"
+    name="${ts}_${exp_name}${tag}"
+    folder="$RESULTS_BASE/$geom_name/$name"
 
     mkdir -p "$folder"
     echo "Output folder: $folder"
