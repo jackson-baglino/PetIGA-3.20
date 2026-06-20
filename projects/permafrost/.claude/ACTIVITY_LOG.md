@@ -1,6 +1,58 @@
 
 ---
 
+## 2026-06-20 — Diagnosed d0_GT amplification failure; switched to tighter geometry + warmer temp
+
+- Two 21-day sweeps on 2D_single_bump_two_grains at -20°C testing larger
+  d0_GT (1e-7, 1e-8) to speed up Ostwald ripening: d0_GT=1e-7 caused
+  I-A INTERF to jump 3.1e-12 -> 4.3e-12 in a few steps then plateau --
+  visual check (igakit render of sol_00045/48/121) confirmed this is the
+  diffuse profile itself fattening on the small grain, not faster mass
+  transfer. d0_GT=1e-8 stayed smooth but moved INTERF only ~1.4% over 21
+  days -- confirms no single d0_GT value threads the needle: too small is
+  invisible, too large breaks the equilibrium profile (the GT forcing on
+  S_sub overwhelms the gradient-energy/double-well restoring balance that
+  holds the profile shape, since both act on similar wavelengths near the
+  interface).
+- Switched tactics per user: raised temperature to -5C instead (already
+  had 30day_T-5_h1.00_GTamp/_GTphys.opts staged from earlier exploration,
+  rationale: rho_vs(T) is exponential in 1/T, so GT's multiplicative
+  correction produces a much larger absolute vapor-density difference at
+  -5C than -20C without touching d0_GT at all). Ran both on
+  2D_single_bump_two_grains/30day: GTphys (d0_GT=9.6e-10, physical)
+  declined smoothly 3.081->2.978e-12 (-3.3%, monotonic, zero DIVERGED);
+  GTamp (d0_GT=1e-8, 10x) oscillated mildly (3.081->3.095->3.048, ~1%
+  swings, no instability) -- confirms -5C gives real headroom for the
+  same 10x amplification that broke cleanly at -20C, and -5C alone is the
+  single biggest lever found so far. Still far from full small-grain
+  sublimation though.
+- User's next idea: switch to the tighter 2D_two_ice_grains_boundary
+  geometry (already existed, unused this whole session) -- per its own
+  header it's purpose-built with a ~40-element vapor gap between a 9.375
+  um and an 18.75 um grain on a near-square domain (4.12e-5 x 5.08e-5 m),
+  vs. the 1.0e-4 m wide single_bump_two_grains domain used so far. IC-only
+  local check confirms clean geometry (rendered, grains positioned as
+  documented). Added 90day_T-5_h1.00_GTamp/_GTphys.opts (mirrors the
+  existing 30-day versions, just t_final=90 days) for a longer-horizon
+  test, per user's request to also try longer t_final.
+- Not yet run: 2D_two_ice_grains_boundary x {30day,90day}_T-5_h1.00_{GTamp,GTphys}
+  on the HPC. This combo (tighter grain spacing + warmer temp + longer
+  time + already-validated-safe 10x GT amplification) stacks every lever
+  found so far without revisiting the ones that failed (over-amplifying
+  d0_GT alone, -20C alone).
+
+---
+
+**Session ended:** 2026-06-19 19:28:40
+
+
+---
+
+**Session ended:** 2026-06-19 19:17:59
+
+
+---
+
 **Session ended:** 2026-06-19 18:41:10
 
 

@@ -1,0 +1,21 @@
+# =============================================================================
+# experiment/90day_T-5_h1.00_GTphys.opts — 90 days at -5°C with physical
+# Gibbs-Thomson coupling (d0_GT = 9.6e-10 m, ice-vapor capillary length at -5°C).
+#
+# Longer-horizon partner to 30day_T-5_h1.00_GTphys.opts: the 30-day run on
+# 2D_single_bump_two_grains gave a gradual, monotonic I-A INTERF decrease
+# (-3.3%, no instability) but nowhere near full small-grain sublimation.
+# Tripling the wall-clock budget gives the LSW mechanism more time to act,
+# intended for use with the more tightly-coupled 2D_two_ice_grains_boundary
+# geometry (~40-element vapor gap) rather than the wide single_bump_two_grains
+# domain.
+# =============================================================================
+
+-t_final 7776000.0                      # 90 days (s)
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-d0_GT 9.6e-10                          # physical capillary length for ice at -5°C
