@@ -19,13 +19,19 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 ###############################################################################
 # Input arguments
-#   $1 : geometry name (e.g. 2D_touching_grains)
-#   $2 : experiment name (e.g. 1day_T-20_h1.00)
-#   $3 : Title prefix for the run (used in folder name)
+#   $1   : geometry name (e.g. 2D_touching_grains)
+#   $2   : experiment name (e.g. 1day_T-20_h1.00)
+#   $3   : Title prefix for the run (used in folder name)
+#   $4.. : extra options forwarded verbatim to the permafrost executable,
+#          appended after the three -options_file flags so they override
+#          anything set in solver.opts/geometry/experiment opts
+#          (e.g. -d0_GT 1.0e-8). Populated by submit_permafrost.sh's `--`
+#          separator.
 ###############################################################################
 geom_name="${1:-2D_touching_grains}"
 exp_name="${2:-1day_T-20_h1.00}"
 title="${3:-}"
+EXTRA_OPTS=("${@:4}")
 
 ###############################################################################
 # Resolve project root.
@@ -299,6 +305,7 @@ run_simulation() {
     echo "Geometry     : $GEOM_OPTS"
     echo "Experiment   : $EXP_OPTS"
     echo "Output path  : $folder"
+    echo "Extra opts   : ${EXTRA_OPTS[*]:-(none)}"
 
     # Validate the -geom_file .dat so stale/missing mesh files are caught
     # before launching hundreds of MPI ranks.
@@ -344,6 +351,7 @@ run_simulation() {
             -options_file "$GEOM_OPTS"   \
             -options_file "$EXP_OPTS"    \
             -output_path  "$folder" \
+            "${EXTRA_OPTS[@]}" \
             | tee "$folder/outp.txt"
     else
         echo "No SLURM environment detected; running locally with mpiexec."
@@ -355,6 +363,7 @@ run_simulation() {
             -options_file "$GEOM_OPTS"   \
             -options_file "$EXP_OPTS"    \
             -output_path  "$folder" \
+            "${EXTRA_OPTS[@]}" \
             | tee "$folder/outp.txt"
     fi
 

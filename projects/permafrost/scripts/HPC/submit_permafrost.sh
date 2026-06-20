@@ -3,20 +3,28 @@
 # submit_permafrost.sh — compute optimal MPI ranks and submit via sbatch
 #
 # Usage (run from project root):
-#   ./scripts/HPC/submit_permafrost.sh <geometry> <experiment> [tag] [sbatch_overrides...]
+#   ./scripts/HPC/submit_permafrost.sh <geometry> <experiment> [tag] \
+#       [sbatch_overrides...] [-- extra_permafrost_opts...]
 #
 #   geometry    Name (without .opts) of a file in inputs/geometry/
 #   experiment  Name (without .opts) of a file in inputs/experiment/
 #   tag         Optional label appended to the run folder name
 #
-# Any extra arguments after the tag (starting with --) are forwarded verbatim
-# to sbatch and can override any of the computed or default resource flags.
+# Extra arguments after the tag are split on a literal `--`:
+#   - before `--` (or if no `--` is given): forwarded verbatim to sbatch,
+#     can override any of the computed or default resource flags.
+#   - after `--`: forwarded verbatim to the permafrost executable itself
+#     (appended after the three -options_file flags, so they override
+#     anything set in solver.opts/geometry/experiment opts files).
 #
 # Examples:
 #   ./scripts/HPC/submit_permafrost.sh 2D_multi_grain_test 2day_T-20_h0.95
 #
 #   ./scripts/HPC/submit_permafrost.sh 2D_multi_grain_test 2day_T-20_h0.95 p2_run \
 #       --time=0-12:00:00 --partition=expansion
+#
+#   ./scripts/HPC/submit_permafrost.sh 2D_single_bump_two_grains 21day_T-20_h0.95 \
+#       d0GT_1e-8 -- -d0_GT 1.0e-8
 # =============================================================================
 
 set -euo pipefail
@@ -51,6 +59,23 @@ if [[ "${1:-}" != "" && "${1:-}" != --* ]]; then
     title="$1"
     shift 1
 fi
+
+# Split remaining args on a literal `--`: before it are sbatch flags, after
+# it are extra options forwarded to the permafrost executable.
+sbatch_flags=()
+extra_opts=()
+sep_seen=0
+for a in "$@"; do
+    if [[ "$sep_seen" -eq 0 && "$a" == "--" ]]; then
+        sep_seen=1
+        continue
+    fi
+    if [[ "$sep_seen" -eq 0 ]]; then
+        sbatch_flags+=("$a")
+    else
+        extra_opts+=("$a")
+    fi
+done
 
 geom_file="$PROJECT_ROOT/inputs/geometry/${geom_name}.opts"
 exp_file="$PROJECT_ROOT/inputs/experiment/${exp_name}.opts"
@@ -115,13 +140,19 @@ hpc_cost_pre_submit "${NPROCS}"
 # Submit — --ntasks/--nodes override the #SBATCH defaults in run_permafrost.sh
 # ---------------------------------------------------------------------------
 run_args=("$geom_name" "$exp_name")
-[[ -n "$title" ]] && run_args+=("$title")
+if [[ "${#extra_opts[@]}" -gt 0 ]]; then
+    # title must be positional $3 even if empty, so extra_opts land at $4+
+    run_args+=("$title" "${extra_opts[@]}")
+    echo "  Extra opts : ${extra_opts[*]}"
+elif [[ -n "$title" ]]; then
+    run_args+=("$title")
+fi
 
 sbatch \
     --job-name="${geom_name}__${exp_name}" \
     --nodes="${NNODES}" \
     --ntasks="${NPROCS}" \
     --ntasks-per-node="${NTASKS_PER_NODE}" \
-    "$@" \
+    "${sbatch_flags[@]}" \
     "$SCRIPT_DIR/run_permafrost.sh" \
     "${run_args[@]}"
