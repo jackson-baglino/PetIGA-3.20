@@ -44,6 +44,15 @@ def main():
     p.add_argument("--save-csv", default=None, help="Write time, left, right, total to this CSV path")
     p.add_argument("--save-fig", default=None, help="Save a plot to this path")
     p.add_argument("--no-show", action="store_true", help="Don't open an interactive plot window")
+    p.add_argument("--logx", action="store_true", help="Log-scale the x-axis (both subplots)")
+    p.add_argument("--logy", action="store_true", help="Log-scale the y-axis (both subplots)")
+    p.add_argument("--twinx", action="store_true",
+                   help="Plot left/right regions on separate y-axes (left region uses the "
+                        "left axis, right region the right axis) instead of sharing one -- "
+                        "use when the two regions' magnitudes are too different to read on "
+                        "a shared linear scale. Drops the 'total' conservation-check line, "
+                        "since it doesn't belong to either axis; check that separately from "
+                        "the printed percentages or the CSV.")
     args = p.parse_args()
 
     igasol = os.path.join(args.dir, "igasol.dat")
@@ -131,15 +140,45 @@ def main():
             time_div, time_unit = 1.0, "s"
         times_scaled = times / time_div
 
+        # logx needs strictly positive x; step 0 and t == 0 are both
+        # undefined on a log axis, same as plot_timestep.py's t>0 mask.
+        step_mask = (steps > 0) if args.logx else np.ones_like(steps, dtype=bool)
+        time_mask = (times > 0) if args.logx else np.ones_like(times, dtype=bool)
+
         fig, (ax_step, ax_time) = plt.subplots(1, 2, figsize=(12, 5))
-        for ax, x, xlabel in ((ax_step, steps, "step"),
-                              (ax_time, times_scaled, f"simulation time [{time_unit}]")):
-            ax.plot(x, lefts, label=f"left (x<{split:.2e})")
-            ax.plot(x, rights, label=f"right (x>{split:.2e})")
-            ax.plot(x, totals, label="total", linestyle="--", color="gray")
+        panels = ((ax_step, steps[step_mask], lefts[step_mask], rights[step_mask],
+                   totals[step_mask], "step"),
+                  (ax_time, times_scaled[time_mask], lefts[time_mask], rights[time_mask],
+                   totals[time_mask], f"simulation time [{time_unit}]"))
+
+        blue, orange, gray = "#1f77b4", "#ff7f0e", "gray"
+
+        for ax, x, l, r, t, xlabel in panels:
+            if args.twinx:
+                ax2 = ax.twinx()
+                ax.plot(x, l, color=blue, label=f"left (x<{split:.2e})")
+                ax2.plot(x, r, color=orange, label=f"right (x>{split:.2e})")
+                ax.set_ylabel("left region: integrated phi_ice", color=blue)
+                ax2.set_ylabel("right region: integrated phi_ice", color=orange)
+                ax.tick_params(axis="y", labelcolor=blue)
+                ax2.tick_params(axis="y", labelcolor=orange)
+                if args.logy:
+                    ax.set_yscale("log")
+                    ax2.set_yscale("log")
+                h1, lbl1 = ax.get_legend_handles_labels()
+                h2, lbl2 = ax2.get_legend_handles_labels()
+                ax.legend(h1 + h2, lbl1 + lbl2, loc="best", fontsize=9)
+            else:
+                ax.plot(x, l, color=blue, label=f"left (x<{split:.2e})")
+                ax.plot(x, r, color=orange, label=f"right (x>{split:.2e})")
+                ax.plot(x, t, label="total", linestyle="--", color=gray)
+                ax.set_ylabel("integrated phi_ice")
+                if args.logy:
+                    ax.set_yscale("log")
+                ax.legend(fontsize=9)
             ax.set_xlabel(xlabel)
-            ax.set_ylabel("integrated phi_ice")
-            ax.legend()
+            if args.logx:
+                ax.set_xscale("log")
         fig.tight_layout()
         if args.save_fig:
             fig.savefig(args.save_fig, dpi=140)
