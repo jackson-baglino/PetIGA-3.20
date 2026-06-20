@@ -94,26 +94,41 @@ def plot_timestep(run_dir: str, save_path: str = None, title: str = None):
     # For log-log both axes must be positive; drop t == 0 (step 0 has no
     # meaningful "elapsed" time to plot on a log scale)
     mask = t > 0
-    t_plot  = t[mask]
-    dt_plot = dt[mask]
+    t_plot    = t[mask]
+    dt_plot   = dt[mask]
+    step_plot = step[mask]
 
     if len(t_plot) == 0:
         sys.exit("ERROR: all time values are zero — nothing to plot on log scale.")
 
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, (ax_step, ax_time) = plt.subplots(1, 2, figsize=(13, 4.5))
 
-    ax.loglog(t_plot, dt_plot, color="#1f77b4", lw=1.5, marker=".", markersize=3)
+    # Step-indexed view: reveals reject/grow cycling and other per-step
+    # structure that a time axis compresses away when dt spans many orders
+    # of magnitude (e.g. the initial ramp-up from delt_t to dtmax).
+    ax_step.semilogy(step_plot, dt_plot, color="#1f77b4", lw=1.5, marker=".", markersize=3)
+    ax_step.set_xlabel("Step", fontsize=12)
+    ax_step.set_ylabel("Time step  $\\Delta t$  [s]", fontsize=12)
+    ax_step.set_title("vs. step", fontsize=12)
+    ax_step.grid(True, which="both", alpha=0.3)
+    ax_step.tick_params(labelsize=11)
 
-    ax.set_xlabel("Simulation time  $t$  [s]", fontsize=12)
-    ax.set_ylabel("Time step  $\\Delta t$  [s]", fontsize=12)
-    ax.set_title(title or "Adaptive time step history", fontsize=13)
-    ax.grid(True, which="both", alpha=0.3)
-    ax.tick_params(labelsize=11)
+    # Time-indexed view: shows dt growth relative to elapsed simulation
+    # time -- a steadily growing dt indicates a well-behaved adaptive
+    # stepper; sudden drops signal rejected steps or hard events.
+    ax_time.loglog(t_plot, dt_plot, color="#1f77b4", lw=1.5, marker=".", markersize=3)
+    ax_time.set_xlabel("Simulation time  $t$  [s]", fontsize=12)
+    ax_time.set_ylabel("Time step  $\\Delta t$  [s]", fontsize=12)
+    ax_time.set_title("vs. simulation time", fontsize=12)
+    ax_time.grid(True, which="both", alpha=0.3)
+    ax_time.tick_params(labelsize=11)
+
+    fig.suptitle(title or "Adaptive time step history", fontsize=13)
 
     # Annotate total step count and final dt
-    ax.text(0.98, 0.05,
+    ax_time.text(0.98, 0.05,
             f"steps: {step[-1]}   final $\\Delta t$: {dt[-1]:.2e} s",
-            transform=ax.transAxes, ha="right", va="bottom",
+            transform=ax_time.transAxes, ha="right", va="bottom",
             fontsize=9, color="gray")
 
     plt.tight_layout()
