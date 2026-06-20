@@ -521,6 +521,35 @@ int main(int argc, char *argv[]) {
     user.Etai = Sigma_i; /* Ice surface energy in the double-well free energy */
     user.Etaa = Sigma_a; /* Air surface energy in the double-well free energy */
 
+    /* Allow CLI override of the physical attachment-kinetics coefficient
+     * beta_sub0 via -beta_sub0 <value> (default 1.4e5, set above). Unlike
+     * overriding -alph_sub directly (which only rescales the phase-change
+     * source term and leaves mob_sub, the AC interfacial-relaxation rate,
+     * untouched), beta_sub0 feeds into tau_sub BEFORE both alph_sub and
+     * mob_sub are derived below, so a smaller beta_sub0 (faster physical
+     * deposition/sublimation kinetics) raises alph_sub and mob_sub together
+     * and preserves alph_sub/mob_sub = 3*lambda_sub/eps exactly (that ratio
+     * doesn't depend on beta_sub0 at all -- only the overall rate does).
+     * That keeps the phase-change source and the interface-profile
+     * relaxation in the same proportion that the Karma-Plapp matched
+     * asymptotics calibrated, so speeding up sublimation this way should
+     * not distort the equilibrium diffuse profile the way overshooting
+     * d0_GT did (job64420343/64420350: 1e-7 fattened the profile because
+     * that term only enters the curvature-dependent forcing, decoupled from
+     * mob_sub's restoring strength). */
+    {
+        PetscReal  beta_sub0_cli = -1.0;
+        PetscBool  flg           = PETSC_FALSE;
+        ierr = PetscOptionsGetReal(NULL, NULL, "-beta_sub0",
+                                   &beta_sub0_cli, &flg); CHKERRQ(ierr);
+        if (flg && beta_sub0_cli > 0.0) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  -beta_sub0 override: %.4e -> %.4e (factor %.2f)\n",
+                        user.beta_sub0, beta_sub0_cli, user.beta_sub0 / beta_sub0_cli);
+            user.beta_sub0 = beta_sub0_cli;
+        }
+    }
+
     PetscReal a1 = 5.0, a2 = 0.1581; /* Constants for GT relation */
     PetscReal d0_sub;                /* Capillary length parameter */
     PetscReal beta_sub;              /* Kinetic coefficient */
