@@ -109,7 +109,18 @@
 -snes_linesearch_type bt
 
 # ---------- Linear solver (KSP + preconditioner) -----------------------------
--ksp_type gmres
+# bcgs, not gmres: with the Gibbs-Thomson curvature term active (d0_GT above),
+# the [ice,ice] Jacobian's curvature chain-rule term divides by |grad_ice|^3
+# and |grad_ice|^5 in the diffuse band (|grad_ice| ~ 1/eps ~ 1e6), and at
+# large dt -- where the stabilizing shift*mass-matrix diagonal is weak --
+# this conditioning pushed GMRES into DIVERGED_BREAKDOWN on the very first
+# Newton iteration (confirmed via -ksp_converged_reason: "DIVERGED_BREAKDOWN
+# iterations 400" -> SNES "DIVERGED_LINEAR_SOLVE iterations 0"), causing a
+# reject-and-halve cycle that stalled dt growth around 1e3 instead of
+# reaching dtmax. Same failure mode as 2D_touching_grains_hires.opts hit
+# before (which already overrides to bcgs per-file); moved the fix here
+# since GT is now active globally, not just in that one case.
+-ksp_type bcgs
 -ksp_rtol 1e-08
 -ksp_atol 1e-12
 -ksp_max_it 1000

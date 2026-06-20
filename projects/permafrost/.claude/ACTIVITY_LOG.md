@@ -1,6 +1,36 @@
 
 ---
 
+## 2026-06-19 — Fixed GT-induced dt stall: switched KSP from gmres to bcgs
+
+- User reported job64416684 (2D_single_bump_two_grains, GT fix) confirmed
+  Ostwald ripening works again, but dt stalls oscillating around 1e3
+  instead of growing toward dtmax=1.0e4. Counts: 325 "Increase time step"
+  vs 272 "Reduce time step" (near 1:1, a hunting/limit-cycle), versus the
+  pre-GT baseline's 146 Increase vs only 15 Reduce -- confirms GT is the
+  trigger, not a pre-existing issue.
+- Reproduced locally with -snes_converged_reason -ksp_converged_reason:
+  every "Reduce time step" event is `Linear solve did not converge due to
+  DIVERGED_BREAKDOWN iterations 400` -> `Nonlinear solve did not converge
+  due to DIVERGED_LINEAR_SOLVE iterations 0` -- GMRES breaking down on the
+  very first Newton iteration once dt grows large, not a Newton-iteration-
+  count (NRmax) issue and not a bound violation (zero WARN/bound-rollback
+  events). Cause: the GT Jacobian's curvature chain-rule term divides by
+  |grad_ice|^3 and |grad_ice|^5 in the diffuse band (|grad_ice| ~ 1/eps ~
+  1e6), and at large dt the stabilizing shift*mass-matrix diagonal is too
+  weak to keep the linear system well-conditioned for GMRES.
+- Exact same failure mode (`GMRES DIVERGED_BREAKDOWN`) already has
+  precedent in this project -- `2D_touching_grains_hires.opts` already
+  overrides to `-ksp_type bcgs` per-file for it. Moved that fix to
+  `solver.opts` globally instead, since GT is now active by default for
+  every case, not just hires/touching-grain ones.
+- Not yet HPC-confirmed (user redirected all further testing to the HPC
+  cluster, away from local Mac runs, mid-investigation) -- needs a rerun
+  of 2D_single_bump_two_grains:2day_T-20_h0.95 (or the running
+  job64416684 case) to verify dt actually grows past 1e3 toward dtmax now.
+
+---
+
 ## 2026-06-19 — Restored Gibbs-Thomson curvature term (Ostwald ripening)
 
 - After the VI-solver fix (below) eliminated the bound-violation artifact,
