@@ -1,6 +1,50 @@
 
 ---
 
+## 2026-06-19 — Restored Gibbs-Thomson curvature term (Ostwald ripening)
+
+- After the VI-solver fix (below) eliminated the bound-violation artifact,
+  user noticed the model no longer shows any curvature-driven sublimation
+  or Ostwald ripening -- correctly diagnosed that what previously *looked*
+  like curvature-driven ripening was actually phi going out of [0,1] near
+  high-curvature points, eroding the phase field in a way that showed up as
+  vapor. With that artifact gone, rho_vs(T) (flat-interface only, no
+  curvature dependence) has no mechanism left to drive small-grain ->
+  large-grain mass transfer.
+- Found this term already existed in this codebase before the
+  "rewrite/2phase-from-equations" branch's clean rewrite of assembly.c
+  (commits 5108210/5d6424e) -- a working `Curvature()` function in
+  material_properties.c (regularized kappa = -L/G + gHg/G^3 via
+  `IGAPointFormHess`), a `-d0_GT` parameter, and full analytic Jacobian
+  terms, all dropped when assembly.c was rewritten from the variational
+  weak form. `docs/model_description.md` ​§4 already documents this exact
+  failure mode ("Without GT the model freezes... no driving force for
+  ripening").
+- Ported `Curvature()` back into `material_properties.c`/`.h` verbatim.
+  Wired `rhoI_vs_eff = rho_vs*(1 + d0_GT*kappa)` into the *current*
+  (rewritten) `Residual_A1`/`Jacobian_A1` in `assembly.c` -- simpler than
+  the old port since the current model's vapor equation sources from
+  `ice_t` (not `S_sub` directly), so no `[vap,ice]` GT Jacobian block is
+  needed, only `[ice,ice]`/`[ice,tem]`.
+- `d0_GT` defaults to `user.d0_sub0` (the bare 1.0e-9 m capillary-length
+  constant), NOT the locally-computed `d0_sub = d0_sub0/rho_rhovs` used to
+  derive `alph_sub`/`mob_sub` just above it in `permafrost2.c` -- caught via
+  a quick magnitude check before committing: `d0_sub` is rescaled by the
+  huge `rho_ice/rho_vs(T)` ratio for the Karma-Plapp kinetic-coefficient
+  asymptotics specifically, and using it for the standalone Kelvin equation
+  would give a curvature correction to rho_vs of ~2e-8% for a 5um grain
+  (utterly negligible) versus ~0.02% with the bare `d0_sub0` (close to the
+  literature ice capillary length, ~9.6e-10 m). `-d0_GT 0` still disables it
+  for diagnostics.
+- Verified: clean build, IC-only sanity run shows `BOUNDS: phi_ice [0.0,
+  1.0]` with `d0_GT (capillary length): 1.0000e-09 m [GT active]`. Full
+  2-day `2D_single_bump_two_grains` validation run launched into
+  `SimulationResults/permafrost/scratch/` (not /tmp, per standing
+  instruction) to confirm Newton convergence and Ostwald ripening behavior
+  before pushing further.
+
+---
+
 ## 2026-06-19 — Bound-constrained (VI) Newton solve replaces dt/gate heuristics for phase bounds
 
 - User reported that job64415277 (2D_single_bump_ice_cap, the v8 circle-fit

@@ -534,6 +534,40 @@ int main(int argc, char *argv[]) {
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = lambda_sub / tau_sub;  /* Phase change rate parameter, eq.(9) Moure & Fu (2024) SI */
 
+    /* Gibbs-Thomson capillary length for the curvature correction to the
+     * saturation vapor density (rhoI_vs_eff = rhoI_vs*(1 + d0_GT*kappa) in
+     * assembly.c). Defaults to d0_sub0, the bare microscopic capillary
+     * length constant (NOT d0_sub = d0_sub0/rho_rhovs used just above for
+     * the kinetic-coefficient derivation -- that rescaling by the huge
+     * rho_ice/rho_vs(T) density ratio belongs to the Karma-Plapp asymptotic
+     * matching for alph_sub/mob_sub, not to the standalone Kelvin equation,
+     * and would make the curvature correction ~1e-6x too small to have any
+     * visible effect; d0_sub0 ~ 1e-9 m is close to the literature ice
+     * capillary length, ~9.6e-10 m). Without this term every interface
+     * shares one flat rhoI_vs(T) and there is no driving force for Ostwald
+     * ripening (confirmed directly: job64415277's VI-solver fix removed the
+     * bound-violation artifact that was masquerading as curvature-driven
+     * sublimation, and ripening stopped). */
+    user.d0_GT = user.d0_sub0;
+
+    /* Allow CLI override, e.g. -d0_GT 0 to disable GT for diagnostics while
+     * leaving the kinetic-coefficient derivation above untouched. */
+    {
+        PetscReal  d0_GT_cli = -1.0;
+        PetscBool  flg       = PETSC_FALSE;
+        ierr = PetscOptionsGetReal(NULL, NULL, "-d0_GT",
+                                   &d0_GT_cli, &flg); CHKERRQ(ierr);
+        if (flg && d0_GT_cli >= 0.0) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  -d0_GT override: %.4e -> %.4e%s\n",
+                        user.d0_GT, d0_GT_cli,
+                        (d0_GT_cli == 0.0) ? " (Gibbs-Thomson DISABLED)" : "");
+            user.d0_GT = d0_GT_cli;
+        }
+    }
+    PetscPrintf(PETSC_COMM_WORLD, "d0_GT (capillary length): %.4e m  %s\n",
+                user.d0_GT, (user.d0_GT == 0.0) ? "[GT DISABLED]" : "[GT active]");
+
     /* Allow per-test override of mob_sub via -mob_sub <value>. Tests with
      * very stiff geometries (touching/merging grains in 2D) can reduce
      * mob_sub by ~10x to trade kinetics speed for AC stability. The

@@ -91,6 +91,14 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     }
     PetscScalar air = 1.0 - ice;
 
+    /* Hessian of ice, needed only for the Gibbs-Thomson curvature term
+     * below (kappa = -div(grad_ice/|grad_ice|)). Read unconditionally; the
+     * GT correction itself is skipped when d0_GT == 0, but the read is cheap. */
+    PetscScalar hess_sol[3][dim][dim];
+    IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
+    PetscScalar hess_ice[dim * dim];
+    for (l = 0; l < dim * dim; l++) hess_ice[l] = hess_sol[0][l / dim][l % dim];
+
     /* SNES domain-error catch — if a trial Newton iterate has phi out of the
      * configured bounds, signal an invalid state so the line search backs off
      * the step. Cheaper than committing a bad state and rolling back later. */
@@ -120,6 +128,17 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     RhoVS_I    (user, tem,    &rho_vs,  NULL);
     Mobility   (user, ice_c, &mob_sub);
 
+    /* Gibbs-Thomson curvature correction to the saturation vapor density:
+     * rhoI_vs_eff = rho_vs * (1 + d0_GT * kappa), kappa = -div(grad_ice/|grad_ice|).
+     * Without this, every interface shares one flat rho_vs(T) and there is no
+     * driving force for Ostwald ripening: larger grains/flatter necks (smaller
+     * kappa) get a lower rhoI_vs_eff than smaller/sharper ones, so vapor flows
+     * small -> large. d0_GT == 0 disables it (rhoI_vs_eff = rho_vs). */
+    PetscScalar kappa = 0.0;
+    if (user->d0_GT != 0.0)
+        Curvature(dim, grad_ice, hess_ice, 0.01 / eps, &kappa, NULL, NULL);
+    PetscReal rhoI_vs_eff = rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
+
     PetscReal f1;
     DoubleWellDeriv(PetscRealPart(ice_c), &f1, NULL);
 
@@ -130,7 +149,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     /* Phase-change source. S_sub > 0 = deposition (vapor -> ice). */
     PetscReal loc   = PetscRealPart(ice_c) * PetscRealPart(ice_c)
                     * air_r * air_r;
-    PetscReal S_sub = alph_sub * loc * (PetscRealPart(rhov) - rho_vs) / rho_ice;
+    PetscReal S_sub = alph_sub * loc * (PetscRealPart(rhov) - rhoI_vs_eff) / rho_ice;
 
     /* T-equation row-scale (numerical preconditioning; no physics change). */
     PetscReal S_T = 1.0 / (rho_ice * lat_sub);
@@ -217,12 +236,20 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscScalar ice    = sol[0],  ice_t  = sol_t[0];
     PetscScalar tem    = sol[1];
     PetscScalar rhov   = sol[2],  rhov_t = sol_t[2];
+    PetscScalar grad_ice[dim];
     PetscScalar grad_tem[dim], grad_rhov[dim];
     for (l = 0; l < dim; l++) {
+        grad_ice [l] = grad_sol[0][l];
         grad_tem [l] = grad_sol[1][l];
         grad_rhov[l] = grad_sol[2][l];
     }
     PetscScalar air = 1.0 - ice;
+
+    /* Hessian of ice for the GT-curvature derivatives (dkappa/dgrad, dkappa/dHess). */
+    PetscScalar hess_sol[3][dim][dim];
+    IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
+    PetscScalar hess_ice[dim * dim];
+    for (l = 0; l < dim * dim; l++) hess_ice[l] = hess_sol[0][l / dim][l % dim];
 
     /* Clamp copies for material-property evaluation */
     PetscScalar ice_c = ice, air_c = air;
@@ -247,6 +274,16 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     VaporDiffus(user, tem, NULL, &d_dif_vap);
     RhoVS_I    (user, tem, NULL, &d_rho_vs);
 
+    /* Gibbs-Thomson curvature correction (see Residual_A1 for rationale).
+     * kappa doesn't depend on tem, so d(rhoI_vs_eff)/dtem = d_rho_vs*(1+d0_GT*kappa). */
+    PetscScalar kappa = 0.0;
+    PetscScalar dkappa_dg[3] = {0.0, 0.0, 0.0};
+    PetscScalar dkappa_dH[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    if (user->d0_GT != 0.0)
+        Curvature(dim, grad_ice, hess_ice, 0.01 / eps, &kappa, dkappa_dg, dkappa_dH);
+    PetscReal rhoI_vs_eff      = rho_vs   * (1.0 + user->d0_GT * PetscRealPart(kappa));
+    PetscReal d_rhoI_vs_eff_dtem = d_rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
+
     PetscReal df1;
     DoubleWellDeriv(PetscRealPart(ice_c), NULL, &df1);
 
@@ -258,13 +295,16 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     /* loc and its ice-derivative */
     PetscReal loc       = PetscRealPart(ice_c) * PetscRealPart(ice_c) * air_r * air_r;
     PetscReal dloc_dice = 2.0 * PetscRealPart(ice_c) * air_r * (air_r - PetscRealPart(ice_c));
-    PetscReal rho_v_minus_rho_vs = PetscRealPart(rhov) - rho_vs;
+    PetscReal rho_v_minus_rho_vs = PetscRealPart(rhov) - rhoI_vs_eff;
 
     PetscReal S_T = 1.0 / (rho_ice * lat_sub);
 
-    const PetscReal *N0, (*N1)[dim];
+    const PetscReal *N0, (*N1)[dim], (*N2)[dim][dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
     IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1);
+    /* N2 (second-derivative shape funs) -- needed only for the GT curvature
+     * chain-rule term below, but cheap to fetch unconditionally. */
+    IGAPointGetShapeFuns(pnt, 2, (const PetscReal**)&N2);
 
     PetscInt a, b, nen = pnt->nen;
     PetscScalar (*J)[3][nen][3] = (PetscScalar (*)[3][nen][3])Je;
@@ -287,8 +327,30 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                            + 3.0 * mob_sub * eps * N1a_N1b
                            + (3.0 * mob_sub / eps) * df1 * Na_Nb
                            - alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb;
-            J[a][0][b][1] += alph_sub * loc * d_rho_vs / rho_ice * Na_Nb;
+            J[a][0][b][1] += alph_sub * loc * d_rhoI_vs_eff_dtem / rho_ice * Na_Nb;
             J[a][0][b][2] += -alph_sub * loc / rho_ice * Na_Nb;
+
+            /* Gibbs-Thomson curvature contribution to [ice, ice]. S_sub
+             * depends on grad(phi_ice) and Hess(phi_ice) through
+             * rhoI_vs_eff = rhoI_vs*(1 + d0_GT*kappa). Chain rule:
+             *   d S_sub / d phi_ice^b |_GT
+             *     = -alph_sub*loc*rhoI_vs*d0_GT/rho_ice * dkappa/dphi_ice^b,
+             *   dkappa/dphi_ice^b = sum_l dkappa_dg[l]*N1[b][l]
+             *                     + sum_kl dkappa_dH[kl]*N2[b][k][l].
+             * R_ice -= S_sub*N0[a], so J[ice,ice] += -d(S_sub)/dphi*N0[a]
+             *   = +alph_sub*loc*rhoI_vs*d0_GT/rho_ice * N0[a]*(grad+hess). */
+            if (user->d0_GT != 0.0) {
+                PetscReal grad_part = 0.0;
+                for (l = 0; l < dim; l++)
+                    grad_part += (PetscReal)dkappa_dg[l] * N1[b][l];
+                PetscReal hess_part = 0.0;
+                PetscInt _k, _l;
+                for (_k = 0; _k < dim; _k++)
+                    for (_l = 0; _l < dim; _l++)
+                        hess_part += (PetscReal)dkappa_dH[_k * dim + _l] * N2[b][_k][_l];
+                J[a][0][b][0] += alph_sub * loc * rho_vs * user->d0_GT
+                              / rho_ice * N0[a] * (grad_part + hess_part);
+            }
 
             /* ====================== [ tem , * ] (row-scaled by S_T) ========= */
             J[a][1][b][0] += S_T * (

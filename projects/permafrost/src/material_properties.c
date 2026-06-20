@@ -146,6 +146,74 @@ if (d_difvap)
 return;
 }
 
+/* Curvature of an isosurface of phi from its gradient and Hessian. See header
+ * for full description. */
+void Curvature(PetscInt dim,
+               const PetscScalar grad_phi[],
+               const PetscScalar hess_phi[],
+               PetscReal eps_reg,
+               PetscScalar *kappa,
+               PetscScalar dkappa_dg[],
+               PetscScalar dkappa_dH[])
+{
+    /* 1D: curvature is identically zero physically; the regularized formula
+     * would otherwise produce a small artifact. Return zeros and exit. */
+    if (dim == 1) {
+        if (kappa) (*kappa) = 0.0;
+        if (dkappa_dg) dkappa_dg[0] = 0.0;
+        if (dkappa_dH) dkappa_dH[0] = 0.0;
+        return;
+    }
+
+    PetscInt k, l;
+
+    /* G^2 = |g|^2 + eps_reg^2  (Tikhonov-style regularization)
+     * Keeps kappa bounded where |grad_phi| -> 0 in bulk regions. */
+    PetscScalar G2 = (PetscScalar)(eps_reg * eps_reg);
+    for (l = 0; l < dim; l++) G2 += grad_phi[l] * grad_phi[l];
+    PetscScalar G  = PetscSqrtScalar(G2);
+    PetscScalar G3 = G2 * G;
+    PetscScalar G5 = G3 * G2;
+
+    /* Laplacian L = trace(H) */
+    PetscScalar L = 0.0;
+    for (k = 0; k < dim; k++) L += hess_phi[k * dim + k];
+
+    /* g . H . g */
+    PetscScalar gHg = 0.0;
+    for (k = 0; k < dim; k++)
+        for (l = 0; l < dim; l++)
+            gHg += grad_phi[k] * hess_phi[k * dim + l] * grad_phi[l];
+
+    if (kappa) {
+        (*kappa) = -L / G + gHg / G3;
+    }
+
+    if (dkappa_dg) {
+        /* (H g)_l = sum_k H_{lk} g_k */
+        PetscScalar Hg[3] = {0.0, 0.0, 0.0};
+        for (l = 0; l < dim; l++) {
+            PetscScalar s = 0.0;
+            for (k = 0; k < dim; k++) s += hess_phi[l * dim + k] * grad_phi[k];
+            Hg[l] = s;
+        }
+        for (l = 0; l < dim; l++) {
+            dkappa_dg[l] = (L * grad_phi[l] + 2.0 * Hg[l]) / G3
+                         - 3.0 * gHg * grad_phi[l] / G5;
+        }
+    }
+
+    if (dkappa_dH) {
+        /* d kappa / d H_{kl} = -delta_{kl} / G + g_k g_l / G^3 */
+        for (k = 0; k < dim; k++)
+            for (l = 0; l < dim; l++) {
+                PetscScalar delta = (k == l) ? 1.0 : 0.0;
+                dkappa_dH[k * dim + l] = -delta / G
+                                       + grad_phi[k] * grad_phi[l] / G3;
+            }
+    }
+}
+
 /**
  * @brief Computes the saturation vapor density and its derivative with respect to temperature.
  *

@@ -135,6 +135,12 @@ typedef struct {
   /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */
   PetscReal phase_lo;     // lower bound for phi_ice, phi_air (default -0.25)
   PetscReal phase_hi;     // upper bound for phi_ice, phi_air (default  1.25)
+
+  /* Gibbs-Thomson capillary length: rhoI_vs_eff = rhoI_vs*(1 + d0_GT*kappa).
+   * Defaults to the same microscopic capillary length used to derive the
+   * kinetic coefficients (d0_sub, see permafrost2.c) -- 0 disables GT
+   * (flat-interface rhoI_vs, no curvature-driven Ostwald ripening). */
+  PetscReal d0_GT;
   PetscReal *alph;     // Alpha field, possibly phase fraction or related property
   PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)
 
