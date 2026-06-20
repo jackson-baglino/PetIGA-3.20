@@ -1,0 +1,15 @@
+# =============================================================================
+# experiment/365day_T-20_h1.00.opts — 365 days at -20°C, saturated humidity
+#
+# Long-time Ostwald-ripening diagnostic. At -20°C the vapor budget is small
+# (~1e-3 kg/m³ saturation density) so LSW ripening proceeds slowly; the
+# 365-day window gives the system enough time for visible asymmetric mass
+# transfer between grains of different curvature.
+# =============================================================================
+
+-t_final 31536000.0                     # 365 days (s) = 365 * 86400
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -20.0
+-humidity 0.95
+-grad_temp0 0.0,0.0,0.0
