@@ -66,20 +66,22 @@
                                         # ice-sed contact under frozen sed — see commit log)
 
 # ---------- Adaptive time stepping -------------------------------------------
--dtmax 1.0e4                            # ~2.8 hr; restored to its pre-job64406550 default
-                                        # now that the VI bound-constrained solve (see
-                                        # -snes_type vinewtonssls above) makes the original
-                                        # reason for capping it at 2.0e3 structurally
-                                        # impossible: that incident (random_bumpy_floor_v1)
-                                        # was dt growing into a full-sublimation AC
-                                        # singularity with no damped Newton step able to
-                                        # stay within [phase_lo,phase_hi] under the old
-                                        # unconstrained newtonls solve. With ice DOF-bounded
-                                        # to [0,1] by construction, that failure mode can't
-                                        # recur regardless of dt -- the NRmin/NRmax growth/
-                                        # shrink heuristic below still self-limits dt based on
-                                        # Newton iteration count, so this is a ceiling that's
-                                        # only reached during genuinely easy, quiet stretches.
+-dtmax 1.0e5                            # ~1.16 days; raised from 1.0e4 after job64418602
+                                        # (bcgs_fix) hit that ceiling 12 times cleanly (0
+                                        # DIVERGED, 79 Increase / 0 Reduce) in a 2-day run
+                                        # that finished in 2.57 min wall-clock on 1 rank --
+                                        # confirms dt was being limited purely by the ceiling,
+                                        # not by any solver instability, once VI bounds
+                                        # (-snes_type vinewtonssls) made the original
+                                        # job64406550 full-sublimation-singularity danger
+                                        # structurally impossible regardless of dt, and bcgs
+                                        # (not gmres) fixed the GT-curvature-Jacobian
+                                        # conditioning issue at large dt. The NRmin/NRmax
+                                        # growth/shrink heuristic below still self-limits dt
+                                        # based on Newton iteration count, so this ceiling is
+                                        # only reached during genuinely easy, quiet stretches
+                                        # -- exactly where a 21+ day Ostwald-ripening run
+                                        # spends most of its time.
 -adap 1
 -NRmin 5                                # SNES iters strictly below this trigger dt growth
 -NRmax 15                               # SNES iters above this trigger dt shrink

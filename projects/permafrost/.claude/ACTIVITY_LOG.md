@@ -1,6 +1,25 @@
 
 ---
 
+## 2026-06-19 — Confirmed bcgs fix on HPC, raised dtmax to 1.0e5
+
+- job64418602 (2D_single_bump_two_grains, bcgs_fix) confirms the gmres ->
+  bcgs switch fully resolved the dt stall: 0 DIVERGED events, 79 "Increase
+  time step" vs 0 "Reduce time step" (vs the prior 325/272 near-1:1
+  hunting cycle), dt cleanly hit the dtmax=1.0e4 ceiling 12 times. Full
+  2-day run finished in 2.57 min wall-clock on 1 rank.
+- Since dt was being limited purely by the ceiling (not any solver
+  instability) once VI bounds + bcgs removed both prior failure modes,
+  raised -dtmax from 1.0e4 to 1.0e5 (~1.16 days/step) in solver.opts --
+  the NRmin/NRmax heuristic still self-limits based on Newton iteration
+  count, so the higher ceiling only gets used during genuinely quiet
+  stretches, which is most of a 21+ day Ostwald-ripening run.
+- Next: rerun 2D_single_bump_two_grains (or 2D_single_bump_ice_cap) at
+  21day_T-20_h0.95 on the HPC with the new dtmax to see ripening develop
+  over a longer horizon, now markedly cheaper to run.
+
+---
+
 ## 2026-06-19 — Fixed GT-induced dt stall: switched KSP from gmres to bcgs
 
 - User reported job64416684 (2D_single_bump_two_grains, GT fix) confirmed
@@ -24,10 +43,7 @@
   overrides to `-ksp_type bcgs` per-file for it. Moved that fix to
   `solver.opts` globally instead, since GT is now active by default for
   every case, not just hires/touching-grain ones.
-- Not yet HPC-confirmed (user redirected all further testing to the HPC
-  cluster, away from local Mac runs, mid-investigation) -- needs a rerun
-  of 2D_single_bump_two_grains:2day_T-20_h0.95 (or the running
-  job64416684 case) to verify dt actually grows past 1e3 toward dtmax now.
+- Confirmed on HPC (job64418602) -- see entry above.
 
 ---
 
