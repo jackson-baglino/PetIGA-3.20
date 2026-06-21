@@ -1,0 +1,23 @@
+# =============================================================================
+# experiment/10yr_T-5_h0.80_GTphys.opts — 10 years at -5°C, 80% humidity, with
+# physical Gibbs-Thomson coupling (d0_GT = 9.6e-10 m, ice-vapor capillary
+# length at -5°C).
+#
+# The 3-year run on 2D_pore_channel_icecap at h=1.00 (3yr_T-5_h1.00_GTphys.opts)
+# showed too little change to be useful -- going to 10 years and dropping
+# humidity to 0.80 together: lower humidity increases the vapor-pressure
+# deficit away from the ice surfaces (air is no longer saturated relative to
+# ice), strengthening the sublimation driving force everywhere, not just at
+# curved interfaces, so it should speed up visible mass transfer on top of
+# just running longer. dt saturates at dtmax early (now 1.0e6, see
+# inputs/solver.opts) so wall-clock cost grows far slower than t_final.
+# =============================================================================
+
+-t_final 315360000.0                    # 10 years (s) = 10 * 365 * 86400
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -5.0
+-humidity 0.80
+-grad_temp0 0.0,0.0,0.0
+
+-d0_GT 9.6e-10                          # physical capillary length for ice at -5°C

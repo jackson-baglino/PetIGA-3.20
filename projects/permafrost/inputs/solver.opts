@@ -66,22 +66,20 @@
                                         # ice-sed contact under frozen sed — see commit log)
 
 # ---------- Adaptive time stepping -------------------------------------------
--dtmax 1.0e5                            # ~1.16 days; raised from 1.0e4 after job64418602
-                                        # (bcgs_fix) hit that ceiling 12 times cleanly (0
-                                        # DIVERGED, 79 Increase / 0 Reduce) in a 2-day run
-                                        # that finished in 2.57 min wall-clock on 1 rank --
-                                        # confirms dt was being limited purely by the ceiling,
-                                        # not by any solver instability, once VI bounds
-                                        # (-snes_type vinewtonssls) made the original
-                                        # job64406550 full-sublimation-singularity danger
-                                        # structurally impossible regardless of dt, and bcgs
-                                        # (not gmres) fixed the GT-curvature-Jacobian
-                                        # conditioning issue at large dt. The NRmin/NRmax
-                                        # growth/shrink heuristic below still self-limits dt
-                                        # based on Newton iteration count, so this ceiling is
-                                        # only reached during genuinely easy, quiet stretches
-                                        # -- exactly where a 21+ day Ostwald-ripening run
-                                        # spends most of its time.
+-dtmax 1.0e6                            # ~11.6 days; raised from 1.0e5 for multi-year
+                                        # pore-channel runs. The original reason for capping
+                                        # dtmax at all (job64406550's full-sublimation
+                                        # singularity at uncontrolled dt) is exactly the
+                                        # failure mode -snes_type vinewtonssls now prevents
+                                        # structurally, regardless of dt size -- so the cap is
+                                        # no longer a safety limit, just a speed knob. The
+                                        # 1.0e5 ceiling above was validated as safe (job64418602,
+                                        # 0 DIVERGED at that ceiling) but never pushed further.
+                                        # The NRmin/NRmax growth/shrink heuristic below still
+                                        # self-limits dt based on Newton iteration count, so
+                                        # this only matters during genuinely easy, quiet
+                                        # stretches -- exactly where a multi-year
+                                        # Ostwald-ripening run spends most of its time.
 -adap 1
 -NRmin 5                                # SNES iters strictly below this trigger dt growth
 -NRmax 15                               # SNES iters above this trigger dt shrink
