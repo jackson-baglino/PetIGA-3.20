@@ -334,7 +334,7 @@ def write_vtk(surf, fname, n_per_elem=4):
 
 
 def main():
-    global P, C, Nx, Ny, Lx, Ly, SEDIMENT_GRAINS
+    global P, C, Nx, Ny, Lx, Ly, SEDIMENT_GRAINS, TOP_GRAINS
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--Nx", type=int, default=Nx,
@@ -356,6 +356,10 @@ def main():
                               "'5.0e-5,0.4e-5,0.2e-5'). Default: unchanged, uses the "
                               "hardcoded production 5-bump SEDIMENT_GRAINS list. "
                               "Mutually exclusive with --random-bumps.")
+    parser.add_argument("--top-bumps", default=None,
+                         help="override TOP_GRAINS (ceiling bumps, downward from Ly) for "
+                              "this invocation only, same 'cx,R,h;cx,R,h;...' syntax as "
+                              "--bumps. Default: unchanged, TOP_GRAINS=[] (flat ceiling).")
     parser.add_argument("--random-bumps", action="store_true",
                          help="generate a full-coverage random bump list (overrides "
                               "SEDIMENT_GRAINS) instead of using --bumps or the "
@@ -407,6 +411,11 @@ def main():
         SEDIMENT_GRAINS = [
             tuple(float(v) for v in triple.split(","))
             for triple in args.bumps.split(";")
+        ]
+    if args.top_bumps is not None:
+        TOP_GRAINS = [
+            tuple(float(v) for v in triple.split(","))
+            for triple in args.top_bumps.split(";")
         ]
 
     surf = build_surface()

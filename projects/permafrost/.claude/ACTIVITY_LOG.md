@@ -1,6 +1,54 @@
 
 ---
 
+## 2026-06-20 — Mesh-convergence investigation on grain plateau; pivoted to pore-channel geometry
+
+- 10-year run on 2D_two_ice_grains_boundary (half-size small grain) showed
+  99% small-grain sublimation before plateauing -- visual check showed the
+  grain's two opposing diffuse interfaces had merged into a degenerate
+  blob (no flat phi_ice~1 core) by year 6.5, frozen for the remaining 3.5
+  years. Diagnosed as a resolution-validity limit: once a grain's radius
+  approaches the interface width, curvature degrades toward zero and the
+  Gibbs-Thomson driving force has nothing left to act on.
+- Built a 2x-refined geometry (Nx/Ny x2, eps /2, dx/eps held exactly
+  constant at 0.70711) to test this. Result was the OPPOSITE of expected:
+  the refined run plateaued earlier and at a much larger residual (-64%
+  vs -99%), while staying visually well-resolved (clean core, no merged
+  interface) throughout. The gap between original and 2x trajectories
+  grows continuously from t=0, not just near the end -- revised diagnosis:
+  the original (coarser) mesh was systematically overestimating curvature
+  (Hessian-based, second-derivative-sensitive to discretization) as the
+  grain shrank, artificially inflating the GT driving force throughout the
+  run, not just failing once the grain got tiny. The original "near-total
+  sublimation" result was not mesh-converged.
+- Tried a 4x-refined geometry (same dx/eps ratio) plus -dtmax 5e5 (from
+  1e5) to keep wall-clock down, since dtmax was being hit at step 105/day
+  4.6 in the 2x run (essentially the whole run at the ceiling). User
+  judged this was rabbit-holing -- mesh refinement alone isn't resolving
+  the question productively, and called it (job left to finish in the
+  background, not analyzed further). Decided to stop chasing full
+  sublimation via mesh refinement.
+- Discussed: this is a well-documented issue in the alloy/grain-growth
+  phase-field literature ("small particle disappearance problem",
+  "lattice/mesh pinning"), typically addressed via adaptive mesh
+  refinement, explicit small-grain elimination rules, or multi-order-
+  parameter grain tracking -- all bigger undertakings than today's time
+  budget (conference presentation due Tuesday 2026-06-23) allows.
+- Pivoted to a new deliverable: built 2D_pore_channel.opts, a tortuous
+  pore-channel geometry through sediment-laden regolith (5 floor bumps +
+  4 interleaved, differently-sized ceiling bumps, varied R/height for
+  visual irregularity vs the uniform 5-bump production baseline), reusing
+  the proven 2D_multi_grain_test.opts ice-grain layout (2 boundary
+  attractor grains + 4 trough grains) and eps. Added --top-bumps to
+  build_geometry_multi_grain.py (mirrors --bumps, was bottom-only before)
+  to support this. Genuine LEFT/RIGHT side-wall intrusions (also
+  requested) were explicitly deferred -- the current ruled-surface mesh
+  construction only warps y as a function of x; doing both directions at
+  once needs a true 4-edge Coons-patch blend, judged too risky to attempt
+  for the first time under today's deadline.
+
+---
+
 ## 2026-06-20 — Diagnosed d0_GT amplification failure; switched to tighter geometry + warmer temp
 
 - Two 21-day sweeps on 2D_single_bump_two_grains at -20°C testing larger
