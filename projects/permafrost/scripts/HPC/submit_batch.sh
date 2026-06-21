@@ -22,6 +22,12 @@
 #
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests-file tests.txt
 #
+# --extra-opts forwards a single quoted string of permafrost CLI flags to
+# EVERY fanned-out job (appended after the three -options_file flags, same
+# as submit_permafrost.sh's `-- ...` convention, so they override anything
+# set in the opts files):
+#   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." --extra-opts "-beta_sub0 1.4e3"
+#
 # Extra sbatch flags can be appended after --:
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." -- --time=0-04:00:00
 # =============================================================================
@@ -45,6 +51,7 @@ tag=""
 tests_arg=""
 tests_file=""
 sbatch_extra=()
+extra_opts=()
 
 usage() {
     sed -n '2,28p' "$0"
@@ -56,6 +63,7 @@ while [[ $# -gt 0 ]]; do
         --tag)         tag="$2"; shift 2 ;;
         --tests)       tests_arg="$2"; shift 2 ;;
         --tests-file)  tests_file="$2"; shift 2 ;;
+        --extra-opts)  read -ra extra_opts <<< "$2"; shift 2 ;;
         --)            shift; sbatch_extra=("$@"); break ;;
         -h|--help)     usage ;;
         *)             echo "Unknown argument: $1"; usage ;;
@@ -235,7 +243,7 @@ submit_one() {
            --ntasks-per-node="$tasks_per_node" \
            --export=ALL,SKIP_COMPILE=1,BATCH_OUT_DIR="$BATCH_PARENT" \
            "${sbatch_extra[@]}" \
-           "$RUN_SCRIPT" "$geom" "$exp" "$tag"
+           "$RUN_SCRIPT" "$geom" "$exp" "$tag" "${extra_opts[@]}"
     ((N_SUBMITTED++)) || true
 }
 
