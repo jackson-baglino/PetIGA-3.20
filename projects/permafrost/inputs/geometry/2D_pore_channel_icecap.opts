@@ -24,23 +24,33 @@
 # (all floor-floor, top-top, floor-top, and cap-vs-boundary-grain pairs have
 # >=3e-6 m clearance) without needing to re-tune spacing.
 #
-# Ice grains (9 caps + 2 boundary attractors):
+# Ice grains (9 caps + 1 right-boundary attractor + 4 left-boundary grains):
 #   floor caps (bump R,H from -sed_grain_*): cx=1,3,5,7,9 x1e-5
 #   top caps   (bump R,H from -top_grain_*): cx=2,4,6,8   x1e-5
-#   boundary:  cx=0 (R=3.5e-6), cx=Lx (R=1.5e-5)
+#   right boundary attractor: cx=Lx (R=1.5e-5)
+#   left boundary cluster:    cx=0, cy=0.5,1.5,2.5,3.5 x1e-5, R=1.75e-6 each
 #
-# Left boundary grain shrunk from 6.0e-6 to 3.5e-6 (the 10yr/h=0.80 run on
-# the 6.0e-6 version showed only "a little" boundary coarsening and almost
-# none among the caps -- TOT_ICE moved just -0.004% over 10 years despite
+# Left boundary grain history: started at 6.0e-6 (1 grain). The 10yr/h=0.80
+# run on that showed only "a little" boundary coarsening and almost none
+# among the caps -- TOT_ICE moved just -0.004% over 10 years despite
 # TOT_RHOV moving +24%, confirming bulk humidity barely touches the ice
 # budget; the real lever is Gibbs-Thomson curvature CONTRAST between
-# competing ice masses. 6.0e-6 vs 1.5e-5 was only a 2.5x ratio; the caps
-# among themselves span just 1.67x (6.0e-6 to 1.0e-5), explaining their
-# near-stasis. The two-grain runs that showed 50-99% sublimation used a
-# 4.0x ratio (-RCice0 4.6875e-6 override). 3.5e-6 vs 1.5e-5 = 4.29x,
-# matching that contrast; 3.5e-6 also reuses the already-validated trough-
-# grain radius from this geometry family (R/eps=9.5, same well-resolved
-# range as the dramatic two-grain case's R/eps=10.05).
+# competing ice masses. Shrunk to a single 3.5e-6 grain (4.29x ratio vs the
+# 1.5e-5 right boundary grain, matching the two-grain runs' proven 4.0x
+# contrast that gave 50-99% sublimation).
+#
+# Then split into 4 grains of equal area to the single 3.5e-6 grain
+# (N*r^2 = R0^2 -> r = R0/sqrt(4) = 1.75e-6): same total left-boundary ice
+# mass, but each individual grain is far more curved (1/r), which should
+# pull mass toward the big right grain faster, and gives a richer "many
+# small grains feeding one big one" visual. Checked this isn't pushing
+# into the merged/no-flat-core regime that caused trouble in the earlier
+# mesh-refinement investigation: r/eps=4.75 (vs the single-grain 3.5e-6's
+# r/eps=9.5) sounds marginal by the eps-multiples rule of thumb, but a
+# direct IC render + point sample confirmed each of the 4 small grains
+# still reaches ice=0.998 at its center (genuine flat core, not merged).
+# Spaced at cy=0.5,1.5,2.5,3.5 x1e-5 (1.0e-5 between centers, >>2r=3.5e-6
+# apart -- no overlap risk with each other or any floor/top cap).
 # =============================================================================
 # DOF_GRID: 306 124
 -geom_file inputs/geometry/pore_channel_test.dat
@@ -57,11 +67,11 @@
 -top_grain_x 2.0e-5,4.0e-5,6.0e-5,8.0e-5
 -top_grain_R 0.5e-5,0.35e-5,0.55e-5,0.4e-5
 -top_grain_h 0.4e-5,0.25e-5,0.45e-5,0.3e-5
--ice_grain_cx 0.0,1.0e-4,1.0000e-05,3.0000e-05,5.0000e-05,7.0000e-05,9.0000e-05,2.0000e-05,4.0000e-05,6.0000e-05,8.0000e-05
--ice_grain_cy 2.0e-5,2.0e-5,-3.0000e-06,-1.1111e-06,-2.0625e-06,-1.1250e-06,-1.9500e-06,4.1125e-05,4.1200e-05,4.1111e-05,4.1167e-05
--ice_grain_R  3.5e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06
--ice_grain_ax 3.5e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06
--ice_grain_ay 3.5e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06
+-ice_grain_cx 0.0,0.0,0.0,0.0,1.0e-4,1.0000e-05,3.0000e-05,5.0000e-05,7.0000e-05,9.0000e-05,2.0000e-05,4.0000e-05,6.0000e-05,8.0000e-05
+-ice_grain_cy 5.0e-6,1.5e-5,2.5e-5,3.5e-5,2.0e-5,-3.0000e-06,-1.1111e-06,-2.0625e-06,-1.1250e-06,-1.9500e-06,4.1125e-05,4.1200e-05,4.1111e-05,4.1167e-05
+-ice_grain_R  1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06
+-ice_grain_ax 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06
+-ice_grain_ay 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06
 -delt_t 1.0e-4
 -eps 3.68274e-07
 -periodic 0
