@@ -1,0 +1,54 @@
+# =============================================================================
+# geometry/2D_pore_channel_icecap.opts — 2D_pore_channel.opts with every
+# floor and ceiling sediment bump encapsulated in ice (same technique as
+# 2D_single_bump_ice_cap.opts, generalized to all 9 bumps), plus the same
+# 2 boundary "attractor" ice grains. Same mesh/eps/-sed_grain_*/-top_grain_*
+# as 2D_pore_channel.opts -- only the ice_grain_* list changes.
+#
+# Encapsulation: fit a circle through each bump's two edges and peak
+# (sagitta formula, preprocess/comp_ice_encapsulation.py), then place a
+# concentric ice circle with radius enlarged by the bump's own height
+# (thickness = H, matching 2D_single_bump_ice_cap.opts's precedent of
+# thickness = H for that same bump shape). For top/ceiling bumps the same
+# fit applies mirrored about Ly: cy_top = Ly - cy_sed_floor.
+#
+#   python3 preprocess/comp_ice_encapsulation.py --cx <x> --R <R> --H <H> --thickness <H>
+#   (run once per bump; top bumps need cy_top = Ly - cy_sed from the script's output)
+#
+# Dropped the 4 standalone "trough" ice grains from 2D_multi_grain_test.opts
+# /2D_pore_channel.opts: floor cap radii here are noticeably larger than the
+# bare bump footprint (e.g. bump 1's R_ice=7.0e-6 vs bare bump R=4.0e-6), and
+# the trough grain at x=2.0e-5 sits just 1.044e-5 from floor cap 1's center
+# vs their summed radii of 1.05e-5 -- a real (if small) overlap. Removing
+# the trough grains avoids this and every other adjacent-pair check cleanly
+# (all floor-floor, top-top, floor-top, and cap-vs-boundary-grain pairs have
+# >=3e-6 m clearance) without needing to re-tune spacing.
+#
+# Ice grains (9 caps + 2 boundary attractors):
+#   floor caps (bump R,H from -sed_grain_*): cx=1,3,5,7,9 x1e-5
+#   top caps   (bump R,H from -top_grain_*): cx=2,4,6,8   x1e-5
+#   boundary:  cx=0 (R=6e-6), cx=Lx (R=1.5e-5)
+# =============================================================================
+# DOF_GRID: 306 124
+-geom_file inputs/geometry/pore_channel_test.dat
+-p 2
+-C 1
+-ic_type multi_grains
+-dim 2
+-Lx 1.0e-4
+-Ly 4.0e-5
+-Lz 0
+-sed_grain_x 1.0e-5,3.0e-5,5.0e-5,7.0e-5,9.0e-5
+-sed_grain_R 0.4e-5,0.55e-5,0.35e-5,0.5e-5,0.4e-5
+-sed_grain_h 0.2e-5,0.45e-5,0.2e-5,0.4e-5,0.25e-5
+-top_grain_x 2.0e-5,4.0e-5,6.0e-5,8.0e-5
+-top_grain_R 0.5e-5,0.35e-5,0.55e-5,0.4e-5
+-top_grain_h 0.4e-5,0.25e-5,0.45e-5,0.3e-5
+-ice_grain_cx 0.0,1.0e-4,1.0000e-05,3.0000e-05,5.0000e-05,7.0000e-05,9.0000e-05,2.0000e-05,4.0000e-05,6.0000e-05,8.0000e-05
+-ice_grain_cy 2.0e-5,2.0e-5,-3.0000e-06,-1.1111e-06,-2.0625e-06,-1.1250e-06,-1.9500e-06,4.1125e-05,4.1200e-05,4.1111e-05,4.1167e-05
+-ice_grain_R  6.0e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06
+-ice_grain_ax 6.0e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06
+-ice_grain_ay 6.0e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06
+-delt_t 1.0e-4
+-eps 3.68274e-07
+-periodic 0
