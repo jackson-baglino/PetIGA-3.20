@@ -64,6 +64,16 @@ sampled at, e.g. ~2432x488 for a 608x122-element mesh at n_per_elem=4), not
 some fixed/capped video size. Use --supersample for extra antialiasing or
 --resolution WxH to override outright.
 
+Most of these domains are wide and short (Lx >> Ly), so native height is
+often well under 1080 (e.g. 488px in the example above) even when native
+width is already huge -- "render at native resolution" alone does not
+imply HD. --min-height (default 1080) scales the whole frame UP
+proportionally whenever native/supersampled height would fall short, so
+movies are never sub-HD; --max-width is still a downscale safety cap on
+top of that, but yields to --min-height if the two conflict (a printed
+note explains when this happens). Pass --min-height 0 to disable and get
+the old "purely native/supersampled, no HD floor" behavior back.
+
 The camera is set explicitly to the data's bounding box with zero margin
 (not ResetCamera's default padding), so frames are cropped tight to the
 geometry -- no background border. In-frame scalar bars are hidden (they
@@ -205,10 +215,16 @@ def main():
                         "dense sampling 1:1)")
     p.add_argument("--supersample", type=float, default=1.0,
                    help="multiply the native resolution by this factor (default: 1.0)")
+    p.add_argument("--min-height", type=int, default=1080,
+                   help="floor on output height in pixels (the '1080' in '1080p'); "
+                        "native/supersampled resolution is scaled UP proportionally "
+                        "if it would fall short, so the movie is never sub-HD even for "
+                        "short, low-resolution domains. Set to 0 to disable. (default: 1080)")
     p.add_argument("--max-width", type=int, default=4096,
-                   help="safety cap on output width in pixels; native/supersampled "
-                        "resolution is downscaled proportionally if it would exceed "
-                        "this (default: 4096)")
+                   help="safety cap on output width in pixels; resolution is downscaled "
+                        "proportionally if it would exceed this -- unless that would also "
+                        "violate --min-height, in which case --min-height wins and "
+                        "--max-width is raised to match, with a printed note (default: 4096)")
     p.add_argument("--no-colorbars", action="store_true",
                    help="skip exporting the standalone SVG colorbars")
     p.add_argument("--keep-frames", action="store_true",
@@ -293,6 +309,14 @@ def main():
         nx, ny = ext[1] - ext[0] + 1, ext[3] - ext[2] + 1
         w = int(round(nx * args.supersample))
         h = int(round(ny * args.supersample))
+    if args.min_height and h < args.min_height:
+        scale = args.min_height / h
+        w, h = int(round(w * scale)), args.min_height
+        print(f"  (upscaled to meet --min-height {args.min_height}: now {w}x{h})")
+        if w > args.max_width:
+            print(f"  (--min-height requires width {w} > --max-width {args.max_width} "
+                  f"-- raising --max-width to match; min-height wins)")
+            args.max_width = w
     if w > args.max_width:
         scale = args.max_width / w
         w, h = args.max_width, max(1, int(round(h * scale)))
