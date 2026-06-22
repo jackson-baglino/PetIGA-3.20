@@ -148,10 +148,12 @@ def save_vector_colorbar(lut, label, out_path):
     positions = [(v - lo) / (hi - lo) if hi > lo else 0.0 for v in values]
     cmap = LinearSegmentedColormap.from_list("custom", list(zip(positions, colors)), N=256)
 
-    fig, ax = plt.subplots(figsize=(1.4, 6))
+    fig, ax = plt.subplots(figsize=(0.5, 6))
     cb = ColorbarBase(ax, cmap=cmap, norm=Normalize(vmin=lo, vmax=hi), orientation="vertical")
-    cb.set_label(label, fontsize=14)
-    cb.ax.tick_params(labelsize=12)
+    cb.set_label(label, fontsize=14, fontweight="bold", color="white")
+    cb.ax.tick_params(labelsize=12, colors="white")
+    for tick_label in cb.ax.get_yticklabels():
+        tick_label.set_fontweight("bold")
     fig.savefig(out_path, format="svg", bbox_inches="tight", transparent=True)
     plt.close(fig)
     print(f"  wrote {out_path}  (range [{lo:.4g}, {hi:.4g}])")
