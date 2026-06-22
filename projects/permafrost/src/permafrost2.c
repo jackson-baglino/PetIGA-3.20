@@ -830,6 +830,10 @@ int main(int argc, char *argv[]) {
      * actually want to take it. Widening the bound just gives more room
      * before that pinning kicks in.
      *
+     * Tightened back to -0.05/1.05 (2026-06-22): with the smaller -dtmax
+     * (1.0e4) and surgical/no-left-grains geometry changes, runs stay
+     * well-behaved without needing the extra -0.1/1.1 slack.
+     *
      * Technically incorrect (allows larger unphysical excursions outside
      * [0,1]); intentional tradeoff to get a visibly-evolving result for the
      * 2026-06-23 conference. Revisit the real fix (per-DOF-block atol
@@ -837,8 +841,8 @@ int main(int argc, char *argv[]) {
     Vec Xl, Xu;
     ierr = IGACreateVec(iga, &Xl); CHKERRQ(ierr);
     ierr = IGACreateVec(iga, &Xu); CHKERRQ(ierr);
-    ierr = VecStrideSet(Xl, 0, -0.1);            CHKERRQ(ierr);
-    ierr = VecStrideSet(Xu, 0, 1.1);             CHKERRQ(ierr);
+    ierr = VecStrideSet(Xl, 0, -0.05);           CHKERRQ(ierr);
+    ierr = VecStrideSet(Xu, 0, 1.05);            CHKERRQ(ierr);
     ierr = VecStrideSet(Xl, 1, PETSC_NINFINITY); CHKERRQ(ierr);
     ierr = VecStrideSet(Xu, 1, PETSC_INFINITY);  CHKERRQ(ierr);
     ierr = VecStrideSet(Xl, 2, PETSC_NINFINITY); CHKERRQ(ierr);
