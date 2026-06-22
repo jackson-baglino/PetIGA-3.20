@@ -799,7 +799,7 @@ int main(int argc, char *argv[]) {
      * bad state is committed to ts->vec_sol. */
     user.snes = nonlin;
 
-    /* Bound-constrained Newton solve: enforce -0.1 <= ice <= 1.1 directly
+    /* Bound-constrained Newton solve: enforce 0 <= ice <= 1 directly
      * on the DOF vector via a variational-inequality SNES (-snes_type
      * vinewtonssls in solver.opts). Field values at quadrature points are a
      * convex combination of nearby DOFs, so bounding the DOFs themselves
@@ -834,6 +834,10 @@ int main(int argc, char *argv[]) {
      * (1.0e4) and surgical/no-left-grains geometry changes, runs stay
      * well-behaved without needing the extra -0.1/1.1 slack.
      *
+     * Tightened to strict [0,1] (2026-06-22, same day, third trial): testing
+     * whether the smaller -dtmax (1.0e4) alone is now enough to keep this
+     * physically-correct bound well-behaved, without any VI slack at all.
+     *
      * Technically incorrect (allows larger unphysical excursions outside
      * [0,1]); intentional tradeoff to get a visibly-evolving result for the
      * 2026-06-23 conference. Revisit the real fix (per-DOF-block atol
@@ -841,8 +845,8 @@ int main(int argc, char *argv[]) {
     Vec Xl, Xu;
     ierr = IGACreateVec(iga, &Xl); CHKERRQ(ierr);
     ierr = IGACreateVec(iga, &Xu); CHKERRQ(ierr);
-    ierr = VecStrideSet(Xl, 0, -0.05);           CHKERRQ(ierr);
-    ierr = VecStrideSet(Xu, 0, 1.05);            CHKERRQ(ierr);
+    ierr = VecStrideSet(Xl, 0, 0.0);             CHKERRQ(ierr);
+    ierr = VecStrideSet(Xu, 0, 1.0);             CHKERRQ(ierr);
     ierr = VecStrideSet(Xl, 1, PETSC_NINFINITY); CHKERRQ(ierr);
     ierr = VecStrideSet(Xu, 1, PETSC_INFINITY);  CHKERRQ(ierr);
     ierr = VecStrideSet(Xl, 2, PETSC_NINFINITY); CHKERRQ(ierr);
