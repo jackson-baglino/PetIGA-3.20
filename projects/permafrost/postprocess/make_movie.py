@@ -19,6 +19,16 @@ project Python (it has cmocean; pvpython does not):
 
     python3 postprocess/make_cmocean_preset.py ice
 
+Each run also needs its dense, true-NURBS-interpolated permafrost_highres.pvd
+generated first (same regular project Python, not pvpython -- it needs
+igakit):
+
+    python3 postprocess/plot_permafrost_highres.py --dir <rundir>
+
+find_pvd() requires this file and refuses to silently fall back to the
+coarse control-point permafrost.pvd (the raw B-spline control-point grid,
+not the actual field shape -- rendering it directly looks faceted/blocky).
+
 ------------------------------------------------------------------------
 Linear-time playback
 ------------------------------------------------------------------------
@@ -148,27 +158,51 @@ def save_vector_colorbar(lut, label, out_path):
 
 
 def find_pvd(run_dir: str) -> str:
-    for name in ("permafrost_highres.pvd", "permafrost.pvd"):
-        path = os.path.join(run_dir, name)
-        if os.path.isfile(path):
-            return path
+    """Require the dense, true-NURBS-interpolated permafrost_highres.pvd
+    (written by plot_permafrost_highres.py) -- never silently fall back to
+    the coarse control-point permafrost.pvd. The coarse mesh is the raw
+    B-spline control-point grid, not the actual field shape; rendering it
+    directly looks faceted/blocky and is not the same data plot_
+    permafrost_highres.py's dense .vts files show. If a movie ever needs to
+    render that coarse mesh on purpose, pass --pvd explicitly."""
+    highres_path = os.path.join(run_dir, "permafrost_highres.pvd")
+    if os.path.isfile(highres_path):
+        return highres_path
+    coarse_path = os.path.join(run_dir, "permafrost.pvd")
+    if os.path.isfile(coarse_path):
+        raise FileNotFoundError(
+            f"No permafrost_highres.pvd in {run_dir} (found only the coarse "
+            f"control-point permafrost.pvd). Generate the dense, true-NURBS "
+            f"interpolated version first, with this project's regular "
+            f"Python (not pvpython):\n"
+            f"    python3 postprocess/plot_permafrost_highres.py --dir {run_dir}\n"
+            f"then re-run make_movie.py. Pass --pvd {coarse_path} explicitly "
+            f"if you really want the coarse mesh instead.")
     raise FileNotFoundError(
         f"No permafrost_highres.pvd or permafrost.pvd found in {run_dir}")
 
 
-def auto_vapor_range(reader, timestep_values, n_samples, lo_pct, hi_pct):
+def auto_vapor_range(air_volume, timestep_values, n_samples, lo_pct, hi_pct):
     """Sample n_samples evenly-spaced timesteps, pool VaporDensity across
     them, and return a global [lo_pct, hi_pct] percentile range -- a fixed
     colorbar range that stays meaningful across the whole movie instead of
-    auto-rescaling (and thus changing meaning) every frame."""
+    auto-rescaling (and thus changing meaning) every frame.
+
+    Samples from air_volume (the IsoVolume already clipped to the air
+    region, IcePhase in [-0.1, 0.5]) rather than the raw reader. VaporDensity
+    inside the ICE region sits near the (much higher, more uniform)
+    saturation density rho_vs -- pooling that in would dominate the
+    percentile range and wash out the actual variation in the air region,
+    which is the only place this colormap is ever rendered."""
     n = len(timestep_values)
     idx = np.unique(np.linspace(0, n - 1, min(n_samples, n)).astype(int))
     pooled = []
     for i in idx:
-        reader.UpdatePipeline(timestep_values[i])
-        data = dsa.WrapDataObject(servermanager.Fetch(reader))
+        air_volume.UpdatePipeline(timestep_values[i])
+        data = dsa.WrapDataObject(servermanager.Fetch(air_volume))
         arr = np.asarray(data.PointData["VaporDensity"]).ravel()
-        pooled.append(arr)
+        if arr.size:
+            pooled.append(arr)
     pooled = np.concatenate(pooled)
     lo, hi = np.percentile(pooled, [lo_pct, hi_pct])
     return float(lo), float(hi)
@@ -252,16 +286,6 @@ def main():
     print(f"Simulated time window: [{t_start:.6g}, {t_end:.6g}] "
           f"({len(timestep_values)} source snapshots, {args.n_frames} output frames)")
 
-    # ---- vapor colorbar range (fixed across the whole movie) --------------
-    if args.vapor_range is not None:
-        vmin, vmax = args.vapor_range
-    else:
-        vmin, vmax = auto_vapor_range(
-            reader, timestep_values, args.vapor_range_samples, *args.vapor_percentile)
-        print(f"Auto vapor-density range ({args.vapor_percentile[0]:.0f}-"
-              f"{args.vapor_percentile[1]:.0f} percentile over "
-              f"{args.vapor_range_samples} samples): [{vmin:.4g}, {vmax:.4g}]")
-
     # ---- pipeline -----------------------------------------------------------
     source = reader
     if not args.no_interpolate:
@@ -271,6 +295,17 @@ def main():
                             ThresholdRange=[0.5, 1.1])
     air_volume = IsoVolume(Input=source, InputScalars=["POINTS", "IcePhase"],
                             ThresholdRange=[-0.1, 0.5])
+
+    # ---- vapor colorbar range (fixed across the whole movie) --------------
+    if args.vapor_range is not None:
+        vmin, vmax = args.vapor_range
+    else:
+        vmin, vmax = auto_vapor_range(
+            air_volume, timestep_values, args.vapor_range_samples, *args.vapor_percentile)
+        print(f"Auto vapor-density range ({args.vapor_percentile[0]:.0f}-"
+              f"{args.vapor_percentile[1]:.0f} percentile over "
+              f"{args.vapor_range_samples} samples, air region only): "
+              f"[{vmin:.4g}, {vmax:.4g}]")
 
     view = GetActiveViewOrCreate("RenderView")
     view.InteractionMode = "2D"
