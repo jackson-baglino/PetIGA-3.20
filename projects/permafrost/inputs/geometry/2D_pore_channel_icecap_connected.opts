@@ -1,57 +1,56 @@
 # =============================================================================
 # geometry/2D_pore_channel_icecap_connected.opts — 2D_pore_channel_icecap.opts
-# with 14 additional small circular "bridge" ice grains added so that ALL
-# ice (left-boundary cluster, right-boundary grain, and all 9 bump caps)
-# forms ONE single connected ice body, instead of 14 separate disconnected
-# features.
+# with 4 small circular "bridge" ice grains added, targeting ONLY the
+# specific caps that the 10yr/h=1.00/GTphys/[-0.1,1.1]-bounds run actually
+# showed getting stuck or vanishing: FloorCap1 and FloorCap4 plateaued at a
+# small nonzero size, FloorCap3 fully vanished, TopCap2 was still declining.
+# Every other feature (L0-L3, Right, FloorCap2/5, TopCap1/3/4) is UNCHANGED
+# from 2D_pore_channel_icecap.opts.
 #
-# Motivation: the disconnected version showed several caps shrink fast then
-# get permanently stuck at a small nonzero plateau (with persistent step-to-
-# step pulsing on top) instead of fully sublimating -- the same curvature-
-# breakdown wall hit once a feature's two opposing diffuse interfaces merge,
-# from the earlier (abandoned) mesh-refinement investigation. Caps pinned to
-# a sediment base are especially prone to it: as they shrink, the exposed,
-# evolvable ice/air interface shrinks faster relative to total cap size than
-# for a free circular grain.
+# Motivation: a feature pinned to a sediment base, shrinking in isolation,
+# hits the same curvature-breakdown wall as the earlier (abandoned) mesh-
+# refinement investigation once its two opposing diffuse interfaces start
+# to merge -- its exposed, evolvable ice/air interface shrinks faster
+# relative to total size than a free grain's would, so vapor-phase
+# Gibbs-Thomson alone can stall before the cap fully sublimates. Giving
+# each stuck/vanishing cap a direct ice-phase bridge to its nearest
+# ROBUST neighbor (the cap that was NOT observed to be stuck) opens a
+# second, vapor-independent transport path: direct curvature-driven flow
+# through the ice itself, so the struggling cap has somewhere for its
+# mass to go besides fully detaching and sublimating alone.
 #
-# Connecting all the ice into one body opens a SECOND mass-transport channel
-# that doesn't depend on a feature staying large enough for the vapor-phase
-# Gibbs-Thomson mechanism to keep working: direct curvature-driven transport
-# THROUGH the ice itself (the connected-tissue/grain-boundary-diffusion
-# analogue of real snow/firn metamorphism), so a small, nearly-disconnected
-# remnant has a direct path to lose mass into its neighbor rather than
-# needing to fully detach and sublimate away on its own.
+# History: two earlier attempts both connected ALL 14 features into one
+# body (left-boundary cluster + right-boundary grain + all 9 caps) and
+# both showed phi_ice creeping well past 1.0 (up to ~1.08-1.09) during
+# real timestepping -- v1 used 2 wide near-flat connecting ellipses
+# (job64466301, distorted IC, bounds pushed to 1.079 within ~170 steps);
+# v2 replaced those with 11 discrete circular bridges instead (no change
+# in kind, same magnitude of bounds excursion in a local 4-core/5e6s
+# sanity run: 1.0889 by step 97, plateauing rather than running away, but
+# not actually better than v1). Conclusion: the excursion isn't really
+# about ellipse-vs-circle shape, it's that 28 total ice features (14
+# original + 14 bridges), many close together, is simply a lot more
+# tightly-packed curvature for the known under-resolved single-Newton-
+# step solver to handle per step. This version only adds 4 new grains
+# (vs 14), specifically targeting the diagnosed problem caps instead of
+# wiring up the whole geometry, to minimize that added numerical stress
+# while still giving the actual stuck caps a way out.
 #
-# v1 (superseded) used 2 wide, nearly-flat connecting ellipses spanning the
-# whole floor/ceiling instead of discrete bridges -- job64466301 showed the
-# IC was already distorted and phi_ice pushed hard against the [-0.1,1.1]
-# VI bound within the first ~170 steps (BOUNDS: phi_ice up to 1.079) instead
-# of settling down like every other run this session. Likely cause: a long,
-# nearly-flat ellipse has near-zero curvature almost everywhere, which seems
-# to interact badly with the Hessian-based Gibbs-Thomson term (especially
-# combined with the already-known under-resolved single-Newton-step-per-
-# timestep issue) -- a much bigger per-step perturbation than the well-
-# behaved circular features everywhere else in this geometry.
-#
-# v2 (this version): replaced both wide ellipses with 11 small CIRCULAR
-# bridge grains, one per gap along two connectivity paths, sized to just
-# overlap both neighbors with >=1.0e-6 m margin (computed via the standard
-# "place at the midpoint between the two centers, radius = max(0, D/2-rA,
-# D/2-rB) + margin" rule, where D is the center-to-center distance):
-#   Floor path:  L0 -- FloorCap1 -- FloorCap2 -- FloorCap3 -- FloorCap4
-#                -- FloorCap5 -- Right
-#   Top path:    L3 -- TopCap1 -- TopCap2 -- TopCap3 -- TopCap4 -- Right
-# All resulting bridge radii are 3.83e-6 to 9.71e-6 m (R/eps = 10.4 to 26.4,
-# comfortably resolved, better than the proven dramatic two-grain case's
-# R/eps~9.5-10.05) -- no near-degenerate shapes, every new feature is an
-# ordinary circle like everything else in this geometry.
-# Plus the 3 small LeftBridge circles (R=4.0e-6, cx=0, cy=1,2,3 x1e-5) from
-# v1 connecting the 4 left-boundary grains into one column -- these were NOT
-# implicated in the v1 blowup (also ordinary circles) and are unchanged.
+# 4 new bridge grains (same "midpoint + radius = max(0,D/2-rA,D/2-rB)
+# + 1.0e-6 m margin" sizing rule as before):
+#   FloorCap1 -- FloorCap2 (R=4.045e-6): FloorCap2 is the largest, most
+#     robust floor cap (R=1.0111e-5) -- gives stuck FloorCap1 an outlet.
+#   FloorCap2 -- FloorCap3 (R=4.949e-6): gives vanished FloorCap3 the
+#     same robust neighbor.
+#   FloorCap4 -- FloorCap5 (R=4.0585e-6): FloorCap5 was not observed
+#     stuck -- gives stuck FloorCap4 an outlet (NOT bridged to FloorCap3,
+#     which is itself collapsing and not a useful mass sink).
+#   TopCap2 -- TopCap3 (R=4.80e-6): TopCap3 is the largest top cap
+#     (R=1.0111e-5) -- gives declining TopCap2 an outlet.
+# All new radii are comfortably resolved (R/eps = 11.0-13.4).
 #
 # Same mesh/eps/-sed_grain_*/-top_grain_* as 2D_pore_channel_icecap.opts --
-# only the ice_grain_* list changes (14 -> 28 entries: +3 left-bridges,
-# +11 path-bridges).
+# only the ice_grain_* list changes (14 -> 18 entries).
 # =============================================================================
 # DOF_GRID: 306 124
 -geom_file inputs/geometry/pore_channel_test.dat
@@ -68,11 +67,11 @@
 -top_grain_x 2.0e-5,4.0e-5,6.0e-5,8.0e-5
 -top_grain_R 0.5e-5,0.35e-5,0.55e-5,0.4e-5
 -top_grain_h 0.4e-5,0.25e-5,0.45e-5,0.3e-5
--ice_grain_cx 0.0,0.0,0.0,0.0,1.0e-4,1.0000e-05,3.0000e-05,5.0000e-05,7.0000e-05,9.0000e-05,2.0000e-05,4.0000e-05,6.0000e-05,8.0000e-05,0.0,0.0,0.0,5.0000e-06,2.0000e-05,4.0000e-05,6.0000e-05,8.0000e-05,9.5000e-05,1.0000e-05,3.0000e-05,5.0000e-05,7.0000e-05,9.0000e-05
--ice_grain_cy 5.0e-6,1.5e-5,2.5e-5,3.5e-5,2.0e-5,-3.0000e-06,-1.1111e-06,-2.0625e-06,-1.1250e-06,-1.9500e-06,4.1125e-05,4.1200e-05,4.1111e-05,4.1167e-05,1.0e-05,2.0e-05,3.0e-05,1.0000e-06,-2.0556e-06,-1.5868e-06,-1.5938e-06,-1.5375e-06,9.0250e-06,3.8062e-05,4.1162e-05,4.1156e-05,4.1139e-05,3.0584e-05
--ice_grain_R  1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,4.0e-06,4.0e-06,4.0e-06,5.6531e-06,4.0445e-06,4.9488e-06,4.9485e-06,4.0585e-06,6.1103e-06,9.7084e-06,4.8001e-06,4.8001e-06,3.8333e-06,8.3939e-06
--ice_grain_ax 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,4.0e-06,4.0e-06,4.0e-06,5.6531e-06,4.0445e-06,4.9488e-06,4.9485e-06,4.0585e-06,6.1103e-06,9.7084e-06,4.8001e-06,4.8001e-06,3.8333e-06,8.3939e-06
--ice_grain_ay 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,4.0e-06,4.0e-06,4.0e-06,5.6531e-06,4.0445e-06,4.9488e-06,4.9485e-06,4.0585e-06,6.1103e-06,9.7084e-06,4.8001e-06,4.8001e-06,3.8333e-06,8.3939e-06
+-ice_grain_cx 0.0,0.0,0.0,0.0,1.0e-4,1.0000e-05,3.0000e-05,5.0000e-05,7.0000e-05,9.0000e-05,2.0000e-05,4.0000e-05,6.0000e-05,8.0000e-05,2.0e-05,4.0e-05,8.0e-05,5.0e-05
+-ice_grain_cy 5.0e-6,1.5e-5,2.5e-5,3.5e-5,2.0e-5,-3.0000e-06,-1.1111e-06,-2.0625e-06,-1.1250e-06,-1.9500e-06,4.1125e-05,4.1200e-05,4.1111e-05,4.1167e-05,-2.0556e-06,-1.5868e-06,-1.5375e-06,4.1156e-05
+-ice_grain_R  1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,4.045e-06,4.949e-06,4.0585e-06,4.80e-06
+-ice_grain_ax 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,4.045e-06,4.949e-06,4.0585e-06,4.80e-06
+-ice_grain_ay 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,4.045e-06,4.949e-06,4.0585e-06,4.80e-06
 -delt_t 1.0e-4
 -eps 3.68274e-07
 -periodic 0
