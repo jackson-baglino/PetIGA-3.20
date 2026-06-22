@@ -838,6 +838,11 @@ int main(int argc, char *argv[]) {
      * whether the smaller -dtmax (1.0e4) alone is now enough to keep this
      * physically-correct bound well-behaved, without any VI slack at all.
      *
+     * Loosened slightly to -0.01/1.01 (2026-06-22, same day, fourth trial):
+     * a small amount of slack between strict [0,1] and the earlier
+     * -0.05/1.05, to see where the smaller-dtmax regime actually needs the
+     * line drawn.
+     *
      * Technically incorrect (allows larger unphysical excursions outside
      * [0,1]); intentional tradeoff to get a visibly-evolving result for the
      * 2026-06-23 conference. Revisit the real fix (per-DOF-block atol
@@ -845,8 +850,8 @@ int main(int argc, char *argv[]) {
     Vec Xl, Xu;
     ierr = IGACreateVec(iga, &Xl); CHKERRQ(ierr);
     ierr = IGACreateVec(iga, &Xu); CHKERRQ(ierr);
-    ierr = VecStrideSet(Xl, 0, 0.0);             CHKERRQ(ierr);
-    ierr = VecStrideSet(Xu, 0, 1.0);             CHKERRQ(ierr);
+    ierr = VecStrideSet(Xl, 0, -0.01);           CHKERRQ(ierr);
+    ierr = VecStrideSet(Xu, 0, 1.01);            CHKERRQ(ierr);
     ierr = VecStrideSet(Xl, 1, PETSC_NINFINITY); CHKERRQ(ierr);
     ierr = VecStrideSet(Xu, 1, PETSC_INFINITY);  CHKERRQ(ierr);
     ierr = VecStrideSet(Xl, 2, PETSC_NINFINITY); CHKERRQ(ierr);
