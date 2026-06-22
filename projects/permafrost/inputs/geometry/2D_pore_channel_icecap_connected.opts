@@ -1,8 +1,9 @@
 # =============================================================================
 # geometry/2D_pore_channel_icecap_connected.opts — 2D_pore_channel_icecap.opts
-# with 5 additional ice grains added so that ALL ice (left-boundary cluster,
-# right-boundary grain, and all 9 bump caps) forms ONE single connected ice
-# body, instead of 14 separate disconnected features.
+# with 14 additional small circular "bridge" ice grains added so that ALL
+# ice (left-boundary cluster, right-boundary grain, and all 9 bump caps)
+# forms ONE single connected ice body, instead of 14 separate disconnected
+# features.
 #
 # Motivation: the disconnected version showed several caps shrink fast then
 # get permanently stuck at a small nonzero plateau (with persistent step-to-
@@ -21,37 +22,36 @@
 # remnant has a direct path to lose mass into its neighbor rather than
 # needing to fully detach and sublimate away on its own.
 #
-# 5 new grains added to the existing 14:
-#   - FloorConnector / TopConnector: wide, flat ellipses (ax=2.0e-4 >> Lx,
-#     ay=6.5e-6) centered just outside the floor/ceiling (offset 0.5e-6),
-#     spanning the full domain width, exposed surface ~5.8-6.0 microns into
-#     the channel everywhere (nearly flat: ax>>Lx keeps center-vs-edge
-#     height difference small) -- overlaps every floor/top cap (each
-#     already reaches down to its own bump's edges at y=0/Ly) and the
-#     lowest/highest left-boundary grain and the right-boundary grain
-#     (checked via the ellipse-membership value at each target's near edge:
-#     right-boundary grain bottom edge = 0.778, lowest left grain bottom
-#     edge = 0.395, both comfortably <1, i.e. solidly inside the connector).
-#     First attempt used ay=1.0e-5/ax=9.0e-5 (offset 1.5e-6, reaching up to
-#     8.5e-6) -- visually too thick; thinned to this flatter, shorter
-#     version. Most of the remaining visual thickness at the cap locations
-#     is the PRE-EXISTING caps' own height (already 6-10 microns,
-#     unchanged from 2D_pore_channel_icecap.opts) -- the connector itself
-#     only fills the previously-open gaps between caps with a ~6 micron
-#     layer. Verified via connected-component labeling on the rendered IC
-#     (scipy.ndimage.label, threshold ice>0.5): exactly 1 connected
-#     component (was 14 separate ones in the unconnected version).
-#   - LeftBridge1/2/3: small circles (R=4.0e-6) at cx=0, cy=1,2,3 x1e-5,
-#     bridging the 4 left-boundary grains (cy=0.5,1.5,2.5,3.5 x1e-5,
-#     R=1.75e-6 each, spaced 1.0e-5 apart -- NOT touching each other on
-#     their own) into one connected column.
+# v1 (superseded) used 2 wide, nearly-flat connecting ellipses spanning the
+# whole floor/ceiling instead of discrete bridges -- job64466301 showed the
+# IC was already distorted and phi_ice pushed hard against the [-0.1,1.1]
+# VI bound within the first ~170 steps (BOUNDS: phi_ice up to 1.079) instead
+# of settling down like every other run this session. Likely cause: a long,
+# nearly-flat ellipse has near-zero curvature almost everywhere, which seems
+# to interact badly with the Hessian-based Gibbs-Thomson term (especially
+# combined with the already-known under-resolved single-Newton-step-per-
+# timestep issue) -- a much bigger per-step perturbation than the well-
+# behaved circular features everywhere else in this geometry.
 #
-# Connectivity path: floor caps <-> FloorConnector <-> L0 <-> bridge1 <-> L1
-# <-> bridge2 <-> L2 <-> bridge3 <-> L3 <-> TopConnector <-> top caps, and
-# FloorConnector <-> right-boundary grain directly. One connected component.
+# v2 (this version): replaced both wide ellipses with 11 small CIRCULAR
+# bridge grains, one per gap along two connectivity paths, sized to just
+# overlap both neighbors with >=1.0e-6 m margin (computed via the standard
+# "place at the midpoint between the two centers, radius = max(0, D/2-rA,
+# D/2-rB) + margin" rule, where D is the center-to-center distance):
+#   Floor path:  L0 -- FloorCap1 -- FloorCap2 -- FloorCap3 -- FloorCap4
+#                -- FloorCap5 -- Right
+#   Top path:    L3 -- TopCap1 -- TopCap2 -- TopCap3 -- TopCap4 -- Right
+# All resulting bridge radii are 3.83e-6 to 9.71e-6 m (R/eps = 10.4 to 26.4,
+# comfortably resolved, better than the proven dramatic two-grain case's
+# R/eps~9.5-10.05) -- no near-degenerate shapes, every new feature is an
+# ordinary circle like everything else in this geometry.
+# Plus the 3 small LeftBridge circles (R=4.0e-6, cx=0, cy=1,2,3 x1e-5) from
+# v1 connecting the 4 left-boundary grains into one column -- these were NOT
+# implicated in the v1 blowup (also ordinary circles) and are unchanged.
 #
 # Same mesh/eps/-sed_grain_*/-top_grain_* as 2D_pore_channel_icecap.opts --
-# only the ice_grain_* list changes (14 -> 19 entries).
+# only the ice_grain_* list changes (14 -> 28 entries: +3 left-bridges,
+# +11 path-bridges).
 # =============================================================================
 # DOF_GRID: 306 124
 -geom_file inputs/geometry/pore_channel_test.dat
@@ -68,11 +68,11 @@
 -top_grain_x 2.0e-5,4.0e-5,6.0e-5,8.0e-5
 -top_grain_R 0.5e-5,0.35e-5,0.55e-5,0.4e-5
 -top_grain_h 0.4e-5,0.25e-5,0.45e-5,0.3e-5
--ice_grain_cx 0.0,0.0,0.0,0.0,1.0e-4,1.0000e-05,3.0000e-05,5.0000e-05,7.0000e-05,9.0000e-05,2.0000e-05,4.0000e-05,6.0000e-05,8.0000e-05,5.0e-05,5.0e-05,0.0,0.0,0.0
--ice_grain_cy 5.0e-6,1.5e-5,2.5e-5,3.5e-5,2.0e-5,-3.0000e-06,-1.1111e-06,-2.0625e-06,-1.1250e-06,-1.9500e-06,4.1125e-05,4.1200e-05,4.1111e-05,4.1167e-05,-5.0e-07,4.05e-05,1.0e-05,2.0e-05,3.0e-05
--ice_grain_R  1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,6.5e-06,6.5e-06,4.0e-06,4.0e-06,4.0e-06
--ice_grain_ax 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,2.0e-04,2.0e-04,4.0e-06,4.0e-06,4.0e-06
--ice_grain_ay 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,6.5e-06,6.5e-06,4.0e-06,4.0e-06,4.0e-06
+-ice_grain_cx 0.0,0.0,0.0,0.0,1.0e-4,1.0000e-05,3.0000e-05,5.0000e-05,7.0000e-05,9.0000e-05,2.0000e-05,4.0000e-05,6.0000e-05,8.0000e-05,0.0,0.0,0.0,5.0000e-06,2.0000e-05,4.0000e-05,6.0000e-05,8.0000e-05,9.5000e-05,1.0000e-05,3.0000e-05,5.0000e-05,7.0000e-05,9.0000e-05
+-ice_grain_cy 5.0e-6,1.5e-5,2.5e-5,3.5e-5,2.0e-5,-3.0000e-06,-1.1111e-06,-2.0625e-06,-1.1250e-06,-1.9500e-06,4.1125e-05,4.1200e-05,4.1111e-05,4.1167e-05,1.0e-05,2.0e-05,3.0e-05,1.0000e-06,-2.0556e-06,-1.5868e-06,-1.5938e-06,-1.5375e-06,9.0250e-06,3.8062e-05,4.1162e-05,4.1156e-05,4.1139e-05,3.0584e-05
+-ice_grain_R  1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,4.0e-06,4.0e-06,4.0e-06,5.6531e-06,4.0445e-06,4.9488e-06,4.9485e-06,4.0585e-06,6.1103e-06,9.7084e-06,4.8001e-06,4.8001e-06,3.8333e-06,8.3939e-06
+-ice_grain_ax 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,4.0e-06,4.0e-06,4.0e-06,5.6531e-06,4.0445e-06,4.9488e-06,4.9485e-06,4.0585e-06,6.1103e-06,9.7084e-06,4.8001e-06,4.8001e-06,3.8333e-06,8.3939e-06
+-ice_grain_ay 1.75e-6,1.75e-6,1.75e-6,1.75e-6,1.5e-5,7.0000e-06,1.0111e-05,6.0625e-06,9.1250e-06,6.9500e-06,9.1250e-06,6.2000e-06,1.0111e-05,7.1667e-06,4.0e-06,4.0e-06,4.0e-06,5.6531e-06,4.0445e-06,4.9488e-06,4.9485e-06,4.0585e-06,6.1103e-06,9.7084e-06,4.8001e-06,4.8001e-06,3.8333e-06,8.3939e-06
 -delt_t 1.0e-4
 -eps 3.68274e-07
 -periodic 0
