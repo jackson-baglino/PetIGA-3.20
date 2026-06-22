@@ -54,11 +54,18 @@ from igakit.io import PetIGA
 # ---------------------------------------------------------------------------
 
 # outp.txt has two kinds of pipe-delimited rows:
-#   domain rows (9 fields):  STEP | TIME | DT | TOT_ICE | ... | TRIPL_JUNC
-#   SNES rows  (13 fields):  it   | fnorm | n0 | r0 | ...
-# We want only domain rows (exactly 9 pipe-delimited fields after the step).
+#   domain rows (8 fields): STEP | TIME | DT | TOT_ICE | TOT_AIR | TEMP |
+#                           TOT_RHOV | I-A INTERF | TOTAL_MASS
+#   SNES rows  (10 fields): it   | fnorm | n0 | r0 | s0 | n1 | r1 | s1 | n2 | r2 | s2
+# Both start with "<small int> |", so we disambiguate by field count, not by
+# the leading index alone -- _DOMAIN_NFIELDS must track monitoring.c's actual
+# column count exactly (it previously said 10, a stale value from when the
+# domain row also had TOT_SED/TRIPL_JUNC columns; that made this regex match
+# SNES rows instead, since those happen to also have 10 fields after the
+# leading index -- silently corrupting the time map for nearly every step
+# with the SNES iteration's fnorm value instead of the real simulated time).
 _OUTP_ROW_RE    = re.compile(r"^\s*(\d+)\s*\|(.+)$")
-_DOMAIN_NFIELDS = 10  # TIME, DT, TOT_ICE, TOT_AIR, TOT_SED, TEMP, TOT_RHOV, I-A INTERF, TRIPL_JUNC, TOTAL_MASS
+_DOMAIN_NFIELDS = 8  # TIME, DT, TOT_ICE, TOT_AIR, TEMP, TOT_RHOV, I-A INTERF, TOTAL_MASS
 
 
 def _load_time_map(outp_path: str) -> dict:
