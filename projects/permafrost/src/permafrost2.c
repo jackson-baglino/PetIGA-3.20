@@ -846,17 +846,42 @@ int main(int argc, char *argv[]) {
      * Technically incorrect (allows larger unphysical excursions outside
      * [0,1]); intentional tradeoff to get a visibly-evolving result for the
      * 2026-06-23 conference. Revisit the real fix (per-DOF-block atol
-     * matched to each field's natural scale) after the conference. */
-    Vec Xl, Xu;
-    ierr = IGACreateVec(iga, &Xl); CHKERRQ(ierr);
-    ierr = IGACreateVec(iga, &Xu); CHKERRQ(ierr);
-    ierr = VecStrideSet(Xl, 0, -0.01);           CHKERRQ(ierr);
-    ierr = VecStrideSet(Xu, 0, 1.01);            CHKERRQ(ierr);
-    ierr = VecStrideSet(Xl, 1, PETSC_NINFINITY); CHKERRQ(ierr);
-    ierr = VecStrideSet(Xu, 1, PETSC_INFINITY);  CHKERRQ(ierr);
-    ierr = VecStrideSet(Xl, 2, PETSC_NINFINITY); CHKERRQ(ierr);
-    ierr = VecStrideSet(Xu, 2, PETSC_INFINITY);  CHKERRQ(ierr);
-    ierr = SNESVISetVariableBounds(nonlin, Xl, Xu); CHKERRQ(ierr);
+     * matched to each field's natural scale) after the conference.
+     *
+     * CLI-togglable for direct A/B comparison against the pre-VI solver
+     * (2026-06-23): -vi_bounds 0 skips this whole block, so -snes_type can
+     * be set back to plain newtonls on the command line to reproduce the
+     * original unbounded Newton solve exactly (no VI machinery at all, not
+     * just unenforced bounds). -vi_lo/-vi_hi override the bound values
+     * themselves (default -0.01/1.01, the current production setting) so
+     * the same binary can also run with strict [0,1] bounds for comparison
+     * without a rebuild. */
+    PetscBool vi_bounds = PETSC_TRUE;
+    PetscReal vi_lo = -0.01, vi_hi = 1.01;
+    ierr = PetscOptionsGetBool(NULL, NULL, "-vi_bounds", &vi_bounds, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(NULL, NULL, "-vi_lo", &vi_lo, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(NULL, NULL, "-vi_hi", &vi_hi, NULL); CHKERRQ(ierr);
+    if (vi_bounds) {
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "VI bound-constrained solve: ON  (ice in [%.4f, %.4f])\n",
+                    vi_lo, vi_hi);
+        Vec Xl, Xu;
+        ierr = IGACreateVec(iga, &Xl); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Xu); CHKERRQ(ierr);
+        ierr = VecStrideSet(Xl, 0, vi_lo);           CHKERRQ(ierr);
+        ierr = VecStrideSet(Xu, 0, vi_hi);           CHKERRQ(ierr);
+        ierr = VecStrideSet(Xl, 1, PETSC_NINFINITY); CHKERRQ(ierr);
+        ierr = VecStrideSet(Xu, 1, PETSC_INFINITY);  CHKERRQ(ierr);
+        ierr = VecStrideSet(Xl, 2, PETSC_NINFINITY); CHKERRQ(ierr);
+        ierr = VecStrideSet(Xu, 2, PETSC_INFINITY);  CHKERRQ(ierr);
+        ierr = SNESVISetVariableBounds(nonlin, Xl, Xu); CHKERRQ(ierr);
+        ierr = VecDestroy(&Xl); CHKERRQ(ierr);
+        ierr = VecDestroy(&Xu); CHKERRQ(ierr);
+    } else {
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "VI bound-constrained solve: OFF (unbounded Newton -- "
+                    "pair with -snes_type newtonls for the pre-VI solver)\n");
+    }
 
     /* Create solution vector (ice, temperature, vapor) */
     Vec U;
@@ -900,8 +925,6 @@ int main(int argc, char *argv[]) {
 
     /* Cleanup Resources */
     ierr = VecDestroy(&U); CHKERRQ(ierr);
-    ierr = VecDestroy(&Xl); CHKERRQ(ierr);
-    ierr = VecDestroy(&Xu); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     ierr = PetscFree(user.alph); CHKERRQ(ierr);
