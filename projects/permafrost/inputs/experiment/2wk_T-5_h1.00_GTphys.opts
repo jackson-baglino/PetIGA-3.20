@@ -1,0 +1,18 @@
+# =============================================================================
+# experiment/2wk_T-5_h1.00_GTphys.opts — 2 weeks at -5°C with physical
+# Gibbs-Thomson coupling (d0_GT = 9.6e-10 m, ice-vapor capillary length at -5°C).
+#
+# Short-horizon partner to 6mo_T-5_h1.00_GTphys.opts: same temperature/
+# humidity/Gibbs-Thomson settings, t_final cut to 2 weeks for a final,
+# short bounds-comparison run (strict-vs-loosened VI bounds under the
+# smaller -dtmax=1.0e4 regime).
+# =============================================================================
+
+-t_final 1209600.0                      # 2 weeks (s) = 14 * 86400
+-t_sed_freeze 10                        # pin sed at t=10s
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-d0_GT 9.6e-10                          # physical capillary length for ice at -5°C
