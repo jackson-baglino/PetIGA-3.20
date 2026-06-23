@@ -72,15 +72,19 @@ ierr = VecStrideSet(Xl, 1, PETSC_NINFINITY); CHKERRQ(ierr);   // temperature: un
 ierr = VecStrideSet(Xu, 1, PETSC_INFINITY);  CHKERRQ(ierr);
 ierr = VecStrideSet(Xl, 2, PETSC_NINFINITY); CHKERRQ(ierr);   // vapor density: unbounded
 ierr = VecStrideSet(Xu, 2, PETSC_INFINITY);  CHKERRQ(ierr);
-ierr = VecStrideSet(Xl, 3, PETSC_NINFINITY); CHKERRQ(ierr);   // sediment phase: unbounded
-ierr = VecStrideSet(Xu, 3, PETSC_INFINITY);  CHKERRQ(ierr);
 ierr = SNESVISetVariableBounds(nonlin, Xl, Xu); CHKERRQ(ierr);
 ```
 
-Only DOF 0 (φ_i) carries a finite bound. Temperature and vapor density are
-genuinely unbounded physical fields. The sediment phase φ_s is currently left
-unbounded too (it is frozen after `t_sed_freeze`, so it never needs the VI
-machinery in practice).
+This is the active "clean 2-phase" model (`-dof 3` in `inputs/solver.opts`):
+the solution vector only carries ice φ_i, temperature T, and vapor density
+ρ_v. Only DOF 0 (φ_i) carries a finite bound; temperature and vapor density
+are genuinely unbounded physical fields. Sediment is not a fourth solved DOF
+here — it is geometric, baked directly into the mesh shape via
+`SedimentBumpField()`/`TopBumpField()` (`src/initial_conditions.c`), not a
+phase field that evolves in `U`. (A separate three-phase ice/T/vapor/sediment
+formulation with a dynamic φ_s DOF is described in
+`docs/model_description.md`, but that is a different model variant, not what
+the production runs in this document use.)
 
 ---
 
