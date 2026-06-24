@@ -113,6 +113,11 @@ typedef struct {
   PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 2=flat interface
   PetscInt  outp;            // output control flag
   PetscBool flag_Tdep;       // temperature-dependent material properties
+  PetscBool decouple_phase_change;  // -decouple_phase_change 1: zero the ice_t-driven
+                                     // source terms in R_tem (latent heat) and R_vap
+                                     // (mass-balance) too, not just S_sub in R_ice --
+                                     // isolates pure AC curvature relaxation from any
+                                     // leakage into temperature/vapor (see assembly.c)
 
   // Numerical method and discretization parameters
   PetscInt p;  // Polynomial degree of basis functions (for IGA)

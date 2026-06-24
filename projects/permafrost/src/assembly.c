@@ -23,7 +23,12 @@
  * the sublimation-equivalence reduction of the wet-snow model. ice_t
  * already includes the AC curvature/double-well relaxation, so using it
  * (rather than S_sub alone) makes the ice<->vapor mass exchange and the
- * latent-heat release exact, regardless of mob_sub:
+ * latent-heat release exact, regardless of mob_sub. This assumes ice_t is
+ * always a real ice<->vapor exchange; -decouple_phase_change 1 zeroes this
+ * coupling (multiplies it by `couple`, 0 or 1) for diagnostics that ablate
+ * -alph_sub but leave mob_sub active, where ice_t is pure curvature
+ * relaxation, not phase change -- without decoupling, that motion still
+ * gets dumped into vapor at full rho_ice, blowing up the vapor field:
  *
  * Temperature (row-scaled by S_T = 1/(rho_ice*lat_sub), numerical
  * preconditioning only). The latent-heat source uses the constant rho_ice
@@ -71,6 +76,13 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal lat_sub = user->lat_sub;
     PetscReal alph_sub= user->alph_sub;
     PetscReal air_lim = user->air_lim;
+    /* -decouple_phase_change 1: zero the ice_t-driven source terms in R_tem
+     * and R_vap (see file header). Lets -alph_sub 0 truly isolate pure AC
+     * curvature relaxation -- without this, ice motion from curvature
+     * relaxation alone (not real sublimation) still gets dumped into vapor
+     * at full rho_ice, producing an unphysical vapor blowup amplified by
+     * rho_ice/rho_v (~1e5-1e6x). */
+    PetscReal couple = user->decouple_phase_change ? 0.0 : 1.0;
 
     if (pnt->atboundary) return 0;
 
@@ -177,11 +189,11 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
         PetscScalar R_tem = rho * cp * N0[a] * tem_t
                           + thcond * grad_N_dot_grad_tem
-                          - rho_ice * lat_sub * ice_t * N0[a];
+                          - couple * rho_ice * lat_sub * ice_t * N0[a];
 
         PetscScalar R_vap = N0[a] * air_eff * rhov_t
                           + dif_vap * air_eff * grad_N_dot_grad_rhov
-                          + N0[a] * (rho_ice - rhov) * ice_t;
+                          + couple * N0[a] * (rho_ice - rhov) * ice_t;
 
         R[a][0] = R_ice;
         R[a][1] = S_T * R_tem;
@@ -225,6 +237,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscReal lat_sub = user->lat_sub;
     PetscReal alph_sub= user->alph_sub;
     PetscReal air_lim = user->air_lim;
+    PetscReal couple  = user->decouple_phase_change ? 0.0 : 1.0;  /* see Residual_A1 */
 
     if (pnt->atboundary) return 0;
 
@@ -355,7 +368,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             /* ====================== [ tem , * ] (row-scaled by S_T) ========= */
             J[a][1][b][0] += S_T * (
                   dthcond_dice * grad_Na_dot_grad_tem * N0[b]
-                - rho_ice * lat_sub * shift * Na_Nb
+                - couple * rho_ice * lat_sub * shift * Na_Nb
             );
             J[a][1][b][1] += S_T * (
                   shift * rho * cp * Na_Nb
@@ -363,13 +376,18 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             );
 
             /* ====================== [ vap , * ] ============================= */
-            J[a][2][b][0] += (rho_ice - PetscRealPart(rhov)) * shift * Na_Nb;
+            /* Only the d/d(ice) of the couple*(rho_ice-rhov)*ice_t source term
+             * is gated here -- the air_above_lim block below is d(air_eff)/d(ice)
+             * acting on the (unconditional) mass-matrix/diffusion terms, a
+             * separate, legitimate geometric coupling that stays on regardless
+             * of -decouple_phase_change. */
+            J[a][2][b][0] += couple * (rho_ice - PetscRealPart(rhov)) * shift * Na_Nb;
             if (air_above_lim) {
                 J[a][2][b][0] += -Na_Nb * PetscRealPart(rhov_t)
                                - dif_vap * N0[b] * grad_Na_dot_grad_rhov;
             }
             J[a][2][b][1] += d_dif_vap * air_eff * grad_Na_dot_grad_rhov * N0[b];
-            J[a][2][b][2] += -Na_Nb * PetscRealPart(ice_t)
+            J[a][2][b][2] += -couple * Na_Nb * PetscRealPart(ice_t)
                            + air_eff * shift * Na_Nb
                            + dif_vap * air_eff * N1a_N1b;
         }
