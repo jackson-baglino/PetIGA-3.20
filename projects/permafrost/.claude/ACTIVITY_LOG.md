@@ -1,4 +1,386 @@
 
+## 2026-06-29 — Switch to p=2/C1 basis, refine 2D two-grain mesh, overhaul parameter print
+
+- Identified that all simulations were using linear basis (p=1, C=0) due to explicit settings in `inputs/solver.opts`; changed to p=2, C=1 (quadratic/C1) globally as the new default — both in `solver.opts` and the `permafrost2.c` code defaults.
+- Updated `2D_two_ice_grains_boundary.opts`: increased mesh 1.5× (125→188, 154→231) to address tanh-profile kink artifact observed after ~100 steps in the 100yr run; eps updated to `2.5080e-07 m` (user-calibrated to achieve exactly 7.5 elements across the diffuse interface, slightly finer than the naive eps/1.5 scaling).
+- Rewrote the simulation parameter print in `permafrost2.c`: removed the early scattered print blocks (scattered across before/after IGASetUp) and replaced with a single comprehensive block printed after all setup (IGASetUp + VI-bounds) so true Nx/Ny/p/C and derived kinetics are all available. Organized into sections: MESH & DISCRETIZATION, PHASE-FIELD INTERFACE, ENVIRONMENT & IC, TIME STEPPING, TRANSPORT & THERMOPHYSICAL PROPERTIES, PHASE-CHANGE KINETICS, SOLVER, BOUNDARY CONDITIONS.
+- Ran smoke test (2-step IC verification): confirmed p=2/C1, Nx=188/Ny=231, eps=3.1099e-07 print correctly; output saved to `SimulationResults/permafrost/scratch/smoketest_2D_two_ice_grains_boundary_p2_refined1p5x/`.
+
+---
+
+**Session ended:** 2026-06-23 18:09:35
+
+
+---
+
+**Session ended:** 2026-06-23 17:35:57
+
+
+---
+
+**Session ended:** 2026-06-23 12:22:34
+
+
+---
+
+**Session ended:** 2026-06-23 12:11:01
+
+
+---
+
+**Session ended:** 2026-06-23 12:05:28
+
+
+---
+
+**Session ended:** 2026-06-23 11:58:05
+
+
+---
+
+**Session ended:** 2026-06-23 11:42:31
+
+
+---
+
+**Session ended:** 2026-06-23 11:35:49
+
+
+---
+
+**Session ended:** 2026-06-22 18:29:17
+
+
+---
+
+**Session ended:** 2026-06-22 18:26:55
+
+
+---
+
+**Session ended:** 2026-06-22 18:26:03
+
+
+---
+
+**Session ended:** 2026-06-22 18:15:42
+
+
+---
+
+**Session ended:** 2026-06-22 18:11:18
+
+
+---
+
+**Session ended:** 2026-06-22 17:45:27
+
+
+---
+
+**Session ended:** 2026-06-22 17:40:14
+
+
+---
+
+**Session ended:** 2026-06-22 17:38:18
+
+
+---
+
+**Session ended:** 2026-06-22 17:30:47
+
+
+---
+
+**Session ended:** 2026-06-22 16:39:59
+
+
+---
+
+**Session ended:** 2026-06-22 16:32:31
+
+
+---
+
+**Session ended:** 2026-06-22 16:17:14
+
+
+---
+
+**Session ended:** 2026-06-22 16:09:47
+
+
+---
+
+**Session ended:** 2026-06-22 16:09:38
+
+
+---
+
+**Session ended:** 2026-06-22 16:05:59
+
+
+---
+
+**Session ended:** 2026-06-22 16:04:42
+
+
+---
+
+**Session ended:** 2026-06-22 16:03:06
+
+
+---
+
+**Session ended:** 2026-06-22 16:00:54
+
+
+---
+
+**Session ended:** 2026-06-22 15:45:16
+
+
+---
+
+**Session ended:** 2026-06-22 15:40:56
+
+
+---
+
+**Session ended:** 2026-06-22 15:38:50
+
+
+---
+
+**Session ended:** 2026-06-22 15:17:16
+
+
+---
+
+**Session ended:** 2026-06-22 15:14:32
+
+
+---
+
+**Session ended:** 2026-06-22 15:13:39
+
+
+---
+
+**Session ended:** 2026-06-22 15:11:46
+
+
+---
+
+**Session ended:** 2026-06-22 11:11:16
+
+
+---
+
+**Session ended:** 2026-06-22 11:07:42
+
+
+---
+
+**Session ended:** 2026-06-22 11:04:13
+
+
+---
+
+**Session ended:** 2026-06-22 11:01:00
+
+
+---
+
+**Session ended:** 2026-06-22 10:54:29
+
+
+---
+
+**Session ended:** 2026-06-22 10:50:57
+
+
+---
+
+**Session ended:** 2026-06-22 10:49:24
+
+
+---
+
+**Session ended:** 2026-06-22 10:45:09
+
+
+---
+
+**Session ended:** 2026-06-22 10:15:10
+
+
+---
+
+**Session ended:** 2026-06-22 10:11:18
+
+
+---
+
+**Session ended:** 2026-06-22 10:10:30
+
+
+---
+
+**Session ended:** 2026-06-22 10:04:25
+
+
+---
+
+**Session ended:** 2026-06-22 08:59:47
+
+
+---
+
+**Session ended:** 2026-06-22 08:59:36
+
+
+---
+
+**Session ended:** 2026-06-22 08:56:55
+
+
+---
+
+**Session ended:** 2026-06-22 08:35:34
+
+
+---
+
+**Session ended:** 2026-06-22 08:33:24
+
+
+---
+
+**Session ended:** 2026-06-22 08:30:10
+
+
+---
+
+**Session ended:** 2026-06-22 08:27:48
+
+
+---
+
+**Session ended:** 2026-06-22 08:16:46
+
+
+---
+
+**Session ended:** 2026-06-22 08:15:37
+
+
+---
+
+**Session ended:** 2026-06-22 08:02:26
+
+
+---
+
+**Session ended:** 2026-06-22 07:53:18
+
+
+---
+
+**Session ended:** 2026-06-21 18:55:52
+
+
+---
+
+**Session ended:** 2026-06-21 17:42:56
+
+
+---
+
+**Session ended:** 2026-06-21 17:41:22
+
+
+---
+
+**Session ended:** 2026-06-21 17:25:20
+
+
+---
+
+**Session ended:** 2026-06-21 17:19:17
+
+
+---
+
+**Session ended:** 2026-06-21 17:15:29
+
+
+---
+
+**Session ended:** 2026-06-21 16:46:12
+
+
+---
+
+**Session ended:** 2026-06-21 16:43:31
+
+
+---
+
+**Session ended:** 2026-06-21 16:26:33
+
+
+---
+
+**Session ended:** 2026-06-21 15:58:08
+
+
+---
+
+**Session ended:** 2026-06-21 15:52:42
+
+
+---
+
+**Session ended:** 2026-06-21 15:32:25
+
+
+---
+
+**Session ended:** 2026-06-21 15:24:04
+
+
+---
+
+**Session ended:** 2026-06-21 14:13:09
+
+
+---
+
+**Session ended:** 2026-06-21 13:10:13
+
+
+---
+
+**Session ended:** 2026-06-21 13:05:06
+
+
+---
+
+**Session ended:** 2026-06-21 11:27:45
+
+
+---
+
+**Session ended:** 2026-06-21 10:20:58
+
+
+---
+
+**Session ended:** 2026-06-20 17:32:59
+
+
 ---
 
 ## 2026-06-20 — Mesh-convergence investigation on grain plateau; pivoted to pore-channel geometry

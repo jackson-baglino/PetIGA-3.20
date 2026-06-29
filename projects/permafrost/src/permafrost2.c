@@ -56,8 +56,8 @@ int main(int argc, char *argv[]) {
     PetscReal Sigma_a = 0.132; /* air surface energy [J/m²] */
 
     /* Define common variables (can be overridden by PETSc options) */
-    PetscInt  p   = 1;          /* Polynomial order */
-    PetscInt  C   = 0;          /* Global continuity order */
+    PetscInt  p   = 2;          /* Polynomial order */
+    PetscInt  C   = 1;          /* Global continuity order */
 
     PetscInt  dof = 3;          /* Degrees of freedom per node (ice, temperature, vapor) */
     PetscInt  dim = 2;          /* Problem dimension (2D or 3D) */
@@ -450,25 +450,6 @@ int main(int argc, char *argv[]) {
     PetscStrncpy(user.initial_cond, initial, PETSC_MAX_PATH_LEN);
     PetscStrncpy(user.initial_PFgeom, PFgeom, PETSC_MAX_PATH_LEN);
 
-    // Print simulation parameters
-    PetscPrintf(PETSC_COMM_WORLD, "----- Simulation Parameters ----- \n");
-    PetscPrintf(PETSC_COMM_WORLD, "Dimension:                    %dD \n", dim);
-    PetscPrintf(PETSC_COMM_WORLD, "Domain size:                  Lx = %.2e m", Lx);
-    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ly = %.2e m", Ly);
-    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Lz = %.2e m", Lz);
-    PetscPrintf(PETSC_COMM_WORLD, "\n");
-    /* Elements/degree/continuity are printed after IGASetUp() below, where
-     * the true values are known (geom_file overrides CLI -Nx/-Ny/-p/-C). */
-    PetscPrintf(PETSC_COMM_WORLD, "Time stepping:                delt_t = %.2e s, t_final = %.2e s, n_out = %d \n", delt_t, t_final, n_out);
-    PetscPrintf(PETSC_COMM_WORLD, "Initial conditions:           T = %.2f °C, humidity = %.2f \n", temp, humidity);
-    PetscPrintf(PETSC_COMM_WORLD, "Interface width:              eps = %.2e m \n", eps);
-    PetscPrintf(PETSC_COMM_WORLD, "Temperature gradient:         dT/dx = %.2e °C/m", grad_temp0[0]);
-    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", dT/dy = %.2e °C/m", grad_temp0[1]);
-    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", dT/dz = %.2e °C/m", grad_temp0[2]);
-    PetscPrintf(PETSC_COMM_WORLD, "\n");
-    PetscPrintf(PETSC_COMM_WORLD, "Vapor diffusivity:            D_v = %.5e m²/s \n", user.dif_vap);
-    PetscPrintf(PETSC_COMM_WORLD, "Lambda:                       %.2e \n", user.Lambd);
-
     /* Compute saturation vapor density and its derivative based on initial temperature */
     PetscReal rho_rhovs;   /* Ratio of ice density to saturation vapor density */
     PetscReal rhoI_vs;     /* Saturation vapor density over ice (at given temperature) */
@@ -479,21 +460,6 @@ int main(int argc, char *argv[]) {
     /* Adjust boundary condition flags for periodic case */
     if (user.periodic == 1 && flag_BC_Tfix)    flag_BC_Tfix    = PETSC_FALSE;
     if (user.periodic == 1 && flag_BC_rhovfix) flag_BC_rhovfix = PETSC_FALSE;
-
-    /* Resolved boundary-condition summary. Without IGASetBoundaryValue() and
-     * with the `if (pnt->atboundary) return 0;` guards in Residual_A1, the
-     * natural Neumann BC ∂u/∂n = 0 is what's enforced for any DOF that's not
-     * explicitly Dirichlet-fixed. The ice phase field is always left at
-     * natural Neumann (no Dirichlet for it anywhere in this code). */
-    PetscPrintf(PETSC_COMM_WORLD, "----- Boundary conditions ----- \n");
-    PetscPrintf(PETSC_COMM_WORLD, "  ice (phi_i):   natural Neumann (zero gradient)\n");
-    PetscPrintf(PETSC_COMM_WORLD, "  temperature:   %s\n",
-                flag_BC_Tfix    ? "Dirichlet (fixed value at boundary)"
-                                : "natural Neumann (insulating, zero heat flux)");
-    PetscPrintf(PETSC_COMM_WORLD, "  vapor (rho_v): %s\n",
-                flag_BC_rhovfix ? "Dirichlet (fixed value at boundary)"
-                                : "natural Neumann (insulating, zero vapor flux)");
-    PetscPrintf(PETSC_COMM_WORLD, "\n");
 
     /* Time stepping parameters */
     if (n_out > 1) {
@@ -508,13 +474,6 @@ int main(int argc, char *argv[]) {
     /* If dtmax > 0.5*t_interv, print error message */
     if (dtmax > 0.5 * user.t_interv) {
         PetscPrintf(PETSC_COMM_WORLD, "OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval \n\n");
-    }
-
-    /* If adaptive time stepping is enabled, print parameters */
-    if (adap == 1) {
-        PetscPrintf(PETSC_COMM_WORLD, "Adaptive time stepping is ON \n");
-        PetscPrintf(PETSC_COMM_WORLD, "    NRmin = %d, NRmax = %d, factor = %.4f \n", NRmin, NRmax, factor);
-        PetscPrintf(PETSC_COMM_WORLD, "    dtmin = %.2e sec, dtmax = %.2e sec \n\n", dtmin, dtmax);
     }
 
     /* Gibbs-Thomson kinetic parameters */
@@ -596,9 +555,6 @@ int main(int argc, char *argv[]) {
             user.d0_GT = d0_GT_cli;
         }
     }
-    PetscPrintf(PETSC_COMM_WORLD, "d0_GT (capillary length): %.4e m  %s\n",
-                user.d0_GT, (user.d0_GT == 0.0) ? "[GT DISABLED]" : "[GT active]");
-
     /* Allow per-test override of mob_sub via -mob_sub <value>. Tests with
      * very stiff geometries (touching/merging grains in 2D) can reduce
      * mob_sub by ~10x to trade kinetics speed for AC stability. The
@@ -633,16 +589,6 @@ int main(int argc, char *argv[]) {
                         (alph_sub_cli == 0.0) ? " (phase-change coupling DISABLED)" : "");
             user.alph_sub = alph_sub_cli;
         }
-    }
-
-    PetscPrintf(PETSC_COMM_WORLD, "Mobility terms: mob_sub = %.2e m^3/s \n", user.mob_sub);
-
-    if (!user.flag_Tdep) {
-        PetscPrintf(PETSC_COMM_WORLD,
-                    "FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",
-                    tau_sub, lambda_sub, user.mob_sub, user.alph_sub);
-    } else {
-        PetscPrintf(PETSC_COMM_WORLD, "TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
     }
 
     /* Create IGA and set up problem */
@@ -708,15 +654,6 @@ int main(int argc, char *argv[]) {
         user.npoints = Nx * Ny * Nz;
         p = p_axis[0];
     }
-
-    PetscPrintf(PETSC_COMM_WORLD, "Elements:                     Nx = %d", Nx);
-    if (dim >= 2) PetscPrintf(PETSC_COMM_WORLD, ", Ny = %d", Ny);
-    if (dim == 3) PetscPrintf(PETSC_COMM_WORLD, ", Nz = %d", Nz);
-    if (geom_file[0] != '\0')
-        PetscPrintf(PETSC_COMM_WORLD, "  (from -geom_file; CLI -Nx/-Ny ignored)");
-    PetscPrintf(PETSC_COMM_WORLD, "\n");
-    PetscPrintf(PETSC_COMM_WORLD, "Polynomial order:             p = %d \n", p);
-    PetscPrintf(PETSC_COMM_WORLD, "Continuity order:             C = %d \n", C);
 
     PetscInt nmb;
     if (dim == 1) {
@@ -864,9 +801,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsGetReal(NULL, NULL, "-vi_lo", &vi_lo, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsGetReal(NULL, NULL, "-vi_hi", &vi_hi, NULL); CHKERRQ(ierr);
     if (vi_bounds) {
-        PetscPrintf(PETSC_COMM_WORLD,
-                    "VI bound-constrained solve: ON  (ice in [%.4f, %.4f])\n",
-                    vi_lo, vi_hi);
         Vec Xl, Xu;
         ierr = IGACreateVec(iga, &Xl); CHKERRQ(ierr);
         ierr = IGACreateVec(iga, &Xu); CHKERRQ(ierr);
@@ -879,11 +813,124 @@ int main(int argc, char *argv[]) {
         ierr = SNESVISetVariableBounds(nonlin, Xl, Xu); CHKERRQ(ierr);
         ierr = VecDestroy(&Xl); CHKERRQ(ierr);
         ierr = VecDestroy(&Xu); CHKERRQ(ierr);
-    } else {
-        PetscPrintf(PETSC_COMM_WORLD,
-                    "VI bound-constrained solve: OFF (unbounded Newton -- "
-                    "pair with -snes_type newtonls for the pre-VI solver)\n");
     }
+
+    /* ========================================================================
+     * Comprehensive parameter summary — printed here so all true values are
+     * available: Nx/Ny/p/C (after IGASetUp + geom_file override), derived
+     * kinetic params (tau_sub/lambda_sub/mob_sub/alph_sub), and VI bounds
+     * (vi_lo/vi_hi). Override notifications above document any CLI changes.
+     * ======================================================================== */
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n================================================================================\n"
+        " PERMAFROST SIMULATION PARAMETERS\n"
+        "================================================================================\n");
+
+    /* --- Mesh & discretization -------------------------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD, "\n MESH & DISCRETIZATION\n");
+    if (dim == 1) {
+        PetscPrintf(PETSC_COMM_WORLD, "   Nx = %d%s\n",
+                    Nx, geom_file[0] ? "  [from -geom_file]" : "");
+        PetscPrintf(PETSC_COMM_WORLD, "   Lx = %.4e m\n", Lx);
+        PetscPrintf(PETSC_COMM_WORLD, "   dx = %.4e m\n", Lx / Nx);
+    } else if (dim == 2) {
+        PetscPrintf(PETSC_COMM_WORLD, "   Nx = %d,  Ny = %d%s\n",
+                    Nx, Ny, geom_file[0] ? "  [from -geom_file]" : "");
+        PetscPrintf(PETSC_COMM_WORLD, "   Lx = %.4e m,  Ly = %.4e m\n", Lx, Ly);
+        PetscPrintf(PETSC_COMM_WORLD, "   dx = %.4e m,  dy = %.4e m\n", Lx / Nx, Ly / Ny);
+    } else {
+        PetscPrintf(PETSC_COMM_WORLD, "   Nx = %d,  Ny = %d,  Nz = %d%s\n",
+                    Nx, Ny, Nz, geom_file[0] ? "  [from -geom_file]" : "");
+        PetscPrintf(PETSC_COMM_WORLD, "   Lx = %.4e m,  Ly = %.4e m,  Lz = %.4e m\n", Lx, Ly, Lz);
+        PetscPrintf(PETSC_COMM_WORLD, "   dx = %.4e m,  dy = %.4e m,  dz = %.4e m\n",
+                    Lx / Nx, Ly / Ny, Lz / Nz);
+    }
+    {
+        const char *pname = (p == 1) ? "linear" : (p == 2) ? "quadratic" : (p == 3) ? "cubic" : "order";
+        PetscPrintf(PETSC_COMM_WORLD, "   p = %d (%s),  C = %d\n", p, pname, C);
+    }
+
+    /* --- Phase-field interface -------------------------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-FIELD INTERFACE\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   eps      =  %.4e m\n", user.eps);
+    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_i  =  %.4e J/m²   (ice surface energy)\n", user.Etai);
+    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_a  =  %.4e J/m²   (air surface energy)\n", user.Etaa);
+    PetscPrintf(PETSC_COMM_WORLD, "   Lambda   =  %.4e\n", user.Lambd);
+
+    /* --- Environment & initial conditions --------------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD, "\n ENVIRONMENT & INITIAL CONDITIONS\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   T0       = %7.2f °C,  humidity = %.4f\n", temp, humidity);
+    if (dim == 1)
+        PetscPrintf(PETSC_COMM_WORLD, "   grad_T   =  (%.4e) °C/m\n", grad_temp0[0]);
+    else if (dim == 2)
+        PetscPrintf(PETSC_COMM_WORLD, "   grad_T   =  (%.4e, %.4e) °C/m\n",
+                    grad_temp0[0], grad_temp0[1]);
+    else
+        PetscPrintf(PETSC_COMM_WORLD, "   grad_T   =  (%.4e, %.4e, %.4e) °C/m\n",
+                    grad_temp0[0], grad_temp0[1], grad_temp0[2]);
+
+    /* --- Time stepping ----------------------------------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD, "\n TIME STEPPING\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   dt0      =  %.4e s\n", delt_t);
+    PetscPrintf(PETSC_COMM_WORLD, "   t_final  =  %.4e s,  n_out = %d\n", t_final, n_out);
+    if (adap == 1) {
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   adaptive    ON  (NRmin = %d,  NRmax = %d,  factor = %.4f)\n",
+                    NRmin, NRmax, factor);
+        PetscPrintf(PETSC_COMM_WORLD, "   dtmin    =  %.4e s,  dtmax = %.4e s\n", dtmin, dtmax);
+    } else {
+        PetscPrintf(PETSC_COMM_WORLD, "   adaptive    OFF (fixed dt)\n");
+    }
+
+    /* --- Transport & thermophysical properties ----------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD, "\n TRANSPORT & THERMOPHYSICAL PROPERTIES\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   D_v      =  %.4e m²/s    (vapor diffusivity)\n", user.dif_vap);
+    PetscPrintf(PETSC_COMM_WORLD, "   k_ice    =  %.4e W/m/K,  k_air  = %.4e W/m/K\n",
+                user.thcond_ice, user.thcond_air);
+    PetscPrintf(PETSC_COMM_WORLD, "   rho_ice  =  %.4e kg/m³,  rho_air = %.4e kg/m³\n",
+                user.rho_ice, user.rho_air);
+    PetscPrintf(PETSC_COMM_WORLD, "   cp_ice   =  %.4e J/kg/K, cp_air = %.4e J/kg/K\n",
+                user.cp_ice, user.cp_air);
+    PetscPrintf(PETSC_COMM_WORLD, "   lat_sub  =  %.4e J/kg    (latent heat of sublimation)\n",
+                user.lat_sub);
+
+    /* --- Phase-change kinetics -------------------------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-CHANGE KINETICS\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   d0_GT    =  %.4e m   (%s)\n",
+                user.d0_GT, (user.d0_GT == 0.0) ? "Gibbs-Thomson DISABLED" : "Gibbs-Thomson active");
+    PetscPrintf(PETSC_COMM_WORLD, "   d0_sub0  =  %.4e m,  beta_sub0 = %.4e\n",
+                user.d0_sub0, user.beta_sub0);
+    if (!user.flag_Tdep) {
+        PetscPrintf(PETSC_COMM_WORLD, "   lambda   =  %.4e\n", lambda_sub);
+        PetscPrintf(PETSC_COMM_WORLD, "   tau_sub  =  %.4e s\n", tau_sub);
+        PetscPrintf(PETSC_COMM_WORLD, "   mob_sub  =  %.4e m³/s\n", user.mob_sub);
+        PetscPrintf(PETSC_COMM_WORLD, "   alph_sub =  %.4e%s\n", user.alph_sub,
+                    (user.alph_sub == 0.0) ? "   (phase-change DECOUPLED)" : "");
+    } else {
+        PetscPrintf(PETSC_COMM_WORLD, "   [temperature-dependent kinetics active]\n");
+    }
+    if (user.decouple_phase_change)
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   decouple_phase_change: ON  (pure AC dynamics, no latent-heat/mass source)\n");
+
+    /* --- Solver ------------------------------------------------------------ */
+    PetscPrintf(PETSC_COMM_WORLD, "\n SOLVER\n");
+    if (vi_bounds)
+        PetscPrintf(PETSC_COMM_WORLD, "   VI bounds:  ON  (ice in [%.4f, %.4f])\n", vi_lo, vi_hi);
+    else
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)\n");
+
+    /* --- Boundary conditions ----------------------------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD, "\n BOUNDARY CONDITIONS\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   phi_i:   natural Neumann (zero flux)\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   T:       %s\n",
+                flag_BC_Tfix    ? "Dirichlet (fixed value)" : "natural Neumann (insulating)");
+    PetscPrintf(PETSC_COMM_WORLD, "   rho_v:   %s\n",
+                flag_BC_rhovfix ? "Dirichlet (fixed value)" : "natural Neumann (insulating)");
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n================================================================================\n\n");
 
     /* Create solution vector (ice, temperature, vapor) */
     Vec U;

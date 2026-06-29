@@ -3,16 +3,18 @@
 # grains (smaller at x=0, larger at x=Lx) connected through a shared vapor
 # pore. Ostwald-ripening test for the 3-DOF (ice/T/vapor) model.
 #
-# eps and dx mirror geometry/2D_touching_grains.opts (RCice1 = that file's
-# RCice = 1.875e-5; RCice0 = half of RCice1), so eps/R ~ 0.025 -- a sharp
-# interface relative to the grain radii.
+# Mesh refined 1.5x from the original 125x154 configuration (to address a
+# kink artifact in the tanh profile of the smaller grain observed after ~100
+# time steps).  eps is set so that exactly 7.5 elements span the diffuse
+# interface (calibrated via comp_eps.py):
 #
-# Domain trimmed to remove excess empty space while keeping the geometry
-# meaningful for Ostwald ripening via vapor diffusion (not direct grain
-# contact):
-#   dx = 2*sqrt(2)*eps/4 = 3.2985e-07 m  (4 elements across the interface)
-#   Lx = R0+R1 + 40*dx  -> Nx=125  (~40-element vapor gap between grains)
-#   Ly = 2*R1 + 2*20*dx -> Ny=154  (~20-element margin above/below the
+#   dx = Lx / Nx = 4.123140e-05 / 188 = 2.1932e-07 m
+#   dy = Ly / Ny = 5.079708e-05 / 231 = 2.1990e-07 m
+#   eps = 2.5080e-07 m  (7.5 elements across the diffuse interface)
+#
+# Domain size is unchanged (same grain radii and inter-grain gap):
+#   Lx = R0+R1 + 60*dx  -> Nx=188  (~60-element vapor gap between grains)
+#   Ly = 2*R1 + 2*30*dy -> Ny=231  (~30-element margin above/below the
 #                                    larger grain)
 #
 # Natural-Neumann (zero-flux) BCs are required at x=0/x=Lx for this IC —
@@ -21,8 +23,8 @@
 # =============================================================================
 -ic_type two_ice_grains_boundary
 -dim 2
--Nx 125
--Ny 154
+-Nx 188
+-Ny 231
 -Nz 1
 -Lx 4.123140e-5
 -Ly 5.079708e-5
@@ -30,5 +32,5 @@
 -RCice0 9.375e-6
 -RCice1 1.875e-5
 -delt_t 1.0e-8
--eps 4.6648e-07
+-eps 2.507983871e-07
 -periodic 0
