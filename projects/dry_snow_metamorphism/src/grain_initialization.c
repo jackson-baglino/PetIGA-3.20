@@ -582,8 +582,7 @@ static PetscErrorCode ReadIceGrainsFromFile(AppCtx *user)
   MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
   FILE *file;
   char grainDataFile[PETSC_MAX_PATH_LEN];
-  const char *inputFile = getenv("inputFile");
-  PetscStrcpy(grainDataFile, inputFile);
+  PetscStrcpy(grainDataFile, user->grains_file);
   PetscPrintf(PETSC_COMM_WORLD, "Reading grains from %s\n\n\n", grainDataFile);
   file = fopen(grainDataFile, "r");
   if (!file)

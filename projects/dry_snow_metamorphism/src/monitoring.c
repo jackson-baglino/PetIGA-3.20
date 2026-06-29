@@ -109,9 +109,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
   if(print==1) {
     char filedata[256];
-    const char *env = "folder"; char *dir; dir = getenv(env);
-
-    sprintf(filedata,"%s/SSA_evo.dat",dir);
+    sprintf(filedata,"%s/SSA_evo.dat",user->output_dir);
     PetscViewer       view;
     PetscViewerCreate(PETSC_COMM_WORLD,&view);
     PetscViewerSetType(view,PETSCVIEWERASCII);
@@ -141,12 +139,8 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 
   // Check if it's the first step
   if (step == 0) {
-    const char *env = "folder";
-    char *dir;
-    dir = getenv(env);
-
     char fileiga[256];
-    sprintf(fileiga, "%s/igasol.dat", dir);
+    sprintf(fileiga, "%s/igasol.dat", user->output_dir);
 
     ierr = IGAWrite(user->iga, fileiga);CHKERRQ(ierr);
   }
@@ -165,14 +159,9 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
     PetscPrintf(PETSC_COMM_WORLD, "OUTPUT print!\n");
     user->t_out += user->t_interv;
 
-    // Get the directory path from the environment variable
-    const char *env = "folder";
-    char *dir;
-    dir = getenv(env);
-
     // Create the filename for the output file
     char filename[256];
-    sprintf(filename, "%s/sol_%05d.dat", dir, step);
+    sprintf(filename, "%s/sol_%05d.dat", user->output_dir, step);
 
     // Write the vector U to the output file
     ierr = IGAWriteVec(user->iga, U, filename);

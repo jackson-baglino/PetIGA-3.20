@@ -1,0 +1,12 @@
+# Geometry config for grains__phi=0.24__Lxmm=1__Lymm=1__seed=22
+
+-dim 3
+-Nx 571
+-Ny 571
+-Nz 52
+-Lx 1.000000e-03
+-Ly 1.000000e-03
+-Lz 8.984375e-05
+-eps 8.756952130264e-07
+-readFlag 1
+-grains_file /Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/grains__phi=0.24__Lxmm=1__Lymm=1__seed=22/grains.dat

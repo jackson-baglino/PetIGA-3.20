@@ -88,6 +88,12 @@ typedef struct {
   PetscBool readSedFromFile;  // Boolean flag to indicate reading sediment data from file
   char sedFile[PETSC_MAX_PATH_LEN];  // Filename for sediment grain data
 
+  // I/O paths (set via -grains_file, -output_dir, -initial_cond, -initial_PFgeom)
+  char grains_file[PETSC_MAX_PATH_LEN];
+  char output_dir[PETSC_MAX_PATH_LEN];
+  char initial_cond[PETSC_MAX_PATH_LEN];
+  char PFgeom[PETSC_MAX_PATH_LEN];
+
 } AppCtx;
 
 /* Field definitions for node data */

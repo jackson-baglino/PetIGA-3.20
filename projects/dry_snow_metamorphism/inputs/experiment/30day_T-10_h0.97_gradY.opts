@@ -1,0 +1,7 @@
+# 30-day run at -10°C, 97% humidity, vertical temperature gradient 3 K/m
+-t_final 2592000.0
+-n_out 500
+-delt_t 1.0e-4
+-temp -10.0
+-humidity 0.97
+-grad_temp0 0.0,3.0,0.0

@@ -1,0 +1,25 @@
+# ============================================================
+# solver.opts — universal solver/numerics settings for DSM
+# Pass with: -options_file inputs/solver.opts
+# ============================================================
+
+# IGA discretisation
+-dof 3
+-p 1
+-C 0
+
+# Output
+-NASA_output 1
+-NASA_monitor 1
+
+# Nonlinear solver (SNES) — preserved from original run_dsm.sh
+-snes_rtol 1e-3
+-snes_stol 1e-6
+-snes_max_it 7
+-snes_linesearch_type basic
+-snes_converged_reason
+
+# Linear solver (KSP) — GMRES, preserved from original run_dsm.sh
+-ksp_gmres_restart 150
+-ksp_max_it 1000
+-ksp_converged_reason

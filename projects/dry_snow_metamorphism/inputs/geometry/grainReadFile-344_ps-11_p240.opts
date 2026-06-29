@@ -1,0 +1,15 @@
+# Geometry config converted from configs/porespy2/to_run/grainReadFile-344_ps-11_p240.env
+# Use with: -options_file inputs/solver.opts \
+#           -options_file inputs/geometry/grainReadFile-344_ps-11_p240.opts \
+#           -options_file inputs/experiment/<name>.opts
+
+-dim 3
+-Nx 1024
+-Ny 1024
+-Nz 115
+-Lx 2.000000e-03
+-Ly 2.000000e-03
+-Lz 2.246094e-04
+-eps 9.765625000000e-07
+-readFlag 1
+-grains_file /Users/jacksonbaglino/PetIGA-3.20/projects/dry_snow_metamorphism/inputs/grainReadFile-344_ps-11_p240/grains.dat

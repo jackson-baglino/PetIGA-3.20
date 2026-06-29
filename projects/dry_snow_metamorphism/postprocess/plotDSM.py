@@ -1,123 +1,167 @@
-from igakit.io import PetIGA,VTK
-from numpy import linspace
+#!/usr/bin/env python3
+"""
+plotDSM.py — Convert PetIGA sol_*.dat snapshots to VTK/VTS files and write a
+ParaView PVD collection file.
+
+Reads the IGA geometry from igasol.dat and converts each sol_NNNNN.dat
+snapshot to a VTK file under vtkOut/. After all snapshots are processed,
+writes dsm.pvd (a ParaView data collection) so all snapshots can be opened
+at once as a time series.
+
+Usage
+-----
+  # From inside a run folder:
+  python3 postprocess/plotDSM.py
+
+  # Specify a different run directory:
+  python3 postprocess/plotDSM.py --dir /path/to/run
+
+  # Force regeneration of existing VTK files:
+  python3 postprocess/plotDSM.py --force
+
+Fields written per snapshot (indices match DOF order):
+  IcePhase    — col 0 — φ_i ∈ [0, 1]
+  Temperature — col 1 — T   [°C relative to T₀]
+  VaporDensity — col 2 — ρ_v [kg/m³]
+"""
+
+import argparse
 import glob
 import os
+import re
+import sys
 
-nrb = PetIGA().read("igasol.dat")
-#uniform = lambda U: linspace(U[0], U[-1], 400)
-for infile in glob.glob("sol*.dat"):
-	name = infile.split(".")[0]
-	number = name.split("l")[1]
-	root = './solV'+number+'.vtk'
-	if not os.path.isfile(root):
-		sol = PetIGA().read_vec(infile,nrb)
-		outfile = './vtkOut/solV'+number+'.vtk' 
-		VTK().write(outfile,  
-	            nrb,             
-	            fields=sol,     
-    		    scalars = {'IcePhase':0,'Temperature':1,'VaporDensity':2})
+try:
+    from igakit.io import PetIGA, VTK
+except ImportError:
+    sys.exit("ERROR: igakit is not installed.\nInstall with:  pip install igakit")
 
 
+# ---- PVD writer ----
+
+_PVD_HEADER = """\
+<?xml version="1.0"?>
+<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">
+  <Collection>
+"""
+_PVD_FOOTER = """\
+  </Collection>
+</VTKFile>
+"""
 
 
+def write_pvd(pvd_path: str, entries: list):
+    """Write a ParaView PVD collection.
+
+    entries: list of (time, vtk_rel_path) tuples, sorted by time.
+    """
+    with open(pvd_path, "w") as f:
+        f.write(_PVD_HEADER)
+        for t, relpath in entries:
+            f.write(f'    <DataSet timestep="{t:.6e}" group="" part="0" file="{relpath}"/>\n')
+        f.write(_PVD_FOOTER)
+    print(f"PVD collection written: {pvd_path}")
 
 
+def parse_step(filename: str) -> int:
+    """Extract the integer step number from sol_NNNNN.dat."""
+    m = re.search(r"(\d+)", os.path.basename(filename))
+    return int(m.group(1)) if m else -1
 
-# ------------------------------------------------------------------------------
-# ------------------------- CODE HERE STILL NEEDS WORK -------------------------
-# ----------------------------- ONLY WORKS FOR 3D ------------------------------
-# ------------------------------------------------------------------------------
 
-# from igakit.io import PetIGA
-# import glob
-# import os
-# import numpy as np
-# from scipy.interpolate import RegularGridInterpolator
+def main():
+    p = argparse.ArgumentParser(description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--dir",   default=".",
+                   help="Run directory containing igasol.dat and sol_*.dat (default: .)")
+    p.add_argument("--force", action="store_true",
+                   help="Regenerate VTK files even if they already exist")
+    p.add_argument("--iga",   default="igasol.dat",
+                   help="IGA geometry file name (default: igasol.dat)")
+    p.add_argument("--vtk-dir", default="vtkOut",
+                   help="Sub-directory for VTK output (default: vtkOut)")
+    p.add_argument("--pvd",   default="dsm.pvd",
+                   help="PVD collection file name in --dir (default: dsm.pvd)")
+    p.add_argument("--ssa",   default="SSA_evo.dat",
+                   help="SSA_evo.dat for time-axis data (default: SSA_evo.dat)")
+    args = p.parse_args()
 
-# def read_nrb(file_path):
-#     """Reads the IGA solution file."""
-#     return PetIGA().read(file_path)
+    run_dir = os.path.abspath(args.dir)
+    iga_path = os.path.join(run_dir, args.iga)
+    vtk_dir  = os.path.join(run_dir, args.vtk_dir)
+    pvd_path = os.path.join(run_dir, args.pvd)
+    ssa_path = os.path.join(run_dir, args.ssa)
 
-# def interpolate_data_3d(data, x_dim, y_dim, z_dim):
-#     """Interpolate 3D data using RegularGridInterpolator."""
-#     # Original grid coordinates (assuming regular spacing)
-#     x = np.linspace(0, 1, data.shape[0])
-#     y = np.linspace(0, 1, data.shape[1])
-#     z = np.linspace(0, 1, data.shape[2])
+    if not os.path.isfile(iga_path):
+        sys.exit(f"ERROR: IGA geometry file not found: {iga_path}")
 
-#     # Create an interpolator for the regular grid
-#     interpolator = RegularGridInterpolator((x, y, z), data)
+    os.makedirs(vtk_dir, exist_ok=True)
 
-#     # New grid coordinates for interpolation
-#     xnew = np.linspace(0, 1, x_dim)
-#     ynew = np.linspace(0, 1, y_dim)
-#     znew = np.linspace(0, 1, z_dim)
-#     Xnew, Ynew, Znew = np.meshgrid(xnew, ynew, znew)
+    print(f"Reading IGA geometry: {iga_path}")
+    nrb = PetIGA().read(iga_path)
 
-#     # Perform the interpolation
-#     interpolated_data = interpolator((Xnew, Ynew, Znew))
+    # ---- Build step→time mapping from SSA_evo.dat ----
+    step_to_time = {}
+    if os.path.isfile(ssa_path):
+        import numpy as np
+        try:
+            ssa = np.genfromtxt(ssa_path, dtype=float, comments="#",
+                                 invalid_raise=False)
+            if ssa.ndim == 1:
+                ssa = ssa[np.newaxis, :]
+            if ssa.shape[1] >= 4:
+                for row in ssa:
+                    if not any(map(lambda x: x != x, row[:4])):  # no NaN
+                        step_to_time[int(row[3])] = float(row[2])
+        except Exception:
+            pass
 
-#     return interpolated_data
+    # ---- Sort solution files by step number ----
+    sol_files = sorted(
+        glob.glob(os.path.join(run_dir, "sol_*.dat")),
+        key=parse_step
+    )
+    if not sol_files:
+        sol_files = sorted(
+            glob.glob(os.path.join(run_dir, "sol*.dat")),
+            key=parse_step
+        )
+    if not sol_files:
+        sys.exit(f"ERROR: No sol_*.dat files found in {run_dir}")
 
-# def write_dat_file(output_dir, field_name, sequence_number, data):
-#     """Writes a .dat file for a specific field."""
-#     os.makedirs(output_dir, exist_ok=True)  # Ensure directory exists
-#     file_name = f'{output_dir}/{field_name}_{sequence_number:04d}.dat'
-#     print(f"Writing {file_name}")
-    
-#     np.savetxt(file_name, data.reshape(-1), fmt='%.6e')
+    print(f"Found {len(sol_files)} snapshot(s)")
 
-# def process_solution_files(nrb, input_pattern="sol*.dat", output_dir="./output", interpolate=False, x_dim=None, y_dim=None, z_dim=None):
-#     """Processes all solution files and saves .dat files with optional interpolation."""
-    
-#     # Create output directories for each field
-#     ice_phase_dir = os.path.join(output_dir, "IcePhase")
-#     temp_dir = os.path.join(output_dir, "Temperature")
-#     vapor_dir = os.path.join(output_dir, "VaporDensity")
-    
-#     os.makedirs(ice_phase_dir, exist_ok=True)
-#     os.makedirs(temp_dir, exist_ok=True)
-#     os.makedirs(vapor_dir, exist_ok=True)
-    
-#     # Sort input files to maintain order
-#     input_files = sorted(glob.glob(input_pattern), key=lambda x: int(x.split("l")[1].split(".")[0]))
+    pvd_entries = []
 
-#     # Sequential numbering for output (0001, 0002, 0003, ...)
-#     for sequence_number, infile in enumerate(input_files, start=1):
-#         print(f"Processing {infile}...")
+    for sol_file in sol_files:
+        step = parse_step(sol_file)
+        base = os.path.splitext(os.path.basename(sol_file))[0]
+        vtk_name = f"solV{step:05d}.vtk"
+        vtk_path = os.path.join(vtk_dir, vtk_name)
+        vtk_rel  = os.path.join(args.vtk_dir, vtk_name)
 
-#         # Read the solution vector from the .dat file
-#         sol = PetIGA().read_vec(infile, nrb)
+        if not args.force and os.path.isfile(vtk_path):
+            print(f"  Skipping {vtk_name} (already exists; use --force to regenerate)")
+        else:
+            print(f"  Writing {vtk_name} ...")
+            sol = PetIGA().read_vec(sol_file, nrb)
+            VTK().write(
+                vtk_path, nrb,
+                fields=sol,
+                scalars={
+                    "IcePhase":    0,
+                    "Temperature": 1,
+                    "VaporDensity": 2,
+                },
+            )
 
-#         # Debug: Print the shape of the data being processed
-#         print(f"Shape of data in {infile}: {sol.shape}")
+        t = step_to_time.get(step, float(step))
+        pvd_entries.append((t, vtk_rel))
 
-#         # Check if the data is 4D (3D spatial dimensions and 3 fields)
-#         if sol.ndim == 4 and sol.shape[-1] == 3:
-#             print("Processing 4D data (3D space + fields)...")
+    pvd_entries.sort(key=lambda e: e[0])
+    write_pvd(pvd_path, pvd_entries)
+    print(f"\nDone. Open {pvd_path} in ParaView to view the time series.")
 
-#             # Extract the fields (IcePhase, Temperature, VaporDensity)
-#             ice_phase_data = sol[:, :, :, 0]  # Assuming IcePhase is field 0
-#             temperature_data = sol[:, :, :, 1]  # Assuming Temperature is field 1
-#             vapor_density_data = sol[:, :, :, 2]  # Assuming VaporDensity is field 2
 
-#             # Optionally interpolate the data for 3D
-#             if interpolate and x_dim is not None and y_dim is not None and z_dim is not None:
-#                 ice_phase_data = interpolate_data_3d(ice_phase_data, x_dim, y_dim, z_dim)
-#                 temperature_data = interpolate_data_3d(temperature_data, x_dim, y_dim, z_dim)
-#                 vapor_density_data = interpolate_data_3d(vapor_density_data, x_dim, y_dim, z_dim)
-        
-#         else:
-#             raise ValueError(f"Unsupported data dimensionality: {sol.ndim}D for {infile}. Expected 4D data (3D space + fields).")
-
-#         # Write the .dat files for each field
-#         write_dat_file(ice_phase_dir, "IcePhase", sequence_number, ice_phase_data)
-#         write_dat_file(temp_dir, "Temperature", sequence_number, temperature_data)
-#         write_dat_file(vapor_dir, "VaporDensity", sequence_number, vapor_density_data)
-
-# if __name__ == "__main__":
-#     nrb_file = "igasol.dat"
-#     nrb = read_nrb(nrb_file)
-    
-#     # Example of running the script with interpolation and dimensions (optional)
-#     process_solution_files(nrb, interpolate=True, x_dim=500, y_dim=500, z_dim=500)
+if __name__ == "__main__":
+    main()

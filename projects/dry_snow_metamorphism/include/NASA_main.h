@@ -18,6 +18,6 @@
 #include "grain_initialization.h"
 #include "initial_conditions.h"
 #include "snes_convergence.h"
-#include "env_helper.h"
+#include "options_helper.h"
 
 #endif // NASA_MAIN_H

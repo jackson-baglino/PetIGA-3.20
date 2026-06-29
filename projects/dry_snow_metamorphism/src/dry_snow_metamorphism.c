@@ -2,32 +2,26 @@
 
 int main(int argc, char *argv[]) {
 
-  // Petsc Initialization rite of passage 
   PetscErrorCode  ierr;
   ierr = PetscInitialize(&argc,&argv,NULL,NULL);CHKERRQ(ierr);
 
   PetscLogDouble itim;
   ierr = PetscTime(&itim); CHKERRQ(ierr);
 
-  // Define simulation specific parameters
   AppCtx user;
   PetscInt flag_sedgrav, flag_BC_Tfix, flag_BC_rhovfix;
 
-  //----------------------model parameters
-  user.xi_v       = 1.0e-5;       
-  user.xi_T       = 1.0e-4;       //--- time scaling depends on the problem temperature and the length scale, 
-  user.flag_xiT   = 1;            //    note kinetics change 2-3 orders of magnitude from 0 to -70 C. 
-                                  //    xi_v > 1e2*Lx/beta_sub;      xi_t > 1e4*Lx/beta_sub;   xi_v>1e-5; xi_T>1e-5;
-
-  // user.eps        = 9.1e-7;      //--- usually: eps < 1.0e-7, in some setups this limitation can be relaxed (see Manuscript-draft)
-	user.Lambd      = 1.0;          //    for low temperatures (T=-70C), we might have eps < 1e-11
+  // ---- Default physical parameters (overridable via .opts / CLI) ----
+  user.xi_v       = 1.0e-5;
+  user.xi_T       = 1.0e-4;
+  user.flag_xiT   = 1;
+  user.Lambd      = 1.0;
   user.air_lim    = 1.0e-6;
   user.nsteps_IC  = 10;
-
   user.lat_sub    = 2.83e6;
-  user.thcond_ice = 2.29; //1.27e-6
-  user.thcond_met = 36.0; //1.32e-7
-  user.thcond_air = 0.02; //1.428e-5
+  user.thcond_ice = 2.29;
+  user.thcond_met = 36.0;
+  user.thcond_air = 0.02;
   user.cp_ice     = 1.96e3;
   user.cp_met     = 4.86e2;
   user.cp_air     = 1.044e3;
@@ -38,114 +32,102 @@ int main(int argc, char *argv[]) {
   user.T_melt     = 0.0;
   user.flag_it0   = 1;
   user.flag_tIC   = 0;
+  user.flag_Tdep  = 1;
+  user.d0_sub0    = 1.0e-9;
+  user.beta_sub0  = 1.4e5;
+  // Default initial conditions
+  user.temp0         = -10.0;
+  user.hum0          = 1.0;
+  user.eps           = 1.0e-6;
+  user.readFlag      = 1;
+  user.grad_temp0[0] = 0.0;
+  user.grad_temp0[1] = 0.0;
+  user.grad_temp0[2] = 0.0;
+  user.output_dir[0] = '\0';
+  user.grains_file[0] = '\0';
+  user.initial_cond[0] = '\0';
+  user.PFgeom[0] = '\0';
+  // Default I/O paths
+  PetscStrcpy(user.output_dir, ".");
 
-  // user.readFlag   = 1; // 0: generate ice grains, 1: read ice grains from file
+  // ---- Parse all parameters from .opts files / CLI ----
+  PetscInt  Nx=100, Ny=100, Nz=1;
+  PetscReal Lx=1.0e-3, Ly=1.0e-3, Lz=1.0e-4;
+  PetscReal delt_t=1.0e-4, t_final=1.0e6;
+  PetscInt  n_out=100, dim=2, p=1, C=0;
+  PetscBool output=PETSC_TRUE, monitor=PETSC_TRUE;
 
-  //---------Gibbs-Thomson parameters 
-  user.flag_Tdep  = 1;        // Temperature-dependent GT parameters; 
-                              // pretty unstable, need to check implementation!!!
+  ierr = GetOptions(&user, &Nx, &Ny, &Nz, &Lx, &Ly, &Lz,
+                    &delt_t, &t_final, &n_out,
+                    &dim, &p, &C, &output, &monitor); CHKERRQ(ierr);
 
-  user.d0_sub0    = 1.0e-9; 
-  user.beta_sub0  = 1.4e5;    
-  PetscReal gamma_im = 0.033, gamma_iv = 0.109, gamma_mv = 0.056; //76
+  user.p = p; user.C = C;
 
-  PetscReal rho_rhovs, rhoI_vs, d_rhovs; // = 2.0e5; // at 0C;  rho_rhovs=5e5 at -10C
+  // ---- Gibbs-Thomson / kinetic parameters ----
+  PetscReal gamma_im = 0.033, gamma_iv = 0.109, gamma_mv = 0.056;
+  PetscReal rho_rhovs, rhoI_vs, d_rhovs;
   RhoVS_I(&user, user.temp0, &rhoI_vs, &d_rhovs);
   rho_rhovs = user.rho_ice / rhoI_vs;
 
   ierr = PetscPrintf(PETSC_COMM_WORLD, "rho_rhovs = %e \n", rho_rhovs);CHKERRQ(ierr);
-  // Unpack environment variables
-  PetscPrintf(PETSC_COMM_WORLD, "Unpacking environment variables...\n");
-  PetscInt Nx, Ny, Nz, n_out, dim, readFlag;
-  PetscReal Lx, Ly, Lz, delt_t, t_final, humidity, temp, eps;
-  PetscReal grad_temp0[3];
-  ierr = ParseEnvironment(&user, &Nx, &Ny, &Nz, &Lx, &Ly, &Lz,
-                            &delt_t, &t_final, &n_out,
-                            &humidity, &temp, grad_temp0,
-                            &dim, &eps, &readFlag); CHKERRQ(ierr);
-  // Define the polynomial order of basis functions and global continuity order
-  PetscInt  l,m, p=1, C=0; //dim=2;
-  user.p=p; user.C=C;  user.dim=dim;
 
-  // grains!
-  if (user.readFlag==0) {
-    user.NCsed      = 20; //less than 200, otherwise update in user
+  // ---- Grain configuration ----
+  if (user.readFlag == 0) {
+    user.NCsed = 20;
   } else {
-    user.NCsed      = 0; //less than 200, otherwise update in user
+    user.NCsed = 0;
   }
   flag_sedgrav    = 0;
   user.RCsed      = 0.8e-5;
   user.RCsed_dev  = 0.4;
-
-  user.NCice      = 140; //less than 200, otherwise update in user
+  user.NCice      = 140;
   user.RCice      = 0.9e-4;
   user.RCice_dev  = 0.55;
 
-  //boundary conditions
-  user.periodic   = 0;          // periodic >> Dirichlet   
+  // ---- Boundary conditions ----
+  user.periodic   = 0;
   flag_BC_Tfix    = 1;
   flag_BC_rhovfix = 0;
   if(user.periodic==1 && flag_BC_Tfix==1) flag_BC_Tfix=0;
   if(user.periodic==1 && flag_BC_rhovfix==1) flag_BC_rhovfix=0;
 
-  //output
-  user.outp = 0;                        // if 0 -> output according to t_interv
-  user.t_out = 0;                       // if 0 -> output according to t_interv    
-  user.t_interv = t_final/(n_out-1);    //output every t_interv
-  // user.t_interv =  600.0;               //output every t_interv
+  // ---- Output timing ----
+  user.outp     = 0;
+  user.t_out    = 0;
+  user.t_interv = t_final / (n_out - 1);
 
   PetscInt adap = 1;
   PetscInt NRmin = 2, NRmax = 5;
-  PetscReal factor = pow(10.0,1.0/8.0);
+  PetscReal factor = pow(10.0, 1.0/8.0);
   PetscReal dtmin = 0.01*delt_t, dtmax = 0.5*user.t_interv;
-  if(dtmax>0.5*user.t_interv) PetscPrintf(PETSC_COMM_WORLD,"OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval \n\n");
   PetscInt max_rej = 10;
-  if(adap==1) PetscPrintf(PETSC_COMM_WORLD,"Adapative time stepping scheme: NR_iter %d-%d  factor %.3f  dt0 %.2e  dt_range %.2e-%.2e  \n\n",NRmin,NRmax,factor,delt_t,dtmin,dtmax);
+  if(adap==1) PetscPrintf(PETSC_COMM_WORLD,"Adaptive time stepping: NR_iter %d-%d  factor %.3f  dt0 %.2e  dt_range %.2e-%.2e  \n\n",NRmin,NRmax,factor,delt_t,dtmin,dtmax);
 
   PetscInt size;
   MPI_Comm_size(PETSC_COMM_WORLD, &size);
   PetscPrintf(PETSC_COMM_WORLD, "Running on %d processes.\n\n\n", size);
 
-
-  // G-T kinetic parameters
+  // ---- Gibbs-Thomson kinetic parameters ----
   user.diff_sub = 0.5*(user.thcond_air/user.rho_air/user.cp_air + user.thcond_ice/user.rho_ice/user.cp_ice);
-  user.Etai       = gamma_iv + gamma_im - gamma_mv;
-  user.Etam       = gamma_mv + gamma_im - gamma_iv;
-  user.Etaa       = gamma_iv + gamma_mv - gamma_im;
-  PetscReal a1=5.0, a2=0.1581; // at 0C;  rho_rhovs=5e5 at -10C    // Might need to change these values (depends on the temperature, rho_rhovs=10e5 at -20C)
-  PetscReal d0_sub,  beta_sub, lambda_sub, tau_sub;
-  d0_sub = user.d0_sub0/rho_rhovs;  beta_sub = user.beta_sub0/rho_rhovs; 
-  lambda_sub    = a1*user.eps/d0_sub;
-  tau_sub       = user.eps*lambda_sub*(beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
+  user.Etai = gamma_iv + gamma_im - gamma_mv;
+  user.Etam = gamma_mv + gamma_im - gamma_iv;
+  user.Etaa = gamma_iv + gamma_mv - gamma_im;
+  PetscReal a1=5.0, a2=0.1581;
+  PetscReal d0_sub, beta_sub, lambda_sub, tau_sub;
+  d0_sub     = user.d0_sub0 / rho_rhovs;
+  beta_sub   = user.beta_sub0 / rho_rhovs;
+  lambda_sub = a1 * user.eps / d0_sub;
+  tau_sub    = user.eps * lambda_sub * (beta_sub/a1 + a2*user.eps/user.diff_sub + a2*user.eps/user.dif_vap);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD, "Beta_sub = %e \n", beta_sub);CHKERRQ(ierr);
 
-  // // Parameters tuned from Molaro experiments
-  // user.mob_sub    = 5.0*user.eps/3.0/tau_sub;
-  // user.alph_sub   = 0.01*lambda_sub/tau_sub;
-
-  // Untuned parameters
-  user.mob_sub    = 1.0*user.eps/3.0/tau_sub;
-  user.alph_sub   = 1.0*lambda_sub/tau_sub;
+  user.mob_sub  = 1.0 * user.eps / 3.0 / tau_sub;
+  user.alph_sub = 1.0 * lambda_sub / tau_sub;
 
   if(user.flag_Tdep==0) PetscPrintf(PETSC_COMM_WORLD,"FIXED PARAMETERS: tau %.4e  lambda %.4e  M0 %.4e  alpha %.4e \n\n",tau_sub,lambda_sub,user.mob_sub,user.alph_sub);
   else PetscPrintf(PETSC_COMM_WORLD,"TEMPERATURE DEPENDENT G-T PARAMETERS \n\n");
-  
 
-  PetscBool output=PETSC_TRUE,monitor=PETSC_TRUE;
-  char initial[PETSC_MAX_PATH_LEN] = {0};
-  char PFgeom[PETSC_MAX_PATH_LEN] = {0};
-  PetscOptionsBegin(PETSC_COMM_WORLD, "", "NASA Options", "IGA");
-  ierr = PetscOptionsInt("-Nx", "number of elements along x dimension", __FILE__, Nx, &Nx, NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-Ny", "number of elements along y dimension", __FILE__, Ny, &Ny, NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-p", "polynomial order", __FILE__, p, &p, NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-C", "global continuity order", __FILE__, C, &C, NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsString("-initial_cond","Load initial solution from file",__FILE__,initial,initial,sizeof(initial),NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsString("-initial_PFgeom","Load initial ice geometry from file",__FILE__,PFgeom,PFgeom,sizeof(PFgeom),NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-NASA_output","Enable output files",__FILE__,output,&output,NULL);CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-NASA_monitor","Monitor the solution",__FILE__,monitor,&monitor,NULL);CHKERRQ(ierr);
-  PetscOptionsEnd();
-
+  // ---- IGA setup ----
   IGA iga;
   ierr = IGACreate(PETSC_COMM_WORLD,&iga);CHKERRQ(ierr);
   ierr = IGASetDim(iga,dim);CHKERRQ(ierr);
@@ -154,6 +136,7 @@ int main(int argc, char *argv[]) {
   ierr = IGASetFieldName(iga,1,"temperature"); CHKERRQ(ierr);
   ierr = IGASetFieldName(iga,2,"vap_density"); CHKERRQ(ierr);
 
+  PetscInt l, m;
   IGAAxis axis0, axis1, axis2;
   ierr = IGAGetAxis(iga,0,&axis0);CHKERRQ(ierr);
   if(user.periodic==1) {ierr = IGAAxisSetPeriodic(axis0,PETSC_TRUE);CHKERRQ(ierr);}
@@ -174,9 +157,8 @@ int main(int argc, char *argv[]) {
   ierr = IGASetUp(iga);CHKERRQ(ierr);
   user.iga = iga;
 
-  // Use this to set the initial condition
   PetscInt nmb = iga->elem_width[0]*iga->elem_width[1]*SQ(p+1);
-  if(dim==3) nmb = iga->elem_width[0]*iga->elem_width[1]*iga->elem_width[2]*CU(p+1); // Gets the number of elements in a single core!
+  if(dim==3) nmb = iga->elem_width[0]*iga->elem_width[1]*iga->elem_width[2]*CU(p+1);
   ierr = PetscMalloc(sizeof(PetscReal)*(nmb),&user.Phi_sed);CHKERRQ(ierr);
   ierr = PetscMemzero(user.Phi_sed,sizeof(PetscReal)*(nmb));CHKERRQ(ierr);
   ierr = PetscMalloc(sizeof(PetscReal)*(nmb),&user.alph);CHKERRQ(ierr);
@@ -184,11 +166,10 @@ int main(int argc, char *argv[]) {
   ierr = PetscMalloc(sizeof(PetscReal)*(nmb),&user.mob);CHKERRQ(ierr);
   ierr = PetscMemzero(user.mob,sizeof(PetscReal)*(nmb));CHKERRQ(ierr);
 
-  //Residual and Tangent
   ierr = IGASetFormIFunction(iga,Residual,&user);CHKERRQ(ierr);
   ierr = IGASetFormIJacobian(iga,Jacobian,&user);CHKERRQ(ierr);
 
-  //Boundary Condition
+  // ---- Boundary conditions ----
   if(flag_BC_rhovfix==1){
     PetscReal rho0_vs;
     RhoVS_I(&user,user.temp0,&rho0_vs,NULL);
@@ -201,6 +182,7 @@ int main(int argc, char *argv[]) {
     for(l=0;l<dim;l++) for(m=0;m<2;m++) ierr = IGASetBoundaryValue(iga,l,m,1,T_BC[l][m]);CHKERRQ(ierr);
   }
 
+  // ---- Time stepping ----
   TS ts;
   ierr = IGACreateTS(iga,&ts);CHKERRQ(ierr);
   ierr = TSSetMaxTime(ts,t_final);CHKERRQ(ierr);
@@ -225,6 +207,7 @@ int main(int argc, char *argv[]) {
   ierr = TSGetSNES(ts,&nonlin);CHKERRQ(ierr);
   ierr = SNESSetConvergenceTest(nonlin,SNESDOFConvergence,&user,NULL);CHKERRQ(ierr);
 
+  // ---- Sediment grains (if any) ----
   if(user.NCsed>0){
     if(flag_sedgrav==1) {
       if(dim==2) {ierr = InitialSedGrainsGravity(iga,&user);CHKERRQ(ierr);}
@@ -233,8 +216,6 @@ int main(int argc, char *argv[]) {
         ierr = InitialSedGrains(iga,&user);CHKERRQ(ierr);
       }
     } else {ierr = InitialSedGrains(iga,&user);CHKERRQ(ierr);}
-
-    //output sediment/metal in OutputMonitor function --> single file for all variables
 
     IGA igaS;   IGAAxis axis0S, axis1S, axis2S;
     ierr = IGACreate(PETSC_COMM_WORLD,&igaS);CHKERRQ(ierr);
@@ -259,57 +240,54 @@ int main(int argc, char *argv[]) {
 
     Vec S;
     ierr = IGACreateVec(igaS,&S);CHKERRQ(ierr);
-    //ierr = IGACreateVec(igaS,&user.Sed);CHKERRQ(ierr);
     if(dim==2) {ierr = FormInitialSoil2D(igaS,S,&user);CHKERRQ(ierr);}
     else {ierr = FormInitialSoil3D(igaS,S,&user);CHKERRQ(ierr);}
-    //ierr = VecCopy(S,user.Sed);CHKERRQ(ierr);
 
-    const char *env="folder"; char *dir; dir=getenv(env);
-    char filename[256],filevect[256];
-    sprintf(filename, "%s/igasoil.dat", dir);
+    char filename[256], filevect[256];
+    sprintf(filename, "%s/igasoil.dat", user.output_dir);
     ierr=IGAWrite(igaS,filename);CHKERRQ(ierr);
-    
-    sprintf(filevect, "%s/soil.dat", dir);
+    sprintf(filevect, "%s/soil.dat", user.output_dir);
     ierr=IGAWriteVec(igaS,S,filevect);CHKERRQ(ierr);
 
     ierr = VecDestroy(&S);CHKERRQ(ierr);
     ierr = IGADestroy(&igaS);CHKERRQ(ierr);
   } else {
     PetscPrintf(PETSC_COMM_WORLD,"No sed grains\n\n");
-    user.n_actsed= 0;
+    user.n_actsed = 0;
   }
 
   ierr = InitialIceGrains(iga,&user);CHKERRQ(ierr);
 
-  // Print the variables
-  PetscPrintf(PETSC_COMM_WORLD, "Nx: %f\n", user.Nx);
-  PetscPrintf(PETSC_COMM_WORLD, "Ny: %f\n", user.Ny);
-  PetscPrintf(PETSC_COMM_WORLD, "Nz: %f\n", user.Nz);
-  PetscPrintf(PETSC_COMM_WORLD, "Lx: %f\n", user.Lx);
-  PetscPrintf(PETSC_COMM_WORLD, "Ly: %f\n", user.Ly);
-  PetscPrintf(PETSC_COMM_WORLD, "Lz: %f\n", user.Lz);
-  PetscPrintf(PETSC_COMM_WORLD, "delt_t: %f\n", delt_t);
-  PetscPrintf(PETSC_COMM_WORLD, "t_final: %f\n", t_final);
-  PetscPrintf(PETSC_COMM_WORLD, "humidity: %f\n", humidity);
-  PetscPrintf(PETSC_COMM_WORLD, "temp: %f\n", user.temp0);
-  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0X: %f\n", user.grad_temp0[0]);
-  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %f\n", user.grad_temp0[1]);
-  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Z: %f\n", user.grad_temp0[2]);
-  PetscPrintf(PETSC_COMM_WORLD, "dim: %d\n", user.dim);
-  PetscPrintf(PETSC_COMM_WORLD, "eps: %f\n", user.eps);
+  // ---- Print resolved parameters ----
+  PetscPrintf(PETSC_COMM_WORLD, "Nx: %f\n",           user.Nx);
+  PetscPrintf(PETSC_COMM_WORLD, "Ny: %f\n",           user.Ny);
+  PetscPrintf(PETSC_COMM_WORLD, "Nz: %f\n",           user.Nz);
+  PetscPrintf(PETSC_COMM_WORLD, "Lx: %f\n",           user.Lx);
+  PetscPrintf(PETSC_COMM_WORLD, "Ly: %f\n",           user.Ly);
+  PetscPrintf(PETSC_COMM_WORLD, "Lz: %f\n",           user.Lz);
+  PetscPrintf(PETSC_COMM_WORLD, "delt_t: %f\n",       delt_t);
+  PetscPrintf(PETSC_COMM_WORLD, "t_final: %f\n",      t_final);
+  PetscPrintf(PETSC_COMM_WORLD, "humidity: %f\n",     user.hum0);
+  PetscPrintf(PETSC_COMM_WORLD, "temp: %f\n",         user.temp0);
+  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0X: %f\n",  user.grad_temp0[0]);
+  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Y: %f\n",  user.grad_temp0[1]);
+  PetscPrintf(PETSC_COMM_WORLD, "grad_temp0Z: %f\n",  user.grad_temp0[2]);
+  PetscPrintf(PETSC_COMM_WORLD, "dim: %d\n",          user.dim);
+  PetscPrintf(PETSC_COMM_WORLD, "eps: %e\n",          user.eps);
+  PetscPrintf(PETSC_COMM_WORLD, "output_dir: %s\n",   user.output_dir);
+  PetscPrintf(PETSC_COMM_WORLD, "grains_file: %s\n",  user.grains_file);
 
+  // ---- Initial condition ----
   PetscReal t=0; Vec U;
   ierr = IGACreateVec(iga,&U);CHKERRQ(ierr);
   ierr = VecZeroEntries(U);CHKERRQ(ierr);
   if(dim==2) {
-    ierr = FormLayeredInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
-    // ierr = FormInitialCondition2D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);
+    ierr = FormLayeredInitialCondition2D(iga,t,U,&user,user.initial_cond,user.PFgeom);CHKERRQ(ierr);
   }
-  else {ierr = FormInitialCondition3D(iga,t,U,&user,initial,PFgeom);CHKERRQ(ierr);}
+  else {ierr = FormInitialCondition3D(iga,t,U,&user,user.initial_cond,user.PFgeom);CHKERRQ(ierr);}
 
   ierr = TSSolve(ts,U);CHKERRQ(ierr);
 
-  //ierr = VecDestroy(&user.Sed);CHKERRQ(ierr);
   ierr = VecDestroy(&U);CHKERRQ(ierr);
   ierr = TSDestroy(&ts);CHKERRQ(ierr);
   ierr = IGADestroy(&iga);CHKERRQ(ierr);
@@ -318,16 +296,15 @@ int main(int argc, char *argv[]) {
   ierr = PetscFree(user.alph);CHKERRQ(ierr);
   ierr = PetscFree(user.mob);CHKERRQ(ierr);
 
-  PetscLogDouble ltim,tim;
+  PetscLogDouble ltim, tim;
   ierr = PetscTime(&ltim); CHKERRQ(ierr);
-  tim = ltim-itim;
+  tim = ltim - itim;
 
-  int days = (int)(tim / 86400);
-  int hours = (int)((tim - days * 86400) / 3600);
+  int days    = (int)(tim / 86400);
+  int hours   = (int)((tim - days * 86400) / 3600);
   int minutes = (int)((tim - days * 86400 - hours * 3600) / 60);
   double seconds = tim - days * 86400 - hours * 3600 - minutes * 60;
 
-  // Print computation time in bold if terminal supports ANSI escape codes
   PetscPrintf(PETSC_COMM_WORLD, "\033[1mcomp time: ");
   if (days > 0)
     PetscPrintf(PETSC_COMM_WORLD, "%d day%s ", days, days == 1 ? "" : "s");

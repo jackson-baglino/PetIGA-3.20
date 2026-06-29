@@ -330,7 +330,7 @@ with open(dat_path, "w") as f:
         f.write(f"{xC} {yC} {zC} {r}\n")
 print(f"Saved .dat to {dat_path}")
 
-# --- Save .env file for downstream model ---
+# --- Save .env file (legacy, kept for backward compat with effective_k gen_opts.py) ---
 Nx = nx; Ny = ny
 Nz = max(1, int(round(Lz / dx)))
 eps_val = args.eps if args.eps is not None else 0.5 * dx
@@ -339,7 +339,28 @@ with open(env_path, "w") as fenv:
     fenv.write(f"Lx={args.Lx:.6e}\n")
     fenv.write(f"Ly={args.Ly:.6e}\n")
     fenv.write(f"Lz={Lz:.6e}\n")
+    fenv.write(f"Nx={Nx}\n")
+    fenv.write(f"Ny={Ny}\n")
+    fenv.write(f"Nz={Nz}\n")
+    fenv.write(f"eps={eps_val:.12e}\n")
 print(f"Saved grains.env to {env_path}")
+
+# --- Save .opts file for PETSc-based DSM run ---
+dim_val = 2 if Nz <= 1 else 3
+opts_path = os.path.join(inputs_run_dir, "grains.opts")
+with open(opts_path, "w") as fopts:
+    fopts.write(f"# Auto-generated geometry opts for {os.path.basename(dat_path)}\n\n")
+    fopts.write(f"-dim {dim_val}\n")
+    fopts.write(f"-Lx {args.Lx:.6e}\n")
+    fopts.write(f"-Ly {args.Ly:.6e}\n")
+    fopts.write(f"-Lz {Lz:.6e}\n")
+    fopts.write(f"-Nx {Nx}\n")
+    fopts.write(f"-Ny {Ny}\n")
+    fopts.write(f"-Nz {Nz}\n")
+    fopts.write(f"-eps {eps_val:.12e}\n")
+    fopts.write(f"-readFlag 1\n")
+    fopts.write(f"-grains_file {os.path.abspath(dat_path)}\n")
+print(f"Saved grains.opts to {opts_path}")
 
 # Construct void mask for consistency with earlier logic
 im = ~solid_mask
@@ -417,6 +438,7 @@ metadata = {
                    "mean_r_m": float(args.mean_r_m), "sigma_ln": float(args.sigma_ln)},
     "artifacts": {"grains_dat": os.path.basename(dat_path) if 'dat_path' in locals() else None,
                    "env_file": os.path.basename(env_path) if 'env_path' in locals() else None,
+                   "opts_file": os.path.basename(opts_path) if 'opts_path' in locals() else None,
                    "preview_png": os.path.basename(img_path)}
 }
 # Derived and informative fields
@@ -450,6 +472,7 @@ metadata.update({
         "metadata_dir": os.path.abspath(inputs_run_dir),
         "grains_dat": os.path.abspath(dat_path) if 'dat_path' in locals() else None,
         "env_file": os.path.abspath(env_path) if 'env_path' in locals() else None,
+        "opts_file": os.path.abspath(opts_path) if 'opts_path' in locals() else None,
         "preview_png": os.path.abspath(img_path)
     }
 })
@@ -458,7 +481,7 @@ with open(meta_json_path, "w") as jf:
     json.dump(metadata, jf, indent=2)
 
 # Checksums
-chk_paths = [p for p in [meta_json_path, img_path, locals().get('dat_path'), locals().get('env_path')] if p]
+chk_paths = [p for p in [meta_json_path, img_path, locals().get('dat_path'), locals().get('env_path'), locals().get('opts_path')] if p]
 chk_text = []
 for p in chk_paths:
     try:
