@@ -90,18 +90,15 @@
                                         # consecutive halvings and ran out at 25)
 
 # ---------- Nonlinear solver (SNES) ------------------------------------------
-# vinewtonssls: semismooth variational-inequality Newton -- required for the
-# 0<=ice<=1 SNESVISetVariableBounds() call in permafrost2.c to actually be
-# enforced (plain newtonls would silently ignore the bounds). Tried
-# vinewtonrsls (reduced-space active-set) first: it hit a PETSc-internal
-# parallel bug at the very first active-set change (MatCreateSubMatrix_
-# MPIBAIJ "Nonconforming object sizes" inside SNESSolve_VINEWTONRSLS, with
-# -n 6) -- a PETSc/MPIBAIJ limitation, not anything in this code. vinewtonssls
-# uses a semismooth reformulation instead of explicit active-set submatrices,
-# so it doesn't hit that path, and cleared the 2D_single_bump_ice_cap
-# extinction window (job64415277 steps 61-71, formerly -0.10 to -0.41) with
-# phi_ice bounds at machine-zero.
--snes_type vinewtonssls
+# VI bounds disabled: testing whether the bound-constrained solve was causing
+# the kink/blip artifact in the tanh profile of the smaller grain. With
+# -vi_bounds 0, permafrost2.c skips SNESVISetVariableBounds() entirely.
+# Reverted to plain newtonls to match the pre-VI solver exactly.
+#
+# To re-enable VI: set -vi_bounds 1 and -snes_type vinewtonssls (vinewtonrsls
+# hits a PETSc parallel bug with MPIBAIJ; vinewtonssls is the working choice).
+-vi_bounds 0
+-snes_type newtonls
 -snes_max_it 50
 -snes_rtol 1e-06
 -snes_atol 1e-06
