@@ -59,11 +59,11 @@
 -phase_lo -0.15
 -phase_hi  1.15
 
--Lambda 1.0                             # triple-junction penalty in F_tri
-                                        # (original physical value; was bumped to 1e4
-                                        # under prior model to force bounds, but that
-                                        # also destabilized any diffuse phi_a > 0 at the
-                                        # ice-sed contact under frozen sed — see commit log)
+-Lambda 0.0                             # triple-junction penalty in F_tri (disabled).
+                                        # Only relevant for 3-phase ice/sediment/vapor
+                                        # contact lines; the 2-phase (ice+vapor, no sediment)
+                                        # geometry has no triple junction so Lambda=0 is
+                                        # physically correct here.
 
 # ---------- Adaptive time stepping -------------------------------------------
 -dtmax 1.0e6                            # ~11.6 days; raised from 1.0e5 for multi-year
