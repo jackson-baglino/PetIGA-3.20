@@ -90,15 +90,15 @@
                                         # consecutive halvings and ran out at 25)
 
 # ---------- Nonlinear solver (SNES) ------------------------------------------
-# VI bounds disabled: testing whether the bound-constrained solve was causing
-# the kink/blip artifact in the tanh profile of the smaller grain. With
-# -vi_bounds 0, permafrost2.c skips SNESVISetVariableBounds() entirely.
-# Reverted to plain newtonls to match the pre-VI solver exactly.
-#
-# To re-enable VI: set -vi_bounds 1 and -snes_type vinewtonssls (vinewtonrsls
-# hits a PETSc parallel bug with MPIBAIJ; vinewtonssls is the working choice).
--vi_bounds 0
--snes_type newtonls
+# VI bound-constrained solve: enforces phi_ice in [vi_lo, vi_hi] at the DOF
+# level so no Newton step can push the field outside [0,1]. vinewtonssls is
+# the working parallel choice (vinewtonrsls hits a PETSc MPIBAIJ bug).
+# Strict 0/1 bounds: testing whether eliminating all phase violations removes
+# the mass loss seen in the unconstrained (newtonls) run.
+-vi_bounds 1
+-vi_lo 0.0
+-vi_hi 1.0
+-snes_type vinewtonssls
 -snes_max_it 50
 -snes_rtol 1e-06
 -snes_atol 1e-06
