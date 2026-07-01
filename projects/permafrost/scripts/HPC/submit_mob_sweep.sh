@@ -110,7 +110,7 @@ for mob in "${MOB_VALUES[@]}"; do
         --mail-type=END,FAIL \
         --constraint='icelake|skylake|cascadelake' \
         "${sbatch_extra[@]}" \
-        --wrap="srun -n $nprocs $EXEC \
+        --wrap="export folder=$out_dir && srun -n $nprocs $EXEC \
             -options_file $SOLVER_OPTS \
             -options_file $GEOM_OPTS \
             -options_file $EXP_OPTS \
