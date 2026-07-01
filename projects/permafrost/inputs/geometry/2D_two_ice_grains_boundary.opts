@@ -3,28 +3,27 @@
 # grains (smaller at x=0, larger at x=Lx) connected through a shared vapor
 # pore. Ostwald-ripening test for the 3-DOF (ice/T/vapor) model.
 #
-# Mesh refined 1.5x from the original 125x154 configuration (to address a
-# kink artifact in the tanh profile of the smaller grain observed after ~100
-# time steps).  eps is set so that exactly 7.5 elements span the diffuse
-# interface (calibrated via comp_eps.py):
+# eps and mesh sized by comp_eps.py (Kaempfer & Plapp 2009 bounds) at
+# T=-5°C, alpha_c=2e-3 (Libbrecht 2017), R_ave=14.06 µm, safety=0.5.
+# Binding bound: B-KINETIC = d0/(beta0*vn) = 9.707e-7 m → eps = 4.853e-7 m.
+# Mesh rule: h = eps, ~7.5 elements across the full diffuse interface.
 #
-#   dx = Lx / Nx = 4.123140e-05 / 188 = 2.1932e-07 m
-#   dy = Ly / Ny = 5.079708e-05 / 231 = 2.1990e-07 m
-#   eps = 2.5080e-07 m  (7.5 elements across the diffuse interface)
+#   dx = dy ≈ eps = 4.853e-07 m
+#   Nx = ceil(Lx / eps) = 85
+#   Ny = ceil(Ly / eps) = 105
 #
-# Domain size is unchanged (same grain radii and inter-grain gap):
-#   Lx = R0+R1 + 60*dx  -> Nx=188  (~60-element vapor gap between grains)
-#   Ly = 2*R1 + 2*30*dy -> Ny=231  (~30-element margin above/below the
-#                                    larger grain)
+# Physical parameters (set in permafrost2.c defaults):
+#   d0_sub0  = 9.6e-10 m   (capillary length gamma*Vm/(R*T) at -5°C)
+#   beta_sub0 = 9.9e5 s/m  (Hertz-Knudsen beta0 at alpha_c=2e-3, -5°C)
+#   d0_GT    = 9.6e-10 m   (set in experiment opts)
 #
-# Natural-Neumann (zero-flux) BCs are required at x=0/x=Lx for this IC —
-# each grain is centered exactly on its boundary, so the profile is
-# symmetric under reflection there. Override solver.opts' -periodic 1.
+# Natural-Neumann (zero-flux) BCs at x=0/x=Lx — each grain is centered
+# exactly on its boundary (symmetric under reflection). Overrides -periodic 1.
 # =============================================================================
 -ic_type two_ice_grains_boundary
 -dim 2
--Nx 188
--Ny 231
+-Nx 85
+-Ny 105
 -Nz 1
 -Lx 4.123140e-5
 -Ly 5.079708e-5
@@ -32,5 +31,5 @@
 -RCice0 9.375e-6
 -RCice1 1.875e-5
 -delt_t 1.0e-4
--eps 2.507983871e-07
+-eps 4.8534e-07
 -periodic 0

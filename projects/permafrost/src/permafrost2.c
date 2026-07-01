@@ -46,8 +46,9 @@ int main(int argc, char *argv[]) {
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
 
-    user.d0_sub0    = 1.0e-9;    /* capillary length scale (physical) */
-    user.beta_sub0  = 1.4e5;     /* kinetic coefficient (physical) */
+    user.d0_sub0    = 9.6e-10;   /* capillary length d0 = gamma*Vm/(R*T) at -5°C [m] */
+    user.beta_sub0  = 9.9e5;     /* beta0 = (1/alpha_c)*sqrt(2pi*m/kT)/(rho_vs/rho_i)
+                                  * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
 
     /* Surface energy parameters of the double-well free energy [J/m²]:
      *   F_dub(phi_i) = C*phi_i^2(1-phi_i)^2,  C = (Sigma_i+Sigma_a)/2 + Lambda
