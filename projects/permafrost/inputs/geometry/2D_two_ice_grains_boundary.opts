@@ -3,14 +3,16 @@
 # grains (smaller at x=0, larger at x=Lx) connected through a shared vapor
 # pore. Ostwald-ripening test for the 3-DOF (ice/T/vapor) model.
 #
-# eps and mesh sized by comp_eps.py (Kaempfer & Plapp 2009 bounds) at
-# T=-5°C, alpha_c=2e-3 (Libbrecht 2017), R_ave=14.06 µm, safety=0.25.
-# Binding bound: B-KINETIC = d0/(beta0*vn) = 9.707e-7 m → eps = 2.427e-7 m.
-# Mesh rule: h = eps, ~7.5 elements across the full diffuse interface.
+# eps sized by comp_eps.py (Kaempfer & Plapp 2009 bounds) at
+# T=-5°C, alpha_c=2e-3 (Libbrecht 2017), R_ave=14.06 µm, safety=0.5.
+# Binding bound: B-KINETIC = d0/(beta0*vn) = 9.707e-7 m → eps = 4.853e-7 m.
+# mob_sub and alph_sub are derived from this eps via K&P matching (permafrost2.c
+# lines 521-526); keeping eps at safety=0.5 leaves those kinetics unchanged.
 #
-#   dx = dy ≈ eps = 2.4267e-07 m
-#   Nx = ceil(Lx / eps) = 170
-#   Ny = ceil(Ly / eps) = 210
+# Mesh is twice as fine as the h=eps minimum (h = eps/2):
+#   dx = dy ≈ eps/2 = 2.4267e-07 m   (~15 elements across full diffuse interface)
+#   Nx = 2 * ceil(Lx / eps) = 170
+#   Ny = 2 * ceil(Ly / eps) = 210
 #
 # Physical parameters (set in permafrost2.c defaults):
 #   d0_sub0  = 9.6e-10 m   (capillary length gamma*Vm/(R*T) at -5°C)
@@ -31,5 +33,5 @@
 -RCice0 9.375e-6
 -RCice1 1.875e-5
 -delt_t 1.0e-4
--eps 2.4267e-07
+-eps 4.8534e-07
 -periodic 0
