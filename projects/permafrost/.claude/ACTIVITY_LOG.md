@@ -1,4 +1,149 @@
 
+---
+
+**Session ended:** 2026-07-01 14:29:14
+
+
+---
+
+**Session ended:** 2026-07-01 14:27:08
+
+
+---
+
+**Session ended:** 2026-07-01 14:25:35
+
+
+---
+
+**Session ended:** 2026-07-01 14:24:28
+
+
+---
+
+**Session ended:** 2026-07-01 14:06:34
+
+
+---
+
+**Session ended:** 2026-07-01 14:02:43
+
+
+---
+
+**Session ended:** 2026-07-01 13:55:50
+
+
+---
+
+**Session ended:** 2026-07-01 13:54:50
+
+
+---
+
+**Session ended:** 2026-07-01 13:49:22
+
+
+---
+
+**Session ended:** 2026-07-01 13:44:43
+
+
+---
+
+**Session ended:** 2026-07-01 13:39:51
+
+
+---
+
+**Session ended:** 2026-07-01 13:29:14
+
+
+---
+
+**Session ended:** 2026-07-01 13:25:47
+
+
+---
+
+**Session ended:** 2026-07-01 12:22:34
+
+
+---
+
+**Session ended:** 2026-07-01 12:16:29
+
+
+---
+
+**Session ended:** 2026-07-01 11:59:31
+
+
+---
+
+**Session ended:** 2026-06-30 16:53:27
+
+
+---
+
+**Session ended:** 2026-06-30 16:41:48
+
+
+---
+
+**Session ended:** 2026-06-30 16:37:08
+
+
+---
+
+**Session ended:** 2026-06-30 16:36:26
+
+
+---
+
+**Session ended:** 2026-06-30 15:58:49
+
+
+---
+
+**Session ended:** 2026-06-30 15:57:31
+
+
+---
+
+**Session ended:** 2026-06-30 15:56:47
+
+
+---
+
+**Session ended:** 2026-06-30 15:56:42
+
+
+---
+
+**Session ended:** 2026-06-30 15:26:36
+
+
+---
+
+**Session ended:** 2026-06-29 15:54:09
+
+
+---
+
+**Session ended:** 2026-06-29 15:46:31
+
+
+---
+
+**Session ended:** 2026-06-29 15:35:53
+
+
+---
+
+**Session ended:** 2026-06-29 15:32:13
+
+
 ## 2026-06-29 — Switch to p=2/C1 basis, refine 2D two-grain mesh, overhaul parameter print
 
 - Identified that all simulations were using linear basis (p=1, C=0) due to explicit settings in `inputs/solver.opts`; changed to p=2, C=1 (quadratic/C1) globally as the new default — both in `solver.opts` and the `permafrost2.c` code defaults.
