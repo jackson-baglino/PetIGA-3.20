@@ -1,4 +1,17 @@
 
+## 2026-07-01 — mob_sub sweep scripts + mesh/eps/kinetics decoupling
+
+- Tightened K&P bounds: safety 0.5 → 0.25, eps halved to 2.4267e-7, Nx/Ny doubled to 170/210.
+- Decoupled mesh refinement from kinetics: eps follows h=eps rule (~7.5 elements/interface); mob_sub and alph_sub frozen at safety=0.5 K&P values (6.5404e-10, 2.8363e6) via explicit opts overrides in geometry file.
+- Added Studio mob_sub sweep script (scripts/Studio/run_mob_sweep.sh) for local sequential runs.
+- Added HPC mob_sub sweep (scripts/HPC/submit_mob_sweep.sh): fans out one SLURM job per value via --wrap, each with its own subfolder under a shared parent; fixed bug where BATCH_OUT_DIR caused all jobs to write to the same folder (geom__exp naming collision).
+- Saved memory: always push to GitHub before giving HPC run commands.
+
+---
+
+**Session ended:** 2026-07-01 14:32:36
+
+
 ---
 
 **Session ended:** 2026-07-01 14:29:14
