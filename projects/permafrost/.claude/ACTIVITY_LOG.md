@@ -1,6 +1,31 @@
 
 ---
 
+## 2026-07-02 — IC eps fix; smaller mob_sub sweep
+
+- Analysed 30-day mob_sub sweep: ΔiceVol% = ΔtotMass% to 4 decimal places in every case — ice disappears without converting to vapor. Root cause: AC and vapor fully decoupled; non-conserved AC motion deletes ice volume.
+- Best performer: mob_6.5e-12 (3.21% loss in 31 days). All 6 cases ran to completion, no SNES divergences.
+- Fixed IC/residual eps mismatch: all circular-grain IC functions now use eps_model = 0.75*user->eps for tc, matching Residual_A1/Jacobian_A1. Removes the permanent AC driving force from the IC/model mismatch.
+- Updated mob_sub sweep values: kp_default, 6.5e-12, 6.5e-13, 6.5e-14, 6.5e-15 (focused below previous best).
+- Committed and pushed: 3b0d78c.
+
+---
+
+**Session ended:** 2026-07-02 12:45:17
+
+
+---
+
+**Session ended:** 2026-07-02 12:32:16
+
+
+---
+
+**Session ended:** 2026-07-02 12:18:34
+
+
+---
+
 ## 2026-07-02 — Remove couple/decouple mechanism; comment out sublimation in assembly.c
 
 - Diagnosed three-bump artifact: sublimation was ON in recent runs (30day_T-5_h1.00_GTphys.opts does not zero alph_sub), combined with the 0.75×eps residual/IC mismatch and mob_sub being 4× below K&P at safety=0.125 → mode-3 instability on small grain.
