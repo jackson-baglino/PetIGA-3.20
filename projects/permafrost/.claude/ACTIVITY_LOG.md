@@ -1,4 +1,19 @@
 
+---
+
+## 2026-07-02 — Remove couple/decouple mechanism; comment out sublimation in assembly.c
+
+- Diagnosed three-bump artifact: sublimation was ON in recent runs (30day_T-5_h1.00_GTphys.opts does not zero alph_sub), combined with the 0.75×eps residual/IC mismatch and mob_sub being 4× below K&P at safety=0.125 → mode-3 instability on small grain.
+- Removed `couple` variable and all `couple * ...` terms from R_tem, R_vap, and corresponding Jacobian blocks (J[tem,ice], J[vap,ice], J[vap,vap]). The decouple_phase_change switch was diagnostic scaffolding that added complexity without benefit.
+- Commented out S_sub from R_ice and all downstream variables (alph_sub, loc, rho_vs, kappa, rhoI_vs_eff, hessian reads, N2 shape funs), and corresponding Jacobian blocks. Commented code preserved for future re-activation.
+- Build: zero warnings from our code.
+- Committed and pushed: `27396c5` on `rewrite/2phase-from-equations`.
+
+---
+
+**Session ended:** 2026-07-01 19:04:33
+
+
 ## 2026-07-01 — Mesh refinement to safety=0.125, eps/R diagnostic, untuned mob_sub sweep
 
 - Investigated user's "missing factor of 2" question: traced it to a geometric accuracy constraint. B-KINETIC gives eps_max ≈ R_small/10, so safety=0.5 → eps/R=5% (borderline) and safety=0.25 → eps/R=2.6% (minimum acceptable). No formula error; the safety parameter needed to be ≤0.25 for this grain size.
