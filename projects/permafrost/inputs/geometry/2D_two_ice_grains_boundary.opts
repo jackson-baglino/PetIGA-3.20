@@ -4,19 +4,20 @@
 # pore. Ostwald-ripening test for the 3-DOF (ice/T/vapor) model.
 #
 # eps and mesh sized by comp_eps.py (Kaempfer & Plapp 2009 bounds) at
-# T=-5°C, alpha_c=2e-3 (Libbrecht 2017), R_ave=14.06 µm, safety=0.25.
-# Binding bound: B-KINETIC = d0/(beta0*vn) = 9.707e-7 m → eps = 2.427e-7 m.
+# T=-5°C, alpha_c=2e-3 (Libbrecht 2017), R_min=9.375 µm, safety=0.125.
+# Binding bound: B-KINETIC = d0/(beta0*vn) = 9.707e-7 m → eps = 1.213e-7 m.
 # Mesh rule: h = eps, ~7.5 elements across the full diffuse interface.
+# eps/R_min = 1.3% — well within the sharp-interface accuracy limit (<5%).
 #
-#   dx = dy ≈ eps = 2.4267e-07 m
-#   Nx = ceil(Lx / eps) = 170
-#   Ny = ceil(Ly / eps) = 210
+#   dx = dy ≈ eps = 1.2133e-07 m
+#   Nx = ceil(Lx / eps) = 340
+#   Ny = ceil(Ly / eps) = 419
 #
 # Kinetic parameters are pinned at their safety=0.5 values (eps=4.8534e-7)
-# via explicit overrides below. At eps_fine, K&P matching would double
-# mob_sub and alph_sub; the overrides freeze them to avoid worsening mass
-# loss from the finer mesh. Experiment opts may still override alph_sub
-# (e.g. -alph_sub 0 for decoupled AC-only runs).
+# via explicit overrides below. At eps_fine, K&P matching would scale
+# mob_sub and alph_sub inversely with eps; the overrides freeze them below
+# their K&P values to reduce AC-driven mass loss. Experiment opts may still
+# override alph_sub (e.g. -alph_sub 0 for decoupled AC-only runs).
 #
 #   mob_sub  = 6.5404e-10  (K&P at eps=4.8534e-7, a1=5, a2=0.1581)
 #   alph_sub = 2.8363e+06  (K&P at eps=4.8534e-7)
@@ -31,8 +32,8 @@
 # =============================================================================
 -ic_type two_ice_grains_boundary
 -dim 2
--Nx 170
--Ny 210
+-Nx 340
+-Ny 419
 -Nz 1
 -Lx 4.123140e-5
 -Ly 5.079708e-5
@@ -40,7 +41,7 @@
 -RCice0 9.375e-6
 -RCice1 1.875e-5
 -delt_t 1.0e-4
--eps 2.4267e-07
+-eps 1.2133e-07
 -mob_sub 6.5404e-10
 -alph_sub 2.8363e6
 -periodic 0
