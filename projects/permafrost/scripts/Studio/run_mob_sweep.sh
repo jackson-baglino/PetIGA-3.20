@@ -30,9 +30,14 @@ GEOM_OPTS="$INPUTS_DIR/geometry/${GEOM}.opts"
 EXP_OPTS="$INPUTS_DIR/experiment/${EXP}.opts"
 
 # mob_sub values to sweep (log-spaced: baseline → 100× reduction)
+#
+# "kp_default" is a special sentinel: the geometry opts -mob_sub override is
+# stripped so the executable computes mob_sub via K&P matching at the actual
+# eps in the opts file. This is the physically-correct but untuned reference.
 MOB_VALUES=(
-    6.5404e-10   # K&P baseline (safety=0.5); reference
-    1.3e-10      #  5× reduction
+    kp_default   # K&P-computed at current eps (untuned reference)
+    6.5404e-10   # frozen at safety=0.5 K&P values; baseline
+    1.3e-10      #  5× reduction relative to safety=0.5 baseline
     6.5e-11      # 10× reduction
     1.3e-11      # 50× reduction
     6.5e-12      # 100× reduction
@@ -73,8 +78,21 @@ for mob in "${MOB_VALUES[@]}"; do
     folder="$RESULTS_BASE/$GEOM/${ts}_${EXP}_${tag}"
     mkdir -p "$folder"
     cp "$SOLVER_OPTS" "$folder/"
-    cp "$GEOM_OPTS"   "$folder/"
     cp "$EXP_OPTS"    "$folder/"
+
+    geom_copy="$folder/$(basename "$GEOM_OPTS")"
+    cp "$GEOM_OPTS" "$geom_copy"
+
+    # kp_default: strip the frozen -mob_sub line so the executable uses K&P
+    # matching at the current eps; all other cases pass -mob_sub explicitly.
+    if [[ "$mob" == "kp_default" ]]; then
+        sed -i '' '/^-mob_sub/d' "$geom_copy"
+        mob_arg=()
+        run_geom="$geom_copy"
+    else
+        mob_arg=(-mob_sub "$mob")
+        run_geom="$GEOM_OPTS"
+    fi
 
     echo ""
     echo "=========================================================================="
@@ -86,10 +104,10 @@ for mob in "${MOB_VALUES[@]}"; do
     set +e
     mpiexec -np "$NPROCS" "$EXEC"       \
         -options_file "$SOLVER_OPTS"    \
-        -options_file "$GEOM_OPTS"      \
+        -options_file "$run_geom"       \
         -options_file "$EXP_OPTS"       \
         -output_path  "$folder"         \
-        -mob_sub      "$mob"            \
+        "${mob_arg[@]}"                 \
         2>&1 | tee "$folder/outp.txt"
     exit_code=${PIPESTATUS[0]}
     set -e
