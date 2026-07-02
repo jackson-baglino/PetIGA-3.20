@@ -206,12 +206,13 @@ PetscErrorCode FormInitialSingleIceGrain2D(IGA iga, Vec U, AppCtx *user)
     PetscFunctionBegin;
 
     const PetscReal Lx    = user->Lx;
-    const PetscReal Ly    = user->Ly;
-    const PetscReal eps   = user->eps;
-    const PetscReal RCice = user->RCice;
-    const PetscReal tc    = 1.0 / (PetscSqrtReal(2.0) * eps);
-    const PetscReal cx    = 0.5 * Lx;
-    const PetscReal cy    = 0.5 * Ly;
+    const PetscReal Ly        = user->Ly;
+    const PetscReal eps       = user->eps;
+    const PetscReal eps_model = 0.75 * eps;  /* must match Residual_A1/Jacobian_A1 */
+    const PetscReal RCice     = user->RCice;
+    const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps_model);
+    const PetscReal cx        = 0.5 * Lx;
+    const PetscReal cy        = 0.5 * Ly;
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (2D single ice grain) ---\n"
@@ -272,11 +273,12 @@ PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user)
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    const PetscReal Lx    = user->Lx;
-    const PetscReal eps   = user->eps;
-    const PetscReal RCice = user->RCice;
-    const PetscReal tc    = 1.0 / (PetscSqrtReal(2.0) * eps);
-    const PetscReal cx    = 0.5 * Lx;
+    const PetscReal Lx        = user->Lx;
+    const PetscReal eps       = user->eps;
+    const PetscReal eps_model = 0.75 * eps;  /* must match Residual_A1/Jacobian_A1 */
+    const PetscReal RCice     = user->RCice;
+    const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps_model);
+    const PetscReal cx        = 0.5 * Lx;
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (1D single ice grain) ---\n"
@@ -411,10 +413,11 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
 
     const PetscReal Lx  = user->Lx;
     const PetscReal Ly  = user->Ly;
-    const PetscReal eps = user->eps;
-    const PetscReal R0  = user->RCice0;   /* left grain (x=0), smaller  */
-    const PetscReal R1  = user->RCice1;   /* right grain (x=Lx), larger */
-    const PetscReal tc  = 1.0 / (PetscSqrtReal(2.0) * eps);
+    const PetscReal eps       = user->eps;
+    const PetscReal eps_model = 0.75 * eps;  /* must match Residual_A1/Jacobian_A1 */
+    const PetscReal R0        = user->RCice0;   /* left grain (x=0), smaller  */
+    const PetscReal R1        = user->RCice1;   /* right grain (x=Lx), larger */
+    const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps_model);
 
     const PetscReal c0x = 0.0,  c0y = 0.5 * Ly;
     const PetscReal c1x = Lx,   c1y = 0.5 * Ly;
@@ -497,9 +500,10 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
 
     const PetscReal Lx  = user->Lx;
     const PetscReal Ly  = user->Ly;
-    const PetscReal eps = user->eps;
-    const PetscReal tc  = 1.0 / (PetscSqrtReal(2.0) * eps);
-    const PetscInt  ng  = user->n_act;
+    const PetscReal eps       = user->eps;
+    const PetscReal eps_model = 0.75 * eps;  /* must match Residual_A1/Jacobian_A1 */
+    const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps_model);
+    const PetscInt  ng        = user->n_act;
 
     if (ng <= 0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,

@@ -44,11 +44,10 @@ EXP_OPTS="$PROJ/inputs/experiment/${EXP}.opts"
 # ---------------------------------------------------------------------------
 MOB_VALUES=(
     kp_default   # K&P-computed at current eps (untuned reference)
-    6.5404e-10   # frozen at safety=0.5 K&P values; baseline
-    1.3e-10      #  5× reduction relative to safety=0.5 baseline
-    6.5e-11      # 10× reduction
-    1.3e-11      # 50× reduction
-    6.5e-12      # 100× reduction
+    6.5e-12      # best from prev sweep; baseline for IC-fix comparison
+    6.5e-13      # 10× below 6.5e-12
+    6.5e-14      # 100× below 6.5e-12
+    6.5e-15      # 1000× below 6.5e-12
 )
 
 # ---------------------------------------------------------------------------
