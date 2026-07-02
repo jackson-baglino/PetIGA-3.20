@@ -1,4 +1,47 @@
 
+## 2026-07-01 — Mesh refinement to safety=0.125, eps/R diagnostic, untuned mob_sub sweep
+
+- Investigated user's "missing factor of 2" question: traced it to a geometric accuracy constraint. B-KINETIC gives eps_max ≈ R_small/10, so safety=0.5 → eps/R=5% (borderline) and safety=0.25 → eps/R=2.6% (minimum acceptable). No formula error; the safety parameter needed to be ≤0.25 for this grain size.
+- Added eps/R_grain geometric accuracy diagnostic to comp_eps.py: flags BORDERLINE (5–10%) and VIOLATED (>10%) with actionable messages.
+- Refined geometry opts to safety=0.125: eps=1.2133e-7 m, Nx=340, Ny=419 (4× the DOFs). eps/R_small=1.3% — well into the accurate regime. mob_sub and alph_sub remain frozen at safety=0.5 K&P values.
+- Added `kp_default` sentinel to both sweep scripts (HPC and Studio): strips the frozen -mob_sub line from the geometry opts copy so the code computes mob_sub via K&P matching at the actual eps. Serves as untuned physical reference alongside the reduced-mobility runs.
+- Observed three-bump artifact on large grain at mob_sub=6.5404e-10 in sweep results: identified as mesh-induced interface faceting. Expected to improve significantly with the new finer mesh (eps 2× smaller relative to grain).
+
+---
+
+**Session ended:** 2026-07-01 18:24:34
+
+
+---
+
+**Session ended:** 2026-07-01 18:21:54
+
+
+---
+
+**Session ended:** 2026-07-01 17:50:18
+
+
+---
+
+**Session ended:** 2026-07-01 17:45:32
+
+
+---
+
+**Session ended:** 2026-07-01 17:41:20
+
+
+---
+
+**Session ended:** 2026-07-01 15:00:02
+
+
+---
+
+**Session ended:** 2026-07-01 14:41:45
+
+
 ## 2026-07-01 — mob_sub sweep scripts + mesh/eps/kinetics decoupling
 
 - Tightened K&P bounds: safety 0.5 → 0.25, eps halved to 2.4267e-7, Nx/Ny doubled to 170/210.
