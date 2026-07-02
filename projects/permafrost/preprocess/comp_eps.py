@@ -259,6 +259,21 @@ def compute_eps(
     # Warn if eps is within 2x of the binding bound (safety may be too loose)
     eps_ratio = eps / eps_max   # = safety; included for completeness
 
+    # eps/R geometric accuracy warning (sharp-interface limit: eps << R_grain)
+    eps_over_Rave = eps / Rave if Rave > 0 else 0.0
+    geom_warn = None
+    if eps_over_Rave > 0.10:
+        geom_warn = (
+            f"WARNING: eps/R_ave = {eps_over_Rave:.1%} > 10%. The sharp-interface "
+            f"approximation is severely violated; curvature-driven dynamics will be "
+            f"substantially wrong. Reduce safety or use smaller grain simulations."
+        )
+    elif eps_over_Rave > 0.05:
+        geom_warn = (
+            f"NOTE: eps/R_ave = {eps_over_Rave:.1%} (5–10%). The Gibbs-Thomson "
+            f"condition is borderline accurate. Consider reducing safety by 2×."
+        )
+
     return dict(
         # --- chosen eps and mesh ---
         eps=eps,
@@ -282,6 +297,9 @@ def compute_eps(
         safety=safety,
         xi_v_max=xi_v_max,
         xi_v_warn=xi_v_warn,
+        Rave=Rave,
+        eps_over_Rave=eps_over_Rave,
+        geom_warn=geom_warn,
     )
 
 
@@ -381,6 +399,15 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
     Pe_status = "OK (≪ 1)" if p["Pe"] < 0.1 else ("borderline" if p["Pe"] < 1.0 else "VIOLATED — Pe ≥ 1!")
     print(f"  Pe = eps·vₙ/Dᵥ   = {p['Pe']:.4e}  [{Pe_status}]")
     print(f"  (K&P: should remain ≪ 1 for the sharp-interface analogy to hold)")
+
+    print(f"\n--- Geometric accuracy check (sharp-interface limit: eps ≪ R_grain) ---")
+    geom_status = ("OK (< 5%)" if p["eps_over_Rave"] < 0.05
+                   else ("BORDERLINE (5–10%)" if p["eps_over_Rave"] < 0.10
+                         else "VIOLATED (> 10%)"))
+    print(f"  eps / R_ave       = {p['eps_over_Rave']:.1%}  [{geom_status}]")
+    print(f"  (Gibbs-Thomson curvature error scales as eps/R; need eps/R ≲ 5%)")
+    if p["geom_warn"]:
+        print(f"  {p['geom_warn']}")
 
     print(f"\n--- ξᵥ validity check (K&P Eq. 48) ---")
     print(f"  ξᵥ hard upper bound = ρ_vs/ρᵢ = {p['xi_v_max']:.4e}")
