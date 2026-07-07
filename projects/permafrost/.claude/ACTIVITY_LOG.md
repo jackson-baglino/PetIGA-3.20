@@ -1,4 +1,49 @@
 
+## 2026-07-07 — Restore phase-change coupling via ice_t in T and vapor equations
+
+- Restored sublimation source `S_sub` in the Allen-Cahn (ice) equation.
+- Changed latent-heat coupling in `R_tem` from S_sub to full `ice_t = d(phi_i)/dt`, making AC interface motion thermodynamically consistent.
+- Changed mass-exchange coupling in `R_vap` from S_sub to full `ice_t`, ensuring global mass conservation by construction.
+- Updated Jacobian_A1 consistently: restored sublimation derivatives for J[ice][*]; added latent-heat term to J[tem][ice]; added mass-coupling terms to J[vap][ice] and J[vap][rhov].
+- Restored hessian computation (needed for optional Gibbs-Thomson curvature correction via d0_GT).
+- Updated `2D_two_ice_grains_boundary.opts` with new comp_eps.py values: eps=4.8534e-7 m, Nx=85, Ny=105 (T=-5°C, alpha_c=2e-3, safety=0.5).
+- Committed and pushed to `rewrite/2phase-from-equations`.
+
+---
+
+**Session ended:** 2026-07-06 17:21:14
+
+
+---
+
+**Session ended:** 2026-07-06 17:15:41
+
+
+---
+
+**Session ended:** 2026-07-06 17:13:01
+
+
+---
+
+**Session ended:** 2026-07-05 17:53:25
+
+
+---
+
+**Session ended:** 2026-07-03 11:12:18
+
+
+---
+
+**Session ended:** 2026-07-02 13:24:27
+
+
+---
+
+**Session ended:** 2026-07-02 12:54:55
+
+
 ---
 
 ## 2026-07-02 — IC eps fix; smaller mob_sub sweep
