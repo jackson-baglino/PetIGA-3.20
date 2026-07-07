@@ -13,14 +13,13 @@
 #   Nx = ceil(Lx / eps) = 340
 #   Ny = ceil(Ly / eps) = 419
 #
-# Kinetic parameters are pinned at their safety=0.5 values (eps=4.8534e-7)
-# via explicit overrides below. At eps_fine, K&P matching would scale
-# mob_sub and alph_sub inversely with eps; the overrides freeze them below
-# their K&P values to reduce AC-driven mass loss. Experiment opts may still
-# override alph_sub (e.g. -alph_sub 0 for decoupled AC-only runs).
-#
-#   mob_sub  = 6.5404e-10  (K&P at eps=4.8534e-7, a1=5, a2=0.1581)
-#   alph_sub = 2.8363e+06  (K&P at eps=4.8534e-7)
+# Kinetic parameters (mob_sub, alph_sub) are NOT overridden here; they are
+# computed internally in permafrost2.c via K&P/M&F matching at the current
+# eps (lines 521-526). At eps = 1.2133e-7 m:
+#   mob_sub  ≈ 2.652e-09  (K&P at eps=1.2133e-7, a1=5, a2=0.1581)
+#   alph_sub ≈ 1.150e+07  (K&P at eps=1.2133e-7)
+# Experiment opts may still override alph_sub (e.g. -alph_sub 0 for
+# decoupled AC-only runs) or mob_sub for sweep studies.
 #
 # Physical parameters (set in permafrost2.c defaults):
 #   d0_sub0  = 9.6e-10 m   (capillary length gamma*Vm/(R*T) at -5°C)
@@ -42,6 +41,4 @@
 -RCice1 1.875e-5
 -delt_t 1.0e-4
 -eps 1.2133e-07
--mob_sub 6.5404e-10
--alph_sub 2.8363e6
 -periodic 0
