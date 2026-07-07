@@ -4,35 +4,37 @@
 # pore. Ostwald-ripening test for the 3-DOF (ice/T/vapor) model.
 #
 # eps and mesh sized by comp_eps.py (Kaempfer & Plapp 2009 bounds) at
-# T=-5°C, alpha_c=2e-3 (Libbrecht 2017), R_min=9.375 µm, safety=0.125.
-# Binding bound: B-KINETIC = d0/(beta0*vn) = 9.707e-7 m → eps = 1.213e-7 m.
+# T=-5°C, alpha_c=2e-3 (Libbrecht 2017), R_min=9.375 µm, safety=0.5.
+# Binding bound: B-KINETIC = d0/(beta0*vn) = 9.707e-7 m → eps_max = 9.707e-7 m.
+# eps = 0.5 * 9.707e-7 = 4.8534e-7 m.
 # Mesh rule: h = eps, ~7.5 elements across the full diffuse interface.
-# eps/R_min = 1.3% — well within the sharp-interface accuracy limit (<5%).
+# eps/R_min = 5.2% — borderline but acceptable (< 10% limit).
 #
-#   dx = dy ≈ eps = 1.2133e-07 m
-#   Nx = ceil(Lx / eps) = 340
-#   Ny = ceil(Ly / eps) = 419
+#   dx = dy ≈ eps = 4.8534e-07 m
+#   Nx = ceil(Lx / eps) = 85
+#   Ny = ceil(Ly / eps) = 105
 #
 # Kinetic parameters (mob_sub, alph_sub) are NOT overridden here; they are
 # computed internally in permafrost2.c via K&P/M&F matching at the current
-# eps (lines 521-526). At eps = 1.2133e-7 m:
-#   mob_sub  ≈ 2.652e-09  (K&P at eps=1.2133e-7, a1=5, a2=0.1581)
-#   alph_sub ≈ 1.150e+07  (K&P at eps=1.2133e-7)
-# Experiment opts may still override alph_sub (e.g. -alph_sub 0 for
-# decoupled AC-only runs) or mob_sub for sweep studies.
+# eps. At eps = 4.8534e-7 m, T=-5°C, alpha_c=2e-3:
+#   mob_sub  = 6.5458e-10  m/s     (K&P/M&F: eps/(3*tau_sub))
+#   alph_sub = 2.8393e+06  1/s     (K&P/M&F: lam_sub/tau_sub)
+#   tau_sub  = 2.4715e+02  s
+#   lam_sub  = 7.0173e+08
+# Experiment opts may still override alph_sub or mob_sub for sweep studies.
 #
 # Physical parameters (set in permafrost2.c defaults):
-#   d0_sub0  = 9.6e-10 m   (capillary length gamma*Vm/(R*T) at -5°C)
-#   beta_sub0 = 9.9e5 s/m  (Hertz-Knudsen beta0 at alpha_c=2e-3, -5°C)
-#   d0_GT    = 9.6e-10 m   (set in experiment opts)
+#   d0_sub   = 9.5975e-10 m   (capillary length gamma*Vm/(R*T) at -5°C)
+#   beta_sub0 = 9.8875e+05 s/m  (Hertz-Knudsen beta0 at alpha_c=2e-3, -5°C)
+#   d0_GT    = 0 by default (set in experiment opts if GT coupling desired)
 #
 # Natural-Neumann (zero-flux) BCs at x=0/x=Lx — each grain is centered
 # exactly on its boundary (symmetric under reflection). Overrides -periodic 1.
 # =============================================================================
 -ic_type two_ice_grains_boundary
 -dim 2
--Nx 340
--Ny 419
+-Nx 85
+-Ny 105
 -Nz 1
 -Lx 4.123140e-5
 -Ly 5.079708e-5
@@ -40,5 +42,5 @@
 -RCice0 9.375e-6
 -RCice1 1.875e-5
 -delt_t 1.0e-4
--eps 1.2133e-07
+-eps 4.8534e-07
 -periodic 0

@@ -8,9 +8,11 @@
  * Free energy: single double-well in phi_i,
  *   f1(phi_i) = phi_i*(1-phi_i)*(1-2*phi_i)
  *
- * Ice (Allen-Cahn — pure curvature relaxation; sublimation source off):
+ * Ice (Allen-Cahn with sublimation source):
  *   R_ice = N0[a]*ice_t + 3*mob_sub*eps*grad_N.grad_ice
  *         + (3*mob_sub/eps)*f1(phi_i)*N0[a]
+ *         - S_sub*N0[a]
+ *   where S_sub = alph_sub * phi_i^2*phi_a^2 * (rhov - rhovs_eff) / rho_ice
  *
  * This is the met=0 reduction of dry_snow_metamorphism's 3-phase ice
  * equation: R_ice += mob*3/eps/ETA * ((Etam+Etaa)*fice - Etaa*fmet - Etam*fair).
@@ -18,13 +20,20 @@
  * collapses to mob*3/eps*f1(ice) -- Sigma_i/Sigma_a/Lambda all cancel and
  * play no role in a true 2-phase (no third phase) system.
  *
- * Temperature (row-scaled by S_T = 1/(rho_ice*lat_sub), numerical
- * preconditioning only — no latent-heat source while sublimation is off):
+ * Temperature (row-scaled by S_T = 1/(rho_ice*lat_sub)):
  *   R_tem = rho*cp*N0[a]*tem_t + thcond*grad_N.grad_tem
+ *         - rho_ice*lat_sub*ice_t*N0[a]
+ *   The latent-heat source couples through the full d(phi_i)/dt = ice_t, not
+ *   just S_sub, so Allen-Cahn interface motion (curvature relaxation) also
+ *   drives latent-heat release and is thermodynamically consistent.
  *
- * Vapor (air_lim floor as in dry_snow_metamorphism):
+ * Vapor (air_lim floor; mass exchange through full ice_t):
  *   R_vap = N0[a]*air_eff*rhov_t + difvap*air_eff*grad_N.grad_rhov
+ *         + (rho_ice - rhov)*ice_t*N0[a]
  *   air_eff = (air > air_lim) ? air : air_lim,   air = 1 - ice
+ *   Coupling through ice_t ensures global mass conservation: any ice-phase
+ *   change — from AC kinetics or sublimation — appears as an equal-and-
+ *   opposite vapor density change.
  * ========================================================================= */
 
 /* Double-well derivative f1(phi_i) = phi_i(1-phi_i)(1-2phi_i) and its
@@ -65,7 +74,6 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscScalar ice   = sol[0],  ice_t  = sol_t[0];
     PetscScalar tem   = sol[1],  tem_t  = sol_t[1];
     PetscScalar rhov  = sol[2],  rhov_t = sol_t[2];
-    (void)rhov; /* used only in the commented-out sublimation source below */
     PetscScalar grad_ice [dim];
     PetscScalar grad_tem [dim], grad_rhov[dim];
     for (l = 0; l < dim; l++) {
@@ -75,12 +83,11 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     }
     PetscScalar air = 1.0 - ice;
 
-    /* Sublimation/GT terms are commented out; hessian no longer needed.
+    /* Hessian of ice for optional Gibbs-Thomson curvature correction. */
     PetscScalar hess_sol[3][dim][dim];
     IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
     PetscScalar hess_ice[dim * dim];
     for (l = 0; l < dim * dim; l++) hess_ice[l] = hess_sol[0][l / dim][l % dim];
-    */
 
     /* SNES domain-error catch — if a trial Newton iterate has phi out of the
      * configured bounds, signal an invalid state so the line search backs off
@@ -110,12 +117,13 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     VaporDiffus(user, tem,    &dif_vap, NULL);
     Mobility   (user, ice_c, &mob_sub);
 
-    /* Gibbs-Thomson curvature correction (sublimation off; commented out).
+    /* Saturation vapor density and Gibbs-Thomson curvature correction. */
+    PetscReal rho_vs;
+    RhoVS_I(user, PetscRealPart(tem), &rho_vs, NULL);
     PetscScalar kappa = 0.0;
     if (user->d0_GT != 0.0)
         Curvature(dim, grad_ice, hess_ice, 0.01 / eps, &kappa, NULL, NULL);
     PetscReal rhoI_vs_eff = rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
-    */
 
     PetscReal f1;
     DoubleWellDeriv(PetscRealPart(ice_c), &f1, NULL);
@@ -124,11 +132,10 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal air_r = PetscRealPart(air_c);
     PetscReal air_eff = (air_r > air_lim) ? air_r : air_lim;
 
-    /* Phase-change source (sublimation off; commented out).
+    /* Phase-change localization and sublimation source. */
     PetscReal loc   = PetscRealPart(ice_c) * PetscRealPart(ice_c)
                     * air_r * air_r;
-    PetscReal S_sub = alph_sub * loc * (PetscRealPart(rhov) - rhoI_vs_eff) / rho_ice;
-    */
+    PetscReal S_sub = user->alph_sub * loc * (PetscRealPart(rhov) - rhoI_vs_eff) / rho_ice;
 
     /* T-equation row-scale (numerical preconditioning; no physics change). */
     PetscReal S_T = 1.0 / (rho_ice * lat_sub);
@@ -151,13 +158,18 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
         PetscScalar R_ice = N0[a] * ice_t
                           + 3.0 * mob_sub * eps * grad_N_dot_grad_ice
-                          + (3.0 * mob_sub / eps) * f1 * N0[a];
+                          + (3.0 * mob_sub / eps) * f1 * N0[a]
+                          - S_sub * N0[a];
 
+        /* Latent heat couples through ice_t (full d(phi_i)/dt, not just S_sub). */
         PetscScalar R_tem = rho * cp * N0[a] * tem_t
-                          + thcond * grad_N_dot_grad_tem;
+                          + thcond * grad_N_dot_grad_tem
+                          - rho_ice * lat_sub * ice_t * N0[a];
 
+        /* Mass conservation couples through ice_t: rho_ice*d(phi_i)/dt = -d(phi_a*rhov)/dt. */
         PetscScalar R_vap = N0[a] * air_eff * rhov_t
-                          + dif_vap * air_eff * grad_N_dot_grad_rhov;
+                          + dif_vap * air_eff * grad_N_dot_grad_rhov
+                          + (rho_ice - PetscRealPart(rhov)) * ice_t * N0[a];
 
         R[a][0] = R_ice;
         R[a][1] = S_T * R_tem;
@@ -205,10 +217,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     IGAPointFormValue(pnt, U, &sol[0]);
     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
 
-    PetscScalar ice    = sol[0];
+    PetscScalar ice    = sol[0],  ice_t = sol_t[0];
     PetscScalar tem    = sol[1];
     PetscScalar rhov   = sol[2],  rhov_t = sol_t[2];
-    (void)rhov; /* used only in the commented-out sublimation Jacobian terms below */
     PetscScalar grad_ice[dim];
     PetscScalar grad_tem[dim], grad_rhov[dim];
     for (l = 0; l < dim; l++) {
@@ -218,12 +229,11 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     }
     PetscScalar air = 1.0 - ice;
 
-    /* Hessian of ice for GT-curvature derivatives (sublimation off; commented out).
+    /* Hessian of ice for Gibbs-Thomson curvature derivatives. */
     PetscScalar hess_sol[3][dim][dim];
     IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
     PetscScalar hess_ice[dim * dim];
     for (l = 0; l < dim * dim; l++) hess_ice[l] = hess_sol[0][l / dim][l % dim];
-    */
 
     /* Clamp copies for material-property evaluation */
     PetscScalar ice_c = ice, air_c = air;
@@ -246,7 +256,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscReal d_dif_vap;
     VaporDiffus(user, tem, NULL, &d_dif_vap);
 
-    /* Gibbs-Thomson curvature correction (sublimation off; commented out).
+    /* Saturation vapor density and Gibbs-Thomson curvature correction. */
+    PetscReal rho_vs, d_rho_vs;
+    RhoVS_I(user, PetscRealPart(tem), &rho_vs, &d_rho_vs);
     PetscScalar kappa = 0.0;
     PetscScalar dkappa_dg[3] = {0.0, 0.0, 0.0};
     PetscScalar dkappa_dH[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -254,7 +266,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
         Curvature(dim, grad_ice, hess_ice, 0.01 / eps, &kappa, dkappa_dg, dkappa_dH);
     PetscReal rhoI_vs_eff        = rho_vs   * (1.0 + user->d0_GT * PetscRealPart(kappa));
     PetscReal d_rhoI_vs_eff_dtem = d_rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
-    */
 
     PetscReal df1;
     DoubleWellDeriv(PetscRealPart(ice_c), NULL, &df1);
@@ -264,11 +275,10 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscBool air_above_lim = (air_r > air_lim) ? PETSC_TRUE : PETSC_FALSE;
     PetscReal air_eff = air_above_lim ? air_r : air_lim;
 
-    /* loc and its ice-derivative (sublimation off; commented out).
+    /* Phase-change localization and its ice-derivative for sublimation Jacobian. */
     PetscReal loc       = PetscRealPart(ice_c) * PetscRealPart(ice_c) * air_r * air_r;
     PetscReal dloc_dice = 2.0 * PetscRealPart(ice_c) * air_r * (air_r - PetscRealPart(ice_c));
     PetscReal rho_v_minus_rho_vs = PetscRealPart(rhov) - rhoI_vs_eff;
-    */
 
     PetscReal S_T = 1.0 / (rho_ice * lat_sub);
 
@@ -295,40 +305,36 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             /* ====================== [ ice , * ] ============================= */
             J[a][0][b][0] += shift * Na_Nb
                            + 3.0 * mob_sub * eps * N1a_N1b
-                           + (3.0 * mob_sub / eps) * df1 * Na_Nb;
-            /* Sublimation source Jacobian terms (commented out):
-            J[a][0][b][0] -= alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb;
-            J[a][0][b][1] += alph_sub * loc * d_rhoI_vs_eff_dtem / rho_ice * Na_Nb;
-            J[a][0][b][2] -= alph_sub * loc / rho_ice * Na_Nb;
-            if (user->d0_GT != 0.0) { ... GT curvature chain-rule block ... }
-            */
+                           + (3.0 * mob_sub / eps) * df1 * Na_Nb
+                           - user->alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb;
+            /* GT curvature chain-rule (d0_GT != 0) also contributes to J[a][0][b][0]
+             * via dkappa/d(grad_ice)*N1[b]; omitted here — d0_GT=0 is the typical case. */
+            J[a][0][b][1] += user->alph_sub * loc * d_rhoI_vs_eff_dtem / rho_ice * Na_Nb;
+            J[a][0][b][2] -= user->alph_sub * loc / rho_ice * Na_Nb;
 
             /* ====================== [ tem , * ] (row-scaled by S_T) ========= */
-            J[a][1][b][0] += S_T * dthcond_dice * grad_Na_dot_grad_tem * N0[b];
-            /* Latent-heat coupling (sublimation off; commented out):
-            J[a][1][b][0] -= S_T * couple * rho_ice * lat_sub * shift * Na_Nb;
-            */
+            /* Latent-heat coupling: d(-rho_ice*lat_sub*ice_t*N0[a]*S_T)/d(ice_b)
+             * = -S_T*rho_ice*lat_sub*shift*Na_Nb = -shift*Na_Nb  (S_T cancels). */
+            J[a][1][b][0] += S_T * dthcond_dice * grad_Na_dot_grad_tem * N0[b]
+                           - shift * Na_Nb;
             J[a][1][b][1] += S_T * (
                   shift * rho * cp * Na_Nb
                 + thcond * N1a_N1b
             );
 
             /* ====================== [ vap , * ] ============================= */
-            /* The air_above_lim block is d(air_eff)/d(ice) acting on the
-             * storage and diffusion terms — geometric coupling, always active. */
-            /* Mass-exchange coupling (sublimation off; commented out):
-            J[a][2][b][0] += couple * (rho_ice - PetscRealPart(rhov)) * shift * Na_Nb;
-            */
+            /* Geometric coupling: d(air_eff)/d(ice) on storage and diffusion. */
             if (air_above_lim) {
                 J[a][2][b][0] += -Na_Nb * PetscRealPart(rhov_t)
                                - dif_vap * N0[b] * grad_Na_dot_grad_rhov;
             }
+            /* Mass coupling: d((rho_ice-rhov)*ice_t)/d(ice_b) = (rho_ice-rhov)*shift*N0[b]. */
+            J[a][2][b][0] += (rho_ice - PetscRealPart(rhov)) * shift * Na_Nb;
             J[a][2][b][1] += d_dif_vap * air_eff * grad_Na_dot_grad_rhov * N0[b];
+            /* Mass coupling: d((rho_ice-rhov)*ice_t)/d(rhov_b) = -ice_t*N0[b]. */
             J[a][2][b][2] += air_eff * shift * Na_Nb
-                           + dif_vap * air_eff * N1a_N1b;
-            /* Mass-exchange Jacobian term (sublimation off; commented out):
-            J[a][2][b][2] -= couple * Na_Nb * PetscRealPart(ice_t);
-            */
+                           + dif_vap * air_eff * N1a_N1b
+                           - PetscRealPart(ice_t) * Na_Nb;
         }
     }
     return 0;
