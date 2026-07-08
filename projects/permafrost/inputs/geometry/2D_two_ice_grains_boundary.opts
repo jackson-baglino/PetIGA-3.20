@@ -6,23 +6,19 @@
 # eps and mesh sized by comp_eps.py (Kaempfer & Plapp 2009 bounds) at
 # T=-5°C, alpha_c=2e-3 (Libbrecht 2017), R_min=9.375 µm, safety=0.125.
 # Binding bound: B-KINETIC = d0/(beta_sub*vn) = 9.707e-7 m.
-# eps = 0.125 * 9.707e-7 = 1.2133e-7 m.
-# Mesh rule: h = eps, ~7.5 elements across the full diffuse interface.
-# eps/R_min = 1.3% — well within the sharp-interface accuracy limit (< 5%).
-# Thin-interface correction: > 0.97 on all channels.
+# eps_tight = 0.125 * 9.707e-7 = 1.2133e-7 m.
+# Running at eps = 2*eps_tight = 2.4267e-7 m (2x coarser, reduced cost).
+# Mesh rule: h = sqrt(2)*eps → ~7.5 elements across phi=0.005-0.995 band.
+# eps/R_min = 2.6% — within the sharp-interface accuracy limit (< 5%).
 #
-#   dx = dy ≈ eps = 1.2133e-07 m
-#   Nx = ceil(Lx / eps) = 340
-#   Ny = ceil(Ly / eps) = 419
+#   dx = dy ≈ sqrt(2)*eps = 3.432e-07 m
+#   Nx = ceil(Lx / (sqrt(2)*eps)) = 121  [set to 170 for extra resolution]
+#   Ny = ceil(Ly / (sqrt(2)*eps)) = 149  [set to 210 for extra resolution]
 #
 # Kinetic parameters (mob_sub, alph_sub) are NOT overridden here; they are
 # computed internally in permafrost2.c via K&P/M&F matching at the current
-# eps. At eps = 1.2133e-7 m, T=-5°C, alpha_c=2e-3:
-#   mob_sub  = 2.6544e-09  m/s     (K&P/M&F: eps/(3*tau_sub))
-#   alph_sub = 1.1514e+07  1/s     (K&P/M&F: lam_sub/tau_sub)
-#   tau_sub  = 1.5237e+01  s
-#   lam_sub  = 1.7543e+08
-# Experiment opts may still override alph_sub or mob_sub for sweep studies.
+# eps. Experiment opts may still override alph_sub or mob_sub for sweep
+# studies.
 #
 # Physical parameters (set in permafrost2.c defaults):
 #   d0_sub   = 9.5975e-10 m   (capillary length gamma*Vm/(R*T) at -5°C)
@@ -34,8 +30,8 @@
 # =============================================================================
 -ic_type two_ice_grains_boundary
 -dim 2
--Nx 340
--Ny 419
+-Nx 170
+-Ny 210
 -Nz 1
 -Lx 4.123140e-5
 -Ly 5.079708e-5
@@ -43,5 +39,5 @@
 -RCice0 9.375e-6
 -RCice1 1.875e-5
 -delt_t 1.0e-4
--eps 1.2133e-07
+-eps 2.4267e-07
 -periodic 0
