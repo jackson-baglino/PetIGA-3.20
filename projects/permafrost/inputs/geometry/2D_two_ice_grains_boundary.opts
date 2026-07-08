@@ -16,23 +16,26 @@
 #   Nx = ceil(Lx*sqrt(2)/eps) = 121
 #   Ny = ceil(Ly*sqrt(2)/eps) = 149
 #
-# Kinetic parameters (mob_sub, alph_sub) are NOT overridden here; they are
-# computed internally in permafrost2.c via K&P/M&F matching at the current
-# eps. Experiment opts may still override alph_sub or mob_sub for sweep
-# studies.
+# Kinetic parameters mob_sub and alph_sub are NOT set here — they are
+# derived in permafrost2.c from M&F SI Eq. 9 using d0_sub0 and beta_sub0:
+#   mob_sub  = d0_sub0 / (3 * eps * beta_sub0)   [rho_ratio cancels exactly]
+#   alph_sub = a1^2 / (eps * beta_sub0 * rho_rhovs * d0_sub0)
+# Do NOT pass -mob_sub or -alph_sub in opts files; overriding either breaks
+# the K&P consistency ratio alph_sub/mob_sub = 3*lambda/eps.
 #
-# Physical parameters (set in permafrost2.c defaults):
-#   d0_sub   = 9.5975e-10 m   (capillary length gamma*Vm/(R*T) at -5°C)
-#   beta_sub0 = 9.8875e+05 s/m  (Hertz-Knudsen beta0 at alpha_c=2e-3, -5°C)
-#   d0_GT    = 0 by default (set in experiment opts if GT coupling desired)
+# Defaults in permafrost2.c (M&F-consistent):
+#   d0_sub0  = 1e-7 m   (M&F inflated capillary length; physical ~9.6e-10)
+#   beta_sub0 = 9.9e5 s/m  (K&P beta0 = Hertz-Knudsen / (rho_vs/rho_ice)
+#                            at alpha_c=2e-3, T=-5°C; M&F range: 2e4-2e6)
+#   d0_GT    = d0_sub0 = 1e-7 m  (Gibbs-Thomson correction in assembly)
 #
 # Natural-Neumann (zero-flux) BCs at x=0/x=Lx — each grain is centered
 # exactly on its boundary (symmetric under reflection). Overrides -periodic 1.
 # =============================================================================
 -ic_type two_ice_grains_boundary
 -dim 2
--Nx 121
--Ny 149
+-Nx 241
+-Ny 297
 -Nz 1
 -Lx 4.123140e-5
 -Ly 5.079708e-5
@@ -40,5 +43,5 @@
 -RCice0 9.375e-6
 -RCice1 1.875e-5
 -delt_t 1.0e-4
--eps 4.8534e-07
+-eps 2.4267e-07
 -periodic 0
