@@ -46,7 +46,12 @@ int main(int argc, char *argv[]) {
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
 
-    /* Anti-trapping / diffuse-interface stabilization multipliers (M&F 2024). */
+    /* Temporal-scaling factors (M&F 2024 §3.1, eqs. 25-26): slow the fast
+     * T / vapor diffusion timescales by 1/xi while keeping the quasi-steady
+     * fields (and thus interface velocity) physical, permitting large dt.
+     * Each xi must scale the diffusion term AND its phase-change source
+     * together so xi cancels in the quasi-steady balance. M&F values:
+     * xi_T = 1 (no solidification), xi_v = 1e-3. */
     user.xi_T = 1.0;    /* thermal: scales conduction + latent heat in R_tem  */
     user.xi_v = 1e-3;   /* vapor:   scales diffusion + rho_ice source in R_vap */
 

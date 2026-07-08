@@ -17,12 +17,20 @@
  * Temperature:
  *   R_tem = rho*cp * N*T_t  +  k * grad_N.grad_T  -  rho_ice*L * phi_t * N
  *
- * Vapor:
- *   R_vap = phi_a_eff * N*rhov_t  +  xi_v*D_v*phi_a_eff * grad_N.grad_rhov
- *         + (rho_ice - rhov) * phi_t * N
+ * Vapor (M&F 2024 eq. 26, temporal scaling):
+ *   (1/xi_v) * d(phi_a*rhov)/dt = div(D_v*phi_a*grad_rhov) + rho_ice*phi_a_t
+ * Multiplying through by xi_v and expanding the storage product gives
+ *   R_vap = phi_a_eff * N*rhov_t  -  rhov * phi_t * N
+ *         + xi_v*D_v*phi_a_eff * grad_N.grad_rhov
+ *         + xi_v*rho_ice * phi_t * N
  *   where phi_a_eff = max(1-phi, air_lim)
- *   xi_v scales only vapor diffusion — NOT the mass exchange source,
- *   which must remain unscaled to preserve exact mass balance.
+ *   xi_v scales diffusion AND the rho_ice mass-exchange source TOGETHER:
+ *   in the quasi-steady limit xi_v cancels between them, so the vapor field
+ *   and interface velocity stay physical while the fast diffusion timescale
+ *   is slowed by 1/xi_v (allows large dt). The -rhov*phi_t part belongs to
+ *   the storage term and stays unscaled. The apparent ice->vapor mass
+ *   "loss" of (1-xi_v)*Delta_m_vapor is ~rho_v/rho_i ~ 1e-6 relative —
+ *   the approximation M&F accept for the temporal scaling.
  * ========================================================================= */
 
 /* f1(phi) = phi*(1-phi)*(1-2*phi)  and  df1/dphi = 1 - 6*phi + 6*phi^2 */
@@ -142,9 +150,9 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
                 - user->xi_T * rho_ice * lat_sub * phi_t * N0[a];      /* latent heat */
 
         R[a][2] = phi_aef * N0[a] * rhov_t                             /* vapor storage */
-                + user->xi_v * dif_vap * phi_aef * gN_grhov            /* vapor diffusion (xi_v only here) */
-                + (rho_ice - PetscRealPart(rhov))
-                  * phi_t * N0[a];                                      /* mass exchange (unscaled) */
+                + user->xi_v * dif_vap * phi_aef * gN_grhov            /* vapor diffusion (xi_v-scaled) */
+                + (user->xi_v * rho_ice - PetscRealPart(rhov))
+                  * phi_t * N0[a];                                      /* xi_v*source - storage cross-term */
     }
     return 0;
 }
@@ -295,10 +303,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 J[a][2][b][0] += -NaNb * PetscRealPart(rhov_t)
                                - user->xi_v * dif_vap * N0[b] * gNa_grhov;
             }
-            /* Inexact Jacobian: use xi_v*rho_ice here (matching the old scaled form)
-             * so the vap/ice coupling is ~1000x smaller than with unscaled rho_ice.
-             * The residual R[a][2] uses unscaled rho_ice for exact mass balance;
-             * this approximation only affects Newton conditioning, not the solution. */
+            /* Exact Jacobian of the xi_v-scaled residual: the source coefficient
+             * in R[a][2] is (xi_v*rho_ice - rhov), so the vap/ice coupling is
+             * O(xi_v*rho_ice) ~ 1 instead of O(rho_ice) ~ 1e3 — well-conditioned. */
             J[a][2][b][0] += (user->xi_v * rho_ice - PetscRealPart(rhov)) * shift * NaNb;
 
             /* ============ R_vap / T ============ */
