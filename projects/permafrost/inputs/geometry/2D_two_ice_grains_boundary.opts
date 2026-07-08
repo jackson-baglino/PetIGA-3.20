@@ -7,13 +7,14 @@
 # T=-5°C, alpha_c=2e-3 (Libbrecht 2017), R_min=9.375 µm, safety=0.125.
 # Binding bound: B-KINETIC = d0/(beta_sub*vn) = 9.707e-7 m.
 # eps_tight = 0.125 * 9.707e-7 = 1.2133e-7 m.
-# Running at eps = 2*eps_tight = 2.4267e-7 m (2x coarser, reduced cost).
-# Mesh rule: h = sqrt(2)*eps → ~7.5 elements across phi=0.005-0.995 band.
-# eps/R_min = 2.6% — within the sharp-interface accuracy limit (< 5%).
+# Running at eps = 4*eps_tight = 4.8534e-7 m (4x coarser, reduced cost).
+# Mesh rule: h = eps/sqrt(2) → ~8.3 elements across phi=0.05-0.95 band
+#            (sqrt(2) MORE elements per direction than the old h=eps rule).
+# eps/R_min = 5.2% — borderline; acceptable for exploratory runs.
 #
-#   dx = dy ≈ sqrt(2)*eps = 3.432e-07 m
-#   Nx = ceil(Lx / (sqrt(2)*eps)) = 121  [set to 170 for extra resolution]
-#   Ny = ceil(Ly / (sqrt(2)*eps)) = 149  [set to 210 for extra resolution]
+#   dx = dy = eps/sqrt(2) = 3.432e-07 m
+#   Nx = ceil(Lx*sqrt(2)/eps) = 121
+#   Ny = ceil(Ly*sqrt(2)/eps) = 149
 #
 # Kinetic parameters (mob_sub, alph_sub) are NOT overridden here; they are
 # computed internally in permafrost2.c via K&P/M&F matching at the current
@@ -30,8 +31,8 @@
 # =============================================================================
 -ic_type two_ice_grains_boundary
 -dim 2
--Nx 170
--Ny 210
+-Nx 121
+-Ny 149
 -Nz 1
 -Lx 4.123140e-5
 -Ly 5.079708e-5
@@ -39,5 +40,5 @@
 -RCice0 9.375e-6
 -RCice1 1.875e-5
 -delt_t 1.0e-4
--eps 2.4267e-07
+-eps 4.8534e-07
 -periodic 0

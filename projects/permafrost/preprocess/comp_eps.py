@@ -6,18 +6,20 @@ Cryst. Growth Des. 24, 5687 (2024) — sublimation reduction.
 
 MESH CONVENTION (this solver)
 ------------------------------
-Setting h = √2·ε gives ~7.5 elements across the diffuse interface:
-    h  = sqrt(2) * eps
-    Nx = ceil(Lx / (sqrt(2) * eps))
+Setting h = ε/√2 gives ~7.5 elements across the phi=0.05–0.95 visible band:
+    h  = eps / sqrt(2)
+    Nx = ceil(Lx / (eps / sqrt(2)))  =  ceil(sqrt(2) * Lx / eps)
+
+This is sqrt(2) MORE elements per direction than the old h=eps rule.
 
 The logistic equilibrium profile phi(x) = 1/(1+exp(-x/eps)) has these
 band widths expressed in units of eps:
-    phi=0.005–0.995  (0.5%–99.5%): 10.59·eps  →  7.49 elements at h=√2·eps
-    phi=0.010–0.990  (1%–99%):      9.19·eps  →  6.50 elements at h=√2·eps
-    phi=0.050–0.950  (5%–95%):      5.89·eps  →  4.16 elements at h=√2·eps
+    phi=0.050–0.950  (5%–95%):      5.89·eps  →  8.33 elements at h=ε/√2  ≈ ~7.5
+    phi=0.010–0.990  (1%–99%):      9.19·eps  → 13.0  elements at h=ε/√2
+    phi=0.005–0.995  (0.5%–99.5%): 10.59·eps  → 14.97 elements at h=ε/√2
 No 2√2 prefactor in the physics — that belongs to Karma-convention solvers.
-The √2 here is purely a mesh-resolution choice calibrated to the 0.5%–99.5%
-visible band.
+The 1/√2 here is purely a mesh-resolution choice targeting ~7.5 visible
+(phi=0.05–0.95) interface elements.
 
 BOUNDS ON ε (K&P eqs. 42–46, equivalent to M&F SI Cond. 1–3)
 ------------------------------------------------------------
@@ -245,8 +247,8 @@ def compute_eps(
     binding = min(bounds, key=bounds.get)
     eps     = safety * eps_max
 
-    # Mesh: h = sqrt(2)*eps → ~7.5 elements across phi=0.005–0.995 band
-    h  = math.sqrt(2.0) * eps
+    # Mesh: h = eps/sqrt(2) → ~7.5 elements across phi=0.05–0.95 visible band
+    h  = eps / math.sqrt(2.0)
     Nx = math.ceil(Lx / h) if Lx > 0 else 0
     Ny = math.ceil(Ly / h) if Ly > 0 else 0
     Nz = math.ceil(Lz / h) if Lz > 0 else 0
@@ -414,13 +416,13 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
         marker = "  ← BINDING" if key == p["binding"] else ""
         print(f"  {label}  =  {p[key]:.4e} m{marker}")
 
-    h = math.sqrt(2.0) * p['eps']
+    h = p['eps'] / math.sqrt(2.0)
     print(f"\n--- Chosen ε and mesh ---")
-    print(f"  ε                      = {p['eps']:.4e}  m")
-    print(f"  h = √2·ε               = {h:.4e}  m    (mesh rule: ~7.5 elements across phi=0.005-0.995)")
-    print(f"  Nx = ceil(Lx/(√2·ε))   = {p['Nx']}")
-    if dim >= 2 and p["Ny"] > 0: print(f"  Ny = ceil(Ly/(√2·ε))   = {p['Ny']}")
-    if dim == 3 and p["Nz"] > 0: print(f"  Nz = ceil(Lz/(√2·ε))   = {p['Nz']}")
+    print(f"  ε                        = {p['eps']:.4e}  m")
+    print(f"  h = ε/√2                 = {h:.4e}  m    (mesh rule: ~7.5 elements across phi=0.05-0.95)")
+    print(f"  Nx = ceil(Lx·√2/ε)       = {p['Nx']}")
+    if dim >= 2 and p["Ny"] > 0: print(f"  Ny = ceil(Ly·√2/ε)       = {p['Ny']}")
+    if dim == 3 and p["Nz"] > 0: print(f"  Nz = ceil(Lz·√2/ε)       = {p['Nz']}")
 
     print(f"\n--- Derived phase-field model parameters (M&F SI Eq. 9) ---")
     print(f"  These are your solver inputs — recompute at every ε.")
@@ -531,7 +533,7 @@ def _infer_dim(Lx, Ly, Lz, explicit_dim):
 def _cli():
     ap = argparse.ArgumentParser(
         description=("Compute ε, mesh, and derived phase-field model parameters "
-                     "per K&P (2009) and M&F (2024) SI Eq. 9. Mesh rule: h = √2·ε."),
+                     "per K&P (2009) and M&F (2024) SI Eq. 9. Mesh rule: h = ε/√2."),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     ap.add_argument("--Lx",    type=float, required=True,  help="Domain length x [m]")
