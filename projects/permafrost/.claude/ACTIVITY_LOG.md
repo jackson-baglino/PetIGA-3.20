@@ -1,3 +1,80 @@
+## 2026-07-08 — Fix ξ_v temporal scaling: source must be scaled with diffusion (M&F 2024 eq. 26)
+
+- Root-caused the shrinking-grain phase-field oscillation and dt stall: commit 864ae88 removed
+  xi_v from the vapor mass-exchange source (conservation concern), leaving it only on diffusion.
+  M&F 2024 eq. 26 writes (1/xi_v)*d(phi_a*rho_v)/dt = div(phi_a*D_v*grad rho_v) + rho_i*phi_a_t —
+  xi_v multiplies diffusion AND source together, cancelling in the quasi-steady limit so the
+  vapor field/interface velocity stay physical while diffusion stiffness drops 1000x. Scaling
+  diffusion alone broke that cancellation 1000x → supersaturation spikes → oscillation.
+- assembly.c: vapor source coefficient restored to (xi_v*rho_ice - rhov)*phi_t; -rhov*phi_t part
+  is storage and stays unscaled. The 160d4c0 "inexact Jacobian" line is now the exact Jacobian.
+- permafrost2.c: reverted uncommitted FD-Jacobian switch back to the analytic Jacobian (now
+  consistent with the residual); relabeled xi_T/xi_v comments from "anti-trapping" to
+  "temporal scaling" (M&F §3.1).
+- Conservation note: apparent ice→vapor deficit under scaling is (1-xi_v)*vapor-mass change
+  ~1e-6 relative — negligible (M&F accept it). Validate with a xi_v=1 reference run, not the raw
+  ice+vapor TOTAL_MASS monitor. docs/model_description.md §3.4 corrected accordingly.
+- Confirmed against the paper: no explicit Gibbs-Thomson correction to rho_vs in M&F (GT emerges
+  from calibrated kinetics) — explicit d0_GT term likely double-counts curvature ~2x; plan is to
+  A/B test with -d0_GT 0 after this fix. Latent heat: M&F use mixture rho(phi), code uses rho_ice
+  (documented deviation, no change). xi_T treatment already matches M&F's (1/xi_T) form.
+
+---
+
+---
+
+**Session ended:** 2026-07-08 15:34:51
+
+
+---
+
+**Session ended:** 2026-07-08 15:31:21
+
+
+---
+
+**Session ended:** 2026-07-08 14:15:21
+
+
+---
+
+**Session ended:** 2026-07-08 14:13:11
+
+
+---
+
+**Session ended:** 2026-07-08 14:02:37
+
+
+---
+
+**Session ended:** 2026-07-08 13:48:10
+
+
+---
+
+**Session ended:** 2026-07-08 13:45:14
+
+
+---
+
+**Session ended:** 2026-07-08 13:41:44
+
+
+---
+
+**Session ended:** 2026-07-08 13:29:06
+
+
+---
+
+**Session ended:** 2026-07-08 13:23:05
+
+
+---
+
+**Session ended:** 2026-07-08 13:06:39
+
 
 ## 2026-07-08 — Re-enable VI bounds; add GT Jacobian gradient chain-rule term
 
