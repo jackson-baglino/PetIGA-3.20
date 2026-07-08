@@ -119,7 +119,16 @@
 # since GT is now active globally, not just in that one case.
 -ksp_type bcgs
 -ksp_rtol 1e-08
--ksp_atol 1e-12
+# ksp_atol must sit far BELOW the nonlinear residual scale. This model
+# assembles dimensional SI residuals on a ~40 um domain: element volumes
+# ~1e-13 m^2 make ||F|| ~ 3e-13 at step start (per-DOF blocks: ice ~1e-13,
+# T ~1e-14, vapor ~1e-24). The old -ksp_atol 1e-12 was LARGER than ||F||,
+# so the linear solve could "converge" with a zero/garbage step; the bt
+# line search then found no decrease, SNES died before Newton it 1 (the
+# DOF-wise convergence test requires it >= 1), and the dt controller
+# spiralled to dtmin (2026-07-08 run 16.01.03, 63 rejects -> hard fail).
+# Rely on ksp_rtol; keep atol as a pure underflow guard only.
+-ksp_atol 1e-30
 -ksp_max_it 1000
 -ksp_gmres_restart 200
 -pc_type asm
