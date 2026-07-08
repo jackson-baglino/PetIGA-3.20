@@ -18,9 +18,11 @@
  *   R_tem = rho*cp * N*T_t  +  k * grad_N.grad_T  -  rho_ice*L * phi_t * N
  *
  * Vapor:
- *   R_vap = phi_a_eff * N*rhov_t  +  D_v*phi_a_eff * grad_N.grad_rhov
+ *   R_vap = phi_a_eff * N*rhov_t  +  xi_v*D_v*phi_a_eff * grad_N.grad_rhov
  *         + (rho_ice - rhov) * phi_t * N
  *   where phi_a_eff = max(1-phi, air_lim)
+ *   xi_v scales only vapor diffusion — NOT the mass exchange source,
+ *   which must remain unscaled to preserve exact mass balance.
  * ========================================================================= */
 
 /* f1(phi) = phi*(1-phi)*(1-2*phi)  and  df1/dphi = 1 - 6*phi + 6*phi^2 */
@@ -140,9 +142,9 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
                 - user->xi_T * rho_ice * lat_sub * phi_t * N0[a];      /* latent heat */
 
         R[a][2] = phi_aef * N0[a] * rhov_t                             /* vapor storage */
-                + user->xi_v * dif_vap * phi_aef * gN_grhov            /* vapor diffusion */
-                + (user->xi_v * rho_ice - PetscRealPart(rhov))
-                  * phi_t * N0[a];                                      /* mass exchange */
+                + user->xi_v * dif_vap * phi_aef * gN_grhov            /* vapor diffusion (xi_v only here) */
+                + (rho_ice - PetscRealPart(rhov))
+                  * phi_t * N0[a];                                      /* mass exchange (unscaled) */
     }
     return 0;
 }
@@ -293,7 +295,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 J[a][2][b][0] += -NaNb * PetscRealPart(rhov_t)
                                - user->xi_v * dif_vap * N0[b] * gNa_grhov;
             }
-            J[a][2][b][0] += (user->xi_v * rho_ice - PetscRealPart(rhov)) * shift * NaNb;
+            J[a][2][b][0] += (rho_ice - PetscRealPart(rhov)) * shift * NaNb;
 
             /* ============ R_vap / T ============ */
             J[a][2][b][1] += user->xi_v * d_dif_vap * phi_aef * gNa_grhov * N0[b];
