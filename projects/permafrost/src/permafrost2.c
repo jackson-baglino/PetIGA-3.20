@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
 
-    user.d0_sub0    = 9.6e-10;   /* capillary length d0 = gamma*Vm/(R*T) at -5°C [m] */
+    user.d0_sub0    = 1e-7; // 9.6e-10;   /* capillary length d0 = gamma*Vm/(R*T) at -5°C [m] */
     user.beta_sub0  = 9.9e5;     /* beta0 = (1/alpha_c)*sqrt(2pi*m/kT)/(rho_vs/rho_i)
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
 
@@ -511,6 +511,18 @@ int main(int argc, char *argv[]) {
             user.beta_sub0 = beta_sub0_cli;
         }
     }
+    {
+        PetscReal  d0_sub0_cli = -1.0;
+        PetscBool  flg         = PETSC_FALSE;
+        ierr = PetscOptionsGetReal(NULL, NULL, "-d0_sub0",
+                                   &d0_sub0_cli, &flg); CHKERRQ(ierr);
+        if (flg && d0_sub0_cli > 0.0) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  -d0_sub0 override: %.4e -> %.4e (factor %.2f)\n",
+                        user.d0_sub0, d0_sub0_cli, d0_sub0_cli / user.d0_sub0);
+            user.d0_sub0 = d0_sub0_cli;
+        }
+    }
 
     PetscReal a1 = 5.0, a2 = 0.1581; /* Constants for GT relation */
     PetscReal d0_sub;                /* Capillary length parameter */
@@ -897,15 +909,20 @@ int main(int argc, char *argv[]) {
 
     /* --- Phase-change kinetics -------------------------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-CHANGE KINETICS\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   rho_ice/rho_vs   = %.4e   (density ratio at T0)\n", rho_rhovs);
+    PetscPrintf(PETSC_COMM_WORLD, "   d0_sub0          = %.4e m   (capillary length; M&F use 1e-7)\n",
+                user.d0_sub0);
+    PetscPrintf(PETSC_COMM_WORLD, "   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = %.4e s/m"
+                "   [M&F range: 2e4–2e6]\n", user.beta_sub0);
+    PetscPrintf(PETSC_COMM_WORLD, "   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = %.4e s/m\n",
+                beta_sub);
     PetscPrintf(PETSC_COMM_WORLD, "   d0_GT    =  %.4e m   (%s)\n",
                 user.d0_GT, (user.d0_GT == 0.0) ? "Gibbs-Thomson DISABLED" : "Gibbs-Thomson active");
-    PetscPrintf(PETSC_COMM_WORLD, "   d0_sub0  =  %.4e m,  beta_sub0 = %.4e\n",
-                user.d0_sub0, user.beta_sub0);
     if (!user.flag_Tdep) {
         PetscPrintf(PETSC_COMM_WORLD, "   lambda   =  %.4e\n", lambda_sub);
         PetscPrintf(PETSC_COMM_WORLD, "   tau_sub  =  %.4e s\n", tau_sub);
-        PetscPrintf(PETSC_COMM_WORLD, "   mob_sub  =  %.4e m³/s\n", user.mob_sub);
-        PetscPrintf(PETSC_COMM_WORLD, "   alph_sub =  %.4e%s\n", user.alph_sub,
+        PetscPrintf(PETSC_COMM_WORLD, "   mob_sub  =  %.4e m/s   [M&F: 4.33e-7]\n", user.mob_sub);
+        PetscPrintf(PETSC_COMM_WORLD, "   alph_sub =  %.4e 1/s%s\n", user.alph_sub,
                     (user.alph_sub == 0.0) ? "   (phase-change DECOUPLED)" : "");
     } else {
         PetscPrintf(PETSC_COMM_WORLD, "   [temperature-dependent kinetics active]\n");
