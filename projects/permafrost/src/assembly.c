@@ -2,46 +2,32 @@
 #include "material_properties.h"
 
 /* =========================================================================
- * 2-phase (ice / temperature / vapor) system. phi_a = 1 - phi_i is
- * computed algebraically; there is no sediment DOF.
+ * Weak-form residuals for the 2-phase (ice / T / vapor) system.
+ * phi_a = 1 - phi_i is algebraic; no sediment DOF.
  *
- * Free energy: single double-well in phi_i,
- *   f1(phi_i) = phi_i*(1-phi_i)*(1-2*phi_i)
+ * Notation: phi = phi_i,  M = mob_sub.
  *
- * Ice (Allen-Cahn with sublimation source):
- *   R_ice = N0[a]*ice_t + 3*mob_sub*eps*grad_N.grad_ice
- *         + (3*mob_sub/eps)*f1(phi_i)*N0[a]
- *         - S_sub*N0[a]
- *   where S_sub = alph_sub * phi_i^2*phi_a^2 * (rhov - rhovs_eff) / rho_ice
+ * f1(phi) = phi*(1-phi)*(1-2*phi)   [d/dphi of double-well phi^2*(1-phi)^2]
+ * loc(phi) = phi^2*(1-phi)^2         [phase-change localization at interface]
  *
- * This is the met=0 reduction of dry_snow_metamorphism's 3-phase ice
- * equation: R_ice += mob*3/eps/ETA * ((Etam+Etaa)*fice - Etaa*fmet - Etam*fair).
- * With met=0, ETA=Etaa*Etai, fmet=0, fice=Etai*f1(ice), so the expression
- * collapses to mob*3/eps*f1(ice) -- Sigma_i/Sigma_a/Lambda all cancel and
- * play no role in a true 2-phase (no third phase) system.
+ * Allen-Cahn (ice):
+ *   R_ice = N*phi_t  +  3*M*eps * grad_N.grad_phi  +  (3*M/eps)*f1 * N
+ *         - (alph_sub/rho_ice) * loc * (rhov - rhovs_eff) * N
  *
- * Temperature (row-scaled by S_T = 1/(rho_ice*lat_sub)):
- *   R_tem = rho*cp*N0[a]*tem_t + thcond*grad_N.grad_tem
- *         - rho_ice*lat_sub*ice_t*N0[a]
- *   The latent-heat source couples through the full d(phi_i)/dt = ice_t, not
- *   just S_sub, so Allen-Cahn interface motion (curvature relaxation) also
- *   drives latent-heat release and is thermodynamically consistent.
+ * Temperature:
+ *   R_tem = rho*cp * N*T_t  +  k * grad_N.grad_T  -  rho_ice*L * phi_t * N
  *
- * Vapor (air_lim floor; mass exchange through full ice_t):
- *   R_vap = N0[a]*air_eff*rhov_t + difvap*air_eff*grad_N.grad_rhov
- *         + (rho_ice - rhov)*ice_t*N0[a]
- *   air_eff = (air > air_lim) ? air : air_lim,   air = 1 - ice
- *   Coupling through ice_t ensures global mass conservation: any ice-phase
- *   change — from AC kinetics or sublimation — appears as an equal-and-
- *   opposite vapor density change.
+ * Vapor:
+ *   R_vap = phi_a_eff * N*rhov_t  +  D_v*phi_a_eff * grad_N.grad_rhov
+ *         + (rho_ice - rhov) * phi_t * N
+ *   where phi_a_eff = max(1-phi, air_lim)
  * ========================================================================= */
 
-/* Double-well derivative f1(phi_i) = phi_i(1-phi_i)(1-2phi_i) and its
- * derivative df1/dphi_i = 1 - 6 phi_i + 6 phi_i^2. */
-static void DoubleWellDeriv(PetscReal ice, PetscReal *f1, PetscReal *df1)
+/* f1(phi) = phi*(1-phi)*(1-2*phi)  and  df1/dphi = 1 - 6*phi + 6*phi^2 */
+static void DoubleWellDeriv(PetscReal phi, PetscReal *f1, PetscReal *df1)
 {
-    if (f1)  *f1  = ice * (1.0 - ice) * (1.0 - 2.0 * ice);
-    if (df1) *df1 = 1.0 - 6.0 * ice + 6.0 * ice * ice;
+    if (f1)  *f1  = phi * (1.0 - phi) * (1.0 - 2.0 * phi);
+    if (df1) *df1 = 1.0 - 6.0 * phi + 6.0 * phi * phi;
 }
 
 
@@ -68,74 +54,64 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     IGAPointFormValue(pnt, U, &sol[0]);
     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
 
-    PetscScalar ice   = sol[0],  ice_t  = sol_t[0];
+    PetscScalar phi   = sol[0],  phi_t  = sol_t[0];
     PetscScalar tem   = sol[1],  tem_t  = sol_t[1];
     PetscScalar rhov  = sol[2],  rhov_t = sol_t[2];
-    PetscScalar grad_ice [dim];
+    PetscScalar grad_phi [dim];
     PetscScalar grad_tem [dim], grad_rhov[dim];
     for (l = 0; l < dim; l++) {
-        grad_ice [l] = grad_sol[0][l];
+        grad_phi [l] = grad_sol[0][l];
         grad_tem [l] = grad_sol[1][l];
         grad_rhov[l] = grad_sol[2][l];
     }
-    PetscScalar air = 1.0 - ice;
+    PetscScalar phi_a = 1.0 - phi;
 
-    /* Hessian of ice for optional Gibbs-Thomson curvature correction. */
+    /* Hessian of phi for optional Gibbs-Thomson curvature correction. */
     PetscScalar hess_sol[3][dim][dim];
     IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
-    PetscScalar hess_ice[dim * dim];
-    for (l = 0; l < dim * dim; l++) hess_ice[l] = hess_sol[0][l / dim][l % dim];
+    PetscScalar hess_phi[dim * dim];
+    for (l = 0; l < dim * dim; l++) hess_phi[l] = hess_sol[0][l / dim][l % dim];
 
-    /* SNES domain-error catch — if a trial Newton iterate has phi out of the
-     * configured bounds, signal an invalid state so the line search backs off
-     * the step. Cheaper than committing a bad state and rolling back later. */
+    /* SNES domain-error catch: if a trial Newton iterate has phi out of the
+     * configured bounds, signal an invalid state so the line search backs off. */
     {
         PetscReal lo = user->phase_lo, hi = user->phase_hi;
-        if (PetscRealPart(ice) < lo || PetscRealPart(ice) > hi ||
-            PetscRealPart(air) < lo || PetscRealPart(air) > hi) {
+        if (PetscRealPart(phi)   < lo || PetscRealPart(phi)   > hi ||
+            PetscRealPart(phi_a) < lo || PetscRealPart(phi_a) > hi) {
             if (user->snes) SNESSetFunctionDomainError(user->snes);
             return 0;
         }
     }
 
-    /* Clamp clipping copies of phi for material-property evaluation only —
-     * keeps Density/HeatCap/etc. from getting negative inputs near the bounds. */
-    PetscScalar ice_c = ice, air_c = air;
-    if (PetscRealPart(ice_c) < 0.0) ice_c = 0.0;
-    if (PetscRealPart(ice_c) > 1.0) ice_c = 1.0;
-    if (PetscRealPart(air_c) < 0.0) air_c = 0.0;
-    if (PetscRealPart(air_c) > 1.0) air_c = 1.0;
+    /* Clamped copies for material-property evaluation (avoids negative inputs). */
+    PetscReal phi_c  = PetscRealPart(phi);
+    PetscReal phi_ac = PetscRealPart(phi_a);
+    if (phi_c  < 0.0) phi_c  = 0.0;
+    if (phi_c  > 1.0) phi_c  = 1.0;
+    if (phi_ac < 0.0) phi_ac = 0.0;
+    if (phi_ac > 1.0) phi_ac = 1.0;
 
-    /* Material properties */
+    /* Material properties. */
     PetscReal thcond, cp, rho, dif_vap, mob_sub;
-    ThermalCond(user, ice_c, &thcond,  NULL);
-    HeatCap    (user, ice_c, &cp,      NULL);
-    Density    (user, ice_c, &rho,     NULL);
+    ThermalCond(user, phi_c,  &thcond,  NULL);
+    HeatCap    (user, phi_c,  &cp,      NULL);
+    Density    (user, phi_c,  &rho,     NULL);
     VaporDiffus(user, tem,    &dif_vap, NULL);
-    Mobility   (user, ice_c, &mob_sub);
+    Mobility   (user, phi_c,  &mob_sub);
 
-    /* Saturation vapor density and Gibbs-Thomson curvature correction. */
+    /* Saturation vapor density with optional Gibbs-Thomson curvature correction. */
     PetscReal rho_vs;
     RhoVS_I(user, PetscRealPart(tem), &rho_vs, NULL);
     PetscScalar kappa = 0.0;
     if (user->d0_GT != 0.0)
-        Curvature(dim, grad_ice, hess_ice, 0.01 / eps, &kappa, NULL, NULL);
-    PetscReal rhoI_vs_eff = rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
+        Curvature(dim, grad_phi, hess_phi, 0.01 / eps, &kappa, NULL, NULL);
+    PetscReal rhovs_eff = rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
 
+    /* Double-well derivative and localization. */
     PetscReal f1;
-    DoubleWellDeriv(PetscRealPart(ice_c), &f1, NULL);
-
-    /* air_eff = max(air, air_lim) */
-    PetscReal air_r = PetscRealPart(air_c);
-    PetscReal air_eff = (air_r > air_lim) ? air_r : air_lim;
-
-    /* Phase-change localization and sublimation source. */
-    PetscReal loc   = PetscRealPart(ice_c) * PetscRealPart(ice_c)
-                    * air_r * air_r;
-    PetscReal S_sub = user->alph_sub * loc * (PetscRealPart(rhov) - rhoI_vs_eff) / rho_ice;
-
-    /* T-equation row-scale (numerical preconditioning; no physics change). */
-    PetscReal S_T = 1.0 / (rho_ice * lat_sub);
+    DoubleWellDeriv(phi_c, &f1, NULL);
+    PetscReal loc     = phi_c * phi_c * phi_ac * phi_ac;
+    PetscReal phi_aef = (phi_ac > air_lim) ? phi_ac : air_lim;
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
@@ -144,40 +120,35 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscScalar (*R)[3] = (PetscScalar (*)[3])Re;
     PetscInt a, nen = pnt->nen;
     for (a = 0; a < nen; a++) {
-        PetscReal grad_N_dot_grad_ice  = 0.0;
-        PetscReal grad_N_dot_grad_tem  = 0.0;
-        PetscReal grad_N_dot_grad_rhov = 0.0;
+        PetscReal gN_gphi  = 0.0;
+        PetscReal gN_gtem  = 0.0;
+        PetscReal gN_grhov = 0.0;
         for (l = 0; l < dim; l++) {
-            grad_N_dot_grad_ice  += N1[a][l] * PetscRealPart(grad_ice [l]);
-            grad_N_dot_grad_tem  += N1[a][l] * PetscRealPart(grad_tem [l]);
-            grad_N_dot_grad_rhov += N1[a][l] * PetscRealPart(grad_rhov[l]);
+            gN_gphi  += N1[a][l] * PetscRealPart(grad_phi [l]);
+            gN_gtem  += N1[a][l] * PetscRealPart(grad_tem [l]);
+            gN_grhov += N1[a][l] * PetscRealPart(grad_rhov[l]);
         }
 
-        PetscScalar R_ice = N0[a] * ice_t
-                          + 3.0 * mob_sub * eps * grad_N_dot_grad_ice
-                          + (3.0 * mob_sub / eps) * f1 * N0[a]
-                          - S_sub * N0[a];
+        R[a][0] = N0[a] * phi_t
+                + 3.0 * mob_sub * eps * gN_gphi
+                + (3.0 * mob_sub / eps) * f1 * N0[a]
+                - (user->alph_sub / rho_ice) * loc
+                  * (PetscRealPart(rhov) - rhovs_eff) * N0[a];
 
-        /* Latent heat couples through ice_t (full d(phi_i)/dt, not just S_sub). */
-        PetscScalar R_tem = rho * cp * N0[a] * tem_t
-                          + thcond * grad_N_dot_grad_tem
-                          - rho_ice * lat_sub * ice_t * N0[a];
+        R[a][1] = rho * cp * N0[a] * tem_t                  /* storage */
+                + thcond * gN_gtem                           /* conduction */
+                - rho_ice * lat_sub * phi_t * N0[a];         /* latent heat */
 
-        /* Mass conservation couples through ice_t: rho_ice*d(phi_i)/dt = -d(phi_a*rhov)/dt. */
-        PetscScalar R_vap = N0[a] * air_eff * rhov_t
-                          + dif_vap * air_eff * grad_N_dot_grad_rhov
-                          + (rho_ice - PetscRealPart(rhov)) * ice_t * N0[a];
-
-        R[a][0] = R_ice;
-        R[a][1] = S_T * R_tem;
-        R[a][2] = R_vap;
+        R[a][2] = phi_aef * N0[a] * rhov_t                  /* vapor storage */
+                + dif_vap * phi_aef * gN_grhov               /* vapor diffusion */
+                + (rho_ice - PetscRealPart(rhov)) * phi_t * N0[a]; /* mass exchange */
     }
     return 0;
 }
 
 
 /* =========================================================================
- * Residual dispatcher (single avenue)
+ * Residual dispatcher
  * ========================================================================= */
 PetscErrorCode Residual(IGAPoint pnt,
                         PetscReal shift, const PetscScalar *V,
@@ -189,9 +160,8 @@ PetscErrorCode Residual(IGAPoint pnt,
 
 
 /* =========================================================================
- * Jacobian.  J[a][i][b][j] = d R[a][i] / d u[b][j] + shift * d R[a][i] / d u_t[b][j]
- *
- * DOF layout: 0=ice, 1=tem, 2=rhov.
+ * Jacobian.  J[a][i][b][j] = dR[a][i]/du[b][j] + shift * dR[a][i]/du_t[b][j]
+ * DOF layout: 0=phi(ice), 1=T, 2=rhov.
  * ========================================================================= */
 static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                                   PetscReal shift, const PetscScalar *V,
@@ -201,7 +171,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     AppCtx *user = (AppCtx*)ctx;
 
     PetscInt l, dim = user->dim;
-    PetscReal eps     = 1.0 * user->eps;
+    PetscReal eps     = user->eps;
     PetscReal rho_ice = user->rho_ice;
     PetscReal lat_sub = user->lat_sub;
     PetscReal air_lim = user->air_lim;
@@ -213,70 +183,66 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     IGAPointFormValue(pnt, U, &sol[0]);
     IGAPointFormGrad (pnt, U, &grad_sol[0][0]);
 
-    PetscScalar ice    = sol[0],  ice_t = sol_t[0];
-    PetscScalar tem    = sol[1];
-    PetscScalar rhov   = sol[2],  rhov_t = sol_t[2];
-    PetscScalar grad_ice[dim];
-    PetscScalar grad_tem[dim], grad_rhov[dim];
+    PetscScalar phi   = sol[0],  phi_t  = sol_t[0];
+    PetscScalar tem   = sol[1];
+    PetscScalar rhov  = sol[2],  rhov_t = sol_t[2];
+    PetscScalar grad_phi [dim];
+    PetscScalar grad_tem [dim], grad_rhov[dim];
     for (l = 0; l < dim; l++) {
-        grad_ice [l] = grad_sol[0][l];
+        grad_phi [l] = grad_sol[0][l];
         grad_tem [l] = grad_sol[1][l];
         grad_rhov[l] = grad_sol[2][l];
     }
-    PetscScalar air = 1.0 - ice;
+    PetscScalar phi_a = 1.0 - phi;
 
-    /* Hessian of ice for Gibbs-Thomson curvature derivatives. */
+    /* Hessian of phi for Gibbs-Thomson curvature derivatives. */
     PetscScalar hess_sol[3][dim][dim];
     IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
-    PetscScalar hess_ice[dim * dim];
-    for (l = 0; l < dim * dim; l++) hess_ice[l] = hess_sol[0][l / dim][l % dim];
+    PetscScalar hess_phi[dim * dim];
+    for (l = 0; l < dim * dim; l++) hess_phi[l] = hess_sol[0][l / dim][l % dim];
 
-    /* Clamp copies for material-property evaluation */
-    PetscScalar ice_c = ice, air_c = air;
-    if (PetscRealPart(ice_c) < 0.0) ice_c = 0.0;
-    if (PetscRealPart(ice_c) > 1.0) ice_c = 1.0;
-    if (PetscRealPart(air_c) < 0.0) air_c = 0.0;
-    if (PetscRealPart(air_c) > 1.0) air_c = 1.0;
+    /* Clamped copies for material-property evaluation. */
+    PetscReal phi_c  = PetscRealPart(phi);
+    PetscReal phi_ac = PetscRealPart(phi_a);
+    if (phi_c  < 0.0) phi_c  = 0.0;
+    if (phi_c  > 1.0) phi_c  = 1.0;
+    if (phi_ac < 0.0) phi_ac = 0.0;
+    if (phi_ac > 1.0) phi_ac = 1.0;
 
-    /* Material properties + derivatives */
+    /* Material properties and their derivatives. */
     PetscReal thcond, cp, rho, dif_vap, mob_sub;
-    ThermalCond(user, ice_c, &thcond,  NULL);
-    HeatCap    (user, ice_c, &cp,      NULL);
-    Density    (user, ice_c, &rho,     NULL);
+    ThermalCond(user, phi_c,  &thcond,  NULL);
+    HeatCap    (user, phi_c,  &cp,      NULL);
+    Density    (user, phi_c,  &rho,     NULL);
     VaporDiffus(user, tem,    &dif_vap, NULL);
-    Mobility   (user, ice_c, &mob_sub);
+    Mobility   (user, phi_c,  &mob_sub);
 
-    PetscReal dthcond_dice;
-    ThermalCond(user, ice_c, NULL, &dthcond_dice);
+    PetscReal dthcond_dphi, d_dif_vap;
+    ThermalCond(user, phi_c, NULL, &dthcond_dphi);
+    VaporDiffus(user, tem,   NULL, &d_dif_vap);
 
-    PetscReal d_dif_vap;
-    VaporDiffus(user, tem, NULL, &d_dif_vap);
-
-    /* Saturation vapor density and Gibbs-Thomson curvature correction. */
+    /* Saturation vapor density with Gibbs-Thomson correction. */
     PetscReal rho_vs, d_rho_vs;
     RhoVS_I(user, PetscRealPart(tem), &rho_vs, &d_rho_vs);
     PetscScalar kappa = 0.0;
     PetscScalar dkappa_dg[3] = {0.0, 0.0, 0.0};
     PetscScalar dkappa_dH[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     if (user->d0_GT != 0.0)
-        Curvature(dim, grad_ice, hess_ice, 0.01 / eps, &kappa, dkappa_dg, dkappa_dH);
-    PetscReal rhoI_vs_eff        = rho_vs   * (1.0 + user->d0_GT * PetscRealPart(kappa));
-    PetscReal d_rhoI_vs_eff_dtem = d_rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
+        Curvature(dim, grad_phi, hess_phi, 0.01 / eps, &kappa, dkappa_dg, dkappa_dH);
+    PetscReal rhovs_eff      = rho_vs   * (1.0 + user->d0_GT * PetscRealPart(kappa));
+    PetscReal d_rhovs_eff_dT = d_rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
 
+    /* Double-well derivative and its phi-derivative. */
     PetscReal df1;
-    DoubleWellDeriv(PetscRealPart(ice_c), NULL, &df1);
+    DoubleWellDeriv(phi_c, NULL, &df1);
 
-    /* air_eff = max(air, air_lim) */
-    PetscReal air_r = PetscRealPart(air_c);
-    PetscBool air_above_lim = (air_r > air_lim) ? PETSC_TRUE : PETSC_FALSE;
-    PetscReal air_eff = air_above_lim ? air_r : air_lim;
+    /* Localization loc = phi^2*(1-phi)^2 and dloc/dphi. */
+    PetscReal loc      = phi_c * phi_c * phi_ac * phi_ac;
+    PetscReal dloc_dph = 2.0 * phi_c * phi_ac * (phi_ac - phi_c);
 
-    /* Phase-change localization and its ice-derivative for sublimation Jacobian. */
-    PetscReal loc       = PetscRealPart(ice_c) * PetscRealPart(ice_c) * air_r * air_r;
-    PetscReal dloc_dice = 2.0 * PetscRealPart(ice_c) * air_r * (air_r - PetscRealPart(ice_c));
-    PetscReal rho_v_minus_rho_vs = PetscRealPart(rhov) - rhoI_vs_eff;
-
-    PetscReal S_T = 1.0 / (rho_ice * lat_sub);
+    /* phi_a floor for vapor storage/diffusion. */
+    PetscBool phi_a_above_lim = (phi_ac > air_lim) ? PETSC_TRUE : PETSC_FALSE;
+    PetscReal phi_aef = phi_a_above_lim ? phi_ac : air_lim;
 
     const PetscReal *N0, (*N1)[dim];
     IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0);
@@ -286,51 +252,55 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscScalar (*J)[3][nen][3] = (PetscScalar (*)[3][nen][3])Je;
 
     for (a = 0; a < nen; a++) {
-        PetscReal grad_Na_dot_grad_tem  = 0.0;
-        PetscReal grad_Na_dot_grad_rhov = 0.0;
+        PetscReal gNa_gtem  = 0.0;
+        PetscReal gNa_grhov = 0.0;
         for (l = 0; l < dim; l++) {
-            grad_Na_dot_grad_tem  += N1[a][l] * PetscRealPart(grad_tem [l]);
-            grad_Na_dot_grad_rhov += N1[a][l] * PetscRealPart(grad_rhov[l]);
+            gNa_gtem  += N1[a][l] * PetscRealPart(grad_tem [l]);
+            gNa_grhov += N1[a][l] * PetscRealPart(grad_rhov[l]);
         }
 
         for (b = 0; b < nen; b++) {
-            PetscReal Na_Nb   = N0[a] * N0[b];
-            PetscReal N1a_N1b = 0.0;
-            for (l = 0; l < dim; l++) N1a_N1b += N1[a][l] * N1[b][l];
+            PetscReal NaNb   = N0[a] * N0[b];
+            PetscReal gNagNb = 0.0;
+            for (l = 0; l < dim; l++) gNagNb += N1[a][l] * N1[b][l];
 
-            /* ====================== [ ice , * ] ============================= */
-            J[a][0][b][0] += shift * Na_Nb
-                           + 3.0 * mob_sub * eps * N1a_N1b
-                           + (3.0 * mob_sub / eps) * df1 * Na_Nb
-                           - user->alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb;
-            /* GT curvature chain-rule (d0_GT != 0) also contributes to J[a][0][b][0]
-             * via dkappa/d(grad_ice)*N1[b]; omitted here — d0_GT=0 is the typical case. */
-            J[a][0][b][1] += user->alph_sub * loc * d_rhoI_vs_eff_dtem / rho_ice * Na_Nb;
-            J[a][0][b][2] -= user->alph_sub * loc / rho_ice * Na_Nb;
+            /* ============ R_ice / phi ============ */
+            J[a][0][b][0] += shift * NaNb
+                           + 3.0 * mob_sub * eps * gNagNb
+                           + (3.0 * mob_sub / eps) * df1 * NaNb
+                           - (user->alph_sub / rho_ice) * dloc_dph
+                             * (PetscRealPart(rhov) - rhovs_eff) * NaNb;
+            /* GT curvature chain-rule (d0_GT != 0) also contributes here
+             * via dkappa/d(grad_phi)*N1[b]; omitted — d0_GT=0 is typical. */
 
-            /* ====================== [ tem , * ] (row-scaled by S_T) ========= */
-            /* Latent-heat coupling: d(-rho_ice*lat_sub*ice_t*N0[a]*S_T)/d(ice_b)
-             * = -S_T*rho_ice*lat_sub*shift*Na_Nb = -shift*Na_Nb  (S_T cancels). */
-            J[a][1][b][0] += S_T * dthcond_dice * grad_Na_dot_grad_tem * N0[b]
-                           - shift * Na_Nb;
-            J[a][1][b][1] += S_T * (
-                  shift * rho * cp * Na_Nb
-                + thcond * N1a_N1b
-            );
+            /* ============ R_ice / T ============ */
+            J[a][0][b][1] += (user->alph_sub / rho_ice) * loc * d_rhovs_eff_dT * NaNb;
 
-            /* ====================== [ vap , * ] ============================= */
-            /* Geometric coupling: d(air_eff)/d(ice) on storage and diffusion. */
-            if (air_above_lim) {
-                J[a][2][b][0] += -Na_Nb * PetscRealPart(rhov_t)
-                               - dif_vap * N0[b] * grad_Na_dot_grad_rhov;
+            /* ============ R_ice / rhov ============ */
+            J[a][0][b][2] -= (user->alph_sub / rho_ice) * loc * NaNb;
+
+            /* ============ R_tem / phi ============ */
+            J[a][1][b][0] += dthcond_dphi * gNa_gtem * N0[b]
+                           - rho_ice * lat_sub * shift * NaNb;
+
+            /* ============ R_tem / T ============ */
+            J[a][1][b][1] += shift * rho * cp * NaNb
+                           + thcond * gNagNb;
+
+            /* ============ R_vap / phi ============ */
+            if (phi_a_above_lim) {
+                J[a][2][b][0] += -NaNb * PetscRealPart(rhov_t)
+                               - dif_vap * N0[b] * gNa_grhov;
             }
-            /* Mass coupling: d((rho_ice-rhov)*ice_t)/d(ice_b) = (rho_ice-rhov)*shift*N0[b]. */
-            J[a][2][b][0] += (rho_ice - PetscRealPart(rhov)) * shift * Na_Nb;
-            J[a][2][b][1] += d_dif_vap * air_eff * grad_Na_dot_grad_rhov * N0[b];
-            /* Mass coupling: d((rho_ice-rhov)*ice_t)/d(rhov_b) = -ice_t*N0[b]. */
-            J[a][2][b][2] += air_eff * shift * Na_Nb
-                           + dif_vap * air_eff * N1a_N1b
-                           - PetscRealPart(ice_t) * Na_Nb;
+            J[a][2][b][0] += (rho_ice - PetscRealPart(rhov)) * shift * NaNb;
+
+            /* ============ R_vap / T ============ */
+            J[a][2][b][1] += d_dif_vap * phi_aef * gNa_grhov * N0[b];
+
+            /* ============ R_vap / rhov ============ */
+            J[a][2][b][2] += phi_aef * shift * NaNb
+                           + dif_vap * phi_aef * gNagNb
+                           - PetscRealPart(phi_t) * NaNb;
         }
     }
     return 0;
@@ -348,11 +318,11 @@ PetscErrorCode Jacobian(IGAPoint pnt,
 
 /* =========================================================================
  * Per-element scalar integrals for the monitor table.
- *   S[0] = ice
- *   S[1] = ice^2 air^2   (ice-air interface measure)
- *   S[2] = air
- *   S[3] = tem
- *   S[4] = rhov * air
+ *   S[0] = phi_i (ice volume fraction)
+ *   S[1] = phi_i^2 * phi_a^2  (ice-air interface measure)
+ *   S[2] = phi_a (air volume fraction)
+ *   S[3] = T
+ *   S[4] = rhov * phi_a
  * ========================================================================= */
 PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
                            PetscScalar *S, void *ctx)
@@ -362,16 +332,16 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
     PetscScalar sol[3];
     IGAPointFormValue(pnt, U, &sol[0]);
 
-    PetscReal ice  = PetscRealPart(sol[0]);
+    PetscReal phi  = PetscRealPart(sol[0]);
     PetscReal tem  = PetscRealPart(sol[1]);
     PetscReal rhov = PetscRealPart(sol[2]);
-    PetscReal air  = 1.0 - ice;
+    PetscReal phi_a = 1.0 - phi;
 
-    S[0] = ice;
-    S[1] = ice*ice * air*air;
-    S[2] = air;
+    S[0] = phi;
+    S[1] = phi*phi * phi_a*phi_a;
+    S[2] = phi_a;
     S[3] = tem;
-    S[4] = rhov * air;
+    S[4] = rhov * phi_a;
 
     PetscFunctionReturn(0);
 }
