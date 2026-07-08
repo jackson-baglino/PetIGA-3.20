@@ -135,13 +135,14 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
                 - (user->alph_sub / rho_ice) * loc
                   * (PetscRealPart(rhov) - rhovs_eff) * N0[a];
 
-        R[a][1] = rho * cp * N0[a] * tem_t                  /* storage */
-                + thcond * gN_gtem                           /* conduction */
-                - rho_ice * lat_sub * phi_t * N0[a];         /* latent heat */
+        R[a][1] = rho * cp * N0[a] * tem_t                              /* storage */
+                + user->xi_T * thcond * gN_gtem                        /* conduction */
+                - user->xi_T * rho_ice * lat_sub * phi_t * N0[a];      /* latent heat */
 
-        R[a][2] = phi_aef * N0[a] * rhov_t                  /* vapor storage */
-                + dif_vap * phi_aef * gN_grhov               /* vapor diffusion */
-                + (rho_ice - PetscRealPart(rhov)) * phi_t * N0[a]; /* mass exchange */
+        R[a][2] = phi_aef * N0[a] * rhov_t                             /* vapor storage */
+                + user->xi_v * dif_vap * phi_aef * gN_grhov            /* vapor diffusion */
+                + (user->xi_v * rho_ice - PetscRealPart(rhov))
+                  * phi_t * N0[a];                                      /* mass exchange */
     }
     return 0;
 }
@@ -280,26 +281,26 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             J[a][0][b][2] -= (user->alph_sub / rho_ice) * loc * NaNb;
 
             /* ============ R_tem / phi ============ */
-            J[a][1][b][0] += dthcond_dphi * gNa_gtem * N0[b]
-                           - rho_ice * lat_sub * shift * NaNb;
+            J[a][1][b][0] += user->xi_T * dthcond_dphi * gNa_gtem * N0[b]
+                           - user->xi_T * rho_ice * lat_sub * shift * NaNb;
 
             /* ============ R_tem / T ============ */
             J[a][1][b][1] += shift * rho * cp * NaNb
-                           + thcond * gNagNb;
+                           + user->xi_T * thcond * gNagNb;
 
             /* ============ R_vap / phi ============ */
             if (phi_a_above_lim) {
                 J[a][2][b][0] += -NaNb * PetscRealPart(rhov_t)
-                               - dif_vap * N0[b] * gNa_grhov;
+                               - user->xi_v * dif_vap * N0[b] * gNa_grhov;
             }
-            J[a][2][b][0] += (rho_ice - PetscRealPart(rhov)) * shift * NaNb;
+            J[a][2][b][0] += (user->xi_v * rho_ice - PetscRealPart(rhov)) * shift * NaNb;
 
             /* ============ R_vap / T ============ */
-            J[a][2][b][1] += d_dif_vap * phi_aef * gNa_grhov * N0[b];
+            J[a][2][b][1] += user->xi_v * d_dif_vap * phi_aef * gNa_grhov * N0[b];
 
             /* ============ R_vap / rhov ============ */
             J[a][2][b][2] += phi_aef * shift * NaNb
-                           + dif_vap * phi_aef * gNagNb
+                           + user->xi_v * dif_vap * phi_aef * gNagNb
                            - PetscRealPart(phi_t) * NaNb;
         }
     }

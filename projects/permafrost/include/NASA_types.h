@@ -137,6 +137,15 @@ typedef struct {
 
   PetscInt npoints;
 
+  /* Anti-trapping / stabilization multipliers (Moure & Fu 2024, K&P 2009).
+   * xi_T scales thermal conduction and latent heat in R_tem.
+   * xi_v scales vapor diffusion and the rho_ice part of the mass exchange
+   *      source in R_vap — reduces spurious interface fluxes from the
+   *      finite-width diffuse interface to the physical sharp-interface limit.
+   * Defaults: xi_T = 1.0 (no effect), xi_v = 1e-3 (M&F sublimation value). */
+  PetscReal xi_T;
+  PetscReal xi_v;
+
   /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */
   PetscReal phase_lo;     // lower bound for phi_ice, phi_air (default -0.25)
   PetscReal phase_hi;     // upper bound for phi_ice, phi_air (default  1.25)

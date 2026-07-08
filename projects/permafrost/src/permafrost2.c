@@ -46,6 +46,10 @@ int main(int argc, char *argv[]) {
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
 
+    /* Anti-trapping / diffuse-interface stabilization multipliers (M&F 2024). */
+    user.xi_T = 1.0;    /* thermal: scales conduction + latent heat in R_tem  */
+    user.xi_v = 1e-3;   /* vapor:   scales diffusion + rho_ice source in R_vap */
+
     user.d0_sub0    = 1e-7; // 9.6e-10;   /* capillary length d0 = gamma*Vm/(R*T) at -5°C [m] */
     user.beta_sub0  = 9.9e5;     /* beta0 = (1/alpha_c)*sqrt(2pi*m/kT)/(rho_vs/rho_i)
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
@@ -604,6 +608,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* CLI overrides for xi_T and xi_v. */
+    ierr = PetscOptionsGetReal(NULL, NULL, "-xi_T", &user.xi_T, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(NULL, NULL, "-xi_v", &user.xi_v, NULL); CHKERRQ(ierr);
+
     /* Create IGA and set up problem */
     IGA iga;
     ierr = IGACreate(PETSC_COMM_WORLD, &iga); CHKERRQ(ierr);
@@ -930,6 +938,10 @@ int main(int argc, char *argv[]) {
     if (user.decouple_phase_change)
         PetscPrintf(PETSC_COMM_WORLD,
                     "   decouple_phase_change: ON  (pure AC dynamics, no latent-heat/mass source)\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   xi_T     =  %.4e   (thermal conduction + latent heat scale)\n",
+                user.xi_T);
+    PetscPrintf(PETSC_COMM_WORLD, "   xi_v     =  %.4e   (vapor diffusion + rho_ice source scale)\n",
+                user.xi_v);
 
     /* --- Solver ------------------------------------------------------------ */
     PetscPrintf(PETSC_COMM_WORLD, "\n SOLVER\n");
