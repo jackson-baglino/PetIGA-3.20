@@ -1,4 +1,16 @@
 
+## 2026-07-08 — Re-enable VI bounds; add GT Jacobian gradient chain-rule term
+
+- Root-caused instability: M&F mob_sub (4.33e-7) makes tau_sub ~0.06 s; running dtmax=1e3 without VI bounds → interface overshoot → double-well sign-flip cascade.
+- Compared old stable HPC run (2026-06-20, vinewtonssls ON, beta_sub0=1.4e3) vs. current run: VI was the critical safety net; mob_sub was also 700x smaller due to different beta_sub0.
+- Re-enabled `-snes_type vinewtonssls` and `-vi_bounds 1` in `inputs/solver.opts`.
+- Added missing GT Jacobian gradient chain-rule term to `assembly.c` (`J[ice,ice]` += `alph_sub * loc / rho_ice * d0_GT * rho_vs * (dkappa_dg · N1[b]) * N0[a]`); this was the root cause of the previous Newton divergence after grain extinction that prompted disabling VI.
+- Removed the `0.75*eps` hack from `Residual_A1`/`Jacobian_A1` (was a temporary workaround; removing it restores self-consistency between R and J).
+- Updated `2D_two_ice_grains_boundary.opts` to M&F-consistent mesh: eps=7.7654e-8 m, Nx=751, Ny=926 (safety=0.08).
+- Committed and pushed to `rewrite/2phase-from-equations`.
+
+---
+
 ## 2026-07-07 — Restore phase-change coupling via ice_t in T and vapor equations
 
 - Restored sublimation source `S_sub` in the Allen-Cahn (ice) equation.
