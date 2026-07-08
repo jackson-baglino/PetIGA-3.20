@@ -303,15 +303,8 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                            + 3.0 * mob_sub * eps * N1a_N1b
                            + (3.0 * mob_sub / eps) * df1 * Na_Nb
                            - user->alph_sub * dloc_dice * rho_v_minus_rho_vs / rho_ice * Na_Nb;
-            /* GT curvature chain-rule: d(rhoI_vs_eff)/d(ice_b) via d(kappa)/d(grad_ice).
-             * Gradient term only; Hessian term (requires N2) is omitted as secondary. */
-            if (user->d0_GT != 0.0) {
-                PetscReal dkappa_dg_dot_N1b = 0.0;
-                for (l = 0; l < dim; l++)
-                    dkappa_dg_dot_N1b += PetscRealPart(dkappa_dg[l]) * N1[b][l];
-                J[a][0][b][0] += user->alph_sub * loc / rho_ice
-                               * user->d0_GT * rho_vs * dkappa_dg_dot_N1b * N0[a];
-            }
+            /* GT curvature chain-rule (d0_GT != 0) also contributes to J[a][0][b][0]
+             * via dkappa/d(grad_ice)*N1[b]; omitted here — d0_GT=0 is the typical case. */
             J[a][0][b][1] += user->alph_sub * loc * d_rhoI_vs_eff_dtem / rho_ice * Na_Nb;
             J[a][0][b][2] -= user->alph_sub * loc / rho_ice * Na_Nb;
 

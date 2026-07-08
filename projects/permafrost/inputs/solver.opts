@@ -90,20 +90,15 @@
                                         # consecutive halvings and ran out at 25)
 
 # ---------- Nonlinear solver (SNES) ------------------------------------------
-# vinewtonssls: semismooth VI Newton — enforces the phi_ice ∈ [vi_lo, vi_hi]
-# bounds set by SNESVISetVariableBounds() in permafrost2.c.  This is the
-# critical structural fix for double-well sign-flip instability: without it,
-# a single interface overshoot (phi_ice > 1) flips f1(phi)=phi²(1-phi) negative
-# and Newton drives phi further out of bounds, causing a runaway cascade.
+# VI bounds disabled: the strict [0,1] bound-constrained solve (vinewtonssls)
+# was tested but caused GT Jacobian singularity failures once a grain dissolved
+# (DOFs pinned at phi=0 → |∇phi|=0 → 1/|∇phi|^3 blows up at large dt).
+# Plain newtonls is more robust for multi-year Ostwald-ripening runs.
 #
-# The prior reason for disabling VI (GT Jacobian singularity once a grain
-# dissolved: DOFs pinned at phi=0 → Newton divergence) was caused by the
-# missing dkappa/d(grad_ice) Jacobian term in assembly.c.  That term is now
-# implemented, making the Newton Jacobian consistent with the GT residual
-# when d0_GT ≠ 0.  vinewtonrsls hits a PETSc parallel bug (MPIBAIJ submatrix
-# mismatch); vinewtonssls uses a semismooth reformulation and avoids that path.
--vi_bounds 1
--snes_type vinewtonssls
+# To re-enable VI: set -vi_bounds 1 and -snes_type vinewtonssls (vinewtonrsls
+# hits a PETSc parallel bug with MPIBAIJ; vinewtonssls is the working choice).
+-vi_bounds 0
+-snes_type newtonls
 -snes_max_it 50
 -snes_rtol 1e-06
 -snes_atol 1e-06
