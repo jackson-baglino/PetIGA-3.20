@@ -295,7 +295,11 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                 J[a][2][b][0] += -NaNb * PetscRealPart(rhov_t)
                                - user->xi_v * dif_vap * N0[b] * gNa_grhov;
             }
-            J[a][2][b][0] += (rho_ice - PetscRealPart(rhov)) * shift * NaNb;
+            /* Inexact Jacobian: use xi_v*rho_ice here (matching the old scaled form)
+             * so the vap/ice coupling is ~1000x smaller than with unscaled rho_ice.
+             * The residual R[a][2] uses unscaled rho_ice for exact mass balance;
+             * this approximation only affects Newton conditioning, not the solution. */
+            J[a][2][b][0] += (user->xi_v * rho_ice - PetscRealPart(rhov)) * shift * NaNb;
 
             /* ============ R_vap / T ============ */
             J[a][2][b][1] += user->xi_v * d_dif_vap * phi_aef * gNa_grhov * N0[b];
