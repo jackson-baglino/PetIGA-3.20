@@ -1,3 +1,29 @@
+## 2026-07-09 (afternoon 2) — Ripple pinned to committed phi undershoot; dtmax capped
+
+- ts_alpha_radius=0.5 did NOT prevent the step-52 ripple (12.22.29 run) — parsed
+  the .vts snapshots: the artifact is ice-phase undershoot down to phi=-0.107 at
+  snaps 51-53, committed by the Newton limit cycle at dt=237-316 s, decaying only
+  to -4e-4 by snap 500. Not integrator ringing.
+- Why every safety net missed it: -0.107 is inside the ±0.15 domain guard, and an
+  O(0.1) phi ripple has nodal residual ~1e-12 in dimensional SI — 8 orders below
+  atol=1e-6, so SNES "converges" onto it. The per-DOF ABS criterion is
+  structurally blind to phi-field errors (design debt, see below).
+- Fix applied: -dtmax 2.0e2 in solver.opts (= tau_kin/4.9 on the 1.3335x dt
+  ladder; Newton loses contraction at tau_kin/3). Re-derive when grain sizes
+  change: dtmax ~ beta_sub0*L_min²/(5*d0_sub0).
+- Open design debt: per-DOF atol is meaningless for DOF 0 (everything phi lives
+  below 1e-6 in this scaling); convergence effectively rides on the temperature
+  block + stol. Needs residual-scale-aware tolerances eventually.
+
+---
+
+**Session ended:** 2026-07-09 12:18:12
+
+
+---
+
+**Session ended:** 2026-07-09 12:07:50
+
 ## 2026-07-09 (afternoon) — Timescale analysis; damp integrator ringing
 
 - Verified user's Pe_eff algebra: Pe_eff = d0_sub/(xi_v·beta_sub·D_v) is correct
