@@ -56,8 +56,17 @@
 # the gate accepted them -- dt-shrinking has diminishing returns right at a
 # genuine AC-extinction singularity. Switching to a bound-constrained solve
 # fixes the underlying issue instead of tuning dt/gate width around it.
--phase_lo -0.15
--phase_hi  1.15
+# Tightened -0.15/1.15 -> -0.05/1.05 (2026-07-09): during a grain's terminal
+# collapse the interface velocity diverges (v = d0_sub0/(beta_sub0*r), ~30
+# cells/step at dt=178 s when r~1.7 um) and the quadratic B-spline front
+# develops Gibbs undershoots; at +-0.15 the guard slept through committed
+# phi = -0.107 ripple states (2026-07-09 12.34.19 run, small-grain collapse
+# at t~700-1100 s). At +-0.05 those trials fail the solve and the rejection
+# feedback drives dt down to the interface-CFL scale (~2-17 s) through the
+# collapse, then dt regrows. Healthy converged states overshoot only ~-0.007,
+# so 0.05 keeps ample margin for legitimate trial-iterate wiggle.
+-phase_lo -0.05
+-phase_hi  1.05
 
 -Lambda 0.0                             # triple-junction penalty in F_tri (disabled).
                                         # Only relevant for 3-phase ice/sediment/vapor
