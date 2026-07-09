@@ -1,5 +1,34 @@
 #include "NASA_main.h" // Need to change name later
 
+/* SNESSetFunctionDomainError() is logically collective, but Residual()
+ * (assembly.c) flags it per quadrature point — i.e. only on the rank that
+ * owns the offending point. PETSc's line searches branch on the raw flag
+ * BEFORE any norm collective (SNESLineSearchApply_Basic returns early with
+ * SNES_LINESEARCH_FAILED_DOMAIN), so a rank-local flag splits the ranks'
+ * control flow and deadlocks the run: observed 2026-07-09 on the 6-rank
+ * two-grain case at step 52, one rank stuck in MPI_Barrier inside
+ * SNESNEWTONLSCheckLocalMin_Private, the rest in VecNormEnd/MPI_Allreduce
+ * inside the line search. (PETSc's own VecSetInf mitigation in
+ * SNESComputeFunction only helps paths that compute a norm before
+ * branching, which the basic line search does not.)
+ *
+ * Wrap the TS-provided SNES residual so every evaluation ends with an
+ * allreduce that makes the flag uniform across ranks; the wrapper runs
+ * inside SNESComputeFunction, so its VecSetInf tagging then also fires
+ * consistently on all ranks. */
+static PetscErrorCode SNESTSFormFunction_DomainErrSync(SNES snes, Vec X, Vec F, void *ctx)
+{
+    PetscErrorCode ierr;
+    PetscBool derr_loc = PETSC_FALSE, derr_glob = PETSC_FALSE;
+    PetscFunctionBegin;
+    ierr = SNESTSFormFunction(snes, X, F, ctx); CHKERRQ(ierr);
+    ierr = SNESGetFunctionDomainError(snes, &derr_loc); CHKERRQ(ierr);
+    ierr = MPIU_Allreduce(&derr_loc, &derr_glob, 1, MPIU_BOOL, MPI_LOR,
+                          PetscObjectComm((PetscObject)snes)); CHKERRQ(ierr);
+    if (derr_glob && !derr_loc) { ierr = SNESSetFunctionDomainError(snes); CHKERRQ(ierr); }
+    PetscFunctionReturn(0);
+}
+
 int main(int argc, char *argv[]) {
     /* Petsc Initialization */
     PetscErrorCode ierr;
@@ -763,6 +792,12 @@ int main(int argc, char *argv[]) {
      * instabilities while they are still recoverable, before the resulting
      * bad state is committed to ts->vec_sol. */
     user.snes = nonlin;
+
+    /* Re-route the SNES residual through the domain-error-syncing wrapper
+     * (see SNESTSFormFunction_DomainErrSync above). TSGetSNES() has already
+     * installed SNESTSFormFunction with ctx=ts, and TSSetUp() only installs
+     * it when unset, so overriding here sticks. */
+    ierr = SNESSetFunction(nonlin, NULL, SNESTSFormFunction_DomainErrSync, ts); CHKERRQ(ierr);
 
     /* Bound-constrained Newton solve: enforce 0 <= ice <= 1 directly
      * on the DOF vector via a variational-inequality SNES (-snes_type
