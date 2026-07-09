@@ -1,3 +1,28 @@
+## 2026-07-09 (afternoon 6) — Width doc, Molaro validation geometry, dtmax ladder
+
+- Wrote docs/interface_width_conventions.md: width-convention table, ParaView
+  measurement guidance (1%-99% on-spec value = 9.2*eps/h ≈ 13 el), the one-way
+  physics→eps→profile→h→IC chain, historical pitfalls.
+- Created inputs/geometry/2D_molaro_sintering.opts for the Molaro et al. 2019
+  (JGR Planets, Fig. 11) validation: tangent grains D=73/101 um, multi_grains
+  IC, 204x131 um domain, 595x382 mesh (~12x current — HPC). Same eps 4.85e-7
+  (Eq. 45 binding bound is grain-size independent). OPEN: match the paper's
+  temperature + duration, re-run comp_eps at that T before running.
+- Created dtmax4e2/8e2 experiment variants: empirical ladder for the static
+  dtmax ceiling at physical d0 (prediction: collapse-endgame CFL caps it ~2e2;
+  if confirmed, next step is an interface-CFL dt limiter — cap dt via
+  max |phi_t| per step — to unlock quiet-phase dt ~ tau_kin/5 = 2.7e5 s at
+  Molaro scale).
+
+---
+
+**Session ended:** 2026-07-09 13:51:22
+
+
+---
+
+**Session ended:** 2026-07-09 13:37:58
+
 ## 2026-07-09 (afternoon 5) — d0phys run validated; ICs fixed to equilibrium width
 
 - d0phys run (13.04.29) fully healthy: phi in [0,1] all run, dt steady at 177.8 s
