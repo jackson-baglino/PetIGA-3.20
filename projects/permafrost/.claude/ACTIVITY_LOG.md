@@ -1,3 +1,28 @@
+## 2026-07-09 — Diagnose step-52 freeze; fix iter-0 convergence guard
+
+- Diagnosed the 2026-07-09__08.09.24 xiv-fix run "freeze": at step 52 (dt grown to
+  ~316 s) the DOF-1 residual oscillated 2e-6–4e-5 and never met atol, sending the
+  controller into a reject/halve cascade whose endgame (seen in the 07-08 16:01 run)
+  is an infinite "Min dt! can not Reduce time step" loop at dtmin=1e-6.
+- Root cause of the infinite loop: SNESDOFConvergence's `it_number < 1` guard skipped
+  all criteria at iteration 0, so a machine-noise initial residual (3e-13, far below
+  atol) still forced a Newton step; that KSP solve fails before iteration 1, the
+  prev_dt_red rtol loosening was never reached, and the identical solve retried forever.
+- Fix (c400a84): at iteration 0, accept SNES_CONVERGED_FNORM_ABS when every DOF
+  residual is below atol (rel/stol are meaningless at it 0). Rebuilt and pushed.
+- Open follow-ups: possibly adjust xi_v; investigate where dt plateaus before
+  choosing a dtmax; large-dt Newton contractivity (basic line search + inexact
+  R_vap/phi Jacobian) still limits dt growth.
+
+---
+
+**Session ended:** 2026-07-09 08:42:43
+
+
+---
+
+**Session ended:** 2026-07-08 17:08:44
+
 ## 2026-07-08 (later) — Root-cause dt-collapse: bt line search cannot operate at this residual scale
 
 - Post-xi_v-fix two-grain runs still died at dtmin. Local single-rank diagnostics
