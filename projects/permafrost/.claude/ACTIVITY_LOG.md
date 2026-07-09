@@ -1,3 +1,35 @@
+## 2026-07-08 (later) — Root-cause dt-collapse: bt line search cannot operate at this residual scale
+
+- Post-xi_v-fix two-grain runs still died at dtmin. Local single-rank diagnostics
+  (-snes_linesearch_monitor, exact-LU KSP, -snes_mf_operator) isolated the cause: near
+  equilibrium the residual is machine-dust (||F|| ~ 2e-13 in dimensional SI on the ~40 um
+  domain), while any meaningful Newton step transits a second-order residual bump ~1e-8 from
+  the phi-T latent-heat/conduction coupling. ||F|| increases for EVERY line-search lambda, so
+  bt returns DIVERGED_LINE_SEARCH at any dt; the adaptive controller then shrinks dt (which
+  fixes nothing) until dtmin. Verified NOT a linear-solver or Jacobian problem: exact LU and
+  true FD directional derivatives fail identically; forced full steps converge quadratically
+  (ice residual 2.3e-13 -> 1.7e-20 in one iteration).
+- Fix: -snes_linesearch_type basic in solver.opts. Confirmed on the production stack
+  (bcgs/ASM, 6 ranks): 51 steps, 0 rejections, dt ramped 1e-4 -> 2.4e+2 s, vapor evolving,
+  TOTAL_MASS drift 0.003%. Explains history: old vinewtonssls runs stepped because SSLS does
+  not backtrack on ||F||; all recent newtonls runs (before and after the xi_v fix) shared this
+  failure.
+- Also dropped -ksp_atol 1e-12 -> 1e-30 earlier in the session (it exceeded ||F||; wrong in
+  principle, though it turned out not to be the blocker).
+- Follow-ups noted: snes_atol 1e-6 is trivially satisfied near equilibrium (real steps have
+  fnorm ~1e-4 so REL does the work); durable fix remains nondimensionalization/row scaling.
+
+---
+
+---
+
+**Session ended:** 2026-07-08 16:08:25
+
+
+---
+
+**Session ended:** 2026-07-08 16:00:07
+
 ## 2026-07-08 — Fix ξ_v temporal scaling: source must be scaled with diffusion (M&F 2024 eq. 26)
 
 - Root-caused the shrinking-grain phase-field oscillation and dt stall: commit 864ae88 removed

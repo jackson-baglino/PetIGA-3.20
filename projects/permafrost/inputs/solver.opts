@@ -103,7 +103,21 @@
 -snes_rtol 1e-06
 -snes_atol 1e-06
 -snes_stol 1e-06
--snes_linesearch_type bt
+# basic (full-step) line search, NOT bt. Diagnosed 2026-07-08 on the two-grain
+# GTphys case: near equilibrium the residual norm sits at machine-dust level
+# (||F|| ~ 2e-13 in this model's dimensional SI units), while any physically
+# meaningful Newton step must transit a second-order residual bump ~1e-8 from
+# the phi-T latent-heat/conduction coupling (k(phi)*grad T). So ||F(x+lambda*dx)||
+# > ||F(x)|| for EVERY lambda: bt backtracks to nothing and SNES returns
+# DIVERGED_LINE_SEARCH at any dt (verified identical with exact-LU linear
+# solves and with -snes_mf_operator true directional derivatives), which sent
+# the adaptive controller spiralling to dtmin. With basic, Newton converges
+# quadratically (ice-block residual 2.3e-13 -> 1.7e-20 in ONE iteration) and
+# the same case ran 51 steps / 0 rejects with dt ramping 1e-4 -> 2.4e+2 s.
+# Globalization safety nets that remain: the phase-bounds domain-error guard
+# in Residual (bad trial states fail the solve -> dt reduce), NRmin/NRmax
+# iteration-count dt adaptivity, and max_rej.
+-snes_linesearch_type basic
 
 # ---------- Linear solver (KSP + preconditioner) -----------------------------
 # bcgs, not gmres: with the Gibbs-Thomson curvature term active (d0_GT above),
