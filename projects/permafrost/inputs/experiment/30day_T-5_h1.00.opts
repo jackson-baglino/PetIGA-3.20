@@ -18,3 +18,16 @@
 -temp -5.0
 -humidity 1.00
 -grad_temp0 0.0,0.0,0.0
+
+# Explicitly disable the Gibbs-Thomson curvature correction. This file predates
+# the change that made d0_GT default to d0_sub0 (1e-7), so without this line it
+# silently ran WITH curvature at the inflated M&F value. Baseline policy
+# (2026-07-09): run with M&F 2024 kinetic parameters (d0_sub0, beta_sub0
+# defaults) and NO curvature effect on rho_vs until the model is well-behaved.
+# TODO(later): reintroduce curvature via -d0_GT (physical value 9.6e-10 at
+# -5°C, see 30day_T-5_h1.00_GTphys.opts). Before doing so, fix the omitted GT
+# curvature chain-rule in the ice Jacobian (assembly.c "R_ice / phi" block) —
+# with d0_GT != 0 the inexact Jacobian makes Newton non-contractive above
+# dt ~ 250-300 s (diagnosed 2026-07-09, two-grain GTphys runs); alternatively
+# use -snes_linesearch_damping as a stopgap.
+-d0_GT 0
