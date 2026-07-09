@@ -1,3 +1,34 @@
+## 2026-07-09 (later still) — Root-cause the freeze: rank-local domain error deadlocks MPI
+
+- noGT-MF2024 run (d0_GT=0) failed identically at step 52 — GT Jacobian omission
+  disproved as the cause of the Newton oscillation (still open).
+- Stack-sampled the stuck 6-rank run (0% CPU): one rank in MPI_Barrier inside
+  SNESNEWTONLSCheckLocalMin_Private, others in MPI_Allreduce inside
+  SNESLineSearchApply_Basic. Cause: assembly.c Residual() sets
+  SNESSetFunctionDomainError per quadrature point (rank-local); basic line search
+  branches on the raw flag before its norm collectives → control-flow split →
+  deadlock. This explains ALL the "frozen" runs.
+- Fix (permafrost2.c): SNESTSFormFunction_DomainErrSync wrapper allreduces the
+  flag after every residual evaluation; out-of-bounds trials now fail the solve
+  collectively and dt reduces cleanly.
+- Also disabled GT curvature in the 30day_T-5_h1.00 baseline explicitly
+  (-d0_GT 0; default silently became 1e-7) per user decision to run pure
+  M&F 2024 parameters; re-enabling physical d0_GT=9.6e-10 noted as follow-up.
+
+---
+
+**Session ended:** 2026-07-09 10:01:24
+
+
+---
+
+**Session ended:** 2026-07-09 09:40:17
+
+
+---
+
+**Session ended:** 2026-07-09 09:23:44
+
 ## 2026-07-09 (later) — Revert iter-0 acceptance; add failure-reason diagnostics
 
 - The it0-atol-fix run (09.13.16) proved iteration-0 acceptance freezes all dynamics:
