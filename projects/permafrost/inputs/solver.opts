@@ -79,20 +79,21 @@
 -ts_alpha_radius 0.5
 
 # ---------- Adaptive time stepping -------------------------------------------
--dtmax 1.0e3                            # ~11.6 days; raised from 1.0e5 for multi-year
-                                        # pore-channel runs. The original reason for capping
-                                        # dtmax at all (job64406550's full-sublimation
-                                        # singularity at uncontrolled dt) is exactly the
-                                        # failure mode -snes_type vinewtonssls now prevents
-                                        # structurally, regardless of dt size -- so the cap is
-                                        # no longer a safety limit, just a speed knob. The
-                                        # 1.0e5 ceiling above was validated as safe (job64418602,
-                                        # 0 DIVERGED at that ceiling) but never pushed further.
-                                        # The NRmin/NRmax growth/shrink heuristic below still
-                                        # self-limits dt based on Newton iteration count, so
-                                        # this only matters during genuinely easy, quiet
-                                        # stretches -- exactly where a multi-year
-                                        # Ostwald-ripening run spends most of its time.
+# dtmax = tau_kin(smallest grain)/5. The kinetic timescale tau_kin =
+# beta_sub0*L^2/d0_sub0 is what bounds dt for this model (NOT the vapor
+# Peclet number, which is dt-independent and ~1e-6 here): for the 9.375 um
+# grain tau_kin = 9.9e5*(9.375e-6)^2/1e-7 = 870 s. Measured on the
+# 2026-07-09 two-grain runs, Newton becomes a non-contractive limit cycle at
+# dt ~ 237-316 s = tau_kin/3, and the oscillating iterates carry phi ripples
+# up to -0.107 that pass BOTH the +-0.15 domain guard AND atol=1e-6 (an
+# O(0.1) phi error has nodal residual ~1e-12 in this dimensional scaling),
+# so they get committed and imprint the "radiating oscillation" artifact at
+# step ~52. Capping at 2e2 keeps dt on the 1.3335x ladder's 177.9 s rung =
+# tau_kin/4.9, safely inside the contractive range. RE-DERIVE when grain
+# sizes change: dtmax ~ beta_sub0*L_min^2/(5*d0_sub0).
+# (History: old cap 1.0e3 was a speed knob after vinewtonssls removed the
+# full-sublimation-singularity failure mode; see git history for details.)
+-dtmax 2.0e2
 -adap 1
 -NRmin 5                                # SNES iters strictly below this trigger dt growth
 -NRmax 15                               # SNES iters above this trigger dt shrink
