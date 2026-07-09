@@ -1,3 +1,25 @@
+## 2026-07-09 (afternoon) — Timescale analysis; damp integrator ringing
+
+- Verified user's Pe_eff algebra: Pe_eff = d0_sub/(xi_v·beta_sub·D_v) is correct
+  (L cancels; d0/beta scaling-invariant = 1.01e-13 m²/s). Pe_eff = 4.64e-9/xi_v:
+  ~4.6e-6 at xi_v=1e-3, ≪1 for all xi_v ≥ 1e-6 — vapor stays quasi-steady, so
+  Pe does NOT set dtmax (it is dt-independent).
+- The dt bound comes from the kinetic timescale tau_kin = beta_sub·L²/d0_sub:
+  870 s for the 9.4 µm grain (cross-check: tau_kin(eps)=2.33 s ≈ tau_sub 2.38 s).
+  Crisis onset at dt≈237-316 s = tau_kin/3; recommended dtmax ≈ 90-175 s
+  (tau_kin/10..tau_kin/5) during active dynamics.
+- domerr-sync run validated the deadlock fix: 1669+ steps, 8 clean
+  DIVERGED_LINE_SEARCH (dt 237→23.7 backoff) at the step 51-60 crisis, recovery
+  to dt=790 s (dtmax/1.33 cap), mass conserved to -0.002%.
+- Root-caused the radiating oscillation from the small grain: PETSc TSALPHA
+  default is rho_inf=1 (midpoint, zero high-frequency damping) — stiff vapor
+  modes amplified by -1/step ring forever once kicked. Set -ts_alpha_radius 0.5
+  in solver.opts.
+
+---
+
+**Session ended:** 2026-07-09 10:24:03
+
 ## 2026-07-09 (later still) — Root-cause the freeze: rank-local domain error deadlocks MPI
 
 - noGT-MF2024 run (d0_GT=0) failed identically at step 52 — GT Jacobian omission
