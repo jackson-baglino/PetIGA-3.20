@@ -118,6 +118,14 @@
 # in Residual (bad trial states fail the solve -> dt reduce), NRmin/NRmax
 # iteration-count dt adaptivity, and max_rej.
 -snes_linesearch_type basic
+# Print the divergence reason whenever a solve fails (silent on success).
+# Rationale: in the 2026-07-08/09 dt-collapse cascades, SNES aborted between
+# Newton it 0 and it 1 — i.e. inside the KSP solve or the trial-state function
+# evaluation — and nothing in the log said why, so every post-mortem was
+# guesswork. These make the next failure self-documenting at zero cost on
+# healthy steps.
+-snes_converged_reason ::failed
+-ksp_converged_reason ::failed
 
 # ---------- Linear solver (KSP + preconditioner) -----------------------------
 # bcgs, not gmres: with the Gibbs-Thomson curvature term active (d0_GT above),

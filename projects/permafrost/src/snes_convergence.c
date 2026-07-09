@@ -108,25 +108,17 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
 
     *reason = SNES_CONVERGED_ITERATING;
 
-    /* At iteration 0 only the absolute criterion is meaningful: rel[i]=1 by
-     * construction (norm0 is set from this residual) and the solution update
-     * is stale, so rtol/stol cannot be consulted.  But the absolute check
-     * must fire here: if every DOF residual is already below atol there is
-     * nothing for Newton to do, and forcing a step on a machine-noise
-     * residual makes the KSP fail before iteration 1.  At dtmin that trapped
-     * the timestep controller in an infinite reject/retry loop — the rtol
-     * loosening below only runs at it >= 1, which was never reached. */
+    /* Never declare convergence at iteration 0.  The it-0 residual is
+     * evaluated at the TSALPHA predictor, which nearly satisfies the
+     * equations by construction: it sits at the residual noise floor
+     * (~1e-13 in this model's SI scaling, far below atol) whether or not
+     * dynamics are pending.  The physics lives entirely in the first Newton
+     * update — accepting here freezes the solution at the predictor and the
+     * simulation shows no dynamics at all (2026-07-09 it0-atol-fix run:
+     * 1223/1223 steps accepted at it 0, all domain integrals static).
+     * Healthy near-equilibrium solves instead reach it 1 with a ~zero
+     * update and are accepted by the stol criterion below. */
     if (it_number < 1) {
-        PetscInt  nd0     = (dof < 3) ? dof : 3;
-        PetscBool all_abs = PETSC_TRUE;
-        for (i = 0; i < nd0; i++) {
-            if (!(n2dof[i] < atol)) { all_abs = PETSC_FALSE; break; }
-        }
-        if (all_abs) {
-            PetscPrintf(PETSC_COMM_WORLD,
-                        "  SNES converged at it 0: all DOF residuals below atol\n");
-            *reason = SNES_CONVERGED_FNORM_ABS;
-        }
         PetscFunctionReturn(0);
     }
 
