@@ -208,9 +208,15 @@ PetscErrorCode FormInitialSingleIceGrain2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal Lx    = user->Lx;
     const PetscReal Ly        = user->Ly;
     const PetscReal eps       = user->eps;
-    const PetscReal eps_model = 0.75 * eps;  /* must match Residual_A1/Jacobian_A1 */
     const PetscReal RCice     = user->RCice;
-    const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps_model);
+    /* Equilibrium logistic profile: phi = 1/(1+exp(-(R-d)/eps))
+     * = 0.5 - 0.5*tanh(0.5*(d-R)/eps), so tc = 0.5/eps. Initializing at the
+     * model's own equilibrium width (1%-99% band = 9.2*eps) removes the
+     * early width-relaxation transient. The old tc = 1/(sqrt(2)*0.75*eps)
+     * was 1.89x steeper — a leftover from the removed eps_model=0.75*eps
+     * residual scaling — and made every run start with the IC ~7 cells wide
+     * relaxing to the equilibrium 13 cells over the first ~60 steps. */
+    const PetscReal tc        = 0.5 / eps;
     const PetscReal cx        = 0.5 * Lx;
     const PetscReal cy        = 0.5 * Ly;
 
@@ -275,9 +281,15 @@ PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user)
 
     const PetscReal Lx        = user->Lx;
     const PetscReal eps       = user->eps;
-    const PetscReal eps_model = 0.75 * eps;  /* must match Residual_A1/Jacobian_A1 */
     const PetscReal RCice     = user->RCice;
-    const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps_model);
+    /* Equilibrium logistic profile: phi = 1/(1+exp(-(R-d)/eps))
+     * = 0.5 - 0.5*tanh(0.5*(d-R)/eps), so tc = 0.5/eps. Initializing at the
+     * model's own equilibrium width (1%-99% band = 9.2*eps) removes the
+     * early width-relaxation transient. The old tc = 1/(sqrt(2)*0.75*eps)
+     * was 1.89x steeper — a leftover from the removed eps_model=0.75*eps
+     * residual scaling — and made every run start with the IC ~7 cells wide
+     * relaxing to the equilibrium 13 cells over the first ~60 steps. */
+    const PetscReal tc        = 0.5 / eps;
     const PetscReal cx        = 0.5 * Lx;
 
     PetscPrintf(PETSC_COMM_WORLD,
@@ -414,10 +426,16 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal Lx  = user->Lx;
     const PetscReal Ly  = user->Ly;
     const PetscReal eps       = user->eps;
-    const PetscReal eps_model = 0.75 * eps;  /* must match Residual_A1/Jacobian_A1 */
     const PetscReal R0        = user->RCice0;   /* left grain (x=0), smaller  */
     const PetscReal R1        = user->RCice1;   /* right grain (x=Lx), larger */
-    const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps_model);
+    /* Equilibrium logistic profile: phi = 1/(1+exp(-(R-d)/eps))
+     * = 0.5 - 0.5*tanh(0.5*(d-R)/eps), so tc = 0.5/eps. Initializing at the
+     * model's own equilibrium width (1%-99% band = 9.2*eps) removes the
+     * early width-relaxation transient. The old tc = 1/(sqrt(2)*0.75*eps)
+     * was 1.89x steeper — a leftover from the removed eps_model=0.75*eps
+     * residual scaling — and made every run start with the IC ~7 cells wide
+     * relaxing to the equilibrium 13 cells over the first ~60 steps. */
+    const PetscReal tc        = 0.5 / eps;
 
     const PetscReal c0x = 0.0,  c0y = 0.5 * Ly;
     const PetscReal c1x = Lx,   c1y = 0.5 * Ly;
@@ -501,8 +519,14 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal Lx  = user->Lx;
     const PetscReal Ly  = user->Ly;
     const PetscReal eps       = user->eps;
-    const PetscReal eps_model = 0.75 * eps;  /* must match Residual_A1/Jacobian_A1 */
-    const PetscReal tc        = 1.0 / (PetscSqrtReal(2.0) * eps_model);
+    /* Equilibrium logistic profile: phi = 1/(1+exp(-(R-d)/eps))
+     * = 0.5 - 0.5*tanh(0.5*(d-R)/eps), so tc = 0.5/eps. Initializing at the
+     * model's own equilibrium width (1%-99% band = 9.2*eps) removes the
+     * early width-relaxation transient. The old tc = 1/(sqrt(2)*0.75*eps)
+     * was 1.89x steeper — a leftover from the removed eps_model=0.75*eps
+     * residual scaling — and made every run start with the IC ~7 cells wide
+     * relaxing to the equilibrium 13 cells over the first ~60 steps. */
+    const PetscReal tc        = 0.5 / eps;
     const PetscInt  ng        = user->n_act;
 
     if (ng <= 0)
