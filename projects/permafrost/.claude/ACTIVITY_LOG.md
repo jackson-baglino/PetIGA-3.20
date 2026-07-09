@@ -1,3 +1,30 @@
+## 2026-07-09 (afternoon 5) — d0phys run validated; ICs fixed to equilibrium width
+
+- d0phys run (13.04.29) fully healthy: phi in [0,1] all run, dt steady at 177.8 s
+  through the small grain's extinction at t=1.08e5 s (~30 h — scales linearly
+  with d0 vs the inflated run's ~900 s, ratio ≈ d0 ratio; kinetics validated).
+- Interface width measured: IC 7.0 cells (1%-99%) relaxes to 13.0 cells by snap
+  60 and holds ±0.1 for 1400 snapshots — exactly the analytic equilibrium
+  2·ln(99)·eps = 13.1 cells. Width "growth" was IC relaxation, not fattening.
+- Rejected reintroducing eps_model = 0.75*eps in residual/Jacobian: it breaks
+  the K&P asymptotic mapping (mob/alph derive from user->eps), shifting
+  effective d0/beta ~25% untracked. Mesh is NOT over-resolved: h = eps/√2 is
+  4 elements per Karma width (the standard rule of thumb); 13 cells per 1-99%
+  band is the same interface in a wider ruler.
+- Fixed all four grain ICs: stale tc = 1/(√2·0.75·eps) (leftover from the
+  removed eps_model scaling) → equilibrium logistic tc = 0.5/eps. Runs now
+  start at the model's equilibrium width; the early relaxation transient and
+  its vapor/thermal kick are gone. Rebuilt, committed, pushed.
+
+---
+
+**Session ended:** 2026-07-09 13:18:06
+
+
+---
+
+**Session ended:** 2026-07-09 13:01:37
+
 ## 2026-07-09 (afternoon 4) — Switch to physical d0_sub0; guard approach abandoned
 
 - guard005 run confirmed the ±0.05 guard is symptomatic and leaky: committed
