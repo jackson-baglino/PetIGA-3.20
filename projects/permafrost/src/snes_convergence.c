@@ -108,16 +108,25 @@ PetscErrorCode SNESDOFConvergence(SNES snes, PetscInt it_number, PetscReal xnorm
 
     *reason = SNES_CONVERGED_ITERATING;
 
-    /* Require at least 1 Newton iteration before checking convergence — this
-     * avoids declaring success on the iter-0 residual (which equals norm0 by
-     * construction, so rel[i]=1 and no criterion can fire).
-     *
-     * The old guard was it_number < 3, but that forced SNES to attempt a 2nd
-     * Newton step even when the BT line search at step 0 had already reduced
-     * ||G|| to machine precision.  At larger dt the TSALPHA Jacobian is less
-     * well-conditioned, causing KSP to diverge on that 2nd solve; the custom
-     * checker never got a chance to see the already-converged residual. */
+    /* At iteration 0 only the absolute criterion is meaningful: rel[i]=1 by
+     * construction (norm0 is set from this residual) and the solution update
+     * is stale, so rtol/stol cannot be consulted.  But the absolute check
+     * must fire here: if every DOF residual is already below atol there is
+     * nothing for Newton to do, and forcing a step on a machine-noise
+     * residual makes the KSP fail before iteration 1.  At dtmin that trapped
+     * the timestep controller in an infinite reject/retry loop — the rtol
+     * loosening below only runs at it >= 1, which was never reached. */
     if (it_number < 1) {
+        PetscInt  nd0     = (dof < 3) ? dof : 3;
+        PetscBool all_abs = PETSC_TRUE;
+        for (i = 0; i < nd0; i++) {
+            if (!(n2dof[i] < atol)) { all_abs = PETSC_FALSE; break; }
+        }
+        if (all_abs) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  SNES converged at it 0: all DOF residuals below atol\n");
+            *reason = SNES_CONVERGED_FNORM_ABS;
+        }
         PetscFunctionReturn(0);
     }
 
