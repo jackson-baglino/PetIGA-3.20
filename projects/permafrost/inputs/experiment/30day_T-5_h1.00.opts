@@ -19,15 +19,23 @@
 -humidity 1.00
 -grad_temp0 0.0,0.0,0.0
 
-# Explicitly disable the Gibbs-Thomson curvature correction. This file predates
-# the change that made d0_GT default to d0_sub0 (1e-7), so without this line it
-# silently ran WITH curvature at the inflated M&F value. Baseline policy
-# (2026-07-09): run with M&F 2024 kinetic parameters (d0_sub0, beta_sub0
-# defaults) and NO curvature effect on rho_vs until the model is well-behaved.
-# TODO(later): reintroduce curvature via -d0_GT (physical value 9.6e-10 at
-# -5°C, see 30day_T-5_h1.00_GTphys.opts). Before doing so, fix the omitted GT
-# curvature chain-rule in the ice Jacobian (assembly.c "R_ice / phi" block) —
-# with d0_GT != 0 the inexact Jacobian makes Newton non-contractive above
-# dt ~ 250-300 s (diagnosed 2026-07-09, two-grain GTphys runs); alternatively
-# use -snes_linesearch_damping as a stopgap.
+# Physical capillary length (K&P 2009 Eq. 13: d0 = gamma_iv*V_m/(R*T) =
+# 0.109 * 1.96e-5 / (8.314 * 268.15) = 9.5975e-10 m at -5°C). The code default
+# is M&F 2024's 100x-inflated 1e-7, which makes all capillarity-driven
+# kinetics (carried by the AC/source coupling via lambda = a1*eps/d0_sub —
+# active even with -d0_GT 0) run ~100x faster than physical: the 9.375 um
+# grain collapsed in 435 s instead of the physical ~12.6 h, and near collapse
+# the interface crossed 10-100 cells/step at dt=178 s, generating the Gibbs
+# undershoot ripples seen in every 2026-07-09 run. comp_eps.py sizes eps/mesh
+# from the PHYSICAL d0 (binding bound Eq. 45: d0/(beta_sub*vn) = 9.7e-7 m),
+# so this geometry's eps = 4.85e-7 and 121x149 mesh already support the
+# physical value — the inflation was never needed here. At physical d0 the
+# collapse endgame velocity d0/(beta*eps) = 2e-9 m/s gives ~1 cell/step at
+# dtmax = 2e2: interface CFL respected, no ripple generation.
+-d0_sub0 9.5975e-10
+
+# Keep the explicit rho_vs curvature correction OFF: with physical d0_sub0 the
+# AC coupling already carries physical capillarity; adding d0_GT on top would
+# double-count it. Revisit only with the Jacobian chain-rule fix (see
+# assembly.c "R_ice / phi") if an explicit Kelvin term is ever needed.
 -d0_GT 0
