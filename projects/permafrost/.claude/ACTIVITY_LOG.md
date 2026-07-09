@@ -1,3 +1,26 @@
+## 2026-07-09 (afternoon 3) — Step-51 event identified: small-grain collapse; guard tightened
+
+- dtmax=200 did NOT stop the ripple (12.34.19 run): undershoot to -0.098 at
+  dt=177.8 and continuing at dt=10-25 s. Field analysis showed why: the small
+  grain (r=9.375 um) fully collapses at t~700-1100 s, its mass transferring to
+  the large grain via vapor (sum_phi left 1164 -> -6; right 4954 -> 6009; total
+  conserved 0.7%). Ripening IS active despite d0_GT=0 — the AC/source coupling
+  carries the K&P-calibrated GT kinetics with the INFLATED d0_sub0=1e-7.
+- Collapse time beta_sub0*r0²/(2*d0_sub0) = 435 s matches observation. With
+  physical d0=9.6e-10 it would take ~12.6 h — the model runs ~100x faster than
+  physical because d0_sub0 is inflated 100x. This quantifies the user's "dynamics
+  feel too fast" and the mesh-refinement observation (finer mesh -> smaller eps ->
+  K&P bounds admit smaller/physical d0).
+- The ripple: interface velocity diverges as r->0 (10-100 cells/step at dt=178);
+  quadratic B-splines produce Gibbs undershoot on a front outrunning the mesh.
+  Fixed dtmax can't track diverging v; tightened -phase_lo/-phase_hi to
+  -0.05/1.05 so guard rejections drive dt down to interface-CFL (~2-17 s)
+  through the collapse and regrow after.
+
+---
+
+**Session ended:** 2026-07-09 12:31:57
+
 ## 2026-07-09 (afternoon 2) — Ripple pinned to committed phi undershoot; dtmax capped
 
 - ts_alpha_radius=0.5 did NOT prevent the step-52 ripple (12.22.29 run) — parsed
