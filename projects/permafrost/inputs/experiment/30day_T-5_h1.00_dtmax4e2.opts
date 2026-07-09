@@ -1,0 +1,26 @@
+# =============================================================================
+# experiment/30day_T-5_h1.00_dtmax4e2.opts — dtmax ladder rung 1 (4e2 s)
+#
+# Identical to 30day_T-5_h1.00.opts (physical d0_sub0, d0_GT=0) but raises
+# dtmax 2e2 -> 4e2. Part of the systematic dtmax study at physical d0
+# (2026-07-09): the static cap 2e2 was set for the small grain's collapse
+# endgame interface-CFL (v -> d0/(beta*eps) ~ 2e-9 m/s -> dt ~ 1.7e2 s for
+# 1 cell/step). Prediction: at 4e2 the run is clean during quiet phases but
+# regrows phi undershoot ripples during the collapse window (~t = 1e5 s).
+# Judge by: min(phi_ice) in BOUNDS lines through the collapse, and the bulk
+# ripple metric on the vtk output. If clean, try dtmax8e2; if rippled, the
+# static-dtmax ceiling is confirmed at ~2e2 and the interface-CFL dt limiter
+# is the way to unlock larger steps.
+# =============================================================================
+
+-t_final 2592000.0                      # 30 days (s)
+-t_sed_freeze 10
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-d0_sub0 9.5975e-10                     # physical capillary length (K&P Eq. 13)
+-d0_GT 0
+
+-dtmax 4.0e2

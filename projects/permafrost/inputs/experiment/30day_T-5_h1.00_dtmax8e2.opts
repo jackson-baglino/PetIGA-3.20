@@ -1,0 +1,20 @@
+# =============================================================================
+# experiment/30day_T-5_h1.00_dtmax8e2.opts — dtmax ladder rung 2 (8e2 s)
+#
+# Identical to 30day_T-5_h1.00.opts (physical d0_sub0, d0_GT=0) but raises
+# dtmax 2e2 -> 8e2. Run ONLY if the 4e2 rung stayed clean through the
+# small grain's collapse window (~t = 1e5 s); see the dtmax4e2 variant
+# header for the study rationale and pass/fail criteria.
+# =============================================================================
+
+-t_final 2592000.0                      # 30 days (s)
+-t_sed_freeze 10
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-d0_sub0 9.5975e-10                     # physical capillary length (K&P Eq. 13)
+-d0_GT 0
+
+-dtmax 8.0e2

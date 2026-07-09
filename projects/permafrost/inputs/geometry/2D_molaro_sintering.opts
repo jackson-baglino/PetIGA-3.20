@@ -1,0 +1,50 @@
+# =============================================================================
+# geometry/2D_molaro_sintering.opts — two-grain sintering, Molaro et al. (2019)
+# JGR Planets Fig. 11 validation scale.
+#
+# Grains: D = 73 um and 101 um (R0 = 36.5e-6 m, R1 = 50.5e-6 m), placed
+# tangent (center separation = R0 + R1 = 87 um) INSIDE the domain via the
+# multi_grains IC — not the boundary-centered IC — so the contact/neck sits
+# in the domain interior with clean margins on all sides (15 um ~ 31*eps).
+#
+# Domain:  Lx = 15 + 73 + 87 + ... : margins 15 um each side
+#          Lx = 15 + 36.5 + 87 + 50.5 + 15 = 204 um
+#          Ly = 2*(R1 + 15)              = 131 um
+# Centers: c0 = (51.5e-6, 65.5e-6), c1 = (138.5e-6, 65.5e-6)   [tangent]
+#
+# eps / mesh from comp_eps.py (T0 = -5 C, alpha_c = 2e-3, vn = 1e-9):
+#   binding bound Eq.(45) d0/(beta_sub*vn) = 9.7067e-7 m  (grain-size
+#   independent — same eps as the small two-grain geometry)
+#   eps = 4.8534e-7, h = eps/sqrt(2) = 3.4318e-7 -> Nx = 595, Ny = 382
+#   (~227k nodes, ~12x the 121x149 two-grain case: run on HPC.)
+#
+# Timescales at physical d0_sub0 = 9.5975e-10 (set in the experiment file):
+#   tau_kin(R0=36.5 um) = beta_sub0*R0^2/d0_sub0 = 1.37e6 s (~16 days)
+#   initial neck formation CFL: v ~ d0/(beta*eps) ~ 2e-9 m/s -> dt ~ 1.7e2 s
+#   -> static dtmax must stay ~2e2 until the interface-CFL dt limiter lands;
+#      after that, quiet-phase dt can grow toward tau_kin/5 ~ 2.7e5 s.
+#
+# NOTE: Molaro et al.'s experiment temperature and duration must be matched
+# before the validation run — re-run comp_eps.py at that T0 (bounds are
+# T-dependent through beta_HK and D_v) and update eps/Nx/Ny here if it moves.
+# =============================================================================
+
+-ic_type multi_grains
+-dim 2
+-Lx 2.04e-4
+-Ly 1.31e-4
+-Lz 0
+
+-ice_grain_cx 5.15e-5,1.385e-4
+-ice_grain_cy 6.55e-5,6.55e-5
+-ice_grain_R  3.65e-5,5.05e-5
+-ice_grain_ax 3.65e-5,5.05e-5
+-ice_grain_ay 3.65e-5,5.05e-5
+
+-Nx 595
+-Ny 382
+-Nz 1
+-eps 4.8534e-07
+
+-delt_t 1.0e-4
+-periodic 0
