@@ -1,3 +1,21 @@
+## 2026-07-09 (later) — Revert iter-0 acceptance; add failure-reason diagnostics
+
+- The it0-atol-fix run (09.13.16) proved iteration-0 acceptance freezes all dynamics:
+  1223/1223 steps accepted at it 0, every domain integral static at +0.000%. The it-0
+  residual sits at the predictor's noise floor (~1e-13 < atol) dynamics or not; the
+  physics lives in the first Newton update. Reverted (2f01cf5).
+- Established from the 07-08 16:01 log that healthy near-equilibrium solves converge
+  at it 1 via STOL with ~zero update; pathological solves abort BETWEEN it 0 and it 1
+  (inside KSP or the trial function evaluation) with no recorded reason.
+- Added -snes_converged_reason ::failed and -ksp_converged_reason ::failed to
+  solver.opts so the next dt-collapse cascade documents its own failure mode.
+- Noted the apparent "freeze" at step 52 may partly be block-buffered stdout during a
+  long rejection cascade (up to snes_max_it=50 its per failed attempt, max_rej=50).
+
+---
+
+**Session ended:** 2026-07-09 09:09:40
+
 ## 2026-07-09 — Diagnose step-52 freeze; fix iter-0 convergence guard
 
 - Diagnosed the 2026-07-09__08.09.24 xiv-fix run "freeze": at step 52 (dt grown to
