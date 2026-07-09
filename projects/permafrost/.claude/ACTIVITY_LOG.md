@@ -1,3 +1,27 @@
+## 2026-07-09 (afternoon 4) — Switch to physical d0_sub0; guard approach abandoned
+
+- guard005 run confirmed the ±0.05 guard is symptomatic and leaky: committed
+  states still reached phi=-0.098/-0.112 (B-spline field dips between quadrature
+  points where the guard samples). User correctly rejected bound-tightening as
+  treating symptoms.
+- Root fix: -d0_sub0 9.5975e-10 (physical capillary length, K&P Eq. 13 =
+  gamma_iv*V_m/(R*T) at -5°C with gamma=0.109; the "9.6e-10" provenance).
+  M&F's inflated 1e-7 made collapse velocity hit 10-100 cells/step (the ripple
+  source); at physical d0 the endgame velocity d0/(beta*eps)=2e-9 m/s gives
+  ~1 cell/step at dtmax=2e2 — no Gibbs overshoot generation.
+- Key discovery: comp_eps.py sizes eps/mesh from the PHYSICAL d0 (Eq. 45 bound
+  9.7e-7 m -> eps=4.85e-7, 121x149) — the current geometry already supports
+  physical d0; the inflation was never a mesh necessity here. All K&P validity
+  checks pass (thin-interface corr >0.91, kinetic-dominated tau_sub 98.2%).
+- Expected: grain collapse at ~12.6 h sim time (t=4.5e4 s, validates kinetics
+  if observed), no oscillations, ~14.6k steps per 30 days at dtmax=2e2.
+- d0_GT stays 0 with physical d0_sub0 (AC coupling carries capillarity;
+  explicit Kelvin term would double-count).
+
+---
+
+**Session ended:** 2026-07-09 12:47:19
+
 ## 2026-07-09 (afternoon 3) — Step-51 event identified: small-grain collapse; guard tightened
 
 - dtmax=200 did NOT stop the ripple (12.34.19 run): undershoot to -0.098 at
