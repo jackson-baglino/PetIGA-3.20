@@ -65,6 +65,19 @@
                                         # geometry has no triple junction so Lambda=0 is
                                         # physically correct here.
 
+# ---------- Time integrator --------------------------------------------------
+# Generalized-alpha spectral radius rho_inf. PETSc's TSALPHA default is
+# rho_inf = 1 (Alpha_m = Alpha_f = Gamma = 0.5, midpoint rule), which has ZERO
+# high-frequency dissipation: stiff modes are amplified by -1 per step, i.e.
+# they flip sign forever instead of decaying. With dt ~ 1e2-1e3 s the vapor
+# diffusion modes are stiff by a factor dt/tau_diff ~ 1e4-1e5, so any kick
+# (e.g. the step-51 dt-overshoot crisis, 2026-07-09 domerr-sync run) imprints
+# a spatially oscillatory ripple that rings undamped and "radiates" from the
+# source. rho_inf = 0.5 (the standard structural-dynamics choice, also used by
+# Kaempfer & Plapp-type codes) annihilates stiff transients within a few steps
+# while keeping second-order accuracy on the resolved dynamics.
+-ts_alpha_radius 0.5
+
 # ---------- Adaptive time stepping -------------------------------------------
 -dtmax 1.0e3                            # ~11.6 days; raised from 1.0e5 for multi-year
                                         # pore-channel runs. The original reason for capping
