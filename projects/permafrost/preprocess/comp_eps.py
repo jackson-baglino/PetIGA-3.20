@@ -618,6 +618,14 @@ def _cli():
                          "--alpha/--alpha_range.")
     ap.add_argument("--vn",     type=float, default=1.0e-9,
                     help="Normal front velocity vₙ [m/s] for Eq.(45)")
+    ap.add_argument("--vn_feature", type=float, default=None, metavar="R_FEAT",
+                    help="Derive vₙ self-consistently from capillary-driven "
+                         "kinetics: vₙ = d₀/(β_sub·R_FEAT) for the smallest "
+                         "curvature feature you must resolve [m]. This makes "
+                         "the Eq.(45) bound β-independent (≈ R_FEAT), fixing "
+                         "the artifact where colder T (larger β_sub) demanded "
+                         "a finer mesh while the physics actually slowed "
+                         "down. Overrides --vn.")
     ap.add_argument("--xiv",    type=float, default=None,
                     help="Time-scaling factor ξᵥ (optional; triggers K&P Eq. 48 check)")
     ap.add_argument("--safety", type=float, default=0.5,
@@ -645,6 +653,16 @@ def _cli():
               + ("   [FLOORED at 1e-30: sigma_surf < sigma0/69.08 — kinetics "
                  "effectively frozen at this supersaturation]"
                  if args.alpha <= 1.0e-30 else ""))
+
+    if args.vn_feature is not None:
+        rho_rat_ = rho_vs_sat(args.T0) / _RHO_ICE
+        beta_uns_ = beta_HK(args.T0, args.alpha) / rho_rat_ if args.alpha else None
+        if beta_uns_ is None:
+            ap.error("--vn_feature needs --alpha (or --sigma_surf) to evaluate beta.")
+        d0_ = capillary_length(args.T0)
+        args.vn = d0_ / (beta_uns_ * args.vn_feature)
+        print(f"\n  Self-consistent vn: d0/(beta_sub*R_feat) = {d0_:.3e}/"
+              f"({beta_uns_:.3e}*{args.vn_feature:.2e}) = {args.vn:.3e} m/s")
 
     dim = _infer_dim(args.Lx, args.Ly, args.Lz, args.dim)
 
