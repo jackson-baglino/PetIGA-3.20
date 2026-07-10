@@ -1,3 +1,23 @@
+## 2026-07-09 (night 2) — alpha_c physical-range audit; d0 reconciled
+
+- Quantified alpha_c over T in [-20, 0] C with the Libbrecht model: NO single
+  sigma keeps alpha inside the physical 1e-3..1e-1 window across the range.
+  sigma=1e-3..3e-3 is physical near -2..-10 C but collapses at -20 C
+  (alpha = 6e-16..9e-6); keeping alpha physical at -20 C needs
+  sigma = 5e-3..1.5e-2. GT-scale driving in saturated sintering is
+  sigma ~ 1e-5..1e-3 -> Libbrecht exp(-sigma0/sigma) predicts alpha tens of
+  orders below the observed range there. Conclusion: the exp model (built for
+  Libbrecht's higher-supersaturation lab growth regime) is a poor
+  parameterization for low-sigma sintering; use constant alpha in 1e-3..1e-1
+  as the validation free parameter.
+- Reconciled d0: monitoring.c now computes d0 = user->Etai*V_m/(R*T_K) (same
+  constants as comp_eps.py) instead of the hardcoded 2.548e-7/T_K (~1% low,
+  blind to -Sigma_i). Rebuilt, pushed.
+
+---
+
+**Session ended:** 2026-07-09 18:27:02
+
 ## 2026-07-09 (night) — T-dependent GT kinetics into comp_eps.py; big consistency findings
 
 - dtmax ladder concluded: 4e2 clean, 8e2 shows oscillation at grain vanish —
