@@ -1,3 +1,25 @@
+## 2026-07-10 (later 6) — fig11-v3 audited; neck-width tool built and run
+
+- fig11-v3 (job64916188) healthy: 62 steps to t=7333 s, 0 failures, 0 CFL caps,
+  phi in [0,1] exactly. One empty vts (solV_00010, incomplete transfer).
+- postprocess/neck_width.py: neck = minimum vertical chord of the phi>=0.5 body
+  between the two grain-center peaks of w(x) (sub-cell interpolated). Chosen
+  over the curvature-extrema idea (same plane, but 2nd differences amplify
+  noise at the saddle); tracks the migrating neck plane automatically. Fixed a
+  first-version bug (tips hijacked the global-min center split; now peak-based).
+- Measured: neck 37.8 -> 43.1 um over 2 h (+14%). Two calibration notes:
+  (1) t=0 measured neck 37.8 vs paper's 32.8 — the diffuse union projection
+  inflates the initial neck ~15%; shrink the overlap to match the measured
+  value if quantitative t=0 fidelity is needed.
+  (2) Experiment "roughly doubles" (+100%) vs simulated +14%: gap ~7x. Missing
+  3D curvature (axisymmetric would roughly double the driving: convex grains
+  2/R vs 1/R) accounts for ~2-3x; the rest points to alpha_c ~ 1e-2 (4x). Both
+  fixes already planned: axisymmetric r-z mode + alpha_c calibration.
+
+---
+
+**Session ended:** 2026-07-10 09:36:43
+
 ## 2026-07-10 (later 5) — Neck size = width; little coarsening is the prediction
 
 - "Grains too close" resolved: uncertainty arithmetic (2.3/202 = 0.011 ~ their
