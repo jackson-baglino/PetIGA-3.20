@@ -1,3 +1,21 @@
+## 2026-07-10 (later 7) — Starting neck calibrated analytically; v4 run prepped
+
+- Empty solV_00010.vts explained (user's disk-full during download; re-downloaded).
+- Built an analytic union-profile model of the IC's measured phi=0.5 waist;
+  it reproduces the fig11-v3 simulation's t=0 neck to 0.2% (37.74 vs 37.8 um).
+  Solved for the overlap that yields measured width = 32.81 um (the paper's
+  t=0 value): nominal x0 = 13.496 um, s = 171.33 um, Lx = 384.8, Nx = 1173.
+- Caveat noted: calibrated rim rho0/eps = 2.7 (< 4) — initial rim modestly
+  smoothed; tighten eps ~3.2e-7 if early-time slope matters.
+- Plan (user): rerun at alpha_c = 2e-3 with the corrected neck; if growth
+  changes ~2-3x, the axisymmetric (3D-curvature) factor ~2-3x closes the
+  remaining gap to the experiment's ~2x neck growth. Then implement
+  axisymmetric r-z mode.
+
+---
+
+**Session ended:** 2026-07-10 12:36:07
+
 ## 2026-07-10 (later 6) — fig11-v3 audited; neck-width tool built and run
 
 - fig11-v3 (job64916188) healthy: 62 steps to t=7333 s, 0 failures, 0 CFL caps,
