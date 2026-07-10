@@ -6,50 +6,52 @@
 #   Lg. diameter 202 um -> R1 = 101.0e-6 m
 #   Sm. diameter 145 um -> R0 =  72.5e-6 m
 #   Neck size 32.81 um (+2.3/-2.4) at t = 0 — the grains START pre-sintered.
-#   [ASSUMPTION: "neck size" = neck RADIUS (half-width) x0. If it is the
-#    diameter, x0 = 16.4e-6; center separation and rim numbers change but the
-#    eps conclusion below does not — the thin-interface ceiling still binds.]
+#   "Neck size" = neck WIDTH (diameter): confirmed by the uncertainty
+#   arithmetic (+-2.3 um / 202 um = 0.011 ~ their quoted relative +-0.01),
+#   so the chord HALF-width is x0 = 16.405e-6 m. (The first geometry used
+#   x0 = 32.8 um = radius reading -> 13.3 um overlap, visibly 'too close'.)
 #
 # Derivation chain (no hand-picked values; every number traces to inputs
 # {R0, R1, x0, T0 = -20 C, alpha_c = 2e-3, pad rule >= 40 elements}):
 #   1. Center separation from chord geometry:
-#      s = sqrt(R0^2 - x0^2) + sqrt(R1^2 - x0^2) = 160.2e-6 m
+#      s = sqrt(R0^2 - x0^2) + sqrt(R1^2 - x0^2) = 170.3e-6 m
+#      (overlap only 3.2 um — grains nearly tangent, as in the micrograph)
 #      (overlapping circles reproduce the measured neck at t = 0; the union's
 #      re-entrant rim corner relaxes to the eps-scale fillet within a few
 #      steps — the interface-CFL limiter paces that brief transient).
-#   2. Neck rim curvature radius rho0 = x0^2/(2*R0) = 7.42e-6 m; resolving it
-#      needs eps <= rho0/4 = 1.86e-6 m.
+#   2. Neck rim curvature radius rho0 = x0^2/(2*R0) = 1.86e-6 m; resolving it
+#      needs eps <= rho0/4 = 4.64e-7 m. This BINDS.
 #   3. K&P thin-interface correction ceiling (heat-in-ice channel,
-#      beta_eff/beta > 0.9): eps <= 0.1*D_ice*beta_HK/(a1*a2) = 5.90e-7 m.
-#      This BINDS (tighter than the rim requirement — because the experiment
-#      starts pre-sintered, the rim is already smooth).
-#   => eps = 5.0e-7 m (correction = 0.915), h = eps/sqrt(2) = 3.54e-7 m.
-#   4. Domain: pad = 20 um (= 57 elements >= 40 required):
-#      Lx = pad + R0 + s + R1 + pad = 373.7e-6; Ly = 2*(R1 + pad) = 242.0e-6
-#      -> Nx = 1057, Ny = 685 (~724k nodes, ~2.2M dofs — HPC).
+#      beta_eff/beta > 0.9): eps <= 0.1*D_ice*beta_HK/(a1*a2) = 5.90e-7 m
+#      (looser than the rim requirement here).
+#   => eps = 4.64e-7 m, h = eps/sqrt(2) = 3.28e-7 m.
+#   4. Domain: pad = 20 um (= 61 elements >= 40 required):
+#      Lx = pad + R0 + s + R1 + pad = 383.8e-6; Ly = 2*(R1 + pad) = 242.0e-6
+#      -> Nx = 1170, Ny = 738 (~863k nodes, ~2.6M dofs — HPC).
 #
-# Physics expectation at alpha_c = 2e-3 (Kingery-Berg evap-condensation):
-#   x(2 h) - x0 = +246 nm (+0.75%) — far below the paper's +-2.3 um
-#   uncertainty. If Fig. 11 shows measurable growth over 2 h, the kinetics
-#   must be ~10x faster (alpha_c ~ 2e-2) — that comparison IS the validation.
+# Physics expectation (Kingery-Berg evap-condensation, neck WIDTH over 2 h):
+#   alpha_c = 2e-3: +1.9 um (borderline vs the +-2.3 um uncertainty)
+#   alpha_c = 1e-2: +7.9 um;  2e-2: +13.5 um;  1e-1: +38 um.
+#   Very little visible coarsening at alpha_c = 2e-3 is the model's honest
+#   prediction; Fig. 11's measured growth calibrates alpha_c directly.
 # =============================================================================
 
 -ic_type multi_grains
 -dim 2
--Lx 3.737e-4
+-Lx 3.838e-4
 -Ly 2.420e-4
 -Lz 0
 
--ice_grain_cx 9.25e-5,2.527e-4
+-ice_grain_cx 9.25e-5,2.6278e-4
 -ice_grain_cy 1.21e-4,1.21e-4
 -ice_grain_R  7.25e-5,1.01e-4
 -ice_grain_ax 7.25e-5,1.01e-4
 -ice_grain_ay 7.25e-5,1.01e-4
 
--Nx 1057
--Ny 685
+-Nx 1170
+-Ny 738
 -Nz 1
--eps 5.0000e-07
+-eps 4.6400e-07
 
 -delt_t 1.0e-4
 -periodic 0
