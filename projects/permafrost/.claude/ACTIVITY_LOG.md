@@ -1,3 +1,27 @@
+## 2026-07-10 — cfl1e4 stress test: stable but 32% late; sintering testbed added
+
+- cfl1e4 stress run (19.57.43): 94 steps (vs 262), 0 failures, 16 CFL caps
+  walking dt 1e4 -> 220 s through the collapse, worst undershoot -0.0029,
+  ripple-free. BUT grain extinction at t = 1.44e5 s vs 1.08-1.11e5 s in all
+  finer-dt runs: 32% LATE. Lesson: the limiter (dphimax = 0.2) guarantees
+  stability/cleanliness, NOT rate accuracy — 20%-phase-swing steps
+  under-resolve vapor-mediated mass transfer. For rate-sensitive science
+  (sintering validation!), dtmax stays accuracy-governed (~tau_kin/40-50) and
+  production configs need a dtmax/2 convergence check.
+- Added the small-scale sintering testbed: geometry 2D_sintering_test.opts
+  (tangent 9.375/18.75 um grains in the interior, 252x197, local-runnable) +
+  experiment sinter_T-5_h1.00.opts (dtmax 2e3, t_final 3e5 s). Observable:
+  neck radius vs time at the contact point.
+
+---
+
+**Session ended:** 2026-07-09 19:53:50
+
+
+---
+
+**Session ended:** 2026-07-09 19:25:58
+
 ## 2026-07-09 (night 4) — Interface-CFL limiter validated
 
 - Compared cfl8e2 (19.13.34) vs dtmax8e2-no-limiter (18.03.26), identical
