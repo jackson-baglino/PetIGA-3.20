@@ -1,3 +1,31 @@
+## 2026-07-09 (night) — T-dependent GT kinetics into comp_eps.py; big consistency findings
+
+- dtmax ladder concluded: 4e2 clean, 8e2 shows oscillation at grain vanish —
+  static dtmax ceiling for collapse-type runs is 4e2. Safety factor question:
+  comp_eps uses eps = 0.5 * min(bounds) (--safety, default 0.5).
+- Ported the code's T-dependent kinetics into comp_eps.py: sigma0(T) (exact
+  Sigma0() log-log interpolation) and alpha_libbrecht(T, sigma) =
+  exp(-sigma0/sigma) with the 1e-30 floor (monitoring.c flag_Tdep model).
+  New --sigma_surf CLI mode derives alpha_c from it.
+- New preprocess/plot_gt_temperature_dependence.py: 2x3 figure of all
+  T-dependent parameters (rho_vs, D_v, d0, sigma0, alpha, beta_sub, eps bound)
+  for sigma in {1e-4..1e-1} vs constant alpha_c=2e-3; table at -5/-20 C.
+- DIFFICULTIES FOUND (as user predicted):
+  1. alpha depends on LOCAL supersaturation, not just T: at -20 C beta spans
+     2.6e5 (sigma=1e-2) to 1.3e19 s/m (sigma=1e-3, alpha=exp(-35)) — the mesh
+     and all timescales are undefined until a characteristic sigma is chosen.
+     Saturated sintering drives sigma ~ d0*kappa ~ 1e-5..1e-3 -> Libbrecht
+     kinetics near-frozen; constant alpha=2e-3 equals Libbrecht at sigma~5.6e-3.
+  2. d0 constant mismatch: monitoring.c hardcodes 2.548e-7/T_K, comp_eps uses
+     gamma*V_m/(R*T) = 2.574e-7/T_K (~1%). Reconcile before validation.
+  3. The flag_Tdep branch is ONE-SHOT: it evaluates per-point mob/alph from the
+     IC state at step 0 then sets flag_Tdep=FALSE — not a live T-dependence.
+  4. Sigma0 table is non-monotonic (-6/-7 C bump) -> kinks in everything.
+
+---
+
+**Session ended:** 2026-07-09 17:50:00
+
 ## 2026-07-09 (evening) — Output cap, Molaro -20C finalized, dt ladder continues
 
 - dtmax4e2 dtladder run: clean (0 failures, no bound violations) — static dtmax
