@@ -1,3 +1,34 @@
+## 2026-07-10 (later) — Resolved the "colder needs finer mesh" paradox
+
+- User intuition validated: colder = slower kinetics (beta_sub is a RESISTANCE;
+  its 4x rise from -5 to -20 C is the rho_ice/rho_vs Clausius-Clapeyron factor)
+  and should NOT demand finer meshes. The 4x refinement was an artifact: Eq. 45
+  was evaluated with vn fixed at 1e-9 m/s while beta quadrupled. With
+  self-consistent capillary velocity v = d0/(beta*L), beta*v = d0/L cancels
+  beta and the bound = feature size at any T (verified numerically at -5/-20).
+- Added --vn_feature R to comp_eps.py. Molaro -20 C mesh returns to ~-5 C
+  density (~240k nodes 2D; quarter-symmetric 3D ~22M nodes = feasible),
+  pending the neck-scale choice for R_feature.
+- Clarified Libbrecht usage: production runs never used the sigma0-table
+  interpolation (flag_Tdep=0); beta_sub0=9.9e5 is plain HK with constant
+  alpha_c=2e-3 (value cited from Libbrecht 2017), mid-range of K&P 2009's
+  3e4-3e6 s/m. User wants K&P 2009's specific beta_sub — to be read off the
+  paper and set via -beta_sub0 (pending).
+
+---
+
+**Session ended:** 2026-07-10 08:23:12
+
+
+---
+
+**Session ended:** 2026-07-10 08:10:34
+
+
+---
+
+**Session ended:** 2026-07-10 07:55:49
+
 ## 2026-07-10 — cfl1e4 stress test: stable but 32% late; sintering testbed added
 
 - cfl1e4 stress run (19.57.43): 94 steps (vs 262), 0 failures, 16 CFL caps
