@@ -1,3 +1,24 @@
+## 2026-07-10 (later 3) — HPC test diagnosed; eps must derive from the neck rim
+
+- HPC Molaro test (job64914731): healthy (478 steps, 0 failures, 0 CFL caps,
+  overrides applied) but ran the 14-day t_final placeholder = 168x the actual
+  2-hour Fig. 11 experiment; the 1000-snapshot cap left ~6 frames in the 2-h
+  window ("strange" appearance + sparse output explained). t_final now 7.2e3 s;
+  per-step output resumes automatically below 1000 steps.
+- eps provenance challenged by user (correctly): R_feature=2um and safety=0.25
+  were hand-picked. Proper chain (Kingery-Berg evap-condensation sintering):
+  x(t) = (6 d0 R t/beta)^(1/3), rim radius rho = x^2/(2R) is THE feature that
+  sets eps. At 2 h: x = 7.4 um, rho = 0.75 um — the current 242k mesh
+  (eps=5e-7) smears the rim throughout the experiment. Cost table: resolve
+  from t*=30min/1h/2h -> eps = 7.4e-8/1.2e-7/1.9e-7 -> 11M/4.3M/1.7M nodes.
+- PENDING user decision: t* = time of first trusted Fig. 11 data point; then
+  regenerate geometry (document full derivation) and add a --sinter mode to
+  comp_eps.py so the chain is executable, not hand-fed.
+
+---
+
+**Session ended:** 2026-07-10 08:46:25
+
 ## 2026-07-10 (later 2) — Molaro -20C mesh finalized (242k nodes); HPC test prepped
 
 - Recomputed the Molaro geometry with --vn_feature 2e-6 --safety 0.25:
