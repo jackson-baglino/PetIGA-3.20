@@ -1,0 +1,37 @@
+# =============================================================================
+# experiment/collapse_T-5_h1.00_cfl1e4.opts — dtmax stress test under the
+# interface-CFL limiter: dtmax = 1e4 s (12.5x the old 8e2 static ceiling,
+# 50x the 2e2 pre-limiter safe value).
+#
+# With the limiter validated (cfl8e2 run: throttled exactly at grain-vanish,
+# worst undershoot -0.0013 vs -0.0398 unthrottled), dtmax is a speed knob and
+# the limiter is the safety. This run probes how far that holds: at dtmax=1e4
+# the quiet phases take ~15 steps total and the ENTIRE collapse arc should be
+# paced by the limiter alone (dphimax=0.2 is itself a temporal-accuracy
+# control on phi: max 20% phase swing per point per step).
+#
+# Pass criteria vs the cfl8e2 reference (19.13.34):
+#   * grain extinction time within a few % of t = 1.08e5 s;
+#   * min(phi_ice) stays > ~-0.01 (limiter's reactive one-step lag allows
+#     brief overshoot of the dphi target; watch it doesn't gouge deeper);
+#   * "Interface-CFL cap" lines pace the whole approach to collapse (expected:
+#     many more than 3 — the limiter replaces dt growth as the controller
+#     there);
+#   * total steps well under the 262 of the 8e2 run.
+# If min(phi_ice) degrades past ~-0.02, the reactive lag is biting at large
+# incoming dt: retry with -dtCFL_dphimax 0.1 before lowering dtmax.
+# =============================================================================
+
+-t_final 1.5e5                          # ~1.7 days; covers collapse + settling
+-t_sed_freeze 10
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-d0_sub0 9.5975e-10                     # physical capillary length (K&P Eq. 13)
+-d0_GT 0
+
+-dtmax 1.0e4
+-dtCFL 1
+-dtCFL_dphimax 0.2
