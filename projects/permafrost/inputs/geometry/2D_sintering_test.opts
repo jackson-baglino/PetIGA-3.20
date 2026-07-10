@@ -1,0 +1,39 @@
+# =============================================================================
+# geometry/2D_sintering_test.opts — small-scale sintering testbed at -5 C.
+#
+# Purpose: observe neck formation/growth qualitatively BEFORE committing to
+# the Molaro-scale HPC job (2D_molaro_sintering.opts, ~3.7M nodes, blocked on
+# the alpha_c parameterization). Same grain radii as the well-characterized
+# two-grain collapse case (9.375 / 18.75 um) but placed TANGENT in the domain
+# interior via the multi_grains IC, so the observable is interior neck growth
+# rather than boundary-seam coarsening.
+#
+#   centers: c0 = (24.375e-6, 33.75e-6), c1 = (52.5e-6, 33.75e-6)
+#   |c1-c0| = R0 + R1 = 28.125 um (tangent contact)
+#   padding 15 um (~44 elements) on all sides
+#   Lx = 15 + 2*9.375 + 2*18.75 + 15 = 86.25 um ; Ly = 2*(18.75+15) = 67.5 um
+#
+# eps / mesh from comp_eps.py (T0 = -5 C, alpha_c = 2e-3, vn = 1e-9):
+#   eps = 4.8534e-7 (same binding Eq. 45 bound as the collapse case),
+#   h = eps/sqrt(2) -> Nx = 252, Ny = 197 (~50k nodes; fine for local runs).
+# =============================================================================
+
+-ic_type multi_grains
+-dim 2
+-Lx 8.625e-5
+-Ly 6.75e-5
+-Lz 0
+
+-ice_grain_cx 2.4375e-5,5.25e-5
+-ice_grain_cy 3.375e-5,3.375e-5
+-ice_grain_R  9.375e-6,1.875e-5
+-ice_grain_ax 9.375e-6,1.875e-5
+-ice_grain_ay 9.375e-6,1.875e-5
+
+-Nx 252
+-Ny 197
+-Nz 1
+-eps 4.8534e-07
+
+-delt_t 1.0e-4
+-periodic 0

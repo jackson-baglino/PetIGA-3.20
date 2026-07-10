@@ -1,0 +1,32 @@
+# =============================================================================
+# experiment/sinter_T-5_h1.00.opts — sintering testbed run, -5 C, saturated.
+#
+# Pair with geometry/2D_sintering_test.opts (tangent 9.375/18.75 um grains).
+# Observable: neck radius vs time at the contact point (x ~ 33.75e-6 m).
+#
+# dtmax = 2e3 — NOT larger, deliberately. The cfl1e4 stress test
+# (2026-07-09 19.57.43) proved the interface-CFL limiter keeps huge dt
+# STABLE (ripple-free at dtmax=1e4) but not ACCURATE: the grain-extinction
+# time came out 32% late because ~20%-phase-swing steps under-resolve the
+# vapor-mediated mass transfer. Sintering validation measures a RATE, so
+# accuracy governs dtmax here: 2e3 ~ tau_kin(R0)/45. Verify dt-convergence
+# by rerunning any production configuration at dtmax/2 and comparing neck
+# curves before trusting rates.
+#
+# t_final = 3e5 s (~3.5 days): tau_kin(R0 = 9.375 um) = 9.05e4 s, so this
+# covers the fast necking transient plus several kinetic times of growth.
+# =============================================================================
+
+-t_final 3.0e5
+-t_sed_freeze 10
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-d0_sub0 9.5975e-10                     # physical capillary length (K&P Eq. 13)
+-d0_GT 0
+
+-dtmax 2.0e3
+-dtCFL 1
+-dtCFL_dphimax 0.2
