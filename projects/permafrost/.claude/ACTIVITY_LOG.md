@@ -1,3 +1,21 @@
+## 2026-07-09 (night 4) — Interface-CFL limiter validated
+
+- Compared cfl8e2 (19.13.34) vs dtmax8e2-no-limiter (18.03.26), identical
+  physics/t_final: limiter engaged exactly 3 times, all at the grain-vanish
+  moment (t = 1.080-1.092e5 s), throttling dt 750 -> 215 s; measured peak
+  |dphi|/step 0.44 without cap vs target 0.2 (reactive one-step lag,
+  acceptable).
+- Result: worst phi undershoot -0.0398 -> -0.0013 (30x cleaner), final-state
+  residual undershoot -7.9e-4 -> -2e-5, 0 SNES failures both, cost only
+  +8 steps (254 -> 262, +3%). Verdict: strictly better — dtmax is now a pure
+  speed knob with the limiter as the safety mechanism.
+- Ready to raise dtmax aggressively for Molaro-scale runs once GT
+  parameterization (user's paper reading) settles alpha_c.
+
+---
+
+**Session ended:** 2026-07-09 19:02:33
+
 ## 2026-07-09 (night 3) — Interface-CFL timestep limiter implemented
 
 - New InterfaceCFLMonitor (monitoring.c): after each accepted step, clamp the
