@@ -1,3 +1,23 @@
+## 2026-07-09 (night 3) — Interface-CFL timestep limiter implemented
+
+- New InterfaceCFLMonitor (monitoring.c): after each accepted step, clamp the
+  next dt so max pointwise |dphi| per step <= -dtCFL_dphimax (default 0.2),
+  measured from ||phi^n - phi^{n-1}||_inf / dt. TS monitor, on by default
+  (-dtCFL 0 disables); prints "Interface-CFL cap" when it throttles.
+  Rationale: static dtmax cannot track diverging event velocities (ladder:
+  4e2 clean, 8e2 rippled at grain-vanish); the limiter makes dtmax a pure
+  speed knob. AppCtx additions: flag_dtCFL, cfl_dphimax, cfl_U_prev,
+  cfl_t_prev (destroyed in cleanup).
+- Validation case collapse_T-5_h1.00_cfl8e2.opts: the exact failed 8e2 rung
+  with the limiter on. Pass = cap lines only in the collapse window, no
+  ripple, dt back at 8e2 after. User to run.
+- Next after validation: raise dtmax aggressively for Molaro-scale runs
+  (quiet-phase tau_kin/5 ~ 2.7e5 s at -20 C) with the limiter as the safety.
+
+---
+
+**Session ended:** 2026-07-09 18:36:25
+
 ## 2026-07-09 (night 2) — alpha_c physical-range audit; d0 reconciled
 
 - Quantified alpha_c over T in [-20, 0] C with the Libbrecht model: NO single
