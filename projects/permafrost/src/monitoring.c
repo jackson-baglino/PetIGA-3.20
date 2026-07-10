@@ -346,6 +346,77 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 
 
 /* =========================================================================
+ * InterfaceCFLMonitor
+ *
+ * Interface-CFL timestep limiter. After every ACCEPTED step, measure the
+ * fastest pointwise phase change rate of that step,
+ *
+ *     rate = ||phi^n - phi^{n-1}||_inf / (t^n - t^{n-1}),
+ *
+ * and clamp the controller's proposed next dt so that no DOF can change by
+ * more than user->cfl_dphimax (default 0.2) in one step:
+ *
+ *     dt_next <= cfl_dphimax / rate.
+ *
+ * Rationale (2026-07-09 two-grain campaign): during fast interface events —
+ * a grain's terminal collapse, initial neck formation — the front velocity
+ * diverges (v = d0/(beta*r) as r -> 0) and a quadratic B-spline front moved
+ * many cells per step develops Gibbs undershoot ripples that pass both the
+ * phase guard (field dips between quadrature points) and the atol test
+ * (O(0.1) phi errors have ~1e-12 residuals in this dimensional scaling).
+ * A static dtmax cannot track a diverging velocity: the ladder showed 4e2
+ * clean but 8e2 rippling at grain-vanish. This limiter is the dynamic
+ * version: NRmin/NRmax and dtmax still propose dt; the measured phase rate
+ * disposes. Quiet phases are untouched (rate ~ 0 -> cap huge); events
+ * throttle automatically and dt regrows the moment they end.
+ *
+ * Runs as a TS monitor (accepted steps only), so the rate is always
+ * measured on a solution the solver already accepted; the cap is applied
+ * with TSSetTimeStep after the controller's own adjustment.
+ * ========================================================================= */
+PetscErrorCode InterfaceCFLMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
+                                   void *mctx)
+{
+  PetscErrorCode ierr;
+  AppCtx *user = (AppCtx *)mctx;
+
+  PetscFunctionBegin;
+  if (!user->flag_dtCFL) PetscFunctionReturn(0);
+
+  if (!user->cfl_U_prev) {                    /* first call: just record */
+    ierr = VecDuplicate(U, &user->cfl_U_prev); CHKERRQ(ierr);
+    ierr = VecCopy(U, user->cfl_U_prev);       CHKERRQ(ierr);
+    user->cfl_t_prev = t;
+    PetscFunctionReturn(0);
+  }
+
+  PetscReal dt_used = t - user->cfl_t_prev;
+  if (dt_used > 0.0) {
+    /* ||dphi||_inf of the last step: reuse cfl_U_prev as the diff buffer */
+    PetscReal dphi_max;
+    ierr = VecAYPX(user->cfl_U_prev, -1.0, U); CHKERRQ(ierr);  /* prev = U - prev */
+    ierr = VecStrideNorm(user->cfl_U_prev, 0, NORM_INFINITY, &dphi_max); CHKERRQ(ierr);
+
+    if (dphi_max > 0.0) {
+      PetscReal dt_cap = user->cfl_dphimax * dt_used / dphi_max;
+      PetscReal dt_next;
+      ierr = TSGetTimeStep(ts, &dt_next); CHKERRQ(ierr);
+      if (dt_cap < dt_next) {
+        ierr = TSSetTimeStep(ts, dt_cap); CHKERRQ(ierr);
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "Interface-CFL cap: dt %.3e -> %.3e (max |dphi|/step %.3e)\n",
+                    (double)dt_next, (double)dt_cap, (double)dphi_max);
+      }
+    }
+  }
+
+  ierr = VecCopy(U, user->cfl_U_prev); CHKERRQ(ierr);
+  user->cfl_t_prev = t;
+  PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
  * BoundsRollbackPreStep
  *
  * TS pre-step callback. If Monitor() flagged a bounds violation on the last

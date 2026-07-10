@@ -70,6 +70,12 @@ int main(int argc, char *argv[]) {
     user.flag_tIC   = 0;              /* IC variant: 0=centered slab, 2=flat interface */
     user.readFlag   = PETSC_FALSE;    /* read initial field from file */
     user.flag_Tdep  = PETSC_FALSE;    /* temperature-dependent material properties */
+
+    /* Interface-CFL timestep limiter (InterfaceCFLMonitor) */
+    user.flag_dtCFL   = PETSC_TRUE;   /* on by default */
+    user.cfl_dphimax  = 0.2;          /* max pointwise |dphi| per step */
+    user.cfl_U_prev   = NULL;
+    user.cfl_t_prev   = 0.0;
     user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
 
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
@@ -406,6 +412,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-dtCFL",           "Interface-CFL timestep limiter",                   "", user.flag_dtCFL, &user.flag_dtCFL, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-dtCFL_dphimax",   "Max pointwise |dphi| per step for the CFL limiter","", user.cfl_dphimax, &user.cfl_dphimax, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-decouple_phase_change", "Zero ice_t-driven source terms in R_tem/R_vap too (not just S_sub in R_ice)", "", user.decouple_phase_change, &user.decouple_phase_change, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
     /* --- Thermophysical properties --------------------------------------- */
@@ -783,6 +791,9 @@ int main(int argc, char *argv[]) {
     ierr = TSAlphaSetRadius(ts, 0.5); CHKERRQ(ierr);
     if (monitor) { ierr = TSMonitorSet(ts, Monitor, &user, NULL); CHKERRQ(ierr); }
     if (output) { ierr = TSMonitorSet(ts, OutputMonitor, &user, NULL); CHKERRQ(ierr); }
+    /* Interface-CFL limiter: registered unconditionally (cheap — one vector
+     * diff + stride norm per accepted step); disable with -dtCFL 0. */
+    ierr = TSMonitorSet(ts, InterfaceCFLMonitor, &user, NULL); CHKERRQ(ierr);
 
     /* Application context — so BoundsRollbackPreStep can fetch user via
      * TSGetApplicationContext to consume deferred bounds-rollback requests. */
@@ -1064,6 +1075,7 @@ int main(int argc, char *argv[]) {
 
     /* Cleanup Resources */
     ierr = VecDestroy(&U); CHKERRQ(ierr);
+    ierr = VecDestroy(&user.cfl_U_prev); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     ierr = PetscFree(user.alph); CHKERRQ(ierr);

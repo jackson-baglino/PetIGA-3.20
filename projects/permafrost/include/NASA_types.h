@@ -182,6 +182,17 @@ typedef struct {
   PetscBool bounds_violated;
   PetscReal bounds_new_dt;
 
+  // Interface-CFL timestep limiter (InterfaceCFLMonitor in monitoring.c):
+  // clamps the NEXT dt so max pointwise |d(phi)| per step stays below
+  // cfl_dphimax, measured from the last accepted step's rate
+  // ||phi^n - phi^{n-1}||_inf / dt. Lets dtmax be large (quiet phases
+  // cruise) while fast interface events (grain collapse, neck formation)
+  // throttle dt automatically instead of Gibbs-rippling the B-spline front.
+  PetscBool flag_dtCFL;      // -dtCFL (default 1)
+  PetscReal cfl_dphimax;     // -dtCFL_dphimax (default 0.2)
+  Vec       cfl_U_prev;      // previous accepted solution (lazy-created)
+  PetscReal cfl_t_prev;      // time of previous accepted step
+
 } AppCtx;/* Field definitions for node data */
 
 #endif // NASA_TYPES_H

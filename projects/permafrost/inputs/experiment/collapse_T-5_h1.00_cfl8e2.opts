@@ -1,0 +1,31 @@
+# =============================================================================
+# experiment/collapse_T-5_h1.00_cfl8e2.opts — interface-CFL limiter validation.
+#
+# EXACTLY the configuration that failed the static-dtmax ladder
+# (collapse_T-5_h1.00_dtmax8e2.opts: oscillation at grain-vanish), rerun with
+# the new InterfaceCFLMonitor active (on by default; -dtCFL_dphimax 0.2).
+#
+# Pass criteria:
+#   * "Interface-CFL cap" lines appear ONLY around the collapse window
+#     (t ~ 1e5 s), throttling dt while the front is fast;
+#   * dt returns to the 8e2 cap after the grain is gone;
+#   * min(phi_ice) in BOUNDS stays ~>-0.01 throughout (no Gibbs ripple);
+#   * quiet-phase wall time comparable to the plain dtmax8e2 run.
+# If it passes, static dtmax stops being the safety mechanism entirely —
+# dtmax becomes a pure speed/output knob and can be raised aggressively
+# (tau_kin/5-scale) for the Molaro production runs.
+# =============================================================================
+
+-t_final 1.5e5                          # ~1.7 days; covers collapse + settling
+-t_sed_freeze 10
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-d0_sub0 9.5975e-10                     # physical capillary length (K&P Eq. 13)
+-d0_GT 0
+
+-dtmax 8.0e2                            # the rung that rippled WITHOUT the limiter
+-dtCFL 1
+-dtCFL_dphimax 0.2
