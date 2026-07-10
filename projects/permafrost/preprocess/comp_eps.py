@@ -146,9 +146,75 @@ def beta_HK(T_C: float, alpha_c: float) -> float:
 
 
 def capillary_length(T_C: float, gamma: float = _GAMMA) -> float:
-    """Physical capillary length d₀ = γ V_m/(R T) [m] (K&P Eq. 13)."""
+    """Physical capillary length d₀ = γ V_m/(R T) [m] (K&P Eq. 13).
+
+    NOTE: the C code (monitoring.c flag_Tdep branch) hardcodes
+    d0 = 2.548e-7/T_K, i.e. γ·V_m/R = 2.548e-7, ~1% below this function's
+    0.109*1.963e-5/8.314 = 2.574e-7. Reconcile before quantitative
+    validation runs; comp_eps prints both when run verbosely.
+    """
     T_K = T_C + 273.15
     return gamma * _VM_ICE / (_R_GAS * T_K)
+
+
+def capillary_length_code(T_C: float) -> float:
+    """d₀ exactly as hardcoded in monitoring.c: 2.548e-7 / T_K [m]."""
+    return 2.548e-7 / (T_C + 273.15)
+
+
+# =========================================================================
+# Libbrecht temperature-dependent attachment kinetics
+# (exact ports of Sigma0() in material_properties.c and the alpha model in
+#  the flag_Tdep branch of monitoring.c)
+# =========================================================================
+
+_SIG0_S = [3.0e-3, 4.1e-3, 5.5e-3, 8.0e-3, 4.0e-3,
+           6.0e-3, 3.5e-2, 7.0e-2, 1.1e-1, 0.75]
+_SIG0_T = [-0.0001, -2.0, -4.0, -6.0, -7.0,
+           -10.0, -20.0, -30.0, -40.0, -100.0]
+
+
+def sigma0(T_C: float) -> float:
+    """Libbrecht critical supersaturation σ₀(T) [-].
+
+    Exact port of Sigma0() in material_properties.c: log10-log10
+    interpolation of the lookup table in |T| (°C), flat beyond both table
+    ends. NOTE the table is non-monotonic (bump at -6/-7 °C), so σ₀(T) has a
+    kink there — this is inherited from the C code by design.
+    """
+    if T_C > _SIG0_T[0]:
+        return _SIG0_S[0]
+    interv = 0
+    for ii in range(10):
+        if T_C <= _SIG0_T[ii]:
+            interv = ii
+    if interv == 9:
+        return _SIG0_S[9]
+    t0, t1 = abs(_SIG0_T[interv]), abs(_SIG0_T[interv + 1])
+    s0, s1 = _SIG0_S[interv], _SIG0_S[interv + 1]
+    return 10.0 ** (math.log10(s0)
+                    + (math.log10(s1) - math.log10(s0))
+                    / (math.log10(t1) - math.log10(t0))
+                    * (math.log10(abs(T_C)) - math.log10(t0)))
+
+
+def alpha_libbrecht(T_C: float, sigma_surf: float) -> float:
+    """Libbrecht attachment coefficient α(T, σ) = exp(-σ₀(T)/σ) [-].
+
+    Exact port of the model in monitoring.c's flag_Tdep branch, including
+    its floor: σ_surf < σ₀/ln(1e30) = σ₀/69.0775  ->  α = 1e-30.
+
+    σ_surf is the LOCAL supersaturation |ρᵥ - ρ_vs|/ρ_vs. In a saturated
+    sintering problem the driving σ is Gibbs-Thomson-scale (d₀·κ ~ 1e-5 to
+    1e-3), which puts α in the exp(-30)..exp(-3000) regime — enormously
+    smaller than the constant α_c ~ 1e-3..1e-2 typically assumed. The α you
+    feed the eps bounds therefore depends strongly on which σ you consider
+    characteristic; sweep it before trusting a mesh.
+    """
+    s0 = sigma0(T_C)
+    if sigma_surf < s0 / 69.0775:
+        return 1.0e-30
+    return math.exp(-s0 / sigma_surf)
 
 
 # =========================================================================
@@ -545,6 +611,11 @@ def _cli():
                     help="Condensation coefficient α_c [−]. Mutually exclusive with --alpha_range.")
     ap.add_argument("--alpha_range", nargs=3, metavar=("LO","HI","N"), default=None,
                     help="α_c sweep: LO HI N_points (log-uniform).")
+    ap.add_argument("--sigma_surf", type=float, default=None,
+                    help="Characteristic supersaturation σ [-]: derive α_c from the "
+                         "code's Libbrecht model α = exp(-σ₀(T0)/σ) (Sigma0 lookup, "
+                         "monitoring.c flag_Tdep). Mutually exclusive with "
+                         "--alpha/--alpha_range.")
     ap.add_argument("--vn",     type=float, default=1.0e-9,
                     help="Normal front velocity vₙ [m/s] for Eq.(45)")
     ap.add_argument("--xiv",    type=float, default=None,
@@ -559,10 +630,21 @@ def _cli():
                     help="Print only ε and Nx/Ny/Nz (one per line)")
     args = ap.parse_args()
 
-    if args.alpha is not None and args.alpha_range is not None:
-        ap.error("--alpha and --alpha_range are mutually exclusive.")
-    if args.alpha is None and args.alpha_range is None:
-        ap.error("Provide either --alpha or --alpha_range.")
+    n_modes = sum(x is not None for x in (args.alpha, args.alpha_range, args.sigma_surf))
+    if n_modes > 1:
+        ap.error("--alpha, --alpha_range, and --sigma_surf are mutually exclusive.")
+    if n_modes == 0:
+        ap.error("Provide one of --alpha, --alpha_range, or --sigma_surf.")
+
+    if args.sigma_surf is not None:
+        s0 = sigma0(args.T0)
+        args.alpha = alpha_libbrecht(args.T0, args.sigma_surf)
+        print(f"\n  Libbrecht kinetics mode: sigma0({args.T0:g} C) = {s0:.4e}, "
+              f"sigma_surf = {args.sigma_surf:.3e}")
+        print(f"  -> alpha_c = exp(-sigma0/sigma_surf) = {args.alpha:.4e}"
+              + ("   [FLOORED at 1e-30: sigma_surf < sigma0/69.08 — kinetics "
+                 "effectively frozen at this supersaturation]"
+                 if args.alpha <= 1.0e-30 else ""))
 
     dim = _infer_dim(args.Lx, args.Ly, args.Lz, args.dim)
 
@@ -585,6 +667,13 @@ def _cli():
             return
 
         _print_single(args, p, args.alpha, dim)
+
+        d0_code = capillary_length_code(args.T0)
+        if abs(d0_code - p["d0"]) / p["d0"] > 1e-3:
+            print(f"\n  NOTE: monitoring.c (flag_Tdep) hardcodes d0 = 2.548e-7/T_K "
+                  f"= {d0_code:.4e} m,\n        {100*(d0_code/p['d0']-1):+.1f}% vs "
+                  f"this script's gamma*V_m/(R*T) = {p['d0']:.4e} m — reconcile "
+                  f"before quantitative validation.")
 
         if p["xi_v_warn"]:
             print(f"\n  {p['xi_v_warn']}\n")
