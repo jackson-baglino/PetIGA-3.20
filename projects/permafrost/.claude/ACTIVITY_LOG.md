@@ -1,3 +1,21 @@
+## 2026-07-10 (later 5) — Neck size = width; little coarsening is the prediction
+
+- "Grains too close" resolved: uncertainty arithmetic (2.3/202 = 0.011 ~ their
+  relative ±0.01) proves "neck size 32.81 um" is the neck WIDTH -> half-width
+  x0 = 16.4 um, center separation 170.3 um (3.2 um overlap, nearly tangent).
+- eps re-derived: rim rho0 = 1.86 um -> rim/4 = 4.64e-7 now binds (below the
+  5.9e-7 thin-interface ceiling). Mesh 1170x738 = 863k nodes.
+- "Very little coarsening" is the model's honest 2-h prediction at
+  alpha_c = 2e-3: +1.9 um neck width (vs ±2.3 um measurement uncertainty).
+  Ladder: 1e-2 -> +7.9 um, 2e-2 -> +13.5 um, 1e-1 -> +38 um. Fig. 11's
+  measured growth calibrates alpha_c directly — need the later-time table
+  rows from the user. Also note earlier runs coarsened faster because grains
+  were 8-10x smaller (tau_kin ~ R^2: ~60x) and kinetics 4x faster at -5 C.
+
+---
+
+**Session ended:** 2026-07-10 09:21:40
+
 ## 2026-07-10 (later 4) — Molaro geometry corrected: pre-sintered grains, derived eps
 
 - User's table (Fig. 11, t=0): diameters 202/145 um (the earlier 73/101 were
