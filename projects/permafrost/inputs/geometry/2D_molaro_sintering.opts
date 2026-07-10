@@ -13,21 +13,27 @@
 #
 # Derivation chain (no hand-picked values; every number traces to inputs
 # {R0, R1, x0, T0 = -20 C, alpha_c = 2e-3, pad rule >= 40 elements}):
-#   1. Center separation from chord geometry:
-#      s = sqrt(R0^2 - x0^2) + sqrt(R1^2 - x0^2) = 170.3e-6 m
-#      (overlap only 3.2 um — grains nearly tangent, as in the micrograph)
+#   1. Center separation from chord geometry, CALIBRATED for the diffuse
+#      union: the tanh-sum projection inflates the measured phi=0.5 waist by
+#      ~5 um at this eps (verified: predicted 37.74 vs simulated 37.8 um in
+#      fig11-v3). Solving the union profile for measured width = 32.81 um
+#      gives nominal x0 = 13.496e-6 m ->
+#      s = sqrt(R0^2 - x0^2) + sqrt(R1^2 - x0^2) = 171.33e-6 m
 #      (overlapping circles reproduce the measured neck at t = 0; the union's
 #      re-entrant rim corner relaxes to the eps-scale fillet within a few
 #      steps — the interface-CFL limiter paces that brief transient).
-#   2. Neck rim curvature radius rho0 = x0^2/(2*R0) = 1.86e-6 m; resolving it
-#      needs eps <= rho0/4 = 4.64e-7 m. This BINDS.
+#   2. Neck rim curvature radius rho0 = x0^2/(2*R0) = 1.26e-6 m at the
+#      calibrated x0; eps = 4.64e-7 gives rho0/eps = 2.7 (slightly under the
+#      >=4 rule — the initial rim is modestly smoothed; acceptable for this
+#      alpha-ladder step, tighten eps to ~3.2e-7 if the early-time slope
+#      becomes the quantity of interest).
 #   3. K&P thin-interface correction ceiling (heat-in-ice channel,
 #      beta_eff/beta > 0.9): eps <= 0.1*D_ice*beta_HK/(a1*a2) = 5.90e-7 m
 #      (looser than the rim requirement here).
 #   => eps = 4.64e-7 m, h = eps/sqrt(2) = 3.28e-7 m.
 #   4. Domain: pad = 20 um (= 61 elements >= 40 required):
-#      Lx = pad + R0 + s + R1 + pad = 383.8e-6; Ly = 2*(R1 + pad) = 242.0e-6
-#      -> Nx = 1170, Ny = 738 (~863k nodes, ~2.6M dofs — HPC).
+#      Lx = pad + R0 + s + R1 + pad = 384.8e-6; Ly = 2*(R1 + pad) = 242.0e-6
+#      -> Nx = 1173, Ny = 738 (~866k nodes, ~2.6M dofs — HPC).
 #
 # Physics expectation (Kingery-Berg evap-condensation, neck WIDTH over 2 h):
 #   alpha_c = 2e-3: +1.9 um (borderline vs the +-2.3 um uncertainty)
@@ -38,17 +44,17 @@
 
 -ic_type multi_grains
 -dim 2
--Lx 3.838e-4
+-Lx 3.848e-4
 -Ly 2.420e-4
 -Lz 0
 
--ice_grain_cx 9.25e-5,2.6278e-4
+-ice_grain_cx 9.25e-5,2.6383e-4
 -ice_grain_cy 1.21e-4,1.21e-4
 -ice_grain_R  7.25e-5,1.01e-4
 -ice_grain_ax 7.25e-5,1.01e-4
 -ice_grain_ay 7.25e-5,1.01e-4
 
--Nx 1170
+-Nx 1173
 -Ny 738
 -Nz 1
 -eps 4.6400e-07
