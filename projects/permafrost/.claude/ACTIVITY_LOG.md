@@ -1,3 +1,24 @@
+## 2026-07-09 (evening) — Output cap, Molaro -20C finalized, dt ladder continues
+
+- dtmax4e2 dtladder run: clean (0 failures, no bound violations) — static dtmax
+  ceiling at physical d0 is >= 4e2, my endgame-CFL ripple prediction was too
+  conservative (~2-4x headroom above the naive 1-cell estimate).
+- Output cap (permafrost2.c): if t_final/(dtmax*outp) > 1000 steps, switch to
+  1000 time-uniform snapshots. Fixed monitoring.c t_out catch-up bug that
+  degenerated time-interval output to every-step whenever dt > t_interv.
+- Molaro geometry finalized at T=-20C: beta_sub 4x larger -> eps = 1.2802e-7
+  (Eq. 45), mesh 2364x1558 (~3.7M nodes, HPC only). 20 um padding = 221
+  elements (>= 40 required). Experiment molaro_T-20_h1.00.opts carries the
+  T-dependent overrides -beta_sub0 3.9704e6 / -d0_sub0 1.0166e-9 (code
+  defaults are -5C-era; must move with T0). t_final placeholder 14 d —
+  match Fig. 11 time axis before production.
+- collapse_T-5_h1.00_dtmax8e2.opts: t_final capped 1.5e5 s (grain gone by
+  step ~400 = 1.11e5 s), dtmax rung 2.
+
+---
+
+**Session ended:** 2026-07-09 14:07:08
+
 ## 2026-07-09 (afternoon 6) — Width doc, Molaro validation geometry, dtmax ladder
 
 - Wrote docs/interface_width_conventions.md: width-convention table, ParaView
