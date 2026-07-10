@@ -1,3 +1,20 @@
+## 2026-07-10 (later 2) — Molaro -20C mesh finalized (242k nodes); HPC test prepped
+
+- Recomputed the Molaro geometry with --vn_feature 2e-6 --safety 0.25:
+  eps = 5e-7 (R_feat/4), mesh 606x399 = 242k nodes / 726k dofs — 15x smaller
+  than the fixed-vn artifact estimate. All K&P validity checks pass.
+- Experiment molaro_T-20_h1.00: dtmax 1e3 (tau_kin(2um neck)/16), limiter on,
+  t_final still a 14-day placeholder pending the paper's Fig. 11 time axis.
+  Neck-rate convergence check (-dtmax 5e2 rerun) required before trusting.
+- User to pull on HPC and submit via
+  ./scripts/HPC/submit_permafrost.sh 2D_molaro_sintering molaro_T-20_h1.00 <tag>.
+- Still pending: K&P 2009's specific beta_sub value (user reading), alpha_c
+  parameterization decision, axisymmetric r-z mode for true-3D curvature.
+
+---
+
+**Session ended:** 2026-07-10 08:37:00
+
 ## 2026-07-10 (later) — Resolved the "colder needs finer mesh" paradox
 
 - User intuition validated: colder = slower kinetics (beta_sub is a RESISTANCE;
