@@ -20,18 +20,22 @@
 #   Ly = 2*(R1 + 20)                                   = 141 um
 #   centers: c0 = (56.5e-6, 70.5e-6), c1 = (143.5e-6, 70.5e-6)
 #
-# eps / mesh from comp_eps.py at T0 = -20 C, alpha_c = 2e-3, vn = 1e-9:
-#   beta_sub (K&P beta0) = 3.9704e+06 s/m   (4x the -5 C value — colder ice
-#   attaches slower), d0_sub = 1.0166e-09 m, binding bound Eq. 45
-#   d0/(beta_sub*vn) = 2.5605e-07 m  ->  eps = 1.2802e-07, h = 9.0527e-08.
-#   The -20 C mesh is therefore ~3.8x finer per direction than the -5 C one:
-#   Nx = 2364, Ny = 1558  (~3.7M nodes, ~11M dofs -> HPC ONLY).
+# eps / mesh from comp_eps.py at T0 = -20 C, alpha_c = 2e-3, with the
+# SELF-CONSISTENT Eq. 45 velocity (--vn_feature 2e-6 --safety 0.25):
+#   vn = d0/(beta_sub*R_feat) = 1.280e-10 m/s (capillary-driven kinetics:
+#   colder ice moves slower, so the old fixed vn = 1e-9 artificially
+#   demanded a 3.8x finer mesh; with vn self-consistent the Eq. 45 bound
+#   equals R_feat = 2 um at ANY temperature).
+#   eps = 5.0e-7 (= R_feat/4: resolves ~2 um neck curvature), h = eps/sqrt(2)
+#   -> Nx = 606, Ny = 399 (~242k nodes, ~726k dofs). Thin-interface
+#   corrections all > 0.91. beta_sub(K&P beta0, alpha_c=2e-3) = 3.9704e6 s/m,
+#   d0_sub = 1.0166e-9 m.
 #
 # Timescales at -20 C physical parameters:
-#   tau_kin(R0)      = beta_sub*R0^2/d0_sub = 5.2e6 s (~60 days)
-#   neck-CFL guide   : v_max ~ d0/(beta*eps) = 2.0e-9 m/s -> dt(1 cell) ~ 45 s;
-#     the -5 C dt-ladder showed ~2-4x headroom above the naive 1-cell CFL,
-#     so start with dtmax = 2e2 (experiment file) and ladder up from there.
+#   tau_kin(R0)          = beta_sub*R0^2/d0_sub = 5.2e6 s (~60 days)
+#   tau_kin(2 um neck)   = 1.56e4 s — the measured observable's timescale;
+#     dtmax stays accuracy-governed (experiment file), interface-CFL limiter
+#     handles the initial necking transient.
 #
 # Companion experiment: inputs/experiment/molaro_T-20_h1.00.opts (sets the
 # T-dependent kinetic overrides beta_sub0/d0_sub0 — they MUST move with T0).
@@ -49,10 +53,10 @@
 -ice_grain_ax 3.65e-5,5.05e-5
 -ice_grain_ay 3.65e-5,5.05e-5
 
--Nx 2364
--Ny 1558
+-Nx 606
+-Ny 399
 -Nz 1
--eps 1.2802e-07
+-eps 5.0000e-07
 
 -delt_t 1.0e-4
 -periodic 0

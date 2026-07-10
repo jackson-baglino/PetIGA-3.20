@@ -16,11 +16,13 @@
 # before the production run (tau_kin(R0) = 5.2e6 s ~ 60 days at -20 C, so
 # neck growth will be partial on any lab timescale; that is expected).
 #
-# dtmax = 2e2: the -20 C neck-CFL guide is dt(1 cell) ~ 45 s and the -5 C
-# dt ladder demonstrated ~2-4x headroom above the naive 1-cell estimate.
-# Ladder upward (4e2, 8e2) only after a clean first run. The output cap in
-# permafrost2.c limits this run to 1000 time-uniform snapshots
-# (t_final/dtmax = 6048 > 1000).
+# dtmax = 1e3, accuracy-governed with the interface-CFL limiter as safety.
+# The measured observable is the neck growth rate; its early timescale is
+# tau_kin(2 um) = 1.56e4 s, so 1e3 ~ tau_kin/16 during the fastest measured
+# phase (the limiter throttles the initial necking transient below that
+# automatically). Lesson from the cfl1e4 stress test (2026-07-09): the
+# limiter guarantees stability, NOT rate accuracy — before trusting neck
+# curves, rerun at -dtmax 5e2 and confirm they overlap.
 # =============================================================================
 
 -t_final 1.2096e6                       # 14 days (s) — PLACEHOLDER, match Fig. 11
@@ -34,4 +36,6 @@
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 -d0_GT 0                                # AC coupling carries capillarity
 
--dtmax 2.0e2
+-dtmax 1.0e3
+-dtCFL 1
+-dtCFL_dphimax 0.2
