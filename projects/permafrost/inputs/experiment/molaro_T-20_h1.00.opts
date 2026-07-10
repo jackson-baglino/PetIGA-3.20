@@ -1,0 +1,37 @@
+# =============================================================================
+# experiment/molaro_T-20_h1.00.opts — Molaro et al. (2019) JGR Planets Fig. 11
+# sintering validation: T = -20 C, saturated humidity.
+#
+# Pair with geometry/2D_molaro_sintering.opts (grains D = 73/101 um; that
+# header documents the mesh/eps derivation at -20 C).
+#
+# The kinetic overrides below are T-DEPENDENT and must match the geometry's
+# comp_eps.py derivation temperature:
+#   beta_sub0 = beta_HK/(rho_vs/rho_ice) = 3.9704e6 s/m at -20 C, alpha_c=2e-3
+#   d0_sub0   = gamma*V_m/(R*T)          = 1.0166e-9 m  at -20 C
+# (code defaults are the -5 C-era values 9.9e5 / 1e-7-inflated — never rely
+# on them for this experiment).
+#
+# t_final: placeholder 14 days — SET FROM THE PAPER's Fig. 11 time axis
+# before the production run (tau_kin(R0) = 5.2e6 s ~ 60 days at -20 C, so
+# neck growth will be partial on any lab timescale; that is expected).
+#
+# dtmax = 2e2: the -20 C neck-CFL guide is dt(1 cell) ~ 45 s and the -5 C
+# dt ladder demonstrated ~2-4x headroom above the naive 1-cell estimate.
+# Ladder upward (4e2, 8e2) only after a clean first run. The output cap in
+# permafrost2.c limits this run to 1000 time-uniform snapshots
+# (t_final/dtmax = 6048 > 1000).
+# =============================================================================
+
+-t_final 1.2096e6                       # 14 days (s) — PLACEHOLDER, match Fig. 11
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0                                # AC coupling carries capillarity
+
+-dtmax 2.0e2

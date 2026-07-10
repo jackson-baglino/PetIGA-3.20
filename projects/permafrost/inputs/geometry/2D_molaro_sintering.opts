@@ -1,50 +1,58 @@
 # =============================================================================
 # geometry/2D_molaro_sintering.opts — two-grain sintering, Molaro et al. (2019)
-# JGR Planets Fig. 11 validation scale.
+# JGR Planets Fig. 11 validation. T = -20 C, saturated (humid chamber; far-away
+# seed crystals hold the vapor field at saturation — our closed Neumann box
+# with humidity = 1.00 is the analogous condition).
 #
-# Grains: D = 73 um and 101 um (R0 = 36.5e-6 m, R1 = 50.5e-6 m), placed
-# tangent (center separation = R0 + R1 = 87 um) INSIDE the domain via the
-# multi_grains IC — not the boundary-centered IC — so the contact/neck sits
-# in the domain interior with clean margins on all sides (15 um ~ 31*eps).
+# Grains: D = 73 um and 101 um (R0 = 36.5e-6, R1 = 50.5e-6), tangent
+# (center separation = R0 + R1 = 87 um), placed in the domain INTERIOR via
+# the multi_grains IC so the neck sits far from every boundary.
 #
-# Domain:  Lx = 15 + 73 + 87 + ... : margins 15 um each side
-#          Lx = 15 + 36.5 + 87 + 50.5 + 15 = 204 um
-#          Ly = 2*(R1 + 15)              = 131 um
-# Centers: c0 = (51.5e-6, 65.5e-6), c1 = (138.5e-6, 65.5e-6)   [tangent]
+# Padding: 20 um on all sides = 221 elements at this mesh (user requirement:
+# >= 40 elements to exclude boundary effects — satisfied 5x over). Note the
+# padding is for boundary-gradient isolation, NOT vapor supply: the standing
+# vapor stock is ~1e-6 of the ice mass (rho_vs/rho_ice at -20 C), so neck
+# growth is always fed by surface-to-surface redistribution through the
+# quasi-steady vapor field, never by depleting the reservoir. With
+# humidity = 1.00 the far field starts saturated, matching the experiment.
 #
-# eps / mesh from comp_eps.py (T0 = -5 C, alpha_c = 2e-3, vn = 1e-9):
-#   binding bound Eq.(45) d0/(beta_sub*vn) = 9.7067e-7 m  (grain-size
-#   independent — same eps as the small two-grain geometry)
-#   eps = 4.8534e-7, h = eps/sqrt(2) = 3.4318e-7 -> Nx = 595, Ny = 382
-#   (~227k nodes, ~12x the 121x149 two-grain case: run on HPC.)
+#   Lx = 20 + 73 + 87 + ... = 2*20 + R0 + (R0+R1) + R1 = 214 um
+#   Ly = 2*(R1 + 20)                                   = 141 um
+#   centers: c0 = (56.5e-6, 70.5e-6), c1 = (143.5e-6, 70.5e-6)
 #
-# Timescales at physical d0_sub0 = 9.5975e-10 (set in the experiment file):
-#   tau_kin(R0=36.5 um) = beta_sub0*R0^2/d0_sub0 = 1.37e6 s (~16 days)
-#   initial neck formation CFL: v ~ d0/(beta*eps) ~ 2e-9 m/s -> dt ~ 1.7e2 s
-#   -> static dtmax must stay ~2e2 until the interface-CFL dt limiter lands;
-#      after that, quiet-phase dt can grow toward tau_kin/5 ~ 2.7e5 s.
+# eps / mesh from comp_eps.py at T0 = -20 C, alpha_c = 2e-3, vn = 1e-9:
+#   beta_sub (K&P beta0) = 3.9704e+06 s/m   (4x the -5 C value — colder ice
+#   attaches slower), d0_sub = 1.0166e-09 m, binding bound Eq. 45
+#   d0/(beta_sub*vn) = 2.5605e-07 m  ->  eps = 1.2802e-07, h = 9.0527e-08.
+#   The -20 C mesh is therefore ~3.8x finer per direction than the -5 C one:
+#   Nx = 2364, Ny = 1558  (~3.7M nodes, ~11M dofs -> HPC ONLY).
 #
-# NOTE: Molaro et al.'s experiment temperature and duration must be matched
-# before the validation run — re-run comp_eps.py at that T0 (bounds are
-# T-dependent through beta_HK and D_v) and update eps/Nx/Ny here if it moves.
+# Timescales at -20 C physical parameters:
+#   tau_kin(R0)      = beta_sub*R0^2/d0_sub = 5.2e6 s (~60 days)
+#   neck-CFL guide   : v_max ~ d0/(beta*eps) = 2.0e-9 m/s -> dt(1 cell) ~ 45 s;
+#     the -5 C dt-ladder showed ~2-4x headroom above the naive 1-cell CFL,
+#     so start with dtmax = 2e2 (experiment file) and ladder up from there.
+#
+# Companion experiment: inputs/experiment/molaro_T-20_h1.00.opts (sets the
+# T-dependent kinetic overrides beta_sub0/d0_sub0 — they MUST move with T0).
 # =============================================================================
 
 -ic_type multi_grains
 -dim 2
--Lx 2.04e-4
--Ly 1.31e-4
+-Lx 2.14e-4
+-Ly 1.41e-4
 -Lz 0
 
--ice_grain_cx 5.15e-5,1.385e-4
--ice_grain_cy 6.55e-5,6.55e-5
+-ice_grain_cx 5.65e-5,1.435e-4
+-ice_grain_cy 7.05e-5,7.05e-5
 -ice_grain_R  3.65e-5,5.05e-5
 -ice_grain_ax 3.65e-5,5.05e-5
 -ice_grain_ay 3.65e-5,5.05e-5
 
--Nx 595
--Ny 382
+-Nx 2364
+-Ny 1558
 -Nz 1
--eps 4.8534e-07
+-eps 1.2802e-07
 
 -delt_t 1.0e-4
 -periodic 0

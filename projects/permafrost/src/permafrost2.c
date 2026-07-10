@@ -515,6 +515,26 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD, "OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval \n\n");
     }
 
+    /* Cap output volume. With -outp N, every N-th accepted step writes a
+     * snapshot, and t_final/dtmax is a LOWER bound on the total step count
+     * (the adaptive ramp only adds steps). If even that bound exceeds 1000
+     * files, per-step output is a disk hazard (each sol_*.dat is ~0.5 MB and
+     * the vtk conversion doubles it): switch to time-uniform output with
+     * exactly 1000 snapshots. Runs short enough to stay under 1000 files
+     * keep the -outp per-step behavior (naturally log-spaced under the
+     * adaptive dt). */
+    if (user.outp >= 1 && dtmax > 0.0 &&
+        t_final / (dtmax * (PetscReal)user.outp) > 1000.0) {
+        user.outp     = 0;
+        n_out         = 1000;
+        user.t_interv = t_final / (PetscReal)(n_out - 1);
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "Output cap: t_final/dtmax = %.0f exceeds 1000 snapshots; "
+                    "switching to %d time-uniform outputs (t_interv = %.3e s)\n",
+                    (double)(t_final / dtmax), (int)n_out,
+                    (double)user.t_interv);
+    }
+
     /* Gibbs-Thomson kinetic parameters */
     user.diff_sub = 0.5 * (user.thcond_air / user.rho_air / user.cp_air + user.thcond_ice / user.rho_ice / user.cp_ice);
 

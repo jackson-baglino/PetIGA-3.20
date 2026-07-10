@@ -316,7 +316,10 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
   // If it's time to print output, do the following
   if (print == 1) {
     PetscPrintf(PETSC_COMM_WORLD, "OUTPUT print!\n");
-    user->t_out += user->t_interv;
+    /* Advance t_out past the current time: a single += degenerates to
+     * every-step output whenever dt > t_interv (t_out falls permanently
+     * behind t), defeating the 1000-snapshot output cap. */
+    while (user->t_out <= t) user->t_out += user->t_interv;
 
     // Get the directory path from the environment variable
     const char *env = "folder";

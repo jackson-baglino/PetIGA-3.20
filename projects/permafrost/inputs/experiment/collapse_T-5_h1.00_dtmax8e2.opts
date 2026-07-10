@@ -1,0 +1,27 @@
+# =============================================================================
+# experiment/collapse_T-5_h1.00_dtmax8e2.opts — two-grain collapse study,
+# t_final capped, dtmax ladder rung 2 (8e2 s).
+#
+# Physics identical to 30day_T-5_h1.00.opts (physical d0_sub0, d0_GT = 0) with
+# two changes based on the 2026-07-09 dtmax4e2 dtladder run:
+#   * t_final = 1.5e5 s: the small grain is fully consumed by step ~400
+#     (t = 1.11e5 s) and the system is a single equilibrated grain by step
+#     ~500 (t = 1.43e5 s) — integrating the remaining 28 days is featureless.
+#   * dtmax = 8e2: rung 1 (4e2) ran clean through the collapse (0 nonlinear
+#     failures, no phase-bound violations), so continue the ladder. Judge by
+#     min(phi_ice) in BOUNDS through the collapse window (t ~ 1e5 s) and the
+#     bulk ripple metric. If clean, the static ceiling is >= 8e2 and the
+#     next unlock (interface-CFL dt limiter) may not even be needed at -5 C.
+# =============================================================================
+
+-t_final 1.5e5                          # ~1.7 days; covers collapse + settling
+-t_sed_freeze 10
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-d0_sub0 9.5975e-10                     # physical capillary length (K&P Eq. 13)
+-d0_GT 0
+
+-dtmax 8.0e2
