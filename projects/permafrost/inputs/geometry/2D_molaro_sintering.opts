@@ -1,60 +1,53 @@
 # =============================================================================
 # geometry/2D_molaro_sintering.opts — two-grain sintering, Molaro et al. (2019)
-# JGR Planets Fig. 11 validation. T = -20 C, saturated (humid chamber; far-away
-# seed crystals hold the vapor field at saturation — our closed Neumann box
-# with humidity = 1.00 is the analogous condition).
+# JGR Planets Fig. 11 validation. T = -20 C, saturated, 2-hour experiment.
 #
-# Grains: D = 73 um and 101 um (R0 = 36.5e-6, R1 = 50.5e-6), tangent
-# (center separation = R0 + R1 = 87 um), placed in the domain INTERIOR via
-# the multi_grains IC so the neck sits far from every boundary.
+# Grain data (paper's table, t = 0 row):
+#   Lg. diameter 202 um -> R1 = 101.0e-6 m
+#   Sm. diameter 145 um -> R0 =  72.5e-6 m
+#   Neck size 32.81 um (+2.3/-2.4) at t = 0 — the grains START pre-sintered.
+#   [ASSUMPTION: "neck size" = neck RADIUS (half-width) x0. If it is the
+#    diameter, x0 = 16.4e-6; center separation and rim numbers change but the
+#    eps conclusion below does not — the thin-interface ceiling still binds.]
 #
-# Padding: 20 um on all sides = 221 elements at this mesh (user requirement:
-# >= 40 elements to exclude boundary effects — satisfied 5x over). Note the
-# padding is for boundary-gradient isolation, NOT vapor supply: the standing
-# vapor stock is ~1e-6 of the ice mass (rho_vs/rho_ice at -20 C), so neck
-# growth is always fed by surface-to-surface redistribution through the
-# quasi-steady vapor field, never by depleting the reservoir. With
-# humidity = 1.00 the far field starts saturated, matching the experiment.
+# Derivation chain (no hand-picked values; every number traces to inputs
+# {R0, R1, x0, T0 = -20 C, alpha_c = 2e-3, pad rule >= 40 elements}):
+#   1. Center separation from chord geometry:
+#      s = sqrt(R0^2 - x0^2) + sqrt(R1^2 - x0^2) = 160.2e-6 m
+#      (overlapping circles reproduce the measured neck at t = 0; the union's
+#      re-entrant rim corner relaxes to the eps-scale fillet within a few
+#      steps — the interface-CFL limiter paces that brief transient).
+#   2. Neck rim curvature radius rho0 = x0^2/(2*R0) = 7.42e-6 m; resolving it
+#      needs eps <= rho0/4 = 1.86e-6 m.
+#   3. K&P thin-interface correction ceiling (heat-in-ice channel,
+#      beta_eff/beta > 0.9): eps <= 0.1*D_ice*beta_HK/(a1*a2) = 5.90e-7 m.
+#      This BINDS (tighter than the rim requirement — because the experiment
+#      starts pre-sintered, the rim is already smooth).
+#   => eps = 5.0e-7 m (correction = 0.915), h = eps/sqrt(2) = 3.54e-7 m.
+#   4. Domain: pad = 20 um (= 57 elements >= 40 required):
+#      Lx = pad + R0 + s + R1 + pad = 373.7e-6; Ly = 2*(R1 + pad) = 242.0e-6
+#      -> Nx = 1057, Ny = 685 (~724k nodes, ~2.2M dofs — HPC).
 #
-#   Lx = 20 + 73 + 87 + ... = 2*20 + R0 + (R0+R1) + R1 = 214 um
-#   Ly = 2*(R1 + 20)                                   = 141 um
-#   centers: c0 = (56.5e-6, 70.5e-6), c1 = (143.5e-6, 70.5e-6)
-#
-# eps / mesh from comp_eps.py at T0 = -20 C, alpha_c = 2e-3, with the
-# SELF-CONSISTENT Eq. 45 velocity (--vn_feature 2e-6 --safety 0.25):
-#   vn = d0/(beta_sub*R_feat) = 1.280e-10 m/s (capillary-driven kinetics:
-#   colder ice moves slower, so the old fixed vn = 1e-9 artificially
-#   demanded a 3.8x finer mesh; with vn self-consistent the Eq. 45 bound
-#   equals R_feat = 2 um at ANY temperature).
-#   eps = 5.0e-7 (= R_feat/4: resolves ~2 um neck curvature), h = eps/sqrt(2)
-#   -> Nx = 606, Ny = 399 (~242k nodes, ~726k dofs). Thin-interface
-#   corrections all > 0.91. beta_sub(K&P beta0, alpha_c=2e-3) = 3.9704e6 s/m,
-#   d0_sub = 1.0166e-9 m.
-#
-# Timescales at -20 C physical parameters:
-#   tau_kin(R0)          = beta_sub*R0^2/d0_sub = 5.2e6 s (~60 days)
-#   tau_kin(2 um neck)   = 1.56e4 s — the measured observable's timescale;
-#     dtmax stays accuracy-governed (experiment file), interface-CFL limiter
-#     handles the initial necking transient.
-#
-# Companion experiment: inputs/experiment/molaro_T-20_h1.00.opts (sets the
-# T-dependent kinetic overrides beta_sub0/d0_sub0 — they MUST move with T0).
+# Physics expectation at alpha_c = 2e-3 (Kingery-Berg evap-condensation):
+#   x(2 h) - x0 = +246 nm (+0.75%) — far below the paper's +-2.3 um
+#   uncertainty. If Fig. 11 shows measurable growth over 2 h, the kinetics
+#   must be ~10x faster (alpha_c ~ 2e-2) — that comparison IS the validation.
 # =============================================================================
 
 -ic_type multi_grains
 -dim 2
--Lx 2.14e-4
--Ly 1.41e-4
+-Lx 3.737e-4
+-Ly 2.420e-4
 -Lz 0
 
--ice_grain_cx 5.65e-5,1.435e-4
--ice_grain_cy 7.05e-5,7.05e-5
--ice_grain_R  3.65e-5,5.05e-5
--ice_grain_ax 3.65e-5,5.05e-5
--ice_grain_ay 3.65e-5,5.05e-5
+-ice_grain_cx 9.25e-5,2.527e-4
+-ice_grain_cy 1.21e-4,1.21e-4
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
 
--Nx 606
--Ny 399
+-Nx 1057
+-Ny 685
 -Nz 1
 -eps 5.0000e-07
 
