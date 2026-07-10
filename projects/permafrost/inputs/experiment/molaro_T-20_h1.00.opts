@@ -12,9 +12,12 @@
 # (code defaults are the -5 C-era values 9.9e5 / 1e-7-inflated — never rely
 # on them for this experiment).
 #
-# t_final: placeholder 14 days — SET FROM THE PAPER's Fig. 11 time axis
-# before the production run (tau_kin(R0) = 5.2e6 s ~ 60 days at -20 C, so
-# neck growth will be partial on any lab timescale; that is expected).
+# t_final = 2 h (Molaro et al. Fig. 11 experiment duration). Kingery-Berg
+# evaporation-condensation estimate: neck x(t) = (6*d0*R*t/beta)^(1/3) =
+# 7.4 um at 2 h on the 36.5 um grain; rim curvature radius rho = x^2/(2R) =
+# 0.75 um at the end, smaller earlier — THE feature that sets eps (see the
+# geometry header; mesh finalization pending the user's t* choice = first
+# trusted Fig. 11 data point).
 #
 # dtmax = 1e3, accuracy-governed with the interface-CFL limiter as safety.
 # The measured observable is the neck growth rate; its early timescale is
@@ -25,7 +28,7 @@
 # curves, rerun at -dtmax 5e2 and confirm they overlap.
 # =============================================================================
 
--t_final 1.2096e6                       # 14 days (s) — PLACEHOLDER, match Fig. 11
+-t_final 7.2e3                          # 2 hours — Molaro et al. Fig. 11 duration
 -t_sed_freeze 10
 
 -temp -20.0
