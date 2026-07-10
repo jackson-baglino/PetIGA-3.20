@@ -1,3 +1,22 @@
+## 2026-07-10 (later 4) — Molaro geometry corrected: pre-sintered grains, derived eps
+
+- User's table (Fig. 11, t=0): diameters 202/145 um (the earlier 73/101 were
+  radii), and neck size 32.81 um AT t=0 — the experiment starts pre-sintered.
+- Consequence: rim radius at t=0 is x0^2/(2*R0) = 7.4 um, so the rim
+  resolution requirement (eps <= 1.86e-6) is looser than the K&P
+  thin-interface ceiling at -20 C (eps <= 5.9e-7, heat-in-ice corr > 0.9),
+  which now binds: eps = 5e-7 fully derived, no hand-picked feature size.
+- Geometry rebuilt: overlapping circles, center separation 160.2 um (chord
+  geometry reproduces x0), domain 374x242 um, mesh 1057x685 (~724k nodes).
+  Flagged assumption: neck size = radius (vs diameter) — doesn't change eps.
+- Kingery-Berg at alpha_c=2e-3 predicts only +246 nm growth in 2 h (« the
+  paper's +-2.3 um uncertainty); measurable Fig. 11 growth implies
+  alpha_c ~ 2e-2. That discrimination IS the validation.
+
+---
+
+**Session ended:** 2026-07-10 09:13:26
+
 ## 2026-07-10 (later 3) — HPC test diagnosed; eps must derive from the neck rim
 
 - HPC Molaro test (job64914731): healthy (478 steps, 0 failures, 0 CFL caps,
