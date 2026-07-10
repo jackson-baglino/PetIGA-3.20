@@ -1,3 +1,21 @@
+## 2026-07-10 (later 8) — v4 measured; eps (safety-factor) sweep prepared
+
+- fig11-v4: t=0 neck measured 32.82 um (calibration target 32.81 — exact),
+  0 failures; growth +5.8 um / +17.8% over 2 h (v3: +5.3 / +14%). Faster but
+  modest, per user's observation. Still ~5x short of the experiment's ~2x.
+- Built the safety-factor sweep (user request): s100/s075/s050/s025 with
+  eps = 9.28/6.96/4.64/2.32e-7 (s050 = existing baseline = v4). Each member's
+  initial-neck overlap RECALIBRATED for its eps so all start at measured
+  32.81 um (union inflation scales with eps; without recalibration the sweep
+  would confound IC with kinetics). Meshes 217k/386k/866k/3.46M nodes.
+  Thin-interface corr ladder 0.843/0.882/0.921/0.961 — the sweep empirically
+  measures the O(eps) kinetics bias; converged rate ~ s025/s050.
+- Shared experiment molaro_T-20_h1.00; submit s100, s075, s025 on HPC.
+
+---
+
+**Session ended:** 2026-07-10 14:26:36
+
 ## 2026-07-10 (later 7) — Starting neck calibrated analytically; v4 run prepped
 
 - Empty solV_00010.vts explained (user's disk-full during download; re-downloaded).
