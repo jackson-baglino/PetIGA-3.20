@@ -1,3 +1,31 @@
+## 2026-07-10 (later 9) — eps sweep interpreted; axisymmetric plan written
+
+- Sweep results (all starting at measured 32.8 um): s100 +13.0%, s075 +15.4%,
+  s050 +17.8% — growth INCREASES as eps shrinks, perfectly linear (+2.4% per
+  2.32e-7 of eps). Mechanism: rim-curvature smearing dominates (rim
+  rho0/eps = 1.4 at s100 — the fat interface understates the neck's GT
+  driving); the opposite-signed thin-interface beta correction is subdominant.
+  User's mobility question answered: mob_sub is a model-internal coefficient
+  whose eps-dependence the K&P mapping cancels at leading order; the measured
+  trend is the O(eps) error, not mobility physics.
+- Richardson extrapolation: eps->0 rate = +22.6%; prediction s025 lands ~+20%
+  (falsifiable when the 3.5M-node job finishes). Even converged, 2D gives
+  ~+22% vs experiment's ~+100% -> deficit is physical (3D curvature + alpha_c).
+- Wrote docs/axisymmetric_plan.md: r-weight formulation (one multiplicative
+  factor per integrand; IGAPointFormPoint verified as the coordinate API),
+  8 touch points, on-axis grains = exact spheres, same calibrated overlaps,
+  ~433k-node Molaro mesh (half of planar), gated validation V0-V3, risks.
+  PENDING user review before implementation.
+
+---
+
+**Session ended:** 2026-07-10 15:53:50
+
+
+---
+
+**Session ended:** 2026-07-10 15:24:38
+
 ## 2026-07-10 (later 8) — v4 measured; eps (safety-factor) sweep prepared
 
 - fig11-v4: t=0 neck measured 32.82 um (calibration target 32.81 — exact),
