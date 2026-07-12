@@ -1,3 +1,27 @@
+## 2026-07-12 — Axisymmetric (r-z) mode implemented
+
+- Implemented per docs/axisymmetric_plan.md (0577edb): -axisym option;
+  r-weight (IGAPointFormPoint) on Residual/Jacobian integrands; full 2*pi*r
+  in the Monitor Integration callback so TOT_ICE etc. are true 3D volumes;
+  neck_width.py --axisym (axis-to-contour chord = radius, width = 2x).
+  Planar mode untouched (default). Built clean.
+- Validation gates ready:
+  V0/V1: 2D_axisym_sphere_test.opts — TOT_ICE(step 0) must equal
+  (4/3)pi R^3 = 3.4515e-15 m^3, then hold constant saturated at -5 C.
+  V3: 2D_molaro_axisym.opts (433k nodes, half the planar mesh; identical
+  calibrated overlap since the (z,r) cross-section = planar mid-plane);
+  V0 target TOT_ICE(0) = 5.911e-12 m^3. Hypothesis: ~2-3x planar +17.8%.
+- User to run V0/V1 locally, then V3 on HPC.
+
+---
+
+**Session ended:** 2026-07-12 10:56:24
+
+
+---
+
+**Session ended:** 2026-07-10 18:06:11
+
 ## 2026-07-10 (later 9) — eps sweep interpreted; axisymmetric plan written
 
 - Sweep results (all starting at measured 32.8 um): s100 +13.0%, s075 +15.4%,
