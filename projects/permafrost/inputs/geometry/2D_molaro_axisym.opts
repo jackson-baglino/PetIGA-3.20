@@ -1,0 +1,44 @@
+# =============================================================================
+# geometry/2D_molaro_axisym.opts — Molaro Fig. 11 validation, AXISYMMETRIC.
+#
+# Same physical setup as 2D_molaro_sintering.opts (grains R = 72.5/101 um,
+# t=0 neck width 32.81 um, T = -20 C via molaro_T-20_h1.00) but in r-z mode:
+# x = z (symmetry axis), y = r, grains centered ON the axis (cy = 0). The
+# (z,r) cross-section is identical to the planar mid-plane, so the
+# eps-calibrated overlap carries over unchanged (nominal chord half-width
+# x0 = 13.496 um -> measured phi=0.5 neck radius 16.405 um -> neck WIDTH
+# 32.81 um via neck_width.py --axisym).
+#
+# r-extent needs only [0, R1 + pad] = 121 um: HALF the planar transverse
+# domain -> Nx x Ny = 1173 x 369 (~433k nodes).
+#
+# V0 CHECK (t = 0): TOT_ICE = two-sphere union volume
+#     (4/3)*pi*(R0^3 + R1^3) - V_lens = 5.911e-12 m^3   (expect within ~1-2%,
+#     diffuse-interface + overlap corrections are small at eps/R ~ 6e-3)
+#
+# Physics expectation: the r-weight generates the azimuthal curvature mode
+# (docs/axisymmetric_plan.md 1b): grain surfaces 2/R, neck saddle 1/x - 1/rho.
+# Hypothesis: ~2-3x the planar s050 growth of +17.8% over 2 h.
+# =============================================================================
+
+-axisym 1
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.848e-4
+-Ly 1.21e-4
+-Lz 0
+
+-ice_grain_cx 9.25e-5,2.6383e-4
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 1173
+-Ny 369
+-Nz 1
+-eps 4.6400e-07
+
+-delt_t 1.0e-4
+-periodic 0

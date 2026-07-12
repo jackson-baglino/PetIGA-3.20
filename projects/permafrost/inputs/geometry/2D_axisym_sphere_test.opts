@@ -1,0 +1,40 @@
+# =============================================================================
+# geometry/2D_axisym_sphere_test.opts — axisymmetric validation V0/V1.
+#
+# Single sphere R = 9.375 um centered ON the axis (cy = 0). In r-z mode the
+# (z,r) half-plane represents the full sphere, so at t = 0 the monitor's
+# TOT_ICE must equal the analytic sphere volume:
+#
+#     V0 CHECK:  TOT_ICE(step 0) = (4/3)*pi*R^3 = 3.4515e-15 m^3  (+-~1%,
+#     diffuse-interface correction is O(eps/R) ~ 5%... expect 3.3-3.6e-15)
+#
+#     V1 CHECK:  run a few hundred steps saturated (humidity 1): TOT_ICE
+#     constant to <0.1%, phi in [0,1], no drift or artifacts near r = 0.
+#
+# Domain: z in [0, 40 um] (sphere center z = 20 um), r in [0, 20 um]
+# (~22 um padding above the sphere in r; >40 elements everywhere).
+# eps = 4.8534e-7 (the -5 C value; pair with sinter_T-5_h1.00 or any -5 C
+# experiment for local runs).
+# =============================================================================
+
+-axisym 1
+
+-ic_type multi_grains
+-dim 2
+-Lx 4.0e-5
+-Ly 2.0e-5
+-Lz 0
+
+-ice_grain_cx 2.0e-5
+-ice_grain_cy 0.0
+-ice_grain_R  9.375e-6
+-ice_grain_ax 9.375e-6
+-ice_grain_ay 9.375e-6
+
+-Nx 117
+-Ny 59
+-Nz 1
+-eps 4.8534e-07
+
+-delt_t 1.0e-4
+-periodic 0

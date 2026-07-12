@@ -76,6 +76,8 @@ int main(int argc, char *argv[]) {
     user.cfl_dphimax  = 0.2;          /* max pointwise |dphi| per step */
     user.cfl_U_prev   = NULL;
     user.cfl_t_prev   = 0.0;
+
+    user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see NASA_types.h) */
     user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
 
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
@@ -413,6 +415,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-dtCFL",           "Interface-CFL timestep limiter",                   "", user.flag_dtCFL, &user.flag_dtCFL, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-axisym",          "Axisymmetric r-z mode (x=axis, y=radius; grains on y=0)", "", user.axisym, &user.axisym, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-dtCFL_dphimax",   "Max pointwise |dphi| per step for the CFL limiter","", user.cfl_dphimax, &user.cfl_dphimax, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-decouple_phase_change", "Zero ice_t-driven source terms in R_tem/R_vap too (not just S_sub in R_ice)", "", user.decouple_phase_change, &user.decouple_phase_change, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
@@ -920,6 +923,10 @@ int main(int argc, char *argv[]) {
 
     /* --- Mesh & discretization -------------------------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n MESH & DISCRETIZATION\n");
+    if (user.axisym)
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   AXISYMMETRIC r-z mode: x = axis (z), y = radius (r); "
+                    "integrands weighted by 2*pi*r\n");
     if (dim == 1) {
         PetscPrintf(PETSC_COMM_WORLD, "   Nx = %d%s\n",
                     Nx, geom_file[0] ? "  [from -geom_file]" : "");

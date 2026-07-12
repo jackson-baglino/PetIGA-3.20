@@ -106,6 +106,10 @@ def main():
     ap.add_argument("run_dir", type=Path)
     ap.add_argument("--phi", type=float, default=0.5, help="contour level")
     ap.add_argument("--out", type=Path, default=None, help="CSV path")
+    ap.add_argument("--axisym", action="store_true",
+                    help="axisymmetric r-z run: the grid's y is the radius and "
+                         "the axis is y = 0, so the measured chord (axis to the "
+                         "phi contour) is the neck RADIUS; report width = 2x.")
     args = ap.parse_args()
 
     files = sorted(glob.glob(str(args.run_dir / "vtkOut" / "solV_*.vts")))
@@ -125,6 +129,10 @@ def main():
                   file=sys.stderr)
             continue
         w = np.array([chord_width(phi[:, j], y, args.phi) for j in range(len(x))])
+        if args.axisym:
+            # chord runs from the axis (y = 0, inside the grain) up to the
+            # contour: it IS the local radius; physical width is its double.
+            w = 2.0 * w
 
         if centers is None:
             # Grain centers = the two prominent local maxima of w(x). A local
