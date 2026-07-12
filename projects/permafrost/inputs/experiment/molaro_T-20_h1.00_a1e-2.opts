@@ -1,0 +1,42 @@
+# =============================================================================
+# experiment/molaro_T-20_h1.00_a1e-2.opts — alpha_c CALIBRATION run.
+#
+# Identical to molaro_T-20_h1.00.opts except alpha_c = 1e-2 (5x the 2e-3
+# baseline): beta_sub0 = beta_HK/(rho_vs/rho_ice) = 7.9408e5 s/m at -20 C.
+#
+# Why 1e-2: the axisym run at alpha=2e-3 gave +18.6% neck growth vs the
+# experiment's ~+100% (2026-07-12); with dimensionality (axisym result) and
+# discretization (eps sweep) both eliminated, the ~5.4x kinetics deficit
+# implies alpha_c ~ 1.1e-2 — independently consistent with the Libbrecht
+# model at -20 C / sigma ~ 1e-2 and with the mesh-cost sweet spot.
+#
+# CAVEAT (accepted for calibration, tighten for the final fit): at this
+# alpha the K&P heat-in-ice validity ratio at eps = 4.64e-7 drops to ~0.61;
+# the Eq. 9 mapping compensates to first order (the a2*eps/D terms are in
+# tau_sub) but O(corr^2) ~ 10-15% kinetics uncertainty remains. If this run
+# lands near doubling, confirm with a refined-eps rerun before quoting a
+# fitted alpha_c.
+#
+# dtmax = 2e2 (was 1e3): kinetics are 5x faster, so the accuracy-governed
+# cap scales down 5x to keep dt ~ tau_kin(2um-neck)/16 during the measured
+# phase. Interface-CFL limiter remains the safety.
+#
+# Pair with geometry/2D_molaro_axisym.opts. Measure with
+#   postprocess/neck_width.py <run_dir> --axisym
+# Target: neck width 32.8 -> ~65 um (+100%) matches Molaro Fig. 11.
+# =============================================================================
+
+-t_final 7.2e3                          # 2 hours — Molaro et al. Fig. 11 duration
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 7.9408e5                     # K&P beta0 at -20 C, alpha_c = 1e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0                                # AC coupling carries capillarity
+
+-dtmax 2.0e2
+-dtCFL 1
+-dtCFL_dphimax 0.2
