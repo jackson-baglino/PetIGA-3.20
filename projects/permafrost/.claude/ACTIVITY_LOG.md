@@ -1,3 +1,28 @@
+## 2026-07-12 (later) — Axisym V0/V1 PASSED; BC/volume questions answered
+
+- User's sphere-test run: single half-grain at bottom of domain = CORRECT
+  (axis on y=0; revolve to get the sphere). V0: measured TOT_ICE 3.544e-15
+  vs diffuse-corrected analytic V = (4/3)piR^3 + (4pi^3/3)R*eps^2 =
+  3.5427e-15 — 0.04% agreement (the naive 2.7% "error" was sharp-vs-diffuse
+  definition mismatch). V1: TOT_ICE flat over 224 steps to 3e5 s, 0 failures,
+  phi_min = 0. Gate headers updated with the tight target.
+- BC/contact-angle explanation recorded: r=0 Neumann = exact 3D smoothness/
+  symmetry condition (not a wall); outer Neumann walls imply 90-deg contact
+  angle but are never exercised (padding keeps interfaces off walls); real
+  substrate wetting would need a wall free-energy term (deliberate feature).
+- HPC build failure = login node /tmp full: export TMPDIR to group storage.
+- V3 queued by user: 2D_molaro_axisym + molaro_T-20_h1.00 (target TOT_ICE(0)
+  = 5.91e-12; hypothesis 2-3x planar +17.8% neck growth).
+
+---
+
+**Session ended:** 2026-07-12 11:24:22
+
+
+---
+
+**Session ended:** 2026-07-12 11:17:55
+
 ## 2026-07-12 — Axisymmetric (r-z) mode implemented
 
 - Implemented per docs/axisymmetric_plan.md (0577edb): -axisym option;
