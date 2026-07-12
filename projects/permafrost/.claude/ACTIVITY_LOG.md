@@ -1,3 +1,31 @@
+## 2026-07-12 (later 4) — Fig. 11 data in repo; regime identified as vapor-diffusion-limited
+
+- Full Molaro supplemental table committed (inputs/validation/
+  molaro2019_fig11_T-20.csv): neck 32.81 -> 64.78 um at 78 min (+97%).
+  Growth-law fit: n=5 (R²=0.990) beats n=3 (0.947) — vapor-DIFFUSION-limited,
+  matching the literature consensus the user cited and our sublinearity
+  (alpha 5x -> growth 1.74x; field probe: neck sigma -7.6e-5 vs bulk +2.8e-5
+  = ~12% of GT driving eaten by transport at alpha=1e-2).
+- Strategy shift: push alpha until the model saturates at its transport
+  ceiling; the saturated curve is a parameter-free comparison to data.
+  a3e-2 rung added (beta_sub0 2.6469e5, dtmax 6e1; sed & mangling fixed).
+- Observed in data: large grain shrinks 202 -> 193.9 um — mild chamber
+  undersaturation candidate (humidity < 1 experiment variant next; grain
+  drift = independent calibration target).
+- Answered: dt-halving = Richardson rate-convergence check; d0_GT would
+  double-count capillarity (AC coupling already carries Kelvin physics —
+  proven by collapse-test mass transfer and the sigma field structure).
+- Model at 78 min: a2e-3 +14%, a1e-2 +26% vs data +97%. dthalf running.
+
+---
+
+**Session ended:** 2026-07-12 16:27:43
+
+
+---
+
+**Session ended:** 2026-07-12 16:09:26
+
 ## 2026-07-12 (later 3) — Axisym V3: dimensionality ELIMINATED; alpha ladder begins
 
 - Local axisym Molaro run (15.04.29): V0 exact (TOT_ICE 5.913e-12 vs analytic
