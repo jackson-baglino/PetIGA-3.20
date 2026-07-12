@@ -13,6 +13,9 @@
 # Extra arguments after the tag are split on a literal `--`:
 #   - before `--` (or if no `--` is given): forwarded verbatim to sbatch,
 #     can override any of the computed or default resource flags.
+#     Special flag (consumed here, not passed to sbatch):
+#       --half-cores   request half the computed MPI ranks — queues faster
+#                      on a busy cluster at ~2x wall time.
 #   - after `--`: forwarded verbatim to the permafrost executable itself
 #     (appended after the three -options_file flags, so they override
 #     anything set in solver.opts/geometry/experiment opts files).
@@ -62,15 +65,25 @@ fi
 
 # Split remaining args on a literal `--`: before it are sbatch flags, after
 # it are extra options forwarded to the permafrost executable.
+# `--half-cores` is intercepted here (not a real sbatch flag): request half
+# the computed MPI ranks so the job queues faster on a busy cluster. The
+# runner (run_permafrost.sh) clamps its own rank count to the SLURM
+# allocation, so the halved request propagates consistently; wall time
+# roughly doubles (weak-scaling regime at 10k DoFs/core).
 sbatch_flags=()
 extra_opts=()
 sep_seen=0
+half_cores=0
 for a in "$@"; do
     if [[ "$sep_seen" -eq 0 && "$a" == "--" ]]; then
         sep_seen=1
         continue
     fi
     if [[ "$sep_seen" -eq 0 ]]; then
+        if [[ "$a" == "--half-cores" ]]; then
+            half_cores=1
+            continue
+        fi
         sbatch_flags+=("$a")
     else
         extra_opts+=("$a")
@@ -117,6 +130,12 @@ fi
 total_dofs=$((dof * Nx * Ny * Nz))
 NPROCS=$(((total_dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE))
 (( NPROCS < 1 )) && NPROCS=1
+
+if [[ "$half_cores" -eq 1 ]]; then
+    NPROCS=$(( (NPROCS + 1) / 2 ))
+    (( NPROCS < 1 )) && NPROCS=1
+    echo "  --half-cores: requesting ${NPROCS} ranks (half the computed optimum)"
+fi
 
 NNODES=$(( (NPROCS + NTASKS_PER_NODE - 1) / NTASKS_PER_NODE ))
 (( NNODES < 1 )) && NNODES=1
