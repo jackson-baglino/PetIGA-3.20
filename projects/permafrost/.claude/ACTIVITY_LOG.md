@@ -1,3 +1,33 @@
+## 2026-07-12 (later 3) — Axisym V3: dimensionality ELIMINATED; alpha ladder begins
+
+- Local axisym Molaro run (15.04.29): V0 exact (TOT_ICE 5.913e-12 vs analytic
+  5.911e-12, 0.03%), 0 failures, phi clean. Neck growth +18.6% — essentially
+  identical to planar +17.8%. The 3D-curvature hypothesis is REFUTED by the
+  model, and the curvature arithmetic agrees: early sintering is rim-driven
+  (1/rho = 7.9e5 vs azimuthal 1/x = 6.1e4 and grain 2/R = 2.3e4); the
+  dimensionality factor applies to grain-scale-driven coarsening, not
+  sharp-rim necks. Gap to experiment is kinetics: need ~5.4x -> alpha ~ 1.1e-2
+  (converges with Libbrecht sigma~1e-2 at -20 C and the mesh sweet spot).
+- Added molaro_T-20_h1.00_a1e-2.opts (beta_sub0 7.9408e5, dtmax 2e2, K&P
+  validity caveat ~0.61 documented — locate alpha now, refine eps for the
+  final quoted fit). User launching locally (~20 min at 433k nodes).
+- Note: user hit "unrecognized --axisym" by running a stale postprocess/
+  snapshot copy from another run dir — use the repo script with venv python.
+
+---
+
+**Session ended:** 2026-07-12 16:00:30
+
+
+---
+
+**Session ended:** 2026-07-12 15:04:15
+
+
+---
+
+**Session ended:** 2026-07-12 13:37:00
+
 ## 2026-07-12 (later 2) — --half-cores flag for HPC submissions
 
 - Added --half-cores to scripts/HPC/submit_permafrost.sh (intercepted before
