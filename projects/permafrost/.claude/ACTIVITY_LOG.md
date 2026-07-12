@@ -1,3 +1,14 @@
+## 2026-07-12 (later 2) — --half-cores flag for HPC submissions
+
+- Added --half-cores to scripts/HPC/submit_permafrost.sh (intercepted before
+  sbatch flags): requests half the computed ranks/nodes for faster queueing
+  on a busy cluster at ~2x wall time. Safe because run_permafrost.sh clamps
+  its rank computation to the SLURM allocation.
+
+---
+
+**Session ended:** 2026-07-12 11:47:26
+
 ## 2026-07-12 (later) — Axisym V0/V1 PASSED; BC/volume questions answered
 
 - User's sphere-test run: single half-grain at bottom of domain = CORRECT
