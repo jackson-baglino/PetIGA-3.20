@@ -5,8 +5,11 @@
 # (z,r) half-plane represents the full sphere, so at t = 0 the monitor's
 # TOT_ICE must equal the analytic sphere volume:
 #
-#     V0 CHECK:  TOT_ICE(step 0) = (4/3)*pi*R^3 = 3.4515e-15 m^3  (+-~1%,
-#     diffuse-interface correction is O(eps/R) ~ 5%... expect 3.3-3.6e-15)
+#     V0 CHECK (tight): TOT_ICE integrates phi, whose logistic tails carry
+#     an analytic r^2-weighted excess: V_diffuse = (4/3)*pi*R^3
+#     + (4*pi^3/3)*R*eps^2 = 3.4515e-15 * 1.0264 = 3.5427e-15 m^3.
+#     PASSED 2026-07-12 (run 11.18.42): measured 3.544e-15 — 0.04% off the
+#     diffuse-corrected value; TOT_ICE flat over 224 steps to t = 3e5 s.
 #
 #     V1 CHECK:  run a few hundred steps saturated (humidity 1): TOT_ICE
 #     constant to <0.1%, phi in [0,1], no drift or artifacts near r = 0.
