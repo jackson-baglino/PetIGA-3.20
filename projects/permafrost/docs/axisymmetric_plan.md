@@ -47,6 +47,34 @@ eps sweep exonerated discretization).
   contains points with r > 0).
 - **Other boundaries:** Neumann as today; `-periodic 0`.
 
+## 1b. Where the third curvature mode comes from (the |grad phi|^2 question)
+
+The gradient energy density |grad phi|^2 is local and geometry-blind; the
+curvature physics enters through the VARIATIONAL BALANCE — i.e. through the
+volume measure the gradient term is integrated against, because
+curvature-driven motion exists exactly because moving a curved interface
+changes its area, and the measure is what knows about area. With
+dV = 2*pi*r dr dz, integrating the weak-form term  ∫ grad(N)·grad(phi) r dr dz
+by parts yields
+
+    -(1/r) d/dr( r d(phi)/dr ) - d2(phi)/dz2
+      = -( d2/dr2 + d2/dz2 )phi  -  (1/r) d(phi)/dr
+        [in-plane curvature]       [azimuthal curvature mode]
+
+The (1/r)*d(phi)/dr term IS the second principal curvature — generated
+automatically by the r-weight, with the |grad phi|^2 term untouched.
+Sphere check (must give kappa = 2/R everywhere): at the equator (normal
+radial, r = R) the in-plane part gives phi'/R and (1/r)phi_r = phi'/R ->
+2/R; at the pole (r -> 0, phi_r -> 0) the limit of (1/r)phi_r is
+phi_rr = phi'/R -> again 2/R. Correct and regular at the axis.
+
+At the neck this is the dominant 2D-vs-3D difference: kappa_neck becomes
+1/x - 1/rho (the azimuthal neck-circle term is new physics 2D cannot
+represent), and grain surfaces go 1/R -> 2/R, roughly doubling the
+source-sink driving difference. The ONLY code path needing a hand-added
+azimuthal term is Curvature() (explicit kappa from grad/Hessian for d0_GT)
+— off and out of scope.
+
 ## 2. Code touch points (in implementation order)
 
 1. **`include/NASA_types.h`** — add `PetscBool axisym;` to AppCtx.
