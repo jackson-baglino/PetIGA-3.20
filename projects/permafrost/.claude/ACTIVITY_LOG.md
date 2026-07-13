@@ -1,3 +1,20 @@
+## 2026-07-12 (later 12) — Core-count audit: 10k -> 40k DoFs/rank
+
+- Audited rank selection (user request): 10k DoFs/rank over-parallelized —
+  PETSc guidance 20k-100k/rank; ASM+ILU degrades with subdomain count (extra
+  ranks cost KSP iterations AND comms); empirically local runs at 108k/rank
+  did 7 s/step at 1.3M dofs while HPC allocated 260 ranks/9 nodes to a
+  62-step job (queue wait dominated). Runs are step-limited: allocation
+  size, not wall time, is the cost.
+- Raised TARGET_DOFS_PER_CORE to 40000 in all three scripts (Studio/run,
+  HPC/run, HPC/submit — kept in sync; 9ddb57f). Molaro s050: 260 -> 65
+  ranks (3 nodes); s025 rim test: 520 -> 130 ranks. --half-cores now =
+  80k/rank, still healthy.
+
+---
+
+**Session ended:** 2026-07-12 20:25:30
+
 ## 2026-07-12 (later 11) — openbc3 analysis; s025 axisym rim-test geometry cut
 
 - openbc3 (h=0.998): ice -18%/2h (vs -39% at 0.995; data ~-9%/78min) — one
