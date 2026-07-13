@@ -1,3 +1,25 @@
+## 2026-07-13 (later 2) — Response surface complete; no hard ceiling
+
+- Corner runs: a1e-1@Dx1 +38%; Dx10kx10@a1e-1 +75% at 78 min (0 failures
+  both). Full map: 33/38/43/53/55/75 — rate ~ D^0.3 at alpha=0.1 (mixed
+  regime, Lambda ~ 1 across the range); NO plateau.
+- Dx10 curve TRACKS the data mid-time (18 min: 45.7 vs 46.8 um, inside
+  error bars), lags late (57.5 vs 64.8 at 78). Time-shift fit now ~0.5 min:
+  the pre-imaging-delay burst dissolves into their early error bars at
+  these rates.
+- Closing +97% needs D_eff ~ 20-40x molecular at alpha=0.1 (or ~10x plus a
+  few K warmer sample): beyond passive convection -> question now
+  quantitatively posed to the experiment: chamber airflow (methods),
+  sample T, or surface/QLL contribution. T-series comparison is the
+  discriminator ((D*rhovs)(T) fingerprint); AWAITING the paper's other
+  temperature tables + chamber airflow description from the user.
+- Validation statement: first-principles model + one fitted chamber-
+  transport factor reproduces phenomenology, exponent, and mid-time record.
+
+---
+
+**Session ended:** 2026-07-13 08:59:58
+
 ## 2026-07-13 (later) — Dx3kx3: +55%; thermal channel eliminated (my k_air error)
 
 - Dx3kx3 run: +55% at 78 min (prediction +80-95% MISSED). Reason identified:
