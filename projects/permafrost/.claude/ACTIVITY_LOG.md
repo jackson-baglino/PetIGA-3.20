@@ -1,3 +1,30 @@
+## 2026-07-12 (later 11) — openbc3 analysis; s025 axisym rim-test geometry cut
+
+- openbc3 (h=0.998): ice -18%/2h (vs -39% at 0.995; data ~-9%/78min) — one
+  more nudge to h~0.9985 closes shrinkage. Neck +38.8%: confirms neck is
+  chamber-insensitive.
+- Oblong grains QUANTIFIED: sm grain lost 7.9 um axially vs 5.9 radially —
+  Dirichlet flux ~ 1/(wall distance), poles 20 um from z-walls vs 50 um
+  radially -> oblate drift. Domain size couples to the h calibration
+  (sigma_needed ~ reservoir distance); enlarge padding (~60-80 um) for
+  chamber fidelity later. Periodic BCs would disable both reservoirs
+  (closed box + cooling neutralization) and model a grain chain — wrong
+  tool for the chamber.
+- Cut 2D_molaro_axisym_s025.opts (869ec89): eps 2.32e-7, overlap
+  recalibrated (x0=15.023um), rim rho0/eps=6.7, 2343x738 ~1.73M nodes,
+  HPC. Pair with CLOSED molaro_T-20_h1.00_a3e-2 to isolate the rim effect.
+  Pass: neck jump toward +50%+ indicts rim resolution; null ~+35% closes
+  the suspect and points at the experiment's effective sample conditions.
+
+---
+
+**Session ended:** 2026-07-12 19:45:56
+
+
+---
+
+**Session ended:** 2026-07-12 19:12:55
+
 ## 2026-07-12 (later 10) — Open chamber works; undersaturation refuted as neck driver
 
 - openbc2 (h=0.995, both reservoirs): healthy, mass ledger smooth
