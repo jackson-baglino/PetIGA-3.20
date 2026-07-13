@@ -1,3 +1,19 @@
+## 2026-07-12 (later 5) — dthalf was vacuous: Studio script dropped extra args
+
+- The dthalf run produced BIT-IDENTICAL curves (max diff 0.0 nm) because
+  scripts/Studio/run_permafrost.sh silently ignored args past the tag: the
+  '-- -dtmax 1.0e2' override never reached the executable (header shows
+  dtmax=2e2). The '--' pass-through was an HPC-script-only feature — my
+  wrong instruction.
+- Fixed (0bef36c): Studio script now forwards args past the tag to the
+  executable after the -options_file flags (HPC semantics), echoes them in
+  the banner, uses the set-u-safe empty-array idiom for macOS bash 3.2.
+- dt-convergence check still PENDING: rerun with the fixed script.
+
+---
+
+**Session ended:** 2026-07-12 16:54:53
+
 ## 2026-07-12 (later 4) — Fig. 11 data in repo; regime identified as vapor-diffusion-limited
 
 - Full Molaro supplemental table committed (inputs/validation/
