@@ -784,6 +784,9 @@ int main(int argc, char *argv[]) {
         PetscReal LL[3]      = {user.Lx, user.Ly, user.Lz};
         for (PetscInt l = 0; l < dim; l++) {
             for (PetscInt m = 0; m < 2; m++) {
+                /* Axisym: skip the y=0 axis face (interior space, not a
+                 * thermal reservoir) — same guard as the vapor BC above. */
+                if (user.axisym && l == 1 && m == 0) continue;
                 T_BC[l][m] = user.temp0 + (2.0 * m - 1.0) * user.grad_temp0[l] * LL[l] / 2.0;
                 ierr = IGASetBoundaryValue(iga, l, m, 1, T_BC[l][m]); CHKERRQ(ierr);
             }

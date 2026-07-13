@@ -1,0 +1,41 @@
+# =============================================================================
+# experiment/molaro_T-20open_h0.995_a3e-2.opts — FULL open-chamber model:
+# vapor AND temperature reservoirs at the outer boundaries.
+#
+# Lesson from the vapor-only attempt (2026-07-12 17.53.19 run): with
+# insulating thermal walls the box neutralized the 0.5% undersaturation by
+# COOLING 0.05 K — sublimation's latent heat dropped rho_vs(T) to meet the
+# reservoir value (d ln rho_vs/dT = 9.7 %/K x 0.05 K = 0.5%), sigma_local
+# -> 0, and net mass loss stopped at ~0.003% of the ice. TOT_ICE constant,
+# neck identical to the closed box: thermodynamically correct, but not the
+# experiment, where the chamber holds the sample at -20 C and supplies the
+# latent heat. -flag_BC_Tfix 1 makes the outer boundaries that heat
+# reservoir (the axisym axis face is excluded for both BCs in
+# permafrost2.c).
+#
+# Note the new rate-limiting physics this admits: sustained sublimation
+# requires heat conducted from the walls through low-conductivity air to
+# the grains — a real limitation the physical chamber shares.
+#
+# Diagnostics to check: TOTAL_MASS drifts smoothly DOWN (boundary vapor
+# ledger); TEMP integral holds near -20 C now; grain diameters shrink
+# toward the observed 202 -> 193.9 um; neck growth vs the +33% closed-box
+# ceiling and the data's +97% (inputs/validation/molaro2019_fig11_T-20.csv).
+# =============================================================================
+
+-t_final 7.2e3
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 0.995
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_rhovfix 1
+-flag_BC_Tfix 1
+
+-beta_sub0 2.6469e5                     # K&P beta0 at -20 C, alpha_c = 3e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0
+
+-dtmax 6.0e1
+-dtCFL 1
+-dtCFL_dphimax 0.2

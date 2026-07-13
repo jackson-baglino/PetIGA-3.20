@@ -381,6 +381,20 @@ PetscErrorCode InterfaceCFLMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
   AppCtx *user = (AppCtx *)mctx;
 
   PetscFunctionBegin;
+
+  /* Snap-to-dtmax: the NRmin growth heuristic refuses to grow dt when
+   * dt*factor would exceed dtmax, stranding dt just below the cap forever
+   * (e.g. 790 s against dtmax = 1000: "Max dt! can not Increase"). When
+   * growth is blocked ONLY by the cap, take dtmax itself. Runs before the
+   * CFL cap below, which can still pull the result back down. */
+  if (ts->adap && ts->dtmax > 0.0) {
+    PetscReal dt_now;
+    PetscErrorCode ierr2 = TSGetTimeStep(ts, &dt_now);CHKERRQ(ierr2);
+    if (dt_now < ts->dtmax && dt_now * ts->factor > ts->dtmax) {
+      ierr2 = TSSetTimeStep(ts, ts->dtmax);CHKERRQ(ierr2);
+    }
+  }
+
   if (!user->flag_dtCFL) PetscFunctionReturn(0);
 
   if (!user->cfl_U_prev) {                    /* first call: just record */
