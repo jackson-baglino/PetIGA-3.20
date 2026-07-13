@@ -1,3 +1,28 @@
+## 2026-07-13 — Latent-heat resistance identified; paired-enhancement run queued
+
+- Dx3+a1e-1 run: +53% at 78 min (ladder 33/43/53), 0 failures. Sublinear again
+  — new bottleneck identified: LATENT HEAT (cloud-droplet two-resistance
+  analysis: F_K/F_D = D*rhovs*L^2/(k_air*Rv*T^2) = 0.24 at molecular D but
+  0.73 at Dx3 — enhancing vapor alone promotes the thermal channel to
+  co-limiting). Model contains the coupling in full; physics, not artifact.
+- Refined hypothesis: chamber convection enhances heat AND vapor together.
+  Next run: -dif_vap 6.5e-5 -thcond_air 0.06 -beta_sub0 7.9408e4 (Dx3kx3).
+  Prediction: +80-95% at 78 min.
+- User notes: (1) grains don't shrink in these runs — correct, closed/
+  saturated config conserves mass; shrinkage lives in the open-chamber
+  config (h~0.9985), recombined in the final validation run. (2) Possible
+  minutes of pre-imaging delay — time-shift fit vs current curve still poor
+  (8 um RMS); revisit as a one-parameter correction once slopes match.
+
+---
+
+**Session ended:** 2026-07-12 22:08:29
+
+
+---
+
+**Session ended:** 2026-07-12 21:37:19
+
 ## 2026-07-12 (later 13) — s025 rim test: modest gain; transport-coefficient hypothesis
 
 - s025 rim test (job64977234): +38% at 78 min vs s050's +33% (+46.2% at 2h),
