@@ -1,3 +1,23 @@
+## 2026-07-12 (later 9) — Vapor-only open box self-neutralized by cooling; fixed
+
+- openbc run diagnosis: Dirichlet vapor BC WAS enforced (boundary at exactly
+  0.995*rhovs) but the domain cooled 0.05 K (TEMP integral/volume = -20.05 C)
+  — latent heat of initial sublimation dropped rhovs(T) by exactly 0.5%
+  (9.7%/K * 0.05K), sigma_local -> 0, mass loss stopped at ~0.003% of ice.
+  Insulating thermal walls = no sustained sublimation. Thermodynamically
+  correct; not the chamber, which supplies latent heat at fixed T.
+- Fixes (4dd21a2): flag_BC_Tfix gets the axisym axis-face guard (same as
+  vapor); new molaro_T-20open_h0.995_a3e-2.opts sets BOTH reservoirs
+  (rhovfix + Tfix). New rate physics admitted: heat conduction through air
+  to the grains can now limit — real chamber physics.
+- User-requested timestepper edit: snap dt to dtmax when growth is blocked
+  only by the cap (was stranded at dtmax/factor, e.g. 790 vs 1000).
+  Implemented in InterfaceCFLMonitor pre-CFL-cap; no PETSc rebuild.
+
+---
+
+**Session ended:** 2026-07-12 17:55:29
+
 ## 2026-07-12 (later 8) — dt convergence PASSED; elimination chain complete
 
 - dthalf2 (17.31.26): override took effect (dtmax=1e2 in header — Studio
