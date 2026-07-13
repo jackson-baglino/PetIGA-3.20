@@ -1,3 +1,25 @@
+## 2026-07-13 (later 5) — Paper read; validation campaign SYNTHESIZED
+
+- Read Molaro et al. 2019 (SA81 model). Their vapor term V3 = Hertz-Knudsen
+  alpha=1, "ignores gas-gas diffusion rates" (their Appendix A, verbatim) =
+  the (alpha=1, D=inf) corner of our response surface — unreachable at
+  physical parameters. Their validation claim: order-of-magnitude.
+- Residual factor ~2 named: surface diffusion — SA81's OTHER co-dominant
+  mechanism (their Fig. 10), absent from our vapor-only model. Our ~50% of
+  the observed rate = the expected vapor share.
+- T-inversion resolved: -20 sinters faster than -5 in absolute rate
+  (impossible for any vapor mechanism); their own shrinkage data (3-4% at
+  -20, 9% at -5, in a nominally saturated sealed cell) implicates
+  illumination/gradient artifact, 4x stronger at -5, eventually consuming
+  the neck. -20 series = clean benchmark (the one we used).
+- Wrote docs/molaro_validation_synthesis.md: full statement, comparison
+  conventions (adopt their time-anchoring), future work (surface-diffusion
+  mobility; gradient-metamorphism runs; grain-shrinkage co-fit).
+
+---
+
+**Session ended:** 2026-07-13 12:40:14
+
 ## 2026-07-13 (later 4) — Molaro methods paragraphs: hypotheses rewritten
 
 - Apparatus: sealed Peltier cryostage, ~1 mm slide-to-cover gap, ice-coated
