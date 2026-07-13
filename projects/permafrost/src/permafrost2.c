@@ -416,6 +416,14 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-dtCFL",           "Interface-CFL timestep limiter",                   "", user.flag_dtCFL, &user.flag_dtCFL, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-axisym",          "Axisymmetric r-z mode (x=axis, y=radius; grains on y=0)", "", user.axisym, &user.axisym, NULL); CHKERRQ(ierr);
+    /* Vapor diffusivity override: molecular D_v is the default; larger
+     * values model convectively enhanced chamber transport (an effective
+     * Sherwood-number correction) — see the 2026-07-12 Molaro validation
+     * campaign, where the vapor-diffusion-limited neck rate fell ~3x below
+     * experiment with every model-side mechanism eliminated. NOTE: the
+     * kinetic derivation (tau_sub via M&F SI Eq. 9) uses this value too,
+     * consistently. */
+    ierr = PetscOptionsReal("-dif_vap",         "Vapor diffusivity in air [m^2/s]",                 "", user.dif_vap, &user.dif_vap, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-dtCFL_dphimax",   "Max pointwise |dphi| per step for the CFL limiter","", user.cfl_dphimax, &user.cfl_dphimax, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-decouple_phase_change", "Zero ice_t-driven source terms in R_tem/R_vap too (not just S_sub in R_ice)", "", user.decouple_phase_change, &user.decouple_phase_change, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
