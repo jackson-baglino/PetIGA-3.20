@@ -1,3 +1,29 @@
+## 2026-07-13 (later 4) — Molaro methods paragraphs: hypotheses rewritten
+
+- Apparatus: sealed Peltier cryostage, ~1 mm slide-to-cover gap, ice-coated
+  slide (nearby saturated reservoir), grains ON a glass slide over the cold
+  plate. CONVECTION HYPOTHESIS DEAD (no airflow in a 1 mm sealed gap).
+- New leading mechanism: illumination/window radiative heating -> weak
+  vertical T gradient in the cell. Magnitude check: dT ~ 0.5 K over 1 mm
+  gives recession ~1e-9 m/s = their observed shrinkage, AND explains the
+  T-trend (9% at -5 vs 3-4% at -20, tracking rhovs(T)). Gradient-driven
+  vapor flux may also enhance neck transport. Caveat: their gradient is
+  transverse to the pair axis — breaks axisymmetry (planar 2D +
+  -grad_temp0 to test).
+- Their Fig. 12 comparison ANCHORS the first measurement to the model time
+  with matching neck size (shape comparison, not absolute clock) and is
+  against THEIR model (identity/parameters unknown — possibly kinetics-only
+  with alpha ~ 1, which would ignore the diffusion limit our model
+  enforces). Extracting their model equations is now top priority.
+- -5 C series exists (neck 32->44 um, grains 99/78, cut short): possible
+  inverted T-dependence vs vapor scaling — Fig. 12 time axes settle it.
+- ASKED USER: (a) their section-3 model equations/parameters; (b) -5 C
+  time series from Fig. 12; (c) Appendix B temperature tolerances.
+
+---
+
+**Session ended:** 2026-07-13 12:03:24
+
 ## 2026-07-13 (later 3) — Fig. 11 data overlay added to neck_width plots
 
 - neck_width.py now overlays the Molaro data (points + asymmetric error
