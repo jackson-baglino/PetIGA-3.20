@@ -767,6 +767,12 @@ int main(int argc, char *argv[]) {
         RhoVS_I(&user, user.temp0, &rho0_vs, NULL);
         for (PetscInt l = 0; l < dim; l++) {
             for (PetscInt m = 0; m < 2; m++) {
+                /* Axisymmetric mode: the y = 0 face is the symmetry AXIS —
+                 * interior space of the 3D problem, usually with ice sitting
+                 * on it — never a reservoir. Keep it natural Neumann (the
+                 * exact axis condition) and pin vapor only on the true
+                 * outer boundaries. */
+                if (user.axisym && l == 1 && m == 0) continue;
                 ierr = IGASetBoundaryValue(iga, l, m, 2, user.hum0 * rho0_vs); CHKERRQ(ierr);
             }
         }

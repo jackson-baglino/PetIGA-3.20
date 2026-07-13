@@ -56,8 +56,25 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "preprocess"))
-import comp_eps as ce  # noqa: E402
+# Thermodynamics inlined (mirrors material_properties.c / comp_eps.py) so
+# this script also runs from the postprocess/ snapshot copy inside a run
+# directory, where ../preprocess does not exist.
+_KJ = [-0.5865e4, 0.2224e2, 0.1375e-1, -0.3403e-4, 0.2697e-7, 0.6918]
+_RHO_AIR, _BB, _PATM = 1.341, 0.62, 101325.0
+_DV0 = 2.178e-5
+
+
+def rho_vs_sat(T_C):
+    """Saturation vapor density over ice [kg/m^3] (ASHRAE, as in RhoVS_I)."""
+    T = T_C + 273.15
+    Pvs = math.exp(_KJ[0] / T + _KJ[1] + _KJ[2] * T + _KJ[3] * T ** 2
+                   + _KJ[4] * T ** 3 + _KJ[5] * math.log(T))
+    return _RHO_AIR * _BB * Pvs / (_PATM - Pvs)
+
+
+def Dv_T(T_C):
+    """Vapor diffusivity D_v(T) [m^2/s]."""
+    return _DV0 * ((T_C + 273.15) / 273.15) ** 1.81
 
 
 def read_vts(fn):
@@ -110,7 +127,7 @@ def sample(field_dict, x, y, xp, yp):
         return ((1 - fx) * (1 - fy) * F[i, j] + fx * (1 - fy) * F[i, j + 1]
                 + (1 - fx) * fy * F[i + 1, j] + fx * fy * F[i + 1, j + 1])
     Tv, rvv = bl(T), bl(rv)
-    rvs = ce.rho_vs_sat(Tv)
+    rvs = rho_vs_sat(Tv)
     return (rvv - rvs) / rvs
 
 
@@ -142,7 +159,7 @@ def main():
         # SCALED beta printed as "beta_sub (SCALED = ...) = X s/m"; fall back:
         if beta_hk is None:
             beta_hk = 0.733
-    Dv = ce.Dv_T(-20.0)
+    Dv = Dv_T(-20.0)
     delta = 3.0 * args.eps
 
     names = ["neck", "top-sm", "top-lg", "pole-sm", "pole-lg", "farfield"]
