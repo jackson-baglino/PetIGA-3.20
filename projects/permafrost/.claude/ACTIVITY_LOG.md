@@ -1,3 +1,19 @@
+## 2026-07-12 (later 8) — dt convergence PASSED; elimination chain complete
+
+- dthalf2 (17.31.26): override took effect (dtmax=1e2 in header — Studio
+  pass-through fix verified in production). Curves differ by max 12 nm,
+  0.0% of growth at 78 min: alpha=1e-2 rate temporally CONVERGED.
+- Every numerical suspect for the 3x gap to Fig. 11 now tested and cleared:
+  dt (12 nm), eps (sweep, linear O(eps)), dimensionality (axisym +18.6% vs
+  planar +17.8%), attachment (alpha ladder saturates +33%, model diffusion-
+  limited at Lambda~0.2, n~5). Remaining hypothesis: open-chamber vapor
+  exchange (grain shrinkage in the data demands it independently) — the
+  molaro_T-20_h0.995_a3e-2 open-boundary run is the decisive experiment.
+
+---
+
+**Session ended:** 2026-07-12 17:50:54
+
 ## 2026-07-12 (later 7) — Open-boundary chamber model prepped
 
 - supersat_probes.py comp_eps ModuleNotFoundError (user ran the run-dir
