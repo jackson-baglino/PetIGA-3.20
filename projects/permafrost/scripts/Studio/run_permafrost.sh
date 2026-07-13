@@ -134,6 +134,24 @@ geom_name="$1"
 exp_name="$2"
 title="${3:-}"
 
+# Args past the tag (an optional literal `--` separator is skipped) are
+# forwarded verbatim to the permafrost executable, AFTER the three
+# -options_file flags — so they override anything in the opts files.
+# Mirrors scripts/HPC/submit_permafrost.sh semantics, e.g.:
+#   ./scripts/Studio/run_permafrost.sh GEOM EXP mytag -- -dtmax 1.0e2
+# (Previously extra args were silently IGNORED — a -dtmax override ran
+# with the opts-file value and no warning.)
+EXTRA_OPTS=()
+if [ "$#" -gt 3 ]; then
+    _rest=("${@:4}")
+    for _a in "${_rest[@]}"; do
+        if [ "$_a" = "--" ] && [ "${#EXTRA_OPTS[@]}" -eq 0 ]; then
+            continue
+        fi
+        EXTRA_OPTS+=("$_a")
+    done
+fi
+
 GEOM_OPTS="$GEOMETRY_DIR/${geom_name}.opts"
 EXP_OPTS="$EXPERIMENT_DIR/${exp_name}.opts"
 
@@ -357,11 +375,15 @@ run_simulation() {
     export folder
 
     set +e
+    if [ "${#EXTRA_OPTS[@]}" -gt 0 ]; then
+        echo "Extra opts   : ${EXTRA_OPTS[*]}"
+    fi
     mpiexec -np "$NPROCS" "$EXEC"      \
         -options_file "$SOLVER_OPTS"   \
         -options_file "$GEOM_OPTS"     \
         -options_file "$EXP_OPTS"      \
         -output_path  "$folder"        \
+        ${EXTRA_OPTS[@]+"${EXTRA_OPTS[@]}"} \
         | tee "$folder/outp.txt"
 
     sim_exit=${PIPESTATUS[0]}
