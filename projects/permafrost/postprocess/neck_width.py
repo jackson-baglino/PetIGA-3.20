@@ -106,6 +106,9 @@ def main():
     ap.add_argument("run_dir", type=Path)
     ap.add_argument("--phi", type=float, default=0.5, help="contour level")
     ap.add_argument("--out", type=Path, default=None, help="CSV path")
+    ap.add_argument("--data", type=Path, default=None,
+                    help="experimental neck-width CSV to overlay "
+                         "(default: the repo's Molaro Fig. 11 table, if found)")
     ap.add_argument("--axisym", action="store_true",
                     help="axisymmetric r-z run: the grid's y is the radius and "
                          "the axis is y = 0, so the measured chord (axis to the "
@@ -173,7 +176,33 @@ def main():
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(figsize=(7, 4.5))
-    ax.plot(t, nw, lw=2, color="#3d74d9")
+    ax.plot(t, nw, lw=2, color="#3d74d9", label="model")
+
+    # Experimental overlay (Molaro et al. 2019 Fig. 11 table). Default file
+    # is resolved against the repo (this script's parent's parent), so the
+    # overlay also appears when analyzing runs outside the repo tree; a
+    # postprocess/ snapshot copy inside a run dir won't find it — pass
+    # --data explicitly there, or it is skipped with a note.
+    data_csv = args.data
+    if data_csv is None:
+        cand = Path(__file__).resolve().parent.parent / "inputs" / "validation" \
+               / "molaro2019_fig11_T-20.csv"
+        data_csv = cand if cand.exists() else None
+    if data_csv is not None and Path(data_csv).exists():
+        dt_, dw_, ep_, em_ = [], [], [], []
+        for line in open(data_csv):
+            if line.startswith("#") or not line.strip():
+                continue
+            c = line.split(",")
+            dt_.append(float(c[0])); dw_.append(float(c[1]))
+            ep_.append(float(c[2])); em_.append(float(c[3]))
+        ax.errorbar(dt_, dw_, yerr=[em_, ep_], fmt="o", ms=5, lw=1.2,
+                    capsize=3, color="#3f434a", label="Molaro et al. (2019)")
+        ax.legend(fontsize=9)
+    else:
+        print("note: experimental data CSV not found — plotting model only "
+              "(pass --data <csv> to overlay)")
+
     ax.set_xlabel("time [min]")
     ax.set_ylabel("neck width [µm]")
     ax.set_title("Neck width vs time (minimum cross-section of φ ≥ 0.5 body)")
