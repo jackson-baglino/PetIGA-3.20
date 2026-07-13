@@ -1,3 +1,24 @@
+## 2026-07-12 (later 6) — Transport ceiling confirmed; probe tool built
+
+- a3e-2 rung: +33% at 78 min (ladder 14/26/33 for alpha 2e-3/1e-2/3e-2) —
+  hard saturation ~3x below the data's +97%. Model's own growth exponent now
+  n~5 (R²=0.984): it has ENTERED the vapor-diffusion-limited regime; right
+  physics, short supply.
+- Built postprocess/supersat_probes.py (user request): 6 moving probes
+  (neck/tops/poles/farfield) + regime panel Lambda = D_v*beta_HK/x_neck with
+  the two Kingery limits (n=3 kinetic: x^3-x0^3 = A3 d0 R t/beta; n=5
+  diffusion: x^5-x0^5 = A5 Dv (rhovs/rhoi) d0 R^2 t) as the analytic
+  accompaniment. a3e-2: Lambda 0.28->0.20 (diffusion-limited), neck sigma
+  -4e-4 relaxing to -1.1e-4, source probes barely above farfield.
+- Next lever identified: the closed saturated box cannot reproduce the
+  experiment's NET grain shrinkage (202->193.9 um) — the chamber exchanges
+  vapor. Candidate: -flag_BC_rhovfix 1 with humidity slightly <1 (open
+  reservoir boundary), grain-diameter drift as the independent calibration.
+
+---
+
+**Session ended:** 2026-07-12 17:13:28
+
 ## 2026-07-12 (later 5) — dthalf was vacuous: Studio script dropped extra args
 
 - The dthalf run produced BIT-IDENTICAL curves (max diff 0.0 nm) because
