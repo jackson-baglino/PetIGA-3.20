@@ -1,3 +1,20 @@
+## 2026-07-12 (later 7) — Open-boundary chamber model prepped
+
+- supersat_probes.py comp_eps ModuleNotFoundError (user ran the run-dir
+  snapshot copy): thermodynamics inlined; script now standalone.
+- flag_BC_rhovfix made axisym-aware (skips the y=0 axis face — interior
+  space, ice on it; only outer boundaries become the reservoir). Rebuilt.
+- New experiment molaro_T-20_h0.995_a3e-2.opts: -flag_BC_rhovfix 1 +
+  humidity 0.995 (derived from lg-grain shrinkage 4.05um/78min ->
+  sigma_far = 4.5e-3). Mass bookkeeping documented: TOTAL_MASS drift IS the
+  boundary-exchange ledger (d(mass)/dt = -flux); health = smooth monotone
+  drift + reconciliation with contour-measured grain volumes. Explicit
+  boundary-flux integral deferred unless the ledger fails to reconcile.
+
+---
+
+**Session ended:** 2026-07-12 17:36:08
+
 ## 2026-07-12 (later 6) — Transport ceiling confirmed; probe tool built
 
 - a3e-2 rung: +33% at 78 min (ladder 14/26/33 for alpha 2e-3/1e-2/3e-2) —
