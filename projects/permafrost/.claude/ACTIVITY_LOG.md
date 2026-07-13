@@ -1,3 +1,15 @@
+## 2026-07-13 (later 3) — Fig. 11 data overlay added to neck_width plots
+
+- neck_width.py now overlays the Molaro data (points + asymmetric error
+  bars, legend) on every plot; repo validation CSV auto-resolved, --data
+  overrides, graceful skip for snapshot copies. Regenerated the Dx10kx10
+  plot: model threads the first four data points within error bars, lags
+  from ~29 min — the visual summary of the current validation state.
+
+---
+
+**Session ended:** 2026-07-13 11:34:21
+
 ## 2026-07-13 (later 2) — Response surface complete; no hard ceiling
 
 - Corner runs: a1e-1@Dx1 +38%; Dx10kx10@a1e-1 +75% at 78 min (0 failures
