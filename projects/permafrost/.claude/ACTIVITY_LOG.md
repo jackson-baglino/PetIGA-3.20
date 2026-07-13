@@ -1,3 +1,29 @@
+## 2026-07-12 (later 10) — Open chamber works; undersaturation refuted as neck driver
+
+- openbc2 (h=0.995, both reservoirs): healthy, mass ledger smooth
+  (5.434 -> 3.318e-9), thermal reservoir held T. Ice lost 39%/2h vs data
+  ~9%/78min -> humidity recalibrated to 0.998 (sigma = 1.85e-3); new
+  experiment molaro_T-20open_h0.998_a3e-2.opts committed.
+- KEY NEGATIVE: neck growth +33.6% — at/below the closed-box ceiling.
+  Undersaturation subtracts from deposition everywhere including the neck;
+  the open-chamber hypothesis for the 3x neck gap is REFUTED. Full
+  elimination chain now: dt, eps(planar), dimensionality, attachment,
+  chamber exchange.
+- Remaining candidates: (1) early-rim sharpness — data jumps +36% in the
+  first 9 min and even the 9-78min slope is 3x ours; diffuse rim caps the
+  Kelvin driving at ~d0/eps; test = s025-eps axisym run (HPC); (2) actual
+  sample temperature/convective transport in the chamber (paper methods).
+- Data-shape note kept: their burst-then-tail favors sharp-rim early physics.
+
+---
+
+**Session ended:** 2026-07-12 18:39:34
+
+
+---
+
+**Session ended:** 2026-07-12 18:22:55
+
 ## 2026-07-12 (later 9) — Vapor-only open box self-neutralized by cooling; fixed
 
 - openbc run diagnosis: Dirichlet vapor BC WAS enforced (boundary at exactly
