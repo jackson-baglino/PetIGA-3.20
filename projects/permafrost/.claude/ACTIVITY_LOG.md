@@ -1,3 +1,30 @@
+## 2026-07-13 (later) — Dx3kx3: +55%; thermal channel eliminated (my k_air error)
+
+- Dx3kx3 run: +55% at 78 min (prediction +80-95% MISSED). Reason identified:
+  the neck's latent heat escapes through the ICE (k=2.29), not the air
+  (k=0.02) — the k_air-based two-resistance analysis mis-located the thermal
+  path; enhancing air conduction was aimed at the wrong channel. Thermal
+  resistance eliminated as a limiter.
+- Response surface: 33 (base) / 43 (Dx3) / 53 (Dx3+a1e-1) / 55 (Dx3kx3).
+  Structural ceiling: with alpha capped at physical ~0.1, raising D swings
+  Lambda back toward kinetic limitation — vapor-route ceiling ~+55-60% at
+  physically admissible parameters = HALF the measured rate, with the right
+  exponent (n~5) but rate constant ~3.5x small.
+- Plan: (1) two corner runs to close the (alpha,D) map: a1e-1@Dx1 and
+  Dx10kx10@a1e-1; (2) request the paper's OTHER temperature series — vapor
+  route scales as D(T)*rhovs(T), surface/QLL transport has different
+  activation energy: the T-scaling comparison discriminates the missing
+  factor-2 mechanism; (3) current honest validation statement documented.
+
+---
+
+**Session ended:** 2026-07-13 07:24:02
+
+
+---
+
+**Session ended:** 2026-07-13 07:19:48
+
 ## 2026-07-13 — Latent-heat resistance identified; paired-enhancement run queued
 
 - Dx3+a1e-1 run: +53% at 78 min (ladder 33/43/53), 0 failures. Sublinear again
