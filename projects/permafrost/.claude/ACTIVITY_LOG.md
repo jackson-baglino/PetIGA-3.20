@@ -1,3 +1,20 @@
+## 2026-07-12 (later 13) — s025 rim test: modest gain; transport-coefficient hypothesis
+
+- s025 rim test (job64977234): +38% at 78 min vs s050's +33% (+46.2% at 2h),
+  0 failures, Lambda 0.28->0.19. Rim resolution is a CONTRIBUTOR (~+5 pts per
+  eps halving), extrapolating to ~+43-45% at eps->0 — not the 3x answer.
+- Model-side suspect list now exhausted: dt, eps(planar+axisym), dimension,
+  attachment, chamber humidity, rim resolution. In the diffusion-limited
+  regime rate ~ D_v: deficit ~2.5-3x -> leading hypothesis is convectively
+  enhanced chamber transport (Sherwood ~ 3, modest for a humid chamber).
+- Added -dif_vap CLI option (f474bb1) to test it directly. Humidity >1
+  question answered: their own data rules it out (grains SHRINK while the
+  neck doubles; a supersaturated reservoir would grow both grains).
+
+---
+
+**Session ended:** 2026-07-12 20:29:44
+
 ## 2026-07-12 (later 12) — Core-count audit: 10k -> 40k DoFs/rank
 
 - Audited rank selection (user request): 10k DoFs/rank over-parallelized —
