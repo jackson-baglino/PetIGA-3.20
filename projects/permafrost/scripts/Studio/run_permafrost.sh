@@ -196,7 +196,16 @@ fi
 # ---------------------------------------------------------------------------
 compute_optimal_nprocs() {
     local Nx Ny Nz dof total_dofs grid_src
-    local TARGET_DOFS_PER_CORE=10000
+    # 40000 DoFs/rank (raised from 10000, 2026-07-12): PETSc guidance for
+    # implicit solves is 20k-100k unknowns/rank — below ~20k, reductions and halo
+    # exchange dominate; and ASM+ILU weakens as subdomain count grows (more ranks
+    # -> more BiCGStab iterations AND more comms). Empirically the local axisym
+    # Molaro runs at 108k DoFs/rank did ~7 s/step at 1.3M DoFs, while the old
+    # target allocated 260 ranks / 9 HPC nodes to a 62-step job whose cost was
+    # all queue wait. These runs are step-limited, so wall time is nearly flat
+    # in rank count; the allocation size is what costs. Keep the three copies of
+    # this constant in sync (Studio/run, HPC/run, HPC/submit).
+    local TARGET_DOFS_PER_CORE=40000
 
     dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" | head -n1)
     [[ -z "${dof:-}" ]] && dof=4

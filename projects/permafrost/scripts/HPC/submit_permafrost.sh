@@ -69,7 +69,7 @@ fi
 # the computed MPI ranks so the job queues faster on a busy cluster. The
 # runner (run_permafrost.sh) clamps its own rank count to the SLURM
 # allocation, so the halved request propagates consistently; wall time
-# roughly doubles (weak-scaling regime at 10k DoFs/core).
+# roughly doubles (weak-scaling regime at the 40k DoFs/core target).
 sbatch_flags=()
 extra_opts=()
 sep_seen=0
@@ -106,7 +106,16 @@ fi
 # Compute optimal NPROCS — kept in sync with compute_optimal_nprocs() in
 # run_permafrost.sh. Formula: ceil(dof * Nx * Ny * Nz / TARGET_DOFS_PER_CORE)
 # ---------------------------------------------------------------------------
-TARGET_DOFS_PER_CORE=10000
+# 40000 DoFs/rank (raised from 10000, 2026-07-12): PETSc guidance for
+# implicit solves is 20k-100k unknowns/rank — below ~20k, reductions and halo
+# exchange dominate; and ASM+ILU weakens as subdomain count grows (more ranks
+# -> more BiCGStab iterations AND more comms). Empirically the local axisym
+# Molaro runs at 108k DoFs/rank did ~7 s/step at 1.3M DoFs, while the old
+# target allocated 260 ranks / 9 HPC nodes to a 62-step job whose cost was
+# all queue wait. These runs are step-limited, so wall time is nearly flat
+# in rank count; the allocation size is what costs. Keep the three copies of
+# this constant in sync (Studio/run, HPC/run, HPC/submit).
+TARGET_DOFS_PER_CORE=40000
 NTASKS_PER_NODE=32   # safe minimum across icelake|skylake|cascadelake
 
 # Read dof from solver.opts (default 4 if absent)
