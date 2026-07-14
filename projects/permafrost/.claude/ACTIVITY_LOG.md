@@ -1,3 +1,29 @@
+## 2026-07-14 (later) — Movie pair verified; equal-grain Molaro-scale study cut
+
+- Movie-run checks: resolution/eps match the sintering sims within 4-5%
+  ("more diffuse" look = 9x smaller domain, confirmed). Timescales
+  consistent: full-model extinction 4.64 d at -20 vs 1.25 d at -5 = ratio 3.7
+  (analytic beta/d0 scaling predicts 3.8); same geometry factor ~2.3-2.4 vs
+  the naive sphere formula as always. AC-only: small grain dies 1.8 d
+  (predicted 2.0) and then AC annihilates ALL ice (TOT_ICE -> 0 by ~day 8-10,
+  large-grain prediction 8 d) — pure curvature flow with no conservation;
+  full model conserved to +0.0%. Stronger slide contrast than planned.
+- New geometry 2D_two_equal_grains_molaro_scale.opts (0f8132d): R0=R1=87 um
+  (Molaro mean — CONFIRM vs user's target size), domain proportional
+  (255x236 um), same eps/mesh rule, 744x687 = 511k nodes (HPC ~39 ranks).
+  Equal grains isolate rates: AC-only erosion prediction -9% radius/30 d,
+  collapse 174 d; full run = metastability control (residual = sublimation).
+  Reuses ripening_*_T-20 experiments unchanged.
+
+---
+
+**Session ended:** 2026-07-14 15:09:25
+
+
+---
+
+**Session ended:** 2026-07-14 12:43:27
+
 ## 2026-07-14 — Advisor slides published; ripening demo pair (AC-only vs full)
 
 - Published 7-slide advisor-update artifact (ripening hardening arc, physics
