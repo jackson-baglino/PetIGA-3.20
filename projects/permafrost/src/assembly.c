@@ -152,19 +152,26 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             gN_grhov += N1[a][l] * PetscRealPart(grad_rhov[l]);
         }
 
+        /* -decouple_phase_change 1: zero every phase-change coupling — the
+         * sublimation source in R_ice AND the ice_t-driven sources in
+         * R_tem (latent heat) / R_vap (mass exchange) — leaving pure
+         * Allen-Cahn curvature relaxation with passive heat/vapor
+         * diffusion. Demo/diagnostic mode. */
+        const PetscReal pc = user->decouple_phase_change ? 0.0 : 1.0;
+
         R[a][0] = rw * ( N0[a] * phi_t
                 + 3.0 * mob_sub * eps * gN_gphi
                 + (3.0 * mob_sub / eps) * f1 * N0[a]
-                - (user->alph_sub / rho_ice) * loc
+                - pc * (user->alph_sub / rho_ice) * loc
                   * (PetscRealPart(rhov) - rhovs_eff) * N0[a] );
 
         R[a][1] = rw * ( rho * cp * N0[a] * tem_t                       /* storage */
                 + user->xi_T * thcond * gN_gtem                        /* conduction */
-                - user->xi_T * rho_ice * lat_sub * phi_t * N0[a] );    /* latent heat */
+                - pc * user->xi_T * rho_ice * lat_sub * phi_t * N0[a] ); /* latent heat */
 
         R[a][2] = rw * ( phi_aef * N0[a] * rhov_t                      /* vapor storage */
                 + user->xi_v * dif_vap * phi_aef * gN_grhov            /* vapor diffusion (xi_v-scaled) */
-                + (user->xi_v * rho_ice - PetscRealPart(rhov))
+                + pc * (user->xi_v * rho_ice - PetscRealPart(rhov))
                   * phi_t * N0[a] );                                    /* xi_v*source - storage cross-term */
     }
     return 0;
@@ -284,6 +291,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
         rw = xphys[1];
     }
 
+    /* Must mirror the pc factor in Residual (see comment there). */
+    const PetscReal pc = user->decouple_phase_change ? 0.0 : 1.0;
+
     for (a = 0; a < nen; a++) {
         PetscReal gNa_gtem  = 0.0;
         PetscReal gNa_grhov = 0.0;
@@ -301,7 +311,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             J[a][0][b][0] += rw * ( shift * NaNb
                            + 3.0 * mob_sub * eps * gNagNb
                            + (3.0 * mob_sub / eps) * df1 * NaNb
-                           - (user->alph_sub / rho_ice) * dloc_dph
+                           - pc * (user->alph_sub / rho_ice) * dloc_dph
                              * (PetscRealPart(rhov) - rhovs_eff) * NaNb );
             /* GT curvature chain-rule (d0_GT != 0) also contributes here
              * via dkappa/d(grad_phi)*N1[b]; omitted — d0_GT=0 is typical.
@@ -310,14 +320,14 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
              * — the r-weight below does NOT cover explicitly computed kappa. */
 
             /* ============ R_ice / T ============ */
-            J[a][0][b][1] += rw * ( (user->alph_sub / rho_ice) * loc * d_rhovs_eff_dT * NaNb );
+            J[a][0][b][1] += rw * pc * ( (user->alph_sub / rho_ice) * loc * d_rhovs_eff_dT * NaNb );
 
             /* ============ R_ice / rhov ============ */
-            J[a][0][b][2] -= rw * ( (user->alph_sub / rho_ice) * loc * NaNb );
+            J[a][0][b][2] -= rw * pc * ( (user->alph_sub / rho_ice) * loc * NaNb );
 
             /* ============ R_tem / phi ============ */
             J[a][1][b][0] += rw * ( user->xi_T * dthcond_dphi * gNa_gtem * N0[b]
-                           - user->xi_T * rho_ice * lat_sub * shift * NaNb );
+                           - pc * user->xi_T * rho_ice * lat_sub * shift * NaNb );
 
             /* ============ R_tem / T ============ */
             J[a][1][b][1] += rw * ( shift * rho * cp * NaNb
@@ -331,7 +341,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             /* Exact Jacobian of the xi_v-scaled residual: the source coefficient
              * in R[a][2] is (xi_v*rho_ice - rhov), so the vap/ice coupling is
              * O(xi_v*rho_ice) ~ 1 instead of O(rho_ice) ~ 1e3 — well-conditioned. */
-            J[a][2][b][0] += rw * ( (user->xi_v * rho_ice - PetscRealPart(rhov)) * shift * NaNb );
+            J[a][2][b][0] += rw * pc * ( (user->xi_v * rho_ice - PetscRealPart(rhov)) * shift * NaNb );
 
             /* ============ R_vap / T ============ */
             J[a][2][b][1] += rw * ( user->xi_v * d_dif_vap * phi_aef * gNa_grhov * N0[b] );

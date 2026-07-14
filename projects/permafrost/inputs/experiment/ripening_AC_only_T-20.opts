@@ -1,0 +1,34 @@
+# =============================================================================
+# experiment/ripening_AC_only_T-20.opts — Ostwald-ripening movie run, AC-ONLY control.
+#
+# Two-grain ripening demo pair for slides (with ripening_AC_only_T-20.opts):
+# identical in every respect except the phase-change coupling. 30 days at
+# -20 C, saturated, physical kinetics.
+#
+# -decouple_phase_change 1 zeros the sublimation source in R_ice and the
+# ice_t-driven sources in R_tem/R_vap: pure Allen-Cahn curvature flow with
+# passive heat/vapor fields. Expected contrast for the slides:
+#   AC collapse time r^2/(2*3*mob*eps) ~ 2 days for the small grain, and —
+#   the pedagogical point — TOT_ICE is NOT conserved: the small grain's mass
+#   simply vanishes (non-conservative AC dynamics), whereas the full model
+#   transfers it to the large grain through the vapor field.
+# dtmax 3e3 = tau_kin/110: rate-accurate; ~860+ steps -> per-step output
+# (smooth movie); interface-CFL limiter paces the collapse endgame.
+# =============================================================================
+
+-t_final 2.592e6
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0
+
+-decouple_phase_change 1
+
+-dtmax 3.0e3
+-dtCFL 1
+-dtCFL_dphimax 0.2

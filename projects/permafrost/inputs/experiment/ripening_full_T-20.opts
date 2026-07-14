@@ -1,0 +1,29 @@
+# =============================================================================
+# experiment/ripening_full_T-20.opts — Ostwald-ripening movie run, FULL model.
+#
+# Two-grain ripening demo pair for slides (with ripening_AC_only_T-20.opts):
+# identical in every respect except the phase-change coupling. 30 days at
+# -20 C, saturated, physical kinetics.
+#
+# Expected physics (pair with 2D_two_ice_grains_boundary):
+#   tau_kin(9.375 um) = beta_sub*r^2/d0 = 3.4e5 s -> small grain consumed at
+#   ~4-8 days, mass TRANSFERRED to the large grain through the vapor field
+#   (TOT_ICE conserved) — the vapor-mediated ripening story.
+# dtmax 3e3 = tau_kin/110: rate-accurate; ~860+ steps -> per-step output
+# (smooth movie); interface-CFL limiter paces the collapse endgame.
+# =============================================================================
+
+-t_final 2.592e6
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0
+
+-dtmax 3.0e3
+-dtCFL 1
+-dtCFL_dphimax 0.2
