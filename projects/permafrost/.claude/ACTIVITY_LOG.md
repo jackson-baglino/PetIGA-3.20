@@ -1,3 +1,24 @@
+## 2026-07-14 (later 2) — alpha_c sweep + Arrhenius alpha_c(T) proposal
+
+- preprocess/plot_alpha_gt_sweep.py: GT parameters across the physical
+  alpha_c range [1e-3, 1e-1], no Libbrecht. Top row: beta_sub(alpha;T),
+  M&F Eq. 9 params at production eps, and the mesh demanded by the K&P
+  validity ceiling (eps_max ~ 1/alpha). Bottom row: proposed smooth
+  Arrhenius alpha_c(T) = 1.87e11*exp(-63.7 kJ/mol / RT) (anchors -2C/1e-1,
+  -40C/1e-3, CLI-tunable) with induced beta_sub(T) and mesh-along-path.
+  Q ~ 64 kJ/mol ~ ice self-diffusion activation energy — credible form.
+- Honest caveat recorded: the corr>0.9 validity mesh at warm T along the
+  path is large (Nx ~ 48k at -2C), BUT (a) at high alpha the physics is
+  diffusion-limited so beta-fidelity loses importance, and (b) the Eq. 9
+  bracket compensates to first order (alpha=1e-1 ran fine at corr<<0.9).
+  The practical mesh burden is far below the formal criterion.
+- Fixed a d0_sub density-ratio inversion in the script's first version
+  (caught by inspecting the rendered panel).
+
+---
+
+**Session ended:** 2026-07-14 15:17:44
+
 ## 2026-07-14 (later) — Movie pair verified; equal-grain Molaro-scale study cut
 
 - Movie-run checks: resolution/eps match the sintering sims within 4-5%
