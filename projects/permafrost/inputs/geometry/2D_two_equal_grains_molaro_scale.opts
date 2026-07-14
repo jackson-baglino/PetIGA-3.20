@@ -32,8 +32,8 @@
 -Lx 2.5508e-4
 -Ly 2.3570e-4
 -Lz 0
--RCice0 8.7e-5
--RCice1 8.7e-5
+-RCice0 1.01e-4
+-RCice1 7.7e-5
 -delt_t 1.0e-4
 -eps 4.8534e-07
 -periodic 0

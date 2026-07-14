@@ -1,3 +1,8 @@
+
+---
+
+**Session ended:** 2026-07-14 15:45:30
+
 ## 2026-07-14 (later 2) — alpha_c sweep + Arrhenius alpha_c(T) proposal
 
 - preprocess/plot_alpha_gt_sweep.py: GT parameters across the physical
