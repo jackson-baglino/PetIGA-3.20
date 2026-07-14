@@ -1,0 +1,39 @@
+# =============================================================================
+# geometry/2D_two_equal_grains_molaro_scale.opts — EQUAL grains at Molaro scale.
+#
+# Purpose (2026-07-14): erosion-vs-sublimation rate study at the grain size
+# of the target simulations. Equal radii remove the Ostwald-ripening driving
+# force, isolating the rates:
+#   * AC-only run (ripening_AC_only_T-20): pure curvature-erosion rate at
+#     low curvature. Prediction at -20 C physical params: r 87 -> 79.1 um
+#     over 30 days (-9.0%); full collapse at ~174 days (grains survive the
+#     movie, unlike the small-scale demo where AC annihilated everything).
+#   * Full run (ripening_full_T-20): the coupling compensates the AC flow
+#     (K&P calibration); equal saturated grains are metastable — expected
+#     near-static, with only the tiny vapor-charging transient. Residual
+#     drift = genuine sublimation physics, directly readable.
+#
+# Geometry: R0 = R1 = 87 um (Molaro pair mean, within their 73-101 um);
+# domain proportional to 2D_two_ice_grains_boundary (Lx = 1.4660*(R0+R1),
+# Ly = 2.7092*R): Lx = 255.08 um, Ly = 235.70 um; 81 um gap between grains.
+# Same eps = 4.8534e-7 and mesh rule as the small-scale demo pair -> movies
+# are directly comparable frame-for-frame (identical dt cadence via the
+# shared experiments).
+# Mesh: h = eps/sqrt(2) -> Nx = 744, Ny = 687 (~511k nodes, 1.5M dofs; HPC,
+# ~39 ranks at the 40k policy). Thin-interface checks at -20 C pass
+# (ceiling 5.9e-7 > eps).
+# =============================================================================
+
+-ic_type two_ice_grains_boundary
+-dim 2
+-Nx 744
+-Ny 687
+-Nz 1
+-Lx 2.5508e-4
+-Ly 2.3570e-4
+-Lz 0
+-RCice0 8.7e-5
+-RCice1 8.7e-5
+-delt_t 1.0e-4
+-eps 4.8534e-07
+-periodic 0
