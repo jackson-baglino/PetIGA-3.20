@@ -1,3 +1,33 @@
+## 2026-07-14 — Advisor slides published; ripening demo pair (AC-only vs full)
+
+- Published 7-slide advisor-update artifact (ripening hardening arc, physics
+  calibration, sintering validation, response surface, SA81 synthesis, next
+  steps): https://claude.ai/code/artifact/aaf66916-7d00-44b3-9a34-861df1c98c03
+- Next-steps recommendation recorded: (1) validation write-up now, (2)
+  ripening science as main line, (3) surface-diffusion term scoped in
+  parallel, (4) optional -5C artifact epilogue.
+- Found -decouple_phase_change was plumbing-only after the rewrite;
+  reimplemented via a pc factor zeroing the sublimation source + latent-heat
+  + vapor mass-exchange terms in residual AND Jacobian (1fdffa7).
+- Movie demo pair added (30 d, -20 C, physical kinetics, two-grain boundary
+  geometry): ripening_AC_only_T-20 (pure AC: small grain vanishes ~2 d,
+  TOT_ICE not conserved) vs ripening_full_T-20 (vapor-mediated transfer,
+  ~4-8 d, conserved). User to run both locally for slide movies.
+
+---
+
+**Session ended:** 2026-07-14 12:34:21
+
+
+---
+
+**Session ended:** 2026-07-13 15:43:22
+
+
+---
+
+**Session ended:** 2026-07-13 12:56:14
+
 ## 2026-07-13 (later 5) — Paper read; validation campaign SYNTHESIZED
 
 - Read Molaro et al. 2019 (SA81 model). Their vapor term V3 = Hertz-Knudsen
