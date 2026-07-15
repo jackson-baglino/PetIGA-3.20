@@ -1,0 +1,56 @@
+# =============================================================================
+# experiment/30day_T-20_h1.00_arrh.opts — 30 days at -20 C, saturated, with the
+# Arrhenius alpha_c(T) kinetics. Built for
+# geometry/2D_random_bumpy_floor_molaroscale.opts.
+#
+# WHY NOT JUST USE 30day_T-20_h1.00.opts: that file sets ONLY -t_final/-temp/
+# -humidity/-grad_temp0, so beta_sub0, d0_sub0 and d0_GT silently fall back to
+# the code defaults -- which are the -5 C-era values. Verified by a -t_final 0
+# smoke test on this geometry (2026-07-15), which reported:
+#     d0_sub0  = 1.0000e-07 m     (1e-7-inflated, not the physical 1.0166e-9)
+#     beta_sub = 9.9000e+05 s/m   (not the -20 C value)
+#     d0_GT    = 1.0000e-07       (Gibbs-Thomson ACTIVE, not the baseline 0)
+# Never pair that file with this geometry.
+#
+# KINETICS — the Arrhenius fit at -20 C (preprocess/plot_alpha_gt_sweep.py
+# defaults: alpha_c = 1e-1 at -2 C, 1e-3 at -40 C, Q ~ 64 kJ/mol):
+#   alpha_c(-20 C) = 1.341e-2
+#   beta_sub0 = 5.9216e5 s/m    d0_sub0 = 1.0166e-9 m
+# These are the SAME values the geometry's loose eps = 8.584e-7 was derived
+# for, and the same ones the validated union-IC eps series used. Changing
+# alpha_c invalidates that eps -- re-derive with comp_eps.py if you do.
+#
+# dtmax = 5.7e2 = 1.093 * tau_sub, the campaign's calibrated ratio, with
+# tau_sub = 5.233e2 s at eps = 8.584e-7 / -20 C / alpha_c = 1.341e-2. This also
+# sits well under the 2.0e3 ceiling that job64406550's post-mortem imposed on
+# this geometry (dt growing into the stiff regime as a cap sublimated away), so
+# both constraints are satisfied. ~4550 steps to t_final.
+#
+# TIMESCALE — READ BEFORE INTERPRETING: the geometry is 6.73x the original
+# bumpy-floor scale, and evaporation-condensation goes as x^3 = 6*d0*R*t/beta,
+# so at fixed x/R the time to a given relative state scales as R^2 -- ~45x
+# slower. THIS 30-DAY RUN SHOWS ROUGHLY WHAT ~16 HOURS SHOWED AT THE OLD SCALE.
+# Expect modest relative evolution; that is the physics at Molaro grain size,
+# not a stalled run. Do not read the old 30-day results as the expectation.
+#
+# Ostwald-ripening failure modes (job64406550 SNES failure, job64410270 dt
+# limit cycle) were both triggered by a SMALL cap fully sublimating. The
+# smallest cap here is 2.020e-5, not 3.0e-6, so it should take far longer to
+# vanish -- but if the run dies or dt collapses late, that is the first thing
+# to check (render the field and look for a cap that has just disappeared).
+# =============================================================================
+
+-t_final 2.592e6                        # 30 days
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 5.9216e5                     # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0                                # AC coupling carries capillarity
+
+-dtmax 5.7e2
+-dtCFL 1
+-dtCFL_dphimax 0.2
