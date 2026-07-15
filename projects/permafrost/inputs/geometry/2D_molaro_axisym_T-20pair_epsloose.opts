@@ -1,0 +1,64 @@
+# =============================================================================
+# geometry/2D_molaro_axisym_T-20pair_epsloose.opts — LOOSE arm of the
+# D_heat eps-convergence test. Pair with
+# experiment/molaro_T-20_h1.00_arrh_epsloose.opts.
+#
+# THE TEST (see the STRICT partner, 2D_molaro_axisym_T-20pair_epsstrict.opts)
+# ---------------------------------------------------------------------------
+# comp_eps.py's heat-channel bound (K&P Eq. 43a) can be read two ways, and
+# they disagree by 2.47x in eps at -20 C / alpha_c = 1.341e-2:
+#
+#   --Dchannel mean (current default): D*_ia = 8.06e-6 -> B-KINETIC binds
+#       at 1.72e-6 -> eps = 8.584e-7   <-- THIS FILE
+#   --Dchannel ice  (conservative)   : D_ice = 1.27e-6 -> B-HEAT binds
+#       at 6.96e-7 -> eps = 3.479e-7   <-- the partner
+#
+# The mean was adopted 2026-07-14 on the argument that tau_sub compensates
+# with D*_ia and permafrost2.c:558 assembles that mean. That argument is
+# about M&F's Eq. 9 parameter mapping, NOT about K&P's asymptotics: the
+# actual heat transport in assembly.c:169 uses an INTERPOLATED conductivity
+# (ThermalCond -> ice*k_i + air*k_a), so the physical two-sided problem
+# really does have a slow ice channel. K&P Eq. 43a is a per-phase condition
+# and the mean does not satisfy it.
+#
+# WHAT THIS ARM IS EXPECTED TO EXPOSE: at this eps the heat-in-ice
+# thin-interface ratio beta_eff/beta is 0.0246 — the correction has eaten
+# 97.5% of the kinetic coefficient. If the mean reading is wrong, THIS run
+# is the contaminated one, and its neck curve should depart from the strict
+# partner's. If the two curves agree, the mean is vindicated and eps can
+# stay coarse.
+#
+# Also note the diffuse skin is doing a lot of work here: the sharp chord is
+# only 20.89 um of the 32.81 um initial neck (+11.92 um is diffuse, 36% of
+# the neck) vs +4.21 um (13%) in the strict arm. Read the t=0 snapshot with
+# that in mind.
+#
+# Geometry re-calibrated at THIS eps (the diffuse offset scales with eps):
+#   python preprocess/calibrate_neck_geometry.py --axisym \
+#       --R0 7.25e-5 --R1 1.01e-4 --neck 32.81e-6 --eps 8.584e-7
+# -> measured neck 32.810 um (err < 0.1 nm).
+#
+# Grains are the -20 C series' own (diam. 202/145 um).
+# =============================================================================
+
+-axisym 1
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.85702e-04
+-Ly 1.21000e-04
+-Lz 0
+
+-ice_grain_cx 9.25000e-05,2.64702e-04   # separation d = 1.722023e-04 m
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 636                                 # h = eps/sqrt(2)
+-Ny 200
+-Nz 1
+-eps 8.5840e-07
+
+-delt_t 1.0e-4
+-periodic 0

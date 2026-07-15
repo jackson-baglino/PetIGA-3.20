@@ -1,0 +1,38 @@
+# =============================================================================
+# experiment/molaro_T-20_h1.00_arrh_epsloose.opts — LOOSE arm of the D_heat
+# eps-convergence test. Pair with geometry/2D_molaro_axisym_T-20pair_epsloose.
+#
+# Identical to molaro_T-20_h1.00_arrh.opts (same T, alpha_c, beta_sub0,
+# d0_sub0, humidity, t_final) EXCEPT dtmax, which must track tau_sub and
+# therefore eps. The physics is deliberately unchanged: eps is the only
+# independent variable in this test.
+#
+#   eps      = 8.5840e-7  (D*_ia reading; set in the geometry file)
+#   tau_sub  = 5.2331e2 s at that eps
+#   dtmax    = 1.093 * tau_sub = 5.72e2   (the campaign's calibrated ratio,
+#              from the committed a1e-2 run: tau=1.83e2, dtmax=2e2)
+#
+# See the geometry header for what the test is and how to read it. Short
+# version: this arm's heat-in-ice thin-interface ratio is 0.0246, so if the
+# conservative reading of K&P Eq. 43a is the right one, THIS is the
+# contaminated run.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Compare against the STRICT arm, NOT against the Molaro data — this test is
+# about numerics, not validation.
+# =============================================================================
+
+-t_final 7.2e3                          # 2 hours — matches the -20 C campaign
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 5.9216e5                     # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0                                # AC coupling carries capillarity
+
+-dtmax 5.7e2
+-dtCFL 1
+-dtCFL_dphimax 0.2

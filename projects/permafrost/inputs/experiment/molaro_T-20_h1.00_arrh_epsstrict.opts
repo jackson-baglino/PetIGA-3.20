@@ -1,0 +1,36 @@
+# =============================================================================
+# experiment/molaro_T-20_h1.00_arrh_epsstrict.opts — STRICT arm of the D_heat
+# eps-convergence test. Pair with geometry/2D_molaro_axisym_T-20pair_epsstrict.
+#
+# Identical to the LOOSE arm (molaro_T-20_h1.00_arrh_epsloose.opts) in every
+# physical parameter; only dtmax differs, because dtmax tracks tau_sub which
+# tracks eps.
+#
+#   eps      = 3.4790e-7  (conservative pure-ice reading; in the geometry file)
+#   tau_sub  = 7.6745e1 s at that eps
+#   dtmax    = 1.093 * tau_sub = 8.4e1
+#
+# This arm is ~6x the nodes (769k vs 127k) and ~7x the steps of the loose
+# arm, so budget accordingly — it is the expensive one and it is the
+# reference.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Compare against the LOOSE arm. See the geometry header for how to read the
+# comparison (in particular: some eps dependence is EXPECTED per synthesis
+# sec. 2; the question is magnitude).
+# =============================================================================
+
+-t_final 7.2e3                          # 2 hours — matches the -20 C campaign
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 5.9216e5                     # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0                                # AC coupling carries capillarity
+
+-dtmax 8.4e1
+-dtCFL 1
+-dtCFL_dphimax 0.2
