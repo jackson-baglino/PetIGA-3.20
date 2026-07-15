@@ -23,9 +23,13 @@ The 1/√2 here is purely a mesh-resolution choice targeting ~7.5 visible
 
 BOUNDS ON ε (K&P eqs. 42–46, equivalent to M&F SI Cond. 1–3)
 ------------------------------------------------------------
-  [B-HEAT-ICE]   W ≪ (κᵢ/Cᵢ) · (ρ_vs/ρᵢ) · β₀     Eq. (43a)
-  [B-HEAT-AIR]   W ≪ (κₐ/Cₐ) · (ρ_vs/ρᵢ) · β₀     Eq. (43b)
+  [B-HEAT]       W ≪  D_heat · (ρ_vs/ρᵢ) · β₀     Eq. (43a/b)
   [B-VAPOR]      W ≪  Dᵥ     · (ρ_vs/ρᵢ) · β₀     Eq. (43c)
+
+D_heat is set by --Dchannel. Default "mean" uses D*_ia = ½(κᵢ/Cᵢ + κₐ/Cₐ),
+the diffusivity τ_sub is compensated against here and the one the solver
+assembles (permafrost2.c:558 diff_sub). "ice" uses κᵢ/Cᵢ — ~6x tighter on ε,
+the conservative single-sided reading of K&P Eq. 43a.
   [B-KINETIC]    W ≪  d₀ / (β₀ · vₙ)               Eq. (45)
   [B-CURV]       W ≪  R_ave                         geometric (near Eq. 44)
 
@@ -222,13 +226,23 @@ def alpha_libbrecht(T_C: float, sigma_surf: float) -> float:
 # =========================================================================
 
 def derived_pf_params(eps: float, T0_C: float, d0: float, beta_hk: float,
-                      alpha_i: float, alpha_a: float, Dv: float) -> dict:
+                      alpha_i: float, alpha_a: float, Dv: float,
+                      thermal_channel: str = "mean") -> dict:
     """
     Solve M&F SI Eq. (9) for the phase-field model parameters (λ, τ, M, α_source)
     given ε, physical target (β_sub, d_sub) and diffusivities.
 
     beta_hk is the Hertz-Knudsen value = β_sub·(ρ_vs/ρᵢ) in M&F notation.
     (Equivalently, if you have M&F's unscaled β_sub, then β_HK = β_sub·rho_rat.)
+
+    thermal_channel selects the diffusivity used for the heat-channel Eq.(43)
+    bound and thin-interface correction check:
+      "mean" (default) — D*_ia, matching the diffusivity τ_sub actually
+          compensates with here, and the one permafrost2.c:558 assembles
+          (diff_sub = 0.5*(D_air + D_ice)).
+      "ice" — κᵢ/Cᵢ, the conservative single-sided choice. ~6x more
+          restrictive on ε; fall back to it if the mean-channel runs show
+          interface-kinetics artifacts.
     """
     rho_vs  = rho_vs_sat(T0_C)
     rho_rat = rho_vs / _RHO_ICE
@@ -255,11 +269,14 @@ def derived_pf_params(eps: float, T0_C: float, d0: float, beta_hk: float,
     beta_ratio_heat_ice = _beta_ratio(alpha_i)
     beta_ratio_heat_air = _beta_ratio(alpha_a)
     beta_ratio_vapor    = _beta_ratio(Dv)
+    D_heat              = D_ia if thermal_channel == "mean" else alpha_i
+    beta_ratio_heat     = _beta_ratio(D_heat)
 
     return dict(
         lam_sub=lam_sub, tau_sub=tau_sub,
         M_sub=M_sub, alpha_src=alpha_src,
-        D_ia=D_ia,
+        D_ia=D_ia, D_heat=D_heat, thermal_channel=thermal_channel,
+        beta_ratio_heat=beta_ratio_heat,
         kinetic_term=kinetic_term,
         corr_thermal=corr_thermal,
         corr_vapor=corr_vapor,
@@ -283,6 +300,7 @@ def compute_eps(
     safety: float = 1.0,
     v_n: float = 1.0e-9,
     xi_v: float | None = None,
+    thermal_channel: str = "mean",
 ) -> dict:
     """Compute ε, mesh, and derived phase-field model parameters."""
     rho_vs   = rho_vs_sat(T0_C)
@@ -295,17 +313,20 @@ def compute_eps(
     alpha_a  = _K_A / _C_A
 
     # K&P Eq. 43 bounds: W ≪ D · β' (uses the SCALED coefficient β' = β_HK)
-    b_heat_ice = alpha_i * beta_hk
-    b_heat_air = alpha_a * beta_hk
-    b_vapor    = Dv      * beta_hk
+    # The heat channel uses D*_ia by default — the same diffusivity τ_sub
+    # compensates with (derived_pf_params) and the one the solver assembles
+    # (permafrost2.c:558). --Dchannel ice restores the conservative κᵢ/Cᵢ.
+    D_ia       = 0.5 * (alpha_i + alpha_a)
+    D_heat     = D_ia if thermal_channel == "mean" else alpha_i
+    b_heat     = D_heat * beta_hk
+    b_vapor    = Dv     * beta_hk
     # K&P Eq. 45: W ≪ d₀ / (β₀·vₙ) (uses the UNSCALED coefficient β₀)
     b_kinetic  = d0 / (beta_uns * v_n)
     b_curv     = Rave
 
     bounds = {
-        "B-HEAT-ICE": b_heat_ice,
-        "B-HEAT-AIR": b_heat_air,
-        "B-VAPOR":    b_vapor,
+        "B-HEAT":  b_heat,
+        "B-VAPOR": b_vapor,
         "B-KINETIC":  b_kinetic,
         "B-CURV":     b_curv,
     }
@@ -320,7 +341,8 @@ def compute_eps(
     Nz = math.ceil(Lz / h) if Lz > 0 else 0
 
     # Derived PF parameters (M&F SI Eq. 9)
-    dpf = derived_pf_params(eps, T0_C, d0, beta_hk, alpha_i, alpha_a, Dv)
+    dpf = derived_pf_params(eps, T0_C, d0, beta_hk, alpha_i, alpha_a, Dv,
+                            thermal_channel=thermal_channel)
 
     # Diagnostics
     Pe = eps * v_n / Dv
@@ -364,9 +386,7 @@ def compute_eps(
         bracket_warn = (f"NOTE: kinetic term is {kinetic_frac:.1%} of τ_sub bracket. "
                         f"Sharp-interface regime is marginal.")
 
-    min_beta_ratio = min(dpf["beta_ratio_heat_ice"],
-                         dpf["beta_ratio_heat_air"],
-                         dpf["beta_ratio_vapor"])
+    min_beta_ratio = min(dpf["beta_ratio_heat"], dpf["beta_ratio_vapor"])
 
     return dict(
         eps=eps, Nx=Nx, Ny=Ny, Nz=Nz,
@@ -378,7 +398,9 @@ def compute_eps(
         v_n=v_n, safety=safety, Rave=Rave, alpha_c=alpha_c,
         lam_sub=dpf["lam_sub"], tau_sub=dpf["tau_sub"],
         M_sub=dpf["M_sub"], alpha_src=dpf["alpha_src"],
-        D_ia=dpf["D_ia"],
+        D_ia=dpf["D_ia"], D_heat=dpf["D_heat"],
+        thermal_channel=thermal_channel,
+        beta_ratio_heat=dpf["beta_ratio_heat"],
         kinetic_term=dpf["kinetic_term"],
         corr_thermal=dpf["corr_thermal"],
         corr_vapor=dpf["corr_vapor"],
@@ -471,9 +493,9 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
     print(f"  d₀_sub  (physical)     = {p['d0']:.4e}  m     [γ·V_m/RT; K&P Eq. 13]")
 
     print(f"\n--- Upper bounds on ε (K&P eqs. 42–46) ---")
+    chan = "D*_ia" if p["thermal_channel"] == "mean" else "κᵢ/Cᵢ"
     labels = {
-        "B-HEAT-ICE": "Eq.(43a)  (κᵢ/Cᵢ)·β_HK  ",
-        "B-HEAT-AIR": "Eq.(43b)  (κₐ/Cₐ)·β_HK  ",
+        "B-HEAT":     f"Eq.(43a)  {chan}·β_HK   ",
         "B-VAPOR":    "Eq.(43c)  Dᵥ·β_HK        ",
         "B-KINETIC":  "Eq.(45)   d₀/(β_sub·vₙ) ",
         "B-CURV":     "Geometric R_ave           ",
@@ -513,8 +535,9 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
 
     print(f"\n--- Thin-interface correction: β_eff/β_target (K&P Eq. 40 form) ---")
     print(f"  = 1 − a₁·a₂·ε / (D · β_HK). Should be > 0.9 per D channel.")
-    print(f"    heat-in-ice channel   = {p['beta_ratio_heat_ice']:.4f}")
-    print(f"    heat-in-air channel   = {p['beta_ratio_heat_air']:.4f}")
+    print(f"    heat channel ({chan}, active) = {p['beta_ratio_heat']:.4f}")
+    print(f"    [heat-in-ice κᵢ/Cᵢ, conservative] = {p['beta_ratio_heat_ice']:.4f}")
+    print(f"    [heat-in-air κₐ/Cₐ]               = {p['beta_ratio_heat_air']:.4f}")
     print(f"    vapor channel         = {p['beta_ratio_vapor']:.4f}")
 
     print(f"\n--- Kinetic vs. curvature dominance (d₀ inflation regime check) ---")
@@ -626,6 +649,11 @@ def _cli():
                          "the artifact where colder T (larger β_sub) demanded "
                          "a finer mesh while the physics actually slowed "
                          "down. Overrides --vn.")
+    ap.add_argument("--Dchannel", choices=("mean", "ice"), default="mean",
+                    help="Diffusivity for the Eq.(43) heat bound and its "
+                         "thin-interface check. 'mean' (default) = D*_ia, "
+                         "consistent with tau_sub and permafrost2.c:558. "
+                         "'ice' = kappa_i/C_i, ~6x more restrictive on eps.")
     ap.add_argument("--xiv",    type=float, default=None,
                     help="Time-scaling factor ξᵥ (optional; triggers K&P Eq. 48 check)")
     ap.add_argument("--safety", type=float, default=0.5,
@@ -670,6 +698,7 @@ def _cli():
         Lx=args.Lx, Ly=args.Ly, Lz=args.Lz,
         Rave=args.Rave, v_n=args.vn,
         safety=args.safety, xi_v=args.xiv,
+        thermal_channel=args.Dchannel,
     )
 
     if args.alpha is not None:
