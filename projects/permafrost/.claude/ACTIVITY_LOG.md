@@ -1,4 +1,99 @@
 
+---
+
+**Session ended:** 2026-07-15 15:31:48
+
+
+---
+
+**Session ended:** 2026-07-15 15:25:56
+
+
+---
+
+**Session ended:** 2026-07-15 14:43:26
+
+
+---
+
+**Session ended:** 2026-07-15 14:30:15
+
+
+---
+
+**Session ended:** 2026-07-15 13:47:38
+
+
+---
+
+**Session ended:** 2026-07-15 13:02:54
+
+
+---
+
+**Session ended:** 2026-07-15 11:57:07
+
+
+---
+
+**Session ended:** 2026-07-15 11:22:34
+
+
+---
+
+**Session ended:** 2026-07-15 08:37:49
+
+
+---
+
+**Session ended:** 2026-07-14 19:03:25
+
+
+---
+
+**Session ended:** 2026-07-14 18:49:56
+
+
+---
+
+**Session ended:** 2026-07-14 18:47:35
+
+
+## 2026-07-15 — union IC; eps series converged; D*_ia vindicated
+
+- Found the multi_grains IC SUMS each grain's tanh profile. Harmless for
+  separated grains, but where grains overlap the tails add and the phi=0.5
+  contour lands at an eps-dependent radius — why the user's ParaView contours
+  overlapped away from the neck but never at it. Added -ic_grain_union (union
+  signed distance; default off, preserves prior runs).
+- Ran the union eps series (batch_2026-07-15__15.31.58_epsunion). RESULT: the
+  physics is converged. Across a 2.47x eps range the neck agrees to 0.32 um
+  (0.7%) at t=120 min; loose (eps=8.584e-7, 127k nodes) is -1.16% off the
+  eps->0 extrapolation vs strict (769k nodes).
+- THIS REVERSES the earlier "revert to --Dchannel ice" call. That came from the
+  additive-IC series whose arms started from different necks
+  (38.19/35.60/32.91 um); its 26% "eps effect" was almost entirely that IC
+  artifact, not a thin-interface error. D*_ia stays the default.
+- Practical consequence (the user's actual goal): a loose mesh is adequate, so
+  much larger domains are affordable. No extrapolation needed at -20 C.
+- neck_width.py: added refine_min() (parabola vertex). min-over-columns is a
+  biased estimator and w(x) at the neck is steep (slopes 13-21), so per-mesh
+  misalignment fabricated eps-dependence. At t_final the estimator was already
+  exact (40x upsample moves it 0.01 um). At t=0 only ~0.7 um of the 2.68 um
+  spread is measurement; ~2.0 um is real crease-rounding at O(eps).
+- Conventions confirmed: compare w(t) at fixed t >= 30 min. Never anchor at t=0
+  and never quote "+X% growth" (34.4/37.9/44.3% across arms whose final states
+  agree to 0.7%).
+- Fixed core sizing: submit_batch.sh was on the stale TARGET_DOFS_PER_CORE=10000
+  AND hardcoded dof=4 vs solver.opts' -dof 3 -> 5.25x over-allocation (462 vs
+  88 cores; strict arm alone asked 308 cores / 10 nodes). Root cause was a sync
+  comment naming only three of what are actually SIX copies. Also fixed the
+  same two bugs in Studio/run_batch_tests.sh and HPC/submit_regression.sh.
+- Fixed HPC/run_permafrost.sh to use SLURM_NTASKS rather than recomputing and
+  clamping to node capacity (broke --half-cores outright).
+
+---
+
 ## 2026-07-14 (later 3) — eps sized against D*_ia; near-melting mesh cost diagnosed
 
 - Swept comp_eps.py over alpha_c x {-5, -20 C}: at fixed alpha_c the two
