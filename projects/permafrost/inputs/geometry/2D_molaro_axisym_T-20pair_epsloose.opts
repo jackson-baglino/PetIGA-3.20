@@ -1,4 +1,22 @@
 # =============================================================================
+# SUPERSEDED 2026-07-15 by 2D_molaro_axisym_T-20pair_epsloose_fixgeom.opts.
+# DO NOT USE for the eps series.
+#
+# This file was calibrated to the same MEASURED neck (32.81 um) as the strict
+# arm. Because the diffuse skin fattens with eps, that forced a DIFFERENT
+# sharp geometry: d = 1.722023e-4 here vs 1.710585e-4 in the strict arm, so
+# the large grain sits 1.14 um further right and the two arms' phi=0.5
+# contours do not overlap. Initial curvature therefore differs, and since
+# curvature drives neck growth the two runs were never a controlled
+# comparison — the 26% growth gap measured from this pair (run
+# job65077923 vs job65080441, 2026-07-15) conflates the eps effect with a
+# geometry effect and should not be quoted.
+#
+# The replacement series holds the sharp geometry fixed at the strict arm's
+# d and lets the measured neck vary with eps, which is the correct
+# convergence test.
+# =============================================================================
+#
 # geometry/2D_molaro_axisym_T-20pair_epsloose.opts — LOOSE arm of the
 # D_heat eps-convergence test. Pair with
 # experiment/molaro_T-20_h1.00_arrh_epsloose.opts.

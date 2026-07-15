@@ -1,0 +1,38 @@
+# =============================================================================
+# experiment/molaro_T-20_h1.00_arrh_epsmid.opts — MID arm of the
+# fixed-geometry eps-convergence series. Pair with
+# geometry/2D_molaro_axisym_T-20pair_epsmid_fixgeom.opts.
+#
+# Physically identical to the loose and strict arms; only dtmax differs,
+# because dtmax tracks tau_sub which tracks eps.
+#
+#   eps     = 6.030e-7  (set in the geometry file)
+#   tau_sub = 2.444e2 s at that eps
+#   dtmax   = 1.093 * tau_sub = 2.7e2   (the campaign's calibrated ratio)
+#
+# Series dtmax values, for reference:
+#   loose  eps=8.584e-7  tau=5.233e2  dtmax=5.7e2   (molaro_..._epsloose.opts)
+#   mid    eps=6.030e-7  tau=2.444e2  dtmax=2.7e2   (this file)
+#   strict eps=3.479e-7  tau=7.676e1  dtmax=8.4e1   (molaro_..._epsstrict.opts)
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Compare the three arms' neck-vs-time CURVES against each other — NOT their
+# "+X%" growth figures, which are not comparable because the arms start from
+# different measured necks by construction (38.21 / 35.61 / 32.88 um), and
+# NOT against the Molaro data: this series is about numerics.
+# =============================================================================
+
+-t_final 7.2e3                          # 2 hours — matches the -20 C campaign
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 5.9216e5                     # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0                                # AC coupling carries capillarity
+
+-dtmax 2.7e2
+-dtCFL 1
+-dtCFL_dphimax 0.2
