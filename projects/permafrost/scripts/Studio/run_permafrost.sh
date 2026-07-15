@@ -203,8 +203,10 @@ compute_optimal_nprocs() {
     # Molaro runs at 108k DoFs/rank did ~7 s/step at 1.3M DoFs, while the old
     # target allocated 260 ranks / 9 HPC nodes to a 62-step job whose cost was
     # all queue wait. These runs are step-limited, so wall time is nearly flat
-    # in rank count; the allocation size is what costs. Keep the three copies of
-    # this constant in sync (Studio/run, HPC/run, HPC/submit).
+    # in rank count; the allocation size is what costs. Keep the FOUR copies of
+    # this constant in sync (Studio/run, HPC/run, HPC/submit, HPC/submit_batch
+    # -- submit_batch was omitted from this list and silently kept the old
+    # 10000 until 2026-07-15).
     local TARGET_DOFS_PER_CORE=40000
 
     dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" | head -n1)

@@ -42,7 +42,11 @@ SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/permafrost/scratch"
 
 MAX_LOCAL_CORES=12
-TARGET_DOFS_PER_CORE=10000
+# One of FIVE copies -- keep in sync (Studio/run, Studio/run_batch_tests,
+# HPC/run, HPC/submit, HPC/submit_batch). This file and HPC/submit_batch.sh
+# were both left at the old 10000 when the rest moved to 40000 on 2026-07-12;
+# fixed 2026-07-15. Locally the hw-core cap hid it; on HPC it did not.
+TARGET_DOFS_PER_CORE=40000
 
 if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
     echo "❌ Could not find makefile at $PROJECT_ROOT"
@@ -211,14 +215,17 @@ cp "${BASH_SOURCE[0]}" "$BATCH_DIR/run_batch_tests.sh"
 # ---------------------------------------------------------------------------
 choose_nprocs() {
     local opts="$1"
-    local Nx Ny Nz total dofs cap hw
+    local Nx Ny Nz total dofs cap hw dof
     Nx=$(awk '$1=="-Nx"{print $2}' "$opts" | head -n1)
     Ny=$(awk '$1=="-Ny"{print $2}' "$opts" | head -n1)
     Nz=$(awk '$1=="-Nz"{print $2}' "$opts" | head -n1)
     [[ -z "${Nx:-}" ]] && Nx=1
     [[ -z "${Ny:-}" ]] && Ny=1
     [[ -z "${Nz:-}" ]] && Nz=1
-    dofs=$((4 * Nx * Ny * Nz))
+    # dof from solver.opts, not a hardcoded 4 (solver.opts sets -dof 3).
+    dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" 2>/dev/null | head -n1)
+    [[ -z "${dof:-}" ]] && dof=4
+    dofs=$((dof * Nx * Ny * Nz))
     local n=$(((dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE))
     (( n < 1 )) && n=1
     hw=$(sysctl -n hw.logicalcpu 2>/dev/null || nproc 2>/dev/null || echo $MAX_LOCAL_CORES)

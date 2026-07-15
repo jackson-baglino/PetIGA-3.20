@@ -114,7 +114,9 @@ fi
 # target allocated 260 ranks / 9 HPC nodes to a 62-step job whose cost was
 # all queue wait. These runs are step-limited, so wall time is nearly flat
 # in rank count; the allocation size is what costs. Keep the three copies of
-# this constant in sync (Studio/run, HPC/run, HPC/submit).
+# this constant in sync (Studio/run, HPC/run, HPC/submit, HPC/submit_batch
+# -- submit_batch was omitted from this list and silently kept the old
+# 10000 until 2026-07-15).
 TARGET_DOFS_PER_CORE=40000
 NTASKS_PER_NODE=32   # safe minimum across icelake|skylake|cascadelake
 

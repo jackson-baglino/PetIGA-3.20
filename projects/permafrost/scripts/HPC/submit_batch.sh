@@ -39,9 +39,19 @@ RUN_SCRIPT="$SCRIPT_DIR/run_permafrost.sh"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 GEOMETRY_DIR="$INPUTS_DIR/geometry"
 EXPERIMENT_DIR="$INPUTS_DIR/experiment"
+SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 
-# Resource-sizing parameters — keep in sync with run_permafrost.sh::compute_optimal_nprocs.
-TARGET_DOFS_PER_CORE=10000
+# Resource-sizing parameters. FOUR copies of TARGET_DOFS_PER_CORE exist -- keep
+# them in sync:
+#   scripts/Studio/run_permafrost.sh :: compute_optimal_nprocs
+#   scripts/HPC/run_permafrost.sh    :: compute_optimal_nprocs
+#   scripts/HPC/submit_permafrost.sh
+#   scripts/HPC/submit_batch.sh      :: here
+# (The other three said "three copies" and omitted this file, which is exactly
+# how it was left behind at the old 10000 when the rest moved to 40000 on
+# 2026-07-12 -- a 4x over-allocation, compounded to 5.3x by the hardcoded
+# dof=4 in compute_alloc. Fixed 2026-07-15.)
+TARGET_DOFS_PER_CORE=40000
 MAX_TASKS_PER_NODE=32
 
 # ---------------------------------------------------------------------------
@@ -183,12 +193,26 @@ fi
 # ---------------------------------------------------------------------------
 compute_alloc() {
     local geom_file="$1"
-    local nx ny nz
-    nx=$(awk '$1=="-Nx"{print $2}' "$geom_file" | head -n1); nx=${nx:-1}
-    ny=$(awk '$1=="-Ny"{print $2}' "$geom_file" | head -n1); ny=${ny:-1}
-    nz=$(awk '$1=="-Nz"{print $2}' "$geom_file" | head -n1); nz=${nz:-1}
+    local nx ny nz dof
 
-    local total_dofs=$((4 * nx * ny * nz))
+    # dof from solver.opts, NOT hardcoded. This used to be a literal 4 while
+    # solver.opts sets -dof 3, inflating every allocation by 4/3 on top of the
+    # stale DoFs/core target. The other three sizers all read it from the file.
+    dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" 2>/dev/null | head -n1)
+    [[ -z "${dof:-}" ]] && dof=4
+
+    # -geom_file meshes override -Nx/-Ny/-Nz; read the grid from the
+    # "# DOF_GRID: nx ny [nz]" comment, matching submit_permafrost.sh.
+    if grep -q "^-geom_file" "$geom_file"; then
+        read -r nx ny nz <<< "$(awk '$1=="#" && $2=="DOF_GRID:"{print $3, $4, $5}' "$geom_file" | head -n1)"
+    else
+        nx=$(awk '$1=="-Nx"{print $2}' "$geom_file" | head -n1)
+        ny=$(awk '$1=="-Ny"{print $2}' "$geom_file" | head -n1)
+        nz=$(awk '$1=="-Nz"{print $2}' "$geom_file" | head -n1)
+    fi
+    nx=${nx:-1}; ny=${ny:-1}; nz=${nz:-1}
+
+    local total_dofs=$((dof * nx * ny * nz))
     local nprocs=$(( (total_dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE ))
     (( nprocs < 1 )) && nprocs=1
 
