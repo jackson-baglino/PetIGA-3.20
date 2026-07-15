@@ -269,11 +269,26 @@ compute_optimal_nprocs() {
     (( NPROCS < 1 )) && NPROCS=1
 
     if [[ "${SLURM_JOB_ID:-none}" != "none" ]]; then
-        local nnodes ntpn max_procs
-        nnodes=${SLURM_NNODES:-1}
-        ntpn=${SLURM_NTASKS_PER_NODE:-1}
-        max_procs=$((nnodes * ntpn))
-        (( max_procs > 0 && NPROCS > max_procs )) && NPROCS=$max_procs
+        # Under SLURM the ALLOCATION is authoritative — do not second-guess it
+        # with the recomputed estimate above. SLURM_NTASKS is exactly what
+        # sbatch granted, so srun -n "$NPROCS" can never overrun the step.
+        #
+        # The previous clamp used SLURM_NNODES * SLURM_NTASKS_PER_NODE, which
+        # is the ROUNDED-UP node capacity, not the grant: for the epsstrict
+        # arm submit asks --nodes=2 --ntasks=58 --ntasks-per-node=32, so the
+        # ceiling was 64 against a 58-task allocation and srun -n 58..64 died
+        # with "More processors requested than permitted". It also ignored
+        # --half-cores entirely (submit halves --ntasks; the runner recomputed
+        # the full count and clamped to the unhalved node capacity).
+        if [[ -n "${SLURM_NTASKS:-}" ]]; then
+            NPROCS=${SLURM_NTASKS}
+        else
+            local nnodes ntpn max_procs
+            nnodes=${SLURM_NNODES:-1}
+            ntpn=${SLURM_NTASKS_PER_NODE:-1}
+            max_procs=$((nnodes * ntpn))
+            (( max_procs > 0 && NPROCS > max_procs )) && NPROCS=$max_procs
+        fi
     else
         local hw
         hw=$(nproc 2>/dev/null || echo 12)
