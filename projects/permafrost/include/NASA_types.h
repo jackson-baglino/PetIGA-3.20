@@ -201,6 +201,27 @@ typedef struct {
   // the axis (ice_grain_cy = 0).
   PetscBool axisym;          // -axisym (default 0 = planar)
 
+  // -ic_grain_union: build the multi_grains IC from the signed distance to the
+  // UNION of the grains (sdf = min_k sdf_k, phi = 0.5-0.5*tanh(0.5*sdf/eps))
+  // instead of SUMMING each grain's tanh profile.
+  //
+  // Why it matters for OVERLAPPING grains: the additive form's phi=0.5 contour
+  // depends on eps at the neck, because both grains' tails contribute there.
+  // (Away from the neck a lone grain crosses 0.5 at r=R for any eps, which is
+  // why only the neck misbehaves.) With the union form phi=0.5 <=> sdf=0, i.e.
+  // exactly the sharp union surface, for ANY eps -- so an eps series shares one
+  // initial contour instead of one per eps (38.19/35.60/32.91 um measured in
+  // the 2026-07-15 series).
+  //
+  // Caveat: the sharp union has a zero-radius concave crease at the neck, which
+  // no diffuse interface can hold; AC dynamics rounds it to O(eps) within a few
+  // steps. Contours coincide at t=0 and then diverge by O(eps) at the neck --
+  // that residual IS the eps error being measured.
+  //
+  // Default 0 (additive) preserves every pre-2026-07-15 run. The two forms
+  // agree for well-separated grains, where the far grain's tanh is negligible.
+  PetscBool ic_grain_union;  // -ic_grain_union (default 0 = additive)
+
 } AppCtx;/* Field definitions for node data */
 
 #endif // NASA_TYPES_H

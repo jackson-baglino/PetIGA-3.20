@@ -574,14 +574,35 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
             PetscReal y     = y_bot + v * (y_top - y_bot);
 
             PetscReal ice = 0.0;
-            for (PetscInt k = 0; k < ng; k++) {
-                PetscReal ax   = user->ice_grain_ax[k];
-                PetscReal ay   = user->ice_grain_ay[k];
-                PetscReal dx   = x - user->cent[0][k];
-                PetscReal dy   = y - user->cent[1][k];
-                PetscReal d    = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay)); /* =1 on ellipse boundary */
-                PetscReal tc_k = tc * PetscSqrtReal(ax * ay);              /* keeps interface width ~eps */
-                ice += 0.5 - 0.5 * PetscTanhReal(tc_k * (d - 1.0));
+            if (user->ic_grain_union) {
+                /* Union form: sdf = min_k sdf_k is zero exactly on the sharp
+                 * union surface, so phi = 0.5 lands there for ANY eps. Note
+                 * (d-1)*sqrt(ax*ay) is the same per-grain signed distance the
+                 * additive branch already uses -- the only change is min-vs-sum
+                 * and a single tanh applied afterwards. See -ic_grain_union in
+                 * NASA_types.h for why the additive form is eps-dependent at an
+                 * overlapping neck. */
+                PetscReal sdf = PETSC_MAX_REAL;
+                for (PetscInt k = 0; k < ng; k++) {
+                    PetscReal ax    = user->ice_grain_ax[k];
+                    PetscReal ay    = user->ice_grain_ay[k];
+                    PetscReal dx    = x - user->cent[0][k];
+                    PetscReal dy    = y - user->cent[1][k];
+                    PetscReal d     = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay));
+                    PetscReal sdf_k = (d - 1.0) * PetscSqrtReal(ax * ay);
+                    sdf = PetscMin(sdf, sdf_k);
+                }
+                ice = 0.5 - 0.5 * PetscTanhReal(tc * sdf);
+            } else {
+                for (PetscInt k = 0; k < ng; k++) {
+                    PetscReal ax   = user->ice_grain_ax[k];
+                    PetscReal ay   = user->ice_grain_ay[k];
+                    PetscReal dx   = x - user->cent[0][k];
+                    PetscReal dy   = y - user->cent[1][k];
+                    PetscReal d    = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay)); /* =1 on ellipse boundary */
+                    PetscReal tc_k = tc * PetscSqrtReal(ax * ay);              /* keeps interface width ~eps */
+                    ice += 0.5 - 0.5 * PetscTanhReal(tc_k * (d - 1.0));
+                }
             }
             for (PetscInt k = 0; k < user->n_ice_shells; k++) {
                 PetscReal xs = user->ice_shell_x[k];

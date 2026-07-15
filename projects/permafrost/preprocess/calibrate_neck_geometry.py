@@ -98,10 +98,32 @@ def measure_neck(d, R0, R1, eps, axisym=True, nx=3000, ny=1200):
 
 
 def sharp_chord(d, R0, R1):
-    """Sharp two-sphere lens chord half-width (what the IC does NOT give)."""
+    """Sharp two-sphere lens chord half-width.
+
+    With the ADDITIVE IC this is NOT the measured neck (the diffuse skin adds
+    to it, eps-dependently). With -ic_grain_union it IS the measured neck, for
+    every eps -- which is the whole point of that flag.
+    """
     a = (d * d + R0 * R0 - R1 * R1) / (2 * d)
     v = R0 * R0 - a * a
     return math.sqrt(v) if v > 0 else 0.0
+
+
+def solve_d_union(R0, R1, target_width):
+    """Separation d whose SHARP chord equals target_width.
+
+    This is the -ic_grain_union sizing: phi=0.5 sits on the sharp union surface
+    at any eps, so the sharp chord IS the initial neck and no eps-dependent
+    calibration is needed. One d serves an entire eps series.
+    """
+    lo, hi = 0.5 * (R0 + R1), R0 + R1
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if 2.0 * sharp_chord(mid, R0, R1) > target_width:
+            lo = mid          # chord too wide -> less overlap -> larger d
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
 
 
 def solve_d(R0, R1, eps, target, axisym=True, **kw):

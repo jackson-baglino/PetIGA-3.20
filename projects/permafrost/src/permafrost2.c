@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
     user.cfl_t_prev   = 0.0;
 
     user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see NASA_types.h) */
+    user.ic_grain_union = PETSC_FALSE; /* multi_grains IC: additive (see NASA_types.h) */
     user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
 
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
@@ -416,6 +417,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-dtCFL",           "Interface-CFL timestep limiter",                   "", user.flag_dtCFL, &user.flag_dtCFL, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-axisym",          "Axisymmetric r-z mode (x=axis, y=radius; grains on y=0)", "", user.axisym, &user.axisym, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-ic_grain_union",  "multi_grains IC from the union signed distance (eps-independent phi=0.5 contour) instead of summed tanh profiles", "", user.ic_grain_union, &user.ic_grain_union, NULL); CHKERRQ(ierr);
     /* Vapor diffusivity override: molecular D_v is the default; larger
      * values model convectively enhanced chamber transport (an effective
      * Sherwood-number correction) — see the 2026-07-12 Molaro validation
