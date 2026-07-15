@@ -1,36 +1,31 @@
 # =============================================================================
-# geometry/2D_two_equal_grains_molaro_scale.opts — EQUAL grains at Molaro scale.
+# geometry/2D_two_equal_grains_molaro_scale.opts — Molaro-SIZE grain pair for
+# the ripening/sublimation rate study (2026-07-14, revised per user intent:
+# NOT equal grains — one large, one small, at the Molaro experiment's scale).
 #
-# Purpose (2026-07-14): erosion-vs-sublimation rate study at the grain size
-# of the target simulations. Equal radii remove the Ostwald-ripening driving
-# force, isolating the rates:
-#   * AC-only run (ripening_AC_only_T-20): pure curvature-erosion rate at
-#     low curvature. Prediction at -20 C physical params: r 87 -> 79.1 um
-#     over 30 days (-9.0%); full collapse at ~174 days (grains survive the
-#     movie, unlike the small-scale demo where AC annihilated everything).
-#   * Full run (ripening_full_T-20): the coupling compensates the AC flow
-#     (K&P calibration); equal saturated grains are metastable — expected
-#     near-static, with only the tiny vapor-charging transient. Residual
-#     drift = genuine sublimation physics, directly readable.
+# R0 = 101 um (Molaro large), R1 = 50 um (smaller than Molaro's 72.5 um small
+# grain, per user request — stronger curvature contrast). Boundary-centered
+# IC as in the demo pair; run with ripening_full_T-20 (sublimation ON).
+# Ly enlarged to preserve the original clearance ratio above the big grain
+# (0.355*R -> 35.8 um = 104 elements; the user-edited 2.357e-4 left only
+# 17 um). Same eps/mesh rule as the small-scale demo: movies comparable.
 #
-# Geometry: R0 = R1 = 87 um (Molaro pair mean, within their 73-101 um);
-# domain proportional to 2D_two_ice_grains_boundary (Lx = 1.4660*(R0+R1),
-# Ly = 2.7092*R): Lx = 255.08 um, Ly = 235.70 um; 81 um gap between grains.
-# Same eps = 4.8534e-7 and mesh rule as the small-scale demo pair -> movies
-# are directly comparable frame-for-frame (identical dt cadence via the
-# shared experiments).
-# Mesh: h = eps/sqrt(2) -> Nx = 744, Ny = 687 (~511k nodes, 1.5M dofs; HPC,
-# ~39 ranks at the 40k policy). Thin-interface checks at -20 C pass
-# (ceiling 5.9e-7 > eps).
+# Expectations at -20 C physical kinetics (for reading the results):
+#   tau_kin(R1=50um) = beta*R1^2/d0 = 9.8e6 s -> small grain shrinks ~but
+#   survives 30 days (collapse ~ 57 d by the kinetic estimate /2 -> with the
+#   usual geometry factor ~2.3x slower: safely partial); mass transfer to
+#   the large grain via vapor, TOT_ICE conserved. Erosion-vs-sublimation
+#   rates readable from the two grains' radius traces.
+# Mesh: Nx = 744, Ny = 798 (~594k nodes, 1.8M dofs; HPC ~45 ranks).
 # =============================================================================
 
 -ic_type two_ice_grains_boundary
 -dim 2
 -Nx 744
--Ny 687
+-Ny 798
 -Nz 1
 -Lx 2.5508e-4
--Ly 2.3570e-4
+-Ly 2.7360e-4
 -Lz 0
 -RCice0 1.01e-4
 -RCice1 5.0e-5
