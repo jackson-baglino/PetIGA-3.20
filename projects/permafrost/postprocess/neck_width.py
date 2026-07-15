@@ -89,6 +89,38 @@ def chord_width(col, y, level):
     return y_hi - y_lo
 
 
+def refine_min(w, x, jn):
+    """Sub-grid neck: parabola vertex through the 3 columns bracketing w[jn].
+
+    min(w) over discrete columns is a BIASED estimator -- a sampled minimum can
+    only ever overshoot the true one, by roughly |w'|*dx/2 near a kink or
+    w''*dx^2/8 near a smooth minimum. That matters here because w(x) at the neck
+    is steep (slopes of 13-21 measured on the 2026-07-15 union series), so a
+    fraction-of-a-cell misalignment becomes a ~1 um width error, and the
+    misalignment differs per mesh -- manufacturing an apparent eps-dependence
+    out of fields that actually agree.
+
+    The vertex fit removes the smooth-minimum part of that bias exactly. It does
+    NOT fix a genuine crease (a V has no parabola): on the union-IC t=0 crease
+    it recovers only ~0.4 um of a 2.7 um spread, because ~2 um of that spread is
+    a real O(eps) difference -- the sharp crease is rounded by the spline basis
+    at the scale of eps. Once the fillet rounds (t >~ 1 min) the minimum IS
+    smooth and this is accurate: on that series the refined and 40x-upsampled
+    measurements agree to 0.01 um at t_final.
+    """
+    if jn <= 0 or jn >= len(w) - 1:
+        return w[jn], x[jn]
+    y0, y1, y2 = w[jn - 1], w[jn], w[jn + 1]
+    den = y0 - 2.0 * y1 + y2
+    if den <= 0.0:                      # not a convex minimum -> keep the sample
+        return w[jn], x[jn]
+    off = 0.5 * (y0 - y2) / den         # vertex offset in cells, |off| <= 0.5
+    if abs(off) > 0.5:
+        return w[jn], x[jn]
+    dx = x[jn + 1] - x[jn - 1]
+    return y1 - 0.25 * (y0 - y2) * off, x[jn] + off * 0.5 * dx
+
+
 def step_times(outp):
     """Map step -> time from the monitor tables in outp.txt."""
     tmap = {}
@@ -157,7 +189,7 @@ def main():
             neck, xneck = 0.0, np.nan
         else:
             jn = interior[np.argmin(w[interior])]
-            neck, xneck = w[jn], x[jn]
+            neck, xneck = refine_min(w, x, jn)
         rows.append((tmap.get(step, np.nan), neck, xneck))
 
     out = args.out or (args.run_dir / "neck_width.csv")
