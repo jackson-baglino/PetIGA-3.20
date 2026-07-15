@@ -5,10 +5,16 @@ Two things on one figure:
 
 1. THE SWEEP (top row): alpha_c in [1e-3, 1e-1] -> beta_sub(alpha; T), the
    M&F SI Eq. 9 phase-field parameters (tau_sub, mob_sub, alph_sub at the
-   production eps), and the mesh consequence: the K&P thin-interface
-   validity ceiling eps_max ~ 0.1*D_ice*beta_HK/(a1*a2) shrinks ~ 1/alpha,
-   so FAST kinetics (high alpha) demand fine meshes. This panel shows the
-   feasible (alpha, mesh) band explicitly.
+   production eps), and the mesh consequence: the K&P heat-channel ceiling
+   eps_max = safety*D_heat*beta_HK shrinks ~ 1/alpha, so FAST kinetics
+   (high alpha) demand fine meshes. This panel shows the feasible
+   (alpha, mesh) band explicitly.
+
+   The ceiling comes from comp_eps.eps_ceiling — the same function that
+   sizes the production meshes, so this figure cannot drift from the opts
+   files. Defaults match comp_eps: D_heat = D*_ia (--Dchannel) and
+   safety = 0.5 (--safety). Pass --corr 0.9 for the stricter
+   thin-interface criterion, which is ~3.95x tighter.
 
 2. THE ARRHENIUS PROPOSAL (bottom row): alpha_c(T) = A*exp(-Q/(R*T)),
    anchored so alpha spans [1e-3, 1e-1] smoothly across the temperature
@@ -39,8 +45,6 @@ import matplotlib                  # noqa: E402
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt    # noqa: E402
 
-A1A2 = ce._A1 * ce._A2
-
 
 def beta_pair(T_C, alpha):
     """(beta_HK scaled, beta_sub unscaled) at T, alpha."""
@@ -54,19 +58,23 @@ def pf_params(T_C, alpha, eps):
     rho_rat = ce.rho_vs_sat(T_C) / ce._RHO_ICE
     d0_sub = ce.capillary_length(T_C) * rho_rat   # d0_sub0/(rho_i/rho_vs), K&P scaling
     lam = ce._A1 * eps / d0_sub
-    Di = ce._K_I / ce._C_I if hasattr(ce, "_K_I") else 1.2722e-6
-    Da = ce._K_A / ce._C_A if hasattr(ce, "_K_A") else 1.4855e-5
-    Dstar = 0.5 * (Di + Da)
+    Dstar = ce.D_heat_of("mean")
     Dv = ce.Dv_T(T_C)
     tau = eps * lam * (bhk / ce._A1 + ce._A2 * eps / Dstar + ce._A2 * eps / Dv)
     return lam, tau, eps / (3.0 * tau), lam / tau  # lam, tau, mob, alph
 
 
-def eps_ceiling(T_C, alpha):
-    """K&P thin-interface validity ceiling (heat-in-ice channel, corr>0.9)."""
-    bhk, _ = beta_pair(T_C, alpha)
-    Di = 1.2722e-6
-    return 0.1 * Di * bhk / A1A2
+def eps_ceiling(T_C, alpha, args):
+    """K&P heat-channel eps ceiling — delegated to comp_eps.eps_ceiling.
+
+    Do not reimplement here: a local copy is what let this figure drift onto
+    the pure-ice channel and the corr>0.9 convention while comp_eps (which
+    sizes the production meshes) used D*_ia and safety=0.5.
+    """
+    return ce.eps_ceiling(T_C, alpha,
+                          thermal_channel=args.Dchannel,
+                          safety=args.safety,
+                          corr_target=args.corr)
 
 
 def main():
@@ -79,6 +87,16 @@ def main():
     ap.add_argument("--awarm", type=float, default=1e-1)
     ap.add_argument("--Tcold", type=float, default=-40.0)
     ap.add_argument("--acold", type=float, default=1e-3)
+    ap.add_argument("--Dchannel", choices=("mean", "ice"), default="mean",
+                    help="Heat-channel diffusivity for the eps ceiling "
+                         "(comp_eps.eps_ceiling). Default 'mean' = D*_ia.")
+    ap.add_argument("--safety", type=float, default=0.5,
+                    help="eps = safety * D_heat * beta_HK. Default 0.5, "
+                         "matching comp_eps and the production meshes.")
+    ap.add_argument("--corr", type=float, default=None, metavar="RATIO",
+                    help="Use the strict thin-interface criterion instead: "
+                         "require beta_eff/beta >= RATIO (e.g. 0.9). ~3.95x "
+                         "tighter than --safety 0.5, which lands at 0.605.")
     ap.add_argument("--out", type=Path,
                     default=Path(__file__).parent / "alpha_gt_sweep.png")
     args = ap.parse_args()
@@ -96,9 +114,15 @@ def main():
     T = np.linspace(args.Tcold, args.Twarm, 300)
     alpha_T = Apre * np.exp(-QoverR / (T + 273.15))
 
+    crit = (f"$\\beta_{{eff}}/\\beta \\geq$ {args.corr:g}" if args.corr is not None
+            else f"safety = {args.safety:g}")
+    chan = "D*_ia" if args.Dchannel == "mean" else r"$\kappa_i/C_i$"
+
     fig, axs = plt.subplots(2, 3, figsize=(15.5, 8.6))
     fig.suptitle("Gibbs–Thomson parameters across the physical $\\alpha_c$ range "
-                 "and a smooth Arrhenius $\\alpha_c(T)$ (no Libbrecht data)",
+                 "and a smooth Arrhenius $\\alpha_c(T)$ (no Libbrecht data)\n"
+                 f"$\\epsilon$ ceiling: heat channel = {chan}, {crit} "
+                 "(comp_eps.eps_ceiling)",
                  fontsize=12)
     C = {"m20": "#3d74d9", "m5": "#e8883a", "arr": "#3a8f8a", "ref": "#3f434a"}
 
@@ -134,13 +158,13 @@ def main():
     # --- C: mesh feasibility vs alpha
     ax = axs[0, 2]
     for Tv, key, lab in [(-20.0, "m20", "−20 °C"), (-5.0, "m5", "−5 °C")]:
-        em = np.array([eps_ceiling(Tv, a) for a in alpha])
+        em = np.array([eps_ceiling(Tv, a, args) for a in alpha])
         Nx = args.Lx * math.sqrt(2) / em
         ax.loglog(alpha, Nx, lw=2, color=C[key], label=f"Nx required, {lab}")
     ax.axhline(args.Lx * math.sqrt(2) / args.eps, color=C["ref"], lw=1, ls="--",
                label=f"current mesh (eps = {args.eps:.2g})")
     mark_runs(ax)
-    ax.set_xlabel(r"$\alpha_c$"); ax.set_ylabel(r"$N_x$ for validity (corr > 0.9)")
+    ax.set_xlabel(r"$\alpha_c$"); ax.set_ylabel(r"$N_x$ for validity")
     ax.set_title("Mesh demanded by the K&P validity ceiling\n"
                  r"(eps$_{max}\propto 1/\alpha_c$: fast kinetics need fine meshes)")
     ax.legend(fontsize=8); ax.grid(alpha=0.25, which="both", lw=0.4)
@@ -172,7 +196,7 @@ def main():
 
     # --- F: mesh requirement along the Arrhenius path
     ax = axs[1, 2]
-    Nx_arr = [args.Lx * math.sqrt(2) / eps_ceiling(t, a)
+    Nx_arr = [args.Lx * math.sqrt(2) / eps_ceiling(t, a, args)
               for t, a in zip(T, alpha_T)]
     ax.semilogy(T, Nx_arr, lw=2.5, color=C["arr"], label="Nx required (validity)")
     ax.axhline(args.Lx * math.sqrt(2) / args.eps, color=C["ref"], lw=1, ls="--",
@@ -193,7 +217,7 @@ def main():
     for t in [-2, -5, -10, -20, -30, -40]:
         a = Apre * math.exp(-QoverR / (t + 273.15))
         _, b = beta_pair(t, a)
-        em = eps_ceiling(t, a)
+        em = eps_ceiling(t, a, args)
         print(f"{t:7.0f} | {a:9.3e} | {b:14.3e} | {em:11.3e} | "
               f"{args.Lx*math.sqrt(2)/em:9.0f}")
 

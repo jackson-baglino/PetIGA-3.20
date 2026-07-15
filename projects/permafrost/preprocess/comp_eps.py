@@ -78,6 +78,8 @@ Usage (CLI)
   python comp_eps.py --Lx 6e-4 --T0 -5 --alpha 1e-3 --quiet
 """
 
+from __future__ import annotations   # PEP 604 (`float | None`) on Python 3.9
+
 import argparse
 import math
 import re
@@ -222,6 +224,47 @@ def alpha_libbrecht(T_C: float, sigma_surf: float) -> float:
 
 
 # =========================================================================
+# Heat-channel ε ceiling — single source of truth
+# =========================================================================
+
+def D_heat_of(thermal_channel: str = "mean") -> float:
+    """Diffusivity for the Eq.(43) heat channel. See --Dchannel."""
+    D_i = _K_I / _C_I
+    D_a = _K_A / _C_A
+    if thermal_channel == "mean":
+        return 0.5 * (D_i + D_a)          # D*_ia; matches permafrost2.c:558
+    if thermal_channel == "ice":
+        return D_i                        # conservative single-sided K&P 43a
+    raise ValueError(f"thermal_channel must be 'mean' or 'ice', got "
+                     f"{thermal_channel!r}")
+
+
+def eps_ceiling(T_C: float, alpha_c: float,
+                thermal_channel: str = "mean",
+                safety: float = 0.5,
+                corr_target: float | None = None) -> float:
+    """ε ceiling from the K&P Eq.(43) heat channel.
+
+    Two conventions, which disagree by ~4x — pick deliberately:
+
+      safety (default 0.5): ε = safety · D_heat · β_HK. This is what sizes
+          the production meshes. Note safety=0.5 lands at a thin-interface
+          correction ratio of 1 − a₁a₂·0.5 = 0.605, i.e. it does NOT meet
+          the >0.9 rule quoted in this script's own output.
+
+      corr_target (overrides safety when given): require
+          β_eff/β_target ≥ corr_target, i.e.
+          ε = (1 − corr_target)·D_heat·β_HK / (a₁·a₂).
+          corr_target=0.9 is the strict thin-interface reading; it is ~3.95x
+          tighter than safety=0.5.
+    """
+    bound = D_heat_of(thermal_channel) * beta_HK(T_C, alpha_c)
+    if corr_target is not None:
+        return (1.0 - corr_target) * bound / (_A1 * _A2)
+    return safety * bound
+
+
+# =========================================================================
 # Derived phase-field model parameters (M&F SI Eq. 9)
 # =========================================================================
 
@@ -269,7 +312,7 @@ def derived_pf_params(eps: float, T0_C: float, d0: float, beta_hk: float,
     beta_ratio_heat_ice = _beta_ratio(alpha_i)
     beta_ratio_heat_air = _beta_ratio(alpha_a)
     beta_ratio_vapor    = _beta_ratio(Dv)
-    D_heat              = D_ia if thermal_channel == "mean" else alpha_i
+    D_heat              = D_heat_of(thermal_channel)
     beta_ratio_heat     = _beta_ratio(D_heat)
 
     return dict(
@@ -297,7 +340,7 @@ def compute_eps(
     Rave: float = 3.0e-5,
     T0_C: float = -20.0,
     alpha_c: float = 1.0e-2,
-    safety: float = 1.0,
+    safety: float = 0.5,   # match the CLI default and eps_ceiling()
     v_n: float = 1.0e-9,
     xi_v: float | None = None,
     thermal_channel: str = "mean",
@@ -316,8 +359,7 @@ def compute_eps(
     # The heat channel uses D*_ia by default — the same diffusivity τ_sub
     # compensates with (derived_pf_params) and the one the solver assembles
     # (permafrost2.c:558). --Dchannel ice restores the conservative κᵢ/Cᵢ.
-    D_ia       = 0.5 * (alpha_i + alpha_a)
-    D_heat     = D_ia if thermal_channel == "mean" else alpha_i
+    D_heat     = D_heat_of(thermal_channel)
     b_heat     = D_heat * beta_hk
     b_vapor    = Dv     * beta_hk
     # K&P Eq. 45: W ≪ d₀ / (β₀·vₙ) (uses the UNSCALED coefficient β₀)
