@@ -1,4 +1,32 @@
 
+## 2026-07-14 (later 3) — eps sized against D*_ia; near-melting mesh cost diagnosed
+
+- Swept comp_eps.py over alpha_c x {-5, -20 C}: at fixed alpha_c the two
+  temperatures cost the same mesh (Nx 12007 vs 11666 at alpha_c=1e-1). The
+  "-5 C is infeasible" conclusion was not about temperature — beta_HK ∝
+  (1/alpha_c)·sqrt(1/T_K), and the sqrt(T) factor moves ~3% across 15 K. The
+  cost came entirely from the Arrhenius fit assigning alpha_c ≈ 1e-1 near T_m.
+- Found an inconsistency in comp_eps.py: the Eq.(43) heat bound used pure-ice
+  kappa_i/C_i while tau_sub compensates the thin-interface correction with
+  D*_ia = 0.5*(D_air + D_ice) — also what permafrost2.c:558 assembles as
+  diff_sub. Correction applied and correction validated against disagreed.
+- Made the heat channel selectable (--Dchannel, default "mean"). Binding bound
+  loosens 6.3x: Nx 12007 -> 1895 at alpha_c=1e-1, -5 C. Deliberately taking the
+  looser bound for now; --Dchannel ice restores the conservative one.
+- CAVEAT to watch: at the mean-channel eps, the pure-ice beta ratio is -1.51
+  (now printed as a diagnostic). If the ice channel is the physically correct
+  one, the correction over-compensates and beta_eff flips sign. Watch the
+  looser runs for interface-kinetics artifacts; fall back to --Dchannel ice.
+- Not yet done: the alpha_c(T) form itself. The monotonic Arrhenius rising to
+  1e-1 at T_m is contradicted by the Libbrecht sigma0 bump at -6/-7 C
+  (non-monotonic; basal growth slows near -5 C). A saturating/capped form near
+  alpha_c ~ 1e-2 is both cheaper and better supported.
+
+---
+
+**Session ended:** 2026-07-14 18:07:55
+
+
 ---
 
 **Session ended:** 2026-07-14 15:45:30
