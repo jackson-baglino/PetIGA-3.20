@@ -1,0 +1,66 @@
+# =============================================================================
+# experiment/molaro_T-5_h1.00_arrh.opts — Molaro -5 C series, Arrhenius
+# alpha_c(T). Pair with geometry/2D_molaro_axisym_T-5pair.opts.
+#
+# HALF OF A MATCHED PAIR with molaro_T-20_h1.00_arrh.opts — see that file's
+# header for the shared design. Everything but temperature (and the
+# constants derived from it) is held fixed.
+#
+# READ docs/molaro_validation_synthesis.md SEC. 5 BEFORE INTERPRETING THIS
+# RUN. The -5 C series is artifact-dominated and is NOT a validation
+# benchmark. Their -5 grains net-shrink 9% in a nominally saturated sealed
+# isothermal cell (vs 3-4% at -20) — impossible without a heat source — and
+# they stopped measuring when the necks began to shrink. This run exists to
+# DEMONSTRATE the resulting inversion, not to be scored against the data:
+#
+#   rho_vs(-5)/rho_vs(-20) = 3.90  ->  every vapor mechanism, ours included,
+#   MUST predict -5 growing faster than -20.
+#   Data:  -20 ~ 0.41 um/min  vs  -5 ~ 0.24 um/min   (inverted)
+#
+# A large model-vs-data disagreement here is the EXPECTED result and is the
+# measurement of the artifact. Do not "fix" the model against it.
+#
+# alpha_c FROM THE ARRHENIUS FIT (preprocess/plot_alpha_gt_sweep.py defaults):
+#   alpha_c(-5 C) = 7.290e-2
+# CAVEAT: this is the least-defensible end of the Arrhenius fit. It rises
+# monotonically toward T_m, which the Libbrecht sigma0 bump at -6/-7 C
+# argues against (basal growth SLOWS near -5 C). alpha_c here is ~5.4x the
+# -20 value, so this run confounds the T effect with an unvalidated
+# alpha_c(T) form. A constant-alpha_c partner run is the clean control if
+# the attribution matters.
+#
+# Derived (preprocess/comp_eps.py --T0 -5 --alpha 7.29e-2):
+#   beta_sub0 = 2.7126e4 s/m     d0_sub0 = 9.5975e-10 m
+#
+# dtmax = 7.0e0: same dtmax/tau_sub = 1.093 ratio as the -20 partner
+# (tau_sub = 6.62 s here at eps = 3.9e-7 -> 7.24 -> 7.0e0). This is ~14x
+# smaller than the partner's cap because the kinetics are that much faster;
+# EXPECT THIS RUN TO BE THE EXPENSIVE ONE (>=510 steps to t_final before the
+# CFL limiter throttles further).
+#
+# -outp 5 (overrides solver.opts' -outp 1): at ~7 s/step a per-step snapshot
+# would be >500 files x ~14 MB. Every 5th still yields ~100 points on the
+# neck curve, which is far denser than the 3 experimental points.
+#
+# t_final = 3.6e3 (60 min); the -5 data ends at 48 min.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Data: neck width 32.51 -> 44.00 um over 48 min (+35%).
+# =============================================================================
+
+-t_final 3.6e3                          # 60 min — the -5 C data ends at 48 min
+-t_sed_freeze 10
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 2.7126e4                     # K&P beta0 at -5 C, alpha_c = 7.290e-2
+-d0_sub0 9.5975e-10                     # physical capillary length at -5 C
+-d0_GT 0                                # AC coupling carries capillarity
+
+-dtmax 7.0e0
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-outp 5                                 # ~100 snapshots; see header

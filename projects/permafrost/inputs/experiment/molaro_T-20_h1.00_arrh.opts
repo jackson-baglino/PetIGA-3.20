@@ -1,0 +1,56 @@
+# =============================================================================
+# experiment/molaro_T-20_h1.00_arrh.opts — Molaro -20 C series, Arrhenius
+# alpha_c(T). Pair with geometry/2D_molaro_axisym_T-20pair.opts.
+#
+# HALF OF A MATCHED PAIR. The partner is molaro_T-5_h1.00_arrh.opts. The two
+# differ ONLY in temperature and the T-dependent constants derived from it;
+# eps, mesh rule, humidity, and solver settings are identical by design so
+# the temperature effect is not confounded.
+#
+# alpha_c FROM THE ARRHENIUS FIT (preprocess/plot_alpha_gt_sweep.py defaults:
+# alpha_c = 1e-1 at -2 C, 1e-3 at -40 C, Q ~ 64 kJ/mol):
+#   alpha_c(-20 C) = 1.341e-2      [cf. the campaign's calibrated 1e-2]
+# Derived at that alpha_c and T (preprocess/comp_eps.py --T0 -20 --alpha
+# 1.341e-2):
+#   beta_sub0 = beta_HK/(rho_vs/rho_ice) = 5.9216e5 s/m
+#   d0_sub0   = gamma*V_m/(R*T)          = 1.0166e-9 m
+# flag_Tdep is 0 (solver.opts), so the code uses these explicit values and
+# rescales beta_sub = beta_sub0*rho_vs(T)/rho_ice at -temp. RhoVS_I is
+# always evaluated on the local temperature field regardless of flag_Tdep,
+# so the vapor-pressure difference vs the -5 partner IS captured.
+#
+# dtmax = 1.0e2: the campaign calibrated dtmax/tau_sub = 1.093 (the
+# committed a1e-2 run: tau_sub = 1.83e2, dtmax = 2e2). Here tau_sub =
+# 9.74e1 at eps = 3.9e-7, so the same ratio gives 1.065e2 -> 1.0e2.
+# Interface-CFL limiter remains the safety. Lesson from cfl1e4 (2026-07-09):
+# the limiter guarantees stability, NOT rate accuracy — before quoting the
+# neck curve, rerun at -dtmax 5e1 and confirm overlap.
+#
+# t_final = 7.2e3 (2 h), matching the committed molaro_T-20 runs; the data
+# ends at 78 min.
+#
+# EXPECTATION (this is the point of the pair): rho_vs(-5)/rho_vs(-20) = 3.90,
+# so every vapor mechanism predicts the -5 partner grows FASTER. The data
+# has -20 at ~0.41 um/min and -5 at ~0.24 um/min — inverted. Per
+# docs/molaro_validation_synthesis.md sec. 5 the inversion is the
+# experiment's sublimation artifact, not sintering physics; this pair is
+# meant to demonstrate that, NOT to validate against the -5 series.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Data: neck width 32.81 -> 64.78 um over 78 min (+97%).
+# =============================================================================
+
+-t_final 7.2e3                          # 2 hours — Molaro et al. Fig. 11 duration
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 5.9216e5                     # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+-d0_GT 0                                # AC coupling carries capillarity
+
+-dtmax 1.0e2
+-dtCFL 1
+-dtCFL_dphimax 0.2

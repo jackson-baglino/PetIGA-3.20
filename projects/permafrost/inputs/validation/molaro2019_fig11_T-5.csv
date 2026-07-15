@@ -1,0 +1,23 @@
+# Molaro et al. (2019) JGR Planets, Fig. 11 / supplemental, T = -5 C series.
+# time_min, neck_size_um, err_plus_um, err_minus_um, lg_diam_um, sm_diam_um
+#
+# ARTIFACT-DOMINATED — NOT A VALIDATION BENCHMARK.
+# See docs/molaro_validation_synthesis.md sec. 5. These grains net-shrink 9%
+# (197->179 lg, 153->139 sm) in a nominally saturated, sealed, isothermal
+# cell, vs 3-4% in the -20 C series: impossible without a heat source. The
+# series stops at 48 min because the necks began to shrink. The resulting
+# rate (~0.24 um/min) is SLOWER than the -20 C series (~0.41 um/min) even
+# though rho_vs is 3.90x higher at -5 C — inverted against every vapor
+# mechanism. Use this file to demonstrate that inversion, not to score a
+# model against it.
+#
+# Grain sizes here (197/153 um) differ from the -20 series (202/145): these
+# are a different grain pair. Geometry: 2D_molaro_axisym_T-5pair.opts.
+#
+# neck_width.py defaults to the -20 CSV, so this one must be passed
+# explicitly:
+#   python postprocess/neck_width.py <run_dir> --axisym \
+#       --data inputs/validation/molaro2019_fig11_T-5.csv
+0,32.51,3.7,2.8,197,153
+26,41.57,0.7,0.5,191,149
+48,44.00,1.1,1.0,179,139
