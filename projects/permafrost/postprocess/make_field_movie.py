@@ -53,25 +53,21 @@ import cmocean
 
 
 def ice_alpha_cmap(n=256):
-    """cmocean 'ice' for phi in [0.5,1], fully TRANSPARENT below 0.5.
+    """cmocean 'ice' mapping phi in [0,1] DIRECTLY (colourbar bounds 0 and 1),
+    made fully TRANSPARENT below phi=0.5 so only the ice region paints.
 
-    Lets the ice layer be drawn with gouraud shading (smooth, anti-aliased
-    grain edges -- the fix for the 'pixelated grains') WITHOUT a masked array,
-    which gouraud pcolormesh cannot handle. The transparent rows carry the
-    same RGB as the phi=0.5 ice colour (not black), so gouraud interpolation
-    across the interface ramps only alpha -- no dark fringe. Render with
-    vmin=0, vmax=1; show a clean 0.5..1 ice colourbar via a separate mappable.
+    phi -> ice(phi): the visible ice region (phi in [0.5,1]) uses the UPPER
+    half of the map, so grains read light with a mid-tone rim at phi=0.5 (not
+    the dark ice(0) rim of the old [0.5,1]->[0,1] remap).
+
+    Lets the ice layer use gouraud shading (smooth, anti-aliased grain edges)
+    WITHOUT a masked array, which gouraud pcolormesh cannot handle. RGB is
+    cmocean 'ice' and continuous across phi=0.5, so gouraud only ramps alpha at
+    the interface -- no dark fringe. Render with vmin=0, vmax=1.
     """
-    ice = cmocean.cm.ice
-    edge = ice(0.0)
-    lut = np.zeros((n, 4))
-    for i in range(n):
-        phi = i / (n - 1)
-        if phi < 0.5:
-            lut[i] = (edge[0], edge[1], edge[2], 0.0)
-        else:
-            c = ice((phi - 0.5) / 0.5)
-            lut[i] = (c[0], c[1], c[2], 1.0)
+    phi = np.linspace(0.0, 1.0, n)
+    lut = cmocean.cm.ice(phi)          # (n,4) RGBA, phi -> ice(phi)
+    lut[:, 3] = np.where(phi < 0.5, 0.0, 1.0)
     return ListedColormap(lut)
 
 
@@ -169,19 +165,27 @@ def main():
     # Static mesh: read coordinates once from the first snapshot.
     _, X, Y = read_vts(files[0])
 
-    # Global vapour colour range: robust percentiles over the AIR region,
-    # sampled across the run so the scale is fixed frame-to-frame.
+    # Vapour colour range: the TRUE global min and max of VaporDensity within
+    # the AIR phase (phi < 0.5), over EVERY frame -- a single fixed scale for
+    # the whole run. Requires a full pre-pass over all snapshots (each is read
+    # again during rendering); --vmin-vapor/--vmax-vapor skip the pre-pass.
     if args.vmin_vapor is None or args.vmax_vapor is None:
-        sample = files[:: max(1, len(files) // 40)]
-        los, his = [], []
-        for fn in sample:
+        # A --frame-png preview samples ~40 frames for speed; the real render
+        # scans every frame for the exact global min/max.
+        scan = (files if args.frame_png is None
+                else files[:: max(1, len(files) // 40)])
+        gmin, gmax = np.inf, -np.inf
+        for k, fn in enumerate(scan):
             f, _, _ = read_vts(fn)
             air = f["IcePhase"] < 0.5
             if air.any():
-                lo, hi = np.percentile(f["VaporDensity"][air], [0.5, 99.5])
-                los.append(lo); his.append(hi)
-        vmin = args.vmin_vapor if args.vmin_vapor is not None else min(los)
-        vmax = args.vmax_vapor if args.vmax_vapor is not None else max(his)
+                v = f["VaporDensity"][air]
+                gmin = min(gmin, float(v.min()))
+                gmax = max(gmax, float(v.max()))
+            if k % 200 == 0:
+                print(f"  vapor-range pre-pass {k}/{len(scan)}", flush=True)
+        vmin = args.vmin_vapor if args.vmin_vapor is not None else gmin
+        vmax = args.vmax_vapor if args.vmax_vapor is not None else gmax
     else:
         vmin, vmax = args.vmin_vapor, args.vmax_vapor
     if vmax <= vmin:
@@ -217,7 +221,7 @@ def main():
     # Two horizontal colourbars, side by side under the axes -- no overlap.
     cax_i = fig.add_axes([0.10, 0.15, 0.35, 0.03])
     cax_v = fig.add_axes([0.57, 0.15, 0.35, 0.03])
-    sm_i = ScalarMappable(norm=Normalize(0.5, 1.0), cmap=cmocean.cm.ice)
+    sm_i = ScalarMappable(norm=Normalize(0.0, 1.0), cmap=cmocean.cm.ice)
     cb_i = fig.colorbar(sm_i, cax=cax_i, orientation="horizontal")
     cb_i.set_label(r"IcePhase $\phi_i$ (ice region)")
     cb_v = fig.colorbar(base, cax=cax_v, orientation="horizontal")
