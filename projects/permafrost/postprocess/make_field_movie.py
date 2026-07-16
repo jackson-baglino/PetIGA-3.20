@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+"""make_field_movie.py — render an ice/vapor animation from solV_*.vts, in pure
+Python (matplotlib + cmocean), no ParaView.
+
+WHAT IT DRAWS (per the user's ParaView recipe, reproduced faithfully)
+  * ICE region  (IcePhase >= 0.5): coloured by IcePhase through cmocean 'ice'.
+  * AIR region  (IcePhase <  0.5): coloured by VaporDensity through cmocean 'amp'.
+The phi = 0.5 contour is the partition, exactly as the two ParaView iso-volumes
+[0.5, 1.01] and [-0.01, 0.5] intended.
+
+WHY NOT TWO MASKED LAYERS (and why ParaView dropped pixels): thresholding into
+two disjoint volumes leaves the phi=0.5 boundary cells owned by neither at the
+export resolution -> the "missing pixels inside the grains" on animation export.
+Here the VAPOR field is drawn as a FULL-DOMAIN base layer and the ICE layer is
+drawn OPAQUE on top, masked to phi>=0.5. Every pixel is covered by the base, so
+nothing can be dropped; the ice simply paints over the air where it exists.
+
+CURVILINEAR MESH: the bumpy floor makes the grid deformed (the bottom row of
+nodes follows the bumps). We plot with the ACTUAL node coordinates via
+pcolormesh, not an imshow on a regular grid -- otherwise the floor bumps are
+misplaced. The mesh is static (Eulerian), so the QuadMeshes are built once and
+only their colour arrays are updated each frame.
+
+VAPOR IS NEARLY FLAT: in a saturated cell VaporDensity varies only in its ~5th
+significant digit (e.g. 8.4868e-4..8.4873e-4). The colour range is therefore
+auto-scaled to robust percentiles of the vapour in the AIR region, sampled
+GLOBALLY across the run so the scale is fixed and comparable frame-to-frame.
+Override with --vmin-vapor/--vmax-vapor. The colourbar prints the true values.
+
+Usage:
+    python make_field_movie.py <run_dir> [--out FILE.mp4] [--stride N]
+        [--fps 24] [--dpi 150] [--vmin-vapor V --vmax-vapor V]
+        [--frame-png STEP]   # render one frame to PNG and exit (a preview)
+"""
+
+import argparse
+import base64
+import glob
+import re
+import struct
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.animation import FFMpegWriter
+import cmocean
+
+
+def read_vts(fn, want=("IcePhase", "VaporDensity")):
+    """Return (fields dict, X[ny,nx], Y[ny,nx]) from a solV_*.vts snapshot."""
+    root = ET.parse(fn).getroot()
+    grid = root.find(".//StructuredGrid")
+    ext = [int(v) for v in grid.get("WholeExtent").split()]
+    nx, ny = ext[1] - ext[0] + 1, ext[3] - ext[2] + 1
+
+    def decode(da):
+        raw = base64.b64decode("".join(da.text.split()))
+        n = struct.unpack("<Q", raw[:8])[0]
+        return np.frombuffer(raw[8:8 + n], dtype=np.float64)
+
+    pts = None
+    for da in root.findall(".//Points/DataArray"):
+        pts = decode(da).reshape(ny, nx, 3)
+    fields = {}
+    for da in root.findall(".//PointData/DataArray"):
+        if da.get("Name") in want:
+            fields[da.get("Name")] = decode(da).reshape(ny, nx)
+    return fields, pts[:, :, 0], pts[:, :, 1]
+
+
+def step_of(fn):
+    return int(re.search(r"solV_(\d+)\.vts", fn).group(1))
+
+
+def step_times(run_dir):
+    """step -> time[s] from the monitor tables in outp.txt (8-pipe rows)."""
+    tmap = {}
+    outp = Path(run_dir) / "outp.txt"
+    if not outp.exists():
+        return tmap
+    pat = re.compile(r"^\s+(\d+)\s+\|\s+([0-9.eE+-]+)\s+\|")
+    for line in open(outp, errors="replace"):
+        if line.count("|") == 8:
+            m = pat.match(line)
+            if m:
+                tmap[int(m.group(1))] = float(m.group(2))
+    return tmap
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("run_dir", type=Path)
+    ap.add_argument("--out", type=Path, default=None,
+                    help="output mp4 (default: <run_dir>/ice_vapor_movie.mp4)")
+    ap.add_argument("--stride", type=int, default=1,
+                    help="use every Nth snapshot (default 1 = all)")
+    ap.add_argument("--fps", type=int, default=24)
+    ap.add_argument("--dpi", type=int, default=150)
+    ap.add_argument("--vmin-vapor", type=float, default=None)
+    ap.add_argument("--vmax-vapor", type=float, default=None)
+    ap.add_argument("--frame-png", type=int, default=None,
+                    help="render only the snapshot with this step index to a PNG "
+                         "(preview) and exit")
+    args = ap.parse_args()
+
+    files = sorted(glob.glob(str(args.run_dir / "vtkOut" / "solV_*.vts")),
+                   key=step_of)
+    if not files:
+        sys.exit(f"no solV_*.vts under {args.run_dir}/vtkOut")
+    tmap = step_times(args.run_dir)
+
+    # Static mesh: read coordinates once from the first snapshot.
+    _, X, Y = read_vts(files[0])
+
+    # Global vapour colour range: robust percentiles over the AIR region,
+    # sampled across the run so the scale is fixed frame-to-frame.
+    if args.vmin_vapor is None or args.vmax_vapor is None:
+        sample = files[:: max(1, len(files) // 40)]
+        los, his = [], []
+        for fn in sample:
+            f, _, _ = read_vts(fn)
+            air = f["IcePhase"] < 0.5
+            if air.any():
+                lo, hi = np.percentile(f["VaporDensity"][air], [0.5, 99.5])
+                los.append(lo); his.append(hi)
+        vmin = args.vmin_vapor if args.vmin_vapor is not None else min(los)
+        vmax = args.vmax_vapor if args.vmax_vapor is not None else max(his)
+    else:
+        vmin, vmax = args.vmin_vapor, args.vmax_vapor
+    if vmax <= vmin:
+        vmax = vmin + 1e-30
+
+    # ---- Figure: aspect-true, sized to the domain -----------------------
+    Lx, Ly = X.max(), Y.max()
+    fig_w = 14.0
+    fig_h = max(2.4, fig_w * (Ly / Lx) + 1.4)
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    ax.set_aspect("equal")
+    ax.set_xlim(X.min(), X.max()); ax.set_ylim(Y.min(), Y.max())
+    ax.set_xlabel("x [m]"); ax.set_ylabel("y [m]")
+
+    f0, _, _ = read_vts(files[0])
+    phi0 = f0["IcePhase"]; vap0 = f0["VaporDensity"]
+
+    # Base layer: vapour over the WHOLE domain (guarantees full coverage).
+    base = ax.pcolormesh(X, Y, vap0, cmap=cmocean.cm.amp,
+                         vmin=vmin, vmax=vmax, shading="gouraud", rasterized=True)
+    # Ice layer on top, opaque, masked to phi>=0.5.
+    # 'nearest' keeps a crisp phi=0.5 threshold and, unlike 'gouraud', tolerates
+    # masked arrays here (gouraud+mask trips a matplotlib reshape bug). The
+    # curvilinear-coords warning is cosmetic: cell-edge inference is sub-pixel
+    # at this resolution. The base vapour layer underneath guarantees no gaps.
+    import warnings
+    warnings.filterwarnings("ignore", message=".*not monotonically.*")
+    ice_c = np.ma.masked_where(phi0 < 0.5, phi0)
+    ice = ax.pcolormesh(X, Y, ice_c, cmap=cmocean.cm.ice,
+                        vmin=0.5, vmax=1.0, shading="nearest", rasterized=True)
+
+    cb_i = fig.colorbar(ice, ax=ax, fraction=0.025, pad=0.01)
+    cb_i.set_label(r"IcePhase $\phi_i$ (ice region)")
+    cb_v = fig.colorbar(base, ax=ax, fraction=0.025, pad=0.06)
+    cb_v.set_label(r"VaporDensity [kg/m$^3$] (air region)")
+    cb_v.formatter.set_powerlimits((0, 0)); cb_v.update_ticks()
+
+    title = ax.set_title("")
+
+    def draw(fn):
+        f, _, _ = read_vts(fn)
+        phi = f["IcePhase"]; vap = f["VaporDensity"]
+        base.set_array(vap.ravel())
+        ice.set_array(np.ma.masked_where(phi < 0.5, phi).ravel())
+        st = step_of(fn)
+        t = tmap.get(st)
+        tstr = f"t = {t/86400:.2f} d" if t is not None else f"step {st}"
+        ice_frac = 100.0 * (phi >= 0.5).mean()
+        title.set_text(f"{args.run_dir.name}\nstep {st}   {tstr}   "
+                       f"ice area {ice_frac:.1f}%")
+
+    # ---- Preview single frame -------------------------------------------
+    if args.frame_png is not None:
+        fn = min(files, key=lambda p: abs(step_of(p) - args.frame_png))
+        draw(fn)
+        out = args.run_dir / f"frame_{step_of(fn):05d}.png"
+        fig.savefig(out, dpi=args.dpi, bbox_inches="tight")
+        print(f"preview -> {out}  (vapor range {vmin:.6e}..{vmax:.6e})")
+        return
+
+    frames = files[:: args.stride]
+    out = args.out or (args.run_dir / "ice_vapor_movie.mp4")
+    writer = FFMpegWriter(fps=args.fps, bitrate=-1,
+                          metadata={"title": args.run_dir.name})
+    print(f"rendering {len(frames)} frames -> {out}")
+    print(f"  vapor colour range: {vmin:.6e} .. {vmax:.6e} kg/m^3")
+    with writer.saving(fig, str(out), dpi=args.dpi):
+        for i, fn in enumerate(frames):
+            draw(fn)
+            writer.grab_frame()
+            if i % 50 == 0:
+                print(f"  frame {i}/{len(frames)}  ({step_of(fn)})", flush=True)
+    print(f"movie -> {out}")
+
+
+if __name__ == "__main__":
+    main()
