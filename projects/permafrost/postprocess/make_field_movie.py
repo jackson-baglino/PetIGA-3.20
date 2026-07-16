@@ -47,7 +47,32 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FFMpegWriter
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import ListedColormap, Normalize
 import cmocean
+
+
+def ice_alpha_cmap(n=256):
+    """cmocean 'ice' for phi in [0.5,1], fully TRANSPARENT below 0.5.
+
+    Lets the ice layer be drawn with gouraud shading (smooth, anti-aliased
+    grain edges -- the fix for the 'pixelated grains') WITHOUT a masked array,
+    which gouraud pcolormesh cannot handle. The transparent rows carry the
+    same RGB as the phi=0.5 ice colour (not black), so gouraud interpolation
+    across the interface ramps only alpha -- no dark fringe. Render with
+    vmin=0, vmax=1; show a clean 0.5..1 ice colourbar via a separate mappable.
+    """
+    ice = cmocean.cm.ice
+    edge = ice(0.0)
+    lut = np.zeros((n, 4))
+    for i in range(n):
+        phi = i / (n - 1)
+        if phi < 0.5:
+            lut[i] = (edge[0], edge[1], edge[2], 0.0)
+        else:
+            c = ice((phi - 0.5) / 0.5)
+            lut[i] = (c[0], c[1], c[2], 1.0)
+    return ListedColormap(lut)
 
 
 def read_vts(fn, want=("IcePhase", "VaporDensity")):
@@ -100,7 +125,12 @@ def main():
     ap.add_argument("--stride", type=int, default=1,
                     help="use every Nth snapshot (default 1 = all)")
     ap.add_argument("--fps", type=int, default=24)
-    ap.add_argument("--dpi", type=int, default=150)
+    ap.add_argument("--dpi", type=int, default=200)
+    ap.add_argument("--frames-dir", type=Path, default=None,
+                    help="where to save per-frame PNGs (default: "
+                         "<run_dir>/movie_frames/)")
+    ap.add_argument("--no-frames", action="store_true",
+                    help="render only the mp4, skip the per-frame PNG dump")
     ap.add_argument("--vmin-vapor", type=float, default=None)
     ap.add_argument("--vmax-vapor", type=float, default=None)
     ap.add_argument("--frame-png", type=int, default=None,
@@ -157,11 +187,15 @@ def main():
     if vmax <= vmin:
         vmax = vmin + 1e-30
 
-    # ---- Figure: aspect-true, sized to the domain -----------------------
+    # ---- Figure: wide domain (aspect ~5:1) with colourbars BELOW ---------
+    # Vertical colourbars collide on a short-wide plot; horizontal bars under
+    # the axes have room. Axes rect leaves space top (title) and bottom (bars).
     Lx, Ly = X.max(), Y.max()
-    fig_w = 14.0
-    fig_h = max(2.4, fig_w * (Ly / Lx) + 1.4)
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    fig_w = 16.0
+    ax_frac_h = 0.56
+    fig_h = fig_w * 0.90 * (Ly / Lx) / ax_frac_h + 1.6
+    fig = plt.figure(figsize=(fig_w, fig_h))
+    ax = fig.add_axes([0.05, 0.30, 0.90, ax_frac_h])
     ax.set_aspect("equal")
     ax.set_xlim(X.min(), X.max()); ax.set_ylim(Y.min(), Y.max())
     ax.set_xlabel("x [m]"); ax.set_ylabel("y [m]")
@@ -169,23 +203,24 @@ def main():
     f0, _, _ = read_vts(files[0])
     phi0 = f0["IcePhase"]; vap0 = f0["VaporDensity"]
 
-    # Base layer: vapour over the WHOLE domain (guarantees full coverage).
+    # Base: vapour over the WHOLE domain, gouraud (smooth). Guarantees coverage.
     base = ax.pcolormesh(X, Y, vap0, cmap=cmocean.cm.amp,
                          vmin=vmin, vmax=vmax, shading="gouraud", rasterized=True)
-    # Ice layer on top, opaque, masked to phi>=0.5.
-    # 'nearest' keeps a crisp phi=0.5 threshold and, unlike 'gouraud', tolerates
-    # masked arrays here (gouraud+mask trips a matplotlib reshape bug). The
-    # curvilinear-coords warning is cosmetic: cell-edge inference is sub-pixel
-    # at this resolution. The base vapour layer underneath guarantees no gaps.
-    import warnings
-    warnings.filterwarnings("ignore", message=".*not monotonically.*")
-    ice_c = np.ma.masked_where(phi0 < 0.5, phi0)
-    ice = ax.pcolormesh(X, Y, ice_c, cmap=cmocean.cm.ice,
-                        vmin=0.5, vmax=1.0, shading="nearest", rasterized=True)
+    # Ice on top: gouraud with the alpha-cutoff cmap (transparent below 0.5).
+    # gouraud interpolates between nodes -> anti-aliased grain edges (the fix
+    # for the pixelation) without resampling the .vts. No masked array, so no
+    # gouraud+mask crash.
+    ice_cmap = ice_alpha_cmap()
+    ice = ax.pcolormesh(X, Y, phi0, cmap=ice_cmap,
+                        vmin=0.0, vmax=1.0, shading="gouraud", rasterized=True)
 
-    cb_i = fig.colorbar(ice, ax=ax, fraction=0.025, pad=0.01)
+    # Two horizontal colourbars, side by side under the axes -- no overlap.
+    cax_i = fig.add_axes([0.10, 0.15, 0.35, 0.03])
+    cax_v = fig.add_axes([0.57, 0.15, 0.35, 0.03])
+    sm_i = ScalarMappable(norm=Normalize(0.5, 1.0), cmap=cmocean.cm.ice)
+    cb_i = fig.colorbar(sm_i, cax=cax_i, orientation="horizontal")
     cb_i.set_label(r"IcePhase $\phi_i$ (ice region)")
-    cb_v = fig.colorbar(base, ax=ax, fraction=0.025, pad=0.06)
+    cb_v = fig.colorbar(base, cax=cax_v, orientation="horizontal")
     cb_v.set_label(r"VaporDensity [kg/m$^3$] (air region)")
     cb_v.formatter.set_powerlimits((0, 0)); cb_v.update_ticks()
 
@@ -195,7 +230,7 @@ def main():
         f, _, _ = read_vts(fn)
         phi = f["IcePhase"]; vap = f["VaporDensity"]
         base.set_array(vap.ravel())
-        ice.set_array(np.ma.masked_where(phi < 0.5, phi).ravel())
+        ice.set_array(phi.ravel())
         st = step_of(fn)
         t = tmap.get(st)
         tstr = f"t = {t/86400:.2f} days" if t is not None else f"step {st}"
@@ -208,23 +243,36 @@ def main():
         fn = min(files, key=lambda p: abs(step_of(p) - args.frame_png))
         draw(fn)
         out = args.run_dir / f"frame_{step_of(fn):05d}.png"
-        fig.savefig(out, dpi=args.dpi, bbox_inches="tight")
+        fig.savefig(out, dpi=args.dpi)
         print(f"preview -> {out}  (vapor range {vmin:.6e}..{vmax:.6e})")
         return
 
     frames = files[:: args.stride]
     out = args.out or (args.run_dir / "ice_vapor_movie.mp4")
+    # Screenshots: save each rendered frame as a PNG too, unless --no-frames.
+    frames_dir = None
+    if not args.no_frames:
+        frames_dir = args.frames_dir or (args.run_dir / "movie_frames")
+        frames_dir.mkdir(parents=True, exist_ok=True)
+
     writer = FFMpegWriter(fps=args.fps, bitrate=-1,
                           metadata={"title": args.run_dir.name})
     print(f"rendering {len(frames)} frames -> {out}")
     print(f"  vapor colour range: {vmin:.6e} .. {vmax:.6e} kg/m^3")
+    if frames_dir:
+        print(f"  screenshots -> {frames_dir}/frame_*.png")
     with writer.saving(fig, str(out), dpi=args.dpi):
         for i, fn in enumerate(frames):
             draw(fn)
             writer.grab_frame()
+            if frames_dir:
+                fig.savefig(frames_dir / f"frame_{step_of(fn):05d}.png",
+                            dpi=args.dpi)
             if i % 50 == 0:
                 print(f"  frame {i}/{len(frames)}  ({step_of(fn)})", flush=True)
     print(f"movie -> {out}")
+    if frames_dir:
+        print(f"screenshots -> {frames_dir}")
 
 
 if __name__ == "__main__":
