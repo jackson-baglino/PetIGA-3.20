@@ -106,6 +106,9 @@ def main():
     ap.add_argument("--frame-png", type=int, default=None,
                     help="render only the snapshot with this step index to a PNG "
                          "(preview) and exit")
+    ap.add_argument("--title", type=str, default=None,
+                    help="static title line (default: auto from -temp/-humidity "
+                         "in the run's opts). Pass '' for no static line.")
     args = ap.parse_args()
 
     files = sorted(glob.glob(str(args.run_dir / "vtkOut" / "solV_*.vts")),
@@ -113,6 +116,25 @@ def main():
     if not files:
         sys.exit(f"no solV_*.vts under {args.run_dir}/vtkOut")
     tmap = step_times(args.run_dir)
+
+    # Static title: describe the PHYSICS, not the folder. The folder name is a
+    # filing label, not a plot caption. Auto-build from the run's opts unless
+    # the user supplies --title.
+    if args.title is None:
+        opt = {}
+        for f in glob.glob(str(args.run_dir / "*.opts")):
+            for line in open(f, errors="replace"):
+                line = line.split("#")[0].split()
+                if len(line) >= 2 and line[0] in ("-temp", "-humidity"):
+                    opt[line[0]] = line[1]
+        bits = []
+        if "-temp" in opt:
+            bits.append(f"T = {float(opt['-temp']):g} °C")
+        if "-humidity" in opt:
+            bits.append(f"RH = {float(opt['-humidity'])*100:g}%")
+        static_title = "   ".join(bits)
+    else:
+        static_title = args.title
 
     # Static mesh: read coordinates once from the first snapshot.
     _, X, Y = read_vts(files[0])
@@ -176,10 +198,10 @@ def main():
         ice.set_array(np.ma.masked_where(phi < 0.5, phi).ravel())
         st = step_of(fn)
         t = tmap.get(st)
-        tstr = f"t = {t/86400:.2f} d" if t is not None else f"step {st}"
+        tstr = f"t = {t/86400:.2f} days" if t is not None else f"step {st}"
         ice_frac = 100.0 * (phi >= 0.5).mean()
-        title.set_text(f"{args.run_dir.name}\nstep {st}   {tstr}   "
-                       f"ice area {ice_frac:.1f}%")
+        dyn = f"{tstr}     ice area {ice_frac:.1f}%"
+        title.set_text(f"{static_title}\n{dyn}" if static_title else dyn)
 
     # ---- Preview single frame -------------------------------------------
     if args.frame_png is not None:
