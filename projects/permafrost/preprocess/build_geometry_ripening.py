@@ -8,15 +8,15 @@ Derived from 2D_random_bumpy_floor_molaroscale.opts:
   * BUMPS on BOTH edges (floor + ceiling), magnitude x2, same bump width,
     count ~0.75x. Different seeds top/bottom -> similar but not identical.
   * ICE CAPS as semicircles ON each boundary (cy = 0 / Ly), sitting over the
-    bumps. R > tallest bump so none is buried. MOSTLY ISOLATED (large gaps);
-    one deliberately TOUCHING pair per boundary. Wide size spread with a couple
-    of large "winner" caps that consume small neighbours by ripening.
-  * A VERY LARGE ice grain (circle) at the RIGHT end.
-  * A squared ICE BLOCK (flat top, no curvature; -ice_flat) at the LEFT end.
+    bumps. R > tallest bump so none is buried. ALL NON-TOUCHING (>= MIN_GAP
+    apart). Wide size spread with one large "winner" cap per boundary.
+  * A VERY LARGE ice grain centred at (Lx, Ly/2) -- a semicircle at the RIGHT
+    edge.
+  * A squared ICE BLOCK (flat top, no curvature; -ice_flat) at the LEFT edge,
+    spanning the FULL domain height.
 
 Loose eps = 8.584e-7. The generator ASSERTS every constraint before writing:
-floor+ceiling clearance, no buried cap, eps/R < 5%, and no unintended overlap
-(only the tagged touching pairs may overlap).
+floor+ceiling clearance, no buried cap, eps/R < 5%, and NO overlaps at all.
 
 Writes the .dat mesh, the .opts, and a preview PNG. Deterministic (seeded).
 """
@@ -44,40 +44,45 @@ BUMP_HR = (0.30, 0.56)          # x2 magnitude
 BUMP_OV = (0.20, 0.32)
 SEED_BOT_BUMP, SEED_TOP_BUMP = 0, 7
 
-R_CAP = (2.9e-5, 4.0e-5)        # normal cap radii (all > tallest bump)
-R_WIN = (5.0e-5, 6.5e-5)        # "winner" caps
+R_CAP = (2.6e-5, 4.0e-5)        # cap radii (all > tallest bump so not buried)
+R_WIN = (5.0e-5, 6.5e-5)        # one "winner" cap per boundary
 SEED_BOT_CAP, SEED_TOP_CAP = 1, 4
+MIN_GAP = 1.8e-5                # min edge-to-edge gap between caps (non-touching)
 
 # End features
-R_BIG = 9.0e-5                  # very large grain, right end, mid-height
-BLOCK_XF, BLOCK_RF, BLOCK_H = 7.0e-5, 6.0e-5, 1.30e-4   # squared ice block, left
+R_BIG = 1.0e-4                  # very large grain, semicircle at (Lx, Ly/2)
+BLOCK_XF, BLOCK_RF = 7.0e-5, 6.0e-5     # squared ice block, left; full height
 
 
-def place_caps(rng, y, x_lo, x_hi, n_winners, tag):
-    """Isolated caps (large gaps) across [x_lo,x_hi], then ONE touching pair.
-    Returns list of [x, y, R, tag] where tag marks intended touching partners."""
+def place_caps(rng, y, x_lo, x_hi, tag):
+    """A handful of NON-TOUCHING caps across [x_lo,x_hi], MIN_GAP apart, sizes
+    varied; promote one interior cap to a winner where it fits without touching
+    a neighbour. Returns [x, y, R, tag]."""
     caps = []
-    x = x_lo
     while True:
         R = float(rng.uniform(*R_CAP))
-        if x + R > x_hi:
+        if not caps:
+            xc = x_lo + R
+        else:
+            xp, _, Rp, _ = caps[-1]
+            xc = xp + Rp + R + float(rng.uniform(MIN_GAP, MIN_GAP + 2.2e-5))
+        if xc + R > x_hi:
             break
-        caps.append([x + R if not caps else x, y, R, None])
-        xc = caps[-1][0]
-        # big isolation gap to next centre
-        x = xc + R + float(rng.uniform(1.7, 2.6)) * (R + 3.4e-5)
-    # promote winners
-    if caps and n_winners > 0:
-        for j in sorted(set(np.linspace(0, len(caps) - 1, n_winners).round().astype(int))):
-            caps[j][2] = float(rng.uniform(*R_WIN))
-    # one touching pair: drop a partner just inside an interior cap's edge
-    if len(caps) >= 3:
-        j = len(caps) // 2
-        xc, yc, R0, _ = caps[j]
-        R1 = float(rng.uniform(*R_CAP))
-        xp = xc + (R0 + R1) * 0.82          # centres closer than R0+R1 -> overlap
-        caps[j][3] = f"{tag}-pair"
-        caps.insert(j + 1, [xp, yc, R1, f"{tag}-pair"])
+        caps.append([xc, y, R, None])
+
+    def slack(j):  # largest radius cap j could take without touching a neighbour
+        s = 1e9
+        if j > 0:
+            s = min(s, caps[j][0] - (caps[j - 1][0] + caps[j - 1][2]))
+        if j < len(caps) - 1:
+            s = min(s, (caps[j + 1][0] - caps[j + 1][2]) - caps[j][0])
+        return s
+
+    # winner: the interior cap with the most room, if a winner radius fits
+    cand = [(slack(j), j) for j in range(1, len(caps) - 1) if slack(j) >= R_WIN[0]]
+    if cand:
+        _, j = max(cand)
+        caps[j][2] = float(rng.uniform(R_WIN[0], min(R_WIN[1], slack(j))))
     return caps
 
 
@@ -93,15 +98,17 @@ def main():
                                   N_BUMPS, BUMP_R, BUMP_HR, BUMP_OV)
     maxH = max(max(h for *_, h in bot_b), max(h for *_, h in top_b))
 
-    # Caps live in the middle span; ends reserved for the block (left) and the
-    # very large grain (right).
+    # Caps live in the middle span; ends reserved for the full-height block
+    # (left) and the very large semicircle grain (right, centred on x=Lx).
     x_lo = BLOCK_XF + BLOCK_RF + 4.0e-5
-    x_hi = Lx - (2 * R_BIG) - 4.0e-5
-    bot_c = place_caps(np.random.default_rng(SEED_BOT_CAP), 0.0, x_lo, x_hi, 1, "bot")
-    top_c = place_caps(np.random.default_rng(SEED_TOP_CAP), Ly, x_lo, x_hi, 1, "top")
+    x_hi = Lx - R_BIG - 4.0e-5
+    bot_c = place_caps(np.random.default_rng(SEED_BOT_CAP), 0.0, x_lo, x_hi, "bot")
+    top_c = place_caps(np.random.default_rng(SEED_TOP_CAP), Ly, x_lo, x_hi, "top")
 
-    # Very large grain, right end, mid-height (isolated).
-    big = [Lx - R_BIG - 1.5e-5, 0.5 * Ly, R_BIG, "big"]
+    # Very large grain centred exactly at (Lx, Ly/2): a semicircle at the right
+    # edge (half in-domain).
+    big = [Lx, 0.5 * Ly, R_BIG, "big"]
+    BLOCK_H = Ly + 1.0e-5          # block spans the ENTIRE domain height
 
     caps = bot_c + top_c + [big]
 
@@ -132,11 +139,10 @@ def main():
 
     Nx = math.ceil(Lx * math.sqrt(2) / EPS)
     Ny = math.ceil(Ly * math.sqrt(2) / EPS)
-    npair = sum(1 for c in caps if c[3] and c[3].endswith("pair")) // 2
     print(f"Lx={Lx:.6e} Ly={Ly:.6e}  Nx={Nx} Ny={Ny}  nodes {(Nx+P)*(Ny+P)/1e6:.2f}M")
     print(f"bumps {len(bot_b)}+{len(top_b)}, maxH {maxH:.3e} ({maxH/Ly*100:.1f}% Ly), "
           f"floor+ceiling gap {clearance/Ly*100:.0f}% Ly")
-    print(f"caps: {len(bot_c)} bottom + {len(top_c)} top; {npair} touching pair(s), rest isolated")
+    print(f"caps: {len(bot_c)} bottom + {len(top_c)} top (all non-touching)")
     print(f"  + 1 very large grain (R={R_BIG:.2e}, right) + 1 flat block "
           f"(xf={BLOCK_XF:.2e}, Rf={BLOCK_RF:.2e}, H={BLOCK_H:.2e}, left)")
     allR = [c[2] for c in caps]
