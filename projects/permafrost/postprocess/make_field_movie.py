@@ -121,6 +121,10 @@ def main():
     ap.add_argument("--stride", type=int, default=1,
                     help="use every Nth snapshot (default 1 = all)")
     ap.add_argument("--fps", type=int, default=24)
+    ap.add_argument("--duration", type=float, default=None,
+                    help="target movie length [s]. Even-samples fps*duration "
+                         "frames from the run so the movie is exactly this long "
+                         "(overrides --stride).")
     ap.add_argument("--dpi", type=int, default=200)
     ap.add_argument("--frames-dir", type=Path, default=None,
                     help="where to save per-frame PNGs (default: "
@@ -251,7 +255,13 @@ def main():
         print(f"preview -> {out}  (vapor range {vmin:.6e}..{vmax:.6e})")
         return
 
-    frames = files[:: args.stride]
+    if args.duration is not None:
+        # exactly fps*duration frames, evenly sampled across the run
+        n = max(1, round(args.fps * args.duration))
+        idx = sorted(set(np.linspace(0, len(files) - 1, n).round().astype(int)))
+        frames = [files[i] for i in idx]
+    else:
+        frames = files[:: args.stride]
     out = args.out or (args.run_dir / "ice_vapor_movie.mp4")
     # Screenshots: save each rendered frame as a PNG too, unless --no-frames.
     frames_dir = None
