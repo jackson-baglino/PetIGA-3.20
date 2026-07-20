@@ -1,0 +1,42 @@
+# =============================================================================
+# experiment/Tgrad_T-20_G20.opts — 30 days at -20 C, saturated, HORIZONTAL
+# temperature gradient |dT/dx| = 20 K/m (left warm -> right cold).
+# Pair with geometry/2D_two_grains_Tgrad.opts.
+#
+# DIRECTION / SIGN
+# ----------------
+# grad_temp0[0] = dT/dx = -20 K/m. The IC/BC set T = temp0 + grad_temp0[0]*(x -
+# Lx/2), so grad_temp0[0] < 0 makes the LEFT wall (x=0) warmest and the RIGHT
+# wall (x=Lx) coldest. flag_BC_Tfix then pins T only on the left/right walls
+# (perpendicular to the gradient) and leaves the top/bottom walls insulating,
+# so the horizontal gradient survives at y=0 where the grains sit
+# (permafrost2.c temperature-BC block).
+#
+# DRIVING dT
+# ----------
+# Across the full domain (Lx = 7.5e-4 m):        dT = 1.5e-2 K
+# Between the two grain centres (dx = 2.5e-4 m):  dT = 5.0e-3 K
+# The warm (left) grain then has the higher rho_vs(T); vapour diffuses to the
+# cold (right) grain and deposits. HYPOTHESIS: left grain shrinks, right grows.
+#
+# NOTE: at -20 C the vapour density is low and this dT is small, so the signal
+# over 30 days is expected to be SUBTLE. This is the weakest gradient in the
+# sweep; compare against G50/G100 and the G0 control.
+# =============================================================================
+
+-t_final 2.592e6                        # 30 days
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 -20.0,0.0,0.0                # left warm -> right cold, |dT/dx| = 20 K/m
+
+-flag_BC_Tfix 1                          # pin left/right walls; top/bottom insulating
+
+-beta_sub0 5.9216e5                      # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                        # physical capillary length at -20 C
+-d0_GT 0                                 # AC coupling carries capillarity
+
+-dtmax 5.7e2                             # 1.093 * tau_sub (tau_sub = 5.233e2 s)
+-dtCFL 1
+-dtCFL_dphimax 0.2

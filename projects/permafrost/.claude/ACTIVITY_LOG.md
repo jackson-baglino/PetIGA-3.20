@@ -1,3 +1,198 @@
+## 2026-07-20 — Two-grain horizontal temperature-gradient test
+
+- New task: test the 2-phase model under a horizontal temperature gradient
+  with two EQUAL semicircular ice grains on the floor at (Lx/3, 0) and
+  (2Lx/3, 0), asking whether the warm grain shrinks while the cold grain grows.
+- Fixed a temperature-BC bug in permafrost2.c: `-flag_BC_Tfix` pinned Dirichlet
+  T on ALL faces, which for a transverse (dT/dx) gradient would flatten the
+  gradient along the y=0 edge where the grains sit. Now only faces
+  perpendicular to the gradient are pinned; parallel faces stay insulating
+  (natural Neumann). Zero-gradient case still pins all faces (backward compat).
+- Added geometry/2D_two_grains_Tgrad.opts: planar (axisym 0) two equal circles
+  R=100 um (Molaro scale) centred on the floor -> semicircles; Lx=7.5e-4,
+  Ly=3.0e-4; eps=8.584e-7 with Nx=1236/Ny=495 from comp_eps.py (same scale as
+  the validated random_bumpy_floor_molaroscale geometry).
+- Added experiment/Tgrad_T-20_G0/G20/G50.opts: 30-day runs at -20 C, saturated,
+  |dT/dx| = 0/20/50 K/m (left warm -> right cold), flag_BC_Tfix 1, -20 C
+  Arrhenius constants, d0_GT 0. With d0_GT=0 the equal grains have no transfer
+  driver except the gradient, so G0 is a clean static control.
+- CAVEAT: at -20 C the driving dT between grain centres is tiny (5e-3 K at 20,
+  1.25e-2 K at 50 K/m), so a 30-day signal is expected to be subtle.
+
+---
+
+**Session ended:** 2026-07-20 16:27:46
+
+
+---
+
+**Session ended:** 2026-07-20 14:27:58
+
+
+---
+
+**Session ended:** 2026-07-20 13:52:43
+
+
+---
+
+**Session ended:** 2026-07-20 13:52:36
+
+
+---
+
+**Session ended:** 2026-07-20 13:40:18
+
+
+---
+
+**Session ended:** 2026-07-18 19:36:19
+
+
+---
+
+**Session ended:** 2026-07-18 13:44:47
+
+
+---
+
+**Session ended:** 2026-07-18 11:57:43
+
+
+---
+
+**Session ended:** 2026-07-18 07:38:02
+
+
+---
+
+**Session ended:** 2026-07-17 22:54:53
+
+
+---
+
+**Session ended:** 2026-07-17 17:18:54
+
+
+---
+
+**Session ended:** 2026-07-17 17:15:33
+
+
+---
+
+**Session ended:** 2026-07-16 17:37:34
+
+
+---
+
+**Session ended:** 2026-07-16 17:27:27
+
+
+---
+
+**Session ended:** 2026-07-16 17:13:37
+
+
+---
+
+**Session ended:** 2026-07-16 16:29:46
+
+
+---
+
+**Session ended:** 2026-07-16 16:26:32
+
+
+---
+
+**Session ended:** 2026-07-16 16:18:18
+
+
+---
+
+**Session ended:** 2026-07-16 13:32:03
+
+
+---
+
+**Session ended:** 2026-07-16 13:09:45
+
+
+---
+
+**Session ended:** 2026-07-16 13:05:30
+
+
+---
+
+**Session ended:** 2026-07-16 12:58:53
+
+
+---
+
+**Session ended:** 2026-07-16 12:44:40
+
+
+---
+
+**Session ended:** 2026-07-16 11:40:57
+
+
+---
+
+**Session ended:** 2026-07-16 11:25:36
+
+
+---
+
+**Session ended:** 2026-07-16 11:07:03
+
+
+---
+
+**Session ended:** 2026-07-16 11:05:01
+
+
+---
+
+**Session ended:** 2026-07-16 11:03:36
+
+
+---
+
+**Session ended:** 2026-07-16 11:02:07
+
+
+---
+
+**Session ended:** 2026-07-16 11:00:45
+
+
+---
+
+**Session ended:** 2026-07-16 11:00:22
+
+
+---
+
+**Session ended:** 2026-07-16 11:00:11
+
+
+---
+
+**Session ended:** 2026-07-15 17:05:15
+
+
+---
+
+**Session ended:** 2026-07-15 16:55:33
+
+
+---
+
+**Session ended:** 2026-07-15 16:21:05
+
 
 ---
 

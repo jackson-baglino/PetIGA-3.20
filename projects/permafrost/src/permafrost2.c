@@ -793,7 +793,25 @@ int main(int argc, char *argv[]) {
     if (flag_BC_Tfix) {
         PetscReal T_BC[3][2] = {{0}};
         PetscReal LL[3]      = {user.Lx, user.Ly, user.Lz};
+        /* A temperature gradient is sustained by pinning T (Dirichlet) on the
+         * two faces PERPENDICULAR to it and leaving the faces PARALLEL to it
+         * insulating (natural Neumann). IGASetBoundaryValue writes a single
+         * constant per face, which is exact for the perpendicular faces (T is
+         * constant along them) but WRONG for a parallel face: a purely
+         * transverse gradient (e.g. dT/dx with the grains on the y=0 edge)
+         * has T varying along the top/bottom edges, so pinning them to a
+         * uniform temp0 would flatten the gradient right where the grains sit
+         * and erase the driving ΔT. So skip any face whose axis carries no
+         * gradient component -- UNLESS there is no gradient at all, in which
+         * case every face is pinned to temp0 (a uniform isothermal reservoir,
+         * the original behaviour). */
+        PetscBool has_grad = (PetscBool)(user.grad_temp0[0] != 0.0 ||
+                                         user.grad_temp0[1] != 0.0 ||
+                                         user.grad_temp0[2] != 0.0);
         for (PetscInt l = 0; l < dim; l++) {
+            /* Face parallel to the gradient (no component along axis l): leave
+             * it insulating so the transverse gradient survives on that edge. */
+            if (has_grad && user.grad_temp0[l] == 0.0) continue;
             for (PetscInt m = 0; m < 2; m++) {
                 /* Axisym: skip the y=0 axis face (interior space, not a
                  * thermal reservoir) — same guard as the vapor BC above. */

@@ -1,0 +1,65 @@
+# =============================================================================
+# geometry/2D_two_grains_Tgrad.opts — two EQUAL semicircular ice grains on the
+# floor, for a HORIZONTAL temperature-gradient sweep. Pair with the
+# experiment/Tgrad_T-20_G*.opts family.
+#
+# GEOMETRY
+# --------
+# Planar 2D (NOT axisymmetric). Two full circles of radius R = 100 um centred
+# on the floor at (Lx/3, 0) and (2*Lx/3, 0). Because the centres sit on y = 0
+# the bottom half of each circle is below the domain, so each renders as a
+# SEMICIRCLE resting flat on the floor — exactly the intended shape (the
+# multi_grains IC sums tanh distance fields; a centre at cy = 0 gives a clean
+# half-disk).
+#
+#   Lx = 7.5e-4 m,  Ly = 3.0e-4 m
+#   centres:  x = 2.5e-4 (= Lx/3),  x = 5.0e-4 (= 2Lx/3),  both at y = 0
+#   R = 1.0e-4 m each  (Molaro-grain scale: their pairs are R ~ 72–101 um)
+#   surface-to-surface gap = Lx/3 − 2R = 5.0e-5 m (0.5 R) — well separated,
+#     no initial neck (interface width ~9.2*eps ≈ 7.9 um << gap)
+#   side/top pad: 1.5e-4 m left & right margins; 2.0e-4 m vapour headroom
+#     above the grain tops (y = R = 1.0e-4)
+#
+# WHY EQUAL GRAINS + d0_GT = 0 IS A CLEAN GRADIENT TEST
+# ----------------------------------------------------
+# With Gibbs-Thomson curvature off (d0_GT = 0 in the experiment file, the
+# project baseline), two EQUAL grains at EQUAL temperature have identical
+# equilibrium vapour pressure and no driver for mass transfer — so the
+# zero-gradient control stays static. Under a horizontal T-gradient rho_vs(T)
+# differs across the pair (warm > cold), driving sublimation off the warm
+# (left) grain and deposition onto the cold (right) grain. Any asymmetry is
+# therefore unambiguously the gradient's doing.
+#
+# eps / MESH
+# ----------
+# eps = 8.584e-7 and Nx/Ny below are comp_eps.py output for THIS domain at
+# R = 1.0e-4, T0 = -20 C, alpha_c = 1.341e-2 (h = eps/sqrt(2), ~7.5 elements
+# across the visible interface). This is the SAME eps / scale as the validated
+# 2D_random_bumpy_floor_molaroscale geometry and the 30day_T-20_h1.00_arrh
+# experiment; the derived tau_sub = 5.233e2 s is what sets their dtmax = 5.7e2.
+#   Re-derive on any change to R / T0 / alpha_c:
+#     python preprocess/comp_eps.py --Lx 7.5e-4 --Ly 3.0e-4 --Rave 1.0e-4 \
+#         --T0 -20 --alpha 1.341e-2
+# =============================================================================
+
+-axisym 0
+
+-ic_type multi_grains
+-dim 2
+-Lx 7.5000e-04
+-Ly 3.0000e-04
+-Lz 0
+
+-ice_grain_cx 2.5000e-04,5.0000e-04     # Lx/3 and 2*Lx/3
+-ice_grain_cy 0.0,0.0                    # centres on the floor -> semicircles
+-ice_grain_R  1.0e-4,1.0e-4              # equal grains, Molaro scale
+-ice_grain_ax 1.0e-4,1.0e-4
+-ice_grain_ay 1.0e-4,1.0e-4
+
+-Nx 1236                                 # h = eps/sqrt(2)
+-Ny 495
+-Nz 1
+-eps 8.5840e-07
+
+-delt_t 1.0e-4
+-periodic 0
