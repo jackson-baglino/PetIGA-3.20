@@ -31,6 +31,7 @@ Usage
 
 import argparse
 import os
+import re
 import sys
 
 import numpy as np
@@ -115,6 +116,45 @@ def load_ssa(path: str) -> np.ndarray:
     return data[keep]
 
 
+def load_outp(path: str) -> np.ndarray:
+    """Load the monitor table from outp.txt into the SSA_evo.dat column layout
+    [sub_interf/eps, tot_ice, t, step, dt, tot_air, tot_rhov, tot_mass].
+
+    WHY: monitoring.c re-opened the SSA_evo.dat viewer every step with no error
+    check, so it silently stopped writing ~step 15 (fd exhaustion) -- truncating
+    SSA_evo.dat to the first 16 rows while outp.txt (via PetscPrintf) kept the
+    full history. outp.txt is thus the complete record for any run written
+    before that bug was fixed. Its 8-pipe data rows are:
+        step | t | dt | TOT_ICE | TOT_AIR | TEMP | TOT_RHOV | I-A INTERF | TOTAL_MASS
+    (I-A INTERF is sub_interf/eps; TEMP is not needed here.)
+    """
+    if not os.path.isfile(path):
+        return None
+    row = re.compile(r"^\s*(\d+)\s*\|")
+    rows = []
+    for line in open(path, errors="replace"):
+        if line.count("|") != 8:
+            continue
+        if not row.match(line):
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        try:
+            step = int(parts[0]); t = float(parts[1]); dt = float(parts[2])
+            tot_ice = float(parts[3]); tot_air = float(parts[4])
+            tot_rhov = float(parts[6]); iface = float(parts[7])
+            tot_mass = float(parts[8])
+        except (ValueError, IndexError):
+            continue
+        rows.append([iface, tot_ice, t, step, dt, tot_air, tot_rhov, tot_mass])
+    if not rows:
+        return None
+    data = np.array(rows, float)
+    steps = data[:, 3].astype(int)
+    _, last_idx = np.unique(steps[::-1], return_index=True)
+    keep = np.sort(len(steps) - 1 - last_idx)
+    return data[keep]
+
+
 # ---------------------------------------------------------------------------
 # Core computation
 # ---------------------------------------------------------------------------
@@ -140,6 +180,18 @@ def compute_masses(run_dir: str):
     to its SSA_evo.dat row by step number (parsed from the filename).
     """
     ssa = load_ssa(os.path.join(run_dir, "SSA_evo.dat"))
+
+    # outp.txt carries the SAME per-step integrals and is the complete record
+    # when SSA_evo.dat was truncated by the fd-exhaustion bug. Use whichever has
+    # more rows (they agree where they overlap; outp.txt wins on truncated runs).
+    outp = load_outp(os.path.join(run_dir, "outp.txt"))
+    n_ssa = 0 if ssa is None else len(ssa)
+    n_outp = 0 if outp is None else len(outp)
+    if outp is not None and n_outp > n_ssa:
+        if n_ssa and n_outp > n_ssa + 1:
+            print(f"note: SSA_evo.dat has {n_ssa} rows but outp.txt has {n_outp} "
+                  f"-- using outp.txt (SSA_evo.dat truncated).", file=sys.stderr)
+        ssa = outp
 
     if ssa is not None and ssa.shape[1] >= 8:
         times    = ssa[:, 2]

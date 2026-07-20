@@ -79,6 +79,7 @@ int main(int argc, char *argv[]) {
 
     user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see NASA_types.h) */
     user.ic_grain_union = PETSC_FALSE; /* multi_grains IC: additive (see NASA_types.h) */
+    user.ssa_view = NULL;              /* SSA_evo.dat viewer, opened lazily in Monitor() */
     user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
 
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
@@ -1100,6 +1101,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "Solution completed. \n");
 
     /* Cleanup Resources */
+    if (user.ssa_view) { ierr = PetscViewerDestroy(&user.ssa_view); CHKERRQ(ierr); }
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = VecDestroy(&user.cfl_U_prev); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);

@@ -222,6 +222,12 @@ typedef struct {
   // agree for well-separated grains, where the far grain's tanh is negligible.
   PetscBool ic_grain_union;  // -ic_grain_union (default 0 = additive)
 
+  // Persistent viewer for SSA_evo.dat. Opened ONCE on the first Monitor() call
+  // and flushed every step, instead of re-opening a viewer per step (which
+  // silently exhausted file descriptors ~step 15 -- the calls had no CHKERRQ --
+  // truncating the file while outp.txt kept going). NULL until first use.
+  PetscViewer ssa_view;
+
 } AppCtx;/* Field definitions for node data */
 
 #endif // NASA_TYPES_H

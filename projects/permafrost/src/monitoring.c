@@ -265,26 +265,22 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   print = 1;
 
   if(print==1) {
-    char filedata[256];
-    const char *env = "folder"; char *dir; dir = getenv(env);
-
-    sprintf(filedata,"%s/SSA_evo.dat",dir);
-    PetscViewer       view;
-    PetscViewerCreate(PETSC_COMM_WORLD,&view);
-    PetscViewerSetType(view,PETSCVIEWERASCII);
-
-    if (step==0){
-      PetscViewerFileSetMode(view,FILE_MODE_WRITE);
-    } else {
-      PetscViewerFileSetMode(view,FILE_MODE_APPEND);
+    /* Open the SSA_evo.dat viewer ONCE (first call), then reuse it and flush
+     * every step. Re-opening a viewer per step previously exhausted file
+     * descriptors around step 15 and, with no CHKERRQ on any of the calls,
+     * failed silently -- truncating SSA_evo.dat while outp.txt kept growing.
+     * Flushing each step keeps the on-disk file current for mid-run reads. */
+    if (user->ssa_view == NULL) {
+      char filedata[256];
+      const char *dir = getenv("folder");
+      if (dir) { sprintf(filedata,"%s/SSA_evo.dat",dir); }
+      else     { sprintf(filedata,"SSA_evo.dat"); }
+      ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,filedata,&user->ssa_view);CHKERRQ(ierr);
     }
-
-    PetscViewerFileSetName(view,filedata);
-    PetscViewerASCIIPrintf(view,"%e %e %e %d %e %e %e %e\n",
-                           sub_interf/user->eps, tot_ice, t, step, dt,
-                           tot_air, tot_rhov, tot_mass);
-
-    PetscViewerDestroy(&view);
+    ierr = PetscViewerASCIIPrintf(user->ssa_view,"%e %e %e %d %e %e %e %e\n",
+                                  sub_interf/user->eps, tot_ice, t, step, dt,
+                                  tot_air, tot_rhov, tot_mass);CHKERRQ(ierr);
+    ierr = PetscViewerFlush(user->ssa_view);CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
