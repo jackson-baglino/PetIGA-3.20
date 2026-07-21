@@ -22,7 +22,6 @@
 
 -beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
--d0_GT 0
 
 -dtmax 3.0e3
 -dtCFL 1

@@ -24,7 +24,6 @@
 -grad_temp0 0.0,0.0,0.0
 
 -d0_sub0 9.5975e-10                     # physical capillary length (K&P Eq. 13)
--d0_GT 0
 
 -dtmax 8.0e2                            # the rung that rippled WITHOUT the limiter
 -dtCFL 1

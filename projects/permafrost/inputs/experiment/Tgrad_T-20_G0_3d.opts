@@ -33,7 +33,6 @@
 
 -beta_sub0 5.9216e5                      # K&P beta0 at -20 C, alpha_c = 1.341e-2
 -d0_sub0 1.0166e-9                        # physical capillary length at -20 C
--d0_GT 0                                 # AC coupling carries capillarity
 
 -dtmax 5.7e2                             # 1.093 * tau_sub (tau_sub = 5.233e2 s)
 -dtCFL 1

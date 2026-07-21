@@ -38,4 +38,3 @@
 # AC coupling already carries physical capillarity; adding d0_GT on top would
 # double-count it. Revisit only with the Jacobian chain-rule fix (see
 # assembly.c "R_ice / phi") if an explicit Kelvin term is ever needed.
--d0_GT 0

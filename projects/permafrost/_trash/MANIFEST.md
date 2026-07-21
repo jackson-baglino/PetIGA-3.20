@@ -46,3 +46,26 @@ dead geometries and no script consumes the file.
 - `inputs/README.md`: rewritten for the two-phase model.
 - `scripts/check_ic_types.sh`: new guard that validates every `.opts` ic_type
   against the source dispatch list (and checks the `# DOF_GRID:` comment).
+
+---
+
+## Batch 2 — Gibbs-Thomson / d0_GT removal (2026-07-21)
+
+GT curvature is no longer pursued. The code was removed in a preceding commit
+(flat-interface `rho_vs` everywhere; `Curvature()` and the phi Hessian gone).
+`-d0_GT` is now an unregistered option that PETSc silently ignores.
+
+### `preprocess/` — GT-only tooling
+`plot_alpha_gt_sweep.py`, `plot_gt_temperature_dependence.py`.
+
+### `inputs/experiment/` — 21 GT-specific experiments
+Everything matching `*_GT`, `*_GTphys`, `*_GTamp`, `*_nopen_GT*`: the GT
+parameter-sweep diagnostics (`1day_T-20_nopen_GT*`) and the long-duration
+GT-ripening runs (`{2wk,6mo,90day,365day,3yr,5yr,10yr,100yr}…_GTphys`,
+`30day_T-5_h1.00_GTamp`, `30day_T-20_h1.00_nopen_GT*`). Without a curvature
+term these have no Ostwald-ripening driver, so they are moot as written.
+
+**Companion edits (in place):** the inert `-d0_GT` option line was stripped
+from 30 substantive experiment files (Molaro, Tgrad, ripening, collapse,
+sinter, dt studies) that set `-d0_GT 0` but are not GT-specific. Their physics
+comments referencing capillarity are left as documentation.
