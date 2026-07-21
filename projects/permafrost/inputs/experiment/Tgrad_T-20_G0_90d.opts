@@ -1,0 +1,32 @@
+# =============================================================================
+# experiment/Tgrad_T-20_G0_90d.opts — CONTROL: 90 days at -20 C, saturated, NO
+# temperature gradient. Pair with geometry/2D_two_grains_Tgrad.opts.
+#
+# 90-day version of Tgrad_T-20_G0.opts (see that file for the full rationale).
+# Longer window chosen to raise signal-to-noise: the gradient-driven transfer
+# is diffusion-limited by a tiny ΔT, and mass moved grows ~linearly in time, so
+# 3x the duration ~ 3x the signal. dt saturates at dtmax=570 s, so cost is
+# ~linear in t_final (~13.8k steps, still a single 24 h SLURM job).
+#
+# Baseline for the horizontal-gradient sweep (Tgrad_T-20_G20/G50_90d). With
+# equal grains and d0_GT = 0 there is no driver for mass transfer, so this run
+# should stay essentially static — the null against which the gradient runs'
+# warm->cold transfer is measured.
+# =============================================================================
+
+-t_final 7.776e6                        # 90 days
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                  # control: no gradient
+
+-flag_BC_Tfix 1                          # pin wall temperatures
+
+-beta_sub0 5.9216e5                      # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                        # physical capillary length at -20 C
+-d0_GT 0                                 # AC coupling carries capillarity
+
+-dtmax 5.7e2                             # 1.093 * tau_sub (tau_sub = 5.233e2 s)
+-dtCFL 1
+-dtCFL_dphimax 0.2
