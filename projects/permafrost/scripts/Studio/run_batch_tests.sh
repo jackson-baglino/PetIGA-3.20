@@ -41,12 +41,9 @@ POSTPROCESS="$PROJECT_ROOT/postprocess"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/permafrost/scratch"
 
-MAX_LOCAL_CORES=12
-# One of FIVE copies -- keep in sync (Studio/run, Studio/run_batch_tests,
-# HPC/run, HPC/submit, HPC/submit_batch). This file and HPC/submit_batch.sh
-# were both left at the old 10000 when the rest moved to 40000 on 2026-07-12;
-# fixed 2026-07-15. Locally the hw-core cap hid it; on HPC it did not.
-TARGET_DOFS_PER_CORE=40000
+# Allocation constants (TARGET_DOFS_PER_CORE, MAX_LOCAL_CORES) — single source
+# of truth in scripts/lib/alloc.sh.
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/alloc.sh"
 
 if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
     echo "❌ Could not find makefile at $PROJECT_ROOT"
@@ -212,7 +209,7 @@ choose_nprocs() {
     [[ -z "${Nz:-}" ]] && Nz=1
     # dof from solver.opts, not a hardcoded 4 (solver.opts sets -dof 3).
     dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" 2>/dev/null | head -n1)
-    [[ -z "${dof:-}" ]] && dof=4
+    [[ -z "${dof:-}" ]] && dof=3
     dofs=$((dof * Nx * Ny * Nz))
     local n=$(((dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE))
     (( n < 1 )) && n=1

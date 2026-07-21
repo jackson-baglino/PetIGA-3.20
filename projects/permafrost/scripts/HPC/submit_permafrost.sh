@@ -113,12 +113,9 @@ fi
 # Molaro runs at 108k DoFs/rank did ~7 s/step at 1.3M DoFs, while the old
 # target allocated 260 ranks / 9 HPC nodes to a 62-step job whose cost was
 # all queue wait. These runs are step-limited, so wall time is nearly flat
-# in rank count; the allocation size is what costs. Keep the three copies of
-# this constant in sync (Studio/run, HPC/run, HPC/submit, HPC/submit_batch
-# -- submit_batch was omitted from this list and silently kept the old
-# 10000 until 2026-07-15).
-TARGET_DOFS_PER_CORE=40000
-NTASKS_PER_NODE=32   # safe minimum across icelake|skylake|cascadelake
+# TARGET_DOFS_PER_CORE and NTASKS_PER_NODE are sourced from
+# scripts/lib/alloc.sh (single source of truth; see rationale there).
+source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 
 # Read dof from solver.opts (default 3 if absent: ice / temperature / vapor)
 dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" 2>/dev/null | head -n1)

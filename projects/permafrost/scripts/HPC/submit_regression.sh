@@ -21,13 +21,9 @@ RUN_SCRIPT="$SCRIPT_DIR/run_permafrost.sh"
 
 TAG="${1:-kpen0_regression}"
 
-# Resource-sizing parameters — keep in sync with submit_permafrost.sh.
-# One of SIX copies -- keep in sync (Studio/run, Studio/run_batch_tests,
-# HPC/run, HPC/submit, HPC/submit_batch, HPC/submit_regression). This file was
-# left at the old 10000 when the rest moved to 40000 on 2026-07-12; fixed
-# 2026-07-15.
-TARGET_DOFS_PER_CORE=40000          # rule-of-thumb DoFs/core target
-MAX_TASKS_PER_NODE=32               # safe minimum across icelake|skylake|cascadelake
+# TARGET_DOFS_PER_CORE and MAX_TASKS_PER_NODE are sourced from
+# scripts/lib/alloc.sh (single source of truth; see rationale there).
+source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 
 # Quick regression: 1 day, -20°C, saturated. All geometries below should run
 # cleanly with k_pen=0 and the new PenaltyWeight() (active only deep in solid).
@@ -78,7 +74,7 @@ compute_alloc() {
     # dof from solver.opts, not a hardcoded 4 (solver.opts sets -dof 3).
     local dof
     dof=$(awk '$1=="-dof"{print $2}' "$PROJECT_ROOT/inputs/solver.opts" 2>/dev/null | head -n1)
-    [[ -z "${dof:-}" ]] && dof=4
+    [[ -z "${dof:-}" ]] && dof=3
     local total_dofs=$((dof * nx * ny * nz))
     local nprocs=$(( (total_dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE ))
     (( nprocs < 1 )) && nprocs=1

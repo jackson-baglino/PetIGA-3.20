@@ -45,14 +45,9 @@ SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 # them in sync:
 #   scripts/Studio/run_permafrost.sh :: compute_optimal_nprocs
 #   scripts/HPC/run_permafrost.sh    :: compute_optimal_nprocs
-#   scripts/HPC/submit_permafrost.sh
-#   scripts/HPC/submit_batch.sh      :: here
-# (The other three said "three copies" and omitted this file, which is exactly
-# how it was left behind at the old 10000 when the rest moved to 40000 on
-# 2026-07-12 -- a 4x over-allocation, compounded to 5.3x by the hardcoded
-# dof=4 in compute_alloc. Fixed 2026-07-15.)
-TARGET_DOFS_PER_CORE=40000
-MAX_TASKS_PER_NODE=32
+# TARGET_DOFS_PER_CORE and MAX_TASKS_PER_NODE are sourced from
+# scripts/lib/alloc.sh (single source of truth; see rationale there).
+source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 
 # ---------------------------------------------------------------------------
 # CLI parsing
@@ -199,7 +194,7 @@ compute_alloc() {
     # solver.opts sets -dof 3, inflating every allocation by 4/3 on top of the
     # stale DoFs/core target. The other three sizers all read it from the file.
     dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" 2>/dev/null | head -n1)
-    [[ -z "${dof:-}" ]] && dof=4
+    [[ -z "${dof:-}" ]] && dof=3
 
     # -geom_file meshes override -Nx/-Ny/-Nz; read the grid from the
     # "# DOF_GRID: nx ny [nz]" comment, matching submit_permafrost.sh.

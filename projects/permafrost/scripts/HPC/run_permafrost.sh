@@ -55,6 +55,9 @@ if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
     exit 1
 fi
 
+# Allocation constants (TARGET_DOFS_PER_CORE, ...) — single source of truth.
+source "$PROJECT_ROOT/scripts/lib/alloc.sh"
+
 # Load cost utilities (graceful no-op if missing)
 _HPC_COST_SH="$PROJECT_ROOT/scripts/HPC/hpc_cost.sh"
 if [[ -f "$_HPC_COST_SH" ]]; then
@@ -230,23 +233,11 @@ stage_output_folder() {
 ###############################################################################
 compute_optimal_nprocs() {
     local Nx Ny Nz dof grid_src
-    local TARGET_DOFS_PER_CORE total_dofs
-
-    # 40000 DoFs/rank (raised from 10000, 2026-07-12): PETSc guidance for
-    # implicit solves is 20k-100k unknowns/rank — below ~20k, reductions and halo
-    # exchange dominate; and ASM+ILU weakens as subdomain count grows (more ranks
-    # -> more BiCGStab iterations AND more comms). Empirically the local axisym
-    # Molaro runs at 108k DoFs/rank did ~7 s/step at 1.3M DoFs, while the old
-    # target allocated 260 ranks / 9 HPC nodes to a 62-step job whose cost was
-    # all queue wait. These runs are step-limited, so wall time is nearly flat
-    # in rank count; the allocation size is what costs. Keep the FOUR copies of
-    # this constant in sync (Studio/run, HPC/run, HPC/submit, HPC/submit_batch
-    # -- submit_batch was omitted from this list and silently kept the old
-    # 10000 until 2026-07-15).
-    TARGET_DOFS_PER_CORE=40000
+    local total_dofs
+    # TARGET_DOFS_PER_CORE is sourced from scripts/lib/alloc.sh.
 
     dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" | head -n1)
-    [[ -z "${dof:-}" ]] && dof=4
+    [[ -z "${dof:-}" ]] && dof=3
 
     # -geom_file meshes override -Nx/-Ny/-Nz; read the DOF count from the
     # "# DOF_GRID: nx ny [nz]" comment written alongside -geom_file in the
