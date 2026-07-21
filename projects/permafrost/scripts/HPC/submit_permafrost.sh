@@ -120,9 +120,9 @@ fi
 TARGET_DOFS_PER_CORE=40000
 NTASKS_PER_NODE=32   # safe minimum across icelake|skylake|cascadelake
 
-# Read dof from solver.opts (default 4 if absent)
+# Read dof from solver.opts (default 3 if absent: ice / temperature / vapor)
 dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" 2>/dev/null | head -n1)
-[[ -z "${dof:-}" ]] && dof=4
+[[ -z "${dof:-}" ]] && dof=3
 
 # For -geom_file meshes the DOF grid is in the "# DOF_GRID: nx ny [nz]" comment
 if grep -q "^-geom_file" "$geom_file"; then

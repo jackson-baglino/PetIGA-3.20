@@ -9,9 +9,6 @@
 
 /* Field definitions for node data */
 typedef struct {
-  PetscScalar soil;
-} FieldS;
-typedef struct {
   PetscScalar ice, tem, rhov;
 } Field;
 /* Application context structure */

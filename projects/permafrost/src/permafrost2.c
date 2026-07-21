@@ -659,6 +659,19 @@ int main(int argc, char *argv[]) {
     IGA iga;
     ierr = IGACreate(PETSC_COMM_WORLD, &iga); CHKERRQ(ierr);
     ierr = IGASetDim(iga, dim); CHKERRQ(ierr);
+    /* Guard: the residual/Jacobian in assembly.c and the Field struct in
+     * NASA_types.h assume exactly this many DOF per node (currently 3: ice,
+     * temperature, vapor). -dof is exposed for future multi-field work (e.g.
+     * an explicit sediment phase), but changing it without also updating Field
+     * and assembly.c silently misinterprets the solution vector. Fail loudly. */
+    {
+        const PetscInt dof_fields = (PetscInt)(sizeof(Field) / sizeof(PetscScalar));
+        if (dof != dof_fields)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "-dof %d does not match the %d-field solver (Field struct in "
+                    "NASA_types.h and the [%d] arrays in assembly.c must change "
+                    "together).", (int)dof, (int)dof_fields, (int)dof_fields);
+    }
     ierr = IGASetDof(iga, dof); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 0, "phaseice"); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 1, "temperature"); CHKERRQ(ierr);

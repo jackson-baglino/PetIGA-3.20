@@ -210,7 +210,7 @@ compute_optimal_nprocs() {
     local TARGET_DOFS_PER_CORE=40000
 
     dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" | head -n1)
-    [[ -z "${dof:-}" ]] && dof=4
+    [[ -z "${dof:-}" ]] && dof=3   # two-phase model: ice / temperature / vapor
 
     # -geom_file (custom igakit mesh) overrides -Nx/-Ny/-Nz, so the DOF grid
     # must come from the geometry opts' "# DOF_GRID: nx ny [nz]" comment
