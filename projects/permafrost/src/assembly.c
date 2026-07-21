@@ -12,7 +12,7 @@
  *
  * Allen-Cahn (ice):
  *   R_ice = N*phi_t  +  3*M*eps * grad_N.grad_phi  +  (3*M/eps)*f1 * N
- *         - (alph_sub/rho_ice) * loc * (rhov - rhovs_eff) * N
+ *         - (alph_sub/rho_ice) * loc * (rhov - rho_vs) * N
  *
  * Temperature:
  *   R_tem = rho*cp * N*T_t  +  k * grad_N.grad_T  -  rho_ice*L * phi_t * N
@@ -76,12 +76,6 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     }
     PetscScalar phi_a = 1.0 - phi;
 
-    /* Hessian of phi for optional Gibbs-Thomson curvature correction. */
-    PetscScalar hess_sol[3][dim][dim];
-    IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
-    PetscScalar hess_phi[dim * dim];
-    for (l = 0; l < dim * dim; l++) hess_phi[l] = hess_sol[0][l / dim][l % dim];
-
     /* SNES domain-error catch: if a trial Newton iterate has phi out of the
      * configured bounds, signal an invalid state so the line search backs off. */
     {
@@ -109,13 +103,9 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     VaporDiffus(user, tem,    &dif_vap, NULL);
     Mobility   (user, phi_c,  &mob_sub);
 
-    /* Saturation vapor density with optional Gibbs-Thomson curvature correction. */
+    /* Flat-interface saturation vapor density. */
     PetscReal rho_vs;
     RhoVS_I(user, PetscRealPart(tem), &rho_vs, NULL);
-    PetscScalar kappa = 0.0;
-    if (user->d0_GT != 0.0)
-        Curvature(dim, grad_phi, hess_phi, 0.01 / eps, &kappa, NULL, NULL);
-    PetscReal rhovs_eff = rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
 
     /* Double-well derivative and localization. */
     PetscReal f1;
@@ -163,7 +153,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
                 + 3.0 * mob_sub * eps * gN_gphi
                 + (3.0 * mob_sub / eps) * f1 * N0[a]
                 - pc * (user->alph_sub / rho_ice) * loc
-                  * (PetscRealPart(rhov) - rhovs_eff) * N0[a] );
+                  * (PetscRealPart(rhov) - rho_vs) * N0[a] );
 
         R[a][1] = rw * ( rho * cp * N0[a] * tem_t                       /* storage */
                 + user->xi_T * thcond * gN_gtem                        /* conduction */
@@ -217,20 +207,12 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscScalar phi   = sol[0],  phi_t  = sol_t[0];
     PetscScalar tem   = sol[1];
     PetscScalar rhov  = sol[2],  rhov_t = sol_t[2];
-    PetscScalar grad_phi [dim];
     PetscScalar grad_tem [dim], grad_rhov[dim];
     for (l = 0; l < dim; l++) {
-        grad_phi [l] = grad_sol[0][l];
         grad_tem [l] = grad_sol[1][l];
         grad_rhov[l] = grad_sol[2][l];
     }
     PetscScalar phi_a = 1.0 - phi;
-
-    /* Hessian of phi for Gibbs-Thomson curvature derivatives. */
-    PetscScalar hess_sol[3][dim][dim];
-    IGAPointFormHess(pnt, U, &hess_sol[0][0][0]);
-    PetscScalar hess_phi[dim * dim];
-    for (l = 0; l < dim * dim; l++) hess_phi[l] = hess_sol[0][l / dim][l % dim];
 
     /* Clamped copies for material-property evaluation. */
     PetscReal phi_c  = PetscRealPart(phi);
@@ -252,16 +234,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     ThermalCond(user, phi_c, NULL, &dthcond_dphi);
     VaporDiffus(user, tem,   NULL, &d_dif_vap);
 
-    /* Saturation vapor density with Gibbs-Thomson correction. */
+    /* Flat-interface saturation vapor density and its T-derivative. */
     PetscReal rho_vs, d_rho_vs;
     RhoVS_I(user, PetscRealPart(tem), &rho_vs, &d_rho_vs);
-    PetscScalar kappa = 0.0;
-    PetscScalar dkappa_dg[3] = {0.0, 0.0, 0.0};
-    PetscScalar dkappa_dH[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    if (user->d0_GT != 0.0)
-        Curvature(dim, grad_phi, hess_phi, 0.01 / eps, &kappa, dkappa_dg, dkappa_dH);
-    PetscReal rhovs_eff      = rho_vs   * (1.0 + user->d0_GT * PetscRealPart(kappa));
-    PetscReal d_rhovs_eff_dT = d_rho_vs * (1.0 + user->d0_GT * PetscRealPart(kappa));
 
     /* Double-well derivative and its phi-derivative. */
     PetscReal df1;
@@ -312,15 +287,10 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                            + 3.0 * mob_sub * eps * gNagNb
                            + (3.0 * mob_sub / eps) * df1 * NaNb
                            - pc * (user->alph_sub / rho_ice) * dloc_dph
-                             * (PetscRealPart(rhov) - rhovs_eff) * NaNb );
-            /* GT curvature chain-rule (d0_GT != 0) also contributes here
-             * via dkappa/d(grad_phi)*N1[b]; omitted — d0_GT=0 is typical.
-             * NOTE (axisym): if d0_GT is ever re-enabled, Curvature() must
-             * additionally gain the azimuthal term -(d(phi)/dr)/(r*|grad phi|)
-             * — the r-weight below does NOT cover explicitly computed kappa. */
+                             * (PetscRealPart(rhov) - rho_vs) * NaNb );
 
             /* ============ R_ice / T ============ */
-            J[a][0][b][1] += rw * pc * ( (user->alph_sub / rho_ice) * loc * d_rhovs_eff_dT * NaNb );
+            J[a][0][b][1] += rw * pc * ( (user->alph_sub / rho_ice) * loc * d_rho_vs * NaNb );
 
             /* ============ R_ice / rhov ============ */
             J[a][0][b][2] -= rw * pc * ( (user->alph_sub / rho_ice) * loc * NaNb );
