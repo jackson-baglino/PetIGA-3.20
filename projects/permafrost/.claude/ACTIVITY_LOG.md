@@ -1,3 +1,70 @@
+## 2026-07-21 — Repo cleanup + restructure groundwork (Phases 0-2 partial)
+
+Planned three research efforts (icy-regolith implicit/explicit, snow thermal
+properties) and began the cleanup/restructure that precedes them. Plan file:
+~/.claude/plans/i-want-to-do-lexical-crayon.md.
+
+- **Branch consolidation.** All 4 branch tips were fully contained in
+  `rewrite/2phase-from-equations` (nothing to harvest). Tagged the three stale
+  tips `archive/*`, tagged `v1.0-two-phase-validated`, fast-forwarded and
+  pushed `main` to the working tip. Remote deletion of the three stale branches
+  is BLOCKED by the auto-mode classifier — pending user action.
+- **Dead ic_type cleanup (Phase 1a).** git mv'd 21 dead-`-ic_type` .opts (all
+  of inputs/tests + sediment-era geometries) + tmp/advisor_slides.tests to
+  `_trash/`; repaired DEFAULT_TESTS/ADVISOR_SLIDES_GEOMS so the regression
+  suite runs again; rewrote inputs/README.md; added scripts/check_ic_types.sh
+  guard (derives valid list from source dispatch).
+- **Gibbs-Thomson removal (Phase 1b).** Deleted Curvature()+derivatives, the
+  phi Hessian, d0_GT everywhere (169 LOC); flat rho_vs now. Builds clean.
+  Trashed 21 GT experiments + 2 GT scripts; stripped inert -d0_GT from 30
+  substantive experiments.
+- **Disk reclaim (Phase 1c).** ~890MB: preprocess/*.vtk (495M, regenerable),
+  test/tune_difvap+penalty2d (295M, dead-param sweeps), scratch/inputs (103M),
+  4 duplicate mesh.dat (27M, MD5-verified). Updated .gitignore.
+- **DOF guard (Phase 2b).** Assert -dof == Field field count before IGASetDof;
+  removed unused FieldS; fixed pre-fork dof=4 fallbacks to 3.
+- **Allocation constants (Phase 2a).** Consolidated 6 copies of
+  TARGET_DOFS_PER_CORE into scripts/lib/alloc.sh; raised 40k->50k; env-var
+  overridable. All scripts pass bash -n.
+- **Deferred:** directory rename to projects/sublimation_pf, studies/
+  scaffolding, doc status headers, and Efforts 1-3 (Effort 2 blocked on the
+  beta-eliminated equations; surface-energy fix via contact-angle
+  parameterization is designed and ready).
+
+---
+
+**Session ended:** 2026-07-21 12:51:38
+
+
+---
+
+**Session ended:** 2026-07-21 12:47:03
+
+
+---
+
+**Session ended:** 2026-07-21 12:41:54
+
+
+---
+
+**Session ended:** 2026-07-21 11:04:52
+
+
+---
+
+**Session ended:** 2026-07-20 17:14:09
+
+
+---
+
+**Session ended:** 2026-07-20 16:57:48
+
+
+---
+
+**Session ended:** 2026-07-20 16:52:02
+
 ## 2026-07-20 — Two-grain horizontal temperature-gradient test
 
 - New task: test the 2-phase model under a horizontal temperature gradient
