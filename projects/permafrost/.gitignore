@@ -21,6 +21,15 @@ __pycache__/
 outputs/
 scratch/
 
+# Generated geometry previews (regenerable by preprocess/build_geometry_*.py)
+preprocess/*.vtk
+
+# Parameter-sweep run outputs (drivers/reports are tracked explicitly with -f)
+test/tune_*/
+test/plots/
+# Stray SSA file written when a run is launched without -output_path
+/SSA_evo.dat
+
 # Editor/IDE files
 .vscode/settings.json
 *.swp
