@@ -51,21 +51,9 @@ DEFAULT_TESTS=(
     "1D_ice_slab_hires:1day_T-20_h0.95"
     "1D_single_ice:1day_T-20_h0.95"
     "1D_single_ice_hires:1day_T-20_h0.95"
-    "1D_ice_sed_pair:1day_T-20_h0.95"
-    "1D_ice_sed_pair_hires:1day_T-20_h0.95"
-    "1D_separated_grains:1day_T-20_h0.95"
-    "1D_separated_grains_hires:1day_T-20_h0.95"
-    "1D_touching_grains:1day_T-20_h0.95"
-    "1D_touching_grains_hires:1day_T-20_h0.95"
 
-    # ---- 2D tests at saturation (multi-grain physics — Ostwald ripening, sintering) ----
-    "2D_ice_sed_pair:1day_T-20_h1.00"
-    "2D_ice_sed_pair_hires:1day_T-20_h1.00"
-    "2D_touching_grains:1day_T-20_h1.00"
-    "2D_touching_grains_hires:1day_T-20_h1.00"
-    "2D_separated_grains:1day_T-20_h1.00"
-    "2D_separated_grains_hires:1day_T-20_h1.00"
-    "2D_single_sed:1day_T-20_h1.00"
+    # ---- 2D tests at saturation (two-grain neck physics — sintering / ripening) ----
+    "2D_two_ice_grains_boundary:1day_T-20_h1.00"
 
     # ---- 2D tests at undersaturation (bulk sublimation driving force) ----
     "2D_single_ice:1day_T-20_h0.95"
@@ -78,22 +66,22 @@ DEFAULT_TESTS=(
 # Geometry presets — named subsets of canonical geometries that get paired
 # with a user-supplied experiment name at invocation time.
 #
-# ADVISOR_SLIDES_GEOMS mirrors the 7-geometry list used in the 2026-05-25
-# `advisor_slides_*` batches under $SCRATCH/permafrost. It's the smallest
-# curated subset that exercises the full range of physics relevant for
-# advisor-facing snapshot deliverables: ice-sed contact (2D_ice_sed_pair),
-# multi-grain ripening (2D_separated_grains, 2D_touching_grains), isolated
-# response (2D_single_ice, 2D_single_sed), and 1D high-res sanity checks
-# (1D_*_hires).
+# ADVISOR_SLIDES_GEOMS is a small curated subset that exercises the range of
+# two-phase physics for advisor-facing snapshot deliverables: two-grain neck
+# formation (2D_two_ice_grains_boundary), isolated grain response
+# (2D_single_ice), a flat interface (2D_ice_slab), and 1D high-res sanity
+# checks (1D_*_hires).
+#
+# NOTE: the original 2026-05-25 preset targeted the sediment-era geometries
+# (2D_ice_sed_pair, 2D_separated/touching_grains, 2D_single_sed) that were
+# dropped in the 2026-06-13 two-phase fork; those .opts now live under _trash/.
 # -----------------------------------------------------------------------------
 ADVISOR_SLIDES_GEOMS=(
-    "1D_separated_grains_hires"
-    "1D_touching_grains_hires"
-    "2D_ice_sed_pair"
-    "2D_separated_grains"
+    "1D_single_ice_hires"
+    "1D_ice_slab_hires"
+    "2D_two_ice_grains_boundary"
     "2D_single_ice"
-    "2D_single_sed"
-    "2D_touching_grains"
+    "2D_ice_slab"
 )
 
 # -----------------------------------------------------------------------------

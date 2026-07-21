@@ -1,4 +1,4 @@
-# Permafrost simulation inputs
+# Sublimation phase-field simulation inputs
 
 The opts files are split into three orthogonal categories. A run is composed
 by passing one file from each category to PETSc, left to right:
@@ -13,57 +13,73 @@ mpiexec -np N ./permafrost \
 PETSc processes `-options_file` flags left to right; later entries override
 earlier ones. The split lets you sweep one axis without touching the others
 (e.g., the same geometry at different humidities, or the same experiment on
-different meshes).
+different meshes). In practice you never type this by hand — use
+`./scripts/Studio/run_permafrost.sh <geom> <exp> [tag]`, which assembles the
+three files and adds `-output_path`.
 
 ## What goes where
 
 ### `solver.opts` — numerical / model defaults
 Things that almost never change between runs:
-- DOFs, polynomial order, continuity, periodicity
+- DOFs (`-dof 3`: ice / temperature / vapor), polynomial order, continuity, periodicity
 - Output cadence
-- Model flags (`flag_avenue`, `n_relax`, BC type, `flag_Tdep`)
+- Model flags (BC type, temperature-dependent mobility)
 - Equation time-scaling (`xi_v`, `xi_T`)
 - Phase-field bounds (`phase_lo`, `phase_hi`)
-- Penalty coefficients (`difvap_pen`, `k_pen`, `k_sed_pen`, `Lambda`)
-- Adaptive time-stepping caps (`dtmax`, `NRmin`, `NRmax`, `max_rej`)
-- SNES / KSP / PC settings
+- Adaptive time-stepping caps (`dtmax`, interface-CFL limiter) and SNES / KSP / PC settings
 
 ### `geometry/<name>.opts` — geometry & mesh
-- IC type (`-ic_type`)
+- IC type (`-ic_type`) — see the valid list below
 - Dimension, mesh size, domain extents (`dim`, `Nx`/`Ny`/`Nz`, `Lx`/`Ly`/`Lz`)
-- Geometric parameters (`RCice`, `RCsed`, `grain_sep`, per-grain radii)
-- Interface width (`eps`) and initial time step (`delt_t`) — these are tied
-  to the spatial resolution
-- Geometry-specific solver overrides (e.g., `-ksp_type preonly -pc_type lu`
-  for 1D tests where direct LU is fastest; `-mob_sub` reductions for the
-  stiff touching/separated grain pair configurations)
+- Grain radii / placement (`RCice`, per-grain radii)
+- Interface width (`eps`) and initial time step (`delt_t`) — tied to spatial
+  resolution; always (re)computed with `preprocess/comp_eps.py`
+- For igakit meshes: `-geom_file <path>` plus a `# DOF_GRID: nx ny [nz]`
+  comment (parsed by `run_permafrost.sh` for rank sizing — do not omit it)
+- Geometry-specific solver overrides (e.g. `-ksp_type preonly -pc_type lu`
+  for 1D, `-mob_sub` reductions for stiff pairs)
 
 ### `experiment/<name>.opts` — environmental conditions
 The bits you change between successive runs of the same geometry:
-- `t_final`, `t_sed_freeze`
+- `t_final`
 - `temp`, `humidity`, `grad_temp0`
+- output cadence overrides
 
-## Available files
+## Valid `-ic_type` values
 
-### Geometries
-- 1D: `1D_ice_slab`, `1D_single_ice`, `1D_ice_sed_pair`, `1D_touching_grains`,
-  `1D_separated_grains` (each with a `_hires` 2× variant)
-- 2D: `2D_ice_slab`, `2D_single_ice`, `2D_single_sed`, `2D_ice_sed_pair`,
-  `2D_touching_grains`, `2D_separated_grains` (each with a `_hires` 2× variant
-  except `single_sed`)
+The two-phase solver (`src/permafrost2.c`) dispatches exactly these in 2D/3D;
+anything else aborts at startup. `scripts/check_ic_types.sh` enforces this
+across every `.opts` file.
 
-### Experiments
-- `1day_T-20_h0.95.opts` — 1 day at -20°C, undersaturated air (h = 0.95)
-- `1day_T-20_h1.00.opts` — 1 day at -20°C, saturated air (h = 1.00)
+| ic_type | builder |
+|---|---|
+| `two_ice_grains_boundary` | `FormInitialTwoIceGrainsBoundary2D` |
+| `ice_slab` | `FormInitialIceSlab2D` |
+| `single_ice` | `FormInitialSingleIceGrain2D` (1D: `…1D`) |
+| `multi_grains` | `FormInitialMultiGrains2D` — the multi-grain / igakit workhorse |
+
+In 1D, any `-ic_type` other than `single_ice` falls through to
+`FormInitialCondition1D` (centered slab / flat interface).
+
+## Available geometries
+
+- **1D:** `1D_ice_slab`, `1D_single_ice` (each with a `_hires` 2× variant)
+- **2D:** `2D_single_ice`, `2D_ice_slab`, `2D_two_ice_grains_boundary`
+  (+ `_refined2x` / `_refined4x`), plus the Molaro/axisym, pore-channel,
+  bumpy-floor, ripening, and multi-grain families — see `inputs/geometry/`.
+
+> **Note.** The sediment-era geometries (`*_ice_sed_pair`, `*_separated_grains`,
+> `*_touching_grains`, `*_single_sed`) and the `inputs/tests/` suite were
+> dropped in the 2026-06-13 two-phase fork and moved to `_trash/`. They request
+> `-ic_type` values (`ice_sed_pair`, `enclosed`, `single_sed`, `ice_cap`,
+> `capillary`, `contact_sed`, `slab_and_grains`) the solver no longer implements.
 
 ## Example: same geometry, two humidities
 
 ```bash
-# Run the 2D ice-sed pair at saturation
-./scripts/Studio/run_batch_tests.sh \
-    --geom 2D_ice_sed_pair --exp 1day_T-20_h1.00
+# Two-grain neck formation at saturation
+./scripts/Studio/run_permafrost.sh 2D_two_ice_grains_boundary 1day_T-20_h1.00
 
 # Same geometry, undersaturated
-./scripts/Studio/run_batch_tests.sh \
-    --geom 2D_ice_sed_pair --exp 1day_T-20_h0.95
+./scripts/Studio/run_permafrost.sh 2D_two_ice_grains_boundary 1day_T-20_h0.95
 ```
