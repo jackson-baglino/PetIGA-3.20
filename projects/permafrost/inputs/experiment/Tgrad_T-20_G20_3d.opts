@@ -1,0 +1,35 @@
+# =============================================================================
+# experiment/Tgrad_T-20_G20_3d.opts — 3 days at -20 C, saturated, HORIZONTAL
+# gradient |dT/dx| = 20 K/m (left warm -> right cold), TIME-SYNCHRONISED output.
+# Pair with geometry/2D_two_grains_Tgrad.opts.
+#
+# See Tgrad_T-20_G0_3d.opts for the 3-day / synchronised-output rationale and
+# Tgrad_T-20_G20.opts for the sign convention and BC handling.
+#
+# OBSERVED (90-day run, stopped early): the warm (left) grain fully sublimates
+# and redeposits on the cold (right) grain by t = 1.71 d (total ice conserved).
+# 3 days captures the full transfer plus the settled single-grain end-state.
+#
+# DRIVING dT: full domain 1.5e-2 K; between grain centres 5.0e-3 K. This is the
+# weakest gradient in the sweep, so the SLOWEST transfer -> sets t_final.
+# =============================================================================
+
+-t_final 2.592e5                        # 3 days
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 -20.0,0.0,0.0                # left warm -> right cold, |dT/dx| = 20 K/m
+
+-flag_BC_Tfix 1                          # pin left/right walls; top/bottom insulating
+
+-outp 0                                  # time-based output (overrides solver.opts -outp 1)
+-n_out 100                               # 100 snapshots -> t_interv = t_final/99 ≈ 2618 s
+
+-beta_sub0 5.9216e5                      # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                        # physical capillary length at -20 C
+-d0_GT 0                                 # AC coupling carries capillarity
+
+-dtmax 5.7e2                             # 1.093 * tau_sub (tau_sub = 5.233e2 s)
+-dtCFL 1
+-dtCFL_dphimax 0.2

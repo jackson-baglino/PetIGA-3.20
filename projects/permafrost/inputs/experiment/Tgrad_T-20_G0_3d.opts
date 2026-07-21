@@ -1,0 +1,40 @@
+# =============================================================================
+# experiment/Tgrad_T-20_G0_3d.opts — CONTROL: 3 days at -20 C, saturated, NO
+# temperature gradient, TIME-SYNCHRONISED output. Pair with
+# geometry/2D_two_grains_Tgrad.opts.
+#
+# WHY 3 DAYS + SYNCHRONISED OUTPUT (supersedes the 30d/90d files)
+# --------------------------------------------------------------
+# The 90-day runs showed the warm-left grain fully transfers to the cold-right
+# grain FAST: 1.71 d at 20 K/m, 0.52 d at 50 K/m (total ice conserved to
+# ~1e-4% — it is pure warm->cold vapour transfer, not loss). 3 days captures
+# the slowest case (G20) with margin and the settled single-grain end-state.
+#
+# TIME-based output: -outp 0 + -n_out 100 -> t_interv = t_final/99 ≈ 2618 s, so
+# EVERY case in the sweep writes snapshots at the SAME physical times
+# (0, t_interv, 2*t_interv, ...) regardless of its own dt history — the k-th
+# sol file is at t = k*t_interv in all runs, enabling direct comparison.
+# Constraint respected: dtmax (570) <= 0.5*t_interv (1309).
+#
+# This control should stay static (equal grains, d0_GT=0 -> no transfer driver).
+# =============================================================================
+
+-t_final 2.592e5                        # 3 days
+-t_sed_freeze 10
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                  # control: no gradient
+
+-flag_BC_Tfix 1                          # pin wall temperatures
+
+-outp 0                                  # time-based output (overrides solver.opts -outp 1)
+-n_out 100                               # 100 snapshots -> t_interv = t_final/99 ≈ 2618 s
+
+-beta_sub0 5.9216e5                      # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                        # physical capillary length at -20 C
+-d0_GT 0                                 # AC coupling carries capillarity
+
+-dtmax 5.7e2                             # 1.093 * tau_sub (tau_sub = 5.233e2 s)
+-dtCFL 1
+-dtCFL_dphimax 0.2
