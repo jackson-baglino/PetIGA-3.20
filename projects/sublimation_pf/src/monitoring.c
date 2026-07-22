@@ -28,7 +28,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         ierr = IGAElementGetValues(element,arrayU,&UU);CHKERRQ(ierr);
         ierr = IGAElementBeginPoint(element,&point);CHKERRQ(ierr);
         while (IGAElementNextPoint(element,point)) {
-            PetscScalar solS[4];
+            PetscScalar solS[MAX_DOF];
             ierr = IGAPointFormValue(point,UU,&solS[0]);CHKERRQ(ierr);
             RhoVS_I(user,solS[1],&rhovs,NULL);
             sigm_surf=fabs(solS[2]-rhovs)/rhovs;
@@ -117,7 +117,7 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       ierr = IGAElementGetValues(elementb, arrayUb, &UUb); CHKERRQ(ierr);
       ierr = IGAElementBeginPoint(elementb, &pointb); CHKERRQ(ierr);
       while (IGAElementNextPoint(elementb, pointb)) {
-        PetscScalar solb[4];
+        PetscScalar solb[MAX_DOF];
         ierr = IGAPointFormValue(pointb, UUb, &solb[0]); CHKERRQ(ierr);
         PetscReal fi = PetscRealPart(solb[0]);
         PetscReal fs = (user->dof == 4) ? PetscRealPart(solb[3]) : 0.0;

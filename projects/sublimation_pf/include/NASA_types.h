@@ -7,6 +7,14 @@
 #define SQ(x) ((x)*(x))
 #define CU(x) ((x)*(x)*(x))
 
+/* Largest supported DOF-per-node across all formulations (2-phase=3, 3-phase=4).
+ * Shared code that runs for BOTH formulations (Integration, the Monitor,
+ * per-DOF convergence norms) sizes fixed-length node buffers to this instead of
+ * hardcoding 3 or 4 — C forbids sol[dof] (a VLA) per the project style. Bump
+ * this if a formulation with more fields is added. Formulation-specific kernels
+ * (Residual/Jacobian _A1 use [3], _A2 use [4]) keep their exact sizes. */
+#define MAX_DOF 4
+
 /* Field definitions for node data */
 typedef struct {
   PetscScalar ice, tem, rhov;
@@ -121,7 +129,7 @@ typedef struct {
   PetscReal ice_flat_height[MAX_SED_GRAINS];
 
   // Initial normal vector components (possibly for a structured interface)
-  PetscReal norm0[4];  // Per-DOF initial residual norms for SNES convergence check
+  PetscReal norm0[MAX_DOF];  // Per-DOF initial residual norms for SNES convergence check
 
   // Flags for controlling different simulation options
   PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 2=flat interface

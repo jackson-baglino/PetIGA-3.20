@@ -355,7 +355,7 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
     PetscFunctionBegin;
     (void)n;
     AppCtx *user = (AppCtx *)ctx;
-    PetscScalar sol[4];                 /* sized for dof=4 (3-phase); dof=3 uses [0..2] */
+    PetscScalar sol[MAX_DOF];                 /* sized for dof=4 (3-phase); dof=3 uses [0..2] */
     IGAPointFormValue(pnt, U, &sol[0]);
 
     PetscReal phi  = PetscRealPart(sol[0]);
