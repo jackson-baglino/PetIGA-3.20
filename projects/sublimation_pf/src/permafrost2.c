@@ -127,6 +127,13 @@ int main(int argc, char *argv[]) {
     PetscReal humidity = 0.95;  /* Initial humidity */
     PetscReal temp     = -20.0; /* Initial temperature */
 
+    /* Temperature the mesh/eps were sized for by comp_eps.py (set by generated
+     * geometry .opts). Guards against running at a -temp inconsistent with the
+     * eps/mesh resolution (see the check after PetscOptionsEnd). */
+    PetscReal eps_valid_temp      = 0.0;
+    PetscBool eps_valid_temp_set  = PETSC_FALSE;
+    PetscBool eps_temp_override   = PETSC_FALSE;
+
     PetscReal grad_temp0[3] = {0.0, 0.0, 0.0}; /* Initial temperature gradient */
 
     PetscReal eps = 9.0e-7;     /* Interface width parameter */
@@ -209,6 +216,12 @@ int main(int argc, char *argv[]) {
                                  "",
                                  grad_temp0, &ngrad, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-eps", "Interface width parameter", "", eps, &eps, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-eps_valid_temp",
+                            "Temperature [C] the mesh/eps were sized for (comp_eps.py)",
+                            "", eps_valid_temp, &eps_valid_temp, &eps_valid_temp_set); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-eps_temp_override",
+                            "Proceed even if -temp disagrees with -eps_valid_temp",
+                            "", eps_temp_override, &eps_temp_override, NULL); CHKERRQ(ierr);
 
     /* --- Grain geometry: ice --------------------------------------------- */
     ierr = PetscOptionsInt("-NCice", "Number of ice grains", "", user.NCice, &user.NCice, NULL); CHKERRQ(ierr);
@@ -489,6 +502,34 @@ int main(int argc, char *argv[]) {
              "", user.phase_hi, &user.phase_hi, NULL); CHKERRQ(ierr);
 
     PetscOptionsEnd();
+
+    /* --- Mesh/run temperature-consistency guard --------------------------
+     * eps, and hence the mesh element count Nx = ceil(Lx*sqrt(2)/eps), is sized
+     * by comp_eps.py through the TEMPERATURE-dependent kinetic bound. A geometry
+     * .opts generated for temperature T sets -eps_valid_temp T. Running that
+     * mesh at a different -temp means eps/mesh are inconsistent with the actual
+     * kinetics — the diffuse interface is under- or over-resolved and the physics
+     * is silently wrong. Fail loudly unless -eps_temp_override is set on purpose. */
+    if (eps_valid_temp_set) {
+        PetscReal dT = PetscAbsReal(temp - eps_valid_temp);
+        if (dT > 1.0 && !eps_temp_override) {
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                    "\n*** TEMPERATURE MISMATCH ***\n"
+                    "  run -temp          = %g C\n"
+                    "  mesh -eps_valid_temp = %g C  (eps=%.4e sized here by comp_eps.py)\n"
+                    "eps and the mesh element count are inconsistent with the kinetics at "
+                    "%g C; the diffuse interface will be under/over-resolved. Regenerate the "
+                    "geometry with comp_eps.py for %g C (see the builder's printed command), "
+                    "or pass -eps_temp_override 1 to proceed intentionally.",
+                    (double)temp, (double)eps_valid_temp, (double)eps,
+                    (double)temp, (double)temp);
+        } else if (dT > 1.0) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                    "  *** WARNING: -temp %g C != mesh -eps_valid_temp %g C; "
+                    "-eps_temp_override active. eps/mesh may under/over-resolve the "
+                    "interface. ***\n", (double)temp, (double)eps_valid_temp);
+        }
+    }
 
     /* Assign parameters to user context */
     user.p = p;
