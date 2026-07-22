@@ -1,5 +1,8 @@
 # Axisymmetric (r–z) Mode — Implementation Plan
 
+> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented. Predates the rename to `sublimation_pf` — read any `projects/permafrost` path as `projects/sublimation_pf`.
+
+
 *2026-07-10. Goal: true 3D two-sphere sintering physics at 2D cost, for the
 Molaro et al. (2019) Fig. 11 validation. Status: PLAN — review before
 implementation.*

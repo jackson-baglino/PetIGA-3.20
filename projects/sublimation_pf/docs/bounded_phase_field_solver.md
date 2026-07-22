@@ -1,5 +1,8 @@
 # Bound-Constrained Newton Solve for the Ice Phase Field
 
+> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented. Predates the rename to `sublimation_pf` — read any `projects/permafrost` path as `projects/sublimation_pf`.
+
+
 > **Purpose:** Reference document explaining how the ice phase-field DOF is
 > kept within physical bounds during the nonlinear solve.
 > **Code:** `src/permafrost2.c` (bound setup), `src/snes_convergence.c`
