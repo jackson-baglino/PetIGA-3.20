@@ -38,4 +38,5 @@
 -ice_grain_ay 4.030990e-05,3.894136e-05,3.676920e-05,3.407821e-05,3.250116e-05,3.846296e-05,2.841003e-05
 -delt_t 1.0e-4
 -eps 8.5840e-07
+-eps_valid_temp -20   # C: temperature eps/mesh were sized for; solver ABORTS if -temp differs (override: -eps_temp_override 1)
 -periodic 0

@@ -388,6 +388,7 @@ def main():
 -ice_grain_ay {arr(gR)}
 -delt_t 1.0e-4
 -eps {EPS:.4e}
+-eps_valid_temp {T0_C:g}   # C: temperature eps/mesh were sized for; solver ABORTS if -temp differs (override: -eps_temp_override 1)
 -periodic 0
 """)
     print(f"\nwrote {opts}\nwrote {dat}")
