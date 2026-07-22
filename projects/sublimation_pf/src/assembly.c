@@ -334,7 +334,10 @@ PetscErrorCode Jacobian(IGAPoint pnt,
                         PetscReal t, const PetscScalar *U,
                         PetscScalar *Je, void *ctx)
 {
-    return Jacobian_A1(pnt, shift, V, t, U, Je, ctx);
+    AppCtx *user = (AppCtx*)ctx;
+    if (user->dof == 4)                  /* 3-phase */
+        return Jacobian_A2(pnt, shift, V, t, U, Je, ctx);
+    return Jacobian_A1(pnt, shift, V, t, U, Je, ctx);  /* 2-phase */
 }
 
 

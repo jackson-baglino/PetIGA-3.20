@@ -802,14 +802,11 @@ int main(int argc, char *argv[]) {
 
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
-    if (dof == 4) {
-        /* 3-phase: analytic Jacobian_A2 not yet implemented; use finite
-         * differences for now (correct but slower). Verify the analytic
-         * version against this with -snes_test_jacobian when it lands. */
-        ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
-    } else {
-        ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
-    }
+    /* Analytic Jacobian for both formulations (dispatcher routes on dof).
+     * The 3-phase Jacobian_A2 is new — verify with -snes_test_jacobian at t=0
+     * (unclamped IC) if convergence looks off. -snes_mf_operator falls back to
+     * matrix-free FD without editing code. */
+    ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
 
     /* Boundary conditions (could 'functionalize' this at some point) */
     // Set vapor density BCs
