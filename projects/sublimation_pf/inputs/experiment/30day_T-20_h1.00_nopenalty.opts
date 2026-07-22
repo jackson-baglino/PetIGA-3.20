@@ -18,11 +18,8 @@
 # =============================================================================
 
 -t_final 2592000.0                      # 30 days (s)
--t_sed_freeze 10                        # pin sed at t=10s
 
 -temp -20.0
 -humidity 1.00
 -grad_temp0 0.0,0.0,0.0
 
--k_pen 0.0                              # equilibrium penalty OFF
--difvap_pen 1.0                         # diffusivity penalty OFF (D_eff = difvap everywhere)

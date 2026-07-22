@@ -21,7 +21,6 @@
 # =============================================================================
 
 -t_final 7.2e3                          # 2 hours — matches the -20 C campaign
--t_sed_freeze 10
 
 -temp -20.0
 -humidity 1.00
