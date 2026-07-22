@@ -19,7 +19,14 @@ typedef struct {
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
   PetscReal mob_sub;  // Mobility for ice phase evolution
-  PetscReal Etai, Etam, Etaa;  // Surface energy terms: Sigma_i (ice-vapor), Etam (unused), Sigma_a (air-vapor side)
+  // Phase-field surface-energy parameters (Sigma_k = gamma_ka + gamma_kb - gamma_ab,
+  // the two interfacial energies involving phase k minus the opposite one):
+  //   Sigma_i = gamma_ia + gamma_is - gamma_as   (ice)
+  //   Sigma_a = gamma_ia + gamma_as - gamma_is   (air/vapor)
+  //   Sigma_s = gamma_is + gamma_as - gamma_ia   (sediment; only used in the
+  //             3-phase model, dof=4). Set via preprocess/comp_eps.py's
+  //             gammas_from_contact_angle so Sigma_s clears its >0 floor.
+  PetscReal Sigma_i, Sigma_s, Sigma_a;
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate

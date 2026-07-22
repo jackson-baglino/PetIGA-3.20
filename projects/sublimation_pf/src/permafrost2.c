@@ -103,6 +103,10 @@ int main(int argc, char *argv[]) {
      * Sigma_i = ice-side surface energy, Sigma_a = air-side surface energy. */
     PetscReal Sigma_i = 0.109; /* ice surface energy [J/m²] */
     PetscReal Sigma_a = 0.132; /* air surface energy [J/m²] */
+    PetscReal Sigma_s = 0.100; /* sediment surface energy [J/m²]; 3-phase only.
+                                * Placeholder — set from a valid contact-angle
+                                * gamma set (comp_eps.py gammas_from_contact_angle)
+                                * so Sigma_s > 0. */
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 2;          /* Polynomial order */
@@ -455,6 +459,7 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscOptionsReal("-Sigma_i", "Ice-side surface energy in the double-well free energy [J/m^2]", "", Sigma_i, &Sigma_i, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-Sigma_a", "Air-side surface energy in the double-well free energy [J/m^2]", "", Sigma_a, &Sigma_a, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Sigma_s", "Sediment surface energy in the triple-well free energy (3-phase, dof=4) [J/m^2]", "", Sigma_s, &Sigma_s, NULL); CHKERRQ(ierr);
 
     /* --- Output control -------------------------------------------------- */
     ierr = PetscOptionsInt("-outp", "Output control flag", "", user.outp, &user.outp, NULL); CHKERRQ(ierr);
@@ -601,8 +606,9 @@ int main(int argc, char *argv[]) {
     /* Gibbs-Thomson kinetic parameters */
     user.diff_sub = 0.5 * (user.thcond_air / user.rho_air / user.cp_air + user.thcond_ice / user.rho_ice / user.cp_ice);
 
-    user.Etai = Sigma_i; /* Ice surface energy in the double-well free energy */
-    user.Etaa = Sigma_a; /* Air surface energy in the double-well free energy */
+    user.Sigma_i = Sigma_i; /* Ice surface energy in the double-well free energy */
+    user.Sigma_a = Sigma_a; /* Air surface energy in the double-well free energy */
+    user.Sigma_s = Sigma_s; /* Sediment surface energy (triple well, 3-phase) */
 
     /* Allow CLI override of the physical attachment-kinetics coefficient
      * beta_sub0 via -beta_sub0 <value> (default 1.4e5, set above). Unlike
@@ -1011,8 +1017,8 @@ int main(int argc, char *argv[]) {
     /* --- Phase-field interface -------------------------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-FIELD INTERFACE\n");
     PetscPrintf(PETSC_COMM_WORLD, "   eps      =  %.4e m\n", user.eps);
-    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_i  =  %.4e J/m²   (ice surface energy)\n", user.Etai);
-    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_a  =  %.4e J/m²   (air surface energy)\n", user.Etaa);
+    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_i  =  %.4e J/m²   (ice surface energy)\n", user.Sigma_i);
+    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_a  =  %.4e J/m²   (air surface energy)\n", user.Sigma_a);
     PetscPrintf(PETSC_COMM_WORLD, "   Lambda   =  %.4e\n", user.Lambd);
 
     /* --- Environment & initial conditions --------------------------------- */
