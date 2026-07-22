@@ -1,7 +1,16 @@
 # Material Parameters: Water Ice, Water Vapor, and Lunar Regolith
 
-**Date:** 2026-05-15  
-**Model:** Permafrost sublimation phase-field (permafrost2.c)  
+> ⚠️ **PARTIALLY HISTORICAL (banner added 2026-07-21).** The ice/vapor
+> parameters remain current. The **sediment / triple-line surface-energy**
+> material (γ_iv/γ_is/γ_sv, contact-angle derivation, the η > 0 constraints)
+> describes the removed three-phase model and is **reference for Effort 2**,
+> not the current two-phase code. Note the diagnosed fix: parameterize by
+> contact angle θ so only γ_is > (γ_iv/2)(1 − cos θ) is a free constraint —
+> the prior γ_is = 0.033 violated it. See
+> `studies/icy_regolith/explicit_sediment_phase/`.
+
+**Date:** 2026-05-15 (banner 2026-07-21)  
+**Model:** Sublimation phase-field (permafrost2.c)  
 **Target environment:** Lunar permanently shadowed regions (PSRs), T ≈ 40–120 K
 
 > **Status note (2026-05-27).** Material properties documented here are

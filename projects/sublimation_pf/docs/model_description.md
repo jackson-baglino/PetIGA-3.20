@@ -1,8 +1,19 @@
 # Permafrost Phase-Field Model: Mathematical and Numerical Description
 
+> ⚠️ **HISTORICAL / PARTIALLY SUPERSEDED (banner added 2026-07-21).** This
+> document describes the **4-DOF, three-phase (ice / sediment / air)**
+> Kim–Steinbach model with a triple-well free energy and the `t_sed_freeze`
+> switch. The code no longer implements that model: the 2026-06-13 fork
+> dropped the sediment DOF, giving a **2-phase (ice / T / vapor)** system with
+> a plain double well (φ_a = 1 − φ). Gibbs–Thomson curvature was also removed
+> (2026-07-21). Treat the equations here as a record of what was believed at
+> the time, not as the current implementation. The triple-well material is the
+> reference for Effort 2 (`studies/icy_regolith/explicit_sediment_phase/`),
+> where it will be re-derived from the beta-eliminated equations.
+
 > **Purpose:** Reference document for manuscript preparation.  
-> **Code:** `PetIGA-3.20/projects/permafrost/`  
-> **Last updated:** 2026-05-27
+> **Code:** `PetIGA-3.20/projects/sublimation_pf/`  
+> **Last updated:** 2026-05-27 (banner 2026-07-21)
 
 ---
 
