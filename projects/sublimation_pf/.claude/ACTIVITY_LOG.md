@@ -1,3 +1,35 @@
+## 2026-07-22 — Temperature guard, Effort 1 geometry, plan completion
+
+- **Fixed rename fallout:** relocated both venvs in place (57 hardcoded-path
+  files) after the `mv` broke them; corrected the stop-hook + 23 stale paths in
+  `.claude/settings.local.json`. Re-postprocessed the test batch — 9/9 pass,
+  total mass drift < 0.01% (2D two-grain ~7e-4%), confirming cleanup/rename
+  preserved behavior.
+- **Effort 1 started** (`exp/regolith-implicit-pore-domain`):
+  `preprocess/build_geometry_regolith_pore.py` — two-sided pore channel with
+  regolith-GSD walls + central throat; ice placement is a swappable
+  `--ice-placement` strategy (flank_caps / throat_bridge / pore_lining) since
+  "how ice adheres" is the open question. 3 geometries generated + previewed.
+- **eps verified proper:** reproduced the reference run's eps=8.5840e-7 exactly
+  via comp_eps.py (T=−20 C, α_c=1.341e-2, kinetic-bound limited). Documented
+  provenance; killed the misleading "loose" label.
+- **Temperature guard (on main):** new `-eps_valid_temp` — solver ABORTS if
+  `-temp` disagrees with the temperature the mesh/eps were sized for (override
+  `-eps_temp_override 1`). eps is baked into the mesh element count, so a
+  temperature/alpha change requires regenerating the mesh; this catches the
+  silent mismatch.
+- **Completed Phase 1d:** removed 12 stale scripts/*.py (tuning framework + 2025
+  orphans); stripped 3 dead options (`-t_sed_freeze`×37, `-k_pen`, `-difvap_pen`).
+- **Completed Phase 2c:** status banners on all 9 docs/*.md (historical vs current).
+- **Planned Efforts 2 & 3:** `studies/snow_thermal/PLAN.md` (6-stage k_eff plan)
+  and `studies/icy_regolith/explicit_sediment_phase/PLAN.md` (contact-angle γ
+  fix + implementation budget; residual/Jacobian left as TODO(user) blanks
+  pending the beta-eliminated equations).
+- **Phases 0–2 now fully complete.** Still deferred: remote deletion of the 3
+  archived branches (user runs it); Efforts 1–3 execution.
+
+---
+
 ## 2026-07-21 — Repo cleanup + restructure groundwork (Phases 0-2 partial)
 
 Planned three research efforts (icy-regolith implicit/explicit, snow thermal

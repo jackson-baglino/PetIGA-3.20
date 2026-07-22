@@ -1,5 +1,8 @@
 # Ice Mass Loss Analysis: Allen-Cahn Curvature Coarsening vs. Sublimation
 
+> ⚠️ **HISTORICAL (banner 2026-07-22).** Sediment-era analysis of the removed three-phase model. The negative-φ / inverted-well finding here is the key **Effort 2** reference (see `studies/icy_regolith/explicit_sediment_phase/` and the contact-angle γ fix). Not the current two-phase code.
+
+
 **Date:** 2026-05-15  
 **Run analyzed:** `test_2D_IceSedPair` (86400 s at T = −20 °C, h₀ = 0.95)
 

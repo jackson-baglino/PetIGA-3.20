@@ -1,5 +1,8 @@
 # Molaro et al. (2019) Validation — Synthesis
 
+> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented. Predates the rename to `sublimation_pf` — read any `projects/permafrost` path as `projects/sublimation_pf`.
+
+
 *2026-07-13. Closes the two-week campaign: what the model reproduces, what
 the residual is, and why. Companion data: inputs/validation/
 molaro2019_fig11_T-20.csv; runs indexed in .claude/ACTIVITY_LOG.md.*

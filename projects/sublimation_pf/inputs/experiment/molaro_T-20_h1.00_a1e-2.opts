@@ -27,7 +27,6 @@
 # =============================================================================
 
 -t_final 7.2e3                          # 2 hours — Molaro et al. Fig. 11 duration
--t_sed_freeze 10
 
 -temp -20.0
 -humidity 1.00

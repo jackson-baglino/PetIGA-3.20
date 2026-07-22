@@ -1,5 +1,8 @@
 # Interface Width: Conventions, Measurement, and Mesh Sizing
 
+> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented. Predates the rename to `sublimation_pf` — read any `projects/permafrost` path as `projects/sublimation_pf`.
+
+
 *Written 2026-07-09, after the d0phys two-grain runs. Companion to the
 `eps` section in CLAUDE.md and to `preprocess/comp_eps.py`.*
 

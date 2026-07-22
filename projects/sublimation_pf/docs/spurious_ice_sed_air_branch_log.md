@@ -1,5 +1,8 @@
 # Branch log: `fix/spurious-ice-sed-air-penalty`
 
+> ⚠️ **HISTORICAL (banner 2026-07-22).** Sediment-era analysis (pre-2026-06-13 fork) of the removed three-phase model. Kept as reference for Effort 2 (`studies/icy_regolith/explicit_sediment_phase/`), not a description of the current two-phase code.
+
+
 This document narrates the changes made on the branch `fix/spurious-ice-sed-air-penalty`,
 ordered from most significant (architectural / model-level) to least significant
 (cleanups). For each entry: *why* the change was made and *what happened* after.

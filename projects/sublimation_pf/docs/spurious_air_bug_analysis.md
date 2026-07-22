@@ -1,5 +1,8 @@
 # Root Cause Analysis: Spurious Air in the Old Permafrost Simulation
 
+> ⚠️ **HISTORICAL (banner 2026-07-22).** Sediment-era analysis (pre-2026-06-13 fork) of the removed three-phase model. Kept as reference for Effort 2 (`studies/icy_regolith/explicit_sediment_phase/`), not a description of the current two-phase code.
+
+
 **Date:** 2026-05-15  
 **Old run:** `test_1D_IceSlab_2Phase_difvappen1e-07_k_pen1e09` (2026-05-05)  
 **Reference files compared:** `src/assembly.c`, `src/permafrost2.c`, `src/initial_conditions.c`, `*.opts`

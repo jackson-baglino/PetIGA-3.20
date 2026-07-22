@@ -15,7 +15,6 @@
 # =============================================================================
 
 -t_final 1.5e5                          # ~1.7 days; covers collapse + settling
--t_sed_freeze 10
 
 -temp -5.0
 -humidity 1.00
