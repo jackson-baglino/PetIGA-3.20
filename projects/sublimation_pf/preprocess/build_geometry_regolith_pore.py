@@ -71,7 +71,18 @@ N_BUMPS = 12                         # wall grains per side
 # Domain width so N_BUMPS median grains tile it with typical overlap:
 # (n-1)*step ~= Lx, step = 2*R_MED*(1-avg_overlap).
 Lx = (N_BUMPS - 1) * (2 * R_MED * (1 - 0.26))
-EPS = 8.5840e-7                      # loose; recompute with comp_eps.py per run
+
+# eps is the comp_eps.py (Kaempfer & Plapp) value FOR T=-20 C, alpha_c=1.341e-2
+# — binding constraint is the T-dependent kinetic bound, so it is grain-size
+# independent here (all strategies pass eps/R_ave < 5%). Verified: reproduces
+# the validated 2D_ripening_two_sided reference run exactly, and pairs with the
+# 30day_T-20_h1.00_arrh experiment's beta_sub0=5.9216e5 / d0_sub0=1.0166e-9.
+# RECOMPUTE for any other run temperature:
+#   python3 preprocess/comp_eps.py --Lx {Lx} --Ly {Ly} --Rave <R_smallest_ice> \
+#           --T0 <degC> --alpha <alpha_c>
+T0_C = -20.0                         # temperature eps is valid for [deg C]
+ALPHA_C = 1.341e-2                   # attachment coefficient used for eps/kinetics
+EPS = 8.5840e-7                      # comp_eps.py value at T0_C (NOT arbitrary)
 P, C = 2, 1
 
 SEED_BOT_BUMP, SEED_TOP_BUMP = 0, 7  # different seeds -> similar-but-distinct walls
@@ -348,9 +359,12 @@ def main():
 # '{args.ice_placement}' -> {len(ice)} ice grains in the pore space. The regolith
 # is the deformed boundary, NOT a simulated field (that is Effort 2).
 #
-# eps={EPS:.4e} is LOOSE (reused at this scale). Recompute with
-# preprocess/comp_eps.py for the actual run temperature before production.
-# Pair with an experiment, e.g. 30day_T-20_h1.00_arrh.opts.
+# eps={EPS:.4e} is the comp_eps.py (Kaempfer&Plapp) value for T={T0_C:g}C,
+# alpha_c={ALPHA_C:g} (kinetic-bound limited, so grain-size independent here;
+# eps/R_smallest={EPS/Rmin*100:.1f}% < 5%). Reproduces the validated
+# 2D_ripening_two_sided reference exactly. PAIR ONLY with a T={T0_C:g}C
+# experiment (e.g. 30day_T-20_h1.00_arrh, which sets the matching
+# beta_sub0/d0_sub0). RECOMPUTE eps for any other run temperature.
 # =============================================================================
 # DOF_GRID: {Nx+P} {Ny+P}
 -geom_file {rel_dat}
@@ -377,8 +391,9 @@ def main():
 -periodic 0
 """)
     print(f"\nwrote {opts}\nwrote {dat}")
-    print("REMINDER: recompute -eps with preprocess/comp_eps.py for the run "
-          "temperature before a production run.")
+    print(f"eps={EPS:.4e} is the comp_eps.py value for T={T0_C:g}C "
+          f"(eps/R_smallest={EPS/Rmin*100:.1f}%). Valid ONLY at T={T0_C:g}C — "
+          f"pair with a {T0_C:g}C experiment; RECOMPUTE eps for other temperatures.")
 
 
 if __name__ == "__main__":

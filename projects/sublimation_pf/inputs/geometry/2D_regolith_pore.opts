@@ -9,9 +9,12 @@
 # 'flank_caps' -> 6 ice grains in the pore space. The regolith
 # is the deformed boundary, NOT a simulated field (that is Effort 2).
 #
-# eps=8.5840e-07 is LOOSE (reused at this scale). Recompute with
-# preprocess/comp_eps.py for the actual run temperature before production.
-# Pair with an experiment, e.g. 30day_T-20_h1.00_arrh.opts.
+# eps=8.5840e-07 is the comp_eps.py (Kaempfer&Plapp) value for T=-20C,
+# alpha_c=0.01341 (kinetic-bound limited, so grain-size independent here;
+# eps/R_smallest=3.0% < 5%). Reproduces the validated
+# 2D_ripening_two_sided reference exactly. PAIR ONLY with a T=-20C
+# experiment (e.g. 30day_T-20_h1.00_arrh, which sets the matching
+# beta_sub0/d0_sub0). RECOMPUTE eps for any other run temperature.
 # =============================================================================
 # DOF_GRID: 1344 446
 -geom_file inputs/geometry/regolith_pore.dat
