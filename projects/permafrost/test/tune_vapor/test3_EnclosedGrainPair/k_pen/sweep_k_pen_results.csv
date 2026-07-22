@@ -1,5 +1,0 @@
-param,value,rc_a,rc_b,rhov_drift_pct,rhov_increase,max_snes_iters,ice_rhov_err_pct,pass_rhov,pass_sublim,pass_iters,pass_ice,PASS
-k_pen,1000.0,-2,-2,,,-1,,False,False,False,True,False
-k_pen,1000000.0,-2,-2,,,-1,,False,False,False,True,False
-k_pen,1000000000.0,-2,-2,,,-1,,False,False,False,True,False
-k_pen,100000000000.0,-2,-2,,,-1,,False,False,False,True,False
