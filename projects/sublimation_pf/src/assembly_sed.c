@@ -12,7 +12,9 @@
  *                     + alpha_sub phi_i^2 phi_a^2 (rho_v - rho_vs^I(T))/rho_i
  *  Sed:   dphi_s/dt = 0
  *  Temp:  rho(phi) cp(phi) dT/dt = xi_T div(K(phi) grad T)
- *                                  + xi_T rho(phi) Lsub dphi_i/dt
+ *                                  + xi_T rho_ice Lsub dphi_i/dt
+ *         (latent-heat density = rho_ice, not the mixture rho of the written
+ *          equation — chosen after an A1 A/B test; see the R_tem comment below)
  *  Vapor: d(phi_a rho_v)/dt = xi_v div(phi_a Dv(T) grad rho_v) - rho_i dphi_i/dt
  *
  * Weak residual (R = 0), integrated by parts on the Laplacian/divergence terms
@@ -155,12 +157,13 @@ PetscErrorCode Residual_A2(IGAPoint pnt,
                 - pc * (user->alph_sub / rho_ice) * loc
                   * (PetscRealPart(rhov) - rho_vs) * N0[a] );
 
-        /* Temperature (xi_T scaling; latent-heat density is rho_ice or the
-         * mixture rho per -latent_mixture_rho, same choice as A1). */
+        /* Temperature (xi_T scaling). Latent-heat density is rho_ice, NOT the
+         * mixture rho of the written equation: an A1 A/B test showed mixture rho
+         * gave ~3x worse vapor-mass conservation, and rho_ice is the physically
+         * correct energy-per-unit-ice-mass form. Same choice as A1. */
         R[a][1] = rw * ( rho * cp * N0[a] * tem_t
                 + user->xi_T * thcond * gN_gtem
-                - pc * user->xi_T * (user->latent_mixture_rho ? rho : rho_ice)
-                  * lat_sub * phi_t * N0[a] );
+                - pc * user->xi_T * rho_ice * lat_sub * phi_t * N0[a] );
 
         /* Vapor (phi_a = 1-phi_i-phi_s storage/diffusion, xi_v scaling). */
         R[a][2] = rw * ( phi_aef * N0[a] * rhov_t

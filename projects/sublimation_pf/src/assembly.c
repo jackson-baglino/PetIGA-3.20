@@ -157,8 +157,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
         R[a][1] = rw * ( rho * cp * N0[a] * tem_t                       /* storage */
                 + user->xi_T * thcond * gN_gtem                        /* conduction */
-                - pc * user->xi_T * (user->latent_mixture_rho ? rho : rho_ice)
-                  * lat_sub * phi_t * N0[a] ); /* latent heat (rho_ice or mixture rho) */
+                - pc * user->xi_T * rho_ice * lat_sub * phi_t * N0[a] ); /* latent heat */
 
         R[a][2] = rw * ( phi_aef * N0[a] * rhov_t                      /* vapor storage */
                 + user->xi_v * dif_vap * phi_aef * gN_grhov            /* vapor diffusion (xi_v-scaled) */
@@ -234,10 +233,9 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     VaporDiffus(user, tem,    &dif_vap, NULL);
     Mobility   (user, phi_c,  &mob_sub);
 
-    PetscReal dthcond_dphi, d_dif_vap, drho_dphi;
+    PetscReal dthcond_dphi, d_dif_vap;
     ThermalCond(user, phi_c, NULL, &dthcond_dphi);
     VaporDiffus(user, tem,   NULL, &d_dif_vap);
-    Density    (user, phi_c, NULL, &drho_dphi);   /* d(rho)/d(phi_i) = rho_ice - rho_air */
 
     /* Flat-interface saturation vapor density and its T-derivative. */
     PetscReal rho_vs, d_rho_vs;
@@ -301,13 +299,8 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             J[a][0][b][2] -= rw * pc * ( (user->alph_sub / rho_ice) * loc * NaNb );
 
             /* ============ R_tem / phi ============ */
-            /* latent term d/dphi_i of -xi_T rho_lat L phi_t:
-             *   rho_ice mode  -> rho_ice * shift
-             *   mixture  mode -> rho * shift + drho_dphi * phi_t  */
             J[a][1][b][0] += rw * ( user->xi_T * dthcond_dphi * gNa_gtem * N0[b]
-                           - pc * user->xi_T * lat_sub * NaNb *
-                             ( (user->latent_mixture_rho ? rho : rho_ice) * shift
-                             + (user->latent_mixture_rho ? drho_dphi * PetscRealPart(phi_t) : 0.0) ) );
+                           - pc * user->xi_T * rho_ice * lat_sub * shift * NaNb );
 
             /* ============ R_tem / T ============ */
             J[a][1][b][1] += rw * ( shift * rho * cp * NaNb
