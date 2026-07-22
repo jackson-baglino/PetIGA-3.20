@@ -26,10 +26,20 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - **Allocation constants (Phase 2a).** Consolidated 6 copies of
   TARGET_DOFS_PER_CORE into scripts/lib/alloc.sh; raised 40k->50k; env-var
   overridable. All scripts pass bash -n.
-- **Deferred:** directory rename to projects/sublimation_pf, studies/
-  scaffolding, doc status headers, and Efforts 1-3 (Effort 2 blocked on the
-  beta-eliminated equations; surface-energy fix via contact-angle
-  parameterization is designed and ready).
+- **Rename (Phase 2a).** projects/permafrost -> projects/sublimation_pf (mv +
+  git add -A, 281 renames). Updated PROJECT_ROOT / RESULTS_BASE / HPC $SCRATCH
+  paths; binary name (permafrost) and script filenames left unchanged. Clean
+  rebuild + smoke check verified from the new tree. New runs now write to
+  ~/SimulationResults/sublimation_pf/.
+- **studies/ scaffolding (Phase 2).** studies/icy_regolith/{implicit_pore_domain,
+  explicit_sediment_phase} and studies/snow_thermal/{packings,opts,analysis},
+  each paper with a README (question / regime / status).
+- **Docs (Phase 2c).** Rewrote README.md (was fictional); bannered
+  model_description.md + material_parameters.md as historical/Effort-2 reference.
+- **Deferred (next session):** remote deletion of the 3 archived branches
+  (blocked by classifier — user runs `git push origin --delete ...`); permanent
+  deletion of _trash/ after user review; Efforts 1-3 (Effort 2 blocked on the
+  beta-eliminated equations; surface-energy contact-angle fix is designed).
 
 ---
 
