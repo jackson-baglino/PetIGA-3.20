@@ -120,7 +120,8 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
         PetscScalar solb[4];
         ierr = IGAPointFormValue(pointb, UUb, &solb[0]); CHKERRQ(ierr);
         PetscReal fi = PetscRealPart(solb[0]);
-        PetscReal fa = 1.0 - fi;
+        PetscReal fs = (user->dof == 4) ? PetscRealPart(solb[3]) : 0.0;
+        PetscReal fa = 1.0 - fi - fs;  /* 3-phase air fraction */
         if (fi < phi_ice_min) phi_ice_min = fi;
         if (fi > phi_ice_max) phi_ice_max = fi;
         if (fa < phi_air_min) phi_air_min = fa;

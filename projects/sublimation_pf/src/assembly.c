@@ -355,13 +355,14 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
     PetscFunctionBegin;
     (void)n;
     AppCtx *user = (AppCtx *)ctx;
-    PetscScalar sol[3];
+    PetscScalar sol[4];                 /* sized for dof=4 (3-phase); dof=3 uses [0..2] */
     IGAPointFormValue(pnt, U, &sol[0]);
 
     PetscReal phi  = PetscRealPart(sol[0]);
     PetscReal tem  = PetscRealPart(sol[1]);
     PetscReal rhov = PetscRealPart(sol[2]);
-    PetscReal phi_a = 1.0 - phi;
+    PetscReal sed  = (user && user->dof == 4) ? PetscRealPart(sol[3]) : 0.0;
+    PetscReal phi_a = 1.0 - phi - sed;   /* 3-phase air fraction (sed=0 => 2-phase) */
 
     /* Axisymmetric: include the FULL 2*pi*r measure so the reported
      * integrals are true 3D volumes (TOT_ICE in m^3, etc.) and mass
