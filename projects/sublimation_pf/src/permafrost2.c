@@ -715,23 +715,19 @@ int main(int argc, char *argv[]) {
     IGA iga;
     ierr = IGACreate(PETSC_COMM_WORLD, &iga); CHKERRQ(ierr);
     ierr = IGASetDim(iga, dim); CHKERRQ(ierr);
-    /* Guard: the residual/Jacobian in assembly.c and the Field struct in
-     * NASA_types.h assume exactly this many DOF per node (currently 3: ice,
-     * temperature, vapor). -dof is exposed for future multi-field work (e.g.
-     * an explicit sediment phase), but changing it without also updating Field
-     * and assembly.c silently misinterprets the solution vector. Fail loudly. */
-    {
-        const PetscInt dof_fields = (PetscInt)(sizeof(Field) / sizeof(PetscScalar));
-        if (dof != dof_fields)
-            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
-                    "-dof %d does not match the %d-field solver (Field struct in "
-                    "NASA_types.h and the [%d] arrays in assembly.c must change "
-                    "together).", (int)dof, (int)dof_fields, (int)dof_fields);
-    }
+    /* Guard: -dof selects the formulation, and the residual/Jacobian assume a
+     * specific field count. dof=3 -> 2-phase (ice/T/vapor, Residual_A1);
+     * dof=4 -> 3-phase (+ sediment, Residual_A2). Any other value silently
+     * misinterprets the solution vector, so fail loudly. */
+    if (dof != 3 && dof != 4)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                "-dof %d is not a supported formulation: use 3 (two-phase: "
+                "ice/T/vapor) or 4 (three-phase: + sediment).", (int)dof);
     ierr = IGASetDof(iga, dof); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 0, "phaseice"); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 1, "temperature"); CHKERRQ(ierr);
     ierr = IGASetFieldName(iga, 2, "vap_density"); CHKERRQ(ierr);
+    if (dof == 4) { ierr = IGASetFieldName(iga, 3, "sediment"); CHKERRQ(ierr); }
 
     /* Set up axes: either from a custom igakit geometry (-geom_file), which
      * defines its own dim/degree/knots/control-net and overrides -p/-C/-N*,
@@ -804,8 +800,14 @@ int main(int argc, char *argv[]) {
 
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
-    ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
-    // ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
+    if (dof == 4) {
+        /* 3-phase: analytic Jacobian_A2 not yet implemented; use finite
+         * differences for now (correct but slower). Verify the analytic
+         * version against this with -snes_test_jacobian when it lands. */
+        ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
+    } else {
+        ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
+    }
 
     /* Boundary conditions (could 'functionalize' this at some point) */
     // Set vapor density BCs

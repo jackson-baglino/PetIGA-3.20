@@ -176,7 +176,10 @@ PetscErrorCode Residual(IGAPoint pnt,
                         PetscReal t, const PetscScalar *U,
                         PetscScalar *Re, void *ctx)
 {
-    return Residual_A1(pnt, shift, V, t, U, Re, ctx);
+    AppCtx *user = (AppCtx*)ctx;
+    if (user->dof == 4)                  /* 3-phase: ice/T/vapor/sediment */
+        return Residual_A2(pnt, shift, V, t, U, Re, ctx);
+    return Residual_A1(pnt, shift, V, t, U, Re, ctx);  /* 2-phase */
 }
 
 

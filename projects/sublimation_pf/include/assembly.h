@@ -8,7 +8,13 @@ PetscErrorCode Residual_A1(IGAPoint pnt, PetscReal shift, const PetscScalar *V,
                             PetscReal t, const PetscScalar *U, PetscScalar *Re,
                             void *ctx);
 
-/* Dispatcher (currently forwards to Residual_A1) */
+/* Residual for the 3-phase (ice/temperature/vapor/sediment) system, dof=4
+ * (defined in assembly_sed.c) */
+PetscErrorCode Residual_A2(IGAPoint pnt, PetscReal shift, const PetscScalar *V,
+                            PetscReal t, const PetscScalar *U, PetscScalar *Re,
+                            void *ctx);
+
+/* Dispatcher: forwards to Residual_A1 (dof=3) or Residual_A2 (dof=4) */
 PetscErrorCode Residual(IGAPoint pnt, PetscReal shift, const PetscScalar *V,
                         PetscReal t, const PetscScalar *U, PetscScalar *Re,
                         void *ctx);
