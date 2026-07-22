@@ -661,13 +661,71 @@ def _infer_dim(Lx, Ly, Lz, explicit_dim):
     return 1
 
 
+def gammas_from_contact_angle(gamma_iv, theta_deg, gamma_is):
+    """Phase-field surface-energy parameters Sigma_k for the 3-phase model
+    (ice/air/sediment), from the ice-vapor surface energy, the ice-on-substrate
+    contact angle, and the ice-sediment surface energy.
+
+    Young's law at the ice-sediment-vapor triple line gives the sediment-vapor
+    energy:  gamma_sv = gamma_is + gamma_iv * cos(theta).  Then (Sigma_k =
+    sum of the two interfacial energies involving phase k, minus the opposite):
+        Sigma_i = gamma_iv + gamma_is - gamma_sv = gamma_iv (1 - cos theta)   > 0 for theta>0
+        Sigma_a = gamma_iv + gamma_sv - gamma_is = gamma_iv (1 + cos theta)   > 0 for theta<180
+        Sigma_s = gamma_is + gamma_sv - gamma_iv = 2 gamma_is - gamma_iv(1-cos theta)
+
+    Two of the three positivity (triple-junction stability) conditions hold
+    automatically; the ONLY real constraint is Sigma_s > 0, i.e.
+        gamma_is > (gamma_iv/2)(1 - cos theta) = Sigma_i / 2.
+    Violating it inverts the sediment well and produces the spurious air film
+    that wets the ice-sediment interface (the prior-attempt failure mode).
+
+    Returns a dict: Sigma_i, Sigma_a, Sigma_s, gamma_sv, gamma_is_floor, margin
+    (= gamma_is - floor), ok (bool).
+    """
+    ct = math.cos(math.radians(theta_deg))
+    gamma_sv = gamma_is + gamma_iv * ct
+    Sigma_i = gamma_iv * (1.0 - ct)
+    Sigma_a = gamma_iv * (1.0 + ct)
+    Sigma_s = 2.0 * gamma_is - gamma_iv * (1.0 - ct)
+    floor   = 0.5 * gamma_iv * (1.0 - ct)
+    return dict(Sigma_i=Sigma_i, Sigma_a=Sigma_a, Sigma_s=Sigma_s,
+                gamma_sv=gamma_sv, gamma_is_floor=floor,
+                margin=gamma_is - floor, ok=(gamma_is > floor))
+
+
+def print_gamma_report(gamma_iv, theta_deg, gamma_is):
+    """Human-readable Sigma_k report with the Sigma_s>0 floor check, in the
+    style of comp_eps's other diagnostics. Use before any 3-phase run:
+        python preprocess/comp_eps.py --gamma_iv 0.109 --theta 90 --gamma_is 0.06
+    """
+    g = gammas_from_contact_angle(gamma_iv, theta_deg, gamma_is)
+    print("\n--- Surface energies for the 3-phase model (Sigma_k from contact angle) ---")
+    print(f"  inputs: gamma_iv = {gamma_iv:.4e} J/m^2,  theta = {theta_deg:g} deg,  "
+          f"gamma_is = {gamma_is:.4e} J/m^2")
+    print(f"  Young:  gamma_sv = gamma_is + gamma_iv cos(theta) = {g['gamma_sv']:.4e} J/m^2")
+    print(f"  -Sigma_i  {g['Sigma_i']:.4e}   (ice; > 0 automatically)")
+    print(f"  -Sigma_a  {g['Sigma_a']:.4e}   (air; > 0 automatically)")
+    print(f"  -Sigma_s  {g['Sigma_s']:.4e}   (sediment)")
+    print(f"  Sigma_s>0 floor: gamma_is > (gamma_iv/2)(1-cos theta) = {g['gamma_is_floor']:.4e} J/m^2")
+    if g["ok"]:
+        print(f"  OK: gamma_is clears the floor by {g['margin']:.4e} J/m^2 "
+              f"({100.0*g['margin']/g['gamma_is_floor']:.0f}% margin) -> Sigma_s > 0.")
+    else:
+        print(f"  *** VIOLATION: gamma_is is {(-g['margin']):.4e} J/m^2 BELOW the floor "
+              f"-> Sigma_s < 0 (inverted sediment well; expect spurious air at the "
+              f"ice-sediment interface). Raise gamma_is or lower theta. ***")
+    print(f"  opts:  -Sigma_i {g['Sigma_i']:.4e} -Sigma_a {g['Sigma_a']:.4e} "
+          f"-Sigma_s {g['Sigma_s']:.4e}")
+    return g
+
+
 def _cli():
     ap = argparse.ArgumentParser(
         description=("Compute ε, mesh, and derived phase-field model parameters "
                      "per K&P (2009) and M&F (2024) SI Eq. 9. Mesh rule: h = ε/√2."),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    ap.add_argument("--Lx",    type=float, required=True,  help="Domain length x [m]")
+    ap.add_argument("--Lx",    type=float, default=None,   help="Domain length x [m] (required for the eps computation)")
     ap.add_argument("--Ly",    type=float, default=0.0,    help="Domain length y [m]; 0 = unused")
     ap.add_argument("--Lz",    type=float, default=0.0,    help="Domain length z [m]; 0 = unused")
     ap.add_argument("--Rave",  type=float, default=3.0e-5, help="Representative grain radius [m]")
@@ -706,7 +764,27 @@ def _cli():
                     help="Opts file to update in place")
     ap.add_argument("--quiet",  action="store_true",
                     help="Print only ε and Nx/Ny/Nz (one per line)")
+    # 3-phase surface-energy check (Sigma_k from contact angle); standalone if no --Lx.
+    ap.add_argument("--gamma_iv", type=float, default=0.109,
+                    help="Ice-vapor surface energy [J/m^2] (for --theta report)")
+    ap.add_argument("--theta",    type=float, default=None,
+                    help="Ice-on-substrate contact angle [deg]: print the 3-phase "
+                         "Sigma_k report + Sigma_s>0 floor check, then (if no --Lx) exit")
+    ap.add_argument("--gamma_is", type=float, default=None,
+                    help="Ice-sediment surface energy [J/m^2] (for --theta report)")
     args = ap.parse_args()
+
+    # Standalone / add-on 3-phase surface-energy report.
+    if args.theta is not None:
+        if args.gamma_is is None:
+            ap.error("--theta needs --gamma_is (and optionally --gamma_iv).")
+        print_gamma_report(args.gamma_iv, args.theta, args.gamma_is)
+        if args.Lx is None:
+            return   # gamma-only invocation
+
+    if args.Lx is None:
+        ap.error("--Lx is required for the eps computation (or use --theta/--gamma_is "
+                 "for a standalone surface-energy report).")
 
     n_modes = sum(x is not None for x in (args.alpha, args.alpha_range, args.sigma_surf))
     if n_modes > 1:
