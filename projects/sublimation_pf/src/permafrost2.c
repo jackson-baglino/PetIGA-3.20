@@ -59,6 +59,12 @@ int main(int argc, char *argv[]) {
 
     user.cp_ice     = 1.96e3;   /* Specific heat capacity of ice */
     user.cp_air     = 1.044e3;  /* Specific heat capacity of air */
+    /* Sediment (lunar regolith grain) — 3-phase model only. Solid-grain values
+     * (docs/material_parameters.md §2.3): grain density 2900-3100, silicate cp
+     * ~700, mineral thermal conductivity ~2. Override via -thcond_sed/-cp_sed/-rho_sed. */
+    user.thcond_sed = 2.0;      /* Thermal conductivity of sediment grain [W/m/K] */
+    user.cp_sed     = 700.0;    /* Specific heat capacity of sediment [J/kg/K] */
+    user.rho_sed    = 3000.0;   /* Density of sediment grain [kg/m^3] */
 
     user.rho_ice    = 919.0;    /* Density of ice */
     user.rho_air    = 1.341;    /* Density of air */
@@ -453,6 +459,9 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscOptionsReal("-cp_ice", "Specific heat capacity of ice", "", user.cp_ice, &user.cp_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-cp_air", "Specific heat capacity of air", "", user.cp_air, &user.cp_air, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-thcond_sed", "Thermal conductivity of sediment grain (3-phase)", "", user.thcond_sed, &user.thcond_sed, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-cp_sed", "Specific heat capacity of sediment (3-phase)", "", user.cp_sed, &user.cp_sed, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-rho_sed", "Density of sediment grain (3-phase)", "", user.rho_sed, &user.rho_sed, NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsReal("-rho_ice", "Density of ice", "", user.rho_ice, &user.rho_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);

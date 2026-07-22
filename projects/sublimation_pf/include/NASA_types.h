@@ -35,6 +35,8 @@ typedef struct {
   PetscReal thcond_ice, thcond_air;  // Thermal conductivities of ice and air
   PetscReal cp_ice, cp_air;  // Specific heat capacities of ice and air
   PetscReal rho_ice, rho_air;  // Densities of ice and air
+  // Sediment (regolith) phase — used only in the 3-phase model (dof=4).
+  PetscReal thcond_sed, cp_sed, rho_sed;
   PetscReal dif_vap;  // Vapor diffusivity in air
   PetscReal lat_sub;  // Latent heat of sublimation
   PetscReal diff_sub;  // Diffusivity related to sublimation

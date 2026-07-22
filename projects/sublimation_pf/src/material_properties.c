@@ -259,3 +259,74 @@ void Sigma0(PetscScalar temp, PetscScalar *sigm0)
 
     return;
 }
+
+/* ==========================================================================
+ * Three-phase (ice / sediment / air) material properties and triple well.
+ * Used only by the 3-phase model (dof=4, assembly_sed.c). air = 1 - ice - sed.
+ * Callers pass clamped fractions; these are exact linear mixtures with
+ * constant analytic derivatives (d(air)/d(ice) = d(air)/d(sed) = -1).
+ * ========================================================================== */
+
+/* Effective thermal conductivity K(phi) = ice*k_i + sed*k_s + air*k_a. */
+void ThermalCond3(AppCtx *user, PetscScalar ice, PetscScalar sed,
+                  PetscScalar *cond, PetscScalar *dcond_ice, PetscScalar *dcond_sed)
+{
+    PetscReal ki = user->thcond_ice, ka = user->thcond_air, ks = user->thcond_sed;
+    PetscScalar air = 1.0 - ice - sed;
+    if (cond)      (*cond)      = ice*ki + sed*ks + air*ka;
+    if (dcond_ice) (*dcond_ice) = ki - ka;
+    if (dcond_sed) (*dcond_sed) = ks - ka;
+}
+
+/* Effective heat capacity cp(phi) = ice*cp_i + sed*cp_s + air*cp_a. */
+void HeatCap3(AppCtx *user, PetscScalar ice, PetscScalar sed,
+              PetscScalar *cp, PetscScalar *dcp_ice, PetscScalar *dcp_sed)
+{
+    PetscReal ci = user->cp_ice, ca = user->cp_air, cs = user->cp_sed;
+    PetscScalar air = 1.0 - ice - sed;
+    if (cp)      (*cp)      = ice*ci + sed*cs + air*ca;
+    if (dcp_ice) (*dcp_ice) = ci - ca;
+    if (dcp_sed) (*dcp_sed) = cs - ca;
+}
+
+/* Effective density rho(phi) = ice*rho_i + sed*rho_s + air*rho_a. */
+void Density3(AppCtx *user, PetscScalar ice, PetscScalar sed,
+              PetscScalar *rho, PetscScalar *drho_ice, PetscScalar *drho_sed)
+{
+    PetscReal ri = user->rho_ice, ra = user->rho_air, rs = user->rho_sed;
+    PetscScalar air = 1.0 - ice - sed;
+    if (rho)      (*rho)      = ice*ri + sed*rs + air*ra;
+    if (drho_ice) (*drho_ice) = ri - ra;
+    if (drho_sed) (*drho_sed) = rs - ra;
+}
+
+/* Triple-well driving force for the ice equation:
+ *   g = dF^tri/dphi_i - dF^tri/dphi_a   (the beta-eliminated difference)
+ * with F^tri = 1/2 * sum_k Sigma_k phi_k^2 (1-phi_k)^2 + Lambda phi_i^2 phi_s^2 phi_a^2,
+ * phi_a = 1 - phi_i - phi_s. Returns g and its derivatives w.r.t. the two
+ * independent DOFs (phi_i, phi_s). Reduces to the 2-phase double well
+ * (Sigma_i+Sigma_a) phi_i(1-phi_i)(1-2phi_i) when sed = 0. See the
+ * derivation in studies/icy_regolith/explicit_sediment_phase/PLAN.md.
+ *
+ *   w(p)  = p(1-p)(1-2p),   w'(p) = 1 - 6p + 6p^2
+ *   g        = Si w(i) - Sa w(a) + 2 L s^2 ( i a^2 - i^2 a )
+ *   dg/di    = Si w'(i) + Sa w'(a) + 2 L s^2 ( a^2 - 4 i a + i^2 )
+ *   dg/ds    = Sa w'(a) + 2 L [ 2 s i a (a - i) + s^2 ( i^2 - 2 i a ) ]
+ */
+void TripleWell(AppCtx *user, PetscScalar ice, PetscScalar sed,
+                PetscScalar *g, PetscScalar *dg_ice, PetscScalar *dg_sed)
+{
+    PetscReal Si = user->Sigma_i, Sa = user->Sigma_a, L = user->Lambd;
+    PetscScalar i = ice, s = sed, a = 1.0 - ice - sed;
+#define WELL(p)  ((p)*(1.0-(p))*(1.0-2.0*(p)))
+#define DWELL(p) (1.0 - 6.0*(p) + 6.0*(p)*(p))
+    if (g)
+        (*g)      = Si*WELL(i) - Sa*WELL(a) + 2.0*L*s*s*(i*a*a - i*i*a);
+    if (dg_ice)
+        (*dg_ice) = Si*DWELL(i) + Sa*DWELL(a) + 2.0*L*s*s*(a*a - 4.0*i*a + i*i);
+    if (dg_sed)
+        (*dg_sed) = Sa*DWELL(a)
+                  + 2.0*L*( 2.0*s*i*a*(a - i) + s*s*(i*i - 2.0*i*a) );
+#undef WELL
+#undef DWELL
+}
