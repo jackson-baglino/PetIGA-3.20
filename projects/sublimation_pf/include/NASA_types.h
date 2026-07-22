@@ -113,7 +113,7 @@ typedef struct {
   PetscReal ice_flat_height[MAX_SED_GRAINS];
 
   // Initial normal vector components (possibly for a structured interface)
-  PetscReal norm0[3];  // Per-DOF initial residual norms for SNES convergence check
+  PetscReal norm0[4];  // Per-DOF initial residual norms for SNES convergence check
 
   // Flags for controlling different simulation options
   PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 2=flat interface
