@@ -1,0 +1,35 @@
+# =============================================================================
+# geometry/2D_ice_sed_contact.opts — 2D 3-phase (dof=4) ice grain ON a sediment
+# slab, for studying the ice-sediment contact (triple junction) and the Lambda
+# triple-junction penalty sweep. Effort 2.
+#
+# Unlike 2D_ice_sed_slab.opts (which defaults to the phi_s=0 VALIDATION case),
+# this bakes in a real sediment slab AND a valid contact-angle surface-energy
+# set (theta=90 deg, gamma_is=0.07 -> Sigma_s=+0.031, 28% above the >0 floor;
+# comp_eps.py --theta 90 --gamma_is 0.07), so a run needs NO extra -Sigma/-sed
+# opts — only the Lambda you are sweeping:
+#
+#   ./scripts/Studio/run_permafrost.sh 2D_ice_sed_contact 1day_T-20_h1.00 L0   -- -Lambda 0
+#   ./scripts/Studio/run_permafrost.sh 2D_ice_sed_contact 1day_T-20_h1.00 L1   -- -Lambda 1
+#   ./scripts/Studio/run_permafrost.sh 2D_ice_sed_contact 1day_T-20_h1.00 L10  -- -Lambda 10
+#   ./scripts/Studio/run_permafrost.sh 2D_ice_sed_contact 1day_T-20_h1.00 L100 -- -Lambda 100
+#
+# (If -Lambda is omitted it falls back to solver.opts's Lambda=0 — the baseline.)
+# =============================================================================
+-dof 4
+-ic_type sed_slab_grain
+-dim 2
+-Nx 190
+-Ny 190
+-Nz 1
+-Lx 6.25e-05
+-Ly 6.25e-05
+-Lz 0
+-RCice 1.875e-5
+-sed_slab_height 1.5e-5
+-Sigma_i 0.109
+-Sigma_a 0.109
+-Sigma_s 0.031
+-delt_t 1.0e-4
+-eps 4.6648e-07
+-periodic 0
