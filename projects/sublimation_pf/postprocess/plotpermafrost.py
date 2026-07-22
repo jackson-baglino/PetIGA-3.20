@@ -173,9 +173,10 @@ def _write_vts(outfile: str, nrb, sol: np.ndarray) -> None:
         fields["Temperature"]  = sol[..., 1]
     if ndof >= 3:
         fields["VaporDensity"] = sol[..., 2]
+        fields["AirPhase"]     = 1.0 - sol[..., 0]              # 2-phase; refined below if sediment present
     if ndof >= 4:
         fields["SedPhase"]     = sol[..., 3]
-        fields["AirPhase"]     = 1.0 - sol[..., 0] - sol[..., 3]
+        fields["AirPhase"]     = 1.0 - sol[..., 0] - sol[..., 3]  # 3-phase air
 
     # Reorder each scalar field to VTK point order
     fields_vtk = {name: _vtk_scalar(arr) for name, arr in fields.items()}

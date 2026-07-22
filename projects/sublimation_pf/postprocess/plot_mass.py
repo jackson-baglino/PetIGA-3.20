@@ -271,11 +271,15 @@ def compute_masses(run_dir: str):
 
     for k, sf in enumerate(sol_files[:n]):
         sol = PetIGA().read_vec(sf, nrb)
-        sol = sol.reshape(-1, 3)               # ensure (N_total, 3) even for 2D
+        # Infer DOF-per-node from the data (3 = 2-phase ice/T/vapor,
+        # 4 = 3-phase + sediment) instead of assuming 3.
+        ndof = int(sol.size // N_total)
+        sol = sol.reshape(-1, ndof)
 
         phi_i = sol[:, 0].clip(0.0, 1.0)
         rho_v = sol[:, 2].clip(0.0)
-        phi_a = (1.0 - phi_i).clip(0.0, 1.0)
+        phi_s = sol[:, 3].clip(0.0, 1.0) if ndof >= 4 else 0.0
+        phi_a = (1.0 - phi_i - phi_s).clip(0.0, 1.0)   # 3-phase air fraction
 
         mass_ice[k] = RHO_ICE * np.sum(phi_i) * dV
         mass_vap[k] = np.sum(rho_v * phi_a) * dV
