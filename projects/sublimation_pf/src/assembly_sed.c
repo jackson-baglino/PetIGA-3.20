@@ -155,10 +155,12 @@ PetscErrorCode Residual_A2(IGAPoint pnt,
                 - pc * (user->alph_sub / rho_ice) * loc
                   * (PetscRealPart(rhov) - rho_vs) * N0[a] );
 
-        /* Temperature (mixture rho for latent heat, xi_T scaling). */
+        /* Temperature (xi_T scaling; latent-heat density is rho_ice or the
+         * mixture rho per -latent_mixture_rho, same choice as A1). */
         R[a][1] = rw * ( rho * cp * N0[a] * tem_t
                 + user->xi_T * thcond * gN_gtem
-                - pc * user->xi_T * rho * lat_sub * phi_t * N0[a] );
+                - pc * user->xi_T * (user->latent_mixture_rho ? rho : rho_ice)
+                  * lat_sub * phi_t * N0[a] );
 
         /* Vapor (phi_a = 1-phi_i-phi_s storage/diffusion, xi_v scaling). */
         R[a][2] = rw * ( phi_aef * N0[a] * rhov_t

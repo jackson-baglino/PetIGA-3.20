@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
     user.ic_grain_union = PETSC_FALSE; /* multi_grains IC: additive (see NASA_types.h) */
     user.ssa_view = NULL;              /* SSA_evo.dat viewer, opened lazily in Monitor() */
     user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
+    user.latent_mixture_rho    = PETSC_FALSE;  /* default rho_ice (current A1); A/B tested */
 
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
@@ -453,6 +454,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-dif_vap",         "Vapor diffusivity in air [m^2/s]",                 "", user.dif_vap, &user.dif_vap, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-dtCFL_dphimax",   "Max pointwise |dphi| per step for the CFL limiter","", user.cfl_dphimax, &user.cfl_dphimax, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-decouple_phase_change", "Zero ice_t-driven source terms in R_tem/R_vap too (not just S_sub in R_ice)", "", user.decouple_phase_change, &user.decouple_phase_change, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-latent_mixture_rho", "Latent-heat density in R_tem: 1 => mixture rho(phi), 0 => rho_ice (A1 & A2)", "", user.latent_mixture_rho, &user.latent_mixture_rho, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-flag_tIC", "1D IC variant (0=centered slab, 2=flat interface)", "", user.flag_tIC, &user.flag_tIC, NULL); CHKERRQ(ierr);
     /* --- Thermophysical properties --------------------------------------- */
     ierr = PetscOptionsReal("-thcond_ice", "Thermal conductivity of ice", "", user.thcond_ice, &user.thcond_ice, NULL); CHKERRQ(ierr);

@@ -127,6 +127,9 @@ typedef struct {
   PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 2=flat interface
   PetscInt  outp;            // output control flag
   PetscBool flag_Tdep;       // temperature-dependent material properties
+  PetscBool latent_mixture_rho;      // latent heat density in R_tem: 1 => mixture
+                                     // rho(phi), 0 => rho_ice. A/B tested for mass
+                                     // conservation; applies to BOTH A1 and A2.
   PetscBool decouple_phase_change;  // -decouple_phase_change 1: zero the ice_t-driven
                                      // source terms in R_tem (latent heat) and R_vap
                                      // (mass-balance) too, not just S_sub in R_ice --
