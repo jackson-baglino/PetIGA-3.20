@@ -1125,6 +1125,8 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD, "IC type: %s (1D)\n", ic_type);
         if (strcmp(ic_type, "single_ice") == 0) {
             ierr = FormInitialSingleIceGrain1D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "sed_slab_grain") == 0) {
+            ierr = FormInitialSedIce1D(iga, U, &user); CHKERRQ(ierr);  /* 1D 3-phase stack */
         } else {
             /* Default: centered slab or flat interface, variant via -flag_tIC */
             ierr = FormInitialCondition1D(iga, U, &user); CHKERRQ(ierr);

@@ -1,0 +1,25 @@
+# =============================================================================
+# geometry/1D_ice_sed.opts — 1D 3-phase (dof=4) sediment|ice|air stack.
+# Effort 2 (explicit sediment phase). Mirrors 1D_single_ice.opts (same
+# Nx/Lx/eps/RCice) but runs the 4-DOF model.
+#
+# DEFAULT is VALIDATION MODE (-sed_slab_height 0 => phi_s=0, centred ice grain):
+# a dof=4 run must reproduce the 2-phase 1D_single_ice result. Compare:
+#   ./scripts/Studio/run_permafrost.sh 1D_single_ice 1day_T-20_h1.00
+#   ./scripts/Studio/run_permafrost.sh 1D_ice_sed    1day_T-20_h1.00
+#
+# For the REAL 3-phase stack (sediment | ice | air), set the slab height and a
+# valid surface-energy set (Sigma_s > 0; use comp_eps.py --theta/--gamma_is):
+#   ./scripts/Studio/run_permafrost.sh 1D_ice_sed 1day_T-20_h1.00 stack -- \
+#       -sed_slab_height 1.5e-5 -Sigma_i 0.109 -Sigma_a 0.109 -Sigma_s 0.031
+# =============================================================================
+-dof 4
+-ic_type sed_slab_grain
+-dim 1
+-Nx 96
+-Lx 6.25e-05
+-RCice 1.875e-5
+-sed_slab_height 0.0
+-delt_t 1.0e-2
+-eps 7.12e-07
+-periodic 0

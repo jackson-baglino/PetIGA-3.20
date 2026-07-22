@@ -24,4 +24,8 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user);
  * sed_slab_height <= 0 => phi_s=0 everywhere (2-phase validation mode). */
 PetscErrorCode FormInitialSedSlabGrain2D(IGA iga, Vec U, AppCtx *user);
 
+/* 3-phase (dof=4) 1D: sediment|ice|air stack; sed_slab_height<=0 => phi_s=0
+ * centred grain (2-phase validation). */
+PetscErrorCode FormInitialSedIce1D(IGA iga, Vec U, AppCtx *user);
+
 #endif // INITIAL_CONDITIONS_H

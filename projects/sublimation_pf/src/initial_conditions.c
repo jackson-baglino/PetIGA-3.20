@@ -751,3 +751,85 @@ PetscErrorCode FormInitialSedSlabGrain2D(IGA iga, Vec U, AppCtx *user)
     ierr = DMDestroy(&da);                 CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
+
+
+/* =========================================================================
+ * FormInitialSedIce1D  —  1D 3-phase (dof=4) initial condition.
+ *
+ * A three-layer stack along x:  SEDIMENT [0, x_sed] | ICE [x_sed, x_ice] | AIR.
+ * x_sed = sed_slab_height, ice block width = 2*RCice. Cleanly isolates the
+ * ice-sediment and ice-air interfaces in 1D — the sharpest test of the triple
+ * well and whether spurious air appears at the ice-sediment contact.
+ *
+ * VALIDATION MODE (sed_slab_height <= 0): phi_s = 0 and a centred ice grain,
+ * identical to FormInitialSingleIceGrain1D, so a dof=4 run reproduces the
+ * 2-phase 1D result.
+ * =========================================================================*/
+PetscErrorCode FormInitialSedIce1D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx    = user->Lx;
+    const PetscReal eps   = user->eps;
+    const PetscReal RCice = user->RCice;
+    const PetscReal h_sed = user->sed_slab_height;
+    const PetscReal tc    = 0.5 / eps;
+    const PetscReal x_sed = h_sed;                 /* sediment fills [0, x_sed] */
+    const PetscReal x_ice = h_sed + 2.0 * RCice;   /* ice block [x_sed, x_ice] */
+    const PetscReal cx    = 0.5 * Lx;              /* validation-mode grain centre */
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (1D sediment|ice|air stack, 3-phase) ---\n"
+        "  sed_slab_height = %.4e m %s\n"
+        "  ice block = [%.4e, %.4e] m,  RCice = %.4e m\n",
+        h_sed, (h_sed > 0.0) ? "" : "(<=0: phi_s=0, 2-phase validation mode)",
+        x_sed, x_ice, RCice);
+
+    if (RCice <= 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE, "RCice must be > 0");
+    if (h_sed > 0.0 && x_ice >= Lx)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "ice block end %.2e exceeds Lx=%.2e — lower sed_slab_height/RCice or raise Lx",
+                x_ice, Lx);
+
+    DM da;
+    FieldSed *u;
+    DMDALocalInfo info;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+
+        PetscReal sed, ice;
+        if (h_sed > 0.0) {
+            sed = 0.5 - 0.5 * PetscTanhReal(tc * (x - x_sed));
+            /* smooth box = 1 between x_sed and x_ice, 0 outside */
+            ice = (0.5 + 0.5 * PetscTanhReal(tc * (x - x_sed)))
+                * (0.5 - 0.5 * PetscTanhReal(tc * (x - x_ice)));
+        } else {
+            sed = 0.0;
+            ice = 0.5 - 0.5 * PetscTanhReal(tc * (PetscAbsReal(x - cx) - RCice));
+        }
+        sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+        ice = PetscMin(PetscMax(ice, 0.0), 1.0);
+        if (ice > 1.0 - sed) ice = 1.0 - sed;   /* guarantee phi_a >= 0 */
+
+        u[i].ice = ice;
+        u[i].sed = sed;
+        u[i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
+
+        PetscScalar rho_vs, temp_loc = u[i].tem;
+        RhoVS_I(user, temp_loc, &rho_vs, NULL);
+        { PetscReal _pa = PetscMax(0.0, 1.0 - ice - sed);
+          u[i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
