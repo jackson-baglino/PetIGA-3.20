@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
     user.thcond_sed = 2.0;      /* Thermal conductivity of sediment grain [W/m/K] */
     user.cp_sed     = 700.0;    /* Specific heat capacity of sediment [J/kg/K] */
     user.rho_sed    = 3000.0;   /* Density of sediment grain [kg/m^3] */
+    user.sed_slab_height = 0.0; /* 3-phase IC slab height; 0 => phi_s=0 (validation) */
 
     user.rho_ice    = 919.0;    /* Density of ice */
     user.rho_air    = 1.341;    /* Density of air */
@@ -462,6 +463,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-thcond_sed", "Thermal conductivity of sediment grain (3-phase)", "", user.thcond_sed, &user.thcond_sed, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-cp_sed", "Specific heat capacity of sediment (3-phase)", "", user.cp_sed, &user.cp_sed, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-rho_sed", "Density of sediment grain (3-phase)", "", user.rho_sed, &user.rho_sed, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-sed_slab_height", "3-phase IC: sediment fills y < this height [m] (0 => phi_s=0, 2-phase validation)", "", user.sed_slab_height, &user.sed_slab_height, NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsReal("-rho_ice", "Density of ice", "", user.rho_ice, &user.rho_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);
@@ -1143,9 +1145,11 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialSingleIceGrain2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "multi_grains") == 0) {
             ierr = FormInitialMultiGrains2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "sed_slab_grain") == 0) {
+            ierr = FormInitialSedSlabGrain2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
-                    "Unknown -ic_type. Valid: two_ice_grains_boundary ice_slab single_ice multi_grains");
+                    "Unknown -ic_type. Valid: two_ice_grains_boundary ice_slab single_ice multi_grains sed_slab_grain");
         }
     }
 

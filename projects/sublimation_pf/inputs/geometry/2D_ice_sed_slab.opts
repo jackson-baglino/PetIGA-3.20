@@ -1,0 +1,35 @@
+# =============================================================================
+# geometry/2D_ice_sed_slab.opts — 3-phase (dof=4) sediment slab + ice grain.
+# Effort 2 (explicit sediment phase); studies/icy_regolith/explicit_sediment_phase/.
+#
+# Mirrors 2D_single_ice.opts (same domain/mesh/eps/RCice) but runs the 4-DOF
+# three-phase model (ice/T/vapor/sediment, Residual_A2).
+#
+# DEFAULT is VALIDATION MODE: -sed_slab_height 0 => phi_s=0 everywhere, so
+# Residual_A2 reduces to Residual_A1 and this MUST reproduce the 2-phase
+# 2D_single_ice run bit-for-bit (ice evolution, mass conservation). Run both
+# and compare as the first correctness gate:
+#   ./scripts/Studio/run_permafrost.sh 2D_single_ice   1day_T-20_h0.95
+#   ./scripts/Studio/run_permafrost.sh 2D_ice_sed_slab 1day_T-20_h0.95
+#
+# For the REAL 3-phase case (sediment slab present), override the slab height:
+#   ./scripts/Studio/run_permafrost.sh 2D_ice_sed_slab 1day_T-20_h0.95 slab \
+#       -- -sed_slab_height 1.5e-5
+# The ice grain is then seated just above the slab. Set the surface energies
+# (-Sigma_i/-Sigma_a/-Sigma_s) from a valid contact-angle gamma set before
+# reading anything into the ice-sediment contact morphology.
+# =============================================================================
+-dof 4
+-ic_type sed_slab_grain
+-dim 2
+-Nx 190
+-Ny 190
+-Nz 1
+-Lx 6.25e-05
+-Ly 6.25e-05
+-Lz 0
+-RCice 1.875e-5
+-sed_slab_height 0.0
+-delt_t 1.0e-4
+-eps 4.6648e-07
+-periodic 0

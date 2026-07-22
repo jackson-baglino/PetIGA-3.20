@@ -661,3 +661,93 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
     ierr = PetscFree(gy); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
+
+
+/* =========================================================================
+ * FormInitialSedSlabGrain2D  —  simplest 3-phase (dof=4) initial condition.
+ *
+ * A flat SEDIMENT slab filling y < sed_slab_height (phi_s), plus ONE ice grain
+ * (radius RCice) centred in x and sitting just above the slab. Air fills the
+ * rest. This is the "simplest geometry first" test for the explicit sediment
+ * phase (Effort 2).
+ *
+ * VALIDATION MODE: sed_slab_height <= 0 => phi_s = 0 everywhere and the ice
+ * grain is centred at (Lx/2, Ly/2) — identical to FormInitialSingleIceGrain2D.
+ * With phi_s = 0, Residual_A2 reduces to Residual_A1, so a dof=4 run must
+ * reproduce the trusted 2-phase single-grain result.
+ * =========================================================================*/
+PetscErrorCode FormInitialSedSlabGrain2D(IGA iga, Vec U, AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    const PetscReal Lx    = user->Lx;
+    const PetscReal Ly    = user->Ly;
+    const PetscReal eps   = user->eps;
+    const PetscReal RCice = user->RCice;
+    const PetscReal h_sed = user->sed_slab_height;
+    const PetscReal tc    = 0.5 / eps;               /* equilibrium logistic width */
+    const PetscReal cx    = 0.5 * Lx;
+    /* Grain centre: validation (no slab) -> domain centre; otherwise seat the
+     * grain just above the slab with a thin air gap so phi_a >= 0 at t=0. */
+    const PetscReal cy    = (h_sed > 0.0) ? (h_sed + RCice + 4.0 * eps) : 0.5 * Ly;
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "--- INITIAL CONDITIONS (2D sediment slab + ice grain, 3-phase) ---\n"
+        "  sed_slab_height = %.4e m %s\n"
+        "  ice grain centre = (%.4e, %.4e) m,  RCice = %.4e m\n",
+        h_sed, (h_sed > 0.0) ? "" : "(<=0: phi_s=0, 2-phase validation mode)",
+        cx, cy, RCice);
+
+    if (RCice <= 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "RCice must be > 0 (got %.2e)", RCice);
+    if (cy + RCice >= Ly)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "ice grain (cy=%.2e + R=%.2e) exceeds Ly=%.2e — lower "
+                "sed_slab_height or RCice", cy, RCice, Ly);
+
+    DM da;
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    FieldSed **u;
+    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
+
+    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+
+            /* Sediment slab (flat top at y = h_sed). */
+            PetscReal sed = (h_sed > 0.0)
+                          ? 0.5 - 0.5 * PetscTanhReal(tc * (y - h_sed))
+                          : 0.0;
+            sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+
+            /* Ice grain. */
+            PetscReal dist = PetscSqrtReal(SQ(x - cx) + SQ(y - cy));
+            PetscReal ice  = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCice));
+            ice = PetscMin(PetscMax(ice, 0.0), 1.0);
+            /* Guarantee phi_a = 1 - ice - sed >= 0 at t=0. */
+            if (ice > 1.0 - sed) ice = 1.0 - sed;
+
+            u[j][i].ice = ice;
+            u[j][i].sed = sed;
+            u[j][i].tem = user->temp0
+                          + user->grad_temp0[0] * (x - 0.5 * Lx)
+                          + user->grad_temp0[1] * (y - 0.5 * Ly);
+
+            PetscScalar rho_vs, temp_loc = u[j][i].tem;
+            RhoVS_I(user, temp_loc, &rho_vs, NULL);
+            { PetscReal _pa = PetscMax(0.0, 1.0 - ice - sed);
+              u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}

@@ -20,4 +20,8 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user);
  * on an optionally multi-bump sediment geometry (-sed_grain_x/-sed_grain_R) */
 PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user);
 
+/* 3-phase (dof=4): flat sediment slab (y < sed_slab_height) + one ice grain.
+ * sed_slab_height <= 0 => phi_s=0 everywhere (2-phase validation mode). */
+PetscErrorCode FormInitialSedSlabGrain2D(IGA iga, Vec U, AppCtx *user);
+
 #endif // INITIAL_CONDITIONS_H

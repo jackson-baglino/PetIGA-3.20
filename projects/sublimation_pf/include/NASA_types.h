@@ -11,6 +11,12 @@
 typedef struct {
   PetscScalar ice, tem, rhov;
 } Field;
+/* 4-DOF layout for the 3-phase model (dof=4). Must match the DOF order in
+ * assembly_sed.c (0=ice,1=tem,2=rhov,3=sed). Used by 3-phase ICs so the
+ * DMDA node-array stride matches the 4-component solution vector. */
+typedef struct {
+  PetscScalar ice, tem, rhov, sed;
+} FieldSed;
 /* Application context structure */
 typedef struct {
   IGA       iga;  // Isogeometric analysis (IGA) structure for managing geometry and basis functions
@@ -37,6 +43,8 @@ typedef struct {
   PetscReal rho_ice, rho_air;  // Densities of ice and air
   // Sediment (regolith) phase — used only in the 3-phase model (dof=4).
   PetscReal thcond_sed, cp_sed, rho_sed;
+  PetscReal sed_slab_height;  // 3-phase IC: sediment fills y < this height
+                              // [m]; 0 => no sediment (phi_s=0, reduces to 2-phase).
   PetscReal dif_vap;  // Vapor diffusivity in air
   PetscReal lat_sub;  // Latent heat of sublimation
   PetscReal diff_sub;  // Diffusivity related to sublimation
