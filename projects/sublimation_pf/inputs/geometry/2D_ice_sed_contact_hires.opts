@@ -1,0 +1,41 @@
+# =============================================================================
+# geometry/2D_ice_sed_contact_hires.opts — 2D_ice_sed_contact.opts at HALF eps
+# and DOUBLE the mesh (h/eps held fixed). For the eps-scaling test of the
+# ice-sediment interface "spurious air" (Effort 2).
+#
+# Everything is identical to 2D_ice_sed_contact.opts EXCEPT:
+#   eps: 4.6648e-07 -> 2.3324e-07   (halved)
+#   Nx,Ny: 190 -> 380               (doubled, so h = eps/sqrt(2) is preserved)
+#
+# The air across the ice-sed interface is antisymmetric (positive on the
+# sediment side, 0 at phi_i=phi_s=0.5, negative on the ice side) => the ice
+# interface is NARROWER than the frozen sediment interface (a width mismatch,
+# not a third-phase adsorption). This run tests whether that mismatch is a
+# RESOLUTION artifact:
+#   - if the mean interface air drops steeply here -> under-resolution; just use
+#     a smaller eps / finer mesh.
+#   - if the PEAK air is ~unchanged (only the diffuse band thins) -> a genuine
+#     width-ratio mismatch; fix it by initializing the frozen sediment at the
+#     ice's (narrower) width instead.
+#
+#   ./scripts/Studio/run_permafrost.sh 2D_ice_sed_contact_hires 1day_T-20_h1.00 hires
+# (compare against the 2D_ice_sed_contact L1 run). ~4x the DOFs -> slower.
+# =============================================================================
+-dof 4
+-ic_type sed_slab_grain
+-dim 2
+-Nx 380
+-Ny 380
+-Nz 1
+-Lx 6.25e-05
+-Ly 6.25e-05
+-Lz 0
+-RCice 1.875e-5
+-sed_slab_height 1.5e-5
+-Sigma_i 0.109
+-Sigma_a 0.109
+-Sigma_s 0.031
+-Lambda 1.0
+-delt_t 1.0e-4
+-eps 2.3324e-07
+-periodic 0
