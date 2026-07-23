@@ -688,16 +688,18 @@ PetscErrorCode FormInitialSedSlabGrain2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal h_sed = user->sed_slab_height;
     const PetscReal tc    = 0.5 / eps;               /* equilibrium logistic width */
     const PetscReal cx    = 0.5 * Lx;
-    /* Grain centre: validation (no slab) -> domain centre; otherwise seat the
-     * grain just above the slab with a thin air gap so phi_a >= 0 at t=0. */
-    const PetscReal cy    = (h_sed > 0.0) ? (h_sed + RCice + 4.0 * eps) : 0.5 * Ly;
+    /* Grain centre: validation (no slab) -> domain centre; otherwise EMBED the
+     * grain into the slab so its bottom sits ice_inset_frac*RCice below the slab
+     * top (grain contacts/penetrates the sediment, no initial air gap). */
+    const PetscReal cy    = (h_sed > 0.0) ? (h_sed + (1.0 - user->ice_inset_frac) * RCice)
+                                          : 0.5 * Ly;
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (2D sediment slab + ice grain, 3-phase) ---\n"
         "  sed_slab_height = %.4e m %s\n"
-        "  ice grain centre = (%.4e, %.4e) m,  RCice = %.4e m\n",
+        "  ice grain centre = (%.4e, %.4e) m,  RCice = %.4e m,  inset = %.2f*R\n",
         h_sed, (h_sed > 0.0) ? "" : "(<=0: phi_s=0, 2-phase validation mode)",
-        cx, cy, RCice);
+        cx, cy, RCice, user->ice_inset_frac);
 
     if (RCice <= 0.0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
@@ -721,19 +723,24 @@ PetscErrorCode FormInitialSedSlabGrain2D(IGA iga, Vec U, AppCtx *user)
             PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
             PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
 
-            /* Sediment slab (flat top at y = h_sed). Interface sharpened by
-             * sed_width_factor to match the evolved ice width (width-mismatch fix). */
-            PetscReal sed = (h_sed > 0.0)
+            /* Raw sediment slab (flat top at y = h_sed), interface optionally
+             * sharpened by sed_width_factor. */
+            PetscReal slab = (h_sed > 0.0)
                           ? 0.5 - 0.5 * PetscTanhReal(tc * user->sed_width_factor * (y - h_sed))
                           : 0.0;
-            sed = PetscMin(PetscMax(sed, 0.0), 1.0);
+            slab = PetscMin(PetscMax(slab, 0.0), 1.0);
 
             /* Ice grain. */
             PetscReal dist = PetscSqrtReal(SQ(x - cx) + SQ(y - cy));
             PetscReal ice  = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCice));
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
-            /* Guarantee phi_a = 1 - ice - sed >= 0 at t=0. */
-            if (ice > 1.0 - sed) ice = 1.0 - sed;
+
+            /* CARVE the grain out of the sediment: phi_s = slab*(1-ice). Then
+             * phi_a = 1 - ice - sed = (1-ice)*(1-slab) >= 0, which is ZERO
+             * wherever ice OR sediment is present -- no air at the ice-sed
+             * contact at t=0, and the ice-sed interface is complementary
+             * (phi_s = 1-phi_i there), so the widths match automatically. */
+            PetscReal sed = slab * (1.0 - ice);
 
             u[j][i].ice = ice;
             u[j][i].sed = sed;

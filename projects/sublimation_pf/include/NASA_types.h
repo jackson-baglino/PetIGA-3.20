@@ -53,6 +53,11 @@ typedef struct {
   PetscReal thcond_sed, cp_sed, rho_sed;
   PetscReal sed_slab_height;  // 3-phase IC: sediment fills y < this height
                               // [m]; 0 => no sediment (phi_s=0, reduces to 2-phase).
+  PetscReal ice_inset_frac;   // 3-phase IC: embed the ice grain into the sediment
+                              // slab by this fraction of RCice (grain bottom sits
+                              // ice_inset_frac*RCice below the slab top). phi_s is
+                              // carved as slab*(1-phi_i) so there is NO air at the
+                              // ice-sed contact at t=0 (tests spurious air formation).
   PetscReal sed_width_factor; // 3-phase IC: sharpen the frozen phi_s interface by
                               // this factor (tc_sed = factor*0.5/eps). >1 makes the
                               // sediment interface narrower to match the (sharper)
