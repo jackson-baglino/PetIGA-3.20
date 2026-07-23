@@ -30,6 +30,10 @@
 -Sigma_i 0.109
 -Sigma_a 0.109
 -Sigma_s 0.031
+# Lambda=1 is the sweet spot from a 0/1/10/100 sweep: it modestly lowers the
+# ice-sed interface air while keeping the phases in contact. Lambda>=10
+# over-stiffens and opens a spurious air film separating ice from sediment.
+-Lambda 1.0
 -delt_t 1.0e-4
 -eps 4.6648e-07
 -periodic 0
