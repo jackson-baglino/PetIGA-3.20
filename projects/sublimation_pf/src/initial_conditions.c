@@ -721,9 +721,10 @@ PetscErrorCode FormInitialSedSlabGrain2D(IGA iga, Vec U, AppCtx *user)
             PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
             PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
 
-            /* Sediment slab (flat top at y = h_sed). */
+            /* Sediment slab (flat top at y = h_sed). Interface sharpened by
+             * sed_width_factor to match the evolved ice width (width-mismatch fix). */
             PetscReal sed = (h_sed > 0.0)
-                          ? 0.5 - 0.5 * PetscTanhReal(tc * (y - h_sed))
+                          ? 0.5 - 0.5 * PetscTanhReal(tc * user->sed_width_factor * (y - h_sed))
                           : 0.0;
             sed = PetscMin(PetscMax(sed, 0.0), 1.0);
 

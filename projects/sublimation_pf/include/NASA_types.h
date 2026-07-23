@@ -53,6 +53,11 @@ typedef struct {
   PetscReal thcond_sed, cp_sed, rho_sed;
   PetscReal sed_slab_height;  // 3-phase IC: sediment fills y < this height
                               // [m]; 0 => no sediment (phi_s=0, reduces to 2-phase).
+  PetscReal sed_width_factor; // 3-phase IC: sharpen the frozen phi_s interface by
+                              // this factor (tc_sed = factor*0.5/eps). >1 makes the
+                              // sediment interface narrower to match the (sharper)
+                              // evolved ice interface, cancelling the antisymmetric
+                              // ice-sed "spurious air" (width-mismatch fix). Default 1.
   PetscReal dif_vap;  // Vapor diffusivity in air
   PetscReal lat_sub;  // Latent heat of sublimation
   PetscReal diff_sub;  // Diffusivity related to sublimation

@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
     user.cp_sed     = 700.0;    /* Specific heat capacity of sediment [J/kg/K] */
     user.rho_sed    = 3000.0;   /* Density of sediment grain [kg/m^3] */
     user.sed_slab_height = 0.0; /* 3-phase IC slab height; 0 => phi_s=0 (validation) */
+    user.sed_width_factor = 1.0; /* 3-phase IC: frozen phi_s interface sharpening (width-mismatch fix) */
 
     user.rho_ice    = 919.0;    /* Density of ice */
     user.rho_air    = 1.341;    /* Density of air */
@@ -464,6 +465,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-cp_sed", "Specific heat capacity of sediment (3-phase)", "", user.cp_sed, &user.cp_sed, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-rho_sed", "Density of sediment grain (3-phase)", "", user.rho_sed, &user.rho_sed, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-sed_slab_height", "3-phase IC: sediment fills y < this height [m] (0 => phi_s=0, 2-phase validation)", "", user.sed_slab_height, &user.sed_slab_height, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-sed_width_factor", "3-phase IC: sharpen frozen phi_s interface by this factor to match the ice (width-mismatch fix; >1 sharper)", "", user.sed_width_factor, &user.sed_width_factor, NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsReal("-rho_ice", "Density of ice", "", user.rho_ice, &user.rho_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);
