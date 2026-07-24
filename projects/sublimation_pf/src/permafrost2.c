@@ -986,6 +986,16 @@ int main(int argc, char *argv[]) {
         ierr = VecStrideSet(Xu, 1, PETSC_INFINITY);  CHKERRQ(ierr);
         ierr = VecStrideSet(Xl, 2, PETSC_NINFINITY); CHKERRQ(ierr);
         ierr = VecStrideSet(Xu, 2, PETSC_INFINITY);  CHKERRQ(ierr);
+        /* dof==4 (3-phase): stride 3 is the FROZEN sediment (d phi_s/dt = 0).
+         * It must be set explicitly to (-inf,+inf) -- IGACreateVec zero-fills, so
+         * leaving it unset would pin phi_s to [0,0] and erase the sediment slab.
+         * Sediment does not evolve, so it needs no bound; only ice (stride 0) is
+         * constrained. Air is a derived field (1-phi_i-phi_s), not a DOF, and so
+         * cannot be VI-constrained -- bounding ice is what keeps it in check. */
+        if (user.dof == 4) {
+            ierr = VecStrideSet(Xl, 3, PETSC_NINFINITY); CHKERRQ(ierr);
+            ierr = VecStrideSet(Xu, 3, PETSC_INFINITY);  CHKERRQ(ierr);
+        }
         ierr = SNESVISetVariableBounds(nonlin, Xl, Xu); CHKERRQ(ierr);
         ierr = VecDestroy(&Xl); CHKERRQ(ierr);
         ierr = VecDestroy(&Xu); CHKERRQ(ierr);

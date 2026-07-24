@@ -113,15 +113,18 @@
                                         # consecutive halvings and ran out at 25)
 
 # ---------- Nonlinear solver (SNES) ------------------------------------------
-# VI bounds disabled: the strict [0,1] bound-constrained solve (vinewtonssls)
-# was tested but caused GT Jacobian singularity failures once a grain dissolved
-# (DOFs pinned at phi=0 → |∇phi|=0 → 1/|∇phi|^3 blows up at large dt).
-# Plain newtonls is more robust for multi-year Ostwald-ripening runs.
-#
-# To re-enable VI: set -vi_bounds 1 and -snes_type vinewtonssls (vinewtonrsls
-# hits a PETSc parallel bug with MPIBAIJ; vinewtonssls is the working choice).
--vi_bounds 0
--snes_type newtonls
+# VI bounds ENABLED with strict [0,1] on the ice DOF (2026-07-24). The earlier
+# reason for disabling VI -- strict [0,1] caused a GT Jacobian singularity once a
+# grain dissolved (DOFs pinned at phi=0 => |grad phi|=0 => 1/|grad phi|^3 blows
+# up) -- no longer applies: the Gibbs-Thomson curvature term was removed on
+# 2026-07-21, so there is no 1/|grad phi|^3 to blow up. Enforcing strict bounds
+# to eliminate the phase-field overshoot at the ice-sediment triple junction.
+# vinewtonssls is the working VI type (vinewtonrsls hits a PETSc MPIBAIJ bug).
+# -vi_lo/-vi_hi set the ice bound; strict [0,1] here (default is -0.01/1.01).
+-vi_bounds 1
+-vi_lo 0.0
+-vi_hi 1.0
+-snes_type vinewtonssls
 -snes_max_it 50
 -snes_rtol 1e-06
 -snes_atol 1e-06
