@@ -2,6 +2,19 @@
 
 > ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented. Predates the rename to `sublimation_pf` — read any `projects/permafrost` path as `projects/sublimation_pf`.
 
+> 🔧 **UPDATE 2026-07-24 (VI re-enabled, strict bounds).** VI bounds are now ON
+> in `inputs/solver.opts` with **strict `[0,1]`** on the ice DOF
+> (`-vi_bounds 1`, `-vi_lo 0.0`, `-vi_hi 1.0`, `-snes_type vinewtonssls`). The
+> earlier reason VI had been disabled — a Gibbs–Thomson `1/|∇phi|^3` Jacobian
+> singularity — no longer applies (GT curvature removed 2026-07-21). The VI
+> bounds block also now sets stride 3 to `(−inf,+inf)` for the `dof=4`
+> three-phase variant (frozen sediment); leaving it unset would have pinned
+> `phi_s` to `[0,0]`. **Important limitation for the 3-phase variant:** VI can
+> only bound *solver DOFs*, so the derived air field `1−phi_i−phi_s` is **not**
+> bounded and still overshot at the ice–sediment triple junction — the reason
+> the explicit-sediment route was set aside. See
+> `docs/explicit_sediment_phase_attempt.md`.
+
 
 > **Purpose:** Reference document explaining how the ice phase-field DOF is
 > kept within physical bounds during the nonlinear solve.
@@ -69,14 +82,24 @@ including between control points. No extra pointwise constraint is needed.
 Vec Xl, Xu;
 ierr = IGACreateVec(iga, &Xl); CHKERRQ(ierr);
 ierr = IGACreateVec(iga, &Xu); CHKERRQ(ierr);
-ierr = VecStrideSet(Xl, 0, -0.01);           CHKERRQ(ierr);   // ice lower bound
-ierr = VecStrideSet(Xu, 0,  1.01);           CHKERRQ(ierr);   // ice upper bound
+ierr = VecStrideSet(Xl, 0, vi_lo);           CHKERRQ(ierr);   // ice lower bound (default 0.0 strict)
+ierr = VecStrideSet(Xu, 0, vi_hi);           CHKERRQ(ierr);   // ice upper bound (default 1.0 strict)
 ierr = VecStrideSet(Xl, 1, PETSC_NINFINITY); CHKERRQ(ierr);   // temperature: unbounded
 ierr = VecStrideSet(Xu, 1, PETSC_INFINITY);  CHKERRQ(ierr);
 ierr = VecStrideSet(Xl, 2, PETSC_NINFINITY); CHKERRQ(ierr);   // vapor density: unbounded
 ierr = VecStrideSet(Xu, 2, PETSC_INFINITY);  CHKERRQ(ierr);
+if (user.dof == 4) {                                          // 3-phase: frozen sediment
+    ierr = VecStrideSet(Xl, 3, PETSC_NINFINITY); CHKERRQ(ierr);   // must be set (-inf,+inf):
+    ierr = VecStrideSet(Xu, 3, PETSC_INFINITY);  CHKERRQ(ierr);   // else zero-fill pins phi_s=[0,0]
+}
 ierr = SNESVISetVariableBounds(nonlin, Xl, Xu); CHKERRQ(ierr);
 ```
+
+`vi_lo`/`vi_hi` come from `-vi_lo`/`-vi_hi` (default now strict `0.0`/`1.0`; the
+older `-0.01`/`1.01` slack is still selectable on the command line). Note that
+in the 3-phase (`dof=4`) variant only ice is bounded — **air is derived**
+(`1−phi_i−phi_s`), not a DOF, so VI cannot keep it in `[0,1]`; see
+`docs/explicit_sediment_phase_attempt.md` §4.
 
 This is the active "clean 2-phase" model (`-dof 3` in `inputs/solver.opts`):
 the solution vector only carries ice φ_i, temperature T, and vapor density
