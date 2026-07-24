@@ -1,3 +1,30 @@
+## 2026-07-24 — Effort 2 explicit-sediment set aside; pivot to Effort 1
+
+- **Contact-angle grain placement (Effort 2):** replaced the ad-hoc
+  `ice_inset_frac=0.33` embed with equilibrium placement
+  `cy = h_sed − RCice·cos(theta)`, theta from `-contact_angle_deg` or Young's law
+  on `Sigma_i/Sigma_a`. For the symmetric production Sigmas this is theta=90°
+  (hemisphere, centre on the slab); the old embed had imposed ~132°, forcing a
+  ~42° relaxation that fed the corner spurious air.
+- **VI solver re-enabled with strict [0,1]** (`vinewtonssls`, `-vi_bounds 1`,
+  `-vi_lo/hi 0/1`). The old reason for disabling VI (GT `1/|∇phi|^3`
+  singularity) is obsolete since GT curvature was removed 2026-07-21. Also
+  fixed a latent dof=4 bug: VI bounds left stride 3 (frozen sediment) unset,
+  which would have pinned `phi_s=[0,0]`; now set to (−inf,+inf).
+- **Explicit-sediment route SET ASIDE.** VI held the ice DOF in [0,1] but the
+  run stalled at step 26 (`DIVERGED_FUNCTION_DOMAIN`): air is a *derived* field
+  (`1−phi_i−phi_s`), not a solver DOF, so VI cannot bound it and it overshoots
+  at the ice/air/sed triple junction. Intrinsic to the eliminated-air
+  formulation; fixing it needs a constrained-sum/obstacle multiphase solver.
+  Documented in new `docs/explicit_sediment_phase_attempt.md`; updated
+  `docs/bounded_phase_field_solver.md`. Branch left in final state.
+- **Pivoted to Effort 1** (`exp/regolith-implicit-pore-domain`, already
+  scaffolded): implicit pore-domain, 3 DOF, no frozen-phase triple junction.
+  Geometry builder + 3 ice-placement strategies exist; next is the −20 °C
+  first gate (mass conservation) then the ice-placement × throat sweep.
+
+---
+
 ## 2026-07-22 — Temperature guard, Effort 1 geometry, plan completion
 
 - **Fixed rename fallout:** relocated both venvs in place (57 hardcoded-path
