@@ -27,11 +27,13 @@
 -Lz 0
 -RCice 1.875e-5
 -sed_slab_height 1.5e-5
-# Embed the ice grain 0.33*RCice into the sediment; phi_s is carved as
-# slab*(1-phi_i) so there is NO air at the ice-sed contact at t=0. The grain
-# is in real contact (no gap to close), and any air that appears at the
-# interface during the run is then unambiguously spurious.
--ice_inset_frac 0.33
+# Grain placed at its EQUILIBRIUM contact angle so the triple junction does not
+# have to relax (relaxation was the source of the corner "spurious air"). With
+# -contact_angle_deg omitted, theta is derived from Young's law on the surface
+# energies: cos(theta) = (Sigma_a - Sigma_i)/(Sigma_a + Sigma_i). Here Sigma_i =
+# Sigma_a => theta = 90deg => a hemisphere with its centre ON the slab surface
+# (cy = h_sed). phi_s is still carved as slab*(1-phi_i), so there is NO air at
+# the ice-sed contact at t=0 and any air that appears during the run is spurious.
 -Sigma_i 0.109
 -Sigma_a 0.109
 -Sigma_s 0.031

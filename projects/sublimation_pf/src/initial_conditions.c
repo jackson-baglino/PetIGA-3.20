@@ -688,18 +688,37 @@ PetscErrorCode FormInitialSedSlabGrain2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal h_sed = user->sed_slab_height;
     const PetscReal tc    = 0.5 / eps;               /* equilibrium logistic width */
     const PetscReal cx    = 0.5 * Lx;
-    /* Grain centre: validation (no slab) -> domain centre; otherwise EMBED the
-     * grain into the slab so its bottom sits ice_inset_frac*RCice below the slab
-     * top (grain contacts/penetrates the sediment, no initial air gap). */
-    const PetscReal cy    = (h_sed > 0.0) ? (h_sed + (1.0 - user->ice_inset_frac) * RCice)
+    /* Grain centre placement by equilibrium contact angle. For a circular grain of
+     * radius R whose centre sits a height d = cy - h_sed above the slab surface, the
+     * imposed contact angle (ice-air arc vs. slab, through the ice) is
+     *   theta = 90deg + asin(d/R)   <=>   d = -R*cos(theta).
+     * So cy = h_sed - R*cos(theta): theta=90 => centre ON the surface (hemisphere),
+     * theta<90 wets (centre below, grain spreads/embeds), theta>90 balls up.
+     * Starting AT the equilibrium angle avoids a triple-junction relaxation transient,
+     * which is the source of the corner "spurious air". theta is taken from
+     * -contact_angle_deg, or (if that is <0) derived from Young's law on the surface
+     * energies: cos(theta) = (Sigma_a - Sigma_i)/(Sigma_a + Sigma_i). */
+    PetscReal cos_theta, theta_deg;
+    if (user->contact_angle_deg >= 0.0) {
+        theta_deg = user->contact_angle_deg;
+        cos_theta = PetscCosReal(theta_deg * PETSC_PI / 180.0);
+    } else {
+        PetscReal denom = user->Sigma_a + user->Sigma_i;
+        cos_theta = (denom != 0.0) ? (user->Sigma_a - user->Sigma_i) / denom : 0.0;
+        cos_theta = PetscMin(PetscMax(cos_theta, -1.0), 1.0);
+        theta_deg = PetscAcosReal(cos_theta) * 180.0 / PETSC_PI;
+    }
+    const PetscReal cy    = (h_sed > 0.0) ? (h_sed - RCice * cos_theta)
                                           : 0.5 * Ly;
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (2D sediment slab + ice grain, 3-phase) ---\n"
         "  sed_slab_height = %.4e m %s\n"
-        "  ice grain centre = (%.4e, %.4e) m,  RCice = %.4e m,  inset = %.2f*R\n",
+        "  contact angle   = %.2f deg %s  (cos theta = %.4f)\n"
+        "  ice grain centre = (%.4e, %.4e) m,  RCice = %.4e m\n",
         h_sed, (h_sed > 0.0) ? "" : "(<=0: phi_s=0, 2-phase validation mode)",
-        cx, cy, RCice, user->ice_inset_frac);
+        theta_deg, (user->contact_angle_deg >= 0.0) ? "(set)" : "(Young, from Sigmas)", cos_theta,
+        cx, cy, RCice);
 
     if (RCice <= 0.0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,

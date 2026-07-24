@@ -53,11 +53,19 @@ typedef struct {
   PetscReal thcond_sed, cp_sed, rho_sed;
   PetscReal sed_slab_height;  // 3-phase IC: sediment fills y < this height
                               // [m]; 0 => no sediment (phi_s=0, reduces to 2-phase).
-  PetscReal ice_inset_frac;   // 3-phase IC: embed the ice grain into the sediment
-                              // slab by this fraction of RCice (grain bottom sits
-                              // ice_inset_frac*RCice below the slab top). phi_s is
-                              // carved as slab*(1-phi_i) so there is NO air at the
-                              // ice-sed contact at t=0 (tests spurious air formation).
+  PetscReal ice_inset_frac;   // DEPRECATED (superseded by contact_angle_deg). Was:
+                              // embed the ice grain into the sediment slab by this
+                              // fraction of RCice. Kept only so old .opts don't error;
+                              // no longer used to place the grain.
+  PetscReal contact_angle_deg;// 3-phase IC: equilibrium contact angle theta [deg] used
+                              // to place the ice grain on the slab. Grain centre sits at
+                              // cy = h_sed - RCice*cos(theta): theta=90 => hemisphere with
+                              // centre on the slab surface; theta<90 wets (embeds), >90
+                              // balls up. Negative sentinel (<0) => derive theta from
+                              // Young's law on the surface energies: cos(theta) =
+                              // (Sigma_a-Sigma_i)/(Sigma_a+Sigma_i). Starting the grain
+                              // at its equilibrium angle avoids a triple-junction
+                              // relaxation transient (the corner "spurious air" source).
   PetscReal sed_width_factor; // 3-phase IC: sharpen the frozen phi_s interface by
                               // this factor (tc_sed = factor*0.5/eps). >1 makes the
                               // sediment interface narrower to match the (sharper)

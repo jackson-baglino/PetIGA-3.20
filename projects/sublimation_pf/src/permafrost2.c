@@ -67,7 +67,8 @@ int main(int argc, char *argv[]) {
     user.rho_sed    = 3000.0;   /* Density of sediment grain [kg/m^3] */
     user.sed_slab_height = 0.0; /* 3-phase IC slab height; 0 => phi_s=0 (validation) */
     user.sed_width_factor = 1.0; /* 3-phase IC: frozen phi_s interface sharpening (width-mismatch fix) */
-    user.ice_inset_frac  = 0.33; /* 3-phase IC: embed grain into sediment by this fraction of RCice */
+    user.ice_inset_frac  = 0.33; /* DEPRECATED: superseded by contact_angle_deg (no longer used) */
+    user.contact_angle_deg = -1.0; /* 3-phase IC: grain contact angle [deg]; <0 => derive from Young's law on Sigma_i/Sigma_a */
 
     user.rho_ice    = 919.0;    /* Density of ice */
     user.rho_air    = 1.341;    /* Density of air */
@@ -467,7 +468,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-rho_sed", "Density of sediment grain (3-phase)", "", user.rho_sed, &user.rho_sed, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-sed_slab_height", "3-phase IC: sediment fills y < this height [m] (0 => phi_s=0, 2-phase validation)", "", user.sed_slab_height, &user.sed_slab_height, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-sed_width_factor", "3-phase IC: sharpen frozen phi_s interface by this factor to match the ice (width-mismatch fix; >1 sharper)", "", user.sed_width_factor, &user.sed_width_factor, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ice_inset_frac", "3-phase IC: embed the ice grain into the sediment by this fraction of RCice (no air at the contact at t=0)", "", user.ice_inset_frac, &user.ice_inset_frac, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_inset_frac", "DEPRECATED (superseded by -contact_angle_deg): no longer used to place the grain", "", user.ice_inset_frac, &user.ice_inset_frac, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-contact_angle_deg", "3-phase IC: grain contact angle [deg]; grain centre at cy=h_sed-RCice*cos(theta). <0 => derive theta from Young's law on Sigma_i/Sigma_a", "", user.contact_angle_deg, &user.contact_angle_deg, NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsReal("-rho_ice", "Density of ice", "", user.rho_ice, &user.rho_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);
