@@ -1,0 +1,45 @@
+# =============================================================================
+# geometry/2D_Tgrad_2grain_bigR.opts — two unequal grains: BIG grain on the COLD
+# (right) side. Temperature-gradient sanity series (Effort 1). Mirror of
+# 2D_Tgrad_2grain_bigL.opts. Pair with experiment/Tgrad_T-20_G50_3d.opts.
+#
+# TEST 6 — COMPLEMENTING drivers. The big (150 um) grain sits on the cold/right
+# side, so the temperature gradient AND Ostwald ripening BOTH drive it to GROW
+# (deposition on the cold grain + the large grain winning ripening). The small
+# (50 um) warm/left grain is driven to shrink by both. This isolates gradient
+# vs. ripening when they REINFORCE.
+#
+# GEOMETRY (planar 2D, NOT axisymmetric)
+# --------------------------------------
+#   Lx = 7.5e-4 m (same width as the prior batch), Ly = 3.0e-4 m
+#   Centres (mirror of test 2), keeping every grain >= 2 R_small off its wall:
+#     small(left,  R = 5.0e-5): x = Lx/5  = 1.5e-4  -> 2 R_small (100 um) off wall
+#     big  (right, R = 1.5e-4): x = 2Lx/3 = 5.0e-4  -> 2 R_small off wall
+#   surf-to-surf = 1.5e-4 = 3 R_small (non-touching)
+#
+# eps / MESH  (comp_eps.py, T0 = -20 C, alpha_c = 1.341e-2; eps/R_small = 1.7%)
+#     python preprocess/comp_eps.py --Lx 7.5e-4 --Ly 3.0e-4 --Rave 5.0e-5 \
+#         --T0 -20 --alpha 1.341e-2
+# =============================================================================
+
+-axisym 0
+
+-ic_type multi_grains
+-dim 2
+-Lx 7.5000e-04
+-Ly 3.0000e-04
+-Lz 0
+
+-ice_grain_cx 1.5000e-04,5.0000e-04       # Lx/5 (small, warm) and 2Lx/3 (big, cold)
+-ice_grain_cy 0.0,0.0                       # centres on the floor -> semicircles
+-ice_grain_R  5.0e-5,1.5e-4                  # small LEFT (50 um), big RIGHT (150 um)
+-ice_grain_ax 5.0e-5,1.5e-4
+-ice_grain_ay 5.0e-5,1.5e-4
+
+-Nx 1236                                   # ceil(sqrt(2)*Lx/eps)
+-Ny 495
+-Nz 1
+-eps 8.5840e-07
+
+-delt_t 1.0e-4
+-periodic 0
