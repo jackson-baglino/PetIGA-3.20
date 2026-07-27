@@ -29,5 +29,47 @@
 : "${NTASKS_PER_NODE:=32}"
 : "${MAX_TASKS_PER_NODE:=${NTASKS_PER_NODE}}"
 
+# Lower edge of the acceptable tasks-per-node band. Used by plan_alloc below to
+# rebalance instead of leaving a nearly-empty last node.
+: "${MIN_TASKS_PER_NODE:=28}"
+
 # Cap for local (Studio) runs — physical cores on the dev Mac.
 : "${MAX_LOCAL_CORES:=12}"
+
+# ---------------------------------------------------------------------------
+# plan_alloc <total_ranks>  ->  echoes "<nodes> <tasks_per_node>"
+#
+# The naive plan (nodes = ceil(ranks/NTASKS_PER_NODE), tasks-per-node fixed at
+# the max) wastes a whole node whenever ranks is just over a multiple: 33 ranks
+# becomes 32+1, and the second node sits ~97% idle while still being billed.
+# This spreads the ranks evenly instead — 33 ranks becomes 2x17 — keeping
+# tasks-per-node inside [MIN_TASKS_PER_NODE, NTASKS_PER_NODE] when it can.
+#
+# Ported from the band-clamping planner in the legacy dry_snow_metamorphism
+# batch submitter, which is the only place this logic existed.
+# ---------------------------------------------------------------------------
+plan_alloc() {
+    local ranks="$1"
+    (( ranks < 1 )) && ranks=1
+
+    local nodes tpn
+    nodes=$(( (ranks + NTASKS_PER_NODE - 1) / NTASKS_PER_NODE ))
+    (( nodes < 1 )) && nodes=1
+    tpn=$(( (ranks + nodes - 1) / nodes ))      # even spread over those nodes
+
+    # If the even spread drops below the band, drop nodes until it climbs back
+    # in (a single node holding the whole job is always acceptable).
+    if (( tpn < MIN_TASKS_PER_NODE )); then
+        local n p
+        for (( n = nodes; n >= 1; n-- )); do
+            p=$(( (ranks + n - 1) / n ))
+            if (( p >= MIN_TASKS_PER_NODE && p <= NTASKS_PER_NODE )); then
+                nodes=$n; tpn=$p; break
+            fi
+        done
+    fi
+
+    (( tpn > NTASKS_PER_NODE )) && tpn=$NTASKS_PER_NODE
+    (( tpn < 1 )) && tpn=1
+    echo "$nodes $tpn"
+}

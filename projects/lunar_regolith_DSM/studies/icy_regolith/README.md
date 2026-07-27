@@ -5,24 +5,22 @@ vapor redistribution of ice) proceed when the ice occupies the pore space of an
 inert granular regolith? What controls ice redistribution, neck formation, and
 loss rates in an icy lunar-regolith analog?
 
-**Two competing approaches** to representing the regolith. Both target the same
-result; one will be chosen for the paper.
+**Approach: implicit pore domain** (`implicit_pore_domain/`). The regolith is
+represented by the **domain geometry** — baked into the mesh boundary — so the
+solver stays at 3 DOF (ice, T, vapor) and needs no model changes.
+Branch: `exp/regolith-implicit-pore-domain`.
 
-| Approach | Directory | Regolith representation | DOF |
-|---|---|---|---|
-| Implicit | `implicit_pore_domain/` | Pore-space **domain geometry** (regolith baked into the mesh boundary) | 3 (ice, T, vapor) |
-| Explicit | `explicit_sediment_phase/` | 4th **phase-field DOF** φ_s with ∂φ_s/∂t = 0, triple-well potential | 4 |
+The competing **explicit sediment phase** approach (a 4th phase-field DOF φ_s
+with ∂φ_s/∂t = 0 and a triple-well potential) was set aside on 2026-07-24 and
+retired on 2026-07-27. It failed because the variational-inequality bound
+constrains the ice DOF, but air is a *derived* field (1 − φ_i − φ_s), so it
+overshoots at the triple junction — `DIVERGED_FUNCTION_DOMAIN` at step 26.
+Making it work needs a constrained-sum / obstacle multiphase solver. The
+three-phase formulation is now gone from both sibling projects; its last state
+is at tag `archive/dry_snow_metamorphism-legacy` and in this repo's history.
 
-**Shared solver.** Both consume the master model in `../../src` +
-`../../preprocess` + `../../postprocess`. The implicit approach needs no solver
-changes (branch `exp/regolith-implicit-pore-domain`); the explicit approach adds
-a 4th field and a triple well (branch `exp/regolith-explicit-sediment-phase`).
+**Shared solver.** Consumes the model in `../../src` + `../../preprocess` +
+`../../postprocess`, which is byte-identical to the sibling `enceladus_DSM`.
 
 **Parameter regime.** Sub-mm to few-mm domains; lunar surface/near-surface
 temperatures. ε and mesh sized via `../../preprocess/comp_eps.py`.
-
-**Status (2026-07-21).** Not started. Effort 2's surface energies are the known
-prior blocker — parameterize by contact angle θ (only γ_is > (γ_iv/2)(1−cos θ)
-is a real constraint); the beta-eliminated equations are still to be supplied.
-Start explicit from the simplest geometry (one slab, one grain) and gate on
-3-phase mass conservation before adding complexity.

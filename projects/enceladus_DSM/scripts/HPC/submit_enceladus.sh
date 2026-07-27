@@ -145,8 +145,7 @@ if [[ "$half_cores" -eq 1 ]]; then
     echo "  --half-cores: requesting ${NPROCS} ranks (half the computed optimum)"
 fi
 
-NNODES=$(( (NPROCS + NTASKS_PER_NODE - 1) / NTASKS_PER_NODE ))
-(( NNODES < 1 )) && NNODES=1
+read -r NNODES TASKS_PER_NODE <<< "$(plan_alloc "$NPROCS")"
 
 echo "============================================================"
 echo "  Enceladus DSM submission"
@@ -159,7 +158,7 @@ echo "  Grid       : Nx=${Nx}, Ny=${Ny}, Nz=${Nz}  (dof=${dof})"
 echo "  Total DoFs : ${dof} × ${Nx} × ${Ny} × ${Nz} = ${total_dofs}"
 echo "  Target     : ${TARGET_DOFS_PER_CORE} DoFs/core"
 echo "  NPROCS     : ${NPROCS}"
-echo "  Nodes      : ${NNODES}  (${NTASKS_PER_NODE} tasks/node)"
+echo "  Nodes      : ${NNODES}  (${TASKS_PER_NODE} tasks/node)"
 echo "============================================================"
 hpc_cost_pre_submit "${NPROCS}"
 
@@ -179,7 +178,7 @@ sbatch \
     --job-name="${geom_name}__${exp_name}" \
     --nodes="${NNODES}" \
     --ntasks="${NPROCS}" \
-    --ntasks-per-node="${NTASKS_PER_NODE}" \
+    --ntasks-per-node="${TASKS_PER_NODE}" \
     "${sbatch_flags[@]}" \
     "$SCRIPT_DIR/run_enceladus.sh" \
     "${run_args[@]}"
