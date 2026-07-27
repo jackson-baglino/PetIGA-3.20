@@ -1,3 +1,8 @@
+
+---
+
+**Session ended:** 2026-07-24 11:07:40
+
 ## 2026-07-24 — Effort 2 explicit-sediment set aside; pivot to Effort 1
 
 - **Contact-angle grain placement (Effort 2):** replaced the ad-hoc
