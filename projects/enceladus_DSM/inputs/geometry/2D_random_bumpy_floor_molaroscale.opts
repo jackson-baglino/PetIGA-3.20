@@ -1,0 +1,94 @@
+# =============================================================================
+# geometry/2D_random_bumpy_floor_molaroscale.opts — the bumpy-floor-with-ice-
+# caps domain (2D_random_bumpy_floor.opts) rescaled so the largest ice grain
+# matches the Molaro grains, and re-meshed on the LOOSE eps criteria.
+#
+# WHAT CHANGED vs 2D_random_bumpy_floor.opts
+# -------------------------------------------
+# Uniform geometric scaling by s = 6.7335 = 1.01e-4 / 1.5e-5, i.e. the old
+# largest ice grain (R = 1.5e-5, right boundary) is blown up to the Molaro
+# large-grain radius R = 1.0100e-4. EVERYTHING scales by the same s:
+#
+#   Lx  2.0e-4  -> 1.3467e-3        Ly  4.0e-5  -> 2.6933e-4
+#   bump R-range  5.0-7.0e-6  -> 3.3667e-5 - 4.7133e-5
+#   ice grains    R 3.0e-6-1.5e-5 -> 2.0200e-5 - 1.0100e-4
+#
+# WHY UNIFORM (and not "scale the ice grains only"): MAX_SED_GRAINS = 24
+# (NASA_types.h). The original design covers the whole floor with exactly 24
+# bumps, no flat gaps. A 6.7x wider floor at the ORIGINAL bump size would need
+# ~162 bumps -- silently truncated at 24 by the C code, leaving most of the
+# floor flat. Scaling the bumps with the domain keeps the 24-bump full coverage
+# and preserves the tuned overlap/clearance design (critical overlap ~0.36).
+#
+# The scaled layout is geometrically similar to the original: same seed=0, same
+# dimensionless height-ratio (0.15-0.28) and overlap (0.20-0.32) ranges, so the
+# bump list is the old one times s to 2.7e-5 relative (that residual is just
+# the rounding of Lx to 1.3467e-3). Generation-time check reports max height
+# 4.7% of Ly -- IDENTICAL to the original's 4.7% -- and max curvature 1.495e5,
+# 7x LOWER than the original's ~1.0e6 (bigger bumps are gentler).
+#
+# MESH: the loose criteria validated on 2026-07-15
+# ------------------------------------------------
+#   eps = 8.5840e-7  (K&P via comp_eps.py at -20 C, alpha_c = 1.341e-2; the
+#   D*_ia heat channel with B-KINETIC binding). The union-IC eps series
+#   (batch_2026-07-15__15.31.58_epsunion) showed this eps reproduces the
+#   3.479e-7 "strict" mesh to 0.7% on neck width at t=120 min, at 1/6 the
+#   nodes -- which is what makes THIS domain affordable:
+#       loose  eps=8.584e-7 -> 2219 x 444  = 0.99M nodes   <- THIS FILE
+#       strict eps=3.479e-7 -> 5475 x 1095 = 6.00M nodes
+#   h = eps/sqrt(2) (the current convention; NOTE the original bumpy-floor
+#   geometry predates it and used h ~ eps, so do not copy its Nx/Ny scaling).
+#
+#   eps/R_smallest_cap = 4.2% -- inside comp_eps.py's < 5% guideline, but it is
+#   the binding geometric constraint here. The 2.020e-5 floor caps are the
+#   least-resolved feature; if they misbehave, that ratio is the first suspect.
+#
+# Regenerate the mesh with:
+#   ./venv_pf311/bin/python3 preprocess/build_geometry_multi_grain.py \
+#       --random-bumps --seed 0 --n-bumps 24 \
+#       --R-range 3.3667e-5 4.7133e-5 --height-ratio-range 0.15 0.28 \
+#       --overlap-range 0.20 0.32 \
+#       --Lx 1.3467e-3 --Ly 2.6933e-4 --Nx 2219 --Ny 444 --P 2 --C 1 \
+#       --out inputs/geometry/random_bumpy_floor_molaroscale.dat \
+#       --variant random_bumpy_floor_molaroscale \
+#       --opts inputs/geometry/2D_random_bumpy_floor.opts
+#
+# INHERITED FAILURE MODES (both from the ORIGINAL scale; see ACTIVITY_LOG
+# 2026-06-18/19). Small caps fully sublimating by Ostwald ripening made the AC
+# reaction term singular -> SNES failure (job64406550, needed -dtmax capped and
+# -max_rej raised) and later a dt limit cycle (job64410270). Scaling UP should
+# ease both: the smallest cap is now 2.020e-5, not 3.0e-6, so it takes far
+# longer to vanish. The solver.opts guards remain in place regardless.
+#
+# TIMESCALE WARNING: evaporation-condensation neck growth goes as x^3 = 6*d0*R*t/beta,
+# so at FIXED x/R the time to reach a given relative state scales as R^2. This
+# geometry is 6.73x larger => ~45x SLOWER in relative terms than the original.
+# A 30-day run here shows roughly what 16 hours showed at the old scale. Size
+# -t_final accordingly; do not copy the old 30day durations expecting the same
+# evolution.
+#
+# Ice grains (22, all circles): 0 = left boundary, 1 = right boundary (the
+# Molaro-sized one, R = 1.0100e-4), 3 and 5 floating mid-channel, the rest
+# floor-touching caps (cy = 0). See 2D_random_bumpy_floor.opts for the original
+# placement rationale.
+# =============================================================================
+# DOF_GRID: 2221 446
+-geom_file inputs/geometry/random_bumpy_floor_molaroscale.dat
+-p 2
+-C 1
+-ic_type multi_grains
+-dim 2
+-Lx 1.3467e-3
+-Ly 2.6933e-4
+-Lz 0
+-sed_grain_x 0.000000e+00,6.118530e-05,1.149549e-04,1.761537e-04,2.379108e-04,2.905014e-04,3.504690e-04,4.160697e-04,4.703547e-04,5.185766e-04,5.707491e-04,6.281199e-04,6.886801e-04,7.451799e-04,8.130173e-04,8.713148e-04,9.286215e-04,9.819187e-04,1.038499e-03,1.095012e-03,1.150296e-03,1.216467e-03,1.283329e-03,1.346700e-03
+-sed_grain_R 4.509009e-05,3.562595e-05,3.914107e-05,4.592051e-05,3.424694e-05,4.474556e-05,3.926056e-05,4.484114e-05,3.380105e-05,3.858271e-05,3.472583e-05,4.245511e-05,3.735465e-05,4.312891e-05,4.637623e-05,3.537472e-05,4.531210e-05,3.446774e-05,3.879446e-05,3.945434e-05,4.024985e-05,4.681604e-05,4.411246e-05,3.782607e-05
+-sed_grain_h 8.345219e-06,9.341324e-06,1.035555e-05,9.936823e-06,6.669881e-06,1.249919e-05,7.501620e-06,7.791265e-06,8.937428e-06,9.861880e-06,8.223967e-06,1.165791e-05,1.009856e-05,1.066459e-05,1.214553e-05,6.442765e-06,7.628839e-06,8.172579e-06,9.423189e-06,6.774976e-06,8.107223e-06,1.256230e-05,9.836288e-06,8.517814e-06
+-ice_grain_cx 0.000000e+00,1.346700e-03,2.020050e-04,4.040100e-04,6.060150e-04,8.080200e-04,1.010025e-03,8.080200e-05,1.415627e-04,2.661387e-04,3.300283e-04,4.101388e-04,4.682062e-04,5.318152e-04,6.789785e-04,7.518242e-04,8.130937e-04,8.713728e-04,9.434684e-04,1.065185e-03,1.123494e-03,1.192019e-03
+-ice_grain_cy 1.346700e-04,1.346700e-04,0.000000e+00,6.733500e-05,0.000000e+00,1.481370e-04,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00
+-ice_grain_R  4.040100e-05,1.010025e-04,2.356725e-05,3.366750e-05,3.030075e-05,4.376775e-05,2.020050e-05,2.020050e-05,2.222055e-05,2.424060e-05,2.693400e-05,2.020050e-05,2.222055e-05,2.424060e-05,2.693400e-05,2.020050e-05,2.222055e-05,2.424060e-05,2.693400e-05,2.020050e-05,2.222055e-05,2.424060e-05
+-ice_grain_ax 4.040100e-05,1.010025e-04,2.356725e-05,3.366750e-05,3.030075e-05,4.376775e-05,2.020050e-05,2.020050e-05,2.222055e-05,2.424060e-05,2.693400e-05,2.020050e-05,2.222055e-05,2.424060e-05,2.693400e-05,2.020050e-05,2.222055e-05,2.424060e-05,2.693400e-05,2.020050e-05,2.222055e-05,2.424060e-05
+-ice_grain_ay 4.040100e-05,1.010025e-04,2.356725e-05,3.366750e-05,3.030075e-05,4.376775e-05,2.020050e-05,2.020050e-05,2.222055e-05,2.424060e-05,2.693400e-05,2.020050e-05,2.222055e-05,2.424060e-05,2.693400e-05,2.020050e-05,2.222055e-05,2.424060e-05,2.693400e-05,2.020050e-05,2.222055e-05,2.424060e-05
+-delt_t 1.0e-4
+-eps 8.5840e-07
+-periodic 0

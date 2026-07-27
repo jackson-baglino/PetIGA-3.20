@@ -1,6 +1,6 @@
 # Testing Guide — Permafrost Phase-Field Simulation
 
-This document describes how to systematically test the permafrost code. Because the
+This document describes how to systematically test the lunar_regolith_dsm code. Because the
 code solves a nonlinear coupled PDE system with no exact closed-form solution, testing
 is organized around three complementary strategies:
 
@@ -28,11 +28,11 @@ inputs/tests/
 
 ```bash
 # Serial
-mpirun -np 1 ./permafrost -options_file inputs/tests/<test>.opts \
+mpirun -np 1 ./lunar_regolith_dsm -options_file inputs/tests/<test>.opts \
     -output_path outputs/<test_name>
 
 # Parallel (e.g., 4 ranks)
-mpirun -np 4 ./permafrost -options_file inputs/tests/<test>.opts \
+mpirun -np 4 ./lunar_regolith_dsm -options_file inputs/tests/<test>.opts \
     -output_path outputs/<test_name>
 ```
 
@@ -40,7 +40,7 @@ Set the `folder` environment variable for the SSA output file:
 ```bash
 export folder=outputs/<test_name>
 mkdir -p $folder
-mpirun -np 1 ./permafrost -options_file inputs/tests/<test>.opts \
+mpirun -np 1 ./lunar_regolith_dsm -options_file inputs/tests/<test>.opts \
     -output_path $folder
 ```
 
@@ -181,7 +181,7 @@ Solution files are written as `sol_NNNNN.dat` in the output directory. To inspec
 them, use the provided Python plotting scripts:
 
 ```bash
-python scripts/plotpermafrost.py --dir outputs/<test_name> --step 10
+python scripts/plot_fields.py --dir outputs/<test_name> --step 10
 ```
 
 To extract scalar time-series data:

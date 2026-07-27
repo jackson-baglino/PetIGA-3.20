@@ -9,7 +9,7 @@
 # and nowhere else.
 #
 # Each is set with := so an environment override wins, e.g.
-#   TARGET_DOFS_PER_CORE=80000 ./scripts/HPC/submit_permafrost.sh ...
+#   TARGET_DOFS_PER_CORE=80000 ./scripts/HPC/submit_lunar.sh ...
 # lets large-domain runs tune the target without editing any script.
 # ---------------------------------------------------------------------------
 

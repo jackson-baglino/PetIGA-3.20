@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # =============================================================================
-# submit_permafrost.sh — compute optimal MPI ranks and submit via sbatch
+# submit_lunar.sh — compute optimal MPI ranks and submit via sbatch
 #
 # Usage (run from project root):
-#   ./scripts/HPC/submit_permafrost.sh <geometry> <experiment> [tag] \
-#       [sbatch_overrides...] [-- extra_permafrost_opts...]
+#   ./scripts/HPC/submit_lunar.sh <geometry> <experiment> [tag] \
+#       [sbatch_overrides...] [-- extra_solver_opts...]
 #
 #   geometry    Name (without .opts) of a file in inputs/geometry/
 #   experiment  Name (without .opts) of a file in inputs/experiment/
@@ -16,17 +16,17 @@
 #     Special flag (consumed here, not passed to sbatch):
 #       --half-cores   request half the computed MPI ranks — queues faster
 #                      on a busy cluster at ~2x wall time.
-#   - after `--`: forwarded verbatim to the permafrost executable itself
+#   - after `--`: forwarded verbatim to the lunar_regolith_dsm executable itself
 #     (appended after the three -options_file flags, so they override
 #     anything set in solver.opts/geometry/experiment opts files).
 #
 # Examples:
-#   ./scripts/HPC/submit_permafrost.sh 2D_multi_grain_test 2day_T-20_h0.95
+#   ./scripts/HPC/submit_lunar.sh 2D_multi_grain_test 2day_T-20_h0.95
 #
-#   ./scripts/HPC/submit_permafrost.sh 2D_multi_grain_test 2day_T-20_h0.95 p2_run \
+#   ./scripts/HPC/submit_lunar.sh 2D_multi_grain_test 2day_T-20_h0.95 p2_run \
 #       --time=0-12:00:00 --partition=expansion
 #
-#   ./scripts/HPC/submit_permafrost.sh 2D_single_bump_two_grains 21day_T-20_h0.95 \
+#   ./scripts/HPC/submit_lunar.sh 2D_single_bump_two_grains 21day_T-20_h0.95 \
 #       d0GT_1e-8 -- -d0_GT 1.0e-8
 # =============================================================================
 
@@ -64,10 +64,10 @@ if [[ "${1:-}" != "" && "${1:-}" != --* ]]; then
 fi
 
 # Split remaining args on a literal `--`: before it are sbatch flags, after
-# it are extra options forwarded to the permafrost executable.
+# it are extra options forwarded to the lunar_regolith_dsm executable.
 # `--half-cores` is intercepted here (not a real sbatch flag): request half
 # the computed MPI ranks so the job queues faster on a busy cluster. The
-# runner (run_permafrost.sh) clamps its own rank count to the SLURM
+# runner (run_lunar.sh) clamps its own rank count to the SLURM
 # allocation, so the halved request propagates consistently; wall time
 # roughly doubles (weak-scaling regime at the 40k DoFs/core target).
 sbatch_flags=()
@@ -104,7 +104,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # Compute optimal NPROCS — kept in sync with compute_optimal_nprocs() in
-# run_permafrost.sh. Formula: ceil(dof * Nx * Ny * Nz / TARGET_DOFS_PER_CORE)
+# run_lunar.sh. Formula: ceil(dof * Nx * Ny * Nz / TARGET_DOFS_PER_CORE)
 # ---------------------------------------------------------------------------
 # 40000 DoFs/rank (raised from 10000, 2026-07-12): PETSc guidance for
 # implicit solves is 20k-100k unknowns/rank — below ~20k, reductions and halo
@@ -149,7 +149,7 @@ NNODES=$(( (NPROCS + NTASKS_PER_NODE - 1) / NTASKS_PER_NODE ))
 (( NNODES < 1 )) && NNODES=1
 
 echo "============================================================"
-echo "  Permafrost submission"
+echo "  Lunar regolith DSM submission"
 echo "  Geometry   : ${geom_name}"
 echo "  Experiment : ${exp_name}"
 echo "  Title      : ${title}"
@@ -164,7 +164,7 @@ echo "============================================================"
 hpc_cost_pre_submit "${NPROCS}"
 
 # ---------------------------------------------------------------------------
-# Submit — --ntasks/--nodes override the #SBATCH defaults in run_permafrost.sh
+# Submit — --ntasks/--nodes override the #SBATCH defaults in run_lunar.sh
 # ---------------------------------------------------------------------------
 run_args=("$geom_name" "$exp_name")
 if [[ "${#extra_opts[@]}" -gt 0 ]]; then
@@ -181,5 +181,5 @@ sbatch \
     --ntasks="${NPROCS}" \
     --ntasks-per-node="${NTASKS_PER_NODE}" \
     "${sbatch_flags[@]}" \
-    "$SCRIPT_DIR/run_permafrost.sh" \
+    "$SCRIPT_DIR/run_lunar.sh" \
     "${run_args[@]}"

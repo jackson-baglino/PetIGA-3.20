@@ -11,7 +11,7 @@ efforts best deferred until the model is otherwise stable.
 ### Files Deleted / Moved
 | Action | File | Reason |
 |--------|------|--------|
-| Deleted | `src/permafrost.c` | Entire file was `//`-commented dead code (old `main`) |
+| Deleted | `src/lunar_regolith_dsm.c` | Entire file was `//`-commented dead code (old `main`) |
 | Moved | `-output_path` → `scratch/` | Oddly-named leftover run summary in root |
 | Removed | `.DS_Store` (×2) | macOS metadata, not source code |
 | Created | `.gitignore` | Excludes `obj/`, `venv_*/`, `.DS_Store`, `outputs/`, `scratch/` |
@@ -27,10 +27,10 @@ efforts best deferred until the model is otherwise stable.
 |------|-----|-----|
 | `include/NASA_types.h` | `Nx, Ny, Nz` declared as `PetscReal` | Changed to `PetscInt` |
 | `src/assembly.c` | `fair_ice` declared but never assigned in `Jacobian()` | Added `Fair(user, ice, sed, NULL, &fair_ice)` call |
-| `src/permafrost2.c` | `T_BC[dim][2], LL[dim]` were VLAs — unsafe for dim=1 | Changed to fixed-size `[3][2]` and `[3]` arrays |
-| `src/permafrost2.c` | `axis1` setup ran unconditionally even for dim=1 | Wrapped in `if (dim >= 2)` |
-| `src/permafrost2.c` | `nmb` calculation wrong for dim=1 or dim=3 | Rewrote with explicit dim==1, dim==2, dim==3 branches |
-| `src/permafrost2.c` | Ny, Ly option parsing and print statements ignored dim==1 | Added `if (dim >= 2)` guards |
+| `src/lunar_main.c` | `T_BC[dim][2], LL[dim]` were VLAs — unsafe for dim=1 | Changed to fixed-size `[3][2]` and `[3]` arrays |
+| `src/lunar_main.c` | `axis1` setup ran unconditionally even for dim=1 | Wrapped in `if (dim >= 2)` |
+| `src/lunar_main.c` | `nmb` calculation wrong for dim=1 or dim=3 | Rewrote with explicit dim==1, dim==2, dim==3 branches |
+| `src/lunar_main.c` | Ny, Ly option parsing and print statements ignored dim==1 | Added `if (dim >= 2)` guards |
 
 ### Jacobian Cleanup
 The large commented blocks in `Jacobian()` (temperature and vapor spatial terms)
@@ -46,7 +46,7 @@ analytic Jacobian can be used.
 - New function `FormInitialCondition1D()` in `src/initial_conditions.c`
   - `flag_tIC == 0` → centered slab (ice in [0.35 Lx, 0.65 Lx])
   - `flag_tIC == 2` → flat interface (ice in [0, 0.5 Lx])
-- Routing in `permafrost2.c`: if `dim == 1`, calls `FormInitialCondition1D()`
+- Routing in `lunar_main.c`: if `dim == 1`, calls `FormInitialCondition1D()`
 - Test input files created: `inputs/tests/test_1D_IceSlab.opts` and
   `inputs/tests/test_1D_FlatInterface.opts`
 
@@ -71,7 +71,7 @@ What needs to be done:
 - Fix coefficient inconsistency in ice Jacobian: currently `3*mob/(Etai*eps)`,
   should be `3*mob/((Etai+Etaa)*eps)` to match the Residual
 - Add `Etaa` to the Jacobian's local variable list
-- Re-enable with `IGASetFormIJacobian(iga, Jacobian, &user)` in `permafrost2.c`
+- Re-enable with `IGASetFormIJacobian(iga, Jacobian, &user)` in `lunar_main.c`
 
 **[2] Validate the temperature-equation coupling in the Residual** (`src/assembly.c:Residual`)  
 The old comment `// R_tem = N0[a] * tem_t;  // Does not solve temperature equation`
@@ -105,7 +105,7 @@ Verify this is correct for the current DOF ordering (ice=0, temp=1, vapor=2).
 
 ### Medium Priority
 
-**[5] IC selection is hard-coded in `permafrost2.c`**  
+**[5] IC selection is hard-coded in `lunar_main.c`**  
 The initial condition is selected by commenting/uncommenting lines. This is fragile.
 Consider adding a `-ic_type` string option and dispatching via a lookup table.
 Example ICs to support: `capillary`, `layered`, `enclosed`, `packed`, `flat`, `1D_slab`.
@@ -117,7 +117,7 @@ but the rest of the code uses `user->output_path`. These should be unified —
 correct place without needing to set an environment variable.
 
 **[7] Duplicate plotting scripts**  
-`scripts/plotpermafrost.py` and `postprocess/plotpermafrost.py` appear to be the
+`scripts/plot_fields.py` and `postprocess/plot_fields.py` appear to be the
 same file (or close versions). Similarly for `plotSSA.py` and `plotPorosity.py`.
 Pick one canonical location (`scripts/`) and remove the other copies.
 
@@ -150,7 +150,7 @@ All tests in `TESTS.md` currently require manual inspection. A simple Python scr
 that runs a short test, parses the monitor output, and checks scalar quantities
 against stored reference values would make CI possible.
 
-**[13] `readFlag` description says "UPDATE IMPLEMENTATION!"** (`permafrost2.c:52`)  
+**[13] `readFlag` description says "UPDATE IMPLEMENTATION!"** (`lunar_main.c:52`)  
 The flag for reading ice grains from file is set but loading logic may be incomplete.
 Check `InitialIceGrains` in `grain_initialization.c` for the file-read path.
 
@@ -174,9 +174,9 @@ to improve time-step control so the phase field never goes significantly out of
 ## File Structure Reference
 
 ```
-permafrost/
+lunar_regolith_dsm/
 ├── src/
-│   ├── permafrost2.c         Main program (IGA setup, time stepping, IC dispatch)
+│   ├── lunar_main.c         Main program (IGA setup, time stepping, IC dispatch)
 │   ├── assembly.c            Residual, Jacobian, Integration (weak forms)
 │   ├── initial_conditions.c  All IC functions (2D, 3D, 1D)
 │   ├── grain_initialization.c  Random grain placement (sed & ice)

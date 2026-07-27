@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------
 # check_ic_types.sh — guard against dead -ic_type / mesh-sizing regressions.
 #
-# The C solver (src/permafrost2.c) dispatches a fixed set of -ic_type values
+# The C solver (src/*_main.c) dispatches a fixed set of -ic_type values
 # and SETERRQs on anything else in 2D/3D. Config files drift out of sync with
 # that list every time the model changes (the 2026-06-13 two-phase fork left
 # 21 .opts files that aborted at startup and silently broke the regression
@@ -12,7 +12,7 @@
 #   1. Every 2D/3D file's -ic_type is in the live dispatch list.
 #      (1D falls through to a default, so any value is accepted there.)
 #   2. Any file setting -geom_file also carries a "# DOF_GRID: nx ny [nz]"
-#      comment — run_permafrost.sh parses it for rank sizing; without it the
+#      comment — run_lunar.sh parses it for rank sizing; without it the
 #      run silently drops to 1 rank.
 #
 # Exit 0 if clean, 1 if any problem is found. Zero external dependencies.
@@ -21,7 +21,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INPUTS="$ROOT/inputs"
-SRC="$ROOT/src/permafrost2.c"
+SRC=$(ls "$ROOT"/src/*_main.c 2>/dev/null | head -1)
 
 # Derive the valid 2D/3D ic_type list directly from the source dispatch, so
 # this script never goes stale relative to the code it guards.

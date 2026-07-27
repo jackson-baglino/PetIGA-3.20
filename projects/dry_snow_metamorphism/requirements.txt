@@ -1,9 +1,0 @@
-# Standard scientific Python packages
-numpy
-scipy
-matplotlib
-pandas
-netCDF4
-
-# Install igakit manually via URL (latest master branch)
--e git+https://github.com/dalcinl/igakit.git@master#egg=igakit

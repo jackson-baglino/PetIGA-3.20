@@ -1,0 +1,39 @@
+# =============================================================================
+# geometry/2D_two_ice_grains_boundary_refined2x.opts — 2x mesh refinement of
+# 2D_two_ice_grains_boundary.opts: Nx/Ny doubled AND eps halved together, so
+# dx/eps (and therefore elements-per-interface-width) is unchanged:
+#
+#   dx/eps = 3.2985e-07/4.6648e-07 = 0.70711  (original)
+#          = 1.6493e-07/2.3324e-07 = 0.70711  (refined, exact match)
+#
+# Built specifically to push past the resolution-validity wall hit in the
+# 10-year small-grain Ostwald-ripening run (-RCice0 4.6875e-6): the small
+# grain sublimated 99% before its two opposing diffuse interfaces merged
+# (no more flat phi_ice~1 core), at which point the curvature-driven
+# Gibbs-Thomson forcing -- which assumes a single well-resolved curved
+# boundary -- degrades toward zero and the residual blob stops shrinking,
+# frozen from year 6.5 through year 10 in that run.
+#
+# This refines resolution ONLY (same elements-per-interface ratio as the
+# original file, not a re-derivation): same RCice0/RCice1/Lx/Ly, just
+# smaller dx and eps together, deliberately NOT a "same eps, more elements"
+# test -- that would change the elements-per-interface ratio and risk
+# making the interface span more elements without changing anything
+# physical, exactly the unphysical-erosion risk this file is designed to
+# avoid. Still uses -RCice0 4.6875e-6 as a CLI override at runtime, same as
+# the run that hit the wall, to isolate resolution as the only changed
+# variable.
+# =============================================================================
+-ic_type two_ice_grains_boundary
+-dim 2
+-Nx 250
+-Ny 308
+-Nz 1
+-Lx 4.123140e-5
+-Ly 5.079708e-5
+-Lz 0
+-RCice0 9.375e-6
+-RCice1 1.875e-5
+-delt_t 1.0e-8
+-eps 2.3324e-07
+-periodic 0

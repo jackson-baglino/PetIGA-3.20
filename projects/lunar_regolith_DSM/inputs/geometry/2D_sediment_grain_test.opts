@@ -15,7 +15,7 @@
 # =============================================================================
 # DOF_GRID: 81 81
 # (control-point grid of sediment_grain_test.dat: Nx+1 = Ny+1 = 80+1 -- used
-# by run_permafrost.sh's compute_optimal_nprocs() since -geom_file overrides
+# by run_lunar.sh's compute_optimal_nprocs() since -geom_file overrides
 # -Nx/-Ny and those default to 1. Update if Nx/Ny change in
 # build_geometry_sediment_grain.py.)
 -geom_file inputs/geometry/sediment_grain_test.dat

@@ -1,0 +1,11 @@
+# =============================================================================
+# experiment/smoke_short.opts — very short run for mechanics smoke tests
+# (e.g. -geom_file non-rectangular geometry). Just enough steps to confirm
+# IGARead + residual/Jacobian assembly work on a curved-boundary mesh.
+# =============================================================================
+-t_final 1.0e-6
+-temp -20.0
+-humidity 0.95
+-grad_temp0 0.0,0.0,0.0
+-outp 1
+-n_out 5

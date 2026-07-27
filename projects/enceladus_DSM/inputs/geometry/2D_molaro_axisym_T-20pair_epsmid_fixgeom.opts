@@ -1,0 +1,51 @@
+# =============================================================================
+# geometry/2D_molaro_axisym_T-20pair_epsmid_fixgeom.opts — MID arm of the
+# FIXED-GEOMETRY eps-convergence series.
+# Pair with experiment/molaro_T-20_h1.00_arrh_epsmid.opts.
+#
+# See 2D_molaro_axisym_T-20pair_epsloose_fixgeom.opts for the full framing.
+# In brief: all three arms share the sharp geometry (R0, R1, d) and differ
+# ONLY in eps and what follows from it (Nx/Ny, dtmax). The measured t=0 neck
+# therefore differs by arm — that spread IS the eps error in the observable.
+#
+#   eps = 6.030e-7, the midpoint of the loose/strict pair. The three eps are
+#   equally spaced (3.479e-7, 6.030e-7, 8.584e-7; gaps 2.551e-7 and 2.554e-7),
+#   which is what makes the series a direct test of the linear-O(eps) scaling
+#   claimed in docs/molaro_validation_synthesis.md sec. 2. If the three points
+#   fall on a line, the eps->0 extrapolation is trustworthy and a looser mesh
+#   can be CORRECTED rather than merely tolerated — which is the practical
+#   prize here, since eps sets how large a domain is affordable.
+#
+#   Predicted t=0 measured neck: 35.61 um   (loose 38.21, strict 32.88)
+#   sharp chord 2*x0 = 28.599 um            (the eps->0 limit)
+#
+#   d  = 1.710585e-4 m ; cx = 9.25000e-05,2.63558e-04  — IDENTICAL to the
+#   other two arms, so the phi=0.5 contours share one underlying body.
+#
+# eps = 6.03e-7 sits ABOVE the conservative pure-ice ceiling (6.96e-7 bound ->
+# eps 3.479e-7 at safety 0.5) and BELOW the D*_ia-implied 8.584e-7. It is
+# deliberately in the disputed band: it is the point that says whether the
+# error grows gracefully (linear, correctable) or turns over.
+# =============================================================================
+
+-axisym 1
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.84558e-04
+-Ly 1.21000e-04
+-Lz 0
+
+-ice_grain_cx 9.25000e-05,2.63558e-04   # separation d = 1.710585e-04 m — SHARED
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 902                                 # h = eps/sqrt(2)
+-Ny 284
+-Nz 1
+-eps 6.0300e-07
+
+-delt_t 1.0e-4
+-periodic 0

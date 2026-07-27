@@ -1,4 +1,4 @@
-# Claude Code Instructions — Permafrost Project
+# Claude Code Instructions — lunar_regolith_DSM
 
 ## Git Workflow
 

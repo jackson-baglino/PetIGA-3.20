@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# submit_batch.sh — Submit a batch of permafrost simulations to SLURM,
+# submit_batch.sh — Submit a batch of lunar_regolith_dsm simulations to SLURM,
 # with all outputs going into a single timestamped parent folder for easy
 # bulk download.
 #
@@ -8,12 +8,12 @@
 # test specs work on both. Each test is submitted as an independent sbatch
 # job (so they run in parallel on the cluster), but they all write into:
 #
-#   $SCRATCH/sublimation_pf/batch_<timestamp>[_<tag>]/<geom>__<exp>/
+#   $SCRATCH/lunar_regolith_DSM/batch_<timestamp>[_<tag>]/<geom>__<exp>/
 #
 # Each sbatch call:
 #   - sizes its allocation to the geometry's grid (TARGET_DOFS_PER_CORE)
-#   - calls run_permafrost.sh as the actual SLURM script
-#   - sets BATCH_OUT_DIR so run_permafrost.sh writes into the shared parent
+#   - calls run_lunar.sh as the actual SLURM script
+#   - sets BATCH_OUT_DIR so run_lunar.sh writes into the shared parent
 #   - sets SKIP_COMPILE=1 since this script builds once on the submission host
 #
 # Usage (run from project root):
@@ -22,9 +22,9 @@
 #
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests-file tests.txt
 #
-# --extra-opts forwards a single quoted string of permafrost CLI flags to
+# --extra-opts forwards a single quoted string of lunar_regolith_dsm CLI flags to
 # EVERY fanned-out job (appended after the three -options_file flags, same
-# as submit_permafrost.sh's `-- ...` convention, so they override anything
+# as submit_lunar.sh's `-- ...` convention, so they override anything
 # set in the opts files):
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." --extra-opts "-beta_sub0 1.4e3"
 #
@@ -35,7 +35,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-RUN_SCRIPT="$SCRIPT_DIR/run_permafrost.sh"
+RUN_SCRIPT="$SCRIPT_DIR/run_lunar.sh"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 GEOMETRY_DIR="$INPUTS_DIR/geometry"
 EXPERIMENT_DIR="$INPUTS_DIR/experiment"
@@ -43,8 +43,8 @@ SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 
 # Resource-sizing parameters. FOUR copies of TARGET_DOFS_PER_CORE exist -- keep
 # them in sync:
-#   scripts/Studio/run_permafrost.sh :: compute_optimal_nprocs
-#   scripts/HPC/run_permafrost.sh    :: compute_optimal_nprocs
+#   scripts/Studio/run_lunar.sh :: compute_optimal_nprocs
+#   scripts/HPC/run_lunar.sh    :: compute_optimal_nprocs
 # TARGET_DOFS_PER_CORE and MAX_TASKS_PER_NODE are sourced from
 # scripts/lib/alloc.sh (single source of truth; see rationale there).
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
@@ -124,16 +124,16 @@ cd "$PROJECT_ROOT"
 
 # ---------------------------------------------------------------------------
 # Build once (sets SKIP_COMPILE=1 for each fanned-out job — see compile_code
-# in run_permafrost.sh for the race-condition rationale).
+# in run_lunar.sh for the race-condition rationale).
 # ---------------------------------------------------------------------------
 echo ""
-echo "--- Building permafrost on submission host ---"
+echo "--- Building lunar_regolith_dsm on submission host ---"
 if ! make all; then
     echo "❌ Build failed. Fix the build before submitting jobs."
     exit 1
 fi
-if [[ ! -x ./permafrost ]]; then
-    echo "❌ ./permafrost still missing after make all."
+if [[ ! -x ./lunar_regolith_dsm ]]; then
+    echo "❌ ./lunar_regolith_dsm still missing after make all."
     exit 1
 fi
 echo "✅ Build complete."
@@ -146,14 +146,14 @@ TS=$(date +%Y-%m-%d__%H.%M.%S)
 batch_name="batch_${TS}${tag:+_$tag}"
 
 if [[ -d "${SCRATCH:-}" ]]; then
-    BATCH_PARENT="$SCRATCH/sublimation_pf/$batch_name"
+    BATCH_PARENT="$SCRATCH/lunar_regolith_DSM/$batch_name"
 else
     BATCH_PARENT="$PROJECT_ROOT/scratch/$batch_name"
 fi
 mkdir -p "$BATCH_PARENT"
 
 echo "============================================================"
-echo "  Permafrost batch submission"
+echo "  Lunar regolith DSM batch submission"
 echo "  Tag         : ${tag:-<none>}"
 echo "  Tests       : ${#TESTS[@]}"
 echo "  Parent dir  : $BATCH_PARENT"
@@ -197,7 +197,7 @@ compute_alloc() {
     [[ -z "${dof:-}" ]] && dof=3
 
     # -geom_file meshes override -Nx/-Ny/-Nz; read the grid from the
-    # "# DOF_GRID: nx ny [nz]" comment, matching submit_permafrost.sh.
+    # "# DOF_GRID: nx ny [nz]" comment, matching submit_lunar.sh.
     if grep -q "^-geom_file" "$geom_file"; then
         read -r nx ny nz <<< "$(awk '$1=="#" && $2=="DOF_GRID:"{print $3, $4, $5}' "$geom_file" | head -n1)"
     else
@@ -221,7 +221,7 @@ compute_alloc() {
 }
 
 # ---------------------------------------------------------------------------
-# Submit one job: sbatch run_permafrost.sh <geom> <exp> <tag>
+# Submit one job: sbatch run_lunar.sh <geom> <exp> <tag>
 # with BATCH_OUT_DIR pointing at the shared parent so all jobs end up there.
 # ---------------------------------------------------------------------------
 N_SUBMITTED=0

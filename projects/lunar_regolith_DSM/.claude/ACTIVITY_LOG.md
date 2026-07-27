@@ -2591,7 +2591,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 ## 2026-06-19 — Generated first real movie; bounded highres disk cost
 
 - User asked to actually run the new movie pipeline on job64410270's
-  real output (5564 snapshots). Discovered plot_permafrost_highres.py's
+  real output (5564 snapshots). Discovered plot_fields_highres.py's
   dense VTS output is ~70MB/file at n_per_elem=4 on this 608x122-element
   mesh -- converting all 5564 snapshots would be ~400GB, and even the
   ~1199 unique steps make_movie.py's default 600-frame, evenly-spaced-in-
@@ -2600,7 +2600,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - Added `postprocess/select_movie_frames.py`: computes the same target
   times make_movie.py uses internally, finds the real snapshot(s)
   bracketing each one, and converts only that union via
-  plot_permafrost_highres.py --steps -- run with matching --n-frames so
+  plot_fields_highres.py --steps -- run with matching --n-frames so
   the two scripts' target times line up exactly.
 - Generated job64410270's first movie at --n-per-elem 2 (~20.5GB, safe
   margin) instead of the default 4: 600 frames, 1218x246, 20s @ 30fps,
@@ -2911,7 +2911,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   `preprocess/build_geometry_multi_grain.py` so a one-off bump layout (the
   shared single-bump mesh for cases 2/3) doesn't require hand-editing the
   script's hardcoded `SEDIMENT_GRAINS` list; default behavior unchanged.
-- Verified all 3 cases locally with `-t_final 0` + `plot_permafrost_highres.py`;
+- Verified all 3 cases locally with `-t_final 0` + `plot_fields_highres.py`;
   the ice-cap ellipse needed one retuning pass (ax/ay/cy) after the first
   attempt floated visibly above the flat floor away from the bump. Committed
   (8fabe59).
@@ -2952,13 +2952,13 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   (full Kaempfer & Plapp bound, not manually shrunk), Nx=304, Ny=122
   (down from 600x240) -- confirmed the earlier 600x240 mesh size was
   driven by a ParaView control-point-rendering artifact, not a real
-  resolution requirement (see prior session's plot_permafrost_highres.py).
+  resolution requirement (see prior session's plot_fields_highres.py).
 - Added `--C` continuity option to `build_geometry_multi_grain.py`
   (previously hardcoded to C=P-1); used to verify a P=2/C0 mesh, then
   rebuilt the production mesh at the intended P=2/C=1.
 - Ran a local `-t_final 0` sanity check on the new 304x122 mesh (commit
-  75a414e), converted with both `plotpermafrost.py` and
-  `plot_permafrost_highres.py`, confirmed clean IC. Discovered
+  75a414e), converted with both `plot_fields.py` and
+  `plot_fields_highres.py`, confirmed clean IC. Discovered
   `monitoring.c` reads the output directory from a `folder` env var
   (set by `run_permafrost.sh`'s `export folder`), not `-output_path`
   directly -- not a bug, just missed when invoking the binary by hand.
@@ -6174,8 +6174,8 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 
 - Updated `postprocess/analyze_interface.py`: read sediment DOF (sol[:,3]), fix air = 1−φ_i−φ_s, add sediment volume fraction to metrics and 4×2 panel plot
 - Updated `postprocess/plot2D_snapshot.py`: expand `_plot_cuts` from 2×3 to 2×4 to include sediment cross-sections
-- Updated `postprocess/plotpermafrost.py`: add SedPhase DOF export, fix file-exists path bug, add CLI flags
-- Updated `scripts/plotpermafrost.py`: fix `❌ Error processing` bug caused by erroneous `np.newaxis` in air-phase computation
+- Updated `postprocess/plot_fields.py`: add SedPhase DOF export, fix file-exists path bug, add CLI flags
+- Updated `scripts/plot_fields.py`: fix `❌ Error processing` bug caused by erroneous `np.newaxis` in air-phase computation
 - Set up `.claude/ACTIVITY_LOG.md` and Stop hook for session logging; added activity log instruction to `CLAUDE.md`
 
 ---

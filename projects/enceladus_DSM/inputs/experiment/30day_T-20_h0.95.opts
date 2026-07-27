@@ -1,0 +1,14 @@
+# =============================================================================
+# experiment/2day_T-20_h0.95.opts — 2 days at -20C, 95% relative humidity.
+#
+# Same conditions as 1day_T-20_h0.95.opts, run twice as long. Uses
+# solver.opts' -outp 1 (every-step) default output cadence.
+# =============================================================================
+
+# ---------- Simulation time ----------
+-t_final 2592000.0                      # 20 days (s)
+
+# ---------- Environmental conditions ----------
+-temp -20.0                             # initial temperature [°C]
+-humidity 0.95                          # initial relative humidity in air
+-grad_temp0 0.0,0.0,0.0                 # no imposed temperature gradient

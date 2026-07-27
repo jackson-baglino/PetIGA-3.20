@@ -1,0 +1,60 @@
+# =============================================================================
+# geometry/2D_molaro_axisym_T-20pair_epsstrict.opts — STRICT arm of the
+# D_heat eps-convergence test. Pair with
+# experiment/molaro_T-20_h1.00_arrh_epsstrict.opts.
+#
+# See the LOOSE partner (2D_molaro_axisym_T-20pair_epsloose.opts) for the
+# full framing. In brief: this arm sizes eps by the CONSERVATIVE reading of
+# K&P Eq. 43a, D_heat = D_ice = 1.27e-6 (comp_eps.py --Dchannel ice), which
+# makes B-HEAT bind at 6.96e-7 -> eps = 3.479e-7. The loose arm uses
+# D*_ia = 8.06e-6 and lands at eps = 8.584e-7, 2.47x coarser.
+#
+# The two runs are IDENTICAL except for eps and the three things that follow
+# from it (grain separation re-calibration, Nx/Ny, dtmax). So a difference
+# between their neck curves is an eps artifact and nothing else.
+#
+# READING THE RESULT
+#   curves agree      -> the answer is eps-insensitive across the disputed
+#                        range; the D*_ia default is safe and we keep the
+#                        cheap mesh.
+#   curves disagree   -> the loose bound is too loose; revert comp_eps.py's
+#                        default to --Dchannel ice and re-derive every mesh
+#                        sized since 2026-07-14.
+#
+# CAVEAT ON INTERPRETATION: docs/molaro_validation_synthesis.md sec. 2 already
+# reports an eps dependence ("planar sweep linear O(eps)"), i.e. the neck rate
+# is expected to move ~linearly with eps rather than be converged. So SOME
+# difference is expected and is not by itself proof the mean is wrong. The
+# question is magnitude: if the gap is ~linear-in-eps and modest, that is the
+# known first-order thin-interface behavior; if this arm and the loose arm
+# diverge far beyond that, the loose arm is in the sign-flipped regime its
+# beta ratio (0.0246) warns about.
+#
+# Geometry re-calibrated at THIS eps:
+#   python preprocess/calibrate_neck_geometry.py --axisym \
+#       --R0 7.25e-5 --R1 1.01e-4 --neck 32.81e-6 --eps 3.479e-7
+# -> measured neck 32.810 um (err < 0.1 nm); diffuse skin +4.21 um (13% of
+#    the neck, vs 36% in the loose arm).
+# =============================================================================
+
+-axisym 1
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.84558e-04
+-Ly 1.21000e-04
+-Lz 0
+
+-ice_grain_cx 9.25000e-05,2.63558e-04   # separation d = 1.710585e-04 m
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 1564                                # h = eps/sqrt(2)
+-Ny 492
+-Nz 1
+-eps 3.4790e-07
+
+-delt_t 1.0e-4
+-periodic 0

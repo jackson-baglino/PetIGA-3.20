@@ -1,0 +1,42 @@
+# =============================================================================
+# geometry/2D_Tgrad_3grain_bigC.opts — three grains, LARGE centre grain.
+# Temperature-gradient sanity series (Effort 1). Identical to
+# 2D_Tgrad_3grain_equal.opts except the middle grain is doubled.
+# Pair with experiment/Tgrad_T-20_G50_3d.opts (dT/dx = -50 K/m, left warm).
+#
+# TEST 5 — large centre grain. Ostwald ripening favours the big (100 um) middle
+# grain GROWING at the expense of the two 50 um flankers; the gradient biases
+# which flanker feeds it. The centre grain acts as the ripening hub.
+#
+# GEOMETRY (planar 2D, NOT axisymmetric)
+# --------------------------------------
+#   Lx = 1.125e-3 m, Ly = 2.5e-4 m (headroom for the 100 um centre grain)
+#   centres 0.2/0.5/0.8 Lx, y = 0;  R = 50, 100, 50 um
+#   centre-to-flanker surf gap = 3.75 R_small each side (non-touching)
+#
+# eps / MESH  (comp_eps.py, T0 = -20 C, alpha_c = 1.341e-2; eps/R_small = 1.7%)
+#     python preprocess/comp_eps.py --Lx 1.125e-3 --Ly 2.5e-4 --Rave 5.0e-5 \
+#         --T0 -20 --alpha 1.341e-2
+# =============================================================================
+
+-axisym 0
+
+-ic_type multi_grains
+-dim 2
+-Lx 1.1250e-03
+-Ly 2.5000e-04
+-Lz 0
+
+-ice_grain_cx 2.2500e-04,5.6250e-04,9.0000e-04   # 0.2Lx, 0.5Lx, 0.8Lx
+-ice_grain_cy 0.0,0.0,0.0                          # centres on the floor -> semicircles
+-ice_grain_R  5.0e-5,1.0e-4,5.0e-5                  # LARGE centre (100 um)
+-ice_grain_ax 5.0e-5,1.0e-4,5.0e-5
+-ice_grain_ay 5.0e-5,1.0e-4,5.0e-5
+
+-Nx 1854                                   # ceil(sqrt(2)*Lx/eps)
+-Ny 412
+-Nz 1
+-eps 8.5840e-07
+
+-delt_t 1.0e-4
+-periodic 0

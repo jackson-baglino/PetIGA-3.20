@@ -1,0 +1,39 @@
+# =============================================================================
+# geometry/2D_molaro_sintering_s075.opts — safety-factor sweep member
+# (eps = 0.75 x the Eq.45-derived bound scale; s050 = the baseline
+# 2D_molaro_sintering.opts geometry, already run as fig11-v4).
+#
+# Purpose: empirical eps-convergence study of the sintering kinetics. The
+# K&P thin-interface corrections are O(eps) — heat-in-ice channel
+# beta_eff/beta = 0.882 at this eps — and the mobility derivation depends
+# on eps, so the measured neck growth rate quantifies the eps bias directly.
+# If rates converge as eps shrinks, the s025/s050 values are trustworthy;
+# if not, extrapolate eps -> 0.
+#
+# The initial-neck overlap is RECALIBRATED for this eps (the diffuse-union
+# inflation of the measured phi=0.5 waist scales with eps): nominal chord
+# half-width x0 = 1.1766e-5 m gives measured neck width = 32.81 um at t=0 for
+# every sweep member — identical starting necks, kinetics isolated.
+# Physics inputs otherwise identical to 2D_molaro_sintering.opts
+# (R = 72.5/101 um, T = -20 C via the shared molaro_T-20_h1.00 experiment).
+# =============================================================================
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.854e-4
+-Ly 2.420e-4
+-Lz 0
+
+-ice_grain_cx 9.25e-5,2.64351e-4
+-ice_grain_cy 1.21e-4,1.21e-4
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 784
+-Ny 492
+-Nz 1
+-eps 6.960e-07
+
+-delt_t 1.0e-4
+-periodic 0

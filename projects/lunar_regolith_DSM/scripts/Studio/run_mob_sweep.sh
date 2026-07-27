@@ -18,10 +18,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="${PETIGA_DIR}/projects/sublimation_pf"
-EXEC="$PROJECT_ROOT/permafrost"
+PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_regolith_DSM"
+EXEC="$PROJECT_ROOT/lunar_regolith_dsm"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
-RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/sublimation_pf/scratch"
+RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch"
 GEOM="2D_two_ice_grains_boundary"
 EXP="${1:-30day_T-5_h1.00_GTphys}"
 

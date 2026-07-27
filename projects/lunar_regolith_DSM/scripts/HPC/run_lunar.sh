@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J permafrost_SlabAndGrains
+#SBATCH -J lunar_regolith_dsm
 #SBATCH -A rubyfu
 #SBATCH -t 0-24:00:00
 
@@ -22,10 +22,10 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 #   $1   : geometry name (e.g. 2D_touching_grains)
 #   $2   : experiment name (e.g. 1day_T-20_h1.00)
 #   $3   : Title prefix for the run (used in folder name)
-#   $4.. : extra options forwarded verbatim to the permafrost executable,
+#   $4.. : extra options forwarded verbatim to the lunar_regolith_dsm executable,
 #          appended after the three -options_file flags so they override
 #          anything set in solver.opts/geometry/experiment opts
-#          (e.g. -d0_GT 1.0e-8). Populated by submit_permafrost.sh's `--`
+#          (e.g. -d0_GT 1.0e-8). Populated by submit_lunar.sh's `--`
 #          separator.
 ###############################################################################
 geom_name="${1:-2D_touching_grains}"
@@ -67,7 +67,7 @@ else
     hpc_cost_post_job() { :; }
 fi
 
-EXEC="$PROJECT_ROOT/permafrost"
+EXEC="$PROJECT_ROOT/lunar_regolith_dsm"
 SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
@@ -151,7 +151,7 @@ compile_code() {
 
 ###############################################################################
 # Create output folder:
-#   $SCRATCH/sublimation_pf/<geometry>/<timestamp>_<experiment>[_<tag>][_job<id>]
+#   $SCRATCH/lunar_regolith_DSM/<geometry>/<timestamp>_<experiment>[_<tag>][_job<id>]
 #
 # One subfolder per distinct geometry (geom_name itself, not the old
 # -ic_type category bucket, which lumped unrelated geometries that happen to
@@ -165,7 +165,7 @@ create_folder() {
     echo "--- Creating output folder ---"
 
     # Batch-mode path: when submit_batch.sh fans out a sweep, every job sets
-    # BATCH_OUT_DIR=$SCRATCH/sublimation_pf/batch_<ts>[_<tag>]/, and we just write
+    # BATCH_OUT_DIR=$SCRATCH/lunar_regolith_DSM/batch_<ts>[_<tag>]/, and we just write
     # into a clean `<geom>__<exp>/` subfolder of that shared parent so the
     # whole batch can be downloaded with a single rsync.
     if [[ -n "${BATCH_OUT_DIR:-}" ]]; then
@@ -192,7 +192,7 @@ create_folder() {
     # Base scratch dir on Resnick; fall back to local scratch
     local base_dir
     if [[ -d "${SCRATCH:-}" ]]; then
-        base_dir="$SCRATCH/sublimation_pf"
+        base_dir="$SCRATCH/lunar_regolith_DSM"
     else
         base_dir="$PROJECT_ROOT/scratch"
     fi
@@ -213,7 +213,7 @@ stage_output_folder() {
     cp "$SOLVER_OPTS" "$folder/"
     cp "$GEOM_OPTS"   "$folder/"
     cp "$EXP_OPTS"    "$folder/"
-    cp "${BASH_SOURCE[0]}" "$folder/run_permafrost.sh"
+    cp "${BASH_SOURCE[0]}" "$folder/run_lunar.sh"
 
     # Post-processing scripts — copy the full postprocess/ directory so that
     # results can be reproduced without access to the source tree
@@ -426,7 +426,7 @@ JOB_START_TIME=$(date +%s)
 
 echo ""
 echo "========================================================================="
-echo "  Permafrost simulation workflow (HPC)"
+echo "  Lunar regolith DSM simulation workflow (HPC)"
 echo "  Project root : $PROJECT_ROOT"
 echo "  Options      : $params_file"
 echo "  Title        : $title"

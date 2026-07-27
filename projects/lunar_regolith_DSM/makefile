@@ -1,4 +1,4 @@
-TARGETS = permafrost
+TARGETS = lunar_regolith_dsm
 
 all: $(TARGETS)
 .PHONY: all clean debug

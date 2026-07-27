@@ -2,7 +2,7 @@
 # =============================================================================
 # run_batch_tests.sh — Run a curated set of tests sequentially into one folder
 #
-# Location: $PETIGA_DIR/projects/sublimation_pf/scripts/Studio/run_batch_tests.sh
+# Location: $PETIGA_DIR/projects/lunar_regolith_DSM/scripts/Studio/run_batch_tests.sh
 #
 # All runs go under a single timestamped parent folder:
 #   $RESULTS_BASE/batch_<timestamp>/<test_name>/
@@ -31,15 +31,15 @@ set -uo pipefail
 # Paths
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="${PETIGA_DIR}/projects/sublimation_pf"
-EXEC="$PROJECT_ROOT/permafrost"
+PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_regolith_DSM"
+EXEC="$PROJECT_ROOT/lunar_regolith_dsm"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 GEOMETRY_DIR="$INPUTS_DIR/geometry"
 EXPERIMENT_DIR="$INPUTS_DIR/experiment"
 POSTPROCESS="$PROJECT_ROOT/postprocess"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
-RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/sublimation_pf/scratch"
+RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch"
 
 # Allocation constants (TARGET_DOFS_PER_CORE, MAX_LOCAL_CORES) — single source
 # of truth in scripts/lib/alloc.sh.
@@ -306,13 +306,13 @@ run_one_test() {
 
     set +e
     if [[ "$dim" != "1" ]]; then
-        # 2D/3D: VTK conversion. Call plotpermafrost.py directly from the
+        # 2D/3D: VTK conversion. Call plot_fields.py directly from the
         # project's postprocess/ — earlier this went through
-        # run_plotpermafrost.sh, which expects a per-run staged postprocess/
+        # run_plot_fields.sh, which expects a per-run staged postprocess/
         # subdirectory and silently exits 1 if it doesn't find one.
-        if [ -n "$PYTHON" ] && [ -f "$POSTPROCESS/plotpermafrost.py" ]; then
+        if [ -n "$PYTHON" ] && [ -f "$POSTPROCESS/plot_fields.py" ]; then
             echo "  Post-processing (VTK)..."
-            "$PYTHON" "$POSTPROCESS/plotpermafrost.py" \
+            "$PYTHON" "$POSTPROCESS/plot_fields.py" \
                 --dir "$test_out" 2>&1 | sed 's/^/    /' || true
         fi
     else

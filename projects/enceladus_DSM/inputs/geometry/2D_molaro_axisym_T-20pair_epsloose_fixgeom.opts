@@ -1,0 +1,67 @@
+# =============================================================================
+# geometry/2D_molaro_axisym_T-20pair_epsloose_fixgeom.opts — LOOSE arm of the
+# FIXED-GEOMETRY eps-convergence series.
+# Pair with experiment/molaro_T-20_h1.00_arrh_epsloose.opts (eps unchanged,
+# so tau_sub and dtmax are unchanged).
+#
+# WHY THIS SUPERSEDES 2D_molaro_axisym_T-20pair_epsloose.opts
+# ------------------------------------------------------------
+# The first eps test calibrated each arm to the same MEASURED neck (32.81 um).
+# Because the diffuse skin fattens with eps, hitting the same measured neck
+# required LESS overlap at large eps, so the arms ended up with DIFFERENT
+# sharp geometries: d = 1.722023e-4 (loose) vs 1.710585e-4 (strict), i.e. the
+# large grain sat 1.14 um further right in the loose arm. Their phi=0.5
+# contours do not overlap. That is a confound, not a control: initial
+# curvature differs, so the neck-growth rates were never comparable, and the
+# 26% gap that test reported mixes the eps effect with a geometry effect.
+#
+# THE FIX: hold the SHARP geometry (R0, R1, d) fixed across the series and let
+# the measured neck vary with eps. That is the correct convergence test — one
+# physical problem, three diffuse renderings, converging as eps -> 0.
+#
+#   d  = 1.710585e-4 m   (the strict arm's separation; it is the reference)
+#   cx = 9.25000e-05,2.63558e-04   IDENTICAL in all three arms
+#   sharp chord 2*x0 = 28.599 um   <- the eps->0 limit of the neck
+#
+# CONSEQUENCE — DO NOT MISREAD THE t=0 NECK: it is NOT 32.81 here. Predicted
+# t=0 measured neck by arm (calibrate_neck_geometry.py at each run grid):
+#   loose  eps=8.584e-7 -> 38.21 um   <- THIS FILE
+#   mid    eps=6.030e-7 -> 35.61 um
+#   strict eps=3.479e-7 -> 32.88 um
+# The spread IS the eps error in the observable; watching it shrink is the
+# point of the series. Compare the arms by their neck-vs-time CURVES, not by
+# "+X%" growth — the percentages are not comparable across different starting
+# necks.
+#
+# The three eps are equally spaced (gaps 2.551e-7, 2.554e-7) so the series
+# tests the linear-O(eps) claim in docs/molaro_validation_synthesis.md sec. 2
+# directly.
+#
+# NOTE for the eventual validation figure: matching the measured neck at
+# finite eps (the old approach) means the SHARP geometry does not carry the
+# experiment's 32.81 um neck — as eps->0 it tends to 28.60 um instead. Which
+# of the two should carry the experimental value is an anchoring convention
+# worth settling separately (synthesis sec. 6); it does not affect this test.
+# =============================================================================
+
+-axisym 1
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.84558e-04
+-Ly 1.21000e-04
+-Lz 0
+
+-ice_grain_cx 9.25000e-05,2.63558e-04   # separation d = 1.710585e-04 m — SHARED
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 634                                 # h = eps/sqrt(2)
+-Ny 200
+-Nz 1
+-eps 8.5840e-07
+
+-delt_t 1.0e-4
+-periodic 0

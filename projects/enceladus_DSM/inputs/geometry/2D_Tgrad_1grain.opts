@@ -1,0 +1,49 @@
+# =============================================================================
+# geometry/2D_Tgrad_1grain.opts — SINGLE semicircular ice grain on the floor,
+# for the temperature-gradient sanity series (Effort 1, flat-domain pre-study).
+# Pair with experiment/Tgrad_T-20_G50_3d.opts (dT/dx = -50 K/m, left warm).
+#
+# TEST 0 — single-grain baseline. One isolated grain under the gradient: its
+# warm (left) flank sublimates and its cold (right) flank grows, so the grain
+# should TRANSLATE toward the cold side while conserving total ice (~1e-4%).
+# This is the cleanest check that the gradient + IC behave before adding a
+# second grain.
+#
+# GEOMETRY (planar 2D, NOT axisymmetric)
+# --------------------------------------
+#   Lx = 3.75e-4 m  (half the two-grain width — "proportionally smaller" for 1
+#                    grain), Ly = 2.0e-4 m (reduced height; 3 R headroom)
+#   centre: x = Lx/2 = 1.875e-4, y = 0  -> semicircle resting on the floor
+#   R = 5.0e-5 m  (50 um; half the prior 100 um base)
+#   wall clearance = Lx/2 - R = 1.375e-4 = 2.75 R on each side
+#
+# eps / MESH  (comp_eps.py, Kaempfer&Plapp, T0 = -20 C, alpha_c = 1.341e-2)
+# ------------------------------------------------------------------------
+#   eps = 8.584e-7 is the kinetic-bound value at -20 C (grain-size independent
+#   here; eps/R = 1.7%). h = eps/sqrt(2) -> ~7.5 elements across the interface.
+#   Re-derive on any change to R / T0 / alpha_c:
+#     python preprocess/comp_eps.py --Lx 3.75e-4 --Ly 2.0e-4 --Rave 5.0e-5 \
+#         --T0 -20 --alpha 1.341e-2
+# =============================================================================
+
+-axisym 0
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.7500e-04
+-Ly 2.0000e-04
+-Lz 0
+
+-ice_grain_cx 1.8750e-04                  # Lx/2
+-ice_grain_cy 0.0                          # centre on the floor -> semicircle
+-ice_grain_R  5.0e-5                        # 50 um
+-ice_grain_ax 5.0e-5
+-ice_grain_ay 5.0e-5
+
+-Nx 618                                    # ceil(sqrt(2)*Lx/eps), h = eps/sqrt(2)
+-Ny 330
+-Nz 1
+-eps 8.5840e-07
+
+-delt_t 1.0e-4
+-periodic 0

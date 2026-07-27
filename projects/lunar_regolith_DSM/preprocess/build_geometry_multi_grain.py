@@ -6,7 +6,7 @@ from one bump to N.
 
 Usage
 -----
-Run from the project root (PetIGA-3.20/projects/sublimation_pf/):
+Run from the project root (PetIGA-3.20/projects/lunar_regolith_DSM/):
 
     python3 preprocess/build_geometry_multi_grain.py [options]
 

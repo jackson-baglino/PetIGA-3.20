@@ -380,11 +380,11 @@ def reinitialize_ice_phase_notemp(
 
 if __name__ == "__main__":
     infile = (
-        "/Users/jacksonbaglino/PetIGA-3.20/projects/sublimation_pf/"
+        "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/"
         "inputs/tests/SthavisthaInputs/AssemblePhase__first.dat"
     )
     outfile = (
-        "/Users/jacksonbaglino/PetIGA-3.20/projects/sublimation_pf/"
+        "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/"
         "inputs/tests/SthavisthaInputs/AssemblePhase__first_reinit.dat"
     )
 

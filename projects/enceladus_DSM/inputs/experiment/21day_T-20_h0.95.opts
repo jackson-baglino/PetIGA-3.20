@@ -1,0 +1,19 @@
+# =============================================================================
+# experiment/21day_T-20_h0.95.opts — 21 days at -20C, 95% relative humidity.
+#
+# Same conditions as 2day_T-20_h0.95.opts, run longer -- long enough to see
+# whether the 2D_single_bump_ice_cap encapsulating ring (job64415277 /
+# vinewtonssls_validation) actually fully sublimates given the true, much
+# slower rate the VI bound-constrained solve revealed (see
+# .claude/ACTIVITY_LOG.md), or asymptotically thins without fully vanishing
+# within a couple of days. Uses solver.opts' -outp 1 (every-step) default
+# output cadence.
+# =============================================================================
+
+# ---------- Simulation time ----------
+-t_final 1814400.0                      # 21 days (s)
+
+# ---------- Environmental conditions ----------
+-temp -20.0                             # initial temperature [°C]
+-humidity 0.95                          # initial relative humidity in air
+-grad_temp0 0.0,0.0,0.0                 # no imposed temperature gradient

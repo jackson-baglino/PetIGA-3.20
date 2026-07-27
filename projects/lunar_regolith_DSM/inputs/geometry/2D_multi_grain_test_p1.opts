@@ -22,7 +22,7 @@
 # =============================================================================
 # DOF_GRID: 481 481
 # (control-point grid of multi_grain_test_p1.dat: Nx+P = Ny+P = 480+1 -- used
-# by run_permafrost.sh's compute_optimal_nprocs() since -geom_file overrides
+# by run_lunar.sh's compute_optimal_nprocs() since -geom_file overrides
 # -Nx/-Ny and those default to 1.)
 -geom_file inputs/geometry/multi_grain_test_p1.dat
 -ic_type multi_grains

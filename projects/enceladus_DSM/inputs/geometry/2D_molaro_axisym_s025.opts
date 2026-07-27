@@ -1,0 +1,54 @@
+# =============================================================================
+# geometry/2D_molaro_axisym_s025.opts — RIM-RESOLUTION test: the axisym Molaro
+# pair at HALF the baseline eps (s025 rung: eps = 2.32e-7 vs 4.64e-7).
+#
+# Purpose: last strong suspect for the 3x neck-rate gap to Fig. 11. In the
+# vapor-diffusion-limited regime the neck flux is driven by the rim's Kelvin
+# depression (~d0/rho_rim); the diffuse interface caps the representable rim
+# curvature at ~1/eps, so eps may throttle the neck rate directly. The
+# planar eps sweep showed growth still rising linearly as eps shrank —
+# measured in the KINETIC-limited regime; this run measures it in the
+# diffusion-limited regime where the stakes are higher. Pair with the
+# CLOSED saturated experiment (molaro_T-20_h1.00_a3e-2) so the rim effect
+# is isolated from chamber physics.
+#
+# Pass/fail: neck growth at 78 min vs the s050 axisym result (+33% at
+# alpha=3e-2 closed). A significant jump (toward +50%+) indicts rim
+# resolution and motivates a further eps rung / sharper-rim treatment;
+# a null (~+35%) closes this suspect and shifts weight to the experiment's
+# effective sample conditions.
+#
+# Derivation (same chain as 2D_molaro_axisym.opts, at eps = 2.32e-7):
+#   - initial-neck overlap RECALIBRATED for this eps (diffuse-union
+#     inflation shrinks with eps): nominal x0 = 15.023e-6 m -> measured
+#     phi=0.5 neck width 32.81 um; s = 170.80e-6 m.
+#   - rim rho0 = x0^2/(2*R0) = 1.56e-6 m -> rho0/eps = 6.7 (vs 2.7 at s050:
+#     the rim is now properly resolved even at t = 0).
+#   - Lx = 20 + 72.5 + 170.80 + 101 + 20 = 384.3 um; Ly = R1 + 20 = 121 um
+#   - h = eps/sqrt(2) = 1.6405e-7 -> Nx = 2343, Ny = 738 (~1.73M nodes,
+#     ~5.2M dofs — HPC).
+#   - V0 gate: TOT_ICE(0) ~ 5.91e-12 m^3 (union volume; tail correction
+#     ~0.01% at this eps).
+# =============================================================================
+
+-axisym 1
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.843e-4
+-Ly 1.21e-4
+-Lz 0
+
+-ice_grain_cx 9.25e-5,2.63303e-4
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 2343
+-Ny 738
+-Nz 1
+-eps 2.3200e-07
+
+-delt_t 1.0e-4
+-periodic 0

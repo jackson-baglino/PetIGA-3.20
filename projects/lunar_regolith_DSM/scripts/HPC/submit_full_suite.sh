@@ -156,7 +156,7 @@ for t in "${TESTS[@]}"; do
 done
 
 echo "============================================================"
-echo "  Permafrost full-suite HPC submission"
+echo "  Lunar regolith DSM full-suite HPC submission"
 echo "  Tag        : ${tag:-<none>}"
 echo "  Tests      : ${#TESTS[@]}"
 echo "  Filters    : skip_1d=$skip_1d  skip_hires=$skip_hires"

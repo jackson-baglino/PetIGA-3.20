@@ -1,6 +1,6 @@
 # Bound-Constrained Newton Solve for the Ice Phase Field
 
-> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented. Predates the rename to `sublimation_pf` — read any `projects/permafrost` path as `projects/sublimation_pf`.
+> ✅ **CURRENT (banner 2026-07-22).** Applies to the two-phase model as implemented. Predates the renames to `sublimation_pf` (2026-07-21) and `lunar_regolith_DSM` (2026-07-27) — read any `projects/permafrost` or `projects/sublimation_pf` path as `projects/lunar_regolith_DSM`.
 
 
 > **Purpose:** Reference document explaining how the ice phase-field DOF is

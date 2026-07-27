@@ -29,7 +29,7 @@ Derived from build_geometry_ripening.py, with two deliberate changes:
      Add more by registering a function in ICE_STRATEGIES.
 
 Writes inputs/geometry/regolith_pore.dat and inputs/geometry/2D_regolith_pore.opts
-(so scripts/Studio/run_permafrost.sh finds them by the usual convention), plus a
+(so scripts/Studio/run_lunar.sh finds them by the usual convention), plus a
 preview PNG. Deterministic (seeded). Every geometric constraint is asserted
 before anything is written.
 

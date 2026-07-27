@@ -1,0 +1,41 @@
+# =============================================================================
+# geometry/2D_two_ice_grains_boundary_refined4x.opts — 4x mesh refinement of
+# 2D_two_ice_grains_boundary.opts (Nx/Ny x4, eps /4 from the original file;
+# x2/eps-2 from 2D_two_ice_grains_boundary_refined2x.opts). dx/eps held
+# exactly constant across all three resolutions:
+#
+#   dx/eps = 0.70711  (original, 2x, and 4x -- same ratio every time)
+#
+# Mesh-convergence check. The 2x-refined run showed the opposite of the
+# original "near-total sublimation" result: the small grain plateaued at
+# -64% (not -99%), much earlier relative to its own trajectory, while
+# staying visually well-resolved (clean core, no merged interface) the
+# whole time -- unlike the original run, where the grain's two opposing
+# interfaces visibly merged into a degenerate blob before it stalled.
+# The gap between the original and 2x curves grows continuously from t=0
+# (not just near the end), consistent with the *original* (coarser) mesh
+# systematically overestimating curvature (and thus the Gibbs-Thomson
+# driving force) as the grain shrinks -- a classic discretization-error
+# story for Hessian-based curvature near a shrinking feature, not a
+# resolution floor on the small side.
+#
+# This run is the decisive test: if the plateau value/timing here is close
+# to the 2x result (~-64%, ~year 6.2), that confirms mesh convergence --
+# the small grain genuinely reaches a stable nonzero equilibrium size for
+# this closed two-grain configuration, not a numerical artifact. If it
+# moves substantially again, the model isn't converged yet at any
+# resolution tried so far.
+# =============================================================================
+-ic_type two_ice_grains_boundary
+-dim 2
+-Nx 500
+-Ny 616
+-Nz 1
+-Lx 4.123140e-5
+-Ly 5.079708e-5
+-Lz 0
+-RCice0 9.375e-6
+-RCice1 1.875e-5
+-delt_t 1.0e-8
+-eps 1.1662e-07
+-periodic 0

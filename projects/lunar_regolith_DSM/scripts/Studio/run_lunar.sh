@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # =============================================================================
-# run_permafrost.sh — Build, run, and post-process a permafrost simulation
+# run_lunar.sh — Build, run, and post-process a lunar_regolith_dsm simulation
 #
-# Location: $PETIGA_DIR/projects/sublimation_pf/scripts/Studio/run_permafrost.sh
+# Location: $PETIGA_DIR/projects/lunar_regolith_DSM/scripts/Studio/run_lunar.sh
 #
 # Usage:
-#   ./scripts/Studio/run_permafrost.sh <geometry> <experiment> [tag]
+#   ./scripts/Studio/run_lunar.sh <geometry> <experiment> [tag]
 #
 #   geometry    Name (without .opts) of a file in inputs/geometry/. Sets up
 #               the domain/mesh/IC: -dim, -Lx/-Ly/-Lz, -Nx/-Ny/-Nz (or
@@ -18,7 +18,7 @@
 #
 # Combining the two: the script concatenates solver.opts + the chosen
 # geometry .opts + the chosen experiment .opts (later files can override
-# earlier settings) and passes the result to `permafrost`.
+# earlier settings) and passes the result to `lunar_regolith_dsm`.
 #
 # The output folder is auto-derived from the geometry name and the two opts
 # basenames, one subfolder per distinct geometry, timestamp leading the run
@@ -26,9 +26,9 @@
 #   $RESULTS_BASE/<geometry>/<timestamp>_<experiment>[_<tag>]/
 #
 # Examples:
-#   ./scripts/Studio/run_permafrost.sh 2D_touching_grains 1day_T-20_h1.00
-#   ./scripts/Studio/run_permafrost.sh 1D_ice_slab 1day_T-20_h0.95 sweep_a
-#   ./scripts/Studio/run_permafrost.sh 2D_multi_grain_test 2day_T-20_h0.95 multigrain_2day
+#   ./scripts/Studio/run_lunar.sh 2D_touching_grains 1day_T-20_h1.00
+#   ./scripts/Studio/run_lunar.sh 1D_ice_slab 1day_T-20_h0.95 sweep_a
+#   ./scripts/Studio/run_lunar.sh 2D_multi_grain_test 2day_T-20_h0.95 multigrain_2day
 #
 # -----------------------------------------------------------------------
 # Adding a new EXPERIMENT (run conditions)
@@ -37,7 +37,7 @@
 # inputs/experiment/<my_experiment>.opts and edit -t_final/-temp/-humidity/
 # -grad_temp0 (and -outp/-n_out if you want non-default output cadence —
 # solver.opts defaults to -outp 1, i.e. a snapshot every time step). Then:
-#   ./scripts/Studio/run_permafrost.sh <geometry> my_experiment [tag]
+#   ./scripts/Studio/run_lunar.sh <geometry> my_experiment [tag]
 #
 # -----------------------------------------------------------------------
 # Adding a new GEOMETRY / initial condition
@@ -60,7 +60,7 @@
 #      its parameters, -dim, -Lx/-Ly/-Lz, -eps, -delt_t, -periodic 0.
 #
 # Then run as usual:
-#   ./scripts/Studio/run_permafrost.sh my_geometry <experiment> [tag]
+#   ./scripts/Studio/run_lunar.sh my_geometry <experiment> [tag]
 # =============================================================================
 
 set -uo pipefail
@@ -79,11 +79,11 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/alloc.sh"
 
 # ---------------------------------------------------------------------------
 # Resolve project root — always two levels above this script's location
-# Script lives at: <project_root>/scripts/Studio/run_permafrost.sh
+# Script lives at: <project_root>/scripts/Studio/run_lunar.sh
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-PROJECT_ROOT="${PETIGA_DIR}/projects/sublimation_pf"
+PROJECT_ROOT="${PETIGA_DIR}/projects/lunar_regolith_DSM"
 
 # Validate that we resolved the project root correctly
 if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
@@ -94,11 +94,11 @@ if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
 fi
 
 # Convenience aliases
-EXEC="$PROJECT_ROOT/permafrost"
+EXEC="$PROJECT_ROOT/lunar_regolith_dsm"
 SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
-RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/sublimation_pf/scratch"
+RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch"
 SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 GEOMETRY_DIR="$INPUTS_DIR/geometry"
 EXPERIMENT_DIR="$INPUTS_DIR/experiment"
@@ -109,7 +109,7 @@ EXPERIMENT_DIR="$INPUTS_DIR/experiment"
 usage() {
     echo ""
     echo "Usage:"
-    echo "  ./scripts/Studio/run_permafrost.sh <geometry> <experiment> [tag]"
+    echo "  ./scripts/Studio/run_lunar.sh <geometry> <experiment> [tag]"
     echo ""
     echo "Arguments:"
     echo "  geometry    Name (without .opts) of a file in inputs/geometry/"
@@ -122,8 +122,8 @@ usage() {
     echo "  \$RESULTS_BASE/<geom>/<timestamp>_<exp>[_<tag>]/"
     echo ""
     echo "Example:"
-    echo "  ./scripts/Studio/run_permafrost.sh 2D_touching_grains 1day_T-20_h1.00"
-    echo "  ./scripts/Studio/run_permafrost.sh 1D_ice_slab 1day_T-20_h0.95 sweep_a"
+    echo "  ./scripts/Studio/run_lunar.sh 2D_touching_grains 1day_T-20_h1.00"
+    echo "  ./scripts/Studio/run_lunar.sh 1D_ice_slab 1day_T-20_h0.95 sweep_a"
     echo ""
 }
 
@@ -138,10 +138,10 @@ exp_name="$2"
 title="${3:-}"
 
 # Args past the tag (an optional literal `--` separator is skipped) are
-# forwarded verbatim to the permafrost executable, AFTER the three
+# forwarded verbatim to the lunar_regolith_dsm executable, AFTER the three
 # -options_file flags — so they override anything in the opts files.
-# Mirrors scripts/HPC/submit_permafrost.sh semantics, e.g.:
-#   ./scripts/Studio/run_permafrost.sh GEOM EXP mytag -- -dtmax 1.0e2
+# Mirrors scripts/HPC/submit_lunar.sh semantics, e.g.:
+#   ./scripts/Studio/run_lunar.sh GEOM EXP mytag -- -dtmax 1.0e2
 # (Previously extra args were silently IGNORED — a -dtmax override ran
 # with the opts-file value and no warning.)
 EXTRA_OPTS=()
@@ -307,7 +307,7 @@ stage_output_folder() {
     fi
 
     # Copy this run script itself
-    cp "${BASH_SOURCE[0]}" "$folder/run_permafrost.sh"
+    cp "${BASH_SOURCE[0]}" "$folder/run_lunar.sh"
 
     echo "✅ Staging complete."
 }
@@ -416,7 +416,7 @@ run_plotting() {
     echo ""
     echo "--- Running post-processing (VTK) ---"
 
-    local plot_script="$SCRIPTS_DIR/run_plotpermafrost.sh"
+    local plot_script="$SCRIPTS_DIR/run_plot_fields.sh"
 
     if [ ! -f "$plot_script" ]; then
         echo "⚠️  Plotting script not found: $plot_script — skipping."
@@ -507,7 +507,7 @@ run_1d_plotting() {
 # =============================================================================
 echo ""
 echo "========================================================================="
-echo "  Permafrost simulation workflow"
+echo "  Lunar regolith DSM simulation workflow"
 echo "  Project root : $PROJECT_ROOT"
 echo "  Geometry     : $geom_name  ($GEOM_OPTS)"
 echo "  Experiment   : $exp_name  ($EXP_OPTS)"

@@ -1,0 +1,9 @@
+# =============================================================================
+# experiment/30day_T-20_h1.00.opts — 30 days at -20C, saturated humidity.
+# Canonical experiment for the clean 2-phase model.
+# Sediment is identically frozen from t=0 (no t_sed_freeze parameter).
+# =============================================================================
+-t_final 2592000.0                      # 30 days (s)
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0

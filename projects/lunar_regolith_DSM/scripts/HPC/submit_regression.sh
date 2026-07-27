@@ -4,7 +4,7 @@
 #
 # Submits every job in parallel via sbatch. Each job sizes its allocation to
 # the geometry's actual problem size (target: TARGET_DOFS_PER_CORE DoFs/core),
-# overriding the default #SBATCH directives in run_permafrost.sh so 1D jobs
+# overriding the default #SBATCH directives in run_lunar.sh so 1D jobs
 # don't grab a full 64-core allocation.
 #
 # Run from project root:
@@ -17,7 +17,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-RUN_SCRIPT="$SCRIPT_DIR/run_permafrost.sh"
+RUN_SCRIPT="$SCRIPT_DIR/run_lunar.sh"
 
 TAG="${1:-kpen0_regression}"
 
@@ -51,16 +51,16 @@ cd "$PROJECT_ROOT"
 # "Stale file handle" / "No space left on device" errors when one job's
 # `make clean` deletes obj/*.o while another job is mid-write).
 echo ""
-echo "--- Building permafrost on submission host ---"
+echo "--- Building lunar_regolith_dsm on submission host ---"
 if ! make all; then
     echo "❌ Build failed. Fix the build before submitting jobs."
     exit 1
 fi
-if [[ ! -x ./permafrost ]]; then
-    echo "❌ ./permafrost still missing after make all."
+if [[ ! -x ./lunar_regolith_dsm ]]; then
+    echo "❌ ./lunar_regolith_dsm still missing after make all."
     exit 1
 fi
-echo "✅ Build complete: $(ls -la ./permafrost | awk '{print $5, $6, $7, $8}')"
+echo "✅ Build complete: $(ls -la ./lunar_regolith_dsm | awk '{print $5, $6, $7, $8}')"
 
 # Compute optimal (nprocs, nnodes, ntasks_per_node) for a geometry's grid size.
 # Echoes the three values space-separated; caller reads with `read`.
@@ -106,7 +106,7 @@ submit_one() {
         "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node"
 
     # --export=ALL,SKIP_COMPILE=1 forwards the submitter's environment and adds
-    # the skip-compile flag — see compile_code() in run_permafrost.sh.
+    # the skip-compile flag — see compile_code() in run_lunar.sh.
     sbatch --job-name="$job_name" \
            --nodes="$nnodes" \
            --ntasks="$nprocs" \
@@ -116,7 +116,7 @@ submit_one() {
 }
 
 echo "============================================================"
-echo "  Permafrost regression sweep"
+echo "  Lunar regolith DSM regression sweep"
 echo "  Tag        : $TAG"
 echo "  Target     : ${TARGET_DOFS_PER_CORE} DoFs/core (max ${MAX_TASKS_PER_NODE}/node)"
 echo "  Regression : $REGRESSION_EXP  (${#REGRESSION_GEOMS[@]} jobs)"

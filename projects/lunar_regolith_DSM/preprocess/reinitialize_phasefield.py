@@ -349,8 +349,8 @@ def reinitialize_ice_phase(
 
 if __name__ == "__main__":
     # Example usage – change these to match your case
-    infile = "/Users/jacksonbaglino/PetIGA-3.20/projects/sublimation_pf/inputs/tests/SthavisthaInputs/AssemblePhase.dat"
-    outfile = "/Users/jacksonbaglino/PetIGA-3.20/projects/sublimation_pf/inputs/tests/SthavisthaInputs/AssemblePhase_reinit.dat"
+    infile = "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/inputs/tests/SthavisthaInputs/AssemblePhase.dat"
+    outfile = "/Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/inputs/tests/SthavisthaInputs/AssemblePhase_reinit.dat"
 
     # Input (fine) grid and physical domain – must match the original AssemblePhase.dat file
     Nx_in = 868 + 1

@@ -1,13 +1,13 @@
 #!/bin/zsh
 
-# Locate plotpermafrost.py: prefer the staged postprocess/ subdirectory,
+# Locate plot_fields.py: prefer the staged postprocess/ subdirectory,
 # fall back to the root of the results folder for older result dirs.
 find_plot_script() {
     local dir=$1
-    if [[ -f "$dir/postprocess/plotpermafrost.py" ]]; then
-        echo "$dir/postprocess/plotpermafrost.py"
-    elif [[ -f "$dir/plotpermafrost.py" ]]; then
-        echo "$dir/plotpermafrost.py"
+    if [[ -f "$dir/postprocess/plot_fields.py" ]]; then
+        echo "$dir/postprocess/plot_fields.py"
+    elif [[ -f "$dir/plot_fields.py" ]]; then
+        echo "$dir/plot_fields.py"
     else
         echo ""
     fi
@@ -20,7 +20,7 @@ execute_python_scripts() {
     plot_py=$(find_plot_script "$dir")
 
     if [[ -z "$plot_py" ]]; then
-        echo "⚠️  plotpermafrost.py not found in $dir or $dir/postprocess/ — skipping."
+        echo "⚠️  plot_fields.py not found in $dir or $dir/postprocess/ — skipping."
         return 1
     fi
 
@@ -34,7 +34,7 @@ if [[ -n $1 ]]; then
     if [[ "$1" == /* ]]; then
         dir="$1"
     else
-        dir=/Users/jacksonbaglino/SimulationResults/sublimation_pf/scratch/$1
+        dir=/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch/$1
     fi
     echo "Starting process for directory: $dir"
 
@@ -51,7 +51,7 @@ else
     dir="$(pwd)"
     plot_py=$(find_plot_script "$dir")
     if [[ -z "$plot_py" ]]; then
-        echo "⚠️  plotpermafrost.py not found — skipping."
+        echo "⚠️  plot_fields.py not found — skipping."
         exit 1
     fi
     echo "Executing: $plot_py --dir $dir"
