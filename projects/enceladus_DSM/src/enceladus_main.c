@@ -371,17 +371,35 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* --- Ice-grain array capacity ------------------------------------------ */
+    user.n_grain_max = 2000;
+    ierr = PetscOptionsInt("-n_grain_max",
+             "Capacity of the ice-grain centre/radius arrays", "",
+             user.n_grain_max, &user.n_grain_max, NULL); CHKERRQ(ierr);
+    if (user.n_grain_max < 1)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "-n_grain_max must be >= 1 (got %d)", (int)user.n_grain_max);
+    for (PetscInt d = 0; d < 3; d++) {
+        ierr = PetscCalloc1(user.n_grain_max, &user.cent[d]); CHKERRQ(ierr);
+    }
+    ierr = PetscCalloc1(user.n_grain_max, &user.radius);       CHKERRQ(ierr);
+    ierr = PetscCalloc1(user.n_grain_max, &user.ice_grain_ax); CHKERRQ(ierr);
+    ierr = PetscCalloc1(user.n_grain_max, &user.ice_grain_ay); CHKERRQ(ierr);
+
     /* --- Multi-grain ice IC (-ic_type multi_grains) ------------------------ */
     user.n_act = 0;
     {
-        PetscInt  n = 200;
-        PetscReal cx[200];
+        PetscInt   n = user.n_grain_max;
+        PetscReal *cx;
+        ierr = PetscMalloc1(user.n_grain_max, &cx); CHKERRQ(ierr);
         ierr = PetscOptionsRealArray("-ice_grain_cx",
                  "Ice grain center x-positions [m] (-ic_type multi_grains)",
                  "", cx, &n, &flg); CHKERRQ(ierr);
         if (flg) {
-            PetscInt  ncy = 200, nr = 200;
-            PetscReal cy[200], rr[200];
+            PetscInt   ncy = user.n_grain_max, nr = user.n_grain_max;
+            PetscReal *cy, *rr;
+            ierr = PetscMalloc1(user.n_grain_max, &cy); CHKERRQ(ierr);
+            ierr = PetscMalloc1(user.n_grain_max, &rr); CHKERRQ(ierr);
             ierr = PetscOptionsRealArray("-ice_grain_cy", "Ice grain center y-positions [m]", "", cy, &ncy, NULL); CHKERRQ(ierr);
             ierr = PetscOptionsRealArray("-ice_grain_R",  "Ice grain radii [m]",               "", rr, &nr,  NULL); CHKERRQ(ierr);
             if (ncy != n || nr != n)
@@ -394,8 +412,29 @@ int main(int argc, char *argv[]) {
                 user.cent[1][k] = cy[k];
                 user.radius[k]  = rr[k];
             }
+            ierr = PetscFree(cy); CHKERRQ(ierr);
+            ierr = PetscFree(rr); CHKERRQ(ierr);
         }
+        ierr = PetscFree(cx); CHKERRQ(ierr);
     }
+
+    /* --- Multi-grain ice IC from file (-ic_type multi_grains_file) ---------
+     * Whitespace-delimited grain list, one grain per line, produced by
+     * preprocess/generate_packing.py:
+     *
+     *     Lx Ly            <- optional 2-token header (domain size, metres)
+     *     x  y  r          <- one row per grain, metres
+     *
+     * A 4-token row (x y z r) from the legacy 3D-flavoured generators is
+     * also accepted: z is read and discarded, since the model is 2D. Mixing
+     * row widths inside one file is rejected rather than guessed at -- the
+     * legacy reader inferred the width from the first line only and left the
+     * radius uninitialised on short rows, which silently produced garbage
+     * grains. Parsed on rank 0 and broadcast; every rank must agree. */
+    ierr = PetscOptionsString("-grains_file",
+             "Path to a grain list for -ic_type multi_grains_file", "",
+             user.grains_file, user.grains_file,
+             sizeof(user.grains_file), &flg); CHKERRQ(ierr);
 
     /* --- Elliptical ice grain semi-axes (-ice_grain_ax / -ice_grain_ay) -- */
     {
@@ -480,7 +519,7 @@ int main(int argc, char *argv[]) {
              "overriding -p/-C/-Nx/-Ny/-Nz axis setup with the geometry's own",
              "", geom_file, geom_file, sizeof(geom_file), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-ic_type",
-             "Initial condition geometry (two_ice_grains_boundary|ice_slab|single_ice|multi_grains)",
+             "Initial condition geometry (two_ice_grains_boundary|ice_slab|single_ice|multi_grains|multi_grains_file)",
              "src/<project>_main.c", ic_type, ic_type, sizeof(ic_type),
              NULL); CHKERRQ(ierr);
 
@@ -1126,9 +1165,16 @@ int main(int argc, char *argv[]) {
             ierr = FormInitialSingleIceGrain2D(iga, U, &user); CHKERRQ(ierr);
         } else if (strcmp(ic_type, "multi_grains") == 0) {
             ierr = FormInitialMultiGrains2D(iga, U, &user); CHKERRQ(ierr);
+        } else if (strcmp(ic_type, "multi_grains_file") == 0) {
+            /* Same builder, but the grain list comes from -grains_file rather
+             * than the -ice_grain_* option arrays (packings have ~400-500
+             * grains, far past what is reasonable to inline in a .opts). */
+            ierr = ReadGrainsFromFile(&user);               CHKERRQ(ierr);
+            ierr = FormInitialMultiGrains2D(iga, U, &user); CHKERRQ(ierr);
         } else {
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
-                    "Unknown -ic_type. Valid: two_ice_grains_boundary ice_slab single_ice multi_grains");
+                    "Unknown -ic_type. Valid: two_ice_grains_boundary ice_slab "
+                    "single_ice multi_grains multi_grains_file");
         }
     }
 
@@ -1143,6 +1189,10 @@ int main(int argc, char *argv[]) {
     ierr = VecDestroy(&user.cfl_U_prev); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
+    for (PetscInt d = 0; d < 3; d++) { ierr = PetscFree(user.cent[d]); CHKERRQ(ierr); }
+    ierr = PetscFree(user.radius);       CHKERRQ(ierr);
+    ierr = PetscFree(user.ice_grain_ax); CHKERRQ(ierr);
+    ierr = PetscFree(user.ice_grain_ay); CHKERRQ(ierr);
     ierr = PetscFree(user.alph); CHKERRQ(ierr);
     ierr = PetscFree(user.mob); CHKERRQ(ierr);
     /* End Timer */

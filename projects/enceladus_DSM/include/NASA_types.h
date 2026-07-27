@@ -74,11 +74,18 @@ typedef struct {
   PetscReal top_grain_R[MAX_SED_GRAINS];
   PetscReal top_grain_h[MAX_SED_GRAINS];
 
-  // Arrays storing geometry information for ice grains
-  PetscReal cent[3][200];  // Coordinates of ice grain centers (3D array for x, y, z positions)
-  PetscReal radius[200];   // Radii of individual ice grains (isotropic; used as default ax/ay)
-  PetscReal ice_grain_ax[200]; /* ellipse semi-axis in x; defaults to radius[k] if -ice_grain_ax not set */
-  PetscReal ice_grain_ay[200]; /* ellipse semi-axis in y; defaults to radius[k] if -ice_grain_ay not set */
+  // Arrays storing geometry information for ice grains.
+  //
+  // Heap-allocated with capacity n_grain_max (-n_grain_max, default 2000).
+  // These were fixed [200] arrays until 2026-07-27; granular packings from
+  // preprocess/generate_packing.py routinely carry 400-500 grains at
+  // 2 mm / 45 um mean radius, which silently overran them. Capacity is
+  // allocated once in main() and freed at the end; indexing is unchanged.
+  PetscInt  n_grain_max;   // Allocated capacity of the four arrays below
+  PetscReal *cent[3];      // Ice grain centre coordinates: cent[dim][k]
+  PetscReal *radius;       // Radii of individual ice grains (isotropic; default ax/ay)
+  PetscReal *ice_grain_ax; /* ellipse semi-axis in x; defaults to radius[k] if -ice_grain_ax not set */
+  PetscReal *ice_grain_ay; /* ellipse semi-axis in y; defaults to radius[k] if -ice_grain_ay not set */
 
   // Ice "shell" capping a floor bump at constant thickness, conformal to
   // the bump's own surface (true distance to the SedimentBumpField(x)
@@ -157,6 +164,7 @@ typedef struct {
   char output_path[PETSC_MAX_PATH_LEN];  // Path for output files
   char initial_cond[PETSC_MAX_PATH_LEN];  // Path for initial condition file
   char initial_PFgeom[PETSC_MAX_PATH_LEN];  // Path for initial geometry file
+  char grains_file[PETSC_MAX_PATH_LEN];  // Grain list for -ic_type multi_grains_file
 
   // Capillary neck parameters
   PetscReal R1;  // Radius of capillary neck

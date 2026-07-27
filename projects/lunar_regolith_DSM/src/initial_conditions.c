@@ -5,16 +5,35 @@
 /* =========================================================================
  * GrevilleAbscissae
  *
- * Fills `g[0..n-1]` with the Greville abscissae (parametric DOF locations,
- * in [0,1]) of the given IGA axis: g_i = mean(U[i+1..i+p]) for the axis's
- * knot vector U and degree p. For an open-uniform knot vector this reduces
- * to g_i = i/N (degree 1) but is non-uniform for degree >= 2 -- this is
- * the degree-agnostic replacement for the `i/(mx+per)` index mapping used
- * by IC functions on -geom_file domains.
+ * Fills `g[0..count-1]` with the Greville abscissae (parametric DOF locations,
+ * normalized to the physical parameter range) of the given IGA axis:
+ * g_i = mean(U[i+1..i+p]) for the axis's knot vector U and degree p. For an
+ * open-uniform knot vector this reduces to g_i = i/N (degree 1) but is
+ * non-uniform for degree >= 2 -- this is the degree-agnostic replacement for
+ * the `i/(mx+per)` index mapping used by IC functions on -geom_file domains.
+ *
+ * `count` is how many DOFs the caller actually has along this axis, i.e.
+ * DMDALocalInfo's mx/my. Passing it in (rather than deriving m-p here) is what
+ * makes this work under -periodic 1: IGAAxisInitUniform sets
+ * nnp = periodic ? n-C : n+1 (petigaaxis.c:452), so a periodic axis has p
+ * FEWER DOFs than basis-function slots, and the first `count` Greville values
+ * are exactly the periodic DOF positions.
+ *
+ * Normalization uses U[p]..U[m-p], NOT U[0]..U[m]. They are identical for an
+ * open knot vector, but IGAAxisInitUniform's periodic branch (petigaaxis.c:
+ * 442-446) rewrites the p leading and trailing knots to lie OUTSIDE the
+ * domain -- for N=8, p=2, C=1 on [0,1] it gives U[0]=-0.25, U[m]=1.25.
+ * Dividing by that inflated span compressed the whole DOF grid: spacing came
+ * out 0.0833 instead of the correct 0.125 = 1/N. U[p]..U[m-p] is the true
+ * domain in both cases.
+ *
+ * Under periodicity the first abscissa is slightly negative (-h/2 for p=2),
+ * which is correct: that DOF's basis function wraps around the domain.
+ * Consumers must handle it, e.g. by minimum-image wrapping.
  *
  * Caller must PetscFree(*g).
  * =========================================================================*/
-static PetscErrorCode GrevilleAbscissae(IGA iga, PetscInt dir, PetscReal **g, PetscInt *n)
+static PetscErrorCode GrevilleAbscissae(IGA iga, PetscInt dir, PetscInt count, PetscReal **g)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -26,24 +45,27 @@ static PetscErrorCode GrevilleAbscissae(IGA iga, PetscInt dir, PetscReal **g, Pe
     ierr = IGAAxisGetDegree(axis, &p);      CHKERRQ(ierr);
     ierr = IGAAxisGetKnots(axis, &m, &U);   CHKERRQ(ierr);
 
+    if (count < 1 || count > m - p)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "GrevilleAbscissae(dir=%d): asked for %d abscissae but the axis "
+                "has only %d basis functions", (int)dir, (int)count, (int)(m - p));
+
     /* Normalize to [0,1]: a -geom_file axis's knots already span [0,1] (the
      * igakit builder's convention), but the default (-Nx/-Ny, no -geom_file)
      * axis built by IGAAxisInitUniform() spans [0,Lx]/[0,Ly] directly -- callers
      * (FormInitialMultiGrains2D) multiply the returned abscissae by Lx/Ly
      * themselves, so this must always return [0,1] regardless of which path
      * built the axis, or physical coordinates get scaled by Lx/Ly twice. */
-    PetscReal Ui = U[0], Uf = U[m];
-    PetscInt nb = m - p; /* number of basis functions / DOFs along this axis */
+    PetscReal Ui = U[p], Uf = U[m - p];
     PetscReal *greville;
-    ierr = PetscMalloc1(nb, &greville); CHKERRQ(ierr);
-    for (PetscInt i = 0; i < nb; i++) {
+    ierr = PetscMalloc1(count, &greville); CHKERRQ(ierr);
+    for (PetscInt i = 0; i < count; i++) {
         PetscReal sum = 0.0;
         for (PetscInt k = 1; k <= p; k++) sum += U[i + k];
         greville[i] = (sum / (PetscReal)p - Ui) / (Uf - Ui);
     }
 
     *g = greville;
-    *n = nb;
     PetscFunctionReturn(0);
 }
 
@@ -556,14 +578,15 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
     ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
 
     PetscReal *gx, *gy;
-    PetscInt nbx, nby;
-    ierr = GrevilleAbscissae(iga, 0, &gx, &nbx); CHKERRQ(ierr);
-    ierr = GrevilleAbscissae(iga, 1, &gy, &nby); CHKERRQ(ierr);
-    if (nbx != info.mx || nby != info.my)
-        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_PLIB,
-                "Greville abscissae count (%d,%d) != DOF grid size (%d,%d) "
-                "-- multi_grains IC does not support -periodic 1",
-                (int)nbx, (int)nby, (int)info.mx, (int)info.my);
+    ierr = GrevilleAbscissae(iga, 0, info.mx, &gx); CHKERRQ(ierr);
+    ierr = GrevilleAbscissae(iga, 1, info.my, &gy); CHKERRQ(ierr);
+
+    /* Under -periodic 1 the grain field must wrap: a grain near x=0 has to be
+     * seen by DOFs near x=Lx, or the microstructure is discontinuous across
+     * the face that the solver (and the k_eff cell problem downstream) treats
+     * as glued. Only meaningful with the union SDF -- the additive branch
+     * sums per-grain tanh profiles and is unused for packings. */
+    const PetscBool wrap = (PetscBool)(user->periodic == 1);
 
     for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
         for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
@@ -588,6 +611,12 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                     PetscReal ay    = user->ice_grain_ay[k];
                     PetscReal dx    = x - user->cent[0][k];
                     PetscReal dy    = y - user->cent[1][k];
+                    if (wrap) {   /* minimum image: nearest periodic copy.
+                                   * floor(t+0.5) == round(t); PETSc 3.20 has
+                                   * no PetscRoundReal. */
+                        dx -= Lx * PetscFloorReal(dx / Lx + 0.5);
+                        dy -= Ly * PetscFloorReal(dy / Ly + 0.5);
+                    }
                     PetscReal d     = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay));
                     PetscReal sdf_k = (d - 1.0) * PetscSqrtReal(ax * ay);
                     sdf = PetscMin(sdf, sdf_k);
@@ -659,5 +688,143 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
     ierr = DMDestroy(&da);                 CHKERRQ(ierr);
     ierr = PetscFree(gx); CHKERRQ(ierr);
     ierr = PetscFree(gy); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * ReadGrainsFromFile
+ *
+ * Populates user->cent[0..1][k] and user->radius[k] from the whitespace-
+ * delimited grain list at user->grains_file, setting user->n_act. Written for
+ * the packings produced by preprocess/generate_packing.py:
+ *
+ *     Lx Ly          <- optional 2-token header (domain size in metres)
+ *     x  y  r        <- one row per grain, metres
+ *
+ * A 4-token row (x y z r) from the legacy 3D-flavoured generators is also
+ * accepted; z is read and discarded because the model is 2D.
+ *
+ * Row width is fixed by the FIRST data row and every later row must match.
+ * The legacy reader in dry_snow_metamorphism inferred the width from the
+ * first line and then accepted any row with >= 3 fields, so a 3-field row in
+ * a 4-field file left the radius holding whatever the previous iteration had
+ * -- silently producing grains of the wrong size. Here a ragged file is an
+ * error.
+ *
+ * Parsed on rank 0 and broadcast, so every rank sees identical geometry
+ * regardless of filesystem visibility.
+ * =========================================================================*/
+PetscErrorCode ReadGrainsFromFile(AppCtx *user)
+{
+    PetscErrorCode ierr;
+    PetscMPIInt    rank;
+    PetscInt       ng = 0;
+    PetscFunctionBegin;
+
+    ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank); CHKERRQ(ierr);
+
+    if (!user->grains_file[0])
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                "-ic_type multi_grains_file requires -grains_file <path>");
+
+    if (rank == 0) {
+        FILE *fp = fopen(user->grains_file, "r");
+        if (!fp)
+            SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+                    "Cannot open -grains_file '%s'", user->grains_file);
+
+        char     line[512];
+        PetscInt ncol = 0;          /* 3 (x y r) or 4 (x y z r); 0 until known */
+        PetscInt lineno = 0;
+
+        while (fgets(line, (int)sizeof(line), fp)) {
+            lineno++;
+
+            /* Skip blank lines and '#' comments */
+            char *s = line;
+            while (*s == ' ' || *s == '\t') s++;
+            if (*s == '\0' || *s == '\n' || *s == '\r' || *s == '#') continue;
+
+            PetscReal v[4];
+            PetscInt  nf = (PetscInt)sscanf(s, "%lf %lf %lf %lf",
+                                            &v[0], &v[1], &v[2], &v[3]);
+
+            /* A leading 2-token line is the "Lx Ly" domain header. */
+            if (nf == 2) {
+                if (ng == 0 && ncol == 0) continue;
+                SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_UNEXPECTED,
+                        "%s:%d: 2 fields, but a domain header is only allowed "
+                        "before the first grain", user->grains_file, (int)lineno);
+            }
+            if (nf < 3)
+                SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_UNEXPECTED,
+                        "%s:%d: expected 3 (x y r) or 4 (x y z r) fields, got %d",
+                        user->grains_file, (int)lineno, (int)nf);
+
+            if (ncol == 0) {
+                ncol = nf;                      /* fixed by the first data row */
+            } else if (nf != ncol) {
+                /* A 3-field first row followed by 4-field rows is almost
+                 * always a legacy 3D "Lx Ly Lz" header, which is ambiguous
+                 * with a 3-field "x y r" grain row and so cannot be detected
+                 * from the row alone. Name it rather than leaving the user
+                 * with a bare ragged-file complaint. */
+                if (ng == 1 && ncol == 3 && nf == 4)
+                    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_UNEXPECTED,
+                            "%s:%d: looks like the legacy 3D format -- a "
+                            "'Lx Ly Lz' header (indistinguishable from an "
+                            "'x y r' grain row) followed by 'x y z r' rows. "
+                            "The model is 2D: drop the Lz field from the "
+                            "header, or drop the header entirely.",
+                            user->grains_file, (int)lineno);
+                SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_UNEXPECTED,
+                        "%s:%d: ragged file -- %d fields here but %d in the "
+                        "first grain row", user->grains_file, (int)lineno,
+                        (int)nf, (int)ncol);
+            }
+
+            if (ng >= user->n_grain_max) {
+                fclose(fp);
+                SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE,
+                        "%s holds more than -n_grain_max (%d) grains; raise it",
+                        user->grains_file, (int)user->n_grain_max);
+            }
+
+            PetscReal gx = v[0], gy = v[1];
+            PetscReal gr = (ncol == 4) ? v[3] : v[2];   /* z (v[2]) discarded */
+            if (gr <= 0.0) {
+                fclose(fp);
+                SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_OUTOFRANGE,
+                        "%s:%d: radius must be > 0 (got %.6e)",
+                        user->grains_file, (int)lineno, (double)gr);
+            }
+
+            user->cent[0][ng] = gx;
+            user->cent[1][ng] = gy;
+            user->cent[2][ng] = 0.0;
+            user->radius[ng]  = gr;
+            ng++;
+        }
+        fclose(fp);
+
+        if (ng == 0)
+            SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_UNEXPECTED,
+                    "%s contains no grain rows", user->grains_file);
+    }
+
+    ierr = MPI_Bcast(&ng, 1, MPIU_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(user->cent[0], (PetscMPIInt)ng, MPIU_REAL, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(user->cent[1], (PetscMPIInt)ng, MPIU_REAL, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(user->radius,  (PetscMPIInt)ng, MPIU_REAL, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+
+    user->n_act = ng;
+    for (PetscInt k = 0; k < ng; k++) {
+        user->ice_grain_ax[k] = user->radius[k];
+        user->ice_grain_ay[k] = user->radius[k];
+    }
+
+    PetscPrintf(PETSC_COMM_WORLD,
+        "  -grains_file: %d grains from %s\n", (int)ng, user->grains_file);
     PetscFunctionReturn(0);
 }

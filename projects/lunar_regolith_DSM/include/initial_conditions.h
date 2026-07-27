@@ -20,4 +20,9 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user);
  * on an optionally multi-bump sediment geometry (-sed_grain_x/-sed_grain_R) */
 PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user);
 
+/* Populate cent[]/radius[] from the -grains_file grain list, for the
+ * -ic_type multi_grains_file path (large packings). Fills the same arrays
+ * -ice_grain_cx/cy/R would, so FormInitialMultiGrains2D consumes both. */
+PetscErrorCode ReadGrainsFromFile(AppCtx *user);
+
 #endif // INITIAL_CONDITIONS_H
