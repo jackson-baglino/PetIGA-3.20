@@ -91,7 +91,7 @@ Runs on HPC as one batch → `batch_<timestamp>_Tgrad_sanity/`.
 
 ## Tests 2 & 6 — competing vs. complementing  ★ headline
 
-Big grain (150 µm) vs. small (50 µm), 0.75 mm domain. **Only the side differs.**
+Big grain (150 µm) vs. small (50 µm), 1.0 mm domain. **Only the side differs.**
 
 | | Big grain on… | Gradient wants it to… | Ripening wants it to… | Net |
 |---|---|---|---|---|
@@ -149,8 +149,8 @@ Three grains, equally spaced (0.2 / 0.5 / 0.8 Lx), 1.125 mm domain.
 |---|---|---|---|---|---|
 | 0 | `2D_Tgrad_1grain`       | 0.375 | 0.20 | 50                | single baseline |
 | 1 | `2D_Tgrad_2grain_equal` | 0.75  | 0.20 | 50, 50            | equal pair |
-| 2 | `2D_Tgrad_2grain_bigL`  | 0.75  | 0.30 | **150**, 50       | competing |
-| 6 | `2D_Tgrad_2grain_bigR`  | 0.75  | 0.30 | 50, **150**       | complementing |
+| 2 | `2D_Tgrad_2grain_bigL`  | 1.00  | 0.30 | **150**, 50       | competing |
+| 6 | `2D_Tgrad_2grain_bigR`  | 1.00  | 0.30 | 50, **150**       | complementing |
 | 3 | `2D_Tgrad_3grain_equal` | 1.125 | 0.20 | 50, 50, 50        | 3-grain baseline |
 | 4 | `2D_Tgrad_3grain_smallC`| 1.125 | 0.20 | 50, **25**, 50    | small centre |
 | 5 | `2D_Tgrad_3grain_bigC`  | 1.125 | 0.25 | 50, **100**, 50   | large centre |
