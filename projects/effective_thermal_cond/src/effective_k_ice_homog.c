@@ -30,7 +30,15 @@
 
 int main(int argc, char *argv[])
 {
-  AppCtx         user;
+  /* Zero-initialise: the multi-file loop below does
+   *     if (user.ice) PetscFree(user.ice);
+   * before each re-allocation, which on the FIRST iteration was reading an
+   * uninitialised stack pointer and freeing it -- PETSc's debug allocator
+   * reports "Block at address ... is corrupted; cannot free". Nothing else
+   * assigns user.ice before that point, and the pointer members (ice, T_sol,
+   * iga, iga_input) are not covered by ParseOptions or
+   * InitializeUserContext. */
+  AppCtx         user = {0};
   PetscErrorCode ierr;
   PetscMPIInt    rank;
   PetscLogDouble t_start, t_1, t_2, t_end;

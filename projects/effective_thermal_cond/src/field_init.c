@@ -2,6 +2,69 @@
 #include "material.h"
 
 /*-----------------------------------------------------------------------------
+  CheckVecMatchesIGA
+  Compare the global length of the IGA-shaped vector we are about to fill
+  against the length actually stored in the PETSc binary file, and fail with
+  the discretisation parameters spelled out if they disagree.
+
+  IGAReadVec would catch the mismatch on its own, but only as a bare
+  "Vec sizes differ" -- and the cause is always one of a handful of parameters
+  disagreeing with the run that produced the file (-p, -C, -periodic, -Nx/-Ny,
+  or a snapshot with a different DOF count). Printing them turns a puzzling
+  failure into an obvious one.
+
+  Compare against the NATURAL vector, not the global one. IGAWriteVec stores
+  the natural (unwrapped tensor-grid) layout, which for a periodic axis has
+  the p duplicated wrap nodes present: measured on a 32x32, p=2, C=1 mesh, the
+  global vector is 3072 while the file holds 3468 either way. A consequence
+  worth knowing is that the file length is IDENTICAL periodic or not, so this
+  check cannot detect a -periodic mismatch -- it catches -dim/-Nx/-Ny/-Nz/-p/-C
+  and DOF-count errors, which is what actually bit us (this solver hardcoded
+  p=2, C=1 while the producer was configured p=1, C=0).
+
+  PETSc's binary Vec format is [VEC_FILE_CLASSID, global_rows, values...],
+  written big-endian, so the length is the second int in the file.
+-----------------------------------------------------------------------------*/
+PetscErrorCode CheckVecMatchesIGA(IGA iga, const char *vec_file, AppCtx *user)
+{
+  PetscErrorCode ierr;
+  PetscViewer    viewer;
+  Vec            natural;
+  PetscInt       header[2] = {0, 0};
+  PetscInt       expected;
+
+  PetscFunctionBegin;
+
+  ierr = IGAGetNaturalVec(iga, &natural); CHKERRQ(ierr);
+  ierr = VecGetSize(natural, &expected);  CHKERRQ(ierr);
+
+  ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD, vec_file,
+                               FILE_MODE_READ, &viewer); CHKERRQ(ierr);
+  ierr = PetscViewerBinarySkipInfo(viewer); CHKERRQ(ierr);
+  ierr = PetscViewerBinaryRead(viewer, header, 2, NULL, PETSC_INT); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  if (header[1] != expected) {
+    PetscInt nodes = expected / PF_INPUT_DOF;
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_UNEXPECTED,
+            "\n*** INPUT MESH MISMATCH ***\n"
+            "  %s holds %d values, but the configured mesh wants %d\n"
+            "  (%d nodes x %d dof).\n"
+            "  Configured: -dim %d -Nx %d -Ny %d -Nz %d -p %d -C %d -periodic %d\n"
+            "  These must match the run that produced the file. Point this\n"
+            "  solver at that run's own staged solver.opts + geometry .opts\n"
+            "  rather than re-specifying them by hand.\n"
+            "  (-periodic does not change the on-disk length, so a periodicity\n"
+            "   mismatch is NOT detected here -- check it yourself.)\n",
+            vec_file, (int)header[1], (int)expected, (int)nodes,
+            (int)PF_INPUT_DOF, (int)user->dim, (int)user->Nx, (int)user->Ny,
+            (int)user->Nz, (int)user->p, (int)user->C, (int)user->periodic);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+/*-----------------------------------------------------------------------------
   AllocateAppCtxFields
   Allocate a PetscScalar array sized for the LOCAL Gauss-point count on this
   rank.  Supports both 2-D and 3-D tensor-product element structures.
@@ -83,19 +146,31 @@ PetscErrorCode ReadSolutionVec(const char *iga_file, const char *vec_file,
 
   ierr = IGACreate(PETSC_COMM_WORLD, &iga_input); CHKERRQ(ierr);
   ierr = IGASetDim(iga_input, user->dim); CHKERRQ(ierr);
-  ierr = IGASetDof(iga_input, 3); CHKERRQ(ierr);
+  /* The producing solver writes 3 DOF per node: (ice phi, temperature,
+     vapour density). Only DOF 0 is used here -- see
+     EvaluateFieldAtGaussPoints, which takes sol[0]. */
+  ierr = IGASetDof(iga_input, PF_INPUT_DOF); CHKERRQ(ierr);
 
+  /* Periodicity must match the producing run. It does NOT change the on-disk
+     length (IGAWriteVec stores the unwrapped natural grid either way), but it
+     does change how those values scatter into the global vector, and hence
+     what field gets evaluated at the Gauss points. IGARead() cannot supply
+     it -- IGALoad stores only degree and knots, and IGAReset clears the
+     periodic flag -- so it comes from the options database instead. */
   ierr = IGAGetAxis(iga_input, 0, &axis0); CHKERRQ(ierr);
   ierr = IGAAxisSetDegree(axis0, user->p); CHKERRQ(ierr);
+  ierr = IGAAxisSetPeriodic(axis0, user->periodic); CHKERRQ(ierr);
   ierr = IGAAxisInitUniform(axis0, user->Nx, 0.0, user->Lx, user->C); CHKERRQ(ierr);
 
   ierr = IGAGetAxis(iga_input, 1, &axis1); CHKERRQ(ierr);
   ierr = IGAAxisSetDegree(axis1, user->p); CHKERRQ(ierr);
+  ierr = IGAAxisSetPeriodic(axis1, user->periodic); CHKERRQ(ierr);
   ierr = IGAAxisInitUniform(axis1, user->Ny, 0.0, user->Ly, user->C); CHKERRQ(ierr);
 
   if (user->dim == 3) {
     ierr = IGAGetAxis(iga_input, 2, &axis2); CHKERRQ(ierr);
     ierr = IGAAxisSetDegree(axis2, user->p); CHKERRQ(ierr);
+    ierr = IGAAxisSetPeriodic(axis2, user->periodic); CHKERRQ(ierr);
     ierr = IGAAxisInitUniform(axis2, user->Nz, 0.0, user->Lz, user->C); CHKERRQ(ierr);
   }
 
@@ -107,6 +182,7 @@ PetscErrorCode ReadSolutionVec(const char *iga_file, const char *vec_file,
   ierr = AllocateAppCtxFields(iga_input, user, &user->ice); CHKERRQ(ierr);
 
   ierr = IGACreateVec(iga_input, &ice_phase); CHKERRQ(ierr);
+  ierr = CheckVecMatchesIGA(iga_input, vec_file, user); CHKERRQ(ierr);
   ierr = IGAReadVec(iga_input, ice_phase, vec_file); CHKERRQ(ierr);
   ierr = EvaluateFieldAtGaussPoints(user, iga_input, ice_phase); CHKERRQ(ierr);
 

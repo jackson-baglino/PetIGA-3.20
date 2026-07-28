@@ -26,6 +26,13 @@ PetscErrorCode ParseOptions(AppCtx *user)
   user->eps          = 1.0e-4;
   user->T_top        = 243.15;   /* 273.15 - 30 K */
   user->q_bottom     = -1.0;     /* W/m² */
+  /* p/C/periodic must match the run that produced the sol_*.dat being read.
+     They used to be hardcoded p=2, C=1 in InitializeUserContext, which
+     silently disagreed with any producer configured otherwise. Supply them
+     from the producing run's own staged solver.opts. */
+  user->p            = 2;
+  user->C            = 1;
+  user->periodic     = PETSC_TRUE;
   user->outputBinary = PETSC_TRUE;
   user->sol_index    = -1;       /* -1 = loop over all files */
   user->output_dir[0] = '\0';
@@ -67,6 +74,18 @@ PetscErrorCode ParseOptions(AppCtx *user)
   ierr = PetscOptionsReal("-eps",
       "Phase-field interface width (m)",
       __FILE__, user->eps, &user->eps, NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsInt("-p",
+      "B-spline polynomial degree (must match the run being read)",
+      __FILE__, user->p, &user->p, NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsInt("-C",
+      "Inter-element continuity (must match the run being read)",
+      __FILE__, user->C, &user->C, NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsBool("-periodic",
+      "Input phase-field mesh is periodic (must match the run being read)",
+      __FILE__, user->periodic, &user->periodic, NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsReal("-temp_top",
       "Temperature at the top boundary (K)",
@@ -113,6 +132,15 @@ PetscErrorCode ParseOptions(AppCtx *user)
   if (user->eps <= 0.0)
     SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
             "-eps must be positive (got %g)", (double)user->eps);
+
+  if (user->p < 1)
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+            "-p must be >= 1 (got %d)", (int)user->p);
+
+  if (user->C < 0 || user->C >= user->p)
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+            "-C must be in [0, p-1] = [0, %d] (got %d)",
+            (int)user->p - 1, (int)user->C);
 
   if (user->output_dir[0] == '\0')
     SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,

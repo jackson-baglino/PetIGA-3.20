@@ -35,6 +35,13 @@ typedef struct {
   PetscReal eps;           /* Phase-field interface width (m)        */
   PetscInt  p;             /* Polynomial order for basis functions   */
   PetscInt  C;             /* Inter-element continuity order         */
+  /* Periodicity of the INPUT phase-field mesh (-periodic). The
+     homogenization cell is always periodic -- that is what the cell problem
+     means -- but the snapshot being read was written by a solver whose own
+     periodicity is a run-time choice, and a periodic axis has p fewer DOFs
+     than an open one (petigaaxis.c:452). Get this wrong and the sol_*.dat
+     vector will not match the IGA that reads it. */
+  PetscBool periodic;
 
   /* Phase field */
   PetscReal *ice;          /* Ice fraction at every Gauss point      */

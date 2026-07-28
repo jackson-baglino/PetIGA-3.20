@@ -49,20 +49,53 @@ base="$(basename "$INIT_DIR")"
 OUTPUT_DIR="$OUT_ROOT/${base}"
 export OUT_ROOT OUTPUT_DIR
 
-# --- Step 1: Resolve options source (grains.opts preferred over env vars) ----
+# --- Step 1: Resolve options source -----------------------------------------
+#
+# The mesh this solver builds must match the run that produced the sol_*.dat
+# in INIT_DIR: -dim, -Nx/-Ny/-Nz, -Lx/-Ly/-Lz, -p, -C, -periodic. The producing
+# run stages its own solver.opts and geometry .opts into its output directory
+# for exactly this reason, so prefer those over anything re-specified here --
+# a hand-copied value is a mismatch waiting to happen (this solver used to
+# hardcode p=2, C=1 regardless of what the producer used).
+#
+# Layered left-to-right, later overriding earlier, mirroring the producer:
+#   solver.opts   -> -p -C -periodic -dof
+#   <geometry>.opts / grains.opts -> -dim -N* -L* -eps
+OPTS_ARGS=()
 
-if [[ -f "$INIT_DIR/grains.opts" ]]; then
-  OPTS_FILE="$INIT_DIR/grains.opts"
-  echo "[Options] Using: $OPTS_FILE"
-elif [[ -f "$INIT_DIR/grains.env" ]]; then
-  echo "[Options] No grains.opts found; generating from grains.env ..."
-  python3 scripts/gen_opts.py "$INIT_DIR/grains.env" > "$INIT_DIR/grains.opts"
-  OPTS_FILE="$INIT_DIR/grains.opts"
-  echo "[Options] Generated: $OPTS_FILE"
+if [[ -f "$INIT_DIR/solver.opts" ]]; then
+  OPTS_ARGS+=(-options_file "$INIT_DIR/solver.opts")
+  echo "[Options] discretisation from: $INIT_DIR/solver.opts"
 else
-  OPTS_FILE="inputs/default.opts"
-  echo "[Options] No grains.opts or grains.env in INIT_DIR; using $OPTS_FILE"
+  echo "[Options] WARNING: no solver.opts staged in INIT_DIR -- falling back to"
+  echo "          this solver's defaults for -p/-C/-periodic. Verify they match"
+  echo "          the producing run, or k_eff will be computed on the wrong mesh."
 fi
+
+# Geometry: the producer stages the geometry file under its own name, so take
+# whichever of the known names exists (most specific first).
+_geom=""
+for _cand in "$INIT_DIR"/geometry.opts "$INIT_DIR"/grains.opts "$INIT_DIR"/*.opts; do
+  [[ -f "$_cand" ]] || continue
+  [[ "$(basename "$_cand")" == "solver.opts" ]] && continue
+  _geom="$_cand"; break
+done
+
+if [[ -n "$_geom" ]]; then
+  OPTS_ARGS+=(-options_file "$_geom")
+  echo "[Options] geometry from     : $_geom"
+elif [[ -f "$INIT_DIR/grains.env" ]]; then
+  echo "[Options] No .opts in INIT_DIR; generating from the legacy grains.env ..."
+  python3 scripts/gen_opts.py "$INIT_DIR/grains.env" > "$INIT_DIR/grains.opts"
+  OPTS_ARGS+=(-options_file "$INIT_DIR/grains.opts")
+  echo "[Options] geometry from     : $INIT_DIR/grains.opts (generated)"
+else
+  OPTS_ARGS+=(-options_file "inputs/default.opts")
+  echo "[Options] geometry from     : inputs/default.opts (no geometry in INIT_DIR)"
+fi
+
+# Kept for the echo below and the dry-run string.
+OPTS_FILE="${_geom:-inputs/default.opts}"
 
 echo "=== Effective k (homog) – run configuration ==="
 echo "INIT_DIR     : $INIT_DIR"
@@ -78,7 +111,7 @@ echo "MPI          : NUM_PROCS=$NUM_PROCS"
 if [[ "${DRY_RUN:-0}" == "1" ]]; then
   echo "[DRY-RUN] Build : make effective_k_ice_homog"
 
-  _run_args="-options_file \"$OPTS_FILE\" -init_dir \"$INIT_DIR\" -init_mode \"$INIT_MODE\" -output_dir \"$OUTPUT_DIR\""
+  _run_args="${OPTS_ARGS[*]} -init_dir \"$INIT_DIR\" -init_mode \"$INIT_MODE\" -output_dir \"$OUTPUT_DIR\""
   if (( NUM_PROCS > 1 )); then
     echo "[DRY-RUN] Run   : mpiexec -np $NUM_PROCS ./effective_k_ice_homog $_run_args"
   else
@@ -126,13 +159,13 @@ else
   echo "[Run] Launching simulation (NUM_PROCS=$NUM_PROCS)"
   if (( NUM_PROCS > 1 )); then
     mpiexec -np "$NUM_PROCS" ./effective_k_ice_homog \
-      -options_file "$OPTS_FILE" \
+      "${OPTS_ARGS[@]}" \
       -init_dir     "$INIT_DIR" \
       -init_mode    "$INIT_MODE" \
       -output_dir   "$OUTPUT_DIR"
   else
     ./effective_k_ice_homog \
-      -options_file "$OPTS_FILE" \
+      "${OPTS_ARGS[@]}" \
       -init_dir     "$INIT_DIR" \
       -init_mode    "$INIT_MODE" \
       -output_dir   "$OUTPUT_DIR"

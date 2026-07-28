@@ -15,8 +15,12 @@ void InitializeUserContext(AppCtx *user)
   user->rho_ice    = 919.0;    /* kg/m³  */
   user->rho_air    = 1.341;    /* kg/m³  */
 
-  user->p = 2;  /* Quadratic B-splines                    */
-  user->C = 1;  /* C^1 inter-element continuity (p-1)    */
+  /* NOTE: p, C and periodic are NOT set here. They must match the run that
+     produced the sol_*.dat being read, so they come from the options database
+     (ParseOptions) -- normally the producing run's own staged solver.opts.
+     They were hardcoded to p=2, C=1 here until 2026-07-27, which silently
+     disagreed with any producer using a different discretisation and made the
+     input vector the wrong length. */
 }
 
 /*-----------------------------------------------------------------------------

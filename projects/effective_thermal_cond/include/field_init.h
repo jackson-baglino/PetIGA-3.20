@@ -4,6 +4,19 @@
 #include "app_ctx.h"
 
 /*
+ * DOF count of the phase-field snapshots this solver consumes: the producing
+ * solver writes (ice phi, temperature, vapour density) per node. Only DOF 0
+ * (phi) is read -- see EvaluateFieldAtGaussPoints.
+ */
+#define PF_INPUT_DOF 3
+
+/*
+ * CheckVecMatchesIGA — verify the on-disk vector length matches the mesh
+ * configured from options, and report the offending parameters if not.
+ */
+PetscErrorCode CheckVecMatchesIGA(IGA iga, const char *vec_file, AppCtx *user);
+
+/*
  * AllocateAppCtxFields — allocate user->ice for the local Gauss-point count.
  * Uses the local element widths from the given IGA object.
  */
