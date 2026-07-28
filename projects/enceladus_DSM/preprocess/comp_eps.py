@@ -471,28 +471,62 @@ def alpha_c_sensitivity(T0_C, alpha_lo, alpha_hi, n_points=10, **kwargs):
 # Opts-file patching
 # =========================================================================
 
-def patch_opts(opts_path: Path, params: dict, dim: int) -> None:
-    """Replace ε, mesh, and derived model parameters in opts_path."""
+def patch_opts(opts_path: Path, params: dict, dim: int, T0_C: float) -> None:
+    """Write ε, mesh, and the kinetics into opts_path.
+
+    Emits ONLY flags the solver actually reads. This function previously wrote
+    -M_sub, -alpha_sub, -tau_sub, -lam_sub, -beta_sub and -d0_sub: all six are
+    ignored by the solver (it reads -beta_sub0/-d0_sub0 and derives λ, τ, M_sub
+    and α_sub from them together with ε), and -beta_sub additionally raised a
+    KeyError because compute_eps returns beta_uns/beta_hk, never beta_sub. So
+    --patch could not have worked.
+
+    Deliberately does NOT emit -mob_sub or -alph_sub. The solver derives both
+    from (ε, β_sub0, d0_sub0) so that α_sub/M_sub = 3λ/ε exactly, which is the
+    ratio the Karma-Plapp matched asymptotics calibrated; overriding either one
+    alone breaks it (see the -mob_sub/-alph_sub comments in the solver).
+
+    CONVENTION WARNING -- the two kinetics flags are scaled differently:
+      -beta_sub0 is the UNSCALED K&P β₀ = M&F β_sub = β_HK/(ρ_vs/ρᵢ)
+      -d0_sub0   is the RAW physical capillary length γ·V_m/(R·T), NOT
+                 pre-divided by anything
+    The solver applies the same 1/rho_rhovs = ρ_vs/ρᵢ factor to both, which
+    recovers β_HK for the first and d0·(ρ_vs/ρᵢ) for the second -- correct only
+    because this script pre-compensates β and not d0. Writing a -d0_sub0 taken
+    from M&F's already-scaled d_sub would be wrong by ~10⁶.
+    """
     text = opts_path.read_text()
 
-    def _replace_or_append(text: str, key: str, value: str) -> str:
-        pattern = rf"^({re.escape(key)}\s+)\S+(\s*)$"
+    def _replace_or_append(text: str, key: str, value: str, comment: str = "") -> str:
+        # Overwrite any existing trailing comment too: for the keys this
+        # function owns, the comment is provenance (which temperature and
+        # safety factor produced the number), so a stale one is worse than
+        # none -- it would describe the previous patch's parameters.
+        tail = f"    # {comment}" if comment else ""
+        pattern = rf"^{re.escape(key)}\s+\S+[^\S\n]*(?:#.*)?$"
         if re.search(pattern, text, flags=re.MULTILINE):
-            return re.sub(pattern, rf"{key} {value}\2", text, flags=re.MULTILINE)
-        return text.rstrip() + f"\n{key} {value}\n"
+            return re.sub(pattern, f"{key} {value}{tail}", text, flags=re.MULTILINE)
+        return text.rstrip() + f"\n{key} {value}{tail}\n"
 
-    text = _replace_or_append(text, "-eps", f"{params['eps']:.4e}")
-    text = _replace_or_append(text, "-Nx",  str(params["Nx"]))
+    text = _replace_or_append(text, "-eps", f"{params['eps']:.6e}",
+                              f"comp_eps.py @ T={T0_C:g}C, safety={params['safety']:g}, "
+                              f"binding bound: {params['binding']}")
+    text = _replace_or_append(text, "-Nx", str(params["Nx"]),
+                              "ceil(sqrt(2)*Lx/eps)")
     if dim >= 2 and params["Ny"] > 0:
         text = _replace_or_append(text, "-Ny", str(params["Ny"]))
     if dim == 3 and params["Nz"] > 0:
         text = _replace_or_append(text, "-Nz", str(params["Nz"]))
-    text = _replace_or_append(text, "-M_sub",     f"{params['M_sub']:.4e}")
-    text = _replace_or_append(text, "-alpha_sub", f"{params['alpha_src']:.4e}")
-    text = _replace_or_append(text, "-tau_sub",   f"{params['tau_sub']:.4e}")
-    text = _replace_or_append(text, "-lam_sub",   f"{params['lam_sub']:.4e}")
-    text = _replace_or_append(text, "-beta_sub",  f"{params['beta_sub']:.4e}")
-    text = _replace_or_append(text, "-d0_sub",    f"{params['d0']:.4e}")
+
+    text = _replace_or_append(
+        text, "-beta_sub0", f"{params['beta_uns']:.6e}",
+        f"K&P beta0 = beta_HK/(rho_vs/rho_i) at {T0_C:g}C, alpha_c={params['alpha_c']:.3e}")
+    text = _replace_or_append(
+        text, "-d0_sub0", f"{params['d0']:.6e}",
+        f"physical gamma*V_m/(R*T) at {T0_C:g}C (K&P Eq. 13)")
+    text = _replace_or_append(
+        text, "-eps_valid_temp", f"{T0_C:g}",
+        "solver ABORTS if -temp differs by >1C")
 
     opts_path.write_text(text)
     print(f"  Patched {opts_path}")
@@ -621,12 +655,11 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
     print(f"  -Nx         {p['Nx']}")
     if dim >= 2 and p["Ny"] > 0: print(f"  -Ny         {p['Ny']}")
     if dim == 3 and p["Nz"] > 0: print(f"  -Nz         {p['Nz']}")
-    print(f"  -M_sub      {p['M_sub']:.4e}")
-    print(f"  -alpha_sub  {p['alpha_src']:.4e}")
-    print(f"  -tau_sub    {p['tau_sub']:.4e}")
-    print(f"  -lam_sub    {p['lam_sub']:.4e}")
-    print(f"  -beta_sub   {p['beta_uns']:.4e}")
-    print(f"  -d0_sub     {p['d0']:.4e}")
+    print(f"  -beta_sub0  {p['beta_uns']:.4e}   # K&P beta0 (unscaled)")
+    print(f"  -d0_sub0    {p['d0']:.4e}   # physical gamma*V_m/(R*T)")
+    print(f"  -eps_valid_temp {args.T0:g}")
+    print(f"  (M_sub/alpha_sub/tau_sub/lam_sub are DERIVED by the solver from")
+    print(f"   eps + beta_sub0 + d0_sub0 -- do not set them separately.)")
 
     print("=" * 76)
 
@@ -752,7 +785,7 @@ def _cli():
             if dim >= 2: print(p["Ny"])
             if dim == 3: print(p["Nz"])
             if args.patch:
-                patch_opts(args.patch, p, dim)
+                patch_opts(args.patch, p, dim, args.T0)
             return
 
         _print_single(args, p, args.alpha, dim)
@@ -769,7 +802,7 @@ def _cli():
 
         if args.patch:
             print()
-            patch_opts(args.patch, p, dim)
+            patch_opts(args.patch, p, dim, args.T0)
         return
 
     lo, hi, n = float(args.alpha_range[0]), float(args.alpha_range[1]), int(args.alpha_range[2])
