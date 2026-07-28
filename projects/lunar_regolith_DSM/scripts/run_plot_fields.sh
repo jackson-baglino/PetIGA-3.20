@@ -1,5 +1,22 @@
 #!/bin/zsh
 
+# Pick an interpreter that can actually import igakit -- plot_fields.py needs it
+# to read the PetIGA .dat files, and a bare `python3` usually cannot. Silently
+# failing here leaves the run with no vtkOut/, which every downstream
+# measurement (neck_width.py, plot_neck_convergence.py) then finds empty.
+find_python() {
+    local root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)}"
+    local c
+    for c in "$VIRTUAL_ENV/bin/python3" \
+             "$root"/venv_*/bin/python3 \
+             "$root"/../enceladus_DSM/venv_*/bin/python3 \
+             "$(command -v python3)"; do
+        [[ -x "$c" ]] || continue
+        if "$c" -c 'import igakit' >/dev/null 2>&1; then echo "$c"; return 0; fi
+    done
+    return 1
+}
+
 # Locate plot_fields.py: prefer the staged postprocess/ subdirectory,
 # fall back to the root of the results folder for older result dirs.
 find_plot_script() {
@@ -24,8 +41,16 @@ execute_python_scripts() {
         return 1
     fi
 
-    echo "Executing: $plot_py --dir $dir"
-    python3 "$plot_py" --dir "$dir"
+    local PY
+    if ! PY=$(find_python); then
+        echo "⚠️  no interpreter with igakit found — cannot write vtkOut/."
+        echo "    Install it into the project venv:"
+        echo "      ./venv_pf311/bin/pip install \\"
+        echo "        'igakit @ https://github.com/dalcinl/igakit/archive/refs/heads/master.zip'"
+        return 1
+    fi
+    echo "Executing: $PY $plot_py --dir $dir"
+    "$PY" "$plot_py" --dir "$dir"
 }
 
 # Main script logic
@@ -34,7 +59,7 @@ if [[ -n $1 ]]; then
     if [[ "$1" == /* ]]; then
         dir="$1"
     else
-        dir=/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch/$1
+        dir=/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/$1
     fi
     echo "Starting process for directory: $dir"
 
@@ -54,6 +79,14 @@ else
         echo "⚠️  plot_fields.py not found — skipping."
         exit 1
     fi
-    echo "Executing: $plot_py --dir $dir"
-    python3 "$plot_py" --dir "$dir"
+    local PY
+    if ! PY=$(find_python); then
+        echo "⚠️  no interpreter with igakit found — cannot write vtkOut/."
+        echo "    Install it into the project venv:"
+        echo "      ./venv_pf311/bin/pip install \\"
+        echo "        'igakit @ https://github.com/dalcinl/igakit/archive/refs/heads/master.zip'"
+        return 1
+    fi
+    echo "Executing: $PY $plot_py --dir $dir"
+    "$PY" "$plot_py" --dir "$dir"
 fi

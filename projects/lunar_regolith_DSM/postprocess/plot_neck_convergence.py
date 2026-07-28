@@ -82,24 +82,40 @@ def discover(run_dirs, out_dir, axisym_override):
     here = Path(__file__).resolve().parent
     tmp = Path(out_dir) / "_neck_csv"
     tmp.mkdir(parents=True, exist_ok=True)
-    eps, csv = {}, {}
-    for rd in run_dirs:
-        rd = Path(rd)
+
+    # A geometry re-run leaves several timestamped directories per arm. Keep
+    # only the NEWEST of each, so a fresh batch is compared against itself
+    # rather than silently mixing runs from different builds.
+    best = {}
+    for rd in (Path(r) for r in run_dirs):
         if not (rd / "SSA_evo.dat").is_file():
-            print(f"  skip {rd.name}: no SSA_evo.dat", file=sys.stderr)
             continue
         geo = [f for f in rd.glob("*.opts")
-               if f.name not in ("solver.opts",) and _opt(f.read_text(), "-eps")]
+               if f.name != "solver.opts" and _opt(f.read_text(), "-eps")]
         if not geo:
-            print(f"  skip {rd.name}: no geometry .opts staged", file=sys.stderr)
             continue
+        key = geo[0].stem
+        mt = (rd / "SSA_evo.dat").stat().st_mtime
+        if key not in best or mt > best[key][0]:
+            best[key] = (mt, rd)
+    if len(best) < len(list(run_dirs)):
+        import datetime as _dt
+        for k, (mt, rd) in sorted(best.items()):
+            print(f"  using {rd.parent.name}/{rd.name}"
+                  f"  ({_dt.datetime.fromtimestamp(mt):%Y-%m-%d %H:%M})",
+                  file=sys.stderr)
+
+    eps, csv = {}, {}
+    for _mt, rd in sorted(best.values()):
+        geo = [f for f in rd.glob("*.opts")
+               if f.name != "solver.opts" and _opt(f.read_text(), "-eps")]
         txt = geo[0].read_text()
         arm = geo[0].stem
         eps[arm] = float(_opt(txt, "-eps"))
         ax = axisym_override
         if ax is None:
             ax = (_opt(txt, "-axisym") or "0") not in ("0", "false", "FALSE")
-        out = tmp / f"{arm}.csv"
+        out = tmp / f"{arm}__{int(_mt)}.csv"
         if not out.is_file():
             cmd = [sys.executable, str(here / "neck_width.py"), str(rd),
                    "--out", str(out)] + (["--axisym"] if ax else [])

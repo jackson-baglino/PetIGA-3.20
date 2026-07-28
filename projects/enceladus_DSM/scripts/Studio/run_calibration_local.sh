@@ -3,8 +3,13 @@
 # run_calibration_local.sh — the Phase-4 arms that are small enough for the Mac.
 #
 #   ./scripts/Studio/run_calibration_local.sh --dry-run
-#   ./scripts/Studio/run_calibration_local.sh
+#   ./scripts/Studio/run_calibration_local.sh          # run + post-process
 #   ./scripts/Studio/run_calibration_local.sh molaro   # just the neck arm
+#   ./scripts/Studio/run_calibration_local.sh --no-post
+#
+# After the runs it measures the neck on each and writes the eps-convergence
+# figure + table. plot_neck_convergence.py keeps only the NEWEST run per arm,
+# so re-running a batch compares it against itself rather than mixing builds.
 #
 # Split rationale, MEASURED (not guessed -- an earlier guess put a 24 M DOF
 # arm on the workstation and exhausted its 64 GB).
@@ -32,9 +37,21 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-WHICH="${1:-all}"
+WHICH="all"
 DRY=0
-[[ "${1:-}" == "--dry-run" ]] && { DRY=1; WHICH="${2:-all}"; }
+POST=1
+for a in "$@"; do
+  case "$a" in
+    --dry-run) DRY=1 ;;
+    --no-post) POST=0 ;;
+    -*)        echo "unknown flag: $a" >&2; exit 1 ;;
+    *)         WHICH="$a" ;;
+  esac
+done
+
+RESULTS="${RESULTS_BASE:-$HOME/SimulationResults/enceladus_DSM/scratch}"
+PY_ENV="./venv_enceladus/bin/python3"
+[[ -x "$PY_ENV" ]] || PY_ENV="python3"
 
 RUN=./scripts/Studio/run_enceladus.sh
 cmds=()
@@ -55,6 +72,14 @@ echo "  All 7-day arms (calib_ripen_*, calib_pack_*) go to the cluster:"
 echo "    ./scripts/HPC/submit_calibration.sh heavy"
 echo "  They fit in memory on <=0.5 mm domains but need ~55 h serial here."
 
+if (( POST )); then
+  echo
+  echo "  then post-process:"
+  echo "    $PY_ENV postprocess/plot_neck_convergence.py --runs $RESULTS/*/*/ \\"
+  echo "        --validation inputs/validation/molaro2019_fig11_T-20.csv \\"
+  echo "        --out $RESULTS/neck_convergence.png"
+fi
+
 if (( DRY )); then
   echo
   echo "(dry run — nothing executed)"
@@ -67,3 +92,14 @@ for c in "${cmds[@]}"; do
   joined+="${joined:+ && }$c"
 done
 eval "$joined"
+
+if (( POST )); then
+  echo
+  echo "============================================================"
+  echo "  Neck-width convergence"
+  echo "============================================================"
+  $PY_ENV postprocess/plot_neck_convergence.py \
+      --runs "$RESULTS"/*/*/ \
+      --validation inputs/validation/molaro2019_fig11_T-20.csv \
+      --out "$RESULTS/neck_convergence.png"
+fi
