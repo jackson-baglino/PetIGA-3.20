@@ -52,11 +52,33 @@ obstruction is specific to 2D -- in 3D both phases percolate simultaneously.)
 
 --contact-gap therefore jams the grains against an inflated radius r + gap/2
 while reporting the true r, leaving a uniform surface-to-surface gap at every
-contact. Porosity is computed from the true radii and is unaffected. A gap of
-about 1 um reconnects the pore completely (one cluster holding 100% of the
-void) at porosity 0.30. Grains that near still sinter -- closing a gap of a few
-microns by vapour deposition is exactly the metamorphism being modelled -- but
-the wider throats stay open for transport.
+contact. Porosity is computed from the true radii and is unaffected.
+
+Measured on 2 mm packings, mean radius 45 um, porosity 0.20 to 0.40 (see the
+table below): the pore reconnects between 2 and 4 um of gap, and 4 um gives a
+single cluster holding 100% of the void at EVERY porosity. The transition is
+set by grain-scale contact geometry, not by the global density, which is why
+it barely moves with porosity. Hence the 4 um default.
+
+  gap    porosity 0.25 .. 0.40
+  0 um   pore blocked  (largest cluster 10-50% of void), solid percolates
+  2 um   pore blocked  (15-66%),                         solid broken up
+  4 um   pore PERCOLATES (100%, one cluster),            solid broken up
+  6 um   as 4 um
+
+Pore and solid percolation are mutually exclusive throughout. That is the
+correct starting point for this study rather than a defect: an unsintered
+packing has no solid conduction path, and k_eff should RISE from near the air
+value as vapour deposition builds necks. A 4 um gap is also narrower than the
+5-95% diffuse band (about 6*eps = 5.2 um at eps = 0.86 um), so neighbouring
+grains' interfaces already overlap and necks form immediately.
+
+LOWEST ACHIEVABLE POROSITY. Jamming against r + gap/2 costs solid fraction:
+with 2D random close packing near 0.84, the target must satisfy
+(1-phi)*((r+gap/2)/r)^2 <~ 0.84. At r = 45 um and gap = 4 um that is
+phi >~ 0.23, and porosity 0.20 indeed fails to jam (it stops at s = 0.975 and
+overshoots to 0.24). To go below ~0.23, raise --mean_r_m: the penalty is
+(1 + gap/2r)^2, so r = 90 um admits phi >~ 0.20.
 
 Checks (all failures are reported in metadata.json and on stderr):
   - achieved area porosity vs target
@@ -396,7 +418,7 @@ def main(argv=None):
                     help="log-normal shape parameter of the radii")
     ap.add_argument("--radius_clip_frac", type=float, default=1.0,
                     help="clip radii to (1 +/- f)*mean_r_m")
-    ap.add_argument("--contact-gap", type=float, default=1.0e-6,
+    ap.add_argument("--contact-gap", type=float, default=4.0e-6,
                     help="surface-to-surface gap held at every contact [m]. "
                          "0 gives exact tangency, which DISCONNECTS the pore "
                          "space in 2D -- see the module docstring")
@@ -462,8 +484,8 @@ def main(argv=None):
             f"holds {p_frac*100:.1f}% of the void in {p_n} clusters) -- vapour "
             f"cannot diffuse across the domain. In 2D a fully jammed packing "
             f"always does this, because the spanning contact network cuts the "
-            f"complement into cells; raise --contact-gap (about 1 um suffices "
-            f"at porosity 0.30) to reopen the throats.")
+            f"complement into cells; raise --contact-gap (4 um reopens the "
+            f"throats at every porosity tested).")
 
     meta = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
