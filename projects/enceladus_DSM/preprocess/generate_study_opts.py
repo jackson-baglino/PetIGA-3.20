@@ -46,6 +46,7 @@ import os
 import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from comp_eps import (                                    # noqa: E402
     compute_eps, rho_vs_sat, beta_HK, capillary_length, _RHO_ICE,
@@ -155,7 +156,16 @@ def main(argv=None):
             print(f"  SKIP {d.name}: {m['problems'][0][:70]}", file=sys.stderr)
             continue
         m["name"] = d.name
-        m["grains_file"] = str(dat.resolve())
+        # Project-root-relative, NOT absolute: these .opts are committed and
+        # read on the cluster too, where the checkout lives somewhere else.
+        # Both scripts/Studio/run_enceladus.sh and scripts/HPC/run_enceladus.sh
+        # cd to PROJECT_ROOT before launching, so this resolves on any machine.
+        try:
+            m["grains_file"] = str(dat.resolve().relative_to(PROJECT_ROOT))
+        except ValueError:
+            m["grains_file"] = str(dat.resolve())
+            print(f"  NOTE {d.name}: packing lives outside the project root, "
+                  f"writing an absolute -grains_file (not portable)", file=sys.stderr)
         packs.append(m)
 
     if not packs:

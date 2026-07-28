@@ -51,14 +51,17 @@ import json, sys, glob, os
 root = sys.argv[1]
 rows = []
 for d in sorted(glob.glob(os.path.join(root, "phi*"))):
-    m = json.load(open(os.path.join(d, "metadata.json")))
+    f = os.path.join(d, "metadata.json")
+    if not os.path.isfile(f):
+        continue
+    m = json.load(open(f))
+    m["_dir"] = os.path.basename(d)
     rows.append(m)
 print(f"{'packing':>22} {'N':>5} {'phi':>7} {'Z':>5} {'pore%':>6} {'throat p25[um]':>15}  status")
 for m in rows:
     t = m["throat_gap_m"].get("p25", 0.0) * 1e6
     st = "OK" if not m["problems"] else m["problems"][0][:40]
-    print(f"{os.path.basename(m.get('name','?')) if 'name' in m else '':>22}"
-          f"{m['n_grains']:>5} {m['porosity_achieved']:>7.4f} "
+    print(f"{m['_dir']:>22} {m['n_grains']:>5} {m['porosity_achieved']:>7.4f} "
           f"{m['coordination_number']:>5.2f} {m['pore_largest_cluster_frac']*100:>6.1f} "
           f"{t:>15.2f}  {st}")
 print(f"\n{len(rows)} packings")
