@@ -5,11 +5,16 @@
 # Finds the cheapest (safety, xi_v) that still reproduces the observables of
 # the finest run, before committing to the 200-run production matrix.
 #
+#   ./scripts/HPC/submit_calibration.sh heavy      # ONLY what needs a cluster
 #   ./scripts/HPC/submit_calibration.sh            # submit everything
 #   ./scripts/HPC/submit_calibration.sh --dry-run  # print the commands only
 #   ./scripts/HPC/submit_calibration.sh safety     # just the safety sweep
 #   ./scripts/HPC/submit_calibration.sh xiv        # just the xi_v sweep
 #   ./scripts/HPC/submit_calibration.sh molaro     # just the neck-width arm
+#
+# `heavy` omits the arms that finish on the Mac -- the three Molaro geometries
+# (only ~72 steps) and the two coarsest ripening arms. Run those with
+# scripts/Studio/run_calibration_local.sh and keep the allocation for the rest.
 #
 # Every job is chained with && so a failure stops the sequence rather than
 # burning the whole allocation on a broken build.
@@ -41,15 +46,17 @@ cmds=()
 # held FIXED across eps by preprocess/calibrate_neck_geometry.py -- so any
 # change in the measured neck growth is a discretisation effect, not a
 # different starting geometry. eps = 8.584e-7 / 6.030e-7 / 3.479e-7.
-if [[ "$WHICH" == "all" || "$WHICH" == "molaro" ]]; then
+if [[ "$WHICH" == "all" || "$WHICH" == "molaro" ]]; then   # not in `heavy`
   for e in epsloose epsmid epsstrict; do
     cmds+=("$SUB 2D_molaro_axisym_T-20pair_union_$e molaro_T-20_h1.00_arrh calib_$e")
   done
 fi
 
 # --- B/C. Safety sweep at the default xi_v ---------------------------------
-if [[ "$WHICH" == "all" || "$WHICH" == "safety" ]]; then
+if [[ "$WHICH" == "all" || "$WHICH" == "safety" || "$WHICH" == "heavy" ]]; then
+  # s100/s075 finish locally; only submit them when the whole sweep is asked for
   for s in s025 s050 s075 s100; do
+    [[ "$WHICH" == "heavy" && ( "$s" == "s100" || "$s" == "s075" ) ]] && continue
     cmds+=("$SUB calib_ripen_$s $EXP calib_${s}")
   done
   for s in s025 s050 s075 s100; do
@@ -60,7 +67,7 @@ fi
 # --- B/C. xi_v sweep at safety = 0.5 ---------------------------------------
 # 1e-3 is the solver default and is already covered by the safety sweep's
 # s050 arms, so it is not repeated here.
-if [[ "$WHICH" == "all" || "$WHICH" == "xiv" ]]; then
+if [[ "$WHICH" == "all" || "$WHICH" == "xiv" || "$WHICH" == "heavy" ]]; then
   for x in 1e-4 1e-2 1e-1; do
     tag="xiv${x}"
     cmds+=("$SUB calib_ripen_s050 $EXP $tag -- -xi_v $x")
@@ -69,7 +76,7 @@ if [[ "$WHICH" == "all" || "$WHICH" == "xiv" ]]; then
 fi
 
 if (( ${#cmds[@]} == 0 )); then
-  echo "Nothing selected. Use: all | safety | xiv | molaro" >&2
+  echo "Nothing selected. Use: heavy | all | safety | xiv | molaro" >&2
   exit 1
 fi
 

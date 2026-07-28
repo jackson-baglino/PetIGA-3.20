@@ -4,19 +4,40 @@
 physics? The production matrix is 200 runs, so a factor of 2 in `eps` is a
 factor of 4 in cost across the whole study.
 
-Run on HPC. Submit with:
+## Where each arm runs
+
+Cost is (DOF) x (steps), and the two test families sit in very different
+places, so the sweep splits rather than all going to the cluster:
+
+| family | steps | DOF | where |
+|---|---|---|---|
+| Molaro neck (test A) | ~72 (t_final 2 h, dtmax 100 s) | 0.4-2.3 M | **local** |
+| 7-day calibration, coarse arms (`ripen_s100`, `ripen_s075`) | >=3024 | 0.2-0.3 M | **local** |
+| 7-day calibration, everything else | >=3024 | 0.8-24 M | **HPC** |
+
+Locally:
 
 ```bash
-git pull                                    # on the cluster
-./scripts/HPC/submit_calibration.sh --dry-run    # inspect first
-./scripts/HPC/submit_calibration.sh              # 17 jobs, chained with &&
+./scripts/Studio/run_calibration_local.sh --dry-run
+./scripts/Studio/run_calibration_local.sh
 ```
 
-Then, once they finish:
+On the cluster — `heavy` submits only what actually needs it (12 jobs), so the
+allocation is not spent on arms the Mac finishes:
+
+```bash
+cd $PETIGA_DIR/projects && git fetch origin && \
+  git checkout restructure/enceladus-lunar-split && git pull
+cd enceladus_DSM && make
+./scripts/HPC/submit_calibration.sh --dry-run heavy
+./scripts/HPC/submit_calibration.sh heavy
+```
+
+Then, once everything has landed (local + cluster results in one tree):
 
 ```bash
 ./venv_enceladus/bin/python3 postprocess/calibration_report.py \
-    $SCRATCH/enceladus_DSM --tol 0.02 --mass-tol 0.01
+    <results-root> --tol 0.02 --mass-tol 0.01
 ```
 
 ---
