@@ -12,9 +12,14 @@
 #   ./scripts/HPC/submit_calibration.sh xiv        # just the xi_v sweep
 #   ./scripts/HPC/submit_calibration.sh molaro     # just the neck-width arm
 #
-# `heavy` omits the arms that finish on the Mac -- the three Molaro geometries
-# (only ~72 steps) and the two coarsest ripening arms. Run those with
-# scripts/Studio/run_calibration_local.sh and keep the allocation for the rest.
+# `heavy` omits only the three Molaro geometries, which need ~125 steps and
+# finish in 0.6 h on the Mac -- run those with
+# scripts/Studio/run_calibration_local.sh.
+#
+# Every 7-day arm belongs here. On <=0.5 mm domains they all FIT in the
+# workstation's memory except ripen_s025 (10 GB) and pack_s025 (21 GB), but at
+# a measured 7.5 s/step per 1.5 M DOF on 6 ranks they are ~55 h serial for the
+# safety sweep alone. Memory is not the binding constraint; step count is.
 #
 # Every job is chained with && so a failure stops the sequence rather than
 # burning the whole allocation on a broken build.
@@ -54,9 +59,7 @@ fi
 
 # --- B/C. Safety sweep at the default xi_v ---------------------------------
 if [[ "$WHICH" == "all" || "$WHICH" == "safety" || "$WHICH" == "heavy" ]]; then
-  # s100/s075 finish locally; only submit them when the whole sweep is asked for
   for s in s025 s050 s075 s100; do
-    [[ "$WHICH" == "heavy" && ( "$s" == "s100" || "$s" == "s075" ) ]] && continue
     cmds+=("$SUB calib_ripen_$s $EXP calib_${s}")
   done
   for s in s025 s050 s075 s100; do

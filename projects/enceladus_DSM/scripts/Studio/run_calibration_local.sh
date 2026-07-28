@@ -6,16 +6,23 @@
 #   ./scripts/Studio/run_calibration_local.sh
 #   ./scripts/Studio/run_calibration_local.sh molaro   # just the neck arm
 #
-# Split rationale. Cost is (DOF) x (steps), and the two test families sit in
-# very different places:
+# Split rationale, MEASURED (not guessed -- an earlier guess put a 24 M DOF
+# arm on the workstation and exhausted its 64 GB).
 #
-#   Molaro neck (test A)   t_final 2 h / dtmax 100 s  ->  ~72 steps minimum.
-#     Only 0.4-2.3 M DOF and few steps, so all three eps arms finish locally.
+# Memory: preprocess/estimate_memory.py. The ILU(3) fill dominates, roughly
+#   3 x the Jacobian, itself DOF x (2p+1)^2 x dof x 12 B. All arms on <=0.5 mm
+#   domains fit except the two finest (ripen_s025 10 GB, pack_s025 21 GB).
 #
-#   7-day calibration      t_final 7 d / dtmax 200 s  ->  >=3024 steps, and the
-#     adaptive stepper takes more early on while dt climbs from 1e-4. Only the
-#     two coarsest ripening arms are sane locally; everything else goes to
-#     scripts/HPC/submit_calibration.sh.
+# Time: benchmarked at 7.5 s/step for 1.5 M DOF on 6 ranks, scaling ~linearly
+#   in DOF. Step COUNT is what separates the two families:
+#
+#   Molaro neck (test A)   t_final 2 h / dtmax 100 s -> ~125 steps including
+#     the ramp.  0.6 h for all three arms. LOCAL.
+#
+#   7-day calibration      t_final 7 d / dtmax 200 s -> ~3075 steps (the
+#     adaptive stepper needs ~50 just to climb from dt = 1e-4 to dtmax).
+#     55 h serial for the safety sweep alone, before the xi_v arms. HPC --
+#     these fit in memory but not in patience.
 #
 # Runs go through run_enceladus.sh (not the bare binary) so each one stages its
 # own solver.opts + geometry .opts -- which is also what effective_thermal_cond
@@ -39,18 +46,14 @@ if [[ "$WHICH" == "all" || "$WHICH" == "molaro" ]]; then
   done
 fi
 
-# --- B. The two coarsest ripening arms -------------------------------------
-if [[ "$WHICH" == "all" || "$WHICH" == "ripen" ]]; then
-  for s in s100 s075; do
-    cmds+=("$RUN calib_ripen_$s calib_T-20_7d calib_$s")
-  done
-fi
+# The 7-day arms are deliberately NOT here -- see the timing note above.
 
 echo "=== ${#cmds[@]} local calibration jobs ==="
 printf '  %s\n' "${cmds[@]}"
 echo
-echo "  Everything else (calib_ripen_s050/s025, all calib_pack_*) needs the"
-echo "  cluster: ./scripts/HPC/submit_calibration.sh"
+echo "  All 7-day arms (calib_ripen_*, calib_pack_*) go to the cluster:"
+echo "    ./scripts/HPC/submit_calibration.sh heavy"
+echo "  They fit in memory on <=0.5 mm domains but need ~55 h serial here."
 
 if (( DRY )); then
   echo

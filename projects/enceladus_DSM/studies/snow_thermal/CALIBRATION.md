@@ -6,24 +6,35 @@ factor of 4 in cost across the whole study.
 
 ## Where each arm runs
 
-Cost is (DOF) x (steps), and the two test families sit in very different
-places, so the sweep splits rather than all going to the cluster:
+All calibration domains are **<= 0.5 mm**. Cost is (DOF) x (steps), and STEP
+COUNT is what separates the two families -- not mesh size:
 
-| family | steps | DOF | where |
-|---|---|---|---|
-| Molaro neck (test A) | ~72 (t_final 2 h, dtmax 100 s) | 0.4-2.3 M | **local** |
-| 7-day calibration, coarse arms (`ripen_s100`, `ripen_s075`) | >=3024 | 0.2-0.3 M | **local** |
-| 7-day calibration, everything else | >=3024 | 0.8-24 M | **HPC** |
+| family | steps | DOF | wall, 6 ranks | where |
+|---|---|---|---|---|
+| Molaro neck (test A) | ~125 (t_final 2 h, dtmax 100 s) | 0.4-2.3 M | 0.6 h total | **local** |
+| 7-day calibration (all arms) | ~3075 (t_final 7 d, dtmax 200 s) | 0.2-6 M | ~55 h serial | **HPC** |
+
+Two numbers behind that, both measured rather than assumed:
+
+- **Memory** (`preprocess/estimate_memory.py`): ILU(3) fill dominates, ~3x the
+  Jacobian. On 0.5 mm domains every arm fits in 64 GB except `ripen_s025`
+  (10 GB) and `pack_s025` (21 GB). An earlier 1 mm `pack_s025` needed **83 GB**
+  and exhausted the workstation -- always run the estimator before a local job.
+- **Time**: 7.5 s/step for 1.5 M DOF on 6 ranks, ~linear in DOF. The adaptive
+  stepper needs ~50 steps just to climb from dt = 1e-4 to dtmax = 200 s, so the
+  7-day arms are ~3075 steps regardless of how coarse the mesh is.
+
+So the 7-day arms fit in memory but not in patience: they all go to the
+cluster.
 
 Locally:
 
 ```bash
 ./scripts/Studio/run_calibration_local.sh --dry-run
-./scripts/Studio/run_calibration_local.sh
+./scripts/Studio/run_calibration_local.sh   # 3 Molaro arms, ~0.6 h
 ```
 
-On the cluster — `heavy` submits only what actually needs it (12 jobs), so the
-allocation is not spent on arms the Mac finishes:
+On the cluster — `heavy` (14 jobs) is everything except the three Molaro arms:
 
 ```bash
 cd $PETIGA_DIR/projects && git fetch origin && \
@@ -47,12 +58,12 @@ Then, once everything has landed (local + cluster results in one tree):
 **`safety`** — `eps = safety * min(K&P bounds)`. With `R_feat = 2 um` the
 kinetic bound binds, so `eps = 2*safety` um exactly. Cost goes as `1/eps^2`:
 
-| arm | safety | eps | ripen Nx x Ny | pack Nx x Ny | pack cores |
+| arm | safety | eps | ripen (0.5 x 0.25 mm) | pack (0.5 x 0.5 mm) | pack RAM |
 |---|---|---|---|---|---|
-| s025 | 0.25 | 0.5 um | 1415 x 708 | 2829 x 2829 | 481 |
-| s050 | 0.50 | 1.0 um | 708 x 354 | 1415 x 1415 | 121 |
-| s075 | 0.75 | 1.5 um | 472 x 236 | 943 x 943 | 54 |
-| s100 | 1.00 | 2.0 um | 354 x 177 | 708 x 708 | 31 |
+| s025 | 0.25 | 0.5 um | 1415 x 708 | 1415 x 1415 | 21 G |
+| s050 | 0.50 | 1.0 um | 708 x 354 | 708 x 708 | 5.2 G |
+| s075 | 0.75 | 1.5 um | 472 x 236 | 472 x 472 | 2.3 G |
+| s100 | 1.00 | 2.0 um | 354 x 177 | 354 x 354 | 1.3 G |
 
 **`xi_v`** — this one is counter-intuitive, and the intuition matters. The
 solver assembles (`src/assembly.c:21`)
@@ -66,16 +77,17 @@ artificially slowed vapour field stops being quasi-steady:
 
     tau_vap = L^2 / (xi_v * D_v)
 
-| xi_v | tau_vap (1 mm) | vs 28 d | tau_vap (2 mm) | vs 28 d |
+| xi_v | tau_vap (0.5 mm test) | vs 7 d | tau_vap (2 mm production) | vs 28 d |
 |---|---|---|---|---|
-| 1e-4 | 527 s | 4600x | 2108 s | 1150x |
-| 1e-3 | 53 s | 46000x | 211 s | 11500x |
-| 1e-2 | 5.3 s | 460000x | 21 s | 115000x |
+| 1e-4 | 132 s | 4600x | 2108 s | 1150x |
+| 1e-3 | 13 s | 46000x | 211 s | 11500x |
+| 1e-2 | 1.3 s | 460000x | 21 s | 115000x |
 
-`tau_vap` grows as `L^2`, so the 2 mm production domain is **4x less
-quasi-steady** than the 1 mm calibration domain at the same `xi_v`. Read the
-`xi_v` result as a lower bound on what production needs, and re-check the
-accepted value at 2 mm before committing.
+`tau_vap` grows as `L^2`, so the 2 mm production domain is **16x less
+quasi-steady** than the 0.5 mm calibration domain at the same `xi_v`. Read the
+`xi_v` result as a LOWER BOUND on what production needs, and re-check the
+accepted value at 2 mm before committing to the 200-run matrix. This is the
+one result here that does not transfer directly.
 
 Note K&P Eq. 48 (`xi_v <= rho_vs/rho_ice ~ 1e-6`) is a *different* condition —
 it is what you need to resolve the true vapour transient, which is exactly what
@@ -101,8 +113,10 @@ confound geometry with resolution.
 Test B uses the study's grain scale (45 / 90 um), not the legacy 9 / 19 um of
 `2D_two_ice_grains_boundary.opts`, so `eps/R` matches production.
 
-Test C runs on 1 mm rather than 2 mm to keep the sweep affordable — same grain
-size, contact gap and porosity as production.
+Test C runs on 0.5 mm rather than the 2 mm production domain (28 grains vs
+~420) — same grain size, contact gap and porosity. That is adequate for a
+CONVERGENCE comparison, which contrasts one geometry against itself at
+different `eps`; it is NOT an REV, so its absolute k_eff means nothing.
 
 ## Acceptance
 
