@@ -31,15 +31,25 @@ Colours are Okabe-Ito blue / vermillion / bluish-green: adjacent-pair OKLab
 separation >= 18.7 normal and >= 11 under deuteranopia/protanopia. Blue vs green
 under tritanopia is 5.4, so line style carries identity too -- never colour alone.
 
-USAGE
-  ./postprocess/plot_neck_convergence.py --csv epsstrict=a.csv epsmid=b.csv \\
-      epsloose=c.csv --eps epsstrict=3.479e-7 epsmid=6.030e-7 epsloose=8.584e-7 \\
-      --validation inputs/validation/molaro2019_fig11_T-20.csv --out neck.png
+USAGE — point it at the run directories and it does everything:
+
+  ./venv_enceladus/bin/python3 postprocess/plot_neck_convergence.py \\
+      --runs ~/SimulationResults/enceladus_DSM/scratch/*/*/ \\
+      --validation inputs/validation/molaro2019_fig11_T-20.csv \\
+      --out neck_convergence.png
+
+It measures each run with neck_width.py, reads eps from the geometry .opts the
+run script staged into the output directory, and names each arm from that file.
+
+The lower-level form is still available if you already have the CSVs:
+
+  ... --csv epsstrict=a.csv epsmid=b.csv --eps epsstrict=3.479e-7 epsmid=6.03e-7
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -55,11 +65,77 @@ STYLES = ["-", "--", ":", "-."]
 INK, MUTED, GRID = "#1a1a1a", "#5c5c5c", "#d8d8d8"
 
 
+def _opt(text, key):
+    import re
+    m = re.search(rf"^{re.escape(key)}\s+(\S+)", text, re.MULTILINE)
+    return m.group(1) if m else None
+
+
+def discover(run_dirs, out_dir, axisym_override):
+    """Measure each run and return ({arm: eps}, {arm: csv_path}).
+
+    eps, the arm name and the axisymmetry flag all come from the geometry .opts
+    that run_enceladus.sh stages into the output directory -- the same file the
+    solver used -- so there is nothing to keep in sync by hand.
+    """
+    import subprocess
+    here = Path(__file__).resolve().parent
+    tmp = Path(out_dir) / "_neck_csv"
+    tmp.mkdir(parents=True, exist_ok=True)
+    eps, csv = {}, {}
+    for rd in run_dirs:
+        rd = Path(rd)
+        if not (rd / "SSA_evo.dat").is_file():
+            print(f"  skip {rd.name}: no SSA_evo.dat", file=sys.stderr)
+            continue
+        geo = [f for f in rd.glob("*.opts")
+               if f.name not in ("solver.opts",) and _opt(f.read_text(), "-eps")]
+        if not geo:
+            print(f"  skip {rd.name}: no geometry .opts staged", file=sys.stderr)
+            continue
+        txt = geo[0].read_text()
+        arm = geo[0].stem
+        eps[arm] = float(_opt(txt, "-eps"))
+        ax = axisym_override
+        if ax is None:
+            ax = (_opt(txt, "-axisym") or "0") not in ("0", "false", "FALSE")
+        out = tmp / f"{arm}.csv"
+        if not out.is_file():
+            cmd = [sys.executable, str(here / "neck_width.py"), str(rd),
+                   "--out", str(out)] + (["--axisym"] if ax else [])
+            print(f"  measuring {arm} ...", file=sys.stderr)
+            r = subprocess.run(cmd, capture_output=True, text=True)
+            if r.returncode != 0 or not out.is_file():
+                print(f"  FAILED on {arm}:\n{r.stdout[-500:]}{r.stderr[-500:]}",
+                      file=sys.stderr)
+                eps.pop(arm, None)
+                continue
+        csv[arm] = out
+
+    # Strip the prefix every arm shares -- the geometry names differ only in
+    # their eps suffix, and the full names are too long to tabulate.
+    if len(eps) > 1:
+        names = list(eps)
+        pre = os.path.commonprefix(names)
+        pre = pre[:pre.rfind("_") + 1] if "_" in pre else ""
+        if pre and all(len(n) > len(pre) for n in names):
+            eps = {n[len(pre):]: v for n, v in eps.items()}
+            csv = {n[len(pre):]: v for n, v in csv.items()}
+    return eps, csv
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", nargs="+", required=True, metavar="ARM=PATH",
-                    help="neck_width.py output per arm")
-    ap.add_argument("--eps", nargs="+", required=True, metavar="ARM=EPS")
+    ap.add_argument("--runs", nargs="+", default=None, metavar="RUN_DIR",
+                    help="run directories; eps and the arm name are read from "
+                         "the geometry .opts staged inside each one, and the "
+                         "neck series is measured with neck_width.py")
+    ap.add_argument("--csv", nargs="+", default=None, metavar="ARM=PATH",
+                    help="alternative to --runs: neck_width.py output per arm")
+    ap.add_argument("--eps", nargs="+", default=None, metavar="ARM=EPS")
+    ap.add_argument("--axisym", action="store_true", default=None,
+                    help="force axisymmetric measurement (auto-detected from "
+                         "the staged geometry .opts when using --runs)")
     ap.add_argument("--validation", type=Path, default=None,
                     help="molaro2019_fig11_T-*.csv")
     ap.add_argument("--t-ref", type=float, default=1500.0,
@@ -68,8 +144,15 @@ def main(argv=None):
     ap.add_argument("--out", type=Path, default=Path("neck_convergence.png"))
     args = ap.parse_args(argv)
 
-    eps = {k: float(v) for k, v in (s.split("=") for s in args.eps)}
-    csv = {k: Path(v) for k, v in (s.split("=") for s in args.csv)}
+    if args.runs:
+        eps, csv = discover(args.runs, args.out.parent, args.axisym)
+    elif args.csv and args.eps:
+        eps = {k: float(v) for k, v in (s.split("=") for s in args.eps)}
+        csv = {k: Path(v) for k, v in (s.split("=") for s in args.csv)}
+    else:
+        ap.error("give either --runs, or both --csv and --eps")
+    if len(eps) < 2:
+        ap.error(f"need at least 2 arms to compare, found {len(eps)}")
     arms = sorted(eps, key=lambda a: eps[a])           # finest first
 
     D = {}
