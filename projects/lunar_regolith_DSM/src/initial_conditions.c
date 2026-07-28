@@ -605,7 +605,8 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                  * and a single tanh applied afterwards. See -ic_grain_union in
                  * NASA_types.h for why the additive form is eps-dependent at an
                  * overlapping neck. */
-                PetscReal sdf = PETSC_MAX_REAL;
+                PetscReal sdf  = PETSC_MAX_REAL;
+                PetscInt  kmin = -1;              /* grain achieving the min */
                 for (PetscInt k = 0; k < ng; k++) {
                     PetscReal ax    = user->ice_grain_ax[k];
                     PetscReal ay    = user->ice_grain_ay[k];
@@ -619,7 +620,100 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                     }
                     PetscReal d     = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay));
                     PetscReal sdf_k = (d - 1.0) * PetscSqrtReal(ax * ay);
-                    sdf = PetscMin(sdf, sdf_k);
+                    if (sdf_k < sdf) { sdf = sdf_k; kmin = k; }
+                }
+
+                /* min_k sdf_k is the distance to the nearest grain SURFACE, which
+                 * equals the distance to the union BOUNDARY only when that nearest
+                 * surface point is itself on the boundary. Where grains overlap it
+                 * can be buried inside a neighbour, and then the formula reports a
+                 * far smaller depth than the truth, leaving phi < 1 in bulk ice.
+                 *
+                 * Measured on the Molaro pair (R = 72.5/101 um, overlapped to form
+                 * a neck): at the neck centre min_k sdf_k = -1.88 um against a true
+                 * -16.41 um, giving phi = 0.87 / 0.97 at eps = 0.858 / 0.603 um
+                 * instead of 1. The nearest point of grain 0's surface there lies
+                 * 3.2 um inside grain 1.
+                 *
+                 * Trigger on OCCLUSION, not on how many grains contain the point:
+                 * a point inside a single grain is affected too, whenever its
+                 * nearest surface point is buried in a neighbour. Correction takes
+                 * the nearest surface point of each of the two grains, discards it
+                 * if buried, and falls back to the crease points where the circles
+                 * cross -- those are always on the union boundary.
+                 *
+                 * Circles only (ax == ay); ellipses keep the approximation.
+                 * Never fires for non-overlapping packings (production uses a 4 um
+                 * contact gap), so it costs nothing there. */
+                if (sdf < 0.0 && kmin >= 0) {
+                    PetscReal ax0 = user->ice_grain_ax[kmin];
+                    PetscReal ay0 = user->ice_grain_ay[kmin];
+                    if (PetscAbsReal(ax0 - ay0) <= 1e-12 * ax0) {
+                        PetscReal R0  = ax0;
+                        PetscReal c0x = user->cent[0][kmin], c0y = user->cent[1][kmin];
+                        PetscReal px = x, py = y;
+                        if (wrap) {
+                            PetscReal sx = px - c0x, sy = py - c0y;
+                            px = c0x + sx - Lx * PetscFloorReal(sx / Lx + 0.5);
+                            py = c0y + sy - Ly * PetscFloorReal(sy / Ly + 0.5);
+                        }
+                        PetscReal ddx = px - c0x, ddy = py - c0y;
+                        PetscReal L   = PetscSqrtReal(ddx*ddx + ddy*ddy);
+                        if (L > 0.0) {
+                            PetscReal qx = c0x + R0*ddx/L, qy = c0y + R0*ddy/L;
+                            /* is that surface point buried inside another grain? */
+                            PetscInt  occ = -1;
+                            for (PetscInt j = 0; j < ng && occ < 0; j++) {
+                                if (j == kmin) continue;
+                                PetscReal axj = user->ice_grain_ax[j];
+                                PetscReal ayj = user->ice_grain_ay[j];
+                                if (PetscAbsReal(axj - ayj) > 1e-12 * axj) continue;
+                                PetscReal cjx = user->cent[0][j], cjy = user->cent[1][j];
+                                if (wrap) {
+                                    PetscReal sx = cjx - c0x, sy = cjy - c0y;
+                                    cjx = c0x + sx - Lx * PetscFloorReal(sx / Lx + 0.5);
+                                    cjy = c0y + sy - Ly * PetscFloorReal(sy / Ly + 0.5);
+                                }
+                                if (SQ(qx-cjx) + SQ(qy-cjy) < SQ(axj)) occ = j;
+                            }
+                            if (occ >= 0) {
+                                PetscReal R1  = user->ice_grain_ax[occ];
+                                PetscReal c1x = user->cent[0][occ], c1y = user->cent[1][occ];
+                                if (wrap) {
+                                    PetscReal sx = c1x - c0x, sy = c1y - c0y;
+                                    c1x = c0x + sx - Lx * PetscFloorReal(sx / Lx + 0.5);
+                                    c1y = c0y + sy - Ly * PetscFloorReal(sy / Ly + 0.5);
+                                }
+                                PetscReal best = PETSC_MAX_REAL;
+                                /* the occluder's own nearest surface point, if visible */
+                                PetscReal e1x = px - c1x, e1y = py - c1y;
+                                PetscReal L1  = PetscSqrtReal(e1x*e1x + e1y*e1y);
+                                if (L1 > 0.0) {
+                                    PetscReal q1x = c1x + R1*e1x/L1, q1y = c1y + R1*e1y/L1;
+                                    if (SQ(q1x-c0x) + SQ(q1y-c0y) >= SQ(R0))
+                                        best = PetscMin(best, PetscAbsReal(R1 - L1));
+                                }
+                                /* crease points -- always on the union boundary */
+                                PetscReal Dx = c1x - c0x, Dy = c1y - c0y;
+                                PetscReal Dd = PetscSqrtReal(Dx*Dx + Dy*Dy);
+                                if (Dd > 0.0 && Dd < R0 + R1 && Dd > PetscAbsReal(R0 - R1)) {
+                                    PetscReal aa = (Dd*Dd + R0*R0 - R1*R1) / (2.0*Dd);
+                                    PetscReal h2 = R0*R0 - aa*aa;
+                                    if (h2 > 0.0) {
+                                        PetscReal h  = PetscSqrtReal(h2);
+                                        PetscReal mx = c0x + aa*Dx/Dd, my = c0y + aa*Dy/Dd;
+                                        PetscReal ex = -Dy/Dd, ey = Dx/Dd;
+                                        for (PetscInt sg = -1; sg <= 1; sg += 2) {
+                                            PetscReal cxp = mx + sg*h*ex, cyp = my + sg*h*ey;
+                                            best = PetscMin(best,
+                                                PetscSqrtReal(SQ(px-cxp) + SQ(py-cyp)));
+                                        }
+                                    }
+                                }
+                                if (best < PETSC_MAX_REAL) sdf = -best;
+                            }
+                        }
+                    }
                 }
                 ice = 0.5 - 0.5 * PetscTanhReal(tc * sdf);
             } else {
