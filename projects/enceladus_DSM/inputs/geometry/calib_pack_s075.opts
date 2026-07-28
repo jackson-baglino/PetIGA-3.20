@@ -1,0 +1,24 @@
+# Packing calibration, safety = 0.75  (generated)
+#
+# Same grain size, contact gap and porosity as production, on a 1 mm domain so
+# the sweep is affordable. Observables: SSA(t) from SSA_evo.dat and k_eff(t)
+# from effective_thermal_cond.
+#
+#   porosity = 0.3301   grains = 108
+#   contact gap = 4.00 um   Z = 2.72
+#   diffuse band 6*eps = 9.00 um
+#   NOTE tau_vap ~ L^2, so this 1 mm test is 4x MORE quasi-steady than the
+#   2 mm production domain at the same xi_v -- read the xi_v result as a lower
+#   bound on what production needs.
+
+-ic_type multi_grains_file
+-grains_file inputs/packings_calib/phi0.325_1mm/grains.dat
+-ic_grain_union 1
+-dim 2
+-Lx 1.000000e-03
+-Ly 1.000000e-03
+-Nx 943
+-Ny 943
+-eps 1.500000e-06             # safety=0.75, binding: B-KINETIC
+-eps_valid_temp -20
+-delt_t 1.0e-4
