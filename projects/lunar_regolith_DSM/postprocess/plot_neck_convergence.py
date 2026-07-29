@@ -223,12 +223,21 @@ def main(argv=None):
     ax2.axvspan(0, tc / 60.0, color="#f2f2f2", zorder=0)
     ax2.axvline(tc / 60.0, color=MUTED, lw=1.0, ls=":")
     ytop = max(spread.max() * 1.15, 3)
-    ax2.text(tc / 120.0, ytop * 0.62, "initial crease\nunresolvable",
-             ha="center", va="center", fontsize=8.5, color=MUTED)
-    ax2.annotate(f"spread < 2% from t = {tc:.0f} s",
-                 xy=(tc / 60.0, 2.0), xytext=(tc / 60.0 + 8, ytop * 0.78),
-                 fontsize=8.5, color=MUTED,
-                 arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.9))
+    # When the crease resolves quickly the shaded band is too narrow to hold a
+    # label; point at it from outside instead of writing over the axis.
+    if tc / tmax > 0.08:
+        ax2.text(tc / 120.0, ytop * 0.62, "initial crease\nunresolvable",
+                 ha="center", va="center", fontsize=8.5, color=MUTED)
+        ax2.annotate(f"spread < 2% from t = {tc:.0f} s",
+                     xy=(tc / 60.0, 2.0), xytext=(tc / 60.0 + 8, ytop * 0.78),
+                     fontsize=8.5, color=MUTED,
+                     arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.9))
+    else:
+        ax2.annotate(f"initial crease unresolvable;\nspread < 2% from t = {tc:.0f} s",
+                     xy=(tc / 60.0, 2.0),
+                     xytext=(tmax / 60.0 * 0.16, ytop * 0.72),
+                     fontsize=8.5, color=MUTED,
+                     arrowprops=dict(arrowstyle="-", color=MUTED, lw=0.9))
 
     ax2.set_xlabel("time  [min]", color=INK)
     ax2.set_ylabel("spread across\narms  [%]", color=INK)
