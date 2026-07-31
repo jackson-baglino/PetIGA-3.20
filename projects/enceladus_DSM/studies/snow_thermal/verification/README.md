@@ -35,11 +35,23 @@ can be stated correctly.
 `-ic_type ice_slab` on a 1 mm periodic cell: ice on `[0, Ly/2]`, air above.
 One time step, 12 configurations, three sweeps:
 
+All three sweeps are anchored on the **project mesh rule** `h = ε/√2`
+(`comp_eps.py`), i.e. `Nx = ⌈√2·Lx/eps⌉`, which puts **~8.5 elements across the
+φ=0.05–0.95 band**. Every sweep passes through that production point rather than
+sitting to one side of it.
+
 | sweep | what varies | what it isolates |
 |---|---|---|
-| **A** `mesh follows eps` | `eps` and `Nx = ⌈√2·Lx/eps⌉` together | the configuration the real study runs use |
-| **B** `fixed mesh` | `eps` at `Nx = 256` | the effect of `eps` alone |
-| **C** `fixed eps` | `Nx` at `eps = 2e-5` | the effect of the mesh alone |
+| **A** `mesh follows eps` | `eps` with `Nx` from the rule | every point AT production resolution |
+| **B** `fixed mesh` | `eps` at `Nx = 142` (the rule's own answer for `eps=1e-5`) | the effect of `eps` alone |
+| **C** `fixed eps` | `Nx` from 0.5× to 4× the rule, at `eps = 2e-5` | the effect of the mesh alone |
+
+> **Band convention.** Element counts here are across the **φ=0.05–0.95** band
+> (`6·eps`), matching `comp_eps.py` and the project's ~7.5–10 target. The
+> **φ=0.01–0.99** band (`9.2·eps`) gives a count **1.53× larger for the same
+> mesh** — 13.0 where this reads 8.5. Mixing the two makes a production mesh look
+> heavily over-resolved. (`CLAUDE.md` currently attributes the 7.5–10 figure to
+> the 1–99% band; that label appears to be wrong.)
 
 Reproduce with:
 
@@ -62,39 +74,49 @@ logs under `raw/`.
 All 12 runs collapse onto
 
 ```
-|φ̄ − 0.5|  ≈  240 · Δx² / eps
+|φ̄ − 0.5|  ≈  236 · Δx² / eps
 ```
 
 which each sweep confirms from a different direction: second order in `Δx` at
 fixed `eps` (sweep C), inverse-linear in `eps` at fixed mesh (sweep B), and — the
 consequence that matters — **only first order in `eps` when the mesh follows the
-project rule** (sweep A), since `Δx ∝ eps` there makes `Δx²/eps ∝ eps`.
+project rule** (sweep A), since `Δx = ε/√2` there makes `Δx²/eps = eps/2`.
 
 So halving `eps` while holding elements-per-interface constant buys a factor of
 2 in ice-fraction accuracy, not the factor of 4 that "second-order" suggests.
 
-| sweep A (project mesh rule) | `eps` [m] | `Nx` | `φ̄` | `|φ̄ − 0.5|` |
-|---|---|---|---|---|
-| safety 1.0 analogue | 4.0e-5 | 36 | 0.504521 | 4.52e-3 |
-| safety 0.5 analogue | 2.0e-5 | 71 | 0.502351 | 2.35e-3 |
-| safety 0.25 analogue | 1.0e-5 | 142 | 0.501183 | 1.18e-3 |
+### 2. On the production mesh rule the error is simply proportional to eps
 
-### 2. What that costs the benchmark
+Substituting `Δx = ε/√2` into the collapse gives `|φ̄ − 0.5| ≈ 118·eps`, and
+sweep A measures the coefficient at 113–120 across a factor of 8 in `eps`:
 
-The implied bias in k_eff if it were compared against `φ = 0.5`:
+| `eps` [m] | `Nx` (rule) | elem/band | `|φ̄ − 0.5|` | ÷ eps | implied `|Δk|/k` |
+|---|---|---|---|---|---|
+| 4.0e-5 | 36 | 8.6 | 4.52e-3 | 113.0 | 8.9e-3 |
+| 2.0e-5 | 71 | 8.5 | 2.35e-3 | 117.6 | 4.6e-3 |
+| 1.0e-5 | 142 | 8.5 | 1.18e-3 | 118.3 | 2.3e-3 |
+| 5.0e-6 | 283 | 8.5 | 5.98e-4 | 119.5 | 1.2e-3 |
 
-| elements across the φ=0.01…0.99 band | `|Δk|/k` |
-|---|---|
-| 6.6 | 1.6e-2 |
-| **13.1  ← the project mesh rule** | **4.6e-3** |
-| 26.1 | 1.2e-3 |
-| 47.1 | 3.7e-4 |
-| 94.2 | 9.3e-5 |
+**This corrects an earlier statement in this file.** A previous revision said the
+initial condition contributes "~0.5% error at the resolution the study runs
+use". That figure was measured at the *benchmark's* `eps = 2e-5`, which is 10–40×
+larger than the `eps` the packing runs use. Because the error scales linearly
+with `eps` on the production rule, the correct figures for the real study
+geometries at T = −20 °C are much smaller:
 
-**At the resolution the study runs actually use, the initial condition alone
-contributes ~0.5% error to both k_eff components.** That is far above any
-sensible solver tolerance, which is why the benchmark must be evaluated at the
-measured `φ̄`, not at 0.5.
+| study configuration | `eps` | `|φ̄ − 0.5|` | k_eff bias |
+|---|---|---|---|
+| safety 0.5 | 1.0e-6 | ~1.2e-4 | **0.024 %** |
+| safety 1.0 | 2.0e-6 | ~2.4e-4 | **0.047 %** |
+
+So the discretisation floor on the safety 0.5 vs 1.0 comparison is **0.024 %**,
+not the ~0.2 % quoted earlier. Any difference between the two resolutions above
+roughly 0.05 % is real physics — throat closure — rather than numerics. That
+makes the shakedown comparison a much sharper instrument than it first appeared.
+
+The benchmark itself must still be evaluated at the measured `φ̄` rather than at
+0.5, because at the benchmark's own (deliberately large) `eps` the IC error is
+~0.5 %, far above any solver tolerance.
 
 Both components are affected almost identically, because at `φ = 0.5`
 
@@ -246,11 +268,12 @@ useful cadence is only possible because the iterative path works.
 1. **State the benchmark at measured `φ̄`.** `inputs/geometry/2D_ice_slab_keff.opts`
    documents this. A tolerance of 1e-6 against the nominal 1.155000 is not
    achievable at any mesh we would run, and is not a meaningful target.
-2. **The safety 0.5 vs 1.0 comparison in the packing runs has a known floor.**
-   Sweep A says the ice fraction alone differs by 2.35e-3 vs 4.52e-3 between
-   those two resolutions — about 0.2% in k_eff — *before* any physics. Interpret
-   differences below roughly half a percent between the two resolutions as
-   discretisation, not as a real eps effect on the microstructure.
+2. **The safety 0.5 vs 1.0 comparison has a floor of 0.024 %, not 0.2 %.**
+   See §2 above. Differences above ~0.05 % between the two resolutions are real
+   — and the mechanism to suspect is throat closure, since the diffuse band
+   (9.2·eps = 9.2 µm at safety 0.5, 18.4 µm at safety 1.0) exceeds the median
+   throat (4.0 / 5.95 / 12.6 µm for the three shakedown packings) in most cases.
+   Expect the effect to be largest at low porosity, where throats are tightest.
 3. **Interface-integral diagnostics run 1–7% low** at these resolutions. Worth
    remembering when `SSA_evo.dat`'s `sub_interf` column is used quantitatively.
 

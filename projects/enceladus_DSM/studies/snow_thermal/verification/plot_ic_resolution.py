@@ -96,7 +96,8 @@ def make_figure(rows, theme):
     ax.loglog(x, ref, "--", color=t["muted"], lw=1.4, zorder=2, label=r"slope 2 ($\Delta x^2$)")
     ax.set_xlabel(r"element size $\Delta x$  [m]")
     ax.set_ylabel(r"$|\bar\phi - 0.5|$")
-    ax.set_title("1.  Refining the mesh at fixed $\\epsilon$\nsecond-order convergence", fontsize=10.5, loc="left")
+    ax.set_title("1.  Refining the mesh at fixed $\\epsilon$  (0.5x to 4x the rule)\n"
+                 "second-order convergence", fontsize=10.5, loc="left")
     ax.legend(frameon=False, fontsize=8.5, labelcolor=t["ink2"])
     thin_log_xticks(ax)
 
@@ -106,7 +107,8 @@ def make_figure(rows, theme):
     s = sorted([r for r in rows if r["sweep"] == "B_fixed_mesh"], key=lambda r: r["eps"])
     x = np.array([r["eps"] for r in s])
     y = np.array([err(r) for r in s])
-    ax.loglog(x, y, "s-", color=SERIES[1], lw=2, ms=7, zorder=3, label="measured, $N=256$")
+    ax.loglog(x, y, "s-", color=SERIES[1], lw=2, ms=7, zorder=3,
+              label=rf"measured, $N={int(s[0]['Nx'])}$")
     ref = y[-1] * (x[-1] / x)
     ax.loglog(x, ref, "--", color=t["muted"], lw=1.4, zorder=2, label=r"slope $-1$ ($1/\epsilon$)")
     ax.set_xlabel(r"interface width $\epsilon$  [m]")

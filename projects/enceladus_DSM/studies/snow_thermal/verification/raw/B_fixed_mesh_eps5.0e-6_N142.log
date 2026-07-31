@@ -3,17 +3,17 @@ Running on 1 processes.
 
 OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
 
-  [keff] layout: 65536 elements x 9 pts/elem = 589824 local Gauss points (ngp=589824)
+  [keff] layout: 20164 elements x 9 pts/elem = 181476 local Gauss points (ngp=181476)
 
   ===============================================================================
   >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
   ===============================================================================
-    corrector mesh    : dim 2, scalar (dof 1), 65536 unknowns x 2 directions
-    cell volume (quad): 1.000000000005e-06 m^2
-    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 5.34e-12]
+    corrector mesh    : dim 2, scalar (dof 1), 20164 unknowns x 2 directions
+    cell volume (quad): 9.999999999988e-07 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 1.21e-12]
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     cadence           : every 1 accepted step(s)
-    output            : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/studies/snow_thermal/verification/raw/C_fixed_eps_eps2.0e-5_N256/k_eff.csv
+    output            : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/studies/snow_thermal/verification/raw/B_fixed_mesh_eps5.0e-6_N142/k_eff.csv
   ===============================================================================
 
 
@@ -22,13 +22,13 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 ================================================================================
 
  MESH & DISCRETIZATION
-   Nx = 256,  Ny = 256
+   Nx = 142,  Ny = 142
    Lx = 1.0000e-03 m,  Ly = 1.0000e-03 m
-   dx = 3.9063e-06 m,  dy = 3.9063e-06 m
+   dx = 7.0423e-06 m,  dy = 7.0423e-06 m
    p = 2 (quadratic),  C = 1
 
  PHASE-FIELD INTERFACE
-   eps      =  2.0000e-05 m
+   eps      =  5.0000e-06 m
    Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
    Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
    Lambda   =  0.0000e+00
@@ -55,10 +55,10 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
-   lambda   =  1.0829e+09
-   tau_sub  =  1.5908e+04 s
-   mob_sub  =  4.1908e-10 m/s   [M&F: 4.33e-7]
-   alph_sub =  6.8070e+04 1/s
+   lambda   =  2.7071e+08
+   tau_sub  =  4.3418e+02 s
+   mob_sub  =  3.8386e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  6.2350e+05 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -77,26 +77,26 @@ IC type: ice_slab
 --- INITIAL CONDITIONS (2D Ice Slab: ice on [0, Ly/2], air above, periodic in y: interfaces at Ly/2 AND the y=0 seam) ---
   [keff] Gauss-point projection check (clone vs solver mesh)
          quantity                  clone (kc->ice[])             solver (U)    rel diff
-         mean ice fraction     5.001893956822159e-01  5.001893956822159e-01   0.000e+00
-         ice centroid x [m]    4.999999999995376e-04  4.999999999995376e-04   0.000e+00
-         ice centroid y [m]    2.763541309736970e-04  2.763541309736970e-04   0.000e+00
-         ice <x^2> [m^2]       3.333333333330052e-07  3.333333333330052e-07   0.000e+00
-         ice <y^2> [m^2]       1.097497123814890e-07  1.097497123814890e-07   0.000e+00
+         mean ice fraction     5.021264919572727e-01  5.021264919572727e-01   0.000e+00
+         ice centroid x [m]    4.999999999998702e-04  4.999999999998702e-04   0.000e+00
+         ice centroid y [m]    2.577673312919144e-04  2.577673312919144e-04   0.000e+00
+         ice <x^2> [m^2]       3.333333333332630e-07  3.333333333332630e-07   0.000e+00
+         ice <y^2> [m^2]       9.178920122420577e-08  9.178920122420577e-08   0.000e+00
          worst = 0.000e+00 on 'mean ice fraction'  (tol 1.0e-10)
-  BOUNDS: phi_ice [0.0000, 1.0000]  phi_air [0.0000, 1.0000]
+  BOUNDS: phi_ice [0.0000, 1.0000]  phi_air [-0.0000, 1.0000]
   ===============================================================================
   >>> DOMAIN INTEGRALS (PER TIME STEP)
   ===============================================================================
   -------------------------------------------------------------------------------------------------------------
     STEP |     TIME [s] |    DT [s] |    TOT_ICE |    TOT_AIR |      TEMP |  TOT_RHOV | I-A INTERF | TOTAL_MASS
   -------------------------------------------------------------------------------------------------------------
-     0 |  0.00000e+00 | 1.000e-04 |  5.002e-07 |  4.998e-07 | -2.000e-05 | 4.242e-10 |  6.468e-09 |  4.597e-04
+     0 |  0.00000e+00 | 1.000e-04 |  5.021e-07 |  4.979e-07 | -2.000e-05 | 4.225e-10 |  1.665e-09 |  4.615e-04
     SNES DOF norms (2-norm) and ratios
     
     it |       fnorm |          n0 |        r0 |        s0 |          n1 |        r1 |        s1 |          n2 |        r2 |        s2
     
-     0 |  1.5748e-13 |   1.442e-14 | 1.000e+00 | 0.000e+00 |   1.568e-13 | 1.000e+00 | 0.000e+00 |   3.678e-26 | 1.000e+00 | 0.000e+00
-     1 |  3.0192e-12 |   1.151e-21 | 7.980e-08 | 9.439e-10 |   3.019e-12 | 1.925e+01 | 7.787e-09 |   1.060e-21 | 2.883e+04 | 1.919e-06
+     0 |  1.8631e-13 |   1.103e-13 | 1.000e+00 | 0.000e+00 |   1.502e-13 | 1.000e+00 | 0.000e+00 |   4.848e-26 | 1.000e+00 | 0.000e+00
+     1 |  1.0898e-11 |   1.737e-21 | 1.575e-08 | 3.832e-09 |   1.090e-11 | 7.258e+01 | 4.789e-07 |   3.934e-21 | 8.114e+04 | 4.484e-06
   SNES converged via DOF-wise criteria:
     DOF 0: REL (rtol) ABS (atol) STOL (stol)
     DOF 1: ABS (atol) STOL (stol)
@@ -105,8 +105,8 @@ IC type: ice_slab
     
     it |       fnorm |          n0 |        r0 |        s0 |          n1 |        r1 |        s1 |          n2 |        r2 |        s2
     
-     0 |  3.4449e-05 |   1.442e-14 | 1.000e+00 | 9.439e-10 |   3.445e-05 | 1.000e+00 | 7.787e-09 |   2.770e-15 | 1.000e+00 | 1.919e-06
-     1 |  3.2564e-12 |   1.251e-21 | 8.672e-08 | 9.437e-10 |   3.256e-12 | 9.453e-08 | 3.511e-09 |   1.143e-21 | 4.128e-07 | 1.612e-06
+     0 |  2.6446e-04 |   1.102e-13 | 1.000e+00 | 3.832e-09 |   2.645e-04 | 1.000e+00 | 4.789e-07 |   8.315e-15 | 1.000e+00 | 4.484e-06
+     1 |  5.4760e-12 |   1.768e-21 | 1.605e-08 | 3.828e-09 |   5.476e-12 | 2.071e-08 | 2.762e-07 |   3.416e-21 | 4.108e-07 | 4.009e-06
   SNES converged via DOF-wise criteria:
     DOF 0: REL (rtol) ABS (atol) STOL (stol)
     DOF 1: REL (rtol) ABS (atol) STOL (stol)
@@ -115,24 +115,24 @@ IC type: ice_slab
     
     it |       fnorm |          n0 |        r0 |        s0 |          n1 |        r1 |        s1 |          n2 |        r2 |        s2
     
-     0 |  2.4953e-05 |   3.245e-14 | 1.000e+00 | 9.437e-10 |   2.495e-05 | 1.000e+00 | 3.511e-09 |   1.339e-15 | 1.000e+00 | 1.612e-06
-     1 |  2.9374e-12 |   1.055e-21 | 3.252e-08 | 2.265e-09 |   2.937e-12 | 1.177e-07 | 1.455e-08 |   1.172e-21 | 8.756e-07 | 4.396e-06
+     0 |  1.8858e-04 |   2.481e-13 | 1.000e+00 | 3.828e-09 |   1.886e-04 | 1.000e+00 | 2.762e-07 |   3.509e-15 | 1.000e+00 | 4.009e-06
+     1 |  2.8131e-11 |   1.750e-21 | 7.052e-09 | 9.195e-09 |   2.813e-11 | 1.492e-07 | 9.742e-07 |   1.264e-20 | 3.602e-06 | 1.046e-05
   SNES converged via DOF-wise criteria:
     DOF 0: REL (rtol) ABS (atol) STOL (stol)
     DOF 1: REL (rtol) ABS (atol) STOL (stol)
-    DOF 2: REL (rtol) ABS (atol)
+    DOF 2: ABS (atol)
 Increase time step: 1.000e-04 -> 1.334e-04 
-  BOUNDS: phi_ice [0.0000, 1.0000]  phi_air [0.0000, 1.0000]
+  BOUNDS: phi_ice [-0.0000, 1.0000]  phi_air [-0.0000, 1.0000]
   ===============================================================================
   >>> DOMAIN INTEGRALS (PER TIME STEP)
   ===============================================================================
   -------------------------------------------------------------------------------------------------------------
     STEP |     TIME [s] |    DT [s] |    TOT_ICE |    TOT_AIR |      TEMP |  TOT_RHOV | I-A INTERF | TOTAL_MASS
   -------------------------------------------------------------------------------------------------------------
-     1 |  1.00000e-04 | 1.334e-04 |  5.002e-07 |  4.998e-07 | -2.000e-05 | 4.242e-10 |  6.468e-09 |  4.597e-04
+     1 |  1.00000e-04 | 1.334e-04 |  5.021e-07 |  4.979e-07 | -2.000e-05 | 4.225e-10 |  1.665e-09 |  4.615e-04
        |              |           |    +0.000% |    -0.000% |           |   -0.000% |            |    +0.000%
 Solution completed. 
-Setup time 4.626621e+00 sec  =  0.08 min 
+Setup time 1.407674e+00 sec  =  0.02 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!

@@ -45,23 +45,35 @@ fi
 
 LX=1.0e-3
 
+# All three sweeps are anchored on the PROJECT MESH RULE, Nx = ceil(sqrt(2)*Lx/eps)
+# (comp_eps.py's h = eps/sqrt(2)), which gives ~8.5 elements across the
+# phi=0.05-0.95 band. Every sweep passes through that production point rather
+# than sitting to one side of it, so the sweeps bracket the resolution the real
+# runs use instead of only sampling over-resolved meshes.
+#
+#   eps      rule Nx    (= ceil(sqrt(2) * 1e-3 / eps))
+#   4.0e-5   36
+#   2.0e-5   71
+#   1.0e-5   142
+#   5.0e-6   283
+#
 # sweep_label : eps : Nx
 CONFIGS=(
-    # --- A: mesh follows eps (Nx = ceil(sqrt(2)*Lx/eps)), the project rule ---
+    # --- A: mesh follows eps -- every point AT the production resolution ---
     "A_follow:4.0e-5:36"
     "A_follow:2.0e-5:71"
     "A_follow:1.0e-5:142"
-    # --- B: eps varies at fixed fine mesh ---
-    "B_fixed_mesh:4.0e-5:256"
-    "B_fixed_mesh:2.0e-5:256"
-    "B_fixed_mesh:1.0e-5:256"
-    "B_fixed_mesh:5.0e-6:256"
-    # --- C: mesh refines at fixed eps ---
+    "A_follow:5.0e-6:283"
+    # --- B: eps varies at fixed mesh; the rule's own Nx for eps=1e-5 ---
+    "B_fixed_mesh:4.0e-5:142"
+    "B_fixed_mesh:2.0e-5:142"
+    "B_fixed_mesh:1.0e-5:142"
+    "B_fixed_mesh:5.0e-6:142"
+    # --- C: mesh refines at fixed eps, spanning 0.5x .. 4x the rule ---
     "C_fixed_eps:2.0e-5:36"
     "C_fixed_eps:2.0e-5:71"
     "C_fixed_eps:2.0e-5:142"
-    "C_fixed_eps:2.0e-5:256"
-    "C_fixed_eps:2.0e-5:512"
+    "C_fixed_eps:2.0e-5:284"
 )
 
 echo "sweep,eps,Nx,dx,elem_per_band_5_95,tot_ice,tot_air,interf,phi_bar_solver,phi_bar_clone,proj_worst,phi_min,phi_max" > "$CSV"

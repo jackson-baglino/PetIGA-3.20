@@ -132,7 +132,7 @@ Increase time step: 1.000e-04 -> 1.334e-04
      1 |  1.00000e-04 | 1.334e-04 |  5.082e-07 |  4.918e-07 | -2.000e-05 | 4.174e-10 |  6.749e-09 |  4.670e-04
        |              |           |    +0.000% |    -0.000% |           |   -0.000% |            |    +0.000%
 Solution completed. 
-Setup time 1.047130e-01 sec  =  0.00 min 
+Setup time 1.032540e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
