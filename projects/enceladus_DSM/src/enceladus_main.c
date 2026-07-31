@@ -825,6 +825,14 @@ int main(int argc, char *argv[]) {
     ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);     CHKERRQ(ierr);
     ierr = PetscMemzero(user.alph,    sizeof(PetscReal) * nmb); CHKERRQ(ierr);
     ierr = PetscMemzero(user.mob,     sizeof(PetscReal) * nmb); CHKERRQ(ierr);
+    user.ngp = nmb;
+
+    /* In-line effective thermal conductivity (-keff). No-op unless requested.
+     * Created HERE, and not later, because this is the first point where
+     * IGASetUp has run, -geom_file has corrected Nx/Ny/Nz, and nmb is known --
+     * and because it is early enough that the large corrector matrix
+     * allocation fails fast instead of six hours into a run. */
+    ierr = KeffCreate(&user); CHKERRQ(ierr);
 
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
@@ -1185,6 +1193,10 @@ int main(int argc, char *argv[]) {
 
     /* Cleanup Resources */
     if (user.ssa_view) { ierr = PetscViewerDestroy(&user.ssa_view); CHKERRQ(ierr); }
+    /* Before IGADestroy: the clone holds no reference to the parent, so the
+     * order is not strictly required, but destroying the derived object first
+     * is what survives future refactors. */
+    ierr = KeffDestroy(&user); CHKERRQ(ierr);
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = VecDestroy(&user.cfl_U_prev); CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);

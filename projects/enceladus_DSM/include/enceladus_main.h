@@ -17,5 +17,6 @@
 #include "monitoring.h"
 #include "initial_conditions.h"
 #include "snes_convergence.h"
+#include "keff.h"
 
 #endif // ENCELADUS_MAIN_H

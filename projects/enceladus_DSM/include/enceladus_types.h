@@ -228,6 +228,18 @@ typedef struct {
   // truncating the file while outp.txt kept going). NULL until first use.
   PetscViewer ssa_view;
 
+  // Number of quadrature points owned by this rank, sized exactly as the alph
+  // and mob arrays are. Recorded here so the k_eff module can allocate its own
+  // per-Gauss-point phi array without re-deriving elem_width x (p+1)^dim, and
+  // so the cloned corrector IGA can assert it sees the same count.
+  PetscInt ngp;
+
+  // In-line effective thermal conductivity by periodic homogenization.
+  // NULL unless -keff is set; owned by KeffCreate/KeffDestroy (see keff.h).
+  // Declared as an incomplete type so enceladus_types.h stays independent of
+  // keff.h, which includes it.
+  struct KeffCtx *keff;
+
 } AppCtx;/* Field definitions for node data */
 
 #endif // ENCELADUS_TYPES_H
