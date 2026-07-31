@@ -142,8 +142,8 @@ def make_figure(rows, theme):
     # ---------------------------------------------------------------- panel 4
     ax = axes[1, 1]
     style_axes(ax, t)
-    s = sorted(rows, key=lambda r: r["elem_per_band"])
-    n = np.array([r["elem_per_band"] for r in s])
+    s = sorted(rows, key=lambda r: r["elem_per_band_5_95"])
+    n = np.array([r["elem_per_band_5_95"] for r in s])
     phi = np.array([r["phi_bar_solver"] for r in s])
     bias_par = np.abs(k_parallel(phi) - k_parallel(PHI_EXACT)) / k_parallel(PHI_EXACT)
     bias_per = np.abs(k_perp(phi) - k_perp(PHI_EXACT)) / k_perp(PHI_EXACT)
@@ -157,16 +157,17 @@ def make_figure(rows, theme):
     # Second-order terms separate them by at most 1.6% (at the coarsest mesh,
     # |d phi| = 8e-3) and by 0.01% at the finest, so the curves overlap; hence
     # open squares over filled circles rather than two filled markers.
-    # Open squares over filled circles: the two series approach each other as the
-    # mesh refines, and filled-over-filled would hide one of them.
     ax.loglog(n, bias_per, "s", markerfacecolor="none", markeredgecolor=SERIES[1],
               markeredgewidth=1.8, ms=11, lw=0, zorder=4, label=r"$k_\perp$ (harmonic)")
     ax.loglog(n, bias_par, "o", color=SERIES[0], ms=7, lw=0, zorder=3,
               label=r"$k_\parallel$ (arithmetic)", markeredgecolor=t["surface"], markeredgewidth=1.0)
-    ax.axvline(13.0, color=t["muted"], ls=":", lw=1.4, zorder=1)
-    ax.annotate("project mesh rule\n$N_x=\\sqrt{2}L/\\epsilon$  ($\\approx$13 elem)",
-                xy=(11.5, bias_par.min() * 1.6), fontsize=8.5, color=t["ink2"], ha="right")
-    ax.set_xlabel(r"elements across the $\phi=0.01\ldots0.99$ band")
+    # comp_eps.py's rule h = eps/sqrt(2) puts ~8.5 elements across the 5-95%
+    # band (it reports this as "~7.5"). The same mesh is 13.0 across the 1-99%
+    # band -- do not mix the conventions.
+    ax.axvline(8.5, color=t["muted"], ls=":", lw=1.4, zorder=1)
+    ax.annotate("project mesh rule\n$h=\\epsilon/\\sqrt{2}$  ($\\approx$8.5 elem)",
+                xy=(8.0, bias_par.min() * 1.6), fontsize=8.5, color=t["ink2"], ha="right")
+    ax.set_xlabel(r"elements across the $\phi=0.05\ldots0.95$ band")
     ax.set_ylabel(r"$|\Delta k| / k$ implied by the IC alone")
     ax.set_title("4.  Error the benchmark would misread as solver error\n"
                  "if compared against $\\phi=0.5$ instead of measured $\\bar\\phi$",

@@ -73,6 +73,19 @@ static PetscErrorCode KeffParseOptions(KeffCtx *kc)
       "Also write the corrector fields t_vec_%05d.dat and igakeff.dat", "",
       kc->write_corrector, &kc->write_corrector, NULL); CHKERRQ(ierr);
 
+  ierr = PetscOptionsBool("-keff_pc_freeze",
+      "Hold the corrector preconditioner across samples instead of rebuilding "
+      "its coarse operators each time", "",
+      kc->pc_freeze, &kc->pc_freeze, NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsInt("-keff_pc_refresh",
+      "When frozen, force a full preconditioner rebuild every N samples", "",
+      kc->pc_refresh, &kc->pc_refresh, NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsInt("-keff_max_its",
+      "Corrector iterations above this force a preconditioner rebuild and one retry", "",
+      kc->max_its, &kc->max_its, NULL); CHKERRQ(ierr);
+
   ierr = PetscOptionsBool("-keff_debug_phibar",
       "Cross-check the phi projection: mean ice fraction on the cloned mesh vs "
       "the solver mesh", "",
@@ -173,6 +186,9 @@ PetscErrorCode KeffCreate(AppCtx *app)
   kc->at_step0      = PETSC_TRUE;
   kc->only          = PETSC_FALSE;
   kc->replay_stride = 1;
+  kc->pc_freeze     = PETSC_FALSE;
+  kc->pc_refresh    = 20;
+  kc->max_its       = 500;
 
   ierr = KeffParseOptions(kc); CHKERRQ(ierr);
 
@@ -203,6 +219,41 @@ PetscErrorCode KeffCreate(AppCtx *app)
   }
 
   ierr = IGACreateMat(kc->iga, &kc->A); CHKERRQ(ierr);
+
+  /* Hand the matrix back its stock AIJ behaviour for CreateVecs and Duplicate.
+   *
+   * IGACreateMat composes an "IGA" object onto the matrix and overrides
+   * MATOP_CREATE_VECS and MATOP_DUPLICATE with IGA-aware versions
+   * (petigamat.c:385-391) that hard-error with "Matrix not generated from IGA"
+   * if that composed object is absent. Algebraic multigrid builds a hierarchy of
+   * coarse operators from this one, and those coarse matrices inherit the
+   * overridden operations without inheriting the composed IGA -- so PCGAMG dies
+   * during setup, on any mesh, every time.
+   *
+   * Nothing here needs the IGA-aware versions: the vectors are created directly
+   * with IGACreateVec, and the matrix is only ever assembled by
+   * IGAComputeMatrix (which uses MatSetValues) and consumed by KSP. Restoring
+   * the defaults costs nothing and is what makes -keff_pc_type gamg usable.
+   *
+   * This is the whole of the "iterative solvers are unreliable for this problem"
+   * story in the standalone project's README: not a numerical property of the
+   * cell problem at all, but a PetIGA/GAMG plumbing incompatibility.
+   *
+   * MATOP_CREATE_VECS can simply be cleared -- MatCreateVecs falls back to a
+   * layout-based default when the slot is empty. MATOP_DUPLICATE cannot:
+   * clearing it yields "No method duplicate for Mat of type seqaij". PetIGA
+   * stashes the original under "__IGA_MatDuplicate" (petigamat.c:390), so the
+   * stock implementation is put back from there. */
+  ierr = MatSetOperation(kc->A, MATOP_CREATE_VECS, NULL); CHKERRQ(ierr);
+  {
+    PetscErrorCode (*matduplicate)(Mat, MatDuplicateOption, Mat *) = NULL;
+    ierr = PetscObjectQueryFunction((PetscObject)kc->A, "__IGA_MatDuplicate",
+                                    &matduplicate); CHKERRQ(ierr);
+    if (matduplicate) {
+      ierr = MatSetOperation(kc->A, MATOP_DUPLICATE,
+                             (PetscVoidFunction)matduplicate); CHKERRQ(ierr);
+    }
+  }
   /* Keep the sparsity pattern across MatZeroRowsColumns. Without this the
    * zeroed off-diagonals are REMOVED from the AIJ structure, which bumps
    * A->nonzerostate; PCSetUp then sees DIFFERENT_NONZERO_PATTERN and redoes

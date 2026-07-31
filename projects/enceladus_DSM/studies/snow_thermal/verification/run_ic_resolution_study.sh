@@ -64,7 +64,7 @@ CONFIGS=(
     "C_fixed_eps:2.0e-5:512"
 )
 
-echo "sweep,eps,Nx,dx,elem_per_band,tot_ice,tot_air,interf,phi_bar_solver,phi_bar_clone,proj_worst,phi_min,phi_max" > "$CSV"
+echo "sweep,eps,Nx,dx,elem_per_band_5_95,tot_ice,tot_air,interf,phi_bar_solver,phi_bar_clone,proj_worst,phi_min,phi_max" > "$CSV"
 
 for cfg in "${CONFIGS[@]}"; do
     IFS=: read -r sweep eps nx <<< "$cfg"
@@ -103,8 +103,12 @@ for cfg in "${CONFIGS[@]}"; do
         awk '/BOUNDS: phi_ice/ {gsub(/[\[\],]/," "); print $3, $4; exit}' "$log")"
 
     dx=$(awk -v l="$LX" -v n="$nx" 'BEGIN{printf "%.6e", l/n}')
-    # elements spanning the directly observable phi = 0.01 .. 0.99 band (9.2*eps)
-    epb=$(awk -v e="$eps" -v l="$LX" -v n="$nx" 'BEGIN{printf "%.3f", 9.2*e/(l/n)}')
+    # Elements spanning the phi = 0.05 .. 0.95 band (6*eps). THIS is the project
+    # convention: comp_eps.py's mesh rule h = eps/sqrt(2) targets ~7.5-8.5 across
+    # it, and that is the number to compare a mesh against. The 1-99% band
+    # (9.2*eps) gives a count 1.53x larger for the same mesh; quoting that one
+    # makes a production-resolution mesh look heavily over-resolved.
+    epb=$(awk -v e="$eps" -v l="$LX" -v n="$nx" 'BEGIN{printf "%.3f", 6.0*e/(l/n)}')
 
     echo "$sweep,$eps,$nx,$dx,$epb,$tot_ice,$tot_air,$interf,$pb_solver,$pb_clone,$worst,$pmin,$pmax" >> "$CSV"
     echo "  ok  $tag   phi_bar=$pb_solver  interf=$interf  elem/band=$epb"

@@ -51,3 +51,5 @@ studies/snow_thermal/verification/raw/*/
 !studies/snow_thermal/verification/*.png
 
 studies/snow_thermal/verification/raw_keff/*/
+
+studies/snow_thermal/verification/raw_solver/*/

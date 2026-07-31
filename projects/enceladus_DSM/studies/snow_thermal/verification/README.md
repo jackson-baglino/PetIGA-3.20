@@ -182,6 +182,65 @@ significant fraction of the feature it is resolving, the perpendicular
 (series) component of k_eff reads high, badly.** In a granular packing the
 analogous feature is the pore throat, not a 500 µm layer.
 
+---
+
+## CG + GAMG vs direct LU — settling the "iterative solvers are unreliable" claim
+
+```bash
+./studies/snow_thermal/verification/run_solver_comparison.sh
+```
+
+Meshes are multiples of the **project rule** `h = ε/√2` (`comp_eps.py`), which at
+`eps = 2e-5` on a 1 mm cell is `Nx = 71` and gives **8.5 elements across the
+φ=0.05–0.95 band**. Element counts below use that 5–95% convention — the same
+mesh is 13.0 across the 1–99% band, and mixing the two makes a
+production-resolution mesh look heavily over-resolved.
+
+| `Nx` | ×rule | elem/band | dof | LU [s] | GAMG [s] | GAMG its | speedup |
+|---|---|---|---|---|---|---|---|
+| 71 | 1 | 8.5 | 5 041 | 0.12 | 0.05 | 30 | 2.4× |
+| 142 | 2 | 17.0 | 20 164 | 0.86 | 0.18 | 35 | 4.8× |
+| 284 | 4 | 34.1 | 80 656 | 6.18 | 0.76 | 37 | 8.1× |
+| 568 | 8 | 68.2 | 322 624 | 50.86 | 3.04 | 40 | **16.7×** |
+| 1136 | 16 | 136.3 | 1 290 496 | — | 12.92 | 47 | — |
+| 2272 | 32 | 272.6 | 5 161 984 | — | 53.36 | 50 | — |
+
+**The two solvers agree to all ten printed digits of `k_00` and `k_11` at every
+shared mesh.** Iteration counts grow 30 → 50 while the problem grows 1000×,
+i.e. essentially mesh-independent, which is what AMG is supposed to do. Measured
+scaling is `O(N^1.03)` for GAMG against `O(N^1.45)` for LU — the latter matching
+2-D nested dissection.
+
+### The claim was a plumbing bug, not numerics
+
+`effective_thermal_cond/README.md` asserted that iterative solvers give polluted
+answers for this problem class, while its own `solver.h` documented CG+GAMG and
+its code shipped `PREONLY`+`LU`. The actual failure is mechanical:
+
+`IGACreateMat` composes an `"IGA"` object onto the matrix and overrides
+`MATOP_CREATE_VECS` and `MATOP_DUPLICATE` with IGA-aware versions
+(`petigamat.c:385-391`) that hard-error with *"Matrix not generated from IGA"*
+when that composed object is missing. AMG builds coarse operators from the fine
+matrix; those inherit the overridden operations **without** the composed IGA, so
+`PCGAMG` dies during setup — on any mesh, every time, regardless of the physics.
+
+The fix is three lines in `KeffCreate`: clear `MATOP_CREATE_VECS` (which falls
+back to a layout-based default) and restore the stock `MATOP_DUPLICATE` from the
+`"__IGA_MatDuplicate"` function PetIGA stashes for exactly this purpose. Nothing
+in the k_eff path needs the IGA-aware versions.
+
+Also worth recording: plain CG with Jacobi converges to the *same* answer
+(`k_11 = 6.284918655e-02`, identical to LU and GAMG) in 256 iterations. So no
+iterative method was ever giving a wrong answer here — GAMG simply could not
+start.
+
+### Why this matters for the study meshes
+
+At `Nx = Ny = 2829` (the T = −20 °C study geometries) the corrector is ~8.0 M
+unknowns. Extrapolating the measured scalings: GAMG ≈ 80 s per sample serial and
+far less in parallel, against ≈ 90 min per sample for LU. In-line k_eff at any
+useful cadence is only possible because the iterative path works.
+
 ## Consequences for the rest of the study
 
 1. **State the benchmark at measured `φ̄`.** `inputs/geometry/2D_ice_slab_keff.opts`

@@ -69,6 +69,10 @@ typedef struct KeffCtx {
   Vec       T[3];            /* one corrector per direction; also the initial
                               * guess for the next sample */
   KSP       ksp;             /* option prefix "keff_" -- see keff_solve.c */
+  PetscBool pc_freeze;       /* -keff_pc_freeze: reuse the AMG hierarchy */
+  PetscInt  pc_refresh;      /* -keff_pc_refresh: rebuild every N samples */
+  PetscInt  max_its;         /* -keff_max_its: exceeded => forced rebuild + retry */
+  PetscInt  nrebuilds;       /* diagnostics: forced rebuilds so far */
 
   /* --- microstructure ---------------------------------------------------- */
   PetscReal *ice;            /* phi at every local Gauss point; length app->ngp */
