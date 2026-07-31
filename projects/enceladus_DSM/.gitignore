@@ -41,3 +41,11 @@ test/plots/
 
 # Cached neck measurements (regenerable by plot_neck_convergence.py)
 _neck_csv/
+
+# k_eff verification: per-run scratch dirs (SSA_evo.dat etc). The .log files
+# next to them ARE tracked -- they are the evidence behind the study README.
+studies/snow_thermal/verification/raw/*/
+
+# ...but the k_eff verification figures are documentation: the study README
+# embeds them, so they are tracked despite the blanket *.png rule above.
+!studies/snow_thermal/verification/*.png

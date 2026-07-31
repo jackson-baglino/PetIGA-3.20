@@ -1,0 +1,158 @@
+# k_eff verification — initial-condition resolution study
+
+**Status: ✅ CURRENT** (2026-07-31)
+
+Groundwork for the analytic gate on the in-line effective-thermal-conductivity
+solver (`-keff`). This directory characterises the *layered benchmark's initial
+condition* so that, when the cell-problem solver is switched on, we can tell
+solver error apart from discretisation error.
+
+**No k_eff values here yet** — the cell problem is not implemented at this point
+(Step 4 of the merge). Everything below is about the phase field the benchmark
+feeds to it.
+
+---
+
+## Why this study exists
+
+A 50/50 ice/air layered medium has closed-form effective conductivity, which is
+what makes it the benchmark:
+
+| | formula | value at `k_ice = 2.29`, `k_air = 0.02` W/m/K |
+|---|---|---|
+| `k_∥` parallel to the layers | arithmetic mean, `φ·k_i + (1−φ)·k_a` | **1.155000** |
+| `k_⊥` perpendicular | harmonic mean, `1/(φ/k_i + (1−φ)/k_a)` | **0.0396538** |
+| `k_01`, `k_10` | — | 0 |
+
+Those are properties of the **continuous** profile. The solver sees a spline fit
+to nodal values, whose mean ice fraction is near but not exactly 0.5. Comparing
+computed k_eff against the values above would charge the initial condition's
+quadrature error to the solver. This study measures that error so the benchmark
+can be stated correctly.
+
+## Method
+
+`-ic_type ice_slab` on a 1 mm periodic cell: ice on `[0, Ly/2]`, air above.
+One time step, 12 configurations, three sweeps:
+
+| sweep | what varies | what it isolates |
+|---|---|---|
+| **A** `mesh follows eps` | `eps` and `Nx = ⌈√2·Lx/eps⌉` together | the configuration the real study runs use |
+| **B** `fixed mesh` | `eps` at `Nx = 256` | the effect of `eps` alone |
+| **C** `fixed eps` | `Nx` at `eps = 2e-5` | the effect of the mesh alone |
+
+Reproduce with:
+
+```bash
+./studies/snow_thermal/verification/run_ic_resolution_study.sh
+venv_enceladus/bin/python3 studies/snow_thermal/verification/plot_ic_resolution.py
+```
+
+Outputs: `ic_resolution_study.csv`, `ic_resolution_{light,dark}.png`, raw solver
+logs under `raw/`.
+
+![resolution study](ic_resolution_light.png)
+
+---
+
+## Results
+
+### 1. The volume-fraction error obeys a single law
+
+All 12 runs collapse onto
+
+```
+|φ̄ − 0.5|  ≈  240 · Δx² / eps
+```
+
+which each sweep confirms from a different direction: second order in `Δx` at
+fixed `eps` (sweep C), inverse-linear in `eps` at fixed mesh (sweep B), and — the
+consequence that matters — **only first order in `eps` when the mesh follows the
+project rule** (sweep A), since `Δx ∝ eps` there makes `Δx²/eps ∝ eps`.
+
+So halving `eps` while holding elements-per-interface constant buys a factor of
+2 in ice-fraction accuracy, not the factor of 4 that "second-order" suggests.
+
+| sweep A (project mesh rule) | `eps` [m] | `Nx` | `φ̄` | `|φ̄ − 0.5|` |
+|---|---|---|---|---|
+| safety 1.0 analogue | 4.0e-5 | 36 | 0.504521 | 4.52e-3 |
+| safety 0.5 analogue | 2.0e-5 | 71 | 0.502351 | 2.35e-3 |
+| safety 0.25 analogue | 1.0e-5 | 142 | 0.501183 | 1.18e-3 |
+
+### 2. What that costs the benchmark
+
+The implied bias in k_eff if it were compared against `φ = 0.5`:
+
+| elements across the φ=0.01…0.99 band | `|Δk|/k` |
+|---|---|
+| 6.6 | 1.6e-2 |
+| **13.1  ← the project mesh rule** | **4.6e-3** |
+| 26.1 | 1.2e-3 |
+| 47.1 | 3.7e-4 |
+| 94.2 | 9.3e-5 |
+
+**At the resolution the study runs actually use, the initial condition alone
+contributes ~0.5% error to both k_eff components.** That is far above any
+sensible solver tolerance, which is why the benchmark must be evaluated at the
+measured `φ̄`, not at 0.5.
+
+Both components are affected almost identically, because at `φ = 0.5`
+
+```
+d ln k/d φ  =  2(k_i − k_a)/(k_i + k_a)  =  1.9654
+```
+
+for the arithmetic *and* the harmonic mean, for any contrast ratio. Second-order
+terms separate them by at most 1.6% (coarsest mesh) and 0.01% (finest).
+
+### 3. The periodic seam is real and resolved
+
+Independent confirmation that the slab has **two** interfaces — the obvious one
+at `y = Ly/2` and one at the `y = 0 ≡ Ly` seam. The interface integral
+`∫φ²(1−φ)²dV` has the closed form `2·Lx·eps/6` for two interfaces (half that for
+one):
+
+| `eps` [m] | measured | analytic (2 interfaces) | one interface would be |
+|---|---|---|---|
+| 4.0e-5 | 1.315e-8 | 1.333e-8 | 6.67e-9 |
+| 2.0e-5 | 6.468e-9 | 6.667e-9 | 3.33e-9 |
+| 1.0e-5 | 3.152e-9 | 3.333e-9 | 1.67e-9 |
+
+Measured values sit 1–7% below analytic (converging as the mesh refines) and
+nowhere near the one-interface value. A single-tanh profile would have left the
+seam as an unresolved discontinuity and corrupted `k_⊥` specifically.
+
+### 4. Cross-mesh φ projection is exact
+
+Every run also verified, via `-keff_debug_phibar`, that the phase field handed
+from the solver mesh to the cloned corrector mesh agrees on mean, centroid and
+per-axis mean square to **0.000e+00** relative — serial and on 4 ranks.
+
+---
+
+## Consequences for the rest of the study
+
+1. **State the benchmark at measured `φ̄`.** `inputs/geometry/2D_ice_slab_keff.opts`
+   documents this. A tolerance of 1e-6 against the nominal 1.155000 is not
+   achievable at any mesh we would run, and is not a meaningful target.
+2. **The safety 0.5 vs 1.0 comparison in the packing runs has a known floor.**
+   Sweep A says the ice fraction alone differs by 2.35e-3 vs 4.52e-3 between
+   those two resolutions — about 0.2% in k_eff — *before* any physics. Interpret
+   differences below roughly half a percent between the two resolutions as
+   discretisation, not as a real eps effect on the microstructure.
+3. **Interface-integral diagnostics run 1–7% low** at these resolutions. Worth
+   remembering when `SSA_evo.dat`'s `sub_interf` column is used quantitatively.
+
+## Files
+
+| file | contents |
+|---|---|
+| `run_ic_resolution_study.sh` | driver; 12 solver runs, writes the CSV |
+| `plot_ic_resolution.py` | four-panel figure, light and dark |
+| `ic_resolution_study.csv` | the measurements |
+| `ic_resolution_{light,dark}.png` | the figure |
+| `raw/` | full solver logs, one per configuration |
+
+Plot colours are categorical slots 1–3 of the project's validated palette;
+`postprocess/validate_palette.py` checks colour-blind separation (worst pair
+ΔE = 10.0 under protanopia, threshold 8.0).

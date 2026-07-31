@@ -1,0 +1,140 @@
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  [keff] layout: 65536 elements x 9 pts/elem = 589824 local Gauss points (ngp=589824)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 65536 unknowns x 2 directions
+    cell volume (quad): 1.000000000005e-06 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 5.34e-12]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    cadence           : every 1 accepted step(s)
+    output            : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/studies/snow_thermal/verification/raw/B_fixed_mesh_eps5.0e-6_N256/k_eff.csv
+  ===============================================================================
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 256,  Ny = 256
+   Lx = 1.0000e-03 m,  Ly = 1.0000e-03 m
+   dx = 3.9063e-06 m,  dy = 3.9063e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  5.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  1.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  2.7071e+08
+   tau_sub  =  4.3418e+02 s
+   mob_sub  =  3.8386e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  6.2350e+05 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   phi_i:   natural Neumann (zero flux)
+   T:       natural Neumann (insulating)
+   rho_v:   natural Neumann (insulating)
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: ice_slab
+--- INITIAL CONDITIONS (2D Ice Slab: ice on [0, Ly/2], air above, periodic in y: interfaces at Ly/2 AND the y=0 seam) ---
+  [keff] Gauss-point projection check (clone vs solver mesh)
+         quantity                  clone (kc->ice[])             solver (U)    rel diff
+         mean ice fraction     5.007238055641307e-01  5.007238055641307e-01   0.000e+00
+         ice centroid x [m]    4.999999999992617e-04  4.999999999992617e-04   0.000e+00
+         ice centroid y [m]    2.564713896133803e-04  2.564713896133803e-04   0.000e+00
+         ice <x^2> [m^2]       3.333333333329156e-07  3.333333333329156e-07   0.000e+00
+         ice <y^2> [m^2]       9.004235991464374e-08  9.004235991464374e-08   0.000e+00
+         worst = 0.000e+00 on 'mean ice fraction'  (tol 1.0e-10)
+  BOUNDS: phi_ice [0.0000, 1.0000]  phi_air [-0.0000, 1.0000]
+  ===============================================================================
+  >>> DOMAIN INTEGRALS (PER TIME STEP)
+  ===============================================================================
+  -------------------------------------------------------------------------------------------------------------
+    STEP |     TIME [s] |    DT [s] |    TOT_ICE |    TOT_AIR |      TEMP |  TOT_RHOV | I-A INTERF | TOTAL_MASS
+  -------------------------------------------------------------------------------------------------------------
+     0 |  0.00000e+00 | 1.000e-04 |  5.007e-07 |  4.993e-07 | -2.000e-05 | 4.237e-10 |  1.556e-09 |  4.602e-04
+    SNES DOF norms (2-norm) and ratios
+    
+    it |       fnorm |          n0 |        r0 |        s0 |          n1 |        r1 |        s1 |          n2 |        r2 |        s2
+    
+     0 |  1.9963e-13 |   1.122e-13 | 1.000e+00 | 0.000e+00 |   1.651e-13 | 1.000e+00 | 0.000e+00 |   3.688e-26 | 1.000e+00 | 0.000e+00
+     1 |  1.0219e-11 |   7.894e-22 | 7.034e-09 | 7.175e-09 |   1.022e-11 | 6.189e+01 | 1.979e-07 |   8.958e-21 | 2.429e+05 | 5.997e-06
+  SNES converged via DOF-wise criteria:
+    DOF 0: REL (rtol) ABS (atol) STOL (stol)
+    DOF 1: ABS (atol) STOL (stol)
+    DOF 2: ABS (atol)
+    SNES DOF norms (2-norm) and ratios
+    
+    it |       fnorm |          n0 |        r0 |        s0 |          n1 |        r1 |        s1 |          n2 |        r2 |        s2
+    
+     0 |  2.7949e-04 |   1.120e-13 | 1.000e+00 | 7.175e-09 |   2.795e-04 | 1.000e+00 | 1.979e-07 |   2.198e-14 | 1.000e+00 | 5.997e-06
+     1 |  4.2654e-12 |   7.012e-22 | 6.258e-09 | 7.168e-09 |   4.265e-12 | 1.526e-08 | 1.276e-07 |   6.980e-21 | 3.176e-07 | 4.361e-06
+  SNES converged via DOF-wise criteria:
+    DOF 0: REL (rtol) ABS (atol) STOL (stol)
+    DOF 1: REL (rtol) ABS (atol) STOL (stol)
+    DOF 2: REL (rtol) ABS (atol)
+    SNES DOF norms (2-norm) and ratios
+    
+    it |       fnorm |          n0 |        r0 |        s0 |          n1 |        r1 |        s1 |          n2 |        r2 |        s2
+    
+     0 |  2.0447e-04 |   2.524e-13 | 1.000e+00 | 7.168e-09 |   2.045e-04 | 1.000e+00 | 1.276e-07 |   1.067e-14 | 1.000e+00 | 4.361e-06
+     1 |  3.0633e-11 |   2.598e-21 | 1.029e-08 | 1.722e-08 |   3.063e-11 | 1.498e-07 | 4.134e-07 |   2.976e-20 | 2.791e-06 | 1.326e-05
+  SNES converged via DOF-wise criteria:
+    DOF 0: REL (rtol) ABS (atol) STOL (stol)
+    DOF 1: REL (rtol) ABS (atol) STOL (stol)
+    DOF 2: ABS (atol)
+Increase time step: 1.000e-04 -> 1.334e-04 
+  BOUNDS: phi_ice [-0.0000, 1.0000]  phi_air [-0.0000, 1.0000]
+  ===============================================================================
+  >>> DOMAIN INTEGRALS (PER TIME STEP)
+  ===============================================================================
+  -------------------------------------------------------------------------------------------------------------
+    STEP |     TIME [s] |    DT [s] |    TOT_ICE |    TOT_AIR |      TEMP |  TOT_RHOV | I-A INTERF | TOTAL_MASS
+  -------------------------------------------------------------------------------------------------------------
+     1 |  1.00000e-04 | 1.334e-04 |  5.007e-07 |  4.993e-07 | -2.000e-05 | 4.237e-10 |  1.556e-09 |  4.602e-04
+       |              |           |    +0.000% |    -0.000% |           |   -0.000% |            |    +0.000%
+Solution completed. 
+Setup time 4.591217e+00 sec  =  0.08 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There is one unused database option. It is:
+Option left: name:-ksp_gmres_restart value: 200 source: file
