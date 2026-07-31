@@ -144,26 +144,61 @@ PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user)
 
 /* -------------------------------------------------------------------------
  * 2D Ice Slab Initial Condition
- *   - Ice: circular blob of radius Ly, air fills the rest
- *   - Temperature: temp0 + grad_temp0 * (r - 0.5*L)
- *   - Vapor: hum0 * rho_vs(T)
+ *
+ *   - Ice: a slab spanning the full width of the domain, from y = 0 up to
+ *          y = Ly/2. The top half is pure air. Exactly 50% ice by volume.
+ *   - Temperature: temp0 + grad_temp0 . (x - L/2)
+ *   - Vapor: hum0 * rho_vs(T) in air, saturated in ice
+ *
+ * This is the analytic benchmark for the k_eff homogenization (-keff): for a
+ * two-phase layered medium the effective conductivity is known in closed form,
+ *   parallel to the layers      k = arithmetic mean = (k_ice + k_air)/2
+ *   perpendicular to the layers k = harmonic mean   = 2/(1/k_ice + 1/k_air)
+ * which at k_ice = 2.29, k_air = 0.02 gives 1.155000 and 0.0396538 W/m/K.
+ *
+ * THE PERIODIC SEAM. Under -periodic 1 the domain wraps in y, so a slab
+ * occupying [0, Ly/2] has TWO interfaces: the obvious one at y = Ly/2, and a
+ * second at the y = 0 == Ly seam. That second interface is physically real and
+ * must be resolved like the first. Writing the profile with a single tanh,
+ *     phi = 0.5*(1 - tanh(0.5*(y - Ly/2)/eps)),
+ * gives phi(0) = 1 and phi(Ly) = 0 -- a discontinuity across the seam. It looks
+ * right in a plot and is wrong: the jump is unresolved by any mesh, and it
+ * corrupts the perpendicular (harmonic) component of k_eff, which is precisely
+ * the component the benchmark is checking. The same bug is on record in the
+ * standalone homogenization code (effective_thermal_cond/CHANGES.md:40-56).
+ *
+ * So phi is built from the SIGNED DISTANCE to the nearest interface, the same
+ * construction -ic_grain_union uses for grains:
+ *
+ *     phi = 0.5 - 0.5*tanh(0.5*sdf/eps),   sdf < 0 inside ice
+ *
+ * with sdf measured to whichever of the two interfaces is closer. That form is
+ * exactly 50% ice for any eps: the ice and air slabs are both Ly/2 thick, so
+ * sdf(y + Ly/2) = -sdf(y), hence phi(y + Ly/2) = 1 - phi(y), and the two halves
+ * of the integral sum to Ly/2 identically. (A naive difference of two tanh
+ * profiles does NOT have this property -- it is short by eps*ln(2), i.e. ~2.8%
+ * of the ice at eps = 2e-5 on a 1 mm cell, which would show up as a bias in
+ * k_parallel that looks like a solver error.)
+ *
+ * Under -periodic 0 there is only the one interface at y = Ly/2, and phi -> 1
+ * at y = 0; that branch is also exactly 50% by antisymmetry about y = Ly/2.
  * -------------------------------------------------------------------------*/
 PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    PetscPrintf(PETSC_COMM_WORLD,
-                "--- INITIAL CONDITIONS (2D Ice Slab, R=Ly) ---\n");
-
     const PetscReal Lx  = user->Lx;
     const PetscReal Ly  = user->Ly;
     const PetscReal eps = user->eps;
 
-    /* Circular ice blob; air fills the rest of the domain. */
-    const PetscReal R       = Ly;
-    const PetscReal x_ice_c = 0.40 * Lx;
-    const PetscReal y_ice_c = 0.5 * Ly;
+    const PetscBool wrap = (PetscBool)(user->periodic == 1);
+
+    PetscPrintf(PETSC_COMM_WORLD,
+                "--- INITIAL CONDITIONS (2D Ice Slab: ice on [0, Ly/2], air above, "
+                "%s) ---\n",
+                wrap ? "periodic in y: interfaces at Ly/2 AND the y=0 seam"
+                     : "non-periodic: single interface at Ly/2");
 
     user->n_act = 0;
 
@@ -183,12 +218,18 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
             PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
             PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
 
-            /* Signed distance from the ice surface (negative inside ice) */
-            PetscReal dx       = x - x_ice_c;
-            PetscReal dy       = y - y_ice_c;
-            PetscReal dist_ice = PetscSqrtReal(dx*dx + dy*dy) - R;
+            /* Signed distance to the nearest ice/air interface, negative
+             * inside the ice. Periodic: interfaces at y = Ly/2 and y = 0 == Ly.
+             * Non-periodic: the single interface at y = Ly/2. */
+            PetscReal dist_ice;
+            if (wrap) {
+                dist_ice = (y <= 0.5 * Ly)
+                         ? -PetscMin(y, 0.5 * Ly - y)          /* in the ice */
+                         :  PetscMin(y - 0.5 * Ly, Ly - y);    /* in the air */
+            } else {
+                dist_ice = y - 0.5 * Ly;
+            }
 
-            /* Ice: interior of the circle */
             PetscReal ice = 0.5 - 0.5 * PetscTanhReal(0.5 * dist_ice / eps);
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 

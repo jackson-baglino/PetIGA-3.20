@@ -1,0 +1,71 @@
+# =============================================================================
+# geometry/2D_ice_slab_keff.opts — analytic benchmark for the k_eff
+# homogenization (-keff). NOT a physics run.
+#
+# A 50/50 ice/air layered medium: ice on [0, Ly/2], air above. For layered
+# two-phase media the effective conductivity is known in closed form, so this
+# is the gate that says the cell problem is solving the right equations at all.
+# With k_ice = 2.29 and k_air = 0.02 W/m/K:
+#
+#   k_00  (parallel to the layers, arithmetic mean)  = 1.155000     W/m/K
+#   k_11  (perpendicular, harmonic mean)             = 0.0396538    W/m/K
+#   k_01, k_10                                       = 0
+#
+# k_00 is insensitive to eps: the arithmetic mean depends only on the mean ice
+# fraction, which the CONTINUOUS profile makes exactly 0.5 for any eps (see the
+# long comment on FormInitialIceSlab2D in src/initial_conditions.c).
+#
+# COMPARE AGAINST THE MEASURED VOLUME FRACTION, NOT AGAINST 0.5. The discrete
+# field is a spline fit to nodal values, and its mean lands near but not on 0.5:
+# measured TOT_ICE = 5.002e-07 against an exact 5.000e-07 at Nx=Ny=256, i.e.
+# 4e-4 relative. Feeding 0.5 into the arithmetic mean would therefore predict
+# k_00 = 1.155000 while the correct discrete answer is 1.155454, and the gate
+# would flag a 4e-4 "solver error" that is really the initial condition's
+# quadrature error. So evaluate the analytic forms at the measured phi_bar,
+# which the k_eff CSV reports in its own column:
+#
+#   k_parallel = phi*k_ice + (1-phi)*k_air
+#   k_perp     = 1/( phi/k_ice + (1-phi)/k_air )
+#
+# That isolates what this benchmark is actually for -- whether the cell problem
+# is solved correctly -- from how well the IC discretises a step function.
+#
+# k_11 IS eps-sensitive, and converges to the harmonic mean FROM ABOVE: the
+# diffuse band is a high-conductivity short circuit across what is otherwise a
+# series resistance, so a wider interface reads high. That is the whole reason
+# to record an eps ladder here -- it calibrates how to read the safety=0.5 vs
+# safety=1.0 comparison in the packing runs, where the same bias is present but
+# has no analytic value to compare against.
+#
+# -periodic 1 is MANDATORY (the solver errors out otherwise). It also means the
+# slab has TWO interfaces: y = Ly/2 and the y = 0 == Ly seam. Both are real and
+# both must be resolved.
+#
+# Run it with -keff_only, which takes one sample from the IC and exits:
+#
+#   ./enceladus_dsm -options_file inputs/solver.opts \
+#                   -options_file inputs/geometry/2D_ice_slab_keff.opts \
+#                   -keff 1 -keff_only 1 \
+#                   -keff_ksp_type preonly -keff_pc_type lu
+#
+# eps ladder: rerun with -eps 1.5625e-5 / 7.8125e-6 / 3.90625e-6 (= Ly/64, /128,
+# /256) at -Nx 1024 -Ny 1024 and record k_11. Use CG+GAMG above ~256^2; a direct
+# LU factorization stops being comfortable there.
+# =============================================================================
+
+-ic_type ice_slab
+-dim 2
+
+-Lx 1.0e-3
+-Ly 1.0e-3
+-Nx 256
+-Ny 256
+
+-p 2
+-C 1
+-periodic 1                       # REQUIRED by -keff; also creates the y=0 seam interface
+
+-eps 2.0e-5                       # ~7.8 elements across the phi=0.05..0.95 band at Ny=256
+-eps_temp_override 1              # eps here is chosen for resolution, not from comp_eps.py
+
+-delt_t 1.0e-4
