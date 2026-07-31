@@ -1,7 +1,7 @@
 #ifndef ASSEMBLY_H
 #define ASSEMBLY_H
 
-#include "NASA_types.h"
+#include "enceladus_types.h"
 
 /* Residual implementation for the 2-phase (ice/temperature/vapor) system */
 PetscErrorCode Residual_A1(IGAPoint pnt, PetscReal shift, const PetscScalar *V,

@@ -108,7 +108,7 @@ SEDIMENT_GRAINS = [
 # Set to a list of (center, R, height) tuples to add ceiling bumps.
 TOP_GRAINS = []
 
-# Must match include/NASA_types.h's #define MAX_SED_GRAINS -- hard array
+# Must match include/enceladus_types.h's #define MAX_SED_GRAINS -- hard array
 # size cap; -sed_grain_x beyond this many entries is silently truncated by
 # PETSc's option parser (no error), so --random-bumps enforces it directly.
 MAX_SED_GRAINS = 24

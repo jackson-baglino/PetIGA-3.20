@@ -31,7 +31,7 @@ enceladus_DSM/
 ├─ src/              # solver: enceladus_main.c (main), assembly.c (residual/Jacobian),
 │                    #   initial_conditions.c, material_properties.c, monitoring.c,
 │                    #   snes_convergence.c, env_helper.c
-├─ include/          # headers (NASA_types.h holds AppCtx + Field)
+├─ include/          # headers (enceladus_types.h holds AppCtx + Field)
 ├─ makefile          # `make` (optimized) / `make debug`; builds ./enceladus_dsm
 ├─ inputs/
 │  ├─ solver.opts            # numerical/model defaults (-dof 3, xi_v, xi_T, bounds, ...)

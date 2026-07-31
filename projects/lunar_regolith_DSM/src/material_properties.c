@@ -1,5 +1,4 @@
 #include "material_properties.h"
-#include "NASA_types.h"
 
 /**
  * @brief Computes the effective thermal conductivity based on phase fractions.

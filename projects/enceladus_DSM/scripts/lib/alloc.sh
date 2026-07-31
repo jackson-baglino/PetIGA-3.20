@@ -17,11 +17,19 @@
 # is ~20k-100k unknowns/rank; below ~20k, reductions and halo exchange
 # dominate, and ASM+ILU weakens as the subdomain count grows. These runs are
 # step-limited, so wall time is nearly flat in rank count and the allocation
-# SIZE is what costs — so we target the upper part of the band. 50k keeps rank
-# counts (hence core-hours and queue wait) modest; --half-cores doubles the
-# per-rank load to ~100k, at the top of the demonstrated-good range
-# (108k/rank ran ~7 s/step at 1.3M DoFs).
-: "${TARGET_DOFS_PER_CORE:=50000}"
+# SIZE is what costs — so we target the upper part of the band.
+#
+# Raised 50k -> 80k on 2026-07-31: the k_eff study's 2mm packings at safety=0.5
+# are 24M DoF, which at 50k/rank demanded 480 ranks and a correspondingly long
+# queue wait. 80k puts the same run at 300 ranks while staying inside the band
+# (--half-cores would take it to ~160k, above the demonstrated-good 108k/rank
+# that ran ~7 s/step at 1.3M DoFs, so do not combine the two on large jobs).
+#
+# CAUTION: per-rank memory scales with this. Runs using -keff carry a SECOND
+# large operator (the scalar corrector matrix plus its GAMG hierarchy) on top
+# of the phase-field Jacobian and its ASM/ILU(3) factor. Check peak RSS on a
+# small run before submitting a large one at this target.
+: "${TARGET_DOFS_PER_CORE:=80000}"
 
 # MPI ranks per node on the Caltech Resnick cluster. 32 is the safe count
 # across the icelake|skylake|cascadelake constraint. MAX_TASKS_PER_NODE is the

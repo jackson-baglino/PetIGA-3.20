@@ -80,7 +80,7 @@ azimuthal term is Curvature() (explicit kappa from grad/Hessian for d0_GT)
 
 ## 2. Code touch points (in implementation order)
 
-1. **`include/NASA_types.h`** — add `PetscBool axisym;` to AppCtx.
+1. **`include/enceladus_types.h`** — add `PetscBool axisym;` to AppCtx.
 2. **`src/permafrost2.c`** — `-axisym` option (default 0 = planar, fully
    backward compatible); print mode in the parameter header; pass through
    context as usual.

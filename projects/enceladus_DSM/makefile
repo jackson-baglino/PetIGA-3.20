@@ -13,7 +13,7 @@ include $(PETIGA_DIR)/lib/petiga/conf/test
 
 ###############################################################################
 # Include paths
-# petsc/private is required for tsimpl.h / snesimpl.h used in NASA_main.h
+# petsc/private is required for tsimpl.h / snesimpl.h used in enceladus_main.h
 ###############################################################################
 INCLUDES = -I$(PETSC_DIR)/include \
            -I$(PETSC_DIR)/include/petsc/private \

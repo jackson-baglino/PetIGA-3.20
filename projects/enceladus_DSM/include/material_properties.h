@@ -1,7 +1,7 @@
 #ifndef MATERIAL_PROPERTIES_H
 #define MATERIAL_PROPERTIES_H
 
-#include "NASA_types.h"
+#include "enceladus_types.h"
 
 /* Computes effective thermal conductivity and its derivative with respect to ice */
 void ThermalCond(AppCtx *user, PetscScalar ice, PetscScalar *cond, PetscScalar *dcond_ice);

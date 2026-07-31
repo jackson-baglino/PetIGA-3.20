@@ -1,7 +1,7 @@
 #ifndef INITIAL_CONDITIONS_H
 #define INITIAL_CONDITIONS_H
 
-#include "NASA_types.h"
+#include "enceladus_types.h"
 
 /* 1D initial conditions */
 PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user);

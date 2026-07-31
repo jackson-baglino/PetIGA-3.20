@@ -1,5 +1,5 @@
-#ifndef NASA_MAIN_H
-#define NASA_MAIN_H
+#ifndef ENCELADUS_MAIN_H
+#define ENCELADUS_MAIN_H
 
 // Standard library includes
 #include <math.h>
@@ -11,12 +11,11 @@
 #include "petiga.h"
 
 // Project-specific includes
-#include "NASA_types.h"
+#include "enceladus_types.h"
 #include "material_properties.h"
 #include "assembly.h"
 #include "monitoring.h"
 #include "initial_conditions.h"
 #include "snes_convergence.h"
-#include "env_helper.h"
 
-#endif // NASA_MAIN_H
+#endif // ENCELADUS_MAIN_H

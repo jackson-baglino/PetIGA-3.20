@@ -603,7 +603,7 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                  * (d-1)*sqrt(ax*ay) is the same per-grain signed distance the
                  * additive branch already uses -- the only change is min-vs-sum
                  * and a single tanh applied afterwards. See -ic_grain_union in
-                 * NASA_types.h for why the additive form is eps-dependent at an
+                 * enceladus_types.h for why the additive form is eps-dependent at an
                  * overlapping neck. */
                 PetscReal sdf  = PETSC_MAX_REAL;
                 PetscInt  kmin = -1;              /* grain achieving the min */

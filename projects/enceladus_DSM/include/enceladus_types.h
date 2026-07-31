@@ -1,5 +1,5 @@
-#ifndef NASA_TYPES_H
-#define NASA_TYPES_H
+#ifndef ENCELADUS_TYPES_H
+#define ENCELADUS_TYPES_H
 
 #include <petsc.h>
 #include "petiga.h"
@@ -230,4 +230,4 @@ typedef struct {
 
 } AppCtx;/* Field definitions for node data */
 
-#endif // NASA_TYPES_H
+#endif // ENCELADUS_TYPES_H

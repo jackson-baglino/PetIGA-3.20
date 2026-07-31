@@ -1,4 +1,4 @@
-#include "NASA_main.h" // Need to change name later
+#include "enceladus_main.h"
 
 /* SNESSetFunctionDomainError() is logically collective, but Residual()
  * (assembly.c) flags it per quadrature point — i.e. only on the rank that
@@ -77,10 +77,10 @@ int main(int argc, char *argv[]) {
     user.cfl_U_prev   = NULL;
     user.cfl_t_prev   = 0.0;
 
-    user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see NASA_types.h) */
-    user.ic_grain_union = PETSC_FALSE; /* multi_grains IC: additive (see NASA_types.h) */
+    user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see enceladus_types.h) */
+    user.ic_grain_union = PETSC_FALSE; /* multi_grains IC: additive (see enceladus_types.h) */
     user.ssa_view = NULL;              /* SSA_evo.dat viewer, opened lazily in Monitor() */
-    user.decouple_phase_change = PETSC_FALSE;  /* see NASA_types.h / assembly.c */
+    user.decouple_phase_change = PETSC_FALSE;  /* see enceladus_types.h / assembly.c */
 
     user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
     user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
@@ -740,7 +740,7 @@ int main(int argc, char *argv[]) {
     ierr = IGACreate(PETSC_COMM_WORLD, &iga); CHKERRQ(ierr);
     ierr = IGASetDim(iga, dim); CHKERRQ(ierr);
     /* Guard: the residual/Jacobian in assembly.c and the Field struct in
-     * NASA_types.h assume exactly this many DOF per node (currently 3: ice,
+     * enceladus_types.h assume exactly this many DOF per node (currently 3: ice,
      * temperature, vapor). -dof is exposed for future multi-field work (e.g.
      * an explicit sediment phase), but changing it without also updating Field
      * and assembly.c silently misinterprets the solution vector. Fail loudly. */
@@ -749,7 +749,7 @@ int main(int argc, char *argv[]) {
         if (dof != dof_fields)
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
                     "-dof %d does not match the %d-field solver (Field struct in "
-                    "NASA_types.h and the [%d] arrays in assembly.c must change "
+                    "enceladus_types.h and the [%d] arrays in assembly.c must change "
                     "together).", (int)dof, (int)dof_fields, (int)dof_fields);
     }
     ierr = IGASetDof(iga, dof); CHKERRQ(ierr);
