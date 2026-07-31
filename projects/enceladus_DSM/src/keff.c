@@ -225,6 +225,8 @@ PetscErrorCode KeffCreate(AppCtx *app)
   /* Precondition for the flat Gauss-point index formula (see keff_field.c). */
   ierr = KeffCheckGaussLayout(app); CHKERRQ(ierr);
 
+  ierr = KeffCreateSolver(app); CHKERRQ(ierr);
+
   /* Measure the cell volume by quadrature instead of assuming Lx*Ly[*Lz].
    * Costs one element loop at startup and is a genuine self-test: a mis-cloned
    * axis, a wrong quadrature rule or a partitioning bug shows up here as a
@@ -398,6 +400,7 @@ PetscErrorCode KeffDestroy(AppCtx *app)
   PetscFunctionBegin;
   if (!kc) PetscFunctionReturn(0);
 
+  ierr = KeffDestroySolver(app); CHKERRQ(ierr);
   if (kc->csv) { ierr = PetscViewerDestroy(&kc->csv); CHKERRQ(ierr); }
   for (PetscInt m = 0; m < kc->dim; m++) {
     if (kc->b[m]) { ierr = VecDestroy(&kc->b[m]); CHKERRQ(ierr); }

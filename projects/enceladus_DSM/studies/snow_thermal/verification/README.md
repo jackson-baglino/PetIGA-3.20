@@ -130,6 +130,58 @@ per-axis mean square to **0.000e+00** relative — serial and on 4 ranks.
 
 ---
 
+---
+
+## The analytic gate on the cell-problem solver
+
+Run after the k_eff cell problem landed (Step 4 of the merge). Direct LU
+throughout, so the linear solver is not a variable.
+
+```bash
+./studies/snow_thermal/verification/run_keff_benchmark.sh
+venv_enceladus/bin/python3 studies/snow_thermal/verification/check_keff_benchmark.py
+```
+
+**The comparison is against the exact closed form for the *diffuse* profile, not
+against the sharp-interface values.** For a layered medium,
+`k_∥ = ⟨k⟩` and `k_⊥ = 1/⟨1/k⟩`, and those hold for any `k(y)` — so
+`check_keff_benchmark.py` integrates the same tanh profile the IC lays down and
+compares. That leaves no modelling error in the comparison; anything left is the
+solver or the spline. Comparing against 1.155000 / 0.0396538 would instead be
+asking the diffuse profile to reproduce a sharp interface, which it is not
+supposed to do at finite `eps`.
+
+| gate | result |
+|---|---|
+| **1.** `k_∥` vs arithmetic mean at measured `φ̄` | ≤ **8.8e-7** relative, all 7 runs |
+| **2.** off-diagonals vanish | max `|k_01|,|k_10|` = **1.5e-16** |
+| **3a.** `k_⊥` error falls monotonically with mesh | 5.35e-3 → 5.04e-3 → 3.10e-3 → **1.70e-3** (N = 64→512) |
+| **3b.** `k_⊥` at the finest mesh per `eps` | **≤ 3.1e-3** |
+
+`k_⊥` is judged by convergence rather than a fixed tolerance because it is a
+harmonic mean across a 114:1 contrast: it is dominated by the low-`k` region,
+where the spline's pointwise error is amplified by `1/k²`. `k_∥`, being linear
+in `φ`, has no such amplification — hence the six-order-of-magnitude difference
+between gate 1 and gate 3.
+
+### The sharp-interface limit is a long way off at benchmark resolution
+
+`k_⊥` for the diffuse profile exceeds the sharp-interface harmonic mean because
+the band is a high-conductivity short circuit across a series resistance:
+
+| `eps` | band / layer thickness | `k_⊥` diffuse | `k_⊥` sharp | ratio |
+|---|---|---|---|---|
+| 3.125e-5 | 0.575 | 9.390e-2 | 3.965e-2 | **2.37** |
+| 2.000e-5 | 0.368 | 6.321e-2 | 3.965e-2 | 1.59 |
+| 1.563e-5 | 0.287 | 5.594e-2 | 3.965e-2 | 1.41 |
+| 7.813e-6 | 0.144 | 4.641e-2 | 3.965e-2 | 1.17 |
+
+This is a model property, not an error — but it is the single most important
+number for interpreting the packing runs. **When the diffuse band is a
+significant fraction of the feature it is resolving, the perpendicular
+(series) component of k_eff reads high, badly.** In a granular packing the
+analogous feature is the pore throat, not a 500 µm layer.
+
 ## Consequences for the rest of the study
 
 1. **State the benchmark at measured `φ̄`.** `inputs/geometry/2D_ice_slab_keff.opts`

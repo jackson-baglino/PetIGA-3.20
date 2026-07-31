@@ -68,6 +68,7 @@ typedef struct KeffCtx {
   Vec       b[3];            /* one RHS per macroscopic direction */
   Vec       T[3];            /* one corrector per direction; also the initial
                               * guess for the next sample */
+  KSP       ksp;             /* option prefix "keff_" -- see keff_solve.c */
 
   /* --- microstructure ---------------------------------------------------- */
   PetscReal *ice;            /* phi at every local Gauss point; length app->ngp */
@@ -121,5 +122,37 @@ PetscErrorCode KeffIceMoments(AppCtx *app, PetscBool from_clone, Vec U, PetscRea
  * centroid computed on each mesh. Hard-errors on disagreement. No-op unless the
  * flag is set. */
 PetscErrorCode KeffDebugPhiBar(AppCtx *app, Vec U);
+
+/* --- keff_cell.c: the cell problem ---------------------------------------- */
+
+/* Bilinear form:  K[i][j] += k(x) grad N_i . grad N_j.  Direction-independent,
+ * so the operator is assembled once and reused for all dim right-hand sides. */
+PetscErrorCode KeffFormMatrix(IGAPoint point, PetscScalar K[], void *ctx);
+
+/* Load for direction kc->cur_dir:  F[i] += -k(x) dN_i/dx_m. */
+PetscErrorCode KeffFormVector(IGAPoint point, PetscScalar F[], void *ctx);
+
+/* One tensor row plus the cell-mean ice fraction. */
+PetscErrorCode KeffScalarIntegrand(IGAPoint point, const PetscScalar U[],
+                                   PetscInt n, PetscScalar S[], void *ctx);
+
+/* Row-major k_eff[i*dim+j] from the dim solved correctors, divided by the
+ * measured cell volume. phi_bar may be NULL. */
+PetscErrorCode KeffComputeTensor(AppCtx *app, PetscReal keff[9], PetscReal *phi_bar);
+
+/* --- keff_solve.c --------------------------------------------------------- */
+
+PetscErrorCode KeffCreateSolver(AppCtx *app);
+PetscErrorCode KeffDestroySolver(AppCtx *app);
+
+/* Assemble the operator once, solve all dim correctors against it. */
+PetscErrorCode KeffSolveCell(AppCtx *app, PetscInt *its_out,
+                             KSPConvergedReason *reason_out);
+
+/* --- keff_sample.c -------------------------------------------------------- */
+
+/* The shared core of the in-line and replay paths: project, solve, form the
+ * tensor, report. */
+PetscErrorCode KeffSample(AppCtx *app, PetscInt step, PetscReal t, Vec U);
 
 #endif /* KEFF_H */

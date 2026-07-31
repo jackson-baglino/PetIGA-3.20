@@ -49,3 +49,5 @@ studies/snow_thermal/verification/raw/*/
 # ...but the k_eff verification figures are documentation: the study README
 # embeds them, so they are tracked despite the blanket *.png rule above.
 !studies/snow_thermal/verification/*.png
+
+studies/snow_thermal/verification/raw_keff/*/

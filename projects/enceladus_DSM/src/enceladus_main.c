@@ -1186,8 +1186,15 @@ int main(int argc, char *argv[]) {
      * agree on Gauss-point numbering (-keff_debug_phibar). No-op otherwise. */
     ierr = KeffDebugPhiBar(&user, U); CHKERRQ(ierr);
 
-    /* Solve the system */
-    ierr = TSSolve(ts, U); CHKERRQ(ierr);
+    /* -keff_only: take a single k_eff sample from the initial condition and
+     * stop. This is the driver for the analytic layered benchmark, which needs
+     * no time integration at all -- the answer is a property of the IC. */
+    if (user.keff && user.keff->enabled && user.keff->only) {
+        ierr = KeffSample(&user, 0, 0.0, U); CHKERRQ(ierr);
+    } else {
+        /* Solve the system */
+        ierr = TSSolve(ts, U); CHKERRQ(ierr);
+    }
 
     PetscPrintf(PETSC_COMM_WORLD, "Solution completed. \n");
 
