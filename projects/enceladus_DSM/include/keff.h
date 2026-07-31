@@ -159,4 +159,8 @@ PetscErrorCode KeffSolveCell(AppCtx *app, PetscInt *its_out,
  * tensor, report. */
 PetscErrorCode KeffSample(AppCtx *app, PetscInt step, PetscReal t, Vec U);
 
+/* TS monitor. Register AFTER Monitor so it can honour user->bounds_violated;
+ * see the comment on the definition. */
+PetscErrorCode KeffMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void *mctx);
+
 #endif /* KEFF_H */

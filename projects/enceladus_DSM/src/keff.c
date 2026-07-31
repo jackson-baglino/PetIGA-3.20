@@ -302,6 +302,10 @@ PetscErrorCode KeffCreate(AppCtx *app)
     else     ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "k_eff.csv");
     CHKERRQ(ierr);
   }
+  /* First scheduled time for the time-based cadence. Starting at t_interv
+   * rather than 0 keeps step 0 the business of -keff_step0 alone. */
+  kc->t_next = kc->t_interv;
+
   if (kc->replay_dir[0] != '\0' && kc->replay_times[0] == '\0') {
     ierr = PetscSNPrintf(kc->replay_times, sizeof(kc->replay_times),
                          "%s/SSA_evo.dat", kc->replay_dir); CHKERRQ(ierr);

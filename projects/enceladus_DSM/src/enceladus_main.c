@@ -900,6 +900,18 @@ int main(int argc, char *argv[]) {
      * diff + stride norm per accepted step); disable with -dtCFL 0. */
     ierr = TSMonitorSet(ts, InterfaceCFLMonitor, &user, NULL); CHKERRQ(ierr);
 
+    /* In-line k_eff. Registered LAST on purpose: PETSc runs monitors in
+     * registration order, so this one sees user.bounds_violated already set by
+     * Monitor and can skip a step that BoundsRollbackPreStep is about to
+     * discard — otherwise a full corrector solve is spent on a state the run
+     * never keeps, and a plausible-looking but meaningless row lands in the
+     * CSV. Cadence is independent of -outp by design: field snapshots are
+     * hundreds of MB, a k_eff sample is ~200 bytes. */
+    if (user.keff && user.keff->enabled && !user.keff->only
+        && user.keff->replay_dir[0] == '\0') {
+        ierr = TSMonitorSet(ts, KeffMonitor, &user, NULL); CHKERRQ(ierr);
+    }
+
     /* Application context — so BoundsRollbackPreStep can fetch user via
      * TSGetApplicationContext to consume deferred bounds-rollback requests. */
     ierr = TSSetApplicationContext(ts, &user); CHKERRQ(ierr);
