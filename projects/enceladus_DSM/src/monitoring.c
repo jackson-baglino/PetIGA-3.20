@@ -17,10 +17,18 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   IGAPoint point;
   PetscScalar *UU;
   PetscScalar rhovs, arg_kin, sigm0, sigm_surf, v_kin, alp;
-  PetscInt indd=0;
-  PetscReal a1=5.0, a2=0.1581, bet_max=0.0, bet_min=1.0e30;
-  PetscReal bet0, d0, rho_rhovs, d0_sub,  beta_sub, lambda_sub, tau_sub;
+  PetscReal bet_max=0.0, bet_min=1.0e30;
+  PetscReal bet0, rho_rhovs;
 
+  /* -flag_Tdep is a DIAGNOSTIC pass, not a kinetics update. It sweeps the
+   * quadrature points once and reports the range of the kinetic coefficient
+   * beta0 over the current field; it does not feed anything back into the
+   * solver. Until 2026-07-31 it also stored per-point mobility and alpha into
+   * user->mob[]/user->alph[], but nothing ever read those arrays -- assembly.c
+   * uses the scalars user->mob_sub/user->alph_sub throughout -- so they were
+   * removed along with the d0/lambda_sub/tau_sub chain that fed only them.
+   * (The "M0_sub new"/"alpha_sub new" lines below print those same scalars,
+   * which this loop never assigns; they echo what main() computed.) */
   if (user->flag_Tdep) {
     ierr = IGAGetLocalVecArray(user->iga,U,&localU,&arrayU);CHKERRQ(ierr);
     ierr = IGABeginElement(user->iga,&element);CHKERRQ(ierr);
@@ -44,25 +52,9 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
             if(alp*v_kin<1.0e-30) bet0 = 1.0e30;
             else bet0 = 1.0/(alp*v_kin);
-            /* Capillary length from the model's own surface energy (K&P
-             * Eq. 13): d0 = gamma_iv*V_m/(R*T). gamma_iv = user->Etai (the
-             * -Sigma_i opts parameter, default 0.109 J/m^2), V_m = 1.963e-5
-             * m^3/mol, R = 8.314 J/mol/K — the same constants comp_eps.py
-             * uses, so preprocessing and runtime agree. Replaces the stale
-             * hardcoded 2.548e-7/T_K (~1% low, and blind to -Sigma_i). */
-            d0 = user->Etai * 1.963e-5 / 8.314 / (solS[1]+273.15);
 
             if(bet0>bet_max) bet_max = bet0;
             if(bet0<bet_min) bet_min = bet0;
-            d0_sub   = d0/rho_rhovs;  
-            beta_sub = bet0/rho_rhovs;
-            lambda_sub = a1*user->eps/d0_sub;
-            tau_sub    = user->eps*lambda_sub*(beta_sub/a1 + a2*user->eps/user->diff_sub + a2*user->eps/user->dif_vap);
-
-            user->mob[indd]  = user->eps/3.0/tau_sub;
-            user->alph[indd] = lambda_sub/tau_sub;
-
-            indd ++;
         }
         ierr = IGAElementEndPoint(element,&point);CHKERRQ(ierr);
     }

@@ -821,10 +821,6 @@ int main(int argc, char *argv[]) {
         nmb = iga->elem_width[0] * iga->elem_width[1] * iga->elem_width[2]
               * (p_axis[0] + 1) * (p_axis[1] + 1) * (p_axis[2] + 1);
     }
-    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.alph);    CHKERRQ(ierr);
-    ierr = PetscMalloc(sizeof(PetscReal) * nmb, &user.mob);     CHKERRQ(ierr);
-    ierr = PetscMemzero(user.alph,    sizeof(PetscReal) * nmb); CHKERRQ(ierr);
-    ierr = PetscMemzero(user.mob,     sizeof(PetscReal) * nmb); CHKERRQ(ierr);
     user.ngp = nmb;
 
     /* In-line effective thermal conductivity (-keff). No-op unless requested.
@@ -1186,6 +1182,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* Optional cross-check that the cloned corrector mesh and the solver mesh
+     * agree on Gauss-point numbering (-keff_debug_phibar). No-op otherwise. */
+    ierr = KeffDebugPhiBar(&user, U); CHKERRQ(ierr);
+
     /* Solve the system */
     ierr = TSSolve(ts, U); CHKERRQ(ierr);
 
@@ -1205,8 +1205,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscFree(user.radius);       CHKERRQ(ierr);
     ierr = PetscFree(user.ice_grain_ax); CHKERRQ(ierr);
     ierr = PetscFree(user.ice_grain_ay); CHKERRQ(ierr);
-    ierr = PetscFree(user.alph); CHKERRQ(ierr);
-    ierr = PetscFree(user.mob); CHKERRQ(ierr);
     /* End Timer */
     PetscLogDouble ltim, tim;
     ierr = PetscTime(&ltim); CHKERRQ(ierr);

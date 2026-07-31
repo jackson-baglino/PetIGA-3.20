@@ -1,5 +1,6 @@
 #include "keff.h"
 #include "material_properties.h"
+#include "assembly.h"   /* Integration(), for the -keff_debug_phibar cross-check */
 
 /* ---------------------------------------------------------------------------
  * keff.c -- lifecycle, options and guards for the in-line k_eff diagnostic.
@@ -71,6 +72,11 @@ static PetscErrorCode KeffParseOptions(KeffCtx *kc)
   ierr = PetscOptionsBool("-keff_write_corrector",
       "Also write the corrector fields t_vec_%05d.dat and igakeff.dat", "",
       kc->write_corrector, &kc->write_corrector, NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsBool("-keff_debug_phibar",
+      "Cross-check the phi projection: mean ice fraction on the cloned mesh vs "
+      "the solver mesh", "",
+      kc->debug_phibar, &kc->debug_phibar, NULL); CHKERRQ(ierr);
 
   PetscOptionsEnd();
 
@@ -212,6 +218,13 @@ PetscErrorCode KeffCreate(AppCtx *app)
   ierr = PetscMalloc1(app->ngp, &kc->ice); CHKERRQ(ierr);
   ierr = PetscMemzero(kc->ice, sizeof(PetscReal) * app->ngp); CHKERRQ(ierr);
 
+  /* app->keff must be visible before KeffCheckGaussLayout, which reaches back
+   * through it. Set here rather than at the end of the function. */
+  app->keff = kc;
+
+  /* Precondition for the flat Gauss-point index formula (see keff_field.c). */
+  ierr = KeffCheckGaussLayout(app); CHKERRQ(ierr);
+
   /* Measure the cell volume by quadrature instead of assuming Lx*Ly[*Lz].
    * Costs one element loop at startup and is a genuine self-test: a mis-cloned
    * axis, a wrong quadrature rule or a partitioning bug shows up here as a
@@ -287,7 +300,86 @@ PetscErrorCode KeffCreate(AppCtx *app)
       kc->csv_path); CHKERRQ(ierr);
   }
 
-  app->keff = kc;
+  PetscFunctionReturn(0);
+}
+
+/* ---------------------------------------------------------------------------
+ * KeffDebugPhiBar  (-keff_debug_phibar)
+ *
+ * The one assumption in this port with no prior test coverage anywhere: that
+ * the SOLVER IGA and the CLONED corrector IGA number their local Gauss points
+ * identically, so phi written by KeffProjectIce while walking the former is
+ * read at the same physical location while assembling on the latter.
+ *
+ * If that fails, nothing crashes -- you get a plausible conductivity tensor for
+ * a scrambled microstructure. So compare one scalar that both meshes can
+ * compute independently: the mean ice fraction.
+ *
+ *   clone : (1/|Y|) INT phi dV, with phi read back out of kc->ice[]
+ *   solver: TOT_ICE/|Y| from IGAComputeScalar(app->iga, U, ..., Integration),
+ *           the same call Monitor makes (monitoring.c), which never touches
+ *           kc->ice[] and shares no code with the projection
+ *
+ * A single mismatched point moves the mean, so agreement to round-off is strong
+ * evidence the mapping is right.
+ * ------------------------------------------------------------------------- */
+PetscErrorCode KeffDebugPhiBar(AppCtx *app, Vec U)
+{
+  PetscErrorCode  ierr;
+  KeffCtx        *kc = app->keff;
+  PetscReal       mc[7] = {0,0,0,0,0,0,0};  /* from the clone, via kc->ice[] */
+  PetscReal       ms[7] = {0,0,0,0,0,0,0};  /* from the solver mesh, via U   */
+  PetscReal       worst = 0.0;
+  PetscInt        worst_i = 0;
+  const PetscReal tol = 1.0e-10;
+  const char     *label2[7] = {"mean ice fraction",
+                               "ice centroid x [m]", "ice centroid y [m]",
+                               "ice <x^2> [m^2]",    "ice <y^2> [m^2]",
+                               "", ""};
+  const char     *label3[7] = {"mean ice fraction",
+                               "ice centroid x [m]", "ice centroid y [m]",
+                               "ice centroid z [m]",
+                               "ice <x^2> [m^2]",    "ice <y^2> [m^2]",
+                               "ice <z^2> [m^2]"};
+  const char    **label = (kc && kc->dim == 3) ? label3 : label2;
+
+  PetscFunctionBegin;
+  if (!kc || !kc->debug_phibar) PetscFunctionReturn(0);
+
+  ierr = KeffProjectIce(app, U); CHKERRQ(ierr);
+  ierr = KeffIceMoments(app, PETSC_TRUE,  U, mc); CHKERRQ(ierr);
+  ierr = KeffIceMoments(app, PETSC_FALSE, U, ms); CHKERRQ(ierr);
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,
+    "  [keff] Gauss-point projection check (clone vs solver mesh)\n"
+    "         %-20s %22s %22s %11s\n",
+    "quantity", "clone (kc->ice[])", "solver (U)", "rel diff"); CHKERRQ(ierr);
+
+  for (PetscInt i = 0; i < 1 + 2 * kc->dim; i++) {
+    /* Scale each residual by a fixed quantity of the right dimension, not by
+     * the value itself: a centroid or moment legitimately near zero would
+     * otherwise blow the ratio up. */
+    const PetscReal scale = (i == 0)            ? PetscMax(PetscAbsReal(ms[0]), 1.0e-300)
+                          : (i <= kc->dim)      ? app->Lx
+                                                : app->Lx * app->Lx;
+    const PetscReal rd    = PetscAbsReal(mc[i] - ms[i]) / scale;
+    if (rd > worst) { worst = rd; worst_i = i; }
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+      "         %-20s %22.15e %22.15e %11.3e\n",
+      label[i], (double)mc[i], (double)ms[i], (double)rd); CHKERRQ(ierr);
+  }
+  ierr = PetscPrintf(PETSC_COMM_WORLD,
+    "         worst = %.3e on '%s'  (tol %.1e)\n",
+    (double)worst, label[worst_i], (double)tol); CHKERRQ(ierr);
+
+  if (worst > tol)
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_PLIB,
+            "k_eff: the cloned corrector mesh and the solver mesh disagree on "
+            "'%s' by %.3e (tol %.1e). The Gauss-point index mapping between "
+            "them is wrong, so every k(x) in the cell problem would be taken "
+            "from the wrong location. See src/keff_field.c.",
+            label[worst_i], (double)worst, (double)tol);
+
   PetscFunctionReturn(0);
 }
 

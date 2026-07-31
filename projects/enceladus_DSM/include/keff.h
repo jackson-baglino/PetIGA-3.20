@@ -77,6 +77,7 @@ typedef struct KeffCtx {
   char        csv_path[PETSC_MAX_PATH_LEN];
   PetscViewer csv;           /* lazily opened, flushed per sample */
   PetscBool   write_corrector;
+  PetscBool   debug_phibar;  /* -keff_debug_phibar: cross-IGA projection check */
   PetscInt    nsamples;
 
   AppCtx     *app;           /* back-pointer: thcond_*, iga, dim, ngp */
@@ -92,5 +93,33 @@ PetscErrorCode KeffDestroy(AppCtx *app);
  * by quadrature rather than trusting Lx*Ly[*Lz]. */
 PetscErrorCode KeffVolumeIntegrand(IGAPoint point, const PetscScalar U[],
                                    PetscInt n, PetscScalar S[], void *ctx);
+
+/* --- keff_field.c ---------------------------------------------------------
+ * THE Gauss-point indexing convention for this project is documented at the
+ * top of src/keff_field.c: every per-quadrature-point array is indexed by
+ *   point->index + point->count * point->parent->index
+ * and never by a sequential counter. Read that comment before adding another
+ * such array. */
+
+/* Evaluate phi (dof 0 of the 3-dof solution) at every local quadrature point of
+ * the solver IGA into kc->ice[], for the cell assembly to read on the clone. */
+PetscErrorCode KeffProjectIce(AppCtx *app, Vec U);
+
+/* Startup assertion: point->count uniform across elements of the clone, and
+ * the clone's local Gauss-point population equals app->ngp. */
+PetscErrorCode KeffCheckGaussLayout(AppCtx *app);
+
+/* Ice moments: m[0] = mean ice fraction, m[1..dim] = ice centroid [m],
+ * m[1+dim..2dim] = ice mean square per axis [m^2].
+ * from_clone == TRUE reads phi from kc->ice[] on the corrector mesh;
+ * FALSE reads it from the 3-dof solution U on the solver mesh.
+ * The MOMENTS are the load-bearing part -- see the long comment in
+ * keff_field.c for why the mean alone cannot detect a scrambled mapping. */
+PetscErrorCode KeffIceMoments(AppCtx *app, PetscBool from_clone, Vec U, PetscReal m[7]);
+
+/* -keff_debug_phibar: project phi onto the clone, then compare the ice mean and
+ * centroid computed on each mesh. Hard-errors on disagreement. No-op unless the
+ * flag is set. */
+PetscErrorCode KeffDebugPhiBar(AppCtx *app, Vec U);
 
 #endif /* KEFF_H */

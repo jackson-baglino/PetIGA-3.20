@@ -154,8 +154,13 @@ typedef struct {
   PetscReal phase_lo;     // lower bound for phi_ice, phi_air (default -0.25)
   PetscReal phase_hi;     // upper bound for phi_ice, phi_air (default  1.25)
 
-  PetscReal *alph;     // Alpha field, possibly phase fraction or related property
-  PetscReal *mob;      // Ice mobility field, spatially varying (T-dependent)
+  // NOTE: per-quadrature-point alph[]/mob[] arrays were removed 2026-07-31.
+  // They were filled under -flag_Tdep and read by nothing: assembly.c uses the
+  // scalars alph_sub/mob_sub everywhere. See the comment in monitoring.c's
+  // flag_Tdep block. If spatially varying kinetics are ever wired into the
+  // residual, reintroduce the array together with the code that reads it, and
+  // index it as point->index + point->count * point->parent->index (the one
+  // Gauss-point indexing convention in this project -- see keff_field.c).
 
   // Flag for reading input files
   PetscBool readFlag; // read initial field data from file
