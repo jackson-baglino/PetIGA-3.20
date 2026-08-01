@@ -10,8 +10,10 @@ Observables
   ripen  final large/small grain ice split -> Ostwald transfer;
          ice-mass drift over the run (conservation)
   pack   SSA(t) endpoint and trajectory; ice-mass drift.
-         k_eff must be added separately by running effective_thermal_cond over
-         the snapshots -- pass --keff <dir> to fold in its k_eff.csv.
+         k_eff is written by the solver itself when -keff 1 is set, landing in
+         k_eff.csv beside SSA_evo.dat; --keff-root defaults to the run directory
+         for that reason. For runs that predate the in-line k_eff, regenerate it
+         with -keff_replay <run_dir> (see studies/snow_thermal/CALIBRATION.md).
   molaro neck width, measured by postprocess/neck_width.py (run separately;
          this script only reports what it finds in neck_width.txt)
 
@@ -123,7 +125,8 @@ def main(argv=None):
     ap.add_argument("--mass-tol", type=float, default=0.01,
                     help="tolerance on ice-mass drift")
     ap.add_argument("--keff-root", type=Path, default=None,
-                    help="effective_thermal_cond output root, for k_eff.csv")
+                    help="where to look for k_eff.csv; defaults to each run's own "
+                         "directory, which is where -keff 1 writes it")
     args = ap.parse_args(argv)
 
     runs = {}
@@ -135,8 +138,13 @@ def main(argv=None):
         s = summarize(run)
         if s is None:
             continue
+        # In-line k_eff (-keff 1) writes k_eff.csv into the run directory itself,
+        # so that is the default place to look. --keff-root stays supported for
+        # the old layout, where a separate binary wrote into <root>/<run>/.
         if args.keff_root:
             s["keff"] = keff_last(args.keff_root / run.name / "k_eff.csv")
+        else:
+            s["keff"] = keff_last(run / "k_eff.csv")
         runs.setdefault(test, {})[arm] = (run, s)
 
     if not runs:

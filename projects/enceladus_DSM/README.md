@@ -30,7 +30,9 @@ interface-CFL adaptive timestep. (Gibbs–Thomson curvature was removed 2026-07-
 enceladus_DSM/
 ├─ src/              # solver: enceladus_main.c (main), assembly.c (residual/Jacobian),
 │                    #   initial_conditions.c, material_properties.c, monitoring.c,
-│                    #   snes_convergence.c, env_helper.c
+│                    #   snes_convergence.c
+│                    # k_eff: keff.c (lifecycle/guards), keff_field.c (phi projection),
+│                    #   keff_cell.c (cell problem), keff_solve.c, keff_sample.c
 ├─ include/          # headers (enceladus_types.h holds AppCtx + Field)
 ├─ makefile          # `make` (optimized) / `make debug`; builds ./enceladus_dsm
 ├─ inputs/
@@ -46,8 +48,47 @@ enceladus_DSM/
 │  └─ check_ic_types.sh   # guard: validates every .opts -ic_type vs the solver
 ├─ studies/
 │  └─ snow_thermal/  # DSM on granular packings -> effective thermal conductivity
+│     └─ verification/  # k_eff analytic gate + resolution studies
 └─ docs/             # design/analysis notes (HISTORICAL — see per-file banners)
 ```
+
+## Effective thermal conductivity (`-keff`)
+
+The solver computes the **effective (homogenized) thermal conductivity tensor**
+in-line, by solving the periodic cell problem
+`-div(k(x) ∇t_m) = div(k(x) e_m)` for each direction and averaging the resulting
+flux. Merged in from `projects/effective_thermal_cond` on 2026-07-31; that
+project is superseded.
+
+It is in-line rather than a post-processing pass because the two cadences want to
+be very different: a field snapshot at study resolution is hundreds of MB, so a
+run writes a few hundred, while a k_eff sample is ~200 bytes. Reading k_eff off
+snapshots capped k_eff(t) at the snapshot count.
+
+```bash
+# during a run, every 10 accepted steps (independent of -outp)
+./scripts/Studio/run_enceladus.sh <geom> <exp> tag -- -keff 1 -keff_freq 10
+
+# or on simulated time
+... -- -keff 1 -keff_t_interv 3600
+
+# for a run that already finished
+folder=<run_dir> ./enceladus_dsm -options_file <run_dir>/solver.opts \
+    -options_file <run_dir>/<geom>.opts -options_file <run_dir>/<exp>.opts \
+    -keff 1 -keff_replay <run_dir>
+```
+
+Output is `k_eff.csv` in the run directory:
+`step,time,k_ij…,phi_bar,k_iso,ksp_its,ksp_reason,wall_s`.
+
+**Periodicity is required and enforced.** `-keff` hard-errors on a non-periodic
+mesh, on `-geom_file`, on `-axisym`, and on `dim < 2` — each a case where the
+cell problem would still return a number that means nothing.
+
+Corrector solves default to CG + GAMG under the `keff_` option prefix; direct LU
+(`-keff_ksp_type preonly -keff_pc_type lu`) is the validation reference. The
+analytic gate, solver comparison and resolution studies live in
+`studies/snow_thermal/verification/`.
 
 ## Build
 

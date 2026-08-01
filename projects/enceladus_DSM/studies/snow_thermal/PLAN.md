@@ -3,8 +3,9 @@
 Paper 2. Quantify how dry-snow metamorphism (DSM) reshapes icy granular packings
 and how that changes the **effective (homogenized) thermal conductivity** k_eff.
 Branch: `feat/effective-thermal-conductivity`. Shares the `sublimation_pf` master
-solver; k_eff comes from the **existing** `projects/effective_thermal_cond`
-solver (periodic homogenization) — no new estimator is written.
+solver. k_eff is computed by periodic homogenization **inside this solver**
+(`-keff`) — no new estimator was written; the cell problem was merged in from
+`projects/effective_thermal_cond`, which is now superseded. See "Stage C" below.
 
 See `README.md` for the one-paragraph overview; this file is the execution plan.
 
@@ -49,23 +50,35 @@ the 3D IC path (`multi_grains` / grain-file readers) works in the current solver
   conservation (`postprocess/plot_mass.py`) before committing HPC time to the
   3 mm cases. Run on HPC, not locally.
 
-## Stage C — Effective conductivity via `effective_thermal_cond` (the handoff)
+## Stage C — Effective conductivity, in-line (DONE, 2026-07-31)
 
-The solver exists (`effective_thermal_cond/src/effective_k_ice_homog.c`): it
-solves the periodic cell problem `-div(k∇t_m)=div(k·e_m)` per direction and
-integrates the Voigt k_eff tensor. The work is streamlining the snow→k_eff
-handoff (currently `field_init.c:224` reads `<init_dir>/igasol.dat` +
-`sol_%05d.dat`, and it still uses the `.env→.opts` `gen_opts.py` path):
+**Status: ✅ complete.** The cell problem now lives in this solver. Stage C as
+originally written planned to keep k_eff a separate binary and build an adapter
+around the handoff; that was reversed. The handoff was the problem, not a thing
+to streamline.
 
-1. Point k_eff directly at a `sublimation_pf` run directory. The snow solution is
-   3-DOF (ice, T, vapor); k_eff needs only the **ice** field — make the DOF-offset
-   explicit in `field_init.c` (confirm it reads component 0, not a 1-field file).
-2. Share domain/eps metadata so k_eff's cell matches the snow mesh without a
-   hand-copied opts; retire `gen_opts.py`'s `.env` dependence in favour of the
-   snow run's staged `.opts`.
-3. Keep k_eff a **separate solver** (different equation, different build). Add a
-   thin adapter in `studies/snow_thermal/analysis/` that locates snapshots and
-   launches k_eff over a time series → k_eff(t).
+The reason is cadence, not tidiness. A run takes thousands of steps but writes a
+few hundred snapshots, because a snapshot at study resolution is hundreds of MB.
+Reading k_eff off snapshots therefore caps k_eff(t) at a few hundred points —
+while a k_eff sample is ~200 bytes. Computing it in-line decouples the two.
+
+What exists now:
+
+- `-keff 1` computes the tensor during the time loop, on a cadence set by
+  `-keff_freq N` (steps) or `-keff_t_interv T` (simulated seconds), entirely
+  independent of `-outp`.
+- Output is one CSV per run, `k_eff.csv`, with columns
+  `step,time,k_ij...,phi_bar,k_iso,ksp_its,ksp_reason,wall_s`.
+- `-keff_replay <run_dir>` computes k_eff for a run that has already finished,
+  which is what the old separate binary was for. It reproduces the in-line
+  numbers exactly, because it reuses the producing run's own IGA.
+- Guards refuse the cases where homogenization would return a meaningless
+  number: non-periodic mesh, `-geom_file`, `-axisym`, `dim < 2`.
+
+Corrector solves use CG + GAMG (`-keff_ksp_*`, `-keff_pc_*`); direct LU remains
+available for validation. The claim in the old project's README that iterative
+solvers are unreliable here turned out to be a PetIGA/GAMG plumbing
+incompatibility, not numerics — see `studies/snow_thermal/verification/`.
 
 ## Stage D — Validation gate (before any science claim)
 

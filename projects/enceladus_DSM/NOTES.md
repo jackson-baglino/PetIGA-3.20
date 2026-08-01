@@ -110,11 +110,14 @@ The initial condition is selected by commenting/uncommenting lines. This is frag
 Consider adding a `-ic_type` string option and dispatching via a lookup table.
 Example ICs to support: `capillary`, `layered`, `enclosed`, `packed`, `flat`, `1D_slab`.
 
-**[6] `monitoring.c` uses `getenv("folder")` for file output**  
-The output path is fetched via `getenv("folder")` in two places in `monitoring.c`,
-but the rest of the code uses `user->output_path`. These should be unified — 
-`monitoring.c` should use `user->output_path` exclusively so all output goes to the
-correct place without needing to set an environment variable.
+**[6] `monitoring.c` uses `getenv("folder")` for file output** — STILL OPEN, and
+now in three places, since `keff.c` follows the same convention for `k_eff.csv`.
+The output path is fetched via `getenv("folder")`, but `user->output_path` is
+parsed from `-output_path` and read by *nothing*. These should be unified. The
+k_eff work deliberately matched the existing (env-var) convention rather than
+introducing a second one mid-merge; unifying is a separate change that touches
+every writer at once, plus `scripts/*/run_enceladus.sh`, which currently exports
+`folder` **and** passes `-output_path` to the same run.
 
 **[7] Duplicate plotting scripts**  
 `scripts/plot_fields.py` and `postprocess/plot_fields.py` appear to be the

@@ -137,13 +137,27 @@ most likely to reject it.
 
 ## k_eff for test C
 
-`SSA_evo.dat` gives SSA directly; k_eff needs a second pass over the snapshots:
+`SSA_evo.dat` gives SSA directly. k_eff no longer needs a second pass over the
+snapshots — add `-keff 1` to the run and it lands in `k_eff.csv` alongside
+`SSA_evo.dat`, sampled on its own cadence:
 
 ```bash
-cd ../effective_thermal_cond
-OUT_ROOT=$SCRATCH/keff_calib ./scripts/run_effective_k_ice_homog.sh <run_dir>
+./scripts/Studio/run_enceladus.sh <geom> <exp> calib -- -keff 1 -keff_freq 10
 ```
 
-then re-run the report with `--keff-root $SCRATCH/keff_calib` to fold it in.
-The run directory stages its own `solver.opts` and geometry `.opts`, which the
-k_eff script now reads so the mesh matches by construction.
+For a run that has **already finished**, replay its snapshots instead (this is
+what the retired `effective_thermal_cond` binary used to do):
+
+```bash
+folder=<run_dir> ./enceladus_dsm \
+    -options_file <run_dir>/solver.opts \
+    -options_file <run_dir>/<geometry>.opts \
+    -options_file <run_dir>/<experiment>.opts \
+    -keff 1 -keff_replay <run_dir>
+```
+
+Replay writes `k_eff.csv` into the replayed directory. Because it rebuilds the
+IGA from the run's own staged `.opts`, the mesh matches by construction and the
+values are identical to what an in-line run would have produced.
+
+Then re-run the report with `--keff-root <run_dir>` to fold it in.

@@ -16,10 +16,11 @@ sharing the same master solver.
    `circle_packing_touching.py`.
 2. Run DSM to evolve the microstructure → opts in `opts/`. Use the master
    model's ξ_v = 1e-3 / ξ_T = 1 (NOT dry_snow_metamorphism's stale values).
-3. Compute k_eff on snapshots with the **existing** homogenization solver at
-   `../../../effective_thermal_cond` (periodic cell problem; reads
-   `igasol.dat` + `sol_NNNNN.dat`). Effort 3 is streamlining that handoff, not
-   writing a new estimator. → `analysis/`.
+3. k_eff is computed **in-line by the same solver** (`-keff 1`), by periodic
+   homogenization, sampled on its own cadence and written to `k_eff.csv`.
+   The cell problem was merged in from `../../../effective_thermal_cond`
+   (now superseded) rather than rewritten; `-keff_replay <dir>` covers runs
+   that finished before the merge. See `verification/` for the analytic gate.
 
 **Parameter regime.** Few-mm domains (up to 3 mm, ~1.5×10⁸ DOF in 3D) — much
 larger than anything the master model has run (its largest is 1.35 × 0.27 mm,

@@ -1,5 +1,60 @@
 # effective_k_ice_homog
 
+> # ⚠️ SUPERSEDED — 2026-07-31
+>
+> **This project has been merged into `projects/enceladus_DSM` and is no longer
+> the way to compute k_eff.** It is kept for provenance only. Do not add
+> features here; do not use it for new results.
+>
+> The cell problem now runs **in-line** inside the phase-field solver:
+>
+> ```bash
+> # during a run, on a cadence independent of field output
+> ./scripts/Studio/run_enceladus.sh <geom> <exp> tag -- -keff 1 -keff_freq 10
+>
+> # for a run that already finished — this replaces this binary entirely
+> folder=<run_dir> ./enceladus_dsm \
+>     -options_file <run_dir>/solver.opts \
+>     -options_file <run_dir>/<geom>.opts \
+>     -options_file <run_dir>/<exp>.opts \
+>     -keff 1 -keff_replay <run_dir>
+> ```
+>
+> **Why it moved.** k_eff sampling was tied to the snapshot rate, and the two
+> want very different cadences: a snapshot at study resolution is hundreds of MB
+> (so a run writes a few hundred) while a k_eff sample is ~200 bytes. k_eff(t)
+> was needlessly sparse as a direct consequence.
+>
+> **What changed in the move**, all verified in
+> `enceladus_DSM/studies/snow_thermal/verification/`:
+>
+> - **The claim below that iterative solvers are unreliable for this problem is
+>   wrong.** It was a PetIGA/GAMG plumbing incompatibility, not numerics:
+>   `IGACreateMat` overrides `MATOP_CREATE_VECS`/`MATOP_DUPLICATE` with
+>   IGA-aware versions that hard-error when the composed `"IGA"` object is
+>   absent, and AMG's coarse operators inherit the overrides without the object,
+>   so `PCGAMG` died during setup on every mesh. With three lines restoring the
+>   stock operations, CG+GAMG agrees with LU to all ten printed digits and is
+>   17× faster at 322k unknowns. LU was never viable at the study meshes (~8M
+>   unknowns per corrector: ~90 min per sample vs ~80 s).
+> - The `dim`-DOF blocked system is now `dim` solves against **one shared scalar
+>   operator** — the bilinear form never referenced the direction, so three
+>   quarters of the matrix was structurally zero at `dim=2` (9.6 GB → 2.4 GB at
+>   Nx=2829).
+> - The input IGA is no longer rebuilt from re-parsed options. `field_init.c`
+>   admitted its length check could not detect a `-periodic` mismatch — the one
+>   that silently gives wrong answers. Reusing the producer's own IGA makes that
+>   unrepresentable.
+> - The cell volume is measured by quadrature rather than assumed `Lx*Ly`.
+> - Fixed on the way through: `MPI_INT` → `MPIU_INT` on a `PetscInt` broadcast,
+>   an 80 KB fixed stack array for the snapshot list, `sol_%05d.dat` parsing that
+>   broke past 99999 steps, `MPI_Abort` in place of `SETERRQ`, and per-call
+>   `fopen`/`fclose` on the output CSV.
+>
+> Everything below describes the retired standalone binary.
+
+---
+
 Computes the **effective thermal conductivity tensor** of snow/ice microstructure
 via periodic homogenization. Given a phase-field snapshot of an ice grain structure
 (from a separate grain growth simulation), it solves the IGA cell problem

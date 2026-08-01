@@ -1,4 +1,10 @@
-# Testing Guide — Permafrost Phase-Field Simulation
+# Testing Guide — enceladus_DSM
+
+> ⚠️ **PARTIALLY STALE.** The `inputs/tests/` directory this file documents was
+> removed in the 2026-06-13 two-phase fork; those `.opts` were reorganised into
+> `inputs/geometry/` + `inputs/experiment/`. The *strategy* below is still how
+> this code is tested, but the T01–T19 file paths are not. The **k_eff
+> verification suite** (next section) is current and runnable as written.
 
 This document describes how to systematically test the enceladus_dsm code. Because the
 code solves a nonlinear coupled PDE system with no exact closed-form solution, testing
@@ -11,7 +17,75 @@ is organized around three complementary strategies:
 
 ---
 
-## Directory Layout
+## k_eff verification suite  ✅ CURRENT
+
+The effective-conductivity path (`-keff`) *does* have a closed-form reference, so
+it is tested against one. Everything lives in
+`studies/snow_thermal/verification/`, which carries the full analysis; this is
+the short version.
+
+```bash
+# 1. analytic gate on the cell-problem solver (LU, ~7 short runs)
+./studies/snow_thermal/verification/run_keff_benchmark.sh
+venv_enceladus/bin/python3 studies/snow_thermal/verification/check_keff_benchmark.py
+
+# 2. CG+GAMG vs direct LU on an identical assembly
+./studies/snow_thermal/verification/run_solver_comparison.sh
+
+# 3. how much of the benchmark's error belongs to the initial condition
+./studies/snow_thermal/verification/run_ic_resolution_study.sh
+venv_enceladus/bin/python3 studies/snow_thermal/verification/plot_ic_resolution.py
+```
+
+**Compare against the diffuse profile, not the sharp interface.** A layered
+medium satisfies `k_∥ = ⟨k⟩` and `k_⊥ = 1/⟨1/k⟩` for *any* `k(y)`, so
+`check_keff_benchmark.py` integrates the same tanh profile the IC lays down.
+Comparing against the sharp-interface values 1.155000 / 0.0396538 instead would
+demand that a diffuse profile reproduce a sharp one — at the benchmark's own
+`eps` the exact diffuse `k_⊥` is **1.59×** the sharp value, which reads as a 59%
+solver bug that is not there.
+
+Current pass criteria and measured values:
+
+| check | criterion | measured |
+|---|---|---|
+| `k_∥` vs arithmetic mean at measured `φ̄` | < 1e-5 rel | ≤ 8.8e-7 |
+| off-diagonals | < 1e-12 | 1.5e-16 |
+| `k_⊥` error falls with mesh refinement | monotone | 5.35e-3 → 1.70e-3 (N 64→512) |
+| `k_⊥` at the finest mesh per `eps` | < 3.5e-3 | ≤ 3.1e-3 |
+| CG+GAMG vs LU | agree to KSP tol | all 10 printed digits |
+| replay vs in-line | agree to KSP tol | 0.000e+00 |
+| cross-mesh φ projection (`-keff_debug_phibar`) | < 1e-10 | 0.000e+00 |
+
+### eps ladder — the sharp-interface limit
+
+`k_⊥` for the diffuse profile exceeds the sharp-interface harmonic mean because
+the band short-circuits a series resistance. This is a **model property, not an
+error**, and it is the number to keep in mind when reading packing results,
+where the analogous feature is a pore throat rather than a 500 µm layer:
+
+| `eps` [m] | band / layer | `k_⊥` diffuse | ÷ sharp |
+|---|---|---|---|
+| 3.125e-5 | 0.575 | 9.390e-2 | 2.37 |
+| 2.000e-5 | 0.368 | 6.321e-2 | 1.59 |
+| 1.563e-5 | 0.287 | 5.594e-2 | 1.41 |
+| 7.813e-6 | 0.144 | 4.641e-2 | 1.17 |
+
+The closed form `k_⊥ ≈ k_air·Ly/(Ly/2 − 9.2·eps)` reproduces the exact integral
+to 0.1–0.7% over this range, and diverges when the band fills the layer at
+`eps = Ly/18.4`.
+
+### Element counts: state the band
+
+Counts here are across the **φ=0.05–0.95** band (`6·eps`), matching
+`comp_eps.py`'s `h = ε/√2` rule and its ~7.5–8.5 target. The **φ=0.01–0.99**
+band (`9.2·eps`) gives a count **1.53× larger for the same mesh**. Mixing the two
+makes a production-resolution mesh look heavily over-resolved — it happened
+during this work.
+
+---
+
+## Directory Layout  ⚠️ STALE — see the banner at the top of this file
 
 ```
 inputs/tests/
