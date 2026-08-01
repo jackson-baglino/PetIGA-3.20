@@ -50,9 +50,37 @@ The consequence is that a perfectly tangent 2D packing cannot transport vapour
 across the domain at all, which defeats the purpose of the simulation. (This
 obstruction is specific to 2D -- in 3D both phases percolate simultaneously.)
 
---contact-gap therefore jams the grains against an inflated radius r + gap/2
-while reporting the true r, leaving a uniform surface-to-surface gap at every
-contact. Porosity is computed from the true radii and is unaffected.
+--contact-gap jams the grains against a radius r + gap/2 while reporting the
+true r. A POSITIVE gap leaves a uniform surface-to-surface separation at every
+contact; ZERO gives exact tangency; a NEGATIVE gap makes neighbours OVERLAP by
+|gap|, producing a real solid neck at t=0. Porosity is computed from the true
+radii and is unaffected either way.
+
+WHY THE DEFAULT IS NO LONGER A POSITIVE GAP (changed 2026-08-01)
+----------------------------------------------------------------
+The positive gap bought vapour percolation at t=0 and it is not worth the price:
+
+  * It does not last. Sintering closes the gap within the first part of any run,
+    so a positive gap only defers the disconnection -- it does not avoid it.
+  * It corrupts the observable this study exists to measure. k_eff is largely a
+    function of GRAIN CONNECTIVITY, and the rise of k_eff through a run IS the
+    growth of that connectivity. Starting from a pack whose grains do not touch
+    means the early k_eff rise is partly a numerical gap closing rather than
+    real neck growth, which skews the very trend being reported.
+  * With a 4 um gap and a diffuse interface 9.2-18.4 um wide, the phase field
+    bridges the gap anyway -- so conduction at t=0 was carried by the interface
+    representation, not by the microstructure. Measured: k_eff differed by
+    31-39% between eps = 1 um and 2 um on an identical packing
+    (studies/snow_thermal/verification/).
+  * For Enceladus specifically, the vapour budget is small: at tiger-stripe
+    pressures and temperatures there is little vapour to transport, so paying
+    for pore percolation with a disconnected solid is the wrong trade.
+
+The way to prolong vapour transport is therefore NOT to hold the grains apart,
+but to SELECT configurations that retain large pores -- see
+preprocess/select_packing_seeds.py, which generates many seeds and ranks them on
+pore retention. This is a real limitation of 2D and belongs in the write-up: in
+3D both phases percolate simultaneously and no such choice is forced.
 
 Measured on 2 mm packings, mean radius 45 um, porosity 0.20 to 0.40 (see the
 table below): the pore reconnects between 2 and 4 um of gap, and 4 um gives a
@@ -418,10 +446,14 @@ def main(argv=None):
                     help="log-normal shape parameter of the radii")
     ap.add_argument("--radius_clip_frac", type=float, default=1.0,
                     help="clip radii to (1 +/- f)*mean_r_m")
-    ap.add_argument("--contact-gap", type=float, default=4.0e-6,
-                    help="surface-to-surface gap held at every contact [m]. "
-                         "0 gives exact tangency, which DISCONNECTS the pore "
-                         "space in 2D -- see the module docstring")
+    ap.add_argument("--contact-gap", type=float, default=-4.0e-6,
+                    help="surface-to-surface separation held at every contact "
+                         "[m]. NEGATIVE overlaps neighbours by |gap|, giving a "
+                         "real solid neck at t=0 (the default, and what k_eff "
+                         "needs); 0 is exact tangency; positive holds the "
+                         "grains apart. In 2D anything <= 0 disconnects the "
+                         "pore space -- see the module docstring for why that "
+                         "is the right trade here")
     ap.add_argument("--seed", type=int, required=True)
     ap.add_argument("--out", required=True, help="output directory")
     ap.add_argument("--raster", type=int, default=1024,
@@ -478,14 +510,28 @@ def main(argv=None):
         problems.append(f"porosity {phi_exact:.4f} misses target "
                         f"{args.porosity:.4f} by more than 0.01 "
                         f"(jammed at s={s_ok:.4f})")
+    # Pore non-percolation is a FAILURE only when a positive gap was requested,
+    # because then reconnecting the pore was the whole point of paying for it.
+    # At gap <= 0 the grains are meant to be in contact, and in 2D a spanning
+    # contact network necessarily cuts the void into cells -- so this is an
+    # accepted, recorded consequence of the geometry, not a defect. Keeping it
+    # in `problems` there would make generate_study_opts.py skip every packing.
+    warnings = []
     if not (px and py):
-        problems.append(
-            f"pore space does not percolate (x={px}, y={py}; largest cluster "
-            f"holds {p_frac*100:.1f}% of the void in {p_n} clusters) -- vapour "
-            f"cannot diffuse across the domain. In 2D a fully jammed packing "
-            f"always does this, because the spanning contact network cuts the "
-            f"complement into cells; raise --contact-gap (4 um reopens the "
-            f"throats at every porosity tested).")
+        msg = (f"pore space does not percolate (x={px}, y={py}; largest cluster "
+               f"holds {p_frac*100:.1f}% of the void in {p_n} clusters)")
+        if gap > 0.0:
+            problems.append(
+                msg + " -- vapour cannot diffuse across the domain, and a "
+                f"positive --contact-gap ({gap*1e6:.2f} um) was requested "
+                "precisely to prevent this. Raise it further, or set it to <= 0 "
+                "and accept contact (see the module docstring).")
+        else:
+            warnings.append(
+                msg + f" -- EXPECTED at --contact-gap {gap*1e6:.2f} um. In 2D a "
+                "spanning contact network cuts the void into cells; this is the "
+                "accepted cost of having the grains actually touch. Rank seeds "
+                "on pore retention with preprocess/select_packing_seeds.py.")
 
     meta = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
@@ -517,6 +563,7 @@ def main(argv=None):
         "n_contacts": int(n_contact),
         "throat_gap_m": throats,
         "problems": problems,
+        "warnings": warnings,
     }
 
     write_outputs(args.out, centres, radii, Lx, Ly, meta,
@@ -527,6 +574,8 @@ def main(argv=None):
     print(f"  gap={gap*1e6:.2f} um | pore perc x={px} y={py} "
           f"(largest {p_frac*100:.1f}%, {p_n} clusters) | solid perc "
           f"x={sx} y={sy} (largest {s_frac*100:.1f}%)", file=sys.stderr)
+    for w in warnings:
+        print(f"  note: {w}", file=sys.stderr)
     if problems:
         for p in problems:
             print(f"  PROBLEM: {p}", file=sys.stderr)
