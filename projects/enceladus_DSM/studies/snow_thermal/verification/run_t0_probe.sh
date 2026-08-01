@@ -17,14 +17,20 @@
 # only in how thick the diffuse band around it is. No time integration is needed
 # at all (-keff_only 1), so this costs one cell solve per configuration.
 #
-# Interpretation:
-#   * gap <= 0.024%  -> the discretisation floor (see README section 2); nothing
-#                       to see, and safety 1.0 is geometrically safe.
-#   * gap  > 0.024%  -> a real artefact of the diffuse representation. If it also
-#                       DECREASES with porosity, that is the throat-closure
-#                       signature, since band/throat falls 4.60 -> 3.09 -> 1.46
-#                       across these three packings.
-#   * safety 1.0 should read HIGH if throat closure is the mechanism.
+# Both resolutions read the SAME grains.dat with the same -Lx and the same union
+# IC; only -eps and -Nx differ. The comparison is therefore paired within a
+# configuration, and packing-to-packing realization scatter cancels exactly --
+# each packing is only ever compared with itself.
+#
+# READ THE RESULT AS AN UPPER BOUND, NOT AS THE STUDY'S ERROR BAR. t = 0 is where
+# this artefact is largest, by construction: the packings are jammed with a 4 um
+# design contact gap, the solid barely percolates
+# (solid_largest_cluster_frac ~ 0.009), so every conduction path runs through
+# those 4 um gaps -- and the diffuse band is 9.2 um (safety 0.5) or 18.4 um
+# (safety 1.0), wider than the gap either way. At t = 0 the band IS the
+# conduction path. Once DSM builds necks the path is solid ice and the
+# sensitivity should fall. The number that matters for the study is the gap at
+# the END of a run; see the README for how to measure it.
 #
 # Usage:  ./run_t0_probe.sh [safety05|safety10|both]
 # ---------------------------------------------------------------------------

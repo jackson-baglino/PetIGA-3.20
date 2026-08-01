@@ -265,7 +265,8 @@ useful cadence is only possible because the iterative path works.
 
 ---
 
-## t=0 probe — eps sensitivity on the real packings  ⚠️ MAJOR FINDING
+## t=0 probe — an UPPER BOUND on the eps artifact
+
 
 ```bash
 NPROCS=6 ./studies/snow_thermal/verification/run_t0_probe.sh both
@@ -312,21 +313,48 @@ between the two band widths, and those distributions are strongly skewed —
 p5 = p25 = 4.00 µm for all three (the design contact gap), while p75 is 16.6 /
 32.7 / 45.2 µm. Do not use the p50 ratio as a diagnostic.
 
-### What this means for the study
+### Read this as a worst case, not as the study's error bar
 
-1. **safety 1.0 is not usable** for k_eff on these packings. That much is settled.
-2. **More seriously: k_eff is not eps-converged at safety 0.5 either.** A 35 %
-   change from one halving of eps says nothing about where the sequence is
-   heading. Until an eps ladder shows k_eff flattening, absolute conductivities
-   from either resolution are not trustworthy, and the porosity *trend* may be
-   distorted too.
-3. This is prior to, and larger than, any REV question. Domain-size convergence
-   on a quantity that has not converged in eps would measure the wrong thing.
+**t = 0 is the configuration in which this artifact is maximal, by
+construction**, and an earlier revision of this file overstated the result by not
+saying so.
 
-**Recommended next step:** an eps convergence ladder (safety 0.5 → 0.25 → 0.125)
-on one packing, to find where k_eff stabilises. Cheap on the 0.5 mm calibration
-packing (`inputs/packings_calib/`), where safety 0.125 is only Nx≈2829 — the
-same mesh the 2 mm packings need at safety 0.5.
+- The packings are jammed with a deliberate **4 µm contact gap**
+  (`generate_packing.py`: gap = 0 disconnects the pore space in 2D).
+- `solid_largest_cluster_frac ≈ 0.009` — at t = 0 there is essentially **no solid
+  connectivity**, so every conduction path runs through those 4 µm gaps.
+- The diffuse band is 9.2 µm at safety 0.5 and 18.4 µm at safety 1.0 — **wider
+  than the gap in both cases**.
+
+So at t = 0 the band *is* the conduction path, and 35 % sensitivity to doubling
+it is close to tautological. A sanity check agrees: k_iso = 0.895 W/m/K at
+φ_ice = 0.75 is what one would expect from *well-sintered* firn, but this
+structure is not sintered at all. **The t = 0 values are artifact-dominated and
+should not be quoted as conductivities.**
+
+Once DSM builds real necks the conduction path is solid ice rather than
+band-bridged vapour gaps, and the sensitivity should fall — possibly a long way.
+The study's observable is k_eff(t) *after* metamorphism, so the number that
+matters is the gap at the end of a run, not at the start.
+
+### What is and is not established
+
+1. **safety 1.0 is not usable at t = 0**, and any k_eff reported near t = 0 at
+   either resolution is suspect.
+2. **Not established: whether this persists after sintering.** A 35 % gap on an
+   unsintered skeleton does not imply a 35 % gap on a necked one.
+3. Both questions sit upstream of the REV study, but only if (2) turns out badly.
+
+**Next step — measure the gap versus time, not another t = 0 point.** Run one
+packing at both resolutions for a few hundred steps with `-keff_freq` set small,
+and plot `k_iso(t; safety 1.0) / k_iso(t; safety 0.5)`:
+
+- ratio decaying toward 1 as necks form → the artifact is a start-up transient,
+  safety 0.5 is fine and safety 1.0 may be acceptable at late times;
+- ratio holding near 1.35 → structural, and an eps ladder
+  (safety 0.5 → 0.25 → 0.125) becomes necessary before any k_eff is trusted.
+  That ladder is cheap on the 0.5 mm calibration packing
+  (`inputs/packings_calib/`), where safety 0.125 is only Nx ≈ 2829.
 
 ## Consequences for the rest of the study
 
