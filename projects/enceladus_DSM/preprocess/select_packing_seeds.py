@@ -66,8 +66,11 @@ def main(argv=None):
                     help="mean grain radius [m]; 100 um matches the Molaro "
                          "et al. (2019) grain experiments")
     ap.add_argument("--sigma-ln", type=float, default=0.5)
-    ap.add_argument("--contact-gap", type=float, default=-4.0e-6,
-                    help="negative = overlap, giving a real neck at t=0")
+    ap.add_argument("--contact-gap", type=float, default=0.0,
+                    help="0 = exact tangency: grains touch where each one's phi "
+                         "crosses 0.5, which is eps-independent and needs no "
+                         "calibration. See generate_packing.py's docstring "
+                         "before using anything else")
     ap.add_argument("--seeds", default="1-20", help="e.g. '1-20' or '1,3,7'")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--keep", type=int, default=5,

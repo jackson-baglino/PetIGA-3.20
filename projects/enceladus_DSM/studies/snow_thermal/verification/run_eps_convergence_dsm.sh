@@ -49,9 +49,21 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 PROJECT_ROOT="$PWD"
 RUNNER="$PROJECT_ROOT/scripts/Studio/run_enceladus.sh"
 
-TAG="${1:-epsconv}"
+TAG="${2:-epsconv}"
 EXP="snow_T-20_6hr"
-GEOMS=(phi0.325_0.5mm_T-20_s05 phi0.325_0.5mm_T-20_s10)
+
+# Three arms -- loose / standard / strict eps -- on ONE tangent contact packing.
+# 1mm is the affordable set (19 / 76 / 301 cores); 2mm's strict arm is 96M DOF
+# and 1201 cores, so it is opt-in.
+case "${1:-1mm}" in
+    1mm) GEOMS=(phi0.325_seed12_T-20_1mm_s10
+                phi0.325_seed12_T-20_1mm_s05
+                phi0.325_seed12_T-20_1mm_s025) ;;
+    2mm) GEOMS=(phi0.325_seed6_T-20_2mm_s10
+                phi0.325_seed6_T-20_2mm_s05
+                phi0.325_seed6_T-20_2mm_s025) ;;
+    *)   echo "usage: $0 [1mm|2mm] [tag]" >&2; exit 2 ;;
+esac
 
 [[ -x "$RUNNER" ]] || { echo "ERROR: $RUNNER missing" >&2; exit 1; }
 

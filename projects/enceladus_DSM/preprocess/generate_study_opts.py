@@ -113,19 +113,19 @@ def write_geometry(path: Path, T_C: float, p: dict, pack: dict, args) -> None:
 # clamped SUM of the grains' diffuse fields,
 #     phi = clamp( sum_k [ 0.5 - 0.5*tanh(0.5*(r_k - R_k)/eps) ], 0, 1 )
 # rather than the tanh of the signed distance to their union. This is the form
-# the Molaro axisymmetric geometries use and the one that has worked best for
-# this model; lunar_regolith_DSM/inputs/geometry/2D_molaro_axisym_T-20pair.opts
-# documents the convention and preprocess/calibrate_neck_geometry.py solves the
-# geometry against it.
+# the Molaro axisymmetric geometries use.
 #
-# KNOWN PROPERTY, and it matters when comparing across eps: in the overlap
-# region both grains' fields contribute, so the measured phi=0.5 waist is WIDER
-# than the sharp lens, by an amount that scales with eps. For the Molaro pair the
-# documented offset is +4.77 um on a 32.81 um neck (~17%). With the grain centres
-# and radii held fixed, two runs at different eps therefore start from slightly
-# different NECK WIDTHS even though they read the same grains.dat. Quantify it
-# with calibrate_neck_geometry.py before attributing an eps difference to
-# physics.
+# Each grain's own field crosses 0.5 at exactly r_k = R_k -- the sharp grain
+# surface -- FOR ANY eps. The packings are generated at exact tangency
+# (--contact-gap 0), so neighbours touch precisely where phi_1 = phi_2 = 0.5.
+# Contact therefore has an eps-independent meaning, the radii never depend on
+# eps, and no neck calibration is needed: the sharp geometry is fixed and only
+# the width of the diffuse skin around it changes.
+#
+# The union form (-ic_grain_union 1) exists for OVERLAPPING grains, which these
+# packings deliberately do not have. calibrate_neck_geometry.py is likewise
+# specific to the Molaro axisymmetric pair, where the initial neck had to match
+# a measured experimental value; that constraint does not apply here.
 
 -ic_type multi_grains_file
 -grains_file {pack['grains_file']}

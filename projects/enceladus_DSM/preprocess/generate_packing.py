@@ -52,13 +52,32 @@ obstruction is specific to 2D -- in 3D both phases percolate simultaneously.)
 
 --contact-gap jams the grains against a radius r + gap/2 while reporting the
 true r. A POSITIVE gap leaves a uniform surface-to-surface separation at every
-contact; ZERO gives exact tangency; a NEGATIVE gap makes neighbours OVERLAP by
-|gap|, producing a real solid neck at t=0. Porosity is computed from the true
-radii and is unaffected either way.
+contact; ZERO gives exact tangency; a NEGATIVE gap makes neighbours overlap.
+Porosity is computed from the true radii and is unaffected either way.
 
-WHY THE DEFAULT IS NO LONGER A POSITIVE GAP (changed 2026-08-01)
-----------------------------------------------------------------
-The positive gap bought vapour percolation at t=0 and it is not worth the price:
+WHY THE DEFAULT IS ZERO -- EXACT TANGENCY (changed 2026-08-01)
+--------------------------------------------------------------
+The initial condition gives each grain its own diffuse field
+
+    phi_k = 0.5 - 0.5*tanh( 0.5*(r_k - R_k)/eps )
+
+which crosses 0.5 at exactly r_k = R_k, the sharp grain surface, FOR ANY eps.
+"In contact" therefore has an eps-independent meaning: the grains are tangent,
+centre distance = R_1 + R_2, so that at the contact point phi_1 = phi_2 = 0.5
+and the additive sum is 1. Nothing needs calibrating and the radii never depend
+on eps -- the geometry is fixed by the sharp surfaces, and only the width of the
+diffuse skin around them changes.
+
+Do NOT use a negative gap here. Overlapping grains are what the UNION form
+(-ic_grain_union 1) was built for; with the additive sum used for packings, an
+overlap has to be calibrated against a target neck (the Molaro axisymmetric
+geometries do this only because they reproduce a specific experiment's initial
+neck) and that calibration is eps-dependent, which reintroduces exactly the
+eps sensitivity contact was meant to remove.
+
+WHY NOT A POSITIVE GAP
+----------------------
+A positive gap bought vapour percolation at t=0 and it is not worth the price:
 
   * It does not last. Sintering closes the gap within the first part of any run,
     so a positive gap only defers the disconnection -- it does not avoid it.
@@ -446,14 +465,13 @@ def main(argv=None):
                     help="log-normal shape parameter of the radii")
     ap.add_argument("--radius_clip_frac", type=float, default=1.0,
                     help="clip radii to (1 +/- f)*mean_r_m")
-    ap.add_argument("--contact-gap", type=float, default=-4.0e-6,
+    ap.add_argument("--contact-gap", type=float, default=0.0,
                     help="surface-to-surface separation held at every contact "
-                         "[m]. NEGATIVE overlaps neighbours by |gap|, giving a "
-                         "real solid neck at t=0 (the default, and what k_eff "
-                         "needs); 0 is exact tangency; positive holds the "
-                         "grains apart. In 2D anything <= 0 disconnects the "
-                         "pore space -- see the module docstring for why that "
-                         "is the right trade here")
+                         "[m]. 0 (the default) is EXACT TANGENCY: the grains "
+                         "touch where each one's phi crosses 0.5, which is "
+                         "eps-independent. Positive holds them apart; negative "
+                         "overlaps them and then needs an eps-dependent neck "
+                         "calibration -- see the module docstring")
     ap.add_argument("--seed", type=int, required=True)
     ap.add_argument("--out", required=True, help="output directory")
     ap.add_argument("--raster", type=int, default=1024,
