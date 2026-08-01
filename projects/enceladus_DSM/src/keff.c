@@ -135,27 +135,47 @@ static PetscErrorCode KeffCheckGuards(KeffCtx *kc)
             "  measure, and the cell-problem assembly does not carry the r\n"
             "  weight that assembly.c applies to the phase-field residual.\n");
 
-  /* Interrogate the AXES, not user->periodic: -geom_file bypasses the
-   * IGAAxisSetPeriodic calls in main() entirely, so the flag does not imply a
-   * periodic mesh. (The -geom_file guard above already catches that case, but
-   * this stays correct if that guard is ever relaxed.) */
-  for (PetscInt d = 0; d < kc->dim; d++) {
-    IGAAxis   ax;
-    PetscBool per;
-    ierr = IGAGetAxis(app->iga, d, &ax); CHKERRQ(ierr);
-    ierr = IGAAxisGetPeriodic(ax, &per); CHKERRQ(ierr);
-    if (!per)
-      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
-              "\n*** -keff REQUIRES A FULLY PERIODIC DOMAIN ***\n"
-              "  Axis %d is not periodic (run has -periodic %d).\n"
-              "  This is periodic homogenization: the corrector t_m being\n"
-              "  periodic on the cell boundary IS the definition of the upscaled\n"
-              "  tensor. On a non-periodic window the boundary layer contaminates\n"
-              "  the cell average, and the result is not an effective property of\n"
-              "  anything -- it describes that particular box with those\n"
-              "  particular walls.\n"
-              "  Fix: run with -periodic 1, or drop -keff.\n",
-              (int)d, (int)app->periodic);
+  /* The SOLVER mesh no longer has to be periodic -- the corrector builds its own
+   * periodic mesh (see KeffCreate). But a warning is still owed when it is not,
+   * because periodic homogenization computes the effective property of the
+   * medium obtained by TILING the cell, and that presumes k(x) is periodic.
+   *
+   * Under -periodic 0 two things break that presumption, and neither is fixed by
+   * giving the corrector its own mesh:
+   *   - the packings are generated periodic, and the multi_grains IC applies
+   *     minimum-image wrapping ONLY under -periodic 1 (initial_conditions.c),
+   *     so grains that straddle the boundary are CUT rather than wrapped,
+   *     leaving flat artificial faces at the walls from t = 0;
+   *   - a zero-flux wall is a MIRROR, not a wrap, so the field evolves
+   *     mirror-symmetric rather than periodic and the corrector's periodic
+   *     condition sees a material mismatch across the seam.
+   * The size of the resulting error scales with how much of the domain lies
+   * within a grain radius of a wall.
+   */
+  {
+    PetscInt nonper = 0;
+    for (PetscInt d = 0; d < kc->dim; d++) {
+      IGAAxis   ax;
+      PetscBool per;
+      ierr = IGAGetAxis(app->iga, d, &ax); CHKERRQ(ierr);
+      ierr = IGAAxisGetPeriodic(ax, &per); CHKERRQ(ierr);
+      if (!per) nonper++;
+    }
+    if (nonper) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,
+        "\n"
+        "  *** -keff WARNING: the solver mesh is NOT periodic (%d of %d axes) ***\n"
+        "  The corrector still solves on its own periodic mesh, so k_eff is\n"
+        "  computed -- but periodic homogenization upscales the medium obtained\n"
+        "  by TILING this cell, and a non-periodic run does not produce one:\n"
+        "    - grains straddling the boundary are cut, not wrapped, because the\n"
+        "      multi_grains IC only applies minimum-image under -periodic 1;\n"
+        "    - a zero-flux wall is a mirror, not a wrap, so the evolved field is\n"
+        "      mirror-symmetric and k(x) does not match across the seam.\n"
+        "  Treat the result as indicative. For a defensible tensor either run\n"
+        "  with -periodic 1, or generate a packing whose grains lie fully inside\n"
+        "  the box so nothing is cut.\n\n", (int)nonper, (int)kc->dim); CHKERRQ(ierr);
+    }
   }
 
   PetscFunctionReturn(0);
@@ -197,24 +217,64 @@ PetscErrorCode KeffCreate(AppCtx *app)
   kc->dim = app->dim;
   ierr = KeffCheckGuards(kc); CHKERRQ(ierr);
 
-  /* Scalar corrector mesh. IGAClone copies the axes INCLUDING periodicity, the
-   * quadrature rules and the element partition, and deliberately does not copy
-   * iga->form -- so the phase-field Dirichlet values for T and rho_v cannot
-   * leak into the cell problem. */
-  ierr = IGAClone(app->iga, 1, &kc->iga); CHKERRQ(ierr);
-  ierr = IGASetMatType(kc->iga, MATAIJ); CHKERRQ(ierr);
+  /* Scalar corrector mesh, ALWAYS PERIODIC regardless of the solver's own
+   * boundary conditions.
+   *
+   * The two problems want different boundary conditions and there is no reason
+   * they should share them. The phase field, temperature and vapour equations
+   * are perfectly well posed with zero flux on every wall (-periodic 0); it is
+   * only the CELL PROBLEM that needs periodicity, because a periodic corrector
+   * is what makes the flux average an effective property rather than a property
+   * of one box. PetIGA carries periodicity on the AXIS, i.e. on the knot vector
+   * and DOF layout, so it applies to every field on an IGA at once -- which is
+   * why the corrector needs its own mesh rather than a flag.
+   *
+   * Built from the solver IGA's element counts and extents rather than cloned,
+   * so the periodicity can differ. The element PARTITION must still match
+   * exactly, because kc->ice[] is filled walking the solver IGA and read back
+   * walking this one; that is asserted immediately below and is the reason this
+   * is safe. */
+  {
+    IGAAxis ax_src, ax_dst;
+    ierr = IGACreate(PetscObjectComm((PetscObject)app->iga), &kc->iga); CHKERRQ(ierr);
+    ierr = IGASetDim(kc->iga, kc->dim); CHKERRQ(ierr);
+    ierr = IGASetDof(kc->iga, 1); CHKERRQ(ierr);
+    for (PetscInt d = 0; d < kc->dim; d++) {
+      PetscInt  p_d, N_d;
+      PetscReal U0, U1;
+      const PetscReal *Uknot;
+      ierr = IGAGetAxis(app->iga, d, &ax_src); CHKERRQ(ierr);
+      ierr = IGAAxisGetDegree(ax_src, &p_d); CHKERRQ(ierr);
+      ierr = IGAAxisGetKnots(ax_src, &N_d, (PetscReal**)&Uknot); CHKERRQ(ierr);
+      ierr = IGAAxisGetLimits(ax_src, &U0, &U1); CHKERRQ(ierr);
+      ierr = IGAGetAxis(kc->iga, d, &ax_dst); CHKERRQ(ierr);
+      ierr = IGAAxisSetPeriodic(ax_dst, PETSC_TRUE); CHKERRQ(ierr);
+      ierr = IGAAxisSetDegree(ax_dst, p_d); CHKERRQ(ierr);
+      ierr = IGAAxisInitUniform(ax_dst, app->iga->elem_sizes[d], U0, U1,
+                                p_d - 1); CHKERRQ(ierr);
+    }
+    ierr = IGASetMatType(kc->iga, MATAIJ); CHKERRQ(ierr);
+    ierr = IGASetUp(kc->iga); CHKERRQ(ierr);
+  }
 
-  /* The cross-IGA contract: the clone must partition elements exactly as the
-   * parent does, because kc->ice[] is indexed by the parent's Gauss-point
-   * numbering and read back on the clone. */
+  /* The cross-IGA contract. kc->ice[] is FILLED walking the solver IGA and READ
+   * walking this one, so the two must agree element for element. A periodic and
+   * an open axis of the same element count have different NODE counts, and
+   * PetIGA partitions from the node layout, so in parallel the element
+   * decompositions can legitimately diverge -- this is not a formality. Fail
+   * loudly rather than silently reading phi from the wrong place. */
   for (PetscInt d = 0; d < kc->dim; d++) {
     if (kc->iga->elem_width[d] != app->iga->elem_width[d] ||
         kc->iga->elem_start[d] != app->iga->elem_start[d])
-      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_PLIB,
-              "k_eff: cloned IGA partitions axis %d differently from the solver "
-              "IGA (start %d/%d, width %d/%d). The Gauss-point index mapping "
-              "between the two would be invalid.", (int)d,
-              (int)kc->iga->elem_start[d], (int)app->iga->elem_start[d],
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_PLIB,
+              "k_eff: the periodic corrector mesh partitions axis %d differently "
+              "from the solver mesh (start %d vs %d, width %d vs %d). This "
+              "happens when the solver is NOT periodic: the two axes then carry "
+              "different node counts and PetIGA can split the elements "
+              "differently across ranks, which would make the Gauss-point index "
+              "mapping read phi from the wrong location. Run this case on fewer "
+              "ranks, or with -periodic 1 so both meshes share a layout.",
+              (int)d, (int)kc->iga->elem_start[d], (int)app->iga->elem_start[d],
               (int)kc->iga->elem_width[d], (int)app->iga->elem_width[d]);
   }
 
