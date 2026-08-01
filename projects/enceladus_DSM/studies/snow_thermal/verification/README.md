@@ -263,6 +263,71 @@ unknowns. Extrapolating the measured scalings: GAMG ≈ 80 s per sample serial a
 far less in parallel, against ≈ 90 min per sample for LU. In-line k_eff at any
 useful cadence is only possible because the iterative path works.
 
+---
+
+## t=0 probe — eps sensitivity on the real packings  ⚠️ MAJOR FINDING
+
+```bash
+NPROCS=6 ./studies/snow_thermal/verification/run_t0_probe.sh both
+```
+
+Compares k_eff at **t = 0** between safety 0.5 and safety 1.0 on the three
+shakedown packings. At t=0 the two resolutions describe the *identical* sharp
+microstructure, because `-ic_grain_union 1` puts the φ=0.5 contour on the sharp
+union surface for any eps. So no sintering, no kinetics, no sharp-interface-limit
+error — only the thickness of the diffuse band differs. One cell solve per
+configuration, ~6 s and ~30 s respectively on 6 ranks.
+
+| packing | pore φ | throat p50 | k_iso @ safety 0.5 | @ safety 1.0 | gap |
+|---|---|---|---|---|---|
+| phi0.250_seed1 | 0.248 | 4.00 µm | 0.8951 | 1.1726 | **+31.0 %** |
+| phi0.325_seed3 | 0.325 | 5.95 µm | 0.5477 | 0.7581 | **+38.4 %** |
+| phi0.400_seed5 | 0.398 | 12.61 µm | 0.3716 | 0.5169 | **+39.1 %** |
+
+**The discretisation floor is 0.024 %. This is three orders of magnitude above
+it.** Halving eps changes k_eff on a fixed microstructure by ~35 %.
+
+It is not a volume-fraction effect: `phi_bar` differs by only ~0.4 % between the
+two, and in the *opposite* direction — safety 1.0 has slightly **less** ice yet
+conducts ~35 % **more**. The extra conductance is purely geometric, from the
+band filling pore space.
+
+Why it is so large: the ice skeleton **does not percolate** in these packings
+(`solid_percolates_x/y = false`, `solid_largest_cluster_frac ≈ 0.009`). k_eff is
+therefore set by the weakest links in a series network, which is exactly what a
+widened diffuse band bridges. In a percolation-limited medium k_eff is
+extraordinarily sensitive to anything that adds conducting paths.
+
+### A prediction this refutes
+
+Earlier work in this directory proposed that a gap exceeding the floor, *and*
+**decreasing with porosity**, would be the throat-closure signature — reasoning
+from the band ÷ p50-throat ratio, which falls 4.60 → 3.09 → 1.46 across these
+packings. The measured gap does the opposite: it is nearly flat and slightly
+**increasing** with porosity (31.0 → 38.4 → 39.1 %).
+
+So the band ÷ median-throat ratio is **not** the controlling variable. Bridging
+severity depends on how much of the whole throat-size *distribution* falls
+between the two band widths, and those distributions are strongly skewed —
+p5 = p25 = 4.00 µm for all three (the design contact gap), while p75 is 16.6 /
+32.7 / 45.2 µm. Do not use the p50 ratio as a diagnostic.
+
+### What this means for the study
+
+1. **safety 1.0 is not usable** for k_eff on these packings. That much is settled.
+2. **More seriously: k_eff is not eps-converged at safety 0.5 either.** A 35 %
+   change from one halving of eps says nothing about where the sequence is
+   heading. Until an eps ladder shows k_eff flattening, absolute conductivities
+   from either resolution are not trustworthy, and the porosity *trend* may be
+   distorted too.
+3. This is prior to, and larger than, any REV question. Domain-size convergence
+   on a quantity that has not converged in eps would measure the wrong thing.
+
+**Recommended next step:** an eps convergence ladder (safety 0.5 → 0.25 → 0.125)
+on one packing, to find where k_eff stabilises. Cheap on the 0.5 mm calibration
+packing (`inputs/packings_calib/`), where safety 0.125 is only Nx≈2829 — the
+same mesh the 2 mm packings need at safety 0.5.
+
 ## Consequences for the rest of the study
 
 1. **State the benchmark at measured `φ̄`.** `inputs/geometry/2D_ice_slab_keff.opts`

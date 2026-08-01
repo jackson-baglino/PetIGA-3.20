@@ -100,7 +100,14 @@ def write_geometry(path: Path, T_C: float, p: dict, pack: dict, args) -> None:
 #   grains              = {pack['n_grains']}
 #   contact gap         = {pack['contact_gap_m']*1e6:.2f} um
 #   coordination number = {pack['coordination_number']:.2f}
-#   diffuse band 6*eps  = {6*p['eps']*1e6:.2f} um   (compare with the throat sizes above)
+#
+# THROATS vs THE DIFFUSE BAND -- the binding constraint on eps for k_eff, and the
+# one to check before trusting a conductivity from this geometry. Where the band
+# is wider than a throat, phi never reaches 0 inside it, so ThermalCond returns
+# well above k_air in a channel that ought to be air and k_eff reads HIGH.
+#   pore throat  p25 = {pack['throat_gap_m']['p25']*1e6:6.2f} um   p50 = {pack['throat_gap_m']['p50']*1e6:6.2f} um
+#   diffuse band 6*eps  = {6*p['eps']*1e6:6.2f} um  ({6*p['eps']/pack['throat_gap_m']['p50']:.2f}x the median throat)
+#                9.2*eps = {9.2*p['eps']*1e6:6.2f} um  ({9.2*p['eps']/pack['throat_gap_m']['p50']:.2f}x)
 
 -ic_type multi_grains_file
 -grains_file {pack['grains_file']}
@@ -136,6 +143,15 @@ def main(argv=None):
                     help="condensation coefficient; 1.341e-2 reproduces the "
                          "committed -20 C kinetics (beta_sub0 = 5.9216e5)")
     ap.add_argument("--safety", type=float, default=0.5)
+    ap.add_argument("--name-suffix", default="",
+                    help="appended to every generated .opts stem, e.g. '_s10'. Use "
+                         "this when generating a second set at a different --safety "
+                         "so it does not overwrite the existing one: eps and the "
+                         "mesh are baked into the file name's meaning, not its text. "
+                         "NOTE the suffix lands on the EXPERIMENT file too, which "
+                         "does not depend on --safety (its kinetics are set by "
+                         "temperature alone) -- rename or delete that one, or both "
+                         "safety sets will carry a needless duplicate.")
     ap.add_argument("--Rave", type=float, default=45e-6,
                     help="mean grain radius, for the geometric eps bound")
     ap.add_argument("--humidity", type=float, default=1.00)
@@ -188,7 +204,9 @@ def main(argv=None):
                          alpha_c=args.alpha_c, Rave=args.Rave,
                          safety=args.safety, v_n=vn)
         dof = 3 * p0["Nx"] * p0["Ny"]
-        cores = math.ceil(dof / 50000)
+        # Keep in step with TARGET_DOFS_PER_CORE in scripts/lib/alloc.sh, which
+        # is what the submit scripts actually use (raised 50k -> 80k 2026-07-31).
+        cores = math.ceil(dof / 80000)
         total_cores += cores * len(packs)
         print(f"{T:>5g} {p0['eps']*1e6:>9.4f} {p0['Nx']:>6} {6*p0['eps']*1e6:>9.2f} "
               f"{dof:>12,} {cores:>7} {p0['binding']:>10}")
@@ -196,12 +214,13 @@ def main(argv=None):
         if args.dry_run:
             continue
 
-        write_experiment(exp_dir / f"snow_T{T:g}.opts", T, p0, args)
+        sfx = args.name_suffix
+        write_experiment(exp_dir / f"snow_T{T:g}{sfx}.opts", T, p0, args)
         for pk in packs:
             p = compute_eps(Lx=pk["Lx"], Ly=pk["Ly"], T0_C=T,
                             alpha_c=args.alpha_c, Rave=args.Rave,
                             safety=args.safety, v_n=vn)
-            write_geometry(geo_dir / f"{pk['name']}_T{T:g}.opts", T, p, pk, args)
+            write_geometry(geo_dir / f"{pk['name']}_T{T:g}{sfx}.opts", T, p, pk, args)
 
     n = len(packs) * len(args.temps)
     print(f"\n  {len(packs)} packings x {len(args.temps)} temperatures = {n} runs")

@@ -1,0 +1,552 @@
+Running on 6 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  -beta_sub0 override: 9.9000e+05 -> 5.9216e+05 (factor 1.67)
+  -d0_sub0 override: 1.0000e-07 -> 1.0166e-09 (factor 0.01)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 2002225 unknowns x 2 directions
+    cell volume (quad): 4.000000000056e-06 m^2
+    cell volume (box) : 4.000000000000e-06 m^2   [rel diff 1.41e-11]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    mode              : -keff_only (one sample from the IC, then exit)
+    output            : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/studies/snow_thermal/verification/raw_t0/phi0.250_seed1_s1.0/k_eff.csv
+  ===============================================================================
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 1415,  Ny = 1415
+   Lx = 2.0000e-03 m,  Ly = 2.0000e-03 m
+   dx = 1.4134e-06 m,  dy = 1.4134e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  2.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  8.6400e+04 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0166e-09 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 5.9216e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 5.4685e-01 s/m
+   lambda   =  1.0651e+10
+   tau_sub  =  3.5052e+03 s
+   mob_sub  =  1.9020e-10 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.0388e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   phi_i:   natural Neumann (zero flux)
+   T:       natural Neumann (insulating)
+   rho_v:   natural Neumann (insulating)
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains_file
+  -grains_file: 458 grains from inputs/packings/phi0.250_seed1/grains.dat
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  458 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (5.5983e-04, 1.2045e-03) m,  ax = 4.7203e-05 m,  ay = 4.7203e-05 m
+  ice grain 1: centre = (1.3059e-03, 1.0103e-03) m,  ax = 5.9888e-05 m,  ay = 5.9888e-05 m
+  ice grain 2: centre = (1.8540e-03, 7.7794e-04) m,  ax = 4.6847e-05 m,  ay = 4.6847e-05 m
+  ice grain 3: centre = (1.5044e-03, 2.0579e-04) m,  ax = 2.0699e-05 m,  ay = 2.0699e-05 m
+  ice grain 4: centre = (1.3372e-03, 8.8794e-04) m,  ax = 6.2448e-05 m,  ay = 6.2448e-05 m
+  ice grain 5: centre = (1.4600e-03, 1.9828e-03) m,  ax = 4.9643e-05 m,  ay = 4.9643e-05 m
+  ice grain 6: centre = (1.6544e-03, 1.2390e-03) m,  ax = 3.0362e-05 m,  ay = 3.0362e-05 m
+  ice grain 7: centre = (5.0636e-04, 1.0268e-03) m,  ax = 5.3102e-05 m,  ay = 5.3102e-05 m
+  ice grain 8: centre = (1.1665e-03, 3.7320e-05) m,  ax = 4.7653e-05 m,  ay = 4.7653e-05 m
+  ice grain 9: centre = (1.5686e-03, 1.8081e-03) m,  ax = 4.6004e-05 m,  ay = 4.6004e-05 m
+  ice grain 10: centre = (1.8305e-03, 7.1616e-05) m,  ax = 4.0281e-05 m,  ay = 4.0281e-05 m
+  ice grain 11: centre = (1.8972e-03, 1.9100e-06) m,  ax = 5.2197e-05 m,  ay = 5.2197e-05 m
+  ice grain 12: centre = (1.8141e-03, 1.3332e-03) m,  ax = 2.7479e-05 m,  ay = 2.7479e-05 m
+  ice grain 13: centre = (2.2892e-04, 5.8168e-04) m,  ax = 3.6606e-05 m,  ay = 3.6606e-05 m
+  ice grain 14: centre = (8.0580e-04, 1.2978e-03) m,  ax = 3.1206e-05 m,  ay = 3.1206e-05 m
+  ice grain 15: centre = (8.9685e-04, 7.0553e-04) m,  ax = 5.3575e-05 m,  ay = 5.3575e-05 m
+  ice grain 16: centre = (1.8667e-03, 1.5808e-03) m,  ax = 4.0509e-05 m,  ay = 4.0509e-05 m
+  ice grain 17: centre = (7.6167e-04, 2.3213e-04) m,  ax = 3.4310e-05 m,  ay = 3.4310e-05 m
+  ice grain 18: centre = (5.0508e-04, 9.1875e-04) m,  ax = 2.6862e-05 m,  ay = 2.6862e-05 m
+  ice grain 19: centre = (1.1394e-04, 1.7089e-03) m,  ax = 3.4920e-05 m,  ay = 3.4920e-05 m
+  ice grain 20: centre = (5.7433e-04, 9.0431e-04) m,  ax = 3.9874e-05 m,  ay = 3.9874e-05 m
+  ice grain 21: centre = (1.5010e-03, 1.2327e-03) m,  ax = 3.4600e-05 m,  ay = 3.4600e-05 m
+  ice grain 22: centre = (2.7934e-05, 2.2561e-04) m,  ax = 7.5845e-05 m,  ay = 7.5845e-05 m
+  ice grain 23: centre = (4.4658e-04, 5.2940e-04) m,  ax = 6.5695e-05 m,  ay = 6.5695e-05 m
+  ice grain 24: centre = (6.0890e-04, 1.9241e-03) m,  ax = 1.0238e-05 m,  ay = 1.0238e-05 m
+  ice grain 25: centre = (1.0552e-03, 1.3199e-03) m,  ax = 1.5443e-05 m,  ay = 1.5443e-05 m
+  ice grain 26: centre = (7.0523e-04, 7.4256e-04) m,  ax = 3.6389e-05 m,  ay = 3.6389e-05 m
+  ice grain 27: centre = (1.7840e-03, 9.9365e-04) m,  ax = 3.2155e-05 m,  ay = 3.2155e-05 m
+  ice grain 28: centre = (3.5726e-04, 1.6308e-03) m,  ax = 4.4189e-05 m,  ay = 4.4189e-05 m
+  ice grain 29: centre = (1.0810e-03, 1.5786e-03) m,  ax = 4.4271e-05 m,  ay = 4.4271e-05 m
+  ice grain 30: centre = (1.4117e-03, 1.7067e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 31: centre = (1.8580e-03, 5.8149e-04) m,  ax = 2.2775e-05 m,  ay = 2.2775e-05 m
+  ice grain 32: centre = (1.7253e-03, 4.2958e-04) m,  ax = 3.2880e-05 m,  ay = 3.2880e-05 m
+  ice grain 33: centre = (1.7317e-04, 1.2351e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 34: centre = (1.5790e-03, 1.1812e-03) m,  ax = 5.4873e-05 m,  ay = 5.4873e-05 m
+  ice grain 35: centre = (1.2370e-03, 1.2119e-03) m,  ax = 5.5323e-05 m,  ay = 5.5323e-05 m
+  ice grain 36: centre = (8.3502e-04, 4.1543e-04) m,  ax = 3.0712e-05 m,  ay = 3.0712e-05 m
+  ice grain 37: centre = (7.3377e-05, 5.8162e-04) m,  ax = 1.7420e-05 m,  ay = 1.7420e-05 m
+  ice grain 38: centre = (2.6636e-04, 1.6401e-03) m,  ax = 4.3181e-05 m,  ay = 4.3181e-05 m
+  ice grain 39: centre = (1.5002e-03, 7.2924e-04) m,  ax = 4.1937e-05 m,  ay = 4.1937e-05 m
+  ice grain 40: centre = (1.4912e-04, 1.4941e-03) m,  ax = 2.1499e-05 m,  ay = 2.1499e-05 m
+  ice grain 41: centre = (6.1909e-04, 1.4621e-04) m,  ax = 2.8221e-05 m,  ay = 2.8221e-05 m
+  ice grain 42: centre = (4.2310e-04, 1.9730e-03) m,  ax = 3.8307e-05 m,  ay = 3.8307e-05 m
+  ice grain 43: centre = (1.4855e-03, 4.4823e-04) m,  ax = 2.4761e-05 m,  ay = 2.4761e-05 m
+  ice grain 44: centre = (7.5128e-04, 9.7287e-04) m,  ax = 3.7808e-05 m,  ay = 3.7808e-05 m
+  ice grain 45: centre = (2.4968e-04, 1.8160e-03) m,  ax = 4.1654e-05 m,  ay = 4.1654e-05 m
+  ice grain 46: centre = (7.6119e-04, 5.0764e-04) m,  ax = 4.0425e-05 m,  ay = 4.0425e-05 m
+  ice grain 47: centre = (6.8421e-04, 4.9168e-04) m,  ax = 3.0831e-05 m,  ay = 3.0831e-05 m
+  ice grain 48: centre = (1.3347e-03, 1.9905e-03) m,  ax = 5.3439e-05 m,  ay = 5.3439e-05 m
+  ice grain 49: centre = (6.8590e-04, 1.7535e-03) m,  ax = 6.2007e-05 m,  ay = 6.2007e-05 m
+  ice grain 50: centre = (1.2888e-03, 1.1195e-03) m,  ax = 4.6623e-05 m,  ay = 4.6623e-05 m
+  ice grain 51: centre = (1.0497e-03, 1.1004e-04) m,  ax = 2.6378e-05 m,  ay = 2.6378e-05 m
+  ice grain 52: centre = (1.7378e-03, 1.1964e-03) m,  ax = 5.7253e-05 m,  ay = 5.7253e-05 m
+  ice grain 53: centre = (1.5189e-03, 4.9767e-04) m,  ax = 3.0906e-05 m,  ay = 3.0906e-05 m
+  ice grain 54: centre = (7.3937e-04, 4.0385e-04) m,  ax = 6.1636e-05 m,  ay = 6.1636e-05 m
+  ice grain 55: centre = (9.6175e-04, 1.8678e-03) m,  ax = 2.3238e-05 m,  ay = 2.3238e-05 m
+  ice grain 56: centre = (9.7273e-04, 1.1853e-03) m,  ax = 6.2734e-05 m,  ay = 6.2734e-05 m
+  ice grain 57: centre = (1.7772e-03, 8.2779e-04) m,  ax = 3.9316e-05 m,  ay = 3.9316e-05 m
+  ice grain 58: centre = (2.9058e-04, 1.5981e-04) m,  ax = 2.1270e-05 m,  ay = 2.1270e-05 m
+  ice grain 59: centre = (8.0845e-04, 7.2984e-04) m,  ax = 3.3944e-05 m,  ay = 3.3944e-05 m
+  ice grain 60: centre = (1.0172e-03, 1.7639e-03) m,  ax = 4.0801e-05 m,  ay = 4.0801e-05 m
+  ice grain 61: centre = (8.1459e-04, 5.8002e-04) m,  ax = 4.5516e-05 m,  ay = 4.5516e-05 m
+  ice grain 62: centre = (1.1403e-03, 7.5924e-04) m,  ax = 2.4302e-05 m,  ay = 2.4302e-05 m
+  ice grain 63: centre = (1.0533e-03, 1.2244e-03) m,  ax = 2.2828e-05 m,  ay = 2.2828e-05 m
+  ice grain 64: centre = (8.4825e-04, 4.9290e-04) m,  ax = 4.3880e-05 m,  ay = 4.3880e-05 m
+  ice grain 65: centre = (1.3680e-03, 1.1411e-03) m,  ax = 3.1446e-05 m,  ay = 3.1446e-05 m
+  ice grain 66: centre = (7.3112e-04, 1.6382e-03) m,  ax = 4.4675e-05 m,  ay = 4.4675e-05 m
+  ice grain 67: centre = (1.1747e-03, 6.2793e-04) m,  ax = 5.8057e-05 m,  ay = 5.8057e-05 m
+  ice grain 68: centre = (1.4035e-03, 9.4653e-04) m,  ax = 1.7414e-05 m,  ay = 1.7414e-05 m
+  ice grain 69: centre = (2.6387e-04, 1.1296e-03) m,  ax = 4.5099e-05 m,  ay = 4.5099e-05 m
+  ice grain 70: centre = (5.9347e-04, 6.9421e-04) m,  ax = 7.3258e-05 m,  ay = 7.3258e-05 m
+  ice grain 71: centre = (1.9508e-03, 4.2067e-04) m,  ax = 3.4223e-05 m,  ay = 3.4223e-05 m
+  ice grain 72: centre = (1.8981e-03, 1.9407e-04) m,  ax = 2.6476e-05 m,  ay = 2.6476e-05 m
+  ice grain 73: centre = (1.9680e-03, 1.1858e-03) m,  ax = 5.7846e-05 m,  ay = 5.7846e-05 m
+  ice grain 74: centre = (6.2922e-05, 1.8612e-03) m,  ax = 4.5078e-05 m,  ay = 4.5078e-05 m
+  ice grain 75: centre = (1.6909e-03, 1.0289e-04) m,  ax = 6.2153e-05 m,  ay = 6.2153e-05 m
+  ice grain 76: centre = (1.9367e-03, 1.7645e-03) m,  ax = 3.3417e-05 m,  ay = 3.3417e-05 m
+  ice grain 77: centre = (1.8224e-03, 1.9943e-03) m,  ax = 1.8930e-05 m,  ay = 1.8930e-05 m
+  ice grain 78: centre = (1.3898e-03, 1.0674e-03) m,  ax = 3.7587e-05 m,  ay = 3.7587e-05 m
+  ice grain 79: centre = (1.3452e-03, 1.9019e-03) m,  ax = 3.1777e-05 m,  ay = 3.1777e-05 m
+  ice grain 80: centre = (1.4230e-03, 1.4115e-03) m,  ax = 5.8517e-05 m,  ay = 5.8517e-05 m
+  ice grain 81: centre = (1.0939e-03, 1.1666e-03) m,  ax = 4.3749e-05 m,  ay = 4.3749e-05 m
+  ice grain 82: centre = (1.5803e-03, 9.0809e-04) m,  ax = 1.7571e-05 m,  ay = 1.7571e-05 m
+  ice grain 83: centre = (1.0369e-03, 9.4865e-04) m,  ax = 2.1847e-05 m,  ay = 2.1847e-05 m
+  ice grain 84: centre = (6.2680e-04, 1.3796e-03) m,  ax = 6.1779e-05 m,  ay = 6.1779e-05 m
+  ice grain 85: centre = (1.6293e-04, 4.1518e-04) m,  ax = 5.5787e-05 m,  ay = 5.5787e-05 m
+  ice grain 86: centre = (1.8415e-03, 1.4837e-03) m,  ax = 2.8834e-05 m,  ay = 2.8834e-05 m
+  ice grain 87: centre = (1.4342e-03, 9.9937e-04) m,  ax = 3.9692e-05 m,  ay = 3.9692e-05 m
+  ice grain 88: centre = (2.3770e-04, 1.4377e-03) m,  ax = 4.9623e-05 m,  ay = 4.9623e-05 m
+  ice grain 89: centre = (1.6080e-03, 1.9218e-03) m,  ax = 5.0192e-05 m,  ay = 5.0192e-05 m
+  ice grain 90: centre = (6.1328e-04, 4.2047e-04) m,  ax = 6.1546e-05 m,  ay = 6.1546e-05 m
+  ice grain 91: centre = (1.2070e-03, 8.7514e-04) m,  ax = 4.5146e-05 m,  ay = 4.5146e-05 m
+  ice grain 92: centre = (7.0940e-04, 5.7160e-04) m,  ax = 3.7873e-05 m,  ay = 3.7873e-05 m
+  ice grain 93: centre = (4.6055e-04, 8.4457e-05) m,  ax = 3.4891e-05 m,  ay = 3.4891e-05 m
+  ice grain 94: centre = (3.7099e-04, 1.1752e-03) m,  ax = 6.7325e-05 m,  ay = 6.7325e-05 m
+  ice grain 95: centre = (6.7147e-05, 1.2622e-03) m,  ax = 1.2887e-05 m,  ay = 1.2887e-05 m
+  ice grain 96: centre = (1.5391e-04, 1.7395e-05) m,  ax = 3.7052e-05 m,  ay = 3.7052e-05 m
+  ice grain 97: centre = (1.7874e-04, 1.0987e-03) m,  ax = 4.0373e-05 m,  ay = 4.0373e-05 m
+  ice grain 98: centre = (2.1095e-04, 8.6010e-04) m,  ax = 1.9472e-05 m,  ay = 1.9472e-05 m
+  ice grain 99: centre = (1.6614e-03, 1.8360e-03) m,  ax = 4.6902e-05 m,  ay = 4.6902e-05 m
+  ice grain 100: centre = (1.0174e-03, 1.8627e-03) m,  ax = 2.8675e-05 m,  ay = 2.8675e-05 m
+  ice grain 101: centre = (3.3035e-04, 5.8944e-04) m,  ax = 6.1123e-05 m,  ay = 6.1123e-05 m
+  ice grain 102: centre = (1.0676e-03, 1.4941e-03) m,  ax = 3.7295e-05 m,  ay = 3.7295e-05 m
+  ice grain 103: centre = (1.2143e-03, 3.0876e-04) m,  ax = 5.5492e-05 m,  ay = 5.5492e-05 m
+  ice grain 104: centre = (9.6851e-04, 8.1553e-04) m,  ax = 7.3046e-05 m,  ay = 7.3046e-05 m
+  ice grain 105: centre = (3.1415e-04, 1.7226e-03) m,  ax = 4.8093e-05 m,  ay = 4.8093e-05 m
+  ice grain 106: centre = (8.3229e-04, 6.5305e-04) m,  ax = 2.5631e-05 m,  ay = 2.5631e-05 m
+  ice grain 107: centre = (1.6806e-03, 4.6249e-04) m,  ax = 1.8625e-05 m,  ay = 1.8625e-05 m
+  ice grain 108: centre = (8.4898e-04, 1.7113e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 109: centre = (1.0029e-03, 1.5925e-04) m,  ax = 3.7563e-05 m,  ay = 3.7563e-05 m
+  ice grain 110: centre = (1.8664e-03, 1.6974e-03) m,  ax = 2.8145e-05 m,  ay = 2.8145e-05 m
+  ice grain 111: centre = (4.9040e-04, 6.3288e-04) m,  ax = 4.2683e-05 m,  ay = 4.2683e-05 m
+  ice grain 112: centre = (1.4254e-03, 4.2396e-04) m,  ax = 3.6088e-05 m,  ay = 3.6088e-05 m
+  ice grain 113: centre = (9.5318e-04, 9.7092e-04) m,  ax = 6.0809e-05 m,  ay = 6.0809e-05 m
+  ice grain 114: centre = (1.6423e-03, 9.0781e-04) m,  ax = 4.0392e-05 m,  ay = 4.0392e-05 m
+  ice grain 115: centre = (7.5197e-04, 1.9487e-03) m,  ax = 3.9986e-05 m,  ay = 3.9986e-05 m
+  ice grain 116: centre = (1.1358e-03, 1.4833e-03) m,  ax = 2.7782e-05 m,  ay = 2.7782e-05 m
+  ice grain 117: centre = (8.5435e-04, 9.1205e-04) m,  ax = 5.0222e-05 m,  ay = 5.0222e-05 m
+  ice grain 118: centre = (1.7816e-03, 1.1204e-03) m,  ax = 2.3682e-05 m,  ay = 2.3682e-05 m
+  ice grain 119: centre = (1.7818e-03, 7.0004e-04) m,  ax = 5.5402e-05 m,  ay = 5.5402e-05 m
+  ice grain 120: centre = (1.2170e-03, 1.9102e-03) m,  ax = 8.5083e-05 m,  ay = 8.5083e-05 m
+  ice grain 121: centre = (1.9231e-03, 7.7148e-04) m,  ax = 1.8529e-05 m,  ay = 1.8529e-05 m
+  ice grain 122: centre = (1.4420e-03, 1.8079e-03) m,  ax = 1.1572e-05 m,  ay = 1.1572e-05 m
+  ice grain 123: centre = (1.7314e-03, 1.3115e-03) m,  ax = 5.4060e-05 m,  ay = 5.4060e-05 m
+  ice grain 124: centre = (1.7935e-03, 1.8851e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 125: centre = (4.9258e-04, 7.0361e-04) m,  ax = 2.4076e-05 m,  ay = 2.4076e-05 m
+  ice grain 126: centre = (1.9918e-03, 9.1533e-04) m,  ax = 2.1249e-05 m,  ay = 2.1249e-05 m
+  ice grain 127: centre = (7.4964e-04, 6.6005e-04) m,  ax = 5.3311e-05 m,  ay = 5.3311e-05 m
+  ice grain 128: centre = (1.0224e-03, 1.6292e-03) m,  ax = 2.6083e-05 m,  ay = 2.6083e-05 m
+  ice grain 129: centre = (3.5657e-04, 1.9426e-03) m,  ax = 3.0835e-05 m,  ay = 3.0835e-05 m
+  ice grain 130: centre = (1.5406e-03, 1.7188e-03) m,  ax = 3.3368e-05 m,  ay = 3.3368e-05 m
+  ice grain 131: centre = (6.6336e-04, 9.3938e-04) m,  ax = 5.1814e-05 m,  ay = 5.1814e-05 m
+  ice grain 132: centre = (1.2941e-03, 1.6604e-03) m,  ax = 3.2428e-05 m,  ay = 3.2428e-05 m
+  ice grain 133: centre = (3.9824e-04, 1.4525e-03) m,  ax = 4.5632e-05 m,  ay = 4.5632e-05 m
+  ice grain 134: centre = (7.6066e-04, 1.0505e-03) m,  ax = 3.6357e-05 m,  ay = 3.6357e-05 m
+  ice grain 135: centre = (7.4913e-04, 3.1270e-04) m,  ax = 2.6032e-05 m,  ay = 2.6032e-05 m
+  ice grain 136: centre = (5.4237e-04, 4.9011e-04) m,  ax = 3.3844e-05 m,  ay = 3.3844e-05 m
+  ice grain 137: centre = (6.9841e-05, 1.4518e-03) m,  ax = 2.4692e-05 m,  ay = 2.4692e-05 m
+  ice grain 138: centre = (1.5054e-03, 3.8258e-04) m,  ax = 3.9842e-05 m,  ay = 3.9842e-05 m
+  ice grain 139: centre = (1.8879e-03, 1.1588e-03) m,  ax = 2.2640e-05 m,  ay = 2.2640e-05 m
+  ice grain 140: centre = (4.2162e-04, 1.6612e-03) m,  ax = 2.2994e-05 m,  ay = 2.2994e-05 m
+  ice grain 141: centre = (3.2210e-04, 1.3312e-03) m,  ax = 8.2281e-05 m,  ay = 8.2281e-05 m
+  ice grain 142: centre = (6.9384e-04, 1.1767e-03) m,  ax = 3.8670e-05 m,  ay = 3.8670e-05 m
+  ice grain 143: centre = (6.7707e-05, 4.4017e-04) m,  ax = 3.8656e-05 m,  ay = 3.8656e-05 m
+  ice grain 144: centre = (1.2790e-03, 2.1885e-04) m,  ax = 5.1287e-05 m,  ay = 5.1287e-05 m
+  ice grain 145: centre = (8.0864e-04, 4.7732e-05) m,  ax = 3.2176e-05 m,  ay = 3.2176e-05 m
+  ice grain 146: centre = (1.1155e-03, 1.0792e-04) m,  ax = 3.5424e-05 m,  ay = 3.5424e-05 m
+  ice grain 147: centre = (1.8104e-03, 4.1723e-04) m,  ax = 4.9119e-05 m,  ay = 4.9119e-05 m
+  ice grain 148: centre = (1.6634e-03, 1.1195e-03) m,  ax = 4.5735e-05 m,  ay = 4.5735e-05 m
+  ice grain 149: centre = (1.8185e-03, 8.7871e-04) m,  ax = 2.2243e-05 m,  ay = 2.2243e-05 m
+  ice grain 150: centre = (1.8841e-03, 2.8369e-04) m,  ax = 6.0240e-05 m,  ay = 6.0240e-05 m
+  ice grain 151: centre = (1.1189e-03, 5.5508e-04) m,  ax = 2.9561e-05 m,  ay = 2.9561e-05 m
+  ice grain 152: centre = (1.0127e-03, 9.0577e-04) m,  ax = 2.3421e-05 m,  ay = 2.3421e-05 m
+  ice grain 153: centre = (6.2445e-05, 1.5966e-03) m,  ax = 2.5316e-05 m,  ay = 2.5316e-05 m
+  ice grain 154: centre = (2.0608e-04, 1.3574e-03) m,  ax = 3.2668e-05 m,  ay = 3.2668e-05 m
+  ice grain 155: centre = (1.0358e-03, 1.9836e-03) m,  ax = 8.9596e-05 m,  ay = 8.9596e-05 m
+  ice grain 156: centre = (1.6708e-03, 9.6784e-04) m,  ax = 2.2063e-05 m,  ay = 2.2063e-05 m
+  ice grain 157: centre = (8.1988e-04, 3.3088e-04) m,  ax = 4.3022e-05 m,  ay = 4.3022e-05 m
+  ice grain 158: centre = (6.1077e-05, 1.6819e-03) m,  ax = 1.3637e-05 m,  ay = 1.3637e-05 m
+  ice grain 159: centre = (3.9055e-04, 1.7734e-03) m,  ax = 3.9681e-05 m,  ay = 3.9681e-05 m
+  ice grain 160: centre = (1.4657e-03, 1.1382e-03) m,  ax = 6.2268e-05 m,  ay = 6.2268e-05 m
+  ice grain 161: centre = (2.1025e-04, 1.5223e-03) m,  ax = 3.5281e-05 m,  ay = 3.5281e-05 m
+  ice grain 162: centre = (3.1985e-04, 1.4465e-03) m,  ax = 2.8991e-05 m,  ay = 2.8991e-05 m
+  ice grain 163: centre = (6.3910e-04, 1.6533e-03) m,  ax = 4.4586e-05 m,  ay = 4.4586e-05 m
+  ice grain 164: centre = (1.2025e-03, 5.1282e-04) m,  ax = 5.6359e-05 m,  ay = 5.6359e-05 m
+  ice grain 165: centre = (1.6026e-03, 4.6400e-04) m,  ax = 5.5340e-05 m,  ay = 5.5340e-05 m
+  ice grain 166: centre = (5.3360e-04, 1.5044e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 167: centre = (1.0941e-03, 1.8588e-03) m,  ax = 4.4091e-05 m,  ay = 4.4091e-05 m
+  ice grain 168: centre = (1.0734e-03, 4.9466e-04) m,  ax = 2.9531e-05 m,  ay = 2.9531e-05 m
+  ice grain 169: centre = (8.8811e-04, 1.1248e-03) m,  ax = 3.7288e-05 m,  ay = 3.7288e-05 m
+  ice grain 170: centre = (1.1882e-03, 1.1274e-03) m,  ax = 3.8299e-05 m,  ay = 3.8299e-05 m
+  ice grain 171: centre = (1.6810e-03, 6.8912e-04) m,  ax = 4.1931e-05 m,  ay = 4.1931e-05 m
+  ice grain 172: centre = (4.3781e-04, 1.5971e-03) m,  ax = 3.9121e-05 m,  ay = 3.9121e-05 m
+  ice grain 173: centre = (9.7799e-04, 2.4040e-04) m,  ax = 4.3321e-05 m,  ay = 4.3321e-05 m
+  ice grain 174: centre = (2.5851e-04, 7.8942e-04) m,  ax = 1.7223e-05 m,  ay = 1.7223e-05 m
+  ice grain 175: centre = (1.0985e-03, 8.8869e-04) m,  ax = 6.0128e-05 m,  ay = 6.0128e-05 m
+  ice grain 176: centre = (1.5435e-03, 1.9756e-03) m,  ax = 2.9794e-05 m,  ay = 2.9794e-05 m
+  ice grain 177: centre = (1.9073e-05, 1.4530e-03) m,  ax = 2.2089e-05 m,  ay = 2.2089e-05 m
+  ice grain 178: centre = (9.8964e-04, 1.4382e-03) m,  ax = 5.4628e-05 m,  ay = 5.4628e-05 m
+  ice grain 179: centre = (5.4067e-04, 1.9917e-03) m,  ax = 7.6733e-05 m,  ay = 7.6733e-05 m
+  ice grain 180: centre = (1.1658e-03, 4.0786e-04) m,  ax = 5.0814e-05 m,  ay = 5.0814e-05 m
+  ice grain 181: centre = (8.0026e-04, 1.2197e-03) m,  ax = 4.3045e-05 m,  ay = 4.3045e-05 m
+  ice grain 182: centre = (2.4058e-04, 1.5549e-04) m,  ax = 2.4917e-05 m,  ay = 2.4917e-05 m
+  ice grain 183: centre = (1.0239e-03, 3.7933e-04) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 184: centre = (1.5751e-03, 1.3821e-03) m,  ax = 6.1670e-05 m,  ay = 6.1670e-05 m
+  ice grain 185: centre = (1.8123e-03, 1.6344e-03) m,  ax = 2.2466e-05 m,  ay = 2.2466e-05 m
+  ice grain 186: centre = (1.9477e-03, 1.2724e-03) m,  ax = 2.6892e-05 m,  ay = 2.6892e-05 m
+  ice grain 187: centre = (7.6816e-04, 1.1372e-03) m,  ax = 4.1478e-05 m,  ay = 4.1478e-05 m
+  ice grain 188: centre = (4.9765e-04, 1.6107e-03) m,  ax = 1.8252e-05 m,  ay = 1.8252e-05 m
+  ice grain 189: centre = (2.9892e-04, 1.8900e-03) m,  ax = 4.3206e-05 m,  ay = 4.3206e-05 m
+  ice grain 190: centre = (8.6017e-04, 1.8363e-03) m,  ax = 3.1567e-05 m,  ay = 3.1567e-05 m
+  ice grain 191: centre = (1.5470e-03, 1.6083e-03) m,  ax = 7.3317e-05 m,  ay = 7.3317e-05 m
+  ice grain 192: centre = (4.2001e-04, 8.7623e-04) m,  ax = 6.4247e-05 m,  ay = 6.4247e-05 m
+  ice grain 193: centre = (1.7089e-03, 1.4714e-03) m,  ax = 1.0237e-05 m,  ay = 1.0237e-05 m
+  ice grain 194: centre = (1.4437e-03, 5.0350e-04) m,  ax = 4.0549e-05 m,  ay = 4.0549e-05 m
+  ice grain 195: centre = (3.3858e-04, 1.8230e-03) m,  ax = 1.7689e-05 m,  ay = 1.7689e-05 m
+  ice grain 196: centre = (1.3316e-03, 5.2278e-04) m,  ax = 6.9164e-05 m,  ay = 6.9164e-05 m
+  ice grain 197: centre = (1.6181e-03, 1.8678e-05) m,  ax = 4.3195e-05 m,  ay = 4.3195e-05 m
+  ice grain 198: centre = (1.9869e-03, 5.6597e-04) m,  ax = 5.2241e-05 m,  ay = 5.2241e-05 m
+  ice grain 199: centre = (3.4791e-04, 5.0274e-04) m,  ax = 2.3315e-05 m,  ay = 2.3315e-05 m
+  ice grain 200: centre = (1.5691e-03, 6.1206e-04) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 201: centre = (1.5665e-03, 1.0188e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 202: centre = (4.7601e-04, 2.6889e-04) m,  ax = 2.3319e-05 m,  ay = 2.3319e-05 m
+  ice grain 203: centre = (5.6936e-04, 5.7144e-04) m,  ax = 4.7850e-05 m,  ay = 4.7850e-05 m
+  ice grain 204: centre = (1.9783e-03, 1.8155e-03) m,  ax = 2.8361e-05 m,  ay = 2.8361e-05 m
+  ice grain 205: centre = (7.6915e-04, 1.8179e-03) m,  ax = 3.9247e-05 m,  ay = 3.9247e-05 m
+  ice grain 206: centre = (5.2359e-04, 2.7782e-04) m,  ax = 2.1091e-05 m,  ay = 2.1091e-05 m
+  ice grain 207: centre = (1.3642e-03, 7.2798e-04) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 208: centre = (2.5824e-04, 8.5226e-04) m,  ax = 2.4461e-05 m,  ay = 2.4461e-05 m
+  ice grain 209: centre = (9.6801e-04, 1.6635e-03) m,  ax = 3.4248e-05 m,  ay = 3.4248e-05 m
+  ice grain 210: centre = (7.7548e-04, 1.3785e-03) m,  ax = 5.1030e-05 m,  ay = 5.1030e-05 m
+  ice grain 211: centre = (1.1567e-03, 8.1387e-04) m,  ax = 2.8728e-05 m,  ay = 2.8728e-05 m
+  ice grain 212: centre = (1.1597e-03, 1.6064e-03) m,  ax = 3.5234e-05 m,  ay = 3.5234e-05 m
+  ice grain 213: centre = (1.2161e-03, 1.2987e-03) m,  ax = 2.9959e-05 m,  ay = 2.9959e-05 m
+  ice grain 214: centre = (8.9287e-04, 3.7280e-04) m,  ax = 3.7149e-05 m,  ay = 3.7149e-05 m
+  ice grain 215: centre = (1.8193e-03, 1.5340e-03) m,  ax = 2.2118e-05 m,  ay = 2.2118e-05 m
+  ice grain 216: centre = (1.6699e-03, 8.3670e-04) m,  ax = 3.1902e-05 m,  ay = 3.1902e-05 m
+  ice grain 217: centre = (1.9127e-03, 1.8337e-03) m,  ax = 3.5810e-05 m,  ay = 3.5810e-05 m
+  ice grain 218: centre = (9.3923e-04, 1.3609e-03) m,  ax = 3.3609e-05 m,  ay = 3.3609e-05 m
+  ice grain 219: centre = (1.4216e-03, 2.4122e-04) m,  ax = 4.0854e-05 m,  ay = 4.0854e-05 m
+  ice grain 220: centre = (9.3811e-04, 1.5974e-03) m,  ax = 3.4299e-05 m,  ay = 3.4299e-05 m
+  ice grain 221: centre = (5.9423e-04, 1.1010e-03) m,  ax = 5.7874e-05 m,  ay = 5.7874e-05 m
+  ice grain 222: centre = (1.2210e-03, 1.0587e-03) m,  ax = 3.3787e-05 m,  ay = 3.3787e-05 m
+  ice grain 223: centre = (1.8796e-03, 8.6206e-04) m,  ax = 3.7090e-05 m,  ay = 3.7090e-05 m
+  ice grain 224: centre = (1.6452e-03, 1.3191e-03) m,  ax = 2.8482e-05 m,  ay = 2.8482e-05 m
+  ice grain 225: centre = (5.6035e-04, 1.6971e-04) m,  ax = 3.0521e-05 m,  ay = 3.0521e-05 m
+  ice grain 226: centre = (4.7033e-04, 9.5739e-04) m,  ax = 2.1103e-05 m,  ay = 2.1103e-05 m
+  ice grain 227: centre = (1.5075e-03, 1.8891e-03) m,  ax = 5.1473e-05 m,  ay = 5.1473e-05 m
+  ice grain 228: centre = (1.3768e-03, 3.8461e-04) m,  ax = 2.2430e-05 m,  ay = 2.2430e-05 m
+  ice grain 229: centre = (1.7869e-03, 2.6218e-04) m,  ax = 2.7350e-05 m,  ay = 2.7350e-05 m
+  ice grain 230: centre = (3.2317e-04, 8.1279e-04) m,  ax = 4.7526e-05 m,  ay = 4.7526e-05 m
+  ice grain 231: centre = (1.7086e-03, 1.0322e-03) m,  ax = 4.8567e-05 m,  ay = 4.8567e-05 m
+  ice grain 232: centre = (8.6228e-04, 7.8872e-04) m,  ax = 3.2512e-05 m,  ay = 3.2512e-05 m
+  ice grain 233: centre = (5.7771e-04, 1.0212e-03) m,  ax = 1.4469e-05 m,  ay = 1.4469e-05 m
+  ice grain 234: centre = (7.0963e-04, 1.4590e-03) m,  ax = 4.9005e-05 m,  ay = 4.9005e-05 m
+  ice grain 235: centre = (8.2143e-05, 1.5247e-03) m,  ax = 4.5216e-05 m,  ay = 4.5216e-05 m
+  ice grain 236: centre = (1.9268e-03, 9.5967e-05) m,  ax = 1.9599e-05 m,  ay = 1.9599e-05 m
+  ice grain 237: centre = (1.7906e-04, 7.8472e-04) m,  ax = 5.8371e-05 m,  ay = 5.8371e-05 m
+  ice grain 238: centre = (6.3758e-04, 1.2194e-03) m,  ax = 2.7969e-05 m,  ay = 2.7969e-05 m
+  ice grain 239: centre = (1.4026e-03, 3.3036e-05) m,  ax = 2.2614e-05 m,  ay = 2.2614e-05 m
+  ice grain 240: centre = (3.6004e-05, 1.9479e-03) m,  ax = 4.1659e-05 m,  ay = 4.1659e-05 m
+  ice grain 241: centre = (7.4338e-05, 1.3200e-03) m,  ax = 3.6322e-05 m,  ay = 3.6322e-05 m
+  ice grain 242: centre = (1.5973e-04, 1.0079e-03) m,  ax = 4.3947e-05 m,  ay = 4.3947e-05 m
+  ice grain 243: centre = (1.7216e-03, 8.5315e-04) m,  ax = 1.7793e-05 m,  ay = 1.7793e-05 m
+  ice grain 244: centre = (6.3816e-04, 2.6693e-04) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 245: centre = (7.1718e-04, 1.7216e-04) m,  ax = 2.9381e-05 m,  ay = 2.9381e-05 m
+  ice grain 246: centre = (1.4921e-03, 1.3693e-03) m,  ax = 1.8390e-05 m,  ay = 1.8390e-05 m
+  ice grain 247: centre = (6.8881e-04, 1.8736e-03) m,  ax = 5.4113e-05 m,  ay = 5.4113e-05 m
+  ice grain 248: centre = (1.4282e-03, 1.5806e-03) m,  ax = 3.3257e-05 m,  ay = 3.3257e-05 m
+  ice grain 249: centre = (8.3990e-04, 1.9710e-03) m,  ax = 4.6716e-05 m,  ay = 4.6716e-05 m
+  ice grain 250: centre = (5.7050e-04, 1.0194e-04) m,  ax = 3.3510e-05 m,  ay = 3.3510e-05 m
+  ice grain 251: centre = (8.2662e-04, 1.0008e-03) m,  ax = 3.8544e-05 m,  ay = 3.8544e-05 m
+  ice grain 252: centre = (3.3551e-04, 1.0478e-03) m,  ax = 4.4905e-05 m,  ay = 4.4905e-05 m
+  ice grain 253: centre = (5.4340e-05, 1.2080e-03) m,  ax = 2.7340e-05 m,  ay = 2.7340e-05 m
+  ice grain 254: centre = (1.7794e-03, 1.7098e-03) m,  ax = 5.5759e-05 m,  ay = 5.5759e-05 m
+  ice grain 255: centre = (1.7230e-03, 1.7814e-03) m,  ax = 3.1397e-05 m,  ay = 3.1397e-05 m
+  ice grain 256: centre = (9.1909e-04, 1.9590e-03) m,  ax = 2.5708e-05 m,  ay = 2.5708e-05 m
+  ice grain 257: centre = (1.2779e-03, 6.2384e-04) m,  ax = 4.1272e-05 m,  ay = 4.1272e-05 m
+  ice grain 258: centre = (1.7350e-03, 9.2329e-04) m,  ax = 4.9610e-05 m,  ay = 4.9610e-05 m
+  ice grain 259: centre = (8.8985e-04, 1.9008e-03) m,  ax = 3.5415e-05 m,  ay = 3.5415e-05 m
+  ice grain 260: centre = (1.3402e-03, 1.3806e-03) m,  ax = 2.5801e-05 m,  ay = 2.5801e-05 m
+  ice grain 261: centre = (1.4520e-03, 1.4690e-04) m,  ax = 5.4139e-05 m,  ay = 5.4139e-05 m
+  ice grain 262: centre = (1.2283e-04, 1.8014e-03) m,  ax = 1.6469e-05 m,  ay = 1.6469e-05 m
+  ice grain 263: centre = (2.9053e-04, 1.2258e-03) m,  ax = 2.3718e-05 m,  ay = 2.3718e-05 m
+  ice grain 264: centre = (1.4309e-03, 3.4266e-04) m,  ax = 4.0505e-05 m,  ay = 4.0505e-05 m
+  ice grain 265: centre = (1.3553e-03, 6.1414e-04) m,  ax = 2.0108e-05 m,  ay = 2.0108e-05 m
+  ice grain 266: centre = (4.2244e-04, 1.0762e-03) m,  ax = 4.0272e-05 m,  ay = 4.0272e-05 m
+  ice grain 267: centre = (1.5869e-03, 1.2784e-03) m,  ax = 3.8638e-05 m,  ay = 3.8638e-05 m
+  ice grain 268: centre = (1.6034e-03, 7.6447e-04) m,  ax = 6.2242e-05 m,  ay = 6.2242e-05 m
+  ice grain 269: centre = (7.9666e-04, 1.6042e-03) m,  ax = 2.5135e-05 m,  ay = 2.5135e-05 m
+  ice grain 270: centre = (6.3133e-04, 1.0180e-03) m,  ax = 2.9041e-05 m,  ay = 2.9041e-05 m
+  ice grain 271: centre = (2.1227e-04, 1.9516e-03) m,  ax = 4.6911e-05 m,  ay = 4.6911e-05 m
+  ice grain 272: centre = (9.5460e-04, 1.7116e-03) m,  ax = 1.1622e-05 m,  ay = 1.1622e-05 m
+  ice grain 273: centre = (1.9593e-04, 2.6571e-04) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 274: centre = (1.1864e-03, 1.5103e-04) m,  ax = 2.8004e-05 m,  ay = 2.8004e-05 m
+  ice grain 275: centre = (1.2317e-03, 1.6745e-03) m,  ax = 2.7570e-05 m,  ay = 2.7570e-05 m
+  ice grain 276: centre = (1.1235e-03, 1.2773e-03) m,  ax = 6.1083e-05 m,  ay = 6.1083e-05 m
+  ice grain 277: centre = (1.2053e-04, 1.9447e-03) m,  ax = 3.8929e-05 m,  ay = 3.8929e-05 m
+  ice grain 278: centre = (1.2589e-03, 9.1494e-04) m,  ax = 1.6313e-05 m,  ay = 1.6313e-05 m
+  ice grain 279: centre = (1.5109e-03, 2.8456e-04) m,  ax = 5.4333e-05 m,  ay = 5.4333e-05 m
+  ice grain 280: centre = (3.6843e-04, 1.2284e-04) m,  ax = 6.0907e-05 m,  ay = 6.0907e-05 m
+  ice grain 281: centre = (1.1708e-03, 1.5363e-03) m,  ax = 3.1712e-05 m,  ay = 3.1712e-05 m
+  ice grain 282: centre = (1.6372e-03, 1.8802e-04) m,  ax = 3.4497e-05 m,  ay = 3.4497e-05 m
+  ice grain 283: centre = (4.6819e-04, 1.2489e-03) m,  ax = 5.0636e-05 m,  ay = 5.0636e-05 m
+  ice grain 284: centre = (1.8219e-03, 1.1561e-03) m,  ax = 2.5211e-05 m,  ay = 2.5211e-05 m
+  ice grain 285: centre = (1.9835e-03, 1.5196e-03) m,  ax = 4.9445e-05 m,  ay = 4.9445e-05 m
+  ice grain 286: centre = (1.4127e-03, 1.8596e-03) m,  ax = 4.3874e-05 m,  ay = 4.3874e-05 m
+  ice grain 287: centre = (1.7457e-03, 3.6766e-04) m,  ax = 2.8338e-05 m,  ay = 2.8338e-05 m
+  ice grain 288: centre = (5.3841e-04, 9.5691e-04) m,  ax = 1.9799e-05 m,  ay = 1.9799e-05 m
+  ice grain 289: centre = (1.2409e-03, 1.5238e-03) m,  ax = 3.5476e-05 m,  ay = 3.5476e-05 m
+  ice grain 290: centre = (1.8129e-03, 3.3851e-04) m,  ax = 2.5635e-05 m,  ay = 2.5635e-05 m
+  ice grain 291: centre = (1.2884e-04, 1.2098e-04) m,  ax = 6.5521e-05 m,  ay = 6.5521e-05 m
+  ice grain 292: centre = (1.6320e-03, 2.6903e-04) m,  ax = 4.2679e-05 m,  ay = 4.2679e-05 m
+  ice grain 293: centre = (4.1799e-04, 1.8721e-03) m,  ax = 5.8716e-05 m,  ay = 5.8716e-05 m
+  ice grain 294: centre = (1.5605e-03, 1.4892e-03) m,  ax = 4.2477e-05 m,  ay = 4.2477e-05 m
+  ice grain 295: centre = (1.2657e-03, 4.0009e-04) m,  ax = 4.5291e-05 m,  ay = 4.5291e-05 m
+  ice grain 296: centre = (1.5988e-03, 9.0150e-05) m,  ax = 2.6847e-05 m,  ay = 2.6847e-05 m
+  ice grain 297: centre = (8.9456e-04, 1.2793e-03) m,  ax = 5.5461e-05 m,  ay = 5.5461e-05 m
+  ice grain 298: centre = (9.6865e-04, 5.6010e-04) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 299: centre = (1.8900e-03, 3.8177e-04) m,  ax = 3.4016e-05 m,  ay = 3.4016e-05 m
+  ice grain 300: centre = (1.0392e-04, 3.4813e-04) m,  ax = 2.9526e-05 m,  ay = 2.9526e-05 m
+  ice grain 301: centre = (3.3718e-04, 9.4067e-04) m,  ax = 3.6699e-05 m,  ay = 3.6699e-05 m
+  ice grain 302: centre = (1.8485e-03, 6.3870e-04) m,  ax = 3.1219e-05 m,  ay = 3.1219e-05 m
+  ice grain 303: centre = (1.9150e-03, 1.9014e-03) m,  ax = 2.7964e-05 m,  ay = 2.7964e-05 m
+  ice grain 304: centre = (2.4432e-04, 1.0401e-03) m,  ax = 4.2553e-05 m,  ay = 4.2553e-05 m
+  ice grain 305: centre = (1.9821e-03, 1.8821e-03) m,  ax = 3.4336e-05 m,  ay = 3.4336e-05 m
+  ice grain 306: centre = (5.5611e-04, 1.8301e-03) m,  ax = 8.1540e-05 m,  ay = 8.1540e-05 m
+  ice grain 307: centre = (1.8597e-03, 1.7690e-03) m,  ax = 3.9716e-05 m,  ay = 3.9716e-05 m
+  ice grain 308: centre = (1.8512e-03, 9.4510e-04) m,  ax = 4.6694e-05 m,  ay = 4.6694e-05 m
+  ice grain 309: centre = (7.1446e-05, 1.1143e-03) m,  ax = 6.3923e-05 m,  ay = 6.3923e-05 m
+  ice grain 310: centre = (7.7734e-05, 1.0124e-03) m,  ax = 3.4168e-05 m,  ay = 3.4168e-05 m
+  ice grain 311: centre = (6.9151e-04, 5.8588e-05) m,  ax = 8.1453e-05 m,  ay = 8.1453e-05 m
+  ice grain 312: centre = (1.9614e-03, 1.9461e-03) m,  ax = 2.8943e-05 m,  ay = 2.8943e-05 m
+  ice grain 313: centre = (1.5852e-03, 3.2536e-04) m,  ax = 2.6509e-05 m,  ay = 2.6509e-05 m
+  ice grain 314: centre = (8.2596e-04, 1.0840e-03) m,  ax = 3.3067e-05 m,  ay = 3.3067e-05 m
+  ice grain 315: centre = (1.6780e-03, 1.3907e-03) m,  ax = 3.7499e-05 m,  ay = 3.7499e-05 m
+  ice grain 316: centre = (6.0180e-04, 1.5961e-03) m,  ax = 1.9708e-05 m,  ay = 1.9708e-05 m
+  ice grain 317: centre = (6.9495e-04, 1.0950e-03) m,  ax = 3.9022e-05 m,  ay = 3.9022e-05 m
+  ice grain 318: centre = (3.9715e-04, 1.2599e-03) m,  ax = 1.7252e-05 m,  ay = 1.7252e-05 m
+  ice grain 319: centre = (1.9685e-03, 1.6519e-03) m,  ax = 7.9657e-05 m,  ay = 7.9657e-05 m
+  ice grain 320: centre = (1.5010e-03, 1.3095e-03) m,  ax = 3.8136e-05 m,  ay = 3.8136e-05 m
+  ice grain 321: centre = (1.0048e-03, 1.3505e-03) m,  ax = 2.8809e-05 m,  ay = 2.8809e-05 m
+  ice grain 322: centre = (5.6462e-04, 1.7197e-03) m,  ax = 2.5216e-05 m,  ay = 2.5216e-05 m
+  ice grain 323: centre = (1.9452e-03, 1.4925e-04) m,  ax = 3.2768e-05 m,  ay = 3.2768e-05 m
+  ice grain 324: centre = (8.8899e-04, 1.0480e-03) m,  ax = 3.5521e-05 m,  ay = 3.5521e-05 m
+  ice grain 325: centre = (4.1808e-04, 3.8669e-05) m,  ax = 2.3557e-05 m,  ay = 2.3557e-05 m
+  ice grain 326: centre = (8.1917e-04, 2.5879e-04) m,  ax = 2.5072e-05 m,  ay = 2.5072e-05 m
+  ice grain 327: centre = (1.3766e-03, 9.0197e-05) m,  ax = 3.6164e-05 m,  ay = 3.6164e-05 m
+  ice grain 328: centre = (1.4881e-03, 1.8053e-03) m,  ax = 3.0608e-05 m,  ay = 3.0608e-05 m
+  ice grain 329: centre = (2.7805e-04, 7.0696e-04) m,  ax = 6.3515e-05 m,  ay = 6.3515e-05 m
+  ice grain 330: centre = (1.8625e-03, 1.0654e-03) m,  ax = 7.0147e-05 m,  ay = 7.0147e-05 m
+  ice grain 331: centre = (1.2389e-03, 1.6033e-03) m,  ax = 4.0032e-05 m,  ay = 4.0032e-05 m
+  ice grain 332: centre = (1.3732e-04, 1.4107e-03) m,  ax = 5.0323e-05 m,  ay = 5.0323e-05 m
+  ice grain 333: centre = (1.6806e-03, 1.9046e-03) m,  ax = 2.0370e-05 m,  ay = 2.0370e-05 m
+  ice grain 334: centre = (1.9866e-03, 9.9503e-04) m,  ax = 5.4618e-05 m,  ay = 5.4618e-05 m
+  ice grain 335: centre = (1.6419e-03, 1.4628e-03) m,  ax = 3.9110e-05 m,  ay = 3.9110e-05 m
+  ice grain 336: centre = (4.3060e-05, 1.7635e-03) m,  ax = 5.0602e-05 m,  ay = 5.0602e-05 m
+  ice grain 337: centre = (8.7301e-04, 1.5439e-04) m,  ax = 8.8397e-05 m,  ay = 8.8397e-05 m
+  ice grain 338: centre = (1.1783e-03, 9.3971e-04) m,  ax = 1.2695e-05 m,  ay = 1.2695e-05 m
+  ice grain 339: centre = (1.8093e-03, 1.8156e-04) m,  ax = 4.5247e-05 m,  ay = 4.5247e-05 m
+  ice grain 340: centre = (1.0154e-03, 1.1065e-03) m,  ax = 2.2922e-05 m,  ay = 2.2922e-05 m
+  ice grain 341: centre = (1.5178e-04, 5.2797e-04) m,  ax = 5.3397e-05 m,  ay = 5.3397e-05 m
+  ice grain 342: centre = (1.8581e-03, 1.6454e-03) m,  ax = 2.0594e-05 m,  ay = 2.0594e-05 m
+  ice grain 343: centre = (1.9293e-03, 9.1545e-04) m,  ax = 3.0999e-05 m,  ay = 3.0999e-05 m
+  ice grain 344: centre = (9.0012e-04, 2.8801e-04) m,  ax = 4.3949e-05 m,  ay = 4.3949e-05 m
+  ice grain 345: centre = (2.0504e-04, 1.7270e-03) m,  ax = 5.3969e-05 m,  ay = 5.3969e-05 m
+  ice grain 346: centre = (1.7107e-03, 7.7124e-04) m,  ax = 4.1226e-05 m,  ay = 4.1226e-05 m
+  ice grain 347: centre = (1.4472e-03, 6.2179e-05) m,  ax = 2.6716e-05 m,  ay = 2.6716e-05 m
+  ice grain 348: centre = (1.9933e-03, 4.7986e-04) m,  ax = 3.0111e-05 m,  ay = 3.0111e-05 m
+  ice grain 349: centre = (6.1490e-05, 7.4477e-04) m,  ax = 6.1801e-05 m,  ay = 6.1801e-05 m
+  ice grain 350: centre = (9.1015e-04, 2.7720e-05) m,  ax = 3.9603e-05 m,  ay = 3.9603e-05 m
+  ice grain 351: centre = (5.3154e-04, 2.3568e-04) m,  ax = 1.7112e-05 m,  ay = 1.7112e-05 m
+  ice grain 352: centre = (2.6138e-04, 4.8438e-04) m,  ax = 6.0551e-05 m,  ay = 6.0551e-05 m
+  ice grain 353: centre = (1.4267e-03, 5.9925e-04) m,  ax = 4.8900e-05 m,  ay = 4.8900e-05 m
+  ice grain 354: centre = (6.4246e-04, 8.2398e-04) m,  ax = 6.1459e-05 m,  ay = 6.1459e-05 m
+  ice grain 355: centre = (6.1590e-05, 5.1614e-04) m,  ax = 3.3560e-05 m,  ay = 3.3560e-05 m
+  ice grain 356: centre = (4.0532e-04, 7.1619e-04) m,  ax = 6.0084e-05 m,  ay = 6.0084e-05 m
+  ice grain 357: centre = (1.5979e-03, 8.5632e-04) m,  ax = 2.3362e-05 m,  ay = 2.3362e-05 m
+  ice grain 358: centre = (1.2176e-03, 7.3448e-04) m,  ax = 5.2808e-05 m,  ay = 5.2808e-05 m
+  ice grain 359: centre = (4.0018e-04, 1.5332e-03) m,  ax = 3.1077e-05 m,  ay = 3.1077e-05 m
+  ice grain 360: centre = (1.3353e-03, 1.5781e-03) m,  ax = 5.5636e-05 m,  ay = 5.5636e-05 m
+  ice grain 361: centre = (2.5108e-04, 6.1502e-05) m,  ax = 6.5660e-05 m,  ay = 6.5660e-05 m
+  ice grain 362: centre = (1.3012e-03, 3.0560e-04) m,  ax = 2.7486e-05 m,  ay = 2.7486e-05 m
+  ice grain 363: centre = (1.3572e-03, 1.6664e-04) m,  ax = 3.8708e-05 m,  ay = 3.8708e-05 m
+  ice grain 364: centre = (5.0233e-05, 6.3908e-04) m,  ax = 4.0493e-05 m,  ay = 4.0493e-05 m
+  ice grain 365: centre = (1.0606e-03, 6.9836e-04) m,  ax = 7.1988e-05 m,  ay = 7.1988e-05 m
+  ice grain 366: centre = (1.3158e-03, 1.4635e-03) m,  ax = 5.6653e-05 m,  ay = 5.6653e-05 m
+  ice grain 367: centre = (1.5112e-03, 1.4415e-03) m,  ax = 2.1586e-05 m,  ay = 2.1586e-05 m
+  ice grain 368: centre = (1.3222e-03, 1.8194e-03) m,  ax = 4.9922e-05 m,  ay = 4.9922e-05 m
+  ice grain 369: centre = (1.7694e-03, 1.4289e-03) m,  ax = 5.7639e-05 m,  ay = 5.7639e-05 m
+  ice grain 370: centre = (1.3761e-03, 1.2662e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 371: centre = (1.8918e-03, 7.5062e-05) m,  ax = 1.7152e-05 m,  ay = 1.7152e-05 m
+  ice grain 372: centre = (9.8362e-04, 1.2910e-03) m,  ax = 3.0371e-05 m,  ay = 3.0371e-05 m
+  ice grain 373: centre = (9.8294e-05, 8.9874e-04) m,  ax = 7.7351e-05 m,  ay = 7.7351e-05 m
+  ice grain 374: centre = (4.0761e-04, 6.2704e-04) m,  ax = 2.0169e-05 m,  ay = 2.0169e-05 m
+  ice grain 375: centre = (5.1275e-04, 1.1542e-04) m,  ax = 2.1800e-05 m,  ay = 2.1800e-05 m
+  ice grain 376: centre = (1.6347e-04, 1.8607e-03) m,  ax = 5.1429e-05 m,  ay = 5.1429e-05 m
+  ice grain 377: centre = (1.5644e-04, 1.6128e-03) m,  ax = 6.6080e-05 m,  ay = 6.6080e-05 m
+  ice grain 378: centre = (1.0972e-03, 7.9614e-04) m,  ax = 2.8427e-05 m,  ay = 2.8427e-05 m
+  ice grain 379: centre = (4.7706e-04, 1.7175e-03) m,  ax = 5.2025e-05 m,  ay = 5.2025e-05 m
+  ice grain 380: centre = (5.4846e-04, 1.6502e-03) m,  ax = 4.2104e-05 m,  ay = 4.2104e-05 m
+  ice grain 381: centre = (1.4857e-03, 8.5924e-04) m,  ax = 8.4863e-05 m,  ay = 8.4863e-05 m
+  ice grain 382: centre = (1.6892e-03, 1.9688e-03) m,  ax = 3.9682e-05 m,  ay = 3.9682e-05 m
+  ice grain 383: centre = (1.6432e-03, 1.7203e-03) m,  ax = 6.5156e-05 m,  ay = 6.5156e-05 m
+  ice grain 384: centre = (7.3778e-04, 9.0715e-04) m,  ax = 2.5282e-05 m,  ay = 2.5282e-05 m
+  ice grain 385: centre = (1.2662e-03, 8.1373e-04) m,  ax = 3.6206e-05 m,  ay = 3.6206e-05 m
+  ice grain 386: centre = (1.7286e-03, 2.9960e-04) m,  ax = 3.7838e-05 m,  ay = 3.7838e-05 m
+  ice grain 387: centre = (3.6314e-04, 2.5783e-04) m,  ax = 7.0191e-05 m,  ay = 7.0191e-05 m
+  ice grain 388: centre = (5.0006e-04, 7.8508e-04) m,  ax = 5.3062e-05 m,  ay = 5.3062e-05 m
+  ice grain 389: centre = (1.3388e-03, 4.2261e-04) m,  ax = 2.7270e-05 m,  ay = 2.7270e-05 m
+  ice grain 390: centre = (4.7144e-04, 1.8585e-04) m,  ax = 5.5849e-05 m,  ay = 5.5849e-05 m
+  ice grain 391: centre = (3.0680e-04, 1.5370e-03) m,  ax = 5.8380e-05 m,  ay = 5.8380e-05 m
+  ice grain 392: centre = (8.0879e-04, 1.8883e-03) m,  ax = 3.7556e-05 m,  ay = 3.7556e-05 m
+  ice grain 393: centre = (5.0224e-05, 1.3913e-03) m,  ax = 3.4912e-05 m,  ay = 3.4912e-05 m
+  ice grain 394: centre = (9.2960e-04, 1.8133e-03) m,  ax = 3.6045e-05 m,  ay = 3.6045e-05 m
+  ice grain 395: centre = (1.1467e-04, 1.7648e-03) m,  ax = 1.7016e-05 m,  ay = 1.7016e-05 m
+  ice grain 396: centre = (5.5272e-04, 1.2990e-03) m,  ax = 4.3643e-05 m,  ay = 4.3643e-05 m
+  ice grain 397: centre = (4.0789e-04, 9.8848e-04) m,  ax = 4.4654e-05 m,  ay = 4.4654e-05 m
+  ice grain 398: centre = (6.7280e-04, 6.2848e-04) m,  ax = 2.5762e-05 m,  ay = 2.5762e-05 m
+  ice grain 399: centre = (2.3902e-04, 9.3611e-04) m,  ax = 5.7563e-05 m,  ay = 5.7563e-05 m
+  ice grain 400: centre = (9.6776e-04, 6.7409e-04) m,  ax = 1.9989e-05 m,  ay = 1.9989e-05 m
+  ice grain 401: centre = (1.3571e-03, 3.3158e-04) m,  ax = 3.0137e-05 m,  ay = 3.0137e-05 m
+  ice grain 402: centre = (6.9564e-04, 1.0203e-03) m,  ax = 3.1314e-05 m,  ay = 3.1314e-05 m
+  ice grain 403: centre = (1.9213e-03, 1.3903e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 404: centre = (1.6589e-03, 1.1869e-03) m,  ax = 1.7851e-05 m,  ay = 1.7851e-05 m
+  ice grain 405: centre = (6.7041e-04, 1.5571e-03) m,  ax = 5.2614e-05 m,  ay = 5.2614e-05 m
+  ice grain 406: centre = (1.5684e-04, 6.5695e-04) m,  ax = 6.3607e-05 m,  ay = 6.3607e-05 m
+  ice grain 407: centre = (1.5259e-03, 6.0166e-05) m,  ax = 4.7968e-05 m,  ay = 4.7968e-05 m
+  ice grain 408: centre = (4.8673e-04, 3.6734e-04) m,  ax = 7.1705e-05 m,  ay = 7.1705e-05 m
+  ice grain 409: centre = (6.4442e-04, 5.8276e-04) m,  ax = 2.4054e-05 m,  ay = 2.4054e-05 m
+  ice grain 410: centre = (1.1542e-03, 1.1706e-03) m,  ax = 1.2699e-05 m,  ay = 1.2699e-05 m
+  ice grain 411: centre = (1.9748e-03, 8.3355e-04) m,  ax = 5.8269e-05 m,  ay = 5.8269e-05 m
+  ice grain 412: centre = (6.2028e-04, 1.2828e-03) m,  ax = 2.1840e-05 m,  ay = 2.1840e-05 m
+  ice grain 413: centre = (9.1407e-04, 4.4462e-04) m,  ax = 3.3733e-05 m,  ay = 3.3733e-05 m
+  ice grain 414: centre = (1.2414e-03, 9.5349e-04) m,  ax = 2.2026e-05 m,  ay = 2.2026e-05 m
+  ice grain 415: centre = (1.2694e-03, 9.6725e-05) m,  ax = 6.7211e-05 m,  ay = 6.7211e-05 m
+  ice grain 416: centre = (4.6591e-04, 1.3647e-03) m,  ax = 6.1206e-05 m,  ay = 6.1206e-05 m
+  ice grain 417: centre = (1.1848e-03, 1.7108e-03) m,  ax = 2.7705e-05 m,  ay = 2.7705e-05 m
+  ice grain 418: centre = (1.0934e-03, 1.6885e-03) m,  ax = 6.2390e-05 m,  ay = 6.2390e-05 m
+  ice grain 419: centre = (1.2737e-03, 1.7364e-03) m,  ax = 4.2195e-05 m,  ay = 4.2195e-05 m
+  ice grain 420: centre = (2.5427e-04, 3.8304e-04) m,  ax = 3.7039e-05 m,  ay = 3.7039e-05 m
+  ice grain 421: centre = (3.5278e-04, 1.8227e-05) m,  ax = 4.0869e-05 m,  ay = 4.0869e-05 m
+  ice grain 422: centre = (1.9701e-03, 1.0881e-03) m,  ax = 3.5884e-05 m,  ay = 3.5884e-05 m
+  ice grain 423: centre = (1.6594e-03, 3.6590e-04) m,  ax = 5.4010e-05 m,  ay = 5.4010e-05 m
+  ice grain 424: centre = (1.7186e-03, 2.1195e-04) m,  ax = 4.6379e-05 m,  ay = 4.6379e-05 m
+  ice grain 425: centre = (1.8767e-03, 1.3393e-04) m,  ax = 3.3346e-05 m,  ay = 3.3346e-05 m
+  ice grain 426: centre = (1.8551e-03, 1.2451e-03) m,  ax = 6.5680e-05 m,  ay = 6.5680e-05 m
+  ice grain 427: centre = (8.7191e-04, 1.1935e-03) m,  ax = 2.9251e-05 m,  ay = 2.9251e-05 m
+  ice grain 428: centre = (1.4703e-03, 1.5089e-03) m,  ax = 4.5839e-05 m,  ay = 4.5839e-05 m
+  ice grain 429: centre = (1.2625e-03, 1.3676e-03) m,  ax = 4.9045e-05 m,  ay = 4.9045e-05 m
+  ice grain 430: centre = (1.1022e-03, 1.0360e-03) m,  ax = 8.3185e-05 m,  ay = 8.3185e-05 m
+  ice grain 431: centre = (1.3504e-03, 2.6694e-04) m,  ax = 3.0844e-05 m,  ay = 3.0844e-05 m
+  ice grain 432: centre = (8.5453e-04, 1.5001e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 433: centre = (1.7607e-03, 1.8527e-05) m,  ax = 4.3369e-05 m,  ay = 4.3369e-05 m
+  ice grain 434: centre = (8.6620e-04, 1.3705e-03) m,  ax = 3.6042e-05 m,  ay = 3.6042e-05 m
+  ice grain 435: centre = (3.1416e-04, 3.4795e-04) m,  ax = 2.8373e-05 m,  ay = 2.8373e-05 m
+  ice grain 436: centre = (1.7756e-05, 3.5831e-04) m,  ax = 5.3240e-05 m,  ay = 5.3240e-05 m
+  ice grain 437: centre = (1.1996e-03, 1.7816e-03) m,  ax = 4.0696e-05 m,  ay = 4.0696e-05 m
+  ice grain 438: centre = (4.5374e-04, 1.7943e-03) m,  ax = 2.2871e-05 m,  ay = 2.2871e-05 m
+  ice grain 439: centre = (1.8977e-03, 1.5045e-03) m,  ax = 2.2595e-05 m,  ay = 2.2595e-05 m
+  ice grain 440: centre = (3.2003e-04, 4.1012e-04) m,  ax = 3.0081e-05 m,  ay = 3.0081e-05 m
+  ice grain 441: centre = (5.8716e-04, 9.7536e-04) m,  ax = 2.8323e-05 m,  ay = 2.8323e-05 m
+  ice grain 442: centre = (1.9425e-03, 6.8254e-04) m,  ax = 6.8499e-05 m,  ay = 6.8499e-05 m
+  ice grain 443: centre = (1.1035e-03, 2.2573e-04) m,  ax = 7.8999e-05 m,  ay = 7.8999e-05 m
+  ice grain 444: centre = (1.8900e-03, 4.9942e-04) m,  ax = 6.1310e-05 m,  ay = 6.1310e-05 m
+  ice grain 445: centre = (1.5572e-03, 1.5653e-04) m,  ax = 4.7494e-05 m,  ay = 4.7494e-05 m
+  ice grain 446: centre = (2.9359e-04, 1.9691e-03) m,  ax = 3.2058e-05 m,  ay = 3.2058e-05 m
+  ice grain 447: centre = (3.9107e-04, 4.3385e-04) m,  ax = 4.0809e-05 m,  ay = 4.0809e-05 m
+  ice grain 448: centre = (7.6971e-04, 8.2184e-04) m,  ax = 6.1807e-05 m,  ay = 6.1807e-05 m
+  ice grain 449: centre = (1.7441e-03, 5.5545e-04) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  ice grain 450: centre = (7.0933e-04, 1.2811e-03) m,  ax = 6.2684e-05 m,  ay = 6.2684e-05 m
+  ice grain 451: centre = (9.5571e-04, 1.0854e-03) m,  ax = 3.4517e-05 m,  ay = 3.4517e-05 m
+  ice grain 452: centre = (9.9511e-04, 1.5430e-03) m,  ax = 4.0475e-05 m,  ay = 4.0475e-05 m
+  ice grain 453: centre = (6.4516e-04, 1.9515e-03) m,  ax = 3.1199e-05 m,  ay = 3.1199e-05 m
+  ice grain 454: centre = (1.5761e-03, 3.8199e-04) m,  ax = 2.6855e-05 m,  ay = 2.6855e-05 m
+  ice grain 455: centre = (1.4792e-05, 1.2720e-03) m,  ax = 3.6217e-05 m,  ay = 3.6217e-05 m
+  ice grain 456: centre = (4.8134e-04, 1.1424e-03) m,  ax = 4.3793e-05 m,  ay = 4.3793e-05 m
+  ice grain 457: centre = (1.7113e-03, 1.5764e-03) m,  ax = 9.0000e-05 m,  ay = 9.0000e-05 m
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.749317   k_iso = 1.172583e+00 W/m/K   (56 its, 4.28 s)
+         k = [ 1.159655289e+00  4.051910669e-03 ]
+             [ 4.051910669e-03  1.185510256e+00 ]
+Solution completed. 
+Setup time 5.741867e+00 sec  =  0.10 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
