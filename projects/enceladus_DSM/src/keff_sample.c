@@ -1,4 +1,6 @@
 #include "keff.h"
+#include <dirent.h>
+#include <string.h>
 
 /* ---------------------------------------------------------------------------
  * keff_sample.c -- the one function both the in-line and replay paths call.
@@ -170,5 +172,195 @@ PetscErrorCode KeffSample(AppCtx *app, PetscInt step, PetscReal t, Vec U)
   ierr = KeffCSVAppend(app, step, t, keff, phi_bar, k_iso, its, reason,
                        (PetscReal)(t1 - t0)); CHKERRQ(ierr);
 
+  PetscFunctionReturn(0);
+}
+
+/* ---------------------------------------------------------------------------
+ * REPLAY MODE  (-keff_replay <run_dir>)
+ *
+ * Computes k_eff for every sol_*.dat in a finished run directory, replacing the
+ * standalone binary that used to do this.
+ *
+ * The decisive simplification over that binary: because the replaying process
+ * builds its IGA from the SAME options files as the producing run, user->iga IS
+ * the IGA that wrote the snapshots. So a snapshot is read with a plain
+ * IGAReadVec onto the live 3-dof vector, and handed to the identical KeffSample
+ * the in-line path uses.
+ *
+ * The old code instead reconstructed an input IGA from re-parsed
+ * -Nx/-p/-C/-periodic and compared vector lengths to catch a mismatch. Its own
+ * comment (field_init.c:56-58) admitted that check could not detect a -periodic
+ * mismatch -- which is precisely the mismatch that silently yields wrong
+ * answers, since a periodic and a non-periodic mesh of the same Nx have
+ * different node counts only for some degrees. Reusing the producer's IGA makes
+ * the entire failure class unrepresentable.
+ * ------------------------------------------------------------------------- */
+
+/* Rank 0 scans <dir> for sol_NNNNN.dat and returns the sorted step indices.
+ * Two fixes over the original: the count is taken first and the array heap
+ * allocated (the original used a fixed PetscInt[10000] stack array, 80 KB, that
+ * silently truncated), and the parse is "sol_%d.dat" rather than "sol_%05d.dat"
+ * so it keeps working past 99999 steps. */
+static PetscErrorCode KeffScanSnapshots(const char *dir, PetscInt **steps_out,
+                                        PetscInt *n_out)
+{
+  PetscErrorCode ierr;
+  PetscMPIInt    rank;
+  PetscInt       n = 0, *steps = NULL;
+
+  PetscFunctionBegin;
+  ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank); CHKERRQ(ierr);
+
+  if (rank == 0) {
+    DIR           *d;
+    struct dirent *ent;
+
+    d = opendir(dir);
+    if (!d) SETERRQ(PETSC_COMM_SELF, PETSC_ERR_FILE_OPEN,
+                    "-keff_replay: cannot open directory '%s'", dir);
+
+    while ((ent = readdir(d)) != NULL) {
+      int  idx; char tail[16];
+      if (sscanf(ent->d_name, "sol_%d.dat%15s", &idx, tail) == 1 && idx >= 0) n++;
+    }
+    rewinddir(d);
+
+    if (n > 0) {
+      PetscInt k = 0;
+      ierr = PetscMalloc1(n, &steps); CHKERRQ(ierr);
+      while ((ent = readdir(d)) != NULL) {
+        int idx; char tail[16];
+        if (sscanf(ent->d_name, "sol_%d.dat%15s", &idx, tail) == 1 && idx >= 0 && k < n)
+          steps[k++] = (PetscInt)idx;
+      }
+      n = k;
+      ierr = PetscSortInt(n, steps); CHKERRQ(ierr);
+    }
+    closedir(d);
+  }
+
+  /* MPIU_INT, not MPI_INT: PetscInt is 64-bit under --with-64-bit-indices, and
+   * the original's MPI_INT would have silently corrupted the list there. */
+  ierr = MPI_Bcast(&n, 1, MPIU_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+  if (rank != 0 && n > 0) { ierr = PetscMalloc1(n, &steps); CHKERRQ(ierr); }
+  if (n > 0) { ierr = MPI_Bcast(steps, n, MPIU_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr); }
+
+  *steps_out = steps;
+  *n_out     = n;
+  PetscFunctionReturn(0);
+}
+
+/* Recover simulated time per step from the producing run's SSA_evo.dat, whose
+ * columns are: sub_interf/eps, tot_ice, t, step, dt, tot_air, tot_rhov,
+ * tot_mass (monitoring.c). Without this the CSV's `time` column -- the whole
+ * reason the schema exists -- would be unavailable on the replay path. */
+static PetscErrorCode KeffLoadTimeMap(const char *path, PetscInt **steps_out,
+                                      PetscReal **times_out, PetscInt *n_out)
+{
+  PetscErrorCode ierr;
+  PetscMPIInt    rank;
+  PetscInt       n = 0, *steps = NULL;
+  PetscReal     *times = NULL;
+
+  PetscFunctionBegin;
+  ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank); CHKERRQ(ierr);
+
+  if (rank == 0) {
+    FILE *fp = fopen(path, "r");
+    if (fp) {
+      char line[512];
+      while (fgets(line, sizeof(line), fp)) {
+        double c[8];
+        if (sscanf(line, "%lf %lf %lf %lf %lf %lf %lf %lf",
+                   &c[0], &c[1], &c[2], &c[3], &c[4], &c[5], &c[6], &c[7]) == 8) n++;
+      }
+      if (n > 0) {
+        PetscInt k = 0;
+        rewind(fp);
+        ierr = PetscMalloc1(n, &steps); CHKERRQ(ierr);
+        ierr = PetscMalloc1(n, &times); CHKERRQ(ierr);
+        while (fgets(line, sizeof(line), fp) && k < n) {
+          double c[8];
+          if (sscanf(line, "%lf %lf %lf %lf %lf %lf %lf %lf",
+                     &c[0], &c[1], &c[2], &c[3], &c[4], &c[5], &c[6], &c[7]) == 8) {
+            steps[k] = (PetscInt)(c[3] + 0.5);
+            times[k] = (PetscReal)c[2];
+            k++;
+          }
+        }
+        n = k;
+      }
+      fclose(fp);
+    }
+  }
+
+  ierr = MPI_Bcast(&n, 1, MPIU_INT, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+  if (n > 0) {
+    if (rank != 0) {
+      ierr = PetscMalloc1(n, &steps); CHKERRQ(ierr);
+      ierr = PetscMalloc1(n, &times); CHKERRQ(ierr);
+    }
+    ierr = MPI_Bcast(steps, n, MPIU_INT,  0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    ierr = MPI_Bcast(times, n, MPIU_REAL, 0, PETSC_COMM_WORLD); CHKERRQ(ierr);
+  }
+
+  *steps_out = steps;
+  *times_out = times;
+  *n_out     = n;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode KeffReplay(AppCtx *app, Vec U)
+{
+  PetscErrorCode ierr;
+  KeffCtx       *kc = app->keff;
+  PetscInt      *steps = NULL, nsteps = 0;
+  PetscInt      *tsteps = NULL, ntimes = 0;
+  PetscReal     *times = NULL;
+  PetscBool      warned_no_times = PETSC_FALSE;
+
+  PetscFunctionBegin;
+
+  ierr = KeffScanSnapshots(kc->replay_dir, &steps, &nsteps); CHKERRQ(ierr);
+  if (nsteps == 0)
+    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_FILE_OPEN,
+            "-keff_replay: no sol_*.dat snapshots found in '%s'", kc->replay_dir);
+
+  ierr = KeffLoadTimeMap(kc->replay_times, &tsteps, &times, &ntimes); CHKERRQ(ierr);
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,
+    "  [keff] replay: %d snapshot(s) in %s, stride %d%s\n",
+    (int)nsteps, kc->replay_dir, (int)kc->replay_stride,
+    (ntimes > 0) ? "" : "   (no step->time map; `time` will be -1)"); CHKERRQ(ierr);
+
+  for (PetscInt i = 0; i < nsteps; i += kc->replay_stride) {
+    char      path[PETSC_MAX_PATH_LEN];
+    PetscReal t = -1.0;
+
+    ierr = PetscSNPrintf(path, sizeof(path), "%s/sol_%05d.dat",
+                         kc->replay_dir, (int)steps[i]); CHKERRQ(ierr);
+
+    for (PetscInt j = 0; j < ntimes; j++)
+      if (tsteps[j] == steps[i]) { t = times[j]; break; }
+
+    if (t < 0.0 && ntimes == 0 && !warned_no_times) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,
+        "  [keff] WARNING: %s not readable; the CSV's time column will be -1. "
+        "Supply one with -keff_replay_times.\n", kc->replay_times); CHKERRQ(ierr);
+      warned_no_times = PETSC_TRUE;
+    }
+
+    /* The producer's own IGA, so no length check or mesh reconstruction. */
+    ierr = IGAReadVec(app->iga, U, path); CHKERRQ(ierr);
+    ierr = KeffSample(app, steps[i], t, U); CHKERRQ(ierr);
+  }
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,
+    "  [keff] replay complete: %d sample(s) written to %s\n",
+    (int)kc->nsamples, kc->csv_path); CHKERRQ(ierr);
+
+  ierr = PetscFree(steps);  CHKERRQ(ierr);
+  ierr = PetscFree(tsteps); CHKERRQ(ierr);
+  ierr = PetscFree(times);  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

@@ -1201,7 +1201,12 @@ int main(int argc, char *argv[]) {
     /* -keff_only: take a single k_eff sample from the initial condition and
      * stop. This is the driver for the analytic layered benchmark, which needs
      * no time integration at all -- the answer is a property of the IC. */
-    if (user.keff && user.keff->enabled && user.keff->only) {
+    if (user.keff && user.keff->enabled && user.keff->replay_dir[0] != '\0') {
+        /* -keff_replay: post-process a finished run instead of integrating.
+         * U is reused as the read buffer -- it is the producer's own vector
+         * layout, since this process built its IGA from the same opts files. */
+        ierr = KeffReplay(&user, U); CHKERRQ(ierr);
+    } else if (user.keff && user.keff->enabled && user.keff->only) {
         ierr = KeffSample(&user, 0, 0.0, U); CHKERRQ(ierr);
     } else {
         /* Solve the system */

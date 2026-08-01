@@ -163,4 +163,8 @@ PetscErrorCode KeffSample(AppCtx *app, PetscInt step, PetscReal t, Vec U);
  * see the comment on the definition. */
 PetscErrorCode KeffMonitor(TS ts, PetscInt step, PetscReal t, Vec U, void *mctx);
 
+/* -keff_replay: compute k_eff for every sol_*.dat in a finished run directory,
+ * reusing U as the read buffer. Replaces the standalone binary. */
+PetscErrorCode KeffReplay(AppCtx *app, Vec U);
+
 #endif /* KEFF_H */

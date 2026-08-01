@@ -298,8 +298,14 @@ PetscErrorCode KeffCreate(AppCtx *app)
    * read by anything that writes. */
   if (kc->csv_path[0] == '\0') {
     const char *dir = getenv("folder");
-    if (dir) ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "%s/k_eff.csv", dir);
-    else     ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "k_eff.csv");
+    /* Replaying writes alongside the run being replayed, which is where anyone
+     * looking for it will look -- and where $folder usually is not pointing. */
+    if (kc->replay_dir[0] != '\0')
+      ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "%s/k_eff.csv", kc->replay_dir);
+    else if (dir)
+      ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "%s/k_eff.csv", dir);
+    else
+      ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "k_eff.csv");
     CHKERRQ(ierr);
   }
   /* First scheduled time for the time-based cadence. Starting at t_interv
