@@ -108,10 +108,28 @@ def write_geometry(path: Path, T_C: float, p: dict, pack: dict, args) -> None:
 #   pore throat  p25 = {pack['throat_gap_m']['p25']*1e6:6.2f} um   p50 = {pack['throat_gap_m']['p50']*1e6:6.2f} um
 #   diffuse band 6*eps  = {6*p['eps']*1e6:6.2f} um  ({6*p['eps']/pack['throat_gap_m']['p50']:.2f}x the median throat)
 #                9.2*eps = {9.2*p['eps']*1e6:6.2f} um  ({9.2*p['eps']/pack['throat_gap_m']['p50']:.2f}x)
+#
+# ADDITIVE INITIALISATION (-ic_grain_union 0), the Molaro convention. phi is the
+# clamped SUM of the grains' diffuse fields,
+#     phi = clamp( sum_k [ 0.5 - 0.5*tanh(0.5*(r_k - R_k)/eps) ], 0, 1 )
+# rather than the tanh of the signed distance to their union. This is the form
+# the Molaro axisymmetric geometries use and the one that has worked best for
+# this model; lunar_regolith_DSM/inputs/geometry/2D_molaro_axisym_T-20pair.opts
+# documents the convention and preprocess/calibrate_neck_geometry.py solves the
+# geometry against it.
+#
+# KNOWN PROPERTY, and it matters when comparing across eps: in the overlap
+# region both grains' fields contribute, so the measured phi=0.5 waist is WIDER
+# than the sharp lens, by an amount that scales with eps. For the Molaro pair the
+# documented offset is +4.77 um on a 32.81 um neck (~17%). With the grain centres
+# and radii held fixed, two runs at different eps therefore start from slightly
+# different NECK WIDTHS even though they read the same grains.dat. Quantify it
+# with calibrate_neck_geometry.py before attributing an eps difference to
+# physics.
 
 -ic_type multi_grains_file
 -grains_file {pack['grains_file']}
--ic_grain_union 1                 # phi=0.5 contour sits on the sharp geometry for any eps
+-ic_grain_union 0                 # ADDITIVE, the Molaro convention -- see below
 
 -dim 2
 -Lx {pack['Lx']:.6e}
