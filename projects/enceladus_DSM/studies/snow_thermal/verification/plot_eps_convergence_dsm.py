@@ -70,16 +70,22 @@ def make_figure(a, b, theme):
     fig.patch.set_facecolor(t["surface"])
     hr = 1.0 / 3600.0
 
-    # --- 1. k_iso(t), both arms -------------------------------------------
+    # --- 1. k_xx and k_yy, both arms, on one axes --------------------------
+    # Colour carries the eps arm (the entity); dash carries the tensor
+    # component. Both components share one scale, so they belong on one axes --
+    # and seeing them together is the point: a 28-grain cell is not isotropic,
+    # and k_xx vs k_yy is how far from isotropic it is.
     ax = axes[0]; style(ax, t)
-    ax.plot(a["t"] * hr, a["k_iso"], "-", color=SERIES[0], lw=2,
-            label=r"safety 0.5  ($\epsilon=1\,\mu$m)")
-    ax.plot(b["t"] * hr, b["k_iso"], "-", color=SERIES[1], lw=2,
-            label=r"safety 1.0  ($\epsilon=2\,\mu$m)")
+    for d, lab, ls in (("k00", r"$k_{xx}$", "-"), ("k11", r"$k_{yy}$", "--")):
+        ax.plot(a["t"] * hr, a[d], ls, color=SERIES[0], lw=2,
+                label=rf"{lab}, safety 0.5 ($\epsilon=1\,\mu$m)")
+        ax.plot(b["t"] * hr, b[d], ls, color=SERIES[1], lw=2,
+                label=rf"{lab}, safety 1.0 ($\epsilon=2\,\mu$m)")
     ax.set_xlabel("time [h]")
-    ax.set_ylabel(r"$k_{iso}$  [W m$^{-1}$ K$^{-1}$]")
-    ax.set_title("1.  Effective conductivity", fontsize=10.5, loc="left")
-    ax.legend(frameon=False, fontsize=8.5, labelcolor=t["ink2"])
+    ax.set_ylabel(r"$k_{xx}$, $k_{yy}$  [W m$^{-1}$ K$^{-1}$]")
+    ax.set_title("1.  Both tensor components, both resolutions",
+                 fontsize=10.5, loc="left")
+    ax.legend(frameon=False, fontsize=7.6, labelcolor=t["ink2"], ncol=1)
 
     # --- 2. the ratio, on a common time grid -------------------------------
     ax = axes[1]; style(ax, t)
@@ -109,8 +115,6 @@ def make_figure(a, b, theme):
     ax.plot(b["t"] * hr, b["k00"] / b["k11"], "-", color=SERIES[1], lw=1.8,
             label=r"$k_{00}/k_{11}$, safety 1.0")
     ax.axhline(1.0, color=t["muted"], ls="--", lw=1.2, zorder=2)
-    ax2 = ax.twiny()          # a second X axis is fine; never a second Y
-    ax2.set_visible(False)
     ax.set_xlabel("time [h]")
     ax.set_ylabel(r"$k_{00}/k_{11}$   (1 = isotropic)")
     ax.set_title("3.  Anisotropy — a 28-grain cell is not isotropic,\n"

@@ -4,8 +4,23 @@
 # to read the PetIGA .dat files, and a bare `python3` usually cannot. Silently
 # failing here leaves the run with no vtkOut/, which every downstream
 # measurement (neck_width.py, plot_neck_convergence.py) then finds empty.
+# Resolve the script's own directory HERE, at file scope, not inside the
+# function. In zsh $0 inside a function is the FUNCTION NAME, not the script
+# path (FUNCTION_ARGZERO is on by default), so `dirname $0` returned "." and the
+# search root became the parent of the caller's cwd -- projects/ rather than
+# projects/enceladus_DSM/. BASH_SOURCE does not exist in zsh either, so the
+# fallback never helped. ${0:A:h} is zsh for "absolute path, head".
+SCRIPT_DIR="${0:A:h}"
+DEFAULT_ROOT="${SCRIPT_DIR:h}"      # scripts/ -> project root
+
 find_python() {
-    local root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)}"
+    # null_glob: an unmatched pattern expands to nothing instead of aborting the
+    # function with "no matches found", which is zsh's default (nomatch) and
+    # which killed the search at the FIRST candidate directory that happened not
+    # to exist -- before any valid interpreter was ever tried.
+    setopt local_options null_glob
+
+    local root="${PROJECT_ROOT:-$DEFAULT_ROOT}"
     local c
     for c in "$VIRTUAL_ENV/bin/python3" \
              "$root"/venv_*/bin/python3 \
