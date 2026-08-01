@@ -356,6 +356,81 @@ and plot `k_iso(t; safety 1.0) / k_iso(t; safety 0.5)`:
   That ladder is cheap on the 0.5 mm calibration packing
   (`inputs/packings_calib/`), where safety 0.125 is only Nx ≈ 2829.
 
+---
+
+## Is our initialisation introducing the eps dependence?
+
+Run with:
+
+```bash
+./studies/snow_thermal/verification/run_eps_convergence_dsm.sh
+venv_enceladus/bin/python3 studies/snow_thermal/verification/plot_eps_convergence_dsm.py \
+    --s05 <results>/phi0.325_0.5mm_T-20_s05/<stamp>_snow_T-20_6hr_epsconv \
+    --s10 <results>/phi0.325_0.5mm_T-20_s10/<stamp>_snow_T-20_6hr_epsconv
+```
+
+0.5 mm calibration packing, 6 h at −20 °C, **identical initial condition**, both
+safety factors, `k_eff` recorded at **every accepted step** and field snapshots
+every step. The observable is
+
+```
+R(t) = k_iso(t; safety 1.0) / k_iso(t; safety 0.5)
+```
+
+- **R → 1 as necks form** — the eps dependence is a *start-up transient*.
+  safety 1.0 becomes usable, and the initialisation is the thing to fix.
+- **R flat near 1.35** — structural; the eps ladder (0.5 → 0.25 → 0.125) is then
+  required before any k_eff is trusted.
+
+### Why a transient is the likely outcome
+
+The profile we lay down is `φ = ½(1 − tanh(d/2ε))` on the signed distance to the
+union of the grains (`-ic_grain_union 1`). That **is** the exact equilibrium of
+the double well — but only for a **flat, isolated** interface. It is not
+stationary where the geometry is curved, and emphatically not at the 4 µm
+contact gaps, where the tanh tails of two opposing grain surfaces overlap. There
+the superposed profile is not a solution of anything, and Allen–Cahn relaxes it
+over a timescale set by the mobility and ε.
+
+That relaxation moves the neck geometry by O(ε). Any observable measured while it
+is happening therefore carries an ε signature that is **not physics** — which is
+exactly what the t=0 probe measured, and why its 31–39 % should be read as an
+initialisation artifact rather than a statement about the model.
+
+Relaxation itself is normal and expected: the literature's own position is that
+a phase-field code *should* relax a wrong-width profile to the correct one
+([Comparison of phase-field models for surface diffusion](https://arxiv.org/pdf/0711.1809)).
+The defect is not that relaxation occurs — it is that we start the clock, and
+start measuring, in the middle of it.
+
+### More robust initialisations, from the literature
+
+1. **Pre-relaxation (equilibration) run.** Evolve the Allen–Cahn dynamics alone,
+   with the phase-change sources off, for a short time; then start the physics
+   from the relaxed field with the clock reset. Described as solving Allen–Cahn
+   "initially for a few time steps to obtain the desired particle shape and to
+   get a smooth interface between phases"
+   ([Efficient implementation of the Allen–Cahn phase-field method](https://www.sciencedirect.com/science/article/pii/S0045793025002282)),
+   and as a deliberate way to remove a large numerical artifact from the initial
+   condition rather than starting from an analytic equilibrium
+   ([Mitigation of Initial Transients](https://arxiv.org/html/2607.15072)).
+   **This solver already has the dynamics**: `-decouple_phase_change 1` zeroes
+   every phase-change coupling and gives pure AC evolution
+   (`src/assembly.c:145-150`). What is missing is a restart path — a way to read
+   a solution vector back as an initial condition. `preprocess/reinitialize_phasefield.py`
+   does part of this already (signed distance via `distance_transform_edt`).
+2. **High-mobility Cahn–Hilliard smoothing.** A few iterations of the
+   Cahn–Hilliard operator alone, at high mobility, starting from a sharp
+   characteristic function, to manufacture a diffuse configuration
+   ([Comparison of phase-field models for surface diffusion](https://arxiv.org/pdf/0711.1809)).
+3. **Report against the post-relaxation state**, not t=0 — cheap, and it makes
+   `k_eff(t)/k_eff(t_relaxed)` comparable across ε even if the absolute values
+   are not.
+
+Option 1 is the one that matches this codebase, and it is a small change: a
+`-restart_from <sol.dat>` that calls `IGAReadVec` in place of the IC dispatch
+would make the two-stage workflow possible without touching the physics.
+
 ## Consequences for the rest of the study
 
 1. **State the benchmark at measured `φ̄`.** `inputs/geometry/2D_ice_slab_keff.opts`

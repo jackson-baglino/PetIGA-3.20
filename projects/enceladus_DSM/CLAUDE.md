@@ -67,6 +67,47 @@ Never force-push to `main`. Feature branches are fine.
 
 ---
 
+## Running tests and experiments
+
+These two rules apply to **every** run — quick probes and one-off diagnostics
+included, not just production simulations.
+
+### 1. Always go through the run script
+
+Use `./scripts/Studio/run_enceladus.sh <geom> <exp> [tag] [-- extra flags]`
+(or `scripts/HPC/submit_enceladus.sh` on the cluster). **Never invoke
+`./enceladus_dsm` directly for anything whose result will be looked at.**
+
+The script is not a convenience wrapper — it is what makes a run reproducible
+and legible. It compiles, sizes the rank count, creates a timestamped output
+folder, **stages the three `.opts` files and a copy of `src/` into it**, runs,
+and then **generates the plots**. A hand-rolled `./enceladus_dsm ...` skips all
+of that: no staged inputs, no provenance, no figures.
+
+Exceptions, and they are narrow: a build smoke test that produces no result
+worth reading, and unit-style gates under `studies/*/verification/` that have
+their own committed driver script (those scripts *are* the reproducible record,
+and they write their CSVs and figures into the repo).
+
+### 2. Always save the results where they can be seen
+
+Results must survive the session and must be findable. A run whose output landed
+in `/tmp`, a scratchpad, or a shell variable that has since gone away did not
+happen.
+
+- Simulation output goes to `$RESULTS_BASE` via the run script — that is
+  `/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/<geom>/<timestamp>_<exp>[_tag]/`.
+- Verification and study results go **into the repo**, under
+  `studies/<study>/verification/` or equivalent: the driver script, the CSV, the
+  figures, and a README explaining what the numbers mean. Raw solver logs too if
+  they are small.
+- **Produce plots.** A CSV nobody can look at is half an answer. If the run
+  script's default figures do not cover what the test is about, add a plotting
+  script next to the driver and commit both.
+- Say where the results are, explicitly, when reporting them.
+
+---
+
 ## Code style
 
 - C99: declare loop variables inside `for (PetscInt i = ...)`.
