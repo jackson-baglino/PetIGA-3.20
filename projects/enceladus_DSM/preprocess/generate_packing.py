@@ -316,25 +316,48 @@ def jam(centres, radii, Lx, Ly, tol_frac, max_iter, s_start, verbose=True):
 # =========================================================================
 
 def rasterize(centres, radii, Lx, Ly, nx, ny):
-    """Boolean solid mask on an nx-by-ny grid, periodic (grains wrap)."""
+    """Boolean solid mask on an nx-by-ny grid.
+
+    Honours PERIODIC. Under PERIODIC[0] = False the mask is a plain box: grains
+    whose centres lie OUTSIDE [0,L] contribute only the part that falls inside,
+    and nothing wraps.
+
+    That distinction is not cosmetic. A window cut from a larger pack keeps every
+    grain overlapping it, so centres span [-R, L+R]; rasterising those with the
+    periodic branch wraps each overhanging grain onto the OPPOSITE face, adding
+    solid that is not there and removing it from where it is. Porosity,
+    percolation and coordination are all corrupted by it.
+    """
     dx, dy = Lx / nx, Ly / ny
     solid = np.zeros((ny, nx), dtype=bool)
     xs = (np.arange(nx) + 0.5) * dx
     ys = (np.arange(ny) + 0.5) * dy
 
     for (cx, cy), r in zip(centres, radii):
-        # Only touch the bounding box of this grain, then wrap the indices.
+        # Only touch the bounding box of this grain.
         i0, i1 = int(np.floor((cx - r) / dx)) - 1, int(np.ceil((cx + r) / dx)) + 1
         j0, j1 = int(np.floor((cy - r) / dy)) - 1, int(np.ceil((cy + r) / dy)) + 1
-        ii = np.arange(i0, i1 + 1)
-        jj = np.arange(j0, j1 + 1)
-        ddx = xs[np.mod(ii, nx)] - cx
-        ddy = ys[np.mod(jj, ny)] - cy
-        ddx -= Lx * np.round(ddx / Lx)          # minimum image
-        ddy -= Ly * np.round(ddy / Ly)
-        inside = (ddx[None, :] ** 2 + ddy[:, None] ** 2) <= r * r
-        if inside.any():
-            solid[np.ix_(np.mod(jj, ny), np.mod(ii, nx))] |= inside
+
+        if PERIODIC[0]:
+            ii = np.arange(i0, i1 + 1)
+            jj = np.arange(j0, j1 + 1)
+            ddx = xs[np.mod(ii, nx)] - cx
+            ddy = ys[np.mod(jj, ny)] - cy
+            ddx -= Lx * np.round(ddx / Lx)      # minimum image
+            ddy -= Ly * np.round(ddy / Ly)
+            inside = (ddx[None, :] ** 2 + ddy[:, None] ** 2) <= r * r
+            if inside.any():
+                solid[np.ix_(np.mod(jj, ny), np.mod(ii, nx))] |= inside
+        else:
+            ii = np.arange(max(i0, 0), min(i1, nx - 1) + 1)
+            jj = np.arange(max(j0, 0), min(j1, ny - 1) + 1)
+            if ii.size == 0 or jj.size == 0:
+                continue                        # grain lies wholly outside
+            ddx = xs[ii] - cx
+            ddy = ys[jj] - cy
+            inside = (ddx[None, :] ** 2 + ddy[:, None] ** 2) <= r * r
+            if inside.any():
+                solid[np.ix_(jj, ii)] |= inside
     return solid
 
 
