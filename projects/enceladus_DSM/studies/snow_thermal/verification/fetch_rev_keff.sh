@@ -29,6 +29,25 @@ REMOTE_HOST="${REMOTE_HOST:-hpc}"
 REMOTE_BASE="${1:-/resnick/scratch/jbaglino/enceladus_DSM/rev_sweep}"
 LOCAL_DEST="${2:-$HERE/raw_rev}"
 
+# Running this ON the cluster is a no-op with a confusing failure mode: the
+# login node has no route back to itself over the `hpc` alias, so rsync dies on
+# a port-22 timeout that looks like a network problem rather than what it is --
+# the data is already on this filesystem and there is nothing to copy.
+if [[ -d "$REMOTE_BASE" ]]; then
+    cat >&2 <<EOF
+$REMOTE_BASE exists on THIS machine -- you are already on the cluster, so
+there is nothing to fetch. Plot the sweep in place:
+
+  venv_enceladus/bin/python3 studies/snow_thermal/verification/plot_rev_tensor.py \\
+      --results $REMOTE_BASE \\
+      --out studies/snow_thermal/verification
+
+This script is for pulling the CSVs down to a machine that does NOT have the
+scratch filesystem mounted -- run it from your laptop, not from a login node.
+EOF
+    exit 1
+fi
+
 mkdir -p "$LOCAL_DEST"
 
 echo "=== fetching k_eff series only ==="
