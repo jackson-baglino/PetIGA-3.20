@@ -1,0 +1,51 @@
+{
+  "generated_utc": "2026-08-03T16:48:45.349502+00:00",
+  "generator": "preprocess/generate_packing.py",
+  "algorithm": "periodic collective rearrangement (Jodrey-Tory family), radii grown to jamming",
+  "periodic": false,
+  "Lx": 0.001,
+  "Ly": 0.001,
+  "seed": 8,
+  "n_grains": 18,
+  "porosity_target": 0.325,
+  "porosity_achieved": 0.3066308337838134,
+  "porosity_raster": 0.30660152435302734,
+  "raster_nx": 1024,
+  "raster_ny": 1024,
+  "scale_factor_reached": 0.98359375,
+  "contact_gap_m": 0.0,
+  "mean_r_m_requested": 0.0001,
+  "mean_r_m_realized": 9.893915419159417e-05,
+  "min_r_m": 2.7312297899571912e-05,
+  "max_r_m": 0.00018426380272892721,
+  "sigma_ln": 0.5,
+  "radius_clip_frac": 1.0,
+  "max_overlap_m": 2.7259739770373395e-09,
+  "overlap_free": true,
+  "solid_percolates_x": false,
+  "solid_percolates_y": true,
+  "solid_largest_cluster_frac": 1.0,
+  "solid_n_clusters": 1,
+  "pore_percolates_x": false,
+  "pore_percolates_y": true,
+  "pore_largest_cluster_frac": 0.38913513429446805,
+  "pore_n_clusters": 92,
+  "coordination_number": 2.2222222222222223,
+  "n_contacts": 20,
+  "throat_gap_m": {
+    "p5": 6.17434916090196e-07,
+    "p25": 1.7311762259737675e-05,
+    "p50": 6.422202862821174e-05,
+    "p75": 0.00012151072596344605,
+    "p95": 0.00024869755197455984,
+    "mean": 8.657232684535984e-05,
+    "n": 54
+  },
+  "problems": [
+    "porosity 0.3066 misses target 0.3250 by more than 0.01 (jammed at s=0.9836)"
+  ],
+  "warnings": [
+    "pore space does not percolate (x=False, y=True; largest cluster holds 38.9% of the void in 92 clusters) -- EXPECTED at --contact-gap 0.00 um. In 2D a spanning contact network cuts the void into cells; this is the accepted cost of having the grains actually touch. Rank seeds on pore retention with preprocess/select_packing_seeds.py."
+  ],
+  "grains_dat_sha256": "ceaf4524dc6314dfb74d14bb2a2cb5dbc9d9a4d8f27e5615f7b41bbaaf105a00"
+}

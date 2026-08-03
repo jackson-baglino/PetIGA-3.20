@@ -75,6 +75,9 @@ def main(argv=None):
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--keep", type=int, default=5,
                     help="how many of the best seeds to retain")
+    ap.add_argument("--non-periodic", action="store_true",
+                    help="closed-box packing with every grain wholly inside the "
+                         "walls; use for -periodic 0 runs so nothing is clipped")
     ap.add_argument("--raster", type=int, default=1024)
     ap.add_argument("--python", default=sys.executable)
     ap.add_argument("--dry-run", action="store_true")
@@ -102,6 +105,8 @@ def main(argv=None):
                    "--sigma_ln", repr(args.sigma_ln),
                    f"--contact-gap={args.contact_gap!r}",
                    "--out", str(d), "--raster", str(args.raster)]
+            if args.non_periodic:
+                cmd.append("--non-periodic")
             if args.Ly is not None:
                 cmd += ["--Ly", repr(args.Ly)]
             r = subprocess.run(cmd, capture_output=True, text=True)

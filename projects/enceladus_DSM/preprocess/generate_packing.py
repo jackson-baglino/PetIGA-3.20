@@ -195,6 +195,12 @@ def sample_radii(rng, Lx, Ly, porosity, mean_r, sigma_ln, clip_frac):
 # Periodic overlap relaxation
 # =========================================================================
 
+# Set once from --non-periodic before any packing work. A module-level cell
+# rather than a threaded argument because _worst_overlap is called from four
+# places and the alternative is plumbing a boolean through all of them.
+PERIODIC = [True]
+
+
 def _worst_overlap(centres, radii, Lx, Ly):
     """Return (max_overlap, pairs, deltas) for all overlapping pairs.
 
@@ -202,7 +208,11 @@ def _worst_overlap(centres, radii, Lx, Ly):
     argument does the periodic wrapping for us, so no 3x3 replication is
     needed; it requires coordinates inside [0, L).
     """
-    tree = cKDTree(centres, boxsize=[Lx, Ly])
+    # boxsize=None drops the minimum image, so grains no longer interact with
+    # their images across the wall -- required when the cell is a closed box
+    # with zero-flux walls rather than a periodic tile.
+    tree = (cKDTree(centres, boxsize=[Lx, Ly]) if PERIODIC[0]
+            else cKDTree(centres))
     rmax = float(radii.max())
     pairs = np.array(list(tree.query_pairs(2.0 * rmax)), dtype=np.int64)
     if pairs.size == 0:
@@ -251,8 +261,17 @@ def relax(centres, radii, Lx, Ly, tol_frac, max_iter, damping=0.5):
         np.add.at(disp, j, +0.5 * shift)
 
         centres += disp
-        centres[:, 0] = np.mod(centres[:, 0], Lx)   # stay inside [0, L)
-        centres[:, 1] = np.mod(centres[:, 1], Ly)
+        if PERIODIC[0]:
+            centres[:, 0] = np.mod(centres[:, 0], Lx)   # stay inside [0, L)
+            centres[:, 1] = np.mod(centres[:, 1], Ly)
+        else:
+            # Keep every grain WHOLLY inside the box, so nothing is clipped by
+            # the wall. This is what makes a zero-flux run legitimate: the
+            # multi_grains IC only applies minimum-image wrapping under
+            # -periodic 1, so a grain straddling the boundary would otherwise
+            # be cut, leaving a flat artificial face from t = 0.
+            centres[:, 0] = np.clip(centres[:, 0], radii, Lx - radii)
+            centres[:, 1] = np.clip(centres[:, 1], radii, Ly - radii)
 
     worst, _, _, _ = _worst_overlap(centres, radii, Lx, Ly)
     return worst <= tol, max_iter, worst
@@ -357,7 +376,11 @@ def descriptors(centres, radii, Lx, Ly, gap=0.0, contact_tol_frac=0.02):
     """
     tol = contact_tol_frac * float(radii.min())
 
-    tree = cKDTree(centres, boxsize=[Lx, Ly])
+    # boxsize=None drops the minimum image, so grains no longer interact with
+    # their images across the wall -- required when the cell is a closed box
+    # with zero-flux walls rather than a periodic tile.
+    tree = (cKDTree(centres, boxsize=[Lx, Ly]) if PERIODIC[0]
+            else cKDTree(centres))
     pairs = np.array(list(tree.query_pairs(2.0 * radii.max() + gap + tol)), dtype=np.int64)
     n_contact = 0
     if pairs.size:
@@ -472,6 +495,12 @@ def main(argv=None):
                          "eps-independent. Positive holds them apart; negative "
                          "overlaps them and then needs an eps-dependent neck "
                          "calibration -- see the module docstring")
+    ap.add_argument("--non-periodic", action="store_true",
+                    help="build a CLOSED-BOX packing: no minimum image, and "
+                         "every grain kept wholly inside the walls so nothing "
+                         "is clipped. Use with -periodic 0 runs, where the "
+                         "multi_grains IC does not wrap grains and a straddling "
+                         "grain would be cut")
     ap.add_argument("--seed", type=int, required=True)
     ap.add_argument("--out", required=True, help="output directory")
     ap.add_argument("--raster", type=int, default=1024,
@@ -487,6 +516,7 @@ def main(argv=None):
 
     Lx = args.Lx
     Ly = args.Ly if args.Ly is not None else args.Lx
+    PERIODIC[0] = not args.non_periodic
     rng = np.random.default_rng(args.seed)
 
     print(f"[{args.out}] target porosity {args.porosity:.3f} on "
@@ -556,7 +586,7 @@ def main(argv=None):
         "generator": "preprocess/generate_packing.py",
         "algorithm": "periodic collective rearrangement (Jodrey-Tory family), "
                      "radii grown to jamming",
-        "periodic": True,
+        "periodic": bool(PERIODIC[0]),
         "Lx": Lx, "Ly": Ly,
         "seed": args.seed,
         "n_grains": int(n),

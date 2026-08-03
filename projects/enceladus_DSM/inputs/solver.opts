@@ -11,9 +11,28 @@
 -dof 3                                  # ice / temperature / vapor
 -p 2                                    # B-spline polynomial order (quadratic)
 -C 1                                    # B-spline continuity (C^1 for p=2)
--periodic 1                             # periodic BCs (closed system; vapor cannot
-                                        # leak through boundaries — needed for clean
-                                        # mass-balance diagnostics).
+-periodic 0                             # ZERO-FLUX walls on all three equations.
+                                        # Changed from 1 on 2026-08-03: periodicity
+                                        # wrapped the ICE equation, so ice growing
+                                        # into one wall reappeared on the opposite
+                                        # face -- visible in the s10 1mm run. None
+                                        # of phi, T or rho_v needs periodicity; all
+                                        # three are well posed with no flux, and it
+                                        # is still a closed system, so the mass
+                                        # balance is unaffected.
+                                        #
+                                        # PetIGA carries periodicity on the AXIS, so
+                                        # it applies to every field at once -- there
+                                        # is no per-equation switch. The k_eff
+                                        # corrector therefore builds its OWN periodic
+                                        # mesh (src/keff.c); homogenization still
+                                        # gets the periodic cell it requires.
+                                        #
+                                        # Packings for these runs must be generated
+                                        # with --non-periodic, so no grain straddles
+                                        # a wall: the multi_grains IC only applies
+                                        # minimum-image wrapping under -periodic 1,
+                                        # and a straddling grain would be CUT.
 
 # ---------- Output ------------------------------------------------------------
 -n_out 5000                             # snapshots when -outp 0
