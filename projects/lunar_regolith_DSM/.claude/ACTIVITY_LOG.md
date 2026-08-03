@@ -1,3 +1,31 @@
+## 2026-08-03 — wall_divots geometry for the −50 K/m aggregation run
+
+- **New ice-placement strategy `wall_divots`** in
+  `preprocess/build_geometry_regolith_pore.py`: 12 ice grains (6 per wall,
+  R = 2.1–3.0e-5) each seated in a smooth divot carved into the pore wall,
+  replacing the old ice-block-at-one-end / big-grain-at-the-other framing that
+  fixed the outcome in the IC. A divot is a C-infinity bump with **negative
+  height** in `-sed_grain_*`/`-top_grain_*`, which `SedimentBumpField()`
+  already sums correctly — no C changes.
+- **Mesh quality drove the design.** Element skew tracks wall slope, and the
+  validated geometry peaks at 46°. Kept the carved wall at 47° by (1) siting
+  seats only at wall extrema — troughs alone measured 55–59°; (2) softening the
+  regolith relief to h/R 0.22–0.36 for this strategy only, with central
+  amplification raised to 2.8 so the throat survives (48% Ly); (3) checking the
+  slope budget per seat over its own support, since a domain-wide check lets
+  the first divot at the limit veto every later seat.
+- **Strategy contract changed** to `(ice, bot_extra, top_extra)` so a strategy
+  can reshape walls; those in `CARVES_WALLS` get their own mesh `.dat`.
+  `flank_caps`/`throat_bridge`/`pore_lining` regenerate byte-identical.
+- **Verified on the written mesh:** Jacobian strictly positive (min/max 0.465
+  vs 0.403 for the validated mesh), max shear 47° vs 46°, mesh boundary matches
+  the C-side bump formula to 8.7e-9 m (1% of eps), all 12 grain centres on
+  their seats to ~1e-11 m.
+- **Not yet run.** Pairs with the unmodified `Tgrad_T-20_G50_3d` experiment;
+  3-day run first, then decide on a longer window.
+
+---
+
 
 ---
 
