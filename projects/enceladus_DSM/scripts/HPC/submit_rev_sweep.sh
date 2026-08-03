@@ -51,6 +51,28 @@ SIZES=(0.5 1 1.5 2 2.5 3)
 KEFF=(-keff 1 -keff_freq 20)
 
 [[ -x "$SUBMIT" ]] || { echo "ERROR: $SUBMIT missing" >&2; exit 1; }
+
+# BUILD ONCE, HERE, then tell every job to skip its own compile.
+#
+# run_enceladus.sh compiles with `make clean && make all` by default. Six jobs
+# starting together all run that against the SAME obj/ on a shared filesystem,
+# so one job's `make clean` deletes object files another job is mid-write to.
+# On NFS that surfaces as
+#     Fatal error: can't write N bytes to section .text of obj/assembly.o:
+#     'Stale file handle'
+# and every job in the sweep dies before it starts. compile_code() documents
+# this and provides SKIP_COMPILE=1 for exactly this case; submit_batch.sh has
+# used the same build-once pattern all along. This script simply had not.
+echo "--- building once on the submission host ---"
+if ! make all; then
+    echo "ERROR: make all failed; nothing submitted." >&2
+    exit 1
+fi
+if [[ ! -f "$PROJECT_ROOT/enceladus_dsm" ]]; then
+    echo "ERROR: enceladus_dsm missing after a successful make; nothing submitted." >&2
+    exit 1
+fi
+echo "    built $(ls -la "$PROJECT_ROOT/enceladus_dsm" | awk '{print $5}') bytes"
 [[ -f "$PROJECT_ROOT/inputs/experiment/$EXP.opts" ]] || {
     echo "ERROR: inputs/experiment/$EXP.opts missing" >&2; exit 1; }
 
@@ -66,7 +88,10 @@ for L in "${SIZES[@]}"; do
     # The `--` is REQUIRED. submit_enceladus.sh forwards everything BEFORE it to
     # sbatch and everything after to enceladus_dsm; without it, -keff would be
     # handed to sbatch as an unknown option and the job would never submit.
-    "$SUBMIT" "$geom" "$EXP" "$TAG" -- "${KEFF[@]}" ${EXTRA[@]+"${EXTRA[@]}"}
+    # --export before the `--` is an sbatch flag; SKIP_COMPILE=1 stops the job
+    # rebuilding into the shared obj/ (see the build-once block above).
+    "$SUBMIT" "$geom" "$EXP" "$TAG" --export=ALL,SKIP_COMPILE=1 \
+        -- "${KEFF[@]}" ${EXTRA[@]+"${EXTRA[@]}"}
 done
 
 echo
