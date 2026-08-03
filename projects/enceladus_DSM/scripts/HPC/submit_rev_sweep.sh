@@ -27,7 +27,10 @@
 #
 # The sweep is submitted smallest first so a failure shows up cheaply.
 #
-# Usage:  ./submit_rev_sweep.sh [tag] [-- extra solver flags]
+# Usage:  ./submit_rev_sweep.sh [tag] [extra solver flags...]
+#
+# Extra arguments are forwarded to the SOLVER (they are placed after the `--`
+# that submit_enceladus.sh uses to separate sbatch flags from solver flags).
 # ---------------------------------------------------------------------------
 set -uo pipefail
 
@@ -60,7 +63,10 @@ for L in "${SIZES[@]}"; do
     fi
     echo
     echo "--- L = ${L} mm ---"
-    "$SUBMIT" "$geom" "$EXP" "$TAG" "${KEFF[@]}" ${EXTRA[@]+"${EXTRA[@]}"}
+    # The `--` is REQUIRED. submit_enceladus.sh forwards everything BEFORE it to
+    # sbatch and everything after to enceladus_dsm; without it, -keff would be
+    # handed to sbatch as an unknown option and the job would never submit.
+    "$SUBMIT" "$geom" "$EXP" "$TAG" -- "${KEFF[@]}" ${EXTRA[@]+"${EXTRA[@]}"}
 done
 
 echo
