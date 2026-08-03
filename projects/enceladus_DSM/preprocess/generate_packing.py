@@ -433,14 +433,52 @@ def descriptors(centres, radii, Lx, Ly, gap=0.0, contact_tol_frac=0.02):
 def write_outputs(out, centres, radii, Lx, Ly, meta, preview=True):
     os.makedirs(out, exist_ok=True)
 
+    # EXPLICIT EDGE IMAGES.
+    #
+    # The pack is jammed under minimum-image periodicity, so a grain near a wall
+    # genuinely continues on the opposite face. The multi_grains IC only
+    # reconstructs that under -periodic 1; under -periodic 0 (zero-flux walls,
+    # which is what the phase-field, temperature and vapour equations want) it
+    # would simply CUT the grain and leave a flat artificial face.
+    #
+    # So the wrapping is baked into the file instead of left to the solver: any
+    # grain reaching past an edge is emitted a second time at its periodic image,
+    # giving a centre list that spans [-R, Lx+R] x [-R, Ly+R]. A grain then needs
+    # only to be PARTLY inside the domain, which is the point -- these packings
+    # represent a window cut from a much larger pack, and deleting the grains
+    # that straddle the edge would sever the conduction paths that leave the
+    # domain and bias k_eff low. Connectivity across the boundary is exactly what
+    # k_eff is most sensitive to.
+    #
+    # Because the images are the true periodic partners, the microstructure also
+    # stays periodic across every face, which removes the seam mismatch the
+    # corrector's periodic BCs would otherwise see. Not required -- Calonne et
+    # al. (2011) apply periodic BCs to plainly non-periodic tomographic images --
+    # but it costs nothing here and removes one source of window bias.
+    emitted = []
+    for (x, y), r in zip(centres, radii):
+        for ox in (-Lx, 0.0, Lx):
+            for oy in (-Ly, 0.0, Ly):
+                cx, cy = x + ox, y + oy
+                # keep any copy whose disk overlaps the domain at all
+                if (-r <= cx <= Lx + r) and (-r <= cy <= Ly + r):
+                    emitted.append((cx, cy, r))
+    meta["n_grain_rows_emitted"] = len(emitted)
+    meta["n_edge_images"] = len(emitted) - len(radii)
+
     dat = os.path.join(out, "grains.dat")
     with open(dat, "w") as f:
         f.write(f"# periodic 2D packing, generated {meta['generated_utc']}\n")
         f.write(f"# porosity_achieved = {meta['porosity_achieved']:.6f}"
                 f"  (target {meta['porosity_target']:.6f})\n")
+        f.write(f"# {len(radii)} distinct grains; {len(emitted)} rows including "
+                f"{len(emitted)-len(radii)} periodic edge images.\n")
+        f.write("# Centres span [-R, L+R]: a grain need only be PARTLY inside.\n")
+        f.write("# Do NOT drop the out-of-box rows -- they carry the conduction\n")
+        f.write("# paths that cross the domain edge, and k_eff depends on them.\n")
         f.write("# header row is 'Lx Ly'; grain rows are 'x y r', all in metres\n")
         f.write(f"{Lx:.12e} {Ly:.12e}\n")
-        for (x, y), r in zip(centres, radii):
+        for (x, y, r) in emitted:
             f.write(f"{x:.12e} {y:.12e} {r:.12e}\n")
 
     with open(dat, "rb") as f:

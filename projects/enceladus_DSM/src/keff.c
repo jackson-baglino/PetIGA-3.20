@@ -163,18 +163,15 @@ static PetscErrorCode KeffCheckGuards(KeffCtx *kc)
     }
     if (nonper) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,
-        "\n"
-        "  *** -keff WARNING: the solver mesh is NOT periodic (%d of %d axes) ***\n"
-        "  The corrector still solves on its own periodic mesh, so k_eff is\n"
-        "  computed -- but periodic homogenization upscales the medium obtained\n"
-        "  by TILING this cell, and a non-periodic run does not produce one:\n"
-        "    - grains straddling the boundary are cut, not wrapped, because the\n"
-        "      multi_grains IC only applies minimum-image under -periodic 1;\n"
-        "    - a zero-flux wall is a mirror, not a wrap, so the evolved field is\n"
-        "      mirror-symmetric and k(x) does not match across the seam.\n"
-        "  Treat the result as indicative. For a defensible tensor either run\n"
-        "  with -periodic 1, or generate a packing whose grains lie fully inside\n"
-        "  the box so nothing is cut.\n\n", (int)nonper, (int)kc->dim); CHKERRQ(ierr);
+        "  [keff] solver mesh is not periodic (%d of %d axes); the corrector\n"
+        "         solves on its own periodic mesh, which is correct. Periodic\n"
+        "         BCs on a NON-periodic window are standard practice -- Calonne\n"
+        "         et al. (2011) apply them to tomographic snow images -- and give\n"
+        "         an APPARENT conductivity bracketed by the Dirichlet (upper) and\n"
+        "         Neumann (lower) results, converging to the effective value\n"
+        "         faster than either as the window grows. The residual window\n"
+        "         dependence is the REV question, not a validity problem.\n",
+        (int)nonper, (int)kc->dim); CHKERRQ(ierr);
     }
   }
 
