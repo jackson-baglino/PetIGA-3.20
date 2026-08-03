@@ -95,7 +95,11 @@ def main(argv=None):
 
     rows = []
     for s in seeds:
-        d = args.out / f"cand_seed{s}"
+        # Namespaced by porosity. With a bare "cand_seed{N}" a candidate that
+        # FAILED for one porosity was left on disk, and the next porosity's run
+        # skipped regeneration (the "metadata.json exists" test) and adopted it
+        # -- filing a packing built for a different target under the new one.
+        d = args.out / f"cand_phi{args.porosity:.3f}_seed{s}"
         if not (d / "metadata.json").is_file():
             # `--contact-gap=-4e-06`, not `--contact-gap -4e-06`: argparse reads
             # a leading '-' on the value as the start of another option.
@@ -157,6 +161,11 @@ def main(argv=None):
                 r["dir"].rename(dest)
         else:
             shutil.rmtree(r["dir"], ignore_errors=True)
+
+    # Anything still named cand_* for THIS porosity failed or was rejected;
+    # leaving it behind is what caused the reuse bug above.
+    for leftover in args.out.glob(f"cand_phi{args.porosity:.3f}_seed*"):
+        shutil.rmtree(leftover, ignore_errors=True)
 
     print(f"\nkept {min(args.keep, len(rows))} packing(s) in {args.out}")
     print("Pore percolation is NOT expected here -- the grains are in contact "

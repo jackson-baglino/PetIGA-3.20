@@ -492,16 +492,34 @@ def write_outputs(out, centres, radii, Lx, Ly, meta, preview=True):
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
             from matplotlib.patches import Circle
-            fig, ax = plt.subplots(figsize=(6, 6 * Ly / Lx))
-            for (x, y), r in zip(centres, radii):
-                for ox in (-Lx, 0, Lx):
-                    for oy in (-Ly, 0, Ly):
-                        ax.add_patch(Circle((x + ox, y + oy), r,
-                                            facecolor="#7fb3d5",
-                                            edgecolor="#1b4f72", lw=0.3))
-            ax.set_xlim(0, Lx); ax.set_ylim(0, Ly); ax.set_aspect("equal")
-            ax.set_title(f"phi={meta['porosity_achieved']:.4f}  "
-                         f"N={len(radii)}  seed={meta['seed']}", fontsize=10)
+            fig, ax = plt.subplots(figsize=(6.4, 6.4 * Ly / Lx))
+            # Draw the margin OUTSIDE the domain too, so the grains that hang
+            # past an edge are visible -- they are written to grains.dat and the
+            # solver sees them, and they carry the conduction paths that leave
+            # the domain. A preview cropped to [0,L] hides exactly the part of
+            # the configuration that k_eff is most sensitive to.
+            pad = float(radii.max())
+            for (x, y, r), is_img in ((e, out_of_box) for e, out_of_box in
+                                      ((e, not (0 <= e[0] <= Lx and 0 <= e[1] <= Ly))
+                                       for e in emitted)):
+                ax.add_patch(Circle((x, y), r,
+                                    facecolor="#c9d9e6" if is_img else "#7fb3d5",
+                                    edgecolor="#1b4f72",
+                                    lw=0.3, alpha=0.55 if is_img else 1.0,
+                                    zorder=2 if is_img else 3))
+            ax.add_patch(plt.Rectangle((0, 0), Lx, Ly, fill=False,
+                                       edgecolor="#c0392b", lw=1.8, zorder=4))
+            ax.set_xlim(-pad, Lx + pad); ax.set_ylim(-pad, Ly + pad)
+            ax.set_aspect("equal")
+            ax.set_xlabel("x [m]", fontsize=8); ax.set_ylabel("y [m]", fontsize=8)
+            ax.tick_params(labelsize=7)
+            ax.set_title(
+                f"phi={meta['porosity_achieved']:.4f}  N={len(radii)}  "
+                f"seed={meta['seed']}  L={Lx*1e3:.2f} mm\n"
+                f"{len(emitted)-len(radii)} edge images (pale)   "
+                f"solid in largest cluster {meta['solid_largest_cluster_frac']*100:.0f}%   "
+                f"pore {meta['pore_largest_cluster_frac']*100:.0f}%",
+                fontsize=8.5)
             fig.savefig(os.path.join(out, "preview.png"), dpi=140,
                         bbox_inches="tight")
             plt.close(fig)
