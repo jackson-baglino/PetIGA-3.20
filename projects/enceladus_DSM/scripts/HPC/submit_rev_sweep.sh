@@ -64,6 +64,11 @@ for L in "${SIZES[@]}"; do
 done
 
 echo
-echo "When they finish, collect with:"
+echo "Jobs submitted. AFTER they all finish, collect with:"
+echo
 echo "  venv_enceladus/bin/python3 studies/snow_thermal/verification/plot_rev.py \\"
-echo "      --results \$RESULTS_BASE --tag $TAG"
+echo "      --results \"\$SCRATCH/enceladus_DSM\" --tag $TAG"
+echo
+echo "(\$RESULTS_BASE is NOT set in your shell -- the run scripts define it"
+echo " internally and never export it. On the cluster the results live under"
+echo " \$SCRATCH/enceladus_DSM/<geometry>/<timestamp>_<experiment>_<tag>_job<id>/.)"

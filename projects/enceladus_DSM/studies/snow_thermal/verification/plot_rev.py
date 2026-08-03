@@ -63,7 +63,11 @@ def collect(results, tag):
         if not m:
             continue
         L = float(m.group(1))
-        runs = sorted(glob.glob(os.path.join(geo, f"*_{tag}")))
+        # NOT f"*_{tag}": on the cluster the run directory is
+        #   <ts>_<experiment>[_<tag>][_job<SLURM_JOB_ID>]
+        # so an exact-suffix glob misses every job that carries an ID.
+        runs = sorted(glob.glob(os.path.join(geo, f"*_{tag}")) +
+                      glob.glob(os.path.join(geo, f"*_{tag}_job*")))
         if not runs:
             continue
         run = runs[-1]                              # newest matching run
@@ -94,7 +98,12 @@ def collect(results, tag):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--results", required=True)
+    ap.add_argument("--results", required=True,
+                    help="the directory holding the per-geometry run folders. "
+                         "On the cluster that is $SCRATCH/enceladus_DSM; locally "
+                         "it is /Users/<you>/SimulationResults/enceladus_DSM/"
+                         "scratch. NOTE there is no RESULTS_BASE in your shell -- "
+                         "the run scripts set it internally and never export it.")
     ap.add_argument("--tag", default="rev")
     ap.add_argument("--out", default=HERE)
     ap.add_argument("--tol", type=float, default=0.02,
