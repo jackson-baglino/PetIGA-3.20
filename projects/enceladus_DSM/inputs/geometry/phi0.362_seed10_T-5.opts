@@ -9,15 +9,15 @@
 #   porosity (achieved) = 0.3607   target 0.3625
 #   grains              = 97
 #   contact gap         = 0.00 um
-#   coordination number = 2.58
+#   coordination number = 1.77
 #
 # THROATS vs THE DIFFUSE BAND -- the binding constraint on eps for k_eff, and the
 # one to check before trusting a conductivity from this geometry. Where the band
 # is wider than a throat, phi never reaches 0 inside it, so ThermalCond returns
 # well above k_air in a channel that ought to be air and k_eff reads HIGH.
-#   pore throat  p25 =  19.38 um   p50 =  67.61 um
-#   diffuse band 6*eps  =  10.80 um  (0.16x the median throat)
-#                9.2*eps =  16.56 um  (0.24x)
+#   pore throat  p25 =  28.78 um   p50 =  63.39 um
+#   diffuse band 6*eps  =  10.80 um  (0.17x the median throat)
+#                9.2*eps =  16.56 um  (0.26x)
 #
 # ADDITIVE INITIALISATION (-ic_grain_union 0), the Molaro convention. phi is the
 # clamped SUM of the grains' diffuse fields,

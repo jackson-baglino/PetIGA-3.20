@@ -17,15 +17,29 @@ connected cluster and how wide the surviving throats are. This script generates
 a batch and ranks them, so the study runs on the most open configurations rather
 than on whichever seed happened to come first.
 
-RANKING
--------
-Default score is the largest connected pore fraction, tie-broken by median
-throat. Both are already measured by generate_packing.py and stored in
-metadata.json; this script only drives it and sorts.
+RANKING -- UNIFORMITY, not pore connectivity  (changed 2026-08-03)
+------------------------------------------------------------------
+Seeds are ranked by how EVENLY the grains are spread:
 
-  pore_largest_cluster_frac   fraction of the void in its biggest cluster
-  throat p50                  median surface-to-surface gap at contacts
-  coordination_number         mean contacts per grain (lower = more open)
+  max_void_radius_per_mean_r  radius of the largest circle fitting entirely in
+                              the pore space, in units of the mean grain radius.
+                              The direct measure of "one overly large void".
+  local_density_cv            coefficient of variation of the solid fraction
+                              over an 8x8 coarse grid; clumping raises it.
+
+This REPLACES ranking by pore_largest_cluster_frac, which was actively harmful.
+Maximising the fraction of void held in one connected cluster selects for
+exactly the configurations that concentrate all the empty space in a single
+hole -- so the winners were clumped grains beside a large void, which is the
+opposite of a representative snow microstructure. The 0.362/seed12 packing
+picked under the old rule had a void running the full height of the domain and
+was chosen BECAUSE of it (pore 69%, the highest in its group).
+
+The trade is explicit: uniform packings hold less of the void in one connected
+cluster, so vapour transport is more obstructed at t=0. Pore connectivity is
+still measured and reported, just not optimised for. In 2D it cannot be had
+together with contacting grains anyway, and on Enceladus the vapour budget is
+small.
 
 Usage:
     python3 select_packing_seeds.py --porosity 0.325 --Lx 2.0e-3 \\
@@ -133,21 +147,24 @@ def main(argv=None):
             "pore_n": m["pore_n_clusters"],
             "p50": m["throat_gap_m"]["p50"],
             "p75": m["throat_gap_m"]["p75"],
+            "void_r": m.get("max_void_radius_per_mean_r", float("inf")),
+            "cv": m.get("local_density_cv", float("inf")),
         })
 
     if not rows:
         print("no usable packings generated", file=sys.stderr)
         return 1
 
-    rows.sort(key=lambda r: (-r["pore_frac"], -r["p50"]))
+    # Most uniform first: smallest worst-void, then least clumped.
+    rows.sort(key=lambda r: (r["void_r"], r["cv"]))
 
     print(f"\n{'rank':>4} {'seed':>5} {'phi':>7} {'N':>5} {'Z':>5} "
-          f"{'pore in largest':>15} {'clusters':>9} {'p50 [um]':>9} {'p75 [um]':>9}")
+          f"{'maxvoid/r':>10} {'densCV':>7} {'pore%':>6} {'p50[um]':>8}")
     for i, r in enumerate(rows):
         mark = "  <- keep" if i < args.keep else ""
         print(f"{i+1:>4} {r['seed']:>5} {r['phi']:>7.4f} {r['n']:>5} {r['Z']:>5.2f} "
-              f"{r['pore_frac']*100:>14.1f}% {r['pore_n']:>9} "
-              f"{r['p50']*1e6:>9.2f} {r['p75']*1e6:>9.2f}{mark}")
+              f"{r['void_r']:>10.2f} {r['cv']:>7.3f} "
+              f"{r['pore_frac']*100:>5.1f}% {r['p50']*1e6:>8.1f}{mark}")
 
     # Promote the winners to stable names; drop the rest so the directory holds
     # only what the study will actually run.
@@ -168,9 +185,10 @@ def main(argv=None):
         shutil.rmtree(leftover, ignore_errors=True)
 
     print(f"\nkept {min(args.keep, len(rows))} packing(s) in {args.out}")
-    print("Pore percolation is NOT expected here -- the grains are in contact "
-          "by design.\nThese are the configurations that retain the most open "
-          "pore among those tried.")
+    print("Ranked by UNIFORMITY: smallest largest-void first, then least clumped.\n"
+          "Pore percolation is not expected -- the grains are in contact by "
+          "design -- and is no longer\noptimised for, because maximising it "
+          "selects for a single large hole.")
     return 0
 
 

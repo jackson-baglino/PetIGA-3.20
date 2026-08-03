@@ -315,6 +315,41 @@ def jam(centres, radii, Lx, Ly, tol_frac, max_iter, s_start, verbose=True):
 # Rasterization and percolation
 # =========================================================================
 
+def uniformity(solid, Lx, Ly, mean_r, ncoarse=8):
+    """How evenly the solid is spread, and how big the worst void is.
+
+    Returns (local_density_cv, max_void_radius_m).
+
+    local_density_cv : coefficient of variation of the solid fraction over an
+        ncoarse x ncoarse coarse grid. 0 would be perfectly uniform; clumping
+        raises it because some cells fill up while others empty out.
+    max_void_radius_m : radius of the largest circle that fits entirely in the
+        pore space, from a Euclidean distance transform of the void. This is the
+        direct measure of "overly large voids" -- a packing can have an
+        acceptable mean porosity and still be unusable because all of it is in
+        one hole.
+
+    Both are reported per mean grain radius where it matters, so they compare
+    across grain sizes.
+    """
+    from scipy.ndimage import distance_transform_edt
+
+    ny, nx = solid.shape
+    ky, kx = max(1, ny // ncoarse), max(1, nx // ncoarse)
+    cells = []
+    for j in range(0, ny - ky + 1, ky):
+        for i in range(0, nx - kx + 1, kx):
+            cells.append(solid[j:j + ky, i:i + kx].mean())
+    cells = np.asarray(cells, dtype=float)
+    cv = float(cells.std() / cells.mean()) if cells.mean() > 0 else float("inf")
+
+    # Distance from every pore pixel to the nearest solid pixel; the maximum is
+    # the largest inscribed empty circle.
+    dpix = distance_transform_edt(~solid)
+    px = Lx / nx
+    return cv, float(dpix.max() * px)
+
+
 def rasterize(centres, radii, Lx, Ly, nx, ny):
     """Boolean solid mask on an nx-by-ny grid.
 
@@ -609,7 +644,22 @@ def main(argv=None):
     # Jam against an inflated radius so a uniform surface gap survives at every
     # contact; porosity is always computed from the TRUE radii.
     gap = args.contact_gap
-    centres = np.column_stack([rng.uniform(0, Lx, n), rng.uniform(0, Ly, n)])
+    # Seed on a JITTERED LATTICE rather than uniformly at random. Uniform random
+    # placement has Poisson density fluctuations, and the relaxation only removes
+    # overlaps -- it does not transport grains from dense regions to sparse ones,
+    # so those fluctuations survive jamming as clumps beside large voids. A
+    # jittered lattice starts with the density already even and lets relaxation
+    # do only what it is good at.
+    ncol = int(np.ceil(np.sqrt(n * Lx / Ly)))
+    nrow = int(np.ceil(n / ncol))
+    gx, gy = Lx / ncol, Ly / nrow
+    idx = rng.permutation(ncol * nrow)[:n]
+    cx = (idx % ncol + 0.5) * gx
+    cy = (idx // ncol + 0.5) * gy
+    jitter = 0.35                       # fraction of a cell; keeps order, breaks the grid
+    centres = np.column_stack([
+        np.mod(cx + rng.uniform(-jitter, jitter, n) * gx, Lx),
+        np.mod(cy + rng.uniform(-jitter, jitter, n) * gy, Ly)])
     centres, s_ok = jam(centres, radii + 0.5 * gap, Lx, Ly, args.tol_frac,
                         args.max_iter, args.s_start)
     radii = radii * s_ok
@@ -629,6 +679,7 @@ def main(argv=None):
     px, py, p_frac, p_n = percolates(~solid)
 
     coord, n_contact, throats, _ = descriptors(centres, radii, Lx, Ly, gap)
+    uni_cv, uni_void = uniformity(solid, Lx, Ly, float(radii.mean()))
 
     problems = []
     if not overlap_ok:
@@ -686,6 +737,9 @@ def main(argv=None):
         "solid_largest_cluster_frac": s_frac, "solid_n_clusters": s_n,
         "pore_percolates_x": px, "pore_percolates_y": py,
         "pore_largest_cluster_frac": p_frac, "pore_n_clusters": p_n,
+        "local_density_cv": float(uni_cv),
+        "max_void_radius_m": float(uni_void),
+        "max_void_radius_per_mean_r": float(uni_void / radii.mean()),
         "coordination_number": float(coord),
         "n_contacts": int(n_contact),
         "throat_gap_m": throats,

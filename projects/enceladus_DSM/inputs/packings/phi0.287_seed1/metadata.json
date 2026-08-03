@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-03T17:55:48.483030+00:00",
+  "generated_utc": "2026-08-03T18:13:51.486892+00:00",
   "generator": "preprocess/generate_packing.py",
   "algorithm": "periodic collective rearrangement (Jodrey-Tory family), radii grown to jamming",
   "periodic": true,
@@ -9,7 +9,7 @@
   "n_grains": 93,
   "porosity_target": 0.2875,
   "porosity_achieved": 0.2861625907297125,
-  "porosity_raster": 0.28615283966064453,
+  "porosity_raster": 0.2860898971557617,
   "raster_nx": 1024,
   "raster_ny": 1024,
   "scale_factor_reached": 1.0,
@@ -20,32 +20,35 @@
   "max_r_m": 0.0002,
   "sigma_ln": 0.5,
   "radius_clip_frac": 1.0,
-  "max_overlap_m": 2.2550397151812826e-09,
+  "max_overlap_m": 2.2710236034393858e-09,
   "overlap_free": true,
   "solid_percolates_x": true,
   "solid_percolates_y": true,
-  "solid_largest_cluster_frac": 0.9590607102253371,
-  "solid_n_clusters": 11,
+  "solid_largest_cluster_frac": 0.8864062923713814,
+  "solid_n_clusters": 19,
   "pore_percolates_x": false,
   "pore_percolates_y": false,
-  "pore_largest_cluster_frac": 0.38903127114209823,
-  "pore_n_clusters": 339,
-  "coordination_number": 2.6666666666666665,
-  "n_contacts": 124,
+  "pore_largest_cluster_frac": 0.21509598749279135,
+  "pore_n_clusters": 261,
+  "local_density_cv": 0.20427013922885554,
+  "max_void_radius_m": 0.0001021990269683682,
+  "max_void_radius_per_mean_r": 1.1055289433096762,
+  "coordination_number": 2.150537634408602,
+  "n_contacts": 100,
   "throat_gap_m": {
-    "p5": 5.648972269112778e-07,
-    "p25": 1.982896963646819e-05,
-    "p50": 5.434338324386953e-05,
-    "p75": 8.717017022434068e-05,
-    "p95": 0.00015209203094773214,
-    "mean": 6.0443818936217326e-05,
-    "n": 188
+    "p5": 8.663250633640912e-07,
+    "p25": 1.6177057002340596e-05,
+    "p50": 4.744202811927798e-05,
+    "p75": 9.039524588344704e-05,
+    "p95": 0.00015844924017971296,
+    "mean": 5.9557403577540716e-05,
+    "n": 213
   },
   "problems": [],
   "warnings": [
-    "pore space does not percolate (x=False, y=False; largest cluster holds 38.9% of the void in 339 clusters) -- EXPECTED at --contact-gap 0.00 um. In 2D a spanning contact network cuts the void into cells; this is the accepted cost of having the grains actually touch. Rank seeds on pore retention with preprocess/select_packing_seeds.py."
+    "pore space does not percolate (x=False, y=False; largest cluster holds 21.5% of the void in 261 clusters) -- EXPECTED at --contact-gap 0.00 um. In 2D a spanning contact network cuts the void into cells; this is the accepted cost of having the grains actually touch. Rank seeds on pore retention with preprocess/select_packing_seeds.py."
   ],
   "n_grain_rows_emitted": 111,
   "n_edge_images": 18,
-  "grains_dat_sha256": "69d9be957fb63293ced1b94bfe74c8f21742e8debefa6b8fe90f565ae5c2051c"
+  "grains_dat_sha256": "e1eb5f6536a145b677023c85d7d5046a0ee1a7b433dca6c50b91c1abd0997a99"
 }
