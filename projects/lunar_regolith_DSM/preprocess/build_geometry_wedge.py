@@ -187,8 +187,13 @@ def main():
     lx, ly = args.Lx, args.Ly
     w_t, w_m = args.w_throat, args.w_mouth
     tag = f"_{args.tag}" if args.tag else ""
-    dat = Path(args.out) if args.out else ROOT / f"inputs/geometry/wedge{tag}.dat"
-    opts = Path(args.opts) if args.opts else ROOT / f"inputs/geometry/2D_wedge_band{tag}.opts"
+    # resolve(): the .opts records the mesh path relative to ROOT, so a relative
+    # --out (the natural thing to type from the project root) would otherwise
+    # blow up in relative_to() AFTER the mesh and PNGs had already been written.
+    dat = (Path(args.out).resolve() if args.out
+           else ROOT / f"inputs/geometry/wedge{tag}.dat")
+    opts = (Path(args.opts).resolve() if args.opts
+            else ROOT / f"inputs/geometry/2D_wedge_band{tag}.opts")
     png = ROOT / f"preprocess/wedge{tag}.png"
 
     assert w_m > w_t > 0, f"need w_mouth > w_throat > 0 (got {w_t:.3e}, {w_m:.3e})"
