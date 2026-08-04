@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
 
     user.Lambd      = 1.0;      /* Model parameter Lambda (triple-junction penalty) */
     user.air_lim    = 1.0e-6;   /* Air phase fraction floor */
+    user.rhovfix_axis = -1;     /* -1 = pin vapor on every face (legacy) */
 
     user.lat_sub    = 2.83e6;   /* Latent heat of sublimation */
 
@@ -512,6 +513,14 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-rhovfix_axis",
+             "With -flag_BC_rhovfix: pin vapor only on this axis's two faces "
+             "(0=x, 1=y, 2=z; -1 = every face, the legacy default). A pore "
+             "channel wants 0 -- its top/bottom are solid wall, not reservoirs",
+             "", user.rhovfix_axis, &user.rhovfix_axis, NULL); CHKERRQ(ierr);
+    if (user.rhovfix_axis >= dim)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "-rhovfix_axis %d is out of range for dim=%d", (int)user.rhovfix_axis, (int)dim);
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-dtCFL",           "Interface-CFL timestep limiter",                   "", user.flag_dtCFL, &user.flag_dtCFL, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-axisym",          "Axisymmetric r-z mode (x=axis, y=radius; grains on y=0)", "", user.axisym, &user.axisym, NULL); CHKERRQ(ierr);
@@ -882,6 +891,14 @@ int main(int argc, char *argv[]) {
         PetscReal rho0_vs;
         RhoVS_I(&user, user.temp0, &rho0_vs, NULL);
         for (PetscInt l = 0; l < dim; l++) {
+            /* -rhovfix_axis restricts the reservoir to ONE axis's two faces.
+             * In a pore-channel domain only the open ENDS are reservoirs; the
+             * top/bottom are solid regolith wall. Pinning vapor on the wall
+             * faces would feed the ice directly at its contact line, driving
+             * growth along the whole wall and corrupting the contact angle —
+             * so a wall-bounded channel wants -rhovfix_axis 0 (x-faces only),
+             * not the legacy all-faces behaviour (-1). */
+            if (user.rhovfix_axis >= 0 && l != user.rhovfix_axis) continue;
             for (PetscInt m = 0; m < 2; m++) {
                 /* Axisymmetric mode: the y = 0 face is the symmetry AXIS —
                  * interior space of the 3D problem, usually with ice sitting

@@ -34,6 +34,11 @@ typedef struct {
 
   // Environmental conditions and threshold parameters
   PetscReal air_lim;  // Air phase fraction floor used in the vapor equation (avoids division/degeneracy as phi_a -> 0)
+  // With -flag_BC_rhovfix: which axis's two faces get the Dirichlet vapor
+  // reservoir. -1 (default) = every face, the legacy behaviour. A wall-bounded
+  // pore channel wants 0 (x-faces only): its top/bottom are solid regolith, and
+  // pinning vapor there feeds the ice at its contact line.
+  PetscInt  rhovfix_axis;
 
   // Initial and boundary condition parameters
   PetscReal T_melt;  // Melting temperature of ice
