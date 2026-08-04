@@ -126,19 +126,29 @@ def main():
     if not sol_files:
         sys.exit(f"No sol_*.dat files found in {args.dir}")
 
-    # SSA_evo.dat row i matches sol_i.dat when -outp 1 (see track_grain_mass.py).
+    # Times come from SSA_evo.dat, matched by STEP NUMBER rather than row index.
+    # sol_NNNNN.dat is named by the step it was written at, and the output
+    # cadence is not one-file-per-step in general (a 90-day run wrote 1000
+    # snapshots over 13695 steps), so a row-index match silently produces a
+    # time axis that is really the snapshot counter -- which looks like a
+    # 999-second run instead of a 90-day one. Column 3 is the step, column 2
+    # the time.
     ssa_path = os.path.join(args.dir, "SSA_evo.dat")
+    steps = np.array([int(re.search(r"sol_(\d+)\.dat$", f).group(1))
+                      for f in sol_files])
     times = None
     if os.path.isfile(ssa_path):
         ssa = np.loadtxt(ssa_path)
         if ssa.ndim == 1:
             ssa = ssa.reshape(1, -1)
-        if len(ssa) == len(sol_files):
-            times = ssa[:, 2]
+        step2time = dict(zip(ssa[:, 3].astype(int), ssa[:, 2]))
+        missing = [s for s in steps if s not in step2time]
+        if missing:
+            print(f"Warning: {len(missing)} sol_*.dat steps absent from SSA_evo.dat "
+                  f"(first: {missing[0]}) -- falling back to step number for the "
+                  f"time axis.", file=sys.stderr)
         else:
-            print(f"Warning: SSA_evo.dat has {len(ssa)} rows but {len(sol_files)} "
-                  f"sol_*.dat files -- falling back to step index for the time axis.",
-                  file=sys.stderr)
+            times = np.array([step2time[s] for s in steps])
 
     # Geometry is fixed, so coordinates, areas and radii are computed once.
     C0, _ = nrb(u, v, fields=PetIGA().read_vec(sol_files[0], nrb))
@@ -147,16 +157,30 @@ def main():
     rho = np.hypot(X - apex_x, Y - apex_y)
 
     rc, xc, mass = [], [], []
+    rv_lo, rv_hi = [], []
     for f in sol_files:
         _, F = nrb(u, v, fields=PetIGA().read_vec(f, nrb))
-        w = F[..., 0] * dA                      # ice fraction x physical area
+        ice = F[..., 0]
+        w = ice * dA                            # ice fraction x physical area
         m = float(w.sum())
         mass.append(m)
+        c = float((X * w).sum() / m) if m > 0 else np.nan
         rc.append(float((rho * w).sum() / m) if m > 0 else np.nan)
-        xc.append(float((X * w).sum() / m) if m > 0 else np.nan)
+        xc.append(c)
+        # Vapour on each side of the deposit. A deposit that spans the channel
+        # is a vapour BARRIER: phi_aef = max(1-phi, air_lim) with air_lim=1e-6
+        # (src/assembly.c), so ice suppresses vapour diffusion by 1e6. The two
+        # sides then equilibrate SEPARATELY with their own meniscus and sit at
+        # different densities they cannot equalise -- which halts migration no
+        # matter how large the curvature difference is. Tracking the split is
+        # the difference between "no effect" and "effect present but blocked".
+        air = ice < 0.01
+        lo, hi = air & (X < c), air & (X > c)
+        rv_lo.append(float(F[..., 2][lo].mean()) if lo.any() else np.nan)
+        rv_hi.append(float(F[..., 2][hi].mean()) if hi.any() else np.nan)
 
     rc, xc, mass = np.array(rc), np.array(xc), np.array(mass)
-    steps = np.arange(len(sol_files))
+    rv_lo, rv_hi = np.array(rv_lo), np.array(rv_hi)
     if times is None:
         times = steps.astype(float)
 
@@ -170,15 +194,52 @@ def main():
         print(f"\nr_c change:   {dr:+.4e} m  ({dr / rc[0] * 100:+.3f}%)")
         print(f"x_c change:   {xc[-1] - xc[0]:+.4e} m")
         print(f"ice change:   {dm:+.4f}%   (should be ~0; everything is Neumann)")
-        if dr < 0:
-            print("\n-> r_c FELL: the band migrated toward the NARROW end, as predicted.")
-        elif dr > 0:
-            print("\n-> r_c ROSE: migration toward the WIDE end. This contradicts the "
-                  "curvature argument -- check the contact angle in the first snapshot "
-                  "and the sign of the geometry before reporting it.")
+        # The VERDICT must come from the late-half drift, not the total change.
+        # A lens run's early motion is shape relaxation (the centroid shifts as
+        # the contact angle corrects itself), which is not transport -- judging
+        # by rc[-1]-rc[0] alone reports migration that has already stopped.
+        h = len(times) // 2
+        slope = None
+        if h > 2 and times[-1] > times[h]:
+            slope = np.polyfit(times[h:], rc[h:], 1)[0]
+            years = 1.8e-4 / abs(slope) / 3.156e7 if slope != 0.0 else np.inf
+            print(f"\nLate-half drift: {slope:.3e} m/s "
+                  f"({slope * 3.156e7 * 1e6:+.3f} um/yr)")
+            print(f"  -> one band length (1.8e-4 m) would take {years:.3g} years "
+                  "at this rate")
+            if years > 1e3:
+                print(f"\n-> RELAXED AND STOPPED. r_c moved {dr * 1e6:+.3f} um early on "
+                      "(shape relaxation) and\n   then went flat; the late drift is "
+                      "indistinguishable from zero. This is NOT slow\n   migration -- "
+                      "see the vapour split below for why it halted.")
+            elif slope < 0:
+                print("\n-> MIGRATING toward the NARROW end, as predicted.")
+            else:
+                print("\n-> MIGRATING toward the WIDE end. This contradicts the "
+                      "curvature argument --\n   check the contact angle in the first "
+                      "snapshot and the sign of the geometry\n   before reporting it.")
         if abs(dr) < 1e-3 * rc[0] and abs(dm) > 1.0:
-            print("   NOTE: r_c is flat but ice mass moved %.2f%% -- the band is losing "
-                  "mass rather than translating." % dm)
+            print("   NOTE: r_c is flat but ice mass moved %.2f%% -- the deposit is "
+                  "losing mass rather than translating." % dm)
+
+        # The seal check -- why a null is a null.
+        split = (rv_hi[-1] - rv_lo[-1]) / rv_lo[-1]
+        print(f"\nVapour across the deposit (final): low-x {rv_lo[-1]:.6e}, "
+              f"high-x {rv_hi[-1]:.6e}")
+        print(f"  fractional split (high-low)/low = {split:+.3e}  "
+              f"(started {(rv_hi[0] - rv_lo[0]) / rv_lo[0]:+.3e})")
+        if abs(split) > 1e-7:
+            print("  -> THE DEPOSIT IS SEALING THE CHANNEL. The two sides have "
+                  "equilibrated separately")
+            print("     with their own menisci and cannot exchange vapour: ice "
+                  "suppresses vapour")
+            print("     diffusion by 1e6 (air_lim, src/assembly.c). The curvature "
+                  "difference is")
+            print("     REAL -- this split is its direct measurement -- but it can "
+                  "do no work, so")
+            print("     migration halts. Compare the split against "
+                  "d0*(1/r1 + 1/r2) to confirm.")
+            print("     A migrating deposit needs a vapour path AROUND it.")
 
     if args.save_csv:
         with open(args.save_csv, "w") as fh:
