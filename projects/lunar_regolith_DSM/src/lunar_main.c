@@ -308,6 +308,51 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* --- Affine wall baselines (tapered / wedge domains) ------------------- *
+     * The bumps above have compact support and cannot express a linear ramp,
+     * so a wall that rises or falls across the whole domain needs these. They
+     * MUST match build_geometry_multi_grain.py's --bot-y0/--bot-slope/
+     * --top-y0/--top-slope: the mesh is cut from the same two curves, and the
+     * IC is seeded by mapping (u,v) through them, so a mismatch puts the ice
+     * where the mesh is not. Defaults reproduce a flat [0,Ly] channel. */
+    user.wall_bot_y0    = 0.0;
+    user.wall_bot_slope = 0.0;
+    user.wall_top_y0    = Ly;
+    user.wall_top_slope = 0.0;
+    ierr = PetscOptionsReal("-wall_bot_y0",
+             "Bottom wall height at x=0 [m] (affine baseline under the bumps)",
+             "", user.wall_bot_y0, &user.wall_bot_y0, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-wall_bot_slope",
+             "Bottom wall dy/dx [-]; negative = floor drops to the right",
+             "", user.wall_bot_slope, &user.wall_bot_slope, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-wall_top_y0",
+             "Top wall height at x=0 [m] (defaults to Ly)",
+             "", user.wall_top_y0, &user.wall_top_y0, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-wall_top_slope",
+             "Top wall dy/dx [-]; positive = ceiling rises to the right",
+             "", user.wall_top_slope, &user.wall_top_slope, NULL); CHKERRQ(ierr);
+
+    /* --- Wedge-bridging ice band ------------------------------------------ *
+     * Annulus about the wedge apex. An apex-centred arc is perpendicular to
+     * every ray from the apex, hence to both wedge walls, so this meets both
+     * at the natural 90-degree contact angle -- which a circle cannot do. */
+    user.wedge_apex_x  = 0.0;
+    user.wedge_apex_y  = 0.0;
+    user.wedge_band_r1 = 0.0;
+    user.wedge_band_r2 = 0.0;
+    ierr = PetscOptionsReal("-wedge_apex_x", "Wedge apex x [m] (virtual, outside the domain)",
+             "", user.wedge_apex_x, &user.wedge_apex_x, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-wedge_apex_y", "Wedge apex y [m]",
+             "", user.wedge_apex_y, &user.wedge_apex_y, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-wedge_band_r1",
+             "Inner radius of the ice band from the apex [m]; band is inactive unless r2 > r1",
+             "", user.wedge_band_r1, &user.wedge_band_r1, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-wedge_band_r2", "Outer radius of the ice band from the apex [m]",
+             "", user.wedge_band_r2, &user.wedge_band_r2, NULL); CHKERRQ(ierr);
+    if (user.wedge_band_r1 < 0.0)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                "-wedge_band_r1 must be >= 0 (got %g)", (double)user.wedge_band_r1);
+
     /* --- Ice "shell" capping a floor bump at constant thickness ------------ */
     user.n_ice_shells = 0;
     {

@@ -74,6 +74,26 @@ typedef struct {
   PetscReal top_grain_R[MAX_SED_GRAINS];
   PetscReal top_grain_h[MAX_SED_GRAINS];
 
+  // Affine baseline of each wall, added UNDER the bumps above (see
+  // WallBottom()/WallTop() in src/initial_conditions.c):
+  //     y_bot(x) = wall_bot_y0 + wall_bot_slope*x + SedimentBumpField(x)
+  //     y_top(x) = wall_top_y0 + wall_top_slope*x - TopBumpField(x)
+  // Bumps have compact support and cannot express a linear ramp, so a
+  // tapered (wedge) domain needs these. Must match the --bot-y0/--bot-slope/
+  // --top-y0/--top-slope arguments of build_geometry_multi_grain.py, which
+  // cuts the mesh from the same two curves.
+  // Defaults (0, 0, Ly, 0) reproduce the previous flat-baseline behaviour.
+  PetscReal wall_bot_y0, wall_bot_slope;
+  PetscReal wall_top_y0, wall_top_slope;
+
+  // Wedge-bridging ice band: the annulus wedge_band_r1 <= |X - apex| <=
+  // wedge_band_r2 about (wedge_apex_x, wedge_apex_y). An apex-centred arc is
+  // perpendicular to every ray from the apex, i.e. to both wedge walls, so
+  // this is the shape that meets both at the natural 90-degree contact angle.
+  // Inactive unless wedge_band_r2 > wedge_band_r1 (both default 0).
+  PetscReal wedge_apex_x, wedge_apex_y;
+  PetscReal wedge_band_r1, wedge_band_r2;
+
   // Arrays storing geometry information for ice grains.
   //
   // Heap-allocated with capacity n_grain_max (-n_grain_max, default 2000).

@@ -440,6 +440,48 @@ static PetscReal TopBumpField(const AppCtx *user, PetscReal x)
         h += SedimentBump(x, user->top_grain_x[k], user->top_grain_R[k], user->top_grain_h[k]);
     return h;
 }
+
+/* =========================================================================
+ * WallBottom / WallTop -- the actual wall LINES, in physical y.
+ *
+ * The bump fields above only ever produced deviations from a flat floor at
+ * y=0 and a flat ceiling at y=Ly. A tapered (wedge) domain needs a LINEAR
+ * ramp, which compact-support bumps cannot represent at all, so each wall
+ * gains an affine baseline:
+ *
+ *     y_bot(x) = wall_bot_y0 + wall_bot_slope*x + SedimentBumpField(x)
+ *     y_top(x) = wall_top_y0 + wall_top_slope*x - TopBumpField(x)
+ *
+ * These MUST match build_geometry_multi_grain.py's build_surface(), which
+ * cuts the mesh from the same two curves -- the IC is seeded by mapping
+ * (u,v) through them, so any disagreement puts the ice somewhere the mesh
+ * is not.
+ *
+ * Defaults (0, 0, Ly, 0) reproduce the previous flat-baseline behaviour
+ * exactly, so every pre-existing geometry is untouched.
+ *
+ * Note these return the wall lines directly, NOT TopBumpField()'s "downward
+ * displacement from Ly" convention. A rising ceiling threaded through that
+ * sign convention is a sign error waiting to happen; callers should use
+ * these and never hand-roll `Ly - TopBumpField(...)` again.
+ * =========================================================================*/
+static PetscReal WallBottom(const AppCtx *user, PetscReal x)
+{
+    return user->wall_bot_y0 + user->wall_bot_slope * x + SedimentBumpField(user, x);
+}
+
+static PetscReal WallTop(const AppCtx *user, PetscReal x)
+{
+    return user->wall_top_y0 + user->wall_top_slope * x - TopBumpField(user, x);
+}
+
+/* d/dx of WallBottom() -- local slope of the floor curve including the
+ * affine baseline, used by the ice-shell distance-to-surface calculation. */
+static PetscReal WallBottomDeriv(const AppCtx *user, PetscReal x)
+{
+    return user->wall_bot_slope + SedimentBumpFieldDeriv(user, x);
+}
+
 PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
@@ -491,8 +533,8 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
         for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
             PetscReal x     = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
             PetscReal v     = (PetscReal)j / (PetscReal)(info.my + per);
-            PetscReal y_bot = SedimentBumpField(user, x);
-            PetscReal y_top = Ly - TopBumpField(user, x);
+            PetscReal y_bot = WallBottom(user, x);
+            PetscReal y_top = WallTop(user, x);
             PetscReal y     = y_bot + v * (y_top - y_bot);
 
             PetscReal d0 = PetscSqrtReal(SQ(x - c0x) + SQ(y - c0y));
@@ -551,14 +593,25 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
     const PetscReal tc        = 0.5 / eps;
     const PetscInt  ng        = user->n_act;
 
-    if (ng <= 0)
+    /* The wedge band (below) is a standalone ice body, so a run may legitimately
+     * have zero ice_grain_* circles. Only demand grains when nothing else would
+     * put ice in the domain. */
+    const PetscBool has_band = (PetscBool)(user->wedge_band_r2 > user->wedge_band_r1);
+
+    if (ng <= 0 && !has_band)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
-                "-ic_type multi_grains requires -ice_grain_cx/-ice_grain_cy/-ice_grain_R");
+                "-ic_type multi_grains requires -ice_grain_cx/-ice_grain_cy/-ice_grain_R "
+                "(or -wedge_band_r1/-wedge_band_r2 for a wedge-bridging band)");
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (2D multi-grain) ---\n"
         "  %d ice grain(s), %d sediment bump(s)\n",
         (int)ng, (int)user->n_sed_grains);
+    if (has_band)
+        PetscPrintf(PETSC_COMM_WORLD,
+            "  wedge band: apex = (%.4e, %.4e) m,  r1 = %.4e m,  r2 = %.4e m\n",
+            user->wedge_apex_x, user->wedge_apex_y,
+            user->wedge_band_r1, user->wedge_band_r2);
     for (PetscInt k = 0; k < ng; k++) {
         PetscReal ax = user->ice_grain_ax[k];
         PetscReal ay = user->ice_grain_ay[k];
@@ -592,8 +645,8 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
         for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
             PetscReal x     = Lx * gx[i];
             PetscReal v     = gy[j];
-            PetscReal y_bot = SedimentBumpField(user, x);
-            PetscReal y_top = Ly - TopBumpField(user, x);
+            PetscReal y_bot = WallBottom(user, x);
+            PetscReal y_top = WallTop(user, x);
             PetscReal y     = y_bot + v * (y_top - y_bot);
 
             PetscReal ice = 0.0;
@@ -744,7 +797,7 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                      * curve's local tangent line (good approximation for a
                      * gently-curving bump); matches the endpoint formula
                      * continuously at x=xs+-Rs since slope->0 there too */
-                    PetscReal slope = SedimentBumpFieldDeriv(user, x);
+                    PetscReal slope = WallBottomDeriv(user, x);
                     dist = (y - y_bot) / PetscSqrtReal(1.0 + SQ(slope));
                 }
                 PetscReal dn      = dist / ts;
@@ -763,6 +816,27 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                                                                              * everywhere else (no
                                                                              * R-dependent sharpening) */
                 ice += w * flat;
+            }
+            /* Wedge-bridging band: the annulus r1 <= |X - apex| <= r2.
+             *
+             * In a wedge the two walls are rays from the apex, and a circular
+             * arc centred on that apex is perpendicular to every such ray --
+             * so an apex-centred annulus is exactly the shape that meets BOTH
+             * walls at 90 degrees, the model's natural (Neumann) contact angle.
+             * Initialising anything else, a circle in particular, starts the
+             * run with a contact-angle relaxation transient that swamps the
+             * slow wedge-driven migration we are trying to measure.
+             *
+             * max(r1-rho, rho-r2) is the exact signed distance to the annulus
+             * (negative inside), so the same tanh/tc used for every other
+             * feature gives the equilibrium interface width here too. */
+            if (has_band) {
+                PetscReal dxb = x - user->wedge_apex_x;
+                PetscReal dyb = y - user->wedge_apex_y;
+                PetscReal rho = PetscSqrtReal(SQ(dxb) + SQ(dyb));
+                PetscReal sdf = PetscMax(user->wedge_band_r1 - rho,
+                                         rho - user->wedge_band_r2);
+                ice += 0.5 - 0.5 * PetscTanhReal(tc * sdf);
             }
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 

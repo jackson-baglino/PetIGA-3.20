@@ -108,6 +108,15 @@ SEDIMENT_GRAINS = [
 # Set to a list of (center, R, height) tuples to add ceiling bumps.
 TOP_GRAINS = []
 
+# Affine wall baselines, added UNDER the bumps (see build_surface()):
+#     y_bot(x) = BOT_Y0 + BOT_SLOPE*x + bump_field(x)
+#     y_top(x) = TOP_Y0 + TOP_SLOPE*x - top_bump_field(x)
+# Defaults give the flat [0, Ly] channel. Override via --bot-y0/--bot-slope/
+# --top-y0/--top-slope for a tapered (wedge) domain; TOP_Y0 = None means
+# "use Ly", resolved in main() after --Ly is known.
+BOT_Y0, BOT_SLOPE = 0.0, 0.0
+TOP_Y0, TOP_SLOPE = None, 0.0
+
 # Must match include/NASA_types.h's #define MAX_SED_GRAINS -- hard array
 # size cap; -sed_grain_x beyond this many entries is silently truncated by
 # PETSc's option parser (no error), so --random-bumps enforces it directly.
@@ -154,6 +163,19 @@ def _top_bump_field(x):
     for center, R, height in TOP_GRAINS:
         y = y + _bump(x, center, R, height)
     return y
+
+
+def _parse_bumps(spec):
+    """Parse a "cx,R,h;cx,R,h;..." bump spec into a list of triples.
+
+    An empty (or whitespace-only) spec means NO bumps — a legitimate request
+    now that walls carry an affine baseline, so a purely straight wall is
+    expressed as an empty bump list rather than by omitting the flag."""
+    spec = spec.strip()
+    if not spec:
+        return []
+    return [tuple(float(v) for v in triple.split(","))
+            for triple in spec.split(";") if triple.strip()]
 
 
 def generate_random_bumps(rng, Lx_, n, R_range, height_ratio_range, overlap_range,
@@ -240,15 +262,29 @@ def build_surface():
     gy = greville_abscissae(Uy, P)   # (Ny+P,) parametric y-DOF positions
 
     x        = Lx * gx
-    bottom_y = _bump_field(x)            # floor rises from 0
-    top_y    = Ly - _top_bump_field(x)  # ceiling drops from Ly
+    # Affine baseline + bumps. BOT_Y0/BOT_SLOPE/TOP_Y0/TOP_SLOPE default to
+    # (0, 0, Ly, 0), i.e. the flat [0,Ly] channel these walls used to be.
+    # Bumps have compact support and cannot express a ramp, so a tapered
+    # (wedge) domain rides on the affine term.
+    #
+    # MUST match WallBottom()/WallTop() in src/initial_conditions.c: the solver
+    # re-derives these same two curves from -wall_{bot,top}_{y0,slope} to map
+    # (u,v) -> (x,y) for the initial condition. If they disagree, the ice is
+    # seeded somewhere the mesh is not.
+    #
+    # A linear wall is reproduced EXACTLY here (unlike the bumps, which are
+    # only approximated): B-splines reproduce linear functions at their
+    # Greville abscissae, which is what gx/gy are.
+    bottom_y = BOT_Y0 + BOT_SLOPE * x + _bump_field(x)
+    top_y    = TOP_Y0 + TOP_SLOPE * x - _top_bump_field(x)
 
     if np.any(bottom_y >= Ly):
-        raise ValueError(f"floor bump reaches/exceeds Ly={Ly:.3e} "
-                          f"(max={bottom_y.max():.3e}) -- reduce SEDIMENT_GRAINS heights")
+        raise ValueError(f"floor reaches/exceeds Ly={Ly:.3e} "
+                          f"(max={bottom_y.max():.3e}) -- reduce bump heights "
+                          "or the --bot-y0/--bot-slope baseline")
     if np.any(top_y <= 0):
-        raise ValueError(f"ceiling bump drops to/below 0 "
-                          f"(min top_y={top_y.min():.3e}) -- reduce TOP_GRAINS heights")
+        raise ValueError(f"ceiling drops to/below 0 (min top_y={top_y.min():.3e}) "
+                          "-- reduce bump heights or the --top-y0/--top-slope baseline")
     if np.any(top_y <= bottom_y):
         raise ValueError(f"floor and ceiling cross "
                           f"(min gap={( top_y - bottom_y).min():.3e}) -- bumps too large")
@@ -335,6 +371,7 @@ def write_vtk(surf, fname, n_per_elem=4):
 
 def main():
     global P, C, Nx, Ny, Lx, Ly, SEDIMENT_GRAINS, TOP_GRAINS
+    global BOT_Y0, BOT_SLOPE, TOP_Y0, TOP_SLOPE
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--Nx", type=int, default=Nx,
@@ -360,6 +397,19 @@ def main():
                          help="override TOP_GRAINS (ceiling bumps, downward from Ly) for "
                               "this invocation only, same 'cx,R,h;cx,R,h;...' syntax as "
                               "--bumps. Default: unchanged, TOP_GRAINS=[] (flat ceiling).")
+    parser.add_argument("--bot-y0", type=float, default=0.0,
+                         help="bottom wall height at x=0 [m]; affine baseline under "
+                              "the bumps (default 0.0, the flat floor)")
+    parser.add_argument("--bot-slope", type=float, default=0.0,
+                         help="bottom wall dy/dx [-]; negative = floor drops to the "
+                              "right. Bumps have compact support and cannot express a "
+                              "ramp, so a tapered/wedge domain rides on this term. "
+                              "Must match -wall_bot_slope in the solver.")
+    parser.add_argument("--top-y0", type=float, default=None,
+                         help="top wall height at x=0 [m] (default: Ly, the flat ceiling)")
+    parser.add_argument("--top-slope", type=float, default=0.0,
+                         help="top wall dy/dx [-]; positive = ceiling rises to the "
+                              "right. Must match -wall_top_slope in the solver.")
     parser.add_argument("--random-bumps", action="store_true",
                          help="generate a full-coverage random bump list (overrides "
                               "SEDIMENT_GRAINS) instead of using --bumps or the "
@@ -400,6 +450,10 @@ def main():
     Ly = args.Ly
     P = args.P
     C = args.C
+    BOT_Y0    = args.bot_y0
+    BOT_SLOPE = args.bot_slope
+    TOP_SLOPE = args.top_slope
+    TOP_Y0    = Ly if args.top_y0 is None else args.top_y0
     if args.random_bumps:
         rng = np.random.default_rng(args.seed)
         SEDIMENT_GRAINS = generate_random_bumps(
@@ -408,15 +462,9 @@ def main():
         validate_bump_field(SEDIMENT_GRAINS, Lx, Ly)
         print(f"generated {len(SEDIMENT_GRAINS)} random bumps (seed={args.seed})")
     elif args.bumps is not None:
-        SEDIMENT_GRAINS = [
-            tuple(float(v) for v in triple.split(","))
-            for triple in args.bumps.split(";")
-        ]
+        SEDIMENT_GRAINS = _parse_bumps(args.bumps)
     if args.top_bumps is not None:
-        TOP_GRAINS = [
-            tuple(float(v) for v in triple.split(","))
-            for triple in args.top_bumps.split(";")
-        ]
+        TOP_GRAINS = _parse_bumps(args.top_bumps)
 
     surf = build_surface()
 
