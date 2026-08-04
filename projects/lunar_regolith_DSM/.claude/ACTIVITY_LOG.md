@@ -1,3 +1,35 @@
+## 2026-08-03 — Wedge pore: does taper alone move ice?
+
+- **New geometry `2D_wedge_band`** (`preprocess/build_geometry_wedge.py`):
+  two perfectly flat walls tapering 50 um -> 200 um (half-angle 14 deg), no
+  thermal gradient, one ice band bridging the channel. Strips away every
+  variable the rough-wall geometries include, so anything that moves was moved
+  by the pore geometry. Analytic clean-room version of `throat_bridge`.
+- **Prediction: migration toward the NARROW end.** Both menisci are
+  apex-centred arcs (the only shape meeting both walls at 90 deg), so the inner
+  is concave (kappa=-1/r1) and the outer convex (+1/r2); the concave face is the
+  vapour sink. Energy agrees independently: at fixed area L = 2*alpha*(r1+r2)
+  falls monotonically toward the apex. The run tests this rather than
+  demonstrating it.
+- **Two solver additions.** `-wall_{bot,top}_{y0,slope}` give each wall an
+  affine baseline — bumps have compact support and cannot express a ramp, so
+  without this the IC would be seeded against a flat channel while the mesh was
+  a wedge. `-wedge_apex_*`/`-wedge_band_r{1,2}` add the annular band as an
+  additive feature in `FormInitialMultiGrains2D` (not a new `ic_type`).
+  Defaults are a provable no-op; all four regolith_pore geometries regenerate
+  byte-identical.
+- **Verified:** all four wall contacts at exactly 90.000000 deg; mesh boundary
+  matches the solver's wall formula to 4e-20 m (a straight wall is exactly
+  representable, vs ~9e-9 m for the bump walls); Jacobian positive, max shear
+  14 deg. `track_wedge_band.py` validated against the analytic annular sector
+  (area ~1e-3, area-weighted mean radius ~2e-5 relative).
+- **Honest caveat recorded:** driving force is 1.7e-6, only 0.13x the ripening
+  pair, so 90 days should show modest displacement. The knob if too slow is a
+  steeper wedge (force ~ 4*alpha^2/w), not a longer run.
+- **Not yet run.**
+
+---
+
 ## 2026-08-03 — wall_divots geometry for the −50 K/m aggregation run
 
 - **New ice-placement strategy `wall_divots`** in

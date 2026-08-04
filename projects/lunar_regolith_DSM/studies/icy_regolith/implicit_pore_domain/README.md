@@ -109,6 +109,103 @@ two-grain sanity test (1.25e-2 K over 2.5e-4 m). Little movement in 3 days is
 therefore expected rather than a fault; the response is a longer `t_final`
 (`Tgrad_T-20_G50_90d.opts`), not a geometry change.
 
+## The wedge: does taper alone move ice?
+
+A separate, deliberately minimal geometry —
+`preprocess/build_geometry_wedge.py` → `2D_wedge_band.opts` — that removes
+every variable the geometries above deliberately include. Two **perfectly flat**
+walls tapering from a 50 µm throat to a 200 µm mouth (half-angle 14°), **no
+temperature gradient**, and a **single** ice band bridging the channel. If the
+ice moves, the pore geometry moved it.
+
+This is the analytic clean-room version of the `throat_bridge` hypothesis: the
+rough-walled geometries ask whether ice persists at a constriction, and this one
+isolates the mechanism that would make it do so.
+
+### Prediction: it migrates toward the NARROW end
+
+The walls are two rays from a virtual apex off the left edge of the domain, and
+a circular arc centred on that apex is perpendicular to every ray from it — so
+at the model's natural 90° (Neumann) contact angle, **both menisci are
+apex-centred arcs whose radius of curvature is their distance from the apex.**
+The inner meniscus has the ice on the *outside* of its circle, so it is
+**concave** (κ = −1/r₁); the outer is **convex** (κ = +1/r₂). The concave face
+has the lower equilibrium vapour density, so vapour flows inward.
+
+The counterintuitive part is that the narrow end has the *larger* |κ|. That is
+true, but κ carries a sign, and the sign is what sets which way material goes.
+The energy accounting agrees and needs no flux argument at all. At 90° Young's
+equation gives γ_wall-ice = γ_wall-vap, so sliding the band costs no wall energy
+and only the two menisci count:
+
+```
+interfacial length  L = 2α(r₁ + r₂)
+ice area            A = α(r₂² − r₁²) = α(r₂−r₁)(r₂+r₁)
+```
+
+With `S = r₁+r₂` the constraint gives `r₂−r₁ = A/(αS)` and `L = 2αS`, so at
+fixed area **L falls monotonically as S shrinks** — toward the apex. Curvature
+rises toward the apex while interfacial *area* falls, and area is what carries
+the energy. Same sign as two familiar cases: sintering necks grow rather than
+pinch off, and capillary condensation fills the smallest pores first.
+
+**The run is the test of this, not a demonstration of it.** A drift toward the
+wide end would be a real finding, or a sign error worth hunting.
+
+### Why a band and not a circle
+
+A circle meets a wall at 90° only if its centre lies *on* that wall, which
+cannot hold for both walls at once. Seeding a circle would open the run with a
+contact-angle relaxation transient far larger than the slow taper-driven
+migration being measured. The annulus is already at the right contact angle —
+verified at exactly 90.000000° at all four wall contacts.
+
+### Two things the solver needed
+
+- **Affine wall baselines** (`-wall_{bot,top}_{y0,slope}`). The solver rebuilds
+  the wall from the bump lists only to map (u,v) → (x,y) for the IC. Bumps have
+  compact support and **cannot express a linear ramp**, so without this the ice
+  would be seeded against a flat channel while the mesh is a wedge. Defaults
+  (0, 0, Ly, 0) are a no-op; all four geometries above regenerate byte-identical.
+- **The band IC** (`-wedge_apex_*`, `-wedge_band_r{1,2}`), added as an additive
+  feature in `FormInitialMultiGrains2D` alongside `ice_shell_*`/`ice_flat_*`
+  rather than as a new `ic_type`.
+
+A straight wall is represented **exactly** by the mesh (B-splines reproduce
+linear functions at their Greville abscissae): the mesh boundary matches the
+solver's wall formula to 4e-20 m, against ~9e-9 m for the bump walls.
+
+### Running it
+
+```bash
+# config check first — confirm the 90 deg contact before spending an allocation
+./scripts/Studio/run_lunar.sh  2D_wedge_band Tgrad_T-20_G0_10s config_check
+# production
+./scripts/HPC/submit_lunar.sh  2D_wedge_band Tgrad_T-20_G0_90d wedge_migration
+# the answer
+python3 postprocess/track_wedge_band.py --dir <run folder> \
+    --save-csv wedge_band.csv --save-fig wedge_band.png --no-show
+```
+
+**Pair only with a zero-gradient experiment** — a thermal gradient would swamp
+the effect entirely (the G50 runs drive ~1.2e-3 supersaturation; this drives
+1.7e-6).
+
+**Expect a modest result.** The driving force is `d₀(1/r₁ − 1/r₂) = 1.7e-6`,
+about **0.13×** the 50/150 µm ripening pair that showed clear change in ~30
+days. If it is too slow the knob is a **steeper wedge**, not a longer run — the
+force scales as `4α²/w`:
+
+| half-angle | throat | d₀Δκ | vs. ripening |
+|---|---|---|---|
+| 3.8° | 125 µm | 1.4e-7 | 0.01× |
+| **14°** | **50 µm** | **1.7e-6** | **0.13×** |
+| 17° | 50 µm | 7.2e-6 | 0.53× |
+| 25° | 50 µm | 1.6e-5 | 1.1× |
+
+The mesh is ~0.17M control points (`# DOF_GRID: 497 332`), about a third of the
+divot geometry.
+
 ## Running
 
     # from the project root
