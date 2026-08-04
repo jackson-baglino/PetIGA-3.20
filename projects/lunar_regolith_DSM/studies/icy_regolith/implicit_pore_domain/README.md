@@ -115,7 +115,7 @@ A separate, deliberately minimal geometry —
 `preprocess/build_geometry_wedge.py` → `2D_wedge_band.opts` — that removes
 every variable the geometries above deliberately include. Two **perfectly flat**
 walls tapering from a 50 µm throat to a 200 µm mouth (half-angle 14°), **no
-temperature gradient**, and a **single** ice band bridging the channel. If the
+temperature gradient**, and a **single** ice grain bridging the channel. If the
 ice moves, the pore geometry moved it.
 
 This is the analytic clean-room version of the `throat_bridge` hypothesis: the
@@ -152,13 +152,30 @@ pinch off, and capillary condensation fills the smallest pores first.
 **The run is the test of this, not a demonstration of it.** A drift toward the
 wide end would be a real finding, or a sign error worth hunting.
 
-### Why a band and not a circle
+### Two ice shapes, and why you cannot have both properties
 
-A circle meets a wall at 90° only if its centre lies *on* that wall, which
-cannot hold for both walls at once. Seeding a circle would open the run with a
-contact-angle relaxation transient far larger than the slow taper-driven
-migration being measured. The annulus is already at the right contact angle —
-verified at exactly 90.000000° at all four wall contacts.
+`--ice-shape` selects the initial deposit:
+
+| shape | what it is | contact angle | convex? |
+|---|---|---|---|
+| **`lens`** (default) | an oversized **disc clipped by both walls** — a grain larger than the channel, cut off top and bottom | 48° at the default `R/h = 1.5` | **yes, everywhere** |
+| `band` | the **annulus about the apex** — the equilibrium shape | exactly 90.000000° | no; inner meniscus concave |
+
+**Convexity and 90° contact are mutually exclusive in a converging channel.** A
+clipped disc meets the wall at `arccos(h/R)`, where `h` is the *perpendicular*
+distance from the axis to the wall. Driving that to 90° needs `R/h → ∞`, and the
+lens is `2√(R²−h²)` long — so a convex shape at 90° is infinitely long. In a
+finite domain the lens is always well short of 90°, and the script prints the
+angle it achieved.
+
+The `lens` is what an ice grain grown inside a pore actually looks like, and it
+needs no special IC — it is an ordinary `-ice_grain_*` circle, clipped because
+the domain simply ends at the walls. **It will not stay convex**: the wall BC is
+natural Neumann, so equilibrium is 90°, and the ice relaxes toward the band
+shape with its inner meniscus going concave early in the run. That is expected,
+it is a useful first check that the run is behaving, and `track_wedge_band.py`
+warns to read the migration trend from *after* it settles. `--lens-R-over-h`
+trades a blunter start against travel room.
 
 ### Two things the solver needed
 

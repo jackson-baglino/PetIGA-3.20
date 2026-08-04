@@ -36,12 +36,32 @@ This is the analytic clean-room version of the 'throat_bridge' hypothesis in
 the study README. The run is the TEST of that prediction, not a demonstration
 of it -- a drift toward the wide end would be a real finding, or a sign error.
 
-WHY A BAND AND NOT A CIRCLE. A circle can meet a wall at 90 degrees only if its
-centre lies ON that wall, which cannot hold for both walls at once. Seeding a
-circle instead would start the run with a contact-angle relaxation transient
-far larger than the slow wedge-driven migration being measured. The annulus is
-the shape that is already at the right contact angle; the solver reproduces it
-from -wedge_apex_x/-wedge_apex_y/-wedge_band_r1/-wedge_band_r2.
+TWO ICE SHAPES (--ice-shape), and the trade-off between them:
+
+  lens (default) — an oversized DISC clipped by the two walls: a grain larger
+      than the channel, cut off top and bottom. TOTALLY CONVEX; both menisci
+      are arcs of the same circle. This is what an ice grain grown in a pore
+      actually looks like. Uses the ordinary -ice_grain_* circle IC; the walls
+      clip it because the domain simply ends there.
+
+  band — the annulus about the wedge apex. The EQUILIBRIUM shape: an
+      apex-centred arc is perpendicular to every ray from the apex, hence to
+      both walls, so this sits at exactly 90 degrees with no relaxation
+      transient. Its inner meniscus is concave. Uses -wedge_band_r1/r2.
+
+CONVEXITY AND 90 DEGREES ARE MUTUALLY EXCLUSIVE HERE. A clipped disc meets the
+wall at arccos(h/R), where h is the PERPENDICULAR distance from the centre to
+the wall. Driving that to 90 degrees needs R/h -> infinity, and the lens is
+2*sqrt(R^2 - h^2) long, so a convex shape at 90 degrees is infinitely long. In
+a domain of finite length the lens is therefore always well below 90 degrees
+(this script prints the angle it achieved).
+
+CONSEQUENCE FOR THE LENS RUN: the shape will NOT stay convex. The wall BC is
+natural Neumann, so the equilibrium contact angle is 90 degrees, and the ice
+relaxes toward the band shape -- meaning the INNER (left) meniscus goes concave
+early in the run. That is expected, and is itself a useful first check that the
+run is behaving. The sustained migration rate quoted below is the one set by
+the relaxed shape, not by the initial lens.
 
 Unlike the bump walls, a straight wall is represented EXACTLY by the mesh:
 B-splines reproduce linear functions at their Greville abscissae. The affine
@@ -72,8 +92,14 @@ Lx = 3.0e-4          # domain length [m]
 W_THROAT = 5.0e-5    # channel width at x=0   (narrow end) [m]
 W_MOUTH = 2.0e-4     # channel width at x=Lx  (wide end)   [m]
 
-BAND_X = 0.5         # band centre as a fraction of Lx
-BAND_DR = 1.0e-4     # band radial extent [m]
+ICE_X = 0.5          # ice centre as a fraction of Lx
+BAND_DR = 1.0e-4     # band radial extent [m] (--ice-shape band)
+# Lens radius as a multiple of the PERPENDICULAR wall distance h (--ice-shape
+# lens). Larger = contact angle closer to 90 deg but a longer lens with less
+# room to migrate; the disc must overhang the walls (>1) to be clipped at all.
+# 1.5 gives ~48 deg and leaves ~0.4 channel-widths of travel in the default
+# domain. The script prints both, so tune against those, not against this number.
+LENS_R_OVER_H = 1.5
 
 # eps is the comp_eps.py (Kaempfer & Plapp) value for T=-20 C, alpha_c=1.341e-2.
 # The binding constraint is the temperature-dependent kinetic bound, so it is
@@ -96,9 +122,10 @@ RIPENING_REF = D0 * (1.0 / 5.0e-5 - 1.0 / 1.5e-4)
 EDGE_MARGIN = 2.0e-5
 
 
-def preview(y_bot, y_top, apex, r1, r2, lx, ly, fname, title):
-    """Render the wedge + the ice band, with the band clipped to the channel so
-    the apex-centred arcs are visible as arcs (the whole point of the shape)."""
+def preview(y_bot, y_top, ice_mask, lx, ly, fname, title):
+    """Render the wedge + the ice, clipped to the channel exactly as the solver
+    clips it (the domain simply ends at the walls), so the shape on screen is
+    the shape that gets solved."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -110,10 +137,8 @@ def preview(y_bot, y_top, apex, r1, r2, lx, ly, fname, title):
     ax.plot(x, y_bot(x), "k-", lw=1.2, zorder=3)
     ax.plot(x, y_top(x), "k-", lw=1.2, zorder=3)
 
-    # ice band: shade where r1 <= |X - apex| <= r2 AND inside the channel
-    gx, gy = np.meshgrid(np.linspace(0, lx, 900), np.linspace(0, ly, 500))
-    rho = np.hypot(gx - apex[0], gy - apex[1])
-    inside = (rho >= r1) & (rho <= r2) & (gy >= y_bot(gx)) & (gy <= y_top(gx))
+    gx, gy = np.meshgrid(np.linspace(0, lx, 1200), np.linspace(0, ly, 700))
+    inside = ice_mask(gx, gy) & (gy >= y_bot(gx)) & (gy <= y_top(gx))
     ax.contourf(gx, gy, inside.astype(float), levels=[0.5, 1.5],
                 colors=["#66b3ff"], zorder=2)
     ax.contour(gx, gy, inside.astype(float), levels=[0.5],
@@ -140,10 +165,18 @@ def main():
                     help="channel width at the narrow (left) end [m]")
     ap.add_argument("--w-mouth", type=float, default=W_MOUTH,
                     help="channel width at the wide (right) end [m]")
-    ap.add_argument("--band-x", type=float, default=BAND_X,
-                    help="band centre as a fraction of Lx (default 0.5)")
+    ap.add_argument("--ice-shape", choices=("lens", "band"), default="lens",
+                    help="lens = oversized disc clipped by the walls, totally convex "
+                         "(default); band = apex-centred annulus, the 90-degree "
+                         "equilibrium shape")
+    ap.add_argument("--ice-x", type=float, default=ICE_X,
+                    help="ice centre as a fraction of Lx (default 0.5)")
+    ap.add_argument("--lens-R-over-h", type=float, default=LENS_R_OVER_H,
+                    help="lens radius / perpendicular wall distance; >1 so the disc "
+                         "overhangs the walls. Larger = contact angle nearer 90 deg "
+                         "but a longer lens with less room to migrate")
     ap.add_argument("--band-dr", type=float, default=BAND_DR,
-                    help="band radial extent [m]")
+                    help="band radial extent [m] (--ice-shape band only)")
     ap.add_argument("--tag", default=None,
                     help="suffix for output basenames, e.g. --tag steep -> "
                          "2D_wedge_band_steep.opts / wedge_steep.dat")
@@ -180,27 +213,49 @@ def main():
     assert (y_bot(xs) >= -1e-15).all() and (y_top(xs) <= ly + 1e-15).all(), \
         "walls leave the [0, Ly] bounding box"
 
-    # ---- Band: annulus about the apex, centred on x = band_x * Lx ----
-    band_cx = args.band_x * lx
-    r_c = band_cx - apex_x                    # centre distance from the apex
-    r1 = r_c - 0.5 * args.band_dr
-    r2 = r_c + 0.5 * args.band_dr
-    assert r1 > 0.0, f"band inner radius {r1:.3e} <= 0 — band_dr too large"
+    # ---- Ice ----
+    ice_cx = args.ice_x * lx
+    ice_cy = 0.5 * ly                         # the wedge axis
+    r_c = ice_cx - apex_x                     # centre distance from the apex
+    w_at_ice = w_t + 2.0 * m * ice_cx
+    # PERPENDICULAR distance from the axis to a wall -- this, not the vertical
+    # half-width, is what sets the contact angle of a clipped disc.
+    h_perp = 0.5 * w_at_ice * math.cos(alpha)
 
-    # Where the band meets the domain in x (on the wedge axis).
-    band_x_lo = r1 + apex_x
-    band_x_hi = r2 + apex_x
-    assert band_x_lo > EDGE_MARGIN, \
-        (f"band reaches x={band_x_lo:.3e}, inside the {EDGE_MARGIN:.1e} m keep-out "
-         "at the Dirichlet-T left wall — move it right or shrink band_dr")
-    assert band_x_hi < lx - EDGE_MARGIN, \
-        (f"band reaches x={band_x_hi:.3e}, too close to the right wall")
-    assert EPS / r1 < 0.05, f"eps/r1 = {EPS/r1:.1%} (interface under-resolved)"
+    if args.ice_shape == "lens":
+        R = args.lens_R_over_h * h_perp
+        assert R > h_perp, \
+            (f"--lens-R-over-h must exceed 1 so the disc overhangs the walls and is "
+             f"clipped (got {args.lens_R_over_h})")
+        contact_deg = math.degrees(math.acos(h_perp / R))
+        ice_x_lo, ice_x_hi = ice_cx - R, ice_cx + R
+        half_chord = math.sqrt(R * R - h_perp * h_perp)
+        # Clipped-disc area: disc minus the two segments cut off by the walls.
+        area = 2.0 * (h_perp * half_chord + R * R * math.asin(h_perp / R))
+        # Both menisci are arcs of the SAME circle, so their curvatures are
+        # equal and there is no instantaneous driving force. The sustained rate
+        # is the one the relaxed (90-degree) shape sets, so quote the band's.
+        r1, r2 = r_c - 0.5 * w_at_ice, r_c + 0.5 * w_at_ice
+        dkappa = 1.0 / r1 - 1.0 / r2
+        assert EPS / R < 0.05, f"eps/R = {EPS/R:.1%} (interface under-resolved)"
+    else:
+        r1 = r_c - 0.5 * args.band_dr
+        r2 = r_c + 0.5 * args.band_dr
+        assert r1 > 0.0, f"band inner radius {r1:.3e} <= 0 — band_dr too large"
+        R = None
+        contact_deg = 90.0
+        ice_x_lo, ice_x_hi = r1 + apex_x, r2 + apex_x
+        area = alpha * (r2 ** 2 - r1 ** 2)
+        dkappa = 1.0 / r1 - 1.0 / r2
+        assert EPS / r1 < 0.05, f"eps/r1 = {EPS/r1:.1%} (interface under-resolved)"
 
-    w_at_band = w_t + 2.0 * m * band_cx
-    dkappa = 1.0 / r1 - 1.0 / r2
+    assert ice_x_lo > EDGE_MARGIN, \
+        (f"ice reaches x={ice_x_lo:.3e}, inside the {EDGE_MARGIN:.1e} m keep-out at "
+         "the Dirichlet-T left wall — shrink it or move it right")
+    assert ice_x_hi < lx - EDGE_MARGIN, \
+        (f"ice reaches x={ice_x_hi:.3e}, too close to the right wall")
+
     drive = D0 * dkappa
-    area = alpha * (r2 ** 2 - r1 ** 2)
 
     Nx = math.ceil(lx * math.sqrt(2) / EPS)
     Ny = math.ceil(ly * math.sqrt(2) / EPS)
@@ -212,16 +267,34 @@ def main():
     print(f"         y_bot(x) = {bot_y0:.4e} {-m:+.4f}*x")
     print(f"         y_top(x) = {top_y0:.4e} {m:+.4f}*x")
     print(f"  apex:  ({apex_x:.4e}, {apex_y:.4e})  [virtual, outside the domain]")
-    print(f"  band:  centre x={band_cx:.4e} (r_c={r_c:.4e}), r1={r1:.4e} r2={r2:.4e}")
-    print(f"         spans x {band_x_lo:.4e}..{band_x_hi:.4e}, local width "
-          f"{w_at_band:.3e}, area {area:.3e} m^2")
-    print(f"         room to migrate inward: {band_x_lo:.3e} m "
-          f"({band_x_lo/args.band_dr:.2f} band widths)")
+    if args.ice_shape == "lens":
+        print(f"  ice:   'lens' — disc R={R:.4e} centred ({ice_cx:.4e}, {ice_cy:.4e}), "
+              f"clipped by both walls")
+        print(f"         R/h = {args.lens_R_over_h:.2f} (h_perp={h_perp:.4e}) -> "
+              f"contact angle {contact_deg:.1f} deg, TOTALLY CONVEX")
+    else:
+        print(f"  ice:   'band' — annulus r1={r1:.4e} r2={r2:.4e} about the apex, "
+              f"contact angle 90 deg (equilibrium)")
+    print(f"         spans x {ice_x_lo:.4e}..{ice_x_hi:.4e}, local channel width "
+          f"{w_at_ice:.3e}, area {area:.3e} m^2")
+    print(f"         room to migrate inward: {ice_x_lo - EDGE_MARGIN:.3e} m "
+          f"({(ice_x_lo - EDGE_MARGIN)/w_at_ice:.2f} channel widths)")
     print(f"  DRIVE: d_kappa = {dkappa:.4g} 1/m -> d0*d_kappa = {drive:.3e} "
           f"({drive/RIPENING_REF:.2f}x the 50/150 um ripening pair)")
+    if args.ice_shape == "lens":
+        print("         (both lens menisci share one circle, so d_kappa is 0 at t=0; "
+              "the figure above is the")
+        print("          SUSTAINED rate, set by the relaxed 90-degree shape the lens "
+              "decays into)")
     if drive < 0.05 * RIPENING_REF:
         print("  WARNING: driving force is <5% of the ripening reference — expect "
               "no measurable motion. Steepen the wedge (force scales as 4*alpha^2/w).")
+    if args.ice_shape == "lens" and contact_deg < 60.0:
+        print(f"  NOTE: contact angle {contact_deg:.0f} deg is well below the 90 deg "
+              "equilibrium, so expect a visible")
+        print("        early relaxation (the inner meniscus will go CONCAVE) before "
+              "any migration. Raise")
+        print("        --lens-R-over-h for a blunter start, at the cost of travel room.")
 
     # ---- Build the mesh via the shared igakit template ----
     cmd = [str(ROOT / "venv_pf311/bin/python3"),
@@ -239,12 +312,53 @@ def main():
         print("MESH BUILD FAILED:\n", r.stderr[-2000:])
         sys.exit(1)
 
-    preview(y_bot, y_top, (apex_x, apex_y), r1, r2, lx, ly, png,
-            f"wedge pore — half-angle {math.degrees(alpha):.1f} deg, "
-            f"bridging band at x={band_cx:.2e} m "
-            f"(drive {drive/RIPENING_REF:.2f}x ripening)")
+    if args.ice_shape == "lens":
+        mask = lambda gx, gy: np.hypot(gx - ice_cx, gy - ice_cy) <= R
+        shape_txt = f"convex lens, R/h={args.lens_R_over_h:.2f}, contact {contact_deg:.0f} deg"
+    else:
+        mask = lambda gx, gy: ((np.hypot(gx - apex_x, gy - apex_y) >= r1) &
+                               (np.hypot(gx - apex_x, gy - apex_y) <= r2))
+        shape_txt = "apex-centred band, contact 90 deg"
+    preview(y_bot, y_top, mask, lx, ly, png,
+            f"wedge pore — half-angle {math.degrees(alpha):.1f} deg, {shape_txt}, "
+            f"at x={ice_cx:.2e} m (sustained drive {drive/RIPENING_REF:.2f}x ripening)")
 
     rel_dat = dat.relative_to(ROOT)
+    if args.ice_shape == "lens":
+        ice_note = f"""# ICE — 'lens': a disc of radius {R:.4e} m centred on the wedge axis at
+# ({ice_cx:.4e}, {ice_cy:.4e}), LARGER than the channel so both walls cut it.
+# The result is TOTALLY CONVEX: both menisci are arcs of the same circle, which
+# is what an ice grain grown inside a pore actually looks like. No special IC is
+# needed — it is an ordinary -ice_grain_* circle, and the walls clip it because
+# the domain simply ends there.
+#
+# CONTACT ANGLE {contact_deg:.1f} deg, = arccos(h/R) with h={h_perp:.4e} m the
+# perpendicular distance from the axis to a wall. This is NOT 90 deg, and it
+# cannot be: driving arccos(h/R) to 90 deg needs R/h -> infinity, and the lens is
+# 2*sqrt(R^2-h^2) long, so a convex shape at 90 deg is infinitely long.
+# Convexity and 90-degree contact are mutually exclusive in a converging channel.
+#
+# CONSEQUENCE: the shape will NOT stay convex. The wall BC is natural Neumann,
+# so equilibrium is 90 deg, and the ice relaxes toward the apex-centred band —
+# the inner (left) meniscus goes CONCAVE early in the run. Expected, and a
+# useful first check that the run is behaving. Raise --lens-R-over-h for a
+# blunter start, at the cost of travel room.
+#"""
+        ice_block = (f"-ice_grain_cx {ice_cx:.6e}\n"
+                     f"-ice_grain_cy {ice_cy:.6e}\n"
+                     f"-ice_grain_R  {R:.6e}\n"
+                     f"-ice_grain_ax {R:.6e}\n"
+                     f"-ice_grain_ay {R:.6e}")
+    else:
+        ice_note = f"""# ICE — 'band': the annulus r1 <= |X - apex| <= r2 about the VIRTUAL apex at
+# ({apex_x:.4e}, {apex_y:.4e}), where the two walls would meet. An apex-centred
+# arc is perpendicular to every ray from the apex, hence to both walls, so this
+# is the shape that already sits at the natural 90-degree contact angle, with no
+# relaxation transient. Its inner meniscus is concave; it is not convex.
+#"""
+        ice_block = (f"-wedge_band_r1 {r1:.6e}\n"
+                     f"-wedge_band_r2 {r2:.6e}")
+
     with open(opts, "w") as f:
         f.write(f"""# =============================================================================
 # geometry/{opts.name} — tapered (wedge) pore channel with a bridging ice band.
@@ -265,25 +379,26 @@ def main():
 # represented EXACTLY by the mesh (B-splines reproduce linear functions at
 # their Greville abscissae), unlike the bump geometries.
 #
-# ICE BAND. The annulus r1 <= |X - apex| <= r2 about the VIRTUAL apex at
-# ({apex_x:.4e}, {apex_y:.4e}), where the two walls would meet. An apex-centred
-# arc is perpendicular to every ray from the apex, hence to both walls, so this
-# is the shape that sits at the natural 90-degree contact angle. A circle
-# cannot: it meets a wall at 90 deg only if its centre is ON that wall, which
-# cannot hold for both walls at once, and seeding one would start the run with
-# a contact-angle transient far larger than the migration being measured.
+{ice_note}
+# PREDICTION: the ice migrates toward the NARROW (left) end. Once relaxed to
+# the 90-degree contact angle its inner meniscus is concave (kappa = -1/r1) and
+# its outer convex (+1/r2), so the inner face has the lower equilibrium vapour
+# density and vapour flows inward. Sustained driving force
+# d0*(1/r1 - 1/r2) = {drive:.3e}, i.e. {drive/RIPENING_REF:.2f}x the 50/150 um ripening
+# pair that showed clear change in ~30 days. Expect modest but measurable
+# displacement over 90 days, not a dramatic one. If it is too slow, steepen the
+# wedge — the force scales as 4*alpha^2/w, NOT with run time.
 #
-# PREDICTION: the band migrates toward the NARROW (left) end. Its inner
-# meniscus is concave (kappa = -1/r1), its outer convex (kappa = +1/r2), so the
-# inner face has the lower equilibrium vapour density and vapour flows inward.
-# Driving force d0*(1/r1 - 1/r2) = {drive:.3e}, i.e. {drive/RIPENING_REF:.2f}x the
-# 50/150 um ripening pair that showed clear change in ~30 days. Expect modest
-# but measurable displacement over 90 days, not a dramatic one. If it is too
-# slow, steepen the wedge — the force scales as 4*alpha^2/w, NOT with run time.
+# The counterintuitive part is that the narrow end has the LARGER |kappa|. True,
+# but kappa carries a sign and the sign is what sets transport direction. The
+# energy accounting agrees with no flux argument at all: at 90 degrees Young
+# gives gamma_wall-ice = gamma_wall-vap, so sliding costs no wall energy and only
+# the menisci count — L = 2*alpha*(r1+r2) at fixed A = alpha*(r2^2-r1^2), which
+# with S = r1+r2 is L = 2*alpha*S and falls monotonically toward the apex.
 #
 # eps={EPS:.4e} is the comp_eps.py (Kaempfer&Plapp) value for T={T0_C:g}C,
 # alpha_c={ALPHA_C:g} — the same kinetic-bound value every other {T0_C:g}C geometry
-# here uses (eps/r1={EPS/r1*100:.1f}%). RECOMPUTE eps for any other temperature.
+# here uses. RECOMPUTE eps for any other temperature.
 # =============================================================================
 # DOF_GRID: {Nx+P} {Ny+P}
 -geom_file {rel_dat}
@@ -298,10 +413,12 @@ def main():
 -wall_bot_slope {-m:.6e}
 -wall_top_y0 {top_y0:.6e}
 -wall_top_slope {m:.6e}
+# The apex is emitted for BOTH ice shapes: postprocess/track_wedge_band.py
+# reads it to compute the centroid's distance from the apex, which is the
+# number the whole run is about. With -wedge_band_r2 <= r1 the band IC is off.
 -wedge_apex_x {apex_x:.6e}
 -wedge_apex_y {apex_y:.6e}
--wedge_band_r1 {r1:.6e}
--wedge_band_r2 {r2:.6e}
+{ice_block}
 -delt_t 1.0e-4
 -eps {EPS:.4e}
 -eps_valid_temp {T0_C:g}   # C: temperature eps/mesh were sized for; solver ABORTS if -temp differs (override: -eps_temp_override 1)

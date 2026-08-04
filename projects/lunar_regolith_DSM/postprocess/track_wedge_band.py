@@ -5,15 +5,23 @@ The wedge run (geometry/2D_wedge_band.opts, zero temperature gradient) asks one
 question: does pore taper alone redistribute ice? The answer is one number per
 snapshot — the ice-weighted centroid's distance from the wedge apex, r_c(t):
 
-    FALLING r_c  -> the band migrates toward the NARROW end, as predicted from
+    FALLING r_c  -> the ice migrates toward the NARROW end, as predicted from
                     the meniscus curvatures (inner face concave, kappa=-1/r1;
                     outer convex, kappa=+1/r2; so the inner face is the vapour
                     sink).
     FLAT r_c     -> no migration. Before calling it a null, check the total ice
-                    is also flat: a band that is simply evaporating uniformly
+                    is also flat: ice that is simply evaporating uniformly
                     holds its centroid while losing mass.
     RISING r_c   -> migration toward the WIDE end, contradicting the curvature
                     argument. Worth chasing rather than reporting.
+
+IGNORE THE FIRST FEW SNAPSHOTS OF A 'lens' RUN. The default ice shape is an
+oversized disc clipped by the walls — totally convex, but at a contact angle
+well below the 90 deg the Neumann wall BC enforces. It therefore relaxes toward
+the apex-centred band shape first, and that relaxation moves the centroid on its
+own, before any transport-driven migration. Read the trend from after the
+contact angle has settled, not from t=0. A 'band' run starts at 90 deg and has
+no such transient.
 
 AREA WEIGHTING. The sampling grid is uniform in PARAMETRIC (u,v), but the wedge
 mesh maps it to physical cells whose area varies 4x between throat and mouth
