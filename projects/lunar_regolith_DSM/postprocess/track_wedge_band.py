@@ -222,13 +222,30 @@ def main():
             print("   NOTE: r_c is flat but ice mass moved %.2f%% -- the deposit is "
                   "losing mass rather than translating." % dm)
 
-        # The seal check -- why a null is a null.
+        # The seal check -- why a null is a null. Only meaningful under NEUMANN
+        # vapour BCs: with Dirichlet reservoirs at the open ends each face has
+        # its own supply path, so a split across the deposit is just the
+        # curvature difference being sustained against a through-flux, not
+        # evidence of a blockage. Reporting "SEALING" on a run that plainly
+        # migrated is worse than reporting nothing.
+        reservoirs = False
+        for path in sorted(glob.glob(os.path.join(args.dir, "*.opts"))):
+            txt = open(path).read()
+            if re.search(r"^-flag_BC_rhovfix\s+1", txt, re.M):
+                reservoirs = True
         split = (rv_hi[-1] - rv_lo[-1]) / rv_lo[-1]
         print(f"\nVapour across the deposit (final): low-x {rv_lo[-1]:.6e}, "
               f"high-x {rv_hi[-1]:.6e}")
         print(f"  fractional split (high-low)/low = {split:+.3e}  "
               f"(started {(rv_hi[0] - rv_lo[0]) / rv_lo[0]:+.3e})")
-        if abs(split) > 1e-7:
+        if reservoirs:
+            print("  vapour BC: Dirichlet reservoirs (-flag_BC_rhovfix 1) -- each "
+                  "face has its own")
+            print("  supply path, so this split is the curvature difference held "
+                  "against a")
+            print("  through-flux, NOT a blockage. Mass is not conserved here by "
+                  "construction.")
+        elif abs(split) > 1e-7:
             print("  -> THE DEPOSIT IS SEALING THE CHANNEL. The two sides have "
                   "equilibrated separately")
             print("     with their own menisci and cannot exchange vapour: ice "
