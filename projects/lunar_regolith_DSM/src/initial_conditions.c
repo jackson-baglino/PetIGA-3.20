@@ -598,10 +598,11 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
      * put ice in the domain. */
     const PetscBool has_band = (PetscBool)(user->wedge_band_r2 > user->wedge_band_r1);
 
-    if (ng <= 0 && !has_band)
+    if (ng <= 0 && !has_band && user->n_bridges <= 0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
                 "-ic_type multi_grains requires -ice_grain_cx/-ice_grain_cy/-ice_grain_R "
-                "(or -wedge_band_r1/-wedge_band_r2 for a wedge-bridging band)");
+                "(or -wedge_band_r1/-wedge_band_r2 for a wedge-bridging band, or "
+                "-bridge_cxL/... for throat-spanning ice plugs)");
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (2D multi-grain) ---\n"
@@ -612,6 +613,12 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
             "  wedge band: apex = (%.4e, %.4e) m,  r1 = %.4e m,  r2 = %.4e m\n",
             user->wedge_apex_x, user->wedge_apex_y,
             user->wedge_band_r1, user->wedge_band_r2);
+    for (PetscInt k = 0; k < user->n_bridges; k++)
+        PetscPrintf(PETSC_COMM_WORLD,
+            "  throat plug %d: axis y = %.4e m,  left meniscus (%.4e, r=%.4e), "
+            "right meniscus (%.4e, r=%.4e)\n",
+            (int)k, user->bridge_cy[k], user->bridge_cxL[k], user->bridge_rL[k],
+            user->bridge_cxR[k], user->bridge_rR[k]);
     for (PetscInt k = 0; k < ng; k++) {
         PetscReal ax = user->ice_grain_ax[k];
         PetscReal ay = user->ice_grain_ay[k];
@@ -837,6 +844,26 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                 PetscReal sdf = PetscMax(user->wedge_band_r1 - rho,
                                          rho - user->wedge_band_r2);
                 ice += 0.5 - 0.5 * PetscTanhReal(tc * sdf);
+            }
+            /* Ice plugs spanning a pore throat: the INTERSECTION of two
+             * meniscus discs centred on the channel axis. Ice inside both discs
+             * makes each meniscus CONVEX, i.e. the plug is barrel-shaped, wider
+             * at the axis than at its wall contacts -- what a 90-degree contact
+             * angle forces in a converging-diverging channel. (The hourglass of
+             * a wetting capillary bridge needs theta < 90, which a Neumann wall
+             * BC cannot give.) An intersection of two discs is already bounded,
+             * so it needs no lateral clipping and cannot leak ice down channel.
+             *
+             * Sign consequence worth stating: convex menisci mean the TIGHTER
+             * throat holds its ice at HIGHER curvature, hence higher
+             * equilibrium vapour density, making it the vapour SOURCE. */
+            for (PetscInt k = 0; k < user->n_bridges; k++) {
+                PetscReal cyk = user->bridge_cy[k];
+                PetscReal dL  = PetscSqrtReal(SQ(x - user->bridge_cxL[k]) + SQ(y - cyk));
+                PetscReal dR  = PetscSqrtReal(SQ(x - user->bridge_cxR[k]) + SQ(y - cyk));
+                PetscReal sdfb = PetscMax(dL - user->bridge_rL[k],
+                                          dR - user->bridge_rR[k]);
+                ice += 0.5 - 0.5 * PetscTanhReal(tc * sdfb);
             }
             ice = PetscMin(PetscMax(ice, 0.0), 1.0);
 

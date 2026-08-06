@@ -354,6 +354,51 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
                 "-wedge_band_r1 must be >= 0 (got %g)", (double)user.wedge_band_r1);
 
+    /* --- Frozen capillary bridges spanning a pore throat ------------------- *
+     * Region outside two axis-centred meniscus circles and between their
+     * centres, giving CONCAVE (waisted) menisci at 90 degrees to both walls.
+     * The radii must be solved against the actual wall shape -- generate these
+     * with preprocess/build_geometry_two_throat.py, do not hand-write them. */
+    user.n_bridges = 0;
+    {
+        PetscInt n = MAX_SED_GRAINS;
+        ierr = PetscOptionsRealArray("-bridge_cxL",
+                 "Capillary-bridge LEFT meniscus circle centres, x [m]; one per bridge",
+                 "", user.bridge_cxL, &n, &flg); CHKERRQ(ierr);
+        if (flg) {
+            user.n_bridges = n;
+            struct { const char *name; PetscReal *arr; const char *desc; } req[] = {
+                {"-bridge_rL",  user.bridge_rL,  "LEFT meniscus radii [m]"},
+                {"-bridge_cxR", user.bridge_cxR, "RIGHT meniscus circle centres, x [m]"},
+                {"-bridge_rR",  user.bridge_rR,  "RIGHT meniscus radii [m]"},
+                {"-bridge_cy",  user.bridge_cy,  "channel-axis y of each bridge [m]"},
+            };
+            for (PetscInt q = 0; q < 4; q++) {
+                PetscInt nq = MAX_SED_GRAINS;
+                ierr = PetscOptionsRealArray(req[q].name, req[q].desc, "",
+                         req[q].arr, &nq, NULL); CHKERRQ(ierr);
+                if (nq != n)
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                            "-bridge_cxL and %s must have the same length (%d vs %d)",
+                            req[q].name, (int)n, (int)nq);
+            }
+            for (PetscInt k = 0; k < n; k++) {
+                if (user.bridge_rL[k] <= 0.0 || user.bridge_rR[k] <= 0.0)
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                            "bridge %d: meniscus radii must be > 0", (int)k);
+                /* Intersection of the two discs must be non-empty: their
+                 * centres must be closer together than the sum of the radii. */
+                if (PetscAbsReal(user.bridge_cxR[k] - user.bridge_cxL[k]) >=
+                    user.bridge_rL[k] + user.bridge_rR[k])
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                            "bridge %d: meniscus discs do not overlap (|dcx|=%g >= "
+                            "rL+rR=%g) -- the plug would be empty", (int)k,
+                            (double)PetscAbsReal(user.bridge_cxR[k] - user.bridge_cxL[k]),
+                            (double)(user.bridge_rL[k] + user.bridge_rR[k]));
+            }
+        }
+    }
+
     /* --- Ice "shell" capping a floor bump at constant thickness ------------ */
     user.n_ice_shells = 0;
     {

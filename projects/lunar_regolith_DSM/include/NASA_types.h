@@ -135,6 +135,30 @@ typedef struct {
   PetscReal ice_flat_R[MAX_SED_GRAINS];
   PetscReal ice_flat_height[MAX_SED_GRAINS];
 
+  // Ice plug spanning a pore throat. Each plug is the INTERSECTION of two
+  // meniscus discs, both centred ON the channel axis y=bridge_cy:
+  //     left  meniscus: circle (bridge_cxL, cy) radius bridge_rL
+  //     right meniscus: circle (bridge_cxR, cy) radius bridge_rR
+  // Ice lies INSIDE both discs, so each meniscus is CONVEX and the plug is
+  // BARREL-shaped -- wider at the axis than at its wall contacts. That is what
+  // a 90-degree contact angle forces in a converging-diverging channel; the
+  // hourglass shape of a wetting capillary bridge needs theta < 90, which this
+  // model's Neumann wall BC cannot produce.
+  //
+  // 90 degrees requires the arc centre to lie along the wall's TANGENT at the
+  // contact (NOT its normal, which gives tangency, i.e. a 0-degree contact):
+  //     xc = xp + (cy - y_wall(xp)) / y_wall'(xp)
+  // For a straight wall this returns the wedge apex, which is the cross-check
+  // that the sign is right. The radii must be solved against the actual wall
+  // shape -- generate them with preprocess/build_geometry_two_throat.py, which
+  // asserts 90 degrees at every contact, and never hand-write them.
+  //
+  // Inactive when n_bridges == 0.
+  PetscInt  n_bridges;
+  PetscReal bridge_cxL[MAX_SED_GRAINS], bridge_rL[MAX_SED_GRAINS];
+  PetscReal bridge_cxR[MAX_SED_GRAINS], bridge_rR[MAX_SED_GRAINS];
+  PetscReal bridge_cy[MAX_SED_GRAINS];
+
   // Initial normal vector components (possibly for a structured interface)
   PetscReal norm0[3];  // Per-DOF initial residual norms for SNES convergence check
 
