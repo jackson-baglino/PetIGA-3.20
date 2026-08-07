@@ -44,6 +44,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 import numpy as np
+from pplib import step_times
 
 
 def read_vts_phi(fn):
@@ -53,10 +54,6 @@ def read_vts_phi(fn):
     ext = [int(v) for v in grid.get("WholeExtent").split()]
     nx, ny = ext[1] - ext[0] + 1, ext[3] - ext[2] + 1
 
-    def decode(da):
-        raw = base64.b64decode("".join(da.text.split()))
-        n = struct.unpack("<Q", raw[:8])[0]
-        return np.frombuffer(raw[8:8 + n], dtype=np.float64)
 
     pts = None
     for da in root.findall(".//Points/DataArray"):
@@ -119,17 +116,6 @@ def refine_min(w, x, jn):
         return w[jn], x[jn]
     dx = x[jn + 1] - x[jn - 1]
     return y1 - 0.25 * (y0 - y2) * off, x[jn] + off * 0.5 * dx
-
-
-def step_times(outp):
-    """Map step -> time from the monitor tables in outp.txt."""
-    tmap = {}
-    pat = re.compile(r"^\s+(\d+)\s+\|\s+([0-9.eE+-]+)\s+\|")
-    for line in open(outp, errors="replace"):
-        m = pat.match(line)
-        if m and line.count("|") == 8:
-            tmap[int(m.group(1))] = float(m.group(2))
-    return tmap
 
 
 def main():

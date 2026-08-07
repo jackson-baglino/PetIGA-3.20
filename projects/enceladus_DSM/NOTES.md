@@ -121,7 +121,7 @@ every writer at once, plus `scripts/*/run_enceladus.sh`, which currently exports
 
 **[7] Duplicate plotting scripts**  
 `scripts/plot_fields.py` and `postprocess/plot_fields.py` appear to be the
-same file (or close versions). Similarly for `plotSSA.py` and `plotPorosity.py`.
+same file (or close versions). Similarly for `plot_ssa.py` and `plot_porosity.py`.
 Pick one canonical location (`scripts/`) and remove the other copies.
 
 **[8] Virtual environments should not be in the repo**  

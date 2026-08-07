@@ -30,59 +30,12 @@ import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
+from pplib import load_ssa
 
 
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
-
-def load_ssa(path: str) -> np.ndarray:
-    """
-    Load SSA_evo.dat.  Returns (N, 5) array:
-      col 0: sub_interf / eps  (ice-air interface density proxy)
-      col 1: tot_ice           (integrated ice volume)
-      col 2: t  [s]
-      col 3: step
-      col 4: dt [s]            (TSGetTimeStep; NaN for legacy 4-col files)
-
-    Rows with NaN are dropped, then deduplicated by step number (last
-    entry per step is kept) to guard against any repeated monitor calls.
-    """
-    if not os.path.isfile(path):
-        sys.exit(f"ERROR: SSA data file not found: {path}")
-
-    try:
-        data = np.genfromtxt(path, dtype=float, comments="#",
-                              invalid_raise=False)
-    except Exception as e:
-        sys.exit(f"ERROR reading '{path}': {e}")
-
-    if data.ndim == 1:
-        data = data[np.newaxis, :]
-
-    ncols = data.shape[1]
-    if ncols < 4:
-        sys.exit(f"Expected ≥ 4 columns in SSA_evo.dat, got {ncols}")
-
-    # Pad legacy 4-column files with NaN in the dt column
-    if ncols == 4:
-        data = np.hstack([data, np.full((len(data), 1), np.nan)])
-
-    # Drop rows that are entirely NaN or have NaN in the first 4 columns
-    mask = ~np.isnan(data[:, :4]).any(axis=1)
-    data = data[mask]
-
-    if len(data) == 0:
-        sys.exit("No valid rows found in SSA_evo.dat")
-
-    # Deduplicate by step number: keep the last entry for each step.
-    # This removes any spurious repeated rows from monitor retries.
-    steps = data[:, 3].astype(int)
-    _, last_idx = np.unique(steps[::-1], return_index=True)
-    keep = np.sort(len(steps) - 1 - last_idx)
-    data = data[keep]
-
-    return data
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +70,8 @@ def plot_scalars(data_path: str, time_unit: str = "h", save_path: str = None,
       5. dt vs step number
     """
     data = load_ssa(data_path)
+    if data is None:
+        sys.exit(f"ERROR: no usable SSA data in: {data_path}")
 
     intf   = data[:, 0]            # sub_interf / eps
     ice    = data[:, 1]            # tot_ice

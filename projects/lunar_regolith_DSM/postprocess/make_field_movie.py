@@ -50,6 +50,7 @@ from matplotlib.animation import FFMpegWriter
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import ListedColormap, Normalize
 import cmocean
+from pplib import read_vts, step_of, step_times
 
 
 def ice_alpha_cmap(n=256):
@@ -69,47 +70,6 @@ def ice_alpha_cmap(n=256):
     lut = cmocean.cm.ice(phi)          # (n,4) RGBA, phi -> ice(phi)
     lut[:, 3] = np.where(phi < 0.5, 0.0, 1.0)
     return ListedColormap(lut)
-
-
-def read_vts(fn, want=("IcePhase", "VaporDensity")):
-    """Return (fields dict, X[ny,nx], Y[ny,nx]) from a solV_*.vts snapshot."""
-    root = ET.parse(fn).getroot()
-    grid = root.find(".//StructuredGrid")
-    ext = [int(v) for v in grid.get("WholeExtent").split()]
-    nx, ny = ext[1] - ext[0] + 1, ext[3] - ext[2] + 1
-
-    def decode(da):
-        raw = base64.b64decode("".join(da.text.split()))
-        n = struct.unpack("<Q", raw[:8])[0]
-        return np.frombuffer(raw[8:8 + n], dtype=np.float64)
-
-    pts = None
-    for da in root.findall(".//Points/DataArray"):
-        pts = decode(da).reshape(ny, nx, 3)
-    fields = {}
-    for da in root.findall(".//PointData/DataArray"):
-        if da.get("Name") in want:
-            fields[da.get("Name")] = decode(da).reshape(ny, nx)
-    return fields, pts[:, :, 0], pts[:, :, 1]
-
-
-def step_of(fn):
-    return int(re.search(r"solV_(\d+)\.vts", fn).group(1))
-
-
-def step_times(run_dir):
-    """step -> time[s] from the monitor tables in outp.txt (8-pipe rows)."""
-    tmap = {}
-    outp = Path(run_dir) / "outp.txt"
-    if not outp.exists():
-        return tmap
-    pat = re.compile(r"^\s+(\d+)\s+\|\s+([0-9.eE+-]+)\s+\|")
-    for line in open(outp, errors="replace"):
-        if line.count("|") == 8:
-            m = pat.match(line)
-            if m:
-                tmap[int(m.group(1))] = float(m.group(2))
-    return tmap
 
 
 def main():

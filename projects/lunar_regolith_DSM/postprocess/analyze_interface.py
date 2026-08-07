@@ -37,6 +37,7 @@ import glob
 
 import numpy as np
 import matplotlib.pyplot as plt
+from pplib import rho_vs
 
 try:
     from igakit.io import PetIGA
@@ -47,10 +48,6 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def rho_vs(T_C: np.ndarray) -> np.ndarray:
-    """Saturation vapor density over ice [kg/m³]."""
-    return 3.25e-3 * np.exp(-6150.0 / (T_C + 273.15))
 
 
 def _crossings(x: np.ndarray, y: np.ndarray, level: float = 0.5) -> np.ndarray:

@@ -4,7 +4,7 @@ Publication-style schematic of the ice/air double-well potential
 
     F^dub(phi) = 1/2 * phi^2 * (1 - phi)^2
 
-(the same normalization used in plotTripleWell.py; its derivative is the
+(the same normalization used in plot_triple_well.py; its derivative is the
 f1(phi) term assembled in src/assembly.c::DoubleWellDeriv). phi = phi_i is
 the ice phase fraction, so the well at phi=0 is pure air (phi_a = 1) and the
 well at phi=1 is pure ice.

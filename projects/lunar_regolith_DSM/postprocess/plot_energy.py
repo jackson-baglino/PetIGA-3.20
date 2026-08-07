@@ -43,6 +43,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from pplib import auto_time_unit, load_ssa
 
 try:
     from igakit.io import PetIGA
@@ -68,16 +69,6 @@ TIME_SCALES = {
     "h":   (3600.0,  "Time  [h]"),
     "d":   (86400.0, "Time  [days]"),
 }
-
-
-def auto_time_unit(t_max_sec: float) -> str:
-    if t_max_sec <= 600:
-        return "s"
-    if t_max_sec <= 7200:
-        return "min"
-    if t_max_sec <= 3 * 86400:
-        return "h"
-    return "d"
 
 
 # ---------------------------------------------------------------------------
@@ -109,27 +100,6 @@ def parse_opts_float(opts_files, key: str, default=None):
         except (OSError, ValueError):
             pass
     return value
-
-
-def load_ssa(path: str):
-    if not os.path.isfile(path):
-        return None
-    try:
-        data = np.genfromtxt(path, dtype=float, comments="#", invalid_raise=False)
-    except Exception:
-        return None
-    if data.ndim == 1:
-        data = data[np.newaxis, :]
-    if data.shape[1] < 4:
-        return None
-    mask = ~np.isnan(data[:, :4]).any(axis=1)
-    data = data[mask]
-    if len(data) == 0:
-        return None
-    steps = data[:, 3].astype(int)
-    _, last_idx = np.unique(steps[::-1], return_index=True)
-    keep = np.sort(len(steps) - 1 - last_idx)
-    return data[keep]
 
 
 # ---------------------------------------------------------------------------

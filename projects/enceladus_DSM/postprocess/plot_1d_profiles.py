@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-plot1D_profiles.py  —  Visualize 1D phase-field simulation field profiles.
+plot_1d_profiles.py  —  Visualize 1D phase-field simulation field profiles.
 
 Reads sol_*.dat files from a PetIGA 1D run and produces:
 
@@ -30,16 +30,16 @@ Reads sol_*.dat files from a PetIGA 1D run and produces:
 Usage
 -----
   # Default: per-step phase PNGs + thermal PNGs + first/last comparison
-  python plot1D_profiles.py --dir /path/to/run
+  python plot_1d_profiles.py --dir /path/to/run
 
   # Also produce the thermal overlay (all steps overlaid on one plot)
-  python plot1D_profiles.py --dir /path/to/run --thermal
+  python plot_1d_profiles.py --dir /path/to/run --thermal
 
   # Derived scalar quantities only
-  python plot1D_profiles.py --dir . --derived --save derived.png
+  python plot_1d_profiles.py --dir . --derived --save derived.png
 
   # First and last snapshot only
-  python plot1D_profiles.py --dir . --first-last
+  python plot_1d_profiles.py --dir . --first-last
 """
 
 import argparse
@@ -52,6 +52,7 @@ import matplotlib
 matplotlib.use("Agg")          # safe for headless / HPC environments
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from pplib import rho_vs
 
 # ---------------------------------------------------------------------------
 # Optional cmocean — fall back gracefully if not installed
@@ -135,10 +136,6 @@ def load_times(run_dir: str) -> dict:
 # ---------------------------------------------------------------------------
 # Saturation vapor density (matches material_properties.c: RhoVS_I)
 # ---------------------------------------------------------------------------
-
-def rho_vs(T_C: np.ndarray) -> np.ndarray:
-    """ρ_vs over ice [kg/m³] at temperature T_C [°C]."""
-    return 3.25e-3 * np.exp(-6150.0 / (T_C + 273.15))
 
 
 # ---------------------------------------------------------------------------

@@ -3912,7 +3912,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   with the 160x160 mesh and enlarged LHS ice grain (R=6.0e-6) from commit
   322d880.
 - 202 steps to t=1.74e5s, Total mass Delta=-0.001%, no [ABORT]/NaN.
-- Snapshots (step 141 and final step 202, via fixed plot2D_snapshot.py)
+- Snapshots (step 141 and final step 202, via fixed plot_2d_snapshot.py)
   show smooth circular ice-air interfaces -- the jaggedness reported on the
   old 80x80/R=0.9375e-6 setup is resolved. Small grains (LHS boundary +
   2 trough nuclei) are nearly fully sublimated by t~1.74e5s via Ostwald
@@ -5851,7 +5851,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - `initial_conditions.c`: Fixed 2D ice-slab rhov IC to blend saturation density inside ice/sed regions (`rho_vs`) with undersaturated air (`hum0 * rho_vs`), improving physical consistency at initialization.
 - `material_properties.c` + `.h`: Added `SmoothHeavisidePoly()` utility (extracted from inline Mobility code). Changed `Mobility()` to use linear interpolation (hi=ice, hs=sed, ha=air) instead of cubic Hermite.
 - `test_2D_IceSlab.opts`: Added `-difvap_pen 1e-5` and `-k_pen 1e7` as defaults so the sweep script's opts file is self-contained.
-- `postprocess/plot1D_profiles.py`: Major rewrite — twin y-axes for thermal plots (T + ρ_v on one panel), first/last comparison always produced (no flag needed), removed GIF/animation support, removed cmocean colormap variables (just checks availability), cleaner helper structure.
+- `postprocess/plot_1d_profiles.py`: Major rewrite — twin y-axes for thermal plots (T + ρ_v on one panel), first/last comparison always produced (no flag needed), removed GIF/animation support, removed cmocean colormap variables (just checks availability), cleaner helper structure.
 
 ---
 
@@ -6116,7 +6116,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - Added `FormInitialIceSlab2D` in `src/initial_conditions.c`: 2D equivalent of the 1D centered-slab IC (flag_tIC=0), using tanh profiles in x uniform across Ly.
 - Registered `ic_type = "ice_slab"` in `src/permafrost2.c` and declared in `include/initial_conditions.h`.
 - Created `inputs/tests/test_2D_IceSlab.opts`: thin 2D domain (114×23 nodes, Lx=1e-4 m, Ly=2e-5 m) matching the 1D slab parameters.
-- Updated `postprocess/plot1D_profiles.py`: added dashed black sum-of-phases line (φ_i+φ_s+φ_a) to per-step phase plots as a partition-of-unity diagnostic.
+- Updated `postprocess/plot_1d_profiles.py`: added dashed black sum-of-phases line (φ_i+φ_s+φ_a) to per-step phase plots as a partition-of-unity diagnostic.
 - Added `plot_thermal_steps()` in plotting script: saves per-step T(x) and ρ_v(x) figures on individual subplots to `thermal_steps/` directory, running alongside phase images by default.
 
 ---
@@ -6233,7 +6233,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 ## 2026-04-16 — Post-processing updates and bug fixes
 
 - Updated `postprocess/analyze_interface.py`: read sediment DOF (sol[:,3]), fix air = 1−φ_i−φ_s, add sediment volume fraction to metrics and 4×2 panel plot
-- Updated `postprocess/plot2D_snapshot.py`: expand `_plot_cuts` from 2×3 to 2×4 to include sediment cross-sections
+- Updated `postprocess/plot_2d_snapshot.py`: expand `_plot_cuts` from 2×3 to 2×4 to include sediment cross-sections
 - Updated `postprocess/plot_fields.py`: add SedPhase DOF export, fix file-exists path bug, add CLI flags
 - Updated `scripts/plot_fields.py`: fix `❌ Error processing` bug caused by erroneous `np.newaxis` in air-phase computation
 - Set up `.claude/ACTIVITY_LOG.md` and Stop hook for session logging; added activity log instruction to `CLAUDE.md`

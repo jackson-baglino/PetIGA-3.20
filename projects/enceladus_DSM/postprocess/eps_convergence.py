@@ -49,6 +49,7 @@ import os
 import sys
 
 import numpy as np
+from pplib import load_ssa, SSA, ICE, TIME, MASS
 
 try:
     from scipy.optimize import brentq
@@ -84,16 +85,6 @@ def power_fit(eps, f):
         return p, y[0] - C * e[0] ** p
     except Exception:
         return None
-
-
-def load_ssa(run_dir):
-    f = os.path.join(run_dir, "SSA_evo.dat")
-    if not os.path.isfile(f):
-        return None
-    a = np.loadtxt(f)
-    if a.ndim != 2 or a.shape[1] < 8:
-        return None
-    return dict(t=a[:, 2], ssa=a[:, 0], ice=a[:, 1], mass=a[:, 7])
 
 
 def report(name, arms, eps, series, unit="", scale=1.0):
@@ -163,9 +154,10 @@ def main(argv=None):
             or glob.glob(os.path.join(args.results, f"*{a}*", "SSA_evo.dat"))
         if not hits:
             missing.append(a); continue
-        d = load_ssa(os.path.dirname(hits[0]))
-        if d:
-            ssa[a] = d
+        a_ = load_ssa(os.path.dirname(hits[0]), min_cols=8)
+        if a_ is not None:
+            ssa[a] = dict(t=a_[:, TIME], ssa=a_[:, SSA],
+                          ice=a_[:, ICE], mass=a_[:, MASS])
     if missing:
         print(f"  no SSA_evo.dat for: {', '.join(missing)}", file=sys.stderr)
     if len(ssa) == len(arms):

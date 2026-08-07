@@ -243,8 +243,8 @@ def _get_dim(opts_file: str) -> int:
 # ── post-processing scripts ───────────────────────────────────────────────────
 SCRIPT_VTK      = str(ROOT / "scripts"     / "plotpermafrost.py")
 SCRIPT_SCALARS  = str(ROOT / "postprocess" / "plot_scalars.py")
-SCRIPT_PROFS1D  = str(ROOT / "postprocess" / "plot1D_profiles.py")
-SCRIPT_PROFS2D  = str(ROOT / "postprocess" / "plot2D_snapshot.py")
+SCRIPT_PROFS1D  = str(ROOT / "postprocess" / "plot_1d_profiles.py")
+SCRIPT_PROFS2D  = str(ROOT / "postprocess" / "plot_2d_snapshot.py")
 
 
 def _postprocess(run_dir: str, dim: int = 2) -> None:

@@ -86,14 +86,14 @@ if [[ "$dim" == "1" ]]; then
     echo ""
     echo "--- 1D phase field profiles ---"
     set +e
-    "$PYTHON" "$POSTPROCESS_DIR/plot1D_profiles.py" \
+    "$PYTHON" "$POSTPROCESS_DIR/plot_1d_profiles.py" \
         --dir "$RUN_DIR" --out-dir "$RUN_DIR" \
         2>&1 | sed 's/^/  /'
     (( overall_exit += $? )) || true
 
     echo ""
     echo "--- 1D derived quantities ---"
-    "$PYTHON" "$POSTPROCESS_DIR/plot1D_profiles.py" \
+    "$PYTHON" "$POSTPROCESS_DIR/plot_1d_profiles.py" \
         --dir "$RUN_DIR" --derived --save "$RUN_DIR/derived.png" \
         2>&1 | sed 's/^/  /'
     (( overall_exit += $? )) || true

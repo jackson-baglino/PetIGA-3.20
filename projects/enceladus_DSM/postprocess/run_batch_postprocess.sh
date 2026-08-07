@@ -16,7 +16,7 @@
 #                                            mass_plots/{total,ice,sediment,
 #                                            vapor,change_loglog}.png)
 #   - postprocess/plot_fields.py        (dim >= 2: VTK conversion)
-#   - postprocess/plot1D_profiles.py       (dim == 1: phase-field profiles)
+#   - postprocess/plot_1d_profiles.py       (dim == 1: phase-field profiles)
 #
 # It uses the `postprocess/` directory that submit_batch.sh staged at the
 # batch root, so no source tree is required.
@@ -115,10 +115,10 @@ for run in "$BATCH_DIR"/*/; do
 
     # ── 2. dim-specific field plots ─────────────────────────────────────
     if [[ "$dim" == "1" ]]; then
-        if [[ -f "$POSTPROCESS/plot1D_profiles.py" ]]; then
-            echo "  plot1D_profiles.py ..."
-            if ! "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" --dir "$run" 2>&1 | sed 's/^/    /'; then
-                echo "  ⚠ plot1D_profiles.py failed"
+        if [[ -f "$POSTPROCESS/plot_1d_profiles.py" ]]; then
+            echo "  plot_1d_profiles.py ..."
+            if ! "$PYTHON" "$POSTPROCESS/plot_1d_profiles.py" --dir "$run" 2>&1 | sed 's/^/    /'; then
+                echo "  ⚠ plot_1d_profiles.py failed"
                 failed_this=1
             fi
         fi

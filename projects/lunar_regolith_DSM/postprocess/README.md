@@ -29,7 +29,7 @@ following files are written to the output folder:
 
 ## Scripts
 
-### `plot1D_profiles.py` — 1D field snapshots
+### `plot_1d_profiles.py` — 1D field snapshots
 
 Reads `sol_*.dat` and (optionally) `soil.dat` from a 1D run and produces:
 
@@ -48,19 +48,19 @@ Reads `sol_*.dat` and (optionally) `soil.dat` from a 1D run and produces:
 
 ```bash
 # Per-step phase PNGs (written to run directory)
-python plot1D_profiles.py --dir /path/to/run
+python plot_1d_profiles.py --dir /path/to/run
 
 # Also produce GIF and thermal overlay
-python plot1D_profiles.py --dir /path/to/run --gif --thermal
+python plot_1d_profiles.py --dir /path/to/run --gif --thermal
 
 # Write outputs to a separate directory
-python plot1D_profiles.py --dir /path/to/run --out-dir /path/to/figs --gif
+python plot_1d_profiles.py --dir /path/to/run --out-dir /path/to/figs --gif
 
 # Limit to 8 snapshots
-python plot1D_profiles.py --dir . --max-steps 8
+python plot_1d_profiles.py --dir . --max-steps 8
 
 # Derived scalar quantities
-python plot1D_profiles.py --dir . --derived --save derived.png
+python plot_1d_profiles.py --dir . --derived --save derived.png
 ```
 
 **Flags**
@@ -109,7 +109,7 @@ python compare_runs.py run_A run_B --normalise
 
 ---
 
-### `plot2D_snapshot.py` — 2D field visualization
+### `plot_2d_snapshot.py` — 2D field visualization
 
 Produces a 6-panel matplotlib figure (ice, sediment, air, temperature, vapor
 density, supersaturation) evaluated on a regular grid from a 2D PetIGA run.
@@ -117,10 +117,10 @@ Optionally adds horizontal/vertical cross-section profiles.
 
 ```bash
 # Plot step 10
-python plot2D_snapshot.py --dir /path/to/run --step 10
+python plot_2d_snapshot.py --dir /path/to/run --step 10
 
 # Higher resolution grid, with cross-section cuts
-python plot2D_snapshot.py --dir . --step 50 --nx 300 --ny 300 --cuts --save snap.png
+python plot_2d_snapshot.py --dir . --step 50 --nx 300 --ny 300 --cuts --save snap.png
 ```
 
 ---
@@ -156,12 +156,53 @@ python analyze_interface.py --dir /path/to/2D/run --dim 2 --eps 9.3295e-7
 | Script | Purpose |
 |--------|---------|
 | `plot_fields.py` | Old minimal VTK converter (superseded by `scripts/plot_fields.py`) |
-| `plotSSA.py`        | SSA time-series (hardcoded paths, use `plot_scalars.py` instead) |
-| `plotPorosity.py`   | SSA + porosity dual-axis (hardcoded paths) |
-| `plotTripleWell.py` | 3D surface plot of the triple-well free energy potential |
-| `convet2stl.py`     | Convert VTK to STL |
+| `plot_ssa.py`        | SSA time-series (hardcoded paths, use `plot_scalars.py` instead) |
+| `plot_porosity.py`   | SSA + porosity dual-axis (hardcoded paths) |
+| `plot_triple_well.py` | 3D surface plot of the triple-well free energy potential |
+| `convert_to_stl.py`     | Convert VTK to STL |
 
 ---
+
+---
+
+## `pplib.py` — shared helpers
+
+Import from `pplib` rather than re-deriving. Running any script in this
+directory puts it on `sys.path`, so `from pplib import rho_vs` just works.
+
+| Helper | Replaces |
+|---|---|
+| `load_ssa(path, min_cols=4)` | 5 copies with 5 different contracts |
+| `rho_vs(T_C, rho_air=1.341)` | 3 copies, **all of them wrong** (see below) |
+| `supersaturation(rhov, T_C)` | the `(rhov - rvs) / rvs` idiom |
+| `read_vts(fn, want=None)` | 3 copies |
+| `step_times(path)` | 3 copies |
+| `step_of(fn)`, `auto_time_unit(t)`, `in_time_unit(t, unit)` | 2 copies each |
+| `SSA, ICE, TIME, STEP, DT, AIR, RHOV, MASS` | hardcoded column indices |
+
+`load_ssa` accepts a run directory or the file itself, pads legacy 4-column
+files with a NaN `dt`, filters NaN on the first four columns only, and
+deduplicates by step. It returns `None` rather than exiting, so callers decide
+how to handle a missing file.
+
+### ⚠ Supersaturation figures made before 2026-08-07 are wrong
+
+The three previous `rho_vs` copies all computed
+
+```python
+3.25e-3 * np.exp(-6150.0 / T_K)
+```
+
+which is about **1e10 times too small** — for that Clausius-Clapeyron form the
+prefactor should have been ~3e7, so the exponent looks like a typo. The error
+does not cancel in `(rhov - rho_vs) / rho_vs`: a *saturated* run, which should
+report 0 supersaturation, reported about **9e9** instead.
+
+`pplib.rho_vs` now mirrors the solver's `RhoVS_I` (`src/material_properties.c`)
+exactly — same K0..K5 coefficients, same `rho_air * 0.62 * Pvs / (Patm - Pvs)`.
+Postprocess and solver no longer disagree. Regenerate any supersaturation
+panel produced by `analyze_interface.py`, `plot_1d_profiles.py` or
+`plot_2d_snapshot.py` before trusting it.
 
 ## Output File Format Reference
 

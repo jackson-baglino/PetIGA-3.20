@@ -30,6 +30,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from pplib import load_ssa
 
 SSA_COLUMNS = {
     0: ("Interface density  $\\Sigma/\\varepsilon$", "Interface density"),
@@ -47,22 +48,6 @@ TIME_SCALES = {
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
-
-def load_ssa(run_dir: str) -> np.ndarray:
-    path = os.path.join(run_dir, "SSA_evo.dat")
-    if not os.path.isfile(path):
-        print(f"  WARNING: SSA_evo.dat not found in '{run_dir}' — skipping.")
-        return None
-    try:
-        data = np.genfromtxt(path, dtype=float, comments="#",
-                              invalid_raise=False)
-        if data.ndim == 1:
-            data = data[np.newaxis, :]
-        data = data[~np.isnan(data).any(axis=1)]
-        return data if len(data) > 0 else None
-    except Exception as e:
-        print(f"  WARNING: Could not read '{path}': {e}")
-        return None
 
 
 # ---------------------------------------------------------------------------

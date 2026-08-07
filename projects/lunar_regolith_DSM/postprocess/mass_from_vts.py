@@ -39,30 +39,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
-
-def read_vts(fn):
-    root = ET.parse(fn).getroot()
-    grid = root.find(".//StructuredGrid")
-    ext = [int(v) for v in grid.get("WholeExtent").split()]
-    nx, ny = ext[1] - ext[0] + 1, ext[3] - ext[2] + 1
-
-    def decode(da):
-        raw = base64.b64decode("".join(da.text.split()))
-        n = struct.unpack("<Q", raw[:8])[0]
-        return np.frombuffer(raw[8:8 + n], dtype=np.float64)
-
-    pts = None
-    for da in root.findall(".//Points/DataArray"):
-        pts = decode(da).reshape(ny, nx, 3)
-    f = {}
-    for da in root.findall(".//PointData/DataArray"):
-        f[da.get("Name")] = decode(da).reshape(ny, nx)
-    return f, pts[:, :, 0], pts[:, :, 1]
-
-
-def step_of(fn):
-    return int(re.search(r"solV_(\d+)\.vts", fn).group(1))
+from pplib import read_vts, step_of
 
 
 def integrate(fn, rho_ice):

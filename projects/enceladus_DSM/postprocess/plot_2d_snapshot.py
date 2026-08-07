@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-plot2D_snapshot.py  —  2D field snapshots without ParaView/VTK.
+plot_2d_snapshot.py  —  2D field snapshots without ParaView/VTK.
 
 Reads a PetIGA 2D solution file (3-DOF: ice, temperature, vapor density) and
 produces a multi-panel matplotlib figure:
@@ -16,16 +16,16 @@ vertical cut through the domain.
 Usage
 -----
   # Plot step 10 from current directory (uses sol_00010.dat)
-  python plot2D_snapshot.py --step 10
+  python plot_2d_snapshot.py --step 10
 
   # Specify directory and grid resolution
-  python plot2D_snapshot.py --dir /path/to/output --step 50 --nx 200 --ny 200
+  python plot_2d_snapshot.py --dir /path/to/output --step 50 --nx 200 --ny 200
 
   # Also plot x- and y-cuts through the domain midpoint
-  python plot2D_snapshot.py --step 10 --cuts
+  python plot_2d_snapshot.py --step 10 --cuts
 
   # Save figure
-  python plot2D_snapshot.py --step 10 --save snap_010.png
+  python plot_2d_snapshot.py --step 10 --save snap_010.png
 """
 
 import argparse
@@ -37,6 +37,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from pplib import rho_vs
 
 try:
     from igakit.io import PetIGA
@@ -48,11 +49,6 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Saturation vapor density (matches material_properties.c: RhoVS_I)
 # ---------------------------------------------------------------------------
-
-def rho_vs(T_C: np.ndarray) -> np.ndarray:
-    """Saturation vapor density over ice [kg/m³] at temperature T_C [°C]."""
-    T_K = T_C + 273.15
-    return 3.25e-3 * np.exp(-6150.0 / T_K)
 
 
 # ---------------------------------------------------------------------------

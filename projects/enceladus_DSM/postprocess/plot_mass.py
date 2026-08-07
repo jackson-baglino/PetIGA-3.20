@@ -38,6 +38,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from pplib import auto_time_unit, load_ssa
 
 try:
     from igakit.io import PetIGA
@@ -70,50 +71,9 @@ TIME_SCALES = {
 }
 
 
-def auto_time_unit(t_max_sec: float) -> str:
-    """Choose a sensible time unit for the x-axis."""
-    if t_max_sec <= 600:
-        return "s"
-    if t_max_sec <= 7200:
-        return "min"
-    if t_max_sec <= 3 * 86400:
-        return "h"
-    return "d"
-
-
 # ---------------------------------------------------------------------------
 # SSA_evo.dat loader (duplicated from plot_scalars.py for standalone use)
 # ---------------------------------------------------------------------------
-
-def load_ssa(path: str) -> np.ndarray:
-    """Load SSA_evo.dat → (N, >=5) array.
-
-    Columns: [sub_interf/eps, tot_ice, t, step, dt, tot_air, tot_rhov, tot_mass].
-    The last three columns (tot_air, tot_rhov, tot_mass) are written directly
-    from monitoring.c's IGA-quadrature integrals and are only present in runs
-    produced after that change; older runs have just the first 5 columns.
-    """
-    if not os.path.isfile(path):
-        return None
-    try:
-        data = np.genfromtxt(path, dtype=float, comments="#", invalid_raise=False)
-    except Exception:
-        return None
-    if data.ndim == 1:
-        data = data[np.newaxis, :]
-    if data.shape[1] < 4:
-        return None
-    if data.shape[1] == 4:
-        data = np.hstack([data, np.full((len(data), 1), np.nan)])
-    mask = ~np.isnan(data[:, :4]).any(axis=1)
-    data = data[mask]
-    if len(data) == 0:
-        return None
-    # Deduplicate by step number
-    steps = data[:, 3].astype(int)
-    _, last_idx = np.unique(steps[::-1], return_index=True)
-    keep = np.sort(len(steps) - 1 - last_idx)
-    return data[keep]
 
 
 def load_outp(path: str) -> np.ndarray:

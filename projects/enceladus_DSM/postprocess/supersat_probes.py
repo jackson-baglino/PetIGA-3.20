@@ -55,6 +55,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 import numpy as np
+from pplib import read_vts, step_times
 
 # Thermodynamics inlined (mirrors material_properties.c / comp_eps.py) so
 # this script also runs from the postprocess/ snapshot copy inside a run
@@ -75,34 +76,6 @@ def rho_vs_sat(T_C):
 def Dv_T(T_C):
     """Vapor diffusivity D_v(T) [m^2/s]."""
     return _DV0 * ((T_C + 273.15) / 273.15) ** 1.81
-
-
-def read_vts(fn):
-    root = ET.parse(fn).getroot()
-    grid = root.find(".//StructuredGrid")
-    ext = [int(v) for v in grid.get("WholeExtent").split()]
-    nx, ny = ext[1] - ext[0] + 1, ext[3] - ext[2] + 1
-
-    def dec(da):
-        raw = base64.b64decode("".join(da.text.split()))
-        n = struct.unpack("<Q", raw[:8])[0]
-        return np.frombuffer(raw[8:8 + n], dtype=np.float64)
-
-    pts = dec(root.find(".//Points/DataArray")).reshape(ny, nx, 3)
-    out = {}
-    for da in root.findall(".//PointData/DataArray"):
-        out[da.get("Name")] = dec(da).reshape(ny, nx)
-    return out, pts[0, :, 0], pts[:, 0, 1]
-
-
-def step_times(outp):
-    tmap = {}
-    pat = re.compile(r"^\s+(\d+)\s+\|\s+([0-9.eE+-]+)\s+\|")
-    for line in open(outp, errors="replace"):
-        m = pat.match(line)
-        if m and line.count("|") == 8:
-            tmap[int(m.group(1))] = float(m.group(2))
-    return tmap
 
 
 def contour_r(col, y, level=0.5):
@@ -168,7 +141,8 @@ def main():
     for fn in files:
         step = int(Path(fn).stem.split("_")[1])
         try:
-            d, x, y = read_vts(fn)
+            d, X, Y = read_vts(fn)
+            x, y = X[0, :], Y[:, 0]   # pplib returns meshgrids
         except Exception:
             continue
         phi = d["IcePhase"]

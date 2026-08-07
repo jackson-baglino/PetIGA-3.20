@@ -68,7 +68,7 @@ PASS_ICESD_DROP_DEFAULT = 20.0   # % drop in ice_sed_interf after freeze
 # ── post-processing scripts ───────────────────────────────────────────────────
 SCRIPT_VTK     = str(ROOT / "scripts"     / "plotpermafrost.py")
 SCRIPT_SCALARS = str(ROOT / "postprocess" / "plot_scalars.py")
-SCRIPT_PROFS1D = str(ROOT / "postprocess" / "plot1D_profiles.py")
+SCRIPT_PROFS1D = str(ROOT / "postprocess" / "plot_1d_profiles.py")
 
 
 # ── monitor / bounds parsers ──────────────────────────────────────────────────

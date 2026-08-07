@@ -487,14 +487,14 @@ run_1d_plotting() {
 
     # Per-step phase field PNGs
     echo "  Generating phase field images..."
-    "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
+    "$PYTHON" "$POSTPROCESS/plot_1d_profiles.py" \
         --dir "$folder" --out-dir "$folder" \
         2>&1 | sed 's/^/    /'
     py_exit=$(( py_exit + $? ))
 
     # Derived scalar time-series
     echo "  Generating derived quantity plot..."
-    "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
+    "$PYTHON" "$POSTPROCESS/plot_1d_profiles.py" \
         --dir "$folder" --derived --save "$folder/derived.png" \
         2>&1 | sed 's/^/    /'
     py_exit=$(( py_exit + $? ))

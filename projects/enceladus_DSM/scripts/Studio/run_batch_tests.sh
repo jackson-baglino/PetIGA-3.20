@@ -317,9 +317,9 @@ run_one_test() {
         fi
     else
         # 1D: phase profile plots
-        if [ -n "$PYTHON" ] && [ -f "$POSTPROCESS/plot1D_profiles.py" ]; then
+        if [ -n "$PYTHON" ] && [ -f "$POSTPROCESS/plot_1d_profiles.py" ]; then
             echo "  Post-processing (1D profiles)..."
-            "$PYTHON" "$POSTPROCESS/plot1D_profiles.py" \
+            "$PYTHON" "$POSTPROCESS/plot_1d_profiles.py" \
                 --dir "$test_out" --out-dir "$test_out" 2>&1 | sed 's/^/    /' || true
         fi
     fi
