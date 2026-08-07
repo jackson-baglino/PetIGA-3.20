@@ -3,6 +3,30 @@
 
 
 /* =========================================================================
+ * HOW THIS FILE IS ORGANISED
+ *
+ * Every initial condition does the same six things: create the node DM, walk
+ * the local DOF box, turn (i,j) into physical (x,y), evaluate a phase field,
+ * clamp it to [0,1], and write ice/temperature/vapour. Only the fourth step
+ * differs between ICs.
+ *
+ * So that scaffolding lives once, in FillIC1D() / FillIC2D(), and each IC
+ * supplies just a *shape function* -- a pure PetscReal(x[,y],user) that
+ * returns the unclamped ice field. The public FormInitial*() entry points are
+ * thin wrappers: validate arguments, print the banner, hand a shape to a
+ * filler. Adding an IC means writing one shape function.
+ *
+ * Layout below:
+ *   1. GrevilleAbscissae      -- parametric DOF locations
+ *   2. wall / bump geometry   -- the curved domain boundaries
+ *   3. FillIC1D / FillIC2D    -- the shared scaffolding
+ *   4. shape functions        -- one per IC, plus the multi-grain feature set
+ *   5. FormInitial*()         -- public entry points
+ *   6. ReadGrainsFromFile     -- packing loader
+ * =========================================================================*/
+
+
+/* =========================================================================
  * GrevilleAbscissae
  *
  * Fills `g[0..count-1]` with the Greville abscissae (parametric DOF locations,
@@ -53,9 +77,9 @@ static PetscErrorCode GrevilleAbscissae(IGA iga, PetscInt dir, PetscInt count, P
     /* Normalize to [0,1]: a -geom_file axis's knots already span [0,1] (the
      * igakit builder's convention), but the default (-Nx/-Ny, no -geom_file)
      * axis built by IGAAxisInitUniform() spans [0,Lx]/[0,Ly] directly -- callers
-     * (FormInitialMultiGrains2D) multiply the returned abscissae by Lx/Ly
-     * themselves, so this must always return [0,1] regardless of which path
-     * built the axis, or physical coordinates get scaled by Lx/Ly twice. */
+     * multiply the returned abscissae by Lx/Ly themselves, so this must always
+     * return [0,1] regardless of which path built the axis, or physical
+     * coordinates get scaled by Lx/Ly twice. */
     PetscReal Ui = U[p], Uf = U[m - p];
     PetscReal *greville;
     ierr = PetscMalloc1(count, &greville); CHKERRQ(ierr);
@@ -69,6 +93,566 @@ static PetscErrorCode GrevilleAbscissae(IGA iga, PetscInt dir, PetscInt count, P
     PetscFunctionReturn(0);
 }
 
+
+/* =========================================================================
+ * 2. WALL / BUMP GEOMETRY
+ * =========================================================================*/
+
+/* C-infinity bump g(x) = height*exp(1 - 1/(1-t^2)) for |t|<1, t=(x-center)/R;
+ * 0 outside -- must match build_geometry_sediment_grain.py's _bump(). */
+static PetscReal SedimentBump(PetscReal x, PetscReal center, PetscReal R, PetscReal height)
+{
+    if (R <= 0.0 || height == 0.0) return 0.0;
+    PetscReal t = (x - center) / R;
+    if (PetscAbsReal(t) >= 1.0) return 0.0;
+    return height * PetscExpReal(1.0 - 1.0 / (1.0 - t * t));
+}
+
+/* Total floor displacement at x: the sum of every sediment bump. */
+static PetscReal SedimentBumpField(const AppCtx *user, PetscReal x)
+{
+    PetscReal h = 0.0;
+    for (PetscInt k = 0; k < user->n_sed_grains; k++)
+        h += SedimentBump(x, user->sed_grain_x[k], user->sed_grain_R[k], user->sed_grain_h[k]);
+    return h;
+}
+
+/* d/dx of SedimentBump(). */
+static PetscReal SedimentBumpDeriv(PetscReal x, PetscReal center, PetscReal R, PetscReal height)
+{
+    if (R <= 0.0 || height == 0.0) return 0.0;
+    PetscReal t = (x - center) / R;
+    if (PetscAbsReal(t) >= 1.0) return 0.0;
+    PetscReal s = 1.0 - t * t;
+    return height * PetscExpReal(1.0 - 1.0 / s) * (-2.0 * t / (s * s)) / R;
+}
+
+static PetscReal SedimentBumpFieldDeriv(const AppCtx *user, PetscReal x)
+{
+    PetscReal d = 0.0;
+    for (PetscInt k = 0; k < user->n_sed_grains; k++)
+        d += SedimentBumpDeriv(x, user->sed_grain_x[k], user->sed_grain_R[k], user->sed_grain_h[k]);
+    return d;
+}
+
+static PetscReal TopBumpField(const AppCtx *user, PetscReal x)
+{
+    PetscReal h = 0.0;
+    for (PetscInt k = 0; k < user->n_top_grains; k++)
+        h += SedimentBump(x, user->top_grain_x[k], user->top_grain_R[k], user->top_grain_h[k]);
+    return h;
+}
+
+/* =========================================================================
+ * WallBottom / WallTop -- the actual wall LINES, in physical y.
+ *
+ * The floor is y=0 raised by the sediment bumps; the ceiling is y=Ly lowered
+ * by the top bumps:
+ *
+ *     y_bot(x) = SedimentBumpField(x)
+ *     y_top(x) = Ly - TopBumpField(x)
+ *
+ * These MUST match build_geometry_multi_grain.py's build_surface(), which
+ * cuts the mesh from the same two curves -- the IC is seeded by mapping
+ * (u,v) through them, so any disagreement puts the ice somewhere the mesh
+ * is not.
+ *
+ * With no bumps configured these are y=0 and y=Ly, so IC_COORD_WALLS
+ * degenerates to the plain rectangular mapping.
+ *
+ * Note these return the wall lines directly, NOT TopBumpField()'s "downward
+ * displacement from Ly" convention. A rising ceiling threaded through that
+ * sign convention is a sign error waiting to happen; callers should use
+ * these and never hand-roll `Ly - TopBumpField(...)` again.
+ * =========================================================================*/
+static PetscReal WallBottom(const AppCtx *user, PetscReal x)
+{
+    return SedimentBumpField(user, x);
+}
+
+static PetscReal WallTop(const AppCtx *user, PetscReal x)
+{
+    return user->Ly - TopBumpField(user, x);
+}
+
+/* d/dx of WallBottom() -- local slope of the floor curve including the
+ * affine baseline, used by the ice-shell distance-to-surface calculation. */
+static PetscReal WallBottomDeriv(const AppCtx *user, PetscReal x)
+{
+    return SedimentBumpFieldDeriv(user, x);
+}
+
+
+/* =========================================================================
+ * 3. SHARED SCAFFOLDING
+ * =========================================================================*/
+
+/* Interface sharpness used by every shape function below.
+ *
+ * The equilibrium logistic profile is phi = 1/(1+exp(-(R-d)/eps))
+ * = 0.5 - 0.5*tanh(0.5*(d-R)/eps), so the tanh coefficient is 0.5/eps.
+ * Initializing at the model's own equilibrium width (1%-99% band = 9.2*eps)
+ * removes the early width-relaxation transient. The old tc = 1/(sqrt(2)*
+ * 0.75*eps) was 1.89x steeper -- a leftover from the removed eps_model =
+ * 0.75*eps residual scaling -- and made every run start with the IC ~7 cells
+ * wide relaxing to the equilibrium 13 cells over the first ~60 steps. */
+static inline PetscReal PhaseSlope(const AppCtx *user) { return 0.5 / user->eps; }
+
+/* A shape function returns the UNCLAMPED ice field at a physical point.
+ * Everything it needs comes from `user`; the fillers clamp to [0,1]. */
+typedef PetscReal (*IceShape1D)(PetscReal x, const AppCtx *user);
+typedef PetscReal (*IceShape2D)(PetscReal x, PetscReal y, const AppCtx *user);
+
+/* How (i,j) becomes physical (x,y). */
+typedef enum {
+    IC_COORD_UNIFORM,   /* x = Lx*i/(mx+per),      y = Ly*j/(my+per)          */
+    IC_COORD_WALLS,     /* x as above,             y ruled between the walls  */
+    IC_COORD_GREVILLE   /* x = Lx*greville_x[i],   y ruled between the walls  */
+} ICCoordMode;
+
+/* The closure every IC shares: temperature is the linear background field and
+ * vapour is saturated inside ice, hum0-scaled in air, blended by ice fraction. */
+static void SetNodeFields(Field *f, PetscReal ice, PetscReal tem, AppCtx *user)
+{
+    PetscScalar rho_vs;
+    RhoVS_I(user, tem, &rho_vs, NULL);
+
+    PetscReal air = PetscMax(0.0, 1.0 - ice);
+
+    f->ice  = ice;
+    f->tem  = tem;
+    f->rhov = rho_vs * (user->hum0 * air + (1.0 - air));
+}
+
+/* Walk the local 1D DOF box, evaluate `shape`, write the node fields. */
+static PetscErrorCode FillIC1D(IGA iga, Vec U, AppCtx *user, IceShape1D shape)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    DM            da;
+    Field        *u;   /* 1D: plain pointer, not pointer-to-pointer */
+    DMDALocalInfo info;
+
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);           CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);          CHKERRQ(ierr);
+
+    const PetscReal Lx  = user->Lx;
+    const PetscInt  per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        PetscReal x   = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+        PetscReal ice = PetscMin(PetscMax(shape(x, user), 0.0), 1.0);
+        PetscReal tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
+
+        SetNodeFields(&u[i], ice, tem, user);
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+}
+
+/* Walk the local 2D DOF box, evaluate `shape`, write the node fields.
+ *
+ * `mode` picks the index->physical map. IC_COORD_WALLS and IC_COORD_GREVILLE
+ * rule y between WallBottom(x) and WallTop(x), which is what makes the IC
+ * follow a curved or tapered -geom_file domain instead of a bounding box. */
+static PetscErrorCode FillIC2D(IGA iga, Vec U, AppCtx *user,
+                               ICCoordMode mode, IceShape2D shape)
+{
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    DM            da;
+    Field       **u;
+    DMDALocalInfo info;
+
+    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(da, U, &u);           CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(da, &info);          CHKERRQ(ierr);
+
+    const PetscReal Lx  = user->Lx;
+    const PetscReal Ly  = user->Ly;
+    const PetscInt  per = (user->periodic == 1) ? user->p - 1 : -1;
+
+    PetscReal *gx = NULL, *gy = NULL;
+    if (mode == IC_COORD_GREVILLE) {
+        ierr = GrevilleAbscissae(iga, 0, info.mx, &gx); CHKERRQ(ierr);
+        ierr = GrevilleAbscissae(iga, 1, info.my, &gy); CHKERRQ(ierr);
+    }
+
+    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
+        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
+
+            PetscReal x = (mode == IC_COORD_GREVILLE)
+                        ? Lx * gx[i]
+                        : Lx * (PetscReal)i / (PetscReal)(info.mx + per);
+
+            PetscReal y;
+            if (mode == IC_COORD_UNIFORM) {
+                y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
+            } else {
+                PetscReal v = (mode == IC_COORD_GREVILLE)
+                            ? gy[j]
+                            : (PetscReal)j / (PetscReal)(info.my + per);
+                PetscReal y_bot = WallBottom(user, x);
+                PetscReal y_top = WallTop(user, x);
+                y = y_bot + v * (y_top - y_bot);
+            }
+
+            PetscReal ice = PetscMin(PetscMax(shape(x, y, user), 0.0), 1.0);
+            PetscReal tem = user->temp0
+                          + user->grad_temp0[0] * (x - 0.5 * Lx)
+                          + user->grad_temp0[1] * (y - 0.5 * Ly);
+
+            SetNodeFields(&u[j][i], ice, tem, user);
+        }
+    }
+
+    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    if (mode == IC_COORD_GREVILLE) {
+        ierr = PetscFree(gx); CHKERRQ(ierr);
+        ierr = PetscFree(gy); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+}
+
+
+/* =========================================================================
+ * 4. SHAPE FUNCTIONS
+ * =========================================================================*/
+
+/* Diffuse slab between x_lo and x_hi.
+ *   flag_tIC == 2  ->  flat interface (ice fills [0, 0.5 Lx])
+ *   otherwise      ->  centred slab   (ice fills [0.35 Lx, 0.65 Lx]) */
+static PetscReal ShapeSlab1D(PetscReal x, const AppCtx *user)
+{
+    const PetscReal Lx  = user->Lx;
+    const PetscReal eps = user->eps;
+    const PetscReal x_lo = (user->flag_tIC == 2) ? 0.0       : 0.35 * Lx;
+    const PetscReal x_hi = (user->flag_tIC == 2) ? 0.5 * Lx  : 0.65 * Lx;
+
+    return 0.5 * (PetscTanhReal(0.5 * (x - x_lo) / eps)
+                - PetscTanhReal(0.5 * (x - x_hi) / eps));
+}
+
+/* Layered ice slab on [0, Ly/2], air above -- the k_eff analytic benchmark.
+ * See the FormInitialIceSlab2D banner comment for why this is built from a
+ * signed distance rather than a single tanh. */
+static PetscReal ShapeIceSlab2D(PetscReal x, PetscReal y, const AppCtx *user)
+{
+    const PetscReal Ly = user->Ly;
+
+    /* Signed distance to the nearest ice/air interface, negative inside the
+     * ice. Periodic: interfaces at y = Ly/2 and y = 0 == Ly.
+     * Non-periodic: the single interface at y = Ly/2. */
+    PetscReal dist_ice;
+    if (user->periodic == 1) {
+        dist_ice = (y <= 0.5 * Ly)
+                 ? -PetscMin(y, 0.5 * Ly - y)          /* in the ice */
+                 :  PetscMin(y - 0.5 * Ly, Ly - y);    /* in the air */
+    } else {
+        dist_ice = y - 0.5 * Ly;
+    }
+
+    return 0.5 - 0.5 * PetscTanhReal(0.5 * dist_ice / user->eps);
+}
+
+/* Single ice circle of radius RCice at the domain centre. */
+static PetscReal ShapeSingleIceGrain2D(PetscReal x, PetscReal y, const AppCtx *user)
+{
+    const PetscReal dist = PetscSqrtReal(SQ(x - 0.5 * user->Lx)
+                                       + SQ(y - 0.5 * user->Ly));
+
+    return 0.5 - 0.5 * PetscTanhReal(PhaseSlope(user) * (dist - user->RCice));
+}
+
+/* 1D cross-section through the centre of a single ice grain. */
+static PetscReal ShapeSingleIceGrain1D(PetscReal x, const AppCtx *user)
+{
+    const PetscReal dist = PetscAbsReal(x - 0.5 * user->Lx);
+
+    return 0.5 - 0.5 * PetscTanhReal(PhaseSlope(user) * (dist - user->RCice));
+}
+
+/* Two ice semicircles centred ON the x=0 and x=Lx boundaries, summed. */
+static PetscReal ShapeTwoIceGrainsBoundary2D(PetscReal x, PetscReal y, const AppCtx *user)
+{
+    const PetscReal tc = PhaseSlope(user);
+    const PetscReal cy = 0.5 * user->Ly;
+
+    PetscReal d0 = PetscSqrtReal(SQ(x - 0.0)      + SQ(y - cy));
+    PetscReal d1 = PetscSqrtReal(SQ(x - user->Lx) + SQ(y - cy));
+
+    return (0.5 - 0.5 * PetscTanhReal(tc * (d0 - user->RCice0)))
+         + (0.5 - 0.5 * PetscTanhReal(tc * (d1 - user->RCice1)));
+}
+
+
+/* ---- multi-grain feature fields -----------------------------------------
+ *
+ * The multi-grain IC is a SUM of independent ice bodies. Each helper below
+ * contributes one family; ShapeMultiGrains2D adds them up. Keeping them
+ * separate is what makes the geometry legible -- the alternative is one
+ * 300-line loop where the grain, shell, flat, wedge and bridge logic are
+ * interleaved and the nesting runs ten braces deep.
+ * ------------------------------------------------------------------------*/
+
+/* Minimum-image displacement under -periodic 1: the nearest periodic copy.
+ * floor(t+0.5) == round(t); PETSc 3.20 has no PetscRoundReal. */
+static inline PetscReal MinImage(PetscReal d, PetscReal L) {
+    return d - L * PetscFloorReal(d / L + 0.5);
+}
+
+/* Additive form: sum of per-grain tanh profiles.
+ * Each grain's own field crosses 0.5 at exactly its own surface for any eps,
+ * which is what makes contact eps-independent for tangent (non-overlapping)
+ * packings. See -ic_grain_union in enceladus_types.h for why this form is
+ * eps-DEPENDENT at an overlapping neck. */
+static PetscReal GrainFieldAdditive(PetscReal x, PetscReal y, const AppCtx *user)
+{
+    const PetscReal tc  = PhaseSlope(user);
+    PetscReal       ice = 0.0;
+
+    for (PetscInt k = 0; k < user->n_act; k++) {
+        PetscReal ax   = user->ice_grain_ax[k];
+        PetscReal ay   = user->ice_grain_ay[k];
+        PetscReal dx   = x - user->cent[0][k];
+        PetscReal dy   = y - user->cent[1][k];
+        PetscReal d    = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay)); /* =1 on ellipse boundary */
+        PetscReal tc_k = tc * PetscSqrtReal(ax * ay);              /* keeps interface width ~eps */
+        ice += 0.5 - 0.5 * PetscTanhReal(tc_k * (d - 1.0));
+    }
+    return ice;
+}
+
+/* Distance from (px,py) to the true union boundary of the overlapping pair
+ * (kmin, occ), or PETSC_MAX_REAL if no correction applies.
+ *
+ * WHY THIS EXISTS. min_k sdf_k is the distance to the nearest grain SURFACE,
+ * which equals the distance to the union BOUNDARY only when that nearest
+ * surface point is itself on the boundary. Where grains overlap it can be
+ * buried inside a neighbour, and then the formula reports a far smaller depth
+ * than the truth, leaving phi < 1 in bulk ice.
+ *
+ * Measured on the Molaro pair (R = 72.5/101 um, overlapped to form a neck):
+ * at the neck centre min_k sdf_k = -1.88 um against a true -16.41 um, giving
+ * phi = 0.87 / 0.97 at eps = 0.858 / 0.603 um instead of 1. The nearest point
+ * of grain 0's surface there lies 3.2 um inside grain 1.
+ *
+ * The fix takes the nearest surface point of each of the two grains, discards
+ * it if buried, and falls back to the crease points where the circles cross --
+ * those are always on the union boundary. */
+static PetscReal UnionBoundaryDistance(PetscReal px, PetscReal py,
+                                       PetscInt kmin, PetscInt occ,
+                                       const AppCtx *user)
+{
+    const PetscBool wrap = (PetscBool)(user->periodic == 1);
+    const PetscReal Lx = user->Lx, Ly = user->Ly;
+
+    const PetscReal R0  = user->ice_grain_ax[kmin];
+    const PetscReal c0x = user->cent[0][kmin], c0y = user->cent[1][kmin];
+
+    PetscReal R1  = user->ice_grain_ax[occ];
+    PetscReal c1x = user->cent[0][occ], c1y = user->cent[1][occ];
+    if (wrap) {
+        c1x = c0x + MinImage(c1x - c0x, Lx);
+        c1y = c0y + MinImage(c1y - c0y, Ly);
+    }
+
+    PetscReal best = PETSC_MAX_REAL;
+
+    /* the occluder's own nearest surface point, if visible */
+    PetscReal e1x = px - c1x, e1y = py - c1y;
+    PetscReal L1  = PetscSqrtReal(e1x * e1x + e1y * e1y);
+    if (L1 > 0.0) {
+        PetscReal q1x = c1x + R1 * e1x / L1, q1y = c1y + R1 * e1y / L1;
+        if (SQ(q1x - c0x) + SQ(q1y - c0y) >= SQ(R0))
+            best = PetscMin(best, PetscAbsReal(R1 - L1));
+    }
+
+    /* crease points -- always on the union boundary */
+    PetscReal Dx = c1x - c0x, Dy = c1y - c0y;
+    PetscReal Dd = PetscSqrtReal(Dx * Dx + Dy * Dy);
+    if (Dd > 0.0 && Dd < R0 + R1 && Dd > PetscAbsReal(R0 - R1)) {
+        PetscReal aa = (Dd * Dd + R0 * R0 - R1 * R1) / (2.0 * Dd);
+        PetscReal h2 = R0 * R0 - aa * aa;
+        if (h2 > 0.0) {
+            PetscReal h  = PetscSqrtReal(h2);
+            PetscReal mx = c0x + aa * Dx / Dd, my = c0y + aa * Dy / Dd;
+            PetscReal ex = -Dy / Dd,           ey = Dx / Dd;
+            for (PetscInt sg = -1; sg <= 1; sg += 2) {
+                PetscReal cxp = mx + sg * h * ex, cyp = my + sg * h * ey;
+                best = PetscMin(best, PetscSqrtReal(SQ(px - cxp) + SQ(py - cyp)));
+            }
+        }
+    }
+    return best;
+}
+
+/* Which OTHER circular grain buries the point q, or -1 if none does. */
+static PetscInt OccludingGrain(PetscReal qx, PetscReal qy,
+                               PetscReal c0x, PetscReal c0y, PetscInt kmin,
+                               const AppCtx *user)
+{
+    const PetscBool wrap = (PetscBool)(user->periodic == 1);
+    const PetscReal Lx = user->Lx, Ly = user->Ly;
+
+    for (PetscInt jg = 0; jg < user->n_act; jg++) {
+        if (jg == kmin) continue;
+        PetscReal axj = user->ice_grain_ax[jg];
+        PetscReal ayj = user->ice_grain_ay[jg];
+        if (PetscAbsReal(axj - ayj) > 1e-12 * axj) continue;   /* circles only */
+
+        PetscReal cjx = user->cent[0][jg], cjy = user->cent[1][jg];
+        if (wrap) {
+            cjx = c0x + MinImage(cjx - c0x, Lx);
+            cjy = c0y + MinImage(cjy - c0y, Ly);
+        }
+        if (SQ(qx - cjx) + SQ(qy - cjy) < SQ(axj)) return jg;
+    }
+    return -1;
+}
+
+/* Union form: sdf = min_k sdf_k is zero exactly on the sharp union surface,
+ * so phi = 0.5 lands there for ANY eps. (d-1)*sqrt(ax*ay) is the same
+ * per-grain signed distance the additive branch uses -- the only change is
+ * min-vs-sum and a single tanh applied afterwards.
+ *
+ * Under -periodic 1 the grain field must wrap: a grain near x=0 has to be seen
+ * by DOFs near x=Lx, or the microstructure is discontinuous across the face
+ * that the solver (and the k_eff cell problem downstream) treats as glued.
+ *
+ * The crease correction below is circles-only (ax == ay); ellipses keep the
+ * approximation. It never fires for non-overlapping packings (production uses
+ * a 4 um contact gap), so it costs nothing there. */
+static PetscReal GrainFieldUnion(PetscReal x, PetscReal y, const AppCtx *user)
+{
+    const PetscBool wrap = (PetscBool)(user->periodic == 1);
+    const PetscReal Lx = user->Lx, Ly = user->Ly;
+
+    PetscReal sdf  = PETSC_MAX_REAL;
+    PetscInt  kmin = -1;                  /* grain achieving the min */
+
+    for (PetscInt k = 0; k < user->n_act; k++) {
+        PetscReal ax = user->ice_grain_ax[k];
+        PetscReal ay = user->ice_grain_ay[k];
+        PetscReal dx = x - user->cent[0][k];
+        PetscReal dy = y - user->cent[1][k];
+        if (wrap) {
+            dx = MinImage(dx, Lx);
+            dy = MinImage(dy, Ly);
+        }
+        PetscReal d     = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay));
+        PetscReal sdf_k = (d - 1.0) * PetscSqrtReal(ax * ay);
+        if (sdf_k < sdf) { sdf = sdf_k; kmin = k; }
+    }
+
+    /* Inside the union: check whether the nearest surface point is buried,
+     * and if so fall back to the true union boundary. Trigger on OCCLUSION,
+     * not on how many grains contain the point: a point inside a single grain
+     * is affected too, whenever its nearest surface point is buried. */
+    if (sdf < 0.0 && kmin >= 0) {
+        PetscReal ax0 = user->ice_grain_ax[kmin];
+        PetscReal ay0 = user->ice_grain_ay[kmin];
+
+        if (PetscAbsReal(ax0 - ay0) <= 1e-12 * ax0) {       /* circles only */
+            PetscReal R0  = ax0;
+            PetscReal c0x = user->cent[0][kmin], c0y = user->cent[1][kmin];
+
+            PetscReal px = x, py = y;
+            if (wrap) {
+                px = c0x + MinImage(px - c0x, Lx);
+                py = c0y + MinImage(py - c0y, Ly);
+            }
+            PetscReal ddx = px - c0x, ddy = py - c0y;
+            PetscReal L   = PetscSqrtReal(ddx * ddx + ddy * ddy);
+
+            if (L > 0.0) {
+                PetscReal qx = c0x + R0 * ddx / L, qy = c0y + R0 * ddy / L;
+                PetscInt  occ = OccludingGrain(qx, qy, c0x, c0y, kmin, user);
+                if (occ >= 0) {
+                    PetscReal best = UnionBoundaryDistance(px, py, kmin, occ, user);
+                    if (best < PETSC_MAX_REAL) sdf = -best;
+                }
+            }
+        }
+    }
+
+    return 0.5 - 0.5 * PetscTanhReal(PhaseSlope(user) * sdf);
+}
+
+/* Conformal ice shells hugging the floor curve. */
+static PetscReal IceShellField(PetscReal x, PetscReal y, const AppCtx *user)
+{
+    const PetscReal tc    = PhaseSlope(user);
+    const PetscReal y_bot = WallBottom(user, x);
+    PetscReal       ice   = 0.0;
+
+    for (PetscInt k = 0; k < user->n_ice_shells; k++) {
+        PetscReal xs = user->ice_shell_x[k];
+        PetscReal Rs = user->ice_shell_R[k];
+        PetscReal ts = user->ice_shell_thickness[k];
+        PetscReal dist;
+
+        if (x < xs - Rs) {
+            /* left of the shell's segment: distance to its fixed endpoint (the
+             * floor curve is exactly 0 there) -- gives a naturally rounded cap,
+             * not a sharp/independent window */
+            dist = PetscSqrtReal(SQ(x - (xs - Rs)) + SQ(y));
+        } else if (x > xs + Rs) {
+            dist = PetscSqrtReal(SQ(x - (xs + Rs)) + SQ(y));
+        } else {
+            /* inside the segment: perpendicular distance to the floor curve's
+             * local tangent line (good approximation for a gently-curving
+             * bump); matches the endpoint formula continuously at x = xs+-Rs
+             * since slope -> 0 there too */
+            PetscReal slope = WallBottomDeriv(user, x);
+            dist = (y - y_bot) / PetscSqrtReal(1.0 + SQ(slope));
+        }
+
+        ice += 0.5 - 0.5 * PetscTanhReal((tc * ts) * (dist / ts - 1.0));
+    }
+    return ice;
+}
+
+/* Laterally-windowed flat ice layers. */
+static PetscReal IceFlatField(PetscReal x, PetscReal y, const AppCtx *user)
+{
+    const PetscReal tc  = PhaseSlope(user);
+    PetscReal       ice = 0.0;
+
+    for (PetscInt k = 0; k < user->n_ice_flats; k++) {
+        PetscReal xf   = user->ice_flat_x[k];
+        PetscReal Rf   = user->ice_flat_R[k];
+        PetscReal Hf   = user->ice_flat_height[k];
+        PetscReal dlat = PetscAbsReal(x - xf) / Rf;                /* =1 at edge */
+        PetscReal w    = 0.5 - 0.5 * PetscTanhReal((tc * Rf) * (dlat - 1.0));
+        /* flat threshold, same interface width as everywhere else (no
+         * R-dependent sharpening) */
+        PetscReal flat = 0.5 - 0.5 * PetscTanhReal(tc * (y - Hf));
+        ice += w * flat;
+    }
+    return ice;
+}
+
+/* The multi-grain ice field: grains plus the optional conformal bodies. */
+static PetscReal ShapeMultiGrains2D(PetscReal x, PetscReal y, const AppCtx *user)
+{
+    PetscReal ice = user->ic_grain_union ? GrainFieldUnion(x, y, user)
+                                         : GrainFieldAdditive(x, y, user);
+    ice += IceShellField(x, y, user);
+    ice += IceFlatField(x, y, user);
+    return ice;
+}
+
+
+/* =========================================================================
+ * 5. PUBLIC ENTRY POINTS
+ * =========================================================================*/
 
 /**
  * @brief 1D initial condition: a centered ice slab surrounded by air.
@@ -91,55 +675,10 @@ PetscErrorCode FormInitialCondition1D(IGA iga, Vec U, AppCtx *user)
 
     user->n_act = 0;
 
-    /* Build node DM for the primary field vector */
-    DM            da;
-    Field        *u;   /* 1D: plain pointer, not pointer-to-pointer */
-    DMDALocalInfo info;
-
-    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
-    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
-    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
-
-    const PetscReal Lx  = user->Lx;
-    const PetscReal eps = user->eps;
-
-    /* Slab extents — choose variant based on flag_tIC */
-    PetscReal x_lo, x_hi;
-    if (user->flag_tIC == 2) {
-        /* Flat interface: left half is ice */
-        x_lo = 0.0;
-        x_hi = 0.5 * Lx;
-    } else {
-        /* Default: centered slab */
-        x_lo = 0.35 * Lx;
-        x_hi = 0.65 * Lx;
-    }
-
-    PetscInt k = -1;
-    if (user->periodic == 1) k = user->p - 1;
-
-    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
-        PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + k);
-
-        /* Diffuse slab: tanh transition at x_lo and x_hi */
-        PetscReal ice = 0.5 * (tanh(0.5 * (x - x_lo) / eps)
-                              - tanh(0.5 * (x - x_hi) / eps));
-        ice = PetscMin(PetscMax(ice, 0.0), 1.0);
-
-        u[i].ice = ice;
-        u[i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
-
-        PetscScalar rho_vs_loc, temp_loc = u[i].tem;
-        RhoVS_I(user, temp_loc, &rho_vs_loc, NULL);
-        { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
-          u[i].rhov = rho_vs_loc * (user->hum0 * _pa + (1.0 - _pa)); }
-    }
-
-    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
-    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
-
+    ierr = FillIC1D(iga, U, user, ShapeSlab1D); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
+
 
 
 /* -------------------------------------------------------------------------
@@ -188,69 +727,16 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    const PetscReal Lx  = user->Lx;
-    const PetscReal Ly  = user->Ly;
-    const PetscReal eps = user->eps;
-
-    const PetscBool wrap = (PetscBool)(user->periodic == 1);
-
     PetscPrintf(PETSC_COMM_WORLD,
                 "--- INITIAL CONDITIONS (2D Ice Slab: ice on [0, Ly/2], air above, "
                 "%s) ---\n",
-                wrap ? "periodic in y: interfaces at Ly/2 AND the y=0 seam"
-                     : "non-periodic: single interface at Ly/2");
+                (user->periodic == 1)
+                    ? "periodic in y: interfaces at Ly/2 AND the y=0 seam"
+                    : "non-periodic: single interface at Ly/2");
 
     user->n_act = 0;
 
-    DM            da;
-    Field       **u;
-    DMDALocalInfo info;
-
-    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
-    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
-    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
-
-    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
-
-    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
-        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
-
-            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
-            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
-
-            /* Signed distance to the nearest ice/air interface, negative
-             * inside the ice. Periodic: interfaces at y = Ly/2 and y = 0 == Ly.
-             * Non-periodic: the single interface at y = Ly/2. */
-            PetscReal dist_ice;
-            if (wrap) {
-                dist_ice = (y <= 0.5 * Ly)
-                         ? -PetscMin(y, 0.5 * Ly - y)          /* in the ice */
-                         :  PetscMin(y - 0.5 * Ly, Ly - y);    /* in the air */
-            } else {
-                dist_ice = y - 0.5 * Ly;
-            }
-
-            PetscReal ice = 0.5 - 0.5 * PetscTanhReal(0.5 * dist_ice / eps);
-            ice = PetscMin(PetscMax(ice, 0.0), 1.0);
-
-            PetscReal tem = user->temp0
-                          + user->grad_temp0[0] * (x - 0.5 * Lx)
-                          + user->grad_temp0[1] * (y - 0.5 * Ly);
-
-            PetscScalar rho_vs_loc;
-            RhoVS_I(user, tem, &rho_vs_loc, NULL);
-
-            PetscReal air = PetscMax(0.0, 1.0 - ice);
-
-            u[j][i].ice  = ice;
-            u[j][i].tem  = tem;
-            u[j][i].rhov = user->hum0 * rho_vs_loc * air + rho_vs_loc * (1.0 - air);
-        }
-    }
-
-    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
-    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
-
+    ierr = FillIC2D(iga, U, user, IC_COORD_UNIFORM, ShapeIceSlab2D); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 
@@ -259,7 +745,6 @@ PetscErrorCode FormInitialIceSlab2D(IGA iga, Vec U, AppCtx *user)
  * FormInitialSingleIceGrain2D
  *
  * Single pure ice circle (no sediment core) centered in the domain.
- * Tanh profile with half-width eps.
  *
  * Parameters: user->RCice (grain radius), Lx, Ly, eps, temp0, hum0.
  * =========================================================================*/
@@ -268,25 +753,12 @@ PetscErrorCode FormInitialSingleIceGrain2D(IGA iga, Vec U, AppCtx *user)
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    const PetscReal Lx    = user->Lx;
-    const PetscReal Ly        = user->Ly;
-    const PetscReal eps       = user->eps;
-    const PetscReal RCice     = user->RCice;
-    /* Equilibrium logistic profile: phi = 1/(1+exp(-(R-d)/eps))
-     * = 0.5 - 0.5*tanh(0.5*(d-R)/eps), so tc = 0.5/eps. Initializing at the
-     * model's own equilibrium width (1%-99% band = 9.2*eps) removes the
-     * early width-relaxation transient. The old tc = 1/(sqrt(2)*0.75*eps)
-     * was 1.89x steeper — a leftover from the removed eps_model=0.75*eps
-     * residual scaling — and made every run start with the IC ~7 cells wide
-     * relaxing to the equilibrium 13 cells over the first ~60 steps. */
-    const PetscReal tc        = 0.5 / eps;
-    const PetscReal cx        = 0.5 * Lx;
-    const PetscReal cy        = 0.5 * Ly;
+    const PetscReal Lx = user->Lx, Ly = user->Ly, RCice = user->RCice;
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (2D single ice grain) ---\n"
         "  centre = (%.4e, %.4e) m,  RCice = %.4e m\n",
-        cx, cy, RCice);
+        0.5 * Lx, 0.5 * Ly, RCice);
 
     if (RCice <= 0.0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
@@ -295,38 +767,7 @@ PetscErrorCode FormInitialSingleIceGrain2D(IGA iga, Vec U, AppCtx *user)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
                 "Grain radius %.2e exceeds half the domain — increase domain or reduce RCice", RCice);
 
-    DM da;
-    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
-    Field **u;
-    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
-    DMDALocalInfo info;
-    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
-
-    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
-
-    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
-        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
-            PetscReal x = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
-            PetscReal y = Ly * (PetscReal)j / (PetscReal)(info.my + per);
-
-            PetscReal dist = PetscSqrtReal(SQ(x - cx) + SQ(y - cy));
-            PetscReal ice  = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCice));
-            ice = PetscMin(PetscMax(ice, 0.0), 1.0);
-
-            u[j][i].ice = ice;
-            u[j][i].tem = user->temp0
-                          + user->grad_temp0[0] * (x - 0.5 * Lx)
-                          + user->grad_temp0[1] * (y - 0.5 * Ly);
-
-            PetscScalar rho_vs, temp_loc = u[j][i].tem;
-            RhoVS_I(user, temp_loc, &rho_vs, NULL);
-            { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
-              u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
-        }
-    }
-
-    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
-    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    ierr = FillIC2D(iga, U, user, IC_COORD_UNIFORM, ShapeSingleIceGrain2D); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 
@@ -342,22 +783,11 @@ PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user)
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    const PetscReal Lx        = user->Lx;
-    const PetscReal eps       = user->eps;
-    const PetscReal RCice     = user->RCice;
-    /* Equilibrium logistic profile: phi = 1/(1+exp(-(R-d)/eps))
-     * = 0.5 - 0.5*tanh(0.5*(d-R)/eps), so tc = 0.5/eps. Initializing at the
-     * model's own equilibrium width (1%-99% band = 9.2*eps) removes the
-     * early width-relaxation transient. The old tc = 1/(sqrt(2)*0.75*eps)
-     * was 1.89x steeper — a leftover from the removed eps_model=0.75*eps
-     * residual scaling — and made every run start with the IC ~7 cells wide
-     * relaxing to the equilibrium 13 cells over the first ~60 steps. */
-    const PetscReal tc        = 0.5 / eps;
-    const PetscReal cx        = 0.5 * Lx;
+    const PetscReal Lx = user->Lx, RCice = user->RCice;
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (1D single ice grain) ---\n"
-        "  centre = %.4e m,  RCice = %.4e m\n", cx, RCice);
+        "  centre = %.4e m,  RCice = %.4e m\n", 0.5 * Lx, RCice);
 
     if (RCice <= 0.0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
@@ -366,32 +796,7 @@ PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
                 "Grain radius %.2e exceeds half the domain — increase Lx or reduce RCice", RCice);
 
-    DM da;
-    Field *u;
-    DMDALocalInfo info;
-    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
-    ierr = DMDAVecGetArray(da, U, &u);            CHKERRQ(ierr);
-    ierr = DMDAGetLocalInfo(da, &info);           CHKERRQ(ierr);
-
-    PetscInt k = (user->periodic == 1) ? user->p - 1 : -1;
-
-    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
-        PetscReal x    = Lx * (PetscReal)i / (PetscReal)(info.mx + k);
-        PetscReal dist = PetscAbsReal(x - cx);
-        PetscReal ice  = 0.5 - 0.5 * PetscTanhReal(tc * (dist - RCice));
-        ice = PetscMin(PetscMax(ice, 0.0), 1.0);
-
-        u[i].ice = ice;
-        u[i].tem = user->temp0 + user->grad_temp0[0] * (x - 0.5 * Lx);
-
-        PetscScalar rho_vs, temp_loc = u[i].tem;
-        RhoVS_I(user, temp_loc, &rho_vs, NULL);
-        { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
-          u[i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
-    }
-
-    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
-    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    ierr = FillIC1D(iga, U, user, ShapeSingleIceGrain1D); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 
@@ -410,104 +815,29 @@ PetscErrorCode FormInitialSingleIceGrain1D(IGA iga, Vec U, AppCtx *user)
  * spans the full domain width Lx, giving an Ostwald-ripening timescale
  * test between the two grains of different curvature.
  *
- * Physical coordinates: for a plain rectangular domain (geom_bump_R == 0)
- * node (i,j) maps to (Lx*i/mx, Ly*j/my) as usual. For the -geom_file
- * sediment-grain geometry (build_geometry_sediment_grain.py), the bottom
- * edge is raised by a C-infinity bump y=g(x) and the surface is ruled to
- * the flat top edge, so y_phys = g(x) + (j/my)*(Ly - g(x)); x_phys = Lx*i/mx
- * exactly by construction (both curves share the u<->x parametrization).
- * geom_bump_R must match that script's R_sed (bump half-width == height)
- * for the IC to align with the actual geometry.
+ * Physical coordinates: for a plain rectangular domain the wall baselines are
+ * flat, so IC_COORD_WALLS reduces to (Lx*i/mx, Ly*j/my) as usual. For the
+ * -geom_file sediment-grain geometry (build_geometry_sediment_grain.py) the
+ * bottom edge is raised by a C-infinity bump y=g(x) and the surface is ruled
+ * to the flat top edge, so y_phys = g(x) + (j/my)*(Ly - g(x)); x_phys =
+ * Lx*i/mx exactly by construction (both curves share the u<->x
+ * parametrization). geom_bump_R must match that script's R_sed (bump
+ * half-width == height) for the IC to align with the actual geometry.
  * =========================================================================*/
-
-/* C-infinity bump g(x) = height*exp(1 - 1/(1-t^2)) for |t|<1, t=(x-center)/R;
- * 0 outside -- must match build_geometry_sediment_grain.py's _bump(). */
-static PetscReal SedimentBump(PetscReal x, PetscReal center, PetscReal R, PetscReal height)
-{
-    if (R <= 0.0) return 0.0;
-    PetscReal t = (x - center) / R;
-    if (PetscAbsReal(t) >= 1.0) return 0.0;
-    return height * PetscExpReal(1.0 - 1.0 / (1.0 - t * t));
-}
-
-/* Sum of SedimentBump() humps along the bottom edge. If -sed_grain_x/-R were
- * not given (n_sed_grains == 0), falls back to the single-bump -geom_bump_R
- * behavior (centered at Lx/2) for backward compatibility with
- * build_geometry_sediment_grain.py / two_ice_grains_boundary. With
- * -sed_grain_x/-sed_grain_R/-sed_grain_h set, must match
- * build_geometry_multi_grain.py's SEDIMENT_GRAINS list. */
-static PetscReal SedimentBumpField(const AppCtx *user, PetscReal x)
-{
-    if (user->n_sed_grains <= 0)
-        return SedimentBump(x, 0.5 * user->Lx, user->geom_bump_R, user->geom_bump_R);
-
-    PetscReal y = 0.0;
-    for (PetscInt k = 0; k < user->n_sed_grains; k++)
-        y += SedimentBump(x, user->sed_grain_x[k], user->sed_grain_R[k], user->sed_grain_h[k]);
-    return y;
-}
-
-/* d/dx of SedimentBump(): g'(x) = g(x) * (-2t)/(R*(1-t^2)^2), t=(x-center)/R.
- * Vanishes at |t|->1 along with g() itself (C-infinity, compact support). */
-static PetscReal SedimentBumpDeriv(PetscReal x, PetscReal center, PetscReal R, PetscReal height)
-{
-    if (R <= 0.0) return 0.0;
-    PetscReal t = (x - center) / R;
-    if (PetscAbsReal(t) >= 1.0) return 0.0;
-    PetscReal g = SedimentBump(x, center, R, height);
-    return g * (-2.0 * t) / (R * SQ(1.0 - t * t));
-}
-
-/* d/dx of SedimentBumpField() -- local slope of the actual floor curve,
- * used by the ice-shell distance-to-surface calculation below. */
-static PetscReal SedimentBumpFieldDeriv(const AppCtx *user, PetscReal x)
-{
-    if (user->n_sed_grains <= 0)
-        return SedimentBumpDeriv(x, 0.5 * user->Lx, user->geom_bump_R, user->geom_bump_R);
-
-    PetscReal dy = 0.0;
-    for (PetscInt k = 0; k < user->n_sed_grains; k++)
-        dy += SedimentBumpDeriv(x, user->sed_grain_x[k], user->sed_grain_R[k], user->sed_grain_h[k]);
-    return dy;
-}
-
-/* Sum of ceiling bumps (-top_grain_x/-R/-h) pushing DOWN from Ly.
- * Returns total downward displacement; caller computes y_top = Ly - TopBumpField().
- * Must match build_geometry_multi_grain.py's TOP_GRAINS list. */
-static PetscReal TopBumpField(const AppCtx *user, PetscReal x)
-{
-    PetscReal h = 0.0;
-    for (PetscInt k = 0; k < user->n_top_grains; k++)
-        h += SedimentBump(x, user->top_grain_x[k], user->top_grain_R[k], user->top_grain_h[k]);
-    return h;
-}
 PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    const PetscReal Lx  = user->Lx;
-    const PetscReal Ly  = user->Ly;
-    const PetscReal eps       = user->eps;
-    const PetscReal R0        = user->RCice0;   /* left grain (x=0), smaller  */
-    const PetscReal R1        = user->RCice1;   /* right grain (x=Lx), larger */
-    /* Equilibrium logistic profile: phi = 1/(1+exp(-(R-d)/eps))
-     * = 0.5 - 0.5*tanh(0.5*(d-R)/eps), so tc = 0.5/eps. Initializing at the
-     * model's own equilibrium width (1%-99% band = 9.2*eps) removes the
-     * early width-relaxation transient. The old tc = 1/(sqrt(2)*0.75*eps)
-     * was 1.89x steeper — a leftover from the removed eps_model=0.75*eps
-     * residual scaling — and made every run start with the IC ~7 cells wide
-     * relaxing to the equilibrium 13 cells over the first ~60 steps. */
-    const PetscReal tc        = 0.5 / eps;
-
-    const PetscReal c0x = 0.0,  c0y = 0.5 * Ly;
-    const PetscReal c1x = Lx,   c1y = 0.5 * Ly;
+    const PetscReal Lx = user->Lx, Ly = user->Ly;
+    const PetscReal R0 = user->RCice0;   /* left grain (x=0), smaller  */
+    const PetscReal R1 = user->RCice1;   /* right grain (x=Lx), larger */
 
     PetscPrintf(PETSC_COMM_WORLD,
         "--- INITIAL CONDITIONS (2D two ice grains, boundary-centered) ---\n"
         "  grain 0: centre = (%.4e, %.4e) m,  RCice0 = %.4e m\n"
         "  grain 1: centre = (%.4e, %.4e) m,  RCice1 = %.4e m\n",
-        c0x, c0y, R0, c1x, c1y, R1);
+        0.0, 0.5 * Ly, R0, Lx, 0.5 * Ly, R1);
 
     if (R0 <= 0.0 || R1 <= 0.0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
@@ -519,44 +849,7 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
                 "RCice0/RCice1 must be <= Ly/2 (got %.2e, %.2e, Ly/2=%.2e)", R0, R1, 0.5*Ly);
 
-    DM da;
-    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
-    Field **u;
-    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
-    DMDALocalInfo info;
-    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
-
-    PetscInt per = (user->periodic == 1) ? user->p - 1 : -1;
-
-    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
-        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
-            PetscReal x     = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
-            PetscReal v     = (PetscReal)j / (PetscReal)(info.my + per);
-            PetscReal y_bot = SedimentBumpField(user, x);
-            PetscReal y_top = Ly - TopBumpField(user, x);
-            PetscReal y     = y_bot + v * (y_top - y_bot);
-
-            PetscReal d0 = PetscSqrtReal(SQ(x - c0x) + SQ(y - c0y));
-            PetscReal d1 = PetscSqrtReal(SQ(x - c1x) + SQ(y - c1y));
-
-            PetscReal ice0 = 0.5 - 0.5 * PetscTanhReal(tc * (d0 - R0));
-            PetscReal ice1 = 0.5 - 0.5 * PetscTanhReal(tc * (d1 - R1));
-            PetscReal ice  = PetscMin(PetscMax(ice0 + ice1, 0.0), 1.0);
-
-            u[j][i].ice = ice;
-            u[j][i].tem = user->temp0
-                          + user->grad_temp0[0] * (x - 0.5 * Lx)
-                          + user->grad_temp0[1] * (y - 0.5 * Ly);
-
-            PetscScalar rho_vs, temp_loc = u[j][i].tem;
-            RhoVS_I(user, temp_loc, &rho_vs, NULL);
-            { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
-              u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
-        }
-    }
-
-    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
-    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
+    ierr = FillIC2D(iga, U, user, IC_COORD_WALLS, ShapeTwoIceGrainsBoundary2D); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 
@@ -567,30 +860,20 @@ PetscErrorCode FormInitialTwoIceGrainsBoundary2D(IGA iga, Vec U, AppCtx *user)
  * N ice grains, each a tanh distance profile from a (cx,cy)/R given by
  * -ice_grain_cx/-ice_grain_cy/-ice_grain_R, summed and clamped to [0,1] --
  * the same construction as FormInitialTwoIceGrainsBoundary2D generalized
- * to an arbitrary number of grains.
+ * to an arbitrary number of grains. Optional extra ice bodies (conformal
+ * shells, flat layers) add on top; see the feature fields above.
  *
- * Physical coordinates use SedimentBumpField(), i.e. the bottom edge is the
- * sum of -sed_grain_x/-sed_grain_R bump humps (or the single -geom_bump_R
- * bump if those aren't set), matching build_geometry_multi_grain.py /
- * build_geometry_sediment_grain.py respectively.
+ * Physical coordinates use the Greville abscissae and the wall curves, i.e.
+ * the bottom edge is the sum of -sed_grain_x/-sed_grain_R bump humps (or the
+ * single -geom_bump_R bump if those aren't set), matching
+ * build_geometry_multi_grain.py / build_geometry_sediment_grain.py.
  * =========================================================================*/
 PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
 {
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    const PetscReal Lx  = user->Lx;
-    const PetscReal Ly  = user->Ly;
-    const PetscReal eps       = user->eps;
-    /* Equilibrium logistic profile: phi = 1/(1+exp(-(R-d)/eps))
-     * = 0.5 - 0.5*tanh(0.5*(d-R)/eps), so tc = 0.5/eps. Initializing at the
-     * model's own equilibrium width (1%-99% band = 9.2*eps) removes the
-     * early width-relaxation transient. The old tc = 1/(sqrt(2)*0.75*eps)
-     * was 1.89x steeper — a leftover from the removed eps_model=0.75*eps
-     * residual scaling — and made every run start with the IC ~7 cells wide
-     * relaxing to the equilibrium 13 cells over the first ~60 steps. */
-    const PetscReal tc        = 0.5 / eps;
-    const PetscInt  ng        = user->n_act;
+    const PetscInt ng = user->n_act;
 
     if (ng <= 0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
@@ -611,221 +894,14 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
                     "-ice_grain_ax/ay[%d] must be > 0 (got ax=%.2e, ay=%.2e)", (int)k, ax, ay);
     }
 
-    DM da;
-    ierr = IGACreateNodeDM(iga, user->dof, &da); CHKERRQ(ierr);
-    Field **u;
-    ierr = DMDAVecGetArray(da, U, &u); CHKERRQ(ierr);
-    DMDALocalInfo info;
-    ierr = DMDAGetLocalInfo(da, &info); CHKERRQ(ierr);
-
-    PetscReal *gx, *gy;
-    ierr = GrevilleAbscissae(iga, 0, info.mx, &gx); CHKERRQ(ierr);
-    ierr = GrevilleAbscissae(iga, 1, info.my, &gy); CHKERRQ(ierr);
-
-    /* Under -periodic 1 the grain field must wrap: a grain near x=0 has to be
-     * seen by DOFs near x=Lx, or the microstructure is discontinuous across
-     * the face that the solver (and the k_eff cell problem downstream) treats
-     * as glued. Only meaningful with the union SDF -- the additive branch
-     * sums per-grain tanh profiles and is unused for packings. */
-    const PetscBool wrap = (PetscBool)(user->periodic == 1);
-
-    for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
-        for (PetscInt j = info.ys; j < info.ys + info.ym; j++) {
-            PetscReal x     = Lx * gx[i];
-            PetscReal v     = gy[j];
-            PetscReal y_bot = SedimentBumpField(user, x);
-            PetscReal y_top = Ly - TopBumpField(user, x);
-            PetscReal y     = y_bot + v * (y_top - y_bot);
-
-            PetscReal ice = 0.0;
-            if (user->ic_grain_union) {
-                /* Union form: sdf = min_k sdf_k is zero exactly on the sharp
-                 * union surface, so phi = 0.5 lands there for ANY eps. Note
-                 * (d-1)*sqrt(ax*ay) is the same per-grain signed distance the
-                 * additive branch already uses -- the only change is min-vs-sum
-                 * and a single tanh applied afterwards. See -ic_grain_union in
-                 * enceladus_types.h for why the additive form is eps-dependent at an
-                 * overlapping neck. */
-                PetscReal sdf  = PETSC_MAX_REAL;
-                PetscInt  kmin = -1;              /* grain achieving the min */
-                for (PetscInt k = 0; k < ng; k++) {
-                    PetscReal ax    = user->ice_grain_ax[k];
-                    PetscReal ay    = user->ice_grain_ay[k];
-                    PetscReal dx    = x - user->cent[0][k];
-                    PetscReal dy    = y - user->cent[1][k];
-                    if (wrap) {   /* minimum image: nearest periodic copy.
-                                   * floor(t+0.5) == round(t); PETSc 3.20 has
-                                   * no PetscRoundReal. */
-                        dx -= Lx * PetscFloorReal(dx / Lx + 0.5);
-                        dy -= Ly * PetscFloorReal(dy / Ly + 0.5);
-                    }
-                    PetscReal d     = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay));
-                    PetscReal sdf_k = (d - 1.0) * PetscSqrtReal(ax * ay);
-                    if (sdf_k < sdf) { sdf = sdf_k; kmin = k; }
-                }
-
-                /* min_k sdf_k is the distance to the nearest grain SURFACE, which
-                 * equals the distance to the union BOUNDARY only when that nearest
-                 * surface point is itself on the boundary. Where grains overlap it
-                 * can be buried inside a neighbour, and then the formula reports a
-                 * far smaller depth than the truth, leaving phi < 1 in bulk ice.
-                 *
-                 * Measured on the Molaro pair (R = 72.5/101 um, overlapped to form
-                 * a neck): at the neck centre min_k sdf_k = -1.88 um against a true
-                 * -16.41 um, giving phi = 0.87 / 0.97 at eps = 0.858 / 0.603 um
-                 * instead of 1. The nearest point of grain 0's surface there lies
-                 * 3.2 um inside grain 1.
-                 *
-                 * Trigger on OCCLUSION, not on how many grains contain the point:
-                 * a point inside a single grain is affected too, whenever its
-                 * nearest surface point is buried in a neighbour. Correction takes
-                 * the nearest surface point of each of the two grains, discards it
-                 * if buried, and falls back to the crease points where the circles
-                 * cross -- those are always on the union boundary.
-                 *
-                 * Circles only (ax == ay); ellipses keep the approximation.
-                 * Never fires for non-overlapping packings (production uses a 4 um
-                 * contact gap), so it costs nothing there. */
-                if (sdf < 0.0 && kmin >= 0) {
-                    PetscReal ax0 = user->ice_grain_ax[kmin];
-                    PetscReal ay0 = user->ice_grain_ay[kmin];
-                    if (PetscAbsReal(ax0 - ay0) <= 1e-12 * ax0) {
-                        PetscReal R0  = ax0;
-                        PetscReal c0x = user->cent[0][kmin], c0y = user->cent[1][kmin];
-                        PetscReal px = x, py = y;
-                        if (wrap) {
-                            PetscReal sx = px - c0x, sy = py - c0y;
-                            px = c0x + sx - Lx * PetscFloorReal(sx / Lx + 0.5);
-                            py = c0y + sy - Ly * PetscFloorReal(sy / Ly + 0.5);
-                        }
-                        PetscReal ddx = px - c0x, ddy = py - c0y;
-                        PetscReal L   = PetscSqrtReal(ddx*ddx + ddy*ddy);
-                        if (L > 0.0) {
-                            PetscReal qx = c0x + R0*ddx/L, qy = c0y + R0*ddy/L;
-                            /* is that surface point buried inside another grain? */
-                            PetscInt  occ = -1;
-                            for (PetscInt j = 0; j < ng && occ < 0; j++) {
-                                if (j == kmin) continue;
-                                PetscReal axj = user->ice_grain_ax[j];
-                                PetscReal ayj = user->ice_grain_ay[j];
-                                if (PetscAbsReal(axj - ayj) > 1e-12 * axj) continue;
-                                PetscReal cjx = user->cent[0][j], cjy = user->cent[1][j];
-                                if (wrap) {
-                                    PetscReal sx = cjx - c0x, sy = cjy - c0y;
-                                    cjx = c0x + sx - Lx * PetscFloorReal(sx / Lx + 0.5);
-                                    cjy = c0y + sy - Ly * PetscFloorReal(sy / Ly + 0.5);
-                                }
-                                if (SQ(qx-cjx) + SQ(qy-cjy) < SQ(axj)) occ = j;
-                            }
-                            if (occ >= 0) {
-                                PetscReal R1  = user->ice_grain_ax[occ];
-                                PetscReal c1x = user->cent[0][occ], c1y = user->cent[1][occ];
-                                if (wrap) {
-                                    PetscReal sx = c1x - c0x, sy = c1y - c0y;
-                                    c1x = c0x + sx - Lx * PetscFloorReal(sx / Lx + 0.5);
-                                    c1y = c0y + sy - Ly * PetscFloorReal(sy / Ly + 0.5);
-                                }
-                                PetscReal best = PETSC_MAX_REAL;
-                                /* the occluder's own nearest surface point, if visible */
-                                PetscReal e1x = px - c1x, e1y = py - c1y;
-                                PetscReal L1  = PetscSqrtReal(e1x*e1x + e1y*e1y);
-                                if (L1 > 0.0) {
-                                    PetscReal q1x = c1x + R1*e1x/L1, q1y = c1y + R1*e1y/L1;
-                                    if (SQ(q1x-c0x) + SQ(q1y-c0y) >= SQ(R0))
-                                        best = PetscMin(best, PetscAbsReal(R1 - L1));
-                                }
-                                /* crease points -- always on the union boundary */
-                                PetscReal Dx = c1x - c0x, Dy = c1y - c0y;
-                                PetscReal Dd = PetscSqrtReal(Dx*Dx + Dy*Dy);
-                                if (Dd > 0.0 && Dd < R0 + R1 && Dd > PetscAbsReal(R0 - R1)) {
-                                    PetscReal aa = (Dd*Dd + R0*R0 - R1*R1) / (2.0*Dd);
-                                    PetscReal h2 = R0*R0 - aa*aa;
-                                    if (h2 > 0.0) {
-                                        PetscReal h  = PetscSqrtReal(h2);
-                                        PetscReal mx = c0x + aa*Dx/Dd, my = c0y + aa*Dy/Dd;
-                                        PetscReal ex = -Dy/Dd, ey = Dx/Dd;
-                                        for (PetscInt sg = -1; sg <= 1; sg += 2) {
-                                            PetscReal cxp = mx + sg*h*ex, cyp = my + sg*h*ey;
-                                            best = PetscMin(best,
-                                                PetscSqrtReal(SQ(px-cxp) + SQ(py-cyp)));
-                                        }
-                                    }
-                                }
-                                if (best < PETSC_MAX_REAL) sdf = -best;
-                            }
-                        }
-                    }
-                }
-                ice = 0.5 - 0.5 * PetscTanhReal(tc * sdf);
-            } else {
-                for (PetscInt k = 0; k < ng; k++) {
-                    PetscReal ax   = user->ice_grain_ax[k];
-                    PetscReal ay   = user->ice_grain_ay[k];
-                    PetscReal dx   = x - user->cent[0][k];
-                    PetscReal dy   = y - user->cent[1][k];
-                    PetscReal d    = PetscSqrtReal(SQ(dx / ax) + SQ(dy / ay)); /* =1 on ellipse boundary */
-                    PetscReal tc_k = tc * PetscSqrtReal(ax * ay);              /* keeps interface width ~eps */
-                    ice += 0.5 - 0.5 * PetscTanhReal(tc_k * (d - 1.0));
-                }
-            }
-            for (PetscInt k = 0; k < user->n_ice_shells; k++) {
-                PetscReal xs = user->ice_shell_x[k];
-                PetscReal Rs = user->ice_shell_R[k];
-                PetscReal ts = user->ice_shell_thickness[k];
-                PetscReal dist;
-                if (x < xs - Rs) {
-                    /* left of the shell's segment: distance to its fixed
-                     * endpoint (the floor curve is exactly 0 there) -- gives
-                     * a naturally rounded cap, not a sharp/independent window */
-                    dist = PetscSqrtReal(SQ(x - (xs - Rs)) + SQ(y));
-                } else if (x > xs + Rs) {
-                    dist = PetscSqrtReal(SQ(x - (xs + Rs)) + SQ(y));
-                } else {
-                    /* inside the segment: perpendicular distance to the floor
-                     * curve's local tangent line (good approximation for a
-                     * gently-curving bump); matches the endpoint formula
-                     * continuously at x=xs+-Rs since slope->0 there too */
-                    PetscReal slope = SedimentBumpFieldDeriv(user, x);
-                    dist = (y - y_bot) / PetscSqrtReal(1.0 + SQ(slope));
-                }
-                PetscReal dn      = dist / ts;
-                PetscReal tc_shell = tc * ts;
-                ice += 0.5 - 0.5 * PetscTanhReal(tc_shell * (dn - 1.0));
-            }
-            for (PetscInt k = 0; k < user->n_ice_flats; k++) {
-                PetscReal xf   = user->ice_flat_x[k];
-                PetscReal Rf   = user->ice_flat_R[k];
-                PetscReal Hf   = user->ice_flat_height[k];
-                PetscReal dlat = PetscAbsReal(x - xf) / Rf;             /* lateral window: =1 at edge */
-                PetscReal tc_lat = tc * Rf;
-                PetscReal w    = 0.5 - 0.5 * PetscTanhReal(tc_lat * (dlat - 1.0));
-                PetscReal flat = 0.5 - 0.5 * PetscTanhReal(tc * (y - Hf)); /* flat threshold, same
-                                                                             * interface width as
-                                                                             * everywhere else (no
-                                                                             * R-dependent sharpening) */
-                ice += w * flat;
-            }
-            ice = PetscMin(PetscMax(ice, 0.0), 1.0);
-
-            u[j][i].ice = ice;
-            u[j][i].tem = user->temp0
-                          + user->grad_temp0[0] * (x - 0.5 * Lx)
-                          + user->grad_temp0[1] * (y - 0.5 * Ly);
-
-            PetscScalar rho_vs, temp_loc = u[j][i].tem;
-            RhoVS_I(user, temp_loc, &rho_vs, NULL);
-            { PetscReal _pa = PetscMax(0.0, 1.0 - ice);
-              u[j][i].rhov = rho_vs * (user->hum0 * _pa + (1.0 - _pa)); }
-        }
-    }
-
-    ierr = DMDAVecRestoreArray(da, U, &u); CHKERRQ(ierr);
-    ierr = DMDestroy(&da);                 CHKERRQ(ierr);
-    ierr = PetscFree(gx); CHKERRQ(ierr);
-    ierr = PetscFree(gy); CHKERRQ(ierr);
+    ierr = FillIC2D(iga, U, user, IC_COORD_GREVILLE, ShapeMultiGrains2D); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 
+
+/* =========================================================================
+ * 6. PACKING LOADER
+ * =========================================================================*/
 
 /* =========================================================================
  * ReadGrainsFromFile

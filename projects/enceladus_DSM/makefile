@@ -28,7 +28,7 @@ INCLUDES = -I$(PETSC_DIR)/include \
 ###############################################################################
 ifeq ($(BUILD),debug)
   OPT_FLAGS  = -g3 -O0
-  WARN_FLAGS = -Wall -Wextra -Wno-unused-parameter
+  WARN_FLAGS = -Wall -Wextra -Wno-unused-parameter -Wshadow
 else
   # -march=native / -mtune=native: enable all M2 NEON/SIMD instructions
   # -funroll-loops: benefits tight Gauss-point loops in IGA assembly
@@ -36,7 +36,10 @@ else
   # -pipe: use pipes instead of temp files (faster compilation)
   OPT_FLAGS  = -O3 -march=native -mtune=native -funroll-loops \
                -fomit-frame-pointer -pipe
-  WARN_FLAGS = -Wall -Wextra -Wno-unused-parameter
+  # -Wshadow: a grain-index loop variable once shadowed the DMDA node index
+  #           `j` inside the multi-grain IC. Harmless then, silent corruption
+  #           the moment anyone indexed u[j][i] in that block.
+  WARN_FLAGS = -Wall -Wextra -Wno-unused-parameter -Wshadow
 endif
 
 # -MMD -MP: emit a .d dependency file alongside each .o so that editing
