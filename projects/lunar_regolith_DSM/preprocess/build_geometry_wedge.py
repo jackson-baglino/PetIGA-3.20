@@ -177,6 +177,11 @@ def main():
                          "but a longer lens with less room to migrate")
     ap.add_argument("--band-dr", type=float, default=BAND_DR,
                     help="band radial extent [m] (--ice-shape band only)")
+    ap.add_argument("--n-bands", type=int, default=1,
+                    help="number of bands, evenly spaced in x with EQUAL radial "
+                         "thickness (--ice-shape band only). Equal dr means band "
+                         "area ~ 2*alpha*r*dr grows with r, so the band nearer the "
+                         "wide mouth is the larger one")
     ap.add_argument("--tag", default=None,
                     help="suffix for output basenames, e.g. --tag steep -> "
                          "2D_wedge_band_steep.opts / wedge_steep.dat")
@@ -244,15 +249,30 @@ def main():
         dkappa = 1.0 / r1 - 1.0 / r2
         assert EPS / R < 0.05, f"eps/R = {EPS/R:.1%} (interface under-resolved)"
     else:
-        r1 = r_c - 0.5 * args.band_dr
-        r2 = r_c + 0.5 * args.band_dr
-        assert r1 > 0.0, f"band inner radius {r1:.3e} <= 0 — band_dr too large"
+        # n bands evenly spaced in x, all with the same radial thickness.
+        if args.n_bands == 1:
+            centres = [ice_cx]
+        else:
+            step = lx / (args.n_bands + 1)
+            centres = [(i + 1) * step for i in range(args.n_bands)]
+        bands = []
+        for xb in centres:
+            rc = xb - apex_x
+            bands.append((rc - 0.5 * args.band_dr, rc + 0.5 * args.band_dr))
+        assert bands[0][0] > 0.0, "innermost band inner radius <= 0 -- band_dr too large"
+        for i in range(1, len(bands)):
+            assert bands[i][0] > bands[i - 1][1], \
+                (f"bands {i-1} and {i} overlap (r1={bands[i][0]:.3e} <= "
+                 f"r2={bands[i-1][1]:.3e}) -- shrink --band-dr or use fewer bands")
         R = None
         contact_deg = 90.0
-        ice_x_lo, ice_x_hi = r1 + apex_x, r2 + apex_x
-        area = alpha * (r2 ** 2 - r1 ** 2)
+        ice_x_lo, ice_x_hi = bands[0][0] + apex_x, bands[-1][1] + apex_x
+        area = sum(alpha * (b[1] ** 2 - b[0] ** 2) for b in bands)
+        # Drive quoted for the innermost band, the one nearest the throat.
+        r1, r2 = bands[0]
         dkappa = 1.0 / r1 - 1.0 / r2
         assert EPS / r1 < 0.05, f"eps/r1 = {EPS/r1:.1%} (interface under-resolved)"
+        band_report = [(b[0], b[1], alpha * (b[1] ** 2 - b[0] ** 2)) for b in bands]
 
     assert ice_x_lo > EDGE_MARGIN, \
         (f"ice reaches x={ice_x_lo:.3e}, inside the {EDGE_MARGIN:.1e} m keep-out at "
@@ -278,8 +298,14 @@ def main():
         print(f"         R/h = {args.lens_R_over_h:.2f} (h_perp={h_perp:.4e}) -> "
               f"contact angle {contact_deg:.1f} deg, TOTALLY CONVEX")
     else:
-        print(f"  ice:   'band' — annulus r1={r1:.4e} r2={r2:.4e} about the apex, "
-              f"contact angle 90 deg (equilibrium)")
+        print(f"  ice:   'band' x{len(band_report)} — apex-centred annuli, contact 90 deg:")
+        for i, (a1, a2, ar) in enumerate(band_report):
+            print(f"           band {i}: r {a1:.4e}..{a2:.4e}  (x {a1+apex_x:.4e}.."
+                  f"{a2+apex_x:.4e})  area {ar:.4e} m^2")
+        if len(band_report) > 1:
+            print(f"           area ratio outer/inner = "
+                  f"{band_report[-1][2]/band_report[0][2]:.2f} "
+                  "(equal dr, area ~ 2*alpha*r*dr, so the wide-end band is larger)")
     print(f"         spans x {ice_x_lo:.4e}..{ice_x_hi:.4e}, local channel width "
           f"{w_at_ice:.3e}, area {area:.3e} m^2")
     print(f"         room to migrate inward: {ice_x_lo - EDGE_MARGIN:.3e} m "
@@ -321,9 +347,13 @@ def main():
         mask = lambda gx, gy: np.hypot(gx - ice_cx, gy - ice_cy) <= R
         shape_txt = f"convex lens, R/h={args.lens_R_over_h:.2f}, contact {contact_deg:.0f} deg"
     else:
-        mask = lambda gx, gy: ((np.hypot(gx - apex_x, gy - apex_y) >= r1) &
-                               (np.hypot(gx - apex_x, gy - apex_y) <= r2))
-        shape_txt = "apex-centred band, contact 90 deg"
+        def mask(gx, gy, _b=band_report):
+            rho = np.hypot(gx - apex_x, gy - apex_y)
+            out = np.zeros_like(gx, dtype=bool)
+            for a1, a2, _ in _b:
+                out |= (rho >= a1) & (rho <= a2)
+            return out
+        shape_txt = f"{len(band_report)} apex-centred band(s), contact 90 deg"
     preview(y_bot, y_top, mask, lx, ly, png,
             f"wedge pore — half-angle {math.degrees(alpha):.1f} deg, {shape_txt}, "
             f"at x={ice_cx:.2e} m (sustained drive {drive/RIPENING_REF:.2f}x ripening)")
@@ -361,8 +391,9 @@ def main():
 # is the shape that already sits at the natural 90-degree contact angle, with no
 # relaxation transient. Its inner meniscus is concave; it is not convex.
 #"""
-        ice_block = (f"-wedge_band_r1 {r1:.6e}\n"
-                     f"-wedge_band_r2 {r2:.6e}")
+        ice_block = ("-wedge_band_r1 " + ",".join(f"{b[0]:.6e}" for b in band_report)
+                     + "\n-wedge_band_r2 "
+                     + ",".join(f"{b[1]:.6e}" for b in band_report))
 
     with open(opts, "w") as f:
         f.write(f"""# =============================================================================

@@ -337,22 +337,47 @@ int main(int argc, char *argv[]) {
      * Annulus about the wedge apex. An apex-centred arc is perpendicular to
      * every ray from the apex, hence to both wedge walls, so this meets both
      * at the natural 90-degree contact angle -- which a circle cannot do. */
-    user.wedge_apex_x  = 0.0;
-    user.wedge_apex_y  = 0.0;
-    user.wedge_band_r1 = 0.0;
-    user.wedge_band_r2 = 0.0;
+    user.wedge_apex_x   = 0.0;
+    user.wedge_apex_y   = 0.0;
+    user.n_wedge_bands  = 0;
     ierr = PetscOptionsReal("-wedge_apex_x", "Wedge apex x [m] (virtual, outside the domain)",
              "", user.wedge_apex_x, &user.wedge_apex_x, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-wedge_apex_y", "Wedge apex y [m]",
              "", user.wedge_apex_y, &user.wedge_apex_y, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-wedge_band_r1",
-             "Inner radius of the ice band from the apex [m]; band is inactive unless r2 > r1",
-             "", user.wedge_band_r1, &user.wedge_band_r1, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-wedge_band_r2", "Outer radius of the ice band from the apex [m]",
-             "", user.wedge_band_r2, &user.wedge_band_r2, NULL); CHKERRQ(ierr);
-    if (user.wedge_band_r1 < 0.0)
-        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                "-wedge_band_r1 must be >= 0 (got %g)", (double)user.wedge_band_r1);
+    {
+        PetscInt n1 = MAX_SED_GRAINS, n2 = MAX_SED_GRAINS;
+        PetscBool f1;
+        ierr = PetscOptionsRealArray("-wedge_band_r1",
+                 "Inner radii of the ice bands from the apex [m], one per band",
+                 "", user.wedge_band_r1, &n1, &f1); CHKERRQ(ierr);
+        if (f1) {
+            user.n_wedge_bands = n1;
+            ierr = PetscOptionsRealArray("-wedge_band_r2",
+                     "Outer radii of the ice bands from the apex [m], one per band",
+                     "", user.wedge_band_r2, &n2, NULL); CHKERRQ(ierr);
+            if (n2 != n1)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_SIZ,
+                        "-wedge_band_r1 and -wedge_band_r2 must have the same "
+                        "length (%d vs %d)", (int)n1, (int)n2);
+            for (PetscInt k = 0; k < n1; k++) {
+                if (user.wedge_band_r1[k] < 0.0)
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                            "-wedge_band_r1[%d] must be >= 0 (got %g)",
+                            (int)k, (double)user.wedge_band_r1[k]);
+                if (user.wedge_band_r2[k] <= user.wedge_band_r1[k])
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                            "band %d: r2 (%g) must exceed r1 (%g)", (int)k,
+                            (double)user.wedge_band_r2[k], (double)user.wedge_band_r1[k]);
+                if (k > 0 && user.wedge_band_r1[k] <= user.wedge_band_r2[k-1])
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                            "bands %d and %d overlap (r1[%d]=%g <= r2[%d]=%g); "
+                            "they must be listed in increasing radius and be "
+                            "disjoint", (int)k-1, (int)k, (int)k,
+                            (double)user.wedge_band_r1[k], (int)k-1,
+                            (double)user.wedge_band_r2[k-1]);
+            }
+        }
+    }
 
     /* --- Frozen capillary bridges spanning a pore throat ------------------- *
      * Region outside two axis-centred meniscus circles and between their
@@ -558,6 +583,19 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
+    /* Default both faces to -humidity, so omitting these reproduces the old
+     * single-value behaviour exactly. -humidity is parsed well above this. */
+    user.rhovfix_lo = humidity;
+    user.rhovfix_hi = humidity;
+    ierr = PetscOptionsReal("-rhovfix_lo",
+             "Vapor reservoir on the m=0 face (x=0), as a MULTIPLE of rho_vs(temp0). "
+             "Defaults to -humidity. Specify at the 1e-6 level: a grain's own "
+             "Gibbs-Thomson equilibrium is within ~5e-6 of rho_vs, so a "
+             "humidity-style 0.99 swamps the curvature physics",
+             "", user.rhovfix_lo, &user.rhovfix_lo, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-rhovfix_hi",
+             "Vapor reservoir on the m=1 face (x=Lx), as a multiple of rho_vs(temp0)",
+             "", user.rhovfix_hi, &user.rhovfix_hi, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-rhovfix_axis",
              "With -flag_BC_rhovfix: pin vapor only on this axis's two faces "
              "(0=x, 1=y, 2=z; -1 = every face, the legacy default). A pore "
@@ -951,7 +989,9 @@ int main(int argc, char *argv[]) {
                  * exact axis condition) and pin vapor only on the true
                  * outer boundaries. */
                 if (user.axisym && l == 1 && m == 0) continue;
-                ierr = IGASetBoundaryValue(iga, l, m, 2, user.hum0 * rho0_vs); CHKERRQ(ierr);
+                /* m=0 is the low-coordinate face, m=1 the high one. */
+                PetscReal frac = (m == 0) ? user.rhovfix_lo : user.rhovfix_hi;
+                ierr = IGASetBoundaryValue(iga, l, m, 2, frac * rho0_vs); CHKERRQ(ierr);
             }
         }
     }

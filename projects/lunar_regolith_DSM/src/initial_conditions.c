@@ -596,7 +596,7 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
     /* The wedge band (below) is a standalone ice body, so a run may legitimately
      * have zero ice_grain_* circles. Only demand grains when nothing else would
      * put ice in the domain. */
-    const PetscBool has_band = (PetscBool)(user->wedge_band_r2 > user->wedge_band_r1);
+    const PetscBool has_band = (PetscBool)(user->n_wedge_bands > 0);
 
     if (ng <= 0 && !has_band && user->n_bridges <= 0)
         SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
@@ -608,11 +608,11 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
         "--- INITIAL CONDITIONS (2D multi-grain) ---\n"
         "  %d ice grain(s), %d sediment bump(s)\n",
         (int)ng, (int)user->n_sed_grains);
-    if (has_band)
+    for (PetscInt k = 0; k < user->n_wedge_bands; k++)
         PetscPrintf(PETSC_COMM_WORLD,
-            "  wedge band: apex = (%.4e, %.4e) m,  r1 = %.4e m,  r2 = %.4e m\n",
-            user->wedge_apex_x, user->wedge_apex_y,
-            user->wedge_band_r1, user->wedge_band_r2);
+            "  wedge band %d: apex = (%.4e, %.4e) m,  r1 = %.4e m,  r2 = %.4e m\n",
+            (int)k, user->wedge_apex_x, user->wedge_apex_y,
+            user->wedge_band_r1[k], user->wedge_band_r2[k]);
     for (PetscInt k = 0; k < user->n_bridges; k++)
         PetscPrintf(PETSC_COMM_WORLD,
             "  throat plug %d: axis y = %.4e m,  left meniscus (%.4e, r=%.4e), "
@@ -837,12 +837,12 @@ PetscErrorCode FormInitialMultiGrains2D(IGA iga, Vec U, AppCtx *user)
              * max(r1-rho, rho-r2) is the exact signed distance to the annulus
              * (negative inside), so the same tanh/tc used for every other
              * feature gives the equilibrium interface width here too. */
-            if (has_band) {
+            for (PetscInt k = 0; k < user->n_wedge_bands; k++) {
                 PetscReal dxb = x - user->wedge_apex_x;
                 PetscReal dyb = y - user->wedge_apex_y;
                 PetscReal rho = PetscSqrtReal(SQ(dxb) + SQ(dyb));
-                PetscReal sdf = PetscMax(user->wedge_band_r1 - rho,
-                                         rho - user->wedge_band_r2);
+                PetscReal sdf = PetscMax(user->wedge_band_r1[k] - rho,
+                                         rho - user->wedge_band_r2[k]);
                 ice += 0.5 - 0.5 * PetscTanhReal(tc * sdf);
             }
             /* Ice plugs spanning a pore throat: the INTERSECTION of two

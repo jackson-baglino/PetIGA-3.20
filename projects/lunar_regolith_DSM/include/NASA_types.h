@@ -39,6 +39,15 @@ typedef struct {
   // pore channel wants 0 (x-faces only): its top/bottom are solid regolith, and
   // pinning vapor there feeds the ice at its contact line.
   PetscInt  rhovfix_axis;
+  // Per-face vapor reservoir strength, as a multiple of rho_vs(temp0): lo is
+  // the m=0 face (x=0, "left"), hi the m=1 face (x=Lx, "right"). Both default
+  // to hum0, which reproduces the previous single-value behaviour exactly.
+  //
+  // These must be specified at the 1e-6 level, NOT as a humidity. A grain's own
+  // Gibbs-Thomson equilibrium sits within ~5e-6 of rho_vs (d0/r), so a
+  // humidity-style 0.99 is ~2000x the grain scale and simply sublimates
+  // everything uniformly, hiding the curvature physics the run is measuring.
+  PetscReal rhovfix_lo, rhovfix_hi;
 
   // Initial and boundary condition parameters
   PetscReal T_melt;  // Melting temperature of ice
@@ -96,8 +105,12 @@ typedef struct {
   // perpendicular to every ray from the apex, i.e. to both wedge walls, so
   // this is the shape that meets both at the natural 90-degree contact angle.
   // Inactive unless wedge_band_r2 > wedge_band_r1 (both default 0).
+  // n_wedge_bands annuli sharing one apex; band k spans wedge_band_r1[k] to
+  // wedge_band_r2[k]. Two bands let a wedge hold a pair of grains at different
+  // distances from the apex, i.e. at different confinement.
   PetscReal wedge_apex_x, wedge_apex_y;
-  PetscReal wedge_band_r1, wedge_band_r2;
+  PetscInt  n_wedge_bands;
+  PetscReal wedge_band_r1[MAX_SED_GRAINS], wedge_band_r2[MAX_SED_GRAINS];
 
   // Arrays storing geometry information for ice grains.
   //
