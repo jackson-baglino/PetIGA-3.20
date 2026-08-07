@@ -20,6 +20,7 @@ __pycache__/
 # Simulation outputs (generated at runtime)
 outputs/
 scratch/
+vtkOut/
 
 # Generated geometry previews (regenerable by preprocess/build_geometry_*.py)
 preprocess/*.vtk

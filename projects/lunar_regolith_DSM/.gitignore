@@ -20,13 +20,16 @@ __pycache__/
 # Simulation outputs (generated at runtime)
 outputs/
 scratch/
+tmp/
 
 # Generated geometry previews (regenerable by preprocess/build_geometry_*.py)
 preprocess/*.vtk
 
-# Parameter-sweep run outputs (drivers/reports are tracked explicitly with -f)
+# Parameter-sweep run outputs. The drivers (test/*.py) and reports (test/*.md)
+# ARE tracked -- only the generated sweep directories and logs are ignored.
 test/tune_*/
 test/plots/
+test/*.log
 # Stray SSA file written when a run is launched without -output_path
 /SSA_evo.dat
 

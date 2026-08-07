@@ -3,39 +3,47 @@
 ###############################################################################
 # macOS system files
 .DS_Store
+.DS_Store?
+._*
 
 # VS Code workspace settings
 .vscode/
 
+# Editor swap/backup files
+*.swp
+*.swo
+*~
+
 ###############################################################################
 # Virtual Environments & Python Caches
 ###############################################################################
-# Virtual environments (common names)
+# Virtual environments (any project: venv_DSM, venv_enceladus, venv_pf311, ...)
 .venv/
-env/
 venv/
-projects/permafrost/venv_pf311/*
-
-
-# Project-specific venvs
-projects/dry_snow_metamorphism/venv_DSM/
-projects/effective_thermal_cond/venv_EffK/
-projects/permafrost/venv_permafrost/
+venv_*/
+env/
 
 # Python bytecode and cache
 __pycache__/
 *.py[cod]
 
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
 ###############################################################################
-# Test, Temporary, & Input Files
+# PetIGA Upstream Directories (anchored to the repo root so they do not
+# swallow same-named subdirectories inside projects/, e.g. projects/*/test/)
 ###############################################################################
-Original/
-input/
-test/
+/Original/
+/input/
+/test/
 
 ###############################################################################
 # Image Files
 ###############################################################################
+# Blanket rule: figures are regenerable from postprocess scripts. Individual
+# projects re-include curated figures with a negation in their own .gitignore
+# (see projects/enceladus_DSM/.gitignore).
 *.png
 
 ###############################################################################
@@ -43,42 +51,52 @@ test/
 ###############################################################################
 demo/Metamorph
 demo/Oldfiles/
+demo/Original/
+demo/input/
 demo/ssa_evolution_plotTEST.png
 demo/venv/
 
 ###############################################################################
-# Effective Thermal Conductivity Project Outputs
+# Projects
+#
+# Each project also carries its own .gitignore (build artifacts, outputs/,
+# scratch/, preprocess/*.vtk, ...). The rules below cover only what is
+# specific to this repo layout or not handled there.
 ###############################################################################
-projects/effective_thermal_cond/crash_log.txt
+
+# --- projects/enceladus_DSM ---------------------------------------------------
+projects/enceladus_DSM/enceladus_dsm
+projects/enceladus_DSM/obj/
+projects/enceladus_DSM/outputs/
+projects/enceladus_DSM/output_files/
+projects/enceladus_DSM/scratch/
+projects/enceladus_DSM/vtkOut/
+# Generated geometry visualisation files (can be large; regenerate with
+# preprocess/build_geometry_*.py)
+projects/enceladus_DSM/preprocess/*.vtk
+
+# --- projects/lunar_regolith_DSM ----------------------------------------------
+projects/lunar_regolith_DSM/lunar_regolith_dsm
+projects/lunar_regolith_DSM/obj/
+projects/lunar_regolith_DSM/outputs/
+projects/lunar_regolith_DSM/output_files/
+projects/lunar_regolith_DSM/scratch/
+projects/lunar_regolith_DSM/tmp/
+projects/lunar_regolith_DSM/preprocess/*.vtk
+
+# --- projects/effective_thermal_cond ------------------------------------------
 projects/effective_thermal_cond/effective_k_ice
 projects/effective_thermal_cond/effective_k_ice_full
 projects/effective_thermal_cond/effective_k_ice_homog
 projects/effective_thermal_cond/obj/
 projects/effective_thermal_cond/outputs/
+projects/effective_thermal_cond/crash_log.txt
 projects/effective_thermal_cond/scratch.c
 projects/effective_thermal_cond/temperature.bin.info
+projects/effective_thermal_cond/MATLAB/matlab_ekeff
 
-###############################################################################
-# Dry Snow Metamorphism Project Outputs
-###############################################################################
-projects/dry_snow_metamorphism/configs/configs_scratch
-projects/dry_snow_metamorphism/dry_snow_metamorphism
-projects/dry_snow_metamorphism/inputs/scratch
-projects/dry_snow_metamorphism/obj/
-projects/dry_snow_metamorphism/output_files/
-projects/dry_snow_metamorphism/outputs/
-projects/dry_snow_metamorphism_scrap/*
-
-###############################################################################
-# Permafrost Project Outputs
-###############################################################################
-projects/permafrost/obj/
-projects/permafrost/outputs/
-projects/permafrost/permafrost
-# Generated geometry visualisation files (can be large; regenerate with
-# preprocess/build_geometry_*.py)
-projects/permafrost/preprocess/*.vtk
-projects/permafrost/inputs/tests/SthavisthaInputs/Assemble*
+# Archived project tarballs
+projects/*.zip
 
 ###############################################################################
 # PETSc & MPI Build Directories
@@ -89,16 +107,3 @@ MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/
 
 # HPC Builds
 HPC_Petsc-3.20
-projects/dry_snow_metamorphism/scratch/*
-projects/dry_snow_metamorphism/metadata/*
-projects/dry_snow_metamorphism/inputs/latest
-projects/dry_snow_metamorphism/inputs/manifest.csv
-projects/effective_thermal_cond/MATLAB/matlab_ekeff
-projects/permafrost/inputs/latest
-projects/dry_snow_metamorphism.zip
-projects/permafrost.zip
-projects/permafrost/scratch/*
-projects/permafrost/output_files/*
-projects/permafrost/postprocess/plotTripleWell.py
-projects/dry_snow_metamorphism/postprocess/MolaroSims/fonts/*
-projects/dry_snow_metamorphism/postprocess/MolaroSims/plots/*
