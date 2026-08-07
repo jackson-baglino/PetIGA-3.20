@@ -108,6 +108,35 @@ happen.
 
 ---
 
+## Input files: search `inputs/scratch/` before creating a new one
+
+`inputs/` holds only `solver.opts` and `README.md` at its top level. Every
+geometry file, experiment file, packing and mesh from earlier work lives in
+`inputs/scratch/`, in its original sub-directory layout.
+
+**Before writing any new input file, search the quarantine for one that already
+does the job:**
+
+```bash
+find inputs/scratch -name '*<something>*'
+```
+
+- **If it exists**, pull it back out and use it — never rewrite an equivalent
+  file under a new name:
+  `git mv inputs/scratch/geometry/<family>/<name>.opts inputs/geometry/<family>/<name>.opts`
+- **If it does not**, create a new one in the live tree.
+
+Either way, keep the existing sub-directory scheme: geometry under
+`geometry/<family>/`, experiments under `experiment/<family>/`. The run scripts
+run this search automatically and print the exact `git mv` when a name misses.
+
+The same quarantine convention applies to `preprocess/scratch/`,
+`postprocess/scratch/` and `studies/scratch/`. All of them are **pending
+deletion**, not archives — treat anything in them as gone unless it is pulled
+back into the live tree.
+
+---
+
 ## Code style
 
 - C99: declare loop variables inside `for (PetscInt i = ...)`.

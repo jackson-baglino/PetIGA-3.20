@@ -80,6 +80,27 @@ resolve_opts() {
     return 1
 }
 
+# Retired .opts files live on in inputs/scratch/ with their original layout.
+# When a name misses in the live tree, look there before giving up -- an opts
+# file that already exists should be pulled back out, never rewritten from
+# scratch under a new name.
+suggest_from_scratch() {
+    local kind="$1" name="$2" hit rel live
+    local scratch="$INPUTS_DIR/scratch/$kind"
+    [ -d "$scratch" ] || return 0
+    hit=$(find "$scratch" -type f -name "${name}.opts" -print 2>/dev/null | head -n 5)
+    [ -n "$hit" ] || return 0
+    echo ""
+    echo "   💡 Found it in the quarantine. Pull it back out rather than"
+    echo "      writing a new one:"
+    while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        rel="${f#$PROJECT_ROOT/}"              # inputs/scratch/<kind>/...
+        live="inputs/${rel#inputs/scratch/}"   # inputs/<kind>/...
+        echo "        git mv $rel $live"
+    done <<< "$hit"
+}
+
 set -uo pipefail
 
 # ---------------------------------------------------------------------------
@@ -183,13 +204,15 @@ fi
 if [ ! -f "$GEOM_OPTS" ]; then
     echo "❌ Error: Geometry opts not found: $GEOM_OPTS"
     echo "   Available geometries:"
-    (cd "$GEOMETRY_DIR" && find . -name "*.opts" | sed 's|^\./||; s/\.opts$//' | sort) | sed 's/^/     /'
+    (cd "$GEOMETRY_DIR" 2>/dev/null && find . -name "*.opts" | sed 's|^\./||; s/\.opts$//' | sort) | sed 's/^/     /'
+    suggest_from_scratch geometry "$geom_name"
     exit 1
 fi
 if [ ! -f "$EXP_OPTS" ]; then
     echo "❌ Error: Experiment opts not found: $EXP_OPTS"
     echo "   Available experiments:"
-    (cd "$EXPERIMENT_DIR" && find . -name "*.opts" | sed 's|^\./||; s/\.opts$//' | sort) | sed 's/^/     /'
+    (cd "$EXPERIMENT_DIR" 2>/dev/null && find . -name "*.opts" | sed 's|^\./||; s/\.opts$//' | sort) | sed 's/^/     /'
+    suggest_from_scratch experiment "$exp_name"
     exit 1
 fi
 

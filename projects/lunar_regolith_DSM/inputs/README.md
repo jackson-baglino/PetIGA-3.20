@@ -17,6 +17,33 @@ different meshes). In practice you never type this by hand — use
 `./scripts/Studio/run_lunar.sh <geom> <exp> [tag]`, which assembles the
 three files and adds `-output_path`.
 
+## Search `scratch/` before creating a new input file
+
+Only `solver.opts` and this README live at the top of `inputs/`. Every geometry
+file, experiment file and mesh from earlier work sits in `inputs/scratch/`,
+keeping its original sub-directory layout (`inputs/scratch/geometry/wedge/…`,
+`inputs/scratch/experiment/tgrad/…`).
+
+**Before writing a new input file, look for one that already does the job:**
+
+```bash
+find inputs/scratch -name '*<something>*'
+```
+
+If it exists, move it back and use it — do not rewrite it under a new name:
+
+```bash
+git mv inputs/scratch/geometry/wedge/<name>.opts inputs/geometry/wedge/<name>.opts
+```
+
+The run scripts do this search for you: when a geometry or experiment name
+misses, they check `inputs/scratch/` and print the exact `git mv` to run.
+
+Keep the same sub-directory scheme on both sides — geometry under
+`geometry/<family>/`, experiments under `experiment/<family>/`. `scratch/` is a
+quarantine, not an archive: it will be cleared out wholesale, so anything worth
+keeping needs to be pulled back into the live tree before then.
+
 ## What goes where
 
 ### `solver.opts` — numerical / model defaults
