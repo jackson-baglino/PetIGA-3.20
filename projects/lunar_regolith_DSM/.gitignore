@@ -19,8 +19,13 @@ __pycache__/
 
 # Simulation outputs (generated at runtime)
 outputs/
-scratch/
 tmp/
+# Stashed run folders at the project root only (currently
+# scratch/2D_two_ice_grains_boundary/). ANCHORED (leading slash) so it does not
+# swallow the quarantine folders -- preprocess/scratch/, inputs/scratch/,
+# postprocess/scratch/, studies/scratch/ -- which hold retired SOURCE and must
+# stay tracked so a file can be pulled back out on any clone.
+/scratch/
 
 # Generated geometry previews (regenerable by preprocess/build_geometry_*.py)
 preprocess/*.vtk
