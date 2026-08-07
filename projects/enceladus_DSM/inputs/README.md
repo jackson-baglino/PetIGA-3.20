@@ -74,6 +74,29 @@ In 1D, any `-ic_type` other than `single_ice` falls through to
 > `-ic_type` values (`ice_sed_pair`, `enclosed`, `single_sed`, `ice_cap`,
 > `capillary`, `contact_sed`, `slab_and_grains`) the solver no longer implements.
 
+## The `phi<X>_seed<N>_T-<M>` packing sweep is generated, not hand-written
+
+`geometry/phi*_seed*_T-*.opts` and most of `experiment/` are **derived output**
+of `preprocess/generate_study_opts.py`, which reads `inputs/packings/*/`
+(`grains.dat` + `metadata.json` — those are the real source). Do not hand-edit
+them; edit the generator and re-run it.
+
+Only the temperatures the study drivers actually use are kept in the repo,
+currently **T-20 and T-5**. The packing geometry is temperature-independent,
+and because `eps` is sized from `R_feat` (the K&P Eq. 45 kinetic bound) rather
+than from the temperature-dependent bound, `-eps` and the mesh come out
+*identical* at every temperature — a `T-30` file differs from `T-20` only in
+the `-eps_valid_temp` guard. So the extra temperatures cost 150 tracked files
+and buy nothing until a driver needs them.
+
+To bring a temperature back:
+
+```bash
+preprocess/generate_study_opts.py \
+    --packings-dir inputs/packings \
+    --temps -30                       # or: -5 -10 -15 -20 -25 -30 -35 -40
+```
+
 ## Example: same geometry, two humidities
 
 ```bash
