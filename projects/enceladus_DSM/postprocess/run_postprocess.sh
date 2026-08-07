@@ -61,85 +61,74 @@ echo "Detected dim = $dim"
 
 overall_exit=0
 
+# Every figure goes here, so the run folder root stays solver output only.
+PLOTS="$RUN_DIR/plots"
+mkdir -p "$PLOTS"
+
+# ---------------------------------------------------------------------------
+# run_step <label> <script> [args...]
+#
+# Runs one post-processing script and folds its REAL exit status into
+# overall_exit. The previous version did `cmd | sed` then `$?`, which reads
+# sed's status -- always 0 -- so every failure was silently counted as a pass.
+# PIPESTATUS[0] is the actual one.
+# ---------------------------------------------------------------------------
+run_step() {
+    local label="$1" script="$2"; shift 2
+    [[ -f "$script" ]] || { echo "⚠️  missing $(basename "$script") — skipping $label"; return; }
+    echo ""
+    echo "--- $label ---"
+    set +e
+    "$PYTHON" "$script" "$@" 2>&1 | sed 's/^/  /'
+    local rc=${PIPESTATUS[0]}
+    set -e
+    (( rc != 0 )) && { echo "  ⚠️  $(basename "$script") exited $rc"; (( overall_exit += rc )); }
+    return 0
+}
+
 # ---------------------------------------------------------------------------
 # VTK conversion (2D and 3D only — not meaningful for 1D)
+#
+# This is a format conversion, not a figure, so it writes to vtkOut/ and is
+# deliberately NOT routed into plots/. plot_fields_highres.py is likewise not
+# run here: it is slow and only wanted on demand.
 # ---------------------------------------------------------------------------
 if [[ "$dim" != "1" ]]; then
     if [[ -f "$RUN_DIR/igasol.dat" ]]; then
-        echo ""
-        echo "--- VTK conversion ---"
         mkdir -p "$RUN_DIR/vtkOut"
-        set +e
-        "$PYTHON" "$POSTPROCESS_DIR/plot_fields.py" --dir "$RUN_DIR" \
-            2>&1 | sed 's/^/  /'
-        (( overall_exit += $? )) || true
-        set -e
+        run_step "VTK conversion" "$POSTPROCESS_DIR/plot_fields.py" --dir "$RUN_DIR"
     else
         echo "⚠️  igasol.dat not found — skipping VTK conversion."
     fi
 fi
 
 # ---------------------------------------------------------------------------
-# 1D-specific plots
-# ---------------------------------------------------------------------------
-if [[ "$dim" == "1" ]]; then
-    echo ""
-    echo "--- 1D phase field profiles ---"
-    set +e
-    "$PYTHON" "$POSTPROCESS_DIR/plot_1d_profiles.py" \
-        --dir "$RUN_DIR" --out-dir "$RUN_DIR" \
-        2>&1 | sed 's/^/  /'
-    (( overall_exit += $? )) || true
-
-    echo ""
-    echo "--- 1D derived quantities ---"
-    "$PYTHON" "$POSTPROCESS_DIR/plot_1d_profiles.py" \
-        --dir "$RUN_DIR" --derived --save "$RUN_DIR/derived.png" \
-        2>&1 | sed 's/^/  /'
-    (( overall_exit += $? )) || true
-    set -e
-fi
-
-# ---------------------------------------------------------------------------
-# Scalar time-series (SSA_evo.dat)
+# Scalar time-series from SSA_evo.dat
 # ---------------------------------------------------------------------------
 if [[ -f "$RUN_DIR/SSA_evo.dat" ]]; then
-    echo ""
-    echo "--- Scalar time-series ---"
-    set +e
-    "$PYTHON" "$POSTPROCESS_DIR/plot_scalars.py" \
-        --file "$RUN_DIR/SSA_evo.dat" --save "$RUN_DIR/scalars.png" \
-        2>&1 | sed 's/^/  /'
-    (( overall_exit += $? )) || true
-    set -e
+    run_step "Porosity + interface density" \
+        "$POSTPROCESS_DIR/plot_porosity.py" --dir "$RUN_DIR" --save "$PLOTS/porosity.png"
+    run_step "Ice-air surface area" \
+        "$POSTPROCESS_DIR/plot_ssa.py" --dir "$RUN_DIR" --save "$PLOTS/ssa.png"
+else
+    echo "⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots."
 fi
 
 # ---------------------------------------------------------------------------
 # Time step diagnostic (outp.txt)
 # ---------------------------------------------------------------------------
 if [[ -f "$RUN_DIR/outp.txt" ]]; then
-    echo ""
-    echo "--- Time step diagnostic ---"
-    set +e
-    "$PYTHON" "$POSTPROCESS_DIR/plot_timestep.py" \
-        --dir "$RUN_DIR" --save "$RUN_DIR/timestep.png" \
-        2>&1 | sed 's/^/  /'
-    (( overall_exit += $? )) || true
-    set -e
+    run_step "Time step diagnostic" \
+        "$POSTPROCESS_DIR/plot_timestep.py" --dir "$RUN_DIR" --save "$PLOTS/timestep.png"
 fi
 
 # ---------------------------------------------------------------------------
 # Phase mass vs. time (igasol.dat + sol_*.dat required)
 # ---------------------------------------------------------------------------
 if [[ -f "$RUN_DIR/igasol.dat" ]] && ls "$RUN_DIR"/sol_*.dat &>/dev/null 2>&1; then
-    echo ""
-    echo "--- Phase mass vs. time ---"
-    set +e
-    "$PYTHON" "$POSTPROCESS_DIR/plot_mass.py" \
-        --dir "$RUN_DIR" --save "$RUN_DIR/mass.png" \
-        2>&1 | sed 's/^/  /'
-    (( overall_exit += $? )) || true
-    set -e
+    run_step "Phase mass vs. time" \
+        "$POSTPROCESS_DIR/plot_mass.py" --dir "$RUN_DIR" \
+        --save "$PLOTS/mass.png" --per-phase-dir "$PLOTS/mass"
 fi
 
 echo ""
@@ -150,6 +139,10 @@ else
     echo "  ✅ Post-processing complete"
 fi
 echo "  Results in: $RUN_DIR"
+echo "  Figures in: $PLOTS"
+if compgen -G "$PLOTS/*.png" >/dev/null; then
+    (cd "$PLOTS" && ls *.png) | sed 's/^/      /'
+fi
 echo "========================================================================="
 echo ""
 

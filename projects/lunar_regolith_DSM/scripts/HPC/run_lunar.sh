@@ -220,7 +220,8 @@ stage_output_folder() {
     local POSTPROCESS="$PROJECT_ROOT/postprocess"
     if [ -d "$POSTPROCESS" ]; then
         cp -r "$POSTPROCESS" "$folder/postprocess"
-        echo "  Copied postprocess/ → $folder/postprocess/"
+        rm -rf "$folder/postprocess/scratch" "$folder/postprocess/__pycache__"
+        echo "  Copied postprocess/ → $folder/postprocess/ (scratch/ excluded)"
     else
         echo "⚠️  postprocess/ directory not found at $POSTPROCESS — skipping."
     fi

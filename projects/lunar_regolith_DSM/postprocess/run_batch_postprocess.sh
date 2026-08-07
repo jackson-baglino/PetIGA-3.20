@@ -11,12 +11,19 @@
 #   4. Locally: bash <downloaded-parent>/run_batch_postprocess.sh
 #
 # The script auto-detects every per-test subfolder of the parent directory
-# (anything that contains an `igasol.dat`) and runs:
-#   - postprocess/plot_mass.py             (always; produces mass.png +
-#                                            mass_plots/{total,ice,sediment,
-#                                            vapor,change_loglog}.png)
-#   - postprocess/plot_fields.py        (dim >= 2: VTK conversion)
-#   - postprocess/plot_1d_profiles.py       (dim == 1: phase-field profiles)
+# (anything that contains an `igasol.dat`) and runs the standard sweep into
+# that run's own `plots/` folder:
+#   - plot_porosity.py   porosity + interface density   -> plots/porosity.png
+#   - plot_ssa.py        ice-air surface area           -> plots/ssa.png
+#   - plot_mass.py       phase mass vs time             -> plots/mass{.png,/}
+#   - plot_timestep.py   adaptive dt history            -> plots/timestep.png
+#   - plot_fields.py     VTK conversion (dim >= 2)      -> vtkOut/
+#
+# plot_fields.py is a format conversion rather than a figure, so it stays in
+# vtkOut/. plot_fields_highres.py is not in the sweep: it is slow and only
+# wanted on demand.
+#
+# 1D runs get no field plots -- plot_1d_profiles.py is in postprocess/scratch/.
 #
 # It uses the `postprocess/` directory that submit_batch.sh staged at the
 # batch root, so no source tree is required.
@@ -95,41 +102,44 @@ for run in "$BATCH_DIR"/*/; do
 
     failed_this=0
 
-    # ── 1. plot_mass.py (always) ────────────────────────────────────────
-    if [[ -f "$POSTPROCESS/plot_mass.py" ]]; then
-        echo "  plot_mass.py ..."
-        if ! "$PYTHON" "$POSTPROCESS/plot_mass.py" --dir "$run" 2>&1 | sed 's/^/    /'; then
-            echo "  ⚠ plot_mass.py failed"
-            failed_this=1
-        fi
+    # Every figure for this run goes in its own plots/ subfolder.
+    plots="$run/plots"
+    mkdir -p "$plots"
+
+    # Run one script, folding its REAL status in. `cmd | sed` then `$?` reads
+    # sed's status (always 0), so the previous `if ! cmd | sed` never fired.
+    step() {
+        local script="$POSTPROCESS/$1"; shift
+        [[ -f "$script" ]] || return 0
+        echo "  $(basename "$script") ..."
+        "$PYTHON" "$script" "$@" 2>&1 | sed 's/^/    /'
+        local rc=${PIPESTATUS[0]}
+        (( rc != 0 )) && { echo "  ⚠ $(basename "$script") exited $rc"; failed_this=1; }
+        return 0
+    }
+
+    # ── 1. scalar time-series from SSA_evo.dat ──────────────────────────
+    if [[ -f "$run/SSA_evo.dat" ]]; then
+        step plot_porosity.py --dir "$run" --save "$plots/porosity.png"
+        step plot_ssa.py      --dir "$run" --save "$plots/ssa.png"
     fi
 
-    # ── 1b. plot_energy.py (always) — phase-field free energy vs time ───
-    if [[ -f "$POSTPROCESS/plot_energy.py" ]]; then
-        echo "  plot_energy.py ..."
-        if ! "$PYTHON" "$POSTPROCESS/plot_energy.py" --dir "$run" 2>&1 | sed 's/^/    /'; then
-            echo "  ⚠ plot_energy.py failed"
-            failed_this=1
-        fi
+    # ── 2. phase mass ───────────────────────────────────────────────────
+    step plot_mass.py --dir "$run" --save "$plots/mass.png" \
+                      --per-phase-dir "$plots/mass"
+
+    # ── 3. time step diagnostic ─────────────────────────────────────────
+    if [[ -f "$run/outp.txt" ]]; then
+        step plot_timestep.py --dir "$run" --save "$plots/timestep.png"
     fi
 
-    # ── 2. dim-specific field plots ─────────────────────────────────────
-    if [[ "$dim" == "1" ]]; then
-        if [[ -f "$POSTPROCESS/plot_1d_profiles.py" ]]; then
-            echo "  plot_1d_profiles.py ..."
-            if ! "$PYTHON" "$POSTPROCESS/plot_1d_profiles.py" --dir "$run" 2>&1 | sed 's/^/    /'; then
-                echo "  ⚠ plot_1d_profiles.py failed"
-                failed_this=1
-            fi
-        fi
+    # ── 4. VTK conversion (2D/3D only). A format conversion, not a figure,
+    #      so it stays in vtkOut/ rather than plots/. ────────────────────
+    if [[ "$dim" != "1" ]]; then
+        step plot_fields.py --dir "$run"
     else
-        if [[ -f "$POSTPROCESS/plot_fields.py" ]]; then
-            echo "  plot_fields.py (VTK) ..."
-            if ! "$PYTHON" "$POSTPROCESS/plot_fields.py" --dir "$run" 2>&1 | sed 's/^/    /'; then
-                echo "  ⚠ plot_fields.py failed"
-                failed_this=1
-            fi
-        fi
+        echo "  (dim 1 — no 1D plotter in the current sweep; see"
+        echo "   postprocess/scratch/plot_1d_profiles.py)"
     fi
 
     if (( failed_this )); then

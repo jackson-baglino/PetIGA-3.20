@@ -338,11 +338,15 @@ stage_output_folder() {
     cp "$GEOM_OPTS"   "$folder/"
     cp "$EXP_OPTS"    "$folder/"
 
-    # Post-processing scripts — copy the full postprocess/ directory
+    # Post-processing scripts — copy postprocess/ so the run folder can be
+    # re-processed standalone after transfer, EXCLUDING scratch/: that is
+    # retired code pending deletion and there is no reason to ship a copy of
+    # it with every single run.
     local POSTPROCESS="$PROJECT_ROOT/postprocess"
     if [ -d "$POSTPROCESS" ]; then
         cp -r "$POSTPROCESS" "$folder/postprocess"
-        echo "  Copied postprocess/ → $folder/postprocess/"
+        rm -rf "$folder/postprocess/scratch" "$folder/postprocess/__pycache__"
+        echo "  Copied postprocess/ → $folder/postprocess/ (scratch/ excluded)"
     else
         echo "⚠️  postprocess/ directory not found at $POSTPROCESS — skipping."
     fi
@@ -443,104 +447,33 @@ run_simulation() {
 
 # ---------------------------------------------------------------------------
 # run_plotting
-# Calls the post-processing plotting script if it exists
+#
+# Delegates the whole sweep to postprocess/run_postprocess.sh, the same script
+# that is staged into the run folder and used to re-process a downloaded HPC
+# batch. It handles dim detection, VTK conversion, and every figure, writing
+# them all into <run>/plots/.
+#
+# This used to be three separate blocks here (run_plotting for VTK,
+# run_1d_plotting, and trailing plot_timestep/plot_mass calls) that duplicated
+# the standalone script and had already drifted from it -- they wrote PNGs
+# loose in the run root while the standalone script was being kept current. One
+# call means a local run and a downloaded HPC run produce identical output.
 # ---------------------------------------------------------------------------
 run_plotting() {
-    # Skip VTK for 1D runs — not meaningful and the file format differs
-    local dim
-    dim=$(awk '$1 == "-dim" { print $2 }' "$params_file" | head -n1)
-    dim=${dim:-2}
-    if [[ "$dim" == "1" ]]; then
-        return
-    fi
+    local sweep="$folder/postprocess/run_postprocess.sh"
+    [ -f "$sweep" ] || sweep="$PROJECT_ROOT/postprocess/run_postprocess.sh"
 
-    echo ""
-    echo "--- Running post-processing (VTK) ---"
-
-    local plot_script="$SCRIPTS_DIR/run_plot_fields.sh"
-
-    if [ ! -f "$plot_script" ]; then
-        echo "⚠️  Plotting script not found: $plot_script — skipping."
+    if [ ! -f "$sweep" ]; then
+        echo "⚠️  run_postprocess.sh not found — skipping post-processing."
         return
     fi
 
     set +e
-    # Pass the full output folder path so the script works regardless of subfolder depth
-    "$plot_script" "$folder"
-    local plot_exit=$?
+    bash "$sweep" "$folder"
+    local rc=$?
     set -e
-
-    if [ "$plot_exit" -ne 0 ]; then
-        echo "⚠️  VTK plotting exited with code $plot_exit"
-    else
-        echo "✅ VTK post-processing complete."
-    fi
-}
-
-# ---------------------------------------------------------------------------
-# run_1d_plotting
-# Detects 1D runs from the opts file and invokes the 1D Python post-processing
-# scripts automatically.  Silently skips for 2D/3D runs.
-# ---------------------------------------------------------------------------
-run_1d_plotting() {
-    # Extract the -dim value from the options file (default 2 if absent)
-    local dim
-    dim=$(awk '$1 == "-dim" { print $2 }' "$params_file" | head -n1)
-    dim=${dim:-2}
-
-    if [[ "$dim" != "1" ]]; then
-        return   # not a 1D run — nothing to do
-    fi
-
-    echo ""
-    echo "--- 1D post-processing ---"
-
-    local POSTPROCESS="$PROJECT_ROOT/postprocess"
-    local py_exit=0
-
-    if ! command -v python &>/dev/null && ! command -v python3 &>/dev/null; then
-        echo "⚠️  python not found — skipping 1D plots."
-        return
-    fi
-
-    local PYTHON
-    PYTHON=$(command -v python3 || command -v python)
-
-    set +e
-
-    # Per-step phase field PNGs
-    echo "  Generating phase field images..."
-    "$PYTHON" "$POSTPROCESS/plot_1d_profiles.py" \
-        --dir "$folder" --out-dir "$folder" \
-        2>&1 | sed 's/^/    /'
-    py_exit=$(( py_exit + $? ))
-
-    # Derived scalar time-series
-    echo "  Generating derived quantity plot..."
-    "$PYTHON" "$POSTPROCESS/plot_1d_profiles.py" \
-        --dir "$folder" --derived --save "$folder/derived.png" \
-        2>&1 | sed 's/^/    /'
-    py_exit=$(( py_exit + $? ))
-
-    # SSA scalar time-series
-    if [ -f "$folder/SSA_evo.dat" ]; then
-        echo "  Generating SSA scalar plot..."
-        "$PYTHON" "$POSTPROCESS/plot_scalars.py" \
-            --file "$folder/SSA_evo.dat" --save "$folder/scalars.png" \
-            2>&1 | sed 's/^/    /'
-        py_exit=$(( py_exit + $? ))
-    fi
-
-    set -e
-
-    if [ "$py_exit" -ne 0 ]; then
-        echo "⚠️  One or more 1D plots failed (exit sum $py_exit) — check output above."
-    else
-        echo "✅ 1D post-processing complete."
-        echo "   phase_step_*.png  →  $folder/"
-        echo "   derived.png       →  $folder/derived.png"
-        echo "   scalars.png          →  $folder/scalars.png"
-    fi
+    [ "$rc" -ne 0 ] && echo "⚠️  Post-processing exited with code $rc"
+    return 0
 }
 
 # =============================================================================
@@ -561,28 +494,7 @@ create_folder
 stage_output_folder
 run_simulation
 copy_source_code
-run_plotting
-run_1d_plotting
-
-PYTHON=$(command -v python3 || command -v python)
-
-# Time step diagnostic — always generated from outp.txt (all dims)
-if [ -f "$folder/outp.txt" ]; then
-    echo ""
-    echo "--- Time step diagnostic ---"
-    "$PYTHON" "$PROJECT_ROOT/postprocess/plot_timestep.py" \
-        --dir "$folder" --save "$folder/timestep.png" \
-        2>&1 | sed 's/^/    /'
-fi
-
-# Phase mass plot — always generated when solution snapshots are present
-if ls "$folder"/sol_*.dat &>/dev/null; then
-    echo ""
-    echo "--- Phase mass plot ---"
-    "$PYTHON" "$PROJECT_ROOT/postprocess/plot_mass.py" \
-        --dir "$folder" --save "$folder/mass.png" \
-        2>&1 | sed 's/^/    /'
-fi
+run_plotting   # timestep, mass, porosity, ssa and VTK all happen in here
 
 echo ""
 echo "========================================================================="
@@ -592,6 +504,7 @@ else
     echo "  ✅ Workflow completed successfully"
 fi
 echo "  Results: $folder"
+echo "  Figures: $folder/plots"
 echo "========================================================================="
 echo ""
 
