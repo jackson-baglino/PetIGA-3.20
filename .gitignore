@@ -50,6 +50,7 @@ __pycache__/
 # Demo Files & Outputs
 ###############################################################################
 demo/Metamorph
+demo/NASAv2
 demo/Oldfiles/
 demo/Original/
 demo/input/
