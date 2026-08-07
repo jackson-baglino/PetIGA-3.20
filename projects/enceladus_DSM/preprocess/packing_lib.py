@@ -525,13 +525,20 @@ def write_outputs(out, centres, radii, Lx, Ly, meta, px, py, preview=True):
 
     xoffs = (-Lx, 0.0, Lx) if px else (0.0,)
     yoffs = (-Ly, 0.0, Ly) if py else (0.0,)
-    emitted = []
-    for (x, y), r in zip(centres, radii):
+    # `src` records which grain each emitted row came from, and whether the row
+    # is the grain itself or one of its images. Without it a caller cannot tell
+    # the two apart: emitted rows are grouped BY GRAIN with that grain's images
+    # beside it, so emitted[:len(radii)] is an interleaved mixture, not the
+    # distinct grains. The preview used to assume otherwise and coloured the
+    # wrong circles as fillers.
+    emitted, src = [], []
+    for k, ((x, y), r) in enumerate(zip(centres, radii)):
         for ox in xoffs:
             for oy in yoffs:
                 cx, cy = x + ox, y + oy
                 if (-r <= cx <= Lx + r) and (-r <= cy <= Ly + r):
                     emitted.append((cx, cy, r))
+                    src.append((k, ox == 0.0 and oy == 0.0))
 
     meta["n_grain_rows_emitted"] = len(emitted)
     meta["n_edge_images"] = len(emitted) - len(radii)
@@ -562,11 +569,11 @@ def write_outputs(out, centres, radii, Lx, Ly, meta, px, py, preview=True):
         json.dump(meta, f, indent=2)
 
     if preview:
-        _preview(out, emitted, radii, Lx, Ly, meta)
+        _preview(out, emitted, src, radii, Lx, Ly, meta)
     return dat
 
 
-def _preview(out, emitted, radii, Lx, Ly, meta):
+def _preview(out, emitted, src, radii, Lx, Ly, meta):
     """Preview PNG. Optional -- a failure here must not lose the packing."""
     try:
         import matplotlib
@@ -584,9 +591,10 @@ def _preview(out, emitted, radii, Lx, Ly, meta):
         pad = float(np.max(radii))
         n_filler = meta.get("n_filler_grains", 0)
         n_matrix = len(radii) - n_filler
-        for k, (x, y, r) in enumerate(emitted):
-            img = not (0 <= x <= Lx and 0 <= y <= Ly)
-            filler = k < len(radii) and k >= n_matrix
+        # src[i] = (index of the source grain, is_this_the_grain_itself)
+        for (x, y, r), (gi, is_self) in zip(emitted, src):
+            img = not is_self
+            filler = is_self and gi >= n_matrix
             face = C_IMAGE if img else (C_FILLER if filler else C_MATRIX)
             ax.add_patch(Circle((x, y), r, facecolor=face, edgecolor="#1b4f72",
                                 lw=0.3, alpha=0.55 if img else 1.0,

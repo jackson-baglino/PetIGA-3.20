@@ -108,7 +108,15 @@ PERIODICITY
     --periodic xy    additionally wrap in y, healing the seam by relaxing
                      overlaps under the minimum image. Only grains near the
                      seam move; the reported max displacement says how much.
+    --periodic y     wraps along gravity but not across it. Provided for BC
+                     comparisons; x or xy is the more natural REV.
     --periodic none  plain window, no edge images.
+
+The flag controls the OUTPUT cell -- which edge images are written, how the
+raster and the metrics wrap, and how the window is cropped. Deposition itself
+always wraps in x, because the bed being modelled is wide and the domain is a
+window cut from it; a strip with free sides is a generator artifact rather than
+a microstructure anyone wants (see the note in deposit_at_porosity).
 
 Because the deposition is geometric there is no compaction under load, so
 density has no systematic drift with depth and the y-wrap is defensible. That
@@ -366,8 +374,9 @@ def fill_voids(rng, cen, rad, Lx, Ly, px, py, target_porosity, mean_r,
         # `context` is the surrounding bed the window crop discarded. Without
         # it an open edge reads as empty beyond the boundary and every filler
         # ends up in a band along that edge.
-        dist, dx, dy = pl.void_map(cen, rad, Lx, Ly, raster, raster, px, py,
-                                   context=context)
+        # Same convention as grade(): the parent bed, x always wrapped.
+        dist, dx, dy = pl.void_map(cen, rad, Lx, Ly, raster, raster, True, py,
+                                   context=None if py else context)
         big = float(dist.max())
         if big < r_floor or r_deficit < r_floor:
             break                     # no room, or nothing meaningful left
@@ -452,14 +461,40 @@ def coarse_grid_for(Lx, mean_r):
     return max(4, int(round(Lx / (2.5 * mean_r))))
 
 
-def grade(cen, rad, Lx, Ly, px, py, mean_r, raster):
-    """Every metric that goes into metadata.json and the acceptance gate."""
+def grade(cen, rad, Lx, Ly, px, py, mean_r, raster, context=None):
+    """Every metric that goes into metadata.json and the acceptance gate.
+
+    POROSITY is measured on the OUTPUT CELL, with its actual periodicity --
+    that is the porosity the solver will see, and it is what the caller asked
+    for.
+
+    HOMOGENEITY IS MEASURED ON THE PARENT BED, which is x-periodic because
+    that is how deposition ran, and y-periodic only if the output is. Judging
+    it on the output cell instead confuses a window-cutting artifact with a
+    microstructural defect: under an open axis `rasterize` CLIPS every grain
+    that overhangs the wall, which severs the solid there (so percolation
+    fails) and leaves nothing beyond it for the distance transform (so the
+    void against the wall reads enormous). With --periodic y that rejected 2
+    of 3 seeds for voids up to 3.4 mean radii and for x-percolation, on
+    packings whose interiors were fine.
+
+    A half-pore sitting against an open wall is a property of where the window
+    was cut, not of the bed. The bed is the thing that is homogeneous or not,
+    and the bed is what has to be a valid REV.
+    """
     solid = pl.rasterize(cen, rad, Lx, Ly, raster, raster, px, py)
     porosity = 1.0 - float(solid.mean())
+
+    # The parent bed: x always wraps (deposition did), y follows the output.
+    mpx, mpy = True, py
+    parent = pl.rasterize(cen, rad, Lx, Ly, raster, raster, mpx, mpy)
     ncoarse = coarse_grid_for(Lx, mean_r)
-    cv, max_void = pl.uniformity(solid, Lx, Ly, px, py, ncoarse=ncoarse)
-    sx, sy, sfrac, sn = pl.percolates(solid)
-    px_, py_, pfrac, pn = pl.percolates(~solid)
+    cv, _ = pl.uniformity(parent, Lx, Ly, mpx, mpy, ncoarse=ncoarse)
+    dist, _, _ = pl.void_map(cen, rad, Lx, Ly, raster, raster, mpx, mpy,
+                             context=None if mpy else context)
+    max_void = float(dist.max())
+    sx, sy, sfrac, sn = pl.percolates(parent)
+    px_, py_, pfrac, pn = pl.percolates(~parent)
     coord, ncont, throat = pl.descriptors(cen, rad, Lx, Ly, px, py)
 
     # HALF-DOMAIN ASYMMETRY -- the largest-scale homogeneity mode, and the one
@@ -473,9 +508,9 @@ def grade(cen, rad, Lx, Ly, px, py, mean_r, raster):
     # --periodic xy seam indefensible): across seeds the sign flips and a
     # larger crop margin does not shrink it, so what is left is configurational
     # variance rather than a depth drift.
-    hy, hx = solid.shape[0] // 2, solid.shape[1] // 2
-    bot, top = float(solid[:hy].mean()), float(solid[hy:].mean())
-    lef, rig = float(solid[:, :hx].mean()), float(solid[:, hx:].mean())
+    hy, hx = parent.shape[0] // 2, parent.shape[1] // 2
+    bot, top = float(parent[:hy].mean()), float(parent[hy:].mean())
+    lef, rig = float(parent[:, :hx].mean()), float(parent[:, hx:].mean())
     asym_y = abs(bot - top) / max(bot + top, 1e-30) * 2.0
     asym_x = abs(lef - rig) / max(lef + rig, 1e-30) * 2.0
 
@@ -522,8 +557,20 @@ def deposit_at_porosity(seed, a, px, py, want, verbose=True):
 
     def attempt(rt):
         rng = np.random.default_rng(seed)
+        # DEPOSITION ALWAYS WRAPS IN X, whatever the output periodicity. The
+        # bed being modelled is wide and the domain is a window cut from it, so
+        # a strip with free sides is a generator artifact, not a microstructure
+        # anyone wants: grains at x=0 and x=Lx have no neighbours beyond the
+        # edge, which opens large voids there AND makes the min-surface stop
+        # criterion over-deposit to fill the sparse edge columns, driving the
+        # interior too dense. With --periodic y that showed up as porosity
+        # landing at 0.22-0.30 against a 0.325 target with voids up to 2.8
+        # mean radii, and two of three seeds failing outright.
+        #
+        # Output x-periodicity (`px`) is a separate question -- it controls
+        # edge images, rasterization and the crop -- and is applied below.
         cen, rad = deposit(rng, a.Lx, strip_h, a.mean_r, a.sigma_ln,
-                           a.radius_clip_frac, rt, px)
+                           a.radius_clip_frac, rt, True)
         # Keep the WHOLE strip alongside the window. The grains the crop
         # discards are the bed that physically continues past the domain
         # edge, and the filler pass needs them so an open boundary does not
@@ -590,22 +637,32 @@ def build_once(seed, a, px, py, verbose=True):
         cen[:, 1] = np.mod(cen[:, 1], a.Ly)
         if px:
             cen[:, 0] = np.mod(cen[:, 0], a.Lx)
-        pl.relax(cen, rad, a.Lx, a.Ly, px, py,
+        # Relax with x WRAPPED, not with the output px. On an open axis
+        # pl.relax clips centres to keep every grain wholly inside, which here
+        # would bodily yank each x-overhanging grain inward and sever the
+        # solid across that boundary -- under --periodic y that made
+        # x-percolation fail on 23 of 24 attempts, against 0-1 of 24 for the
+        # other three modes. This step is healing the y seam of an x-periodic
+        # bed; x must wrap for it.
+        pl.relax(cen, rad, a.Lx, a.Ly, True, py,
                  tol_frac=a.tol_frac, max_iter=a.max_iter)
-        d = pl.min_image(cen - before, a.Lx, a.Ly, px, py)
+        d = pl.min_image(cen - before, a.Lx, a.Ly, True, py)
         seam_shift = float(np.hypot(d[:, 0], d[:, 1]).max())
 
     cen, rad, n_fill = fill_voids(rng, cen, rad, a.Lx, a.Ly, px, py,
                                   a.porosity, a.mean_r, a.sigma_ln,
                                   a.radius_clip_frac, a.fill_raster,
-                                  # Only where y is OPEN. Under --periodic xy
-                                  # the cell is self-contained and its own
-                                  # images ARE the surroundings; adding the
-                                  # strip there is phantom solid that hides
-                                  # real voids (1.45 reported vs 2.27 true).
+                                  # Context is for an OPEN axis only. Where y
+                                  # wraps, the cell's own images already ARE
+                                  # the surroundings and adding the strip is
+                                  # phantom solid that hides real voids (1.45
+                                  # reported against a true 2.27). x never
+                                  # needs it: deposition wrapped in x, so the
+                                  # images are the real neighbours.
                                   context=None if py else strip)
 
-    meta = grade(cen, rad, a.Lx, a.Ly, px, py, a.mean_r, a.raster)
+    meta = grade(cen, rad, a.Lx, a.Ly, px, py, a.mean_r, a.raster,
+                 context=strip)
     meta.update({
         "n_grains": len(rad),
         "n_matrix_grains": n_matrix,
@@ -650,7 +707,7 @@ def main(argv=None):
                    help="write straight to --out instead of grouping by "
                         "periodicity")
 
-    p.add_argument("--periodic", choices=["x", "xy", "none"], default="x",
+    p.add_argument("--periodic", choices=["x", "y", "xy", "none"], default="x",
                    help="which axes wrap (default: x)")
     p.add_argument("--roll-tol", dest="roll_tol", type=float, default=None,
                    help="rolling budget [rad]; default: bisected to hit the "
@@ -705,7 +762,7 @@ def main(argv=None):
     if a.Ly is None:
         a.Ly = a.Lx
     px = a.periodic in ("x", "xy")
-    py = a.periodic == "xy"
+    py = a.periodic in ("y", "xy")
 
     # Group output by periodicity. The same packing parameters under different
     # wrapping are different microstructures and belong in different runs, but
