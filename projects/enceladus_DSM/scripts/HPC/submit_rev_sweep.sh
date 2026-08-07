@@ -42,7 +42,7 @@ TAG="${1:-rev}"; shift || true
 [[ "${1:-}" == "--" ]] && shift || true
 EXTRA=("$@")
 
-EXP="snow_T-20_rev1day"
+EXP="snow_T-20_h1.00_1d_rev"
 SIZES=(0.5 1 1.5 2 2.5 3)
 
 # k_eff every 20 steps: enough points to see the trajectory without the

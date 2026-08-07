@@ -136,7 +136,7 @@ Deliberately NOT in scope:
   (rho_ice·beta_scaled)·(...) has an analytic 3D form; also comparable to the
   same test run planar (expect the 2/R vs 1/R curvature factor where
   capillarity drives). Verifies the axisym physics, not just the plumbing.
-- **V3 — Molaro rerun (HPC):** 2D_molaro_axisym + molaro_T-20_h1.00,
+- **V3 — Molaro rerun (HPC):** 2D_molaro_axisym + molaro_T-20_h1.00_2h_a2e-3,
   neck_width.py --axisym. Compare against the planar s050 curve (+17.8%):
   the 3D-curvature hypothesis predicts ~2–3× that growth. Then the residual
   gap to the experiment's ~2× is the alpha_c calibration, run as a short

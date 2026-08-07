@@ -19,10 +19,10 @@
 #   ./scripts/Studio/run_batch_tests.sh                                  # default set
 #   ./scripts/Studio/run_batch_tests.sh --skip-1d                        # 2D-only
 #   ./scripts/Studio/run_batch_tests.sh --tag mylabel
-#   ./scripts/Studio/run_batch_tests.sh --tests "2D_touching_grains:1day_T-20_h1.00,2D_single_ice:1day_T-20_h0.95"
+#   ./scripts/Studio/run_batch_tests.sh --tests "2D_touching_grains:base_T-20_h1.00_1d,2D_single_ice:base_T-20_h0.95_1d"
 #
 # Or run a single one-off:
-#   ./scripts/Studio/run_batch_tests.sh --geom 2D_touching_grains --exp 1day_T-20_h1.00
+#   ./scripts/Studio/run_batch_tests.sh --geom 2D_touching_grains --exp base_T-20_h1.00_1d
 # =============================================================================
 
 set -uo pipefail
@@ -63,19 +63,19 @@ PYTHON=$(command -v python3 || command -v python || true)
 # ---------------------------------------------------------------------------
 DEFAULT_TESTS=(
     # ---- 1D tests at h=0.95, T=-20 ----
-    "1D_ice_slab:1day_T-20_h0.95"
-    "1D_ice_slab_hires:1day_T-20_h0.95"
-    "1D_single_ice:1day_T-20_h0.95"
-    "1D_single_ice_hires:1day_T-20_h0.95"
+    "1D_ice_slab:base_T-20_h0.95_1d"
+    "1D_ice_slab_hires:base_T-20_h0.95_1d"
+    "1D_single_ice:base_T-20_h0.95_1d"
+    "1D_single_ice_hires:base_T-20_h0.95_1d"
 
     # ---- 2D tests at saturation (two-grain neck physics — sintering / ripening) ----
-    "2D_two_ice_grains_boundary:1day_T-20_h1.00"
+    "2D_two_ice_grains_boundary:base_T-20_h1.00_1d"
 
     # ---- 2D tests at undersaturation (bulk sublimation driving force) ----
-    "2D_single_ice:1day_T-20_h0.95"
-    "2D_single_ice_hires:1day_T-20_h0.95"
-    "2D_ice_slab:1day_T-20_h0.95"
-    "2D_ice_slab_hires:1day_T-20_h0.95"
+    "2D_single_ice:base_T-20_h0.95_1d"
+    "2D_single_ice_hires:base_T-20_h0.95_1d"
+    "2D_ice_slab:base_T-20_h0.95_1d"
+    "2D_ice_slab_hires:base_T-20_h0.95_1d"
 )
 
 # ---------------------------------------------------------------------------

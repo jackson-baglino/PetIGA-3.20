@@ -5,7 +5,7 @@
 #
 # R0 = 101 um (Molaro large), R1 = 50 um (smaller than Molaro's 72.5 um small
 # grain, per user request — stronger curvature contrast). Boundary-centered
-# IC as in the demo pair; run with ripening_full_T-20 (sublimation ON).
+# IC as in the demo pair; run with ripen_T-20_h1.00_30d_full (sublimation ON).
 # Ly enlarged to preserve the original clearance ratio above the big grain
 # (0.355*R -> 35.8 um = 104 elements; the user-edited 2.357e-4 left only
 # 17 um). Same eps/mesh rule as the small-scale demo: movies comparable.

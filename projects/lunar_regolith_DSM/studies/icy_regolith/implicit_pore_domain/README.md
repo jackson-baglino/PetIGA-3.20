@@ -95,10 +95,10 @@ at one end, one big attractor grain at the other), which fixes the end state
 in the initial condition.
 
 ```bash
-./scripts/HPC/submit_lunar.sh 2D_regolith_pore_divots Tgrad_T-20_G50_3d divot_seed
+./scripts/HPC/submit_lunar.sh 2D_regolith_pore_divots tgrad_T-20_h1.00_3d_G50 divot_seed
 ```
 
-`Tgrad_T-20_G50_3d` is −20 °C, saturated, `dT/dx = −50 K/m` (left warm), with
+`tgrad_T-20_h1.00_3d_G50` is −20 °C, saturated, `dT/dx = −50 K/m` (left warm), with
 the left/right faces pinned and top/bottom insulating so the gradient survives
 at the walls. It needs no edits — and its −20 °C matches this geometry's
 `-eps_valid_temp -20` lock.
@@ -196,9 +196,9 @@ solver's wall formula to 4e-20 m, against ~9e-9 m for the bump walls.
 
 ```bash
 # config check first — confirm the 90 deg contact before spending an allocation
-./scripts/Studio/run_lunar.sh  2D_wedge_band Tgrad_T-20_G0_10s config_check
+./scripts/Studio/run_lunar.sh  2D_wedge_band tgrad_T-20_h1.00_10s_G0 config_check
 # production
-./scripts/HPC/submit_lunar.sh  2D_wedge_band Tgrad_T-20_G0_90d wedge_migration
+./scripts/HPC/submit_lunar.sh  2D_wedge_band tgrad_T-20_h1.00_90d_G0 wedge_migration
 # the answer
 python3 postprocess/track_wedge_band.py --dir <run folder> \
     --save-csv wedge_band.csv --save-fig wedge_band.png --no-show
@@ -226,9 +226,9 @@ divot geometry.
 ## Running
 
     # from the project root
-    ./scripts/Studio/run_lunar.sh 2D_regolith_pore        30day_T-20_h1.00_arrh
-    ./scripts/Studio/run_lunar.sh 2D_regolith_pore_throat 30day_T-20_h1.00_arrh
-    ./scripts/Studio/run_lunar.sh 2D_regolith_pore_lining 30day_T-20_h1.00_arrh
+    ./scripts/Studio/run_lunar.sh 2D_regolith_pore        base_T-20_h1.00_30d_a1.34e-2
+    ./scripts/Studio/run_lunar.sh 2D_regolith_pore_throat base_T-20_h1.00_30d_a1.34e-2
+    ./scripts/Studio/run_lunar.sh 2D_regolith_pore_lining base_T-20_h1.00_30d_a1.34e-2
 
 (3 DOF; `run_lunar.sh` sizes the rank count from the `# DOF_GRID` comment.)
 
@@ -252,7 +252,7 @@ the temperature-dependent **kinetic bound**, so eps is grain-size independent
 here — every strategy passes `eps/R_ave < 5%` (3.0%, 3.0%, 4.8%, 4.1%).
 
 **Consequence:** these geometries are valid **only at −20 °C**, paired with a
-−20 °C experiment (`30day_T-20_h1.00_arrh`, which sets the matching kinetics).
+−20 °C experiment (`base_T-20_h1.00_30d_a1.34e-2`, which sets the matching kinetics).
 For any other temperature — notably lunar PSR temperatures (40–120 K,
 `docs/material_parameters.md`) — **recompute eps** and regenerate:
 

@@ -1,0 +1,42 @@
+# =============================================================================
+# experiment/tgrad/tgrad_T-20_h1.00_10s_G50.opts — 10 SECONDS at -20 C, saturated,
+# HORIZONTAL gradient |dT/dx| = 50 K/m (left warm -> right cold).
+#
+# CONFIGURATION CHECK, NOT SCIENCE. Identical physics to tgrad_T-20_h1.00_3d_G50
+# (same temperature, humidity, gradient, BCs and kinetics) with t_final cut to
+# 10 s, so a new geometry can be opened in ParaView and eyeballed before it
+# costs an HPC allocation. 10 s is ~0.02 tau_sub — nothing measurable moves.
+#
+# WHAT TO LOOK AT. The initial condition is written as sol_00000.dat BEFORE
+# any solve (OutputMonitor, src/monitoring.c:298), together with igasol.dat —
+# so the configuration is on disk within seconds of launch even if the run
+# is interrupted. Everything after that is confirmation the solver is happy
+# with the mesh.
+#
+# CHECKLIST for a wall-seated geometry (e.g. 2D_regolith_pore_divots):
+#   - every ice grain sits IN its divot, none buried in or floating off a wall
+#   - the diffuse band is smooth over the divot flanks, no kinks at seat edges
+#   - the temperature field ramps left-to-right and is NOT flattened at the
+#     top/bottom walls (those faces must stay insulating)
+#   - the IC banner lists the grain count/centres the .opts asked for
+#
+# -outp 1 overrides the time-synchronised output of the longer Tgrad files:
+# with only a handful of steps we want every one of them.
+# =============================================================================
+
+-t_final 1.0e1                          # 10 seconds
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 -50.0,0.0,0.0                # left warm -> right cold, |dT/dx| = 50 K/m
+
+-flag_BC_Tfix 1                          # pin left/right walls; top/bottom insulating
+
+-outp 1                                  # every step (few enough to want them all)
+
+-beta_sub0 5.9216e5                      # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                        # physical capillary length at -20 C
+
+-dtmax 2.0                               # cap dt so 10 s is a few steps, not one
+-dtCFL 1
+-dtCFL_dphimax 0.2

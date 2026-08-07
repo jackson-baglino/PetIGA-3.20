@@ -65,7 +65,7 @@ opts files, sizes the rank count, and stages a reproducible copy of the run:
 ```bash
 ./scripts/Studio/run_lunar.sh <geometry> <experiment> [tag] [-- extra -flags]
 # e.g.
-./scripts/Studio/run_lunar.sh 2D_two_ice_grains_boundary 1day_T-20_h1.00
+./scripts/Studio/run_lunar.sh 2D_two_ice_grains_boundary base_T-20_h1.00_1d
 ```
 
 Geometry and experiment name files in `inputs/geometry/` and

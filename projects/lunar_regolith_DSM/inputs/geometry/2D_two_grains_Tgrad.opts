@@ -35,7 +35,7 @@
 # eps = 8.584e-7 and Nx/Ny below are comp_eps.py output for THIS domain at
 # R = 1.0e-4, T0 = -20 C, alpha_c = 1.341e-2 (h = eps/sqrt(2), ~7.5 elements
 # across the visible interface). This is the SAME eps / scale as the validated
-# 2D_random_bumpy_floor_molaroscale geometry and the 30day_T-20_h1.00_arrh
+# 2D_random_bumpy_floor_molaroscale geometry and the base_T-20_h1.00_30d_a1.34e-2
 # experiment; the derived tau_sub = 5.233e2 s is what sets their dtmax = 5.7e2.
 #   Re-derive on any change to R / T0 / alpha_c:
 #     python preprocess/comp_eps.py --Lx 7.5e-4 --Ly 3.0e-4 --Rave 1.0e-4 \

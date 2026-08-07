@@ -42,7 +42,7 @@ DRY=0
 [[ "${1:-}" == "--dry-run" ]] && { DRY=1; WHICH="${2:-all}"; }
 
 SUB=./scripts/HPC/submit_enceladus.sh
-EXP=calib_T-20_7d
+EXP=calib_T-20_h1.00_7d
 
 cmds=()
 
@@ -53,7 +53,7 @@ cmds=()
 # different starting geometry. eps = 8.584e-7 / 6.030e-7 / 3.479e-7.
 if [[ "$WHICH" == "all" || "$WHICH" == "molaro" ]]; then   # not in `heavy`
   for e in epsloose epsmid epsstrict; do
-    cmds+=("$SUB 2D_molaro_axisym_T-20pair_union_$e molaro_T-20_h1.00_arrh calib_$e")
+    cmds+=("$SUB 2D_molaro_axisym_T-20pair_union_$e molaro_T-20_h1.00_2h_a1.34e-2 calib_$e")
   done
 fi
 

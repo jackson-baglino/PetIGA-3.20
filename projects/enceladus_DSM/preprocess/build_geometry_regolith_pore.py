@@ -76,7 +76,7 @@ Lx = (N_BUMPS - 1) * (2 * R_MED * (1 - 0.26))
 # — binding constraint is the T-dependent kinetic bound, so it is grain-size
 # independent here (all strategies pass eps/R_ave < 5%). Verified: reproduces
 # the validated 2D_ripening_two_sided reference run exactly, and pairs with the
-# 30day_T-20_h1.00_arrh experiment's beta_sub0=5.9216e5 / d0_sub0=1.0166e-9.
+# base_T-20_h1.00_30d_a1.34e-2 experiment's beta_sub0=5.9216e5 / d0_sub0=1.0166e-9.
 # RECOMPUTE for any other run temperature:
 #   python3 preprocess/comp_eps.py --Lx {Lx} --Ly {Ly} --Rave <R_smallest_ice> \
 #           --T0 <degC> --alpha <alpha_c>
@@ -363,7 +363,7 @@ def main():
 # alpha_c={ALPHA_C:g} (kinetic-bound limited, so grain-size independent here;
 # eps/R_smallest={EPS/Rmin*100:.1f}% < 5%). Reproduces the validated
 # 2D_ripening_two_sided reference exactly. PAIR ONLY with a T={T0_C:g}C
-# experiment (e.g. 30day_T-20_h1.00_arrh, which sets the matching
+# experiment (e.g. base_T-20_h1.00_30d_a1.34e-2, which sets the matching
 # beta_sub0/d0_sub0). RECOMPUTE eps for any other run temperature.
 # =============================================================================
 # DOF_GRID: {Nx+P} {Ny+P}

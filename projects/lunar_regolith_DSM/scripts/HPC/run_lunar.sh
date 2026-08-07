@@ -20,7 +20,7 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 ###############################################################################
 # Input arguments
 #   $1   : geometry name (e.g. 2D_touching_grains)
-#   $2   : experiment name (e.g. 1day_T-20_h1.00)
+#   $2   : experiment name (e.g. base_T-20_h1.00_1d)
 #   $3   : Title prefix for the run (used in folder name)
 #   $4.. : extra options forwarded verbatim to the lunar_regolith_dsm executable,
 #          appended after the three -options_file flags so they override

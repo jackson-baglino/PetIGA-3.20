@@ -1,0 +1,37 @@
+# =============================================================================
+# experiment/base/base_T-5_h1.00_30d.opts — 30 days at -5°C, saturated humidity
+#
+# Diagnostic experiment for Ostwald ripening visibility. At -5°C the saturation
+# vapor density rho_v_sat is roughly an order of magnitude larger than at -20°C
+# (Clausius-Clapeyron: exponential in 1/T), giving the system a much larger
+# vapor "budget" available for mass transfer between grains. The Gibbs-Thomson
+# driving force scales the same way, so on the same geometry we expect to see
+# ripening over the same 30-day window that produced essentially no signal at
+# -20°C (TOT_ICE +0.001%).
+#
+# Same geometry / IC as the -20°C run for direct comparison.
+# =============================================================================
+
+-t_final 2592000.0                      # 30 days (s)
+
+-temp -5.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+# Physical capillary length (K&P 2009 Eq. 13: d0 = gamma_iv*V_m/(R*T) =
+# 0.109 * 1.96e-5 / (8.314 * 268.15) = 9.5975e-10 m at -5°C). The code default
+# is M&F 2024's 100x-inflated 1e-7, which makes all capillarity-driven
+# kinetics (carried by the AC/source coupling via lambda = a1*eps/d0_sub —
+# grain collapsed in 435 s instead of the physical ~12.6 h, and near collapse
+# the interface crossed 10-100 cells/step at dt=178 s, generating the Gibbs
+# undershoot ripples seen in every 2026-07-09 run. comp_eps.py sizes eps/mesh
+# from the PHYSICAL d0 (binding bound Eq. 45: d0/(beta_sub*vn) = 9.7e-7 m),
+# so this geometry's eps = 4.85e-7 and 121x149 mesh already support the
+# physical value — the inflation was never needed here. At physical d0 the
+# collapse endgame velocity d0/(beta*eps) = 2e-9 m/s gives ~1 cell/step at
+# dtmax = 2e2: interface CFL respected, no ripple generation.
+-d0_sub0 9.5975e-10
+
+# Keep the explicit rho_vs curvature correction OFF: with physical d0_sub0 the
+# double-count it. Revisit only with the Jacobian chain-rule fix (see
+# assembly.c "R_ice / phi") if an explicit Kelvin term is ever needed.

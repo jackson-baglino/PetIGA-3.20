@@ -168,7 +168,7 @@ def main(argv=None):
 #
 # xi_v is NOT set here. Sweep it on the command line so one experiment file
 # serves every arm:
-#     ./scripts/HPC/submit_enceladus.sh <geom> calib_T-20_7d <tag> -- -xi_v 1e-2
+#     ./scripts/HPC/submit_enceladus.sh <geom> calib_T-20_h1.00_7d <tag> -- -xi_v 1e-2
 # Unset, the solver default (1e-3) applies.
 
 -temp {T0:g}

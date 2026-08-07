@@ -1,0 +1,21 @@
+# Calibration experiment: -20 C, 7 days  (generated)
+#
+# Shorter than the 28-day production runs: the convergence question is whether
+# the observables AGREE between discretisations, which is visible well before
+# the microstructure fully coarsens.
+#
+# xi_v is NOT set here. Sweep it on the command line so one experiment file
+# serves every arm:
+#     ./scripts/HPC/submit_enceladus.sh <geom> calib_T-20_h1.00_7d <tag> -- -xi_v 1e-2
+# Unset, the solver default (1e-3) applies.
+
+-temp -20
+-humidity 1.00
+-t_final 6.048e5                  # 7 days
+
+-beta_sub0 5.921573e+05
+-d0_sub0 1.016620e-09
+
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-dtmax 2.0e2

@@ -371,8 +371,8 @@ def main():
 # redistribute between them, and which throat wins? The network version of the
 # wedge result (a single deposit migrated -18.75 um/yr toward the narrow end).
 #
-# PAIR WITH A CLOSED (Neumann-vapour) EXPERIMENT — Tgrad_T-20_G0_90d for the
-# isothermal case, Tgrad_T-20_G0.3_90d for the gradient. Do NOT add
+# PAIR WITH A CLOSED (Neumann-vapour) EXPERIMENT — tgrad_T-20_h1.00_90d_G0 for the
+# isothermal case, tgrad_T-20_h1.00_90d_G0.3 for the gradient. Do NOT add
 # -flag_BC_rhovfix here: each bridge plugs its throat, so the domain is three
 # pockets, and the MIDDLE one already connects the two bridges' inner menisci.
 # That is the transport path, it needs no reservoir, and keeping the system

@@ -403,7 +403,7 @@ def main():
 #
 # THE QUESTION: does pore taper ALONE move ice? Two perfectly flat walls, no
 # thermal gradient, no second grain. PAIR WITH A ZERO-GRADIENT EXPERIMENT
-# (Tgrad_T-20_G0_90d / Tgrad_T-20_G0_10s) — a gradient would swamp the effect.
+# (tgrad_T-20_h1.00_90d_G0 / tgrad_T-20_h1.00_10s_G0) — a gradient would swamp the effect.
 #
 # GEOMETRY. Straight walls, symmetric about y = Ly/2, opening left to right:
 #   width {w_t:.3e} m at x=0  ->  {w_m:.3e} m at x=Lx

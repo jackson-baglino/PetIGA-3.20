@@ -50,7 +50,7 @@ PROJECT_ROOT="$PWD"
 RUNNER="$PROJECT_ROOT/scripts/Studio/run_enceladus.sh"
 
 TAG="${2:-epsconv}"
-EXP="snow_T-20_6hr"
+EXP="snow_T-20_h1.00_6h"
 
 # Three arms -- loose / standard / strict eps -- on ONE tangent contact packing.
 # 1mm is the affordable set (19 / 76 / 301 cores); 2mm's strict arm is 96M DOF

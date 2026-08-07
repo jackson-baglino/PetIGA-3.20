@@ -27,7 +27,7 @@ source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 
 # Quick regression: 1 day, -20°C, saturated. All geometries below should run
 # cleanly with k_pen=0 and the new PenaltyWeight() (active only deep in solid).
-REGRESSION_EXP="1day_T-20_h1.00"
+REGRESSION_EXP="base_T-20_h1.00_1d"
 REGRESSION_GEOMS=(
     "1D_ice_sed_pair"
     "1D_ice_slab"
@@ -41,7 +41,7 @@ REGRESSION_GEOMS=(
 )
 
 # Diagnostic: the wide-separation Ostwald ripening run (30 day, -5°C).
-DIAGNOSTIC_EXP="30day_T-5_h1.00"
+DIAGNOSTIC_EXP="base_T-5_h1.00_30d"
 DIAGNOSTIC_GEOM="2D_separated_grains"
 
 cd "$PROJECT_ROOT"

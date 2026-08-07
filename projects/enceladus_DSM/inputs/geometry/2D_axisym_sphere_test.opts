@@ -16,7 +16,7 @@
 #
 # Domain: z in [0, 40 um] (sphere center z = 20 um), r in [0, 20 um]
 # (~22 um padding above the sphere in r; >40 elements everywhere).
-# eps = 4.8534e-7 (the -5 C value; pair with sinter_T-5_h1.00 or any -5 C
+# eps = 4.8534e-7 (the -5 C value; pair with sinter_T-5_h1.00_3.00e5s or any -5 C
 # experiment for local runs).
 # =============================================================================
 

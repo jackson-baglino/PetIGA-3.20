@@ -21,12 +21,12 @@
 #     anything set in solver.opts/geometry/experiment opts files).
 #
 # Examples:
-#   ./scripts/HPC/submit_lunar.sh 2D_multi_grain_test 2day_T-20_h0.95
+#   ./scripts/HPC/submit_lunar.sh 2D_multi_grain_test base_T-20_h0.95_1d
 #
-#   ./scripts/HPC/submit_lunar.sh 2D_multi_grain_test 2day_T-20_h0.95 p2_run \
+#   ./scripts/HPC/submit_lunar.sh 2D_multi_grain_test base_T-20_h0.95_1d p2_run \
 #       --time=0-12:00:00 --partition=expansion
 #
-#   ./scripts/HPC/submit_lunar.sh 2D_single_bump_two_grains 21day_T-20_h0.95 \
+#   ./scripts/HPC/submit_lunar.sh 2D_single_bump_two_grains base_T-20_h0.95_1d \
 #       d0GT_1e-8 -- -d0_GT 1.0e-8
 # =============================================================================
 
@@ -91,7 +91,23 @@ for a in "$@"; do
 done
 
 geom_file="$PROJECT_ROOT/inputs/geometry/${geom_name}.opts"
-exp_file="$PROJECT_ROOT/inputs/experiment/${exp_name}.opts"
+# Experiments live in per-campaign subdirectories (molaro/, tgrad/, base/, ...).
+# Accept either a bare name ("molaro_T-20_h1.00_2h_a3e-2") or an explicit
+# "campaign/name", so the CLI did not change when the files were regrouped.
+resolve_experiment() {
+    local dir="$1" name="$2" hit
+    if [ -f "$dir/${name}.opts" ]; then printf '%s' "$dir/${name}.opts"; return 0; fi
+    hit=$(find "$dir" -type f -name "${name}.opts" -print 2>/dev/null)
+    if [ "$(printf '%s' "$hit" | grep -c .)" -gt 1 ]; then
+        echo "❌ Ambiguous experiment '${name}':" >&2
+        printf '%s\n' "$hit" | sed 's|^|     |' >&2
+        return 1
+    fi
+    [ -n "$hit" ] && printf '%s' "$hit" && return 0
+    return 1
+}
+
+exp_file="$(resolve_experiment "$PROJECT_ROOT/inputs/experiment" "$exp_name")" || exp_file="$PROJECT_ROOT/inputs/experiment/${exp_name}.opts"
 
 if [ ! -f "$geom_file" ]; then
     echo "❌ Geometry opts not found: $geom_file"

@@ -9,7 +9,7 @@
 # planar eps sweep showed growth still rising linearly as eps shrank —
 # measured in the KINETIC-limited regime; this run measures it in the
 # diffusion-limited regime where the stakes are higher. Pair with the
-# CLOSED saturated experiment (molaro_T-20_h1.00_a3e-2) so the rim effect
+# CLOSED saturated experiment (molaro_T-20_h1.00_2h_a3e-2) so the rim effect
 # is isolated from chamber physics.
 #
 # Pass/fail: neck growth at 78 min vs the s050 axisym result (+33% at

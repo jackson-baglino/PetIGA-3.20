@@ -1,0 +1,19 @@
+# =============================================================================
+# experiment/smoke/smoke_T-20_h0.95_1e-6s.opts — very short run for mechanics smoke tests
+# (e.g. -geom_file non-rectangular geometry). Just enough steps to confirm
+# IGARead + residual/Jacobian assembly work on a curved-boundary mesh.
+# =============================================================================
+# ---------------------------------------------------------------------------
+# NO KINETICS SET IN THIS FILE. It leaves -beta_sub0 and -d0_sub0 at the code
+# defaults, which are the -5 C-era values (d0_sub0 = 1e-7, beta_sub0 = 9.9e5)
+# -- NOT the physical -20 C values. That is fine for a smoke test or a mesh/
+# timestep probe, and wrong for any run whose physics you intend to believe.
+# For -20 C physics use the sibling with an explicit alpha_c token, e.g.
+# base_T-20_h1.00_30d_a1.34e-2.opts.
+# ---------------------------------------------------------------------------
+-t_final 1.0e-6
+-temp -20.0
+-humidity 0.95
+-grad_temp0 0.0,0.0,0.0
+-outp 1
+-n_out 5

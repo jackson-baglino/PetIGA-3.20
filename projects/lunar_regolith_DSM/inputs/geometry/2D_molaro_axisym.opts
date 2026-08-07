@@ -2,7 +2,7 @@
 # geometry/2D_molaro_axisym.opts — Molaro Fig. 11 validation, AXISYMMETRIC.
 #
 # Same physical setup as 2D_molaro_sintering.opts (grains R = 72.5/101 um,
-# t=0 neck width 32.81 um, T = -20 C via molaro_T-20_h1.00) but in r-z mode:
+# t=0 neck width 32.81 um, T = -20 C via molaro_T-20_h1.00_2h_a2e-3) but in r-z mode:
 # x = z (symmetry axis), y = r, grains centered ON the axis (cy = 0). The
 # (z,r) cross-section is identical to the planar mid-plane, so the
 # eps-calibrated overlap carries over unchanged (nominal chord half-width

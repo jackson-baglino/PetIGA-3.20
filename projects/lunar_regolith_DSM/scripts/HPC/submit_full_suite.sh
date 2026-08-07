@@ -18,7 +18,7 @@
 #   ./scripts/HPC/submit_full_suite.sh --dry-run              # print resolved list, do not submit
 #
 # Presets (named subsets of canonical geometries paired with a chosen experiment):
-#   ./scripts/HPC/submit_full_suite.sh --advisor-slides 30day_T-20_h1.00_nopenalty
+#   ./scripts/HPC/submit_full_suite.sh --advisor-slides base_T-20_h1.00_30d_nopenalty
 #                                                            # the 7 geometries used in the
 #                                                            # 2026-05-25 advisor_slides batches,
 #                                                            # paired with the named experiment.
@@ -47,19 +47,19 @@ fi
 # -----------------------------------------------------------------------------
 DEFAULT_TESTS=(
     # ---- 1D tests at h=0.95, T=-20 ----
-    "1D_ice_slab:1day_T-20_h0.95"
-    "1D_ice_slab_hires:1day_T-20_h0.95"
-    "1D_single_ice:1day_T-20_h0.95"
-    "1D_single_ice_hires:1day_T-20_h0.95"
+    "1D_ice_slab:base_T-20_h0.95_1d"
+    "1D_ice_slab_hires:base_T-20_h0.95_1d"
+    "1D_single_ice:base_T-20_h0.95_1d"
+    "1D_single_ice_hires:base_T-20_h0.95_1d"
 
     # ---- 2D tests at saturation (two-grain neck physics — sintering / ripening) ----
-    "2D_two_ice_grains_boundary:1day_T-20_h1.00"
+    "2D_two_ice_grains_boundary:base_T-20_h1.00_1d"
 
     # ---- 2D tests at undersaturation (bulk sublimation driving force) ----
-    "2D_single_ice:1day_T-20_h0.95"
-    "2D_single_ice_hires:1day_T-20_h0.95"
-    "2D_ice_slab:1day_T-20_h0.95"
-    "2D_ice_slab_hires:1day_T-20_h0.95"
+    "2D_single_ice:base_T-20_h0.95_1d"
+    "2D_single_ice_hires:base_T-20_h0.95_1d"
+    "2D_ice_slab:base_T-20_h0.95_1d"
+    "2D_ice_slab_hires:base_T-20_h0.95_1d"
 )
 
 # -----------------------------------------------------------------------------

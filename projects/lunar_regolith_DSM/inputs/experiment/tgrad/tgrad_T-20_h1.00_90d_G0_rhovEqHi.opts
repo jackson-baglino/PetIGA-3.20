@@ -1,0 +1,48 @@
+# =============================================================================
+# experiment/tgrad/tgrad_T-20_h1.00_90d_G0_rhovEqHi.opts — 90 days at -20 C, NO temperature
+# gradient, with the pore's open ends held at PRESCRIBED vapour densities.
+#
+#   rho_v(x=0)  = 1.000000 * rho_vs(T)   (AT saturation)
+#   rho_v(x=Lx) = 1.000005 * rho_vs(T)   (ABOVE saturation)
+#
+# Left at rho_vs, right above rho_vs -- an imposed left-right asymmetry.
+#
+# WHY THE OFFSET IS 5e-6 AND NOT A HUMIDITY. A grain's own Gibbs-Thomson
+# equilibrium sits within ~5e-6 of rho_vs: for the wedge band (r1=2e-4, r2=3e-4)
+# the concave inner face wants rho_vs*(1 - 5.08e-6) and the convex outer face
+# rho_vs*(1 + 3.39e-6). An offset of 5e-6 is therefore COMPARABLE to what the
+# curvature itself imposes, so the reservoir and the geometry compete and which
+# wins is a real measurement. A humidity-style 0.99 would be ~2000x the grain
+# scale: every face would be driven the same way and the curvature physics would
+# be invisible under uniform sublimation.
+#
+# -rhovfix_axis 0 pins ONLY the x-faces. The default (-1) would put a reservoir
+# on the solid channel walls, feeding the ice at its contact line.
+#
+# MASS IS NOT CONSERVED -- vapour crosses the x-faces by construction, so
+# postprocess/plot_mass.py's conservation gate does NOT apply. Read
+# postprocess/track_wedge_band.py's late-half drift in r_c instead.
+#
+# Pair with geometry/2D_wedge_band_90deg.opts (one band, centred) or
+# 2D_wedge_band_2band.opts (two bands, equal radial thickness so the wide-end
+# band is 1.5x the area -- size and taper compete).
+# =============================================================================
+
+-t_final 7.776e6                        # 90 days
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                  # isothermal: geometry and the BCs are the only drivers
+
+-flag_BC_Tfix 1                          # pin wall temperatures (uniform)
+-flag_BC_rhovfix 1                       # vapour reservoirs...
+-rhovfix_axis 0                          # ...on the x-faces ONLY (open pore ends)
+-rhovfix_lo 1.000000                     # rho_v at x=0  / rho_vs
+-rhovfix_hi 1.000005                     # rho_v at x=Lx / rho_vs
+
+-beta_sub0 5.9216e5                      # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                        # physical capillary length at -20 C
+
+-dtmax 5.7e2                             # 1.093 * tau_sub (tau_sub = 5.233e2 s)
+-dtCFL 1
+-dtCFL_dphimax 0.2

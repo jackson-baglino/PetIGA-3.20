@@ -26,9 +26,9 @@
 #   $RESULTS_BASE/<geometry>/<timestamp>_<experiment>[_<tag>]/
 #
 # Examples:
-#   ./scripts/Studio/run_enceladus.sh 2D_touching_grains 1day_T-20_h1.00
-#   ./scripts/Studio/run_enceladus.sh 1D_ice_slab 1day_T-20_h0.95 sweep_a
-#   ./scripts/Studio/run_enceladus.sh 2D_multi_grain_test 2day_T-20_h0.95 multigrain_2day
+#   ./scripts/Studio/run_enceladus.sh 2D_touching_grains base_T-20_h1.00_1d
+#   ./scripts/Studio/run_enceladus.sh 1D_ice_slab base_T-20_h0.95_1d sweep_a
+#   ./scripts/Studio/run_enceladus.sh 2D_multi_grain_test base_T-20_h0.95_1d multigrain_2day
 #
 # -----------------------------------------------------------------------
 # Adding a new EXPERIMENT (run conditions)
@@ -115,15 +115,15 @@ usage() {
     echo "  geometry    Name (without .opts) of a file in inputs/geometry/"
     echo "              e.g. 2D_touching_grains, 1D_ice_slab"
     echo "  experiment  Name (without .opts) of a file in inputs/experiment/"
-    echo "              e.g. 1day_T-20_h1.00"
+    echo "              e.g. base_T-20_h1.00_1d"
     echo "  tag         Optional label appended to the run folder name"
     echo ""
     echo "The output folder is:"
     echo "  \$RESULTS_BASE/<geom>/<timestamp>_<exp>[_<tag>]/"
     echo ""
     echo "Example:"
-    echo "  ./scripts/Studio/run_enceladus.sh 2D_touching_grains 1day_T-20_h1.00"
-    echo "  ./scripts/Studio/run_enceladus.sh 1D_ice_slab 1day_T-20_h0.95 sweep_a"
+    echo "  ./scripts/Studio/run_enceladus.sh 2D_touching_grains base_T-20_h1.00_1d"
+    echo "  ./scripts/Studio/run_enceladus.sh 1D_ice_slab base_T-20_h0.95_1d sweep_a"
     echo ""
 }
 
@@ -156,7 +156,23 @@ if [ "$#" -gt 3 ]; then
 fi
 
 GEOM_OPTS="$GEOMETRY_DIR/${geom_name}.opts"
-EXP_OPTS="$EXPERIMENT_DIR/${exp_name}.opts"
+# Experiments live in per-campaign subdirectories (molaro/, tgrad/, base/, ...).
+# Accept either a bare name ("molaro_T-20_h1.00_2h_a3e-2") or an explicit
+# "campaign/name", so the CLI did not change when the files were regrouped.
+resolve_experiment() {
+    local dir="$1" name="$2" hit
+    if [ -f "$dir/${name}.opts" ]; then printf '%s' "$dir/${name}.opts"; return 0; fi
+    hit=$(find "$dir" -type f -name "${name}.opts" -print 2>/dev/null)
+    if [ "$(printf '%s' "$hit" | grep -c .)" -gt 1 ]; then
+        echo "❌ Ambiguous experiment '${name}':" >&2
+        printf '%s\n' "$hit" | sed 's|^|     |' >&2
+        return 1
+    fi
+    [ -n "$hit" ] && printf '%s' "$hit" && return 0
+    return 1
+}
+
+EXP_OPTS="$(resolve_experiment "$EXPERIMENT_DIR" "$exp_name")" || EXP_OPTS="$EXPERIMENT_DIR/${exp_name}.opts"
 
 if [ ! -f "$SOLVER_OPTS" ]; then
     echo "❌ Error: Solver opts not found: $SOLVER_OPTS"
@@ -171,7 +187,7 @@ fi
 if [ ! -f "$EXP_OPTS" ]; then
     echo "❌ Error: Experiment opts not found: $EXP_OPTS"
     echo "   Available experiments:"
-    ls "$EXPERIMENT_DIR" 2>/dev/null | sed 's/\.opts$//' | sed 's/^/     /'
+    (cd "$EXPERIMENT_DIR" && find . -name "*.opts" | sed 's|^\./||; s/\.opts$//' | sort) | sed 's/^/     /'
     exit 1
 fi
 

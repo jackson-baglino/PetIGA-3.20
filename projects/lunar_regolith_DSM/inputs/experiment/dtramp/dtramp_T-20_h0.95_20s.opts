@@ -1,0 +1,25 @@
+# =============================================================================
+# experiment/dtramp/dtramp_T-20_h0.95_20s.opts — short run to observe adaptive-dt ramp
+# behavior (same temp/humidity as 2day_T-20_h0.95.opts, but t_final cut down
+# to the t~0-20s window where dt was seen oscillating at ~0.2-0.4s on the
+# P=2/C1 240x240 mesh).
+# =============================================================================
+
+# ---------- Simulation time ----------
+# ---------------------------------------------------------------------------
+# NO KINETICS SET IN THIS FILE. It leaves -beta_sub0 and -d0_sub0 at the code
+# defaults, which are the -5 C-era values (d0_sub0 = 1e-7, beta_sub0 = 9.9e5)
+# -- NOT the physical -20 C values. That is fine for a smoke test or a mesh/
+# timestep probe, and wrong for any run whose physics you intend to believe.
+# For -20 C physics use the sibling with an explicit alpha_c token, e.g.
+# base_T-20_h1.00_30d_a1.34e-2.opts.
+# ---------------------------------------------------------------------------
+-t_final 20.0                           # 20 s -- covers the dt ramp/oscillation window
+
+# ---------- Environmental conditions ----------
+-temp -20.0                             # initial temperature [°C]
+-humidity 0.95                          # initial relative humidity in air
+-grad_temp0 0.0,0.0,0.0                 # no imposed temperature gradient
+
+# ---------- Output ----------
+-n_out 200                              # keep snapshot count modest for a short test

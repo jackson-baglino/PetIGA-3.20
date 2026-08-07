@@ -155,14 +155,14 @@ Three grains, equally spaced (0.2 / 0.5 / 0.8 Lx), 1.125 mm domain.
 | 4 | `2D_Tgrad_3grain_smallC`| 1.125 | 0.20 | 50, **25**, 50    | small centre |
 | 5 | `2D_Tgrad_3grain_bigC`  | 1.125 | 0.25 | 50, **100**, 50   | large centre |
 
-All pair with experiment `Tgrad_T-20_G50_3d` (dT/dx = −50 K/m, −20 °C, 3 days).
+All pair with experiment `tgrad_T-20_h1.00_3d_G50` (dT/dx = −50 K/m, −20 °C, 3 days).
 
 **Run (HPC, one batch):**
 
 ```bash
 ./scripts/HPC/submit_batch.sh --tag Tgrad_sanity --tests "\
-2D_Tgrad_1grain:Tgrad_T-20_G50_3d,2D_Tgrad_2grain_equal:Tgrad_T-20_G50_3d,\
-2D_Tgrad_2grain_bigL:Tgrad_T-20_G50_3d,2D_Tgrad_2grain_bigR:Tgrad_T-20_G50_3d,\
-2D_Tgrad_3grain_equal:Tgrad_T-20_G50_3d,2D_Tgrad_3grain_smallC:Tgrad_T-20_G50_3d,\
-2D_Tgrad_3grain_bigC:Tgrad_T-20_G50_3d"
+2D_Tgrad_1grain:tgrad_T-20_h1.00_3d_G50,2D_Tgrad_2grain_equal:tgrad_T-20_h1.00_3d_G50,\
+2D_Tgrad_2grain_bigL:tgrad_T-20_h1.00_3d_G50,2D_Tgrad_2grain_bigR:tgrad_T-20_h1.00_3d_G50,\
+2D_Tgrad_3grain_equal:tgrad_T-20_h1.00_3d_G50,2D_Tgrad_3grain_smallC:tgrad_T-20_h1.00_3d_G50,\
+2D_Tgrad_3grain_bigC:tgrad_T-20_h1.00_3d_G50"
 ```

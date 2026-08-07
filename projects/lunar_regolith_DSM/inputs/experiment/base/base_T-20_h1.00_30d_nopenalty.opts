@@ -1,0 +1,33 @@
+# =============================================================================
+# experiment/base/base_T-20_h1.00_30d_nopenalty.opts — 30 days at -20°C, saturated,
+# with BOTH vapor-equation penalties disabled.
+#
+# Identical to 30day_T-20_h1.00.opts but overrides:
+#   -k_pen 0              disables the rhov -> rhov_eq equilibrium penalty
+#   -difvap_pen 1.0       sets D_pen = 1.0 * difvap = difvap everywhere, so
+#                         the diffusivity-penalty linear combination
+#                         D_pen*g_pen + difvap*(1-g_pen) collapses to difvap
+#                         regardless of g_pen — i.e. full physical vapor
+#                         diffusion in BOTH air and solid.
+#
+# Diagnostic purpose: see how the model behaves with no artificial vapor-
+# field stabilisers. Expected to either work cleanly (penalty was masking a
+# fixed-elsewhere issue) or to expose the underlying instabilities that
+# motivated each penalty originally (spurious vapor migration through solid,
+# runaway rhov accumulation at slow-diffusion interfaces).
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# NO KINETICS SET IN THIS FILE. It leaves -beta_sub0 and -d0_sub0 at the code
+# defaults, which are the -5 C-era values (d0_sub0 = 1e-7, beta_sub0 = 9.9e5)
+# -- NOT the physical -20 C values. That is fine for a smoke test or a mesh/
+# timestep probe, and wrong for any run whose physics you intend to believe.
+# For -20 C physics use the sibling with an explicit alpha_c token, e.g.
+# base_T-20_h1.00_30d_a1.34e-2.opts.
+# ---------------------------------------------------------------------------
+-t_final 2592000.0                      # 30 days (s)
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+

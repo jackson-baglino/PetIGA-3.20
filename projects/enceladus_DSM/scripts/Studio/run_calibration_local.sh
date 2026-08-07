@@ -59,7 +59,7 @@ cmds=()
 # --- A. Molaro neck width: all three eps arms ------------------------------
 if [[ "$WHICH" == "all" || "$WHICH" == "molaro" ]]; then
   for e in epsloose epsmid epsstrict; do
-    cmds+=("$RUN 2D_molaro_axisym_T-20pair_union_$e molaro_T-20_h1.00_arrh calib_$e")
+    cmds+=("$RUN 2D_molaro_axisym_T-20pair_union_$e molaro_T-20_h1.00_2h_a1.34e-2 calib_$e")
   done
 fi
 

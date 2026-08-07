@@ -18,7 +18,7 @@
 #
 # Usage (run from project root):
 #   ./scripts/HPC/submit_batch.sh --tag mytag \
-#       --tests "1D_separated_grains:1day_T-20_h1.00,2D_separated_grains:30day_T-5_h1.00"
+#       --tests "1D_separated_grains:base_T-20_h1.00_1d,2D_separated_grains:base_T-5_h1.00_30d"
 #
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests-file tests.txt
 #

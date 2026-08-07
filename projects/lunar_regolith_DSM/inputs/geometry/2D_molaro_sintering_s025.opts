@@ -15,7 +15,7 @@
 # half-width x0 = 1.5023e-5 m gives measured neck width = 32.81 um at t=0 for
 # every sweep member — identical starting necks, kinetics isolated.
 # Physics inputs otherwise identical to 2D_molaro_sintering.opts
-# (R = 72.5/101 um, T = -20 C via the shared molaro_T-20_h1.00 experiment).
+# (R = 72.5/101 um, T = -20 C via the shared molaro_T-20_h1.00_2h_a2e-3 experiment).
 # =============================================================================
 
 -ic_type multi_grains

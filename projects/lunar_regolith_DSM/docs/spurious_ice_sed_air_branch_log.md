@@ -508,8 +508,8 @@ the other geometries (single grains, ice-sed pair, touching grains, 1D
 variants) need to be re-validated to confirm nothing else broke.
 
 **What happened.** Added `scripts/HPC/submit_regression.sh`, which fires
-nine geometries × `1day_T-20_h1.00` plus the wide-sep
-`2D_separated_grains × 30day_T-5_h1.00` diagnostic, in parallel via
+nine geometries × `base_T-20_h1.00_1d` plus the wide-sep
+`2D_separated_grains × base_T-5_h1.00_30d` diagnostic, in parallel via
 `sbatch`. Wraps `run_permafrost.sh` directly (the legacy
 `submit_permafrost.sh` still expects the pre-§2 single-opts-file format).
 The sweep covers `1D_*` (ice_sed_pair, ice_slab, separated_grains,

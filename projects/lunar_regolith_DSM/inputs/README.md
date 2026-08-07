@@ -74,12 +74,58 @@ In 1D, any `-ic_type` other than `single_ice` falls through to
 > `-ic_type` values (`ice_sed_pair`, `enclosed`, `single_sed`, `ice_cap`,
 > `capillary`, `contact_sed`, `slab_and_grains`) the solver no longer implements.
 
+## Experiment naming scheme
+
+Every file under `experiment/` follows one format, in one campaign subdirectory:
+
+```
+<campaign>/<campaign>_T<temp>_h<humidity>_<duration>[_G<grad>][_a<alpha_c>][_<special>...]
+```
+
+- **campaign** — what the run is for: `molaro`, `snow`, `tgrad`, `ripen`,
+  `collapse`, `sinter`, `calib`, `smoke`, `dtramp`, or `base` for the generic
+  ones. Also the subdirectory name.
+- **T / h / duration** — the three parameters that vary in essentially every
+  run. Duration is an exact integer in the largest sensible unit (`30min`,
+  `6h`, `30d`, `365d`); when no unit divides evenly it falls back to compact
+  seconds (`1.50e5s`).
+- **G`<grad>`** — temperature-gradient magnitude in K/m, present only when
+  `-grad_temp0` is nonzero.
+- **a`<alpha_c>`** — the condensation coefficient, present only where a
+  campaign actually varies it (`molaro`, and `base` to separate the file that
+  sets kinetics from the one that does not). Where a campaign holds `alpha_c`
+  fixed (`snow`, `tgrad`) it is documented in the file header instead of
+  cluttering every name.
+- **special** — anything set for that one run and not normally touched:
+  `openBC`, `rhovHiLo`, `epsloose`, `nopenalty`, `dtmax8e2`, `cfl1e4`, …
+
+You still pass a **bare name** to the run scripts — they search the campaign
+subdirectories for you. `campaign/name` also works if you want to be explicit.
+
+```bash
+./scripts/Studio/run_lunar.sh 2D_molaro_axisym molaro_T-20_h1.00_2h_a3e-2
+```
+
+### If a file has no `_a<alpha_c>` token, check before trusting its physics
+
+`-beta_sub0` and `-d0_sub0` default to **-5 C-era values** (`9.9e5`, `1e-7`).
+A file that sets neither runs those defaults whatever `-temp` says. That is
+fine for smoke tests and timestep probes, and wrong for physics you intend to
+believe. Those files now carry an explicit warning header naming the sibling
+to use instead.
+
+> **On the old `_arrh` suffix.** It never meant an Arrhenius law — no such
+> code exists in the solver. Those files simply hard-coded the `beta_sub0` /
+> `d0_sub0` that an Arrhenius *fit* produced at one temperature, so they are
+> now named by the `alpha_c` they encode: `_arrh` was `alpha_c = 1.341e-2`
+> at -20 C, i.e. `_a1.34e-2`.
+
 ## Example: same geometry, two humidities
 
 ```bash
 # Two-grain neck formation at saturation
-./scripts/Studio/run_lunar.sh 2D_two_ice_grains_boundary 1day_T-20_h1.00
+./scripts/Studio/run_lunar.sh 2D_two_ice_grains_boundary base_T-20_h1.00_1d
 
 # Same geometry, undersaturated
-./scripts/Studio/run_lunar.sh 2D_two_ice_grains_boundary 1day_T-20_h0.95
+./scripts/Studio/run_lunar.sh 2D_two_ice_grains_boundary base_T-20_h0.95_1d
 ```

@@ -28,7 +28,7 @@
 # alpha_c=0.01341 (kinetic-bound limited, so grain-size independent here;
 # eps/R_smallest=4.1% < 5%). Reproduces the validated
 # 2D_ripening_two_sided reference exactly. PAIR ONLY with a T=-20C
-# experiment (e.g. 30day_T-20_h1.00_arrh, which sets the matching
+# experiment (e.g. base_T-20_h1.00_30d_a1.34e-2, which sets the matching
 # beta_sub0/d0_sub0). RECOMPUTE eps for any other run temperature.
 # =============================================================================
 # DOF_GRID: 1344 446
