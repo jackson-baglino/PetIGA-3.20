@@ -86,6 +86,94 @@ def load_ssa(path: str, min_cols: int = 4):
 
 
 # ---------------------------------------------------------------------------
+# Staged .opts files
+# ---------------------------------------------------------------------------
+def read_opts(run_dir: str) -> dict:
+    """Merge every ``*.opts`` staged in a run folder into a {flag: value} dict.
+
+    The run scripts copy solver / geometry / experiment opts into the run
+    folder, so the settings a run actually used are recoverable from the folder
+    alone -- no source tree, no guessing from the folder name.
+
+    Later files win, mirroring how PETSc processes repeated ``-options_file``
+    flags. That ordering is only approximated here (files are read in sorted
+    name order) so do not rely on it to resolve a flag that is genuinely set
+    twice to different values; every flag read by this module is set in exactly
+    one of the three.
+
+    Keys keep their leading dash. Valueless boolean flags map to "".
+    """
+    opts: dict[str, str] = {}
+    if not os.path.isdir(run_dir):
+        return opts
+    for fn in sorted(os.listdir(run_dir)):
+        if not fn.endswith(".opts"):
+            continue
+        try:
+            with open(os.path.join(run_dir, fn), errors="replace") as fh:
+                for line in fh:
+                    line = line.split("#", 1)[0].strip()
+                    if not line.startswith("-"):
+                        continue
+                    parts = line.split(None, 1)
+                    opts[parts[0]] = parts[1].strip() if len(parts) > 1 else ""
+        except OSError:
+            continue
+    return opts
+
+
+def opt_float(opts: dict, key: str, default=None):
+    """Read a numeric flag out of read_opts(), or `default` if absent/bad."""
+    try:
+        return float(opts[key])
+    except (KeyError, ValueError, TypeError):
+        return default
+
+
+def grain_radii(run_dir: str):
+    """Radii [m] from the packing this run used, or None.
+
+    Resolves ``-grains_file`` out of the staged opts. The path recorded there
+    is relative to the PROJECT root, not the run folder, so the file usually
+    does not travel with the results -- a copy staged next to the opts is
+    preferred when present.
+
+    Rows are ``x y r`` (or legacy ``x y z r``), with an optional leading
+    two-field ``Lx Ly`` header, matching ReadGrainsFromFile in
+    src/initial_conditions.c. Periodic edge images are included in the file and
+    are NOT filtered out here: they are real grain area inside the domain.
+    """
+    opts = read_opts(run_dir)
+    rel = opts.get("-grains_file", "").strip()
+    if not rel:
+        return None
+
+    candidates = [os.path.join(run_dir, os.path.basename(rel)), rel]
+    path = next((p for p in candidates if os.path.isfile(p)), None)
+    if path is None:
+        return None
+
+    radii = []
+    with open(path, errors="replace") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            f = line.split()
+            if len(f) == 2:          # 'Lx Ly' domain header
+                continue
+            try:
+                vals = [float(v) for v in f]
+            except ValueError:
+                continue
+            if len(vals) == 3:
+                radii.append(vals[2])
+            elif len(vals) == 4:
+                radii.append(vals[3])
+    return np.array(radii) if radii else None
+
+
+# ---------------------------------------------------------------------------
 # Material properties
 # ---------------------------------------------------------------------------
 # Empirical saturation-pressure coefficients, copied from RhoVS_I in
@@ -94,7 +182,7 @@ def load_ssa(path: str, min_cols: int = 4):
 _K = (-0.5865e4, 0.2224e2, 0.1375e-1, -0.3403e-4, 0.2697e-7, 0.6918)
 _PATM = 101325.0
 _BB = 0.62
-RHO_AIR_DEFAULT = 1.341          # -rho_air default in lunar_main.c
+RHO_AIR_DEFAULT = 1.341          # -rho_air default in enceladus_main.c
 
 
 def rho_vs(T_C, rho_air: float = RHO_AIR_DEFAULT):
