@@ -51,9 +51,9 @@ _neck_csv/
 # variant -- raw/, raw_keff/, raw_rev/, raw_solver/, raw_t0/ and any future
 # one. The .log files next to them ARE tracked: they are the evidence behind
 # the study README.
-studies/snow_thermal/verification/raw*/*/
+studies/**/verification/raw*/*/
 
 # ...but the k_eff verification figures are documentation: the study README
 # embeds them, so they are tracked despite the blanket *.png rule above.
-!studies/snow_thermal/verification/*.png
+!studies/**/verification/*.png
 
