@@ -120,6 +120,17 @@ gated (--max-asymmetry) rather than waved through.
 
 OUTPUT is grains.dat + metadata.json + preview.png, the same contract the
 solver already reads (-ic_type multi_grains_file -grains_file ...).
+
+Output is grouped by periodicity, with a periodic_<mode>/ level inserted above
+the leaf name:
+
+    --out inputs/packings/phi0.325_seed4 --periodic x
+      -> inputs/packings/periodic_x/phi0.325_seed4/
+
+The same parameters under different wrapping are different microstructures and
+belong to different runs, but they naturally get the same descriptive name, so
+without the split the second would silently overwrite the first. Pass
+--no-periodic-subdir to write straight to --out.
 """
 from __future__ import annotations
 
@@ -319,7 +330,7 @@ def crop_window(cen, rad, Lx, Ly, y0, py=False):
 
 
 def fill_voids(rng, cen, rad, Lx, Ly, px, py, target_porosity, mean_r,
-               sigma_ln, clip_frac, raster, max_fill=4000):
+               sigma_ln, clip_frac, raster, context=None, max_fill=4000):
     """Insert grains into the largest voids until porosity reaches the target.
 
     Biggest hole first, so porosity falls to target while pore heterogeneity
@@ -352,7 +363,11 @@ def fill_voids(rng, cen, rad, Lx, Ly, px, py, target_porosity, mean_r,
         deficit = (porosity - target_porosity) * domain
         r_deficit = math.sqrt(deficit / math.pi)
 
-        dist, dx, dy = pl.void_map(solid, Lx, Ly)
+        # `context` is the surrounding bed the window crop discarded. Without
+        # it an open edge reads as empty beyond the boundary and every filler
+        # ends up in a band along that edge.
+        dist, dx, dy = pl.void_map(cen, rad, Lx, Ly, raster, raster, px, py,
+                                   context=context)
         big = float(dist.max())
         if big < r_floor or r_deficit < r_floor:
             break                     # no room, or nothing meaningful left
@@ -382,16 +397,23 @@ def auto_void_ratio(target_porosity):
     the porosity, so a flat gate silently becomes a porosity gate. Worst case
     per group over the 25 accepted jammed packings in inputs/scratch/packings/:
 
-        phi 0.250 -> 1.04    phi 0.325 -> 1.24    phi 0.400 -> 1.58
-        phi 0.287 -> 1.17    phi 0.362 -> 1.42
+        phi 0.250 -> 0.97    phi 0.325 -> 1.07    phi 0.400 -> 1.66
+        phi 0.287 -> 1.06    phi 0.362 -> 1.45
 
-    which fits void_max ~ 3.5*phi + 0.15. The default is that envelope plus a
+    which fits void_max ~ 4.7*phi - 0.29. The default is that envelope plus a
     little headroom. A flat 1.30 -- the value this started with -- rejects the
-    reference standard for every phi >= 0.327, and did exactly that: phi 0.400
+    reference standard for every phi >= 0.33, and did exactly that: phi 0.400
     failed in all three periodicity modes while hitting its porosity target to
     four decimals.
+
+    These are the reference packings RE-MEASURED with packing_lib.periodic_edt,
+    not the numbers in their metadata.json. Those were computed with a plain
+    distance transform that cannot see solid across a periodic face, and are
+    off by 0.86x to 1.05x -- in both directions, so it does not cancel. Gating
+    a corrected measurement against an uncorrected calibration would be
+    comparing two different quantities.
     """
-    return max(0.9, 3.5 * target_porosity + 0.22)
+    return max(0.9, 4.7 * target_porosity - 0.19)
 
 
 def auto_density_cv(target_porosity):
@@ -435,7 +457,7 @@ def grade(cen, rad, Lx, Ly, px, py, mean_r, raster):
     solid = pl.rasterize(cen, rad, Lx, Ly, raster, raster, px, py)
     porosity = 1.0 - float(solid.mean())
     ncoarse = coarse_grid_for(Lx, mean_r)
-    cv, max_void = pl.uniformity(solid, Lx, Ly, ncoarse=ncoarse)
+    cv, max_void = pl.uniformity(solid, Lx, Ly, px, py, ncoarse=ncoarse)
     sx, sy, sfrac, sn = pl.percolates(solid)
     px_, py_, pfrac, pn = pl.percolates(~solid)
     coord, ncont, throat = pl.descriptors(cen, rad, Lx, Ly, px, py)
@@ -491,7 +513,9 @@ def deposit_at_porosity(seed, a, px, py, want, verbose=True):
     [0, pi/2] works. Deposition is re-run from the same seed each time, so this
     is deterministic.
 
-    Returns (centres, radii, roll_tol, skeleton_porosity).
+    Returns (centres, radii, roll_tol, skeleton_porosity, strip), where
+    `strip` is the full deposited bed in window coordinates -- the filler pass
+    needs the material outside the window (see packing_lib.void_map).
     """
     margin = a.crop_margin * a.mean_r
     strip_h = a.Ly + 2.0 * margin
@@ -500,39 +524,44 @@ def deposit_at_porosity(seed, a, px, py, want, verbose=True):
         rng = np.random.default_rng(seed)
         cen, rad = deposit(rng, a.Lx, strip_h, a.mean_r, a.sigma_ln,
                            a.radius_clip_frac, rt, px)
+        # Keep the WHOLE strip alongside the window. The grains the crop
+        # discards are the bed that physically continues past the domain
+        # edge, and the filler pass needs them so an open boundary does not
+        # read as empty space (see packing_lib.void_map).
+        strip = (cen.copy() - np.array([0.0, margin]), rad.copy())
         cen, rad = crop_window(cen, rad, a.Lx, a.Ly, margin, py)
         solid = pl.rasterize(cen, rad, a.Lx, a.Ly, a.fill_raster,
                              a.fill_raster, px, py)
-        return cen, rad, 1.0 - float(solid.mean())
+        return cen, rad, 1.0 - float(solid.mean()), strip
 
     if a.roll_tol is not None:
-        cen, rad, phi = attempt(a.roll_tol)
-        return cen, rad, a.roll_tol, phi
+        cen, rad, phi, strip = attempt(a.roll_tol)
+        return cen, rad, a.roll_tol, phi, strip
 
     lo, hi = 0.0, math.pi / 2
-    c_lo, r_lo, p_lo = attempt(lo)
-    c_hi, r_hi, p_hi = attempt(hi)
+    c_lo, r_lo, p_lo, s_lo = attempt(lo)
+    c_hi, r_hi, p_hi, s_hi = attempt(hi)
     if verbose:
         print(f"    budget bracket: phi({lo:.2f})={p_lo:.4f}  "
               f"phi({hi:.2f})={p_hi:.4f}  want ~{want:.4f}", file=sys.stderr)
 
     if want >= p_lo:                 # even ballistic is denser than we want
-        return c_lo, r_lo, lo, p_lo
+        return c_lo, r_lo, lo, p_lo, s_lo
     if want <= p_hi:                 # even full rolling is looser than we want
-        return c_hi, r_hi, hi, p_hi
+        return c_hi, r_hi, hi, p_hi, s_hi
 
-    best = (c_hi, r_hi, hi, p_hi)
+    best = (c_hi, r_hi, hi, p_hi, s_hi)
     for _ in range(a.bisect_iters):
         mid = 0.5 * (lo + hi)
-        cen, rad, phi = attempt(mid)
+        cen, rad, phi, strip = attempt(mid)
         if abs(phi - want) < abs(best[3] - want):
-            best = (cen, rad, mid, phi)
+            best = (cen, rad, mid, phi, strip)
         if phi > want:
             lo = mid
         else:
             hi = mid
         if abs(phi - want) < 0.004:
-            return cen, rad, mid, phi
+            return cen, rad, mid, phi, strip
     return best
 
 
@@ -541,7 +570,7 @@ def build_once(seed, a, px, py, verbose=True):
     rng = np.random.default_rng(seed + 7919)      # fillers get their own stream
     want = min(a.porosity + a.fill_margin, 0.52)
 
-    cen, rad, roll_tol, skeleton_porosity = deposit_at_porosity(
+    cen, rad, roll_tol, skeleton_porosity, strip = deposit_at_porosity(
         seed, a, px, py, want, verbose)
     n_matrix = len(rad)
 
@@ -568,7 +597,13 @@ def build_once(seed, a, px, py, verbose=True):
 
     cen, rad, n_fill = fill_voids(rng, cen, rad, a.Lx, a.Ly, px, py,
                                   a.porosity, a.mean_r, a.sigma_ln,
-                                  a.radius_clip_frac, a.fill_raster)
+                                  a.radius_clip_frac, a.fill_raster,
+                                  # Only where y is OPEN. Under --periodic xy
+                                  # the cell is self-contained and its own
+                                  # images ARE the surroundings; adding the
+                                  # strip there is phantom solid that hides
+                                  # real voids (1.45 reported vs 2.27 true).
+                                  context=None if py else strip)
 
     meta = grade(cen, rad, a.Lx, a.Ly, px, py, a.mean_r, a.raster)
     meta.update({
@@ -607,7 +642,13 @@ def main(argv=None):
     p.add_argument("--radius-clip-frac", dest="radius_clip_frac", type=float,
                    default=1.0, help="clip radii to (1 +/- f)*mean_r")
     p.add_argument("--seed", type=int, required=True)
-    p.add_argument("--out", required=True, help="output directory")
+    p.add_argument("--out", required=True,
+                   help="output directory. A periodic_<mode>/ level is inserted "
+                        "above the leaf name (see --no-periodic-subdir)")
+    p.add_argument("--no-periodic-subdir", dest="periodic_subdir",
+                   action="store_false",
+                   help="write straight to --out instead of grouping by "
+                        "periodicity")
 
     p.add_argument("--periodic", choices=["x", "xy", "none"], default="x",
                    help="which axes wrap (default: x)")
@@ -665,6 +706,17 @@ def main(argv=None):
         a.Ly = a.Lx
     px = a.periodic in ("x", "xy")
     py = a.periodic == "xy"
+
+    # Group output by periodicity. The same packing parameters under different
+    # wrapping are different microstructures and belong in different runs, but
+    # they naturally get the same descriptive name -- so without this the
+    # second one silently overwrites the first. Insert the level ABOVE the leaf
+    # so the leaf keeps meaning "this packing":
+    #   --out inputs/packings/phi0.325_seed4  --periodic x
+    #     -> inputs/packings/periodic_x/phi0.325_seed4
+    if a.periodic_subdir:
+        parent, leaf = os.path.split(os.path.normpath(a.out))
+        a.out = os.path.join(parent, f"periodic_{a.periodic}", leaf)
     if a.max_void_ratio is None:
         a.max_void_ratio = auto_void_ratio(a.porosity)
     if a.max_density_cv is None:

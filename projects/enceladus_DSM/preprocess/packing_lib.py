@@ -292,7 +292,31 @@ def percolates(mask):
     return perc_x, perc_y, frac, int(n)
 
 
-def uniformity(solid, Lx, Ly, ncoarse=8):
+def periodic_edt(mask, px, py):
+    """Distance (in pixels) from each pore pixel to the nearest solid pixel,
+    respecting periodicity.
+
+    scipy's distance_transform_edt has no periodic mode: a pore pixel near an
+    array edge cannot see the solid that wraps around, so its distance comes
+    out wrong. Tiling 3x along each PERIODIC axis and keeping the centre tile
+    fixes it. Measured on the 25 reference packings the plain transform is off
+    by 0.86x to 1.05x -- in both directions, depending on where the biggest
+    void happens to sit, so it is not a bias that cancels.
+
+    An OPEN axis is not tiled: there is genuinely nothing beyond it, and a
+    caller that has the surrounding material should use void_map() instead,
+    which takes it as `context`.
+    """
+    ny, nx = mask.shape
+    ry, rx = (3 if py else 1), (3 if px else 1)
+    tiled = np.tile(mask, (ry, rx))
+    d = ndimage.distance_transform_edt(~tiled)
+    y0 = ny if py else 0
+    x0 = nx if px else 0
+    return d[y0:y0 + ny, x0:x0 + nx]
+
+
+def uniformity(solid, Lx, Ly, px=True, py=True, ncoarse=8):
     """How evenly the solid is spread, and how big the worst void is.
 
     Returns (local_density_cv, max_void_radius_m).
@@ -308,6 +332,10 @@ def uniformity(solid, Lx, Ly, ncoarse=8):
 
     These two ARE the homogeneity criterion. Do not substitute pore-cluster
     connectivity for them; see the note in accept_reasons().
+
+    max_void_radius_m goes through periodic_edt, so it differs from the value
+    stored in the pre-2026-08 packing metadata, which used a plain transform
+    that could not see solid across a periodic face.
     """
     ny, nx = solid.shape
     ky, kx = max(1, ny // ncoarse), max(1, nx // ncoarse)
@@ -318,20 +346,53 @@ def uniformity(solid, Lx, Ly, ncoarse=8):
     cells = np.asarray(cells, dtype=float)
     cv = float(cells.std() / cells.mean()) if cells.mean() > 0 else float("inf")
 
-    dpix = ndimage.distance_transform_edt(~solid)
+    dpix = periodic_edt(solid, px, py)
     return cv, float(dpix.max() * (Lx / nx))
 
 
-def void_map(solid, Lx, Ly):
-    """(distance_to_solid [m], dx, dy) for the pore space.
+def void_map(cen, rad, Lx, Ly, nx, ny, px, py, context=None, pad_frac=0.2):
+    """(distance_to_solid [m], dx, dy) over the domain, without edge bias.
 
-    The filler pass uses this to find the biggest hole: the global maximum is
-    the largest inscribed empty circle, and its location is where a grain
-    should go.
+    The filler pass uses this to find the biggest hole: the maximum is the
+    largest inscribed empty circle and its location is where a grain goes.
+
+    THE TRANSFORM IS RUN ON A PADDED WINDOW, and it has to be.
+    scipy's distance_transform_edt has no periodic mode and no notion of
+    material outside the array, so a pore pixel near an edge sees nothing
+    beyond it and its distance is overstated. Measured on a real packing, the
+    plain transform reported a 2.66-mean-radii void where the correct wrapped
+    answer was 2.38, and put its global maximum in the corner. The filler pass
+    then chased that artifact and deposited every filler in a band along the
+    domain edge -- clearly visible in the preview, and not a packing anyone
+    wants.
+
+    The padding is filled with real material, not a guess:
+      - periodic axes: the grains' own periodic images;
+      - open axes: `context`, the grains from the surrounding bed that the
+        window crop discarded. Pass it whenever the caller has it; without it
+        an open edge still reads as empty beyond the boundary.
+
+    Only the domain part of the transform is returned, so the caller never
+    sees the padding.
     """
-    ny, nx = solid.shape
-    dpix = ndimage.distance_transform_edt(~solid)
-    return dpix * (Lx / nx), Lx / nx, Ly / ny
+    px_size = Lx / nx
+    pad = int(round(pad_frac * nx))
+    pad_x, pad_y = pad * px_size, pad * (Ly / ny)
+
+    all_c = cen if context is None else np.vstack([cen, context[0]])
+    all_r = rad if context is None else np.concatenate([rad, context[1]])
+
+    # Replicate along periodic axes, then shift into the padded window so it
+    # can be rasterized as a plain box.
+    offs = _offsets(Lx, Ly, px, py)
+    big_c = (all_c[None, :, :] + offs[:, None, :]).reshape(-1, 2)
+    big_r = np.tile(all_r, len(offs))
+    big_c = big_c + np.array([pad_x, pad_y])
+
+    padded = rasterize(big_c, big_r, Lx + 2 * pad_x, Ly + 2 * pad_y,
+                       nx + 2 * pad, ny + 2 * pad, False, False)
+    dist = ndimage.distance_transform_edt(~padded) * px_size
+    return dist[pad:pad + ny, pad:pad + nx], px_size, Ly / ny
 
 
 # =========================================================================
@@ -513,7 +574,9 @@ def _preview(out, emitted, radii, Lx, Ly, meta):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Circle
 
-        fig, ax = plt.subplots(figsize=(6.4, 6.4 * Ly / Lx))
+        C_MATRIX, C_FILLER, C_IMAGE = "#7fb3d5", "#e8b84b", "#c9d9e6"
+
+        fig, ax = plt.subplots(figsize=(6.6, 6.6 * Ly / Lx))
         # Draw the margin OUTSIDE the domain too, so grains hanging past an
         # edge are visible -- they are in grains.dat, the solver sees them, and
         # they carry the conduction paths that leave the domain. A preview
@@ -524,7 +587,7 @@ def _preview(out, emitted, radii, Lx, Ly, meta):
         for k, (x, y, r) in enumerate(emitted):
             img = not (0 <= x <= Lx and 0 <= y <= Ly)
             filler = k < len(radii) and k >= n_matrix
-            face = "#c9d9e6" if img else ("#e8b84b" if filler else "#7fb3d5")
+            face = C_IMAGE if img else (C_FILLER if filler else C_MATRIX)
             ax.add_patch(Circle((x, y), r, facecolor=face, edgecolor="#1b4f72",
                                 lw=0.3, alpha=0.55 if img else 1.0,
                                 zorder=2 if img else 3))
@@ -534,13 +597,34 @@ def _preview(out, emitted, radii, Lx, Ly, meta):
         ax.set_aspect("equal")
         ax.set_xlabel("x [m]", fontsize=8); ax.set_ylabel("y [m]", fontsize=8)
         ax.tick_params(labelsize=7)
+
+        # Legend, because "what do the orange ones mean" is the first question
+        # anyone asks of this figure and the answer should not live only in a
+        # docstring.
+        axes = "".join(a for a, f in (("x", meta.get("periodic_x")),
+                                      ("y", meta.get("periodic_y"))) if f) or "none"
+        handles = [
+            Circle((0, 0), 1, facecolor=C_MATRIX, edgecolor="#1b4f72", lw=0.5,
+                   label=f"deposited matrix ({n_matrix}) — each rests on a support below"),
+            Circle((0, 0), 1, facecolor=C_FILLER, edgecolor="#1b4f72", lw=0.5,
+                   label=f"filler ({n_filler}) — added into the largest voids to reach "
+                         f"target porosity; may float"),
+            Circle((0, 0), 1, facecolor=C_IMAGE, edgecolor="#1b4f72", lw=0.5,
+                   alpha=0.55,
+                   label=f"periodic image ({len(emitted) - len(radii)}) — "
+                         f"wrapped copy, outside the domain"),
+        ]
+        ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.09),
+                  fontsize=7, frameon=False, handlelength=1.2, borderpad=0.2,
+                  labelspacing=0.35)
+
         ax.set_title(
-            f"phi={meta['porosity_achieved']:.4f}  N={len(radii)}"
-            f"  ({n_matrix} matrix + {n_filler} filler)  seed={meta['seed']}"
-            f"  L={Lx * 1e3:.2f} mm\n"
-            f"{len(emitted) - len(radii)} edge images (pale)   "
+            f"phi={meta['porosity_achieved']:.4f} (target "
+            f"{meta['porosity_target']:.4f})   N={len(radii)}   "
+            f"seed={meta['seed']}   L={Lx * 1e3:.2f} mm   periodic {axes}\n"
             f"max void {meta['max_void_radius_per_mean_r']:.2f} r_mean   "
             f"cv {meta['local_density_cv']:.3f}   "
+            f"asym {meta.get('half_domain_asymmetry', float('nan')) * 100:.0f}%   "
             f"Z {meta['coordination_number']:.2f}",
             fontsize=8.5)
         fig.savefig(os.path.join(out, "preview.png"), dpi=140, bbox_inches="tight")
