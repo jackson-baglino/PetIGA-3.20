@@ -796,10 +796,10 @@ int main(int argc, char *argv[]) {
      * decoupled from mob_sub's restoring strength would. */
     {
         PetscReal  beta_sub0_cli = -1.0;
-        PetscBool  flg           = PETSC_FALSE;
+        PetscBool  set_beta      = PETSC_FALSE;
         ierr = PetscOptionsGetReal(NULL, NULL, "-beta_sub0",
-                                   &beta_sub0_cli, &flg); CHKERRQ(ierr);
-        if (flg && beta_sub0_cli > 0.0) {
+                                   &beta_sub0_cli, &set_beta); CHKERRQ(ierr);
+        if (set_beta && beta_sub0_cli > 0.0) {
             PetscPrintf(PETSC_COMM_WORLD,
                         "  -beta_sub0 override: %.4e -> %.4e (factor %.2f)\n",
                         user.beta_sub0, beta_sub0_cli, user.beta_sub0 / beta_sub0_cli);
@@ -808,10 +808,10 @@ int main(int argc, char *argv[]) {
     }
     {
         PetscReal  d0_sub0_cli = -1.0;
-        PetscBool  flg         = PETSC_FALSE;
+        PetscBool  set_d0      = PETSC_FALSE;
         ierr = PetscOptionsGetReal(NULL, NULL, "-d0_sub0",
-                                   &d0_sub0_cli, &flg); CHKERRQ(ierr);
-        if (flg && d0_sub0_cli > 0.0) {
+                                   &d0_sub0_cli, &set_d0); CHKERRQ(ierr);
+        if (set_d0 && d0_sub0_cli > 0.0) {
             PetscPrintf(PETSC_COMM_WORLD,
                         "  -d0_sub0 override: %.4e -> %.4e (factor %.2f)\n",
                         user.d0_sub0, d0_sub0_cli, d0_sub0_cli / user.d0_sub0);
@@ -838,10 +838,10 @@ int main(int argc, char *argv[]) {
      * physical value computed above is the default. */
     {
         PetscReal  mob_sub_cli = -1.0;
-        PetscBool  flg         = PETSC_FALSE;
+        PetscBool  set_mob     = PETSC_FALSE;
         ierr = PetscOptionsGetReal(NULL, NULL, "-mob_sub",
-                                   &mob_sub_cli, &flg); CHKERRQ(ierr);
-        if (flg && mob_sub_cli > 0.0) {
+                                   &mob_sub_cli, &set_mob); CHKERRQ(ierr);
+        if (set_mob && mob_sub_cli > 0.0) {
             PetscPrintf(PETSC_COMM_WORLD,
                         "  -mob_sub override: %.2e -> %.2e (factor %.1f)\n",
                         user.mob_sub, mob_sub_cli, mob_sub_cli / user.mob_sub);
@@ -856,10 +856,10 @@ int main(int argc, char *argv[]) {
      * values are ignored. */
     {
         PetscReal  alph_sub_cli = -1.0;
-        PetscBool  flg          = PETSC_FALSE;
+        PetscBool  set_alph     = PETSC_FALSE;
         ierr = PetscOptionsGetReal(NULL, NULL, "-alph_sub",
-                                   &alph_sub_cli, &flg); CHKERRQ(ierr);
-        if (flg && alph_sub_cli >= 0.0) {
+                                   &alph_sub_cli, &set_alph); CHKERRQ(ierr);
+        if (set_alph && alph_sub_cli >= 0.0) {
             PetscPrintf(PETSC_COMM_WORLD,
                         "  -alph_sub override: %.2e -> %.2e%s\n",
                         user.alph_sub, alph_sub_cli,
