@@ -106,7 +106,7 @@ opts files, sizes the rank count, and stages a reproducible copy of the run:
 ```bash
 ./scripts/Studio/run_enceladus.sh <geometry> <experiment> [tag] [-- extra -flags]
 # e.g.
-./scripts/Studio/run_enceladus.sh 2D_two_ice_grains_boundary base_T-20_h1.00_1d
+./scripts/Studio/run_enceladus.sh twograins_2D_L41um_eps0.49um base_T-20_h1.00_1d
 ```
 
 Geometry and experiment name files in `inputs/geometry/` and

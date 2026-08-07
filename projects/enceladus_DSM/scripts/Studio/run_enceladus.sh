@@ -27,8 +27,8 @@
 #
 # Examples:
 #   ./scripts/Studio/run_enceladus.sh 2D_touching_grains base_T-20_h1.00_1d
-#   ./scripts/Studio/run_enceladus.sh 1D_ice_slab base_T-20_h0.95_1d sweep_a
-#   ./scripts/Studio/run_enceladus.sh 2D_multi_grain_test base_T-20_h0.95_1d multigrain_2day
+#   ./scripts/Studio/run_enceladus.sh iceslab_1D_L100um_eps0.71um base_T-20_h0.95_1d sweep_a
+#   ./scripts/Studio/run_enceladus.sh multigrain_2D_L100um_eps0.37um_test base_T-20_h0.95_1d multigrain_2day
 #
 # -----------------------------------------------------------------------
 # Adding a new EXPERIMENT (run conditions)
@@ -62,6 +62,23 @@
 # Then run as usual:
 #   ./scripts/Studio/run_enceladus.sh my_geometry <experiment> [tag]
 # =============================================================================
+
+
+# Geometry and experiment .opts live in per-family / per-campaign
+# subdirectories. Accept either a bare name or an explicit
+# "subdir/name", so the CLI did not change when the files were regrouped.
+resolve_opts() {
+    local dir="$1" name="$2" hit
+    if [ -f "$dir/${name}.opts" ]; then printf '%s' "$dir/${name}.opts"; return 0; fi
+    hit=$(find "$dir" -type f -name "${name}.opts" -print 2>/dev/null)
+    if [ "$(printf '%s' "$hit" | grep -c .)" -gt 1 ]; then
+        echo "❌ Ambiguous name '${name}':" >&2
+        printf '%s\n' "$hit" | sed 's|^|     |' >&2
+        return 1
+    fi
+    [ -n "$hit" ] && printf '%s' "$hit" && return 0
+    return 1
+}
 
 set -uo pipefail
 
@@ -113,7 +130,7 @@ usage() {
     echo ""
     echo "Arguments:"
     echo "  geometry    Name (without .opts) of a file in inputs/geometry/"
-    echo "              e.g. 2D_touching_grains, 1D_ice_slab"
+    echo "              e.g. 2D_touching_grains, iceslab_1D_L100um_eps0.71um"
     echo "  experiment  Name (without .opts) of a file in inputs/experiment/"
     echo "              e.g. base_T-20_h1.00_1d"
     echo "  tag         Optional label appended to the run folder name"
@@ -123,7 +140,7 @@ usage() {
     echo ""
     echo "Example:"
     echo "  ./scripts/Studio/run_enceladus.sh 2D_touching_grains base_T-20_h1.00_1d"
-    echo "  ./scripts/Studio/run_enceladus.sh 1D_ice_slab base_T-20_h0.95_1d sweep_a"
+    echo "  ./scripts/Studio/run_enceladus.sh iceslab_1D_L100um_eps0.71um base_T-20_h0.95_1d sweep_a"
     echo ""
 }
 
@@ -155,24 +172,9 @@ if [ "$#" -gt 3 ]; then
     done
 fi
 
-GEOM_OPTS="$GEOMETRY_DIR/${geom_name}.opts"
-# Experiments live in per-campaign subdirectories (molaro/, tgrad/, base/, ...).
-# Accept either a bare name ("molaro_T-20_h1.00_2h_a3e-2") or an explicit
-# "campaign/name", so the CLI did not change when the files were regrouped.
-resolve_experiment() {
-    local dir="$1" name="$2" hit
-    if [ -f "$dir/${name}.opts" ]; then printf '%s' "$dir/${name}.opts"; return 0; fi
-    hit=$(find "$dir" -type f -name "${name}.opts" -print 2>/dev/null)
-    if [ "$(printf '%s' "$hit" | grep -c .)" -gt 1 ]; then
-        echo "❌ Ambiguous experiment '${name}':" >&2
-        printf '%s\n' "$hit" | sed 's|^|     |' >&2
-        return 1
-    fi
-    [ -n "$hit" ] && printf '%s' "$hit" && return 0
-    return 1
-}
+GEOM_OPTS="$(resolve_opts "$GEOMETRY_DIR" "$geom_name")" || GEOM_OPTS="$GEOMETRY_DIR/${geom_name}.opts"
 
-EXP_OPTS="$(resolve_experiment "$EXPERIMENT_DIR" "$exp_name")" || EXP_OPTS="$EXPERIMENT_DIR/${exp_name}.opts"
+EXP_OPTS="$(resolve_opts "$EXPERIMENT_DIR" "$exp_name")" || EXP_OPTS="$EXPERIMENT_DIR/${exp_name}.opts"
 
 if [ ! -f "$SOLVER_OPTS" ]; then
     echo "❌ Error: Solver opts not found: $SOLVER_OPTS"
@@ -181,7 +183,7 @@ fi
 if [ ! -f "$GEOM_OPTS" ]; then
     echo "❌ Error: Geometry opts not found: $GEOM_OPTS"
     echo "   Available geometries:"
-    ls "$GEOMETRY_DIR" 2>/dev/null | sed 's/\.opts$//' | sed 's/^/     /'
+    (cd "$GEOMETRY_DIR" && find . -name "*.opts" | sed 's|^\./||; s/\.opts$//' | sort) | sed 's/^/     /'
     exit 1
 fi
 if [ ! -f "$EXP_OPTS" ]; then

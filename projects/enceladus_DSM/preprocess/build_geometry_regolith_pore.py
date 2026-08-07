@@ -28,7 +28,7 @@ Derived from build_geometry_ripening.py, with two deliberate changes:
                       bodies (distributed adhesion).
      Add more by registering a function in ICE_STRATEGIES.
 
-Writes inputs/geometry/regolith_pore.dat and inputs/geometry/2D_regolith_pore.opts
+Writes inputs/geometry/meshes/regolith_pore.dat and inputs/geometry/2D_regolith_pore.opts
 (so scripts/Studio/run_enceladus.sh finds them by the usual convention), plus a
 preview PNG. Deterministic (seeded). Every geometric constraint is asserted
 before anything is written.
@@ -75,7 +75,7 @@ Lx = (N_BUMPS - 1) * (2 * R_MED * (1 - 0.26))
 # eps is the comp_eps.py (Kaempfer & Plapp) value FOR T=-20 C, alpha_c=1.341e-2
 # — binding constraint is the T-dependent kinetic bound, so it is grain-size
 # independent here (all strategies pass eps/R_ave < 5%). Verified: reproduces
-# the validated 2D_ripening_two_sided reference run exactly, and pairs with the
+# the validated ripening_2D_L1.01mm_eps0.86um_2sided reference run exactly, and pairs with the
 # base_T-20_h1.00_30d_a1.34e-2 experiment's beta_sub0=5.9216e5 / d0_sub0=1.0166e-9.
 # RECOMPUTE for any other run temperature:
 #   python3 preprocess/comp_eps.py --Lx {Lx} --Ly {Ly} --Rave <R_smallest_ice> \
@@ -271,8 +271,8 @@ def main():
     # The mesh depends only on the walls (fixed seeds/GSD), NOT on the ice
     # placement, so every strategy shares ONE mesh .dat; only the .opts (ice
     # grains) is per-strategy.
-    dat = Path(args.out) if args.out else ROOT / "inputs/geometry/regolith_pore.dat"
-    opts = Path(args.opts) if args.opts else ROOT / f"inputs/geometry/2D_regolith_pore{tag}.opts"
+    dat = Path(args.out) if args.out else ROOT / "inputs/geometry/meshes/regolith_pore.dat"
+    opts = Path(args.opts) if args.opts else ROOT / f"inputs/geometry/regolithpore_2D_L814um_eps0.86um{tag}.opts"
     png = ROOT / f"preprocess/regolith_pore{tag}.png"
 
     # ---- Walls from the regolith GSD, with a central throat ----
@@ -362,7 +362,7 @@ def main():
 # eps={EPS:.4e} is the comp_eps.py (Kaempfer&Plapp) value for T={T0_C:g}C,
 # alpha_c={ALPHA_C:g} (kinetic-bound limited, so grain-size independent here;
 # eps/R_smallest={EPS/Rmin*100:.1f}% < 5%). Reproduces the validated
-# 2D_ripening_two_sided reference exactly. PAIR ONLY with a T={T0_C:g}C
+# ripening_2D_L1.01mm_eps0.86um_2sided reference exactly. PAIR ONLY with a T={T0_C:g}C
 # experiment (e.g. base_T-20_h1.00_30d_a1.34e-2, which sets the matching
 # beta_sub0/d0_sub0). RECOMPUTE eps for any other run temperature.
 # =============================================================================

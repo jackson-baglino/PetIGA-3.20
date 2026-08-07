@@ -61,18 +61,6 @@ across every `.opts` file.
 In 1D, any `-ic_type` other than `single_ice` falls through to
 `FormInitialCondition1D` (centered slab / flat interface).
 
-## Available geometries
-
-- **1D:** `1D_ice_slab`, `1D_single_ice` (each with a `_hires` 2× variant)
-- **2D:** `2D_single_ice`, `2D_ice_slab`, `2D_two_ice_grains_boundary`
-  (+ `_refined2x` / `_refined4x`), plus the Molaro/axisym, pore-channel,
-  bumpy-floor, ripening, and multi-grain families — see `inputs/geometry/`.
-
-> **Note.** The sediment-era geometries (`*_ice_sed_pair`, `*_separated_grains`,
-> `*_touching_grains`, `*_single_sed`) and the `inputs/tests/` suite were
-> dropped in the 2026-06-13 two-phase fork and moved to `_trash/`. They request
-> `-ic_type` values (`ice_sed_pair`, `enclosed`, `single_sed`, `ice_cap`,
-> `capillary`, `contact_sed`, `slab_and_grains`) the solver no longer implements.
 
 ## The `phi<X>_seed<N>_T-<M>` packing sweep is generated, not hand-written
 
@@ -96,6 +84,53 @@ preprocess/generate_study_opts.py \
     --packings-dir inputs/packings \
     --temps -30                       # or: -5 -10 -15 -20 -25 -30 -35 -40
 ```
+
+## Geometry naming scheme
+
+Same idea as the experiment files, one family subdirectory each:
+
+```
+<family>/<family>_<dim>D[_<discriminator>]_L<size>_eps<eps>[_<special>...]
+```
+
+- **family** — `molaro`, `packing`, `rev`, `wedge`, `throat`, `regolithpore`,
+  `porechannel`, `bumpyfloor`, `twograins`, `iceslab`, `singleice`,
+  `multigrain`, `ripening`, `sediment`, `calib`, `tgrad`, `bump`, `sphere`,
+  `sinter`. Also the subdirectory name.
+- **dim** — `1D` or `2D`, from `-dim`.
+- **discriminator** — only where a family needs one; `packing` carries its
+  `phi<X>_seed<N>`.
+- **L`<size>`** — domain extent from `-Lx`, in `um` below 1 mm and `mm` above.
+- **eps`<eps>`** — the interface parameter from `-eps`, in um.
+- **special** — anything set for that one geometry: `axisym`, `union`,
+  `fixgeom`, `T-20pair`, `icecap`, `2band`, `90deg`, `narrowL`, `molaroscale`, …
+
+**Vague resolution qualifiers are gone.** `_hires`, `_epsloose`, `_epsmid`,
+`_epsstrict` and `_refined2x` all named a resolution without saying what it
+was, and the same word meant different values in different families. They are
+now the actual `eps`, so two files are directly comparable:
+
+| was | is |
+|---|---|
+| `1D_ice_slab` / `1D_ice_slab_hires` | `iceslab_1D_L100um_eps0.71um` / `…_eps0.36um` |
+| `2D_molaro_axisym_T-20pair_epsloose` | `molaro_2D_L386um_eps0.86um_axisym_T-20pair` |
+| `2D_molaro_axisym_T-20pair_epsstrict` | `molaro_2D_L385um_eps0.35um_axisym_T-20pair` |
+
+As with experiments you pass a **bare name** — the run scripts search the
+family subdirectories. `family/name` also works.
+
+### `geometry/meshes/` and `geometry/multigrain/`
+
+igakit mesh `.dat` files live in `geometry/meshes/`, separate from the
+hand-written `.opts` that point at them via `-geom_file`. The exception is
+`geometry/multigrain/<name>/`, where each mesh keeps its own
+`build_geometry.py` + `mesh.dat` + `mesh.opts` together — that layout is the
+reproducible record of how the mesh was built, so it stays intact.
+
+> Four of those `multigrain/*/mesh.dat` have never been committed
+> (`compEps_304x122`, `random_bumpy_floor_v1`, `random_bumpy_floor_molaroscale`,
+> `single_bump_v1`). Regenerate with the `build_geometry.py` next to each one
+> before using its `mesh.opts`.
 
 ## Experiment naming scheme
 
@@ -126,7 +161,7 @@ You still pass a **bare name** to the run scripts — they search the campaign
 subdirectories for you. `campaign/name` also works if you want to be explicit.
 
 ```bash
-./scripts/Studio/run_enceladus.sh 2D_molaro_axisym molaro_T-20_h1.00_2h_a3e-2
+./scripts/Studio/run_enceladus.sh molaro_2D_L385um_eps0.46um_axisym molaro_T-20_h1.00_2h_a3e-2
 ```
 
 ### If a file has no `_a<alpha_c>` token, check before trusting its physics
@@ -147,8 +182,8 @@ to use instead.
 
 ```bash
 # Two-grain neck formation at saturation
-./scripts/Studio/run_enceladus.sh 2D_two_ice_grains_boundary base_T-20_h1.00_1d
+./scripts/Studio/run_enceladus.sh twograins_2D_L41um_eps0.49um base_T-20_h1.00_1d
 
 # Same geometry, undersaturated
-./scripts/Studio/run_enceladus.sh 2D_two_ice_grains_boundary base_T-20_h0.95_1d
+./scripts/Studio/run_enceladus.sh twograins_2D_L41um_eps0.49um base_T-20_h0.95_1d
 ```

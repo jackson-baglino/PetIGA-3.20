@@ -198,7 +198,7 @@ def main():
     dat = (Path(args.out).resolve() if args.out
            else ROOT / f"inputs/geometry/wedge{tag}.dat")
     opts = (Path(args.opts).resolve() if args.opts
-            else ROOT / f"inputs/geometry/2D_wedge_band{tag}.opts")
+            else ROOT / f"inputs/geometry/wedge_2D_L300um_eps0.86um{tag}.opts")
     png = ROOT / f"preprocess/wedge{tag}.png"
 
     assert w_m > w_t > 0, f"need w_mouth > w_throat > 0 (got {w_t:.3e}, {w_m:.3e})"

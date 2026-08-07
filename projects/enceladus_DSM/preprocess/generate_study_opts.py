@@ -60,6 +60,16 @@ def derived_vn(T_C: float, alpha_c: float, R_feat: float) -> float:
     return capillary_length(T_C) / (beta_uns * R_feat)
 
 
+def _L_token(metres: float) -> str:
+    return (f"L{round(metres * 1e3, 2):g}mm" if metres >= 1e-3
+            else f"L{round(metres * 1e6):g}um")
+
+
+def _eps_token(metres: float) -> str:
+    um = metres * 1e6
+    return f"eps{um:.2f}um" if um < 10 else f"eps{um:g}um"
+
+
 def _dur_token(seconds: float) -> str:
     """Duration token for the naming scheme: exact integer in the largest
     sensible unit, else compact scientific seconds."""
@@ -224,7 +234,7 @@ def main(argv=None):
     geo_dir = args.out_dir / "geometry"
     exp_dir = args.out_dir / "experiment"
     if not args.dry_run:
-        geo_dir.mkdir(parents=True, exist_ok=True)
+        (geo_dir / "packing").mkdir(parents=True, exist_ok=True)
         (exp_dir / "snow").mkdir(parents=True, exist_ok=True)
 
     total_cores = 0
@@ -258,7 +268,10 @@ def main(argv=None):
             p = compute_eps(Lx=pk["Lx"], Ly=pk["Ly"], T0_C=T,
                             alpha_c=args.alpha_c, Rave=args.Rave,
                             safety=args.safety, v_n=vn)
-            write_geometry(geo_dir / f"{pk['name']}_T{T:g}{sfx}.opts", T, p, pk, args)
+            # Naming scheme: <family>_<dim>D_<discriminator>_L<size>_eps<eps>_T<T>
+            gname = (f"packing_2D_{pk['name']}_{_L_token(pk['Lx'])}"
+                     f"_{_eps_token(p['eps'])}_T{T:g}{sfx}")
+            write_geometry(geo_dir / "packing" / f"{gname}.opts", T, p, pk, args)
 
     n = len(packs) * len(args.temps)
     print(f"\n  {len(packs)} packings x {len(args.temps)} temperatures = {n} runs")

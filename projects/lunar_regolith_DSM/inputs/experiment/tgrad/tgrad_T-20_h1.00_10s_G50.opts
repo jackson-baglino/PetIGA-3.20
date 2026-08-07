@@ -13,7 +13,7 @@
 # is interrupted. Everything after that is confirmation the solver is happy
 # with the mesh.
 #
-# CHECKLIST for a wall-seated geometry (e.g. 2D_regolith_pore_divots):
+# CHECKLIST for a wall-seated geometry (e.g. regolithpore_2D_L814um_eps0.86um_divots):
 #   - every ice grain sits IN its divot, none buried in or floating off a wall
 #   - the diffuse band is smooth over the divot flanks, no kinks at seat edges
 #   - the temperature field ramps left-to-right and is NOT flattened at the

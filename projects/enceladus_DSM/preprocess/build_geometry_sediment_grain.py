@@ -174,7 +174,7 @@ def main():
     plot_surface(surf, "preprocess/sediment_grain_geometry.png")
     write_vtk(surf, "preprocess/sediment_grain_geometry.vtk")
 
-    out = "inputs/geometry/sediment_grain_test.dat"
+    out = "inputs/geometry/meshes/sediment_grain_test.dat"
     PetIGA().write(out, surf)
     print(f"wrote {out}")
 

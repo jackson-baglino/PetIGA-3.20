@@ -47,19 +47,19 @@ fi
 # -----------------------------------------------------------------------------
 DEFAULT_TESTS=(
     # ---- 1D tests at h=0.95, T=-20 ----
-    "1D_ice_slab:base_T-20_h0.95_1d"
-    "1D_ice_slab_hires:base_T-20_h0.95_1d"
-    "1D_single_ice:base_T-20_h0.95_1d"
-    "1D_single_ice_hires:base_T-20_h0.95_1d"
+    "iceslab_1D_L100um_eps0.71um:base_T-20_h0.95_1d"
+    "iceslab_1D_L100um_eps0.36um:base_T-20_h0.95_1d"
+    "singleice_1D_L62um_eps0.71um:base_T-20_h0.95_1d"
+    "singleice_1D_L62um_eps0.36um:base_T-20_h0.95_1d"
 
     # ---- 2D tests at saturation (two-grain neck physics — sintering / ripening) ----
-    "2D_two_ice_grains_boundary:base_T-20_h1.00_1d"
+    "twograins_2D_L41um_eps0.49um:base_T-20_h1.00_1d"
 
     # ---- 2D tests at undersaturation (bulk sublimation driving force) ----
-    "2D_single_ice:base_T-20_h0.95_1d"
-    "2D_single_ice_hires:base_T-20_h0.95_1d"
-    "2D_ice_slab:base_T-20_h0.95_1d"
-    "2D_ice_slab_hires:base_T-20_h0.95_1d"
+    "singleice_2D_L62um_eps0.47um:base_T-20_h0.95_1d"
+    "singleice_2D_L62um_eps0.36um:base_T-20_h0.95_1d"
+    "iceslab_2D_L100um_eps0.47um:base_T-20_h0.95_1d"
+    "iceslab_2D_L100um_eps0.36um:base_T-20_h0.95_1d"
 )
 
 # -----------------------------------------------------------------------------
@@ -68,8 +68,8 @@ DEFAULT_TESTS=(
 #
 # ADVISOR_SLIDES_GEOMS is a small curated subset that exercises the range of
 # two-phase physics for advisor-facing snapshot deliverables: two-grain neck
-# formation (2D_two_ice_grains_boundary), isolated grain response
-# (2D_single_ice), a flat interface (2D_ice_slab), and 1D high-res sanity
+# formation (twograins_2D_L41um_eps0.49um), isolated grain response
+# (singleice_2D_L62um_eps0.47um), a flat interface (iceslab_2D_L100um_eps0.47um), and 1D high-res sanity
 # checks (1D_*_hires).
 #
 # NOTE: the original 2026-05-25 preset targeted the sediment-era geometries
@@ -77,11 +77,11 @@ DEFAULT_TESTS=(
 # dropped in the 2026-06-13 two-phase fork; those .opts now live under _trash/.
 # -----------------------------------------------------------------------------
 ADVISOR_SLIDES_GEOMS=(
-    "1D_single_ice_hires"
-    "1D_ice_slab_hires"
-    "2D_two_ice_grains_boundary"
-    "2D_single_ice"
-    "2D_ice_slab"
+    "singleice_1D_L62um_eps0.36um"
+    "iceslab_1D_L100um_eps0.36um"
+    "twograins_2D_L41um_eps0.49um"
+    "singleice_2D_L62um_eps0.47um"
+    "iceslab_2D_L100um_eps0.47um"
 )
 
 # -----------------------------------------------------------------------------

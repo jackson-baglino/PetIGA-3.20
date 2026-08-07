@@ -37,7 +37,7 @@ solver's SedimentBumpField() already sums correctly, so no C change is needed.
 Strategies listed in CARVES_WALLS get their own mesh .dat instead of sharing
 the pore-only mesh, since their walls genuinely differ.
 
-Writes inputs/geometry/regolith_pore.dat and inputs/geometry/2D_regolith_pore.opts
+Writes inputs/geometry/meshes/regolith_pore.dat and inputs/geometry/2D_regolith_pore.opts
 (so scripts/Studio/run_lunar.sh finds them by the usual convention), plus a
 preview PNG. Deterministic (seeded). Every geometric constraint is asserted
 before anything is written — including the wall-slope budget that keeps the
@@ -87,7 +87,7 @@ Lx = (N_BUMPS - 1) * (2 * R_MED * (1 - 0.26))
 # eps is the comp_eps.py (Kaempfer & Plapp) value FOR T=-20 C, alpha_c=1.341e-2
 # — binding constraint is the T-dependent kinetic bound, so it is grain-size
 # independent here (all strategies pass eps/R_ave < 5%). Verified: reproduces
-# the validated 2D_ripening_two_sided reference run exactly, and pairs with the
+# the validated ripening_2D_L1.01mm_eps0.86um_2sided reference run exactly, and pairs with the
 # base_T-20_h1.00_30d_a1.34e-2 experiment's beta_sub0=5.9216e5 / d0_sub0=1.0166e-9.
 # RECOMPUTE for any other run temperature:
 #   python3 preprocess/comp_eps.py --Lx {Lx} --Ly {Ly} --Rave <R_smallest_ice> \
@@ -403,7 +403,7 @@ ICE_STRATEGIES = {
 # Per-strategy wall parameters, resolved BEFORE the walls are generated.
 #
 # The first three strategies differ only in where ice is placed, so they share
-# one mesh (inputs/geometry/regolith_pore.dat) and MUST keep the original stiff
+# one mesh (inputs/geometry/meshes/regolith_pore.dat) and MUST keep the original stiff
 # wall values — re-cutting those walls would silently invalidate every run
 # already done against them. wall_divots spends slope budget on the divots, so
 # it softens the regolith relief to buy that budget back and raises the central
@@ -451,8 +451,8 @@ def main():
     elif carves:
         dat = ROOT / f"inputs/geometry/regolith_pore{tag or '_' + args.ice_placement}.dat"
     else:
-        dat = ROOT / "inputs/geometry/regolith_pore.dat"
-    opts = Path(args.opts) if args.opts else ROOT / f"inputs/geometry/2D_regolith_pore{tag}.opts"
+        dat = ROOT / "inputs/geometry/meshes/regolith_pore.dat"
+    opts = Path(args.opts) if args.opts else ROOT / f"inputs/geometry/regolithpore_2D_L814um_eps0.86um{tag}.opts"
     png = ROOT / f"preprocess/regolith_pore{tag}.png"
 
     # ---- Walls from the regolith GSD, with a central throat ----
@@ -586,7 +586,7 @@ def main():
 # (floor/ceiling), within the {math.degrees(math.atan(SLOPE_BUDGET)):.0f} deg budget.
 #
 # Because the walls differ, this geometry has its OWN mesh — it does not share
-# inputs/geometry/regolith_pore.dat with flank_caps/throat_bridge/pore_lining."""
+# inputs/geometry/meshes/regolith_pore.dat with flank_caps/throat_bridge/pore_lining."""
     with open(opts, "w") as f:
         f.write(f"""# =============================================================================
 # geometry/{opts.name} — regolith pore channel (implicit regolith).
@@ -602,7 +602,7 @@ def main():
 # eps={EPS:.4e} is the comp_eps.py (Kaempfer&Plapp) value for T={T0_C:g}C,
 # alpha_c={ALPHA_C:g} (kinetic-bound limited, so grain-size independent here;
 # eps/R_smallest={EPS/Rmin*100:.1f}% < 5%). Reproduces the validated
-# 2D_ripening_two_sided reference exactly. PAIR ONLY with a T={T0_C:g}C
+# ripening_2D_L1.01mm_eps0.86um_2sided reference exactly. PAIR ONLY with a T={T0_C:g}C
 # experiment (e.g. base_T-20_h1.00_30d_a1.34e-2, which sets the matching
 # beta_sub0/d0_sub0). RECOMPUTE eps for any other run temperature.
 # =============================================================================

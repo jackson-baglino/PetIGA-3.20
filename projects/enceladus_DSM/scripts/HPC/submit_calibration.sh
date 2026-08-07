@@ -73,8 +73,8 @@ fi
 if [[ "$WHICH" == "all" || "$WHICH" == "xiv" || "$WHICH" == "heavy" ]]; then
   for x in 1e-4 1e-2 1e-1; do
     tag="xiv${x}"
-    cmds+=("$SUB calib_ripen_s050 $EXP $tag -- -xi_v $x")
-    cmds+=("$SUB calib_pack_s050  $EXP $tag -- -xi_v $x")
+    cmds+=("$SUB calib_2D_L500um_eps1.00um_ripen_s050 $EXP $tag -- -xi_v $x")
+    cmds+=("$SUB calib_2D_L500um_eps1.00um_pack_s050  $EXP $tag -- -xi_v $x")
   done
 fi
 

@@ -2,7 +2,7 @@
 """
 estimate_memory.py — peak RAM for a run, from its geometry .opts.
 
-Written after a local smoke test of calib_pack_s025 (24 M DOF) exhausted a
+Written after a local smoke test of calib_2D_L500um_eps0.50um_pack_s025 (24 M DOF) exhausted a
 64 GB machine. Mesh size alone is a bad proxy: the Jacobian and especially the
 ILU(3) fill dominate, and solver.opts uses -sub_pc_factor_levels 3.
 

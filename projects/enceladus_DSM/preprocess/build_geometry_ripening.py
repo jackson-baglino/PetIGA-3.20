@@ -190,7 +190,7 @@ def main():
 
     # ---- Mesh ----
     def bstr(b): return ";".join(f"{cx:.6e},{R:.6e},{h:.6e}" for cx, R, h in b)
-    dat = ROOT / "inputs/geometry/ripening_two_sided.dat"
+    dat = ROOT / "inputs/geometry/meshes/ripening_two_sided.dat"
     cmd = [str(ROOT / "venv_pf311/bin/python3"),
            str(ROOT / "preprocess/build_geometry_multi_grain.py"),
            "--bumps", bstr(bot_b), "--top-bumps", bstr(top_b),
@@ -225,7 +225,7 @@ def main():
 # Pair with an experiment that sets kinetics, e.g. 30day_T-20_h1.00_arrh.opts.
 # =============================================================================
 # DOF_GRID: {Nx+P} {Ny+P}
--geom_file inputs/geometry/ripening_two_sided.dat
+-geom_file inputs/geometry/meshes/ripening_two_sided.dat
 -p {P}
 -C {C}
 -ic_type multi_grains

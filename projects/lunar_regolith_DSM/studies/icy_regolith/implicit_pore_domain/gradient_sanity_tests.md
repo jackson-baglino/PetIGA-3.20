@@ -147,13 +147,13 @@ Three grains, equally spaced (0.2 / 0.5 / 0.8 Lx), 1.125 mm domain.
 
 | # | File | Lx [mm] | Ly [mm] | Grains (R, µm) | Role |
 |---|---|---|---|---|---|
-| 0 | `2D_Tgrad_1grain`       | 0.375 | 0.20 | 50                | single baseline |
-| 1 | `2D_Tgrad_2grain_equal` | 0.75  | 0.20 | 50, 50            | equal pair |
-| 2 | `2D_Tgrad_2grain_bigL`  | 1.00  | 0.30 | **150**, 50       | competing |
-| 6 | `2D_Tgrad_2grain_bigR`  | 1.00  | 0.30 | 50, **150**       | complementing |
-| 3 | `2D_Tgrad_3grain_equal` | 1.125 | 0.20 | 50, 50, 50        | 3-grain baseline |
-| 4 | `2D_Tgrad_3grain_smallC`| 1.125 | 0.20 | 50, **25**, 50    | small centre |
-| 5 | `2D_Tgrad_3grain_bigC`  | 1.125 | 0.25 | 50, **100**, 50   | large centre |
+| 0 | `tgrad_2D_L375um_eps0.86um_1grain`       | 0.375 | 0.20 | 50                | single baseline |
+| 1 | `tgrad_2D_L750um_eps0.86um_2grain_equal` | 0.75  | 0.20 | 50, 50            | equal pair |
+| 2 | `tgrad_2D_L1mm_eps0.86um_2grain_bigL`  | 1.00  | 0.30 | **150**, 50       | competing |
+| 6 | `tgrad_2D_L1mm_eps0.86um_2grain_bigR`  | 1.00  | 0.30 | 50, **150**       | complementing |
+| 3 | `tgrad_2D_L1.12mm_eps0.86um_3grain_equal` | 1.125 | 0.20 | 50, 50, 50        | 3-grain baseline |
+| 4 | `tgrad_2D_L1.12mm_eps0.86um_3grain_smallC`| 1.125 | 0.20 | 50, **25**, 50    | small centre |
+| 5 | `tgrad_2D_L1.12mm_eps0.86um_3grain_bigC`  | 1.125 | 0.25 | 50, **100**, 50   | large centre |
 
 All pair with experiment `tgrad_T-20_h1.00_3d_G50` (dT/dx = −50 K/m, −20 °C, 3 days).
 
@@ -161,8 +161,8 @@ All pair with experiment `tgrad_T-20_h1.00_3d_G50` (dT/dx = −50 K/m, −20 °C
 
 ```bash
 ./scripts/HPC/submit_batch.sh --tag Tgrad_sanity --tests "\
-2D_Tgrad_1grain:tgrad_T-20_h1.00_3d_G50,2D_Tgrad_2grain_equal:tgrad_T-20_h1.00_3d_G50,\
-2D_Tgrad_2grain_bigL:tgrad_T-20_h1.00_3d_G50,2D_Tgrad_2grain_bigR:tgrad_T-20_h1.00_3d_G50,\
-2D_Tgrad_3grain_equal:tgrad_T-20_h1.00_3d_G50,2D_Tgrad_3grain_smallC:tgrad_T-20_h1.00_3d_G50,\
-2D_Tgrad_3grain_bigC:tgrad_T-20_h1.00_3d_G50"
+tgrad_2D_L375um_eps0.86um_1grain:tgrad_T-20_h1.00_3d_G50,tgrad_2D_L750um_eps0.86um_2grain_equal:tgrad_T-20_h1.00_3d_G50,\
+tgrad_2D_L1mm_eps0.86um_2grain_bigL:tgrad_T-20_h1.00_3d_G50,tgrad_2D_L1mm_eps0.86um_2grain_bigR:tgrad_T-20_h1.00_3d_G50,\
+tgrad_2D_L1.12mm_eps0.86um_3grain_equal:tgrad_T-20_h1.00_3d_G50,tgrad_2D_L1.12mm_eps0.86um_3grain_smallC:tgrad_T-20_h1.00_3d_G50,\
+tgrad_2D_L1.12mm_eps0.86um_3grain_bigC:tgrad_T-20_h1.00_3d_G50"
 ```

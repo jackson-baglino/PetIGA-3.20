@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
-# run_mob_sweep.sh — Sequential mob_sub sweep for 2D_two_ice_grains_boundary
+# run_mob_sweep.sh — Sequential mob_sub sweep for twograins_2D_L41um_eps0.49um
 #
 # Runs one simulation per mob_sub value, each into its own timestamped folder
-# under $RESULTS_BASE/2D_two_ice_grains_boundary/.
+# under $RESULTS_BASE/twograins_2D_L41um_eps0.49um/.
 #
 # Usage:
 #   ./scripts/Studio/run_mob_sweep.sh [experiment] [extra petsc opts...]
@@ -22,7 +22,7 @@ PROJECT_ROOT="${PETIGA_DIR}/projects/enceladus_DSM"
 EXEC="$PROJECT_ROOT/enceladus_dsm"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch"
-GEOM="2D_two_ice_grains_boundary"
+GEOM="twograins_2D_L41um_eps0.49um"
 EXP="${1:-30day_T-5_h1.00_GTphys}"
 
 SOLVER_OPTS="$INPUTS_DIR/solver.opts"

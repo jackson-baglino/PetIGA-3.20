@@ -17,7 +17,7 @@ grain-size distribution (median radius ~50 µm, `docs/material_parameters.md`
     preprocess/build_geometry_regolith_pore.py
 
 Strategies that only place ice into the pore share one mesh
-`inputs/geometry/regolith_pore.dat` (the walls) and differ only in their
+`inputs/geometry/meshes/regolith_pore.dat` (the walls) and differ only in their
 `.opts` (the ice); a strategy that *reshapes* the walls (`wall_divots`) gets
 its own mesh. Deterministic; asserts every geometric constraint (throat gap,
 wall-slope budget, no buried/overlapping ice, bump count vs `MAX_SED_GRAINS`,
@@ -90,12 +90,12 @@ comparable wall-adhering deposits, **where does it collect** under a
 warm→cold gradient? Monotone cold-ward migration, a pile-up at the throat
 constriction, or do the seats pin it in place?
 
-Deliberately *not* the older `2D_pore_channel_icecap*` framing (a slab of ice
+Deliberately *not* the older `porechannel_2D_L100um_eps0.37um_icecap*` framing (a slab of ice
 at one end, one big attractor grain at the other), which fixes the end state
 in the initial condition.
 
 ```bash
-./scripts/HPC/submit_lunar.sh 2D_regolith_pore_divots tgrad_T-20_h1.00_3d_G50 divot_seed
+./scripts/HPC/submit_lunar.sh regolithpore_2D_L814um_eps0.86um_divots tgrad_T-20_h1.00_3d_G50 divot_seed
 ```
 
 `tgrad_T-20_h1.00_3d_G50` is −20 °C, saturated, `dT/dx = −50 K/m` (left warm), with
@@ -196,9 +196,9 @@ solver's wall formula to 4e-20 m, against ~9e-9 m for the bump walls.
 
 ```bash
 # config check first — confirm the 90 deg contact before spending an allocation
-./scripts/Studio/run_lunar.sh  2D_wedge_band tgrad_T-20_h1.00_10s_G0 config_check
+./scripts/Studio/run_lunar.sh  wedge_2D_L300um_eps0.86um tgrad_T-20_h1.00_10s_G0 config_check
 # production
-./scripts/HPC/submit_lunar.sh  2D_wedge_band tgrad_T-20_h1.00_90d_G0 wedge_migration
+./scripts/HPC/submit_lunar.sh  wedge_2D_L300um_eps0.86um tgrad_T-20_h1.00_90d_G0 wedge_migration
 # the answer
 python3 postprocess/track_wedge_band.py --dir <run folder> \
     --save-csv wedge_band.csv --save-fig wedge_band.png --no-show
@@ -226,9 +226,9 @@ divot geometry.
 ## Running
 
     # from the project root
-    ./scripts/Studio/run_lunar.sh 2D_regolith_pore        base_T-20_h1.00_30d_a1.34e-2
-    ./scripts/Studio/run_lunar.sh 2D_regolith_pore_throat base_T-20_h1.00_30d_a1.34e-2
-    ./scripts/Studio/run_lunar.sh 2D_regolith_pore_lining base_T-20_h1.00_30d_a1.34e-2
+    ./scripts/Studio/run_lunar.sh regolithpore_2D_L814um_eps0.86um        base_T-20_h1.00_30d_a1.34e-2
+    ./scripts/Studio/run_lunar.sh regolithpore_2D_L814um_eps0.86um_throat base_T-20_h1.00_30d_a1.34e-2
+    ./scripts/Studio/run_lunar.sh regolithpore_2D_L814um_eps0.86um_lining base_T-20_h1.00_30d_a1.34e-2
 
 (3 DOF; `run_lunar.sh` sizes the rank count from the `# DOF_GRID` comment.)
 
@@ -246,7 +246,7 @@ module constants and re-run; the `.dat` and all `.opts` regenerate.
 
 `eps = 8.5840e-7` is **not** an arbitrary/loose value: it is exactly what
 `preprocess/comp_eps.py` recommends for **T = −20 °C, α_c = 1.341e-2**, and it
-reproduces the validated `2D_ripening_two_sided` reference run bit-for-bit
+reproduces the validated `ripening_2D_L1.01mm_eps0.86um_2sided` reference run bit-for-bit
 (same `beta_sub0=5.9216e5`, `d0_sub0=1.0166e-9`). The binding K&P constraint is
 the temperature-dependent **kinetic bound**, so eps is grain-size independent
 here — every strategy passes `eps/R_ave < 5%` (3.0%, 3.0%, 4.8%, 4.1%).

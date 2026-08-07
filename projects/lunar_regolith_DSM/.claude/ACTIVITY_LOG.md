@@ -1,6 +1,6 @@
 ## 2026-08-03 — Wedge pore: does taper alone move ice?
 
-- **New geometry `2D_wedge_band`** (`preprocess/build_geometry_wedge.py`):
+- **New geometry `wedge_2D_L300um_eps0.86um`** (`preprocess/build_geometry_wedge.py`):
   two perfectly flat walls tapering 50 um -> 200 um (half-angle 14 deg), no
   thermal gradient, one ice band bridging the channel. Strips away every
   variable the rough-wall geometries include, so anything that moves was moved
@@ -992,7 +992,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   angle but are never exercised (padding keeps interfaces off walls); real
   substrate wetting would need a wall free-energy term (deliberate feature).
 - HPC build failure = login node /tmp full: export TMPDIR to group storage.
-- V3 queued by user: 2D_molaro_axisym + molaro_T-20_h1.00_2h_a2e-3 (target TOT_ICE(0)
+- V3 queued by user: molaro_2D_L385um_eps0.46um_axisym + molaro_T-20_h1.00_2h_a2e-3 (target TOT_ICE(0)
   = 5.91e-12; hypothesis 2-3x planar +17.8% neck growth).
 
 ---
@@ -1181,7 +1181,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   t_final still a 14-day placeholder pending the paper's Fig. 11 time axis.
   Neck-rate convergence check (-dtmax 5e2 rerun) required before trusting.
 - User to pull on HPC and submit via
-  ./scripts/HPC/submit_permafrost.sh 2D_molaro_sintering molaro_T-20_h1.00_2h_a2e-3 <tag>.
+  ./scripts/HPC/submit_permafrost.sh molaro_2D_L385um_eps0.46um_sintering molaro_T-20_h1.00_2h_a2e-3 <tag>.
 - Still pending: K&P 2009's specific beta_sub value (user reading), alpha_c
   parameterization decision, axisymmetric r-z mode for true-3D curvature.
 
@@ -2366,7 +2366,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 
 ## 2026-06-20 — Mesh-convergence investigation on grain plateau; pivoted to pore-channel geometry
 
-- 10-year run on 2D_two_ice_grains_boundary (half-size small grain) showed
+- 10-year run on twograins_2D_L41um_eps0.49um (half-size small grain) showed
   99% small-grain sublimation before plateauing -- visual check showed the
   grain's two opposing diffuse interfaces had merged into a degenerate
   blob (no flat phi_ice~1 core) by year 6.5, frozen for the remaining 3.5
@@ -2414,7 +2414,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 
 ## 2026-06-20 — Diagnosed d0_GT amplification failure; switched to tighter geometry + warmer temp
 
-- Two 21-day sweeps on 2D_single_bump_two_grains at -20°C testing larger
+- Two 21-day sweeps on twograins_2D_L100um_eps0.37um_2grain at -20°C testing larger
   d0_GT (1e-7, 1e-8) to speed up Ostwald ripening: d0_GT=1e-7 caused
   I-A INTERF to jump 3.1e-12 -> 4.3e-12 in a few steps then plateau --
   visual check (igakit render of sol_00045/48/121) confirmed this is the
@@ -2430,14 +2430,14 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   rationale: rho_vs(T) is exponential in 1/T, so GT's multiplicative
   correction produces a much larger absolute vapor-density difference at
   -5C than -20C without touching d0_GT at all). Ran both on
-  2D_single_bump_two_grains/30day: GTphys (d0_GT=9.6e-10, physical)
+  twograins_2D_L100um_eps0.37um_2grain/30day: GTphys (d0_GT=9.6e-10, physical)
   declined smoothly 3.081->2.978e-12 (-3.3%, monotonic, zero DIVERGED);
   GTamp (d0_GT=1e-8, 10x) oscillated mildly (3.081->3.095->3.048, ~1%
   swings, no instability) -- confirms -5C gives real headroom for the
   same 10x amplification that broke cleanly at -20C, and -5C alone is the
   single biggest lever found so far. Still far from full small-grain
   sublimation though.
-- User's next idea: switch to the tighter 2D_two_ice_grains_boundary
+- User's next idea: switch to the tighter twograins_2D_L41um_eps0.49um
   geometry (already existed, unused this whole session) -- per its own
   header it's purpose-built with a ~40-element vapor gap between a 9.375
   um and an 18.75 um grain on a near-square domain (4.12e-5 x 5.08e-5 m),
@@ -2446,7 +2446,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   documented). Added 90day_T-5_h1.00_GTamp/_GTphys.opts (mirrors the
   existing 30-day versions, just t_final=90 days) for a longer-horizon
   test, per user's request to also try longer t_final.
-- Not yet run: 2D_two_ice_grains_boundary x {30day,90day}_T-5_h1.00_{GTamp,GTphys}
+- Not yet run: twograins_2D_L41um_eps0.49um x {30day,90day}_T-5_h1.00_{GTamp,GTphys}
   on the HPC. This combo (tighter grain spacing + warmer temp + longer
   time + already-validated-safe 10x GT amplification) stacks every lever
   found so far without revisiting the ones that failed (over-amplifying
@@ -2471,7 +2471,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 
 ## 2026-06-19 — Confirmed bcgs fix on HPC, raised dtmax to 1.0e5
 
-- job64418602 (2D_single_bump_two_grains, bcgs_fix) confirms the gmres ->
+- job64418602 (twograins_2D_L100um_eps0.37um_2grain, bcgs_fix) confirms the gmres ->
   bcgs switch fully resolved the dt stall: 0 DIVERGED events, 79 "Increase
   time step" vs 0 "Reduce time step" (vs the prior 325/272 near-1:1
   hunting cycle), dt cleanly hit the dtmax=1.0e4 ceiling 12 times. Full
@@ -2482,7 +2482,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   the NRmin/NRmax heuristic still self-limits based on Newton iteration
   count, so the higher ceiling only gets used during genuinely quiet
   stretches, which is most of a 21+ day Ostwald-ripening run.
-- Next: rerun 2D_single_bump_two_grains (or 2D_single_bump_ice_cap) at
+- Next: rerun twograins_2D_L100um_eps0.37um_2grain (or bump_2D_L100um_eps0.37um_icecap) at
   base_T-20_h0.95_1d on the HPC with the new dtmax to see ripening develop
   over a longer horizon, now markedly cheaper to run.
 
@@ -2490,7 +2490,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 
 ## 2026-06-19 — Fixed GT-induced dt stall: switched KSP from gmres to bcgs
 
-- User reported job64416684 (2D_single_bump_two_grains, GT fix) confirmed
+- User reported job64416684 (twograins_2D_L100um_eps0.37um_2grain, GT fix) confirmed
   Ostwald ripening works again, but dt stalls oscillating around 1e3
   instead of growing toward dtmax=1.0e4. Counts: 325 "Increase time step"
   vs 272 "Reduce time step" (near 1:1, a hunting/limit-cycle), versus the
@@ -2552,7 +2552,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   for diagnostics.
 - Verified: clean build, IC-only sanity run shows `BOUNDS: phi_ice [0.0,
   1.0]` with `d0_GT (capillary length): 1.0000e-09 m [GT active]`. Full
-  2-day `2D_single_bump_two_grains` validation run launched into
+  2-day `twograins_2D_L100um_eps0.37um_2grain` validation run launched into
   `SimulationResults/permafrost/scratch/` (not /tmp, per standing
   instruction) to confirm Newton convergence and Ostwald ripening behavior
   before pushing further.
@@ -2561,7 +2561,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 
 ## 2026-06-19 — Bound-constrained (VI) Newton solve replaces dt/gate heuristics for phase bounds
 
-- User reported that job64415277 (2D_single_bump_ice_cap, the v8 circle-fit
+- User reported that job64415277 (bump_2D_L100um_eps0.37um_icecap, the v8 circle-fit
   encapsulation) saw phi_ice undershoot to -0.18 and -0.196 at steps 63/70,
   voiding those results -- much worse than the small (~-0.004), expected/
   tolerated overshoot seen by the end of the run. Traced every BOUNDS/WARN
@@ -2590,8 +2590,8 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - Validated locally (`scripts/Studio/run_batch_tests.sh --tag
   vinewtonssls_validation`, full 2-day runs into
   `SimulationResults/permafrost/scratch/`): both
-  `2D_single_bump_ice_cap:base_T-20_h0.95_1d` and
-  `2D_single_bump_two_grains:base_T-20_h0.95_1d` (regression check on normal,
+  `bump_2D_L100um_eps0.37um_icecap:base_T-20_h0.95_1d` and
+  `twograins_2D_L100um_eps0.37um_2grain:base_T-20_h0.95_1d` (regression check on normal,
   non-extinction sintering dynamics) completed OK with zero WARNs and
   every BOUNDS line at machine-zero.
 - Unexpected, important finding: with the fix, the ice-cap's encapsulating
@@ -2718,8 +2718,8 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - Verified end-to-end against job64410270's `permafrost.pvd` (5564 real
   snapshots). Committed (5f65166) and pushed.
 - Gave the user `submit_permafrost.sh` commands to rerun the three 2-day
-  simple-case sanity sims (`2D_two_grains_flat`,
-  `2D_single_bump_two_grains`, `2D_single_bump_ice_cap`, all still
+  simple-case sanity sims (`twograins_2D_L100um_eps0.37um_2grain_flat`,
+  `twograins_2D_L100um_eps0.37um_2grain`, `bump_2D_L100um_eps0.37um_icecap`, all still
   present and unchanged) with `base_T-20_h0.95_1d`.
 
 ---
@@ -3025,10 +3025,10 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - User measured ~9.5 elements across the 1%-99% diffuse band on this
   mesh in ParaView (target ~7.5); rescaled eps by 7.5/9.5 to
   eps=3.68274e-07 (commit 423a051), still below comp_eps.py's ceiling.
-- Archived the mesh/opts as `inputs/geometry/multi_grain/compEps_304x122/`
+- Archived the mesh/opts as `inputs/geometry/multigrain/compEps_304x122/`
   via `build_geometry_multi_grain.py --variant`.
 - Handed off the HPC submission command
-  (`./scripts/HPC/submit_permafrost.sh 2D_multi_grain_test base_T-20_h0.95_1d compEps304x122`)
+  (`./scripts/HPC/submit_permafrost.sh multigrain_2D_L100um_eps0.37um_test base_T-20_h0.95_1d compEps304x122`)
   for a full t_final=172800 (2-day) run to check whether the new mesh/eps
   avoids the dt-rejection-cascade crash and keeps the interface width
   stable over time.
@@ -3238,7 +3238,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - Added `-ice_grain_ax` / `-ice_grain_ay` CLI options in `permafrost2.c`; default to `radius[k]` for backward compatibility.
 - Rewrote grain distance loop in `FormInitialMultiGrains2D` to use elliptical normalized distance `sqrt((dx/ax)^2+(dy/ay)^2)` with `tc_k = tc*sqrt(ax*ay)` scaling; circular grains (ax=ay=R) produce identical output to the old code.
 - Scaled domain: `Lx 4.0e-5 → 1.0e-4 m`, `Nx 240 → 600` (h unchanged at 1.667e-7 m); 12 alternating-height bumps (was 5 uniform); 8 ice grains (was 6): 2 circular boundary + 6 elliptical trough puddles (ax=4.5e-6, ay=2.5e-6).
-- Regenerated `inputs/geometry/multi_grain_test.dat` (602×242 control points).
+- Regenerated `inputs/geometry/meshes/multi_grain_test.dat` (602×242 control points).
 - Build clean (no errors).
 
 ---
@@ -3822,7 +3822,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - Rewrote `preprocess/build_geometry_multi_grain.py` to build the multi-grain
   geometry directly as degree-(2,2)/C1 NURBS via Greville-abscissa control
   points (no more igakit `cad.ruled`/`refine_surface`); regenerated
-  `inputs/geometry/multi_grain_test.dat`.
+  `inputs/geometry/meshes/multi_grain_test.dat`.
 - Worked through eps/mesh-resolution relationship: eps is a fixed physical
   bound from `comp_eps.py` (4.6648e-07 for this domain/T), independent of
   mesh; two earlier attempts to rescale eps with mesh size (2.9155e-07,
@@ -3908,7 +3908,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 
 ## 2026-06-15 — Validate refined multi-grain mesh (160x160) over 2 days
 
-- Re-ran `2D_multi_grain_test` + `base_T-20_h0.95_1d` (tag `multigrain_refine_2day`)
+- Re-ran `multigrain_2D_L100um_eps0.37um_test` + `base_T-20_h0.95_1d` (tag `multigrain_refine_2day`)
   with the 160x160 mesh and enlarged LHS ice grain (R=6.0e-6) from commit
   322d880.
 - 202 steps to t=1.74e5s, Total mass Delta=-0.001%, no [ABORT]/NaN.
@@ -3957,7 +3957,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   via summed/clamped tanh distance profiles, reusing the `cent`/`radius`
   AppCtx fields.
 - New `preprocess/build_geometry_multi_grain.py` generates a 3-sediment-grain
-  geometry (`inputs/geometry/multi_grain_test.dat`) with 4 ice grains
+  geometry (`inputs/geometry/meshes/multi_grain_test.dat`) with 4 ice grains
   (2 boundary grains + 2 nucleating in the inter-grain troughs), config in
   `inputs/geometry/2D_multi_grain_test.opts`.
 - Smoke test (`smoke_T-20_h0.95_1e-6s`, t_final=1e-6): no `[ABORT]` bound violations,
@@ -3979,7 +3979,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 
 ## 2026-06-15 — Verify fixes with fresh 2-day sediment-grain run (sedgeom_recheck)
 
-- Re-ran `2D_sediment_grain_test` + `base_T-20_h0.95_1d` (tag `sedgeom_recheck`)
+- Re-ran `sediment_2D_L40um_eps0.47um_test` + `base_T-20_h0.95_1d` (tag `sedgeom_recheck`)
   with the updated `monitoring.c`/plotting scripts.
 - `mass.png` now matches `outp.txt` exactly: Total mass Δ = -4.87e-04%,
   Ice Δ ≈ -4.9e-04% (effectively conserved), Vapor Δ = +5.05% (but vapor
@@ -4091,7 +4091,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   grain 0 (smaller, R0=9.375e-6) stays just outside the bump region and
   looks circular. Purely an IC/smoke-test artifact, not a physics issue.
 - Ran a 2-day (-20C/95% humidity) simulation on the sediment-grain geometry
-  (`2D_sediment_grain_test` + `base_T-20_h0.95_1d`, tag `sedgeom_2day`):
+  (`sediment_2D_L40um_eps0.47um_test` + `base_T-20_h0.95_1d`, tag `sedgeom_2day`):
   completed 141 steps to t=1.728e5s (full target), 44 VTK snapshots.
   TOT_ICE +0.006%, TOT_AIR -0.005%, TOTAL_MASS +0.006%, TOT_RHOV +5.06%
   (consistent with prior rectangular-domain runs). Bounds stayed close to
@@ -4126,7 +4126,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   detJ > 0 over the whole parameter domain). Result is degree (1,1)
   with C0 interior knots, matching `solver.opts`' `-p 1 -C 0` (commit
   `c4098ad`).
-- Re-ran the `2D_sediment_grain_test` + `smoke_T-20_h0.95_1e-6s` smoke test: now
+- Re-ran the `sediment_2D_L40um_eps0.47um_test` + `smoke_T-20_h0.95_1e-6s` smoke test: now
   completes (13 steps), TOT_ICE/TOTAL_MASS drift 0.000%, bounds clean
   (phi_ice/phi_air in [0,1]). Multi-patch geometry is NOT needed for
   this case.
@@ -4150,7 +4150,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   arc-length-based knot refinement (vs. uniform-in-parameter) and added
   a legacy-VTK structured-grid export
   (`preprocess/sediment_grain_geometry.vtk`) for ParaView inspection.
-- Smoke test (`2D_sediment_grain_test` + `smoke_T-20_h0.95_1e-6s`, commit `85e50f0`):
+- Smoke test (`sediment_2D_L40um_eps0.47um_test` + `smoke_T-20_h0.95_1e-6s`, commit `85e50f0`):
   IGARead + IC + assembly setup all ran correctly, but the solve failed
   with "Non-positive det(Jacobian)" -- the single-Coons-patch geometry
   folds near the two reflex corners where the semicircular bite meets
@@ -4165,7 +4165,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 ## 2026-06-14 — 2-day Ostwald run completes; start igakit geometry exploration
 
 - Ran the 2-day -20C/95% humidity Ostwald-ripening case
-  (`2D_two_ice_grains_boundary` + `base_T-20_h0.95_1d` + `ostwald_v1`) via
+  (`twograins_2D_L41um_eps0.49um` + `base_T-20_h0.95_1d` + `ostwald_v1`) via
   `run_permafrost.sh`, with time-equally-spaced output
   (`-outp 0 -n_out 100`, new `inputs/experiment/2day_T-20_h0.95.opts`).
   Completed cleanly in 134 steps, final t=1.738e5s (target 1.728e5s):
@@ -4271,7 +4271,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
 - Verified with a 28-step run: TOT_ICE stays exactly 6.921e-10 (-0.000%),
   bounds in [0,1] -- matches the un-eroded K2P-fix baseline.
 - Relaunched the 60-day practice run (v3) on this geometry via
-  `./scripts/Studio/run_permafrost.sh 2D_two_ice_grains_boundary
+  `./scripts/Studio/run_permafrost.sh twograins_2D_L41um_eps0.49um
   base_T-20_h0.95_1d practice60day_v3`.
 
 ---
@@ -4363,7 +4363,7 @@ properties) and began the cleanup/restructure that precedes them. Plan file:
   `-difvap_pen`/`-k_pen` vapor-penalty block left over from the dropped
   sediment phase.
 - Ran the full 60-day simulation via `./scripts/Studio/run_permafrost.sh
-  2D_two_ice_grains_boundary base_T-20_h0.95_1d practice60day`. With
+  twograins_2D_L41um_eps0.49um base_T-20_h0.95_1d practice60day`. With
   solver.opts' NRmin=5/NRmax=15, dt grew steadily from 1e-8 toward
   dtmax=1e4 with no oscillation (previously observed oscillation was a
   CLI-default NRmin/NRmax issue, resolved by using the proper opts file).

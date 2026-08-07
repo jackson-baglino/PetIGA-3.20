@@ -5,7 +5,7 @@
 # identical in every respect except the phase-change coupling. 30 days at
 # -20 C, saturated, physical kinetics.
 #
-# Expected physics (pair with 2D_two_ice_grains_boundary):
+# Expected physics (pair with twograins_2D_L41um_eps0.49um):
 #   tau_kin(9.375 um) = beta_sub*r^2/d0 = 3.4e5 s -> small grain consumed at
 #   ~4-8 days, mass TRANSFERRED to the large grain through the vapor field
 #   (TOT_ICE conserved) — the vapor-mediated ripening story.

@@ -14,7 +14,7 @@
 # interrupted. Everything after that is confirmation the solver is happy with
 # the mesh.
 #
-# CHECKLIST for the wedge band (2D_wedge_band):
+# CHECKLIST for the wedge band (wedge_2D_L300um_eps0.86um):
 #   - the band spans wall to wall, touching both
 #   - BOTH menisci meet the walls at 90 deg — the single most important
 #     visual, since the whole migration prediction rests on the contact angle.

@@ -68,7 +68,7 @@
 # (random_bumpy_floor_v2) needed the gate widened -0.05/1.05 -> -0.15/1.15
 # because a fully-extinct floor cap's UNDAMPED trial Newton iterate tripped
 # the domain-error check every retry, even though the final accepted state
-# was fine, causing a dt limit cycle. The 2D_single_bump_ice_cap case
+# was fine, causing a dt limit cycle. The 2D_single_bump_ice_cap case (geometry since removed)
 # (job64415277) then showed the underlying problem directly: even with
 # dt-halving retries, an encapsulating ice ring fully sublimating produced
 # real (not just transient) field-level undershoots of -0.10 to -0.18 before

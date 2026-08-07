@@ -15,7 +15,7 @@ Options:
     --Ny INT    Number of elements in y (default: 240)
     --P  INT    B-spline degree; continuity is C^{P-1} (default: 2)
     --out PATH  Output PetIGA binary mesh file
-                  (default: inputs/geometry/multi_grain_test.dat)
+                  (default: inputs/geometry/meshes/multi_grain_test.dat)
     --plot PATH Output control-mesh PNG plot
                   (default: preprocess/multi_grain_geometry.png)
     --vtk PATH  Output VTK structured grid for visualization
@@ -430,7 +430,7 @@ def main():
     parser.add_argument("--margin", type=float, default=0.0,
                          help="keep-out at the left/right domain edges for --random-bumps, "
                               "default 0.0 (bumps run edge-to-edge)")
-    parser.add_argument("--out", default="inputs/geometry/multi_grain_test.dat",
+    parser.add_argument("--out", default="inputs/geometry/meshes/multi_grain_test.dat",
                          help="output PetIGA mesh file (default: active mesh)")
     parser.add_argument("--plot", default="preprocess/multi_grain_geometry.png",
                          help="output control-mesh plot")
@@ -438,9 +438,9 @@ def main():
                          help="output VTK structured grid")
     parser.add_argument("--variant", default=None,
                          help=("archive name, e.g. 'BLphase1_5bump_600x288'. "
-                               "Creates inputs/geometry/multi_grain/<variant>/ with "
+                               "Creates inputs/geometry/multigrain/<variant>/ with "
                                "mesh.dat, mesh.opts, and build_geometry.py snapshot. "
-                               "Also writes the active inputs/geometry/multi_grain_test.dat."))
+                               "Also writes the active inputs/geometry/meshes/multi_grain_test.dat."))
     parser.add_argument("--opts", default="inputs/geometry/2D_multi_grain_test.opts",
                          help="opts file to snapshot into the variant folder (default: active opts)")
     args = parser.parse_args()
@@ -483,7 +483,7 @@ def main():
     print(f"wrote {args.out}")
 
     if args.variant:
-        vdir = Path(f"inputs/geometry/multi_grain/{args.variant}")
+        vdir = Path(f"inputs/geometry/multigrain/{args.variant}")
         vdir.mkdir(parents=True, exist_ok=True)
 
         # mesh.dat — copy from active output
@@ -498,7 +498,7 @@ def main():
             text = opts_src.read_text()
             text = re.sub(
                 r"^(-geom_file\s+)\S+",
-                rf"\1inputs/geometry/multi_grain/{args.variant}/mesh.dat",
+                rf"\1inputs/geometry/multigrain/{args.variant}/mesh.dat",
                 text,
                 flags=re.MULTILINE,
             )

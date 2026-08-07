@@ -24,7 +24,7 @@ PROJ="$(cd "$SCRIPT_DIR/../.." && pwd)"
 EXEC="$PROJ/lunar_regolith_dsm"
 SOLVER_OPTS="$PROJ/inputs/solver.opts"
 
-GEOM="2D_two_ice_grains_boundary"
+GEOM="twograins_2D_L41um_eps0.49um"
 GEOM_OPTS="$PROJ/inputs/geometry/${GEOM}.opts"
 
 EXP="${1:-30day_T-5_h1.00_GTphys}"; shift || true
