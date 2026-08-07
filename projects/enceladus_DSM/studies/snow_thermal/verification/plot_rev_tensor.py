@@ -37,6 +37,7 @@ Usage:
 """
 import argparse
 import csv
+import json
 import os
 import re
 
@@ -46,6 +47,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+PROJ = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 
 # Window size is an ordered magnitude, not a set of unrelated categories, so it
 # is encoded on a sequential ramp rather than with categorical hues: small L
@@ -105,6 +107,16 @@ def collect(results, tag):
             print(f"  empty k_eff.csv in {run} -- skipped")
             continue
         m = re.search(r"L([0-9.]+)mm", geom)
+        # The packing's own solid fraction, so the run can be checked against
+        # the microstructure it was supposed to start from. Without this the
+        # phi_bar column has nothing to be wrong relative to.
+        solid = np.nan
+        if m:
+            mp = os.path.join(PROJ, "inputs", "packings_rev",
+                              f"rev_L{m.group(1)}mm", "metadata.json")
+            if os.path.isfile(mp):
+                with open(mp) as fh:
+                    solid = 1.0 - json.load(fh)["porosity_achieved"]
         rows.append({
             "geom": geom,
             "run": run,
@@ -114,6 +126,9 @@ def collect(results, tag):
             "k": {c: np.array([float(r[c]) for r in d]) for c, _, _ in COMPONENTS},
             "k_iso": np.array([float(r["k_iso"]) for r in d]),
             "phi_bar": np.array([float(r["phi_bar"]) for r in d]),
+            "its": np.array([int(r["ksp_its"]) for r in d]),
+            "reason": np.array([int(r["ksp_reason"]) for r in d]),
+            "solid_pack": solid,
         })
     # NaN sorts last, so unlabelled geometries fall to the end instead of
     # raising or scrambling the colour order.
@@ -193,6 +208,7 @@ def main():
         raise SystemExit(f"no k_eff.csv found under {args.results} "
                          f"with tag '{args.tag}'")
 
+    print("THE TENSOR AT t_end")
     print(f"{'window':>12} {'n':>4} {'t_end[h]':>9} {'k_00':>11} {'k_11':>11} "
           f"{'k_01':>11} {'k_10':>11} {'|k01-k10|/k_iso':>16} {'k_iso':>11}")
     summary = []
@@ -203,18 +219,51 @@ def main():
               f"{f['k_00']:11.4e} {f['k_11']:11.4e} {f['k_01']:11.4e} "
               f"{f['k_10']:11.4e} {asym:16.2e} {r['k_iso'][-1]:11.4e}")
         summary.append([r["geom"], r["L"], r["t"][-1], f["k_00"], f["k_01"],
-                        f["k_10"], f["k_11"], r["k_iso"][-1], r["phi_bar"][-1],
-                        asym, r["run"]])
+                        f["k_10"], f["k_11"], r["k_iso"][-1],
+                        r["phi_bar"][0], r["phi_bar"][-1], r["solid_pack"],
+                        r["k_iso"][0], asym, int(r["its"][-1]),
+                        int(r["reason"][-1]), r["run"]])
 
-    worst = max(s[9] for s in summary)
-    print(f"\nlargest k_01 vs k_10 asymmetry: {worst:.2e} of k_iso "
-          f"({'fine — the corrector solves agree' if worst < 1e-3 else 'LOOK AT THIS: the two corrector solves disagree'})")
+    # THE ICE-FRACTION AUDIT. k_eff in this model goes roughly as phi_bar^4, so
+    # a couple of percent of ice fraction is ~10% of k_eff -- more than the REV
+    # tolerance. A k_eff(L) trend can therefore be entirely an artefact of
+    # phi_bar not being what it should be, in two distinct ways this table
+    # separates:
+    #   pack->t0   the run did not start from the packing it was given
+    #              (rasterisation, diffuse-interface bias, a bad IC)
+    #   t0->end    ice was created or destroyed during the run
+    #              (boundary conditions, mass conservation)
+    # Only once BOTH are small is a k_eff(L) trend about L at all.
+    print("\nTHE ICE-FRACTION AUDIT — k_eff ~ phi_bar^4, so read this first")
+    print(f"{'window':>12} {'pack':>8} {'phi(t0)':>9} {'phi(end)':>9} "
+          f"{'pack->t0':>10} {'t0->end':>9} {'k_iso drift':>12}")
+    for r in rows:
+        p0, pe, pk = r["phi_bar"][0], r["phi_bar"][-1], r["solid_pack"]
+        ic = 100 * (p0 - pk) / pk if np.isfinite(pk) else np.nan
+        run = 100 * (pe - p0) / p0
+        kd = 100 * (r["k_iso"][-1] - r["k_iso"][0]) / r["k_iso"][0]
+        print(f"{r['label']:>12} {pk:8.4f} {p0:9.4f} {pe:9.4f} "
+              f"{ic:+9.2f}% {run:+8.2f}% {kd:+11.2f}%")
+
+    ic = [abs(r["phi_bar"][0] - r["solid_pack"]) / r["solid_pack"]
+          for r in rows if np.isfinite(r["solid_pack"])]
+    if ic:
+        note = "" if max(ic) < 0.02 else (
+            "  <-- the ICs do not match the packings, so k_eff(L) "
+            "is not about L until this is explained")
+        print(f"\nworst pack->t0 ice-fraction error: {max(ic)*100:.1f}%{note}")
+
+    worst = max(s[12] for s in summary)
+    print(f"largest k_01 vs k_10 asymmetry: {worst:.2e} of k_iso "
+          f"({'fine — the corrector solves agree' if worst < 1e-6 else 'the corrector solves are stopping short; check ksp_reason'})")
 
     csvp = os.path.join(args.out, "rev_keff_tensor_summary.csv")
     with open(csvp, "w", newline="") as fh:
         w = csv.writer(fh)
         w.writerow(["geometry", "L_mm", "t_end_s", "k_00", "k_01", "k_10",
-                    "k_11", "k_iso", "phi_bar", "asym_over_k_iso", "run_dir"])
+                    "k_11", "k_iso_end", "phi_bar_t0", "phi_bar_end",
+                    "solid_frac_packing", "k_iso_t0", "asym_over_k_iso",
+                    "ksp_its_end", "ksp_reason_end", "run_dir"])
         w.writerows(summary)
     print("wrote", csvp)
 
