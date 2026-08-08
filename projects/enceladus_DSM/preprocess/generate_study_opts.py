@@ -66,7 +66,16 @@ def _L_token(metres: float) -> str:
 
 
 def _eps_token(metres: float) -> str:
+    """eps in the unit that keeps its significant figures.
+
+    The um-with-2-decimals form silently degrades once eps drops below a
+    micron: at R_ave = 2.5 um, eps = 0.045 um renders as "eps0.04um", which is
+    both lossy and reads like a different value. eps is baked into the meaning
+    of the file name, so it has to survive the formatting.
+    """
     um = metres * 1e6
+    if um < 1.0:
+        return f"eps{metres * 1e9:g}nm"
     return f"eps{um:.2f}um" if um < 10 else f"eps{um:g}um"
 
 
@@ -111,6 +120,21 @@ def write_experiment(path: Path, T_C: float, p: dict, args) -> None:
 """)
 
 
+def _axes_token(pack: dict) -> str:
+    """Which axes the packing wraps on, from its metadata."""
+    axes = "".join(a for a, f in (("x", pack.get("periodic_x")),
+                                  ("y", pack.get("periodic_y"))) if f)
+    return axes or "none"
+
+
+def _matrix_note(pack: dict) -> str:
+    """'  (N deposited + M filler)' when the packing records the split."""
+    nf = pack.get("n_filler_grains")
+    if nf is None:
+        return ""
+    return f"   ({pack['n_grains'] - nf} deposited + {nf} filler)"
+
+
 def write_geometry(path: Path, T_C: float, p: dict, pack: dict, args) -> None:
     path.write_text(f"""\
 # Geometry: {pack['name']} at T = {T_C:g} C
@@ -122,9 +146,11 @@ def write_geometry(path: Path, T_C: float, p: dict, pack: dict, args) -> None:
 # temperatures. Binding bound here: {p['binding']}.
 #
 #   porosity (achieved) = {pack['porosity_achieved']:.4f}   target {pack['porosity_target']:.4f}
-#   grains              = {pack['n_grains']}
-#   contact gap         = {pack['contact_gap_m']*1e6:.2f} um
+#   grains              = {pack['n_grains']}{_matrix_note(pack)}
 #   coordination number = {pack['coordination_number']:.2f}
+#   periodic axes       = {_axes_token(pack)}
+#   largest pore circle = {pack.get('max_void_radius_per_mean_r', float('nan')):.2f} mean grain radii
+#   half-domain asym.   = {pack.get('half_domain_asymmetry', float('nan'))*100:.1f} %
 #
 # THROATS vs THE DIFFUSE BAND -- the binding constraint on eps for k_eff, and the
 # one to check before trusting a conductivity from this geometry. Where the band
@@ -141,16 +167,17 @@ def write_geometry(path: Path, T_C: float, p: dict, pack: dict, args) -> None:
 # the Molaro axisymmetric geometries use.
 #
 # Each grain's own field crosses 0.5 at exactly r_k = R_k -- the sharp grain
-# surface -- FOR ANY eps. The packings are generated at exact tangency
-# (--contact-gap 0), so neighbours touch precisely where phi_1 = phi_2 = 0.5.
+# surface -- FOR ANY eps. Drop-and-roll seats every deposited grain in exact
+# tangency on its supports, so neighbours touch precisely where
+# phi_1 = phi_2 = 0.5.
 # Contact therefore has an eps-independent meaning, the radii never depend on
 # eps, and no neck calibration is needed: the sharp geometry is fixed and only
 # the width of the diffuse skin around it changes.
 #
 # The union form (-ic_grain_union 1) exists for OVERLAPPING grains, which these
-# packings deliberately do not have. calibrate_neck_geometry.py is likewise
-# specific to the Molaro axisymmetric pair, where the initial neck had to match
-# a measured experimental value; that constraint does not apply here.
+# packings deliberately do not have -- the deposition rejects any placement
+# that overlaps a settled grain, and the filler pass sizes each insert to the
+# clearance it is filling.
 
 -ic_type multi_grains_file
 -grains_file {pack['grains_file']}
@@ -204,8 +231,20 @@ def main(argv=None):
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
 
-    packs = []
+    # Accept either a directory OF packings, or a directory of periodic_<mode>/
+    # directories of packings -- the layout generate_packing_gravity.py writes.
+    cands = []
     for d in sorted(args.packings_dir.iterdir()):
+        if not d.is_dir():
+            continue
+        if (d / "metadata.json").is_file():
+            cands.append(d)
+        else:
+            cands.extend(sorted(c for c in d.iterdir()
+                                if c.is_dir() and (c / "metadata.json").is_file()))
+
+    packs = []
+    for d in cands:
         meta = d / "metadata.json"
         dat = d / "grains.dat"
         if not (meta.is_file() and dat.is_file()):
@@ -234,7 +273,7 @@ def main(argv=None):
     geo_dir = args.out_dir / "geometry"
     exp_dir = args.out_dir / "experiment"
     if not args.dry_run:
-        (geo_dir / "packing").mkdir(parents=True, exist_ok=True)
+        geo_dir.mkdir(parents=True, exist_ok=True)
         (exp_dir / "snow").mkdir(parents=True, exist_ok=True)
 
     total_cores = 0
@@ -269,9 +308,14 @@ def main(argv=None):
                             alpha_c=args.alpha_c, Rave=args.Rave,
                             safety=args.safety, v_n=vn)
             # Naming scheme: <family>_<dim>D_<discriminator>_L<size>_eps<eps>_T<T>
+            # One subdirectory per periodicity, mirroring inputs/packings/, so
+            # the four modes of the same packing do not collide: their names
+            # differ only by a token nobody reads carefully.
+            sub = f"packing_{_axes_token(pk)}"
+            (geo_dir / sub).mkdir(parents=True, exist_ok=True)
             gname = (f"packing_2D_{pk['name']}_{_L_token(pk['Lx'])}"
-                     f"_{_eps_token(p['eps'])}_T{T:g}{sfx}")
-            write_geometry(geo_dir / "packing" / f"{gname}.opts", T, p, pk, args)
+                     f"_{_eps_token(p['eps'])}_per{_axes_token(pk)}_T{T:g}{sfx}")
+            write_geometry(geo_dir / sub / f"{gname}.opts", T, p, pk, args)
 
     n = len(packs) * len(args.temps)
     print(f"\n  {len(packs)} packings x {len(args.temps)} temperatures = {n} runs")
