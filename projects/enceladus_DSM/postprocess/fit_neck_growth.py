@@ -455,7 +455,8 @@ def main():
 
     csv_out = args.out / f"{args.prefix}_fits.csv"
     with open(csv_out, "w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        # lineterminator: csv defaults to CRLF, which git flags on every commit.
+        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()), lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
 
