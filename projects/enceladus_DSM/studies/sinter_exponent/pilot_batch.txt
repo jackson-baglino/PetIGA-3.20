@@ -1,0 +1,21 @@
+# Stage-2 pilot for studies/sinter_exponent. One "geometry:experiment" per line.
+#
+# Submit with:
+#   ./scripts/HPC/submit_batch.sh --tag sinter_pilot \
+#       --tests-file studies/sinter_exponent/pilot_batch.txt
+#
+# Both jobs go through ONE batch file on purpose: two chained submit_enceladus.sh
+# calls race in obj/ and fail with "Stale file handle".
+#
+# Neither job needs --extra-opts; dtmax and the output cadence are already set
+# per-experiment in the two .opts files (and --extra-opts would apply to both).
+#
+# 1. Demmenie coarse arm. ~19.6M dof, tau_sub 16.3 s, ~550 steps, ~220-450
+#    core-h. Its job is to answer how far up in r/R0 the neck climbs in 2.5 h,
+#    which is what sizes the strict production run.
+sinter_2D_L2200um_eps0.64um_axisym_D1mm_tangent:sinter_T-3_h1.00_2.5h_a9.0e-2
+
+# 2. Molaro pair from tangent contact, 8 h. ~774k nodes, ~14 core-h — free.
+#    Asks whether our model gives the same exponent at 85 um grains as at
+#    500 um ones, which is the only thing that lets the two studies be compared.
+molaro_2D_L387um_eps0.35um_axisym_T-20pair_tangent:molaro_T-20_h1.00_8h_a1.34e-2
