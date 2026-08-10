@@ -1,0 +1,110 @@
+# =============================================================================
+# geometry/sinter/sinter_2D_L2200um_eps0.32um_axisym_D1mm_tangent.opts
+#
+# STRICT arm (comp_eps --safety 0.5) of the Demmenie et al. (2025) replication.
+# Pair with experiment/sinter/sinter_T-3_h1.00_2.5h_a9.0e-2.opts.
+# Coarse partner: sinter_2D_L2200um_eps0.64um_axisym_D1mm_tangent.opts.
+#
+# THE EXPERIMENT
+# --------------
+# Demmenie, Woutersen & Bonn, "Ice Sintering by Sublimation and Condensation",
+# J. Phys. Chem. Lett. 16(8) 2104-2109 (2025), doi:10.1021/acs.jpclett.5c00050.
+# Two ~1 mm-diameter ice spheres brought into side-by-side horizontal contact
+# with no applied load, in an air box held at the saturation vapour pressure of
+# ice at -3 C, imaged from above for 2.5 h. Four runs give r ~ t^alpha with
+# alpha = 0.29 / 0.33 / 0.30 / 0.26 (+-0.01), i.e. Kuczynski m = 3, i.e.
+# evaporation-condensation -- which is exactly this model's transport route.
+#
+# GEOMETRY
+# --------
+# Identical spheres, so the pair is exactly axisymmetric about the line of
+# centres and -axisym 1 is not an approximation here (unlike the Molaro pair,
+# where it is). R0 = R1 = 5.0e-4 m. Padding 1.0e-4 m = 0.2*R on every side,
+# the same fraction the committed Molaro geometries use (20 um on 101 um).
+#
+#   Lx = d + 2R + 2*pad = 1.0e-3 + 1.0e-3 + 2.0e-4 = 2.2e-3
+#   Ly = R + pad        = 5.0e-4 + 1.0e-4          = 6.0e-4
+#
+# EXACT TANGENCY: d = |c1 - c0| = 1.0e-3 = R0 + R1. The spheres touch at a
+# point and the initial neck is ZERO, which is the r -> 0 that Demmenie's fit
+# form assumes (their t0 is a free parameter precisely because they cannot see
+# the moment of contact).
+#
+# -ic_grain_union 1 IS LOAD-BEARING, NOT A STYLE CHOICE
+# ------------------------------------------------------
+# The additive IC sums two tanh profiles that EACH equal 0.5 at the tangent
+# point, so their sum crosses 0.5 out at a finite radius and the run opens with
+# a bridge that is a pure artifact of the IC. Measured with
+# preprocess/calibrate_neck_geometry.py at this eps: width 40.0 um, r/R = 0.040
+# (53.8 um, r/R = 0.054 on the coarse arm -- note it is eps-dependent, so the
+# two arms would not even start from the same place).
+#
+# The union form phi = 0.5 - 0.5*tanh(0.5*sdf_union/eps) puts phi = 0.5 on the
+# sharp union surface for every eps, so tangency gives a genuine point contact.
+# Verified: calibrate_neck_geometry.solve_d_union(R, R, ~0) returns d = 1.0e-3.
+#
+# WHERE THE MEASUREMENT BECOMES TRUSTWORTHY
+# -----------------------------------------
+# The neck fillet has radius rho ~ r^2/(2R), and a diffuse interface resolves
+# it only once rho exceeds the ~6*eps visible band, i.e.
+#
+#     r/R >= sqrt(12*eps/R) = sqrt(12*3.1776e-7/5.0e-4) = 0.087
+#
+# Below that the fillet is thinner than the interface and the neck is a
+# discretisation artifact. postprocess/fit_neck_growth.py computes this floor
+# and excludes points below it by default.
+#
+# THIS IS THE WHOLE REASON FOR 1 mm GRAINS. The floor scales as sqrt(eps/R), so
+# the Molaro geometry (eps 3.48e-7, R_ave 85 um) has a floor of 0.22 -- above
+# the entire Molaro dataset (r/R = 0.19-0.38), which is why no exponent can be
+# extracted there no matter how the fit is done. Six times the grain radius at
+# comparable eps buys a floor 2.5x lower and an actual fit window.
+#
+# Maeno & Ebinuma (1983) independently place the vapour/surface-diffusion
+# crossover at r/R0 ~ 0.08, so the numerical floor and the physical validity
+# limit of a vapour-only model nearly coincide here. Convenient, and worth
+# stating in the write-up rather than glossing.
+#
+# MESH
+# ----
+# preprocess/comp_eps.py --Lx 2.2e-3 --Ly 6.0e-4 --Rave 5e-4 --T0 -3 \
+#     --alpha 9.007e-2 --vn_feature 1e-5 --safety 0.5
+#   BINDING bound: K&P Eq. 43a (heat channel, D*_ia * beta_HK = 6.3552e-07)
+#   eps = 3.1776e-07, h = eps/sqrt(2), tau_sub = 3.02 s
+#   thin-interface beta_eff/beta_target: heat 0.605, vapour 0.851
+#   tau_sub is kinetic-dominated (64.7%) -> correct sharp-interface regime
+#
+# 9792 x 2671 = 26.2M nodes = 78.5M dof. One sol_*.dat is ~630 MB, so keep the
+# -t_out_log budget small and run neck_width.py ON THE CLUSTER; only the CSV
+# needs to come back.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Fit with:     python postprocess/fit_neck_growth.py <run_dir>/neck_width.csv --demmenie
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # zero neck at tangency — see above
+
+-ic_type multi_grains
+-dim 2
+-Lx 2.2e-03
+-Ly 6.0e-04
+-Lz 0
+
+-ice_grain_cx 6.0e-04,1.6e-03           # d = 1.0e-3 = R0+R1, EXACTLY TANGENT
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  5.0e-04,5.0e-04
+-ice_grain_ax 5.0e-04,5.0e-04
+-ice_grain_ay 5.0e-04,5.0e-04
+
+-Nx 9792                                # h = eps/sqrt(2)  (~26.2M nodes)
+-Ny 2671
+-Nz 1
+-eps 3.1776e-07
+-eps_valid_temp -3                      # eps was sized at -3 C; guard the pairing
+
+-delt_t 1.0e-4
+-periodic 0                             # zero-flux walls: a sealed cell that
+                                        # conserves total mass, matching their
+                                        # observation that sphere volume and
+                                        # mass held constant over the run

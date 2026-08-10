@@ -1,0 +1,68 @@
+# =============================================================================
+# experiment/molaro/molaro_T-20_h1.00_8h_a1.34e-2.opts
+#
+# The committed molaro_T-20_h1.00_2h_a1.34e-2.opts conditions, run four times
+# longer and with a log-spaced output cadence. Pair with
+# geometry/molaro/molaro_2D_L387um_eps0.35um_axisym_T-20pair_tangent.opts.
+#
+# WHAT CHANGED AND WHY
+# --------------------
+# 1. t_final 7.2e3 -> 2.88e4 (2 h -> 8 h). The paired geometry starts from
+#    tangent contact with a ZERO neck, so it has to grow through the entire
+#    range the pre-necked runs were handed at t = 0 before it reaches anything
+#    measurable. The resolution floor for that geometry is r/R = 0.219, a neck
+#    WIDTH of 38.1 um -- already past the experiment's 32.81 um starting neck --
+#    and a usable fit window needs the neck to roughly double past it.
+#
+#    8 h is a guess sized off the pre-necked runs, which took 2 h to go
+#    33 -> 47.6 um from an ALREADY mature neck; growth from a point contact is
+#    fast at first and then slower than that. If the run finishes short of a
+#    fittable window, extend rather than reinterpret -- the mesh is only 774k
+#    nodes and the whole thing is ~14 core-h, so length is nearly free here.
+#
+# 2. -t_out_log 60 replaces the default per-step cadence. The deliverable is a
+#    slope in log-log, and 8 h at dtmax = 100 s would otherwise trip the
+#    1000-snapshot cap into time-uniform output, putting ~90% of the samples in
+#    the last decade where the curve is flattest.
+#
+# Everything else is deliberately IDENTICAL to the 2 h file, so this run and
+# the committed pre-necked epsstrict runs differ only in the initial neck:
+# same T, same humidity, same alpha_c, same dtmax, same eps in the geometry.
+#
+# alpha_c = 1.341e-2 from the repo's Arrhenius fit at -20 C, with
+#   beta_sub0 = 5.9216e5 s/m, d0_sub0 = 1.0166e-9 m
+# (preprocess/comp_eps.py --T0 -20 --alpha 1.341e-2). flag_Tdep is 0, so the
+# solver uses these explicitly and rescales beta_sub by rho_vs(T)/rho_ice.
+#
+# dtmax = 1.0e2 as calibrated for the strict arm (tau_sub = 9.74e1 at
+# eps = 3.479e-7, ratio ~1.03). Standing lesson from the cfl1e4 run
+# (2026-07-09): the interface-CFL limiter guarantees stability, not rate
+# accuracy. Re-run at -dtmax 5e1 before quoting the curve.
+#
+# WHAT THIS RUN IS FOR
+# --------------------
+# Not for scoring against the Molaro data -- the pre-necked geometries do that,
+# and the answer is in docs/molaro_validation_synthesis.md. This one asks a
+# single question: does our model give the SAME growth exponent at 85 um grains
+# as at Demmenie's 500 um ones? Kuczynski scaling says m should not depend on
+# grain radius. If it does in our model, the two studies cannot be compared and
+# that is the more interesting result.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Fit with:     python postprocess/fit_neck_growth.py <run_dir>/neck_width.csv --demmenie
+# =============================================================================
+
+-t_final 2.88e4                         # 8 h — see note 1 above
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 5.9216e5                     # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+-dtmax 1.0e2
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-t_out_log 60                           # log-spaced — see note 2 above

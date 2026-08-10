@@ -1,0 +1,105 @@
+# =============================================================================
+# experiment/sinter/sinter_T-3_h1.00_2.5h_a9.0e-2.opts — Demmenie et al. (2025)
+# ice-sphere sintering conditions. Pair with either arm of
+# geometry/sinter/sinter_2D_L2200um_eps*_axisym_D1mm_tangent.opts.
+#
+# THE CONDITIONS BEING REPRODUCED
+# -------------------------------
+# Demmenie, Woutersen & Bonn, J. Phys. Chem. Lett. 16(8) 2104-2109 (2025),
+# doi:10.1021/acs.jpclett.5c00050. Ice held at -3 C in an AIR-FILLED box whose
+# humidity is set so the box's water-vapour pressure equals the saturation
+# vapour pressure of ice (Murphy & Koop 2005). 2.5 h per run, four runs.
+#
+# Both of those map onto this solver without any modelling licence:
+#   -humidity 1.00   initialises the air at rho_vs(T), i.e. ice saturation.
+#   Patm             is hardcoded to 101325 Pa in material_properties.c:160,
+#                    which is their air box. (Worth remembering when reading
+#                    Molaro et al.: THEIR vapour-transport term is derived for
+#                    vacuum, so it is the one that does not fit this solver's
+#                    assumptions, not this experiment.)
+#
+# They also confirmed sphere volume and mass were constant over the run, which
+# is what the geometry files' zero-flux walls (-periodic 0) enforce: a sealed,
+# mass-conserving cell. No open-chamber Dirichlet reservoir is wanted here --
+# that configuration exists for the Molaro campaign, where the grains measurably
+# net-shrank and the chamber had to be allowed to take mass away.
+#
+# alpha_c AT -3 C
+# ---------------
+# 9.007e-2, from the repo's own Arrhenius fit for the condensation coefficient
+# (preprocess/plot_alpha_gt_sweep.py defaults: alpha_c = 1e-1 at -2 C, 1e-3 at
+# -40 C, Q = 63.7 kJ/mol). This is not a new assumption: the same fit
+# reproduces the committed molaro_T-5_*_a7.3e-2 (7.290e-2) and
+# molaro_T-20_*_a1.34e-2 (1.341e-2) files to three figures.
+#
+# Note what alpha_c buys and costs. It is the only genuine free parameter in
+# the model, and at -3 C the Arrhenius value is ~7x the -20 C one, which shrinks
+# the binding K&P Eq. 43a bound (D*_ia * beta_HK) by the same factor and is the
+# entire reason this mesh is 26M nodes rather than 1M. It should not move the
+# EXPONENT -- in classical Kuczynski scaling alpha_c enters the prefactor
+# C_m(T), not m -- so if the fitted alpha ever needs defending, the cheap test
+# is a re-run at alpha_c = 3e-2 (eps 9.54e-7, 3262 x 890, ~20 core-h) and a
+# check that alpha is unchanged while C moves.
+#
+# Derived at this alpha_c and T by
+#   preprocess/comp_eps.py --T0 -3 --alpha 9.007e-2:
+#     beta_sub0 = beta_HK/(rho_vs/rho_ice) = 1.8447e4 s/m
+#     d0_sub0   = gamma*V_m/(R*T)          = 9.5265e-10 m
+# flag_Tdep is 0 (solver.opts), so the code uses these explicitly and rescales
+# beta_sub = beta_sub0*rho_vs(T)/rho_ice at -temp.
+#
+# TIMESTEP
+# --------
+# dtmax = 1.8e1 follows the campaign's calibrated dtmax/tau_sub ~ 1.1 against
+# the COARSE arm's tau_sub = 16.34 s. THE STRICT ARM NEEDS -dtmax 3.3 (its
+# tau_sub is 3.02 s); pass it on the command line rather than forking this
+# file, since nothing else differs:
+#     ./scripts/HPC/submit_enceladus.sh <strict geom> <this exp> tag -- -dtmax 3.3
+#
+# Standing lesson from the 2026-07-09 cfl1e4 run: the interface-CFL limiter
+# guarantees stability, NOT rate accuracy. Before quoting a neck curve, re-run
+# at half dtmax and confirm the curves overlap.
+#
+# OUTPUT CADENCE
+# --------------
+# -t_out_log 60: log-spaced snapshots, because the deliverable is a slope in
+# log-log and time-uniform output would put ~90% of the samples in the last
+# decade. 60 files is ~9.4 GB on the coarse mesh and would be ~38 GB on the
+# strict one -- drop the strict arm to -t_out_log 40 and run neck_width.py on
+# the cluster.
+#
+# The schedule starts at delt_t = 1e-4 s, which is ~8 decades below t_final and
+# almost all of it is IC relaxation rather than sintering. Once the pilot shows
+# where the neck actually starts moving, set -t_out_log_t0 to that time on the
+# strict arm and spend the whole budget on the physical range.
+#
+# EXPECTATION
+# -----------
+# alpha = 1/3 over the fittable window (r/R0 >= sqrt(12*eps/R)). Getting it
+# would be a shape validation that is independent of the ~50% rate deficit
+# already documented in docs/molaro_validation_synthesis.md. Their
+# out-of-equilibrium control (deliberately under-saturated) gave alpha ~ 1/7,
+# the surface-diffusion signature -- which this model, having no surface
+# mobility, should NOT be able to reproduce. That asymmetry is a genuine
+# prediction, and a -humidity 0.98 arm is the cheap way to test it.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Fit with:     python postprocess/fit_neck_growth.py <run_dir>/neck_width.csv --demmenie
+# Data: alpha = 0.29 / 0.33 / 0.30 / 0.26 (+-0.01) over four runs, no tabulated
+#       r(t) published (their Figure 3 is log-log only).
+# =============================================================================
+
+-t_final 9.0e3                          # 2.5 h — their run duration
+
+-temp -3.0
+-humidity 1.00                          # air at ice saturation
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 1.8447e4                     # K&P beta0 at -3 C, alpha_c = 9.007e-2
+-d0_sub0 9.5265e-10                     # physical capillary length at -3 C
+
+-dtmax 1.8e1                            # coarse arm; strict arm: -dtmax 3.3
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-t_out_log 60                           # log-spaced; strict arm: -t_out_log 40

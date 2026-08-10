@@ -1,0 +1,94 @@
+# =============================================================================
+# geometry/molaro/molaro_2D_L387um_eps0.35um_axisym_T-20pair_tangent.opts
+#
+# The committed -20 C Molaro grain pair, restarted FROM TANGENT CONTACT instead
+# of from a pre-formed neck. Pair with
+# experiment/molaro/molaro_T-20_h1.00_8h_a1.34e-2.opts.
+#
+# WHY THIS EXISTS
+# ---------------
+# Every existing Molaro geometry sizes the centre separation d so the t = 0
+# neck matches the experiment's first measurement, 32.81 um. That is the right
+# thing for reproducing their neck-vs-time curve, and the wrong thing for
+# measuring a growth EXPONENT, because it starts the run at r/R = 0.19 and ends
+# it at 0.38: less than a factor two, entirely outside the small-neck regime
+# where any Kuczynski exponent is derived, and -- see below -- at or under this
+# discretisation's resolution floor for the whole run.
+#
+# Measured on the committed union-IC runs
+# (studies/sinter_exponent/verification/molaro_fits.csv): the model's local
+# log-slope climbs monotonically from 0.02 to 0.12 over the full 2 h and is
+# still rising at the end. The run never leaves the fillet-rounding transient,
+# so there is no power law to fit. The three eps arms lie on top of each other,
+# which says that is a property of the initial condition, not of the mesh.
+#
+# This file removes the pre-formed neck: d = R0 + R1 exactly, so the grains
+# touch at a point and, under -ic_grain_union 1, the initial neck is ZERO.
+# What it buys is the ability to ask whether OUR model produces the same
+# exponent at Molaro's grain size as at Demmenie's 1 mm -- Kuczynski scaling
+# says m should not depend on R, and that is worth checking rather than
+# assuming, since it is the only thing that lets the two studies be compared.
+#
+#   d = R0 + R1 = 7.25e-5 + 1.01e-4 = 1.735e-4     (pre-necked geometries:
+#                                                   1.7028e-4 union,
+#                                                   1.7133e-4 additive)
+#
+# Everything else -- R0, R1, eps, pad, axisym, the union IC -- is identical to
+# molaro_2D_L384um_eps0.35um_axisym_T-20pair_union.opts, the STRICT arm, so the
+# two are directly comparable and the only variable is the initial neck.
+#
+# EXPECT A NARROW WINDOW ANYWAY
+# -----------------------------
+# The neck fillet has radius rho ~ r^2/(2R), resolved only once rho exceeds the
+# ~6*eps visible band, i.e. r/R >= sqrt(12*eps/R). At eps = 3.479e-7 and
+# R_ave = 86.75 um that floor is
+#
+#     r/R = 0.219,  i.e. a neck WIDTH of 38.1 um
+#
+# so this run only becomes measurable ABOVE the experiment's starting neck.
+# That is not a defect of the run, it is the finding: at Molaro's grain size
+# this model cannot resolve the small-neck regime at any eps it can afford, and
+# the exponent has to be measured on the 1 mm geometry (floor 0.087) instead.
+# Reaching a useful window needs the neck to roughly double past the floor,
+# hence t_final = 8 h in the paired experiment file rather than their 2 h.
+#
+# CAVEAT INHERITED FROM THE UNION SERIES
+# --------------------------------------
+# The sharp union has a zero-radius concave crease at the contact point. No
+# diffuse interface can hold it; AC dynamics rounds it to O(eps) within a few
+# steps. Expect a fast fillet-rounding transient at the start that is NOT
+# sintering, and exclude it from any fit -- the r/R floor above does this
+# automatically, since the rounding happens far below it.
+#
+# MESH — unchanged from the strict union arm apart from Lx growing 3 um with d:
+#   Lx = d + R0 + R1 + 2*pad = 3.870e-4   (pad = 2.0e-5, as the whole family)
+#   Ly = R1 + pad            = 1.210e-4
+#   Nx = ceil(sqrt(2)*Lx/eps) = 1574,  Ny = 492   (~774k nodes)
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Fit with:     python postprocess/fit_neck_growth.py <run_dir>/neck_width.csv --demmenie
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # zero neck at tangency — load-bearing
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.87000e-04
+-Ly 1.21000e-04
+-Lz 0
+
+-ice_grain_cx 9.25000e-05,2.66000e-04   # d = 1.735e-4 = R0+R1, EXACTLY TANGENT
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 1574                                # h = eps/sqrt(2)  (~774k nodes)
+-Ny 492
+-Nz 1
+-eps 3.4790e-07
+-eps_valid_temp -20
+
+-delt_t 1.0e-4
+-periodic 0
