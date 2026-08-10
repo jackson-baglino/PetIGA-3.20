@@ -618,8 +618,11 @@ int main(int argc, char *argv[]) {
     if (dtmin <= 0.0) dtmin = 0.01 * delt_t;
     if (dtmax <= 0.0) dtmax = 0.5 * user.t_interv;
 
-    /* If dtmax > 0.5*t_interv, print error message */
-    if (dtmax > 0.5 * user.t_interv) {
+    /* If dtmax > 0.5*t_interv, print error message. Not applicable under
+     * -t_out_log, which ignores t_interv entirely -- warning about it there
+     * puts a spurious "OUTPUT DATA ERROR" at the top of every log-cadence
+     * run's log. */
+    if (user.n_out_log <= 0 && dtmax > 0.5 * user.t_interv) {
         PetscPrintf(PETSC_COMM_WORLD, "OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval \n\n");
     }
 

@@ -44,27 +44,24 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 import numpy as np
+import pplib
 from pplib import step_times
 
 
 def read_vts_phi(fn):
-    """Return (phi[ny,nx], x[nx], y[ny]) from a solV_*.vts snapshot."""
-    root = ET.parse(fn).getroot()
-    grid = root.find(".//StructuredGrid")
-    ext = [int(v) for v in grid.get("WholeExtent").split()]
-    nx, ny = ext[1] - ext[0] + 1, ext[3] - ext[2] + 1
+    """Return (phi[ny,nx], x[nx], y[ny]) from a solV_*.vts snapshot.
 
-
-    pts = None
-    for da in root.findall(".//Points/DataArray"):
-        pts = decode(da).reshape(ny, nx, 3)
-    phi = None
-    for da in root.findall(".//PointData/DataArray"):
-        if da.get("Name") == "IcePhase":
-            phi = decode(da).reshape(ny, nx)
-    if phi is None or pts is None:
-        raise RuntimeError(f"IcePhase/Points missing in {fn}")
-    return phi, pts[0, :, 0], pts[:, 0, 1]
+    Delegates to pplib.read_vts. This used to be a local copy of the parser
+    that called a `decode` helper it never imported, so EVERY snapshot raised
+    NameError -- and the caller's broad `except Exception` reported that as
+    "empty/corrupt file, likely an incomplete transfer" and carried on to write
+    an empty CSV. The script lived in postprocess/scratch/ at the time, so
+    nothing exercised it after pplib absorbed the decoder.
+    """
+    fields, X, Y = pplib.read_vts(fn, want=("IcePhase",))
+    if "IcePhase" not in fields:
+        raise RuntimeError(f"IcePhase missing in {fn}")
+    return fields["IcePhase"], X[0, :], Y[:, 0]
 
 
 def chord_width(col, y, level):
@@ -144,7 +141,12 @@ def main():
         step = int(Path(fn).stem.split("_")[1])
         try:
             phi, x, y = read_vts_phi(fn)
-        except Exception as e:
+        except (ET.ParseError, OSError, ValueError, RuntimeError) as e:
+            # Deliberately NOT a bare `except Exception`. That is how a
+            # NameError in the reader spent this script's whole life being
+            # reported as a truncated download, once per snapshot, while the
+            # run still exited 0 with an empty CSV. Anything outside this
+            # tuple is a bug in the reader and should crash loudly.
             print(f"  WARNING: skipping {Path(fn).name} ({e}) — "
                   f"empty/corrupt file, likely an incomplete transfer",
                   file=sys.stderr)
@@ -177,6 +179,10 @@ def main():
             jn = interior[np.argmin(w[interior])]
             neck, xneck = refine_min(w, x, jn)
         rows.append((tmap.get(step, np.nan), neck, xneck))
+
+    if not rows:
+        sys.exit(f"every snapshot under {args.run_dir}/vtkOut failed to read — "
+                 f"see the warnings above; refusing to write an empty CSV")
 
     out = args.out or (args.run_dir / "neck_width.csv")
     with open(out, "w") as f:
