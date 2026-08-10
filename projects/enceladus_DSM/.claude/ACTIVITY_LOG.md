@@ -2,6 +2,58 @@
 
 Newest entries first.
 
+## 2026-08-10 — Sintering growth exponent vs Demmenie et al. (2025)
+
+- New target: Demmenie, Woutersen & Bonn, *J. Phys. Chem. Lett.* 16(8)
+  2104–2109 (2025), doi:10.1021/acs.jpclett.5c00050 — two ~1 mm ice spheres at
+  −3 °C in a box at ice-saturation, 2.5 h, giving r ~ t^alpha with alpha =
+  0.29/0.33/0.30/0.26 (±0.01), i.e. Kuczynski m = 3, evaporation–condensation.
+  That is this model's own transport route, and alpha is a *shape* observable,
+  so it is independent of the ~50 % rate deficit against Molaro.
+- Pulled `neck_width.py`, `plot_neck_convergence.py`,
+  `calibrate_neck_geometry.py` and the Molaro validation CSVs out of the
+  scratch quarantine.
+- Added `postprocess/fit_neck_growth.py`. Reports three fit forms side by side
+  (`d_free` = Demmenie's `C(t+t0)^a` with t0 free, `d_fixed`, Kuczynski
+  `r^m − r0^m = Kt`) plus the local log-slope, because the exponent turns out
+  to be mostly a property of the protocol: the same model curve gives a = 0.087
+  over the solver's dense output, 0.078 at the data's sample times, 0.110 with
+  t0 released.
+- **Found `neck_width.py` could never read a snapshot.** Its local VTS parser
+  called a `decode` helper it never imported; a bare `except Exception` then
+  reported every NameError as "empty/corrupt file, likely an incomplete
+  transfer" and the script exited 0 with a header-only CSV. Broke when pplib
+  absorbed the decoder (a09f873) while the script sat in scratch/. Now
+  delegates to `pplib.read_vts`, narrows the except, refuses to write an empty
+  CSV.
+- Added `-t_out_log N` (log-spaced snapshot cadence). Neither existing cadence
+  spreads samples across decades, and one snapshot of the 9792×2671 sintering
+  mesh is ~630 MB, so the budget is ~40 files. t0 defaults to `delt_t`, not
+  `dtmin`: entries below the first accepted step are silently subtracted from
+  the budget (`-t_out_log 8` gave 7 files before the fix).
+- Stage-1 reanalysis (`studies/sinter_exponent/`, no compute): **the Molaro
+  geometry cannot resolve an exponent at all.** The neck fillet `rho ~ r²/(2R)`
+  is only resolved above `r/R >= sqrt(12·eps/R)` = 0.22 there, and the whole
+  dataset spans 0.19–0.38 — a quarter decade sitting on the floor, over which
+  1/3 and 1/7 are indistinguishable. The eps 0.60 and 0.86 µm arms have no
+  fittable window whatsoever. Fix is bigger grains, not finer mesh: the floor
+  falls only as sqrt(eps).
+- Also: the Molaro *data* sits at a flat local slope of 0.185, between 1/7 and
+  1/5, so it does not show Demmenie's exponent either — consistent with their
+  claim that the 1/3-to-1/7 literature scatter tracks humidity control. And the
+  model/data gap is far smaller on the r0-subtracting Kuczynski form (m = 5.32
+  vs 4.04) than on the naive one (11.5 vs 5.4).
+- Added five opts files: strict/coarse Demmenie arms (1 mm spheres, exactly
+  tangent, `-ic_grain_union 1` — the additive IC would open with a spurious
+  eps-dependent bridge), their shared −3 °C experiment file, and the Molaro
+  pair restarted from tangent contact with an 8 h experiment. IC verified at
+  the full pilot mesh: TOT_ICE = 1.047e-9 = the analytic two-sphere volume.
+- Not yet run. Pilot batch is `studies/sinter_exponent/pilot_batch.txt`
+  (~$5); production strict arm ~$60–110, gated on the pilot showing the neck
+  climbs past r/R0 ≈ 0.15.
+
+---
+
 ## 2026-07-31 — Merge effective_thermal_cond in; k_eff becomes an in-line diagnostic
 
 - Merged `projects/effective_thermal_cond` into this solver. k_eff is now
