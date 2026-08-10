@@ -156,6 +156,10 @@ int main(int argc, char *argv[]) {
     /* Define output parameters (can be overridden by PETSc options) */
     user.outp        = 0;       /* Output control flag (0: output according to t_interv) */
     user.t_out       = 0.0;     /* Next output time */
+    user.n_out_log    = 0;      /* -t_out_log N: log-spaced snapshots (0 = disabled) */
+    user.t_out_log_t0 = 0.0;    /* first scheduled time; <= 0 = first accepted step's t */
+    user.t_out_log    = NULL;
+    user.i_out_log    = 0;
     if (n_out > 1) {
         user.t_interv = t_final / (n_out - 1); /* Output interval */
     } else {
@@ -498,6 +502,8 @@ int main(int argc, char *argv[]) {
     /* --- Output control -------------------------------------------------- */
     ierr = PetscOptionsInt("-outp", "Output control flag", "", user.outp, &user.outp, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_interv", "Output interval", "", user.t_interv, &user.t_interv, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-t_out_log", "Number of LOG-spaced snapshots (overrides -outp/-t_interv; 0 = off)", "", user.n_out_log, &user.n_out_log, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-t_out_log_t0", "First log-spaced snapshot time [s] (<= 0: use the first accepted step's t)", "", user.t_out_log_t0, &user.t_out_log_t0, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-pf_output", "Enable output files", "", output, &output, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-pf_monitor", "Monitor the solution", "", monitor, &monitor, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-output_path", "Output file path", "", user.output_path, user.output_path, sizeof(user.output_path), NULL); CHKERRQ(ierr);
@@ -625,7 +631,7 @@ int main(int argc, char *argv[]) {
      * exactly 1000 snapshots. Runs short enough to stay under 1000 files
      * keep the -outp per-step behavior (naturally log-spaced under the
      * adaptive dt). */
-    if (user.outp >= 1 && dtmax > 0.0 &&
+    if (user.n_out_log <= 0 && user.outp >= 1 && dtmax > 0.0 &&
         t_final / (dtmax * (PetscReal)user.outp) > 1000.0) {
         user.outp     = 0;
         n_out         = 1000;
@@ -635,6 +641,47 @@ int main(int argc, char *argv[]) {
                     "switching to %d time-uniform outputs (t_interv = %.3e s)\n",
                     (double)(t_final / dtmax), (int)n_out,
                     (double)user.t_interv);
+    }
+
+    /* Build the -t_out_log schedule: n_out_log times, geometric from t0 to
+     * t_final inclusive. Precomputing it here (rather than deriving t0 from
+     * the first accepted step) keeps OutputMonitor a pure consumer.
+     *
+     * t0 defaults to delt_t, the INITIAL timestep -- i.e. the earliest time a
+     * step can actually land on. Not dtmin (= 0.01*delt_t by default): any
+     * entry below delt_t is passed by the very first step, and since a step
+     * that jumps several entries writes ONE snapshot and discards the rest,
+     * every such entry is a snapshot silently subtracted from the budget.
+     * Measured: -t_out_log 8 with t0 = dtmin produced 7 files.
+     *
+     * Entries the solver steps over later are late, never missing:
+     * OutputMonitor writes on the first step at or past each entry. */
+    if (user.n_out_log > 0) {
+        PetscReal t0 = (user.t_out_log_t0 > 0.0) ? user.t_out_log_t0 : delt_t;
+        if (t0 <= 0.0)      t0 = 1.0e-6 * t_final;
+        if (t0 >= t_final)  t0 = 1.0e-6 * t_final;
+
+        ierr = PetscMalloc1(user.n_out_log, &user.t_out_log); CHKERRQ(ierr);
+        if (user.n_out_log == 1) {
+            user.t_out_log[0] = t_final;
+        } else {
+            PetscReal ratio = PetscPowReal(t_final / t0,
+                                           1.0 / (PetscReal)(user.n_out_log - 1));
+            user.t_out_log[0] = t0;
+            for (PetscInt i = 1; i < user.n_out_log; i++)
+                user.t_out_log[i] = user.t_out_log[i - 1] * ratio;
+            /* Pull the last entry a hair below t_final. Accumulating the
+             * geometric ratio overshoots, and even an exact t_final would be
+             * missed whenever TS lands on a t that is one ulp short -- which
+             * would silently drop the final, most-interesting snapshot. */
+            user.t_out_log[user.n_out_log - 1] = t_final * (1.0 - 1.0e-9);
+        }
+        user.i_out_log = 0;
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "Output cadence: %d LOG-spaced snapshots from %.3e s to "
+                    "%.3e s (overrides -outp/-t_interv)\n",
+                    (int)user.n_out_log, (double)user.t_out_log[0],
+                    (double)t_final);
     }
 
     /* Gibbs-Thomson kinetic parameters */
@@ -1229,6 +1276,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscFree(user.radius);       CHKERRQ(ierr);
     ierr = PetscFree(user.ice_grain_ax); CHKERRQ(ierr);
     ierr = PetscFree(user.ice_grain_ay); CHKERRQ(ierr);
+    ierr = PetscFree(user.t_out_log);    CHKERRQ(ierr);
     /* End Timer */
     PetscLogDouble ltim, tim;
     ierr = PetscTime(&ltim); CHKERRQ(ierr);

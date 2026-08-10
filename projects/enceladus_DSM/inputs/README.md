@@ -72,6 +72,28 @@ The bits you change between successive runs of the same geometry:
 - `temp`, `humidity`, `grad_temp0`
 - output cadence overrides
 
+### Output cadence
+
+Three mutually exclusive cadences; the first one set wins.
+
+| flag | snapshots at | use when |
+|---|---|---|
+| `-t_out_log N` | N **log-spaced** times, `delt_t` → `t_final` | fitting a power law, or the mesh is big enough that the snapshot budget is tight |
+| `-outp N` | every N-th accepted step | short runs; roughly log-spaced while the adaptive dt is still ramping |
+| `-t_interv` / `-n_out` | time-uniform | watching a process that is uniform in t |
+
+`-t_out_log` also overrides the safety valve that force-switches `-outp` to
+1000 time-uniform snapshots once `t_final/(dtmax*outp)` exceeds 1000 — with an
+explicit log budget there is nothing to cap. Start it later than the first
+timestep with `-t_out_log_t0 <s>`.
+
+Sizing it matters on large meshes: one `sol_*.dat` is `Nx*Ny*dof*8` bytes
+(18.5 MB on the 1561x492 Molaro mesh, ~630 MB on the 9792x2671 sintering
+mesh), and `plot_fields.py` roughly doubles that in `vtkOut/`.
+
+`SSA_evo.dat` is written every step regardless of cadence, so the scalar time
+series is never the thing you lose by outputting fewer fields.
+
 ## Valid `-ic_type` values
 
 The two-phase solver (`src/<project>_main.c`) dispatches exactly these in 2D/3D;

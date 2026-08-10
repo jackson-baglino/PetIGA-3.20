@@ -135,6 +135,25 @@ typedef struct {
   PetscReal t_interv;  // Intermediate time step interval
   PetscReal t_IC;  // Total duration for initial condition phase
 
+  // -t_out_log N: write N snapshots at LOG-SPACED times instead of the
+  // every-N-steps (-outp) or time-uniform (-t_interv / -n_out) cadences.
+  //
+  // Power-law diagnostics need it. Fitting a growth exponent means reading a
+  // slope in log-log, so the samples have to be spread over the decades, but
+  // time-uniform output puts ~90% of them in the last decade and -outp puts
+  // them wherever the adaptive dt happens to land. On a large mesh the
+  // difference is not cosmetic: one snapshot of the 9792x2671 sintering grid
+  // is ~630 MB, so the snapshot budget is ~40, and spending them uniformly
+  // leaves the early neck completely unresolved.
+  //
+  // Times run from t_out_log_t0 (default: the first accepted step's t, which
+  // is where the log axis can actually start) to t_final, inclusive. Schedule
+  // is precomputed in enceladus_main.c; OutputMonitor consumes it in order.
+  PetscInt   n_out_log;      // number of log-spaced snapshots; 0 = disabled
+  PetscReal  t_out_log_t0;   // first scheduled time [s]; <= 0 = use first step's t
+  PetscReal *t_out_log;      // ascending schedule, length n_out_log (PetscMalloc'd)
+  PetscInt   i_out_log;      // index of the next unwritten entry
+
   // Counters for active ice grains
   PetscInt NCice;  // Number of ice grains
   PetscInt n_act;  // Number of currently active ice grains

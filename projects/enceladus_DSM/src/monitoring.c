@@ -300,9 +300,13 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
 
   // Check if it's time to print output
   PetscInt print = 0;
-  if (user->outp > 0) {   // Print output every user->outp steps
+  if (user->n_out_log > 0) {  /* -t_out_log: consume the log-spaced schedule */
+    if (user->i_out_log < user->n_out_log &&
+        t >= user->t_out_log[user->i_out_log]) print = 1;
+  }
+  else if (user->outp > 0) {   // Print output every user->outp steps
     if (step % user->outp == 0) print = 1;
-  } 
+  }
   else {                  // Print output every user->t_interv seconds
     if (t >= user->t_out) print = 1;
   }
@@ -314,6 +318,11 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
      * every-step output whenever dt > t_interv (t_out falls permanently
      * behind t), defeating the 1000-snapshot output cap. */
     while (user->t_out <= t) user->t_out += user->t_interv;
+    /* Same idea for the log schedule: skip every entry this step jumped over,
+     * so one big dt costs one snapshot rather than queueing up a burst of
+     * them on the following steps. */
+    while (user->i_out_log < user->n_out_log &&
+           user->t_out_log[user->i_out_log] <= t) user->i_out_log++;
 
     // Get the directory path from the environment variable
     const char *env = "folder";
