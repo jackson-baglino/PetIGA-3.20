@@ -597,6 +597,18 @@ def compute_eps(
     }
     eps_max = min(bounds.values())
     binding = min(bounds, key=bounds.get)
+
+    # Enforcing Eq. 42 rigorously is only affordable when alpha_c is physical.
+    # At alpha_c ~ 1e-1 the ice thermal channel drives eps to ~5e-8 and the mesh
+    # to ~1e9 nodes -- which is presumably why an averaged, 6.3x looser "heat"
+    # bound was used instead. That is a real engineering tradeoff and it should
+    # be visible, not discovered by staring at Nx. Say so loudly rather than
+    # emitting an intractable grid in silence.
+    _n_est = 1
+    for _L in (Lx, Ly, Lz):
+        if _L > 0:
+            _n_est *= math.ceil(_L * math.sqrt(2.0) / (safety * eps_max))
+    intractable = _n_est > 5.0e7
     eps     = safety * eps_max
 
     # Mesh: h = eps/sqrt(2) → ~7.5 elements across phi=0.05–0.95 visible band
@@ -670,6 +682,7 @@ def compute_eps(
         corr_thermal=dpf["corr_thermal"],
         corr_vapor=dpf["corr_vapor"],
         kinetic_frac=kinetic_frac,
+        intractable=intractable,
         beta_ratio_heat_ice=dpf["beta_ratio_heat_ice"],
         beta_ratio_heat_air=dpf["beta_ratio_heat_air"],
         beta_ratio_vapor=dpf["beta_ratio_vapor"],
@@ -805,6 +818,17 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
         print(f"  {label}  =  {p[key]:.4e} m{marker}")
 
     h = p['eps'] / math.sqrt(2.0)
+    if p.get("intractable"):
+        print(f"\n  *** MESH IS INTRACTABLE: {p['Nx']} x {p.get('Ny',1)} "
+              f"= {p['Nx']*max(p.get('Ny',1),1)/1e6:.0f}M nodes ***")
+        print(f"      Driven by {p['binding']} = {p['eps_max']:.3e} m.")
+        print(f"      K&P Eq. 42 (W << D·β₀) is enforced per channel, and the ICE")
+        print(f"      thermal channel D = κᵢ/Cᵢ = 1.27e-06 is ~12x below Dᵥ, so it")
+        print(f"      dominates. The ceiling scales with β_HK ∝ 1/α_c, so this is")
+        print(f"      almost always a sign that α_c is too LARGE, not that the mesh")
+        print(f"      must be this fine: α_c = 1e-3 lifts every Eq. 42 ceiling ~100x.")
+        print(f"      Check --alpha_arrhenius / --alpha_libbrecht2 before overriding.")
+
     print(f"\n--- Chosen ε and mesh ---")
     print(f"  ε                        = {p['eps']:.4e}  m")
     print(f"  h = ε/√2                 = {h:.4e}  m    (mesh rule: ~7.5 elements across phi=0.05-0.95)")
