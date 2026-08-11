@@ -86,6 +86,13 @@ def main():
     p.add_argument("--vn_feature", type=float, default=None,
                    help="R_feat for the Eq.(45) bound [m]; default Rave/50")
     p.add_argument("--label", default="Demmenie 1 mm pair")
+    p.add_argument("--alpha_model", choices=("libbrecht2", "arrhenius"),
+                   default="libbrecht2",
+                   help="libbrecht2 = the two-parameter fit alpha(T,sigma) "
+                        "(default); arrhenius = the T-only fallback")
+    p.add_argument("--sigma_char", type=float, default=None,
+                   help="supersaturation the alpha_c fit is pinned to; "
+                        "default d0/R_feat")
     p.add_argument("--Tmin", type=float, default=-40.0)
     p.add_argument("--Tmax", type=float, default=-1.0)
     p.add_argument("--out", type=Path, default=Path("."))
@@ -95,12 +102,26 @@ def main():
     T = np.linspace(args.Tmin, args.Tmax, 160)
 
     # --- alpha_c models -----------------------------------------------------
-    a_arr = np.array([ce.alpha_arrhenius(t) for t in T])
-    a_unclamped = np.array([ce.alpha_arrhenius(t, clamp=None) for t in T])
+    sig_c = (args.sigma_char if args.sigma_char
+             else ce.sigma_char_of(-20.0, rfeat))
+    A_fit, f_fit, _ = ce.libbrecht2_params(sig_c)
     sig0 = np.array([ce.sigma0(t) for t in T])
-    # Libbrecht family at several characteristic supersaturations.
-    sig_family = [1.0e-2, 3.0e-3, 1.0e-3, 4.5e-4]
-    a_lib = {s: np.array([ce.alpha_libbrecht(t, s) for t in T]) for s in sig_family}
+
+    if args.alpha_model == "libbrecht2":
+        a_arr = np.array([ce.alpha_libbrecht2(t, sig_c, sig_c) for t in T])
+        a_unclamped = np.array([ce.alpha_libbrecht2(t, sig_c, sig_c, clamp=None)
+                                for t in T])
+        model_lbl = "$\\alpha_c(T,\\sigma)$ two-parameter fit (used)"
+    else:
+        a_arr = np.array([ce.alpha_arrhenius(t) for t in T])
+        a_unclamped = np.array([ce.alpha_arrhenius(t, clamp=None) for t in T])
+        model_lbl = "Arrhenius $\\alpha_c(T)$ (used)"
+
+    # The sigma dependence of the FITTED model -- this is the alpha_c(T, rho_v)
+    # a solver would evaluate pointwise, so show the spread it would span.
+    sig_family = [10 * sig_c, 3 * sig_c, sig_c, sig_c / 3, sig_c / 10]
+    a_fam = {s: np.array([ce.alpha_libbrecht2(t, s, sig_c, clamp=None) for t in T])
+             for s in sig_family}
 
     # --- propagate each alpha_c through the sizer ---------------------------
     eps, nodes, tau, beta_sub, Lstar, floor, kin = ([] for _ in range(7))
@@ -132,21 +153,25 @@ def main():
     a.axhspan(ce.ALPHA_LIT_LO, ce.ALPHA_LIT_HI, color=C[0], alpha=0.10,
               label="literature band (Libbrecht 2017; Braun 2024)")
     for i, s in enumerate(sig_family):
-        a.plot(T, np.maximum(a_lib[s], 1e-40), lw=1.2, ls=(0, (4, 2)),
-               color=MUTED, alpha=0.35 + 0.15 * i)
-        j = int(0.62 * len(T))
-        if a_lib[s][j] > 1e-38:
-            a.annotate(f"$\\sigma$={s:g}", (T[j], a_lib[s][j]), fontsize=7,
-                       color=MUTED, ha="left", va="bottom")
+        a.plot(T, np.maximum(a_fam[s], 1e-40), lw=1.1, ls=(0, (4, 2)),
+               color=MUTED, alpha=0.7)
+        # Label at each curve's right end, where the family fans out, rather
+        # than mid-curve where all five collapse onto the clamp ceiling.
+        if a_fam[s][-1] > 1e-10:
+            a.annotate(f"$\\sigma$={s:.1e}", (T[-1], a_fam[s][-1]), fontsize=6.5,
+                       color=MUTED, ha="right", va="center",
+                       xytext=(-2, 0), textcoords="offset points")
     a.plot(T, a_unclamped, lw=1.0, ls=":", color=C[1], alpha=0.8,
-           label="Arrhenius, unclamped")
-    a.plot(T, a_arr, lw=2.4, color=C[1], label="Arrhenius $\\alpha_c(T)$ (used)")
-    A, Ea = ce.arrhenius_params()
-    a.annotate(f"$E_a$ = {Ea/1000:.1f} kJ/mol", (0.03, 0.06), xycoords="axes fraction",
-               fontsize=8, color=C[1])
+           label="at $\\sigma_{char}$, unclamped")
+    a.plot(T, a_arr, lw=2.4, color=C[1], label=model_lbl)
+    a.annotate(f"$A$ = {A_fit:.2e} (rough-surface ceiling)\n"
+               f"$\\sigma_0$ rescaled ×1/{1/f_fit:.0f}\n"
+               f"$\\sigma_{{char}}$ = {sig_c:.2e}",
+               (0.03, 0.05), xycoords="axes fraction", fontsize=7, color=C[1])
     _ax(a, "T [°C]", "$\\alpha_c$  [-]",
-        "A.  $\\alpha_c$: Arrhenius vs the Libbrecht form $e^{-\\sigma_0/\\sigma}$")
-    a.set_ylim(1e-12, 1e0)
+        "A.  $\\alpha_c(T,\\sigma)$ = $A\\,e^{-f\\sigma_0(T)/\\sigma}$, "
+        "clamped to the literature band")
+    a.set_ylim(1e-10, 1e-1)
     a.legend(fontsize=7, frameon=False, loc="upper left")
 
     # B: the actual Libbrecht data -------------------------------------------
@@ -241,8 +266,14 @@ def main():
                      f"{args.rneck/Lstar[i]:.4f},{floor[i]:.4f},{kin[i]:.4f}\n")
     print(f"csv  -> {csv}")
 
-    print(f"\n  Arrhenius: Ea = {Ea/1000:.2f} kJ/mol, A = {A:.4e}, "
-          f"clamp [{ce.ALPHA_LIT_LO:g}, {ce.ALPHA_LIT_HI:g}]")
+    if args.alpha_model == "libbrecht2":
+        print(f"\n  Libbrecht 2-param fit: A = {A_fit:.4e}, f = {f_fit:.4e} "
+              f"(sigma0 x1/{1/f_fit:.0f}), sigma_char = {sig_c:.3e}, "
+              f"clamp [{ce.ALPHA_LIT_LO:g}, {ce.ALPHA_LIT_HI:g}]")
+    else:
+        _A, _Ea = ce.arrhenius_params()
+        print(f"\n  Arrhenius: Ea = {_Ea/1000:.2f} kJ/mol, A = {_A:.4e}, "
+              f"clamp [{ce.ALPHA_LIT_LO:g}, {ce.ALPHA_LIT_HI:g}]")
     for t in (-3.0, -20.0):
         i = int(np.argmin(abs(T - t)))
         print(f"  T = {t:6.1f} C : alpha_c = {a_arr[i]:.3e}, eps = {eps[i]:.3e} m, "

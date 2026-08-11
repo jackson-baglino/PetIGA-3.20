@@ -313,6 +313,107 @@ def alpha_arrhenius(T_C: float,
     return a
 
 
+# -------------------------------------------------------------------------
+# Two-parameter Libbrecht fit: alpha_c(T, rho_v)
+# -------------------------------------------------------------------------
+#
+# Libbrecht's form is alpha = A*exp(-sigma0/sigma) with TWO free parameters,
+# A and sigma0. material_properties.c::Sigma0 supplies sigma0(T) from the
+# table but the model in monitoring.c hardwires A = 1, which is what makes it
+# unusable at sintering supersaturations. Freeing A -- and letting the sigma0
+# TABLE be rescaled by a single factor f while keeping its SHAPE -- gives two
+# unknowns for two anchors, so the fit is exactly determined:
+#
+#     alpha_c(T, sigma) = A * exp(-f * sigma0(T) / sigma)
+#
+# Fitted at a characteristic sigma to the literature band (1e-3 warm, 1e-4
+# cold) this returns A = 1.09e-3 and f = 9.8e-3, i.e. sigma0 scaled down by
+# ~100x. Three things follow, and they are why this is preferred over the
+# T-only Arrhenius:
+#
+#   * A is the ROUGH-SURFACE CEILING on alpha, approached as sigma grows.
+#     That is exactly the quantity Libbrecht (2017) and Braun et al. (2024)
+#     bound, so pinning A inside [1e-4, 1e-3] respects the literature by
+#     construction rather than by clamping after the fact.
+#   * The -6/-7 C kink in the table stops mattering. Scaled by f ~ 1/100 it
+#     turns a factor-1.4e-4 jump in alpha into an 8% step, so the sparse
+#     digitisation no longer propagates into a discontinuous mesh.
+#   * sigma0(T)'s SHAPE is retained, so the temperature dependence is
+#     Libbrecht's rather than an invented activation energy.
+#
+# WHY IT STILL HAS TO BE CLAMPED
+# ------------------------------
+# alpha collapses as sigma -> 0 (at sigma = 1e-5, alpha(-40 C) ~ 1e-50), and
+# beta_sub = beta_HK/chi ~ 1/alpha then diverges. Measured consequences at the
+# Demmenie geometry, sweeping alpha_c with --vn_feature active:
+#
+#     alpha_c    beta_sub     mesh      steps    physical t_final
+#     1e-2       1.7e+05     0.32M      1.00x       1.0x
+#     1e-3       1.7e+06     0.11M      0.15x       3.3x
+#     1e-4       1.7e+07     0.11M      0.13x      25.9x
+#     1e-5       1.7e+08     0.11M      0.13x     252.7x
+#
+# Note what does NOT happen: the mesh does not blow up. Eq.(45) becomes the
+# binding ceiling and is beta-independent under --vn_feature, so eps saturates
+# and the step count is nearly alpha-invariant. The binding cost is PHYSICAL
+# TIME -- t_final scales as 1/alpha_c, so a 2.5 h experiment needs ~65 h of
+# simulated time at alpha_c = 1e-4 and ~26 days at 1e-5. That, plus leaving
+# the literature band, is what makes the floor necessary; it is not a mesh
+# argument.
+
+LIBBRECHT_SIGMA_CHAR = 4.5e-4     # characteristic sintering supersaturation
+
+
+def libbrecht2_params(sigma_ref: float = LIBBRECHT_SIGMA_CHAR,
+                      anchor_warm=ALPHA_ANCHOR_WARM,
+                      anchor_cold=ALPHA_ANCHOR_COLD):
+    """(A, f) for alpha = A*exp(-f*sigma0(T)/sigma), fitted at sigma_ref.
+
+    f rescales the sigma0 table without changing its shape. Returns
+    (A, f, sigma_ref) so callers can record what the fit was pinned to --
+    A and f are only meaningful alongside it.
+    """
+    (Tw, aw), (Tc, ac) = anchor_warm, anchor_cold
+    s0w, s0c = sigma0(Tw), sigma0(Tc)
+    if abs(s0c - s0w) < 1e-15:
+        raise ValueError("anchors must straddle a change in sigma0(T)")
+    f = sigma_ref * math.log(aw / ac) / (s0c - s0w)
+    A = aw * math.exp(f * s0w / sigma_ref)
+    return A, f, sigma_ref
+
+
+def alpha_libbrecht2(T_C: float, sigma: float,
+                     sigma_ref: float = LIBBRECHT_SIGMA_CHAR,
+                     anchor_warm=ALPHA_ANCHOR_WARM,
+                     anchor_cold=ALPHA_ANCHOR_COLD,
+                     clamp=(ALPHA_LIT_LO, ALPHA_LIT_HI)) -> float:
+    """alpha_c(T, sigma) from the two-parameter fit, clamped.
+
+    `sigma` is the local supersaturation |rho_v - rho_vs(T)|/rho_vs(T), so
+    this is the alpha_c(T, rho_v) the solver would evaluate pointwise.
+    """
+    A, f, _ = libbrecht2_params(sigma_ref, anchor_warm, anchor_cold)
+    if sigma <= 0.0:
+        a = clamp[0] if clamp else 0.0
+    else:
+        expo = f * sigma0(T_C) / sigma
+        a = 0.0 if expo > 700.0 else A * math.exp(-expo)
+    if clamp:
+        a = min(max(a, clamp[0]), clamp[1])
+    return a
+
+
+def sigma_char_of(T_C: float, r_feat: float) -> float:
+    """Gibbs-Thomson supersaturation at the smallest resolved feature.
+
+    sigma = d0*kappa = d0/r_feat. This is the driving supersaturation a neck
+    fillet of radius r_feat actually sees, and it is what the alpha_c fit
+    should be pinned to -- not a snow-crystal-growth sigma, which is orders
+    of magnitude larger.
+    """
+    return capillary_length(T_C) / r_feat
+
+
 def libbrecht_sigma_ref_for(alpha_target: float, T_C: float):
     """sigma that makes alpha_libbrecht(T_C, sigma) equal alpha_target.
 
@@ -824,6 +925,17 @@ def _cli():
                          "recommended mode: smooth, monotonic, and pinned to the "
                          "α_c ∈ [1e-4, 1e-3] band that Libbrecht (2017) and Braun "
                          "et al. (2024) support. Mutually exclusive with the above.")
+    ap.add_argument("--alpha_libbrecht2", action="store_true",
+                    help="Derive α_c(T0, σ) from the TWO-parameter Libbrecht fit "
+                         "α = A·exp(-f·σ₀(T)/σ), with A and the σ₀ rescaling f "
+                         "fitted to the literature anchors. Keeps Libbrecht's "
+                         "σ₀(T) shape, and tames the −6/−7 °C table kink to ~8%. "
+                         "Pair with --sigma_char. Mutually exclusive with the above.")
+    ap.add_argument("--sigma_char", type=float, default=None,
+                    help="Characteristic supersaturation σ the α_c fit is pinned "
+                         "to [-]. Default: d₀/R_feat (the Gibbs-Thomson σ at the "
+                         "smallest resolved feature), using --vn_feature if given "
+                         f"else Rave/50. Reference value {LIBBRECHT_SIGMA_CHAR:g}.")
     ap.add_argument("--alpha_anchors", default=None,
                     metavar="T1,a1,T2,a2",
                     help="Arrhenius anchors as 'T_warm,alpha_warm,T_cold,alpha_cold' "
@@ -863,17 +975,62 @@ def _cli():
 
     n_modes = sum(x is not None for x in (args.alpha, args.alpha_range, args.sigma_surf))
     n_modes += 1 if args.alpha_arrhenius else 0
+    n_modes += 1 if args.alpha_libbrecht2 else 0
     if n_modes > 1:
-        ap.error("--alpha, --alpha_range, --sigma_surf and --alpha_arrhenius "
-                 "are mutually exclusive.")
+        ap.error("--alpha, --alpha_range, --sigma_surf, --alpha_arrhenius and "
+                 "--alpha_libbrecht2 are mutually exclusive.")
     if n_modes == 0:
-        ap.error("Provide one of --alpha, --alpha_range, --sigma_surf or "
-                 "--alpha_arrhenius.")
+        ap.error("Provide one of --alpha, --alpha_range, --sigma_surf, "
+                 "--alpha_arrhenius or --alpha_libbrecht2.")
+
+    # ---- alpha_c(T, sigma) from the two-parameter Libbrecht fit. Resolved
+    # HERE for the same reason as the Arrhenius below: alpha_c -> beta_sub ->
+    # the binding eps ceiling -> the mesh.
+    if args.alpha_libbrecht2:
+        _say = (lambda *a, **k: None) if args.quiet else print
+        aw, ac = ALPHA_ANCHOR_WARM, ALPHA_ANCHOR_COLD
+        if args.alpha_anchors:
+            v = [float(x) for x in args.alpha_anchors.split(",")]
+            if len(v) != 4:
+                ap.error("--alpha_anchors needs 'T1,a1,T2,a2'")
+            aw, ac = (v[0], v[1]), (v[2], v[3])
+        clamp = (ALPHA_LIT_LO, ALPHA_LIT_HI)
+        if args.alpha_clamp:
+            c = [float(x) for x in args.alpha_clamp.split(",")]
+            if len(c) != 2:
+                ap.error("--alpha_clamp needs 'LO,HI'")
+            clamp = (min(c), max(c))
+
+        rfeat = args.vn_feature if args.vn_feature else args.Rave / 50.0
+        sig = args.sigma_char if args.sigma_char else sigma_char_of(args.T0, rfeat)
+        A, f, _ = libbrecht2_params(sig, aw, ac)
+        raw = alpha_libbrecht2(args.T0, sig, sig, aw, ac, clamp=None)
+        args.alpha = alpha_libbrecht2(args.T0, sig, sig, aw, ac, clamp)
+
+        _say(f"\n  Libbrecht 2-parameter mode: alpha_c(T, sigma) = A*exp(-f*sigma0(T)/sigma)")
+        _say(f"    anchors  {aw[1]:.3e} @ {aw[0]:g} C  and  {ac[1]:.3e} @ {ac[0]:g} C")
+        _say(f"    sigma_char = {sig:.3e}"
+              + ("  (given)" if args.sigma_char else f"  (= d0/R_feat, R_feat = {rfeat:.3e} m)"))
+        _say(f"    fit: A = {A:.4e}  (rough-surface ceiling),  f = {f:.4e} "
+              f"(sigma0 rescaled x1/{1/f:.0f})")
+        _say(f"    -> alpha_c({args.T0:g} C) = {args.alpha:.4e}"
+              + (f"   [CLAMPED from {raw:.3e} into [{clamp[0]:g}, {clamp[1]:g}]]"
+                 if abs(raw - args.alpha) > 1e-12 * max(abs(raw), 1e-300) else ""))
+        k6, k7 = alpha_libbrecht2(-6.0, sig, sig, aw, ac, clamp), \
+                 alpha_libbrecht2(-7.0, sig, sig, aw, ac, clamp)
+        _say(f"    [kink check] alpha(-6 C)/alpha(-7 C) = {k6/k7:.3f} "
+              f"(unscaled f=1 this ratio is {math.exp((sigma0(-7)-sigma0(-6))/sig):.2e})")
+        _say(f"    NOTE: the clamp floor caps beta_sub at "
+              f"{beta_HK(args.T0, clamp[0])/(rho_vs_sat(args.T0)/_RHO_ICE):.3e} s/m. "
+              f"Without it beta_sub diverges as sigma -> 0")
+        _say(f"      and physical t_final scales as 1/alpha_c (26x at 1e-4 vs 1e-2) "
+              f"— the mesh is unaffected, the runtime is not.")
 
     # ---- Arrhenius alpha_c(T). Resolved HERE, before --vn_feature evaluates
     # beta and before compute_eps sizes the mesh: alpha_c -> beta_sub -> the
     # binding eps bound -> Nx/Ny, so it cannot be applied afterwards.
     if args.alpha_arrhenius:
+        _say = (lambda *a, **k: None) if args.quiet else print
         aw, ac = ALPHA_ANCHOR_WARM, ALPHA_ANCHOR_COLD
         if args.alpha_anchors:
             v = [float(x) for x in args.alpha_anchors.split(",")]
@@ -891,11 +1048,11 @@ def _cli():
         raw = A * math.exp(-Ea / (_R_GAS * (args.T0 + 273.15)))
         args.alpha = alpha_arrhenius(args.T0, aw, ac, clamp)
 
-        print(f"\n  Arrhenius kinetics mode: alpha_c(T) = A*exp(-Ea/RT)")
-        print(f"    anchors  {aw[1]:.3e} @ {aw[0]:g} C   and   "
+        _say(f"\n  Arrhenius kinetics mode: alpha_c(T) = A*exp(-Ea/RT)")
+        _say(f"    anchors  {aw[1]:.3e} @ {aw[0]:g} C   and   "
               f"{ac[1]:.3e} @ {ac[0]:g} C")
-        print(f"    Ea = {Ea/1000.0:.2f} kJ/mol,  A = {A:.4e}")
-        print(f"    -> alpha_c({args.T0:g} C) = {args.alpha:.4e}"
+        _say(f"    Ea = {Ea/1000.0:.2f} kJ/mol,  A = {A:.4e}")
+        _say(f"    -> alpha_c({args.T0:g} C) = {args.alpha:.4e}"
               + (f"   [CLAMPED from {raw:.3e} to the "
                  f"[{clamp[0]:g}, {clamp[1]:g}] band]"
                  if abs(raw - args.alpha) > 1e-12 * max(raw, 1e-300) else ""))
@@ -903,14 +1060,14 @@ def _cli():
         # Show, numerically, why the Libbrecht form is not used directly.
         s_eq = libbrecht_sigma_ref_for(aw[1], aw[0])
         a_cold_lib = alpha_libbrecht(ac[0], s_eq)
-        print(f"    [Libbrecht cross-check] the sigma that reproduces the WARM "
+        _say(f"    [Libbrecht cross-check] the sigma that reproduces the WARM "
               f"anchor is {s_eq:.3e};")
-        print(f"      at that same sigma the form gives alpha({ac[0]:g} C) = "
+        _say(f"      at that same sigma the form gives alpha({ac[0]:g} C) = "
               f"{a_cold_lib:.3e}, vs the cold anchor {ac[1]:.3e}.")
-        print(f"      sigma0 spans {sigma0(aw[0]):.2e}->{sigma0(ac[0]):.2e} "
+        _say(f"      sigma0 spans {sigma0(aw[0]):.2e}->{sigma0(ac[0]):.2e} "
               f"(x{sigma0(ac[0])/sigma0(aw[0]):.0f}), and ln(alpha) scales with "
               f"it, so NO single sigma")
-        print(f"      fits both anchors — the incompatibility is structural, "
+        _say(f"      fits both anchors — the incompatibility is structural, "
               f"not a matter of tuning sigma.")
 
     if args.sigma_surf is not None:

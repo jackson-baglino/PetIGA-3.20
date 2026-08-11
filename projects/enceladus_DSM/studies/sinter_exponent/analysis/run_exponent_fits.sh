@@ -5,13 +5,14 @@
 # This script IS the reproducible record of the numbers quoted in
 # studies/sinter_exponent/README.md. Run it from the project root:
 #
-#     bash studies/sinter_exponent/verification/run_exponent_fits.sh
+#     bash studies/sinter_exponent/analysis/run_exponent_fits.sh
 #
-# Stage 1 (the committed Molaro comparison) needs no simulation — it reads the
+# Outputs land under results/<topic>/. Stage 1 (the committed Molaro comparison) needs no simulation — it reads the
 # neck CSVs already under $RESULTS_BASE/_neck_csv and the validation data in
 # inputs/validation. Stage 2 is skipped unless the pilot runs exist.
 # =============================================================================
 set -euo pipefail
+
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
@@ -19,7 +20,10 @@ cd "$ROOT"
 
 PY="${PY:-$ROOT/venv_enceladus/bin/python}"
 RESULTS_BASE="${RESULTS_BASE:-$HOME/SimulationResults/enceladus_DSM/scratch}"
-OUT="$HERE"
+STUDY="$(cd "$HERE/.." && pwd)"
+RES="$STUDY/results"
+
+mkdir -p "$RES/molaro_prenecked" "$RES/demmenie"
 
 FIT="$PY postprocess/fit_neck_growth.py"
 DATA20="inputs/validation/molaro2019_fig11_T-20.csv"
@@ -32,7 +36,7 @@ echo "== 1/3  Molaro eps arms vs data =="
 $FIT "$RESULTS_BASE/_neck_csv/"*.csv "$DATA20" \
     --results-base "$RESULTS_BASE" \
     --labels "model eps0.86um (loose),model eps0.60um (mid),model eps0.35um (strict),Molaro 2019 data (-20C)" \
-    --out "$OUT" --prefix molaro --demmenie
+    --out "$RES/molaro_prenecked" --prefix molaro --demmenie
 
 # --- 2. The same model arm, sampled where the experiment sampled -------------
 # The protocol control. Nothing about the model changes here; only the times
@@ -42,7 +46,7 @@ echo "== 2/3  strict arm resampled at the data's times =="
 $FIT "$RESULTS_BASE/_neck_csv/"*epsstrict*.csv "$DATA20" \
     --results-base "$RESULTS_BASE" --resample-at "$DATA20" \
     --labels "model eps0.35um (strict),Molaro 2019 data (-20C)" \
-    --out "$OUT" --prefix molaro_resampled --demmenie
+    --out "$RES/molaro_prenecked" --prefix molaro_resampled --demmenie
 
 # --- 3. Demmenie replication, once the runs exist ----------------------------
 echo "== 3/3  Demmenie 1 mm spheres =="
@@ -59,10 +63,10 @@ done
 
 if [ "${#demmenie_csvs[@]}" -eq 0 ]; then
     echo "   (skipped — no sinter runs under $RESULTS_BASE yet;"
-    echo "    submit studies/sinter_exponent/pilot_batch.txt first)"
+    echo "    submit studies/sinter_exponent/batches/gate.txt first)"
 else
-    $FIT "${demmenie_csvs[@]}" --out "$OUT" --prefix demmenie --demmenie
+    $FIT "${demmenie_csvs[@]}" --out "$RES/demmenie" --prefix demmenie --demmenie
 fi
 
 echo
-echo "outputs -> $OUT"
+echo "outputs -> $RES"

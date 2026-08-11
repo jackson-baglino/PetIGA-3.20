@@ -3,11 +3,19 @@
 Regenerate everything here with:
 
 ```bash
-bash studies/sinter_exponent/verification/run_exponent_fits.sh
+bash studies/sinter_exponent/analysis/run_exponent_fits.sh
 ```
 
 No simulation required: it reads the three committed Molaro neck curves from
 `$RESULTS_BASE/_neck_csv/` and the validation data in `inputs/validation/`.
+
+> **SUPERSEDED IN PART (2026-08-11).** Every number below was computed at
+> α_c = 9.0e-2, which we now believe puts the model in the wrong transport
+> regime — see `results/kinetics/`. The *geometric* conclusions (resolution
+> floor, window width, protocol sensitivity) are α_c-independent and stand.
+> The *kinetic* numbers quoted in PLAN.md (τ_sub, kinetic fraction, L*) do
+> not, and the .opts files still carry the old α_c. Re-run the driver after
+> the α_c migration.
 
 **Short answer: no, and the Molaro geometry cannot answer the question either
 way.** Details below. See `PLAN.md` for the benchmark being tested against and
@@ -17,7 +25,7 @@ for the stages that follow.
 
 ## The numbers
 
-From `verification/molaro_fits.csv`. `a` is the fitted exponent in
+From `results/molaro_prenecked/molaro_fits.csv`. `a` is the fitted exponent in
 `r ~ t^a`; `m = 1/a` is the Kuczynski exponent (Demmenie's `m`, **not** their
 mechanism index `n`).
 
@@ -52,7 +60,7 @@ measurably net-shrank 3–4 %, which a saturated cell cannot do.
 
 **2. Our model never reaches a power law in these runs.** Its local slope
 climbs monotonically from 0.02 to 0.12 across the full 2 h and is *still
-rising* at the end (`verification/molaro_local_slope.png`). The run spends its
+rising* at the end (`results/molaro_prenecked/molaro_local_slope.png`). The run spends its
 entire length in the fillet-rounding transient that follows a pre-formed neck.
 The three eps arms lie on top of each other, so this is a property of the
 initial condition, not of the mesh.
@@ -63,8 +71,7 @@ Compare `d_fixed` — m = 11.5 model vs 5.4 data, an apparent factor of two — 
 naive fit is the model and the experiment having different amounts of neck at
 t = 0, not different physics.
 
-**4. The exponent is mostly an artifact of protocol.** `verification/
-molaro_resampled_*` re-fits the *same* model curve at the *same* nine times the
+**4. The exponent is mostly an artifact of protocol.** `results/molaro_prenecked/molaro_resampled_*` re-fits the *same* model curve at the *same* nine times the
 experiment sampled. Nothing about the physics changes; only the sampling:
 
 | sampling | `d_fixed` a |
@@ -91,13 +98,19 @@ That is the argument for stage 2/3, and it is a stronger reason to run the
 
 ## Files
 
+All results live under `results/<topic>/`; batch specs under `batches/`; the
+driver under `analysis/`.
+
 | file | what |
 |---|---|
-| `molaro_fits.csv` | fit table: parameters, 95 % CIs, R², window, eps, R0, floor |
-| `molaro_growth_loglog.png` | r/R0 vs t, log–log, with 1/1 · 1/3 · 1/5 · 1/7 guides, the Demmenie band, and each arm's resolution floor |
-| `molaro_local_slope.png` | `d ln r / d ln t` vs r/R0 — the decisive figure |
-| `molaro_resampled_*` | the same strict arm read at the data's sample times |
-| `run_exponent_fits.sh` | driver; regenerates all of the above |
+| `results/molaro_prenecked/molaro_fits.csv` | fit table: parameters, 95 % CIs, R², window, eps, R0, floor |
+| `…/molaro_growth_loglog.png` | r/R0 vs t, log–log, with 1/1 · 1/3 · 1/5 · 1/7 guides, the Demmenie band, and each arm's resolution floor |
+| `…/molaro_local_slope.png` | `d ln r / d ln t` vs r/R0 — the decisive figure |
+| `…/molaro_resampled_*` | the same strict arm read at the data's sample times |
+| `analysis/run_exponent_fits.sh` | driver; regenerates all of the above |
+| `results/kinetics/alpha_kinetics.png` | how α_c(T,σ) propagates into ε, mesh, timestep, regime |
+| `results/dv_sweep/` | the D_v ladder — D_v moves the rate, not the exponent |
+| `results/gate_batch/` | the three Molaro boundary arms (batch of 2026-08-11) |
 
 ## Caveats
 

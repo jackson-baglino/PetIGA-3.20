@@ -129,7 +129,7 @@ lands in the window. `solve_d_union(5e-4, 5e-4, 9.0e-5)` → d = 9.959418e-04.
 
 ## Stage 1 — Reanalysis (done, no compute)
 
-`bash studies/sinter_exponent/verification/run_exponent_fits.sh`
+`bash studies/sinter_exponent/analysis/run_exponent_fits.sh`
 
 Fits the three committed Molaro eps arms and both validation CSVs. Results and
 interpretation in `README.md`.
@@ -171,7 +171,7 @@ same way their own deliberately-undersaturated control did.
 
 ```bash
 ./scripts/HPC/submit_batch.sh --tag sinter_gate \
-    --tests-file studies/sinter_exponent/batch_gate.txt
+    --tests-file studies/sinter_exponent/batches/gate.txt
 ```
 
 D0 + all three Molaro arms. The Molaro runs are cheap enough to go alongside
@@ -191,7 +191,7 @@ the `u³` estimate that sized `t_final = 5 h`.
 
 ```bash
 ./scripts/HPC/submit_batch.sh --tag sinter_prod \
-    --tests-file studies/sinter_exponent/batch_production.txt
+    --tests-file studies/sinter_exponent/batches/production.txt
 ```
 
 D1 + D2. 78.3M dof, ~5450 steps at dtmax 3.3 each; ~980 ranks at the default
