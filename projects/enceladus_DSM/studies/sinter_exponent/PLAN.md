@@ -134,35 +134,73 @@ lands in the window. `solve_d_union(5e-4, 5e-4, 9.0e-5)` → d = 9.959418e-04.
 Fits the three committed Molaro eps arms and both validation CSVs. Results and
 interpretation in `README.md`.
 
-## Stage 2 — Pilot (~3 % of production)
+## The run matrix
+
+Six runs, two batches. Every one uses the same initialisation method (union
+IC started just above its own resolution floor) so Demmenie and Molaro get
+identical treatment and the comparison between them is clean.
+
+| # | run | T | boundaries | t_final | cost |
+|---|---|---|---|---|---|
+| D0 | Demmenie pilot | −3 °C | sealed | 10 min | ~160 core-h |
+| D1 | Demmenie | −3 °C | sealed | 5 h | ~5–9k core-h |
+| D2 | Demmenie | −3 °C | open, h = 1.000 | 5 h | ~5–9k core-h |
+| M1 | Molaro | −20 °C | sealed | 8 h | ~14 core-h |
+| M2 | Molaro | −20 °C | open, h = 1.000 | 8 h | ~14 core-h |
+| M3 | Molaro | −20 °C | open, h = 0.998 | 8 h | ~14 core-h |
+
+"open" = `-flag_BC_Tfix 1 -flag_BC_rhovfix 1`: T pinned at `-temp`, ρ_v at
+`humidity·rho_vs(T)`.
+
+**Neither boundary treatment is exactly right, and that is the point.**
+Zero-flux walls a fraction of a grain radius away give the latent heat no sink
+and let the vapour reservoir deplete; Dirichlet walls at the same distance are
+an infinite reservoir far closer than the real chamber. They **bracket** it.
+Compare the *exponent* across the pair, not the rate. Both non-kinetic
+channels bend the slope downward, so a sealed-only result would be easy to
+misread as the model's exponent.
+
+`h = 0.998` (M3) is not a guess: the 2026-07 campaign back-fitted it from the
+3–4 % grain shrinkage Molaro measured — shrinkage that cannot happen in a
+genuinely saturated cell. It carries a prediction worth stating in advance:
+if Demmenie are right that the literature's 1/3-to-1/7 scatter is a humidity
+artifact, **M3's exponent should fall below M1/M2 and fall toward 1/7**, the
+same way their own deliberately-undersaturated control did.
+
+## Stage 2 — Gate batch (~200 core-h)
 
 ```bash
-./scripts/HPC/submit_batch.sh --tag sinter_pilot \
-    --tests-file studies/sinter_exponent/pilot_batch.txt
+./scripts/HPC/submit_batch.sh --tag sinter_gate \
+    --tests-file studies/sinter_exponent/batch_gate.txt
 ```
 
-**2a. Demmenie, production mesh truncated to 10 min** — the real 78.3M-dof
-problem, ~180 steps. Deliberately *not* a coarse-eps pilot: the
-kinetic/thermal/vapour split of tau_sub is set by the comp_eps safety factor
-alone (64.7 % at 0.5, 47.9 % at 1.0), so a coarser arm sits in a **different
-physical regime** and predicts nothing about the production run. Truncating
-time changes neither the discretisation nor the regime.
+D0 + all three Molaro arms. The Molaro runs are cheap enough to go alongside
+the gate rather than after it.
 
-**2b. Molaro from its own resolution floor**, 8 h — 765k nodes, ~14 core-h.
+**D0 is deliberately *not* a coarse-eps pilot.** The kinetic/thermal/vapour
+split of tau_sub is set by the comp_eps safety factor alone (64.7 % at 0.5,
+47.9 % at 1.0), so a coarser arm sits in a **different physical regime** and
+predicts nothing about the production run. Truncating time changes neither the
+discretisation nor the regime.
 
-**Gate:** stability, and confirm the t = 0 neck is r0/R = 0.09 and the early
-rate matches the `u³` extrapolation that sized `t_final`.
+**Gate before submitting stage 3:** D0 stays stable, its t = 0 neck is
+r/R ≈ 0.092 (the mesh-convergence extrapolation), and its early rate matches
+the `u³` estimate that sized `t_final = 5 h`.
 
-## Stage 3 — Production
+## Stage 3 — Production batch
 
 ```bash
-./scripts/HPC/submit_enceladus.sh \
-    sinter_2D_L2196um_eps0.32um_axisym_D1mm_r0p09 \
-    sinter_T-3_h1.00_5h_a9.0e-2 demmenie
+./scripts/HPC/submit_batch.sh --tag sinter_prod \
+    --tests-file studies/sinter_exponent/batch_production.txt
 ```
 
-78.3M dof, ~5450 steps at dtmax 3.3. `t_final = 1.8e4` (5 h) rather than their
-2.5 h, because their duration is a property of their apparatus:
+D1 + D2. 78.3M dof, ~5450 steps at dtmax 3.3 each; ~980 ranks at the default
+80k dof/core, so pass `-- --ntasks=<n>` or `--half-cores` if the queue is busy.
+Each run leaves ~31 GB of snapshots — run `neck_width.py` on the cluster and
+bring back only the CSV.
+
+`t_final = 1.8e4` (5 h) rather than their 2.5 h, because their duration is a
+property of their apparatus:
 
 | t_final | 2.5 h | 3.3 h | 5.0 h | 6.7 h |
 |---|---|---|---|---|
@@ -174,22 +212,13 @@ directly comparable to their runs. One snapshot is ~627 MB, so run
 `neck_width.py` on the cluster and bring back only the CSV. Push before
 submitting.
 
-**Regime control, not an eps ladder.** Because eps and regime are entangled, a
-coarse/fine pair cannot separate discretisation from physics. Instead:
-
-```bash
-./scripts/HPC/submit_enceladus.sh \
-    sinter_2D_L2196um_eps0.32um_axisym_D1mm_r0p09 \
-    sinter_T-3_h1.00_5h_a9.0e-2_dirichlet demmenie_dirichlet
-```
-
-pins T and rho_v at the outer faces, so the latent heat released at the neck
-has a sink and the vapour reservoir cannot deplete — the sealed box otherwise
-self-warms and starves, both of which bend the slope *downward*. Compare the
-**exponent**, not the rate: if they agree, the sealed arm is fine and this is a
-one-line robustness statement; if they differ, the Dirichlet arm is the more
-faithful representation of their cooled-stage apparatus and is the one to
-quote.
+**Regime control, not an eps ladder.** Because eps and regime are entangled,
+a coarse/fine pair cannot separate discretisation from physics — which is why
+D2 varies the boundaries instead. Compare the **exponent** across D1/D2: if
+they agree, the boundary treatment is not bending it and that is a one-line
+robustness statement; if they differ, D2 is the closer analogue of a large box
+on a cooled stage and is the one to quote, stated explicitly rather than
+presented as an uncertainty band.
 
 A genuine discretisation check, if wanted, is **refinement at fixed eps**
 (h = eps/2 instead of eps/√2, ~4× cost) — that isolates the mesh with zero

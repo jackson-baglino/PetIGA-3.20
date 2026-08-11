@@ -1,0 +1,65 @@
+# =============================================================================
+# experiment/molaro/molaro_T-20_h1.00_8h_a1.34e-2_dirichlet.opts
+#
+# Molaro -20 C pair, open boundaries at FULL saturation. Pair with
+# geometry/molaro/molaro_2D_L382um_eps0.35um_axisym_T-20pair_r0p22.opts.
+#
+# Middle arm of a three-way boundary comparison, all otherwise identical:
+#   molaro_T-20_h1.00_8h_a1.34e-2.opts            sealed (zero-flux)
+#   molaro_T-20_h1.00_8h_a1.34e-2_dirichlet.opts  THIS — open, h = 1.000
+#   molaro_T-20_h0.998_8h_a1.34e-2_dirichlet.opts open, h = 0.998 (calibrated)
+#
+# WHY THREE
+# ---------
+# The three arms separate two effects that the old campaign varied together.
+# Going sealed -> open at h = 1.000 changes ONLY the boundary type: it gives
+# the latent heat a sink and stops the vapour reservoir depleting, without
+# changing the thermodynamic state the walls are held at (at humidity 1.00 and
+# uniform T the pinned rho_v IS the equilibrium value, so nothing is injected).
+# Going h = 1.000 -> 0.998 then changes only the chamber state.
+#
+# Molaro's chamber is a sealed Peltier cryostage with the grains sitting on a
+# glass slide over the cold plate and an ice-coated slide nearby as a vapour
+# reservoir. Neither idealisation is exactly it: zero-flux walls 20 um away
+# give the latent heat nowhere to go, while Dirichlet walls 20 um away are an
+# infinite reservoir far closer than the real one. The two BRACKET the real
+# chamber -- report them that way rather than calling either one correct.
+#
+# WHAT TO READ OFF
+# ----------------
+# The EXPONENT, not the rate. If it is insensitive to the boundary treatment
+# across all three arms, then the finding that this geometry cannot resolve a
+# power law (studies/sinter_exponent/README.md) is a property of the grain
+# size and eps, not an artifact of how the box was closed -- which is the
+# claim the Demmenie comparison rests on.
+#
+# Everything else is identical to the sealed arm: t_final 8 h, alpha_c
+# 1.341e-2 from the repo Arrhenius fit, beta_sub0 and d0_sub0 from comp_eps at
+# -20 C, dtmax 1.0e2 (~1.03 * tau_sub), log-spaced output.
+#
+# Exclude the first ~2000 s from any fit: the union IC's crease has to build a
+# 2.19 um fillet first (t_fill ~ beta*rho^2/(2*d0) = 1400 s). Use --tmin 2000.
+#
+# Mass is not conserved with -flag_BC_rhovfix 1, so TOTAL_MASS drift in the
+# monitor table is expected and is not a solver fault. At h = 1.000 it should
+# be small; if it is not, the sealed arm was starved and that is itself the
+# result.
+# =============================================================================
+
+-t_final 2.88e4                         # 8 h
+
+-temp -20.0
+-humidity 1.00                          # walls at ice saturation
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1                         # isothermal reservoir (the cold plate)
+-flag_BC_rhovfix 1                      # rho_v pinned at hum0 * rho_vs(T)
+
+-beta_sub0 5.9216e5                     # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+-dtmax 1.0e2
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-t_out_log 60

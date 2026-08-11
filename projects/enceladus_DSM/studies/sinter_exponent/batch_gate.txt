@@ -1,0 +1,51 @@
+# Stage 2 — GATE batch for studies/sinter_exponent. One "geometry:experiment"
+# per line. Submit ALL of these before batch_production.txt.
+#
+#   ./scripts/HPC/submit_batch.sh --tag sinter_gate \
+#       --tests-file studies/sinter_exponent/batch_gate.txt
+#
+# Four jobs in ONE batch file on purpose: chained submit_enceladus.sh calls
+# race in obj/ and die with "Stale file handle". No --extra-opts -- dtmax,
+# boundary flags and cadence are all set per-experiment (and --extra-opts
+# would apply to every job).
+#
+# Total ~200 core-h. The Demmenie pilot is ~80% of that; the three Molaro arms
+# are ~14 core-h each.
+#
+# ---------------------------------------------------------------------------
+# 1. DEMMENIE PILOT — production mesh and eps, truncated to 10 min.
+#    ~78.3M dof, ~180 steps. Deliberately not a coarse-eps pilot: the
+#    kinetic/thermal/vapour split of tau_sub is set by the comp_eps safety
+#    factor alone, so a coarser arm would sit in a different physical regime
+#    and predict nothing about the production run.
+#    GATE: does it stay stable, is the t=0 neck r/R ~ 0.092 (the
+#    mesh-convergence extrapolation), and does the early rate match the u^3
+#    estimate that sized t_final = 5 h?
+sinter_2D_L2196um_eps0.32um_axisym_D1mm_r0p09:sinter_T-3_h1.00_10min_a9.0e-2
+
+# ---------------------------------------------------------------------------
+# 2-4. MOLARO, three boundary treatments, everything else identical.
+#      New initialisation (starts at the mesh's resolution floor, 39.0 um
+#      chord) so it gets the same treatment as the Demmenie runs and the two
+#      are comparable. ~765k nodes each.
+#
+#      These are cheap enough to run alongside the gate rather than after it.
+#      Expectation, stated up front: none of them recovers 1/3, because this
+#      geometry's whole measurable range (r/R 0.22-0.42) sits at the
+#      sqrt(12*eps/R) resolution floor and outside the small-neck regime. The
+#      three arms exist to show that is a property of grain size and eps, not
+#      of how the box was closed.
+#
+# 2. sealed (zero-flux) — the baseline
+molaro_2D_L382um_eps0.35um_axisym_T-20pair_r0p22:molaro_T-20_h1.00_8h_a1.34e-2
+
+# 3. open at full saturation — isolates the BOUNDARY TYPE (heat sink + vapour
+#    reservoir) with the wall state unchanged
+molaro_2D_L382um_eps0.35um_axisym_T-20pair_r0p22:molaro_T-20_h1.00_8h_a1.34e-2_dirichlet
+
+# 4. open at h = 0.998 — the chamber as it actually behaved, back-fitted from
+#    the 3-4% grain shrinkage Molaro measured. Carries a prediction: if the
+#    undersaturation story is right, THIS arm's exponent should fall below the
+#    other two and fall toward 1/7, matching Demmenie's own deliberately
+#    undersaturated control.
+molaro_2D_L382um_eps0.35um_axisym_T-20pair_r0p22:molaro_T-20_h0.998_8h_a1.34e-2_dirichlet

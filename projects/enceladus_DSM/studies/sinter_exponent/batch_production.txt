@@ -1,0 +1,43 @@
+# Stage 3 — PRODUCTION batch for studies/sinter_exponent. Submit only AFTER
+# batch_gate.txt has passed its gate (see that file).
+#
+#   ./scripts/HPC/submit_batch.sh --tag sinter_prod \
+#       --tests-file studies/sinter_exponent/batch_production.txt
+#
+# Two Demmenie arms, identical except for the boundary treatment. 78.3M dof,
+# ~5450 steps each at dtmax 3.3. Sizing: ~980 ranks at the default
+# 80k dof/core; pass `-- --ntasks=<n>` or --half-cores if the queue is busy,
+# and budget ~5-10 h wall on a few hundred ranks.
+#
+# One snapshot is ~627 MB and there are 50 of them, so each run leaves ~31 GB
+# on scratch. RUN neck_width.py ON THE CLUSTER and bring back only the CSV:
+#     python postprocess/neck_width.py <run_dir> --axisym
+#
+# WHY BOTH ARMS
+# -------------
+# alpha = 1/3 is the attachment-limited prediction; tau_sub here is 64.7%
+# kinetic / 25.3% thermal / 10.7% vapour, and both non-kinetic channels are
+# made worse by a sealed box in the same direction -- latent heat accumulates
+# with no sink 0.1 mm from the spheres, and the vapour reservoir depletes.
+# Both bend the slope DOWNWARD over the run, which is easy to misread as "our
+# model gives a smaller exponent".
+#
+# Neither arm is exactly their apparatus: zero-flux walls 0.1 mm away give the
+# heat nowhere to go, while Dirichlet walls 0.1 mm away are an infinite
+# reservoir far closer than their real box. The two BRACKET it. Compare the
+# EXPONENT, not the rate:
+#   agree    -> the boundary treatment is not bending it; quote the sealed arm
+#               and make this a one-line robustness statement.
+#   differ   -> the Dirichlet arm is the closer analogue of a large box on a
+#               cooled stage; quote that one and say so explicitly, rather
+#               than presenting the pair as an uncertainty band.
+#
+# Expected: a local slope of 0.30-0.33 across r/R = 0.09-0.35 -- the
+# exact-fillet ideal, NOT a flat 1/3 -- against Demmenie's 0.26-0.33.
+#
+# 1. sealed (zero-flux), mass-conserving — matches their constant sphere volume
+sinter_2D_L2196um_eps0.32um_axisym_D1mm_r0p09:sinter_T-3_h1.00_5h_a9.0e-2
+
+# 2. open: T and rho_v pinned at the walls — matches the cooled stage and the
+#    actively humidity-controlled box
+sinter_2D_L2196um_eps0.32um_axisym_D1mm_r0p09:sinter_T-3_h1.00_5h_a9.0e-2_dirichlet

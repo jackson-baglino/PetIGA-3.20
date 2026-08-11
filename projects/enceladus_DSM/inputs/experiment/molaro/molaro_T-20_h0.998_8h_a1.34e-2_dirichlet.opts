@@ -1,0 +1,64 @@
+# =============================================================================
+# experiment/molaro/molaro_T-20_h0.998_8h_a1.34e-2_dirichlet.opts
+#
+# Molaro -20 C pair, open boundaries at the CALIBRATED chamber humidity. Pair
+# with geometry/molaro/molaro_2D_L382um_eps0.35um_axisym_T-20pair_r0p22.opts.
+#
+# Third arm of the boundary comparison; see the h1.00_dirichlet file for the
+# other two and for why the sealed and open cases bracket the real chamber.
+#
+# WHY h = 0.998 AND NOT 1.000
+# ---------------------------
+# Because Molaro's grains measurably SHRANK. Their -20 C pair loses 3-4% of its
+# diameter over 78 min in a nominally saturated, sealed, isothermal cell --
+# which cannot happen at true saturation. Something in that chamber was
+# undersaturated, or warmed, or both (docs/molaro_validation_synthesis.md sec.
+# 5 argues illumination/window radiative heating, and shows the artifact is
+# ~4x stronger in the -5 C series, which is why that series is unusable).
+#
+# 0.998 is not a guess: the 2026-07 campaign back-fitted it from the observed
+# shrinkage via the open-chamber configuration, after h = 0.995 overshot with
+# a -39%/2h ice loss. Inherited here from
+# inputs/scratch/experiment/molaro/molaro_T-20_h0.998_2h_a3e-2_openBC.opts,
+# with alpha_c moved from that file's 3e-2 to the Arrhenius 1.341e-2 so the
+# whole new campaign shares one kinetics choice.
+#
+# Note what this arm is and is not. It is the most faithful representation of
+# the chamber as it actually behaved. It is NOT a better shot at the growth
+# exponent -- a net-sublimating chamber removes mass from the grains while the
+# neck is trying to grow, which is exactly the confound Demmenie identify as
+# the reason literature exponents scatter from 1/3 down to 1/7 (their own
+# deliberately-undersaturated control reproduced ~1/7).
+#
+# So this arm carries a prediction: if the undersaturation story is right, THIS
+# is the arm whose exponent should fall below the other two, and it should fall
+# toward 1/7 rather than toward 1/3. That is a sharper test of the Demmenie
+# thesis than anything the saturated arms can offer, and it costs ~14 core-h.
+#
+# Everything else is identical to the other two arms. Exclude the first
+# ~2000 s (crease fillet-building, t_fill ~ 1400 s): --tmin 2000.
+#
+# Expect real TOTAL_MASS loss here -- that is the point, not a solver fault.
+# Cross-check it against the measured 3-4% grain shrinkage with
+# postprocess/plot_mass.py; if the model sheds far more or far less, the 0.998
+# calibration did not transfer across the change in alpha_c and geometry, and
+# should be re-fitted before the arm is interpreted.
+# =============================================================================
+
+-t_final 2.88e4                         # 8 h
+
+-temp -20.0
+-humidity 0.998                         # calibrated from the observed shrinkage
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1                         # isothermal reservoir (the cold plate)
+-flag_BC_rhovfix 1                      # rho_v pinned at 0.998 * rho_vs(T)
+
+-beta_sub0 5.9216e5                     # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+-dtmax 1.0e2
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-t_out_log 60
