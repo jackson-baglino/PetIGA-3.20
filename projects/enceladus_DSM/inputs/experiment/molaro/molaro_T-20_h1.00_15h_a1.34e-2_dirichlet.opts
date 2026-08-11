@@ -1,0 +1,71 @@
+# =============================================================================
+# molaro_T-20_h1.00_15h_a1.34e-2_dirichlet.opts
+#
+# Molaro -20 C, TANGENT-START set. Pair with
+# geometry/molaro/molaro_2D_L387um_eps0.24um_axisym_T-20pair_tangent.opts.
+# Boundaries: open, h = 1.000.
+#
+# Same three-way boundary comparison as the r0p22 set, re-run from a zero
+# initial neck. Together the two sets are a 2 x 3 matrix (initial condition x
+# boundary treatment) in which the ONLY differences are the two things we
+# cannot derive from first principles, so anything common to all six is a
+# property of the model rather than of the setup.
+#
+# t_final = 5.4e4 (15 h), not 8 h
+# -------------------------------
+# From a zero neck the run must traverse the whole range the pre-necked runs
+# were handed at t = 0. Calibrating t(u) = C*u^3*beta*R^2/d0 on the committed
+# strict arm and applying the ~1.4x slowdown the r0p22 runs actually show:
+#     their first point  32.81 um  ->  ~3.7 ks
+#     their last point   64.78 um  ->  ~28 ks
+# 15 h covers their full range with roughly 2x margin. ~1400 steps at
+# dtmax = 39 s on a 1.63M-node mesh: ~140 core-h, so the margin is nearly free
+# and running short would waste the whole point.
+#
+# dtmax = 3.9e1 = 1.1 * tau_sub (35.6 s at eps = 2.4002e-07). Note tau_sub is
+# 2.7x smaller than at the coarser eps, so this needs ~3x the steps of the
+# r0p22 arms for the same physical time -- that is the real cost of the
+# refinement, not the node count.
+#
+# -t_out_log_t0 1.0e2 IS DELIBERATE
+# ---------------------------------
+# The default t0 is delt_t = 1e-4 s, which spreads the log schedule over 8.7
+# decades when the physics of interest occupies about 1.2. On the r0p22 runs
+# that put roughly 8 of 60 snapshots above the resolution floor. Starting the
+# schedule at 100 s spans 100 s -> 54 ks (2.7 decades) and puts ~35 of the 80
+# snapshots in the usable window.
+#
+# HOW TO COMPARE TO THE DATA
+# --------------------------
+# Do NOT compare clocks directly -- ours starts at contact, theirs at an
+# unknown time after it. Shift ours so t = 0 falls where our neck equals their
+# first measured width (16.405 um RADIUS = 32.81 um width):
+#
+#   python postprocess/fit_neck_growth.py <run>/neck_width.csv \
+#       inputs/validation/molaro2019_fig11_T-20.csv \
+#       --anchor-neck 1.6405e-5 --demmenie
+#
+# This is legitimate here only because eps was chosen so the resolution floor
+# (31.6 um) sits BELOW that width; at the coarser eps the anchor point would be
+# inside the unresolved region. It is also the convention Molaro et al. used in
+# their own Fig. 12.
+# =============================================================================
+
+-t_final 5.4e4                          # 15 h — see note above
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1                         # isothermal reservoir (the cold plate)
+-flag_BC_rhovfix 1                      # rho_v pinned at 1.00 * rho_vs(T)
+
+-beta_sub0 5.9216e5                     # K&P beta0 at -20 C, alpha_c = 1.341e-2
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+-dtmax 3.9e1                            # 1.1 * tau_sub (35.6 s at this eps)
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-t_out_log 80
+-t_out_log_t0 1.0e2                     # skip 6 empty decades — see note above

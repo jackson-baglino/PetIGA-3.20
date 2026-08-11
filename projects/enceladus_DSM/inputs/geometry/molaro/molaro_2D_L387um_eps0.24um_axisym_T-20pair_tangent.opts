@@ -1,0 +1,101 @@
+# =============================================================================
+# geometry/molaro/molaro_2D_L387um_eps0.24um_axisym_T-20pair_tangent.opts
+#
+# The Molaro -20 C pair started from EXACT TANGENCY — a sharp-interface neck of
+# zero — at an eps fine enough that the model's first trustworthy neck is
+# SMALLER than the experiment's first measured one. Pair with
+# experiment/molaro/molaro_T-20_h*_15h_a1.34e-2*.opts.
+#
+# WHY THIS SUPERSEDES THE r0p22 GEOMETRY FOR COMPARISON PURPOSES
+# ---------------------------------------------------------------
+# Starting from tangency removes the last arbitrary choice in the setup. The
+# initial neck is no longer a number we picked; it is zero, and the model is
+# allowed to generate its own trajectory. The comparison to Molaro is then made
+# by SHIFTING OUR CLOCK so that t = 0 falls where our neck equals their first
+# measured width, which is what postprocess/fit_neck_growth.py --anchor-neck
+# does and what Molaro et al. themselves did in their Fig. 12.
+#
+# That only works if our neck is RESOLVED when it passes through their starting
+# width. It is not, at the eps the other Molaro geometries use. The neck fillet
+# has radius rho ~ r^2/(2R) and is resolved only above
+#
+#     r/R >= sqrt(12*eps/R)   ->   neck WIDTH >= 2R*sqrt(12*eps/R)
+#
+#     eps = 3.479e-7 (safety 0.5)   -> floor 38.06 um   ABOVE their 32.81 um
+#     eps = 2.400e-7 (safety 0.345) -> floor 31.61 um   below it  <-- this file
+#
+# So eps is dropped to 2.4002e-07. Below the floor the DYNAMICS are wrong, not
+# just the measurement, so anchoring at a sub-floor width would silently pin
+# our clock to a fictitious part of the trajectory.
+#
+# WHAT IT COSTS AND WHAT IT BUYS
+# ------------------------------
+# 1.63M nodes vs 765k — still a ~60-rank job, so the refinement is nearly free
+# here. It also moves the run DEEPER into the attachment-limited regime, which
+# is the regime in which alpha = 1/3 is the clean prediction:
+#
+#     tau_sub kinetic fraction   94.2%  (vs 84% at eps 3.479e-7)
+#     thin-interface beta_eff/beta, heat channel   0.727 (vs 0.605)
+#
+# Both move the right way, so this arm is a better test of the exponent than
+# the coarser ones, not merely a finer one.
+#
+# THE PRICE IS TIME, AS EXPECTED
+# ------------------------------
+# From a zero neck the run has to traverse the whole range the pre-necked runs
+# were handed for free. Calibrating t(u) = C*u^3*beta*R^2/d0 against the
+# committed strict arm and applying the ~1.4x slowdown the r0p22 runs actually
+# show:
+#
+#     neck width   31.6 um (floor)   32.81 um (their t=0)   64.78 um (their end)
+#     t                ~3.3 ks            ~3.7 ks                 ~28 ks
+#
+# hence t_final = 5.4e4 s (15 h) in the paired experiment files, with margin.
+#
+# CAVEAT: the sharp union has a zero-radius crease at the contact point. No
+# diffuse interface can hold it; AC dynamics rounds it to O(eps) within
+# t_fill ~ beta*eps^2/(2*d0) ~ 17 s. That is negligible here, which is the
+# whole advantage of starting at tangency rather than pre-necked: t_fill grows
+# as r0^4, so it is 1400 s at the r0p22 geometry's 39 um and 17 s at zero.
+#
+# MESH
+# ----
+# preprocess/comp_eps.py --Lx 3.87e-4 --Ly 1.21e-4 --Rave 8.675e-5 --T0 -20 \
+#     --alpha 1.341e-2 --Dchannel ice --safety 0.345
+#   BINDING: K&P Eq. 43a (heat, kappa_i/C_i * beta_HK = 6.9571e-07)
+#   eps = 2.4002e-07, h = eps/sqrt(2), tau_sub = 35.6 s
+#   --Dchannel ice matches the STRICT convention the committed Molaro arms use.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Anchor + fit: python postprocess/fit_neck_growth.py <run>/neck_width.csv \
+#                   inputs/validation/molaro2019_fig11_T-20.csv \
+#                   --anchor-neck 1.6405e-5 --demmenie
+#               (1.6405e-5 m = half of their 32.81 um first measured width)
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # zero neck at tangency — load-bearing:
+                                        # the additive IC's two tanh tails each
+                                        # equal 0.5 at the touch point and sum
+                                        # to a spurious eps-dependent bridge
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.87000e-04
+-Ly 1.21000e-04
+-Lz 0
+
+-ice_grain_cx 9.25000e-05,2.66000e-04   # d = 1.735e-4 = R0+R1, EXACTLY TANGENT
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 2281                                # h = eps/sqrt(2)  (~1.63M nodes)
+-Ny 713
+-Nz 1
+-eps 2.4002e-07
+-eps_valid_temp -20
+
+-delt_t 1.0e-4
+-periodic 0

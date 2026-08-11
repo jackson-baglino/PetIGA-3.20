@@ -348,6 +348,13 @@ def fit_kuczynski(t, r):
         return None
     _, p, pcov = best
     m, lnK = p
+    # A fit parked on a bound is not a fit. Over a short window r^m - r0^m = Kt
+    # is nearly degenerate -- m and K trade off almost exactly -- and the
+    # optimiser slides to the edge of the allowed range and reports it with a
+    # vast covariance. Returning m = 0.2 (i.e. a = 5) alongside an R^2 of 0.87
+    # looks like an answer and is not one.
+    if m <= 0.2 * 1.01 or m >= 60.0 * 0.99:
+        return None
     return {"form": "kucz", "a": 1.0 / m, "a_ci": _ci(pcov, 0) / m ** 2,
             "C": math.exp(lnK), "t0": 0.0, "m": m,
             "r2": _r2(u, model(t, *p)), "m_ci": _ci(pcov, 0)}
@@ -495,6 +502,15 @@ def main():
         fits = [f for f in (fit_d_free(t, r), fit_d_fixed(t, r), fit_kuczynski(t, r))
                 if f is not None]
         fits_by_series[s.label] = (mask, fits)
+        # A power law needs range, not just points. Fitting an exponent over a
+        # fifth of a decade recovers whatever the noise prefers, so say so
+        # rather than letting the number stand unqualified in the table.
+        if len(t) >= 2 and t[0] > 0:
+            dec = math.log10(t[-1] / t[0])
+            if dec < 0.5 or len(t) < 8:
+                print(f"NOTE: '{s.label}' fit window is thin — {len(t)} points "
+                      f"over {dec:.2f} decades in t (want >= 8 and >= 0.5). "
+                      f"Treat the exponent as provisional.", file=sys.stderr)
         if not fits:
             # An empty window is a RESULT, not a skip: it means the whole
             # series lies below sqrt(12*eps/R), i.e. this geometry cannot

@@ -35,10 +35,9 @@ Reads <run_dir>/vtkOut/solV_*.vts (snapshot index = timestep, -outp 1) and
 """
 
 import argparse
-import base64
 import glob
+import math
 import re
-import struct
 import sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -201,6 +200,59 @@ def main():
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.plot(t, nw, lw=2, color="#3d74d9", label="model")
+
+    # --- power-law fit, for an at-a-glance check against r ~ t^(1/3) ---------
+    #
+    # Fitted on the WIDTH rather than the radius on purpose: a is invariant
+    # under scaling, so the exponent is identical either way and there is no
+    # factor-of-2 convention to get wrong here.
+    #
+    # Uses Demmenie's own form, r = C*(t+t0)^a with t0 free, because our clock
+    # zero is not theirs: these runs start from a finite neck, so forcing t0=0
+    # would report a spuriously small exponent. Restricted to the window where
+    # the neck fillet (rho ~ r^2/2R) is actually resolved, r/R >= sqrt(12*eps/R)
+    # -- the same floor fit_neck_growth.py uses. Below it the measurement is a
+    # discretisation artifact and fitting through it is meaningless.
+    try:
+        from fit_neck_growth import fit_d_free
+        opts = pplib.read_opts(str(args.run_dir))
+        eps_m = pplib.opt_float(opts, "-eps")
+        radii = opts.get("-ice_grain_R", "")
+        R0_m = (float(np.mean([float(v) for v in radii.split(",")]))
+                if radii else None)
+        floor_um = (2.0 * math.sqrt(12.0 * eps_m / R0_m) * R0_m * 1e6
+                    if (eps_m and R0_m) else 0.0)          # as a WIDTH, in um
+
+        ts = np.array([r[0] for r in rows])                # seconds
+        sel = (ts > 0) & (nw >= floor_um) & np.isfinite(nw)
+        fit = fit_d_free(ts[sel], nw[sel]) if sel.sum() >= 4 else None
+        if fit:
+            tf = np.linspace(ts[sel][0], ts[sel][-1], 200)
+            ax.plot(tf / 60.0,
+                    fit["C"] * (tf + fit["t0"]) ** fit["a"],
+                    lw=1.6, ls="--", color="#d1495b", zorder=5,
+                    label=(f"fit $r\\propto(t+t_0)^{{a}}$: "
+                           f"a = {fit['a']:.3f} ± {fit['a_ci']:.3f}"))
+            # 1/3 reference through the same start point, for visual scale.
+            a3, t0 = 1.0 / 3.0, fit["t0"]
+            C3 = nw[sel][0] / (ts[sel][0] + t0) ** a3
+            ax.plot(tf / 60.0, C3 * (tf + t0) ** a3, lw=1.2, ls=":",
+                    color="#3f434a", zorder=4,
+                    label="$t^{1/3}$ (sublimation–condensation)")
+            if floor_um:
+                ax.axhline(floor_um, lw=0.8, ls=(0, (1, 3)), color="#8a8a8a")
+                ax.annotate(f"resolution floor  $r/R=\\sqrt{{12\\epsilon/R}}$",
+                            (t[-1], floor_um), fontsize=7, color="#8a8a8a",
+                            ha="right", va="bottom")
+            print(f"power-law fit (t+t0)^a over {sel.sum()} pts above the "
+                  f"{floor_um:.1f} um floor: a = {fit['a']:.4f} "
+                  f"+-{fit['a_ci']:.4f}  (t0 = {fit['t0']:.0f} s, "
+                  f"R2 = {fit['r2']:.4f});  1/3 = 0.3333")
+        else:
+            print("power-law fit: skipped — fewer than 4 samples above the "
+                  f"{floor_um:.1f} um resolution floor")
+    except Exception as e:                                   # noqa: BLE001
+        print(f"power-law fit: skipped ({e})", file=sys.stderr)
 
     # Experimental overlay (Molaro et al. 2019 Fig. 11 table). Default file
     # is resolved against the repo (this script's parent's parent), so the

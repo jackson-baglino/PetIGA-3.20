@@ -1,0 +1,43 @@
+# Molaro, TANGENT-START set. One "geometry:experiment" per line.
+#
+#   ./scripts/HPC/submit_batch.sh --tag molaro_tangent \
+#       --tests-file studies/sinter_exponent/batch_molaro_tangent.txt
+#
+# Three arms, ~140 core-h each (1.63M nodes, ~1400 steps, ~61 ranks) -- about
+# 420 core-h total, so this whole set costs less than 10% of one Demmenie
+# production run and needs 2 nodes rather than 31.
+#
+# WHAT IS DIFFERENT FROM THE r0p22 SET ALREADY RUNNING
+# ----------------------------------------------------
+# 1. Starts at EXACT TANGENCY (zero sharp-interface neck) instead of at a
+#    chosen 39.0 um chord. The initial neck stops being a free parameter.
+# 2. eps 3.479e-7 -> 2.4002e-07, which drops the resolution floor from a
+#    38.06 um neck width to 31.61 um -- BELOW Molaro's first measured 32.81 um.
+#    Without that the clock-shift comparison would anchor inside the region
+#    where the fillet is thinner than the interface and the dynamics are wrong.
+# 3. t_final 8 h -> 15 h, because from zero the neck needs ~28 ks to reach
+#    their last measured point.
+# 4. -t_out_log_t0 100 s, so the log schedule spans the 2.7 decades that matter
+#    instead of 8.7 decades that mostly predate any resolvable neck.
+#
+# Together the two sets form a 2 x 3 matrix (initial condition x boundary
+# treatment). Anything common to all six is a property of the model, not of
+# the setup -- which is the point.
+#
+# ANALYSIS: shift our clock to their first measured neck, do not compare
+# clocks directly (ours starts at contact, theirs at an unknown time after):
+#   python postprocess/fit_neck_growth.py <run>/neck_width.csv \
+#       inputs/validation/molaro2019_fig11_T-20.csv \
+#       --anchor-neck 1.6405e-5 --demmenie
+#
+# 1. sealed (zero-flux)
+molaro_2D_L387um_eps0.24um_axisym_T-20pair_tangent:molaro_T-20_h1.00_15h_a1.34e-2
+
+# 2. open at full saturation — isolates the boundary type
+molaro_2D_L387um_eps0.24um_axisym_T-20pair_tangent:molaro_T-20_h1.00_15h_a1.34e-2_dirichlet
+
+# 3. open at h = 0.998 — the chamber as it behaved. On the r0p22 set this arm
+#    shed 0.133 %vol/min against Molaro's measured 0.135 %vol/min, so the 2026-07
+#    humidity calibration transferred. It carries the prediction that its
+#    exponent falls BELOW the saturated arms, toward Demmenie's 1/7.
+molaro_2D_L387um_eps0.24um_axisym_T-20pair_tangent:molaro_T-20_h0.998_15h_a1.34e-2_dirichlet

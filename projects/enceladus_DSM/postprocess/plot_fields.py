@@ -28,6 +28,13 @@ VTK files are written to ./vtkOut/ with extension .vts.  Existing files are
 skipped unless --force is given.  After conversion, pf.pvd is written
 next to vtkOut/ so that opening it in ParaView gives a time-aware dataset.
 
+pf.pvd is ALWAYS rewritten, and is built by globbing the .vts files that
+actually exist rather than from the sol_*.dat list -- so re-running after more
+timesteps have landed always extends the collection, and an entry never points
+at a snapshot that was not written.  A sol_*.dat that cannot be read (routine
+while a job is still writing its newest file) is warned about and skipped
+instead of aborting the run.
+
 Time values are read from outp.txt (the monitor table).  If outp.txt is absent,
 the PVD file uses the step index as a proxy for time.
 
@@ -263,29 +270,59 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
         print("  Warning: outp.txt not found or empty — PVD will use step "
               "index as time proxy.")
 
-    pvd_entries = []   # (time, relative_vts_path)
-
+    n_fail = 0
     for infile in sol_files:
         name    = os.path.splitext(os.path.basename(infile))[0]  # "sol_00042"
         number  = name.split("l")[1]                              # "_00042"
-        step    = int(name.split("_")[1])                         # 42
         outfile = os.path.join(out_dir, f"solV{number}.vts")      # XML format
-        rel_vts = os.path.join("vtkOut", f"solV{number}.vts")
-
-        t = time_map.get(step, float(step))
-        pvd_entries.append((t, rel_vts))
 
         if not force and os.path.isfile(outfile):
             print(f"  Skipping (exists): {outfile}")
             continue
 
-        sol = PetIGA().read_vec(infile, nrb)
-        _write_vts(outfile, nrb, sol)
+        # One unreadable sol_*.dat must not abort the run. While a job is still
+        # writing, the newest file is routinely half-flushed; letting that
+        # exception escape used to kill the script before the .pvd was rewritten
+        # (it is written after this loop), which is how a stale collection
+        # survives a re-run.
+        try:
+            sol = PetIGA().read_vec(infile, nrb)
+            _write_vts(outfile, nrb, sol)
+        except Exception as exc:                                 # noqa: BLE001
+            n_fail += 1
+            print(f"  WARNING: skipping {os.path.basename(infile)} ({exc}) — "
+                  f"truncated or still being written?")
+            continue
         print(f"  Written: {outfile}")
 
+    # Build the collection from the .vts files that ACTUALLY EXIST, not from
+    # the sol_*.dat list, and always rewrite it.
+    #
+    # The old version appended an entry per sol_*.dat before attempting the
+    # conversion, so the .pvd could advertise snapshots that were never
+    # written; and because it only ran when that loop completed, a single bad
+    # file left the previous .pvd in place. Re-running after more timesteps
+    # landed then appeared to do nothing -- ParaView kept showing however many
+    # steps existed the first time.
+    #
+    # Globbing vtkOut/ also picks up snapshots whose sol_*.dat has since been
+    # cleaned up, so the collection stays complete.
+    pvd_entries = []
+    for vts in sorted(glob.glob(os.path.join(out_dir, "solV_*.vts"))):
+        stem = os.path.splitext(os.path.basename(vts))[0]        # "solV_00042"
+        try:
+            step = int(stem.split("_")[1])
+        except (IndexError, ValueError):
+            continue
+        pvd_entries.append((time_map.get(step, float(step)),
+                            os.path.join("vtkOut", os.path.basename(vts))))
+
     if pvd_entries:
-        pvd_path = os.path.join(run_dir, "pf.pvd")
-        _write_pvd(pvd_path, pvd_entries)
+        _write_pvd(os.path.join(run_dir, "pf.pvd"), pvd_entries)
+        print(f"  PVD lists {len(pvd_entries)} snapshot(s)"
+              + (f"; {n_fail} sol file(s) skipped" if n_fail else ""))
+    else:
+        print("  No .vts files present — pf.pvd not written.")
 
 
 # ---------------------------------------------------------------------------
