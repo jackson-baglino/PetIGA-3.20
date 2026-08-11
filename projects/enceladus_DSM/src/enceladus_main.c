@@ -475,13 +475,20 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-dtCFL",           "Interface-CFL timestep limiter",                   "", user.flag_dtCFL, &user.flag_dtCFL, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-axisym",          "Axisymmetric r-z mode (x=axis, y=radius; grains on y=0)", "", user.axisym, &user.axisym, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-ic_grain_union",  "multi_grains IC from the union signed distance (eps-independent phi=0.5 contour) instead of summed tanh profiles", "", user.ic_grain_union, &user.ic_grain_union, NULL); CHKERRQ(ierr);
-    /* Vapor diffusivity override: molecular D_v is the default; larger
-     * values model convectively enhanced chamber transport (an effective
-     * Sherwood-number correction) — see the 2026-07-12 Molaro validation
-     * campaign, where the vapor-diffusion-limited neck rate fell ~3x below
-     * experiment with every model-side mechanism eliminated. NOTE: the
-     * kinetic derivation (tau_sub via M&F SI Eq. 9) uses this value too,
-     * consistently. */
+    /* Vapor diffusivity override. The default is the molecular value at
+     * 273.15 K; VaporDiffus() scales it pointwise as D_v0*(T/273.15)^1.81, so
+     * pass D_v0 here, never a temperature-corrected D_v.
+     *
+     * Inflating it is a FUDGE, not a modelled effect. An earlier version of
+     * this comment justified 10x as "convectively enhanced chamber transport
+     * (an effective Sherwood correction)"; that claim was never sourced and
+     * does not survive checking. Natural convection in Molaro's 1 mm cell
+     * would need Ra > ~1708 and reaches Ra ~ 0.2. Larger chambers can convect
+     * at box scale, but neck growth is fed over grain-to-neck distances of
+     * tens of microns, where Ra ~ 1e-3 and diffusion dominates outright.
+     *
+     * Use it only as a labelled sensitivity arm. Note it also feeds tau_sub
+     * (M&F SI Eq. 9), consistently, so the timestep moves with it. */
     ierr = PetscOptionsReal("-dif_vap",         "Vapor diffusivity in air [m^2/s]",                 "", user.dif_vap, &user.dif_vap, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-dtCFL_dphimax",   "Max pointwise |dphi| per step for the CFL limiter","", user.cfl_dphimax, &user.cfl_dphimax, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-decouple_phase_change", "Zero ice_t-driven source terms in R_tem/R_vap too (not just S_sub in R_ice)", "", user.decouple_phase_change, &user.decouple_phase_change, NULL); CHKERRQ(ierr);
