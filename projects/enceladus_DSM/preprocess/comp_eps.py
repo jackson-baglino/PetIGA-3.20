@@ -23,8 +23,13 @@ The 1/√2 here is purely a mesh-resolution choice targeting ~7.5 visible
 
 BOUNDS ON ε (K&P eqs. 42–46, equivalent to M&F SI Cond. 1–3)
 ------------------------------------------------------------
-  [B-HEAT]       W ≪  D_heat · (ρ_vs/ρᵢ) · β₀     Eq. (43a/b)
-  [B-VAPOR]      W ≪  Dᵥ     · (ρ_vs/ρᵢ) · β₀     Eq. (43c)
+  [B-HEAT-ICE]   W ≪  (κᵢ/Cᵢ) · (ρ_vs/ρᵢ) · β₀    Eq. (42a)
+  [B-HEAT-AIR]   W ≪  (κₐ/Cₐ) · (ρ_vs/ρᵢ) · β₀    Eq. (42b)
+  [B-VAPOR]      W ≪  Dᵥ      · (ρ_vs/ρᵢ) · β₀    Eq. (42c)
+
+All three channels are enforced separately, as Eq. 42 states. The ice thermal
+channel always binds among them. Eqs. 44 and 46 are estimates of W, not
+constraints on it, and are deliberately not enforced.
 
 D_heat is set by --Dchannel. Default "mean" uses D*_ia = ½(κᵢ/Cᵢ + κₐ/Cₐ),
 the diffusivity τ_sub is compensated against here and the one the solver
@@ -563,16 +568,30 @@ def compute_eps(
     # The heat channel uses D*_ia by default — the same diffusivity τ_sub
     # compensates with (derived_pf_params) and the one the solver assembles
     # (src/<project>_main.c:558). --Dchannel ice restores the conservative κᵢ/Cᵢ.
-    D_heat     = D_heat_of(thermal_channel)
-    b_heat     = D_heat * beta_hk
-    b_vapor    = Dv     * beta_hk
+    # K&P Eq. 42 requires W << D*beta0' for EACH transport channel separately:
+    #   42a  W/(kappa_i/C_i) << beta0'      42b  W/(kappa_a/C_a) << beta0'
+    #   42c  W/D_v          << beta0'
+    # so all three are enforced, and the SMALLEST diffusivity binds -- which is
+    # always the ice thermal channel (D_ice ~ 6.3x below the D*_ia mean this
+    # module used to average into a single "heat" bound). Averaging the two
+    # thermal channels is not what Eq. 42 says; it is ~6x too permissive.
+    #
+    # Evaluated against beta_hk, which is the CORRECTED beta' rather than the
+    # bare beta0' the inequality names. Since beta' = beta0'(1 - a1*a2*W/(D*beta0'))
+    # <= beta0', using beta' understates the ceiling, so the bound is
+    # conservative -- and it avoids the circularity of beta0' depending on W.
+    D_heat     = D_heat_of(thermal_channel)   # retained for the tau_sub bracket
+    b_heat_ice = alpha_i * beta_hk            # Eq. 42a
+    b_heat_air = alpha_a * beta_hk            # Eq. 42b
+    b_vapor    = Dv      * beta_hk            # Eq. 42c
     # K&P Eq. 45: W ≪ d₀ / (β₀·vₙ) (uses the UNSCALED coefficient β₀)
     b_kinetic  = d0 / (beta_uns * v_n)
     b_curv     = Rave
 
     bounds = {
-        "B-HEAT":  b_heat,
-        "B-VAPOR": b_vapor,
+        "B-HEAT-ICE": b_heat_ice,
+        "B-HEAT-AIR": b_heat_air,
+        "B-VAPOR":    b_vapor,
         "B-KINETIC":  b_kinetic,
         "B-CURV":     b_curv,
     }
@@ -772,11 +791,12 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
     print(f"                           [= β_HK/(ρ_vs/ρᵢ); matches K&P range 3e4–3e6]")
     print(f"  d₀_sub  (physical)     = {p['d0']:.4e}  m     [γ·V_m/RT; K&P Eq. 13]")
 
-    print(f"\n--- Upper bounds on ε (K&P eqs. 42–46) ---")
+    print(f"\n--- Upper bounds on ε (K&P Eq. 42a/b/c and Eq. 45) ---")
     chan = "D*_ia" if p["thermal_channel"] == "mean" else "κᵢ/Cᵢ"
     labels = {
-        "B-HEAT":     f"Eq.(43a)  {chan}·β_HK   ",
-        "B-VAPOR":    "Eq.(43c)  Dᵥ·β_HK        ",
+        "B-HEAT-ICE": "Eq.(42a)  (κᵢ/Cᵢ)·β_HK  ",
+        "B-HEAT-AIR": "Eq.(42b)  (κₐ/Cₐ)·β_HK  ",
+        "B-VAPOR":    "Eq.(42c)  Dᵥ·β_HK        ",
         "B-KINETIC":  "Eq.(45)   d₀/(β_sub·vₙ) ",
         "B-CURV":     "Geometric R_ave           ",
     }
