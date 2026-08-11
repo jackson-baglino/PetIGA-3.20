@@ -76,10 +76,10 @@ int main(int argc, char *argv[]) {
     user.alpha_model = ALPHA_MODEL_CONST;
     user.alpha_c0    = 1.0e-2;
     user.alpha_A     = 1.0932e-3;   /* rough-surface ceiling from the 2-param fit */
-    user.alpha_Ea    = 31850.0;     /* J/mol; 1e-3 @ -2 C to 1e-4 @ -40 C */
+    user.alpha_Ea    = 63700.0;     /* J/mol; 1e-1 @ -2 C to 1e-3 @ -40 C */
     user.alpha_f     = 2.2103e-3;   /* sigma0 rescaling at sigma_char ~ 1e-4 */
-    user.alpha_lo    = 1.0e-4;
-    user.alpha_hi    = 1.0e-1;      /* top of the Braun et al. (2024) range */
+    user.alpha_lo    = 1.0e-3;      /* Braun et al. (2024): 1e-3 < alpha < 1e-1 */
+    user.alpha_hi    = 1.0e-1;
 
     /* Interface-CFL timestep limiter (InterfaceCFLMonitor) */
     user.flag_dtCFL   = PETSC_TRUE;   /* on by default */
