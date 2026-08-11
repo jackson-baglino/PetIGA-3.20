@@ -70,6 +70,16 @@ int main(int argc, char *argv[]) {
     user.flag_tIC   = 0;              /* IC variant: 0=centered slab, 2=flat interface */
     user.readFlag   = PETSC_FALSE;    /* read initial field from file */
     user.flag_Tdep  = PETSC_FALSE;    /* temperature-dependent material properties */
+    /* alpha_c(T, rho_v). Defaults reproduce the previous scalar behaviour
+     * exactly (CONST at 1e-2) so no committed run changes until it opts in.
+     * Fitted-model defaults mirror preprocess/comp_eps.py. */
+    user.alpha_model = ALPHA_MODEL_CONST;
+    user.alpha_c0    = 1.0e-2;
+    user.alpha_A     = 1.0932e-3;   /* rough-surface ceiling from the 2-param fit */
+    user.alpha_Ea    = 31850.0;     /* J/mol; 1e-3 @ -2 C to 1e-4 @ -40 C */
+    user.alpha_f     = 2.2103e-3;   /* sigma0 rescaling at sigma_char ~ 1e-4 */
+    user.alpha_lo    = 1.0e-4;
+    user.alpha_hi    = 1.0e-1;      /* top of the Braun et al. (2024) range */
 
     /* Interface-CFL timestep limiter (InterfaceCFLMonitor) */
     user.flag_dtCFL   = PETSC_TRUE;   /* on by default */
@@ -472,6 +482,13 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt ("-alpha_model", "alpha_c model: 0=const, 1=Arrhenius(T), 2=Libbrecht(T,rho_v)", "", user.alpha_model, &user.alpha_model, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-alpha_c0",    "alpha_c for -alpha_model 0",                       "", user.alpha_c0,  &user.alpha_c0,  NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-alpha_A",     "alpha_c prefactor A (models 1,2)",                 "", user.alpha_A,   &user.alpha_A,   NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-alpha_Ea",    "alpha_c activation energy [J/mol] (model 1)",      "", user.alpha_Ea,  &user.alpha_Ea,  NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-alpha_f",     "sigma0 rescaling factor f (model 2)",              "", user.alpha_f,   &user.alpha_f,   NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-alpha_lo",    "alpha_c clamp floor",                              "", user.alpha_lo,  &user.alpha_lo,  NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-alpha_hi",    "alpha_c clamp ceiling",                            "", user.alpha_hi,  &user.alpha_hi,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-dtCFL",           "Interface-CFL timestep limiter",                   "", user.flag_dtCFL, &user.flag_dtCFL, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-axisym",          "Axisymmetric r-z mode (x=axis, y=radius; grains on y=0)", "", user.axisym, &user.axisym, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-ic_grain_union",  "multi_grains IC from the union signed distance (eps-independent phi=0.5 contour) instead of summed tanh profiles", "", user.ic_grain_union, &user.ic_grain_union, NULL); CHKERRQ(ierr);

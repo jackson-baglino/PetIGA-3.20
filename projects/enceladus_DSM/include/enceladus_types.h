@@ -8,6 +8,12 @@
 #define CU(x) ((x)*(x)*(x))
 
 /* Field definitions for node data */
+/* alpha_c model selectors — see the alpha_* fields in AppCtx. */
+#define ALPHA_MODEL_CONST 0
+#define ALPHA_MODEL_ARRH  1
+#define ALPHA_MODEL_LIBB2 2
+#define ALPHA_R_GAS 8.314462618   /* J/(mol K) */
+
 typedef struct {
   PetscScalar ice, tem, rhov;
 } Field;
@@ -117,6 +123,26 @@ typedef struct {
   PetscInt  flag_tIC;        // IC geometry variant: 0=centered slab, 2=flat interface
   PetscInt  outp;            // output control flag
   PetscBool flag_Tdep;       // temperature-dependent material properties
+
+  // --- Condensation coefficient alpha_c(T, rho_v) -------------------------
+  // alpha_c is the model's one free parameter and should be DETERMINED by the
+  // local state, not chosen per run. -alpha_model selects how:
+  //   0 ALPHA_MODEL_CONST  alpha_c = alpha_c0            (previous behaviour,
+  //                        and the default, so nothing changes until opted in)
+  //   1 ALPHA_MODEL_ARRH   alpha_c = A*exp(-Ea/(R*T))    (temperature only)
+  //   2 ALPHA_MODEL_LIBB2  alpha_c = A*exp(-f*sigma0(T)/sigma), sigma taken
+  //                        from the LOCAL rho_v -- the full alpha_c(T, rho_v)
+  // Always clamped to [alpha_lo, alpha_hi]. The floor is load-bearing:
+  // alpha_c -> 0 sends beta_sub ~ 1/alpha_c to infinity, which is unphysical
+  // and unsolvable. Mirror of preprocess/comp_eps.py -- keep them in step, or
+  // the mesh is sized from a different alpha_c than the solver evaluates.
+  PetscInt  alpha_model;     // -alpha_model
+  PetscReal alpha_c0;        // -alpha_c0   constant-model value
+  PetscReal alpha_A;         // -alpha_A    prefactor (both fitted models)
+  PetscReal alpha_Ea;        // -alpha_Ea   activation energy [J/mol] (Arrhenius)
+  PetscReal alpha_f;         // -alpha_f    sigma0 rescaling (Libbrecht 2-param)
+  PetscReal alpha_lo;        // -alpha_lo   clamp floor
+  PetscReal alpha_hi;        // -alpha_hi   clamp ceiling
   PetscBool decouple_phase_change;  // -decouple_phase_change 1: zero the ice_t-driven
                                      // source terms in R_tem (latent heat) and R_vap
                                      // (mass-balance) too, not just S_sub in R_ice --

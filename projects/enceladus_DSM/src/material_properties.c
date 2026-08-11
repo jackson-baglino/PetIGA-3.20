@@ -258,3 +258,108 @@ void Sigma0(PetscScalar temp, PetscScalar *sigm0)
 
     return;
 }
+
+
+/**
+ * @brief Condensation coefficient alpha_c(T, rho_v) and its derivatives.
+ *
+ * alpha_c is the model's one genuinely free parameter, and it should be a
+ * FUNCTION OF THE LOCAL STATE rather than a number chosen per run: it is set
+ * by the temperature and by the local supersaturation, both of which the
+ * solver already carries at every quadrature point. Fixing it as a scalar
+ * turns a determined quantity into a knob.
+ *
+ * Three models, selected by user->alpha_model:
+ *
+ *   ALPHA_MODEL_CONST (0)  alpha_c = user->alpha_c0.  Reproduces the previous
+ *                          behaviour exactly and is the default, so nothing
+ *                          changes until a run opts in.
+ *
+ *   ALPHA_MODEL_ARRH (1)   alpha_c = A*exp(-Ea/(R*T)).  Temperature only.
+ *                          Anchored on the alpha_c range Braun et al. (2024)
+ *                          report; note THEY give no temperature dependence
+ *                          (they hold alpha constant and say so), so the
+ *                          T-dependence here is our assumption, not theirs.
+ *
+ *   ALPHA_MODEL_LIBB2 (2)  alpha_c = A*exp(-f*sigma0(T)/sigma), the Libbrecht
+ *                          form with BOTH free parameters fitted rather than
+ *                          A hardwired to 1. sigma = |rho_v - rho_vs|/rho_vs
+ *                          is the local supersaturation, so this is the full
+ *                          alpha_c(T, rho_v).
+ *
+ * CLAMPED to [user->alpha_lo, user->alpha_hi] in every model. The floor is
+ * not cosmetic: alpha_c -> 0 as sigma -> 0 sends beta_sub ~ 1/alpha_c to
+ * infinity, which is both unphysical and unsolvable. The clamp is applied
+ * BEFORE the derivatives, and the derivatives are zeroed where it binds --
+ * otherwise the Jacobian would advertise a sensitivity the residual does not
+ * have, and Newton would chase it.
+ *
+ * Mirrors preprocess/comp_eps.py (alpha_arrhenius / alpha_libbrecht2). Keep
+ * the two in step: comp_eps sizes the mesh from the same alpha_c the solver
+ * evaluates, and a divergence between them silently invalidates the mesh.
+ */
+void AlphaCondensation(AppCtx *user, PetscScalar tem, PetscScalar rhov,
+                       PetscScalar *alpha, PetscScalar *dalpha_dtem,
+                       PetscScalar *dalpha_drhov)
+{
+    PetscReal a = user->alpha_c0, da_dT = 0.0, da_drv = 0.0;
+    const PetscReal T_K = PetscRealPart(tem) + 273.15;
+
+    if (user->alpha_model == ALPHA_MODEL_ARRH) {
+        /* a = A exp(-Ea/(R T));  da/dT = a * Ea/(R T^2). */
+        a     = user->alpha_A * exp(-user->alpha_Ea / (ALPHA_R_GAS * T_K));
+        da_dT = a * user->alpha_Ea / (ALPHA_R_GAS * T_K * T_K);
+    }
+    else if (user->alpha_model == ALPHA_MODEL_LIBB2) {
+        PetscScalar rho_vs, d_rho_vs, s0;
+        RhoVS_I(user, tem, &rho_vs, &d_rho_vs);
+        Sigma0(tem, &s0);
+
+        const PetscReal rvs   = PetscRealPart(rho_vs);
+        const PetscReal drvs  = PetscRealPart(d_rho_vs);
+        const PetscReal dev   = PetscRealPart(rhov) - rvs;      /* signed */
+        const PetscReal sgn   = (dev >= 0.0) ? 1.0 : -1.0;
+        const PetscReal sig   = fabs(dev) / rvs;
+
+        /* Below this the exponent overflows and alpha underflows to zero; the
+         * clamp would catch it anyway, but evaluating exp(-1e30) first is a
+         * needless way to generate a denormal. */
+        if (sig <= 1.0e-30) {
+            a = user->alpha_lo;
+        } else {
+            const PetscReal expo = user->alpha_f * PetscRealPart(s0) / sig;
+            if (expo > 700.0) {
+                a = 0.0;
+            } else {
+                a = user->alpha_A * exp(-expo);
+                /* d sigma/d rho_v = sgn/rvs
+                 * d sigma/d T     = -sgn*dev*drvs/rvs^2 - sgn*drvs/rvs ... via
+                 *   sigma = |rho_v - rvs(T)|/rvs(T):
+                 *   dsig/dT = [-sgn*drvs*rvs - |dev|*drvs] / rvs^2
+                 *           = -drvs*(sgn*rvs + fabs(dev))/rvs^2
+                 * and da/dx = a * (f*s0/sigma^2) * dsigma/dx  (s0's own T
+                 * dependence is a table interpolant; its derivative is
+                 * piecewise-constant and is deliberately omitted -- see NOTE). */
+                const PetscReal ds_drv = sgn / rvs;
+                const PetscReal ds_dT  = -drvs * (sgn * rvs + fabs(dev)) / (rvs * rvs);
+                const PetscReal pref   = a * user->alpha_f * PetscRealPart(s0) / (sig * sig);
+                da_drv = pref * ds_drv;
+                da_dT  = pref * ds_dT;
+            }
+        }
+        /* NOTE: d(sigma0)/dT is dropped. Sigma0() is a 10-point log-log table
+         * interpolant with a genuine kink at -6/-7 C, so its derivative is
+         * discontinuous and, at the kink, meaningless. Including it would make
+         * the Jacobian inconsistent with the residual exactly where the table
+         * misbehaves. The omission makes the Jacobian slightly inexact in T;
+         * check -snes_test_jacobian after enabling this model. */
+    }
+
+    /* Clamp, and kill the derivatives where the clamp binds. */
+    if (a <= user->alpha_lo) { a = user->alpha_lo; da_dT = 0.0; da_drv = 0.0; }
+    if (a >= user->alpha_hi) { a = user->alpha_hi; da_dT = 0.0; da_drv = 0.0; }
+
+    if (alpha)        (*alpha)        = a;
+    if (dalpha_dtem)  (*dalpha_dtem)  = da_dT;
+    if (dalpha_drhov) (*dalpha_drhov) = da_drv;
+}

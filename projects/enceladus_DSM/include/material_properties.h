@@ -25,3 +25,9 @@ void Mobility(AppCtx *user, PetscScalar ice, PetscScalar *mob);
 void Sigma0(PetscScalar temp, PetscScalar *sigm0);
 
 #endif // MATERIAL_PROPERTIES_H
+
+/* Condensation coefficient alpha_c(T, rho_v) + analytic derivatives.
+ * Model selected by user->alpha_model; see material_properties.c. */
+void AlphaCondensation(AppCtx *user, PetscScalar tem, PetscScalar rhov,
+                       PetscScalar *alpha, PetscScalar *dalpha_dtem,
+                       PetscScalar *dalpha_drhov);
