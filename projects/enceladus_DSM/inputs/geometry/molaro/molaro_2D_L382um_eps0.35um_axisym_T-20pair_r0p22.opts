@@ -1,0 +1,94 @@
+# =============================================================================
+# geometry/molaro/molaro_2D_L382um_eps0.35um_axisym_T-20pair_r0p22.opts
+#
+# The committed -20 C Molaro grain pair, restarted with the neck placed just
+# above this discretisation's resolution floor instead of at the experiment's
+# 32.81 um. Pair with experiment/molaro/molaro_T-20_h1.00_8h_a1.34e-2.opts.
+#
+# WHAT THIS RUN IS FOR
+# --------------------
+# One question only: does our model give the SAME growth exponent at 85 um
+# grains as at Demmenie's 500 um ones? Kuczynski scaling says m should not
+# depend on grain radius, and if it does in our model then the Demmenie
+# replication cannot be carried over to planetary grain sizes -- which would
+# be the more interesting result. It is NOT for scoring against the Molaro
+# neck-vs-time data; the pre-necked geometries do that, and the answer is in
+# docs/molaro_validation_synthesis.md.
+#
+# WHY r0/R = 0.225 AND NOT THE EXPERIMENT'S 32.81 um
+# --------------------------------------------------
+# The neck fillet has radius rho ~ r^2/(2R) and is only resolved once rho
+# exceeds the ~6*eps band, i.e. above
+#
+#     r/R = sqrt(12*eps/R_ave) = sqrt(12*3.479e-7/8.675e-5) = 0.219
+#           i.e. a neck WIDTH of 38.1 um
+#
+# The experiment starts at 32.81 um, BELOW that line, where the fillet is
+# thinner than the interface and the dynamics -- not just the measurement --
+# are wrong. So this run starts at a 39.0 um chord (r/R = 0.225), the first
+# size this mesh can actually represent.
+#
+# That is the whole finding about this geometry, and it is worth stating
+# plainly: at Molaro's grain size the model cannot reach the small-neck regime
+# at any eps we can afford, because the floor scales as sqrt(eps/R) and eps is
+# bounded below by cost. The exponent has to be measured on the 1 mm geometry
+# (floor 0.087) instead. This run only checks that the two agree where they
+# overlap.
+#
+# Starting AT the floor rather than at tangent contact also buys the snapshot
+# budget: from tangent, log-spaced output would put ~90% of its snapshots
+# below the floor, since the neck does not cross 38.1 um until t ~ 4100 s of a
+# 28.8 ks run.
+#
+#   preprocess/calibrate_neck_geometry.py :: solve_d_union(7.25e-5, 1.01e-4,
+#   3.9e-5) -> d = 1.689281e-04   (sharp union chord = 39.0 um)
+#   cf. 1.7028e-4 in the committed union geometry (32.81 um) and
+#       1.735e-4 at exact tangency.
+#
+# THE TRANSIENT THIS COSTS
+# ------------------------
+# The union IC is two spheres intersected, so the neck is a ZERO-radius
+# crease, while the true trajectory at this r0 carries a 2.19 um fillet.
+# Building it is an off-trajectory transient of t_fill ~ beta*rho^2/(2*d0)
+# = 1400 s, i.e. 4.9% of the 8 h run. (The same formula predicts 701 s for the
+# committed 32.81 um IC, against the 864 s that the d_free fit independently
+# returned -- so it is calibrated, not hand-waved.) Exclude the first ~2000 s
+# from any fit; fit_neck_growth.py's --tmin does this.
+#
+# Everything else -- R0, R1, eps, pad, axisym, union IC -- is identical to
+# molaro_2D_L384um_eps0.35um_axisym_T-20pair_union.opts, so the only variable
+# against the committed strict arm is the initial neck.
+#
+# MESH
+#   Lx = d + R0 + R1 + 2*pad = 3.824281e-4   (pad = 2.0e-5, as the whole family)
+#   Ly = R1 + pad            = 1.210e-4
+#   Nx = ceil(sqrt(2)*Lx/eps) = 1555,  Ny = 492   (~765k nodes)
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Fit with:     python postprocess/fit_neck_growth.py <run_dir>/neck_width.csv \
+#                   --demmenie --tmin 2000
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # phi=0.5 on the sharp union chord
+
+-ic_type multi_grains
+-dim 2
+-Lx 3.824281e-04
+-Ly 1.210000e-04
+-Lz 0
+
+-ice_grain_cx 9.250000e-05,2.614281e-04  # d = 1.689281e-4 -> 39.0 um chord
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 1555                                # h = eps/sqrt(2)  (~765k nodes)
+-Ny 492
+-Nz 1
+-eps 3.4790e-07
+-eps_valid_temp -20
+
+-delt_t 1.0e-4
+-periodic 0

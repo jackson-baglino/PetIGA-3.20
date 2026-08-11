@@ -5,17 +5,21 @@
 #       --tests-file studies/sinter_exponent/pilot_batch.txt
 #
 # Both jobs go through ONE batch file on purpose: two chained submit_enceladus.sh
-# calls race in obj/ and fail with "Stale file handle".
+# calls race in obj/ and fail with "Stale file handle". Neither needs
+# --extra-opts; dtmax and cadence are set per-experiment (and --extra-opts would
+# apply to both).
 #
-# Neither job needs --extra-opts; dtmax and the output cadence are already set
-# per-experiment in the two .opts files (and --extra-opts would apply to both).
-#
-# 1. Demmenie coarse arm. ~19.6M dof, tau_sub 16.3 s, ~550 steps, ~220-450
-#    core-h. Its job is to answer how far up in r/R0 the neck climbs in 2.5 h,
-#    which is what sizes the strict production run.
-sinter_2D_L2200um_eps0.64um_axisym_D1mm_tangent:sinter_T-3_h1.00_2.5h_a9.0e-2
+# 1. Demmenie, PRODUCTION mesh truncated to 10 min. ~78.3M dof, ~180 steps,
+#    roughly 3% of the production cost. Checks stability and dt behaviour on
+#    the real problem, confirms the t=0 neck really is r0/R = 0.09, and gives a
+#    first read on the growth rate to validate the u^3 extrapolation that sized
+#    t_final = 5 h. Deliberately NOT a coarse-eps pilot: the kinetic/thermal/
+#    vapour split of tau_sub is set by the comp_eps safety factor alone, so a
+#    coarser arm would sit in a different regime and predict nothing.
+sinter_2D_L2196um_eps0.32um_axisym_D1mm_r0p09:sinter_T-3_h1.00_10min_a9.0e-2
 
-# 2. Molaro pair from tangent contact, 8 h. ~774k nodes, ~14 core-h — free.
-#    Asks whether our model gives the same exponent at 85 um grains as at
-#    500 um ones, which is the only thing that lets the two studies be compared.
-molaro_2D_L387um_eps0.35um_axisym_T-20pair_tangent:molaro_T-20_h1.00_8h_a1.34e-2
+# 2. Molaro pair started at its own resolution floor (39.0 um chord), 8 h.
+#    ~765k nodes, ~14 core-h -- free. Asks whether the model gives the same
+#    exponent at 85 um grains as at 500 um, which is the only thing that lets
+#    the two studies be compared.
+molaro_2D_L382um_eps0.35um_axisym_T-20pair_r0p22:molaro_T-20_h1.00_8h_a1.34e-2

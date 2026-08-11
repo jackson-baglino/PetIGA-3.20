@@ -3,22 +3,20 @@
 #
 # The committed molaro_T-20_h1.00_2h_a1.34e-2.opts conditions, run four times
 # longer and with a log-spaced output cadence. Pair with
-# geometry/molaro/molaro_2D_L387um_eps0.35um_axisym_T-20pair_tangent.opts.
+# geometry/molaro/molaro_2D_L382um_eps0.35um_axisym_T-20pair_r0p22.opts.
 #
 # WHAT CHANGED AND WHY
 # --------------------
-# 1. t_final 7.2e3 -> 2.88e4 (2 h -> 8 h). The paired geometry starts from
-#    tangent contact with a ZERO neck, so it has to grow through the entire
-#    range the pre-necked runs were handed at t = 0 before it reaches anything
-#    measurable. The resolution floor for that geometry is r/R = 0.219, a neck
-#    WIDTH of 38.1 um -- already past the experiment's 32.81 um starting neck --
-#    and a usable fit window needs the neck to roughly double past it.
+# 1. t_final 7.2e3 -> 2.88e4 (2 h -> 8 h). The paired geometry starts at the
+#    mesh's resolution floor, a 39.0 um chord (r/R = 0.225), and a usable fit
+#    window needs the neck to grow well past that. Extrapolating the committed
+#    strict arm as u^3 - u0^3 ~ t puts r/R ~ 0.42 at 8 h, i.e. ~0.85 decades of
+#    window. Length is nearly free here (765k nodes, ~14 core-h), so extend
+#    rather than reinterpret if it finishes short.
 #
-#    8 h is a guess sized off the pre-necked runs, which took 2 h to go
-#    33 -> 47.6 um from an ALREADY mature neck; growth from a point contact is
-#    fast at first and then slower than that. If the run finishes short of a
-#    fittable window, extend rather than reinterpret -- the mesh is only 774k
-#    nodes and the whole thing is ~14 core-h, so length is nearly free here.
+#    Exclude the first ~2000 s from any fit: the union IC's zero-radius crease
+#    has to build a 2.19 um fillet first, which the t_fill ~ beta*rho^2/(2*d0)
+#    estimate puts at 1400 s. Use fit_neck_growth.py --tmin 2000.
 #
 # 2. -t_out_log 60 replaces the default per-step cadence. The deliverable is a
 #    slope in log-log, and 8 h at dtmax = 100 s would otherwise trip the

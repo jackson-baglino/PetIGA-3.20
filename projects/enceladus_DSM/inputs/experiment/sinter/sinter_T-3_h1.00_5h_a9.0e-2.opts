@@ -1,0 +1,93 @@
+# =============================================================================
+# experiment/sinter/sinter_T-3_h1.00_5h_a9.0e-2.opts — PRODUCTION arm of the
+# Demmenie et al. (2025) replication. Pair with
+# geometry/sinter/sinter_2D_L2196um_eps0.32um_axisym_D1mm_r0p09.opts.
+#
+# Companions, same geometry:
+#   sinter_T-3_h1.00_10min_a9.0e-2.opts            short pilot (stability/sizing)
+#   sinter_T-3_h1.00_5h_a9.0e-2_dirichlet.opts     open-boundary regime control
+#
+# THE CONDITIONS BEING REPRODUCED
+# -------------------------------
+# Demmenie, Woutersen & Bonn, J. Phys. Chem. Lett. 16(8) 2104-2109 (2025),
+# doi:10.1021/acs.jpclett.5c00050. Ice at -3 C in an AIR-FILLED box whose
+# humidity is held so the vapour pressure equals the saturation vapour pressure
+# of ice (Murphy & Koop 2005). Both map on without modelling licence:
+#   -humidity 1.00   initialises the air at rho_vs(T), i.e. ice saturation
+#   Patm             hardcoded to 101325 Pa (material_properties.c:160) = their
+#                    air box. Worth remembering that Molaro's own vapour term
+#                    is instead derived for VACUUM.
+# They confirmed sphere volume and mass stayed constant, which is what the
+# geometry's zero-flux walls enforce.
+#
+# t_final = 1.8e4 (5 h), NOT their 2.5 h
+# --------------------------------------
+# Their 2.5 h is a property of their apparatus, not of the physics we need to
+# resolve. Starting from r0/R = 0.09 and using u^3 - u0^3 = t/(C*beta*R^2/d0)
+# calibrated on our own strict Molaro run:
+#
+#     t_final    2.5 h     3.3 h     5.0 h     6.7 h
+#     r/R end    0.279     0.306     0.349     0.384
+#     window     1.47      1.59      1.77      1.89   decades in t
+#
+# 5 h buys 0.3 decades over their duration for ~2x the steps, and the exact
+# fillet geometry only costs ~0.03 in local slope out at r/R = 0.35 (see the
+# geometry header's table), so the extra range is still usable rather than
+# padding. Report the fit over the whole window AND over the sub-window
+# t <= 9000 s, which is the part directly comparable to their runs.
+#
+# alpha_c AT -3 C
+# ---------------
+# 9.007e-2 from the repo's own Arrhenius fit (1e-1 at -2 C, 1e-3 at -40 C,
+# Q = 63.7 kJ/mol); it reproduces the committed -5 C (7.3e-2) and -20 C
+# (1.34e-2) files to three figures, so it is not a new assumption. Derived at
+# that alpha_c and T by comp_eps.py --T0 -3 --alpha 9.007e-2:
+#     beta_sub0 = 1.8447e4 s/m,  d0_sub0 = 9.5265e-10 m
+# flag_Tdep is 0, so the solver uses these explicitly and rescales
+# beta_sub = beta_sub0*rho_vs(T)/rho_ice at -temp.
+#
+# alpha_c should move the PREFACTOR C_m(T), not the exponent m. If the fitted
+# alpha ever needs defending, re-run at alpha_c = 3e-2 and check alpha holds
+# while C moves. Note it will NOT change the kinetic/thermal/vapour split of
+# tau_sub -- that depends only on the comp_eps safety factor.
+#
+# TIMESTEP
+# --------
+# dtmax = 3.3 = 1.1 * tau_sub (3.02 s), the campaign's calibrated ratio.
+# Standing lesson from the 2026-07-09 cfl1e4 run: the interface-CFL limiter
+# guarantees stability, NOT rate accuracy. Before quoting the curve, re-run a
+# window at -dtmax 1.65 and confirm overlap. ~5450 steps at this dtmax.
+#
+# OUTPUT
+# ------
+# -t_out_log 50: log-spaced, because the deliverable is a slope in log-log.
+# One snapshot is ~627 MB, so this is ~31 GB -- run neck_width.py on the
+# cluster and bring back the CSV. Starting pre-necked is what makes the budget
+# work: from tangent contact only 11 of 50 log-spaced snapshots would land
+# above the resolution floor.
+#
+# EXPECTATION
+# -----------
+# A local slope of 0.30-0.33 across r/R = 0.09-0.35 (the exact-fillet ideal,
+# not a flat 1/3), against Demmenie's 0.26-0.33. Their under-saturated control
+# gave alpha ~ 1/7, the surface-diffusion signature, which this model has no
+# mobility for and should NOT reproduce -- a -humidity 0.98 arm tests that.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Fit with:     python postprocess/fit_neck_growth.py <run_dir>/neck_width.csv --demmenie
+# =============================================================================
+
+-t_final 1.8e4                          # 5 h — sized for the window, not their run
+
+-temp -3.0
+-humidity 1.00                          # air at ice saturation
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 1.8447e4                     # K&P beta0 at -3 C, alpha_c = 9.007e-2
+-d0_sub0 9.5265e-10                     # physical capillary length at -3 C
+
+-dtmax 3.3                              # 1.1 * tau_sub
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-t_out_log 50                           # log-spaced (~31 GB of snapshots)

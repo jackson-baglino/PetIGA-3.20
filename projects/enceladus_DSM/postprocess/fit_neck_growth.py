@@ -127,6 +127,32 @@ DEMMENIE_ERR = 0.01
 GUIDE_M = {1: "viscous flow", 3: "sublim.-cond.", 5: "bulk diff.", 7: "surf. diff."}
 
 
+def ideal_slope(u):
+    """Local d ln r / d ln t a PERFECT kinetic-limited model gives at r/R = u.
+
+    Do not benchmark against a flat 1/3. That value comes from the small-neck
+    approximation rho = r^2/(2R); with the exact rolling-ball fillet between
+    two spheres of radius R,
+
+        R^2 + c^2 = (R + rho)^2,     r = c - rho
+
+    so rho is larger than r^2/(2R) (by 5% at r/R = 0.1, 20% at 0.3), the
+    driving force d0/rho is correspondingly smaller, and the ideal slope sags:
+
+        r/R     0.087  0.10   0.15   0.20   0.25   0.30   0.35
+        slope   0.326  0.324  0.320  0.314  0.309  0.303  0.296
+
+    Time follows from dr/dt ~ d0/(beta*rho) => dt ~ rho dr, integrated from
+    contact. Returns NaN outside the tabulated range.
+    """
+    v = np.geomspace(1e-6, 0.5, 6000)          # v = rho/R
+    uu = np.sqrt(2 * v + v * v) - v
+    t = np.concatenate(([0.0], np.cumsum(0.5 * (v[1:] + v[:-1]) * np.diff(uu))))
+    ok = t > 0
+    sl = np.gradient(np.log(uu[ok]), np.log(t[ok]))
+    return np.interp(u, uu[ok], sl, left=np.nan, right=np.nan)
+
+
 # ---------------------------------------------------------------------------
 # Series loading
 # ---------------------------------------------------------------------------
@@ -389,6 +415,16 @@ def main():
                     help="resample every MODEL series onto this series' sample "
                          "times before fitting (log-interpolated). Exposes how "
                          "much of a fitted exponent is the sampling.")
+    ap.add_argument("--anchor-neck", type=float, default=None,
+                    help="shift every series' clock so that a neck RADIUS of "
+                         "this many metres occurs at t = 0. This is how a model "
+                         "run started at an arbitrary r0 is compared with an "
+                         "experiment started at a different one -- and it is "
+                         "what Molaro et al. themselves did in their Fig. 12. "
+                         "Samples before the anchor are dropped.")
+    ap.add_argument("--anchor-neck-rn", type=float, default=None,
+                    help="same as --anchor-neck but in r/R0 units, so one value "
+                         "serves series with different grain radii.")
     ap.add_argument("--slope-window", type=int, default=9,
                     help="samples per local-slope regression window")
     ap.add_argument("--demmenie", action="store_true",
@@ -419,6 +455,36 @@ def main():
             if len(tt) >= 3:
                 s.t, s.r = tt, np.exp(np.interp(np.log(tt), np.log(s.t), np.log(s.r)))
                 s.label += " @data-t"
+
+    if args.anchor_neck is not None or args.anchor_neck_rn is not None:
+        # Re-zero each clock at equal neck size. Two series that sit on the same
+        # trajectory but were started at different r0 differ ONLY by a time
+        # offset, so anchoring at a shared neck radius is the correct way to
+        # overlay them -- it removes the offset without fitting it away, and it
+        # is the convention Molaro et al. used in their Fig. 12.
+        kept = []
+        for s in series:
+            r_a = args.anchor_neck
+            if r_a is None:
+                if not s.R0:
+                    print(f"NOTE: '{s.label}' has no R0, cannot anchor in r/R0 "
+                          f"units — dropped.", file=sys.stderr)
+                    continue
+                r_a = args.anchor_neck_rn * s.R0
+            if s.r[0] > r_a or s.r[-1] < r_a:
+                print(f"NOTE: '{s.label}' never crosses r = {r_a:.3e} m "
+                      f"(spans {s.r[0]:.3e}-{s.r[-1]:.3e}) — dropped.",
+                      file=sys.stderr)
+                continue
+            t_a = float(np.interp(np.log(r_a), np.log(s.r), np.log(s.t)))
+            t_a = math.exp(t_a)
+            m = s.t > t_a
+            s.t, s.r = s.t[m] - t_a, s.r[m]
+            s.label += f" @r={r_a*1e6:.1f}um"
+            kept.append(s)
+        series = [s for s in kept if len(s.t) >= 3]
+        if not series:
+            sys.exit("no series survived --anchor-neck")
 
     args.out.mkdir(parents=True, exist_ok=True)
     rows, fits_by_series = [], {}
@@ -552,6 +618,16 @@ def main():
     if args.demmenie:
         ax.axhspan(min(DEMMENIE_ALPHA) - DEMMENIE_ERR, max(DEMMENIE_ALPHA) + DEMMENIE_ERR,
                    color="#0072B2", alpha=0.10, label="Demmenie 2025")
+
+    # The exact-fillet ideal. This, not a flat 1/3, is what a perfect
+    # kinetic-limited model gives -- it sags from 0.326 at r/R = 0.087 to 0.303
+    # at 0.30 purely from rho > r^2/(2R). Plotting the flat line alone would
+    # make a correct model look increasingly wrong at large necks.
+    if all(s.R0 for s in series):
+        ug = np.geomspace(max(1e-3, min(s.rn.min() for s in series)),
+                          max(s.rn.max() for s in series), 200)
+        ax.plot(ug, ideal_slope(ug), color=INK, lw=1.4, ls=(0, (6, 2)),
+                alpha=0.8, zorder=1, label="exact-fillet ideal (kinetic-limited)")
     ax.set_xscale("log")
     ax.set_xlabel("$r/R_0$" if all(s.R0 for s in series) else "neck radius [m]")
     ax.set_ylabel("$d\\ln r\\,/\\,d\\ln t$")

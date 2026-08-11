@@ -1,0 +1,139 @@
+# =============================================================================
+# geometry/sinter/sinter_2D_L2196um_eps0.32um_axisym_D1mm_r0p09.opts
+#
+# Demmenie et al. (2025) replication: two 1 mm ice spheres, started with a
+# SMALL PRE-FORMED NECK at r0/R = 0.09, just above this discretisation's
+# resolution floor. comp_eps --safety 0.5.
+# Pair with experiment/sinter/sinter_T-3_h1.00_*.opts.
+#
+# THE EXPERIMENT
+# --------------
+# Demmenie, Woutersen & Bonn, J. Phys. Chem. Lett. 16(8) 2104-2109 (2025),
+# doi:10.1021/acs.jpclett.5c00050. Two ~1 mm-diameter ice spheres in
+# side-by-side contact, no applied load, in an air box held at the saturation
+# vapour pressure of ice at -3 C, 2.5 h. Four runs give r ~ t^alpha with
+# alpha = 0.29 / 0.33 / 0.30 / 0.26 (+-0.01): Kuczynski m = 3,
+# evaporation-condensation, which is this model's own transport route.
+#
+# WHY r0/R = 0.09 AND NOT TANGENT CONTACT
+# ---------------------------------------
+# A pre-existing neck is NOT a problem in itself -- it just means our clock
+# starts partway along the trajectory, and both the d_free fit (t0 free) and
+# the equal-neck anchoring used for the Molaro comparison absorb that exactly.
+# What matters is whether the initial state lies ON the trajectory.
+#
+# Two competing errors, and 0.09 is where they cross:
+#
+# 1. TOO SMALL (tangent contact). The neck fillet has radius rho ~ r^2/(2R),
+#    and the phase field only resolves it once rho exceeds the ~6*eps band,
+#    i.e. above r/R = sqrt(12*eps/R) = 0.0873 here. BELOW that line the
+#    dynamics are wrong, not merely the measurement: the fillet is thinner
+#    than the interface. From tangent contact the run spends its first ~287 s
+#    there. Worse, that phase eats the output budget -- log-spaced snapshots
+#    from delt_t to t_final put only 11 of 50 inside the usable window,
+#    because 6 of the 8 decades covered are sub-floor.
+#
+# 2. TOO LARGE. The union IC is two spheres intersected, so the neck is a
+#    ZERO-radius crease, whereas the true trajectory at r0 carries a fillet of
+#    radius r0^2/(2R). Building that missing fillet is an off-trajectory
+#    transient of
+#         t_fill ~ beta*rho^2/(2*d0) = beta*r0^4/(8*d0*R^2)
+#    which grows as r0^4. Verified against the committed Molaro runs: their
+#    pre-necked IC (r0/R = 0.19 at -20 C) predicts 701 s and the d_free fit
+#    independently returned t0 = 864 s.
+#
+# At r0/R = 0.09 the fillet to build is 2.03 um and t_fill = 40 s -- 0.2% of
+# an 18 ks run -- while every snapshot lands inside the window. Tangent contact
+# would cost 287 s of wrong dynamics and 78% of the snapshot budget to save
+# 39 s of transient.
+#
+#   preprocess/calibrate_neck_geometry.py :: solve_d_union(5e-4, 5e-4, 9.0e-5)
+#     -> d = 9.959418e-04   (sharp union chord = 90.0 um = 2*0.09*R)
+#
+# VERIFIED against the C IC (measured with postprocess/neck_width.py --axisym
+# on the t=0 snapshot, mesh coarsened so it runs locally). The B-spline basis
+# rounds the sharp crease over ~h, so the measured neck carries an excess that
+# is exactly first order in h:
+#
+#     h/eps      4.94     3.29     2.47      ->  0.71 (production)
+#     r0/R      0.1027   0.0985   0.0964     ->  0.0919 extrapolated
+#
+#   fit: r0/R = 0.09011 + 0.00255*(h/eps),  R^2 = 1.00000
+#
+# The h -> 0 intercept recovers the sharp chord 0.0900 to 0.1%, confirming the
+# union IC does what it claims. At the production h/eps = 1/sqrt(2) the start
+# is r0/R ~ 0.092, 2% high and still above the 0.0873 floor -- fine, and in the
+# safe direction. Also verified: x_neck lands on the domain midpoint to 7
+# figures, as two identical spheres require.
+#
+# -ic_grain_union 1 IS LOAD-BEARING. The additive IC's two tanh tails add in
+# the overlap, so its phi=0.5 waist is wider than the sharp chord AND
+# eps-dependent. The union form puts phi=0.5 on the sharp union surface at
+# every eps, so r0 is exactly 0.09*R as solved above.
+#
+# WHAT A PERFECT MODEL WOULD GIVE (do not chase exactly 1/3)
+# ----------------------------------------------------------
+# alpha = 1/3 comes from the small-neck approximation rho = r^2/(2R). With the
+# exact rolling-ball fillet (R^2 + c^2 = (R+rho)^2, r = c - rho) a perfect
+# kinetic-limited model gives a local slope that sags with neck size:
+#
+#     r/R    0.087   0.10    0.15    0.20    0.25    0.30    0.35
+#     slope  0.326   0.324   0.320   0.314   0.309   0.303   0.296
+#
+# So the target over this run's window is ~0.30-0.33, not 0.3333. That is
+# still comfortably inside Demmenie's own 0.26-0.33 spread.
+#
+# REGIME
+# ------
+# alpha = 1/3 is specifically the ATTACHMENT-LIMITED prediction
+# (v = d0*kappa/beta with kappa ~ 2R/r^2 gives r^3 = 6*d0*R*t/beta). If vapour
+# diffusion or latent heat co-limits, the exponent bends. comp_eps puts
+# tau_sub at 64.7% kinetic / 25.3% thermal / 10.7% vapour here.
+#
+# That split is set by the safety factor ALONE -- it is identically 64.7% at
+# alpha_c = 9e-2 and 3e-2, so temperature and alpha_c are not levers on it.
+# Which is why there is no coarse-eps companion arm: a larger eps would not
+# just be less resolved, it would be a DIFFERENT REGIME (47.9% kinetic at
+# safety 1.0), and the two effects would be inseparable. Use the Dirichlet
+# arm (experiment/sinter/sinter_T-3_h1.00_5h_a9.0e-2_dirichlet.opts) to hold
+# the regime instead, and test discretisation by refining h at FIXED eps.
+#
+# MESH
+# ----
+# preprocess/comp_eps.py --Lx 2.195942e-3 --Ly 6.0e-4 --Rave 5e-4 --T0 -3 \
+#     --alpha 9.007e-2 --vn_feature 1e-5 --safety 0.5
+#   BINDING: K&P Eq. 43a (heat channel, D*_ia * beta_HK = 6.3552e-07)
+#   eps = 3.1776e-07, h = eps/sqrt(2), tau_sub = 3.02 s
+#   thin-interface beta_eff/beta: heat 0.605, vapour 0.851
+#
+# 9774 x 2671 = 26.1M nodes = 78.3M dof. One sol_*.dat is ~627 MB, so run
+# neck_width.py ON THE CLUSTER and bring back only the CSV.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+# Fit with:     python postprocess/fit_neck_growth.py <run_dir>/neck_width.csv --demmenie
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # phi=0.5 on the sharp union — see above
+
+-ic_type multi_grains
+-dim 2
+-Lx 2.195942e-03
+-Ly 6.000000e-04
+-Lz 0
+
+-ice_grain_cx 6.000000e-04,1.595942e-03  # d = 9.959418e-4 -> r0/R = 0.09
+-ice_grain_cy 0.0,0.0
+-ice_grain_R  5.0e-04,5.0e-04
+-ice_grain_ax 5.0e-04,5.0e-04
+-ice_grain_ay 5.0e-04,5.0e-04
+
+-Nx 9774                                # h = eps/sqrt(2)  (~26.1M nodes)
+-Ny 2671
+-Nz 1
+-eps 3.1776e-07
+-eps_valid_temp -3                      # eps was sized at -3 C; guard the pairing
+
+-delt_t 1.0e-4
+-periodic 0                             # zero-flux: sealed, mass-conserving cell,
+                                        # matching their constant sphere volume

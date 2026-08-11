@@ -1,0 +1,47 @@
+# =============================================================================
+# experiment/sinter/sinter_T-3_h1.00_10min_a9.0e-2.opts — SHORT PILOT for the
+# Demmenie replication. Pair with
+# geometry/sinter/sinter_2D_L2196um_eps0.32um_axisym_D1mm_r0p09.opts.
+#
+# Identical to sinter_T-3_h1.00_5h_a9.0e-2.opts except t_final and the snapshot
+# budget. Same geometry, same mesh, same eps -- so it exercises the PRODUCTION
+# configuration, which a coarser-mesh pilot would not.
+#
+# WHY A SHORT PILOT AND NOT A COARSE-eps ONE
+# ------------------------------------------
+# The obvious cheap pilot is a larger eps. It is the wrong pilot here: the
+# kinetic/thermal/vapour split of tau_sub is set by the comp_eps safety factor
+# alone (64.7% kinetic at 0.5, 47.9% at 1.0), so a coarse arm is not merely
+# under-resolved, it sits in a different physical regime and tells you nothing
+# about how the production arm will behave. Truncating time instead changes
+# nothing about the discretisation or the regime.
+#
+# WHAT IT IS FOR
+#   - stability and SNES/dt behaviour on the real 78.3M-dof problem before
+#     committing ~5450 steps;
+#   - confirming the measured t=0 neck really is r0/R = 0.09 (the union IC's
+#     sharp chord) rather than something eps-smeared;
+#   - a first read on the growth rate, to check the u^3 extrapolation that
+#     sized t_final = 5 h in the production file.
+#
+# 600 s reaches r/R ~ 0.129 (0.46 decades) -- not a fit window, a sanity check.
+# ~180 steps, so roughly 3% of the production cost.
+#
+# The 20 log-spaced snapshots are plenty at this length and keep the pilot
+# under ~13 GB.
+# =============================================================================
+
+-t_final 6.0e2                          # 10 min — sanity check, not a fit window
+
+-temp -3.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 1.8447e4                     # K&P beta0 at -3 C, alpha_c = 9.007e-2
+-d0_sub0 9.5265e-10
+
+-dtmax 3.3                              # 1.1 * tau_sub — same as production
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-t_out_log 20
