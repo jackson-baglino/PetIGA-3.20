@@ -44,6 +44,7 @@ RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch"
 # Allocation constants (TARGET_DOFS_PER_CORE, MAX_LOCAL_CORES) — single source
 # of truth in scripts/lib/alloc.sh.
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/alloc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/opts.sh"
 
 if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
     echo "❌ Could not find makefile at $PROJECT_ROOT"
@@ -232,18 +233,19 @@ run_one_test() {
         return
     fi
 
-    local geom_path="$GEOMETRY_DIR/${geom}.opts"
-    local exp_path="$EXPERIMENT_DIR/${exp}.opts"
+    # Resolve through the shared helper (scripts/lib/opts.sh): .opts live in
+    # per-family subdirectories while the spec carries a bare name.
+    local geom_path exp_path
     local test_name="${geom}__${exp}"
     local test_out="$BATCH_DIR/$test_name"
 
-    if [ ! -f "$geom_path" ]; then
-        echo "⚠️  Missing geometry: $geom_path"
+    if ! geom_path="$(require_opts "$GEOMETRY_DIR" "$geom" geometry)"; then
+        echo "⚠️  Missing geometry: $geom"
         printf "%-45s | %-9s | %-7s | %-9s\n" "$test_name" "MISSING_G" "-" "-" >> "$SUMMARY"
         return
     fi
-    if [ ! -f "$exp_path" ]; then
-        echo "⚠️  Missing experiment: $exp_path"
+    if ! exp_path="$(require_opts "$EXPERIMENT_DIR" "$exp" experiment)"; then
+        echo "⚠️  Missing experiment: $exp"
         printf "%-45s | %-9s | %-7s | %-9s\n" "$test_name" "MISSING_E" "-" "-" >> "$SUMMARY"
         return
     fi

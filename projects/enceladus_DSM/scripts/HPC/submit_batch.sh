@@ -48,6 +48,7 @@ SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 # TARGET_DOFS_PER_CORE and MAX_TASKS_PER_NODE are sourced from
 # scripts/lib/alloc.sh (single source of truth; see rationale there).
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
+source "$PROJECT_ROOT/scripts/lib/opts.sh"
 
 # ---------------------------------------------------------------------------
 # CLI parsing
@@ -167,8 +168,11 @@ mkdir -p "$BATCH_PARENT/inputs_snapshot/geometry"
 mkdir -p "$BATCH_PARENT/inputs_snapshot/experiment"
 mkdir -p "$BATCH_PARENT/src_snapshot"
 cp "$INPUTS_DIR/solver.opts"           "$BATCH_PARENT/inputs_snapshot/"   2>/dev/null || true
-cp -r "$GEOMETRY_DIR"/*.opts           "$BATCH_PARENT/inputs_snapshot/geometry/"   2>/dev/null || true
-cp -r "$EXPERIMENT_DIR"/*.opts         "$BATCH_PARENT/inputs_snapshot/experiment/" 2>/dev/null || true
+# -r over a *.opts glob only ever caught the TOP level, so the snapshot has
+# been silently empty since the .opts were regrouped into per-family
+# subdirectories. Copy the trees.
+cp -r "$GEOMETRY_DIR"/.                "$BATCH_PARENT/inputs_snapshot/geometry/"   2>/dev/null || true
+cp -r "$EXPERIMENT_DIR"/.              "$BATCH_PARENT/inputs_snapshot/experiment/" 2>/dev/null || true
 for ext in c h; do
     cp "$PROJECT_ROOT/src/"*.$ext     "$BATCH_PARENT/src_snapshot/"      2>/dev/null || true
 done
@@ -236,15 +240,16 @@ submit_one() {
         return
     fi
 
-    local geom_file="$GEOMETRY_DIR/${geom}.opts"
-    local exp_file="$EXPERIMENT_DIR/${exp}.opts"
-    if [[ ! -f "$geom_file" ]]; then
-        echo "⚠ Skipping $spec — geometry file not found: $geom_file"
+    # Resolve through the shared helper (scripts/lib/opts.sh): .opts live in
+    # per-family subdirectories while the spec carries a bare name.
+    local geom_file exp_file
+    if ! geom_file="$(require_opts "$GEOMETRY_DIR" "$geom" geometry)"; then
+        echo "⚠ Skipping $spec — geometry not found"
         ((N_SKIPPED++)) || true
         return
     fi
-    if [[ ! -f "$exp_file" ]]; then
-        echo "⚠ Skipping $spec — experiment file not found: $exp_file"
+    if ! exp_file="$(require_opts "$EXPERIMENT_DIR" "$exp" experiment)"; then
+        echo "⚠ Skipping $spec — experiment not found"
         ((N_SKIPPED++)) || true
         return
     fi
@@ -261,8 +266,8 @@ submit_one() {
            --ntasks="$nprocs" \
            --ntasks-per-node="$tasks_per_node" \
            --export=ALL,SKIP_COMPILE=1,BATCH_OUT_DIR="$BATCH_PARENT" \
-           "${sbatch_extra[@]}" \
-           "$RUN_SCRIPT" "$geom" "$exp" "$tag" "${extra_opts[@]}"
+           ${sbatch_extra[@]+"${sbatch_extra[@]}"} \
+           "$RUN_SCRIPT" "$geom" "$exp" "$tag" ${extra_opts[@]+"${extra_opts[@]}"}
     ((N_SUBMITTED++)) || true
 }
 

@@ -57,6 +57,7 @@ fi
 
 # Allocation constants (TARGET_DOFS_PER_CORE, ...) — single source of truth.
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
+source "$PROJECT_ROOT/scripts/lib/opts.sh"
 
 # Load cost utilities (graceful no-op if missing)
 _HPC_COST_SH="$PROJECT_ROOT/scripts/HPC/hpc_cost.sh"
@@ -72,8 +73,11 @@ SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 SOLVER_OPTS="$INPUTS_DIR/solver.opts"
-GEOM_OPTS="$INPUTS_DIR/geometry/${geom_name}.opts"
-EXP_OPTS="$INPUTS_DIR/experiment/${exp_name}.opts"
+# Resolve through the shared helper: .opts live in per-family subdirectories
+# but the CLI takes a bare name. This runs INSIDE the SLURM job, so a flat
+# lookup here fails after queueing rather than at submit time.
+GEOM_OPTS="$(require_opts "$INPUTS_DIR/geometry"   "$geom_name" geometry)"   || exit 1
+EXP_OPTS="$(require_opts  "$INPUTS_DIR/experiment" "$exp_name"  experiment)" || exit 1
 
 # Discover mpiexec: prefer the PETSC-bundled binary (always present when
 # PETSc downloaded MPICH), fall back to whatever is on PATH.
