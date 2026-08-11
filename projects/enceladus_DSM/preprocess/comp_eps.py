@@ -224,6 +224,109 @@ def alpha_libbrecht(T_C: float, sigma_surf: float) -> float:
 
 
 # =========================================================================
+# Arrhenius attachment kinetics — the model to actually use
+# =========================================================================
+#
+# WHY NOT USE alpha_libbrecht() DIRECTLY
+# --------------------------------------
+# Two independent problems, both fatal for mesh sizing.
+#
+# 1. The table is 10 points, and it is NOT monotonic: sigma0 runs
+#    ... 5.5e-3 (-4), 8.0e-3 (-6), 4.0e-3 (-7), 6.0e-3 (-10) ...
+#    so alpha(T) has a kink and a local reversal around -6/-7 C that is an
+#    artifact of sparse digitisation, not physics. Interpolating through it
+#    makes eps -- and therefore the whole mesh -- jump discontinuously with a
+#    1 C change in T0.
+#
+# 2. The functional form alpha = exp(-sigma0/sigma) is exquisitely sensitive
+#    to sigma, and sintering runs at a TINY supersaturation: at the neck
+#    sigma = d0*kappa = d0/rho_fillet ~ 4.5e-4. There
+#       alpha(-3 C)  = 2.0e-5
+#       alpha(-20 C) = 1e-30   (floored; genuinely exp(-78))
+#    i.e. no sintering at all, which contradicts every experiment. Meanwhile
+#    sigma0 itself spans 4.1e-3 (-2 C) to 1.1e-1 (-40 C), a factor of 27, so
+#    ln(alpha) spans a factor of 27 too: NO single reference sigma can put
+#    this form inside a one-decade alpha band across that range. The
+#    incompatibility is structural, not a matter of picking sigma better.
+#
+# WHAT THIS DOES INSTEAD
+# ----------------------
+# A smooth two-parameter Arrhenius, alpha_c(T) = A*exp(-Ea/(R*T)), pinned to
+# the range the literature actually supports rather than to the table:
+#
+#   Libbrecht (2017), "Physical Dynamics of Ice Crystal Growth"
+#   Braun et al. (2024), "A rigorous approach to the specific surface area
+#     evolution in snow during temperature gradient metamorphism"
+#
+# both bracket alpha_c in roughly [1e-4, 1e-3]. Those bounds set the two
+# anchors; Libbrecht sets only the SIGN of the temperature dependence (sigma0
+# rises as T falls, so attachment gets harder when colder), which the
+# Arrhenius reproduces smoothly and monotonically. The default anchors
+# 1e-3 @ -2 C and 1e-4 @ -40 C imply Ea = 31.8 kJ/mol, an unremarkable value
+# for a surface process on ice.
+#
+# This matters far beyond bookkeeping: alpha_c sets beta_sub, beta_sub sets
+# the binding eps bound, and eps sets the mesh. It also sets which TRANSPORT
+# REGIME the run is in, via the crossover length L* = beta_HK*D_v -- below
+# L* attachment limits, above it vapour diffusion limits, and the Kuczynski
+# r ~ t^(1/3) exponent is derived for the attachment-limited case. So alpha_c
+# has to be fixed before eps, which is why it is resolved before compute_eps.
+
+_R_GAS = 8.314462618            # J/(mol K)
+
+# Literature band, used as the default anchors and the default clamp.
+ALPHA_LIT_LO, ALPHA_LIT_HI = 1.0e-4, 1.0e-3
+ALPHA_ANCHOR_WARM = (-2.0, 1.0e-3)
+ALPHA_ANCHOR_COLD = (-40.0, 1.0e-4)
+
+
+def arrhenius_params(anchor_warm=ALPHA_ANCHOR_WARM, anchor_cold=ALPHA_ANCHOR_COLD):
+    """(A, Ea) of alpha = A*exp(-Ea/(R*T)) through two (T_C, alpha) anchors.
+
+    Returns (A [-], Ea [J/mol]). Ea > 0 means alpha falls as T falls, which
+    is the direction Libbrecht's sigma0(T) implies.
+    """
+    (T1, a1), (T2, a2) = anchor_warm, anchor_cold
+    T1K, T2K = T1 + 273.15, T2 + 273.15
+    if a1 <= 0 or a2 <= 0 or abs(T1K - T2K) < 1e-9:
+        raise ValueError("anchors must have positive alpha and distinct T")
+    Ea = _R_GAS * math.log(a1 / a2) / (1.0 / T2K - 1.0 / T1K)
+    A = a1 * math.exp(Ea / (_R_GAS * T1K))
+    return A, Ea
+
+
+def alpha_arrhenius(T_C: float,
+                    anchor_warm=ALPHA_ANCHOR_WARM,
+                    anchor_cold=ALPHA_ANCHOR_COLD,
+                    clamp=(ALPHA_LIT_LO, ALPHA_LIT_HI)) -> float:
+    """Condensation coefficient alpha_c(T) [-] from the anchored Arrhenius.
+
+    Clamped to `clamp` (default the literature band) so that EXTRAPOLATING
+    past the anchors cannot silently hand the mesh sizer an alpha_c the
+    literature does not support -- which is exactly the failure mode of the
+    Libbrecht form at sintering supersaturations.
+    """
+    A, Ea = arrhenius_params(anchor_warm, anchor_cold)
+    a = A * math.exp(-Ea / (_R_GAS * (T_C + 273.15)))
+    if clamp:
+        a = min(max(a, clamp[0]), clamp[1])
+    return a
+
+
+def libbrecht_sigma_ref_for(alpha_target: float, T_C: float):
+    """sigma that makes alpha_libbrecht(T_C, sigma) equal alpha_target.
+
+    Diagnostic only. Inverting alpha = exp(-sigma0/sigma) gives
+    sigma = sigma0(T) / ln(1/alpha). Evaluating this at one anchor and then
+    applying it at the other is how the structural incompatibility in note 2
+    above is demonstrated numerically rather than asserted.
+    """
+    if not (0.0 < alpha_target < 1.0):
+        return float("nan")
+    return sigma0(T_C) / math.log(1.0 / alpha_target)
+
+
+# =========================================================================
 # Heat-channel ε ceiling — single source of truth
 # =========================================================================
 
@@ -713,7 +816,24 @@ def _cli():
                     help="Characteristic supersaturation σ [-]: derive α_c from the "
                          "code's Libbrecht model α = exp(-σ₀(T0)/σ) (Sigma0 lookup, "
                          "monitoring.c flag_Tdep). Mutually exclusive with "
-                         "--alpha/--alpha_range.")
+                         "--alpha/--alpha_range. NOTE: at sintering σ (~5e-4) this "
+                         "underflows — see --alpha_arrhenius.")
+    ap.add_argument("--alpha_arrhenius", action="store_true",
+                    help="Derive α_c(T0) from the anchored Arrhenius "
+                         "α = A·exp(-Ea/RT) instead of a constant. This is the "
+                         "recommended mode: smooth, monotonic, and pinned to the "
+                         "α_c ∈ [1e-4, 1e-3] band that Libbrecht (2017) and Braun "
+                         "et al. (2024) support. Mutually exclusive with the above.")
+    ap.add_argument("--alpha_anchors", default=None,
+                    metavar="T1,a1,T2,a2",
+                    help="Arrhenius anchors as 'T_warm,alpha_warm,T_cold,alpha_cold' "
+                         f"(default {ALPHA_ANCHOR_WARM[0]:g},{ALPHA_ANCHOR_WARM[1]:g},"
+                         f"{ALPHA_ANCHOR_COLD[0]:g},{ALPHA_ANCHOR_COLD[1]:g} → "
+                         "Ea = 31.8 kJ/mol).")
+    ap.add_argument("--alpha_clamp", default=None, metavar="LO,HI",
+                    help=f"Clamp α_c(T) to this band (default "
+                         f"{ALPHA_LIT_LO:g},{ALPHA_LIT_HI:g}, the literature range). "
+                         "Pass '0,1' to disable and allow free extrapolation.")
     ap.add_argument("--vn",     type=float, default=1.0e-9,
                     help="Normal front velocity vₙ [m/s] for Eq.(45)")
     ap.add_argument("--vn_feature", type=float, default=None, metavar="R_FEAT",
@@ -742,10 +862,56 @@ def _cli():
     args = ap.parse_args()
 
     n_modes = sum(x is not None for x in (args.alpha, args.alpha_range, args.sigma_surf))
+    n_modes += 1 if args.alpha_arrhenius else 0
     if n_modes > 1:
-        ap.error("--alpha, --alpha_range, and --sigma_surf are mutually exclusive.")
+        ap.error("--alpha, --alpha_range, --sigma_surf and --alpha_arrhenius "
+                 "are mutually exclusive.")
     if n_modes == 0:
-        ap.error("Provide one of --alpha, --alpha_range, or --sigma_surf.")
+        ap.error("Provide one of --alpha, --alpha_range, --sigma_surf or "
+                 "--alpha_arrhenius.")
+
+    # ---- Arrhenius alpha_c(T). Resolved HERE, before --vn_feature evaluates
+    # beta and before compute_eps sizes the mesh: alpha_c -> beta_sub -> the
+    # binding eps bound -> Nx/Ny, so it cannot be applied afterwards.
+    if args.alpha_arrhenius:
+        aw, ac = ALPHA_ANCHOR_WARM, ALPHA_ANCHOR_COLD
+        if args.alpha_anchors:
+            v = [float(x) for x in args.alpha_anchors.split(",")]
+            if len(v) != 4:
+                ap.error("--alpha_anchors needs 'T1,a1,T2,a2'")
+            aw, ac = (v[0], v[1]), (v[2], v[3])
+        clamp = (ALPHA_LIT_LO, ALPHA_LIT_HI)
+        if args.alpha_clamp:
+            c = [float(x) for x in args.alpha_clamp.split(",")]
+            if len(c) != 2:
+                ap.error("--alpha_clamp needs 'LO,HI'")
+            clamp = (c[0], c[1]) if c[1] > c[0] else (c[1], c[0])
+
+        A, Ea = arrhenius_params(aw, ac)
+        raw = A * math.exp(-Ea / (_R_GAS * (args.T0 + 273.15)))
+        args.alpha = alpha_arrhenius(args.T0, aw, ac, clamp)
+
+        print(f"\n  Arrhenius kinetics mode: alpha_c(T) = A*exp(-Ea/RT)")
+        print(f"    anchors  {aw[1]:.3e} @ {aw[0]:g} C   and   "
+              f"{ac[1]:.3e} @ {ac[0]:g} C")
+        print(f"    Ea = {Ea/1000.0:.2f} kJ/mol,  A = {A:.4e}")
+        print(f"    -> alpha_c({args.T0:g} C) = {args.alpha:.4e}"
+              + (f"   [CLAMPED from {raw:.3e} to the "
+                 f"[{clamp[0]:g}, {clamp[1]:g}] band]"
+                 if abs(raw - args.alpha) > 1e-12 * max(raw, 1e-300) else ""))
+
+        # Show, numerically, why the Libbrecht form is not used directly.
+        s_eq = libbrecht_sigma_ref_for(aw[1], aw[0])
+        a_cold_lib = alpha_libbrecht(ac[0], s_eq)
+        print(f"    [Libbrecht cross-check] the sigma that reproduces the WARM "
+              f"anchor is {s_eq:.3e};")
+        print(f"      at that same sigma the form gives alpha({ac[0]:g} C) = "
+              f"{a_cold_lib:.3e}, vs the cold anchor {ac[1]:.3e}.")
+        print(f"      sigma0 spans {sigma0(aw[0]):.2e}->{sigma0(ac[0]):.2e} "
+              f"(x{sigma0(ac[0])/sigma0(aw[0]):.0f}), and ln(alpha) scales with "
+              f"it, so NO single sigma")
+        print(f"      fits both anchors — the incompatibility is structural, "
+              f"not a matter of tuning sigma.")
 
     if args.sigma_surf is not None:
         s0 = sigma0(args.T0)
