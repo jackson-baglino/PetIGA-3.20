@@ -2,6 +2,43 @@
 
 Newest entries first.
 
+## 2026-08-12 (later still) — ParaView macros: phase isovolumes, GT curvature fields
+
+- Added `scripts/paraview_macros/split_phases.py`: ice IsoVolume
+  (`IcePhase` in [0.5, 1.01]) + air IsoVolume ([-0.01, 0.5]) on the active
+  source. The isovolume half of `setup_movie_view.py`, standalone.
+- Extended `scripts/paraview_macros/plot_rhovsI.py` with the Gibbs-Thomson
+  correction removed from the solver on 2026-07-21, as a *post-processing*
+  diagnostic: new `Curvature`, `RhoVS_I_GT` and `Supersaturation_GT` point
+  arrays, with kappa = -div(grad phi/|grad phi|) rebuilt from the deleted
+  `Curvature()` and evaluated via two passes of VTK's gradient operator.
+  d0 = gamma*V_m/(R*T) pointwise. Nothing in the solver reads these.
+- eps (for the regularization) and `-axisym` are auto-detected from the .opts
+  the run script stages next to the data; the axisym mode is always printed,
+  since the .vts itself cannot say, and getting it wrong halves every kappa.
+- Added `scripts/paraview_macros/verify_curvature.py`, an analytic gate that
+  runs the macro's own filter on synthetic logistic spheres: planar +/-1/R and
+  axisymmetric +/-2/R. All four within 1.01% (near-axis 1.24%). The concave
+  cases pin the sign — kappa must be POSITIVE on a convex grain or ripening
+  runs backwards.
+- Two real bugs the gate caught:
+  - **Boundary ring.** kappa needs a second derivative, so VTK's one-sided
+    stencil corrupts the outer TWO point layers, not one: 39% and 26% low on an
+    analytic sphere, in planar runs as much as axisymmetric. Now repaired by
+    replicating the first clean layer outward.
+  - **Axis limit.** n_y/y is 0/0 on the axis; flooring the denominator was 13%
+    off. Replaced with the exact limit H_yy/G (g_y vanishes there by symmetry).
+- Also noted, for anyone writing a Programmable Filter: it execs in `__main__`,
+  so its preamble star-imports `numpy_interface.algorithms` over the builtins
+  (`max(a, b)` becomes `algs.max(a, axis=b)`) and rebinds `vtk`. Both files
+  document it; the gate dodges it with underscore-prefixed globals.
+- On the `phi0.325_0.5mm_T-20_s05` epsconv run the flat supersaturation is
+  ~2e-15 (uniform T, rho_v initialized at rho_vs — no driving force at all)
+  while `Supersaturation_GT` spans -4.4e-4 to +2.3e-2. That is the LSW
+  ripening driver the 2026-07-21 removal took out, visible again.
+
+---
+
 ## 2026-08-12 (later still) — ParaView macro to split ice/air isovolumes
 
 - Added `scripts/paraview_macros/split_phases.py`: builds an ice IsoVolume

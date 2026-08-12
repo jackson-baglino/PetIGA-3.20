@@ -6,7 +6,11 @@
 > switch. The code no longer implements that model: the 2026-06-13 fork
 > dropped the sediment DOF, giving a **2-phase (ice / T / vapor)** system with
 > a plain double well (φ_a = 1 − φ). Gibbs–Thomson curvature was also removed
-> (2026-07-21). Treat the equations here as a record of what was believed at
+> (2026-07-21) — the §4 GT equations survive as a **post-processing diagnostic**
+> in `scripts/paraview_macros/plot_rhovsI.py`, which recomputes κ and
+> ρ_vs^eff from a finished run's φ field (analytic gate:
+> `scripts/paraview_macros/verify_curvature.py`). Nothing in the solver reads
+> them. Treat the equations here as a record of what was believed at
 > the time, not as the current implementation. The triple-well material is the
 > reference for Effort 2 (`studies/icy_regolith/explicit_sediment_phase/`),
 > where it will be re-derived from the beta-eliminated equations.
