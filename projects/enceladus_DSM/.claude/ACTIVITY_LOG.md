@@ -2,6 +2,24 @@
 
 Newest entries first.
 
+## 2026-08-11 — mesh_pair coarse arm: exponent fits vs the Molaro −20 °C data
+
+- Fitted the tangent-contact coarse run (79 h, α_c = 1e-3, ε = 0.87 µm) from
+  `batch_2026-08-11__17.24.16_mesh_pair` against `molaro2019_fig11_T-20.csv`.
+  a = 0.19–0.21 on all three fit forms, vs a = 0.18–0.25 for the data — inside
+  the data's CI, at m ≈ 5, not Demmenie's m = 3.
+- The tangent IC is the reason: it gives the run a physical clock zero, so the
+  three forms agree instead of spanning 2x as they did on the pre-necked runs
+  in `results/molaro_prenecked/` (a = 0.09–0.12 there).
+- Recorded the caveats with the numbers: the whole curve sits below this arm's
+  resolution floor √(12ε/R) = 0.346 (default protocol → no fittable window), so
+  the fine arm settles it; the absolute rate is ~155x slow at α_c = 1e-3; the
+  first ~15 samples are diffuse-interface relaxation off tangent contact.
+- New `analysis/run_mesh_pair_fits.sh` (picks up the fine arm automatically) and
+  `results/mesh_pair/` with three fit windows, both figures, and a README.
+
+---
+
 ## 2026-08-10 — Sintering growth exponent vs Demmenie et al. (2025)
 
 - New target: Demmenie, Woutersen & Bonn, *J. Phys. Chem. Lett.* 16(8)
