@@ -2,7 +2,30 @@
 
 Newest entries first.
 
-## 2026-08-12 — Fine arm arrives: the mesh pair does not converge
+## 2026-08-12 (later) — `--axisym` correction; the arms agree after all
+
+- The fine arm's `neck_width.csv` had been extracted **without `--axisym`**.
+  These are axisymmetric r–z runs, so the measured chord is the neck *radius*
+  and the flag doubles it; every fine-arm width was half its true value.
+- Corrected, the fine arm spans 9.3 → 51.1 µm (not 4.7 → 25.6). This withdraws
+  the entry below: the arms differ by **1.9× at 32.8 µm, 1.2× by 51 µm**, not
+  36–150×, and the fine arm *does* reach the experiment's starting width
+  (15.05 h), so nothing needs extrapolating.
+- The fine arm is above its own 31.6 µm floor over the compared range — the
+  resolved arm the pair was built to produce. a = **0.283 ± 0.001**, inside the
+  Demmenie band; the coarse arm (below its 60.1 µm floor throughout) gives
+  0.229. Molaro's data gives 0.204 ± 0.053, so model and experiment do *not*
+  agree on the exponent once the resolved arm is used.
+- Rate offset vs Molaro: 152× (coarse), 156× (fine) — agreeing to 3 % across a
+  3.6× change in ε, which is what marks it as the α_c choice, not a mesh effect.
+- Rewrote `compare_mesh_pair.py` down to a single axes as asked: both arms, the
+  Molaro points, a dotted power-law fit per arm, each simulation clock shifted
+  so t = 0 lands where its own neck reaches 32.81 µm. No mechanism guide lines.
+  Dropped the now-subsumed `meshpair_both_*` and `meshpair_aligned_*` sets.
+
+---
+
+## 2026-08-12 — Fine arm arrives: the mesh pair does not converge (WITHDRAWN — see above)
 
 - Extracted the fine arm's neck curve (`neck_width.py`, 57 snapshots) and
   compared both arms against the Molaro −20 °C data.
