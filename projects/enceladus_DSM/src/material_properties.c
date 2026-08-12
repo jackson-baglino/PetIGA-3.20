@@ -363,3 +363,80 @@ void AlphaCondensation(AppCtx *user, PetscScalar tem, PetscScalar rhov,
     if (dalpha_dtem)  (*dalpha_dtem)  = da_dT;
     if (dalpha_drhov) (*dalpha_drhov) = da_drv;
 }
+
+
+/**
+ * @brief Pointwise sublimation kinetics: mob_sub and alph_sub from alpha_c(T, rho_v).
+ *
+ * main() computes these once as scalars from a single alpha_c. That is only
+ * right if alpha_c is a constant. Once alpha_c depends on the local state,
+ * everything downstream of it does too, via the M&F SI Eq. 9 chain:
+ *
+ *   chi        = rho_vs(T)/rho_ice
+ *   d0_sub     = d0_sub0 * chi
+ *   lambda_sub = a1*eps/d0_sub
+ *   beta_s     = (1/alpha_c) * sqrt(2*pi*m/(kB*T))      [scaled, K&P beta']
+ *   B          = beta_s/a1 + a2*eps/diff_sub + a2*eps/D_v(T)
+ *   tau_sub    = eps*lambda_sub*B
+ *   mob_sub    = eps/(3*tau_sub) = 1/(3*lambda_sub*B)
+ *   alph_sub   = lambda_sub/tau_sub = 1/(eps*B)
+ *
+ * Note alph_sub depends on T and rho_v ONLY through B, while mob_sub also
+ * picks up lambda_sub's temperature dependence through d0_sub.
+ *
+ * With -alpha_model 0 (the default) alpha_c is constant, and the only residual
+ * state dependence is D_v(T) and rho_vs(T) -- which main()'s scalars already
+ * ignore. So even in CONST mode this is a slight refinement, not a no-op; pass
+ * user->mob_scale = 0 to fall back to the scalars exactly.
+ *
+ * Derivatives are analytic and exact for the CONST and ARRH models. For LIBB2
+ * they inherit the dropped d(sigma0)/dT term from AlphaCondensation (~1% in
+ * dalpha/dT) -- check -snes_test_jacobian before trusting that model.
+ */
+void SubKinetics(AppCtx *user, PetscScalar tem, PetscScalar rhov,
+                 PetscScalar *mob,  PetscScalar *alph,
+                 PetscScalar *dmob_dT,  PetscScalar *dmob_drv,
+                 PetscScalar *dalph_dT, PetscScalar *dalph_drv)
+{
+    const PetscReal a1 = 5.0, a2 = 0.1581;      /* M&F SI footnote 1 */
+    const PetscReal kB = 1.38e-23, m_h2o = 3.0e-26;
+    const PetscReal eps = user->eps;
+    const PetscReal T_K = PetscRealPart(tem) + 273.15;
+
+    PetscScalar alpha, da_dT, da_drv;
+    AlphaCondensation(user, tem, rhov, &alpha, &da_dT, &da_drv);
+
+    PetscScalar rho_vs, d_rho_vs, dv, d_dv;
+    RhoVS_I(user, tem, &rho_vs, &d_rho_vs);
+    VaporDiffus(user, tem, &dv, &d_dv);
+
+    const PetscReal rvs = PetscRealPart(rho_vs), drvs = PetscRealPart(d_rho_vs);
+    const PetscReal Dv = PetscRealPart(dv),      dDv = PetscRealPart(d_dv);
+
+    /* lambda_sub = a1*eps/(d0_sub0*chi),  chi = rho_vs/rho_ice */
+    const PetscReal chi   = rvs / user->rho_ice;
+    const PetscReal dchi  = drvs / user->rho_ice;
+    const PetscReal d0s   = user->d0_sub0 * chi;
+    const PetscReal lam   = a1 * eps / d0s;
+    const PetscReal dlam  = -lam * dchi / chi;          /* d lambda / dT */
+
+    /* beta_s = C(T)/alpha,  C = sqrt(2*pi*m/(kB*T)),  dC/dT = -C/(2T) */
+    const PetscReal Cth   = sqrt(2.0 * PETSC_PI * m_h2o / (kB * T_K));
+    const PetscReal beta_s = Cth / PetscRealPart(alpha);
+    const PetscReal dbeta_dT  = (-Cth / (2.0 * T_K)) / PetscRealPart(alpha)
+                              - beta_s * PetscRealPart(da_dT)  / PetscRealPart(alpha);
+    const PetscReal dbeta_drv = - beta_s * PetscRealPart(da_drv) / PetscRealPart(alpha);
+
+    /* B and its derivatives (diff_sub is a constant; D_v carries T) */
+    const PetscReal B    = beta_s / a1 + a2 * eps / user->diff_sub + a2 * eps / Dv;
+    const PetscReal dB_dT  = dbeta_dT  / a1 - a2 * eps * dDv / (Dv * Dv);
+    const PetscReal dB_drv = dbeta_drv / a1;
+
+    if (alph)      (*alph)      = 1.0 / (eps * B);
+    if (dalph_dT)  (*dalph_dT)  = -dB_dT  / (eps * B * B);
+    if (dalph_drv) (*dalph_drv) = -dB_drv / (eps * B * B);
+
+    if (mob)       (*mob)       = 1.0 / (3.0 * lam * B);
+    if (dmob_dT)   (*dmob_dT)   = -(dlam * B + lam * dB_dT) / (3.0 * lam * lam * B * B);
+    if (dmob_drv)  (*dmob_drv)  = -dB_drv / (3.0 * lam * B * B);
+}

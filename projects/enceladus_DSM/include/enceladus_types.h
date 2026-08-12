@@ -136,6 +136,10 @@ typedef struct {
   // alpha_c -> 0 sends beta_sub ~ 1/alpha_c to infinity, which is unphysical
   // and unsolvable. Mirror of preprocess/comp_eps.py -- keep them in step, or
   // the mesh is sized from a different alpha_c than the solver evaluates.
+  PetscBool alpha_pointwise; // -alpha_pointwise: evaluate mob_sub and
+                             // alph_sub per quadrature point from
+                             // alpha_c(T, rho_v) instead of using
+                             // main()'s scalars. Off = previous path.
   PetscInt  alpha_model;     // -alpha_model
   PetscReal alpha_c0;        // -alpha_c0   constant-model value
   PetscReal alpha_A;         // -alpha_A    prefactor (both fitted models)

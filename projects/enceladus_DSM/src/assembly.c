@@ -103,6 +103,18 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     VaporDiffus(user, tem,    &dif_vap, NULL);
     Mobility   (user, phi_c,  &mob_sub);
 
+    /* alpha_c(T, rho_v): mob_sub and alph_sub become POINTWISE. Both descend
+     * from alpha_c through the same M&F Eq. 9 bracket, so neither can be a
+     * scalar once alpha_c depends on the local state. Off by default
+     * (-alpha_pointwise 0) -> main()'s scalars, bit-identical to before. */
+    PetscReal alph_sub = user->alph_sub;
+    if (user->alpha_pointwise) {
+        PetscScalar mb, al;
+        SubKinetics(user, tem, rhov, &mb, &al, NULL, NULL, NULL, NULL);
+        mob_sub  = PetscRealPart(mb);
+        alph_sub = PetscRealPart(al);
+    }
+
     /* Flat-interface saturation vapor density. */
     PetscReal rho_vs;
     RhoVS_I(user, PetscRealPart(tem), &rho_vs, NULL);
@@ -152,7 +164,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
         R[a][0] = rw * ( N0[a] * phi_t
                 + 3.0 * mob_sub * eps * gN_gphi
                 + (3.0 * mob_sub / eps) * f1 * N0[a]
-                - pc * (user->alph_sub / rho_ice) * loc
+                - pc * (alph_sub / rho_ice) * loc
                   * (PetscRealPart(rhov) - rho_vs) * N0[a] );
 
         R[a][1] = rw * ( rho * cp * N0[a] * tem_t                       /* storage */
@@ -207,8 +219,11 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscScalar phi   = sol[0],  phi_t  = sol_t[0];
     PetscScalar tem   = sol[1];
     PetscScalar rhov  = sol[2],  rhov_t = sol_t[2];
+    PetscScalar grad_phi [dim];          /* needed by the alpha_pointwise
+                                          * mob_sub coupling in J[.][0][.][1,2] */
     PetscScalar grad_tem [dim], grad_rhov[dim];
     for (l = 0; l < dim; l++) {
+        grad_phi [l] = grad_sol[0][l];
         grad_tem [l] = grad_sol[1][l];
         grad_rhov[l] = grad_sol[2][l];
     }
@@ -234,13 +249,29 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     ThermalCond(user, phi_c, NULL, &dthcond_dphi);
     VaporDiffus(user, tem,   NULL, &d_dif_vap);
 
+    /* Pointwise kinetics, plus the extra couplings they introduce. mob_sub
+     * multiplies the gradient and double-well terms, so its T/rho_v
+     * derivatives enter J[.][0][.][1] and J[.][0][.][2] on top of the source
+     * term's -- those are the two blocks that gain new contributions below. */
+    PetscReal alph_sub = user->alph_sub;
+    PetscReal dmob_dT = 0.0, dmob_drv = 0.0, dalph_dT = 0.0, dalph_drv = 0.0;
+    if (user->alpha_pointwise) {
+        PetscScalar mb, al, dmT, dmR, daT, daR;
+        SubKinetics(user, tem, rhov, &mb, &al, &dmT, &dmR, &daT, &daR);
+        mob_sub  = PetscRealPart(mb);
+        alph_sub = PetscRealPart(al);
+        dmob_dT  = PetscRealPart(dmT);  dmob_drv  = PetscRealPart(dmR);
+        dalph_dT = PetscRealPart(daT);  dalph_drv = PetscRealPart(daR);
+    }
+
     /* Flat-interface saturation vapor density and its T-derivative. */
     PetscReal rho_vs, d_rho_vs;
     RhoVS_I(user, PetscRealPart(tem), &rho_vs, &d_rho_vs);
 
     /* Double-well derivative and its phi-derivative. */
-    PetscReal df1;
-    DoubleWellDeriv(phi_c, NULL, &df1);
+    PetscReal f1, df1;
+    DoubleWellDeriv(phi_c, &f1, &df1);   /* f1 is needed by the
+        alpha_pointwise mob_sub coupling below; df1 by J[.][0][.][0]. */
 
     /* Localization loc = phi^2*(1-phi)^2 and dloc/dphi. */
     PetscReal loc      = phi_c * phi_c * phi_ac * phi_ac;
@@ -272,9 +303,11 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     for (a = 0; a < nen; a++) {
         PetscReal gNa_gtem  = 0.0;
         PetscReal gNa_grhov = 0.0;
+        PetscReal gNa_gphi  = 0.0;   /* alpha_pointwise mob_sub coupling */
         for (l = 0; l < dim; l++) {
             gNa_gtem  += N1[a][l] * PetscRealPart(grad_tem [l]);
             gNa_grhov += N1[a][l] * PetscRealPart(grad_rhov[l]);
+            gNa_gphi  += N1[a][l] * PetscRealPart(grad_phi [l]);
         }
 
         for (b = 0; b < nen; b++) {
@@ -286,14 +319,32 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             J[a][0][b][0] += rw * ( shift * NaNb
                            + 3.0 * mob_sub * eps * gNagNb
                            + (3.0 * mob_sub / eps) * df1 * NaNb
-                           - pc * (user->alph_sub / rho_ice) * dloc_dph
+                           - pc * (alph_sub / rho_ice) * dloc_dph
                              * (PetscRealPart(rhov) - rho_vs) * NaNb );
 
             /* ============ R_ice / T ============ */
-            J[a][0][b][1] += rw * pc * ( (user->alph_sub / rho_ice) * loc * d_rho_vs * NaNb );
+            J[a][0][b][1] += rw * pc * ( (alph_sub / rho_ice) * loc * d_rho_vs * NaNb );
 
             /* ============ R_ice / rhov ============ */
-            J[a][0][b][2] -= rw * pc * ( (user->alph_sub / rho_ice) * loc * NaNb );
+            J[a][0][b][2] -= rw * pc * ( (alph_sub / rho_ice) * loc * NaNb );
+
+            /* Extra couplings from alpha_c(T, rho_v). With a scalar alph_sub
+             * and mob_sub these are identically zero, which is why they were
+             * absent. Pointwise, R_ice depends on T and rho_v through BOTH
+             * the source (alph_sub) and the Allen-Cahn terms (mob_sub) --
+             * missing the mob_sub pieces is the easy mistake here, since they
+             * sit in the gradient and double-well terms rather than the
+             * obviously-coupled source. */
+            if (user->alpha_pointwise) {
+                const PetscReal src = pc * loc
+                                    * (PetscRealPart(rhov) - rho_vs) / rho_ice;
+                J[a][0][b][1] += rw * ( 3.0 * dmob_dT * eps * gNa_gphi * N0[b]
+                               + (3.0 * dmob_dT / eps) * f1 * NaNb
+                               - dalph_dT * src * NaNb );
+                J[a][0][b][2] += rw * ( 3.0 * dmob_drv * eps * gNa_gphi * N0[b]
+                               + (3.0 * dmob_drv / eps) * f1 * NaNb
+                               - dalph_drv * src * NaNb );
+            }
 
             /* ============ R_tem / phi ============ */
             J[a][1][b][0] += rw * ( user->xi_T * dthcond_dphi * gNa_gtem * N0[b]

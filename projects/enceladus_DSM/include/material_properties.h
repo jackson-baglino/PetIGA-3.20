@@ -31,3 +31,10 @@ void Sigma0(PetscScalar temp, PetscScalar *sigm0);
 void AlphaCondensation(AppCtx *user, PetscScalar tem, PetscScalar rhov,
                        PetscScalar *alpha, PetscScalar *dalpha_dtem,
                        PetscScalar *dalpha_drhov);
+
+/* Pointwise mob_sub / alph_sub from alpha_c(T, rho_v), with analytic
+ * derivatives. Replaces main()'s scalars when user->alpha_pointwise is set. */
+void SubKinetics(AppCtx *user, PetscScalar tem, PetscScalar rhov,
+                 PetscScalar *mob,  PetscScalar *alph,
+                 PetscScalar *dmob_dT,  PetscScalar *dmob_drv,
+                 PetscScalar *dalph_dT, PetscScalar *dalph_drv);

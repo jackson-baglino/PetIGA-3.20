@@ -73,6 +73,7 @@ int main(int argc, char *argv[]) {
     /* alpha_c(T, rho_v). Defaults reproduce the previous scalar behaviour
      * exactly (CONST at 1e-2) so no committed run changes until it opts in.
      * Fitted-model defaults mirror preprocess/comp_eps.py. */
+    user.alpha_pointwise = PETSC_FALSE;
     user.alpha_model = ALPHA_MODEL_CONST;
     user.alpha_c0    = 1.0e-2;
     user.alpha_A     = 1.0932e-3;   /* rough-surface ceiling from the 2-param fit */
@@ -482,6 +483,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-alpha_pointwise", "Evaluate mob_sub/alph_sub per quadrature point from alpha_c(T,rho_v)", "", user.alpha_pointwise, &user.alpha_pointwise, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt ("-alpha_model", "alpha_c model: 0=const, 1=Arrhenius(T), 2=Libbrecht(T,rho_v)", "", user.alpha_model, &user.alpha_model, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-alpha_c0",    "alpha_c for -alpha_model 0",                       "", user.alpha_c0,  &user.alpha_c0,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-alpha_A",     "alpha_c prefactor A (models 1,2)",                 "", user.alpha_A,   &user.alpha_A,   NULL); CHKERRQ(ierr);
@@ -768,6 +770,30 @@ int main(int argc, char *argv[]) {
     tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = lambda_sub / tau_sub;  /* Phase change rate parameter, eq.(9) Moure & Fu (2024) SI */
+
+    /* -alpha_pointwise recomputes beta_sub from alpha_c(T, rho_v) at every
+     * quadrature point, so the -beta_sub0 above stops being used for anything
+     * except this startup echo. Every committed experiment .opts sets
+     * -beta_sub0, so silently ignoring it is a real footgun: the run would
+     * use alpha_c0's default rather than the alpha_c that file was sized for.
+     * Say so, and print the alpha_c the scalar corresponds to so the two can
+     * be reconciled. */
+    if (user.alpha_pointwise) {
+        PetscReal C_th = PetscSqrtReal(2.0*PETSC_PI*3.0e-26/(1.38e-23*(temp+273.15)));
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\n*** -alpha_pointwise 1: -beta_sub0 (%.4e) is IGNORED ***\n"
+            "    beta_sub is rebuilt per quadrature point from alpha_c(T, rho_v).\n"
+            "    That -beta_sub0 corresponds to alpha_c = %.4e at %.1f C;\n"
+            "    this run uses -alpha_model %d",
+            (double)user.beta_sub0, (double)(C_th/(user.beta_sub0*rhoI_vs/user.rho_ice)),
+            (double)temp, (int)user.alpha_model);
+        if (user.alpha_model == ALPHA_MODEL_CONST)
+            PetscPrintf(PETSC_COMM_WORLD, " with -alpha_c0 %.4e.\n", (double)user.alpha_c0);
+        else
+            PetscPrintf(PETSC_COMM_WORLD, " (alpha_c computed from the local state).\n");
+        PetscPrintf(PETSC_COMM_WORLD,
+            "    Clamped to [%.1e, %.1e].\n\n", (double)user.alpha_lo, (double)user.alpha_hi);
+    }
 
     /* Allow per-test override of mob_sub via -mob_sub <value>. Tests with
      * very stiff geometries (touching/merging grains in 2D) can reduce
