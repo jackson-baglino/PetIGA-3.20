@@ -28,7 +28,18 @@ Run
     /Applications/ParaView-6.1.1.app/Contents/bin/pvpython \
         scripts/paraview_macros/verify_curvature.py
 
+    PV_DENOM=gradient ... verify_curvature.py     # the other denominator
+
 Exits non-zero if any case misses its analytic value by more than TOL_PCT.
+
+On these synthetic fields the "gradient" denominator scores slightly BETTER
+than the "equipartition" default (max 3.05% vs 4.73%), which is expected and
+not an argument for switching: these profiles are exactly at equilibrium and
+noise-free, so the measured |grad phi| is the exact denominator while
+equipartition is only as good as the discretization. Equipartition earns its
+place on real runs, where |grad phi| is a differentiated quantity that decays
+to zero at the band edges and carries noise into the divide. The macro prints
+the measured equipartition ratio per run so the assumption stays checkable.
 """
 
 import builtins
@@ -65,8 +76,8 @@ EPS_M = R_M / 20.0       # phase-field decay length [m]
 DX_M = EPS_M / 3.0       # grid spacing [m]
 TEMP_C = -20.0
 
-# Points within this much of phi = 0.5 are where kappa is compared.
-CONTOUR_HALF_WIDTH = 0.05
+# Band mask, matching the macro's own localizer: 16*(phi*(1-phi))^2 >= this.
+LOC_FLOOR = 0.01
 TOL_PCT = 5.0
 
 # Axisym only: how many cells off y = 0 get their own reported column.
@@ -92,12 +103,14 @@ def load_macro():
     return namespace
 
 
-def build_grid(axisym, concave):
-    """A vtkStructuredGrid carrying a logistic phase field around a circle.
+def build_grid(axisym, kind):
+    """A vtkStructuredGrid carrying a logistic phase field.
 
-    Planar: the disc sits in the middle of a square domain. Axisym: y is the
-    radius and the domain starts at y = 0, so the circle centred on y = 0 is a
-    sphere of revolution.
+    kind "flat" gives one flat interface through x = 0 (ice at x > 0); "convex"
+    an ice disc of radius R; "concave" an air bubble of radius R inside ice.
+    Planar puts the feature in the middle of a square domain. Axisym makes y
+    the radius with the domain starting at y = 0, so a circle centred on y = 0
+    is a sphere of revolution.
     """
     if axisym:
         x0, x1 = -2.0 * R_M, 2.0 * R_M
@@ -118,7 +131,12 @@ def build_grid(axisym, concave):
 
     rad = np.sqrt((gx - xc) ** 2 + (gy - yc) ** 2)
     # signed distance, positive inside the ice
-    sdf = (rad - R_M) if concave else (R_M - rad)
+    if kind == "flat":
+        sdf = gx - xc
+    elif kind == "concave":
+        sdf = rad - R_M
+    else:
+        sdf = R_M - rad
     phi = 1.0 / (1.0 + np.exp(-sdf / EPS_M))
 
     points = _vtkPoints()
@@ -141,14 +159,18 @@ def build_grid(axisym, concave):
     return grid, rad
 
 
-def run_case(namespace, axisym, concave):
-    """Apply the macro's filter to a synthetic case; return (measured, exact)."""
+def run_case(namespace, axisym, kind):
+    """Apply the macro's filter to a synthetic case.
+
+    Returns (err_pct over the band, npts, near-axis err, profile) where the
+    profile is a list of (phi, median kappa, median exact) rows for printing.
+    """
     from paraview.simple import (
         Delete, OpenDataFile, ProgrammableFilter, servermanager,
     )
     from vtk.numpy_interface import dataset_adapter as dsa
 
-    grid, rad = build_grid(axisym, concave)
+    grid, rad = build_grid(axisym, kind)
 
     handle, path = tempfile.mkstemp(suffix=".vts")
     os.close(handle)
@@ -177,8 +199,8 @@ def run_case(namespace, axisym, concave):
             # hands back the input untouched. Turn that into a real failure.
             raise SystemExit(
                 "verify_curvature: the filter produced no Curvature array for "
-                "axisym=%s concave=%s -- see the traceback above."
-                % (axisym, concave))
+                "axisym=%s kind=%s -- see the traceback above."
+                % (axisym, kind))
         phi = np.asarray(data.PointData["IcePhase"])
         kappa = np.asarray(data.PointData["Curvature"])
         ys = np.asarray(data.Points)[:, 1]
@@ -187,75 +209,102 @@ def run_case(namespace, axisym, concave):
     finally:
         os.unlink(path)
 
-    # Compare only on the phi = 0.5 contour, where the interface actually is.
-    # Off-contour the logistic profile's own level sets have their own radii,
-    # so kappa legitimately differs from 1/R there.
-    on_contour = np.abs(phi - 0.5) < CONTOUR_HALF_WIDTH
+    # Score the WHOLE band, using the macro's own localizer. Each level set of
+    # the logistic profile is its own circle, so the exact kappa follows the
+    # point's actual radius rather than R -- which is why `rad` comes back from
+    # build_grid. For the flat case the exact answer is 0 at every phi.
+    loc = 16.0 * (phi * (1.0 - phi)) ** 2
+    band = loc >= LOC_FLOOR
 
     dim_factor = 2.0 if axisym else 1.0
-    exact = (-1.0 if concave else 1.0) * dim_factor / R_M
+    if kind == "flat":
+        exact = np.zeros_like(kappa)
+        # kappa = 0 has no relative scale, so measure the artifact against a
+        # real curvature: that of an R_M-radius feature.
+        scale = np.full_like(kappa, 1.0 / R_M)
+    else:
+        sign = -1.0 if kind == "concave" else 1.0
+        exact = sign * dim_factor / np.maximum(rad, 1e-30)
+        scale = np.abs(exact)
 
-    # Nothing is excluded from the score, the axis rows included: they are
-    # where the azimuthal term is a 0/0 limit AND where the mesh edge corrupts
-    # the second derivative, so they are the part most worth testing -- a
-    # sintering neck sits exactly there. The near-axis column reports them
-    # separately as well, to catch a regression there specifically.
-    near_axis = np.zeros_like(on_contour)
-    if axisym:
-        near_axis = on_contour & (ys < AXIS_REPORT_CELLS * DX_M)
+    if not band.any():
+        raise SystemExit("verify_curvature: no points in the band")
 
-    sample = kappa[on_contour]
-    if sample.size == 0:
-        raise SystemExit("verify_curvature: no points on the phi=0.5 contour")
+    err = 100.0 * np.abs(kappa[band] - exact[band]) / scale[band]
 
     axis_err = float("nan")
-    if near_axis.any():
-        axis_err = 100.0 * abs(float(np.median(kappa[near_axis])) - exact) / abs(exact)
+    if axisym:
+        near = band & (ys < AXIS_REPORT_CELLS * DX_M)
+        if near.any():
+            axis_err = float(np.median(
+                100.0 * np.abs(kappa[near] - exact[near]) / scale[near]))
 
-    return float(np.median(sample)), exact, sample, axis_err
+    # A phi-binned profile: this is what makes a regularization residue
+    # legible -- it is antisymmetric about phi = 0.5 and worst at the edges.
+    profile = []
+    for lo_phi, hi_phi in ((0.02, 0.10), (0.10, 0.30), (0.30, 0.70),
+                           (0.70, 0.90), (0.90, 0.98)):
+        sel = band & (phi >= lo_phi) & (phi < hi_phi)
+        if sel.any():
+            profile.append((0.5 * (lo_phi + hi_phi),
+                            float(np.median(kappa[sel])),
+                            float(np.median(exact[sel])),
+                            float(np.median(100.0 * np.abs(kappa[sel] - exact[sel])
+                                            / scale[sel]))))
+
+    return err, int(band.sum()), axis_err, profile
 
 
 def main():
     namespace = load_macro()
     rows = []
     worst = 0.0
+    profiles = {}
 
-    for axisym in (False, True):
-        for concave in (False, True):
-            measured, exact, sample, axis_err = run_case(namespace, axisym, concave)
-            err = 100.0 * _abs(measured - exact) / _abs(exact)
-            worst = _max(worst, err)
-            rows.append((
-                "%s %s" % ("axisym " if axisym else "planar ",
-                           "concave" if concave else "convex "),
-                exact, measured, err,
-                100.0 * float(np.percentile(np.abs(sample - exact), 90)) / abs(exact),
-                sample.size, axis_err,
-            ))
+    cases = [(False, "flat"), (False, "convex"), (False, "concave"),
+             (True, "convex"), (True, "concave")]
+    for axisym, kind in cases:
+        err, npts, axis_err, profile = run_case(namespace, axisym, kind)
+        name = "%s %s" % ("axisym" if axisym else "planar", kind)
+        worst = _max(worst, float(np.max(err)))
+        rows.append((name, float(np.median(err)), float(np.percentile(err, 90)),
+                     float(np.max(err)), npts, axis_err))
+        profiles[name] = profile
 
     print()
-    print("  case              exact [1/m]   median [1/m]   err     p90 err   pts"
-          "    near-axis err")
-    print("  " + "-" * 88)
-    for name, exact, measured, err, p90, npts, axis_err in rows:
-        axis_txt = "     --" if axis_err != axis_err else "%6.2f%%" % axis_err
-        print("  %-16s %+12.4g  %+13.4g  %5.2f%%  %6.2f%%  %6d    %s"
-              % (name, exact, measured, err, p90, npts, axis_txt))
+    print("  Error vs the analytic kappa, over the whole diffuse band")
     print()
+    print("  case              median     p90       MAX      pts    near-axis")
+    print("  " + "-" * 68)
+    for name, med, p90, mx, npts, axis_err in rows:
+        axis_txt = "      --" if axis_err != axis_err else "%7.2f%%" % axis_err
+        print("  %-16s %7.2f%%  %7.2f%%  %8.2f%%  %6d  %s"
+              % (name, med, p90, mx, npts, axis_txt))
+
+    print()
+    print("  Profile through the band (median per phi bin) -- a regularization")
+    print("  residue shows up here as a sign flip about phi = 0.5:")
+    print()
+    print("    case              phi    kappa [1/m]   exact [1/m]     err")
+    print("    " + "-" * 62)
+    for name in ("planar flat", "planar convex"):
+        for phi_mid, k_med, k_exact, err_med in profiles[name]:
+            print("    %-16s %4.2f  %+11.4g  %+12.4g  %7.2f%%"
+                  % (name, phi_mid, k_med, k_exact, err_med))
+        print()
+
     print("  near-axis = the first %g cells off y = 0, also counted in the score."
           % AXIS_REPORT_CELLS)
-    print("  Those rows carry both the 0/0 azimuthal limit and the mesh-edge")
-    print("  second-derivative repair, and a sintering neck sits on the axis.")
-    print()
-    print("  radius R = %.4g m, eps = %.4g m, dx = %.4g m, tol = %.1f%%"
-          % (R_M, EPS_M, DX_M, TOL_PCT))
+    print("  radius R = %.4g m, eps = %.4g m, dx = %.4g m, band = 16(phi(1-phi))^2 "
+          ">= %g" % (R_M, EPS_M, DX_M, LOC_FLOOR))
+    print("  tolerance %.1f%% on the MAX error over the band." % TOL_PCT)
 
     if worst > TOL_PCT:
-        print("\n  FAIL: worst case is %.2f%% off (tolerance %.1f%%)"
+        print("\n  FAIL: worst point is %.2f%% off (tolerance %.1f%%)"
               % (worst, TOL_PCT))
         return 1
-    print("\n  PASS: all four cases within %.1f%% (worst %.2f%%)"
-          % (TOL_PCT, worst))
+    print("\n  PASS: all %d cases within %.1f%% across the band (worst %.2f%%)"
+          % (len(rows), TOL_PCT, worst))
     return 0
 
 

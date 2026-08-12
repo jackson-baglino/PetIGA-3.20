@@ -33,24 +33,45 @@ the Lifshitz–Slyozov–Wagner driving force that makes vapor flow small -> lar
 
 How kappa is computed
 ---------------------
-kappa = -L/G + (g.H.g)/G^3, with g = grad phi, H its Hessian, L = trace(H) and
-G^2 = |g|^2 + eps_reg^2 — the regularized form from the deleted Curvature() in
-material_properties.c, evaluated here with VTK's mesh-aware gradient operator
-applied twice (once for g, once for H).
+kappa = -div(n) with n = grad phi/|grad phi|, expanded as
 
-Two things that formula needs, and where they come from:
+    kappa = -(laplacian(phi) - n.H.n) / G
 
-* **eps_reg.** The solver used 0.01/eps. The macro reads `-eps` out of the
-  .opts files the run script stages next to the data. Failing that it falls
-  back to 0.04*max|grad phi|, which is the same number: the equilibrium profile
-  has max|grad phi| = 1/(4*eps).
+where H is the Hessian of phi. grad phi and H come from VTK's mesh-aware
+gradient operator applied once and twice. Two deliberate choices:
 
-* **Away from the interface kappa is meaningless** — grad phi -> 0 there and
-  the regularization, not the geometry, sets the value. So kappa is zeroed
-  wherever the localizer 16*phi^2*(1-phi)^2 (the solver's ice^2*air^2, scaled
-  to peak at 1) drops below LOC_FLOOR. At the default 0.01 that keeps
-  phi in [0.026, 0.974], about the visibly diffuse band. Outside it kappa = 0
-  makes RhoVS_I_GT fall back exactly to RhoVS_I, which is the right bulk limit.
+* **The bracket, not the two-term form.** The solver's deleted Curvature()
+  used the algebraically identical -L/G + (g.H.g)/G^3 with a Tikhonov
+  G^2 = |grad phi|^2 + eps_reg^2. That regularization does NOT cancel between
+  the two terms: on a flat interface, where kappa must be zero, it leaves
+  -eps_reg^2 * phi'' / G^3 -- zero at phi = 0.5, sign-flipped either side of
+  it, and divergent toward the band edges (~1e5 /m at phi = 0.03 for
+  eps = 0.86 um, far larger than any real curvature in the run). Factoring G
+  out kills it identically: a flat interface has L = n.H.n exactly.
+
+* **Direction and magnitude from different places.** n = grad phi/|grad phi|
+  is a unit vector, so gradient noise can tilt it but cannot rescale kappa;
+  and it points toward increasing phi, i.e. into the ice, automatically -- a
+  convex ice grain gives kappa > 0 with no sign convention to impose. The
+  DENOMINATOR instead comes from equipartition, |grad phi| = phi(1-phi)/eps,
+  an analytic function of phi alone. That is the smoothing: the measured
+  |grad phi| is a differentiated quantity that decays to zero at the band
+  edges, and dividing by it there amplifies noise into exactly the region
+  where the interface is least resolved. Set DENOM = "gradient" (or
+  PV_DENOM=gradient) to divide by the measured |grad phi| instead -- exact
+  where the profile is at equilibrium, noisier at the edges.
+
+  The macro reports how well equipartition actually holds, as the median and
+  spread of |grad phi| * eps / (phi(1-phi)) over the band. That ratio is 1 at
+  equilibrium; far from 1 means the profile is being driven or under-resolved,
+  and the two DENOM choices will disagree by that factor.
+
+**Away from the interface kappa is meaningless** -- grad phi -> 0 there and
+the profile relation does not apply. So kappa is zeroed wherever the localizer
+16*phi^2*(1-phi)^2 (the solver's ice^2*air^2, scaled to peak at 1) drops below
+LOC_FLOOR. At the default 0.01 that keeps phi in [0.026, 0.974], about the
+visibly diffuse band. Outside it kappa = 0 makes RhoVS_I_GT fall back exactly
+to RhoVS_I, which is the right bulk limit.
 
 Axisymmetric runs
 -----------------
@@ -94,8 +115,11 @@ Notes
   instead (~1% lower); comp_eps.py flags the discrepancy as unreconciled.
 """
 
+import builtins
 import os
 import re
+
+builtins_max = builtins.max
 
 from paraview.simple import (
     ColorBy,
@@ -121,9 +145,24 @@ GAMMA_VM_OVER_R = float(os.environ.get("PV_GAMMA_VM_OVER_R", 2.574e-7))
 # zeroed elsewhere. 0.01 => phi in [0.026, 0.974].
 LOC_FLOOR = float(os.environ.get("PV_LOC_FLOOR", 0.01))
 
-# eps [m] for the curvature regularization, and axisymmetric mode. Both are
-# None => auto-detect from the staged .opts, then fall back (see module docstring).
+# eps [m] -- the phase-field decay length. NOT optional book-keeping: it sets
+# the scale of the curvature denominator, so kappa scales as 1/eps if it is
+# wrong, and it changes from run to run. Resolved in this order:
+#
+#   1. the PV_EPS environment variable
+#   2. the EPS constant just below
+#   3. `-eps` in a .opts the run script staged next to the data
+#   4. estimated from the data as 1/(4 max|grad phi|)   <- last resort
+#
+# The macro prints which one it used every time. Set EPS here (or export
+# PV_EPS) whenever the data is not sitting next to its .opts.
 EPS = None
+
+# Denominator for kappa: "equipartition" uses phi(1-phi)/eps, "gradient" uses
+# the measured |grad phi|. See the block comment in the filter body.
+DENOM = os.environ.get("PV_DENOM", "equipartition")
+
+# Axisymmetric r-z mode. None => auto-detect from the staged .opts.
 AXISYM = None
 
 # Candidate names for the input arrays, in order of preference.
@@ -189,9 +228,10 @@ rho_vs = RHO_AIR * BB * Pvs / denom
 output.PointData.append(rho_vs, "RhoVS_I")
 
 # --- Gibbs-Thomson curvature correction -------------------------------------
-# kappa = -div(grad phi / |grad phi|) = -L/G + (g.H.g)/G^3, regularized with
-# G^2 = |g|^2 + eps_reg^2. Reproduces the deleted Curvature() in
-# src/material_properties.c; see the module docstring for the whole story.
+# kappa = -div(grad phi/|grad phi|) = -(L - n.H.n)/G, with the unit normal from
+# the numerical gradient and G from equipartition. This is NOT the deleted
+# Curvature()'s two-term regularized form -- see the block comment below and
+# the module docstring for why that form cannot be used pointwise.
 phase_name = pick(PHASE_CANDIDATES)
 rho_vs_eff = None
 
@@ -207,26 +247,72 @@ else:
     g = np.asarray(g, dtype=np.float64)
     H = np.asarray(H, dtype=np.float64).reshape(-1, 3, 3)
 
+    phi_np = np.asarray(phi, dtype=np.float64)
     gmag = np.sqrt(np.sum(g * g, axis=1))
+    gmax = float(gmag.max())
 
-    # eps_reg: 0.01/eps when eps is known, else the identical 0.04*max|grad phi|
-    # (the equilibrium profile has max|grad phi| = 1/(4 eps)).
+    # eps sets the denominator scale, so it is a real input now, not a
+    # regularization knob: kappa scales as 1/eps if you get it wrong. Order of
+    # preference is PV_EPS, the EPS constant, the run's staged .opts, and only
+    # then a guess off the data (the equilibrium profile peaks at 1/(4 eps)).
     if EPS is not None and EPS > 0.0:
-        eps_reg = 0.01 / EPS
-        eps_reg_src = "0.01/eps, eps = %.4g m" % EPS
+        EPS_USED = float(EPS)
+        eps_src = EPS_ORIGIN
+    elif gmax > 0.0:
+        EPS_USED = 1.0 / (4.0 * gmax)
+        eps_src = ("ESTIMATED as 1/(4 max|grad phi|) -- no eps given and none "
+                   "found in a .opts; pass one via PV_EPS if this is wrong")
     else:
-        gmax = float(gmag.max())
-        eps_reg = 0.04 * gmax if gmax > 0.0 else 1.0
-        eps_reg_src = "0.04*max|grad phi|, max|grad phi| = %.4g /m" % gmax
+        raise RuntimeError("plot_rhovsI: phase field is constant; cannot "
+                           "determine eps. Set PV_EPS or the EPS constant.")
+    print("plot_rhovsI: eps = %.4g m (%s)" % (EPS_USED, eps_src))
 
-    G2 = gmag * gmag + eps_reg * eps_reg
-    G  = np.sqrt(G2)
-    G3 = G2 * G
+    # --- direction and magnitude are taken from DIFFERENT places -------------
+    #
+    # kappa = -div(n) with n = grad phi/|grad phi| expands two ways that are
+    # algebraically identical but numerically are not:
+    #
+    #   (a)  -L/G + (g.H.g)/G^3           <- one G per term
+    #   (b)  -(L - n.H.n)/G               <- G factored out
+    #
+    # Form (a) is what the solver's Curvature() used, with a Tikhonov G^2 =
+    # |g|^2 + eps_reg^2 to survive the bulk. That regularization does not
+    # cancel between the two terms: on a FLAT interface, where kappa must be
+    # 0, (a) leaves -eps_reg^2 * phi'' / G^3. That residue is zero at
+    # phi = 0.5, flips sign across it, and diverges toward the band edges --
+    # ~1e5 /m at phi = 0.03 for eps = 0.86 um, swamping any real curvature.
+    #
+    # Form (b) cannot do that: for a flat interface L = n.H.n exactly, so the
+    # bracket vanishes identically whatever the denominator is. Use (b).
+    #
+    # The two inputs then come from different places, on purpose:
+    #   * DIRECTION  n = g/|g| -- from the numerical gradient. It is a unit
+    #     vector, so gradient noise tilts it slightly but cannot scale kappa.
+    #     n automatically points toward increasing phi, i.e. INTO the ice.
+    #   * MAGNITUDE  G -- from equipartition, |grad phi| = phi(1-phi)/eps, an
+    #     analytic function of phi alone. This is the smoothing: the true
+    #     |grad phi| is a differentiated quantity that goes to zero at the band
+    #     edges, and dividing by it there amplifies noise. phi(1-phi)/eps has
+    #     the same profile without the noise. Set DENOM = "gradient" to divide
+    #     by the measured |grad phi| instead (exact, but noisier at the edges).
+    L = H[:, 0, 0] + H[:, 1, 1] + H[:, 2, 2]
 
-    L   = H[:, 0, 0] + H[:, 1, 1] + H[:, 2, 2]
-    gHg = np.einsum("nk,nkl,nl->n", g, H, g)
+    # Floor only guards the bulk, which is masked out below anyway.
+    dir_floor = 1.0e-6 * gmax if gmax > 0.0 else 1.0
+    n_hat = g / np.maximum(gmag, dir_floor)[:, None]
+    nHn = np.einsum("nk,nkl,nl->n", n_hat, H, n_hat)
 
-    kappa = -L / G + gHg / G3
+    if DENOM == "gradient":
+        G = gmag
+        denom_src = "measured |grad phi|"
+    else:
+        G = phi_np * (1.0 - phi_np) / EPS_USED
+        denom_src = "equipartition phi(1-phi)/eps, eps = %.4g m" % EPS_USED
+    # phi(1-phi) bottoms out at 0.0253/eps at the band edge vs 0.25/eps at the
+    # centre; the floor is well below both and only bites outside the band.
+    G = np.maximum(G, 1.0e-4 * (0.25 / EPS_USED))
+
+    kappa = -(L - nHn) / G
 
     # Axisymmetric r-z: add the azimuthal mode. y is the radius, axis at y = 0.
     # kappa_3D = kappa_planar - n_y/y.
@@ -239,6 +325,7 @@ else:
     #
     # since g_y vanishes on the axis by symmetry. H_yy and G are already in
     # hand, so the exact limit costs nothing. Switch to it within one cell.
+
     # Grid geometry, needed below for the axis switch, the boundary repair and
     # the resolution check. GetExtent covers the structured types;
     # vtkStructuredGrid's GetDimensions() wants an out parameter and raises
@@ -255,7 +342,7 @@ else:
     if AXISYM:
         pts = np.asarray(inp.Points, dtype=np.float64)
         y = pts[:, 1]
-        ny = g[:, 1] / G
+        ny = n_hat[:, 1]
         ny_rows = ny_p if ny_p > 1 else builtins.max(int(len(y) ** 0.5), 2)
         dy = (bnds[3] - bnds[2]) / (ny_rows - 1)
         dy = builtins.max(dy, 1.0e-30)
@@ -297,7 +384,6 @@ else:
     # Zero kappa away from the diffuse band, where it is a regularization
     # artifact rather than geometry. Localizer = solver's ice^2*air^2, scaled
     # to peak at 1.
-    phi_np = np.asarray(phi, dtype=np.float64)
     loc = 16.0 * (phi_np * (1.0 - phi_np)) ** 2
     band = loc >= LOC_FLOOR
     kappa = np.where(band, kappa, 0.0)
@@ -309,9 +395,10 @@ else:
 
     n_band = int(band.sum())
     print("plot_rhovsI: curvature on %d of %d points (%.1f%% in the band), "
-          "eps_reg from %s%s"
+          "denominator = %s%s"
           % (n_band, len(kappa), 100.0 * n_band / builtins.max(len(kappa), 1),
-             eps_reg_src, ", AXISYMMETRIC (y = radius)" if AXISYM else ", planar"))
+             denom_src,
+             ", AXISYMMETRIC (y = radius)" if AXISYM else ", planar"))
     if n_band:
         kb = np.abs(kappa[band])
         rel = np.abs(d0[band] * kappa[band])
@@ -322,6 +409,15 @@ else:
         print("  |d0*kappa|: median %.3e, max %.3e  "
               "<- relative size of the GT correction"
               % (np.median(rel), rel.max()))
+
+        # Does equipartition actually hold here? The ratio is 1 for a profile
+        # at equilibrium. A ratio far from 1 means the two DENOM choices
+        # disagree by that factor, and kappa carries the same bias.
+        eq = gmag[band] * EPS_USED / np.maximum(
+            phi_np[band] * (1.0 - phi_np[band]), 1.0e-12)
+        print("  equipartition |grad phi|*eps/(phi(1-phi)): median %.3f, "
+              "p10 %.3f, p90 %.3f  (1.0 = at equilibrium)"
+              % (np.median(eq), np.percentile(eq, 10), np.percentile(eq, 90)))
 
         # A curvature radius under one cell is not a measurement, it is the
         # mesh. Grain-contact cusps in a t = 0 packing produce a few of these
@@ -352,18 +448,21 @@ else:
 '''
 
 
-def _filter_script(eps, axisym):
+def _filter_script(eps, axisym, eps_origin="given", denom=None):
     """FILTER_BODY with a constants header prepended."""
     header = (
         "RHO_AIR         = %r\n"
         "GAMMA_VM_OVER_R = %r\n"
         "LOC_FLOOR       = %r\n"
         "EPS             = %r\n"
+        "EPS_ORIGIN      = %r\n"
+        "DENOM           = %r\n"
         "AXISYM          = %r\n"
         "TEMP_CANDIDATES = %r\n"
         "RHOV_CANDIDATES = %r\n"
         "PHASE_CANDIDATES = %r\n"
-    ) % (RHO_AIR, GAMMA_VM_OVER_R, LOC_FLOOR, eps, bool(axisym),
+    ) % (RHO_AIR, GAMMA_VM_OVER_R, LOC_FLOOR, eps, eps_origin,
+         denom if denom is not None else DENOM, bool(axisym),
          TEMP_ARRAY_CANDIDATES, RHOV_ARRAY_CANDIDATES, PHASE_ARRAY_CANDIDATES)
     return header + FILTER_BODY
 
@@ -484,7 +583,14 @@ def main():
         )
 
     opts_eps, opts_axisym = _scan_opts(src)
-    eps = EPS if EPS is not None else opts_eps
+    if "PV_EPS" in os.environ:
+        eps, eps_origin = float(os.environ["PV_EPS"]), "the PV_EPS env var"
+    elif EPS is not None:
+        eps, eps_origin = float(EPS), "the EPS constant in the macro"
+    elif opts_eps is not None:
+        eps, eps_origin = opts_eps, "-eps in the run's staged .opts"
+    else:
+        eps, eps_origin = None, "unavailable"
     if "PV_AXISYM" in os.environ:
         axisym = os.environ["PV_AXISYM"].strip().lower() in ("1", "true", "yes", "on")
         axisym_src = "PV_AXISYM"
@@ -497,12 +603,14 @@ def main():
 
     print("plot_rhovsI: axisym = %s (from %s)" % (axisym, axisym_src))
     if eps is None:
-        print("plot_rhovsI: eps not found in any .opts; regularizing off "
-              "max|grad phi| instead")
+        print("plot_rhovsI: WARNING -- no eps from PV_EPS, the EPS constant or "
+              "any .opts.\n  Falling back to an estimate off the data. eps sets "
+              "the curvature scale,\n  so set PV_EPS=<value> or edit EPS if this "
+              "run's eps is known.")
 
     pf = ProgrammableFilter(Input=src)
     pf.OutputDataSetType = "Same as Input"
-    pf.Script = _filter_script(eps, axisym)
+    pf.Script = _filter_script(eps, axisym, eps_origin)
     pf.RequestInformationScript = ""
     pf.RequestUpdateExtentScript = ""
     RenameSource("RhoVS_I", pf)
@@ -523,6 +631,15 @@ def main():
     lut = GetColorTransferFunction(color_by)
     if color_by == "Curvature":
         _apply_preset(lut, ("Cool to Warm (Extended)", "Cool to Warm"))
+        # Centre the diverging map on zero. Auto-rescaling to an asymmetric
+        # range puts white at (min+max)/2, so a field that is mostly one sign
+        # reads as if it straddled zero -- the opposite of what a diverging
+        # map is for, and easy to misread as a sign error in the data.
+        info = pf.PointData["Curvature"]
+        lo, hi = info.GetRange()
+        half = builtins_max(abs(lo), abs(hi))
+        if half > 0.0:
+            lut.RescaleTransferFunction(-half, half)
     else:
         _apply_preset(lut, ("Viridis", "Viridis (matplotlib)", "Cool to Warm"))
     Render(view)

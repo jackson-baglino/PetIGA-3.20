@@ -2,6 +2,47 @@
 
 Newest entries first.
 
+## 2026-08-12 (later still) — Curvature was dominated by a regularization artifact
+
+Jackson flagged the Curvature field on the wedge run
+(`batch_2026-08-07__07.26.38_wedge_bc/2D_wedge_band_90deg__...`) as wrong: the
+sign did not mirror between the ice block's left and right surfaces. He was
+right, and the cause was the regularization, not the normal direction.
+
+- **Diagnosis.** The two-term form `-L/G + (g.H.g)/G^3` with Tikhonov
+  `G^2 = |grad phi|^2 + eps_reg^2` does not cancel between its terms. On a FLAT
+  interface, where kappa must be 0, it leaves `-eps_reg^2 * phi'' / G^3` —
+  zero at phi = 0.5, sign-flipped either side, divergent at the band edges.
+  Measured on the wedge: -1.0e5 /m at phi = 0.03 against a real curvature of
+  ~4.5e3. The residue is a function of phi, so it reads as "negative in air,
+  positive in ice" at BOTH surfaces — which is exactly the failure to mirror
+  that was reported.
+- **Fix.** Factor G out: `kappa = -(L - n.H.n)/G`. A flat interface has
+  L = n.H.n identically, so the bracket vanishes for any denominator. The unit
+  normal `n = grad phi/|grad phi|` already points into the ice by construction;
+  no sign convention needed.
+- **Denominator from equipartition** (Jackson's suggestion), `|grad phi| =
+  phi(1-phi)/eps`: analytic in phi, so it does not amplify noise where the
+  measured gradient decays at the band edges. `PV_DENOM=gradient` switches to
+  the measured gradient. The macro now prints the measured equipartition ratio
+  (1.041 median on the wedge, so the assumption holds there).
+- **eps is now a real input,** not a regularization knob — it sets the
+  denominator scale, so kappa scales as 1/eps if it is wrong. Resolution order
+  PV_EPS > EPS constant > `-eps` in the staged .opts > estimate off the data,
+  and the source is printed every run.
+- **The gate missed this** because it only sampled |phi-0.5| < 0.05, where the
+  residue is zero by construction. Rewritten to score the WHOLE band against
+  each level set's own radius, plus a flat-interface case that pins kappa = 0
+  at every phi. Before: max error 283%. After: 4.73% (flat case exactly 0.00%).
+- Diverging colormap now centred on zero; auto-rescaling to an asymmetric range
+  had been putting white off-zero, compounding the misreading.
+
+Wedge results after the fix: left surface uniformly -4583..-6246 /m (concave),
+right surface uniformly +3036..+4243 /m (convex), no sign flip within either
+band — the annulus geometry, as expected.
+
+---
+
 ## 2026-08-12 (later still) — ParaView macros: phase isovolumes, GT curvature fields
 
 - Added `scripts/paraview_macros/split_phases.py`: ice IsoVolume
