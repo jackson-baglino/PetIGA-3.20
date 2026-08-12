@@ -17,6 +17,14 @@ Newest entries first.
   first ~15 samples are diffuse-interface relaxation off tangent contact.
 - New `analysis/run_mesh_pair_fits.sh` (picks up the fine arm automatically) and
   `results/mesh_pair/` with three fit windows, both figures, and a README.
+- Added `analysis/plot_neck_linear.py`: neck **width** vs time on linear axes,
+  `w = A·t + C`, Molaro overlaid. A = 0.290 ± 0.025 µm/h over the shared width
+  range (R² = 0.96); a line does *not* fit the full 79 h (R² = 0.77).
+- Best result of the day: stretching the Molaro clock by one factor S = 152
+  (elapsed time at equal neck size) puts the data on the model curve within its
+  error bars — model vs experiment is a pure rate offset over 32.8–53.5 µm.
+- The requested `w = A(t − t0) + C` is over-parameterized (t0 and C trade off
+  exactly); fitted the two identifiable readings instead and quote C.
 
 ---
 
