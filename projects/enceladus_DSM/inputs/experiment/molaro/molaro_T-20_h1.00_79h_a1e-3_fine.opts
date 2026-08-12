@@ -1,0 +1,76 @@
+# =============================================================================
+# molaro_T-20_h1.00_79h_a1e-3_fine.opts
+#
+# FINE arm of the MESH-RESOLUTION PAIR, at a severely kinetics-limited
+# alpha_c. Pair with geometry/molaro/molaro_2D_L387um_eps0.24um_axisym_T-20pair_tangent.opts
+#
+# THIS ARM: 2281 x 713 (1.63M nodes), neck floor 31.6 um WIDTH -- resolves
+#           essentially all of Molaro's range
+#
+# THE QUESTION
+# ------------
+# Both arms are the same physics, the same grains, the same tangent contact;
+# only eps differs. If they recover the SAME power law where they overlap,
+# coarse meshes are adequate for the rest of the campaign and everything
+# downstream gets ~13x cheaper. If they disagree, the neck-VISIBILITY criterion
+# (the fillet rho ~ r^2/(2R) must exceed the ~6*eps diffuse band before the
+# neck can be measured at all) is binding, and the fine mesh is mandatory.
+#
+# This is NOT the same as K&P's Eq. 45, which BOTH arms satisfy. Eq. 45 is
+# asymptotic validity of the sharp-interface limit; visibility is whether the
+# feature can be measured on the grid. The pair tests which one governs in
+# practice, which is not something we can settle by argument.
+#
+# alpha_c = 1e-3, AND POINTWISE
+# -----------------------------
+# -alpha_pointwise 1 evaluates alpha_c at every quadrature point via
+# AlphaCondensation() and rebuilds mob_sub and alph_sub from it through the
+# M&F SI Eq. 9 bracket. -alpha_model 0 holds alpha_c constant at -alpha_c0, so
+# this run exercises the pointwise MACHINERY without also varying alpha_c --
+# T and rho_v still enter through rho_vs(T) and D_v(T), which main()'s scalars
+# ignored entirely.
+#
+# 1e-3 is the bottom of the Braun et al. (2024) range, chosen to be SEVERELY
+# kinetics-limited: L* = beta_HK*D_v = 139 um at -20 C against a neck radius of
+# 15-30 um, so r/L* = 0.11. Kuczynski's r ~ t^(1/3) is derived in exactly this
+# regime and Demmenie's experiments sit in it, which is the reason for taking
+# the minimum rather than a middle value.
+#
+# -beta_sub0 IS IGNORED under -alpha_pointwise 1, since beta_sub is rebuilt
+# from alpha_c pointwise. It is omitted here rather than left in to rot; the
+# solver prints a banner if one is supplied anyway.
+#
+# t_final = 2.83e5 s (79 h). At alpha_c = 1e-3 the kinetics are ~13x slower
+# than at the 1.34e-2 the earlier files used; t_final was scaled with the total
+# resistance beta_sub + r/(D_v*chi) so the run still reaches a comparable neck.
+#
+# dtmax = 4.97e2 = min(1.1*tau_sub, t_final/300) with tau_sub = 4.5181e2 s. The
+# 300-step floor matters here: tau_sub grows as 1/alpha_c, so the campaign's
+# dtmax ~ 1.1*tau_sub rule alone would leave this arm with far too few steps to
+# read a slope from.
+#
+# Measure: python postprocess/neck_width.py <run_dir> --axisym
+# Fit:     python postprocess/fit_neck_growth.py <run>/neck_width.csv \
+#              inputs/validation/molaro2019_fig11_T-20.csv --demmenie
+# =============================================================================
+
+-t_final 2.83e5                         # 79 h
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-alpha_pointwise 1                      # mob_sub/alph_sub per quadrature point
+-alpha_model 0                          # constant alpha_c; isolates the machinery
+-alpha_c0 1.0e-3                        # bottom of Braun's range -> kinetics-limited
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+-dtmax 4.97e2
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-t_out_log 80
+-t_out_log_t0 1.0e2

@@ -1,0 +1,50 @@
+# MESH-RESOLUTION PAIR, severely kinetics-limited (alpha_c = 1e-3, pointwise).
+#
+#   ./scripts/HPC/submit_batch.sh --tag mesh_pair \
+#       --tests-file studies/sinter_exponent/batches/mesh_pair.txt
+#
+# THE QUESTION
+# ------------
+# Same physics, same grains, same tangent contact, same alpha_c. Only eps
+# differs. If both arms recover the SAME power law where they overlap, coarse
+# meshes are adequate for the rest of the campaign and everything downstream
+# gets ~13x cheaper. If they disagree, the neck-VISIBILITY criterion is binding
+# and the fine mesh is mandatory.
+#
+#   arm      eps          Nx x Ny     nodes   ranks  neck floor (WIDTH)
+#   coarse   8.6750e-07    631 x 198   125 k    ~5    60.1 um
+#   fine     2.4002e-07   2281 x 713  1.63 M   ~61    31.6 um
+#
+# Molaro's measured neck spans 32.8 -> 64.8 um WIDTH, so the coarse arm only
+# becomes trustworthy at the very top of that range while the fine arm covers
+# essentially all of it. That is the whole point of running both.
+#
+# Both arms SATISFY K&P Eq. 45 (asymptotic validity, eps <= R_feat). Visibility
+# -- whether the fillet rho ~ r^2/(2R) exceeds the ~6*eps band enough to be
+# measured -- is a separate and stricter practical criterion, and only the fine
+# arm meets it over the data range. Which of the two actually governs the
+# fitted exponent is not something we can settle by argument, hence the pair.
+#
+# REGIME: severely kinetics-limited by design. L* = beta_HK*D_v = 139 um at
+# alpha_c = 1e-3 and -20 C, so r/L* = 0.22 (coarse) and 0.11 (fine). That is
+# the regime Kuczynski's r ~ t^(1/3) is derived in, and the one Demmenie's
+# experiments sit in.
+#
+# Both use -alpha_pointwise 1, so this is also the first real exercise of the
+# pointwise mob_sub/alph_sub path. -alpha_model 0 holds alpha_c constant, which
+# isolates the machinery from any alpha_c(T, rho_v) variation.
+#
+# Cost is negligible: ~300 steps at 125k nodes and ~570 at 1.63M.
+#
+# ANALYSIS -- compare the two fitted exponents over the SHARED r/R window, not
+# over each arm's own full range; a wider window on one arm alone manufactures
+# a difference (that trap is documented in results/dv_sweep/):
+#   python postprocess/fit_neck_growth.py <coarse>/neck_width.csv \
+#       <fine>/neck_width.csv inputs/validation/molaro2019_fig11_T-20.csv \
+#       --demmenie --out studies/sinter_exponent/results/mesh_pair
+
+# coarse — 631 x 198, neck NOT resolved over the data range
+molaro_2D_L387um_eps0.87um_axisym_T-20pair_tangent:molaro_T-20_h1.00_79h_a1e-3_coarse
+
+# fine — 2281 x 713, neck resolved
+molaro_2D_L387um_eps0.24um_axisym_T-20pair_tangent:molaro_T-20_h1.00_79h_a1e-3_fine
