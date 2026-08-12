@@ -89,29 +89,53 @@ A separate, blunter question: **how many microns of neck per hour, and does the
 rate hold steady?** `analysis/plot_neck_linear.py` fits `w = A·t + C` to the neck
 *width* on linear axes and overlays the Molaro points.
 
-| series | A [µm/h] | ±95 % | C [µm] | R² | rms | max resid | window [µm] | n |
-|---|---:|---:|---:|---:|---:|---:|---|---:|
-| model (full run) | 0.494 | 0.074 | 24.0 | 0.773 | 5.40 | 10.39 | 13.7–53.5 | 53 |
-| model (shared width) | 0.290 | 0.025 | 33.0 | 0.960 | 1.23 | 2.33 | 33.0–53.5 | 24 |
-| Molaro (full range) | 24.89 | 6.52 | 37.1 | 0.889 | 3.76 | 5.05 | 32.8–64.8 | 9 |
-| Molaro (shared width) | 50.78 | 20.97 | 33.3 | 0.883 | 1.97 | 3.80 | 32.8–46.8 | 5 |
+**Both clocks are anchored at a common starting neck.** The experiment opens
+with a 32.81 µm neck already formed; the model opens at tangent contact and
+takes **7.74 h** to reach that width. Comparing them on raw clocks compares two
+different parts of the same trajectory. Re-zeroing both at w = 32.81 µm removes
+the mismatch without fitting anything away, and is the convention Molaro et al.
+used in their own Fig. 12. Times below are *since the anchor*.
+
+| series | form | A [µm/h] | ±95 % | C [µm] | R² | rms | max resid | window [µm] | n |
+|---|---|---:|---:|---:|---:|---:|---:|---|---:|
+| model (full run) | free | 0.494 | 0.074 | 27.9 | 0.773 | 5.40 | 10.39 | 13.7–53.5 | 53 |
+| model (shared width) | free | 0.290 | 0.025 | 35.3 | 0.960 | 1.23 | 2.33 | 33.0–53.5 | 24 |
+| **model (pinned @anchor)** | pinned | **0.349** | 0.027 | 32.81 | 0.890 | 2.04 | 4.04 | 33.0–53.5 | 24 |
+| Molaro (full range) | free | 24.89 | 6.52 | 37.1 | 0.889 | 3.76 | 5.05 | 32.8–64.8 | 9 |
+| Molaro (shared width) | free | 50.78 | 20.97 | 33.3 | 0.883 | 1.97 | 3.80 | 32.8–46.8 | 5 |
+| **Molaro (pinned @anchor)** | pinned | **52.91** | 12.57 | 32.81 | 0.880 | 1.99 | 3.93 | 32.8–46.8 | 5 |
+
+Anchoring is what makes the intercept stop being a fitted nuisance: pinned at
+w = 32.81 µm the line has **one** free parameter, the rate, so the two `A`
+values are the comparison with nothing else moving. It costs a little R²
+(0.89 vs 0.96 free) because the concavity can no longer be partly absorbed into
+an offset — that is the honest number, not a worse fit.
+
+**The pinned fit also validates the time-scale factor.** Pinned rate ratio
+A_data/A_model = **151.5×**, against the model-free elapsed-time ratio of
+**151.8×** — agreement to 0.2 %. The free-slope ratio reads 175× only because a
+free intercept lets the data's truncated window (32.8–46.8 µm) tilt its chord.
+Two independent routes to the same number is the strongest evidence here that
+the model–experiment difference really is a single rate factor.
 
 **A line is not a description of the full run.** Over all 79 h it gives R² = 0.77
 with a 10.4 µm max residual on a 39.9 µm span — 26 % — because `r ~ t^0.2` is
 strongly concave and a chord cannot follow it. Restricted to the width range the
-experiment actually covers, a line is a fair local approximation (R² = 0.96,
-rms 1.2 µm), and **A = 0.290 ± 0.025 µm/h** is the number worth quoting. The
-residual panel shows the leftover arc, which is the concavity the line cannot
-absorb, at ±2 µm.
+experiment actually covers, a line is a fair local approximation, and
+**A = 0.349 ± 0.027 µm/h** (pinned) is the number worth quoting. The residual
+panel shows the leftover arc, which is the concavity the line cannot absorb,
+at ±4 µm.
 
 **The requested `w = A·(t − t0) + C` is not fitted as written**, because it is
 over-parameterized: it expands to `A·t + (C − A·t0)`, so `t0` and `C` trade off
-exactly and only two of the three parameters are identifiable. The script fits
-the line once and reports both identifiable readings — slope-intercept `(A, C)`
-and zero-crossing `t0 = −C/A`. Use `C`; the `t0` column is in the CSV for
-completeness but is a large negative number (−114 h for the model) that says
-only "extrapolating a chord backwards off a concave curve misses the origin",
-not anything about when the grains touched.
+exactly and only two of the three parameters are identifiable. Anchoring is the
+principled way to spend that third parameter — it fixes the origin *from the
+data* instead of asking the fit to invent one. The script reports the free line
+both ways (slope-intercept `(A, C)` and zero-crossing `t0 = −C/A`) alongside the
+pinned fit. The free `t0` column is in the CSV for completeness but is a large
+negative number (−122 h for the model) that says only "extrapolating a chord
+backwards off a concave curve misses the origin", not anything about when the
+grains touched. **Quote the pinned `A`.**
 
 **The collapse is the real result.** Stretching the Molaro clock by the single
 factor **S = 152** — the elapsed-time ratio at equal neck size, model 70.9 h vs
@@ -120,14 +144,15 @@ curve within their own error bars. One scalar, no shape adjustment. Combined
 with the matching exponents above, the model differs from the −20 °C experiment
 by a pure rate factor over this range, and that factor is the α_c = 1e-3 choice.
 
-Two cautions on S. It is quoted from elapsed times, not from the ratio of fitted
-slopes (which reads 175): with only 9 experimental points the data's fit window
-cannot land on the window edge and truncates at 46.8 µm instead of 53.5, and a
-chord over that shorter, steeper sub-range overstates the ratio. Earlier drafts
-of this comparison also clipped the shared window on the model only, leaving the
-data's chord spanning 32.8–64.8 µm against the model's 32.8–53.5; because both
-curves are concave that mismatch pulled S down to 86, off by 1.8×. The window
-must be the intersection, applied to both.
+Two cautions on S, both about windowing rather than physics. It is quoted from
+elapsed times, not from the ratio of *free* fitted slopes (which reads 175):
+with only 9 experimental points the data's fit window cannot land on the window
+edge and truncates at 46.8 µm instead of 53.5, and with a free intercept a chord
+over that shorter, steeper sub-range overstates the ratio. Pinning the intercept
+removes that freedom and recovers 151.5×. Earlier drafts also clipped the shared
+window on the model only, leaving the data's chord spanning 32.8–64.8 µm against
+the model's 32.8–53.5; because both curves are concave that mismatch pulled S
+down to 86, off by 1.8×. The window must be the intersection, applied to both.
 
 ## Why there is no `--anchor-neck` variant here
 
@@ -146,6 +171,6 @@ protocol artifact, and the files were removed rather than left to be misread.
 | `meshpair_coarse_*` | **default protocol.** Floor enforced → the model has no fittable window. |
 | `meshpair_full_*` | **headline.** `--rmin 0`, each series over its own full range. |
 | `meshpair_shared_*` | both clipped to the r/R₀ = 0.197–0.309 overlap; leaves the data 3 points, and the `kucz` fit there (m = 1.34) is degenerate — do not quote it. |
-| `meshpair_linear*` | straight-line fit to neck **width** on linear axes, Molaro overlaid on a ×152 clock, with a residual panel |
+| `meshpair_linear*` | straight-line fit to neck **width** on linear axes, both clocks anchored at w = 32.81 µm, Molaro overlaid on a ×152 clock, with a residual panel |
 | `../../analysis/run_mesh_pair_fits.sh` | driver; regenerates the power-law sets |
 | `../../analysis/plot_neck_linear.py` | driver; regenerates the linear set |
