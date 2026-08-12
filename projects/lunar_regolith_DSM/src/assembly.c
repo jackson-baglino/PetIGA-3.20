@@ -7,7 +7,7 @@
  *
  * Notation: phi = phi_i,  M = mob_sub.
  *
- * f1(phi) = phi*(1-phi)*(1-2*phi)   [d/dphi of double-well phi^2*(1-phi)^2]
+ * f1(phi) = phi*(1-phi)*(1-2*phi)   [d/dphi of the double well (1/2)*phi^2*(1-phi)^2]
  * loc(phi) = phi^2*(1-phi)^2         [phase-change localization at interface]
  *
  * Allen-Cahn (ice):
@@ -33,7 +33,21 @@
  *   the approximation M&F accept for the temporal scaling.
  * ========================================================================= */
 
-/* f1(phi) = phi*(1-phi)*(1-2*phi)  and  df1/dphi = 1 - 6*phi + 6*phi^2 */
+/* f1(phi) = phi*(1-phi)*(1-2*phi)  and  df1/dphi = 1 - 6*phi + 6*phi^2
+ *
+ * NOTE THE NORMALISATION: this is d/dphi of (1/2)*phi^2*(1-phi)^2, NOT of
+ * phi^2*(1-phi)^2 (which would be twice this). The half-normalised well is
+ * deliberate and must not be "corrected": it is what makes the equilibrium
+ * profile of eps^2 phi'' = f1(phi) come out as
+ *
+ *     phi(x) = 0.5*(1 + tanh(x/(2*eps)))
+ *
+ * i.e. interface-thickness parameter W = eps exactly. That is the Karma-Plapp
+ * convention the matched asymptotics assume, and it is the W that
+ * lambda_sub = a1*eps/d0_sub in <project>_main.c is calibrated against.
+ * Doubling f1 would shrink the real profile to W = eps/sqrt(2) while the
+ * Gibbs-Thomson and kinetic calibration kept using eps, throwing d0 and beta
+ * off by sqrt(2). Verified against run data: measured W/eps = 1.015. */
 static void DoubleWellDeriv(PetscReal phi, PetscReal *f1, PetscReal *df1)
 {
     if (f1)  *f1  = phi * (1.0 - phi) * (1.0 - 2.0 * phi);

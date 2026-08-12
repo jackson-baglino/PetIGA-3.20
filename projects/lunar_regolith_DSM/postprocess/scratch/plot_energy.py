@@ -238,12 +238,13 @@ def compute_energy(run_dir: str):
     #     R_ice = phi_t + 3 M [ eps grad_N.grad_phi + f1(phi) N / eps ]
     # i.e. phi_t = -M dF/dphi with the Lyapunov functional
     #     F = C * int 3 [ g(phi)/eps + (eps/2)|grad phi|^2 ] dOmega,
-    # where g is the antiderivative of the code's f1.  NOTE that f1 there is
-    # phi(1-phi)(1-2phi), which is HALF of d/dphi[phi^2 (1-phi)^2] -- the
-    # comment at assembly.c:10 drops that factor.  The well the solver
-    # actually descends is g = (1/2) phi^2 (1-phi)^2, which gives the
-    # equilibrium profile phi = 1/(1+exp(-x/eps)) (decay length exactly eps,
-    # as documented in CLAUDE.md) and equipartition F_bulk == F_grad.
+    # where g is the antiderivative of the code's f1.  NOTE the normalisation:
+    # f1 there is phi(1-phi)(1-2phi), so g = (1/2) phi^2 (1-phi)^2, HALF the
+    # well one might assume.  That is deliberate -- it is what puts the
+    # equilibrium profile at phi = 0.5(1+tanh(x/(2 eps))), i.e. interface
+    # thickness W = eps, the Karma-Plapp convention the solver's
+    # lambda_sub = a1*eps/d0_sub is calibrated against.  Using the doubled
+    # well here breaks equipartition (F_bulk/F_grad comes out at 2.0).
     #
     # That bracket integrates to 1/2 across an equilibrated flat profile, so
     # C = 2*gamma_iv makes F equal exactly gamma_iv per unit interface area
