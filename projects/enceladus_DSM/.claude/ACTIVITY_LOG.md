@@ -2,6 +2,21 @@
 
 Newest entries first.
 
+## 2026-08-12 (later still) — ParaView macro to split ice/air isovolumes
+
+- Added `scripts/paraview_macros/split_phases.py`: builds an ice IsoVolume
+  (`IcePhase` in [0.5, 1.01]) and an air IsoVolume ([-0.01, 0.5]) on the active
+  source, colours them solid, and hides the input beneath them.
+- This is the isovolume half of `setup_movie_view.py` on its own, for when the
+  two phases are wanted as pipeline objects rather than as a movie scene.
+- Auto-detects the phase array name, and leaves the air volume invisible on 3D
+  inputs where it would enclose the ice.
+- Verified with pvpython on the `phi0.325_0.5mm_T-20_s05` epsconv run: 348k ice
+  cells + 175k air cells vs 503k input cells — the overlap is the cells
+  IsoVolume clips at phi = 0.5, so the two tile the domain.
+
+---
+
 ## 2026-08-12 (later) — `--axisym` correction; the arms agree after all
 
 - The fine arm's `neck_width.csv` had been extracted **without `--axisym`**.
