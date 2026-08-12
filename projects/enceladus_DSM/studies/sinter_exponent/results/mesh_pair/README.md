@@ -6,22 +6,75 @@ Regenerate with:
 bash studies/sinter_exponent/analysis/run_mesh_pair_fits.sh
 ```
 
-Run analysed: `batch_2026-08-11__17.24.16_mesh_pair/molaro_2D_L387um_eps0.87um_axisym_T-20pair_tangent__molaro_T-20_h1.00_79h_a1e-3_coarse`
-(631 × 198, ε = 8.675e-7 m, R̄ = 86.75 µm, α_c = 1e-3 constant and pointwise,
-79 h, 53 neck samples, neck width 13.7 → 53.5 µm).
+Both arms of `batch_2026-08-11__17.24.16_mesh_pair`. Identical grains, tangent
+contact, α_c = 1e-3 pointwise, 79 h; **only ε and the mesh differ**:
 
-**The fine arm (ε = 0.24 µm) is not in this folder** — only the coarse arm was
-pulled off the cluster. The driver picks the fine arm up automatically once its
-folder appears, and the comparison the batch was designed to make is not
-answered until it does.
+| arm | ε [µm] | mesh | neck width reached in 78.6 h | samples | its floor √(12ε/R) |
+|---|---:|---|---|---:|---:|
+| coarse | 0.867 | 631 × 198 | 13.7 → **53.5** µm | 53 | 60.1 µm |
+| fine | 0.240 | 2281 × 713 | 4.7 → **25.6** µm | 57 | 31.6 µm |
+| Molaro −20 °C | — | — | 32.8 → 64.8 µm (in 78 **min**) | 9 | — |
 
 ---
 
-## Headline
+## Headline: the two arms do not agree, so the pair's question is answered — badly
 
-**The tangent-start run reproduces the Molaro exponent — and it is *not* 1/3.**
-Every fit form gives the model and the data the same answer to within the data's
-95 % CI, at m ≈ 4.7–5.4 rather than Demmenie's m = 3.
+**The coarse mesh is not adequate.** At matched neck width the arms differ by a
+factor of **36–150 in rate**, and re-zeroing them at a shared neck does *not*
+collapse them (`meshpair_compare.png` panel b), so this is not the coarse arm
+merely being "ahead" on the same trajectory. From
+`meshpair_compare_rate_ratio.csv`:
+
+| neck width [µm] | coarse [h] | fine [h] | fine/coarse |
+|---:|---:|---:|---:|
+| 13.9 | 0.05 | 7.6 | 150 |
+| 17.8 | 0.37 | 20.7 | 56 |
+| 21.7 | 1.00 | 43.2 | 43 |
+| 25.6 | 2.19 | 78.6 | 36 |
+
+**The exponent is not converged either, once the window is honest.** Fitted over
+each arm's *own* range the two look reassuringly similar (a = 0.19–0.21 coarse,
+0.21–0.24 fine) — but they are covering different parts of the trajectory. Over
+the width range the arms actually share (13.7–25.6 µm):
+
+| series | `d_free` | `d_fixed` | `kucz` |
+|---|---:|---:|---:|
+| coarse | 0.238 | 0.157 | 0.280 |
+| fine | **0.285** | **0.261** | 0.592 † |
+| Demmenie 2025 band | 0.25–0.34 | | |
+
+† parked near the fit bound; degenerate, do not quote.
+
+Refining ε moves the exponent **toward** 1/3: the fine arm's 0.26–0.285 sits in
+the Demmenie band, the coarse arm's 0.16–0.24 does not. This is the same
+same-window discipline that `results/dv_sweep/` documents — there a wider window
+on one arm manufactured a difference; here it manufactured an *agreement*.
+
+**Neither arm resolves its own neck.** The coarse run ends at 53.5 µm against a
+60.1 µm floor; the fine run ends at 25.6 µm against a 31.6 µm floor. Every
+number on this page is therefore below √(12ε/R) — see the caveats section. The
+fine arm is closer to its floor and to the Demmenie band, which is consistent
+with the coarse arm's neck being substantially an ε-scale artefact (the two
+arms' *initial* widths, 13.7 vs 4.7 µm, scale roughly as √ε as an unresolved
+diffuse bridge should).
+
+## The requested alignment: possible for the coarse arm only
+
+Shifting the clock so the model's neck equals the experiment's first measured
+width (32.81 µm) at t = 0 — Molaro et al.'s own Fig. 12 convention — works for
+the coarse arm, which reaches that width at **7.74 h**. It is **impossible for
+the fine arm**: that run tops out at 25.56 µm, 7.25 µm *below* the experiment's
+starting neck, so the two have **no common neck width at all**. Extrapolating
+its `d_free` fit puts the crossing at ≈ 325 h, 4× the length of the run — a
+number worth knowing and not worth plotting, so `meshpair_compare.png` panel (c)
+annotates it rather than drawing a curve.
+
+---
+
+## Coarse-arm results (superseded as a converged result; kept as the record)
+
+Everything below is the coarse arm alone. Given the above it should be read as
+"what the unconverged arm says", not as a model–experiment comparison.
 
 From `meshpair_full_fits.csv` (`--rmin 0`, each series over its own full range):
 
@@ -51,8 +104,9 @@ is resolved only above r/R₀ ≥ √(12ε/R) = **0.346** (neck width 60.1 µm);
 ends at 0.309 (53.5 µm). Under the default protocol the model therefore has *no
 fittable window at all* — that is what `meshpair_coarse_*` shows, and it is
 exactly what `batches/mesh_pair.txt` predicted. The numbers above come from
-overriding the floor. The fine arm's floor is 0.182 (31.6 µm), below the entire
-data range, which is why it is the arm that settles this.
+overriding the floor. **The fine arm does not rescue this**: its floor is 31.6 µm
+and it only reaches 25.6 µm, so it is below its own floor too, over its whole
+run. The pair was expected to give one resolved arm; it gave none.
 
 **2. The rate is off by a factor of ~155.** Growing the neck from 33.6 to
 53.5 µm width takes the model 69.7 h and took Molaro 27 min. That is the
@@ -79,9 +133,13 @@ the same axes with the exact-fillet ideal drawn:
 
 Model and experiment lie on top of each other, and both lie a clear 0.10 below
 what a perfect kinetic-limited vapour model should give. So the deficit is
-*shared*, which is the useful result: whatever suppresses the exponent in the
-Molaro cryostage, this model reproduces it at α_c = 1e-3. It is not yet
-established that the mechanism is the same one.
+*shared*, which looked like the useful result.
+
+**The fine arm withdraws that conclusion.** Its local slope over the same widths
+is 0.26–0.285, not 0.20 — so the "shared deficit" was a property of the coarse
+mesh, not of the physics. What survives is weaker and still worth having: the
+experiment's exponent is ≈ 0.19, the best-resolved arm gives ≈ 0.27, and the gap
+between them is now the open question rather than the agreement.
 
 ## Straight-line fit — `meshpair_linear.png`
 
@@ -172,5 +230,11 @@ protocol artifact, and the files were removed rather than left to be misread.
 | `meshpair_full_*` | **headline.** `--rmin 0`, each series over its own full range. |
 | `meshpair_shared_*` | both clipped to the r/R₀ = 0.197–0.309 overlap; leaves the data 3 points, and the `kucz` fit there (m = 1.34) is degenerate — do not quote it. |
 | `meshpair_linear*` | straight-line fit to neck **width** on linear axes, both clocks anchored at w = 32.81 µm, Molaro overlaid on a ×152 clock, with a residual panel |
+| **`meshpair_compare.png`** | **both arms + data: raw clocks, arms re-zeroed at a shared neck, and aligned on the experiment's first width** |
+| `meshpair_compare_fits.csv` | power-law fits for both arms over their own *and* their shared window |
+| `meshpair_compare_rate_ratio.csv` | fine/coarse elapsed time at matched neck width |
+| `meshpair_both_*` | both arms + data through `fit_neck_growth.py`, each over its own range |
+| `meshpair_aligned_*` | `--anchor-neck 1.6405e-5`: coarse + data on a common clock (the fine arm is reported as never reaching it) |
 | `../../analysis/run_mesh_pair_fits.sh` | driver; regenerates the power-law sets |
 | `../../analysis/plot_neck_linear.py` | driver; regenerates the linear set |
+| `../../analysis/compare_mesh_pair.py` | driver; regenerates the arm-vs-arm comparison |

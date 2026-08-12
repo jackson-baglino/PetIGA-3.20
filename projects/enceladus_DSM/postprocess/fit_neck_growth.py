@@ -164,10 +164,19 @@ class Series:
     r   [m]  neck RADIUS (half the measured width)
     R0  [m]  grain radius used for the r/R0 normalisation, or None
     eps [m]  interface parameter, or None (then no resolution floor)
+
+    t_raw/r_raw keep the t = 0 sample that t/r drop. Fitting cannot use it
+    (ln t), but ANCHORING must: an experiment that opens with a neck already
+    formed carries its starting width at exactly t = 0, and that is the sample
+    the anchor has to interpolate against. Anchoring on the filtered arrays
+    instead makes the series look as though it never reaches its own first
+    width, and --anchor-neck then drops the very dataset it exists to align.
     """
 
     def __init__(self, label, t, r, R0=None, eps=None, kind="model", path=None):
-        keep = (t > 0) & np.isfinite(r) & (r > 0)
+        good = np.isfinite(r) & (r > 0)
+        self.t_raw, self.r_raw = t[good], r[good]
+        keep = good & (t > 0)
         self.t, self.r = t[keep], r[keep]
         self.label, self.R0, self.eps, self.kind, self.path = label, R0, eps, kind, path
 
@@ -478,13 +487,14 @@ def main():
                           f"units — dropped.", file=sys.stderr)
                     continue
                 r_a = args.anchor_neck_rn * s.R0
-            if s.r[0] > r_a or s.r[-1] < r_a:
+            # Interpolated on the RAW arrays so a series whose starting width
+            # sits at t = 0 (every pre-necked experiment) can still be anchored.
+            if s.r_raw[0] > r_a or s.r_raw[-1] < r_a:
                 print(f"NOTE: '{s.label}' never crosses r = {r_a:.3e} m "
-                      f"(spans {s.r[0]:.3e}-{s.r[-1]:.3e}) — dropped.",
+                      f"(spans {s.r_raw[0]:.3e}-{s.r_raw[-1]:.3e}) — dropped.",
                       file=sys.stderr)
                 continue
-            t_a = float(np.interp(np.log(r_a), np.log(s.r), np.log(s.t)))
-            t_a = math.exp(t_a)
+            t_a = float(np.interp(r_a, s.r_raw, s.t_raw))
             m = s.t > t_a
             s.t, s.r = s.t[m] - t_a, s.r[m]
             s.label += f" @r={r_a*1e6:.1f}um"
