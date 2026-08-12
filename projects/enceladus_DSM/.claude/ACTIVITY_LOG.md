@@ -24,7 +24,13 @@ Newest entries first.
   (elapsed time at equal neck size) puts the data on the model curve within its
   error bars — model vs experiment is a pure rate offset over 32.8–53.5 µm.
 - The requested `w = A(t − t0) + C` is over-parameterized (t0 and C trade off
-  exactly); fitted the two identifiable readings instead and quote C.
+  exactly). Resolved it by anchoring: both clocks re-zeroed at a common neck
+  width (32.81 µm; the model needs 7.74 h to get there from tangent contact),
+  which fixes the origin from the data and leaves the one-parameter pinned form
+  `w = A·t' + w_anchor`. A = 0.349 ± 0.027 µm/h model vs 52.91 ± 12.57 Molaro.
+- That cross-validates the rate factor: pinned ratio 151.5× vs model-free
+  elapsed-time ratio 151.8×, two independent routes to the same number. The
+  free-slope 175× was an artifact of the data's truncated fit window.
 
 ---
 
