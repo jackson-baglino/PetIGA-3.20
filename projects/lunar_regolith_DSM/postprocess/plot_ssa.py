@@ -73,6 +73,49 @@ def analytic_initial_area(run_dir):
     return float(np.sum(2.0 * math.pi * radii)), len(radii)
 
 
+def fit_power_law(t, y, t_lo, t_hi):
+    """Least-squares fit of  y = C * t^n  over t_lo <= t <= t_hi.
+
+    Done as OLS of log(y) on log(t), which is the convention every coarsening
+    exponent in this repo is quoted in (see postprocess/fit_neck_growth.py and
+    the Demmenie/Kuczynski comparisons). Returns None if the window holds
+    fewer than three usable points.
+
+    Returns a dict with the exponent, its standard error, R^2, the window
+    actually used, and the LOCAL log-slope at each end of that window. The
+    local slopes are the honest check on whether a single exponent means
+    anything: if they disagree with n, the curve is not a power law and the
+    fitted number is an artefact of the window, not a property of the run.
+    """
+    m = (t > 0) & (y > 0) & (t >= t_lo) & (t <= t_hi)
+    if m.sum() < 3:
+        return None
+    x = np.log(t[m])
+    z = np.log(y[m])
+
+    n, logC = np.polyfit(x, z, 1)
+    resid = z - (n * x + logC)
+    dof = len(x) - 2
+    ss_res = float(np.sum(resid ** 2))
+    ss_tot = float(np.sum((z - z.mean()) ** 2))
+    sxx = float(np.sum((x - x.mean()) ** 2))
+    stderr = math.sqrt(ss_res / dof / sxx) if dof > 0 and sxx > 0 else float("nan")
+    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
+
+    # Local log-slope d(log y)/d(log t), smoothed over the ends of the window.
+    if len(x) >= 8:
+        loc = np.gradient(z, x)
+        k = max(3, len(loc) // 20)
+        slope_lo = float(np.median(loc[:k]))
+        slope_hi = float(np.median(loc[-k:]))
+    else:
+        slope_lo = slope_hi = float("nan")
+
+    return {"n": float(n), "C": float(np.exp(logC)), "stderr": stderr, "r2": r2,
+            "t_lo": float(t[m].min()), "t_hi": float(t[m].max()),
+            "npts": int(m.sum()), "slope_lo": slope_lo, "slope_hi": slope_hi}
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -84,6 +127,15 @@ def main(argv=None):
     p.add_argument("--loglog", action="store_true",
                    help="log-log axes, for reading a coarsening exponent")
     p.add_argument("--title", default=None)
+    p.add_argument("--no-fit", action="store_true",
+                   help="skip the power-law fit")
+    p.add_argument("--fit-from", type=float, default=0.01, metavar="FRAC",
+                   help="start of the fit window as a fraction of the run "
+                        "length (default 0.01, i.e. drop the first 1%% as "
+                        "initial-condition relaxation transient)")
+    p.add_argument("--fit-to", type=float, default=1.0, metavar="FRAC",
+                   help="end of the fit window as a fraction of the run length "
+                        "(default 1.0)")
     a = p.parse_args(argv)
 
     data = load_ssa(a.dir)
@@ -106,9 +158,24 @@ def main(argv=None):
 
     a0, n_grains = analytic_initial_area(a.dir)
 
+    # Power-law fit. Done in SECONDS so the exponent is independent of the
+    # x-axis unit; only the prefactor C carries the unit.
+    fit = None
+    if not a.no_fit and len(t) > 3:
+        span = float(t.max())
+        fit = fit_power_law(t, area, a.fit_from * span, a.fit_to * span)
+
     fig, ax1 = plt.subplots(figsize=(10, 6))
     plot = ax1.loglog if a.loglog else ax1.plot
-    plot(tt, area, "-", color="#1b4f72", lw=1.8)
+    plot(tt, area, "-", color="#1b4f72", lw=1.8, label="measured")
+
+    if fit is not None:
+        tf = np.linspace(fit["t_lo"], fit["t_hi"], 200)
+        plot(in_time_unit(tf, unit), fit["C"] * tf ** fit["n"],
+             "--", color="#c0392b", lw=1.6,
+             label=(f"fit  $S \\propto t^{{{fit['n']:.4f}}}$   "
+                    f"($R^2$ = {fit['r2']:.4f})"))
+        ax1.legend(fontsize=11, loc="best")
 
     ax1.set_xlabel(f"Time [{unit}]", fontsize=14)
     ax1.set_ylabel(f"Ice-air surface  [{unit_label}]", fontsize=14)
@@ -141,6 +208,23 @@ def main(argv=None):
     plt.close(fig)
 
     print(f"  surface: {area[0]:.6g} → {area[-1]:.6g} {unit_label}")
+    if fit is not None:
+        lo_u = in_time_unit(np.array([fit["t_lo"], fit["t_hi"]]), unit)
+        print(f"  power-law fit  S ~ C t^n   (OLS on log S vs log t)")
+        print(f"    exponent n = {fit['n']:+.4f} ± {fit['stderr']:.4f}"
+              f"   (R² = {fit['r2']:.4f})")
+        print(f"    window     = {lo_u[0]:.4g} → {lo_u[1]:.4g} {unit}"
+              f"  ({fit['npts']} points)")
+        print(f"    local log-slope across that window: "
+              f"{fit['slope_lo']:+.4f} → {fit['slope_hi']:+.4f}")
+        drift = abs(fit["slope_hi"] - fit["slope_lo"])
+        if not math.isnan(drift) and drift > 0.5 * max(abs(fit["n"]), 1e-12):
+            print("    ⚠ the local slope moves by more than half the fitted "
+                  "exponent across the window:")
+            print("      this curve is not a clean power law, so n is a "
+                  "property of the WINDOW as much as of the run.")
+        print("    (a fitted exponent is a property of the curve AND the fit "
+              "protocol — always quote n with its form and window)")
     if a0:
         print(f"  analytic initial surface from packing: {a0:.6g} {unit_label} "
               f"({n_grains} grain rows); measured/analytic = {area[0] / a0:.3f}")

@@ -131,13 +131,16 @@ def compute_masses(run_dir: str):
     tot_air, and tot_rhov computed via proper IGA-quadrature integration
     (matching outp.txt's TOTAL_MASS exactly) for *every* time step — so we
     use those directly instead of recomputing from the sparsely-written
-    sol_*.dat snapshots. This avoids both (a) a step/time mismatch when
-    sol_*.dat is written less often than every step, and (b) a flawed
-    uniform-dV approximation that overcounts non-rectangular geometries.
+    sol_*.dat snapshots. This avoids a step/time mismatch when sol_*.dat is
+    written less often than every step, and it is exact quadrature rather
+    than a control-net sum.
 
     Fallback (older runs without the extra SSA_evo.dat columns): recompute
-    from sol_*.dat with a uniform-dV approximation, matching each snapshot
-    to its SSA_evo.dat row by step number (parsed from the filename).
+    from sol_*.dat, matching each snapshot to its SSA_evo.dat row by step
+    number (parsed from the filename) and weighting each control point by
+    the mesh metric |det J| (see below) rather than a single uniform dV --
+    the latter overcounts non-rectangular geometries badly (1.596x on the
+    wedge_band channel).
     """
     ssa = load_ssa(os.path.join(run_dir, "SSA_evo.dat"))
 
@@ -168,7 +171,7 @@ def compute_masses(run_dir: str):
 
         return times, mass_ice, mass_vap, dim
 
-    # ── Fallback: integrate sol_*.dat with uniform-dV approximation ────────
+    # ── Fallback: integrate sol_*.dat with metric-weighted control-net sum ──
     geo_file = os.path.join(run_dir, "igasol.dat")
     if not os.path.isfile(geo_file):
         sys.exit(f"ERROR: IGA geometry file not found: {geo_file}")
@@ -185,16 +188,35 @@ def compute_masses(run_dir: str):
     nrb = PetIGA().read(geo_file)
     dim = nrb.dim
 
-    # Physical domain extent and cell volume
+    # ── Per-node cell volume from the mesh metric ─────────────────────────
     # nrb.points has shape (*shape, sdim) where sdim >= dim
     ctrl = nrb.points[..., :dim]               # physical coordinates
-    flat = ctrl.reshape(-1, dim)
-    extents = flat.max(axis=0) - flat.min(axis=0)
-    V_domain = float(np.prod(extents))
-
     shape = nrb.points.shape[:-1]              # (Nx,) or (Nx, Ny) or (Nx, Ny, Nz)
     N_total = int(np.prod(shape))
-    dV = V_domain / N_total                    # approximate cell volume per ctrl point
+    #
+    # The control net is NOT a uniform Cartesian grid, so a single scalar
+    # dV = prod(bounding-box extents)/N_total is wrong on two counts: open
+    # knot vectors bunch control points towards the boundaries, and mapped
+    # geometries put the nodes on a shape that is not the bounding box at
+    # all. On the wedge_band family -- a channel widening from 5e-5 m to
+    # 2e-4 m -- the bounding box overstates the true (trapezoidal) domain by
+    # a factor of 1.596, and every absolute mass inherited that error.
+    #
+    # Instead take the Jacobian of the index -> physical map,
+    # J[..., d, k] = dx_d/dxi_k, with unit spacing in index space; |det J| is
+    # then the physical volume carried by each control point. Summing it
+    # reproduces the analytic trapezoid area of the wedge to 0.25%. On a
+    # genuinely uniform rectangular mesh this reduces to the old constant dV.
+    J = np.empty(shape + (dim, dim))
+    for d in range(dim):
+        gd = np.gradient(ctrl[..., d])
+        if dim == 1:
+            gd = [gd]
+        for k in range(dim):
+            J[..., d, k] = gd[k]
+
+    cellV = np.abs(np.linalg.det(J)).reshape(-1)   # per-node volume [m^dim]
+    V_domain = float(cellV.sum())
 
     # ── Time axis: match each sol_NNNNN.dat to its SSA_evo.dat row by step ──
     if ssa is not None:
@@ -237,8 +259,8 @@ def compute_masses(run_dir: str):
         rho_v = sol[:, 2].clip(0.0)
         phi_a = (1.0 - phi_i).clip(0.0, 1.0)
 
-        mass_ice[k] = RHO_ICE * np.sum(phi_i) * dV
-        mass_vap[k] = np.sum(rho_v * phi_a) * dV
+        mass_ice[k] = RHO_ICE * np.sum(phi_i * cellV)
+        mass_vap[k] = np.sum(rho_v * phi_a * cellV)
 
     return times, mass_ice, mass_vap, dim
 
