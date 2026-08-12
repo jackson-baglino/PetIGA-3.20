@@ -2,6 +2,33 @@
 
 Newest entries first.
 
+## 2026-08-12 — Fine arm arrives: the mesh pair does not converge
+
+- Extracted the fine arm's neck curve (`neck_width.py`, 57 snapshots) and
+  compared both arms against the Molaro −20 °C data.
+- **The coarse mesh is not adequate.** At matched neck width the arms differ by
+  36–150× in elapsed time, and re-zeroing at a shared neck does not collapse
+  them — so it is not the coarse arm merely being ahead on one trajectory.
+- The exponent is not converged either: equal over each arm's *own* range
+  (0.19–0.21 vs 0.21–0.24), but 0.157–0.238 (coarse) vs 0.261–0.285 (fine) over
+  the range they share. Refining ε moves the exponent toward 1/3; the fine arm
+  lands inside the Demmenie band, the coarse arm does not.
+- This supersedes 2026-08-11's headline: the coarse arm's agreement with the
+  Molaro exponent, and the ~152× rate factor, are mesh properties. README
+  updated where it previously said the opposite.
+- Neither arm resolves its own neck (coarse 53.5 µm vs a 60.1 µm floor; fine
+  25.6 µm vs 31.6 µm). The pair was expected to give one resolved arm, gave none.
+- The requested alignment on the experiment's first neck (32.81 µm) works for
+  the coarse arm (−7.74 h) and is impossible for the fine one — it tops out
+  7.25 µm below that width, extrapolating to ~325 h (4× its run).
+- New `analysis/compare_mesh_pair.py` (3-panel comparison + rate-ratio CSV).
+- Fixed `--anchor-neck` in `fit_neck_growth.py`: it interpolated the anchor
+  after the `t > 0` filter had dropped the t = 0 sample, which for a pre-necked
+  experiment is the sample carrying the starting width — so it silently dropped
+  the very dataset it was written to align. `Series` now keeps raw arrays.
+
+---
+
 ## 2026-08-11 — mesh_pair coarse arm: exponent fits vs the Molaro −20 °C data
 
 - Fitted the tangent-contact coarse run (79 h, α_c = 1e-3, ε = 0.87 µm) from
