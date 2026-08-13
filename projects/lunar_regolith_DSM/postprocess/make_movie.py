@@ -113,10 +113,22 @@ geometry -- no background border. In-frame scalar bars are hidden (they
 were eating into that crop and don't antialias/scale well baked into video
 anyway); use --no-colorbars to skip exporting the standalone ones below.
 
-Each run also exports two standalone vector colorbars next to the movie
-(<out>_ice_colorbar.svg, <out>_vapor_colorbar.svg) reconstructed directly
-from the actual ParaView transfer functions used for rendering (so they're
-guaranteed to match), as SVG for easy resizing/relabeling in Inkscape.
+Each run also exports standalone vector colorbars next to the movie,
+reconstructed directly from the actual ParaView transfer functions used for
+rendering (so they're guaranteed to match), as SVG for easy
+resizing/relabeling in Inkscape. For each field, BOTH ink colours are
+written -- identical bars differing only in the colour of the label, ticks
+and frame:
+
+    <out>_ice_colorbar_black.svg    <out>_ice_colorbar_white.svg
+    <out>_sigma_colorbar_black.svg  <out>_sigma_colorbar_white.svg
+
+The SVG background is transparent, so the ink is what carries the contrast:
+black for a white page or light slide, white for a dark slide or when laid
+over the movie itself. Writing both costs nothing and saves recolouring an
+SVG by hand later. Re-running on a run whose frames are already cached
+re-exports the colorbars without re-rendering anything, so a change to how
+they're drawn reaches an existing movie cheaply.
 
 ------------------------------------------------------------------------
 Frame cache and movie length
@@ -193,11 +205,23 @@ from vtk.numpy_interface import dataset_adapter as dsa
 import numpy as np
 
 
-def save_vector_colorbar(lut, label, out_path):
-    """Export a standalone vertical colorbar as SVG, reconstructed from the
-    actual ParaView transfer function (lut.RGBPoints) so it's guaranteed to
-    match what's rendered in the frames -- regardless of whether the LUT
-    came from a named built-in preset or a custom JSON import."""
+COLORBAR_INKS = ("black", "white")
+
+
+def save_vector_colorbar(lut, label, out_base):
+    """Export standalone vertical colorbars as SVG, reconstructed from the
+    actual ParaView transfer function (lut.RGBPoints) so they're guaranteed
+    to match what's rendered in the frames -- regardless of whether the LUT
+    came from a named built-in preset or a custom JSON import.
+
+    TWO files are written per field, identical but for the ink colour:
+    <out_base>_black.svg and <out_base>_white.svg. The SVG background is
+    transparent, so the label, ticks and frame have to carry the contrast
+    themselves: black reads on a white page or light slide, white on a dark
+    slide or when laid over the movie itself. Which one a given figure needs
+    is not knowable from here, and recolouring an SVG by hand afterwards is
+    exactly the fiddling this script exists to avoid -- so write both, every
+    time, and let the figure pick."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -212,15 +236,49 @@ def save_vector_colorbar(lut, label, out_path):
     positions = [(v - lo) / (hi - lo) if hi > lo else 0.0 for v in values]
     cmap = LinearSegmentedColormap.from_list("custom", list(zip(positions, colors)), N=256)
 
-    fig, ax = plt.subplots(figsize=(0.5, 6))
-    cb = ColorbarBase(ax, cmap=cmap, norm=Normalize(vmin=lo, vmax=hi), orientation="vertical")
-    cb.set_label(label, fontsize=14, fontweight="bold", color="white")
-    cb.ax.tick_params(labelsize=12, colors="white")
-    for tick_label in cb.ax.get_yticklabels():
-        tick_label.set_fontweight("bold")
-    fig.savefig(out_path, format="svg", bbox_inches="tight", transparent=True)
-    plt.close(fig)
-    print(f"  wrote {out_path}  (range [{lo:.4g}, {hi:.4g}])")
+    for ink in COLORBAR_INKS:
+        fig, ax = plt.subplots(figsize=(0.5, 6))
+        cb = ColorbarBase(ax, cmap=cmap, norm=Normalize(vmin=lo, vmax=hi),
+                          orientation="vertical")
+        cb.set_label(label, fontsize=14, fontweight="bold", color=ink)
+        cb.ax.tick_params(labelsize=12, colors=ink)
+        # The frame around the ramp is drawn in the default black; left alone
+        # it would vanish against a dark slide in the white variant.
+        cb.outline.set_edgecolor(ink)
+        for tick_label in cb.ax.get_yticklabels():
+            tick_label.set_fontweight("bold")
+        fig.savefig(f"{out_base}_{ink}.svg", format="svg",
+                    bbox_inches="tight", transparent=True)
+        plt.close(fig)
+    print(f"  wrote {os.path.basename(out_base)}_{{{','.join(COLORBAR_INKS)}}}.svg"
+          f"  (range [{lo:.4g}, {hi:.4g}])")
+
+
+def build_lut(array_name, colormap, vmin, vmax):
+    """Fetch and configure the transfer function for `array_name`.
+
+    Depends only on the preset and the value range -- no reader, no data --
+    which is what lets the cached re-mux path re-export colorbars without
+    rebuilding the render pipeline."""
+    presets = servermanager.vtkSMTransferFunctionPresets.GetInstance()
+    lut = GetColorTransferFunction(array_name)
+    if os.path.isfile(colormap):
+        preset_name = json.load(open(colormap))[0]["Name"]
+        if not presets.HasPreset(preset_name):
+            if not presets.ImportPresets(colormap):
+                raise RuntimeError(f"Failed to import colormap preset: {colormap}")
+        lut.ApplyPreset(preset_name, True)
+    else:
+        lut.ApplyPreset(colormap, True)
+    lut.RescaleTransferFunction(vmin, vmax)
+    return lut
+
+
+def export_colorbars(args, out_path, ice_lut, air_lut):
+    base, _ = os.path.splitext(out_path)
+    save_vector_colorbar(ice_lut, "Ice phase", base + "_ice_colorbar")
+    save_vector_colorbar(air_lut, air_field_label(args.air_field),
+                         base + "_" + air_field_slug(args.air_field) + "_colorbar")
 
 
 def find_pvd(run_dir: str) -> str:
@@ -561,6 +619,16 @@ def run_stream(args):
             print(f"Reusing {len(frame_steps)} cached frames in {frame_dir} "
                   f"(air field {cached['air_field']}, range "
                   f"[{c_rng[0]:.4g}, {c_rng[1]:.4g}])")
+            # Colorbars are re-exported even here. They depend only on the
+            # presets and the cached range -- no data, no pipeline -- so this
+            # costs nothing, and it means a change to how they are DRAWN
+            # (ink colour, labels) reaches an existing run without paying for
+            # a full re-render of frames that would come out identical.
+            if not args.no_colorbars:
+                export_colorbars(
+                    args, out_path,
+                    build_lut("IcePhase", ice_preset_path, 0.0, 1.0),
+                    build_lut(args.air_field, vapor_colormap, *c_rng))
             encode([frame_path(s) for s in frame_steps], out_path, args.fps)
             print(f"Done: {out_path}")
             return
@@ -678,25 +746,12 @@ def _setup_scene(reader, ice_volume, air_volume, args, vmin, vmax,
 
     ice_display = Show(ice_volume, view)
     ColorBy(ice_display, ("POINTS", "IcePhase"))
-    presets = servermanager.vtkSMTransferFunctionPresets.GetInstance()
-    if not presets.HasPreset("cmocean_ice"):
-        if not presets.ImportPresets(ice_preset_path):
-            raise RuntimeError(f"Failed to import ice colormap preset: {ice_preset_path}")
-    ice_lut = GetColorTransferFunction("IcePhase")
-    ice_lut.ApplyPreset("cmocean_ice", True)
-    ice_lut.RescaleTransferFunction(0.0, 1.0)
+    ice_lut = build_lut("IcePhase", ice_preset_path, 0.0, 1.0)
 
     air_display = Show(air_volume, view)
     ColorBy(air_display, ("POINTS", args.air_field))
-    vapor_lut = GetColorTransferFunction(args.air_field)
-    if os.path.isfile(vapor_colormap):
-        preset_name = json.load(open(vapor_colormap))[0]["Name"]
-        if not presets.HasPreset(preset_name):
-            presets.ImportPresets(vapor_colormap)
-        vapor_lut.ApplyPreset(preset_name, True)
-    else:
-        vapor_lut.ApplyPreset(vapor_colormap, True)
-    vapor_lut.RescaleTransferFunction(vmin, vmax)
+    vapor_lut = build_lut(args.air_field, vapor_colormap, vmin, vmax)
+
     ice_display.SetScalarBarVisibility(view, False)
     air_display.SetScalarBarVisibility(view, False)
 
@@ -733,11 +788,7 @@ def _setup_scene(reader, ice_volume, air_volume, args, vmin, vmax,
     cam.SetParallelScale(0.5 * (b[3] - b[2]))
 
     if not args.no_colorbars:
-        base, _ = os.path.splitext(out_path)
-        save_vector_colorbar(ice_lut, "Ice phase", base + "_ice_colorbar.svg")
-        save_vector_colorbar(vapor_lut, air_field_label(args.air_field),
-                             base + "_" + air_field_slug(args.air_field)
-                             + "_colorbar.svg")
+        export_colorbars(args, out_path, ice_lut, vapor_lut)
 
     # ---- sediment background: render frames transparent where the domain
     # excludes a bump, then alpha-composite onto a static regolith-colored
