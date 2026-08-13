@@ -2,6 +2,49 @@
 
 Newest entries first.
 
+## 2026-08-13 — Where curvature actually drives growth: docs/curvature_driven_growth.md
+
+Jackson asked why a growing interface reads UNDERSATURATED when the only
+explicit phase-change term is proportional to (rhov - rhoIvs), and where
+curvature enters at all given d0_GT was deleted. Written up in full.
+
+- **Answer.** Capillarity is carried by the Allen-Cahn term, not by rho_vs.
+  Substituting the equilibrium profile kills the AC bracket and leaves
+  -3*M*eps*|grad phi|*kappa: motion by mean curvature. Projecting the residual
+  onto the translation zero mode f' (Fredholm solvability, since L f' = 0 by
+  translation invariance) gives
+      v_n = -3 M eps kappa + (eps*alph/(5 rho_ice))(rhov - rhovs)
+  i.e. the Gibbs-Thomson condition  s = d0*kappa + beta*v_n  with
+      d0   = 15 M rho_ice/(alph_sub rho_vs)
+      beta = 5 rho_ice/(eps alph_sub rho_vs)
+- **d0 checks out to five decimals**: 1.0166e-9 m from the run's own M and
+  alph_sub, vs d0_sub0 = 1.0166e-9 printed by the run, vs the physical
+  gamma*Vm/(R*T) = 1.0168e-9. The hard-coded a1 = 5.0 IS the
+  int f'^2 / int loc*f' ratio, (1/6eps)/(1/30).
+- **beta is 22% high at leading order**, and the gap is fully accounted for:
+  it equals 5*a2*eps*(1/diff_sub + 1/dif_vap)*rho_ice/rho_vs, the thin-interface
+  correction the code subtracts when building tau. Implied diff_sub = 7.7785e-6
+  matches enceladus_main.c:717's 0.5*(k_a/rho_a cp_a + k_i/rho_i cp_i) to four
+  digits. a2 enters beta only, never d0.
+- **The paradox resolves**: at the concave surface d0*kappa = -5.05e-6 and the
+  measured s = -4.71e-6, so relative to its own (depressed) equilibrium the
+  interface is SUPERsaturated by +3.4e-7 and grows. It is undersaturated only
+  against a flat surface.
+- **New `postprocess/gt_balance.py`** tests s = d0*kappa + beta*v_n on any run:
+  reads M/alph_sub/rho_ice/eps from the run's outp.txt, samples the phi=0.5
+  contour, reuses plot_rhovsI.py's own filter for kappa. On the wedge run,
+  5702 points over 8 timesteps: median |s - d0*kappa|/|d0*kappa| falls from
+  1.000 at t=0 (vapour initialized uniform, far off equilibrium) to 0.103 at
+  90 d. It RELAXES onto the GT line, which is the evidence the condition is
+  emergent rather than imposed. Concave grows (+5.2e-13 m/s), convex
+  sublimates (-5.0e-13 m/s). Figure + CSV in docs/figures/.
+- **Practical consequence recorded**: do NOT add an explicit d0_GT*kappa term
+  to RhoVS_I — it would double-count capillarity the AC term already supplies.
+  The lever is -d0_sub0. Also noted that Supersaturation_GT ~ beta*v_n, i.e.
+  it is an interface-velocity field (positive = growing).
+
+---
+
 ## 2026-08-12 (later still) — "Bunny ears": a cancellation, not a denominator
 
 Jackson reported a symmetric cusp in the curvature profile across the band.

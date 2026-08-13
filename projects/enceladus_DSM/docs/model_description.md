@@ -6,7 +6,11 @@
 > switch. The code no longer implements that model: the 2026-06-13 fork
 > dropped the sediment DOF, giving a **2-phase (ice / T / vapor)** system with
 > a plain double well (φ_a = 1 − φ). Gibbs–Thomson curvature was also removed
-> (2026-07-21) — the §4 GT equations survive as a **post-processing diagnostic**
+> (2026-07-21) as an explicit term — but capillarity is still present,
+> carried implicitly by the Allen–Cahn term; see
+> **`docs/curvature_driven_growth.md`**, which derives the Gibbs–Thomson
+> condition the current solver actually obeys and verifies it against a run.
+> The §4 GT equations survive as a **post-processing diagnostic**
 > in `scripts/paraview_macros/plot_rhovsI.py`, which recomputes κ and
 > ρ_vs^eff from a finished run's φ field (analytic gate:
 > `scripts/paraview_macros/verify_curvature.py`). Nothing in the solver reads
