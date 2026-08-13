@@ -43,6 +43,8 @@ the measured equipartition ratio per run so the assumption stays checkable.
 """
 
 import builtins
+import contextlib
+import io
 import os
 import sys
 import tempfile
@@ -103,7 +105,7 @@ def load_macro():
     return namespace
 
 
-def build_grid(axisym, kind):
+def build_grid(axisym, kind, dx=None):
     """A vtkStructuredGrid carrying a logistic phase field.
 
     kind "flat" gives one flat interface through x = 0 (ice at x > 0); "convex"
@@ -121,8 +123,9 @@ def build_grid(axisym, kind):
         y0, y1 = -2.0 * R_M, 2.0 * R_M
         xc, yc = 0.0, 0.0
 
-    nx = int(_round((x1 - x0) / DX_M)) + 1
-    ny = int(_round((y1 - y0) / DX_M)) + 1
+    dx = DX_M if dx is None else dx
+    nx = int(_round((x1 - x0) / dx)) + 1
+    ny = int(_round((y1 - y0) / dx)) + 1
     xs = np.linspace(x0, x1, nx)
     ys = np.linspace(y0, y1, ny)
     # VTK structured grids vary the first index fastest.
@@ -159,7 +162,18 @@ def build_grid(axisym, kind):
     return grid, rad
 
 
-def run_case(namespace, axisym, kind):
+def run_case(namespace, axisym, kind, dx=None, method=None):
+    """Wrapper that swallows the macro's own per-run diagnostics.
+
+    Those prints are the point in ParaView, but here five cases plus a six-run
+    sweep would bury the tables. The filter prints to ordinary stdout, so
+    redirecting it is enough.
+    """
+    with contextlib.redirect_stdout(io.StringIO()):
+        return _run_case(namespace, axisym, kind, dx, method)
+
+
+def _run_case(namespace, axisym, kind, dx=None, method=None):
     """Apply the macro's filter to a synthetic case.
 
     Returns (err_pct over the band, npts, near-axis err, profile) where the
@@ -170,7 +184,8 @@ def run_case(namespace, axisym, kind):
     )
     from vtk.numpy_interface import dataset_adapter as dsa
 
-    grid, rad = build_grid(axisym, kind)
+    dx = DX_M if dx is None else dx
+    grid, rad = build_grid(axisym, kind, dx)
 
     handle, path = tempfile.mkstemp(suffix=".vts")
     os.close(handle)
@@ -188,7 +203,8 @@ def run_case(namespace, axisym, kind):
         # EPS is passed explicitly: a scratch .vts has no staged .opts beside
         # it, which is exactly the fallback path, but the gate should test the
         # formula rather than the auto-detection.
-        pf.Script = namespace["_filter_script"](EPS_M, axisym)
+        pf.Script = namespace["_filter_script"](EPS_M, axisym, "given",
+                                                None, method)
         pf.RequestInformationScript = ""
         pf.RequestUpdateExtentScript = ""
         pf.UpdatePipeline()
@@ -234,7 +250,7 @@ def run_case(namespace, axisym, kind):
 
     axis_err = float("nan")
     if axisym:
-        near = band & (ys < AXIS_REPORT_CELLS * DX_M)
+        near = band & (ys < AXIS_REPORT_CELLS * dx)
         if near.any():
             axis_err = float(np.median(
                 100.0 * np.abs(kappa[near] - exact[near]) / scale[near]))
@@ -292,6 +308,26 @@ def main():
             print("    %-16s %4.2f  %+11.4g  %+12.4g  %7.2f%%"
                   % (name, phi_mid, k_med, k_exact, err_med))
         print()
+
+    # --- resolution sweep, both methods -------------------------------------
+    # The bracket form's error comes from cancelling two terms that are
+    # |1-2phi|/(eps*kappa) times larger than their difference, so it is
+    # invisible at fine dx/eps and blows up as the mesh coarsens. Real runs sit
+    # near dx/eps = 0.7, which is where the "bunny ears" appear. Sweep it.
+    print("  Resolution sweep -- MAX error over the band, planar convex disc")
+    print()
+    print("    dx/eps    divergence    bracket        flat: divergence  bracket")
+    print("    " + "-" * 68)
+    for frac in (0.33, 0.70, 1.00):
+        dx = frac * EPS_M
+        cells = []
+        for meth in ("divergence", "bracket"):
+            e_curved, _, _, _ = run_case(namespace, False, "convex", dx, meth)
+            e_flat, _, _, _ = run_case(namespace, False, "flat", dx, meth)
+            cells.append((float(np.max(e_curved)), float(np.max(e_flat))))
+        print("    %5.2f    %9.2f%%  %9.2f%%     %11.2f%%  %7.2f%%"
+              % (frac, cells[0][0], cells[1][0], cells[0][1], cells[1][1]))
+    print()
 
     print("  near-axis = the first %g cells off y = 0, also counted in the score."
           % AXIS_REPORT_CELLS)

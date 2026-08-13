@@ -33,41 +33,55 @@ the Lifshitz–Slyozov–Wagner driving force that makes vapor flow small -> lar
 
 How kappa is computed
 ---------------------
-kappa = -div(n) with n = grad phi/|grad phi|, expanded as
+kappa = -div(n), n = grad phi/|grad phi|, evaluated by **normalizing first and
+differentiating second**: grad phi comes from VTK's mesh-aware gradient, is
+normalized pointwise to the unit normal, and that unit-vector field is handed
+back to the same operator so its divergence is kappa. n points toward
+increasing phi, i.e. into the ice, by construction -- a convex ice grain gives
+kappa > 0 with no sign convention to impose.
 
-    kappa = -(laplacian(phi) - n.H.n) / G
+The obvious alternatives both fail, and both failures are visible in the
+output rather than subtle:
 
-where H is the Hessian of phi. grad phi and H come from VTK's mesh-aware
-gradient operator applied once and twice. Two deliberate choices:
+* `-L/G + (g.H.g)/G^3` with a Tikhonov G^2 = |grad phi|^2 + eps_reg^2 (the
+  deleted solver Curvature()). The regularization does not cancel between the
+  two terms, so a FLAT interface -- kappa must be 0 -- retains
+  -eps_reg^2*phi''/G^3: zero at phi = 0.5, sign-flipped either side, divergent
+  at the band edges. ~1e5 /m at phi = 0.03 for eps = 0.86 um, against real
+  curvatures near 5e3.
 
-* **The bracket, not the two-term form.** The solver's deleted Curvature()
-  used the algebraically identical -L/G + (g.H.g)/G^3 with a Tikhonov
-  G^2 = |grad phi|^2 + eps_reg^2. That regularization does NOT cancel between
-  the two terms: on a flat interface, where kappa must be zero, it leaves
-  -eps_reg^2 * phi'' / G^3 -- zero at phi = 0.5, sign-flipped either side of
-  it, and divergent toward the band edges (~1e5 /m at phi = 0.03 for
-  eps = 0.86 um, far larger than any real curvature in the run). Factoring G
-  out kills it identically: a flat interface has L = n.H.n exactly.
+* `-(L - n.H.n)/G` fixes the sign flip (a flat interface has L = n.H.n
+  identically) but still forms the difference L - n.H.n, and those two terms
+  nearly cancel. With the profile written as f(s) across the interface,
+  L = f'' - f'*kappa and n.H.n = f'', so the answer is smaller than its own
+  operands by |1 - 2 phi|/(eps*kappa) -- 238x at phi = 0.03 for the wedge run,
+  and exactly 0x at phi = 0.5. Discretization error in the second derivatives
+  is amplified by that factor: none mid-band, most at both edges. The profile
+  across the band then lifts at both ends into a symmetric "bunny ear" shape.
+  It is invisible on a fine mesh and grows with dx/eps -- 4.5% at dx/eps =
+  0.33, 20% at 0.70, 39% at 1.00, where real runs sit near 0.7.
 
-* **Direction and magnitude from different places.** n = grad phi/|grad phi|
-  is a unit vector, so gradient noise can tilt it but cannot rescale kappa;
-  and it points toward increasing phi, i.e. into the ice, automatically -- a
-  convex ice grain gives kappa > 0 with no sign convention to impose. The
-  DENOMINATOR instead comes from equipartition, |grad phi| = phi(1-phi)/eps,
-  an analytic function of phi alone. That is the smoothing: the measured
-  |grad phi| is a differentiated quantity that decays to zero at the band
-  edges, and dividing by it there amplifies noise into exactly the region
-  where the interface is least resolved. Set DENOM = "gradient" (or
-  PV_DENOM=gradient) to divide by the measured |grad phi| instead -- exact
-  where the profile is at equilibrium, noisier at the edges.
+Differentiating the normalized field avoids the cancellation instead of
+fighting it: the large f'' terms cancel exactly at the pointwise divide, and
+what gets differenced afterwards is an order-1 unit vector whose divergence is
+the curvature directly. No denominator, nothing to amplify. A flat interface
+comes out exactly zero at every phi and every resolution. Measured against
+analytic circles: 0.87% / 3.48% / 6.45% at dx/eps = 0.33 / 0.70 / 1.00.
 
-  The macro reports how well equipartition actually holds, as the median and
-  spread of |grad phi| * eps / (phi(1-phi)) over the band. That ratio is 1 at
-  equilibrium; far from 1 means the profile is being driven or under-resolved,
-  and the two DENOM choices will disagree by that factor.
+METHOD = "bracket" (or PV_METHOD=bracket) selects the second form for
+comparison; verify_curvature.py scores both and prints the sweep above.
 
-**Away from the interface kappa is meaningless** -- grad phi -> 0 there and
-the profile relation does not apply. So kappa is zeroed wherever the localizer
+**Equipartition** -- |grad phi| = phi(1-phi)/eps -- is therefore no longer
+needed as a denominator, because there is no denominator. It survives as a
+printed diagnostic: the macro reports the measured
+|grad phi|*eps/(phi(1-phi)) over the band, which is 1.0 for a profile at
+equilibrium. Values far from 1 mean the interface is being driven or is
+under-resolved, and kappa should be read with that in mind. (It is still the
+denominator for METHOD = "bracket", where DENOM selects it or the measured
+gradient.)
+
+**Away from the interface kappa is meaningless** -- grad phi -> 0 there, so
+the normal direction is undefined. kappa is zeroed wherever the localizer
 16*phi^2*(1-phi)^2 (the solver's ice^2*air^2, scaled to peak at 1) drops below
 LOC_FLOOR. At the default 0.01 that keeps phi in [0.026, 0.974], about the
 visibly diffuse band. Outside it kappa = 0 makes RhoVS_I_GT fall back exactly
@@ -145,9 +159,9 @@ GAMMA_VM_OVER_R = float(os.environ.get("PV_GAMMA_VM_OVER_R", 2.574e-7))
 # zeroed elsewhere. 0.01 => phi in [0.026, 0.974].
 LOC_FLOOR = float(os.environ.get("PV_LOC_FLOOR", 0.01))
 
-# eps [m] -- the phase-field decay length. NOT optional book-keeping: it sets
-# the scale of the curvature denominator, so kappa scales as 1/eps if it is
-# wrong, and it changes from run to run. Resolved in this order:
+# eps [m] -- the phase-field decay length. Needed for the equipartition
+# diagnostic, for the resolution report, and as the denominator when
+# METHOD = "bracket". Changes from run to run. Resolved in this order:
 #
 #   1. the PV_EPS environment variable
 #   2. the EPS constant just below
@@ -158,8 +172,13 @@ LOC_FLOOR = float(os.environ.get("PV_LOC_FLOOR", 0.01))
 # PV_EPS) whenever the data is not sitting next to its .opts.
 EPS = None
 
-# Denominator for kappa: "equipartition" uses phi(1-phi)/eps, "gradient" uses
-# the measured |grad phi|. See the block comment in the filter body.
+# How kappa is evaluated. "divergence" differentiates the unit normal field
+# directly and is the right choice; "bracket" is the older -(L - n.H.n)/G form,
+# kept only so verify_curvature.py can score the two against each other.
+METHOD = os.environ.get("PV_METHOD", "divergence")
+
+# Denominator for the "bracket" method only: "equipartition" uses phi(1-phi)/eps,
+# "gradient" the measured |grad phi|. Unused by "divergence", which has none.
 DENOM = os.environ.get("PV_DENOM", "equipartition")
 
 # Axisymmetric r-z mode. None => auto-detect from the staged .opts.
@@ -179,6 +198,7 @@ PHASE_ARRAY_CANDIDATES = ("IcePhase", "phaseice", "phi", "Phase")
 FILTER_BODY = r'''
 import numpy as np
 from vtk.numpy_interface import algorithms as algs
+from vtk.numpy_interface import dataset_adapter as dsa
 
 # ParaView star-imports numpy_interface.algorithms into this namespace, which
 # SHADOWS the builtin max/min/sum/round with array reductions whose second
@@ -241,11 +261,9 @@ if phase_name is None:
 else:
     phi = inp.PointData[phase_name]
 
-    # Mesh-aware gradients: g is (N,3), H is (N,3,3) with H[:,k,l] = d g_k/d x_l.
-    g = algs.gradient(phi)
-    H = algs.gradient(g)
-    g = np.asarray(g, dtype=np.float64)
-    H = np.asarray(H, dtype=np.float64).reshape(-1, 3, 3)
+    # Mesh-aware gradient: g is (N,3).
+    g_vtk = algs.gradient(phi)
+    g = np.asarray(g_vtk, dtype=np.float64)
 
     phi_np = np.asarray(phi, dtype=np.float64)
     gmag = np.sqrt(np.sum(g * g, axis=1))
@@ -267,52 +285,74 @@ else:
                            "determine eps. Set PV_EPS or the EPS constant.")
     print("plot_rhovsI: eps = %.4g m (%s)" % (EPS_USED, eps_src))
 
-    # --- direction and magnitude are taken from DIFFERENT places -------------
+    # --- normalize FIRST, differentiate SECOND ------------------------------
     #
-    # kappa = -div(n) with n = grad phi/|grad phi| expands two ways that are
-    # algebraically identical but numerically are not:
+    # kappa = -div(n), n = grad phi/|grad phi|. Three ways to evaluate it, all
+    # algebraically identical and numerically very different:
     #
-    #   (a)  -L/G + (g.H.g)/G^3           <- one G per term
-    #   (b)  -(L - n.H.n)/G               <- G factored out
+    #   (a)  -L/G + (g.H.g)/G^3      two terms, one G each  (the solver's)
+    #   (b)  -(L - n.H.n)/G          G factored out
+    #   (c)  -div(n)                 normalize, THEN differentiate   <- used
     #
-    # Form (a) is what the solver's Curvature() used, with a Tikhonov G^2 =
-    # |g|^2 + eps_reg^2 to survive the bulk. That regularization does not
-    # cancel between the two terms: on a FLAT interface, where kappa must be
-    # 0, (a) leaves -eps_reg^2 * phi'' / G^3. That residue is zero at
-    # phi = 0.5, flips sign across it, and diverges toward the band edges --
-    # ~1e5 /m at phi = 0.03 for eps = 0.86 um, swamping any real curvature.
+    # (a) is what the deleted Curvature() used, with a Tikhonov
+    # G^2 = |g|^2 + eps_reg^2. The regularization does not cancel between its
+    # two terms: on a FLAT interface, where kappa must be 0, it leaves
+    # -eps_reg^2*phi''/G^3 -- zero at phi = 0.5, sign-flipped either side, and
+    # divergent toward the band edges (~1e5 /m at phi = 0.03, eps = 0.86 um).
     #
-    # Form (b) cannot do that: for a flat interface L = n.H.n exactly, so the
-    # bracket vanishes identically whatever the denominator is. Use (b).
+    # (b) fixes that -- a flat interface has L = n.H.n identically -- but it
+    # still forms L - n.H.n, and THOSE TWO TERMS NEARLY CANCEL. Writing the
+    # profile as f(s) across the interface: L = f'' - f'*kappa and n.H.n = f'',
+    # so the wanted answer is smaller than its own operands by
     #
-    # The two inputs then come from different places, on purpose:
-    #   * DIRECTION  n = g/|g| -- from the numerical gradient. It is a unit
-    #     vector, so gradient noise tilts it slightly but cannot scale kappa.
-    #     n automatically points toward increasing phi, i.e. INTO the ice.
-    #   * MAGNITUDE  G -- from equipartition, |grad phi| = phi(1-phi)/eps, an
-    #     analytic function of phi alone. This is the smoothing: the true
-    #     |grad phi| is a differentiated quantity that goes to zero at the band
-    #     edges, and dividing by it there amplifies noise. phi(1-phi)/eps has
-    #     the same profile without the noise. Set DENOM = "gradient" to divide
-    #     by the measured |grad phi| instead (exact, but noisier at the edges).
-    L = H[:, 0, 0] + H[:, 1, 1] + H[:, 2, 2]
-
-    # Floor only guards the bulk, which is masked out below anyway.
+    #     f''/(f'*kappa) = |1 - 2 phi| / (eps*kappa)
+    #
+    # which for eps = 0.86 um and kappa = 4600 /m is 238x at phi = 0.03 and
+    # exactly 0x at phi = 0.5. Discretization error in the second derivatives
+    # is amplified by that factor -- none in the middle of the band, most at
+    # both edges. The result is a symmetric-in-phi error that lifts both ends
+    # of the profile: the "bunny ears". At dx/eps = 0.7 it reaches ~35%.
+    #
+    # (c) removes the cancellation instead of fighting it. n is normalized
+    # pointwise BEFORE any second difference, so the large f'' terms cancel
+    # exactly in floating point at the divide, not approximately inside a
+    # difference of discretized derivatives. What is then differentiated is a
+    # unit vector of order 1 whose divergence IS the curvature -- no large
+    # operands, no denominator, nothing to amplify. A flat interface gives a
+    # constant n and hence exactly zero, at every phi and every resolution.
+    #
+    # n = grad phi/|grad phi| also points toward increasing phi, i.e. INTO the
+    # ice, by construction: a convex ice grain gives kappa > 0 with no sign
+    # convention to impose.
     dir_floor = 1.0e-6 * gmax if gmax > 0.0 else 1.0
     n_hat = g / np.maximum(gmag, dir_floor)[:, None]
-    nHn = np.einsum("nk,nkl,nl->n", n_hat, H, n_hat)
 
-    if DENOM == "gradient":
-        G = gmag
-        denom_src = "measured |grad phi|"
+    if METHOD == "bracket":
+        # Kept for comparison against (c); see verify_curvature.py, which
+        # scores both. Not recommended -- this is the form with the ears.
+        H = np.asarray(algs.gradient(g_vtk), dtype=np.float64).reshape(-1, 3, 3)
+        L = H[:, 0, 0] + H[:, 1, 1] + H[:, 2, 2]
+        nHn = np.einsum("nk,nkl,nl->n", n_hat, H, n_hat)
+        if DENOM == "gradient":
+            G = gmag
+            method_src = "bracket / measured |grad phi|"
+        else:
+            G = phi_np * (1.0 - phi_np) / EPS_USED
+            method_src = "bracket / equipartition phi(1-phi)/eps"
+        G = np.maximum(G, 1.0e-4 * (0.25 / EPS_USED))
+        kappa = -(L - nHn) / G
+        dny_dy = H[:, 1, 1] / G
     else:
-        G = phi_np * (1.0 - phi_np) / EPS_USED
-        denom_src = "equipartition phi(1-phi)/eps, eps = %.4g m" % EPS_USED
-    # phi(1-phi) bottoms out at 0.0253/eps at the band edge vs 0.25/eps at the
-    # centre; the floor is well below both and only bites outside the band.
-    G = np.maximum(G, 1.0e-4 * (0.25 / EPS_USED))
-
-    kappa = -(L - nHn) / G
+        # Hand the normal field back to VTK as a point array so the same
+        # mesh-aware operator differentiates it. J[:,k,l] = d n_k / d x_l, so
+        # its trace is div(n) and J[1,1] is the d n_y/dy needed on the axis.
+        n_vtk = dsa.VTKArray(n_hat)
+        n_vtk.DataSet = phi.DataSet
+        n_vtk.Association = phi.Association
+        J = np.asarray(algs.gradient(n_vtk), dtype=np.float64).reshape(-1, 3, 3)
+        kappa = -(J[:, 0, 0] + J[:, 1, 1] + J[:, 2, 2])
+        dny_dy = J[:, 1, 1]
+        method_src = "divergence of the unit normal"
 
     # Axisymmetric r-z: add the azimuthal mode. y is the radius, axis at y = 0.
     # kappa_3D = kappa_planar - n_y/y.
@@ -349,7 +389,7 @@ else:
         ay = np.abs(y)
         azimuthal = np.where(ay > dy,
                              ny / np.maximum(ay, dy),
-                             H[:, 1, 1] / G)
+                             dny_dy)
         kappa = kappa - azimuthal
 
     # Repair the outer TWO layers of points. kappa takes a second derivative,
@@ -395,9 +435,9 @@ else:
 
     n_band = int(band.sum())
     print("plot_rhovsI: curvature on %d of %d points (%.1f%% in the band), "
-          "denominator = %s%s"
+          "method = %s%s"
           % (n_band, len(kappa), 100.0 * n_band / builtins.max(len(kappa), 1),
-             denom_src,
+             method_src,
              ", AXISYMMETRIC (y = radius)" if AXISYM else ", planar"))
     if n_band:
         kb = np.abs(kappa[band])
@@ -448,7 +488,7 @@ else:
 '''
 
 
-def _filter_script(eps, axisym, eps_origin="given", denom=None):
+def _filter_script(eps, axisym, eps_origin="given", denom=None, method=None):
     """FILTER_BODY with a constants header prepended."""
     header = (
         "RHO_AIR         = %r\n"
@@ -456,12 +496,14 @@ def _filter_script(eps, axisym, eps_origin="given", denom=None):
         "LOC_FLOOR       = %r\n"
         "EPS             = %r\n"
         "EPS_ORIGIN      = %r\n"
+        "METHOD          = %r\n"
         "DENOM           = %r\n"
         "AXISYM          = %r\n"
         "TEMP_CANDIDATES = %r\n"
         "RHOV_CANDIDATES = %r\n"
         "PHASE_CANDIDATES = %r\n"
     ) % (RHO_AIR, GAMMA_VM_OVER_R, LOC_FLOOR, eps, eps_origin,
+         method if method is not None else METHOD,
          denom if denom is not None else DENOM, bool(axisym),
          TEMP_ARRAY_CANDIDATES, RHOV_ARRAY_CANDIDATES, PHASE_ARRAY_CANDIDATES)
     return header + FILTER_BODY

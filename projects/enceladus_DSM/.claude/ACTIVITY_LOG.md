@@ -2,6 +2,46 @@
 
 Newest entries first.
 
+## 2026-08-12 (later still) — "Bunny ears": a cancellation, not a denominator
+
+Jackson reported a symmetric cusp in the curvature profile across the band.
+Real, and a third distinct defect after the eps_reg residue.
+
+- **Not the denominator.** Measured the equipartition ratio binned by phi on
+  the wedge: 1.073 at the band edges, 0.990 mid-band — an 8% swing, against a
+  36% peak-to-trough in kappa. The denominator could not explain it.
+- **Cancellation in the numerator.** `-(L - n.H.n)/G` forms a difference whose
+  operands are `|1 - 2 phi|/(eps*kappa)` times larger than the result: 238x at
+  phi = 0.03 for the wedge, exactly 0x at phi = 0.5. Discretization error in
+  the second derivatives is amplified by exactly that profile — none mid-band,
+  most at both edges. That IS the bunny-ear shape.
+- **Fix: normalize first, differentiate second.** kappa = -div(n) with n built
+  pointwise and handed back to VTK's gradient as a point array
+  (`dsa.VTKArray` + DataSet/Association). The large f'' terms then cancel
+  exactly at the divide instead of approximately inside a difference of
+  discretized derivatives, and what gets differenced is an order-1 unit vector.
+  No denominator at all.
+- **Resolution sweep added to the gate**, which is what makes the case:
+  MAX band error on an analytic disc, divergence vs bracket —
+  dx/eps 0.33: 0.87% vs 4.53%; 0.70: 3.48% vs 20.44%; 1.00: 6.45% vs 38.70%.
+  Real runs sit near 0.7. The old gate at dx/eps = 0.33 was too fine to see it.
+- Main gate worst case 4.73% -> 0.88%. Wedge profile spread across the band
+  36% -> 8%, which is about the true level-set variation plus numerics.
+- Equipartition is no longer a denominator (there is none) but survives as a
+  printed diagnostic of how far the profile is from equilibrium; it remains the
+  denominator for METHOD = "bracket", kept only so the gate can score both.
+
+Separately: confirmed no absolute value anywhere in the kappa path. Curvature
+does NOT change sign across phi = 0.5 within one interface, and should not —
+the level sets of a curved surface are nested and all curve the same way
+(analytically, an R = 200 um disc gives +4926 at phi = 0.03 rising monotonically
+to +5076 at phi = 0.97). The field that flips sign at phi = 0.5 is
+laplacian(phi) / d2phi/dn2, the inflection of the tanh profile. The old
+eps_reg residue was proportional to phi'', which is why the earlier, broken
+version appeared to flip.
+
+---
+
 ## 2026-08-12 (later still) — Curvature was dominated by a regularization artifact
 
 Jackson flagged the Curvature field on the wedge run
