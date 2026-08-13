@@ -1,3 +1,39 @@
+## 2026-08-13 — Supersaturation movies, frame cache, per-wall BC report
+
+- **Movies now color the air region by supersaturation** sigma = (rhov -
+  rho_vs(T))/rho_vs(T), not raw vapor density. On the 90deg wedge run rhov
+  spanned only 8.4868e-4 to 8.4869e-4 and rendered as flat colour — it is
+  dominated by the T-dependence of rho_vs itself. sigma divides that out and
+  resolves a clean +/-5e-6 signal: undersaturated (blue) in the narrow throat,
+  supersaturated (red) at the open end, white at the saturated reservoir walls.
+  `plot_fields_highres.py` writes the field into each .vts via `pplib.rho_vs`
+  (which mirrors the solver's `RhoVS_I`); the range is forced symmetric so the
+  diverging colormap's midpoint means sigma = 0.
+- **`make_movie.py`: `--duration SECONDS`** sets frame count = duration*fps, so
+  playback stays at 30 fps and a shorter movie is proportionally cheaper.
+- **Frames are cached, not deleted.** Named by source step in
+  `<out>.mp4_frames/`, with `render_meta.json` recording what they depict.
+  Re-cutting an existing frame set to a new length is a pure re-mux: 3 s versus
+  the ~50 min the original render took. Writes are atomic so an interrupted run
+  cannot leave a frame the cache would wrongly trust. `--force-frames` /
+  `--delete-frames` override.
+- **Solver always writes step 1 now** (both lunar and enceladus). Step 0 already
+  fell out of every schedule; step 1 did not, so under time-uniform output the
+  first actually-solved state never reached disk. Movies now skip the raw IC by
+  default — its uniform initial vapor field is a flat sigma that skewed the
+  pooled percentile range for the whole series.
+- **Boundary-condition banner is now per wall, per equation.** The old summary
+  printed the flags, so `-flag_BC_rhovfix` with `-rhovfix_axis 0` reported
+  "rho_v: Dirichlet" while two of the four walls were actually sealed. Driven by
+  a record filled in where the BCs are applied, so it cannot drift from them.
+- Fixed a real bug hit along the way: ParaView 6.1.1's `SaveScreenshot` returns
+  before flushing ~10 MB frames, so compositing read a truncated PNG and the
+  render died outright. Frames now wait on the PNG IEND chunk.
+- Pulled `make_movie.py` and its colormap/texture assets out of
+  `postprocess/scratch/` (pending deletion) into the live tree.
+
+---
+
 ## 2026-08-03 — Wedge pore: does taper alone move ice?
 
 - **New geometry `wedge_2D_L300um_eps0.86um`** (`preprocess/build_geometry_wedge.py`):
