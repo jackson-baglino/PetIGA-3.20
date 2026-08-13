@@ -57,3 +57,8 @@ studies/**/verification/raw*/*/
 # embeds them, so they are tracked despite the blanket *.png rule above.
 !studies/**/verification/*.png
 
+
+# Same reasoning for docs/figures: curated figures that a doc embeds, not
+# regenerable run output. docs/curvature_driven_growth.md renders gt_balance.png
+# inline, so it has to be tracked.
+!docs/figures/*.png
