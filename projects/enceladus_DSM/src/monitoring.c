@@ -298,17 +298,31 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
     ierr = IGAWrite(user->iga, fileiga);CHKERRQ(ierr);
   }
 
+  /* Always write step 0 (the raw initial condition) and step 1 (the first
+   * computed step). Step 0 already falls out of the schedules below, but
+   * step 1 generally does not: under time-uniform or log-spaced output the
+   * next scheduled snapshot is far away, so the first *solved* state is
+   * otherwise never on disk. That state is what movies and diagnostics
+   * should start from -- the IC's vapor field is a uniform hum0*rho_vs, so
+   * its supersaturation is a constant that carries no dynamics and skews
+   * any percentile range computed across the series. Forcing step 1 gives
+   * an "initial frame" that is a real solution, so the IC can be skipped.
+   * The schedule-advance loops below are no-ops at step 1's tiny t, so this
+   * does not consume a scheduled slot. */
+  PetscInt print = (step <= 1) ? 1 : 0;
+
   // Check if it's time to print output
-  PetscInt print = 0;
-  if (user->n_out_log > 0) {  /* -t_out_log: consume the log-spaced schedule */
-    if (user->i_out_log < user->n_out_log &&
-        t >= user->t_out_log[user->i_out_log]) print = 1;
-  }
-  else if (user->outp > 0) {   // Print output every user->outp steps
-    if (step % user->outp == 0) print = 1;
-  }
-  else {                  // Print output every user->t_interv seconds
-    if (t >= user->t_out) print = 1;
+  if (!print) {
+    if (user->n_out_log > 0) {  /* -t_out_log: consume the log-spaced schedule */
+      if (user->i_out_log < user->n_out_log &&
+          t >= user->t_out_log[user->i_out_log]) print = 1;
+    }
+    else if (user->outp > 0) {   // Print output every user->outp steps
+      if (step % user->outp == 0) print = 1;
+    }
+    else {                  // Print output every user->t_interv seconds
+      if (t >= user->t_out) print = 1;
+    }
   }
 
   // If it's time to print output, do the following
