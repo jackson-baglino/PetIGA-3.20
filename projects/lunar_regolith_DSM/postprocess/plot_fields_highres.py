@@ -44,6 +44,7 @@ from plot_fields import (
     _load_time_map,
     _write_pvd,
 )
+from pplib import RHO_AIR_DEFAULT, supersaturation
 
 
 def _dense_uv(nrb, n_per_elem: int):
@@ -78,11 +79,14 @@ def _vtk_coords_dense(C: np.ndarray) -> np.ndarray:
     return np.ascontiguousarray(coords.transpose(axes)).reshape(-1, 3)
 
 
-def _write_vts_dense(outfile: str, C: np.ndarray, F: np.ndarray) -> None:
+def _write_vts_dense(outfile: str, C: np.ndarray, F: np.ndarray,
+                     rho_air: float = RHO_AIR_DEFAULT) -> None:
     """Write a dense-sampled VTK XML Structured Grid (.vts) file.
 
     C : dense physical coordinates, shape (nu, nv[, nw], 3)
     F : dense solution fields,      shape (nu, nv[, nw], ndof)
+    rho_air : the run's -rho_air, needed for the Supersaturation field
+              (rho_vs scales linearly with it, so a mismatch biases sigma)
     """
     grid_shape = C.shape[:-1]
     dim        = len(grid_shape)
@@ -101,6 +105,16 @@ def _write_vts_dense(outfile: str, C: np.ndarray, F: np.ndarray) -> None:
         fields["Temperature"]  = F[..., 1]
     if ndof >= 3:
         fields["VaporDensity"] = F[..., 2]
+    if ndof >= 3:
+        # Supersaturation sigma = (rhov - rho_vs(T)) / rho_vs(T): the actual
+        # thermodynamic driving force for sublimation/deposition, and the
+        # field worth coloring the air region by. Raw VaporDensity is
+        # dominated by the (large, smooth) T-dependence of rho_vs itself, so
+        # under a temperature gradient it shows the background saturation
+        # profile rather than the departure from it. rho_vs comes from
+        # pplib.rho_vs, which mirrors the solver's RhoVS_I exactly.
+        fields["Supersaturation"] = supersaturation(
+            F[..., 2], F[..., 1], rho_air)
     if ndof >= 4:
         fields["SedPhase"]     = F[..., 3]
         fields["AirPhase"]     = 1.0 - F[..., 0] - F[..., 3]
@@ -138,7 +152,8 @@ def _write_vts_dense(outfile: str, C: np.ndarray, F: np.ndarray) -> None:
 
 
 def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
-            force: bool = False, n_per_elem: int = 4, steps=None):
+            force: bool = False, n_per_elem: int = 4, steps=None,
+            rho_air: float = RHO_AIR_DEFAULT):
     iga_path = os.path.join(run_dir, iga_file)
     if not os.path.isfile(iga_path):
         raise FileNotFoundError(f"IGA geometry file not found: {iga_path}")
@@ -187,7 +202,7 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
 
         sol = PetIGA().read_vec(infile, nrb)
         C, F = nrb(u, v, fields=sol)
-        _write_vts_dense(outfile, C, F)
+        _write_vts_dense(outfile, C, F, rho_air)
         print(f"  Written: {outfile}")
 
     if pvd_entries:
@@ -212,10 +227,17 @@ def parse_args():
                          "per step at the default --n-per-elem) -- prefer "
                          "this for spot-checking a few snapshots rather "
                          "than converting a full time series.")
+    p.add_argument("--rho-air", type=float, default=RHO_AIR_DEFAULT,
+                    help="the run's -rho_air, used for the Supersaturation "
+                         f"field's rho_vs (default: {RHO_AIR_DEFAULT}, the "
+                         "solver default). Override only if the run set "
+                         "-rho_air explicitly -- rho_vs scales linearly with "
+                         "it, so a mismatch biases sigma.")
     return p.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
     convert(run_dir=args.dir, iga_file=args.iga, force=args.force,
-            n_per_elem=args.n_per_elem, steps=args.steps)
+            n_per_elem=args.n_per_elem, steps=args.steps,
+            rho_air=args.rho_air)

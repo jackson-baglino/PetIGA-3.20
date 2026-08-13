@@ -6,7 +6,17 @@ time series, the way it's normally built by hand in the ParaView GUI:
   - "ice volume": IsoVolume of IcePhase in [0.5, 1.1], colored by IcePhase
     with the cmocean "ice" colormap.
   - "air volume": IsoVolume of IcePhase in [-0.1, 0.5] (i.e. air = 1-ice),
-    colored by VaporDensity.
+    colored by supersaturation sigma = (rhov - rho_vs(T)) / rho_vs(T) with
+    the diverging cmocean "balance" colormap, on a range forced symmetric
+    about zero so white always marks the saturated state (--air-field
+    VaporDensity restores the old raw-density coloring).
+
+    sigma, not rhov, is the field that shows the physics: rhov is dominated
+    by the strong, smooth temperature dependence of rho_vs itself, so under
+    a gradient it mostly redraws the background saturation profile. sigma
+    divides that out, leaving the departure from equilibrium -- which is the
+    actual driving force for deposition (sigma > 0) and sublimation
+    (sigma < 0). It is written into each .vts by plot_fields_highres.py.
 
 Must be run with ParaView's own Python, not this project's venv:
 
@@ -109,14 +119,51 @@ from the actual ParaView transfer functions used for rendering (so they're
 guaranteed to match), as SVG for easy resizing/relabeling in Inkscape.
 
 ------------------------------------------------------------------------
+Frame cache and movie length
+------------------------------------------------------------------------
+Rendered PNGs are KEPT in <out>.mp4_frames/ and, in streaming mode, named
+by their SOURCE STEP (frame_01234.png) rather than by position in the
+video. Rendering is the expensive part -- each frame costs a dense .vts
+generation -- so a rerun reuses every cached PNG it can and renders only
+what is missing. Alongside them sits render_meta.json recording what the
+cache depicts (field, colour range, resolution, colormaps, n_per_elem);
+if the current invocation would draw a different picture, the cache is
+discarded rather than silently mixed into one movie. --force-frames
+re-renders unconditionally; --delete-frames cleans up afterwards.
+
+--duration sets the movie length in seconds, as frame count = duration *
+--fps (so playback stays at a normal frame rate and a shorter movie is
+proportionally cheaper). Because the frame set is a subsample of the same
+snapshot list, changing --duration on a rerun reuses whatever frames it
+lands on and renders only the rest; re-encoding an unchanged frame set at
+a new length is a pure re-mux with no ParaView work at all.
+
+The first snapshot (step 0, the raw initial condition) is SKIPPED by
+default -- it is not a solution, and its uniform initial vapor field is a
+flat sigma that appears nowhere else in the run and drags the pooled
+percentile range used to set the colorbar. The solver always writes step 1
+as well (OutputMonitor in src/monitoring.c), so the movie still opens
+essentially at t=0, just on real solved data. --include-first restores it.
+
+------------------------------------------------------------------------
 Usage examples
 ------------------------------------------------------------------------
-  # Full run, 600 frames linear in simulated time, 30 fps, auto vapor range,
+  # Full run, 600 frames linear in simulated time, 30 fps, auto sigma range,
   # native resolution, separate vector colorbars
   pvpython postprocess/make_movie.py --dir /path/to/run
 
-  # Fixed vapor colorbar bounds instead of auto-detecting
-  pvpython postprocess/make_movie.py --dir /path/to/run --vapor-range 1e-4 5e-4
+  # A 5-second movie (150 frames at 30 fps)
+  pvpython postprocess/make_movie.py --dir /path/to/run --duration 5
+
+  # Re-cut the frames already on disk to 10 seconds -- no re-rendering
+  pvpython postprocess/make_movie.py --dir /path/to/run --duration 10
+
+  # Fixed colorbar bounds instead of auto-detecting
+  pvpython postprocess/make_movie.py --dir /path/to/run --vapor-range -0.02 0.02
+
+  # Colour by raw vapor density, as before
+  pvpython postprocess/make_movie.py --dir /path/to/run \\
+      --air-field VaporDensity --no-symmetric-range
 
   # Only the first 2 days, denser sampling, no temporal interpolation
   pvpython postprocess/make_movie.py --dir /path/to/run --t-end 172800 \\
@@ -134,6 +181,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 
 from paraview.simple import (
     OpenDataFile, XMLStructuredGridReader, IsoVolume, TemporalInterpolator,
@@ -200,30 +248,197 @@ def find_pvd(run_dir: str) -> str:
         f"No pf_highres.pvd or pf.pvd found in {run_dir}")
 
 
-def auto_vapor_range(air_volume, timestep_values, n_samples, lo_pct, hi_pct):
-    """Sample n_samples evenly-spaced timesteps, pool VaporDensity across
-    them, and return a global [lo_pct, hi_pct] percentile range -- a fixed
+def symmetrize(lo, hi):
+    """Widen [lo, hi] to the symmetric range about zero that contains it.
+
+    The air field's colormap (cmocean balance) is DIVERGING: its white
+    midpoint only means anything if it sits at zero. For supersaturation
+    that midpoint is exactly the saturated state (sigma = 0, the boundary
+    between deposition and sublimation), so an asymmetric range would put
+    white at some arbitrary non-equilibrium value and silently mislabel
+    which regions are growing versus shrinking."""
+    m = max(abs(lo), abs(hi))
+    return -m, m
+
+
+def auto_air_range(air_volume, timestep_values, n_samples, lo_pct, hi_pct,
+                   field):
+    """Sample n_samples evenly-spaced timesteps, pool `field` across them,
+    and return a global [lo_pct, hi_pct] percentile range -- a fixed
     colorbar range that stays meaningful across the whole movie instead of
     auto-rescaling (and thus changing meaning) every frame.
 
     Samples from air_volume (the IsoVolume already clipped to the air
-    region, IcePhase in [-0.1, 0.5]) rather than the raw reader. VaporDensity
-    inside the ICE region sits near the (much higher, more uniform)
-    saturation density rho_vs -- pooling that in would dominate the
-    percentile range and wash out the actual variation in the air region,
-    which is the only place this colormap is ever rendered."""
+    region, IcePhase in [-0.1, 0.5]) rather than the raw reader. Inside the
+    ICE region the vapor field sits pinned near saturation -- pooling that
+    in would dominate the percentile range and wash out the actual
+    variation in the air region, which is the only place this colormap is
+    ever rendered."""
     n = len(timestep_values)
     idx = np.unique(np.linspace(0, n - 1, min(n_samples, n)).astype(int))
     pooled = []
     for i in idx:
         air_volume.UpdatePipeline(timestep_values[i])
         data = dsa.WrapDataObject(servermanager.Fetch(air_volume))
-        arr = np.asarray(data.PointData["VaporDensity"]).ravel()
+        arr = np.asarray(data.PointData[field]).ravel()
         if arr.size:
             pooled.append(arr)
     pooled = np.concatenate(pooled)
     lo, hi = np.percentile(pooled, [lo_pct, hi_pct])
     return float(lo), float(hi)
+
+
+AIR_FIELD_LABELS = {
+    "Supersaturation": "Supersaturation  $\\sigma$",
+    "VaporDensity":    "Vapor density",
+    "Temperature":     "Temperature",
+}
+
+
+def air_field_label(field):
+    return AIR_FIELD_LABELS.get(field, field)
+
+
+def air_field_slug(field):
+    """Filename stem for this field's standalone colorbar."""
+    return {"Supersaturation": "sigma", "VaporDensity": "vapor"}.get(
+        field, field.lower())
+
+
+def resolve_n_frames(args, n_available=None):
+    """Reconcile --duration / --n-frames / --fps into a frame count.
+
+    --duration sets the frame COUNT at the given --fps (rather than raising
+    fps and keeping every frame), so playback stays at a normal frame rate
+    and a shorter movie is proportionally cheaper to render. To instead keep
+    every frame and just play them faster, set --fps directly.
+
+    n_available caps the count at the number of distinct source snapshots;
+    pass None where frames are synthesised at arbitrary times (the
+    --no-stream, temporally-interpolated path) and no such cap applies."""
+    if args.duration:
+        n = max(2, int(round(args.duration * args.fps)))
+        if n_available is not None and n > n_available:
+            # Not enough snapshots to fill the requested length at --fps;
+            # drop fps so the movie still lasts --duration seconds.
+            args.fps = max(1, int(round(n_available / args.duration)))
+            print(f"  (only {n_available} snapshots available; lowering fps to "
+                  f"{args.fps} to still fill {args.duration:g}s)")
+            n = n_available
+        print(f"Target duration {args.duration:g}s at {args.fps} fps "
+              f"-> {n} frames")
+        return n
+    return args.n_frames
+
+
+def render_key(args, w, h, vmin, vmax):
+    """Everything that changes what a rendered PNG looks like.
+
+    Stored alongside the cached frames; a mismatch means the cache is of a
+    DIFFERENT picture (other field, other colormap, other resolution) and
+    must be discarded rather than silently re-muxed into a movie that mixes
+    two rendering conventions. Frame COUNT and fps are deliberately absent:
+    those change which cached frames are used and how fast they play, not
+    what any one of them looks like."""
+    return {
+        "air_field": args.air_field,
+        "range": [round(vmin, 12), round(vmax, 12)],
+        "resolution": [w, h],
+        "ice_colormap": os.path.basename(args.ice_colormap or "cmocean_ice.json"),
+        "air_colormap": os.path.basename(args.vapor_colormap or "cmocean_balance.json"),
+        "n_per_elem": args.n_per_elem,
+        "sediment_texture": (not args.no_sediment_texture),
+    }
+
+
+def load_frame_meta(frame_dir):
+    path = os.path.join(frame_dir, "render_meta.json")
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path) as fh:
+            return json.load(fh)
+    except (ValueError, OSError):
+        return None
+
+
+def save_frame_meta(frame_dir, key):
+    with open(os.path.join(frame_dir, "render_meta.json"), "w") as fh:
+        json.dump(key, fh, indent=2, sort_keys=True)
+
+
+PNG_IEND = b"IEND\xaeB`\x82"
+
+
+def _await_png(path, timeout=60.0):
+    """Block until `path` is a complete, decodable PNG.
+
+    SaveScreenshot can return BEFORE ParaView has finished flushing the file
+    (observed on ParaView 6.1.1 with ~10 MB frames): reading it immediately
+    fails with UnidentifiedImageError on a half-written header. Wait for the
+    terminating IEND chunk AND for a decode to actually succeed."""
+    from PIL import Image
+    deadline = time.time() + timeout
+    while True:
+        try:
+            with open(path, "rb") as fh:
+                fh.seek(-len(PNG_IEND), os.SEEK_END)
+                if fh.read(len(PNG_IEND)) == PNG_IEND:
+                    im = Image.open(path)
+                    im.load()
+                    return im
+        except (OSError, ValueError):
+            pass                       # truncated / not yet written
+        if time.time() > deadline:
+            raise RuntimeError(
+                f"ParaView never finished writing {path} (waited {timeout:.0f}s)")
+        time.sleep(0.05)
+
+
+def save_frame(view, w, h, path, background):
+    """Render one frame to `path`, compositing onto `background` if given.
+
+    Written via a temporary file and renamed into place, so `path` either
+    does not exist or is a finished frame. The frame cache decides what to
+    reuse by filename alone, so a run interrupted mid-write must not leave
+    behind something that *looks* cached -- a half-written or (worse) an
+    uncomposited transparent frame would be silently muxed into the next
+    movie."""
+    tmp = path + ".part.png"
+    if background is not None:
+        from PIL import Image
+        SaveScreenshot(tmp, view, ImageResolution=[w, h], TransparentBackground=1)
+        fg = _await_png(tmp)
+        Image.alpha_composite(background, fg.convert("RGBA")
+                              ).convert("RGB").save(tmp)
+    else:
+        SaveScreenshot(tmp, view, ImageResolution=[w, h])
+        _await_png(tmp).close()
+    os.replace(tmp, path)
+
+
+def encode(frame_paths, out_path, fps):
+    """Mux an arbitrary ordered list of PNGs into out_path at `fps`.
+
+    The frames are cached under their SOURCE STEP number (so a rerun at a
+    different length can reuse them), which is not the gapless 0,1,2,...
+    sequence ffmpeg's numbered-input pattern needs. Rather than renaming
+    (and so destroying) the cache, stage a directory of symlinks in the
+    sequential order this particular movie wants."""
+    seq_dir = os.path.join(os.path.dirname(frame_paths[0]), "_seq")
+    if os.path.isdir(seq_dir):
+        shutil.rmtree(seq_dir)
+    os.makedirs(seq_dir)
+    for i, src in enumerate(frame_paths):
+        os.symlink(os.path.abspath(src), os.path.join(seq_dir, f"f_{i:05d}.png"))
+    print(f"Encoding {out_path}: {len(frame_paths)} frames at {fps} fps "
+          f"({len(frame_paths) / fps:.2f}s)")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error",
+                    "-framerate", str(fps),
+                    "-i", os.path.join(seq_dir, "f_%05d.png"),
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p", out_path],
+                   check=True)
+    shutil.rmtree(seq_dir)
 
 
 def find_gen_python(explicit):
@@ -290,13 +505,68 @@ def run_stream(args):
     steps = sol_steps(run_dir)
     if not steps:
         raise RuntimeError(f"no sol_*.dat snapshots in {run_dir}")
-    # frame selection: all snapshots, or evenly sampled down to --n-frames
-    if args.n_frames and args.n_frames < len(steps):
-        idx = [round(i * (len(steps) - 1) / (args.n_frames - 1))
-               for i in range(args.n_frames)]
+
+    # ---- drop the initial condition ----------------------------------------
+    # Step 0 is the raw IC, not a solution: its vapor field is a uniform
+    # hum0*rho_vs, so its supersaturation is a flat constant that appears
+    # nowhere else in the run. Kept as frame 0 it both opens the movie on a
+    # non-physical still and, worse, drags the pooled percentile range used
+    # for the colorbar. The solver now always writes step 1 as well (see
+    # OutputMonitor), so dropping step 0 still leaves a genuine first frame
+    # essentially at t=0.
+    if not args.include_first and len(steps) > 1:
+        print(f"Skipping the initial condition (step {steps[0]}); "
+              f"first frame is step {steps[1]}")
+        steps = steps[1:]
+
+    n_frames = resolve_n_frames(args, len(steps))
+    # frame selection: all snapshots, or evenly sampled down to n_frames
+    if n_frames and n_frames < len(steps):
+        idx = [round(i * (len(steps) - 1) / (n_frames - 1))
+               for i in range(n_frames)]
         frame_steps = [steps[j] for j in sorted(set(idx))]
     else:
         frame_steps = steps
+
+    frame_dir = out_path + "_frames"
+    os.makedirs(frame_dir, exist_ok=True)
+
+    def frame_path(step):
+        return os.path.join(frame_dir, f"frame_{step:05d}.png")
+
+    # ---- fast path: every requested frame is already rendered ---------------
+    # Reuse is keyed on render_key(); a cached meta that matches means those
+    # PNGs are the same picture this invocation would draw, so a rerun that
+    # only changes --duration/--fps/--n-frames is a pure re-mux -- no
+    # ParaView, no .vts generation, no percentile sampling.
+    cached = None if args.force_frames else load_frame_meta(frame_dir)
+    if cached is not None and all(os.path.isfile(frame_path(s))
+                                  for s in frame_steps):
+        # The cache supplies resolution and colour range (both are otherwise
+        # only known after the expensive setup), so rebuild the key around
+        # the cached values -- but honour them only where this invocation did
+        # not ASK for something different, or "--vapor-range 0 1" would be
+        # silently ignored in favour of whatever the cache happened to hold.
+        c_res, c_rng = cached.get("resolution", [0, 0]), cached.get("range", [0.0, 0.0])
+        want = None
+        if args.resolution:
+            want = [int(v) for v in args.resolution.split("x")]
+        req_rng = args.vapor_range
+        if req_rng and args.symmetric_range:
+            req_rng = list(symmetrize(*req_rng))
+        if ((want is None or want == c_res)
+                and (req_rng is None
+                     or [round(v, 12) for v in req_rng] == c_rng)
+                and render_key(args, *c_res, *c_rng) == cached):
+            print(f"Reusing {len(frame_steps)} cached frames in {frame_dir} "
+                  f"(air field {cached['air_field']}, range "
+                  f"[{c_rng[0]:.4g}, {c_rng[1]:.4g}])")
+            encode([frame_path(s) for s in frame_steps], out_path, args.fps)
+            print(f"Done: {out_path}")
+            return
+        print("Cached frames were rendered with different settings "
+              "-- re-rendering.")
+
     print(f"Streaming {len(frame_steps)} frames from {len(steps)} snapshots "
           f"(gen: {gen_python}, n-per-elem {args.n_per_elem})")
 
@@ -320,7 +590,6 @@ def run_stream(args):
         ns = min(args.vapor_range_samples, len(frame_steps))
         samp = [frame_steps[round(i * (len(frame_steps) - 1) / max(1, ns - 1))]
                 for i in range(ns)]
-        import numpy as np
         vals = []
         for s in sorted(set(samp)):
             vts = first_vts if s == frame_steps[0] else gen_highres(
@@ -328,50 +597,64 @@ def run_stream(args):
             reader.FileName = [vts]; reader.UpdatePipeline()
             air_volume.UpdatePipeline()
             d = dsa.WrapDataObject(servermanager.Fetch(air_volume))
-            arr = d.PointData.GetArray("VaporDensity")
+            arr = d.PointData.GetArray(args.air_field)
             if arr is not None and len(arr):
                 vals.append(np.asarray(arr))
             if s != frame_steps[0] and os.path.isfile(vts):
                 os.remove(vts)
-        allv = np.concatenate(vals) if vals else np.array([0.0, 1.0])
+        if not vals:
+            raise RuntimeError(
+                f"field '{args.air_field}' not present in the generated .vts "
+                f"(available via plot_fields_highres.py: IcePhase, Temperature, "
+                f"VaporDensity, Supersaturation). Pass --air-field to pick "
+                f"another, or regenerate with an updated plot_fields_highres.py.")
+        allv = np.concatenate(vals)
         vmin, vmax = (float(np.percentile(allv, args.vapor_percentile[0])),
                       float(np.percentile(allv, args.vapor_percentile[1])))
+        if args.symmetric_range:
+            vmin, vmax = symmetrize(vmin, vmax)
         # restore the reader to the first frame's file for pipeline setup
         reader.FileName = [first_vts]; reader.UpdatePipeline()
-        print(f"Auto vapor range ({args.vapor_percentile[0]:.0f}-"
-              f"{args.vapor_percentile[1]:.0f}%, air region): [{vmin:.4g}, {vmax:.4g}]")
+        print(f"Auto {args.air_field} range ({args.vapor_percentile[0]:.0f}-"
+              f"{args.vapor_percentile[1]:.0f}%, air region): "
+              f"[{vmin:.4g}, {vmax:.4g}]")
 
     view, w, h, regolith_bg = _setup_scene(
         reader, ice_volume, air_volume, args, vmin, vmax,
         ice_preset_path, vapor_colormap, out_path)
 
     # ---- frame loop: gen -> render -> delete --------------------------------
-    frame_dir = out_path + "_frames"
-    if os.path.isdir(frame_dir):
-        shutil.rmtree(frame_dir)
-    os.makedirs(frame_dir)
+    # Frames are cached under their SOURCE STEP, and any left over from a
+    # previous run with identical settings are kept: a rerun that only widens
+    # or re-samples the frame set pays only for the steps it does not have.
+    key = render_key(args, w, h, vmin, vmax)
+    stale = load_frame_meta(frame_dir) != key
+    if stale or args.force_frames:
+        for old in glob.glob(os.path.join(frame_dir, "frame_*.png")):
+            os.remove(old)
+    save_frame_meta(frame_dir, key)
 
-    n = len(frame_steps)
-    for i, step in enumerate(frame_steps):
+    todo = [s for s in frame_steps if not os.path.isfile(frame_path(s))]
+    if len(todo) < len(frame_steps):
+        print(f"  reusing {len(frame_steps) - len(todo)} cached frames; "
+              f"rendering {len(todo)}")
+
+    n = len(todo)
+    for i, step in enumerate(todo):
         vts = first_vts if step == frame_steps[0] else gen_highres(
             run_dir, step, gen_python, args.n_per_elem)
         reader.FileName = [vts]; reader.UpdatePipeline()
         Render(view)
-        frame_path = os.path.join(frame_dir, f"frame_{i:05d}.png")
-        if regolith_bg is not None:
-            from PIL import Image
-            SaveScreenshot(frame_path, view, ImageResolution=[w, h], TransparentBackground=1)
-            fg = Image.open(frame_path).convert("RGBA")
-            Image.alpha_composite(regolith_bg, fg).convert("RGB").save(frame_path)
-        else:
-            SaveScreenshot(frame_path, view, ImageResolution=[w, h])
+        save_frame(view, w, h, frame_path(step), regolith_bg)
         if os.path.isfile(vts):          # delete this step's dense file
             os.remove(vts)
         if i % 25 == 0 or i == n - 1:
             print(f"  frame {i+1}/{n}  step {step}", flush=True)
 
-    # tidy the (now-empty) high-res dir and the stale pvd the generator wrote
-    for junk in (os.path.join(run_dir, "pf_highres.pvd"),):
+    # tidy the (now-empty) high-res dir and the stale pvd the generator wrote.
+    # first_vts is only deleted by the loop if its step was actually rendered;
+    # when frame_steps[0] came from the cache it is still sitting there.
+    for junk in (os.path.join(run_dir, "pf_highres.pvd"), first_vts):
         if os.path.isfile(junk):
             os.remove(junk)
     try:
@@ -379,11 +662,8 @@ def run_stream(args):
     except OSError:
         pass
 
-    print(f"Encoding {out_path} at {args.fps} fps")
-    subprocess.run(["ffmpeg", "-y", "-framerate", str(args.fps),
-                    "-i", os.path.join(frame_dir, "frame_%05d.png"),
-                    "-c:v", "libx264", "-pix_fmt", "yuv420p", out_path], check=True)
-    if not args.keep_frames:
+    encode([frame_path(s) for s in frame_steps], out_path, args.fps)
+    if args.delete_frames:
         shutil.rmtree(frame_dir)
     print(f"Done: {out_path}")
 
@@ -391,7 +671,7 @@ def run_stream(args):
 def _setup_scene(reader, ice_volume, air_volume, args, vmin, vmax,
                  ice_preset_path, vapor_colormap, out_path):
     """Shared display/colormap/camera/resolution setup. Returns (view,w,h,bg).
-    Mirrors the inline setup in main() so both paths render identically."""
+    The single implementation for BOTH the streaming and --no-stream paths."""
     view = GetActiveViewOrCreate("RenderView")
     view.InteractionMode = "2D"
     view.OrientationAxesVisibility = 0
@@ -407,8 +687,8 @@ def _setup_scene(reader, ice_volume, air_volume, args, vmin, vmax,
     ice_lut.RescaleTransferFunction(0.0, 1.0)
 
     air_display = Show(air_volume, view)
-    ColorBy(air_display, ("POINTS", "VaporDensity"))
-    vapor_lut = GetColorTransferFunction("VaporDensity")
+    ColorBy(air_display, ("POINTS", args.air_field))
+    vapor_lut = GetColorTransferFunction(args.air_field)
     if os.path.isfile(vapor_colormap):
         preset_name = json.load(open(vapor_colormap))[0]["Name"]
         if not presets.HasPreset(preset_name):
@@ -429,12 +709,16 @@ def _setup_scene(reader, ice_volume, air_volume, args, vmin, vmax,
     if args.min_height and h < args.min_height:
         scale = args.min_height / h
         w, h = int(round(w * scale)), args.min_height
+        print(f"  (upscaled to meet --min-height {args.min_height}: now {w}x{h})")
         if w > args.max_width:
+            print(f"  (--min-height requires width {w} > --max-width "
+                  f"{args.max_width} -- raising --max-width to match)")
             args.max_width = w
     if w > args.max_width:
         scale = args.max_width / w
         w, h = args.max_width, max(1, int(round(h * scale)))
-    w, h = w + (w % 2), h + (h % 2)
+        print(f"  (downscaled to stay under --max-width {args.max_width})")
+    w, h = w + (w % 2), h + (h % 2)  # libx264/yuv420p needs even dimensions
     view.ViewSize = [w, h]
     print(f"Render resolution: {w}x{h}")
 
@@ -451,8 +735,16 @@ def _setup_scene(reader, ice_volume, air_volume, args, vmin, vmax,
     if not args.no_colorbars:
         base, _ = os.path.splitext(out_path)
         save_vector_colorbar(ice_lut, "Ice phase", base + "_ice_colorbar.svg")
-        save_vector_colorbar(vapor_lut, "Vapor density", base + "_vapor_colorbar.svg")
+        save_vector_colorbar(vapor_lut, air_field_label(args.air_field),
+                             base + "_" + air_field_slug(args.air_field)
+                             + "_colorbar.svg")
 
+    # ---- sediment background: render frames transparent where the domain
+    # excludes a bump, then alpha-composite onto a static regolith-colored
+    # texture -- ParaView's own background-texture/environment properties
+    # don't render in this 2D parallel-projection view (tried BackgroundTexture
+    # and EnvironmentalBGTexture; both no-op here), so this is done as a
+    # per-frame post-composite instead.
     regolith_bg = None
     if not args.no_sediment_texture:
         sediment_texture = args.sediment_texture or os.path.join(
@@ -460,6 +752,11 @@ def _setup_scene(reader, ice_volume, air_volume, args, vmin, vmax,
         if os.path.isfile(sediment_texture):
             from PIL import Image
             regolith_bg = Image.open(sediment_texture).convert("RGBA").resize((w, h))
+            print(f"  Sediment background texture: {sediment_texture}")
+        else:
+            print(f"  (sediment texture not found at {sediment_texture} -- "
+                  f"skipping; run postprocess/make_regolith_texture.py to "
+                  f"generate it)")
     return view, w, h, regolith_bg
 
 
@@ -474,8 +771,30 @@ def main():
                    help="output movie path (default: <dir>/movie.mp4)")
     p.add_argument("--n-frames", type=int, default=600,
                    help="number of frames, evenly spaced in simulated time "
-                        "(default: 600)")
+                        "(default: 600). Ignored when --duration is given.")
+    p.add_argument("--duration", type=float, default=None,
+                   help="target movie length in SECONDS. Overrides --n-frames: "
+                        "the frame count becomes duration*fps, so playback "
+                        "stays at --fps and a shorter movie is proportionally "
+                        "cheaper to render. (To instead keep every frame and "
+                        "play them faster, set --fps and leave this off.) If "
+                        "there are fewer snapshots than duration*fps, fps is "
+                        "lowered instead so the movie still runs this long.")
     p.add_argument("--fps", type=int, default=30, help="playback frame rate (default: 30)")
+    p.add_argument("--air-field", default="Supersaturation",
+                   help="point field used to color the air region (default: "
+                        "Supersaturation, sigma = (rhov - rho_vs)/rho_vs -- the "
+                        "actual driving force for deposition/sublimation, and "
+                        "signed about zero so the diverging colormap reads "
+                        "correctly). Other options written by "
+                        "plot_fields_highres.py: VaporDensity, Temperature.")
+    p.add_argument("--no-symmetric-range", dest="symmetric_range",
+                   action="store_false",
+                   help="do not force the air-field color range to be symmetric "
+                        "about zero. Symmetric is the default because the "
+                        "colormap is diverging and its midpoint is only "
+                        "meaningful at sigma = 0 (the saturated state).")
+    p.set_defaults(symmetric_range=True)
     p.add_argument("--t-start", type=float, default=None,
                    help="start of the simulated-time window (default: first timestep)")
     p.add_argument("--t-end", type=float, default=None,
@@ -493,7 +812,7 @@ def main():
                         "postprocess/colormaps/cmocean_balance.json, generated by "
                         "make_cmocean_preset.py)")
     p.add_argument("--vapor-range", type=float, nargs=2, default=None,
-                   help="fixed [min, max] for the vapor-density colorbar; if "
+                   help="fixed [min, max] for the air-field colorbar; if "
                         "omitted, auto-computed from --vapor-percentile over "
                         "--vapor-range-samples sampled timesteps")
     p.add_argument("--vapor-percentile", type=float, nargs=2, default=[2.0, 98.0],
@@ -518,8 +837,20 @@ def main():
                         "--max-width is raised to match, with a printed note (default: 4096)")
     p.add_argument("--no-colorbars", action="store_true",
                    help="skip exporting the standalone SVG colorbars")
-    p.add_argument("--keep-frames", action="store_true",
-                   help="keep the rendered PNG frame sequence after muxing")
+    p.add_argument("--delete-frames", action="store_true",
+                   help="delete the rendered PNG frame sequence after muxing. "
+                        "Frames are KEPT by default (in <out>.mp4_frames/, "
+                        "named by source step) so a rerun that only changes "
+                        "--duration/--fps/--n-frames re-muxes them instead of "
+                        "re-rendering -- which is the expensive part.")
+    p.add_argument("--force-frames", action="store_true",
+                   help="re-render every frame even if a matching cached PNG "
+                        "already exists")
+    p.add_argument("--include-first", action="store_true",
+                   help="include the first snapshot (step 0, the raw initial "
+                        "condition). Skipped by default: it is not a solution, "
+                        "and its uniform vapor field skews the pooled "
+                        "percentile range used for the colorbar.")
     p.add_argument("--sediment-texture", default=None,
                    help="path to a background texture image composited behind "
                         "the ice/air rendering, showing through wherever the "
@@ -555,14 +886,6 @@ def main():
         os.path.dirname(os.path.abspath(__file__)), "colormaps", "cmocean_ice.json")
     vapor_colormap = args.vapor_colormap or os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "colormaps", "cmocean_balance.json")
-    sediment_texture = None
-    if not args.no_sediment_texture:
-        sediment_texture = args.sediment_texture or os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "textures", "lunar_regolith.png")
-        if not os.path.isfile(sediment_texture):
-            print(f"  (sediment texture not found at {sediment_texture} -- "
-                  f"skipping; run postprocess/make_regolith_texture.py to generate it)")
-            sediment_texture = None
 
     print(f"Reading {pvd_path}")
     reader = OpenDataFile(pvd_path)
@@ -571,10 +894,17 @@ def main():
     if not timestep_values:
         raise RuntimeError("No timesteps found in the PVD file")
 
+    if not args.include_first and len(timestep_values) > 1:
+        # Start the window at the first SOLVED snapshot, not the raw IC --
+        # see the same skip in run_stream() for why.
+        print(f"Skipping the initial condition (t = {timestep_values[0]:.6g})")
+        timestep_values = timestep_values[1:]
+
     t_start = args.t_start if args.t_start is not None else timestep_values[0]
     t_end = args.t_end if args.t_end is not None else timestep_values[-1]
+    n_frames = resolve_n_frames(args)
     print(f"Simulated time window: [{t_start:.6g}, {t_end:.6g}] "
-          f"({len(timestep_values)} source snapshots, {args.n_frames} output frames)")
+          f"({len(timestep_values)} source snapshots, {n_frames} output frames)")
 
     # ---- pipeline -----------------------------------------------------------
     source = reader
@@ -586,141 +916,71 @@ def main():
     air_volume = IsoVolume(Input=source, InputScalars=["POINTS", "IcePhase"],
                             ThresholdRange=[-0.1, 0.5])
 
-    # ---- vapor colorbar range (fixed across the whole movie) --------------
+    # ---- air-field colorbar range (fixed across the whole movie) ----------
     if args.vapor_range is not None:
         vmin, vmax = args.vapor_range
+        if args.symmetric_range:
+            vmin, vmax = symmetrize(vmin, vmax)
     else:
-        vmin, vmax = auto_vapor_range(
-            air_volume, timestep_values, args.vapor_range_samples, *args.vapor_percentile)
-        print(f"Auto vapor-density range ({args.vapor_percentile[0]:.0f}-"
+        vmin, vmax = auto_air_range(
+            air_volume, timestep_values, args.vapor_range_samples,
+            *args.vapor_percentile, field=args.air_field)
+        if args.symmetric_range:
+            vmin, vmax = symmetrize(vmin, vmax)
+        print(f"Auto {args.air_field} range ({args.vapor_percentile[0]:.0f}-"
               f"{args.vapor_percentile[1]:.0f} percentile over "
               f"{args.vapor_range_samples} samples, air region only): "
               f"[{vmin:.4g}, {vmax:.4g}]")
 
-    view = GetActiveViewOrCreate("RenderView")
-    view.InteractionMode = "2D"
-    view.OrientationAxesVisibility = 0
-
-    ice_display = Show(ice_volume, view)
-    ColorBy(ice_display, ("POINTS", "IcePhase"))
-    presets = servermanager.vtkSMTransferFunctionPresets.GetInstance()
-    if not presets.HasPreset("cmocean_ice"):
-        if not presets.ImportPresets(ice_preset_path):
-            raise RuntimeError(f"Failed to import ice colormap preset: {ice_preset_path}")
-    ice_lut = GetColorTransferFunction("IcePhase")
-    ice_lut.ApplyPreset("cmocean_ice", True)
-    ice_lut.RescaleTransferFunction(0.0, 1.0)
-    ice_display.SetScalarBarVisibility(view, True)
-
-    air_display = Show(air_volume, view)
-    ColorBy(air_display, ("POINTS", "VaporDensity"))
-    vapor_lut = GetColorTransferFunction("VaporDensity")
-    if os.path.isfile(vapor_colormap):
-        preset_name = json.load(open(vapor_colormap))[0]["Name"]
-        if not presets.HasPreset(preset_name):
-            presets.ImportPresets(vapor_colormap)
-        vapor_lut.ApplyPreset(preset_name, True)
-    else:
-        vapor_lut.ApplyPreset(vapor_colormap, True)
-    vapor_lut.RescaleTransferFunction(vmin, vmax)
-
-    # In-frame legends off: they eat into the tight crop below and don't
-    # scale/antialias well baked into video. Standalone vector colorbars
-    # (matching these exact LUTs) are exported separately further down.
-    ice_display.SetScalarBarVisibility(view, False)
-    air_display.SetScalarBarVisibility(view, False)
-
-    # ---- resolution: native data point grid by default, not a fixed cap ----
-    if args.resolution:
-        w, h = (int(v) for v in args.resolution.split("x"))
-    else:
-        ext = reader.GetDataInformation().GetExtent()
-        nx, ny = ext[1] - ext[0] + 1, ext[3] - ext[2] + 1
-        w = int(round(nx * args.supersample))
-        h = int(round(ny * args.supersample))
-    if args.min_height and h < args.min_height:
-        scale = args.min_height / h
-        w, h = int(round(w * scale)), args.min_height
-        print(f"  (upscaled to meet --min-height {args.min_height}: now {w}x{h})")
-        if w > args.max_width:
-            print(f"  (--min-height requires width {w} > --max-width {args.max_width} "
-                  f"-- raising --max-width to match; min-height wins)")
-            args.max_width = w
-    if w > args.max_width:
-        scale = args.max_width / w
-        w, h = args.max_width, max(1, int(round(h * scale)))
-        print(f"  (downscaled to stay under --max-width {args.max_width})")
-    w, h = w + (w % 2), h + (h % 2)  # libx264/yuv420p needs even dimensions
-    view.ViewSize = [w, h]
-    print(f"Render resolution: {w}x{h}")
-
-    # ---- tight crop: explicit camera on the data bounds, zero margin -------
-    # ParaView auto-resets the camera (fit-to-data, with padding) on the
-    # FIRST render after new representations are shown -- render once now
-    # to absorb that reset, then override the camera explicitly. Setting
-    # the camera before this first Render() is silently undone.
-    Render(view)
-    b = reader.GetDataInformation().GetBounds()
-    xmid, ymid = 0.5 * (b[0] + b[1]), 0.5 * (b[2] + b[3])
-    cam = view.GetActiveCamera()
-    cam.SetParallelProjection(1)
-    cam.SetFocalPoint(xmid, ymid, 0.0)
-    cam.SetPosition(xmid, ymid, 1.0)
-    cam.SetViewUp(0.0, 1.0, 0.0)
-    cam.SetParallelScale(0.5 * (b[3] - b[2]))
-
-    # ---- standalone vector colorbars (match the LUTs exactly) --------------
-    if not args.no_colorbars:
-        base, _ = os.path.splitext(out_path)
-        save_vector_colorbar(ice_lut, "Ice phase", base + "_ice_colorbar.svg")
-        save_vector_colorbar(vapor_lut, "Vapor density", base + "_vapor_colorbar.svg")
+    # Display/colormap/camera/resolution setup is shared with the streaming
+    # path -- this used to be a second, hand-kept copy of it, which is exactly
+    # how the two paths end up rendering subtly different movies.
+    view, w, h, regolith_bg = _setup_scene(
+        reader, ice_volume, air_volume, args, vmin, vmax,
+        ice_preset_path, vapor_colormap, out_path)
 
     # ---- frame loop: evenly spaced in simulated time, not in snapshot index --
+    # Frames here are keyed by output INDEX, not by source step: they are
+    # synthesised at arbitrary interpolated times, so "which snapshot is this"
+    # has no answer and a cache would only be reusable at an identical frame
+    # count. Reuse therefore requires the same count as well as the same key.
     frame_dir = out_path + "_frames"
-    if os.path.isdir(frame_dir):
-        shutil.rmtree(frame_dir)
-    os.makedirs(frame_dir)
+    os.makedirs(frame_dir, exist_ok=True)
+    key = dict(render_key(args, w, h, vmin, vmax),
+               mode="pvd", n_frames=n_frames,
+               window=[round(t_start, 9), round(t_end, 9)],
+               interpolate=(not args.no_interpolate))
+    frames = [os.path.join(frame_dir, f"frame_{i:05d}.png") for i in range(n_frames)]
+
+    if (not args.force_frames and load_frame_meta(frame_dir) == key
+            and all(os.path.isfile(f) for f in frames)):
+        print(f"Reusing {n_frames} cached frames in {frame_dir}")
+        encode(frames, out_path, args.fps)
+        if args.delete_frames:
+            shutil.rmtree(frame_dir)
+        print(f"Done: {out_path}")
+        return
+
+    for old in glob.glob(os.path.join(frame_dir, "frame_*.png")):
+        os.remove(old)
+    save_frame_meta(frame_dir, key)
 
     scene = GetAnimationScene()
     scene.UpdateAnimationUsingDataTimeSteps()
 
-    # ---- sediment background: render frames transparent where the domain
-    # excludes a bump, then alpha-composite onto a static regolith-colored
-    # texture -- ParaView's own background-texture/environment properties
-    # don't render in this 2D parallel-projection view (tried BackgroundTexture
-    # and EnvironmentalBGTexture; both no-op here), so this is done as a
-    # per-frame post-composite instead.
-    regolith_bg = None
-    if sediment_texture:
-        from PIL import Image
-        regolith_bg = Image.open(sediment_texture).convert("RGBA").resize((w, h))
-        print(f"  Sediment background texture: {sediment_texture}")
-
-    n = args.n_frames
+    n = n_frames
     for i in range(n):
         t = t_start + (t_end - t_start) * (i / (n - 1) if n > 1 else 0.0)
         scene.AnimationTime = t
         Render(view)
-        frame_path = os.path.join(frame_dir, f"frame_{i:05d}.png")
-        if regolith_bg is not None:
-            SaveScreenshot(frame_path, view, ImageResolution=[w, h], TransparentBackground=1)
-            fg = Image.open(frame_path).convert("RGBA")
-            Image.alpha_composite(regolith_bg, fg).convert("RGB").save(frame_path)
-        else:
-            SaveScreenshot(frame_path, view, ImageResolution=[w, h])
+        save_frame(view, w, h, frames[i], regolith_bg)
         if i % 50 == 0 or i == n - 1:
             print(f"  frame {i+1}/{n}  t={t:.6g}")
 
     # ---- mux with ffmpeg -----------------------------------------------------
-    print(f"Encoding {out_path} at {args.fps} fps")
-    cmd = [
-        "ffmpeg", "-y", "-framerate", str(args.fps),
-        "-i", os.path.join(frame_dir, "frame_%05d.png"),
-        "-c:v", "libx264", "-pix_fmt", "yuv420p", out_path,
-    ]
-    subprocess.run(cmd, check=True)
+    encode(frames, out_path, args.fps)
 
-    if not args.keep_frames:
+    if args.delete_frames:
         shutil.rmtree(frame_dir)
 
     print(f"Done: {out_path}")
