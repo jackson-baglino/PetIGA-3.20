@@ -969,6 +969,19 @@ int main(int argc, char *argv[]) {
     // ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
 
     /* Boundary conditions (could 'functionalize' this at some point) */
+
+    /* Record of what is actually pinned on each face, so the per-wall report
+     * further down prints the real configuration rather than re-deriving it
+     * from the flags. The carve-outs below (-rhovfix_axis, the gradient-
+     * parallel skip, the axisymmetric y=0 exemption) make "which faces ended
+     * up Dirichlet" genuinely awkward to restate, and a report that restates
+     * it is a second implementation waiting to disagree with this one.
+     * Indexed [axis][side][dof]; side 0 is the low-coordinate face. */
+    PetscBool bc_dirichlet[3][2][3];
+    PetscReal bc_value[3][2][3];
+    ierr = PetscMemzero(bc_dirichlet, sizeof(bc_dirichlet)); CHKERRQ(ierr);
+    ierr = PetscMemzero(bc_value,     sizeof(bc_value));     CHKERRQ(ierr);
+
     // Set vapor density BCs
     if (flag_BC_rhovfix) {
         PetscReal rho0_vs;
@@ -992,6 +1005,8 @@ int main(int argc, char *argv[]) {
                 /* m=0 is the low-coordinate face, m=1 the high one. */
                 PetscReal frac = (m == 0) ? user.rhovfix_lo : user.rhovfix_hi;
                 ierr = IGASetBoundaryValue(iga, l, m, 2, frac * rho0_vs); CHKERRQ(ierr);
+                bc_dirichlet[l][m][2] = PETSC_TRUE;
+                bc_value[l][m][2]     = frac * rho0_vs;
             }
         }
     }
@@ -1025,6 +1040,8 @@ int main(int argc, char *argv[]) {
                 if (user.axisym && l == 1 && m == 0) continue;
                 T_BC[l][m] = user.temp0 + (2.0 * m - 1.0) * user.grad_temp0[l] * LL[l] / 2.0;
                 ierr = IGASetBoundaryValue(iga, l, m, 1, T_BC[l][m]); CHKERRQ(ierr);
+                bc_dirichlet[l][m][1] = PETSC_TRUE;
+                bc_value[l][m][1]     = T_BC[l][m];
             }
         }
     }
@@ -1272,13 +1289,84 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD,
                     "   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)\n");
 
-    /* --- Boundary conditions ----------------------------------------------- */
-    PetscPrintf(PETSC_COMM_WORLD, "\n BOUNDARY CONDITIONS\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   phi_i:   natural Neumann (zero flux)\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   T:       %s\n",
-                flag_BC_Tfix    ? "Dirichlet (fixed value)" : "natural Neumann (insulating)");
-    PetscPrintf(PETSC_COMM_WORLD, "   rho_v:   %s\n",
-                flag_BC_rhovfix ? "Dirichlet (fixed value)" : "natural Neumann (insulating)");
+    /* --- Boundary conditions ------------------------------------------------
+     * One row per wall, one column per equation, printed from the bc_dirichlet
+     * record filled in where the conditions were actually applied. The old
+     * three-line summary reported only the FLAGS, which is not the same thing:
+     * -flag_BC_Tfix with a transverse gradient pins two walls and leaves the
+     * other two insulating, and -rhovfix_axis pins only one axis's pair, but
+     * both cases printed a flat "T: Dirichlet" / "rho_v: Dirichlet" that
+     * implied all four. */
+    {
+        static const char *const wall_name[3][2] = {
+            {"x = 0   (left)",   "x = Lx  (right)"},
+            {"y = 0   (bottom)", "y = Ly  (top)"},
+            {"z = 0   (back)",   "z = Lz  (front)"},
+        };
+        const char *unit[3] = {"", "C", "kg/m3"};
+        /* rho_v runs ~1e-4 kg/m3, which %g renders as an unreadable string of
+         * leading zeros; T is a plain few-digit number. Format each to suit. */
+        const char *vfmt[3] = {"", "Dirichlet %.4f %s", "Dirichlet %.4e %s"};
+
+        PetscPrintf(PETSC_COMM_WORLD, "\n BOUNDARY CONDITIONS\n");
+        if (user.periodic == 1) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   PERIODIC on every axis — the domain has no walls, and all\n"
+                "   Dirichlet flags are forced off (-flag_BC_Tfix/-flag_BC_rhovfix\n"
+                "   are ignored under -periodic 1).\n");
+        } else {
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   Per wall, per equation. \"Neumann\" is the NATURAL condition —\n"
+                "   zero normal flux, imposed by omission rather than explicitly:\n"
+                "   dphi/dn = 0 for the phase field (a 90° contact angle where ice\n"
+                "   meets the wall), zero heat flux for T (insulating), and zero\n"
+                "   vapor flux for rho_v (sealed — no mass enters or leaves there).\n\n");
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   %-18s %-22s %-24s %s\n",
+                "Wall", "phi_i (ice)", "T (temperature)", "rho_v (vapor)");
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   %-18s %-22s %-24s %s\n",
+                "------------------", "----------------------",
+                "------------------------", "------------------------");
+            for (PetscInt l = 0; l < dim; l++) {
+                for (PetscInt m = 0; m < 2; m++) {
+                    char cell[3][40];
+                    const char *name = wall_name[l][m];
+                    /* In axisymmetric r-z mode the y=0 face is the symmetry
+                     * axis, not a physical wall — say so, since "Neumann"
+                     * there is the exact axis condition, not a modelling
+                     * choice about a boundary. */
+                    if (user.axisym && l == 1 && m == 0) name = "r = 0   (axis)";
+                    PetscSNPrintf(cell[0], sizeof(cell[0]), "Neumann  dphi/dn=0");
+                    for (PetscInt d = 1; d < 3; d++) {
+                        if (bc_dirichlet[l][m][d])
+                            PetscSNPrintf(cell[d], sizeof(cell[d]), vfmt[d],
+                                          (double)bc_value[l][m][d], unit[d]);
+                        else
+                            PetscSNPrintf(cell[d], sizeof(cell[d]), "Neumann  (%s)",
+                                          (d == 1) ? "insulating" : "sealed");
+                    }
+                    PetscPrintf(PETSC_COMM_WORLD, "   %-18s %-22s %-24s %s\n",
+                                name, cell[0], cell[1], cell[2]);
+                }
+            }
+            /* phi_i has no Dirichlet path anywhere in the code, so the column
+             * above is constant by construction; call that out rather than
+             * leaving the reader to wonder whether a flag could change it. */
+            PetscPrintf(PETSC_COMM_WORLD,
+                "\n   phi_i is natural Neumann on every wall in all configurations —\n"
+                "   the solver never pins the phase field on a boundary.\n");
+            if (flag_BC_Tfix && !bc_dirichlet[0][0][1] && !bc_dirichlet[1][0][1])
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "   NOTE: -flag_BC_Tfix is set but no wall was pinned.\n");
+            if (flag_BC_rhovfix && user.rhovfix_axis >= 0)
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "   Vapor reservoir restricted to axis %d by -rhovfix_axis "
+                    "(lo x%.4g, hi x%.4g of rho_vs(T0)).\n",
+                    (int)user.rhovfix_axis, (double)user.rhovfix_lo,
+                    (double)user.rhovfix_hi);
+        }
+    }
 
     PetscPrintf(PETSC_COMM_WORLD,
         "\n================================================================================\n\n");
