@@ -2,6 +2,37 @@
 
 Newest entries first.
 
+## 2026-08-14 — plot_growth_rate.py: interface velocity v_n as a ParaView field
+
+- New macro `scripts/paraview_macros/plot_growth_rate.py` renders the interface
+  normal velocity derived in docs/curvature_driven_growth.md:
+      v_n = -3*M*eps*kappa + (eps*alph_sub/(5*rho_ice))*(rho_v - rho_vs)
+  v_n > 0 = ice growing. Adds V_normal, V_curvature, V_phasechange and
+  V_normal_um_per_day, masked to the diffuse band.
+- **Chains onto plot_rhovsI rather than recomputing kappa.** It consumes that
+  macro's Curvature / Supersaturation / RhoVS_I arrays, so the curvature
+  implementation (which took three rounds to get right) exists once.
+- Emits the decomposition, not just the total, because on the wedge run the two
+  terms are ~1e-11 each and **cancel by a median of 88.5%**, leaving v_n ~5e-13.
+  Plotting v_n alone would hide that the net is a small residual of two large
+  opposing rates.
+- mob_sub / alph_sub / rho_ice / eps are read from the run's own outp.txt
+  banner (they are DERIVED at startup from d0_sub0/beta_sub0 and appear in no
+  .opts), with PV_* env and constant overrides; provenance is printed per value
+  and the macro refuses to guess if it cannot find them.
+- Cross-checked against postprocess/gt_balance.py, which reaches the same
+  quantity by the independent route (sigma - d0*kappa)/beta. On the phi=0.5
+  contour: concave +5.264e-13 vs +5.20e-13, convex -4.955e-13 vs -4.97e-13.
+- Band medians differ from contour values (+6.28e-13 vs +5.26e-13) because
+  kappa varies across the band; the docstring says to read the contour, and
+  prints the instruction after running.
+- Hit the ParaView builtins-shadowing trap a third time, and here it is a real
+  user-path bug rather than a test artifact: clicking plot_rhovsI first runs a
+  Programmable Filter that star-imports over max/min/sum in __main__, which
+  macros share. Guarded with builtins bindings.
+
+---
+
 ## 2026-08-13 — Where curvature actually drives growth: docs/curvature_driven_growth.md
 
 Jackson asked why a growing interface reads UNDERSATURATED when the only
