@@ -42,12 +42,20 @@
  *
  *     phi(x) = 0.5*(1 + tanh(x/(2*eps)))
  *
- * i.e. interface-thickness parameter W = eps exactly. That is the Karma-Plapp
- * convention the matched asymptotics assume, and it is the W that
- * lambda_sub = a1*eps/d0_sub in <project>_main.c is calibrated against.
- * Doubling f1 would shrink the real profile to W = eps/sqrt(2) while the
+ * This is Moure & Fu's well, so `eps` here is exactly M&F's eps, and the
+ * constants a1 = 5, a2 = 0.1581 that lambda_sub = a1*eps/d0_sub and tau_sub
+ * in <project>_main.c use are the ones derived for THIS well.
+ *
+ * It is NOT Kaempfer & Plapp's W. Their Eq.(33) uses a +-1 well with profile
+ * tanh(x/(sqrt(2)*W)), so W = sqrt(2)*eps, and their constants are
+ * a1 = 5*sqrt(2)/8 = 0.8839, a2 = 0.6267. The two sets are equivalent --
+ * 5 == 0.8839*sqrt(2)*4, and a1*a2 is 0.79 in eps-units vs 0.78 in W-units --
+ * so the sqrt(2) is already absorbed. Do not "fix" it anywhere.
+ *
+ * Doubling f1 would shrink the real profile to eps/sqrt(2) while the
  * Gibbs-Thomson and kinetic calibration kept using eps, throwing d0 and beta
- * off by sqrt(2). Verified against run data: measured W/eps = 1.015. */
+ * off by sqrt(2). Verified against run data: measured profile scale is
+ * 1.015*eps. */
 static void DoubleWellDeriv(PetscReal phi, PetscReal *f1, PetscReal *df1)
 {
     if (f1)  *f1  = phi * (1.0 - phi) * (1.0 - 2.0 * phi);

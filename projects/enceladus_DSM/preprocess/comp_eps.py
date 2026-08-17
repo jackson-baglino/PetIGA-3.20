@@ -1,104 +1,80 @@
 """
-comp_eps.py — Compute the diffuse-interface parameter `eps`, mesh resolution,
-and all derived phase-field model parameters for the dry-snow phase-field model,
-following Kaempfer & Plapp, Phys. Rev. E 79, 031502 (2009), and Moure & Fu,
-Cryst. Growth Des. 24, 5687 (2024) — sublimation reduction.
+comp_eps.py — Compute the diffuse-interface parameter `eps`, the mesh, and the
+derived phase-field parameters for the dry-snow sublimation model.
 
-MESH CONVENTION (this solver)
-------------------------------
-Setting h = ε/√2 gives ~7.5 elements across the phi=0.05–0.95 visible band:
-    h  = eps / sqrt(2)
-    Nx = ceil(Lx / (eps / sqrt(2)))  =  ceil(sqrt(2) * Lx / eps)
+Sources: Kaempfer & Plapp, Phys. Rev. E 79, 031502 (2009) ["K&P"], and
+Moure & Fu, Cryst. Growth Des. 24, 7808 (2024) ["M&F"], sublimation reduction.
 
-This is NOT a tunable. It follows from the equilibrium profile. Solving the 1D
-steady phase-field equation for this double well gives
+WIDTH CONVENTION
+----------------
+This solver uses M&F's well, (1/2)*phi^2*(1-phi)^2 with an eps^2 gradient
+term, so the 1D equilibrium profile is logistic:
 
-    phi(x) = 0.5 * (1 - tanh(x / (2*eps)))
+    phi(x) = 1/(1 + exp(-x/eps)) = 0.5*(1 + tanh(x/(2*eps)))
 
-so every width in the problem is fixed in units of eps:
+`eps` here is exactly M&F's eps, and a1 = 5, a2 = 0.1581 below are the
+asymptotic constants for THAT well. K&P's Eq.(33) uses a +-1 well whose
+profile is tanh(x/(sqrt(2)*W)), so their W = sqrt(2)*eps and their constants
+are a1 = 5*sqrt(2)/8, a2 = 0.6267. The two sets agree: 5 == (5*sqrt(2)/8)*4,
+and a1*a2 == 0.79 in eps-units vs 0.78 in W-units. Nothing here needs a
+sqrt(2): every width-carrying quantity goes through a1/a2, and the bounds
+below are written in eps the way M&F write them.
 
-    Karma width  2*sqrt(2)*eps = 2.828 eps   <- the asymptotic scale
-    5%-95% band  4*atanh(0.9)  = 5.889 eps
-    1%-99% band  4*atanh(0.98) = 9.190 eps
+MESH
+----
+    h = eps/sqrt(2)      Nx = ceil(Lx/h) = ceil(sqrt(2)*Lx/eps)
 
-h = eps/sqrt(2) puts EXACTLY 4.00 elements across the Karma width (and 8.33
-across the visible 5-95% band). The thin-interface asymptotics the whole model
-rests on are written in terms of that width, so the mesh is tied to it by
-construction. h = eps/2 would give 5.66 elements per Karma width -- a number
-that corresponds to nothing in the analysis -- at 2x the node count.
+That is 2 elements per asymptotic width W, and (since the logistic profile
+has no edge) 8.3 elements across phi=0.05-0.95 and 13.0 across 0.01-0.99.
+See docs/interface_width_conventions.md before comparing against a ParaView
+measurement.
 
-The logistic equilibrium profile phi(x) = 1/(1+exp(-x/eps)) has these
-band widths expressed in units of eps:
-    phi=0.050–0.950  (5%–95%):      5.89·eps  →  8.33 elements at h=ε/√2  ≈ ~7.5
-    phi=0.010–0.990  (1%–99%):      9.19·eps  → 13.0  elements at h=ε/√2
-    phi=0.005–0.995  (0.5%–99.5%): 10.59·eps  → 14.97 elements at h=ε/√2
-No 2√2 prefactor in the physics — that belongs to Karma-convention solvers.
-The 1/√2 here is purely a mesh-resolution choice targeting ~7.5 visible
-(phi=0.05–0.95) interface elements.
+BOUNDS ON eps
+-------------
+  [B-HEAT]     eps <= safety * D_heat * beta_HK    K&P Eq.(43a/b)
+  [B-VAPOR]    eps <= safety * D_v    * beta_HK    K&P Eq.(43c)
+  [B-KINETIC]  eps <= safety * d0/(beta_sub*vn)    K&P Eq.(45)
+  [B-CURV]     eps <= eps_over_R * R_ave           geometric, K&P "W << 1/chi"
 
-BOUNDS ON ε (K&P eqs. 42–46, equivalent to M&F SI Cond. 1–3)
-------------------------------------------------------------
-  [B-HEAT]       W ≪  D_heat · (ρ_vs/ρᵢ) · β₀     Eq. (42a/b), M&F mean
-  [B-VAPOR]      W ≪  Dᵥ     · (ρ_vs/ρᵢ) · β₀     Eq. (42c)
+B-HEAT/B-VAPOR control the thin-interface expansion parameter
 
-Eq. 42 literally names the ice and air thermal channels separately, but only
-the MEAN is enforced here, because M&F SI Eq. 9 -- which tau_sub is derived
-from -- compensates against the mean D*_ia and the solver assembles the same.
-The single-channel readings are reported under the thin-interface diagnostic.
-M&F's own SI parameters fail the ice-channel test and pass the mean, and K&P do
-not use the ice channel to size their parameters either. Eqs. 44 and 46 are
-estimates of W, not constraints on it, and are deliberately not enforced.
+    delta = a1*a2*eps/(D*beta_HK) = a1*a2*safety     (on the binding channel)
 
-D_heat is set by --Dchannel. Default "mean" uses D*_ia = ½(κᵢ/Cᵢ + κₐ/Cₐ),
-the diffusivity τ_sub is compensated against here and the one the solver
-assembles (src/<project>_main.c:558 diff_sub). "ice" uses κᵢ/Cᵢ — ~6x tighter on ε,
-the conservative single-sided reading of K&P Eq. 43a.
-  [B-KINETIC]    W ≪  d₀ / (β₀ · vₙ)               Eq. (45)
-  [B-CURV]       W ≪  R_ave                         geometric (near Eq. 44)
+which is what "<<" means quantitatively. tau_sub already COMPENSATES the
+first order in delta (it carries the a2 terms), so delta is the size of the
+correction being applied, not the residual error; the residual is O(delta^2).
+safety=0.5 -> delta=0.40, safety=0.25 -> delta=0.20.
 
-Here β₀ is the PHYSICAL (unscaled) kinetic coefficient (M&F's β_sub, K&P's β₀).
+D_heat is set by --Dchannel. "mean" (default) = D*_ia = (D_i+D_a)/2, the
+diffusivity tau_sub compensates against and the one the solver assembles
+(enceladus_main.c diff_sub). "ice" = kappa_i/C_i, ~6x tighter. The ice channel
+is knowingly violated: enforcing it drove the Demmenie mesh to ~1e9 nodes
+(tried 2026-08-11, reverted). M&F violate it by 100x in print and say so
+("we consider a value eps < 10^-6 m, which allows us to use a coarser spatial
+discretization ... less accurate in capturing interface kinetics along the
+air-ice ... interfaces"). delta_ice is reported as a diagnostic instead.
 
-DERIVED PHASE-FIELD MODEL PARAMETERS (M&F SI Eq. 9, verbatim)
--------------------------------------------------------------
-Once ε, β_sub, d_sub are fixed, ALL of these are algebraically determined:
+B-CURV is deliberately crude: it is 1-2 decades looser than the binding bound
+in every case we run, and the true smallest curvature (a fresh neck fillet)
+starts near-singular and then relaxes, so sizing a mesh from it is both
+unstable and needlessly expensive. eps <= 0.1*R_ave, no safety factor.
 
-   d_sub · (ρ_vs/ρᵢ)  =  a₁ · ε / λ_sub
-   β_sub · (ρ_vs/ρᵢ)  =  a₁ · [τ_sub/(ε·λ_sub) − a₂·ε/D*_ia − a₂·ε/Dᵥ]
-   M_sub = ε / (3·τ_sub)     α_sub = λ_sub / τ_sub
-
-where D*_ia = (Dᵢ + Dₐ)/2, and the M&F-specific asymptotic constants
-(from their SI footnote 1, derived from Karma-Rappel applied to their
-free energy):  a₁ ≈ 5,  a₂ ≈ 0.1581.
-(These differ from Karma-Rappel's a₁=5√2/8, a₂=0.6267, which are specific
-to Karma's ±1 double-well; M&F's φ∈[0,1] well gives different values.)
-
-β_sub INTERPRETATION (important!)
+DERIVED PARAMETERS (M&F SI Eq. 9)
 ---------------------------------
-Both K&P and M&F use β_sub / β₀ to mean the *unscaled* physical kinetic
-coefficient in the Gibbs-Thomson condition ρᵥ − ρvs = β_sub · ρvs · vₙ + …
-Hertz-Knudsen gives β_sub = β_HK = (1/α_c)·√(2πm/kT).
-(K&P sometimes uses β' or β₀' for the *scaled* form β₀·(ρ_vs/ρᵢ) — we
-avoid that notation and use β_sub throughout.)
+   d_sub*(rho_vs/rho_i) = a1*eps/lam_sub
+   beta_sub*(rho_vs/rho_i) = a1*[tau_sub/(eps*lam_sub) - a2*eps/D*_ia - a2*eps/Dv]
+   M_sub = eps/(3*tau_sub)      alpha_sub = lam_sub/tau_sub
 
-α_c IS THE ONLY GENUINE FREE PARAMETER
---------------------------------------
-Uncertain by orders of magnitude (10⁻⁴ to 10⁻¹; Libbrecht & Rickerby 2013,
-Bouvet et al. 2022, Libbrecht 2017).
+beta_sub / beta_0 always mean the UNSCALED coefficient in the Gibbs-Thomson
+condition; beta_HK = beta_sub*(rho_vs/rho_i) = (1/alpha_c)*sqrt(2*pi*m/kT) is
+the scaled one (K&P's beta'). alpha_c is the only genuine free parameter
+(10^-4 to 10^-1; Libbrecht 2017, Braun et al. 2024).
 
-DIAGNOSTICS
------------
-  β_eff / β_target     Thin-interface correction. Should be > 0.9 per D channel.
-  Kinetic/curvature    β_sub·vₙ / (d₀·κ). Should be ≫ 1 for kinetic regime.
-  Pe                   ε·vₙ/Dᵥ. Should be ≪ 1.
-  ξᵥ ≤ ρ_vs/ρᵢ         K&P Eq. (48).
-  τ_sub bracket        Kinetic vs correction dominance (M&F regime check).
-
-Usage (CLI)
------------
-  python comp_eps.py --Lx 6e-4 --Ly 6e-4 --Lz 6e-4 --T0 -10 --alpha 1e-3
+Usage
+-----
+  python comp_eps.py --Lx 6e-4 --Ly 6e-4 --T0 -10 --alpha 1e-3
   python comp_eps.py --Lx 6e-4 --T0 -20 --alpha_range 1e-4 1e-1 12
   python comp_eps.py --Lx 6e-4 --T0 -5 --alpha 1e-3 --patch inputs/sim.opts
-  python comp_eps.py --Lx 6e-4 --T0 -5 --alpha 1e-3 --quiet
 """
 
 from __future__ import annotations   # PEP 604 (`float | None`) on Python 3.9
@@ -122,7 +98,7 @@ _DV0     = 2.178e-5       # vapor diffusivity at 273.15 K [m²/s]
 _PATM    = 101325.0       # atmospheric pressure [Pa]
 _RHO_AIR = 1.341          # air density [kg/m³]
 _BB      = 0.62           # ASHRAE humidity ratio coeff
-_GAMMA   = 0.109          # ice–vapor surface energy γ [J/m²]  (K&P Table I)
+_GAMMA   = 0.109          # ice-vapor surface energy γ [J/m²]  (K&P Table I)
 _VM_ICE  = 1.963e-5       # molar volume of ice [m³/mol]
 _R_GAS   = 8.314          # gas constant [J/mol/K]
 
@@ -162,7 +138,7 @@ def beta_HK(T_C: float, alpha_c: float) -> float:
     * K&P denote this as β' or β₀' (the *scaled* form).
     * M&F write β_sub·(ρ_vs/ρᵢ) — this product also equals β_HK.
     * K&P's β₀ (unscaled) = β_HK / (ρ_vs/ρᵢ) — this is what M&F call β_sub
-      in Table S1 (~10⁴–10⁶ s/m).
+      in Table S1 (~10⁴-10⁶ s/m).
 
     Both conventions give the same numerical result for K&P Eq. 43 bounds
     and M&F SI Eq. 9 model parameters, as long as scaling is consistent.
@@ -247,67 +223,31 @@ def alpha_libbrecht(T_C: float, sigma_surf: float) -> float:
 
 
 # =========================================================================
-# Arrhenius attachment kinetics — the model to actually use
+# Arrhenius attachment kinetics — the default alpha_c(T) model
 # =========================================================================
+# alpha_libbrecht() above is not usable for mesh sizing: its sigma0 table is
+# non-monotonic (kink at -6/-7 C, so eps jumps with a 1 C change in T0), and
+# alpha = exp(-sigma0/sigma) underflows at sintering supersaturations
+# (alpha(-20 C) = 1e-30 at sigma = 4.5e-4, i.e. no sintering at all). Because
+# sigma0 spans a factor of 27 over -2..-40 C, no single reference sigma fits
+# both ends -- the incompatibility is structural.
 #
-# WHY NOT USE alpha_libbrecht() DIRECTLY
-# --------------------------------------
-# Two independent problems, both fatal for mesh sizing.
+# Instead: a smooth alpha_c(T) = A*exp(-Ea/(R*T)) anchored to the literature
+# band (Libbrecht 2017; Braun, Fourteau & Lowe, The Cryosphere 18, 1653, 2024).
+# Libbrecht's sigma0(T) sets only the SIGN of the T-dependence. Defaults imply
+# Ea = 31.8 kJ/mol.
 #
-# 1. The table is 10 points, and it is NOT monotonic: sigma0 runs
-#    ... 5.5e-3 (-4), 8.0e-3 (-6), 4.0e-3 (-7), 6.0e-3 (-10) ...
-#    so alpha(T) has a kink and a local reversal around -6/-7 C that is an
-#    artifact of sparse digitisation, not physics. Interpolating through it
-#    makes eps -- and therefore the whole mesh -- jump discontinuously with a
-#    1 C change in T0.
-#
-# 2. The functional form alpha = exp(-sigma0/sigma) is exquisitely sensitive
-#    to sigma, and sintering runs at a TINY supersaturation: at the neck
-#    sigma = d0*kappa = d0/rho_fillet ~ 4.5e-4. There
-#       alpha(-3 C)  = 2.0e-5
-#       alpha(-20 C) = 1e-30   (floored; genuinely exp(-78))
-#    i.e. no sintering at all, which contradicts every experiment. Meanwhile
-#    sigma0 itself spans 4.1e-3 (-2 C) to 1.1e-1 (-40 C), a factor of 27, so
-#    ln(alpha) spans a factor of 27 too: NO single reference sigma can put
-#    this form inside a one-decade alpha band across that range. The
-#    incompatibility is structural, not a matter of picking sigma better.
-#
-# WHAT THIS DOES INSTEAD
-# ----------------------
-# A smooth two-parameter Arrhenius, alpha_c(T) = A*exp(-Ea/(R*T)), pinned to
-# the range the literature actually supports rather than to the table:
-#
-#   Libbrecht (2017), "Physical Dynamics of Ice Crystal Growth"
-#   Braun et al. (2024), "A rigorous approach to the specific surface area
-#     evolution in snow during temperature gradient metamorphism"
-#
-# both bracket alpha_c in roughly [1e-4, 1e-3]. Those bounds set the two
-# anchors; Libbrecht sets only the SIGN of the temperature dependence (sigma0
-# rises as T falls, so attachment gets harder when colder), which the
-# Arrhenius reproduces smoothly and monotonically. The default anchors
-# 1e-3 @ -2 C and 1e-4 @ -40 C imply Ea = 31.8 kJ/mol, an unremarkable value
-# for a surface process on ice.
-#
-# This matters far beyond bookkeeping: alpha_c sets beta_sub, beta_sub sets
-# the binding eps bound, and eps sets the mesh. It also sets which TRANSPORT
-# REGIME the run is in, via the crossover length L* = beta_HK*D_v -- below
-# L* attachment limits, above it vapour diffusion limits, and the Kuczynski
-# r ~ t^(1/3) exponent is derived for the attachment-limited case. So alpha_c
-# has to be fixed before eps, which is why it is resolved before compute_eps.
+# alpha_c must be resolved BEFORE eps: alpha_c -> beta_sub -> binding eps bound
+# -> mesh, and it also sets the transport regime via L* = beta_HK*D_v (below
+# L* attachment-limited, above it vapour-diffusion-limited).
 
 _R_GAS = 8.314462618            # J/(mol K)
 
-# Literature band, used as the default anchors and the default clamp.
-# Braun, Fourteau & Lowe, The Cryosphere 18(4) 1653-1668 (2024): "the best
-# agreement ... is obtained for values in the range 1e-3 < alpha < 1e-1", with
-# optimal fits 1e-1, 1e-1.5 and 1e-2.25 -- all at T ~ -8 C.
-#
-# CAUTION: this is NOT a temperature range. All three of their values come from
-# essentially one temperature, and series 1 drifts 1e-1 -> 3.2e-2 within a
-# single sample over 160 h as the snow coarsens (curvature falls -> local sigma
-# falls -> alpha falls). The spread is the SUPERSATURATION dependence, so the
-# anchors below impose a T-dependence the data does not support on its own.
-# Treat the band as a consistency check on alpha_c(T, sigma), not a fit target.
+# Literature band (default anchors and default clamp). Braun et al. 2024 find
+# 1e-3 < alpha < 1e-1, but all their values sit at T ~ -8 C and drift within a
+# single sample as the snow coarsens -- the spread is SUPERSATURATION
+# dependence, not temperature. Treat the band as a consistency check on
+# alpha_c(T, sigma), not a fit target.
 ALPHA_LIT_LO, ALPHA_LIT_HI = 1.0e-3, 1.0e-1
 ALPHA_ANCHOR_WARM = (-2.0, 1.0e-1)
 ALPHA_ANCHOR_COLD = (-40.0, 1.0e-3)
@@ -350,49 +290,22 @@ def alpha_arrhenius(T_C: float,
 # Two-parameter Libbrecht fit: alpha_c(T, rho_v)
 # -------------------------------------------------------------------------
 #
-# Libbrecht's form is alpha = A*exp(-sigma0/sigma) with TWO free parameters,
-# A and sigma0. material_properties.c::Sigma0 supplies sigma0(T) from the
-# table but the model in monitoring.c hardwires A = 1, which is what makes it
-# unusable at sintering supersaturations. Freeing A -- and letting the sigma0
-# TABLE be rescaled by a single factor f while keeping its SHAPE -- gives two
-# unknowns for two anchors, so the fit is exactly determined:
+# Preferred over the T-only Arrhenius. Libbrecht's form has TWO free
+# parameters, A and sigma0; monitoring.c hardwires A = 1, which is what makes
+# it underflow. Freeing A and rescaling the sigma0 table by a single factor f
+# (keeping its shape) gives two unknowns for two anchors:
 #
 #     alpha_c(T, sigma) = A * exp(-f * sigma0(T) / sigma)
 #
-# Fitted at a characteristic sigma to the literature band (1e-3 warm, 1e-4
-# cold) this returns A = 1.09e-3 and f = 9.8e-3, i.e. sigma0 scaled down by
-# ~100x. Three things follow, and they are why this is preferred over the
-# T-only Arrhenius:
+# A is the rough-surface ceiling on alpha -- exactly the quantity the
+# literature bounds -- and f ~ 1/100 turns the -6/-7 C table kink into an 8%
+# step while keeping Libbrecht's T-dependence rather than an invented Ea.
 #
-#   * A is the ROUGH-SURFACE CEILING on alpha, approached as sigma grows.
-#     That is exactly the quantity Libbrecht (2017) and Braun et al. (2024)
-#     bound, so pinning A inside [1e-4, 1e-3] respects the literature by
-#     construction rather than by clamping after the fact.
-#   * The -6/-7 C kink in the table stops mattering. Scaled by f ~ 1/100 it
-#     turns a factor-1.4e-4 jump in alpha into an 8% step, so the sparse
-#     digitisation no longer propagates into a discontinuous mesh.
-#   * sigma0(T)'s SHAPE is retained, so the temperature dependence is
-#     Libbrecht's rather than an invented activation energy.
-#
-# WHY IT STILL HAS TO BE CLAMPED
-# ------------------------------
-# alpha collapses as sigma -> 0 (at sigma = 1e-5, alpha(-40 C) ~ 1e-50), and
-# beta_sub = beta_HK/chi ~ 1/alpha then diverges. Measured consequences at the
-# Demmenie geometry, sweeping alpha_c with --vn_feature active:
-#
-#     alpha_c    beta_sub     mesh      steps    physical t_final
-#     1e-2       1.7e+05     0.32M      1.00x       1.0x
-#     1e-3       1.7e+06     0.11M      0.15x       3.3x
-#     1e-4       1.7e+07     0.11M      0.13x      25.9x
-#     1e-5       1.7e+08     0.11M      0.13x     252.7x
-#
-# Note what does NOT happen: the mesh does not blow up. Eq.(45) becomes the
-# binding ceiling and is beta-independent under --vn_feature, so eps saturates
-# and the step count is nearly alpha-invariant. The binding cost is PHYSICAL
-# TIME -- t_final scales as 1/alpha_c, so a 2.5 h experiment needs ~65 h of
-# simulated time at alpha_c = 1e-4 and ~26 days at 1e-5. That, plus leaving
-# the literature band, is what makes the floor necessary; it is not a mesh
-# argument.
+# The clamp floor is still required: alpha collapses as sigma -> 0 and
+# beta_sub ~ 1/alpha diverges. The mesh does NOT blow up (Eq.45 becomes
+# binding and is beta-independent under --vn_feature), but physical t_final
+# scales as 1/alpha_c -- a 2.5 h experiment needs ~65 h simulated at
+# alpha_c = 1e-4 and ~26 days at 1e-5. Runtime, not resolution, is the cost.
 
 LIBBRECHT_SIGMA_CHAR = 4.5e-4     # characteristic sintering supersaturation
 
@@ -479,25 +392,17 @@ def D_heat_of(thermal_channel: str = "mean") -> float:
 def eps_ceiling(T_C: float, alpha_c: float,
                 thermal_channel: str = "mean",
                 safety: float = 0.5,
-                corr_target: float | None = None) -> float:
+                delta_target: float | None = None) -> float:
     """ε ceiling from the K&P Eq.(43) heat channel.
 
-    Two conventions, which disagree by ~4x — pick deliberately:
-
-      safety (default 0.5): ε = safety · D_heat · β_HK. This is what sizes
-          the production meshes. Note safety=0.5 lands at a thin-interface
-          correction ratio of 1 − a₁a₂·0.5 = 0.605, i.e. it does NOT meet
-          the >0.9 rule quoted in this script's own output.
-
-      corr_target (overrides safety when given): require
-          β_eff/β_target ≥ corr_target, i.e.
-          ε = (1 − corr_target)·D_heat·β_HK / (a₁·a₂).
-          corr_target=0.9 is the strict thin-interface reading; it is ~3.95x
-          tighter than safety=0.5.
+    safety (default 0.5):  ε = safety · D_heat · β_HK.
+    delta_target (overrides safety): size ε from the thin-interface expansion
+        parameter directly, ε = delta_target · D_heat · β_HK / (a₁·a₂).
+    The two are the same knob: delta = a₁·a₂·safety = 0.79·safety.
     """
     bound = D_heat_of(thermal_channel) * beta_HK(T_C, alpha_c)
-    if corr_target is not None:
-        return (1.0 - corr_target) * bound / (_A1 * _A2)
+    if delta_target is not None:
+        return delta_target * bound / (_A1 * _A2)
     return safety * bound
 
 
@@ -509,20 +414,12 @@ def derived_pf_params(eps: float, T0_C: float, d0: float, beta_hk: float,
                       alpha_i: float, alpha_a: float, Dv: float,
                       thermal_channel: str = "mean") -> dict:
     """
-    Solve M&F SI Eq. (9) for the phase-field model parameters (λ, τ, M, α_source)
-    given ε, physical target (β_sub, d_sub) and diffusivities.
+    Solve M&F SI Eq. (9) for (λ, τ, M, α_source) given ε, the physical targets
+    (β_sub, d_sub) and the diffusivities.
 
-    beta_hk is the Hertz-Knudsen value = β_sub·(ρ_vs/ρᵢ) in M&F notation.
-    (Equivalently, if you have M&F's unscaled β_sub, then β_HK = β_sub·rho_rat.)
-
-    thermal_channel selects the diffusivity used for the heat-channel Eq.(43)
-    bound and thin-interface correction check:
-      "mean" (default) — D*_ia, matching the diffusivity τ_sub actually
-          compensates with here, and the one src/<project>_main.c:558 assembles
-          (diff_sub = 0.5*(D_air + D_ice)).
-      "ice" — κᵢ/Cᵢ, the conservative single-sided choice. ~6x more
-          restrictive on ε; fall back to it if the mean-channel runs show
-          interface-kinetics artifacts.
+    beta_hk is the scaled coefficient β_sub·(ρ_vs/ρᵢ). thermal_channel selects
+    the D reported in the delta diagnostic; τ_sub always compensates against
+    D*_ia, which is what the solver assembles (enceladus_main.c diff_sub).
     """
     rho_vs  = rho_vs_sat(T0_C)
     rho_rat = rho_vs / _RHO_ICE
@@ -542,27 +439,26 @@ def derived_pf_params(eps: float, T0_C: float, d0: float, beta_hk: float,
     M_sub     = eps / (3.0 * tau_sub)
     alpha_src = lam_sub / tau_sub
 
-    # Thin-interface correction per K&P Eq. 40 form:
-    #   β_eff / β_target = 1 − a₁·a₂·ε / (D · β_HK)
-    def _beta_ratio(D_channel):
-        return 1.0 - _A1 * _A2 * eps / (D_channel * beta_hk)
-    beta_ratio_heat_ice = _beta_ratio(alpha_i)
-    beta_ratio_heat_air = _beta_ratio(alpha_a)
-    beta_ratio_vapor    = _beta_ratio(Dv)
-    D_heat              = D_heat_of(thermal_channel)
-    beta_ratio_heat     = _beta_ratio(D_heat)
+    # Thin-interface expansion parameter (K&P Eq. 40 bracket):
+    #   delta = a₁·a₂·ε/(D·β_HK)
+    # tau_sub above compensates delta to first order, so this is the SIZE of
+    # the correction, not the residual error; the residual is O(delta^2).
+    def _delta(D_channel):
+        return _A1 * _A2 * eps / (D_channel * beta_hk)
+    D_heat = D_heat_of(thermal_channel)
 
     return dict(
         lam_sub=lam_sub, tau_sub=tau_sub,
         M_sub=M_sub, alpha_src=alpha_src,
         D_ia=D_ia, D_heat=D_heat, thermal_channel=thermal_channel,
-        beta_ratio_heat=beta_ratio_heat,
         kinetic_term=kinetic_term,
         corr_thermal=corr_thermal,
         corr_vapor=corr_vapor,
-        beta_ratio_heat_ice=beta_ratio_heat_ice,
-        beta_ratio_heat_air=beta_ratio_heat_air,
-        beta_ratio_vapor=beta_ratio_vapor,
+        delta_heat=_delta(D_heat),
+        delta_ia=_delta(D_ia),          # what tau_sub actually compensates
+        delta_heat_ice=_delta(alpha_i),
+        delta_heat_air=_delta(alpha_a),
+        delta_vapor=_delta(Dv),
     )
 
 
@@ -581,6 +477,7 @@ def compute_eps(
     v_n: float = 1.0e-9,
     xi_v: float | None = None,
     thermal_channel: str = "mean",
+    eps_over_R: float = 0.1,
 ) -> dict:
     """Compute ε, mesh, and derived phase-field model parameters."""
     rho_vs   = rho_vs_sat(T0_C)
@@ -592,72 +489,39 @@ def compute_eps(
     alpha_i  = _K_I / _C_I
     alpha_a  = _K_A / _C_A
 
-    # K&P Eq. 43 bounds: W ≪ D · β' (uses the SCALED coefficient β' = β_HK)
-    # The heat channel uses D*_ia by default — the same diffusivity τ_sub
-    # compensates with (derived_pf_params) and the one the solver assembles
-    # (src/<project>_main.c:558). --Dchannel ice restores the conservative κᵢ/Cᵢ.
-    # K&P Eq. 42 literally states W << D*beta0' for EACH channel separately
-    # (ice thermal, air thermal, vapour). We ENFORCE only the mean-thermal and
-    # vapour channels, and report the ice/air split as a diagnostic. That is
-    # deliberate, and it is not a shortcut:
-    #
-    #   * M&F SI Eq. 9 -- the equation tau_sub is derived from, three lines
-    #     below -- carries exactly two correction terms, a2*eps/D*_ia and
-    #     a2*eps/D_v. It lumps the two thermal channels into the arithmetic
-    #     mean, and src/<project>_main.c assembles diff_sub = D*_ia to match.
-    #     The model is COMPENSATED against D*_ia, so judging it against
-    #     kappa_i/C_i alone tests a condition it was never compensated for.
-    #
-    #   * M&F's own published parameters (SI: beta_sub = 1.4e5, eps = 5e-7)
-    #     fail the ice-channel test outright -- beta'/beta0' = -1.40 at -20 C,
-    #     i.e. a negative effective kinetic coefficient -- while passing
-    #     against the mean (0.621) and vapour (0.839). Their system is the
-    #     more demanding one; a criterion that rejects their working setup is
-    #     the wrong criterion for ours.
-    #
-    #   * K&P state the ice-channel inequality but do not use it to size their
-    #     own parameters either.
-    #
-    # This was briefly enforced per-channel (2026-08-11) and reverted: it drove
-    # eps to 4.5e-8 and the Demmenie mesh to 1292M nodes, an artifact of the
-    # wrong criterion rather than a real resolution requirement.
-    #
-    # Evaluated against beta_hk, the CORRECTED beta' rather than the bare
-    # beta0' the inequality names. beta' <= beta0', so the bound is
-    # conservative, and it avoids beta0' depending circularly on W.
-    D_heat     = D_heat_of(thermal_channel)   # D*_ia by default; --Dchannel ice
-    b_heat     = D_heat * beta_hk             # Eq. 42a/b via the M&F mean
-    b_vapor    = Dv     * beta_hk             # Eq. 42c
-    # Reported only, never in min(): the single-channel readings.
-    b_heat_ice = alpha_i * beta_hk
-    b_heat_air = alpha_a * beta_hk
-    # K&P Eq. 45: W ≪ d₀ / (β₀·vₙ) (uses the UNSCALED coefficient β₀)
+    # K&P Eq. 43 bounds, in eps (M&F's own form). Evaluated against beta_hk,
+    # the scaled coefficient beta'. --Dchannel picks the heat channel; the
+    # single-channel readings are reported via delta_* but never enforced.
+    D_heat     = D_heat_of(thermal_channel)
+    b_heat     = D_heat * beta_hk             # Eq. 43a/b
+    b_vapor    = Dv     * beta_hk             # Eq. 43c
+    # K&P Eq. 45 uses the UNSCALED coefficient beta_0.
     b_kinetic  = d0 / (beta_uns * v_n)
-    b_curv     = Rave
 
+    # Bounds that the safety factor applies to (they are all "<<" statements).
     bounds = {
         "B-HEAT":    b_heat,
         "B-VAPOR":   b_vapor,
         "B-KINETIC": b_kinetic,
-        "B-CURV":    b_curv,
     }
     eps_max = min(bounds.values())
+    eps     = safety * eps_max
     binding = min(bounds, key=bounds.get)
 
-    # Enforcing Eq. 42 rigorously is only affordable when alpha_c is physical.
-    # At alpha_c ~ 1e-1 the ice thermal channel drives eps to ~5e-8 and the mesh
-    # to ~1e9 nodes -- which is presumably why an averaged, 6.3x looser "heat"
-    # bound was used instead. That is a real engineering tradeoff and it should
-    # be visible, not discovered by staring at Nx. Say so loudly rather than
-    # emitting an intractable grid in silence.
+    # B-CURV is already a fraction, so it does NOT get the safety factor on
+    # top. It is 1-2 decades looser than the others in practice.
+    b_curv = eps_over_R * Rave
+    if b_curv < eps:
+        eps, binding = b_curv, "B-CURV"
+    bounds["B-CURV"] = b_curv
+
     _n_est = 1
     for _L in (Lx, Ly, Lz):
         if _L > 0:
-            _n_est *= math.ceil(_L * math.sqrt(2.0) / (safety * eps_max))
+            _n_est *= math.ceil(_L * math.sqrt(2.0) / eps)
     intractable = _n_est > 5.0e7
-    eps     = safety * eps_max
 
-    # Mesh: h = eps/sqrt(2) → ~7.5 elements across phi=0.05–0.95 visible band
+    # Mesh: h = eps/sqrt(2) → ~7.5 elements across phi=0.05-0.95 visible band
     h  = eps / math.sqrt(2.0)
     Nx = math.ceil(Lx / h) if Lx > 0 else 0
     Ny = math.ceil(Ly / h) if Ly > 0 else 0
@@ -683,14 +547,14 @@ def compute_eps(
         geom_warn = (f"WARNING: ε/R_ave = {eps_over_Rave:.1%} > 10%. "
                      f"Curvature-driven dynamics will be substantially wrong.")
     elif eps_over_Rave > 0.05:
-        geom_warn = (f"NOTE: ε/R_ave = {eps_over_Rave:.1%} (5–10%). "
+        geom_warn = (f"NOTE: ε/R_ave = {eps_over_Rave:.1%} (5-10%). "
                      f"Borderline Gibbs-Thomson accuracy.")
 
-    kappa = 1.0 / Rave if Rave > 0 else 0.0
-    # d₀ inflation regime check: β·vₙ (Gibbs-Thomson kinetic term) vs d₀·κ (capillary term)
-    # Use unscaled β for consistency with the physical Gibbs-Thomson condition.
-    kin_over_curv = ((beta_uns * v_n) / (d0 * kappa)
-                     if (d0 * kappa) > 0 else float("inf"))
+    # d₀ inflation regime check: β·vₙ (kinetic term) vs d₀·χ (capillary term)
+    # in the Gibbs-Thomson condition; χ is the curvature. Unscaled β.
+    chi = 1.0 / Rave if Rave > 0 else 0.0
+    kin_over_curv = ((beta_uns * v_n) / (d0 * chi)
+                     if (d0 * chi) > 0 else float("inf"))
 
     tau_warn = None
     if dpf["tau_sub"] <= 0:
@@ -709,7 +573,7 @@ def compute_eps(
         bracket_warn = (f"NOTE: kinetic term is {kinetic_frac:.1%} of τ_sub bracket. "
                         f"Sharp-interface regime is marginal.")
 
-    min_beta_ratio = min(dpf["beta_ratio_heat"], dpf["beta_ratio_vapor"])
+    max_delta = max(dpf["delta_heat"], dpf["delta_vapor"])
 
     return dict(
         eps=eps, Nx=Nx, Ny=Ny, Nz=Nz,
@@ -723,16 +587,17 @@ def compute_eps(
         M_sub=dpf["M_sub"], alpha_src=dpf["alpha_src"],
         D_ia=dpf["D_ia"], D_heat=dpf["D_heat"],
         thermal_channel=thermal_channel,
-        beta_ratio_heat=dpf["beta_ratio_heat"],
         kinetic_term=dpf["kinetic_term"],
         corr_thermal=dpf["corr_thermal"],
         corr_vapor=dpf["corr_vapor"],
         kinetic_frac=kinetic_frac,
         intractable=intractable,
-        beta_ratio_heat_ice=dpf["beta_ratio_heat_ice"],
-        beta_ratio_heat_air=dpf["beta_ratio_heat_air"],
-        beta_ratio_vapor=dpf["beta_ratio_vapor"],
-        min_beta_ratio=min_beta_ratio,
+        delta_heat=dpf["delta_heat"],
+        delta_ia=dpf["delta_ia"],
+        delta_heat_ice=dpf["delta_heat_ice"],
+        delta_heat_air=dpf["delta_heat_air"],
+        delta_vapor=dpf["delta_vapor"],
+        max_delta=max_delta,
         kin_over_curv=kin_over_curv,
         xi_v_max=xi_v_max, xi_v_warn=xi_v_warn,
         eps_over_Rave=eps_over_Rave, geom_warn=geom_warn,
@@ -756,26 +621,15 @@ def alpha_c_sensitivity(T0_C, alpha_lo, alpha_hi, n_points=10, **kwargs):
 def patch_opts(opts_path: Path, params: dict, dim: int, T0_C: float) -> None:
     """Write ε, mesh, and the kinetics into opts_path.
 
-    Emits ONLY flags the solver actually reads. This function previously wrote
-    -M_sub, -alpha_sub, -tau_sub, -lam_sub, -beta_sub and -d0_sub: all six are
-    ignored by the solver (it reads -beta_sub0/-d0_sub0 and derives λ, τ, M_sub
-    and α_sub from them together with ε), and -beta_sub additionally raised a
-    KeyError because compute_eps returns beta_uns/beta_hk, never beta_sub. So
-    --patch could not have worked.
-
-    Deliberately does NOT emit -mob_sub or -alph_sub. The solver derives both
-    from (ε, β_sub0, d0_sub0) so that α_sub/M_sub = 3λ/ε exactly, which is the
-    ratio the Karma-Plapp matched asymptotics calibrated; overriding either one
-    alone breaks it (see the -mob_sub/-alph_sub comments in the solver).
+    Emits only flags the solver reads. Deliberately does NOT emit -mob_sub or
+    -alph_sub: the solver derives both from (ε, β_sub0, d0_sub0) so that
+    α_sub/M_sub = 3λ/ε exactly, and overriding either one alone breaks that.
 
     CONVENTION WARNING -- the two kinetics flags are scaled differently:
-      -beta_sub0 is the UNSCALED K&P β₀ = M&F β_sub = β_HK/(ρ_vs/ρᵢ)
-      -d0_sub0   is the RAW physical capillary length γ·V_m/(R·T), NOT
-                 pre-divided by anything
-    The solver applies the same 1/rho_rhovs = ρ_vs/ρᵢ factor to both, which
-    recovers β_HK for the first and d0·(ρ_vs/ρᵢ) for the second -- correct only
-    because this script pre-compensates β and not d0. Writing a -d0_sub0 taken
-    from M&F's already-scaled d_sub would be wrong by ~10⁶.
+      -beta_sub0 is the UNSCALED β₀ = β_HK/(ρ_vs/ρᵢ)
+      -d0_sub0   is the RAW physical capillary length γ·V_m/(R·T)
+    The solver multiplies BOTH by ρ_vs/ρᵢ, recovering β_HK and d₀·(ρ_vs/ρᵢ).
+    Writing a -d0_sub0 taken from M&F's already-scaled d_sub is wrong by ~10⁶.
     """
     text = opts_path.read_text()
 
@@ -832,12 +686,12 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
     print(f"  α_c (condensation coeff) = {alpha_c:.3e}   [only genuine free parameter]")
     print(f"  vₙ (front velocity)      = {args.vn:.1e}  m/s")
     print(f"  R_ave (grain radius)     = {args.Rave:.2e} m")
-    print(f"  Safety factor            = {args.safety:.2f}  (ε = safety · min(bounds))")
+    print(f"  Safety factor            = {args.safety:.2f}  (ε = safety · min(bounds); δ = a₁a₂·safety = {_A1*_A2*args.safety:.2f})")
     print(f"  Asymptotic constants     : a₁ = {_A1}, a₂ = {_A2}  (M&F SI footnote 1)")
 
     print(f"\n--- Thermodynamic state at T₀ ---")
     print(f"  ρ_vs(T₀)         = {p['rho_vs']:.4e}  kg/m³")
-    print(f"  ρ_vs/ρᵢ  (χ)     = {p['rho_rat']:.4e}  [-]")
+    print(f"  ρ_vs/ρᵢ          = {p['rho_rat']:.4e}  [-]")
     print(f"  Dᵥ(T₀)           = {p['Dv']:.4e}  m²/s")
     print(f"  κᵢ/Cᵢ  (D_ice)   = {p['alpha_i']:.4e}  m²/s")
     print(f"  κₐ/Cₐ  (D_air)   = {p['alpha_a']:.4e}  m²/s")
@@ -847,36 +701,33 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
     print(f"  β_HK (Hertz-Knudsen)   = {p['beta_hk']:.4e}  s/m   [K&P β', SCALED form]")
     print(f"                           [= β_sub·(ρ_vs/ρᵢ) in M&F notation]")
     print(f"  β_sub (physical)       = {p['beta_uns']:.4e}  s/m   [K&P β₀, M&F Table S1 form]")
-    print(f"                           [= β_HK/(ρ_vs/ρᵢ); matches K&P range 3e4–3e6]")
+    print(f"                           [= β_HK/(ρ_vs/ρᵢ); matches K&P range 3e4-3e6]")
     print(f"  d₀_sub  (physical)     = {p['d0']:.4e}  m     [γ·V_m/RT; K&P Eq. 13]")
 
-    print(f"\n--- Upper bounds on ε (K&P Eq. 42 via the M&F mean, and Eq. 45) ---")
+    print(f"\n--- Upper bounds on ε (K&P Eqs. 43, 45) ---")
     chan = "D*_ia" if p["thermal_channel"] == "mean" else "κᵢ/Cᵢ"
     labels = {
-        "B-HEAT":     f"Eq.(42a/b) {chan}·β_HK ",
-        "B-VAPOR":    "Eq.(42c)  Dᵥ·β_HK        ",
-        "B-KINETIC":  "Eq.(45)   d₀/(β_sub·vₙ) ",
-        "B-CURV":     "Geometric R_ave           ",
+        "B-HEAT":     f"Eq.(43a/b) {chan}·β_HK  ",
+        "B-VAPOR":    "Eq.(43c)   Dᵥ·β_HK       ",
+        "B-KINETIC":  "Eq.(45)    d₀/(β_sub·vₙ) ",
+        "B-CURV":     "Geometric  0.1·R_ave     ",
     }
     for key, label in labels.items():
         marker = "  ← BINDING" if key == p["binding"] else ""
         print(f"  {label}  =  {p[key]:.4e} m{marker}")
+    print(f"  (safety applies to the first three; B-CURV is already a fraction)")
 
     h = p['eps'] / math.sqrt(2.0)
     if p.get("intractable"):
         print(f"\n  *** MESH IS INTRACTABLE: {p['Nx']} x {p.get('Ny',1)} "
               f"= {p['Nx']*max(p.get('Ny',1),1)/1e6:.0f}M nodes ***")
-        print(f"      Driven by {p['binding']} = {p['eps_max']:.3e} m.")
-        print(f"      K&P Eq. 42 (W << D·β₀) is enforced per channel, and the ICE")
-        print(f"      thermal channel D = κᵢ/Cᵢ = 1.27e-06 is ~12x below Dᵥ, so it")
-        print(f"      dominates. The ceiling scales with β_HK ∝ 1/α_c, so this is")
-        print(f"      almost always a sign that α_c is too LARGE, not that the mesh")
-        print(f"      must be this fine: α_c = 1e-3 lifts every Eq. 42 ceiling ~100x.")
-        print(f"      Check --alpha_arrhenius / --alpha_libbrecht2 before overriding.")
+        print(f"      Driven by {p['binding']}. The Eq.43 ceilings scale as β_HK ∝ 1/α_c,")
+        print(f"      so this usually means α_c is too LARGE, not that the mesh must be")
+        print(f"      this fine. Check --alpha_arrhenius / --alpha_libbrecht2 first.")
 
     print(f"\n--- Chosen ε and mesh ---")
     print(f"  ε                        = {p['eps']:.4e}  m")
-    print(f"  h = ε/√2                 = {h:.4e}  m    (mesh rule: ~7.5 elements across phi=0.05-0.95)")
+    print(f"  h = ε/√2                 = {h:.4e}  m    (2 elements per W; 8.3 across phi=0.05-0.95)")
     print(f"  Nx = ceil(Lx·√2/ε)       = {p['Nx']}")
     if dim >= 2 and p["Ny"] > 0: print(f"  Ny = ceil(Ly·√2/ε)       = {p['Ny']}")
     if dim == 3 and p["Nz"] > 0: print(f"  Nz = ceil(Lz·√2/ε)       = {p['Nz']}")
@@ -902,15 +753,19 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
     if p["tau_warn"]:
         print(f"\n  {p['tau_warn']}")
 
-    print(f"\n--- Thin-interface correction: β_eff/β_target (K&P Eq. 40 form) ---")
-    print(f"  = 1 − a₁·a₂·ε / (D · β_HK). Should be > 0.9 per D channel.")
-    print(f"    heat channel ({chan}, active) = {p['beta_ratio_heat']:.4f}")
-    print(f"    [heat-in-ice κᵢ/Cᵢ, conservative] = {p['beta_ratio_heat_ice']:.4f}")
-    print(f"    [heat-in-air κₐ/Cₐ]               = {p['beta_ratio_heat_air']:.4f}")
-    print(f"    vapor channel         = {p['beta_ratio_vapor']:.4f}")
+    print(f"\n--- Thin-interface expansion parameter δ = a₁a₂·ε/(D·β_HK) ---")
+    print(f"  τ_sub compensates δ to first order, so the residual error is O(δ²).")
+    print(f"    heat channel ({chan}, active)    δ = {p['delta_heat']:.4f}")
+    print(f"    heat-in-ice κᵢ/Cᵢ  [violated]   δ = {p['delta_heat_ice']:.4f}")
+    print(f"    heat-in-air κₐ/Cₐ               δ = {p['delta_heat_air']:.4f}")
+    print(f"    vapor                           δ = {p['delta_vapor']:.4f}")
+    print(f"  τ_sub always compensates at D*_ia (δ = {p['delta_ia']:.4f}), so the ice-side")
+    print(f"  correction is under-applied by δ_ice − δ(D*_ia) = {p['delta_heat_ice'] - p['delta_ia']:.3f} — that is the")
+    print(f"  honest uncertainty on β. Enforcing the ice channel is intractable;")
+    print(f"  M&F violate it by 100x in print for the same reason.")
 
     print(f"\n--- Kinetic vs. curvature dominance (d₀ inflation regime check) ---")
-    print(f"  β_sub·vₙ / (d₀·κ)  with κ ≈ 1/R_ave  = {p['kin_over_curv']:.2e}")
+    print(f"  β_sub·vₙ / (d₀·χ)  with χ ≈ 1/R_ave  = {p['kin_over_curv']:.2e}")
     if p['kin_over_curv'] > 100:
         print(f"  → Kinetic-dominated regime. Physical d₀ is safe; inflation OK too.")
     elif p['kin_over_curv'] > 10:
@@ -928,7 +783,7 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
 
     print(f"\n--- Geometric accuracy (ε ≪ R_grain) ---")
     geom_status = ("OK (< 5%)" if p["eps_over_Rave"] < 0.05
-                   else ("BORDERLINE (5–10%)" if p["eps_over_Rave"] < 0.10
+                   else ("BORDERLINE (5-10%)" if p["eps_over_Rave"] < 0.10
                          else "VIOLATED (> 10%)"))
     print(f"  ε / R_ave         = {p['eps_over_Rave']:.1%}  [{geom_status}]")
     if p["geom_warn"]:
@@ -969,7 +824,8 @@ def _print_sweep(results, alphas, T0_C: float) -> None:
               f"{p['eps']:10.3e} {p['binding']:>11s} {p['M_sub']:11.3e} "
               f"{p['alpha_src']:11.3e} {p['kinetic_frac']:8.2%}")
     print("=" * 76)
-    print("  Note: ε = safety · eps_max.  M_sub, α_sub from M&F SI Eq. 9.")
+    print("  Note: ε = min(safety · eps_max, eps_over_R · R_ave).  M_sub, α_sub")
+    print("  from M&F SI Eq. 9; eps_max is the min of B-HEAT/B-VAPOR/B-KINETIC.")
     print("  kin.frac = kinetic term / (bracket total). Should be ≥ 50% for the")
     print("  sharp-interface regime; smaller values ⇒ τ is dominated by corrections.")
     print("=" * 76)
@@ -1053,7 +909,11 @@ def _cli():
     ap.add_argument("--xiv",    type=float, default=None,
                     help="Time-scaling factor ξᵥ (optional; triggers K&P Eq. 48 check)")
     ap.add_argument("--safety", type=float, default=0.5,
-                    help="Safety factor: ε = safety · min(bounds).")
+                    help="ε = safety · min(B-HEAT, B-VAPOR, B-KINETIC). Equivalent "
+                         "to a thin-interface expansion parameter δ = a₁a₂·safety.")
+    ap.add_argument("--eps_over_R", type=float, default=0.1,
+                    help="Geometric bound ε <= eps_over_R · R_ave. Crude on "
+                         "purpose: 1-2 decades looser than the binding bound.")
     ap.add_argument("--dim",    type=int,   default=None,
                     help="Problem dimension (1/2/3); inferred from Ly/Lz if omitted")
     ap.add_argument("--patch",  type=Path,  default=None,
@@ -1186,6 +1046,7 @@ def _cli():
         Rave=args.Rave, v_n=args.vn,
         safety=args.safety, xi_v=args.xiv,
         thermal_channel=args.Dchannel,
+        eps_over_R=args.eps_over_R,
     )
 
     if args.alpha is not None:

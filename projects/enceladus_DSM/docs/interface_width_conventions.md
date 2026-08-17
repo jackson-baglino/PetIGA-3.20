@@ -35,7 +35,7 @@ multiples of `eps`:
 
 | convention            | definition                              | width      | elements at h = eps/√2 |
 |-----------------------|-----------------------------------------|------------|------------------------|
-| Karma width           | 2√2·eps (tanh-argument convention, K&P) | 2.83·eps   | **4.0**                |
+| **asymptotic W (K&P)**| √2·eps (their Eq. 33 well)              | 1.41·eps   | **2.0**                |
 | slope width           | 1 / max\|phi'\| (tangent ramp at mid)   | 4.00·eps   | 5.7                    |
 | 10%–90% band          | 2·ln(9)·eps                             | 4.39·eps   | 6.2                    |
 | 5%–95% band           | 2·ln(19)·eps                            | 5.89·eps   | 8.3                    |
@@ -59,13 +59,14 @@ The rule of thumb exists to control **discretization error**, which lives
 where the solution has large derivatives — the steep **core** of the profile.
 The tails (between phi = 0.01 and 0.05, say) are nearly flat and cost the
 basis nothing to represent. So published resolution guidance (Karma & Rappel,
-Provatas & Elder, ...) is stated in core-width units: the Karma/tanh width or
-the slope width. Translated to the 1%–99% ruler, "4–10 per Karma width" reads
-"13–32 per 1%–99% band."
+Provatas & Elder, ...) is stated in core-width units: the asymptotic width W
+or the slope width. Karma–Rappel practice is dx/W ≈ 0.4–0.8, i.e. 1.25–2.5
+elements per W; translated to the 1%–99% ruler that reads "8–16 per 1%–99%
+band."
 
-Our mesh rule `h = eps/√2` (built into `comp_eps.py`) delivers **exactly 4
-elements per Karma width** — the standard floor — equivalently ~6 across
-10%–90% and ~13 across 1%–99%.
+Our mesh rule `h = eps/√2` (built into `comp_eps.py`) is `h = W/2`, i.e. **2
+elements per asymptotic width W** — mid-range for that guidance — equivalently
+~6 across 10%–90% and ~13 across 1%–99%.
 
 ## 3. How to measure interface width (and resolution adequacy)
 
@@ -96,8 +97,8 @@ one way:
    functional; it is not independently adjustable. The kinetic coefficients
    (lambda, tau_sub, mob_sub, alph_sub via M&F SI Eq. 9) are *derived from
    this same eps* — which is why the assembly must use `user->eps` verbatim.
-3. **h resolves the profile core**: h = eps/√2 gives the standard 4 elements
-   per Karma width. If a mesh-convergence study shows more accuracy is
+3. **h resolves the profile core**: h = eps/√2 gives 2 elements per
+   asymptotic width W = √2·eps. If a mesh-convergence study shows more accuracy is
    needed, reduce h (e.g. eps/2 or eps/(2√2)); the 1%–99% count then rises
    (18, 26, ...) as an automatic consequence. Refining h changes nothing
    about the width in meters — it only re-tiles the same interface.
@@ -128,7 +129,7 @@ one way:
 
 ## 6. Open item
 
-Whether 4 elements/Karma width is sufficient *for this problem's accuracy
+Whether 2 elements per asymptotic width W is sufficient *for this problem's accuracy
 targets* is an empirical question: run the same GT-physics case at h = eps/√2
 and h = eps/2 (eps unchanged!) and compare grain-mass/interface evolution
 curves. If they overlap, the standard mesh is converged; if not, the delta is
