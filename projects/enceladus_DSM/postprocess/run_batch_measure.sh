@@ -28,9 +28,10 @@
 #   meaningless -- everything is anchored on t_star.
 #
 # Usage:
-#   bash run_batch_measure.sh                     # from inside the batch folder
-#   bash run_batch_measure.sh /path/to/batch
-#   ANCHOR_NECK_UM=32.81 bash run_batch_measure.sh /path/to/batch
+#   bash run_batch_measure.sh /path/to/run        # ONE run (the usual case)
+#   bash run_batch_measure.sh /path/to/batch      # a batch parent, fans out
+#   bash run_batch_measure.sh                     # from inside either
+#   ANCHOR_NECK_UM=32.81 bash run_batch_measure.sh /path/to/run
 # =============================================================================
 set -uo pipefail
 
@@ -62,13 +63,24 @@ echo "  postprocess : $POSTPROCESS"
 echo "  anchor neck : ${ANCHOR_NECK_UM} um"
 echo "============================================================"
 
+n_ok=0; n_fail=0; n_skip=0
+
+# Accept a SINGLE run directory as well as a batch parent. The Molaro campaign
+# runs one arm at a time (studies/molaro_2019/RUNBOOK.md), so the common case is
+# pointing this at one run; a batch parent still fans out as before.
+if [[ -f "$BATCH_DIR/igasol.dat" ]]; then
+    RUNS=("$BATCH_DIR")
+    SUMMARY="$BATCH_DIR/summary.csv"
+    echo "  (single run directory)"
+else
+    RUNS=("$BATCH_DIR"/*/)
+fi
+
 printf 'run,geometry,experiment,alpha_c,humidity,Lz_m,Lr_m,eps_m,' > "$SUMMARY"
 printf 'neck_w_final_um,neck_w_at_78min_um,t_star_s,' >> "$SUMMARY"
 printf 'R_large_init_um,R_large_end_um,dR_large_pct,dR_small_pct,n_snapshots\n' >> "$SUMMARY"
 
-n_ok=0; n_fail=0; n_skip=0
-
-for run in "$BATCH_DIR"/*/; do
+for run in "${RUNS[@]}"; do
     run="${run%/}"; name="$(basename "$run")"
     case "$name" in inputs_snapshot|src_snapshot|postprocess) continue ;; esac
     [[ -f "$run/igasol.dat" ]] || { echo "  skip $name (no igasol.dat)"; ((n_skip++)); continue; }

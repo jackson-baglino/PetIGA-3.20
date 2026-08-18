@@ -45,20 +45,43 @@
 # + phi], and the quasi-steady profile establishes in L^2/D_v ~ 6e-3 s --
 # instantaneous on this run.
 #
-# T_FINAL 5.4e+04 s -- this is OUR clock, not theirs. We start at zero neck and
-# the model grows slower than the experiment, so t_final is set by how long our
-# neck takes to cross their range, not by their 78 min. Integrating
-# dr/dt = d0'*dK(r)/(beta' + rho(r)/D_v) from the O(eps) IC bridge at alpha_c=0.1:
-#     t* (reach their first neck, 32.81 um) = 0.41 h
-#     t_end (reach their last neck, 64.78 um) = 10.76 h
-# Both are upper bounds (the l = rho transport term overestimates the resistance
-# by ~2.5x against measured runs), so expect ~4 h in practice. 15 h keeps margin;
-# a run that stops short of their last point is worthless. The domain check needs
-# only 2 h, which already covers their first three data points.
+# T_FINAL 2.2e+04 s -- this is OUR clock, not theirs. We start at a zero neck and
+# the model grows slower than the experiment, so t_final is set by how long OUR
+# neck takes to cross their range, not by their 78 min.
 #
-# COST: dtmax = 1.1*tau_sub = 8.6 s against t_final = 15 h is ~6300 steps, ~4.5x
-# the old alpha_c = 1.34e-2 arm, on a ~4.2x larger mesh. Budget ~2700 core-h per
-# 15 h arm at dom3.
+# Rescaled from the repo's own CALIBRATED figure: the alpha_c = 1.341e-2 arms
+# needed ~28 ks from tangency to reach their last measured neck (fitted on a
+# committed run, see molaro_T-20_h1.00_15h_a1.34e-2_dirichlet.opts). Time scales
+# with the TOTAL resistance, not with beta alone -- we are in the mixed regime:
+#     t(0.1)/t(1.341e-2) = (beta'(0.1) + rho/D_v) / (beta'(1.341e-2) + rho/D_v)
+#                        = (0.0733 + 0.2515) / (0.5469 + 0.2515) = 0.407
+#     their first neck 32.81 um  ->  t* ~ 0.42 h
+#     their last  neck 64.78 um  ->     ~ 3.16 h
+# Scaling by beta alone would give 1.04 h and cut the run short. 6 h is ~1.9x
+# margin on 3.16 h. The 2 h arms cover their first three points.
+#
+# NO -dtmax HERE, DELIBERATELY. inputs/solver.opts already sets 2.0e2 s, which
+# is an EMPIRICAL value established across several earlier runs -- not a guess,
+# and not something to override without a reason.
+#
+# It also agrees with the physics limiter. -dtCFL caps max|dphi| per step at 0.2
+# from the MEASURED field change; for the logistic profile that is
+# dt <= 0.8*eps/v_n:
+#     v_n = 1e-7 -> 2.1 s     1e-8 -> 21 s     1e-9 -> 207 s
+# so 200 s is dt_CFL at the late-time interface speed, and dtCFL clamps itself
+# harder during the fast cusp-filling transient and opens up as the neck slows.
+# The tested cap and the derived one landing together is a consistency check on
+# both.
+#
+# The earlier Molaro files pinned -dtmax to 1.1*tau_sub instead. tau_sub is the
+# Allen-Cahn RELAXATION time, not a stability limit for an implicit solver; at
+# this eps that is 8.6 s, 23x tighter than the tested default, and ~6300 steps
+# of pure waste.
+#
+# COST: the interface advances 0.8*eps = 0.21 um per step at the CFL cap, and
+# the neck grows 0 -> 32.4 um, so expect a few hundred steps, not thousands.
+# Budget ~220 core-h per 6 h arm at dom3 -- check plot_timestep.py on the first
+# run to see whether dtCFL or dtmax is actually binding.
 #
 # -beta_sub0 is deliberately absent: it is IGNORED under -alpha_pointwise 1,
 # where beta_sub is rebuilt per quadrature point from alpha_c.
@@ -68,7 +91,7 @@
 #            python postprocess/grain_shrinkage.py <run_dir>
 # =============================================================================
 
--t_final 5.4e+04
+-t_final 2.2e+04
 -temp -20.0
 -humidity 0.9913
 -grad_temp0 0.0,0.0,0.0
@@ -84,7 +107,6 @@
 
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
--dtmax 8.6e0                            # 1.1 * tau_sub (7.79 s at eps 2.5852e-7)
 -dtCFL 1
 -dtCFL_dphimax 0.2
 

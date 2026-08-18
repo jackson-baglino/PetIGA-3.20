@@ -54,46 +54,35 @@ establishes instantly and the uniform `hum0·rho_vs` pore value that
 
 ## Workflow
 
+See **[RUNBOOK.md](RUNBOOK.md)** — the campaign runs **one simulation at a
+time**, because each result changes what the next run should be. Grain
+recession is linear in the wall undersaturation, so a measured `dR_large_pct`
+gives an exact Newton step to the next humidity; a blind 5-arm grid would spend
+~5x the core-hours to learn the same thing.
+
 ```bash
-# 0. Parameter envelopes (already run; regenerate if anything changes)
+# Parameter envelopes (already run; regenerate if anything changes)
 python preprocess/estimate_alpha_c_molaro.py
 python preprocess/estimate_vapor_bc_molaro.py --L-over-a 3
 
-# 1. Verify the measurement tool before trusting any number it produces
+# Verify the measurement tool before trusting any number it produces
 python studies/molaro_2019/verification/verify_grain_shrinkage.py
 
-# 2. IC check -- 10 steps on HPC (the production meshes are too big locally)
-./scripts/HPC/submit_enceladus.sh \
-    molaro_2D_L450x225um_eps0.26um_axisym_T-20pair_tangent_dom2 \
-    molaro_T-20_h1.0000_2h_a1e-1_dirichlet icheck --time=0-01:00:00 \
-    -- -ts_max_steps 10 -outp 1 -t_out_log 0
-# then, on the cluster: python postprocess/plot_fields.py --dir <run> --steps 0 1 10
-# and rsync only those three .vts + pf.pvd back.
-
-# 3. Domain convergence (3 arms, ~2 h each, ~1130 core-h)
-./scripts/HPC/submit_batch.sh --tag molaro2019_domain \
-    --tests-file studies/molaro_2019/batches/domain_check.txt
-
-# 4. Humidity fit (5 arms, 15 h each, ~13500 core-h) -- only after step 3
-./scripts/HPC/submit_batch.sh --tag molaro2019_humidity \
-    --tests-file studies/molaro_2019/batches/humidity_fit.txt
-
-# 5. Measure ON THE CLUSTER, download only summary.csv
-bash postprocess/run_batch_measure.sh $SCRATCH/enceladus_DSM/batch_<...>
+# Measure a finished run (works on one run dir or a batch parent)
+bash postprocess/run_batch_measure.sh <run_dir>
 ```
 
-### What to check at the IC step
+## Cost, and where it went
 
-- the banner prints `-ic_grain_union 1` (the **default** is the additive form,
-  which sums two tanh tails to a spurious bridge at exact tangency)
-- φ = 0.5 is tangent at exactly one point
-- the intermediate-φ band at the cusp is ~4.4ε ≈ 1.14 µm axially — that is the
-  correct diffuse image of a cusp, not a defect
-- by step 10 the O(ε) bridge has filled (`t_fill ≈ 2.6 s` at α_c = 0.1) with no
-  spurious structure spreading along the contact plane
+The first pass through this setup budgeted ~2700 core-h per arm. Two of those
+numbers were wrong, and fixing them cut it to ~220:
 
-### What `summary.csv` answers
+| | first pass | corrected | why |
+|---|---|---|---|
+| `-dtmax` | 8.6 s (`1.1*tau_sub`) | none — use the project default 200 s | `tau_sub` is the Allen-Cahn *relaxation* time, not a stability limit for an implicit solver. `inputs/solver.opts` already carries an empirically tested 200 s, and `-dtCFL` is the real limiter: it caps max\|dφ\| per step at 0.2 from the measured field change, i.e. `dt <= 0.8*eps/v_n` — 2 s during the fast cusp fill, 200 s once the neck slows. |
+| `-t_final` | 15 h | 6 h | Rescaled the repo's own calibrated 28 ks (at α_c = 1.341e-2) by the **total** resistance, not by β alone: `(β'+ρ/D_v)` ratio = 0.407, so t_end ≈ 3.16 h and t\* ≈ 0.42 h. Scaling by β alone gives 1.04 h and cuts the run short. |
+| DOFs/rank | 80k | 100k | Top of PETSc's healthy band, still below the 108k/rank that demonstrably ran ~7 s/step. These runs are step-limited, so a smaller allocation costs almost no wall time. dom3 goes 260 → 208 ranks. |
 
-`t_star_s` is the clock shift — when the model neck first reaches their 32.81 µm
-— and `neck_w_at_78min_um` is the model's neck one Molaro-experiment later.
-Target: **64.78 µm**. `dR_large_pct` is the humidity fit target: **−2.93 %**.
+Steps: the interface advances `0.8*eps = 0.21 µm` per step at the CFL cap and
+the neck grows 0 → 32.4 µm, so expect a few hundred steps rather than ~6300.
+**Confirm on rung 1 with `plots/timestep.png` before trusting the rest.**

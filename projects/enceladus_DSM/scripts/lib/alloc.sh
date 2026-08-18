@@ -25,11 +25,19 @@
 # (--half-cores would take it to ~160k, above the demonstrated-good 108k/rank
 # that ran ~7 s/step at 1.3M DoFs, so do not combine the two on large jobs).
 #
-# CAUTION: per-rank memory scales with this. Runs using -keff carry a SECOND
-# large operator (the scalar corrector matrix plus its GAMG hierarchy) on top
-# of the phase-field Jacobian and its ASM/ILU(3) factor. Check peak RSS on a
-# small run before submitting a large one at this target.
-: "${TARGET_DOFS_PER_CORE:=80000}"
+# Raised 80k -> 100k on 2026-08-18 for the Molaro 2019 campaign: 100k is the top
+# of PETSc's healthy band and these runs are step-limited, so shrinking the
+# allocation costs almost no wall time and cuts both the core-hour bill and the
+# queue wait. 100k is still BELOW the 108k/rank that demonstrably ran ~7 s/step,
+# so it is inside measured territory rather than extrapolated.
+#
+# CAUTION: per-rank memory scales with this, and 100k leaves less headroom than
+# 80k did. Runs using -keff carry a SECOND large operator (the scalar corrector
+# matrix plus its GAMG hierarchy) on top of the phase-field Jacobian and its
+# ASM/ILU(3) factor. Check peak RSS on a small run before submitting a large one
+# at this target. Do NOT combine with --half-cores on a large job: that would put
+# it at ~200k/rank, well outside the band.
+: "${TARGET_DOFS_PER_CORE:=100000}"
 
 # MPI ranks per node on the Caltech Resnick cluster. 32 is the safe count
 # across the icelake|skylake|cascadelake constraint. MAX_TASKS_PER_NODE is the
