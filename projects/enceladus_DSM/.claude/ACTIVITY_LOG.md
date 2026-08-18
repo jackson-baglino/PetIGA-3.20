@@ -2,6 +2,57 @@
 
 Newest entries first.
 
+## 2026-08-18 (later) — Rung 0 reviewed; four output/consistency bugs fixed
+
+Rung 0 (10-step IC check, job1059799) ran clean. The IC is confirmed
+quantitatively, not just visually: ice volume +0.0073 % vs analytic (matching
+the diffuse-tail correction (4pi^3/3)R eps^2/V exactly, and the same figure
+verify_grain_shrinkage.py predicts), interface area +2.40 %, 5-95 % band 5.95
+eps / 8.42 elements vs 5.889 / 8.33, 1-99 % band 9.31 eps / 13.17 vs 9.190 /
+13.00, and phi on the axis at the contact = 0.5748 -- a pure cusp sampled
+7.8e-8 m off the exact point, under half a grid spacing. No SNES/KSP failures.
+
+Scope caveat: the run covered 5.03 ms of 7200 s (7e-5 %), so tot_ice is
+unchanged to 7 s.f. and the CFL limiter was never exercised (0 caps, 0
+rollbacks, dt reached only 1.8e-3 s). That check moves to rung 1.
+
+Not problems, explained and left alone:
+- "OUTPUT DATA ERROR" is a bare PetscPrintf, gated on n_out_log <= 0, and only
+  fired because rung 0 passed -t_out_log 0. Production sets -t_out_log 80.
+- Temperature outrunning vapour is xi_v = 1e-3: over 5.03 ms heat penetrates
+  268 um and vapour 10.5 um. Expected.
+- 3 unused PETSc options (-ksp_gmres_restart under bcgs, -Lz/-Nz in 2D).
+
+Fixed:
+- **The banner printed kinetics the solver does not use.** Under
+  -alpha_pointwise 1 it showed tau_sub = 6.8e1 s from the IGNORED -beta_sub0
+  (alpha_c = 8.0e-3) against a true 7.8e0 s -- an 8.7x error I read when sizing
+  -dtmax. Now evaluates AlphaCondensation + SubKinetics at the IC state and
+  prints those, flagging when alpha_c sits ON the -alpha_hi clamp (which
+  -alpha_c0 1.0e-1 against -alpha_hi 1.0e-1 does exactly).
+- D_v banner line printed the raw STP constant, 13 % above what VaporDiffus
+  evaluates at -20 C. Now prints D_v(T0) with D_v0 in parentheses.
+- enceladus_main.c built the startup tau_sub from the same uncorrected
+  dif_vap while SubKinetics uses VaporDiffus -- a 13 % disagreement between
+  two paths that should match. Both now use D_v(T0).
+- **comp_eps.py's xi_v check had the inequality backwards**, warning when xi_v
+  EXCEEDED rho_vs/rho_i. xi_v scales diffusion and the source but not storage,
+  so the storage error is rho_vs/(xi_v rho_i) and larger xi_v is MORE
+  quasi-steady. Now warns below 10*rho_vs/rho_i and reports the storage error
+  (0.092 % at the default) and tau_vap instead of a pass/fail.
+- estimate_vapor_bc_molaro.py printed the vapour transient as L^2/D_v, omitting
+  xi_v and understating tau_vap by 1000x. Now prints tau_vap with the scaling
+  and its margin against eps/v_n, which scales as L^2 (dom2 37x, dom3 17x,
+  dom4 9.3x -- all fine, dom4 worth watching).
+- Deleted a material_properties.c comment referencing a mob_scale field that
+  does not exist.
+
+Domain size: Jackson raised it as unsettled. Rung 1 now runs dom2 AND dom3 at
+h = 1.0000 to measure the effect rather than rely on the (a/L)^3 estimate.
+Nothing submitted yet.
+
+---
+
 ## 2026-08-18 — Interface-width conventions, then the Molaro 2019 campaign setup
 
 **Part 1: eps is Moure & Fu's, not Kaempfer & Plapp's W.**
