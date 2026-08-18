@@ -57,7 +57,7 @@ air-ice ... interfaces"). delta_ice is reported as a diagnostic instead.
 B-CURV is deliberately crude: it is 1-2 decades looser than the binding bound
 in every case we run, and the true smallest curvature (a fresh neck fillet)
 starts near-singular and then relaxes, so sizing a mesh from it is both
-unstable and needlessly expensive. eps <= 0.1*R_ave, no safety factor.
+unstable and needlessly expensive. eps <= 0.05*R_ave, no safety factor.
 
 DERIVED PARAMETERS (M&F SI Eq. 9)
 ---------------------------------
@@ -477,7 +477,7 @@ def compute_eps(
     v_n: float = 1.0e-9,
     xi_v: float | None = None,
     thermal_channel: str = "mean",
-    eps_over_R: float = 0.1,
+    eps_over_R: float = 0.05,
 ) -> dict:
     """Compute ε, mesh, and derived phase-field model parameters."""
     rho_vs   = rho_vs_sat(T0_C)
@@ -710,7 +710,7 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
         "B-HEAT":     f"Eq.(43a/b) {chan}·β_HK  ",
         "B-VAPOR":    "Eq.(43c)   Dᵥ·β_HK       ",
         "B-KINETIC":  "Eq.(45)    d₀/(β_sub·vₙ) ",
-        "B-CURV":     "Geometric  0.1·R_ave     ",
+        "B-CURV":     "Geometric  0.05·R_ave    ",
     }
     for key, label in labels.items():
         marker = "  ← BINDING" if key == p["binding"] else ""
@@ -911,7 +911,7 @@ def _cli():
     ap.add_argument("--safety", type=float, default=0.5,
                     help="ε = safety · min(B-HEAT, B-VAPOR, B-KINETIC). Equivalent "
                          "to a thin-interface expansion parameter δ = a₁a₂·safety.")
-    ap.add_argument("--eps_over_R", type=float, default=0.1,
+    ap.add_argument("--eps_over_R", type=float, default=0.05,
                     help="Geometric bound ε <= eps_over_R · R_ave. Crude on "
                          "purpose: 1-2 decades looser than the binding bound.")
     ap.add_argument("--dim",    type=int,   default=None,
