@@ -79,7 +79,7 @@ numbers were wrong, and fixing them cut it to ~220:
 
 | | first pass | corrected | why |
 |---|---|---|---|
-| `-dtmax` | 8.6 s (`1.1*tau_sub`) | 1.07e3 = `0.8*dt_CFL` at their last neck | `tau_sub` is the Allen-Cahn *relaxation* time, not a stability limit for an implicit solver. `-dtCFL` is the real limiter: it caps max\|dφ\| per step at 0.2 from the measured field change, i.e. `dt <= 0.8*eps/v_n` — 2 s during the fast cusp fill, 1338 s at their last neck. dtmax is now a derived backstop at 0.8x that, **5.35x looser than the tested 200 s in `inputs/solver.opts`** — rung 1 confirms dtCFL actually binds before anything else is spent. |
+| `-dtmax` | 8.6 s (`1.1*tau_sub`) | 1.0e4 — loose, because `-dtCFL` is enforced | `tau_sub` is the Allen-Cahn *relaxation* time, not a stability limit for an implicit solver. `-dtCFL` is now **enforced**: a step whose measured max\|dφ\| exceeds `-dtCFL_dphimax` is rolled back and retried, so the criterion holds on every step the run keeps. `dt_CFL = dphimax*4*eps/v_n` spans five decades here (v_n goes 8e-6 → 1.5e-10 m/s), which no static cap can track — so the cap comes off and the limiter governs. Rung 1 confirms the limiter is what binds. |
 | `-t_final` | 15 h | 6 h | Rescaled the repo's own calibrated 28 ks (at α_c = 1.341e-2) by the **total** resistance, not by β alone: `(β'+ρ/D_v)` ratio = 0.407, so t_end ≈ 3.16 h and t\* ≈ 0.42 h. Scaling by β alone gives 1.04 h and cuts the run short. |
 | DOFs/rank | 80k | 100k | Top of PETSc's healthy band, still below the 108k/rank that demonstrably ran ~7 s/step. These runs are step-limited, so a smaller allocation costs almost no wall time. dom3 goes 260 → 208 ranks. |
 
