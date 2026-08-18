@@ -264,6 +264,12 @@ def main():
     ap.add_argument("--R1", type=float, default=101.0e-6, help="large grain radius [m]")
     ap.add_argument("--R2", type=float, default=72.5e-6, help="small grain radius [m]")
     ap.add_argument("--outdir", type=Path, default=_REPO / "studies/molaro_2019")
+    ap.add_argument("--eps", type=float, default=2.5852e-7,
+                    help="interface parameter, for the dt_CFL table [m]")
+    ap.add_argument("--dphimax", type=float, default=0.2,
+                    help="-dtCFL_dphimax the run will use")
+    ap.add_argument("--dtmax-frac", type=float, default=0.8,
+                    help="dtmax as a fraction of dt_CFL at the reference neck")
     args = ap.parse_args()
 
     R = 0.5 * (args.R1 + args.R2)
@@ -308,6 +314,37 @@ def main():
               f"        {s['frac_of_ceiling']:6.3f}   {s['Lambda']:8.3f}")
     head = [s for s in sweep if s["alpha_c"] == 1.0][0]["rel_to_0p1"]
     print(f"\n   Headroom from alpha_c = 0.1 to the alpha_c = 1 ceiling: {head:.2f}x")
+
+    # ---- timestep cap implied by the same growth law -------------------
+    # -dtCFL caps max|dphi| per step at dphimax. The logistic profile has
+    # max|grad phi| = 1/(4 eps), so |dphi/dt| = v_n/(4 eps) and
+    #     dt_CFL = dphimax * 4 * eps / v_n
+    # dtmax is a STATIC backstop, so it needs one v_n. Use the slowest point
+    # we still need accurate -- their last measured neck -- because that is
+    # where dt is largest and a cap could actually bind.
+    print("\n--- TIMESTEP: dt_CFL = dphimax*4*eps/v_n, and the implied dtmax ---")
+    print(f"   eps = {args.eps:.4e} m, dphimax = {args.dphimax:g},"
+          f" dtmax = {args.dtmax_frac:g} * dt_CFL")
+    print("   neck width [um]     r[um]   rho[um]     v_n[m/s]   dt_CFL[s]   dtmax[s]")
+    ref = None
+    for w_um in (4.0 * args.eps * 1e6, 32.81, 48.0, 64.78):
+        r = w_um / 2 * 1e-6
+        if r >= R:
+            continue
+        v = v_n_of_alpha(0.1, r, R, T)
+        dtc = args.dphimax * 4.0 * args.eps / v
+        print(f"   {w_um:14.2f} {r*1e6:8.2f} {fillet_radius(r, R)*1e6:9.3f}"
+              f"  {v:.4e} {dtc:11.1f} {args.dtmax_frac*dtc:10.1f}")
+        if abs(w_um - 64.78) < 1e-9:
+            ref = args.dtmax_frac * dtc
+    if ref:
+        print(f"\n   -> -dtmax {ref:.2e}   (at their LAST measured neck)")
+        print(f"      inputs/solver.opts carries an empirically tested 200 s; this is"
+              f" {ref/200:.2f}x that,")
+        print("      so it does NOT tighten anything -- it hands the limiting back to")
+        print("      -dtCFL, which computes the same cap per step from the MEASURED")
+        print("      |dphi| instead of from this growth-law estimate. Confirm on the")
+        print("      first run (plots/timestep.png) that dtCFL is what binds.")
 
     print("\n--- HOW TO READ THIS ---")
     print(f"   alpha_c_min = {integ['alpha_c_min']:.3f} is a LOWER bound on what the model needs,")

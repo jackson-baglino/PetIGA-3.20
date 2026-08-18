@@ -47,10 +47,22 @@ the contact plane.
 
 The cheapest arm that produces a real neck curve. Two things to read:
 
-1. **`plots/timestep.png` — is `dtCFL` or `dtmax` binding?** If dt sits pinned
-   at 200 s the CFL limiter never fires and the cap could be raised; if the
-   "Interface-CFL cap" lines dominate the log, the cap is irrelevant and the
-   step count is physics. This single plot sets the cost of everything after it.
+1. **`plots/timestep.png` — is `dtCFL` or `dtmax` binding?** `-dtmax 1.07e3` is
+   `0.8 * dt_CFL` at their last measured neck, which is **5.35x looser than the
+   empirically tested 200 s in `inputs/solver.opts`**. That is deliberate — it
+   hands the limiting to `-dtCFL`, which computes the same cap per step from
+   measured `|dphi|` rather than from a growth-law estimate. But it also means
+   the tested guardrail is no longer what binds, so this run has to confirm the
+   swap was safe:
+   - **`grep 'Interface-CFL cap' <run>/outp.txt` returns lines** → dtCFL is
+     working, dt is physics-limited, and the cost estimate holds.
+   - **dt sits pinned at 1070 s with no CFL lines** → dtCFL is not firing. Put
+     `-dtmax 2.0e2` back in the experiment file before spending anything else.
+   - Also watch the SNES iteration counts: if they climb toward `-NRmax 15` or
+     the log shows rejections, dt is too large regardless of what dtCFL says.
+
+   The tail is only ~50 steps either way, so nothing is lost by reverting.
+   This single plot sets the cost of everything after it.
 2. **Does the neck reach 64.78 µm inside 6 h?** Predicted t\* ≈ 0.42 h and
    t_end ≈ 3.16 h. If it overshoots, raise `-t_final` on the next rung; if it
    finishes in 1 h, lower it.
