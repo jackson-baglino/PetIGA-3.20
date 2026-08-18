@@ -236,16 +236,24 @@ typedef struct {
   PetscBool bounds_violated;
   PetscReal bounds_new_dt;
 
-  // Interface-CFL timestep limiter (InterfaceCFLMonitor in monitoring.c):
-  // clamps the NEXT dt so max pointwise |d(phi)| per step stays below
-  // cfl_dphimax, measured from the last accepted step's rate
-  // ||phi^n - phi^{n-1}||_inf / dt. Lets dtmax be large (quiet phases
-  // cruise) while fast interface events (grain collapse, neck formation)
-  // throttle dt automatically instead of Gibbs-rippling the B-spline front.
+  // Interface-CFL timestep limiter (InterfaceCFLMonitor in monitoring.c).
+  // ENFORCED, not advisory: a step whose measured ||phi^n - phi^{n-1}||_inf
+  // exceeds cfl_dphimax is ROLLED BACK and retried smaller, so the criterion
+  // holds on every step that survives -- not just on the next one. It also
+  // still clamps the next proposed dt, which avoids most rollbacks. This is
+  // what lets dtmax be large: quiet phases cruise, and fast interface events
+  // (grain collapse, neck formation) throttle dt automatically instead of
+  // Gibbs-rippling the B-spline front.
   PetscBool flag_dtCFL;      // -dtCFL (default 1)
   PetscReal cfl_dphimax;     // -dtCFL_dphimax (default 0.2)
-  Vec       cfl_U_prev;      // previous accepted solution (lazy-created)
+  Vec       cfl_U_prev;      // previous ACCEPTED solution (lazy-created)
+  Vec       cfl_diff;        // scratch for U - cfl_U_prev. Must NOT be
+                             // cfl_U_prev itself: the rollback path returns
+                             // early, so anything that clobbers cfl_U_prev
+                             // leaves it holding a difference vector and the
+                             // next measurement reads ||U - (U - U_prev)||.
   PetscReal cfl_t_prev;      // time of previous accepted step
+  PetscInt  cfl_n_reject;    // consecutive CFL rollbacks (thrash diagnostic)
 
   // Axisymmetric (r-z) mode: x = z (symmetry axis direction), y = r (radial),
   // axis on the y = 0 boundary. Every residual/Jacobian/monitor integrand is

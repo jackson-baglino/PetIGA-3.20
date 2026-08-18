@@ -47,22 +47,22 @@ the contact plane.
 
 The cheapest arm that produces a real neck curve. Two things to read:
 
-1. **`plots/timestep.png` — is `dtCFL` or `dtmax` binding?** `-dtmax 1.07e3` is
-   `0.8 * dt_CFL` at their last measured neck, which is **5.35x looser than the
-   empirically tested 200 s in `inputs/solver.opts`**. That is deliberate — it
-   hands the limiting to `-dtCFL`, which computes the same cap per step from
-   measured `|dphi|` rather than from a growth-law estimate. But it also means
-   the tested guardrail is no longer what binds, so this run has to confirm the
-   swap was safe:
-   - **`grep 'Interface-CFL cap' <run>/outp.txt` returns lines** → dtCFL is
-     working, dt is physics-limited, and the cost estimate holds.
-   - **dt sits pinned at 1070 s with no CFL lines** → dtCFL is not firing. Put
-     `-dtmax 2.0e2` back in the experiment file before spending anything else.
-   - Also watch the SNES iteration counts: if they climb toward `-NRmax 15` or
-     the log shows rejections, dt is too large regardless of what dtCFL says.
+1. **`plots/timestep.png` — is `dtCFL` binding?** `-dtCFL` is now *enforced*:
+   a step whose measured `||dphi||_inf` exceeds `-dtCFL_dphimax` is rolled back
+   and retried, so `max |dphi| <= 0.2` holds on every step the run keeps. That
+   is why `-dtmax` is loose (1e4). Confirm the limiter is what binds:
+   - **`grep -c 'Interface-CFL cap' <run>/outp.txt` is large** → the limiter is
+     governing dt. Expected.
+   - **dt pinned at 1e4 with no CFL lines** → the limiter is not firing; put
+     `-dtmax 2.0e2` back before spending anything else.
+   - **`grep -c 'Interface-CFL violated'` is more than a few percent of steps**
+     → rollbacks are thrashing and each one is a wasted step. Lower
+     `CFL_FORWARD_MARGIN` in `src/monitoring.c` (currently 0.9).
+   - Watch the SNES counts: climbing toward `-NRmax 15`, or visible rejections,
+     means dt is too large whatever the CFL limiter says.
 
-   The tail is only ~50 steps either way, so nothing is lost by reverting.
    This single plot sets the cost of everything after it.
+
 2. **Does the neck reach 64.78 µm inside 6 h?** Predicted t\* ≈ 0.42 h and
    t_end ≈ 3.16 h. If it overshoots, raise `-t_final` on the next rung; if it
    finishes in 1 h, lower it.

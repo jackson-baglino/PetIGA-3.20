@@ -85,7 +85,10 @@ int main(int argc, char *argv[]) {
     /* Interface-CFL timestep limiter (InterfaceCFLMonitor) */
     user.flag_dtCFL   = PETSC_TRUE;   /* on by default */
     user.cfl_dphimax  = 0.2;          /* max pointwise |dphi| per step */
+
+    user.cfl_n_reject  = 0;
     user.cfl_U_prev   = NULL;
+    user.cfl_diff     = NULL;
     user.cfl_t_prev   = 0.0;
 
     user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see enceladus_types.h) */
@@ -994,11 +997,19 @@ int main(int argc, char *argv[]) {
     ierr = TSSetTimeStep(ts, delt_t); CHKERRQ(ierr);
     ierr = TSSetType(ts, TSALPHA); CHKERRQ(ierr);
     ierr = TSAlphaSetRadius(ts, 0.5); CHKERRQ(ierr);
+    /* Interface-CFL limiter: registered unconditionally (cheap — one vector
+     * diff + stride norm per accepted step); disable with -dtCFL 0.
+     *
+     * Registered FIRST on purpose. PETSc runs monitors in registration order,
+     * and this one can CONDEMN the step just taken (measured |dphi| above
+     * -dtCFL_dphimax => rollback). Monitor and OutputMonitor both bail out
+     * when user.bounds_violated is set, so a rejected step leaves neither a
+     * row in the monitor table nor a snapshot on disk. Before 2026-08-18 this
+     * was registered last and only clamped the NEXT dt, which meant the
+     * overshooting step itself was always kept. */
+    ierr = TSMonitorSet(ts, InterfaceCFLMonitor, &user, NULL); CHKERRQ(ierr);
     if (monitor) { ierr = TSMonitorSet(ts, Monitor, &user, NULL); CHKERRQ(ierr); }
     if (output) { ierr = TSMonitorSet(ts, OutputMonitor, &user, NULL); CHKERRQ(ierr); }
-    /* Interface-CFL limiter: registered unconditionally (cheap — one vector
-     * diff + stride norm per accepted step); disable with -dtCFL 0. */
-    ierr = TSMonitorSet(ts, InterfaceCFLMonitor, &user, NULL); CHKERRQ(ierr);
 
     /* In-line k_eff. Registered LAST on purpose: PETSc runs monitors in
      * registration order, so this one sees user.bounds_violated already set by
@@ -1323,6 +1334,7 @@ int main(int argc, char *argv[]) {
     ierr = KeffDestroy(&user); CHKERRQ(ierr);
     ierr = VecDestroy(&U); CHKERRQ(ierr);
     ierr = VecDestroy(&user.cfl_U_prev); CHKERRQ(ierr);
+    ierr = VecDestroy(&user.cfl_diff);   CHKERRQ(ierr);
     ierr = TSDestroy(&ts); CHKERRQ(ierr);
     ierr = IGADestroy(&iga); CHKERRQ(ierr);
     for (PetscInt d = 0; d < 3; d++) { ierr = PetscFree(user.cent[d]); CHKERRQ(ierr); }

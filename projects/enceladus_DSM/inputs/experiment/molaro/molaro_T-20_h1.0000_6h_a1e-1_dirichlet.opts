@@ -60,38 +60,29 @@
 # Scaling by beta alone would give 1.04 h and cut the run short. 6 h is ~1.9x
 # margin on 3.16 h. The 2 h arms cover their first three points.
 #
-# DTMAX = 0.8 * dt_CFL, derived rather than inherited.
-# -dtCFL caps max|dphi| per step at dphimax = 0.2 using the MEASURED field
-# change. The logistic profile has max|grad phi| = 1/(4 eps), so
-#     dt_CFL = dphimax * 4 * eps / v_n = 0.8 * eps / v_n
-# dtmax is a STATIC backstop, so it needs one v_n. dt_CFL spans five decades
-# over this run because v_n does -- picking the early value would pin dtmax at
-# ~0 and the run would never advance:
-#     neck width   r[um]   v_n[m/s]     dt_CFL[s]   0.8*dt_CFL[s]
-#      1.03 (IC)    0.52   8.23e-06          0.0            0.0
-#     32.81         16.41  2.61e-09         79.1           63.3
-#     48.00         24.00  5.94e-10        348.4          278.7
-#     64.78         32.39  1.55e-10       1337.6         1070.1
-# Reference = their LAST measured neck, the slowest point we still need
-# accurate and where dt is largest, giving -dtmax 1.07e3.
-# Regenerate with: python preprocess/estimate_alpha_c_molaro.py
+# DTMAX 1.0e4 -- deliberately loose, because -dtCFL is now ENFORCED.
 #
-# READ THIS BEFORE TRUSTING IT. 1070 s is 5.35x the 200 s in
-# inputs/solver.opts, which is an EMPIRICALLY TESTED value from earlier runs.
-# So this does not tighten anything -- it hands the limiting back to -dtCFL,
-# which computes the same cap per step from measured |dphi| rather than from a
-# growth-law estimate. That is the right division of labour, but it means the
-# tested guardrail is no longer the binding one. Rung 1 of
-# studies/molaro_2019/RUNBOOK.md exists to check exactly this on the cheapest
-# arm: if plots/timestep.png shows dt pinned at 1070 s with no "Interface-CFL
-# cap" lines in the log, dtCFL is NOT doing its job and this must go back to
-# 200 s. The tail is only ~50 steps either way, so nothing is lost by being
-# careful here.
+# As of 2026-08-18 the interface-CFL limiter does not merely clamp the NEXT dt;
+# a step whose MEASURED ||dphi||_inf exceeds -dtCFL_dphimax is rolled back and
+# retried at 0.8x the dt that would have hit the limit exactly. So
+#
+#     max |dphi| per step <= dtCFL_dphimax
+#
+# holds on every step the run keeps, and dtmax no longer has to stand in for a
+# criterion it cannot express: dt_CFL = dphimax*4*eps/v_n spans five decades
+# over this run (v_n goes 8e-6 -> 1.5e-10 m/s), and no single static number
+# tracks that. 200 s was the right hedge when the limiter was advisory; with
+# enforcement it just costs steps in the slow tail, where dt_CFL is ~1300 s.
+#
+# 1.0e4 is the value docs/model_description.md records for production runs, so
+# it is a tested ceiling rather than a new one. The limiter, not the cap, is
+# what should bind -- confirm on rung 1 that "Interface-CFL cap" lines appear
+# in outp.txt and dt is not sitting pinned at 1e4.
 #
 # The earlier Molaro files pinned -dtmax to 1.1*tau_sub instead. tau_sub is the
 # Allen-Cahn RELAXATION time, not a stability limit for an implicit solver; at
-# this eps that is 8.6 s, 23x tighter than the tested default, and ~6300 steps
-# of pure waste.
+# this eps that is 8.6 s, 23x tighter than even the conservative default, and
+# ~6300 steps of pure waste.
 #
 # COST: the interface advances 0.8*eps = 0.21 um per step at the CFL cap, and
 # the neck grows 0 -> 32.4 um, so expect a few hundred steps, not thousands.
@@ -122,7 +113,7 @@
 
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
--dtmax 1.07e3                           # 0.8 * dt_CFL at their last neck; see above
+-dtmax 1.0e4                            # loose on purpose: -dtCFL is enforced, see above
 -dtCFL 1
 -dtCFL_dphimax 0.2
 
