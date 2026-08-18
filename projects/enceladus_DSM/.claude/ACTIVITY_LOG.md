@@ -2,6 +2,74 @@
 
 Newest entries first.
 
+## 2026-08-18 — Interface-width conventions, then the Molaro 2019 campaign setup
+
+**Part 1: eps is Moure & Fu's, not Kaempfer & Plapp's W.**
+
+- Re-derived the K&P (2009) Eqs. 43/45 bounds against this solver's own
+  Allen-Cahn equation, from the paper text rather than from the existing
+  docstrings. The solver's well is (1/2)phi^2(1-phi)^2 with an eps^2 gradient
+  term -- M&F's -- so the equilibrium profile is logistic and `eps` IS M&F's
+  eps. K&P's Eq.(33) uses a +-1 well with profile tanh(x/(sqrt(2) W)), so their
+  W = sqrt(2)*eps. Confirmed structurally against the M&F PDF (their Eq. 5
+  triple well is the same 1/2-normalised form, and they write the constraint in
+  eps, not W).
+- Nothing numerical was wrong: a1 = 5 and a2 = 0.1581 are the constants for
+  M&F's well and already absorb the sqrt(2). Verified exactly --
+  5 == (5 sqrt(2)/8)*4, and a1*a2 = 0.79 in eps-units vs 0.78 in W-units.
+  Every committed opts case reproduces its eps and mesh unchanged.
+- Renamed the mislabelled "beta_eff/beta_target > 0.9" diagnostic to the
+  thin-interface expansion parameter delta = a1 a2 eps/(D beta_HK). K&P Eq.(40)
+  quantifies the error you make when you DON'T compensate, but tau_sub carries
+  the a2 terms and does compensate, so the residual is O(delta^2). Now also
+  reports delta_ice - delta(D*_ia), the honest uncertainty on beta from
+  compensating at the mean while violating the ice channel.
+- B-CURV was R_ave with the safety factor on top; now eps <= eps_over_R * R_ave
+  (--eps_over_R, default 0.05) with no safety factor. chi means curvature only.
+  Fixed the "~7.5 elements" claim (it is 8.33) and the "2 sqrt(2) eps Karma
+  width" (the asymptotic W is sqrt(2) eps, so h = eps/sqrt(2) is W/2, i.e. 2
+  elements per width -- mid-range for Karma-Rappel practice, not 4 per a width
+  that does not exist). Docs and comments cut ~40 %.
+
+**Part 2: Molaro et al. (2019) -20 C campaign setup, all parameters derived.**
+
+- `preprocess/estimate_alpha_c_molaro.py` inverts Gibbs-Thomson + series
+  resistance at the neck against their measured dr/dt. The attachment-only
+  limit needs no geometric assumption and gives alpha_c >= 0.139; the alpha_c=1
+  transport ceiling shows the observed rate exceeds what vapour alone delivers.
+  The saturation sweep shows only 1.25x headroom above alpha_c = 0.1, because
+  Lambda = beta_HK D_v/rho is already 0.29 there. **alpha_c cannot be tuned to
+  close the gap** -- it tops out near 50 % of their rate at any value, which is
+  the surface-diffusion share docs/molaro_validation_synthesis.md sec. 4 finds
+  independently. Raising alpha_c also tightens the K&P bound (L* ~ 1/alpha_c).
+- `preprocess/estimate_vapor_bc_molaro.py` does the same for the Dirichlet
+  humidity: h = 0.99728 at L/a_eff = 3, nearly alpha_c-independent but strongly
+  L-dependent, so the previously fitted h = 0.998 does not transfer from the
+  old 121 um domain.
+- Two findings about their data. (1) Fit the LARGE grain: its 78-min trend is
+  4.4 sigma and its least-squares slope (-2.93 %) reproduces the -3 % their
+  caption quotes; the caption's -4 % for the small grain is not in the same
+  table (endpoint -0.69 %, min -2.40 %, fit -0.89 %, all inside its own +-2 %).
+  (2) The differential is NOT a ripening signal -- the imposed wall
+  undersaturation outweighs d0*(2/R_sm - 2/R_lg) by 343x.
+- eps = 2.5852e-07 set by the NECK FILLET (rho >= 6 eps at their FIRST data
+  point), which resolves their entire r/R = 0.19-0.37 range. Every K&P ceiling
+  is looser at alpha_c = 0.1, so safety never binds (0.999).
+- Three domain arms at L/a_eff = 2.01/3.03/4.01 (the old geometry was 1.08, with
+  the wall 20 um from the ice and a predicted ~58 % neck error), five humidity
+  arms, and the batch files for both.
+- `postprocess/grain_shrinkage.py` + an analytic tangent-pair gate under
+  `studies/molaro_2019/verification/`. The gate caught two real defects: the
+  default split plane was the midpoint between grain CENTRES, 14 um from the
+  contact for unequal radii, moving +1.3 % onto the small grain (half the
+  signal being fitted) -- now the radical plane; and splitting the trapezoid
+  rule at an array index dropped the segment straddling the split.
+- `postprocess/run_batch_measure.sh` measures on the cluster and emits one
+  summary.csv, since a dom3 arm's snapshots cannot be moved.
+- Nothing has been submitted. Next step is the 10-step IC check on HPC.
+
+---
+
 ## 2026-08-14 — plot_growth_rate.py: interface velocity v_n as a ParaView field
 
 - New macro `scripts/paraview_macros/plot_growth_rate.py` renders the interface
