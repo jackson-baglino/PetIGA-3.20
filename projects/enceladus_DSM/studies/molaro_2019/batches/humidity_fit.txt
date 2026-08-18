@@ -1,0 +1,39 @@
+# Molaro 2019, HUMIDITY FIT. One "geometry:experiment" per line.
+#
+#   ./scripts/HPC/submit_batch.sh --tag molaro2019_humidity \
+#       --tests-file studies/molaro_2019/batches/humidity_fit.txt
+#
+# RUN THE DOMAIN CHECK FIRST. These lines assume dom3 (L/a_eff = 3.03) is
+# converged; if dom3 and dom4 disagree, swap the geometry on every line.
+#
+# WHAT THIS DECIDES
+# -----------------
+# The Dirichlet vapour value that reproduces the observed grain recession.
+# Derived centre h = 0.99728 from preprocess/estimate_vapor_bc_molaro.py; the
+# grid spans the ~3x uncertainty in that envelope:
+#
+#   h        1 - h      relative to the estimate
+#   1.0000   0.00000    saturated control
+#   0.9989   0.00109    0.4x
+#   0.9973   0.00272    1.0x   <- the estimate
+#   0.9946   0.00544    2.0x
+#   0.9913   0.00870    3.2x
+#
+# TWO THINGS TO CHECK, not one:
+#   1. Does one h reproduce the LARGE grain's -2.93 %/78 min? (The small grain's
+#      trend is inside its own error bar -- report it, do not fit to it.)
+#   2. Does the h = 1.0000 control give essentially the same NECK curve as the
+#      fitted arm? Neck growth is driven by an internal curvature difference and
+#      grain shrinkage by the external wall value, so the two should be nearly
+#      decoupled. If they are not, the domain is still too small.
+#
+# Cost: ~2700 core-h per arm, ~13500 core-h for the set.
+#
+# ANALYSIS: bash postprocess/run_batch_measure.sh <batch_dir>   (on the cluster)
+#           then read <batch_dir>/summary.csv and download only the best arms.
+
+molaro_2D_L680x340um_eps0.26um_axisym_T-20pair_tangent_dom3:molaro_T-20_h1.0000_15h_a1e-1_dirichlet
+molaro_2D_L680x340um_eps0.26um_axisym_T-20pair_tangent_dom3:molaro_T-20_h0.9989_15h_a1e-1_dirichlet
+molaro_2D_L680x340um_eps0.26um_axisym_T-20pair_tangent_dom3:molaro_T-20_h0.9973_15h_a1e-1_dirichlet
+molaro_2D_L680x340um_eps0.26um_axisym_T-20pair_tangent_dom3:molaro_T-20_h0.9946_15h_a1e-1_dirichlet
+molaro_2D_L680x340um_eps0.26um_axisym_T-20pair_tangent_dom3:molaro_T-20_h0.9913_15h_a1e-1_dirichlet

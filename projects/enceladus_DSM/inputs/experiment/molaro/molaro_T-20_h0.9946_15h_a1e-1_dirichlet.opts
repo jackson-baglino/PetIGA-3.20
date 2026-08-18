@@ -1,0 +1,92 @@
+# =============================================================================
+# Molaro et al. (2019) T = -20 C -- alpha_c = 0.1, open chamber, production
+#
+# ALPHA_C = 0.1, and it is NOT a free knob here. Two independent bounds pin it:
+#
+#   FROM BELOW (their data). The attachment-only limit -- infinitely fast vapour
+#   transport, so no geometric assumption -- needs
+#       alpha_c >= sqrt(2 pi m/kT) * v_n / (d0' * dK) = 0.139 integrated
+#   to reproduce their measured dr/dt. Per-interval it spans 0.05-0.42.
+#
+#   FROM ABOVE (saturation + cost). Neck growth is already transport-limited at
+#   alpha_c = 0.1 (Lambda = beta_HK*D_v/rho = 0.29), so going all the way to the
+#   physical ceiling alpha_c = 1 buys only 1.25x more rate. Raising alpha_c also
+#   TIGHTENS the K&P interface-width bound, since L* = D*beta_HK ~ 1/alpha_c: at
+#   alpha_c = 1 the mean-heat ceiling drops to 5.9e-8 and the mesh grows 19x.
+#
+# So the model tops out near 50 % of Molaro's observed neck growth at any
+# alpha_c. The residual is the surface-diffusion share this model does not have
+# -- see docs/molaro_validation_synthesis.md sec. 4. Recompute with
+#     python preprocess/estimate_alpha_c_molaro.py
+#
+# HUMIDITY 0.9946 -- 2.0x the estimate
+# Derived, not guessed. Quasi-steady sublimation from the pair to the wall with
+# both resistances in series:
+#     1 - hum0 = |v_n| * (beta' + l_eff/D_v) / (rho_vs/rho_i),  l_eff = a(1-a/L)
+# Target |v_n| = 6.2544e-10 m/s, the LARGE grain's surface recession from a
+# least-squares fit to their Fig. 11 diameters (-2.93 %/78 min, S/N 4.4). That
+# reproduces the -3 % their caption quotes. The caption's -4 % for the SMALL
+# grain is not in the same table -- endpoint -0.69 %, minimum -2.40 %, fit
+# -0.89 %, all inside its own +-2 % uncertainty -- so fit the large grain and
+# report the small one.
+#
+# At L/a_eff = 3 that gives hum0 = 0.99728. The grid spans the ~3x uncertainty
+# in the envelope. NOTE the previously fitted h = 0.998 does NOT transfer: it
+# was calibrated on the 121 um domain, and 1 - hum0 is nearly alpha_c-
+# independent but strongly L-dependent (0.00035 at L/a = 1.08 -> 0.00272 at 3).
+# Recompute for any other domain with
+#     python preprocess/estimate_vapor_bc_molaro.py --L-over-a <k>
+#
+# The wall undersaturation outweighs the curvature difference between the two
+# grains (d0*(2/R_sm - 2/R_lg) = 7.9e-6) by 343x, so BOTH grains sublimate at
+# nearly the same rate. The differential is not a usable ripening signal.
+#
+# VAPOUR IC needs no change: SetNodeFields writes rho_v = rho_vs*[hum0*(1-phi)
+# + phi], and the quasi-steady profile establishes in L^2/D_v ~ 6e-3 s --
+# instantaneous on this run.
+#
+# T_FINAL 5.4e+04 s -- this is OUR clock, not theirs. We start at zero neck and
+# the model grows slower than the experiment, so t_final is set by how long our
+# neck takes to cross their range, not by their 78 min. Integrating
+# dr/dt = d0'*dK(r)/(beta' + rho(r)/D_v) from the O(eps) IC bridge at alpha_c=0.1:
+#     t* (reach their first neck, 32.81 um) = 0.41 h
+#     t_end (reach their last neck, 64.78 um) = 10.76 h
+# Both are upper bounds (the l = rho transport term overestimates the resistance
+# by ~2.5x against measured runs), so expect ~4 h in practice. 15 h keeps margin;
+# a run that stops short of their last point is worthless. The domain check needs
+# only 2 h, which already covers their first three data points.
+#
+# COST: dtmax = 1.1*tau_sub = 8.6 s against t_final = 15 h is ~6300 steps, ~4.5x
+# the old alpha_c = 1.34e-2 arm, on a ~4.2x larger mesh. Budget ~2700 core-h per
+# 15 h arm at dom3.
+#
+# -beta_sub0 is deliberately absent: it is IGNORED under -alpha_pointwise 1,
+# where beta_sub is rebuilt per quadrature point from alpha_c.
+#
+# Pair with: inputs/geometry/molaro/molaro_2D_L*um_eps0.26um_axisym_T-20pair_tangent_dom*.opts
+# Measure:   python postprocess/neck_width.py <run_dir> --axisym
+#            python postprocess/grain_shrinkage.py <run_dir>
+# =============================================================================
+
+-t_final 5.4e+04
+-temp -20.0
+-humidity 0.9946
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1                         # isothermal reservoir (the cold plate)
+-flag_BC_rhovfix 1                      # rho_v pinned at 0.9946 * rho_vs(T)
+
+-alpha_pointwise 1                      # mob_sub/alph_sub rebuilt per quad point
+-alpha_model 0                          # 0 = constant alpha_c
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+-dtmax 8.6e0                            # 1.1 * tau_sub (7.79 s at eps 2.5852e-7)
+-dtCFL 1
+-dtCFL_dphimax 0.2
+
+-t_out_log 80
+-t_out_log_t0 1.0e2

@@ -1,0 +1,88 @@
+# =============================================================================
+# Molaro et al. (2019) T = -20 C grain pair -- TANGENT start, dom3 domain
+#
+# DOMAIN. Arm dom3: L/a_eff = 3.03, where a_eff = 112.2 um is the
+# volume-equivalent radius of the PAIR and L is measured from the pair centre
+# (Lz = 2*Lr by construction, so the z- and r-walls are equidistant). The old
+# 387x121 um geometry sat at L/a_eff = 1.08 -- the wall was 20 um from the ice.
+# Neck growth is driven by a local curvature-difference dipole, whose Dirichlet
+# image correction scales as (a/L)^3; net sublimation is a monopole and scales
+# as f_diff*(a/L). At L/a_eff = 1.08 those are ~58% and ~37%.
+#
+#   arm    L/a_eff   Lz x Lr [um]    Nz x Nr      Melem   neck err (a/L)^3
+#   dom2      2.01     450 x 225     2462 x 1231    3.03       12.5 %
+#   dom3      3.03     680 x 340     3720 x 1860    6.92        3.7 %
+#   dom4      4.01     900 x 450     4924 x 2462   12.12        1.6 %
+#
+# Those are scaling estimates, not measurements. Production = the smallest arm
+# whose neck curve matches dom4; run studies/molaro_2019/batches/domain_check.txt
+# first (h = 1.0, ~2 h) before committing to the humidity sweep.
+#
+# EPS = 2.5852e-07, set by the NECK FILLET, not by Kaempfer & Plapp.
+# The fillet radius is rho = r^2/(2R), and a diffuse interface resolves it only
+# once rho exceeds the ~6*eps visible (5%-95%) band:
+#
+#     r/R >= sqrt(12*eps/R)   ->   neck WIDTH >= 2R*sqrt(12*eps/R)
+#
+# The BINDING fillet is Molaro's FIRST data point (r = 16.405 um, r/R = 0.189),
+# giving eps <= rho0/6 = 2.585e-07. That resolves their ENTIRE dataset
+# (r/R = 0.19 -> 0.37) -- every later point has a fatter fillet and more margin.
+#
+# At alpha_c = 0.1 every K&P ceiling is looser, so `safety` never binds (0.999):
+#     neck fillet rho0/6              2.585e-07   <- BINDING
+#     K&P mean-heat  D*ia*beta_HK     5.913e-07   (the neck ties it at safety 0.437)
+#     K&P vapour     D_v *beta_HK     1.392e-06
+#     K&P Eq.45      d0/(beta*v_n)    3.280e-06
+#     geometric      0.05*R_min       3.625e-06
+# Thin-interface expansion parameters here: delta_mean = 0.346, delta_vap = 0.147,
+# delta_ice = 2.19. The ice channel is knowingly violated -- enforcing it is
+# intractable, and Moure & Fu violate it by 100x in print for the same reason.
+#
+# TANGENT START. The grains touch at exactly one point (d = R0+R1 = 1.735e-4), so
+# the initial neck is an OUTPUT, not a free parameter, and the clock shift
+# (--anchor-neck) absorbs the unknown offset before their first frame.
+# -ic_grain_union 1 is load-bearing. The union body has a CUSP at the contact, so
+# phi cannot reach 0.9 within 2.197*eps of it -- a band ~4.4*eps = 1.14 um wide.
+# That is the correct diffuse image of a cusp, not a defect; the only knob is eps.
+# Allen-Cahn rounds the cusp to an O(eps) bridge in t_fill ~ beta_sub*eps^2/(2*d0)
+# = 2.6 s at alpha_c = 0.1 -- a 0.26 um radius, 1.6% of their first measured neck.
+#
+# MESH: preprocess/comp_eps.py --Lx 6.800e-04 --Ly 3.400e-04 --Rave 8.675e-5 \
+#           --T0 -20 --alpha 1e-1 --safety 0.999
+#       then eps overridden to the fillet value 2.5852e-07 (16% cheaper than the
+#       old 2.4002e-07 and still below the floor at their first point).
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+#               python postprocess/grain_shrinkage.py <run_dir>
+# Anchor + fit: python postprocess/fit_neck_growth.py <run>/neck_width.csv \
+#                   inputs/validation/molaro2019_fig11_T-20.csv \
+#                   --anchor-neck 1.6405e-5 --demmenie
+#               (1.6405e-5 m = half of their 32.81 um first measured width)
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # zero neck at tangency -- load-bearing:
+                                        # the additive IC's two tanh tails each
+                                        # equal 0.5 at the touch point and sum
+                                        # to a spurious eps-dependent bridge
+
+-ic_type multi_grains
+-dim 2
+-Lx 6.80000e-04
+-Ly 3.40000e-04
+-Lz 0
+
+-ice_grain_cx 2.39000e-04,4.12500e-04   # d = 1.735e-4 = R0+R1, EXACTLY TANGENT
+-ice_grain_cy 0.0,0.0                   # grains on the axisymmetric axis
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 3720                                # h = eps/sqrt(2) = 1.8280e-07
+-Ny 1860                                # (6.92M elements)
+-Nz 1
+-eps 2.5852e-07
+-eps_valid_temp -20
+
+-delt_t 1.0e-4
+-periodic 0
