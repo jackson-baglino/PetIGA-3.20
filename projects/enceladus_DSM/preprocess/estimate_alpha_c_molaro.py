@@ -320,7 +320,7 @@ def main():
     args.outdir.mkdir(parents=True, exist_ok=True)
     csv_path = args.outdir / "alpha_c_estimate.csv"
     with csv_path.open("w", newline="") as fh:
-        w = csv.writer(fh)
+        w = csv.writer(fh, lineterminator="\n")
         w.writerow(["kind", "t0_s", "t1_s", "r_m", "rho_m", "dK_per_m", "v_obs_m_s",
                     "alpha_c_min", "v_max_alpha1_m_s", "v_obs_over_v_max"])
         for d in intervals:

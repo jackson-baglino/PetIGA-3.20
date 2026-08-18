@@ -286,7 +286,7 @@ def main():
     args.outdir.mkdir(parents=True, exist_ok=True)
     csv_path = args.outdir / "vapor_bc_estimate.csv"
     with csv_path.open("w", newline="") as fh:
-        w = csv.writer(fh)
+        w = csv.writer(fh, lineterminator="\n")
         w.writerow(["quantity", "key", "value", "unit"])
         w.writerow(["a_eff", "", f"{a_eff:.6e}", "m"])
         w.writerow(["alpha_c", "", f"{args.alpha:.6g}", "-"])
