@@ -770,7 +770,17 @@ int main(int argc, char *argv[]) {
     d0_sub = user.d0_sub0 / rho_rhovs;
     beta_sub = user.beta_sub0 / rho_rhovs;
     lambda_sub = a1 * user.eps / d0_sub;
-    tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
+    /* D_v must be the T-corrected value, matching SubKinetics
+     * (material_properties.c calls VaporDiffus). user.dif_vap is D_v0 at
+     * 273.15 K; using it raw made these scalars disagree with the pointwise
+     * path by 13% in the a2*eps/D_v term at -20 C. */
+    {
+        PetscScalar dv_T0;
+        VaporDiffus(&user, (PetscScalar)user.temp0, &dv_T0, NULL);
+        tau_sub = user.eps * lambda_sub * (beta_sub / a1
+                                           + a2 * user.eps / user.diff_sub
+                                           + a2 * user.eps / PetscRealPart(dv_T0));
+    }
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = lambda_sub / tau_sub;  /* Phase change rate parameter, eq.(9) Moure & Fu (2024) SI */
 
@@ -1208,7 +1218,16 @@ int main(int argc, char *argv[]) {
 
     /* --- Transport & thermophysical properties ----------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n TRANSPORT & THERMOPHYSICAL PROPERTIES\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   D_v      =  %.4e m²/s    (vapor diffusivity)\n", user.dif_vap);
+    {   /* user.dif_vap is D_v0 at 273.15 K; VaporDiffus scales it pointwise as
+         * D_v0*(T/273.15)^1.81, so the solver never sees the bare constant.
+         * Printing only D_v0 read as "the vapor diffusivity" and is 13% high
+         * at -20 C. */
+        PetscScalar dv0_T;
+        VaporDiffus(&user, (PetscScalar)user.temp0, &dv0_T, NULL);
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   D_v(T0)  =  %.4e m²/s    (D_v0 = %.4e at 273.15 K, ^1.81 scaling)\n",
+                    PetscRealPart(dv0_T), user.dif_vap);
+    }
     PetscPrintf(PETSC_COMM_WORLD, "   k_ice    =  %.4e W/m/K,  k_air  = %.4e W/m/K\n",
                 user.thcond_ice, user.thcond_air);
     PetscPrintf(PETSC_COMM_WORLD, "   rho_ice  =  %.4e kg/m³,  rho_air = %.4e kg/m³\n",
@@ -1227,7 +1246,44 @@ int main(int argc, char *argv[]) {
                 "   [M&F range: 2e4–2e6]\n", user.beta_sub0);
     PetscPrintf(PETSC_COMM_WORLD, "   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = %.4e s/m\n",
                 beta_sub);
-    if (!user.flag_Tdep) {
+    if (user.alpha_pointwise) {
+        /* The scalars above are derived from -beta_sub0, which -alpha_pointwise
+         * IGNORES (assembly.c overwrites mob_sub/alph_sub from SubKinetics at
+         * every quadrature point). Printing them here was actively misleading:
+         * at -alpha_c0 0.1 the stale tau_sub reads 6.8e1 s against a true
+         * 7.8e0 s, an 8.7x error that propagated into a dtmax choice.
+         * Evaluate the real chain at the IC state instead. */
+        PetscScalar rvs0, a_c, mob0, alph0, dv0;
+        RhoVS_I(&user, (PetscScalar)user.temp0, &rvs0, NULL);
+        PetscScalar rhov0 = (PetscScalar)user.hum0 * rvs0;   /* pore value from SetNodeFields */
+        AlphaCondensation(&user, (PetscScalar)user.temp0, rhov0, &a_c, NULL, NULL);
+        SubKinetics(&user, (PetscScalar)user.temp0, rhov0, &mob0, &alph0,
+                    NULL, NULL, NULL, NULL);
+        VaporDiffus(&user, (PetscScalar)user.temp0, &dv0, NULL);
+
+        PetscReal m0   = PetscRealPart(mob0),  al0 = PetscRealPart(alph0);
+        PetscReal tau0 = user.eps / (3.0 * m0);          /* mob = eps/(3 tau)   */
+        PetscReal lam0 = al0 * tau0;                     /* alph = lambda/tau   */
+        PetscReal chi0 = PetscRealPart(rvs0) / user.rho_ice;
+        PetscReal bHK0 = sqrt(2.0 * PETSC_PI * 3.0e-26
+                              / (1.38e-23 * (user.temp0 + 273.15)))
+                         / PetscRealPart(a_c);
+
+        PetscPrintf(PETSC_COMM_WORLD,
+            "   --- pointwise (-alpha_pointwise 1), evaluated at the IC state ---\n");
+        PetscPrintf(PETSC_COMM_WORLD, "   alpha_c  =  %.4e   (model %d)%s\n",
+                    PetscRealPart(a_c), (int)user.alpha_model,
+                    (PetscRealPart(a_c) >= user.alpha_hi) ? "   [ON the -alpha_hi clamp]" : "");
+        PetscPrintf(PETSC_COMM_WORLD, "   beta_sub =  %.4e s/m   (K&P β₀, UNSCALED)\n", bHK0 / chi0);
+        PetscPrintf(PETSC_COMM_WORLD, "   beta_HK  =  %.4e s/m   (SCALED, = β₀·ρ_vs/ρ_ice)\n", bHK0);
+        PetscPrintf(PETSC_COMM_WORLD, "   lambda   =  %.4e\n", lam0);
+        PetscPrintf(PETSC_COMM_WORLD, "   tau_sub  =  %.4e s\n", tau0);
+        PetscPrintf(PETSC_COMM_WORLD, "   mob_sub  =  %.4e m/s\n", m0);
+        PetscPrintf(PETSC_COMM_WORLD, "   alph_sub =  %.4e 1/s\n", al0);
+        PetscPrintf(PETSC_COMM_WORLD,
+            "   (these vary per quadrature point with T and rho_v; the -beta_sub0\n"
+            "    scalars printed above are NOT used by the solve)\n");
+    } else if (!user.flag_Tdep) {
         PetscPrintf(PETSC_COMM_WORLD, "   lambda   =  %.4e\n", lambda_sub);
         PetscPrintf(PETSC_COMM_WORLD, "   tau_sub  =  %.4e s\n", tau_sub);
         PetscPrintf(PETSC_COMM_WORLD, "   mob_sub  =  %.4e m/s   [M&F: 4.33e-7]\n", user.mob_sub);

@@ -385,9 +385,10 @@ void AlphaCondensation(AppCtx *user, PetscScalar tem, PetscScalar rhov,
  * picks up lambda_sub's temperature dependence through d0_sub.
  *
  * With -alpha_model 0 (the default) alpha_c is constant, and the only residual
- * state dependence is D_v(T) and rho_vs(T) -- which main()'s scalars already
- * ignore. So even in CONST mode this is a slight refinement, not a no-op; pass
- * user->mob_scale = 0 to fall back to the scalars exactly.
+ * state dependence is D_v(T) and rho_vs(T). So even in CONST mode this is a
+ * slight refinement, not a no-op. To fall back to main()'s scalars exactly,
+ * set -alpha_pointwise 0 (there is no mob_scale field; an earlier version of
+ * this comment claimed there was).
  *
  * Derivatives are analytic and exact for the CONST and ARRH models. For LIBB2
  * they inherit the dropped d(sigma0)/dT term from AlphaCondensation (~1% in
