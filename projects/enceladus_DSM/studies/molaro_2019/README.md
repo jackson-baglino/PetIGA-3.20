@@ -51,3 +51,49 @@ the same rate regardless of their size difference.
 **The vapour IC needs no change.** `L²/D_v ≤ 1.7e-2 s`, so the quasi-steady profile
 establishes instantly and the uniform `hum0·rho_vs` pore value that
 `SetNodeFields` writes is correct as-is.
+
+## Workflow
+
+```bash
+# 0. Parameter envelopes (already run; regenerate if anything changes)
+python preprocess/estimate_alpha_c_molaro.py
+python preprocess/estimate_vapor_bc_molaro.py --L-over-a 3
+
+# 1. Verify the measurement tool before trusting any number it produces
+python studies/molaro_2019/verification/verify_grain_shrinkage.py
+
+# 2. IC check -- 10 steps on HPC (the production meshes are too big locally)
+./scripts/HPC/submit_enceladus.sh \
+    molaro_2D_L450x225um_eps0.26um_axisym_T-20pair_tangent_dom2 \
+    molaro_T-20_h1.0000_2h_a1e-1_dirichlet icheck --time=0-01:00:00 \
+    -- -ts_max_steps 10 -outp 1 -t_out_log 0
+# then, on the cluster: python postprocess/plot_fields.py --dir <run> --steps 0 1 10
+# and rsync only those three .vts + pf.pvd back.
+
+# 3. Domain convergence (3 arms, ~2 h each, ~1130 core-h)
+./scripts/HPC/submit_batch.sh --tag molaro2019_domain \
+    --tests-file studies/molaro_2019/batches/domain_check.txt
+
+# 4. Humidity fit (5 arms, 15 h each, ~13500 core-h) -- only after step 3
+./scripts/HPC/submit_batch.sh --tag molaro2019_humidity \
+    --tests-file studies/molaro_2019/batches/humidity_fit.txt
+
+# 5. Measure ON THE CLUSTER, download only summary.csv
+bash postprocess/run_batch_measure.sh $SCRATCH/enceladus_DSM/batch_<...>
+```
+
+### What to check at the IC step
+
+- the banner prints `-ic_grain_union 1` (the **default** is the additive form,
+  which sums two tanh tails to a spurious bridge at exact tangency)
+- φ = 0.5 is tangent at exactly one point
+- the intermediate-φ band at the cusp is ~4.4ε ≈ 1.14 µm axially — that is the
+  correct diffuse image of a cusp, not a defect
+- by step 10 the O(ε) bridge has filled (`t_fill ≈ 2.6 s` at α_c = 0.1) with no
+  spurious structure spreading along the contact plane
+
+### What `summary.csv` answers
+
+`t_star_s` is the clock shift — when the model neck first reaches their 32.81 µm
+— and `neck_w_at_78min_um` is the model's neck one Molaro-experiment later.
+Target: **64.78 µm**. `dR_large_pct` is the humidity fit target: **−2.93 %**.
