@@ -53,13 +53,23 @@ The imposed undersaturation is ~2-3 decades stronger, so both grains sublimate a
 nearly the same rate and the ripening difference is buried in the measurement
 noise. Report the differential; do not fit to it.
 
-THE IC NEEDS NO CHANGE
-----------------------
+THE IC NEEDS NO CHANGE, BUT MIND xi_v
+-------------------------------------
 SetNodeFields (src/initial_conditions.c:215-225) writes
 rho_v = rho_vs(T)*[hum0*(1-phi) + phi]: saturated inside the ice, hum0-scaled in
-the pore. The quasi-steady profile establishes in t ~ L^2/D_v, which this script
-prints -- microseconds to milliseconds, i.e. instantaneous on a 78-min run. So
-the uniform pore value is fine and needs no pre-equilibration.
+the pore. The quasi-steady profile establishes in
+
+    tau_vap = L^2 / (xi_v * D_v)
+
+and the xi_v is NOT optional: the M&F temporal scaling multiplies vapour
+diffusion by xi_v (default 1e-3), so the effective diffusivity in the solver is
+1.9e-8, not 1.9e-5. An earlier version of this script printed L^2/D_v and
+understated tau_vap by 1000x. The conclusion survives -- tau_vap is seconds
+against a multi-hour run -- but it scales as L^2, so it has to be re-checked
+whenever the domain grows, against the time the interface takes to move one eps.
+
+This is also why the temperature field responds visibly faster than the vapour
+field in the first milliseconds of a run: heat is unscaled (xi_T = 1).
 
 Usage
 -----
@@ -206,12 +216,20 @@ def main():
     ap.add_argument("--L-over-a", type=float, default=3.0,
                     help="chosen domain size in units of a_eff")
     ap.add_argument("--n-grid", type=int, default=5, help="humidity arms to propose")
+    ap.add_argument("--xi-v", type=float, default=1.0e-3,
+                    help="M&F vapour temporal scaling (solver default 1e-3)")
+    ap.add_argument("--eps", type=float, default=2.5852e-7,
+                    help="interface parameter, for the tau_vap margin [m]")
+    ap.add_argument("--r-first", type=float, default=16.405e-6,
+                    help="their first measured neck RADIUS [m]")
     ap.add_argument("--outdir", type=Path, default=_REPO / "studies/molaro_2019")
     args = ap.parse_args()
 
     T = args.T0
     a_eff = (args.R1 ** 3 + args.R2 ** 3) ** (1.0 / 3.0)
     rr = rho_vs_sat(T) / _RHO_ICE
+    r0 = args.r_first
+    R_ave = 0.5 * (args.R1 + args.R2)
     rows = read_diameters(args.data)
     t_min = [r[0] / 60.0 for r in rows]
 
@@ -275,12 +293,25 @@ def main():
     print("   Both grains sublimate at nearly the same rate; the ripening difference is")
     print("   buried in the measurement noise. Report the differential, do not fit to it.")
 
-    print("\n--- VAPOUR IC: no change needed ---")
+    print(f"\n--- VAPOUR IC / QUASI-STEADY: tau_vap = L^2/(xi_v*D_v), xi_v = {args.xi_v:g} ---")
+    print("   Compare against the time the interface takes to move one eps. Using their")
+    print(f"   FIRST measured neck (r = {r0:.3e} m), where the interface is fastest inside")
+    print("   the window we actually fit:")
+    d0p = capillary_length(T) * rr
+    rho1 = r0 * r0 / (2.0 * (R_ave - r0))
+    dK1 = 2.0 / R_ave - (1.0 / r0 - 1.0 / rho1)
+    v1 = d0p * dK1 / (beta_HK(T, args.alpha) + rho1 / Dv_T(T))
+    t_eps = args.eps / v1
+    print(f"     v_n = {v1:.3e} m/s   ->   eps/v_n = {t_eps:.1f} s\n")
+    print("     L/a_eff   Lr[um]   tau_vap[s]   margin (eps/v_n)/tau_vap")
     for kk in ks:
         L = kk * a_eff
-        print(f"   L/a = {kk:4.2f}: t_diff = L^2/D_v = {L*L/Dv_T(T):.2e} s")
-    print("   Instantaneous on a 78-min run, so the uniform hum0*rho_vs pore value that")
-    print("   SetNodeFields already writes is correct as-is.")
+        tv = L * L / (args.xi_v * Dv_T(T))
+        flag = "" if t_eps / tv > 5.0 else "   <- THIN, re-check"
+        print(f"     {kk:7.2f} {L*1e6:8.1f} {tv:12.2f} {t_eps/tv:19.1f}x{flag}")
+    print("\n   Storage error from the scaling = rho_vs/(xi_v*rho_i) = "
+          f"{100*rr/args.xi_v:.3f} %  (LARGER xi_v is MORE quasi-steady).")
+    print("   The uniform hum0*rho_vs pore value SetNodeFields writes is correct as-is.")
     print("=" * 78)
 
     args.outdir.mkdir(parents=True, exist_ok=True)

@@ -86,3 +86,30 @@ numbers were wrong, and fixing them cut it to ~220:
 Steps: the interface advances `0.8*eps = 0.21 µm` per step at the CFL cap and
 the neck grows 0 → 32.4 µm, so expect a few hundred steps rather than ~6300.
 **Confirm on rung 1 with `plots/timestep.png` before trusting the rest.**
+
+## ξ_v and the vapour transient
+
+`xi_v = 1e-3` (the solver default) multiplies vapour **diffusion** and the ρᵢ
+source in `R_vap` but **not** the storage term, so the residual storage error is
+`ρ_vs/(ξ_v·ρᵢ)` = **0.092 %** here. That means **larger ξ_v is *more*
+quasi-steady, not less** — exceeding K&P Eq. 48 by ~1000× is the point of the
+scaling, not a violation of it. `comp_eps.py` used to warn the other way round;
+fixed 2026-08-18, and it now reports the storage error and `τ_vap` instead of a
+pass/fail.
+
+`τ_vap = L²/(ξ_v·D_v)` scales as **L²**, so it must be rechecked whenever the
+domain grows. Against `ε/v_n = 99 s` at their first measured neck:
+
+| arm | Lr (µm) | τ_vap (s) | margin |
+|---|---|---|---|
+| dom2 | 224 | 2.65 | 37× |
+| dom3 | 337 | 5.97 | 17× |
+| dom4 | 449 | 10.61 | 9.3× |
+
+All comfortable. Regenerate with
+`python preprocess/estimate_vapor_bc_molaro.py --xi-v 1e-3`.
+
+One visible consequence: heat is unscaled (`xi_T = 1`) while vapour is slowed
+1000×, so in the first milliseconds of a run the temperature field responds
+across the whole domain while the vapour field has barely moved. That is
+expected, not a defect.

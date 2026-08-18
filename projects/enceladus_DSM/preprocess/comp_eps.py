@@ -534,12 +534,23 @@ def compute_eps(
     # Diagnostics
     Pe = eps * v_n / Dv
 
-    xi_v_max  = rho_rat
+    # xi_v: the M&F temporal scaling. It multiplies vapour DIFFUSION and the
+    # rho_ice source in R_vap but NOT the storage term (src/assembly.c), so the
+    # residual storage error is rho_vs/(xi_v*rho_i) -- meaning LARGER xi_v is
+    # MORE quasi-steady, not less. This check used to warn when xi_v exceeded
+    # rho_vs/rho_i "(K&P Eq. 48) -- quasi-steady assumption violated", which has
+    # the sense backwards: Eq. 48 is what you need to RESOLVE the true vapour
+    # transient, and exceeding it deliberately is the whole point of the
+    # scaling. See studies/scratch/snow_thermal/CALIBRATION.md:92-96.
+    xi_v_min       = 10.0 * rho_rat          # keep the storage error under ~10 %
+    xi_v_store_err = (rho_rat / xi_v) if xi_v else None
+    xi_v_tau       = (Lx * Lx / (xi_v * Dv)) if (xi_v and Lx > 0) else None
     xi_v_warn = None
-    if xi_v is not None and xi_v > xi_v_max:
-        xi_v_warn = (f"WARNING: ξᵥ = {xi_v:.2e} exceeds ρ_vs/ρᵢ = "
-                     f"{xi_v_max:.2e} (K&P Eq. 48). Quasi-steady assumption "
-                     f"violated.")
+    if xi_v is not None and xi_v < xi_v_min:
+        xi_v_warn = (f"WARNING: ξᵥ = {xi_v:.2e} is below 10·ρ_vs/ρᵢ = "
+                     f"{xi_v_min:.2e}. The unscaled vapour STORAGE term is then "
+                     f"{100*xi_v_store_err:.1f}% of the source and the "
+                     f"quasi-steady approximation degrades. Raise ξᵥ.")
 
     eps_over_Rave = eps / Rave if Rave > 0 else 0.0
     geom_warn = None
@@ -599,7 +610,8 @@ def compute_eps(
         delta_vapor=dpf["delta_vapor"],
         max_delta=max_delta,
         kin_over_curv=kin_over_curv,
-        xi_v_max=xi_v_max, xi_v_warn=xi_v_warn,
+        xi_v_min=xi_v_min, xi_v_store_err=xi_v_store_err,
+        xi_v_tau=xi_v_tau, xi_v_warn=xi_v_warn,
         eps_over_Rave=eps_over_Rave, geom_warn=geom_warn,
         bracket_warn=bracket_warn, tau_warn=tau_warn,
     )
@@ -676,6 +688,11 @@ def _print_header(title: str) -> None:
     print("=" * 76)
     print(f"  {title}")
     print("=" * 76)
+
+
+def eps_over_vn(p: dict) -> float:
+    """Time for the interface to advance one ε — the timescale τ_vap must beat."""
+    return p["eps"] / p["v_n"] if p["v_n"] else float("inf")
 
 
 def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
@@ -789,14 +806,19 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
     if p["geom_warn"]:
         print(f"  {p['geom_warn']}")
 
-    print(f"\n--- ξᵥ validity check (K&P Eq. 48) ---")
-    print(f"  ξᵥ hard upper bound = ρ_vs/ρᵢ = {p['xi_v_max']:.4e}")
-    if p["xi_v_warn"]:
-        print(f"  {p['xi_v_warn']}")
-    elif args.xiv is not None:
-        print(f"  ξᵥ = {args.xiv:.2e}  → OK (ξᵥ ≤ ρ_vs/ρᵢ)")
+    print(f"\n--- ξᵥ (M&F temporal scaling) ---")
+    print(f"  ξᵥ scales vapour DIFFUSION and the ρᵢ source, NOT the storage term,")
+    print(f"  so the residual storage error is ρ_vs/(ξᵥ·ρᵢ): LARGER ξᵥ is MORE")
+    print(f"  quasi-steady. Recommended floor 10·ρ_vs/ρᵢ = {p['xi_v_min']:.4e}.")
+    if args.xiv is not None:
+        print(f"  ξᵥ = {args.xiv:.2e}   storage error = ρ_vs/(ξᵥρᵢ) = "
+              f"{100*p['xi_v_store_err']:.3f} %")
+        if p["xi_v_tau"]:
+            print(f"  τ_vap = Lx²/(ξᵥ·Dᵥ) = {p['xi_v_tau']:.2f} s   "
+                  f"(must stay well below ε/vₙ = {eps_over_vn(p):.0f} s)")
+        print(f"  {p['xi_v_warn']}" if p["xi_v_warn"] else "  → OK")
     else:
-        print(f"  (ξᵥ not provided; pass --xiv to check)")
+        print(f"  (ξᵥ not provided; pass --xiv to check. Solver default is 1e-3.)")
 
     print(f"\n--- Recommended opts entries ---")
     print(f"  -eps        {p['eps']:.4e}")
