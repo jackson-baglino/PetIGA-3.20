@@ -84,7 +84,12 @@ int main(int argc, char *argv[]) {
 
     /* Interface-CFL timestep limiter (InterfaceCFLMonitor) */
     user.flag_dtCFL   = PETSC_TRUE;   /* on by default */
-    user.cfl_dphimax  = 0.2;          /* max pointwise |dphi| per step */
+    user.cfl_dphimax  = 0.05;         /* max pointwise |dphi| per step.
+                                       * 0.2 let the front cross 1.13 ELEMENTS
+                                       * per step (dphi*4*eps against h=eps/sqrt2)
+                                       * -- past where a C1 quadratic basis stays
+                                       * clean, and it is what job1062679 merged
+                                       * the neck at. 0.05 is 0.28 elements. */
 
     user.cfl_n_reject  = 0;
     user.cfl_U_prev   = NULL;
@@ -98,8 +103,11 @@ int main(int argc, char *argv[]) {
 
     user.phase_lo   = -0.01;   /* physics band: excursion below -> rollback */
     user.phase_hi   =  1.01;   /* physics band: excursion above -> rollback */
-    user.snes_guard_lo = -0.5; /* solver guard: only a DIVERGING Newton       */
-    user.snes_guard_hi =  1.5; /* iterate trips this (see enceladus_types.h)  */
+    user.snes_guard_lo = -0.05; /* solver guard: TIGHT. A trial iterate gets a  */
+    user.snes_guard_hi =  1.05; /* little room past the physics band, no more.  */
+    user.guard_phi_min =  1.0e30;
+    user.guard_phi_max = -1.0e30;
+    user.guard_trips   =  0;
 
     /* Temporal-scaling factors (M&F 2024 §3.1, eqs. 25-26): slow the fast
      * T / vapor diffusion timescales by 1/xi while keeping the quasi-steady
@@ -1394,8 +1402,39 @@ int main(int argc, char *argv[]) {
     } else if (user.keff && user.keff->enabled && user.keff->only) {
         ierr = KeffSample(&user, 0, 0.0, U); CHKERRQ(ierr);
     } else {
-        /* Solve the system */
-        ierr = TSSolve(ts, U); CHKERRQ(ierr);
+        /* Solve the system.
+         *
+         * Report the phase-guard excursion on the way out, whether TSSolve
+         * succeeded or not. A domain-error failure surfaces from PETSc as
+         * DIVERGED_LINE_SEARCH with a stack trace that names nothing about
+         * phi; job1062679 emitted 87 identical such lines and the actual
+         * cause (phi = 1.0554) had to be recovered from the last snapshot.
+         * This makes the run say it. */
+        PetscErrorCode solve_ierr = TSSolve(ts, U);
+
+        {
+            PetscReal gmin = user.guard_phi_min, gmax = user.guard_phi_max;
+            PetscInt  trips = user.guard_trips;
+            PetscReal gmin_g, gmax_g; PetscInt trips_g;
+            ierr = MPI_Allreduce(&gmin,  &gmin_g,  1, MPIU_REAL, MPIU_MIN,
+                                 PETSC_COMM_WORLD); CHKERRQ(ierr);
+            ierr = MPI_Allreduce(&gmax,  &gmax_g,  1, MPIU_REAL, MPIU_MAX,
+                                 PETSC_COMM_WORLD); CHKERRQ(ierr);
+            ierr = MPI_Allreduce(&trips, &trips_g, 1, MPIU_INT,  MPIU_SUM,
+                                 PETSC_COMM_WORLD); CHKERRQ(ierr);
+            if (trips_g > 0) {
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "\n\033[33m*** PHASE GUARD TRIPPED %" PetscInt_FMT " time(s) ***\n"
+                    "    worst phi seen: [%.6f, %.6f]   guard band [%.3f, %.3f]\n"
+                    "    phi outside [0,1] by more than ~0.01 means the NUMERICS are\n"
+                    "    wrong -- mesh, timestep, or the CFL limit being too loose.\n"
+                    "    Do NOT widen the guard to make this go away. Tighten\n"
+                    "    -dtCFL_dphimax (front motion per step) or refine the mesh.\033[0m\n",
+                    trips_g, (double)gmin_g, (double)gmax_g,
+                    (double)user.snes_guard_lo, (double)user.snes_guard_hi);
+            }
+        }
+        CHKERRQ(solve_ierr);
     }
 
     PetscPrintf(PETSC_COMM_WORLD, "Solution completed. \n");

@@ -1,5 +1,5 @@
 # =============================================================================
-# Molaro et al. (2019) T = -20 C -- alpha_c = 0.1, open chamber, production
+# Molaro et al. (2019) T = -20 C -- CFL LADDER: the neck-merge window only
 #
 # ALPHA_C = 0.1, and it is NOT a free knob here. Two independent bounds pin it:
 #
@@ -19,7 +19,7 @@
 # -- see docs/molaro_validation_synthesis.md sec. 4. Recompute with
 #     python preprocess/estimate_alpha_c_molaro.py
 #
-# HUMIDITY 0.9973 -- the estimate: fits the large grain's -2.93 %/78 min
+# HUMIDITY 1.0000 -- saturated control: isolates neck growth from shrinkage
 # Derived, not guessed. Quasi-steady sublimation from the pair to the wall with
 # both resistances in series:
 #     1 - hum0 = |v_n| * (beta' + l_eff/D_v) / (rho_vs/rho_i),  l_eff = a(1-a/L)
@@ -45,7 +45,7 @@
 # + phi], and the quasi-steady profile establishes in L^2/D_v ~ 6e-3 s --
 # instantaneous on this run.
 #
-# T_FINAL 2.2e+04 s -- this is OUR clock, not theirs. We start at a zero neck and
+# T_FINAL 7.2e+03 s -- this is OUR clock, not theirs. We start at a zero neck and
 # the model grows slower than the experiment, so t_final is set by how long OUR
 # neck takes to cross their range, not by their 78 min.
 #
@@ -97,13 +97,13 @@
 #            python postprocess/grain_shrinkage.py <run_dir>
 # =============================================================================
 
--t_final 2.2e+04
+-t_final 3.0e+02
 -temp -20.0
--humidity 0.9973
+-humidity 1.0000
 -grad_temp0 0.0,0.0,0.0
 
 -flag_BC_Tfix 1                         # isothermal reservoir (the cold plate)
--flag_BC_rhovfix 1                      # rho_v pinned at 0.9973 * rho_vs(T)
+-flag_BC_rhovfix 1                      # rho_v pinned at 1.0000 * rho_vs(T)
 
 -alpha_pointwise 1                      # mob_sub/alph_sub rebuilt per quad point
 -alpha_model 0                          # 0 = constant alpha_c
@@ -119,3 +119,19 @@
 
 -t_out_log 80
 -t_out_log_t0 1.0e2
+
+# =============================================================================
+# CFL LADDER ARM. t_final = 300 s covers the neck merge, which job1062679 hit at
+# t = 126 -> 142 s (steps 45 -> 46): phi on the axis at the neck plane went
+# 0.9659 -> 1.00200 and a ring of phi > 1 appeared at r = 1-7 um and never
+# relaxed. Everything that killed that run happened inside this window, so there
+# is no reason to pay for 6 h to study it.
+#
+# Vary -dtCFL_dphimax on the command line; leave everything else fixed:
+#   ./scripts/HPC/submit_enceladus.sh <dom2-geom> \
+#       molaro_T-20_h1.0000_merge_a1e-1_dirichlet cfl020 -- -dtCFL_dphimax 0.20
+#   ... 0.05, 0.02, 0.01
+#
+# The measurement is max |phi - clamp(phi,0,1)| through the merge. A healthy
+# run should keep that near machine precision; job1062679 reached 1.4e-2.
+# =============================================================================

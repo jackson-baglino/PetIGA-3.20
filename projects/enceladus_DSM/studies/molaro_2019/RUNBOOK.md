@@ -37,41 +37,51 @@ the contact plane.
 
 ---
 
-## Rung 1 — dom2, saturated (~2 h wall, ~70 core-h)
+## Rung 1 — CFL ladder through the neck merge (~4 short runs, ~40 core-h)
+
+job1062679 (dom3, `-dtCFL_dphimax 0.2`) died at t = 457 s. Cause: the neck
+**merged** at t = 126 → 142 s (steps 45 → 46), φ on the axis at the neck plane
+went 0.9659 → 1.00200, and a ring of φ > 1 appeared at r = 1–7 µm and never
+relaxed — peaking at **1.0143**. Once an accepted state passed the guard band
+every residual evaluation domain-errored and no dt could recover, so it burned
+`-max_rej 50` and exited `DIVERGED_STEP_REJECTED`.
+
+φ outside [0,1] by more than ~0.01 means the numerics are wrong, so the fix is
+to make the excursion not happen — not to tolerate it. The prime suspect is
+front motion per step:
+
+| `dphimax` | front move/step | elements | in units of W | dt (from the 42.2 s observed at 0.2) |
+|---|---|---|---|---|
+| 0.20 | 0.2068 µm | **1.131** | 0.566 | 42.2 s |
+| 0.05 | 0.0517 µm | 0.283 | 0.141 | 10.6 s |
+| 0.02 | 0.0207 µm | 0.113 | 0.057 | 4.2 s |
+| 0.01 | 0.0103 µm | 0.057 | 0.028 | 2.1 s |
+
+A front crossing **more than one element per step** on a C¹ quadratic basis is
+where Gibbs overshoot starts, and 0.2 permits exactly that. Default is now 0.05;
+this ladder measures what is actually required.
+
+Run on **dom2** (cheap) with the merge-window experiment — `t_final = 300 s`
+covers the merge with margin, so there is no reason to pay for 6 h to study it:
 
 ```bash
-./scripts/HPC/submit_enceladus.sh \
-    molaro_2D_L450x225um_eps0.26um_axisym_T-20pair_tangent_dom2 \
-    molaro_T-20_h1.0000_6h_a1e-1_dirichlet dom2
+for d in 0.20 0.05 0.02 0.01; do
+  ./scripts/HPC/submit_enceladus.sh \
+      molaro_2D_L450x225um_eps0.26um_axisym_T-20pair_tangent_dom2 \
+      molaro_T-20_h1.0000_merge_a1e-1_dirichlet cfl${d/./} \
+      -- -dtCFL_dphimax $d
+done
 ```
 
-The cheapest arm that produces a real neck curve. Two things to read:
+**Measure:** peak `max|φ − clamp(φ,0,1)|` through the merge. Healthy is near
+machine precision; job1062679 reached 1.4e-2. The run now reports it itself —
+any guard trip prints `*** PHASE GUARD TRIPPED ***` with the worst φ, so a
+failure names its own cause instead of leaving a bare PETSc trace.
 
-1. **`plots/timestep.png` — is `dtCFL` binding?** `-dtCFL` is now *enforced*:
-   a step whose measured `||dphi||_inf` exceeds `-dtCFL_dphimax` is rolled back
-   and retried, so `max |dphi| <= 0.2` holds on every step the run keeps. That
-   is why `-dtmax` is loose (1e4). Confirm the limiter is what binds:
-   - **`grep -c 'Interface-CFL cap' <run>/outp.txt` is large** → the limiter is
-     governing dt. Expected.
-   - **dt pinned at 1e4 with no CFL lines** → the limiter is not firing; put
-     `-dtmax 2.0e2` back before spending anything else.
-   - **`grep -c 'Interface-CFL violated'` is more than a few percent of steps**
-     → rollbacks are thrashing and each one is a wasted step. Lower
-     `CFL_FORWARD_MARGIN` in `src/monitoring.c` (currently 0.9).
-   - Watch the SNES counts: climbing toward `-NRmax 15`, or visible rejections,
-     means dt is too large whatever the CFL limiter says.
-
-   This single plot sets the cost of everything after it.
-
-2. **Does the neck reach 64.78 µm inside 6 h?** Predicted t\* ≈ 0.42 h and
-   t_end ≈ 3.16 h. If it overshoots, raise `-t_final` on the next rung; if it
-   finishes in 1 h, lower it.
-
-```bash
-bash postprocess/run_batch_measure.sh <run_dir>      # works on a single run too
-```
-
----
+**If tightening `dphimax` alone does not drive the excursion down**, the next
+suspect is spatial, not temporal: `h = ε/√2` is `W/2`, at the loose end of the
+Karma–Rappel `dx/W = 0.4–0.8` band. Re-run the best `dphimax` at `h = ε/2`
+(`Nx`, `Ny` ×1.41) before concluding anything about the model.
 
 ## Rung 2 — domain convergence (~2 runs, ~600 core-h)
 

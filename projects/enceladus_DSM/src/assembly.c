@@ -98,23 +98,24 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     }
     PetscScalar phi_a = 1.0 - phi;
 
-    /* SNES domain-error catch: if a trial Newton iterate has run away, signal
-     * an invalid state so the line search backs off.
+    /* SNES domain-error catch. TIGHT on purpose: phi outside [0,1] by more than
+     * ~0.01 means the numerics are wrong, and in a healthy run the excursion
+     * should be near machine precision. The band is slightly wider than
+     * [phase_lo, phase_hi] only to give a trial Newton iterate room to
+     * overshoot and be pulled back by the line search -- not to tolerate a bad
+     * solution. Widening it to make a run survive would be hiding the bug.
      *
-     * Deliberately checked against snes_guard_lo/hi and NOT against
-     * phase_lo/hi. PETSc evaluates the residual at the INCOMING state as well
-     * as at trial iterates, so a guard set to the physics band turns a state
-     * that is already slightly out of bounds into an unrecoverable one: every
-     * retry domain-errors at the same converged residual and dt reduction
-     * cannot help, because dt does not change where the step starts. That is
-     * how job1062679 died -- 87 DIVERGED_LINE_SEARCH at fnorm 4.33e-09 with
-     * dt pinned at dtmin. Small excursions are the rollback's job
-     * (Monitor + BoundsRollbackPreStep, which CAN act); this guard exists
-     * only for a genuinely diverging Newton, so its band is wide. */
+     * Every trip records the worst phi, so when a solve does fail the run can
+     * say WHAT went out of bounds. job1062679 produced 87 identical
+     * DIVERGED_LINE_SEARCH lines and a PETSc stack trace that named nothing;
+     * the 1.0554 had to be reverse-engineered from the last snapshot. */
     {
         PetscReal lo = user->snes_guard_lo, hi = user->snes_guard_hi;
-        if (PetscRealPart(phi)   < lo || PetscRealPart(phi)   > hi ||
-            PetscRealPart(phi_a) < lo || PetscRealPart(phi_a) > hi) {
+        PetscReal p0 = PetscRealPart(phi), pa = PetscRealPart(phi_a);
+        if (p0 < lo || p0 > hi || pa < lo || pa > hi) {
+            if (p0 < user->guard_phi_min) user->guard_phi_min = p0;
+            if (p0 > user->guard_phi_max) user->guard_phi_max = p0;
+            user->guard_trips++;
             if (user->snes) SNESSetFunctionDomainError(user->snes);
             return 0;
         }

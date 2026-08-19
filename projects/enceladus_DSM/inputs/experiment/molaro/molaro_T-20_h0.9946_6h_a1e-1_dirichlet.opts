@@ -115,7 +115,7 @@
 
 -dtmax 2.0e2                            # the empirically tested value; see above
 -dtCFL 1
--dtCFL_dphimax 0.2
+-dtCFL_dphimax 0.05                     # 0.28 elements/step; 0.2 was 1.13
 
 -t_out_log 80
 -t_out_log_t0 1.0e2

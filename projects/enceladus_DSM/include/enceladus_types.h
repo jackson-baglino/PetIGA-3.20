@@ -206,19 +206,29 @@ typedef struct {
   PetscReal phase_lo;     // lower bound for phi_ice, phi_air
   PetscReal phase_hi;     // upper bound for phi_ice, phi_air
 
-  /* SEPARATE, much looser band whose only job is to stop a DIVERGING Newton
-   * iterate (Residual signals SNESSetFunctionDomainError so the line search
-   * backs off). It must not be tied to [phase_lo, phase_hi]: the residual is
-   * evaluated at the incoming state too, so if that state is already outside
-   * the physics band, EVERY retry domain-errors identically and no dt
-   * reduction can help -- the run then burns -max_rej and dies with
-   * DIVERGED_STEP_REJECTED. Observed on job1062679: 87 consecutive
-   * DIVERGED_LINE_SEARCH at a converged fnorm of 4.33e-09, dt pinned at
-   * dtmin, from a state holding phi = 1.0554 against phase_hi = 1.05.
-   * Keeping the two bands separate lets the rollback (which can act) own
-   * small excursions and this guard (which cannot) own real divergence. */
+  /* SNES domain-error guard. Separate from [phase_lo, phase_hi] only so that a
+   * trial Newton iterate has a little room to overshoot and be pulled back by
+   * the line search before the step is condemned -- NOT to tolerate a bad
+   * solution. It is deliberately TIGHT: phi outside [0,1] by more than ~0.01
+   * means the numerics are wrong (mesh, timestep), and a violation should sit
+   * near machine precision in a healthy run. Do not widen this to make a run
+   * survive; fix what is producing the excursion.
+   *
+   * The failure it must not repeat (job1062679): a guard tied to the physics
+   * band turned an already-accepted out-of-bounds state into an unrecoverable
+   * one, because PETSc evaluates the residual at the INCOMING state too, so
+   * every retry domain-errored identically at a converged fnorm and no dt
+   * reduction could help -- 87 blind DIVERGED_LINE_SEARCH and a bare PETSc
+   * stack trace naming nothing. The fix for THAT is the diagnostic below, not
+   * a wider band. */
   PetscReal snes_guard_lo;
   PetscReal snes_guard_hi;
+
+  /* Worst phi seen by the guard, and where, so a failed solve can say what
+   * actually went out of bounds instead of leaving it to be reverse-engineered
+   * from the last snapshot. */
+  PetscReal guard_phi_min, guard_phi_max;
+  PetscInt  guard_trips;
 
   // NOTE: per-quadrature-point alph[]/mob[] arrays were removed 2026-07-31.
   // They were filled under -flag_Tdep and read by nothing: assembly.c uses the
