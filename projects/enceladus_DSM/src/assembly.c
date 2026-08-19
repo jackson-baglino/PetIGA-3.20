@@ -110,9 +110,15 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
      * DIVERGED_LINE_SEARCH lines and a PETSc stack trace that named nothing;
      * the 1.0554 had to be reverse-engineered from the last snapshot. */
     {
+        /* Checked on phi ONLY. phi_a = 1 - phi is algebraic, so testing it too
+         * is not a second safety net -- it is a second constraint on phi, and
+         * it silently narrows the band: [lo, hi] applied to both collapses to
+         * [max(lo,1-hi), min(hi,1-lo)]. With [-0.01, 1.05] that is
+         * [-0.01, 1.01], i.e. exactly the physics band, which is the
+         * configuration that trapped job1062679. */
         PetscReal lo = user->snes_guard_lo, hi = user->snes_guard_hi;
-        PetscReal p0 = PetscRealPart(phi), pa = PetscRealPart(phi_a);
-        if (p0 < lo || p0 > hi || pa < lo || pa > hi) {
+        PetscReal p0 = PetscRealPart(phi);
+        if (p0 < lo || p0 > hi) {
             if (p0 < user->guard_phi_min) user->guard_phi_min = p0;
             if (p0 > user->guard_phi_max) user->guard_phi_max = p0;
             user->guard_trips++;

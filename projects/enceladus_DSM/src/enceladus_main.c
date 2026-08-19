@@ -103,8 +103,8 @@ int main(int argc, char *argv[]) {
 
     user.phase_lo   = -0.01;   /* physics band: excursion below -> rollback */
     user.phase_hi   =  1.01;   /* physics band: excursion above -> rollback */
-    user.snes_guard_lo = -0.05; /* solver guard: TIGHT. A trial iterate gets a  */
-    user.snes_guard_hi =  1.05; /* little room past the physics band, no more.  */
+    user.snes_guard_lo = -0.01; /* solver guard: TIGHT, and checked on phi only */
+    user.snes_guard_hi =  1.05; /* (phi_a is algebraic -- see assembly.c).       */
     user.guard_phi_min =  1.0e30;
     user.guard_phi_max = -1.0e30;
     user.guard_trips   =  0;

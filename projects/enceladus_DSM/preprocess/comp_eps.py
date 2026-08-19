@@ -770,6 +770,24 @@ def _print_single(args, p: dict, alpha_c: float, dim: int) -> None:
     if p["tau_warn"]:
         print(f"\n  {p['tau_warn']}")
 
+    if max(p["delta_heat_ice"], p["delta_vapor"]) > 1.0:
+        # delta = a1*a2*eps/(D*beta_HK) and beta_HK ~ 1/alpha_c, so every K&P
+        # ceiling scales as 1/alpha_c. The neck-fillet criterion does NOT --
+        # it is alpha_c-independent -- so overriding eps with the fillet can
+        # silently blow past the thin-interface regime when alpha_c is raised.
+        DELTA_REF = 0.273          # delta_ice of the validated alpha_c = 1.34e-2 runs
+        eps_ref = DELTA_REF * p["alpha_i"] * p["beta_hk"] / (_A1 * _A2)
+        print(f"\n  *** delta > 1 ON A CHANNEL ***")
+        print(f"      The thin-interface CORRECTION exceeds the kinetic term it")
+        print(f"      corrects (delta_ice = {p['delta_heat_ice']:.2f}). beta_HK ~ 1/alpha_c, so every")
+        print(f"      K&P ceiling tightens in proportion to alpha_c -- but the")
+        print(f"      neck-fillet criterion does not, so overriding eps with the")
+        print(f"      fillet can walk straight out of the asymptotic regime.")
+        print(f"      At alpha_c = {p['alpha_c']:.1e}, matching the delta_ice = {DELTA_REF} of the")
+        print(f"      validated alpha_c = 1.34e-2 runs needs eps <= {eps_ref:.3e} m.")
+        print(f"      This run reports eps = {p['eps']:.3e} m ({p['eps']/eps_ref:.1f}x that).")
+        print(f"      Decide deliberately; do not let the fillet override hide it.")
+
     print(f"\n--- Thin-interface expansion parameter δ = a₁a₂·ε/(D·β_HK) ---")
     print(f"  τ_sub compensates δ to first order, so the residual error is O(δ²).")
     print(f"    heat channel ({chan}, active)    δ = {p['delta_heat']:.4f}")
