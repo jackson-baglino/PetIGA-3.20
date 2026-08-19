@@ -18,6 +18,41 @@ set -euo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 ###############################################################################
+# Keep the SLURM .o/.e with the results.
+#
+# SLURM writes them to $SLURM_SUBMIT_DIR/output_files/ (see the -o/-e SBATCH
+# lines above), which is where you want them WHILE the job runs -- one place to
+# tail, no hunting through timestamped result folders. But after the fact they
+# belong with the run they describe: a crashed job's stack trace is useless if
+# it is three directories away from the outp.txt and the .opts that produced it.
+#
+# So: leave the originals where they are, and COPY them into $folder on the way
+# out. Registered as an EXIT trap rather than a line at the bottom of the script
+# so it also fires when the run dies -- an ERR trap, a failed srun, or a SLURM
+# SIGTERM at the time limit -- which is exactly when the logs matter most.
+#
+# Caveat: the copy is taken from inside the exiting shell, so it misses whatever
+# is written after the trap runs (a few closing lines). The originals in
+# output_files/ remain authoritative if you ever need the very last bytes.
+###############################################################################
+archive_slurm_logs() {
+    local rc=$?
+    [[ -n "${folder:-}" && -d "${folder:-}" ]] || return $rc
+    [[ -n "${SLURM_JOB_ID:-}" ]]               || return $rc
+
+    local src_dir="${SLURM_SUBMIT_DIR:-$PWD}/output_files"
+    local stem="${SLURM_JOB_NAME:-slurm}"
+    local copied=0
+    for ext in o e; do
+        local f="${src_dir}/${stem}.${ext}${SLURM_JOB_ID}"
+        [[ -f "$f" ]] && cp -f "$f" "$folder/" 2>/dev/null && copied=1
+    done
+    (( copied )) && echo "📋 SLURM logs copied to $folder"
+    return $rc
+}
+trap archive_slurm_logs EXIT
+
+###############################################################################
 # Input arguments
 #   $1   : geometry name (e.g. 2D_touching_grains)
 #   $2   : experiment name (e.g. base_T-20_h1.00_1d)
