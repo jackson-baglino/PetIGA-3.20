@@ -1,0 +1,123 @@
+# =============================================================================
+# Molaro et al. (2019) T = -20 C -- alpha_c = 0.1, open chamber, production
+#
+# ALPHA_C = 0.1, and it is NOT a free knob here. Two independent bounds pin it:
+#
+#   FROM BELOW (their data). The attachment-only limit -- infinitely fast vapour
+#   transport, so no geometric assumption -- needs
+#       alpha_c >= sqrt(2 pi m/kT) * v_n / (d0' * dK) = 0.139 integrated
+#   to reproduce their measured dr/dt. Per-interval it spans 0.05-0.42.
+#
+#   FROM ABOVE (saturation + cost). Neck growth is already transport-limited at
+#   alpha_c = 0.1 (Lambda = beta_HK*D_v/rho = 0.29), so going all the way to the
+#   physical ceiling alpha_c = 1 buys only 1.25x more rate. Raising alpha_c also
+#   TIGHTENS the K&P interface-width bound, since L* = D*beta_HK ~ 1/alpha_c: at
+#   alpha_c = 1 the mean-heat ceiling drops to 5.9e-8 and the mesh grows 19x.
+#
+# So the model tops out near 50 % of Molaro's observed neck growth at any
+# alpha_c. The residual is the surface-diffusion share this model does not have
+# -- see docs/molaro_validation_synthesis.md sec. 4. Recompute with
+#     python preprocess/estimate_alpha_c_molaro.py
+#
+# HUMIDITY 1.0000 -- saturated control: isolates neck growth from shrinkage
+# Derived, not guessed. Quasi-steady sublimation from the pair to the wall with
+# both resistances in series:
+#     1 - hum0 = |v_n| * (beta' + l_eff/D_v) / (rho_vs/rho_i),  l_eff = a(1-a/L)
+# Target |v_n| = 6.2544e-10 m/s, the LARGE grain's surface recession from a
+# least-squares fit to their Fig. 11 diameters (-2.93 %/78 min, S/N 4.4). That
+# reproduces the -3 % their caption quotes. The caption's -4 % for the SMALL
+# grain is not in the same table -- endpoint -0.69 %, minimum -2.40 %, fit
+# -0.89 %, all inside its own +-2 % uncertainty -- so fit the large grain and
+# report the small one.
+#
+# At L/a_eff = 3 that gives hum0 = 0.99728. The grid spans the ~3x uncertainty
+# in the envelope. NOTE the previously fitted h = 0.998 does NOT transfer: it
+# was calibrated on the 121 um domain, and 1 - hum0 is nearly alpha_c-
+# independent but strongly L-dependent (0.00035 at L/a = 1.08 -> 0.00272 at 3).
+# Recompute for any other domain with
+#     python preprocess/estimate_vapor_bc_molaro.py --L-over-a <k>
+#
+# The wall undersaturation outweighs the curvature difference between the two
+# grains (d0*(2/R_sm - 2/R_lg) = 7.9e-6) by 343x, so BOTH grains sublimate at
+# nearly the same rate. The differential is not a usable ripening signal.
+#
+# VAPOUR IC needs no change: SetNodeFields writes rho_v = rho_vs*[hum0*(1-phi)
+# + phi], and the quasi-steady profile establishes in L^2/D_v ~ 6e-3 s --
+# instantaneous on this run.
+#
+# T_FINAL 2.9e+04 s (8 h). Starting PRE-NECKED at r = 14 um, the growth law
+# integrated from 14 -> 32.39 um (their last measured neck) gives 10.5 h by the
+# l = rho envelope, which overestimates by ~3x against the one calibrated point
+# we have, so expect ~3.2 h. 8 h is ~2.5x margin on that. Overrunning is cheap:
+# dt in the tail is dtmax-limited, so the extra hours cost ~90 steps.
+#
+# Rescaled from the repo's own CALIBRATED figure: the alpha_c = 1.341e-2 arms
+# needed ~28 ks from tangency to reach their last measured neck (fitted on a
+# committed run, see molaro_T-20_h1.00_15h_a1.34e-2_dirichlet.opts). Time scales
+# with the TOTAL resistance, not with beta alone -- we are in the mixed regime:
+#     t(0.1)/t(1.341e-2) = (beta'(0.1) + rho/D_v) / (beta'(1.341e-2) + rho/D_v)
+#                        = (0.0733 + 0.2515) / (0.5469 + 0.2515) = 0.407
+#     their first neck 32.81 um  ->  t* ~ 0.42 h
+#     their last  neck 64.78 um  ->     ~ 3.16 h
+# Scaling by beta alone would give 1.04 h and cut the run short. 6 h is ~1.9x
+# margin on 3.16 h. The 2 h arms cover their first three points.
+#
+# DTMAX 2.0e2 -- back to the empirically tested value.
+#
+# As of 2026-08-18 the interface-CFL limiter does not merely clamp the NEXT dt;
+# a step whose MEASURED ||dphi||_inf exceeds -dtCFL_dphimax is rolled back and
+# retried at 0.8x the dt that would have hit the limit exactly. So
+#
+#     max |dphi| per step <= dtCFL_dphimax
+#
+# holds on every step the run keeps, and dtmax no longer has to stand in for a
+# criterion it cannot express: dt_CFL = dphimax*4*eps/v_n spans five decades
+# over this run (v_n goes 8e-6 -> 1.5e-10 m/s), and no single static number
+# tracks that. 200 s was the right hedge when the limiter was advisory; with
+# enforcement it just costs steps in the slow tail, where dt_CFL is ~1300 s.
+#
+# NOTE from job1062679: dt never exceeded 42.2 s in that run -- the CFL limiter
+# held it far below either cap, so dtmax was never the binding constraint and
+# 1.0e4 was not what crashed it. 2.0e2 is restored because it is the value with
+# runs behind it, not because the evidence implicates the looser one.
+#
+# The earlier Molaro files pinned -dtmax to 1.1*tau_sub instead. tau_sub is the
+# Allen-Cahn RELAXATION time, not a stability limit for an implicit solver; at
+# this eps that is 8.6 s, 23x tighter than even the conservative default, and
+# ~6300 steps of pure waste.
+#
+# COST: the interface advances 0.8*eps = 0.21 um per step at the CFL cap, and
+# the neck grows 0 -> 32.4 um, so expect a few hundred steps, not thousands.
+# Budget ~220 core-h per 6 h arm at dom3 -- check plot_timestep.py on the first
+# run to see whether dtCFL or dtmax is actually binding.
+#
+# -beta_sub0 is deliberately absent: it is IGNORED under -alpha_pointwise 1,
+# where beta_sub is rebuilt per quadrature point from alpha_c.
+#
+# Pair with: inputs/geometry/molaro/molaro_2D_L*um_eps0.26um_axisym_T-20pair_tangent_dom*.opts
+# Measure:   python postprocess/neck_width.py <run_dir> --axisym
+#            python postprocess/grain_shrinkage.py <run_dir>
+# =============================================================================
+
+-t_final 2.9e+04
+-temp -20.0
+-humidity 1.0000
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1                         # isothermal reservoir (the cold plate)
+-flag_BC_rhovfix 1                      # rho_v pinned at 1.0000 * rho_vs(T)
+
+-alpha_pointwise 1                      # mob_sub/alph_sub rebuilt per quad point
+-alpha_model 0                          # 0 = constant alpha_c
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+-dtmax 2.0e2                            # the empirically tested value; see above
+-dtCFL 1
+-dtCFL_dphimax 0.05                     # 0.28 elements/step; 0.2 was 1.13
+
+-t_out_log 80
+-t_out_log_t0 1.0e2

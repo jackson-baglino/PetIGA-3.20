@@ -37,51 +37,63 @@ the contact plane.
 
 ---
 
-## Rung 1 — CFL ladder through the neck merge (~4 short runs, ~40 core-h)
+## Rung 1 — pre-necked start at r = 14 µm (dom2 first)
 
-job1062679 (dom3, `-dtCFL_dphimax 0.2`) died at t = 457 s. Cause: the neck
-**merged** at t = 126 → 142 s (steps 45 → 46), φ on the axis at the neck plane
-went 0.9659 → 1.00200, and a ring of φ > 1 appeared at r = 1–7 µm and never
-relaxed — peaking at **1.0143**. Once an accepted state passed the guard band
-every residual evaluation domain-errored and no dt could recover, so it burned
-`-max_rej 50` and exited `DIVERGED_STEP_REJECTED`.
+**The CFL ladder is done and it split into two findings.**
 
-φ outside [0,1] by more than ~0.01 means the numerics are wrong, so the fix is
-to make the excursion not happen — not to tolerate it. The prime suspect is
-front motion per step:
+*Fixed:* the φ > 1 overshoot is a timestep artifact. Peak excursion vs
+`-dtCFL_dphimax`, four dom2 arms through the merge:
 
-| `dphimax` | front move/step | elements | in units of W | dt (from the 42.2 s observed at 0.2) |
-|---|---|---|---|---|
-| 0.20 | 0.2068 µm | **1.131** | 0.566 | 42.2 s |
-| 0.05 | 0.0517 µm | 0.283 | 0.141 | 10.6 s |
-| 0.02 | 0.0207 µm | 0.113 | 0.057 | 4.2 s |
-| 0.01 | 0.0103 µm | 0.057 | 0.028 | 2.1 s |
+| `dphimax` | peak overshoot | ρ_v range / ρ_vs |
+|---|---|---|
+| 0.20 | +8.0e-03 | [−6.69, +8.17] |
+| 0.05 | **+6.7e-16** | [+0.99, +1.00] |
+| 0.02 | +2.2e-16 | [+0.99, +1.00] |
+| 0.01 | +2.2e-16 | [+0.99, +1.00] |
 
-A front crossing **more than one element per step** on a C¹ quadratic basis is
-where Gibbs overshoot starts, and 0.2 permits exactly that. Default is now 0.05;
-this ladder measures what is actually required.
+`dphimax = 0.05` is now the default. 0.2 let the front cross 1.13 elements per
+step; 0.05 is 0.28.
 
-Run on **dom2** (cheap) with the merge-window experiment — `t_final = 300 s`
-covers the merge with margin, so there is no reason to pay for 6 h to study it:
+*Not fixed by dt:* a **trapped void**. Present in all four arms, forming at
+t ≈ 150–165 s at r ≈ 5 µm, sealed over by ice, and persisting and deepening
+(0.69 → 0.55 over 130 s). A 20× tightening moved the trapped minimum only
+0.498 → 0.551 — it is not a temporal artifact.
 
-```bash
-for d in 0.20 0.05 0.02 0.01; do
-  ./scripts/HPC/submit_enceladus.sh \
-      molaro_2D_L450x225um_eps0.26um_axisym_T-20pair_tangent_dom2 \
-      molaro_T-20_h1.0000_merge_a1e-1_dirichlet cfl${d/./} \
-      -- -dtCFL_dphimax $d
-done
+The cause is spatial. At r = 5 µm the fillet radius is
+`ρ = r²/(2(R−r)) = 0.153 µm = 0.59 ε` — **thinner than the interface itself**.
+The whole tangent-start traverse (r = 0 → 16.4 µm) sits below the model's own
+resolution floor. Fixing that by refinement needs ε = 2.5e-8, ~1044× the cost.
+
+**So: start above the floor instead.** ε = 1.18e-7 and a pre-necked r = 14 µm,
+slightly under Molaro's first measured 16.4 µm so the comparison window is still
+derived rather than assumed. Two criteria independently pick that ε:
+
+```
+delta_ice < 1                     -> eps <= 1.1802e-07   <- binds
+start above the resolution floor  -> eps <= 1.8828e-07
 ```
 
-**Measure:** peak `max|φ − clamp(φ,0,1)|` through the merge. Healthy is near
-machine precision; job1062679 reached 1.4e-2. The run now reports it itself —
-any guard trip prints `*** PHASE GUARD TRIPPED ***` with the worst φ, so a
-failure names its own cause instead of leaving a bare PETSc trace.
+At ε = 1.18e-7: floor = 11.08 µm (start is 1.26× above, their first neck 1.48×),
+`δ_ice = 1.000`, `δ_mean = 0.158`, `δ_vap = 0.067`, `τ_sub = 1.33 s`.
 
-**If tightening `dphimax` alone does not drive the excursion down**, the next
-suspect is spatial, not temporal: `h = ε/√2` is `W/2`, at the loose end of the
-Karma–Rappel `dx/W = 0.4–0.8` band. Re-run the best `dphimax` at `h = ε/2`
-(`Nx`, `Ny` ×1.41) before concluding anything about the model.
+| arm | Lz × Lr (µm) | Nz × Nr | Melem | M DoF | ranks @100k |
+|---|---|---|---|---|---|
+| `..._r14um_dom2` | 450 × 225 | 5394 × 2697 | 14.55 | 43.7 | 437 |
+| `..._r14um_dom3` | 680 × 340 | 8150 × 4075 | 33.21 | 99.7 | 998 |
+
+```bash
+./scripts/HPC/submit_enceladus.sh \
+    molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2 \
+    molaro_T-20_h1.0000_8h_a1e-1_dirichlet r14dom2
+```
+
+**Check, in order:** (1) no trapped void — `min φ` inside the neck stays at 1
+and no bracketed dip appears; (2) `*** PHASE GUARD TRIPPED ***` never prints;
+(3) the neck passes 16.4 µm so the comparison window is reached; (4) grab the
+SLURM `.o` for wall time — it is now copied into the run folder automatically,
+and the ~10× cost estimate is still unvalidated.
+
+dom3 only after dom2 is clean — 998 ranks is 32 nodes.
 
 ## Rung 2 — domain convergence (~2 runs, ~600 core-h)
 

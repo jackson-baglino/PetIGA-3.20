@@ -1,0 +1,74 @@
+# =============================================================================
+# Molaro et al. (2019) T = -20 C grain pair -- PRE-NECKED r = 14 um, dom3
+#
+# WHY NOT THE TANGENT START.
+# The tangent geometries make the initial neck an OUTPUT, which is the right
+# instinct, but they force the model to traverse r = 0 -> 16.4 um first, and
+# that whole traverse is below its own resolution floor. Measured consequence
+# (dom2 CFL ladder, 2026-08-19): a void opens at r ~ 5 um at t ~ 150-165 s,
+# the ice seals over it, and it PERSISTS and DEEPENS (phi 0.69 -> 0.55 over
+# 130 s) while the neck grows 7.8 -> 8.7 um. It is not a timestep artifact --
+# a 20x tightening of -dtCFL_dphimax (0.20 -> 0.01) moved the trapped minimum
+# only 0.498 -> 0.551.
+#
+# The cause is resolution, not time integration: at r = 5 um the fillet radius
+# is rho = r^2/(2(R-r)) = 0.153 um = 0.59 eps at the old eps. The model was
+# being asked to represent a feature THINNER THAN ITS OWN INTERFACE. Fixing
+# that by refinement needs eps = 2.5e-8 -- 1044x the cost. Starting above the
+# floor costs nothing.
+#
+# EPS = 1.18e-07, and two independent criteria pick it:
+#   delta_ice < 1   requires eps <= 1.1802e-07   (thin-interface correction no
+#                   longer exceeds the kinetic term it corrects; at the old
+#                   2.5852e-07 with alpha_c = 0.1 it was delta_ice = 2.19)
+#   start above the resolution floor requires eps <= r^2/(12 R) = 1.883e-07
+# The first binds. Resulting numbers:
+#   neck floor      sqrt(12 eps R) = 11.08 um
+#   start r = 14 um is 1.26x above it; Molaro's first neck 16.4 um is 1.48x
+#   fillet at r = 14 um: rho = 1.347 um = 11.4 eps  (needs >= 6)
+#   delta_ice 1.000   delta_mean 0.158   delta_vap 0.067
+#   tau_sub 1.332 s   mob_sub 2.9527e-08   alph_sub 4.7178e+08
+#
+# GEOMETRY. Centre separation solved analytically -- the union IC needs no
+# calibration bisection, unlike the additive one:
+#   d = sqrt(R0^2 - r^2) + sqrt(R1^2 - r^2) = 171.1604 um   (tangent is 173.5)
+# Outside the union, sdf = min_k sdf_k is exact, and the occlusion correction
+# only fires for sdf < 0, so the phi = 0.5 contour IS the sharp union surface.
+# Verified numerically: measured waist 14.05 um at this eps (+0.4 %), and the
+# residual shrinks with eps -- so no preprocess/calibrate_neck_geometry.py run
+# is needed (that tool targets the ADDITIVE IC, which does need it).
+#
+# Neck plane sits at z = c0 + sqrt(R0^2 - r^2) = 311.305 um.
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym
+#               python postprocess/grain_shrinkage.py <run_dir>
+# Anchor + fit: python postprocess/fit_neck_growth.py <run>/neck_width.csv \
+#                   inputs/validation/molaro2019_fig11_T-20.csv \
+#                   --anchor-neck 1.6405e-5 --demmenie
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # phi=0.5 lands on the sharp union
+                                        # surface for ANY eps; the additive
+                                        # default would need per-eps calibration
+
+-ic_type multi_grains
+-dim 2
+-Lx 6.80000e-04
+-Ly 3.40000e-04
+-Lz 0
+
+-ice_grain_cx 2.401698e-04,4.113302e-04   # d = 1.711604e-04 -> neck r = 14 um
+-ice_grain_cy 0.0,0.0                   # grains on the axisymmetric axis
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 8150                                # h = eps/sqrt(2) = 8.3439e-08
+-Ny 4075                                # (33.21M elements, 99.7M DoF)
+-Nz 1
+-eps 1.1800e-07
+-eps_valid_temp -20
+
+-delt_t 1.0e-4
+-periodic 0
