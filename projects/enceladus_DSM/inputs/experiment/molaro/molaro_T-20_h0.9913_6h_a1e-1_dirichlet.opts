@@ -111,7 +111,10 @@
 -alpha_lo 1.0e-3
 -alpha_hi 1.0e-1
 
--d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+# -d0_sub0 deliberately NOT set: the solver computes
+#   d0 = gamma*V_m/(R*T) = 1.0166e-09 m at -20 C
+# from -Sigma_i and -temp, so it tracks the temperature instead of
+# being pinned. Set -d0_sub0 only to deliberately perturb capillarity.
 
 -dtmax 2.0e2                            # the empirically tested value; see above
 -dtCFL 1

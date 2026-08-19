@@ -118,7 +118,16 @@ int main(int argc, char *argv[]) {
     user.xi_T = 1.0;    /* thermal: scales conduction + latent heat in R_tem  */
     user.xi_v = 1e-3;   /* vapor:   scales diffusion + rho_ice source in R_vap */
 
-    user.d0_sub0    = 1e-7; // 9.6e-10;   /* capillary length d0 = gamma*Vm/(R*T) at -5°C [m] */
+    /* Capillary length d0 = gamma*V_m/(R*T). NOT a fixed constant: it is
+     * temperature dependent and is computed below from Sigma_i, V_m and temp0.
+     * 0.0 here means "compute it"; -d0_sub0 overrides.
+     *
+     * It was previously defaulted to 1e-7, which is ~100x the physical value.
+     * That number comes from Moure & Fu, who inflated d0 for their wet-snow
+     * runs; it is not a capillary length and must not be carried as a default
+     * here. The physical value at -20 C is 1.02e-9 m. */
+    user.d0_sub0    = 0.0;
+    user.Vm_ice     = 1.963e-5;  /* molar volume of ice [m^3/mol] */
     user.beta_sub0  = 9.9e5;     /* beta0 = (1/alpha_c)*sqrt(2pi*m/kT)/(rho_vs/rho_i)
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
 
@@ -536,6 +545,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsReal("-Sigma_i", "Ice-side surface energy in the double-well free energy [J/m^2]", "", Sigma_i, &Sigma_i, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-Vm_ice", "Molar volume of ice [m^3/mol]; with -Sigma_i and -temp this sets d0 = gamma*V_m/(R*T)", "", user.Vm_ice, &user.Vm_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-Sigma_a", "Air-side surface energy in the double-well free energy [J/m^2]", "", Sigma_a, &Sigma_a, NULL); CHKERRQ(ierr);
 
     /* --- Output control -------------------------------------------------- */
@@ -767,16 +777,47 @@ int main(int argc, char *argv[]) {
         }
     }
     {
+        /* d0 = gamma * V_m / (R * T), evaluated at temp0. Computed per run
+         * rather than carried as a constant, because it is temperature
+         * dependent and every campaign runs at its own T. -d0_sub0 overrides
+         * for deliberate experiments (e.g. testing capillary sensitivity);
+         * it is not the normal path. */
+        const PetscReal R_GAS = 8.314462618;      /* J/(mol K)   */
+        PetscReal d0_phys = user.Etai * user.Vm_ice / (R_GAS * (temp + 273.15));
+
         PetscReal  d0_sub0_cli = -1.0;
-        PetscBool  set_d0         = PETSC_FALSE;
+        PetscBool  set_d0      = PETSC_FALSE;
         ierr = PetscOptionsGetReal(NULL, NULL, "-d0_sub0",
                                    &d0_sub0_cli, &set_d0); CHKERRQ(ierr);
         if (set_d0 && d0_sub0_cli > 0.0) {
-            PetscPrintf(PETSC_COMM_WORLD,
-                        "  -d0_sub0 override: %.4e -> %.4e (factor %.2f)\n",
-                        user.d0_sub0, d0_sub0_cli, d0_sub0_cli / user.d0_sub0);
             user.d0_sub0 = d0_sub0_cli;
+            PetscPrintf(PETSC_COMM_WORLD,
+                "  -d0_sub0 OVERRIDE: %.4e m (physical gamma*V_m/(R*T) at %.1f C "
+                "is %.4e, factor %.3f)\n",
+                (double)user.d0_sub0, (double)temp, (double)d0_phys,
+                (double)(user.d0_sub0 / d0_phys));
+        } else {
+            user.d0_sub0 = d0_phys;
+            PetscPrintf(PETSC_COMM_WORLD,
+                "  d0_sub0 = gamma*V_m/(R*T) = %.4e m  (gamma %.4e J/m^2, "
+                "V_m %.4e m^3/mol, T %.2f K)\n",
+                (double)d0_phys, (double)user.Etai, (double)user.Vm_ice,
+                (double)(temp + 273.15));
         }
+    }
+
+    /* alpha_c(T) / alpha_c(T, rho_v) interpolation models are INCOMPLETE.
+     * They were partly built and never finished or validated: model 2 in
+     * particular inherits a dropped d(sigma0)/dT term. Do not use them for
+     * results. -alpha_model 0 (constant alpha_c0) is the supported path. */
+    if (user.alpha_model != ALPHA_MODEL_CONST) {
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\n\033[33m*** -alpha_model %d IS INCOMPLETE AND UNVALIDATED ***\n"
+            "    The alpha_c(T[, rho_v]) interpolation was never finished. Its\n"
+            "    derivatives are not trustworthy (model 2 drops a d(sigma0)/dT\n"
+            "    term) and no run has been validated against it.\n"
+            "    Use -alpha_model 0 with -alpha_c0 for anything you intend to\n"
+            "    report.\033[0m\n\n", (int)user.alpha_model);
     }
 
     PetscReal a1 = 5.0, a2 = 0.1581; /* Constants for GT relation */
@@ -822,8 +863,19 @@ int main(int argc, char *argv[]) {
             PetscPrintf(PETSC_COMM_WORLD, " with -alpha_c0 %.4e.\n", (double)user.alpha_c0);
         else
             PetscPrintf(PETSC_COMM_WORLD, " (alpha_c computed from the local state).\n");
-        PetscPrintf(PETSC_COMM_WORLD,
-            "    Clamped to [%.1e, %.1e].\n\n", (double)user.alpha_lo, (double)user.alpha_hi);
+        {
+            /* Say whether the clamp ACTUALLY bit. Printing the band
+             * unconditionally reads as "your value was clamped" -- which it
+             * is not when alpha_c0 sits inside [alpha_lo, alpha_hi]. */
+            PetscBool binds = (PetscBool)(user.alpha_model == ALPHA_MODEL_CONST &&
+                                          (user.alpha_c0 <= user.alpha_lo ||
+                                           user.alpha_c0 >= user.alpha_hi));
+            PetscPrintf(PETSC_COMM_WORLD,
+                "    Clamp band [%.1e, %.1e]%s.\n\n",
+                (double)user.alpha_lo, (double)user.alpha_hi,
+                binds ? "  <-- alpha_c0 is ON the clamp; raise -alpha_hi before raising -alpha_c0"
+                      : "  (alpha_c0 is inside it; nothing is clamped)");
+        }
     }
 
     /* Allow per-test override of mob_sub via -mob_sub <value>. Tests with
@@ -1258,7 +1310,8 @@ int main(int argc, char *argv[]) {
     /* --- Phase-change kinetics -------------------------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-CHANGE KINETICS\n");
     PetscPrintf(PETSC_COMM_WORLD, "   rho_ice/rho_vs   = %.4e   (density ratio at T0)\n", rho_rhovs);
-    PetscPrintf(PETSC_COMM_WORLD, "   d0_sub0          = %.4e m   (capillary length; M&F use 1e-7)\n",
+    PetscPrintf(PETSC_COMM_WORLD,
+                "   d0_sub0          = %.4e m   (capillary length gamma*V_m/(R*T))\n",
                 user.d0_sub0);
     PetscPrintf(PETSC_COMM_WORLD, "   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = %.4e s/m"
                 "   [M&F range: 2e4–2e6]\n", user.beta_sub0);

@@ -153,18 +153,14 @@ def beta_HK(T_C: float, alpha_c: float) -> float:
 def capillary_length(T_C: float, gamma: float = _GAMMA) -> float:
     """Physical capillary length d₀ = γ V_m/(R T) [m] (K&P Eq. 13).
 
-    NOTE: the C code (monitoring.c flag_Tdep branch) hardcodes
-    d0 = 2.548e-7/T_K, i.e. γ·V_m/R = 2.548e-7, ~1% below this function's
-    0.109*1.963e-5/8.314 = 2.574e-7. Reconcile before quantitative
-    validation runs; comp_eps prints both when run verbosely.
+    The solver computes the same expression at startup from -Sigma_i, -Vm_ice
+    and -temp (enceladus_main.c), so this and the run agree by construction.
+    An earlier note here warned about a hardcoded 2.548e-7/T_K in
+    monitoring.c; that code is gone.
     """
     T_K = T_C + 273.15
     return gamma * _VM_ICE / (_R_GAS * T_K)
 
-
-def capillary_length_code(T_C: float) -> float:
-    """d₀ exactly as hardcoded in monitoring.c: 2.548e-7 / T_K [m]."""
-    return 2.548e-7 / (T_C + 273.15)
 
 
 # =========================================================================
@@ -1103,12 +1099,6 @@ def _cli():
 
         _print_single(args, p, args.alpha, dim)
 
-        d0_code = capillary_length_code(args.T0)
-        if abs(d0_code - p["d0"]) / p["d0"] > 1e-3:
-            print(f"\n  NOTE: monitoring.c (flag_Tdep) hardcodes d0 = 2.548e-7/T_K "
-                  f"= {d0_code:.4e} m,\n        {100*(d0_code/p['d0']-1):+.1f}% vs "
-                  f"this script's gamma*V_m/(R*T) = {p['d0']:.4e} m — reconcile "
-                  f"before quantitative validation.")
 
         if p["xi_v_warn"]:
             print(f"\n  {p['xi_v_warn']}\n")

@@ -29,6 +29,11 @@ typedef struct {
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
+  PetscReal Vm_ice;              // Molar volume of ice [m^3/mol], for
+                                 // d0 = gamma*V_m/(R*T). d0 is COMPUTED from
+                                 // this and temp0, not carried as a constant --
+                                 // it is temperature dependent and every
+                                 // campaign runs at its own T.
 
   // Thermophysical properties of different phases
   PetscReal thcond_ice, thcond_air;  // Thermal conductivities of ice and air
