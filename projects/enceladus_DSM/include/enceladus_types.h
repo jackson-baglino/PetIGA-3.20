@@ -199,9 +199,26 @@ typedef struct {
   PetscReal xi_T;
   PetscReal xi_v;
 
-  /* Phase-field bounds: simulation aborts if any phi leaves [phase_lo, phase_hi] */
-  PetscReal phase_lo;     // lower bound for phi_ice, phi_air (default -0.25)
-  PetscReal phase_hi;     // upper bound for phi_ice, phi_air (default  1.25)
+  /* Phase-field bounds. Monitor() flags an excursion outside
+   * [phase_lo, phase_hi] and BoundsRollbackPreStep undoes the step at a
+   * smaller dt. This is the PHYSICS band: phi outside [0,1] is meaningless,
+   * and these are the numerical tolerance around it. */
+  PetscReal phase_lo;     // lower bound for phi_ice, phi_air
+  PetscReal phase_hi;     // upper bound for phi_ice, phi_air
+
+  /* SEPARATE, much looser band whose only job is to stop a DIVERGING Newton
+   * iterate (Residual signals SNESSetFunctionDomainError so the line search
+   * backs off). It must not be tied to [phase_lo, phase_hi]: the residual is
+   * evaluated at the incoming state too, so if that state is already outside
+   * the physics band, EVERY retry domain-errors identically and no dt
+   * reduction can help -- the run then burns -max_rej and dies with
+   * DIVERGED_STEP_REJECTED. Observed on job1062679: 87 consecutive
+   * DIVERGED_LINE_SEARCH at a converged fnorm of 4.33e-09, dt pinned at
+   * dtmin, from a state holding phi = 1.0554 against phase_hi = 1.05.
+   * Keeping the two bands separate lets the rollback (which can act) own
+   * small excursions and this guard (which cannot) own real divergence. */
+  PetscReal snes_guard_lo;
+  PetscReal snes_guard_hi;
 
   // NOTE: per-quadrature-point alph[]/mob[] arrays were removed 2026-07-31.
   // They were filled under -flag_Tdep and read by nothing: assembly.c uses the

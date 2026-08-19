@@ -84,8 +84,21 @@
 # feedback drives dt down to the interface-CFL scale (~2-17 s) through the
 # collapse, then dt regrows. Healthy converged states overshoot only ~-0.007,
 # so 0.05 keeps ample margin for legitimate trial-iterate wiggle.
--phase_lo -0.05
--phase_hi  1.05
+-phase_lo -0.01                         # PHYSICS band. phi outside [0,1] is
+-phase_hi  1.01                         # meaningless; this is the numerical
+                                        # tolerance around it. An excursion here
+                                        # makes Monitor roll the step back at a
+                                        # smaller dt -- it does NOT abort.
+                                        #
+                                        # The SNES domain-error guard is SEPARATE
+                                        # (-snes_guard_lo/-snes_guard_hi, default
+                                        # [-0.5, 1.5]) and exists only to catch a
+                                        # diverging Newton iterate. Tying the two
+                                        # together is what killed job1062679: the
+                                        # residual is evaluated at the INCOMING
+                                        # state too, so once that state was past
+                                        # phase_hi every retry domain-errored
+                                        # identically and no dt could recover.
 
 -Lambda 0.0                             # triple-junction penalty in F_tri (disabled).
                                         # Only relevant for 3-phase ice/sediment/vapor

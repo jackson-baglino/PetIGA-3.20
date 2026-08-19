@@ -96,8 +96,10 @@ int main(int argc, char *argv[]) {
     user.ssa_view = NULL;              /* SSA_evo.dat viewer, opened lazily in Monitor() */
     user.decouple_phase_change = PETSC_FALSE;  /* see enceladus_types.h / assembly.c */
 
-    user.phase_lo   = -0.05;   /* lower bound: phi below this → abort */
-    user.phase_hi   =  1.05;   /* upper bound: phi above this → abort */
+    user.phase_lo   = -0.01;   /* physics band: excursion below -> rollback */
+    user.phase_hi   =  1.01;   /* physics band: excursion above -> rollback */
+    user.snes_guard_lo = -0.5; /* solver guard: only a DIVERGING Newton       */
+    user.snes_guard_hi =  1.5; /* iterate trips this (see enceladus_types.h)  */
 
     /* Temporal-scaling factors (M&F 2024 §3.1, eqs. 25-26): slow the fast
      * T / vapor diffusion timescales by 1/xi while keeping the quasi-steady
@@ -570,6 +572,14 @@ int main(int argc, char *argv[]) {
              "Lower bound for phase fields phi_ice, phi_air "
              "(simulation aborts if any phi falls below this; default -0.05)",
              "", user.phase_lo, &user.phase_lo, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-snes_guard_lo",
+             "Lower phi for the SNES domain-error guard (diverging Newton only; "
+             "NOT the physics band -- see -phase_lo)",
+             "", user.snes_guard_lo, &user.snes_guard_lo, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-snes_guard_hi",
+             "Upper phi for the SNES domain-error guard (diverging Newton only; "
+             "NOT the physics band -- see -phase_hi)",
+             "", user.snes_guard_hi, &user.snes_guard_hi, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-phase_hi",
              "Upper bound for phase fields phi_ice, phi_air "
              "(simulation aborts if any phi exceeds this; default 1.05)",
@@ -1307,6 +1317,14 @@ int main(int argc, char *argv[]) {
     else
         PetscPrintf(PETSC_COMM_WORLD,
                     "   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)\n");
+    /* Both bands always print (the else above is single-statement). They do
+     * DIFFERENT jobs and conflating them is what killed job1062679. */
+    PetscPrintf(PETSC_COMM_WORLD,
+                "   phi physics band  [%.3f, %.3f]  (excursion -> rollback at smaller dt)\n",
+                user.phase_lo, user.phase_hi);
+    PetscPrintf(PETSC_COMM_WORLD,
+                "   phi SNES guard    [%.3f, %.3f]  (diverging Newton only -> domain error)\n",
+                user.snes_guard_lo, user.snes_guard_hi);
 
     /* --- Boundary conditions ----------------------------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n BOUNDARY CONDITIONS\n");

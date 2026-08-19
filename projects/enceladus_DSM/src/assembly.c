@@ -98,10 +98,21 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     }
     PetscScalar phi_a = 1.0 - phi;
 
-    /* SNES domain-error catch: if a trial Newton iterate has phi out of the
-     * configured bounds, signal an invalid state so the line search backs off. */
+    /* SNES domain-error catch: if a trial Newton iterate has run away, signal
+     * an invalid state so the line search backs off.
+     *
+     * Deliberately checked against snes_guard_lo/hi and NOT against
+     * phase_lo/hi. PETSc evaluates the residual at the INCOMING state as well
+     * as at trial iterates, so a guard set to the physics band turns a state
+     * that is already slightly out of bounds into an unrecoverable one: every
+     * retry domain-errors at the same converged residual and dt reduction
+     * cannot help, because dt does not change where the step starts. That is
+     * how job1062679 died -- 87 DIVERGED_LINE_SEARCH at fnorm 4.33e-09 with
+     * dt pinned at dtmin. Small excursions are the rollback's job
+     * (Monitor + BoundsRollbackPreStep, which CAN act); this guard exists
+     * only for a genuinely diverging Newton, so its band is wide. */
     {
-        PetscReal lo = user->phase_lo, hi = user->phase_hi;
+        PetscReal lo = user->snes_guard_lo, hi = user->snes_guard_hi;
         if (PetscRealPart(phi)   < lo || PetscRealPart(phi)   > hi ||
             PetscRealPart(phi_a) < lo || PetscRealPart(phi_a) > hi) {
             if (user->snes) SNESSetFunctionDomainError(user->snes);

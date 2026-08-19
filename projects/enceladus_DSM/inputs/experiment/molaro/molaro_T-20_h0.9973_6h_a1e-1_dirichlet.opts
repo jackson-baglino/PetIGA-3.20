@@ -60,7 +60,7 @@
 # Scaling by beta alone would give 1.04 h and cut the run short. 6 h is ~1.9x
 # margin on 3.16 h. The 2 h arms cover their first three points.
 #
-# DTMAX 1.0e4 -- deliberately loose, because -dtCFL is now ENFORCED.
+# DTMAX 2.0e2 -- back to the empirically tested value.
 #
 # As of 2026-08-18 the interface-CFL limiter does not merely clamp the NEXT dt;
 # a step whose MEASURED ||dphi||_inf exceeds -dtCFL_dphimax is rolled back and
@@ -74,10 +74,10 @@
 # tracks that. 200 s was the right hedge when the limiter was advisory; with
 # enforcement it just costs steps in the slow tail, where dt_CFL is ~1300 s.
 #
-# 1.0e4 is the value docs/model_description.md records for production runs, so
-# it is a tested ceiling rather than a new one. The limiter, not the cap, is
-# what should bind -- confirm on rung 1 that "Interface-CFL cap" lines appear
-# in outp.txt and dt is not sitting pinned at 1e4.
+# NOTE from job1062679: dt never exceeded 42.2 s in that run -- the CFL limiter
+# held it far below either cap, so dtmax was never the binding constraint and
+# 1.0e4 was not what crashed it. 2.0e2 is restored because it is the value with
+# runs behind it, not because the evidence implicates the looser one.
 #
 # The earlier Molaro files pinned -dtmax to 1.1*tau_sub instead. tau_sub is the
 # Allen-Cahn RELAXATION time, not a stability limit for an implicit solver; at
@@ -113,7 +113,7 @@
 
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
--dtmax 1.0e4                            # loose on purpose: -dtCFL is enforced, see above
+-dtmax 2.0e2                            # the empirically tested value; see above
 -dtCFL 1
 -dtCFL_dphimax 0.2
 
