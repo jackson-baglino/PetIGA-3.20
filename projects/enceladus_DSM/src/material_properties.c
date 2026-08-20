@@ -400,7 +400,7 @@ void SubKinetics(AppCtx *user, PetscScalar tem, PetscScalar rhov,
                  PetscScalar *dalph_dT, PetscScalar *dalph_drv)
 {
     const PetscReal a1 = 5.0, a2 = 0.1581;      /* M&F SI footnote 1 */
-    const PetscReal kB = 1.38e-23, m_h2o = 3.0e-26;
+    const PetscReal kB = K_BOLTZ, m_h2o = M_H2O_KG;
     const PetscReal eps = user->eps;
     const PetscReal T_K = PetscRealPart(tem) + 273.15;
 

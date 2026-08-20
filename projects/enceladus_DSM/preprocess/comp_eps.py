@@ -87,8 +87,9 @@ from pathlib import Path
 # =========================================================================
 # Physical constants — match material_properties.c
 # =========================================================================
-_M_H2O   = 2.99e-26       # water molecule mass [kg]
-_K_B     = 1.38e-23       # Boltzmann [J/K]
+_M_H2O   = 2.9915e-26     # water molecule mass [kg] = 18.0153/N_A
+                          # (matches M_H2O_KG in include/enceladus_types.h)
+_K_B     = 1.380649e-23   # Boltzmann [J/K] (matches K_BOLTZ in the solver)
 _K_I     = 2.29           # thermal conductivity of ice [W/m/K]
 _K_A     = 0.02           # thermal conductivity of air [W/m/K]
 _C_I     = 1.8e6          # volumetric heat capacity of ice [J/m³/K]
@@ -158,8 +159,13 @@ def capillary_length(T_C: float, gamma: float = _GAMMA) -> float:
     An earlier note here warned about a hardcoded 2.548e-7/T_K in
     monitoring.c; that code is gone.
     """
+    # K&P Eq. 13 form, with a^3 = m_H2O/rho_ice derived rather than carried:
+    # a^3 = V_m/N_A and k_B = R/N_A, so gamma*a^3/(k_B T) == gamma*V_m/(R T).
+    # Deriving a^3 from _RHO_ICE keeps this identical to the solver, which
+    # computes D0_CAPILLARY(Sigma_i, rho_ice, T_K). Carrying an independent
+    # _VM_ICE implied rho_ice = 917.7 against the solver's 919.0.
     T_K = T_C + 273.15
-    return gamma * _VM_ICE / (_R_GAS * T_K)
+    return gamma * (_M_H2O / _RHO_ICE) / (_K_B * T_K)
 
 
 

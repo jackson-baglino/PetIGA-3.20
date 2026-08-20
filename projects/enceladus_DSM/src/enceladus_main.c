@@ -127,7 +127,6 @@ int main(int argc, char *argv[]) {
      * runs; it is not a capillary length and must not be carried as a default
      * here. The physical value at -20 C is 1.02e-9 m. */
     user.d0_sub0    = 0.0;
-    user.Vm_ice     = 1.963e-5;  /* molar volume of ice [m^3/mol] */
     user.beta_sub0  = 9.9e5;     /* beta0 = (1/alpha_c)*sqrt(2pi*m/kT)/(rho_vs/rho_i)
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
 
@@ -545,7 +544,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);
 
     ierr = PetscOptionsReal("-Sigma_i", "Ice-side surface energy in the double-well free energy [J/m^2]", "", Sigma_i, &Sigma_i, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-Vm_ice", "Molar volume of ice [m^3/mol]; with -Sigma_i and -temp this sets d0 = gamma*V_m/(R*T)", "", user.Vm_ice, &user.Vm_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-Sigma_a", "Air-side surface energy in the double-well free energy [J/m^2]", "", Sigma_a, &Sigma_a, NULL); CHKERRQ(ierr);
 
     /* --- Output control -------------------------------------------------- */
@@ -782,8 +780,8 @@ int main(int argc, char *argv[]) {
          * dependent and every campaign runs at its own T. -d0_sub0 overrides
          * for deliberate experiments (e.g. testing capillary sensitivity);
          * it is not the normal path. */
-        const PetscReal R_GAS = 8.314462618;      /* J/(mol K)   */
-        PetscReal d0_phys = user.Etai * user.Vm_ice / (R_GAS * (temp + 273.15));
+        /* K&P Eq. 13: d0 = gamma*a^3/(k_B*T), a^3 = m_H2O/rho_ice. */
+        PetscReal d0_phys = D0_CAPILLARY(user.Etai, user.rho_ice, temp + 273.15);
 
         PetscReal  d0_sub0_cli = -1.0;
         PetscBool  set_d0      = PETSC_FALSE;
@@ -799,9 +797,11 @@ int main(int argc, char *argv[]) {
         } else {
             user.d0_sub0 = d0_phys;
             PetscPrintf(PETSC_COMM_WORLD,
-                "  d0_sub0 = gamma*V_m/(R*T) = %.4e m  (gamma %.4e J/m^2, "
-                "V_m %.4e m^3/mol, T %.2f K)\n",
-                (double)d0_phys, (double)user.Etai, (double)user.Vm_ice,
+                "  d0_sub0 = gamma*a^3/(k_B*T) = %.4e m   [K&P Eq. 13]\n"
+                "            gamma %.4e J/m^2, a = (m_H2O/rho_ice)^(1/3) = %.4e m, "
+                "T %.2f K\n",
+                (double)d0_phys, (double)user.Etai,
+                (double)pow(M_H2O_KG / user.rho_ice, 1.0/3.0),
                 (double)(temp + 273.15));
         }
     }
@@ -851,7 +851,7 @@ int main(int argc, char *argv[]) {
      * Say so, and print the alpha_c the scalar corresponds to so the two can
      * be reconciled. */
     if (user.alpha_pointwise) {
-        PetscReal C_th = PetscSqrtReal(2.0*PETSC_PI*3.0e-26/(1.38e-23*(temp+273.15)));
+        PetscReal C_th = PetscSqrtReal(2.0*PETSC_PI*M_H2O_KG/(K_BOLTZ*(temp+273.15)));
         PetscPrintf(PETSC_COMM_WORLD,
             "\n*** -alpha_pointwise 1: -beta_sub0 (%.4e) is IGNORED ***\n"
             "    beta_sub is rebuilt per quadrature point from alpha_c(T, rho_v).\n"
@@ -1311,7 +1311,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-CHANGE KINETICS\n");
     PetscPrintf(PETSC_COMM_WORLD, "   rho_ice/rho_vs   = %.4e   (density ratio at T0)\n", rho_rhovs);
     PetscPrintf(PETSC_COMM_WORLD,
-                "   d0_sub0          = %.4e m   (capillary length gamma*V_m/(R*T))\n",
+                "   d0_sub0          = %.4e m   (K&P Eq.13: gamma*a^3/(k_B*T))\n",
                 user.d0_sub0);
     PetscPrintf(PETSC_COMM_WORLD, "   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = %.4e s/m"
                 "   [M&F range: 2e4–2e6]\n", user.beta_sub0);
@@ -1336,8 +1336,8 @@ int main(int argc, char *argv[]) {
         PetscReal tau0 = user.eps / (3.0 * m0);          /* mob = eps/(3 tau)   */
         PetscReal lam0 = al0 * tau0;                     /* alph = lambda/tau   */
         PetscReal chi0 = PetscRealPart(rvs0) / user.rho_ice;
-        PetscReal bHK0 = sqrt(2.0 * PETSC_PI * 3.0e-26
-                              / (1.38e-23 * (user.temp0 + 273.15)))
+        PetscReal bHK0 = sqrt(2.0 * PETSC_PI * M_H2O_KG
+                              / (K_BOLTZ * (user.temp0 + 273.15)))
                          / PetscRealPart(a_c);
 
         PetscPrintf(PETSC_COMM_WORLD,

@@ -9,6 +9,22 @@
 
 /* Field definitions for node data */
 /* alpha_c model selectors — see the alpha_* fields in AppCtx. */
+/* Molecular constants. ONE definition each -- they were previously spelled
+ * 3.0e-26 / 2.99e-26 and 1.38e-23 in five places, which put d0 and beta_HK
+ * 0.3% apart between the solver and preprocess/comp_eps.py for no reason. */
+#define M_H2O_KG   2.9915e-26   /* mass of one water molecule [kg] = 18.0153/N_A */
+#define K_BOLTZ    1.380649e-23 /* Boltzmann constant [J/K]                      */
+
+/* Capillary length, Kaempfer & Plapp Eq. 13:  d0 = gamma * a^3 / (k_B * T),
+ * with a the mean intermolecular spacing in ice. a^3 is the volume per
+ * molecule, so it is NOT an independent constant -- a^3 = m_H2O / rho_ice.
+ * Deriving it that way keeps d0 consistent with whatever -rho_ice the run
+ * uses. (Equivalently d0 = gamma*V_m/(R*T) with V_m = M/rho_ice the molar
+ * volume; a^3 = V_m/N_A and k_B = R/N_A, so the N_A cancels and the two
+ * forms are the same expression.) */
+#define D0_CAPILLARY(gamma, rho_ice, T_K) \
+    ((gamma) * (M_H2O_KG / (rho_ice)) / (K_BOLTZ * (T_K)))
+
 #define ALPHA_MODEL_CONST 0
 #define ALPHA_MODEL_ARRH  1
 #define ALPHA_MODEL_LIBB2 2
@@ -29,11 +45,6 @@ typedef struct {
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
-  PetscReal Vm_ice;              // Molar volume of ice [m^3/mol], for
-                                 // d0 = gamma*V_m/(R*T). d0 is COMPUTED from
-                                 // this and temp0, not carried as a constant --
-                                 // it is temperature dependent and every
-                                 // campaign runs at its own T.
 
   // Thermophysical properties of different phases
   PetscReal thcond_ice, thcond_air;  // Thermal conductivities of ice and air
