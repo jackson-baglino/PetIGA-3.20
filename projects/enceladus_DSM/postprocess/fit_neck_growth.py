@@ -296,7 +296,13 @@ def fit_d_free(t, r):
         return lnC + a * np.log(np.maximum(tt + t0, 1e-300))
 
     best, seed = None, None
-    for t0 in np.concatenate(([0.0], np.geomspace(1e-3 * t.max(), 10 * t.max(), 40))):
+    # t0 = 0 is only a legal seed when t > 0 everywhere; with a t = 0 sample it
+    # makes log(0) and LAPACK prints "On entry to DLASCL ... illegal value" to
+    # stderr from inside polyfit, which looks like a solver failure and is not.
+    seeds = np.geomspace(1e-3 * t.max(), 10 * t.max(), 40)
+    if t.min() > 0.0:
+        seeds = np.concatenate(([0.0], seeds))
+    for t0 in seeds:
         try:
             a, lnC = np.polyfit(np.log(t + t0), y, 1)
         except (ValueError, np.linalg.LinAlgError):

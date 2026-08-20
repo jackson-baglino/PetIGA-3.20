@@ -131,6 +131,31 @@ if [[ -f "$RUN_DIR/igasol.dat" ]] && ls "$RUN_DIR"/sol_*.dat &>/dev/null 2>&1; t
         --save "$PLOTS/mass.png" --per-phase-dir "$PLOTS/mass"
 fi
 
+# ---------------------------------------------------------------------------
+# Two-grain sintering: neck width, per-grain radii, and the Molaro comparison.
+#
+# Only for runs that actually have a grain PAIR -- these scripts locate a neck
+# between two centres, so they are meaningless on a packing or a single grain.
+# Detected from -ice_grain_cx having exactly two entries.
+# ---------------------------------------------------------------------------
+n_grains=$(awk '$1=="-ice_grain_cx"{n=split($2,a,","); print n; exit}' \
+           "$RUN_DIR"/*.opts 2>/dev/null | head -n1)
+axisym=$(awk '$1=="-axisym"{print $2; exit}' "$RUN_DIR"/*.opts 2>/dev/null | head -n1)
+
+if [[ "${n_grains:-0}" == "2" ]] && compgen -G "$RUN_DIR/vtkOut/solV_*.vts" >/dev/null; then
+    ax_flag=""; [[ "${axisym:-0}" == "1" ]] && ax_flag="--axisym"
+    run_step "Neck width" \
+        "$POSTPROCESS_DIR/neck_width.py" "$RUN_DIR" $ax_flag
+    run_step "Per-grain radii" \
+        "$POSTPROCESS_DIR/grain_shrinkage.py" "$RUN_DIR"
+    # Needs neck_width.csv from the step above; skips itself with a clear
+    # message if that failed (e.g. a truncated outp.txt gives no step->time map).
+    if [[ -f "$RUN_DIR/neck_width.csv" ]]; then
+        run_step "Neck growth vs Molaro 2019" \
+            "$POSTPROCESS_DIR/plot_neck_vs_molaro.py" "$RUN_DIR"
+    fi
+fi
+
 echo ""
 echo "========================================================================="
 if [[ "$overall_exit" -ne 0 ]]; then

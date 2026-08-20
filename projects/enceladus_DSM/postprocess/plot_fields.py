@@ -129,7 +129,7 @@ def _vtk_scalar(arr: np.ndarray) -> np.ndarray:
     return np.ascontiguousarray(arr.transpose(axes)).ravel()
 
 
-def _vtk_coords(nrb) -> np.ndarray:
+def _vtk_coords_from(points: np.ndarray) -> np.ndarray:
     """
     Return physical coordinates as (N_total, 3) in VTK point order (x fastest).
 
@@ -137,12 +137,12 @@ def _vtk_coords(nrb) -> np.ndarray:
     has shape (Nx[, Ny[, Nz]], sdim) in C order, so the spatial axes must be
     reversed before flattening.  The component axis (last) is kept last.
     """
-    grid_shape = nrb.points.shape[:-1]
-    sdim       = nrb.points.shape[-1]
+    grid_shape = points.shape[:-1]
+    sdim       = points.shape[-1]
     dim        = len(grid_shape)
 
     coords = np.zeros((*grid_shape, 3))
-    coords[..., :sdim] = nrb.points[..., :sdim]
+    coords[..., :sdim] = points[..., :sdim]
 
     # Reverse only the spatial axes; keep component axis last.
     spatial_axes = list(range(dim - 1, -1, -1))  # e.g. [1,0] for 2-D
@@ -150,7 +150,29 @@ def _vtk_coords(nrb) -> np.ndarray:
     return np.ascontiguousarray(coords.transpose(axes)).reshape(-1, 3)
 
 
-def _write_vts(outfile: str, nrb, sol: np.ndarray) -> None:
+DEFAULT_MAX_AXIS = 1200   # points per axis in the written .vts
+
+
+def _axis_index(n: int, stride: int) -> np.ndarray:
+    """Sub-sample indices along one axis, ALWAYS keeping both endpoints.
+
+    Plain `arr[::k]` keeps index 0 but usually drops the last point, which
+    truncates the domain and biases any volume integral taken from the .vts.
+    """
+    if stride <= 1 or n <= 2:
+        return np.arange(n)
+    n_out = max(2, int(np.ceil((n - 1) / stride)) + 1)
+    return np.unique(np.linspace(0, n - 1, n_out).round().astype(int))
+
+
+def _stride_for(grid_shape, max_axis: int) -> int:
+    """Uniform stride so no axis exceeds `max_axis` points. 0 disables."""
+    if max_axis <= 0:
+        return 1
+    return max(1, int(np.ceil(max(grid_shape) / float(max_axis))))
+
+
+def _write_vts(outfile: str, nrb, sol: np.ndarray, stride: int = 1) -> None:
     """
     Write a VTK XML Structured Grid (.vts) file.
 
@@ -161,16 +183,23 @@ def _write_vts(outfile: str, nrb, sol: np.ndarray) -> None:
     sol     : solution array of shape (*grid_shape, ndof);
               DOFs: 0=phi_i, 1=T, 2=rho_v, 3=phi_s
     """
-    grid_shape = nrb.points.shape[:-1]   # (Nx,) or (Nx, Ny) or (Nx, Ny, Nz)
-    dim        = len(grid_shape)
+    full_shape = nrb.points.shape[:-1]   # (Nx,) or (Nx, Ny) or (Nx, Ny, Nz)
+    dim        = len(full_shape)
     ndof       = sol.shape[-1] if sol.ndim > dim else 1
+
+    # Sub-sample every axis by the same stride so the aspect ratio and the
+    # physical coordinates stay honest.
+    idx = [_axis_index(n, stride) for n in full_shape]
+    pts = nrb.points[np.ix_(*idx)] if stride > 1 else nrb.points
+    sol = sol[np.ix_(*idx)] if stride > 1 else sol
+    grid_shape = pts.shape[:-1]
 
     Nx = grid_shape[0]
     Ny = grid_shape[1] if dim >= 2 else 1
     Nz = grid_shape[2] if dim >= 3 else 1
 
     # --- Physical coordinates (always 3-component for VTK) -----------------
-    coords_vtk = _vtk_coords(nrb)    # (N_total, 3) in VTK point order
+    coords_vtk = _vtk_coords_from(pts)    # (N_total, 3) in VTK point order
 
     # --- Field scalars -------------------------------------------------------
     fields = {}
@@ -249,7 +278,8 @@ def _write_pvd(pvd_path: str, entries: list) -> None:
 # ---------------------------------------------------------------------------
 
 def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
-            force: bool = False):
+            force: bool = False, max_axis: int = DEFAULT_MAX_AXIS,
+            stride: int = 0):
     iga_path = os.path.join(run_dir, iga_file)
     if not os.path.isfile(iga_path):
         raise FileNotFoundError(f"IGA geometry file not found: {iga_path}")
@@ -258,6 +288,22 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
     os.makedirs(out_dir, exist_ok=True)
 
     nrb = PetIGA().read(iga_path)
+
+    # Resolution cap. These meshes are sized for the SOLVER, not for viewing:
+    # a 5394 x 2697 run writes ~870 MB per snapshot, 60 GB for 69 of them.
+    # Sub-sampling to a viewable resolution is lossless for anything you do in
+    # ParaView and, at the default cap, changes the neck and grain-volume
+    # measurements by far less than their own convergence error. Pass
+    # --max-axis 0 (or --stride 1) for the untouched grid.
+    full_shape = nrb.points.shape[:-1]
+    k = stride if stride > 0 else _stride_for(full_shape, max_axis)
+    if k > 1:
+        out_shape = tuple(len(_axis_index(n, k)) for n in full_shape)
+        print(f"  Resolution cap: stride {k} -> "
+              f"{' x '.join(map(str, full_shape))} becomes "
+              f"{' x '.join(map(str, out_shape))} "
+              f"({np.prod(full_shape)/np.prod(out_shape):.0f}x smaller). "
+              f"Use --max-axis 0 for the full grid.")
 
     sol_files = sorted(glob.glob(os.path.join(run_dir, "sol*.dat")))
     if not sol_files:
@@ -287,7 +333,7 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
         # survives a re-run.
         try:
             sol = PetIGA().read_vec(infile, nrb)
-            _write_vts(outfile, nrb, sol)
+            _write_vts(outfile, nrb, sol, stride=k)
         except Exception as exc:                                 # noqa: BLE001
             n_fail += 1
             print(f"  WARNING: skipping {os.path.basename(infile)} ({exc}) — "
@@ -337,9 +383,15 @@ def parse_args():
     p.add_argument("--dir",   default=".",          help="Run directory (default: .)")
     p.add_argument("--iga",   default="igasol.dat", help="IGA geometry file")
     p.add_argument("--force", action="store_true",  help="Overwrite existing VTK files")
+    p.add_argument("--max-axis", type=int, default=DEFAULT_MAX_AXIS,
+                   help="Cap points per axis in the written .vts; 0 = no cap. "
+                        "Solver meshes are far finer than any display needs.")
+    p.add_argument("--stride", type=int, default=0,
+                   help="Explicit sub-sampling stride (overrides --max-axis)")
     return p.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    convert(run_dir=args.dir, iga_file=args.iga, force=args.force)
+    convert(run_dir=args.dir, iga_file=args.iga, force=args.force,
+            max_axis=args.max_axis, stride=args.stride)

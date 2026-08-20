@@ -183,6 +183,22 @@ def main():
         sys.exit(f"every snapshot under {args.run_dir}/vtkOut failed to read — "
                  f"see the warnings above; refusing to write an empty CSV")
 
+    # A CSV whose t_s column is all NaN is worse than no CSV: every downstream
+    # fit silently produces nothing, and the cause (an outp.txt that was
+    # incomplete when this ran -- e.g. measured mid-rsync, or on the cluster
+    # while the job was still writing) is invisible three scripts later.
+    n_nan = sum(1 for r in rows if r[0] != r[0])
+    if n_nan == len(rows):
+        sys.exit(f"every snapshot got t = NaN: no step->time mapping was found "
+                 f"in {args.run_dir}/outp.txt.\n"
+                 f"  The monitor table is what carries the times, so this "
+                 f"usually means outp.txt is truncated or was still being "
+                 f"written/copied.\n"
+                 f"  Refusing to write a CSV that no fit can use.")
+    if n_nan:
+        print(f"  WARNING: {n_nan} of {len(rows)} snapshots have no time in "
+              f"outp.txt and will be NaN in the CSV.")
+
     out = args.out or (args.run_dir / "neck_width.csv")
     with open(out, "w") as f:
         f.write("t_s,neck_width_m,x_neck_m\n")
