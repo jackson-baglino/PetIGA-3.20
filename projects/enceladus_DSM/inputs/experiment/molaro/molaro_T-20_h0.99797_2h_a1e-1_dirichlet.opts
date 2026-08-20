@@ -1,0 +1,64 @@
+# =============================================================================
+# Molaro T = -20 C -- UNDERSATURATED wall, tuned to their observed shrinkage
+#
+# TARGET: the large grain's measured surface recession, |v_n| = 6.2544e-10 m/s
+# (-2.93 %/78 min from a least-squares fit to their Fig. 11 diameters, S/N 4.4;
+# reproduces the -3 % in their caption). The small grain's -4 % is not in the
+# same table -- endpoint -0.69 %, minimum -2.40 %, fit -0.89 %, all inside its
+# own +-2 % -- so fit the large grain and REPORT the small one.
+#
+# Quasi-steady sublimation to the wall, both resistances in series:
+#     1 - h = |v_n| * (beta' + l_eff/D_v) / (rho_vs/rho_i),  l_eff = a(1 - a/L)
+# At dom2 (L/a_eff = 2.00, l_eff = 56.09 um): 1 - h = 0.00205.
+#     python preprocess/estimate_vapor_bc_molaro.py --L-over-a 2
+#
+# THE OFFSET IS FROM h_eq, NOT FROM 1. The reference is the grains' own
+# equilibrium (see molaro_T-20_hcurv_2h_a1e-1_Dv10.opts), so
+#     h = h_eq - 0.00205 = 1.0000234 - 0.00205 = 0.99797
+# Using 1 - 0.00205 instead would fold the 2.34e-05 curvature offset into the
+# fitted undersaturation -- 1.1 % of it, small but free to get right.
+#
+# NOTE 1 - h IS STRONGLY L-DEPENDENT and only weakly alpha_c-dependent
+# (0.00035 at L/a = 1.08 -> 0.00272 at 3). This file is dom2 ONLY. For dom3
+# recompute: h = 1.0000234 - 0.00272 = 0.99730.
+#
+# NOMINAL D_v HERE, deliberately. The 1 - h above was derived at D_v = 1.898e-05;
+# at D_v x10 the transport resistance collapses (l_eff/D_v 2.955 -> 0.296, total
+# 3.028 -> 0.369) and the same shrinkage needs 1 - h = 2.5e-04, i.e. h = 0.99977.
+# So this run and the D_v x10 saturated run are NOT yet one consistent model.
+# Resolve that after the saturated arm reports: whatever D_v_eff it selects has
+# to serve BOTH arms, or the effective-transport framing collapses into two
+# independent fits.
+#
+# The wall undersaturation outweighs the curvature difference between the two
+# grains (d0*(2/R_sm - 2/R_lg) = 7.9e-06) by 260x, so both grains sublimate at
+# nearly the same rate. The differential is not a usable ripening signal.
+#
+# CAVEAT ON THE CALIBRATION: the formula above uses a SPHERICAL far field, while
+# the domain is a cylinder with Dirichlet on r = Lr and both z faces. Different
+# Green's functions -- so check the achieved dR_large against -2.93 % rather
+# than trusting h to land it.
+#
+# Pair with: molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2
+# =============================================================================
+
+-t_final 7.2e+03
+-temp -20.0
+-humidity 0.99797                       # h_eq - 0.00205; dom2 ONLY
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtmax 2.0e2
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step; was 0.05 = 0.28
+
+-t_out_log 80
+-t_out_log_t0 1.0e2

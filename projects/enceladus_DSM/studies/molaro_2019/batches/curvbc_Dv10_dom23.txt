@@ -1,0 +1,14 @@
+# Molaro 2019 -- three-arm run, 2026-08-19.
+#
+# A  dom2 saturated against the GRAINS' equilibrium (h = 1.0000234), D_v0 x10.
+#    Q: does inflated effective transport give the 1/3 saturated exponent?
+# B  dom2 undersaturated (h = 0.99797), nominal D_v.
+#    Q: does the BC that reproduces their -2.93 % shrinkage also fit the neck?
+# C  dom3, otherwise IDENTICAL to A. A vs C isolates the domain (Dirichlet
+#    conductance 2.0x the true far field at dom2, 1.5x at dom3).
+#
+# Measure each with:  bash postprocess/run_batch_measure.sh <run_dir>
+
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_hcurv_2h_a1e-1_Dv10
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99797_2h_a1e-1_dirichlet
+molaro_2D_L680x340um_eps0.12um_axisym_T-20pair_r14um_dom3:molaro_T-20_hcurv_2h_a1e-1_Dv10

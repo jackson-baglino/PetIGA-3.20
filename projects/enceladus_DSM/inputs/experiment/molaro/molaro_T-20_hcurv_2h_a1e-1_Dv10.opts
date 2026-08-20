@@ -1,0 +1,68 @@
+# =============================================================================
+# Molaro T = -20 C -- SATURATED against the GRAINS' own equilibrium, D_v0 x10
+#
+# WHY -humidity IS ABOVE 1.
+# The wall is meant to emulate a large chamber saturated with respect to THESE
+# grains, not with respect to a flat surface. A flat-saturated wall (h = 1.0000)
+# sits BELOW the equilibrium of a convex grain, so the pair slowly sublimates
+# into it: the 8 h dom2 run at h = 1.0000 lost 0.474 % of its ice (tot_ice
+# 5.911e-12 -> 5.883e-12 m^3). That is real Ostwald ripening against a flat
+# reservoir, but it is not the experiment, and it contaminates the exponent with
+# a net-mass-loss term the sintering law does not contain.
+#
+# Setting the wall to the grains' own equilibrium removes it:
+#     h_eq = 1 + d0*kappa,  kappa = 2/R_avg,  R_avg = (101 + 72.5)/2 = 86.75 um
+#     d0 = gamma*a^3/(k_B*T) = 1.0166e-09 m  ->  d0*kappa = 2.34e-05
+#     h_eq = 1.0000234
+# The area-weighted mean curvature gives 1.0000228 (R_eff = 89.09 um), 2.6 %
+# away -- the choice of mean does not matter at this precision.
+#
+# The neck's own Gibbs-Thomson depression at r = 14 um is d0*kappa = -6.81e-04,
+# 29x further below the wall than the grains sit above flat. So the driving
+# force hierarchy is untouched: this correction zeroes the net drift without
+# touching the sintering drive.
+#
+# VERIFICATION: tot_ice should now hold flat to <0.05 % instead of falling
+# 0.474 %. If it does not, the BC is not doing what it is meant to.
+#
+# h_eq IS DOMAIN-INDEPENDENT (it is a property of the grains, not of L), so this
+# same file pairs with dom2 and dom3 and makes the domain comparison clean.
+#
+# D_V0 x10 = 2.178e-04.  NOT a claim about vapour diffusivity, which is known to
+# a few percent (1.90e-05 at 253 K). It is an EFFECTIVE transport coefficient
+# lumping vapour + unmodelled surface diffusion, and the required factor is the
+# output of interest. The model sits on the kinetics/transport crossover
+# (L* = D_v*beta_HK = 1.39 um vs fillet rho = 1.35 um, Lambda ~ 1.03), so unlike
+# a pure time rescale this DOES change the predicted exponent -- it slides the
+# fit window toward the kinetics-controlled side.
+#
+# Mesh is unaffected: the binding thin-interface constraint is delta_ice =
+# a1*a2*eps/(alpha_ice*beta_HK) = 1.000, built on the ICE THERMAL diffusivity.
+# delta_vapor is 0.067 and only falls further when D_v rises.
+#
+# Pair with: molaro_2D_L{450x225,680x340}um_eps0.12um_axisym_T-20pair_r14um_dom{2,3}
+# =============================================================================
+
+-t_final 7.2e+03
+-temp -20.0
+-humidity 1.0000234                     # 1 + d0*(2/R_avg); see above
+-grad_temp0 0.0,0.0,0.0
+
+-dif_vap 2.178e-04                      # D_v0 x10 -- EFFECTIVE transport, not vapour
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet: emulates the large chamber
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtmax 2.0e2
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step; was 0.05 = 0.28
+
+-t_out_log 80
+-t_out_log_t0 2.0e1                     # x10 D_v reaches the 32.81 um anchor
+                                        # ~60 s in; 1.0e2 would miss it
