@@ -118,23 +118,36 @@ int main(int argc, char *argv[]) {
     user.xi_T = 1.0;    /* thermal: scales conduction + latent heat in R_tem  */
     user.xi_v = 1e-3;   /* vapor:   scales diffusion + rho_ice source in R_vap */
 
-    /* Capillary length d0 = gamma*V_m/(R*T). NOT a fixed constant: it is
-     * temperature dependent and is computed below from Sigma_i, V_m and temp0.
-     * 0.0 here means "compute it"; -d0_sub0 overrides.
+    /* Capillary length d0 = gamma*a^3/(k_B*T)  [K&P Eq. 13]. NOT a fixed
+     * constant: it is temperature dependent, so it is recomputed from Sigma_i
+     * and temp0 further down (see "d0_sub0 = gamma*a^3/(k_B*T)"), which
+     * OVERWRITES whatever is set here unconditionally. The value below is only
+     * a defined-state placeholder; the sole way to change d0 is -d0_sub0.
      *
      * It was previously defaulted to 1e-7, which is ~100x the physical value.
      * That number comes from Moure & Fu, who inflated d0 for their wet-snow
      * runs; it is not a capillary length and must not be carried as a default
      * here. The physical value at -20 C is 1.02e-9 m. */
-    user.d0_sub0    = 0.0;
+    user.d0_sub0    = 1.0e-9;
     user.beta_sub0  = 9.9e5;     /* beta0 = (1/alpha_c)*sqrt(2pi*m/kT)/(rho_vs/rho_i)
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
 
     /* Surface energy parameters of the double-well free energy [J/m²]:
      *   F_dub(phi_i) = C*phi_i^2(1-phi_i)^2,  C = (Sigma_i+Sigma_a)/2 + Lambda
-     * Sigma_i = ice-side surface energy, Sigma_a = air-side surface energy. */
-    PetscReal Sigma_i = 0.109; /* ice surface energy [J/m²] */
-    PetscReal Sigma_a = 0.132; /* air surface energy [J/m²] */
+     *
+     * M&F's ternary form is Sigma_i = sigma_ia + sigma_iw - sigma_aw and
+     * Sigma_a = sigma_ia + sigma_aw - sigma_iw, whose MEAN is sigma_ia for any
+     * water pair -- that is the point of the construction. This is a two-phase
+     * ice/vapour model with no water phase, so both collapse to sigma_ia and
+     * must be EQUAL. They were 0.109 and 0.132 (putting C 10.6 % high);
+     * corrected 2026-08-19.
+     *
+     * Only Sigma_i is live: it is the gamma in d0 = gamma*a^3/(k_B*T). Sigma_a
+     * is reported in the banner but never assembled -- the Allen-Cahn residual
+     * carries the well through mob_sub and eps, not through C. Keep them equal
+     * regardless, so the banner does not misreport the surface energy. */
+    PetscReal Sigma_i = 0.109; /* ice-vapour surface energy sigma_ia [J/m²] */
+    PetscReal Sigma_a = 0.109; /* same interface, air side: must equal Sigma_i */
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 2;          /* Polynomial order */
@@ -775,7 +788,7 @@ int main(int argc, char *argv[]) {
         }
     }
     {
-        /* d0 = gamma * V_m / (R * T), evaluated at temp0. Computed per run
+        /* d0 = gamma * a^3 / (k_B * T), evaluated at temp0. Computed per run
          * rather than carried as a constant, because it is temperature
          * dependent and every campaign runs at its own T. -d0_sub0 overrides
          * for deliberate experiments (e.g. testing capillary sensitivity);

@@ -41,7 +41,10 @@ typedef struct {
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
   PetscReal mob_sub;  // Mobility for ice phase evolution
-  PetscReal Etai, Etam, Etaa;  // Surface energy terms: Sigma_i (ice-vapor), Etam (unused), Sigma_a (air-vapor side)
+  // Sigma_i / (unused) / Sigma_a. Two-phase model: Etai == Etaa == sigma_ia
+  // (M&F's ternary combinations both reduce to it). Only Etai is read: it is
+  // the gamma in d0 = gamma*a^3/(k_B*T). Etaa is banner-only.
+  PetscReal Etai, Etam, Etaa;
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
