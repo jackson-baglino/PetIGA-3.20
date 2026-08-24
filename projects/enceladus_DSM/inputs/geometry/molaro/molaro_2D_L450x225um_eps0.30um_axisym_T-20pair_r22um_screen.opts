@@ -1,0 +1,59 @@
+# =============================================================================
+# Molaro T = -20 C pair -- COARSE SCREENING mesh, pre-necked r = 22 um
+#
+# PURPOSE: parameter screening only. 6.75M DoF against the production 43.6M,
+# a 6.5x smaller mesh, so knobs (alpha_c, D_v_eff, humidity) can be swept for
+# TRENDS at a fraction of the cost. Anything quantitative gets re-run on
+# molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2.opts.
+#
+# WHAT IS GIVEN UP. eps = 3.0e-07 puts delta_ice = 2.54 (production: 1.000),
+# i.e. the thin-interface correction is ~2.5x the kinetic term it corrects.
+# Raising alpha_c multiplies that further (delta_ice ~ alpha_c), so an
+# alpha_c = 1.0 screening arm sits at delta_ice ~ 25. Trends should survive;
+# absolute rates and exponents will not. Treat every number from this mesh as
+# a direction, never as a result.
+#
+# WHY r = 22 um. The neck must start ABOVE the resolution floor
+#     r >= sqrt(12*eps*R) = 19.07 um at eps = 3.0e-07, R = 101 um
+# or the fillet is thinner than the interface and a void nucleates and seals
+# over (measured on the tangent-start CFL ladder; see the r14um_dom2 header).
+# 22 um is 1.15x the floor, matching the 1.17x margin the production geometry
+# runs at. The cost of that margin is coverage: this starts at 44 um WIDTH,
+# above Molaro's first measured 32.81 um, so it spans the upper 65 % of their
+# window rather than all of it.
+#
+# CENTRES. Two spheres of R = 72.5 and 101 um intersect in a circle of radius
+# r at separation d, with r^2 = R0^2 - x^2 and x = (d^2 + R0^2 - R1^2)/(2d).
+# Solving r = 22 um gives d = 1.676563e-04, and the pair is centred in Lx.
+#
+# CALIBRATION TARGET. The production Dv10 arm, refitted over the 44.47-60.43 um
+# window this geometry actually covers, gives
+#     a = 0.1802 +- 0.0037   (R2 = 0.9999)
+# A screening arm at matched physics must reproduce that before any swept
+# result from this mesh is trusted. (The same run fitted from 32.81 um gives
+# a = 0.1648 -- exponents are window-dependent, so compare like with like.)
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1
+
+-ic_type multi_grains
+-dim 2
+-Lx 4.50000e-04
+-Ly 2.25000e-04
+-Lz 0
+
+-ice_grain_cx 1.269219e-04,2.945782e-04   # d = 1.676563e-04 -> neck r = 22 um
+-ice_grain_cy 0.0,0.0                   # grains on the axisymmetric axis
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 2122                                # h = eps/sqrt(2) = 2.1213e-07
+-Ny 1061                                # (2.25M elements, 6.75M DoF)
+-Nz 1
+-eps 3.0000e-07
+-eps_valid_temp -20
+
+-delt_t 1.0e-4
+-periodic 0

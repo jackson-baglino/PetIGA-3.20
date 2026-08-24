@@ -12,6 +12,15 @@
 # At dom2 (L/a_eff = 2.00, l_eff = 56.09 um): 1 - h = 0.00205.
 #     python preprocess/estimate_vapor_bc_molaro.py --L-over-a 2
 #
+# MEASURED, job batch 2026-08-19__18.59.52: h = 0.99797 gave dR_large = -3.218 %
+# against the -2.93 % target -- a 10 % overshoot, and dR_small = -4.719 % against
+# their caption's -4 %. One Newton step on the near-linear response,
+#     (1-h)_next = 0.00205 * 2.93/3.218 = 0.001867
+# gives the h = 0.99816 set below. tot_ice fell 10.46 % over the 2 h run.
+# The neck under this BC grew to 45.71 um at t*+78 min with exponent a = 0.1273
+# -- net sublimation SLOWS the neck relative to the saturated arm (56.26 um,
+# a = 0.1648), so the shrinkage and neck targets pull in opposite directions.
+#
 # THE OFFSET IS FROM h_eq, NOT FROM 1. The reference is the grains' own
 # equilibrium (see molaro_T-20_hcurv_2h_a1e-1_Dv10.opts), so
 #     h = h_eq - 0.00205 = 1.0000234 - 0.00205 = 0.99797
@@ -44,7 +53,8 @@
 
 -t_final 7.2e+03
 -temp -20.0
--humidity 0.99797                       # h_eq - 0.00205; dom2 ONLY
+-humidity 0.99816                       # h_eq - 0.001867; Newton step from the
+                                        # measured -3.218 % (target -2.93 %)
 -grad_temp0 0.0,0.0,0.0
 
 -flag_BC_Tfix 1

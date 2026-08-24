@@ -1,0 +1,52 @@
+# =============================================================================
+# SCREENING CALIBRATION -- physics identical to molaro_T-20_hcurv_2h_a1e-1_Dv10,
+# run on the coarse screening mesh so the two can be differenced.
+#
+# THIS ARM PRODUCES NO NEW PHYSICS. Its only job is to answer: does the 6.5x
+# cheaper mesh reproduce the answer we already paid full price for? Every
+# parameter below is copied from the production Dv10 arm -- same wall humidity,
+# same D_v, same alpha_c, same CFL setting -- so resolution is the ONLY
+# difference between them.
+#
+# PASS: a = 0.1802 +- 0.0037 over the 44.47-60.43 um width window
+#       (the production Dv10 run refitted on this geometry's coverage).
+#       Land inside ~10 % of that and the screen is calibrated; sweep away.
+# FAIL: a materially off that. Then the coarse mesh is not usable for exponent
+#       work and the screening plan needs a finer eps -- learned for ~1 % of
+#       the cost of finding out during a sweep.
+#
+# SECOND JOB: this is the cost-model calibration point. The dom2 -> dom3 jump
+# measured ch/step scaling as DoF^2.9, which is NOT safe to extrapolate
+# DOWNWARD to a 6.5x smaller mesh. Linear-in-DoF would put this near 2 USD;
+# the DoF^2.9 slope would put it near 0.06. Nothing between those is
+# predictable without a measurement, so measure it here, on the run whose
+# result is useful either way.
+#
+# T_FINAL 7.0e+03. The production Dv10 arm took 6215 s to cross 44 -> 60.43 um.
+# 7.0e3 covers that with ~13 % margin.
+#
+# Pair with: molaro_2D_L450x225um_eps0.30um_axisym_T-20pair_r22um_screen
+# =============================================================================
+
+-t_final 7.0e+03
+-temp -20.0
+-humidity 1.0000234                     # = 1 + d0*(2/R_avg); grain-matched wall
+-grad_temp0 0.0,0.0,0.0
+
+-dif_vap 2.178e-04                      # D_v0 x10 -- EFFECTIVE transport
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtmax 2.0e2
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # matched to the production arm
+
+-t_out_log 80
+-t_out_log_t0 2.0e1
