@@ -1,18 +1,46 @@
-contourpy==1.3.0
-cycler==0.12.1
-fonttools==4.56.0
-igakit @ https://github.com/dalcinl/igakit/archive/refs/heads/master.zip#sha256=014ca9e15ac9a5ca29b87634a0de8587d81caf28c32790a1b39f407084030854
-importlib_resources==6.5.2
-kiwisolver==1.4.7
-matplotlib==3.9.4
-numpy==2.0.2
-packaging==24.2
-pandas==2.2.3
-pillow==11.1.0
-pyparsing==3.2.1
-python-dateutil==2.9.0.post0
-pytz==2025.1
-scipy==1.13.1
-six==1.17.0
-tzdata==2025.1
-zipp==3.21.0
+# ---------------------------------------------------------------------------
+# Python 3.13  (built and verified against CPython 3.13.7, Homebrew python@3.13)
+#
+#   Floor is Python 3.12: numpy >= 2.5 and scipy >= 1.18 declare
+#   requires-python >= 3.12, so 3.9/3.11 cannot reach the current stack.
+#   3.13 is chosen over 3.14 because every dependency here ships cp313
+#   macos-arm64 wheels and igakit's f2py extension is verified to build.
+#
+# Recreate this environment from scratch:
+#   rm -rf venv_enceladus
+#   /opt/homebrew/bin/python3.13 -m venv venv_enceladus
+#   venv_enceladus/bin/python -m pip install --upgrade pip setuptools wheel
+#   venv_enceladus/bin/pip install -r requirements.txt
+#
+# Only direct dependencies are pinned; transitive versions are resolved by pip
+# and constrained by these pins.
+# ---------------------------------------------------------------------------
+
+# --- core numerics / plotting ------------------------------------------------
+numpy==2.5.2
+scipy==1.18.1
+matplotlib==3.11.1
+pandas==3.0.5
+cmocean==4.0.3
+
+# --- IGA geometry + PetIGA binary I/O ---------------------------------------
+# Built from source (f2py); needs a Fortran compiler on PATH (brew install gcc).
+igakit @ https://github.com/dalcinl/igakit/archive/refs/heads/master.zip#sha256=195dcf30ac1608d75601c112768cbabd3b88f1561152fc967af221bb004bc6a0
+
+# --- preprocessing / geometry generation ------------------------------------
+geomdl==5.4.0          # preprocess/igakit_complexgeocodes/2dspine*.py
+scikit-image==0.26.0   # preprocess/scratch/generateCircularGrains.py
+tqdm==4.70.0           # preprocess/scratch/generateCircularGrains.py
+
+# --- notebooks / interactive -------------------------------------------------
+ipykernel==7.3.0
+
+# --- mesh / STL export -------------------------------------------------------
+# Used by postprocess/scratch/convert_to_stl.py. Pulls in vtk (~150 MB).
+pyvista==0.48.4
+
+# NOTE: scripts under scripts/paraview_macros/ (and the make_movie.py helpers)
+# import `paraview`, which only exists inside ParaView's bundled pvpython --
+# run those with pvpython, not this venv. `paraview` is therefore deliberately
+# not listed. The `vtk` present here comes in as a pyvista dependency and is
+# not a substitute for the ParaView build.

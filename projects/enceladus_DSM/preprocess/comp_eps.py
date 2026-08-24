@@ -916,7 +916,7 @@ def _cli():
                     help="Derive α_c(T0, σ) from the TWO-parameter Libbrecht fit "
                          "α = A·exp(-f·σ₀(T)/σ), with A and the σ₀ rescaling f "
                          "fitted to the literature anchors. Keeps Libbrecht's "
-                         "σ₀(T) shape, and tames the −6/−7 °C table kink to ~8%. "
+                         "σ₀(T) shape, and tames the −6/−7 °C table kink to ~8%%. "
                          "Pair with --sigma_char. Mutually exclusive with the above.")
     ap.add_argument("--sigma_char", type=float, default=None,
                     help="Characteristic supersaturation σ the α_c fit is pinned "

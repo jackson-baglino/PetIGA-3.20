@@ -341,7 +341,7 @@ def main():
     # ---- Mesh ----
     def bstr(b):
         return ";".join(f"{c:.6e},{R:.6e},{h:.6e}" for c, R, h in b)
-    cmd = [str(ROOT / "venv_pf311/bin/python3"),
+    cmd = [sys.executable,
            str(ROOT / "preprocess/build_geometry_multi_grain.py"),
            "--bumps", bstr(bumps), "--top-bumps", bstr(bumps),
            "--Lx", f"{Lx}", "--Ly", f"{Ly}", "--Nx", f"{Nx}", "--Ny", f"{Ny}",

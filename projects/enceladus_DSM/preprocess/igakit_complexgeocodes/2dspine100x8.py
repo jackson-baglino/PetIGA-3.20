@@ -23,13 +23,7 @@ Usage:
 
 import numpy as np
 from numpy import linspace
-import matplotlib.pyplot as plt
-from matplotlib import cm
 import os
-from tqdm import tqdm
-import GPy
-import pandas as pd
-import seaborn as sns
 from geomdl import BSpline
 from geomdl.visualization import VisMPL
 from geomdl import utilities

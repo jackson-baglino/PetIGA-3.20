@@ -52,7 +52,7 @@
 #   1. Write/adapt a preprocess/build_geometry_*.py script (see
 #      preprocess/build_geometry_multi_grain.py for a template) that writes
 #      an IGA mesh file under inputs/geometry/<name>.dat. Run it with:
-#        source venv_pf311/bin/activate && python3 preprocess/build_geometry_<name>.py
+#        source venv_enceladus/bin/activate && python3 preprocess/build_geometry_<name>.py
 #      (run from the project root — paths inside these scripts are relative
 #      to the project root, not preprocess/).
 #   2. Create inputs/geometry/<my_geometry>.opts with -geom_file pointing at

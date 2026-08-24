@@ -323,7 +323,7 @@ def main():
     # ---- Build the mesh via the shared igakit template ----
     def bstr(b):
         return ";".join(f"{cx:.6e},{R:.6e},{h:.6e}" for cx, R, h in b)
-    cmd = [str(ROOT / "venv_pf311/bin/python3"),
+    cmd = [sys.executable,
            str(ROOT / "preprocess/build_geometry_multi_grain.py"),
            "--bumps", bstr(bot_b), "--top-bumps", bstr(top_b),
            "--Lx", f"{Lx}", "--Ly", f"{Ly}", "--Nx", f"{Nx}", "--Ny", f"{Ny}",

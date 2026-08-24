@@ -45,7 +45,7 @@ execute_python_scripts() {
     if ! PY=$(find_python); then
         echo "⚠️  no interpreter with igakit found — cannot write vtkOut/."
         echo "    Install it into the project venv:"
-        echo "      ./venv_pf311/bin/pip install \\"
+        echo "      ./venv_lunar/bin/pip install \\"
         echo "        'igakit @ https://github.com/dalcinl/igakit/archive/refs/heads/master.zip'"
         return 1
     fi
@@ -83,7 +83,7 @@ else
     if ! PY=$(find_python); then
         echo "⚠️  no interpreter with igakit found — cannot write vtkOut/."
         echo "    Install it into the project venv:"
-        echo "      ./venv_pf311/bin/pip install \\"
+        echo "      ./venv_lunar/bin/pip install \\"
         echo "        'igakit @ https://github.com/dalcinl/igakit/archive/refs/heads/master.zip'"
         return 1
     fi

@@ -24,7 +24,7 @@ fly (by shelling out to the igakit venv running plot_fields_highres.py),
 rendered, and then DELETED -- so at most one dense file is on disk at a time.
 This avoids materializing the entire vtkOut_highres/ series, which at
 --n-per-elem 4 can be hundreds of GB for a long run. The generator interpreter
-is autodetected (venv_pf311 / venv_DSM); override with --gen-python.
+is autodetected (venv_enceladus / venv_DSM); override with --gen-python.
 
     /path/to/pvpython postprocess/make_movie.py --dir <rundir>
 
@@ -232,9 +232,8 @@ def find_gen_python(explicit):
     if explicit:
         return explicit
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    for cand in (os.path.join(root, "venv_pf311", "bin", "python3"),
-                 os.path.expanduser("~/venvs/venv_DSM/bin/python3"),
-                 os.path.join(root, "venv_permafrost", "bin", "python3")):
+    for cand in (os.path.join(root, "venv_enceladus", "bin", "python3"),
+                 os.path.expanduser("~/venvs/venv_DSM/bin/python3")):
         if os.path.isfile(cand):
             return cand
     return "python3"
@@ -538,7 +537,7 @@ def main():
     p.add_argument("--gen-python", default=None,
                    help="Python interpreter (with igakit) used to generate each "
                         "frame's dense .vts in streaming mode. Default: autodetect "
-                        "venv_pf311 / venv_DSM. Ignored with --no-stream.")
+                        "venv_enceladus / venv_DSM. Ignored with --no-stream.")
     p.add_argument("--n-per-elem", type=int, default=4,
                    help="dense sample points per element per direction for the "
                         "on-the-fly high-res .vts (streaming mode; default 4)")

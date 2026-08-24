@@ -5,7 +5,7 @@ preset, so pvpython scripts (which run under ParaView's own embedded Python,
 not this project's venv) can apply it without importing cmocean directly.
 
 Run once with this project's regular Python (the one with cmocean installed,
-e.g. venv_pf311) -- NOT pvpython:
+e.g. venv_enceladus) -- NOT pvpython:
 
     python3 postprocess/make_cmocean_preset.py ice
     python3 postprocess/make_cmocean_preset.py --out postprocess/colormaps/cmocean_dense.json dense

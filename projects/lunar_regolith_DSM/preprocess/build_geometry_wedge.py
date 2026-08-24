@@ -328,7 +328,7 @@ def main():
         print("        --lens-R-over-h for a blunter start, at the cost of travel room.")
 
     # ---- Build the mesh via the shared igakit template ----
-    cmd = [str(ROOT / "venv_pf311/bin/python3"),
+    cmd = [sys.executable,
            str(ROOT / "preprocess/build_geometry_multi_grain.py"),
            "--bumps", "", "--top-bumps", "",
            "--bot-y0", f"{bot_y0}", "--bot-slope", f"{-m}",
