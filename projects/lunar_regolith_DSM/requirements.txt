@@ -1,14 +1,19 @@
 # ---------------------------------------------------------------------------
-# Python 3.13  (built and verified against CPython 3.13.7, Homebrew python@3.13)
+# Python 3.11
 #
-#   Floor is Python 3.12: numpy >= 2.5 and scipy >= 1.18 declare
-#   requires-python >= 3.12, so 3.9/3.11 cannot reach the current stack.
-#   3.13 is chosen over 3.14 because every dependency here ships cp313
-#   macos-arm64 wheels and igakit's f2py extension is verified to build.
+#   Chosen to match the HPC: the Resnick module tree tops out at
+#   python/3.11.6, so 3.11 is the newest interpreter available on both the
+#   cluster and the Mac. Local dev uses Homebrew python@3.11 (3.11.14) --
+#   same minor version, so cp311 wheels are interchangeable.
+#
+#   Consequence: numpy and scipy are held one minor behind latest. numpy 2.5+
+#   and scipy 1.18+ declare requires-python >= 3.12 and CANNOT be installed
+#   here. 2.4.6 / 1.17.1 are the newest that still ship cp311 wheels.
+#   Everything else below is at its current release.
 #
 # Recreate this environment from scratch:
 #   rm -rf venv_lunar
-#   /opt/homebrew/bin/python3.13 -m venv venv_lunar
+#   python3.11 -m venv venv_lunar
 #   venv_lunar/bin/python -m pip install --upgrade pip setuptools wheel
 #   venv_lunar/bin/pip install -r requirements.txt
 #
@@ -17,14 +22,15 @@
 # ---------------------------------------------------------------------------
 
 # --- core numerics / plotting ------------------------------------------------
-numpy==2.5.2
-scipy==1.18.1
+numpy==2.4.6           # 3.11 ceiling; 2.5+ needs python >= 3.12
+scipy==1.17.1          # 3.11 ceiling; 1.18+ needs python >= 3.12
 matplotlib==3.11.1
 pandas==3.0.5
 cmocean==4.0.3
 
 # --- IGA geometry + PetIGA binary I/O ---------------------------------------
-# Built from source (f2py); needs a Fortran compiler on PATH (brew install gcc).
+# Built from source (f2py); needs a Fortran compiler on PATH.
+# On the HPC load a gcc module first -- match the one PETSc was built with.
 igakit @ https://github.com/dalcinl/igakit/archive/refs/heads/master.zip#sha256=195dcf30ac1608d75601c112768cbabd3b88f1561152fc967af221bb004bc6a0
 
 # --- preprocessing / geometry generation ------------------------------------
