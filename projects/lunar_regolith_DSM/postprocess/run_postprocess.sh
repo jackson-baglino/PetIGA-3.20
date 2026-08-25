@@ -131,6 +131,21 @@ if [[ -f "$RUN_DIR/igasol.dat" ]] && ls "$RUN_DIR"/sol_*.dat &>/dev/null 2>&1; t
         --save "$PLOTS/mass.png" --per-phase-dir "$PLOTS/mass"
 fi
 
+# ---------------------------------------------------------------------------
+# Gibbs-Thomson normal-velocity check on the wedge menisci.
+#
+# Only meaningful for the apex-centred band geometry, where the centreline
+# interface normal is exactly +/- x_hat, so it is gated on -wedge_apex_x being
+# declared. Every other geometry falls through without a word. Reads vtkOut/,
+# so it must follow the VTK conversion above.
+# ---------------------------------------------------------------------------
+if grep -qs '^-wedge_apex_x' "$RUN_DIR"/*.opts \
+   && compgen -G "$RUN_DIR/vtkOut/solV_*.vts" >/dev/null; then
+    run_step "Gibbs-Thomson interface velocity" \
+        "$POSTPROCESS_DIR/wedge_gt_velocity.py" --dir "$RUN_DIR" \
+        --save "$PLOTS/wedge_gt_velocity.png"
+fi
+
 echo ""
 echo "========================================================================="
 if [[ "$overall_exit" -ne 0 ]]; then

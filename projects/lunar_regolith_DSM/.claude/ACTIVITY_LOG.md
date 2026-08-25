@@ -1,3 +1,47 @@
+## 2026-08-25 — Gibbs-Thomson v_n check on the wedge menisci
+
+- **New `postprocess/wedge_gt_velocity.py`**: measures the normal velocity of
+  the two ice-air menisci on the wedge centreline and compares it against
+  `v_n = (sigma - d0*chi)/beta`. The apex-centred band puts its virtual apex at
+  `y = Ly/2`, so on the centreline the interface normal is exactly `+/- x_hat`
+  and `v_n` collapses to a 1-D displacement rate — no contour differentiation,
+  no normal reconstruction. That is what makes this comparison worth doing at
+  all; anywhere else on the arc it would need all three.
+- **Result across the whole `batch_2026-08-07__07.26.38_wedge_bc` sweep**: the
+  solver recovers **0.825 (inner) / 0.810 (outer)** of the Gibbs-Thomson rate,
+  i.e. `beta_eff/beta_sub0 ~ 1.21-1.24`. That ratio is flat over 90 days and
+  flat across all nine vapour-BC combinations, whose residual driving force
+  `sigma - d0*chi` spans two orders of magnitude (7e-9 to 1e-6). A stable
+  ~19 % kinetic deficit, not scatter. Not diagnosed here; candidates are the
+  finite-eps thin-interface correction, the absent anti-trapping current, and
+  `tau_sub`'s `a2*eps/dif_vap` term using the unscaled `dif_vap` while the
+  residual runs at `xi_v = 1e-3`.
+- **Two calibration traps the script pins down.** It uses the UNSCALED
+  `-d0_sub0`/`-beta_sub0`; the run header also prints `beta_sub (SCALED =
+  beta_HK)`, which pairs with an absolute density difference, not a
+  sigma-normalised one — confusing them is an error of `rho_ice/rho_vs`, ~1e6.
+  And `sigma` and `d0*chi` agree to ~10 %, so `v_n` is their residual and a 1 %
+  error in `sigma` is a ~10 % error in `v_n`; `sigma` is therefore extrapolated
+  from the vapour side back to the `phi=0.5` crossing rather than sampled at a
+  fixed standoff, which alone moves the answer ~20 %. The summary prints how
+  far the prediction shifts under the alternative readings.
+- **Local `read_opts_ordered`**: `pplib.read_opts` merges `*.opts` in sorted-name
+  order, which puts `solver.opts` last, so its `-flag_BC_rhovfix 0` beat the
+  experiment file that set 1 and every wedge run read as sealed. The run folder
+  is named `<geometry>__<experiment>`, which recovers `run_lunar.sh`'s real
+  solver -> geometry -> experiment precedence. Only the vapour-BC flags are
+  affected; every physics flag lives in exactly one file.
+- **Wired into both drivers**, gated on `-wedge_apex_x` so non-wedge geometries
+  skip silently. Verified against the analytic IC (r1/r2 to 1e-10 m, `d0*chi`
+  reproducing RUN_MATRIX's -5.083e-6 / +3.389e-6), against the pinned reservoirs
+  (face sigma exactly +/-5e-6), and against true-NURBS evaluation
+  (`--source vtkOut_highres` agrees to 0.05 %).
+- Script + `pplib.py` copied into all nine staged run folders and the batch
+  root; the legacy staged drivers were appended to, not replaced, so their older
+  steps keep working.
+
+---
+
 ## 2026-08-13 — Supersaturation movies, frame cache, per-wall BC report
 
 - **Movies now color the air region by supersaturation** sigma = (rhov -

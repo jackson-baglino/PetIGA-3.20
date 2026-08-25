@@ -18,6 +18,8 @@
 #   - plot_mass.py       phase mass vs time             -> plots/mass{.png,/}
 #   - plot_timestep.py   adaptive dt history            -> plots/timestep.png
 #   - plot_fields.py     VTK conversion (dim >= 2)      -> vtkOut/
+#   - wedge_gt_velocity.py  Gibbs-Thomson v_n check (wedge geometries only)
+#                                                      -> plots/wedge_gt_velocity.png
 #
 # plot_fields.py is a format conversion rather than a figure, so it stays in
 # vtkOut/. plot_fields_highres.py is not in the sweep: it is slow and only
@@ -133,7 +135,18 @@ for run in "$BATCH_DIR"/*/; do
         step plot_timestep.py --dir "$run" --save "$plots/timestep.png"
     fi
 
-    # ── 4. VTK conversion (2D/3D only). A format conversion, not a figure,
+    # ── 4. Gibbs-Thomson check on the wedge menisci. Only meaningful for
+    #      the apex-centred band geometry, so it is gated on the apex being
+    #      declared; every other geometry falls through silently. Needs the
+    #      .vts, hence after the conversion below reruns -- on a first pass
+    #      over a fresh batch it is skipped and picked up on the second. ──
+    if grep -qs '^-wedge_apex_x' "$run"/*.opts && \
+       compgen -G "$run/vtkOut/solV_*.vts" >/dev/null; then
+        step wedge_gt_velocity.py --dir "$run" \
+             --save "$plots/wedge_gt_velocity.png"
+    fi
+
+    # ── 5. VTK conversion (2D/3D only). A format conversion, not a figure,
     #      so it stays in vtkOut/ rather than plots/. ────────────────────
     if [[ "$dim" != "1" ]]; then
         step plot_fields.py --dir "$run"

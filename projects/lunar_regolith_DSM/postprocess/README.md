@@ -51,6 +51,7 @@ because it is a format conversion for ParaView, not a figure.
 | `plot_timestep.py` | `outp.txt` | adaptive time-step history |
 | `plot_fields.py` | `igasol.dat`, `sol_*.dat` | `.vts` snapshots for ParaView |
 | `plot_fields_highres.py` | same | same, supersampled |
+| `wedge_gt_velocity.py` | `vtkOut/`, staged `.opts` | measured vs. Gibbs-Thomson `v_n` on the two centreline menisci (wedge geometries only) |
 | `pplib.py` | — | shared helpers, not a plotter |
 
 `plot_fields_highres.py` is deliberately **not** in the sweep: it is slow and
@@ -75,6 +76,25 @@ integral is `eps/6` per unit interface, so `plot_ssa.py` reports
 interface is at its equilibrium profile and resolved by the mesh — a smeared
 interface reads high, so early-time values from an IC written at a different
 `eps` are not trustworthy.
+
+**The Gibbs-Thomson check is a difference of two nearly equal numbers.**
+`wedge_gt_velocity.py` predicts `v_n = (sigma - d0*chi)/beta` on the two
+centreline menisci of a wedge-band run. Two things about it are easy to get
+wrong and both change the answer by tens of percent:
+
+- It uses the **unscaled** `-d0_sub0` / `-beta_sub0`. The run header also
+  prints `beta_sub (SCALED = beta0*rho_vs/rho_ice = beta_HK)`; that is the
+  Hertz-Knudsen coefficient and pairs with an absolute density difference, not
+  with a `sigma`-normalised one. Confusing them is an error of `rho_ice/rho_vs`,
+  about 1e6.
+- `sigma` and `d0*chi` agree to roughly 10 %, so `v_n` is their residual and a
+  1 % error in `sigma` is a ~10 % error in `v_n`. `sigma` is therefore read by
+  extrapolating the vapour-side profile back to the `phi=0.5` crossing, not by
+  sampling at a fixed standoff. The script prints how far the prediction moves
+  under the alternative readings — read that line before trusting the ratio.
+
+The script only fires where `-wedge_apex_x` is declared; both run drivers gate
+on it, so other geometries skip silently.
 
 ### `pplib.py`
 
