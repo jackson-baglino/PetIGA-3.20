@@ -33,6 +33,20 @@ CONVENTIONS (from src/lunar_main.c:822-833 and src/assembly.c:166-180)
     sigma-normalised driving force.  Using it is wrong by rho_ice/rho_vs,
     about 1e6.
 
+WHAT THE ANSWER TURNED OUT TO BE, on batch_2026-08-07__07.26.38_wedge_bc.
+Fitting sigma = beta*v_n + d0*chi freely over all nine runs and both fronts
+recovers d0 to 0.05% of -d0_sub0 -- the curvature physics is exact -- while
+beta comes out 1.22x the requested -beta_sub0, and lands within 0.3% of
+
+    beta_bare = tau_sub*d0_sub0/eps^2 = beta_sub0 + a1*a2*eps*(1/D_T + 1/D_v)*rho_ice/rho_vs
+
+i.e. tau_sub's two a2 thin-interface corrections are added but never subtracted
+back off by the asymptotics, so the solver runs 18% slow against the beta you
+asked for.  The summary prints beta_eff/beta_bare for exactly this reason: when
+it reads ~1.00, the shortfall is a calibration artifact, not model physics.
+The deficit is a constant FACTOR, not a friction -- it is identical on fronts
+whose speeds differ 60x -- which is what rules out grid pinning.
+
 SIGMA AT THE INTERFACE.  sigma is read by fitting a line to sigma(x) on the
 VAPOUR side, over [lo, hi] * eps out from the crossing, and evaluating that
 fit AT the crossing.  This matters more than it looks: sigma and d0*chi agree
@@ -42,13 +56,24 @@ supersat_probes.py convention) moves the prediction by ~20%.  The direct
 phi=0.5 sample is carried in the CSV as a cross-check; on well-resolved data
 the two agree to better than 0.1%.
 
-THE RIPPLE IN THE MEASURED CURVE IS NOT PHYSICS.  A meniscus that travels a
-few micrometres over the whole run crosses only a handful of cells, and the
-sub-cell interpolated crossing carries a small periodic bias as it does -- the
-same discretised-extremum bias analyze_interface.py warns about, differentiated.
-It shows up as a few-percent oscillation in v_n at the period of one cell
-crossing.  --vn-window widens the sliding fit against it; the summary uses
-medians, which are insensitive to it.  Do not read it as a growth cycle.
+THE RIPPLE IN THE MEASURED CURVE IS NOT PHYSICS, AND EACH FRONT HAS ITS OWN
+PERIOD.  Measured over the whole batch: |v_n| * T_ripple = 6.0e-7 m for every
+moving front, i.e. one cycle per CONTROL-POINT SPACING traversed (0.90-1.06 x
+dx over twelve fronts).  So the period is dx/|v_n| and the two fronts differ
+simply because they move at different speeds -- nothing is oscillating.
+
+It is a reading artifact, not lattice pinning, and the wiggle in r(t) shrinks
+as the reading improves (rhov_eq_eq, as a fraction of dx):
+
+    control net, 2-pt linear   0.0026     true NURBS 4x, 2-pt linear  0.0012
+    control net, tanh fit      0.0009     true NURBS 4x, tanh fit     0.0002
+
+Real stick-slip would be identical in all four.  Two effects compound: the .vts
+carries p=2 B-spline CONTROL COEFFICIENTS rather than field values (worth ~1e-9 m
+of position error, which drifts in phase as the interface crosses the grid), and
+a 0.5 crossing read from two samples is biased by where those samples fall.
+Hence the default `--interface tanh`.  The summary uses medians, which are
+insensitive to it either way; --vn-window widens the sliding fit further.
 
 Usage:
     python3 postprocess/wedge_gt_velocity.py --dir <run> --save <run>/plots/x.png
@@ -139,6 +164,28 @@ def crossings(x, y, level=0.5):
         return np.empty(0)
     f = (level - y[s]) / (y[s + 1] - y[s])
     return x[s] + f * (x[s + 1] - x[s])
+
+
+def refine_tanh(x, phi, x0, eps, half_width=6.0, lo=0.02, hi=0.98):
+    """Interface position from the whole diffuse band, not two samples.
+
+    The equilibrium profile of this model's half-normalised well is
+    phi = 0.5*(1 + tanh(x/(2*eps))), so atanh(2*phi - 1) is EXACTLY linear in x
+    across the interface. Fitting that line over the band and taking its zero
+    uses ~13 samples where the 0.5 crossing uses 2, which matters here: v_n is
+    a time derivative of this position, so a bias that repeats with the sample
+    grid shows up as a periodic ripple at the period of one cell crossing.
+    Measured on rhov_eq_eq, this cuts that ripple 3x on control-net data and
+    6x on true-NURBS data. Falls back to `x0` if the band is too thin to fit.
+    """
+    m = (np.abs(x - x0) < half_width * eps) & (phi > lo) & (phi < hi)
+    if m.sum() < 5:
+        return x0
+    z = np.arctanh(np.clip(2.0 * phi[m] - 1.0, -1.0 + 1e-12, 1.0 - 1e-12))
+    slope, intercept = np.polyfit(x[m] - x0, z, 1)
+    if not np.isfinite(slope) or slope == 0.0:
+        return x0
+    return x0 - intercept / slope
 
 
 def centreline_weights(Y, y0):
@@ -246,11 +293,50 @@ def sliding_slope(t, y, win):
     return out
 
 
+def beta_bare(opts, eps, d0, rho_air):
+    """The kinetic coefficient this discretisation actually delivers.
+
+    lunar_main.c:822-833 builds
+
+        tau_sub = eps*lambda*( beta_sub/a1 + a2*eps/diff_sub + a2*eps/dif_vap )
+
+    where the two a2 terms are Karma-Plapp thin-interface corrections: tau is
+    inflated by exactly the amount the sharp-interface asymptotics are then
+    supposed to subtract back off, so that the realised kinetic coefficient
+    comes out at the requested beta_sub0. If that subtraction does not happen,
+    the interface responds to the UNCORRECTED coefficient
+
+        beta_bare = a1*tau_sub/(lambda_sub*eps) = tau_sub*d0_sub0/eps^2
+
+    which is beta_sub0 + a1*a2*eps*(1/diff_sub + 1/dif_vap)*rho_ice/rho_vs.
+    Returns (beta_bare, share_thermal, share_vapour) with the two corrections
+    as fractions of the bracket -- i.e. of how much of the deficit each owns.
+    Returns (None, ...) if a material constant is missing.
+    """
+    a1, a2 = 5.0, 0.1581
+    g = lambda k, d: opt_float(opts, k, d)
+    k_ice, k_air = g("-thcond_ice", 2.29), g("-thcond_air", 0.02)
+    cp_ice, cp_air = g("-cp_ice", 1.96e3), g("-cp_air", 1.044e3)
+    rho_ice, Dv = g("-rho_ice", 919.0), g("-dif_vap", 2.178e-5)
+    beta0 = opt_float(opts, "-beta_sub0")
+    T0 = opt_float(opts, "-temp")
+    if None in (beta0, T0) or d0 is None:
+        return None, None, None
+
+    D_T = 0.5 * (k_air / rho_air / cp_air + k_ice / rho_ice / cp_ice)
+    rr = rho_ice / rho_vs(T0, rho_air)
+    t_kin = (beta0 / rr) / a1
+    t_therm = a2 * eps / D_T
+    t_vap = a2 * eps / Dv
+    total = t_kin + t_therm + t_vap
+    return beta0 * total / t_kin, t_therm / total, t_vap / total
+
+
 # ---------------------------------------------------------------------------
 # Core
 # ---------------------------------------------------------------------------
 def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
-            curv_frac=0.2, vn_win=21, progress=True):
+            curv_frac=0.2, vn_win=21, interface="tanh", progress=True):
     opts = read_opts_ordered(run_dir)
 
     for dead in ("-mob_sub", "-alph_sub"):
@@ -329,6 +415,9 @@ def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
             continue
 
         xl, xr = float(c[0]), float(c[1])
+        if interface == "tanh":
+            xl = refine_tanh(x, phi_c, xl, eps)
+            xr = refine_tanh(x, phi_c, xr, eps)
         rl, rr = xl - apex_x, xr - apex_x
         # Outward normal points AWAY from the ice: -x on the inner face, +x on
         # the outer one.  chi follows: inner meniscus concave, outer convex.
@@ -390,7 +479,10 @@ def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
     data["vn_left_meas"] = -sliding_slope(t, data["r_left"], vn_win)
     data["vn_right_meas"] = +sliding_slope(t, data["r_right"], vn_win)
 
+    b_bare, sh_T, sh_v = beta_bare(opts, eps, d0, rho_air)
     meta = dict(run_dir=run_dir, source=source, eps=eps, Ly=Ly, d0=d0, beta=beta,
+                interface=interface,
+                beta_bare=b_bare, share_thermal=sh_T, share_vapour=sh_v,
                 T0=T0, rho_air=rho_air, apex_x=apex_x, apex_y=apex_y,
                 n_snapshots=len(rows), sigma_win=sigma_win, curv_frac=curv_frac,
                 vn_win=vn_win,
@@ -436,6 +528,7 @@ def summarise(data, meta, skip):
     print(f"  apex          : ({meta['apex_x']:.4e}, {meta['apex_y']:.4e}) m")
     print(f"  eps           : {meta['eps']:.4e} m      T0 = {meta['T0']:.2f} C")
     print(f"  d0_sub0       : {d0:.4e} m       beta_sub0 = {beta:.4e} s/m  (UNSCALED)")
+    print(f"  interface     : {meta['interface']} locator")
     print(f"  vapour BC     : -flag_BC_rhovfix {flag}, rhovfix_lo {lo}, rhovfix_hi {hi}")
     print("-" * 74)
     print(f"  {'':14s}{'LEFT (inner, concave)':>26s}{'RIGHT (outer, convex)':>26s}")
@@ -464,6 +557,18 @@ def summarise(data, meta, skip):
                           / data["vn_right_meas"])[keep])
     row("beta_eff [s/m]", beta_eff_l, beta_eff_r)
     row("beta_eff/beta0", beta_eff_l / beta, beta_eff_r / beta, "{:+.4f}")
+
+    bb = meta.get("beta_bare")
+    if bb:
+        print("-" * 74)
+        print(f"  beta_bare = tau_sub*d0_sub0/eps^2 = {bb:.4e} s/m = {bb / beta:.4f} x beta_sub0")
+        print("    = the coefficient this discretisation delivers if the two a2")
+        print("      thin-interface terms in tau_sub are never subtracted back off.")
+        print(f"    Their share of tau_sub's bracket: {100 * meta['share_thermal']:.1f} % thermal "
+              f"(a2*eps/diff_sub), {100 * meta['share_vapour']:.1f} % vapour (a2*eps/dif_vap).")
+        row("beta_eff/beta_bare", beta_eff_l / bb, beta_eff_r / bb, "{:+.4f}")
+        print("    If those two read ~1.00, the deficit above is NOT physics: the solver")
+        print("    is hitting beta_bare, and beta_sub0 is not the kinetics you got.")
 
     print("-" * 74)
     print("  Sensitivity of v_n,pred -- the residual above is a small difference of")
@@ -505,6 +610,13 @@ def make_figure(data, meta, skip, save, title=None):
     ax[0].set_title("Measured vs. predicted normal velocity", fontsize=10, loc="left")
 
     ax[1].axhline(1.0, color="0.4", lw=1.0, ls="--", label="perfect agreement")
+    bb = meta.get("beta_bare")
+    if bb:
+        # Where the ratio lands if tau_sub's a2 thin-interface terms are added
+        # but never subtracted back off, i.e. the solver realises beta_bare
+        # instead of the beta_sub0 the prediction assumes.
+        ax[1].axhline(meta["beta"] / bb, color="0.25", lw=1.2, ls=":",
+                      label=rf"$\beta_0/\beta_{{\rm bare}}$ = {meta['beta'] / bb:.3f}")
     for c, side, lab in ((cl, "left", "left"), (cr, "right", "right")):
         ax[1].plot(t[k], (data[f"vn_{side}_meas"] / data[f"vn_{side}_pred"])[k],
                    "-", lw=1.4, color=c, label=lab)
@@ -562,6 +674,10 @@ def main(argv=None):
     p.add_argument("--curv-window", type=float, default=0.2,
                    help="half-height of the circle-fit window as a fraction of the "
                         "meniscus radius (default: 0.2)")
+    p.add_argument("--interface", default="tanh", choices=("tanh", "linear"),
+                   help="interface locator: 'tanh' fits atanh(2*phi-1) across the "
+                        "whole band (default, ~3x less sample-grid ripple in v_n); "
+                        "'linear' interpolates the two samples straddling phi=0.5")
     p.add_argument("--vn-window", type=int, default=21,
                    help="snapshots in the sliding fit for measured v_n (default: 21)")
     p.add_argument("--title", default=None, help="figure title override")
@@ -571,7 +687,8 @@ def main(argv=None):
     run = os.path.abspath(a.dir)
     data, meta = analyse(run, source=a.source, stride=a.stride,
                          sigma_win=tuple(a.sigma_window), curv_frac=a.curv_window,
-                         vn_win=a.vn_window, progress=not a.quiet)
+                         vn_win=a.vn_window, interface=a.interface,
+                         progress=not a.quiet)
 
     write_csv(data, a.save_csv or os.path.join(run, CSV_NAME))
     make_figure(data, meta, a.skip,

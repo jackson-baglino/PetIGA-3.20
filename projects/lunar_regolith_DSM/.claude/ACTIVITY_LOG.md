@@ -1,3 +1,55 @@
+## 2026-08-25 (b) — The 19% GT deficit is tau_sub, and the ripple is the reading
+
+Follow-up to the entry below. Both open questions from it are now closed.
+
+- **The deficit is a calibration artifact, not model physics.** Fitting
+  `sigma = beta*v_n + d0*chi` freely over all nine runs x both fronts x 1000
+  snapshots (n=3492, cond 2.6 — the two fronts have opposite-sign chi, so it is
+  well posed) gives `d0_fit = 1.0171e-9` (**1.0005 x -d0_sub0**) and
+  `beta_fit = 7.227e5` (**1.2205 x -beta_sub0**). So the curvature physics is
+  exact to 0.05 % and the entire shortfall sits in beta.
+- **beta lands on the BARE Karma-Plapp coefficient.**
+  `beta_bare = tau_sub*d0_sub0/eps^2 = 7.2036e5`; `beta_fit/beta_bare = 1.0033`.
+  `lunar_main.c:822-833` builds `tau_sub = eps*lambda*(beta_sub/a1 +
+  a2*eps/diff_sub + a2*eps/dif_vap)`, inflating tau by the two thin-interface
+  corrections so the asymptotics can subtract them back off and land on
+  `beta_sub0`. **The subtraction never happens.** At this (eps, T) the two terms
+  are 13.1 % (thermal) and 4.7 % (vapour) of the bracket, so
+  `beta_bare/beta_sub0 = 1.2165` and the predicted ratio is `0.8220` — measured
+  0.8259 (left, six clean runs) and 0.8109 (right). Reproduced tau_sub,
+  lambda_sub and mob_sub to five digits against outp.txt first, so this is the
+  code's own arithmetic, not a re-derivation.
+- **Why it plausibly does not cancel** (not proven, and worth saying so): the
+  thermal correction is the larger of the two and these runs have **no thermal
+  field at all** — T is Dirichlet-pinned and flat to 1.2e-7 C over 90 days. The
+  vapour correction uses the unscaled `dif_vap` while the residual runs vapour
+  diffusion at `xi_v = 1e-3`, and the vapour field is one-sided (`phi_aef`),
+  the case that needs an anti-trapping current the solver does not have.
+- **Grid pinning is ruled out.** The deficit is a constant FACTOR, identical on
+  fronts whose speeds differ 60x. A friction/threshold would not behave that way.
+- **Untested away from this parameter point.** The cheap falsifier is a short
+  wedge run at `-beta_sub0 5.9216e4`: predicted ratio **0.316**, and it runs
+  3.8x faster so ~25 days of sim time suffices. If it comes back 0.82, the
+  tau_sub story is wrong.
+- **The v_n ripple is the interface reading, not the ice.** `|v_n| * T_ripple =
+  6.0e-7 m` on every moving front (0.90-1.06 x the control-point spacing over
+  twelve fronts), so the period is `dx/|v_n|` and the two fronts differ only
+  because they move at different speeds. Confirmed it is extraction, not lattice
+  pinning, by measuring the wiggle in r(t) four ways on rhov_eq_eq (as a
+  fraction of dx): control-net 2-pt linear 0.0026, control-net tanh 0.0009,
+  true-NURBS 2-pt 0.0012, true-NURBS tanh 0.0002. Real stick-slip would be
+  identical in all four. Two causes compound: `.vts` carries p=2 B-spline
+  CONTROL COEFFICIENTS, not field values (~1e-9 m of position error that drifts
+  in phase as the interface crosses the grid), and a two-sample 0.5 crossing is
+  biased by where those samples fall.
+- **Changes to `wedge_gt_velocity.py`**: new default `--interface tanh` (fits
+  `atanh(2*phi-1)` across the whole band; cuts the v_n ripple from ~2-3 % to
+  ~0.6 %, medians unchanged); reports `beta_bare`, `beta_eff/beta_bare` and the
+  thermal/vapour split of the tau_sub bracket; draws `beta_sub0/beta_bare` as a
+  reference line on the ratio panel, which the measurement sits on.
+
+---
+
 ## 2026-08-25 — Gibbs-Thomson v_n check on the wedge menisci
 
 - **New `postprocess/wedge_gt_velocity.py`**: measures the normal velocity of

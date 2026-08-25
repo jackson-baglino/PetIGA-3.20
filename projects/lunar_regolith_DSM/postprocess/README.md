@@ -93,6 +93,36 @@ wrong and both change the answer by tens of percent:
   sampling at a fixed standoff. The script prints how far the prediction moves
   under the alternative readings — read that line before trusting the ratio.
 
+**`tau_sub` does not deliver the `beta_sub0` you asked for.** On the wedge batch
+the solver runs 18 % slow against Gibbs-Thomson, and the whole shortfall is in
+the kinetic coefficient: fitting `sigma = beta*v_n + d0*chi` freely recovers
+`d0` to 0.05 % but puts `beta` within 0.3 % of
+
+```
+beta_bare = tau_sub*d0_sub0/eps^2 = beta_sub0 + a1*a2*eps*(1/diff_sub + 1/dif_vap)*rho_ice/rho_vs
+```
+
+`lunar_main.c:822-833` inflates `tau_sub` by those two `a2` Karma-Plapp
+thin-interface terms so the asymptotics can subtract them back off and land on
+`beta_sub0`. The measurement says the subtraction never happens — the interface
+responds to the uncorrected coefficient. At `eps = 8.58e-7 m`, `T = -20 C` the
+two terms are 13.1 % (thermal) and 4.7 % (vapour) of `tau_sub`'s bracket, hence
+`beta_bare/beta_sub0 = 1.217` and a ratio of `0.822`. `wedge_gt_velocity.py`
+prints `beta_eff/beta_bare` and draws `beta_sub0/beta_bare` on the ratio panel:
+when the measurement sits on that line, the shortfall is calibration, not physics.
+
+The deficit is a constant factor, not a friction — identical on fronts whose
+speeds differ 60x — which rules out grid pinning. It is untested away from this
+`(eps, beta_sub0, T)` point; the cheap falsifier is a short run at
+`-beta_sub0 5.9216e4`, which predicts a ratio of **0.316**, not 0.82.
+
+**The ripple in `v_n` is the reading, not the ice.** `|v_n| * T_ripple` equals
+one control-point spacing on every moving front, so each front ripples at its
+own period `dx/|v_n|`. It comes from `.vts` carrying p=2 B-spline control
+coefficients rather than field values, compounded by locating `phi=0.5` from
+two samples. The default `--interface tanh` fits `atanh(2*phi-1)` across the
+whole band and cuts it ~3x; `--source vtkOut_highres` cuts it a further ~5x.
+
 The script only fires where `-wedge_apex_x` is declared; both run drivers gate
 on it, so other geometries skip silently.
 
