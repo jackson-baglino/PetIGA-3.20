@@ -12,8 +12,10 @@ raw times are not comparable and neither is any exponent fitted against them.
 Both series are therefore shifted to the same anchor: t' = 0 is defined as the
 moment each curve passes the SAME neck width (default 32.81 um, their first
 measurement). For the model that instant is found by linear interpolation
-between snapshots; for the experiment it is t = 0 by construction. After the
-shift the two curves are directly comparable, which is the whole point.
+between snapshots; for a run that STARTS above the anchor (the pre-necked
+screening geometries begin at 44 um) it is found by inverting the fit, and the
+figure says so. For the experiment it is t = 0 by construction. Either way t = 0
+is the same physical neck width on every curve, which is the whole point.
 
 THE FIT
 -------
@@ -89,6 +91,29 @@ def anchor_time(t, w, target):
     return None
 
 
+def anchor_time_extrapolated(t, w, target):
+    """
+    Time at which the FITTED power law would have reached `target`, for runs
+    that START above it.
+
+    The pre-necked screening geometries begin at 44 um width, above Molaro's
+    first measured 32.81 um, so there is no crossing to interpolate. Anchoring
+    on the run's own first point instead silently compares two different
+    stretches of a decelerating curve -- the exponent is window-dependent, so
+    that manufactures a discrepancy out of nothing.
+
+    Inverting the fit keeps t = 0 at the SAME physical neck width for every
+    series, which is what makes the curves comparable at all:
+        r = C*(t + t0)^a   ->   t = (r/C)^(1/a) - t0
+    The result is negative (before the run started) and is an EXTRAPOLATION;
+    the caller labels it as such on the figure.
+    """
+    f = fit_d_free(t - t[0], w / 2.0)
+    if not f or f["a"] <= 0 or f["C"] <= 0:
+        return None
+    return (target / 2.0 / f["C"]) ** (1.0 / f["a"]) - f["t0"] + t[0]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -110,17 +135,24 @@ def main():
     tm, wm = read_model(args.run_dir)
     td, wd = read_experiment(data_path)
 
-    t_star = anchor_time(tm, wm, args.anchor_width)
+    anchor = args.anchor_width
+    extrapolated = False
+    t_star = anchor_time(tm, wm, anchor)
     if t_star is None:
-        print(f"  NOTE: the model neck never reaches the anchor "
-              f"{args.anchor_width*1e6:.2f} um "
-              f"(it spans {wm.min()*1e6:.2f}–{wm.max()*1e6:.2f} um).")
-        print("  Falling back to anchoring on the model's FIRST point, so the")
-        print("  curves start together but the comparison is not yet on their")
-        print("  measured range. Run longer for a real comparison.")
+        t_star = anchor_time_extrapolated(tm, wm, anchor)
+        extrapolated = t_star is not None
+        if extrapolated:
+            print(f"  NOTE: the run spans {wm.min()*1e6:.2f}-{wm.max()*1e6:.2f}"
+                  f" um and never crosses the {anchor*1e6:.2f} um anchor.")
+            print("  t = 0 is placed by INVERTING THE FIT, so both curves still"
+                  " start at the same width.")
+            print(f"  The model curve therefore begins at t = "
+                  f"{(tm[0]-t_star)/60.0:.1f} min, not 0 -- that offset is "
+                  f"extrapolated, not simulated.")
+    if t_star is None:
+        print("  Fit inversion failed; anchoring on the model's first point. "
+              "The curves are NOT on a common width.")
         t_star, anchor = tm[0], wm[0]
-    else:
-        anchor = args.anchor_width
     td_star = anchor_time(td, wd, anchor) or td[0]
 
     tm_s, td_s = tm - t_star, td - td_star
@@ -177,7 +209,8 @@ def main():
                               else wd.min()) * 1e6, 1.08 * top * 1e6)
 
     ax.axvline(0.0, color=C_MUTED, lw=0.8, ls=(0, (1, 3)), zorder=1)
-    ax.annotate(f"clocks aligned at {anchor*1e6:.2f} $\\mu$m",
+    ax.annotate(f"clocks aligned at {anchor*1e6:.2f} $\\mu$m"
+                + ("\n(model back-extrapolated to it)" if extrapolated else ""),
                 (0.0, ax.get_ylim()[0]), textcoords="offset points",
                 xytext=(6, 8), fontsize=8, color=C_INK)
 
