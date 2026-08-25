@@ -32,7 +32,8 @@ eps -- inflates the integral, so early-time values read high. It is a
 diagnostic of the diffuse field, not a substitute for measuring a contour.
 
 Under -axisym the integrals carry a 2*pi*r weight, so column 0 is already a
-true 3D area and the same factor applies.
+true 3D area in m^2 and the same factor applies -- the axis label and the
+analytic reference both follow -axisym, not -dim.
 
 Usage:
     python3 plot_ssa.py --dir <run> [--save <png>] [--time-unit h]
@@ -59,7 +60,14 @@ INTERFACE_FACTOR = 6.0
 def analytic_initial_area(run_dir):
     """Initial ice-air surface from the packing, or None.
 
-    2D: sum of circumferences, 2*pi*r. 3D: sum of sphere areas, 4*pi*r^2.
+    Planar 2D: sum of circumferences, 2*pi*r [m]. 3D AND AXISYMMETRIC: sum of
+    sphere areas, 4*pi*r^2 [m^2].
+
+    AXISYMMETRIC RUNS ARE 3D. Integration() in src/assembly.c carries a 2*pi*r
+    weight under -axisym, so column 0 of SSA_evo.dat is a true 3D area even
+    though -dim is 2. Branching on -dim alone divided an area in m^2 by a
+    length in m -- for the Molaro pair that is 1.94e-07 over 1.09e-03, so the
+    "fraction of starting surface" read ~1.8e-04 instead of ~1.
     Grains in contact overlap slightly at their necks, so this is a mild
     OVERESTIMATE of the true free surface -- it is a reference scale, not a
     measurement.
@@ -67,8 +75,10 @@ def analytic_initial_area(run_dir):
     radii = grain_radii(run_dir)
     if radii is None or len(radii) == 0:
         return None, 0
-    dim = int(opt_float(read_opts(run_dir), "-dim", 2) or 2)
-    if dim >= 3:
+    opts = read_opts(run_dir)
+    dim = int(opt_float(opts, "-dim", 2) or 2)
+    axisym = opts.get("-axisym", "0") not in ("0", "")
+    if dim >= 3 or axisym:
         return float(np.sum(4.0 * math.pi * radii ** 2)), len(radii)
     return float(np.sum(2.0 * math.pi * radii)), len(radii)
 
@@ -153,8 +163,10 @@ def main(argv=None):
     unit = a.time_unit or auto_time_unit(float(t.max()) if len(t) else 0.0)
     tt = in_time_unit(t, unit)
 
-    dim = int(opt_float(read_opts(a.dir), "-dim", 2) or 2)
-    unit_label = "m$^2$" if dim >= 3 else "m"
+    _opts = read_opts(a.dir)
+    dim = int(opt_float(_opts, "-dim", 2) or 2)
+    _axisym = _opts.get("-axisym", "0") not in ("0", "")
+    unit_label = "m$^2$" if (dim >= 3 or _axisym) else "m"
 
     a0, n_grains = analytic_initial_area(a.dir)
 

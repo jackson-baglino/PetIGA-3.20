@@ -146,6 +146,16 @@ def grain_radii(run_dir: str):
     opts = read_opts(run_dir)
     rel = opts.get("-grains_file", "").strip()
     if not rel:
+        # The multi_grains geometries (Molaro pair, and every -ic_type
+        # multi_grains run) list radii inline instead of pointing at a packing
+        # file. Without this the callers silently lost their reference scale.
+        inline = opts.get("-ice_grain_R", "").strip()
+        if inline:
+            try:
+                vals = [float(v) for v in inline.replace(",", " ").split()]
+            except ValueError:
+                return None
+            return np.array(vals) if vals else None
         return None
 
     candidates = [os.path.join(run_dir, os.path.basename(rel)), rel]
