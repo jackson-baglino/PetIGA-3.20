@@ -8,124 +8,134 @@
 \setlength{\parskip}{0.45em}\setlength{\parindent}{0pt}
 \newcommand{\code}[1]{\texttt{\small #1}}
 \newcommand{\vn}{v_n}
+\newcommand{\bsub}{\beta_{\mathrm{sub0}}}
+\newcommand{\bbare}{\beta_{\mathrm{bare}}}
 
-\title{\vspace{-1.4cm}\textbf{Where the wedge Gibbs--Thomson deficit comes from}\\
-\large A phase-field calibration audit of \code{lunar\_regolith\_DSM}}
-\author{\normalsize Working note — batch \code{2026-08-07\_\_07.26.38\_wedge\_bc}}
+\title{\vspace{-1.4cm}\textbf{The solver does not deliver the $\bsub$ it is given}\\
+\large Diagnosis and remediation plan for \code{lunar\_regolith\_DSM}}
+\author{\normalsize Working note — evidence from batch \code{2026-08-07\_\_07.26.38\_wedge\_bc}}
 \date{\normalsize 2026-08-25}
 
-\begin{document}\maketitle\vspace{-0.8cm}
+\begin{document}\maketitle\vspace{-0.7cm}
 
-\section{The measurement}
+\begin{center}\fbox{\parbox{0.93\textwidth}{\small
+\textbf{Summary.} The realised kinetic coefficient is $1.22\times$ the requested
+\code{-beta\_sub0}, so every run sublimates and deposits $18\,\%$ slower than intended.
+The capillary length $d_0$ is exact. The excess is precisely the two Karma--Plapp
+thin-interface corrections that \code{lunar\_main.c:829} adds to $\tau_{\mathrm{sub}}$ for
+the asymptotics to subtract back off --- and which the measurement says are never
+subtracted. One of the two (the thermal one, 13.1 of the 17.8 points) is wrong on its
+face and should be fixed regardless. The fix is to $\tau_{\mathrm{sub}}$, not to the
+Gibbs--Thomson prediction, which is correct as written.}}\end{center}
 
-The wedge geometry places an apex-centred ice annulus in a tapering pore, with the
-virtual apex at $y=L_y/2$. On the centreline the interface normal is therefore
-\emph{exactly} $\pm\hat{x}$, so $\vn$ reduces to a one-dimensional displacement rate.
-\code{postprocess/wedge\_gt\_velocity.py} measures it and compares against
+\section{What was measured}
+
+The wedge geometry places an apex-centred ice annulus in a tapering pore with the virtual
+apex at $y=L_y/2$, so on the centreline the interface normal is \emph{exactly} $\pm\hat x$
+and $\vn$ is a one-dimensional displacement rate.
+\code{postprocess/wedge\_gt\_velocity.py} measures it on both menisci of all nine runs and
+compares against
 \begin{equation}
-\vn=\frac{\sigma\,\rho_{vs}(T)/\rho_{vs}(T_0)-d_{0,\mathrm{sub0}}\,\chi}{\beta_{\mathrm{sub0}}},
+\vn=\frac{\sigma\,\rho_{vs}(T)/\rho_{vs}(T_0)-d_{0,\mathrm{sub0}}\,\chi}{\bsub},
 \qquad \sigma=\frac{\rho_v-\rho_{vs}(T)}{\rho_{vs}(T)} .
+\label{eq:gt}
 \end{equation}
-Across all nine runs the solver recovers $0.826$ (inner) / $0.811$ (outer) of that rate,
-flat over 90 days and flat across a residual driving force $\sigma-d_0\chi$ spanning two
-orders of magnitude.
+The solver recovers $0.826$ (inner) / $0.811$ (outer) of that rate --- flat over 90 days,
+and flat across nine vapour-boundary combinations whose residual driving force
+$\sigma-d_0\chi$ spans two orders of magnitude. Interface-extraction noise is $0.5\,\%$
+against an $18\,\%$ effect, and three independent $\vn$ estimators agree on the median to
+$1\,\%$, so the shortfall is not a measurement artifact.
 
-\textbf{Free two-parameter fit.} Regressing $\sigma=\beta \vn+d_0\chi$ over all nine runs
-$\times$ both fronts $\times$ 1000 snapshots ($n=3492$; condition number 2.6, because the
-two fronts carry opposite-sign $\chi$):
-\begin{center}\begin{tabular}{lrr}\toprule
- & fitted & vs.\ requested \\ \midrule
-$d_0$   & $1.0171\times10^{-9}$ m   & $\mathbf{1.0005}\times$ \code{-d0\_sub0} \\
-$\beta$ & $7.227\times10^{5}$ s/m   & $\mathbf{1.2205}\times$ \code{-beta\_sub0} \\ \bottomrule
+\section{The regression: which coefficient is wrong}
+
+Rather than assume Eq.~\eqref{eq:gt} and read off a ratio, fit both coefficients freely.
+Every snapshot supplies a triple $(\sigma,\vn,\chi)$, so
+\begin{equation}
+\sigma \;=\; \beta\,\vn \;+\; d_0\,\chi \qquad\text{(no intercept)}
+\end{equation}
+is an ordinary two-column least-squares problem. \textbf{The design is identifiable
+because the two menisci carry opposite-sign curvature} --- the inner one is concave, the
+outer convex --- while the $3\times3$ reservoir grid moves $\vn$ at nearly fixed $\chi$.
+Those are two genuinely different directions:
+\begin{center}\begin{tabular}{lr}\toprule
+$\chi$ spans & $-5.259\times10^{3}$ \ldots\ $+3.459\times10^{3}$ m$^{-1}$ \\
+$\vn$ spans  & $-1.459\times10^{-12}$ \ldots\ $+1.378\times10^{-12}$ m/s \\
+$\mathrm{corr}(\vn,\chi)$ & $-0.7095$ \quad(correlated, but far from collinear) \\
+condition number & $2.58$ \\ \bottomrule
 \end{tabular}\end{center}
-The curvature physics is exact to $0.05\,\%$. The entire deficit lives in $\beta$.
+
+Fitting $n=3492$ points (nine runs $\times$ two fronts $\times$ every fifth snapshot after
+the initial transient):
+\begin{center}\small\begin{tabular}{lrrrr}\toprule
+ & $\beta$ [s/m] & $\times\,\bsub$ & $d_0$ [m] & $\times\,d_{0,\mathrm{sub0}}$\\ \midrule
+pooled, both fronts & $7.2324\times10^{5}\pm1.8\times10^{2}$ & \textbf{1.2214} & $1.0172\times10^{-9}\pm3.5\times10^{-14}$ & \textbf{1.0006}\\
+left front only     & $7.1384\times10^{5}\pm1.6\times10^{2}$ & 1.2055 & $1.0166\times10^{-9}\pm2.7\times10^{-14}$ & 1.0000\\
+right front only    & $7.2716\times10^{5}\pm1.3\times10^{2}$ & 1.2280 & $1.0167\times10^{-9}\pm3.5\times10^{-14}$ & 1.0001\\ \bottomrule
+\end{tabular}\end{center}
+
+$R^2=0.999997$ pooled; the rms residual is $5.4\times10^{-9}$, i.e.\ $0.14\,\%$ of
+$|\sigma|$. Holding $d_0$ fixed at \code{-d0\_sub0} and fitting $\beta$ alone gives
+$7.2106\times10^{5}$, within $0.3\,\%$ of the free fit --- the two parameters are not
+trading off against each other.
+
+\textbf{Robustness.} Leave-one-run-out (drop each of the nine in turn and refit) moves
+$\beta$ over $7.2204$--$7.2419\times10^{5}$, a spread of $0.30\,\%$ of the mean. No single
+vapour-BC condition drives the result. The residual left/right split ($1.206$ vs $1.228$)
+is $\pm1\,\%$ and is consistent with the quoted $\sigma$-extraction sensitivity
+($0.7\,\%$ left, $0.3\,\%$ right).
+
+\textbf{Conclusion.} $d_0$ is recovered to $0.06\,\%$. The Gibbs--Thomson \emph{curvature}
+physics is exact and the prediction formula is right. The entire deficit lives in $\beta$,
+and it is a clean multiplicative factor of $1.22$.
+
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_regression.pdf}
+\caption{\small Partial-regression views of the same fit. \textbf{Left:} with the fitted
+curvature term removed, $\sigma-d_0\chi$ against $\vn$ is a straight line through the
+origin whose slope is the realised $\beta$. The black fit lies inside the $\bbare$ band
+(orange) and is visibly steeper than the requested $\bsub$ (green dashed).
+\textbf{Right:} with the kinetic term removed, the slope against $\chi$ falls inside the
+$d_{0,\mathrm{sub0}}$ band --- the capillary length is delivered exactly. Both fronts, all
+nine runs, every fifth snapshot.}
+\end{figure}
 
 \section{$\beta$ lands on the \emph{bare} Karma--Plapp coefficient}
 
-The phase equation, after dividing the residual by $3\,\mathrm{mob}/\epsilon$, is
+Dividing the phase residual by $3\,\mathrm{mob}/\epsilon$ gives the Karma--Plapp form
 \begin{equation}
 \tau\,\partial_t\phi=\epsilon^2\nabla^2\phi-f'(\phi)+\lambda\,g(\phi)\,u,
-\qquad u=\frac{\rho_v-\rho_{vs}(T)}{\rho_{\rm ice}} .
+\qquad u=\frac{\rho_v-\rho_{vs}(T)}{\rho_{\rm ice}},
 \end{equation}
-Its sharp-interface limit is $u_{\rm int}=d_0\chi+\beta_{\rm real}V$ with
+whose sharp-interface limit is $u_{\rm int}=d_0\chi+\beta_{\rm real}V$ with
 \begin{equation}
 d_0=\frac{a_1\epsilon}{\lambda},\qquad
-\beta_{\rm real}=\underbrace{\frac{a_1\tau}{\lambda\epsilon}}_{\textstyle \beta_{\rm bare}}-\;C_{\rm corr}.
+\beta_{\rm real}=\underbrace{\frac{a_1\tau}{\lambda\epsilon}}_{\textstyle \bbare}-\;C_{\rm corr}.
+\label{eq:limit}
 \end{equation}
 $C_{\rm corr}$ is an $O(\epsilon)$ term generated by $u$ varying \emph{inside} the diffuse
-interface. \code{lunar\_main.c:829} pre-inflates $\tau$ by precisely what it assumes
-$C_{\rm corr}$ to be, so that the two cancel and $\beta_{\rm real}=\beta_{\rm sub0}$:
+interface. \code{lunar\_main.c:829} pre-inflates $\tau$ by exactly what it assumes
+$C_{\rm corr}$ to be, so that the two cancel and $\beta_{\rm real}=\bsub$:
 \begin{equation}
 \tau_{\rm sub}=\epsilon\lambda\Big(\underbrace{\tfrac{\beta_{\rm sub}}{a_1}}_{82.2\,\%}
 +\underbrace{\tfrac{a_2\epsilon}{\texttt{diff\_sub}}}_{13.1\,\%}
-+\underbrace{\tfrac{a_2\epsilon}{\texttt{dif\_vap}}}_{4.7\,\%}\Big).
++\underbrace{\tfrac{a_2\epsilon}{\texttt{dif\_vap}}}_{4.7\,\%}\Big),
+\qquad
+\bbare=\frac{\tau_{\rm sub}\,d_{0,\mathrm{sub0}}}{\epsilon^2}=7.2036\times10^{5}\ \mathrm{s/m}.
 \label{eq:tau}
 \end{equation}
-Measured: $\beta_{\rm real}=\beta_{\rm bare}$ to $0.3\,\%$, i.e.\ $\mathbf{C_{\rm corr}\approx0}$.
-\textbf{Nothing is subtracted, so the inflation survives}, and
-$\beta_{\rm bare}/\beta_{\rm sub0}=1.2165 \Rightarrow$ predicted ratio $0.8220$.
+The fit gives $\beta/\bbare=1.0040$. \textbf{$C_{\rm corr}\approx0$: nothing is subtracted,
+so the inflation survives intact}, and $\bbare/\bsub=1.2165\Rightarrow$ ratio $0.8220$
+against a measured $0.826/0.811$.
 
-This is a defect in a \emph{model parameter definition}, not in the prediction. The
-prediction is the target physics and it is right; the solver simply does not realise the
-$\beta$ it was asked for.
+This is a defect in a \emph{model parameter definition}. Eq.~\eqref{eq:gt} is the target
+physics and is correct; the solver simply does not realise the $\beta$ it was handed.
 
-\textbf{Grid pinning is ruled out} independently: the deficit is a constant \emph{factor},
-identical on fronts whose speeds differ 60$\times$. A friction or threshold cannot do that.
+\section{Why neither correction materialises}\label{sec:why}
 
-\begin{figure}[t]\centering
-\includegraphics[width=\textwidth]{fig_ladder.pdf}
-\caption{\small \textbf{Left:} the three hypotheses are separated by how the ratio varies
-with $\beta_{\rm sub0}$, because the $a_2$ inflation is additive while $\beta_{\rm sub0}$
-is not. \textbf{Right:} the anatomy of Eq.~\eqref{eq:tau}. The thermal term is the larger
-of the two corrections and is the one that is wrong on its face (\S\ref{sec:thermal}).}
-\end{figure}
-
-\section{$\xi_v$ does \emph{not} enter the interface condition}
-
-In the inner region, moving frame, the vapour equation reads
-\[
-\underbrace{\phi_a\tfrac{V}{W}\partial_\eta\rho_v}_{\rm storage}
-=\underbrace{\tfrac{\xi_v}{W^2}\partial_\eta\!\big(D_v\phi_a\partial_\eta\rho_v\big)}_{\rm diffusion}
-+\underbrace{\xi_v\rho_{\rm ice}\tfrac{V}{W}\partial_\eta\phi}_{\rm ice\ source}.
-\]
-$\xi_v$ multiplies diffusion \emph{and} source identically, so it cancels between them and
-survives only in storage/diffusion, which here is $VW/(\xi_v D_v)=2.4\times10^{-11}$.
-\textbf{The unscaled \code{dif\_vap} in Eq.~\eqref{eq:tau} is correct.} Substituting
-$\xi_v\!\cdot\!$\code{dif\_vap} would be wrong on principle and catastrophic in practice:
-
-\begin{center}\begin{tabular}{lrr}\toprule
-$\tau_{\rm sub}$ bracket & $\beta_{\rm bare}/\beta_0$ & predicted ratio \\ \midrule
-as coded & 1.2165 & 0.8220 \\
-with $a_2\epsilon/(\xi_v\,\texttt{dif\_vap})$ & \textbf{58.13} & \textbf{0.0172} \\ \bottomrule
-\end{tabular}\end{center}
-
-$\xi_v$ would only reach the interface condition once $V\gtrsim \xi_v D_v/\epsilon
-=2.5\times10^{-2}$ m/s --- about $4\times10^{10}$ times the actual velocities.
-
-\subsection{What $\xi_v$ \emph{does} cost: mass conservation}
-The coded vapour equation conserves
-$M_{\rm mod}=\!\int\!\phi_a\rho_v+\xi_v\rho_{\rm ice}\!\int\!\phi$, not the physical
-$M_{\rm phys}=\!\int\!\phi_a\rho_v+\rho_{\rm ice}\!\int\!\phi$. Equivalently, dividing
-through by $\xi_v$: the ice source and the diffusion are physical and only the vapour
-\emph{storage} term is inflated by $1/\xi_v$. So mass is exact in the quasi-static limit,
-which is the regime the model is designed for. Magnitude:
-\begin{center}\begin{tabular}{lrr}\toprule
- & $-20\,^\circ$C & $0\,^\circ$C \\ \midrule
-$M_{\rm vap}/M_{\rm ice}$ & $1.9\times10^{-6}$ & $5.5\times10^{-6}$ \\
-worst-case error, $(1/\xi_v)M_{\rm vap}/M_{\rm ice}$ & $1.9\times10^{-3}$ & $5.5\times10^{-3}$ \\
-observed over 90 d (three runs) & \multicolumn{2}{c}{$1.4$--$4.8\times10^{-5}$} \\ \bottomrule
-\end{tabular}\end{center}
-So: acknowledge and document, do not chase. It is two to three orders of magnitude below
-the effect under investigation. If exact conservation is ever needed, the only real fix is
-$\xi_v=1$ with a stiffer vapour solve --- $\xi_v$ is a stiffness knob
-($D_v/dx^2=5.2\times10^{7}\,$s$^{-1}$ unscaled), and its price is a wrong vapour
-\emph{transient} plus this bounded bookkeeping error.
-
-\section{The thermal $a_2$ term is wrong on its face}\label{sec:thermal}
-
+\subsection{The thermal term is wrong on its face}
 \code{a2*eps/diff\_sub} treats latent heat as if it drove the phase field at unit strength.
 It does not: temperature reaches $u$ only through $\rho_{vs}(T)$, so that channel carries a
-Clausius--Clapeyron factor. Working the inner balance for each channel and reading off
+Clausius--Clapeyron factor. Working the inner balance per channel and reading off
 $\mathrm{d}u/\mathrm{d}(VW)$:
 \begin{center}\begin{tabular}{llr}\toprule
 channel & correct coefficient & value \\ \midrule
@@ -136,94 +146,89 @@ thermal & $(\mathrm{d}\rho_{vs}/\mathrm{d}T)\,L_{\rm sub}/k$ & $1.0\times10^{2}$
 \end{tabular}\end{center}
 Over-weighted by 11$\times$ to 1300$\times$ depending on where in the interface $k$ is
 evaluated --- and \code{ThermalCond} interpolates between the two, so \emph{any} reasonable
-choice leaves this term negligible. That is 13.1 of the 17.8 percentage points, and it is
-wrong regardless of how the asymptotics behave.
+choice leaves this term negligible. This is 13.1 of the 17.8 points and is a defect
+independent of anything else in this note.
 
-The vapour term (the remaining 4.7 points) is structurally \emph{correct} but still is not
-delivered. Most likely --- \textbf{conjecture, not established} --- because vapour diffusion
-is one-sided through \code{phi\_aef}, the case that requires an anti-trapping current the
-solver does not have; the symmetric-model correction simply does not apply there.
+\subsection{The vapour term is right, and still is not delivered}
+It is worth being explicit that $\xi_v$ is \emph{not} implicated here. In the inner region
+$\xi_v$ multiplies the vapour diffusion and the ice source identically, so it cancels
+between them and survives only in storage/diffusion, $VW/(\xi_v D_v)=2.4\times10^{-11}$.
+The unscaled \code{dif\_vap} in Eq.~\eqref{eq:tau} is correct; substituting
+$\xi_v\!\cdot\!$\code{dif\_vap} would put the bracket at $6.36$ instead of $0.133$ and
+predict a $58\times$ shortfall rather than $1.22\times$.
 
-\subsection{Candidate fixes}
-\begin{center}\begin{tabular}{lrr}\toprule
-$\tau_{\rm sub}$ & $\beta_{\rm bare}/\beta_0$ & predicted ratio \\ \midrule
-as coded & 1.2165 & 0.8220 \\
-thermal term fixed (mean $k$) & 1.0572 & 0.9459 \\
-both $a_2$ terms dropped & 1.0000 & 1.0000 \\ \midrule
-\textbf{measured} & --- & \textbf{0.8259 (L) / 0.8109 (R)} \\ \bottomrule
+So the vapour term is structurally sound, yet the measurement says its $4.7$ points are not
+subtracted either. \textbf{Leading hypothesis, not established:} vapour diffusion is
+one-sided through \code{phi\_aef}, and the $-a_1a_2W/D$ correction is derived for the
+symmetric model. The one-sided case requires an anti-trapping current
+(Karma 2001) to remove solute-trapping and interface-stretching terms before a clean
+correction of that form emerges; this solver has no such current, so the symmetric-model
+correction has no reason to apply.
+
+\section{What this has been costing}
+
+$\bsub$ encodes the condensation coefficient, $\beta\propto1/\alpha_c$. A realised
+$\beta$ that is $1.2165\times$ too large is an $\alpha_c$ that is $0.822\times$ too small:
+\begin{center}\begin{tabular}{lr}\toprule
+requested \code{-beta\_sub0} $=5.9216\times10^5$ & $\alpha_c=1.341\times10^{-2}$ \\
+realised $\beta_{\rm eff}=7.2036\times10^5$ & $\alpha_c^{\rm eff}=1.102\times10^{-2}$ \quad(82.2\,\%) \\ \bottomrule
 \end{tabular}\end{center}
 
-\section{$\epsilon$ is not $W_{\rm KP}$ --- but $a_1,a_2$ already absorb it}
-
-This model's well gives the equilibrium profile $\phi=\tfrac12[1+\tanh(x/2\epsilon)]$;
-Karma's gives $\tfrac12[1+\tanh(x/\sqrt2 W)]$. Hence
-\begin{equation}
-\boxed{\;W_{\rm KP}=\sqrt{2}\,\epsilon\;}
-\end{equation}
-Mapping the $[0,1]$ equation onto Karma's $[-1,1]$ form gives
-$\tau_{\rm KP}=2\tau$, $W=\sqrt2\epsilon$, $\lambda_{\rm KP}=\lambda/4$, and therefore
-\begin{align}
-d_0&=a_1^{\rm KP}\tfrac{W}{\lambda_{\rm KP}}
-=0.883883\cdot\sqrt2\cdot 4\cdot\tfrac{\epsilon}{\lambda}=5.0000\,\tfrac{\epsilon}{\lambda}
-&&\text{code: }a_1=5.0 \quad(0.000\,\%)\\
-C_{\rm corr}&=a_1^{\rm KP}a_2^{\rm KP}\tfrac{W}{D}=0.783375\,\tfrac{\epsilon}{D}
-&&\text{code: }a_1a_2=0.7905\quad(0.91\,\%)
-\end{align}
-So the $\sqrt2$ is real and already accounted for. Independently confirmed: the free fit
-recovers $d_0$ to $0.05\,\%$, which is a direct measurement of $a_1=5$.
+Worse, because the inflation is \emph{additive},
+$\beta_{\rm eff}=\bsub+\Delta$ with
+$\Delta=a_1a_2\epsilon\,(1/D_T+1/D_v)\,\rho_{\rm ice}/\rho_{vs}(T)$, so $\Delta$ is a
+\textbf{hard floor on the kinetics the model can represent at all} --- no value of
+\code{-beta\_sub0} can go below it. $\Delta\propto\epsilon$ and $\propto1/\rho_{vs}(T)$,
+so coarser interfaces and colder temperatures are both worse:
+\begin{center}\begin{tabular}{rrrr}\toprule
+$T$ [$^\circ$C] & $\rho_{vs}$ [kg/m$^3$] & $\Delta$ [s/m] & largest reachable $\alpha_c$ \\ \midrule
+$-60$ & $8.885\times10^{-6}$ & $1.225\times10^{7}$ & 0.0006 \\
+$-40$ & $1.055\times10^{-4}$ & $1.031\times10^{6}$ & 0.0077 \\
+$-30$ & $3.123\times10^{-4}$ & $3.484\times10^{5}$ & 0.0228 \\
+$-20$ & $8.487\times10^{-4}$ & $1.282\times10^{5}$ & 0.0619 \\
+$-10$ & $2.139\times10^{-3}$ & $5.086\times10^{4}$ & 0.1561 \\
+$  0$ & $5.047\times10^{-3}$ & $2.156\times10^{4}$ & 0.3684 \\ \bottomrule
+\end{tabular}\end{center}
+(at $\epsilon=8.584\times10^{-7}$ m; halving $\epsilon$ halves every $\Delta$.)
+At $-60\,^\circ$C the floor is $20.7\times$ the reference $\beta$: the model would be
+running kinetics roughly twenty times slower than requested no matter what is asked for.
+\textbf{Any earlier result whose conclusion depends on the absolute rate --- rather than on
+a scaling exponent or a ratio --- should be re-examined against this factor.}
 
 \begin{figure}[t]\centering
 \includegraphics[width=\textwidth]{fig_measure.pdf}
-\caption{\small \textbf{Left:} the measured ratio sits on $\beta_0/\beta_{\rm bare}$ for the
-whole run. \textbf{Right:} the leftover wobble is a deterministic function of where the
-interface sits within a control-point cell --- extraction bias, not ice.}
+\caption{\small \textbf{Left:} the measured ratio tracks $\bsub/\bbare$ for the whole run
+on both fronts. \textbf{Right:} the ceiling on the condensation coefficient implied by
+$\beta_{\rm eff}\ge\Delta$, as a function of temperature and $\epsilon$.}
 \end{figure}
 
-\section{The bumps in $\vn$ are the reading, not the ice}
+\section{What has been ruled out}
 
-The original periodic ripple satisfied $|\vn|\,T_{\rm ripple}=6.0\times10^{-7}$ m on every
-moving front (0.90--1.06 $\times dx$ over twelve fronts): one cycle per control-point
-spacing traversed. Each front has its own period simply because $T=dx/|\vn|$ and the fronts
-move at different speeds. The wobble in $r(t)$ falls 15$\times$ as the reading improves,
-which is what rules out lattice pinning (real stick-slip would be identical in all four):
-\begin{center}\begin{tabular}{lrr}\toprule
-wobble in $r(t)$, units of $dx$ & 2-pt linear & tanh fit \\ \midrule
-control net (p=2 B-spline coefficients) & 0.0026 & 0.0009 \\
-true NURBS, 4$\times$ & 0.0012 & \textbf{0.0002} \\ \bottomrule
-\end{tabular}\end{center}
-Two causes compound: the \code{.vts} carries \emph{control coefficients}, not field values
-($\sim10^{-9}$ m of position error that drifts in phase as the interface crosses the grid),
-and a two-sample $\phi=0.5$ crossing is biased by where those samples fall. The default is
-now \code{--interface tanh}; the residual $\vn$ wobble is $0.5\,\%$ and, as the figure shows,
-still locked to sub-cell phase.
+\begin{itemize}\setlength\itemsep{0.15em}
+\item \textbf{Grid pinning / lattice friction.} The deficit is a constant \emph{factor},
+      identical on fronts whose speeds differ 60$\times$. A threshold or friction cannot
+      behave that way.
+\item \textbf{Interface-extraction bias.} Three independent $\vn$ estimators agree on the
+      median to $1\,\%$; the residual scatter is $0.5\,\%$, zero-mean, and locked to
+      sub-cell phase.
+\item \textbf{A mis-converted $a_1$ or $a_2$.} $\epsilon$ is indeed not the Karma--Plapp
+      $W$ ($W_{\rm KP}=\sqrt2\,\epsilon$), but the constants already absorb it: mapping to
+      Karma's $[-1,1]$ form gives $d_0=a_1^{\rm KP}\sqrt2\cdot4\cdot\epsilon/\lambda
+      =5.0000\,\epsilon/\lambda$ against the coded $a_1=5.0$, and
+      $a_1^{\rm KP}a_2^{\rm KP}\sqrt2=0.78338$ against the coded $a_1a_2=0.7905$
+      ($0.91\,\%$). The free fit recovering $d_0$ to $0.06\,\%$ is an independent
+      measurement of $a_1$.
+\item \textbf{$\xi_v$.} Cancels from the inner balance (\S\ref{sec:why}).
+\end{itemize}
 
-\textbf{Is it biasing the answer? No.} Three independent estimators agree on the median:
-\begin{center}\begin{tabular}{lrr}\toprule
-estimator & median vs.\ reference & wobble \\ \midrule
-position difference + sliding fit (current default) & --- & 0.49\,\% \\
-level set $-\phi_t/\phi_x$, $\phi_x$ from \code{np.gradient} & $+4.5\,\%$ & 0.13\,\% \\
-level set, $\phi_x=1/(4\epsilon)$ analytic & $+1.0\,\%$ & 0.95\,\% \\ \bottomrule
-\end{tabular}\end{center}
-The $+4.5\,\%$ is fully explained: a centred difference underestimates $|\nabla\phi|$ of a
-$\tanh$ on this grid by $1-\tanh(h)/h=3.94\,\%$ with $h=dx/2\epsilon$. Correcting for it
-brings that estimator within $0.2$--$0.4\,\%$ of the default \emph{and} keeps the
-$0.13\,\%$ wobble --- available as an upgrade if ever needed.
+\section{Remediation plan}
 
-\subsection{In-solver or post-processing?}
-Post-processing, for now. The extraction is at $0.5\,\%$ against an effect of $18\,\%$, and
-the medians are confirmed by independent estimators. An in-solver $\vn=-\phi_t/|\nabla\phi|$
-at quadrature points would use the true NURBS field and the integrator's own $\phi_t$,
-eliminating both grid-phase bias and snapshot differencing --- worth doing if (a) a
-$\tau_{\rm sub}$ fix must be validated to $\sim\!1\,\%$ across a sweep, or (b) the check is
-wanted on geometries with no convenient centreline. Not needed to settle the present question.
-
-\section{The test: a $\beta_{\rm sub0}$ ladder}
-
-Four runs, identical but for $\beta_{\rm sub0}$. Because the $a_2$ inflation is
-\emph{additive} and $\beta_{\rm sub0}$ is not, the predicted shortfall is a strong function
-of $\beta_{\rm sub0}$. \code{-t\_final} and \code{-dtmax} are set per arm so all four run the
-same 3406 steps and move the menisci the same ${\sim}2$ control-point spacings --- equal
-cost, equal precision.
+\subsection{Step 1 --- measure before changing anything: the $\bsub$ ladder}
+Everything above rests on one $(\epsilon,\bsub,T)$ point. Because the inflation is additive
+and $\bsub$ is not, the predicted shortfall is a strong function of $\bsub$ --- so a ladder
+in $\bsub$ separates the hypotheses without touching the solver. Four runs, identical but
+for \code{-beta\_sub0}, with \code{-t\_final} and \code{-dtmax} set per arm so all four
+take the same 3406 steps and move the menisci the same ${\sim}2$ control-point spacings:
 
 \begin{center}\begin{tabular}{rrrrrr}\toprule
 $\times$ & \code{-beta\_sub0} & predicted ratio & $\tau_{\rm sub}$ [s] & \code{-dtmax} & \code{-t\_final} \\ \midrule
@@ -232,28 +237,72 @@ $\times$ & \code{-beta\_sub0} & predicted ratio & $\tau_{\rm sub}$ [s] & \code{-
 1.00 & 5.9216e5 & \textbf{0.8220} & 522.1 & 5.707e2 & 1.9440e6 \ (22.5 d) \\
 4.00 & 2.3686e6 & \textbf{0.9487} & 1809.8 & 1.978e3 & 6.7381e6 \ (78.0 d) \\ \bottomrule
 \end{tabular}\end{center}
-
-\textbf{Reading the outcome} (\code{meas / pred} from each run's summary):
+\begin{quote}\code{./scripts/HPC/submit\_batch.sh -{-}tag beta\_ladder \textbackslash\\
+\hspace*{1em}-{-}tests-file scripts/HPC/tests\_beta\_ladder.txt}\end{quote}
+Read \code{meas / pred} from each run's \code{wedge\_gt\_velocity.py} summary:
 \begin{itemize}\setlength\itemsep{0.1em}
-\item $0.316/0.536/0.822/0.949$ --- the $a_2$ terms are never subtracted. Fix $\tau_{\rm sub}$.
-\item $1.00$ at all four --- they \emph{do} operate; the post-processing is wrong somewhere.
-\item $0.82$ at all four --- neither story; the deficit is a constant factor from something else.
+\item $0.316/0.536/0.822/0.949$ --- $C_{\rm corr}=0$ confirmed. Proceed to Step 2.
+\item $1.00$ at all four --- the corrections do operate; the post-processing is wrong and
+      this note is wrong with it.
+\item $0.82$ at all four --- a constant factor from some other source; start over.
+\end{itemize}
+An intermediate curve --- following the shape but not the amplitude --- would mean
+$C_{\rm corr}$ is real but mis-sized, which is the outcome that most needs the Step-4
+modelling work rather than a coefficient change.
+
+\subsection{Step 2 --- the $\tau_{\rm sub}$ change}
+Make the correction explicit and switchable rather than silently baked in, so both forms
+stay runnable and the ladder can be repeated against either. In \code{lunar\_main.c}
+around line 829:
+\begin{quote}\small\ttfamily
+/* Thin-interface corrections. Each channel enters with the strength\\
+~~*~with which it actually drives u = (rho\_v - rho\_vs(T))/rho\_ice, NOT\\
+~~*~with unit strength. See docs/gt\_deficit/. */\\
+PetscReal c\_vap~~= a2 * eps / user.dif\_vap;\\
+PetscReal c\_therm = a2 * eps * drhovs\_dT * user.lat\_sub / k\_eff;\\
+if (!user.thin\_iface\_corr) \{ c\_vap = 0.0; c\_therm = 0.0; \}\\
+tau\_sub = eps * lambda\_sub * (beta\_sub / a1 + c\_therm + c\_vap);
+\end{quote}
+with \code{-thin\_iface\_corr} defaulting to whatever the ladder says, \code{drhovs\_dT}
+from the existing \code{RhoVS\_I} derivative output --- \code{lunar\_main.c:735} already
+requests \code{d\_rhovs} and then never uses it, and it is exactly
+$\mathrm{d}\rho_{vs}/\mathrm{d}T=8.1521\times10^{-5}$ kg\,m$^{-3}$K$^{-1}$ at
+$-20\,^\circ$C, and \code{k\_eff} from \code{ThermalCond} at
+$\phi=1/2$. Print the three bracket terms and $\bbare/\bsub$ in the run header next to
+$\tau_{\rm sub}$, so every future \code{outp.txt} states how far the realised kinetics sit
+from the requested ones.
+
+\subsection{Step 3 --- recalibrate what depends on $\beta$}
+\begin{itemize}\setlength\itemsep{0.15em}
+\item \code{preprocess/comp\_eps.py} sizes $\epsilon$ using \code{beta\_uns}
+      (\code{eps\_ceiling}, \code{kin\_over\_curv}). With the correction in place the
+      relation becomes implicit --- $\epsilon$ sets $\Delta$, which sets $\beta_{\rm eff}$,
+      which feeds the $\epsilon$ bound --- so it needs either an iteration or an explicit
+      note that it reports the \emph{requested} rather than the realised kinetics.
+\item Re-derive $\epsilon$ for the standard $-20\,^\circ$C geometries after the change and
+      confirm the mesh element counts do not move; if they do, meshes must be regenerated
+      before any comparison run.
+\item Audit past conclusions for absolute-rate dependence. Exponent studies and
+      dimensionless ratios are unaffected; anything quoting a time-to-event or an
+      absolute growth rate is off by the factor in \S5 for its own $(\epsilon,T)$.
 \end{itemize}
 
-\textbf{To run it:}
-\begin{quote}\code{./scripts/HPC/submit\_batch.sh -{-}tag beta\_ladder \textbackslash\\
-\hspace*{2em}-{-}tests-file scripts/HPC/tests\_beta\_ladder.txt}\end{quote}
-then, after \code{rsync}'ing the batch down,
-\code{bash <batch>/run\_batch\_postprocess.sh}.
+\subsection{Step 4 --- the open modelling question}
+If the ladder confirms $C_{\rm corr}=0$, the honest position is that this model has
+\emph{no} thin-interface correction, and dropping both terms is a calibration fix, not a
+derivation. Making the correction genuinely valid means adding an anti-trapping current to
+the vapour equation so the one-sided asymptotics close. That is a real project --- new flux
+term in \code{assembly.c}, matching Jacobian, and re-verification with
+\code{-snes\_test\_jacobian} --- and should only be undertaken if a case appears where the
+$O(\epsilon)$ physics actually matters. At present $\epsilon/r\approx4\times10^{-3}$ and
+the interface is deeply attachment-limited, so it does not.
 
-\section{Open items, in priority order}
-\begin{enumerate}\setlength\itemsep{0.15em}
-\item Run the ladder. Everything below is conditional on its outcome.
-\item Fix the thermal $a_2$ term (Clausius--Clapeyron factor). Unambiguous; 13.1 of 17.8 points.
-\item Decide the vapour $a_2$ term: drop it, or add an anti-trapping current so the
-      correction it assumes is actually valid. The latter is a real modelling project.
-\item Document the $\xi_v$ mass-conservation bound. Not a bug; a stated approximation.
-\item Optional: in-solver $\vn$ diagnostic, if the GT check is wanted on general geometries.
-\end{enumerate}
+\subsection{Interim: how to get the kinetics you want today}
+Until Step 2 lands, pre-compensate. To realise a target $\beta$, pass
+$\bsub=\beta_{\rm target}-\Delta$; at $-20\,^\circ$C and
+$\epsilon=8.584\times10^{-7}$ m that is $4.6396\times10^{5}$ in place of
+$5.9216\times10^{5}$. This fails outright when $\beta_{\rm target}<\Delta$ --- see the
+floor table --- and it is a workaround, not a fix: it must be recomputed for every
+$(\epsilon,T)$ and it silently stops working when someone changes either.
 
 \end{document}
