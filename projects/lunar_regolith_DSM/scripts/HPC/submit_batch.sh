@@ -48,6 +48,7 @@ SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 # TARGET_DOFS_PER_CORE and MAX_TASKS_PER_NODE are sourced from
 # scripts/lib/alloc.sh (single source of truth; see rationale there).
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
+source "$PROJECT_ROOT/scripts/lib/opts.sh"
 
 # ---------------------------------------------------------------------------
 # CLI parsing
@@ -167,8 +168,20 @@ mkdir -p "$BATCH_PARENT/inputs_snapshot/geometry"
 mkdir -p "$BATCH_PARENT/inputs_snapshot/experiment"
 mkdir -p "$BATCH_PARENT/src_snapshot"
 cp "$INPUTS_DIR/solver.opts"           "$BATCH_PARENT/inputs_snapshot/"   2>/dev/null || true
-cp -r "$GEOMETRY_DIR"/*.opts           "$BATCH_PARENT/inputs_snapshot/geometry/"   2>/dev/null || true
-cp -r "$EXPERIMENT_DIR"/*.opts         "$BATCH_PARENT/inputs_snapshot/experiment/" 2>/dev/null || true
+# Recurse: the opts live in family sub-directories, so a top-level *.opts glob
+# silently snapshots nothing. Mesh .dat files are deliberately NOT copied -- they
+# are large and regenerable from preprocess/build_geometry_*.py.
+stage_opts() {                      # <src_dir> <dst_dir>
+    local src="$1" dst="$2" f rel
+    [[ -d "$src" ]] || return 0
+    while IFS= read -r f; do
+        rel="${f#$src/}"
+        mkdir -p "$dst/$(dirname "$rel")"
+        cp "$f" "$dst/$rel"
+    done < <(find "$src" -type f -name '*.opts' 2>/dev/null)
+}
+stage_opts "$GEOMETRY_DIR"   "$BATCH_PARENT/inputs_snapshot/geometry"
+stage_opts "$EXPERIMENT_DIR" "$BATCH_PARENT/inputs_snapshot/experiment"
 for ext in c h; do
     cp "$PROJECT_ROOT/src/"*.$ext     "$BATCH_PARENT/src_snapshot/"      2>/dev/null || true
 done
@@ -236,8 +249,9 @@ submit_one() {
         return
     fi
 
-    local geom_file="$GEOMETRY_DIR/${geom}.opts"
-    local exp_file="$EXPERIMENT_DIR/${exp}.opts"
+    local geom_file exp_file
+    geom_file="$(resolve_opts "$GEOMETRY_DIR"   "$geom")" || geom_file="$GEOMETRY_DIR/${geom}.opts"
+    exp_file="$(resolve_opts  "$EXPERIMENT_DIR" "$exp")"  || exp_file="$EXPERIMENT_DIR/${exp}.opts"
     if [[ ! -f "$geom_file" ]]; then
         echo "⚠ Skipping $spec — geometry file not found: $geom_file"
         ((N_SKIPPED++)) || true

@@ -64,22 +64,6 @@
 # =============================================================================
 
 
-# Geometry and experiment .opts live in per-family / per-campaign
-# subdirectories. Accept either a bare name or an explicit
-# "subdir/name", so the CLI did not change when the files were regrouped.
-resolve_opts() {
-    local dir="$1" name="$2" hit
-    if [ -f "$dir/${name}.opts" ]; then printf '%s' "$dir/${name}.opts"; return 0; fi
-    hit=$(find "$dir" -type f -name "${name}.opts" -print 2>/dev/null)
-    if [ "$(printf '%s' "$hit" | grep -c .)" -gt 1 ]; then
-        echo "❌ Ambiguous name '${name}':" >&2
-        printf '%s\n' "$hit" | sed 's|^|     |' >&2
-        return 1
-    fi
-    [ -n "$hit" ] && printf '%s' "$hit" && return 0
-    return 1
-}
-
 # Retired .opts files live on in inputs/scratch/ with their original layout.
 # When a name misses in the live tree, look there before giving up -- an opts
 # file that already exists should be pulled back out, never rewritten from
@@ -114,6 +98,7 @@ NPROCS=1
 # Allocation constants (TARGET_DOFS_PER_CORE, MAX_LOCAL_CORES, ...) — single
 # source of truth in scripts/lib/alloc.sh.
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/alloc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/opts.sh"
 
 # ---------------------------------------------------------------------------
 # Resolve project root — always two levels above this script's location

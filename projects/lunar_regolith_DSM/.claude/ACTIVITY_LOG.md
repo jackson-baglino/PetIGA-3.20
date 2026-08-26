@@ -1,3 +1,32 @@
+## 2026-08-25 (d) — resolve_opts consolidated into scripts/lib/opts.sh
+
+- **The beta ladder would not submit.** `submit_batch.sh` validated
+  `inputs/geometry/<name>.opts` directly, so all four arms were skipped as
+  "geometry file not found" pointing at the flat path — even though the
+  `run_lunar.sh` it would have called resolves that name fine. Fixing the runner
+  last session was not enough: the batch driver has its own pre-flight check.
+- **Root cause is duplication, so the fix is de-duplication.** `resolve_opts`
+  existed in three scripts and was missing from three others (both batch drivers
+  and, until yesterday, `HPC/run_lunar.sh`). Moved to **`scripts/lib/opts.sh`**
+  and sourced by all five, exactly as `scripts/lib/alloc.sh` already does for the
+  allocation constants — whose header documents the same drift happening twice.
+  Also added `list_opts` there for "not found" messages.
+  - `submit_lunar.sh` needed its source line placed near the top: it calls
+    `resolve_opts` at line 97, well above where `alloc.sh` is sourced.
+  - The Studio scripts use the `$(dirname "${BASH_SOURCE[0]}")/../lib/` form and
+    the HPC ones use `$PROJECT_ROOT/scripts/lib/`; kept each file's own form.
+- **`inputs_snapshot` was silently capturing nothing.** `cp -r "$GEOMETRY_DIR"/*.opts`
+  only globs the top level, and every opts file now lives in a family
+  sub-directory. Replaced with a portable `stage_opts` that walks the tree and
+  preserves structure (an earlier attempt used `cp --parents`, which is GNU-only
+  and would have broken the Studio driver on macOS). Mesh `.dat` files are still
+  deliberately excluded — large, and regenerable from `preprocess/`.
+- **Verified end to end** with a stubbed `sbatch`: all four arms resolve, size to
+  495012 DoFs / 10 ranks / 1 node each (matching the August batch's "Running on
+  10 processes"), and the snapshot now contains all six opts files.
+
+---
+
 ## 2026-08-25 (c) — xi_v cleared, the sqrt(2), and the beta ladder is staged
 
 - **Corrected an earlier claim: xi_v is NOT implicated.** It multiplies the vapour

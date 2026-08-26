@@ -57,6 +57,7 @@ fi
 
 # Allocation constants (TARGET_DOFS_PER_CORE, ...) — single source of truth.
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
+source "$PROJECT_ROOT/scripts/lib/opts.sh"
 
 # Load cost utilities (graceful no-op if missing)
 _HPC_COST_SH="$PROJECT_ROOT/scripts/HPC/hpc_cost.sh"
@@ -72,28 +73,6 @@ SRC_DIR="$PROJECT_ROOT/src"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 INPUTS_DIR="$PROJECT_ROOT/inputs"
 SOLVER_OPTS="$INPUTS_DIR/solver.opts"
-
-# ---------------------------------------------------------------------------
-# resolve_opts <dir> <name>
-#
-# inputs/geometry/ and inputs/experiment/ are organised into family
-# sub-directories (geometry/wedge/, experiment/tgrad/, ...), so a bare name is
-# not a path. Look for <dir>/<name>.opts first, then search the tree. Ported
-# from scripts/Studio/run_lunar.sh, which had it while this script did not --
-# every sub-directory name failed here with "Geometry opts not found".
-# ---------------------------------------------------------------------------
-resolve_opts() {
-    local dir="$1" name="$2" hit
-    if [ -f "$dir/${name}.opts" ]; then printf '%s' "$dir/${name}.opts"; return 0; fi
-    hit=$(find "$dir" -type f -name "${name}.opts" -print 2>/dev/null)
-    if [ "$(printf '%s' "$hit" | grep -c .)" -gt 1 ]; then
-        echo "❌ Ambiguous name '${name}':" >&2
-        printf '%s\n' "$hit" | sed 's|^|     |' >&2
-        return 1
-    fi
-    [ -n "$hit" ] && printf '%s' "$hit" && return 0
-    return 1
-}
 
 GEOM_OPTS="$(resolve_opts "$INPUTS_DIR/geometry"   "$geom_name")" \
     || GEOM_OPTS="$INPUTS_DIR/geometry/${geom_name}.opts"

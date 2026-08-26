@@ -31,28 +31,15 @@
 # =============================================================================
 
 
-# Geometry and experiment .opts live in per-family / per-campaign
-# subdirectories. Accept either a bare name or an explicit
-# "subdir/name", so the CLI did not change when the files were regrouped.
-resolve_opts() {
-    local dir="$1" name="$2" hit
-    if [ -f "$dir/${name}.opts" ]; then printf '%s' "$dir/${name}.opts"; return 0; fi
-    hit=$(find "$dir" -type f -name "${name}.opts" -print 2>/dev/null)
-    if [ "$(printf '%s' "$hit" | grep -c .)" -gt 1 ]; then
-        echo "❌ Ambiguous name '${name}':" >&2
-        printf '%s\n' "$hit" | sed 's|^|     |' >&2
-        return 1
-    fi
-    [ -n "$hit" ] && printf '%s' "$hit" && return 0
-    return 1
-}
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 SOLVER_OPTS="$PROJECT_ROOT/inputs/solver.opts"
+
+# resolve_opts is used well above where alloc.sh is sourced, so load it here.
+source "$PROJECT_ROOT/scripts/lib/opts.sh"
 
 # Load cost utilities (graceful no-op if missing)
 if [[ -f "$SCRIPT_DIR/hpc_cost.sh" ]]; then

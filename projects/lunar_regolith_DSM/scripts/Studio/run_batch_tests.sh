@@ -37,6 +37,7 @@ INPUTS_DIR="$PROJECT_ROOT/inputs"
 SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 GEOMETRY_DIR="$INPUTS_DIR/geometry"
 EXPERIMENT_DIR="$INPUTS_DIR/experiment"
+
 POSTPROCESS="$PROJECT_ROOT/postprocess"
 SCRIPTS_DIR="$PROJECT_ROOT/scripts"
 RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch"
@@ -44,6 +45,7 @@ RESULTS_BASE="/Users/jacksonbaglino/SimulationResults/lunar_regolith_DSM/scratch
 # Allocation constants (TARGET_DOFS_PER_CORE, MAX_LOCAL_CORES) — single source
 # of truth in scripts/lib/alloc.sh.
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/alloc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/opts.sh"
 
 if [ ! -f "$PROJECT_ROOT/makefile" ] && [ ! -f "$PROJECT_ROOT/Makefile" ]; then
     echo "❌ Could not find makefile at $PROJECT_ROOT"
@@ -232,8 +234,9 @@ run_one_test() {
         return
     fi
 
-    local geom_path="$GEOMETRY_DIR/${geom}.opts"
-    local exp_path="$EXPERIMENT_DIR/${exp}.opts"
+    local geom_path exp_path
+    geom_path="$(resolve_opts "$GEOMETRY_DIR"   "$geom")" || geom_path="$GEOMETRY_DIR/${geom}.opts"
+    exp_path="$(resolve_opts  "$EXPERIMENT_DIR" "$exp")"  || exp_path="$EXPERIMENT_DIR/${exp}.opts"
     local test_name="${geom}__${exp}"
     local test_out="$BATCH_DIR/$test_name"
 
