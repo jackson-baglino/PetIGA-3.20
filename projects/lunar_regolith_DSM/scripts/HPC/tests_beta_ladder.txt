@@ -1,0 +1,21 @@
+# beta_sub0 ladder — does the wedge Gibbs-Thomson deficit come from tau_sub?
+#
+# Four arms, identical geometry and vapour BCs, differing ONLY in -beta_sub0
+# (and in -t_final/-dtmax, set so all four run the same 3406 steps and move the
+# menisci the same ~2 control-point spacings).  Submit with:
+#
+#   ./scripts/HPC/submit_batch.sh --tag beta_ladder \
+#       --tests-file scripts/HPC/tests_beta_ladder.txt
+#
+# Then, after rsync'ing the batch down:
+#   bash <batch>/run_batch_postprocess.sh
+# and read "meas / pred" from each run's wedge_gt_velocity.py summary.
+#
+#   0.316 / 0.536 / 0.822 / 0.949  -> tau_sub's a2 terms are never subtracted
+#   1.00 at all four               -> they ARE, and the postprocessing is wrong
+#   0.82 at all four               -> neither; the deficit is something else
+#
+wedge_2D_L300um_eps0.86um_90deg:tgrad_T-20_h1.00_G0_rhovHiLo_beta0.10x
+wedge_2D_L300um_eps0.86um_90deg:tgrad_T-20_h1.00_G0_rhovHiLo_beta0.25x
+wedge_2D_L300um_eps0.86um_90deg:tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x
+wedge_2D_L300um_eps0.86um_90deg:tgrad_T-20_h1.00_G0_rhovHiLo_beta4.00x

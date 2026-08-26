@@ -1,0 +1,66 @@
+# =============================================================================
+# experiment/tgrad/tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x.opts
+#
+# ARM 3 OF 4 in the beta_sub0 ladder that tests where the wedge Gibbs-Thomson
+# deficit comes from.  Identical to tgrad_T-20_h1.00_90d_G0_rhovHiLo.opts in
+# every respect except -beta_sub0, -t_final and -dtmax.
+#
+# THE QUESTION.  batch_2026-08-07__07.26.38_wedge_bc recovers only 0.82 of the
+# Gibbs-Thomson rate.  d0 is exact (fit to 0.05 %), so the shortfall is entirely
+# in beta, and the measured beta equals
+#
+#     beta_bare = tau_sub*d0_sub0/eps^2
+#               = beta_sub0 + a1*a2*eps*(1/diff_sub + 1/dif_vap)*rho_ice/rho_vs
+#
+# i.e. lunar_main.c:829 inflates tau_sub by two Karma-Plapp thin-interface
+# corrections that the asymptotics are then supposed to subtract back off, and
+# the subtraction appears never to happen.  Since the inflation is ADDITIVE and
+# beta_sub0 is not, the predicted shortfall depends strongly on beta_sub0 --
+# which is what this ladder measures.
+#
+# WHAT EACH OUTCOME MEANS, read off postprocess/wedge_gt_velocity.py's
+# "meas / pred" across the four arms:
+#
+#   0.316 / 0.536 / 0.822 / 0.949   the a2 terms are never subtracted.  Fix
+#                                   tau_sub; see the thermal-coupling note below.
+#   1.00 at all four                the corrections DO operate and the
+#                                   postprocessing measurement is wrong.
+#   0.82 at all four                neither story holds; the deficit is a
+#                                   constant factor from something else.
+#
+# THIS ARM: beta_sub0 = 5.9216e+05 s/m  (1x the reference 5.9216e+05)
+#           predicted meas/pred = 0.8220
+#           beta_bare = 7.2036e+05 s/m,  tau_sub = 522.13 s
+#
+# -t_final and -dtmax are set so every arm runs the SAME number of steps
+# (3406) and moves the menisci the SAME distance (~2 control-point
+# spacings), so all four measurements carry the same precision and cost.
+#   -dtmax  = 1.093 * tau_sub   (the reference run's ratio)
+#   -t_final scales with beta_bare, since v_n ~ 1/beta_bare
+#
+# A SEPARATE, INDEPENDENT BUG this ladder does NOT test: tau_sub's thermal term
+# a2*eps/diff_sub treats latent heat as if it drove the phase field at unit
+# strength.  Temperature reaches the driving field only through rho_vs(T), so
+# that term needs a Clausius-Clapeyron factor -- the correct coefficient is
+# (d rho_vs/dT)*L_sub/k, which is 1.0e2 (k_ice) to 1.2e4 (k_air) against the
+# 1.29e5 coded.  Fix that separately, and re-run this ladder afterwards.
+# =============================================================================
+
+-t_final 1.9440e+06                     # 22.5 d -- equal displacement to the other arms
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                  # isothermal: geometry and the BCs are the only drivers
+
+-flag_BC_Tfix 1                          # pin wall temperatures (uniform)
+-flag_BC_rhovfix 1                       # vapour reservoirs...
+-rhovfix_axis 0                          # ...on the x-faces ONLY (open pore ends)
+-rhovfix_lo 1.000005                     # rho_v at x=0  / rho_vs
+-rhovfix_hi 0.999995                     # rho_v at x=Lx / rho_vs
+
+-beta_sub0 5.9216e+05                   # 1x reference; predicted meas/pred = 0.8220
+-d0_sub0 1.0166e-9                        # physical capillary length at -20 C
+
+-dtmax 5.707e+02                        # 1.093 * tau_sub (522.1 s) for THIS beta_sub0
+-dtCFL 1
+-dtCFL_dphimax 0.2
