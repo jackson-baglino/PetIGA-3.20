@@ -1,3 +1,19 @@
+## 2026-08-26 — Vector contour export for Figure 1
+
+- Added `postprocess/contour_svg.py`: extracts a level set from a `solV_*.vts`
+  snapshot and writes it as a clean, editable SVG (one `<path>` per loop, um
+  coordinates, mm page size, pt stroke weight, named groups for Inkscape).
+  Motivation: ParaView/matplotlib SVG exports are clip-path soup and cannot be
+  edited by hand.
+- `--mirror` reflects about r = 0 and rejoins the open axisymmetric contour into
+  a single closed outline; the half-plane form closes along the axis instead.
+- Exported the phi_i = 0.5 outline at the final step (288, t = 7210.28 s) of the
+  Dv10 curvature-BC Molaro T = -20 C r = 14 um run, mirrored and half-plane, to
+  the manuscript Figure1__SinteringMechanisms folder in iCloud, each with a PNG
+  preview. Final neck half-width ~30.5 um (from 14 um).
+
+---
+
 # Activity log — enceladus_DSM
 
 Newest entries first.
