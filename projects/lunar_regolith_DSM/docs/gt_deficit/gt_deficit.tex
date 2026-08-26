@@ -19,7 +19,7 @@
 \begin{document}\maketitle\vspace{-0.7cm}
 
 \begin{center}\fbox{\parbox{0.93\textwidth}{\small
-\textbf{Summary.} The realised kinetic coefficient is $1.22\times$ the requested
+\textbf{Summary.} The realized kinetic coefficient is $1.22\times$ the requested
 \code{-beta\_sub0}, so every run sublimates and deposits $18\,\%$ slower than intended.
 The capillary length $d_0$ is exact. The excess is precisely the two Karma--Plapp
 thin-interface corrections that \code{lunar\_main.c:829} adds to $\tau_{\mathrm{sub}}$ for
@@ -30,8 +30,8 @@ Gibbs--Thomson prediction, which is correct as written.}}\end{center}
 
 \section{What was measured}
 
-The wedge geometry places an apex-centred ice annulus in a tapering pore with the virtual
-apex at $y=L_y/2$, so on the centreline the interface normal is \emph{exactly} $\pm\hat x$
+The wedge geometry places an apex-centered ice annulus in a tapering pore with the virtual
+apex at $y=L_y/2$, so on the centerline the interface normal is \emph{exactly} $\pm\hat x$
 and $\vn$ is a one-dimensional displacement rate.
 \code{postprocess/wedge\_gt\_velocity.py} measures it on both menisci of all nine runs and
 compares against
@@ -41,7 +41,7 @@ compares against
 \label{eq:gt}
 \end{equation}
 The solver recovers $0.826$ (inner) / $0.811$ (outer) of that rate --- flat over 90 days,
-and flat across nine vapour-boundary combinations whose residual driving force
+and flat across nine vapor-boundary combinations whose residual driving force
 $\sigma-d_0\chi$ spans two orders of magnitude. Interface-extraction noise is $0.5\,\%$
 against an $18\,\%$ effect, and three independent $\vn$ estimators agree on the median to
 $1\,\%$, so the shortfall is not a measurement artifact.
@@ -74,17 +74,17 @@ right front only    & $7.2716\times10^{5}\pm1.3\times10^{2}$ & 1.2280 & $1.0167\
 \end{tabular}\end{center}
 
 $R^2=0.999997$ pooled; the rms residual is $5.4\times10^{-9}$, i.e.\ $0.14\,\%$ of
-$|\sigma|$. Holding $d_0$ fixed at \code{-d0\_sub0} and fitting $\beta$ alone gives
+$|\sigma|$. Holding $d_{0,\mathrm{sub0}}$ fixed and fitting $\beta$ alone gives
 $7.2106\times10^{5}$, within $0.3\,\%$ of the free fit --- the two parameters are not
 trading off against each other.
 
 \textbf{Robustness.} Leave-one-run-out (drop each of the nine in turn and refit) moves
 $\beta$ over $7.2204$--$7.2419\times10^{5}$, a spread of $0.30\,\%$ of the mean. No single
-vapour-BC condition drives the result. The residual left/right split ($1.206$ vs $1.228$)
+vapor-BC condition drives the result. The residual left/right split ($1.206$ vs $1.228$)
 is $\pm1\,\%$ and is consistent with the quoted $\sigma$-extraction sensitivity
 ($0.7\,\%$ left, $0.3\,\%$ right).
 
-\textbf{Conclusion.} $d_0$ is recovered to $0.06\,\%$. The Gibbs--Thomson \emph{curvature}
+\textbf{Conclusion.} $d_{0,\mathrm{sub0}}$ is recovered to $0.06\,\%$. The Gibbs--Thomson \emph{curvature}
 physics is exact and the prediction formula is right. The entire deficit lives in $\beta$,
 and it is a clean multiplicative factor of $1.22$.
 
@@ -92,54 +92,58 @@ and it is a clean multiplicative factor of $1.22$.
 \includegraphics[width=\textwidth]{fig_regression.pdf}
 \caption{\small Partial-regression views of the same fit. \textbf{Left:} with the fitted
 curvature term removed, $\sigma-d_0\chi$ against $\vn$ is a straight line through the
-origin whose slope is the realised $\beta$. The black fit lies inside the $\bbare$ band
+origin whose slope is the realized $\beta$. The black fit lies inside the $\bbare$ band
 (orange) and is visibly steeper than the requested $\bsub$ (green dashed).
 \textbf{Right:} with the kinetic term removed, the slope against $\chi$ falls inside the
 $d_{0,\mathrm{sub0}}$ band --- the capillary length is delivered exactly. Both fronts, all
 nine runs, every fifth snapshot.}
 \end{figure}
 
-\section{$\beta$ lands on the \emph{bare} Karma--Plapp coefficient}
+\section{$\beta$ lands on the \emph{bare} kinetic coefficient}
 
-Dividing the phase residual by $3\,\mathrm{mob}/\epsilon$ gives the Karma--Plapp form
+Dividing the phase residual by $3\,\mathrm{mob}/\epsilon$ gives the Moure \& Fu form
 \begin{equation}
-\tau\,\partial_t\phi=\epsilon^2\nabla^2\phi-f'(\phi)+\lambda\,g(\phi)\,u,
-\qquad u=\frac{\rho_v-\rho_{vs}(T)}{\rho_{\rm ice}},
+\tau_{\rm sub}\,\partial_t\phi=\epsilon^2\nabla^2\phi-f'(\phi)
++\lambda_{\rm sub}\,g(\phi)\,\frac{\rho_{vs}(T)}{\rho_{\rm ice}}\,\sigma ,
 \end{equation}
-whose sharp-interface limit is $u_{\rm int}=d_0\chi+\beta_{\rm real}V$ with
+whose sharp-interface limit is exactly the Gibbs--Thomson condition
+Eq.~\eqref{eq:gt}, with the two coefficients it realizes given by
 \begin{equation}
-d_0=\frac{a_1\epsilon}{\lambda},\qquad
-\beta_{\rm real}=\underbrace{\frac{a_1\tau}{\lambda\epsilon}}_{\textstyle \bbare}-\;C_{\rm corr}.
+d_{0,\rm realized}=d_{0,\mathrm{sub0}},\qquad
+\beta_{\rm realized}=\underbrace{\frac{\tau_{\rm sub}\,d_{0,\mathrm{sub0}}}{\epsilon^{2}}}_{\textstyle \bbare}\;-\;C_{\rm corr}.
 \label{eq:limit}
 \end{equation}
-$C_{\rm corr}$ is an $O(\epsilon)$ term generated by $u$ varying \emph{inside} the diffuse
-interface. \code{lunar\_main.c:829} pre-inflates $\tau$ by exactly what it assumes
-$C_{\rm corr}$ to be, so that the two cancel and $\beta_{\rm real}=\bsub$:
+$C_{\rm corr}$ is an $O(\epsilon)$ term generated by $\sigma$ varying \emph{inside} the
+diffuse interface. \code{lunar\_main.c:829} pre-inflates $\tau_{\rm sub}$ by exactly what
+it assumes $C_{\rm corr}$ to be, so that the two cancel and $\beta_{\rm realized}=\bsub$:
 \begin{equation}
-\tau_{\rm sub}=\epsilon\lambda\Big(\underbrace{\tfrac{\beta_{\rm sub}}{a_1}}_{82.2\,\%}
+\tau_{\rm sub}=\epsilon\lambda_{\rm sub}\Big(\underbrace{\tfrac{\beta_{\rm sub}}{a_1}}_{82.2\,\%}
 +\underbrace{\tfrac{a_2\epsilon}{\texttt{diff\_sub}}}_{13.1\,\%}
 +\underbrace{\tfrac{a_2\epsilon}{\texttt{dif\_vap}}}_{4.7\,\%}\Big),
 \qquad
-\bbare=\frac{\tau_{\rm sub}\,d_{0,\mathrm{sub0}}}{\epsilon^2}=7.2036\times10^{5}\ \mathrm{s/m}.
+\bbare=7.2036\times10^{5}\ \mathrm{s/m}.
 \label{eq:tau}
 \end{equation}
+(The bracket is written in the $\rho_{vs}/\rho_{\rm ice}$-scaled variables the code carries
+internally; $\bbare$ above is already converted back to the unscaled units of $\bsub$.)
 The fit gives $\beta/\bbare=1.0040$. \textbf{$C_{\rm corr}\approx0$: nothing is subtracted,
 so the inflation survives intact}, and $\bbare/\bsub=1.2165\Rightarrow$ ratio $0.8220$
 against a measured $0.826/0.811$.
 
 This is a defect in a \emph{model parameter definition}. Eq.~\eqref{eq:gt} is the target
-physics and is correct; the solver simply does not realise the $\beta$ it was handed.
+physics and is correct; the solver simply does not realize the $\beta$ it was handed.
 
 \section{Why neither correction materialises}\label{sec:why}
 
 \subsection{The thermal term is wrong on its face}
 \code{a2*eps/diff\_sub} treats latent heat as if it drove the phase field at unit strength.
-It does not: temperature reaches $u$ only through $\rho_{vs}(T)$, so that channel carries a
-Clausius--Clapeyron factor. Working the inner balance per channel and reading off
-$\mathrm{d}u/\mathrm{d}(VW)$:
+It does not: temperature reaches $\sigma$ only through $\rho_{vs}(T)$, so that channel
+carries a Clausius--Clapeyron factor. Working the inner balance per channel and reading off
+$\mathrm{d}\sigma/\mathrm{d}(v_n\epsilon)$, in the same scaled variables as
+Eq.~\eqref{eq:tau}:
 \begin{center}\begin{tabular}{llr}\toprule
 channel & correct coefficient & value \\ \midrule
-vapour  & $1/D_v$ & $5.27\times10^{4}$ \\
+vapor  & $1/D_v$ & $5.27\times10^{4}$ \\
         & \emph{coded}: $1/\texttt{dif\_vap}$ & $4.59\times10^{4}$ \quad\checkmark \\[2pt]
 thermal & $(\mathrm{d}\rho_{vs}/\mathrm{d}T)\,L_{\rm sub}/k$ & $1.0\times10^{2}$ ($k_{\rm ice}$) -- $1.2\times10^{4}$ ($k_{\rm air}$) \\
         & \emph{coded}: $1/\texttt{diff\_sub}$ & $1.29\times10^{5}$ \quad$\times$ \\ \bottomrule
@@ -149,17 +153,18 @@ evaluated --- and \code{ThermalCond} interpolates between the two, so \emph{any}
 choice leaves this term negligible. This is 13.1 of the 17.8 points and is a defect
 independent of anything else in this note.
 
-\subsection{The vapour term is right, and still is not delivered}
+\subsection{The vapor term is right, and still is not delivered}
 It is worth being explicit that $\xi_v$ is \emph{not} implicated here. In the inner region
-$\xi_v$ multiplies the vapour diffusion and the ice source identically, so it cancels
-between them and survives only in storage/diffusion, $VW/(\xi_v D_v)=2.4\times10^{-11}$.
+$\xi_v$ multiplies the vapor diffusion and the ice source identically, so it cancels
+between them and survives only in storage/diffusion,
+$v_n\epsilon/(\xi_v D_v)=2.4\times10^{-11}$.
 The unscaled \code{dif\_vap} in Eq.~\eqref{eq:tau} is correct; substituting
 $\xi_v\!\cdot\!$\code{dif\_vap} would put the bracket at $6.36$ instead of $0.133$ and
 predict a $58\times$ shortfall rather than $1.22\times$.
 
-So the vapour term is structurally sound, yet the measurement says its $4.7$ points are not
-subtracted either. \textbf{Leading hypothesis, not established:} vapour diffusion is
-one-sided through \code{phi\_aef}, and the $-a_1a_2W/D$ correction is derived for the
+So the vapor term is structurally sound, yet the measurement says its $4.7$ points are not
+subtracted either. \textbf{Leading hypothesis, not established:} vapor diffusion is
+one-sided through \code{phi\_aef}, and the $-a_1a_2\epsilon/D$ correction is derived for the
 symmetric model. The one-sided case requires an anti-trapping current
 (Karma 2001) to remove solute-trapping and interface-stretching terms before a clean
 correction of that form emerges; this solver has no such current, so the symmetric-model
@@ -167,11 +172,11 @@ correction has no reason to apply.
 
 \section{What this has been costing}
 
-$\bsub$ encodes the condensation coefficient, $\beta\propto1/\alpha_c$. A realised
+$\bsub$ encodes the condensation coefficient, $\beta\propto1/\alpha_c$. A realized
 $\beta$ that is $1.2165\times$ too large is an $\alpha_c$ that is $0.822\times$ too small:
 \begin{center}\begin{tabular}{lr}\toprule
 requested \code{-beta\_sub0} $=5.9216\times10^5$ & $\alpha_c=1.341\times10^{-2}$ \\
-realised $\beta_{\rm eff}=7.2036\times10^5$ & $\alpha_c^{\rm eff}=1.102\times10^{-2}$ \quad(82.2\,\%) \\ \bottomrule
+realized $\beta_{\rm eff}=7.2036\times10^5$ & $\alpha_c^{\rm eff}=1.102\times10^{-2}$ \quad(82.2\,\%) \\ \bottomrule
 \end{tabular}\end{center}
 
 Worse, because the inflation is \emph{additive},
@@ -211,13 +216,16 @@ $\beta_{\rm eff}\ge\Delta$, as a function of temperature and $\epsilon$.}
 \item \textbf{Interface-extraction bias.} Three independent $\vn$ estimators agree on the
       median to $1\,\%$; the residual scatter is $0.5\,\%$, zero-mean, and locked to
       sub-cell phase.
-\item \textbf{A mis-converted $a_1$ or $a_2$.} $\epsilon$ is indeed not the Karma--Plapp
-      $W$ ($W_{\rm KP}=\sqrt2\,\epsilon$), but the constants already absorb it: mapping to
-      Karma's $[-1,1]$ form gives $d_0=a_1^{\rm KP}\sqrt2\cdot4\cdot\epsilon/\lambda
-      =5.0000\,\epsilon/\lambda$ against the coded $a_1=5.0$, and
+\item \textbf{A mis-converted $a_1$ or $a_2$.} $\epsilon$ here is Moure \& Fu's
+      $\epsilon$, and is deliberately \emph{not} Kaempfer \& Plapp's $W$
+      ($W_{\rm KP}=\sqrt2\,\epsilon$); the constants already absorb the difference.
+      Mapping to K\&P's $[-1,1]$ form gives
+      $d_{0,\mathrm{sub}}=a_1^{\rm KP}\sqrt2\cdot4\cdot\epsilon/\lambda_{\rm sub}
+      =5.0000\,\epsilon/\lambda_{\rm sub}$ against the coded $a_1=5.0$, and
       $a_1^{\rm KP}a_2^{\rm KP}\sqrt2=0.78338$ against the coded $a_1a_2=0.7905$
-      ($0.91\,\%$). The free fit recovering $d_0$ to $0.06\,\%$ is an independent
-      measurement of $a_1$.
+      ($0.91\,\%$). This is already documented at
+      \code{enceladus\_DSM/src/assembly.c:46-58}. The free fit recovering
+      $d_{0,\mathrm{sub0}}$ to $0.06\,\%$ is an independent measurement of $a_1$.
 \item \textbf{$\xi_v$.} Cancels from the inner balance (\S\ref{sec:why}).
 \end{itemize}
 
@@ -248,7 +256,7 @@ Read \code{meas / pred} from each run's \code{wedge\_gt\_velocity.py} summary:
 \end{itemize}
 An intermediate curve --- following the shape but not the amplitude --- would mean
 $C_{\rm corr}$ is real but mis-sized, which is the outcome that most needs the Step-4
-modelling work rather than a coefficient change.
+modeling work rather than a coefficient change.
 
 \subsection{Step 2 --- the $\tau_{\rm sub}$ change}
 Make the correction explicit and switchable rather than silently baked in, so both forms
@@ -269,7 +277,7 @@ requests \code{d\_rhovs} and then never uses it, and it is exactly
 $\mathrm{d}\rho_{vs}/\mathrm{d}T=8.1521\times10^{-5}$ kg\,m$^{-3}$K$^{-1}$ at
 $-20\,^\circ$C, and \code{k\_eff} from \code{ThermalCond} at
 $\phi=1/2$. Print the three bracket terms and $\bbare/\bsub$ in the run header next to
-$\tau_{\rm sub}$, so every future \code{outp.txt} states how far the realised kinetics sit
+$\tau_{\rm sub}$, so every future \code{outp.txt} states how far the realized kinetics sit
 from the requested ones.
 
 \subsection{Step 3 --- recalibrate what depends on $\beta$}
@@ -278,7 +286,7 @@ from the requested ones.
       (\code{eps\_ceiling}, \code{kin\_over\_curv}). With the correction in place the
       relation becomes implicit --- $\epsilon$ sets $\Delta$, which sets $\beta_{\rm eff}$,
       which feeds the $\epsilon$ bound --- so it needs either an iteration or an explicit
-      note that it reports the \emph{requested} rather than the realised kinetics.
+      note that it reports the \emph{requested} rather than the realized kinetics.
 \item Re-derive $\epsilon$ for the standard $-20\,^\circ$C geometries after the change and
       confirm the mesh element counts do not move; if they do, meshes must be regenerated
       before any comparison run.
@@ -287,18 +295,18 @@ from the requested ones.
       absolute growth rate is off by the factor in \S5 for its own $(\epsilon,T)$.
 \end{itemize}
 
-\subsection{Step 4 --- the open modelling question}
+\subsection{Step 4 --- the open modeling question}
 If the ladder confirms $C_{\rm corr}=0$, the honest position is that this model has
 \emph{no} thin-interface correction, and dropping both terms is a calibration fix, not a
 derivation. Making the correction genuinely valid means adding an anti-trapping current to
-the vapour equation so the one-sided asymptotics close. That is a real project --- new flux
+the vapor equation so the one-sided asymptotics close. That is a real project --- new flux
 term in \code{assembly.c}, matching Jacobian, and re-verification with
 \code{-snes\_test\_jacobian} --- and should only be undertaken if a case appears where the
 $O(\epsilon)$ physics actually matters. At present $\epsilon/r\approx4\times10^{-3}$ and
 the interface is deeply attachment-limited, so it does not.
 
 \subsection{Interim: how to get the kinetics you want today}
-Until Step 2 lands, pre-compensate. To realise a target $\beta$, pass
+Until Step 2 lands, pre-compensate. To realize a target $\beta$, pass
 $\bsub=\beta_{\rm target}-\Delta$; at $-20\,^\circ$C and
 $\epsilon=8.584\times10^{-7}$ m that is $4.6396\times10^{5}$ in place of
 $5.9216\times10^{5}$. This fails outright when $\beta_{\rm target}<\Delta$ --- see the
