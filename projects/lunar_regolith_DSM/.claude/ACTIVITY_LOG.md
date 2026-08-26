@@ -1,3 +1,49 @@
+## 2026-08-25 (c) — xi_v cleared, the sqrt(2), and the beta ladder is staged
+
+- **Corrected an earlier claim: xi_v is NOT implicated.** It multiplies the vapour
+  diffusion AND the ice source identically, so it cancels from the inner-region
+  balance that generates the thin-interface correction; it survives only in
+  storage/diffusion = V*W/(xi_v*D_v) = 2.4e-11. The UNSCALED `dif_vap` in
+  tau_sub is correct. Using `xi_v*dif_vap` instead would put tau_sub's bracket
+  at 6.36 rather than 0.133 — predicting the model runs 58x slow, not 1.22x.
+  xi_v only reaches the interface condition once V > xi_v*D_v/eps = 0.025 m/s.
+- **The thermal a2 term is the real bug.** `a2*eps/diff_sub` treats latent heat
+  as driving the phase field at unit strength; T reaches the driving field only
+  through rho_vs(T), so it needs a Clausius-Clapeyron factor. Correct coefficient
+  is `(drho_vs/dT)*L_sub/k` = 1.0e2 (k_ice) to 1.2e4 (k_air) against the 1.29e5
+  coded — over-weighted 11x to 1300x. 13.1 of the 17.8 points.
+- **eps is NOT the Karma-Plapp W: W_KP = sqrt(2)*eps.** Verified from the profiles
+  (ours 0.5(1+tanh(x/2eps)), Karma's tanh(x/sqrt2 W)). BUT a1 and a2 already
+  absorb it: mapping to Karma's [-1,1] form gives tau_KP=2tau, W=sqrt2 eps,
+  lambda_KP=lambda/4, whence d0 = a1_KP*sqrt2*4*eps/lambda = 5.0000*eps/lambda
+  (code's a1=5.0, exact) and a1_KP*a2_KP*sqrt2 = 0.78338 vs the code's
+  a1*a2 = 0.7905 (0.91%). The free d0 fit matching to 0.05% is an independent
+  confirmation of a1=5.
+- **xi_v and mass conservation.** The coded equation conserves
+  `M_vap + xi_v*rho_ice*M_ice`, not `M_vap + M_ice` — equivalently, only the
+  vapour STORAGE term is inflated by 1/xi_v, so mass is exact in the quasi-static
+  limit the model targets. Worst-case bound (1/xi_v)*M_vap/M_ice = 1.9e-3 at
+  -20 C, 5.5e-3 at 0 C; observed over 90 d, 1.4-4.8e-5. Acknowledge, do not chase.
+- **The leftover bumps are still extraction, and still grid-phase-locked.** Binned
+  by sub-cell position the residual is a clean sawtooth (peak-to-peak 0.0025 dx vs
+  residual std 0.0009 dx). Three independent v_n estimators agree on the MEDIAN:
+  position-difference (default, 0.49% wobble), level-set -phi_t/phi_x with
+  np.gradient (+4.5% biased, 0.13% wobble), level-set with analytic
+  phi_x = 1/(4 eps) (+1.0%, 0.95%). The +4.5% is exactly the centred-difference
+  underestimate of |grad phi| for a tanh on this grid, 1-tanh(h)/h = 3.94%,
+  h = dx/2eps. So the bumps are noise, not bias, and the 18% conclusion holds.
+- **beta_sub0 ladder staged for HPC.** Four arms (0.10/0.25/1.00/4.00x), predicted
+  ratios 0.316/0.536/0.822/0.949, all 3406 steps and ~2 cells of travel so cost
+  and precision are equal. `scripts/HPC/tests_beta_ladder.txt`. Restored the
+  wedge geometry, mesh and reference experiment from quarantine.
+- **Fixed a real gap: `scripts/HPC/run_lunar.sh` had no `resolve_opts`**, so any
+  geometry or experiment in a family sub-directory failed with "opts not found".
+  Studio's copy had it; ported across. Without it the ladder cannot be submitted.
+- **Wrote `docs/gt_deficit/gt_deficit.tex`** (5-page PDF, xelatex) collecting all
+  of the above for annotation.
+
+---
+
 ## 2026-08-25 (b) — The 19% GT deficit is tau_sub, and the ripple is the reading
 
 Follow-up to the entry below. Both open questions from it are now closed.
