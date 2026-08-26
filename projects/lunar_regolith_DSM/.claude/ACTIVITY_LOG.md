@@ -1,3 +1,42 @@
+## 2026-08-26 — The beta ladder confirms the tau_sub diagnosis
+
+Batch `2026-08-25__18.14.15_beta_ladder`, four arms, all completed 3406 steps.
+
+- **Result, over a 40x range in `-beta_sub0`:**
+
+  | x | beta_sub0 | beta_bare | predicted | measured (in/out) | beta_fit/beta_bare |
+  |---|---|---|---|---|---|
+  | 0.10 | 5.9216e4 | 1.8741e5 | 0.3160 | 0.3239 / 0.3082 | 1.0004 |
+  | 0.25 | 1.4804e5 | 2.7623e5 | 0.5359 | 0.5444 / 0.5254 | 1.0015 |
+  | 1.00 | 5.9216e5 | 7.2036e5 | 0.8220 | 0.8253 / 0.8126 | 1.0017 |
+  | 4.00 | 2.3686e6 | 2.4968e6 | 0.9487 | 0.9471 / 0.9429 | 1.0000 |
+
+  The ratio swings 0.32 -> 0.95 and tracks the predicted curve to 2.3 % worst
+  case. **beta_fit/beta_bare = 1.0009 +/- 0.0007**, i.e. C_corr = 0 to better
+  than a tenth of a percent. The two rival hypotheses — a flat 1.00 (the
+  corrections operating) and a flat 0.82 (a constant factor from elsewhere) —
+  are excluded by every arm.
+- **Fit d0 held fixed for the per-arm fits.** The ladder has only ONE vapor BC
+  per arm, so the free two-parameter fit is ill-conditioned there (cond 6.4-8.6
+  vs 2.6 on the nine-run 3x3 batch) and lets d0 drift 0.5 % high, which drags
+  beta_fit 1-7 % above beta_bare. Holding d0 at -d0_sub0 — measured to 0.06 %
+  on the 3x3 batch, and independent of beta — collapses the spread to 0.1 %.
+- **Two arms arrived with incomplete `vtkOut/`** (1.00x had 810 of 1000, 4.00x
+  had none) although all four solvers reached t_final with 1001 `sol_*.dat`.
+  Only the VTK conversion was short; re-ran `plot_fields.py` on both. Worth
+  checking `run_batch_postprocess.sh` on the HPC side before the next batch.
+- The `-Lz 0` / `-ksp_gmres_restart` "unused options" warnings in every
+  `outp.txt` are benign (2-D run; the KSP option is consumed by a solver these
+  runs do not use).
+- Doc updated: Step 1 is now a result rather than a plan, `-thin_iface_corr`
+  defaults to 0, and the ladder figure carries the measurements.
+
+**Next: Step 2**, the tau_sub change — authored in enceladus_DSM (it is ahead:
+it already uses the T-corrected D_v in the a2 term, which lunar does not) and
+back-ported to lunar_regolith_DSM.
+
+---
+
 ## 2026-08-25 (d) — resolve_opts consolidated into scripts/lib/opts.sh
 
 - **The beta ladder would not submit.** `submit_batch.sh` validated

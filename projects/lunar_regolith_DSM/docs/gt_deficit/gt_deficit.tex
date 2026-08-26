@@ -19,14 +19,17 @@
 \begin{document}\maketitle\vspace{-0.7cm}
 
 \begin{center}\fbox{\parbox{0.93\textwidth}{\small
-\textbf{Summary.} The realized kinetic coefficient is $1.22\times$ the requested
+\textbf{Summary --- confirmed by experiment, 2026-08-26.} The realized kinetic coefficient is $1.22\times$ the requested
 \code{-beta\_sub0}, so every run sublimates and deposits $18\,\%$ slower than intended.
 The capillary length $d_0$ is exact. The excess is precisely the two Karma--Plapp
 thin-interface corrections that \code{lunar\_main.c:829} adds to $\tau_{\mathrm{sub}}$ for
 the asymptotics to subtract back off --- and which the measurement says are never
 subtracted. One of the two (the thermal one, 13.1 of the 17.8 points) is wrong on its
 face and should be fixed regardless. The fix is to $\tau_{\mathrm{sub}}$, not to the
-Gibbs--Thomson prediction, which is correct as written.}}\end{center}
+Gibbs--Thomson prediction, which is correct as written.\\[0.3em]
+A four-arm $\bsub$ ladder (\S\ref{sec:ladder}) has since confirmed this over a
+$40\times$ range: the measured ratio moves $0.32\to0.95$ exactly as predicted, and
+$\beta_{\rm fit}/\bbare=1.0009\pm0.0007$ throughout.}}\end{center}
 
 \section{What was measured}
 
@@ -231,32 +234,36 @@ $\beta_{\rm eff}\ge\Delta$, as a function of temperature and $\epsilon$.}
 
 \section{Remediation plan}
 
-\subsection{Step 1 --- measure before changing anything: the $\bsub$ ladder}
-Everything above rests on one $(\epsilon,\bsub,T)$ point. Because the inflation is additive
-and $\bsub$ is not, the predicted shortfall is a strong function of $\bsub$ --- so a ladder
-in $\bsub$ separates the hypotheses without touching the solver. Four runs, identical but
-for \code{-beta\_sub0}, with \code{-t\_final} and \code{-dtmax} set per arm so all four
-take the same 3406 steps and move the menisci the same ${\sim}2$ control-point spacings:
+\subsection{Step 1 --- DONE: the $\bsub$ ladder confirms it}\label{sec:ladder}
+The diagnosis above rested on one $(\epsilon,\bsub,T)$ point. Because the inflation is
+additive and $\bsub$ is not, the predicted shortfall is a strong function of $\bsub$, so a
+ladder in $\bsub$ separates the hypotheses without touching the solver. Four runs,
+identical but for \code{-beta\_sub0}, each 3406 steps and ${\sim}2$ control-point spacings
+of meniscus travel. Batch
+\code{2026-08-25\_\_18.14.15\_beta\_ladder}, all four completed:
 
-\begin{center}\begin{tabular}{rrrrrr}\toprule
-$\times$ & \code{-beta\_sub0} & predicted ratio & $\tau_{\rm sub}$ [s] & \code{-dtmax} & \code{-t\_final} \\ \midrule
-0.10 & 5.9216e4 & \textbf{0.3160} & 135.8 & 1.485e2 & 5.0577e5 \ (5.9 d) \\
-0.25 & 1.4804e5 & \textbf{0.5359} & 200.2 & 2.188e2 & 7.4548e5 \ (8.6 d) \\
-1.00 & 5.9216e5 & \textbf{0.8220} & 522.1 & 5.707e2 & 1.9440e6 \ (22.5 d) \\
-4.00 & 2.3686e6 & \textbf{0.9487} & 1809.8 & 1.978e3 & 6.7381e6 \ (78.0 d) \\ \bottomrule
+\begin{center}\small\begin{tabular}{rrrrrrr}\toprule
+$\times$ & \code{-beta\_sub0} & $\bbare$ & predicted & \multicolumn{2}{c}{measured} & $\beta_{\rm fit}/\bbare$\\
+ & & & ratio & inner & outer & \\ \midrule
+0.10 & 5.9216e4 & 1.8741e5 & 0.3160 & 0.3239 & 0.3082 & 1.0004 \\
+0.25 & 1.4804e5 & 2.7623e5 & 0.5359 & 0.5444 & 0.5254 & 1.0015 \\
+1.00 & 5.9216e5 & 7.2036e5 & 0.8220 & 0.8253 & 0.8126 & 1.0017 \\
+4.00 & 2.3686e6 & 2.4968e6 & 0.9487 & 0.9471 & 0.9429 & 1.0000 \\ \bottomrule
 \end{tabular}\end{center}
-\begin{quote}\code{./scripts/HPC/submit\_batch.sh -{-}tag beta\_ladder \textbackslash\\
-\hspace*{1em}-{-}tests-file scripts/HPC/tests\_beta\_ladder.txt}\end{quote}
-Read \code{meas / pred} from each run's \code{wedge\_gt\_velocity.py} summary:
-\begin{itemize}\setlength\itemsep{0.1em}
-\item $0.316/0.536/0.822/0.949$ --- $C_{\rm corr}=0$ confirmed. Proceed to Step 2.
-\item $1.00$ at all four --- the corrections do operate; the post-processing is wrong and
-      this note is wrong with it.
-\item $0.82$ at all four --- a constant factor from some other source; start over.
-\end{itemize}
-An intermediate curve --- following the shape but not the amplitude --- would mean
-$C_{\rm corr}$ is real but mis-sized, which is the outcome that most needs the Step-4
-modeling work rather than a coefficient change.
+
+\textbf{The prediction is confirmed.} The ratio moves $0.32\to0.95$ --- a $2.9\times$
+swing --- and tracks the predicted curve to $2.3\,\%$ worst case. The two rival
+hypotheses are dead: a flat $1.00$ (the corrections operating as intended) and a flat
+$0.82$ (a constant factor from elsewhere) are both excluded by every arm.
+
+Fitting $\beta$ with $d_{0,\mathrm{sub0}}$ held fixed --- the ladder has only one vapor BC
+per arm, so the two-parameter fit is ill-conditioned there, and $d_0$ was already measured
+to $0.06\,\%$ on the nine-run $3\times3$ batch and does not depend on $\beta$ --- gives
+\begin{equation}
+\frac{\beta_{\rm fit}}{\bbare}=1.0009\pm0.0007
+\qquad\text{over a }40\times\text{ range in }\bsub .
+\end{equation}
+$C_{\rm corr}=0$ to better than a tenth of a percent. \textbf{Proceed to Step 2.}
 
 \subsection{Step 2 --- the $\tau_{\rm sub}$ change}
 Make the correction explicit and switchable rather than silently baked in, so both forms
@@ -264,14 +271,19 @@ stay runnable and the ladder can be repeated against either. In \code{lunar\_mai
 around line 829:
 \begin{quote}\small\ttfamily
 /* Thin-interface corrections. Each channel enters with the strength\\
-~~*~with which it actually drives u = (rho\_v - rho\_vs(T))/rho\_ice, NOT\\
-~~*~with unit strength. See docs/gt\_deficit/. */\\
+~~*~with which it actually drives sigma, NOT with unit strength. The\\
+~~*~beta\_sub0 ladder of 2026-08-26 measured C\_corr = 0 to 0.1\%, so the\\
+~~*~default is OFF; -thin\_iface\_corr 1 restores the old behavior for\\
+~~*~comparison. See docs/gt\_deficit/. */\\
 PetscReal c\_vap~~= a2 * eps / user.dif\_vap;\\
 PetscReal c\_therm = a2 * eps * drhovs\_dT * user.lat\_sub / k\_eff;\\
 if (!user.thin\_iface\_corr) \{ c\_vap = 0.0; c\_therm = 0.0; \}\\
 tau\_sub = eps * lambda\_sub * (beta\_sub / a1 + c\_therm + c\_vap);
 \end{quote}
-with \code{-thin\_iface\_corr} defaulting to whatever the ladder says, \code{drhovs\_dT}
+\code{-thin\_iface\_corr} defaults to \textbf{0}: the ladder measured
+$C_{\rm corr}=0$, so subtracting a correction the model does not produce is what
+created the defect. Keeping the flag means the old behavior stays reproducible and the
+ladder can be re-run against either form. \code{drhovs\_dT} comes
 from the existing \code{RhoVS\_I} derivative output --- \code{lunar\_main.c:735} already
 requests \code{d\_rhovs} and then never uses it, and it is exactly
 $\mathrm{d}\rho_{vs}/\mathrm{d}T=8.1521\times10^{-5}$ kg\,m$^{-3}$K$^{-1}$ at
