@@ -1,3 +1,28 @@
+## 2026-08-27 (b) — Defined phi_0; rewrote the GT note in scientific register
+
+- **Defined `phi_0` explicitly**, which had been used throughout §5 without
+  introduction and whose subscript collides with the phase indices `phi_i` /
+  `phi_a`. It is the leading term of the INNER ASYMPTOTIC EXPANSION,
+  `phi = phi_0(eta) + eps*phi_1(eta,s,t) + O(eps^2)`, where the subscript denotes
+  order in eps and not a phase. It satisfies `d2(phi_0)/deta2 - f'(phi_0) = 0`
+  and is therefore the planar, stationary equilibrium profile
+  `1/2(1 + tanh(eta/2))`; curvature, interface motion and the driving field all
+  enter at O(eps) through `phi_1`. So it approximates `phi_i` but is not equal
+  to it.
+- **Rewrote the whole note in the register of the literature.** The previous
+  draft read as advocacy rather than analysis. Removed the rhetorical framing
+  ("the killer", "the receipt", "the two rival hypotheses are dead", "wrong on
+  its face", "a tempting shortcut"), the editorial boldface, and most of the
+  em-dashes; retitled the sections as statements of content rather than of
+  conclusion ("The ladder confirms it" -> "Verification by parameter sweep";
+  "Why C_corr = 0" -> "Vanishing of the correction for a one-sided diffusion
+  field"); replaced the summary box with an abstract. Numbers, tables, figures
+  and technical claims are unchanged.
+
+Still not implemented; the note remains for review.
+
+---
+
 ## 2026-08-27 — Wrote up the theory: why C_corr = 0
 
 Expanded `docs/gt_deficit/` from 6 to 9 pages, restructured around the derivation

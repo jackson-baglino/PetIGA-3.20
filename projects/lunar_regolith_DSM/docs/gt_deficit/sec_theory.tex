@@ -1,164 +1,186 @@
-\section{$\Delta$: what it is, and why it matters}\label{sec:delta}
+\section{The coefficient offset $\Delta$}\label{sec:delta}
 
-\textbf{Definition.} $\Delta$ is the amount by which the realized kinetic coefficient
-exceeds the requested one. From Eq.~\eqref{eq:tau} with $C_{\rm corr}=0$:
+\subsection{Definition}
+Let $\Delta$ denote the amount by which the realized kinetic coefficient exceeds the
+requested one. From Eq.~\eqref{eq:tau} with $C_{\rm corr}=0$,
 \begin{equation}
-\boxed{\;\Delta \;\equiv\; \bbare-\bsub \;=\; a_1a_2\,\epsilon
+\Delta \;\equiv\; \bbare-\bsub \;=\; a_1a_2\,\epsilon
 \left(\frac{1}{\texttt{diff\_sub}}+\frac{1}{\texttt{dif\_vap}}\right)
-\frac{\rho_{\rm ice}}{\rho_{vs}(T)}\;}
+\frac{\rho_{\rm ice}}{\rho_{vs}(T)} ,
 \label{eq:delta}
 \end{equation}
-in the unscaled units of $\bsub$ (s/m). The bracket is the pair of $a_2$ terms
-$\tau_{\rm sub}$ carries; $a_1$ converts the bracket to a kinetic coefficient; the
-$\rho_{\rm ice}/\rho_{vs}$ factor undoes the scaling the code works in internally. At
-the wedge parameters ($\epsilon=8.584\times10^{-7}$ m, $T=-20\,^\circ$C):
+expressed in the unscaled units of $\bsub$ (s\,m$^{-1}$). The bracket is the pair of $a_2$
+terms carried by $\tau_{\rm sub}$; the factor $a_1$ converts the bracket into a kinetic
+coefficient, and $\rho_{\rm ice}/\rho_{vs}$ removes the scaling used internally by the
+solver. For the wedge configuration ($\epsilon=8.584\times10^{-7}$\,m,
+$T=-20\,^\circ$C):
 \begin{center}\small\begin{tabular}{lrr}\toprule
- & value [s/m] & share of $\Delta$\\ \midrule
+ & value [s\,m$^{-1}$] & share of $\Delta$\\ \midrule
 thermal, $a_1a_2\epsilon\,\rho_{\rm ice}/(\rho_{vs}\texttt{diff\_sub})$ & $9.44\times10^{4}$ & 73.7\,\%\\
 vapor, \ \,$a_1a_2\epsilon\,\rho_{\rm ice}/(\rho_{vs}\texttt{dif\_vap})$ & $3.37\times10^{4}$ & 26.3\,\%\\ \midrule
-$\Delta$ & $\mathbf{1.282\times10^{5}}$ & \\
+$\Delta$ & $1.282\times10^{5}$ & \\
 $\bsub$ (requested) & $5.9216\times10^{5}$ & \\
 $\bbare=\bsub+\Delta$ (realized) & $7.2036\times10^{5}$ & \\ \bottomrule
 \end{tabular}\end{center}
 
-\textbf{Why it matters --- three properties, none of them benign.}
+\subsection{Consequences}
+Three properties of Eq.~\eqref{eq:delta} determine its practical significance.
 
-\emph{(i) It is additive, not multiplicative.} The shortfall is
-$\bsub/(\bsub+\Delta)$, so it is not a fixed factor: it depends on how large $\bsub$
-itself is. The ladder measured exactly this, $0.32\to0.95$ across four arms
-(\S\ref{sec:ladder}). Any ``just scale $\beta$ by the observed ratio'' fix is therefore
-calibrated to one parameter point and wrong everywhere else --- see \S\ref{sec:fix}.
+\emph{(i) The offset is additive.} The resulting shortfall is $\bsub/(\bsub+\Delta)$ and
+therefore depends on $\bsub$ itself; it is not a fixed multiplicative factor. The
+parameter sweep of \S\ref{sec:ladder} exhibits this directly, the ratio varying from
+$0.32$ to $0.95$ across four values of $\bsub$. Consequently, any correction of the form
+``rescale $\beta$ by the observed ratio'' is calibrated at a single parameter point and is
+inaccurate elsewhere (\S\ref{sec:fix}).
 
-\emph{(ii) It scales as $\epsilon$ and as $1/\rho_{vs}(T)$.} Coarser interfaces and
-colder temperatures both make it worse, and neither is a free knob: $\epsilon$ is set by
-resolution requirements and $T$ by the science. At Molaro's $\epsilon=1.2\times10^{-7}$ m
-with $\alpha_c=0.1$, $\Delta/\bsub=0.23$; at the wedge's it is $0.22$; at
-$-60\,^\circ$C it is $20.7$.
+\emph{(ii) The offset scales as $\epsilon$ and as $1/\rho_{vs}(T)$.} Coarser interfaces and
+lower temperatures both increase it, and neither quantity is freely adjustable: $\epsilon$
+is fixed by resolution requirements and $T$ by the problem under study. For the Molaro
+configuration ($\epsilon=1.2\times10^{-7}$\,m, $\alpha_c=0.1$), $\Delta/\bsub=0.23$; for
+the wedge configuration, $0.22$; at $-60\,^\circ$C, $20.7$.
 
-\emph{(iii) It is a hard floor on the kinetics the model can represent.} Since
+\emph{(iii) The offset imposes a lower bound on the realizable kinetic coefficient.} Since
 $\beta_{\rm realized}=\bsub+\Delta\ge\Delta$ for any positive $\bsub$, and
-$\beta\propto1/\alpha_c$, there is a \textbf{ceiling on the attachment coefficient} no
-input can exceed:
+$\beta\propto1/\alpha_c$, there exists an upper bound on the attachment coefficient that no
+choice of input can exceed:
 \begin{center}\small\begin{tabular}{rrrr}\toprule
-$T$ [$^\circ$C] & $\rho_{vs}$ [kg/m$^3$] & $\Delta$ [s/m] & largest reachable $\alpha_c$\\ \midrule
+$T$ [$^\circ$C] & $\rho_{vs}$ [kg\,m$^{-3}$] & $\Delta$ [s\,m$^{-1}$] & max.\ attainable $\alpha_c$\\ \midrule
 $-60$ & $8.885\times10^{-6}$ & $1.225\times10^{7}$ & 0.0006\\
 $-40$ & $1.055\times10^{-4}$ & $1.031\times10^{6}$ & 0.0077\\
 $-20$ & $8.487\times10^{-4}$ & $1.282\times10^{5}$ & 0.0619\\
 $  0$ & $5.047\times10^{-3}$ & $2.156\times10^{4}$ & 0.3684\\ \bottomrule
 \end{tabular}\end{center}
-(at $\epsilon=8.584\times10^{-7}$ m; halving $\epsilon$ halves every $\Delta$ and doubles
-every ceiling.) In the Molaro configuration this bites directly: the requested
-$\alpha_c=0.1$ is delivered as $0.081$, and at $\alpha_c\to1$ --- the end one would want
-for an attachment-limited Demmenie replication --- $\Delta$ \emph{exceeds} $\bsub$ by
-$2.3\times$.
+(evaluated at $\epsilon=8.584\times10^{-7}$\,m; halving $\epsilon$ halves $\Delta$ and
+doubles each bound). The Molaro configuration is affected directly: a requested
+$\alpha_c=0.1$ is realized as $0.081$, and in the limit $\alpha_c\to1$, appropriate to an
+attachment-limited regime, $\Delta$ exceeds $\bsub$ by a factor of $2.3$.
 
-\section{Why $C_{\rm corr}=0$: the inner-region analysis}\label{sec:inner}
+\section{Vanishing of the correction for a one-sided diffusion field}\label{sec:inner}
 
-\subsection{What the correction actually is}
-It is not physics. At finite $\epsilon$ the diffuse model produces a \emph{spurious}
-addition to the sharp-interface kinetic coefficient, because $\sigma$ varies inside the
-interface where the phase-change source lives. $\tau_{\rm sub}$ is inflated by exactly
-that spurious amount so the two cancel and the model realizes $\bsub$. The construction
-is right; the question is only whether this model produces the spurious term it is being
-compensated for.
+\subsection{Nature of the correction}
+The thin-interface correction is not a physical effect. At finite $\epsilon$ the
+diffuse-interface formulation introduces a spurious contribution to the sharp-interface
+kinetic coefficient, arising because $\sigma$ varies across the interfacial region in
+which the phase-change source is distributed. $\tau_{\rm sub}$ is inflated by the
+anticipated magnitude of that contribution so that the two cancel and the model realizes
+$\bsub$. The construction is standard; the question addressed here is whether the present
+model in fact generates the contribution for which it is being compensated.
 
 \subsection{The solvability condition}
-Stretch the interface: $\zeta$ is signed normal distance (positive into the vapor),
-$\eta=\zeta/\epsilon$. At leading order the phase equation gives the equilibrium profile
-$\phi_0=\tfrac12(1+\tanh(\eta/2))$. At the next order the linear operator is singular,
-and the Fredholm condition --- projecting onto the translation mode $\partial_\eta\phi_0$
---- is what produces the interface condition. Writing $\sigma=\sigma_{\rm int}+\delta\sigma(\eta)$
-with $\sigma_{\rm int}$ the outer solution extrapolated to $\zeta=0$, the two integrals
-that set the coefficients are
+Introduce the signed normal distance $\zeta$ (positive into the vapor) and the stretched
+inner coordinate $\eta=\zeta/\epsilon$. In the inner region the ice phase field, written
+$\phi$ here and $\phi_i$ elsewhere in the project, is expanded as
+\begin{equation}
+\phi=\phi_0(\eta)+\epsilon\,\phi_1(\eta,s,t)+O(\epsilon^2),
+\end{equation}
+in which the subscript denotes order in $\epsilon$ and is not a phase index. The leading
+term satisfies $\partial^2_{\eta\eta}\phi_0-f'(\phi_0)=0$ and is therefore the planar,
+stationary equilibrium profile $\phi_0=\tfrac12\left(1+\tanh(\eta/2)\right)$; curvature,
+interface motion and the driving field enter at $O(\epsilon)$ through $\phi_1$.
+
+At $O(\epsilon)$ the linearized operator is singular, and the Fredholm alternative,
+obtained by projection onto the translation mode $\partial_\eta\phi_0$, yields the
+interface condition. Writing $\sigma=\sigma_{\rm int}+\delta\sigma(\eta)$, where
+$\sigma_{\rm int}$ is the outer solution extrapolated to $\zeta=0$, the coefficients follow
+from
 \begin{equation}
 \int(\partial_\eta\phi_0)^2\,\mathrm{d}\eta=\tfrac16,\qquad
 \int g(\phi_0)\,\partial_\eta\phi_0\,\mathrm{d}\eta=\tfrac1{30},\qquad
-a_1=\frac{1/6}{1/30}=\mathbf{5}
+a_1=\frac{1/6}{1/30}=5 ,
 \end{equation}
---- verified numerically to six digits, and exactly the $a_1$ the code uses. The
-correction rides on a \emph{third} integral,
+evaluated numerically to six significant figures and equal to the value of $a_1$ used by
+the solver. The correction depends on a third integral,
 \begin{equation}
 I=\int g(\phi_0)\,\partial_\eta\phi_0\;\delta\sigma(\eta)\,\mathrm{d}\eta ,
 \label{eq:Iint}
 \end{equation}
-and the entire question is whether $I$ is zero.
+and vanishes if and only if $I$ does.
 
-\textbf{The weight $g(\phi_0)\,\partial_\eta\phi_0$ is even in $\eta$}, because
-$\phi_0(-\eta)=1-\phi_0(\eta)$ makes $g=\phi_0^2(1-\phi_0)^2$ even and
-$\partial_\eta\phi_0=\tfrac14\mathrm{sech}^2(\eta/2)$ even. So $I$ picks out the
-\emph{even} part of $\delta\sigma$ and is blind to the odd part.
+The weight $g(\phi_0)\,\partial_\eta\phi_0$ is even in $\eta$, since
+$\phi_0(-\eta)=1-\phi_0(\eta)$ renders $g=\phi_0^2(1-\phi_0)^2$ even and
+$\partial_\eta\phi_0=\tfrac14\,\mathrm{sech}^2(\eta/2)$ even. The integral $I$ therefore
+samples only the even part of $\delta\sigma$.
 
-\subsection{Symmetric $D$: the deviation is even, and $I\neq0$}
-With $D$ equal on both sides and the flux splitting $\pm j/2$, the quasi-static inner
+\subsection{Symmetric diffusivity}
+For $D$ equal in both phases and the flux partitioned as $\pm j/2$, the quasi-static inner
 balance $\partial^2_{\eta\eta}\rho_v\propto\partial_\eta\phi_0$ integrates to
-$\partial_\eta\rho_v\propto(\phi_0-\tfrac12)$, which is \emph{odd}; so
-$\delta\sigma\propto\Psi(\eta)=\ln\cosh(\eta/2)-|\eta|/2+\ln2$ is \emph{even} and decays
-to zero at both infinities. Even deviation against even weight: $I\neq0$, and this is
-where Karma \& Rappel's $-a_1a_2\epsilon/D$ comes from.
+$\partial_\eta\rho_v\propto(\phi_0-\tfrac12)$, which is odd. Hence
+$\delta\sigma\propto\Psi(\eta)=\ln\cosh(\eta/2)-|\eta|/2+\ln2$ is even and decays to zero
+in both limits. An even deviation against an even weight gives $I\neq0$; this is the
+origin of the term $-a_1a_2\epsilon/D$ of Karma \& Rappel (1998).
 
-\subsection{One-sided $D_v\phi_a$: the deviation is identically zero}
-Our vapor equation carries $D_v\phi_a$, which vanishes in the ice. Dropping storage
-(justified: $v_n\epsilon/(\xi_v D_v)=2.4\times10^{-11}$) the inner balance is
+\subsection{One-sided diffusivity}
+The vapor equation of the present model carries the diffusivity $D_v\phi_a$, which vanishes
+in the ice. Neglecting storage, which is justified by
+$v_n\epsilon/(\xi_v D_v)=2.4\times10^{-11}$, the inner balance is
 \begin{equation}
 \partial_\eta\!\left(D_v\phi_a\,\partial_\eta\rho_v\right)
 =-\epsilon\,v_n\rho_{\rm ice}\,\partial_\eta\phi_0 .
 \end{equation}
-Integrate once; no flux into the ice fixes the constant at $C=\epsilon v_n\rho_{\rm ice}$:
+A single integration, with the constant fixed by the absence of flux into the ice at
+$C=\epsilon v_n\rho_{\rm ice}$, gives
 \begin{equation}
 D_v\phi_a\,\partial_\eta\rho_v=\epsilon v_n\rho_{\rm ice}(1-\phi_0)
 =\epsilon v_n\rho_{\rm ice}\,\phi_a
 \;\;\Longrightarrow\;\;
-\partial_\eta\rho_v=\frac{\epsilon v_n\rho_{\rm ice}}{D_v}\quad\text{wherever }\phi_a\neq0 .
+\partial_\eta\rho_v=\frac{\epsilon v_n\rho_{\rm ice}}{D_v}
+\quad\text{wherever }\phi_a\neq0 .
 \end{equation}
-\textbf{The $\phi_a$ cancels.} And that constant is precisely the outer Stefan gradient
---- $D_v\partial_\zeta\rho_v|_{\rm int}=v_n\rho_{\rm ice}$ gives the same value. The inner
-solution \emph{is} the outer solution continued through the interface, so
+The factor $\phi_a$ cancels, and the resulting constant is precisely the outer Stefan
+gradient, since $D_v\partial_\zeta\rho_v|_{\rm int}=v_n\rho_{\rm ice}$ yields the same
+value. The inner solution is thus the continuation of the outer solution through the
+interfacial region, so that
 \begin{equation}
-\boxed{\;\delta\sigma\equiv0\;\Longrightarrow\;I=0\;\Longrightarrow\;C_{\rm corr}=0\;}
+\delta\sigma\equiv0
+\;\;\Longrightarrow\;\; I=0
+\;\;\Longrightarrow\;\; C_{\rm corr}=0 .
 \end{equation}
-This is a \emph{vanishing theorem}, not a cancellation: $\delta\sigma$ is not merely odd,
-it is null, so $I=0$ for \emph{any} weight and no prefactor is needed. (Deep in the ice
-the \code{air\_lim}$=10^{-6}$ floor on $\phi_a$ breaks the cancellation, but $g(\phi_0)$
-there is $\lesssim10^{-12}$ and contributes nothing.)
+The integrand vanishes identically rather than by cancellation of contributions: since
+$\delta\sigma$ is null rather than merely odd, $I=0$ for any weight, and no evaluation of
+the prefactor is required. Deep within the ice the floor \code{air\_lim}$=10^{-6}$ on
+$\phi_a$ breaks the cancellation, but $g(\phi_0)$ there is of order $10^{-12}$ and the
+contribution is negligible.
 
-\subsection{An honest limit on this derivation}
-The vanishing result above is robust because it needs no prefactor. The \emph{symmetric}
-branch is not equally settled here: constructing $\delta\sigma=\Psi$ as above and
-evaluating Eq.~\eqref{eq:Iint} gives $a_2=-6I=0.087$, against Karma \& Rappel's $0.158$.
-So this sketch is missing O($\epsilon$) contributions --- the curvature term, the
-$\phi_1$ back-reaction, or the precise matching of the flux split. \textbf{We have not
-re-derived $a_2$, and should not claim to.} What is established is the structural
-contrast: even-and-nonzero versus identically-null. The measurement supplies the rest.
+\subsection{Limitations of the present derivation}
+The vanishing result above is insensitive to prefactors and is correspondingly robust. The
+symmetric branch is less well established here: constructing $\delta\sigma=\Psi$ as above
+and evaluating Eq.~\eqref{eq:Iint} gives $a_2=-6I=0.087$, against the accepted value
+$0.158$. The present treatment therefore omits $O(\epsilon)$ contributions, plausibly the
+curvature term, the back-reaction of $\phi_1$, or the matching of the flux partition. It is
+not offered as a derivation of $a_2$. What is established is the structural contrast
+between an even, non-vanishing deviation and an identically null one; the magnitude is
+supplied by measurement.
 
-\subsection{The thermal channel fails for a different reason}
-The thermal term is not a one-sidedness question --- $k$ is interpolated and nonzero in
-both phases, so a correction does exist there. It is wrong because
-\code{a2*eps/diff\_sub} assumes latent heat drives $\sigma$ at \emph{unit strength}.
-Temperature reaches $\sigma$ only through $\rho_{vs}(T)$, so the channel carries a
-Clausius--Clapeyron factor. Reading off $\mathrm{d}\sigma/\mathrm{d}(v_n\epsilon)$ per
-channel:
+\subsection{The thermal channel}
+The thermal term is not affected by the one-sidedness argument: $k$ is interpolated and
+non-zero in both phases, so a correction does exist for that channel. It is nonetheless
+misspecified, because \code{a2*eps/diff\_sub} presumes that latent heat drives $\sigma$ at
+unit strength. Temperature influences $\sigma$ only through $\rho_{vs}(T)$, so the channel
+carries a Clausius--Clapeyron factor. Evaluating
+$\mathrm{d}\sigma/\mathrm{d}(v_n\epsilon)$ for each channel:
 \begin{center}\small\begin{tabular}{llr}\toprule
-channel & correct coefficient & value\\ \midrule
+channel & coefficient & value\\ \midrule
 vapor & $1/D_v$ & $5.27\times10^{4}$\\
-      & \emph{coded}: $1/\texttt{dif\_vap}$ & $4.59\times10^{4}$ \ \checkmark form, but $I=0$\\[2pt]
+      & as coded: $1/\texttt{dif\_vap}$ & $4.59\times10^{4}$ \ (correct form; $I=0$)\\[2pt]
 thermal & $(\mathrm{d}\rho_{vs}/\mathrm{d}T)\,L_{\rm sub}/k$ & $1.0\times10^{2}$ ($k_{\rm ice}$) -- $1.2\times10^{4}$ ($k_{\rm air}$)\\
-        & \emph{coded}: $1/\texttt{diff\_sub}$ & $1.29\times10^{5}$ \ $\times$ over-weighted 11--1300$\times$\\ \bottomrule
+        & as coded: $1/\texttt{diff\_sub}$ & $1.29\times10^{5}$ \ (over-weighted by 11--1300)\\ \bottomrule
 \end{tabular}\end{center}
-\code{ThermalCond} interpolates between the two $k$'s, so \emph{any} reasonable choice
-leaves this term negligible. This defect stands independently of everything above.
+Since \code{ThermalCond} interpolates between the two conductivities, any admissible choice
+renders this term negligible. This misspecification is independent of the preceding
+argument.
 
-\subsection{What the measurement bounds --- and what it does not}
+\subsection{Scope of the measurement}
 \begin{center}\small\begin{tabular}{lll}\toprule
-spurious term & form & seen by the ladder?\\ \midrule
-kinetic correction & $\propto v_n$ & \textbf{yes} --- $\le0.1\,\%$ of $\bbare$\\
-solute trapping & $\propto\epsilon v_n$ (shifts $\sigma_{\rm int}$) & \textbf{yes} --- also $\propto v_n$, absorbed into fitted $\beta$\\
-surface diffusion & tangential flux along the interface & \textbf{no} --- different operator\\ \bottomrule
+spurious term & form & constrained by the sweep?\\ \midrule
+kinetic correction & $\propto v_n$ & yes; $\le0.1\,\%$ of $\bbare$\\
+solute trapping & $\propto\epsilon v_n$ (shifts $\sigma_{\rm int}$) & yes; also $\propto v_n$, absorbed into fitted $\beta$\\
+surface diffusion & tangential flux along the interface & no; distinct operator\\ \bottomrule
 \end{tabular}\end{center}
-The first two are dead. The third is invisible to a centerline $v_n$ measurement and is
-\emph{not} bounded by anything in this note. One reassurance and one caveat: the surface
-excess of the diffusivity weight, $\int[(1-\phi_0)-\Theta(-\eta)]\mathrm{d}\eta$, is
-\emph{exactly zero} by the same antisymmetry, which suggests the spurious surface
-diffusion is suppressed too --- but that is a suggestion, not the calculation. It matters
-because the model has \emph{no} surface-diffusion term by construction, so a spurious one
-would appear nowhere in the source, and the Molaro campaign is separately reasoning about
-\emph{physical} surface diffusion. The two must not be conflated.
+The first two are excluded. The third is not observable in a centerline $v_n$ measurement
+and is not constrained by any result reported here. The surface excess of the diffusivity
+weight, $\int[(1-\phi_0)-\Theta(-\eta)]\,\mathrm{d}\eta$, vanishes exactly by the same
+antisymmetry, which suggests that the spurious surface diffusion is likewise suppressed;
+this is an indication rather than a calculation. The point is material because the model
+contains no surface-diffusion term by construction, so a spurious one would not be evident
+from the source, and the Molaro analysis separately invokes physical surface diffusion.
+The two must be distinguished.

@@ -11,148 +11,150 @@
 \newcommand{\bsub}{\beta_{\mathrm{sub0}}}
 \newcommand{\bbare}{\beta_{\mathrm{bare}}}
 
-\title{\vspace{-1.4cm}\textbf{The solver does not deliver the $\bsub$ it is given}\\
-\large Diagnosis and remediation plan for \code{lunar\_regolith\_DSM}}
-\author{\normalsize Working note — evidence from batch \code{2026-08-07\_\_07.26.38\_wedge\_bc}}
-\date{\normalsize 2026-08-25}
+\title{\vspace{-1.4cm}\textbf{An inapplicable thin-interface correction inflates the\\
+sublimation kinetic coefficient}\\
+\large Diagnosis, analysis and proposed correction}
+\author{\normalsize Working note --- \code{lunar\_regolith\_DSM}, \code{enceladus\_DSM}}
+\date{\normalsize 2026-08-27}
 
 \begin{document}\maketitle\vspace{-0.7cm}
 
 \begin{center}\fbox{\parbox{0.93\textwidth}{\small
-\textbf{Summary --- confirmed by experiment, 2026-08-26.} The realized kinetic coefficient is $1.22\times$ the requested
-\code{-beta\_sub0}, so every run sublimates and deposits $18\,\%$ slower than intended.
-The capillary length $d_0$ is exact. The excess is precisely the two Karma--Plapp
-thin-interface corrections that \code{lunar\_main.c:829} adds to $\tau_{\mathrm{sub}}$ for
-the asymptotics to subtract back off --- and which the measurement says are never
-subtracted. One of the two (the thermal one, 13.1 of the 17.8 points) is wrong on its
-face and should be fixed regardless. The fix is to $\tau_{\mathrm{sub}}$, not to the
-Gibbs--Thomson prediction, which is correct as written.\\[0.3em]
-A four-arm $\bsub$ ladder (\S\ref{sec:ladder}) has since confirmed this over a
-$40\times$ range: the measured ratio moves $0.32\to0.95$ exactly as predicted, and
-$\beta_{\rm fit}/\bbare=1.0009\pm0.0007$ throughout.}}\end{center}
+\textbf{Abstract.} The kinetic coefficient realized by the solver exceeds the requested
+\code{-beta\_sub0} by a factor of $1.22$, so that sublimation and deposition proceed
+$18\,\%$ more slowly than intended. The capillary length is realized correctly. The
+excess corresponds exactly to the two thin-interface corrections added to
+$\tau_{\mathrm{sub}}$ at \code{lunar\_main.c:829} in anticipation of their removal by the
+sharp-interface asymptotics; measurement indicates that no such removal occurs. An inner-region
+analysis shows why: for a one-sided vapor diffusivity the inner deviation of
+$\sigma$ vanishes identically, so the vapor correction cannot arise. The thermal
+correction is separately misspecified, omitting the Clausius--Clapeyron coupling by which
+temperature acts on $\sigma$. A four-arm parameter sweep in $\bsub$ confirms the diagnosis
+over a range of $40$: the measured ratio varies from $0.32$ to $0.95$ as predicted, with
+$\beta_{\rm fit}/\bbare=1.0009\pm0.0007$. The correction required is the removal of the
+two terms from $\tau_{\mathrm{sub}}$; the Gibbs--Thomson relation used for comparison is
+correct as written.}}\end{center}
 
-\section{What was measured}
+\section{Measurement}
 
-The wedge geometry places an apex-centered ice annulus in a tapering pore with the virtual
-apex at $y=L_y/2$, so on the centerline the interface normal is \emph{exactly} $\pm\hat x$
-and $\vn$ is a one-dimensional displacement rate.
-\code{postprocess/wedge\_gt\_velocity.py} measures it on both menisci of all nine runs and
-compares against
+The wedge geometry places an apex-centered ice annulus in a tapering pore, with the virtual
+apex at $y=L_y/2$. On the centerline the interface normal is therefore exactly $\pm\hat x$
+and $\vn$ reduces to a one-dimensional displacement rate.
+\code{postprocess/wedge\_gt\_velocity.py} measures $\vn$ on both menisci of all nine runs
+and compares it with
 \begin{equation}
 \vn=\frac{\sigma\,\rho_{vs}(T)/\rho_{vs}(T_0)-d_{0,\mathrm{sub0}}\,\chi}{\bsub},
 \qquad \sigma=\frac{\rho_v-\rho_{vs}(T)}{\rho_{vs}(T)} .
 \label{eq:gt}
 \end{equation}
-The solver recovers $0.826$ (inner) / $0.811$ (outer) of that rate --- flat over 90 days,
-and flat across nine vapor-boundary combinations whose residual driving force
-$\sigma-d_0\chi$ spans two orders of magnitude. Interface-extraction noise is $0.5\,\%$
-against an $18\,\%$ effect, and three independent $\vn$ estimators agree on the median to
-$1\,\%$, so the shortfall is not a measurement artifact.
+The solver recovers $0.826$ (inner meniscus) and $0.811$ (outer) of the predicted rate.
+Both values are constant over 90 days and across nine vapor boundary conditions whose
+residual driving force $\sigma-d_{0,\mathrm{sub0}}\chi$ spans two orders of magnitude.
+Interface-extraction noise is $0.5\,\%$, against an effect of $18\,\%$, and three
+independent estimators of $\vn$ agree on the median to within $1\,\%$; the shortfall is
+therefore not an artifact of the measurement.
 
-\section{The regression: which coefficient is wrong}
+\section{Identification of the affected coefficient}
 
-Rather than assume Eq.~\eqref{eq:gt} and read off a ratio, fit both coefficients freely.
-Every snapshot supplies a triple $(\sigma,\vn,\chi)$, so
+Rather than assume Eq.~\eqref{eq:gt} and report a ratio, both coefficients may be fitted.
+Each snapshot supplies a triple $(\sigma,\vn,\chi)$, so that
 \begin{equation}
-\sigma \;=\; \beta\,\vn \;+\; d_0\,\chi \qquad\text{(no intercept)}
+\sigma = \beta\,\vn + d_0\,\chi \qquad\text{(no intercept)}
 \end{equation}
-is an ordinary two-column least-squares problem. \textbf{The design is identifiable
-because the two menisci carry opposite-sign curvature} --- the inner one is concave, the
-outer convex --- while the $3\times3$ reservoir grid moves $\vn$ at nearly fixed
-$\chi$. Two genuinely different directions:
+constitutes a two-column least-squares problem. The design is identifiable because the two
+menisci carry curvature of opposite sign, the inner being concave and the outer convex,
+while the $3\times3$ reservoir grid varies $\vn$ at nearly fixed $\chi$:
 \begin{center}\small\begin{tabular}{lr}\toprule
-$\chi$ spans & $-5.259\times10^{3}$ \ldots\ $+3.459\times10^{3}$ m$^{-1}$ \\
-$\vn$ spans  & $-1.459\times10^{-12}$ \ldots\ $+1.378\times10^{-12}$ m/s \\
-$\mathrm{corr}(\vn,\chi)$ & $-0.7095$ \quad(correlated, but far from collinear) \\
+$\chi$ & $-5.259\times10^{3}$ \ldots\ $+3.459\times10^{3}$ m$^{-1}$ \\
+$\vn$  & $-1.459\times10^{-12}$ \ldots\ $+1.378\times10^{-12}$ m\,s$^{-1}$ \\
+$\mathrm{corr}(\vn,\chi)$ & $-0.7095$ \\
 condition number & $2.58$ \\ \bottomrule
 \end{tabular}\end{center}
 
-Fitting $n=3492$ points (nine runs $\times$ two fronts $\times$ every fifth snapshot after
-the initial transient):
+Fitting $n=3492$ points (nine runs, two menisci, every fifth snapshot after the initial
+transient):
 \begin{center}\small\begin{tabular}{lrrrr}\toprule
- & $\beta$ [s/m] & $\times\,\bsub$ & $d_0$ [m] & $\times\,d_{0,\mathrm{sub0}}$\\ \midrule
-pooled, both fronts & $7.2324\times10^{5}\pm1.8\times10^{2}$ & \textbf{1.2214} & $1.0172\times10^{-9}\pm3.5\times10^{-14}$ & \textbf{1.0006}\\
-left front only     & $7.1384\times10^{5}\pm1.6\times10^{2}$ & 1.2055 & $1.0166\times10^{-9}\pm2.7\times10^{-14}$ & 1.0000\\
-right front only    & $7.2716\times10^{5}\pm1.3\times10^{2}$ & 1.2280 & $1.0167\times10^{-9}\pm3.5\times10^{-14}$ & 1.0001\\ \bottomrule
+ & $\beta$ [s\,m$^{-1}$] & $/\,\bsub$ & $d_0$ [m] & $/\,d_{0,\mathrm{sub0}}$\\ \midrule
+pooled & $7.2324\times10^{5}\pm1.8\times10^{2}$ & 1.2214 & $1.0172\times10^{-9}\pm3.5\times10^{-14}$ & 1.0006\\
+inner  & $7.1384\times10^{5}\pm1.6\times10^{2}$ & 1.2055 & $1.0166\times10^{-9}\pm2.7\times10^{-14}$ & 1.0000\\
+outer  & $7.2716\times10^{5}\pm1.3\times10^{2}$ & 1.2280 & $1.0167\times10^{-9}\pm3.5\times10^{-14}$ & 1.0001\\ \bottomrule
 \end{tabular}\end{center}
 
-$R^2=0.999997$ pooled; the rms residual is $5.4\times10^{-9}$, i.e.\ $0.14\,\%$ of
-$|\sigma|$. Holding $d_{0,\mathrm{sub0}}$ fixed and fitting $\beta$ alone gives
-$7.2106\times10^{5}$, within $0.3\,\%$ of the free fit --- the two parameters are not
-trading off against each other.
+The pooled fit gives $R^2=0.999997$ with an rms residual of $5.4\times10^{-9}$, or
+$0.14\,\%$ of $|\sigma|$. Holding $d_{0,\mathrm{sub0}}$ fixed and fitting $\beta$ alone
+gives $7.2106\times10^{5}$, within $0.3\,\%$ of the free fit, indicating that the two
+parameters are not compensating one another.
 
-\textbf{Robustness.} Leave-one-run-out (drop each of the nine in turn and refit) moves
-$\beta$ over $7.2204$--$7.2419\times10^{5}$, a spread of $0.30\,\%$ of the mean. No single
-vapor-BC condition drives the result. The residual left/right split ($1.206$ vs $1.228$)
-is $\pm1\,\%$ and is consistent with the quoted $\sigma$-extraction sensitivity
-($0.7\,\%$ left, $0.3\,\%$ right).
+Leave-one-run-out refitting displaces $\beta$ over
+$7.2204$--$7.2419\times10^{5}$, a spread of $0.30\,\%$ about the mean, so no single vapor
+boundary condition determines the result. The residual difference between the two menisci
+($1.206$ against $1.228$) is $\pm1\,\%$ and is consistent with the reported
+$\sigma$-extraction sensitivity of $0.7\,\%$ and $0.3\,\%$ respectively.
 
-\textbf{Conclusion.} $d_{0,\mathrm{sub0}}$ is recovered to $0.06\,\%$. The Gibbs--Thomson \emph{curvature}
-physics is exact and the prediction formula is right. The entire deficit lives in $\beta$,
-and it is a clean multiplicative factor of $1.22$.
+The capillary length is thus recovered to $0.06\,\%$: the curvature terms of the
+Gibbs--Thomson relation are realized correctly, and the discrepancy resides entirely in
+$\beta$, as a multiplicative factor of $1.22$.
 
 \begin{figure}[t]\centering
 \includegraphics[width=\textwidth]{fig_regression.pdf}
-\caption{\small Partial-regression views of the same fit. \textbf{Left:} with the fitted
-curvature term removed, $\sigma-d_0\chi$ against $\vn$ is a straight line through the
-origin whose slope is the realized $\beta$. The black fit lies inside the $\bbare$ band
-(orange) and is visibly steeper than the requested $\bsub$ (green dashed).
-\textbf{Right:} with the kinetic term removed, the slope against $\chi$ falls inside the
-$d_{0,\mathrm{sub0}}$ band: the capillary length is delivered exactly. Both fronts,
-all nine runs, every fifth snapshot.}
+\caption{\small Partial-regression views of the fit. Left: with the fitted curvature term
+removed, $\sigma-d_0\chi$ against $\vn$ is linear through the origin with slope equal to
+the realized $\beta$. The fit lies within the $\bbare$ band and is steeper than the
+requested $\bsub$. Right: with the kinetic term removed, the slope against $\chi$ lies
+within the $d_{0,\mathrm{sub0}}$ band. Both menisci, all nine runs, every fifth snapshot.}
 \end{figure}
 
-\section{$\beta$ lands on the \emph{bare} kinetic coefficient}
+\section{The realized kinetic coefficient}
 
-Dividing the phase residual by $3\,\mathrm{mob}/\epsilon$ gives the Moure \& Fu form
+Dividing the phase-field residual by $3\,\mathrm{mob}/\epsilon$ gives the Moure \& Fu form
 \begin{equation}
 \tau_{\rm sub}\,\partial_t\phi=\epsilon^2\nabla^2\phi-f'(\phi)
 +\lambda_{\rm sub}\,g(\phi)\,\frac{\rho_{vs}(T)}{\rho_{\rm ice}}\,\sigma ,
 \end{equation}
-whose sharp-interface limit is exactly the Gibbs--Thomson condition
-Eq.~\eqref{eq:gt}, with the two coefficients it realizes given by
+whose sharp-interface limit is Eq.~\eqref{eq:gt} with realized coefficients
 \begin{equation}
 d_{0,\rm realized}=d_{0,\mathrm{sub0}},\qquad
 \beta_{\rm realized}=\underbrace{\frac{\tau_{\rm sub}\,d_{0,\mathrm{sub0}}}{\epsilon^{2}}}_{\textstyle \bbare}\;-\;C_{\rm corr}.
 \label{eq:limit}
 \end{equation}
-$C_{\rm corr}$ is an $O(\epsilon)$ term generated by $\sigma$ varying \emph{inside} the
-diffuse interface. \code{lunar\_main.c:829} pre-inflates $\tau_{\rm sub}$ by exactly what
-it assumes $C_{\rm corr}$ to be, so that the two cancel and $\beta_{\rm realized}=\bsub$:
+Here $C_{\rm corr}$ is the $O(\epsilon)$ term generated by the variation of $\sigma$ within
+the diffuse interface. The solver inflates $\tau_{\rm sub}$ by the anticipated magnitude of
+$C_{\rm corr}$, so that the two cancel and $\beta_{\rm realized}=\bsub$:
 \begin{equation}
 \tau_{\rm sub}=\epsilon\lambda_{\rm sub}\Big(\underbrace{\tfrac{\beta_{\rm sub}}{a_1}}_{82.2\,\%}
 +\underbrace{\tfrac{a_2\epsilon}{\texttt{diff\_sub}}}_{13.1\,\%}
 +\underbrace{\tfrac{a_2\epsilon}{\texttt{dif\_vap}}}_{4.7\,\%}\Big),
 \qquad
-\bbare=7.2036\times10^{5}\ \mathrm{s/m}.
+\bbare=7.2036\times10^{5}\ \mathrm{s\,m^{-1}} .
 \label{eq:tau}
 \end{equation}
-(The bracket is written in the $\rho_{vs}/\rho_{\rm ice}$-scaled variables the code carries
-internally; $\bbare$ above is already converted back to the unscaled units of $\bsub$.)
-The fit gives $\beta/\bbare=1.0040$. \textbf{$C_{\rm corr}\approx0$: nothing is subtracted,
-so the inflation survives intact}, and $\bbare/\bsub=1.2165\Rightarrow$ ratio $0.8220$
-against a measured $0.826/0.811$.
+The bracket is written in the $\rho_{vs}/\rho_{\rm ice}$-scaled variables used internally
+by the solver; $\bbare$ is quoted in the unscaled units of $\bsub$. The fit gives
+$\beta/\bbare=1.0040$, so that $C_{\rm corr}\approx0$: the anticipated cancellation does
+not occur and the inflation is retained in full. This gives $\bbare/\bsub=1.2165$ and a
+predicted ratio of $0.8220$, against measured values of $0.826$ and $0.811$.
 
-This is a defect in a \emph{model parameter definition}. Eq.~\eqref{eq:gt} is the target
-physics and is correct; the solver simply does not realize the $\beta$ it was handed.
+The defect therefore lies in the definition of a model parameter. Eq.~\eqref{eq:gt} is the
+intended physics and is correct; the solver does not realize the value of $\beta$ supplied
+to it.
 
 \input{sec_theory}
 \begin{figure}[t]\centering
 \includegraphics[width=\textwidth]{fig_measure.pdf}
-\caption{\small \textbf{Left:} the measured ratio tracks $\bsub/\bbare$ for the whole run
-on both fronts. \textbf{Right:} the ceiling on the condensation coefficient implied by
-$\beta_{\rm eff}\ge\Delta$, as a function of temperature and $\epsilon$.}
+\caption{\small Left: the measured ratio follows $\bsub/\bbare$ throughout the run on both
+menisci. Right: the upper bound on the attachment coefficient implied by
+$\beta_{\rm realized}\ge\Delta$, as a function of temperature and $\epsilon$.}
 \end{figure}
-\subsection{What has been ruled out}
+\subsection{Alternative explanations considered}
 
 \begin{itemize}\setlength\itemsep{0.15em}
-\item \textbf{Grid pinning / lattice friction.} The deficit is a constant \emph{factor},
-      identical on fronts whose speeds differ 60$\times$. A threshold or friction cannot
-      behave that way.
-\item \textbf{Interface-extraction bias.} Three independent $\vn$ estimators agree on the
-      median to $1\,\%$; the residual scatter is $0.5\,\%$, zero-mean, and locked to
-      sub-cell phase.
-\item \textbf{A mis-converted $a_1$ or $a_2$.} $\epsilon$ here is Moure \& Fu's
+\item \emph{Grid pinning or lattice friction.} The discrepancy is a constant
+      multiplicative factor, identical on menisci whose velocities differ by a factor of
+      60. A threshold or friction mechanism would not produce this behavior.
+\item \emph{Bias in the interface extraction.} Three independent estimators of $\vn$
+      agree on the median to within $1\,\%$; the residual scatter is $0.5\,\%$,
+      zero-mean, and correlated with sub-cell phase.
+\item \emph{Incorrect conversion of $a_1$ or $a_2$.} The $\epsilon$ used here is Moure \& Fu's
       $\epsilon$, and is deliberately \emph{not} Kaempfer \& Plapp's $W$
       ($W_{\rm KP}=\sqrt2\,\epsilon$); the constants already absorb the difference.
       Mapping to K\&P's $[-1,1]$ form gives
@@ -160,34 +162,34 @@ $\beta_{\rm eff}\ge\Delta$, as a function of temperature and $\epsilon$.}
       =5.0000\,\epsilon/\lambda_{\rm sub}$ against the coded $a_1=5.0$, and
       $a_1^{\rm KP}a_2^{\rm KP}\sqrt2=0.78338$ against the coded $a_1a_2=0.7905$
       ($0.91\,\%$). This is already documented at
-      \code{enceladus\_DSM/src/assembly.c:46-58}. The free fit recovering
-      $d_{0,\mathrm{sub0}}$ to $0.06\,\%$ is an independent measurement of $a_1$.
-\item \textbf{$\xi_v$.} It multiplies the vapor diffusion and the ice source
+      \code{enceladus\_DSM/src/assembly.c:46-58}. Recovery of $d_{0,\mathrm{sub0}}$ to
+      $0.06\,\%$ by the free fit constitutes an independent measurement of $a_1$.
+\item \emph{The temporal scaling $\xi_v$.} It multiplies the vapor diffusion and the ice source
       identically, so it cancels between them in the inner balance
       (\S\ref{sec:inner}) and survives only in storage/diffusion,
       $v_n\epsilon/(\xi_v D_v)=2.4\times10^{-11}$. The unscaled \code{dif\_vap} in
       Eq.~\eqref{eq:tau} is the correct choice; substituting
       $\xi_v\!\cdot\!$\code{dif\_vap} would put the bracket at $6.36$ instead of
-      $0.133$ and predict a $58\times$ shortfall.
+      $0.133$, predicting a shortfall of a factor of $58$.
 \end{itemize}
 
 
 \begin{figure}[t]\centering
 \includegraphics[width=\textwidth]{fig_inner.pdf}
-\caption{\small The structure behind \S\ref{sec:inner}. \textbf{Left:} the solvability
-weight $g(\phi_0)\partial_\eta\phi_0$ is even in $\eta$, so it sees only the even part of
-the inner deviation. \textbf{Right:} with symmetric $D$ the deviation is even and
-non-zero, and the correction survives; with the one-sided $D_v\phi_a$ it is identically
-zero, so no correction can arise for any weight.}
+\caption{\small Structure underlying \S\ref{sec:inner}. Left: the solvability weight
+$g(\phi_0)\,\partial_\eta\phi_0$ is even in $\eta$ and therefore samples only the even part
+of the inner deviation. Right: for symmetric $D$ the deviation is even and non-vanishing,
+and the correction is retained; for the one-sided diffusivity $D_v\phi_a$ it vanishes
+identically, so that no correction arises for any weight.}
 \end{figure}
 
-\section{The ladder confirms it}\label{sec:ladder}
-The diagnosis above rested on one $(\epsilon,\bsub,T)$ point. Because the inflation is
-additive and $\bsub$ is not, the predicted shortfall is a strong function of $\bsub$, so a
-ladder in $\bsub$ separates the hypotheses without touching the solver. Four runs,
-identical but for \code{-beta\_sub0}, each 3406 steps and ${\sim}2$ control-point spacings
-of meniscus travel. Batch
-\code{2026-08-25\_\_18.14.15\_beta\_ladder}, all four completed:
+\section{Verification by parameter sweep}\label{sec:ladder}
+The preceding analysis rests on a single $(\epsilon,\bsub,T)$ configuration. Because the
+offset is additive while $\bsub$ is not, the predicted shortfall depends strongly on
+$\bsub$, so that a sweep in $\bsub$ discriminates between the candidate explanations
+without modification of the solver. Four runs were performed, identical except for
+\code{-beta\_sub0}, each of 3406 steps and approximately two control-point spacings of
+meniscus displacement (batch \code{2026-08-25\_\_18.14.15\_beta\_ladder}):
 
 \begin{center}\small\begin{tabular}{rrrrrrr}\toprule
 $\times$ & \code{-beta\_sub0} & $\bbare$ & predicted & \multicolumn{2}{c}{measured} & $\beta_{\rm fit}/\bbare$\\
@@ -198,19 +200,22 @@ $\times$ & \code{-beta\_sub0} & $\bbare$ & predicted & \multicolumn{2}{c}{measur
 4.00 & 2.3686e6 & 2.4968e6 & 0.9487 & 0.9471 & 0.9429 & 1.0000 \\ \bottomrule
 \end{tabular}\end{center}
 
-\textbf{The prediction is confirmed.} The ratio moves $0.32\to0.95$ --- a $2.9\times$
-swing --- and tracks the predicted curve to $2.3\,\%$ worst case. The two rival
-hypotheses are dead: a flat $1.00$ (the corrections operating as intended) and a flat
-$0.82$ (a constant factor from elsewhere) are both excluded by every arm.
+The measured ratio varies from $0.32$ to $0.95$, a factor of $2.9$, and follows the
+predicted curve to within $2.3\,\%$ in the worst case. The two alternative hypotheses are
+excluded by every arm: a constant value of $1.00$, corresponding to the corrections
+operating as intended, and a constant value of $0.82$, corresponding to a fixed factor of
+other origin.
 
-Fitting $\beta$ with $d_{0,\mathrm{sub0}}$ held fixed --- the ladder has only one vapor BC
-per arm, so the two-parameter fit is ill-conditioned there, and $d_0$ was already measured
-to $0.06\,\%$ on the nine-run $3\times3$ batch and does not depend on $\beta$ --- gives
+The sweep varies only $\bsub$ and carries a single vapor boundary condition per arm, so
+the two-parameter fit is ill-conditioned there; $d_{0,\mathrm{sub0}}$ was measured to
+$0.06\,\%$ on the nine-run $3\times3$ batch and is independent of $\beta$, and is
+therefore held fixed. This gives
 \begin{equation}
 \frac{\beta_{\rm fit}}{\bbare}=1.0009\pm0.0007
 \qquad\text{over a }40\times\text{ range in }\bsub .
 \end{equation}
-$C_{\rm corr}=0$ to better than a tenth of a percent. The correction this implies is \S\ref{sec:fix}.
+so that $C_{\rm corr}=0$ to better than one part in $10^3$. The correction implied by this
+result is given in \S\ref{sec:fix}.
 
 \input{sec_fix}
 
