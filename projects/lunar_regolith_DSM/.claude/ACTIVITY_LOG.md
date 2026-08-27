@@ -1,3 +1,48 @@
+## 2026-08-27 — Wrote up the theory: why C_corr = 0
+
+Expanded `docs/gt_deficit/` from 6 to 9 pages, restructured around the derivation
+rather than the measurement. New `sec_theory.tex` and `sec_fix.tex`, `\input` from
+the main file; new `fig_inner.pdf`.
+
+- **New §4 defines Delta explicitly** — the closed form, its unscaled units, the
+  73.7 % thermal / 26.3 % vapor split, and the three properties that make it
+  bite: it is ADDITIVE (so the shortfall is not a fixed factor), it scales as
+  eps and 1/rho_vs(T), and it is a hard FLOOR on the realizable kinetics with a
+  corresponding ceiling on alpha_c.
+- **New §5 is the inner-region analysis.** Verified the framework by recovering
+  `a1 = (1/6)/(1/30) = 5.000000` exactly from the two well integrals. The
+  correction rides on a third integral `I = int g(phi_0) dphi_0 dsigma deta`, and
+  the weight `g*dphi_0` is EVEN. Symmetric D gives an even dsigma -> I != 0.
+  One-sided `D_v*phi_a` gives `dsigma == 0` identically — the phi_a cancels
+  against the no-flux-into-ice constant, leaving exactly the outer Stefan
+  gradient — so I = 0 for ANY weight. A vanishing theorem, not a cancellation,
+  which is why it needs no prefactor.
+- **Stated an honest limit.** My symmetric-branch construction gives a2 = 0.087
+  against Karma & Rappel's 0.158, so it is missing O(eps) contributions (the
+  curvature term, the phi_1 back-reaction, or the flux-split matching). We have
+  NOT re-derived a2 and the doc says so. The one-sided result does not depend on
+  it.
+- **Corrected a framing error of mine.** The model has no surface-diffusion term
+  BY CONSTRUCTION; my concern was that the one-sided formulation could GENERATE
+  a spurious one at O(eps), which would appear nowhere in the source. Checked:
+  the surface excess of the diffusivity weight,
+  `int[(1-phi_0) - Theta(-eta)]deta`, is exactly zero by the same antisymmetry,
+  which suggests it is suppressed — flagged as a suggestion, not a calculation,
+  since a tangential-flux operator is invisible to a centerline v_n measurement.
+- **New §7 answers "what should the correction be".** Rejected scaling the beta
+  by a fixed 1/0.82: the factor is `beta_sub0/(beta_sub0+Delta)` and the ladder
+  measured it running 0.32 -> 0.95. A factor calibrated at 1.00x gives +195 % at
+  0.10x and -16 % at 4.00x. And at Molaro's eps with alpha_c -> 1, Delta exceeds
+  beta_target by 2.3x, so pre-compensation needs a NEGATIVE -beta_sub0 and no
+  factor exists at all. Removing the terms is the only form that works
+  everywhere, and it is algebraically identical to exact pre-compensation.
+- §8 is the implementation checklist, §9 the open items (anti-trapping, and the
+  reminder that for Molaro the BC is a bigger lever than any kinetics change).
+
+Not yet implemented — this is for review first.
+
+---
+
 ## 2026-08-26 — The beta ladder confirms the tau_sub diagnosis
 
 Batch `2026-08-25__18.14.15_beta_ladder`, four arms, all completed 3406 steps.

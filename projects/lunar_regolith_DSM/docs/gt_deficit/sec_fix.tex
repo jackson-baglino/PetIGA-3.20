@@ -1,0 +1,114 @@
+\section{What the correction should be}\label{sec:fix}
+
+\subsection{The exact statement}
+The realized coefficient obeys, exactly and with no further asymptotics required,
+\begin{equation}
+\beta_{\rm realized}=\bsub+\Delta ,\qquad \Delta \text{ from Eq.~\eqref{eq:delta}},
+\label{eq:exact}
+\end{equation}
+verified as $\beta_{\rm fit}/\bbare=1.0009\pm0.0007$ over a $40\times$ range in $\bsub$.
+This is stronger than a scaling argument: not an estimate of an unknown correction with a
+fitted O(1) prefactor, but a closed form for a known spurious term, read out of the source
+and confirmed to a tenth of a percent.
+
+\subsection{Why a fixed multiplicative factor cannot work}
+A tempting shortcut is to absorb the observed $0.822$ into $\bsub$. It fails, because
+$0.822$ is not a constant --- it is $\bsub/(\bsub+\Delta)$, and $\Delta$ does not scale
+with $\bsub$. Calibrating the factor at the $1.00\times$ arm (pass
+$0.7835\,\beta_{\rm target}$) and carrying it to the others:
+\begin{center}\small\begin{tabular}{rrrr}\toprule
+arm & $\Delta/\beta_{\rm target}$ & realized/target & error\\ \midrule
+$0.10\times$ & 2.165 & 2.948 & \textbf{+195\,\%}\\
+$0.25\times$ & 0.866 & 1.649 & +65\,\%\\
+$1.00\times$ & 0.217 & 1.000 & 0\,\%\\
+$4.00\times$ & 0.054 & 0.838 & $-16$\,\%\\ \bottomrule
+\end{tabular}\end{center}
+Carried to the Molaro configuration it is $-4.4\,\%$ on the $D_v\!\times\!10$ arm. The
+\emph{sense} of such a factor is ambiguous too: $\Delta/\beta_{\rm target}=0.7835$ and
+$\bsub/\bbare=0.822$ are different numbers, and since $\beta_{\rm realized}>\bsub$ the
+model is too \emph{resistive}, so any compensating factor is below one, not above it.
+
+\textbf{And in an important regime no factor exists at all.} At Molaro's
+$\epsilon=1.2\times10^{-7}$ m with $\alpha_c\to1$, $\beta_{\rm target}=7.94\times10^{3}$
+while $\Delta=1.79\times10^{4}$: $\Delta$ exceeds the target by $2.3\times$, so
+pre-compensation would need a \emph{negative} \code{-beta\_sub0}, which the option parser
+rejects. That is exactly the attachment-limited end wanted for a Demmenie replication.
+
+\subsection{The correction, and why it is a one-line change}
+Two operations are algebraically identical:
+\begin{itemize}\setlength\itemsep{0.1em}
+\item pass $\bsub=\beta_{\rm target}-\Delta$, or
+\item \textbf{remove the two $a_2$ terms from $\tau_{\rm sub}$} and pass $\beta_{\rm target}$.
+\end{itemize}
+Both give $\beta_{\rm realized}=\beta_{\rm target}$. Removal is preferable on three counts:
+it happens once in the code rather than in every user's every run; it cannot be silently
+invalidated when someone changes $\epsilon$ or $T$; and it still works when
+$\Delta>\beta_{\rm target}$, where pre-compensation has no solution.
+
+So the ``correction factor'' is not a number. It is the removal of a counter-term for a
+spurious effect this model does not produce --- \S\ref{sec:inner} is the reason,
+\S\ref{sec:ladder} the receipt.
+
+\section{Implementation}\label{sec:impl}
+
+Authored in \code{enceladus\_DSM}, back-ported to \code{lunar\_regolith\_DSM}. Enceladus is
+ahead: it already uses the $T$-corrected $D_v$ in the $a_2$ term where lunar still uses the
+base $0\,^\circ$C value, and its \code{assembly.c} documents the
+$W_{\rm KP}=\sqrt2\,\epsilon$ convention.
+
+\begin{enumerate}\setlength\itemsep{0.2em}
+\item \textbf{Make the correction explicit and switchable} in both the scalar path
+      (\code{enceladus\_main.c:852}, \code{lunar\_main.c:829}) and the pointwise one
+      (\code{SubKinetics}), which carry the identical bracket:
+\begin{quote}\small\ttfamily
+PetscReal c\_vap~~= a2 * eps / dv\_T;\\
+PetscReal c\_therm = a2 * eps * drhovs\_dT * lat\_sub / k\_eff;\\
+if (!user.thin\_iface\_corr) \{ c\_vap = 0.0; c\_therm = 0.0; \}\\
+tau\_sub = eps * lambda\_sub * (beta\_sub / a1 + c\_therm + c\_vap);
+\end{quote}
+\item \textbf{Default \code{-thin\_iface\_corr 0}}, with the conditions for re-enabling it
+      documented at the flag: only if the vapor diffusion is made two-sided, or an
+      anti-trapping current is added, or a regime appears where $\epsilon v_n/D_v$ is not
+      negligible. A physics switch, not a tuning knob.
+\item \textbf{Fix the thermal coefficient} in the ``on'' branch rather than restoring it
+      as-is. \code{drhovs\_dT} is already computed and discarded at
+      \code{lunar\_main.c:735} ($8.1521\times10^{-5}$ kg\,m$^{-3}$K$^{-1}$ at
+      $-20\,^\circ$C); \code{k\_eff} comes from \code{ThermalCond} at $\phi=1/2$.
+\item \textbf{Fix lunar's base-$D_v$} in that term to match enceladus.
+\item \textbf{Print $\bbare/\bsub$ and the three bracket terms} in the run header beside
+      $\tau_{\rm sub}$, so every future \code{outp.txt} states how far realized kinetics sit
+      from requested.
+\item \textbf{Validate}: re-run the $0.10\times$ ladder arm --- 5.9 days simulated, 3406
+      steps --- which predicts the measured ratio jumps $0.32\to1.00$.
+\item \textbf{Recalibrate what depends on $\beta$}: \code{comp\_eps.py} sizes $\epsilon$
+      from \code{beta\_uns} (\code{eps\_ceiling}, \code{kin\_over\_curv}); with the fix that
+      relation stops being implicit. Re-derive $\epsilon$ for the standard $-20\,^\circ$C
+      geometries afterwards and confirm the mesh element counts do not move.
+\item \textbf{Audit past conclusions} for absolute-rate dependence. Exponents and
+      dimensionless ratios are unaffected; anything quoting a time-to-event or an absolute
+      growth rate is off by the factor in \S\ref{sec:delta} for its own $(\epsilon,T)$.
+\end{enumerate}
+
+\section{Open}\label{sec:open}
+
+\textbf{The spurious surface-diffusion term} is the one O($\epsilon$) effect this note does
+not bound (\S\ref{sec:inner}). Settling it means either the one-sided asymptotics for this
+model --- mapping onto Echebarria, Folch, Karma \& Plapp, PRE \textbf{70}, 061604 (2004),
+whose $q(\phi)$ weighting is our $\phi_a$ --- or adding the anti-trapping current of Karma,
+PRL \textbf{87}, 115701 (2001), which cancels it by construction:
+\begin{equation}
+\vec{\jmath}_{\rm at}=a_t\,\epsilon\,\rho_{\rm ice}\,(\partial_t\phi)\,
+\frac{\nabla\phi}{|\nabla\phi|},
+\end{equation}
+added to the vapor flux, with $a_t$ re-derived for M\&F's well exactly as $a_1$ and $a_2$
+were. Neither is urgent: the effects anti-trapping cancels scale as $\epsilon v_n/D_v$,
+which is $2.7\times10^{-14}$ here. It is worth doing before any claim that rests on
+distinguishing numerical from physical surface transport.
+
+\textbf{Priority is not the kinetics.} For the Molaro campaign, removing attachment
+resistance \emph{entirely} buys $1.28\times$ integrated over the neck range, against a
+${\sim}2\times$ gap --- so no change to $\beta$ closes it. The imposed far-field
+undersaturation is the larger lever: in arm B, $\sigma_\infty=-2.03\times10^{-3}$ against
+the neck's own curvature driving force of $+6.57\times10^{-4}$, $3.1\times$ larger and
+opposed, so the neck surface is net-sublimating. The A/B and dom2/dom3 comparisons already
+isolate that.

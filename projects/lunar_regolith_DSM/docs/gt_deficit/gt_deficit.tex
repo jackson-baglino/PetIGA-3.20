@@ -58,9 +58,9 @@ Every snapshot supplies a triple $(\sigma,\vn,\chi)$, so
 \end{equation}
 is an ordinary two-column least-squares problem. \textbf{The design is identifiable
 because the two menisci carry opposite-sign curvature} --- the inner one is concave, the
-outer convex --- while the $3\times3$ reservoir grid moves $\vn$ at nearly fixed $\chi$.
-Those are two genuinely different directions:
-\begin{center}\begin{tabular}{lr}\toprule
+outer convex --- while the $3\times3$ reservoir grid moves $\vn$ at nearly fixed
+$\chi$. Two genuinely different directions:
+\begin{center}\small\begin{tabular}{lr}\toprule
 $\chi$ spans & $-5.259\times10^{3}$ \ldots\ $+3.459\times10^{3}$ m$^{-1}$ \\
 $\vn$ spans  & $-1.459\times10^{-12}$ \ldots\ $+1.378\times10^{-12}$ m/s \\
 $\mathrm{corr}(\vn,\chi)$ & $-0.7095$ \quad(correlated, but far from collinear) \\
@@ -98,8 +98,8 @@ curvature term removed, $\sigma-d_0\chi$ against $\vn$ is a straight line throug
 origin whose slope is the realized $\beta$. The black fit lies inside the $\bbare$ band
 (orange) and is visibly steeper than the requested $\bsub$ (green dashed).
 \textbf{Right:} with the kinetic term removed, the slope against $\chi$ falls inside the
-$d_{0,\mathrm{sub0}}$ band --- the capillary length is delivered exactly. Both fronts, all
-nine runs, every fifth snapshot.}
+$d_{0,\mathrm{sub0}}$ band: the capillary length is delivered exactly. Both fronts,
+all nine runs, every fifth snapshot.}
 \end{figure}
 
 \section{$\beta$ lands on the \emph{bare} kinetic coefficient}
@@ -136,81 +136,14 @@ against a measured $0.826/0.811$.
 This is a defect in a \emph{model parameter definition}. Eq.~\eqref{eq:gt} is the target
 physics and is correct; the solver simply does not realize the $\beta$ it was handed.
 
-\section{Why neither correction materialises}\label{sec:why}
-
-\subsection{The thermal term is wrong on its face}
-\code{a2*eps/diff\_sub} treats latent heat as if it drove the phase field at unit strength.
-It does not: temperature reaches $\sigma$ only through $\rho_{vs}(T)$, so that channel
-carries a Clausius--Clapeyron factor. Working the inner balance per channel and reading off
-$\mathrm{d}\sigma/\mathrm{d}(v_n\epsilon)$, in the same scaled variables as
-Eq.~\eqref{eq:tau}:
-\begin{center}\begin{tabular}{llr}\toprule
-channel & correct coefficient & value \\ \midrule
-vapor  & $1/D_v$ & $5.27\times10^{4}$ \\
-        & \emph{coded}: $1/\texttt{dif\_vap}$ & $4.59\times10^{4}$ \quad\checkmark \\[2pt]
-thermal & $(\mathrm{d}\rho_{vs}/\mathrm{d}T)\,L_{\rm sub}/k$ & $1.0\times10^{2}$ ($k_{\rm ice}$) -- $1.2\times10^{4}$ ($k_{\rm air}$) \\
-        & \emph{coded}: $1/\texttt{diff\_sub}$ & $1.29\times10^{5}$ \quad$\times$ \\ \bottomrule
-\end{tabular}\end{center}
-Over-weighted by 11$\times$ to 1300$\times$ depending on where in the interface $k$ is
-evaluated --- and \code{ThermalCond} interpolates between the two, so \emph{any} reasonable
-choice leaves this term negligible. This is 13.1 of the 17.8 points and is a defect
-independent of anything else in this note.
-
-\subsection{The vapor term is right, and still is not delivered}
-It is worth being explicit that $\xi_v$ is \emph{not} implicated here. In the inner region
-$\xi_v$ multiplies the vapor diffusion and the ice source identically, so it cancels
-between them and survives only in storage/diffusion,
-$v_n\epsilon/(\xi_v D_v)=2.4\times10^{-11}$.
-The unscaled \code{dif\_vap} in Eq.~\eqref{eq:tau} is correct; substituting
-$\xi_v\!\cdot\!$\code{dif\_vap} would put the bracket at $6.36$ instead of $0.133$ and
-predict a $58\times$ shortfall rather than $1.22\times$.
-
-So the vapor term is structurally sound, yet the measurement says its $4.7$ points are not
-subtracted either. \textbf{Leading hypothesis, not established:} vapor diffusion is
-one-sided through \code{phi\_aef}, and the $-a_1a_2\epsilon/D$ correction is derived for the
-symmetric model. The one-sided case requires an anti-trapping current
-(Karma 2001) to remove solute-trapping and interface-stretching terms before a clean
-correction of that form emerges; this solver has no such current, so the symmetric-model
-correction has no reason to apply.
-
-\section{What this has been costing}
-
-$\bsub$ encodes the condensation coefficient, $\beta\propto1/\alpha_c$. A realized
-$\beta$ that is $1.2165\times$ too large is an $\alpha_c$ that is $0.822\times$ too small:
-\begin{center}\begin{tabular}{lr}\toprule
-requested \code{-beta\_sub0} $=5.9216\times10^5$ & $\alpha_c=1.341\times10^{-2}$ \\
-realized $\beta_{\rm eff}=7.2036\times10^5$ & $\alpha_c^{\rm eff}=1.102\times10^{-2}$ \quad(82.2\,\%) \\ \bottomrule
-\end{tabular}\end{center}
-
-Worse, because the inflation is \emph{additive},
-$\beta_{\rm eff}=\bsub+\Delta$ with
-$\Delta=a_1a_2\epsilon\,(1/D_T+1/D_v)\,\rho_{\rm ice}/\rho_{vs}(T)$, so $\Delta$ is a
-\textbf{hard floor on the kinetics the model can represent at all} --- no value of
-\code{-beta\_sub0} can go below it. $\Delta\propto\epsilon$ and $\propto1/\rho_{vs}(T)$,
-so coarser interfaces and colder temperatures are both worse:
-\begin{center}\begin{tabular}{rrrr}\toprule
-$T$ [$^\circ$C] & $\rho_{vs}$ [kg/m$^3$] & $\Delta$ [s/m] & largest reachable $\alpha_c$ \\ \midrule
-$-60$ & $8.885\times10^{-6}$ & $1.225\times10^{7}$ & 0.0006 \\
-$-40$ & $1.055\times10^{-4}$ & $1.031\times10^{6}$ & 0.0077 \\
-$-30$ & $3.123\times10^{-4}$ & $3.484\times10^{5}$ & 0.0228 \\
-$-20$ & $8.487\times10^{-4}$ & $1.282\times10^{5}$ & 0.0619 \\
-$-10$ & $2.139\times10^{-3}$ & $5.086\times10^{4}$ & 0.1561 \\
-$  0$ & $5.047\times10^{-3}$ & $2.156\times10^{4}$ & 0.3684 \\ \bottomrule
-\end{tabular}\end{center}
-(at $\epsilon=8.584\times10^{-7}$ m; halving $\epsilon$ halves every $\Delta$.)
-At $-60\,^\circ$C the floor is $20.7\times$ the reference $\beta$: the model would be
-running kinetics roughly twenty times slower than requested no matter what is asked for.
-\textbf{Any earlier result whose conclusion depends on the absolute rate --- rather than on
-a scaling exponent or a ratio --- should be re-examined against this factor.}
-
+\input{sec_theory}
 \begin{figure}[t]\centering
 \includegraphics[width=\textwidth]{fig_measure.pdf}
 \caption{\small \textbf{Left:} the measured ratio tracks $\bsub/\bbare$ for the whole run
 on both fronts. \textbf{Right:} the ceiling on the condensation coefficient implied by
 $\beta_{\rm eff}\ge\Delta$, as a function of temperature and $\epsilon$.}
 \end{figure}
-
-\section{What has been ruled out}
+\subsection{What has been ruled out}
 
 \begin{itemize}\setlength\itemsep{0.15em}
 \item \textbf{Grid pinning / lattice friction.} The deficit is a constant \emph{factor},
@@ -229,12 +162,26 @@ $\beta_{\rm eff}\ge\Delta$, as a function of temperature and $\epsilon$.}
       ($0.91\,\%$). This is already documented at
       \code{enceladus\_DSM/src/assembly.c:46-58}. The free fit recovering
       $d_{0,\mathrm{sub0}}$ to $0.06\,\%$ is an independent measurement of $a_1$.
-\item \textbf{$\xi_v$.} Cancels from the inner balance (\S\ref{sec:why}).
+\item \textbf{$\xi_v$.} It multiplies the vapor diffusion and the ice source
+      identically, so it cancels between them in the inner balance
+      (\S\ref{sec:inner}) and survives only in storage/diffusion,
+      $v_n\epsilon/(\xi_v D_v)=2.4\times10^{-11}$. The unscaled \code{dif\_vap} in
+      Eq.~\eqref{eq:tau} is the correct choice; substituting
+      $\xi_v\!\cdot\!$\code{dif\_vap} would put the bracket at $6.36$ instead of
+      $0.133$ and predict a $58\times$ shortfall.
 \end{itemize}
 
-\section{Remediation plan}
 
-\subsection{Step 1 --- DONE: the $\bsub$ ladder confirms it}\label{sec:ladder}
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{fig_inner.pdf}
+\caption{\small The structure behind \S\ref{sec:inner}. \textbf{Left:} the solvability
+weight $g(\phi_0)\partial_\eta\phi_0$ is even in $\eta$, so it sees only the even part of
+the inner deviation. \textbf{Right:} with symmetric $D$ the deviation is even and
+non-zero, and the correction survives; with the one-sided $D_v\phi_a$ it is identically
+zero, so no correction can arise for any weight.}
+\end{figure}
+
+\section{The ladder confirms it}\label{sec:ladder}
 The diagnosis above rested on one $(\epsilon,\bsub,T)$ point. Because the inflation is
 additive and $\bsub$ is not, the predicted shortfall is a strong function of $\bsub$, so a
 ladder in $\bsub$ separates the hypotheses without touching the solver. Four runs,
@@ -263,66 +210,8 @@ to $0.06\,\%$ on the nine-run $3\times3$ batch and does not depend on $\beta$ --
 \frac{\beta_{\rm fit}}{\bbare}=1.0009\pm0.0007
 \qquad\text{over a }40\times\text{ range in }\bsub .
 \end{equation}
-$C_{\rm corr}=0$ to better than a tenth of a percent. \textbf{Proceed to Step 2.}
+$C_{\rm corr}=0$ to better than a tenth of a percent. The correction this implies is \S\ref{sec:fix}.
 
-\subsection{Step 2 --- the $\tau_{\rm sub}$ change}
-Make the correction explicit and switchable rather than silently baked in, so both forms
-stay runnable and the ladder can be repeated against either. In \code{lunar\_main.c}
-around line 829:
-\begin{quote}\small\ttfamily
-/* Thin-interface corrections. Each channel enters with the strength\\
-~~*~with which it actually drives sigma, NOT with unit strength. The\\
-~~*~beta\_sub0 ladder of 2026-08-26 measured C\_corr = 0 to 0.1\%, so the\\
-~~*~default is OFF; -thin\_iface\_corr 1 restores the old behavior for\\
-~~*~comparison. See docs/gt\_deficit/. */\\
-PetscReal c\_vap~~= a2 * eps / user.dif\_vap;\\
-PetscReal c\_therm = a2 * eps * drhovs\_dT * user.lat\_sub / k\_eff;\\
-if (!user.thin\_iface\_corr) \{ c\_vap = 0.0; c\_therm = 0.0; \}\\
-tau\_sub = eps * lambda\_sub * (beta\_sub / a1 + c\_therm + c\_vap);
-\end{quote}
-\code{-thin\_iface\_corr} defaults to \textbf{0}: the ladder measured
-$C_{\rm corr}=0$, so subtracting a correction the model does not produce is what
-created the defect. Keeping the flag means the old behavior stays reproducible and the
-ladder can be re-run against either form. \code{drhovs\_dT} comes
-from the existing \code{RhoVS\_I} derivative output --- \code{lunar\_main.c:735} already
-requests \code{d\_rhovs} and then never uses it, and it is exactly
-$\mathrm{d}\rho_{vs}/\mathrm{d}T=8.1521\times10^{-5}$ kg\,m$^{-3}$K$^{-1}$ at
-$-20\,^\circ$C, and \code{k\_eff} from \code{ThermalCond} at
-$\phi=1/2$. Print the three bracket terms and $\bbare/\bsub$ in the run header next to
-$\tau_{\rm sub}$, so every future \code{outp.txt} states how far the realized kinetics sit
-from the requested ones.
-
-\subsection{Step 3 --- recalibrate what depends on $\beta$}
-\begin{itemize}\setlength\itemsep{0.15em}
-\item \code{preprocess/comp\_eps.py} sizes $\epsilon$ using \code{beta\_uns}
-      (\code{eps\_ceiling}, \code{kin\_over\_curv}). With the correction in place the
-      relation becomes implicit --- $\epsilon$ sets $\Delta$, which sets $\beta_{\rm eff}$,
-      which feeds the $\epsilon$ bound --- so it needs either an iteration or an explicit
-      note that it reports the \emph{requested} rather than the realized kinetics.
-\item Re-derive $\epsilon$ for the standard $-20\,^\circ$C geometries after the change and
-      confirm the mesh element counts do not move; if they do, meshes must be regenerated
-      before any comparison run.
-\item Audit past conclusions for absolute-rate dependence. Exponent studies and
-      dimensionless ratios are unaffected; anything quoting a time-to-event or an
-      absolute growth rate is off by the factor in \S5 for its own $(\epsilon,T)$.
-\end{itemize}
-
-\subsection{Step 4 --- the open modeling question}
-If the ladder confirms $C_{\rm corr}=0$, the honest position is that this model has
-\emph{no} thin-interface correction, and dropping both terms is a calibration fix, not a
-derivation. Making the correction genuinely valid means adding an anti-trapping current to
-the vapor equation so the one-sided asymptotics close. That is a real project --- new flux
-term in \code{assembly.c}, matching Jacobian, and re-verification with
-\code{-snes\_test\_jacobian} --- and should only be undertaken if a case appears where the
-$O(\epsilon)$ physics actually matters. At present $\epsilon/r\approx4\times10^{-3}$ and
-the interface is deeply attachment-limited, so it does not.
-
-\subsection{Interim: how to get the kinetics you want today}
-Until Step 2 lands, pre-compensate. To realize a target $\beta$, pass
-$\bsub=\beta_{\rm target}-\Delta$; at $-20\,^\circ$C and
-$\epsilon=8.584\times10^{-7}$ m that is $4.6396\times10^{5}$ in place of
-$5.9216\times10^{5}$. This fails outright when $\beta_{\rm target}<\Delta$ --- see the
-floor table --- and it is a workaround, not a fix: it must be recomputed for every
-$(\epsilon,T)$ and it silently stops working when someone changes either.
+\input{sec_fix}
 
 \end{document}
