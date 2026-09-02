@@ -17,23 +17,26 @@ does not work here, regenerated against the *current* `preprocess/comp_eps.py`
 python preprocess/plot_libbrecht_constraints.py --out studies/libbrecht_kinetics
 ```
 
-Defaults are the Molaro dom2 production geometry ($450 \times 225\ \mu$m,
-$R_{ave} = 86.75\ \mu$m) and the **measured** front velocity
-$v_n = 3.416\times10^{-9}$ m/s — the integrated Fig. 11 neck-growth rate from
-`studies/molaro_2019/alpha_c_estimate.csv`. Every $\epsilon$ and every mesh
-count comes from `comp_eps.compute_eps()` itself, so these plots cannot drift
-from what the sizer does.
+The **argument** uses only Libbrecht's own chamber supersaturations. The
+**reference case** — needed because Eq. (45) wants a front velocity and $N_x$
+wants a domain — defaults to a $450 \times 225\ \mu$m grain pair
+($R_{ave} = 86.75\ \mu$m) at the measured front velocity
+$v_n = 3.416\times10^{-9}$ m/s, the integrated Fig. 11 neck-growth rate from
+`studies/molaro_2019/alpha_c_estimate.csv`. It sets the scale of the vertical
+axes, not the conclusion. Every $\epsilon$ and every mesh count comes from
+`comp_eps.compute_eps()` itself, so these plots cannot drift from what the
+sizer does.
 
 ## Figures
 
 | file | what it shows |
 |---|---|
 | `fig1_sigma0_vs_T.png` | $\sigma_0(T)$: Libbrecht's table and the log–log interpolant `comp_eps.sigma0()` builds from it |
-| `fig2_alpha_vs_sigma0.png` | $\alpha_c$ against $\sigma_0$, at each $\sigma$ in play |
+| `fig2_alpha_vs_sigma0.png` | $\alpha_c$ against $\sigma_0$, at each chamber $\sigma$ |
 | `fig3_alpha_vs_T.png` | the same, in temperature |
 | `fig4_beta_sub_vs_T.png` | $\beta_{sub}(T) \propto 1/\alpha_c$, with the defining equation on the axes |
 | `fig5_eps_vs_T.png` | $\epsilon(T)$ from the four K&P bounds, shaded by which bound binds |
-| `fig6_Nx_vs_T.png` | the $N_x(T)$ that follows, against the production mesh and the molecular limit |
+| `fig6_Nx_vs_T.png` | the $N_x(T)$ that follows, against the $N_x = 10^4$ practical ceiling |
 | `fig0_master.png` | all six at once, 3 × 2, one shared legend — 10 × 6.6 in |
 | `fig7_legend.png` | the shared legend alone, for laying the small panels out by hand |
 | `libbrecht_constraints.csv` | the numbers |
@@ -63,53 +66,77 @@ second set of drawing code, so the small panels and the master cannot disagree.
 > the image is simply 200 dpi at that size. `--dpi 96` produces drop-in sizing
 > instead, at some cost in sharpness on a projector.
 
-The four supersaturations plotted, and where each comes from:
-
-- $\sigma = 10^{-1},\ 10^{-2}$ — **Libbrecht's own chamber conditions** (dashed)
-- $\sigma = 2.7\times10^{-3}$ — **our** imposed Molaro wall undersaturation
-  $1-h$, from `studies/molaro_2019/vapor_bc_estimate.csv` (solid)
-- $\sigma = 4.5\times10^{-4}$ — **our** Gibbs–Thomson supersaturation at a neck
-  fillet, $d_0/\rho_f$ (solid)
+**Only Libbrecht's own chamber conditions are plotted** — $\sigma = 10^{-1}$
+(solid) and $\sigma = 10^{-2}$ (dashed). Nothing here depends on the conditions
+of one of our simulations, so nothing here can be answered with "your boundary
+condition is wrong". See *What is deliberately not plotted*, below.
 
 ## The argument, in three steps
 
-**1. Tractability.** $\beta_{sub} \propto 1/\alpha_c$, and K&P Eq. (45) is
-$\epsilon \le s\,d_0/(\beta_{sub}v_n)$, so the mesh is *exponential* in
-$\sigma_0/\sigma$. At $T = -20\ ^\circ$C:
+**1. The law cannot sit inside the literature band at any one σ.** The band the
+literature supports is $10^{-3} < \alpha_c < 10^{-1}$ (Libbrecht 2017; Braun,
+Fourteau & Löwe 2024). Evaluate $\alpha_c = \exp(-\sigma_0/\sigma)$ at
+Libbrecht's *own upper* chamber condition and it overshoots; at his *own lower*
+one it undershoots, once it is cold enough:
 
-| $\sigma$ | $\alpha_c$ | $\beta_{sub}$ [s/m] | $\epsilon$ [m] | binds | $N_x$ | 2D nodes |
-|---|---|---|---|---|---|---|
-| $10^{-1}$ (Libbrecht) | 7.1e-1 | 1.1e4 | 4.2e-8 | B-HEAT | 1.5e4 | 1.2e8 |
-| $10^{-2}$ (Libbrecht) | 3.1e-2 | 2.6e5 | 5.8e-7 | B-KINETIC | 1.1e3 | 6.1e5 |
-| $2.7\times10^{-3}$ (ours) | 2.5e-6 | 3.2e9 | 4.7e-11 | B-KINETIC | 1.4e7 | 9.2e13 |
-| $4.5\times10^{-4}$ (ours) | 1e-30 (floor) | 7.9e33 | 1.9e-35 | B-KINETIC | 3.4e31 | 5.7e62 |
+| $\sigma$ | $\alpha_c$ at −1 °C | at −20 °C | at −40 °C | vs. the band |
+|---|---|---|---|---|
+| $10^{-1}$ | 0.96 | 0.71 | 0.33 | 3–10× **above** the ceiling, everywhere |
+| $10^{-2}$ | 0.67 | 3.1e-2 | 1.7e-5 | **below** the floor colder than −29.7 °C |
 
-For scale: the production run is $\epsilon = 0.118\ \mu$m, $N_x = 5394$,
-14.5 M nodes; one water molecule is $a = (m/\rho_i)^{1/3} = 3.19$ Å, so
-$L_x/a = 1.4\times10^6$ is *one node per molecule across the domain*. At our
-own wall BC the law already demands ~10× more nodes across $x$ than that, with
-$\epsilon$ half an Ångström. At the fillet supersaturation it demands
-$\epsilon$ twenty-five orders of magnitude below a water molecule. That is not
-an expensive mesh; it is a category error, because the continuum phase field
-has no meaning below $a$.
+That is structural, not a tuning problem. $\sigma_0$ spans a factor 27 over
+−2 to −40 °C and it sits in the *exponent*, so no single reference $\sigma$
+holds $\alpha_c$ inside one decade across the range.
 
-**2. It is the wrong experiment.** Libbrecht grew single ice crystals from
-vapour in a near-vacuum chamber. That isolates any dependence $\alpha_c$ has on
-supersaturation — which is exactly what makes the data valuable — but it also
-means $\sigma$ was *imposed externally* and held one to two decades above ours.
-Our simulations are not in vacuum: there is a continuous vapour field between
-the grains, so $\sigma$ is a **solution variable**, set by the local curvature
-and the wall humidity. Applying a nucleation law two decades below where it was
-calibrated puts the entire extrapolation inside an exponential.
+**2. K&P Eq. (45) turns that into mesh.** $\beta_{sub} \propto 1/\alpha_c$, and
+the kinetic bound is $\epsilon \le s\,d_0/(\beta_{sub}v_n)$, so a falling
+$\alpha_c$ is not just slow physics we can wait out. At $\sigma = 10^{-2}$ —
+Libbrecht's own condition:
 
-**3. The table cannot be fitted anyway.** Nine points; non-monotonic (the kink
-at $-6/-7\ ^\circ$C is a digitisation artifact); and $\sigma_0$ spans a factor
-27 over $-2$ to $-40\ ^\circ$C. Since $\ln\alpha_c = -\sigma_0/\sigma$, no
-single reference $\sigma$ holds $\alpha_c$ inside one decade across that range.
-`comp_eps.libbrecht2_params()` frees the prefactor and rescales the table by
-one factor $f$ to make a fit possible at all; the result is that $A$ pins to
-the clamp ceiling and the $\sigma$-response survives only below
-$\sigma \sim 10^{-3}$.
+| $T$ | $\alpha_c$ | $\beta_{sub}$ [s/m] | $\epsilon$ | binds | $N_x$ |
+|---|---|---|---|---|---|
+| −20 °C | 3.1e-2 | 2.6e5 | 0.58 µm | B-KINETIC | 1.1e3 |
+| −30 °C | 9.1e-4 | 2.4e7 | 6.4 nm | B-KINETIC | 9.9e4 |
+| −40 °C | 1.7e-5 | 4.0e9 | **0.40 Å** | B-KINETIC | **1.6e7** |
+
+For scale: the reference run is $\epsilon = 0.118\ \mu$m, $N_x = 5394$, 14.5 M
+nodes; one water molecule is $a = (m/\rho_i)^{1/3} = 3.19$ Å, so $L_x/a =
+1.4\times10^6$ is *one node per molecule across the domain*. At −40 °C the law
+asks for an $\epsilon$ an **eighth of a water molecule** and eleven times more
+nodes than the domain has molecules. It has passed $N_x = 10^4$ by −25 °C.
+That is not an expensive mesh; it is a category error, because the continuum
+phase field has no meaning below $a$.
+
+**3. It is the wrong experiment for our problem.** Libbrecht grew single ice
+crystals from vapour in a near-vacuum chamber. That isolates any dependence
+$\alpha_c$ has on supersaturation — which is what makes the data valuable — but
+it also means $\sigma$ was *imposed externally*. Our simulations are not in
+vacuum: there is a continuous vapour field between the grains, so $\sigma$ is a
+**solution variable**, set by the local curvature and the wall humidity. And it
+is a nine-point table, non-monotonic (the kink at −6/−7 °C is a digitisation
+artifact), which `comp_eps.libbrecht2_params()` can only fit by freeing the
+prefactor and rescaling — after which $A$ pins to the clamp ceiling.
+
+## What is deliberately not plotted
+
+Sintering is capillarity-driven, so its supersaturation is $d_0/\rho_f$ — lower
+again than either chamber value, for any micron-scale fillet. That only makes
+the result worse, and earlier versions of this figure drew it for a particular
+geometry (an imposed wall undersaturation, and a neck-fillet $d_0/\rho$). Those
+curves are gone, for two reasons:
+
+- they are specific to a **single digital experiment**, and the case being made
+  is general;
+- at those $\sigma$ the law returns an $\alpha_c$ decades below the literature
+  band, so the $\beta_{sub}$ it implies is one **we would never run** — drawing
+  it invites the reading that we do.
+
+A reference case is still unavoidable: Eq. (45) needs a front velocity and
+$N_x$ needs a domain. The defaults are a 450 × 225 µm grain pair and the
+measured integrated neck rate 3.416e-9 m/s from `studies/molaro_2019/`. They
+set the **scale** of the vertical axes; they do not carry the argument, which
+is about where $\alpha_c(T)$ lands relative to a band that has nothing to do
+with them.
 
 ## The escape route, and why it is circular
 

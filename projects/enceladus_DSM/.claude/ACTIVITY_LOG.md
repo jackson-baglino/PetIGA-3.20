@@ -1,3 +1,31 @@
+## 2026-09-02 (final, 6) — Dropped the experiment-specific sigma curves
+
+- Jackson: remove the wall-BC and neck-fillet curves. They imply a beta_sub
+  from an alpha_c far outside the literature band (i.e. one we would never
+  run), and they are specific to one digital experiment when the case should
+  be general. Both gone; SIGMA_CASES now holds only Libbrecht's own chamber
+  conditions, sigma = 1e-1 and 1e-2.
+- The argument is STRONGER for it, and now sits entirely inside Libbrecht's own
+  calibration range:
+    * at his upper condition sigma = 1e-1 the law returns alpha_c = 0.33..0.96,
+      3-10x ABOVE the literature band's ceiling, everywhere;
+    * at his lower one sigma = 1e-2 it falls BELOW the band's floor colder than
+      -29.7 C; by -40 C alpha_c = 1.7e-5, beta_sub = 4.0e9 s/m, eps = 0.40 A
+      (an eighth of a water molecule) and Nx = 1.6e7 -- eleven times more nodes
+      than the domain has molecules across it. Nx passes 1e4 by -25 C.
+  So there is no single sigma at which the law sits inside the band across the
+  range. That is the structural point, and it needs none of our conditions.
+- primary_sigma default 2.7e-3 -> 1e-2 (it must be a plotted case); panel 5's
+  title now formats whichever sigma is primary instead of hardcoding one.
+  Linestyle key is now "solid"/"dashed" rather than "ours"/"lab".
+- Default --label is now "reference case: 450 x 225 um grain pair": the
+  geometry and v_n are unavoidable (Eq. 45 needs a velocity, Nx needs a domain)
+  but they set the axis scale, not the conclusion. Docstring and README say so.
+- README rewritten around the general case, with a "What is deliberately not
+  plotted" section recording why the two curves were removed.
+
+---
+
 ## 2026-09-02 (final, 5) — Individual panels down to 3 in
 
 - Jackson asked for the individual plots at ~3 in wide. `--panel_width`

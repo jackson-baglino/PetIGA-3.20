@@ -19,33 +19,50 @@ The chain is short and every link is plotted:
     sigma0(T)  ->  alpha_c = exp(-sigma0/sigma)  ->  beta_sub ~ 1/alpha_c
                ->  eps <= d0/(beta_sub*v_n)      ->  Nx = ceil(sqrt(2)*Lx/eps)
 
-Two facts drive the whole result.
+The case is made ENTIRELY INSIDE LIBBRECHT'S OWN CALIBRATION RANGE. Only the
+two supersaturations his chamber experiments were run at, sigma = 1e-1 and
+1e-2, are plotted. Nothing here depends on the conditions of any one of our
+simulations, so nothing here can be answered with "your boundary condition is
+wrong".
 
-1. THE SUPERSATURATION GAP. Libbrecht's chamber experiments are run at
-   sigma ~ 1e-2 to 1e-1. Our sintering problem runs one to two decades lower:
-   the Molaro wall undersaturation is 1-h = 2.7e-3, and the Gibbs-Thomson
-   supersaturation at a neck fillet is d0/rho_fillet ~ 4.5e-4. Because (L1) is
-   an exponential in sigma0/sigma, moving down two decades in sigma does not
-   reduce alpha_c by two decades -- it annihilates it. At -20 C and
-   sigma = 4.5e-4, (L1) returns alpha_c = 1e-30 (the code's own underflow
-   floor), i.e. no sintering at all.
+1. THE LAW CANNOT SIT INSIDE THE LITERATURE BAND AT ANY ONE sigma. The band
+   the literature supports is 1e-3 < alpha_c < 1e-1 (Libbrecht 2017; Braun,
+   Fourteau & Lowe 2024). Evaluate (L1) at Libbrecht's OWN upper chamber
+   condition, sigma = 1e-1, and it returns alpha_c = 0.33 to 0.96 across
+   -40..-1 C -- three to ten times ABOVE the band's ceiling. Evaluate it at his
+   own lower one, sigma = 1e-2, and it drops BELOW the band's floor colder than
+   -29.7 C. That is structural, not a tuning problem: sigma0 spans a factor 27
+   over -2..-40 C and it sits in the exponent, so no single reference sigma
+   holds alpha_c inside one decade across the range.
 
 2. K&P Eq. (45) TURNS THAT INTO MESH. beta_sub ~ 1/alpha_c, and the kinetic
    interface-width bound eps <= d0/(beta_sub*v_n) is inversely proportional to
-   beta_sub. A vanishing alpha_c is therefore not merely "slow physics we can
-   wait out": it is a demand for an interface width below the size of a water
-   molecule, and a mesh with more nodes than the domain has molecules.
+   beta_sub. So a falling alpha_c is not merely "slow physics we can wait out".
+   At sigma = 1e-2 and -40 C -- again, Libbrecht's own condition -- (L1) gives
+   alpha_c = 1.7e-5, beta_sub = 4.0e9 s/m, eps = 0.40 angstrom (an EIGHTH of a
+   water molecule) and Nx = 1.6e7, eleven times more nodes across the domain
+   than it has molecules across it. Below about -25 C the mesh has already
+   passed Nx = 1e4.
 
-THE MEASURED v_n IS THE LOAD-BEARING INPUT
-------------------------------------------
-Eq. (45) is only a constraint if the front actually moves. We take v_n from
-Molaro et al. (2019) Fig. 11 themselves -- the integrated neck-growth velocity
-3.416e-9 m/s in studies/molaro_2019/alpha_c_estimate.csv. So the argument is
-not "assume a velocity and watch the mesh explode"; it is "the experiment we
-are replicating moves its interface at THIS speed, and Libbrecht's alpha_c
-says that is impossible to resolve."
+WHAT IS DELIBERATELY NOT PLOTTED
+--------------------------------
+Sintering is capillarity-driven, so its supersaturation is d0/rho_fillet --
+lower again than either chamber value, for any micron-scale fillet. That only
+makes the result worse, and earlier versions of this figure plotted it for a
+particular geometry. Those curves are gone. They were specific to a single
+digital experiment, and at those sigmas (L1) returns an alpha_c decades below
+the literature band, so the beta_sub they imply is one we would never run --
+drawing it invites the reading that we do.
 
-Feeding v_n back self-consistently from the kinetics instead (--vn_feature in
+A REFERENCE CASE IS UNAVOIDABLE, AND IS ONLY A SCALE
+----------------------------------------------------
+Eq. (45) needs a front velocity and Nx needs a domain, so some concrete case
+has to be named. The defaults are a 450 x 225 um grain pair and the measured
+integrated neck rate 3.416e-9 m/s from studies/molaro_2019/. They set the
+SCALE of the vertical axes; they do not carry the argument, which is about
+where alpha_c(T) lands relative to a band that has nothing to do with them.
+
+Feeding v_n back self-consistently from the kinetics (--vn_feature in
 comp_eps.py) makes Eq. (45) collapse to eps <= R_feat and hides the problem;
 that is circular, not a rebuttal. See studies/libbrecht_kinetics/README.md.
 
@@ -58,12 +75,12 @@ WHAT THE PLOTS ARE
   fig5_eps_vs_T.png          eps(T) from comp_eps, shaded by binding bound
   fig6_Nx_vs_T.png           Nx(T), against what a machine can actually hold
   fig0_master.png            all six, 3 x 2, one shared legend
-
-Every figure is 10 in wide -- a hard ceiling, because these go on PowerPoint
-slides -- and no type is below 10 pt. The master gets there by dropping each
-panel's prose annotations, shortening its title, and replacing six near
-identical legends with one at the foot of the figure.
+  fig7_legend.png            that legend alone, for laying panels out by hand
   libbrecht_constraints.csv  the numbers behind them
+
+Panels are --panel_width wide (3 in by default, drawn compact); the master and
+the legend strip are --width (10 in). 10 in is a hard ceiling -- these go on
+PowerPoint slides -- and no type is below 10 pt.
 
 Usage:
     python preprocess/plot_libbrecht_constraints.py \
@@ -101,24 +118,29 @@ BOUND_LABEL = {
     "B-CURV":    "B-CURV  (geometric)",
 }
 
-# The supersaturations in play. Value, colour, label, and whether it is a
-# condition WE impose or one LIBBRECHT measured at.
+# LIBBRECHT'S OWN CHAMBER CONDITIONS, AND ONLY THOSE.
+#
+# Curves for the supersaturations of one particular simulation used to sit here
+# -- an imposed wall undersaturation and a neck-fillet d0/rho. They are gone for
+# two reasons. They are specific to a single digital experiment, and the case
+# being made is general. And at those sigmas the Libbrecht form returns an
+# alpha_c decades below the literature band, so the beta_sub it implies is one
+# we would never run -- plotting it invites the reading that we do.
+#
+# What remains is the honest general statement: evaluate Libbrecht's own law at
+# Libbrecht's own conditions and follow sigma0(T) down in temperature.
+#
+# Value, colour, label, linestyle key.
 SIGMA_CASES = [
-    (1.0e-1, C[2], "$\\sigma = 10^{-1}$", "lab"),
-    (1.0e-2, C[5], "$\\sigma = 10^{-2}$", "lab"),
-    (2.7e-3, C[3], "$\\sigma = 2.7\\times10^{-3}$   wall BC", "ours"),
-    (4.5e-4, C[1], "$\\sigma = 4.5\\times10^{-4}$   neck fillet", "ours"),
+    (1.0e-1, C[2], "$\\sigma = 10^{-1}$", "solid"),
+    (1.0e-2, C[5], "$\\sigma = 10^{-2}$", "dashed"),
 ]
 
-# Legend group headings. Which sigma a curve belongs to is the first thing a
-# reader needs, and it is exactly what the entry label cannot say briefly --
-# so the heading says it once for the pair.
+# Legend group headings.
 GRP_LAB = "Libbrecht's chamber"
-GRP_OURS = "Our conditions"
 GRP_BIND = "Which bound binds"
 GRP_REF = "Reference"
-SIG_LAB = [l for _v, _c, l, k in SIGMA_CASES if k == "lab"]
-SIG_OURS = [l for _v, _c, l, k in SIGMA_CASES if k == "ours"]
+SIG_LAB = [l for _v, _c, l, _k in SIGMA_CASES]
 
 # a = (m/rho_ice)^(1/3): the molecular length already implied by the constants
 # in comp_eps.py. Below it a continuum phase field means nothing.
@@ -294,7 +316,6 @@ def master_groups(ctx):
     """
     return [
         (GRP_LAB, SIG_LAB),
-        (GRP_OURS, SIG_OURS),
         (GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
         (GRP_REF, ["$\\alpha_c = 1$  physical ceiling",
                    "$N_x = 10^4$  practical ceiling",
@@ -312,8 +333,16 @@ def _legend(a, groups, y=-0.165):
 
 
 def _ls(kind):
-    """Ours = solid, Libbrecht's own conditions = dashed. Never colour alone."""
-    return "-" if kind == "ours" else (0, (5, 2))
+    """Line style, so the two sigmas are never told apart by colour alone."""
+    return "-" if kind == "solid" else (0, (5, 2))
+
+
+def _sig_tex(v):
+    """1e-2 -> 10^{-2}, 2.7e-3 -> 2.7\\times10^{-3}. For titles that have to
+    name whichever sigma the caller made primary."""
+    e = int(math.floor(math.log10(v)))
+    m = v / 10.0 ** e
+    return f"10^{{{e}}}" if abs(m - 1.0) < 1e-9 else f"{m:.1f}\\times10^{{{e}}}"
 
 
 # =========================================================================
@@ -382,7 +411,7 @@ def panel_alpha_vs_sigma0(a, T, ctx):
     _style(a, "$\\sigma_0(T)$  [-]", "$\\alpha_c$  [-]",
            "2.  $\\alpha_c = \\exp(-\\sigma_0/\\sigma)$ against $\\sigma_0$",
            short="2.  $\\alpha_c$ against $\\sigma_0$")
-    _legend(a, [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+    _legend(a, [(GRP_LAB, SIG_LAB),
                 (GRP_REF, ["$\\alpha_c = 1$  physical ceiling"])])
 
 
@@ -405,7 +434,7 @@ def panel_alpha_vs_T(a, T, ctx):
     _style(a, "T [°C]", "$\\alpha_c$  [-]",
            "3.  $\\alpha_c(T)$: two decades down in $\\sigma$, "
            "thirty down in $\\alpha_c$", short="3.  $\\alpha_c(T)$")
-    _legend(a, [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+    _legend(a, [(GRP_LAB, SIG_LAB),
                 (GRP_REF, ["$\\alpha_c = 1$  physical ceiling",
                            f"$\\alpha_c$ = {ctx['alpha_run']:g}  what we run"])])
 
@@ -430,7 +459,7 @@ def panel_beta_vs_T(a, T, ctx):
            r"\alpha_c=\exp\left[-\sigma_0(T)/\sigma\right]$",
            title_size=13, pad=14,
            short="4.  $\\beta_{sub}(T) \\propto 1/\\alpha_c$")
-    _legend(a, [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+    _legend(a, [(GRP_LAB, SIG_LAB),
                 (GRP_REF, ["M&F (2024) Table S1",
                            f"$\\beta_{{sub}}$ = {ctx['beta_run']:.1e} s/m  "
                            f"what we run"])])
@@ -455,10 +484,10 @@ def panel_eps_vs_T(a, T, ctx):
                          f"{ctx['eps_run']*1e6:.3g} µm", "what we run"))
     _style(a, "T [°C]", "$\\epsilon$  [m]",
            "5.  Interface width from the comp_eps.py bounds "
-           "(shading follows $\\sigma = 2.7\\times10^{-3}$)",
+           f"(shading follows $\\sigma = {_sig_tex(prim)}$)",
            short="5.  Interface width $\\epsilon(T)$")
     _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
-                (GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+                (GRP_LAB, SIG_LAB),
                 (GRP_REF, [f"$N_x = 10^4$ ceiling, $\\epsilon$ = "
                            f"{ctx['eps_usable']*1e9:.0f} nm",
                            f"production run, $\\epsilon$ = "
@@ -483,7 +512,7 @@ def panel_Nx_vs_T(a, T, ctx):
            "6.  The mesh Libbrecht's $\\alpha_c$ demands",
            short="6.  Mesh $N_x(T)$", short_y="$N_x$")
     _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
-                (GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+                (GRP_LAB, SIG_LAB),
                 (GRP_REF, ["$N_x = 10^4$  practical ceiling",
                            f"production mesh, $N_x$ = {ctx['Nx_run']}"])])
 
@@ -582,8 +611,9 @@ def main():
                         "studies/molaro_2019/alpha_c_estimate.csv")
     p.add_argument("--safety", type=float, default=0.5)
     p.add_argument("--eps_over_R", type=float, default=0.05)
-    p.add_argument("--primary_sigma", type=float, default=2.7e-3,
-                   help="the sigma whose binding bound is shaded in figs 5-6")
+    p.add_argument("--primary_sigma", type=float, default=1.0e-2,
+                   help="the sigma whose binding bound is shaded in figs 5-6; "
+                        "must be one of the plotted SIGMA_CASES")
     p.add_argument("--alpha_run", type=float, default=0.1,
                    help="the constant alpha_c the production runs use")
     p.add_argument("--T_run", type=float, default=-20.0)
@@ -607,7 +637,7 @@ def main():
                         "ignores the PNG's DPI tag will insert it at width*dpi/96 "
                         "in -- set the width box back to --width, or pass "
                         "--dpi 96 for drop-in sizing at some loss of sharpness")
-    p.add_argument("--label", default="Molaro grain pair, 450 × 225 µm")
+    p.add_argument("--label", default="reference case: 450 × 225 µm grain pair")
     p.add_argument("--out", type=Path, default=Path("studies/libbrecht_kinetics"))
     args = p.parse_args()
 
