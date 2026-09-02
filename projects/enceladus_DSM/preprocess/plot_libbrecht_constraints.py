@@ -76,6 +76,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import comp_eps as ce
@@ -89,20 +90,30 @@ BOUND_COLOR = {"B-HEAT": C[0], "B-VAPOR": C[5], "B-KINETIC": C[1], "B-CURV": C[2
 # Short, because these ride in a legend under the axes. The formulas they
 # used to carry live in docs/tex/constraints_iguanatex.txt.
 BOUND_LABEL = {
-    "B-HEAT":    "B-HEAT binds (K&P 43a/b)",
-    "B-VAPOR":   "B-VAPOR binds (K&P 43c)",
-    "B-KINETIC": "B-KINETIC binds (K&P 45)",
-    "B-CURV":    "B-CURV binds (geometric)",
+    "B-HEAT":    "B-HEAT  (K&P 43a/b)",
+    "B-VAPOR":   "B-VAPOR  (K&P 43c)",
+    "B-KINETIC": "B-KINETIC  (K&P 45)",
+    "B-CURV":    "B-CURV  (geometric)",
 }
 
 # The supersaturations in play. Value, colour, label, and whether it is a
 # condition WE impose or one LIBBRECHT measured at.
 SIGMA_CASES = [
-    (1.0e-1, C[2], "$\\sigma = 10^{-1}$  (Libbrecht)", "lab"),
-    (1.0e-2, C[5], "$\\sigma = 10^{-2}$  (Libbrecht)", "lab"),
-    (2.7e-3, C[3], "$\\sigma = 2.7\\times10^{-3}$  (our wall BC)", "ours"),
-    (4.5e-4, C[1], "$\\sigma = 4.5\\times10^{-4}$  (our fillet)", "ours"),
+    (1.0e-1, C[2], "$\\sigma = 10^{-1}$", "lab"),
+    (1.0e-2, C[5], "$\\sigma = 10^{-2}$", "lab"),
+    (2.7e-3, C[3], "$\\sigma = 2.7\\times10^{-3}$   wall BC", "ours"),
+    (4.5e-4, C[1], "$\\sigma = 4.5\\times10^{-4}$   neck fillet", "ours"),
 ]
+
+# Legend group headings. Which sigma a curve belongs to is the first thing a
+# reader needs, and it is exactly what the entry label cannot say briefly --
+# so the heading says it once for the pair.
+GRP_LAB = "Libbrecht's chamber"
+GRP_OURS = "Our conditions"
+GRP_BIND = "Which bound binds"
+GRP_REF = "Reference"
+SIG_LAB = [l for _v, _c, l, k in SIGMA_CASES if k == "lab"]
+SIG_OURS = [l for _v, _c, l, k in SIGMA_CASES if k == "ours"]
 
 # a = (m/rho_ice)^(1/3): the molecular length already implied by the constants
 # in comp_eps.py. Below it a continuum phase field means nothing.
@@ -115,12 +126,13 @@ ALPHA_CEIL = 1.0            # every impinging molecule sticks
 # sized for a projector rather than for a screen an arm's length away. One
 # scheme serves both the standalone figures and the overview grid, because
 # FIGSIZE and OVERVIEW_SIZE keep the per-panel area roughly equal.
-FS_TITLE, FS_LABEL, FS_TICK, FS_LEG, FS_NOTE = 15, 13, 11.5, 10.5, 10
-FIGSIZE = (10.0, 7.0)
-# 3 x FIGSIZE wide, so each overview panel gets the same area the standalone
-# does. Anything smaller and the legends -- which sit UNDER the axes -- either
-# overflow into the neighbouring column or squeeze the plot to nothing.
-OVERVIEW_SIZE = (3 * FIGSIZE[0], 2 * FIGSIZE[1] + 1.0)
+# Nothing here is below 10 pt.
+FS_TITLE, FS_LABEL, FS_TICK, FS_LEG, FS_NOTE = 15, 13, 11.5, 10, 10
+# 10 x 5 of plot, plus an inch for the legend strip underneath it.
+FIGSIZE = (10.0, 5.8)
+# One standalone panel per grid cell: anything smaller and the legends -- which
+# sit UNDER the axes -- overflow into the neighbouring column.
+OVERVIEW_SIZE = (3 * FIGSIZE[0], 2 * FIGSIZE[1])
 
 # -------------------------------------------------------------------------
 # The display window.
@@ -134,12 +146,12 @@ OVERVIEW_SIZE = (3 * FIGSIZE[0], 2 * FIGSIZE[1] + 1.0)
 # -------------------------------------------------------------------------
 VIEW_ALPHA = (ce.ALPHA_LIT_LO * 1e-2, 2.5)        # band 1e-3..1e-1, +2 decades
 MF_BETA_LO, MF_BETA_HI = 2.0e4, 2.0e6             # M&F (2024) Table S1
-VIEW_BETA = (MF_BETA_LO * 1e-2, MF_BETA_HI * 1e2)
+VIEW_BETA = (1.0e3, MF_BETA_HI * 1e2)   # trimmed: nothing runs below 1e3
 
 # Mesh window, in Nx. NX_USABLE is what we can actually run; the frame is
 # opened up ~2.3 decades above it so the molecular limit Lx/a stays visible.
 NX_USABLE = 1.0e4
-VIEW_NX = (3.0e2, 1.0e6)
+VIEW_NX = (4.0e2, 1.0e6)
 
 
 def _mark_offscale(a, x, y, color, fmt="{:.1e}", row=0):
@@ -171,8 +183,7 @@ def _mark_offscale(a, x, y, color, fmt="{:.1e}", row=0):
         a.plot([x[j]], [edge], mk, ms=9, color=color, clip_on=False, zorder=7)
         a.annotate(f"{arrow} {fmt.format(extreme(y))}", (x[j], edge),
                    xytext=(0, -pad if va == "top" else pad),
-                   textcoords="offset points", fontsize=FS_NOTE - 1,
-                   color=color,
+                   textcoords="offset points", fontsize=FS_NOTE, color=color,
                    ha="center", va=va, zorder=7,
                    bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none",
                              alpha=0.85))
@@ -190,16 +201,42 @@ def _style(a, xlabel, ylabel, title, logy=True, title_size=FS_TITLE, pad=10):
     a.tick_params(labelsize=FS_TICK)
 
 
-def _legend(a, ncol=3, size=FS_LEG):
-    """Legend beneath the axes.
+def _blank():
+    """An invisible handle, so a group heading can occupy a legend row."""
+    return Line2D([], [], linestyle="none", marker="none")
 
-    Four curves sweeping the full diagonal leave no corner free, and reserving
-    an empty band inside the frame costs the zoom that makes these panels
-    readable. Putting it outside is the only arrangement that covers nothing.
+
+def _legend(a, groups, y=-0.165):
+    """One legend under the axes, laid out as titled columns.
+
+    Eight entries in a flat strip is a lookup problem: the reader has to scan
+    the whole row to find the curve they want. matplotlib fills a multi-column
+    legend column-major, so padding every group to the same length puts each
+    group in its own column under its own bold heading -- and the headings are
+    what carry the provenance the short entry labels leave out.
+
+    `groups` is [(heading, [label, ...]), ...]; labels not actually plotted in
+    this panel are skipped, so one group list can serve several panels.
     """
-    a.legend(fontsize=size, frameon=False, loc="upper center", ncol=ncol,
-             bbox_to_anchor=(0.5, -0.155), handlelength=2.4,
-             columnspacing=2.0, borderaxespad=0.0)
+    have = {lbl: h for h, lbl in zip(*a.get_legend_handles_labels())}
+    cols = [(t, [k for k in keys if k in have]) for t, keys in groups]
+    cols = [c for c in cols if c[1]]
+    rows = max(len(keys) for _t, keys in cols)
+    handles, labels, headings = [], [], set()
+    for title, keys in cols:
+        handles.append(_blank()); labels.append(title); headings.add(title)
+        for k in keys:
+            handles.append(have[k]); labels.append(k)
+        handles += [_blank()] * (rows - len(keys))
+        labels += [""] * (rows - len(keys))
+    leg = a.legend(handles, labels, ncol=len(cols), loc="upper center",
+                   bbox_to_anchor=(0.5, y), fontsize=FS_LEG, frameon=False,
+                   handlelength=2.2, handletextpad=0.7, columnspacing=1.4,
+                   labelspacing=0.45, borderaxespad=0.0, alignment="left")
+    for t in leg.get_texts():
+        if t.get_text() in headings:
+            t.set_fontweight("bold")
+    return leg
 
 
 def _ls(kind):
@@ -221,7 +258,7 @@ def panel_sigma0(a, T, ctx):
            label="$\\sigma_0(T)$ as coded")
     a.plot(ce._SIG0_T[:9], ce._SIG0_S[:9], "o", ms=7, color=C[0],
            markerfacecolor="white", markeredgewidth=1.8, zorder=5,
-           label="Libbrecht (2017) table, 9 points")
+           label="table, 9 points in range")
     a.annotate("non-monotonic kink at $-6/-7$ °C\n(a digitisation artifact,\n"
                "not physics)", (-6.6, 6.6e-3), xytext=(-14.5, 3.0e-3),
                fontsize=FS_NOTE, color=C[1], ha="center", va="center",
@@ -236,7 +273,8 @@ def panel_sigma0(a, T, ctx):
     a.set_ylim(2.0e-3, 6.0e-1)
     _style(a, "T [°C]", "$\\sigma_0$  (critical supersaturation) [-]",
            "1.  Libbrecht's data: $\\sigma_0(T)$")
-    _legend(a, ncol=2)
+    _legend(a, [("Libbrecht (2017)", ["$\\sigma_0(T)$ as coded",
+                                      "table, 9 points in range"])])
 
 
 def panel_alpha_vs_sigma0(a, T, ctx):
@@ -251,7 +289,7 @@ def panel_alpha_vs_sigma0(a, T, ctx):
         a.plot(s0, y, lw=2.4, color=col, ls=_ls(kind), label=lbl)
         _mark_offscale(a, s0, y, col, row=i % 2)
     a.axhline(ALPHA_CEIL, lw=1.6, color=INK, alpha=0.7,
-              label="$\\alpha_c = 1$ (physical ceiling)")
+              label="$\\alpha_c = 1$  physical ceiling")
     # Where the table's own sigma0 values sit, so x carries physical marks.
     for Tm in (-2.0, -20.0, -40.0):
         s0m = ce.sigma0(Tm)
@@ -264,7 +302,8 @@ def panel_alpha_vs_sigma0(a, T, ctx):
                fontsize=FS_NOTE, color=C[0], va="center")
     _style(a, "$\\sigma_0(T)$  [-]", "$\\alpha_c$  [-]",
            "2.  $\\alpha_c = \\exp(-\\sigma_0/\\sigma)$ against $\\sigma_0$")
-    _legend(a, ncol=3)
+    _legend(a, [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+                (GRP_REF, ["$\\alpha_c = 1$  physical ceiling"])])
 
 
 def panel_alpha_vs_T(a, T, ctx):
@@ -278,26 +317,28 @@ def panel_alpha_vs_T(a, T, ctx):
         a.plot(T, y, lw=2.4, color=col, ls=_ls(kind), label=lbl)
         _mark_offscale(a, T, y, col, row=i % 2)
     a.axhline(ALPHA_CEIL, lw=1.6, color=INK, alpha=0.7,
-              label="$\\alpha_c = 1$ (physical ceiling)")
+              label="$\\alpha_c = 1$  physical ceiling")
     a.axhline(ctx["alpha_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=f"$\\alpha_c$ = {ctx['alpha_run']:g} (what we run)")
+              label=f"$\\alpha_c$ = {ctx['alpha_run']:g}  what we run")
     _style(a, "T [°C]", "$\\alpha_c$  [-]",
            "3.  $\\alpha_c(T)$: two decades down in $\\sigma$, "
            "thirty down in $\\alpha_c$")
-    _legend(a, ncol=3)
+    _legend(a, [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+                (GRP_REF, ["$\\alpha_c = 1$  physical ceiling",
+                           f"$\\alpha_c$ = {ctx['alpha_run']:g}  what we run"])])
 
 
 def panel_beta_vs_T(a, T, ctx):
     """4. beta_sub(T). The defining equation rides in the title, not the frame,
     so it cannot land on the legend or on a curve."""
     a.axhspan(MF_BETA_LO, MF_BETA_HI, color=C[2], alpha=0.14, zorder=0,
-              label="M&F (2024) Table S1: $2\\times10^4$–$2\\times10^6$ s/m")
+              label="M&F (2024) Table S1")
     a.set_ylim(*VIEW_BETA)
     for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         a.plot(T, ctx["beta"][sig], lw=2.4, color=col, ls=_ls(kind), label=lbl)
         _mark_offscale(a, T, ctx["beta"][sig], col, row=i % 2)
     a.axhline(ctx["beta_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=f"$\\beta_{{sub}}$ = {ctx['beta_run']:.2e} s/m (what we run)")
+              label=f"$\\beta_{{sub}}$ = {ctx['beta_run']:.1e} s/m  what we run")
     _style(a, "T [°C]", "$\\beta_{sub}$  [s/m]",
            "4.  Attachment resistance $\\beta_{sub} \\propto 1/\\alpha_c$\n\n"
            r"$\beta_{sub}(T)=\dfrac{\beta_{HK}}{\rho_{vs}(T)/\rho_i}"
@@ -305,7 +346,10 @@ def panel_beta_vs_T(a, T, ctx):
            r"\sqrt{\dfrac{2\pi m}{k_B T}}\,,\qquad"
            r"\alpha_c=\exp\left[-\sigma_0(T)/\sigma\right]$",
            title_size=13, pad=14)
-    _legend(a, ncol=3)
+    _legend(a, [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+                (GRP_REF, ["M&F (2024) Table S1",
+                           f"$\\beta_{{sub}}$ = {ctx['beta_run']:.1e} s/m  "
+                           f"what we run"])])
 
 
 def panel_eps_vs_T(a, T, ctx):
@@ -316,16 +360,22 @@ def panel_eps_vs_T(a, T, ctx):
     for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         a.plot(T, ctx["eps"][sig], lw=3.4 if sig == prim else 2.4, color=col,
                ls=_ls(kind),
-               label=lbl + ("  ← shaded" if sig == prim else ""))
+               label=lbl)
         _mark_offscale(a, T, ctx["eps"][sig], col, row=i % 2)
     a.axhline(ctx["eps_usable"], lw=1.6, color=MUTED,
-              label=f"$N_x = 10^4$ ceiling ($\\epsilon$ = "
-                    f"{ctx['eps_usable']*1e9:.0f} nm)")
+              label=f"$N_x = 10^4$ ceiling, $\\epsilon$ = "
+                    f"{ctx['eps_usable']*1e9:.0f} nm")
     a.axhline(ctx["eps_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=f"production run ($\\epsilon$ = {ctx['eps_run']*1e6:.3g} µm)")
+              label=f"production run, $\\epsilon$ = {ctx['eps_run']*1e6:.3g} µm")
     _style(a, "T [°C]", "$\\epsilon$  [m]",
-           "5.  Interface width from the comp_eps.py bounds")
-    _legend(a, ncol=3)
+           "5.  Interface width from the comp_eps.py bounds "
+           "(shading follows $\\sigma = 2.7\\times10^{-3}$)")
+    _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
+                (GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+                (GRP_REF, [f"$N_x = 10^4$ ceiling, $\\epsilon$ = "
+                           f"{ctx['eps_usable']*1e9:.0f} nm",
+                           f"production run, $\\epsilon$ = "
+                           f"{ctx['eps_run']*1e6:.3g} µm"])])
 
 
 def panel_Nx_vs_T(a, T, ctx):
@@ -338,13 +388,15 @@ def panel_Nx_vs_T(a, T, ctx):
                ls=_ls(kind), label=lbl)
         _mark_offscale(a, T, ctx["Nx"][sig], col, fmt="{:.0e}", row=i % 2)
     a.axhline(NX_USABLE, lw=1.6, color=MUTED,
-              label="$N_x = 10^4$ practical ceiling")
+              label="$N_x = 10^4$  practical ceiling")
     a.axhline(ctx["Nx_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=f"production mesh, $N_x$ = {ctx['Nx_run']} "
-                    f"({ctx['nodes_run']/1e6:.1f} M nodes)")
+              label=f"production mesh, $N_x$ = {ctx['Nx_run']}")
     _style(a, "T [°C]", "$N_x$  [nodes across $L_x$]",
            "6.  The mesh Libbrecht's $\\alpha_c$ demands")
-    _legend(a, ncol=3)
+    _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
+                (GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+                (GRP_REF, ["$N_x = 10^4$  practical ceiling",
+                           f"production mesh, $N_x$ = {ctx['Nx_run']}"])])
 
 
 def _shade_binding(a, T, binding, y_frac=0.975):

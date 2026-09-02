@@ -1,3 +1,24 @@
+## 2026-09-02 (final) — Grouped legends, 10 pt floor, 10 x 5.8 panels
+
+- Panels regenerated at 10 x 5.8 in / 200 dpi (10 x 5 of plot plus a legend
+  strip), with no type below 10 pt: FS_TITLE 15, FS_LABEL 13, FS_TICK 11.5,
+  FS_LEG 10, FS_NOTE 10. Verified by resolving every fontsize expression in
+  the source -- min is exactly 10.
+- The flat 8-entry legend strip was a lookup problem. `_legend()` now takes
+  [(heading, [labels])] and exploits matplotlib's COLUMN-MAJOR fill: pad each
+  group to equal length and every group lands in its own column under its own
+  bold heading. Groups are consistent across panels -- "Which bound binds",
+  "Libbrecht's chamber", "Our conditions", "Reference".
+- Because the heading now carries the provenance, the entries shrank to the
+  number alone: "sigma = 1e-1" instead of "Libbrecht chamber, sigma = 1e-1",
+  and "sigma = 2.7e-3  wall BC" instead of "Molaro wall BC, sigma = 2.7e-3".
+- Panel 5's "<- shaded" suffix moved into the title, which now says outright
+  that the shading follows sigma = 2.7e-3.
+- Trimmed dead space: VIEW_BETA bottom 2e2 -> 1e3 (nothing runs below 1.5e3),
+  VIEW_NX bottom 3e2 -> 4e2 (lowest curve 6e2).
+
+---
+
 ## 2026-09-02 (end of day) — Legends outside; IguanaTeX snippets actually work
 
 - **The IguanaTeX snippets did not generate.** I had validated every block

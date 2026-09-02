@@ -40,13 +40,17 @@ from what the sizer does.
 **Axis windows.** Plotted full-range these quantities span sixty decades and
 the usable band is a hairline, so every axis is clipped to the *literature*
 band opened up by two decades on each side — α_c to [1e-5, 2.5], β_sub to
-[2e2, 2e8] around M&F's [2e4, 2e6], and N_x to [3e2, 1e6] around the
+[1e3, 2e8] around M&F's [2e4, 2e6], and N_x to [4e2, 1e6] around the
 N_x = 10⁴ practical ceiling. Panel 5's ε window is the exact reciprocal of
 panel 6's N_x window, so the two read against each other.
 
-Legends sit **under** the axes, not inside them. Four curves sweeping the full
-diagonal leave no free corner, and reserving an empty band inside the frame
-costs the zoom that makes these panels readable in the first place.
+**Format.** 10 × 5.8 in at 200 dpi — 10 × 5 of plot plus a legend strip under
+it — with nothing set below 10 pt, so a panel can fill a slide.
+
+Legends sit **under** the axes, not inside them (four curves sweeping the full
+diagonal leave no free corner), and they are split into titled columns:
+*Which bound binds* · *Libbrecht's chamber* · *Our conditions* · *Reference*.
+The heading carries the provenance, so each entry only has to carry its number.
 
 Where a curve leaves the frame it is marked on the edge with the extreme it
 reaches, so nothing is hidden; the full range is in
