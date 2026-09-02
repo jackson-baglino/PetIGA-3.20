@@ -1,3 +1,30 @@
+## 2026-09-02 (end of day) — Legends outside; IguanaTeX snippets actually work
+
+- **The IguanaTeX snippets did not generate.** I had validated every block
+  wrapped in \[ ... \], assuming that is what IguanaTeX does. It is not:
+  IguanaTeX supplies \documentclass ... \begin{document} and drops the paste
+  into the body in TEXT mode. `aligned` needs an enclosing math mode, so every
+  block failed. Fixed: `aligned` -> `align*`, and every bare-math block now
+  carries its own \[ ... \]. Also dropped \gtrsim (block 13) -- it is amssymb
+  and IguanaTeX's preamble carries only amsmath. All 13 blocks now compile
+  against the EXACT wrapper Jackson pasted, and the test in docs/tex/README.md
+  uses that wrapper rather than my earlier assumption.
+- Legends moved OUT from under the curves to beneath the axes, 2-3 columns,
+  every panel. The reserved-band trick from this morning was worse than the
+  problem: it cost 1.5-2 decades of axis on panels 2/3/5/6 and still crowded
+  the region labels. Windows reverted to the tight zoom (alpha_c to 2.5,
+  Nx to [3e2, 1e6]).
+- Legend labels shortened: "Libbrecht chamber, sigma = 1e-1" -> "sigma = 1e-1
+  (Libbrecht)", the bound formulas dropped to "B-KINETIC binds (K&P 45)" (the
+  formulas live in docs/tex now), and the reference lines to "production run",
+  "Nx = 1e4 practical ceiling" and so on.
+- Layout switched to constrained_layout, which accounts for legends outside the
+  axes; tight_layout does not. The overview is now 3 x FIGSIZE wide (30 x 15)
+  so each panel gets the standalone's area -- at 24 in the outside legends
+  overflowed into the neighbouring column.
+
+---
+
 ## 2026-09-02 (later still) — Slide-scale type; legends off the curves
 
 - Jackson: legends in panels 5 and 6 were covering curves, panel 4's equation

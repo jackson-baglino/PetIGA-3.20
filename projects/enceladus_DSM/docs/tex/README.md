@@ -8,11 +8,15 @@ change with it.
 
 **`constraints_iguanatex.txt`** — 13 numbered snippets, one constraint each,
 separated by dashed rules. Copy one block into IguanaTeX's *New LaTeX display*
-box and hit Generate. Each block is self-contained, uses only `amsmath` /
-`amssymb` (already in IguanaTeX's default preamble), and every one is
-regression-tested to compile inside `\[ ... \]`, which is what IguanaTeX wraps
-it in. The header lines are `%`-commented, so sweeping one up in a sloppy copy
-is harmless.
+box and hit Generate.
+
+IguanaTeX supplies `\documentclass ... \begin{document}` and drops your text
+into the body **in text mode** — it does *not* wrap it in maths. So each block
+carries its own `\[ ... \]` or `align*`. Paste the block as-is; don't add `$`
+or `\[` around it, and don't paste a preamble. `amsmath` is the only package
+needed (nothing here uses `amssymb`), which is what IguanaTeX loads by default.
+The header lines are `%`-commented, so sweeping one up in a sloppy copy is
+harmless.
 
 Blocks: [1] the four ε bounds on one slide · [2] ε as their minimum ·
 [3] the mesh rule · [4] the thin-interface parameter δ · [5] β_HK vs β_sub ·
@@ -42,6 +46,8 @@ cross-references at all, by design.
 
 ## Checking the snippets still compile
 
+Against the exact wrapper IguanaTeX produces — text mode, `amsmath` only:
+
 ```bash
 python3 - <<'EOF'
 import re, pathlib, subprocess, tempfile, os
@@ -49,8 +55,9 @@ txt = pathlib.Path("docs/tex/constraints_iguanatex.txt").read_text()
 blocks = re.findall(r"^-{80}\n(.*?)^-{80}$", txt, flags=re.S | re.M)
 d = tempfile.mkdtemp(); bad = []
 for i, b in enumerate(blocks, 1):
-    src = ("\\documentclass{article}\n\\usepackage{amsmath,amssymb,amsfonts}\n"
-           "\\begin{document}\n\\[" + b.strip() + "\\]\n\\end{document}\n")
+    src = ("\\documentclass{article}\n\\usepackage{amsmath}\n"
+           "\\pagestyle{empty}\n\\begin{document}\n\n"
+           + b.strip("\n") + "\n\n\\end{document}\n")
     f = os.path.join(d, f"b{i}.tex"); open(f, "w").write(src)
     r = subprocess.run(["pdflatex", "-interaction=nonstopmode", "-halt-on-error",
                         f"-output-directory={d}", f], capture_output=True, text=True)
