@@ -1,3 +1,25 @@
+## 2026-09-02 (final, 4) — Master figure, 10 x 6.6 in
+
+- Jackson asked for a master plot: all six panels, 10 in wide, 10 pt floor.
+  Built `fig0_master.png` (10.00 x 6.60 in @ 200 dpi), 3 x 2.
+- Getting six panels into a third of the width each needed a COMPACT mode
+  rather than a smaller font: `_COMPACT` toggles short titles, short y-labels
+  on panels 1 and 6, no prose annotations (the sigma0 kink callout, the
+  factor-27 block, the literature-band labels, panel 4's equation, panel 2's
+  T marks), and no per-panel legend. It is a flag inside the same panel
+  functions, so the master and the standalone panels cannot drift.
+- One shared legend at the foot instead of six. Panels 3-6 each draw a dotted
+  black "what we run" line with a different label; in compact mode they share
+  the label "what we run", which collapses four legend entries into one.
+  `_legend` split into `_entries` (label -> handle, unioned across axes) and
+  `_grouped` (the titled-column layout), so a figure-level legend reuses the
+  same code as the per-panel one.
+- Off-scale markers drop a row in compact mode: the binding-region names sit on
+  the same edge and there is a third of the width to keep them apart in.
+- Compact type: title 12, labels 10.5, ticks/legend/notes 10. Floor still 10.
+
+---
+
 ## 2026-09-02 (final, 3) — Dropped the contact sheet
 
 - Jackson, on the restacked overview: "This is 10 inches tall, I want 10 inches

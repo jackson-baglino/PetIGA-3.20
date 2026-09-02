@@ -57,10 +57,12 @@ WHAT THE PLOTS ARE
   fig4_beta_sub_vs_T.png     beta_sub(T), with its defining equation
   fig5_eps_vs_T.png          eps(T) from comp_eps, shaded by binding bound
   fig6_Nx_vs_T.png           Nx(T), against what a machine can actually hold
+  fig0_master.png            all six, 3 x 2, one shared legend
 
-Every one is 10.00 x 5.80 in -- 10 wide is a hard ceiling, because these go
-on PowerPoint slides. There is deliberately no combined contact sheet: six
-of these panels cannot be laid out inside 10 in and stay legible.
+Every figure is 10 in wide -- a hard ceiling, because these go on PowerPoint
+slides -- and no type is below 10 pt. The master gets there by dropping each
+panel's prose annotations, shortening its title, and replacing six near
+identical legends with one at the foot of the figure.
   libbrecht_constraints.csv  the numbers behind them
 
 Usage:
@@ -137,6 +139,25 @@ FS_TITLE, FS_LABEL, FS_TICK, FS_LEG, FS_NOTE = 15, 13, 11.5, 10, 10
 SLIDE_W_IN = 10.0
 ASPECT = 0.58              # 10 x 5 of plot, plus the legend strip underneath
 
+# COMPACT MODE. The master grid puts six panels inside the same 10 in, so each
+# one gets a third of the width. Everything that only earns its place at full
+# size -- the long titles, the prose annotations, the per-panel legend -- is
+# dropped there, and the panels share one legend at the foot of the figure.
+# Type still never goes below 10 pt; that is the constraint, not the width.
+FS_C_TITLE, FS_C_LABEL, FS_C_TICK = 12, 10.5, 10
+_COMPACT = [False]
+
+
+def _compact():
+    return _COMPACT[0]
+
+
+def _lbl(full, short):
+    """Legend label: the panel's own wording, or the wording the shared legend
+    uses. Panels 3-6 all draw a dotted black 'what we run' line; giving them
+    one label in compact mode collapses four entries into one."""
+    return short if _compact() else full
+
 # -------------------------------------------------------------------------
 # The display window.
 #
@@ -182,26 +203,33 @@ def _mark_offscale(a, x, y, color, fmt="{:.1e}", row=0):
         while hi_i < len(out) - 1 and out[hi_i + 1]:
             hi_i += 1
         j = hi_i if hi_i < len(out) - 1 else (lo_i if lo_i > 0 else k)
-        pad = 8.0 + 15.0 * row
+        # One row lower in the master: the region names sit on the same edge
+        # and there is a third of the width to keep them apart in.
+        pad = 8.0 + 13.0 * (row + (1 if _compact() else 0))
         a.plot([x[j]], [edge], mk, ms=9, color=color, clip_on=False, zorder=7)
         a.annotate(f"{arrow} {fmt.format(extreme(y))}", (x[j], edge),
                    xytext=(0, -pad if va == "top" else pad),
-                   textcoords="offset points", fontsize=FS_NOTE, color=color,
+                   textcoords="offset points",
+                   fontsize=FS_C_TICK if _compact() else FS_NOTE, color=color,
                    ha="center", va=va, zorder=7,
                    bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none",
                              alpha=0.85))
 
 
-def _style(a, xlabel, ylabel, title, logy=True, title_size=FS_TITLE, pad=10):
-    a.set_xlabel(xlabel, fontsize=FS_LABEL)
-    a.set_ylabel(ylabel, fontsize=FS_LABEL)
+def _style(a, xlabel, ylabel, title, logy=True, title_size=FS_TITLE, pad=10,
+           short=None, short_y=None):
+    lab = FS_C_LABEL if _compact() else FS_LABEL
+    a.set_xlabel(xlabel, fontsize=lab)
+    a.set_ylabel(short_y if (_compact() and short_y) else ylabel, fontsize=lab)
+    if _compact():
+        title, title_size, pad = (short or title), FS_C_TITLE, 6
     if title:
         a.set_title(title, fontsize=title_size, color=INK, loc="left", pad=pad)
     if logy:
         a.set_yscale("log")
     a.grid(alpha=0.25, lw=0.5, color=GRID, which="both")
     a.spines[["top", "right"]].set_visible(False)
-    a.tick_params(labelsize=FS_TICK)
+    a.tick_params(labelsize=FS_C_TICK if _compact() else FS_TICK)
 
 
 def _blank():
@@ -209,19 +237,29 @@ def _blank():
     return Line2D([], [], linestyle="none", marker="none")
 
 
-def _legend(a, groups, y=-0.165):
-    """One legend under the axes, laid out as titled columns.
+def _entries(*axes):
+    """label -> handle, unioned across axes. Panels that draw the same line
+    with the same label collapse to one entry, which is what lets the master
+    grid carry a single legend for all six."""
+    have = {}
+    for a in axes:
+        for h, lbl in zip(*a.get_legend_handles_labels()):
+            have.setdefault(lbl, h)
+    return have
 
-    Eight entries in a flat strip is a lookup problem: the reader has to scan
-    the whole row to find the curve they want. matplotlib fills a multi-column
-    legend column-major, so padding every group to the same length puts each
-    group in its own column under its own bold heading -- and the headings are
-    what carry the provenance the short entry labels leave out.
 
-    `groups` is [(heading, [label, ...]), ...]; labels not actually plotted in
-    this panel are skipped, so one group list can serve several panels.
+def _grouped(target, have, groups, size, **kw):
+    """A legend laid out as titled columns.
+
+    A flat strip of entries is a lookup problem: the reader scans the whole row
+    to find one curve. matplotlib fills a multi-column legend column-major, so
+    padding every group to the same length puts each group in its own column
+    under its own bold heading -- and the headings carry the provenance the
+    short entry labels leave out.
+
+    `groups` is [(heading, [label, ...]), ...]; labels that were never plotted
+    are skipped, so one group list can serve several panels.
     """
-    have = {lbl: h for h, lbl in zip(*a.get_legend_handles_labels())}
     cols = [(t, [k for k in keys if k in have]) for t, keys in groups]
     cols = [c for c in cols if c[1]]
     rows = max(len(keys) for _t, keys in cols)
@@ -232,14 +270,23 @@ def _legend(a, groups, y=-0.165):
             handles.append(have[k]); labels.append(k)
         handles += [_blank()] * (rows - len(keys))
         labels += [""] * (rows - len(keys))
-    leg = a.legend(handles, labels, ncol=len(cols), loc="upper center",
-                   bbox_to_anchor=(0.5, y), fontsize=FS_LEG, frameon=False,
-                   handlelength=2.2, handletextpad=0.7, columnspacing=1.4,
-                   labelspacing=0.45, borderaxespad=0.0, alignment="left")
+    leg = target.legend(handles, labels, ncol=len(cols), fontsize=size,
+                        frameon=False, handlelength=2.0, handletextpad=0.6,
+                        columnspacing=1.2, labelspacing=0.45,
+                        borderaxespad=0.0, alignment="left", **kw)
     for t in leg.get_texts():
         if t.get_text() in headings:
             t.set_fontweight("bold")
     return leg
+
+
+def _legend(a, groups, y=-0.165):
+    """Per-panel legend under the axes. Suppressed in the master grid, which
+    carries one shared legend instead of six near-identical ones."""
+    if _compact():
+        return None
+    return _grouped(a, _entries(a), groups, FS_LEG, loc="upper center",
+                    bbox_to_anchor=(0.5, y))
 
 
 def _ls(kind):
@@ -262,6 +309,18 @@ def panel_sigma0(a, T, ctx):
     a.plot(ce._SIG0_T[:9], ce._SIG0_S[:9], "o", ms=7, color=C[0],
            markerfacecolor="white", markeredgewidth=1.8, zorder=5,
            label="table, 9 points in range")
+    if not _compact():
+        _panel1_notes(a)
+    a.set_xlim(-41, 0.5)
+    a.set_ylim(2.0e-3, 6.0e-1)
+    _style(a, "T [°C]", "$\\sigma_0$  (critical supersaturation) [-]",
+           "1.  Libbrecht's data: $\\sigma_0(T)$",
+           short="1.  Libbrecht's $\\sigma_0(T)$", short_y="$\\sigma_0$  [-]")
+    _legend(a, [("Libbrecht (2017)", ["$\\sigma_0(T)$ as coded",
+                                      "table, 9 points in range"])])
+
+
+def _panel1_notes(a):
     a.annotate("non-monotonic kink at $-6/-7$ °C\n(a digitisation artifact,\n"
                "not physics)", (-6.6, 6.6e-3), xytext=(-14.5, 3.0e-3),
                fontsize=FS_NOTE, color=C[1], ha="center", va="center",
@@ -272,12 +331,6 @@ def panel_sigma0(a, T, ctx):
            "$\\alpha_c = \\exp(-\\sigma_0/\\sigma)$, so that factor\n"
            "lands in the EXPONENT.",
            fontsize=FS_NOTE, color=INK, ha="left", va="top")
-    a.set_xlim(-41, 0.5)
-    a.set_ylim(2.0e-3, 6.0e-1)
-    _style(a, "T [°C]", "$\\sigma_0$  (critical supersaturation) [-]",
-           "1.  Libbrecht's data: $\\sigma_0(T)$")
-    _legend(a, [("Libbrecht (2017)", ["$\\sigma_0(T)$ as coded",
-                                      "table, 9 points in range"])])
 
 
 def panel_alpha_vs_sigma0(a, T, ctx):
@@ -294,17 +347,19 @@ def panel_alpha_vs_sigma0(a, T, ctx):
     a.axhline(ALPHA_CEIL, lw=1.6, color=INK, alpha=0.7,
               label="$\\alpha_c = 1$  physical ceiling")
     # Where the table's own sigma0 values sit, so x carries physical marks.
-    for Tm in (-2.0, -20.0, -40.0):
+    for Tm in ([] if _compact() else (-2.0, -20.0, -40.0)):
         s0m = ce.sigma0(Tm)
         a.axvline(s0m, lw=1.0, ls=(0, (1, 3)), color=MUTED, zorder=0)
         a.annotate(f"$T$ = {Tm:.0f} °C", (s0m, ALPHA_CEIL * 0.55), rotation=90,
                    fontsize=FS_NOTE, color=MUTED, ha="right", va="top", zorder=6,
                    bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none",
                              alpha=0.85))
-    a.annotate("literature band for $\\alpha_c$", (2.9e-4, 3.0e-2),
-               fontsize=FS_NOTE, color=C[0], va="center")
+    if not _compact():
+        a.annotate("literature band for $\\alpha_c$", (2.9e-4, 3.0e-2),
+                   fontsize=FS_NOTE, color=C[0], va="center")
     _style(a, "$\\sigma_0(T)$  [-]", "$\\alpha_c$  [-]",
-           "2.  $\\alpha_c = \\exp(-\\sigma_0/\\sigma)$ against $\\sigma_0$")
+           "2.  $\\alpha_c = \\exp(-\\sigma_0/\\sigma)$ against $\\sigma_0$",
+           short="2.  $\\alpha_c$ against $\\sigma_0$")
     _legend(a, [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
                 (GRP_REF, ["$\\alpha_c = 1$  physical ceiling"])])
 
@@ -313,8 +368,9 @@ def panel_alpha_vs_T(a, T, ctx):
     """3. alpha_c(T) at each sigma -- the supersaturation gap, in T."""
     a.axhspan(ce.ALPHA_LIT_LO, ce.ALPHA_LIT_HI, color=C[0], alpha=0.10, zorder=0)
     a.set_ylim(*VIEW_ALPHA)
-    a.annotate("literature band for $\\alpha_c$", (-39.5, 4.0e-3),
-               fontsize=FS_NOTE, color=C[0], va="center")
+    if not _compact():
+        a.annotate("literature band for $\\alpha_c$", (-39.5, 4.0e-3),
+                   fontsize=FS_NOTE, color=C[0], va="center")
     for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         y = np.maximum(ctx["alpha"][sig], ALPHA_FLOOR)
         a.plot(T, y, lw=2.4, color=col, ls=_ls(kind), label=lbl)
@@ -322,10 +378,11 @@ def panel_alpha_vs_T(a, T, ctx):
     a.axhline(ALPHA_CEIL, lw=1.6, color=INK, alpha=0.7,
               label="$\\alpha_c = 1$  physical ceiling")
     a.axhline(ctx["alpha_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=f"$\\alpha_c$ = {ctx['alpha_run']:g}  what we run")
+              label=_lbl(f"$\\alpha_c$ = {ctx['alpha_run']:g}  what we run",
+                         "what we run"))
     _style(a, "T [°C]", "$\\alpha_c$  [-]",
            "3.  $\\alpha_c(T)$: two decades down in $\\sigma$, "
-           "thirty down in $\\alpha_c$")
+           "thirty down in $\\alpha_c$", short="3.  $\\alpha_c(T)$")
     _legend(a, [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
                 (GRP_REF, ["$\\alpha_c = 1$  physical ceiling",
                            f"$\\alpha_c$ = {ctx['alpha_run']:g}  what we run"])])
@@ -341,14 +398,16 @@ def panel_beta_vs_T(a, T, ctx):
         a.plot(T, ctx["beta"][sig], lw=2.4, color=col, ls=_ls(kind), label=lbl)
         _mark_offscale(a, T, ctx["beta"][sig], col, row=i % 2)
     a.axhline(ctx["beta_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=f"$\\beta_{{sub}}$ = {ctx['beta_run']:.1e} s/m  what we run")
+              label=_lbl(f"$\\beta_{{sub}}$ = {ctx['beta_run']:.1e} s/m  "
+                         f"what we run", "what we run"))
     _style(a, "T [°C]", "$\\beta_{sub}$  [s/m]",
            "4.  Attachment resistance $\\beta_{sub} \\propto 1/\\alpha_c$\n\n"
            r"$\beta_{sub}(T)=\dfrac{\beta_{HK}}{\rho_{vs}(T)/\rho_i}"
            r"=\dfrac{\rho_i}{\rho_{vs}(T)}\;\dfrac{1}{\alpha_c}\;"
            r"\sqrt{\dfrac{2\pi m}{k_B T}}\,,\qquad"
            r"\alpha_c=\exp\left[-\sigma_0(T)/\sigma\right]$",
-           title_size=13, pad=14)
+           title_size=13, pad=14,
+           short="4.  $\\beta_{sub}(T) \\propto 1/\\alpha_c$")
     _legend(a, [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
                 (GRP_REF, ["M&F (2024) Table S1",
                            f"$\\beta_{{sub}}$ = {ctx['beta_run']:.1e} s/m  "
@@ -366,13 +425,16 @@ def panel_eps_vs_T(a, T, ctx):
                label=lbl)
         _mark_offscale(a, T, ctx["eps"][sig], col, row=i % 2)
     a.axhline(ctx["eps_usable"], lw=1.6, color=MUTED,
-              label=f"$N_x = 10^4$ ceiling, $\\epsilon$ = "
-                    f"{ctx['eps_usable']*1e9:.0f} nm")
+              label=_lbl(f"$N_x = 10^4$ ceiling, $\\epsilon$ = "
+                         f"{ctx['eps_usable']*1e9:.0f} nm",
+                         "$N_x = 10^4$  practical ceiling"))
     a.axhline(ctx["eps_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=f"production run, $\\epsilon$ = {ctx['eps_run']*1e6:.3g} µm")
+              label=_lbl(f"production run, $\\epsilon$ = "
+                         f"{ctx['eps_run']*1e6:.3g} µm", "what we run"))
     _style(a, "T [°C]", "$\\epsilon$  [m]",
            "5.  Interface width from the comp_eps.py bounds "
-           "(shading follows $\\sigma = 2.7\\times10^{-3}$)")
+           "(shading follows $\\sigma = 2.7\\times10^{-3}$)",
+           short="5.  Interface width $\\epsilon(T)$")
     _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
                 (GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
                 (GRP_REF, [f"$N_x = 10^4$ ceiling, $\\epsilon$ = "
@@ -393,9 +455,11 @@ def panel_Nx_vs_T(a, T, ctx):
     a.axhline(NX_USABLE, lw=1.6, color=MUTED,
               label="$N_x = 10^4$  practical ceiling")
     a.axhline(ctx["Nx_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=f"production mesh, $N_x$ = {ctx['Nx_run']}")
+              label=_lbl(f"production mesh, $N_x$ = {ctx['Nx_run']}",
+                         "what we run"))
     _style(a, "T [°C]", "$N_x$  [nodes across $L_x$]",
-           "6.  The mesh Libbrecht's $\\alpha_c$ demands")
+           "6.  The mesh Libbrecht's $\\alpha_c$ demands",
+           short="6.  Mesh $N_x(T)$", short_y="$N_x$")
     _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
                 (GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
                 (GRP_REF, ["$N_x = 10^4$  practical ceiling",
@@ -422,7 +486,8 @@ def _shade_binding(a, T, binding, y_frac=0.975):
         seen.add(name)
         # Name the region inside it, so the shading is never colour-alone.
         a.annotate(name, (0.5 * (T[i] + T[j]), y),
-                   xycoords=("data", "axes fraction"), fontsize=FS_NOTE + 1,
+                   xycoords=("data", "axes fraction"),
+                   fontsize=FS_C_TICK if _compact() else FS_NOTE + 1,
                    color=BOUND_COLOR.get(name, MUTED), ha="center", va=va,
                    fontweight="bold")
         i = j + 1
@@ -534,6 +599,32 @@ def main():
         fig, a = plt.subplots(figsize=figsize, layout="constrained")
         fn(a, T, ctx)
         _save(fig, name, args.dpi)
+
+    # --- the master: all six inside the same 10 in --------------------
+    # 3 x 2, so each panel keeps a landscape aspect close to the standalone's.
+    # Every panel drops its own legend and the figure carries one instead --
+    # six copies of the same four sigma curves is six times the reading for
+    # no extra information.
+    _COMPACT[0] = True
+    try:
+        fig, axes = plt.subplots(2, 3, figsize=(args.width, args.width * 0.66),
+                                 layout="constrained")
+        for ax, (_n, fn) in zip(axes.ravel(), PANELS):
+            fn(ax, T, ctx)
+        fig.suptitle("Libbrecht (2017) $\\sigma_0(T)$ as the source of "
+                     "$\\alpha_c$: the chain down to $\\epsilon$ and the mesh\n"
+                     f"{args.label}, measured $v_n$ = {args.vn:.3g} m/s",
+                     fontsize=FS_C_LABEL, color=INK)
+        _grouped(fig, _entries(*axes.ravel()),
+                 [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
+                  (GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
+                  (GRP_REF, ["$\\alpha_c = 1$  physical ceiling",
+                             "$N_x = 10^4$  practical ceiling",
+                             "what we run", "M&F (2024) Table S1"])],
+                 FS_C_TICK, loc="outside lower center")
+        _save(fig, "fig0_master", args.dpi)
+    finally:
+        _COMPACT[0] = False
 
     # --- the numbers ------------------------------------------------------
     csv = args.out / "libbrecht_constraints.csv"

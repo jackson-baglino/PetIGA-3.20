@@ -34,6 +34,7 @@ from what the sizer does.
 | `fig4_beta_sub_vs_T.png` | $\beta_{sub}(T) \propto 1/\alpha_c$, with the defining equation on the axes |
 | `fig5_eps_vs_T.png` | $\epsilon(T)$ from the four K&P bounds, shaded by which bound binds |
 | `fig6_Nx_vs_T.png` | the $N_x(T)$ that follows, against the production mesh and the molecular limit |
+| `fig0_master.png` | all six at once, 3 × 2, one shared legend — 10 × 6.6 in |
 | `libbrecht_constraints.csv` | the numbers |
 
 **Axis windows.** Plotted full-range these quantities span sixty decades and
@@ -53,8 +54,13 @@ on PowerPoint slides — and `_save()` asserts it rather than trusting a figsize
 > image is simply 200 dpi at that size. `--dpi 96` produces a drop-in-sized
 > version instead, at some cost in sharpness on a projector.
 
-There is deliberately no combined figure: six of these panels cannot be laid
-out inside 10 in and stay legible, and a tall stacked strip is not a slide.
+`fig0_master.png` puts all six inside the same 10 in (10 × 6.6). It gets there
+by dropping each panel's prose annotations, shortening its title and y-label,
+and replacing six near-identical legends with one at the foot of the figure —
+the four σ curves are the same in every panel, so six copies of that legend is
+six times the reading for no extra information. Compact mode is a flag in the
+plotting script, not a second set of panel code, so the master and the
+standalone panels cannot disagree.
 
 Legends sit **under** the axes, not inside them (four curves sweeping the full
 diagonal leave no free corner), and they are split into titled columns:
