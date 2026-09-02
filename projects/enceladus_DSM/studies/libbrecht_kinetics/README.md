@@ -34,7 +34,6 @@ from what the sizer does.
 | `fig4_beta_sub_vs_T.png` | $\beta_{sub}(T) \propto 1/\alpha_c$, with the defining equation on the axes |
 | `fig5_eps_vs_T.png` | $\epsilon(T)$ from the four K&P bounds, shaded by which bound binds |
 | `fig6_Nx_vs_T.png` | the $N_x(T)$ that follows, against the production mesh and the molecular limit |
-| `fig0_overview.png` | all six on one slide |
 | `libbrecht_constraints.csv` | the numbers |
 
 **Axis windows.** Plotted full-range these quantities span sixty decades and
@@ -54,9 +53,8 @@ on PowerPoint slides — and `_save()` asserts it rather than trusting a figsize
 > image is simply 200 dpi at that size. `--dpi 96` produces a drop-in-sized
 > version instead, at some cost in sharpness on a projector.
 
-`fig0_overview.png` is a **contact sheet**, not a slide asset: the six panels
-stacked in one column, 10 × 34.8 in. One column is the only arrangement that
-fits the width ceiling and still leaves the four-group legends legible.
+There is deliberately no combined figure: six of these panels cannot be laid
+out inside 10 in and stay legible, and a tall stacked strip is not a slide.
 
 Legends sit **under** the axes, not inside them (four curves sweeping the full
 diagonal leave no free corner), and they are split into titled columns:

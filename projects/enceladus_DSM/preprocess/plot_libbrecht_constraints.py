@@ -57,7 +57,10 @@ WHAT THE PLOTS ARE
   fig4_beta_sub_vs_T.png     beta_sub(T), with its defining equation
   fig5_eps_vs_T.png          eps(T) from comp_eps, shaded by binding bound
   fig6_Nx_vs_T.png           Nx(T), against what a machine can actually hold
-  fig0_overview.png          all six on one slide
+
+Every one is 10.00 x 5.80 in -- 10 wide is a hard ceiling, because these go
+on PowerPoint slides. There is deliberately no combined contact sheet: six
+of these panels cannot be laid out inside 10 in and stay legible.
   libbrecht_constraints.csv  the numbers behind them
 
 Usage:
@@ -531,21 +534,6 @@ def main():
         fig, a = plt.subplots(figsize=figsize, layout="constrained")
         fn(a, T, ctx)
         _save(fig, name, args.dpi)
-
-    # --- one-slide overview ----------------------------------------------
-    # Stacked in ONE column: the width ceiling leaves no other arrangement
-    # that keeps a four-group legend legible. This is a contact sheet for
-    # reviewing all six at once, not a slide asset.
-    fig, axes = plt.subplots(6, 1, layout="constrained",
-                             figsize=(args.width, 6 * args.width * ASPECT))
-    # Two lines: one is wider than the 10 in ceiling and overflows both ends.
-    fig.suptitle("Libbrecht (2017) $\\sigma_0(T)$ as the source of $\\alpha_c$: "
-                 "the chain down to $\\epsilon$ and the mesh\n"
-                 f"{args.label}, measured $v_n$ = {args.vn:.3g} m/s",
-                 fontsize=FS_LEG + 1, color=INK)
-    for ax, (_n, fn) in zip(axes.ravel(), PANELS):
-        fn(ax, T, ctx)
-    _save(fig, "fig0_overview", 110)
 
     # --- the numbers ------------------------------------------------------
     csv = args.out / "libbrecht_constraints.csv"

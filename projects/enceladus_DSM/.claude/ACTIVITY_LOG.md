@@ -1,3 +1,17 @@
+## 2026-09-02 (final, 3) — Dropped the contact sheet
+
+- Jackson, on the restacked overview: "This is 10 inches tall, I want 10 inches
+  wide." Correct. The six slide panels were and are 10.00 wide x 5.80 tall
+  (verified from the PNG IHDR + pHYs chunks, not the figsize); fig0_overview
+  was the only portrait thing in the directory, at 10 x 34.8.
+- Deleted it and the code that built it. Six panels cannot be laid out inside a
+  10 in width and stay legible, so there is no arrangement worth keeping -- the
+  contact sheet was my idea, not a deliverable, and it broke the width rule
+  twice. The docstring and README now say outright that no combined figure
+  exists and why.
+
+---
+
 ## 2026-09-02 (final, 2) — 10 in width is now a hard ceiling
 
 - Jackson: nothing may be wider than 10 in, these go on PowerPoint slides.
