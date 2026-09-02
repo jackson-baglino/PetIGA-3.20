@@ -1,3 +1,25 @@
+## 2026-09-02 (final, 2) — 10 in width is now a hard ceiling
+
+- Jackson: nothing may be wider than 10 in, these go on PowerPoint slides.
+- The six panels were already exactly 10.00 x 5.80 in with correct pHYs DPI
+  metadata (checked the chunk directly, not the figsize). The violator was
+  fig0_overview.png at 30 x 11.6 in -- my contact sheet, three panel-widths
+  across.
+- Overview restacked into ONE column, 10 x 34.8 in at 110 dpi. Two columns
+  would give 5 in per panel, which the four-group legend cannot fit. It is a
+  review sheet, not a slide asset, and the README now says so.
+- Added `--width` (default 10.0) and `--dpi` (default 200), and a `_save()`
+  helper that ASSERTS the width ceiling on every figure and prints the physical
+  size. A figsize edit can no longer silently produce something unusable.
+- Noted in the README: PowerPoint that ignores the PNG DPI tag inserts these at
+  width*dpi/96 = 20.8 in. Setting the width box back to 10 in loses nothing
+  (the image is then 200 dpi at 10 in); `--dpi 96` gives drop-in sizing if
+  preferred.
+- Overview suptitle split across two lines -- as one line it was wider than
+  10 in and overflowed both ends.
+
+---
+
 ## 2026-09-02 (final) — Grouped legends, 10 pt floor, 10 x 5.8 panels
 
 - Panels regenerated at 10 x 5.8 in / 200 dpi (10 x 5 of plot plus a legend

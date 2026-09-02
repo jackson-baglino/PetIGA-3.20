@@ -44,8 +44,19 @@ band opened up by two decades on each side — α_c to [1e-5, 2.5], β_sub to
 N_x = 10⁴ practical ceiling. Panel 5's ε window is the exact reciprocal of
 panel 6's N_x window, so the two read against each other.
 
-**Format.** 10 × 5.8 in at 200 dpi — 10 × 5 of plot plus a legend strip under
-it — with nothing set below 10 pt, so a panel can fill a slide.
+**Format.** Every panel is **10.00 × 5.8 in** at 200 dpi (10 × 5 of plot plus a
+legend strip), with nothing set below 10 pt. Width is a hard ceiling — these go
+on PowerPoint slides — and `_save()` asserts it rather than trusting a figsize;
+`--width` moves it if a different slide size ever needs it.
+
+> If PowerPoint inserts a panel at ~20.8 in wide, it ignored the PNG's DPI tag
+> and assumed 96 dpi. Set the width box back to 10 in — nothing is lost, the
+> image is simply 200 dpi at that size. `--dpi 96` produces a drop-in-sized
+> version instead, at some cost in sharpness on a projector.
+
+`fig0_overview.png` is a **contact sheet**, not a slide asset: the six panels
+stacked in one column, 10 × 34.8 in. One column is the only arrangement that
+fits the width ceiling and still leaves the four-group legends legible.
 
 Legends sit **under** the axes, not inside them (four curves sweeping the full
 diagonal leave no free corner), and they are split into titled columns:

@@ -128,11 +128,11 @@ ALPHA_CEIL = 1.0            # every impinging molecule sticks
 # FIGSIZE and OVERVIEW_SIZE keep the per-panel area roughly equal.
 # Nothing here is below 10 pt.
 FS_TITLE, FS_LABEL, FS_TICK, FS_LEG, FS_NOTE = 15, 13, 11.5, 10, 10
-# 10 x 5 of plot, plus an inch for the legend strip underneath it.
-FIGSIZE = (10.0, 5.8)
-# One standalone panel per grid cell: anything smaller and the legends -- which
-# sit UNDER the axes -- overflow into the neighbouring column.
-OVERVIEW_SIZE = (3 * FIGSIZE[0], 2 * FIGSIZE[1])
+# HARD CONSTRAINT: nothing this script writes may be wider than SLIDE_W_IN.
+# These go on PowerPoint slides, and an image wider than the slide is useless
+# however good it looks. Height is free; width is not.
+SLIDE_W_IN = 10.0
+ASPECT = 0.58              # 10 x 5 of plot, plus the legend strip underneath
 
 # -------------------------------------------------------------------------
 # The display window.
@@ -499,6 +499,14 @@ def main():
     p.add_argument("--Tmin", type=float, default=-40.0)
     p.add_argument("--Tmax", type=float, default=-1.0)
     p.add_argument("--nT", type=int, default=400)
+    p.add_argument("--width", type=float, default=SLIDE_W_IN,
+                   help="figure width [in]. Hard ceiling: these go on slides, "
+                        "so nothing is written wider than this")
+    p.add_argument("--dpi", type=int, default=200,
+                   help="200 keeps text crisp on a projector. PowerPoint that "
+                        "ignores the PNG's DPI tag will insert it at width*dpi/96 "
+                        "in -- set the width box back to --width, or pass "
+                        "--dpi 96 for drop-in sizing at some loss of sharpness")
     p.add_argument("--label", default="Molaro grain pair, 450 × 225 µm")
     p.add_argument("--out", type=Path, default=Path("studies/libbrecht_kinetics"))
     args = p.parse_args()
@@ -506,26 +514,38 @@ def main():
     T = np.linspace(args.Tmin, args.Tmax, args.nT)
     ctx = build_context(T, args)
     args.out.mkdir(parents=True, exist_ok=True)
+    figsize = (args.width, args.width * ASPECT)
+
+    def _save(fig, name, dpi):
+        # The width ceiling is the whole point, so assert it rather than trust
+        # that nobody changed a figsize.
+        w = fig.get_size_inches()[0]
+        assert w <= args.width + 1e-6, f"{name} is {w:.2f} in wide, > {args.width}"
+        fig.savefig(args.out / f"{name}.png", dpi=dpi)
+        plt.close(fig)
+        print(f"plot -> {args.out / (name + '.png')}  "
+              f"({w:.2f} x {fig.get_size_inches()[1]:.2f} in @ {dpi} dpi)")
 
     # --- standalone, slide-sized figures ---------------------------------
     for name, fn in PANELS:
-        fig, a = plt.subplots(figsize=FIGSIZE, layout="constrained")
+        fig, a = plt.subplots(figsize=figsize, layout="constrained")
         fn(a, T, ctx)
-        fig.savefig(args.out / f"{name}.png", dpi=200)
-        plt.close(fig)
-        print(f"plot -> {args.out / (name + '.png')}")
+        _save(fig, name, args.dpi)
 
     # --- one-slide overview ----------------------------------------------
-    fig, axes = plt.subplots(2, 3, figsize=OVERVIEW_SIZE, layout="constrained")
+    # Stacked in ONE column: the width ceiling leaves no other arrangement
+    # that keeps a four-group legend legible. This is a contact sheet for
+    # reviewing all six at once, not a slide asset.
+    fig, axes = plt.subplots(6, 1, layout="constrained",
+                             figsize=(args.width, 6 * args.width * ASPECT))
+    # Two lines: one is wider than the 10 in ceiling and overflows both ends.
     fig.suptitle("Libbrecht (2017) $\\sigma_0(T)$ as the source of $\\alpha_c$: "
-                 f"the chain down to $\\epsilon$ and the mesh — {args.label}, "
-                 f"measured $v_n$ = {args.vn:.3g} m/s",
-                 fontsize=19, color=INK)
+                 "the chain down to $\\epsilon$ and the mesh\n"
+                 f"{args.label}, measured $v_n$ = {args.vn:.3g} m/s",
+                 fontsize=FS_LEG + 1, color=INK)
     for ax, (_n, fn) in zip(axes.ravel(), PANELS):
         fn(ax, T, ctx)
-    fig.savefig(args.out / "fig0_overview.png", dpi=140)
-    plt.close(fig)
-    print(f"plot -> {args.out / 'fig0_overview.png'}")
+    _save(fig, "fig0_overview", 110)
 
     # --- the numbers ------------------------------------------------------
     csv = args.out / "libbrecht_constraints.csv"
