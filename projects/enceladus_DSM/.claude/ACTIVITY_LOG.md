@@ -1,3 +1,23 @@
+## 2026-09-02 (final, 5) — Individual panels down to 3 in
+
+- Jackson asked for the individual plots at ~3 in wide. `--panel_width`
+  (default 3.0) now sizes them, 3.00 x 2.40 in at 200 dpi; `--width` keeps its
+  old job of sizing the master and the legend strip and capping everything.
+- Below COMPACT_BELOW_IN = 6 the panels are drawn in the compact mode built for
+  the master, so a 3 in panel gets a short title, short y-label, no prose and
+  no legend. `--panel_width 10` restores the fully annotated version -- one
+  flag, one set of panel functions, no divergent code.
+- Added `fig7_legend.png` (10 x 1.15 in): the shared legend on its own, since
+  the small panels no longer carry one. Built from the master's own handle
+  dict via master_groups(), so the three can never disagree.
+- Two fixes the 3 in size forced: the binding-region names moved to whichever
+  edge the off-scale markers are NOT on (top in panel 5, bottom in panel 6 --
+  there is no room to share an edge), and both they and the markers gained a
+  white backing. Off-scale markers now clip to the frame in compact mode; sat
+  proud of it they landed in the title.
+
+---
+
 ## 2026-09-02 (final, 4) — Master figure, 10 x 6.6 in
 
 - Jackson asked for a master plot: all six panels, 10 in wide, 10 pt floor.

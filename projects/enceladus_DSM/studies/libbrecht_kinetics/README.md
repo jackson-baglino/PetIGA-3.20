@@ -35,6 +35,7 @@ from what the sizer does.
 | `fig5_eps_vs_T.png` | $\epsilon(T)$ from the four K&P bounds, shaded by which bound binds |
 | `fig6_Nx_vs_T.png` | the $N_x(T)$ that follows, against the production mesh and the molecular limit |
 | `fig0_master.png` | all six at once, 3 × 2, one shared legend — 10 × 6.6 in |
+| `fig7_legend.png` | the shared legend alone, for laying the small panels out by hand |
 | `libbrecht_constraints.csv` | the numbers |
 
 **Axis windows.** Plotted full-range these quantities span sixty decades and
@@ -44,32 +45,23 @@ band opened up by two decades on each side — α_c to [1e-5, 2.5], β_sub to
 N_x = 10⁴ practical ceiling. Panel 5's ε window is the exact reciprocal of
 panel 6's N_x window, so the two read against each other.
 
-**Format.** Every panel is **10.00 × 5.8 in** at 200 dpi (10 × 5 of plot plus a
-legend strip), with nothing set below 10 pt. Width is a hard ceiling — these go
-on PowerPoint slides — and `_save()` asserts it rather than trusting a figsize;
-`--width` moves it if a different slide size ever needs it.
+**Format.** The six panels are **3.00 × 2.40 in** at 200 dpi, sized to sit
+several-to-a-slide, and `fig0_master.png` is all six inside **10.00 × 6.60 in**.
+Nothing is set below 10 pt anywhere, and `_save()` asserts the 10 in width
+ceiling on every figure rather than trusting a figsize.
 
-> If PowerPoint inserts a panel at ~20.8 in wide, it ignored the PNG's DPI tag
-> and assumed 96 dpi. Set the width box back to 10 in — nothing is lost, the
-> image is simply 200 dpi at that size. `--dpi 96` produces a drop-in-sized
-> version instead, at some cost in sharpness on a projector.
+At 3 in a panel cannot hold a title, prose annotations *and* a legend, so below
+`--panel_width 6` they are drawn in **compact mode**: short title, short y-label
+where the full one steals width, no prose annotations, no per-panel legend.
+`fig7_legend.png` (10 × 1.15 in) is that legend on its own — place it once under
+a row of panels. Compact mode is a flag the same panel functions consult, not a
+second set of drawing code, so the small panels and the master cannot disagree.
+`--panel_width 10` gives the fully annotated panels back.
 
-`fig0_master.png` puts all six inside the same 10 in (10 × 6.6). It gets there
-by dropping each panel's prose annotations, shortening its title and y-label,
-and replacing six near-identical legends with one at the foot of the figure —
-the four σ curves are the same in every panel, so six copies of that legend is
-six times the reading for no extra information. Compact mode is a flag in the
-plotting script, not a second set of panel code, so the master and the
-standalone panels cannot disagree.
-
-Legends sit **under** the axes, not inside them (four curves sweeping the full
-diagonal leave no free corner), and they are split into titled columns:
-*Which bound binds* · *Libbrecht's chamber* · *Our conditions* · *Reference*.
-The heading carries the provenance, so each entry only has to carry its number.
-
-Where a curve leaves the frame it is marked on the edge with the extreme it
-reaches, so nothing is hidden; the full range is in
-`libbrecht_constraints.csv` and in the table below.
+> If PowerPoint inserts a figure larger than its stated size, it ignored the
+> PNG's DPI tag and assumed 96 dpi. Set the width box back — nothing is lost,
+> the image is simply 200 dpi at that size. `--dpi 96` produces drop-in sizing
+> instead, at some cost in sharpness on a projector.
 
 The four supersaturations plotted, and where each comes from:
 

@@ -138,6 +138,10 @@ FS_TITLE, FS_LABEL, FS_TICK, FS_LEG, FS_NOTE = 15, 13, 11.5, 10, 10
 # however good it looks. Height is free; width is not.
 SLIDE_W_IN = 10.0
 ASPECT = 0.58              # 10 x 5 of plot, plus the legend strip underneath
+COMPACT_ASPECT = 0.80      # a small panel needs proportionally more height
+# Below this, a panel cannot hold a title, prose annotations AND a legend, so
+# it is drawn compact and the legend is emitted once, separately.
+COMPACT_BELOW_IN = 6.0
 
 # COMPACT MODE. The master grid puts six panels inside the same 10 in, so each
 # one gets a third of the width. Everything that only earns its place at full
@@ -206,7 +210,8 @@ def _mark_offscale(a, x, y, color, fmt="{:.1e}", row=0):
         # One row lower in the master: the region names sit on the same edge
         # and there is a third of the width to keep them apart in.
         pad = 8.0 + 13.0 * (row + (1 if _compact() else 0))
-        a.plot([x[j]], [edge], mk, ms=9, color=color, clip_on=False, zorder=7)
+        a.plot([x[j]], [edge], mk, ms=9, color=color, zorder=7,
+               clip_on=_compact())
         a.annotate(f"{arrow} {fmt.format(extreme(y))}", (x[j], edge),
                    xytext=(0, -pad if va == "top" else pad),
                    textcoords="offset points",
@@ -278,6 +283,23 @@ def _grouped(target, have, groups, size, **kw):
         if t.get_text() in headings:
             t.set_fontweight("bold")
     return leg
+
+
+def master_groups(ctx):
+    """The legend the master grid carries, and the one fig7_legend repeats.
+
+    Panels 3-6 each draw a dotted black line for the value they actually run;
+    compact mode labels all four "what we run", which is what lets one entry
+    stand for the set.
+    """
+    return [
+        (GRP_LAB, SIG_LAB),
+        (GRP_OURS, SIG_OURS),
+        (GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
+        (GRP_REF, ["$\\alpha_c = 1$  physical ceiling",
+                   "$N_x = 10^4$  practical ceiling",
+                   "what we run", "M&F (2024) Table S1"]),
+    ]
 
 
 def _legend(a, groups, y=-0.165):
@@ -447,7 +469,7 @@ def panel_Nx_vs_T(a, T, ctx):
     """6. Nx(T) = ceil(sqrt(2)*Lx/eps), against what a machine can hold."""
     prim = ctx["primary_sigma"]
     a.set_ylim(*VIEW_NX)
-    _shade_binding(a, T, ctx["binding"][prim], y_frac=0.975)
+    _shade_binding(a, T, ctx["binding"][prim], y_frac=0.03)
     for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         a.plot(T, ctx["Nx"][sig], lw=3.4 if sig == prim else 2.4, color=col,
                ls=_ls(kind), label=lbl)
@@ -469,10 +491,11 @@ def panel_Nx_vs_T(a, T, ctx):
 def _shade_binding(a, T, binding, y_frac=0.975):
     """Shade contiguous T-runs sharing a binding bound; name each region once.
 
-    y_frac lets the caller drop the region names clear of whatever else lives
-    at the top of that panel -- panel 5 parks its legend there.
+    y_frac puts the region names on whichever edge the off-scale markers are
+    not using -- they are on the bottom in panel 5 and the top in panel 6, and
+    at 3 in wide there is no room to share an edge.
     """
-    y, va = y_frac, "top"
+    y, va = y_frac, ("top" if y_frac > 0.5 else "bottom")
     seen = set()
     i = 0
     while i < len(T):
@@ -489,7 +512,9 @@ def _shade_binding(a, T, binding, y_frac=0.975):
                    xycoords=("data", "axes fraction"),
                    fontsize=FS_C_TICK if _compact() else FS_NOTE + 1,
                    color=BOUND_COLOR.get(name, MUTED), ha="center", va=va,
-                   fontweight="bold")
+                   fontweight="bold", zorder=7,
+                   bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none",
+                             alpha=0.85))
         i = j + 1
 
 
@@ -568,8 +593,15 @@ def main():
     p.add_argument("--Tmax", type=float, default=-1.0)
     p.add_argument("--nT", type=int, default=400)
     p.add_argument("--width", type=float, default=SLIDE_W_IN,
-                   help="figure width [in]. Hard ceiling: these go on slides, "
-                        "so nothing is written wider than this")
+                   help="width [in] of the master and the legend strip. Hard "
+                        "ceiling: these go on slides, so nothing is written "
+                        "wider than this")
+    p.add_argument("--panel_width", type=float, default=3.0,
+                   help="width [in] of each individual panel. Below "
+                        "COMPACT_BELOW_IN they are drawn in compact mode -- "
+                        "short titles, no prose annotations, no per-panel "
+                        "legend (fig7_legend.png carries it for the set). "
+                        "Pass 10 to get the fully annotated panels back")
     p.add_argument("--dpi", type=int, default=200,
                    help="200 keeps text crisp on a projector. PowerPoint that "
                         "ignores the PNG's DPI tag will insert it at width*dpi/96 "
@@ -582,7 +614,9 @@ def main():
     T = np.linspace(args.Tmin, args.Tmax, args.nT)
     ctx = build_context(T, args)
     args.out.mkdir(parents=True, exist_ok=True)
-    figsize = (args.width, args.width * ASPECT)
+    small = args.panel_width < COMPACT_BELOW_IN
+    figsize = (args.panel_width,
+               args.panel_width * (COMPACT_ASPECT if small else ASPECT))
 
     def _save(fig, name, dpi):
         # The width ceiling is the whole point, so assert it rather than trust
@@ -594,11 +628,15 @@ def main():
         print(f"plot -> {args.out / (name + '.png')}  "
               f"({w:.2f} x {fig.get_size_inches()[1]:.2f} in @ {dpi} dpi)")
 
-    # --- standalone, slide-sized figures ---------------------------------
-    for name, fn in PANELS:
-        fig, a = plt.subplots(figsize=figsize, layout="constrained")
-        fn(a, T, ctx)
-        _save(fig, name, args.dpi)
+    # --- the individual panels -------------------------------------------
+    _COMPACT[0] = small
+    try:
+        for name, fn in PANELS:
+            fig, a = plt.subplots(figsize=figsize, layout="constrained")
+            fn(a, T, ctx)
+            _save(fig, name, args.dpi)
+    finally:
+        _COMPACT[0] = False
 
     # --- the master: all six inside the same 10 in --------------------
     # 3 x 2, so each panel keeps a landscape aspect close to the standalone's.
@@ -615,14 +653,16 @@ def main():
                      "$\\alpha_c$: the chain down to $\\epsilon$ and the mesh\n"
                      f"{args.label}, measured $v_n$ = {args.vn:.3g} m/s",
                      fontsize=FS_C_LABEL, color=INK)
-        _grouped(fig, _entries(*axes.ravel()),
-                 [(GRP_LAB, SIG_LAB), (GRP_OURS, SIG_OURS),
-                  (GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
-                  (GRP_REF, ["$\\alpha_c = 1$  physical ceiling",
-                             "$N_x = 10^4$  practical ceiling",
-                             "what we run", "M&F (2024) Table S1"])],
-                 FS_C_TICK, loc="outside lower center")
+        have = _entries(*axes.ravel())
+        _grouped(fig, have, master_groups(ctx), FS_C_TICK,
+                 loc="outside lower center")
         _save(fig, "fig0_master", args.dpi)
+
+        # The same legend on its own. The small panels carry none, so a slide
+        # that lays them out by hand needs this once underneath them.
+        figL = plt.figure(figsize=(args.width, 1.15), layout="constrained")
+        _grouped(figL, have, master_groups(ctx), FS_C_TICK, loc="center")
+        _save(figL, "fig7_legend", args.dpi)
     finally:
         _COMPACT[0] = False
 
