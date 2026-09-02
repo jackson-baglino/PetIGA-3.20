@@ -1,0 +1,44 @@
+% =====================================================================
+% constraints_standalone.tex -- compilable wrapper around the four
+% fragments, so they can be proof-read on their own:
+%
+%     pdflatex constraints_standalone.tex
+%
+% To use them in a talk instead, \input the fragments directly into
+% beamer frames; none of them defines a preamble or a sectioning level
+% above \paragraph.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{textcomp}
+\usepackage[T1]{fontenc}
+
+\title{Interface-width and mesh constraints in \texttt{comp\_eps.py}}
+\author{enceladus\_DSM}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent
+Every equation below is a transcription of
+\texttt{preprocess/comp\_eps.py}, which is the single source of truth for
+$\epsilon$, the mesh, and the derived phase-field coefficients. References:
+Kaempfer \& Plapp, \emph{Phys.\ Rev.\ E} \textbf{79}, 031502 (2009)
+[``K\&P''] and Moure \& Fu, \emph{Cryst.\ Growth Des.} \textbf{24}, 7808
+(2024) [``M\&F''].
+
+\section{Kinetics: the inputs every bound is evaluated against}
+\input{constraints_kinetics}
+
+\section{The bounds on $\epsilon$, and the mesh}
+\input{constraints_eps}
+
+\section{What is derived from $\epsilon$ afterwards}
+\input{constraints_derived}
+
+\section{Libbrecht (2017) $\sigma_0(T)$ pushed through the chain}
+\input{constraints_libbrecht}
+
+\end{document}

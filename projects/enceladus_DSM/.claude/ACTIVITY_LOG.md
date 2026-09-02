@@ -1,3 +1,33 @@
+## 2026-09-02 — Regenerated the Libbrecht intractability case; constraints in LaTeX
+
+- Added `preprocess/plot_libbrecht_constraints.py`: six slide-sized panels plus
+  a combined overview, tracing Libbrecht (2017) sigma0(T) -> alpha_c -> beta_sub
+  -> eps -> Nx. Every eps and mesh number goes through `comp_eps.compute_eps()`
+  itself, so the figures cannot drift from the sizer. Output in
+  `studies/libbrecht_kinetics/` with a README stating the argument.
+- The load-bearing input is v_n. Eq. (45) only bites if the front moves, so the
+  default is Molaro's own MEASURED integrated neck rate 3.416e-9 m/s from
+  `studies/molaro_2019/alpha_c_estimate.csv`, not comp_eps's generic 1e-9. The
+  README says explicitly that `--vn_feature` makes Eq. (45) collapse to
+  eps <= R_feat and is therefore circular, not a rebuttal.
+- Four sigmas plotted: Libbrecht's own chamber conditions (1e-1, 1e-2) against
+  ours (2.7e-3 = the Molaro wall undersaturation; 4.5e-4 = d0/rho_fillet). At
+  -20 C the wall-BC value already demands Nx = 1.4e7 (9.2e13 nodes, eps = 0.47
+  angstrom) and the fillet value 3.4e31 (5.7e62 nodes, eps 25 orders below a
+  water molecule). Production is Nx = 5394 / 14.5 M nodes at eps = 0.118 um.
+- B-VAPOR and B-CURV never bind for this geometry: D*_ia < D_v makes B-HEAT the
+  tighter of the two K&P Eq. 43 channels, and 0.05*R_ave = 4.3 um is a decade
+  loose. Only B-HEAT and B-KINETIC appear in the shading.
+- Added `docs/tex/`: `constraints_kinetics.tex`, `constraints_eps.tex`,
+  `constraints_derived.tex`, `constraints_libbrecht.tex` (beamer-ready
+  fragments, no preamble) and a compilable `constraints_standalone.tex`.
+  Transcribed from comp_eps.py, including the scaled/unscaled beta trap, the
+  D_heat channel choice, and the alpha_sub/M_sub identity.
+- .gitignore: narrow exception so `studies/libbrecht_kinetics/*.png` is tracked,
+  matching the existing carve-outs for verification and docs figures.
+
+---
+
 ## 2026-08-26 — Vector contour export for Figure 1
 
 - Added `postprocess/contour_svg.py`: extracts a level set from a `solV_*.vts`

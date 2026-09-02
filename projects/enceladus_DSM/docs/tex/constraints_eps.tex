@@ -1,0 +1,112 @@
+% =====================================================================
+% constraints_eps.tex -- the four bounds on the interface width eps and
+% the mesh rule that follows from it.
+%
+% Source of truth: preprocess/comp_eps.py, compute_eps().  Fragment: no
+% preamble; requires amsmath.  Read constraints_kinetics.tex first --
+% it defines beta_HK, beta_sub, d0, D_v and D*_ia.
+% =====================================================================
+
+\paragraph{Width convention.}
+This solver uses Moure \& Fu's well $\tfrac12\phi^2(1-\phi)^2$ with an
+$\epsilon^2$ gradient term, so the equilibrium profile is logistic,
+%
+\begin{equation}
+  \phi(x) \;=\; \frac{1}{1+e^{-x/\epsilon}}
+          \;=\; \tfrac12\left[1+\tanh\!\left(\frac{x}{2\epsilon}\right)\right],
+  \label{eq:profile}
+\end{equation}
+%
+and $\epsilon$ is a \emph{decay length}, not the visible band width: the
+$5\%$--$95\%$ transition spans $\approx 6\epsilon$ and the $1\%$--$99\%$
+transition $\approx 9.2\epsilon$. Kaempfer \& Plapp's $\pm1$ well has
+$W = \sqrt{2}\,\epsilon$; the asymptotic constants used below,
+$a_1 = 5$ and $a_2 = 0.1581$, are the ones for \emph{this} well.
+
+\paragraph{The four bounds.}
+Three are Kaempfer \& Plapp (2009) sharp-interface conditions and carry a
+common safety factor $s$ (default $s = \tfrac12$); the fourth is geometric
+and does not.
+%
+\begin{align}
+  \textbf{B-HEAT:}    &&  \epsilon &\;\le\; s\,D_{heat}\,\beta_{HK}
+    && \text{K\&P Eq.\ (43a/b)} \label{eq:bheat}\\[2pt]
+  \textbf{B-VAPOR:}   &&  \epsilon &\;\le\; s\,D_v\,\beta_{HK}
+    && \text{K\&P Eq.\ (43c)} \label{eq:bvapor}\\[2pt]
+  \textbf{B-KINETIC:} &&  \epsilon &\;\le\; s\,\frac{d_0}{\beta_{sub}\,v_n}
+    && \text{K\&P Eq.\ (45)} \label{eq:bkinetic}\\[2pt]
+  \textbf{B-CURV:}    &&  \epsilon &\;\le\; 0.05\,R_{ave}
+    && \text{geometric, K\&P's } W \ll 1/\chi \label{eq:bcurv}
+\end{align}
+%
+and $\epsilon$ is taken as the smallest of the four:
+%
+\begin{equation}
+  \epsilon \;=\; \min\Big\{\,
+      s\,\min\big(D_{heat}\beta_{HK},\; D_v\beta_{HK},\;
+                  d_0/(\beta_{sub}v_n)\big),\;\; 0.05\,R_{ave}\,\Big\}.
+  \label{eq:epsdef}
+\end{equation}
+
+\paragraph{What each bound is for.}
+\begin{description}
+  \item[B-HEAT, B-VAPOR] control the thin-interface expansion parameter
+    $\delta = a_1 a_2\,\epsilon/(D\beta_{HK})$, so on whichever of the two
+    channels binds, $\delta = a_1 a_2 s = 0.79\,s$ --- that is what the
+    ``$\ll$'' in K\&P Eq.\ (43) means quantitatively. $\tau_{sub}$ already
+    compensates $\delta$ to first order, so $\delta$ is the size of the
+    correction being applied, not the residual; the residual is
+    $\mathcal{O}(\delta^2)$.
+  \item[$D_{heat}$] is $D^{*}_{ia}$ by default --- the diffusivity the solver
+    actually assembles and that $\tau_{sub}$ compensates against. The
+    single-sided ice channel $D_i = \kappa_i/C_i$ is $\sim6\times$ tighter and
+    is knowingly violated (enforcing it drove one geometry to $\sim10^{9}$
+    nodes); M\&F violate it by $100\times$ in print and say so. It is reported
+    as the diagnostic $\delta_{ice}$ instead of enforced.
+  \item[B-KINETIC] keeps the kinetic undercooling $\beta_{sub}v_n$ small
+    against the capillary term $d_0/\epsilon$. It is the \emph{only} bound
+    that involves the front velocity $v_n$, and the only one that tightens
+    as $\alpha_c$ falls.
+  \item[B-CURV] is deliberately crude. It is one to two decades looser than
+    the binding bound in every case we run, and the smallest true curvature
+    (a fresh neck fillet) starts near-singular and then relaxes, so sizing a
+    mesh from it is both unstable and needlessly expensive.
+\end{description}
+
+\paragraph{Mesh.}
+The element size is fixed to $\epsilon$ by
+%
+\begin{equation}
+  h \;=\; \frac{\epsilon}{\sqrt{2}},
+  \qquad
+  N_d \;=\; \left\lceil \frac{L_d}{h} \right\rceil
+        \;=\; \left\lceil \frac{\sqrt{2}\,L_d}{\epsilon} \right\rceil,
+  \qquad d \in \{x,y,z\},
+  \label{eq:mesh}
+\end{equation}
+%
+i.e.\ two elements per asymptotic width $W = \sqrt{2}\epsilon$, which is
+$8.3$ elements across $\phi = 0.05$--$0.95$ and $13.0$ across
+$\phi = 0.01$--$0.99$. Cost therefore scales as $\epsilon^{-d}$: the sizer
+flags a configuration as \emph{intractable} once
+$\prod_d N_d > 5\times10^{7}$.
+
+\paragraph{Diagnostics that are reported but never enforced.}
+\begin{equation}
+  \delta_{X} = \frac{a_1 a_2\,\epsilon}{D_X\,\beta_{HK}},
+  \qquad
+  \mathrm{Pe} = \frac{\epsilon\,v_n}{D_v},
+  \qquad
+  \frac{\epsilon}{R_{ave}},
+  \qquad
+  \frac{\beta_{sub}v_n}{d_0\chi},
+  \qquad
+  \xi_v \;\ge\; 10\,\frac{\rho_{vs}}{\rho_i}.
+  \label{eq:diagnostics}
+\end{equation}
+%
+$\epsilon/R_{ave}$ is noted above $5\%$ and warned above $10\%$;
+$\beta_{sub}v_n/(d_0\chi)$ says whether the Gibbs--Thomson condition is
+kinetics- or capillarity-dominated; the last is the temporal-scaling
+condition that keeps the unscaled vapour storage term under ${\sim}10\%$ of
+the source.

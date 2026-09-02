@@ -1,0 +1,65 @@
+% =====================================================================
+% constraints_kinetics.tex -- the state -> alpha_c -> beta chain that
+% every eps bound is evaluated against.
+%
+% Source of truth: preprocess/comp_eps.py (rho_vs_sat, Dv_T, beta_HK,
+% capillary_length, sigma0, alpha_libbrecht).  Fragment: no preamble,
+% \input it into a beamer frame or a report.  Requires amsmath.
+% =====================================================================
+
+\paragraph{Thermodynamic state at the run temperature $T$.}
+Everything below is evaluated once, at the single temperature the mesh is
+sized for; the solver aborts if the run temperature differs from it by more
+than $1\,^\circ$C (\texttt{-eps\_valid\_temp}).
+%
+\begin{align}
+  \rho_{vs}(T) &= \rho_{a}\,b\,\frac{p_{vs}(T)}{p_{atm}-p_{vs}(T)},
+  &&\text{saturation vapour density (ASHRAE)} \label{eq:rhovs}\\[2pt]
+  D_v(T) &= D_{v0}\left(\frac{T}{273.15\,\mathrm{K}}\right)^{1.81},
+  &&D_{v0} = 2.178\times10^{-5}\ \mathrm{m^2/s} \label{eq:Dv}\\[2pt]
+  d_0(T) &= \frac{\gamma\,(m/\rho_i)}{k_B T} \;=\; \frac{\gamma V_m}{R T},
+  &&\text{capillary length (K\&P Eq.\ 13)} \label{eq:d0}\\[2pt]
+  D_i = \frac{\kappa_i}{C_i}, \quad D_a &= \frac{\kappa_a}{C_a}, \quad
+  D^{*}_{ia} = \tfrac{1}{2}\left(D_i + D_a\right),
+  &&\text{thermal channels} \label{eq:Dheat}
+\end{align}
+
+\paragraph{Attachment kinetics.}
+$\alpha_c$ is the model's only genuinely free parameter. It fixes the
+Hertz--Knudsen coefficient, and through it every bound in
+\texttt{constraints\_eps.tex}:
+%
+\begin{align}
+  \beta_{HK}(T,\alpha_c) &= \frac{1}{\alpha_c}\sqrt{\frac{2\pi m}{k_B T}},
+  &&\text{\emph{scaled} form (K\&P $\beta'$)} \label{eq:betahk}\\[2pt]
+  \beta_{sub}(T,\alpha_c) &= \frac{\beta_{HK}}{\rho_{vs}(T)/\rho_i}
+  \;=\; \frac{\rho_i}{\rho_{vs}(T)}\,\frac{1}{\alpha_c}
+        \sqrt{\frac{2\pi m}{k_B T}},
+  &&\text{\emph{unscaled} (K\&P $\beta_0 \equiv$ M\&F $\beta_{sub}$)}
+  \label{eq:betasub}
+\end{align}
+%
+The two differ by the factor $\rho_{vs}/\rho_i \sim 10^{-6}$, so mixing them
+is a six-order-of-magnitude error. Eqs.~\eqref{eq:bheat} and \eqref{eq:bvapor}
+below take the scaled $\beta_{HK}$; Eq.~\eqref{eq:bkinetic} takes the unscaled
+$\beta_{sub}$. The solver is passed \texttt{-beta\_sub0} $=\beta_{sub}$ and
+\texttt{-d0\_sub0} $=d_0$ and rescales both internally.
+
+\paragraph{Where $\alpha_c$ comes from.}
+Two models are implemented. Libbrecht's nucleation form makes $\alpha_c$ a
+function of the local state,
+%
+\begin{equation}
+  \alpha_c(T,\sigma) \;=\; \exp\!\left[-\,\frac{\sigma_0(T)}{\sigma}\right],
+  \qquad
+  \sigma \;=\; \frac{\lvert \rho_v - \rho_{vs}(T)\rvert}{\rho_{vs}(T)},
+  \label{eq:libbrecht}
+\end{equation}
+%
+with $\sigma_0(T)$ a log--log interpolant of the Libbrecht (2017) table in
+$\lvert T \rvert$, held flat beyond both ends, and a hard floor
+$\alpha_c = 10^{-30}$ whenever $\sigma < \sigma_0/\ln(10^{30})$.
+Section \texttt{constraints\_libbrecht.tex} shows why
+Eq.~\eqref{eq:libbrecht} is not usable here. The fallback is a constant
+$\alpha_c$ inside the literature band $10^{-3} \le \alpha_c \le 10^{-1}$
+(Libbrecht 2017; Braun, Fourteau \& L\"owe 2024).

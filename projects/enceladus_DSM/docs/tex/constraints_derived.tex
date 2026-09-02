@@ -1,0 +1,80 @@
+% =====================================================================
+% constraints_derived.tex -- the phase-field parameters derived from eps
+% once the bounds of constraints_eps.tex have fixed it.
+%
+% Source of truth: preprocess/comp_eps.py, derived_pf_params()
+% (Moure & Fu 2024, SI Eq. 9).  Fragment: no preamble; requires amsmath.
+% =====================================================================
+
+\paragraph{From $\epsilon$ to the solver's coefficients.}
+Once $\epsilon$ is fixed, Moure \& Fu's SI Eq.~(9) inverts the
+sharp-interface limit to give the coefficients the solver assembles. With
+$\rho_{rat} = \rho_{vs}(T)/\rho_i$:
+%
+\begin{align}
+  d_0\,\rho_{rat} &= \frac{a_1\,\epsilon}{\lambda_{sub}}
+  &&\Longrightarrow&
+  \lambda_{sub} &= \frac{a_1\,\epsilon}{d_0\,\rho_{rat}}, \label{eq:lam}\\[4pt]
+  \beta_{HK} &= a_1\left[\frac{\tau_{sub}}{\epsilon\,\lambda_{sub}}
+     \;-\; \frac{a_2\,\epsilon}{D^{*}_{ia}}
+     \;-\; \frac{a_2\,\epsilon}{D_v}\right]
+  &&\Longrightarrow&
+  \tau_{sub} &= \epsilon\,\lambda_{sub}\left[
+     \frac{\beta_{HK}}{a_1}
+     + \frac{a_2\,\epsilon}{D^{*}_{ia}}
+     + \frac{a_2\,\epsilon}{D_v}\right], \label{eq:tau}
+\end{align}
+%
+and then
+%
+\begin{equation}
+  M_{sub} \;=\; \frac{\epsilon}{3\,\tau_{sub}},
+  \qquad
+  \alpha_{sub} \;=\; \frac{\lambda_{sub}}{\tau_{sub}},
+  \qquad\text{so}\qquad
+  \frac{\alpha_{sub}}{M_{sub}} \;=\; \frac{3\lambda_{sub}}{\epsilon}
+  \ \text{exactly.}
+  \label{eq:Msub}
+\end{equation}
+%
+That last identity is why \texttt{-mob\_sub} and \texttt{-alph\_sub} are
+never written into an options file: the solver derives both from
+$(\epsilon,\ \beta_{sub},\ d_0)$, and overriding either alone breaks the
+K\&P consistency ratio.
+
+\paragraph{Two conditions that must hold for Eq.~\eqref{eq:tau} to mean
+anything.}
+\begin{align}
+  \tau_{sub} &> 0
+  &&\text{else the asymptotic expansion is ill-posed;} \label{eq:tauplus}\\[2pt]
+  f_{kin} \;=\; \frac{\beta_{HK}/a_1}
+       {\dfrac{\beta_{HK}}{a_1}
+        + \dfrac{a_2\epsilon}{D^{*}_{ia}}
+        + \dfrac{a_2\epsilon}{D_v}} &\;\gtrsim\; 0.5
+  &&\text{else $\tau_{sub}$ is dominated by thin-interface}
+  \label{eq:fkin}
+\end{align}
+%
+corrections rather than by the physical attachment kinetics, and the
+sharp-interface analogy is being stretched: $f_{kin} < 0.5$ is flagged as
+marginal, $f_{kin} < 0.1$ as a warning.
+
+\paragraph{Physical constants (identical to \texttt{material\_properties.c}).}
+\begin{center}\small
+\begin{tabular}{llll}
+\hline
+symbol & value & symbol & value \\
+\hline
+$m$ (H$_2$O molecule) & $2.9915\times10^{-26}$ kg &
+$\rho_i$              & $919$ kg/m$^3$ \\
+$k_B$                 & $1.380649\times10^{-23}$ J/K &
+$\gamma$ (ice--vapour)& $0.109$ J/m$^2$ \\
+$\kappa_i$            & $2.29$ W/m/K &
+$C_i$                 & $1.8\times10^{6}$ J/m$^3$/K \\
+$\kappa_a$            & $0.02$ W/m/K &
+$C_a$                 & $1.341\times1004$ J/m$^3$/K \\
+$D_{v0}$              & $2.178\times10^{-5}$ m$^2$/s &
+$a_1,\ a_2$           & $5,\ 0.1581$ \\
+\hline
+\end{tabular}
+\end{center}

@@ -62,3 +62,8 @@ studies/**/verification/raw*/*/
 # regenerable run output. docs/curvature_driven_growth.md renders gt_balance.png
 # inline, so it has to be tracked.
 !docs/figures/*.png
+
+# Same again for the Libbrecht kinetics study: these six panels ARE the
+# result -- the README and the slide deck are built around them, and they
+# are cheap to regenerate but expensive to re-derive.
+!studies/libbrecht_kinetics/*.png
