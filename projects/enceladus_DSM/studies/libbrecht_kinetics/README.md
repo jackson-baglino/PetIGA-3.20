@@ -39,13 +39,19 @@ from what the sizer does.
 
 **Axis windows.** Plotted full-range these quantities span sixty decades and
 the usable band is a hairline, so every axis is clipped to the *literature*
-band opened up by two decades on each side — α_c to [1e-5, 1], β_sub to
-[2e2, 2e8] around M&F's [2e4, 2e6], and N_x to [3e2, 1e6] around the
-N_x = 10⁴ practical ceiling (ε panel 5 is the exact reciprocal of the N_x
-window, so panels 5 and 6 read against each other). Where a curve leaves the
-frame it is marked on the edge with the extreme it reaches, so nothing is
-hidden; the full range is in `libbrecht_constraints.csv` and in the table
-below.
+band opened up by two decades on each side — α_c to [1e-5, 30], β_sub to
+[2e2, 2e8] around M&F's [2e4, 2e6], and N_x to [3e1, 1e6] around the
+N_x = 10⁴ practical ceiling. Panel 5's ε window is the exact reciprocal of
+panel 6's N_x window, so the two read against each other.
+
+Each of panels 2, 3, 5 and 6 reserves a band that *no data can reach* and puts
+its legend there, rather than laying it over the curves: above α_c = 1 in
+panels 2–3 (every impinging molecule sticks — nothing is above it), above the
+largest resolvable ε in panel 5, and below the smallest N_x in panel 6.
+
+Where a curve leaves the frame it is marked on the edge with the extreme it
+reaches, so nothing is hidden; the full range is in
+`libbrecht_constraints.csv` and in the table below.
 
 The four supersaturations plotted, and where each comes from:
 

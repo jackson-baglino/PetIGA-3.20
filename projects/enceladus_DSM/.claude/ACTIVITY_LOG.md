@@ -1,3 +1,26 @@
+## 2026-09-02 (later still) — Slide-scale type; legends off the curves
+
+- Jackson: legends in panels 5 and 6 were covering curves, panel 4's equation
+  needed more air, and the whole thing has to read from the back of a room.
+- Type scale is now one scheme for both the standalone panels and the
+  overview: title 15, labels 13, ticks 11.5, legend 10.5, notes 10. Standalone
+  figures went 8.2x5.8 -> 10x7 in, the overview 20x11.4 -> 24x13.6, so the
+  per-panel area stays comparable and one font scheme serves both.
+- Every crowded panel now reserves a band that NO DATA CAN REACH and parks its
+  legend there, instead of floating it over the curves:
+    * panels 2, 3: above alpha_c = 1 (physical ceiling, drawn and labelled)
+    * panel 5: above the largest resolvable eps
+    * panel 6: below the smallest Nx
+  Panels 5 and 6 stay exact reciprocals because Nx's reserved band is at the
+  bottom and eps's is at the top -- same band, seen from the two ends.
+- Panel 4's equation gets a blank line between it and the heading, and sits in
+  the title at 13 pt.
+- Panel 1: moved the factor-27 note to the upper left (the only corner with no
+  curve, legend or arrow) -- it was colliding with the kink callout in the
+  overview -- and trimmed the dead headroom to ylim 0.45.
+
+---
+
 ## 2026-09-02 (later) — Zoomed the Libbrecht panels to the usable window
 
 - Jackson: the beta_sub equation box was sitting on panel 4's legend, and the

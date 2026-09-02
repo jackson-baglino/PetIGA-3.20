@@ -107,6 +107,15 @@ SIGMA_CASES = [
 A_MOL = (ce._M_H2O / ce._RHO_ICE) ** (1.0 / 3.0)
 
 ALPHA_FLOOR = 1.0e-30       # the floor hardwired in comp_eps.alpha_libbrecht
+ALPHA_CEIL = 1.0            # every impinging molecule sticks
+
+# Type scale. These panels are meant to fill most of a slide, so they are
+# sized for a projector rather than for a screen an arm's length away. One
+# scheme serves both the standalone figures and the overview grid, because
+# FIGSIZE and OVERVIEW_SIZE keep the per-panel area roughly equal.
+FS_TITLE, FS_LABEL, FS_TICK, FS_LEG, FS_NOTE = 15, 13, 11.5, 10.5, 10
+FIGSIZE = (10.0, 7.0)
+OVERVIEW_SIZE = (24.0, 13.6)
 
 # -------------------------------------------------------------------------
 # The display window.
@@ -118,14 +127,19 @@ ALPHA_FLOOR = 1.0e-30       # the floor hardwired in comp_eps.alpha_libbrecht
 # frame and the extreme it reaches is stated, so nothing is hidden; the full
 # numbers stay in libbrecht_constraints.csv and the study README.
 # -------------------------------------------------------------------------
-VIEW_ALPHA = (ce.ALPHA_LIT_LO * 1e-2, 1.5)        # band 1e-3..1e-1; alpha_c <= 1
+VIEW_ALPHA = (ce.ALPHA_LIT_LO * 1e-2, 3.0e1)      # band 1e-3..1e-1, +2 decades
+# alpha_c <= ALPHA_CEIL by definition, so everything above it is whitespace
+# no data can ever reach -- which is where panels 2 and 3 park their legends.
 MF_BETA_LO, MF_BETA_HI = 2.0e4, 2.0e6             # M&F (2024) Table S1
 VIEW_BETA = (MF_BETA_LO * 1e-2, MF_BETA_HI * 1e2)
 
 # Mesh window, in Nx. NX_USABLE is what we can actually run; the frame is
 # opened up ~2.3 decades above it so the molecular limit Lx/a stays visible.
 NX_USABLE = 1.0e4
-VIEW_NX = (3.0e2, 1.0e6)
+# The bottom decade and a half carries no data -- they are reserved so panel 6's
+# legend has somewhere to sit that is not on top of a curve. Panel 5's eps
+# window is the exact reciprocal, so its reserved band is at the top.
+VIEW_NX = (3.0e1, 1.0e6)
 
 
 def _mark_offscale(a, x, y, color, fmt="{:.1e}", row=0):
@@ -153,31 +167,32 @@ def _mark_offscale(a, x, y, color, fmt="{:.1e}", row=0):
         while hi_i < len(out) - 1 and out[hi_i + 1]:
             hi_i += 1
         j = hi_i if hi_i < len(out) - 1 else (lo_i if lo_i > 0 else k)
-        pad = 7.0 + 12.0 * row
-        a.plot([x[j]], [edge], mk, ms=7, color=color, clip_on=False, zorder=7)
+        pad = 8.0 + 15.0 * row
+        a.plot([x[j]], [edge], mk, ms=9, color=color, clip_on=False, zorder=7)
         a.annotate(f"{arrow} {fmt.format(extreme(y))}", (x[j], edge),
                    xytext=(0, -pad if va == "top" else pad),
-                   textcoords="offset points", fontsize=7.5, color=color,
+                   textcoords="offset points", fontsize=FS_NOTE - 1,
+                   color=color,
                    ha="center", va=va, zorder=7,
                    bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none",
                              alpha=0.85))
 
 
-def _style(a, xlabel, ylabel, title, logy=True, title_size=11):
-    a.set_xlabel(xlabel, fontsize=10)
-    a.set_ylabel(ylabel, fontsize=10)
+def _style(a, xlabel, ylabel, title, logy=True, title_size=FS_TITLE, pad=10):
+    a.set_xlabel(xlabel, fontsize=FS_LABEL)
+    a.set_ylabel(ylabel, fontsize=FS_LABEL)
     if title:
-        a.set_title(title, fontsize=title_size, color=INK, loc="left", pad=9)
+        a.set_title(title, fontsize=title_size, color=INK, loc="left", pad=pad)
     if logy:
         a.set_yscale("log")
     a.grid(alpha=0.25, lw=0.5, color=GRID, which="both")
     a.spines[["top", "right"]].set_visible(False)
-    a.tick_params(labelsize=9)
+    a.tick_params(labelsize=FS_TICK)
 
 
-def _legend(a, **kw):
+def _legend(a, size=FS_LEG, **kw):
     """Framed legend, for the panels where every corner has a curve in it."""
-    a.legend(fontsize=7.6, frameon=True, framealpha=0.93, facecolor="white",
+    a.legend(fontsize=size, frameon=True, framealpha=0.93, facecolor="white",
              edgecolor=GRID, **kw)
 
 
@@ -202,19 +217,20 @@ def panel_sigma0(a, T, ctx):
            markerfacecolor="white", markeredgewidth=1.8, zorder=5,
            label="Libbrecht (2017) table, 9 points in range")
     a.annotate("non-monotonic kink at $-6/-7$ °C\n(a digitisation artifact,\n"
-               "not physics)", (-6.6, 6.6e-3), xytext=(-13.5, 3.0e-3),
-               fontsize=8.5, color=C[1], ha="center", va="center",
+               "not physics)", (-6.6, 6.6e-3), xytext=(-14.5, 3.0e-3),
+               fontsize=FS_NOTE, color=C[1], ha="center", va="center",
                arrowprops=dict(arrowstyle="->", color=C[1], lw=1.1))
-    a.text(-39.4, 2.35e-3,
+    # Upper left: the only corner with no curve, no legend and no arrow in it.
+    a.text(-39.4, 3.0e-1,
            "$\\sigma_0$ spans a factor 27 across this range.\n"
            "$\\alpha_c = \\exp(-\\sigma_0/\\sigma)$, so that factor\n"
            "lands in the EXPONENT.",
-           fontsize=8.5, color=INK, ha="left", va="bottom")
+           fontsize=FS_NOTE, color=INK, ha="left", va="top")
     a.set_xlim(-41, 0.5)
-    a.set_ylim(2.0e-3, 1.0)
+    a.set_ylim(2.0e-3, 4.5e-1)
     _style(a, "T [°C]", "$\\sigma_0$  (critical supersaturation) [-]",
            "1.  Libbrecht's data: $\\sigma_0(T)$")
-    a.legend(fontsize=8.5, frameon=False, loc="upper right")
+    a.legend(fontsize=FS_LEG, frameon=False, loc="upper right")
 
 
 def panel_alpha_vs_sigma0(a, T, ctx):
@@ -228,35 +244,43 @@ def panel_alpha_vs_sigma0(a, T, ctx):
         y = np.maximum(y, ALPHA_FLOOR)
         a.plot(s0, y, lw=2.4, color=col, ls=_ls(kind), label=lbl)
         _mark_offscale(a, s0, y, col, row=i % 2)
+    a.axhline(ALPHA_CEIL, lw=1.6, color=INK, alpha=0.7,
+              label="$\\alpha_c = 1$: every impinging molecule sticks")
     # Where the table's own sigma0 values sit, so x carries physical marks.
     for Tm in (-2.0, -20.0, -40.0):
         s0m = ce.sigma0(Tm)
         a.axvline(s0m, lw=1.0, ls=(0, (1, 3)), color=MUTED, zorder=0)
-        a.annotate(f"$T$ = {Tm:.0f} °C", (s0m, VIEW_ALPHA[1] * 0.8), rotation=90,
-                   fontsize=8, color=MUTED, ha="right", va="top")
-    a.annotate("literature band for $\\alpha_c$", (2.9e-4, 3.0e-2), fontsize=8,
-               color=C[0], va="center")
+        a.annotate(f"$T$ = {Tm:.0f} °C", (s0m, ALPHA_CEIL * 0.6), rotation=90,
+                   fontsize=FS_NOTE, color=MUTED, ha="right", va="top", zorder=6,
+                   bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none",
+                             alpha=0.85))
+    a.annotate("literature band for $\\alpha_c$", (2.9e-4, 3.0e-2),
+               fontsize=FS_NOTE, color=C[0], va="center")
     _style(a, "$\\sigma_0(T)$  [-]", "$\\alpha_c$  [-]",
            "2.  $\\alpha_c = \\exp(-\\sigma_0/\\sigma)$ against $\\sigma_0$")
-    _legend(a, loc="lower left", bbox_to_anchor=(0.0, 0.09))
+    _legend(a, size=FS_LEG - 0.5, loc="upper center", ncol=2,
+            bbox_to_anchor=(0.5, 1.0))
 
 
 def panel_alpha_vs_T(a, T, ctx):
     """3. alpha_c(T) at each sigma -- the supersaturation gap, in T."""
     a.axhspan(ce.ALPHA_LIT_LO, ce.ALPHA_LIT_HI, color=C[0], alpha=0.10, zorder=0)
     a.set_ylim(*VIEW_ALPHA)
-    a.annotate("literature band for $\\alpha_c$", (-39.5, 5.0e-3), fontsize=8,
-               color=C[0], va="center")
+    a.annotate("literature band for $\\alpha_c$", (-39.5, 4.0e-3),
+               fontsize=FS_NOTE, color=C[0], va="center")
     for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         y = np.maximum(ctx["alpha"][sig], ALPHA_FLOOR)
         a.plot(T, y, lw=2.4, color=col, ls=_ls(kind), label=lbl)
         _mark_offscale(a, T, y, col, row=i % 2)
+    a.axhline(ALPHA_CEIL, lw=1.6, color=INK, alpha=0.7,
+              label="$\\alpha_c = 1$: every impinging molecule sticks")
     a.axhline(ctx["alpha_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
               label=f"$\\alpha_c$ = {ctx['alpha_run']:g}, the constant we run")
     _style(a, "T [°C]", "$\\alpha_c$  [-]",
            "3.  $\\alpha_c(T)$: two decades down in $\\sigma$, "
            "thirty down in $\\alpha_c$")
-    _legend(a, loc="lower right", bbox_to_anchor=(1.0, 0.14))
+    _legend(a, size=FS_LEG - 0.5, loc="upper center", ncol=2,
+            bbox_to_anchor=(0.5, 1.0))
 
 
 def panel_beta_vs_T(a, T, ctx):
@@ -273,22 +297,22 @@ def panel_beta_vs_T(a, T, ctx):
               label=f"$\\beta_{{sub}}$ = {ctx['beta_run']:.2e} s/m at "
                     f"$\\alpha_c$ = {ctx['alpha_run']:g} (what we run)")
     _style(a, "T [°C]", "$\\beta_{sub}$  [s/m]",
-           "4.  Attachment resistance $\\beta_{sub} \\propto 1/\\alpha_c$\n"
+           "4.  Attachment resistance $\\beta_{sub} \\propto 1/\\alpha_c$\n\n"
            r"$\beta_{sub}(T)=\dfrac{\beta_{HK}}{\rho_{vs}(T)/\rho_i}"
-           r"=\dfrac{\rho_i}{\rho_{vs}(T)}\dfrac{1}{\alpha_c}"
-           r"\sqrt{\dfrac{2\pi m}{k_B T}}\,,\quad"
+           r"=\dfrac{\rho_i}{\rho_{vs}(T)}\;\dfrac{1}{\alpha_c}\;"
+           r"\sqrt{\dfrac{2\pi m}{k_B T}}\,,\qquad"
            r"\alpha_c=\exp\left[-\sigma_0(T)/\sigma\right]$",
-           title_size=9.5)
-    a.legend(fontsize=8, frameon=False, loc="lower left")
+           title_size=13, pad=14)
+    a.legend(fontsize=FS_LEG, frameon=False, loc="lower left")
 
 
 def panel_eps_vs_T(a, T, ctx):
     """5. eps(T) straight out of comp_eps.compute_eps, shaded by binding bound."""
     prim = ctx["primary_sigma"]
     a.set_ylim(*ctx["view_eps"])
-    _shade_binding(a, T, ctx["binding"][prim], label_at="top")
+    _shade_binding(a, T, ctx["binding"][prim], y_frac=0.795)
     for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
-        a.plot(T, ctx["eps"][sig], lw=3.0 if sig == prim else 2.0, color=col,
+        a.plot(T, ctx["eps"][sig], lw=3.4 if sig == prim else 2.4, color=col,
                ls=_ls(kind),
                label=lbl + ("  ← shaded" if sig == prim else ""))
         _mark_offscale(a, T, ctx["eps"][sig], col, row=i % 2)
@@ -299,16 +323,17 @@ def panel_eps_vs_T(a, T, ctx):
               label=f"$\\epsilon$ = {ctx['eps_run']*1e6:.3g} µm, the production run")
     _style(a, "T [°C]", "$\\epsilon$  [m]",
            "5.  Interface width from the comp_eps.py bounds")
-    _legend(a, loc="lower left", bbox_to_anchor=(0.0, 0.10))
+    _legend(a, size=FS_LEG - 0.5, loc="upper center", ncol=2,
+            bbox_to_anchor=(0.5, 1.0))
 
 
 def panel_Nx_vs_T(a, T, ctx):
     """6. Nx(T) = ceil(sqrt(2)*Lx/eps), against what a machine can hold."""
     prim = ctx["primary_sigma"]
     a.set_ylim(*VIEW_NX)
-    _shade_binding(a, T, ctx["binding"][prim], label_at="top")
+    _shade_binding(a, T, ctx["binding"][prim], y_frac=0.975)
     for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
-        a.plot(T, ctx["Nx"][sig], lw=3.0 if sig == prim else 2.0, color=col,
+        a.plot(T, ctx["Nx"][sig], lw=3.4 if sig == prim else 2.4, color=col,
                ls=_ls(kind), label=lbl)
         _mark_offscale(a, T, ctx["Nx"][sig], col, fmt="{:.0e}", row=i % 2)
     a.axhline(NX_USABLE, lw=1.6, color=MUTED,
@@ -318,16 +343,17 @@ def panel_Nx_vs_T(a, T, ctx):
                     f"({ctx['nodes_run']/1e6:.1f} M nodes in 2D)")
     _style(a, "T [°C]", "$N_x$  [nodes across $L_x$]",
            "6.  The mesh Libbrecht's $\\alpha_c$ demands")
-    _legend(a, loc="lower left", bbox_to_anchor=(0.0, 0.02))
+    _legend(a, size=FS_LEG - 0.5, loc="lower center", ncol=2,
+            bbox_to_anchor=(0.5, 0.0))
 
 
-def _shade_binding(a, T, binding, label_at="top"):
+def _shade_binding(a, T, binding, y_frac=0.975):
     """Shade contiguous T-runs sharing a binding bound; name each region once.
 
-    label_at keeps the region names clear of the off-scale markers, which sit
-    on the bottom edge in panel 5 and on the top edge in panel 6.
+    y_frac lets the caller drop the region names clear of whatever else lives
+    at the top of that panel -- panel 5 parks its legend there.
     """
-    y, va = (0.975, "top") if label_at == "top" else (0.025, "bottom")
+    y, va = y_frac, "top"
     seen = set()
     i = 0
     while i < len(T):
@@ -341,7 +367,7 @@ def _shade_binding(a, T, binding, label_at="top"):
         seen.add(name)
         # Name the region inside it, so the shading is never colour-alone.
         a.annotate(name, (0.5 * (T[i] + T[j]), y),
-                   xycoords=("data", "axes fraction"), fontsize=9,
+                   xycoords=("data", "axes fraction"), fontsize=FS_NOTE + 1,
                    color=BOUND_COLOR.get(name, MUTED), ha="center", va=va,
                    fontweight="bold")
         i = j + 1
@@ -431,7 +457,7 @@ def main():
 
     # --- standalone, slide-sized figures ---------------------------------
     for name, fn in PANELS:
-        fig, a = plt.subplots(figsize=(8.2, 5.8))
+        fig, a = plt.subplots(figsize=FIGSIZE)
         fn(a, T, ctx)
         fig.tight_layout()
         fig.savefig(args.out / f"{name}.png", dpi=200)
@@ -439,11 +465,11 @@ def main():
         print(f"plot -> {args.out / (name + '.png')}")
 
     # --- one-slide overview ----------------------------------------------
-    fig, axes = plt.subplots(2, 3, figsize=(20.0, 11.4))
+    fig, axes = plt.subplots(2, 3, figsize=OVERVIEW_SIZE)
     fig.suptitle("Libbrecht (2017) $\\sigma_0(T)$ as the source of $\\alpha_c$: "
                  f"the chain down to $\\epsilon$ and the mesh — {args.label}, "
                  f"measured $v_n$ = {args.vn:.3g} m/s",
-                 fontsize=14, color=INK)
+                 fontsize=19, color=INK)
     for ax, (_n, fn) in zip(axes.ravel(), PANELS):
         fn(ax, T, ctx)
     fig.tight_layout(rect=(0, 0, 1, 0.965))
