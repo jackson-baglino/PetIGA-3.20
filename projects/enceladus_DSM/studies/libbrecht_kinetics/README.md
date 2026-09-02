@@ -38,7 +38,8 @@ sizer does.
 | `fig5_eps_vs_T.png` | $\epsilon(T)$ from the four K&P bounds, shaded by which bound binds |
 | `fig6_Nx_vs_T.png` | the $N_x(T)$ that follows, against the $N_x = 10^4$ practical ceiling |
 | `fig0_master.png` | all six at once, 3 × 2, one shared legend — 10 × 6.6 in |
-| `fig7_legend.png` | the shared legend alone, for laying the small panels out by hand |
+| `<panel>_legend.png` | that panel's own key, 3 in wide (default `--panel_legend separate`) |
+| `fig7_legend.png` | one key for the whole set, 10 in wide |
 | `libbrecht_constraints.csv` | the numbers |
 
 **Axis windows.** Plotted full-range these quantities span sixty decades and
@@ -53,13 +54,27 @@ several-to-a-slide, and `fig0_master.png` is all six inside **10.00 × 6.60 in**
 Nothing is set below 10 pt anywhere, and `_save()` asserts the 10 in width
 ceiling on every figure rather than trusting a figsize.
 
-At 3 in a panel cannot hold a title, prose annotations *and* a legend, so below
-`--panel_width 6` they are drawn in **compact mode**: short title, short y-label
-where the full one steals width, no prose annotations, no per-panel legend.
-`fig7_legend.png` (10 × 1.15 in) is that legend on its own — place it once under
-a row of panels. Compact mode is a flag the same panel functions consult, not a
-second set of drawing code, so the small panels and the master cannot disagree.
+At 3 in a panel cannot hold a title, prose annotations *and* a legend inside
+the frame, so below `--panel_width 6` they are drawn in **compact mode**: short
+title, short y-label where the full one steals width, no prose annotations.
+Compact mode is a flag the same panel functions consult, not a second set of
+drawing code, so the small panels and the master cannot disagree.
 `--panel_width 10` gives the fully annotated panels back.
+
+**Each panel still gets a legend**, via `--panel_legend`:
+
+| mode | what you get |
+|---|---|
+| `separate` *(default)* | the panel at 3 × 2.4 in, plus `<panel>_legend.png` at 3 in wide and 0.8–2.0 in tall listing exactly that panel's entries |
+| `inline` | one self-contained image per panel, 3 × 3.2–4.4 in, legend under the axes |
+| `none` | panels only; `fig7_legend.png` (10 × 1.15 in) covers the set |
+
+A panel records what its legend *would* have said on the axes as it draws, and
+both modes read that back — so a legend can never list something the panel did
+not draw. `fig7_legend.png` is still written in every mode, for slides that lay
+several panels out under one key; it is the only place panels 3–6 collapse
+their four different production lines to a single "what we run" entry, because
+that is the only place they share a legend.
 
 > If PowerPoint inserts a figure larger than its stated size, it ignored the
 > PNG's DPI tag and assumed 96 dpi. Set the width box back — nothing is lost,

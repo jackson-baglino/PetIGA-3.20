@@ -1,3 +1,28 @@
+## 2026-09-02 (final, 7) — Per-panel legends
+
+- Jackson: each individual plot needs a legend, inline or separate. Added
+  `--panel_legend {separate,inline,none}`, default separate:
+    * separate -> `<panel>_legend.png`, 3 in wide, 0.78-1.99 in tall, listing
+      exactly that panel's entries;
+    * inline -> one self-contained image per panel, 3 x 3.18-4.39 in, legend in
+      a dedicated gridspec row under the axes (sized from the row count so the
+      legend does not steal height from the plot);
+    * none -> panels only, fig7_legend.png covers the set.
+- `_legend()` now RECORDS its groups on the axes even when compact suppresses
+  drawing, and both modes read that back -- so a legend cannot list something
+  the panel did not draw. `_grouped()` gained a stacked single-column mode
+  (ncol=1, no padding, longer handles so a dash pattern is visible at 10 pt).
+- Two bugs the per-panel legends exposed and fixed:
+    * the reference labels were written twice, once on the axhline and once in
+      the legend group, and `_lbl()` made the two drift -- panel 6's production
+      mesh entry silently vanished. Each is now bound to a local and reused.
+    * the label collapse to "what we run" was keyed on _compact, so a per-panel
+      legend lost the value it had room for. Split into `_SHARED`, set only
+      while the master draws: shared legends collapse, per-panel ones keep
+      "production mesh, Nx = 5394".
+
+---
+
 ## 2026-09-02 (final, 6) — Dropped the experiment-specific sigma curves
 
 - Jackson: remove the wall-BC and neck-fillet curves. They imply a beta_sub

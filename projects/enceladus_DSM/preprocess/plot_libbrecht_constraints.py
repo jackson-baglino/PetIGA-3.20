@@ -172,6 +172,10 @@ COMPACT_BELOW_IN = 6.0
 # Type still never goes below 10 pt; that is the constraint, not the width.
 FS_C_TITLE, FS_C_LABEL, FS_C_TICK = 12, 10.5, 10
 _COMPACT = [False]
+# Separate from _COMPACT: only a legend SHARED across panels needs panels 3-6
+# to agree on one label for their production lines. A panel's own legend has
+# the room, and the value, so it keeps the specific wording.
+_SHARED = [False]
 
 
 def _compact():
@@ -179,10 +183,11 @@ def _compact():
 
 
 def _lbl(full, short):
-    """Legend label: the panel's own wording, or the wording the shared legend
-    uses. Panels 3-6 all draw a dotted black 'what we run' line; giving them
-    one label in compact mode collapses four entries into one."""
-    return short if _compact() else full
+    """Legend label: the panel's own wording, or the wording a shared legend
+    needs. Panels 3-6 all draw a dotted black line for the value they run;
+    collapsing them to one label is what lets the master carry one entry for
+    the set. A per-panel legend keeps the specific wording."""
+    return short if _SHARED[0] else full
 
 # -------------------------------------------------------------------------
 # The display window.
@@ -275,7 +280,18 @@ def _entries(*axes):
     return have
 
 
-def _grouped(target, have, groups, size, **kw):
+def _rows_stacked(have, groups):
+    """Rows a single-column stacked legend will occupy: a heading plus its
+    entries, per group that actually has something plotted."""
+    n = 0
+    for _t, keys in groups:
+        keys = [k for k in keys if k in have]
+        if keys:
+            n += 1 + len(keys)
+    return n
+
+
+def _grouped(target, have, groups, size, ncol=None, **kw):
     """A legend laid out as titled columns.
 
     A flat strip of entries is a lookup problem: the reader scans the whole row
@@ -289,16 +305,22 @@ def _grouped(target, have, groups, size, **kw):
     """
     cols = [(t, [k for k in keys if k in have]) for t, keys in groups]
     cols = [c for c in cols if c[1]]
-    rows = max(len(keys) for _t, keys in cols)
+    # ncol=1 stacks the groups one after another instead of side by side --
+    # what a 3 in wide legend needs, and padding there would only add blanks.
+    stack = ncol == 1
+    rows = 0 if stack else max(len(keys) for _t, keys in cols)
     handles, labels, headings = [], [], set()
     for title, keys in cols:
         handles.append(_blank()); labels.append(title); headings.add(title)
         for k in keys:
             handles.append(have[k]); labels.append(k)
-        handles += [_blank()] * (rows - len(keys))
-        labels += [""] * (rows - len(keys))
-    leg = target.legend(handles, labels, ncol=len(cols), fontsize=size,
-                        frameon=False, handlelength=2.0, handletextpad=0.6,
+        if not stack:
+            handles += [_blank()] * (rows - len(keys))
+            labels += [""] * (rows - len(keys))
+    leg = target.legend(handles, labels, ncol=1 if stack else len(cols),
+                        fontsize=size,
+                        frameon=False, handlelength=3.0 if stack else 2.0,
+                        handletextpad=0.6,
                         columnspacing=1.2, labelspacing=0.45,
                         borderaxespad=0.0, alignment="left", **kw)
     for t in leg.get_texts():
@@ -324,8 +346,14 @@ def master_groups(ctx):
 
 
 def _legend(a, groups, y=-0.165):
-    """Per-panel legend under the axes. Suppressed in the master grid, which
-    carries one shared legend instead of six near-identical ones."""
+    """Per-panel legend under the axes.
+
+    A compact panel has no room for one, so it records what its legend WOULD
+    have said on the axes instead. The caller reads that back to build the
+    panel's own legend -- inline underneath it, or as a separate image -- so
+    the two can never list different things than the panel actually drew.
+    """
+    a._lk_groups = groups
     if _compact():
         return None
     return _grouped(a, _entries(a), groups, FS_LEG, loc="upper center",
@@ -428,15 +456,13 @@ def panel_alpha_vs_T(a, T, ctx):
         _mark_offscale(a, T, y, col, row=i % 2)
     a.axhline(ALPHA_CEIL, lw=1.6, color=INK, alpha=0.7,
               label="$\\alpha_c = 1$  physical ceiling")
-    a.axhline(ctx["alpha_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=_lbl(f"$\\alpha_c$ = {ctx['alpha_run']:g}  what we run",
-                         "what we run"))
+    run = _lbl(f"$\\alpha_c$ = {ctx['alpha_run']:g}  what we run", "what we run")
+    a.axhline(ctx["alpha_run"], lw=1.8, ls=(0, (1, 2)), color=INK, label=run)
     _style(a, "T [°C]", "$\\alpha_c$  [-]",
            "3.  $\\alpha_c(T)$: two decades down in $\\sigma$, "
            "thirty down in $\\alpha_c$", short="3.  $\\alpha_c(T)$")
     _legend(a, [(GRP_LAB, SIG_LAB),
-                (GRP_REF, ["$\\alpha_c = 1$  physical ceiling",
-                           f"$\\alpha_c$ = {ctx['alpha_run']:g}  what we run"])])
+                (GRP_REF, ["$\\alpha_c = 1$  physical ceiling", run])])
 
 
 def panel_beta_vs_T(a, T, ctx):
@@ -448,9 +474,9 @@ def panel_beta_vs_T(a, T, ctx):
     for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         a.plot(T, ctx["beta"][sig], lw=2.4, color=col, ls=_ls(kind), label=lbl)
         _mark_offscale(a, T, ctx["beta"][sig], col, row=i % 2)
-    a.axhline(ctx["beta_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=_lbl(f"$\\beta_{{sub}}$ = {ctx['beta_run']:.1e} s/m  "
-                         f"what we run", "what we run"))
+    run = _lbl(f"$\\beta_{{sub}}$ = {ctx['beta_run']:.1e} s/m  what we run",
+               "what we run")
+    a.axhline(ctx["beta_run"], lw=1.8, ls=(0, (1, 2)), color=INK, label=run)
     _style(a, "T [°C]", "$\\beta_{sub}$  [s/m]",
            "4.  Attachment resistance $\\beta_{sub} \\propto 1/\\alpha_c$\n\n"
            r"$\beta_{sub}(T)=\dfrac{\beta_{HK}}{\rho_{vs}(T)/\rho_i}"
@@ -460,9 +486,7 @@ def panel_beta_vs_T(a, T, ctx):
            title_size=13, pad=14,
            short="4.  $\\beta_{sub}(T) \\propto 1/\\alpha_c$")
     _legend(a, [(GRP_LAB, SIG_LAB),
-                (GRP_REF, ["M&F (2024) Table S1",
-                           f"$\\beta_{{sub}}$ = {ctx['beta_run']:.1e} s/m  "
-                           f"what we run"])])
+                (GRP_REF, ["M&F (2024) Table S1", run])])
 
 
 def panel_eps_vs_T(a, T, ctx):
@@ -475,23 +499,19 @@ def panel_eps_vs_T(a, T, ctx):
                ls=_ls(kind),
                label=lbl)
         _mark_offscale(a, T, ctx["eps"][sig], col, row=i % 2)
-    a.axhline(ctx["eps_usable"], lw=1.6, color=MUTED,
-              label=_lbl(f"$N_x = 10^4$ ceiling, $\\epsilon$ = "
-                         f"{ctx['eps_usable']*1e9:.0f} nm",
-                         "$N_x = 10^4$  practical ceiling"))
-    a.axhline(ctx["eps_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=_lbl(f"production run, $\\epsilon$ = "
-                         f"{ctx['eps_run']*1e6:.3g} µm", "what we run"))
+    ceil = _lbl(f"$N_x = 10^4$ ceiling, $\\epsilon$ = "
+                f"{ctx['eps_usable']*1e9:.0f} nm", "$N_x = 10^4$  practical ceiling")
+    a.axhline(ctx["eps_usable"], lw=1.6, color=MUTED, label=ceil)
+    run = _lbl(f"production run, $\\epsilon$ = {ctx['eps_run']*1e6:.3g} µm",
+               "what we run")
+    a.axhline(ctx["eps_run"], lw=1.8, ls=(0, (1, 2)), color=INK, label=run)
     _style(a, "T [°C]", "$\\epsilon$  [m]",
            "5.  Interface width from the comp_eps.py bounds "
            f"(shading follows $\\sigma = {_sig_tex(prim)}$)",
            short="5.  Interface width $\\epsilon(T)$")
     _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
                 (GRP_LAB, SIG_LAB),
-                (GRP_REF, [f"$N_x = 10^4$ ceiling, $\\epsilon$ = "
-                           f"{ctx['eps_usable']*1e9:.0f} nm",
-                           f"production run, $\\epsilon$ = "
-                           f"{ctx['eps_run']*1e6:.3g} µm"])])
+                (GRP_REF, [ceil, run])])
 
 
 def panel_Nx_vs_T(a, T, ctx):
@@ -505,16 +525,14 @@ def panel_Nx_vs_T(a, T, ctx):
         _mark_offscale(a, T, ctx["Nx"][sig], col, fmt="{:.0e}", row=i % 2)
     a.axhline(NX_USABLE, lw=1.6, color=MUTED,
               label="$N_x = 10^4$  practical ceiling")
-    a.axhline(ctx["Nx_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
-              label=_lbl(f"production mesh, $N_x$ = {ctx['Nx_run']}",
-                         "what we run"))
+    run = _lbl(f"production mesh, $N_x$ = {ctx['Nx_run']}", "what we run")
+    a.axhline(ctx["Nx_run"], lw=1.8, ls=(0, (1, 2)), color=INK, label=run)
     _style(a, "T [°C]", "$N_x$  [nodes across $L_x$]",
            "6.  The mesh Libbrecht's $\\alpha_c$ demands",
            short="6.  Mesh $N_x(T)$", short_y="$N_x$")
     _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
                 (GRP_LAB, SIG_LAB),
-                (GRP_REF, ["$N_x = 10^4$  practical ceiling",
-                           f"production mesh, $N_x$ = {ctx['Nx_run']}"])])
+                (GRP_REF, ["$N_x = 10^4$  practical ceiling", run])])
 
 
 def _shade_binding(a, T, binding, y_frac=0.975):
@@ -637,6 +655,13 @@ def main():
                         "ignores the PNG's DPI tag will insert it at width*dpi/96 "
                         "in -- set the width box back to --width, or pass "
                         "--dpi 96 for drop-in sizing at some loss of sharpness")
+    p.add_argument("--panel_legend", choices=("separate", "inline", "none"),
+                   default="separate",
+                   help="a 3 in panel has no room for a legend inside the "
+                        "frame. 'separate' writes <panel>_legend.png next to "
+                        "each one; 'inline' makes the panel taller and puts "
+                        "the legend under the axes in the same image; 'none' "
+                        "leaves only the combined fig7_legend.png")
     p.add_argument("--label", default="reference case: 450 × 225 µm grain pair")
     p.add_argument("--out", type=Path, default=Path("studies/libbrecht_kinetics"))
     args = p.parse_args()
@@ -659,12 +684,47 @@ def main():
               f"({w:.2f} x {fig.get_size_inches()[1]:.2f} in @ {dpi} dpi)")
 
     # --- the individual panels -------------------------------------------
+    # A legend row is about 1.45 line-heights; the constant is the box padding.
+    def _leg_in(rows):
+        return rows * FS_C_TICK * 1.45 / 72.0 + 0.18
+
     _COMPACT[0] = small
     try:
         for name, fn in PANELS:
-            fig, a = plt.subplots(figsize=figsize, layout="constrained")
-            fn(a, T, ctx)
-            _save(fig, name, args.dpi)
+            inline = small and args.panel_legend == "inline"
+            if not inline:
+                fig, a = plt.subplots(figsize=figsize, layout="constrained")
+                fn(a, T, ctx)
+                _save(fig, name, args.dpi)
+            else:
+                # Draw once on a throwaway axes purely to learn how many legend
+                # rows this panel needs, so the figure can be sized for them
+                # rather than stealing the height from the plot.
+                probe, pa = plt.subplots(figsize=figsize)
+                fn(pa, T, ctx)
+                rows = _rows_stacked(_entries(pa), getattr(pa, "_lk_groups", []))
+                plt.close(probe)
+                lh = _leg_in(rows)
+                fig = plt.figure(figsize=(figsize[0], figsize[1] + lh),
+                                 layout="constrained")
+                gs = fig.add_gridspec(2, 1, height_ratios=[figsize[1], lh])
+                a, al = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
+                al.axis("off")
+                fn(a, T, ctx)
+                _grouped(al, _entries(a), getattr(a, "_lk_groups", []),
+                         FS_C_TICK, ncol=1, loc="center")
+                _save(fig, name, args.dpi)
+
+            # A legend of its own, at the panel's width, for slides that place
+            # the panel and its key as two objects.
+            if small and args.panel_legend == "separate":
+                have = _entries(a)
+                groups = getattr(a, "_lk_groups", [])
+                figL = plt.figure(
+                    figsize=(figsize[0], _leg_in(_rows_stacked(have, groups))),
+                    layout="constrained")
+                _grouped(figL, have, groups, FS_C_TICK, ncol=1, loc="center")
+                _save(figL, f"{name}_legend", args.dpi)
     finally:
         _COMPACT[0] = False
 
@@ -673,7 +733,7 @@ def main():
     # Every panel drops its own legend and the figure carries one instead --
     # six copies of the same four sigma curves is six times the reading for
     # no extra information.
-    _COMPACT[0] = True
+    _COMPACT[0] = _SHARED[0] = True
     try:
         fig, axes = plt.subplots(2, 3, figsize=(args.width, args.width * 0.66),
                                  layout="constrained")
@@ -694,7 +754,7 @@ def main():
         _grouped(figL, have, master_groups(ctx), FS_C_TICK, loc="center")
         _save(figL, "fig7_legend", args.dpi)
     finally:
-        _COMPACT[0] = False
+        _COMPACT[0] = _SHARED[0] = False
 
     # --- the numbers ------------------------------------------------------
     csv = args.out / "libbrecht_constraints.csv"
