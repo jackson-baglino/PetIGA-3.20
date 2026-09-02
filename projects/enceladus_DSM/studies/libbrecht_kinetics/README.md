@@ -17,13 +17,17 @@ does not work here, regenerated against the *current* `preprocess/comp_eps.py`
 python preprocess/plot_libbrecht_constraints.py --out studies/libbrecht_kinetics
 ```
 
-The **argument** uses only Libbrecht's own chamber supersaturations. The
-**reference case** — needed because Eq. (45) wants a front velocity and $N_x$
-wants a domain — defaults to a $450 \times 225\ \mu$m grain pair
-($R_{ave} = 86.75\ \mu$m) at the measured front velocity
+The **argument** uses Libbrecht's own chamber supersaturations, plus one plain
+decade below them. The **reference case** — needed because Eq. (45) wants a
+front velocity and $N_x$ wants a domain — defaults to the Molaro dom2
+production domain, $L_x \times L_y = 450 \times 225\ \mu$m
+($R_{ave} = 86.75\ \mu$m), at the measured front velocity
 $v_n = 3.416\times10^{-9}$ m/s, the integrated Fig. 11 neck-growth rate from
 `studies/molaro_2019/alpha_c_estimate.csv`. It sets the scale of the vertical
-axes, not the conclusion. Every $\epsilon$ and every mesh count comes from
+axes, not the conclusion — $L_x$ enters only as
+$N_x = \lceil \sqrt{2}L_x/\epsilon \rceil$, i.e. *linearly*, so halving or
+doubling the domain slides panel 6 up or down without changing the shape of
+anything on it. Every $\epsilon$ and every mesh count comes from
 `comp_eps.compute_eps()` itself, so these plots cannot drift from what the
 sizer does.
 
@@ -81,23 +85,28 @@ that is the only place they share a legend.
 > the image is simply 200 dpi at that size. `--dpi 96` produces drop-in sizing
 > instead, at some cost in sharpness on a projector.
 
-**Only Libbrecht's own chamber conditions are plotted** — $\sigma = 10^{-1}$
-(solid) and $\sigma = 10^{-2}$ (dashed). Nothing here depends on the conditions
-of one of our simulations, so nothing here can be answered with "your boundary
-condition is wrong". See *What is deliberately not plotted*, below.
+**The case rests on Libbrecht's own chamber conditions**, $\sigma = 10^{-1}$
+(solid) and $\sigma = 10^{-2}$ (dashed). A third curve, $\sigma = 10^{-3}$
+(dash-dot), is one plain decade below that range — no experiment attached to it,
+which is the point. It shows the trend continuing without resting the argument
+on conditions anyone can dispute, and the legend keeps it in its own
+**Extrapolated** group so it is never read as something Libbrecht measured. See
+*What is deliberately not plotted*, below.
 
 ## The argument, in three steps
 
 **1. The law cannot sit inside the literature band at any one σ.** The band the
 literature supports is $10^{-3} < \alpha_c < 10^{-1}$ (Libbrecht 2017; Braun,
 Fourteau & Löwe 2024). Evaluate $\alpha_c = \exp(-\sigma_0/\sigma)$ at
-Libbrecht's *own upper* chamber condition and it overshoots; at his *own lower*
-one it undershoots, once it is cold enough:
+Libbrecht's *own upper* chamber condition and it overshoots; at the lower one
+it undershoots once it is cold enough — and one plain decade below the
+chamber range it collapses:
 
 | $\sigma$ | $\alpha_c$ at −1 °C | at −20 °C | at −40 °C | vs. the band |
 |---|---|---|---|---|
 | $10^{-1}$ | 0.96 | 0.71 | 0.33 | 3–10× **above** the ceiling, everywhere |
 | $10^{-2}$ | 0.67 | 3.1e-2 | 1.7e-5 | **below** the floor colder than −29.7 °C |
+| $10^{-3}$ | 1.8e-2 | 6.3e-16 | 1e-30 (floor) | inside only over −10.6…−1 °C |
 
 That is structural, not a tuning problem. $\sigma_0$ spans a factor 27 over
 −2 to −40 °C and it sits in the *exponent*, so no single reference $\sigma$
@@ -121,6 +130,11 @@ asks for an $\epsilon$ an **eighth of a water molecule** and eleven times more
 nodes than the domain has molecules. It has passed $N_x = 10^4$ by −25 °C.
 That is not an expensive mesh; it is a category error, because the continuum
 phase field has no meaning below $a$.
+
+One decade lower, at $\sigma = 10^{-3}$, the same chain gives $N_x = 4.5\times
+10^{16}$ at −20 °C and $2.6\times10^{32}$ at −40 °C, with $\epsilon$ twenty-six
+orders of magnitude below a water molecule. The exponent is doing all of this:
+$N_x \propto \exp(+\sigma_0/\sigma)$.
 
 **3. It is the wrong experiment for our problem.** Libbrecht grew single ice
 crystals from vapour in a near-vacuum chamber. That isolates any dependence

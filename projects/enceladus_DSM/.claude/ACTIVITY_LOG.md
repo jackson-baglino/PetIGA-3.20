@@ -1,3 +1,27 @@
+## 2026-09-02 (final, 8) — Added sigma = 1e-3
+
+- Jackson asked for a third curve at sigma = 1e-3, one plain decade below
+  Libbrecht's chamber range. Added with its own colour (C[3] pink) and its own
+  linestyle (dash-dot), and -- importantly -- its own legend group,
+  "Extrapolated", so it is never read as something Libbrecht measured. The
+  4th field of SIGMA_CASES is now a group key that also selects the linestyle,
+  which kept every existing 4-tuple unpack site working.
+- What it shows: alpha_c sits inside the literature band only over -10.6..-1 C,
+  and is on the 1e-30 floor by about -19. Nx = 4.5e16 at -20 C and 2.6e32 at
+  -40 C, with eps 26 orders of magnitude below a water molecule. Nx grows as
+  exp(+sigma0/sigma), and that is the whole mechanism.
+- VIEW_NX bottom 4e2 -> 3e2: the new curve's minimum is 388, and at 4e2 it was
+  producing a spurious off-scale marker at the warm end.
+- Documented Lx: it is 4.50e-4 m, the x-extent of the Molaro dom2 production
+  domain (inputs/geometry/molaro/..._L450x225um_..._dom2.opts). It enters only
+  as Nx = ceil(sqrt(2)*Lx/eps), i.e. linearly, so it fixes where panel 6's
+  axis sits and not the shape of anything on it. Said so in the CLI help and
+  the README.
+- Dropped a pronoun for Libbrecht from the docstring and README: their
+  pronouns are not stated in anything I have, and "his" was a guess.
+
+---
+
 ## 2026-09-02 (final, 7) — Per-panel legends
 
 - Jackson: each individual plot needs a legend, inline or separate. Added

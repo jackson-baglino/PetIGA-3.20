@@ -20,7 +20,7 @@ The chain is short and every link is plotted:
                ->  eps <= d0/(beta_sub*v_n)      ->  Nx = ceil(sqrt(2)*Lx/eps)
 
 The case is made ENTIRELY INSIDE LIBBRECHT'S OWN CALIBRATION RANGE. Only the
-two supersaturations his chamber experiments were run at, sigma = 1e-1 and
+two supersaturations the chamber experiments were run at, sigma = 1e-1 and
 1e-2, are plotted. Nothing here depends on the conditions of any one of our
 simulations, so nothing here can be answered with "your boundary condition is
 wrong".
@@ -29,8 +29,8 @@ wrong".
    the literature supports is 1e-3 < alpha_c < 1e-1 (Libbrecht 2017; Braun,
    Fourteau & Lowe 2024). Evaluate (L1) at Libbrecht's OWN upper chamber
    condition, sigma = 1e-1, and it returns alpha_c = 0.33 to 0.96 across
-   -40..-1 C -- three to ten times ABOVE the band's ceiling. Evaluate it at his
-   own lower one, sigma = 1e-2, and it drops BELOW the band's floor colder than
+   -40..-1 C -- three to ten times ABOVE the band's ceiling. Evaluate it at the
+   lower one, sigma = 1e-2, and it drops BELOW the band's floor colder than
    -29.7 C. That is structural, not a tuning problem: sigma0 spans a factor 27
    over -2..-40 C and it sits in the exponent, so no single reference sigma
    holds alpha_c inside one decade across the range.
@@ -130,17 +130,28 @@ BOUND_LABEL = {
 # What remains is the honest general statement: evaluate Libbrecht's own law at
 # Libbrecht's own conditions and follow sigma0(T) down in temperature.
 #
-# Value, colour, label, linestyle key.
+# sigma = 1e-3 is one plain decade below the chamber range -- no experiment
+# attached to it, which is the point. It shows the trend continuing without
+# resting the case on conditions anyone can dispute; the legend keeps it in its
+# own group so nobody reads it as something Libbrecht measured.
+#
+# Value, colour, label, group key (which also picks the linestyle).
 SIGMA_CASES = [
-    (1.0e-1, C[2], "$\\sigma = 10^{-1}$", "solid"),
-    (1.0e-2, C[5], "$\\sigma = 10^{-2}$", "dashed"),
+    (1.0e-1, C[2], "$\\sigma = 10^{-1}$", "chamber_hi"),
+    (1.0e-2, C[5], "$\\sigma = 10^{-2}$", "chamber_lo"),
+    (1.0e-3, C[3], "$\\sigma = 10^{-3}$", "extrap"),
 ]
+_LS = {"chamber_hi": "-",
+       "chamber_lo": (0, (5, 2)),
+       "extrap": (0, (5, 1.5, 1, 1.5))}
 
 # Legend group headings.
 GRP_LAB = "Libbrecht's chamber"
+GRP_EXTRAP = "Extrapolated"
 GRP_BIND = "Which bound binds"
 GRP_REF = "Reference"
-SIG_LAB = [l for _v, _c, l, _k in SIGMA_CASES]
+SIG_LAB = [l for _v, _c, l, k in SIGMA_CASES if k.startswith("chamber")]
+SIG_EXTRAP = [l for _v, _c, l, k in SIGMA_CASES if k == "extrap"]
 
 # a = (m/rho_ice)^(1/3): the molecular length already implied by the constants
 # in comp_eps.py. Below it a continuum phase field means nothing.
@@ -206,7 +217,7 @@ VIEW_BETA = (1.0e3, MF_BETA_HI * 1e2)   # trimmed: nothing runs below 1e3
 # Mesh window, in Nx. NX_USABLE is what we can actually run; the frame is
 # opened up ~2.3 decades above it so the molecular limit Lx/a stays visible.
 NX_USABLE = 1.0e4
-VIEW_NX = (4.0e2, 1.0e6)
+VIEW_NX = (3.0e2, 1.0e6)
 
 
 def _mark_offscale(a, x, y, color, fmt="{:.1e}", row=0):
@@ -338,6 +349,7 @@ def master_groups(ctx):
     """
     return [
         (GRP_LAB, SIG_LAB),
+        (GRP_EXTRAP, SIG_EXTRAP),
         (GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
         (GRP_REF, ["$\\alpha_c = 1$  physical ceiling",
                    "$N_x = 10^4$  practical ceiling",
@@ -361,8 +373,8 @@ def _legend(a, groups, y=-0.165):
 
 
 def _ls(kind):
-    """Line style, so the two sigmas are never told apart by colour alone."""
-    return "-" if kind == "solid" else (0, (5, 2))
+    """Line style, so the sigmas are never told apart by colour alone."""
+    return _LS[kind]
 
 
 def _sig_tex(v):
@@ -439,7 +451,7 @@ def panel_alpha_vs_sigma0(a, T, ctx):
     _style(a, "$\\sigma_0(T)$  [-]", "$\\alpha_c$  [-]",
            "2.  $\\alpha_c = \\exp(-\\sigma_0/\\sigma)$ against $\\sigma_0$",
            short="2.  $\\alpha_c$ against $\\sigma_0$")
-    _legend(a, [(GRP_LAB, SIG_LAB),
+    _legend(a, [(GRP_LAB, SIG_LAB), (GRP_EXTRAP, SIG_EXTRAP),
                 (GRP_REF, ["$\\alpha_c = 1$  physical ceiling"])])
 
 
@@ -461,7 +473,7 @@ def panel_alpha_vs_T(a, T, ctx):
     _style(a, "T [°C]", "$\\alpha_c$  [-]",
            "3.  $\\alpha_c(T)$: two decades down in $\\sigma$, "
            "thirty down in $\\alpha_c$", short="3.  $\\alpha_c(T)$")
-    _legend(a, [(GRP_LAB, SIG_LAB),
+    _legend(a, [(GRP_LAB, SIG_LAB), (GRP_EXTRAP, SIG_EXTRAP),
                 (GRP_REF, ["$\\alpha_c = 1$  physical ceiling", run])])
 
 
@@ -485,7 +497,7 @@ def panel_beta_vs_T(a, T, ctx):
            r"\alpha_c=\exp\left[-\sigma_0(T)/\sigma\right]$",
            title_size=13, pad=14,
            short="4.  $\\beta_{sub}(T) \\propto 1/\\alpha_c$")
-    _legend(a, [(GRP_LAB, SIG_LAB),
+    _legend(a, [(GRP_LAB, SIG_LAB), (GRP_EXTRAP, SIG_EXTRAP),
                 (GRP_REF, ["M&F (2024) Table S1", run])])
 
 
@@ -510,7 +522,7 @@ def panel_eps_vs_T(a, T, ctx):
            f"(shading follows $\\sigma = {_sig_tex(prim)}$)",
            short="5.  Interface width $\\epsilon(T)$")
     _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
-                (GRP_LAB, SIG_LAB),
+                (GRP_LAB, SIG_LAB), (GRP_EXTRAP, SIG_EXTRAP),
                 (GRP_REF, [ceil, run])])
 
 
@@ -531,7 +543,7 @@ def panel_Nx_vs_T(a, T, ctx):
            "6.  The mesh Libbrecht's $\\alpha_c$ demands",
            short="6.  Mesh $N_x(T)$", short_y="$N_x$")
     _legend(a, [(GRP_BIND, [BOUND_LABEL["B-KINETIC"], BOUND_LABEL["B-HEAT"]]),
-                (GRP_LAB, SIG_LAB),
+                (GRP_LAB, SIG_LAB), (GRP_EXTRAP, SIG_EXTRAP),
                 (GRP_REF, ["$N_x = 10^4$  practical ceiling", run])])
 
 
@@ -620,9 +632,14 @@ def main():
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     # Geometry: Molaro dom2, the production axisymmetric grain pair.
-    p.add_argument("--Lx", type=float, default=4.50e-4)
-    p.add_argument("--Ly", type=float, default=2.25e-4)
-    p.add_argument("--Rave", type=float, default=8.675e-5)
+    # Reference-case geometry: the Molaro dom2 production domain,
+    # inputs/geometry/molaro/molaro_2D_L450x225um_..._dom2.opts. Lx enters only
+    # as Nx = ceil(sqrt(2)*Lx/eps), i.e. LINEARLY -- it sets where the vertical
+    # axis of panel 6 sits, not the shape of any curve on it.
+    p.add_argument("--Lx", type=float, default=4.50e-4, help="domain x [m]")
+    p.add_argument("--Ly", type=float, default=2.25e-4, help="domain y [m]")
+    p.add_argument("--Rave", type=float, default=8.675e-5,
+                   help="representative grain radius [m], for B-CURV")
     p.add_argument("--vn", type=float, default=3.415598e-9,
                    help="MEASURED front velocity [m/s]; default is the "
                         "integrated Molaro Fig. 11 neck rate from "
