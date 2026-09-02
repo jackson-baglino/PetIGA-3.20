@@ -1,3 +1,31 @@
+## 2026-09-02 (later) — Zoomed the Libbrecht panels to the usable window
+
+- Jackson: the beta_sub equation box was sitting on panel 4's legend, and the
+  full-range axes wasted the detail on values we could never run. Fixed both.
+- Panel 4's defining equation moved into the axis title, out of the data area
+  entirely -- it cannot collide with a legend or a curve there.
+- Every axis now clipped to the LITERATURE band opened up two decades each
+  side: alpha_c [1e-5, 1], beta_sub [2e2, 2e8] around M&F's [2e4, 2e6], Nx
+  [3e2, 1e6] around the Nx = 1e4 practical ceiling. The eps window is the
+  exact reciprocal of the Nx window so panels 5 and 6 read against each other.
+  The usable structure is now legible: at sigma = 1e-1 Libbrecht's own alpha_c
+  sits right on the 1e4 ceiling, and the crossovers are visible instead of
+  being compressed into a hairline.
+- `_mark_offscale()` puts a triangle on the frame where a curve exits and
+  states the extreme it reaches (3e+32, 1e-30, ...), so clipping never reads
+  as missing data. Markers stagger by curve index and carry a white backing.
+- Dropped the molecular-limit line (a = 3.19 A, Lx/a = 1.4e6) from panels 5-6:
+  it belongs to the regime we just zoomed out of. It stays in the README, the
+  .tex and the console summary.
+- Added `docs/tex/constraints_iguanatex.txt` -- Jackson wants to paste single
+  equations into PowerPoint via IguanaTeX, not \input fragments. 13 numbered
+  snippets, amsmath/amssymb only, each regression-tested to compile inside
+  \[ ... \] (which is what IguanaTeX wraps them in). Header lines are
+  %-commented so a sloppy copy is harmless. The recheck script is in
+  docs/tex/README.md.
+
+---
+
 ## 2026-09-02 — Regenerated the Libbrecht intractability case; constraints in LaTeX
 
 - Added `preprocess/plot_libbrecht_constraints.py`: six slide-sized panels plus

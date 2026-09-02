@@ -37,6 +37,16 @@ from what the sizer does.
 | `fig0_overview.png` | all six on one slide |
 | `libbrecht_constraints.csv` | the numbers |
 
+**Axis windows.** Plotted full-range these quantities span sixty decades and
+the usable band is a hairline, so every axis is clipped to the *literature*
+band opened up by two decades on each side — α_c to [1e-5, 1], β_sub to
+[2e2, 2e8] around M&F's [2e4, 2e6], and N_x to [3e2, 1e6] around the
+N_x = 10⁴ practical ceiling (ε panel 5 is the exact reciprocal of the N_x
+window, so panels 5 and 6 read against each other). Where a curve leaves the
+frame it is marked on the edge with the extreme it reaches, so nothing is
+hidden; the full range is in `libbrecht_constraints.csv` and in the table
+below.
+
 The four supersaturations plotted, and where each comes from:
 
 - $\sigma = 10^{-1},\ 10^{-2}$ — **Libbrecht's own chamber conditions** (dashed)
@@ -111,5 +121,7 @@ exhausted as a knob, because the process is transport-limited there
 the **sign** of the temperature dependence, and a plausible band.
 
 See `preprocess/plot_alpha_models.py` for the alternative laws that were
-considered (Arrhenius in $T$; the two-parameter Libbrecht fit), and `docs/tex/`
-for the constraint set written out as LaTeX.
+considered (Arrhenius in $T$; the two-parameter Libbrecht fit). The constraints
+themselves are written out as LaTeX in `docs/tex/` —
+`constraints_iguanatex.txt` for copy-pasting single equations into PowerPoint
+via IguanaTeX, the `.tex` fragments for a written document.

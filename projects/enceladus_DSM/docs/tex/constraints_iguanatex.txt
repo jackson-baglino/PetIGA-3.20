@@ -1,0 +1,177 @@
+================================================================================
+% comp_eps.py constraints — copy-paste snippets for IguanaTeX (PowerPoint)
+================================================================================
+
+% HOW TO USE
+%  Open IguanaTeX -> New LaTeX display, then copy ONE numbered block below
+%  (everything between the dashed rules) into the equation box and hit
+%  Generate.  Each block is self-contained and uses only amsmath/amssymb,
+%  which IguanaTeX's default preamble already loads.  The "%" comment lines
+%  are safe to paste along with the maths — LaTeX ignores them.
+
+% SOURCE OF TRUTH
+%  preprocess/comp_eps.py.  If that file changes, this one is stale.
+%  References: Kaempfer & Plapp, Phys. Rev. E 79, 031502 (2009) = "K&P";
+%  Moure & Fu, Cryst. Growth Des. 24, 7808 (2024) = "M&F".
+
+% SYMBOLS
+%  eps       interface width (M&F's, a DECAY length: the 1%-99% band is 9.2 eps)
+%  s         safety factor, default 1/2
+%  beta_HK   Hertz-Knudsen, SCALED   (K&P beta')
+%  beta_sub  UNSCALED = beta_HK/(rho_vs/rho_i)   (K&P beta_0 = M&F beta_sub)
+%  d_0       capillary length, D_v vapour diffusivity, D*_ia mean thermal
+%  a_1 = 5, a_2 = 0.1581   M&F asymptotic constants for THIS well
+
+================================================================================
+% [1]  THE FOUR BOUNDS ON eps  — the one-slide version
+--------------------------------------------------------------------------------
+\begin{aligned}
+\text{B-HEAT:}    &\quad \epsilon \;\le\; s\,D_{heat}\,\beta_{HK}
+                  &&\text{(K\&P Eq. 43a/b)} \\[4pt]
+\text{B-VAPOR:}   &\quad \epsilon \;\le\; s\,D_v\,\beta_{HK}
+                  &&\text{(K\&P Eq. 43c)} \\[4pt]
+\text{B-KINETIC:} &\quad \epsilon \;\le\; s\,\dfrac{d_0}{\beta_{sub}\,v_n}
+                  &&\text{(K\&P Eq. 45)} \\[4pt]
+\text{B-CURV:}    &\quad \epsilon \;\le\; 0.05\,R_{ave}
+                  &&\text{(geometric)}
+\end{aligned}
+--------------------------------------------------------------------------------
+
+================================================================================
+% [2]  eps IS THE SMALLEST OF THEM
+--------------------------------------------------------------------------------
+\epsilon \;=\; \min\left\{\,
+  s\,\min\!\left(D_{heat}\beta_{HK},\;\; D_v\beta_{HK},\;\;
+                 \frac{d_0}{\beta_{sub}v_n}\right),
+  \;\; 0.05\,R_{ave} \,\right\}
+--------------------------------------------------------------------------------
+
+================================================================================
+% [3]  THE MESH
+--------------------------------------------------------------------------------
+h \;=\; \frac{\epsilon}{\sqrt{2}},
+\qquad
+N_d \;=\; \left\lceil \frac{L_d}{h} \right\rceil
+      \;=\; \left\lceil \frac{\sqrt{2}\,L_d}{\epsilon} \right\rceil,
+\qquad d \in \{x,y,z\}
+--------------------------------------------------------------------------------
+
+================================================================================
+% [4]  WHAT "<<" MEANS: THE THIN-INTERFACE PARAMETER
+%     On the binding channel this is just delta = a_1 a_2 s = 0.79 s.
+--------------------------------------------------------------------------------
+\delta \;=\; \frac{a_1 a_2\,\epsilon}{D\,\beta_{HK}}
+\;\;\xrightarrow[\ \epsilon\,=\,s D \beta_{HK}\ ]{}\;\;
+\delta \;=\; a_1 a_2\,s \;=\; 0.79\,s
+--------------------------------------------------------------------------------
+
+================================================================================
+% [5]  THE KINETIC COEFFICIENT — scaled vs unscaled
+%     Mixing these two is a factor rho_vs/rho_i ~ 1e-6.
+--------------------------------------------------------------------------------
+\beta_{HK}(T,\alpha_c) \;=\; \frac{1}{\alpha_c}\sqrt{\frac{2\pi m}{k_B T}},
+\qquad
+\beta_{sub} \;=\; \frac{\beta_{HK}}{\rho_{vs}(T)/\rho_i}
+            \;=\; \frac{\rho_i}{\rho_{vs}(T)}\,\frac{1}{\alpha_c}
+                  \sqrt{\frac{2\pi m}{k_B T}}
+--------------------------------------------------------------------------------
+
+================================================================================
+% [6]  THE THERMODYNAMIC INPUTS
+--------------------------------------------------------------------------------
+\begin{aligned}
+\rho_{vs}(T) &= \rho_a\,b\,\frac{p_{vs}(T)}{p_{atm}-p_{vs}(T)}
+   &&\text{(ASHRAE)} \\[4pt]
+D_v(T) &= D_{v0}\left(\frac{T}{273.15\ \mathrm{K}}\right)^{1.81}
+   &&D_{v0} = 2.178\times10^{-5}\ \mathrm{m^2/s} \\[4pt]
+d_0(T) &= \frac{\gamma\,(m/\rho_i)}{k_B T} \;=\; \frac{\gamma V_m}{R T}
+   &&\text{(K\&P Eq. 13)} \\[4pt]
+D^{*}_{ia} &= \tfrac{1}{2}\left(\frac{\kappa_i}{C_i}+\frac{\kappa_a}{C_a}\right)
+   &&\text{(the channel } \tau_{sub} \text{ compensates)}
+\end{aligned}
+--------------------------------------------------------------------------------
+
+================================================================================
+% [7]  LIBBRECHT'S ATTACHMENT COEFFICIENT
+%     sigma_0(T) is a log-log interpolant of the Libbrecht (2017) table in
+%     |T|, held flat past both ends.
+--------------------------------------------------------------------------------
+\alpha_c(T,\sigma) \;=\; \exp\!\left[-\frac{\sigma_0(T)}{\sigma}\right],
+\qquad
+\sigma \;=\; \frac{\left|\rho_v - \rho_{vs}(T)\right|}{\rho_{vs}(T)}
+--------------------------------------------------------------------------------
+
+================================================================================
+% [8]  THE WHOLE CHAIN, AND WHY IT BLOWS UP
+%     Substituting [7] into [5] into B-KINETIC into [3].
+--------------------------------------------------------------------------------
+\epsilon \;\le\; s\,\frac{d_0\,\rho_{vs}}{\rho_i\,v_n}
+                 \sqrt{\frac{k_B T}{2\pi m}}\;
+                 \exp\!\left[-\frac{\sigma_0(T)}{\sigma}\right]
+\qquad\Longrightarrow\qquad
+N_x \;\propto\; \exp\!\left[+\frac{\sigma_0(T)}{\sigma}\right]
+--------------------------------------------------------------------------------
+
+================================================================================
+% [9]  THE SUPERSATURATION GAP, IN ONE LINE
+--------------------------------------------------------------------------------
+\underbrace{\sigma \sim 10^{-2}\!-\!10^{-1}}_{\text{Libbrecht's chamber}}
+\qquad\text{vs.}\qquad
+\underbrace{\sigma = 2.7\times10^{-3}}_{\text{our wall BC},\ 1-h}
+\;,\quad
+\underbrace{\sigma = \frac{d_0}{\rho_f} \approx 4.5\times10^{-4}}
+           _{\text{our neck fillet}}
+--------------------------------------------------------------------------------
+
+================================================================================
+% [10]  DERIVED PHASE-FIELD PARAMETERS  (M&F SI Eq. 9)
+--------------------------------------------------------------------------------
+\begin{aligned}
+\lambda_{sub} &= \frac{a_1\,\epsilon}{d_0\,(\rho_{vs}/\rho_i)} \\[6pt]
+\tau_{sub} &= \epsilon\,\lambda_{sub}\left[\frac{\beta_{HK}}{a_1}
+   + \frac{a_2\,\epsilon}{D^{*}_{ia}} + \frac{a_2\,\epsilon}{D_v}\right] \\[6pt]
+M_{sub} &= \frac{\epsilon}{3\,\tau_{sub}},
+\qquad
+\alpha_{sub} = \frac{\lambda_{sub}}{\tau_{sub}},
+\qquad
+\frac{\alpha_{sub}}{M_{sub}} = \frac{3\lambda_{sub}}{\epsilon}
+\end{aligned}
+--------------------------------------------------------------------------------
+
+================================================================================
+% [11]  THE WIDTH CONVENTION
+%      eps is a decay length, NOT the visible diffuse band.
+--------------------------------------------------------------------------------
+\phi(x) \;=\; \frac{1}{1+e^{-x/\epsilon}}
+        \;=\; \tfrac12\left[1+\tanh\!\left(\frac{x}{2\epsilon}\right)\right],
+\qquad
+w_{5\text{--}95} \approx 6\,\epsilon,
+\qquad
+w_{1\text{--}99} \approx 9.2\,\epsilon
+--------------------------------------------------------------------------------
+
+================================================================================
+% [12]  DIAGNOSTICS REPORTED BUT NEVER ENFORCED
+--------------------------------------------------------------------------------
+\delta_X = \frac{a_1 a_2\,\epsilon}{D_X\,\beta_{HK}},
+\qquad
+\mathrm{Pe} = \frac{\epsilon\,v_n}{D_v},
+\qquad
+\frac{\epsilon}{R_{ave}},
+\qquad
+\frac{\beta_{sub}v_n}{d_0\,\chi},
+\qquad
+\xi_v \ge 10\,\frac{\rho_{vs}}{\rho_i}
+--------------------------------------------------------------------------------
+
+================================================================================
+% [13]  KINETIC FRACTION — is the sharp-interface analogy still standing?
+%      Flagged as marginal below 0.5, as a warning below 0.1.
+--------------------------------------------------------------------------------
+f_{kin} \;=\;
+\frac{\dfrac{\beta_{HK}}{a_1}}
+     {\dfrac{\beta_{HK}}{a_1}
+      + \dfrac{a_2\epsilon}{D^{*}_{ia}}
+      + \dfrac{a_2\epsilon}{D_v}}
+\;\gtrsim\; 0.5
+--------------------------------------------------------------------------------

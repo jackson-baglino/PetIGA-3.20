@@ -108,17 +108,77 @@ A_MOL = (ce._M_H2O / ce._RHO_ICE) ** (1.0 / 3.0)
 
 ALPHA_FLOOR = 1.0e-30       # the floor hardwired in comp_eps.alpha_libbrecht
 
+# -------------------------------------------------------------------------
+# The display window.
+#
+# Plotted full-range, these quantities span sixty decades and the usable
+# band is a hairline. So every axis is clipped to the LITERATURE band opened
+# up by two decades on each side -- roughly "everything we could plausibly
+# run, plus a margin". Outside that, a curve is marked where it leaves the
+# frame and the extreme it reaches is stated, so nothing is hidden; the full
+# numbers stay in libbrecht_constraints.csv and the study README.
+# -------------------------------------------------------------------------
+VIEW_ALPHA = (ce.ALPHA_LIT_LO * 1e-2, 1.5)        # band 1e-3..1e-1; alpha_c <= 1
+MF_BETA_LO, MF_BETA_HI = 2.0e4, 2.0e6             # M&F (2024) Table S1
+VIEW_BETA = (MF_BETA_LO * 1e-2, MF_BETA_HI * 1e2)
 
-def _style(a, xlabel, ylabel, title, logy=True):
+# Mesh window, in Nx. NX_USABLE is what we can actually run; the frame is
+# opened up ~2.3 decades above it so the molecular limit Lx/a stays visible.
+NX_USABLE = 1.0e4
+VIEW_NX = (3.0e2, 1.0e6)
+
+
+def _mark_offscale(a, x, y, color, fmt="{:.1e}", row=0):
+    """Flag where a curve leaves the frame, and say how far off scale it goes.
+
+    Clipping to the usable window is the point of the tight limits, but a
+    curve that simply vanishes at the frame reads as missing data rather
+    than as a number too large to run. One marker on the edge plus the
+    extreme value fixes that without restoring sixty decades of axis.
+    """
+    lo, hi = a.get_ylim()
+    for out, edge, mk, va, extreme, arrow in (
+            (y > hi, hi, "^", "top", np.nanmax, "↑"),
+            (y < lo, lo, "v", "bottom", np.nanmin, "↓")):
+        if not out.any() or out.all():
+            continue
+        # Mark the run that actually contains the extreme, at the end of that
+        # run touching the frame -- a curve can leave and re-enter (the sigma0
+        # kink does exactly that), and a marker parked in the middle of some
+        # other excursion points at the wrong place.
+        k = int(np.nanargmax(y) if va == "top" else np.nanargmin(y))
+        lo_i = hi_i = k
+        while lo_i > 0 and out[lo_i - 1]:
+            lo_i -= 1
+        while hi_i < len(out) - 1 and out[hi_i + 1]:
+            hi_i += 1
+        j = hi_i if hi_i < len(out) - 1 else (lo_i if lo_i > 0 else k)
+        pad = 7.0 + 12.0 * row
+        a.plot([x[j]], [edge], mk, ms=7, color=color, clip_on=False, zorder=7)
+        a.annotate(f"{arrow} {fmt.format(extreme(y))}", (x[j], edge),
+                   xytext=(0, -pad if va == "top" else pad),
+                   textcoords="offset points", fontsize=7.5, color=color,
+                   ha="center", va=va, zorder=7,
+                   bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none",
+                             alpha=0.85))
+
+
+def _style(a, xlabel, ylabel, title, logy=True, title_size=11):
     a.set_xlabel(xlabel, fontsize=10)
     a.set_ylabel(ylabel, fontsize=10)
     if title:
-        a.set_title(title, fontsize=11, color=INK, loc="left")
+        a.set_title(title, fontsize=title_size, color=INK, loc="left", pad=9)
     if logy:
         a.set_yscale("log")
     a.grid(alpha=0.25, lw=0.5, color=GRID, which="both")
     a.spines[["top", "right"]].set_visible(False)
     a.tick_params(labelsize=9)
+
+
+def _legend(a, **kw):
+    """Framed legend, for the panels where every corner has a curve in it."""
+    a.legend(fontsize=7.6, frameon=True, framealpha=0.93, facecolor="white",
+             edgecolor=GRID, **kw)
 
 
 def _ls(kind):
@@ -161,113 +221,113 @@ def panel_alpha_vs_sigma0(a, T, ctx):
     """2. alpha_c vs sigma0 at fixed sigma. Pure exp(-sigma0/sigma)."""
     s0 = np.logspace(-3.6, -0.7, 500)
     a.axhspan(ce.ALPHA_LIT_LO, ce.ALPHA_LIT_HI, color=C[0], alpha=0.10, zorder=0)
-    for sig, col, lbl, kind in SIGMA_CASES:
+    a.set_xscale("log")
+    a.set_ylim(*VIEW_ALPHA)
+    for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         y = np.where(s0 / sig > 69.0775, ALPHA_FLOOR, np.exp(-s0 / sig))
-        a.plot(s0, np.maximum(y, ALPHA_FLOOR), lw=2.4, color=col,
-               ls=_ls(kind), label=lbl)
-    a.axhline(ALPHA_FLOOR, lw=1.4, color=INK, alpha=0.6,
-              label="$10^{-30}$ underflow floor (material_properties.c)")
+        y = np.maximum(y, ALPHA_FLOOR)
+        a.plot(s0, y, lw=2.4, color=col, ls=_ls(kind), label=lbl)
+        _mark_offscale(a, s0, y, col, row=i % 2)
     # Where the table's own sigma0 values sit, so x carries physical marks.
     for Tm in (-2.0, -20.0, -40.0):
         s0m = ce.sigma0(Tm)
         a.axvline(s0m, lw=1.0, ls=(0, (1, 3)), color=MUTED, zorder=0)
-        a.annotate(f"$T$ = {Tm:.0f} °C", (s0m, 6.0e2), rotation=90, fontsize=8,
-                   color=MUTED, ha="right", va="top")
-    a.annotate("literature band for $\\alpha_c$",
-               (2.9e-4, 3.0e-2), fontsize=8, color=C[0], va="center")
-    a.set_xscale("log")
-    a.set_ylim(1e-34, 1e3)
+        a.annotate(f"$T$ = {Tm:.0f} °C", (s0m, VIEW_ALPHA[1] * 0.8), rotation=90,
+                   fontsize=8, color=MUTED, ha="right", va="top")
+    a.annotate("literature band for $\\alpha_c$", (2.9e-4, 3.0e-2), fontsize=8,
+               color=C[0], va="center")
     _style(a, "$\\sigma_0(T)$  [-]", "$\\alpha_c$  [-]",
            "2.  $\\alpha_c = \\exp(-\\sigma_0/\\sigma)$ against $\\sigma_0$")
-    a.legend(fontsize=8, frameon=False, loc="lower left")
+    _legend(a, loc="lower left", bbox_to_anchor=(0.0, 0.09))
 
 
 def panel_alpha_vs_T(a, T, ctx):
     """3. alpha_c(T) at each sigma -- the supersaturation gap, in T."""
     a.axhspan(ce.ALPHA_LIT_LO, ce.ALPHA_LIT_HI, color=C[0], alpha=0.10, zorder=0)
+    a.set_ylim(*VIEW_ALPHA)
     a.annotate("literature band for $\\alpha_c$", (-39.5, 5.0e-3), fontsize=8,
                color=C[0], va="center")
-    for sig, col, lbl, kind in SIGMA_CASES:
-        a.plot(T, np.maximum(ctx["alpha"][sig], ALPHA_FLOOR), lw=2.4, color=col,
-               ls=_ls(kind), label=lbl)
-    a.axhline(ALPHA_FLOOR, lw=1.4, color=INK, alpha=0.6,
-              label="$10^{-30}$ underflow floor: no sintering at all")
+    for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
+        y = np.maximum(ctx["alpha"][sig], ALPHA_FLOOR)
+        a.plot(T, y, lw=2.4, color=col, ls=_ls(kind), label=lbl)
+        _mark_offscale(a, T, y, col, row=i % 2)
     a.axhline(ctx["alpha_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
               label=f"$\\alpha_c$ = {ctx['alpha_run']:g}, the constant we run")
-    a.set_ylim(1e-34, 1e3)
     _style(a, "T [°C]", "$\\alpha_c$  [-]",
            "3.  $\\alpha_c(T)$: two decades down in $\\sigma$, "
            "thirty down in $\\alpha_c$")
-    a.legend(fontsize=8, frameon=False, loc="lower right")
+    _legend(a, loc="lower right", bbox_to_anchor=(1.0, 0.14))
 
 
 def panel_beta_vs_T(a, T, ctx):
-    """4. beta_sub(T), with the equation that produces it."""
-    a.axhspan(2.0e4, 2.0e6, color=C[2], alpha=0.14, zorder=0,
+    """4. beta_sub(T). The defining equation rides in the title, not the frame,
+    so it cannot land on the legend or on a curve."""
+    a.axhspan(MF_BETA_LO, MF_BETA_HI, color=C[2], alpha=0.14, zorder=0,
               label="Moure & Fu (2024) Table S1: $2\\times10^4$–"
                     "$2\\times10^6$ s/m")
-    for sig, col, lbl, kind in SIGMA_CASES:
+    a.set_ylim(*VIEW_BETA)
+    for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         a.plot(T, ctx["beta"][sig], lw=2.4, color=col, ls=_ls(kind), label=lbl)
+        _mark_offscale(a, T, ctx["beta"][sig], col, row=i % 2)
     a.axhline(ctx["beta_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
               label=f"$\\beta_{{sub}}$ = {ctx['beta_run']:.2e} s/m at "
                     f"$\\alpha_c$ = {ctx['alpha_run']:g} (what we run)")
-    a.text(0.030, 0.965,
-           r"$\beta_{sub}(T)\;=\;\dfrac{\beta_{HK}}{\rho_{vs}(T)/\rho_i}"
-           r"\;=\;\dfrac{\rho_i}{\rho_{vs}(T)}\;\dfrac{1}{\alpha_c}\;"
-           r"\sqrt{\dfrac{2\pi m}{k_B T}}\,,$"
-           "\n" r"$\qquad\alpha_c\;=\;\exp\left[-\sigma_0(T)/\sigma\right]$"
-           "\n" r"(K&P $\beta_0\equiv$ M&F $\beta_{sub}$; $\beta_{HK}$ is the "
-           r"scaled Hertz–Knudsen form)",
-           transform=a.transAxes, fontsize=9.5, color=INK, va="top", ha="left",
-           bbox=dict(boxstyle="round,pad=0.45", fc="white", ec=GRID, lw=0.9),
-           zorder=6)
-    a.set_ylim(1e2, 1e46)
     _style(a, "T [°C]", "$\\beta_{sub}$  [s/m]",
-           "4.  Attachment resistance $\\beta_{sub} \\propto 1/\\alpha_c$")
-    a.legend(fontsize=8, frameon=False, loc="upper right")
+           "4.  Attachment resistance $\\beta_{sub} \\propto 1/\\alpha_c$\n"
+           r"$\beta_{sub}(T)=\dfrac{\beta_{HK}}{\rho_{vs}(T)/\rho_i}"
+           r"=\dfrac{\rho_i}{\rho_{vs}(T)}\dfrac{1}{\alpha_c}"
+           r"\sqrt{\dfrac{2\pi m}{k_B T}}\,,\quad"
+           r"\alpha_c=\exp\left[-\sigma_0(T)/\sigma\right]$",
+           title_size=9.5)
+    a.legend(fontsize=8, frameon=False, loc="lower left")
 
 
 def panel_eps_vs_T(a, T, ctx):
     """5. eps(T) straight out of comp_eps.compute_eps, shaded by binding bound."""
     prim = ctx["primary_sigma"]
-    _shade_binding(a, T, ctx["binding"][prim])
-    for sig, col, lbl, kind in SIGMA_CASES:
+    a.set_ylim(*ctx["view_eps"])
+    _shade_binding(a, T, ctx["binding"][prim], label_at="top")
+    for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         a.plot(T, ctx["eps"][sig], lw=3.0 if sig == prim else 2.0, color=col,
                ls=_ls(kind),
                label=lbl + ("  ← shaded" if sig == prim else ""))
+        _mark_offscale(a, T, ctx["eps"][sig], col, row=i % 2)
+    a.axhline(ctx["eps_usable"], lw=1.6, color=MUTED,
+              label=f"$\\epsilon$ = {ctx['eps_usable']*1e9:.0f} nm, the "
+                    f"$N_x = 10^4$ practical ceiling")
     a.axhline(ctx["eps_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
               label=f"$\\epsilon$ = {ctx['eps_run']*1e6:.3g} µm, the production run")
-    a.axhline(A_MOL, lw=1.8, color=INK, alpha=0.8,
-              label=f"one water molecule, $a=(m/\\rho_i)^{{1/3}}$ = "
-                    f"{A_MOL*1e10:.2f} Å")
-    a.set_ylim(1e-38, 1e-2)
     _style(a, "T [°C]", "$\\epsilon$  [m]",
            "5.  Interface width from the comp_eps.py bounds")
-    a.legend(fontsize=7.6, frameon=False, loc="lower right")
+    _legend(a, loc="lower left", bbox_to_anchor=(0.0, 0.10))
 
 
 def panel_Nx_vs_T(a, T, ctx):
     """6. Nx(T) = ceil(sqrt(2)*Lx/eps), against what a machine can hold."""
     prim = ctx["primary_sigma"]
-    _shade_binding(a, T, ctx["binding"][prim])
-    for sig, col, lbl, kind in SIGMA_CASES:
+    a.set_ylim(*VIEW_NX)
+    _shade_binding(a, T, ctx["binding"][prim], label_at="top")
+    for i, (sig, col, lbl, kind) in enumerate(SIGMA_CASES):
         a.plot(T, ctx["Nx"][sig], lw=3.0 if sig == prim else 2.0, color=col,
                ls=_ls(kind), label=lbl)
+        _mark_offscale(a, T, ctx["Nx"][sig], col, fmt="{:.0e}", row=i % 2)
+    a.axhline(NX_USABLE, lw=1.6, color=MUTED,
+              label="$N_x = 10^4$ — the practical ceiling")
     a.axhline(ctx["Nx_run"], lw=1.8, ls=(0, (1, 2)), color=INK,
               label=f"$N_x$ = {ctx['Nx_run']}, the production mesh "
                     f"({ctx['nodes_run']/1e6:.1f} M nodes in 2D)")
-    n_atom = ctx["Lx"] / A_MOL
-    a.axhline(n_atom, lw=1.8, color=INK, alpha=0.8,
-              label=f"$L_x/a$ = {n_atom:.2g}: one node per water molecule")
-    a.set_ylim(1e2, 1e36)
     _style(a, "T [°C]", "$N_x$  [nodes across $L_x$]",
            "6.  The mesh Libbrecht's $\\alpha_c$ demands")
-    a.legend(fontsize=7.6, frameon=False, loc="upper right",
-             bbox_to_anchor=(1.0, 0.93))
+    _legend(a, loc="lower left", bbox_to_anchor=(0.0, 0.02))
 
 
-def _shade_binding(a, T, binding):
-    """Shade contiguous T-runs sharing a binding bound; name each region once."""
+def _shade_binding(a, T, binding, label_at="top"):
+    """Shade contiguous T-runs sharing a binding bound; name each region once.
+
+    label_at keeps the region names clear of the off-scale markers, which sit
+    on the bottom edge in panel 5 and on the top edge in panel 6.
+    """
+    y, va = (0.975, "top") if label_at == "top" else (0.025, "bottom")
     seen = set()
     i = 0
     while i < len(T):
@@ -280,9 +340,9 @@ def _shade_binding(a, T, binding):
                   label=BOUND_LABEL[name] if name not in seen else None)
         seen.add(name)
         # Name the region inside it, so the shading is never colour-alone.
-        a.annotate(name, (0.5 * (T[i] + T[j]), 0.975),
+        a.annotate(name, (0.5 * (T[i] + T[j]), y),
                    xycoords=("data", "axes fraction"), fontsize=9,
-                   color=BOUND_COLOR.get(name, MUTED), ha="center", va="top",
+                   color=BOUND_COLOR.get(name, MUTED), ha="center", va=va,
                    fontweight="bold")
         i = j + 1
 
@@ -328,6 +388,11 @@ def build_context(T, args):
     ctx["beta_run"] = run["beta_uns"]
     ctx["eps_run"] = args.eps_run if args.eps_run > 0 else run["eps"]
     ctx["Nx_run"] = math.ceil(math.sqrt(2.0) * args.Lx / ctx["eps_run"])
+    # eps window is the exact reciprocal of VIEW_NX, so panels 5 and 6 are
+    # the same plot on two axes and can be read against each other.
+    ctx["view_eps"] = (math.sqrt(2.0) * args.Lx / VIEW_NX[1],
+                       math.sqrt(2.0) * args.Lx / VIEW_NX[0])
+    ctx["eps_usable"] = math.sqrt(2.0) * args.Lx / NX_USABLE
     ctx["nodes_run"] = ctx["Nx_run"] * math.ceil(math.sqrt(2.0) * args.Ly
                                                  / ctx["eps_run"])
     return ctx

@@ -67,3 +67,12 @@ studies/**/verification/raw*/*/
 # result -- the README and the slide deck are built around them, and they
 # are cheap to regenerate but expensive to re-derive.
 !studies/libbrecht_kinetics/*.png
+
+# LaTeX build artifacts. The .pdf IS tracked -- it is the readable form of
+# docs/tex/ and nobody should need a TeX install to see the constraints.
+docs/tex/*.aux
+docs/tex/*.log
+docs/tex/*.out
+docs/tex/*.fls
+docs/tex/*.fdb_latexmk
+docs/tex/*.synctex.gz
