@@ -193,9 +193,10 @@ exhausted as a knob, because the process is transport-limited there
 the **sign** of the temperature dependence, and a plausible band.
 
 **The companion study** is `studies/alpha_c_sizing/`: having established that
-$\sigma_0(T)$ cannot set $\alpha_c$, it asks what a *constant* $\alpha_c$
-inside the literature band costs in $\beta_{sub}$, $\epsilon$ and mesh — and
-finds the cost is not monotone, so there is an optimum.
+$\sigma_0(T)$ cannot set $\alpha_c$, it sweeps $\alpha_c$ over
+$[10^{-4}, 1]$ and reads off what each value costs in $\beta_{sub}$,
+$\epsilon$ and mesh — finding the cost is not monotone, so there is an
+optimum, and it sits at the top of the literature band.
 
 See `preprocess/plot_alpha_models.py` for the alternative laws that were
 considered (Arrhenius in $T$; the two-parameter Libbrecht fit). The constraints

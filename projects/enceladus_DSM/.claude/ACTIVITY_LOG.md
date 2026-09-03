@@ -1,3 +1,31 @@
+## 2026-09-02 (final, 10) — Restarted the alpha_c study as a sweep
+
+- Jackson: the three-constants framing was the wrong one, and the panels with
+  alpha_c on the x-axis were what he was after. Replaced
+  plot_alpha_constant_constraints.py with plot_alpha_c_sweep.py: alpha_c swept
+  over [1e-4, 1] on every panel, literature band shaded on every panel, and
+  beta_sub / eps / Nx plotted against it as asked.
+- Six panels: beta_sub(alpha_c) with beta_HK drawn underneath it; the four K&P
+  bounds (the mechanism); eps; Nx; f_kin (validity); L* (regime).
+- ANSWERED his question about beta_sub's T-dependence, in the figure and not
+  just in prose. beta_HK moves 8% over -40..-1 C (just the sqrt(T) in the mean
+  thermal speed); rho_vs falls 44x. So the entire spread in beta_sub is the
+  rho_vs(T)/rho_i factor converting scaled to unscaled -- one kinetics seen
+  through a collapsing vapour density, not three kinetics. Panel 1 now draws
+  beta_HK as a single line below the beta_sub family so the ~1e6 gap between
+  them IS rho_vs/rho_i, visibly.
+- Numbers: cheapest alpha_c = 0.112 at -40 C, 0.039 at -20, 0.020 at -5. The
+  Nx <= 1e4 window narrows as it gets colder -- 0.0009-0.45 at -5 C but only
+  0.026-0.48 at -40 C. f_kin falls to 0.64 above alpha_c = 1e-1. L* drops below
+  the grain radius at alpha_c = 1.6e-3 and the neck radius at 1.0e-2, which is
+  why raising alpha_c past ~0.01 buys progressively less.
+- Layout fix the sweep forced: on an alpha_c axis the literature band is
+  already a translucent fill, so the binding-bound span became a second fill on
+  top of it and the two mixed to grey. Replaced with a dashed rule at the
+  switch plus the two names (_mark_binding), leaving the band as the only fill.
+
+---
+
 ## 2026-09-02 (final, 9) — figstyle.py, and the constant-alpha_c study
 
 - Extracted `preprocess/figstyle.py`: the type scale, the width ceiling and its
