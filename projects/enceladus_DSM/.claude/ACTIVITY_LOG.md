@@ -1,3 +1,34 @@
+## 2026-09-02 (final, 9) — figstyle.py, and the constant-alpha_c study
+
+- Extracted `preprocess/figstyle.py`: the type scale, the width ceiling and its
+  assertion, compact mode, the grouped-legend layout, off-scale marking,
+  binding-region shading, and the emit() driver that writes panels, per-panel
+  legends, the master grid and the legend strip. plot_libbrecht_constraints.py
+  now imports it and its 14 outputs are BYTE-IDENTICAL to before the refactor
+  (checked with cmp), so this is a pure move.
+- New `preprocess/plot_alpha_constant_constraints.py` ->
+  `studies/alpha_c_sizing/`. Jackson asked for the same chain without the
+  Libbrecht data: assume a constant alpha_c at 1e-1, 1e-2, 1e-3 and see what
+  each costs. Six panels: beta_sub(T), eps(T), Nx(T), then three with alpha_c
+  on the x-axis -- the four bounds, Nx, and f_kin.
+- The result is more interesting than expected. B-HEAT/B-VAPOR scale as
+  1/alpha_c and B-KINETIC as alpha_c, so Nx(alpha_c) is V-SHAPED with a genuine
+  optimum: alpha_c = 0.11 at -40 C, 0.039 at -20, 0.020 at -5. Both ends are
+  expensive (2.6e6 nodes at alpha_c=1e-4 and -40 C; 2.1e4 at alpha_c=1), and
+  both exceed the 1e4 practical ceiling. The optimum sits at the TOP of the
+  literature band, not the bottom.
+- alpha_c = 1e-3 is the costly choice of the three: 3.4e4 across x at -20 C and
+  2.6e5 at -40 C. 1e-1 and 1e-2 are both under the ceiling everywhere.
+- The catch at the top: f_kin (kinetic share of the tau_sub bracket) falls from
+  1.00 at alpha_c <= 1e-2 to 0.64 at 1e-1. comp_eps flags below 0.5, so that is
+  acceptable but no longer generous -- the mesh wants alpha_c high and the
+  asymptotics want it low, and 1e-2 is comfortable on both counts.
+- Temperature gets a sequential ramp (magma) rather than three more categorical
+  hues: it is an ordered variable, and the master legend carries the bound
+  colours alongside it, where a repeat would have been ambiguous.
+
+---
+
 ## 2026-09-02 (final, 8) — Added sigma = 1e-3
 
 - Jackson asked for a third curve at sigma = 1e-3, one plain decade below

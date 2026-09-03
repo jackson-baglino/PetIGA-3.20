@@ -192,6 +192,11 @@ exhausted as a knob, because the process is transport-limited there
 ($\Lambda = 0.29$). Libbrecht's data is kept as what it can honestly support:
 the **sign** of the temperature dependence, and a plausible band.
 
+**The companion study** is `studies/alpha_c_sizing/`: having established that
+$\sigma_0(T)$ cannot set $\alpha_c$, it asks what a *constant* $\alpha_c$
+inside the literature band costs in $\beta_{sub}$, $\epsilon$ and mesh — and
+finds the cost is not monotone, so there is an optimum.
+
 See `preprocess/plot_alpha_models.py` for the alternative laws that were
 considered (Arrhenius in $T$; the two-parameter Libbrecht fit). The constraints
 themselves are written out as LaTeX in `docs/tex/` —

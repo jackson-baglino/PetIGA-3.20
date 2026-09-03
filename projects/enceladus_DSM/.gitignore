@@ -76,3 +76,6 @@ docs/tex/*.out
 docs/tex/*.fls
 docs/tex/*.fdb_latexmk
 docs/tex/*.synctex.gz
+
+# Same again for the alpha_c sizing study.
+!studies/alpha_c_sizing/*.png

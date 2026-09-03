@@ -98,25 +98,16 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import comp_eps as ce
-
-# Okabe-Ito, the repo standard (plot_alpha_kinetics.py, fit_neck_growth.py).
-C = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9"]
-INK, MUTED, GRID = "#1a1a1a", "#5c5c5c", "#d8d8d8"
-
-# Colour per binding bound, shared by the fig5/fig6 shading.
-BOUND_COLOR = {"B-HEAT": C[0], "B-VAPOR": C[5], "B-KINETIC": C[1], "B-CURV": C[2]}
-# Short, because these ride in a legend under the axes. The formulas they
-# used to carry live in docs/tex/constraints_iguanatex.txt.
-BOUND_LABEL = {
-    "B-HEAT":    "B-HEAT  (K&P 43a/b)",
-    "B-VAPOR":   "B-VAPOR  (K&P 43c)",
-    "B-KINETIC": "B-KINETIC  (K&P 45)",
-    "B-CURV":    "B-CURV  (geometric)",
-}
+import figstyle as fs
+from figstyle import (C, INK, MUTED, GRID, BOUND_COLOR, BOUND_LABEL,
+                      GRP_BIND, GRP_REF, FS_TITLE, FS_LABEL, FS_TICK, FS_LEG,
+                      FS_NOTE, FS_C_TITLE, FS_C_LABEL, FS_C_TICK, SLIDE_W_IN,
+                      ASPECT, COMPACT_BELOW_IN)
+from figstyle import (style as _style, legend as _legend, compact as _compact,
+                      lbl as _lbl, mark_offscale as _mark_offscale,
+                      shade_binding as _shade_binding, sig_tex as _sig_tex)
 
 # LIBBRECHT'S OWN CHAMBER CONDITIONS, AND ONLY THOSE.
 #
@@ -148,8 +139,6 @@ _LS = {"chamber_hi": "-",
 # Legend group headings.
 GRP_LAB = "Libbrecht's chamber"
 GRP_EXTRAP = "Extrapolated"
-GRP_BIND = "Which bound binds"
-GRP_REF = "Reference"
 SIG_LAB = [l for _v, _c, l, k in SIGMA_CASES if k.startswith("chamber")]
 SIG_EXTRAP = [l for _v, _c, l, k in SIGMA_CASES if k == "extrap"]
 
@@ -159,46 +148,6 @@ A_MOL = (ce._M_H2O / ce._RHO_ICE) ** (1.0 / 3.0)
 
 ALPHA_FLOOR = 1.0e-30       # the floor hardwired in comp_eps.alpha_libbrecht
 ALPHA_CEIL = 1.0            # every impinging molecule sticks
-
-# Type scale. These panels are meant to fill most of a slide, so they are
-# sized for a projector rather than for a screen an arm's length away. One
-# scheme serves both the standalone figures and the overview grid, because
-# FIGSIZE and OVERVIEW_SIZE keep the per-panel area roughly equal.
-# Nothing here is below 10 pt.
-FS_TITLE, FS_LABEL, FS_TICK, FS_LEG, FS_NOTE = 15, 13, 11.5, 10, 10
-# HARD CONSTRAINT: nothing this script writes may be wider than SLIDE_W_IN.
-# These go on PowerPoint slides, and an image wider than the slide is useless
-# however good it looks. Height is free; width is not.
-SLIDE_W_IN = 10.0
-ASPECT = 0.58              # 10 x 5 of plot, plus the legend strip underneath
-COMPACT_ASPECT = 0.80      # a small panel needs proportionally more height
-# Below this, a panel cannot hold a title, prose annotations AND a legend, so
-# it is drawn compact and the legend is emitted once, separately.
-COMPACT_BELOW_IN = 6.0
-
-# COMPACT MODE. The master grid puts six panels inside the same 10 in, so each
-# one gets a third of the width. Everything that only earns its place at full
-# size -- the long titles, the prose annotations, the per-panel legend -- is
-# dropped there, and the panels share one legend at the foot of the figure.
-# Type still never goes below 10 pt; that is the constraint, not the width.
-FS_C_TITLE, FS_C_LABEL, FS_C_TICK = 12, 10.5, 10
-_COMPACT = [False]
-# Separate from _COMPACT: only a legend SHARED across panels needs panels 3-6
-# to agree on one label for their production lines. A panel's own legend has
-# the room, and the value, so it keeps the specific wording.
-_SHARED = [False]
-
-
-def _compact():
-    return _COMPACT[0]
-
-
-def _lbl(full, short):
-    """Legend label: the panel's own wording, or the wording a shared legend
-    needs. Panels 3-6 all draw a dotted black line for the value they run;
-    collapsing them to one label is what lets the master carry one entry for
-    the set. A per-panel legend keeps the specific wording."""
-    return short if _SHARED[0] else full
 
 # -------------------------------------------------------------------------
 # The display window.
@@ -220,126 +169,6 @@ NX_USABLE = 1.0e4
 VIEW_NX = (3.0e2, 1.0e6)
 
 
-def _mark_offscale(a, x, y, color, fmt="{:.1e}", row=0):
-    """Flag where a curve leaves the frame, and say how far off scale it goes.
-
-    Clipping to the usable window is the point of the tight limits, but a
-    curve that simply vanishes at the frame reads as missing data rather
-    than as a number too large to run. One marker on the edge plus the
-    extreme value fixes that without restoring sixty decades of axis.
-    """
-    lo, hi = a.get_ylim()
-    for out, edge, mk, va, extreme, arrow in (
-            (y > hi, hi, "^", "top", np.nanmax, "↑"),
-            (y < lo, lo, "v", "bottom", np.nanmin, "↓")):
-        if not out.any() or out.all():
-            continue
-        # Mark the run that actually contains the extreme, at the end of that
-        # run touching the frame -- a curve can leave and re-enter (the sigma0
-        # kink does exactly that), and a marker parked in the middle of some
-        # other excursion points at the wrong place.
-        k = int(np.nanargmax(y) if va == "top" else np.nanargmin(y))
-        lo_i = hi_i = k
-        while lo_i > 0 and out[lo_i - 1]:
-            lo_i -= 1
-        while hi_i < len(out) - 1 and out[hi_i + 1]:
-            hi_i += 1
-        j = hi_i if hi_i < len(out) - 1 else (lo_i if lo_i > 0 else k)
-        # One row lower in the master: the region names sit on the same edge
-        # and there is a third of the width to keep them apart in.
-        pad = 8.0 + 13.0 * (row + (1 if _compact() else 0))
-        a.plot([x[j]], [edge], mk, ms=9, color=color, zorder=7,
-               clip_on=_compact())
-        a.annotate(f"{arrow} {fmt.format(extreme(y))}", (x[j], edge),
-                   xytext=(0, -pad if va == "top" else pad),
-                   textcoords="offset points",
-                   fontsize=FS_C_TICK if _compact() else FS_NOTE, color=color,
-                   ha="center", va=va, zorder=7,
-                   bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none",
-                             alpha=0.85))
-
-
-def _style(a, xlabel, ylabel, title, logy=True, title_size=FS_TITLE, pad=10,
-           short=None, short_y=None):
-    lab = FS_C_LABEL if _compact() else FS_LABEL
-    a.set_xlabel(xlabel, fontsize=lab)
-    a.set_ylabel(short_y if (_compact() and short_y) else ylabel, fontsize=lab)
-    if _compact():
-        title, title_size, pad = (short or title), FS_C_TITLE, 6
-    if title:
-        a.set_title(title, fontsize=title_size, color=INK, loc="left", pad=pad)
-    if logy:
-        a.set_yscale("log")
-    a.grid(alpha=0.25, lw=0.5, color=GRID, which="both")
-    a.spines[["top", "right"]].set_visible(False)
-    a.tick_params(labelsize=FS_C_TICK if _compact() else FS_TICK)
-
-
-def _blank():
-    """An invisible handle, so a group heading can occupy a legend row."""
-    return Line2D([], [], linestyle="none", marker="none")
-
-
-def _entries(*axes):
-    """label -> handle, unioned across axes. Panels that draw the same line
-    with the same label collapse to one entry, which is what lets the master
-    grid carry a single legend for all six."""
-    have = {}
-    for a in axes:
-        for h, lbl in zip(*a.get_legend_handles_labels()):
-            have.setdefault(lbl, h)
-    return have
-
-
-def _rows_stacked(have, groups):
-    """Rows a single-column stacked legend will occupy: a heading plus its
-    entries, per group that actually has something plotted."""
-    n = 0
-    for _t, keys in groups:
-        keys = [k for k in keys if k in have]
-        if keys:
-            n += 1 + len(keys)
-    return n
-
-
-def _grouped(target, have, groups, size, ncol=None, **kw):
-    """A legend laid out as titled columns.
-
-    A flat strip of entries is a lookup problem: the reader scans the whole row
-    to find one curve. matplotlib fills a multi-column legend column-major, so
-    padding every group to the same length puts each group in its own column
-    under its own bold heading -- and the headings carry the provenance the
-    short entry labels leave out.
-
-    `groups` is [(heading, [label, ...]), ...]; labels that were never plotted
-    are skipped, so one group list can serve several panels.
-    """
-    cols = [(t, [k for k in keys if k in have]) for t, keys in groups]
-    cols = [c for c in cols if c[1]]
-    # ncol=1 stacks the groups one after another instead of side by side --
-    # what a 3 in wide legend needs, and padding there would only add blanks.
-    stack = ncol == 1
-    rows = 0 if stack else max(len(keys) for _t, keys in cols)
-    handles, labels, headings = [], [], set()
-    for title, keys in cols:
-        handles.append(_blank()); labels.append(title); headings.add(title)
-        for k in keys:
-            handles.append(have[k]); labels.append(k)
-        if not stack:
-            handles += [_blank()] * (rows - len(keys))
-            labels += [""] * (rows - len(keys))
-    leg = target.legend(handles, labels, ncol=1 if stack else len(cols),
-                        fontsize=size,
-                        frameon=False, handlelength=3.0 if stack else 2.0,
-                        handletextpad=0.6,
-                        columnspacing=1.2, labelspacing=0.45,
-                        borderaxespad=0.0, alignment="left", **kw)
-    for t in leg.get_texts():
-        if t.get_text() in headings:
-            t.set_fontweight("bold")
-    return leg
-
-
 def master_groups(ctx):
     """The legend the master grid carries, and the one fig7_legend repeats.
 
@@ -357,32 +186,9 @@ def master_groups(ctx):
     ]
 
 
-def _legend(a, groups, y=-0.165):
-    """Per-panel legend under the axes.
-
-    A compact panel has no room for one, so it records what its legend WOULD
-    have said on the axes instead. The caller reads that back to build the
-    panel's own legend -- inline underneath it, or as a separate image -- so
-    the two can never list different things than the panel actually drew.
-    """
-    a._lk_groups = groups
-    if _compact():
-        return None
-    return _grouped(a, _entries(a), groups, FS_LEG, loc="upper center",
-                    bbox_to_anchor=(0.5, y))
-
-
 def _ls(kind):
     """Line style, so the sigmas are never told apart by colour alone."""
     return _LS[kind]
-
-
-def _sig_tex(v):
-    """1e-2 -> 10^{-2}, 2.7e-3 -> 2.7\\times10^{-3}. For titles that have to
-    name whichever sigma the caller made primary."""
-    e = int(math.floor(math.log10(v)))
-    m = v / 10.0 ** e
-    return f"10^{{{e}}}" if abs(m - 1.0) < 1e-9 else f"{m:.1f}\\times10^{{{e}}}"
 
 
 # =========================================================================
@@ -547,36 +353,6 @@ def panel_Nx_vs_T(a, T, ctx):
                 (GRP_REF, ["$N_x = 10^4$  practical ceiling", run])])
 
 
-def _shade_binding(a, T, binding, y_frac=0.975):
-    """Shade contiguous T-runs sharing a binding bound; name each region once.
-
-    y_frac puts the region names on whichever edge the off-scale markers are
-    not using -- they are on the bottom in panel 5 and the top in panel 6, and
-    at 3 in wide there is no room to share an edge.
-    """
-    y, va = y_frac, ("top" if y_frac > 0.5 else "bottom")
-    seen = set()
-    i = 0
-    while i < len(T):
-        j = i
-        while j + 1 < len(T) and binding[j + 1] == binding[i]:
-            j += 1
-        name = binding[i]
-        a.axvspan(T[i], T[j], color=BOUND_COLOR.get(name, MUTED), alpha=0.12,
-                  lw=0, zorder=0,
-                  label=BOUND_LABEL[name] if name not in seen else None)
-        seen.add(name)
-        # Name the region inside it, so the shading is never colour-alone.
-        a.annotate(name, (0.5 * (T[i] + T[j]), y),
-                   xycoords=("data", "axes fraction"),
-                   fontsize=FS_C_TICK if _compact() else FS_NOTE + 1,
-                   color=BOUND_COLOR.get(name, MUTED), ha="center", va=va,
-                   fontweight="bold", zorder=7,
-                   bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none",
-                             alpha=0.85))
-        i = j + 1
-
-
 PANELS = [
     ("fig1_sigma0_vs_T",     panel_sigma0),
     ("fig2_alpha_vs_sigma0", panel_alpha_vs_sigma0),
@@ -686,92 +462,13 @@ def main():
     T = np.linspace(args.Tmin, args.Tmax, args.nT)
     ctx = build_context(T, args)
     args.out.mkdir(parents=True, exist_ok=True)
-    small = args.panel_width < COMPACT_BELOW_IN
-    figsize = (args.panel_width,
-               args.panel_width * (COMPACT_ASPECT if small else ASPECT))
 
-    def _save(fig, name, dpi):
-        # The width ceiling is the whole point, so assert it rather than trust
-        # that nobody changed a figsize.
-        w = fig.get_size_inches()[0]
-        assert w <= args.width + 1e-6, f"{name} is {w:.2f} in wide, > {args.width}"
-        fig.savefig(args.out / f"{name}.png", dpi=dpi)
-        plt.close(fig)
-        print(f"plot -> {args.out / (name + '.png')}  "
-              f"({w:.2f} x {fig.get_size_inches()[1]:.2f} in @ {dpi} dpi)")
-
-    # --- the individual panels -------------------------------------------
-    # A legend row is about 1.45 line-heights; the constant is the box padding.
-    def _leg_in(rows):
-        return rows * FS_C_TICK * 1.45 / 72.0 + 0.18
-
-    _COMPACT[0] = small
-    try:
-        for name, fn in PANELS:
-            inline = small and args.panel_legend == "inline"
-            if not inline:
-                fig, a = plt.subplots(figsize=figsize, layout="constrained")
-                fn(a, T, ctx)
-                _save(fig, name, args.dpi)
-            else:
-                # Draw once on a throwaway axes purely to learn how many legend
-                # rows this panel needs, so the figure can be sized for them
-                # rather than stealing the height from the plot.
-                probe, pa = plt.subplots(figsize=figsize)
-                fn(pa, T, ctx)
-                rows = _rows_stacked(_entries(pa), getattr(pa, "_lk_groups", []))
-                plt.close(probe)
-                lh = _leg_in(rows)
-                fig = plt.figure(figsize=(figsize[0], figsize[1] + lh),
-                                 layout="constrained")
-                gs = fig.add_gridspec(2, 1, height_ratios=[figsize[1], lh])
-                a, al = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
-                al.axis("off")
-                fn(a, T, ctx)
-                _grouped(al, _entries(a), getattr(a, "_lk_groups", []),
-                         FS_C_TICK, ncol=1, loc="center")
-                _save(fig, name, args.dpi)
-
-            # A legend of its own, at the panel's width, for slides that place
-            # the panel and its key as two objects.
-            if small and args.panel_legend == "separate":
-                have = _entries(a)
-                groups = getattr(a, "_lk_groups", [])
-                figL = plt.figure(
-                    figsize=(figsize[0], _leg_in(_rows_stacked(have, groups))),
-                    layout="constrained")
-                _grouped(figL, have, groups, FS_C_TICK, ncol=1, loc="center")
-                _save(figL, f"{name}_legend", args.dpi)
-    finally:
-        _COMPACT[0] = False
-
-    # --- the master: all six inside the same 10 in --------------------
-    # 3 x 2, so each panel keeps a landscape aspect close to the standalone's.
-    # Every panel drops its own legend and the figure carries one instead --
-    # six copies of the same four sigma curves is six times the reading for
-    # no extra information.
-    _COMPACT[0] = _SHARED[0] = True
-    try:
-        fig, axes = plt.subplots(2, 3, figsize=(args.width, args.width * 0.66),
-                                 layout="constrained")
-        for ax, (_n, fn) in zip(axes.ravel(), PANELS):
-            fn(ax, T, ctx)
-        fig.suptitle("Libbrecht (2017) $\\sigma_0(T)$ as the source of "
+    fs.emit(args.out, PANELS, T, ctx, width=args.width,
+            panel_width=args.panel_width, dpi=args.dpi,
+            panel_legend=args.panel_legend, master_groups=master_groups,
+            suptitle="Libbrecht (2017) $\\sigma_0(T)$ as the source of "
                      "$\\alpha_c$: the chain down to $\\epsilon$ and the mesh\n"
-                     f"{args.label}, measured $v_n$ = {args.vn:.3g} m/s",
-                     fontsize=FS_C_LABEL, color=INK)
-        have = _entries(*axes.ravel())
-        _grouped(fig, have, master_groups(ctx), FS_C_TICK,
-                 loc="outside lower center")
-        _save(fig, "fig0_master", args.dpi)
-
-        # The same legend on its own. The small panels carry none, so a slide
-        # that lays them out by hand needs this once underneath them.
-        figL = plt.figure(figsize=(args.width, 1.15), layout="constrained")
-        _grouped(figL, have, master_groups(ctx), FS_C_TICK, loc="center")
-        _save(figL, "fig7_legend", args.dpi)
-    finally:
-        _COMPACT[0] = _SHARED[0] = False
+                     f"{args.label}, measured $v_n$ = {args.vn:.3g} m/s")
 
     # --- the numbers ------------------------------------------------------
     csv = args.out / "libbrecht_constraints.csv"
