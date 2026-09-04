@@ -2,13 +2,17 @@
 #
 # A  dom2 saturated against the GRAINS' equilibrium (h = 1.0000234), D_v0 x10.
 #    Q: does inflated effective transport give the 1/3 saturated exponent?
-# B  dom2 undersaturated (h = 0.99797), nominal D_v.
+# B  dom2 undersaturated, nominal D_v.
 #    Q: does the BC that reproduces their -2.93 % shrinkage also fit the neck?
+#    Was h = 0.99797; that run measured dR_large = -3.218 % against the -2.93 %
+#    target, and one Newton step gave h = 0.99816. The 0.99797 file no longer
+#    exists -- submit_batch.sh SKIPS a missing arm with a warning and still
+#    exits 0, so the stale name here would have silently given 2 jobs of 3.
 # C  dom3, otherwise IDENTICAL to A. A vs C isolates the domain (Dirichlet
 #    conductance 2.0x the true far field at dom2, 1.5x at dom3).
 #
 # Measure each with:  bash postprocess/run_batch_measure.sh <run_dir>
 
 molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_hcurv_2h_a1e-1_Dv10
-molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99797_2h_a1e-1_dirichlet
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99816_2h_a1e-1_dirichlet
 molaro_2D_L680x340um_eps0.12um_axisym_T-20pair_r14um_dom3:molaro_T-20_hcurv_2h_a1e-1_Dv10
