@@ -1,0 +1,102 @@
+# =============================================================================
+# Molaro T = -20 C -- OPTION 3: tune the KINETICS, M_0 x5 and alph_sub x1/100
+#
+# ONE OF FOUR ARMS in the three-option comparison. See
+# studies/molaro_2019/batches/three_options_T-20.txt.
+#
+# PROVENANCE, AND ITS CAVEAT.
+# These two factors come from
+#   SimulationResults/dry_snow_metamorphism/archived_results/BestParams/Group1
+# whose params.dat records exactly
+#     user.mob_sub  = 5*user.eps/3.0/tau_sub;
+#     user.alph_sub = 0.01*lambda_sub/tau_sub;
+#     humidity      = 0.70
+# Two caveats before citing that as validation. (1) Those lines sit in
+# NASAv2.c's flag_Tdep == 0 branch, while both archived runs set flag_Tdep = 1
+# and print "TEMPERATURE DEPENDENT G-T PARAMETERS" -- so the executed path may
+# have used the UNSCALED forms and the record may describe the intent rather
+# than the run. Worth resolving against those logs. (2) That setup is not
+# comparable regardless: 2D planar (not axisymmetric), eps = 9.096e-07 (7.7x
+# coarser than here), humidity 0.70, grad_T = 1e-4, and a different initial
+# neck (33.05 um vs 29.37 um here). The factors are a starting point, not a
+# result being reproduced.
+#
+# WHY -mob_scale/-alph_scale AND NOT -mob_sub/-alph_sub.
+# The latter set ABSOLUTE values on main()'s scalar path, and -alpha_pointwise 1
+# (below, as in every arm) makes SubKinetics() rebuild both at every quadrature
+# point and overwrite them -- silently. -mob_scale/-alph_scale are multipliers
+# applied on both paths. Gate:
+#   studies/molaro_2019/verification/verify_kinetics_scaling.sh
+#
+# WHAT THE FACTORS ACTUALLY DO. From the M&F SI Eq. 9 chain,
+#   alph_sub = 1/(eps*B),  mob_sub = 1/(3*lambda_sub*B),
+#   B = beta'/a1 + a2*eps/diff_sub + a2*eps/D_v = 1.805e-02 at these settings,
+# of which attachment (beta'/a1 = 1.466e-02) is 81 %. Scaling alph_sub by 1/100
+# is therefore equivalent to multiplying B by 100, i.e. an effective
+#     beta'_eff = a1*(100*B - a2*eps/diff_sub - a2*eps/D_v) = 9.007 s/m,
+# a factor 123 on attachment -- the source behaves as if alpha_c were 8.1e-04
+# rather than 0.1. Meanwhile mob_sub x5 speeds the Allen-Cahn interfacial
+# relaxation. Together they move the neck-filling mechanism off vapour transport
+# and onto curvature-driven interface motion.
+#
+# ***  THE CAVEAT THAT HAS TO BE REPORTED WITH THIS ARM'S RESULT  ***
+# Allen-Cahn curvature motion is deliberately NOT coupled to vapour in this
+# model (docs/model_description.md sec. 3.4): it is mass-neutral interface
+# rearrangement by construction, and -mob_sub is named there as THE lever for
+# limiting AC mass drift. This arm raises M by 5 while cutting the
+# mass-conserving source by 100, so most of its neck growth is non-mass-
+# conserving AC relaxation rather than vapour transport -- the ice filling the
+# neck does not have to come from anywhere. That is a legitimate empirical fit
+# to present, but tot_ice drift MUST be reported alongside the neck curve so
+# the size of the effect is visible and not merely implied. It also breaks
+# alph_sub/mob_sub = 3*lambda_sub/eps, the ratio the Karma-Plapp matched
+# asymptotics calibrated, by a factor 500; the solver prints a banner saying so.
+#
+# NOMINAL D_v here, deliberately: this arm tests the kinetics tuning ALONE, and
+# mixing it with the transport tuning would leave neither attributable.
+#
+# HUMIDITY. Same series relation as the other arms, but with beta'_eff = 9.007
+# in place of beta' = 0.0733, because a 100x weaker source needs a far more
+# undersaturated wall to drive the same recession:
+#     total resistance = 9.007 + 2.955 = 11.96 s/m  (vs 3.028 nominal)
+#     1 - h = 8.10e-03, x0.911 (Newton factor from the nominal arm) = 7.38e-03
+#     h = 1.0000234 - 7.38e-03 = 0.99264
+# This is ~4x more undersaturated than the untuned arm and is the least
+# trustworthy of the four estimates, because the AC mass drift above also feeds
+# the measured recession and the quasi-steady formula knows nothing about it.
+# Expect to Newton-correct:
+#     (1-h)_next = (1-h)_now * (-2.93) / dR_large_pct_measured
+#
+# COST. mob_scale 5 speeds the interface, and -dtCFL_dphimax caps the front at
+# 0.85 elements/step, so this arm should take roughly 5x the steps of the
+# untuned one (which ran 203 steps / 1 h 53 m on 437 ranks). Size the wall
+# clock for ~10-13 h, not 2.
+#
+# Pair with: molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2
+# =============================================================================
+
+-t_final 7.2e+03
+-temp -20.0
+-humidity 0.99264                       # h_eq - 7.38e-03; dom2 ONLY, see above
+-grad_temp0 0.0,0.0,0.0
+
+-mob_scale  5.0                         # M_0 x5     -- EMPIRICAL, not physical
+-alph_scale 0.01                        # alph_sub /100        "        "
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet: emulates the large chamber
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step
+-dtmax 3.0e1                            # = t_interv/2; guarantees every minute
+
+-t_out_log 0                            # OFF. -t_out_log is a COUNT of
+                                        # log-spaced snapshots, not an interval.
+-outp 0                                 # cadence from t_interv, not every step
+-n_out 121                              # t_interv = 7200/120 = 60 s exactly

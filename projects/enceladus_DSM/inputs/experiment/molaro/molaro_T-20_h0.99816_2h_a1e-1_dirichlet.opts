@@ -1,6 +1,18 @@
 # =============================================================================
 # Molaro T = -20 C -- UNDERSATURATED wall, tuned to their observed shrinkage
 #
+# ALSO OPTION 1 (UNTUNED) of the three-option comparison. Every parameter is
+# the model's own except beta_sub, which is prescribed through alpha_c = 0.1
+# because no first-principles value for it exists. Nothing else is adjusted:
+# nominal D_v, no kinetics scaling. The wall is calibrated, but that is the
+# experiment's condition rather than a model parameter, and the other three
+# arms carry the same calibration. See
+# studies/molaro_2019/batches/three_options_T-20.txt.
+#
+# Output is minute-cadence and time-uniform (121 snapshots at exactly 60 s),
+# not the 80 log-spaced snapshots its siblings use -- see the bottom of this
+# file. All four arms of the comparison share that cadence.
+#
 # TARGET: the large grain's measured surface recession, |v_n| = 6.2544e-10 m/s
 # (-2.93 %/78 min from a least-squares fit to their Fig. 11 diameters, S/N 4.4;
 # reproduces the -3 % in their caption). The small grain's -4 % is not in the
@@ -66,9 +78,13 @@
 -alpha_lo 1.0e-3
 -alpha_hi 1.0e-1
 
--dtmax 2.0e2
 -dtCFL 1
 -dtCFL_dphimax 0.15                     # 0.85 elements/step; was 0.05 = 0.28
+-dtmax 3.0e1                            # = t_interv/2; guarantees every minute.
+                                        # Was 2.0e2, which the 2026-08-19 run
+                                        # never reached anyway (mean dt 35.6 s).
 
--t_out_log 80
--t_out_log_t0 1.0e2
+-t_out_log 0                            # OFF. -t_out_log is a COUNT of
+                                        # log-spaced snapshots, not an interval.
+-outp 0                                 # cadence from t_interv, not every step
+-n_out 121                              # t_interv = 7200/120 = 60 s exactly

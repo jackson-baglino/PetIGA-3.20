@@ -1,0 +1,83 @@
+# =============================================================================
+# Molaro T = -20 C -- OPTION 2a: tune the effective transport only, D_v0 x30
+#
+# ONE OF FOUR ARMS in the three-option comparison. See
+# studies/molaro_2019/batches/three_options_T-20.txt for the set and the
+# question each arm answers. All four share alpha_c = 0.1, the same dom2
+# geometry, and a wall calibrated to Molaro's measured grain recession, so the
+# ONLY difference between them is the tuning being tested.
+#
+# WHY x30 AND NOT x10.
+# The 2026-08-19 batch ran D_v0 x10 saturated and reached 56.26 um at
+# t*+78 min against Molaro's 64.78 um -- still short. The measured rate scales
+# as ~D^0.3 in this regime (docs/molaro_validation_synthesis.md sec. 2), so
+# closing the remaining factor 31.97/23.45 = 1.363 in neck GROWTH needs
+#     (1.363)^(1/0.3) = 2.8x more D_v,  i.e. x28.
+# x30 is that extrapolation, rounded. If the D^0.3 scaling holds, this arm
+# lands on the data; the x100 arm alongside it says whether it holds at all.
+#
+# D_V0 x30 = 6.534e-04. NOT a claim about vapour diffusivity, which is known to
+# a few percent (1.898e-05 at 253 K). It is an EFFECTIVE transport coefficient
+# lumping vapour with the unmodelled surface diffusion that Molaro's own SA81
+# framework calls co-dominant, and the required factor is the output of
+# interest.
+#
+# THIS IS NOT A PURE TIME RESCALE, and there is a ceiling. The kinetics/
+# transport crossover length L* = D_v*beta_HK is 1.39 um at nominal D_v and
+# 41.8 um here. Once L* exceeds the transport distance from the grain surfaces
+# to the neck (tens of um), the model is attachment-limited and further D_v
+# buys nothing -- the whole point of pairing this with the x100 arm.
+#
+# HUMIDITY. Same series-resistance relation as the nominal-D_v arm, offset from
+# the grains' own equilibrium h_eq = 1.0000234 (NOT from 1):
+#     1 - h = |v_n| * (beta' + l_eff/D_v) / (rho_vs/rho_i)
+# with |v_n| = 6.2544e-10 m/s (their large grain's -2.93 %/78 min fit),
+# l_eff = a(1 - a/L) = 5.6086e-05 m at dom2, rho_vs/rho_i = 9.2349e-07,
+# beta' = 7.3334e-02 s/m at alpha_c = 0.1.
+#     l_eff/D_v collapses 2.955 -> 0.0986, total resistance 3.028 -> 0.1718
+#     1 - h = 1.16e-04, x0.911 (the Newton factor measured on the nominal arm,
+#     which overshot -2.93 % by 10 %) = 1.06e-04
+#     h = 1.0000234 - 1.06e-04 = 0.99992
+#
+# THIS h IS DELICATE, more so than the nominal arm's. At x30 the wall barely
+# has to be undersaturated at all to drive the same recession, so a small
+# absolute error in h is a large relative error in the shrinkage. The
+# calibration also assumes a SPHERICAL far field while the domain is a cylinder
+# with Dirichlet on r = Lr and both z faces -- different Green's functions. So
+# check the achieved dR_large against -2.93 % rather than trusting h to land
+# it, and Newton-correct:
+#     (1-h)_next = (1-h)_now * (-2.93) / dR_large_pct_measured
+#
+# 1 - h IS STRONGLY L-DEPENDENT. This file is dom2 ONLY.
+#
+# OUTPUT is minute-cadence and time-uniform, not log-spaced: 121 snapshots at
+# exactly 60 s. -dtmax is cut to 3.0e1 = t_interv/2 so no minute is skipped;
+# the 2026-08-19 arms ran at a mean dt of 25-36 s, so this costs little.
+#
+# Pair with: molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2
+# =============================================================================
+
+-t_final 7.2e+03
+-temp -20.0
+-humidity 0.99992                       # h_eq - 1.06e-04; dom2 ONLY, see above
+-grad_temp0 0.0,0.0,0.0
+
+-dif_vap 6.534e-04                      # D_v0 x30 -- EFFECTIVE transport, not vapour
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet: emulates the large chamber
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step
+-dtmax 3.0e1                            # = t_interv/2; guarantees every minute
+
+-t_out_log 0                            # OFF. -t_out_log is a COUNT of
+                                        # log-spaced snapshots, not an interval.
+-outp 0                                 # cadence from t_interv, not every step
+-n_out 121                              # t_interv = 7200/120 = 60 s exactly

@@ -1,0 +1,56 @@
+# Molaro 2019 T = -20 C -- three modelling options, four arms, 2026-09-03.
+#
+# THE QUESTION. docs/molaro_validation_synthesis.md records that the untuned
+# vapour-only model reproduces the growth EXPONENT but only ~50 % of the
+# measured neck-growth RATE. This set presents that gap as three explicit
+# choices rather than one result, run at production resolution on ONE geometry
+# (dom2) so they are directly comparable.
+#
+# EVERY arm carries alpha_c = 0.1 -- the only prescribed parameter, since
+# beta_sub has no first-principles value -- and a Dirichlet wall calibrated to
+# Molaro's measured grain recession (-2.93 %/78 min, large grain). The wall is
+# the experiment's condition, not a tuning knob, so it is common to all four;
+# its VALUE differs per arm only because the series resistance it works against
+# does. That is what makes the arms comparable: the only deliberate difference
+# between them is the tuning being tested.
+#
+# 1  UNTUNED.  Nominal D_v, no kinetics scaling, h = 0.99816.
+#    Q: how far short does the model fall with nothing adjusted?
+#
+# 2a TUNED TRANSPORT, D_v0 x30, h = 0.99992.
+#    Q: the 2026-08-19 x10 arm reached 56.26 um vs their 64.78. The measured
+#       rate ~ D^0.3 says a match needs ~x28. Does that extrapolation hold?
+#
+# 2b TUNED TRANSPORT, D_v0 x100, h = 0.99996.
+#    Q: the CEILING. L* = D_v*beta_HK = 139 um here, past every feature and
+#       transport length in the domain, so the model is fully attachment-
+#       limited and more D_v buys nothing. 2a alone cannot tell a successful
+#       extrapolation from a saturating one; 2a vs 2b can.
+#
+# 3  TUNED KINETICS, M_0 x5 and alph_sub x1/100, nominal D_v, h = 0.99264.
+#    Q: the BestParams/Group1 recipe at production resolution. NOTE its neck
+#       growth is largely non-mass-conserving Allen-Cahn relaxation (AC motion
+#       is not coupled to vapour); tot_ice drift must be reported with it.
+#       See the arm's own .opts header.
+#
+# All four: t_final = 2 h, 121 time-uniform snapshots at 60 s, dtmax 3.0e1.
+# The cadence lives in each .opts file, so no --extra-opts is needed:
+#
+#   ./scripts/HPC/submit_batch.sh --tag molaro_three_options_T-20 \
+#       --tests-file studies/molaro_2019/batches/three_options_T-20.txt \
+#       -- --time=0-16:00:00
+#
+# The 16 h ceiling is sized for arm 3 (mob_scale 5 tightens the interface-CFL
+# limit, so expect ~5x the steps of arm 1, which ran 1 h 53 m on 437 ranks).
+# Arms 1, 2a and 2b should finish in 2-3 h.
+#
+# DISK: ~350 MB per snapshot x 121 x 4 arms is ~170 GB, and the .vts conversion
+# in the measurement step roughly doubles that transiently. Check $SCRATCH
+# before submitting.
+#
+# Measure with:  bash postprocess/run_batch_measure.sh <batch_dir>
+
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99816_2h_a1e-1_dirichlet
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99992_2h_a1e-1_Dv30
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99996_2h_a1e-1_Dv100
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99264_2h_a1e-1_M5alph0.01
