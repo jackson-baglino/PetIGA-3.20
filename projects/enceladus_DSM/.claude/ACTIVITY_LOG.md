@@ -1,3 +1,60 @@
+## 2026-09-03 — Molaro three-option comparison: solver knob, four arms, queued
+
+- Jackson wants the −20 °C neck-growth shortfall presented as three explicit
+  modelling choices instead of one result: untuned, tuned D_v, tuned kinetics.
+  Built the whole set; nothing submitted (he runs the jobs).
+- **Added `-mob_scale` / `-alph_scale`.** The obvious knobs could not do option
+  3: `-mob_sub` / `-alph_sub` set absolute values on main()'s scalar path, and
+  every Molaro run uses `-alpha_pointwise 1`, under which `SubKinetics()`
+  rebuilds both per quadrature point and overwrites them — silently, the same
+  footgun `-beta_sub0` already carries a warning for. The new options are
+  multipliers applied on BOTH paths, defaulting to 1.0.
+- Scaling is linear so every derivative carries its own factor and the analytic
+  Jacobian stays exact. Missing one would have left the residual right and the
+  Jacobian wrong — costing Newton iterations and dt, never correctness, so it
+  would never have announced itself. New gate
+  `studies/molaro_2019/verification/verify_kinetics_scaling.sh` checks all
+  three things that matter: default is a no-op, the factors bite on the
+  pointwise path, `-snes_test_jacobian` worst 5.54e-09 over 4 iterations.
+- Because these break `alph_sub/mob_sub = 3*lambda_sub/eps` (the ratio K&P's
+  matched asymptotics calibrated) by 500x, any run setting them now prints a
+  yellow banner saying it is a fit, not a parameter choice.
+- Two test-side bugs the gate found in itself, worth remembering: the 5x ratio
+  came out 4.999822 because the banner prints %.4e (print precision, not
+  error), and PETSc writes `||J - Jfd||_F/||J||_F = <x>`, not the word "ratio"
+  — the first grep matched nothing and reported a false failure.
+- **Four arms, not three.** D_v ×30 is where the measured ~D^0.3 rate puts a
+  match (the 2026-08-19 ×10 arm reached 56.26 µm vs their 64.78), but
+  L* = D_v·beta_HK is 41.8 µm at ×30 and 139 µm at ×100 — past the domain's
+  transport lengths the model is attachment-limited and more D_v buys nothing.
+  ×30 alone cannot separate a successful extrapolation from a saturating one.
+  The banners already show it setting in: alph_sub 4.5e5 → 6.13e5 from ×1 to
+  ×30, then only 6.18e5 at ×100.
+- Every arm carries alpha_c = 0.1 and a wall calibrated to the −2.93 % grain
+  recession. The wall value differs per arm only because the series resistance
+  differs (1−h = 2.05e-3 nominal, 1.16e-4 at ×30, 7.0e-5 at ×100, 8.10e-3 for
+  the kinetics arm, each ×0.911 for the Newton factor measured on the nominal
+  arm). The ×30/×100 values are delicate — at high D_v almost no
+  undersaturation drives the same recession — so each header says to measure
+  dR_large and Newton-correct rather than trust h.
+- **The caveat that has to travel with arm 3:** AC curvature motion is
+  deliberately not coupled to vapour, so M×5 with the source ÷100 makes most of
+  its neck growth non-mass-conserving AC relaxation. `tot_ice` drift must be
+  reported beside its neck curve. Its provenance is weaker than it looks too —
+  `BestParams/Group1/params.dat` records those factors in NASAv2.c's
+  `flag_Tdep == 0` branch while both archived runs set `flag_Tdep = 1`, so the
+  record may describe the intent rather than the run.
+- Minute cadence went into each `.opts` rather than `--extra-opts`, so every arm
+  is reproducible standalone: `-t_out_log 0 -outp 0 -n_out 121` and `-dtmax`
+  2.0e2 → 3.0e1. `-t_out_log` is a COUNT of log-spaced snapshots, not an
+  interval, and an explicit `-t_interv` is silently overwritten from `-n_out`
+  after options parsing — hence that exact combination.
+- Fixed a silent failure in `batches/curvbc_Dv10_dom23.txt`: it named the
+  deleted `h0.99797` file, and `submit_batch.sh` skips a missing arm and still
+  exits 0, so it would have run 2 jobs of 3 and reported success.
+
+---
+
 ## 2026-09-02 (final, 10) — Restarted the alpha_c study as a sweep
 
 - Jackson: the three-constants framing was the wrong one, and the panels with
