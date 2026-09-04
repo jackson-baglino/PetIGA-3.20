@@ -1,0 +1,13 @@
+=== 1. baseline (flags omitted) vs explicit 1.0 ===
+  baseline  mob_sub=2.8151e-11  alph_sub=4.5042e+05
+  unity     mob_sub=2.8151e-11  alph_sub=4.5042e+05
+  PASS: the default is a no-op
+=== 2. -mob_scale 5 -alph_scale 0.01 on the pointwise path ===
+  scaled    mob_sub=1.4075e-10  alph_sub=4.5042e+03
+  mob_sub   ratio 4.999822 vs 5  (rel 3.55e-05)  PASS
+  alph_sub  ratio 0.010000 vs 0.01  (rel 0.00e+00)  PASS
+=== 3. -snes_test_jacobian with the scalings on ===
+  worst ||J - Jfd||_F/||J||_F = 5.53995e-09  (over 4 Newton iterations)
+  PASS: analytic Jacobian still agrees with the FD one
+
+ALL CHECKS PASSED  -> /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/studies/molaro_2019/verification/kinetics_scaling.csv

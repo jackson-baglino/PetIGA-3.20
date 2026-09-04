@@ -131,6 +131,10 @@ int main(int argc, char *argv[]) {
     user.d0_sub0    = 1.0e-9;
     user.beta_sub0  = 9.9e5;     /* beta0 = (1/alpha_c)*sqrt(2pi*m/kT)/(rho_vs/rho_i)
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
+    /* -mob_scale / -alph_scale: empirical multipliers on the derived kinetics.
+     * 1.0 = the physical model; anything else is a deliberate fit. */
+    user.mob_scale  = 1.0;
+    user.alph_scale = 1.0;
 
     /* Surface energy parameters of the double-well free energy [J/m²]:
      *   F_dub(phi_i) = C*phi_i^2(1-phi_i)^2,  C = (Sigma_i+Sigma_a)/2 + Lambda
@@ -525,6 +529,11 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-alpha_f",     "sigma0 rescaling factor f (model 2)",              "", user.alpha_f,   &user.alpha_f,   NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-alpha_lo",    "alpha_c clamp floor",                              "", user.alpha_lo,  &user.alpha_lo,  NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-alpha_hi",    "alpha_c clamp ceiling",                            "", user.alpha_hi,  &user.alpha_hi,  NULL); CHKERRQ(ierr);
+    /* Unlike -mob_sub/-alph_sub, which set absolute values on the scalar path
+     * only and are IGNORED under -alpha_pointwise 1, these multiply whichever
+     * path is active. Use them to fit the kinetics empirically. */
+    ierr = PetscOptionsReal("-mob_scale",   "Multiplier on the derived mob_sub (1 = physical)",  "", user.mob_scale,  &user.mob_scale,  NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-alph_scale",  "Multiplier on the derived alph_sub (1 = physical)", "", user.alph_scale, &user.alph_scale, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-dtCFL",           "Interface-CFL timestep limiter",                   "", user.flag_dtCFL, &user.flag_dtCFL, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-axisym",          "Axisymmetric r-z mode (x=axis, y=radius; grains on y=0)", "", user.axisym, &user.axisym, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-ic_grain_union",  "multi_grains IC from the union signed distance (eps-independent phi=0.5 contour) instead of summed tanh profiles", "", user.ic_grain_union, &user.ic_grain_union, NULL); CHKERRQ(ierr);
@@ -855,6 +864,25 @@ int main(int argc, char *argv[]) {
     }
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = lambda_sub / tau_sub;  /* Phase change rate parameter, eq.(9) Moure & Fu (2024) SI */
+
+    /* Empirical multipliers, applied here so the SCALAR path honours them too;
+     * SubKinetics() applies the same two factors on the pointwise path. They
+     * break alph_sub/mob_sub = 3*lambda_sub/eps, the ratio the Karma-Plapp
+     * matched asymptotics calibrated -- that is the point of them, but it is
+     * also why anything other than 1.0 is a fit and not a model parameter.
+     * Say so loudly, since nothing downstream will. */
+    if (user.mob_scale != 1.0 || user.alph_scale != 1.0) {
+        user.mob_sub  *= user.mob_scale;
+        user.alph_sub *= user.alph_scale;
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\n\033[33m*** EMPIRICAL KINETICS SCALING (not the physical model) ***\n"
+            "    -mob_scale  %.4g  ->  mob_sub  = %.4e m/s\n"
+            "    -alph_scale %.4g  ->  alph_sub = %.4e 1/s\n"
+            "    alph_sub/mob_sub is off the K&P-calibrated 3*lambda_sub/eps by %.4g.\033[0m\n\n",
+            (double)user.mob_scale,  (double)user.mob_sub,
+            (double)user.alph_scale, (double)user.alph_sub,
+            (double)(user.alph_scale / user.mob_scale));
+    }
 
     /* -alpha_pointwise recomputes beta_sub from alpha_c(T, rho_v) at every
      * quadrature point, so the -beta_sub0 above stops being used for anything

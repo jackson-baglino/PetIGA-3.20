@@ -387,8 +387,12 @@ void AlphaCondensation(AppCtx *user, PetscScalar tem, PetscScalar rhov,
  * With -alpha_model 0 (the default) alpha_c is constant, and the only residual
  * state dependence is D_v(T) and rho_vs(T). So even in CONST mode this is a
  * slight refinement, not a no-op. To fall back to main()'s scalars exactly,
- * set -alpha_pointwise 0 (there is no mob_scale field; an earlier version of
- * this comment claimed there was).
+ * set -alpha_pointwise 0.
+ *
+ * Both outputs are then multiplied by user->mob_scale / user->alph_scale
+ * (-mob_scale / -alph_scale, 1.0 by default), which main() applies to its own
+ * scalars as well -- so those two knobs bite on either path, unlike the
+ * absolute -mob_sub / -alph_sub overrides, which this function ignores.
  *
  * Derivatives are analytic and exact for the CONST and ARRH models. For LIBB2
  * they inherit the dropped d(sigma0)/dT term from AlphaCondensation (~1% in
@@ -440,4 +444,16 @@ void SubKinetics(AppCtx *user, PetscScalar tem, PetscScalar rhov,
     if (mob)       (*mob)       = 1.0 / (3.0 * lam * B);
     if (dmob_dT)   (*dmob_dT)   = -(dlam * B + lam * dB_dT) / (3.0 * lam * lam * B * B);
     if (dmob_drv)  (*dmob_drv)  = -dB_drv / (3.0 * lam * B * B);
+
+    /* Empirical multipliers (-mob_scale / -alph_scale, both 1.0 by default;
+     * main() applies the same two to its scalars). The scaling is linear, so
+     * each derivative carries its own factor and the analytic Jacobian stays
+     * exact -- verify with -snes_test_jacobian after touching this. */
+    if (alph)      (*alph)      *= user->alph_scale;
+    if (dalph_dT)  (*dalph_dT)  *= user->alph_scale;
+    if (dalph_drv) (*dalph_drv) *= user->alph_scale;
+
+    if (mob)       (*mob)       *= user->mob_scale;
+    if (dmob_dT)   (*dmob_dT)   *= user->mob_scale;
+    if (dmob_drv)  (*dmob_drv)  *= user->mob_scale;
 }

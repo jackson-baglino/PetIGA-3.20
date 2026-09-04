@@ -46,6 +46,13 @@ typedef struct {
   // the gamma in d0 = gamma*a^3/(k_B*T). Etaa is banner-only.
   PetscReal Etai, Etam, Etaa;
   PetscReal alph_sub;  // Substrate interaction coefficient
+  // Empirical multipliers on the two derived kinetic scalars (-mob_scale,
+  // -alph_scale; both default 1.0). They are applied on BOTH paths -- to the
+  // scalars in main() and at the tail of SubKinetics() -- so they take effect
+  // under -alpha_pointwise 1, which the -mob_sub/-alph_sub absolute overrides
+  // do not. Deliberately break the K&P-calibrated ratio alph_sub/mob_sub =
+  // 3*lambda_sub/eps, so they are a fit, not a physical parameter choice.
+  PetscReal mob_scale, alph_scale;
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
 
