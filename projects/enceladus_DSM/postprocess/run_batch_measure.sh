@@ -20,7 +20,15 @@
 # WHAT summary.csv HOLDS (one row per arm)
 #   run, geometry, experiment, alpha_c, humidity, Lz_m, Lr_m, eps_m,
 #   neck_w_final_um, neck_w_at_78min_um, t_star_s,
-#   R_large_init_um, R_large_end_um, dR_large_pct, dR_small_pct, n_snapshots
+#   R_large_at_tstar_um, R_large_at_78min_um, dR_large_pct, dR_small_pct,
+#   dR_large_fullrun_pct, dR_small_fullrun_pct, n_snapshots
+#
+#   dR_large_pct / dR_small_pct are over [t*, t*+78 min] -- the SAME window as
+#   the neck, and the one Molaro's -2.93 % refers to. The *_fullrun_pct columns
+#   are the whole run and are NOT comparable to their targets; they are carried
+#   only so the difference is visible. Fitting humidity against the full-run
+#   number lands it 1.54x too saturated on a 120-min run (see the note by the
+#   computation below).
 #
 #   t_star_s is the CLOCK SHIFT: the time at which the model neck first reaches
 #   Molaro's first measured width (32.81 um). Our run starts from tangency and
@@ -78,7 +86,8 @@ fi
 
 printf 'run,geometry,experiment,alpha_c,humidity,Lz_m,Lr_m,eps_m,' > "$SUMMARY"
 printf 'neck_w_final_um,neck_w_at_78min_um,t_star_s,' >> "$SUMMARY"
-printf 'R_large_init_um,R_large_end_um,dR_large_pct,dR_small_pct,n_snapshots\n' >> "$SUMMARY"
+printf 'R_large_at_tstar_um,R_large_at_78min_um,dR_large_pct,dR_small_pct,' >> "$SUMMARY"
+printf 'dR_large_fullrun_pct,dR_small_fullrun_pct,n_snapshots\n' >> "$SUMMARY"
 
 for run in "${RUNS[@]}"; do
     run="${run%/}"; name="$(basename "$run")"
@@ -139,13 +148,43 @@ w_78 = interp_width_at(t_star + 78 * 60.0) if t_star == t_star else float("nan")
 
 gs = run / "grain_shrinkage.csv"
 dR_lg = dR_sm = R_lg0 = R_lg1 = float("nan")
+dR_lg_full = dR_sm_full = float("nan")
 if gs.is_file():
     g = list(csv.DictReader(gs.open()))
     if len(g) >= 2:
-        R_lg0, R_lg1 = float(g[0]["R_large_m"]), float(g[-1]["R_large_m"])
-        R_sm0, R_sm1 = float(g[0]["R_small_m"]), float(g[-1]["R_small_m"])
-        dR_lg = 100.0 * (R_lg1 / R_lg0 - 1.0) if R_lg0 else float("nan")
-        dR_sm = 100.0 * (R_sm1 / R_sm0 - 1.0) if R_sm0 else float("nan")
+        gt  = [float(r["t_s"]) for r in g]
+        gRl = [float(r["R_large_m"]) for r in g]
+        gRs = [float(r["R_small_m"]) for r in g]
+
+        def lerp(xs, ys, x):
+            if x <= xs[0]:  return ys[0]
+            if x >= xs[-1]: return ys[-1]
+            for (x0, y0), (x1, y1) in zip(zip(xs, ys), zip(xs[1:], ys[1:])):
+                if x0 <= x <= x1 and x1 > x0:
+                    return y0 + (x - x0) * (y1 - y0) / (x1 - x0)
+            return ys[-1]
+
+        # THE SHRINKAGE MUST BE READ OVER THE SAME 78-MIN WINDOW AS THE NECK.
+        # Molaro's -2.93 % is their large grain's least-squares slope over 78
+        # minutes. Reading it over the whole run instead compares a 120-min
+        # model change against a 78-min target, and because R_large(t) is
+        # linear to R^2 = 1.0000 at fixed humidity that is a clean 120/78 =
+        # 1.54x overstatement -- which propagates straight into the Newton
+        # step and lands the fitted humidity 1.54x too saturated. Measured on
+        # the 2026-09-03 batch: arm 1 reads -2.92 % full-run (looks like a
+        # bullseye) against -1.90 % over the anchored window (35 % short).
+        if t_star == t_star:
+            t_end = t_star + 78 * 60.0
+            R_lg0, R_lg1 = lerp(gt, gRl, t_star), lerp(gt, gRl, t_end)
+            R_sm0, R_sm1 = lerp(gt, gRs, t_star), lerp(gt, gRs, t_end)
+            dR_lg = 100.0 * (R_lg1 / R_lg0 - 1.0) if R_lg0 else float("nan")
+            dR_sm = 100.0 * (R_sm1 / R_sm0 - 1.0) if R_sm0 else float("nan")
+            if gt[-1] < t_end:
+                print(f"    ! run ends {(t_end-gt[-1])/60:.1f} min before t*+78 min;"
+                      f" dR_* are EXTRAPOLATED")
+        # Kept beside it so the two windows can never be mistaken for each other.
+        dR_lg_full = 100.0 * (gRl[-1] / gRl[0] - 1.0) if gRl[0] else float("nan")
+        dR_sm_full = 100.0 * (gRs[-1] / gRs[0] - 1.0) if gRs[0] else float("nan")
 
 # Identify the staged opts files by CONTENT, not by name: the geometry file
 # is the one that sets the mesh, the experiment file the one that sets the
@@ -164,11 +203,13 @@ exp_ = which("-t_final")
 row = [run.name, geom, exp_, opt("-alpha_c0"), opt("-humidity"),
        opt("-Lx"), opt("-Ly"), opt("-eps"),
        f"{w[-1]*1e6:.4f}", f"{w_78*1e6:.4f}", f"{t_star:.2f}",
-       f"{R_lg0*1e6:.4f}", f"{R_lg1*1e6:.4f}", f"{dR_lg:.4f}", f"{dR_sm:.4f}", len(neck)]
+       f"{R_lg0*1e6:.4f}", f"{R_lg1*1e6:.4f}", f"{dR_lg:.4f}", f"{dR_sm:.4f}",
+       f"{dR_lg_full:.4f}", f"{dR_sm_full:.4f}", len(neck)]
 with summary.open("a", newline="") as fh:
     csv.writer(fh, lineterminator="\n").writerow(row)
 print(f"t* = {t_star:.0f} s   neck at t*+78min = {w_78*1e6:.2f} um"
-      f"   dR_large = {dR_lg:+.2f} %   dR_small = {dR_sm:+.2f} %")
+      f"   dR_large = {dR_lg:+.2f} %   dR_small = {dR_sm:+.2f} %"
+      f"   (full run: {dR_lg_full:+.2f} % / {dR_sm_full:+.2f} %)")
 PY
     ((n_ok++))
 done

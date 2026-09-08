@@ -1,0 +1,5 @@
+label,run,humidity,dif_vap,mob_scale,alph_scale,t_star_s,neck_w_at_78min_um,neck_err_um,dR_large_78min_pct,dR_small_78min_pct,dR_large_fullrun_pct,neck_rms_um,neck_chi
+1 untuned,molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2__molaro_T-20_h0.99816_2h_a1e-1_dirichlet,0.99816,2.178e-05,1,1,129.0,46.061,-18.719,-1.8990,-2.7958,-2.9228,11.342,7.075
+2a D_v x30,molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2__molaro_T-20_h0.99992_2h_a1e-1_Dv30,0.99992,6.534e-04,1,1,46.9,60.260,-4.520,-0.4086,-0.8417,-0.6273,3.202,2.182
+2b D_v x100,molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2__molaro_T-20_h0.99996_2h_a1e-1_Dv100,0.99996,2.178e-03,1,1,43.0,62.917,-1.863,-0.2356,-0.6466,-0.3590,2.245,1.878
+"3 M_0 x5, alph/100",molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2__molaro_T-20_h0.99264_2h_a1e-1_M5alph0.01,0.99264,2.178e-05,5.0,0.01,20.4,75.478,+10.698,-4.7842,-8.1894,-7.1025,11.199,8.965
