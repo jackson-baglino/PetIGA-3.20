@@ -1,3 +1,48 @@
+## 2026-09-08 — Scored the four T = −20 °C arms; a 1.54x window bug
+
+- Jackson ran the batch and noticed the neck fits and the shrinkage fits were
+  not the same arms. They are not, and the reason is structural.
+- **Best fit is D_v ×100**, on the neck: 2.24 µm RMS against their own ±1.7–2.4
+  µm error bars (χ = 1.88), 1.86 µm short at 78 min. ×30 close behind (3.20 µm).
+  Untuned is 18.7 µm under, M_0×5 is 10.7 µm over — same RMS, opposite signs.
+- The ×30/×100 pair paid off exactly as intended: 3.3x more D_v bought +2.66 µm,
+  so the attachment-limited ceiling is 63–65 µm, within ~1 µm of their 64.78. So
+  at alpha_c = 0.1 the untuned shortfall is entirely a TRANSPORT shortfall.
+- **No arm fits both observables.** Neck growth is driven by the internal
+  curvature difference, recession by the external wall undersaturation, and both
+  are fed by the same vapour — raising D_v strengthens the neck sink relative to
+  the wall. 2a/2b recede 0.41 %/0.24 % against −2.93 %.
+- **Found a real bug in run_batch_measure.sh.** It anchored the neck at t* but
+  reported dR_large over the WHOLE run. R_large(t) is linear to R² = 1.0000 at
+  fixed humidity, so that is a clean 120/78 = 1.54x overstatement, and every
+  humidity Newton-stepped against it landed 1.54x too saturated. The untuned arm
+  reads −2.92 % full-run (an apparent bullseye) and −1.90 % over the window the
+  target actually refers to. Fixed: anchored window is now the reported one,
+  full-run carried alongside so they cannot be conflated.
+- Corrected humidities: 0.99715 (untuned), 0.99928 (×30), 0.99923 (×100). ×30
+  and ×100 CONVERGING on nearly the same wall is the encouraging part — the
+  effective-transport framing does not collapse into two independent fits.
+- The derived series-resistance formula was off by 7–12x at high D_v (vs 10 % at
+  nominal). It assumes the wall is the only sink; once D_v is large the neck
+  competes for the same vapour. It is a starting point at high D_v, not a
+  calibration.
+- **Arm 3 should be dropped, not re-tuned.** Same nominal D_v as arm 1, 4x the
+  wall undersaturation, 2.5x the recession — yet its neck reaches 75.5 µm vs
+  46.1. Vapour-only physics says more wall loss means a slower neck (measured:
+  45.71 undersaturated vs 56.26 saturated). Arm 3 inverts the ordering, which is
+  what AC-fed neck filling looks like. Its shape is also wrong from their second
+  data point on.
+- New `postprocess/compare_arms_vs_molaro.py`: several arms on one pair of axes,
+  scoring BOTH observables, because scoring only the neck hides half the result.
+  Panel C is the trade-off — nothing sits at the origin.
+- Recommended one more −20 °C round (×30 at 0.99928, ×100 at 0.99923) before
+  −5 °C: the only open question is whether the neck survives a 7–12x stronger
+  wall. Rough estimate says it costs ~5 µm, landing near 58 — but that is a
+  two-point slope extrapolated across a factor 12, which is why it is worth a
+  run rather than more arithmetic. Results in `studies/molaro_2019/three_options/`.
+
+---
+
 ## 2026-09-03 — Molaro three-option comparison: solver knob, four arms, queued
 
 - Jackson wants the −20 °C neck-growth shortfall presented as three explicit
