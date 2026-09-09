@@ -104,6 +104,11 @@ for run in "${RUNS[@]}"; do
     "$PYTHON" "$POSTPROCESS/plot_fields.py"     --dir "$run"            2>&1 | sed 's/^/    /'
     "$PYTHON" "$POSTPROCESS/neck_width.py"      "$run" $ax_flag         2>&1 | sed 's/^/    /'
     "$PYTHON" "$POSTPROCESS/grain_shrinkage.py" "$run" --no-plot        2>&1 | sed 's/^/    /'
+    # plots/neck_vs_molaro.png is a CONSUMER of neck_width.csv, so re-measuring
+    # without redrawing it leaves a figure that silently disagrees with the CSV
+    # beside it. That is exactly how the 2026-09-09 interpolation fix appeared
+    # not to have worked: the numbers had changed and the picture had not.
+    "$PYTHON" "$POSTPROCESS/plot_neck_vs_molaro.py" "$run"              2>&1 | sed 's/^/    /'
 
     if [[ ! -f "$run/neck_width.csv" ]]; then
         echo "    no neck_width.csv — arm not summarised"; ((n_fail++)); continue
