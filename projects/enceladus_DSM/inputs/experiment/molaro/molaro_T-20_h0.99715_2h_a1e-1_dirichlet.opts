@@ -1,0 +1,68 @@
+# =============================================================================
+# Molaro T = -20 C -- ROUND 2, UNTUNED at the SHRINKAGE-CORRECTED wall
+#
+# OPTION 1 of the three-option comparison, re-run so the baseline is scored on
+# the same footing as the tuned arms. Every parameter is the model's own except
+# beta_sub, prescribed through alpha_c = 0.1 because no first-principles value
+# for it exists. Nominal D_v, no kinetics scaling.
+#
+# WHY IT NEEDS RE-RUNNING AT ALL. Its predecessor (h = 0.99816) LOOKED like it
+# had the shrinkage right -- dR_large = -2.92 % against their -2.93 % -- but
+# that was a window artefact. run_batch_measure.sh anchored the neck at t* and
+# then reported dR_large over the WHOLE 120-min run, while Molaro's -2.93 % is
+# over 78 minutes. R_large(t) is linear to R^2 = 1.0000 at fixed humidity, so
+# that is a clean 120/78 = 1.54x overstatement. Over the window the target
+# actually refers to, that arm recedes only -1.90 % -- 35 % short. The bug is
+# fixed (2026-09-08), and this is the humidity it implies:
+#     (1-h)_next = (1-h)_now * (-2.93)/(-1.899) = 1.863e-03 * 1.54 = 2.875e-03
+#     h = h_eq - 2.875e-03 = 1.0000234 - 2.875e-03 = 0.99715
+#
+# Leaving the baseline at the old h would have made the comparison unfair in
+# the baseline's FAVOUR on shrinkage and against it on neck, which is the worst
+# of both: an untuned arm that matches neither, for two different reasons.
+#
+# EXPECT THE NECK TO GET WORSE, and that is the honest result. Round 1 gave
+# 46.06 um at t*+78 min against their 64.78 (18.7 um short, 11.34 um RMS); a
+# more undersaturated wall competes harder with the neck for the same vapour,
+# so this should come in below that. The untuned vapour-only model reproducing
+# ~50 % of the observed neck growth IS the standing result
+# (docs/molaro_validation_synthesis.md sec. 2 and 4) -- this arm quantifies it
+# with both observables read over the same window for the first time.
+#
+# Unlike the high-D_v arms, the series-resistance formula works reasonably here
+# (it missed by 10 %, not 7-12x): at nominal D_v the wall really is the
+# dominant sink, and the neck is not competing for the vapour on anything like
+# equal terms. The Newton step above is still the measured one.
+#
+# -humidity SETS BOTH THE WALL AND THE INITIAL PORE VAPOUR, and they cannot
+# disagree: SetNodeFields writes rho_v = rho_vs*(hum0*phi_air + phi_ice)
+# (initial_conditions.c:224) and the Dirichlet value is hum0*rho_vs
+# (enceladus_main.c:1075). One knob, both places.
+#
+# 1 - h IS STRONGLY L-DEPENDENT. This file is dom2 ONLY.
+#
+# Pair with: molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2
+# =============================================================================
+
+-t_final 7.2e+03
+-temp -20.0
+-humidity 0.99715                       # h_eq - 2.875e-03; MEASURED Newton step
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet: emulates the large chamber
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step
+-dtmax 3.0e1                            # = t_interv/2; guarantees every minute
+
+-t_out_log 0                            # OFF. -t_out_log is a COUNT of
+                                        # log-spaced snapshots, not an interval.
+-outp 0                                 # cadence from t_interv, not every step
+-n_out 121                              # t_interv = 7200/120 = 60 s exactly

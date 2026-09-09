@@ -1,0 +1,66 @@
+# =============================================================================
+# Molaro T = -20 C -- ROUND 2, D_v0 x30 at the SHRINKAGE-CORRECTED wall
+#
+# Round 1 (batch 2026-09-03__17.32.48) reached 60.26 um at t*+78 min against
+# their 64.78 (3.20 um RMS), with dR_large = -0.41 % against the -2.93 %
+# target -- a factor 7 short. Same question as the x100 twin: does the neck
+# survive the wall that also reproduces the recession?
+#
+# WHY BOTH x30 AND x100 AGAIN. Round 1 showed transport tuning is already
+# saturating: 3.3x more D_v bought only +2.66 um of neck, putting the
+# attachment-limited ceiling at 63-65 um -- within ~1 um of their 64.78. The
+# two arms bracket that ceiling, and more usefully they are an INDEPENDENCE
+# CHECK on the wall: their separately-derived corrections land at 0.99928 and
+# 0.99923, within 5e-05 of each other. If both still agree after this round,
+# "effective D_v" is one model with one wall; if they diverge, it is two fits
+# wearing the same name.
+#
+# THE NEW h COMES FROM THE MEASURED RESPONSE, NOT THE FORMULA. The
+# series-resistance estimate assumes the wall is the only sink for the grains'
+# vapour; at high D_v the neck competes for the same vapour and the grains
+# recede far less than it predicts (it missed by 7x here, 12x at x100, against
+# 10 % at nominal D_v). R_large(t) is linear to R^2 = 1.0000, so the Newton
+# step is exact:
+#     (1-h)_next = (1-h)_now * (-2.93)/(-0.409) = 1.034e-04 * 7.17 = 7.414e-04
+#     h = h_eq - 7.414e-04 = 1.0000234 - 7.414e-04 = 0.99928
+#
+# A MEASUREMENT-WINDOW BUG IS ALSO FOLDED IN. run_batch_measure.sh anchored the
+# neck at t* but reported dR_large over the WHOLE run -- a clean 120/78 = 1.54x
+# overstatement that landed every previously fitted humidity 1.54x too
+# saturated. Fixed 2026-09-08; the -0.409 % above is the anchored
+# [t*, t*+78 min] window, the one their -2.93 % refers to.
+#
+# -humidity SETS BOTH THE WALL AND THE INITIAL PORE VAPOUR, and they cannot
+# disagree: SetNodeFields writes rho_v = rho_vs*(hum0*phi_air + phi_ice)
+# (initial_conditions.c:224) and the Dirichlet value is hum0*rho_vs
+# (enceladus_main.c:1075). One knob, both places.
+#
+# 1 - h IS STRONGLY L-DEPENDENT. This file is dom2 ONLY.
+#
+# Pair with: molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2
+# =============================================================================
+
+-t_final 7.2e+03
+-temp -20.0
+-humidity 0.99928                       # h_eq - 7.414e-04; MEASURED Newton step
+-grad_temp0 0.0,0.0,0.0
+
+-dif_vap 6.534e-04                      # D_v0 x30 -- EFFECTIVE transport
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet: emulates the large chamber
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step
+-dtmax 3.0e1                            # = t_interv/2; guarantees every minute
+
+-t_out_log 0                            # OFF. -t_out_log is a COUNT of
+                                        # log-spaced snapshots, not an interval.
+-outp 0                                 # cadence from t_interv, not every step
+-n_out 121                              # t_interv = 7200/120 = 60 s exactly

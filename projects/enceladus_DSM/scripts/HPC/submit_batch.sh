@@ -164,15 +164,20 @@ echo "============================================================"
 # ---------------------------------------------------------------------------
 # Stage shared assets at the batch level for reproducibility + easy download
 # ---------------------------------------------------------------------------
-mkdir -p "$BATCH_PARENT/inputs_snapshot/geometry"
-mkdir -p "$BATCH_PARENT/inputs_snapshot/experiment"
 mkdir -p "$BATCH_PARENT/src_snapshot"
-cp "$INPUTS_DIR/solver.opts"           "$BATCH_PARENT/inputs_snapshot/"   2>/dev/null || true
-# -r over a *.opts glob only ever caught the TOP level, so the snapshot has
-# been silently empty since the .opts were regrouped into per-family
-# subdirectories. Copy the trees.
-cp -r "$GEOMETRY_DIR"/.                "$BATCH_PARENT/inputs_snapshot/geometry/"   2>/dev/null || true
-cp -r "$EXPERIMENT_DIR"/.              "$BATCH_PARENT/inputs_snapshot/experiment/" 2>/dev/null || true
+# The whole inputs/ tree, named `inputs` rather than `inputs_snapshot`, and
+# minus scratch/. Two reasons for both choices:
+#   * run_batch_measure.sh runs $BATCH_PARENT/postprocess/*.py, and those
+#     locate the experimental series as Path(__file__).parent.parent /
+#     "inputs/validation/...". Under the old name that lookup missed and the
+#     figures came out with no data on them.
+#   * the piecemeal copy only took solver.opts + geometry/ + experiment/, so
+#     validation/ and the inputs README were never in the snapshot at all.
+# scratch/ is 70 MB of retired files pending deletion; the rest is ~4 MB.
+# (`inputs_snapshot` is still skipped by the batch iterators, so older batches
+# keep working.)
+cp -r "$INPUTS_DIR"                    "$BATCH_PARENT/inputs"             2>/dev/null || true
+rm -rf "$BATCH_PARENT/inputs/scratch"
 for ext in c h; do
     cp "$PROJECT_ROOT/src/"*.$ext     "$BATCH_PARENT/src_snapshot/"      2>/dev/null || true
 done

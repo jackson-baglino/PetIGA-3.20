@@ -1,0 +1,82 @@
+# =============================================================================
+# Molaro T = -20 C -- ROUND 2, D_v0 x100 at the SHRINKAGE-CORRECTED wall
+#
+# Round 1 (batch 2026-09-03__17.32.48) fit the neck and missed the shrinkage:
+#   neck 62.92 um at t*+78 min against their 64.78 (2.24 um RMS over all nine
+#   points, inside their own +-1.7-2.4 um error bars), but dR_large = -0.24 %
+#   against the -2.93 % target -- a factor 12 short.
+# This arm asks the ONLY question left at -20 C: does that neck survive a wall
+# undersaturated enough to also reproduce the grain recession?
+#
+# TWO CORRECTIONS ARE FOLDED INTO THE NEW h.
+#
+# (1) A MEASUREMENT-WINDOW BUG. run_batch_measure.sh anchored the neck at t*
+#     but reported dR_large over the WHOLE run. R_large(t) is linear to
+#     R^2 = 1.0000 at fixed humidity, so that overstates the shrinkage by
+#     exactly 120/78 = 1.54x, and every humidity Newton-stepped against it
+#     landed 1.54x too saturated -- including this file's predecessor. Fixed
+#     2026-09-08; dR_large_pct is now the anchored [t*, t*+78 min] window.
+#
+# (2) THE SERIES-RESISTANCE FORMULA DOES NOT HOLD AT HIGH D_v. It assumes the
+#     wall is the only sink for the grains' vapour:
+#         1 - h = |v_n| * (beta' + l_eff/D_v) / (rho_vs/rho_i)
+#     Once D_v is large the NECK competes for that same vapour, and the grains
+#     recede far less than the formula predicts. At nominal D_v it missed by
+#     10 %; here it missed by 12x. So this h comes from the MEASURED response,
+#     not from the formula:
+#         (1-h)_next = (1-h)_now * (-2.93)/(-0.236) = 6.340e-05 * 12.44
+#                    = 7.884e-04
+#         h = h_eq - 7.884e-04 = 1.0000234 - 7.884e-04 = 0.99923
+#
+# WORTH NOTING: the D_v x30 arm's independent correction lands at 0.99928,
+# within 5e-05 of this. Two different transport coefficients wanting the same
+# wall is the evidence that "effective D_v" is one model and not two fits.
+#
+# WHAT TO EXPECT. An undersaturated wall demonstrably slows the neck (measured
+# at nominal D_v: 45.71 um undersaturated vs 56.26 um saturated). Scaling that
+# sensitivity (~ -1840 um per unit 1-h) by the 3.65x higher recession-per-(1-h)
+# these high-D_v arms actually achieve gives roughly -5 um, i.e. a neck near
+# 58 um. That is a two-point slope extrapolated across a factor 12, so treat it
+# as an order of magnitude, not a prediction -- measuring it is the point.
+#   * neck holds at 58-63 um -> one parameter set reproduces both observables
+#     to ~10 %, and the T = -5 C series is worth running.
+#   * neck collapses toward ~50 um -> the vapour-only model cannot do both at
+#     once, which sharpens docs/molaro_validation_synthesis.md sec. 4 from
+#     "~50 % of the rate" into a specific, quantified trade-off.
+#
+# -humidity SETS BOTH THE WALL AND THE INITIAL PORE VAPOUR, and they cannot
+# disagree: SetNodeFields writes rho_v = rho_vs*(hum0*phi_air + phi_ice)
+# (initial_conditions.c:224) and the Dirichlet value is hum0*rho_vs
+# (enceladus_main.c:1075). One knob, both places -- which is what we want, since
+# a pore initialised away from its own wall value would relax to it in seconds
+# and put a spurious burst of sublimation or deposition at t = 0.
+#
+# 1 - h IS STRONGLY L-DEPENDENT. This file is dom2 ONLY.
+#
+# Pair with: molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2
+# =============================================================================
+
+-t_final 7.2e+03
+-temp -20.0
+-humidity 0.99923                       # h_eq - 7.884e-04; MEASURED Newton step
+-grad_temp0 0.0,0.0,0.0
+
+-dif_vap 2.178e-03                      # D_v0 x100 -- EFFECTIVE transport
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet: emulates the large chamber
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step
+-dtmax 3.0e1                            # = t_interv/2; guarantees every minute
+
+-t_out_log 0                            # OFF. -t_out_log is a COUNT of
+                                        # log-spaced snapshots, not an interval.
+-outp 0                                 # cadence from t_interv, not every step
+-n_out 121                              # t_interv = 7200/120 = 60 s exactly

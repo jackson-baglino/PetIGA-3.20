@@ -91,7 +91,7 @@ printf 'dR_large_fullrun_pct,dR_small_fullrun_pct,n_snapshots\n' >> "$SUMMARY"
 
 for run in "${RUNS[@]}"; do
     run="${run%/}"; name="$(basename "$run")"
-    case "$name" in inputs_snapshot|src_snapshot|postprocess) continue ;; esac
+    case "$name" in inputs|inputs_snapshot|src_snapshot|postprocess) continue ;; esac
     [[ -f "$run/igasol.dat" ]] || { echo "  skip $name (no igasol.dat)"; ((n_skip++)); continue; }
 
     echo ""

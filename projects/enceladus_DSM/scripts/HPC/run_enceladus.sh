@@ -265,6 +265,22 @@ stage_output_folder() {
         echo "⚠️  postprocess/ directory not found at $POSTPROCESS — skipping."
     fi
 
+    # inputs/ — REQUIRED BY THE STAGED postprocess/, not just provenance.
+    # neck_width.py and grain_shrinkage.py locate the experimental data as
+    # Path(__file__).parent.parent/"inputs/validation/...". Run from the repo
+    # that resolves to the repo's own inputs/; run from the staged copy it
+    # resolves to $folder/inputs/, so without this the validation series is
+    # silently dropped and the figures come out with the model curve alone.
+    # scratch/ is excluded for the same reason postprocess/scratch is: it is
+    # 70 MB of retired files pending deletion (the rest of inputs/ is ~4 MB).
+    if [ -d "$INPUTS_DIR" ]; then
+        cp -r "$INPUTS_DIR" "$folder/inputs"
+        rm -rf "$folder/inputs/scratch"
+        echo "  Copied inputs/ → $folder/inputs/ (scratch/ excluded)"
+    else
+        echo "⚠️  inputs/ directory not found at $INPUTS_DIR — skipping."
+    fi
+
     echo "✅ Staging complete."
 }
 

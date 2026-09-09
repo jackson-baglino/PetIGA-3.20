@@ -80,7 +80,7 @@ for run in "$BATCH_DIR"/*/; do
 
     # Skip the staging directories created by submit_batch.sh
     case "$name" in
-        inputs_snapshot|src_snapshot|postprocess) continue ;;
+        inputs|inputs_snapshot|src_snapshot|postprocess) continue ;;
     esac
 
     if [[ ! -f "$run/igasol.dat" ]]; then

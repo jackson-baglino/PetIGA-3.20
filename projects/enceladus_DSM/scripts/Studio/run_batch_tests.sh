@@ -186,9 +186,13 @@ echo "✅ Build complete."
 # Stage shared assets at the batch level (source + the three input dirs)
 mkdir -p "$BATCH_DIR/src_snapshot"
 cp "$SOLVER_OPTS" "$BATCH_DIR/" 2>/dev/null || true
-mkdir -p "$BATCH_DIR/inputs_snapshot"
-cp -r "$GEOMETRY_DIR"   "$BATCH_DIR/inputs_snapshot/" 2>/dev/null || true
-cp -r "$EXPERIMENT_DIR" "$BATCH_DIR/inputs_snapshot/" 2>/dev/null || true
+# The whole inputs/ tree as `inputs`, minus scratch/ — see the matching note in
+# scripts/HPC/submit_batch.sh. The batch-level postprocess/ scripts resolve the
+# experimental data relative to their own location, so the directory has to be
+# named `inputs` and has to include validation/, which the old piecemeal
+# geometry+experiment copy left out.
+cp -r "$INPUTS_DIR" "$BATCH_DIR/inputs" 2>/dev/null || true
+rm -rf "$BATCH_DIR/inputs/scratch"
 for ext in c h; do
     cp "$PROJECT_ROOT/src/"*.$ext "$BATCH_DIR/src_snapshot/" 2>/dev/null || true
 done

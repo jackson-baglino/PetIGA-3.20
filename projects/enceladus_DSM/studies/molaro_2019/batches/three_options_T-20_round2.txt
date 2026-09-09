@@ -1,0 +1,64 @@
+# Molaro 2019 T = -20 C -- ROUND 2, three arms at the corrected wall, 2026-09-08.
+#
+# WHAT ROUND 1 SETTLED (batch 2026-09-03__17.32.48, see
+# studies/molaro_2019/three_options/README.md):
+#   * D_v x100 fits the NECK inside their own error bars -- 62.92 um at
+#     t*+78 min against 64.78, 2.24 um RMS over all nine points, chi = 1.88.
+#   * Transport tuning saturates right about there: 3.3x more D_v bought only
+#     +2.66 um, so the attachment-limited ceiling is 63-65 um. At alpha_c = 0.1
+#     the untuned neck shortfall is therefore ENTIRELY a transport shortfall.
+#   * No arm fit both observables. The neck is driven by the internal curvature
+#     difference and the recession by the external wall, and both draw on the
+#     same vapour -- so raising D_v strengthens the neck sink at the wall's
+#     expense and the good-neck arms receded only 0.24-0.41 % vs -2.93 %.
+#   * The M_0 x5 / alph_sub /100 arm is DROPPED: worst shape of the four (10.6
+#     um over by their second data point), 754 min of wall clock, and its neck
+#     is not vapour-fed -- it has 4x the wall undersaturation and 2.5x the
+#     recession of the untuned arm yet a 75.5 um neck against 46.1, inverting
+#     the ordering vapour-only transport requires.
+#
+# THE ONE QUESTION THIS ROUND ASKS: does the neck survive a wall undersaturated
+# enough to also reproduce the grain recession? Estimated cost ~5 um (a
+# two-point slope extrapolated across a factor 12, so: measure it).
+#   * neck holds at 58-63 um -> one parameter set does both to ~10 %, and the
+#     T = -5 C series is worth running.
+#   * neck collapses toward ~50 um -> the vapour-only model cannot do both, and
+#     that sharpens molaro_validation_synthesis.md sec. 4 from "~50 % of the
+#     rate" into a specific, quantified trade-off. Either way it is the answer.
+#
+# All three humidities are MEASURED Newton steps, not the series-resistance
+# formula, which missed by 7-12x at high D_v (it assumes the wall is the only
+# sink; the neck competes). They also absorb the 120/78 = 1.54x measurement-
+# window bug fixed in run_batch_measure.sh on 2026-09-08.
+#
+#   arm            round-1 h   round-1 dR@78   ->   round-2 h
+#   1  untuned      0.99816       -1.90 %           0.99715
+#   2a D_v x30      0.99992       -0.41 %           0.99928
+#   2b D_v x100     0.99996       -0.24 %           0.99923
+#
+# 2a and 2b correcting to within 5e-05 of each other is the independence check:
+# two transport coefficients wanting the same wall means "effective D_v" is one
+# model, not two fits. Watch whether they still agree after this round.
+#
+# Arm 1 is re-run so the untuned baseline is scored on the same footing -- at
+# the old h it matched neither observable, for two different reasons.
+#
+# All three: t_final = 2 h, 121 time-uniform snapshots at 60 s, dtmax 3.0e1,
+# alpha_c = 0.1, dom2. Cadence lives in each .opts, so no --extra-opts:
+#
+#   ./scripts/HPC/submit_batch.sh --tag molaro_T-20_round2 \
+#       --tests-file studies/molaro_2019/batches/three_options_T-20_round2.txt \
+#       -- --time=0-08:00:00
+#
+# Round-1 wall clock was 186 / 342 / 216 min for these three, so 8 h is ample
+# now that the 754-min kinetics arm is gone.
+#
+# DISK: ~350 MB per snapshot x 121 x 3 arms is ~127 GB on $SCRATCH.
+#
+# Measure with:  bash postprocess/run_batch_measure.sh <batch_dir>
+# Then:          python postprocess/compare_arms_vs_molaro.py <arm> <arm> <arm> \
+#                    --outdir studies/molaro_2019/three_options_round2
+
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99715_2h_a1e-1_dirichlet
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99928_2h_a1e-1_Dv30
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2:molaro_T-20_h0.99923_2h_a1e-1_Dv100

@@ -341,6 +341,21 @@ stage_output_folder() {
         echo "⚠️  postprocess/ directory not found at $POSTPROCESS — skipping."
     fi
 
+    # inputs/ — REQUIRED BY THE STAGED postprocess/, not just provenance.
+    # neck_width.py and grain_shrinkage.py find the experimental data as
+    # Path(__file__).parent.parent/"inputs/validation/...", which resolves
+    # next to whichever copy of the script is being run. Without this, the
+    # staged copy silently plots the model curve with no data to compare it
+    # against. scratch/ excluded: 70 MB of retired files pending deletion,
+    # against ~4 MB for the rest of inputs/.
+    if [ -d "$INPUTS_DIR" ]; then
+        cp -r "$INPUTS_DIR" "$folder/inputs"
+        rm -rf "$folder/inputs/scratch"
+        echo "  Copied inputs/ → $folder/inputs/ (scratch/ excluded)"
+    else
+        echo "⚠️  inputs/ directory not found at $INPUTS_DIR — skipping."
+    fi
+
     # Copy this run script itself
     cp "${BASH_SOURCE[0]}" "$folder/run_enceladus.sh"
 
