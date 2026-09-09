@@ -7,6 +7,46 @@
 the residual is, and why. Companion data: inputs/validation/
 molaro2019_fig11_T-20.csv; runs indexed in .claude/ACTIVITY_LOG.md.*
 
+## 0. UPDATE 2026-09-09 — the vapour-only ceiling is now measured
+
+Sections 2 and 4 below predate the two-round tuning campaign of 2026-09
+(`studies/molaro_2019/three_options*/`). What changed:
+
+**Both observables must be scored on the same 78-minute window.** The neck was
+anchored at t*, but grain recession was being read over the whole 120-minute
+run — a clean 120/78 = 1.54x overstatement, since R_large(t) is linear to
+R^2 = 1.0000 at fixed humidity. Every humidity fitted against it landed 1.54x
+too saturated. Fixed in `postprocess/run_batch_measure.sh`.
+
+**Scored on both at once, the model has a hard ceiling at 75 %.** Requiring the
+wall to reproduce the measured -2.93 % grain recession, and interpolating each
+transport family across its two humidities:
+
+| | neck at t*+78 min | share of observed growth |
+|---|---|---|
+| untuned (nominal D_v) | 46.05 um | 41.4 % |
+| D_v x30  | 56.87 um | 75.3 % |
+| D_v x100 | 56.88 um | 75.3 % |
+| Molaro et al. (2019) | 64.78 um | 100 % |
+
+x30 and x100 agree to 0.01 um: a factor 3.3 in effective transport buys nothing
+once the mass loss is constrained. The "~50 %" in sections 2 and 4 was measured
+without that constraint and on the un-anchored window; **41 % untuned and a
+75 % ceiling supersede it.**
+
+The residual is 7.9 um of neck at 78 min, 25 % of the observed growth, and that
+is the quantitative target for the surface-diffusion term section 4 identifies
+as future work.
+
+⚠️ **Unresolved:** section 2 claims the growth exponent matches (n ~ 5 from
+x^5 - x0^5 ~ t). Refitting w = C(t' + t0)^a with t0 free over the anchored
+window gives a = 0.235 +- 0.035 for the data against 0.12-0.15 for the model —
+the model growing too slowly by ~2.5 sigma. Different functional form and
+protocol, so not directly comparable, but they point different ways. Resolve
+before publishing either.
+
+---
+
 ## 1. The benchmark
 
 Molaro et al. (2019, JGR Planets, 10.1029/2018JE005773) Fig. 11/12: two ice

@@ -1,0 +1,4 @@
+label,run,humidity,dif_vap,mob_scale,alph_scale,t_star_s,neck_w_at_78min_um,neck_err_um,dR_large_78min_pct,dR_small_78min_pct,dR_large_fullrun_pct,neck_rms_um,neck_chi
+1 untuned h.99715,molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2__molaro_T-20_h0.99715_2h_a1e-1_dirichlet,0.99715,2.178e-05,1,1,129.0,46.046,-18.734,-2.9351,-4.2978,-4.5172,11.347,7.079
+2a D_v x30 h.99928,molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2__molaro_T-20_h0.99928_2h_a1e-1_Dv30,0.99928,6.534e-04,1,1,47.6,56.250,-8.530,-3.3849,-5.0154,-5.2152,4.805,3.135
+2b D_v x100 h.99923,molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2__molaro_T-20_h0.99923_2h_a1e-1_Dv100,0.99923,2.178e-03,1,1,43.6,54.552,-10.228,-3.9627,-5.8548,-6.1128,5.406,3.596
