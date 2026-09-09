@@ -41,7 +41,8 @@ int main(int argc, char *argv[]) {
     /* Get number of processes (number of cores used) */
     PetscInt size;
     MPI_Comm_size(PETSC_COMM_WORLD, &size);
-    PetscPrintf(PETSC_COMM_WORLD, "Running on %d processes.\n\n\n", size);
+    /* Rank count is reported in the parameter banner header; this line and
+     * its two trailing blanks used to sit alone above everything else. */
 
     /* Define simulation specific parameters */
     AppCtx user;                         /* User-defined application context */
@@ -817,14 +818,12 @@ int main(int argc, char *argv[]) {
                 (double)user.d0_sub0, (double)temp, (double)d0_phys,
                 (double)(user.d0_sub0 / d0_phys));
         } else {
+            /* Silent on the normal path: d0_sub0 is reported in the parameter
+             * banner's PHASE-CHANGE KINETICS section, and echoing it here as
+             * well put a stray two-line block above the banner header. Only
+             * the -d0_sub0 OVERRIDE above still announces itself, which is the
+             * case actually worth interrupting for. */
             user.d0_sub0 = d0_phys;
-            PetscPrintf(PETSC_COMM_WORLD,
-                "  d0_sub0 = gamma*a^3/(k_B*T) = %.4e m   [K&P Eq. 13]\n"
-                "            gamma %.4e J/m^2, a = (m_H2O/rho_ice)^(1/3) = %.4e m, "
-                "T %.2f K\n",
-                (double)d0_phys, (double)user.Etai,
-                (double)pow(M_H2O_KG / user.rho_ice, 1.0/3.0),
-                (double)(temp + 273.15));
         }
     }
 
@@ -871,53 +870,24 @@ int main(int argc, char *argv[]) {
      * matched asymptotics calibrated -- that is the point of them, but it is
      * also why anything other than 1.0 is a fit and not a model parameter.
      * Say so loudly, since nothing downstream will. */
+    /* The announcement lives in the parameter banner's PHASE-CHANGE KINETICS
+     * section rather than here. Printing it at this point put a coloured block
+     * above the banner's own header, and -- worse -- it reported these SCALAR
+     * mob_sub/alph_sub, which -alpha_pointwise makes dead. The banner prints
+     * whichever pair the solve actually uses. */
     if (user.mob_scale != 1.0 || user.alph_scale != 1.0) {
         user.mob_sub  *= user.mob_scale;
         user.alph_sub *= user.alph_scale;
-        PetscPrintf(PETSC_COMM_WORLD,
-            "\n\033[33m*** EMPIRICAL KINETICS SCALING (not the physical model) ***\n"
-            "    -mob_scale  %.4g  ->  mob_sub  = %.4e m/s\n"
-            "    -alph_scale %.4g  ->  alph_sub = %.4e 1/s\n"
-            "    alph_sub/mob_sub is off the K&P-calibrated 3*lambda_sub/eps by %.4g.\033[0m\n\n",
-            (double)user.mob_scale,  (double)user.mob_sub,
-            (double)user.alph_scale, (double)user.alph_sub,
-            (double)(user.alph_scale / user.mob_scale));
     }
 
-    /* -alpha_pointwise recomputes beta_sub from alpha_c(T, rho_v) at every
-     * quadrature point, so the -beta_sub0 above stops being used for anything
-     * except this startup echo. Every committed experiment .opts sets
-     * -beta_sub0, so silently ignoring it is a real footgun: the run would
-     * use alpha_c0's default rather than the alpha_c that file was sized for.
-     * Say so, and print the alpha_c the scalar corresponds to so the two can
-     * be reconciled. */
-    if (user.alpha_pointwise) {
-        PetscReal C_th = PetscSqrtReal(2.0*PETSC_PI*M_H2O_KG/(K_BOLTZ*(temp+273.15)));
-        PetscPrintf(PETSC_COMM_WORLD,
-            "\n*** -alpha_pointwise 1: -beta_sub0 (%.4e) is IGNORED ***\n"
-            "    beta_sub is rebuilt per quadrature point from alpha_c(T, rho_v).\n"
-            "    That -beta_sub0 corresponds to alpha_c = %.4e at %.1f C;\n"
-            "    this run uses -alpha_model %d",
-            (double)user.beta_sub0, (double)(C_th/(user.beta_sub0*rhoI_vs/user.rho_ice)),
-            (double)temp, (int)user.alpha_model);
-        if (user.alpha_model == ALPHA_MODEL_CONST)
-            PetscPrintf(PETSC_COMM_WORLD, " with -alpha_c0 %.4e.\n", (double)user.alpha_c0);
-        else
-            PetscPrintf(PETSC_COMM_WORLD, " (alpha_c computed from the local state).\n");
-        {
-            /* Say whether the clamp ACTUALLY bit. Printing the band
-             * unconditionally reads as "your value was clamped" -- which it
-             * is not when alpha_c0 sits inside [alpha_lo, alpha_hi]. */
-            PetscBool binds = (PetscBool)(user.alpha_model == ALPHA_MODEL_CONST &&
-                                          (user.alpha_c0 <= user.alpha_lo ||
-                                           user.alpha_c0 >= user.alpha_hi));
-            PetscPrintf(PETSC_COMM_WORLD,
-                "    Clamp band [%.1e, %.1e]%s.\n\n",
-                (double)user.alpha_lo, (double)user.alpha_hi,
-                binds ? "  <-- alpha_c0 is ON the clamp; raise -alpha_hi before raising -alpha_c0"
-                      : "  (alpha_c0 is inside it; nothing is clamped)");
-        }
-    }
+    /* -alpha_pointwise rebuilds beta_sub from alpha_c(T, rho_v) at every
+     * quadrature point, so the -beta_sub0 above stops being used at all.
+     * Every committed experiment .opts sets it, so ignoring it silently is a
+     * real footgun -- but the notice about that used to print HERE, sixty
+     * lines before the parameter banner and above its own header, where it
+     * read as stray output. It now lives in the banner's PHASE-CHANGE
+     * KINETICS section, beside the numbers it is warning about, along with
+     * the alpha_c clamp band. */
 
     /* Allow per-test override of mob_sub via -mob_sub <value>. Tests with
      * very stiff geometries (touching/merging grains in 2D) can reduce
@@ -1060,6 +1030,22 @@ int main(int argc, char *argv[]) {
     // ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
 
     /* Boundary conditions (could 'functionalize' this at some point) */
+
+    /* BC map, indexed [axis][min=0/max=1][field], filled below at the exact
+     * points the Dirichlet values are applied and read back by the parameter
+     * banner. Recording it rather than re-deriving it in the banner is the
+     * whole point: the face-selection rules are subtle (the axisymmetric axis
+     * is skipped, and a temperature gradient pins only the faces PERPENDICULAR
+     * to it), and a banner that re-implemented them would eventually disagree
+     * with what the solver actually did. Field 0 (ice) is never pinned. */
+    PetscBool bc_dirichlet[3][2][3];
+    PetscReal bc_value[3][2][3];
+    for (PetscInt l = 0; l < 3; l++)
+        for (PetscInt m = 0; m < 2; m++)
+            for (PetscInt f = 0; f < 3; f++) {
+                bc_dirichlet[l][m][f] = PETSC_FALSE;
+                bc_value[l][m][f]     = 0.0;
+            }
     // Set vapor density BCs
     if (flag_BC_rhovfix) {
         PetscReal rho0_vs;
@@ -1073,6 +1059,8 @@ int main(int argc, char *argv[]) {
                  * outer boundaries. */
                 if (user.axisym && l == 1 && m == 0) continue;
                 ierr = IGASetBoundaryValue(iga, l, m, 2, user.hum0 * rho0_vs); CHKERRQ(ierr);
+                bc_dirichlet[l][m][2] = PETSC_TRUE;
+                bc_value[l][m][2]     = user.hum0 * rho0_vs;
             }
         }
     }
@@ -1106,6 +1094,8 @@ int main(int argc, char *argv[]) {
                 if (user.axisym && l == 1 && m == 0) continue;
                 T_BC[l][m] = user.temp0 + (2.0 * m - 1.0) * user.grad_temp0[l] * LL[l] / 2.0;
                 ierr = IGASetBoundaryValue(iga, l, m, 1, T_BC[l][m]); CHKERRQ(ierr);
+                bc_dirichlet[l][m][1] = PETSC_TRUE;
+                bc_value[l][m][1]     = T_BC[l][m];
             }
         }
     }
@@ -1262,102 +1252,206 @@ int main(int argc, char *argv[]) {
      * kinetic params (tau_sub/lambda_sub/mob_sub/alph_sub), and VI bounds
      * (vi_lo/vi_hi). Override notifications above document any CLI changes.
      * ======================================================================== */
-    PetscPrintf(PETSC_COMM_WORLD,
-        "\n================================================================================\n"
-        " PHASE-FIELD SIMULATION PARAMETERS\n"
-        "================================================================================\n");
+    {   /* Header. Rank count, dimensionality and problem size up front: they
+         * are what you check first when a log turns up detached from the job
+         * that made it. */
+        PetscInt nnode = (Nx + p) * ((dim >= 2) ? (Ny + p) : 1) * ((dim >= 3) ? (Nz + p) : 1);
+        PetscReal ndof = (PetscReal)nnode * dof;
+        char dofs[32];
+        /* "0.00 M DoF" on a small mesh is worse than useless, so only switch
+         * to millions once there are millions. */
+        if (ndof >= 1.0e6) PetscSNPrintf(dofs, sizeof(dofs), "%.2f M DoF", (double)(ndof / 1.0e6));
+        else               PetscSNPrintf(dofs, sizeof(dofs), "%.0f DoF", (double)ndof);
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\n"
+            "════════════════════════════════════════════════════════════════════════════\n"
+            "  ENCELADUS_DSM  ·  phase-field sublimation solver\n"
+            "  %d MPI rank%s  ·  %dD%s  ·  %s  (%d fields: ice, T, rho_v)\n"
+            "════════════════════════════════════════════════════════════════════════════\n",
+            (int)size, (size == 1) ? "" : "s", (int)dim,
+            user.axisym ? " axisymmetric (r–z)" : "", dofs, (int)dof);
+    }
 
-    /* --- Mesh & discretization -------------------------------------------- */
-    PetscPrintf(PETSC_COMM_WORLD, "\n MESH & DISCRETIZATION\n");
+    /* Axis labels. In axisymmetric mode x IS the symmetry axis (z) and y IS
+     * the radius (r) -- printing them as "x" and "y" there is what makes the
+     * y = 0 face look like an ordinary wall when it is the axis. */
+    const char *ax[3];
+    ax[0] = user.axisym ? "z" : "x";
+    ax[1] = user.axisym ? "r" : "y";
+    ax[2] = "z";
+
+    /* --- Mesh & discretisation --------------------------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n── MESH & DISCRETISATION ───────────────────────────────────────────────────\n");
     if (user.axisym)
         PetscPrintf(PETSC_COMM_WORLD,
-                    "   AXISYMMETRIC r-z mode: x = axis (z), y = radius (r); "
-                    "integrands weighted by 2*pi*r\n");
+                    "   mode           axisymmetric r–z:  x = axis (z),  y = radius (r)\n"
+                    "                  integrands weighted by 2·π·r\n");
     if (dim == 1) {
-        PetscPrintf(PETSC_COMM_WORLD, "   Nx = %d%s\n",
-                    Nx, geom_file[0] ? "  [from -geom_file]" : "");
-        PetscPrintf(PETSC_COMM_WORLD, "   Lx = %.4e m\n", Lx);
-        PetscPrintf(PETSC_COMM_WORLD, "   dx = %.4e m\n", Lx / Nx);
+        PetscPrintf(PETSC_COMM_WORLD, "   grid           %d elements%s\n",
+                    Nx, geom_file[0] ? "   [from -geom_file]" : "");
+        PetscPrintf(PETSC_COMM_WORLD, "   domain         %s  %.4e m\n", ax[0], Lx);
+        PetscPrintf(PETSC_COMM_WORLD, "   spacing        d%s %.4e m\n", ax[0], Lx / Nx);
     } else if (dim == 2) {
-        PetscPrintf(PETSC_COMM_WORLD, "   Nx = %d,  Ny = %d%s\n",
-                    Nx, Ny, geom_file[0] ? "  [from -geom_file]" : "");
-        PetscPrintf(PETSC_COMM_WORLD, "   Lx = %.4e m,  Ly = %.4e m\n", Lx, Ly);
-        PetscPrintf(PETSC_COMM_WORLD, "   dx = %.4e m,  dy = %.4e m\n", Lx / Nx, Ly / Ny);
+        {
+            PetscReal nel = (PetscReal)Nx * Ny;
+            char els[32];
+            if (nel >= 1.0e6) PetscSNPrintf(els, sizeof(els), "%.2f M elements", (double)(nel / 1.0e6));
+            else              PetscSNPrintf(els, sizeof(els), "%.0f elements", (double)nel);
+            PetscPrintf(PETSC_COMM_WORLD, "   grid           %d × %d  =  %s%s\n",
+                        Nx, Ny, els, geom_file[0] ? "   [from -geom_file]" : "");
+        }
+        PetscPrintf(PETSC_COMM_WORLD, "   domain         %s %.4e  ×  %s %.4e  m\n",
+                    ax[0], Lx, ax[1], Ly);
+        PetscPrintf(PETSC_COMM_WORLD, "   spacing        d%s %.4e  ×  d%s %.4e  m\n",
+                    ax[0], Lx / Nx, ax[1], Ly / Ny);
     } else {
-        PetscPrintf(PETSC_COMM_WORLD, "   Nx = %d,  Ny = %d,  Nz = %d%s\n",
-                    Nx, Ny, Nz, geom_file[0] ? "  [from -geom_file]" : "");
-        PetscPrintf(PETSC_COMM_WORLD, "   Lx = %.4e m,  Ly = %.4e m,  Lz = %.4e m\n", Lx, Ly, Lz);
-        PetscPrintf(PETSC_COMM_WORLD, "   dx = %.4e m,  dy = %.4e m,  dz = %.4e m\n",
+        PetscPrintf(PETSC_COMM_WORLD, "   grid           %d × %d × %d  =  %.2f M elements%s\n",
+                    Nx, Ny, Nz, (double)Nx * Ny * Nz / 1.0e6,
+                    geom_file[0] ? "   [from -geom_file]" : "");
+        PetscPrintf(PETSC_COMM_WORLD, "   domain         %.4e × %.4e × %.4e m\n", Lx, Ly, Lz);
+        PetscPrintf(PETSC_COMM_WORLD, "   spacing        %.4e × %.4e × %.4e m\n",
                     Lx / Nx, Ly / Ny, Lz / Nz);
     }
     {
         const char *pname = (p == 1) ? "linear" : (p == 2) ? "quadratic" : (p == 3) ? "cubic" : "order";
-        PetscPrintf(PETSC_COMM_WORLD, "   p = %d (%s),  C = %d\n", p, pname, C);
+        PetscPrintf(PETSC_COMM_WORLD, "   basis          B-spline p = %d (%s),  C = %d\n",
+                    p, pname, C);
+        /* Elements across the interface is the number people actually want:
+         * eps is a DECAY LENGTH, and the visible 1%-99% band spans 9.19 eps.
+         * Counting against eps itself, or against the Karma width, is what
+         * makes a well-resolved interface look alarmingly under-resolved. */
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   resolution     %.1f elements across the φ = 0.01–0.99 band\n"
+                    "                  (band = 9.19·eps;  d%s/eps = %.3f)\n",
+                    (double)(9.1902 * user.eps / (Lx / Nx)), ax[0],
+                    (double)((Lx / Nx) / user.eps));
     }
 
-    /* --- Phase-field interface -------------------------------------------- */
-    PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-FIELD INTERFACE\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   eps      =  %.4e m\n", user.eps);
-    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_i  =  %.4e J/m²   (ice surface energy)\n", user.Etai);
-    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_a  =  %.4e J/m²   (air surface energy)\n", user.Etaa);
-    PetscPrintf(PETSC_COMM_WORLD, "   Lambda   =  %.4e\n", user.Lambd);
+    /* --- Phase-field interface --------------------------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   eps            %.4e m        decay length, NOT the band width\n", user.eps);
+    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_i        %.4e J/m²     ice surface energy\n", user.Etai);
+    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_a        %.4e J/m²     air surface energy\n", user.Etaa);
+    PetscPrintf(PETSC_COMM_WORLD, "   Lambda         %.4e          triple-junction penalty\n", user.Lambd);
 
-    /* --- Environment & initial conditions --------------------------------- */
-    PetscPrintf(PETSC_COMM_WORLD, "\n ENVIRONMENT & INITIAL CONDITIONS\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   T0       = %7.2f °C,  humidity = %.4f\n", temp, humidity);
+    /* --- Environment -------------------------------------------------------- */
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n── ENVIRONMENT ─────────────────────────────────────────────────────────────\n");
+    {   /* humidity at %.4f printed "1.0000" for h = 0.99996 -- and a campaign
+         * whose whole signal is 1-h ~ 1e-4 cannot afford that. Show the
+         * saturation ratio to 6 places AND the undersaturation directly. */
+        PetscReal rvs_env;
+        RhoVS_I(&user, user.temp0, &rvs_env, NULL);
+        PetscPrintf(PETSC_COMM_WORLD, "   T0             %.2f °C   (%.2f K)\n",
+                    (double)temp, (double)(temp + 273.15));
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   humidity       h = %.6f      1 − h = %+.4e  (%s)\n",
+                    (double)humidity, (double)(1.0 - humidity),
+                    (humidity < 1.0) ? "undersaturated" :
+                    (humidity > 1.0) ? "supersaturated vs a FLAT surface" : "flat-saturated");
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   rho_vs(T0)     %.4e kg/m³     →  h·rho_vs = %.4e kg/m³\n",
+                    (double)rvs_env, (double)(humidity * rvs_env));
+    }
     if (dim == 1)
-        PetscPrintf(PETSC_COMM_WORLD, "   grad_T   =  (%.4e) °C/m\n", grad_temp0[0]);
+        PetscPrintf(PETSC_COMM_WORLD, "   grad_T         (%.4e) °C/m\n", grad_temp0[0]);
     else if (dim == 2)
-        PetscPrintf(PETSC_COMM_WORLD, "   grad_T   =  (%.4e, %.4e) °C/m\n",
+        PetscPrintf(PETSC_COMM_WORLD, "   grad_T         (%.4e, %.4e) °C/m\n",
                     grad_temp0[0], grad_temp0[1]);
     else
-        PetscPrintf(PETSC_COMM_WORLD, "   grad_T   =  (%.4e, %.4e, %.4e) °C/m\n",
+        PetscPrintf(PETSC_COMM_WORLD, "   grad_T         (%.4e, %.4e, %.4e) °C/m\n",
                     grad_temp0[0], grad_temp0[1], grad_temp0[2]);
 
-    /* --- Time stepping ----------------------------------------------------- */
-    PetscPrintf(PETSC_COMM_WORLD, "\n TIME STEPPING\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   dt0      =  %.4e s\n", delt_t);
-    PetscPrintf(PETSC_COMM_WORLD, "   t_final  =  %.4e s,  n_out = %d\n", t_final, n_out);
+    /* --- Time stepping ------------------------------------------------------ */
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n── TIME STEPPING ───────────────────────────────────────────────────────────\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   t_final        %.4e s   (%.2f h)\n",
+                t_final, (double)(t_final / 3600.0));
+    PetscPrintf(PETSC_COMM_WORLD, "   dt0            %.4e s\n", delt_t);
     if (adap == 1) {
         PetscPrintf(PETSC_COMM_WORLD,
-                    "   adaptive    ON  (NRmin = %d,  NRmax = %d,  factor = %.4f)\n",
+                    "   adaptive       ON    NRmin %d · NRmax %d · factor %.4f\n",
                     NRmin, NRmax, factor);
-        PetscPrintf(PETSC_COMM_WORLD, "   dtmin    =  %.4e s,  dtmax = %.4e s\n", dtmin, dtmax);
+        PetscPrintf(PETSC_COMM_WORLD, "   dt range       [%.4e, %.4e] s\n", dtmin, dtmax);
     } else {
-        PetscPrintf(PETSC_COMM_WORLD, "   adaptive    OFF (fixed dt)\n");
+        PetscPrintf(PETSC_COMM_WORLD, "   adaptive       OFF   (fixed dt)\n");
     }
+    if (user.flag_dtCFL)
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   interface CFL  ON    max|Δφ| per step %.3f  (≈ %.2f elements)\n",
+                    (double)user.cfl_dphimax, (double)(user.cfl_dphimax * 5.6667));
+    /* Output cadence: which of the three modes is live is genuinely easy to get
+     * wrong (-t_out_log is a COUNT, and -t_interv is recomputed from -n_out
+     * after options parsing), so say it outright rather than printing knobs. */
+    if (user.n_out_log > 0)
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   output         %d LOG-spaced snapshots, %.3e → %.3e s\n",
+                    (int)user.n_out_log, (double)user.t_out_log[0], (double)t_final);
+    else if (user.outp > 0)
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   output         every %d accepted step%s\n",
+                    (int)user.outp, (user.outp == 1) ? "" : "s");
+    else
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   output         %d time-uniform snapshots, every %.4e s\n",
+                    (int)n_out, (double)user.t_interv);
 
     /* --- Transport & thermophysical properties ----------------------------- */
-    PetscPrintf(PETSC_COMM_WORLD, "\n TRANSPORT & THERMOPHYSICAL PROPERTIES\n");
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n── TRANSPORT & THERMOPHYSICAL PROPERTIES ───────────────────────────────────\n");
     {   /* user.dif_vap is D_v0 at 273.15 K; VaporDiffus scales it pointwise as
          * D_v0*(T/273.15)^1.81, so the solver never sees the bare constant.
          * Printing only D_v0 read as "the vapor diffusivity" and is 13% high
          * at -20 C. */
         PetscScalar dv0_T;
         VaporDiffus(&user, (PetscScalar)user.temp0, &dv0_T, NULL);
+        /* D_V0_STP is the molecular value; anything meaningfully above it is a
+         * deliberate effective-transport choice, and a log that does not say so
+         * invites the number being read as a measured diffusivity. */
+        const PetscReal D_V0_MOLECULAR = 2.178e-5;   /* the physical constant */
         PetscPrintf(PETSC_COMM_WORLD,
-                    "   D_v(T0)  =  %.4e m²/s    (D_v0 = %.4e at 273.15 K, ^1.81 scaling)\n",
+                    "   D_v(T0)        %.4e m²/s    = D_v0 · (T/273.15)^1.81\n"
+                    "                  D_v0 = %.4e m²/s at 273.15 K\n",
                     PetscRealPart(dv0_T), user.dif_vap);
+        if (user.dif_vap > 1.05 * D_V0_MOLECULAR)
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "                  ↑ INFLATED ×%.4g vs molecular — this is an\n"
+                        "                    EFFECTIVE transport coefficient, not a claim\n"
+                        "                    about vapour diffusivity\n",
+                        (double)(user.dif_vap / D_V0_MOLECULAR));
     }
-    PetscPrintf(PETSC_COMM_WORLD, "   k_ice    =  %.4e W/m/K,  k_air  = %.4e W/m/K\n",
-                user.thcond_ice, user.thcond_air);
-    PetscPrintf(PETSC_COMM_WORLD, "   rho_ice  =  %.4e kg/m³,  rho_air = %.4e kg/m³\n",
-                user.rho_ice, user.rho_air);
-    PetscPrintf(PETSC_COMM_WORLD, "   cp_ice   =  %.4e J/kg/K, cp_air = %.4e J/kg/K\n",
-                user.cp_ice, user.cp_air);
-    PetscPrintf(PETSC_COMM_WORLD, "   lat_sub  =  %.4e J/kg    (latent heat of sublimation)\n",
+    PetscPrintf(PETSC_COMM_WORLD,
+                "                  %-12s %-12s %s\n"
+                "   conductivity   %-12.4e %-12.4e %s\n"
+                "   density        %-12.4e %-12.4e %s\n"
+                "   heat capacity  %-12.4e %-12.4e %s\n",
+                "ice", "air", "units",
+                user.thcond_ice, user.thcond_air, "W/m/K",
+                user.rho_ice, user.rho_air, "kg/m³",
+                user.cp_ice, user.cp_air, "J/kg/K");
+    PetscPrintf(PETSC_COMM_WORLD, "   lat_sub        %.4e J/kg     latent heat of sublimation\n",
                 user.lat_sub);
 
     /* --- Phase-change kinetics -------------------------------------------- */
-    PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-CHANGE KINETICS\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   rho_ice/rho_vs   = %.4e   (density ratio at T0)\n", rho_rhovs);
     PetscPrintf(PETSC_COMM_WORLD,
-                "   d0_sub0          = %.4e m   (K&P Eq.13: gamma*a^3/(k_B*T))\n",
+        "\n── PHASE-CHANGE KINETICS ───────────────────────────────────────────────────\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   rho_ice/rho_vs %.4e                density ratio at T0\n", rho_rhovs);
+    PetscPrintf(PETSC_COMM_WORLD, "   d0_sub0        %.4e m              K&P Eq.13  γ·a³/(k_B·T)\n",
                 user.d0_sub0);
-    PetscPrintf(PETSC_COMM_WORLD, "   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = %.4e s/m"
-                "   [M&F range: 2e4–2e6]\n", user.beta_sub0);
-    PetscPrintf(PETSC_COMM_WORLD, "   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = %.4e s/m\n",
-                beta_sub);
+    /* The -beta_sub0 scalars are printed ONLY where they are used. Under
+     * -alpha_pointwise they are dead, and printing them next to the live
+     * numbers is what once sent an 8.7x-wrong tau_sub into a -dtmax choice. */
+    if (!user.alpha_pointwise) {
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   beta_sub       %.4e s/m            K&P β₀ / M&F β_sub, UNSCALED\n"
+                    "                                            [M&F range 2e4–2e6]\n",
+                    user.beta_sub0);
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "   beta_HK        %.4e s/m            SCALED, = β₀·ρ_vs/ρ_ice\n",
+                    beta_sub);
+    }
     if (user.alpha_pointwise) {
         /* The scalars above are derived from -beta_sub0, which -alpha_pointwise
          * IGNORES (assembly.c overwrites mob_sub/alph_sub from SubKinetics at
@@ -1381,63 +1475,185 @@ int main(int argc, char *argv[]) {
                               / (K_BOLTZ * (user.temp0 + 273.15)))
                          / PetscRealPart(a_c);
 
+        /* alpha_c that the (unused) -beta_sub0 would have implied, so the two
+         * conventions can be reconciled at a glance rather than by hand. */
+        PetscReal Cth0     = PetscSqrtReal(2.0 * PETSC_PI * M_H2O_KG
+                                           / (K_BOLTZ * (user.temp0 + 273.15)));
+        PetscReal ac_beta0 = Cth0 / (user.beta_sub0 * chi0);
         PetscPrintf(PETSC_COMM_WORLD,
-            "   --- pointwise (-alpha_pointwise 1), evaluated at the IC state ---\n");
-        PetscPrintf(PETSC_COMM_WORLD, "   alpha_c  =  %.4e   (model %d)%s\n",
+            "\n   evaluated per quadrature point from alpha_c(T, ρ_v); values below\n"
+            "   are at the IC state.  -beta_sub0 (%.4e) is NOT used — it would\n"
+            "   imply alpha_c = %.4e at %.1f °C.\n\n",
+            (double)user.beta_sub0, (double)ac_beta0, (double)temp);
+        PetscPrintf(PETSC_COMM_WORLD, "   alpha_c        %.4e                model %d%s\n",
                     PetscRealPart(a_c), (int)user.alpha_model,
-                    (PetscRealPart(a_c) >= user.alpha_hi) ? "   [ON the -alpha_hi clamp]" : "");
-        PetscPrintf(PETSC_COMM_WORLD, "   beta_sub =  %.4e s/m   (K&P β₀, UNSCALED)\n", bHK0 / chi0);
-        PetscPrintf(PETSC_COMM_WORLD, "   beta_HK  =  %.4e s/m   (SCALED, = β₀·ρ_vs/ρ_ice)\n", bHK0);
-        PetscPrintf(PETSC_COMM_WORLD, "   lambda   =  %.4e\n", lam0);
-        PetscPrintf(PETSC_COMM_WORLD, "   tau_sub  =  %.4e s\n", tau0);
-        PetscPrintf(PETSC_COMM_WORLD, "   mob_sub  =  %.4e m/s\n", m0);
-        PetscPrintf(PETSC_COMM_WORLD, "   alph_sub =  %.4e 1/s\n", al0);
+                    (user.alpha_model == ALPHA_MODEL_CONST) ? " (constant -alpha_c0)" : "");
+        {   /* Report the clamp only as it actually behaved. Printing the band
+             * unconditionally reads as "your value was clamped", which it is
+             * not when alpha_c0 sits inside [alpha_lo, alpha_hi]. */
+            PetscBool binds = (PetscBool)(PetscRealPart(a_c) >= user.alpha_hi ||
+                                          PetscRealPart(a_c) <= user.alpha_lo);
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "   clamp band     [%.1e, %.1e]        %s\n",
+                        (double)user.alpha_lo, (double)user.alpha_hi,
+                        binds ? "← alpha_c sits ON the clamp:\n"
+                                "                                            raise -alpha_hi first"
+                              : "not binding");
+        }
+        PetscPrintf(PETSC_COMM_WORLD, "   beta_sub       %.4e s/m            K&P β₀, UNSCALED\n", bHK0 / chi0);
+        PetscPrintf(PETSC_COMM_WORLD, "   beta_HK        %.4e s/m            SCALED, = β₀·ρ_vs/ρ_ice\n", bHK0);
+        PetscPrintf(PETSC_COMM_WORLD, "   lambda         %.4e\n", lam0);
+        PetscPrintf(PETSC_COMM_WORLD, "   tau_sub        %.4e s\n", tau0);
+        PetscPrintf(PETSC_COMM_WORLD, "   mob_sub        %.4e m/s\n", m0);
+        PetscPrintf(PETSC_COMM_WORLD, "   alph_sub       %.4e 1/s\n", al0);
+        /* L* = D_v·beta_HK is the kinetics/transport crossover length, and
+         * which side of the domain's feature sizes it falls on decides which
+         * physics is rate-limiting. It is the single most useful derived
+         * number here and was previously left for the reader to compute. */
         PetscPrintf(PETSC_COMM_WORLD,
-            "   (these vary per quadrature point with T and rho_v; the -beta_sub0\n"
-            "    scalars printed above are NOT used by the solve)\n");
+                    "   L* = D_v·β_HK  %.4e m            kinetics/transport crossover:\n"
+                    "                                            features BELOW L* are\n"
+                    "                                            attachment-limited\n",
+                    (double)(PetscRealPart(dv0) * bHK0));
     } else if (!user.flag_Tdep) {
-        PetscPrintf(PETSC_COMM_WORLD, "   lambda   =  %.4e\n", lambda_sub);
-        PetscPrintf(PETSC_COMM_WORLD, "   tau_sub  =  %.4e s\n", tau_sub);
-        PetscPrintf(PETSC_COMM_WORLD, "   mob_sub  =  %.4e m/s   [M&F: 4.33e-7]\n", user.mob_sub);
-        PetscPrintf(PETSC_COMM_WORLD, "   alph_sub =  %.4e 1/s%s\n", user.alph_sub,
-                    (user.alph_sub == 0.0) ? "   (phase-change DECOUPLED)" : "");
+        PetscPrintf(PETSC_COMM_WORLD, "   lambda         %.4e\n", lambda_sub);
+        PetscPrintf(PETSC_COMM_WORLD, "   tau_sub        %.4e s\n", tau_sub);
+        PetscPrintf(PETSC_COMM_WORLD, "   mob_sub        %.4e m/s            [M&F: 4.33e-7]\n", user.mob_sub);
+        PetscPrintf(PETSC_COMM_WORLD, "   alph_sub       %.4e 1/s%s\n", user.alph_sub,
+                    (user.alph_sub == 0.0) ? "            phase-change DECOUPLED" : "");
     } else {
         PetscPrintf(PETSC_COMM_WORLD, "   [temperature-dependent kinetics active]\n");
     }
+    /* Coloured, because it is the one line here that changes what the model
+     * IS rather than what it is set to. Anything but 1.0 breaks the ratio
+     * alph_sub/mob_sub = 3·lambda_sub/eps that the Karma-Plapp matched
+     * asymptotics calibrated, so the run is a fit and the log should say so
+     * where the numbers are, not sixty lines earlier. */
+    if (user.mob_scale != 1.0 || user.alph_scale != 1.0)
+        PetscPrintf(PETSC_COMM_WORLD,
+                    "\033[33m   EMPIRICAL      -mob_scale %.4g · -alph_scale %.4g\n"
+                    "                  ↑ a FIT, not the physical model: this breaks\n"
+                    "                    alph_sub/mob_sub = 3·λ/eps by ×%.4g\033[0m\n",
+                    (double)user.mob_scale, (double)user.alph_scale,
+                    (double)(user.alph_scale / user.mob_scale));
     if (user.decouple_phase_change)
         PetscPrintf(PETSC_COMM_WORLD,
-                    "   decouple_phase_change: ON  (pure AC dynamics, no latent-heat/mass source)\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   xi_T     =  %.4e   (thermal conduction + latent heat scale)\n",
+                    "   DECOUPLED      -decouple_phase_change: pure AC dynamics,\n"
+                    "                  no latent-heat or mass source\n");
+    PetscPrintf(PETSC_COMM_WORLD, "   xi_T           %.4e                thermal conduction + latent heat\n",
                 user.xi_T);
-    PetscPrintf(PETSC_COMM_WORLD, "   xi_v     =  %.4e   (vapor diffusion + rho_ice source scale)\n",
+    PetscPrintf(PETSC_COMM_WORLD, "   xi_v           %.4e                vapour diffusion + ρ_ice source\n",
                 user.xi_v);
 
     /* --- Solver ------------------------------------------------------------ */
-    PetscPrintf(PETSC_COMM_WORLD, "\n SOLVER\n");
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n── SOLVER ──────────────────────────────────────────────────────────────────\n");
     if (vi_bounds)
-        PetscPrintf(PETSC_COMM_WORLD, "   VI bounds:  ON  (ice in [%.4f, %.4f])\n", vi_lo, vi_hi);
+        PetscPrintf(PETSC_COMM_WORLD, "   VI bounds      ON    ice constrained to [%.4f, %.4f]\n", vi_lo, vi_hi);
     else
         PetscPrintf(PETSC_COMM_WORLD,
-                    "   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)\n");
+                    "   VI bounds      OFF   unbounded Newton — pair with -snes_type newtonls\n");
     /* Both bands always print (the else above is single-statement). They do
      * DIFFERENT jobs and conflating them is what killed job1062679. */
     PetscPrintf(PETSC_COMM_WORLD,
-                "   phi physics band  [%.3f, %.3f]  (excursion -> rollback at smaller dt)\n",
+                "   phi band       [%.3f, %.3f]        physics: excursion → rollback\n"
+                "                                            at a smaller dt\n",
                 user.phase_lo, user.phase_hi);
     PetscPrintf(PETSC_COMM_WORLD,
-                "   phi SNES guard    [%.3f, %.3f]  (diverging Newton only -> domain error)\n",
+                "   phi guard      [%.3f, %.3f]        diverging Newton only →\n"
+                "                                            SNES domain error\n",
                 user.snes_guard_lo, user.snes_guard_hi);
 
     /* --- Boundary conditions ----------------------------------------------- */
-    PetscPrintf(PETSC_COMM_WORLD, "\n BOUNDARY CONDITIONS\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   phi_i:   natural Neumann (zero flux)\n");
-    PetscPrintf(PETSC_COMM_WORLD, "   T:       %s\n",
-                flag_BC_Tfix    ? "Dirichlet (fixed value)" : "natural Neumann (insulating)");
-    PetscPrintf(PETSC_COMM_WORLD, "   rho_v:   %s\n",
-                flag_BC_rhovfix ? "Dirichlet (fixed value)" : "natural Neumann (insulating)");
+    /* One row per FACE, one column per FIELD, read straight out of the bc_*
+     * map recorded where the conditions were applied. Face-by-face rather than
+     * field-by-field because the interesting cases are per-face: the
+     * axisymmetric axis is not a wall, and a temperature gradient pins only
+     * the faces perpendicular to it. A summary line per field cannot say
+     * either of those things. */
+    PetscPrintf(PETSC_COMM_WORLD,
+        "\n── BOUNDARY CONDITIONS ─────────────────────────────────────────────────────\n");
+    if (user.periodic == 1) {
+        PetscPrintf(PETSC_COMM_WORLD,
+            "   PERIODIC on every axis — PetIGA carries periodicity on the axis, so it\n"
+            "   applies to all %d fields at once. -flag_BC_Tfix / -flag_BC_rhovfix are\n"
+            "   forced off in this mode.\n", (int)dof);
+    } else {
+        PetscPrintf(PETSC_COMM_WORLD,
+            "   face             phi_i (ice)   T [°C]              rho_v [kg/m³]\n"
+            "   ────────────────────────────────────────────────────────────────────────\n");
+        for (PetscInt l = 0; l < dim; l++) {
+            for (PetscInt m = 0; m < 2; m++) {
+                char face[32], tcol[32], vcol[32];
+                PetscBool is_axis = (PetscBool)(user.axisym && l == 1 && m == 0);
+                if (m == 0) PetscSNPrintf(face, sizeof(face), "%s = 0", ax[l]);
+                else        PetscSNPrintf(face, sizeof(face), "%s = L%s", ax[l], ax[l]);
+                if (is_axis) PetscStrlcat(face, "  (axis)", sizeof(face));
+
+                if (bc_dirichlet[l][m][1])
+                    PetscSNPrintf(tcol, sizeof(tcol), "Dirichlet %8.2f", (double)bc_value[l][m][1]);
+                else
+                    PetscSNPrintf(tcol, sizeof(tcol), "%s", is_axis ? "Neumann (symmetry)" : "Neumann (no flux)");
+
+                if (bc_dirichlet[l][m][2])
+                    PetscSNPrintf(vcol, sizeof(vcol), "Dirichlet %.4e", (double)bc_value[l][m][2]);
+                else
+                    PetscSNPrintf(vcol, sizeof(vcol), "%s", is_axis ? "Neumann (symmetry)" : "Neumann (no flux)");
+
+                PetscPrintf(PETSC_COMM_WORLD, "   %-16s %-13s %-19s %s\n",
+                            face, "Neumann", tcol, vcol);
+            }
+        }
+        PetscPrintf(PETSC_COMM_WORLD, "\n");
+
+        /* What the numbers in the table MEAN. The vapour wall in particular is
+         * a product of two things (-humidity and rho_vs(T0)) and the campaigns
+         * that use it are sensitive to 1-h at the 1e-5 level, so spell it out
+         * rather than leaving it to be reconstructed from -humidity. */
+        if (bc_dirichlet[0][0][2] || bc_dirichlet[0][1][2]) {
+            PetscReal rvs_bc;
+            RhoVS_I(&user, user.temp0, &rvs_bc, NULL);
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   rho_v wall  =  h · rho_vs(T0)  =  %.6f × %.4e  =  %.4e kg/m³\n"
+                "                  undersaturation 1 − h = %+.4e\n"
+                "                  the SAME h sets the initial pore vapour, so the field\n"
+                "                  starts in equilibrium with its own wall (no t = 0 kick)\n",
+                (double)user.hum0, (double)rvs_bc, (double)(user.hum0 * rvs_bc),
+                (double)(1.0 - user.hum0));
+        } else {
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   rho_v       closed system — no vapour enters or leaves. Initial pore\n"
+                "               value is still h·rho_vs(T0), h = %.6f\n", (double)user.hum0);
+        }
+        if (flag_BC_Tfix) {
+            PetscBool has_g = (PetscBool)(grad_temp0[0] != 0.0 || grad_temp0[1] != 0.0 ||
+                                          grad_temp0[2] != 0.0);
+            if (has_g)
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "   T wall      =  T0 ± grad_T·L/2 on the faces PERPENDICULAR to grad_T;\n"
+                    "                  faces parallel to it stay insulating, or pinning them\n"
+                    "                  to a uniform T0 would erase the transverse ΔT\n");
+            else
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "   T wall      =  T0 = %.2f °C on every face (grad_T = 0: uniform\n"
+                    "                  isothermal reservoir)\n", (double)temp);
+        } else {
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   T           adiabatic — latent heat is retained in the domain\n");
+        }
+        PetscPrintf(PETSC_COMM_WORLD,
+            "   phi_i       never pinned. The phase field carries no boundary condition;\n"
+            "               ice touching a wall simply stops there.\n");
+        if (user.axisym)
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   axis        %s = 0 is the symmetry axis, i.e. interior space of the 3D\n"
+                "               problem with ice sitting on it — never a reservoir. Natural\n"
+                "               Neumann there IS the exact axis condition, not an approximation.\n",
+                ax[1]);
+    }
 
     PetscPrintf(PETSC_COMM_WORLD,
-        "\n================================================================================\n\n");
+        "\n════════════════════════════════════════════════════════════════════════════\n\n");
 
     /* Create solution vector (ice, temperature, vapor) */
     Vec U;

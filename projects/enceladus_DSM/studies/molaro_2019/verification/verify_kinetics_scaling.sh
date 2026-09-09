@@ -58,10 +58,16 @@ run_case () {           # run_case <name> [extra flags...]
     echo "$WORK/$name.out"
 }
 
-# The pointwise banner block prints these AFTER the '--- pointwise' header;
-# anchor on that so the scalar echoes higher up cannot be picked up by mistake.
+# Pull the value out of the banner's PHASE-CHANGE KINETICS section. Anchored on
+# the section header rather than on the pointwise sub-header, and takes the
+# first field that PARSES AS A NUMBER rather than a fixed column: this gate
+# already broke once when the banner was reformatted (2026-09-08), and a
+# verification script that fails on cosmetics is worse than no script.
 kin () {                # kin <file> <mob_sub|alph_sub>
-    sed -n '/--- pointwise/,$p' "$1" | grep -m1 "^   $2 " | awk '{print $3}'
+    sed -n '/PHASE-CHANGE KINETICS/,$p' "$1" \
+        | grep -m1 -E "^   $2([[:space:]]|=)" \
+        | tr ' ' '\n' \
+        | grep -m1 -E '^[+-]?[0-9]+\.?[0-9]*[eE][+-]?[0-9]+$'
 }
 
 : > "$LOG"
