@@ -1,3 +1,47 @@
+## 2026-09-09 — Round 2: a measured ceiling at 75 %, and the case to stop tuning
+
+- Jackson: D_v x100 is now WORSE on the neck, and should we stop tuning given
+  the model has no surface diffusion? Both reads are right, and round 2 turns
+  the second one into a positive result rather than a concession.
+- D_v x100 went 62.92 -> 54.55 um. Not a regression — the trade-off finally
+  being paid. In round 1 it fit the neck *because* it was barely losing grain
+  (-0.24 % vs -2.93 %). Made to lose the right amount, it cannot.
+- The window fix worked: the untuned arm now gives -2.94 % against the -2.93 %
+  target, in one Newton step.
+- **THE RESULT.** Within each D_v family the two rounds differ ONLY in the
+  wall, so each is a clean two-point sweep at fixed transport, and -2.93 % is a
+  vertical cut through it. At that cut:
+    untuned 46.05 um (41.4 %) · Dv30 56.87 um (75.3 %) · Dv100 56.88 um (75.3 %)
+  **x30 and x100 land 0.01 um apart.** Factor 3.3 in effective transport buys
+  nothing once the mass loss is constrained. A ceiling, not a slow approach.
+- Two corroborations it is not an interpolation artefact: (1) at nominal D_v the
+  neck is COMPLETELY decoupled from the wall — 46.06 vs 46.05 um across a 54 %
+  change in 1-h — so the untuned 18.7 um deficit is physics, not a BC artefact;
+  (2) the coupling switches on only at inflated D_v, which is the tell: the very
+  thing that made the neck fit in round 1 is what makes the observables fight.
+- Exponent says the SHAPE is wrong too: a = 0.235 +- 0.035 (data) vs 0.12-0.15
+  (model), and D_v does not move it monotonically. A mechanism that only
+  rescales the vapour flux cannot fix an exponent — the missing piece is a
+  second channel, not a bigger first one.
+- Flagged rather than overwrote: synthesis sec. 2's "n ~ 5 matches" uses a
+  different functional form. Not directly comparable but points the other way;
+  marked unresolved in the doc.
+- Updated docs/molaro_validation_synthesis.md with a dated sec. 0: the "~50 %"
+  in secs. 2 and 4 was measured without the shrinkage constraint and on the
+  un-anchored window. 41 % untuned / 75 % ceiling supersede it. Residual is
+  7.9 um at 78 min = 25 %, now the quantitative target for surface diffusion.
+- Recommended AGAINST -5 C next: it tests the same exhausted model against the
+  series sec. 5 argues is artefact-dominated. Suggested one optional
+  confirmation arm (Dv30 at 1-h = 6.45e-04) to replace the interpolation with a
+  measurement, then move to a surface-diffusion term.
+- Process notes: round 1's batch has been deleted, so plot_tuning_ceiling.py
+  reads the committed summary.csv files and reproduces without raw snapshots. I
+  also raced Jackson's vtkOut conversion on the Dv30 arm and measured 28 of 122
+  snapshots — re-ran once conversion finished. Worth checking vts count against
+  sol count before measuring.
+
+---
+
 ## 2026-09-08 (later still) — Banner rebuilt around an explicit BC table
 
 - Jackson asked for the outp.txt parameter block to be neater and much more
