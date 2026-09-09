@@ -182,6 +182,14 @@ def main():
                          "thickness (--ice-shape band only). Equal dr means band "
                          "area ~ 2*alpha*r*dr grows with r, so the band nearer the "
                          "wide mouth is the larger one")
+    ap.add_argument("--eps", type=float, default=EPS,
+                    help=f"interface parameter [m] (default {EPS:.4e}, the comp_eps.py "
+                         "Kaempfer & Plapp value for T=-20 C, alpha_c=1.341e-2). That "
+                         "default is an UPPER bound: the sharp-interface limit needs eps "
+                         "at or below it, so REFINE only. Nx and Ny scale as 1/eps, so "
+                         "halving eps quadruples the cell count in 2D. Used for "
+                         "eps-convergence studies; the realised kinetics should not "
+                         "depend on eps at all, which is the point of the test.")
     ap.add_argument("--mirror", action="store_true",
                     help="reflect the channel about x = Lx/2, so the WIDE end is at "
                          "x=0 and the throat at x=Lx and the virtual apex lies off the "
@@ -200,6 +208,7 @@ def main():
     args = ap.parse_args()
 
     lx, ly = args.Lx, args.Ly
+    eps_run = args.eps
     w_t, w_m = args.w_throat, args.w_mouth
     tag = f"_{args.tag}" if args.tag else ""
     # resolve(): the .opts records the mesh path relative to ROOT, so a relative
@@ -270,7 +279,7 @@ def main():
         # is the one the relaxed (90-degree) shape sets, so quote the band's.
         r1, r2 = r_c - 0.5 * w_at_ice, r_c + 0.5 * w_at_ice
         dkappa = 1.0 / r1 - 1.0 / r2
-        assert EPS / R < 0.05, f"eps/R = {EPS/R:.1%} (interface under-resolved)"
+        assert eps_run / R < 0.05, f"eps/R = {eps_run/R:.1%} (interface under-resolved)"
     else:
         # n bands evenly spaced in x, all with the same radial thickness.
         if args.n_bands == 1:
@@ -295,7 +304,7 @@ def main():
         # Drive quoted for the innermost band, the one nearest the throat.
         r1, r2 = bands[0]
         dkappa = 1.0 / r1 - 1.0 / r2
-        assert EPS / r1 < 0.05, f"eps/r1 = {EPS/r1:.1%} (interface under-resolved)"
+        assert eps_run / r1 < 0.05, f"eps/r1 = {eps_run/r1:.1%} (interface under-resolved)"
         band_report = [(b[0], b[1], alpha * (b[1] ** 2 - b[0] ** 2)) for b in bands]
 
     assert ice_x_lo > EDGE_MARGIN, \
@@ -306,8 +315,8 @@ def main():
 
     drive = D0 * dkappa
 
-    Nx = math.ceil(lx * math.sqrt(2) / EPS)
-    Ny = math.ceil(ly * math.sqrt(2) / EPS)
+    Nx = math.ceil(lx * math.sqrt(2) / eps_run)
+    Ny = math.ceil(ly * math.sqrt(2) / eps_run)
 
     print(f"wedge pore channel  Lx={lx:.4e} Ly={ly:.4e}  Nx={Nx} Ny={Ny}  "
           f"nodes {(Nx+P)*(Ny+P)/1e6:.2f}M")
@@ -483,13 +492,13 @@ def main():
 -wedge_apex_y {apex_y:.6e}
 {ice_block}
 -delt_t 1.0e-4
--eps {EPS:.4e}
+-eps {eps_run:.4e}
 -eps_valid_temp {T0_C:g}   # C: temperature eps/mesh were sized for; solver ABORTS if -temp differs (override: -eps_temp_override 1)
 -periodic 0
 """)
     print(f"\nwrote {opts}\nwrote {dat}")
-    print(f"eps={EPS:.4e} is the comp_eps.py value for T={T0_C:g}C "
-          f"(eps/r1={EPS/r1*100:.1f}%). Valid ONLY at T={T0_C:g}C — pair with a "
+    print(f"eps={eps_run:.4e} (comp_eps.py bound {EPS:.4e} at T={T0_C:g}C) "
+          f"(eps/r1={eps_run/r1*100:.1f}%). Valid ONLY at T={T0_C:g}C — pair with a "
           f"{T0_C:g}C ZERO-GRADIENT experiment.")
 
 

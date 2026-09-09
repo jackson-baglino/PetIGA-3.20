@@ -1,0 +1,46 @@
+# =============================================================================
+# experiment/tgrad/tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x_eps0.43um.opts
+#
+# eps-CONVERGENCE ARM. Identical to tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x.opts
+# except for -t_final and -dtmax, both of which follow eps. Pair it with
+# geometry/wedge/wedge_2D_L300um_eps0.43um_90deg.opts (eps halved to 4.2920e-07,
+# Nx x Ny = 989 x 659, four times the cells).
+#
+# WHY. tau_sub scales as eps^2, so -dtmax must fall by 4. -t_final is set for
+# two LOCAL cell spacings of interface travel, the same as the eps arm, so both
+# carry the same interface-extraction precision; since meas/pred is constant in
+# time the differing physical windows do not matter.
+#
+# WHAT IT TESTS. This is the one check that appeals to no formula of our own: a
+# converged sharp-interface limit cannot depend on eps. Before the tau_sub fix
+# the realised kinetic coefficient was beta_sub0 + Delta with Delta ~ eps, so
+# the kinetics moved with the mesh and no refinement could ever converge:
+#
+#     eps      beta_eff (old)   meas/pred (old)  |  beta_eff (new)  meas/pred (new)
+#     8.58e-7   7.2036e5         0.8220          |   5.9216e5        1.0000
+#     4.29e-7   6.5626e5         0.9023          |   5.9216e5        1.0000
+#
+# So the old code predicts the ratio MOVES 0.822 -> 0.902 on refinement, and the
+# new code predicts it stays at 1.0000. Measured at eps it is 1.0056 / 0.9877;
+# if this arm returns the same within its sensitivity, the sharp-interface limit
+# is eps-independent and the fix is confirmed without reference to our algebra.
+# =============================================================================
+
+-t_final 5.0556e+05                     # 5.85 d -- two eps/2 cell spacings of travel
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                  # isothermal: geometry and the BCs are the only drivers
+
+-flag_BC_Tfix 1                          # pin wall temperatures (uniform)
+-flag_BC_rhovfix 1                       # vapour reservoirs...
+-rhovfix_axis 0                          # ...on the x-faces ONLY (open pore ends)
+-rhovfix_lo 1.000005                     # rho_v at x=0  / rho_vs
+-rhovfix_hi 0.999995                     # rho_v at x=Lx / rho_vs
+
+-beta_sub0 5.9216e+05                   # 1x reference; predicted ratio 1.0000
+-d0_sub0 1.0166e-9                        # physical capillary length at -20 C
+
+-dtmax 1.173e+02                        # 1.093 * tau_sub (107.3 s at eps/2)
+-dtCFL 1
+-dtCFL_dphimax 0.2

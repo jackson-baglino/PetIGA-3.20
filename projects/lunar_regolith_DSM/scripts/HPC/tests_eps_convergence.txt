@@ -1,0 +1,19 @@
+# eps-convergence check for the corrected tau_sub, 2026-09-09.
+#
+#   ./scripts/HPC/submit_batch.sh --tag eps_conv \
+#       --tests-file scripts/HPC/tests_eps_convergence.txt
+#
+# ONE arm. The eps comparison point already exists: the beta1.00x run of batch
+# 2026-09-09__09.22.56_tau_fix, which measured 1.0056 (inner) / 0.9877 (outer).
+#
+# This arm halves eps to 4.2920e-07 (989 x 659, four times the cells, ~1.96M
+# DoFs) and predicts the SAME ratio. The old tau_sub would instead have moved it
+# from 0.8220 to 0.9023, because the realised kinetic coefficient carried an
+# eps-dependent term. A converged sharp-interface limit cannot do that, so this
+# is the test that references none of our own derivation.
+#
+# NOTE the resource change: ~1.96M DoFs sizes to about 39 ranks over 2 nodes,
+# and the arm is 4311 steps against the eps arm's 3406. Give it more wall time
+# than the last batch, where the eps beta1.00x arm was cut off at step 3023.
+#
+wedge_2D_L300um_eps0.43um_90deg:tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x_eps0.43um

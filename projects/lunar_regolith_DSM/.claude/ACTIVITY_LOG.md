@@ -1,3 +1,41 @@
+## 2026-09-09 (c) — eps/2 arm staged; doc rewritten; the v_n bumps explained
+
+- **eps/2 convergence arm staged.** `--eps` added to `build_geometry_wedge.py`
+  (default is the comp_eps K&P bound, which is an UPPER limit, so refine only;
+  verified the default path still reproduces the committed geometry byte for
+  byte). New mesh at eps = 4.2920e-07, 989 x 659, 1.97M DoFs -> 40 ranks over
+  2 nodes, 4311 steps. `scripts/HPC/tests_eps_convergence.txt`. Dry-run clean.
+  Predicts the same ratio as the eps run (1.0056 / 0.9877); the old tau_sub
+  would have moved it to 0.9023.
+- **Doc rewritten** for a reader who was not part of this: 10 pages -> 6, one
+  opening paragraph, every symbol introduced where it first appears, and a new
+  section on how the defect scaled with alpha_c, eps, the diffusivities and
+  temperature. Dropped the xi_v, mass-conservation, sqrt(2) and
+  extraction-artifact material entirely; it survives in this log.
+- **The bumps in the measured v_n are the position extraction, not the model.**
+  They are the sub-cell interface-location error divided by the differentiation
+  window:
+
+  | run | travel [dx] | window [s] | pos err [dx] | predicted | measured |
+  |---|---|---|---|---|---|
+  | 0.10x | 0.31 | 2.96e3 | 0.00030 | 4.76% | 5.48% |
+  | 0.25x | 0.78 | 7.39e3 | 0.00021 | 1.35% | 2.13% |
+  | 1.00x | 2.53 | 2.96e4 | 0.00057 | 0.96% | 1.06% |
+  | 4.00x | 10.07 | 1.18e5 | 0.00097 | 0.48% | 0.61% |
+
+  Where the run traverses enough cells to resolve a period, it is one bump per
+  control-point spacing traversed (|v|*T/dx = 0.87-0.90 for the 4.00x and 1.00x
+  arms). The medians are unaffected.
+- **Design flaw in the tau_fix timings, worth fixing before any repeat.** I set
+  t_final proportional to beta_sub0 on the assumption v_n ~ 1/beta. With the
+  correction removed these runs are TRANSPORT-limited, so v_n is nearly
+  beta-independent (1.0-1.6e-12 across a 40x range in beta) and the travel came
+  out 0.31 dx at 0.10x against 10.07 dx at 4.00x. That, on top of the smaller
+  sigma residual at low beta, is why the 0.10x arm is the noisy one. A repeat
+  should set t_final for equal TRAVEL, not proportional to beta.
+
+---
+
 ## 2026-09-09 (b) — The tau_sub fix verifies, and the mirror is exact
 
 Batch `2026-09-09__09.22.56_tau_fix`, five arms. Four completed; `beta1.00x`
