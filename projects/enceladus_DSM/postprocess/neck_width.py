@@ -63,6 +63,45 @@ def read_vts_phi(fn):
     return fields["IcePhase"], X[0, :], Y[:, 0]
 
 
+def _logit(p, floor=1e-12):
+    """log(p/(1-p)), clipped so exact 0/1 samples do not produce +-inf."""
+    p = np.clip(p, floor, 1.0 - floor)
+    return np.log(p / (1.0 - p))
+
+
+def _cross(ya, yb, pa, pb, level):
+    """Where phi crosses `level` between two samples, interpolating in LOGIT.
+
+    WHY NOT LINEAR IN PHI. The .vts snapshots are written on a COARSER grid
+    than the solve -- 1080 x 541 against a 5394 x 2697 mesh -- so the sample
+    spacing is dy = 4.17e-7 m = 3.5 eps. Linear interpolation of a sigmoid
+    across 3.5 eps is not a small correction: the two samples bracketing
+    phi = 0.5 can sit at phi = 0.03 and 0.97, and the resulting crossing error
+    depends on where the true interface falls WITHIN the cell. That is periodic
+    in the sub-cell offset, so as the interface sweeps outward the error
+    oscillates -- which is the sinusoidal second mode riding on the neck-growth
+    curve. Measured: 0.064 um peak-to-peak on the radius, 0.13 um on the width,
+    against a fast residual of 0.26-0.32 um ptp in the data.
+
+    Interpolating in logit(phi) instead is EXACT for this model's equilibrium
+    profile rather than merely higher-order: the 1D profile is
+    phi = 1/(1 + exp(-s/eps)), so logit(phi) = s/eps is LINEAR in distance and
+    a straight line through two samples recovers the crossing to machine
+    precision at ANY spacing. Verified against a synthetic logistic sampled at
+    3.53 eps: linear-in-phi 6.4e-2 um ptp, linear-in-logit 1.6e-16 um.
+
+    Away from equilibrium (a strongly curved neck) the profile is not exactly
+    logistic, so this is very good rather than exact -- but it is unbiased in
+    the sub-cell offset, which is the property that matters here.
+    """
+    la, lb = _logit(pa), _logit(pb)
+    ll = _logit(level)
+    if la == lb:
+        return ya
+    f = (la - ll) / (la - lb)
+    return ya + f * (yb - ya)
+
+
 def chord_width(col, y, level):
     """Full span between outermost `level`-crossings of phi along a column."""
     above = col >= level
@@ -70,15 +109,13 @@ def chord_width(col, y, level):
         return 0.0
     idx = np.flatnonzero(above)
     lo_i, hi_i = idx[0], idx[-1]
-    # sub-cell interpolation at both ends
+    # sub-cell interpolation at both ends (see _cross for why it is in logit)
     y_lo = y[lo_i]
     if lo_i > 0:
-        f = (level - col[lo_i - 1]) / (col[lo_i] - col[lo_i - 1])
-        y_lo = y[lo_i - 1] + f * (y[lo_i] - y[lo_i - 1])
+        y_lo = _cross(y[lo_i - 1], y[lo_i], col[lo_i - 1], col[lo_i], level)
     y_hi = y[hi_i]
     if hi_i < len(y) - 1:
-        f = (col[hi_i] - level) / (col[hi_i] - col[hi_i + 1])
-        y_hi = y[hi_i] + f * (y[hi_i + 1] - y[hi_i])
+        y_hi = _cross(y[hi_i], y[hi_i + 1], col[hi_i], col[hi_i + 1], level)
     return y_hi - y_lo
 
 
@@ -100,6 +137,13 @@ def refine_min(w, x, jn):
     at the scale of eps. Once the fillet rounds (t >~ 1 min) the minimum IS
     smooth and this is accurate: on that series the refined and 40x-upsampled
     measurements agree to 0.01 um at t_final.
+
+    TRIED AND REJECTED (2026-09-09): widening this to a 5-point least-squares
+    parabola, on the theory that the exact 3-point vertex was inheriting noise
+    from its two flanking columns. It is a no-op -- the high-frequency residual
+    moved 0.0232 -> 0.0237 um RMS on the untuned arm and was unchanged on the
+    other two. The weak correlation with the axial sub-cell phase (|R| ~ 0.2-0.3)
+    that motivated it is not, in fact, this estimator. Do not re-derive it.
     """
     if jn <= 0 or jn >= len(w) - 1:
         return w[jn], x[jn]

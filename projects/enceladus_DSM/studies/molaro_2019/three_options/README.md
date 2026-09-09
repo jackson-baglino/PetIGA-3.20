@@ -1,5 +1,12 @@
 # Three tuning options at T = −20 °C — results
 
+> ⚠️ **Measurement convention (noted 2026-09-09).** These neck widths were
+> measured with the old linear-in-φ sub-cell crossing, which carried a
+> ±0.06 µm sub-cell artefact (see `../three_options_round2/README.md`). The raw
+> batch has since been deleted, so they cannot be re-measured. `summary.csv` is
+> retained because `plot_tuning_ceiling.py` needs these points; do not quote
+> them to better than ~0.1 µm.
+
 Batch `2026-09-03__17.32.48_molaro_three_options_T-20`, four arms on dom2
 (43.6 M DoF, 437 ranks), all completed, 121 minute-cadence snapshots each.
 Measured with `postprocess/compare_arms_vs_molaro.py` →

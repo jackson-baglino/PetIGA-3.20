@@ -1,0 +1,7 @@
+spacing,dy_over_eps,estimator,max_abs_err_um,ptp_over_offset_um,verdict
+production .vts (3.5 eps),3.5311,linear-in-phi,6.363112e-02,1.272487e-01,reference
+production .vts (3.5 eps),3.5311,logit,0.000000e+00,0.000000e+00,PASS
+half that (1.8 eps),1.7655,linear-in-phi,9.661568e-03,1.932050e-02,reference
+half that (1.8 eps),1.7655,logit,0.000000e+00,0.000000e+00,PASS
+coarse (7.1 eps),7.0621,linear-in-phi,3.019125e-01,6.037603e-01,reference
+coarse (7.1 eps),7.0621,logit,0.000000e+00,0.000000e+00,PASS

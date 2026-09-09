@@ -24,9 +24,9 @@ transport family across its two humidities:
 
 | | neck at t*+78 min | share of observed growth |
 |---|---|---|
-| untuned (nominal D_v) | 46.05 um | 41.4 % |
-| D_v x30  | 56.87 um | 75.3 % |
-| D_v x100 | 56.88 um | 75.3 % |
+| untuned (nominal D_v) | 45.98 um | 41.2 % |
+| D_v x30  | 56.88 um | 75.3 % |
+| D_v x100 | 56.87 um | 75.3 % |
 | Molaro et al. (2019) | 64.78 um | 100 % |
 
 x30 and x100 agree to 0.01 um: a factor 3.3 in effective transport buys nothing
@@ -40,7 +40,7 @@ as future work.
 
 ⚠️ **Unresolved:** section 2 claims the growth exponent matches (n ~ 5 from
 x^5 - x0^5 ~ t). Refitting w = C(t' + t0)^a with t0 free over the anchored
-window gives a = 0.235 +- 0.035 for the data against 0.12-0.15 for the model —
+window gives a = 0.235 +- 0.035 for the data against 0.122-0.146 for the model —
 the model growing too slowly by ~2.5 sigma. Different functional form and
 protocol, so not directly comparable, but they point different ways. Resolve
 before publishing either.
