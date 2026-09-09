@@ -1,3 +1,41 @@
+## 2026-09-08 (later) — inputs/ staging, replots, and round 2 queued
+
+- Jackson: postprocessing needs inputs/ in the output dir. Confirmed and fixed —
+  and it was not only provenance. neck_width.py / grain_shrinkage.py find the
+  validation series as `Path(__file__).parent.parent/"inputs/validation/..."`,
+  which resolves next to *whichever copy of the script runs*. run_enceladus.sh
+  staged postprocess/ but not inputs/, so the staged copies (what
+  run_batch_measure.sh uses on the cluster) silently plotted the model curve
+  with no data. The lookup is a soft `if cand.is_file()`, so nothing complained.
+- inputs/ now staged by both run_enceladus.sh variants, minus scratch/ (70 MB of
+  retired files vs ~4 MB for the rest) — same convention as postprocess/scratch.
+- At batch level the snapshot was misnamed AND incomplete: `inputs_snapshot/`
+  could never satisfy a lookup for `inputs/`, and the piecemeal
+  solver.opts+geometry+experiment copy never included validation/. Both batch
+  scripts now stage the whole tree as `inputs/`; the iterators skip `inputs` as
+  well as `inputs_snapshot` so old batches still work.
+- Staged inputs/ into the current batch and all four run dirs, then regenerated
+  grain_shrinkage.png for each **through the run's own staged postprocess copy**
+  — which also verifies the fix rather than just asserting it. All four now
+  carry Molaro's grain measurements.
+- ANSWERED the hum0 question: there is only one knob and it already does both.
+  SetNodeFields writes rho_v = rho_vs*(hum0*phi_air + phi_ice)
+  (initial_conditions.c:224); the Dirichlet value is hum0*rho_vs
+  (enceladus_main.c:1075). Pore IC and wall are identical by construction, ice
+  interior saturated. Jackson's instinct was right and no change was needed.
+- Round 2 queued, three arms, walls from the MEASURED response rather than the
+  series-resistance formula (which missed by 7-12x at high D_v vs 10 % at
+  nominal — it assumes the wall is the only sink, and at high D_v the neck
+  competes for the same vapour):
+    untuned  0.99816 -> 0.99715 ; Dv30 0.99992 -> 0.99928 ; Dv100 0.99996 -> 0.99923
+- Arm 1 is RE-RUN, not carried over: at the old h its apparent -2.92 % bullseye
+  was the full-run number, so it matched neither observable for two different
+  reasons. Leaving it there would have made the baseline look wrong by artefact.
+- The M_0 x5 arm is dropped (Jackson agreed): worst shape, 754 min, and its neck
+  is not vapour-fed.
+
+---
+
 ## 2026-09-08 — Scored the four T = −20 °C arms; a 1.54x window bug
 
 - Jackson ran the batch and noticed the neck fits and the shrinkage fits were
