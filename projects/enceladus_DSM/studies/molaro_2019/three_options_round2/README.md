@@ -156,11 +156,32 @@ tried and rejected: widening the axial vertex fit to a 5-point least-squares
 parabola, which is a measured no-op (0.0232 → 0.0237 µm RMS). The residual
 ~0.03 µm is well below anything the conclusions rest on.
 
-## Which round to keep: round 2
+## Which round to keep: BOTH, but re-measure round 1 first
 
-Round 1's raw batch has **already been deleted**; its numbers survive in
-`../three_options/summary.csv`, which is all `plot_tuning_ceiling.py` needs.
-Keep round 2's raw output. On the merits it is the better set regardless:
+Round 1 survives on the HPC (the local copy was deleted). Keep it, because the
+75 % ceiling is a **two-point sweep per family** — it needs one run at each
+wall, and round 1 supplies one of the two ends of every line in
+`tuning_ceiling.png`. Deleting it would leave the headline number resting on a
+committed CSV that can never be re-derived.
+
+There is one thing to do first. Round 1's neck widths were measured with the
+old linear-in-φ crossing; round 2's have been re-measured with the logit fix.
+Re-run the measurement on round 1 **while the raw snapshots still exist**:
+
+```bash
+bash postprocess/run_batch_measure.sh $SCRATCH/enceladus_DSM/batch_2026-09-03__17.32.48_molaro_three_options_T-20
+```
+
+then update `../three_options/summary.csv` from it. That puts both ends of every
+family line on the same convention and removes the last caveat attached to the
+75 % number. It is a measurement, not a re-run — minutes, not core-hours.
+
+**After that, disk is cheap to reclaim.** Everything downstream reads
+`neck_width.csv`, `grain_shrinkage.csv` and `summary.csv` — kilobytes. Once
+round 1 is re-measured, its `sol_*.dat` and `vtkOut/` (~116 GB across four arms)
+can go; keep round 2 complete, since it is the set any further work builds on.
+
+### Why round 2 is the better set on the merits
 
 - its walls are calibrated on the **corrected** 78-minute window — round 1's
   were fitted against the full-run number and sit 1.54× too saturated;
@@ -168,16 +189,10 @@ Keep round 2's raw output. On the merits it is the better set regardless:
   is the defensible untuned-model-vs-experiment comparison; round 1's was 35 %
   short;
 - round 1's *better* neck RMS was bought by barely losing any grain, which is
-  not a fit to the experiment;
-- only round 2 can carry the interpolation fix — round 1's snapshots are gone.
+  not a fit to the experiment.
 
-⚠️ One consequence worth recording: the round-1 values in
-`../three_options/summary.csv` were measured with the **old** linear-in-φ
-crossing and cannot be re-measured. The two ends of each family line in
-`tuning_ceiling.png` therefore use slightly different conventions. The offset is
-±0.06 µm against a 7.9 µm deficit, and recomputing the ceiling after the fix
-moved it by 0.01 µm, so this does not affect any conclusion — but do not quote
-round-1 neck widths to better than ~0.1 µm.
+Round 1's value is as the **saturated end** of the sweep, not as a competing
+answer — and in that role it is essential.
 
 ## What is worth one more run, if anything
 
