@@ -1,3 +1,41 @@
+## 2026-09-09 — Implemented the tau_sub fix; staged its verification batch
+
+- **`-thin_iface_corr`, default 0**, in both projects and at all three sites:
+  the scalar paths (`enceladus_main.c`, `lunar_main.c`) and the pointwise path
+  (`SubKinetics`). Verified locally: with the flag off, `tau_sub = 4.2921e2` and
+  the header reports `beta realised = 5.9216e5 = 1.0000 x -beta_sub0`; with it
+  on, `5.2574e2` and `1.2249x`.
+- **The ON branch reproduces the historical FORM, not a corrected one.** Its
+  only use is comparison against earlier runs. A "corrected" ON branch would
+  need the Clausius-Clapeyron factor, whose derivative would require
+  d2(rho_vs)/dT2 for the pointwise Jacobian, and by the analysis the physically
+  correct correction is ~0 anyway - so it would be indistinguishable from OFF.
+  Gated the analytic derivatives with the terms so the Jacobian stays exact in
+  both branches.
+- **lunar's vapour term now uses D_v(temp0)** instead of the base 0 C value,
+  matching enceladus and the pointwise path. This moves the ON branch's tau_sub
+  by 0.7%, so ON is not bit-for-bit historical in lunar; noted at the flag.
+- **New `--mirror` in `build_geometry_wedge.py`** reflects the channel about
+  x = Lx/2. Verified the default path is unchanged (flags byte-identical to the
+  committed geometry). The mirrored geometry has walls y_bot = +0.25x,
+  y_top = 2.0e-4 - 0.25x and apex (4.0e-04, 1.0e-04); the ice occupies the same
+  x-range and the concave meniscus moves from x=1.0e-04 to x=2.0e-04.
+- **Fixed a latent bug in `wedge_gt_velocity.py`** that the mirror exposed: it
+  computed the radius as the SIGNED `x - apex_x` and assumed the left meniscus
+  was the inner one. On a right-side apex both radii come out negative and both
+  curvature signs silently flip. It now uses `|x - apex_x|` and identifies
+  inner/outer by which radius is smaller, so the labels follow the geometry.
+  Regression-checked against the unmirrored 1.00x arm: unchanged.
+- **Five-arm verification batch staged**, `scripts/HPC/tests_tau_sub_fix.txt`:
+  the four beta_sub0 arms (predicted ratio now 1.0000 for every one, against
+  0.3160/0.5359/0.8220/0.9487 before) plus a mirror control. `-t_final` and
+  `-dtmax` recomputed for the corrected tau_sub, all arms 3406 steps.
+  Dry-run with a stubbed sbatch: 5 parsed, 5 submitted, snapshot correct.
+
+Not submitted; the command is with the user.
+
+---
+
 ## 2026-08-27 (b) — Defined phi_0; rewrote the GT note in scientific register
 
 - **Defined `phi_0` explicitly**, which had been used throughout §5 without

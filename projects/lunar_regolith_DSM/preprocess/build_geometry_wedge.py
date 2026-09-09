@@ -182,6 +182,16 @@ def main():
                          "thickness (--ice-shape band only). Equal dr means band "
                          "area ~ 2*alpha*r*dr grows with r, so the band nearer the "
                          "wide mouth is the larger one")
+    ap.add_argument("--mirror", action="store_true",
+                    help="reflect the channel about x = Lx/2, so the WIDE end is at "
+                         "x=0 and the throat at x=Lx and the virtual apex lies off the "
+                         "RIGHT edge. Geometrically congruent to the default, with the "
+                         "inner (concave) meniscus on the right instead of the left. "
+                         "Used as a symmetry control: the two menisci should exchange "
+                         "roles exactly, so any left/right asymmetry that does NOT "
+                         "follow the geometry is an artifact of the mesh or the "
+                         "measurement. Remember to swap -rhovfix_lo and -rhovfix_hi in "
+                         "the experiment file to mirror the boundary conditions too.")
     ap.add_argument("--tag", default=None,
                     help="suffix for output basenames, e.g. --tag steep -> "
                          "2D_wedge_band_steep.opts / wedge_steep.dat")
@@ -209,14 +219,26 @@ def main():
     m = (w_m - w_t) / (2.0 * lx)
     bot_y0 = 0.5 * (ly - w_t)
     top_y0 = 0.5 * (ly + w_t)
-    y_bot = lambda x: bot_y0 - m * x
-    y_top = lambda x: top_y0 + m * x
-    alpha = math.atan(m)                      # half-angle
-
-    # ---- Virtual apex: where the two walls would meet (outside the domain) ----
     apex_x = -w_t / (2.0 * m)
     apex_y = 0.5 * ly
     assert apex_x < 0.0, "apex must lie outside the domain (left of x=0)"
+
+    # ---- Optional reflection about x = Lx/2 ----
+    # Substituting x -> lx - x turns y_bot = bot_y0 - m*x into
+    # (bot_y0 - m*lx) + m*x, and likewise for the top; the apex reflects to
+    # lx - apex_x, which is off the RIGHT edge. Everything downstream is written
+    # in terms of (bot_y0, m_bot, top_y0, m_top, apex_x), so nothing else changes.
+    if args.mirror:
+        bot_y0, top_y0 = bot_y0 - m * lx, top_y0 + m * lx
+        m_bot, m_top   = +m, -m
+        apex_x         = lx - apex_x
+        assert apex_x > lx, "mirrored apex must lie right of x=Lx"
+    else:
+        m_bot, m_top = -m, +m
+
+    y_bot = lambda x: bot_y0 + m_bot * x
+    y_top = lambda x: top_y0 + m_top * x
+    alpha = math.atan(m)                      # half-angle
 
     xs = np.linspace(0.0, lx, 4000)
     assert (y_top(xs) > y_bot(xs)).all(), "walls cross"
@@ -226,7 +248,8 @@ def main():
     # ---- Ice ----
     ice_cx = args.ice_x * lx
     ice_cy = 0.5 * ly                         # the wedge axis
-    r_c = ice_cx - apex_x                     # centre distance from the apex
+    sgn = -1.0 if args.mirror else +1.0       # x = apex_x + sgn*r
+    r_c = sgn * (ice_cx - apex_x)             # centre distance from the apex
     w_at_ice = w_t + 2.0 * m * ice_cx
     # PERPENDICULAR distance from the axis to a wall -- this, not the vertical
     # half-width, is what sets the contact angle of a clipped disc.
@@ -257,7 +280,7 @@ def main():
             centres = [(i + 1) * step for i in range(args.n_bands)]
         bands = []
         for xb in centres:
-            rc = xb - apex_x
+            rc = sgn * (xb - apex_x)
             bands.append((rc - 0.5 * args.band_dr, rc + 0.5 * args.band_dr))
         assert bands[0][0] > 0.0, "innermost band inner radius <= 0 -- band_dr too large"
         for i in range(1, len(bands)):
@@ -266,7 +289,8 @@ def main():
                  f"r2={bands[i-1][1]:.3e}) -- shrink --band-dr or use fewer bands")
         R = None
         contact_deg = 90.0
-        ice_x_lo, ice_x_hi = bands[0][0] + apex_x, bands[-1][1] + apex_x
+        _xa, _xb = apex_x + sgn*bands[0][0], apex_x + sgn*bands[-1][1]
+        ice_x_lo, ice_x_hi = min(_xa, _xb), max(_xa, _xb)
         area = sum(alpha * (b[1] ** 2 - b[0] ** 2) for b in bands)
         # Drive quoted for the innermost band, the one nearest the throat.
         r1, r2 = bands[0]
@@ -289,8 +313,10 @@ def main():
           f"nodes {(Nx+P)*(Ny+P)/1e6:.2f}M")
     print(f"  walls: flat, width {w_t:.3e} -> {w_m:.3e}, half-angle "
           f"{math.degrees(alpha):.2f} deg (slope {m:+.4f})")
-    print(f"         y_bot(x) = {bot_y0:.4e} {-m:+.4f}*x")
-    print(f"         y_top(x) = {top_y0:.4e} {m:+.4f}*x")
+    print(f"         y_bot(x) = {bot_y0:.4e} {m_bot:+.4f}*x")
+    print(f"         y_top(x) = {top_y0:.4e} {m_top:+.4f}*x")
+    if args.mirror:
+        print("         MIRRORED: wide end at x=0, throat at x=Lx, apex to the right")
     print(f"  apex:  ({apex_x:.4e}, {apex_y:.4e})  [virtual, outside the domain]")
     if args.ice_shape == "lens":
         print(f"  ice:   'lens' — disc R={R:.4e} centred ({ice_cx:.4e}, {ice_cy:.4e}), "
@@ -300,8 +326,9 @@ def main():
     else:
         print(f"  ice:   'band' x{len(band_report)} — apex-centred annuli, contact 90 deg:")
         for i, (a1, a2, ar) in enumerate(band_report):
-            print(f"           band {i}: r {a1:.4e}..{a2:.4e}  (x {a1+apex_x:.4e}.."
-                  f"{a2+apex_x:.4e})  area {ar:.4e} m^2")
+            print(f"           band {i}: r {a1:.4e}..{a2:.4e}  "
+                  f"(x {apex_x+sgn*a1:.4e}..{apex_x+sgn*a2:.4e})  "
+                  f"area {ar:.4e} m^2")
         if len(band_report) > 1:
             print(f"           area ratio outer/inner = "
                   f"{band_report[-1][2]/band_report[0][2]:.2f} "
@@ -331,8 +358,8 @@ def main():
     cmd = [sys.executable,
            str(ROOT / "preprocess/build_geometry_multi_grain.py"),
            "--bumps", "", "--top-bumps", "",
-           "--bot-y0", f"{bot_y0}", "--bot-slope", f"{-m}",
-           "--top-y0", f"{top_y0}", "--top-slope", f"{m}",
+           "--bot-y0", f"{bot_y0}", "--bot-slope", f"{m_bot}",
+           "--top-y0", f"{top_y0}", "--top-slope", f"{m_top}",
            "--Lx", f"{lx}", "--Ly", f"{ly}", "--Nx", f"{Nx}", "--Ny", f"{Ny}",
            "--P", str(P), "--C", str(C), "--out", str(dat),
            "--plot", str(png.with_name(png.stem + "_mesh.png")),
@@ -408,8 +435,8 @@ def main():
 # GEOMETRY. Straight walls, symmetric about y = Ly/2, opening left to right:
 #   width {w_t:.3e} m at x=0  ->  {w_m:.3e} m at x=Lx
 #   half-angle {math.degrees(alpha):.2f} deg
-#   y_bot(x) = {bot_y0:.6e} {-m:+.6f}*x
-#   y_top(x) = {top_y0:.6e} {m:+.6f}*x
+#   y_bot(x) = {bot_y0:.6e} {m_bot:+.6f}*x
+#   y_top(x) = {top_y0:.6e} {m_top:+.6f}*x
 # The walls are carried by -wall_{{bot,top}}_{{y0,slope}}, NOT by the bump lists:
 # bumps have compact support and cannot express a ramp. A straight wall is
 # represented EXACTLY by the mesh (B-splines reproduce linear functions at
@@ -446,9 +473,9 @@ def main():
 -Ly {ly:.6e}
 -Lz 0
 -wall_bot_y0 {bot_y0:.6e}
--wall_bot_slope {-m:.6e}
+-wall_bot_slope {m_bot:.6e}
 -wall_top_y0 {top_y0:.6e}
--wall_top_slope {m:.6e}
+-wall_top_slope {m_top:.6e}
 # The apex is emitted for BOTH ice shapes: postprocess/track_wedge_band.py
 # reads it to compute the centroid's distance from the apex, which is the
 # number the whole run is about. With -wedge_band_r2 <= r1 the band IC is off.

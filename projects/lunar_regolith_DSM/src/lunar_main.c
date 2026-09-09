@@ -581,6 +581,14 @@ int main(int argc, char *argv[]) {
 
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
+    user.thin_iface_corr = PETSC_FALSE;
+    ierr = PetscOptionsBool("-thin_iface_corr",
+             "Include the Karma thin-interface counter-terms in tau_sub. Default 0: "
+             "for a one-sided vapour diffusivity the O(eps) kinetic contribution they "
+             "compensate is identically zero, so including them inflates the realised "
+             "beta above -beta_sub0 (1.22x at the -20 C wedge parameters). See "
+             "docs/gt_deficit/",
+             "", user.thin_iface_corr, &user.thin_iface_corr, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     /* Default both faces to -humidity, so omitting these reproduces the old
@@ -828,7 +836,42 @@ int main(int argc, char *argv[]) {
     d0_sub = user.d0_sub0 / rho_rhovs;
     beta_sub = user.beta_sub0 / rho_rhovs;
     lambda_sub = a1 * user.eps / d0_sub;
-    tau_sub = user.eps * lambda_sub * (beta_sub / a1 + a2 * user.eps / user.diff_sub + a2 * user.eps / user.dif_vap);
+    /* Thin-interface counter-terms, OFF by default (-thin_iface_corr).
+     *
+     * These inflate tau_sub by the spurious O(eps) kinetic contribution that the
+     * sharp-interface asymptotics are expected to subtract back off, so that the
+     * realised kinetic coefficient equals the requested -beta_sub0. For this
+     * model that contribution is zero: the vapour diffusivity is one-sided
+     * (D_v*phi_a), which makes the inner deviation of sigma identically null, so
+     * nothing is subtracted and the inflation survives as an error in beta --
+     * 1.22x at the -20 C wedge parameters, 1.49x at the Molaro ones. Measured
+     * over a 40x sweep in -beta_sub0, beta_fit/beta_bare = 1.0009 +/- 0.0007.
+     *
+     * -thin_iface_corr 1 restores the terms in their historical form, for
+     * comparison against earlier runs. (In lunar this is not bit-for-bit: D_v is
+     * now taken at temp0 rather than at 0 C, which moves tau_sub by 0.7%.) It is
+     * not a corrected form: the
+     * thermal term additionally omits the Clausius-Clapeyron factor by which
+     * temperature acts on sigma, and is over-weighted by 11-1300x as a result.
+     * Since the physically correct correction for this model is ~0, a "fixed"
+     * ON branch would be indistinguishable from OFF and is not provided.
+     *
+     * See docs/gt_deficit/. */
+    /* D_v is taken at temp0, matching enceladus and the pointwise path; the base
+     * 0 C value used here previously differed by 13% in that term at -20 C. */
+    {
+        PetscScalar dv_T0;
+        VaporDiffus(&user, (PetscScalar)user.temp0, &dv_T0, NULL);
+        PetscReal c_vap = 0.0, c_therm = 0.0;
+        if (user.thin_iface_corr) {
+            c_therm = a2 * user.eps / user.diff_sub;
+            c_vap   = a2 * user.eps / PetscRealPart(dv_T0);
+        }
+        user.tau_kin   = user.eps * lambda_sub * (beta_sub / a1);
+        user.tau_therm = user.eps * lambda_sub * c_therm;
+        user.tau_vap   = user.eps * lambda_sub * c_vap;
+        tau_sub = user.tau_kin + user.tau_therm + user.tau_vap;
+    }
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = lambda_sub / tau_sub;  /* Phase change rate parameter, eq.(9) Moure & Fu (2024) SI */
 
@@ -1267,6 +1310,24 @@ int main(int argc, char *argv[]) {
     if (!user.flag_Tdep) {
         PetscPrintf(PETSC_COMM_WORLD, "   lambda   =  %.4e\n", lambda_sub);
         PetscPrintf(PETSC_COMM_WORLD, "   tau_sub  =  %.4e s\n", tau_sub);
+        {   /* Realised vs requested kinetics. beta_bare = tau_sub*d0_sub0/eps^2
+             * is the coefficient the sharp-interface limit actually delivers; it
+             * equals -beta_sub0 only when the thin-interface counter-terms are
+             * absent, which is the default. See docs/gt_deficit/. */
+            PetscReal b_bare = tau_sub * user.d0_sub0 / (user.eps * user.eps);
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   tau_sub terms:  kinetic %.4e s", user.tau_kin);
+            if (user.thin_iface_corr)
+                PetscPrintf(PETSC_COMM_WORLD, " + thermal %.4e + vapor %.4e",
+                            user.tau_therm, user.tau_vap);
+            PetscPrintf(PETSC_COMM_WORLD, "   (-thin_iface_corr %d)\n",
+                        (int)user.thin_iface_corr);
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   beta realised  =  %.4e s/m  =  %.4f x -beta_sub0%s\n",
+                b_bare, b_bare / user.beta_sub0,
+                user.thin_iface_corr ? "   <-- NOT the beta you requested" : "");
+        }
+
         PetscPrintf(PETSC_COMM_WORLD, "   mob_sub  =  %.4e m/s   [M&F: 4.33e-7]\n", user.mob_sub);
         PetscPrintf(PETSC_COMM_WORLD, "   alph_sub =  %.4e 1/s%s\n", user.alph_sub,
                     (user.alph_sub == 0.0) ? "   (phase-change DECOUPLED)" : "");

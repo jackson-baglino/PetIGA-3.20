@@ -1,52 +1,33 @@
 # =============================================================================
 # experiment/tgrad/tgrad_T-20_h1.00_G0_rhovHiLo_beta0.10x.opts
 #
-# ARM 1 OF 4 in the beta_sub0 ladder that tests where the wedge Gibbs-Thomson
-# deficit comes from.  Identical to tgrad_T-20_h1.00_90d_G0_rhovHiLo.opts in
-# every respect except -beta_sub0, -t_final and -dtmax.
+# ARM 1 OF 4 in the beta_sub0 sweep verifying the corrected tau_sub.
 #
-# THE QUESTION.  batch_2026-08-07__07.26.38_wedge_bc recovers only 0.82 of the
-# Gibbs-Thomson rate.  d0 is exact (fit to 0.05 %), so the shortfall is entirely
-# in beta, and the measured beta equals
+# The thin-interface counter-terms were removed from tau_sub on 2026-09-09
+# (-thin_iface_corr, default 0). Before that change the realised kinetic
+# coefficient was beta_sub0 + Delta rather than beta_sub0, and this sweep
+# measured the resulting shortfall as 0.3160 / 0.5359 / 0.8220 / 0.9487 across
+# the four arms (batch 2026-08-25__18.14.15_beta_ladder). With the correction
+# removed the prediction for EVERY arm is
 #
-#     beta_bare = tau_sub*d0_sub0/eps^2
-#               = beta_sub0 + a1*a2*eps*(1/diff_sub + 1/dif_vap)*rho_ice/rho_vs
+#     v_n,measured / v_n,predicted  =  1.0000
 #
-# i.e. lunar_main.c:829 inflates tau_sub by two Karma-Plapp thin-interface
-# corrections that the asymptotics are then supposed to subtract back off, and
-# the subtraction appears never to happen.  Since the inflation is ADDITIVE and
-# beta_sub0 is not, the predicted shortfall depends strongly on beta_sub0 --
-# which is what this ladder measures.
-#
-# WHAT EACH OUTCOME MEANS, read off postprocess/wedge_gt_velocity.py's
-# "meas / pred" across the four arms:
-#
-#   0.316 / 0.536 / 0.822 / 0.949   the a2 terms are never subtracted.  Fix
-#                                   tau_sub; see the thermal-coupling note below.
-#   1.00 at all four                the corrections DO operate and the
-#                                   postprocessing measurement is wrong.
-#   0.82 at all four                neither story holds; the deficit is a
-#                                   constant factor from something else.
+# so the four arms together test that the fix holds over a 40x range in
+# beta_sub0, not merely at one point. Read the ratio from each run's
+# postprocess/wedge_gt_velocity.py summary.
 #
 # THIS ARM: beta_sub0 = 5.9216e+04 s/m  (0.1x the reference 5.9216e+05)
-#           predicted meas/pred = 0.3160
-#           beta_bare = 1.8742e+05 s/m,  tau_sub = 135.84 s
+#           tau_sub   = 42.92 s   (was 135.84 s before the fix)
 #
-# -t_final and -dtmax are set so every arm runs the SAME number of steps
-# (3406) and moves the menisci the SAME distance (~2 control-point
-# spacings), so all four measurements carry the same precision and cost.
-#   -dtmax  = 1.093 * tau_sub   (the reference run's ratio)
-#   -t_final scales with beta_bare, since v_n ~ 1/beta_bare
-#
-# A SEPARATE, INDEPENDENT BUG this ladder does NOT test: tau_sub's thermal term
-# a2*eps/diff_sub treats latent heat as if it drove the phase field at unit
-# strength.  Temperature reaches the driving field only through rho_vs(T), so
-# that term needs a Clausius-Clapeyron factor -- the correct coefficient is
-# (d rho_vs/dT)*L_sub/k, which is 1.0e2 (k_ice) to 1.2e4 (k_air) against the
-# 1.29e5 coded.  Fix that separately, and re-run this ladder afterwards.
+# -t_final and -dtmax are recomputed for the corrected tau_sub: v_n now scales
+# as 1/beta_sub0 rather than 1/(beta_sub0 + Delta), so both had to move. They
+# are set so every arm runs the same 3406 steps and moves the menisci the
+# same ~2 control-point spacings, giving all four equal cost and equal precision.
+#   -dtmax   = 1.093 * tau_sub
+#   -t_final scales with beta_sub0
 # =============================================================================
 
--t_final 5.0577e+05                     # 5.9 d -- equal displacement to the other arms
+-t_final 1.5980e+05                     # 1.85 d
 
 -temp -20.0
 -humidity 1.00
@@ -58,9 +39,9 @@
 -rhovfix_lo 1.000005                     # rho_v at x=0  / rho_vs
 -rhovfix_hi 0.999995                     # rho_v at x=Lx / rho_vs
 
--beta_sub0 5.9216e+04                   # 0.1x reference; predicted meas/pred = 0.3160
+-beta_sub0 5.9216e+04                   # 0.1x reference; predicted ratio 1.0000
 -d0_sub0 1.0166e-9                        # physical capillary length at -20 C
 
--dtmax 1.485e+02                        # 1.093 * tau_sub (135.8 s) for THIS beta_sub0
+-dtmax 4.691e+01                        # 1.093 * tau_sub (42.9 s)
 -dtCFL 1
 -dtCFL_dphimax 0.2

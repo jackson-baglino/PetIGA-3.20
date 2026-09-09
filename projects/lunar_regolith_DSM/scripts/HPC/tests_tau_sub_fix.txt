@@ -1,0 +1,39 @@
+# Verification of the corrected tau_sub (-thin_iface_corr, default 0), 2026-09-09.
+#
+# Submit with:
+#   ./scripts/HPC/submit_batch.sh --tag tau_fix \
+#       --tests-file scripts/HPC/tests_tau_sub_fix.txt
+#
+# Then, after rsync'ing the batch down:
+#   bash <batch>/run_batch_postprocess.sh
+# and read "meas / pred" from each run's wedge_gt_velocity.py summary.
+#
+# ARMS 1-4 -- beta_sub0 sweep, 40x range, ~3406 steps each.
+#   Before the fix these measured 0.3160 / 0.5359 / 0.8220 / 0.9487
+#   (batch 2026-08-25__18.14.15_beta_ladder). The prediction now is 1.0000 for
+#   EVERY arm. A flat 1.00 across all four confirms the fix over the whole
+#   range; anything else means the removal was incomplete or mis-sized.
+#
+#   -t_final and -dtmax were recomputed for the corrected tau_sub: v_n now goes
+#   as 1/beta_sub0 rather than 1/(beta_sub0 + Delta), so both had to change to
+#   keep the arms at equal step count and equal meniscus displacement.
+#
+wedge_2D_L300um_eps0.86um_90deg:tgrad_T-20_h1.00_G0_rhovHiLo_beta0.10x
+wedge_2D_L300um_eps0.86um_90deg:tgrad_T-20_h1.00_G0_rhovHiLo_beta0.25x
+wedge_2D_L300um_eps0.86um_90deg:tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x
+wedge_2D_L300um_eps0.86um_90deg:tgrad_T-20_h1.00_G0_rhovHiLo_beta4.00x
+#
+# ARM 5 -- MIRROR CONTROL, identical physics to arm 3 reflected about x = Lx/2.
+#   The geometry puts the wide end at x=0 and the apex at (4.0e-04, 1.0e-04);
+#   the experiment exchanges -rhovfix_lo and -rhovfix_hi to mirror the BCs with
+#   it. The two menisci swap sides: the concave one moves from x=1.0e-04 to
+#   x=2.0e-04. wedge_gt_velocity.py identifies inner/outer by radius rather than
+#   by side, so its labels follow the geometry automatically.
+#
+#   EXPECTED: arm 5's inner/outer numbers reproduce arm 3's to within the quoted
+#   sigma-extraction sensitivity. Arm 3 shows a residual ~1% difference between
+#   the two menisci; this arm decides whether that follows the GEOMETRY (concave
+#   vs convex, i.e. physical) or the SIDE (left vs right, i.e. an artifact of
+#   the mesh or the measurement).
+#
+wedge_2D_L300um_eps0.86um_90deg_mirror:tgrad_T-20_h1.00_G0_rhovLoHi_beta1.00x_mirror

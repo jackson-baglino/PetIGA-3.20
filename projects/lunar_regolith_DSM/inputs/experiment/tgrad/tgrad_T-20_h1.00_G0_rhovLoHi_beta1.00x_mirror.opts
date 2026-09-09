@@ -1,7 +1,24 @@
 # =============================================================================
 # experiment/tgrad/tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x.opts
 #
-# ARM 3 OF 4 in the beta_sub0 sweep verifying the corrected tau_sub.
+# MIRROR CONTROL for the beta_sub0 sweep. Identical to
+# tgrad_T-20_h1.00_G0_rhovHiLo_beta1.00x.opts except that -rhovfix_lo and
+# -rhovfix_hi are exchanged.
+#
+# Pair with geometry/wedge/wedge_2D_L300um_eps0.86um_90deg_mirror.opts, which
+# reflects the channel about x = Lx/2: the wide end moves to x=0, the throat to
+# x=Lx, and the virtual apex to (4.0e-04, 1.0e-04). Reflecting the geometry
+# without also exchanging the two reservoirs would change the physics rather
+# than mirror it, since -rhovfix_lo is tied to the x=0 face and that face is now
+# the WIDE end.
+#
+# EXPECTED RESULT: the two menisci exchange roles exactly. The inner (concave)
+# meniscus is now on the right, so the mirrored run's OUTER-meniscus numbers
+# should reproduce the unmirrored run's INNER ones and vice versa, to within the
+# quoted sigma-extraction sensitivity. The unmirrored 1.00x arm shows a residual
+# ~1% difference between the two menisci; this run determines whether that
+# difference follows the geometry (concave vs convex, hence physical) or the
+# side (left vs right, hence an artifact of the mesh or the measurement).
 #
 # The thin-interface counter-terms were removed from tau_sub on 2026-09-09
 # (-thin_iface_corr, default 0). Before that change the realised kinetic
@@ -36,8 +53,8 @@
 -flag_BC_Tfix 1                          # pin wall temperatures (uniform)
 -flag_BC_rhovfix 1                       # vapour reservoirs...
 -rhovfix_axis 0                          # ...on the x-faces ONLY (open pore ends)
--rhovfix_lo 1.000005                     # rho_v at x=0  / rho_vs
--rhovfix_hi 0.999995                     # rho_v at x=Lx / rho_vs
+-rhovfix_lo 0.999995                     # rho_v at x=0  / rho_vs
+-rhovfix_hi 1.000005                     # rho_v at x=Lx / rho_vs
 
 -beta_sub0 5.9216e+05                   # 1x reference; predicted ratio 1.0000
 -d0_sub0 1.0166e-9                        # physical capillary length at -20 C

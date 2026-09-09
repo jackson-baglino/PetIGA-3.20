@@ -418,15 +418,21 @@ def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
         if interface == "tanh":
             xl = refine_tanh(x, phi_c, xl, eps)
             xr = refine_tanh(x, phi_c, xr, eps)
-        rl, rr = xl - apex_x, xr - apex_x
-        # Outward normal points AWAY from the ice: -x on the inner face, +x on
-        # the outer one.  chi follows: inner meniscus concave, outer convex.
-        chi_l, chi_r = -1.0 / rl, +1.0 / rr
+        # Radius from the apex, which may lie off EITHER end of the domain: the
+        # mirrored geometry puts it to the right, so a signed (x - apex_x) would
+        # come out negative and silently swap both curvature signs.
+        rl, rr = abs(xl - apex_x), abs(xr - apex_x)
+        # The meniscus at the SMALLER radius is the inner one: ice on the outside
+        # of its arc, hence concave, chi < 0.  The outer one is convex, chi > 0.
+        # Which of them is on the left depends only on which side the apex is.
+        left_is_inner = rl < rr
+        chi_l = (-1.0 if left_is_inner else +1.0) / rl
+        chi_r = (+1.0 if left_is_inner else -1.0) / rr
 
         cxl, cyl, cxr, cyr = contour_points(x, Y, phi, 0.5)
         chi_l_fit = chi_r_fit = float("nan")
-        for px, py, r_ana, sgn, slot in ((cxl, cyl, rl, -1.0, "l"),
-                                         (cxr, cyr, rr, +1.0, "r")):
+        for px, py, r_ana, sgn, slot in ((cxl, cyl, rl, np.sign(chi_l), "l"),
+                                         (cxr, cyr, rr, np.sign(chi_r), "r")):
             if px.size == 0:
                 continue
             m = np.abs(py - y0) < curv_frac * r_ana
@@ -434,9 +440,9 @@ def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
             if fit is None:
                 continue
             if slot == "l":
-                chi_l_fit = -1.0 / fit[2]
+                chi_l_fit = sgn / fit[2]
             else:
-                chi_r_fit = +1.0 / fit[2]
+                chi_r_fit = sgn / fit[2]
 
         sig_l = sigma_at_interface(x, sig_c, xl, -1.0, eps, sigma_win)
         sig_r = sigma_at_interface(x, sig_c, xr, +1.0, eps, sigma_win)
@@ -450,6 +456,7 @@ def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
 
         rows.append(dict(
             step=step, time=times.get(step, float("nan")),
+            left_is_inner=float(left_is_inner),
             r_left=rl, r_right=rr,
             chi_left=chi_l, chi_right=chi_r,
             chi_left_fit=chi_l_fit, chi_right_fit=chi_r_fit,
@@ -474,13 +481,19 @@ def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
                          "snapshot index is NOT the row index in SSA_evo.dat.")
 
     t = data["time"]
-    # Both faces recede toward the apex, so a shrinking radius is GROWTH on the
-    # inner face and RECESSION on the outer one.  Sign both positive-for-growth.
-    data["vn_left_meas"] = -sliding_slope(t, data["r_left"], vn_win)
-    data["vn_right_meas"] = +sliding_slope(t, data["r_right"], vn_win)
+    # Ice grows on the INNER meniscus when its radius shrinks, and on the OUTER
+    # one when its radius grows.  Sign both positive-for-growth, keyed off which
+    # meniscus is on which side rather than assuming the apex is to the left.
+    lii = bool(round(float(np.median(data["left_is_inner"]))))
+    if not np.allclose(data["left_is_inner"], data["left_is_inner"][0]):
+        print("  ⚠️  the two menisci swapped radial order during the run; the "
+              "inner/outer labelling is not constant.", file=sys.stderr)
+    data["vn_left_meas"] = (-1.0 if lii else +1.0) * sliding_slope(t, data["r_left"], vn_win)
+    data["vn_right_meas"] = (+1.0 if lii else -1.0) * sliding_slope(t, data["r_right"], vn_win)
 
     b_bare, sh_T, sh_v = beta_bare(opts, eps, d0, rho_air)
     meta = dict(run_dir=run_dir, source=source, eps=eps, Ly=Ly, d0=d0, beta=beta,
+                left_is_inner=lii,
                 interface=interface,
                 beta_bare=b_bare, share_thermal=sh_T, share_vapour=sh_v,
                 T0=T0, rho_air=rho_air, apex_x=apex_x, apex_y=apex_y,
@@ -531,7 +544,9 @@ def summarise(data, meta, skip):
     print(f"  interface     : {meta['interface']} locator")
     print(f"  vapour BC     : -flag_BC_rhovfix {flag}, rhovfix_lo {lo}, rhovfix_hi {hi}")
     print("-" * 74)
-    print(f"  {'':14s}{'LEFT (inner, concave)':>26s}{'RIGHT (outer, convex)':>26s}")
+    lab_l = "LEFT (inner, concave)" if meta["left_is_inner"] else "LEFT (outer, convex)"
+    lab_r = "RIGHT (outer, convex)" if meta["left_is_inner"] else "RIGHT (inner, concave)"
+    print(f"  {'':14s}{lab_l:>26s}{lab_r:>26s}")
 
     def row(label, l, r, fmt="{:+.4e}"):
         print(f"  {label:14s}{fmt.format(l):>26s}{fmt.format(r):>26s}")
@@ -599,8 +614,9 @@ def make_figure(data, meta, skip, save, title=None):
     cl, cr = "#1f77b4", "#d62728"
 
     ax[0].axhline(0.0, color="0.7", lw=0.8)
-    for c, side, lab in ((cl, "left", "left (inner, concave)"),
-                         (cr, "right", "right (outer, convex)")):
+    _li = meta.get("left_is_inner", True)
+    for c, side, lab in ((cl, "left", "left (inner, concave)" if _li else "left (outer, convex)"),
+                         (cr, "right", "right (outer, convex)" if _li else "right (inner, concave)")):
         ax[0].plot(t[k], data[f"vn_{side}_meas"][k], "o", ms=2.5, color=c, alpha=0.5,
                    label=f"{lab} — measured")
         ax[0].plot(t[k], data[f"vn_{side}_pred"][k], "-", lw=1.8, color=c,

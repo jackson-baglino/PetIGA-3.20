@@ -222,6 +222,28 @@ typedef struct {
    *      source in R_vap — reduces spurious interface fluxes from the
    *      finite-width diffuse interface to the physical sharp-interface limit.
    * Defaults: xi_T = 1.0 (no effect), xi_v = 1e-3 (M&F sublimation value). */
+
+  /* -thin_iface_corr: include the Karma thin-interface counter-terms in
+   * tau_sub.  DEFAULT 0.  These terms inflate tau_sub by the spurious O(eps)
+   * kinetic contribution the sharp-interface asymptotics are expected to
+   * subtract back off, so that the realised beta equals -beta_sub0.  For this
+   * model that contribution is ZERO: the vapour diffusivity is one-sided
+   * (D_v*phi_a), which makes the inner deviation of sigma identically null, so
+   * nothing is subtracted and the inflation survives as a 1.22x error in beta
+   * at the -20 C wedge parameters.  Measured over a 40x sweep in -beta_sub0:
+   * beta_fit/beta_bare = 1.0009 +/- 0.0007.  See docs/gt_deficit/.
+   *
+   * Re-enable ONLY if the vapour diffusion is made two-sided, an anti-trapping
+   * current is added, or a regime appears where eps*v_n/D_v is not negligible.
+   * This is a model-structure switch, not a fitting parameter. */
+  PetscBool thin_iface_corr;
+
+  /* tau_sub decomposition, for the run header. tau_kin is the term that carries
+   * the requested -beta_sub0; tau_therm and tau_vap are the thin-interface
+   * counter-terms and are zero unless -thin_iface_corr is set. */
+  PetscReal tau_kin, tau_therm, tau_vap;
+
+
   PetscReal xi_T;
   PetscReal xi_v;
 

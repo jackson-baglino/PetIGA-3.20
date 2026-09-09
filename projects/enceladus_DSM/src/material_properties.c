@@ -432,9 +432,14 @@ void SubKinetics(AppCtx *user, PetscScalar tem, PetscScalar rhov,
                               - beta_s * PetscRealPart(da_dT)  / PetscRealPart(alpha);
     const PetscReal dbeta_drv = - beta_s * PetscRealPart(da_drv) / PetscRealPart(alpha);
 
-    /* B and its derivatives (diff_sub is a constant; D_v carries T) */
-    const PetscReal B    = beta_s / a1 + a2 * eps / user->diff_sub + a2 * eps / Dv;
-    const PetscReal dB_dT  = dbeta_dT  / a1 - a2 * eps * dDv / (Dv * Dv);
+    /* B and its derivatives (diff_sub is a constant; D_v carries T).
+     * The two a2 thin-interface terms are gated by -thin_iface_corr and are OFF
+     * by default; see enceladus_main.c and docs/gt_deficit/. The derivatives are
+     * gated with them so the analytic Jacobian stays exact in both branches --
+     * check with -snes_test_jacobian after touching this. */
+    const PetscReal tic    = user->thin_iface_corr ? 1.0 : 0.0;
+    const PetscReal B    = beta_s / a1 + tic * (a2 * eps / user->diff_sub + a2 * eps / Dv);
+    const PetscReal dB_dT  = dbeta_dT  / a1 - tic * a2 * eps * dDv / (Dv * Dv);
     const PetscReal dB_drv = dbeta_drv / a1;
 
     if (alph)      (*alph)      = 1.0 / (eps * B);
