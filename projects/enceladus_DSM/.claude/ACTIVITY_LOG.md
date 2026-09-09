@@ -1,3 +1,50 @@
+## 2026-09-08 (later still) — Banner rebuilt around an explicit BC table
+
+- Jackson asked for the outp.txt parameter block to be neater and much more
+  explicit about the boundary conditions.
+- The old BC section was three lines and two of them could be WRONG.
+  "T: Dirichlet (fixed value)" holds only without a temperature gradient: with
+  one, just the faces perpendicular to it are pinned and the parallel ones stay
+  insulating (otherwise a uniform T0 erases the transverse dT right where the
+  grains sit). And under -axisym, y = 0 is the symmetry axis, never a
+  reservoir. Neither exception was visible anywhere in the log.
+- Replaced with a face x field table carrying the actual values, then a block
+  explaining them: the vapour wall as h·rho_vs(T0) with its undersaturation,
+  the note that the same h sets the initial pore vapour (so no t = 0 kick), and
+  why the axis row is exact rather than approximate.
+- The table is READ FROM A MAP recorded where the BCs are applied, not
+  re-derived in the banner. Re-implementing the face-selection rules there is
+  precisely how a banner drifts from the solver it claims to describe.
+- **Precision bug found while doing it:** humidity printed at %.4f, so the
+  D_v x100 arm's h = 0.99996 logged as "1.0000". The whole campaign signal is
+  1-h ~ 1e-4. Now six places with 1-h printed beside it.
+- Folded three orphan blocks that printed ABOVE the banner header into it: the
+  d0_sub0 echo (already duplicated in the kinetics section), the "-beta_sub0 is
+  IGNORED" notice, and the empirical-scaling warning I added earlier today. The
+  latter two now sit beside the numbers they concern; the scaling warning keeps
+  its colour since it changes what the model IS.
+- -beta_sub0's scalars now print only when USED. Under -alpha_pointwise they
+  are dead, and printing them next to live values is what once sent an
+  8.7x-wrong tau_sub into a -dtmax choice.
+- Added L* = D_v·beta_HK (the kinetics/transport crossover — it decides which
+  physics is rate-limiting and we kept computing it by hand this week).
+- Resolution now reports elements across the phi = 0.01-0.99 band rather than
+  dx/eps: eps is a decay length, and counting against it is what makes a
+  well-resolved interface look under-resolved.
+- Output cadence states which of the three modes is live instead of printing
+  knobs — -t_out_log is a COUNT and -t_interv is silently recomputed from
+  -n_out, which has bitten us before.
+- The gate caught its own breakage: verify_kinetics_scaling.sh parsed the old
+  fixed columns. Rather than re-couple it to the new layout, it now anchors on
+  the section header and takes the first field that parses as a number. A
+  verification script that fails on cosmetics is worse than none.
+- Values bit-identical after the rewrite (mob_sub 2.8151e-11, alph_sub
+  4.5042e+05, Jacobian 5.54e-09) — confirming it is print-only. Rendered and
+  checked on every branch: Dirichlet, closed/adiabatic, transverse gradient,
+  periodic, pointwise and scalar kinetics.
+
+---
+
 ## 2026-09-08 (later) — inputs/ staging, replots, and round 2 queued
 
 - Jackson: postprocessing needs inputs/ in the output dir. Confirmed and fixed —
