@@ -1,3 +1,46 @@
+## 2026-09-09 (later) — The neck-curve sinusoid was our measurement
+
+- Jackson spotted a second, sinusoidal mode riding on the power law in the neck
+  curves and suspected the measurement. He was right.
+- **Mechanism.** `.vts` snapshots are written on a COARSER grid than the solve —
+  1080x541 against 5394x2697 — so dy = 4.17e-7 m = **3.5 eps**, and
+  `chord_width()` interpolated phi LINEARLY across it. The two samples
+  bracketing phi = 0.5 can sit at 0.03 and 0.97, so the crossing error depends
+  on where the interface falls inside the cell; a neck growing outward sweeps
+  sub-cell offsets steadily, and the error comes out as a sinusoid. Correlated
+  with the radial sub-cell phase at |R| = 0.66-0.88.
+- **Fix: interpolate in logit(phi)** — exact, not merely higher-order, because
+  the model's own profile phi = 1/(1+exp(-s/eps)) makes logit(phi) = s/eps
+  LINEAR in distance. Synthetic at 3.5 eps: linear 0.127 um ptp, logit 1.6e-16.
+  Real arms: fast residual down 34-58 %.
+- **Tried and rejected**, recorded in the docstring: widening the axial vertex to
+  a 5-point least-squares parabola. Measured no-op (0.0232 -> 0.0237 um RMS), so
+  the weak axial correlation that motivated it is not that estimator. Reverted
+  rather than left in as untested complexity.
+- **Nothing moves.** Neck widths shift +-0.06 um, the 75 % ceiling moves 0.01 um,
+  exponents move less than their own uncertainty. All round-2 numbers, figures
+  and both READMEs re-derived from the fixed measurement.
+- New gate `verification/verify_neck_interp.py`: analytic synthetic neck swept
+  across one sub-cell period at three spacings, testing UNBIASEDNESS in the
+  offset (the property that kills the oscillation) rather than just smallness.
+  Keeps a copy of the old estimator so the regression cannot return silently.
+  My first draft had two bugs worth remembering — a metres/microns slip, and
+  moving the GRID instead of the interface, which put y[0] > 0 and broke
+  chord_width()'s assumption that the axisym axis needs no interpolation.
+- **Which round to keep: ROUND 2.** Round 1's raw batch is already deleted; its
+  numbers survive in the committed summary.csv, which is all
+  plot_tuning_ceiling.py needs. On merit round 2 wins anyway: its walls are
+  calibrated on the corrected 78-min window (round 1's are 1.54x too saturated),
+  its untuned arm reproduces the measured recession (-2.94 % vs -2.93 %), round
+  1's better neck RMS was bought by barely losing grain, and only round 2 can
+  carry the interpolation fix.
+- Caveat recorded in both READMEs: the two ends of each family line in
+  tuning_ceiling.png now mix interpolation conventions by +-0.06 um against a
+  7.9 um deficit. Immaterial, but round-1 widths should not be quoted to better
+  than ~0.1 um.
+
+---
+
 ## 2026-09-09 — Round 2: a measured ceiling at 75 %, and the case to stop tuning
 
 - Jackson: D_v x100 is now WORSE on the neck, and should we stop tuning given
