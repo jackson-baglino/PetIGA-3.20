@@ -1,3 +1,48 @@
+## 2026-09-09 (b) — The tau_sub fix verifies, and the mirror is exact
+
+Batch `2026-09-09__09.22.56_tau_fix`, five arms. Four completed; `beta1.00x`
+hit a wall-clock limit at step 3023/3406 (t = 1.39e6 of 1.598e6, 866 snapshots),
+which is ample for the measurement. No SNES failures anywhere, phase field in
+bounds, ice drift 0.07-1.6 % (the Dirichlet vapour exchange, expected).
+
+- **meas/pred goes to 1.00 at every arm**, against 0.3160 / 0.5359 / 0.8220 /
+  0.9487 before:
+
+  | arm | before | after (L / R) | sigma sensitivity L/R |
+  |---|---|---|---|
+  | 0.10x | 0.3160 | 1.0863 / 0.9539 | 9.47 % / 3.33 % |
+  | 0.25x | 0.5359 | 1.0330 / 0.9720 | 3.60 % / 1.38 % |
+  | 1.00x | 0.8220 | 1.0056 / 0.9877 | 0.88 % / 0.34 % |
+  | 4.00x | 0.9487 | 0.9985 / 0.9936 | 0.22 % / 0.09 % |
+
+  Fitting beta with d0 held fixed: **beta_fit/beta_sub0 = 0.9916, 1.0012,
+  1.0017, 1.0003** across the 40x range.
+- **The residual scatter is the measurement, not the model.** It tracks the
+  sigma-extraction sensitivity arm for arm. The reason it grew at small beta is
+  physical: with the correct (smaller) beta the interface sits closer to local
+  equilibrium, so the residual sigma - d0*chi shrinks (6.99e-8 at 0.10x against
+  2.31e-7 before) and the same absolute extraction error is a larger fraction of
+  it. Precision is now best at LARGE beta, the reverse of before.
+- **The mirror is exact.** Labels flipped as designed (mirrored LEFT is the
+  outer meniscus), and the values swap:
+
+  | | inner (concave) | outer (convex) |
+  |---|---|---|
+  | unmirrored | 1.0056 | 0.9877 |
+  | mirrored | 1.0056 | 0.9869 |
+
+  d0*chi agrees to 0.07 %, and the sigma sensitivities swap too (0.88/0.34 ->
+  0.34/0.89). So the residual ~1 % inner/outer difference follows the GEOMETRY,
+  not the side: it is curvature-related, not a mesh or measurement artifact.
+- **The non-circular test is eps-convergence**, and it has not been run. Under
+  the old tau_sub beta_eff = beta_sub0 + Delta with Delta ~ eps, so the KINETICS
+  depended on the MESH (beta_eff moves 1.43x between 2eps and eps/4) and no
+  refinement could converge. Under the new one beta_eff is eps-independent by
+  construction. Cheapest decisive run: eps/2 at 989x659, 4x the cells; old code
+  predicts 0.9023 there against 0.8220 at eps, new code predicts 1.0000 at both.
+
+---
+
 ## 2026-09-09 — Implemented the tau_sub fix; staged its verification batch
 
 - **`-thin_iface_corr`, default 0**, in both projects and at all three sites:
