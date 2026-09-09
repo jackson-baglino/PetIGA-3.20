@@ -81,6 +81,7 @@ Usage:
 
 import argparse
 import os
+import re
 import sys
 
 import numpy as np
@@ -293,6 +294,68 @@ def sliding_slope(t, y, win):
     return out
 
 
+
+def _iter_igasol(run_dir, y0, nu, nv):
+    """Yield snapshots evaluated on the exact NURBS field, not the control net.
+
+    The wedge walls are symmetric about y = Ly/2, so the ruled patch places the
+    centerline at exactly v = 1/2 and the basis can be evaluated there directly.
+    This removes the dominant extraction error: the .vts files carry p=2 B-spline
+    CONTROL COEFFICIENTS rather than field values, and reading them as values
+    costs ~1e-9 m of interface position that drifts in phase as the interface
+    crosses the grid -- which is what produces the periodic bumps in v_n. On the
+    beta4.00x run the wiggle in r(t) falls from 0.00097 dx to 0.00002 dx, a
+    factor of 48, and the pass is several times faster than reading the .vts.
+
+    Yields (step, x, phi_line, T_line, rhov_line, Y_band, phi_band).
+    """
+    from igakit.io import PetIGA
+    io = PetIGA()
+    nrb = io.read(os.path.join(run_dir, "igasol.dat"))
+    u = np.linspace(0.0, 1.0, nu)
+    v = np.linspace(0.25, 0.75, nv)          # nv odd, so v[nv//2] is exactly 0.5
+    mid = nv // 2
+    files = sorted(f for f in os.listdir(run_dir) if re.fullmatch(r"sol_\d+\.dat", f))
+    if not files:
+        raise SystemExit(f"no sol_*.dat in {run_dir}")
+    checked = False
+    for f in files:
+        C, F = nrb(u, v, fields=io.read_vec(os.path.join(run_dir, f), nrb))
+        if not checked:
+            yline = C[:, mid, 1]
+            if not np.allclose(yline, y0, atol=1e-9 * abs(y0)):
+                raise SystemExit(
+                    f"v=1/2 lies at y = {yline.min():.6e}..{yline.max():.6e}, not at "
+                    f"Ly/2 = {y0:.6e}. That identification holds only when the walls "
+                    "are symmetric about Ly/2; use --source vtkOut for other meshes.")
+            checked = True
+        yield (int(re.search(r"sol_(\d+)", f).group(1)), C[:, mid, 0],
+               F[:, mid, 0], F[:, mid, 1], F[:, mid, 2],
+               C[:, :, 1].T, F[:, :, 0].T)
+
+
+def _iter_vts(run_dir, source, y0):
+    """The same tuples, read from the .vts control net (the pre-2026-09 route)."""
+    _dir = os.path.join(run_dir, source)
+    _files = sorted(f for f in os.listdir(_dir)
+                    if f.startswith("solV_") and f.endswith(".vts")) if os.path.isdir(_dir) else []
+    if not _files:
+        raise SystemExit(f"no solV_*.vts under {_dir}.  Generate them first:\n"
+                         f"    python3 postprocess/plot_fields.py --dir {run_dir}")
+    j = w = None
+    for fn in _files:
+        fields, X, Y = read_vts(os.path.join(_dir, fn))
+        if j is None:
+            if not np.allclose(X, X[0, :][None, :], atol=0.0, rtol=1e-12):
+                raise SystemExit("mesh columns are not at constant x.")
+            j, w = centreline_weights(Y, y0)
+        yield (step_of(fn), X[0, :],
+               on_centreline(fields["IcePhase"], j, w),
+               on_centreline(fields["Temperature"], j, w),
+               on_centreline(fields["VaporDensity"], j, w),
+               Y, fields["IcePhase"])
+
+
 def beta_bare(opts, eps, d0, rho_air):
     """The kinetic coefficient this discretisation actually delivers.
 
@@ -335,8 +398,10 @@ def beta_bare(opts, eps, d0, rho_air):
 # ---------------------------------------------------------------------------
 # Core
 # ---------------------------------------------------------------------------
-def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
-            curv_frac=0.2, vn_win=21, interface="tanh", progress=True):
+def analyse(run_dir, source="igasol", stride=1, sigma_win=(4.0, 10.0),
+            curv_frac=0.2, vn_win=21, interface="tanh", nu=6001, nv=61,
+            progress=True):
+
     opts = read_opts_ordered(run_dir)
 
     for dead in ("-mob_sub", "-alph_sub"):
@@ -374,43 +439,31 @@ def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
               "the interface normal is then only approximately +/- x_hat.",
               file=sys.stderr)
 
-    vdir = os.path.join(run_dir, source)
-    files = sorted(f for f in os.listdir(vdir)
-                   if f.startswith("solV_") and f.endswith(".vts")) if os.path.isdir(vdir) else []
-    if not files:
-        raise SystemExit(f"no solV_*.vts under {vdir}.  Generate them first:\n"
-                         f"    python3 postprocess/plot_fields.py --dir {run_dir}")
-    files = files[::max(stride, 1)]
+    if source == "igasol":
+        try:
+            import igakit.io  # noqa: F401
+        except ImportError:
+            print("  \u26a0\ufe0f  igakit unavailable; falling back to --source vtkOut, which "
+                  "leaves ~50x more interface-position noise.", file=sys.stderr)
+            source = "vtkOut"
+        else:
+            if not os.path.isfile(os.path.join(run_dir, "igasol.dat")):
+                print("  \u26a0\ufe0f  no igasol.dat; falling back to --source vtkOut.",
+                      file=sys.stderr)
+                source = "vtkOut"
+    snaps = list(_iter_igasol(run_dir, y0, nu, nv) if source == "igasol"
+                 else _iter_vts(run_dir, source, y0))[::max(stride, 1)]
 
     times = step_times(run_dir)
     rho_vs_T0 = rho_vs(T0, rho_air)
 
-    j = w = None
     rows = []
-    for n, fn in enumerate(files):
-        path = os.path.join(vdir, fn)
-        fields, X, Y = read_vts(path)
-        if j is None:
-            x = X[0, :]
-            if not np.allclose(X, x[None, :], atol=0.0, rtol=1e-12):
-                raise SystemExit("mesh columns are not at constant x; the centreline "
-                                 "extraction in this script assumes they are.")
-            j, w = centreline_weights(Y, y0)
-
-        phi = fields["IcePhase"]
-        phi_c = on_centreline(phi, j, w)
-        T_c = on_centreline(fields["Temperature"], j, w)
-        if "Supersaturation" in fields:
-            sig_c = on_centreline(fields["Supersaturation"], j, w)
-        else:
-            sig_c = supersaturation(on_centreline(fields["VaporDensity"], j, w),
-                                    T_c, rho_air)
-
+    for n, (step, x, phi_c, T_c, rhov_c, Y, phi) in enumerate(snaps):
+        sig_c = supersaturation(rhov_c, T_c, rho_air)
         c = crossings(x, phi_c, 0.5)
-        step = step_of(fn)
         if c.size != 2:
-            print(f"  ⚠️  step {step}: {c.size} centreline crossings, expected 2 "
-                  "(band broken or ice off the centreline) -- snapshot skipped.",
+            print(f"  \u26a0\ufe0f  step {step}: {c.size} centerline crossings, expected 2 "
+                  "(band broken or ice off the centerline) -- snapshot skipped.",
                   file=sys.stderr)
             continue
 
@@ -469,8 +522,8 @@ def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
             vn_left_pred_chifit=(sig_l * fl - d0 * chi_l_fit) / beta,
             vn_right_pred_chifit=(sig_r * fr - d0 * chi_r_fit) / beta,
         ))
-        if progress and (n % 100 == 0 or n == len(files) - 1):
-            print(f"  {n + 1}/{len(files)} snapshots", flush=True)
+        if progress and (n % 100 == 0 or n == len(snaps) - 1):
+            print(f"  {n + 1}/{len(snaps)} snapshots", flush=True)
 
     if len(rows) < 3:
         raise SystemExit("fewer than 3 usable snapshots -- nothing to differentiate.")
@@ -507,7 +560,7 @@ def analyse(run_dir, source="vtkOut", stride=1, sigma_win=(4.0, 10.0),
 # ---------------------------------------------------------------------------
 # Reporting
 # ---------------------------------------------------------------------------
-COLUMNS = ["step", "time", "r_left", "r_right", "chi_left", "chi_right",
+COLUMNS = ["step", "time", "left_is_inner", "r_left", "r_right", "chi_left", "chi_right",
            "chi_left_fit", "chi_right_fit", "sigma_left", "sigma_right",
            "sigma_left_direct", "sigma_right_direct",
            "vn_left_meas", "vn_right_meas", "vn_left_pred", "vn_right_pred"]
@@ -677,8 +730,18 @@ def main(argv=None):
                    help="figure path (default: <run>/plots/wedge_gt_velocity.png)")
     p.add_argument("--save-csv", default=None,
                    help=f"csv path (default: <run>/{CSV_NAME})")
-    p.add_argument("--source", default="vtkOut", choices=("vtkOut", "vtkOut_highres"),
-                   help="snapshot directory (default: vtkOut)")
+    p.add_argument("--source", default="igasol",
+                   choices=("igasol", "vtkOut", "vtkOut_highres"),
+                   help="where the fields come from. 'igasol' (default) evaluates the "
+                        "exact NURBS basis on the centerline from igasol.dat and "
+                        "sol_*.dat. The .vts routes read p=2 control COEFFICIENTS as if "
+                        "they were field values, which leaves ~50x more "
+                        "interface-position noise and shows up as periodic bumps in v_n.")
+    p.add_argument("--nu", type=int, default=6001,
+                   help="centerline samples for --source igasol (default 6001)")
+    p.add_argument("--nv", type=int, default=61,
+                   help="cross-channel samples for the circle-fit band; odd, so that "
+                        "v=1/2 is a node (default 61)")
     p.add_argument("--stride", type=int, default=1, help="use every Nth snapshot")
     p.add_argument("--skip", type=int, default=5,
                    help="snapshots dropped from the summary and figure; the IC is not "
@@ -704,7 +767,7 @@ def main(argv=None):
     data, meta = analyse(run, source=a.source, stride=a.stride,
                          sigma_win=tuple(a.sigma_window), curv_frac=a.curv_window,
                          vn_win=a.vn_window, interface=a.interface,
-                         progress=not a.quiet)
+                         nu=a.nu, nv=a.nv, progress=not a.quiet)
 
     write_csv(data, a.save_csv or os.path.join(run, CSV_NAME))
     make_figure(data, meta, a.skip,

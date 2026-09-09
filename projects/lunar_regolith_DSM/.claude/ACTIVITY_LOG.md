@@ -1,3 +1,41 @@
+## 2026-09-09 (d) — The v_n bumps removed at source
+
+`wedge_gt_velocity.py` gains `--source igasol`, now the DEFAULT: it evaluates the
+exact NURBS basis on the centerline from `igasol.dat` + `sol_*.dat` instead of
+reading the `.vts` control net.
+
+- **The bumps were the control-net read.** The `.vts` files carry p=2 B-spline
+  CONTROL COEFFICIENTS, not field values; reading them as values costs ~1e-9 m of
+  interface position that drifts in phase as the interface crosses the grid.
+- **The wedge walls are symmetric about Ly/2**, so the ruled patch puts the
+  centerline at exactly v = 1/2 (checked at runtime: y is Ly/2 to 10 digits) and
+  the basis can be evaluated there directly. `nv=61` spans v in [0.25, 0.75] with
+  v=1/2 a node, giving the circle-fit band from the same call.
+- **Result, r(t) wiggle 0.00097 dx -> 0.00002 dx (48x), v_n wiggle:**
+
+  | arm | v_n wiggle before | after |
+  |---|---|---|
+  | 0.10x | 5.48 % | 0.10 % |
+  | 0.25x | 2.13 % | 0.15 % |
+  | 1.00x | 1.06 % | 0.05 % |
+  | 4.00x | 0.61 % | 0.01 % |
+  | mirror | 0.98 % | 0.03 % |
+
+  And it is ~2x FASTER than the .vts route (26 s against 46 s for 1001 snapshots).
+- **The medians barely moved**, confirming the bumps were zero-mean: 1.00x goes
+  1.0056/0.9877 -> 1.0098/0.9911. The mirror agreement TIGHTENED: inner is now
+  1.0098 both ways, identical to four decimals, outer 0.9911 against 0.9906.
+- Falls back to `--source vtkOut` with a warning if igakit or `igasol.dat` is
+  missing. `left_is_inner` added to the CSV, which the mirror run needs and which
+  I had been passing only through `meta`.
+- Doc table updated to the new default path.
+
+**Care needed when patching this file by string match**: `s.index("vdir = ...")`
+matched inside the newly added loader and silently deleted `analyse`. Restored
+from git and redid the edit by line position inside the function.
+
+---
+
 ## 2026-09-09 (c) — eps/2 arm staged; doc rewritten; the v_n bumps explained
 
 - **eps/2 convergence arm staged.** `--eps` added to `build_geometry_wedge.py`
