@@ -118,7 +118,9 @@ measured before (45.71 µm undersaturated vs 56.26 µm saturated at nominal
 
 That is the signature of neck filling by Allen–Cahn interfacial relaxation
 rather than by vapour, which is what `mob_scale 5` with `alph_scale 0.01` sets
-up: AC curvature motion is deliberately not coupled to vapour
+up (those factors come from the archived `BestParams` runs, audited in
+[`../bestparams_archive.md`](../bestparams_archive.md) — they *were* the
+executed model there, but under several violated constraints): AC curvature motion is deliberately not coupled to vapour
 (`docs/model_description.md` §3.4), so the ice arriving in the neck does not
 have to come from anywhere. Combined with the worst shape of the four, this arm
 should be dropped rather than re-tuned.
