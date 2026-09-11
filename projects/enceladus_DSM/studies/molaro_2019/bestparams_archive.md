@@ -112,9 +112,12 @@ parameterisation, not of the physics as run.
 
 **5. Physically inconsistent settings for this problem**, each since changed:
 
-- `Lambd = 1.0` — the triple-junction penalty is on, but this is a two-phase
-  ice/air problem with no sediment and therefore no triple junction. Current
-  `solver.opts` sets 0 and says why.
+- `Lambd = 1.0` — the triple-junction penalty is on where there is no triple
+  junction. **Checked 2026-09-11: dynamically inert here, and an earlier draft
+  of this file over-called it.** Every Λ term in `Fice`/`Fwat`/`Fair` is
+  multiplied by the sediment fraction `met`, and the log prints `No sed grains`,
+  so `met = 0` everywhere and all Λ terms vanish. It is wrong in principle and
+  harmless in this configuration.
 - `grad_temp0 = (0, 1e-4, 0)` — a transverse gradient in a nominally
   isothermal experiment.
 - `humidity = 0.70` — `1 − h = 0.30`, about **100×** more undersaturated than

@@ -129,6 +129,87 @@ start at ρ/eps = 2.10, which is below the 6·eps criterion but well above the
 0.59 where we have hard evidence. We have not measured the failure at 2.1. The
 criterion says it is unsafe; we have not demonstrated how unsafe.
 
+## How the violations show up in the dynamics
+
+Not "are the constraints violated" but "what do they *do*". Four mechanisms,
+each traceable to a number.
+
+### 1. Half the interface kinetics is the mesh, not the physics
+
+`tau_sub = eps·lambda·( beta_HK/a1 + a2·eps/D_th + a2·eps/D_v )`. The first term
+is the physical attachment kinetics. **The other two are proportional to `eps`** —
+they are the thin-interface correction, i.e. the model's own discretisation
+entering the interface mobility. Their share:
+
+| configuration | physics | **numerical** | interface is |
+|---|---|---|---|
+| archived, −20 °C | 49.8 % | **50.2 %** | **2.01× slower** than physics alone |
+| archived, −5 °C | 79.9 % | **20.1 %** | 1.25× slower |
+| `comp_eps` default, −20 °C | 63.4 % | 36.6 % | 1.58× slower |
+| **2026-09 campaign, −20 °C** | **81.3 %** | **18.7 %** | 1.23× slower |
+| proposed ε = 1.883e-7 | 73.1 % | 26.9 % | 1.37× slower |
+
+Two consequences, and the second is the damaging one:
+
+- At the archived ε the interface moves at **half** the speed the physical
+  kinetics specify — the mesh parameter is setting the rate.
+- **It is temperature-dependent.** The spurious slowdown is 2.01× at −20 °C and
+  1.25× at −5 °C, a factor **1.6× difference between the two cases those runs
+  existed to compare.** The artefact does not cancel between temperatures; it
+  tilts the −20/−5 comparison directly.
+
+And it reframes the fitted mobility: `mob_sub` was already 2.01× too slow from
+discretisation, so **roughly half of the ×5 is undoing the mesh**, not a
+statement about physical mobility.
+
+### 2. The ÷100 on the source is very nearly the reciprocal of the BC error
+
+This is the sharpest one. At `humidity = 0.70`:
+
+| | archived | 2026-09 campaign | ratio |
+|---|---|---|---|
+| wall undersaturation `1 − h` | 0.30 | 2.875e-03 | **104×** stronger |
+| `alph_scale` on the source | 0.01 | 1.0 | **100×** weaker |
+| product | | | **1.04** |
+
+Two ~100× errors in opposite directions. The measured ice loss confirms the
+cancellation: the archived run loses **−2.87 % in area (−1.45 % equivalent
+radius) over 2 h** — a plausible-looking number produced by a wall 104× too
+undersaturated feeding a source 100× too weak.
+
+So the fitted `alph_sub` factor is not a claim about attachment kinetics. To the
+precision of this comparison it is **the reciprocal of the humidity error**. That
+is why it looked like a good fit, and it is why the value does not transfer to a
+run with a defensible wall.
+
+### 3. The neck is fed by curvature relaxation, not vapour
+
+With the source 100× weaker and the mobility 5× stronger, the Allen–Cahn term
+dominates neck filling — and AC curvature motion is deliberately *not* coupled to
+vapour (`docs/model_description.md` §3.4), so that ice does not have to come from
+anywhere. The 2026-09 arm-3 run reproduced exactly this signature in the current
+solver: 4× the wall undersaturation and 2.5× the grain recession of the untuned
+arm, yet a 75.5 µm neck against 46.1 — inverting the ordering vapour-only
+transport requires (`three_options/README.md` §6).
+
+### 4. The IC transient, and what is *not* wrong
+
+The additive IC is not an equilibrium profile, so the run opens by relaxing
+toward one. Measured: **+1.32 µm of neck in the first 60 s**, 3.1 % of the total
+2 h growth compressed into 0.8 % of the run, before the sintering rate settles.
+Small in absolute terms, but it lands exactly where Molaro's data is densest.
+
+Two things worth clearing, because a sound argument should not carry weak claims:
+
+- **`Lambd = 1.0` is inert.** Every Λ term in the free energy is multiplied by
+  the sediment fraction, and there is no sediment (`No sed grains`). Wrong in
+  principle, zero dynamical effect.
+- **`grad_T = 1e-4 °C/m` is negligible.** Over `Ly = 3.884e-4 m` that is a
+  **3.9e-8 °C** difference across the domain. The workaround cost nothing.
+- **No grid pinning is visible.** The neck series is not quantised to the mesh
+  (radius/dy fractional part spans 0.001–0.992), so the measurement interpolated
+  sub-cell and there is no stick-slip signature to point at.
+
 ## What the archived runs were good for
 
 They were a **parameter search**, and as a search they were legitimate and
