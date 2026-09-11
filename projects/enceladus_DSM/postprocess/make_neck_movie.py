@@ -23,6 +23,17 @@ rate -- and it makes the movie explain itself: vapour pools in the concave
 neck (sigma highest, the ice there is the least-volatile surface in the frame)
 and drains toward the undersaturated wall, which is why the waist fills in.
 
+Colours are cmocean: 'ice' for the phase field, 'balance' for sigma. balance
+is diverging, so its pale middle is re-sampled onto sigma = 0 (see
+centered_cmap) -- blue is undersaturated, red supersaturated, pale is
+saturation over flat ice.
+
+Molaro's Fig. 11 points are overlaid on the curve, SHIFTED ONTO THE RUN'S
+CLOCK by plot_neck_vs_molaro.py's anchor (t = 0 for them is the moment the
+model passes their first measured width, 32.81 um). The experiment moves, not
+the model, so the time axis stays the clock in the frame titles. --no-data
+drops them.
+
 The measurement is neck_width.py's, not a re-invention: same minimum-cross-
 section definition, same grain-centre peak split, same sub-grid parabola
 refinement (imported from it). So the number burned into the frame is the
@@ -41,6 +52,7 @@ plot_neck_vs_molaro.py for that comparison.
 Usage:
     python make_neck_movie.py <run_dir> [--out FILE.mp4] [--fps 12]
         [--stride N] [--dpi 150] [--frame-png STEP] [--no-vapor]
+        [--no-data] [--cmap NAME]
 
 Auto-detects -axisym from the run's .opts; force with --axisym/--no-axisym.
 --no-vapor gives the plain ice/air panels; it is also the automatic fallback
@@ -57,7 +69,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FFMpegWriter
-from matplotlib.colors import AsinhNorm, ListedColormap, to_rgba
+from matplotlib.colors import AsinhNorm, ListedColormap
+import cmocean
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pplib
@@ -65,29 +78,93 @@ from pplib import read_vts, step_of, step_times
 from neck_width import _cross, refine_min
 
 ICE_EDGE = "#12263a"
-ICE_FILL = "#e6e9ec"
 TRACE = "#3d74d9"
 ACCENT = "#d1495b"
+C_DATA = "#d1495b"         # plot_neck_vs_molaro.py's colour for the experiment
 SIGMA_SCALE = 1e4          # sigma is O(1e-4); supersat_probes.py's convention
+DEFAULT_ANCHOR_UM = 32.81  # Molaro's first measured neck WIDTH
 
 
-def ice_alpha_cmap(color=ICE_FILL, n=256):
-    """A flat ice colour that is fully transparent below phi = 0.5.
+def ice_alpha_cmap(n=256):
+    """cmocean 'ice' over phi, fully TRANSPARENT below phi = 0.5.
 
     The ice is painted ON TOP of the vapour field as one opaque layer rather
     than the vapour being masked to the pore: every pixel is covered by the
     base, so no pixel can be left unowned at the phi = 0.5 boundary (the
     dropped-pixel failure of thresholding into two disjoint regions).
 
-    Flat, not a phi ramp: phi inside the grain carries no information here, and
-    a second gradient next to the vapour colourmap reads as data. Gouraud
-    shading interpolates the RGBA, so only alpha ramps across the interface --
-    an anti-aliased edge with no colour fringe.
+    phi maps DIRECTLY through the map, so the visible ice (phi in [0.5, 1])
+    uses its upper half: grains read light with a mid-tone rim at the
+    interface, not the near-black ice(0) rim a [0.5,1]->[0,1] remap would give.
+    Gouraud shading interpolates the RGBA, so across the interface only alpha
+    ramps -- an anti-aliased edge with no dark fringe.
     """
-    lut = np.zeros((n, 4))
-    lut[:, :3] = to_rgba(color)[:3]
-    lut[:, 3] = np.where(np.linspace(0.0, 1.0, n) < 0.5, 0.0, 1.0)
+    phi = np.linspace(0.0, 1.0, n)
+    lut = cmocean.cm.ice(phi)
+    lut[:, 3] = np.where(phi < 0.5, 0.0, 1.0)
     return ListedColormap(lut)
+
+
+def centered_cmap(base, norm, n=512):
+    """Re-map a DIVERGING colormap so its midpoint lands on sigma = 0.
+
+    balance is diverging, and a diverging map makes a promise: the pale middle
+    is the neutral value. A norm maps vmin->0 and vmax->1 regardless, so with
+    the asymmetric ranges here (-28.5 .. +0.29) the pale middle would land at
+    sigma = -14, i.e. at nothing, and the whole undersaturated field would read
+    as "positive". Re-sampling the map so its 0.5 sits at norm(0) keeps the
+    promise AND the asinh dynamic range: blue is undersaturated, red is
+    supersaturated, pale is saturation over flat ice.
+
+    When the data never reaches zero -- the high-D_v arms are undersaturated
+    everywhere -- only the blue half is used, with the pale end as the
+    saturation the pore never gets to. That is the honest picture, and it is
+    why this is not simply symmetric limits about zero: those would throw away
+    most of the range to represent a sign that never occurs.
+    """
+    if norm.vmin < 0.0 < norm.vmax:
+        p0 = float(np.clip(norm(0.0), 0.0, 1.0))
+    else:
+        p0 = 1.0 if norm.vmax <= 0.0 else 0.0
+    p = np.linspace(0.0, 1.0, n)
+    if p0 <= 0.0:
+        q = 0.5 + 0.5 * p
+    elif p0 >= 1.0:
+        q = 0.5 * p
+    else:
+        q = np.where(p <= p0, 0.5 * p / p0, 0.5 + 0.5 * (p - p0) / (1.0 - p0))
+    return ListedColormap(base(q))
+
+
+def read_experiment(path):
+    """(t_s, width_m, err+_m, err-_m) from a Molaro Fig. 11 validation CSV."""
+    import csv as _csv
+    rows = []
+    with open(path) as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            f = next(_csv.reader([line]))
+            rows.append((float(f[0]) * 60.0, float(f[1]) * 1e-6,
+                         float(f[2]) * 1e-6, float(f[3]) * 1e-6))
+    a = np.asarray(rows)
+    return a[:, 0], a[:, 1], a[:, 2], a[:, 3]
+
+
+def anchor_time(t, w, target):
+    """First time the model curve reaches `target` width, interpolated.
+
+    plot_neck_vs_molaro.py's convention, and it has to be: our t = 0 and
+    theirs are not the same instant. We start from a chosen initial neck;
+    their record starts at 32.81 um at an unknown time after contact. Putting
+    both on a common clock means defining t = 0 as the moment each passes the
+    SAME physical width.
+    """
+    for (t0, w0), (t1, w1) in zip(zip(t, w), zip(t[1:], w[1:])):
+        if w0 <= target <= w1 and w1 > w0:
+            return t0 + (target - w0) * (t1 - t0) / (w1 - w0)
+    return None
 
 
 def sigma_ticks(norm, min_gap=0.055):
@@ -213,8 +290,20 @@ def main():
                          "the largest neck width reached (default 1.6)")
     ap.add_argument("--frame-png", type=int, default=None,
                     help="render only this step to a PNG (preview) and exit")
-    ap.add_argument("--cmap", default="viridis",
-                    help="colourmap for the vapour background (default viridis)")
+    ap.add_argument("--cmap", default="balance",
+                    help="cmocean (or matplotlib) colourmap for the vapour "
+                         "background (default: cmocean balance)")
+    ap.add_argument("--no-center", dest="center", action="store_false",
+                    help="do not re-centre the colourmap on sigma = 0; pass "
+                         "this when --cmap is sequential rather than diverging")
+    ap.add_argument("--data", type=Path, default=None,
+                    help="experimental neck-width CSV to overlay on the curve "
+                         "(default: the repo's Molaro Fig. 11 T=-20 table)")
+    ap.add_argument("--anchor-width", type=float, default=DEFAULT_ANCHOR_UM,
+                    help="neck WIDTH [um] at which the experiment's clock is "
+                         "matched to the model's (default 32.81)")
+    ap.add_argument("--no-data", dest="data_on", action="store_false",
+                    help="model curve only, no experimental points")
     ap.add_argument("--sat-vmin", type=float, default=None,
                     help="fix the low end of the supersaturation scale, in "
                          "units of sigma x 1e4 (default: the run's own min)")
@@ -230,6 +319,12 @@ def main():
                    key=step_of)[:: args.stride]
     if not files:
         sys.exit(f"no solV_*.vts under {args.run_dir}/vtkOut")
+
+    data_path = args.data or (Path(__file__).resolve().parent.parent
+                              / "inputs/validation/molaro2019_fig11_T-20.csv")
+    if args.data_on and not Path(data_path).is_file():
+        print(f"  NOTE: {data_path} not found; model curve only")
+        args.data_on = False
 
     opts = pplib.read_opts(str(args.run_dir))
     if args.axisym is None:
@@ -332,6 +427,10 @@ def main():
         else:
             norm = AsinhNorm(linear_width=max((vmax - vmin) / 300.0, 1e-12),
                              vmin=vmin, vmax=vmax)
+            base = getattr(cmocean.cm, args.cmap, None)
+            if base is None:
+                base = plt.get_cmap(args.cmap)
+            vapcm = centered_cmap(base, norm) if args.center else base
             print(f"  supersaturation range (pore, pair window): "
                   f"{vmin:+.3g} .. {vmax:+.3g}  (sigma x 1e4)")
 
@@ -362,7 +461,7 @@ def main():
         ax.set_aspect("equal")
         vap = None
         if args.vapor:
-            vap = ax.pcolormesh(XX, YY, view(s0, *win)[0], cmap=args.cmap,
+            vap = ax.pcolormesh(XX, YY, view(s0, *win)[0], cmap=vapcm,
                                 norm=norm, shading="gouraud", rasterized=True)
         m = ax.pcolormesh(XX, YY, p, cmap=icecm, vmin=0.0, vmax=1.0,
                           shading="gouraud", rasterized=True, zorder=2)
@@ -404,9 +503,45 @@ def main():
     axc.plot(t_min[good], w_um[good], lw=1.4, color="#c4c8ce", zorder=1)
     (trace,) = axc.plot([], [], lw=2.2, color=TRACE, zorder=2)
     (dot,) = axc.plot([], [], "o", ms=7, mfc=ACCENT, mec="white", mew=1.2, zorder=3)
+
+    # Molaro's points, SHIFTED ONTO THE RUN'S CLOCK -- the experiment moves,
+    # not the model, so the time axis stays the clock in the frame titles and
+    # the dot always sits under the t the panel above reports. The shift is
+    # plot_neck_vs_molaro.py's anchor: t = 0 for them is the moment the model
+    # passes their first measured width, because the two t = 0's are not the
+    # same instant (we start from a chosen neck, their record starts at 32.81
+    # um an unknown time after contact). Raw, unshifted points would compare
+    # two different clocks.
+    ylo, yhi = np.nanmin(w_um), np.nanmax(w_um)
+    if args.data_on:
+        try:
+            td, wd, ep, em = read_experiment(data_path)
+            t_star = anchor_time(ts, ws, args.anchor_width * 1e-6)
+            if t_star is None:
+                print(f"  NOTE: the run never crosses the "
+                      f"{args.anchor_width:.2f} um anchor "
+                      f"({w_um.min():.2f}-{w_um.max():.2f} um); "
+                      f"plotting the experiment on its own clock instead")
+                t_star = 0.0
+            axc.errorbar((t_star + td) / 60.0, wd * 1e6,
+                         yerr=np.vstack([em, ep]) * 1e6,
+                         fmt="o", ms=4.5, lw=0.0, elinewidth=1.0, capsize=2.5,
+                         color=C_DATA, mfc="white", mew=1.3, zorder=4,
+                         label=(f"Molaro et al. 2019\n"
+                                f"(clock anchored at "
+                                f"{args.anchor_width:.2f} $\\mu$m)"))
+            axc.legend(loc="lower right", fontsize=7.5, frameon=False,
+                       handletextpad=0.6, borderpad=0.2)
+            print(f"  experiment anchored at {args.anchor_width:.2f} um: "
+                  f"t* = {t_star/60.0:.2f} min")
+            ylo = min(ylo, float((wd - em).min() * 1e6))
+            yhi = max(yhi, float((wd + ep).max() * 1e6))
+        except (OSError, ValueError, IndexError) as e:
+            print(f"  WARNING: no experimental overlay ({e})")
+
     axc.set_xlim(0.0, np.nanmax(t_min) * 1.02)
-    pad = 0.08 * (np.nanmax(w_um) - np.nanmin(w_um) + 1e-12)
-    axc.set_ylim(np.nanmin(w_um) - pad, np.nanmax(w_um) + pad)
+    pad = 0.08 * (yhi - ylo + 1e-12)
+    axc.set_ylim(ylo - pad, yhi + pad)
     axc.set_xlabel("time [min]")
     axc.set_ylabel(r"neck width $2r$ [$\mu$m]" if args.axisym
                    else r"neck width [$\mu$m]")
