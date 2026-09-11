@@ -296,6 +296,11 @@ def main():
     ap.add_argument("--no-center", dest="center", action="store_false",
                     help="do not re-centre the colourmap on sigma = 0; pass "
                          "this when --cmap is sequential rather than diverging")
+    ap.add_argument("--no-symmetric", dest="symmetric", action="store_false",
+                    help="scale the bar to the data range instead of putting "
+                         "sigma = 0 at its midpoint. Recovers contrast on runs "
+                         "that are undersaturated everywhere, where half the "
+                         "symmetric bar covers a sign the data never reaches")
     ap.add_argument("--data", type=Path, default=None,
                     help="experimental neck-width CSV to overlay on the curve "
                          "(default: the repo's Molaro Fig. 11 T=-20 table)")
@@ -421,18 +426,32 @@ def main():
     if args.vapor:
         vmin = args.sat_vmin if args.sat_vmin is not None else smin
         vmax = args.sat_vmax if args.sat_vmax is not None else smax
+        if args.symmetric and args.sat_vmin is None and args.sat_vmax is None:
+            # sigma = 0 at the MIDPOINT OF THE BAR, so the colourbar reads as
+            # a signed axis: left half sublimation-driving, right half
+            # deposition-driving, the tick in the middle the sign change.
+            # Re-sampling the colormap (centered_cmap) puts balance's pale
+            # middle on sigma = 0 but leaves it at 78 % along the bar; only
+            # symmetric limits move the POSITION.
+            v = max(abs(smin), abs(smax))
+            vmin, vmax = -v, v
         if not np.isfinite(vmin) or not np.isfinite(vmax) or vmax <= vmin:
             print("  WARNING: no usable vapour range; drawing ice/air only")
             args.vapor = False
         else:
-            norm = AsinhNorm(linear_width=max((vmax - vmin) / 300.0, 1e-12),
-                             vmin=vmin, vmax=vmax)
+            # linear_width off the HALF-span: the symmetric bar is twice as
+            # wide as the data, and scaling it off the full span would double
+            # the linear region and squeeze the decades the neck lives in.
+            norm = AsinhNorm(
+                linear_width=max(max(abs(vmin), abs(vmax)) / 300.0, 1e-12),
+                vmin=vmin, vmax=vmax)
             base = getattr(cmocean.cm, args.cmap, None)
             if base is None:
                 base = plt.get_cmap(args.cmap)
             vapcm = centered_cmap(base, norm) if args.center else base
-            print(f"  supersaturation range (pore, pair window): "
-                  f"{vmin:+.3g} .. {vmax:+.3g}  (sigma x 1e4)")
+            print(f"  supersaturation: data {smin:+.3g} .. {smax:+.3g}, "
+                  f"bar {vmin:+.3g} .. {vmax:+.3g}  (sigma x 1e4, "
+                  f"0 at {float(norm(0.0)):.3f} of the bar)")
 
     # ---- figure ----------------------------------------------------------
     pP, xP, yP = view(f0, Pi, Pj)
