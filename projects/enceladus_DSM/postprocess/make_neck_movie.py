@@ -313,6 +313,10 @@ def main():
                     help="fix the low end of the supersaturation scale, in "
                          "units of sigma x 1e4 (default: the run's own min)")
     ap.add_argument("--sat-vmax", type=float, default=None)
+    ap.add_argument("--sat-clip", type=float, default=0.1,
+                    help="percentile trimmed from each end of the pore's "
+                         "supersaturation when sizing the colour scale "
+                         "(default 0.1); 0 uses the strict min/max")
     ap.add_argument("--no-vapor", dest="vapor", action="store_false",
                     help="plain ice/air panels, no vapour background")
     ax_ = ap.add_mutually_exclusive_group()
@@ -375,6 +379,7 @@ def main():
     centers = None
     ts, ws, xs = [], [], []
     smin, smax = np.inf, -np.inf
+    sraw0, sraw1 = np.inf, -np.inf
     for i, fn in enumerate(files):
         f, X, Y = read_vts(fn, want=WANT)
         phi = f["IcePhase"]
@@ -385,8 +390,20 @@ def main():
             pore = phi[Pbox] < args.phi
             if pore.any():
                 sig = sigma_field(f)[Pbox][pore]
-                smin = min(smin, float(sig.min()))
-                smax = max(smax, float(sig.max()))
+                # PERCENTILES, not min/max. A strict extremum lets one frame
+                # set the scale for the whole movie, and the first output
+                # after t = 0 reliably has one: the neck's boundary layer
+                # overshoots hard before the pore field has relaxed. On the
+                # tuned arm that was EIGHT cells of 98411 reaching -427 while
+                # every other frame lived in -74..0 -- a symmetric bar at +-427
+                # squeezed all 103 frames into a narrow band. Clipping those
+                # cells to the end colour costs nothing; letting them set the
+                # scale costs the whole movie.
+                lo, hi = np.percentile(sig, [args.sat_clip, 100.0 - args.sat_clip])
+                smin = min(smin, float(lo))
+                smax = max(smax, float(hi))
+                sraw0 = min(sraw0, float(sig.min()))
+                sraw1 = max(sraw1, float(sig.max()))
         if i % 25 == 0:
             print(f"  {i}/{len(files)}", flush=True)
     ts = np.asarray(ts); ws = np.asarray(ws); xs = np.asarray(xs)
@@ -449,7 +466,8 @@ def main():
             if base is None:
                 base = plt.get_cmap(args.cmap)
             vapcm = centered_cmap(base, norm) if args.center else base
-            print(f"  supersaturation: data {smin:+.3g} .. {smax:+.3g}, "
+            print(f"  supersaturation: raw {sraw0:+.3g} .. {sraw1:+.3g}, "
+                  f"p{args.sat_clip:g} {smin:+.3g} .. {smax:+.3g}, "
                   f"bar {vmin:+.3g} .. {vmax:+.3g}  (sigma x 1e4, "
                   f"0 at {float(norm(0.0)):.3f} of the bar)")
 
@@ -549,8 +567,13 @@ def main():
                          label=(f"Molaro et al. 2019\n"
                                 f"(clock anchored at "
                                 f"{args.anchor_width:.2f} $\\mu$m)"))
-            axc.legend(loc="lower right", fontsize=7.5, frameon=False,
-                       handletextpad=0.6, borderpad=0.2)
+            # Framed, not bare: the handle is an errorbar marker sitting
+            # inside the data area, and with no frame it reads as one more
+            # measurement -- on the tuned arm it lands right where a point
+            # would be.
+            axc.legend(loc="lower right", fontsize=7.5, frameon=True,
+                       framealpha=0.88, edgecolor="none", facecolor="white",
+                       handletextpad=0.6, borderpad=0.4)
             print(f"  experiment anchored at {args.anchor_width:.2f} um: "
                   f"t* = {t_star/60.0:.2f} min")
             ylo = min(ylo, float((wd - em).min() * 1e6))
