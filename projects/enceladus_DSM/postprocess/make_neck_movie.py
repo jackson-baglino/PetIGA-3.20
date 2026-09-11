@@ -1,15 +1,27 @@
 #!/usr/bin/env python3
 """make_neck_movie.py — animate the NECK of a two-grain sintering run.
 
-One frame per snapshot, two synchronised panels:
+One frame per snapshot, three synchronised panels:
 
-  top     the ice body around the neck (phi field + the phi = 0.5 contour),
-          with the measured waist drawn ON the frame as a capped segment and
-          labelled in um. For an axisymmetric r-z run the field is mirrored
-          about the axis (r = 0) so the frame shows the physical pair, and the
-          drawn segment is the full width 2r, matching what is reported.
-  bottom  neck width vs time, the whole curve in grey with the elapsed part
+  left    the neck close up. The vapour field is the background, the ice is
+          painted opaque on top, and the measured waist is drawn ON the frame
+          as a capped segment, labelled in um.
+  top r.  the whole grain pair at the same instant, for scale, with the zoom
+          window marked.
+  bot r.  neck width vs time, the whole curve in grey with the elapsed part
           picked out in colour and a dot at the current frame.
+
+For an axisymmetric r-z run both image panels are mirrored about the axis
+(r = 0) so the frame shows the physical pair, and the drawn segment is the
+full width 2r, matching what is reported.
+
+THE BACKGROUND IS SUPERSATURATION, sigma = rho_v/rho_vs(T) - 1, not vapour
+density: rho_v alone varies in its 4th significant figure and its structure is
+invisible without a scale so tight it means nothing. sigma is the quantity the
+interface actually responds to -- its sign is the sign of the local growth
+rate -- and it makes the movie explain itself: vapour pools in the concave
+neck (sigma highest, the ice there is the least-volatile surface in the frame)
+and drains toward the undersaturated wall, which is why the waist fills in.
 
 The measurement is neck_width.py's, not a re-invention: same minimum-cross-
 section definition, same grain-centre peak split, same sub-grid parabola
@@ -28,9 +40,11 @@ plot_neck_vs_molaro.py for that comparison.
 
 Usage:
     python make_neck_movie.py <run_dir> [--out FILE.mp4] [--fps 12]
-        [--stride N] [--dpi 150] [--frame-png STEP]
+        [--stride N] [--dpi 150] [--frame-png STEP] [--no-vapor]
 
 Auto-detects -axisym from the run's .opts; force with --axisym/--no-axisym.
+--no-vapor gives the plain ice/air panels; it is also the automatic fallback
+for snapshots that carry no VaporDensity/Temperature.
 """
 
 import argparse
@@ -43,16 +57,83 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FFMpegWriter
-import cmocean
+from matplotlib.colors import AsinhNorm, ListedColormap, to_rgba
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pplib
 from pplib import read_vts, step_of, step_times
 from neck_width import _cross, refine_min
 
-ICE_EDGE = "#1b3a5c"
+ICE_EDGE = "#12263a"
+ICE_FILL = "#e6e9ec"
 TRACE = "#3d74d9"
 ACCENT = "#d1495b"
+SIGMA_SCALE = 1e4          # sigma is O(1e-4); supersat_probes.py's convention
+
+
+def ice_alpha_cmap(color=ICE_FILL, n=256):
+    """A flat ice colour that is fully transparent below phi = 0.5.
+
+    The ice is painted ON TOP of the vapour field as one opaque layer rather
+    than the vapour being masked to the pore: every pixel is covered by the
+    base, so no pixel can be left unowned at the phi = 0.5 boundary (the
+    dropped-pixel failure of thresholding into two disjoint regions).
+
+    Flat, not a phi ramp: phi inside the grain carries no information here, and
+    a second gradient next to the vapour colourmap reads as data. Gouraud
+    shading interpolates the RGBA, so only alpha ramps across the interface --
+    an anti-aliased edge with no colour fringe.
+    """
+    lut = np.zeros((n, 4))
+    lut[:, :3] = to_rgba(color)[:3]
+    lut[:, 3] = np.where(np.linspace(0.0, 1.0, n) < 0.5, 0.0, 1.0)
+    return ListedColormap(lut)
+
+
+def sigma_ticks(norm, min_gap=0.055):
+    """Decade ticks for an asinh colourbar, thinned in NORM space.
+
+    Two rules the obvious version gets wrong:
+
+    * Thin by BAR POSITION, not by sigma. With the bar running -28.5 .. +0.29,
+      a 4 %-of-span guard is +-1.15 in sigma, which swallows every tick between
+      -1 and the top.
+    * Zero is MANDATORY, not a candidate. It is the one value on the bar that
+      means something physical -- saturation over flat ice, the sign change
+      between net sublimation and net deposition -- and asinh spacing puts it
+      close enough to its neighbours that a plain greedy pass drops it and
+      keeps 0.01 instead.
+
+    Decades go in first and 3x-decades fill the gaps, so a narrow bar stays
+    readable and a wide one does not go sparse.
+    """
+    vmin, vmax = float(norm.vmin), float(norm.vmax)
+    pos = lambda v: float(norm(v))
+    kept = [vmin, vmax] + ([0.0] if vmin < 0.0 < vmax else [])
+    decades = [10.0 ** k for k in range(-2, 3)]
+    for scale in (1.0, 3.0):
+        for d in decades:
+            for v in (-scale * d, scale * d):
+                if not (vmin < v < vmax):
+                    continue
+                if all(abs(pos(v) - pos(u)) >= min_gap for u in kept):
+                    kept.append(v)
+    return sorted(kept)
+
+
+WANT = ("IcePhase", "VaporDensity", "Temperature")
+
+
+def sigma_field(f):
+    """Supersaturation x 1e4 from a snapshot's fields.
+
+    pplib.supersaturation mirrors the solver's RhoVS_I; the local Temperature
+    array is used rather than the -temp option because a run with a gradient
+    has neither a single T nor a single rho_vs. Snapshots without the two
+    fields are caught in main(), which drops the vapour layer.
+    """
+    return SIGMA_SCALE * pplib.supersaturation(f["VaporDensity"],
+                                               f["Temperature"])
 
 
 def chord_bounds(col, y, level):
@@ -132,6 +213,14 @@ def main():
                          "the largest neck width reached (default 1.6)")
     ap.add_argument("--frame-png", type=int, default=None,
                     help="render only this step to a PNG (preview) and exit")
+    ap.add_argument("--cmap", default="viridis",
+                    help="colourmap for the vapour background (default viridis)")
+    ap.add_argument("--sat-vmin", type=float, default=None,
+                    help="fix the low end of the supersaturation scale, in "
+                         "units of sigma x 1e4 (default: the run's own min)")
+    ap.add_argument("--sat-vmax", type=float, default=None)
+    ap.add_argument("--no-vapor", dest="vapor", action="store_false",
+                    help="plain ice/air panels, no vapour background")
     ax_ = ap.add_mutually_exclusive_group()
     ax_.add_argument("--axisym", dest="axisym", action="store_true", default=None)
     ax_.add_argument("--no-axisym", dest="axisym", action="store_false")
@@ -147,29 +236,12 @@ def main():
         args.axisym = str(opts.get("-axisym", "0")).strip() in ("1", "true", "True")
     tmap = step_times(args.run_dir)
 
-    # ---- pass 1: the w(t) series -----------------------------------------
-    print(f"measuring {len(files)} snapshots "
-          f"({'axisymmetric' if args.axisym else 'planar'}) ...")
-    centers = None
-    ts, ws, xs = [], [], []
-    for i, fn in enumerate(files):
-        f, X, Y = read_vts(fn, want=("IcePhase",))
-        w, xn, centers = measure(f["IcePhase"], X[0, :], Y[:, 0],
-                                 args.phi, args.axisym, centers)
-        ts.append(tmap.get(step_of(fn), np.nan)); ws.append(w); xs.append(xn)
-        if i % 25 == 0:
-            print(f"  {i}/{len(files)}", flush=True)
-    ts = np.asarray(ts); ws = np.asarray(ws); xs = np.asarray(xs)
-    t_min = ts / 60.0
-    w_um = ws * 1e6
-    print(f"neck width: {w_um[0]:.2f} -> {w_um[-1]:.2f} um "
-          f"({100*(w_um[-1]/w_um[0]-1):+.1f}%) over {t_min[-1]:.0f} min")
-
-    # ---- view windows, both fixed over the run --------------------------
-    # Fixed, not tracking x_neck: a window centred on the moving neck would
-    # make the neck look stationary while the grains slid past it, hiding the
-    # plane's migration toward the smaller grain -- part of what this is for.
-    _, X, Y = read_vts(files[0], want=("IcePhase",))
+    # ---- geometry of the pair panel, needed before pass 1 ----------------
+    # The vapour colour scale is built over the PAIR WINDOW's pore, not the
+    # whole domain: the far field is pinned at the Dirichlet wall value, and a
+    # scale stretched to reach it spends most of its range on a boundary layer
+    # neither panel shows, flattening both panels to one colour.
+    f0f, X, Y = read_vts(files[0], want=WANT)
     x1d, y1d = X[0, :], Y[:, 0]
     yc = 0.0 if args.axisym else 0.5 * (y1d[0] + y1d[-1])
 
@@ -182,35 +254,93 @@ def main():
 
     # Pair panel: the ice bounding box at t = 0, padded. Taken from the field
     # rather than -ice_grain_cx/-ice_grain_R so it holds for any IC.
-    f0 = read_vts(files[0], want=("IcePhase",))[0]["IcePhase"]
-    ice = f0 >= args.phi
-    xi, yi = x1d[ice.any(axis=0)], y1d[ice.any(axis=1)]
+    f0 = f0f["IcePhase"]
+    missing = [k for k in WANT[1:] if k not in f0f]
+    if args.vapor and missing:
+        print(f"  WARNING: {', '.join(missing)} not in the snapshots; "
+              f"drawing ice/air only")
+        args.vapor = False
+    ice0 = f0 >= args.phi
+    xi, yi = x1d[ice0.any(axis=0)], y1d[ice0.any(axis=1)]
     padx = 0.04 * (xi[-1] - xi[0])
     r_max = max(abs(yi[-1] - yc), abs(yi[0] - yc))
     Pj = span(xi[0] - padx, xi[-1] + padx, x1d)
     Pi = span(yc - 1.10 * r_max if not args.axisym else 0.0,
               yc + 1.10 * r_max, y1d)
+    Pbox = np.s_[Pi[0]:Pi[1], Pj[0]:Pj[1]]
 
-    # Zoom panel: a few neck widths across, centred on the mean neck plane.
+    # ---- pass 1: the w(t) series, and the vapour range -------------------
+    print(f"measuring {len(files)} snapshots "
+          f"({'axisymmetric' if args.axisym else 'planar'}) ...")
+    centers = None
+    ts, ws, xs = [], [], []
+    smin, smax = np.inf, -np.inf
+    for i, fn in enumerate(files):
+        f, X, Y = read_vts(fn, want=WANT)
+        phi = f["IcePhase"]
+        w, xn, centers = measure(phi, X[0, :], Y[:, 0],
+                                 args.phi, args.axisym, centers)
+        ts.append(tmap.get(step_of(fn), np.nan)); ws.append(w); xs.append(xn)
+        if args.vapor:
+            pore = phi[Pbox] < args.phi
+            if pore.any():
+                sig = sigma_field(f)[Pbox][pore]
+                smin = min(smin, float(sig.min()))
+                smax = max(smax, float(sig.max()))
+        if i % 25 == 0:
+            print(f"  {i}/{len(files)}", flush=True)
+    ts = np.asarray(ts); ws = np.asarray(ws); xs = np.asarray(xs)
+    t_min = ts / 60.0
+    w_um = ws * 1e6
+    print(f"neck width: {w_um[0]:.2f} -> {w_um[-1]:.2f} um "
+          f"({100*(w_um[-1]/w_um[0]-1):+.1f}%) over {t_min[-1]:.0f} min")
+
+    # ---- zoom window -----------------------------------------------------
+    # Both windows are FIXED over the run, not tracking x_neck: a window
+    # centred on the moving neck would hold it still while the grains slid
+    # past it, hiding the plane's migration toward the smaller grain -- part
+    # of what this is for.
     xc = float(np.nanmean(xs))
     Zj = span(xc - args.zoom * ws.max(), xc + args.zoom * ws.max(), x1d)
     Zi = span(yc - 1.05 * ws.max() if not args.axisym else 0.0,
               yc + 1.05 * ws.max(), y1d)
 
-    def view(phi, win_i, win_j):
+    def view(fld, win_i, win_j):
         """Crop to a window; mirror about the axis for an axisym run."""
-        p = phi[win_i[0]:win_i[1], win_j[0]:win_j[1]]
+        p = fld[win_i[0]:win_i[1], win_j[0]:win_j[1]]
         yy = y1d[win_i[0]:win_i[1]]
         if args.axisym:
             p = np.vstack([p[:0:-1, :], p])
             yy = np.concatenate([-yy[:0:-1], yy])
         return p, x1d[win_j[0]:win_j[1]] * 1e6, yy * 1e6
 
+    # ---- vapour colour scale --------------------------------------------
+    # ONE scale for both panels, asinh-spaced. The panels' ranges differ by
+    # roughly a decade (the pair panel reaches the drained field between the
+    # grains, the zoom sees only the neck's own boundary layer), so a linear
+    # scale covering the pair panel leaves the zoom panel a single flat
+    # colour. asinh is log-like over the decades and linear through zero, so
+    # it fits both without a false centre -- and unlike a symmetric diverging
+    # norm it does not need the data to straddle zero, which for the higher-D_v
+    # arms it never does (their pore is undersaturated everywhere).
+    if args.vapor:
+        vmin = args.sat_vmin if args.sat_vmin is not None else smin
+        vmax = args.sat_vmax if args.sat_vmax is not None else smax
+        if not np.isfinite(vmin) or not np.isfinite(vmax) or vmax <= vmin:
+            print("  WARNING: no usable vapour range; drawing ice/air only")
+            args.vapor = False
+        else:
+            norm = AsinhNorm(linear_width=max((vmax - vmin) / 300.0, 1e-12),
+                             vmin=vmin, vmax=vmax)
+            print(f"  supersaturation range (pore, pair window): "
+                  f"{vmin:+.3g} .. {vmax:+.3g}  (sigma x 1e4)")
+
     # ---- figure ----------------------------------------------------------
     pP, xP, yP = view(f0, Pi, Pj)
     pZ, xZ, yZ = view(f0, Zi, Zj)
     XP, YP = np.meshgrid(xP, yP)
     XZ, YZ = np.meshgrid(xZ, yZ)
+    s0 = sigma_field(f0f) if args.vapor else None
 
     # Landscape, because the output is a video: the zoom fills the left half,
     # the pair-scale context and the curve stack on the right. Stacking all
@@ -225,21 +355,31 @@ def main():
     axp = fig.add_subplot(gs[0, 1])
     axc = fig.add_subplot(gs[1, 1])
 
-    def setup(ax, XX, YY, p):
+    icecm = ice_alpha_cmap()
+
+    def setup(ax, XX, YY, p, win):
+        """Vapour as a full-window base layer, ice painted opaque on top."""
         ax.set_aspect("equal")
-        m = ax.pcolormesh(XX, YY, p, cmap=cmocean.cm.ice, vmin=0.0, vmax=1.0,
-                          shading="gouraud", rasterized=True)
+        vap = None
+        if args.vapor:
+            vap = ax.pcolormesh(XX, YY, view(s0, *win)[0], cmap=args.cmap,
+                                norm=norm, shading="gouraud", rasterized=True)
+        m = ax.pcolormesh(XX, YY, p, cmap=icecm, vmin=0.0, vmax=1.0,
+                          shading="gouraud", rasterized=True, zorder=2)
         ax.set_xlim(XX.min(), XX.max()); ax.set_ylim(YY.min(), YY.max())
         ax.set_xlabel(r"$x$ [$\mu$m]")
         ax.set_ylabel(r"$r$ [$\mu$m]" if args.axisym else r"$y$ [$\mu$m]")
         if args.axisym:
-            ax.axhline(0.0, lw=0.7, ls=(0, (6, 4)), color="#ffffff", alpha=0.5)
-        return m
+            ax.axhline(0.0, lw=0.7, ls=(0, (6, 4)), color=ICE_EDGE,
+                       alpha=0.35, zorder=3)
+        return m, vap
 
-    mP = setup(axp, XP, YP, pP)
-    mZ = setup(axz, XZ, YZ, pZ)
-    contP = axp.contour(XP, YP, pP, levels=[args.phi], colors=ICE_EDGE, linewidths=0.8)
-    contZ = axz.contour(XZ, YZ, pZ, levels=[args.phi], colors=ICE_EDGE, linewidths=1.1)
+    mP, vP = setup(axp, XP, YP, pP, (Pi, Pj))
+    mZ, vZ = setup(axz, XZ, YZ, pZ, (Zi, Zj))
+    contP = axp.contour(XP, YP, pP, levels=[args.phi], colors=ICE_EDGE,
+                        linewidths=0.8, zorder=4)
+    contZ = axz.contour(XZ, YZ, pZ, levels=[args.phi], colors=ICE_EDGE,
+                        linewidths=1.1, zorder=4)
 
     # the zoom window, drawn on the pair panel
     axp.add_patch(plt.Rectangle((XZ.min(), YZ.min()),
@@ -283,19 +423,41 @@ def main():
     fig.suptitle(f"{args.run_dir.name}\n{subtitle}", fontsize=9, y=0.975)
     title = axz.set_title("", fontsize=13)
 
+    if args.vapor:
+        # Under the zoom panel, positioned from its DRAWN box: the panel is
+        # aspect-equal, so its gridspec slot is not where it actually lands.
+        fig.canvas.draw()
+        bb = axz.get_window_extent().transformed(fig.transFigure.inverted())
+        cax = fig.add_axes([bb.x0, max(0.030, bb.y0 - 0.105),
+                            bb.width, 0.022])
+        cb = fig.colorbar(vZ, cax=cax, orientation="horizontal",
+                          ticks=sigma_ticks(norm))
+        cb.set_label(r"supersaturation  $\sigma = \rho_v/\rho_{vs}-1$   "
+                     r"[$\times 10^{-4}$]", fontsize=9)
+        cb.ax.xaxis.set_major_formatter(plt.FuncFormatter(
+            lambda v, _p: f"{v:.3g}"))
+        cb.ax.tick_params(labelsize=8)
+
     dx_lab = 0.025 * (XZ.max() - XZ.min())
 
     def draw(k):
         nonlocal contP, contZ
-        phi = read_vts(files[k], want=("IcePhase",))[0]["IcePhase"]
+        fk = read_vts(files[k], want=WANT)[0]
+        phi = fk["IcePhase"]
         pP_, _, _ = view(phi, Pi, Pj)
         pZ_, _, _ = view(phi, Zi, Zj)
         mP.set_array(pP_.ravel()); mZ.set_array(pZ_.ravel())
+        if args.vapor:
+            sk = sigma_field(fk)
+            vP.set_array(view(sk, Pi, Pj)[0].ravel())
+            vZ.set_array(view(sk, Zi, Zj)[0].ravel())
         contP.remove(); contZ.remove()
+        # zorder must match the setup call: the ice layer is at 2, and a
+        # contour left at its default would only land on top by draw order.
         contP = axp.contour(XP, YP, pP_, levels=[args.phi], colors=ICE_EDGE,
-                            linewidths=0.8)
+                            linewidths=0.8, zorder=4)
         contZ = axz.contour(XZ, YZ, pZ_, levels=[args.phi], colors=ICE_EDGE,
-                            linewidths=1.1)
+                            linewidths=1.1, zorder=4)
 
         xn = xs[k] * 1e6
         if args.axisym:
