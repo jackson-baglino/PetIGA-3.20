@@ -202,6 +202,38 @@ one-sided model without an anti-trapping current can also produce a spurious sur
 diffusion, which is a different operator and is not observable in this measurement; see
 \S\ref{sec:open}.
 
+
+\subsection{The resulting definitions of $\beta$ and $\tsub$}\label{sec:defs}
+With $C_{\rm corr}=0$, Eq.~\eqref{eq:limit} reduces to
+\begin{equation}
+d_{0,\rm realized}=\dsub,
+\qquad
+\beta_{\rm realized}=\frac{\tsub\,\dsub}{\epsilon^{2}} ,
+\label{eq:betaone}
+\end{equation}
+so the relaxation time that realizes a requested $\bsub$ follows by inversion:
+\begin{equation}
+\boxed{\;\tsub=\frac{\epsilon^{2}\,\bsub}{\dsub}\;}
+\qquad\text{equivalently}\qquad
+\tsub=\epsilon\lambda_{\rm sub}\frac{\beta_{\rm sub}}{a_1},
+\label{eq:tauone}
+\end{equation}
+the second form being the one the code evaluates. Two properties are worth noting. The
+$\rho_{vs}/\rho_{\rm ice}$ scaling cancels between $\beta_{\rm sub}$ and $d_{0,\rm sub}$,
+so $\tsub$ depends only on the unscaled inputs and enters temperature only through them.
+And $\tsub\propto\epsilon^{2}$: since the stable time step follows $\tsub$, halving
+$\epsilon$ quarters \code{-dtmax}, which is what the convergence arm of \S\ref{sec:open}
+must do.
+
+For contrast, a symmetric diffusivity would require
+\begin{equation}
+\tsub=\frac{\epsilon^{2}\left(\bsub+\Delta\right)}{\dsub} ,
+\label{eq:tausym}
+\end{equation}
+and Eq.~\eqref{eq:tausym} is what was coded. The difference between the two is exactly the
+counter-term: at $-20\,^\circ$C with $\epsilon=8.584\times10^{-7}$\,m,
+Eq.~\eqref{eq:tauone} gives $\tsub=429.2$\,s and Eq.~\eqref{eq:tausym} gives $522.1$\,s.
+
 \begin{figure}[t]\centering
 \includegraphics[width=\textwidth]{fig_inner.pdf}
 \caption{\small Left: the weight $g(\phi_0)\,\partial_\eta\phi_0$ in Eq.~\eqref{eq:I} is
@@ -212,8 +244,9 @@ identically, so no counter-term can arise.}
 
 \section{The change}
 
-Both counter-terms are now behind \code{-thin\_iface\_corr}, which defaults to $0$, in
-the scalar path of both solvers and in the pointwise path \code{SubKinetics}, with the
+Both counter-terms are now behind \code{-thin\_iface\_corr}, which defaults to $0$, so
+that the solver evaluates Eq.~\eqref{eq:tauone} rather than Eq.~\eqref{eq:tausym}. The
+flag is present in the scalar path of both solvers and in the pointwise path \code{SubKinetics}, with the
 analytic Jacobian derivatives gated alongside them. Setting the flag to $1$ restores the
 terms in their historical form for comparison with earlier runs; it is not a corrected
 form, and since the physically correct counter-term for this model is approximately zero,

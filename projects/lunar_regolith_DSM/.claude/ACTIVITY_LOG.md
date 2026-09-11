@@ -1,3 +1,30 @@
+## 2026-09-11 — Doc: added the one-sided definitions of beta and tau_sub
+
+New §4.1 states the definitions the analysis implies, which the document had
+been using implicitly without ever writing down:
+
+    beta_realized = tau_sub * d0_sub0 / eps^2          (C_corr = 0)
+
+and, inverting for the relaxation time that realizes a requested beta_sub0,
+
+    tau_sub = eps^2 * beta_sub0 / d0_sub0              one-sided
+    tau_sub = eps^2 * (beta_sub0 + Delta) / d0_sub0    symmetric, i.e. as coded
+
+with the equivalent bracket form eps*lambda_sub*beta_sub/a1 that the code
+actually evaluates. Verified both against the solver: 429.21 s and 522.13 s at
+-20 C, eps = 8.584e-7, matching the flag-off and historical values exactly.
+
+Two properties noted because they have practical consequences:
+- the rho_vs/rho_ice scaling CANCELS between beta_sub and d0_sub, so tau_sub
+  depends only on the unscaled inputs;
+- tau_sub ~ eps^2, so halving eps quarters -dtmax. That is what the staged
+  eps/2 convergence arm had to do, and the doc now says why.
+
+§5 now says explicitly that -thin_iface_corr selects between the two equations
+rather than describing the change only in words.
+
+---
+
 ## 2026-09-09 (d) — The v_n bumps removed at source
 
 `wedge_gt_velocity.py` gains `--source igasol`, now the DEFAULT: it evaluates the
