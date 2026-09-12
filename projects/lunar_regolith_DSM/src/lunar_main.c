@@ -119,6 +119,8 @@ int main(int argc, char *argv[]) {
     PetscReal contact_angle_deg = 0.0;
     PetscBool contact_angle_set = PETSC_FALSE;
     char      wall_faces[64] = "";
+    PetscBool test_wall_measure = PETSC_FALSE;
+    PetscBool test_wall_jacobian = PETSC_FALSE;
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 2;          /* Polynomial order */
@@ -661,6 +663,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-gamma_as", "Air-regolith surface energy [J/m^2]", "", gamma_as, &gamma_as, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-contact_angle_deg", "DEBUG: set theta directly, bypassing Young's equation", "", contact_angle_deg, &contact_angle_deg, &contact_angle_set); CHKERRQ(ierr);
     ierr = PetscOptionsString("-wall_faces", "Domain faces that are regolith, e.g. \"y0,y1\" (default: none)", "", wall_faces, wall_faces, sizeof(wall_faces), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-test_wall_measure", "DEBUG: assemble the wall term on a uniform phi=1/2 field, check its surface measure, and exit", "", test_wall_measure, &test_wall_measure, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-test_wall_jacobian", "DEBUG: check the analytic Jacobian against finite differences on the initial condition, and exit", "", test_wall_jacobian, &test_wall_jacobian, NULL); CHKERRQ(ierr);
 
     /* --- Output control -------------------------------------------------- */
     ierr = PetscOptionsInt("-outp", "Output control flag", "", user.outp, &user.outp, NULL); CHKERRQ(ierr);
@@ -1613,11 +1617,200 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* ---- -test_wall_jacobian: analytic Jacobian vs finite differences ------
+     * -snes_test_jacobian would do this, but only from inside a TS step, where
+     * TSALPHA's restart solve re-enters the test repeatedly and a debug PETSc
+     * build takes minutes on even a tiny mesh. This checks the same thing
+     * directly and in seconds: for random directions v,
+     *     J*v  ==  [F(U + h v) - F(U - h v)] / (2h)
+     * to second order in h. Run it with and without -wall_faces to isolate the
+     * boundary block -- the interior blocks are identical between the two, so
+     * any discrepancy that appears only with -wall_faces is the wall term's.
+     *
+     * shift = 0 and V = 0, so this tests dR/dU alone. The wall term has no
+     * phi_t dependence, which is exactly the part of J it contributes to. */
+    if (test_wall_jacobian) {
+        Mat Jfull, Jint;
+        Vec Vz, Fp, Fm, Gp, Gm, v, Jv, Up;
+        PetscReal h = 1.0e-7, worst_full = 0.0, worst_bnd = 0.0, scale_bnd = 0.0;
+        PetscRandom rnd;
+        const PetscReal cos_save = user.costhet;
+
+        ierr = IGACreateMat(iga, &Jfull); CHKERRQ(ierr);
+        ierr = IGACreateMat(iga, &Jint);  CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Vz); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fp); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fm); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Gp); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Gm); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &v);  CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Jv); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Up); CHKERRQ(ierr);
+        ierr = VecZeroEntries(Vz); CHKERRQ(ierr);
+
+        /* J with the wall term, and J with it switched off. Setting costhet = 0
+         * makes WallPointActive() return false, so Jint is the interior form
+         * alone -- every other coefficient is untouched. Their difference is
+         * exactly the wall block. */
+        ierr = IGAComputeIJacobian(iga, 0.0, Vz, 0.0, U, Jfull); CHKERRQ(ierr);
+        user.costhet = 0.0;
+        ierr = IGAComputeIJacobian(iga, 0.0, Vz, 0.0, U, Jint); CHKERRQ(ierr);
+        user.costhet = cos_save;
+
+        ierr = PetscRandomCreate(PETSC_COMM_WORLD, &rnd); CHKERRQ(ierr);
+        ierr = PetscRandomSetType(rnd, PETSCRAND48); CHKERRQ(ierr);
+        ierr = PetscRandomSetInterval(rnd, -1.0, 1.0); CHKERRQ(ierr);
+
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\n WALL JACOBIAN CHECK (-test_wall_jacobian)   h = %.1e,  "
+            "cos(theta) = %.6f\n"
+            "   The full-system column is dominated by the interior form, so it\n"
+            "   is insensitive to the wall block; the isolated column differences\n"
+            "   both J and F between costhet on and off and is the real gate.\n\n"
+            "   dir   full system      wall block       ||Jbnd*v||\n",
+            (double)h, (double)user.costhet);
+
+        for (PetscInt k = 0; k < 5; k++) {
+            PetscReal nd_f, nj_f, nd_b, nj_b;
+
+            ierr = PetscRandomSetSeed(rnd, (unsigned long)(12345 + k)); CHKERRQ(ierr);
+            ierr = PetscRandomSeed(rnd); CHKERRQ(ierr);
+            ierr = VecSetRandom(v, rnd); CHKERRQ(ierr);
+
+            /* F(U +- h v) with the wall on (F) and off (G). */
+            ierr = VecWAXPY(Up,  h, v, U); CHKERRQ(ierr);
+            ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Fp); CHKERRQ(ierr);
+            user.costhet = 0.0;
+            ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Gp); CHKERRQ(ierr);
+            user.costhet = cos_save;
+
+            ierr = VecWAXPY(Up, -h, v, U); CHKERRQ(ierr);
+            ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Fm); CHKERRQ(ierr);
+            user.costhet = 0.0;
+            ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Gm); CHKERRQ(ierr);
+            user.costhet = cos_save;
+
+            /* --- full system --- */
+            ierr = VecCopy(Fp, Up); CHKERRQ(ierr);
+            ierr = VecAXPY(Up, -1.0, Fm); CHKERRQ(ierr);
+            ierr = VecScale(Up, 1.0 / (2.0 * h)); CHKERRQ(ierr);
+            ierr = MatMult(Jfull, v, Jv); CHKERRQ(ierr);
+            ierr = VecNorm(Jv, NORM_2, &nj_f); CHKERRQ(ierr);
+            ierr = VecAXPY(Up, -1.0, Jv); CHKERRQ(ierr);
+            ierr = VecNorm(Up, NORM_2, &nd_f); CHKERRQ(ierr);
+
+            /* --- wall block alone: (F - G) differenced, vs (Jfull - Jint)*v --- */
+            ierr = VecAXPY(Fp, -1.0, Gp); CHKERRQ(ierr);   /* wall part at +h */
+            ierr = VecAXPY(Fm, -1.0, Gm); CHKERRQ(ierr);   /* wall part at -h */
+            ierr = VecAXPY(Fp, -1.0, Fm); CHKERRQ(ierr);
+            ierr = VecScale(Fp, 1.0 / (2.0 * h)); CHKERRQ(ierr);
+            ierr = MatMult(Jfull, v, Jv); CHKERRQ(ierr);
+            ierr = MatMult(Jint,  v, Gp); CHKERRQ(ierr);
+            ierr = VecAXPY(Jv, -1.0, Gp); CHKERRQ(ierr);   /* Jbnd * v */
+            ierr = VecNorm(Jv, NORM_2, &nj_b); CHKERRQ(ierr);
+            ierr = VecAXPY(Fp, -1.0, Jv); CHKERRQ(ierr);
+            ierr = VecNorm(Fp, NORM_2, &nd_b); CHKERRQ(ierr);
+
+            if (nj_f > 0.0 && nd_f / nj_f > worst_full) worst_full = nd_f / nj_f;
+            if (nj_b > 0.0 && nd_b / nj_b > worst_bnd)  worst_bnd  = nd_b / nj_b;
+            if (nj_b > scale_bnd) scale_bnd = nj_b;
+
+            PetscPrintf(PETSC_COMM_WORLD, "   %3d   %.6e    %.6e    %.6e\n",
+                        (int)k,
+                        (double)(nj_f > 0.0 ? nd_f / nj_f : nd_f),
+                        (double)(nj_b > 0.0 ? nd_b / nj_b : nd_b),
+                        (double)nj_b);
+        }
+        PetscPrintf(PETSC_COMM_WORLD,
+            "   worst %.6e    %.6e\n"
+            "   (||Jbnd*v|| = 0 would mean the wall block is never exercised --\n"
+            "    the interface must actually cross a face named by -wall_faces.)\n",
+            (double)worst_full, (double)worst_bnd);
+
+        ierr = PetscRandomDestroy(&rnd); CHKERRQ(ierr);
+        ierr = MatDestroy(&Jfull); CHKERRQ(ierr);
+        ierr = MatDestroy(&Jint);  CHKERRQ(ierr);
+        ierr = VecDestroy(&Vz); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fp); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fm); CHKERRQ(ierr);
+        ierr = VecDestroy(&Gp); CHKERRQ(ierr);
+        ierr = VecDestroy(&Gm); CHKERRQ(ierr);
+        ierr = VecDestroy(&v);  CHKERRQ(ierr);
+        ierr = VecDestroy(&Jv); CHKERRQ(ierr);
+        ierr = VecDestroy(&Up); CHKERRQ(ierr);
+        goto cleanup;
+    }
+
+    /* ---- -test_wall_measure: verify the boundary surface measure ----------
+     * The one part of the wall term that cannot be checked by reading the code
+     * is whether PetIGA integrates the boundary form with the right dS. On a
+     * plain Cartesian patch (no -geom_file) petigaelem.c takes the detS = 1.0
+     * branch rather than computing a geometric surface Jacobian, so the face
+     * measure comes entirely from the surviving axes' quadrature weights.
+     *
+     * Set phi = 1/2 uniformly, T = temp0, rho_v = rho_vs(temp0), and phi_t = 0.
+     * Every interior contribution to R[.][0] then vanishes IDENTICALLY:
+     *   phi_t = 0; grad phi = 0; f1(1/2) = 0; and rho_v - rho_vs = 0 kills the
+     *   sublimation source. Whatever is left in the assembled vector is the
+     *   boundary term alone. With cos(theta) = 1 it integrates to
+     *       sum_a F[a][0] = -3*M*(1/4)*|Gamma_wall| = -0.75*M*|Gamma_wall|
+     * because the shape functions are a partition of unity. */
+    if (test_wall_measure) {
+        Vec Uw, Vw, Fw;
+        PetscReal rho_vs_w, area = 0.0, got, want;
+        const PetscReal LL[3] = {user.Lx, user.Ly, user.Lz};
+
+        if (!user.wall_any)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONGSTATE,
+                    "-test_wall_measure needs -wall_faces (and a non-zero "
+                    "contact angle) or there is no boundary term to measure.");
+
+        RhoVS_I(&user, user.temp0, &rho_vs_w, NULL);
+
+        ierr = IGACreateVec(iga, &Uw); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Vw); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fw); CHKERRQ(ierr);
+        ierr = VecZeroEntries(Vw); CHKERRQ(ierr);
+        ierr = VecStrideSet(Uw, 0, 0.5); CHKERRQ(ierr);
+        ierr = VecStrideSet(Uw, 1, user.temp0); CHKERRQ(ierr);
+        ierr = VecStrideSet(Uw, 2, rho_vs_w); CHKERRQ(ierr);
+
+        ierr = IGAComputeIFunction(iga, 0.0, Vw, 0.0, Uw, Fw); CHKERRQ(ierr);
+        ierr = VecStrideSum(Fw, 0, &got); CHKERRQ(ierr);
+
+        /* |Gamma_wall|: each flagged face contributes the measure of the
+         * domain face perpendicular to its axis. */
+        for (PetscInt l = 0; l < dim; l++) {
+            PetscReal face = 1.0;
+            for (PetscInt k = 0; k < dim; k++) if (k != l) face *= LL[k];
+            for (PetscInt m = 0; m < 2; m++) if (user.wall_face[l][m]) area += face;
+        }
+        want = -3.0 * user.mob_sub * 0.25 * user.costhet * area;
+
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\n WALL SURFACE-MEASURE CHECK (-test_wall_measure)\n"
+            "   |Gamma_wall|   = %.12e m^%d\n"
+            "   cos(theta)     = %.12f\n"
+            "   sum F[.][0]    = %.12e   (assembled)\n"
+            "   expected       = %.12e   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)\n"
+            "   rel. error     = %.3e\n",
+            (double)area, (int)(dim - 1), (double)user.costhet,
+            (double)got, (double)want,
+            (double)(want != 0.0 ? PetscAbsReal((got - want) / want)
+                                 : PetscAbsReal(got)));
+
+        ierr = VecDestroy(&Uw); CHKERRQ(ierr);
+        ierr = VecDestroy(&Vw); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fw); CHKERRQ(ierr);
+        goto cleanup;
+    }
+
     /* Solve the system */
     ierr = TSSolve(ts, U); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD, "Solution completed. \n");
 
+cleanup:
     /* Cleanup Resources */
     if (user.ssa_view) { ierr = PetscViewerDestroy(&user.ssa_view); CHKERRQ(ierr); }
     ierr = VecDestroy(&U); CHKERRQ(ierr);
