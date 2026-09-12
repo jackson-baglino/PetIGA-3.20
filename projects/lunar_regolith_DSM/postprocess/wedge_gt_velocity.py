@@ -93,10 +93,14 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pplib import (                                    # noqa: E402
     auto_time_unit,
+    circle_radius,
+    contour_points,
+    crossings,
     in_time_unit,
     opt_float,
     read_opts,
     read_vts,
+    refine_tanh,
     rho_vs,
     step_of,
     step_times,
@@ -158,35 +162,6 @@ def read_opts_ordered(run_dir):
 # ---------------------------------------------------------------------------
 # Geometry helpers
 # ---------------------------------------------------------------------------
-def crossings(x, y, level=0.5):
-    """Linear-interpolation crossings of y=level in y(x).  Never a grid node."""
-    s = np.flatnonzero((y[:-1] - level) * (y[1:] - level) < 0.0)
-    if s.size == 0:
-        return np.empty(0)
-    f = (level - y[s]) / (y[s + 1] - y[s])
-    return x[s] + f * (x[s + 1] - x[s])
-
-
-def refine_tanh(x, phi, x0, eps, half_width=6.0, lo=0.02, hi=0.98):
-    """Interface position from the whole diffuse band, not two samples.
-
-    The equilibrium profile of this model's half-normalised well is
-    phi = 0.5*(1 + tanh(x/(2*eps))), so atanh(2*phi - 1) is EXACTLY linear in x
-    across the interface. Fitting that line over the band and taking its zero
-    uses ~13 samples where the 0.5 crossing uses 2, which matters here: v_n is
-    a time derivative of this position, so a bias that repeats with the sample
-    grid shows up as a periodic ripple at the period of one cell crossing.
-    Measured on rhov_eq_eq, this cuts that ripple 3x on control-net data and
-    6x on true-NURBS data. Falls back to `x0` if the band is too thin to fit.
-    """
-    m = (np.abs(x - x0) < half_width * eps) & (phi > lo) & (phi < hi)
-    if m.sum() < 5:
-        return x0
-    z = np.arctanh(np.clip(2.0 * phi[m] - 1.0, -1.0 + 1e-12, 1.0 - 1e-12))
-    slope, intercept = np.polyfit(x[m] - x0, z, 1)
-    if not np.isfinite(slope) or slope == 0.0:
-        return x0
-    return x0 - intercept / slope
 
 
 def centreline_weights(Y, y0):
@@ -211,54 +186,6 @@ def centreline_weights(Y, y0):
 def on_centreline(A, j, w):
     i = np.arange(A.shape[1])
     return (1.0 - w) * A[j, i] + w * A[j + 1, i]
-
-
-def contour_points(x, Y, phi, level=0.5):
-    """phi=level crossings row by row, as physical (x, y) pairs.
-
-    Returns (xl, yl, xr, yr) for the rows that have exactly two crossings --
-    i.e. the left and right menisci sampled along their whole arcs.
-    """
-    d = phi - level
-    hit = (d[:, :-1] * d[:, 1:]) < 0.0
-    jj, ii = np.nonzero(hit)
-    if jj.size == 0:
-        return (np.empty(0),) * 4
-    f = (level - phi[jj, ii]) / (phi[jj, ii + 1] - phi[jj, ii])
-    px = x[ii] + f * (x[ii + 1] - x[ii])
-    py = Y[jj, ii] + f * (Y[jj, ii + 1] - Y[jj, ii])
-
-    n_per_row = np.bincount(jj, minlength=phi.shape[0])
-    keep = n_per_row[jj] == 2
-    if not keep.any():
-        return (np.empty(0),) * 4
-    jj, px, py = jj[keep], px[keep], py[keep]
-    order = np.lexsort((px, jj))            # per row: left crossing first
-    px, py = px[order], py[order]
-    return px[0::2], py[0::2], px[1::2], py[1::2]
-
-
-def circle_radius(px, py):
-    """Least-squares circle through (px, py).  Returns (xc, yc, r) or None.
-
-    Linear formulation 2*a*x + 2*b*y + c = x^2 + y^2, so no iteration and no
-    initial guess.  Used only to VALIDATE the analytic apex radius -- second
-    differences of the contour would be the noise-amplifying alternative that
-    neck_width.py:18-23 rejects for exactly this geometry.
-    """
-    if px.size < 5:
-        return None
-    A = np.column_stack((2.0 * px, 2.0 * py, np.ones(px.size)))
-    b = px ** 2 + py ** 2
-    try:
-        sol, *_ = np.linalg.lstsq(A, b, rcond=None)
-    except np.linalg.LinAlgError:
-        return None
-    xc, yc = sol[0], sol[1]
-    disc = sol[2] + xc ** 2 + yc ** 2
-    if not np.isfinite(disc) or disc <= 0.0:
-        return None
-    return xc, yc, float(np.sqrt(disc))
 
 
 def sigma_at_interface(x, sigma, x_iface, sign_out, eps, win):
@@ -292,7 +219,6 @@ def sliding_slope(t, y, win):
             continue
         out[k] = np.polyfit(t[a:b] - t[k], y[a:b], 1)[0]
     return out
-
 
 
 def _iter_igasol(run_dir, y0, nu, nv):
