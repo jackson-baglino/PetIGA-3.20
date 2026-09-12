@@ -41,7 +41,27 @@ echo "========================================================================="
 # ---------------------------------------------------------------------------
 # Detect Python
 # ---------------------------------------------------------------------------
-PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "")
+# Prefer the project venv over whatever python3 happens to be on PATH. The bare
+# interpreter frequently has no numpy, and because every step here is wrapped in
+# run_step the failures were individually reported but easy to miss -- the
+# visible symptom was simply an empty plots/ directory after a run that had
+# reported success. POSTPROCESS_DIR is <run>/postprocess for a staged copy, so
+# also try the source tree via PETIGA_DIR.
+PYTHON=""
+for _cand in "$POSTPROCESS_DIR/../venv_lunar/bin/python3" \
+             "${PETIGA_DIR:-}/projects/lunar_regolith_DSM/venv_lunar/bin/python3"; do
+    if [[ -x "$_cand" ]] && "$_cand" -c "import numpy" >/dev/null 2>&1; then
+        PYTHON="$_cand"; break
+    fi
+done
+if [[ -z "$PYTHON" ]]; then
+    PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "")
+    if [[ -n "$PYTHON" ]] && ! "$PYTHON" -c "import numpy" >/dev/null 2>&1; then
+        echo "  WARNING: $PYTHON has no numpy and no usable venv_lunar was found."
+        echo "           Every plotting step below will fail, leaving plots/ empty."
+        echo "           Create the venv: see requirements.txt"
+    fi
+fi
 if [[ -z "$PYTHON" ]]; then
     echo "❌ python3 not found — cannot run post-processing."
     exit 1

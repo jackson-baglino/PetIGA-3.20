@@ -31,11 +31,20 @@
 # reads an EQUILIBRIUM state, not a rate, and the interface-CFL limiter still
 # paces the fast early transient.
 #
-# t_final = 30 days is a starting estimate, NOT a verified plateau. Check
-# theta(t) in contact_angle.png before trusting the number; the angle is a
-# local quantity and should settle well before the global bridge shape does.
+# t_final = 65 days, sized from the pilot run rather than guessed:
+#   studies/contact_angle/verification/ records tau = 14.4 days for the approach
+#   theta(t) = theta_inf + A*exp(-t/tau) on the eps3.00um channel. 65 days is
+#   4.5*tau, which lands within ~1 deg of equilibrium. Relaxation is
+#   vapour-diffusion limited and genuinely this slow; the first ~2 days run the
+#   other way while the grain shrinks under Gibbs-Thomson until the sealed box's
+#   vapour saturates.
+#
+# Even so, contact_angle.py reports theta_inf from a free three-parameter fit,
+# so the equilibrium angle is recovered even if a run stops short -- the
+# relaxation is a very clean single exponential (fit RMS 0.015 deg). Read
+# theta_inf, and check theta(t) in plots/contact_angle.png either way.
 # =============================================================================
--t_final 2.592e6
+-t_final 5.616e6
 
 -temp -20.0
 -humidity 1.00

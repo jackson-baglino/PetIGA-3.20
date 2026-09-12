@@ -281,6 +281,55 @@ def measure(x1d, y1d, phi, eps, walls, exclude_eps, level=0.5):
 
 
 # ---------------------------------------------------------------------------
+def extrapolate(t, th):
+    """Equilibrium angle from theta(t) = theta_inf + A*exp(-t/tau).
+
+    Relaxation here is vapour-diffusion limited and slow: the pilot run
+    measured tau = 14.4 days, so reaching the true equilibrium takes months of
+    simulated time. It is also an extremely clean single exponential -- residual
+    RMS 0.003 degrees over the last 40% of that run -- which makes the
+    three-parameter fit a legitimate way to read the equilibrium off a run that
+    stopped short, and reporting it guards the sweep against an under-estimated
+    t_final.
+
+    theta_inf is FREE. That is the whole point: it is compared to Young's
+    prediction afterwards, never assumed.
+
+    Returns (theta_inf, sigma, tau_seconds, rms, n) or None.
+    """
+    try:
+        from scipy.optimize import curve_fit
+    except ImportError:
+        return None
+    t = np.asarray(t, float)
+    th = np.asarray(th, float)
+    ok = np.isfinite(t) & np.isfinite(th)
+    t, th = t[ok], th[ok]
+    if t.size < 8 or t.max() <= 0:
+        return None
+
+    # Drop the early transient: the grain first shrinks under Gibbs-Thomson
+    # until the sealed box's vapour saturates, and theta briefly moves the wrong
+    # way. Fitting through that biases tau badly.
+    sel = t > 0.4 * t.max()
+    if sel.sum() < 6:
+        return None
+
+    def f(x, a, A, tau):
+        return a + A * np.exp(-x / tau)
+
+    span = max(th[sel].max() - th[sel].min(), 1e-6)
+    try:
+        p, cov = curve_fit(f, t[sel], th[sel],
+                           p0=[th[sel][-1], span, 0.3 * t.max()], maxfev=40000)
+    except Exception:
+        return None
+    if not np.all(np.isfinite(cov)) or p[2] <= 0:
+        return None
+    rms = float(np.sqrt(np.mean((th[sel] - f(t[sel], *p)) ** 2)))
+    return float(p[0]), float(np.sqrt(cov[0, 0])), float(p[2]), rms, int(sel.sum())
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -336,11 +385,23 @@ def main():
         raise SystemExit("no contour could be measured in any snapshot")
 
     steps = sorted({r["step"] for r in rows})
+    # Snapshot-averaged trajectory, for the extrapolation.
+    traj_t, traj_th = [], []
+    for st in steps:
+        sel = [r for r in rows if r["step"] == st]
+        traj_t.append(sel[0]["t"])
+        traj_th.append(float(np.mean([r["theta"] for r in sel])))
+    ext = extrapolate(traj_t, traj_th)
     csv = os.path.join(run, CSV_NAME)
     with open(csv, "w") as fh:
         fh.write("# gamma_ia,gamma_is,gamma_as = %.6g,%.6g,%.6g   "
                  "theta_young = %.4f deg   (%s)\n"
                  % (g_ia, g_is, g_as, theta_young, source))
+        if ext is not None:
+            fh.write("# theta_inf = %.4f +/- %.4f deg, tau = %.6e s, "
+                     "fit_rms = %.5f, n = %d, error_inf = %+.4f deg\n"
+                     % (ext[0], ext[1], ext[2], ext[3], ext[4],
+                        ext[0] - theta_young))
         fh.write("step,time_s,meniscus,y_wall,theta_deg,theta_plate_deg,"
                  "R_arc_m,x_contact_m,n_points,theta_young_deg,error_deg\n")
         for r in rows:
@@ -359,6 +420,17 @@ def main():
     print(f"    theta_measured = {th.mean():8.3f} +/- {th.std():.3f} deg "
           f"({th.size} estimates, final snapshot)")
     print(f"    error          = {th.mean() - theta_young:+8.3f} deg")
+    if ext is not None:
+        a_inf, sig, tau, rms, n = ext
+        print(f"    theta_inf      = {a_inf:8.3f} +/- {sig:.3f} deg   "
+              f"[extrapolated, tau = {tau/86400.0:.2f} d, "
+              f"fit RMS {rms:.4f} over {n} pts]")
+        print(f"    error(inf)     = {a_inf - theta_young:+8.3f} deg")
+        if abs(th.mean() - a_inf) > 1.0:
+            print(f"    NOTE: the run stopped {abs(th.mean()-a_inf):.1f} deg short "
+                  f"of its own extrapolated equilibrium; t_final is too small to\n"
+                  f"          read the angle directly. Trust theta_inf, or extend to "
+                  f"~{-tau*np.log(0.5/max(abs(th.mean()-a_inf),1e-9))/86400:.0f} days.")
     print(f"    -> {csv}")
 
     if args.save:
@@ -374,6 +446,16 @@ def main():
                 t = in_time_unit([r["t"] for r in sel], unit)
                 ax.plot(t, [r["theta"] for r in sel], marker="o", ms=3, lw=1.2,
                         label=f"{name} meniscus, wall y={y_wall:.3g}")
+        if ext is not None:
+            a_inf, sig, tau, _, _ = ext
+            tt = np.linspace(0.0, max(traj_t), 300)
+            A = np.mean([th_ - a_inf for th_, t_ in zip(traj_th, traj_t)
+                         if t_ > 0.4 * max(traj_t)]
+                        ) / np.mean([np.exp(-t_ / tau) for t_ in traj_t
+                                     if t_ > 0.4 * max(traj_t)])
+            ax.plot(in_time_unit(tt, unit), a_inf + A * np.exp(-tt / tau),
+                    color="0.45", ls=":", lw=1.4,
+                    label=f"fit  $\\theta_\\infty$={a_inf:.2f}°, $\\tau$={tau/86400:.1f} d")
         ax.axhline(theta_young, color="k", ls="--", lw=1.4,
                    label=f"Young  {theta_young:.1f}°")
         ax.set_xlabel(f"time [{unit}]")

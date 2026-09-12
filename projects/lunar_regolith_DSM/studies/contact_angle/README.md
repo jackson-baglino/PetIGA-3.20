@@ -113,6 +113,17 @@ The measurement also agrees with the analytic clipped-disc angle on real solver
 output: the t=0 channel IC measures **131.805°** against
 `arccos(−(Ly/2)/R) = 131.810°`, with `R_arc` recovered to 0.01%.
 
+### Pilot — ✅ θ_inf = 60.36 ± 0.04° vs Young's 60.000°
+
+One run, θ = 60°, on the coarsest mesh (ε/R = 1/25). Details and the
+fit-window table in `verification/pilot/`. The relaxation is a clean single
+exponential with τ = 14.4 days; a **free** three-parameter fit (asymptote
+fitted, not assumed) gives θ_inf = 60.36 ± 0.04°, and the best-conditioned
+window gives 59.93 ± 0.03° — **0.07° from Young**.
+
+Strong evidence, not the validation: one angle, one mesh, and an extrapolation
+rather than a directly observed equilibrium.
+
 ### Physics sweep — ⏳ not yet run
 
 `verification/sweep_tests.txt` defines 11 runs: the five-angle sweep, ε
@@ -126,19 +137,12 @@ bash studies/contact_angle/verification/verify_wall_bc.sh              # G1-G4
 venv_lunar/bin/python studies/contact_angle/verification/verify_contact_angle_measure.py
 ```
 
-**Size `t_final` before committing the batch.** The value in the experiment
-files (30 days) is an estimate, not a verified plateau. A short local pilot
-shows the early dynamics is dominated by Gibbs-Thomson shrinkage — the whole
-grain contracts until the sealed box's vapour saturates at the
-curvature-adjusted value — and the contact line moves on a slower timescale
-than that transient. Run one case, look at `plots/contact_angle.png`, and size
-the sweep from where θ(t) actually flattens:
+`t_final` is now sized from the pilot's measured τ = 14.4 days: 65 days, i.e.
+4.5 τ, which lands within ~1° of equilibrium. `contact_angle.py` additionally
+reports θ_inf from the free exponential fit, so the equilibrium angle is
+recovered even if a run stops short.
 
-```bash
-./scripts/Studio/run_lunar.sh channel_2D_H100um_eps3.00um relax_T-20_theta60 pilot
-```
-
-Then the sweep (11 runs — one batch, not chained submits):
+The sweep (11 runs — one batch, not chained submits):
 
 ```bash
 git push
@@ -155,7 +159,7 @@ declares `-wall_faces`, writing `contact_angle.csv` and `plots/contact_angle.png
 estimates (two menisci × two walls) agreeing within their spread, and the error
 decreasing with ε/R.
 
-## Known caveat
+## Known caveats
 
 `docs/gt_deficit/` records a 1.22× gap between requested and realised β, from
 `tau_sub`'s thin-interface corrections being added and never subtracted back.
@@ -165,3 +169,8 @@ systematically off while the unit gates stay clean.
 
 `-axisym` combined with a wetting wall is untested; the `rw` weight is carried
 into the boundary form for consistency but nothing exercises it.
+
+`run_postprocess.sh` previously used whatever `python3` was on PATH, which on
+this machine has no numpy. Every plotting step failed and the only symptom was
+an empty `plots/` directory after a run that reported success. It now prefers
+`venv_lunar` and warns loudly if it cannot find a working interpreter.

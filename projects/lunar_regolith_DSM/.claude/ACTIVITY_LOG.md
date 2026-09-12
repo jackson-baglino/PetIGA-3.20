@@ -29,11 +29,18 @@
   solver output (131.805 vs 131.810).
 - Moved crossings/refine_tanh/contour_points/circle_radius from
   wedge_gt_velocity.py into pplib.py, unchanged, so there is one implementation.
-- Physics sweep (11 runs) defined in verification/sweep_tests.txt but NOT RUN.
-  t_final in the experiment files is an estimate, not a verified plateau — a
-  short pilot showed the early dynamics is dominated by Gibbs-Thomson shrinkage
-  and the contact line moves more slowly than that transient. Size t_final from
-  a pilot before committing the batch.
+- PILOT RUN (theta=60, eps/R=1/25, 30 days): relaxes 131.8 -> 72.2 deg as a
+  clean single exponential, tau = 14.4 days. A FREE three-parameter fit gives
+  theta_inf = 60.36 +/- 0.04 deg against Young's 60.000; the best-conditioned
+  window gives 59.93 +/- 0.03. First real evidence the wall term produces the
+  right macroscopic angle. Recorded in studies/contact_angle/verification/pilot/.
+- Resized t_final 30 -> 65 days (4.5*tau) from that measurement, and added a
+  free-asymptote extrapolation to contact_angle.py so theta_inf is reported even
+  when a run stops short.
+- Fixed run_postprocess.sh picking a numpy-less python3: every plot step was
+  failing and the only symptom was an empty plots/ dir after a "successful" run.
+  It now prefers venv_lunar and warns if no working interpreter is found.
+- Physics sweep (11 runs) defined in verification/sweep_tests.txt, still NOT RUN.
 
 ---
 
