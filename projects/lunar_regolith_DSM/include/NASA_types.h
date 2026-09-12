@@ -100,6 +100,38 @@ typedef struct {
   PetscReal wall_bot_y0, wall_bot_slope;
   PetscReal wall_top_y0, wall_top_slope;
 
+  // ---- Prescribed contact angle at the regolith wall -----------------------
+  // The substrate is NOT a phase field in this two-phase model: it IS the
+  // domain boundary. Its physics enters through a wall free-energy surface
+  // integral added to the functional,
+  //     F_wall = \int_Gamma f_w(phi) dGamma,
+  //     f_w(phi) = gamma_as + (gamma_is - gamma_as)*h(phi)
+  //              = gamma_as - gamma_ia*cos(theta)*h(phi),   h = phi^2(3-2phi)
+  // whose variation supplies the natural BC  dphi/dn = cos(theta)*phi(1-phi)/eps,
+  // i.e. m.n = cos(theta) with m the interface normal into the ice and n the
+  // outward wall normal -- the contact angle measured through the ice.
+  //
+  // Young's equation gives cos(theta) = (gamma_as - gamma_is)/gamma_ia, and the
+  // ONLY admissibility constraint is |gamma_as - gamma_is| <= gamma_ia. (The
+  // three-phase triple-well constraint gamma_is > (gamma_ia/2)(1-cos theta) came
+  // from requiring a positive Sigma_s and does not apply: there is no sediment
+  // phase and no triple well here.)
+  //
+  // gamma_ia defaults to Etai (-Sigma_i, 0.109 J/m^2), which is the ice-vapor
+  // surface energy this solver already implies: inverting monitoring.c's
+  // d0 = Etai*V_m/(R*T) at the physical d0_sub0 = 1.0166e-9 m and -20 C returns
+  // 0.109 J/m^2 exactly.
+  PetscReal gamma_ia, gamma_is, gamma_as;  // [J/m^2]
+  PetscReal costhet;         // cos(theta); 0 => the wall term vanishes identically
+  PetscBool costhet_direct;  // -contact_angle_deg was given (debug override of Young)
+
+  // Which domain faces are regolith, i.e. carry the wetting BC. Indexed
+  // [axis][side]; side 0 is the low-coordinate face. Set from -wall_faces
+  // ("y0,y1" etc). Faces not listed keep the natural Neumann dphi/dn = 0 that
+  // every face had before this feature, so existing runs are unaffected.
+  PetscBool wall_face[3][2];
+  PetscBool wall_any;        // true if any face is flagged (skips work when not)
+
   // Wedge-bridging ice band: the annulus wedge_band_r1 <= |X - apex| <=
   // wedge_band_r2 about (wedge_apex_x, wedge_apex_y). An apex-centred arc is
   // perpendicular to every ray from the apex, i.e. to both wedge walls, so
