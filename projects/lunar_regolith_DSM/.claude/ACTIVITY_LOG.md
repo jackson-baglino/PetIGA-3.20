@@ -1,3 +1,31 @@
+## 2026-09-12 — Contact-angle sweep analysed: the wall term reproduces Young
+
+- 11-run HPC batch (batch_2026-09-12__08.01.14_contactangle) analysed. Results
+  and figures in studies/contact_angle/verification/sweep_2026-09-12/.
+- ANGLE SWEEP PASSES. Channel at eps/R = 1/50, five angles: errors +0.079,
+  +0.035, +0.007, +0.001, +0.020 deg. Max 0.079, RMS 0.040, against a 2 deg
+  acceptance criterion. The four per-snapshot estimates agree below printed
+  precision, and theta_inf is stable across fit windows (drift 0.01-0.32 deg),
+  so the extrapolation is trustworthy.
+- eps convergence: 1/25 -> +0.067, 1/50 -> +0.035. Halving eps halves the
+  error, consistent with an O(eps/R) bias.
+- eps/R = 1/100 run is INVALID: it STALLED. Only 9 distinct snapshots out of
+  61; theta bit-identical at 105.239 from day 10 to day 65. A bounds violation
+  at steps 383-385 cut dt 2e3 -> 5.9e-1, then 23 DIVERGED_LINE_SEARCH with
+  iterations 0. The clock kept advancing at dtmax and the run REPORTED SUCCESS.
+  Likely -dtmax 2.0e3 too coarse for eps = 0.75 um; rerun with -dtmax 5.0e2.
+- Sessile runs are NOT converged, so their apparent 4-17 deg errors mean
+  nothing: all four are still moving toward their targets at t_end, tau = 30-45
+  d against a 65 d run, and their theta_inf drifts 2.8-9.2 deg across fit
+  windows. Needs t_final ~ 1.7e7 s.
+- Worth remembering: tot_ice in SSA_evo.dat is constant to all printed digits
+  in HEALTHY runs too (vapour holds ~1e-6 of the water, below %e precision).
+  It is not a freeze diagnostic. Counting distinct sol_*.dat fingerprints is.
+- The batch's own postprocessing produced no contact_angle.csv — it ran before
+  the venv-detection fix reached the HPC. Reprocessed locally.
+
+---
+
 ## 2026-09-11 — Prescribed contact angle at the regolith wall
 
 - Added Cahn's wetting BC as a wall free-energy surface integral, so the

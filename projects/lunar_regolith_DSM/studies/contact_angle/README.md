@@ -124,10 +124,28 @@ window gives 59.93 ± 0.03° — **0.07° from Young**.
 Strong evidence, not the validation: one angle, one mesh, and an extrapolation
 rather than a directly observed equilibrium.
 
-### Physics sweep — ⏳ not yet run
+### Physics sweep — ✅ angle sweep PASSES (batch 2026-09-12)
 
-`verification/sweep_tests.txt` defines 11 runs: the five-angle sweep, ε
-convergence at fixed θ, and the sessile drop. **These have not been run.**
+Full analysis in `verification/sweep_2026-09-12/`.
+
+| θ_Young | 30° | 60° | 90° | 120° | 150° |
+|---|---|---|---|---|---|
+| θ_inf − θ_Young | +0.079° | +0.035° | +0.007° | +0.001° | +0.020° |
+
+**Max error 0.079°, RMS 0.040°** against a 2° acceptance criterion. The wall
+term reproduces Young's equation. ε convergence 1/25 → 1/50 halves the error
+(+0.067 → +0.035°), consistent with an O(ε/R) diffuse-interface bias.
+
+Two runs are **not** usable and need rerunning:
+
+- **ε/R = 1/100 stalled.** Only 9 distinct snapshots out of 61 — byte-identical
+  from day 10 — after a bounds violation at step 383 cut dt by 3400×. The run
+  still reported success. Almost certainly `-dtmax 2.0e3` being too coarse for
+  ε = 0.75 µm.
+- **Sessile drops have not converged.** All four are still moving toward their
+  targets at t_end, with τ = 30–45 d against a 65-day run. Their fitted θ_inf
+  drifts 2.8–9.2° across fit windows (channel: 0.01–0.32°), so the exponential
+  extrapolation is not valid for them yet. Needs `t_final ≈ 1.7e7 s`.
 
 ## Running it
 
@@ -153,7 +171,7 @@ git push
 `contact_angle.py` runs automatically in `run_postprocess.sh` for any run that
 declares `-wall_faces`, writing `contact_angle.csv` and `plots/contact_angle.png`.
 
-## Acceptance
+## Acceptance — met for the channel sweep
 
 |θ_measured − θ_Young| < 2° across the sweep, with the four per-snapshot
 estimates (two menisci × two walls) agreeing within their spread, and the error
