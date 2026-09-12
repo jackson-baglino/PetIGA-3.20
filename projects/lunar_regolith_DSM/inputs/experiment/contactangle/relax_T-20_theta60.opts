@@ -26,10 +26,11 @@
 # of evaporating away. Do NOT pin vapour on the wall faces -- lunar_main.c
 # warns that doing so feeds ice at the contact line and corrupts the angle.
 #
-# dtmax = 2.0e3 s ~ tau_sub (2197 s at these kinetics). Coarser than the
-# rate-accurate dtmax the sintering runs use, which is deliberate: this test
-# reads an EQUILIBRIUM state, not a rate, and the interface-CFL limiter still
-# paces the fast early transient.
+# -dtmax is deliberately NOT set here. It has to scale with eps (tau_sub goes
+# as eps^2), and this file is shared across three resolutions, so it lives in
+# the geometry file instead. Setting it here would override the geometry's
+# value -- options files are applied geometry-then-experiment -- which is the
+# bug that stalled the eps = 0.75 um run of batch 2026-09-12.
 #
 # t_final = 65 days, sized from the pilot run rather than guessed:
 #   studies/contact_angle/verification/ records tau = 14.4 days for the approach
@@ -58,7 +59,6 @@
 -gamma_as 0.3
 -gamma_is 0.2455000
 
--dtmax 2.0e3
 -dtCFL 1
 -dtCFL_dphimax 0.2
 -outp 0

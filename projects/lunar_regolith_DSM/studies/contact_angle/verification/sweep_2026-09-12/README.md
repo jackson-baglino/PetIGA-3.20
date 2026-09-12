@@ -64,8 +64,30 @@ run including healthy ones — the vapour holds ~1e-6 of the total water, so ice
 volume cannot change within `%e` precision. It is not a freeze diagnostic. The
 snapshot-fingerprint count is.
 
-Most likely cause: `-dtmax 2.0e3` is too coarse for ε = 0.75 µm. The
-interface-CFL limit scales with ε, and this is the only run where it bit.
+### Cause, confirmed
+
+The mesh was **not** at fault. All four geometry files match `comp_eps.py`
+exactly (eps, Nx and Ny), and `dx/eps = 0.707 = 1/√2` independently confirms the
+mesh rule. ε/R = 1/100 was correctly sized.
+
+The timestep was. `tau_sub` scales as **ε²** — measured across this family:
+
+| ε [µm] | τ_sub [s] | dtmax | dtmax/τ_sub | outcome |
+|---|---|---|---|---|
+| 3.00 | 3.515e4 | 2.0e3 | 0.057 | clean |
+| 1.50 | 8.788e3 | 2.0e3 | 0.228 | clean |
+| 0.75 | 2.197e3 | 2.0e3 | **0.910** | stalled |
+
+A single step spanned 91% of the entire interface relaxation time. The
+structural cause was that `-dtmax` lived in the **experiment** file, which is
+shared across all three resolutions, while ε lives in the **geometry** file —
+and options are applied geometry-then-experiment, so the experiment's value
+overrode everything.
+
+**Fixed two ways.** `-dtmax` moved into the geometry files at `τ_sub/10`
+(2.0e3 / 8.79e2 / 2.20e2 for ε = 3.00 / 1.50 / 0.75 µm), never looser than a
+value already proven for that geometry; and the solver now prints
+`dtmax/tau_sub` at startup and warns loudly above 0.25.
 
 ## 3. Sessile drop — ⚠️ not converged, do not interpret
 
@@ -96,9 +118,8 @@ Sealed-box total water is constant to printed precision in every channel run at
 ## What to rerun
 
 ```bash
-# eps/R = 1/100, with dt matched to the finer interface
-./scripts/HPC/submit_lunar.sh channel_2D_H100um_eps0.75um relax_T-20_theta60 \
-    eps100_retry -- -dtmax 5.0e2
+# eps/R = 1/100 -- dtmax now comes from the geometry file, no override needed
+./scripts/HPC/submit_lunar.sh channel_2D_H100um_eps0.75um relax_T-20_theta60 eps100_retry
 
 # sessile, long enough to actually converge
 #   raise -t_final to 1.7e7 in inputs/experiment/contactangle/ first

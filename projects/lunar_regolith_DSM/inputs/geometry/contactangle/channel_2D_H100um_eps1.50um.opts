@@ -45,3 +45,17 @@
 
 # Both y faces are regolith; the x ends stay open (natural Neumann).
 -wall_faces y0,y1
+
+# Timestep ceiling belongs HERE, with eps, not in the experiment file.
+#
+# tau_sub scales as eps^2 (measured across this family: 3.515e4, 8.788e3 and
+# 2.197e3 s at eps = 3.00, 1.50 and 0.75 um), so a dtmax that is safe at one
+# resolution is not safe at a finer one. Carrying a single -dtmax 2.0e3 in the
+# shared experiment file is exactly what stalled the eps = 0.75 um run of batch
+# 2026-09-12: dtmax/tau_sub reached 0.91, i.e. one step spanned the whole
+# interface relaxation time, the phase field left [phase_lo, phase_hi] at step
+# 383, and the solution froze while the clock ran on to t_final.
+#
+# Rule: dtmax = tau_sub/10, and never looser than a value already proven for
+# this geometry. Here tau_sub = 8.7875e+03 s -> tau_sub/10 = 8.788e+02 s.
+-dtmax 8.79e+02

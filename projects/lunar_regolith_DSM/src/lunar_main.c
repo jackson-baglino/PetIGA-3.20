@@ -1418,6 +1418,34 @@ int main(int argc, char *argv[]) {
     if (!user.flag_Tdep) {
         PetscPrintf(PETSC_COMM_WORLD, "   lambda   =  %.4e\n", lambda_sub);
         PetscPrintf(PETSC_COMM_WORLD, "   tau_sub  =  %.4e s\n", tau_sub);
+        /* dtmax must scale with tau_sub, which goes as eps^2. A dtmax that is
+         * safe at one resolution is not safe at a finer one, and the failure is
+         * silent: batch 2026-09-12's eps = 0.75 um run inherited a dtmax sized
+         * for eps = 1.50 um from a SHARED experiment file, reached
+         * dtmax/tau_sub = 0.91 -- one step spanning the whole interface
+         * relaxation time -- drove the phase field out of [phase_lo, phase_hi]
+         * at step 383, and then froze. The clock ran on to t_final at dtmax and
+         * the run reported success; only counting distinct sol_*.dat
+         * fingerprints revealed it. Warn loudly instead.
+         *
+         * Thresholds from that batch: 0.057 and 0.23 ran clean, 0.91 stalled. */
+        if (dtmax > 0.0 && tau_sub > 0.0) {
+            const PetscReal ratio = dtmax / tau_sub;
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   dtmax/tau_sub = %.4f%s\n", (double)ratio,
+                (ratio > 0.25) ? "   <-- SEE WARNING BELOW" : "   (ok, <= 0.25)");
+            if (ratio > 0.25)
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "\n   *** WARNING: dtmax = %.3e s is %.2f x tau_sub = %.3e s.\n"
+                    "       Above ~0.25 the phase field can leave [phase_lo, phase_hi]\n"
+                    "       and the solve can stall while the clock keeps advancing --\n"
+                    "       a run that LOOKS successful but whose solution stopped\n"
+                    "       changing. tau_sub scales as eps^2, so set -dtmax in the\n"
+                    "       GEOMETRY file (which owns eps), not in a shared experiment\n"
+                    "       file. Suggested: -dtmax %.2e  (tau_sub/10)\n\n",
+                    (double)dtmax, (double)ratio, (double)tau_sub,
+                    (double)(tau_sub / 10.0));
+        }
         {   /* Realised vs requested kinetics. beta_bare = tau_sub*d0_sub0/eps^2
              * is the coefficient the sharp-interface limit actually delivers; it
              * equals -beta_sub0 only when the thin-interface counter-terms are
