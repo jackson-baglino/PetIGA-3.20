@@ -1,3 +1,42 @@
+## 2026-09-11 — Prescribed contact angle at the regolith wall
+
+- Added Cahn's wetting BC as a wall free-energy surface integral, so the
+  substrate (which is the domain boundary in this two-phase model, not a phase
+  field) finally sets a contact angle instead of the accidental 90 degrees that
+  natural Neumann gave. Branch `feature/prescribed-contact-angle`.
+- Surface energies are the user-facing input: `-gamma_is`/`-gamma_as`, with
+  `-gamma_ia` defaulting to `-Sigma_i`, and the solver derives theta from
+  Young's equation and prints it. `-wall_faces` says which faces are regolith.
+  `-contact_angle_deg` is a debug override only.
+- The term turned out to contain neither eps nor any gamma:
+  `R_bnd = -3*M*cos(theta)*phi(1-phi)*N`. gamma_ia cancels against the
+  dimensionless functional's eps/6 interfacial excess and the residual's
+  (3M/eps) prefactor cancels the eps. It agrees identically with the
+  |grad phi| form in demo/Metamorph.c. Derivation in docs/contact_angle.md.
+- Four unit gates, all passing (studies/contact_angle/verification/): bitwise
+  regression without `-wall_faces`; wall Jacobian vs FD at 8 angles; boundary
+  surface measure to 2e-16; and the SIGN, i.e. that wetting advances the
+  contact line.
+- Deliberately did not use `-snes_test_jacobian`: it only runs inside a TS step
+  (slow in a debug build) and the full system is insensitive to the wall block
+  anyway. Isolating the block by differencing costhet on/off is what actually
+  tests it.
+- contact_angle.py measures the macroscopic angle from the phi=0.5 contour. Its
+  own gate against synthetic arcs caught a real bug: pplib.circle_radius's
+  affine fit cannot represent a straight interface, so it returned 78 +/- 25
+  degrees at theta = 90. Replaced with an implicit conic fit; all 11 angles now
+  exact. The measurement also matches the analytic clipped-disc angle on real
+  solver output (131.805 vs 131.810).
+- Moved crossings/refine_tanh/contour_points/circle_radius from
+  wedge_gt_velocity.py into pplib.py, unchanged, so there is one implementation.
+- Physics sweep (11 runs) defined in verification/sweep_tests.txt but NOT RUN.
+  t_final in the experiment files is an estimate, not a verified plateau — a
+  short pilot showed the early dynamics is dominated by Gibbs-Thomson shrinkage
+  and the contact line moves more slowly than that transient. Size t_final from
+  a pilot before committing the batch.
+
+---
+
 ## 2026-09-11 — Doc: added the one-sided definitions of beta and tau_sub
 
 New §4.1 states the definitions the analysis implies, which the document had

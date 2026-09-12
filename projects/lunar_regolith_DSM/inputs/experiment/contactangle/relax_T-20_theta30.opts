@@ -1,0 +1,56 @@
+# =============================================================================
+# experiment/contactangle/relax_T-20_theta30.opts
+#
+# Isothermal, sealed relaxation of a confined ice grain, for the contact-angle
+# validation. The SURFACE ENERGIES are the input here; theta is derived by the
+# solver from Young's equation and printed in the banner. That is the point of
+# the test -- the solver is handed gamma's, not an angle.
+#
+#     cos(theta) = (gamma_as - gamma_is)/gamma_ia
+#                = (0.300000 - 0.205603)/0.109000
+#                = +0.866025     ->  theta = 30.000 deg
+#
+# gamma_ia = 0.109 J/m^2 is Sigma_i, the ice-vapour surface energy this solver
+# already implies: inverting monitoring.c's d0 = Etai*V_m/(R*T) at the physical
+# d0_sub0 = 1.0166e-9 m and -20 C returns exactly that. gamma_as = 0.3 J/m^2
+# is a plausible regolith-vapour value; only the DIFFERENCE gamma_as - gamma_is
+# enters the wall term, so the pair is what matters, not either alone.
+#
+# Phase change is ON. -decouple_phase_change would give faster, cleaner
+# curvature relaxation, but with the sublimation source zeroed the ice has no
+# transport mechanism at all and the model is no longer the thing being
+# validated. Relaxation here is vapour-diffusion limited.
+#
+# Sealed box (-flag_BC_rhovfix 0, the solver default): total water is conserved
+# between ice and vapour, so the bridge settles to an equilibrium shape instead
+# of evaporating away. Do NOT pin vapour on the wall faces -- lunar_main.c
+# warns that doing so feeds ice at the contact line and corrupts the angle.
+#
+# dtmax = 2.0e3 s ~ tau_sub (2197 s at these kinetics). Coarser than the
+# rate-accurate dtmax the sintering runs use, which is deliberate: this test
+# reads an EQUILIBRIUM state, not a rate, and the interface-CFL limiter still
+# paces the fast early transient.
+#
+# t_final = 30 days is a starting estimate, NOT a verified plateau. Check
+# theta(t) in contact_angle.png before trusting the number; the angle is a
+# local quantity and should settle well before the global bridge shape does.
+# =============================================================================
+-t_final 2.592e6
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+# --- the substrate, as surface energies ---
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2056032
+
+-dtmax 2.0e3
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0
+-n_out 60

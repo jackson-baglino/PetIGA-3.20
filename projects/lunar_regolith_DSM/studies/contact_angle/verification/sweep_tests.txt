@@ -1,0 +1,24 @@
+# Contact-angle validation sweep, for scripts/HPC/submit_batch.sh --tests-file
+#
+#   geometry:experiment
+#
+# G5 -- the angle sweep. Same channel, five different regolith wettabilities.
+# Surface energies are what varies; theta is derived by the solver.
+channel_2D_H100um_eps1.50um:relax_T-20_theta30
+channel_2D_H100um_eps1.50um:relax_T-20_theta60
+channel_2D_H100um_eps1.50um:relax_T-20_theta90
+channel_2D_H100um_eps1.50um:relax_T-20_theta120
+channel_2D_H100um_eps1.50um:relax_T-20_theta150
+
+# G6 -- eps convergence at fixed theta. The measured angle carries an O(eps/R)
+# diffuse-interface bias; these three (eps/R = 1/25, 1/50, 1/100) are what
+# quantify it and tell us what resolution production runs need.
+channel_2D_H100um_eps3.00um:relax_T-20_theta60
+channel_2D_H100um_eps0.75um:relax_T-20_theta60
+
+# G7 -- sessile drop, one wall, no confinement. If this agrees with the channel
+# then the angle is set by the boundary condition and not by the confinement.
+sessile_2D_H300um_eps1.50um:relax_T-20_theta30
+sessile_2D_H300um_eps1.50um:relax_T-20_theta60
+sessile_2D_H300um_eps1.50um:relax_T-20_theta120
+sessile_2D_H300um_eps1.50um:relax_T-20_theta150

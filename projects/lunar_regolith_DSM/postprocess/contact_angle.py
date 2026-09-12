@@ -83,8 +83,19 @@ def read_snapshots(run_dir, nu, nv):
     from igakit.io import PetIGA
     io = PetIGA()
     nrb = io.read(os.path.join(run_dir, "igasol.dat"))
-    u = np.linspace(0.0, 1.0, nu)
-    v = np.linspace(0.0, 1.0, nv)
+
+    # Sample over the patch's OWN parametric range, which is not [0, 1] here.
+    # A channel built by IGAAxisInitUniform(axis, N, 0.0, L, C) has knots
+    # spanning [0, L] in metres, whereas a mesh read from a -geom_file is
+    # parameterised on [0, 1]. Taking the range from the knot vector covers
+    # both; assuming [0, 1] makes igakit assert on the first evaluation.
+    def prange(k, deg):
+        return float(k[deg]), float(k[-deg - 1])
+
+    (u0, u1) = prange(nrb.knots[0], nrb.degree[0])
+    (v0, v1) = prange(nrb.knots[1], nrb.degree[1])
+    u = np.linspace(u0, u1, nu)
+    v = np.linspace(v0, v1, nv)
     files = sorted(f for f in os.listdir(run_dir)
                    if re.fullmatch(r"sol_\d+\.dat", f))
     if not files:

@@ -16,4 +16,9 @@ G3,x_faces,rel_err_measure,2.111e-15,1e-10,PASS
 G3,theta60,rel_err_measure,2.687e-15,1e-10,PASS
 G3,theta135,rel_err_measure,1.629e-15,1e-10,PASS
 G3,all_faces,rel_err_measure,7.677e-16,1e-10,PASS
+G4,theta=0,sign_of_wall_residual,-1.052188552189e-12,neg,PASS
+G4,theta=60,sign_of_wall_residual,-5.260942760943e-13,neg,PASS
+G4,theta=90,sign_of_wall_residual,1.315986859616e-27,zero,PASS
+G4,theta=120,sign_of_wall_residual,5.260942760943e-13,pos,PASS
+G4,theta=180,sign_of_wall_residual,1.052188552189e-12,pos,PASS
 G1,no_wall_faces,ssa_bitwise_identical,identical,exact,PASS

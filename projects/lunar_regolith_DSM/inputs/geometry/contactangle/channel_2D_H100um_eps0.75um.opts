@@ -1,0 +1,47 @@
+# =============================================================================
+# geometry/contactangle/channel_2D_H100um_eps0.75um.opts
+#
+# Flat channel with a CONFINED ice grain, for validating the prescribed
+# contact angle against Young's equation.
+#
+# No mesh file is needed. A plain rectangular patch already has flat walls at
+# y = 0 and y = Ly: initial_conditions.c documents that the wall defaults
+# (wall_bot_y0 = 0, wall_top_y0 = Ly, both slopes 0) "reproduce a flat floor at
+# y=0 and a flat ceiling at y=Ly exactly".
+#
+# The grain radius is 0.75*Ly, i.e. LARGER than the half-height, so the disc is
+# clipped by both walls and two contact lines exist from t = 0. -ic_type
+# single_ice cannot express this: it pins the centre to the domain middle and
+# rejects R >= min(Lx,Ly)/2 outright, so the grain goes in through
+# multi_grains with a one-element array instead.
+#
+# Lx = 3*Ly leaves vapour room either side of the bridge, so the menisci relax
+# without feeling the x boundaries.
+#
+# eps from preprocess/comp_eps.py (never hand-tuned):
+#     python3 preprocess/comp_eps.py --Lx 3.0e-4 --Ly 1.0e-4 --T0 -20 \
+#         --Rave 7.5e-5 --alpha 1e-3 --vn_feature 1.5e-6
+# The kinetic bound Eq.(45) is binding, and --vn_feature makes that bound equal
+# R_feat, so R_feat is the knob: eps = R_feat/2. This file is eps/R = 1/100.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nx 566
+-Ny 189
+-Nz 1
+-Lx 3.0e-4
+-Ly 1.0e-4
+-Lz 0
+
+# One disc, centred in the channel, radius 0.75*Ly.
+-ice_grain_cx 1.5e-4
+-ice_grain_cy 5.0e-5
+-ice_grain_R  7.5e-5
+
+-eps 7.5e-7
+-eps_valid_temp -20.0
+-delt_t 1.0e-4
+-periodic 0
+
+# Both y faces are regolith; the x ends stay open (natural Neumann).
+-wall_faces y0,y1

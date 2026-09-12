@@ -146,6 +146,20 @@ if grep -qs '^-wedge_apex_x' "$RUN_DIR"/*.opts \
         --save "$PLOTS/wedge_gt_velocity.png"
 fi
 
+# ---------------------------------------------------------------------------
+# Contact angle where ice meets a regolith wall.
+#
+# Gated on -wall_faces, i.e. on the run having declared at least one face to be
+# regolith -- the same "declare it and the step appears" pattern as the wedge
+# check above. Reads sol_*.dat through the NURBS basis rather than vtkOut/, so
+# it does not depend on the VTK conversion having run.
+# ---------------------------------------------------------------------------
+if grep -qs '^-wall_faces' "$RUN_DIR"/*.opts; then
+    run_step "Contact angle vs Young's equation" \
+        "$POSTPROCESS_DIR/contact_angle.py" --dir "$RUN_DIR" \
+        --save "$PLOTS/contact_angle.png"
+fi
+
 echo ""
 echo "========================================================================="
 if [[ "$overall_exit" -ne 0 ]]; then

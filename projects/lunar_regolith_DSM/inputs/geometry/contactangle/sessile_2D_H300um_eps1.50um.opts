@@ -1,0 +1,39 @@
+# =============================================================================
+# geometry/contactangle/sessile_2D_H300um_eps1.50um.opts
+#
+# Sessile drop: a half-disc of ice resting on the FLOOR of a tall box, with
+# only one contact line and no confinement. The companion to the channel case.
+#
+# Why both: the channel bridge has two contact lines and a Laplace pressure
+# coupling them, so a systematic error in the wall term could in principle be
+# absorbed into the bridge's width instead of showing up in the angle. The
+# sessile drop has neither. If the two geometries agree, the angle is really
+# being set by the boundary condition and not by the confinement.
+#
+# Ly = 3*Lx/3 = 3.0e-4 = 4*R, so the drop never feels the ceiling.
+# eps and mesh from comp_eps.py, same kinetic bound as the eps1.50um channel:
+#     python3 preprocess/comp_eps.py --Lx 3.0e-4 --Ly 3.0e-4 --T0 -20 \
+#         --Rave 7.5e-5 --alpha 1e-3 --vn_feature 3.0e-6
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nx 283
+-Ny 283
+-Nz 1
+-Lx 3.0e-4
+-Ly 3.0e-4
+-Lz 0
+
+# Centre ON the floor: the disc is cut in half by the y=0 wall, giving a
+# 90-degree drop at t=0 that relaxes toward the prescribed angle.
+-ice_grain_cx 1.5e-4
+-ice_grain_cy 0.0
+-ice_grain_R  7.5e-5
+
+-eps 1.5e-6
+-eps_valid_temp -20.0
+-delt_t 1.0e-4
+-periodic 0
+
+# Floor only. The ceiling and the x ends stay natural Neumann.
+-wall_faces y0

@@ -126,6 +126,33 @@ theta135         20 12 y0,y1     135
 all_faces        20 12 x0,x1,y0,y1 0
 CASES
 
+# -------------------------------------------------------------------- G4 ----
+# Direction. A correct magnitude with a flipped sign would pass G2 and G3 and
+# then quietly drive every validation run the wrong way, so check it explicitly.
+# R = N*phi_t + ... = 0, so a NEGATIVE wall contribution gives phi_t > 0: ice
+# grows at the wall and the contact line ADVANCES, which is what a wetting wall
+# (cos theta > 0, i.e. gamma_as > gamma_is) must do.
+say ""; say "=== G4: sign -- wetting advances the contact line ==="
+while read -r th want; do
+  [[ -z "$th" ]] && continue
+  run "${MEAS[@]}" -Nx 20 -Ny 12 -wall_faces y0,y1 -contact_angle_deg "$th" || true
+  v=$(grep -E 'sum F' "$LOG" | tail -1 | awk '{print $4}')
+  ok=$(awk -v v="$v" -v w="$want" 'BEGIN{
+         if (v=="") {print "FAIL"; exit}
+         if (w=="neg") print (v+0 < -1e-20) ? "PASS" : "FAIL";
+         else if (w=="pos") print (v+0 > 1e-20) ? "PASS" : "FAIL";
+         else print (v+0 < 1e-20 && v+0 > -1e-20) ? "PASS" : "FAIL"}')
+  [[ $ok == FAIL ]] && fail=1
+  printf '  theta=%-4s sum_wall R = %-16s expect %-4s %s\n' "$th" "$v" "$want" "$ok" | tee -a "$LOG"
+  echo "G4,theta=$th,sign_of_wall_residual,$v,$want,$ok" >> "$CSV"
+done <<'SIGNS'
+0   neg
+60  neg
+90  zero
+120 pos
+180 pos
+SIGNS
+
 # -------------------------------------------------------------------- G1 ----
 # Build the pre-feature solver from the merge-base with main and check that a
 # short run without -wall_faces is byte-identical.
