@@ -47,6 +47,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
    tau_sub  =  1.4256e+01 s
+   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
@@ -100,7 +110,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.987994e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.232890e-01 sec  =  0.00 min 
+Setup time 2.396700e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -157,6 +167,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
    tau_sub  =  1.4256e+01 s
+   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
@@ -210,7 +230,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.844704e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.241070e-01 sec  =  0.00 min 
+Setup time 2.271790e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -267,6 +287,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
    tau_sub  =  1.4256e+01 s
+   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
@@ -320,7 +350,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.891514e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.352290e-01 sec  =  0.00 min 
+Setup time 2.291780e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -377,6 +407,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
    tau_sub  =  1.4256e+01 s
+   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
@@ -430,7 +470,7 @@ IC type: multi_grains
    worst 1.954618e-08    1.068018e-09
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.222230e-01 sec  =  0.00 min 
+Setup time 2.287220e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -487,6 +527,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
    tau_sub  =  1.4256e+01 s
+   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
@@ -540,7 +590,7 @@ IC type: multi_grains
    worst 1.954618e-08    1.346516e+06
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.212620e-01 sec  =  0.00 min 
+Setup time 2.283080e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -597,6 +647,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
    tau_sub  =  1.4256e+01 s
+   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
@@ -650,7 +710,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.055833e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.234220e-01 sec  =  0.00 min 
+Setup time 2.214760e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -707,6 +767,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
    tau_sub  =  1.4256e+01 s
+   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
@@ -760,7 +830,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.401736e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.214330e-01 sec  =  0.00 min 
+Setup time 2.385480e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -817,6 +887,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
    tau_sub  =  1.4256e+01 s
+   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
@@ -870,7 +950,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.084520e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.215300e-01 sec  =  0.00 min 
+Setup time 2.249570e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -927,6 +1007,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
    tau_sub  =  1.4256e+01 s
+   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
@@ -980,7 +1070,7 @@ IC type: multi_grains
    worst 1.954618e-08    1.025291e-09
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.219240e-01 sec  =  0.00 min 
+Setup time 2.228930e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1039,6 +1129,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1083,7 +1183,7 @@ IC type: single_ice
    sum F[.][0]    = -1.052188552189e-12   (assembled)
    expected       = -1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.485e-15
-Setup time 7.528000e-03 sec  =  0.00 min 
+Setup time 7.206000e-03 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1140,6 +1240,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1184,7 +1294,7 @@ IC type: single_ice
    sum F[.][0]    = -1.052188552189e-12   (assembled)
    expected       = -1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 9.597e-16
-Setup time 1.378100e-02 sec  =  0.00 min 
+Setup time 1.328500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1241,6 +1351,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1285,7 +1405,7 @@ IC type: single_ice
    sum F[.][0]    = -1.052188552189e-12   (assembled)
    expected       = -1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.919e-16
-Setup time 3.793100e-02 sec  =  0.00 min 
+Setup time 3.734400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1342,6 +1462,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1386,7 +1516,7 @@ IC type: single_ice
    sum F[.][0]    = -5.260942760943e-13   (assembled)
    expected       = -5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.152e-15
-Setup time 1.331000e-02 sec  =  0.00 min 
+Setup time 1.303500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1443,6 +1573,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1487,7 +1627,7 @@ IC type: single_ice
    sum F[.][0]    = -5.260942760943e-13   (assembled)
    expected       = -5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.111e-15
-Setup time 1.323100e-02 sec  =  0.00 min 
+Setup time 1.317800e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1544,6 +1684,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1588,7 +1738,7 @@ IC type: single_ice
    sum F[.][0]    = -5.260942760943e-13   (assembled)
    expected       = -5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.687e-15
-Setup time 1.360500e-02 sec  =  0.00 min 
+Setup time 1.329300e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1645,6 +1795,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1689,7 +1849,7 @@ IC type: single_ice
    sum F[.][0]    = 7.440096603394e-13   (assembled)
    expected       = 7.440096603394e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.629e-15
-Setup time 1.388300e-02 sec  =  0.00 min 
+Setup time 1.332700e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1746,6 +1906,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1790,7 +1960,7 @@ IC type: single_ice
    sum F[.][0]    = -1.578282828283e-12   (assembled)
    expected       = -1.578282828283e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.677e-16
-Setup time 1.425000e-02 sec  =  0.00 min 
+Setup time 1.377100e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1849,6 +2019,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1893,7 +2073,7 @@ IC type: single_ice
    sum F[.][0]    = -1.052188552189e-12   (assembled)
    expected       = -1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 9.597e-16
-Setup time 1.337600e-02 sec  =  0.00 min 
+Setup time 1.364600e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1950,6 +2130,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -1994,7 +2184,7 @@ IC type: single_ice
    sum F[.][0]    = -5.260942760943e-13   (assembled)
    expected       = -5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.687e-15
-Setup time 1.382100e-02 sec  =  0.00 min 
+Setup time 1.318800e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2051,6 +2241,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -2095,7 +2295,7 @@ IC type: single_ice
    sum F[.][0]    = 1.315986859616e-27   (assembled)
    expected       = -6.442796712686e-29   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.143e+01
-Setup time 1.335800e-02 sec  =  0.00 min 
+Setup time 1.335700e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2152,6 +2352,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -2196,7 +2406,7 @@ IC type: single_ice
    sum F[.][0]    = 5.260942760943e-13   (assembled)
    expected       = 5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.111e-15
-Setup time 1.332500e-02 sec  =  0.00 min 
+Setup time 1.394200e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2253,6 +2463,16 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
    tau_sub  =  8.9100e+01 s
+   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+
    tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
    beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
    mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
@@ -2297,7 +2517,7 @@ IC type: single_ice
    sum F[.][0]    = 1.052188552189e-12   (assembled)
    expected       = 1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 9.597e-16
-Setup time 1.317000e-02 sec  =  0.00 min 
+Setup time 1.329900e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!

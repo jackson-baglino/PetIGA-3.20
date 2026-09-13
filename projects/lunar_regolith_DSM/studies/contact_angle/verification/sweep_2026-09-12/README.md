@@ -64,7 +64,41 @@ run including healthy ones — the vapour holds ~1e-6 of the total water, so ice
 volume cannot change within `%e` precision. It is not a freeze diagnostic. The
 snapshot-fingerprint count is.
 
-### Cause, confirmed
+### Cause, confirmed — and it was the wall term, not dtmax
+
+The first diagnosis (dtmax too coarse) was wrong. A rerun at
+`dtmax/tau_sub = 0.10` stalled again, at step 2653 of 25584.
+
+**The real cause is a sign-flip instability in the wall term.**
+`h'(phi) = 6*phi*(1-phi)` changes sign for `phi < 0`, so the wall residual
+`-3*M*cos(theta)*h'/6*N` flips with it and drives phi *further* out of range.
+And nothing opposes it: the bulk `f1` and `loc` are evaluated at the **clamped**
+`phi_c`, so for `phi < 0` both are identically zero — there is no restoring
+force outside [0,1] by construction. An unclamped wall term was the only thing
+acting out there.
+
+The evidence is a clean boundary layer, not a bulk effect:
+
+| distance from wall | 0 | 1.4 ε | 2.1 ε | 4.2 ε | 14 ε | interior (rows 20–170) |
+|---|---|---|---|---|---|---|
+| φ_min | −0.0521 | −0.0294 | −0.0204 | −0.0069 | −4.7e-5 | **−4.7e-5** |
+
+Control points below −1e-3 go from **0 at step 1779 to 4245 at step 2211** — an
+exponential runaway from a −2e-6 seed, exactly as a positive feedback predicts.
+
+Once phi crossed `-phase_lo`, the residual's domain guard zeroed the residual,
+SNES read ‖F‖ = 0 as converged at iteration 0, and the solution froze for 23,370
+steps while the clock ran to `t_final` and the run **reported success**.
+
+**Fixed** by clamping phi to [0,1] before evaluating `h'` (the Jacobian clamps
+identically and carries the chain-rule factor, so it stays exact; all 24 gates
+still pass), plus a stall detector that aborts when ‖U‖ is bit-identical for 500
+consecutive steps.
+
+Ruled out: `-thin_iface_corr` was off, but enabling it moves `tau_sub` by only
+2.9% at this ε. A sign-flip instability is not a rate problem.
+
+### Mesh and dtmax, checked anyway
 
 The mesh was **not** at fault. All four geometry files match `comp_eps.py`
 exactly (eps, Nx and Ny), and `dx/eps = 0.707 = 1/√2` independently confirms the
