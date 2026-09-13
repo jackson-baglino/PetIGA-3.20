@@ -169,7 +169,15 @@ else
                -dim 2 -Nx 24 -Ny 12 -Lx 6.25e-5 -Ly 3.125e-5 -eps 1.2e-6
                -ic_type multi_grains -ice_grain_cx 3.125e-5 -ice_grain_cy 1.5625e-5
                -ice_grain_R 2.3438e-5 -temp -20 -humidity 1.0
-               -t_final 2.0e2 -delt_t 1.0e-2)
+               -t_final 2.0e2 -delt_t 1.0e-2
+               # Pin the physics on BOTH sides. This gate asks one question --
+               # is the contact-angle feature inert without -wall_faces? -- and
+               # a bitwise comparison answers it only if everything else is held
+               # equal. -thin_iface_corr's default changed OFF -> ON on
+               # 2026-09-13, so without pinning it here the gate would compare
+               # two different models and fail for a reason that has nothing to
+               # do with the feature under test.
+               -thin_iface_corr 0)
       for which in base new; do
         folder="$WORK/g1_$which"; export folder; mkdir -p "$folder"
         bin="$EXEC"; [[ $which == base ]] && bin="$SNAP/lunar_regolith_DSM/lunar_regolith_dsm"

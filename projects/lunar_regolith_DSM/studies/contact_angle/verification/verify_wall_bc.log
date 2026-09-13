@@ -46,21 +46,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
-   tau_sub  =  1.4256e+01 s
-   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
 
-   tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  4.5575e+06 1/s
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -102,15 +102,15 @@ IC type: multi_grains
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    7.856127e-10    4.457834e-13
-     1   1.738476e-08    7.322474e-10    4.241752e-13
-     2   1.954618e-08    7.342379e-10    4.390727e-13
-     3   1.745779e-08    6.165874e-10    4.679463e-13
-     4   1.871669e-08    8.987994e-10    4.478549e-13
-   worst 1.954618e-08    8.987994e-10
+     0   1.849332e-08    7.139944e-10    3.752206e-13
+     1   1.738476e-08    7.485557e-10    3.570327e-13
+     2   1.954618e-08    8.098826e-10    3.695721e-13
+     3   1.745779e-08    6.751163e-10    3.938753e-13
+     4   1.871669e-08    8.419796e-10    3.769642e-13
+   worst 1.954618e-08    8.419796e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.396700e-01 sec  =  0.00 min 
+Setup time 2.608890e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -120,7 +120,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=0     rel.err=8.987994e-10    ||Jbnd*v||=4.478549e-13    PASS
+  theta=0     rel.err=8.419796e-10    ||Jbnd*v||=3.769642e-13    PASS
 Running on 1 processes.
 
 
@@ -166,21 +166,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
-   tau_sub  =  1.4256e+01 s
-   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
 
-   tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  4.5575e+06 1/s
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -222,15 +222,15 @@ IC type: multi_grains
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    8.771158e-10    3.860598e-13
-     1   1.738476e-08    6.250541e-10    3.673465e-13
-     2   1.954618e-08    7.444742e-10    3.802481e-13
-     3   1.745779e-08    7.241494e-10    4.052534e-13
-     4   1.871669e-08    8.844704e-10    3.878537e-13
-   worst 1.954618e-08    8.844704e-10
+     0   1.849332e-08    6.573484e-10    3.249506e-13
+     1   1.738476e-08    6.942413e-10    3.091994e-13
+     2   1.954618e-08    8.063786e-10    3.200588e-13
+     3   1.745779e-08    6.165638e-10    3.411061e-13
+     4   1.871669e-08    8.644933e-10    3.264606e-13
+   worst 1.954618e-08    8.644933e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.271790e-01 sec  =  0.00 min 
+Setup time 2.508270e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -240,7 +240,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=30    rel.err=8.844704e-10    ||Jbnd*v||=3.878537e-13    PASS
+  theta=30    rel.err=8.644933e-10    ||Jbnd*v||=3.264606e-13    PASS
 Running on 1 processes.
 
 
@@ -286,21 +286,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
-   tau_sub  =  1.4256e+01 s
-   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
 
-   tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  4.5575e+06 1/s
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -342,15 +342,15 @@ IC type: multi_grains
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    7.834894e-10    3.152165e-13
-     1   1.738476e-08    7.851697e-10    2.999371e-13
-     2   1.954618e-08    8.180692e-10    3.104713e-13
-     3   1.745779e-08    7.166483e-10    3.308880e-13
-     4   1.871669e-08    9.891514e-10    3.166812e-13
-   worst 1.954618e-08    9.891514e-10
+     0   1.849332e-08    6.952976e-10    2.653210e-13
+     1   1.738476e-08    6.281907e-10    2.524603e-13
+     2   1.954618e-08    8.303251e-10    2.613269e-13
+     3   1.745779e-08    5.387934e-10    2.785119e-13
+     4   1.871669e-08    9.067276e-10    2.665539e-13
+   worst 1.954618e-08    9.067276e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.291780e-01 sec  =  0.00 min 
+Setup time 2.509270e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -360,7 +360,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=45    rel.err=9.891514e-10    ||Jbnd*v||=3.166812e-13    PASS
+  theta=45    rel.err=9.067276e-10    ||Jbnd*v||=2.665539e-13    PASS
 Running on 1 processes.
 
 
@@ -406,21 +406,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
-   tau_sub  =  1.4256e+01 s
-   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
 
-   tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  4.5575e+06 1/s
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -462,15 +462,15 @@ IC type: multi_grains
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    1.041563e-09    2.228917e-13
-     1   1.738476e-08    9.992359e-10    2.120876e-13
-     2   1.954618e-08    1.068018e-09    2.195363e-13
-     3   1.745779e-08    7.008489e-10    2.339731e-13
-     4   1.871669e-08    9.003116e-10    2.239274e-13
-   worst 1.954618e-08    1.068018e-09
+     0   1.849332e-08    9.361825e-10    1.876103e-13
+     1   1.738476e-08    7.597559e-10    1.785164e-13
+     2   1.954618e-08    8.742646e-10    1.847861e-13
+     3   1.745779e-08    6.607302e-10    1.969377e-13
+     4   1.871669e-08    9.035989e-10    1.884821e-13
+   worst 1.954618e-08    9.361825e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.287220e-01 sec  =  0.00 min 
+Setup time 2.507200e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -480,7 +480,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=60    rel.err=1.068018e-09    ||Jbnd*v||=2.239274e-13    PASS
+  theta=60    rel.err=9.361825e-10    ||Jbnd*v||=1.884821e-13    PASS
 Running on 1 processes.
 
 
@@ -526,21 +526,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
-   tau_sub  =  1.4256e+01 s
-   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
 
-   tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  4.5575e+06 1/s
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -582,15 +582,15 @@ IC type: multi_grains
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    6.666456e+04    8.102059e-28
-     1   1.738476e-08    1.346516e+06    6.466765e-29
-     2   1.954618e-08    1.336880e+06    4.246864e-29
-     3   1.745779e-08    1.070634e+06    5.681989e-29
-     4   1.871669e-08    2.844326e+05    2.052737e-28
-   worst 1.954618e-08    1.346516e+06
+     0   1.849332e-08    2.924609e+06    1.545845e-29
+     1   1.738476e-08    1.102285e+06    5.428830e-29
+     2   1.954618e-08    5.809139e+06    1.140443e-29
+     3   1.745779e-08    1.882049e+06    3.513753e-29
+     4   1.871669e-08    1.540051e+06    2.909175e-29
+   worst 1.954618e-08    5.809139e+06
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.283080e-01 sec  =  0.00 min 
+Setup time 2.562690e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -600,7 +600,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=90    wall block is zero (no-op): ||Jbnd*v||=2.052737e-28 PASS
+  theta=90    wall block is zero (no-op): ||Jbnd*v||=2.909175e-29 PASS
 Running on 1 processes.
 
 
@@ -646,21 +646,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
-   tau_sub  =  1.4256e+01 s
-   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
 
-   tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  4.5575e+06 1/s
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -702,15 +702,15 @@ IC type: multi_grains
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    6.798439e-10    2.228917e-13
-     1   1.738476e-08    6.799393e-10    2.120876e-13
-     2   1.954618e-08    8.055833e-10    2.195363e-13
-     3   1.745779e-08    5.924056e-10    2.339731e-13
-     4   1.871669e-08    7.932424e-10    2.239274e-13
-   worst 1.954618e-08    8.055833e-10
+     0   1.849332e-08    7.289375e-10    1.876103e-13
+     1   1.738476e-08    7.406499e-10    1.785164e-13
+     2   1.954618e-08    8.078174e-10    1.847861e-13
+     3   1.745779e-08    6.415216e-10    1.969377e-13
+     4   1.871669e-08    8.421308e-10    1.884821e-13
+   worst 1.954618e-08    8.421308e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.214760e-01 sec  =  0.00 min 
+Setup time 2.552220e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -720,7 +720,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=120   rel.err=8.055833e-10    ||Jbnd*v||=2.239274e-13    PASS
+  theta=120   rel.err=8.421308e-10    ||Jbnd*v||=1.884821e-13    PASS
 Running on 1 processes.
 
 
@@ -766,21 +766,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
-   tau_sub  =  1.4256e+01 s
-   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
 
-   tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  4.5575e+06 1/s
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -822,15 +822,15 @@ IC type: multi_grains
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    7.422566e-10    3.860598e-13
-     1   1.738476e-08    6.175438e-10    3.673465e-13
-     2   1.954618e-08    7.693260e-10    3.802481e-13
-     3   1.745779e-08    5.650537e-10    4.052534e-13
-     4   1.871669e-08    8.401736e-10    3.878537e-13
-   worst 1.954618e-08    8.401736e-10
+     0   1.849332e-08    6.439126e-10    3.249506e-13
+     1   1.738476e-08    6.618296e-10    3.091994e-13
+     2   1.954618e-08    7.392071e-10    3.200588e-13
+     3   1.745779e-08    6.307978e-10    3.411061e-13
+     4   1.871669e-08    8.162578e-10    3.264606e-13
+   worst 1.954618e-08    8.162578e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.385480e-01 sec  =  0.00 min 
+Setup time 2.512030e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -840,7 +840,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=150   rel.err=8.401736e-10    ||Jbnd*v||=3.878537e-13    PASS
+  theta=150   rel.err=8.162578e-10    ||Jbnd*v||=3.264606e-13    PASS
 Running on 1 processes.
 
 
@@ -886,21 +886,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
-   tau_sub  =  1.4256e+01 s
-   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
 
-   tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  4.5575e+06 1/s
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -942,15 +942,15 @@ IC type: multi_grains
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    7.073576e-10    4.457834e-13
-     1   1.738476e-08    5.971012e-10    4.241752e-13
-     2   1.954618e-08    7.710976e-10    4.390727e-13
-     3   1.745779e-08    4.839791e-10    4.679463e-13
-     4   1.871669e-08    8.084520e-10    4.478549e-13
-   worst 1.954618e-08    8.084520e-10
+     0   1.849332e-08    6.680629e-10    3.752206e-13
+     1   1.738476e-08    5.976394e-10    3.570327e-13
+     2   1.954618e-08    7.348583e-10    3.695721e-13
+     3   1.745779e-08    6.235189e-10    3.938753e-13
+     4   1.871669e-08    8.034350e-10    3.769642e-13
+   worst 1.954618e-08    8.034350e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.249570e-01 sec  =  0.00 min 
+Setup time 2.492460e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -960,7 +960,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=180   rel.err=8.084520e-10    ||Jbnd*v||=4.478549e-13    PASS
+  theta=180   rel.err=8.034350e-10    ||Jbnd*v||=3.769642e-13    PASS
 Running on 1 processes.
 
 
@@ -1006,21 +1006,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  6.4971e+07
-   tau_sub  =  1.4256e+01 s
-   dtmax/tau_sub = 14.0292   <-- SEE WARNING BELOW
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 14.03 x tau_sub = 1.426e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 1.43e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
 
-   tau_sub terms:  kinetic 1.4256e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  2.8058e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  4.5575e+06 1/s
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -1062,15 +1062,15 @@ IC type: multi_grains
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    8.794477e-10    2.228917e-13
-     1   1.738476e-08    8.858683e-10    2.120876e-13
-     2   1.954618e-08    1.025291e-09    2.195363e-13
-     3   1.745779e-08    8.220665e-10    2.339731e-13
-     4   1.871669e-08    8.549738e-10    2.239274e-13
-   worst 1.954618e-08    1.025291e-09
+     0   1.849332e-08    7.772043e-10    1.876103e-13
+     1   1.738476e-08    9.260513e-10    1.785164e-13
+     2   1.954618e-08    9.447060e-10    1.847861e-13
+     3   1.745779e-08    8.593891e-10    1.969377e-13
+     4   1.871669e-08    9.404378e-10    1.884821e-13
+   worst 1.954618e-08    9.447060e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.228930e-01 sec  =  0.00 min 
+Setup time 2.526330e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1080,7 +1080,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  gammas(60deg) rel.err=1.025291e-09    PASS
+  gammas(60deg) rel.err=9.447060e-10    PASS
 
 === G3: boundary surface measure ===
 Running on 1 processes.
@@ -1128,21 +1128,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -1180,10 +1180,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = 1.000000000000
-   sum F[.][0]    = -1.052188552189e-12   (assembled)
-   expected       = -1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 7.485e-15
-Setup time 7.206000e-03 sec  =  0.00 min 
+   sum F[.][0]    = -7.157053502426e-13   (assembled)
+   expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 7.477e-15
+Setup time 8.712000e-03 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1193,7 +1193,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  mesh_10x6        |Gamma|=1.250000000000e-04 rel.err=7.485e-15    PASS
+  mesh_10x6        |Gamma|=1.250000000000e-04 rel.err=7.477e-15    PASS
 Running on 1 processes.
 
 
@@ -1239,21 +1239,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -1291,10 +1291,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = 1.000000000000
-   sum F[.][0]    = -1.052188552189e-12   (assembled)
-   expected       = -1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 9.597e-16
-Setup time 1.328500e-02 sec  =  0.00 min 
+   sum F[.][0]    = -7.157053502426e-13   (assembled)
+   expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 7.054e-16
+Setup time 1.594200e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1304,7 +1304,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  mesh_20x12       |Gamma|=1.250000000000e-04 rel.err=9.597e-16    PASS
+  mesh_20x12       |Gamma|=1.250000000000e-04 rel.err=7.054e-16    PASS
 Running on 1 processes.
 
 
@@ -1350,21 +1350,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -1402,10 +1402,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = 1.000000000000
-   sum F[.][0]    = -1.052188552189e-12   (assembled)
-   expected       = -1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 1.919e-16
-Setup time 3.734400e-02 sec  =  0.00 min 
+   sum F[.][0]    = -7.157053502426e-13   (assembled)
+   expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.270e-15
+Setup time 4.242500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1415,7 +1415,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  mesh_41x23       |Gamma|=1.250000000000e-04 rel.err=1.919e-16    PASS
+  mesh_41x23       |Gamma|=1.250000000000e-04 rel.err=1.270e-15    PASS
 Running on 1 processes.
 
 
@@ -1461,21 +1461,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -1513,10 +1513,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 6.250000000000e-05 m^1
    cos(theta)     = 1.000000000000
-   sum F[.][0]    = -5.260942760943e-13   (assembled)
-   expected       = -5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 1.152e-15
-Setup time 1.303500e-02 sec  =  0.00 min 
+   sum F[.][0]    = -3.578526751213e-13   (assembled)
+   expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.834e-15
+Setup time 1.624600e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1526,7 +1526,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  one_wall         |Gamma|=6.250000000000e-05 rel.err=1.152e-15    PASS
+  one_wall         |Gamma|=6.250000000000e-05 rel.err=1.834e-15    PASS
 Running on 1 processes.
 
 
@@ -1572,21 +1572,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -1624,10 +1624,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 6.250000000000e-05 m^1
    cos(theta)     = 1.000000000000
-   sum F[.][0]    = -5.260942760943e-13   (assembled)
-   expected       = -5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 2.111e-15
-Setup time 1.317800e-02 sec  =  0.00 min 
+   sum F[.][0]    = -3.578526751213e-13   (assembled)
+   expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.411e-15
+Setup time 1.545700e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1637,7 +1637,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  x_faces          |Gamma|=6.250000000000e-05 rel.err=2.111e-15    PASS
+  x_faces          |Gamma|=6.250000000000e-05 rel.err=1.411e-15    PASS
 Running on 1 processes.
 
 
@@ -1683,21 +1683,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -1735,10 +1735,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = 0.500000000000
-   sum F[.][0]    = -5.260942760943e-13   (assembled)
-   expected       = -5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 2.687e-15
-Setup time 1.329300e-02 sec  =  0.00 min 
+   sum F[.][0]    = -3.578526751213e-13   (assembled)
+   expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.975e-15
+Setup time 1.585500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1748,7 +1748,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta60          |Gamma|=1.250000000000e-04 rel.err=2.687e-15    PASS
+  theta60          |Gamma|=1.250000000000e-04 rel.err=1.975e-15    PASS
 Running on 1 processes.
 
 
@@ -1794,21 +1794,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -1846,10 +1846,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = -0.707106781187
-   sum F[.][0]    = 7.440096603394e-13   (assembled)
-   expected       = 7.440096603394e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 1.629e-15
-Setup time 1.332700e-02 sec  =  0.00 min 
+   sum F[.][0]    = 5.060801064880e-13   (assembled)
+   expected       = 5.060801064880e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.397e-15
+Setup time 1.605100e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1859,7 +1859,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta135         |Gamma|=1.250000000000e-04 rel.err=1.629e-15    PASS
+  theta135         |Gamma|=1.250000000000e-04 rel.err=1.397e-15    PASS
 Running on 1 processes.
 
 
@@ -1905,21 +1905,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -1957,10 +1957,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.875000000000e-04 m^1
    cos(theta)     = 1.000000000000
-   sum F[.][0]    = -1.578282828283e-12   (assembled)
-   expected       = -1.578282828283e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 7.677e-16
-Setup time 1.377100e-02 sec  =  0.00 min 
+   sum F[.][0]    = -1.073558025364e-12   (assembled)
+   expected       = -1.073558025364e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.693e-15
+Setup time 1.601000e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1970,7 +1970,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  all_faces        |Gamma|=1.875000000000e-04 rel.err=7.677e-16    PASS
+  all_faces        |Gamma|=1.875000000000e-04 rel.err=1.693e-15    PASS
 
 === G4: sign -- wetting advances the contact line ===
 Running on 1 processes.
@@ -2018,21 +2018,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -2070,10 +2070,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = 1.000000000000
-   sum F[.][0]    = -1.052188552189e-12   (assembled)
-   expected       = -1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 9.597e-16
-Setup time 1.364600e-02 sec  =  0.00 min 
+   sum F[.][0]    = -7.157053502426e-13   (assembled)
+   expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 7.054e-16
+Setup time 1.571700e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2083,7 +2083,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=0    sum_wall R = -1.052188552189e-12 expect neg  PASS
+  theta=0    sum_wall R = -7.157053502426e-13 expect neg  PASS
 Running on 1 processes.
 
 
@@ -2129,21 +2129,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -2181,10 +2181,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = 0.500000000000
-   sum F[.][0]    = -5.260942760943e-13   (assembled)
-   expected       = -5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 2.687e-15
-Setup time 1.318800e-02 sec  =  0.00 min 
+   sum F[.][0]    = -3.578526751213e-13   (assembled)
+   expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.975e-15
+Setup time 1.594800e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2194,7 +2194,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=60   sum_wall R = -5.260942760943e-13 expect neg  PASS
+  theta=60   sum_wall R = -3.578526751213e-13 expect neg  PASS
 Running on 1 processes.
 
 
@@ -2240,21 +2240,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -2292,10 +2292,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = 0.000000000000
-   sum F[.][0]    = 1.315986859616e-27   (assembled)
-   expected       = -6.442796712686e-29   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   sum F[.][0]    = 8.951426379969e-28   (assembled)
+   expected       = -4.382431331536e-29   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.143e+01
-Setup time 1.335700e-02 sec  =  0.00 min 
+Setup time 1.599500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2305,7 +2305,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=90   sum_wall R = 1.315986859616e-27 expect zero PASS
+  theta=90   sum_wall R = 8.951426379969e-28 expect zero PASS
 Running on 1 processes.
 
 
@@ -2351,21 +2351,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -2403,10 +2403,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = -0.500000000000
-   sum F[.][0]    = 5.260942760943e-13   (assembled)
-   expected       = 5.260942760943e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 2.111e-15
-Setup time 1.394200e-02 sec  =  0.00 min 
+   sum F[.][0]    = 3.578526751213e-13   (assembled)
+   expected       = 3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 2.540e-15
+Setup time 1.464800e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2416,7 +2416,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=120  sum_wall R = 5.260942760943e-13 expect pos  PASS
+  theta=120  sum_wall R = 3.578526751213e-13 expect pos  PASS
 Running on 1 processes.
 
 
@@ -2462,21 +2462,21 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
    beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
    lambda   =  1.6243e+08
-   tau_sub  =  8.9100e+01 s
-   dtmax/tau_sub = 2.2447   <-- SEE WARNING BELOW
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
-   *** WARNING: dtmax = 2.000e+02 s is 2.24 x tau_sub = 8.910e+01 s.
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
        Above ~0.25 the phase field can leave [phase_lo, phase_hi]
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
        GEOMETRY file (which owns eps), not in a shared experiment
-       file. Suggested: -dtmax 8.91e+00  (tau_sub/10)
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
 
-   tau_sub terms:  kinetic 8.9100e+01 s   (-thin_iface_corr 0)
-   beta realised  =  9.9000e+05 s/m  =  1.0000 x -beta_sub0
-   mob_sub  =  1.1223e-08 m/s   [M&F: 4.33e-7]
-   alph_sub =  1.8230e+06 1/s
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
    xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
    xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
 
@@ -2514,10 +2514,10 @@ IC type: single_ice
  WALL SURFACE-MEASURE CHECK (-test_wall_measure)
    |Gamma_wall|   = 1.250000000000e-04 m^1
    cos(theta)     = -1.000000000000
-   sum F[.][0]    = 1.052188552189e-12   (assembled)
-   expected       = 1.052188552189e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
-   rel. error     = 9.597e-16
-Setup time 1.329900e-02 sec  =  0.00 min 
+   sum F[.][0]    = 7.157053502426e-13   (assembled)
+   expected       = 7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.411e-15
+Setup time 1.494900e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2527,7 +2527,7 @@ Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  theta=180  sum_wall R = 1.052188552189e-12 expect pos  PASS
+  theta=180  sum_wall R = 7.157053502426e-13 expect pos  PASS
 
 === G1: regression, no -wall_faces reproduces pre-feature solver ===
 /Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/assembly.c -o obj/assembly.o

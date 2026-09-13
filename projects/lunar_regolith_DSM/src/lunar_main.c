@@ -605,7 +605,7 @@ int main(int argc, char *argv[]) {
 
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
-    user.thin_iface_corr = PETSC_FALSE;
+    user.thin_iface_corr = PETSC_TRUE;   /* ON by default since 2026-09-13 */
     ierr = PetscOptionsBool("-thin_iface_corr",
              "Include the Karma thin-interface counter-terms in tau_sub. Default 0: "
              "for a one-sided vapour diffusivity the O(eps) kinetic contribution they "
@@ -939,7 +939,36 @@ int main(int argc, char *argv[]) {
     d0_sub = user.d0_sub0 / rho_rhovs;
     beta_sub = user.beta_sub0 / rho_rhovs;
     lambda_sub = a1 * user.eps / d0_sub;
-    /* Thin-interface counter-terms, OFF by default (-thin_iface_corr).
+    /* Thin-interface counter-terms, ON by default (-thin_iface_corr).
+     *
+     *   tau_sub = eps^2*beta/d0  +  a1*a2*(eps^3/d0)*(1/D_therm + 1/D_v)
+     *
+     * DEFAULT CHANGED 2026-09-13, OFF -> ON. The argument for OFF (below, and
+     * docs/gt_deficit/) bounds only the counter-terms PROPORTIONAL TO v_n, and
+     * shows those vanish here because the one-sided D_v*phi_a makes the inner
+     * deviation of sigma identically null. It does not bound the spurious
+     * SURFACE DIFFUSION that a one-sided model produces without an
+     * anti-trapping current -- gt_deficit.tex says so explicitly, and notes
+     * that operator "is not observable in this measurement". This model has no
+     * anti-trapping current, so that term is live and uncontrolled, and the
+     * beta-agreement evidence that motivated OFF simply cannot see it.
+     *
+     * Cost of being wrong in this direction is bounded and known: beta is
+     * realised 1.03-1.12x larger than requested over the eps range in use
+     * (correction/tau = 2.9% at eps = 0.75 um, 5.9% at 1.50, 11.7% at 3.00 --
+     * it scales as eps). Cost of being wrong the other way is an uncontrolled
+     * spurious operator on every interface.
+     *
+     * CAVEAT, unresolved: the thermal counter-term is the HISTORICAL form.
+     * a2*eps/diff_sub treats latent heat as driving sigma at unit strength,
+     * whereas temperature reaches sigma only through rho_vs(T) and so carries a
+     * Clausius-Clapeyron factor; gt_deficit.tex 198-200 gives the correct
+     * coefficient as (d rho_vs/dT)*L_sub/k, smaller by 11x to 1300x. So
+     * tau_therm here is over-weighted. At eps = 0.75 um that is 45.7 s of a
+     * 2261 s tau_sub, and correcting it would move tau_sub by ~1.8%; the vapor
+     * term (18.7 s) is unaffected. Worth fixing on its own terms.
+     *
+     * Historical note on the OFF rationale:
      *
      * These inflate tau_sub by the spurious O(eps) kinetic contribution that the
      * sharp-interface asymptotics are expected to subtract back off, so that the
