@@ -2,7 +2,11 @@
 #
 #   geometry:experiment
 #
-# G5 -- the angle sweep. Same channel, five different regolith wettabilities.
+# Rerun of batch 2026-09-12 with (a) the thin-interface correction ON by
+# default, (b) phi clamped in the wall term, and (c) -dtmax scaled from tau_sub
+# in each geometry file.
+
+# --- angle sweep: five wettabilities, same channel ---------------------------
 # Surface energies are what varies; theta is derived by the solver.
 channel_2D_H100um_eps1.50um:relax_T-20_theta30
 channel_2D_H100um_eps1.50um:relax_T-20_theta60
@@ -10,15 +14,18 @@ channel_2D_H100um_eps1.50um:relax_T-20_theta90
 channel_2D_H100um_eps1.50um:relax_T-20_theta120
 channel_2D_H100um_eps1.50um:relax_T-20_theta150
 
-# G6 -- eps convergence at fixed theta. The measured angle carries an O(eps/R)
-# diffuse-interface bias; these three (eps/R = 1/25, 1/50, 1/100) are what
-# quantify it and tell us what resolution production runs need.
+# --- eps convergence at fixed theta ------------------------------------------
+# eps/R = 1/25, 1/50 (above) and 1/100. The 1/100 case stalled in the previous
+# batch from the wall-term sign flip; the clamp fixes that, verified locally to
+# step 3099 with phi_min = -1.7e-23 and 38/38 distinct states.
 channel_2D_H100um_eps3.00um:relax_T-20_theta60
 channel_2D_H100um_eps0.75um:relax_T-20_theta60
 
-# G7 -- sessile drop, one wall, no confinement. If this agrees with the channel
-# then the angle is set by the boundary condition and not by the confinement.
-sessile_2D_H300um_eps1.50um:relax_T-20_theta30
-sessile_2D_H300um_eps1.50um:relax_T-20_theta60
-sessile_2D_H300um_eps1.50um:relax_T-20_theta120
-sessile_2D_H300um_eps1.50um:relax_T-20_theta150
+# --- sessile drop: one wall, no confinement ----------------------------------
+# NOTE the different experiment files: t_final 1.5e7 (174 d) rather than the
+# channel's 5.616e6 (65 d). At 65 days these reached only 1.4-2.2 tau and
+# measured nothing. See inputs/experiment/contactangle/sessile_*.opts.
+sessile_2D_H300um_eps1.50um:sessile_T-20_theta30
+sessile_2D_H300um_eps1.50um:sessile_T-20_theta60
+sessile_2D_H300um_eps1.50um:sessile_T-20_theta120
+sessile_2D_H300um_eps1.50um:sessile_T-20_theta150
