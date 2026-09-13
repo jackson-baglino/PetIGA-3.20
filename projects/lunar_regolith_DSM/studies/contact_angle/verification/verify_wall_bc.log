@@ -50,7 +50,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -110,7 +110,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.419796e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.608890e-01 sec  =  0.00 min 
+Setup time 2.229360e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -170,7 +170,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -230,7 +230,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.644933e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.508270e-01 sec  =  0.00 min 
+Setup time 2.216040e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -290,7 +290,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -350,7 +350,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.067276e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.509270e-01 sec  =  0.00 min 
+Setup time 2.233320e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -410,7 +410,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -470,7 +470,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.361825e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.507200e-01 sec  =  0.00 min 
+Setup time 2.218930e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -530,7 +530,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -590,7 +590,7 @@ IC type: multi_grains
    worst 1.954618e-08    5.809139e+06
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.562690e-01 sec  =  0.00 min 
+Setup time 2.349750e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -650,7 +650,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -710,7 +710,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.421308e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.552220e-01 sec  =  0.00 min 
+Setup time 2.221060e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -770,7 +770,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -830,7 +830,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.162578e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.512030e-01 sec  =  0.00 min 
+Setup time 2.216440e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -890,7 +890,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -950,7 +950,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.034350e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.492460e-01 sec  =  0.00 min 
+Setup time 2.218130e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1010,7 +1010,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -1070,7 +1070,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.447060e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.526330e-01 sec  =  0.00 min 
+Setup time 2.213000e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1132,7 +1132,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -1183,7 +1183,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.477e-15
-Setup time 8.712000e-03 sec  =  0.00 min 
+Setup time 7.215000e-03 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1243,7 +1243,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -1294,7 +1294,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.054e-16
-Setup time 1.594200e-02 sec  =  0.00 min 
+Setup time 1.344400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1354,7 +1354,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -1405,7 +1405,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.270e-15
-Setup time 4.242500e-02 sec  =  0.00 min 
+Setup time 3.732500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1465,7 +1465,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -1516,7 +1516,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.834e-15
-Setup time 1.624600e-02 sec  =  0.00 min 
+Setup time 1.364600e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1576,7 +1576,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -1627,7 +1627,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.411e-15
-Setup time 1.545700e-02 sec  =  0.00 min 
+Setup time 1.291700e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1687,7 +1687,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -1738,7 +1738,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.975e-15
-Setup time 1.585500e-02 sec  =  0.00 min 
+Setup time 1.341900e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1798,7 +1798,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -1849,7 +1849,7 @@ IC type: single_ice
    sum F[.][0]    = 5.060801064880e-13   (assembled)
    expected       = 5.060801064880e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.397e-15
-Setup time 1.605100e-02 sec  =  0.00 min 
+Setup time 1.334000e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1909,7 +1909,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -1960,7 +1960,7 @@ IC type: single_ice
    sum F[.][0]    = -1.073558025364e-12   (assembled)
    expected       = -1.073558025364e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.693e-15
-Setup time 1.601000e-02 sec  =  0.00 min 
+Setup time 1.374300e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2022,7 +2022,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -2073,7 +2073,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.054e-16
-Setup time 1.571700e-02 sec  =  0.00 min 
+Setup time 1.342500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2133,7 +2133,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -2184,7 +2184,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.975e-15
-Setup time 1.594800e-02 sec  =  0.00 min 
+Setup time 1.310200e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2244,7 +2244,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -2295,7 +2295,7 @@ IC type: single_ice
    sum F[.][0]    = 8.951426379969e-28   (assembled)
    expected       = -4.382431331536e-29   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.143e+01
-Setup time 1.599500e-02 sec  =  0.00 min 
+Setup time 1.321400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2355,7 +2355,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -2406,7 +2406,7 @@ IC type: single_ice
    sum F[.][0]    = 3.578526751213e-13   (assembled)
    expected       = 3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.540e-15
-Setup time 1.464800e-02 sec  =  0.00 min 
+Setup time 1.380400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2466,7 +2466,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
 
    *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
-       Above ~0.25 the phase field can leave [phase_lo, phase_hi]
+       A step longer than the whole interface relaxation time cannot
        and the solve can stall while the clock keeps advancing --
        a run that LOOKS successful but whose solution stopped
        changing. tau_sub scales as eps^2, so set -dtmax in the
@@ -2517,7 +2517,7 @@ IC type: single_ice
    sum F[.][0]    = 7.157053502426e-13   (assembled)
    expected       = 7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.411e-15
-Setup time 1.494900e-02 sec  =  0.00 min 
+Setup time 1.348700e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
