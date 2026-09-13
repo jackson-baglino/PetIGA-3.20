@@ -166,14 +166,37 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
         IGAPointFormValue(pnt, U, &sol_b[0]);
         PetscReal phi_b = PetscRealPart(sol_b[0]);
 
-        /* Raw phi, deliberately NOT the clamped phi_c used for material
-         * properties below: phi*(1-phi) is a polynomial, and leaving it
-         * unclamped keeps the analytic Jacobian exactly consistent with this
-         * residual, which is what -snes_test_jacobian checks. A trial iterate
-         * far outside [0,1] is caught by the interior branch's domain guard on
-         * the same element. */
+        /* CLAMP phi to [0,1] before evaluating h'. This is not cosmetic -- an
+         * unclamped h' makes the wall term UNSTABLE outside the physical range.
+         *
+         * h'(phi) = 6*phi*(1-phi) changes sign for phi < 0 (and phi > 1), so
+         * the wall residual -3*M*cos(theta)*h'/6*N flips sign there too, and
+         * since R = N*phi_t + ... = 0, a sign-flipped wall term drives phi
+         * FURTHER out of range: a runaway. The bulk double-well does the
+         * opposite -- f1 = phi(1-phi)(1-2phi) restores toward 0 -- but near the
+         * wall the surface term can win.
+         *
+         * That is exactly how the eps = 0.75 um run of batch 2026-09-12 died.
+         * phi undershot to -0.05 ON THE WALL ROWS (interior only reached
+         * -0.02), crossed -phase_lo, and the interior branch's domain guard
+         * then zeroed the whole residual, so SNES "converged" at iteration 0
+         * forever while the clock ran on to t_final and the run reported
+         * success. The coarser resolutions never got there (|phi_min| < 5e-7).
+         *
+         * Clamped, h' is identically 0 outside [0,1]: the wall energy stops
+         * pushing and the bulk term restores the field, which is the correct
+         * physical behaviour -- h'(0) = h'(1) = 0 says the wall term is inert
+         * in the pure phases, and that should not stop being true just because
+         * a trial iterate stepped slightly past them.
+         *
+         * The Jacobian below clamps identically and zeroes its derivative
+         * outside the range, so the two stay exactly consistent. */
+        PetscReal phi_w = phi_b;
+        if (phi_w < 0.0) phi_w = 0.0;
+        if (phi_w > 1.0) phi_w = 1.0;
+
         PetscReal dh;
-        WallH(phi_b, NULL, &dh, NULL);
+        WallH(phi_w, NULL, &dh, NULL);
 
         PetscReal mob_b;
         Mobility(user, phi_b, &mob_b);
@@ -337,8 +360,16 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
         IGAPointFormValue(pnt, U, &sol_b[0]);
         PetscReal phi_b = PetscRealPart(sol_b[0]);
 
+        /* Same clamp as the residual, and dh'/dphi = 0 outside [0,1] because
+         * the clamped phi does not respond there -- that chain-rule factor is
+         * what keeps this an EXACT Jacobian of the clamped residual. */
+        PetscReal phi_w = phi_b;
+        if (phi_w < 0.0) phi_w = 0.0;
+        if (phi_w > 1.0) phi_w = 1.0;
+        const PetscReal dclamp = (phi_b > 0.0 && phi_b < 1.0) ? 1.0 : 0.0;
+
         PetscReal d2h;
-        WallH(phi_b, NULL, NULL, &d2h);
+        WallH(phi_w, NULL, NULL, &d2h);
 
         PetscReal mob_b;
         Mobility(user, phi_b, &mob_b);
@@ -353,7 +384,7 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
         for (PetscInt a = 0; a < nen_b; a++)
             for (PetscInt b = 0; b < nen_b; b++)
                 Jb[a][0][b][0] += -rwb * 3.0 * mob_b * user->costhet
-                                * (d2h / 6.0) * N0b[a] * N0b[b];
+                                * (d2h / 6.0) * dclamp * N0b[a] * N0b[b];
         return 0;
     }
 
