@@ -172,9 +172,13 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
          * h'(phi) = 6*phi*(1-phi) changes sign for phi < 0 (and phi > 1), so
          * the wall residual -3*M*cos(theta)*h'/6*N flips sign there too, and
          * since R = N*phi_t + ... = 0, a sign-flipped wall term drives phi
-         * FURTHER out of range: a runaway. The bulk double-well does the
-         * opposite -- f1 = phi(1-phi)(1-2phi) restores toward 0 -- but near the
-         * wall the surface term can win.
+         * FURTHER out of range: a runaway.
+         *
+         * And NOTHING opposes it. The bulk terms evaluate the double well and
+         * the localiser at the CLAMPED phi_c, so for phi < 0 both f1 and loc
+         * are identically zero -- there is no restoring force outside [0,1] by
+         * construction. An unclamped wall term is therefore the only thing
+         * acting out there, and it acts in the wrong direction.
          *
          * That is exactly how the eps = 0.75 um run of batch 2026-09-12 died.
          * phi undershot to -0.05 ON THE WALL ROWS (interior only reached

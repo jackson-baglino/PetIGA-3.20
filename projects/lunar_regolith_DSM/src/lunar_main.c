@@ -168,6 +168,13 @@ int main(int argc, char *argv[]) {
      * zero flux through the boundary for both T and rho_v. Override only if
      * you actually want fixed-value Dirichlet conditions. */
     user.periodic    = 0;       /* Periodic boundary condition flag */
+
+    /* Stall detector: 500 consecutive bit-identical ||U|| values. Generous
+     * enough that no genuine transient trips it, small enough that a frozen run
+     * dies in minutes instead of burning its whole wall-clock allocation. */
+    user.stall_norm  = -1.0;
+    user.stall_count = 0;
+    user.stall_limit = 500;
     flag_BC_Tfix     = PETSC_FALSE; /* insulating T (zero heat flux) — natural Neumann */
     flag_BC_rhovfix  = PETSC_FALSE; /* insulating rho_v (zero vapor flux) — natural Neumann */
 
@@ -663,6 +670,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-gamma_as", "Air-regolith surface energy [J/m^2]", "", gamma_as, &gamma_as, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-contact_angle_deg", "DEBUG: set theta directly, bypassing Young's equation", "", contact_angle_deg, &contact_angle_deg, &contact_angle_set); CHKERRQ(ierr);
     ierr = PetscOptionsString("-wall_faces", "Domain faces that are regolith, e.g. \"y0,y1\" (default: none)", "", wall_faces, wall_faces, sizeof(wall_faces), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-stall_limit", "Abort if ||U|| is bit-identical for this many consecutive steps (0 disables)", "", user.stall_limit, &user.stall_limit, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-test_wall_measure", "DEBUG: assemble the wall term on a uniform phi=1/2 field, check its surface measure, and exit", "", test_wall_measure, &test_wall_measure, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-test_wall_jacobian", "DEBUG: check the analytic Jacobian against finite differences on the initial condition, and exit", "", test_wall_jacobian, &test_wall_jacobian, NULL); CHKERRQ(ierr);
 

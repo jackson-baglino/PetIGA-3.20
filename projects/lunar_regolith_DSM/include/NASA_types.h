@@ -132,6 +132,17 @@ typedef struct {
   PetscBool wall_face[3][2];
   PetscBool wall_any;        // true if any face is flagged (skips work when not)
 
+  // Stall detector. A bounds excursion can leave the solve unable to advance
+  // while TS keeps stepping: the run reaches t_final and reports SUCCESS with a
+  // solution that stopped changing. That happened twice on eps = 0.75 um runs
+  // (batch 2026-09-12) and cost two HPC jobs before anyone noticed -- the only
+  // reliable symptom was that 52 of 61 sol_*.dat files were byte-identical.
+  // Track ||U|| and abort loudly if it does not move at all for stall_limit
+  // consecutive steps. Disable with -stall_limit 0.
+  PetscReal stall_norm;
+  PetscInt  stall_count;
+  PetscInt  stall_limit;
+
   // Wedge-bridging ice band: the annulus wedge_band_r1 <= |X - apex| <=
   // wedge_band_r2 about (wedge_apex_x, wedge_apex_y). An apex-centred arc is
   // perpendicular to every ray from the apex, i.e. to both wedge walls, so
