@@ -1,0 +1,31 @@
+# Contact-angle validation sweep, for scripts/HPC/submit_batch.sh --tests-file
+#
+#   geometry:experiment
+#
+# Rerun of batch 2026-09-12 with (a) the thin-interface correction ON by
+# default, (b) phi clamped in the wall term, and (c) -dtmax scaled from tau_sub
+# in each geometry file.
+
+# --- angle sweep: five wettabilities, same channel ---------------------------
+# Surface energies are what varies; theta is derived by the solver.
+channel_2D_H100um_eps1.50um:relax_T-20_theta30
+channel_2D_H100um_eps1.50um:relax_T-20_theta60
+channel_2D_H100um_eps1.50um:relax_T-20_theta90
+channel_2D_H100um_eps1.50um:relax_T-20_theta120
+channel_2D_H100um_eps1.50um:relax_T-20_theta150
+
+# --- eps convergence at fixed theta ------------------------------------------
+# eps/R = 1/25, 1/50 (above) and 1/100. The 1/100 case stalled in the previous
+# batch from the wall-term sign flip; the clamp fixes that, verified locally to
+# step 3099 with phi_min = -1.7e-23 and 38/38 distinct states.
+channel_2D_H100um_eps3.00um:relax_T-20_theta60
+channel_2D_H100um_eps0.75um:relax_T-20_theta60
+
+# --- sessile drop: one wall, no confinement ----------------------------------
+# NOTE the different experiment files: t_final 1.5e7 (174 d) rather than the
+# channel's 5.616e6 (65 d). At 65 days these reached only 1.4-2.2 tau and
+# measured nothing. See inputs/experiment/contactangle/sessile_*.opts.
+sessile_2D_H300um_eps1.50um:sessile_T-20_theta30
+sessile_2D_H300um_eps1.50um:sessile_T-20_theta60
+sessile_2D_H300um_eps1.50um:sessile_T-20_theta120
+sessile_2D_H300um_eps1.50um:sessile_T-20_theta150

@@ -1,3 +1,77 @@
+## 2026-09-12 — Contact-angle sweep analysed: the wall term reproduces Young
+
+- 11-run HPC batch (batch_2026-09-12__08.01.14_contactangle) analysed. Results
+  and figures in studies/contact_angle/verification/sweep_2026-09-12/.
+- ANGLE SWEEP PASSES. Channel at eps/R = 1/50, five angles: errors +0.079,
+  +0.035, +0.007, +0.001, +0.020 deg. Max 0.079, RMS 0.040, against a 2 deg
+  acceptance criterion. The four per-snapshot estimates agree below printed
+  precision, and theta_inf is stable across fit windows (drift 0.01-0.32 deg),
+  so the extrapolation is trustworthy.
+- eps convergence: 1/25 -> +0.067, 1/50 -> +0.035. Halving eps halves the
+  error, consistent with an O(eps/R) bias.
+- eps/R = 1/100 run is INVALID: it STALLED. Only 9 distinct snapshots out of
+  61; theta bit-identical at 105.239 from day 10 to day 65. A bounds violation
+  at steps 383-385 cut dt 2e3 -> 5.9e-1, then 23 DIVERGED_LINE_SEARCH with
+  iterations 0. The clock kept advancing at dtmax and the run REPORTED SUCCESS.
+  Likely -dtmax 2.0e3 too coarse for eps = 0.75 um; rerun with -dtmax 5.0e2.
+- Sessile runs are NOT converged, so their apparent 4-17 deg errors mean
+  nothing: all four are still moving toward their targets at t_end, tau = 30-45
+  d against a 65 d run, and their theta_inf drifts 2.8-9.2 deg across fit
+  windows. Needs t_final ~ 1.7e7 s.
+- Worth remembering: tot_ice in SSA_evo.dat is constant to all printed digits
+  in HEALTHY runs too (vapour holds ~1e-6 of the water, below %e precision).
+  It is not a freeze diagnostic. Counting distinct sol_*.dat fingerprints is.
+- The batch's own postprocessing produced no contact_angle.csv — it ran before
+  the venv-detection fix reached the HPC. Reprocessed locally.
+
+---
+
+## 2026-09-11 — Prescribed contact angle at the regolith wall
+
+- Added Cahn's wetting BC as a wall free-energy surface integral, so the
+  substrate (which is the domain boundary in this two-phase model, not a phase
+  field) finally sets a contact angle instead of the accidental 90 degrees that
+  natural Neumann gave. Branch `feature/prescribed-contact-angle`.
+- Surface energies are the user-facing input: `-gamma_is`/`-gamma_as`, with
+  `-gamma_ia` defaulting to `-Sigma_i`, and the solver derives theta from
+  Young's equation and prints it. `-wall_faces` says which faces are regolith.
+  `-contact_angle_deg` is a debug override only.
+- The term turned out to contain neither eps nor any gamma:
+  `R_bnd = -3*M*cos(theta)*phi(1-phi)*N`. gamma_ia cancels against the
+  dimensionless functional's eps/6 interfacial excess and the residual's
+  (3M/eps) prefactor cancels the eps. It agrees identically with the
+  |grad phi| form in demo/Metamorph.c. Derivation in docs/contact_angle.md.
+- Four unit gates, all passing (studies/contact_angle/verification/): bitwise
+  regression without `-wall_faces`; wall Jacobian vs FD at 8 angles; boundary
+  surface measure to 2e-16; and the SIGN, i.e. that wetting advances the
+  contact line.
+- Deliberately did not use `-snes_test_jacobian`: it only runs inside a TS step
+  (slow in a debug build) and the full system is insensitive to the wall block
+  anyway. Isolating the block by differencing costhet on/off is what actually
+  tests it.
+- contact_angle.py measures the macroscopic angle from the phi=0.5 contour. Its
+  own gate against synthetic arcs caught a real bug: pplib.circle_radius's
+  affine fit cannot represent a straight interface, so it returned 78 +/- 25
+  degrees at theta = 90. Replaced with an implicit conic fit; all 11 angles now
+  exact. The measurement also matches the analytic clipped-disc angle on real
+  solver output (131.805 vs 131.810).
+- Moved crossings/refine_tanh/contour_points/circle_radius from
+  wedge_gt_velocity.py into pplib.py, unchanged, so there is one implementation.
+- PILOT RUN (theta=60, eps/R=1/25, 30 days): relaxes 131.8 -> 72.2 deg as a
+  clean single exponential, tau = 14.4 days. A FREE three-parameter fit gives
+  theta_inf = 60.36 +/- 0.04 deg against Young's 60.000; the best-conditioned
+  window gives 59.93 +/- 0.03. First real evidence the wall term produces the
+  right macroscopic angle. Recorded in studies/contact_angle/verification/pilot/.
+- Resized t_final 30 -> 65 days (4.5*tau) from that measurement, and added a
+  free-asymptote extrapolation to contact_angle.py so theta_inf is reported even
+  when a run stops short.
+- Fixed run_postprocess.sh picking a numpy-less python3: every plot step was
+  failing and the only symptom was an empty plots/ dir after a "successful" run.
+  It now prefers venv_lunar and warns if no working interpreter is found.
+- Physics sweep (11 runs) defined in verification/sweep_tests.txt, still NOT RUN.
+
+---
+
 ## 2026-09-11 — Doc: added the one-sided definitions of beta and tau_sub
 
 New §4.1 states the definitions the analysis implies, which the document had

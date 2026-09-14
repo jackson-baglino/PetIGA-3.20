@@ -1,0 +1,2546 @@
+
+=== G2: wall Jacobian vs finite differences ===
+    (wall block isolated by differencing costhet on/off)
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 24,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 2.6042e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  1.2000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  6.4971e+07
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
+
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  1 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
+
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = 1.000000
+   The full-system column is dominated by the interior form, so it
+   is insensitive to the wall block; the isolated column differences
+   both J and F between costhet on and off and is the real gate.
+
+   dir   full system      wall block       ||Jbnd*v||
+     0   1.849332e-08    7.139944e-10    3.752206e-13
+     1   1.738476e-08    7.485557e-10    3.570327e-13
+     2   1.954618e-08    8.098826e-10    3.695721e-13
+     3   1.745779e-08    6.751163e-10    3.938753e-13
+     4   1.871669e-08    8.419796e-10    3.769642e-13
+   worst 1.954618e-08    8.419796e-10
+   (||Jbnd*v|| = 0 would mean the wall block is never exercised --
+    the interface must actually cross a face named by -wall_faces.)
+Setup time 2.229360e-01 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=0     rel.err=8.419796e-10    ||Jbnd*v||=3.769642e-13    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 24,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 2.6042e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  1.2000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  6.4971e+07
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
+
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=30.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=30.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 0.866025  ->  theta = 30.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  1 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
+
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = 0.866025
+   The full-system column is dominated by the interior form, so it
+   is insensitive to the wall block; the isolated column differences
+   both J and F between costhet on and off and is the real gate.
+
+   dir   full system      wall block       ||Jbnd*v||
+     0   1.849332e-08    6.573484e-10    3.249506e-13
+     1   1.738476e-08    6.942413e-10    3.091994e-13
+     2   1.954618e-08    8.063786e-10    3.200588e-13
+     3   1.745779e-08    6.165638e-10    3.411061e-13
+     4   1.871669e-08    8.644933e-10    3.264606e-13
+   worst 1.954618e-08    8.644933e-10
+   (||Jbnd*v|| = 0 would mean the wall block is never exercised --
+    the interface must actually cross a face named by -wall_faces.)
+Setup time 2.216040e-01 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=30    rel.err=8.644933e-10    ||Jbnd*v||=3.264606e-13    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 24,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 2.6042e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  1.2000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  6.4971e+07
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
+
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=45.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=45.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 0.707107  ->  theta = 45.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  1 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
+
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = 0.707107
+   The full-system column is dominated by the interior form, so it
+   is insensitive to the wall block; the isolated column differences
+   both J and F between costhet on and off and is the real gate.
+
+   dir   full system      wall block       ||Jbnd*v||
+     0   1.849332e-08    6.952976e-10    2.653210e-13
+     1   1.738476e-08    6.281907e-10    2.524603e-13
+     2   1.954618e-08    8.303251e-10    2.613269e-13
+     3   1.745779e-08    5.387934e-10    2.785119e-13
+     4   1.871669e-08    9.067276e-10    2.665539e-13
+   worst 1.954618e-08    9.067276e-10
+   (||Jbnd*v|| = 0 would mean the wall block is never exercised --
+    the interface must actually cross a face named by -wall_faces.)
+Setup time 2.233320e-01 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=45    rel.err=9.067276e-10    ||Jbnd*v||=2.665539e-13    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 24,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 2.6042e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  1.2000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  6.4971e+07
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
+
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 0.500000  ->  theta = 60.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  1 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
+
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = 0.500000
+   The full-system column is dominated by the interior form, so it
+   is insensitive to the wall block; the isolated column differences
+   both J and F between costhet on and off and is the real gate.
+
+   dir   full system      wall block       ||Jbnd*v||
+     0   1.849332e-08    9.361825e-10    1.876103e-13
+     1   1.738476e-08    7.597559e-10    1.785164e-13
+     2   1.954618e-08    8.742646e-10    1.847861e-13
+     3   1.745779e-08    6.607302e-10    1.969377e-13
+     4   1.871669e-08    9.035989e-10    1.884821e-13
+   worst 1.954618e-08    9.361825e-10
+   (||Jbnd*v|| = 0 would mean the wall block is never exercised --
+    the interface must actually cross a face named by -wall_faces.)
+Setup time 2.218930e-01 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=60    rel.err=9.361825e-10    ||Jbnd*v||=1.884821e-13    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 24,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 2.6042e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  1.2000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  6.4971e+07
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
+
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=90.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=90.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 0.000000  ->  theta = 90.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  1 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
+
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = 0.000000
+   The full-system column is dominated by the interior form, so it
+   is insensitive to the wall block; the isolated column differences
+   both J and F between costhet on and off and is the real gate.
+
+   dir   full system      wall block       ||Jbnd*v||
+     0   1.849332e-08    2.924609e+06    1.545845e-29
+     1   1.738476e-08    1.102285e+06    5.428830e-29
+     2   1.954618e-08    5.809139e+06    1.140443e-29
+     3   1.745779e-08    1.882049e+06    3.513753e-29
+     4   1.871669e-08    1.540051e+06    2.909175e-29
+   worst 1.954618e-08    5.809139e+06
+   (||Jbnd*v|| = 0 would mean the wall block is never exercised --
+    the interface must actually cross a face named by -wall_faces.)
+Setup time 2.349750e-01 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=90    wall block is zero (no-op): ||Jbnd*v||=2.909175e-29 PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 24,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 2.6042e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  1.2000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  6.4971e+07
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
+
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=120.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=120.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = -0.500000  ->  theta = 120.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  1 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
+
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = -0.500000
+   The full-system column is dominated by the interior form, so it
+   is insensitive to the wall block; the isolated column differences
+   both J and F between costhet on and off and is the real gate.
+
+   dir   full system      wall block       ||Jbnd*v||
+     0   1.849332e-08    7.289375e-10    1.876103e-13
+     1   1.738476e-08    7.406499e-10    1.785164e-13
+     2   1.954618e-08    8.078174e-10    1.847861e-13
+     3   1.745779e-08    6.415216e-10    1.969377e-13
+     4   1.871669e-08    8.421308e-10    1.884821e-13
+   worst 1.954618e-08    8.421308e-10
+   (||Jbnd*v|| = 0 would mean the wall block is never exercised --
+    the interface must actually cross a face named by -wall_faces.)
+Setup time 2.221060e-01 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=120   rel.err=8.421308e-10    ||Jbnd*v||=1.884821e-13    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 24,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 2.6042e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  1.2000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  6.4971e+07
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
+
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=150.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=150.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = -0.866025  ->  theta = 150.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  1 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
+
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = -0.866025
+   The full-system column is dominated by the interior form, so it
+   is insensitive to the wall block; the isolated column differences
+   both J and F between costhet on and off and is the real gate.
+
+   dir   full system      wall block       ||Jbnd*v||
+     0   1.849332e-08    6.439126e-10    3.249506e-13
+     1   1.738476e-08    6.618296e-10    3.091994e-13
+     2   1.954618e-08    7.392071e-10    3.200588e-13
+     3   1.745779e-08    6.307978e-10    3.411061e-13
+     4   1.871669e-08    8.162578e-10    3.264606e-13
+   worst 1.954618e-08    8.162578e-10
+   (||Jbnd*v|| = 0 would mean the wall block is never exercised --
+    the interface must actually cross a face named by -wall_faces.)
+Setup time 2.216440e-01 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=150   rel.err=8.162578e-10    ||Jbnd*v||=3.264606e-13    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 24,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 2.6042e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  1.2000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  6.4971e+07
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
+
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=180.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=180.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = -1.000000  ->  theta = 180.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  1 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
+
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = -1.000000
+   The full-system column is dominated by the interior form, so it
+   is insensitive to the wall block; the isolated column differences
+   both J and F between costhet on and off and is the real gate.
+
+   dir   full system      wall block       ||Jbnd*v||
+     0   1.849332e-08    6.680629e-10    3.752206e-13
+     1   1.738476e-08    5.976394e-10    3.570327e-13
+     2   1.954618e-08    7.348583e-10    3.695721e-13
+     3   1.745779e-08    6.235189e-10    3.938753e-13
+     4   1.871669e-08    8.034350e-10    3.769642e-13
+   worst 1.954618e-08    8.034350e-10
+   (||Jbnd*v|| = 0 would mean the wall block is never exercised --
+    the interface must actually cross a face named by -wall_faces.)
+Setup time 2.218130e-01 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=180   rel.err=8.034350e-10    ||Jbnd*v||=3.769642e-13    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 24,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 2.6042e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  1.2000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  6.4971e+07
+   tau_sub  =  1.6937e+01 s
+   dtmax/tau_sub = 11.8085   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 11.81 x tau_sub = 1.694e+01 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.69e+00  (tau_sub/10)
+
+   tau_sub terms:  kinetic 1.4256e+01 s + thermal 1.9016e+00 + vapor 7.7934e-01   (-thin_iface_corr 1)
+   beta realised  =  1.1762e+06 s/m  =  1.1881 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  2.3617e-08 m/s   [M&F: 4.33e-7]
+   alph_sub =  3.8361e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 2.4550e-01   gamma_as = 3.0000e-01  J/m²
+   cos(theta) = (gamma_as - gamma_is)/gamma_ia = 0.500000  ->  theta = 60.00°
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: multi_grains
+--- INITIAL CONDITIONS (2D multi-grain) ---
+  1 ice grain(s), 0 sediment bump(s)
+  ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
+
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = 0.500000
+   The full-system column is dominated by the interior form, so it
+   is insensitive to the wall block; the isolated column differences
+   both J and F between costhet on and off and is the real gate.
+
+   dir   full system      wall block       ||Jbnd*v||
+     0   1.849332e-08    7.772043e-10    1.876103e-13
+     1   1.738476e-08    9.260513e-10    1.785164e-13
+     2   1.954618e-08    9.447060e-10    1.847861e-13
+     3   1.745779e-08    8.593891e-10    1.969377e-13
+     4   1.871669e-08    9.404378e-10    1.884821e-13
+   worst 1.954618e-08    9.447060e-10
+   (||Jbnd*v|| = 0 would mean the wall block is never exercised --
+    the interface must actually cross a face named by -wall_faces.)
+Setup time 2.213000e-01 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  gammas(60deg) rel.err=9.447060e-10    PASS
+
+=== G3: boundary surface measure ===
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 10,  Ny = 6
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 6.2500e-06 m,  dy = 5.2083e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = 1.000000000000
+   sum F[.][0]    = -7.157053502426e-13   (assembled)
+   expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 7.477e-15
+Setup time 7.215000e-03 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  mesh_10x6        |Gamma|=1.250000000000e-04 rel.err=7.477e-15    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = 1.000000000000
+   sum F[.][0]    = -7.157053502426e-13   (assembled)
+   expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 7.054e-16
+Setup time 1.344400e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  mesh_20x12       |Gamma|=1.250000000000e-04 rel.err=7.054e-16    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 41,  Ny = 23
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 1.5244e-06 m,  dy = 1.3587e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = 1.000000000000
+   sum F[.][0]    = -7.157053502426e-13   (assembled)
+   expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.270e-15
+Setup time 3.732500e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  mesh_41x23       |Gamma|=1.250000000000e-04 rel.err=1.270e-15    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 6.250000000000e-05 m^1
+   cos(theta)     = 1.000000000000
+   sum F[.][0]    = -3.578526751213e-13   (assembled)
+   expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.834e-15
+Setup time 1.364600e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  one_wall         |Gamma|=6.250000000000e-05 rel.err=1.834e-15    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 6.250000000000e-05 m^1
+   cos(theta)     = 1.000000000000
+   sum F[.][0]    = -3.578526751213e-13   (assembled)
+   expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.411e-15
+Setup time 1.291700e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  x_faces          |Gamma|=6.250000000000e-05 rel.err=1.411e-15    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 0.500000  ->  theta = 60.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = 0.500000000000
+   sum F[.][0]    = -3.578526751213e-13   (assembled)
+   expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.975e-15
+Setup time 1.341900e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta60          |Gamma|=1.250000000000e-04 rel.err=1.975e-15    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=135.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=135.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = -0.707107  ->  theta = 135.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = -0.707106781187
+   sum F[.][0]    = 5.060801064880e-13   (assembled)
+   expected       = 5.060801064880e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.397e-15
+Setup time 1.334000e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta135         |Gamma|=1.250000000000e-04 rel.err=1.397e-15    PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.875000000000e-04 m^1
+   cos(theta)     = 1.000000000000
+   sum F[.][0]    = -1.073558025364e-12   (assembled)
+   expected       = -1.073558025364e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.693e-15
+Setup time 1.374300e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  all_faces        |Gamma|=1.875000000000e-04 rel.err=1.693e-15    PASS
+
+=== G4: sign -- wetting advances the contact line ===
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=0.0°  Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = 1.000000000000
+   sum F[.][0]    = -7.157053502426e-13   (assembled)
+   expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 7.054e-16
+Setup time 1.342500e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=0    sum_wall R = -7.157053502426e-13 expect neg  PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 0.500000  ->  theta = 60.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = 0.500000000000
+   sum F[.][0]    = -3.578526751213e-13   (assembled)
+   expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.975e-15
+Setup time 1.310200e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=60   sum_wall R = -3.578526751213e-13 expect neg  PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=90.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=90.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = 0.000000  ->  theta = 90.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = 0.000000000000
+   sum F[.][0]    = 8.951426379969e-28   (assembled)
+   expected       = -4.382431331536e-29   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 2.143e+01
+Setup time 1.321400e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=90   sum_wall R = 8.951426379969e-28 expect zero PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=120.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=120.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = -0.500000  ->  theta = 120.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = -0.500000000000
+   sum F[.][0]    = 3.578526751213e-13   (assembled)
+   expected       = 3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 2.540e-15
+Setup time 1.380400e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=120  sum_wall R = 3.578526751213e-13 expect pos  PASS
+Running on 1 processes.
+
+
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+
+================================================================================
+ PHASE-FIELD SIMULATION PARAMETERS
+================================================================================
+
+ MESH & DISCRETIZATION
+   Nx = 20,  Ny = 12
+   Lx = 6.2500e-05 m,  Ly = 3.1250e-05 m
+   dx = 3.1250e-06 m,  dy = 2.6042e-06 m
+   p = 2 (quadratic),  C = 1
+
+ PHASE-FIELD INTERFACE
+   eps      =  3.0000e-06 m
+   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
+   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Lambda   =  0.0000e+00
+
+ ENVIRONMENT & INITIAL CONDITIONS
+   T0       =  -20.00 °C,  humidity = 1.0000
+   grad_T   =  (0.0000e+00, 0.0000e+00) °C/m
+
+ TIME STEPPING
+   dt0      =  1.0000e-04 s
+   t_final  =  0.0000e+00 s,  n_out = 5000
+   adaptive    ON  (NRmin = 5,  NRmax = 15,  factor = 1.3335)
+   dtmin    =  1.0000e-06 s,  dtmax = 2.0000e+02 s
+
+ TRANSPORT & THERMOPHYSICAL PROPERTIES
+   D_v      =  2.1780e-05 m²/s    (vapor diffusivity)
+   k_ice    =  2.2900e+00 W/m/K,  k_air  = 2.0000e-02 W/m/K
+   rho_ice  =  9.1900e+02 kg/m³,  rho_air = 1.3410e+00 kg/m³
+   cp_ice   =  1.9600e+03 J/kg/K, cp_air = 1.0440e+03 J/kg/K
+   lat_sub  =  2.8300e+06 J/kg    (latent heat of sublimation)
+
+ PHASE-CHANGE KINETICS
+   rho_ice/rho_vs   = 1.0829e+06   (density ratio at T0)
+   d0_sub0          = 1.0000e-07 m   (capillary length; M&F use 1e-7)
+   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = 9.9000e+05 s/m   [M&F range: 2e4–2e6]
+   beta_sub (SCALED = β₀·ρ_vs/ρ_ice = β_HK) = 9.1425e-01 s/m
+   lambda   =  1.6243e+08
+   tau_sub  =  1.3099e+02 s
+   dtmax/tau_sub = 1.5268   <-- SEE WARNING BELOW
+
+   *** WARNING: dtmax = 2.000e+02 s is 1.53 x tau_sub = 1.310e+02 s.
+       A step longer than the whole interface relaxation time cannot
+       and the solve can stall while the clock keeps advancing --
+       a run that LOOKS successful but whose solution stopped
+       changing. tau_sub scales as eps^2, so set -dtmax in the
+       GEOMETRY file (which owns eps), not in a shared experiment
+       file. Suggested: -dtmax 1.31e+01  (tau_sub/10)
+
+   tau_sub terms:  kinetic 8.9100e+01 s + thermal 2.9712e+01 + vapor 1.2177e+01   (-thin_iface_corr 1)
+   beta realised  =  1.4554e+06 s/m  =  1.4701 x -beta_sub0   <-- NOT the beta you requested
+   mob_sub  =  7.6342e-09 m/s   [M&F: 4.33e-7]
+   alph_sub =  1.2400e+06 1/s
+   xi_T     =  1.0000e+00   (thermal conduction + latent heat scale)
+   xi_v     =  1.0000e-03   (vapor diffusion + rho_ice source scale)
+
+ SOLVER
+   VI bounds:  OFF (unbounded Newton — pair with -snes_type newtonls)
+
+ BOUNDARY CONDITIONS
+   Per wall, per equation. "Neumann" is the NATURAL condition —
+   zero normal flux, imposed by omission rather than explicitly:
+   dphi/dn = 0 for the phase field (a 90° contact angle where ice
+   meets the wall), zero heat flux for T (insulating), and zero
+   vapor flux for rho_v (sealed — no mass enters or leaves there).
+
+   Wall               phi_i (ice)            T (temperature)          rho_v (vapor)
+   ------------------ ---------------------- ------------------------ ------------------------
+   x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   regolith  theta=180.0° Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      regolith  theta=180.0° Neumann  (insulating)    Neumann  (sealed)
+
+   phi_i is never pinned (no Dirichlet path exists for it). On a
+   face marked "regolith" above, its NATURAL condition is the wall
+   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
+   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
+   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   cos(theta) = -1.000000  ->  theta = 180.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
+
+================================================================================
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (3.1250e-05, 1.5625e-05) m,  RCice = 1.0000e-05 m
+
+ WALL SURFACE-MEASURE CHECK (-test_wall_measure)
+   |Gamma_wall|   = 1.250000000000e-04 m^1
+   cos(theta)     = -1.000000000000
+   sum F[.][0]    = 7.157053502426e-13   (assembled)
+   expected       = 7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
+   rel. error     = 1.411e-15
+Setup time 1.348700e-02 sec  =  0.00 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+  theta=180  sum_wall R = 7.157053502426e-13 expect pos  PASS
+
+=== G1: regression, no -wall_faces reproduces pre-feature solver ===
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/assembly.c -o obj/assembly.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/env_helper.c -o obj/env_helper.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/initial_conditions.c -o obj/initial_conditions.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/lunar_main.c -o obj/lunar_main.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/material_properties.c -o obj/material_properties.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/monitoring.c -o obj/monitoring.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -c src/snes_convergence.c -o obj/snes_convergence.o
+/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/bin/mpicc -Wl,-ld_classic -Wl,-bind_at_load -Wl,-commons,use_dylibs -Wl,-search_paths_first -Wl,-no_compact_unwind -Wl,-ld_classic -Wl,-bind_at_load -Wl,-commons,use_dylibs -Wl,-search_paths_first -Wl,-no_compact_unwind  -Wall -Wwrite-strings -Wno-unknown-pragmas -fstack-protector -fno-stack-check -Qunused-arguments -O3 -march=native -mtune=native -O3 -march=native -mtune=native -funroll-loops -fomit-frame-pointer -pipe -Wall -Wextra -Wno-unused-parameter -Wshadow -I/Users/jacksonbaglino/Petsc-3.20/include -I/Users/jacksonbaglino/Petsc-3.20/include/petsc/private -I/Users/jacksonbaglino/PetIGA-3.20/include -I./include -MMD -MP -o lunar_regolith_dsm obj/assembly.o obj/env_helper.o obj/initial_conditions.o obj/lunar_main.o obj/material_properties.o obj/monitoring.o obj/snes_convergence.o -Wl,-rpath,/Users/jacksonbaglino/PetIGA-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -L/Users/jacksonbaglino/PetIGA-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -lpetiga -L/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -Wl,-rpath,/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -L/Users/jacksonbaglino/Petsc-3.20/MAC_Si-M2_MPICH-4.3.0_PETSC-3.20_GCC-12.4.0_DEBUG/lib -Wl,-rpath,/opt/X11/lib -L/opt/X11/lib -L/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12/gcc/aarch64-apple-darwin23/12 -L/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12/gcc -L/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12 -Wl,-rpath,/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12/gcc/aarch64-apple-darwin23/12 -Wl,-rpath,/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12/gcc -Wl,-rpath,/opt/homebrew/Cellar/gcc@12/12.4.0/lib/gcc/12 -lpetsc -lsuperlu_dist -lflapack -lfblas -lparmetis -lmetis -lX11 -lmpifort -lmpi -lpmpi -lpthread -lm -lgfortran -lemutls_w -lheapt_w -ld_classic -lgfortran -lquadmath -lc++
+ld: warning: -commons use_dylibs is no longer supported, using error treatment instead
+ld: warning: -commons use_dylibs is no longer supported, using error treatment instead
+ld: warning: -bind_at_load is deprecated on macOS
+  SSA_evo.dat identical            PASS
+
+ALL GATES PASSED   (see /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/studies/contact_angle/verification/verify_wall_bc.csv)

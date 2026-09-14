@@ -188,6 +188,44 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     }
   }
 
+  /* ---- Stall detector -------------------------------------------------
+   * A run that cannot advance is otherwise INVISIBLE: TS keeps stepping, the
+   * clock reaches t_final, and the job reports "Solution completed" with a
+   * solution that stopped changing thousands of steps earlier. Both eps =
+   * 0.75 um runs of batch 2026-09-12 died this way; the only symptom was that
+   * 52 of 61 sol_*.dat files were byte-identical, which nobody checks by
+   * default.
+   *
+   * ||U|| not moving AT ALL -- bit-identical, not merely small -- for
+   * stall_limit consecutive steps is not a physical steady state in a
+   * relaxation problem; it means the solve is not updating the solution. Abort
+   * and say so rather than burn the rest of the wall clock.
+   *
+   * Disable with -stall_limit 0. */
+  if (user->stall_limit > 0) {
+    PetscReal unorm;
+    ierr = VecNorm(U, NORM_2, &unorm); CHKERRQ(ierr);
+    if (step > 0 && unorm == user->stall_norm) {
+      user->stall_count++;
+      if (user->stall_count >= user->stall_limit)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_NOT_CONVERGED,
+                "Solution has not changed for %" PetscInt_FMT " consecutive steps "
+                "(||U|| = %.17g, bit-identical) at step %" PetscInt_FMT ", t = %g s.\n"
+                "  The time stepper is advancing but the solve is not updating the "
+                "solution, so every remaining step is wasted and the run would have\n"
+                "  reported SUCCESS at t_final with a frozen field. Usual cause: the "
+                "phase field left [phase_lo, phase_hi], after which the residual's\n"
+                "  domain guard returns zero and SNES reads ||F|| = 0 as converged. "
+                "Check phi_min/phi_max, and -dtmax against tau_sub.\n"
+                "  Disable this check with -stall_limit 0 if a frozen solution is "
+                "genuinely expected.",
+                user->stall_count, (double)unorm, step, (double)t);
+    } else {
+      user->stall_count = 0;
+    }
+    user->stall_norm = unorm;
+  }
+
   //-------------
   PetscReal dt;
   TSGetTimeStep(ts,&dt);

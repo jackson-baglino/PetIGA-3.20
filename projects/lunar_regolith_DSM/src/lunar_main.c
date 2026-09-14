@@ -105,6 +105,23 @@ int main(int argc, char *argv[]) {
     PetscReal Sigma_i = 0.109; /* ice surface energy [J/m²] */
     PetscReal Sigma_a = 0.132; /* air surface energy [J/m²] */
 
+    /* Prescribed contact angle at the regolith wall. The substrate is the
+     * domain boundary in this two-phase model, so its wetting behaviour is set
+     * by the three surface energies through Young's equation,
+     *     cos(theta) = (gamma_as - gamma_is)/gamma_ia.
+     * gamma_is = gamma_as (the default) gives cos(theta) = 0, i.e. theta = 90
+     * deg, which is exactly the natural Neumann wall the solver has always had
+     * -- so leaving these alone changes nothing. gamma_ia defaults to Sigma_i
+     * below, once -Sigma_i has been read. */
+    PetscReal gamma_ia = -1.0;   /* < 0 => "unset", take Sigma_i */
+    PetscReal gamma_is = 0.0;
+    PetscReal gamma_as = 0.0;
+    PetscReal contact_angle_deg = 0.0;
+    PetscBool contact_angle_set = PETSC_FALSE;
+    char      wall_faces[64] = "";
+    PetscBool test_wall_measure = PETSC_FALSE;
+    PetscBool test_wall_jacobian = PETSC_FALSE;
+
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 2;          /* Polynomial order */
     PetscInt  C   = 1;          /* Global continuity order */
@@ -151,6 +168,13 @@ int main(int argc, char *argv[]) {
      * zero flux through the boundary for both T and rho_v. Override only if
      * you actually want fixed-value Dirichlet conditions. */
     user.periodic    = 0;       /* Periodic boundary condition flag */
+
+    /* Stall detector: 500 consecutive bit-identical ||U|| values. Generous
+     * enough that no genuine transient trips it, small enough that a frozen run
+     * dies in minutes instead of burning its whole wall-clock allocation. */
+    user.stall_norm  = -1.0;
+    user.stall_count = 0;
+    user.stall_limit = 500;
     flag_BC_Tfix     = PETSC_FALSE; /* insulating T (zero heat flux) — natural Neumann */
     flag_BC_rhovfix  = PETSC_FALSE; /* insulating rho_v (zero vapor flux) — natural Neumann */
 
@@ -581,7 +605,7 @@ int main(int argc, char *argv[]) {
 
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
-    user.thin_iface_corr = PETSC_FALSE;
+    user.thin_iface_corr = PETSC_TRUE;   /* ON by default since 2026-09-13 */
     ierr = PetscOptionsBool("-thin_iface_corr",
              "Include the Karma thin-interface counter-terms in tau_sub. Default 0: "
              "for a one-sided vapour diffusivity the O(eps) kinetic contribution they "
@@ -639,6 +663,16 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscOptionsReal("-Sigma_i", "Ice-side surface energy in the double-well free energy [J/m^2]", "", Sigma_i, &Sigma_i, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-Sigma_a", "Air-side surface energy in the double-well free energy [J/m^2]", "", Sigma_a, &Sigma_a, NULL); CHKERRQ(ierr);
+
+    /* --- Prescribed contact angle at the regolith wall ------------------- */
+    ierr = PetscOptionsReal("-gamma_ia", "Ice-air surface energy for Young's equation [J/m^2] (default: -Sigma_i)", "", gamma_ia, &gamma_ia, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-gamma_is", "Ice-regolith surface energy [J/m^2]", "", gamma_is, &gamma_is, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-gamma_as", "Air-regolith surface energy [J/m^2]", "", gamma_as, &gamma_as, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-contact_angle_deg", "DEBUG: set theta directly, bypassing Young's equation", "", contact_angle_deg, &contact_angle_deg, &contact_angle_set); CHKERRQ(ierr);
+    ierr = PetscOptionsString("-wall_faces", "Domain faces that are regolith, e.g. \"y0,y1\" (default: none)", "", wall_faces, wall_faces, sizeof(wall_faces), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsInt("-stall_limit", "Abort if ||U|| is bit-identical for this many consecutive steps (0 disables)", "", user.stall_limit, &user.stall_limit, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-test_wall_measure", "DEBUG: assemble the wall term on a uniform phi=1/2 field, check its surface measure, and exit", "", test_wall_measure, &test_wall_measure, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsBool("-test_wall_jacobian", "DEBUG: check the analytic Jacobian against finite differences on the initial condition, and exit", "", test_wall_jacobian, &test_wall_jacobian, NULL); CHKERRQ(ierr);
 
     /* --- Output control -------------------------------------------------- */
     ierr = PetscOptionsInt("-outp", "Output control flag", "", user.outp, &user.outp, NULL); CHKERRQ(ierr);
@@ -788,6 +822,75 @@ int main(int argc, char *argv[]) {
     user.Etai = Sigma_i; /* Ice surface energy in the double-well free energy */
     user.Etaa = Sigma_a; /* Air surface energy in the double-well free energy */
 
+    /* ---- Prescribed contact angle: resolve gamma's -> cos(theta) ---------
+     * gamma_ia defaults to Sigma_i because that is the ice-vapor surface
+     * energy this solver already implies: monitoring.c forms the capillary
+     * length as d0 = Etai*V_m/(R*T), and inverting it at the physical
+     * d0_sub0 = 1.0166e-9 m and -20 C returns 0.109 J/m^2 = Sigma_i exactly.
+     * (Sigma_a = 0.132 in this project is a separate matter -- enceladus_DSM
+     * sets both to 0.109 with the comment "same interface, air side: must
+     * equal Sigma_i". Sigma_a plays no part in the wall term.) */
+    if (gamma_ia <= 0.0) gamma_ia = Sigma_i;
+    user.gamma_ia = gamma_ia;
+    user.gamma_is = gamma_is;
+    user.gamma_as = gamma_as;
+    user.costhet_direct = contact_angle_set;
+
+    if (contact_angle_set) {
+        /* Debug override: theta straight from the CLI, Young bypassed. */
+        if (contact_angle_deg < 0.0 || contact_angle_deg > 180.0)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "-contact_angle_deg %g is outside [0, 180]",
+                    (double)contact_angle_deg);
+        user.costhet = PetscCosReal(contact_angle_deg * PETSC_PI / 180.0);
+    } else {
+        const PetscReal dgam = gamma_as - gamma_is;
+        if (PetscAbsReal(dgam) > gamma_ia)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                    "Young's equation has no solution: |gamma_as - gamma_is| = "
+                    "|%g - %g| = %g exceeds gamma_ia = %g. A contact angle "
+                    "exists only for |gamma_as - gamma_is| <= gamma_ia; outside "
+                    "that range one phase wets the regolith completely.",
+                    (double)gamma_as, (double)gamma_is,
+                    (double)PetscAbsReal(dgam), (double)gamma_ia);
+        user.costhet = dgam / gamma_ia;
+    }
+
+    /* ---- Which faces are regolith ---------------------------------------
+     * -wall_faces "y0,y1": axis letter x/y/z followed by side 0 (low
+     * coordinate) or 1 (high). Faces left out keep the natural Neumann
+     * dphi/dn = 0 they have always had, so omitting the flag is a no-op. */
+    ierr = PetscMemzero(user.wall_face, sizeof(user.wall_face)); CHKERRQ(ierr);
+    user.wall_any = PETSC_FALSE;
+    if (wall_faces[0] != '\0') {
+        for (const char *c = wall_faces; *c != '\0'; c++) {
+            PetscInt axis, side;
+            if (*c == ',' || *c == ' ') continue;
+            if      (*c == 'x' || *c == 'X') axis = 0;
+            else if (*c == 'y' || *c == 'Y') axis = 1;
+            else if (*c == 'z' || *c == 'Z') axis = 2;
+            else SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                         "-wall_faces \"%s\": expected an axis letter x/y/z, got '%c'. "
+                         "Use a comma-separated list like \"y0,y1\".", wall_faces, *c);
+            c++;
+            if      (*c == '0') side = 0;
+            else if (*c == '1') side = 1;
+            else SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                         "-wall_faces \"%s\": axis letter must be followed by side "
+                         "0 (low) or 1 (high).", wall_faces);
+            if (axis >= dim)
+                SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
+                        "-wall_faces \"%s\" names axis %d but -dim is %d.",
+                        wall_faces, (int)axis, (int)dim);
+            user.wall_face[axis][side] = PETSC_TRUE;
+            user.wall_any = PETSC_TRUE;
+        }
+    }
+    if (user.wall_any && user.periodic == 1)
+        SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_INCOMP,
+                "-wall_faces is set but -periodic 1: a periodic domain has no "
+                "walls to apply a contact angle to. Use -periodic 0.");
+
     /* Allow CLI override of the physical attachment-kinetics coefficient
      * beta_sub0 via -beta_sub0 <value> (default 1.4e5, set above). Unlike
      * overriding -alph_sub directly (which only rescales the phase-change
@@ -836,7 +939,36 @@ int main(int argc, char *argv[]) {
     d0_sub = user.d0_sub0 / rho_rhovs;
     beta_sub = user.beta_sub0 / rho_rhovs;
     lambda_sub = a1 * user.eps / d0_sub;
-    /* Thin-interface counter-terms, OFF by default (-thin_iface_corr).
+    /* Thin-interface counter-terms, ON by default (-thin_iface_corr).
+     *
+     *   tau_sub = eps^2*beta/d0  +  a1*a2*(eps^3/d0)*(1/D_therm + 1/D_v)
+     *
+     * DEFAULT CHANGED 2026-09-13, OFF -> ON. The argument for OFF (below, and
+     * docs/gt_deficit/) bounds only the counter-terms PROPORTIONAL TO v_n, and
+     * shows those vanish here because the one-sided D_v*phi_a makes the inner
+     * deviation of sigma identically null. It does not bound the spurious
+     * SURFACE DIFFUSION that a one-sided model produces without an
+     * anti-trapping current -- gt_deficit.tex says so explicitly, and notes
+     * that operator "is not observable in this measurement". This model has no
+     * anti-trapping current, so that term is live and uncontrolled, and the
+     * beta-agreement evidence that motivated OFF simply cannot see it.
+     *
+     * Cost of being wrong in this direction is bounded and known: beta is
+     * realised 1.03-1.12x larger than requested over the eps range in use
+     * (correction/tau = 2.9% at eps = 0.75 um, 5.9% at 1.50, 11.7% at 3.00 --
+     * it scales as eps). Cost of being wrong the other way is an uncontrolled
+     * spurious operator on every interface.
+     *
+     * CAVEAT, unresolved: the thermal counter-term is the HISTORICAL form.
+     * a2*eps/diff_sub treats latent heat as driving sigma at unit strength,
+     * whereas temperature reaches sigma only through rho_vs(T) and so carries a
+     * Clausius-Clapeyron factor; gt_deficit.tex 198-200 gives the correct
+     * coefficient as (d rho_vs/dT)*L_sub/k, smaller by 11x to 1300x. So
+     * tau_therm here is over-weighted. At eps = 0.75 um that is 45.7 s of a
+     * 2261 s tau_sub, and correcting it would move tau_sub by ~1.8%; the vapor
+     * term (18.7 s) is unaffected. Worth fixing on its own terms.
+     *
+     * Historical note on the OFF rationale:
      *
      * These inflate tau_sub by the spurious O(eps) kinetic contribution that the
      * sharp-interface asymptotics are expected to subtract back off, so that the
@@ -1009,6 +1141,19 @@ int main(int argc, char *argv[]) {
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
     ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
+
+    /* Regolith faces get a boundary form so PetIGA visits their quadrature
+     * points: the prescribed-contact-angle wall term is assembled there (see
+     * the pnt->atboundary branches in assembly.c). Faces not listed are never
+     * visited and keep the natural Neumann dphi/dn = 0. Enabling the form with
+     * cos(theta) = 0 is still an exact no-op -- the branch returns immediately
+     * -- so a theta = 90 deg run reproduces the old behaviour bit for bit. */
+    for (PetscInt l = 0; l < dim; l++) {
+        for (PetscInt m = 0; m < 2; m++) {
+            if (!user.wall_face[l][m]) continue;
+            ierr = IGASetBoundaryForm(iga, l, m, PETSC_TRUE); CHKERRQ(ierr);
+        }
+    }
     // ierr = IGASetFormIJacobian(iga, IGAFormIJacobianFD, &user); CHKERRQ(ierr);
 
     /* Boundary conditions (could 'functionalize' this at some point) */
@@ -1310,6 +1455,40 @@ int main(int argc, char *argv[]) {
     if (!user.flag_Tdep) {
         PetscPrintf(PETSC_COMM_WORLD, "   lambda   =  %.4e\n", lambda_sub);
         PetscPrintf(PETSC_COMM_WORLD, "   tau_sub  =  %.4e s\n", tau_sub);
+        /* dtmax must scale with tau_sub, which goes as eps^2. A dtmax that is
+         * safe at one resolution is not safe at a finer one, and the failure is
+         * silent: batch 2026-09-12's eps = 0.75 um run inherited a dtmax sized
+         * for eps = 1.50 um from a SHARED experiment file, reached
+         * dtmax/tau_sub = 0.91 -- one step spanning the whole interface
+         * relaxation time -- drove the phase field out of [phase_lo, phase_hi]
+         * at step 383, and then froze. The clock ran on to t_final at dtmax and
+         * the run reported success; only counting distinct sol_*.dat
+         * fingerprints revealed it. Warn loudly instead.
+         *
+         * Threshold from measurement, not from that batch: dtmax_study.sh swept
+         * dtmax/tau_sub from 0.051 to 0.815 and theta_inf moved 0.0028 deg,
+         * with phi never leaving [0,1] and the CFL limiter never firing. The
+         * 0.91 stall that originally motivated a tight threshold was the
+         * wall-term sign flip, not dt; it is fixed by the clamp. So warn only
+         * above 1.0, where a single step would exceed the entire interface
+         * relaxation time. */
+        if (dtmax > 0.0 && tau_sub > 0.0) {
+            const PetscReal ratio = dtmax / tau_sub;
+            PetscPrintf(PETSC_COMM_WORLD,
+                "   dtmax/tau_sub = %.4f%s\n", (double)ratio,
+                (ratio > 1.0) ? "   <-- SEE WARNING BELOW" : "   (ok, <= 1.0)");
+            if (ratio > 1.0)
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "\n   *** WARNING: dtmax = %.3e s is %.2f x tau_sub = %.3e s.\n"
+                    "       A step longer than the whole interface relaxation time cannot\n"
+                    "       and the solve can stall while the clock keeps advancing --\n"
+                    "       a run that LOOKS successful but whose solution stopped\n"
+                    "       changing. tau_sub scales as eps^2, so set -dtmax in the\n"
+                    "       GEOMETRY file (which owns eps), not in a shared experiment\n"
+                    "       file. Suggested: -dtmax %.2e  (tau_sub/10)\n\n",
+                    (double)dtmax, (double)ratio, (double)tau_sub,
+                    (double)(tau_sub / 10.0));
+        }
         {   /* Realised vs requested kinetics. beta_bare = tau_sub*d0_sub0/eps^2
              * is the coefficient the sharp-interface limit actually delivers; it
              * equals -beta_sub0 only when the thin-interface counter-terms are
@@ -1398,7 +1577,13 @@ int main(int argc, char *argv[]) {
                      * there is the exact axis condition, not a modelling
                      * choice about a boundary. */
                     if (user.axisym && l == 1 && m == 0) name = "r = 0   (axis)";
-                    PetscSNPrintf(cell[0], sizeof(cell[0]), "Neumann  dphi/dn=0");
+                    if (user.wall_face[l][m] && user.costhet != 0.0)
+                        PetscSNPrintf(cell[0], sizeof(cell[0]),
+                                      "regolith  theta=%.1f°",
+                                      (double)(PetscAcosReal(user.costhet)
+                                               * 180.0 / PETSC_PI));
+                    else
+                        PetscSNPrintf(cell[0], sizeof(cell[0]), "Neumann  dphi/dn=0");
                     for (PetscInt d = 1; d < 3; d++) {
                         if (bc_dirichlet[l][m][d])
                             PetscSNPrintf(cell[d], sizeof(cell[d]), vfmt[d],
@@ -1414,9 +1599,38 @@ int main(int argc, char *argv[]) {
             /* phi_i has no Dirichlet path anywhere in the code, so the column
              * above is constant by construction; call that out rather than
              * leaving the reader to wonder whether a flag could change it. */
-            PetscPrintf(PETSC_COMM_WORLD,
-                "\n   phi_i is natural Neumann on every wall in all configurations —\n"
-                "   the solver never pins the phase field on a boundary.\n");
+            /* phi_i still has no Dirichlet path anywhere in the code. What it
+             * DOES have, since -wall_faces, is a natural condition that is no
+             * longer always zero: a regolith face carries the wall free-energy
+             * term and enforces dphi/dn = cos(theta)*phi(1-phi)/eps. */
+            if (user.wall_any && user.costhet != 0.0) {
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "\n   phi_i is never pinned (no Dirichlet path exists for it). On a\n"
+                    "   face marked \"regolith\" above, its NATURAL condition is the wall\n"
+                    "   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than\n"
+                    "   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).\n");
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "   gamma_ia = %.4e   gamma_is = %.4e   gamma_as = %.4e  J/m²\n",
+                    (double)user.gamma_ia, (double)user.gamma_is,
+                    (double)user.gamma_as);
+                if (user.costhet_direct)
+                    PetscPrintf(PETSC_COMM_WORLD,
+                        "   cos(theta) = %.6f  ->  theta = %.2f°   "
+                        "[-contact_angle_deg: Young's equation BYPASSED, debug only]\n",
+                        (double)user.costhet,
+                        (double)(PetscAcosReal(user.costhet) * 180.0 / PETSC_PI));
+                else
+                    PetscPrintf(PETSC_COMM_WORLD,
+                        "   cos(theta) = (gamma_as - gamma_is)/gamma_ia = %.6f"
+                        "  ->  theta = %.2f°\n",
+                        (double)user.costhet,
+                        (double)(PetscAcosReal(user.costhet) * 180.0 / PETSC_PI));
+            } else {
+                PetscPrintf(PETSC_COMM_WORLD,
+                    "\n   phi_i is natural Neumann on every wall — dphi/dn = 0, i.e. a 90°\n"
+                    "   contact angle. Set -wall_faces (with -gamma_is/-gamma_as) to\n"
+                    "   prescribe a different angle where ice meets regolith.\n");
+            }
             if (flag_BC_Tfix && !bc_dirichlet[0][0][1] && !bc_dirichlet[1][0][1])
                 PetscPrintf(PETSC_COMM_WORLD,
                     "   NOTE: -flag_BC_Tfix is set but no wall was pinned.\n");
@@ -1474,11 +1688,200 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* ---- -test_wall_jacobian: analytic Jacobian vs finite differences ------
+     * -snes_test_jacobian would do this, but only from inside a TS step, where
+     * TSALPHA's restart solve re-enters the test repeatedly and a debug PETSc
+     * build takes minutes on even a tiny mesh. This checks the same thing
+     * directly and in seconds: for random directions v,
+     *     J*v  ==  [F(U + h v) - F(U - h v)] / (2h)
+     * to second order in h. Run it with and without -wall_faces to isolate the
+     * boundary block -- the interior blocks are identical between the two, so
+     * any discrepancy that appears only with -wall_faces is the wall term's.
+     *
+     * shift = 0 and V = 0, so this tests dR/dU alone. The wall term has no
+     * phi_t dependence, which is exactly the part of J it contributes to. */
+    if (test_wall_jacobian) {
+        Mat Jfull, Jint;
+        Vec Vz, Fp, Fm, Gp, Gm, v, Jv, Up;
+        PetscReal h = 1.0e-7, worst_full = 0.0, worst_bnd = 0.0, scale_bnd = 0.0;
+        PetscRandom rnd;
+        const PetscReal cos_save = user.costhet;
+
+        ierr = IGACreateMat(iga, &Jfull); CHKERRQ(ierr);
+        ierr = IGACreateMat(iga, &Jint);  CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Vz); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fp); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fm); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Gp); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Gm); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &v);  CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Jv); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Up); CHKERRQ(ierr);
+        ierr = VecZeroEntries(Vz); CHKERRQ(ierr);
+
+        /* J with the wall term, and J with it switched off. Setting costhet = 0
+         * makes WallPointActive() return false, so Jint is the interior form
+         * alone -- every other coefficient is untouched. Their difference is
+         * exactly the wall block. */
+        ierr = IGAComputeIJacobian(iga, 0.0, Vz, 0.0, U, Jfull); CHKERRQ(ierr);
+        user.costhet = 0.0;
+        ierr = IGAComputeIJacobian(iga, 0.0, Vz, 0.0, U, Jint); CHKERRQ(ierr);
+        user.costhet = cos_save;
+
+        ierr = PetscRandomCreate(PETSC_COMM_WORLD, &rnd); CHKERRQ(ierr);
+        ierr = PetscRandomSetType(rnd, PETSCRAND48); CHKERRQ(ierr);
+        ierr = PetscRandomSetInterval(rnd, -1.0, 1.0); CHKERRQ(ierr);
+
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\n WALL JACOBIAN CHECK (-test_wall_jacobian)   h = %.1e,  "
+            "cos(theta) = %.6f\n"
+            "   The full-system column is dominated by the interior form, so it\n"
+            "   is insensitive to the wall block; the isolated column differences\n"
+            "   both J and F between costhet on and off and is the real gate.\n\n"
+            "   dir   full system      wall block       ||Jbnd*v||\n",
+            (double)h, (double)user.costhet);
+
+        for (PetscInt k = 0; k < 5; k++) {
+            PetscReal nd_f, nj_f, nd_b, nj_b;
+
+            ierr = PetscRandomSetSeed(rnd, (unsigned long)(12345 + k)); CHKERRQ(ierr);
+            ierr = PetscRandomSeed(rnd); CHKERRQ(ierr);
+            ierr = VecSetRandom(v, rnd); CHKERRQ(ierr);
+
+            /* F(U +- h v) with the wall on (F) and off (G). */
+            ierr = VecWAXPY(Up,  h, v, U); CHKERRQ(ierr);
+            ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Fp); CHKERRQ(ierr);
+            user.costhet = 0.0;
+            ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Gp); CHKERRQ(ierr);
+            user.costhet = cos_save;
+
+            ierr = VecWAXPY(Up, -h, v, U); CHKERRQ(ierr);
+            ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Fm); CHKERRQ(ierr);
+            user.costhet = 0.0;
+            ierr = IGAComputeIFunction(iga, 0.0, Vz, 0.0, Up, Gm); CHKERRQ(ierr);
+            user.costhet = cos_save;
+
+            /* --- full system --- */
+            ierr = VecCopy(Fp, Up); CHKERRQ(ierr);
+            ierr = VecAXPY(Up, -1.0, Fm); CHKERRQ(ierr);
+            ierr = VecScale(Up, 1.0 / (2.0 * h)); CHKERRQ(ierr);
+            ierr = MatMult(Jfull, v, Jv); CHKERRQ(ierr);
+            ierr = VecNorm(Jv, NORM_2, &nj_f); CHKERRQ(ierr);
+            ierr = VecAXPY(Up, -1.0, Jv); CHKERRQ(ierr);
+            ierr = VecNorm(Up, NORM_2, &nd_f); CHKERRQ(ierr);
+
+            /* --- wall block alone: (F - G) differenced, vs (Jfull - Jint)*v --- */
+            ierr = VecAXPY(Fp, -1.0, Gp); CHKERRQ(ierr);   /* wall part at +h */
+            ierr = VecAXPY(Fm, -1.0, Gm); CHKERRQ(ierr);   /* wall part at -h */
+            ierr = VecAXPY(Fp, -1.0, Fm); CHKERRQ(ierr);
+            ierr = VecScale(Fp, 1.0 / (2.0 * h)); CHKERRQ(ierr);
+            ierr = MatMult(Jfull, v, Jv); CHKERRQ(ierr);
+            ierr = MatMult(Jint,  v, Gp); CHKERRQ(ierr);
+            ierr = VecAXPY(Jv, -1.0, Gp); CHKERRQ(ierr);   /* Jbnd * v */
+            ierr = VecNorm(Jv, NORM_2, &nj_b); CHKERRQ(ierr);
+            ierr = VecAXPY(Fp, -1.0, Jv); CHKERRQ(ierr);
+            ierr = VecNorm(Fp, NORM_2, &nd_b); CHKERRQ(ierr);
+
+            if (nj_f > 0.0 && nd_f / nj_f > worst_full) worst_full = nd_f / nj_f;
+            if (nj_b > 0.0 && nd_b / nj_b > worst_bnd)  worst_bnd  = nd_b / nj_b;
+            if (nj_b > scale_bnd) scale_bnd = nj_b;
+
+            PetscPrintf(PETSC_COMM_WORLD, "   %3d   %.6e    %.6e    %.6e\n",
+                        (int)k,
+                        (double)(nj_f > 0.0 ? nd_f / nj_f : nd_f),
+                        (double)(nj_b > 0.0 ? nd_b / nj_b : nd_b),
+                        (double)nj_b);
+        }
+        PetscPrintf(PETSC_COMM_WORLD,
+            "   worst %.6e    %.6e\n"
+            "   (||Jbnd*v|| = 0 would mean the wall block is never exercised --\n"
+            "    the interface must actually cross a face named by -wall_faces.)\n",
+            (double)worst_full, (double)worst_bnd);
+
+        ierr = PetscRandomDestroy(&rnd); CHKERRQ(ierr);
+        ierr = MatDestroy(&Jfull); CHKERRQ(ierr);
+        ierr = MatDestroy(&Jint);  CHKERRQ(ierr);
+        ierr = VecDestroy(&Vz); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fp); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fm); CHKERRQ(ierr);
+        ierr = VecDestroy(&Gp); CHKERRQ(ierr);
+        ierr = VecDestroy(&Gm); CHKERRQ(ierr);
+        ierr = VecDestroy(&v);  CHKERRQ(ierr);
+        ierr = VecDestroy(&Jv); CHKERRQ(ierr);
+        ierr = VecDestroy(&Up); CHKERRQ(ierr);
+        goto cleanup;
+    }
+
+    /* ---- -test_wall_measure: verify the boundary surface measure ----------
+     * The one part of the wall term that cannot be checked by reading the code
+     * is whether PetIGA integrates the boundary form with the right dS. On a
+     * plain Cartesian patch (no -geom_file) petigaelem.c takes the detS = 1.0
+     * branch rather than computing a geometric surface Jacobian, so the face
+     * measure comes entirely from the surviving axes' quadrature weights.
+     *
+     * Set phi = 1/2 uniformly, T = temp0, rho_v = rho_vs(temp0), and phi_t = 0.
+     * Every interior contribution to R[.][0] then vanishes IDENTICALLY:
+     *   phi_t = 0; grad phi = 0; f1(1/2) = 0; and rho_v - rho_vs = 0 kills the
+     *   sublimation source. Whatever is left in the assembled vector is the
+     *   boundary term alone. With cos(theta) = 1 it integrates to
+     *       sum_a F[a][0] = -3*M*(1/4)*|Gamma_wall| = -0.75*M*|Gamma_wall|
+     * because the shape functions are a partition of unity. */
+    if (test_wall_measure) {
+        Vec Uw, Vw, Fw;
+        PetscReal rho_vs_w, area = 0.0, got, want;
+        const PetscReal LL[3] = {user.Lx, user.Ly, user.Lz};
+
+        if (!user.wall_any)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONGSTATE,
+                    "-test_wall_measure needs -wall_faces (and a non-zero "
+                    "contact angle) or there is no boundary term to measure.");
+
+        RhoVS_I(&user, user.temp0, &rho_vs_w, NULL);
+
+        ierr = IGACreateVec(iga, &Uw); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Vw); CHKERRQ(ierr);
+        ierr = IGACreateVec(iga, &Fw); CHKERRQ(ierr);
+        ierr = VecZeroEntries(Vw); CHKERRQ(ierr);
+        ierr = VecStrideSet(Uw, 0, 0.5); CHKERRQ(ierr);
+        ierr = VecStrideSet(Uw, 1, user.temp0); CHKERRQ(ierr);
+        ierr = VecStrideSet(Uw, 2, rho_vs_w); CHKERRQ(ierr);
+
+        ierr = IGAComputeIFunction(iga, 0.0, Vw, 0.0, Uw, Fw); CHKERRQ(ierr);
+        ierr = VecStrideSum(Fw, 0, &got); CHKERRQ(ierr);
+
+        /* |Gamma_wall|: each flagged face contributes the measure of the
+         * domain face perpendicular to its axis. */
+        for (PetscInt l = 0; l < dim; l++) {
+            PetscReal face = 1.0;
+            for (PetscInt k = 0; k < dim; k++) if (k != l) face *= LL[k];
+            for (PetscInt m = 0; m < 2; m++) if (user.wall_face[l][m]) area += face;
+        }
+        want = -3.0 * user.mob_sub * 0.25 * user.costhet * area;
+
+        PetscPrintf(PETSC_COMM_WORLD,
+            "\n WALL SURFACE-MEASURE CHECK (-test_wall_measure)\n"
+            "   |Gamma_wall|   = %.12e m^%d\n"
+            "   cos(theta)     = %.12f\n"
+            "   sum F[.][0]    = %.12e   (assembled)\n"
+            "   expected       = %.12e   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)\n"
+            "   rel. error     = %.3e\n",
+            (double)area, (int)(dim - 1), (double)user.costhet,
+            (double)got, (double)want,
+            (double)(want != 0.0 ? PetscAbsReal((got - want) / want)
+                                 : PetscAbsReal(got)));
+
+        ierr = VecDestroy(&Uw); CHKERRQ(ierr);
+        ierr = VecDestroy(&Vw); CHKERRQ(ierr);
+        ierr = VecDestroy(&Fw); CHKERRQ(ierr);
+        goto cleanup;
+    }
+
     /* Solve the system */
     ierr = TSSolve(ts, U); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD, "Solution completed. \n");
 
+cleanup:
     /* Cleanup Resources */
     if (user.ssa_view) { ierr = PetscViewerDestroy(&user.ssa_view); CHKERRQ(ierr); }
     ierr = VecDestroy(&U); CHKERRQ(ierr);
