@@ -1,0 +1,33 @@
+# Wedge-scale contact-angle campaign, for scripts/HPC/submit_batch.sh --tests-file
+#
+# Flat channel, Ly = 125 um = the wedge's channel width at its MIDPOINT, so the
+# meniscus curvature sits in the middle of the range the wedge spans. eps =
+# 8.5840e-07 is the wedge's own eps. Walls are flat and parallel: sloped walls
+# drive migration along the taper, and here theta is meant to be the only driver.
+
+# --- A. sealed channel: equilibrium ANGLE at wedge scale, 90 days ------------
+channel_2D_H125um_eps0.86um:relax90_T-20_theta30
+channel_2D_H125um_eps0.86um:relax90_T-20_theta60
+channel_2D_H125um_eps0.86um:relax90_T-20_theta90
+channel_2D_H125um_eps0.86um:relax90_T-20_theta120
+channel_2D_H125um_eps0.86um:relax90_T-20_theta150
+
+# --- B. reservoir channel: GROWTH vs SHRINKAGE, 90 days ---------------------
+# Saturated reservoir on the x-faces, both ends equal, so the meniscus curvature
+# set by theta is the only driver. Expect concave (theta<90) to grow, convex
+# (theta>90) to shrink, theta=90 steady. A SEALED box cannot show this: vapour
+# holds ~1e-6 of the water there.
+channel_2D_H125um_eps0.86um:grow90_T-20_theta30
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60
+channel_2D_H125um_eps0.86um:grow90_T-20_theta90
+channel_2D_H125um_eps0.86um:grow90_T-20_theta120
+channel_2D_H125um_eps0.86um:grow90_T-20_theta150
+
+# --- C. droplet: one contact line, no confinement, 174 days -----------------
+# Box is the SAME 375 x 125 um as the channel. The previous droplet runs used
+# 300 x 300 um and never converged (tau = 76-101 d against a 65 d run).
+droplet_2D_H125um_eps0.86um:droplet_T-20_theta30
+droplet_2D_H125um_eps0.86um:droplet_T-20_theta60
+droplet_2D_H125um_eps0.86um:droplet_T-20_theta90
+droplet_2D_H125um_eps0.86um:droplet_T-20_theta120
+droplet_2D_H125um_eps0.86um:droplet_T-20_theta150

@@ -1,0 +1,48 @@
+# =============================================================================
+# geometry/contactangle/droplet_2D_H125um_eps0.86um.opts
+#
+# Single ice droplet on the floor -- one contact line, no confinement. The
+# companion to the channel: if the two agree on theta, the angle is set by the
+# boundary condition and not by the confinement.
+#
+# SAME BOX as the channel (375 x 125 um), deliberately. The previous droplet
+# case used 300 x 300 um for R_d = 75 um, which was far larger than it needed
+# to be: relaxation here is vapour-diffusion limited over the DOMAIN, so the
+# oversized box gave tau = 76-101 days and the runs never converged. This box
+# holds every angle with room to spare and ~2x less vapour to equilibrate.
+#
+# R_d = 50 um. Area-conserving cap geometry across the sweep:
+#     theta = 30  -> contact width 208 um, height 28 um
+#     theta = 90  -> contact width 100 um, height 50 um
+#     theta = 150 -> contact width  36 um, height 67 um
+# so nothing touches the ceiling (125 um) or the x ends (375 um).
+#
+# eps as for the channel, so the two are directly comparable.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nx 618
+-Ny 206
+-Nz 1
+-Lx 3.75e-4
+-Ly 1.25e-4
+-Lz 0
+
+# Centre ON the floor: the disc is halved by the y=0 wall, giving a 90-degree
+# droplet at t=0 that relaxes toward the prescribed angle.
+-ice_grain_cx 1.875e-4
+-ice_grain_cy 0.0
+-ice_grain_R  5.0e-5
+
+-eps 8.5840e-07
+-eps_valid_temp -20.0
+-delt_t 1.0e-4
+-periodic 0
+-wall_faces y0
+
+# Timestep ceiling. Lives here with eps (tau_sub goes as eps^2, so a shared
+# experiment file cannot express it). tau_sub = 2.9743e+03 s with the
+# thin-interface correction; dtmax = tau_sub/2 per the measured study in
+# studies/contact_angle/verification/dtmax_study.{sh,csv}, which found theta_inf
+# insensitive to dtmax over a 16x range.
+-dtmax 1.487e3

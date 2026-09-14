@@ -1,0 +1,39 @@
+# =============================================================================
+# experiment/contactangle/droplet_T-20_theta90.opts
+#
+# Isothermal relaxation of a droplet on a flat floor, sealed.
+#
+#   cos(theta) = (gamma_as - gamma_is)/gamma_ia
+#              = (0.300000 - 0.300000)/0.109000 = +0.000000  ->  theta = 90.000 deg
+#
+# Meniscus curvature this implies in the H = 125 um channel, chi = 2|cos th|/H:
+#   R_arc = inf m, |chi| = 9.797e-13 1/m -- flat, chi = 0 -> no net exchange
+#
+# SEALED box, single droplet on the floor. Measures the equilibrium angle with
+# ONE contact line and no confinement -- the control on whether the channel's
+# two walls are influencing the answer.
+#
+# t_final = 174 days. The previous droplet runs used 65 days against tau = 76-101
+# days and never converged; this box is ~2x smaller in vapour volume with a
+# smaller drop, so tau should fall well below that, but the run is sized long
+# rather than risk a third non-result. contact_angle.py reports theta_inf from a
+# free exponential fit, so an over-long run costs time, not correctness.
+# =============================================================================
+-t_final 1.5e7
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                 # isothermal: theta is the only driver
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+# --- the substrate, as surface energies ---
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.3000000
+
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0
+-n_out 60

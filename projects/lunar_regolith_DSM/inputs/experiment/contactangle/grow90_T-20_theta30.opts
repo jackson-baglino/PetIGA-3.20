@@ -1,0 +1,54 @@
+# =============================================================================
+# experiment/contactangle/grow90_T-20_theta30.opts
+#
+# Isothermal growth/shrinkage against a saturated vapour reservoir.
+#
+#   cos(theta) = (gamma_as - gamma_is)/gamma_ia
+#              = (0.300000 - 0.205603)/0.109000 = +0.866025  ->  theta = 30.000 deg
+#
+# Meniscus curvature this implies in the H = 125 um channel, chi = 2|cos th|/H:
+#   R_arc = 7.217e-05 m, |chi| = 1.386e+04 1/m -- concave, chi < 0 -> ice grows against a reservoir
+#
+# VAPOUR RESERVOIR on the x-faces at saturation, both ends equal. This is the
+# wedge campaign's boundary condition (-flag_BC_rhovfix 1 -rhovfix_axis 0) with
+# its +/-5e-6 imbalance removed, so the imposed gradient is gone and the
+# MENISCUS CURVATURE SET BY THETA is the only remaining driver.
+#
+# That is what makes growth observable. In a sealed box the ice can change by at
+# most ~1e-6 of itself; with a reservoir the equilibrium vapour density at a
+# curved interface, rho_vs(1 + d0*chi), sits below saturation when the meniscus
+# is concave and above it when convex, so:
+#     theta < 90  (chi < 0, concave) -> draws vapour in  -> ice GROWS
+#     theta = 90  (chi = 0, flat)    -> no net flux      -> ice steady
+#     theta > 90  (chi > 0, convex)  -> releases vapour  -> ice SHRINKS
+#
+# Reservoirs are on the x-faces ONLY. Pinning vapour on the y walls would feed
+# ice directly at its contact line and corrupt the angle (lunar_main.c warns
+# about exactly this).
+#
+# t_final = 90 days, matching the wedge campaign.
+# =============================================================================
+-t_final 7.776e6
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                 # isothermal: theta is the only driver
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+# --- the substrate, as surface energies ---
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2056032
+
+# --- vapour reservoir, x-faces only, both at saturation ---
+-flag_BC_rhovfix 1
+-rhovfix_axis 0
+-rhovfix_lo 1.0
+-rhovfix_hi 1.0
+
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0
+-n_out 60

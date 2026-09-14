@@ -1,0 +1,60 @@
+# =============================================================================
+# geometry/contactangle/channel_2D_H125um_eps0.86um.opts
+#
+# Flat channel sized to the WEDGE, for comparing contact-angle dynamics against
+# the wedge campaign at matched interface curvature.
+#
+# Ly = 125 um is the wedge's channel width AT ITS MIDPOINT:
+#   wedge_2D_L300um_eps0.86um_90deg.opts has y_bot = 7.5e-5 - 0.25x and
+#   y_top = 1.25e-4 + 0.25x, so the gap runs 50 um (throat) -> 125 um (mid)
+#   -> 200 um (mouth). Taking the midpoint puts the meniscus curvature of this
+#   channel in the middle of the range the wedge spans.
+#
+# The walls are FLAT and parallel on purpose. Sloped walls drive ice migration
+# along the taper, which is the wedge experiment; here the contact angle is
+# meant to be the only thing acting, so the geometry contributes no gradient.
+#
+# With the walls fixed, theta sets the meniscus curvature outright:
+#   R_arc = H/(2|cos theta|),  chi = 1/R_arc
+#     theta = 30  ->  R = 72.2 um,  chi = -1.39e4 1/m   (concave)
+#     theta = 60  ->  R =  125 um,  chi = -8.00e3 1/m
+#     theta = 90  ->  R = inf,      chi = 0             (flat)
+#     theta = 120 ->  R =  125 um,  chi = +8.00e3 1/m
+#     theta = 150 ->  R = 72.2 um,  chi = +1.39e4 1/m   (convex)
+#
+# Lx = 3H = 375 um. The bridge spreads to 224 um at the wall at theta = 30
+# (area-conserving), so this leaves clearance at every angle.
+#
+# eps = 8.5840e-07 is the WEDGE's eps, endorsed by comp_eps.py for this box:
+#   python3 preprocess/comp_eps.py --Lx 3.75e-4 --Ly 1.25e-4 --T0 -20 \
+#       --Rave 9.375e-5 --alpha 1e-3 --vn_feature 1.7168e-6
+#   -> -eps 8.5840e-07  -Nx 618  -Ny 206
+# Matching it keeps the interface resolution directly comparable to the wedge
+# runs. eps/R_grain = 1/109.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nx 618
+-Ny 206
+-Nz 1
+-Lx 3.75e-4
+-Ly 1.25e-4
+-Lz 0
+
+# One disc, centred, radius 0.75*Ly -> clipped by both walls, two contact lines.
+-ice_grain_cx 1.875e-4
+-ice_grain_cy 6.25e-5
+-ice_grain_R  9.375e-5
+
+-eps 8.5840e-07
+-eps_valid_temp -20.0
+-delt_t 1.0e-4
+-periodic 0
+-wall_faces y0,y1
+
+# Timestep ceiling. Lives here with eps (tau_sub goes as eps^2, so a shared
+# experiment file cannot express it). tau_sub = 2.9743e+03 s with the
+# thin-interface correction; dtmax = tau_sub/2 per the measured study in
+# studies/contact_angle/verification/dtmax_study.{sh,csv}, which found theta_inf
+# insensitive to dtmax over a 16x range.
+-dtmax 1.487e3

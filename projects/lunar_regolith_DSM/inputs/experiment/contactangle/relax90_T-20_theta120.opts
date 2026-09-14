@@ -1,0 +1,36 @@
+# =============================================================================
+# experiment/contactangle/relax90_T-20_theta120.opts
+#
+# Isothermal relaxation, sealed, wedge-scale channel.
+#
+#   cos(theta) = (gamma_as - gamma_is)/gamma_ia
+#              = (0.300000 - 0.354500)/0.109000 = -0.500000  ->  theta = 120.000 deg
+#
+# Meniscus curvature this implies in the H = 125 um channel, chi = 2|cos th|/H:
+#   R_arc = 1.250e-04 m, |chi| = 8.000e+03 1/m -- convex, chi > 0 -> ice shrinks against a reservoir
+#
+# SEALED box (-flag_BC_rhovfix 0, the solver default). Total water is conserved
+# between ice and vapour, so the bridge settles to an equilibrium SHAPE. Note
+# that vapour holds only ~1e-6 of the water here, so the ice volume cannot
+# change measurably -- this run measures the equilibrium ANGLE, not growth.
+#
+# t_final = 90 days, matching the wedge campaign for comparability.
+# =============================================================================
+-t_final 7.776e6
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                 # isothermal: theta is the only driver
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+# --- the substrate, as surface energies ---
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.3545000
+
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0
+-n_out 60
