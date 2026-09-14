@@ -37,25 +37,27 @@ correction was never that it improves *this* number. It addresses a spurious
 surface-diffusion operator that, by `gt_deficit.tex`'s own argument, this
 measurement cannot see. Worth recording rather than hiding.
 
-## 2. ε convergence — ⚠️ complete, but it flattens
+## 2. ε convergence — ✅ consistent with convergence
 
-| ε/R | θ_inf | error | τ [d] |
+| ε/R | θ_inf | error | extrapolation spread |
 |---|---|---|---|
-| 1/25 | 60.111 | +0.111 | 15.8 |
-| 1/50 | 60.046 | +0.046 | 15.3 |
-| 1/100 | 60.037 | +0.037 | 15.0 |
+| 1/25 | 60.080 | +0.080 | ±0.115 |
+| 1/50 | 60.042 | +0.042 | ±0.068 |
+| 1/100 | 60.032 | +0.032 | ±0.071 |
 
 The 1/100 point ran cleanly — 61/61 distinct snapshots, φ_min = −1.5e-22 —
 after stalling twice in the previous batch. The clamp fixed it.
 
-But the error does **not** go to zero. 1/25 → 1/50 falls by 2.4×, close to
-first order; 1/50 → 1/100 falls by only 1.24×, flattening toward ≈0.035°.
+**Correction to an earlier reading of this table.** It first looked like the
+error was flattening toward a ~0.035° floor (1/25→1/50 falling 2.4×, 1/50→1/100
+only 1.24×). That over-read three points. Quantifying each θ_inf by refitting
+over seven fit windows, the 1/50 and 1/100 errors differ by **0.011°** while
+each carries an extrapolation spread of **~0.07°** — the difference is smaller
+than the uncertainty in either point. There is no evidence for a floor; the data
+are consistent with the expected convergence, the measurement simply cannot
+resolve below ~0.05° at this run length.
 
-That is a residual bias floor, not O(ε/R). It is not the measurement: the
-extraction gate recovers synthetic arcs exactly (0.000° at eleven angles). So
-something at the solver level contributes ~0.035° that refining ε does not
-remove. It is 50× inside tolerance and does not affect the validation, but the
-honest statement is "converges to 0.035°", not "converges".
+Resolving it would need longer runs (to tighten the extrapolation), not finer ε.
 
 ## 3. Sessile drop — ❌ still not converged, do not quote
 
