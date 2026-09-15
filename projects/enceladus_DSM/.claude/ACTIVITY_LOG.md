@@ -1,3 +1,41 @@
+## 2026-09-15 (later) — 2D packings cannot connect both phases
+
+- Started the robust-packing design. Stage 0 landed as planned; Stages 1-2 were
+  overtaken by measurements that changed the question.
+- **Periodicity (done).** `-periodic 1` restored, reversing 2026-08-03. That
+  change blamed periodicity for ice wrapping to the opposite wall; it was a
+  packing/BC MISMATCH -- a free-edged packing under periodic BCs has no image
+  for the wall grain. Geometry files now carry their own `-periodic` from the
+  packing metadata (`_periodic_flag`), and x/y-only packings are refused
+  outright since PetIGA has no per-axis switch. Checked at packing LOAD so
+  `--dry-run` catches it.
+- **The metrics were measuring the wrong things (done).** Coordination counted
+  contacts within 0.02*r_min = 9.5 nm while the diffuse band is 414 nm, 44x
+  wider — the reference packing is Z=3.26 at the band, not 2.03. Pore
+  connectivity used 4-connectivity on both phases (impossible on a square
+  lattice) and its cluster count grew with raster resolution, i.e. was not a
+  property. And the sharp pore is not the usable pore: eroding by band/2 gives
+  228/228/234 clusters across rasters 1024/2048/4096 — converged, hence real —
+  with the largest holding 17% of the void at t=0.
+- **The headline, in `studies/packing_design/`.** Porosity 0.30-0.50 x 3 seeds:
+  **0 of 15 packings percolate both directions in both phases.** Raising
+  porosity to buy pore connectivity costs solid connectivity instead (solid
+  fails in x by 0.45, both ways by 0.50). Kesten's theorem in a real packing.
+  Criticality is no escape — correlation length diverges, no REV.
+- **Throat surgery abandoned, with the reasons recorded** so it is not retried:
+  blind threshold made pore connectivity worse; percolation-targeted opening
+  used grain-adjacency percolation, which is not pore percolation (pore nodes
+  are triangle interiors); and the mover never converges (230 ambiguous throats
+  became 298). Finer eps saturates at ~11% ambiguous.
+- **Consequences.** Pore connectivity stops being a binary to design for and
+  becomes a continuous measurement — effective vapour diffusivity from the cell
+  problem k_eff already solves, with D_v*phi_a for K(phi). And k_eff anisotropy
+  is a first-class result: gravity deposition builds vertical load paths, so
+  solid always fails in x before y.
+- Awaiting Jackson's call on the D_eff pivot before building Stage 3.
+
+---
+
 ## 2026-09-15 — The Calonne equivalence is algebra, not a limit
 
 - Jackson's advisor was unconvinced by Step 2 of
