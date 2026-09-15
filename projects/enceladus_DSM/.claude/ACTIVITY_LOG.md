@@ -33,6 +33,31 @@
   both intercept and slope are predicted rather than fitted.
 - Validated end to end on synthetic ladders since the runs are Jackson's to
   launch. **Not yet run** — the measured CSV and figure are still outstanding.
+- **Second pass, same day.** Jackson flagged that the (7)->(8) collapse jumps:
+  it never shows the ADDITION of the two subdomain weak forms that produces
+  `K_star`, so the global test function reads as an assumption and `K_star`
+  appears from nowhere. Broken into steps (a)-(g), with the outward normals kept
+  distinct so the sign flip on Gamma is visible, and a remark showing the step
+  reverses. `K_star` is just the name for "K_1 on one piece, K_2 on the other";
+  substituting it changes nothing because it already equals each constant on its
+  own subdomain.
+- Also stripped all the ice from the note — none of the math depends on the
+  phases — and cut the duplicated physical/corrector statements and the notation
+  table. Now phases 1 and 2 with constants; the application appears once as the
+  contrast ratio.
+- **New finding while answering "does the transient equation need anything
+  extra?"** Yes, one thing, and it is cheap to fix: `assembly.c:212` uses
+  `rho(phi)*cp(phi)`, a PRODUCT of two arithmetic interpolants, hence quadratic
+  in phi. `phi^2` is not antisymmetric about the interface —
+  `int[sigma^2 - H]du = -1` exactly — so the storage term has a nonzero surface
+  excess where conduction's tangential one is exactly zero. Each interface loses
+  the heat capacity of a 0.47*eps slab of ice: ~1.9% of cell enthalpy at
+  eps = 1um, ~9.3% at 5um for SSA = 2e4 /m. Interpolating the PRODUCT `rho*cp`
+  affinely kills it exactly. **Not changed in code — Jackson's call.**
+- Latent heat is fine in the integral (`int phi dV` is the exact phase volume by
+  the same antisymmetry) but not in its placement within the band; that is the
+  Karma–Rappel thin-interface regime and needs a matched asymptotic expansion,
+  so it is flagged as out of scope rather than hand-waved.
 
 ---
 
