@@ -1,5 +1,5 @@
 # =============================================================================
-# geometry/2D_ice_slab_keff.opts — analytic benchmark for the k_eff
+# geometry/iceslab/iceslab_2D_L1mm_eps20um_keff.opts — analytic benchmark for k_eff
 # homogenization (-keff). NOT a physics run.
 #
 # A 50/50 ice/air layered medium: ice on [0, Ly/2], air above. For layered
@@ -32,25 +32,49 @@
 #
 # k_11 IS eps-sensitive, and converges to the harmonic mean FROM ABOVE: the
 # diffuse band is a high-conductivity short circuit across what is otherwise a
-# series resistance, so a wider interface reads high. That is the whole reason
-# to record an eps ladder here -- it calibrates how to read the safety=0.5 vs
-# safety=1.0 comparison in the packing runs, where the same bias is present but
-# has no analytic value to compare against.
+# series resistance, so a wider interface reads high.
+#
+# THE DRIFT NOW HAS A CLOSED FORM. An earlier version of this header said the
+# eps bias "has no analytic value to compare against". It does. To first order
+# the band acts as a sharp interface carrying two Gibbs surface excesses, and
+# both are exactly computable for the logistic profile:
+#
+#   tangential (conductance)  Sigma_t = 0                       <- exactly zero
+#   normal     (resistance)   Sigma_n = -eps*(1/k_a - 1/k_i)*ln(k_i/k_a)
+#
+# Sigma_t = 0 is why k_00 is eps-insensitive, noted empirically above; it holds
+# because the logistic profile is antisymmetric, so the arithmetic law moves no
+# ice across the interface. Sigma_n is nonzero because 1/K is convex in phi.
+# Hence, with n_Gamma = 2 interfaces per period,
+#
+#   <1/K>(eps) = [phi/k_i + (1-phi)/k_a] - (n_Gamma*eps/Ly)*(1/k_a - 1/k_i)*ln(k_i/k_a)
+#   k_11(eps)  = 1/<1/K>(eps)
+#
+# At k_i/k_a = 2.29/0.02 the constant is 234.959 m K/W, giving +17.0% bias at
+# eps = Ly/128 and +3.8% at Ly/512. Derivation: sections 6-7 of
+# projects/effective_thermal_cond/docs/calonne_to_phasefield_equivalence.tex.
 #
 # -periodic 1 is MANDATORY (the solver errors out otherwise). It also means the
 # slab has TWO interfaces: y = Ly/2 and the y = 0 == Ly seam. Both are real and
-# both must be resolved.
+# both must be resolved. That is the n_Gamma = 2 above.
 #
-# Run it with -keff_only, which takes one sample from the IC and exits:
+# Run it with -keff_only, which takes one sample from the IC and exits. Go
+# through the run script, not the binary:
 #
-#   ./enceladus_dsm -options_file inputs/solver.opts \
-#                   -options_file inputs/geometry/2D_ice_slab_keff.opts \
-#                   -keff 1 -keff_only 1 \
-#                   -keff_ksp_type preonly -keff_pc_type lu
+#   ./scripts/Studio/run_enceladus.sh iceslab_2D_L1mm_eps20um_keff \
+#       snow_T-20_h1.00_1d keff -- -keff 1 -keff_only 1 \
+#       -keff_ksp_type preonly -keff_pc_type lu
 #
-# eps ladder: rerun with -eps 1.5625e-5 / 7.8125e-6 / 3.90625e-6 (= Ly/64, /128,
-# /256) at -Nx 1024 -Ny 1024 and record k_11. Use CG+GAMG above ~256^2; a direct
-# LU factorization stops being comfortable there.
+# eps ladder: DO NOT run it at fixed resolution. The previous instruction here
+# ("-eps 1.5625e-5 / 7.8125e-6 / 3.90625e-6 at -Nx 1024 -Ny 1024") confounds the
+# interface bias with ordinary mesh convergence, because elements-per-band
+# changes by 4x down the ladder. Scale Ny with eps to hold eps/dy fixed at the
+# 5.12 of this file's reference point. The committed driver does exactly that:
+#
+#   ./studies/keff_sharp_limit/verification/verify_keff_sharp_limit.sh
+#
+# Use CG+GAMG above ~256^2; a direct LU factorization stops being comfortable
+# there.
 # =============================================================================
 
 -ic_type ice_slab
