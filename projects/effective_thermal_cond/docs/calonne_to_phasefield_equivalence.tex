@@ -1,10 +1,9 @@
 % ======================================================================
-%  From the sharp-interface homogenization model of Calonne et al. to an
-%  equivalent phase-field formulation for effective thermal conductivity.
+%  Equivalence of the sharp-interface and phase-field cell problems for
+%  the effective conductivity of a two-phase composite.
 %
-%  Notation follows Moure & Fu (2024) where the two overlap; Calonne
-%  et al. (2011) symbols are mapped onto it. Self-contained.
-%  Requires only amsmath, amssymb, amsthm, booktabs, geometry.
+%  Deliberately phase-agnostic: nothing below depends on the phases being
+%  ice and air. Requires amsmath, amssymb, amsthm, booktabs, geometry.
 % ======================================================================
 
 \documentclass[11pt]{article}
@@ -16,629 +15,528 @@
 \newtheorem{corollary}{Corollary}
 \newtheorem{remark}{Remark}
 
-% --- notation macros (Moure & Fu-aligned) ---
-\newcommand{\Ki}{K_i}
-\newcommand{\Ka}{K_a}
-\newcommand{\Keff}{\mathbf{K}_{\mathrm{eff}}}
-\newcommand{\phibar}{\overline{\phi}}
-\newcommand{\phii}{\phi_i}
-\newcommand{\phia}{\phi_a}
 \newcommand{\Om}{\Omega}
-\newcommand{\Omi}{\Omega_i}
-\newcommand{\Oma}{\Omega_a}
 \newcommand{\Gam}{\Gamma}
 \newcommand{\bn}{\hat{\mathbf n}}
 \newcommand{\bt}{\mathbf t}
 \newcommand{\bI}{\mathbf I}
 \newcommand{\be}{\mathbf e}
+\newcommand{\Keff}{\mathbf{K}_{\mathrm{eff}}}
 \newcommand{\jump}[1]{[\![\,#1\,]\!]}
 \newcommand{\Hper}{H^1_{\mathrm{per}}(\Om)}
-\newcommand{\ind}[1]{\mathbf 1_{#1}}
-\newcommand{\chiI}{\chi}
-\newcommand{\dK}{\delta\! K}
-\newcommand{\Band}{B_\varepsilon}
 \newcommand{\avg}[1]{\big\langle #1 \big\rangle}
+\newcommand{\Band}{B_\varepsilon}
 
 \begin{document}
 
 \begin{center}
-{\large\bfseries From Calonne et al.'s sharp-interface homogenization\\[2pt]
-to an equivalent phase-field formulation of $\Keff$}
+{\large\bfseries The sharp-interface and phase-field cell problems\\[2pt]
+are the same problem}
 \end{center}
 
-\section{What we are computing and why}
+\section{Setup}
 
-Snow, firn, and icy regolith are two-phase composites of ice and pore air.
-Heat conducts through \emph{both} phases: the ice conductivity $\Ki$ and the
-air conductivity $\Ka$ differ by nearly two orders of magnitude
-($\Ki/\Ka \approx 2.29/0.02 \approx 114$), so neither can be ignored. The
-quantity we want is the \emph{effective} (bulk) thermal conductivity tensor
-$\Keff$ that a macroscopic sample presents, given only the pore-scale geometry.
-It is defined so that the macroscopic heat flux obeys Fourier's law
-$\mathbf F = -\Keff\,\nabla T$.
+A periodic cell $\Om$ splits into two subdomains meeting on an interface $\Gam$,
+\[
+\Om=\Om_1\cup\Om_2,\qquad \Om_1\cap\Om_2=\varnothing,\qquad
+\Gam=\partial\Om_1\cap\partial\Om_2,
+\]
+with constant conductivities $K_1,K_2>0$ and $\bn$ the unit normal on $\Gam$
+pointing out of $\Om_1$. Homogenization gives the effective tensor $\Keff$ from
+a \emph{corrector} (cell) problem posed on $\Om$. There are two ways to write
+that problem, and this note shows they are the same one. Nothing below uses any
+property of the phases beyond $K_1,K_2$ being positive constants.
 
-Because the pore scale $\ell$ (grains, necks: tens to hundreds of microns) is
-far smaller than any macroscopic scale $L$ of interest, the two scales
-separate and $\Keff$ can be obtained by \emph{homogenization}: solve one
-auxiliary boundary-value problem, the \emph{cell problem}, on a single
-representative elementary volume (REV) $\Om$, and average. Calonne et al.\
-(2011) do this on a \emph{sharp} (voxelized) ice--air geometry. Our
-phase-field model represents the same geometry with a smooth order parameter.
-
-The purpose of this note is to show that the phase-field cell problem we solve
-is the \emph{same} boundary-value problem as Calonne's, written on one domain
-instead of two. We do this in two steps, and it is worth saying up front that
-\emph{neither step is a limit}:
-
-\begin{itemize}
-\item[\S4.1] The two-domain sharp problem and the single global weak form are
-the same problem. The interface conditions are not discarded; they are absorbed,
-one into the solution space and one into the weak form. The step is reversible.
-\item[\S4.2] The sharp coefficient $K_\star$ and the phase-field interpolation
-$K(\phibar)$ are the \emph{same function}. They are not two models that agree in
-a limit; they are one constitutive law evaluated at two different arguments.
-\end{itemize}
-
-\noindent
-What is left over after those two steps is therefore not a modelling
-discrepancy at all, but a purely \emph{geometric} one: the phase field
-$\phii^\varepsilon$ is a smoothed version of the sharp indicator. Sections
-\ref{sec:diff}--\ref{sec:laminate} quantify exactly that difference, with a
-computable error bound at finite $\varepsilon$ and a closed-form answer for a
-laminate. No appeal to an unproved convergence theorem is needed anywhere.
-
-\paragraph{What the cell problem means physically.}
-Impose a unit macroscopic temperature gradient in a coordinate direction
-$\be_j$. The microstructure bends the local temperature field away from a
-straight ramp; the \emph{corrector} $t^j$ is exactly that local deviation.
-Once we know how the field bends, we average the resulting local heat flux
-over the REV to read off the $j$-th column of $\Keff$. There are $d$ corrector
-fields (one per direction), collected into the vector $\bt=(t^1,\dots,t^d)$.
-
-\section{Notation}
-
-\begin{center}
-\begin{tabular}{@{}lll@{}}
-\toprule
-Symbol & Meaning & Source \\
-\midrule
-$\phii,\ \phia$ & ice / air phase-field variables, $\phia=1-\phii$ & Moure \& Fu \\
-$\phibar=\{\phii,\phia\}$ & the phase-field state (set of variables) & Moure \& Fu \\
-$\varepsilon$ & phase-field interface decay length & Moure \& Fu \\
-$\chiI=\ind{\Omi}$ & \emph{indicator function} of the ice subdomain & --- \\
-$\Ki,\ \Ka$ & ice / air thermal conductivities & Calonne \\
-$K(\phibar)=\Ka+(\Ki-\Ka)\phii$ & interpolated conductivity (arith., Eq.~13 M\&F) & Moure \& Fu \\
-$K_\star=\Ki\ind{\Omi}+\Ka\ind{\Oma}$ & sharp (piecewise-constant) coefficient & Calonne \\
-$\dK=K(\phii^\varepsilon)-K_\star$ & coefficient discrepancy & --- \\
-$\Band=\{0<\phii^\varepsilon<1\}$ & the diffuse band & --- \\
-$T$ & temperature & both \\
-$\Om,\ \Omi,\ \Oma$ & REV cell, ice subdomain, air subdomain & (Calonne: $W$) \\
-$\Gam,\ \bn$ & ice--air interface, unit normal (ice$\to$air) & Calonne \\
-$\bt=(t^1,\dots,t^d)$ & corrector (vector); $\nabla\bt+\bI$ is a tensor & Calonne ($\mathbf t$)\\
-$\Keff$ & effective conductivity tensor & both \\
-$\avg{\cdot}=\frac{1}{|\Om|}\int_\Om(\cdot)$ & REV average & --- \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\paragraph{The indicator function.}
-$\ind{A}$ denotes the \emph{indicator} (or \emph{characteristic}) function of a
-set $A$: the function that is $1$ inside $A$ and $0$ outside,
+\paragraph{Notation.}
+$\chi$ is the \emph{indicator function} of $\Om_1$: the function equal to $1$
+inside $\Om_1$ and $0$ outside,
 \begin{equation}
-\ind{\Omi}(\mathbf x)=
-\begin{cases}
-1, & \mathbf x\in\Omi \quad(\text{ice}),\\
-0, & \mathbf x\in\Oma \quad(\text{pore air}).
-\end{cases}
-\label{eq:indicator}
+\chi(\mathbf x)=\mathbf 1_{\Om_1}(\mathbf x)=
+\begin{cases} 1, & \mathbf x\in\Om_1,\\ 0, & \mathbf x\in\Om_2.\end{cases}
+\label{eq:chi}
 \end{equation}
-It is the sharp, discontinuous ancestor of the phase field: $\phii$ is a
-smoothed $\ind{\Omi}$, taking the same values $1$ and $0$ in the bulk phases but
-sweeping continuously between them across a band of decay length $\varepsilon$.
-Writing $K_\star=\Ki\ind{\Omi}+\Ka\ind{\Oma}$ is just a compact way of saying
-``$K_\star$ equals $\Ki$ in the ice and $\Ka$ in the air.'' We write
-$\chiI\equiv\ind{\Omi}$ below where it shortens an equation.
+$\varphi$ is the phase field: a smooth function equal to $1$ in $\Om_1$ and $0$
+in $\Om_2$, sweeping between them across a band of decay length $\varepsilon$.
+It is a smoothed $\chi$. $\avg{\cdot}=|\Om|^{-1}\!\int_\Om(\cdot)$, and
+$\jump{\,\cdot\,}$ is the jump across $\Gam$.
 
-\paragraph{Two arguments, one law.} Throughout, $\phii$ and $\ind{\Omi}$ are two
-\emph{arguments} that may be fed to the single conductivity law $K(\cdot)$; they
-are not two different laws. Lemma~\ref{lem:identity} is precisely this statement.
-
-\paragraph{One deliberate choice of symbol.}
-We never use a single symbol for both the interface width and the
-homogenization scale ratio $\eta=\ell/L$. Only $\varepsilon$ appears below;
-$\eta\to0$ is what licenses homogenization in the first place and plays no
-further role here.
-
-\section{The sharp-interface model (Calonne et al.)}
-
-At the pore scale, steady conduction with no sources reads
+\paragraph{Problem A (sharp).} Find cell-periodic $\bt$ with
 \begin{align}
-\nabla\!\cdot\!(\Ki\nabla T)&=0 \ \text{in }\Omi, &
-\nabla\!\cdot\!(\Ka\nabla T)&=0 \ \text{in }\Oma,
-\label{eq:bulk}\\[2pt]
-\jump{T}&=0 \ \text{on }\Gam, &
-\jump{K\nabla T\!\cdot\!\bn}&=0 \ \text{on }\Gam.
-\label{eq:iface}
-\end{align}
-The two interface conditions \eqref{eq:iface} are the physics: temperature is
-\emph{continuous} across the ice--air boundary, and the normal heat flux is
-\emph{conserved} (no energy is created or stored at the interface -- perfect
-thermal contact, no interfacial resistance).
-
-Homogenization of \eqref{eq:bulk}--\eqref{eq:iface} yields the macroscopic law
-$\nabla\!\cdot\!(\Keff\nabla T)=0$, with $\Keff$ obtained from the
-\emph{corrector (cell) problem}: find the cell-periodic $\bt$ with
-\begin{align}
-\nabla\!\cdot\!\big(\Ki(\nabla\bt+\bI)\big)&=\mathbf 0 \ \text{in }\Omi, &
-\nabla\!\cdot\!\big(\Ka(\nabla\bt+\bI)\big)&=\mathbf 0 \ \text{in }\Oma,
-\label{eq:cellbulk}\\[2pt]
+\nabla\!\cdot\!\big(K_1(\nabla\bt+\bI)\big)&=\mathbf 0 \ \text{in }\Om_1, &
+\nabla\!\cdot\!\big(K_2(\nabla\bt+\bI)\big)&=\mathbf 0 \ \text{in }\Om_2,
+\label{eq:A-bulk}\\
 \jump{\bt}&=\mathbf 0 \ \text{on }\Gam, &
 \jump{K(\nabla\bt+\bI)\!\cdot\!\bn}&=\mathbf 0 \ \text{on }\Gam,
-\label{eq:celliface}
+\label{eq:A-iface}
 \end{align}
-subject to the zero-mean normalization $\avg{\bt}=\mathbf 0$
-(which removes the arbitrary additive constant), and then
+normalized by $\avg{\bt}=\mathbf 0$, and then
 \begin{equation}
-\Keff=\frac{1}{|\Om|}\left[\int_{\Omi}\!\Ki(\nabla\bt+\bI)\,d\Om
-                          +\int_{\Oma}\!\Ka(\nabla\bt+\bI)\,d\Om\right].
-\label{eq:keffsharp}
+\Keff=\frac{1}{|\Om|}\left[\int_{\Om_1}\!K_1(\nabla\bt+\bI)\,d\Om
+                          +\int_{\Om_2}\!K_2(\nabla\bt+\bI)\,d\Om\right].
+\label{eq:A-keff}
 \end{equation}
-Equations \eqref{eq:cellbulk}--\eqref{eq:keffsharp} are Calonne et al.\ (2011),
-Eqs.~(7)--(11). The corrector problem carries the \emph{same} interface
-conditions \eqref{eq:celliface} as the physical problem, for the same reason:
-$\bt$ is a temperature-like field, so it is continuous and its flux is
-conserved.
+The two interface conditions are the physics: the field is continuous, and the
+normal flux is conserved. This is Calonne et al.\ (2011), Eqs.~(7)--(11).
 
-\section{Construction of the phase-field equivalent}
-
-We now build the phase-field cell problem \emph{from}
-\eqref{eq:cellbulk}--\eqref{eq:keffsharp} in two steps. The geometry is frozen:
-$\phii(\mathbf x)$ is a fixed field, $=1$ in ice, $=0$ in pore, transitioning
-smoothly over decay length $\varepsilon$; the sharp indicator
-\eqref{eq:indicator} it regularizes is $\ind{\Omi}$.
-
-\subsection{Step 1 --- collapse the two domains into one weak statement}
-
-Multiply each bulk equation in \eqref{eq:cellbulk} by an arbitrary
-cell-periodic test function $v$, integrate over the respective subdomain, and
-integrate by parts. The outer boundary terms cancel by periodicity, leaving an
-interface term:
+\paragraph{Problem B (phase field).} Find cell-periodic $\bt$ with
 \begin{equation}
-0=-\int_{\Om}\nabla v\cdot K_\star(\nabla\bt+\bI)\,d\Om
- \;+\;\int_{\Gam} v\,\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}\,d\Gam.
-\label{eq:glue}
+\nabla\!\cdot\!\big(K(\varphi)(\nabla\bt+\bI)\big)=\mathbf 0 \ \text{in }\Om,
+\qquad \avg{\bt}=\mathbf 0,
+\qquad K(\varphi)=K_2+(K_1-K_2)\varphi,
+\label{eq:B}
 \end{equation}
-The interface integral vanishes \emph{identically} by the flux
-condition in \eqref{eq:celliface}. What remains is a single equation over the
-whole cell,
 \begin{equation}
-\int_{\Om}\nabla v\cdot K_\star(\nabla\bt+\bI)\,d\Om=0
-\qquad\forall\,v\in\Hper,
-\label{eq:weaksharp}
+\Keff=\frac{1}{|\Om|}\int_{\Om} K(\varphi)(\nabla\bt+\bI)\,d\Om .
+\label{eq:B-keff}
 \end{equation}
-and it is well posed only because $\bt$ is a \emph{single} $H^1$ field with no
-jump --- which is precisely the continuity condition in
-\eqref{eq:celliface}. Thus the two interface conditions have not been
-discarded: continuity $\jump{\bt}=0$ is absorbed into the choice of solution
-space (a single continuous field), and flux conservation
-$\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}=0$ is absorbed into the weak form (it is
-the \emph{natural} condition, satisfied automatically by every weak solution).
-The step is reversible: restricting $v$ to each subdomain recovers
-\eqref{eq:cellbulk}, and undoing the integration by parts recovers
-\eqref{eq:celliface}. So \eqref{eq:weaksharp} is equivalent to
-\eqref{eq:cellbulk}--\eqref{eq:celliface} --- the sharp two-domain problem and
-the single global weak form are the same problem.
+One domain, one equation, no interface conditions.
 
-\subsection{Step 2 --- the coefficient is already the phase-field interpolation}
+\paragraph{Claim.} A and B are the same problem. Two steps:
+\S\ref{sec:step1} collapses A's two domains into one weak equation;
+\S\ref{sec:step2} shows A's coefficient \emph{is} B's coefficient. Neither step
+is a limit.
+
+\section{Step 1: two domains become one weak equation}
+\label{sec:step1}
+
+Let $v\in\Hper$ be an arbitrary cell-periodic scalar test function. We treat
+each subdomain separately, then add.
+
+\paragraph{(a) Test each bulk equation on its own subdomain.}
+Multiply the first equation of \eqref{eq:A-bulk} by $v$ and integrate over
+$\Om_1$; do the same on $\Om_2$:
+\begin{equation}
+\int_{\Om_1}\! v\,\nabla\!\cdot\!\big(K_1(\nabla\bt+\bI)\big)\,d\Om=0,
+\qquad
+\int_{\Om_2}\! v\,\nabla\!\cdot\!\big(K_2(\nabla\bt+\bI)\big)\,d\Om=0 .
+\label{eq:s1-multiply}
+\end{equation}
+Both hold because the integrands vanish pointwise. No approximation yet.
+
+\paragraph{(b) Integrate by parts on each subdomain.}
+Using $\int_D v\,\nabla\!\cdot\!\mathbf A=-\int_D\nabla v\cdot\mathbf A
++\oint_{\partial D}v\,\mathbf A\!\cdot\!\bn_D$ with $\bn_D$ the outward normal
+of $D$. The boundary of $\Om_1$ consists of $\Gam$, where its outward normal is
+$+\bn$, and whatever part of the outer cell boundary $\partial\Om$ it touches;
+likewise for $\Om_2$, whose outward normal on $\Gam$ is $-\bn$. Writing
+$\mathbf A_m=K_m(\nabla\bt+\bI)$ for $m=1,2$,
+\begin{align}
+0&=-\int_{\Om_1}\!\nabla v\cdot\mathbf A_1\,d\Om
+   \;+\;\int_{\Gam} v\,\mathbf A_1\!\cdot\!\bn\,d\Gam
+   \;+\;\underbrace{\int_{\partial\Om\cap\partial\Om_1}\!\! v\,\mathbf A_1\!\cdot\!\bn_{\partial\Om}\,dS}_{\textstyle O_1},
+\label{eq:s1-parts1}\\
+0&=-\int_{\Om_2}\!\nabla v\cdot\mathbf A_2\,d\Om
+   \;-\;\int_{\Gam} v\,\mathbf A_2\!\cdot\!\bn\,d\Gam
+   \;+\;\underbrace{\int_{\partial\Om\cap\partial\Om_2}\!\! v\,\mathbf A_2\!\cdot\!\bn_{\partial\Om}\,dS}_{\textstyle O_2}.
+\label{eq:s1-parts2}
+\end{align}
+The sign flip on the $\Gam$ term of \eqref{eq:s1-parts2} is the only subtlety:
+$\Gam$ is traversed with opposite orientation from the two sides.
+
+\paragraph{(c) Add the two equations.}
+This is the step that produces a single statement on $\Om$. Adding
+\eqref{eq:s1-parts1} and \eqref{eq:s1-parts2},
+\begin{equation}
+0=-\left[\int_{\Om_1}\!\nabla v\cdot\mathbf A_1\,d\Om
+        +\int_{\Om_2}\!\nabla v\cdot\mathbf A_2\,d\Om\right]
+ +\int_{\Gam} v\,\big(\mathbf A_1-\mathbf A_2\big)\!\cdot\!\bn\,d\Gam
+ +\;O_1+O_2 .
+\label{eq:s1-added}
+\end{equation}
+Now dispose of the three groups in turn.
+
+\paragraph{(d) The outer boundary terms cancel.}
+$O_1+O_2$ is an integral over all of $\partial\Om$. Both $v$ and the flux
+$K(\nabla\bt+\bI)$ are cell-periodic, so they take equal values at
+corresponding points of opposite faces, where $\bn_{\partial\Om}$ points in
+opposite directions. Every contribution is therefore matched by its negative:
+$O_1+O_2=0$.
+
+\paragraph{(e) The interface term is exactly the flux jump, which vanishes.}
+By definition of the jump, $\big(\mathbf A_1-\mathbf A_2\big)\!\cdot\!\bn
+=\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}$, so the middle term of
+\eqref{eq:s1-added} is
+$\int_\Gam v\,\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}\,d\Gam$, which is $0$ by the
+second interface condition in \eqref{eq:A-iface} --- for every $v$, since the
+integrand vanishes pointwise.
+
+\paragraph{(f) The two volume integrals merge into one.}
+This is where $K_\star$ comes from, and it is pure bookkeeping. Define the
+piecewise-constant coefficient
+\begin{equation}
+K_\star:=K_1\chi+K_2(1-\chi),
+\qquad\text{so}\qquad
+K_\star=K_1 \text{ on } \Om_1,
+\qquad
+K_\star=K_2 \text{ on } \Om_2 .
+\label{eq:Kstar}
+\end{equation}
+Because $K_\star$ \emph{equals} $K_1$ at every point of $\Om_1$, we may
+substitute it there without changing the integral, and likewise on $\Om_2$:
+\begin{equation}
+\int_{\Om_1}\!\nabla v\cdot\mathbf A_1
++\int_{\Om_2}\!\nabla v\cdot\mathbf A_2
+=\int_{\Om_1}\!\nabla v\cdot K_\star(\nabla\bt+\bI)
++\int_{\Om_2}\!\nabla v\cdot K_\star(\nabla\bt+\bI).
+\label{eq:s1-sub}
+\end{equation}
+The two integrands are now the \emph{same function} of $\mathbf x$, integrated
+over two disjoint sets whose union is $\Om$. Additivity of the integral gives
+\begin{equation}
+\int_{\Om_1}(\cdots)+\int_{\Om_2}(\cdots)=\int_{\Om_1\cup\Om_2}(\cdots)=\int_{\Om}(\cdots),
+\label{eq:s1-merge}
+\end{equation}
+the last equality because $\Om_1\cup\Om_2$ differs from $\Om$ only by $\Gam$,
+a set of measure zero. So $K_\star$ is not assumed or fitted; it is the name for
+``$K_1$ on one piece and $K_2$ on the other,'' and \eqref{eq:s1-merge} is the
+only thing done with it.
+
+\paragraph{(g) Result.}
+Substituting (d), (e), (f) into \eqref{eq:s1-added}:
+\begin{equation}
+\boxed{\;\int_{\Om}\nabla v\cdot K_\star(\nabla\bt+\bI)\,d\Om=0
+\qquad\forall\,v\in\Hper.\;}
+\label{eq:weak}
+\end{equation}
+
+\begin{remark}[Where the two interface conditions went]
+They were not dropped; each was absorbed somewhere.
+\emph{Flux conservation} $\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}=0$ was used in
+step (e), and it is the \emph{natural} condition of \eqref{eq:weak}: run (e)
+backwards and any weak solution satisfies it automatically.
+\emph{Continuity} $\jump{\bt}=0$ is absorbed in the statement
+``$\bt\in H^1(\Om)$'': a single $H^1$ field on $\Om$ cannot jump. Had $\bt$ been
+allowed to jump, \eqref{eq:weak} would not even be well posed.
+\end{remark}
+
+\begin{remark}[Why one arbitrary $v$ on $\Om$ is not an extra assumption]
+It may look as though testing with a single $v$ defined on all of $\Om$ smuggles
+in something. It does not, and the step reverses: given \eqref{eq:weak}, choose
+$v$ supported strictly inside $\Om_1$. Then the integral is over $\Om_1$ only,
+where $K_\star=K_1$; undoing the integration by parts (no boundary term, since
+$v$ vanishes near $\partial\Om_1$) returns the first equation of
+\eqref{eq:A-bulk}. Symmetrically for $\Om_2$. Allowing $v$ to straddle $\Gam$
+then returns the interface term, hence \eqref{eq:A-iface}. So \eqref{eq:weak} is
+\emph{equivalent} to \eqref{eq:A-bulk}--\eqref{eq:A-iface}, not weaker.
+\end{remark}
+
+\begin{remark}[Same algebra for the physical field]
+Nothing in (a)--(g) used the specific form $\nabla\bt+\bI$. Replacing it by
+$\nabla T$ throughout collapses the physical problem
+$\nabla\!\cdot\!(K\nabla T)=0$, $\jump{T}=\jump{K\nabla T\!\cdot\!\bn}=0$ into
+$\int_\Om\nabla v\cdot K_\star\nabla T=0$ identically. See \S\ref{sec:transient}.
+\end{remark}
+
+\section{Step 2: the coefficient is already the phase-field interpolation}
 \label{sec:step2}
 
-It is tempting to describe the next step as ``replace the sharp coefficient
-$K_\star$ by a smooth interpolation that converges to it.'' That description is
-weaker than the truth and invites the objection that an unproved limit is being
-assumed. In fact no replacement occurs, because the two coefficients are
-the same function of the phase variable.
+It is tempting to finish by saying ``now replace $K_\star$ by a smooth $K(\varphi)$
+that converges to it.'' That would be an approximation, and would need a
+convergence theorem. No replacement is needed.
 
-\begin{lemma}[The sharp coefficient \emph{is} the phase-field interpolation]
-\label{lem:identity}
-Let $K(\phibar)$ be any conductivity law satisfying the two endpoint conditions
+\begin{lemma}\label{lem:identity}
+Let $K(\cdot)$ be \emph{any} function with $K(0)=K_2$ and $K(1)=K_1$. Then
 \begin{equation}
-K(\phii{=}0)=\Ka,\qquad K(\phii{=}1)=\Ki .
-\label{eq:endpoints}
-\end{equation}
-Then, evaluated on the sharp indicator,
-\begin{equation}
-K(\phibar)\Big|_{\phii=\ind{\Omi}} \;=\; K_\star
-\qquad\text{pointwise in }\Om,
+K(\chi)=K_\star \qquad\text{pointwise on }\Om,
 \label{eq:identity}
 \end{equation}
-exactly. No limit, and no smallness of $\varepsilon$, is involved.
+exactly --- no limit, no smallness of $\varepsilon$.
 \end{lemma}
 
 \begin{proof}
-$\Om=\Omi\cup\Oma$ is a disjoint decomposition (up to the measure-zero surface
-$\Gam$), so $\ind{\Oma}=1-\ind{\Omi}$ and the indicator $\ind{\Omi}$ takes
-\emph{only} the two values $0$ and $1$. At a point of $\Omi$, $\phii=1$, and
-\eqref{eq:endpoints} gives $K=\Ki=K_\star$; at a point of $\Oma$, $\phii=0$, and
-\eqref{eq:endpoints} gives $K=\Ka=K_\star$. Those are all the points.
+$\chi$ takes only the values $0$ and $1$. At $\mathbf x\in\Om_1$, $\chi=1$, so
+$K(\chi)=K(1)=K_1=K_\star$. At $\mathbf x\in\Om_2$, $\chi=0$, so
+$K(\chi)=K(0)=K_2=K_\star$. Those are all the points of $\Om$.
 \end{proof}
 
 \noindent
-For the arithmetic law actually used (Moure \& Fu, Eq.~13) the same statement is
-three lines of algebra, which is worth writing out because it is the whole of
-Step 2:
+For the affine $K$ of \eqref{eq:B} it is three lines:
 \begin{equation}
-K_\star
-=\Ki\ind{\Omi}+\Ka\ind{\Oma}
-=\Ki\ind{\Omi}+\Ka\big(1-\ind{\Omi}\big)
-=\Ka+(\Ki-\Ka)\,\ind{\Omi}
-=K(\phibar)\Big|_{\phii=\ind{\Omi}} .
+K_\star \overset{\eqref{eq:Kstar}}{=} K_1\chi+K_2(1-\chi)=K_2+(K_1-K_2)\chi=K(\chi).
 \label{eq:algebra}
 \end{equation}
 
-\paragraph{What Lemma~\ref{lem:identity} means.}
-The sharp model and the phase-field model do not have different constitutive
-laws that happen to agree asymptotically. They have \emph{one} law,
-$K(\cdot)$, evaluated at two different arguments:
+\paragraph{What this means.} Problems A and B do not have two constitutive laws
+that agree asymptotically. They have \emph{one} law $K(\cdot)$, evaluated at two
+different arguments:
 \[
-\text{Calonne: } K\big(\ind{\Omi}\big),
-\qquad\qquad
-\text{phase field: } K\big(\phii^{\varepsilon}\big).
+\text{A: }K(\chi),\qquad\qquad \text{B: }K(\varphi).
 \]
-So Step 2 is not an approximation of the \emph{equations}; it is a
-regularization of the \emph{geometry}. Every difference between the two models
-traces back to a single object, $\phii^\varepsilon-\ind{\Omi}$, which is
-supported on the diffuse band and is a statement about how the ice--air boundary
-is represented, not about how heat conducts.
+So Step 2 approximates the \emph{geometry}, never the equations, and every
+difference between A and B traces to the single object $\varphi-\chi$. A second
+consequence: since $\chi$ never takes an intermediate value, the \emph{shape} of
+$K$ between $0$ and $1$ is invisible to Problem A. Every admissible
+interpolation --- arithmetic, harmonic, any other --- coincides exactly on
+$\chi$. The choice can therefore matter only through the diffuse band
+(\S\ref{sec:excess}).
 
-A second consequence of Lemma~\ref{lem:identity} is often missed: because the
-indicator never takes an intermediate value, the \emph{shape} of the
-interpolation between $0$ and $1$ is completely invisible to the sharp problem.
-Arithmetic, harmonic, and every other admissible interpolation coincide exactly
-on $\ind{\Omi}$. This is why the choice of interpolation can matter only through
-the band --- a point we make quantitative in \S\ref{sec:excess}.
-
-\paragraph{The resulting phase-field cell problem.}
-Substituting $K(\phibar)$ into \eqref{eq:weaksharp} and \eqref{eq:keffsharp},
-and returning the weak form to strong form, gives
-\begin{equation}
-\boxed{\;
-\nabla\!\cdot\!\big(K(\phibar)(\nabla\bt+\bI)\big)=\mathbf 0 \ \text{in }\Om,
-\qquad \bt\ \text{cell-periodic},\qquad \int_\Om\bt\,d\Om=\mathbf 0,\;}
-\label{eq:cellPF}
-\end{equation}
-\begin{equation}
-\boxed{\;
-\Keff=\frac{1}{|\Om|}\int_{\Om} K(\phibar)(\nabla\bt+\bI)\,d\Om.\;}
-\label{eq:keffPF}
-\end{equation}
-Equations \eqref{eq:cellPF}--\eqref{eq:keffPF} are exactly the phase-field
-homogenization equations we solve. The two subdomain integrals of
-\eqref{eq:keffsharp} have merged into one integral over $\Om$, and the two
-interface conditions no longer appear because Step~1 showed they are enforced
-implicitly by the single-field weak form. The companion macroscopic equation
-$\nabla\!\cdot\!(K(\phibar)\nabla T)=0$ is the same collapse applied to
-\eqref{eq:bulk}--\eqref{eq:iface}.
-
-\begin{proposition}[Exact equivalence on a sharp geometry]
-\label{prop:exact}
-If the phase field is the sharp indicator, $\phii=\ind{\Omi}$, then the
-phase-field problem \eqref{eq:cellPF}--\eqref{eq:keffPF} and Calonne's problem
-\eqref{eq:cellbulk}--\eqref{eq:keffsharp} are the same boundary-value problem
-and return the same $\Keff$ --- identically, not in a limit.
+\begin{proposition}\label{prop:exact}
+If $\varphi=\chi$, Problems A and B are the same boundary-value problem and give
+the same $\Keff$, identically.
 \end{proposition}
 
 \begin{proof}
-Step 1 shows \eqref{eq:cellbulk}--\eqref{eq:celliface} is equivalent to
-\eqref{eq:weaksharp}; Lemma~\ref{lem:identity} shows the coefficient in
-\eqref{eq:weaksharp} is $K(\phibar)|_{\phii=\ind{\Omi}}$, which is the
-coefficient in \eqref{eq:cellPF}. The two functionals \eqref{eq:keffsharp} and
-\eqref{eq:keffPF} likewise coincide term by term because
-$\int_{\Omi}\Ki(\cdot)+\int_{\Oma}\Ka(\cdot)=\int_{\Om}K_\star(\cdot)$.
+Step 1 gives A $\Leftrightarrow$ \eqref{eq:weak}. Lemma~\ref{lem:identity} gives
+$K_\star=K(\chi)$, so \eqref{eq:weak} is the weak form of \eqref{eq:B}. The two
+$\Keff$ formulas agree by \eqref{eq:s1-sub}--\eqref{eq:s1-merge} applied to the
+integrand $K(\nabla\bt+\bI)$.
 \end{proof}
 
-\section{Exactly what the two problems differ by}
+\section{Finite $\varepsilon$: what is left over}
 \label{sec:diff}
 
-At the finite $\varepsilon$ we actually run, $\phii^\varepsilon\neq\ind{\Omi}$,
-and Proposition~\ref{prop:exact} no longer applies verbatim. This section says
-precisely --- and computably --- what the residual difference is. Nothing here
-is asymptotic.
-
-\subsection{The coefficient discrepancy}
-
-For the arithmetic law, $K$ is \emph{affine} in $\phii$, so subtracting
-\eqref{eq:algebra} from $K(\phii^\varepsilon)$ gives the discrepancy in closed
-form:
+In practice $\varphi\neq\chi$, so Proposition~\ref{prop:exact} does not apply
+verbatim. By Lemma~\ref{lem:identity} the entire residual difference is carried
+by $\varphi-\chi$. For the affine $K$ this is exact:
 \begin{equation}
-\dK \;:=\; K(\phii^{\varepsilon})-K_\star
-\;=\;(\Ki-\Ka)\,\big(\phii^{\varepsilon}-\chiI\big),
-\qquad \operatorname{supp}\dK=\Band .
+\delta\!K:=K(\varphi)-K_\star=(K_1-K_2)(\varphi-\chi),
+\qquad \operatorname{supp}\delta\!K=\Band:=\{0<\varphi<1\}.
 \label{eq:dK}
 \end{equation}
-The coefficient error is \emph{exactly proportional} to the geometric error,
-with the constant $\Ki-\Ka$, and it lives only where the phase field is strictly
-between $0$ and $1$. Both problems are uniformly elliptic on the same bounds,
-$\min(\Ka,\Ki)\le K\le\max(\Ka,\Ki)$, since $\phii^\varepsilon\in[0,1]$; so both
-are well posed and admit the variational characterization used next.
-
-\subsection{A two-sided bound, with no convergence theorem}
-
-For a symmetric coefficient the cell problem has a Dirichlet minimum principle:
-for any unit direction $\be$,
+Both problems are uniformly elliptic on the same bounds, $\min(K_1,K_2)\le K\le
+\max(K_1,K_2)$, so both are well posed and both admit the Dirichlet minimum
+principle: for a unit direction $\be$,
 \begin{equation}
-A(K)\;:=\;\be\cdot\Keff[K]\,\be
-\;=\;\min_{v\in\Hper}\;\frac{1}{|\Om|}\int_\Om(\nabla v+\be)\cdot K\,(\nabla v+\be)\,d\Om
-\;=:\;\min_{v\in\Hper} E_K[v].
+A(K):=\be\cdot\Keff[K]\,\be=\min_{v\in\Hper}E_K[v],
+\qquad E_K[v]:=\avg{(\nabla v+\be)\cdot K(\nabla v+\be)}.
 \label{eq:dirichlet}
 \end{equation}
-Write $K_1=K(\phii^\varepsilon)$ and $K_2=K_\star$, with minimizers $v_1,v_2$,
-and note from \eqref{eq:dK} that
-$E_{K_1}[v]-E_{K_2}[v]=\avg{\dK\,|\nabla v+\be|^2}$ for \emph{any} $v$. Testing
-each minimizer against the other's energy,
-\begin{align}
-A(K_1)=E_{K_1}[v_1]&\le E_{K_1}[v_2]=A(K_2)+\avg{\dK\,|\nabla v_2+\be|^2},\\
-A(K_2)=E_{K_2}[v_2]&\le E_{K_2}[v_1]=A(K_1)-\avg{\dK\,|\nabla v_1+\be|^2},
-\end{align}
-which rearrange into a rigorous sandwich on the error:
+Write $K_1^{\phantom{.}}\!\to K(\varphi)$, $K_2^{\phantom{.}}\!\to K_\star$ with
+minimizers $v_\varepsilon,v_\star$. For \emph{any} $v$,
+$E_{K(\varphi)}[v]-E_{K_\star}[v]=\avg{\delta\!K|\nabla v+\be|^2}$. Testing each
+minimizer against the other's energy gives two inequalities which combine into
 \begin{equation}
-\boxed{\;
-\avg{\dK\,|\nabla v_\varepsilon+\be|^2}
-\;\le\;
-A_\varepsilon-A_{\mathrm{sharp}}
-\;\le\;
-\avg{\dK\,|\nabla v_{\mathrm{sharp}}+\be|^2}. \;}
+\avg{\delta\!K\,|\nabla v_\varepsilon+\be|^2}
+\;\le\;A_\varepsilon-A_\star\;\le\;
+\avg{\delta\!K\,|\nabla v_\star+\be|^2}.
 \label{eq:sandwich}
 \end{equation}
-Two things are worth emphasizing. First, both bounds are integrals over
-$\Band$ \emph{only}, because $\dK$ vanishes elsewhere. Second, the left-hand
-bound involves only $v_\varepsilon$, the corrector we already compute --- so
-\eqref{eq:sandwich} is an \emph{a posteriori} error bar evaluable from the run
-itself, not a statement about an unreachable limit. The derivation is four lines
-and uses nothing beyond \eqref{eq:dirichlet}.
-
-\subsection{Size of the discrepancy}
-
-To turn \eqref{eq:sandwich} into a rate, we need the size of
-$\phii^\varepsilon-\chiI$. The equilibrium profile of this model's double well
-is logistic in the signed distance $s$ to $\Gam$ (positive into ice),
+Both sides are integrals over $\Band$ only. The left one uses only the corrector
+already computed, so \eqref{eq:sandwich} is an \emph{a posteriori} error bar, not
+an asymptotic claim. With the logistic profile
+$\varphi=\sigma(s/\varepsilon)$, $\sigma(u)=(1+e^{-u})^{-1}$, in the signed
+distance $s$ to $\Gam$, and $\int_0^\infty(1-\sigma)\,du=\ln2$,
 \begin{equation}
-\phii^{\varepsilon}=\sigma(s/\varepsilon),
-\qquad \sigma(u)=\frac{1}{1+e^{-u}},
-\qquad \sigma(-u)=1-\sigma(u),
-\label{eq:profile}
-\end{equation}
-and $\chiI$ is the Heaviside step $H(s)$. Integrating across the band in a
-tubular neighbourhood of $\Gam$, with
-$\int_{0}^{\infty}\!\big(1-\sigma(u)\big)\,du=\ln 2$,
-\begin{equation}
-\big\|\phii^{\varepsilon}-\chiI\big\|_{L^1(\Om)}
-=\varepsilon\,|\Gam|\!\int_{-\infty}^{\infty}\!\big|\sigma(u)-H(u)\big|\,du
-\;+\;\mathcal O(\varepsilon^2)
-=2\ln\!2\;\varepsilon\,|\Gam|+\mathcal O(\varepsilon^2),
-\label{eq:L1}
-\end{equation}
-the $\mathcal O(\varepsilon^2)$ coming from the curvature of $\Gam$. Feeding
-\eqref{eq:dK} and \eqref{eq:L1} into \eqref{eq:sandwich},
-\begin{equation}
-\big|A_\varepsilon-A_{\mathrm{sharp}}\big|
-\;\le\;
-2\ln\!2\;(\Ki-\Ka)\,M^2\;\frac{|\Gam|}{|\Om|}\;\varepsilon
-\;+\;\mathcal O(\varepsilon^2),
-\qquad
-M^2=\max_{\Band}|\nabla v+\be|^2 .
+\|\varphi-\chi\|_{L^1(\Om)}=2\ln\!2\;\varepsilon\,|\Gam|+\mathcal O(\varepsilon^2)
+\;\Longrightarrow\;
+\big|A_\varepsilon-A_\star\big|\le
+2\ln\!2\,(K_1-K_2)\,M^2\,\frac{|\Gam|}{|\Om|}\,\varepsilon+\mathcal O(\varepsilon^2),
 \label{eq:rate}
 \end{equation}
-This is an explicit first-order bound with a computable prefactor. Note that
-$|\Gam|/|\Om|$ is the specific surface area, which the solver already reports,
-so the error budget scales with a quantity we measure: at fixed $\varepsilon$,
-finer microstructure means larger error, which is the correct and useful
-statement of the resolution requirement.
+with $M^2=\max_{\Band}|\nabla v+\be|^2$. First order, computable prefactor, and
+no H-convergence theorem required. (That theorem is the right citation only for
+a non-affine $K$, where \eqref{eq:dK} becomes an inequality.)
 
-\begin{remark}[On H-convergence]
-Letting $\varepsilon\to0$ in \eqref{eq:rate} recovers
-$\Keff^{\varepsilon}\to\Keff^{\mathrm{sharp}}$, which is also the standard
-H-convergence result for divergence-form elliptic operators whose coefficient
-converges in $L^p$. We no longer need to invoke it: for the arithmetic law the
-elementary argument above gives the same conclusion \emph{plus} a constant. The
-general result remains the right citation for a non-affine interpolation, where
-\eqref{eq:dK} is an inequality rather than an identity.
-\end{remark}
-
-\section{The first-order correction is a surface excess}
+\section{The first-order error is a surface excess}
 \label{sec:excess}
 
-Estimate \eqref{eq:rate} bounds the error but does not say what sets its sign or
-how to reduce it. Both follow from looking at what the band presents to the
-surrounding field. A thin graded layer of thickness $\mathcal O(\varepsilon)$ is
-equivalent, to first order in $\varepsilon$, to a sharp interface carrying two
-\emph{Gibbs surface excesses} per unit area --- one tangential, one normal:
+To first order a thin graded layer is equivalent to a sharp interface carrying
+two \emph{surface excesses} per unit area. Transport tangential to $\Gam$ crosses
+the layer's sublayers in parallel and sees an excess conductance; transport
+normal to it crosses them in series and sees an excess resistance:
 \begin{equation}
-\Sigma_t=\int_{-\infty}^{\infty}\!\Big[K(\phii^\varepsilon)-K_\star\Big]ds,
+\Sigma_t=\int_{-\infty}^{\infty}\!\big[K(\varphi)-K_\star\big]ds,
 \qquad
-\Sigma_n=\int_{-\infty}^{\infty}\!\left[\frac{1}{K(\phii^\varepsilon)}-\frac{1}{K_\star}\right]ds .
+\Sigma_n=\int_{-\infty}^{\infty}\!\left[\frac{1}{K(\varphi)}-\frac{1}{K_\star}\right]ds.
 \label{eq:excess}
 \end{equation}
-Tangential transport crosses the layer's sublayers in \emph{parallel}, so it
-sees an excess conductance $\Sigma_t$; normal transport crosses them in
-\emph{series}, so it sees an excess resistance $\Sigma_n$. These two numbers are
-the only $\mathcal O(\varepsilon)$ information the band transmits, so the
-first-order error in $\Keff$ is a functional of $(\Sigma_t,\Sigma_n)$ alone. Both
-are computable in closed form for the profile \eqref{eq:profile}.
+These two numbers are the only $\mathcal O(\varepsilon)$ data the band presents.
+Both are elementary for the logistic profile, whose defining property here is
+the antisymmetry $\sigma(-u)=1-\sigma(u)$.
 
-\paragraph{The tangential excess vanishes identically.}
-By affinity of $K$ and the antisymmetry $\sigma(-u)=1-\sigma(u)$, the integrand
-$\sigma(u)-H(u)$ is odd, so
+\paragraph{$\Sigma_t=0$, exactly.} $K$ is affine, so the integrand is
+$(K_1-K_2)[\sigma(u)-H(u)]$ with $H$ the unit step, and antisymmetry makes
+$\sigma-H$ an odd function:
 \begin{equation}
-\Sigma_t=(\Ki-\Ka)\,\varepsilon\!\int_{-\infty}^{\infty}\!\big[\sigma(u)-H(u)\big]du=0 .
+\Sigma_t=(K_1-K_2)\,\varepsilon\!\int_{-\infty}^{\infty}\!\big[\sigma(u)-H(u)\big]du=0 .
 \label{eq:sigmat}
 \end{equation}
-This is exact, not first order: the arithmetic interpolation moves no ice across
-the interface, so the phase-field cell has \emph{exactly} the sharp cell's ice
-fraction, and the parallel (Voigt) response is reproduced with no error at any
-$\varepsilon$. The leading correction is $\mathcal O(\varepsilon^2\kappa)$ from
-interface curvature $\kappa$.
+Not first order --- zero. The diffuse cell has \emph{exactly} the sharp cell's
+phase fraction, so the parallel response carries no error at any $\varepsilon$.
+The leading correction is $\mathcal O(\varepsilon^2\kappa)$ from interface
+curvature.
 
-\paragraph{The normal excess does not.}
-Here $1/K$ is a convex function of $\phii$, so the graded layer is a
-short circuit across what should be a series resistance. Substituting
-$p=\sigma(u)$, $du=dp/[p(1-p)]$ and integrating by partial fractions,
+\paragraph{$\Sigma_n\neq0$.} Here $1/K$ is convex in $\varphi$, so the band
+short-circuits a series resistance. With $p=\sigma(u)$, $du=dp/[p(1-p)]$ and
+partial fractions,
 \begin{equation}
-\Sigma_n
-=\varepsilon\!\left[\int_{0}^{1/2}\!\!+\int_{1/2}^{1}\right]\!\!
-\left[\frac{1}{\Ka+(\Ki-\Ka)p}-\frac{1}{K_\star}\right]\frac{dp}{p(1-p)}
-=-\,\varepsilon\left(\frac{1}{\Ka}-\frac{1}{\Ki}\right)\ln\frac{\Ki}{\Ka}\;<0 .
+\Sigma_n=\varepsilon\!\int_0^1\!\left[\frac{1}{K_2+(K_1-K_2)p}-\frac{1}{K_\star}\right]\frac{dp}{p(1-p)}
+=-\,\varepsilon\left(\frac{1}{K_2}-\frac{1}{K_1}\right)\ln\frac{K_1}{K_2}\;<\;0 .
 \label{eq:sigman}
 \end{equation}
-The excess resistance is \emph{negative}: the phase-field cell is less resistive
-than the sharp one, so $\Keff$ is biased \emph{high} in the direction normal to
-the interface, first order in $\varepsilon$, with no free constants. For
-$\Ki=2.29$, $\Ka=0.02\ \mathrm{W\,m^{-1}K^{-1}}$,
-\begin{equation}
-\left(\frac{1}{\Ka}-\frac{1}{\Ki}\right)\ln\frac{\Ki}{\Ka}
-= 49.5633\times4.74048 = 234.959\ \ \mathrm{m\,K\,W^{-1}} .
-\label{eq:const}
-\end{equation}
-Equations \eqref{eq:sigmat}--\eqref{eq:sigman} are the quantitative version of
-the familiar warning that an arithmetic mixture rule is right in parallel and
-wrong in series. They say how wrong, and in which direction.
+Negative excess resistance: the diffuse cell conducts too well normal to $\Gam$,
+first order in $\varepsilon$, with no free constants. This is the quantitative
+form of the familiar statement that an arithmetic mixture rule is right in
+parallel and wrong in series.
 
 \begin{corollary}[An interpolation with no first-order bias]
 \label{cor:tensor}
-The harmonic law $K_{\mathrm{harm}}(\phibar)=\big(\phii/\Ki+\phia/\Ka\big)^{-1}$
-has $1/K_{\mathrm{harm}}$ affine in $\phii$, so the same antisymmetry argument
-that gives \eqref{eq:sigmat} gives $\Sigma_n=0$ --- but then $\Sigma_t\neq0$.
-Neither scalar law can null both. The tensorial law
+The harmonic law $K_{\mathrm h}(\varphi)=\big(\varphi/K_1+(1-\varphi)/K_2\big)^{-1}$
+has $1/K_{\mathrm h}$ affine in $\varphi$, so the same antisymmetry gives
+$\Sigma_n=0$ --- but then $\Sigma_t\neq0$. No scalar law nulls both. The
+tensorial law
 \begin{equation}
-\mathbf K(\phibar)
-=K_{\mathrm{arith}}(\phibar)\,\big(\bI-\bn\otimes\bn\big)
-+K_{\mathrm{harm}}(\phibar)\,\big(\bn\otimes\bn\big),
-\qquad \bn=\frac{\nabla\phii}{|\nabla\phii|},
+\mathbf K(\varphi)=K(\varphi)\big(\bI-\bn\otimes\bn\big)
++K_{\mathrm h}(\varphi)\,\bn\otimes\bn,
+\qquad \bn=\nabla\varphi/|\nabla\varphi|,
 \label{eq:tensorK}
 \end{equation}
-uses each law in the direction where its excess vanishes, so
-$\Sigma_t=\Sigma_n=0$ and the bias is $\mathcal O(\varepsilon^2)$. Both branches
-satisfy the endpoint conditions \eqref{eq:endpoints}, so
-Lemma~\ref{lem:identity} and Proposition~\ref{prop:exact} apply to
-\eqref{eq:tensorK} unchanged.
+uses each where its excess vanishes, giving $\Sigma_t=\Sigma_n=0$ and
+$\mathcal O(\varepsilon^2)$. Both branches satisfy $K(0)=K_2$, $K(1)=K_1$, so
+Lemma~\ref{lem:identity} and Proposition~\ref{prop:exact} still apply.
 \end{corollary}
 
 \noindent
-Corollary~\ref{cor:tensor} is available because the conductivity cell problem is
-\emph{pure post-processing} on a frozen $\phii$ field, decoupled from the phase
-evolution. The interpolation used for $\Keff$ therefore need not be the Eq.~13
-used in the evolution equations, and may be chosen for accuracy.
+This is available because the conductivity cell problem is post-processing on a
+frozen $\varphi$: its interpolation is decoupled from whatever the evolution
+model uses.
 
-\section{Worked example: the laminate, in closed form at every $\varepsilon$}
+\section{Worked example and test: the laminate}
 \label{sec:laminate}
 
-For a layered two-phase medium every quantity above is elementary, which makes
-this the natural verification case --- and the one the solver already ships as
-its analytic gate.
-
-Take a cell of period $L$ containing an ice layer of thickness $\phibar L$, with
-$n_\Gam=2$ interfaces per period (under periodic boundary conditions the seam is
-a real interface and must be resolved like the other). Transport along the
-layers is a parallel combination and transport across them a series
-combination, so $\Keff$ is diagonal with
-$k_\parallel=\avg{K}$ and $k_\perp=\avg{K^{-1}}^{-1}$. Using
-\eqref{eq:sigmat} and \eqref{eq:sigman},
+For layers of period $L$ with phase fraction $\bar\varphi$ and $n_\Gam$
+interfaces per period, $\Keff$ is diagonal with $k_\parallel=\avg{K}$ and
+$k_\perp=\avg{K^{-1}}^{-1}$. Equations \eqref{eq:sigmat}--\eqref{eq:sigman} give
 \begin{align}
-k_\parallel^{\varepsilon}
-&=\Ka+(\Ki-\Ka)\,\phibar
+k_\parallel(\varepsilon)&=K_2+(K_1-K_2)\bar\varphi
 &&\text{exact for every }\varepsilon,
-\label{eq:lampar}\\[4pt]
-\avg{K^{-1}}_{\varepsilon}
-&=\underbrace{\frac{\phibar}{\Ki}+\frac{1-\phibar}{\Ka}}_{\text{sharp}}
-\;-\;\frac{n_\Gam\varepsilon}{L}\left(\frac{1}{\Ka}-\frac{1}{\Ki}\right)\ln\frac{\Ki}{\Ka},
-&&k_\perp^{\varepsilon}=\frac{1}{\avg{K^{-1}}_{\varepsilon}} .
+\label{eq:lampar}\\
+\avg{K^{-1}}_\varepsilon&=\frac{\bar\varphi}{K_1}+\frac{1-\bar\varphi}{K_2}
+-\frac{n_\Gam\varepsilon}{L}\left(\frac{1}{K_2}-\frac{1}{K_1}\right)\ln\frac{K_1}{K_2},
+&&k_\perp=\avg{K^{-1}}_\varepsilon^{-1}.
 \label{eq:lamperp}
 \end{align}
-Equation \eqref{eq:lamperp} is not merely a first-order truncation. The only
-approximation in it is the overlap of the exponential tails of neighbouring
-interfaces, which is $\mathcal O(e^{-L/4\varepsilon})$; numerically the formula
-agrees with direct quadrature of $\avg{1/K(\phii^\varepsilon)}$ to $5\times
-10^{-5}$ relative at $\varepsilon=L/50$ and to machine precision by
-$\varepsilon=L/128$. It is, for practical purposes, exact.
+Equation \eqref{eq:lamperp} is not a truncation: its only error is tail overlap
+between neighbouring interfaces, $\mathcal O(e^{-L/4\varepsilon})$, which against
+direct quadrature is $5\times10^{-5}$ relative at $\varepsilon=L/50$ and machine
+precision by $\varepsilon=L/128$.
+
+In our application $K_1/K_2=2.29/0.02=114.5$, giving
+$(K_2^{-1}-K_1^{-1})\ln(K_1/K_2)=234.959$ and, at $\bar\varphi=\tfrac12$,
+$n_\Gam=2$:
 
 \begin{center}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
-$\varepsilon$ & $\avg{K^{-1}}_{\varepsilon}$ & $k_\perp^{\varepsilon}$ & bias vs.\ $k_\perp^{\mathrm{sharp}}$ \\
+$\varepsilon$ & $\avg{K^{-1}}$ & $k_\perp$ & bias \\
 \midrule
 $L/50$  & 15.8200 & 0.063211 & $+59.4\%$ \\
-$L/64$  & 17.8759 & 0.055941 & $+41.1\%$ \\
 $L/128$ & 21.5471 & 0.046410 & $+17.0\%$ \\
-$L/256$ & 23.3827 & 0.042767 & $+7.9\%$ \\
 $L/512$ & 24.3005 & 0.041151 & $+3.8\%$ \\
-\midrule
 sharp   & 25.2183 & 0.039654 & --- \\
 \bottomrule
 \end{tabular}
 \end{center}
-{\small Predicted ladder at $\Ki/\Ka=2.29/0.02=114.5$, $\phibar=0.5$,
-$n_\Gam=2$. Over the same ladder $k_\parallel=1.155000$ at every rung, to all
-digits.}
 
-\paragraph{How to plot this --- and the trap in plotting it wrong.}
-Equation \eqref{eq:lamperp} is \emph{linear in $\varepsilon$ in resistivity} and
-a hyperbola in conductivity. Plot and fit $1/k_\perp$ against $\varepsilon$, not
-$k_\perp$. Done that way the test has two independently predicted numbers and no
-fitted ones:
+\paragraph{How to test it.} Equation \eqref{eq:lamperp} is \emph{linear in
+$\varepsilon$ in resistivity} and a hyperbola in conductivity. Fit and plot
+$1/k_\perp$ against $\varepsilon$; then the test has two predicted numbers and no
+fitted ones,
 \begin{equation}
-\text{intercept}=\frac{\phibar}{\Ki}+\frac{1-\phibar}{\Ka},
+\text{intercept}=\frac{\bar\varphi}{K_1}+\frac{1-\bar\varphi}{K_2},
 \qquad
-\text{slope}=\frac{n_\Gam}{L}\left(\frac{1}{\Ka}-\frac{1}{\Ki}\right)\ln\frac{\Ki}{\Ka}
-=\frac{2\times234.959}{L} .
+\text{slope}=\frac{n_\Gam}{L}\left(\frac{1}{K_2}-\frac{1}{K_1}\right)\ln\frac{K_1}{K_2}.
 \label{eq:fit}
 \end{equation}
-Plotted as $k_\perp$ versus $\varepsilon$ the same data is a curve whose
-agreement can only be eyeballed.
+Two ways to get a meaningless answer: evaluating \eqref{eq:fit} at the nominal
+rather than the \emph{measured} $\bar\varphi$ (the discrete field's mean is not
+exactly $\bar\varphi$), and refining $\varepsilon$ at fixed mesh, which
+confounds this bias with mesh convergence. The committed driver is
+\verb|studies/keff_sharp_limit/verification/|.
 
-\paragraph{Two further cautions when running it.}
-Evaluate \eqref{eq:fit} at the \emph{measured} $\phibar$ reported by the solver,
-not at the nominal $0.5$: the discrete field is a spline fit to nodal values and
-its mean lands near but not on $0.5$, and feeding the nominal value in
-manufactures an apparent solver error out of the initial condition's quadrature
-error. And refine the mesh \emph{with} $\varepsilon$, holding elements per band
-fixed; at fixed resolution an $\varepsilon$ ladder confounds the interface bias
-measured here with ordinary mesh convergence, and the fitted slope means
-nothing.
+\section{Carrying this to the transient equation with a phase-change source}
+\label{sec:transient}
 
-\section{Validity at finite interface width}
+The evolution model solves, instead of \eqref{eq:B}, an energy balance of the form
+\begin{equation}
+\underbrace{\rho(\varphi)c(\varphi)\,\partial_t T}_{\text{storage}}
+=\underbrace{\nabla\!\cdot\!\big(K(\varphi)\nabla T\big)}_{\text{conduction}}
++\underbrace{\rho_1 L\,\partial_t\varphi}_{\text{latent heat}} .
+\label{eq:energy}
+\end{equation}
+Three things change, and they are not equally benign.
 
-Collecting the results: \S4 establishes that the sharp and phase-field
-formulations are the same problem, exactly, by Step~1 (reversible) and
-Lemma~\ref{lem:identity} (an algebraic identity). \S\ref{sec:diff} bounds the
-residual finite-$\varepsilon$ error a posteriori and at first order with a
-computable constant. \S\ref{sec:excess} identifies that error as a surface
-excess, shows the tangential part is exactly zero and the normal part has a
-closed form, and names an interpolation \eqref{eq:tensorK} that removes both.
-\S\ref{sec:laminate} gives a case where all of it is checkable in closed form.
+\paragraph{1. Conduction: nothing new.} The operator is the same $K(\varphi)$
+appearing in \eqref{eq:B}. Step 1 collapses the sharp two-domain heat equation
+in the same way, Lemma~\ref{lem:identity} applies unchanged, and
+\eqref{eq:sigmat}--\eqref{eq:sigman} hold verbatim. So the evolution model
+carries the \emph{same} first-order conduction bias --- too conductive normal to
+$\Gam$ --- and Corollary~\ref{cor:tensor} is the same fix.
 
-\begin{remark}[Interpolation dependence, quantified]
-The arithmetic interpolation reproduces the exact conductance for transport
-\emph{tangential} to $\Gam$ --- exactly, at every $\varepsilon$, by
-\eqref{eq:sigmat} --- and overestimates it for transport \emph{normal} to
-$\Gam$, by \eqref{eq:sigman}. Because $\Ki/\Ka\approx114$ the asymmetry is
-severe: the laminate ladder above shows a $+17\%$ bias in $k_\perp$ at
-$\varepsilon=L/128$. In a real microstructure the normal and tangential
-directions are mixed by the geometry, so the net bias is smaller than the
-laminate's worst case but retains its sign, and it scales with the specific
-surface area $|\Gam|/|\Om|$ as \eqref{eq:rate} shows.
-\end{remark}
+\paragraph{2. Storage: a nonzero excess, from a quadratic in $\varphi$.}
+Repeating \eqref{eq:excess} for the volumetric heat capacity $C=\rho c$, the
+excess stored enthalpy per unit interface area is
+$\Sigma_C=\int[C(\varphi)-C_\star]\,ds$. If $C$ is interpolated \emph{affinely}
+in $\varphi$ this vanishes exactly, by the same antisymmetry as
+\eqref{eq:sigmat}. But interpolating $\rho$ and $c$ \emph{separately} and
+multiplying, as \eqref{eq:energy} is written, makes $C$ \emph{quadratic}:
+\begin{equation}
+\rho(\varphi)c(\varphi)=\rho_2c_2+(\rho_2\Delta c+c_2\Delta\rho)\varphi
++\Delta\rho\,\Delta c\;\varphi^2,
+\qquad \Delta\rho=\rho_1-\rho_2,\ \Delta c=c_1-c_2,
+\label{eq:Cquad}
+\end{equation}
+and $\varphi^2$ is \emph{not} antisymmetric about the interface. Its excess is
+exactly computable by the substitution used for \eqref{eq:sigman}:
+\begin{equation}
+\int_{-\infty}^{\infty}\!\big[\sigma(u)^2-H(u)\big]du=-1
+\qquad\Longrightarrow\qquad
+\Sigma_C=-\,\varepsilon\,\Delta\rho\,\Delta c \;\neq\;0 .
+\label{eq:SigmaC}
+\end{equation}
+The diffuse cell stores \emph{less} enthalpy than the sharp one, at first order
+in $\varepsilon$ and proportional to the interfacial area. With
+$\rho_1c_1=1.80\times10^6$ and $\rho_2c_2=1.40\times10^3$~J\,m$^{-3}$K$^{-1}$,
+$\Delta\rho\,\Delta c=8.41\times10^5$, so each interface loses the heat capacity
+of a $0.47\varepsilon$-thick slab of phase 1. On a cell with specific surface
+area $|\Gam|/|\Om|=2\times10^{4}\,\mathrm{m}^{-1}$ that is a $1.9\%$ deficit at
+$\varepsilon=1\,\mu$m and $9.3\%$ at $5\,\mu$m. \emph{The fix is free}:
+interpolate the product,
+$C(\varphi)=\rho_2c_2+(\rho_1c_1-\rho_2c_2)\varphi$, which is affine and has
+$\Sigma_C=0$ exactly. The two agree at $\varphi\in\{0,1\}$, so
+Lemma~\ref{lem:identity} is indifferent between them --- this is precisely a
+case where the interpolation is invisible to the sharp problem and matters only
+through the band.
 
-\begin{remark}[How this is defended in practice]
-The claim to defend is no longer a limit theorem but the size of a known bias,
-which is a much easier thing to demonstrate. The committed verification is the
-$\varepsilon$ ladder of \S\ref{sec:laminate} on the periodic ice-slab cell,
-checking three predictions at once: (i) $k_\parallel$ flat across the ladder to
-the discretization error, confirming $\Sigma_t=0$; (ii) $1/k_\perp$ linear in
-$\varepsilon$ with the intercept and slope of \eqref{eq:fit}, confirming
-$\Sigma_n$; (iii) off-diagonal components zero. Passing (i) and (iii) tests the
-cell solver; passing (ii) tests the theory of \S\ref{sec:excess}. For a
-production microstructure, either run the same ladder and extrapolate to
-$\varepsilon\to0$, or verify via \eqref{eq:rate} that the residual bias at the
-production $\varepsilon$ is inside the error budget.
+\paragraph{3. Latent heat: the integral is exact, the placement is not.}
+In the sharp model latent heat is a \emph{surface} source on $\Gam$, entering as
+a Stefan jump condition $\jump{K\nabla T\!\cdot\!\bn}=\rho_1 L\,v_n$. The
+phase-field model spreads it over the band as the volumetric
+$\rho_1L\,\partial_t\varphi$. The total released is right:
+\begin{equation}
+\int_\Om \rho_1 L\,\partial_t\varphi\,d\Om
+=\rho_1 L\,\frac{d}{dt}\!\int_\Om\varphi\,d\Om
+=\rho_1 L\,\frac{dV_1}{dt},
+\label{eq:latent-exact}
+\end{equation}
+exactly, because $\int_\Om\varphi\,d\Om$ is the exact phase-1 volume --- the same
+$\Sigma_t=0$ antisymmetry as \eqref{eq:sigmat}. What is \emph{not} exact is
+where within the band it is deposited. Heat is injected across a layer of width
+$\mathcal O(\varepsilon)$ over which $T$ and $K$ both vary strongly (here by a
+factor $114$), so it enters at the wrong local temperature.
+
+\noindent
+This third item is the one that needs care, and it is outside the scope of the
+analysis above: \eqref{eq:sandwich} and \eqref{eq:excess} assume a
+\emph{frozen} $\varphi$ and \emph{no} source, which is exactly the situation of
+the $\Keff$ cell problem and exactly not the situation of \eqref{eq:energy}. A
+moving diffuse interface carrying a source is the regime of the thin-interface
+analyses of Karma \& Rappel and Almgren, whose known $\mathcal O(\varepsilon)$
+artifacts --- modified interface kinetics, solute/thermal trapping, and a
+spurious surface diffusion along $\Gam$ --- are generated by the source term
+and are most pronounced when the two phases' transport coefficients are very
+unequal, as here. Quantifying them requires a matched asymptotic expansion of
+\eqref{eq:energy}, not the equilibrium excesses of \S\ref{sec:excess}.
+
+\begin{remark}[The practical consequence]
+A clean $\varepsilon$ ladder for $\Keff$ certifies the conduction operator and
+the geometry representation. It does \emph{not} certify the coupled model, which
+has two further $\varepsilon$-sensitivities: one cheap to remove
+(\eqref{eq:SigmaC}, by interpolating $\rho c$ instead of $\rho$ and $c$), and
+one requiring its own analysis (the latent-heat source). Conversely, item 2
+suggests its own test: the total enthalpy of a static two-phase cell should be
+$\varepsilon$-independent, which is the storage analogue of the
+$k_\parallel$ gate and is equally cheap to run.
 \end{remark}
 
 \end{document}
