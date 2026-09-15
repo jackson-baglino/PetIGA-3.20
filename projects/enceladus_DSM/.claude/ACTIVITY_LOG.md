@@ -1,3 +1,41 @@
+## 2026-09-15 — The Calonne equivalence is algebra, not a limit
+
+- Jackson's advisor was unconvinced by Step 2 of
+  `effective_thermal_cond/docs/calonne_to_phasefield_equivalence.tex`, which
+  claimed only that `K(phi)` "converges to `K_star` pointwise" and then deferred
+  to an uncited H-convergence result it declined to prove. The skepticism was
+  well-founded: no error estimate at the finite eps we run.
+- **The claim is stronger than a limit.** Because the indicator `1_{Omega_i}`
+  takes only the values 0 and 1, `K_star = K_a + (K_i - K_a) 1_{Omega_i}` IS
+  `K(phi)` evaluated at the sharp indicator. One constitutive law, two arguments
+  — so Step 2 regularizes the GEOMETRY, never the physics. Holds for any
+  interpolation with the right endpoints, which is also why interpolation choice
+  can only matter through the diffuse band.
+- Also defined `1_{Omega_i}`, which the note used at the pivotal step without
+  ever introducing (the literal question asked).
+- **Replaced the hand-waving with closed forms.** `delta K = (K_i-K_a)(phi^eps -
+  1_{Omega_i})` exactly; a four-line two-sided bound from the Dirichlet minimum
+  principle whose computable side uses only the corrector we already solve for;
+  and the O(eps) term identified as a Gibbs surface excess. Tangential excess is
+  EXACTLY zero (profile antisymmetry — hence k_parallel is eps-exact, which the
+  ice-slab opts file had already noticed empirically); normal excess is
+  `-eps (1/K_a - 1/K_i) ln(K_i/K_a)`. Corollary: the tensorial law
+  `K_arith (I - n n) + K_harm (n n)` nulls both and is O(eps^2).
+- All closed forms checked against quadrature: normal excess agrees to 12
+  digits, tangential measures 4e-16, k_parallel is 1.1550000 at every rung.
+- **New study `studies/keff_sharp_limit/verification/`** measuring the bias:
+  analytic module, driver, gates + figure, README. Uses the existing
+  `-ic_type ice_slab` + `-keff_only` path; one run gives both directions.
+- Two traps the scripts are built around: resolution must scale with eps (at
+  fixed resolution the ladder confounds interface bias with mesh convergence —
+  the opts header's old ladder instruction had exactly this bug, now fixed), and
+  the ladder must be plotted in resistivity, where the prediction is linear and
+  both intercept and slope are predicted rather than fitted.
+- Validated end to end on synthetic ladders since the runs are Jackson's to
+  launch. **Not yet run** — the measured CSV and figure are still outstanding.
+
+---
+
 ## 2026-09-09 (later) — The neck-curve sinusoid was our measurement
 
 - Jackson spotted a second, sinusoidal mode riding on the power law in the neck
