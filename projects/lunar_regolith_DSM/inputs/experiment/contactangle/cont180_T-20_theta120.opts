@@ -1,0 +1,97 @@
+# =============================================================================
+# experiment/contactangle/cont180_T-20_theta120.opts
+#
+# Isothermal growth/shrinkage against a saturated vapour reservoir.
+#
+#   cos(theta) = (gamma_as - gamma_is)/gamma_ia
+#              = (0.300000 - 0.354500)/0.109000 = -0.500000  ->  theta = 120.000 deg
+#
+# Meniscus curvature this implies in the H = 125 um channel, chi = 2|cos th|/H:
+#   R_arc = 1.250e-04 m, |chi| = 8.000e+03 1/m -- convex, chi > 0 -> ice shrinks against a reservoir
+#
+# VAPOUR RESERVOIR on the x-faces at saturation, both ends equal. This is the
+# wedge campaign's boundary condition (-flag_BC_rhovfix 1 -rhovfix_axis 0) with
+# its +/-5e-6 imbalance removed, so the imposed gradient is gone and the
+# MENISCUS CURVATURE SET BY THETA is the only remaining driver.
+#
+# That is what makes growth observable. In a sealed box the ice can change by at
+# most ~1e-6 of itself; with a reservoir the equilibrium vapour density at a
+# curved interface, rho_vs(1 + d0*chi), sits below saturation when the meniscus
+# is concave and above it when convex, so:
+#     theta < 90  (chi < 0, concave) -> draws vapour in  -> ice GROWS
+#     theta = 90  (chi = 0, flat)    -> no net flux      -> ice steady
+#     theta > 90  (chi > 0, convex)  -> releases vapour  -> ice SHRINKS
+#
+# This needs BOTH reservoirs. Mass alone is not enough -- the latent heat has to
+# go somewhere too, or the temperature moves and cancels the supersaturation.
+#
+# Reservoirs are on the x-faces ONLY. Pinning vapour on the y walls would feed
+# ice directly at its contact line and corrupt the angle (lunar_main.c warns
+# about exactly this).
+#
+# CONTINUATION of the 90-day grow90 run, to t = 180 days.
+#
+# Restart is by -initial_cond <final sol_*.dat of the first leg>, which must be
+# given on the command line because the path is run-specific. -t_start 7.776e6
+# sets the clock so this leg reports ABSOLUTE time; without it the second leg
+# would restart at t=0, overlap the first, and any velocity measured across the
+# join would be wrong.
+#
+# -initial_cond was dead code until 2026-09-15: it was parsed and stored and
+# nothing ever called IGAReadVec. It now loads the vector and prints the phi
+# range so a wrong file is obvious. The IGA must match the one that wrote the
+# snapshot (same -Nx/-Ny/-p/-C/-dof/domain); IGAReadVec errors on a length
+# mismatch, which catches the usual wrong-geometry mistake.
+#
+# Why continue rather than restart longer from scratch: the first leg spent most
+# of its time relaxing the initial clipped disc into the equilibrium SHAPE. At
+# 90 days theta=120 has essentially got there (velocity spread 0.27 of v_mean)
+# while theta=60 has not (1.33). Continuing from the relaxed state is where the
+# growth velocity becomes a clean steady quantity rather than a mixture of shape
+# relaxation and growth.
+#
+# HEADROOM: at theta=60 the contact line is 2.08e-4 m wide in a 3.75e-4 m
+# domain, leaving 8.3e-5 m (97 eps) to each vapour reservoir, closing at
+# ~1.5e-12 m/s. That is ~660 days to contact, so 90 more days is safe -- but the
+# growth rate will drift upward as the diffusion distance shortens, so v_n(t)
+# here is not expected to be flat.
+-t_start 7.776e6
+# =============================================================================
+-t_final 1.5552e7
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0                 # isothermal: theta is the only driver
+
+# THERMAL reservoir, every face. Without this the box is insulated and latent
+# heat shuts the experiment off almost immediately: batch 2026-09-14 measured a
+# drift of +1.49e-4 K at theta=30 and -1.47e-4 K at theta=150, which is exactly
+# the dT needed to move rho_vs(T) by the 1.41e-5 supersaturation that was
+# driving growth. Depositing 1e-5 % of the ice releases that much heat, so the
+# driving force annihilates itself and the ice changes by ~0.003 % in 90 days
+# instead of tens of percent.
+#
+# With -grad_temp0 all zero, the solver pins T = temp0 on EVERY face (a uniform
+# isothermal bath), which is what an open pore in a large regolith body sees.
+# Unlike a vapour reservoir on the y walls, pinning T there is harmless: it does
+# not feed ice at the contact line.
+-flag_BC_Tfix 1
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+# --- the substrate, as surface energies ---
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.3545000
+
+# --- vapour reservoir, x-faces only, both at saturation ---
+-flag_BC_rhovfix 1
+-rhovfix_axis 0
+-rhovfix_lo 1.000000
+-rhovfix_hi 1.000000
+
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0
+-n_out 60

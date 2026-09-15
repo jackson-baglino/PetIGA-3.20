@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
 
     PetscReal delt_t = 1.0e-4;  /* Time step size */
     PetscReal t_final = 0.0;    /* Final simulation time (does not advance if 0) */
+    PetscReal t_start = 0.0;    /* Clock value to resume from (-initial_cond restarts) */
 
     PetscInt  n_out   = 10;     /* Number of outputs */
 
@@ -693,6 +694,7 @@ int main(int argc, char *argv[]) {
     /* --- Restart / initialization files --------------------------------- */
     ierr = PetscOptionsString("-initial_cond", "Load initial solution from file", "", initial, initial, sizeof(initial), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-t_start", "Clock value to resume from when restarting via -initial_cond [s]", "", t_start, &t_start, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-geom_file",
              "Load an igakit-generated IGA geometry (.dat) via IGARead, "
              "overriding -p/-C/-Nx/-Ny/-Nz axis setup with the geometry's own",
@@ -1238,6 +1240,7 @@ int main(int argc, char *argv[]) {
     TS ts;
     ierr = IGACreateTS(iga, &ts); CHKERRQ(ierr);
     ierr = TSSetMaxTime(ts, t_final); CHKERRQ(ierr);
+    if (t_start > 0.0) { ierr = TSSetTime(ts, t_start); CHKERRQ(ierr); }
     ierr = TSSetExactFinalTime(ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRQ(ierr);
     ierr = TSSetTimeStep(ts, delt_t); CHKERRQ(ierr);
     ierr = TSSetType(ts, TSALPHA); CHKERRQ(ierr);
@@ -1653,7 +1656,38 @@ int main(int argc, char *argv[]) {
 
     PetscPrintf(PETSC_COMM_WORLD, "Setting up initial conditions... \n");
 
-    if (dim == 1) {
+    /* ---- Restart from a previous run's snapshot -------------------------
+     * -initial_cond <sol_NNNNN.dat> loads a solution vector written by
+     * IGAWriteVec instead of building an initial condition. The option had
+     * existed since before the fork but was dead: it was parsed into
+     * user.initial_cond and never read, and nothing in the tree called
+     * IGAReadVec, so passing it silently did nothing and the run started from
+     * the -ic_type geometry as usual.
+     *
+     * The vector carries no mesh of its own, so the IGA here must match the one
+     * that wrote it -- same -Nx/-Ny, -p, -C, -dof and domain. IGAReadVec checks
+     * the length and errors on a mismatch, which catches the common case of
+     * restarting against the wrong geometry file.
+     *
+     * -t_start sets the clock so a continuation reports absolute time rather
+     * than starting again from zero; without it the second leg's t would
+     * overlap the first and any velocity measured across the join would be
+     * wrong. */
+    if (user.initial_cond[0] != '\0') {
+        PetscPrintf(PETSC_COMM_WORLD,
+            "  RESTART: loading solution from %s\n"
+            "           clock resumes at t = %.6e s (%.2f days)\n",
+            user.initial_cond, (double)t_start, (double)(t_start / 86400.0));
+        ierr = IGAReadVec(iga, U, user.initial_cond); CHKERRQ(ierr);
+        user.readFlag = PETSC_TRUE;
+        {   /* report what was actually loaded, so a wrong file is obvious */
+            PetscReal pmin, pmax;
+            ierr = VecStrideMin(U, 0, NULL, &pmin); CHKERRQ(ierr);
+            ierr = VecStrideMax(U, 0, NULL, &pmax); CHKERRQ(ierr);
+            PetscPrintf(PETSC_COMM_WORLD,
+                "           phi range [%.6f, %.6f]\n", (double)pmin, (double)pmax);
+        }
+    } else if (dim == 1) {
         /* --- 1D Initial Conditions — selected by -ic_type ----------------- */
         PetscPrintf(PETSC_COMM_WORLD, "IC type: %s (1D)\n", ic_type);
         if (strcmp(ic_type, "single_ice") == 0) {
