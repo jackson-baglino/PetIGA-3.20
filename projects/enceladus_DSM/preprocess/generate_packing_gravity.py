@@ -102,15 +102,27 @@ biases k_eff low.
 
 PERIODICITY
 -----------
-    --periodic x     (default) the deposition strip wraps sideways. Gravity
-                     acts in y, so the x-wrap costs nothing and removes the
-                     side-wall ordering a closed box would impose.
-    --periodic xy    additionally wrap in y, healing the seam by relaxing
+    --periodic xy    (default) wrap both ways, healing the y seam by relaxing
                      overlaps under the minimum image. Only grains near the
                      seam move; the reported max displacement says how much.
+                     The only mode with no boundary layer at all, and the one
+                     an REV wants: -periodic 0 imposes zero flux on phi, which
+                     is a 90-degree contact angle, so a grain clipped by a wall
+                     carries the wrong surface curvature and coarsens as though
+                     it were small.
+    --periodic x     the deposition strip wraps sideways only. Gravity acts in
+                     y, so the x-wrap costs nothing and removes the side-wall
+                     ordering a closed box would impose.
     --periodic y     wraps along gravity but not across it. Provided for BC
-                     comparisons; x or xy is the more natural REV.
+                     comparisons.
     --periodic none  plain window, no edge images.
+
+x AND y ALONE CANNOT BE RUN. PetIGA sets periodicity per AXIS for every field
+at once (src/enceladus_main.c:998-1011), so -periodic is one flag covering both
+axes: there is no half-periodic solve to ask for. generate_study_opts.py
+refuses such a packing rather than picking a value that would be wrong on one
+axis -- which is exactly the mismatch behind the 2026-08-03 wall-teleport
+artifact. Use xy, or none.
 
 The flag controls the OUTPUT cell -- which edge images are written, how the
 raster and the metrics wrap, and how the window is cropped. Deposition itself
@@ -461,7 +473,7 @@ def coarse_grid_for(Lx, mean_r):
     return max(4, int(round(Lx / (2.5 * mean_r))))
 
 
-def grade(cen, rad, Lx, Ly, px, py, mean_r, raster, context=None):
+def grade(cen, rad, Lx, Ly, px, py, mean_r, raster, context=None, band=0.0):
     """Every metric that goes into metadata.json and the acceptance gate.
 
     POROSITY is measured on the OUTPUT CELL, with its actual periodicity --
@@ -494,8 +506,35 @@ def grade(cen, rad, Lx, Ly, px, py, mean_r, raster, context=None):
                              context=None if mpy else context)
     max_void = float(dist.max())
     sx, sy, sfrac, sn = pl.percolates(parent)
-    px_, py_, pfrac, pn = pl.percolates(~parent)
-    coord, ncont, throat = pl.descriptors(cen, rad, Lx, Ly, px, py)
+    # diagonal=True on the PORE: two phases on a square lattice cannot both use
+    # 4-connectivity, and at a near-tangency -- which is most of the throats
+    # here -- 4-connectivity severs both. Without it the pore cluster count is
+    # a lattice artifact that grows with raster resolution (710/881/1229 at
+    # 1024/2048/4096 on the reference packing) rather than a property.
+    px_, py_, pfrac, pn = pl.percolates(~parent, diagonal=True)
+    coord, ncont, throat = pl.descriptors(cen, rad, Lx, Ly, px, py,
+                                          band=band if band else None)
+    # Hoist out of the gap-percentile dict: it belongs beside
+    # coordination_number, which it exists to correct, not buried among
+    # throat statistics where nobody would compare the two.
+    coord_band = throat.pop("coordination_at_band", None)
+
+    # THE PORE THE SOLVER CAN ACTUALLY USE. The sharp pore above answers the
+    # wrong question: phi never reaches 0 inside the diffuse band, so a channel
+    # narrower than `band` blocks vapour and conducts like solid however open
+    # it looks. Eroding by band/2 is also what makes the measurement converge
+    # -- sharp gives 710/881/1229 clusters at raster 1024/2048/4096, this gives
+    # 228/228/234 with the largest at 0.171/0.172/0.172.
+    #
+    # Pass --band-per-mean-r to get these. Without a band there is no way to
+    # grade pore connectivity at all, which is why the earlier packings looked
+    # acceptable while their usable pore was in ~228 pieces.
+    opx = opy = None
+    ofrac = on = onum = None
+    if band:
+        op = pl.open_pore(parent, band, Lx / raster, mpx, mpy)
+        opx, opy, ofrac, onum = pl.percolates(op, diagonal=True)
+        on = float(op.sum()) / max(float((~parent).sum()), 1.0)
 
     # HALF-DOMAIN ASYMMETRY -- the largest-scale homogeneity mode, and the one
     # that matters for an REV: "well connected on one side, sparse on the
@@ -519,10 +558,26 @@ def grade(cen, rad, Lx, Ly, px, py, mean_r, raster, context=None):
         "local_density_cv": cv,
         "max_void_radius_m": max_void,
         "max_void_radius_per_mean_r": max_void / mean_r,
+        # COORDINATION, TWICE, ON PURPOSE. coordination_number counts contacts
+        # within 0.02*r_min -- 9.5 nm on these packings. coordination_at_band
+        # counts pairs closer than the diffuse band, 414 nm, which is what the
+        # SOLVER joins with solid. They read 2.03 and 3.26 on the reference
+        # packing: the first says "barely rigid, half of isostatic", the second
+        # says "nearly isostatic". The second is the one that describes the
+        # simulation, and reporting only the first is how packings with a real
+        # coordination near 4 were recorded as 2.
+        "coordination_at_band": coord_band,
         "solid_percolates_x": sx, "solid_percolates_y": sy,
         "solid_largest_cluster_frac": sfrac, "solid_n_clusters": sn,
         "pore_percolates_x": px_, "pore_percolates_y": py_,
         "pore_largest_cluster_frac": pfrac, "pore_n_clusters": pn,
+        # The band-aware pore: what the solver can actually use. None unless
+        # --band-per-mean-r was given, because without a band the question is
+        # not answerable.
+        "open_pore_band_m": float(band) if band else None,
+        "open_pore_percolates_x": opx, "open_pore_percolates_y": opy,
+        "open_pore_largest_cluster_frac": ofrac, "open_pore_n_clusters": onum,
+        "open_pore_area_frac_of_pore": on,
         "coordination_number": coord, "n_contacts": ncont,
         "throat_gap_m": throat,
         "density_cv_ncoarse": ncoarse,
@@ -662,7 +717,8 @@ def build_once(seed, a, px, py, verbose=True):
                                   context=None if py else strip)
 
     meta = grade(cen, rad, a.Lx, a.Ly, px, py, a.mean_r, a.raster,
-                 context=strip)
+                 context=strip,
+                 band=(a.band_per_mean_r or 0.0) * a.mean_r)
     meta.update({
         "n_grains": len(rad),
         "n_matrix_grains": n_matrix,
@@ -751,6 +807,16 @@ def main(argv=None):
                         "the full width often fails, and one sweep needed 14 "
                         "attempts. An attempt costs ~0.15 s at 2 mm.")
 
+    p.add_argument("--band-per-mean-r", dest="band_per_mean_r", type=float,
+                   default=None,
+                   help="diffuse-band width 9.2*eps, in units of --mean-r. "
+                        "REPORTING ONLY -- it changes no geometry. Without it "
+                        "the pore-connectivity numbers in metadata.json are "
+                        "the sharp ones, which answer the wrong question: phi "
+                        "never reaches 0 inside the band, so a channel "
+                        "narrower than it blocks vapour and conducts like "
+                        "solid. Pass the LARGEST band in the study, since one "
+                        "packing is shared across temperatures.")
     p.add_argument("--raster", type=int, default=1024,
                    help="raster for the reported metrics")
     p.add_argument("--fill-raster", dest="fill_raster", type=int, default=512,

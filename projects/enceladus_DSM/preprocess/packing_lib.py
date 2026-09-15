@@ -267,29 +267,62 @@ def rasterize(centres, radii, Lx, Ly, nx, ny, px, py):
     return solid
 
 
-def percolates(mask):
+_D8 = np.ones((3, 3), dtype=bool)
+
+
+def percolates(mask, diagonal=False):
     """Does `mask` connect to its own periodic translate in x and in y?
 
     Tiles the mask 2x2 and labels it WITHOUT periodicity. If a pixel and the
     copy one period to the right carry the same label, the cluster joins its
     own image, i.e. it wraps -- which is what percolation means on a torus.
 
+    USE diagonal=True FOR THE PORE. Two phases on a square lattice cannot both
+    use 4-connectivity: at a diagonal pinch -- which is what a near-tangency
+    between two disks rasterises to -- 4-connectivity severs BOTH phases, and
+    the standard convention is to pair 4-connectivity on one phase with
+    8-connectivity on its complement. Measured on the reference packing the
+    difference is not cosmetic: the pore reports 710 clusters at 4-connectivity
+    and 291 at 8, and the 4-connected count keeps climbing with raster
+    resolution (710 -> 881 -> 1229 at 1024/2048/4096) because finer pixels
+    resolve more diagonal pinches. It is a lattice artifact, not geometry.
+
     Returns (perc_x, perc_y, largest_cluster_fraction, n_clusters).
     """
+    st = _D8 if diagonal else None
     ny, nx = mask.shape
     if not mask.any():
         return False, False, 0.0, 0
     tiled = np.tile(mask, (2, 2))
-    lab, _ = ndimage.label(tiled)          # 4-connectivity
+    lab, _ = ndimage.label(tiled, structure=st)
     centre = lab[:ny, :nx]
     sel = centre > 0
     perc_x = bool(np.any(centre[sel] == lab[:ny, nx:2 * nx][sel]))
     perc_y = bool(np.any(centre[sel] == lab[ny:2 * ny, :nx][sel]))
 
-    single, n = ndimage.label(mask)
+    single, n = ndimage.label(mask, structure=st)
     sizes = np.bincount(single.ravel())[1:]
     frac = float(sizes.max()) / float(mask.sum()) if n else 0.0
     return perc_x, perc_y, frac, int(n)
+
+
+def open_pore(solid, band, px_size, px=True, py=True):
+    """The pore the SOLVER can use: pore further than band/2 from any solid.
+
+    Pore connectivity measured on the sharp mask answers the wrong question.
+    phi never reaches 0 inside the diffuse band, so a channel narrower than
+    `band` carries solid-like conductivity and blocks vapour however open it
+    looks geometrically. Eroding by band/2 keeps only the pore where phi
+    actually bottoms out.
+
+    This is also the measure that is RESOLUTION-INDEPENDENT. On the reference
+    packing, at rasters of 1024/2048/4096 the sharp pore gives 710/881/1229
+    clusters (diverging -- an artifact) while this gives 228/228/234 with the
+    largest cluster at 0.171/0.172/0.172 (converged -- real).
+
+    `band` and `px_size` are lengths in the same units.
+    """
+    return (~solid) & (periodic_edt(solid, px, py) * px_size > 0.5 * band)
 
 
 def periodic_edt(mask, px, py):
@@ -396,10 +429,57 @@ def void_map(cen, rad, Lx, Ly, nx, ny, px, py, context=None, pad_frac=0.2):
 
 
 # =========================================================================
+# Throat topology
+# =========================================================================
+
+def delaunay_bonds(centres, Lx, Ly, px, py):
+    """Delaunay neighbour bonds as (i, j, ox, oy) over the base tile.
+
+    (ox, oy) are INTEGER periodic offsets in units of (Lx, Ly): the bond joins
+    base grain i to the image of base grain j displaced by (ox*Lx, oy*Ly). The
+    pore network of a disk packing is the Delaunay dual, so these bonds are the
+    throats -- the constrictions a vapour molecule must pass through.
+    """
+    n = len(centres)
+    offs = _offsets(Lx, Ly, px, py)
+    rep = (centres[None, :, :] + offs[:, None, :]).reshape(-1, 2)
+    zero = int(np.argmin(np.abs(offs).sum(axis=1)))
+    units = np.round(offs / np.array([Lx, Ly])).astype(int)
+
+    try:
+        tri = Delaunay(rep)
+    except Exception:
+        return np.empty((0, 4), dtype=np.int64)
+
+    seen = set()
+    for s in tri.simplices:
+        for a in range(3):
+            for b in range(a + 1, 3):
+                p, q = int(s[a]), int(s[b])
+                bp, bq = p // n, q // n
+                if bp != zero and bq != zero:
+                    continue                       # neither end in the base tile
+                if bp != zero:                     # orient so i is in the base
+                    p, q, bp, bq = q, p, bq, bp
+                i, j = p % n, q % n
+                if i == j and bq == zero:
+                    continue
+                o = units[bq] - units[bp]
+                key = (i, j, int(o[0]), int(o[1]))
+                rev = (j, i, -int(o[0]), -int(o[1]))
+                if rev not in seen:
+                    seen.add(key)
+    if not seen:
+        return np.empty((0, 4), dtype=np.int64)
+    return np.array(sorted(seen), dtype=np.int64)
+
+
+# =========================================================================
 # Structural descriptors
 # =========================================================================
 
-def descriptors(centres, radii, Lx, Ly, px, py, gap=0.0, contact_tol_frac=0.02):
+def descriptors(centres, radii, Lx, Ly, px, py, gap=0.0, contact_tol_frac=0.02,
+                band=None):
     """Coordination number, contact count, and throat (gap) statistics.
 
     Contacts: pairs whose surface gap is within contact_tol_frac * r_min of
@@ -411,15 +491,28 @@ def descriptors(centres, radii, Lx, Ly, px, py, gap=0.0, contact_tol_frac=0.02):
     if n < 2:
         return 0.0, 0, {}
 
-    pairs = _candidate_pairs(centres, radii, Lx, Ly, px, py,
-                             2.0 * float(radii.max()) + gap + tol)
+    reach = 2.0 * float(radii.max()) + gap + tol
+    if band:
+        reach = max(reach, 2.0 * float(radii.max()) + band)
+    pairs = _candidate_pairs(centres, radii, Lx, Ly, px, py, reach)
     n_contact = 0
+    n_band = 0
     if pairs.size:
         i, j = pairs[:, 0], pairs[:, 1]
         d = min_image(centres[j] - centres[i], Lx, Ly, px, py)
         sep = np.hypot(d[:, 0], d[:, 1]) - (radii[i] + radii[j])
         n_contact = int(np.sum(np.abs(sep - gap) <= tol))
+        # Coordination AS THE SOLVER SEES IT. `tol` is a geometric nicety --
+        # 0.02*r_min = 9.5 nm on these packings -- but phi does not reach 0
+        # anywhere inside the diffuse band, so every pair closer than `band`
+        # is joined by solid as far as the solve is concerned. Reporting only
+        # the tol-based count is what let packings with a genuine coordination
+        # near 4 be recorded as 1.8-2.1, and hid the pore fragmentation that
+        # came with it. Pass band=9.2*eps to get the number that matters.
+        if band:
+            n_band = int(np.sum(sep < band))
     coord = 2.0 * n_contact / n
+    coord_band = 2.0 * n_band / n if band else None
 
     offs = _offsets(Lx, Ly, px, py)
     rep = (centres[None, :, :] + offs[:, None, :]).reshape(-1, 2)
@@ -429,6 +522,8 @@ def descriptors(centres, radii, Lx, Ly, px, py, gap=0.0, contact_tol_frac=0.02):
     base[zero * n:(zero + 1) * n] = True
 
     stats = {}
+    if coord_band is not None:
+        stats["coordination_at_band"] = coord_band
     try:
         tri = Delaunay(rep)
     except Exception:
