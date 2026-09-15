@@ -1,0 +1,11 @@
+# LaTeX build products
+*.aux
+*.log
+*.out
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+
+# The parent .gitignore excludes *.pdf to keep generated plots out of the
+# repo. Typeset documents in docs/ are deliverables, not plots -- track them.
+!*.pdf
