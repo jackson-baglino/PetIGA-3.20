@@ -11,28 +11,48 @@
 -dof 3                                  # ice / temperature / vapor
 -p 2                                    # B-spline polynomial order (quadratic)
 -C 1                                    # B-spline continuity (C^1 for p=2)
--periodic 0                             # ZERO-FLUX walls on all three equations.
-                                        # Changed from 1 on 2026-08-03: periodicity
-                                        # wrapped the ICE equation, so ice growing
-                                        # into one wall reappeared on the opposite
-                                        # face -- visible in the s10 1mm run. None
-                                        # of phi, T or rho_v needs periodicity; all
-                                        # three are well posed with no flux, and it
-                                        # is still a closed system, so the mass
-                                        # balance is unaffected.
+-periodic 1                             # FALLBACK ONLY. Every geometry file that
+                                        # generate_study_opts.py writes carries its
+                                        # own -periodic, set from the packing's
+                                        # metadata and overriding this. Read
+                                        # generate_study_opts._periodic_flag() before
+                                        # changing anything here.
+                                        #
+                                        # Restored to 1 on 2026-09-15, reversing the
+                                        # 2026-08-03 change. The recorded reason for
+                                        # that change was that periodicity "wrapped
+                                        # the ICE equation, so ice growing into one
+                                        # wall reappeared on the opposite face".
+                                        # That is a MISMATCH artifact, not a property
+                                        # of periodicity: the packing in question had
+                                        # free edges, so the grain at the wall had no
+                                        # periodic image and its ice surfaced
+                                        # somewhere unrelated. With an xy-periodic
+                                        # packing the wall grain IS its own image and
+                                        # the wrap is correct. src/initial_conditions.c
+                                        # :525-567 already minimum-image wraps grains
+                                        # under -periodic 1.
+                                        #
+                                        # Why periodic is now preferred: -periodic 0
+                                        # imposes zero flux on phi, which IS a 90-deg
+                                        # contact angle at the wall. A grain clipped
+                                        # by a wall therefore carries the wrong
+                                        # surface curvature and coarsens as though it
+                                        # were a small grain -- a boundary layer in
+                                        # the sintering, on top of the closed-box
+                                        # vapour boundary. A torus has no wall and no
+                                        # boundary layer, which is what an REV wants.
                                         #
                                         # PetIGA carries periodicity on the AXIS, so
                                         # it applies to every field at once -- there
-                                        # is no per-equation switch. The k_eff
-                                        # corrector therefore builds its OWN periodic
-                                        # mesh (src/keff.c); homogenization still
-                                        # gets the periodic cell it requires.
+                                        # is no per-equation or per-axis switch. That
+                                        # is why 'x'/'y'-only packings are refused
+                                        # outright rather than approximated.
                                         #
-                                        # Packings for these runs must be generated
-                                        # with --non-periodic, so no grain straddles
-                                        # a wall: the multi_grains IC only applies
-                                        # minimum-image wrapping under -periodic 1,
-                                        # and a straddling grain would be CUT.
+                                        # Note this was never needed for k_eff: the
+                                        # corrector builds its OWN periodic mesh
+                                        # (src/keff.c), so homogenization got the
+                                        # periodic cell it requires either way.
 
 # ---------- Output ------------------------------------------------------------
 -n_out 5000                             # snapshots when -outp 0

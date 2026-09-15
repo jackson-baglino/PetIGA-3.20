@@ -707,8 +707,10 @@ def main(argv=None):
                    help="write straight to --out instead of grouping by "
                         "periodicity")
 
-    p.add_argument("--periodic", choices=["x", "y", "xy", "none"], default="x",
-                   help="which axes wrap (default: x)")
+    p.add_argument("--periodic", choices=["x", "y", "xy", "none"], default="xy",
+                   help="which axes wrap (default: xy -- the only mode with no "
+                        "boundary layer at all; 'x'/'y' alone cannot be run, "
+                        "see generate_study_opts._periodic_flag)")
     p.add_argument("--roll-tol", dest="roll_tol", type=float, default=None,
                    help="rolling budget [rad]; default: bisected to hit the "
                         "target porosity")

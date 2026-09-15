@@ -127,6 +127,42 @@ def _axes_token(pack: dict) -> str:
     return axes or "none"
 
 
+def _periodic_flag(pack: dict) -> int:
+    """The -periodic value this packing REQUIRES, or raise.
+
+    The geometry file must carry -periodic itself. Leaving it to solver.opts is
+    what produced the 2026-08-03 artifact: a packing built with free edges was
+    run under -periodic 1, so a grain at a wall did not wrap onto its own image
+    -- there was no image -- and ice growing into that wall reappeared at an
+    unrelated place on the opposite face. That was read as a flaw in
+    periodicity and periodicity was switched off; it was really a MISMATCH
+    between how the packing was built and how the solver wrapped it.
+
+    So the packing decides, and the decision travels with the geometry:
+
+        xy   -> 1   every grain at a seam is its own periodic image
+        none -> 0   crop_window kept every grain with any part inside, and the
+                    free walls are what that packing was built against
+
+    x or y alone is NOT EXPRESSIBLE and is refused rather than silently
+    approximated. PetIGA sets periodicity per AXIS and applies it to every
+    field at once (src/enceladus_main.c:998-1011); -periodic is a single flag
+    covering all axes, so there is no half-periodic run to emit. Either value
+    would be wrong on one axis, which is exactly the mismatch above.
+    """
+    axes = _axes_token(pack)
+    if axes == "xy":
+        return 1
+    if axes == "none":
+        return 0
+    raise SystemExit(
+        f"packing '{pack['name']}' wraps on '{axes}' only, which the solver "
+        f"cannot express: -periodic applies to every axis at once, so '{axes}' "
+        f"would be wrong on the other axis and reproduce the 2026-08-03 "
+        f"wall-teleport artifact. Regenerate it with "
+        f"'--periodic xy' (the default) or '--periodic none'.")
+
+
 def _matrix_note(pack: dict) -> str:
     """'  (N deposited + M filler)' when the packing records the split."""
     nf = pack.get("n_filler_grains")
@@ -184,6 +220,7 @@ def write_geometry(path: Path, T_C: float, p: dict, pack: dict, args) -> None:
 -ic_grain_union 0                 # ADDITIVE, the Molaro convention -- see below
 
 -dim 2
+-periodic {_periodic_flag(pack)}                      # SET BY THE PACKING -- see _periodic_flag()
 -Lx {pack['Lx']:.6e}
 -Ly {pack['Ly']:.6e}
 -Nx {p['Nx']}                          # ceil(sqrt(2)*Lx/eps)
@@ -254,6 +291,10 @@ def main(argv=None):
             print(f"  SKIP {d.name}: {m['problems'][0][:70]}", file=sys.stderr)
             continue
         m["name"] = d.name
+        # Validate periodicity HERE, at load, not at write: --dry-run does not
+        # call write_geometry, and a dry run that cheerfully sizes an unusable
+        # packing set is worse than no dry run.
+        _periodic_flag(m)
         # Project-root-relative, NOT absolute: these .opts are committed and
         # read on the cluster too, where the checkout lives somewhere else.
         # Both scripts/Studio/run_enceladus.sh and scripts/HPC/run_enceladus.sh
