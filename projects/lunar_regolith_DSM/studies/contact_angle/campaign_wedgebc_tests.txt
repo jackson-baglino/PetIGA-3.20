@@ -1,0 +1,27 @@
+# Contact angle under the WEDGE's boundary conditions
+# for scripts/HPC/submit_batch.sh --tests-file
+#
+# Two runs. One geometry: the ice bridge spanning a flat 125 um channel, which
+# is the wedge's channel width at its midpoint. Two contact angles, chosen to
+# sit either side of 90 degrees so the meniscus curvature changes sign:
+#
+#     theta =  60  ->  concave, chi = -8.00e3 1/m  ->  expect ice to GROW
+#     theta = 120  ->  convex,  chi = +8.00e3 1/m  ->  expect ice to SHRINK
+#
+# Boundary conditions are byte-identical to the wedge campaign's rhov_eq_eq
+# case (batch 2026-08-07 wedge_bc):
+#     -flag_BC_Tfix 1                 T = -20 C pinned on EVERY face
+#     -flag_BC_rhovfix 1              vapour Dirichlet...
+#     -rhovfix_axis 0                 ...on the x-faces only
+#     -rhovfix_lo/hi 1.000000         both ends at saturation
+#     -grad_temp0 0,0,0               isothermal
+#     -t_final 7.776e6                90 days
+# so the contact angle is the only thing that differs between these runs and
+# the wedge's, and the only driver within them.
+#
+# The thermal BC is the one that matters and the one the previous batch was
+# missing. Without it the box is insulated, latent heat from 1e-5 % of the ice
+# moves rho_vs(T) by the whole driving supersaturation, and growth stops before
+# it starts.
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60
+channel_2D_H125um_eps0.86um:grow90_T-20_theta120

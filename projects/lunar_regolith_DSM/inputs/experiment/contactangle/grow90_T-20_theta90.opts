@@ -62,8 +62,8 @@
 # --- vapour reservoir, x-faces only, both at saturation ---
 -flag_BC_rhovfix 1
 -rhovfix_axis 0
--rhovfix_lo 1.0
--rhovfix_hi 1.0
+-rhovfix_lo 1.000000
+-rhovfix_hi 1.000000
 
 -dtCFL 1
 -dtCFL_dphimax 0.2
