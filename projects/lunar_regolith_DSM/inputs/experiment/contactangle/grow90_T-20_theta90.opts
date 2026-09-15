@@ -22,6 +22,9 @@
 #     theta = 90  (chi = 0, flat)    -> no net flux      -> ice steady
 #     theta > 90  (chi > 0, convex)  -> releases vapour  -> ice SHRINKS
 #
+# This needs BOTH reservoirs. Mass alone is not enough -- the latent heat has to
+# go somewhere too, or the temperature moves and cancels the supersaturation.
+#
 # Reservoirs are on the x-faces ONLY. Pinning vapour on the y walls would feed
 # ice directly at its contact line and corrupt the angle (lunar_main.c warns
 # about exactly this).
@@ -33,6 +36,20 @@
 -temp -20.0
 -humidity 1.00
 -grad_temp0 0.0,0.0,0.0                 # isothermal: theta is the only driver
+
+# THERMAL reservoir, every face. Without this the box is insulated and latent
+# heat shuts the experiment off almost immediately: batch 2026-09-14 measured a
+# drift of +1.49e-4 K at theta=30 and -1.47e-4 K at theta=150, which is exactly
+# the dT needed to move rho_vs(T) by the 1.41e-5 supersaturation that was
+# driving growth. Depositing 1e-5 % of the ice releases that much heat, so the
+# driving force annihilates itself and the ice changes by ~0.003 % in 90 days
+# instead of tens of percent.
+#
+# With -grad_temp0 all zero, the solver pins T = temp0 on EVERY face (a uniform
+# isothermal bath), which is what an open pore in a large regolith body sees.
+# Unlike a vapour reservoir on the y walls, pinning T there is harmless: it does
+# not feed ice at the contact line.
+-flag_BC_Tfix 1
 
 -beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
