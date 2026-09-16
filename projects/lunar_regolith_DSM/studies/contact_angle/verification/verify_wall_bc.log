@@ -85,7 +85,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -110,7 +110,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.419796e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.208660e-01 sec  =  0.00 min 
+Setup time 2.237220e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -205,7 +205,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 0.866025  ->  theta = 30.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -230,7 +230,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.644933e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.175610e-01 sec  =  0.00 min 
+Setup time 2.217920e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -325,7 +325,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 0.707107  ->  theta = 45.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -350,7 +350,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.067276e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.180920e-01 sec  =  0.00 min 
+Setup time 2.215940e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -445,7 +445,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 0.500000  ->  theta = 60.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -470,7 +470,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.361825e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.180310e-01 sec  =  0.00 min 
+Setup time 2.223410e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -565,7 +565,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 0.000000  ->  theta = 90.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -590,7 +590,7 @@ IC type: multi_grains
    worst 1.954618e-08    5.809139e+06
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.178760e-01 sec  =  0.00 min 
+Setup time 2.195820e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -685,7 +685,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = -0.500000  ->  theta = 120.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -710,7 +710,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.421308e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.354160e-01 sec  =  0.00 min 
+Setup time 2.195930e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -805,7 +805,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = -0.866025  ->  theta = 150.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -830,7 +830,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.162578e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.181730e-01 sec  =  0.00 min 
+Setup time 2.253380e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -925,7 +925,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = -1.000000  ->  theta = 180.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -950,7 +950,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.034350e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.178930e-01 sec  =  0.00 min 
+Setup time 2.260330e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1070,7 +1070,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.447060e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.184540e-01 sec  =  0.00 min 
+Setup time 2.269940e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1167,7 +1167,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1183,7 +1183,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.477e-15
-Setup time 6.799000e-03 sec  =  0.00 min 
+Setup time 8.027000e-03 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1278,7 +1278,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1294,7 +1294,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.054e-16
-Setup time 1.380000e-02 sec  =  0.00 min 
+Setup time 1.342600e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1389,7 +1389,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1405,7 +1405,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.270e-15
-Setup time 3.790900e-02 sec  =  0.00 min 
+Setup time 3.847400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1500,7 +1500,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1516,7 +1516,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.834e-15
-Setup time 1.307300e-02 sec  =  0.00 min 
+Setup time 1.340000e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1611,7 +1611,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1627,7 +1627,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.411e-15
-Setup time 1.323900e-02 sec  =  0.00 min 
+Setup time 1.366100e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1722,7 +1722,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 0.500000  ->  theta = 60.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1738,7 +1738,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.975e-15
-Setup time 1.328700e-02 sec  =  0.00 min 
+Setup time 1.361600e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1833,7 +1833,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = -0.707107  ->  theta = 135.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1849,7 +1849,7 @@ IC type: single_ice
    sum F[.][0]    = 5.060801064880e-13   (assembled)
    expected       = 5.060801064880e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.397e-15
-Setup time 1.326500e-02 sec  =  0.00 min 
+Setup time 1.378800e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1944,7 +1944,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1960,7 +1960,7 @@ IC type: single_ice
    sum F[.][0]    = -1.073558025364e-12   (assembled)
    expected       = -1.073558025364e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.693e-15
-Setup time 1.341900e-02 sec  =  0.00 min 
+Setup time 1.378400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2057,7 +2057,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2073,7 +2073,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.054e-16
-Setup time 1.317600e-02 sec  =  0.00 min 
+Setup time 1.392200e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2168,7 +2168,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 0.500000  ->  theta = 60.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2184,7 +2184,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.975e-15
-Setup time 1.309100e-02 sec  =  0.00 min 
+Setup time 1.357400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2279,7 +2279,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = 0.000000  ->  theta = 90.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2295,7 +2295,7 @@ IC type: single_ice
    sum F[.][0]    = 8.951426379969e-28   (assembled)
    expected       = -4.382431331536e-29   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.143e+01
-Setup time 1.328200e-02 sec  =  0.00 min 
+Setup time 1.375800e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2390,7 +2390,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = -0.500000  ->  theta = 120.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2406,7 +2406,7 @@ IC type: single_ice
    sum F[.][0]    = 3.578526751213e-13   (assembled)
    expected       = 3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.540e-15
-Setup time 1.310800e-02 sec  =  0.00 min 
+Setup time 1.409200e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2501,7 +2501,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
    cos(theta) = -1.000000  ->  theta = 180.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2517,7 +2517,7 @@ IC type: single_ice
    sum F[.][0]    = 7.157053502426e-13   (assembled)
    expected       = 7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.411e-15
-Setup time 1.345200e-02 sec  =  0.00 min 
+Setup time 1.376800e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!

@@ -825,14 +825,24 @@ int main(int argc, char *argv[]) {
     user.Etaa = Sigma_a; /* Air surface energy in the double-well free energy */
 
     /* ---- Prescribed contact angle: resolve gamma's -> cos(theta) ---------
-     * gamma_ia defaults to Sigma_i because that is the ice-vapor surface
-     * energy this solver already implies: monitoring.c forms the capillary
-     * length as d0 = Etai*V_m/(R*T), and inverting it at the physical
-     * d0_sub0 = 1.0166e-9 m and -20 C returns 0.109 J/m^2 = Sigma_i exactly.
-     * (Sigma_a = 0.132 in this project is a separate matter -- enceladus_DSM
-     * sets both to 0.109 with the comment "same interface, air side: must
-     * equal Sigma_i". Sigma_a plays no part in the wall term.) */
-    if (gamma_ia <= 0.0) gamma_ia = Sigma_i;
+     * gamma_ia defaults to (Sigma_i + Sigma_a)/2, NOT to Sigma_i.
+     *
+     * Sigma_i is not the ice-air surface energy except in the degenerate case
+     * Sigma_a = Sigma_i. In the phase-field convention these projects inherit,
+     *     Sigma_i = gamma_ia + gamma_is - gamma_as
+     *     Sigma_a = gamma_ia + gamma_as - gamma_is
+     * so Sigma_i + Sigma_a = 2*gamma_ia and the ice-air energy is their MEAN.
+     * This solver's own double-well coefficient says the same thing a few lines
+     * up: C = (Sigma_i + Sigma_a)/2 + Lambda. With the lunar defaults
+     * (0.109, 0.132) that is 0.1205 J/m^2; taking Sigma_i alone understates it
+     * by 10.6 %, which propagates straight into theta through
+     * cos(theta) = (gamma_as - gamma_is)/gamma_ia.
+     *
+     * It happened to be harmless in enceladus_DSM, which sets Sigma_a = Sigma_i
+     * deliberately, and in every run so far, which passed -gamma_ia explicitly.
+     * Pass -gamma_ia when the substrate matters; the default is only a
+     * fallback. */
+    if (gamma_ia <= 0.0) gamma_ia = 0.5 * (Sigma_i + Sigma_a);
     user.gamma_ia = gamma_ia;
     user.gamma_is = gamma_is;
     user.gamma_as = gamma_as;

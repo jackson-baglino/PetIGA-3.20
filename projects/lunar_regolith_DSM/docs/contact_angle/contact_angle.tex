@@ -1,0 +1,343 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,graphicx,xcolor,microtype}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,urlcolor=blue!45!black]{hyperref}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\setlength{\parskip}{0.45em}\setlength{\parindent}{0pt}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\gia}{\gamma_{ia}}
+\newcommand{\gis}{\gamma_{is}}
+\newcommand{\gas}{\gamma_{as}}
+\newcommand{\Ft}{\widetilde{\mathcal{F}}}
+\newcommand{\Fp}{\mathcal{F}_{\mathrm{phys}}}
+\newcommand{\eps}{\epsilon}
+\newcommand{\dn}{\partial_n}
+
+\title{\vspace{-1.4cm}\textbf{Prescribing the ice--regolith contact angle}\\
+\large Wall free energy, its weak form, and why no surface energy survives
+into the residual coefficient}
+\author{\normalsize \code{lunar\_regolith\_DSM}}
+\date{\normalsize 2026-09-16}
+
+\begin{document}\maketitle\vspace{-0.7cm}
+
+\begin{center}\fbox{\parbox{0.94\textwidth}{\small
+\textbf{Summary.} The substrate in this two-phase model is the domain wall, not a
+phase field, so it must act through a boundary condition. Adding Cahn's wall free
+energy $f_w(\phi)=\gas+(\gis-\gas)h(\phi)$ to the functional supplies a natural
+condition on $\dn\phi$ that fixes the contact angle. Carrying it through the weak
+form gives a residual term
+$-3M\cos\theta\,h'(\phi)/6$, with no $\eps$ and no surface energy in the
+coefficient. Both cancellations are derived below. The $\gia$ that appears in
+$\cos\theta$ is \emph{not} the one that cancels.}}\end{center}
+
+\section{What the wall energy is}
+
+Let $\phi$ be the ice fraction, $\phi=1$ ice and $\phi=0$ vapour, and let
+$\Gamma$ be the part of $\partial\Omega$ that represents regolith. The wall
+carries an energy per unit area that interpolates between its two dry states,
+\begin{equation}
+f_w(\phi) \;=\; \gas\bigl(1-h(\phi)\bigr) \;+\; \gis\,h(\phi)
+\;=\; \gas + (\gis-\gas)\,h(\phi),
+\qquad h(\phi)=\phi^{2}(3-2\phi),
+\label{eq:fw}
+\end{equation}
+so $f_w(0)=\gas$ (wall against vapour) and $f_w(1)=\gis$ (wall against ice).
+
+Two properties of $h$ matter. $h(0)=0$ and $h(1)=1$ give the correct end states.
+$h'(0)=h'(1)=0$ makes the term inert in both bulk phases: it can only act where
+the ice--vapour interface actually meets the wall, and cannot shift the bulk
+equilibria of the double well. A linear interpolant would violate the second
+property and bias $\phi$ everywhere along $\Gamma$.
+
+\textbf{Note that \eqref{eq:fw} contains no $\gia$.} Only the two
+substrate energies appear. This is worth holding onto; $\gia$ enters later, from
+a different direction, and that is the whole reason $\cos\theta$ emerges.
+
+\section{The functional the solver actually evolves}
+
+The ice residual implemented in \code{assembly.c} is
+\begin{equation}
+R \;=\; N\,\phi_t \;+\; 3M\eps\,\nabla N\!\cdot\!\nabla\phi
+\;+\; \frac{3M}{\eps}\,f_1(\phi)\,N \;-\; \text{(source)},
+\qquad f_1 = W'(\phi),
+\label{eq:Rint}
+\end{equation}
+with $M=\code{mob\_sub}$ and the deliberately half-normalised double well
+\begin{equation}
+W(\phi)=\tfrac12\,\phi^{2}(1-\phi)^{2}.
+\label{eq:W}
+\end{equation}
+Equation \eqref{eq:Rint} is the weak form of the gradient flow
+\begin{equation}
+\frac{\partial\phi}{\partial t} \;=\; -\,\frac{3M}{\eps}\,
+\frac{\delta\Ft}{\delta\phi},
+\qquad
+\Ft[\phi] \;=\; \int_\Omega\Bigl[\tfrac{\eps^{2}}{2}\,|\nabla\phi|^{2} + W(\phi)\Bigr]\,d\Omega .
+\label{eq:Ftilde}
+\end{equation}
+
+$\Ft$ is a \emph{shape} functional. It carries no surface energy: there is no
+$\gamma$ anywhere in \eqref{eq:Ftilde}, and none in \eqref{eq:Rint}. In this
+solver $\gia$ reaches the dynamics only through the kinetic calibration
+$d_{0,\mathrm{sub0}}\to\lambda_{\mathrm{sub}}\to\tau_{\mathrm{sub}}\to
+M,\alpha_{\mathrm{sub}}$, never as an energy scale multiplying the PDE. A
+physical energy therefore cannot be added to \eqref{eq:Ftilde} directly. It has
+to be converted first, and the conversion factor is where the interesting
+algebra lives.
+
+\subsection{The conversion factor, and where $1/6$ comes from}
+
+For the equilibrium profile of \eqref{eq:W},
+\begin{equation}
+\phi(x)=\tfrac12\Bigl(1+\tanh\tfrac{x}{2\eps}\Bigr),
+\qquad\text{so}\qquad
+\phi'=\frac{\phi(1-\phi)}{\eps},
+\label{eq:profile}
+\end{equation}
+the first integral of $\eps^{2}\phi''=W'(\phi)$ is $\tfrac{\eps^{2}}{2}\phi'^{2}=W$,
+i.e.\ the two terms of the integrand are equal (equipartition). Hence the
+interfacial excess of $\Ft$ per unit area is
+\begin{equation}
+\int_{-\infty}^{\infty}\!\Bigl[\tfrac{\eps^{2}}{2}\phi'^{2}+W\Bigr]dx
+=\eps^{2}\!\int\!\phi'^{2}dx
+=\frac{\eps^{2}}{16\eps^{2}}\!\int\!\operatorname{sech}^{4}\!\tfrac{x}{2\eps}\,dx
+=\frac{1}{16}\cdot 2\eps\cdot\frac{4}{3}
+=\boxed{\frac{\eps}{6}} .
+\label{eq:excess}
+\end{equation}
+(Verified numerically to eight digits.) The same interface carries physical
+energy $\gia$ per unit area. The two functionals are therefore related by a pure
+number times $\gia/\eps$,
+\begin{equation}
+\Fp \;=\; \frac{6\gia}{\eps}\,\Ft
+\qquad\Longleftrightarrow\qquad
+\text{a physical energy $E$ enters $\Ft$ as } \widetilde{E}=\frac{\eps}{6\gia}\,E .
+\label{eq:convert}
+\end{equation}
+
+\section{The weak form, in full}
+
+Write the total functional including the wall term,
+\begin{equation}
+\Ft_{\text{tot}}[\phi]
+=\int_\Omega\Bigl[\tfrac{\eps^{2}}{2}|\nabla\phi|^{2}+W(\phi)\Bigr]d\Omega
+\;+\;\oint_\Gamma \widetilde{f}_w(\phi)\,d\Gamma,
+\qquad
+\widetilde{f}_w=\frac{\eps}{6\gia}f_w .
+\end{equation}
+
+Take the first variation with an arbitrary test function $\eta$:
+\begin{equation}
+\delta\Ft_{\text{tot}}[\eta]
+=\int_\Omega\Bigl[\eps^{2}\,\nabla\phi\!\cdot\!\nabla\eta + W'(\phi)\,\eta\Bigr]d\Omega
+\;+\;\oint_\Gamma \widetilde{f}_w{}'(\phi)\,\eta\,d\Gamma .
+\label{eq:var}
+\end{equation}
+
+\subsection{Strong form and the natural boundary condition}
+
+To read off the boundary condition, integrate the gradient term by parts:
+\begin{equation}
+\int_\Omega \eps^{2}\nabla\phi\!\cdot\!\nabla\eta \,d\Omega
+= -\int_\Omega \eps^{2}\nabla^{2}\phi\;\eta \,d\Omega
+\;+\;\oint_{\partial\Omega}\eps^{2}\,(\nabla\phi\!\cdot\!\mathbf{n})\,\eta\,dS .
+\end{equation}
+Substituting into \eqref{eq:var} and collecting,
+\begin{equation}
+\delta\Ft_{\text{tot}}[\eta]
+=\int_\Omega\Bigl[-\eps^{2}\nabla^{2}\phi+W'(\phi)\Bigr]\eta\,d\Omega
+\;+\;\oint_{\partial\Omega}\Bigl[\eps^{2}\dn\phi+\widetilde{f}_w{}'(\phi)\Bigr]\eta\,dS .
+\end{equation}
+Because $\eta$ is arbitrary in $\Omega$ and independently arbitrary on
+$\partial\Omega$, stationarity requires both brackets to vanish. The second is
+the natural boundary condition,
+\begin{equation}
+\eps^{2}\,\dn\phi + \widetilde{f}_w{}'(\phi) = 0 .
+\label{eq:natural}
+\end{equation}
+On any face where no wall term is declared, $\widetilde{f}_w{}'\equiv0$ and
+\eqref{eq:natural} reduces to $\dn\phi=0$: the zero-flux condition the solver
+had everywhere before this feature, which is a $90^\circ$ contact angle imposed
+by omission rather than by choice.
+
+\subsection{Evaluating $\widetilde{f}_w{}'$, and the appearance of $\cos\theta$}
+
+From \eqref{eq:fw} and \eqref{eq:convert},
+\begin{equation}
+\widetilde{f}_w{}'(\phi)
+=\frac{\eps}{6\gia}\,(\gis-\gas)\,h'(\phi)
+=-\frac{\eps}{6}\underbrace{\frac{\gas-\gis}{\gia}}_{\textstyle \cos\theta}h'(\phi)
+=-\frac{\eps}{6}\cos\theta\; h'(\phi).
+\label{eq:fwprime}
+\end{equation}
+
+This is the step worth pausing on. \textbf{Young's equation was not assumed.} The
+wall energy \eqref{eq:fw} contains only $\gas$ and $\gis$; $\gia$ entered solely
+through the normalisation \eqref{eq:convert} of the \emph{bulk} functional. Their
+ratio is $(\gas-\gis)/\gia$, which \emph{is} Young's $\cos\theta$. The
+non-dimensionalisation produces it.
+
+\subsection{The contact angle this enforces}
+
+Insert \eqref{eq:fwprime} into \eqref{eq:natural}:
+\begin{equation}
+\eps^{2}\dn\phi=\frac{\eps}{6}\cos\theta\,h'(\phi)
+=\eps\cos\theta\,\phi(1-\phi)
+\qquad\Longrightarrow\qquad
+\dn\phi=\cos\theta\,\frac{\phi(1-\phi)}{\eps},
+\label{eq:bc}
+\end{equation}
+using $h'(\phi)/6=\phi(1-\phi)$. By \eqref{eq:profile} the right-hand side is
+$\cos\theta\,|\nabla\phi|$, and writing $\nabla\phi=|\nabla\phi|\,\mathbf{m}$
+with $\mathbf{m}$ the interface normal pointing into the ice,
+\begin{equation}
+\boxed{\;\mathbf{m}\cdot\mathbf{n}=\cos\theta\;}
+\end{equation}
+with $\mathbf{n}$ the outward wall normal: the contact angle measured through the
+ice. Limits check: $\cos\theta=+1$ puts $\mathbf{m}=\mathbf{n}$, the interface
+normal pointing straight out of the wall, i.e.\ ice sheeted flat onto it,
+$\theta=0$; $\cos\theta=-1$ gives $\theta=180^\circ$, a point contact.
+
+\section{The residual and Jacobian terms}
+
+The Galerkin form does \emph{not} integrate the gradient term by parts --- the
+integration by parts above was only to expose the boundary condition. The weak
+residual is \eqref{eq:var} with $\eta=N_a$, multiplied by the prefactor
+$3M/\eps$ of the gradient flow \eqref{eq:Ftilde}:
+\begin{equation}
+R_a=\int_\Omega N_a\phi_t\,d\Omega
++\frac{3M}{\eps}\Bigl\{\int_\Omega\bigl[\eps^{2}\nabla N_a\!\cdot\!\nabla\phi+W'N_a\bigr]d\Omega
++\oint_\Gamma \widetilde{f}_w{}'(\phi)N_a\,d\Gamma\Bigr\}-\text{(source)} .
+\end{equation}
+The two volume terms reproduce $3M\eps$ and $3M/\eps$ in \eqref{eq:Rint} exactly.
+The boundary term gives, using \eqref{eq:fwprime},
+\begin{equation}
+R^{\Gamma}_a=\frac{3M}{\eps}\Bigl(-\frac{\eps}{6}\cos\theta\,h'(\phi)\Bigr)N_a
+=\boxed{\;-\,3M\,\cos\theta\,\frac{h'(\phi)}{6}\,N_a\;}
+\label{eq:Rbnd}
+\end{equation}
+and, since the wall energy has no $\phi_t$ dependence, a Jacobian with no shift
+term,
+\begin{equation}
+J^{\Gamma}_{ab}=\frac{\partial R^{\Gamma}_a}{\partial\phi_b}
+=-\,3M\cos\theta\,\frac{h''(\phi)}{6}\,N_aN_b ,
+\qquad h''(\phi)=6(1-2\phi).
+\end{equation}
+Equation \eqref{eq:Rbnd} is \code{assembly.c} verbatim:
+\code{Rb[a][0] = -rwb * 3.0 * mob\_b * costhet * (dh/6.0) * N0b[a]}.
+
+\subsection{Where each factor came from}
+
+\begin{center}\begin{tabular}{@{}lll@{}}
+\toprule
+factor & origin & equation \\
+\midrule
+$3M$ & the gradient-flow prefactor $3M/\eps$, as in the interior form & \eqref{eq:Ftilde} \\
+$1/6$ & the interfacial excess $\eps/6$ of the dimensionless $\Ft$ & \eqref{eq:excess} \\
+$\cos\theta$ & $(\gas-\gis)/\gia$, produced by the normalisation & \eqref{eq:fwprime} \\
+no $\eps$ & cancels between $\eps/6$ and $3M/\eps$ & \eqref{eq:Rbnd} \\
+no $\gamma$ prefactor & $\gia$ survives only inside $\cos\theta$ & \eqref{eq:fwprime} \\
+\bottomrule
+\end{tabular}\end{center}
+
+\subsection{Why one cannot simply ``keep the $\gia$''}
+
+A natural objection: the hand derivation gives
+$\delta f_w/\delta\phi=-\gia\cos\theta\,h'$, so why does $\gia$ not multiply the
+residual?
+
+Because that expression already contains $\gia$ twice in disguise. Writing
+$f_w=\gas-\gia\cos\theta\,h$ substitutes Young's equation into \eqref{eq:fw}; the
+$\gia$ introduced there is cancelled by the $\gia$ in $\cos\theta$, leaving
+$(\gis-\gas)h$, which is \eqref{eq:fw} again. The \emph{only} $\gia$ with
+independent standing is the one in the normalisation \eqref{eq:convert}, and it
+is that one which converts $(\gas-\gis)$ into $\cos\theta$.
+
+There is a real physical assumption buried here, and it is worth naming: the
+$\gia$ in \eqref{eq:convert} is the ice--vapour energy the \emph{bulk} model
+realises, while the $\gia$ one might write in $f_w$ is the ice--vapour energy at
+the \emph{contact line}. They are the same interface, so they are the same
+number, and the ratio is one. If they were allowed to differ --- as a
+sensitivity test, say --- the ratio would survive and $\gia$ would reappear
+explicitly.
+
+\subsection{Independent check}
+
+\code{demo/Metamorph.c} in the same PetIGA tree carries a contact-angle term
+derived by a different route,
+\code{R[a][0] = -N0[a]*3.0*eps*mob*|grad phi|*costhet}. Since
+$\eps|\nabla\phi|=\phi(1-\phi)=h'(\phi)/6$ on the equilibrium profile
+\eqref{eq:profile}, that is \eqref{eq:Rbnd} exactly. Two derivations, one
+coefficient.
+
+The $h(\phi)$ form is nonetheless preferable: it needs no $1/|\nabla\phi|$
+regularisation (Metamorph clamps $|\nabla\phi|$ at $10^{-5}$ to avoid dividing by
+zero in its Jacobian), its Jacobian is an exact mass-matrix block, and it remains
+correct away from the equilibrium profile, where
+$\eps|\nabla\phi|\neq\phi(1-\phi)$.
+
+\section{Clamping, and why it is required}
+
+$h'(\phi)=6\phi(1-\phi)$ changes sign for $\phi<0$ and $\phi>1$. So does
+\eqref{eq:Rbnd}, and since $R=N\phi_t+\dots=0$, a sign-flipped wall term drives
+$\phi$ \emph{further} out of range: a runaway.
+
+Nothing in the bulk opposes it. The interior form evaluates $f_1$ and the
+localiser at the clamped $\phi_c\in[0,1]$, so for $\phi<0$ both are identically
+zero --- there is no restoring force outside the range by construction. An
+unclamped wall term is then the only term acting there, and it acts outward.
+
+This is not hypothetical. At $\eps/R=1/100$ a $-2\times10^{-6}$ excursion at the
+wall grew to $-0.05$ within a few hundred steps, crossed \code{-phase\_lo}, and
+the residual's domain guard then returned a zero residual, which \code{SNES} read
+as $\|F\|=0$ and reported as converged. The solution froze for the remaining
+23{,}370 steps while the clock ran on to $t_{\text{final}}$ and the run reported
+success. The implementation therefore clamps $\phi$ to $[0,1]$ before evaluating
+$h'$, with the Jacobian clamping identically and carrying the chain-rule factor
+$d\phi_c/d\phi$, so that it remains an exact Jacobian of the clamped residual.
+
+\section{Using it}
+
+\begin{center}\begin{tabular}{@{}ll@{}}
+\toprule
+\code{-wall\_faces "y0,y1"} & which domain faces are regolith \\
+\code{-gamma\_is} & ice--regolith surface energy [J/m$^2$] \\
+\code{-gamma\_as} & air--regolith surface energy [J/m$^2$] \\
+\code{-gamma\_ia} & ice--air; default $(\Sigma_i+\Sigma_a)/2$ \\
+\bottomrule
+\end{tabular}\end{center}
+
+The solver forms $\cos\theta=(\gas-\gis)/\gia$, refuses the run if
+$|\gas-\gis|>\gia$ (no angle exists; one phase wets completely), and prints both
+the energies and the derived $\theta$.
+
+\textbf{On the default.} $\gia$ defaults to $(\Sigma_i+\Sigma_a)/2$, not to
+$\Sigma_i$. In the convention these projects inherit,
+$\Sigma_i=\gia+\gis-\gas$ and $\Sigma_a=\gia+\gas-\gis$, so
+$\Sigma_i+\Sigma_a=2\gia$ and the ice--air energy is their mean --- which is also
+what the solver's own double-well coefficient $C=(\Sigma_i+\Sigma_a)/2+\Lambda$
+says. $\Sigma_i$ alone equals $\gia$ only when $\Sigma_a=\Sigma_i$, which
+\code{enceladus\_DSM} enforces and \code{lunar\_regolith\_DSM} does not; with the
+lunar defaults $(0.109,0.132)$ taking $\Sigma_i$ understates $\gia$ by $10.6\%$,
+and that propagates directly into $\theta$. Pass \code{-gamma\_ia} explicitly
+whenever the substrate matters.
+
+The only admissibility constraint is $|\gas-\gis|\le\gia$. The three-phase
+triple-well constraint $\gis>\tfrac{\gia}{2}(1-\cos\theta)$ does \emph{not}
+apply: it came from requiring a positive $\Sigma_s$, and there is no sediment
+phase and no triple well here.
+
+\section{Validation}
+
+Five prescribed angles from $30^\circ$ to $150^\circ$ in a flat channel recover
+Young's prediction with a maximum error of $0.127^\circ$ and an RMS of
+$0.062^\circ$, against a $2^\circ$ acceptance criterion, with the error falling
+as $\eps/R$ is refined. A droplet on a single wall, which has no confinement,
+agrees with the channel, so the angle is set by the boundary condition rather
+than by the geometry. Details in
+\code{studies/contact\_angle/}.
+
+\end{document}
