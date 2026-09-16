@@ -145,7 +145,96 @@ percolation stays (0,0)) — the fragmentation is in the geometry, not the band.
 
 ---
 
-## 4. What follows for the study
+## 4. How much does each problem actually bias the answer?
+
+The design goal is not a perfect microstructure — 2D forbids one — but the
+**least biased** one that still satisfies the homogenization assumptions. That
+makes the three problems measurable rather than arguable.
+
+```bash
+venv_enceladus/bin/python studies/packing_design/measure_bias.py
+venv_enceladus/bin/python studies/packing_design/plot_bias.py
+```
+
+The lever is `eps`. Every problem is a diffuse-band artifact, so sweeping `eps`
+on a **fixed** packing separates artifact from material: what moves with `eps`
+is the artifact, and the `eps → 0` intercept is the material. `k_eff` and
+`D_eff` come from `cell_solve.py`, a finite-volume twin of `src/keff_cell.c`
+that is exact on a laminate to 1e-13 and runs in seconds. The raster must
+resolve the band; the driver prints `band/h` per row and flags anything below 4.
+
+![bias](bias.png)
+
+| quantity | at `eps` = 45 nm | `eps → 0` | bias |
+|---|---|---|---|
+| `k_eff` | 0.635 W/m/K | 0.478 ± 0.03 | **+33%** |
+| SSA | 4.06e5 /m | 4.56e5 ± 8e3 | **−11%** |
+| `D_eff/D_0` | 1.4e-3 (x), 3.6e-3 (y) | — | eps-independent |
+
+**`k_eff` is badly biased and SSA is not.** Both trends are cleanly linear in
+`eps`, which is the signature predicted in
+`effective_thermal_cond/docs/calonne_to_phasefield_equivalence.tex` §6: the
+tangential surface excess is exactly zero, the normal one is `−eps·C` with
+`C = (1/K_a − 1/K_i)·ln(K_i/K_a)`, so `k_eff` reads high at first order in
+`eps` scaling with interfacial area. Measured `d(1/k_eff)/d(eps) = −7.0e6`
+against a pure-normal `−C·SSA = −9.4e7`: same sign, same form, prefactor 0.074
+because only the normal-facing fraction of a random interface contributes.
+The theory and the measurement are independent and they agree.
+
+**This does not mean `k_eff` is unusable — it means `k_eff(t=0)` is.** The
+`eps → 0` limit is tangent discs with *point* contacts, which is no more
+physical for sintered ice than the bridged version; the band is crudely
+standing in for necks that are not there yet. Once real necks grow past the
+band the artifact is replaced by material. So: **never use t = 0 as the
+baseline**, and trust `k_eff(t)` only once the neck radius comfortably exceeds
+`9.2·eps`.
+
+**SSA at −11% is the more robust observable**, which is a point in favour of
+the SSA–`k_eff` correlation already observed being real rather than an artifact
+shared by both.
+
+**Pore fragmentation costs a factor of ~50–100 in vapour transport, and it is
+geometric, not a band effect** — `D_eff` barely moves across a factor of 4 in
+`eps`. Against the ~0.16 a well-connected pore at this porosity would give,
+0.0014–0.0036 is the price of the fragmentation. Note `D_yy/D_xx ≈ 2.6`:
+vapour moves preferentially along the deposition direction.
+
+### The kinetic regime, and why the pore cutoff is defensible anyway
+
+One correction worth making before this reaches a reviewer: **`alpha_c = 1e-3`
+is attachment-limited, not vapour-transport-limited.** The crossover length is
+`L* = beta_HK · D_v` with `beta_HK ∝ 1/alpha_c` (`comp_eps.py:243`), so
+*lowering* `alpha_c` pushes *further* into the attachment-limited regime:
+
+| `alpha_c` | `L*` at −20 °C | regime for R = 50 µm grains |
+|---|---|---|
+| 1.34e-2 | 10.8 µm | vapour-diffusion-limited |
+| 1e-3 | 144 µm | **attachment-limited** |
+| 1e-4 | 1444 µm | attachment-limited |
+
+The conclusion survives the correction, and is in fact better supported by it.
+Attachment-limited means the vapour field is nearly uniform over a pore, so the
+growth rate at each surface is set by local curvature rather than by how far
+vapour travelled. Neck growth is fed by the grain surfaces bounding the *same*
+pore — and with 228 pockets to 312 grains, a neck and its feeding surfaces are
+in the same pocket. So **local sintering is unaffected by fragmentation.**
+
+What fragmentation does suppress is *long-range* redistribution: within a
+pocket `D = D_v`, but between pockets `D_eff ≈ 0.002 D_v`, which drops the
+effective crossover to `L*_eff ≈ 0.3 µm`, far below the grain size. So
+macroscopic vapour redistribution — long-range Ostwald ripening — is throttled
+by roughly two orders of magnitude.
+
+For this study that is close to harmless and arguably convenient, since
+sintering is meant to dominate ripening anyway. **But it must be stated as a
+model limitation rather than discovered by a reader**: this configuration
+cannot produce long-range coarsening, so any result about grain-size
+*distribution* evolution is suspect, while results about neck growth, SSA and
+their effect on `k_eff` are not.
+
+---
+
+## 5. What follows for the study
 
 - **Stop treating pore connectivity as a binary to be designed for.** It is
   always "no". The physical quantity is how *well* the pore communicates, which
