@@ -169,7 +169,7 @@ resolve the band; the driver prints `band/h` per row and flags anything below 4.
 |---|---|---|---|
 | `k_eff` | 0.635 W/m/K | 0.478 ± 0.03 | **+33%** |
 | SSA | 4.06e5 /m | 4.56e5 ± 8e3 | **−11%** |
-| `D_eff/D_0` | 1.4e-3 (x), 3.6e-3 (y) | — | eps-independent |
+| `D_eff/D_0` | **≤** 1.4e-3 (x), 3.6e-3 (y) | — | upper bound, see below |
 
 **`k_eff` is badly biased and SSA is not.** Both trends are cleanly linear in
 `eps`, which is the signature predicted in
@@ -193,11 +193,29 @@ baseline**, and trust `k_eff(t)` only once the neck radius comfortably exceeds
 the SSA–`k_eff` correlation already observed being real rather than an artifact
 shared by both.
 
-**Pore fragmentation costs a factor of ~50–100 in vapour transport, and it is
-geometric, not a band effect** — `D_eff` barely moves across a factor of 4 in
-`eps`. Against the ~0.16 a well-connected pore at this porosity would give,
-0.0014–0.0036 is the price of the fragmentation. Note `D_yy/D_xx ≈ 2.6`:
-vapour moves preferentially along the deposition direction.
+**Pore fragmentation suppresses vapour transport by AT LEAST ~100×**, and the
+number is a bound rather than a value. `k_eff` and SSA are raster-converged;
+`D_eff` is not. Over rasters 384 / 512 / 768 / 1024 at `eps` = 45 nm:
+
+| raster | `k_iso` | SSA | `D_xx/D_0` |
+|---|---|---|---|
+| 384 | 0.6330 | 394544 | 7.6e-3 |
+| 512 | 0.6337 | 399689 | 4.2e-3 |
+| 768 | 0.6344 | 404192 | 3.0e-3 |
+| 1024 | 0.6347 | 406017 | **1.4e-3** |
+
+`k_eff` moves 0.3% and SSA ~1–2%, so those are quantitative. `D_eff` falls 5×
+and is still dropping at the finest raster a direct solve fits in memory —
+it is controlled by the narrowest constrictions, and coarse pixels bridge them,
+so every refinement removes transport. **Quote it as "at most", never as a
+value.** Against the ~0.16 a well-connected pore at this porosity would give,
+≤1.4e-3 means suppression of **≥114×**, probably more.
+
+This is *not* a floor artifact — transport is carried by the thin films, not
+through the ice. Checked separately at N = 1024: floors 1e-4 … 1e-8 give
+5.1e-3, 1.9e-3, 1.40e-3, 1.33e-3, 1.325e-3, converged in the floor by 1e-7.
+Note `D_yy/D_xx ≈ 2.6`: vapour moves preferentially along the deposition
+direction.
 
 ### The kinetic regime, and why the pore cutoff is defensible anyway
 
@@ -220,10 +238,10 @@ pore — and with 228 pockets to 312 grains, a neck and its feeding surfaces are
 in the same pocket. So **local sintering is unaffected by fragmentation.**
 
 What fragmentation does suppress is *long-range* redistribution: within a
-pocket `D = D_v`, but between pockets `D_eff ≈ 0.002 D_v`, which drops the
-effective crossover to `L*_eff ≈ 0.3 µm`, far below the grain size. So
+pocket `D = D_v`, but between pockets `D_eff ≤ 0.0014 D_v`, which drops the
+effective crossover to `L*_eff ≤ 0.2 µm`, far below the grain size. So
 macroscopic vapour redistribution — long-range Ostwald ripening — is throttled
-by roughly two orders of magnitude.
+by at least two orders of magnitude, and the bound only moves one way.
 
 For this study that is close to harmless and arguably convenient, since
 sintering is meant to dominate ripening anyway. **But it must be stated as a

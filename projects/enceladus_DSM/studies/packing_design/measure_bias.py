@@ -21,6 +21,21 @@ the artifact, and the eps -> 0 limit is the material.
                always 'disconnected'. It measures how much vapour still moves
                through the thin films, which is the quantity that actually
                matters for whether pore fragmentation changes the physics.
+
+CONVERGENCE, WHICH IS NOT THE SAME FOR ALL THREE. Checked on the LR20 packing
+at eps = 45 nm over rasters 384 / 512 / 768 / 1024:
+
+    k_eff   0.6330  0.6337  0.6344  0.6347    converged, 0.3% spread
+    SSA     394544  399689  404192  406017    converged to ~1-2%
+    D_eff   7.6e-3  4.2e-3  3.0e-3  1.4e-3    NOT CONVERGED, still falling
+
+So k_eff and SSA are quantitative here and D_eff IS AN UPPER BOUND. D_eff is
+set by the narrowest constrictions, and coarse pixels bridge them, so every
+refinement removes transport; 1024 is simply the finest raster a direct solve
+fits in memory. It is not a floor artifact -- transport is film-carried, not
+through the ice -- which was checked separately: at N = 1024 the floor ladder
+1e-4 ... 1e-8 gives 5.1e-3, 1.9e-3, 1.40e-3, 1.33e-3, 1.325e-3, i.e. converged
+in the floor by 1e-7. Quote D_eff as "at most", never as a value.
 """
 from __future__ import annotations
 

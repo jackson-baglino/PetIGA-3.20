@@ -44,7 +44,7 @@ panels = [
     ("k_iso", "$k_{\\rm eff}$  [W m$^{-1}$K$^{-1}$]",
      "(a)  conductivity: biased +33%", fs.C[0], False),
     ("ssa_per_m", "SSA  [m$^{-1}$]", "(b)  SSA: biased -11%", fs.C[2], False),
-    ("D_xx_over_D0", "$D_{\\rm eff}/D_0$", "(c)  vapour: geometric, not band",
+    ("D_xx_over_D0", "$D_{\\rm eff}/D_0$", "(c)  vapour: upper bound only",
      fs.C[1], True),
 ]
 summary = []
@@ -75,6 +75,11 @@ for ax, (key, ylab, title, col, logy) in zip(axes, panels):
         ax.text(eps.max() * 1e9, 0.325 / 2.0 * 1.12,
                 "a well-connected pore\nat this porosity", ha="right",
                 va="bottom", fontsize=fs.FS_NOTE, color=fs.MUTED)
+        ax.annotate("", xy=(55, 6e-4), xytext=(55, 2.0e-3),
+                    arrowprops=dict(arrowstyle="->", color=fs.INK, lw=1.4))
+        ax.text(59, 1.1e-3, "not raster-converged:\nstill falling at the\n"
+                            "finest affordable grid", fontsize=fs.FS_NOTE,
+                color=fs.INK, va="center")
         ax.set_ylim(5e-4, 0.35)
     ax.axvline(PROD * 1e9, color=fs.MUTED, ls=":", lw=1.0, zorder=1)
     fs.style(ax, r"$\varepsilon$  [nm]", ylab, title, logy=logy)
