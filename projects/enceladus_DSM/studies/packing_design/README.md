@@ -6,9 +6,39 @@ solver, ~2 s per packing, whole sweep in a couple of minutes.
 ```bash
 venv_enceladus/bin/python studies/packing_design/measure_connectivity.py
 venv_enceladus/bin/python studies/packing_design/plot_connectivity.py
+venv_enceladus/bin/python studies/packing_design/render_problems.py
 ```
 
-Outputs `connectivity.csv` and `connectivity.png` next to this file.
+Outputs `connectivity.csv`, `connectivity.png` and the three `problem*.png`
+figures next to this file.
+
+---
+
+## 0. The three problems, in pictures
+
+**Problem 1 — a gap narrower than the diffuse band is solid.** `phi` is built
+the way the solver builds it: the additive Molaro convention, so two grains
+each contributing ~0.5 at a near-tangency SUM to ~1 and the gap fills in. At
+the midpoint of a gap `g` the sum is `1 - tanh(g/4eps)`, so `phi` only drops
+below 0.01 once **`g > 10.6 eps`**. Below that there is no pore there at all,
+whatever the drawing says.
+
+![problem 1](problem1_throats.png)
+
+**Problem 2 — vapour cannot cross the domain.** The pore looks connected and is
+not. Eroding by `band/2` leaves 228 disconnected pockets, the largest holding
+17% of the void, none spanning the cell. This is at `t = 0`, before any
+sintering.
+
+![problem 2](problem2_fragments.png)
+
+**Problem 3 — opening the pore breaks the ice.** Only the largest cluster of
+each phase is coloured, so "spans the cell" is visible rather than asserted.
+Raising porosity grows the orange pore pocket and simultaneously shatters the
+blue ice backbone: at 0.30 the ice spans both axes and the pore spans none; by
+0.45 each spans only `y`; by 0.50 neither spans anything.
+
+![problem 3](problem3_trade.png)
 
 ---
 
