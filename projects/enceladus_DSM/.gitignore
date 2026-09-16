@@ -79,3 +79,11 @@ docs/tex/*.synctex.gz
 
 # Same again for the alpha_c sizing study.
 !studies/alpha_c_sizing/*.png
+
+# Same again for the packing-design and sintering->k_eff studies. These
+# figures are the argument, not decoration: the READMEs embed them inline
+# (the connectivity trade, the three "problems", the bias ladder, the pilot
+# initial condition), and without them the prose refers to pictures nobody
+# can see.
+!studies/packing_design/*.png
+!studies/keff_sintering/*.png
