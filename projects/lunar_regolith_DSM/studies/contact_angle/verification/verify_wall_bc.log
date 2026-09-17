@@ -19,8 +19,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  1.2000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -85,7 +85,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -110,7 +110,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.419796e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.237220e-01 sec  =  0.00 min 
+Setup time 2.294190e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -139,8 +139,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  1.2000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -205,7 +205,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 0.866025  ->  theta = 30.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -230,7 +230,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.644933e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.217920e-01 sec  =  0.00 min 
+Setup time 2.315470e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -259,8 +259,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  1.2000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -325,7 +325,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 0.707107  ->  theta = 45.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -350,7 +350,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.067276e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.215940e-01 sec  =  0.00 min 
+Setup time 2.352310e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -379,8 +379,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  1.2000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -445,7 +445,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 0.500000  ->  theta = 60.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -470,7 +470,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.361825e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.223410e-01 sec  =  0.00 min 
+Setup time 2.286880e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -499,8 +499,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  1.2000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -565,7 +565,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 0.000000  ->  theta = 90.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -590,7 +590,7 @@ IC type: multi_grains
    worst 1.954618e-08    5.809139e+06
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.195820e-01 sec  =  0.00 min 
+Setup time 2.282260e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -619,8 +619,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  1.2000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -685,7 +685,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = -0.500000  ->  theta = 120.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -710,7 +710,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.421308e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.195930e-01 sec  =  0.00 min 
+Setup time 2.290680e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -739,8 +739,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  1.2000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -805,7 +805,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = -0.866025  ->  theta = 150.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -830,7 +830,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.162578e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.253380e-01 sec  =  0.00 min 
+Setup time 2.274620e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -859,8 +859,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  1.2000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -925,7 +925,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = -1.000000  ->  theta = 180.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -950,7 +950,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.034350e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.260330e-01 sec  =  0.00 min 
+Setup time 2.295070e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -979,8 +979,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  1.2000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -1038,15 +1038,12 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    ------------------ ---------------------- ------------------------ ------------------------
    x = 0   (left)     Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
    x = Lx  (right)    Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
-   y = 0   (bottom)   regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
-   y = Ly  (top)      regolith  theta=60.0° Neumann  (insulating)    Neumann  (sealed)
+   y = 0   (bottom)   Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
+   y = Ly  (top)      Neumann  dphi/dn=0     Neumann  (insulating)    Neumann  (sealed)
 
-   phi_i is never pinned (no Dirichlet path exists for it). On a
-   face marked "regolith" above, its NATURAL condition is the wall
-   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
-   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.0900e-01   gamma_is = 2.4550e-01   gamma_as = 3.0000e-01  J/m²
-   cos(theta) = (gamma_as - gamma_is)/gamma_ia = 0.500000  ->  theta = 60.00°
+   phi_i is natural Neumann on every wall — dphi/dn = 0, i.e. a 90°
+   contact angle. Set -wall_faces (with -sigma_is/-sigma_as) to
+   prescribe a different angle where ice meets regolith.
 
 ================================================================================
 
@@ -1056,31 +1053,34 @@ IC type: multi_grains
   1 ice grain(s), 0 sediment bump(s)
   ice grain 0: centre = (3.1250e-05, 1.5625e-05) m,  ax = 2.3438e-05 m,  ay = 2.3438e-05 m
 
- WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = 0.500000
+ WALL JACOBIAN CHECK (-test_wall_jacobian)   h = 1.0e-07,  cos(theta) = 0.000000
    The full-system column is dominated by the interior form, so it
    is insensitive to the wall block; the isolated column differences
    both J and F between costhet on and off and is the real gate.
 
    dir   full system      wall block       ||Jbnd*v||
-     0   1.849332e-08    7.772043e-10    1.876103e-13
-     1   1.738476e-08    9.260513e-10    1.785164e-13
-     2   1.954618e-08    9.447060e-10    1.847861e-13
-     3   1.745779e-08    8.593891e-10    1.969377e-13
-     4   1.871669e-08    9.404378e-10    1.884821e-13
-   worst 1.954618e-08    9.447060e-10
+     0   1.849332e-08    0.000000e+00    0.000000e+00
+     1   1.738476e-08    0.000000e+00    0.000000e+00
+     2   1.954618e-08    0.000000e+00    0.000000e+00
+     3   1.745779e-08    0.000000e+00    0.000000e+00
+     4   1.871669e-08    0.000000e+00    0.000000e+00
+   worst 1.954618e-08    0.000000e+00
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.269940e-01 sec  =  0.00 min 
+Setup time 2.205740e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
-There are 5 unused database options. They are:
+There are 8 unused database options. They are:
+Option left: name:-gamma_as value: 0.300 source: command line
+Option left: name:-gamma_ia value: 0.109 source: command line
+Option left: name:-gamma_is value: 0.24550 source: command line
 Option left: name:-ksp_converged_reason value: ::failed source: file
 Option left: name:-ksp_gmres_restart value: 200 source: file
 Option left: name:-snes_converged_reason value: ::failed source: file
 Option left: name:-sub_pc_factor_levels value: 3 source: file
 Option left: name:-sub_pc_type value: ilu source: file
-  gammas(60deg) rel.err=9.447060e-10    PASS
+  gammas(60deg) rel.err=0.000000e+00    PASS
 
 === G3: boundary surface measure ===
 Running on 1 processes.
@@ -1101,8 +1101,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -1167,7 +1167,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1183,7 +1183,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.477e-15
-Setup time 8.027000e-03 sec  =  0.00 min 
+Setup time 7.093000e-03 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1212,8 +1212,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -1278,7 +1278,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1294,7 +1294,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.054e-16
-Setup time 1.342600e-02 sec  =  0.00 min 
+Setup time 1.360900e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1323,8 +1323,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -1389,7 +1389,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1405,7 +1405,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.270e-15
-Setup time 3.847400e-02 sec  =  0.00 min 
+Setup time 3.732400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1434,8 +1434,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -1500,7 +1500,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1516,7 +1516,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.834e-15
-Setup time 1.340000e-02 sec  =  0.00 min 
+Setup time 1.300900e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1545,8 +1545,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -1611,7 +1611,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1627,7 +1627,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.411e-15
-Setup time 1.366100e-02 sec  =  0.00 min 
+Setup time 1.297500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1656,8 +1656,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -1722,7 +1722,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 0.500000  ->  theta = 60.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1738,7 +1738,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.975e-15
-Setup time 1.361600e-02 sec  =  0.00 min 
+Setup time 1.350500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1767,8 +1767,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -1833,7 +1833,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = -0.707107  ->  theta = 135.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1849,7 +1849,7 @@ IC type: single_ice
    sum F[.][0]    = 5.060801064880e-13   (assembled)
    expected       = 5.060801064880e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.397e-15
-Setup time 1.378800e-02 sec  =  0.00 min 
+Setup time 1.333300e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1878,8 +1878,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -1944,7 +1944,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -1960,7 +1960,7 @@ IC type: single_ice
    sum F[.][0]    = -1.073558025364e-12   (assembled)
    expected       = -1.073558025364e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.693e-15
-Setup time 1.378400e-02 sec  =  0.00 min 
+Setup time 1.358600e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1991,8 +1991,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -2057,7 +2057,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 1.000000  ->  theta = 0.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2073,7 +2073,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.054e-16
-Setup time 1.392200e-02 sec  =  0.00 min 
+Setup time 1.303700e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2102,8 +2102,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -2168,7 +2168,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 0.500000  ->  theta = 60.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2184,7 +2184,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.975e-15
-Setup time 1.357400e-02 sec  =  0.00 min 
+Setup time 1.369400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2213,8 +2213,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -2279,7 +2279,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = 0.000000  ->  theta = 90.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2295,7 +2295,7 @@ IC type: single_ice
    sum F[.][0]    = 8.951426379969e-28   (assembled)
    expected       = -4.382431331536e-29   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.143e+01
-Setup time 1.375800e-02 sec  =  0.00 min 
+Setup time 1.331600e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2324,8 +2324,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -2390,7 +2390,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = -0.500000  ->  theta = 120.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2406,7 +2406,7 @@ IC type: single_ice
    sum F[.][0]    = 3.578526751213e-13   (assembled)
    expected       = 3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.540e-15
-Setup time 1.409200e-02 sec  =  0.00 min 
+Setup time 1.318300e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2435,8 +2435,8 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 
  PHASE-FIELD INTERFACE
    eps      =  3.0000e-06 m
-   Sigma_i  =  1.0900e-01 J/m²   (ice surface energy)
-   Sigma_a  =  1.3200e-01 J/m²   (air surface energy)
+   Sigma_i  =  1.0900e-01 J/m²   (surface-tension parameter, = sigma_ia here)
+   Sigma_a  =  1.3200e-01 J/m²   (surface-tension parameter; see note in main)
    Lambda   =  0.0000e+00
 
  ENVIRONMENT & INITIAL CONDITIONS
@@ -2501,7 +2501,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
    face marked "regolith" above, its NATURAL condition is the wall
    free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than
    zero; every other face keeps dphi/dn = 0 (a 90° contact angle).
-   gamma_ia = 1.2050e-01   gamma_is = 0.0000e+00   gamma_as = 0.0000e+00  J/m²
+   sigma_ia = 1.0900e-01   sigma_is = 0.0000e+00   sigma_as = 0.0000e+00  J/m²
    cos(theta) = -1.000000  ->  theta = 180.00°   [-contact_angle_deg: Young's equation BYPASSED, debug only]
 
 ================================================================================
@@ -2517,7 +2517,7 @@ IC type: single_ice
    sum F[.][0]    = 7.157053502426e-13   (assembled)
    expected       = 7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.411e-15
-Setup time 1.376800e-02 sec  =  0.00 min 
+Setup time 1.316300e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!

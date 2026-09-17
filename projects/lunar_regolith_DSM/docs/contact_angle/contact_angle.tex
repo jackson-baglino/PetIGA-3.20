@@ -7,11 +7,10 @@
 \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
 \setlength{\parskip}{0.45em}\setlength{\parindent}{0pt}
 \newcommand{\code}[1]{\texttt{\small #1}}
-\newcommand{\gia}{\gamma_{ia}}
-\newcommand{\gis}{\gamma_{is}}
-\newcommand{\gas}{\gamma_{as}}
+\newcommand{\sia}{\sigma_{ia}}
+\newcommand{\sis}{\sigma_{is}}
+\newcommand{\sas}{\sigma_{as}}
 \newcommand{\Ft}{\widetilde{\mathcal{F}}}
-\newcommand{\Fp}{\mathcal{F}_{\mathrm{phys}}}
 \newcommand{\eps}{\epsilon}
 \newcommand{\dn}{\partial_n}
 
@@ -26,7 +25,7 @@ into the residual coefficient}
 \begin{center}\fbox{\parbox{0.94\textwidth}{\small
 \textbf{Summary.} The substrate in this two-phase model is the domain wall, not a
 phase field, so it must act through a boundary condition. Cahn's wall free energy
-$f_w(\phi)=\gas+(\gis-\gas)h(\phi)$ joins the bulk functional as an ordinary
+$f_w(\phi)=\sas+(\sis-\sas)h(\phi)$ joins the bulk functional as an ordinary
 surface term --- both are energies, both in J/m$^2\times$m, and they add
 directly. Its variation supplies a natural condition on $\dn\phi$ that fixes the
 contact angle. The resulting residual term is $-3M\cos\theta\,h'(\phi)/6$, with
@@ -40,14 +39,14 @@ $\Gamma\subseteq\partial\Omega$ be the part of the boundary representing
 regolith. Write the whole free energy physically, in energy units throughout:
 \begin{equation}
 \mathcal{F}[\phi]
-=\underbrace{\int_\Omega\Bigl[\,3\gia\eps\,|\nabla\phi|^{2}
-+\frac{3\gia}{\eps}\,\phi^{2}(1-\phi)^{2}\Bigr]d\Omega}_{\textstyle \mathcal{F}_{\text{bulk}}}
+=\underbrace{\int_\Omega\Bigl[\,3\sia\eps\,|\nabla\phi|^{2}
++\frac{3\sia}{\eps}\,\phi^{2}(1-\phi)^{2}\Bigr]d\Omega}_{\textstyle \mathcal{F}_{\text{bulk}}}
 \;+\;\underbrace{\oint_\Gamma f_w(\phi)\,d\Gamma}_{\textstyle \mathcal{F}_{\text{wall}}} ,
 \label{eq:F}
 \end{equation}
 \begin{equation}
-f_w(\phi) \;=\; \gas\bigl(1-h(\phi)\bigr) + \gis\,h(\phi)
-\;=\; \gas + (\gis-\gas)\,h(\phi),
+f_w(\phi) \;=\; \sas\bigl(1-h(\phi)\bigr) + \sis\,h(\phi)
+\;=\; \sas + (\sis-\sas)\,h(\phi),
 \qquad h(\phi)=\phi^{2}(3-2\phi).
 \label{eq:fw}
 \end{equation}
@@ -60,7 +59,7 @@ that form with a physical $f_w$ does require a conversion. Writing both
 physically, as here, avoids the question entirely.
 
 The bulk coefficients in \eqref{eq:F} are fixed by requiring that the ice--vapour
-interface carry surface energy $\gia$. For the equilibrium profile
+interface carry surface energy $\sia$. For the equilibrium profile
 \begin{equation}
 \phi(x)=\tfrac12\Bigl(1+\tanh\tfrac{x}{2\eps}\Bigr),
 \qquad
@@ -70,32 +69,61 @@ interface carry surface energy $\gia$. For the equilibrium profile
 the two bulk terms are equal (equipartition, from the first integral of the
 Euler--Lagrange equation), and
 \begin{equation}
-\int_{-\infty}^{\infty}\Bigl[3\gia\eps\,\phi'^{2}+\frac{3\gia}{\eps}\phi^{2}(1-\phi)^{2}\Bigr]dx
-=6\gia\eps\!\int\!\phi'^{2}dx
-=6\gia\eps\cdot\frac{1}{6\eps}
-=\gia .
+\int_{-\infty}^{\infty}\Bigl[3\sia\eps\,\phi'^{2}+\frac{3\sia}{\eps}\phi^{2}(1-\phi)^{2}\Bigr]dx
+=6\sia\eps\!\int\!\phi'^{2}dx
+=6\sia\eps\cdot\frac{1}{6\eps}
+=\sia .
 \label{eq:excess}
 \end{equation}
 (Verified numerically: ratio $1.00000000$.) So \eqref{eq:F} is calibrated, and
 $\eps$ sets the interface width without changing its energy.
 
-Two properties of $h$ matter. $h(0)=0,\ h(1)=1$ give $f_w(0)=\gas$ (wall against
-vapour) and $f_w(1)=\gis$ (wall against ice). And $h'(0)=h'(1)=0$ makes the wall
+Two properties of $h$ matter. $h(0)=0,\ h(1)=1$ give $f_w(0)=\sas$ (wall against
+vapour) and $f_w(1)=\sis$ (wall against ice). And $h'(0)=h'(1)=0$ makes the wall
 term inert in both bulk phases: it acts only where the ice--vapour interface
 meets the wall, and cannot shift the bulk equilibria. A linear interpolant would
 violate the second property and bias $\phi$ all along $\Gamma$.
 
-\textbf{Note that \eqref{eq:fw} contains no $\gia$} --- only the two substrate
-energies. $\gia$ appears in $\mathcal{F}_{\text{bulk}}$, and the ratio of the two
+\textbf{Note that \eqref{eq:fw} contains no $\sia$} --- only the two substrate
+energies. $\sia$ appears in $\mathcal{F}_{\text{bulk}}$, and the ratio of the two
 is what produces $\cos\theta$ in \S\ref{sec:bc}.
+
+\subsection{Notation}
+
+Following Moure \& Fu, the three \emph{interface energies} are $\sia$, $\sis$ and
+$\sas$ [J\,m$^{-2}$]. The \emph{surface-tension parameters} built from them are
+\begin{equation}
+\Sigma_i=\sia+\sis-\sas,\quad
+\Sigma_a=\sia+\sas-\sis,\quad
+\Sigma_s=\sis+\sas-\sia .
+\label{eq:Sigma}
+\end{equation}
+These combinations belong to the three-phase model, in which sediment is a bulk
+phase field and each $\Sigma_k$ weights that phase's well. \textbf{They do not
+apply here.} With the sediment moved to the wall there is no sediment phase: the
+bulk well has a single ice--air interface, so
+\begin{equation}
+\Sigma_i=\Sigma_a=\sia ,
+\end{equation}
+and $\sis,\sas$ enter only through $f_w$. Reverting to \eqref{eq:Sigma} would
+count the sediment twice, once in the well and once at the wall.
+
+\emph{Known inconsistency in the shipped defaults, pre-dating this work:}
+$\Sigma_i=0.109$ is $\sia$, a two-phase value, while $\Sigma_a=0.132$ is the
+three-phase $\Sigma_a$ evaluated at the old sediment energies
+($0.109+0.056-0.033$). For a two-phase model both should be $\sia$. $\Sigma_a$
+feeds the double-well coefficient $C=(\Sigma_i+\Sigma_a)/2+\Lambda$, so it has
+been setting the bulk interface energy to $0.1205$ rather than $0.109$ in every
+lunar run. Left unchanged here because fixing it shifts bulk results across the
+project.
 
 \section{First variation and the weak form}
 
 Vary \eqref{eq:F} with an arbitrary test function $\eta$:
 \begin{equation}
 \delta\mathcal{F}[\eta]
-=\int_\Omega\Bigl[6\gia\eps\,\nabla\phi\!\cdot\!\nabla\eta
-+\frac{6\gia}{\eps}f_1(\phi)\,\eta\Bigr]d\Omega
+=\int_\Omega\Bigl[6\sia\eps\,\nabla\phi\!\cdot\!\nabla\eta
++\frac{6\sia}{\eps}f_1(\phi)\,\eta\Bigr]d\Omega
 \;+\;\oint_\Gamma f_w'(\phi)\,\eta\,d\Gamma ,
 \label{eq:var}
 \end{equation}
@@ -117,39 +145,39 @@ surface integral in the residual, nothing more.
 To see what boundary condition \eqref{eq:var} encodes, integrate the gradient
 term by parts (for this purpose only):
 \begin{equation}
-\int_\Omega 6\gia\eps\,\nabla\phi\!\cdot\!\nabla\eta\,d\Omega
-=-\int_\Omega 6\gia\eps\,\nabla^{2}\phi\,\eta\,d\Omega
-+\oint_{\partial\Omega}6\gia\eps\,(\dn\phi)\,\eta\,dS .
+\int_\Omega 6\sia\eps\,\nabla\phi\!\cdot\!\nabla\eta\,d\Omega
+=-\int_\Omega 6\sia\eps\,\nabla^{2}\phi\,\eta\,d\Omega
++\oint_{\partial\Omega}6\sia\eps\,(\dn\phi)\,\eta\,dS .
 \end{equation}
 Substituting into \eqref{eq:var} and collecting,
 \begin{equation}
 \delta\mathcal{F}[\eta]
-=\int_\Omega\Bigl[-6\gia\eps\nabla^{2}\phi+\frac{6\gia}{\eps}f_1\Bigr]\eta\,d\Omega
-+\oint_{\partial\Omega}\Bigl[6\gia\eps\,\dn\phi+f_w'(\phi)\Bigr]\eta\,dS .
+=\int_\Omega\Bigl[-6\sia\eps\nabla^{2}\phi+\frac{6\sia}{\eps}f_1\Bigr]\eta\,d\Omega
++\oint_{\partial\Omega}\Bigl[6\sia\eps\,\dn\phi+f_w'(\phi)\Bigr]\eta\,dS .
 \end{equation}
 $\eta$ is arbitrary in $\Omega$ and independently arbitrary on $\partial\Omega$,
 so both brackets vanish. The second is the natural boundary condition:
 \begin{equation}
-6\gia\eps\,\dn\phi + f_w'(\phi) = 0 .
+6\sia\eps\,\dn\phi + f_w'(\phi) = 0 .
 \label{eq:natural}
 \end{equation}
 Where no wall term is declared, $f_w'\equiv0$ and \eqref{eq:natural} reduces to
 $\dn\phi=0$ --- the zero-flux condition the solver had everywhere before this
 feature, which is a $90^\circ$ contact angle imposed by omission.
 
-With $f_w'=(\gis-\gas)h'$ and $h'(\phi)=6\phi(1-\phi)$,
+With $f_w'=(\sis-\sas)h'$ and $h'(\phi)=6\phi(1-\phi)$,
 \begin{equation}
 \dn\phi
-=\frac{\gas-\gis}{6\gia\eps}\,h'(\phi)
-=\underbrace{\frac{\gas-\gis}{\gia}}_{\textstyle \cos\theta}\;\frac{\phi(1-\phi)}{\eps} .
+=\frac{\sas-\sis}{6\sia\eps}\,h'(\phi)
+=\underbrace{\frac{\sas-\sis}{\sia}}_{\textstyle \cos\theta}\;\frac{\phi(1-\phi)}{\eps} .
 \label{eq:bc}
 \end{equation}
 
 \textbf{Young's equation was not assumed.} The wall energy contributed only
-$\gas-\gis$; the $\gia$ came from the bulk coefficient in \eqref{eq:F}. Their
+$\sas-\sis$; the $\sia$ came from the bulk coefficient in \eqref{eq:F}. Their
 ratio is Young's $\cos\theta$, and it appears because the two terms of the same
-functional were each calibrated independently --- the bulk to $\gia$, the wall to
-$\gas$ and $\gis$.
+functional were each calibrated independently --- the bulk to $\sia$, the wall to
+$\sas$ and $\sis$.
 
 By \eqref{eq:profile} the right-hand side of \eqref{eq:bc} is
 $\cos\theta\,|\nabla\phi|$, so writing $\nabla\phi=|\nabla\phi|\,\mathbf{m}$ with
@@ -161,45 +189,56 @@ with $\mathbf{n}$ the outward wall normal: the contact angle measured through th
 ice. Limits: $\cos\theta=+1$ gives $\mathbf{m}=\mathbf{n}$, ice sheeted flat onto
 the wall, $\theta=0$; $\cos\theta=-1$ gives $\theta=180^\circ$, point contact.
 
-\section{The residual, and the form the code uses}\label{sec:code}
+\section{The residual, and the mobility}\label{sec:code}
 
-The evolution is the gradient flow $\partial_t\phi=-M_{\text{phys}}\,
-\delta\mathcal{F}/\delta\phi$, so with $\eta=N_a$ the residual is
+The evolution is the gradient flow $\partial_t\phi=-L\,\delta\mathcal{F}/\delta\phi$,
+so with $\eta=N_a$ the residual is
 \begin{equation}
 R_a=\int_\Omega N_a\phi_t\,d\Omega
-+M_{\text{phys}}\Bigl\{\int_\Omega\Bigl[6\gia\eps\nabla N_a\!\cdot\!\nabla\phi
-+\frac{6\gia}{\eps}f_1N_a\Bigr]d\Omega
++L\Bigl\{\int_\Omega\Bigl[6\sia\eps\nabla N_a\!\cdot\!\nabla\phi
++\frac{6\sia}{\eps}f_1N_a\Bigr]d\Omega
 +\oint_\Gamma f_w'(\phi)N_a\,d\Gamma\Bigr\} .
 \label{eq:R}
 \end{equation}
 
-The code stores a single mobility \code{mob\_sub}$\;=M$, calibrated through
-$d_{0,\mathrm{sub0}}\to\lambda_{\mathrm{sub}}\to\tau_{\mathrm{sub}}$ to deliver a
-requested kinetic coefficient $\beta$. Matching \eqref{eq:R} against the
-implemented interior form
+The code does not store $L$. It stores the single number
+\code{mob\_sub}$\;=M$, and matching \eqref{eq:R} against the implemented
+interior form
 \begin{equation}
 R_a=\int N_a\phi_t+3M\eps\!\int\!\nabla N_a\!\cdot\!\nabla\phi
 +\frac{3M}{\eps}\!\int\! f_1N_a-\text{(source)}
 \label{eq:Rcode}
 \end{equation}
-gives $M_{\text{phys}}\cdot6\gia=3M$, i.e.
+shows what that number is:
 \begin{equation}
-\boxed{\;M_{\text{phys}}=\frac{M}{2\gia}\;}
-\label{eq:Mphys}
+L\cdot 6\sia=3M
+\qquad\Longrightarrow\qquad
+\boxed{\;M=2\sia L\;}
+\label{eq:M}
 \end{equation}
-which reproduces \emph{both} bulk coefficients simultaneously --- a consistency
-check, since one number is fixed by two equations.
+One relation, fixed independently by both bulk coefficients --- a consistency
+check, not a definition.
 
-The boundary term of \eqref{eq:R} then follows immediately:
+$M$ is therefore not a free parameter: \textbf{it already contains the interface
+energy}, bundled with the kinetic mobility. This is not a choice made for the
+wall term; it is how \code{mob\_sub} has always been computed. $\sia$ reaches the
+solver through the capillary length $d_0=\sia V_m/(RT)$, which sets
+$\tau_{\mathrm{sub}}\propto1/\sia$ and hence $M=\eps/(3\tau_{\mathrm{sub}})
+\propto\sia$. Verified directly: scaling \code{d0\_sub0} over a factor of four
+scales \code{mob\_sub} by the same factor, leaving $M/(2\sia)$ constant to all
+printed digits.
+
+\subsection{The wall term, added naively}
+
+With $f_w'=(\sis-\sas)h'$ and \eqref{eq:M},
 \begin{equation}
 R^{\Gamma}_a
-=M_{\text{phys}}\,(\gis-\gas)\,h'(\phi)\,N_a
-=\frac{M}{2\gia}(\gis-\gas)h'(\phi)N_a
+=L\,(\sis-\sas)\,h'(\phi)\,N_a
+=\frac{M}{2\sia}(\sis-\sas)h'(\phi)N_a
 =\boxed{\;-\,3M\cos\theta\,\frac{h'(\phi)}{6}\,N_a\;}
 \label{eq:Rbnd}
 \end{equation}
-and, since the wall energy has no $\phi_t$ dependence, a Jacobian with no shift
-term,
+and, the wall energy having no $\phi_t$ dependence, a Jacobian with no shift term,
 \begin{equation}
 J^{\Gamma}_{ab}=-\,3M\cos\theta\,\frac{h''(\phi)}{6}\,N_aN_b ,
 \qquad h''(\phi)=6(1-2\phi).
@@ -207,38 +246,19 @@ J^{\Gamma}_{ab}=-\,3M\cos\theta\,\frac{h''(\phi)}{6}\,N_aN_b ,
 Equation \eqref{eq:Rbnd} is \code{assembly.c} verbatim:
 \code{Rb[a][0] = -rwb * 3.0 * mob\_b * costhet * (dh/6.0) * N0b[a]}.
 
-\subsection{Why no surface energy survives}
+Nothing was rescaled and no prefactor was introduced. The $\sia$ carried in by
+$f_w'$ is the same $\sia$ already inside $M$, so it divides back out; writing it
+explicitly would count it twice. The $3$ and the $1/6$ are not physics either ---
+$L\sia=M/2=3M/6$, factored that way only so the $3$ mirrors $3M\eps$ and
+$3M/\eps$ in \eqref{eq:Rcode}.
 
-$\gia$ cancels in \eqref{eq:Rbnd} between $f_w'$ and $M_{\text{phys}}$, and it
-does so for a reason that is not bookkeeping: \textbf{the mobility is calibrated
-to a kinetic coefficient, not to an energy}. $M$ is whatever makes the interface
-move at the requested $\beta$; by \eqref{eq:Mphys} that forces
-$M_{\text{phys}}\propto1/\gia$, so no energy scale can survive into any residual
-coefficient. Had $\gia$ remained, that would have been the error.
+\subsection{Why no interface energy can survive}
 
-The $\eps$ cancels for the same structural reason: $f_w'$ carries none, and
-$M_{\text{phys}}$ carries none, so \eqref{eq:Rbnd} cannot.
-
-\subsection{An equivalent route, and where $\eps/6$ comes from}
-
-Some presentations non-dimensionalise the bulk term first, writing
-\begin{equation}
-\Ft=\int_\Omega\Bigl[\tfrac{\eps^{2}}{2}|\nabla\phi|^{2}+W(\phi)\Bigr]d\Omega,
-\qquad W=\tfrac12\phi^{2}(1-\phi)^{2},
-\qquad \mathcal{F}_{\text{bulk}}=\frac{6\gia}{\eps}\,\Ft ,
-\end{equation}
-because $\Ft$'s interfacial excess is $\eps/6$ --- a \emph{length} --- rather than
-an energy. The flow is then $\partial_t\phi=-(3M/\eps)\,\delta\Ft/\delta\phi$,
-which is where the familiar $3M/\eps$ prefactor comes from.
-
-Taking that route, the wall term must be converted into the same non-dimensional
-currency, $\widetilde{f}_w=(\eps/6\gia)f_w$, and the $\eps/6$ reappears
-explicitly. It gives the same answer, because
-$(3M/\eps)\cdot(\eps/6\gia)=M/(2\gia)=M_{\text{phys}}$.
-
-The route in \S\ref{sec:code} is preferable precisely because it never mixes the
-two currencies. A conversion factor is only needed if one term is written
-physically and the other is not.
+$M$ is calibrated to deliver a requested kinetic coefficient $\beta$, not an
+energy scale. By \eqref{eq:M} that forces $L\propto1/\sia$, so no interface
+energy can appear in any residual coefficient. Had $\sia$ remained in
+\eqref{eq:Rbnd}, that would have been the error. $\eps$ cancels for the same
+structural reason: neither $f_w'$ nor $L$ carries one.
 
 \section{Clamping, and why it is required}
 
@@ -265,31 +285,24 @@ $d\phi_c/d\phi$, so that it remains an exact Jacobian of the clamped residual.
 \begin{center}\begin{tabular}{@{}ll@{}}
 \toprule
 \code{-wall\_faces "y0,y1"} & which domain faces are regolith \\
-\code{-gamma\_is} & ice--regolith surface energy [J/m$^2$] \\
-\code{-gamma\_as} & air--regolith surface energy [J/m$^2$] \\
-\code{-gamma\_ia} & ice--air; default $(\Sigma_i+\Sigma_a)/2$ \\
+\code{-sigma\_is} & ice--regolith interface energy [J\,m$^{-2}$] \\
+\code{-sigma\_as} & air--regolith interface energy [J\,m$^{-2}$] \\
+\code{-sigma\_ia} & ice--air interface energy; default \code{-Sigma\_i} \\
 \bottomrule
 \end{tabular}\end{center}
 
-The solver forms $\cos\theta=(\gas-\gis)/\gia$, refuses the run if
-$|\gas-\gis|>\gia$ (no angle exists; one phase wets completely), and prints both
+The solver forms $\cos\theta=(\sas-\sis)/\sia$, refuses the run if
+$|\sas-\sis|>\sia$ (no angle exists; one phase wets completely), and prints both
 the energies and the derived $\theta$.
 
-\textbf{On the default.} $\gia$ defaults to $(\Sigma_i+\Sigma_a)/2$, not to
-$\Sigma_i$. In the convention these projects inherit,
-$\Sigma_i=\gia+\gis-\gas$ and $\Sigma_a=\gia+\gas-\gis$, so
-$\Sigma_i+\Sigma_a=2\gia$ and the ice--air energy is their mean --- which is also
-what the solver's own double-well coefficient $C=(\Sigma_i+\Sigma_a)/2+\Lambda$
-says. $\Sigma_i$ alone equals $\gia$ only when $\Sigma_a=\Sigma_i$, which
-\code{enceladus\_DSM} enforces and \code{lunar\_regolith\_DSM} does not; with the
-lunar defaults $(0.109,0.132)$ taking $\Sigma_i$ understates $\gia$ by $10.6\%$,
-and that propagates directly into $\theta$. Pass \code{-gamma\_ia} explicitly
-whenever the substrate matters.
+$\sia$ defaults to \code{-Sigma\_i} because $\Sigma_i=\sia$ in this model
+(\S1.1). Pass it explicitly whenever the substrate matters, rather than relying
+on defaults whose provenance is mixed.
 
-The only admissibility constraint is $|\gas-\gis|\le\gia$. The three-phase
-triple-well constraint $\gis>\tfrac{\gia}{2}(1-\cos\theta)$ does \emph{not}
-apply: it came from requiring a positive $\Sigma_s$, and there is no sediment
-phase and no triple well here.
+The only admissibility constraint is $|\sas-\sis|\le\sia$. The three-phase
+triple-well constraint $\sis>\tfrac{\sia}{2}(1-\cos\theta)$ does \emph{not}
+apply: it came from requiring $\Sigma_s>0$, and there is no sediment phase and no
+triple well here.
 
 \section{Validation}
 

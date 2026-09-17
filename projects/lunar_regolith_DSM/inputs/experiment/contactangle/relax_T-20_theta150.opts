@@ -6,14 +6,16 @@
 # solver from Young's equation and printed in the banner. That is the point of
 # the test -- the solver is handed gamma's, not an angle.
 #
-#     cos(theta) = (gamma_as - gamma_is)/gamma_ia
+#     cos(theta) = (sigma_as - sigma_is)/sigma_ia
 #                = (0.300000 - 0.394397)/0.109000
 #                = -0.866025     ->  theta = 150.000 deg
 #
-# gamma_ia = 0.109 J/m^2 is Sigma_i, the ice-vapour surface energy this solver
-# already implies: inverting monitoring.c's d0 = Etai*V_m/(R*T) at the physical
-# d0_sub0 = 1.0166e-9 m and -20 C returns exactly that. gamma_as = 0.3 J/m^2
-# is a plausible regolith-vapour value; only the DIFFERENCE gamma_as - gamma_is
+# sigma_ia = 0.109 J/m^2 = Sigma_i. With the sediment at the WALL there is no
+# sediment phase in the bulk, so Sigma_i = Sigma_a = sigma_ia; the ice-vapour
+# energy this solver
+# already implies: inverting monitoring.c's d0 = Sigma_i*V_m/(R*T) at the physical
+# d0_sub0 = 1.0166e-9 m and -20 C returns exactly that. sigma_as = 0.3 J/m^2
+# is a plausible regolith-vapour value; only the DIFFERENCE sigma_as - sigma_is
 # enters the wall term, so the pair is what matters, not either alone.
 #
 # Phase change is ON. -decouple_phase_change would give faster, cleaner
@@ -55,9 +57,9 @@
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
 # --- the substrate, as surface energies ---
--gamma_ia 0.109
--gamma_as 0.3
--gamma_is 0.3943968
+-sigma_ia 0.109
+-sigma_as 0.3
+-sigma_is 0.3943968
 
 -dtCFL 1
 -dtCFL_dphimax 0.2

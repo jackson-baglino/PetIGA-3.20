@@ -1,5 +1,17 @@
 # Permafrost Phase-Field Model: Mathematical and Numerical Description
 
+> ⚠️ **NOTE ON $M_{2P}$ (added 2026-09-17).** §3.1's two-phase reduction
+> $M_{2P}=3M/(\eta_i+\eta_a)$ belongs to the Kim–Steinbach three-phase model
+> with the sediment frozen (`t_sed_freeze`), which is no longer pursued. The
+> current solver has no sediment phase and never computes it: `mob_sub` comes
+> from the Kaempfer & Plapp / Moure & Fu calibration
+> $d_0,\beta\to\lambda_{sub}\to\tau_{sub}\to M=\varepsilon/(3\tau_{sub})$,
+> with no $\eta$ anywhere. The two happen to share the structure "divide by
+> twice the interface energy" because $M$ also carries $\sigma_{ia}$ through
+> $d_0=\sigma_{ia}V_m/(RT)$ — but they are not the same quantity and
+> $M_{2P}$ should not be cited when describing the current model. See
+> `docs/contact_angle/contact_angle.tex` §3.
+>
 > ⚠️ **HISTORICAL / PARTIALLY SUPERSEDED (banner added 2026-07-21).** This
 > document describes the **4-DOF, three-phase (ice / sediment / air)**
 > Kim–Steinbach model with a triple-well free energy and the `t_sed_freeze`
@@ -52,9 +64,14 @@ $$f_a(\phi_i,\phi_s) = \eta_a\phi_a(1-\phi_a)(1-2\phi_a) + 2\Lambda\,\phi_i^2\ph
 
 These are related to the partial derivatives of Ψ with respect to each phase fraction. The **phase-specific energy coefficients** η_k are derived from pairwise interface energies (J m⁻²):
 
-$$\eta_i = \gamma_{iv} + \gamma_{is} - \gamma_{sv}$$
-$$\eta_s = \gamma_{sv} + \gamma_{is} - \gamma_{iv}$$
-$$\eta_a = \gamma_{iv} + \gamma_{sv} - \gamma_{is}$$
+$$\Sigma_i = \sigma_{ia} + \sigma_{is} - \sigma_{as}$$
+$$\Sigma_s = \sigma_{is} + \sigma_{as} - \sigma_{ia}$$
+$$\Sigma_a = \sigma_{ia} + \sigma_{as} - \sigma_{is}$$
+
+(Moure & Fu notation: $\sigma_{ab}$ are the interface energies, $\Sigma_k$ the
+surface-tension parameters built from them. Earlier revisions wrote these as
+$\eta_k$ and $\gamma_{iv},\gamma_{sv}$; the code now uses `-sigma_ia`,
+`-sigma_is`, `-sigma_as` and `-Sigma_i`, `-Sigma_a`.)
 
 with default values γ_iv = 0.109, γ_is = 0.033, γ_sv = 0.056 J m⁻². The parameter Λ = 1.0 controls triple-junction energy.
 

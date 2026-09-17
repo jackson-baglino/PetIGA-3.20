@@ -61,12 +61,12 @@ static void DoubleWellDeriv(PetscReal phi, PetscReal *f1, PetscReal *df1)
  * physics enters as a surface integral added to the free-energy functional,
  *
  *     F_wall = int_Gamma f_w(phi) dGamma
- *     f_w(phi) = gamma_as + (gamma_is - gamma_as)*h(phi)
- *              = gamma_as - gamma_ia*cos(theta)*h(phi)
+ *     f_w(phi) = sigma_as + (sigma_is - sigma_as)*h(phi)
+ *              = sigma_as - sigma_ia*cos(theta)*h(phi)
  *
  * with the standard interpolation h(phi) = phi^2*(3-2*phi), so that
- * f_w(0) = gamma_as (wall|vapor) and f_w(1) = gamma_is (wall|ice), and
- * Young's equation gamma_ia*cos(theta) = gamma_as - gamma_is fixes theta.
+ * f_w(0) = sigma_as (wall|vapor) and f_w(1) = sigma_is (wall|ice), and
+ * Young's equation sigma_ia*cos(theta) = sigma_as - sigma_is fixes theta.
  * h'(0) = h'(1) = 0, so the wall term is inert in both bulk phases and acts
  * only where the ice-vapor interface actually meets the wall -- it cannot
  * shift the bulk equilibria.
@@ -80,8 +80,8 @@ static void DoubleWellDeriv(PetscReal phi, PetscReal *f1, PetscReal *df1)
  * DIMENSIONLESS functional Ft = int [ (eps^2/2)|grad phi|^2 + W(phi) ] with
  * W = (1/2)phi^2(1-phi)^2 (see DoubleWellDeriv above). Ft carries an
  * interfacial excess of exactly eps/6 per unit area, so physical energy is
- * (6*gamma_ia/eps)*Ft and the wall term enters Ft as ft_w = (eps/6/gamma_ia)*f_w.
- * The constant gamma_as drops out under variation and gamma_ia cancels against
+ * (6*sigma_ia/eps)*Ft and the wall term enters Ft as ft_w = (eps/6/sigma_ia)*f_w.
+ * The constant sigma_as drops out under variation and sigma_ia cancels against
  * the normalisation:
  *
  *     d ft_w / dphi = -(eps/6)*cos(theta)*h'(phi) = -eps*cos(theta)*phi*(1-phi)
