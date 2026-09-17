@@ -24,8 +24,12 @@
 # via --extra-opts still wins.
 #
 # USAGE
-#   ./scripts/HPC/resume_batch.sh <batch_dir> [--last] [--dry-run]
+#   ./scripts/HPC/resume_batch.sh <batch_dir> [--last] [--dry-run] [--tag T]
 #                                 [--extra-opts "..."] [-- <sbatch flags>]
+#
+# Submits through submit_enceladus.sh, which sbatch's each job. It does NOT
+# call run_enceladus.sh: that is the script sbatch executes, and running it
+# directly puts the solver on the login node with no allocation.
 #
 # Defaults to the same k_eff sampling the pilot used.
 # =============================================================================
@@ -36,12 +40,13 @@ cd "$PROJECT_ROOT"
 
 KEFF_OPTS="-keff 1 -keff_step0 1 -keff_t_interv 5.0e4 -keff_ksp_type cg -keff_pc_type gamg"
 
-batch=""; use_last=0; dry=0; extra=""; sbatch_extra=()
+batch=""; use_last=0; dry=0; extra=""; tag="resume"; sbatch_extra=()
 while [ $# -gt 0 ]; do
     case "$1" in
         --last)        use_last=1; shift ;;
         --dry-run)     dry=1; shift ;;
         --extra-opts)  extra="$2"; shift 2 ;;
+        --tag)         tag="$2"; shift 2 ;;
         --)            shift; sbatch_extra=("$@"); break ;;
         -h|--help)     sed -n '2,32p' "${BASH_SOURCE[0]}"; exit 0 ;;
         *)             batch="$1"; shift ;;
@@ -49,7 +54,16 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$batch" ] && [ -d "$batch" ] || { echo "usage: $0 <batch_dir> [--last] [--dry-run]" >&2; exit 2; }
 
+# Refuse to "submit" on a machine with no scheduler: without this the loop
+# would happily fall through to running jobs wherever it was invoked.
+if [ "$dry" -eq 0 ] && ! command -v sbatch >/dev/null 2>&1; then
+    echo "ERROR: sbatch not found -- this submits SLURM jobs and must run on a" >&2
+    echo "       cluster login node. Use --dry-run to inspect the commands." >&2
+    exit 1
+fi
+
 echo "batch: $batch"
+echo "tag:   $tag"
 echo ""
 n=0
 for run in "$batch"/*__*/; do
@@ -82,9 +96,17 @@ for run in "$batch"/*__*/; do
     echo "      snapshot  $(basename "$snap")  of $nsnap"
     echo "      resumes   t = ${t:-?} s   dt = ${dt:-?} s"
 
-    cmd=(./scripts/HPC/run_enceladus.sh "$geom" "$exp"
-         -- $KEFF_OPTS -initial_cond "$snap" $extra)
+    # submit_enceladus.sh, NOT run_enceladus.sh. run_enceladus.sh is the
+    # script sbatch EXECUTES; invoking it directly runs the solver on whatever
+    # node you are sitting on -- the login node -- with no allocation. The two
+    # names are one word apart and the failure is silent until someone notices
+    # the head node is pinned. submit_enceladus.sh sizes the rank count and
+    # sbatch's it.
+    #
+    # Argument order matters: <geom> <exp> [tag] [sbatch flags] -- [solver flags]
+    cmd=(./scripts/HPC/submit_enceladus.sh "$geom" "$exp" "$tag")
     [ "${#sbatch_extra[@]}" -gt 0 ] && cmd+=("${sbatch_extra[@]}")
+    cmd+=(-- $KEFF_OPTS -initial_cond "$snap" $extra)
 
     if [ "$dry" -eq 1 ]; then
         printf '      $ '; printf '%q ' "${cmd[@]}"; echo
