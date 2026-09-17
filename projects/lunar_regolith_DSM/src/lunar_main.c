@@ -29,6 +29,76 @@ static PetscErrorCode SNESTSFormFunction_DomainErrSync(SNES snes, Vec X, Vec F, 
     PetscFunctionReturn(0);
 }
 
+/* ---------------------------------------------------------------------------
+ * RestartStateFromLog
+ *
+ * Recover (t, dt) for a restart from the run that wrote the snapshot.
+ *
+ * WHY THIS IS NOT LEFT TO THE USER. lunar's -t_start has to be typed in by
+ * hand, and a wrong value is silent: the continuation reports an absolute
+ * time that never matches the first leg, and anything measured across the
+ * join is wrong. The information is already on disk, so read it.
+ *
+ * The snapshot is <dir>/sol_NNNNN.dat (monitoring.c:357) and the run's
+ * <dir>/SSA_evo.dat carries one row per step:
+ *
+ *     ssa/eps   tot_ice   t   step   dt   tot_air   tot_rhov   tot_mass
+ *
+ * so NNNNN from the filename indexes straight into it for both numbers.
+ *
+ * ADOPTING dt IS THE POINT, not a convenience. A restart that begins at
+ * -delt_t (1e-4 s by default) has to climb back to the working step size
+ * through the NRmin/NRmax growth heuristic -- six orders of magnitude, ~145
+ * steps at factor 1.1, every one of them a full nonlinear solve on the real
+ * mesh. Resuming at the dt the run had reached makes a continuation cost
+ * what continuing would have cost.
+ *
+ * Returns PETSC_TRUE only if BOTH values were recovered; the caller keeps its
+ * own defaults otherwise and says so.
+ * ------------------------------------------------------------------------ */
+static PetscBool RestartStateFromLog(const char *sol_path, PetscReal *t_out,
+                                     PetscReal *dt_out)
+{
+  char        dir[PETSC_MAX_PATH_LEN], logpath[PETSC_MAX_PATH_LEN];
+  const char *base;
+  int         want = -1;
+  FILE       *fp;
+  char        line[512];
+  PetscBool   found = PETSC_FALSE;
+
+  base = strrchr(sol_path, '/');
+  if (base) {
+    size_t n = (size_t)(base - sol_path);
+    if (n >= sizeof(dir)) return PETSC_FALSE;
+    memcpy(dir, sol_path, n); dir[n] = '\0';
+    base += 1;
+  } else {
+    dir[0] = '.'; dir[1] = '\0';
+    base = sol_path;
+  }
+  if (sscanf(base, "sol_%d.dat", &want) != 1) return PETSC_FALSE;
+
+  if (PetscSNPrintf(logpath, sizeof(logpath), "%s/SSA_evo.dat", dir)) return PETSC_FALSE;
+  fp = fopen(logpath, "r");
+  if (!fp) return PETSC_FALSE;
+
+  while (fgets(line, sizeof(line), fp)) {
+    double ssa, ice, t, dt, air, rhov, mass;
+    int    step;
+    if (sscanf(line, "%lf %lf %lf %d %lf %lf %lf %lf",
+               &ssa, &ice, &t, &step, &dt, &air, &rhov, &mass) != 8) continue;
+    if (step == want) {
+      *t_out = (PetscReal)t;
+      *dt_out = (PetscReal)dt;
+      found = PETSC_TRUE;
+      /* keep scanning: a rolled-back step can appear twice, and the LAST
+       * row for a step is the accepted one */
+    }
+  }
+  fclose(fp);
+  return found;
+}
+
 int main(int argc, char *argv[]) {
     /* Petsc Initialization */
     PetscErrorCode ierr;
@@ -140,6 +210,9 @@ int main(int argc, char *argv[]) {
     PetscReal delt_t = 1.0e-4;  /* Time step size */
     PetscReal t_final = 0.0;    /* Final simulation time (does not advance if 0) */
     PetscReal t_start = 0.0;    /* Clock value to resume from (-initial_cond restarts) */
+    PetscReal dt_start = 0.0;   /* Time step to resume at; see RestartStateFromLog */
+    PetscBool t_start_set = PETSC_FALSE, dt_start_set = PETSC_FALSE;
+    PetscBool restarting = PETSC_FALSE;
 
     PetscInt  n_out   = 10;     /* Number of outputs */
 
@@ -694,7 +767,11 @@ int main(int argc, char *argv[]) {
     /* --- Restart / initialization files --------------------------------- */
     ierr = PetscOptionsString("-initial_cond", "Load initial solution from file", "", initial, initial, sizeof(initial), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-initial_PFgeom", "Load initial ice geometry from file", "", PFgeom, PFgeom, sizeof(PFgeom), NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-t_start", "Clock value to resume from when restarting via -initial_cond [s]", "", t_start, &t_start, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-t_start", "Clock to resume from [s]. Default: read from the snapshot's SSA_evo.dat", "", t_start, &t_start, &t_start_set); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-dt_start",
+             "Time step to resume at [s]. Default: the dt the run had reached, "
+             "from SSA_evo.dat; NOT -delt_t, which would re-climb from 1e-4",
+             "", dt_start, &dt_start, &dt_start_set); CHKERRQ(ierr);
     ierr = PetscOptionsString("-geom_file",
              "Load an igakit-generated IGA geometry (.dat) via IGARead, "
              "overriding -p/-C/-Nx/-Ny/-Nz axis setup with the geometry's own",
@@ -770,6 +847,26 @@ int main(int argc, char *argv[]) {
     user.hum0 = humidity;
     user.npoints = Nx * Ny * Nz; /* Total number of grid points (for allocating arrays in user context) */
     PetscStrncpy(user.initial_cond, initial, PETSC_MAX_PATH_LEN);
+    /* Resolve the restart clock and step size before the TS is built. An
+     * explicit -t_start/-dt_start wins; otherwise both come from the
+     * snapshot's own SSA_evo.dat. */
+    restarting = (PetscBool)(user.initial_cond[0] != '\0');
+    if (restarting) {
+        PetscReal t_log = 0.0, dt_log = 0.0;
+        PetscBool got = RestartStateFromLog(user.initial_cond, &t_log, &dt_log);
+        if (got) {
+            if (!t_start_set)  t_start  = t_log;
+            if (!dt_start_set) dt_start = dt_log;
+        } else if (!t_start_set || !dt_start_set) {
+            PetscPrintf(PETSC_COMM_WORLD,
+                "\033[33m[WARN] restart: could not read SSA_evo.dat beside %s.\033[0m\n"
+                "       Pass -t_start/-dt_start explicitly: a wrong clock makes\n"
+                "       the two legs overlap, and a dt of -delt_t costs ~145\n"
+                "       wasted nonlinear solves climbing back.\n",
+                user.initial_cond);
+        }
+        if (!dt_start_set && dt_start <= 0.0) dt_start = delt_t;
+    }
     PetscStrncpy(user.initial_PFgeom, PFgeom, PETSC_MAX_PATH_LEN);
 
     /* Compute saturation vapor density and its derivative based on initial temperature */
@@ -1253,6 +1350,12 @@ int main(int argc, char *argv[]) {
     if (t_start > 0.0) { ierr = TSSetTime(ts, t_start); CHKERRQ(ierr); }
     ierr = TSSetExactFinalTime(ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRQ(ierr);
     ierr = TSSetTimeStep(ts, delt_t); CHKERRQ(ierr);
+    /* Resume the step size too, not just the clock: starting a continuation at
+     * -delt_t makes it re-climb six orders of magnitude through the
+     * NRmin/NRmax heuristic before doing any new physics. */
+    if (restarting && dt_start > 0.0) {
+        ierr = TSSetTimeStep(ts, dt_start); CHKERRQ(ierr);
+    }
     ierr = TSSetType(ts, TSALPHA); CHKERRQ(ierr);
     ierr = TSAlphaSetRadius(ts, 0.5); CHKERRQ(ierr);
     if (monitor) { ierr = TSMonitorSet(ts, Monitor, &user, NULL); CHKERRQ(ierr); }
@@ -1686,8 +1789,12 @@ int main(int argc, char *argv[]) {
     if (user.initial_cond[0] != '\0') {
         PetscPrintf(PETSC_COMM_WORLD,
             "  RESTART: loading solution from %s\n"
-            "           clock resumes at t = %.6e s (%.2f days)\n",
-            user.initial_cond, (double)t_start, (double)(t_start / 86400.0));
+            "           clock resumes at t  = %.6e s (%.2f days)%s\n"
+            "           step size resumes at dt = %.6e s%s\n",
+            user.initial_cond, (double)t_start, (double)(t_start / 86400.0),
+            t_start_set ? "  [-t_start]" : "  [from SSA_evo.dat]",
+            (double)dt_start,
+            dt_start_set ? "  [-dt_start]" : "  [from SSA_evo.dat]");
         ierr = IGAReadVec(iga, U, user.initial_cond); CHKERRQ(ierr);
         user.readFlag = PETSC_TRUE;
         {   /* report what was actually loaded, so a wrong file is obvious */
