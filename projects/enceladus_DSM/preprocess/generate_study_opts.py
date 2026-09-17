@@ -53,6 +53,50 @@ from comp_eps import (                                    # noqa: E402
 )
 
 
+# Calibrated in lunar_regolith_DSM and documented in
+# inputs/scratch/experiment/molaro/..._epsloose.opts:12 --
+#   "dtmax = 1.093 * tau_sub (the campaign's calibrated ratio, from the
+#    committed a1e-2 run: tau=1.83e2, dtmax=2e2)"
+# It reproduces both of that campaign's points (1.093 and 1.089), and it is the
+# right SHAPE as well as the right number: tau_sub carries both the eps and the
+# alpha_c dependence, which a flat default cannot.
+DTMAX_OVER_TAU = 1.09
+
+
+def tau_sub_of(eps: float, beta_sub0: float, d0_sub0: float) -> float:
+    """Characteristic phase-change time, matching enceladus_main.c:886-897.
+
+    With -thin_iface_corr and -alpha_pointwise both OFF (the defaults),
+    tau_sub collapses to the kinetic term alone and the rho_ice/rho_vs
+    rescaling cancels:
+
+        tau_kin = eps*lambda*(beta_sub/a1),  lambda = a1*eps/d0_sub
+                = eps^2 * beta_sub0 / d0_sub0
+
+    The solver prints the same number in its banner under PHASE-CHANGE
+    KINETICS, so a run can always be checked against this.
+    """
+    return eps * eps * beta_sub0 / d0_sub0
+
+
+def dtmax_for(eps: float, beta_sub0: float, d0_sub0: float, ratio: float) -> float:
+    """The time-step ceiling, from the physics rather than from a habit.
+
+    WHY THIS IS NOT A CONSTANT. dtmax was a flat 2.0e2 here, inherited
+    unchanged into every study. On the pilot (eps = 1 um, alpha_c = 1e-3) that
+    was 43x BELOW the calibrated value: dt sat exactly on the cap for 99.2% of
+    6353 steps while the interface-CFL limiter -- the thing actually designed
+    to catch fast-interface ripples -- never once asked for anything smaller.
+    The run was paying ~13,000 steps for a number nobody had re-derived.
+
+    dtmax is a BACKSTOP, not the control. -dtCFL measures ||dphi||_inf on every
+    accepted step and rolls back anything that moves a point more than
+    -dtCFL_dphimax, so it tracks a diverging front that no static cap can. Set
+    dtmax from tau_sub and let the CFL limiter do its job.
+    """
+    return ratio * tau_sub_of(eps, beta_sub0, d0_sub0)
+
+
 def derived_vn(T_C: float, alpha_c: float, R_feat: float) -> float:
     """v_n = d0 / (beta_sub * R_feat) -- see module docstring."""
     rho_rat = rho_vs_sat(T_C) / _RHO_ICE
@@ -116,7 +160,7 @@ def write_experiment(path: Path, T_C: float, p: dict, args) -> None:
 # Interface-CFL limiter: cap dt so no Gauss point moves more than dphimax per step
 -dtCFL 1
 -dtCFL_dphimax 0.2
--dtmax {args.dtmax:g}
+-dtmax {p['dtmax']:.4g}                  # {p['dtmax_note']}
 """)
 
 
@@ -264,7 +308,14 @@ def main(argv=None):
     ap.add_argument("--humidity", type=float, default=1.00)
     ap.add_argument("--t-final", type=float, default=28 * 86400.0)
     ap.add_argument("--delt-t", type=float, default=1.0e-4)
-    ap.add_argument("--dtmax", type=float, default=2.0e2)
+    ap.add_argument("--dtmax", type=float, default=None,
+                    help="Max time step [s]. DEFAULT: derived per temperature "
+                         "as DTMAX_OVER_TAU * tau_sub, which is how it must be "
+                         "set -- see dtmax_for().")
+    ap.add_argument("--dtmax-over-tau", dest="dtmax_over_tau", type=float,
+                    default=DTMAX_OVER_TAU,
+                    help=f"ratio used when --dtmax is not given "
+                         f"(default {DTMAX_OVER_TAU}, lunar's calibrated value)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
 
@@ -319,20 +370,32 @@ def main(argv=None):
 
     total_cores = 0
     print(f"{'T[C]':>5} {'eps[um]':>9} {'Nx':>6} {'band[um]':>9} "
-          f"{'DOF/run':>12} {'cores':>7} {'binding':>10}")
+          f"{'DOF/run':>12} {'cores':>7} {'binding':>10} "
+          f"{'dtmax[s]':>10} {'min steps':>10}")
     for T in args.temps:
         vn = derived_vn(T, args.alpha_c, args.R_feat)
         # eps/mesh depend on the domain, which is the same for every packing.
         p0 = compute_eps(Lx=packs[0]["Lx"], Ly=packs[0]["Ly"], T0_C=T,
                          alpha_c=args.alpha_c, Rave=args.Rave,
                          safety=args.safety, v_n=vn)
+        # dtmax from tau_sub, not from a flat default -- see dtmax_for().
+        if args.dtmax is not None:
+            p0["dtmax"] = args.dtmax
+            p0["dtmax_note"] = "set explicitly via --dtmax"
+        else:
+            tau = tau_sub_of(p0["eps"], p0["beta_uns"], p0["d0"])
+            p0["dtmax"] = dtmax_for(p0["eps"], p0["beta_uns"], p0["d0"],
+                                    args.dtmax_over_tau)
+            p0["dtmax_note"] = (f"{args.dtmax_over_tau:g} * tau_sub "
+                                f"({tau:.4g} s); a BACKSTOP -- -dtCFL is the control")
         dof = 3 * p0["Nx"] * p0["Ny"]
         # Keep in step with TARGET_DOFS_PER_CORE in scripts/lib/alloc.sh, which
         # is what the submit scripts actually use (raised 50k -> 80k 2026-07-31).
         cores = math.ceil(dof / 80000)
         total_cores += cores * len(packs)
         print(f"{T:>5g} {p0['eps']*1e6:>9.4f} {p0['Nx']:>6} {6*p0['eps']*1e6:>9.2f} "
-              f"{dof:>12,} {cores:>7} {p0['binding']:>10}")
+              f"{dof:>12,} {cores:>7} {p0['binding']:>10} "
+              f"{p0['dtmax']:>10.3g} {args.t_final/p0['dtmax']:>10,.0f}")
 
         if args.dry_run:
             continue

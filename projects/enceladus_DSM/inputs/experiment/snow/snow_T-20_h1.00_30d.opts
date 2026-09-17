@@ -18,4 +18,4 @@
 # Interface-CFL limiter: cap dt so no Gauss point moves more than dphimax per step
 -dtCFL 1
 -dtCFL_dphimax 0.2
--dtmax 200
+-dtmax 8526                  # 1.09 * tau_sub (7822 s); a BACKSTOP -- -dtCFL is the control
