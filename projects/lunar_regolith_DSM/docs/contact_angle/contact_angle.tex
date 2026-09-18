@@ -7,9 +7,9 @@
 \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
 \setlength{\parskip}{0.45em}\setlength{\parindent}{0pt}
 \newcommand{\code}[1]{\texttt{\small #1}}
-\newcommand{\sia}{\sigma_{ia}}
-\newcommand{\sis}{\sigma_{is}}
-\newcommand{\sas}{\sigma_{as}}
+\newcommand{\sia}{\gamma_{ia}}
+\newcommand{\sis}{\gamma_{is}}
+\newcommand{\sas}{\gamma_{as}}
 \newcommand{\Ft}{\widetilde{\mathcal{F}}}
 \newcommand{\eps}{\epsilon}
 \newcommand{\dn}{\partial_n}
@@ -90,12 +90,12 @@ is what produces $\cos\theta$ in \S\ref{sec:bc}.
 
 \subsection{Notation}
 
-Following Moure \& Fu, the interface energies are $\sia$, $\sis$ and $\sas$
+The interface energies, in the notation standard in the wetting literature, are $\sia$, $\sis$ and $\sas$
 [J\,m$^{-2}$]. $\sia$ is the only one the bulk has --- the model is two-phase ---
 and $\sis,\sas$ enter solely through $f_w$.
 
 Earlier revisions of this code also carried the surface-tension parameters
-$\Sigma_k=\sigma_{ka}+\sigma_{kb}-\sigma_{ab}$, i.e.
+$\Sigma_k=\gamma_{ka}+\gamma_{kb}-\gamma_{ab}$, i.e.
 $\Sigma_i=\sia+\sis-\sas$ and so on. \textbf{Those were removed on
 2026-09-17.} They are a three-phase construction: each $\Sigma_k$ weights the
 well of a bulk phase $k$, and here sediment is not a bulk phase. With a single
@@ -276,9 +276,9 @@ $d\phi_c/d\phi$, so that it remains an exact Jacobian of the clamped residual.
 \begin{center}\begin{tabular}{@{}ll@{}}
 \toprule
 \code{-wall\_faces "y0,y1"} & which domain faces are regolith \\
-\code{-sigma\_is} & ice--regolith interface energy [J\,m$^{-2}$] \\
-\code{-sigma\_as} & air--regolith interface energy [J\,m$^{-2}$] \\
-\code{-sigma\_ia} & ice--air interface energy; default \code{-sigma\_ia\_bulk} \\
+\code{-gamma\_is} & ice--regolith interface energy [J\,m$^{-2}$] \\
+\code{-gamma\_as} & air--regolith interface energy [J\,m$^{-2}$] \\
+\code{-gamma\_ia} & ice--air interface energy; default \code{-gamma\_ia\_bulk} \\
 \bottomrule
 \end{tabular}\end{center}
 
@@ -286,7 +286,7 @@ The solver forms $\cos\theta=(\sas-\sis)/\sia$, refuses the run if
 $|\sas-\sis|>\sia$ (no angle exists; one phase wets completely), and prints both
 the energies and the derived $\theta$.
 
-$\sia$ defaults to \code{-sigma\_ia\_bulk}: the wall sees the same ice--air
+$\sia$ defaults to \code{-gamma\_ia\_bulk}: the wall sees the same ice--air
 interface the bulk does, so by default there is one number rather than two. They
 are separable only so a sensitivity test can perturb the wall's view of it
 independently.

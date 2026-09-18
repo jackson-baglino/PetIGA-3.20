@@ -3,7 +3,7 @@
 #
 # Isothermal growth/shrinkage against a saturated vapour reservoir.
 #
-#   cos(theta) = (sigma_as - sigma_is)/sigma_ia
+#   cos(theta) = (gamma_as - gamma_is)/gamma_ia
 #              = (0.300000 - 0.300000)/0.109000 = +0.000000  ->  theta = 90.000 deg
 #
 # Meniscus curvature this implies in the H = 125 um channel, chi = 2|cos th|/H:
@@ -55,9 +55,9 @@
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
 # --- the substrate, as surface energies ---
--sigma_ia 0.109
--sigma_as 0.3
--sigma_is 0.3000000
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.3000000
 
 # --- vapour reservoir, x-faces only, both at saturation ---
 -flag_BC_rhovfix 1

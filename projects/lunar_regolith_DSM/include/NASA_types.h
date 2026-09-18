@@ -23,18 +23,18 @@ typedef struct {
   // bulk has: the model is two-phase, and the sediment lives on the wall.
   //
   // The Sigma_k surface-tension parameters of Moure & Fu
-  // (Sigma_k = sigma_ka + sigma_kb - sigma_ab) were removed on 2026-09-17. They
+  // (Sigma_k = gamma_ka + gamma_kb - gamma_ab) were removed on 2026-09-17. They
   // are meaningful only when all three phases are bulk phase fields; here the
-  // well has a single ice-air interface, so the Sigma_k collapse to sigma_ia and
+  // well has a single ice-air interface, so the Sigma_k collapse to gamma_ia and
   // carrying two names for one number invited exactly the inconsistency it
-  // produced (Sigma_i held sigma_ia while Sigma_a held a stale three-phase
+  // produced (Sigma_i held gamma_ia while Sigma_a held a stale three-phase
   // value). If sediment is ever re-introduced as a bulk phase, the Sigma_k
   // belong with that model, not this one.
   //
   // Note it never enters the residual: the double well is f1 = phi(1-phi)(1-2phi)
-  // with no energy prefactor, and sigma_ia reaches the dynamics only through the
-  // capillary length d0 = sigma_ia*V_m/(R*T) in the mobility calibration.
-  PetscReal sigma_ia_bulk;
+  // with no energy prefactor, and gamma_ia reaches the dynamics only through the
+  // capillary length d0 = gamma_ia*V_m/(R*T) in the mobility calibration.
+  PetscReal gamma_ia_bulk;
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
@@ -120,26 +120,26 @@ typedef struct {
   // domain boundary. Its physics enters through a wall free-energy surface
   // integral added to the functional,
   //     F_wall = \int_Gamma f_w(phi) dGamma,
-  //     f_w(phi) = sigma_as + (sigma_is - sigma_as)*h(phi)
-  //              = sigma_as - sigma_ia*cos(theta)*h(phi),   h = phi^2(3-2phi)
+  //     f_w(phi) = gamma_as + (gamma_is - gamma_as)*h(phi)
+  //              = gamma_as - gamma_ia*cos(theta)*h(phi),   h = phi^2(3-2phi)
   // whose variation supplies the natural BC  dphi/dn = cos(theta)*phi(1-phi)/eps,
   // i.e. m.n = cos(theta) with m the interface normal into the ice and n the
   // outward wall normal -- the contact angle measured through the ice.
   //
-  // Young's equation gives cos(theta) = (sigma_as - sigma_is)/sigma_ia, and the
-  // ONLY admissibility constraint is |sigma_as - sigma_is| <= sigma_ia. (The
-  // three-phase triple-well constraint sigma_is > (sigma_ia/2)(1-cos theta) came
+  // Young's equation gives cos(theta) = (gamma_as - gamma_is)/gamma_ia, and the
+  // ONLY admissibility constraint is |gamma_as - gamma_is| <= gamma_ia. (The
+  // three-phase triple-well constraint gamma_is > (gamma_ia/2)(1-cos theta) came
   // from requiring a positive three-phase Sigma_s and does not apply: no sediment
   // phase and no triple well here.)
   //
-  // sigma_ia defaults to -sigma_ia_bulk, the ice-vapor
+  // gamma_ia defaults to -gamma_ia_bulk, the ice-vapor
   // surface energy this solver already implies: inverting monitoring.c's
-  // d0 = sigma_ia*V_m/(R*T) at the physical d0_sub0 = 1.0166e-9 m and -20 C returns
+  // d0 = gamma_ia*V_m/(R*T) at the physical d0_sub0 = 1.0166e-9 m and -20 C returns
   // 0.109 J/m^2 exactly.
-  // Interface energies used by the wall term [J/m^2]. sigma_ia duplicates
-  // sigma_ia_bulk by default (same interface); sigma_is and sigma_as are the
+  // Interface energies used by the wall term [J/m^2]. gamma_ia duplicates
+  // gamma_ia_bulk by default (same interface); gamma_is and gamma_as are the
   // substrate pair and appear nowhere else.
-  PetscReal sigma_ia, sigma_is, sigma_as;
+  PetscReal gamma_ia, gamma_is, gamma_as;
   PetscReal costhet;         // cos(theta); 0 => the wall term vanishes identically
   PetscBool costhet_direct;  // -contact_angle_deg was given (debug override of Young)
 

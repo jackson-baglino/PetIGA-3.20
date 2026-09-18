@@ -4,7 +4,7 @@
 WHAT IS BEING TESTED
 
 The solver is given three surface energies and derives cos(theta) from Young's
-equation, cos(theta) = (sigma_as - sigma_is)/sigma_ia. It then enforces that
+equation, cos(theta) = (gamma_as - gamma_is)/gamma_ia. It then enforces that
 angle only LOCALLY, through a wall free-energy term whose natural boundary
 condition is dphi/dn = cos(theta)*phi(1-phi)/eps. Nothing in the solver makes
 the MACROSCOPIC shape of the ice come out right; that has to emerge from the
@@ -361,19 +361,19 @@ def main():
             "wall to measure a contact angle against.")
 
     # What the solver was told, for the comparison column.
-    s_ia = opt_float(opts, "-sigma_ia")
-    s_is = opt_float(opts, "-sigma_is", 0.0)
-    s_as = opt_float(opts, "-sigma_as", 0.0)
+    g_ia = opt_float(opts, "-gamma_ia")
+    g_is = opt_float(opts, "-gamma_is", 0.0)
+    g_as = opt_float(opts, "-gamma_as", 0.0)
     theta_cli = opt_float(opts, "-contact_angle_deg")
     if theta_cli is not None:
         theta_young = theta_cli
         source = "-contact_angle_deg (Young bypassed)"
     else:
-        if s_ia is None:
-            s_ia = opt_float(opts, "-Sigma_i", 0.109)
+        if g_ia is None:
+            g_ia = opt_float(opts, "-gamma_ia_bulk", 0.109)
         theta_young = float(np.degrees(np.arccos(
-            np.clip((s_as - s_is) / s_ia, -1.0, 1.0))))
-        source = "Young from sigma_is/sigma_as"
+            np.clip((g_as - g_is) / g_ia, -1.0, 1.0))))
+        source = "Young from gamma_is/gamma_as"
 
     times = step_times(run)
     rows = []
@@ -394,9 +394,9 @@ def main():
     ext = extrapolate(traj_t, traj_th)
     csv = os.path.join(run, CSV_NAME)
     with open(csv, "w") as fh:
-        fh.write("# sigma_ia,sigma_is,sigma_as = %.6g,%.6g,%.6g   "
+        fh.write("# gamma_ia,gamma_is,gamma_as = %.6g,%.6g,%.6g   "
                  "theta_young = %.4f deg   (%s)\n"
-                 % (s_ia, s_is, s_as, theta_young, source))
+                 % (g_ia, g_is, g_as, theta_young, source))
         if ext is not None:
             fh.write("# theta_inf = %.4f +/- %.4f deg, tau = %.6e s, "
                      "fit_rms = %.5f, n = %d, error_inf = %+.4f deg\n"
@@ -414,8 +414,8 @@ def main():
     last = [r for r in rows if r["step"] == steps[-1]]
     th = np.array([r["theta"] for r in last])
     print(f"\n  CONTACT ANGLE  ({os.path.basename(run.rstrip('/'))})")
-    print(f"    sigma_ia = {s_ia:.6g}  sigma_is = {s_is:.6g}  "
-          f"sigma_as = {s_as:.6g}   J/m^2")
+    print(f"    gamma_ia = {g_ia:.6g}  gamma_is = {g_is:.6g}  "
+          f"gamma_as = {g_as:.6g}   J/m^2")
     print(f"    theta_Young    = {theta_young:8.3f} deg   [{source}]")
     print(f"    theta_measured = {th.mean():8.3f} +/- {th.std():.3f} deg "
           f"({th.size} estimates, final snapshot)")

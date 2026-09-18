@@ -170,24 +170,24 @@ int main(int argc, char *argv[]) {
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
 
     /* Surface energy parameters of the double-well free energy [J/m²]:
-     *   F_dub(phi_i) = sigma_ia * phi_i^2(1-phi_i)^2
+     *   F_dub(phi_i) = gamma_ia * phi_i^2(1-phi_i)^2
      *
      * One interface, one energy. The Sigma_k surface-tension parameters were
      * removed 2026-09-17: they are a three-phase construction and this model has
      * no sediment phase. */
-    PetscReal sigma_ia_bulk = 0.109; /* ice-air interface energy [J/m²] */
+    PetscReal gamma_ia_bulk = 0.109; /* ice-air interface energy [J/m²] */
 
     /* Prescribed contact angle at the regolith wall. The substrate is the
      * domain boundary in this two-phase model, so its wetting behaviour is set
      * by the three surface energies through Young's equation,
-     *     cos(theta) = (sigma_as - sigma_is)/sigma_ia.
-     * sigma_is = sigma_as (the default) gives cos(theta) = 0, i.e. theta = 90
+     *     cos(theta) = (gamma_as - gamma_is)/gamma_ia.
+     * gamma_is = gamma_as (the default) gives cos(theta) = 0, i.e. theta = 90
      * deg, which is exactly the natural Neumann wall the solver has always had
-     * -- so leaving these alone changes nothing. sigma_ia defaults to
-     * sigma_ia_bulk below. */
-    PetscReal sigma_ia = -1.0;   /* < 0 => "unset", take sigma_ia_bulk */
-    PetscReal sigma_is = 0.0;
-    PetscReal sigma_as = 0.0;
+     * -- so leaving these alone changes nothing. gamma_ia defaults to
+     * gamma_ia_bulk below. */
+    PetscReal gamma_ia = -1.0;   /* < 0 => "unset", take gamma_ia_bulk */
+    PetscReal gamma_is = 0.0;
+    PetscReal gamma_as = 0.0;
     PetscReal contact_angle_deg = 0.0;
     PetscBool contact_angle_set = PETSC_FALSE;
     char      wall_faces[64] = "";
@@ -739,10 +739,10 @@ int main(int argc, char *argv[]) {
 
 
     /* --- Prescribed contact angle at the regolith wall ------------------- */
-    ierr = PetscOptionsReal("-sigma_ia_bulk", "Ice-air interface energy [J/m^2]", "", sigma_ia_bulk, &sigma_ia_bulk, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-sigma_ia", "Ice-air interface energy used by the wall term [J/m^2] (default: -sigma_ia_bulk)", "", sigma_ia, &sigma_ia, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-sigma_is", "Ice-regolith interface energy [J/m^2]", "", sigma_is, &sigma_is, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-sigma_as", "Air-regolith interface energy [J/m^2]", "", sigma_as, &sigma_as, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-gamma_ia_bulk", "Ice-air interface energy [J/m^2]", "", gamma_ia_bulk, &gamma_ia_bulk, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-gamma_ia", "Ice-air interface energy used by the wall term [J/m^2] (default: -gamma_ia_bulk)", "", gamma_ia, &gamma_ia, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-gamma_is", "Ice-regolith interface energy [J/m^2]", "", gamma_is, &gamma_is, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-gamma_as", "Air-regolith interface energy [J/m^2]", "", gamma_as, &gamma_as, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-contact_angle_deg", "DEBUG: set theta directly, bypassing Young's equation", "", contact_angle_deg, &contact_angle_deg, &contact_angle_set); CHKERRQ(ierr);
     ierr = PetscOptionsString("-wall_faces", "Domain faces that are regolith, e.g. \"y0,y1\" (default: none)", "", wall_faces, wall_faces, sizeof(wall_faces), NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-stall_limit", "Abort if ||U|| is bit-identical for this many consecutive steps (0 disables)", "", user.stall_limit, &user.stall_limit, NULL); CHKERRQ(ierr);
@@ -919,17 +919,17 @@ int main(int argc, char *argv[]) {
     /* Gibbs-Thomson kinetic parameters */
     user.diff_sub = 0.5 * (user.thcond_air / user.rho_air / user.cp_air + user.thcond_ice / user.rho_ice / user.cp_ice);
 
-    user.sigma_ia_bulk = sigma_ia_bulk;
+    user.gamma_ia_bulk = gamma_ia_bulk;
 
     /* ---- Prescribed contact angle: resolve gamma's -> cos(theta) ---------
-     * sigma_ia defaults to -sigma_ia_bulk -- the same ice-air interface, so by
+     * gamma_ia defaults to -gamma_ia_bulk -- the same ice-air interface, so by
      * default there is one number, not two. They are separable only so a
      * sensitivity test can perturb the wall's view of it independently; see
      * docs/contact_angle/. */
-    if (sigma_ia <= 0.0) sigma_ia = sigma_ia_bulk;
-    user.sigma_ia = sigma_ia;
-    user.sigma_is = sigma_is;
-    user.sigma_as = sigma_as;
+    if (gamma_ia <= 0.0) gamma_ia = gamma_ia_bulk;
+    user.gamma_ia = gamma_ia;
+    user.gamma_is = gamma_is;
+    user.gamma_as = gamma_as;
     user.costhet_direct = contact_angle_set;
 
     if (contact_angle_set) {
@@ -940,16 +940,16 @@ int main(int argc, char *argv[]) {
                     (double)contact_angle_deg);
         user.costhet = PetscCosReal(contact_angle_deg * PETSC_PI / 180.0);
     } else {
-        const PetscReal dgam = sigma_as - sigma_is;
-        if (PetscAbsReal(dgam) > sigma_ia)
+        const PetscReal dgam = gamma_as - gamma_is;
+        if (PetscAbsReal(dgam) > gamma_ia)
             SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_OUTOFRANGE,
-                    "Young's equation has no solution: |sigma_as - sigma_is| = "
-                    "|%g - %g| = %g exceeds sigma_ia = %g. A contact angle "
-                    "exists only for |sigma_as - sigma_is| <= sigma_ia; outside "
+                    "Young's equation has no solution: |gamma_as - gamma_is| = "
+                    "|%g - %g| = %g exceeds gamma_ia = %g. A contact angle "
+                    "exists only for |gamma_as - gamma_is| <= gamma_ia; outside "
                     "that range one phase wets the regolith completely.",
-                    (double)sigma_as, (double)sigma_is,
-                    (double)PetscAbsReal(dgam), (double)sigma_ia);
-        user.costhet = dgam / sigma_ia;
+                    (double)gamma_as, (double)gamma_is,
+                    (double)PetscAbsReal(dgam), (double)gamma_ia);
+        user.costhet = dgam / gamma_ia;
     }
 
     /* ---- Which faces are regolith ---------------------------------------
@@ -1505,7 +1505,7 @@ int main(int argc, char *argv[]) {
     /* --- Phase-field interface -------------------------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-FIELD INTERFACE\n");
     PetscPrintf(PETSC_COMM_WORLD, "   eps      =  %.4e m\n", user.eps);
-    PetscPrintf(PETSC_COMM_WORLD, "   sigma_ia =  %.4e J/m²   (ice-air interface energy)\n", user.sigma_ia_bulk);
+    PetscPrintf(PETSC_COMM_WORLD, "   gamma_ia =  %.4e J/m²   (ice-air interface energy)\n", user.gamma_ia_bulk);
     PetscPrintf(PETSC_COMM_WORLD, "   Lambda   =  %.4e\n", user.Lambd);
 
     /* --- Environment & initial conditions --------------------------------- */
@@ -1712,9 +1712,9 @@ int main(int argc, char *argv[]) {
                     "   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than\n"
                     "   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).\n");
                 PetscPrintf(PETSC_COMM_WORLD,
-                    "   sigma_ia = %.4e   sigma_is = %.4e   sigma_as = %.4e  J/m²\n",
-                    (double)user.sigma_ia, (double)user.sigma_is,
-                    (double)user.sigma_as);
+                    "   gamma_ia = %.4e   gamma_is = %.4e   gamma_as = %.4e  J/m²\n",
+                    (double)user.gamma_ia, (double)user.gamma_is,
+                    (double)user.gamma_as);
                 if (user.costhet_direct)
                     PetscPrintf(PETSC_COMM_WORLD,
                         "   cos(theta) = %.6f  ->  theta = %.2f°   "
@@ -1723,14 +1723,14 @@ int main(int argc, char *argv[]) {
                         (double)(PetscAcosReal(user.costhet) * 180.0 / PETSC_PI));
                 else
                     PetscPrintf(PETSC_COMM_WORLD,
-                        "   cos(theta) = (sigma_as - sigma_is)/sigma_ia = %.6f"
+                        "   cos(theta) = (gamma_as - gamma_is)/gamma_ia = %.6f"
                         "  ->  theta = %.2f°\n",
                         (double)user.costhet,
                         (double)(PetscAcosReal(user.costhet) * 180.0 / PETSC_PI));
             } else {
                 PetscPrintf(PETSC_COMM_WORLD,
                     "\n   phi_i is natural Neumann on every wall — dphi/dn = 0, i.e. a 90°\n"
-                    "   contact angle. Set -wall_faces (with -sigma_is/-sigma_as) to\n"
+                    "   contact angle. Set -wall_faces (with -gamma_is/-gamma_as) to\n"
                     "   prescribe a different angle where ice meets regolith.\n");
             }
             if (flag_BC_Tfix && !bc_dirichlet[0][0][1] && !bc_dirichlet[1][0][1])

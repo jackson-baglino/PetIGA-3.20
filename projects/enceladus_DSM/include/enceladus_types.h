@@ -41,10 +41,13 @@ typedef struct {
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
   PetscReal mob_sub;  // Mobility for ice phase evolution
-  // Sigma_i / (unused) / Sigma_a. Two-phase model: Etai == Etaa == sigma_ia
-  // (M&F's ternary combinations both reduce to it). Only Etai is read: it is
-  // the gamma in d0 = gamma*a^3/(k_B*T). Etaa is banner-only.
-  PetscReal Etai, Etam, Etaa;
+  // Ice-air interface energy [J/m^2]. One interface, one energy: this is a
+  // two-phase (ice/T/vapour) model. Replaced Etai/Etam/Etaa and the -Sigma_i /
+  // -Sigma_a option pair on 2026-09-18 -- the Sigma_k are Moure & Fu's
+  // three-phase surface-tension parameters and collapse to gamma_ia here, and
+  // the code already required Sigma_a == Sigma_i ("same interface, air side").
+  // gamma is the literature-standard symbol for an interface energy.
+  PetscReal gamma_ia;
   PetscReal alph_sub;  // Substrate interaction coefficient
   // Empirical multipliers on the two derived kinetic scalars (-mob_scale,
   // -alph_scale; both default 1.0). They are applied on BOTH paths -- to the

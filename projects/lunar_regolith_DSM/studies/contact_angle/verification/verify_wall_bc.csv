@@ -7,7 +7,7 @@ G2,theta=90,norm_wall_block_must_be_zero,2.909175e-29,1e-25,PASS
 G2,theta=120,rel_err_wall_block,8.421308e-10,1e-6,PASS
 G2,theta=150,rel_err_wall_block,8.162578e-10,1e-6,PASS
 G2,theta=180,rel_err_wall_block,8.034350e-10,1e-6,PASS
-G2,gammas_theta60,rel_err_wall_block,0.000000e+00,1e-6,PASS
+G2,gammas_theta60,rel_err_wall_block,9.447060e-10,1e-6,PASS
 G3,mesh_10x6,rel_err_measure,7.477e-15,1e-10,PASS
 G3,mesh_20x12,rel_err_measure,7.054e-16,1e-10,PASS
 G3,mesh_41x23,rel_err_measure,1.270e-15,1e-10,PASS

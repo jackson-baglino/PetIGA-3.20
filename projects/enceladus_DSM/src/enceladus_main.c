@@ -211,19 +211,13 @@ int main(int argc, char *argv[]) {
     /* Surface energy parameters of the double-well free energy [J/m²]:
      *   F_dub(phi_i) = C*phi_i^2(1-phi_i)^2,  C = (Sigma_i+Sigma_a)/2 + Lambda
      *
-     * M&F's ternary form is Sigma_i = sigma_ia + sigma_iw - sigma_aw and
-     * Sigma_a = sigma_ia + sigma_aw - sigma_iw, whose MEAN is sigma_ia for any
-     * water pair -- that is the point of the construction. This is a two-phase
-     * ice/vapour model with no water phase, so both collapse to sigma_ia and
-     * must be EQUAL. They were 0.109 and 0.132 (putting C 10.6 % high);
-     * corrected 2026-08-19.
-     *
-     * Only Sigma_i is live: it is the gamma in d0 = gamma*a^3/(k_B*T). Sigma_a
-     * is reported in the banner but never assembled -- the Allen-Cahn residual
-     * carries the well through mob_sub and eps, not through C. Keep them equal
-     * regardless, so the banner does not misreport the surface energy. */
-    PetscReal Sigma_i = 0.109; /* ice-vapour surface energy sigma_ia [J/m²] */
-    PetscReal Sigma_a = 0.109; /* same interface, air side: must equal Sigma_i */
+     * gamma is the literature-standard symbol for an interface energy. Moure &
+     * Fu write ternary surface-tension PARAMETERS Sigma_k instead, but those are
+     * a three-phase construction: with only ice and vapour they all collapse to
+     * gamma_ia, so carrying them meant several names for one number. Removed
+     * 2026-09-18 along with the -Sigma_i / -Sigma_a pair, which the code already
+     * required to be equal. */
+    PetscReal gamma_ia = 0.109; /* ice-air interface energy [J/m²] */
 
     /* Define common variables (can be overridden by PETSc options) */
     PetscInt  p   = 2;          /* Polynomial order */
@@ -635,6 +629,7 @@ int main(int argc, char *argv[]) {
      *
      * Use it only as a labelled sensitivity arm. Note it also feeds tau_sub
      * (M&F SI Eq. 9), consistently, so the timestep moves with it. */
+    ierr = PetscOptionsReal("-gamma_ia", "Ice-air interface energy [J/m^2]", "", gamma_ia, &gamma_ia, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-dif_vap",         "Vapor diffusivity in air [m^2/s]",                 "", user.dif_vap, &user.dif_vap, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-dtCFL_dphimax",   "Max pointwise |dphi| per step for the CFL limiter","", user.cfl_dphimax, &user.cfl_dphimax, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-decouple_phase_change", "Zero ice_t-driven source terms in R_tem/R_vap too (not just S_sub in R_ice)", "", user.decouple_phase_change, &user.decouple_phase_change, NULL); CHKERRQ(ierr);
@@ -649,8 +644,6 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-rho_ice", "Density of ice", "", user.rho_ice, &user.rho_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);
 
-    ierr = PetscOptionsReal("-Sigma_i", "Ice-side surface energy in the double-well free energy [J/m^2]", "", Sigma_i, &Sigma_i, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-Sigma_a", "Air-side surface energy in the double-well free energy [J/m^2]", "", Sigma_a, &Sigma_a, NULL); CHKERRQ(ierr);
 
     /* --- Output control -------------------------------------------------- */
     ierr = PetscOptionsInt("-outp", "Output control flag", "", user.outp, &user.outp, NULL); CHKERRQ(ierr);
@@ -882,8 +875,7 @@ int main(int argc, char *argv[]) {
     /* Gibbs-Thomson kinetic parameters */
     user.diff_sub = 0.5 * (user.thcond_air / user.rho_air / user.cp_air + user.thcond_ice / user.rho_ice / user.cp_ice);
 
-    user.Etai = Sigma_i; /* Ice surface energy in the double-well free energy */
-    user.Etaa = Sigma_a; /* Air surface energy in the double-well free energy */
+    user.gamma_ia = gamma_ia;
 
     /* Allow CLI override of the physical attachment-kinetics coefficient
      * beta_sub0 via -beta_sub0 <value> (default 1.4e5, set above). Unlike
@@ -918,7 +910,7 @@ int main(int argc, char *argv[]) {
          * for deliberate experiments (e.g. testing capillary sensitivity);
          * it is not the normal path. */
         /* K&P Eq. 13: d0 = gamma*a^3/(k_B*T), a^3 = m_H2O/rho_ice. */
-        PetscReal d0_phys = D0_CAPILLARY(user.Etai, user.rho_ice, temp + 273.15);
+        PetscReal d0_phys = D0_CAPILLARY(user.gamma_ia, user.rho_ice, temp + 273.15);
 
         PetscReal  d0_sub0_cli = -1.0;
         PetscBool  set_d0      = PETSC_FALSE;
@@ -1481,8 +1473,7 @@ int main(int argc, char *argv[]) {
     PetscPrintf(PETSC_COMM_WORLD,
         "\n── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────\n");
     PetscPrintf(PETSC_COMM_WORLD, "   eps            %.4e m        decay length, NOT the band width\n", user.eps);
-    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_i        %.4e J/m²     ice surface energy\n", user.Etai);
-    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_a        %.4e J/m²     air surface energy\n", user.Etaa);
+    PetscPrintf(PETSC_COMM_WORLD, "   gamma_ia       %.4e J/m²     ice-air interface energy\n", user.gamma_ia);
     PetscPrintf(PETSC_COMM_WORLD, "   Lambda         %.4e          triple-junction penalty\n", user.Lambd);
 
     /* --- Environment -------------------------------------------------------- */

@@ -33,10 +33,10 @@
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
 # --- the substrate ---
-# sigma_ia = 0.109 (the solver default), sigma_as - sigma_is = 0.0545
+# gamma_ia = 0.109 (the solver default), gamma_as - gamma_is = 0.0545
 #   cos(theta) = 0.0545/0.109 = 0.5  ->  theta = 60 deg
--sigma_as 0.300
--sigma_is 0.2455
+-gamma_as 0.300
+-gamma_is 0.2455
 
 # --- no flux anywhere: both flags off, which is the solver default ---
 -flag_BC_rhovfix 0
