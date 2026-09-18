@@ -26,6 +26,10 @@ redundant. This keeps:
 
 and deletes the rest. On the pilot that is ~94% of the bytes.
 
+RUN IT ON THE MERGED TREE, once the legs are merged and deleted. While both
+exist the snapshots are hardlinks -- the same bytes under two names -- so
+removing one name frees nothing until the other is gone too.
+
 DRY RUN BY DEFAULT. Nothing is removed without --apply, and the report names
 the byte count and the file count per leg first.
 """
@@ -85,12 +89,18 @@ def main() -> int:
     protect: set[int] = set()
 
     legs = sorted(p.parent for p in a.batch.glob("**/sol_00000.dat"))
+    # Skip the merged tree only when scanning a batch that CONTAINS it -- its
+    # snapshots are hardlinks to the legs', so thinning both would just unlink
+    # twice. When the merged directory is itself the target (the normal case
+    # once the legs are gone) it must not be skipped, which the first version
+    # got wrong by testing for "merged" anywhere in the path.
+    merged_root = (a.batch / "merged").resolve()
     tot_del = tot_keep = 0
     n_del = n_keep = 0
     to_remove: list[Path] = []
 
     for leg in legs:
-        if "merged" in leg.parts:
+        if merged_root in leg.resolve().parents and merged_root != a.batch.resolve():
             continue
         keep, note = keepers(leg, a.stride, protect)
         snaps = sorted(leg.glob("sol_*.dat"), key=snap_step)

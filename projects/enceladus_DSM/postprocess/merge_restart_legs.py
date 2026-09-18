@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -57,6 +58,57 @@ def find_pairs(batch: Path):
     return pairs
 
 
+
+
+def _place(src: Path, dst: Path, mode: str) -> None:
+    """link / move / copy one file, falling back to copy across devices."""
+    if dst.exists():
+        dst.unlink()
+    if mode == "move":
+        shutil.move(str(src), str(dst))
+        return
+    if mode == "link":
+        try:
+            os.link(src, dst)          # same inode: costs no additional bytes
+            return
+        except OSError:
+            pass                        # cross-device or unsupported: copy
+    shutil.copy2(src, dst)
+
+
+def place_snapshots(dest: Path, l1: Path, legs, ssa, mode: str) -> int:
+    """Bring both legs' sol_*.dat into `dest`, renumbered to be continuous.
+
+    Leg 2's steps restart at 0, so without renumbering its snapshots collide
+    with leg 1's and ParaView shows the run twice. The offsets are the same
+    ones already applied to the tables, so a snapshot and its SSA_evo row keep
+    the same step number.
+
+    Leg 1's snapshots at or after the join are dropped for the same reason its
+    table rows are: they belong to a trajectory that was abandoned.
+
+    Stale pf.pvd is deliberately NOT carried over -- it indexes the old
+    per-leg vtkOut names. Re-run the VTK conversion on the merged folder and
+    it writes a correct one.
+    """
+    if mode == "skip":
+        return 0
+    n = 0
+    keep_steps = set(ssa[0][:, STEP_COL].astype(int).tolist())
+    (dest).mkdir(parents=True, exist_ok=True)
+    for f in sorted(l1.glob("sol_*.dat")):
+        st = int(f.stem.split("_")[1])
+        if st in keep_steps:
+            _place(f, dest / f.name, mode); n += 1
+    base = int(ssa[0][:, STEP_COL].max()) if len(ssa[0]) else 0
+    for idx, leg in enumerate(legs):
+        for f in sorted(leg.glob("sol_*.dat")):
+            st = base + int(f.stem.split("_")[1])
+            _place(f, dest / f"sol_{st:05d}.dat", mode); n += 1
+        base = int(ssa[idx + 1][:, STEP_COL].max())
+    return n
+
+
 def merge_table(rows1, rows2, t_col, join_t):
     """Leg 1 truncated below join_t, then leg 2. Returns the stacked array."""
     keep1 = rows1[rows1[:, t_col] < join_t]
@@ -71,8 +123,16 @@ def main() -> int:
                     help="output dir (default: <batch>/merged)")
     ap.add_argument("--force", action="store_true",
                     help="rebuild a merged run that already exists")
+    ap.add_argument("--snapshots", choices=["skip", "link", "move", "copy"],
+                    default="link",
+                    help="how to bring sol_*.dat (and vtkOut, if present) into "
+                         "the merged run. link (default) hardlinks: zero extra "
+                         "disk, and the legs can be deleted afterwards because "
+                         "the data survives through the merged name. move frees "
+                         "the legs immediately. copy DOUBLES the footprint -- "
+                         "at ~180 MB a snapshot that is hundreds of GB.")
     ap.add_argument("--no-vtk", action="store_true",
-                    help="skip copying vtkOut (much faster; tables only)")
+                    help="deprecated alias for --snapshots skip")
     a = ap.parse_args()
 
     out_root = a.out or (a.batch / "merged")
@@ -142,6 +202,13 @@ def main() -> int:
 
         for opt in l1.glob("*.opts"):
             shutil.copy2(opt, dest / opt.name)
+        # igasol.dat defines the IGA the sol_*.dat vectors are expressed in.
+        # Without it the snapshots cannot be read at all, and it is what
+        # run_batch_postprocess.sh looks for to decide a folder IS a run --
+        # so copying it is what makes the merged folder self-contained and
+        # ParaView-ready once the VTK conversion is run on it.
+        if (l1 / "igasol.dat").is_file():
+            shutil.copy2(l1 / "igasol.dat", dest / "igasol.dat")
         for sub in ("inputs",):
             if (l1 / sub).is_dir() and not (dest / sub).exists():
                 shutil.copytree(l1 / sub, dest / sub)
@@ -152,8 +219,11 @@ def main() -> int:
                     fh.write(f"\n{'='*78}\n=== {lab}: {d.name}\n{'='*78}\n")
                     fh.write((d / "outp.txt").read_text())
 
+        mode = "skip" if a.no_vtk else a.snapshots
+        n_snap = place_snapshots(dest, l1, legs, ssa, mode)
+
         n_vtk = 0
-        if not a.no_vtk:
+        if False:
             vdest = dest / "vtkOut"
             vdest.mkdir(exist_ok=True)
             cut = joins[0]["join_time_s"] if joins else np.inf
@@ -174,13 +244,13 @@ def main() -> int:
             "legs": [str(x) for x in legs], "joins": joins,
             "n_ssa_rows": int(len(ssa_all)), "n_keff_rows": int(len(keff_all)),
             "t_start_s": float(ssa_all[0, T_COL]), "t_end_s": float(ssa_all[-1, T_COL]),
-            "n_vtk": n_vtk,
+            "n_snapshots": n_snap, "snapshot_mode": mode,
         }, indent=2))
 
         print(f"  MERGED   {short}")
         print(f"             {len(ssa_all)} steps, {len(keff_all)} k_eff samples, "
               f"t = {ssa_all[0, T_COL]:.3e} -> {ssa_all[-1, T_COL]:.3e} s"
-              + (f", {n_vtk} vts" if n_vtk else ""))
+              + (f", {n_snap} snapshots ({mode})" if n_snap else ""))
         for j in joins:
             print(f"             join at t = {j['join_time_s']:.4e} s "
                   f"({j['rows_superseded']} superseded rows dropped)")
