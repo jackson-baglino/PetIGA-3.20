@@ -265,3 +265,33 @@ their effect on `k_eff` are not.
 - The 2D pore-communication deficit is a **stated limitation of the 2D model**,
   quantified by the diffusivity above, rather than something the packing design
   can remove.
+
+---
+
+## 6. The void gate is domain-size dependent
+
+Building an `L/R_ave = 64` packing for the REV check failed the acceptance
+gate: *"largest void 1.37 mean-radii > 1.34"*, after exhausting every retry.
+
+The gate is on `max_void_radius / R_ave`. That is the wrong invariant once the
+domain size is what varies, because the largest of N voids grows with N — so a
+gate calibrated on a small box rejects **larger, better** domains. In the terms
+that bear on REV validity, the same absolute void is:
+
+| domain | void / R_ave | void / L |
+|---|---|---|
+| L/R_ave = 40 | 1.3375 | 3.34% |
+| L/R_ave = 64 | 1.3375 | **2.09%** |
+
+The question an REV asks is whether a void approaches the **domain** scale, not
+the grain scale, so `void/L` is the quantity to hold fixed. Scaling the gate by
+64/40 gives 2.14, and the packing that was rejected at 1.37 is comfortably
+inside it — with a *smaller* void relative to its domain than the accepted
+L/R_ave = 40 packings have.
+
+**This will bite again at production sizes.** The generator's docstring already
+records that a flat gate is "silently a porosity gate"; it is silently a
+domain-size gate too. Either scale `--max-void-ratio` with `L/R_ave` when
+changing domain size, or change the gate to measure `void/L`. Until then the
+scaling must be passed explicitly and recorded, as it is in
+`scripts/HPC/submit_rev_check.sh`.
