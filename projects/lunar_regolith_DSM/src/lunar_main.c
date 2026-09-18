@@ -170,14 +170,12 @@ int main(int argc, char *argv[]) {
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
 
     /* Surface energy parameters of the double-well free energy [J/m²]:
-     *   F_dub(phi_i) = C*phi_i^2(1-phi_i)^2,  C = (Sigma_i+Sigma_a)/2 + Lambda
+     *   F_dub(phi_i) = sigma_ia * phi_i^2(1-phi_i)^2
      *
-     * Sigma_i and Sigma_a are Moure & Fu's surface-tension PARAMETERS, not
-     * interface energies: Sigma_k = sigma_ka + sigma_kb - sigma_ab. With the
-     * sediment moved to the wall there is no sediment phase, the bulk has a
-     * single ice-air interface, and Sigma_i = Sigma_a = sigma_ia. */
-    PetscReal Sigma_i = 0.109; /* ice surface energy [J/m²] */
-    PetscReal Sigma_a = 0.132; /* air surface energy [J/m²] */
+     * One interface, one energy. The Sigma_k surface-tension parameters were
+     * removed 2026-09-17: they are a three-phase construction and this model has
+     * no sediment phase. */
+    PetscReal sigma_ia_bulk = 0.109; /* ice-air interface energy [J/m²] */
 
     /* Prescribed contact angle at the regolith wall. The substrate is the
      * domain boundary in this two-phase model, so its wetting behaviour is set
@@ -185,9 +183,9 @@ int main(int argc, char *argv[]) {
      *     cos(theta) = (sigma_as - sigma_is)/sigma_ia.
      * sigma_is = sigma_as (the default) gives cos(theta) = 0, i.e. theta = 90
      * deg, which is exactly the natural Neumann wall the solver has always had
-     * -- so leaving these alone changes nothing. sigma_ia defaults to Sigma_i
-     * below, once -Sigma_i has been read. */
-    PetscReal sigma_ia = -1.0;   /* < 0 => "unset", take Sigma_i */
+     * -- so leaving these alone changes nothing. sigma_ia defaults to
+     * sigma_ia_bulk below. */
+    PetscReal sigma_ia = -1.0;   /* < 0 => "unset", take sigma_ia_bulk */
     PetscReal sigma_is = 0.0;
     PetscReal sigma_as = 0.0;
     PetscReal contact_angle_deg = 0.0;
@@ -739,11 +737,10 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-rho_ice", "Density of ice", "", user.rho_ice, &user.rho_ice, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-rho_air", "Density of air", "", user.rho_air, &user.rho_air, NULL); CHKERRQ(ierr);
 
-    ierr = PetscOptionsReal("-Sigma_i", "Surface-tension parameter Sigma_i = sigma_ia+sigma_is-sigma_as; equals sigma_ia in this 2-phase model [J/m^2]", "", Sigma_i, &Sigma_i, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-Sigma_a", "Surface-tension parameter Sigma_a = sigma_ia+sigma_as-sigma_is; should equal Sigma_i in this 2-phase model [J/m^2]", "", Sigma_a, &Sigma_a, NULL); CHKERRQ(ierr);
 
     /* --- Prescribed contact angle at the regolith wall ------------------- */
-    ierr = PetscOptionsReal("-sigma_ia", "Ice-air surface energy for Young's equation [J/m^2] (default: -Sigma_i)", "", sigma_ia, &sigma_ia, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-sigma_ia_bulk", "Ice-air interface energy [J/m^2]", "", sigma_ia_bulk, &sigma_ia_bulk, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-sigma_ia", "Ice-air interface energy used by the wall term [J/m^2] (default: -sigma_ia_bulk)", "", sigma_ia, &sigma_ia, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-sigma_is", "Ice-regolith interface energy [J/m^2]", "", sigma_is, &sigma_is, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-sigma_as", "Air-regolith interface energy [J/m^2]", "", sigma_as, &sigma_as, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-contact_angle_deg", "DEBUG: set theta directly, bypassing Young's equation", "", contact_angle_deg, &contact_angle_deg, &contact_angle_set); CHKERRQ(ierr);
@@ -922,33 +919,14 @@ int main(int argc, char *argv[]) {
     /* Gibbs-Thomson kinetic parameters */
     user.diff_sub = 0.5 * (user.thcond_air / user.rho_air / user.cp_air + user.thcond_ice / user.rho_ice / user.cp_ice);
 
-    user.Sigma_i = Sigma_i; /* Ice surface energy in the double-well free energy */
-    user.Sigma_a = Sigma_a; /* Air surface energy in the double-well free energy */
+    user.sigma_ia_bulk = sigma_ia_bulk;
 
     /* ---- Prescribed contact angle: resolve gamma's -> cos(theta) ---------
-     * sigma_ia defaults to -Sigma_i.
-     *
-     * In Moure & Fu's notation the Sigma_k are surface-tension PARAMETERS built
-     * from the three interface energies,
-     *     Sigma_i = sigma_ia + sigma_is - sigma_as
-     *     Sigma_a = sigma_ia + sigma_as - sigma_is
-     *     Sigma_s = sigma_is + sigma_as - sigma_ia
-     * and those combinations apply when sediment is a BULK PHASE. Here it is
-     * not: it has been moved to the wall, so the bulk double well has a single
-     * ice-air interface and Sigma_i = Sigma_a = sigma_ia. sigma_is and sigma_as
-     * enter only through f_w. Reverting to the three-phase combination would
-     * count the sediment twice, once in the well and once at the wall.
-     *
-     * KNOWN INCONSISTENCY in the shipped defaults, pre-dating this feature:
-     * Sigma_i = 0.109 is sigma_ia (a two-phase value) while Sigma_a = 0.132 is
-     * the three-phase Sigma_a = sigma_ia + sigma_as - sigma_is evaluated at the
-     * old sediment energies (0.109 + 0.056 - 0.033). For a two-phase model they
-     * should both be sigma_ia. Sigma_a feeds the double-well coefficient
-     * C = (Sigma_i + Sigma_a)/2 + Lambda, so it has been setting the bulk
-     * interface energy to 0.1205 rather than 0.109 in every lunar run, contact
-     * angle or not. Left alone here because fixing it shifts bulk results across
-     * the project, which is outside this feature. */
-    if (sigma_ia <= 0.0) sigma_ia = Sigma_i;
+     * sigma_ia defaults to -sigma_ia_bulk -- the same ice-air interface, so by
+     * default there is one number, not two. They are separable only so a
+     * sensitivity test can perturb the wall's view of it independently; see
+     * docs/contact_angle/. */
+    if (sigma_ia <= 0.0) sigma_ia = sigma_ia_bulk;
     user.sigma_ia = sigma_ia;
     user.sigma_is = sigma_is;
     user.sigma_as = sigma_as;
@@ -1527,8 +1505,7 @@ int main(int argc, char *argv[]) {
     /* --- Phase-field interface -------------------------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-FIELD INTERFACE\n");
     PetscPrintf(PETSC_COMM_WORLD, "   eps      =  %.4e m\n", user.eps);
-    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_i  =  %.4e J/m²   (surface-tension parameter, = sigma_ia here)\n", user.Sigma_i);
-    PetscPrintf(PETSC_COMM_WORLD, "   Sigma_a  =  %.4e J/m²   (surface-tension parameter; see note in main)\n", user.Sigma_a);
+    PetscPrintf(PETSC_COMM_WORLD, "   sigma_ia =  %.4e J/m²   (ice-air interface energy)\n", user.sigma_ia_bulk);
     PetscPrintf(PETSC_COMM_WORLD, "   Lambda   =  %.4e\n", user.Lambd);
 
     /* --- Environment & initial conditions --------------------------------- */

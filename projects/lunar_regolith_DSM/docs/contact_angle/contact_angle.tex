@@ -90,32 +90,23 @@ is what produces $\cos\theta$ in \S\ref{sec:bc}.
 
 \subsection{Notation}
 
-Following Moure \& Fu, the three \emph{interface energies} are $\sia$, $\sis$ and
-$\sas$ [J\,m$^{-2}$]. The \emph{surface-tension parameters} built from them are
-\begin{equation}
-\Sigma_i=\sia+\sis-\sas,\quad
-\Sigma_a=\sia+\sas-\sis,\quad
-\Sigma_s=\sis+\sas-\sia .
-\label{eq:Sigma}
-\end{equation}
-These combinations belong to the three-phase model, in which sediment is a bulk
-phase field and each $\Sigma_k$ weights that phase's well. \textbf{They do not
-apply here.} With the sediment moved to the wall there is no sediment phase: the
-bulk well has a single ice--air interface, so
-\begin{equation}
-\Sigma_i=\Sigma_a=\sia ,
-\end{equation}
-and $\sis,\sas$ enter only through $f_w$. Reverting to \eqref{eq:Sigma} would
-count the sediment twice, once in the well and once at the wall.
+Following Moure \& Fu, the interface energies are $\sia$, $\sis$ and $\sas$
+[J\,m$^{-2}$]. $\sia$ is the only one the bulk has --- the model is two-phase ---
+and $\sis,\sas$ enter solely through $f_w$.
 
-\emph{Known inconsistency in the shipped defaults, pre-dating this work:}
-$\Sigma_i=0.109$ is $\sia$, a two-phase value, while $\Sigma_a=0.132$ is the
-three-phase $\Sigma_a$ evaluated at the old sediment energies
-($0.109+0.056-0.033$). For a two-phase model both should be $\sia$. $\Sigma_a$
-feeds the double-well coefficient $C=(\Sigma_i+\Sigma_a)/2+\Lambda$, so it has
-been setting the bulk interface energy to $0.1205$ rather than $0.109$ in every
-lunar run. Left unchanged here because fixing it shifts bulk results across the
-project.
+Earlier revisions of this code also carried the surface-tension parameters
+$\Sigma_k=\sigma_{ka}+\sigma_{kb}-\sigma_{ab}$, i.e.
+$\Sigma_i=\sia+\sis-\sas$ and so on. \textbf{Those were removed on
+2026-09-17.} They are a three-phase construction: each $\Sigma_k$ weights the
+well of a bulk phase $k$, and here sediment is not a bulk phase. With a single
+ice--air interface the $\Sigma_k$ all collapse to $\sia$, so carrying them meant
+two names for one number --- which is precisely how the tree came to hold
+$\Sigma_i=0.109$ (the two-phase $\sia$) alongside $\Sigma_a=0.132$ (a stale
+three-phase value left from the abandoned sediment-phase model). The double-well
+coefficient is now simply $\sia$.
+
+If sediment is ever reintroduced as a bulk phase field, the $\Sigma_k$ belong
+with that model. They do not belong here.
 
 \section{First variation and the weak form}
 
@@ -287,7 +278,7 @@ $d\phi_c/d\phi$, so that it remains an exact Jacobian of the clamped residual.
 \code{-wall\_faces "y0,y1"} & which domain faces are regolith \\
 \code{-sigma\_is} & ice--regolith interface energy [J\,m$^{-2}$] \\
 \code{-sigma\_as} & air--regolith interface energy [J\,m$^{-2}$] \\
-\code{-sigma\_ia} & ice--air interface energy; default \code{-Sigma\_i} \\
+\code{-sigma\_ia} & ice--air interface energy; default \code{-sigma\_ia\_bulk} \\
 \bottomrule
 \end{tabular}\end{center}
 
@@ -295,9 +286,10 @@ The solver forms $\cos\theta=(\sas-\sis)/\sia$, refuses the run if
 $|\sas-\sis|>\sia$ (no angle exists; one phase wets completely), and prints both
 the energies and the derived $\theta$.
 
-$\sia$ defaults to \code{-Sigma\_i} because $\Sigma_i=\sia$ in this model
-(\S1.1). Pass it explicitly whenever the substrate matters, rather than relying
-on defaults whose provenance is mixed.
+$\sia$ defaults to \code{-sigma\_ia\_bulk}: the wall sees the same ice--air
+interface the bulk does, so by default there is one number rather than two. They
+are separable only so a sensitivity test can perturb the wall's view of it
+independently.
 
 The only admissibility constraint is $|\sas-\sis|\le\sia$. The three-phase
 triple-well constraint $\sis>\tfrac{\sia}{2}(1-\cos\theta)$ does \emph{not}

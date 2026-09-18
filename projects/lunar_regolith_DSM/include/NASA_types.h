@@ -19,16 +19,22 @@ typedef struct {
   // Physical parameters related to phase field and thermodynamics
   PetscReal eps;  // Interface width parameter for phase field method
   PetscReal mob_sub;  // Mobility for ice phase evolution
-  // Moure & Fu surface-tension PARAMETERS (not interface energies themselves):
-  //     Sigma_i = sigma_ia + sigma_is - sigma_as
-  //     Sigma_a = sigma_ia + sigma_as - sigma_is
-  //     Sigma_s = sigma_is + sigma_as - sigma_ia   (3-phase only; no sediment
-  //               phase exists in this model, so it is unused here)
-  // With the sediment moved to the WALL there is no sediment phase in the bulk,
-  // the double well has a single ice-air interface, and Sigma_i = Sigma_a =
-  // sigma_ia. The three-phase combinations above apply only when sediment is a
-  // bulk phase field.
-  PetscReal Sigma_i, Sigma_a, Sigma_s;
+  // Ice-air interface energy [J/m^2]. This is the ONLY interfacial energy the
+  // bulk has: the model is two-phase, and the sediment lives on the wall.
+  //
+  // The Sigma_k surface-tension parameters of Moure & Fu
+  // (Sigma_k = sigma_ka + sigma_kb - sigma_ab) were removed on 2026-09-17. They
+  // are meaningful only when all three phases are bulk phase fields; here the
+  // well has a single ice-air interface, so the Sigma_k collapse to sigma_ia and
+  // carrying two names for one number invited exactly the inconsistency it
+  // produced (Sigma_i held sigma_ia while Sigma_a held a stale three-phase
+  // value). If sediment is ever re-introduced as a bulk phase, the Sigma_k
+  // belong with that model, not this one.
+  //
+  // Note it never enters the residual: the double well is f1 = phi(1-phi)(1-2phi)
+  // with no energy prefactor, and sigma_ia reaches the dynamics only through the
+  // capillary length d0 = sigma_ia*V_m/(R*T) in the mobility calibration.
+  PetscReal sigma_ia_bulk;
   PetscReal alph_sub;  // Substrate interaction coefficient
   PetscReal Lambd;  // Parameter related to thermal conductivity or latent heat (context-dependent)
   PetscReal beta_sub0, d0_sub0;  // Parameters related to phase change at the substrate
@@ -123,16 +129,16 @@ typedef struct {
   // Young's equation gives cos(theta) = (sigma_as - sigma_is)/sigma_ia, and the
   // ONLY admissibility constraint is |sigma_as - sigma_is| <= sigma_ia. (The
   // three-phase triple-well constraint sigma_is > (sigma_ia/2)(1-cos theta) came
-  // from requiring a positive Sigma_s and does not apply: there is no sediment
+  // from requiring a positive three-phase Sigma_s and does not apply: no sediment
   // phase and no triple well here.)
   //
-  // sigma_ia defaults to -Sigma_i, which is the ice-vapor
+  // sigma_ia defaults to -sigma_ia_bulk, the ice-vapor
   // surface energy this solver already implies: inverting monitoring.c's
-  // d0 = Sigma_i*V_m/(R*T) at the physical d0_sub0 = 1.0166e-9 m and -20 C returns
+  // d0 = sigma_ia*V_m/(R*T) at the physical d0_sub0 = 1.0166e-9 m and -20 C returns
   // 0.109 J/m^2 exactly.
-  // The three ACTUAL interface energies [J/m^2], in Moure & Fu's notation.
-  // sigma_is and sigma_as enter only through the wall term; sigma_ia is the
-  // bulk ice-air interface energy and equals Sigma_i here (see above).
+  // Interface energies used by the wall term [J/m^2]. sigma_ia duplicates
+  // sigma_ia_bulk by default (same interface); sigma_is and sigma_as are the
+  // substrate pair and appear nowhere else.
   PetscReal sigma_ia, sigma_is, sigma_as;
   PetscReal costhet;         // cos(theta); 0 => the wall term vanishes identically
   PetscBool costhet_direct;  // -contact_angle_deg was given (debug override of Young)

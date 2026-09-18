@@ -69,6 +69,10 @@
 -phase_hi  1.05
 
 -Lambda 0.0                             # triple-junction penalty in F_tri (disabled).
+                                        # Like the removed Sigma_k this is a
+                                        # THREE-phase construction: a two-phase
+                                        # model has no triple junction. Kept at 0
+                                        # rather than removed, pending a decision.
                                         # Only relevant for 3-phase ice/sediment/vapor
                                         # contact lines; the 2-phase (ice+vapor, no sediment)
                                         # geometry has no triple junction so Lambda=0 is
