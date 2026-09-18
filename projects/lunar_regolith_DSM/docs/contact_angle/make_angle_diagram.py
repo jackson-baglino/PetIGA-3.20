@@ -33,7 +33,7 @@ THETA = 60.0                     # contact angle to draw, degrees
 R     = 1.0                      # cap radius
 EPS   = 0.030                    # interface decay length, in cap radii
 
-ICE  = "#8fc3e8"
+ICE  = "#a9d8e0"      # pale glacial cyan -- reads as ice, not water
 LINE = "#12283a"
 SED  = "#6b5744"
 TAN  = "#c2410c"
@@ -85,16 +85,13 @@ ax.text(xP + 0.400 * np.cos(np.radians(180 - THETA / 2)),
 # ----------------------------------------------------------- phase labels ---
 ax.text(-0.10, 0.17, r"$\phi_i$", fontsize=19, ha="center", va="center",
         color=LINE, zorder=7)
-ax.text(-0.93, 0.66, r"$\phi_a$", fontsize=19, ha="center", va="center",
+ax.text(-0.98, 0.72, r"$\phi_a$", fontsize=19, ha="center", va="center",
         color=LINE, zorder=7)
 
 # ------------------------------------------------- contour + tangent notes --
-ax.annotate(r"$\phi_i = 0.5$", xy=(-0.745, 0.330), xytext=(-1.20, 0.12),
-            fontsize=16, color=LINE, va="center", ha="left", zorder=9,
-            arrowprops=dict(arrowstyle="-", color=LINE, lw=1.3,
-                            shrinkA=2, shrinkB=3))
-ax.text(xP + 0.90 * tx + 0.040, 0.90 * ty + 0.010, "tangent", fontsize=16,
-        color=TAN, ha="left", va="bottom", zorder=9)
+ax.text(0.0, 0.615, r"$\phi_i = 0.5$", fontsize=16, color=LINE,
+        ha="center", va="bottom", zorder=9)
+
 
 ax.set_xlim(x[0], x[-1]); ax.set_ylim(y[0], y[-1])
 ax.set_aspect("equal"); ax.axis("off")
