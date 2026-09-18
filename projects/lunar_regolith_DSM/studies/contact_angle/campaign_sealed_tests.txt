@@ -1,0 +1,18 @@
+# Sealed steady-state contact angle, for scripts/HPC/submit_batch.sh --tests-file
+#
+# One run. Flat-sided bridge (90-degree contact angle at t=0) in the wedge-scale
+# 125 um channel, theta = 60 prescribed, NO FLUX on every face.
+#
+# The hypothesis being tested: the grow90_* runs never reach steady state,
+# because a saturated vapour reservoir keeps the bridge exchanging mass forever.
+# Its meniscus has to carry a Gibbs-Thomson supersaturation to sustain that flux,
+# and a moving interface satisfies sigma = d0*chi + beta*v_n rather than d0*chi
+# alone -- so the shape it holds is not the equilibrium shape and the angle reads
+# slightly off Young. Sealing the domain removes the flux, v_n -> 0, and the
+# meniscus should settle on the Young shape.
+#
+# Existing evidence already points this way: at theta = 60 the reservoir run gave
+# theta_inf = 58.98 (error -1.019) and the sealed run 60.098 (+0.098) -- an order
+# of magnitude better. This run pushes it further with a 90-degree IC (half the
+# excursion of the clipped disc's 131.8) and 150 days ~ 6 tau.
+channel_2D_H125um_eps0.86um_flat90:sealed150_T-20_theta60

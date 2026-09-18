@@ -1,0 +1,47 @@
+# =============================================================================
+# geometry/contactangle/channel_2D_H125um_eps0.86um_flat90.opts
+#
+# Same flat channel as channel_2D_H125um_eps0.86um.opts (Ly = 125 um = the
+# wedge's midpoint width, eps = the wedge's eps), but the ice starts as a
+# FLAT-SIDED BRIDGE -- a slab spanning the channel with vertical menisci, i.e.
+# a 90-degree contact angle at t = 0.
+#
+# Why: the clipped-disc IC used everywhere else starts at
+# arccos(-(Ly/2)/R) = 131.8 degrees. Relaxing from there to 60 is a 72-degree
+# excursion, and most of the run is spent on it. Starting at 90 halves the
+# excursion and gets to the plateau sooner.
+#
+# Built from the existing -bridge_* options rather than a new ic_type: the
+# bridge is the intersection of two discs, so putting their centres far outside
+# the domain makes the menisci nearly straight.
+#   R = 50*Ly = 6.25e-3 m  ->  initial angle arccos((Ly/2)/R) = 89.43 deg
+# The centres are deliberately CROSSED (cxL > cxR): disc L's left edge is the
+# left meniscus and disc R's right edge is the right one, so their intersection
+# is the slab. Putting them uncrossed gives an empty intersection and trips the
+# solver's |cxR - cxL| < rL + rR check.
+#
+# Slab width 1.7249e-4 m is chosen so the ice area matches the clipped-disc runs
+# (2.1561e-8 m^2) exactly, making the two IC families directly comparable.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Nx 618
+-Ny 206
+-Nz 1
+-Lx 3.75e-4
+-Ly 1.25e-4
+-Lz 0
+
+# No discs: the ice is the bridge below.
+-bridge_cxL  6.351256e-03
+-bridge_rL   6.250000e-03
+-bridge_cxR -5.976256e-03
+-bridge_rR   6.250000e-03
+-bridge_cy   6.250000e-05
+
+-eps 8.5840e-07
+-eps_valid_temp -20.0
+-delt_t 1.0e-4
+-periodic 0
+-wall_faces y0,y1
+-dtmax 1.487e3
