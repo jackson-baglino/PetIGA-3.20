@@ -34,14 +34,6 @@ DAY = 86400.0
 OK, BAD = "  ok  ", " FLAG "
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("batch", type=Path)
-    ap.add_argument("--L", type=float, default=2.0e-3)
-    ap.add_argument("--LR0", type=float, default=40.0, help="L/R_ave at t=0")
-    a = ap.parse_args()
-
 def find_runs(batch: Path) -> dict:
     """Every run under `batch`, keyed by seed.
 
@@ -69,6 +61,14 @@ def find_runs(batch: Path) -> dict:
             seen[key] = d
     return dict(sorted(seen.items()))
 
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("batch", type=Path)
+    ap.add_argument("--L", type=float, default=2.0e-3)
+    ap.add_argument("--LR0", type=float, default=40.0, help="L/R_ave at t=0")
+    a = ap.parse_args()
 
     runs = {}
     for seed, d in find_runs(a.batch).items():
