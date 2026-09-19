@@ -361,16 +361,26 @@ def main():
             "wall to measure a contact angle against.")
 
     # What the solver was told, for the comparison column.
-    g_ia = opt_float(opts, "-gamma_ia")
-    g_is = opt_float(opts, "-gamma_is", 0.0)
-    g_as = opt_float(opts, "-gamma_as", 0.0)
+    # Runs written before 2026-09-18 name these -sigma_*; the solver has used
+    # -gamma_* since. Read both, newest first, or every archived run silently
+    # reports gamma_is = gamma_as = 0 -> theta_Young = 90 regardless of what it
+    # was actually given.
+    def _energy(new_key, old_key, default=None):
+        v = opt_float(opts, new_key)
+        if v is None:
+            v = opt_float(opts, old_key)
+        return default if v is None else v
+
+    g_ia = _energy("-gamma_ia", "-sigma_ia")
+    g_is = _energy("-gamma_is", "-sigma_is", 0.0)
+    g_as = _energy("-gamma_as", "-sigma_as", 0.0)
     theta_cli = opt_float(opts, "-contact_angle_deg")
     if theta_cli is not None:
         theta_young = theta_cli
         source = "-contact_angle_deg (Young bypassed)"
     else:
         if g_ia is None:
-            g_ia = opt_float(opts, "-gamma_ia_bulk", 0.109)
+            g_ia = _energy("-gamma_ia_bulk", "-sigma_ia_bulk", 0.109)
         theta_young = float(np.degrees(np.arccos(
             np.clip((g_as - g_is) / g_ia, -1.0, 1.0))))
         source = "Young from gamma_is/gamma_as"

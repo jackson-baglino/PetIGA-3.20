@@ -1,0 +1,61 @@
+# =============================================================================
+# experiment/contactangle/wedge150_T-20_theta60.opts
+#
+# WEDGE, sealed: no-flux on everything.
+#
+# Sealed rather than the previous wedge campaign's vapour reservoir, for two
+# reasons. The reservoir overshoots the angle -- it never reaches steady state,
+# so the meniscus carries a Gibbs-Thomson supersaturation and sits off the Young
+# shape (measured -1.019 deg at theta=60, against +0.004 sealed). And the wedge
+# does not need a reservoir to be interesting: the taper supplies a curvature
+# GRADIENT, so ice redistributes along the channel at constant total mass, which
+# a sealed box supports perfectly well. What a sealed box cannot show is net
+# growth or shrinkage, which is not what the wedge is for.
+#
+# If direct comparison with the 2026-08-07 wedge_bc batch matters more than
+# angle accuracy, use the rhov_eq_eq BCs instead: -flag_BC_Tfix 1
+# -flag_BC_rhovfix 1 -rhovfix_axis 0 -rhovfix_lo/hi 1.000000.
+#
+# The reasoning, and it is worth stating because it is the opposite of the
+# grow90_* runs: those impose a saturated vapour reservoir, so the bridge never
+# stops exchanging mass and never reaches a true steady state. Its meniscus
+# carries a Gibbs-Thomson supersaturation d0*chi to sustain that flux, and a
+# moving interface satisfies sigma = d0*chi + beta*v_n rather than d0*chi alone
+# -- so the SHAPE it holds is not the equilibrium shape, and the angle read off
+# it sits slightly off Young. Measured: grow90 theta=60 gave theta_inf = 58.98
+# (error -1.019) while the sealed relax90 run at the same angle gave 60.098
+# (+0.098), an order of magnitude better.
+#
+# With no flux anywhere the system relaxes to a genuine equilibrium: v_n -> 0,
+# the supersaturation goes to zero, and the meniscus takes the shape Young's
+# equation predicts. Total water is conserved, and since vapour holds ~1e-6 of
+# it the ice volume is effectively fixed -- only the SHAPE relaxes, which is
+# exactly what this run is for.
+#
+# t_final = 150 days ~ 6 tau at the wedge-scale channel's tau = 24-34 d. Longer
+# than the 90-day runs because the point here is the plateau, not the rate, and
+# the flat-90 IC makes the approach cheaper anyway.
+# =============================================================================
+-t_final 1.3e7
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+# --- the substrate ---
+# gamma_ia = 0.109 (the solver default), gamma_as - gamma_is = 0.0545
+#   cos(theta) = 0.0545/0.109 = +0.5000  ->  theta = 60 deg
+-gamma_as 0.300
+-gamma_is 0.2455000
+
+# --- no flux anywhere: both flags off, which is the solver default ---
+-flag_BC_rhovfix 0
+-flag_BC_Tfix 0
+
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0
+-n_out 60

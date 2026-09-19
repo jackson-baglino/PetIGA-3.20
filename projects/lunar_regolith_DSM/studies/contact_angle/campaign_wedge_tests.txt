@@ -1,0 +1,17 @@
+# Prescribed contact angle in a WEDGE, for scripts/HPC/submit_batch.sh --tests-file
+#
+# Two runs, the same tapered domain as the 2026-08-07 wedge_bc campaign, now
+# with the wall free-energy term enforcing 60 and 120 degrees at both regolith
+# walls. The wedge_band IC starts at 90 degrees (an apex-centred annulus is
+# perpendicular to both walls), so each run relaxes 90 -> its prescribed angle.
+#
+# What is new physically: in the flat channel theta sets the meniscus curvature
+# outright, R = H/(2|cos theta|), and nothing else varies. Here the channel
+# WIDTH varies along x, so the same theta gives a curvature that changes with
+# position -- a gradient the ice can migrate along at constant total mass.
+# theta < 90 and theta > 90 should drive that migration in opposite directions.
+#
+# Sealed BCs, not the reservoir the earlier wedge campaign used: see the header
+# of the experiment files for why, and for the one-line change back.
+wedge_2D_L300um_eps0.86um_wall:wedge150_T-20_theta60
+wedge_2D_L300um_eps0.86um_wall:wedge150_T-20_theta120

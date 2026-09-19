@@ -1986,12 +1986,29 @@ int main(int argc, char *argv[]) {
         ierr = IGAComputeIFunction(iga, 0.0, Vw, 0.0, Uw, Fw); CHKERRQ(ierr);
         ierr = VecStrideSum(Fw, 0, &got); CHKERRQ(ierr);
 
-        /* |Gamma_wall|: each flagged face contributes the measure of the
-         * domain face perpendicular to its axis. */
+        /* |Gamma_wall|. A y-face is the wall curve y = y0 + slope*x, so its
+         * length is Lx*sqrt(1 + slope^2), NOT the projected Lx. On a wedge
+         * (slope = +/-0.25) the two differ by 3.08 %, and assuming the flat
+         * value made this gate report a 3 % "error" on a run that was in fact
+         * correct -- PetIGA integrates the boundary form over the true arc
+         * length whenever a -geom_file supplies element geometry.
+         *
+         * Only the affine part is accounted for here. Bump fields
+         * (-sed_grain_*, -top_grain_*) also lengthen the wall, so this gate is
+         * exact for flat and wedge walls and approximate for bumpy ones. */
         for (PetscInt l = 0; l < dim; l++) {
             PetscReal face = 1.0;
             for (PetscInt k = 0; k < dim; k++) if (k != l) face *= LL[k];
-            for (PetscInt m = 0; m < 2; m++) if (user.wall_face[l][m]) area += face;
+            for (PetscInt m = 0; m < 2; m++) {
+                if (!user.wall_face[l][m]) continue;
+                PetscReal stretch = 1.0;
+                if (l == 1) {                       /* a wall curve over x */
+                    PetscReal sl = (m == 0) ? user.wall_bot_slope
+                                            : user.wall_top_slope;
+                    stretch = PetscSqrtReal(1.0 + sl * sl);
+                }
+                area += face * stretch;
+            }
         }
         want = -3.0 * user.mob_sub * 0.25 * user.costhet * area;
 
