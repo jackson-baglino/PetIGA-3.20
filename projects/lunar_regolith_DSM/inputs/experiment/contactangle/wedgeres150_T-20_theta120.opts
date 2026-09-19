@@ -5,10 +5,21 @@
 # sealed; run both to separate what the boundary condition does from what the
 # contact angle does.
 #
-# These BCs are byte-identical to the 2026-08-07 wedge_bc campaign's rhov_eq_eq
-# case: T pinned at -20 C on every face, vapour Dirichlet at saturation on the
-# x-faces only, no imposed gradient. So the contact angle is the only thing that
-# differs from that campaign, and the only driver within these runs.
+# These match the 2026-08-07 wedge_bc campaign's rhov_eq_eq case. Its staged
+# opts were read on 2026-09-19 and carried exactly:
+#     -flag_BC_Tfix 1        -flag_BC_rhovfix 1     -rhovfix_axis 0
+#     -rhovfix_lo 1.000000   -rhovfix_hi 1.000000   -grad_temp0 0.0,0.0,0.0
+#     -humidity 1.00         -temp -20.0            -t_final 7.776e6
+# Everything above is reproduced here except t_final, which is 1.3e7 (150 d)
+# rather than 7.776e6 (90 d) so this run and its sealed twin share a clock;
+# truncate at 90 d to compare against the August campaign directly.
+#
+# The values are recorded here because that batch is NO LONGER ON DISK -- it was
+# under HPC_results/.../batch_2026-08-07__07.26.38_wedge_bc and has since been
+# removed, so this header is now the only local record of its BCs.
+#
+# So the contact angle is the only thing that differs from that campaign, and
+# the only driver within these runs.
 #
 # Expect the angle to come out slightly OFF Young here, and that is the point of
 # running the pair. A reservoir keeps the interface exchanging mass, so it never
