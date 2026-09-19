@@ -26,7 +26,7 @@ SSA-k_eff correlation is two quantities tracking the same third thing. Panel
 from __future__ import annotations
 
 import argparse
-import json
+import re
 import sys
 from pathlib import Path
 
@@ -60,19 +60,41 @@ def load_run(d: Path):
     }
 
 
+def find_runs(batch: Path) -> dict:
+    """Every run under `batch`, keyed by seed.
+
+    Discovery is by CONTENT -- a directory holding both k_eff.csv and
+    SSA_evo.dat is a run -- rather than by directory name. The layout has
+    already changed twice: originally `<geom>__<exp>/` beside `<geom>/<leg>/`,
+    then a `merged/` tree, and now the merged runs relocated into `<geom>/`.
+    Matching on names broke silently at each step and reported "no runs found"
+    on a directory full of results.
+
+    Prefers the deepest match when a run nests inside another, and prefers a
+    merged run over the legs it was built from.
+    """
+    seen = {}
+    for kf in sorted(batch.glob("**/k_eff.csv")):
+        d = kf.parent
+        if not (d / "SSA_evo.dat").is_file():
+            continue
+        m = re.search(r"seed(\d+)", d.name) or re.search(r"seed(\d+)", str(d))
+        key = m.group(1) if m else d.name
+        prev = seen.get(key)
+        # a merged run carries MERGE_INFO.json; prefer it over a raw leg
+        if prev is None or ((d / "MERGE_INFO.json").is_file()
+                            and not (prev / "MERGE_INFO.json").is_file()):
+            seen[key] = d
+    return dict(sorted(seen.items()))
+
+
 def collect(batch: Path):
     runs = {}
-    merged = batch / "merged"
-    for l1 in sorted(batch.glob("*__*")):
-        if not l1.is_dir() or not (l1 / "SSA_evo.dat").is_file():
-            continue
-        geom = l1.name.split("__")[0]
-        seed = geom.split("seed")[1].split("_")[0]
-        src = merged / geom if (merged / geom / "k_eff.csv").is_file() else l1
-        r = load_run(src)
-        r["merged"] = (src != l1)
+    for seed, d in find_runs(batch).items():
+        r = load_run(d)
+        r["merged"] = (d / "MERGE_INFO.json").is_file()
         runs[seed] = r
-    return dict(sorted(runs.items()))
+    return runs
 
 
 def main() -> int:
