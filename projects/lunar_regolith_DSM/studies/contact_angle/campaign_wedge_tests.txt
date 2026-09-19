@@ -11,7 +11,20 @@
 # position -- a gradient the ice can migrate along at constant total mass.
 # theta < 90 and theta > 90 should drive that migration in opposite directions.
 #
-# Sealed BCs, not the reservoir the earlier wedge campaign used: see the header
-# of the experiment files for why, and for the one-line change back.
+# BOTH boundary-condition types, so the BC's effect and the angle's effect can
+# be told apart. Same domain, same IC, same t_final; only the BCs differ.
+#
+#   wedge150_*     sealed: no flux anywhere. Reaches a true steady state, so the
+#                  angle comes out essentially exactly Young (+0.004 deg in the
+#                  flat channel). Ice can REDISTRIBUTE along the taper at
+#                  constant mass but cannot grow or shrink on net.
+#
+#   wedgeres150_*  reservoirs: T pinned on every face, vapour at saturation on
+#                  the x-faces. Identical to the 2026-08-07 wedge_bc campaign's
+#                  rhov_eq_eq case, so these are directly comparable to it.
+#                  Permits net growth/shrinkage, at the cost of ~1 deg of angle
+#                  error because the interface never stops moving.
 wedge_2D_L300um_eps0.86um_wall:wedge150_T-20_theta60
 wedge_2D_L300um_eps0.86um_wall:wedge150_T-20_theta120
+wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta60
+wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta120

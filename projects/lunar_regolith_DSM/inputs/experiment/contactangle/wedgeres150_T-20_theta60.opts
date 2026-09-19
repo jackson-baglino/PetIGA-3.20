@@ -1,0 +1,52 @@
+# =============================================================================
+# experiment/contactangle/wedgeres150_T-20_theta60.opts
+#
+# WEDGE, vapour + thermal reservoirs. The companion to wedge150_*, which is
+# sealed; run both to separate what the boundary condition does from what the
+# contact angle does.
+#
+# These BCs are byte-identical to the 2026-08-07 wedge_bc campaign's rhov_eq_eq
+# case: T pinned at -20 C on every face, vapour Dirichlet at saturation on the
+# x-faces only, no imposed gradient. So the contact angle is the only thing that
+# differs from that campaign, and the only driver within these runs.
+#
+# Expect the angle to come out slightly OFF Young here, and that is the point of
+# running the pair. A reservoir keeps the interface exchanging mass, so it never
+# reaches steady state; its meniscus carries a Gibbs-Thomson supersaturation and
+# a moving interface satisfies sigma = d0*chi + beta*v_n rather than d0*chi
+# alone. In the flat channel that cost -1.019 deg at theta=60 against +0.004
+# sealed. What the reservoir buys in exchange is NET growth or shrinkage, which
+# a sealed box cannot show at all -- vapour there holds ~1e-6 of the water.
+#
+# t_final = 150 days ~ 6 tau at the wedge-scale channel's tau = 24-34 d. Longer
+# than the 90-day runs because the point here is the plateau, not the rate, and
+# the flat-90 IC makes the approach cheaper anyway.
+# =============================================================================
+-t_final 1.3e7
+
+-temp -20.0
+-humidity 1.00
+-grad_temp0 0.0,0.0,0.0
+
+-beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+# --- the substrate ---
+# gamma_ia = 0.109 (the solver default), gamma_as - gamma_is = 0.0545
+#   cos(theta) = 0.0545/0.109 = +0.5000  ->  theta = 60 deg
+-gamma_as 0.300
+-gamma_is 0.2455000
+
+# --- reservoirs: T on every face, vapour on the x-faces only ---
+# Pinning vapour on the y walls would feed ice directly at its contact line and
+# corrupt the angle; pinning T there is harmless, regolith being a thermal bath.
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1
+-rhovfix_axis 0
+-rhovfix_lo 1.000000
+-rhovfix_hi 1.000000
+
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0
+-n_out 60
