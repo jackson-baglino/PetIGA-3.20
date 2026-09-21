@@ -35,6 +35,18 @@
   3001x1501, profile tol 0.004 um) and added a light-gated rim term. The
   camera stays straight on to match Molaro's micrographs, so the rim is the
   only thing standing between a sphere and a flat disc.
+- Third pass: removed the silhouette stroke from the 3-D body too, so nothing
+  in these panels is outlined. Verified unstroked on white, cream and
+  near-black -- the edge holds because the highlight sits inboard of the limb.
+  `--outline-3d` restores it.
+- Reruns now sweep the script's own earlier products from the target folder
+  (`--keep-existing` opts out), restricted to its own filename patterns. A
+  rerun with different `--tags` was silently leaving the old tags' panels
+  behind.
+- Fixed: `--nu/--nv` argparse defaults (1801/901) were overriding the
+  3001/1501 the smoothing pass set on `sample()`, so the finer grid had never
+  actually been used. Neck radii move 16.39 -> 16.40 and 22.99 -> 23.00 um.
+- Exposed `--shade-bands`; at the default 120, `ice3d_vapour_*.svg` is ~1.9 MB.
 - Removed the phi = 0.5 stroke from the 2-D cut face. That forced two knock-on
   fixes: the fill had to move off near-white (sigma peaks AT the ice, so the
   face always abuts the palest colour on the scale) to a mid tone of the ice
