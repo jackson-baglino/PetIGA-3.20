@@ -1,3 +1,33 @@
+## 2026-09-21 — Vector figure panels for the Molaro grain pair
+
+- Added `postprocess/manuscript_grainpair_figure.py`: builds the manuscript
+  figure pieces for an axisymmetric grain-pair run as separate .pdf/.svg
+  files, for assembly in Inkscape. Written because ParaView's SVG export
+  rasterises the surface and is not editable.
+- Panels: `xsec_<tag>` (meridional section, rho_v in the air + opaque ice),
+  `ice3d_<tag>` (the phi = 0.5 surface revolved and shaded, transparent
+  background), `ice3d_vapour_<tag>` (3-D body above the axis, cut section
+  below, field behind both). Plus rho_v / supersaturation / phi colourbars and
+  a scale bar, each in light- and dark-ink variants.
+- The 3-D camera looks perpendicular to the symmetry axis: for a surface of
+  revolution that is the only view where the silhouette IS the profile and the
+  surface cannot occlude itself, so the render is correct without a z-buffer
+  and stays vector, and the 3-D half and the cut half register exactly.
+- Shading is filled bands of the Lambert+Blinn intensity, with a crevice-
+  darkening term. Without the AO term the neck renders *brighter* than the
+  grains: the fillet sweeps the normal through the mirror direction and spikes
+  the specular exactly where the surface is most enclosed.
+- Bands are nested regions painted lightest-first rather than `contourf`.
+  `contourf`'s shared edges seam in vector output, and `set_edgecolor("face")`
+  strokes its compound path and draws a spurious line across the figure. RDP
+  on each ring took the cross-section SVG from 11 MB to 0.4 MB.
+- Ran it on the T = -20 C round-2 baseline at step 62 (t* , neck 16.39 um) and
+  step 236 (t* + 78 min, neck 22.99 um) -- the two times Molaro et al. measured
+  at, under their own neck-size anchoring. Output in that run's
+  `plots/manuscript/` with a README.
+
+---
+
 ## 2026-09-15 (later) — 2D packings cannot connect both phases
 
 - Started the robust-packing design. Stage 0 landed as planned; Stages 1-2 were
