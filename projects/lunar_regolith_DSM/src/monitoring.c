@@ -137,8 +137,13 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
     ierr = MPI_Allreduce(&phi_air_min, &Gfa_min, 1, MPI_DOUBLE, MPI_MIN, PETSC_COMM_WORLD); CHKERRQ(ierr);
     ierr = MPI_Allreduce(&phi_air_max, &Gfa_max, 1, MPI_DOUBLE, MPI_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
 
+    /* Scientific format, not %.4f. This line is the per-step record of how far
+     * the phase field strays outside [0,1], and postprocess/plot_phi_bounds.py
+     * reads it; at fixed precision a -4e-5 excursion printed as "-0.0000",
+     * indistinguishable from a healthy -1e-23. The magnitude IS the
+     * diagnostic. */
     PetscPrintf(PETSC_COMM_WORLD,
-        "  BOUNDS: phi_ice [%.4f, %.4f]  phi_air [%.4f, %.4f]\n",
+        "  BOUNDS: phi_ice [%.4e, %.4e]  phi_air [%.4e, %.4e]\n",
         Gfi_min, Gfi_max, Gfa_min, Gfa_max);
 
     /* If any phase field has left [phase_lo, phase_hi], roll the just-finished

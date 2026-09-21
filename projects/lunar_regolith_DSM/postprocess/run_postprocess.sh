@@ -152,6 +152,21 @@ if [[ -f "$RUN_DIR/igasol.dat" ]] && ls "$RUN_DIR"/sol_*.dat &>/dev/null 2>&1; t
 fi
 
 # ---------------------------------------------------------------------------
+# Per-step extremes of phi_i.
+#
+# Runs for EVERY batch, like the mass plots, and for the same reason: it is the
+# cheapest check that a run stayed resolved. A healthy phase field sits inside
+# [0, 1] to within rounding; a real excursion means an under-resolved interface,
+# a timestep too long for the interface speed, or a boundary term pushing the
+# wrong way. Reads the solver's own per-step BOUNDS line, so it needs
+# -pf_monitor 1 and nothing else.
+# ---------------------------------------------------------------------------
+run_step "Phase-field bounds per step" \
+    "$POSTPROCESS_DIR/plot_phi_bounds.py" --dir "$RUN_DIR" \
+    --save "$PLOTS/phi_bounds.png"
+
+
+# ---------------------------------------------------------------------------
 # Gibbs-Thomson normal-velocity check on the wedge menisci.
 #
 # Only meaningful for the apex-centred band geometry, where the centreline
