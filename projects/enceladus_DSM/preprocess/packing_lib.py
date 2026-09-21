@@ -554,7 +554,7 @@ def descriptors(centres, radii, Lx, Ly, px, py, gap=0.0, contact_tol_frac=0.02,
 # =========================================================================
 
 def accept_reasons(meta, max_void_ratio, max_density_cv, require_percolation=True,
-                   max_void_per_L=None):
+                   max_void_per_L=None, Lx=None):
     """List of reasons this packing should be REJECTED. Empty means accept.
 
     RANK ON UNIFORMITY, NEVER ON PORE CONNECTIVITY. This is carried over from
@@ -591,7 +591,12 @@ def accept_reasons(meta, max_void_ratio, max_density_cv, require_percolation=Tru
     # microstructural statement ("no void many grains across") and the two
     # answer different questions.
     if max_void_per_L is not None:
-        frac = meta["max_void_radius_m"] / meta["Lx"]
+        # Lx is passed in, not read from meta: the gate runs on grade()'s
+        # output, and the domain size is only merged into the metadata dict
+        # afterwards. Reading meta["Lx"] here raised KeyError on every call.
+        if Lx is None:
+            raise ValueError("max_void_per_L needs Lx")
+        frac = meta["max_void_radius_m"] / Lx
         if frac > max_void_per_L:
             bad.append(f"largest void {frac:.4f} of L > {max_void_per_L:.4f}")
     elif meta["max_void_radius_per_mean_r"] > max_void_ratio:

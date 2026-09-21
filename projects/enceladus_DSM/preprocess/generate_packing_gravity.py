@@ -873,8 +873,8 @@ def main(argv=None):
         meta["attempt"] = attempt + 1
         meta["porosity_achieved"] = meta["porosity_raster"]
         bad = pl.accept_reasons(meta, a.max_void_ratio, a.max_density_cv,
-                                max_void_per_L=a.max_void_per_L,
-                                a.percolation_gate)
+                                a.percolation_gate,
+                                max_void_per_L=a.max_void_per_L, Lx=a.Lx)
         # The porosity the caller asked for is the point of the whole exercise,
         # so it is part of the gate. Without this the generator happily emitted
         # a 0.2249 packing against a 0.3250 target.

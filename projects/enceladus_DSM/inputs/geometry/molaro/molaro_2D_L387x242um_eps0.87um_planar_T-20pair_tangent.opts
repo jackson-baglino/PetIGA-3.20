@@ -1,0 +1,62 @@
+# =============================================================================
+# geometry/molaro/molaro_2D_L387x242um_eps0.87um_planar_T-20pair_tangent.opts
+#
+# PLANAR TWIN of molaro_2D_L387um_eps0.87um_axisym_T-20pair_tangent.opts.
+# The pair exists to measure the 2D -> 3D curvature correction, which is the
+# one quantity a planar packing study cannot get from itself.
+#
+# WHY A CORRECTION IS NEEDED. Curvature drives everything here: the
+# Gibbs-Thomson term sets the vapour pressure at the surface, so it sets the
+# whole sublimation/deposition cycle. A surface in 3D has TWO principal
+# curvatures and the driving force goes as 1/R1 + 1/R2. A curve in a plane has
+# ONE. So planar 2D is not a scaled 3D -- it is missing half of the driving
+# term, and not uniformly:
+#
+#   sphere   3D 2/R          planar disc   1/R        factor 2
+#   neck     3D 1/r - 1/rho  planar        -1/rho     the +1/r that partially
+#                                                     CANCELS in 3D is absent,
+#                                                     so a planar neck sees a
+#                                                     stronger sink and grows
+#                                                     FASTER
+#
+# The sign matters: planar 2D over-predicts neck growth, so sintering rates
+# from a planar packing are fast, and by an amount only a matched pair can say.
+#
+# WHAT IS MATCHED, AND WHAT IS NOT. Identical in-plane profile: same two radii
+# (72.5 and 101 um), exactly tangent, same eps, same mesh spacing, same
+# kinetics. The ONLY difference is how the solver interprets the out-of-plane
+# direction -- -axisym 1 revolves the profile into a pair of spheres,
+# -axisym 0 extrudes it into a pair of cylinders. So the ratio of neck growth
+# rates between the two runs isolates the missing curvature and nothing else.
+#
+# THE GEOMETRY IS SHIFTED, NOT CHANGED. Under -axisym the domain is a half
+# plane with the axis at y = 0 and the grains sitting on it, so Ly = 121 um is
+# the radius. Planar needs the whole disc, so Ly doubles to 242 um and the
+# centres move to y = 121 um. Ny doubles with it to hold h = eps/sqrt(2).
+# Nothing else is touched.
+#
+# Run the pair with scripts/HPC/submit_curvature_calib.sh.
+# =============================================================================
+
+-axisym 0                               # THE variable under test
+-ic_grain_union 1                       # zero neck at tangency
+-ic_type multi_grains
+-dim 2
+
+-Lx 3.87000e-04
+-Ly 2.42000e-04                         # 2 x the axisym Ly: full disc, not half
+-Lz 0
+
+-ice_grain_cx 9.25000e-05,2.66000e-04   # d = 1.735e-4 = R0+R1, EXACTLY TANGENT
+-ice_grain_cy 1.21000e-04,1.21000e-04   # on the mid-plane, not on an axis
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 631                                 # h = eps/sqrt(2), same as the twin
+-Ny 396
+
+-eps 8.6750e-07
+-eps_valid_temp -20
+-delt_t 1.0e-4
+-periodic 0
