@@ -5,15 +5,15 @@ Produces the pieces of a multi-panel figure as SEPARATE vector files, so the
 figure itself is assembled in Inkscape:
 
     xsec_<tag>.pdf/.svg          full-domain meridional cross-section:
-                                 vapour density in the air, opaque ice body
+                                 supersaturation in the air, opaque ice body
     ice3d_<tag>.pdf/.svg         shaded 3-D rendering of the ice body (the
                                  phi = 0.5 surface revolved about the
                                  symmetry axis), transparent background
     ice3d_vapour_<tag>.pdf/.svg  the same 3-D body above the symmetry axis,
                                  the vapour cross-section below it
 
-    cbar_rhov_{light,dark}       vapour bar, absolute rho_v
-    cbar_supersat_{light,dark}   the same bar labelled as supersaturation
+    cbar_supersat_{light,dark}   supersaturation bar (cmocean balance,
+                                 white anchored at sigma = 0)
     cbar_ice_{light,dark}        ice-phase (phi) bar
     scalebar_{light,dark}        standalone scale bar (see below)
 
@@ -62,6 +62,7 @@ import argparse
 import os
 import sys
 
+import cmocean
 import numpy as np
 import matplotlib
 
@@ -91,13 +92,17 @@ matplotlib.rcParams.update({
 # ---------------------------------------------------------------------------
 # palette
 # ---------------------------------------------------------------------------
-# Sequential = one hue, light -> dark. Blue ramp steps 100..700; low rho_v (the
-# undersaturated chamber wall) is the light end, high rho_v (the vapour collar
-# hugging the ice) the dark end.
-BLUE_RAMP = ["#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7",
-             "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281",
-             "#0d366b"]
-CMAP_RHOV = LinearSegmentedColormap.from_list("rhov_blue", BLUE_RAMP)
+# The vapour field is drawn as SUPERSATURATION sigma = rho_v/rho_vs - 1 on
+# cmocean's `balance`: a diverging map needs a white point that means
+# something, and sigma = 0 -- equilibrium with flat ice -- is the only value
+# here that does.
+#
+# ONLY THE BLUE ARM IS EVER USED, and that is a result, not an oversight: at
+# this wall humidity the entire domain is undersaturated (sigma runs about
+# -2.85e-3 at the chamber wall to -0.47e-3 at the ice), so nothing in the run
+# reaches white, let alone red. sigma = 0 still anchors the scale, and the
+# colourbar runs up to it so the reader can see how far short the field falls.
+CMAP_SAT = cmocean.cm.balance
 
 # Ice ramp: phi = 0 (air) at the dark end, phi = 1 (ice) at the near-white end.
 # The 3-D shading reads its tones off this same ramp, so the phi colourbar and
@@ -105,21 +110,30 @@ CMAP_RHOV = LinearSegmentedColormap.from_list("rhov_blue", BLUE_RAMP)
 ICE_RAMP = ["#33465a", "#546a80", "#7b90a4", "#a8bccd", "#d5e3ee", "#f7fbff"]
 CMAP_ICE = LinearSegmentedColormap.from_list("ice", ICE_RAMP)
 
-ICE_FILL = "#fbfdff"     # flat ice colour in the 2-D cross-section
-ICE_EDGE = "#16324f"     # phi = 0.5 stroke
-AXIS_INK = "#16324f"
+# The cut face is a MID tone off the ice ramp, not a near-white one. With the
+# phi = 0.5 outline gone the boundary has to be carried by fill contrast
+# alone, and the ice is always adjacent to the brightest end of the vapour
+# scale (sigma is highest right at the surface) -- so the fill has to be
+# clearly darker than near-white. It does not matter that the far field is
+# darker still: the ice is never adjacent to that.
+ICE_FILL = "#9db1c3"     # = CMAP_ICE(0.55), so the flat cut face and the
+                         # shaded 3-D body read as the same material
+ICE_EDGE = "#2c3a48"     # silhouette of the 3-D body only; the 2-D cut face
+                         # is drawn unstroked
+AXIS_INK = "#3a4650"
 
 INK_LIGHT = "#0b0b0b"    # text/rules on a light background
 INK_DARK = "#f4f3ee"     # text/rules on a dark background
 
-N_BAND_RHOV = 40         # vapour bands
-N_BAND_SHADE = 48        # shading bands on the 3-D body
+N_BAND_SAT = 72          # vapour bands
+N_BAND_SHADE = 120       # shading bands on the 3-D body -- this is what sets
+                         # how smooth the rendered ice reads, so it is high
 
 
 # ---------------------------------------------------------------------------
 # data
 # ---------------------------------------------------------------------------
-def sample(run_dir, step, nu=1801, nv=901):
+def sample(run_dir, step, nu=3001, nv=1501):
     """Evaluate (phi, rho_v) of one snapshot on a uniform grid over the whole
     meridional half-domain.
 
@@ -138,7 +152,7 @@ def sample(run_dir, step, nu=1801, nv=901):
     return u, v, F[..., 0].T, F[..., 2].T
 
 
-def ice_profile(x, y, phi, simplify_um=0.02):
+def ice_profile(x, y, phi, simplify_um=0.004):
     """The phi = 0.5 meridional profile, left to right, as (M, 2) in microns.
 
     The ice sits on the symmetry axis, so the level set is an OPEN curve with
@@ -228,16 +242,39 @@ def filled_bands(ax, X, Y, Z, levels, colors, tol, zorder=1, label=None):
     return artists
 
 
-def band_levels(vmin, vmax, n, cmap):
+def band_levels(vmin, vmax, n, cmap, pos=None):
     """n band thresholds spanning [vmin, vmax] and the colour for each.
 
-    The first threshold sits slightly below vmin so the lightest band covers
+    `pos` maps a data value to its position in the colormap. It exists so a
+    diverging map can be anchored on a value rather than on the data range:
+    for supersaturation the white point has to land on sigma = 0 wherever the
+    data happens to stop, which a plain linear vmin..vmax stretch cannot do.
+
+    The first threshold sits slightly below vmin so the first band covers
     every unmasked cell -- otherwise the region at exactly vmin is empty and
     the figure shows holes where the field is at its floor.
     """
     lv = np.linspace(vmin, vmax, n + 1)[:-1]
+    mid = 0.5 * (lv + np.r_[lv[1:], vmax])
+    lv = lv.copy()
     lv[0] -= 1e-9 * max(abs(vmax - vmin), 1.0)
-    return lv, cmap(np.linspace(0.0, 1.0, n))
+    f = pos or (lambda v: (v - vmin) / (vmax - vmin))
+    return lv, cmap(np.clip(f(mid), 0.0, 1.0))
+
+
+# balance's extreme blue is nearly black. The Dirichlet wall sits at exactly
+# sigma_min and wraps the whole domain boundary, so running the scale to the
+# very end floods the corners with near-black. Starting the arm a little way
+# in keeps sigma = 0 anchored at white and still prints.
+SAT_DARK_TRIM = 0.09
+
+
+def sat_pos(sigma, sigma_min):
+    """Colormap position for supersaturation on a diverging map whose white
+    point is sigma = 0. sigma_min (the most undersaturated value in the run)
+    fixes the blue end; sigma = 0 always lands on the midpoint."""
+    t = np.clip(np.asarray(sigma, float) / sigma_min, 0.0, 1.0)
+    return SAT_DARK_TRIM + (0.5 - SAT_DARK_TRIM) * (1.0 - t)
 
 
 # ---------------------------------------------------------------------------
@@ -259,15 +296,20 @@ def _upper_hull(p):
     return np.interp(p[:, 0], h[:, 0], h[:, 1])
 
 
-def shade_revolved(ax, profile, n_theta=721, light=(-0.42, 0.66, 0.62),
-                   ambient=0.24, diffuse=0.58, specular=0.14, shine=30.0,
-                   ao_min=0.44, ao_pow=0.70, n_bands=N_BAND_SHADE,
-                   tol=0.12, zorder=3):
+def shade_revolved(ax, profile, n_theta=1441, light=(-0.44, 0.62, 0.65),
+                   ambient=0.22, diffuse=0.52, specular=0.13, shine=34.0,
+                   rim=0.20, rim_pow=3.0, ao_min=0.44, ao_pow=0.70,
+                   n_bands=N_BAND_SHADE, tol=0.06, zorder=3, outline=True):
     """Draw the ice body: the profile revolved about y = 0, Lambert + Blinn
     shaded with a crevice-darkening term, as filled bands of the intensity.
 
     The camera looks along -z orthographically, so screen (X, Y) = (x, y) in
     micrometres and the silhouette is the profile itself.
+
+    THE CAMERA IS DELIBERATELY STRAIGHT ON, not tilted: Molaro et al.'s
+    micrographs are side-on views of the pair, so this is the orientation the
+    figure has to be compared against. All of the depth cue therefore has to
+    come out of the lighting, which is why there are four terms and not one.
 
     AMBIENT OCCLUSION IS NOT COSMETIC HERE. Without it the neck renders
     *brighter* than the grains: its fillet sweeps the normal through the
@@ -275,6 +317,12 @@ def shade_revolved(ax, profile, n_theta=721, light=(-0.42, 0.66, 0.62),
     most enclosed and should be darkest. The proxy used is the profile's
     depth below its own upper convex hull, which is zero on the grains and
     large exactly in the neck.
+
+    THE RIM TERM is what makes a straight-on view read as a solid rather than
+    a flat disc. It brightens where the surface turns away from the camera
+    (n . view -> 0, i.e. the silhouette), gated by the diffuse term so only
+    the lit limb picks it up -- an unmodulated rim glows all the way round and
+    reads as a halo instead of curvature.
     """
     xp, rp = profile[:, 0], profile[:, 1]
     dx, dr = np.gradient(xp), np.gradient(rp)
@@ -304,7 +352,9 @@ def shade_revolved(ax, profile, n_theta=721, light=(-0.42, 0.66, 0.62),
 
     lam = np.clip(nx * L[0] + ny * L[1] + nz * L[2], 0.0, None)
     spc = np.clip(nx * H[0] + ny * H[1] + nz * H[2], 0.0, None) ** shine
-    inten = np.clip(ao * (ambient + diffuse * lam + specular * spc), 0.0, 1.0)
+    rimt = rim * (1.0 - np.clip(nz, 0.0, 1.0)) ** rim_pow * (0.3 + 0.7 * lam)
+    inten = np.clip(ao * (ambient + diffuse * lam + specular * spc + rimt),
+                    0.0, 1.0)
 
     # Screen coordinates, back half masked away. At this camera the surface
     # cannot occlude itself, so back-face culling is the whole of the
@@ -317,47 +367,66 @@ def shade_revolved(ax, profile, n_theta=721, light=(-0.42, 0.66, 0.62),
     art = filled_bands(ax, X, Y, Z, lv, cols, tol, zorder=zorder,
                        label="shade")
 
-    # Exact silhouette, on top of the banded fill.
-    sil = np.vstack([np.column_stack([xp, rp]),
-                     np.column_stack([xp[::-1], -rp[::-1]])])
-    art.append(ax.plot(sil[:, 0], sil[:, 1], color=ICE_EDGE, lw=0.7,
-                       solid_joinstyle="round", zorder=zorder + 1)[0])
+    # Exact silhouette, on top of the banded fill. This is the body's edge,
+    # not a level-set annotation: without it a pale ice limb has nothing to
+    # sit against on a white page.
+    if outline:
+        sil = np.vstack([np.column_stack([xp, rp]),
+                         np.column_stack([xp[::-1], -rp[::-1]])])
+        art.append(ax.plot(sil[:, 0], sil[:, 1], color=ICE_EDGE, lw=0.55,
+                           alpha=0.85, solid_joinstyle="round",
+                           zorder=zorder + 1)[0])
     return art
 
 
 # ---------------------------------------------------------------------------
 # 2-D vapour cross-section
 # ---------------------------------------------------------------------------
-def vapour_section(ax, x, y, phi, rhov, vmin, vmax, stride=2, tol=0.25,
-                   n_bands=N_BAND_RHOV, zorder=1):
-    """Filled bands of rho_v in the air phase, mirrored about the axis.
+def vapour_section(ax, x, y, phi, sigma, smin, stride=2, tol=0.18,
+                   n_bands=N_BAND_SAT, zorder=1):
+    """Filled bands of supersaturation in the air phase, mirrored about the
+    axis. White (sigma = 0) is anchored by `sat_pos`, not by the data range.
 
-    Masking at phi > 0.5 leaves the band edges ragged at grid resolution; the
-    opaque ice polygon drawn on top is what makes the boundary crisp, so the
-    mask only has to be approximately right -- which is why the field can be
-    decimated (`stride`) without any visible cost.
+    THE FIELD IS DRAWN THROUGH THE ICE, not clipped at phi = 0.5, and the
+    opaque ice polygon is what hides it. contourpy drops any cell with a
+    masked corner, so a mask at phi = 0.5 pulls the bands up to one cell SHORT
+    of the boundary and leaves a ragged sliver of bare page around the ice --
+    which the unstroked cut face has nothing to cover. Letting the bands run
+    under the ice instead guarantees the overlap. rho_v inside the ice is the
+    local equilibrium value, in range and never seen, so nothing is distorted;
+    the mask at phi > 0.99 is only a guard.
+
+    Because the boundary comes from the ice polygon and not from the mask, the
+    field itself can be decimated (`stride`) at no visible cost.
     """
     xu, yu = x[::stride] / UM, y[::stride] / UM
-    ph, rh = phi[::stride, ::stride], rhov[::stride, ::stride]
+    ph, sg = phi[::stride, ::stride], sigma[::stride, ::stride]
 
     yfull = np.concatenate([-yu[:0:-1], yu])
     ph = np.vstack([ph[:0:-1, :], ph])
-    rh = np.vstack([rh[:0:-1, :], rh])
+    sg = np.vstack([sg[:0:-1, :], sg])
 
     X, Y = np.meshgrid(xu, yfull)
-    Z = np.ma.masked_where(ph > 0.5, rh)
-    lv, cols = band_levels(vmin, vmax, n_bands, CMAP_RHOV)
+    Z = np.ma.masked_where(ph > 0.99, sg)
+    lv, cols = band_levels(smin, 0.0, n_bands, CMAP_SAT,
+                           pos=lambda v: sat_pos(v, smin))
     return filled_bands(ax, X, Y, Z, lv, cols, tol, zorder=zorder,
-                        label="rhov")
+                        label="sigma")
 
 
-def draw_ice_body(ax, profile, fill=ICE_FILL, lw=0.7, zorder=4):
-    """Opaque ice cross-section from the phi = 0.5 profile, mirrored."""
+def draw_ice_body(ax, profile, fill=ICE_FILL, zorder=4):
+    """Opaque ice cross-section from the phi = 0.5 profile, mirrored.
+
+    Unstroked on purpose: an outline on a flat cut face reads as an annotation
+    drawn over the figure rather than as the edge of a solid. The boundary is
+    carried by the fill's contrast against the vapour field instead, which is
+    why ICE_FILL is warm and the field is not.
+    """
     xp, rp = profile[:, 0], profile[:, 1]
     poly = np.vstack([np.column_stack([xp, rp]),
                       np.column_stack([xp[::-1], -rp[::-1]])])
-    return ax.fill(poly[:, 0], poly[:, 1], facecolor=fill, edgecolor=ICE_EDGE,
-                   lw=lw, joinstyle="round", zorder=zorder)
+    return ax.fill(poly[:, 0], poly[:, 1], facecolor=fill, edgecolor="none",
+                   lw=0.0, joinstyle="round", zorder=zorder)
 
 
 def draw_axis_line(ax, x0, x1, ink=AXIS_INK, lw=0.5, zorder=6):
@@ -406,11 +475,11 @@ def _save(fig, out, stem, formats=("pdf", "svg")):
 # ---------------------------------------------------------------------------
 # panels
 # ---------------------------------------------------------------------------
-def panel_xsec(out, tag, x, y, phi, rhov, profile, vmin, vmax, ums, stride):
+def panel_xsec(out, tag, x, y, phi, sigma, profile, smin, ums, stride):
     """Full-domain meridional cross-section, mirrored about the axis."""
     Lx, Ly = x[-1] / UM, y[-1] / UM
     fig, ax = _panel_figure((0, Lx), (-Ly, Ly), ums)
-    vapour_section(ax, x, y, phi, rhov, vmin, vmax, stride=stride)
+    vapour_section(ax, x, y, phi, sigma, smin, stride=stride)
     draw_ice_body(ax, profile)
     draw_axis_line(ax, 0, Lx)
     return _save(fig, out, f"xsec_{tag}"), fig
@@ -424,7 +493,7 @@ def panel_ice3d(out, tag, profile, crop, ums):
     return _save(fig, out, f"ice3d_{tag}"), fig
 
 
-def panel_ice3d_vapour(out, tag, x, y, phi, rhov, profile, vmin, vmax, ums,
+def panel_ice3d_vapour(out, tag, x, y, phi, sigma, profile, smin, ums,
                        stride):
     """3-D body above the symmetry axis, meridional section below it, in the
     same frame as panel_xsec.
@@ -439,7 +508,7 @@ def panel_ice3d_vapour(out, tag, x, y, phi, rhov, profile, vmin, vmax, ums,
     Lx, Ly = x[-1] / UM, y[-1] / UM
     fig, ax = _panel_figure((0, Lx), (-Ly, Ly), ums)
 
-    vapour_section(ax, x, y, phi, rhov, vmin, vmax, stride=stride)
+    vapour_section(ax, x, y, phi, sigma, smin, stride=stride)
     _clip(draw_ice_body(ax, profile), ax, 0.0, -Ly, Lx, Ly)
     _clip(shade_revolved(ax, profile), ax, 0.0, 0.0, Lx, Ly)
     draw_axis_line(ax, 0, Lx, lw=0.6)
@@ -450,18 +519,24 @@ def panel_ice3d_vapour(out, tag, x, y, phi, rhov, profile, vmin, vmax, ums,
 # colourbars and scale bars
 # ---------------------------------------------------------------------------
 def colourbar(out, stem, cmap, vmin, vmax, ticks, ticklabels, label, ink,
-              n_bands=256, horizontal=True):
+              n_bands=256, horizontal=True, pos=None):
     """A standalone vector colourbar: band rectangles, so the file carries
-    paths rather than an embedded raster."""
+    paths rather than an embedded raster.
+
+    `pos` is the same value -> colormap-position map the panels use, so an
+    anchored diverging scale is keyed by exactly the colours it is drawn in.
+    """
     if horizontal:
-        fig = plt.figure(figsize=(2.6, 0.64))
-        ax = fig.add_axes([0.04, 0.45, 0.92, 0.33])
+        fig = plt.figure(figsize=(3.0, 0.64))
+        ax = fig.add_axes([0.03, 0.45, 0.94, 0.33])
     else:
-        fig = plt.figure(figsize=(1.0, 2.7))
-        ax = fig.add_axes([0.08, 0.05, 0.28, 0.90])
+        fig = plt.figure(figsize=(1.05, 2.7))
+        ax = fig.add_axes([0.07, 0.05, 0.26, 0.90])
 
     edges = np.linspace(vmin, vmax, n_bands + 1)
-    cols = cmap(np.linspace(0.0, 1.0, n_bands))
+    mid = 0.5 * (edges[:-1] + edges[1:])
+    f = pos or (lambda v: (v - vmin) / (vmax - vmin))
+    cols = cmap(np.clip(f(mid), 0.0, 1.0))
     for i in range(n_bands):
         lo, hi = edges[i], edges[i + 1]
         xy, w, h = ((lo, 0.0), hi - lo, 1.0) if horizontal \
@@ -501,26 +576,27 @@ def colourbar(out, stem, cmap, vmin, vmax, ticks, ticklabels, label, ink,
     return paths
 
 
-def write_colourbars(out, vmin, vmax, rvs, orientations=("h", "v")):
+def write_colourbars(out, smin, orientations=("h", "v")):
+    """One bar for the vapour field and one for the ice phase, each in light
+    and dark ink and in both orientations.
+
+    The vapour bar runs to sigma = 0 even though the data stops short of it:
+    clipped at the data maximum the bar would show blue fading to pale blue
+    and read as an ordinary sequential scale, hiding the one thing the
+    diverging map is there to say -- where equilibrium is, and that the run
+    never gets there.
+    """
     made = []
+    tk = np.arange(-2.5e-3, 1e-9, 0.5e-3)
     for orient in orientations:
         horiz = orient == "h"
         sfx = "" if horiz else "_vert"
         for mode, ink in (("light", INK_LIGHT), ("dark", INK_DARK)):
-            t = np.array([8.465e-4, 8.470e-4, 8.475e-4, 8.480e-4])
             made += colourbar(
-                out, f"cbar_rhov_{mode}{sfx}", CMAP_RHOV, vmin, vmax,
-                t, [f"{v * 1e4:.3f}" for v in t],
-                r"$\rho_v$  ($10^{-4}$ kg m$^{-3}$)", ink, horizontal=horiz)
-
-            # The same bar, relabelled: supersaturation w.r.t. flat ice is the
-            # quantity the growth law actually responds to.
-            sig = np.array([-2.5, -2.0, -1.5, -1.0, -0.5])
-            made += colourbar(
-                out, f"cbar_supersat_{mode}{sfx}", CMAP_RHOV, vmin, vmax,
-                rvs * (1.0 + sig * 1e-3), [f"{s:.1f}" for s in sig],
-                r"$(\rho_v-\rho_{vs})/\rho_{vs}$  ($\times 10^{-3}$)", ink,
-                horizontal=horiz)
+                out, f"cbar_supersat_{mode}{sfx}", CMAP_SAT, smin, 0.0,
+                tk, [f"{v * 1e3:.1f}" for v in tk],
+                r"$\rho_v/\rho_{vs}-1$   ($\times 10^{-3}$)", ink,
+                horizontal=horiz, pos=lambda v: sat_pos(v, smin))
 
             made += colourbar(
                 out, f"cbar_ice_{mode}{sfx}", CMAP_ICE, 0.0, 1.0,
@@ -582,26 +658,43 @@ PANELS  (one pair of files per time tag)
 
 KEYS  (light = dark ink for a light page; dark = light ink for a dark page;
        _vert = vertical bar)
-  cbar_rhov_*         vapour density, 10^-4 kg m^-3
-  cbar_supersat_*     the SAME bar relabelled as (rho_v - rho_vs)/rho_vs;
-                      use one or the other, not both
-  cbar_ice_*          ice phase phi, over the ice tone ramp the 3-D body and
-                      the cut face are drawn from
+  cbar_supersat_*     supersaturation sigma = rho_v/rho_vs - 1, x 10^-3
+  cbar_ice_*          ice phase phi, over the ice tone ramp the 3-D body is
+                      shaded from
   scalebar_*          {sblen:g} um at the panels' own scale
 
-The rho_v colour scale is SHARED across every time shown, so panels are
-directly comparable: [{vmin:.6e}, {vmax:.6e}] kg m^-3, i.e.
-rho_v/rho_vs from {smin:.6f} to {smax:.6f} at T = {T:g} C.
+VAPOUR SCALE
+sigma = rho_v/rho_vs - 1 on cmocean `balance`, white anchored at sigma = 0
+(equilibrium with flat ice at T = {T:g} C). Shared across every time shown, so
+the panels are directly comparable.
+
+Over both snapshots sigma runs [{smin:+.3f}, {smax:+.3f}] x 10^-3: the whole
+domain is UNDERSATURATED, so only the blue arm of the map appears and nothing
+reaches white. That is the result, not a plotting choice -- the pair is net
+sublimating into the chamber wall over this window (R_large falls from 100.9
+to 97.7 um). The colourbar runs all the way to sigma = 0 so the reader can see
+how far short of equilibrium the field stays; the panels themselves stop at
+{smax:+.3f} x 10^-3, the value hugging the ice.
+
+The 2-D cut face carries no outline, by request. Its edge is carried by fill
+contrast instead: the face is a MID blue-grey (the same ramp the 3-D body is
+shaded from), because sigma is highest right at the ice, so the vapour the
+face is always adjacent to is the palest colour on the scale. The 3-D body
+does keep a silhouette stroke -- that is the edge of a solid, not a level-set
+annotation.
+
+The blue arm stops a little short of balance's darkest end, so the Dirichlet
+wall prints rather than going to near-black. The colourbar uses the same
+mapping, so it keys the panels exactly.
 
 preview_*.png are checking renders, not figure material.
 """
 
 
-def write_readme(out, run, snaps, ums, vmin, vmax, rvs, T, sblen=100.0):
+def write_readme(out, run, snaps, ums, smin, smax, T, sblen=100.0):
     txt = README.format(
         run=run, snaps="".join(f"  {s}\n" for s in snaps), ums=ums,
-        ptum=72.0 / ums, sblen=sblen, vmin=vmin, vmax=vmax,
-        smin=vmin / rvs, smax=vmax / rvs, T=T)
+        ptum=72.0 / ums, sblen=sblen, smin=smin * 1e3, smax=smax * 1e3, T=T)
     p = os.path.join(out, "README.txt")
     with open(p, "w") as fh:
         fh.write(txt)
@@ -658,7 +751,7 @@ def main():
     for step, tag in zip(args.steps, tags):
         x, y, phi, rhov = sample(run, step, args.nu, args.nv)
         prof = ice_profile(x, y, phi)
-        data[tag] = (x, y, phi, rhov, prof)
+        data[tag] = (x, y, phi, rhov / rvs - 1.0, prof)
         t = tmap.get(step, float("nan"))
         line = (f"{tag}: step {step}  t = {t:9.1f} s ({t / 60:6.2f} min)  "
                 f"neck radius = {_neck_radius(prof):5.2f} um  "
@@ -666,24 +759,25 @@ def main():
         snaps.append(line)
         print("  " + line)
 
-    vmin = min(float(np.min(d[3][d[2] <= 0.5])) for d in data.values())
-    vmax = max(float(np.max(d[3][d[2] <= 0.5])) for d in data.values())
-    print(f"  shared rho_v scale [{vmin:.6e}, {vmax:.6e}] kg/m^3 = "
-          f"S [{vmin / rvs:.6f}, {vmax / rvs:.6f}]")
+    smin = min(float(np.min(d[3][d[2] <= 0.5])) for d in data.values())
+    smax = max(float(np.max(d[3][d[2] <= 0.5])) for d in data.values())
+    print(f"  shared supersaturation scale: sigma = rho_v/rho_vs - 1 in "
+          f"[{smin * 1e3:+.3f}, {smax * 1e3:+.3f}] x 1e-3 "
+          f"(white anchored at sigma = 0; the field never reaches it)")
 
     crop = ((args.crop[0], args.crop[1]), args.crop[2])
     ums, stride = args.um_per_inch, args.field_stride
     written = []
 
-    for tag, (x, y, phi, rhov, prof) in data.items():
+    for tag, (x, y, phi, sigma, prof) in data.items():
         made = []
-        p, f1 = panel_xsec(out, tag, x, y, phi, rhov, prof, vmin, vmax, ums,
+        p, f1 = panel_xsec(out, tag, x, y, phi, sigma, prof, smin, ums,
                            stride)
         made.append((p, f1, f"xsec_{tag}"))
         p, f2 = panel_ice3d(out, tag, prof, crop, ums)
         made.append((p, f2, f"ice3d_{tag}"))
-        p, f3 = panel_ice3d_vapour(out, tag, x, y, phi, rhov, prof, vmin,
-                                   vmax, ums, stride)
+        p, f3 = panel_ice3d_vapour(out, tag, x, y, phi, sigma, prof, smin,
+                                   ums, stride)
         made.append((p, f3, f"ice3d_vapour_{tag}"))
         for p, fig, stem in made:
             written += p
@@ -692,9 +786,9 @@ def main():
                             transparent=False, facecolor="#ffffff")
             plt.close(fig)
 
-    written += write_colourbars(out, vmin, vmax, rvs)
+    written += write_colourbars(out, smin)
     written += write_scalebars(out, ums)
-    written += write_readme(out, run, snaps, ums, vmin, vmax, rvs, T)
+    written += write_readme(out, run, snaps, ums, smin, smax, T)
 
     print(f"\n  {len(written)} files written to {out}")
 
