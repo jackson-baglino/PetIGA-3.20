@@ -107,3 +107,77 @@ def k_eff(K, h):
         out[m, 0] = float(np.mean(Kx * (gx + (1.0 if m == 0 else 0.0))))
         out[m, 1] = float(np.mean(Ky * (gy + (1.0 if m == 1 else 0.0))))
     return out
+
+
+def _faces_tensor(phi, K_of_phi, k_lo, k_hi):
+    """Face conductivities from the TENSORIAL interpolation.
+
+        K(phi) = K_arith(phi) (I - n n) + K_harm(phi) (n n),  n = grad phi/|grad phi|
+
+    WHY. The arithmetic law K_a + (K_i-K_a)phi is exact for transport TANGENTIAL
+    to the interface (layers in parallel) and wrong for NORMAL transport (layers
+    in series, governed by the harmonic mean). The mismatch is a surface excess
+    of order eps, and it is what makes k_eff read ~23% high at the production
+    eps. Derived in effective_thermal_cond/docs/calonne_to_phasefield_
+    equivalence.tex section 6: the tangential excess vanishes identically by
+    profile antisymmetry, the normal one does not, and using the harmonic law
+    in the normal direction cancels it too -- leaving O(eps^2).
+
+    Only the face-normal components are formed here (K_xx at x-faces, K_yy at
+    y-faces); the off-diagonal K_xy is dropped, which keeps the 5-point stencil.
+    That is an approximation, and it is the right one to try first: the
+    off-diagonal vanishes where n is axis-aligned and is bounded by
+    (K_h-K_a)/2 elsewhere, so if the diagonal correction does not move the bias
+    the full tensor will not rescue it.
+    """
+    gx = 0.5 * (np.roll(phi, -1, axis=1) - np.roll(phi, 1, axis=1))
+    gy = 0.5 * (np.roll(phi, -1, axis=0) - np.roll(phi, 1, axis=0))
+    g2 = gx * gx + gy * gy
+    small = g2 <= 0
+    nx2 = np.where(small, 0.0, gx * gx / np.where(small, 1.0, g2))
+    ny2 = np.where(small, 0.0, gy * gy / np.where(small, 1.0, g2))
+
+    Ka = K_of_phi(phi)                                   # arithmetic
+    Kh = 1.0 / (phi / k_hi + (1.0 - phi) / k_lo)         # harmonic
+    Kxx = Ka * (1.0 - nx2) + Kh * nx2
+    Kyy = Ka * (1.0 - ny2) + Kh * ny2
+    # harmonic face averages, as in _faces
+    return (_harmonic(Kxx, np.roll(Kxx, -1, axis=1)),
+            _harmonic(Kyy, np.roll(Kyy, -1, axis=0)))
+
+
+def k_eff_tensor(phi, h, k_lo, k_hi):
+    """k_eff with the tensorial interpolation. Same solve, different coefficient."""
+    Ka = lambda p: k_lo + (k_hi - k_lo) * p
+    Kx, Ky = _faces_tensor(np.clip(phi, 1e-12, 1 - 1e-12), Ka, k_lo, k_hi)
+    A = _operator(Kx, Ky).tolil()
+    A[0, :] = 0.0
+    A[0, 0] = 1.0
+    lu = spla.splu(A.tocsc())
+    ny, nx = phi.shape
+    out = np.zeros((2, 2))
+    for m in (0, 1):
+        Kf = Kx if m == 0 else Ky
+        ax = 1 if m == 0 else 0
+        b = -h * (Kf - np.roll(Kf, 1, axis=ax)).ravel()
+        b -= b.mean(); b[0] = 0.0
+        t = lu.solve(b).reshape(ny, nx)
+        gx = (np.roll(t, -1, axis=1) - t) / h
+        gy = (np.roll(t, -1, axis=0) - t) / h
+        out[m, 0] = float(np.mean(Kx * (gx + (1.0 if m == 0 else 0.0))))
+        out[m, 1] = float(np.mean(Ky * (gy + (1.0 if m == 1 else 0.0))))
+    return out
+
+
+def k_eff_sharp(phi, h, k_lo, k_hi, thresh=0.5):
+    """k_eff on the THRESHOLDED geometry: phi >= thresh is ice, else air.
+
+    This is the sharp-interface coefficient K_star exactly -- the indicator
+    takes only 0 and 1, so every admissible interpolation collapses onto it.
+    It removes the interpolation bias completely, and replaces it with a
+    STAIRCASE error: the interface is now resolved only to the grid, where a
+    diffuse field carries sub-grid interface position. That trade is only
+    favourable when h is comfortably finer than eps.
+    """
+    K = np.where(phi >= thresh, k_hi, k_lo)
+    return k_eff(K, h)
