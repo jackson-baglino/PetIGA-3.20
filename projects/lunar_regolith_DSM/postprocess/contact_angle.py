@@ -321,7 +321,8 @@ def measure(X, Y, phi, eps, walls, bounds, exclude_eps, level=0.5):
                     theta_pp = 180.0 - theta_pp
             else:
                 theta_pp = 90.0
-            out.append(dict(meniscus=name, y_wall=wall_y(px, w), theta=theta,
+            out.append(dict(meniscus=name, wall=("y0" if side == 0 else "y1"),
+                            y_wall=wall_y(px, w), theta=theta,
                             theta_plate=float(theta_pp), R_arc=float(R),
                             xc=float(xc), yc=float(yc), x_contact=px,
                             n_points=int(keep.sum())))
@@ -343,7 +344,7 @@ def extrapolate(t, th):
     theta_inf is FREE. That is the whole point: it is compared to Young's
     prediction afterwards, never assumed.
 
-    Returns (theta_inf, sigma, tau_seconds, rms, n) or None.
+    Returns (theta_inf, sigma, tau_seconds, rms, n, A, t_fit_min) or None.
     """
     try:
         from scipy.optimize import curve_fit
@@ -375,7 +376,8 @@ def extrapolate(t, th):
     if not np.all(np.isfinite(cov)) or p[2] <= 0:
         return None
     rms = float(np.sqrt(np.mean((th[sel] - f(t[sel], *p)) ** 2)))
-    return float(p[0]), float(np.sqrt(cov[0, 0])), float(p[2]), rms, int(sel.sum())
+    return (float(p[0]), float(np.sqrt(cov[0, 0])), float(p[2]), rms,
+            int(sel.sum()), float(p[1]), float(t[sel].min()))
 
 
 def main():
@@ -470,11 +472,12 @@ def main():
                      "fit_rms = %.5f, n = %d, error_inf = %+.4f deg\n"
                      % (ext[0], ext[1], ext[2], ext[3], ext[4],
                         ext[0] - theta_young))
-        fh.write("step,time_s,meniscus,y_wall,theta_deg,theta_plate_deg,"
+        fh.write("step,time_s,meniscus,wall,y_wall,theta_deg,theta_plate_deg,"
                  "R_arc_m,x_contact_m,n_points,theta_young_deg,error_deg\n")
         for r in rows:
-            fh.write("%d,%.6e,%s,%.6e,%.4f,%.4f,%.6e,%.6e,%d,%.4f,%.4f\n"
-                     % (r["step"], r["t"], r["meniscus"], r["y_wall"],
+            fh.write("%d,%.6e,%s,%s,%.6e,%.4f,%.4f,%.6e,%.6e,%d,%.4f,%.4f\n"
+                     % (r["step"], r["t"], r["meniscus"], r.get("wall", "?"),
+                        r["y_wall"],
                         r["theta"], r["theta_plate"], r["R_arc"],
                         r["x_contact"], r["n_points"], theta_young,
                         r["theta"] - theta_young))
@@ -489,7 +492,7 @@ def main():
           f"({th.size} estimates, final snapshot)")
     print(f"    error          = {th.mean() - theta_young:+8.3f} deg")
     if ext is not None:
-        a_inf, sig, tau, rms, n = ext
+        a_inf, sig, tau, rms, n, _A, _t0 = ext
         print(f"    theta_inf      = {a_inf:8.3f} +/- {sig:.3f} deg   "
               f"[extrapolated, tau = {tau/86400.0:.2f} d, "
               f"fit RMS {rms:.4f} over {n} pts]")
@@ -505,26 +508,31 @@ def main():
         unit = auto_time_unit(max(r["t"] for r in rows if np.isfinite(r["t"]))
                               if any(np.isfinite(r["t"]) for r in rows) else 1.0)
         fig, ax = plt.subplots(figsize=(7.0, 4.2), constrained_layout=True)
+        # Group by (meniscus, wall) using the LABEL, not the wall's y. On a
+        # wedge the contact point's y varies along the run, so matching on it
+        # dropped every series and left only the fit line on the plot.
         for name in ("left", "right"):
-            for y_wall, _ in walls:
+            for wlab in ("y0", "y1"):
                 sel = [r for r in rows
-                       if r["meniscus"] == name and r["y_wall"] == y_wall]
+                       if r["meniscus"] == name and r.get("wall") == wlab]
                 if not sel:
                     continue
                 t = in_time_unit([r["t"] for r in sel], unit)
-                ax.plot(t, [r["theta"] for r in sel], marker="o", ms=3, lw=1.2,
-                        label=f"{name} meniscus, wall y={y_wall:.3g}")
+                ax.plot(t, [r["theta"] for r in sel], marker="o", ms=4.5,
+                        lw=1.3, alpha=0.9, zorder=3,
+                        label=f"{name} meniscus @ {wlab}")
+        # snapshot mean -- this is the series the fit is actually fitting
+        ax.plot(in_time_unit(traj_t, unit), traj_th, color="0.15", lw=1.0,
+                alpha=0.8, zorder=4, label="mean of estimates")
         if ext is not None:
-            a_inf, sig, tau, _, _ = ext
-            tt = np.linspace(0.0, max(traj_t), 300)
-            A = np.mean([th_ - a_inf for th_, t_ in zip(traj_th, traj_t)
-                         if t_ > 0.4 * max(traj_t)]
-                        ) / np.mean([np.exp(-t_ / tau) for t_ in traj_t
-                                     if t_ > 0.4 * max(traj_t)])
+            a_inf, sig, tau, _, _, A, t0 = ext
+            # draw only over the window that was fitted, plus the extrapolation
+            tt = np.linspace(t0, max(traj_t) * 1.05, 300)
             ax.plot(in_time_unit(tt, unit), a_inf + A * np.exp(-tt / tau),
-                    color="0.45", ls=":", lw=1.4,
-                    label=f"fit  $\\theta_\\infty$={a_inf:.2f}°, $\\tau$={tau/86400:.1f} d")
-        ax.axhline(theta_young, color="k", ls="--", lw=1.4,
+                    color="0.35", ls=":", lw=1.6, zorder=2,
+                    label=f"fit (last {100*(1-t0/max(traj_t)):.0f}%)  "
+                          f"$\\theta_\\infty$={a_inf:.3f}°, $\\tau$={tau/86400:.1f} d")
+        ax.axhline(theta_young, color="k", ls="--", lw=1.4, zorder=1,
                    label=f"Young  {theta_young:.1f}°")
         ax.set_xlabel(f"time [{unit}]")
         ax.set_ylabel("contact angle [deg]")
