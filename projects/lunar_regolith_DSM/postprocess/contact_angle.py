@@ -73,22 +73,21 @@ CSV_NAME = "contact_angle.csv"
 # Reading
 # ---------------------------------------------------------------------------
 def read_snapshots(run_dir, nu, nv):
-    """Yield (step, x1d, y1d, phi[ix, iy]) on the exact NURBS field.
+    """Yield (step, X, Y, phi) on the exact NURBS field, all shaped (nu, nv).
 
-    Assumes a rectangular patch: x depends only on the u index and y only on
-    the v index. That holds for the plain Cartesian channel this test uses, and
-    is checked rather than assumed -- a curvilinear mesh (a wedge, a bumpy
-    floor) would silently give wrong coordinates otherwise.
+    X and Y are the PHYSICAL coordinates of each parametric sample, so this
+    works for a curvilinear patch (the wedge) as well as a rectangle. The one
+    structural assumption, checked below, is that the patch is RULED in the
+    sense that x depends on u alone -- true for every geometry
+    build_geometry_*.py produces, since they warp y between two wall curves and
+    leave x untouched. It is what lets the phi = 0.5 contour be found by
+    scanning along u within each v row, and what makes the inverse map in
+    sample_phi() exact.
     """
     from igakit.io import PetIGA
     io = PetIGA()
     nrb = io.read(os.path.join(run_dir, "igasol.dat"))
 
-    # Sample over the patch's OWN parametric range, which is not [0, 1] here.
-    # A channel built by IGAAxisInitUniform(axis, N, 0.0, L, C) has knots
-    # spanning [0, L] in metres, whereas a mesh read from a -geom_file is
-    # parameterised on [0, 1]. Taking the range from the knot vector covers
-    # both; assuming [0, 1] makes igakit assert on the first evaluation.
     def prange(k, deg):
         return float(k[deg]), float(k[-deg - 1])
 
@@ -96,6 +95,7 @@ def read_snapshots(run_dir, nu, nv):
     (v0, v1) = prange(nrb.knots[1], nrb.degree[1])
     u = np.linspace(u0, u1, nu)
     v = np.linspace(v0, v1, nv)
+
     files = sorted(f for f in os.listdir(run_dir)
                    if re.fullmatch(r"sol_\d+\.dat", f))
     if not files:
@@ -105,28 +105,54 @@ def read_snapshots(run_dir, nu, nv):
     for f in files:
         C, F = nrb(u, v, fields=io.read_vec(os.path.join(run_dir, f), nrb))
         if not checked:
-            dx = np.ptp(C[:, :, 0], axis=1).max()
-            dy = np.ptp(C[:, :, 1], axis=0).max()
             span = max(np.ptp(C[:, :, 0]), np.ptp(C[:, :, 1]))
-            if dx > 1e-9 * span or dy > 1e-9 * span:
+            dx = np.ptp(C[:, :, 0], axis=1).max()
+            if dx > 1e-9 * span:
                 raise SystemExit(
-                    "the patch is not a rectangle (x varies along v by "
-                    f"{dx:.3e} m, y varies along u by {dy:.3e} m). This script "
-                    "assumes the flat channel geometry; a curvilinear mesh "
-                    "needs the contour mapped through the geometry instead.")
+                    f"x varies by {dx:.3e} m along a column, so the patch is not "
+                    "ruled in x and the row-scan contour extraction does not "
+                    "apply. A genuinely 2D-warped mesh needs the contour taken "
+                    "in parametric space and mapped through the geometry.")
             checked = True
         yield (int(re.search(r"sol_(\d+)", f).group(1)),
-               C[:, 0, 0].copy(), C[0, :, 1].copy(), F[:, :, 0].copy())
+               C[:, :, 0].copy(), C[:, :, 1].copy(), F[:, :, 0].copy())
 
 
-def bilinear(x1d, y1d, phi, px, py):
-    """phi at (px, py) by bilinear interpolation on the separable grid."""
-    i = np.clip(np.searchsorted(x1d, px) - 1, 0, x1d.size - 2)
-    j = np.clip(np.searchsorted(y1d, py) - 1, 0, y1d.size - 2)
-    tx = (px - x1d[i]) / (x1d[i + 1] - x1d[i])
-    ty = (py - y1d[j]) / (y1d[j + 1] - y1d[j])
-    return ((1 - tx) * (1 - ty) * phi[i, j] + tx * (1 - ty) * phi[i + 1, j]
-            + (1 - tx) * ty * phi[i, j + 1] + tx * ty * phi[i + 1, j + 1])
+def wall_y(px, w):
+    """y of the wall curve at x = px.  w = (y0, slope)."""
+    return w[0] + w[1] * px
+
+
+def wall_normal(w, side):
+    """Outward unit normal of an affine wall.  side 0 = bottom, 1 = top."""
+    s = w[1]
+    n = np.array([s, -1.0]) if side == 0 else np.array([-s, 1.0])
+    return n / np.hypot(*n)
+
+
+def wall_distance(px, py, w):
+    """Perpendicular distance from a point to the wall line."""
+    return abs(py - wall_y(px, w)) / np.hypot(1.0, w[1])
+
+
+def sample_phi(X, Y, phi, px, py, wb, wt):
+    """phi at physical (px, py), by inverting the ruled map exactly.
+
+    x depends only on u, so u comes from interpolating the column positions;
+    the patch is ruled between the two wall curves, so
+    v = (y - y_bot(x)) / (y_top(x) - y_bot(x)) is exact. Then bilinear in index
+    space. For flat walls this reduces to the separable rectangular case.
+    """
+    xs = X[:, 0]
+    iu = np.interp(px, xs, np.arange(xs.size))
+    yb, yt = wall_y(px, wb), wall_y(px, wt)
+    iv = (py - yb) / (yt - yb) * (Y.shape[1] - 1)
+    iu = np.clip(iu, 0, X.shape[0] - 1.001)
+    iv = np.clip(iv, 0, Y.shape[1] - 1.001)
+    i0, j0 = int(iu), int(iv)
+    tu, tv = iu - i0, iv - j0
+    return ((1 - tu) * (1 - tv) * phi[i0, j0] + tu * (1 - tv) * phi[i0 + 1, j0]
+            + (1 - tu) * tv * phi[i0, j0 + 1] + tu * tv * phi[i0 + 1, j0 + 1])
 
 
 # ---------------------------------------------------------------------------
@@ -188,92 +214,114 @@ def circle_from_implicit(coef):
     return xc, yc, (float(np.sqrt(disc)) if disc > 0.0 else float("nan"))
 
 
-def angle_at_wall(coef, y_wall, n_out, arc_x, x1d, y1d, phi, eps):
-    """Contact angle where the fitted arc meets the wall y = y_wall.
+def angle_at_wall(coef, w, side, arc_x, X, Y, phi, eps, wb, wt, ice_dx):
+    """Contact angle where the fitted arc meets the wall line y = y0 + s*x.
 
-    Returns (theta_deg, x_contact) or None when the arc does not reach the wall
-    -- which happens legitimately for a drop that has pulled away from it.
+    Generalises the flat-wall case: substituting the wall line into
+    A(x^2+y^2) + Bx + Cy + D = 0 gives a quadratic in x,
+
+        A(1+s^2) x^2 + (2 A s y0 + B + C s) x + (A y0^2 + C y0 + D) = 0,
+
+    which reduces to the old A x^2 + B x + (A y_w^2 + C y_w + D) when s = 0.
+
+    Returns (theta_deg, x_contact, y_contact) or None if the arc misses the wall.
     """
     A, B, C, D = coef
-    k = A * y_wall * y_wall + C * y_wall + D          # F(x, y_wall) = A x^2 + B x + k
+    y0, sl = w
+    a2 = A * (1.0 + sl * sl)
+    a1 = 2.0 * A * sl * y0 + B + C * sl
+    a0 = A * y0 * y0 + C * y0 + D
 
-    if abs(A) < 1e-12:                                 # straight arc
-        if abs(B) < 1e-30:
+    if abs(a2) < 1e-12:                     # straight arc
+        if abs(a1) < 1e-30:
             return None
-        roots = np.array([-k / B])
+        roots = np.array([-a0 / a1])
     else:
-        disc = B * B - 4.0 * A * k
+        disc = a1 * a1 - 4.0 * a2 * a0
         if disc < 0.0:
             return None
         sq = np.sqrt(disc)
-        roots = np.array([(-B - sq) / (2.0 * A), (-B + sq) / (2.0 * A)])
+        roots = np.array([(-a1 - sq) / (2.0 * a2), (-a1 + sq) / (2.0 * a2)])
 
-    # Take the intersection the measured arc actually runs toward.
     px = float(roots[np.argmin(np.abs(roots - np.mean(arc_x)))])
+    py = wall_y(px, w)
 
-    g = np.array([2.0 * A * px + B, 2.0 * A * y_wall + C])
+    g = np.array([2.0 * A * px + B, 2.0 * A * py + C])
     ng = np.hypot(*g)
     if not np.isfinite(ng) or ng == 0.0:
         return None
-    r = g / ng                                         # unit normal to the arc
+    r = g / ng                               # unit normal to the arc
 
-    # Which way is into the ice? phi increases that way, by definition. Probing
-    # the field rather than assuming concave/convex is what keeps this correct
-    # at theta = 0 and 180, where a curvature-based sign convention degenerates.
+    # Orient toward the ice. Probing phi is exact here thanks to the ruled
+    # inverse map, and unlike a curvature-based convention it stays correct at
+    # theta = 0 and 180. Fall back on the scan direction if both probes land
+    # outside the patch.
     d = 2.0 * eps
-    probe = np.array([px, y_wall]) + np.outer([+1.0, -1.0], r) * d
-    probe[:, 0] = np.clip(probe[:, 0], x1d[0], x1d[-1])
-    probe[:, 1] = np.clip(probe[:, 1], y1d[0], y1d[-1])
-    vals = bilinear(x1d, y1d, phi, probe[:, 0], probe[:, 1])
-    m = r if vals[0] >= vals[1] else -r
+    best, m = None, None
+    for sgn in (+1.0, -1.0):
+        q = np.array([px, py]) + sgn * r * d
+        if wall_distance(q[0], q[1], wb) < 0 or not np.isfinite(q).all():
+            continue
+        val = sample_phi(X, Y, phi, q[0], q[1], wb, wt)
+        if best is None or val > best:
+            best, m = val, sgn * r
+    if m is None:
+        m = r if np.dot(r, [ice_dx, 0.0]) > 0 else -r
 
+    n_out = wall_normal(w, side)
     cos_t = float(np.clip(np.dot(m, n_out), -1.0, 1.0))
-    return float(np.degrees(np.arccos(cos_t))), px
+    return float(np.degrees(np.arccos(cos_t))), px, py
 
 
-def measure(x1d, y1d, phi, eps, walls, exclude_eps, level=0.5):
+# ---------------------------------------------------------------------------
+# The measurement
+# ---------------------------------------------------------------------------
+def measure(X, Y, phi, eps, walls, bounds, exclude_eps, level=0.5):
     """All contact-angle estimates for one snapshot.
 
-    `walls` is a list of (y_wall, outward_normal) pairs.
-    Returns a list of dicts, one per (meniscus, wall) pair.
+    `walls` is a list of (w, side) with w = (y0, slope) and side 0 = bottom.
+    Contour points are taken row by row along u, in physical coordinates, and
+    the wall exclusion uses PERPENDICULAR distance to the wall line -- on a
+    wedge a vertical offset would under-cut the near wall and over-cut the far
+    one.
     """
-    ny, nx = y1d.size, x1d.size
-    Y = np.broadcast_to(y1d[:, None], (ny, nx))
-    xl, yl, xr, yr = contour_points(x1d, Y, phi.T, level=level)
+    # The ruled inverse map needs BOTH bounding curves, even when only one of
+    # them carries a contact angle.
+    wb, wt = bounds
+    xs = X[:, 0]
+    xl, yl, xr, yr = contour_points(xs, Y.T, phi.T, level=level)
     if xl.size == 0:
         return []
 
+    # Ice lies to the RIGHT of the left meniscus and to the left of the right
+    # one; used only as a fallback if both phi probes fall outside the patch.
+    ice_left, ice_right = +1.0, -1.0
     out = []
-    for name, ax, ay in (("left", xl, yl), ("right", xr, yr)):
-        for y_wall, n_out in walls:
-            keep = np.abs(ay - y_wall) > exclude_eps * eps
-            # Stay on this side of the channel: for a bridge between two walls
-            # the far wall's bent region is excluded by its own filter, but the
-            # arc must still be long enough to pin a circle.
-            for yw2, _ in walls:
-                if yw2 != y_wall:
-                    keep &= np.abs(ay - yw2) > exclude_eps * eps
+    for name, ax, ay, idx in (("left", xl, yl, ice_left),
+                              ("right", xr, yr, ice_right)):
+        for w, side in walls:
+            keep = np.ones(ax.shape, dtype=bool)
+            for w2 in (wb, wt):
+                keep &= wall_distance(ax, ay, w2) > exclude_eps * eps
             if keep.sum() < 8:
                 continue
             coef = fit_implicit_circle(ax[keep], ay[keep])
             if coef is None:
                 continue
-            res = angle_at_wall(coef, y_wall, n_out, ax[keep], x1d, y1d, phi, eps)
+            res = angle_at_wall(coef, w, side, ax[keep], X, Y, phi, eps,
+                                wb, wt, idx)
             if res is None:
                 continue
-            theta, px = res
+            theta, px, py = res
             xc, yc, R = circle_from_implicit(coef)
-            # Parallel-plate cross-check: cos(theta) = d_perp/R_arc. Validates
-            # the circle fit, not the physics -- it assumes the very shape the
-            # fit produced.
             if np.isfinite(R) and np.isfinite(yc) and R > 0.0:
-                cos_pp = np.clip(abs(yc - y_wall) / R, -1.0, 1.0)
+                cos_pp = np.clip(wall_distance(xc, yc, w) / R, -1.0, 1.0)
                 theta_pp = float(np.degrees(np.arccos(cos_pp)))
                 if theta > 90.0:
                     theta_pp = 180.0 - theta_pp
             else:
-                theta_pp = 90.0        # straight arc: the flat-meniscus limit
-            out.append(dict(meniscus=name, y_wall=y_wall, theta=theta,
+                theta_pp = 90.0
+            out.append(dict(meniscus=name, y_wall=wall_y(px, w), theta=theta,
                             theta_plate=float(theta_pp), R_arc=float(R),
                             xc=float(xc), yc=float(yc), x_contact=px,
                             n_points=int(keep.sum())))
@@ -349,12 +397,22 @@ def main():
     if eps is None or Ly is None:
         raise SystemExit("could not read -eps and -Ly from the staged .opts")
 
+    # Wall curves y = y0 + slope*x. The defaults (0, 0, Ly, 0) reproduce a flat
+    # channel exactly, which is what initial_conditions.c documents; a wedge
+    # sets the slopes and the same code handles it.
+    wb = (opt_float(opts, "-wall_bot_y0", 0.0) or 0.0,
+          opt_float(opts, "-wall_bot_slope", 0.0) or 0.0)
+    wt = (opt_float(opts, "-wall_top_y0", None) if
+          opt_float(opts, "-wall_top_y0", None) is not None else Ly,
+          opt_float(opts, "-wall_top_slope", 0.0) or 0.0)
+    bounds = (wb, wt)
+
     faces = str(opts.get("-wall_faces", "") or "")
     walls = []
     if "y0" in faces:
-        walls.append((0.0, np.array([0.0, -1.0])))
+        walls.append((wb, 0))
     if "y1" in faces:
-        walls.append((Ly, np.array([0.0, +1.0])))
+        walls.append((wt, 1))
     if not walls:
         raise SystemExit(
             "-wall_faces names no y face in this run, so there is no regolith "
@@ -387,8 +445,8 @@ def main():
 
     times = step_times(run)
     rows = []
-    for step, x1d, y1d, phi in read_snapshots(run, args.nu, args.nv):
-        for r in measure(x1d, y1d, phi, eps, walls, args.exclude_eps, args.level):
+    for step, X, Y, phi in read_snapshots(run, args.nu, args.nv):
+        for r in measure(X, Y, phi, eps, walls, bounds, args.exclude_eps, args.level):
             r.update(step=step, t=times.get(step, np.nan))
             rows.append(r)
     if not rows:

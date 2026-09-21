@@ -109,7 +109,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.419796e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.205670e-01 sec  =  0.00 min 
+Setup time 2.275680e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -228,7 +228,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.644933e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.207660e-01 sec  =  0.00 min 
+Setup time 2.251440e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -347,7 +347,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.067276e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.221490e-01 sec  =  0.00 min 
+Setup time 2.205370e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -466,7 +466,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.361825e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.224420e-01 sec  =  0.00 min 
+Setup time 2.220850e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -585,7 +585,7 @@ IC type: multi_grains
    worst 1.954618e-08    5.809139e+06
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.212370e-01 sec  =  0.00 min 
+Setup time 2.211910e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -704,7 +704,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.421308e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.215930e-01 sec  =  0.00 min 
+Setup time 2.212780e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -823,7 +823,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.162578e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.226120e-01 sec  =  0.00 min 
+Setup time 2.222630e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -942,7 +942,7 @@ IC type: multi_grains
    worst 1.954618e-08    8.034350e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.225520e-01 sec  =  0.00 min 
+Setup time 2.236100e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1061,7 +1061,7 @@ IC type: multi_grains
    worst 1.954618e-08    9.447060e-10
    (||Jbnd*v|| = 0 would mean the wall block is never exercised --
     the interface must actually cross a face named by -wall_faces.)
-Setup time 2.211290e-01 sec  =  0.00 min 
+Setup time 2.210380e-01 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1173,7 +1173,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.477e-15
-Setup time 7.051000e-03 sec  =  0.00 min 
+Setup time 7.087000e-03 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1283,7 +1283,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.054e-16
-Setup time 1.330400e-02 sec  =  0.00 min 
+Setup time 1.313200e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1393,7 +1393,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.270e-15
-Setup time 3.740100e-02 sec  =  0.00 min 
+Setup time 3.719300e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1503,7 +1503,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.834e-15
-Setup time 1.315000e-02 sec  =  0.00 min 
+Setup time 1.306400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1613,7 +1613,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.411e-15
-Setup time 1.312000e-02 sec  =  0.00 min 
+Setup time 1.304400e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1723,7 +1723,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.975e-15
-Setup time 1.345300e-02 sec  =  0.00 min 
+Setup time 1.338700e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1833,7 +1833,7 @@ IC type: single_ice
    sum F[.][0]    = 5.060801064880e-13   (assembled)
    expected       = 5.060801064880e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.397e-15
-Setup time 1.329500e-02 sec  =  0.00 min 
+Setup time 1.320500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1943,7 +1943,7 @@ IC type: single_ice
    sum F[.][0]    = -1.073558025364e-12   (assembled)
    expected       = -1.073558025364e-12   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.693e-15
-Setup time 1.385600e-02 sec  =  0.00 min 
+Setup time 1.372600e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2055,7 +2055,7 @@ IC type: single_ice
    sum F[.][0]    = -7.157053502426e-13   (assembled)
    expected       = -7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 7.054e-16
-Setup time 1.321600e-02 sec  =  0.00 min 
+Setup time 1.382300e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2165,7 +2165,7 @@ IC type: single_ice
    sum F[.][0]    = -3.578526751213e-13   (assembled)
    expected       = -3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.975e-15
-Setup time 1.346000e-02 sec  =  0.00 min 
+Setup time 1.381300e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2275,7 +2275,7 @@ IC type: single_ice
    sum F[.][0]    = 8.951426379969e-28   (assembled)
    expected       = -4.382431331536e-29   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.143e+01
-Setup time 1.309200e-02 sec  =  0.00 min 
+Setup time 1.344200e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2385,7 +2385,7 @@ IC type: single_ice
    sum F[.][0]    = 3.578526751213e-13   (assembled)
    expected       = 3.578526751213e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 2.540e-15
-Setup time 1.366400e-02 sec  =  0.00 min 
+Setup time 1.338800e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -2495,7 +2495,7 @@ IC type: single_ice
    sum F[.][0]    = 7.157053502426e-13   (assembled)
    expected       = 7.157053502426e-13   (-3*M*phi(1-phi)*cos(theta)*|Gamma|)
    rel. error     = 1.411e-15
-Setup time 1.480300e-02 sec  =  0.00 min 
+Setup time 1.321500e-02 sec  =  0.00 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
