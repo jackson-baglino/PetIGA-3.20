@@ -491,6 +491,18 @@ def main():
     print(f"    theta_measured = {th.mean():8.3f} +/- {th.std():.3f} deg "
           f"({th.size} estimates, final snapshot)")
     print(f"    error          = {th.mean() - theta_young:+8.3f} deg")
+
+    # Mean CURVATURE, not 1/mean(radius). The menisci of an asymmetric bridge
+    # can differ several-fold in R, and because chi = 1/R the two averages give
+    # different answers and can even order two runs differently -- averaging
+    # radii understated the theta=60 wedge by 1.8x and reversed its ranking
+    # against theta=120.
+    Rl = np.array([r["R_arc"] for r in last if np.isfinite(r["R_arc"]) and r["R_arc"] > 0])
+    if Rl.size:
+        chi = 1.0 / Rl
+        print(f"    |chi| mean     = {chi.mean():8.4e} 1/m   "
+              f"(min {chi.min():.3e}, max {chi.max():.3e})")
+        print(f"    R_arc          = {Rl.min():8.4e} .. {Rl.max():.4e} m")
     if ext is not None:
         a_inf, sig, tau, rms, n, _A, _t0 = ext
         print(f"    theta_inf      = {a_inf:8.3f} +/- {sig:.3f} deg   "

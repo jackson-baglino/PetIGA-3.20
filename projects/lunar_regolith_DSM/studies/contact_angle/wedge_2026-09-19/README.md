@@ -26,10 +26,43 @@ the taper doing its job: in a flat channel θ fixes the meniscus curvature
 outright, whereas here the channel width varies along x, so the same θ gives a
 curvature that varies with position and the ice has a gradient to move along.
 
-The reservoir's angle error is strongly asymmetric — −1.064° at 60° against
-−0.154° at 120°. Both are negative, i.e. both read below Young, which is what a
-moving interface should do (σ = d₀χ + βv_n rather than d₀χ alone). Why the
-wetting case pays ~7× more is not explained here.
+## The dynamic contact angle, and why 60° deviates more
+
+Neither reservoir run sits on Young's angle, and that is expected rather than an
+error. A reservoir keeps the interface moving, and a moving interface satisfies
+σ = d₀χ + βv_n rather than d₀χ alone, so the shape it holds is not the
+equilibrium shape. These are **dynamic contact angles** θ_d, as opposed to the
+**equilibrium (Young) angle** θ_e; the offset is a velocity-dependent, kinetic
+deviation — the direct analogue of kinetic undercooling in solidification. It is
+not contact-angle *hysteresis*, which means something else (advancing vs
+receding angles from surface heterogeneity or pinning).
+
+The deviation is far larger at 60° (−1.064°) than at 120° (−0.154°), and the
+reason is curvature. Per meniscus at the final snapshot:
+
+| | left \|χ\| | right \|χ\| | **mean \|χ\|** | max \|χ\| |
+|---|---|---|---|---|
+| θ=60 | 1.714e4 | 3.551e3 | **1.035e4** | 1.714e4 |
+| θ=120 | 5.216e3 | 1.040e4 | **7.808e3** | 1.040e4 |
+
+The 60° bridge is strongly asymmetric — one meniscus tightly curved
+(R = 5.8e-5 m) against one nearly flat (R = 2.8e-4 m) — where the 120° bridge is
+more balanced. Its mean curvature is **1.33× higher**, and its most-curved
+meniscus **1.65× more curved**. Higher curvature means a stronger
+non-equilibrium driving force, hence a larger kinetic deviation.
+
+That accounts for the *direction* and for 60° being the worse case. It does not
+by itself account for the size: a 1.33× curvature ratio against a 6.9× deviation
+ratio implies the dependence is steeper than linear in χ, which these two runs
+cannot resolve. An angle sweep at fixed BCs would.
+
+**A caution that cost an incorrect conclusion here.** This table was first
+computed as 1/mean(R) rather than mean(1/R). With menisci differing ~5× in
+radius those are not the same average — the mean radius is dominated by the flat
+meniscus, the mean curvature by the tight one — and it understated θ=60 by 1.8×
+and reversed its ranking against θ=120, producing the opposite conclusion.
+Average curvatures, not radii. `contact_angle.py` now reports mean |χ| directly
+so the mistake is not available to repeat.
 
 ## What this validates
 
