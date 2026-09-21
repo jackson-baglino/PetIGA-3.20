@@ -777,6 +777,15 @@ def main(argv=None):
                    help="strip margin above and below the window, in mean "
                         "radii, discarded as floor/free-surface artifact")
 
+    p.add_argument("--max-void-per-L", dest="max_void_per_L", type=float,
+                   default=None,
+                   help="gate the largest inscribed pore as a FRACTION OF Lx "
+                        "instead of in mean radii. Size-independent, and the "
+                        "criterion REV validity actually depends on: a void "
+                        "matters when it approaches the DOMAIN scale. Use this "
+                        "whenever domain size varies -- the mean-radii gate "
+                        "silently rejects larger, better domains. 0.0335 "
+                        "reproduces the default gate at L/R_ave = 40.")
     p.add_argument("--max-void-ratio", dest="max_void_ratio", type=float,
                    default=None,
                    help="reject if the largest inscribed pore circle exceeds "
@@ -864,6 +873,7 @@ def main(argv=None):
         meta["attempt"] = attempt + 1
         meta["porosity_achieved"] = meta["porosity_raster"]
         bad = pl.accept_reasons(meta, a.max_void_ratio, a.max_density_cv,
+                                max_void_per_L=a.max_void_per_L,
                                 a.percolation_gate)
         # The porosity the caller asked for is the point of the whole exercise,
         # so it is part of the gate. Without this the generator happily emitted

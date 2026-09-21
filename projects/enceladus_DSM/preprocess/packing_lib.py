@@ -553,7 +553,8 @@ def descriptors(centres, radii, Lx, Ly, px, py, gap=0.0, contact_tol_frac=0.02,
 # Acceptance
 # =========================================================================
 
-def accept_reasons(meta, max_void_ratio, max_density_cv, require_percolation=True):
+def accept_reasons(meta, max_void_ratio, max_density_cv, require_percolation=True,
+                   max_void_per_L=None):
     """List of reasons this packing should be REJECTED. Empty means accept.
 
     RANK ON UNIFORMITY, NEVER ON PORE CONNECTIVITY. This is carried over from
@@ -577,7 +578,23 @@ def accept_reasons(meta, max_void_ratio, max_density_cv, require_percolation=Tru
     and in 2D it cannot be had together with contacting grains anyway.
     """
     bad = []
-    if meta["max_void_radius_per_mean_r"] > max_void_ratio:
+    # THE VOID GATE IS DOMAIN-SIZE DEPENDENT IF MEASURED IN GRAIN RADII.
+    # max_void_radius is an EXTREME over the domain, and the largest of N voids
+    # grows with N, so a threshold in mean-radii calibrated on a small box
+    # rejects larger, better domains. Building L/R_ave = 64 failed on exactly
+    # this: "largest void 1.37 > 1.34", while that void was 2.09% of L against
+    # 3.34% for the accepted L/R_ave = 40 packings -- relatively SMALLER.
+    #
+    # What REV validity depends on is whether a void approaches the DOMAIN
+    # scale, so max_void_per_L is the size-independent criterion and is
+    # preferred when given. The mean-radii form is kept because it is the
+    # microstructural statement ("no void many grains across") and the two
+    # answer different questions.
+    if max_void_per_L is not None:
+        frac = meta["max_void_radius_m"] / meta["Lx"]
+        if frac > max_void_per_L:
+            bad.append(f"largest void {frac:.4f} of L > {max_void_per_L:.4f}")
+    elif meta["max_void_radius_per_mean_r"] > max_void_ratio:
         bad.append(f"largest void {meta['max_void_radius_per_mean_r']:.2f} "
                    f"mean-radii > {max_void_ratio:.2f}")
     if meta["local_density_cv"] > max_density_cv:
