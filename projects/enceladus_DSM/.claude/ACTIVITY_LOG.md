@@ -25,6 +25,22 @@
   step 236 (t* + 78 min, neck 22.99 um) -- the two times Molaro et al. measured
   at, under their own neck-size anchoring. Output in that run's
   `plots/manuscript/` with a README.
+- Second pass after review: field switched from rho_v to supersaturation
+  sigma = rho_v/rho_vs - 1 on cmocean `balance`, white anchored at sigma = 0.
+  Only the blue arm appears, and that is the result -- the whole domain is
+  undersaturated (-2.85e-3 at the wall, -0.47e-3 at the ice), so the pair is
+  net sublimating over the window. Bar still runs to 0 to show it.
+- Dropped the two alternative vapour bars; one quantity, one bar.
+- Smoothed the rendered ice (bands 48 -> 120, theta 721 -> 1441, field grid
+  3001x1501, profile tol 0.004 um) and added a light-gated rim term. The
+  camera stays straight on to match Molaro's micrographs, so the rim is the
+  only thing standing between a sphere and a flat disc.
+- Removed the phi = 0.5 stroke from the 2-D cut face. That forced two knock-on
+  fixes: the fill had to move off near-white (sigma peaks AT the ice, so the
+  face always abuts the palest colour on the scale) to a mid tone of the ice
+  ramp, and the field had to be drawn THROUGH the ice instead of masked at
+  phi = 0.5 -- contourpy drops any cell with a masked corner, which left a
+  ragged sliver of bare page the unstroked face could not cover.
 
 ---
 
