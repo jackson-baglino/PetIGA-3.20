@@ -299,7 +299,7 @@ def _upper_hull(p):
 def shade_revolved(ax, profile, n_theta=1441, light=(-0.44, 0.62, 0.65),
                    ambient=0.22, diffuse=0.52, specular=0.13, shine=34.0,
                    rim=0.20, rim_pow=3.0, ao_min=0.44, ao_pow=0.70,
-                   n_bands=N_BAND_SHADE, tol=0.06, zorder=3, outline=True):
+                   n_bands=N_BAND_SHADE, tol=0.06, zorder=3, outline=False):
     """Draw the ice body: the profile revolved about y = 0, Lambert + Blinn
     shaded with a crevice-darkening term, as filled bands of the intensity.
 
@@ -367,9 +367,11 @@ def shade_revolved(ax, profile, n_theta=1441, light=(-0.44, 0.62, 0.65),
     art = filled_bands(ax, X, Y, Z, lv, cols, tol, zorder=zorder,
                        label="shade")
 
-    # Exact silhouette, on top of the banded fill. This is the body's edge,
-    # not a level-set annotation: without it a pale ice limb has nothing to
-    # sit against on a white page.
+    # Optional silhouette, off by default: the body is meant to read as a lit
+    # solid, and a stroke around it reads as a drawn contour. Kept available
+    # only as an escape hatch for a background that swallows the limb --
+    # checked unstroked on white, cream and near-black, where the edge holds
+    # because the highlight sits inboard of the limb, not on it.
     if outline:
         sil = np.vstack([np.column_stack([xp, rp]),
                          np.column_stack([xp[::-1], -rp[::-1]])])
@@ -472,6 +474,31 @@ def _save(fig, out, stem, formats=("pdf", "svg")):
     return paths
 
 
+# Everything this script is allowed to delete on a rerun. Narrow on purpose:
+# a rerun with different --tags leaves panels from the previous tags behind,
+# and stale panels in a figure folder are worse than no panels -- you cannot
+# tell by looking which colour scale or which snapshot they came from. Only
+# these patterns are swept, so anything else in the folder is left alone.
+_OWNED = ("xsec_*.pdf", "xsec_*.svg", "ice3d_*.pdf", "ice3d_*.svg",
+          "cbar_*.pdf", "cbar_*.svg", "scalebar_*.pdf", "scalebar_*.svg",
+          "preview_*.png", "README.txt")
+
+
+def clean_output(out):
+    """Remove this script's own products from `out`. Returns the count."""
+    import glob
+
+    n = 0
+    for pat in _OWNED:
+        for p in glob.glob(os.path.join(out, pat)):
+            try:
+                os.remove(p)
+                n += 1
+            except OSError:
+                pass
+    return n
+
+
 # ---------------------------------------------------------------------------
 # panels
 # ---------------------------------------------------------------------------
@@ -485,16 +512,17 @@ def panel_xsec(out, tag, x, y, phi, sigma, profile, smin, ums, stride):
     return _save(fig, out, f"xsec_{tag}"), fig
 
 
-def panel_ice3d(out, tag, profile, crop, ums):
+def panel_ice3d(out, tag, profile, crop, ums, n_bands=N_BAND_SHADE,
+                outline=False):
     """The revolved ice body on its own, transparent background."""
     (x0, x1), ymax = crop
     fig, ax = _panel_figure((x0, x1), (-ymax, ymax), ums)
-    shade_revolved(ax, profile)
+    shade_revolved(ax, profile, n_bands=n_bands, outline=outline)
     return _save(fig, out, f"ice3d_{tag}"), fig
 
 
 def panel_ice3d_vapour(out, tag, x, y, phi, sigma, profile, smin, ums,
-                       stride):
+                       stride, n_bands=N_BAND_SHADE, outline=False):
     """3-D body above the symmetry axis, meridional section below it, in the
     same frame as panel_xsec.
 
@@ -510,7 +538,8 @@ def panel_ice3d_vapour(out, tag, x, y, phi, sigma, profile, smin, ums,
 
     vapour_section(ax, x, y, phi, sigma, smin, stride=stride)
     _clip(draw_ice_body(ax, profile), ax, 0.0, -Ly, Lx, Ly)
-    _clip(shade_revolved(ax, profile), ax, 0.0, 0.0, Lx, Ly)
+    _clip(shade_revolved(ax, profile, n_bands=n_bands, outline=outline),
+          ax, 0.0, 0.0, Lx, Ly)
     draw_axis_line(ax, 0, Lx, lw=0.6)
     return _save(fig, out, f"ice3d_vapour_{tag}"), fig
 
@@ -676,12 +705,18 @@ to 97.7 um). The colourbar runs all the way to sigma = 0 so the reader can see
 how far short of equilibrium the field stays; the panels themselves stop at
 {smax:+.3f} x 10^-3, the value hugging the ice.
 
-The 2-D cut face carries no outline, by request. Its edge is carried by fill
-contrast instead: the face is a MID blue-grey (the same ramp the 3-D body is
-shaded from), because sigma is highest right at the ice, so the vapour the
-face is always adjacent to is the palest colour on the scale. The 3-D body
-does keep a silhouette stroke -- that is the edge of a solid, not a level-set
-annotation.
+NOTHING IS STROKED. Neither the 2-D cut face nor the 3-D body carries an
+outline; every edge in these panels is fill contrast. That is what sets the
+ice colour: sigma is highest right AT the ice, so the ice is always adjacent
+to the palest colour on the scale, and the cut face therefore has to be a MID
+blue-grey rather than a near-white one. It is a mid tone of the ramp the 3-D
+body is shaded from, so the flat face and the solid read as one material.
+
+`ice3d_*` has a transparent background and was checked unstroked on white,
+cream and near-black: the body is a mid blue-grey overall and its highlight
+sits inboard of the limb, so the edge holds on all three. If some other ground
+does swallow it, rerun with --outline-3d rather than dropping the rim term --
+the rim is what keeps a straight-on sphere from reading as a flat disc.
 
 The blue arm stops a little short of balance's darkest end, so the Dirichlet
 wall prints rather than going to near-black. The colourbar uses the same
@@ -726,16 +761,29 @@ def main():
                     help="micrometre window for the 3-D panels")
     ap.add_argument("--um-per-inch", type=float, default=125.0,
                     help="common scale for every panel and the scale bars")
-    ap.add_argument("--nu", type=int, default=1801)
-    ap.add_argument("--nv", type=int, default=901)
+    ap.add_argument("--nu", type=int, default=3001,
+                    help="sampling grid across Lx (sets profile smoothness)")
+    ap.add_argument("--nv", type=int, default=1501)
     ap.add_argument("--field-stride", type=int, default=2,
                     help="decimation of the vapour field before banding")
+    ap.add_argument("--shade-bands", type=int, default=N_BAND_SHADE,
+                    help="intensity bands on the 3-D body; lower for smaller "
+                         "files, higher for a smoother surface")
+    ap.add_argument("--outline-3d", action="store_true",
+                    help="stroke the 3-D body's silhouette (off by default)")
+    ap.add_argument("--keep-existing", action="store_true",
+                    help="do not sweep this script's earlier output from the "
+                         "target folder first")
     ap.add_argument("--no-preview", action="store_true")
     args = ap.parse_args()
 
     run = os.path.abspath(args.run_dir)
     out = args.out or os.path.join(run, "plots", "manuscript")
     os.makedirs(out, exist_ok=True)
+    if not args.keep_existing:
+        n = clean_output(out)
+        if n:
+            print(f"  swept {n} earlier file(s) from {out}")
     tags = args.tags or [f"step{s:05d}" for s in args.steps]
     if len(tags) != len(args.steps):
         sys.exit("--tags must have one entry per --steps")
@@ -774,10 +822,13 @@ def main():
         p, f1 = panel_xsec(out, tag, x, y, phi, sigma, prof, smin, ums,
                            stride)
         made.append((p, f1, f"xsec_{tag}"))
-        p, f2 = panel_ice3d(out, tag, prof, crop, ums)
+        p, f2 = panel_ice3d(out, tag, prof, crop, ums,
+                            n_bands=args.shade_bands,
+                            outline=args.outline_3d)
         made.append((p, f2, f"ice3d_{tag}"))
         p, f3 = panel_ice3d_vapour(out, tag, x, y, phi, sigma, prof, smin,
-                                   ums, stride)
+                                   ums, stride, n_bands=args.shade_bands,
+                                   outline=args.outline_3d)
         made.append((p, f3, f"ice3d_vapour_{tag}"))
         for p, fig, stem in made:
             written += p
