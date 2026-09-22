@@ -60,23 +60,31 @@ in $\Om_2$, sweeping between them across a band of decay length $\varepsilon$.
 It is a smoothed $\chi$. $\avg{\cdot}=|\Om|^{-1}\!\int_\Om(\cdot)$, and
 $\jump{\,\cdot\,}$ is the jump across $\Gam$.
 
-\paragraph{Problem A (sharp).} Find cell-periodic $\bt$ with
+\paragraph{Problem A (sharp).} Find \emph{two} cell-periodic fields, $\bt_1$
+defined on $\Om_1$ only and $\bt_2$ defined on $\Om_2$ only, with
 \begin{align}
-\nabla\!\cdot\!\big(K_1(\nabla\bt+\bI)\big)&=\mathbf 0 \ \text{in }\Om_1, &
-\nabla\!\cdot\!\big(K_2(\nabla\bt+\bI)\big)&=\mathbf 0 \ \text{in }\Om_2,
+\nabla\!\cdot\!\big(K_1(\nabla\bt_1+\bI)\big)&=\mathbf 0 \ \text{in }\Om_1, &
+\nabla\!\cdot\!\big(K_2(\nabla\bt_2+\bI)\big)&=\mathbf 0 \ \text{in }\Om_2,
 \label{eq:A-bulk}\\
-\jump{\bt}&=\mathbf 0 \ \text{on }\Gam, &
-\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}&=\mathbf 0 \ \text{on }\Gam,
+\bt_1&=\bt_2 \ \text{on }\Gam, &
+K_1(\nabla\bt_1+\bI)\!\cdot\!\bn&=K_2(\nabla\bt_2+\bI)\!\cdot\!\bn \ \text{on }\Gam,
 \label{eq:A-iface}
 \end{align}
-normalized by $\avg{\bt}=\mathbf 0$, and then
+normalized by
+$\int_{\Om_1}\bt_1\,d\Om+\int_{\Om_2}\bt_2\,d\Om=\mathbf 0$, and then
 \begin{equation}
-\Keff=\frac{1}{|\Om|}\left[\int_{\Om_1}\!K_1(\nabla\bt+\bI)\,d\Om
-                          +\int_{\Om_2}\!K_2(\nabla\bt+\bI)\,d\Om\right].
+\Keff=\frac{1}{|\Om|}\left[\int_{\Om_1}\!K_1(\nabla\bt_1+\bI)\,d\Om
+                          +\int_{\Om_2}\!K_2(\nabla\bt_2+\bI)\,d\Om\right].
 \label{eq:A-keff}
 \end{equation}
 The two interface conditions are the physics: the field is continuous, and the
-normal flux is conserved. This is Calonne et al.\ (2011), Eqs.~(7)--(11).
+normal flux is conserved. This is Calonne et al.\ (2011), Eqs.~(7)--(11), whose
+$\bt_i$ (ice) and $\bt_a$ (air) are our $\bt_1$ and $\bt_2$. In the jump
+notation, \eqref{eq:A-iface} reads $\jump{\bt}=\mathbf 0$ and
+$\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}=\mathbf 0$, where the jump of a
+two-field quantity means (side 1)$-$(side 2).
+Note that A has two unknowns, B below has one; reconciling that is part of the
+claim (\S\ref{sec:step1}(f)).
 
 \paragraph{Problem B (phase field).} Find cell-periodic $\bt$ with
 \begin{equation}
@@ -92,11 +100,12 @@ normal flux is conserved. This is Calonne et al.\ (2011), Eqs.~(7)--(11).
 One domain, one equation, no interface conditions.
 
 \paragraph{Claim.} A and B are the same problem. Two steps:
-\S\ref{sec:step1} collapses A's two domains into one weak equation;
+\S\ref{sec:step1} collapses A's two domains and two correctors into one weak
+equation for one field;
 \S\ref{sec:step2} shows A's coefficient \emph{is} B's coefficient. Neither step
 is a limit.
 
-\section{Step 1: two domains become one weak equation}
+\section{Step 1: two domains and two correctors become one weak equation}
 \label{sec:step1}
 
 Let $v\in\Hper$ be an arbitrary cell-periodic scalar test function. We treat
@@ -106,9 +115,9 @@ each subdomain separately, then add.
 Multiply the first equation of \eqref{eq:A-bulk} by $v$ and integrate over
 $\Om_1$; do the same on $\Om_2$:
 \begin{equation}
-\int_{\Om_1}\! v\,\nabla\!\cdot\!\big(K_1(\nabla\bt+\bI)\big)\,d\Om=0,
+\int_{\Om_1}\! v\,\nabla\!\cdot\!\big(K_1(\nabla\bt_1+\bI)\big)\,d\Om=0,
 \qquad
-\int_{\Om_2}\! v\,\nabla\!\cdot\!\big(K_2(\nabla\bt+\bI)\big)\,d\Om=0 .
+\int_{\Om_2}\! v\,\nabla\!\cdot\!\big(K_2(\nabla\bt_2+\bI)\big)\,d\Om=0 .
 \label{eq:s1-multiply}
 \end{equation}
 Both hold because the integrands vanish pointwise. No approximation yet.
@@ -119,7 +128,7 @@ Using $\int_D v\,\nabla\!\cdot\!\mathbf A=-\int_D\nabla v\cdot\mathbf A
 of $D$. The boundary of $\Om_1$ consists of $\Gam$, where its outward normal is
 $+\bn$, and whatever part of the outer cell boundary $\partial\Om$ it touches;
 likewise for $\Om_2$, whose outward normal on $\Gam$ is $-\bn$. Writing
-$\mathbf A_m=K_m(\nabla\bt+\bI)$ for $m=1,2$,
+$\mathbf A_m=K_m(\nabla\bt_m+\bI)$ for $m=1,2$,
 \begin{align}
 0&=-\int_{\Om_1}\!\nabla v\cdot\mathbf A_1\,d\Om
    \;+\;\int_{\Gam} v\,\mathbf A_1\!\cdot\!\bn\,d\Gam
@@ -146,33 +155,71 @@ This is the step that produces a single statement on $\Om$. Adding
 Now dispose of the three groups in turn.
 
 \paragraph{(d) The outer boundary terms cancel.}
-$O_1+O_2$ is an integral over all of $\partial\Om$. Both $v$ and the flux
-$K(\nabla\bt+\bI)$ are cell-periodic, so they take equal values at
+$O_1+O_2$ is an integral over all of $\partial\Om$. Both $v$ and the fluxes
+$\mathbf A_1,\mathbf A_2$ are cell-periodic, so they take equal values at
 corresponding points of opposite faces, where $\bn_{\partial\Om}$ points in
 opposite directions. Every contribution is therefore matched by its negative:
 $O_1+O_2=0$.
 
 \paragraph{(e) The interface term is exactly the flux jump, which vanishes.}
-By definition of the jump, $\big(\mathbf A_1-\mathbf A_2\big)\!\cdot\!\bn
-=\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}$, so the middle term of
-\eqref{eq:s1-added} is
-$\int_\Gam v\,\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}\,d\Gam$, which is $0$ by the
-second interface condition in \eqref{eq:A-iface} --- for every $v$, since the
-integrand vanishes pointwise.
+The middle term of \eqref{eq:s1-added} is
+$\int_\Gam v\,(\mathbf A_1-\mathbf A_2)\!\cdot\!\bn\,d\Gam$, and
+$(\mathbf A_1-\mathbf A_2)\!\cdot\!\bn=0$ on $\Gam$ is exactly the second
+interface condition in \eqref{eq:A-iface}. So the term is $0$ for every $v$,
+since the integrand vanishes pointwise.
 
 \paragraph{(f) The two volume integrals merge into one.}
-This is where $K_\star$ comes from, and it is pure bookkeeping. Define the
-piecewise-constant coefficient
+This is where $K_\star$ and the single corrector $\bt$ come from. For both it is
+the same bookkeeping, with one extra check for $\bt$. Define the
+piecewise-constant coefficient and the glued corrector
 \begin{equation}
 K_\star:=K_1\chi+K_2(1-\chi),
-\qquad\text{so}\qquad
-K_\star=K_1 \text{ on } \Om_1,
 \qquad
-K_\star=K_2 \text{ on } \Om_2 .
+\bt:=\bt_1\chi+\bt_2(1-\chi),
+\qquad\text{so}\qquad
+(K_\star,\bt)=
+\begin{cases}(K_1,\bt_1) & \text{on }\Om_1,\\ (K_2,\bt_2) & \text{on }\Om_2 .\end{cases}
 \label{eq:Kstar}
 \end{equation}
-Because $K_\star$ \emph{equals} $K_1$ at every point of $\Om_1$, we may
-substitute it there without changing the integral, and likewise on $\Om_2$:
+Each piece of $\bt$ is only ever evaluated on its own subdomain, so $\bt_1$
+never needs a value in $\Om_2$ or vice versa.
+
+\emph{The coefficient.} $K_\star$ \emph{equals} $K_1$ at every point of $\Om_1$
+and $K_2$ at every point of $\Om_2$. Nothing more is needed: a coefficient may
+jump, and $K_\star$ does.
+
+\emph{The corrector.} The extra check concerns the gradient. On each open
+subdomain $\nabla\bt=\nabla\bt_m$, so the \emph{piecewise} gradient of $\bt$ is
+$\chi\nabla\bt_1+(1-\chi)\nabla\bt_2$. The question is whether this is also the
+gradient of $\bt$ \emph{as a function on $\Om$}, i.e.\ its weak gradient,
+which is what a weak form on $\Om$ differentiates. Test against a smooth
+periodic vector field $\boldsymbol\psi$ and integrate by parts on each
+subdomain exactly as in (b), with the same orientations and the same periodic
+cancellation as (d):
+\begin{equation}
+\int_\Om \bt\,\nabla\!\cdot\!\boldsymbol\psi\,d\Om
+=-\int_{\Om_1}\!\nabla\bt_1\cdot\boldsymbol\psi\,d\Om
+ -\int_{\Om_2}\!\nabla\bt_2\cdot\boldsymbol\psi\,d\Om
+ +\int_\Gam\big(\bt_1-\bt_2\big)\,\boldsymbol\psi\!\cdot\!\bn\,d\Gam .
+\label{eq:glue}
+\end{equation}
+The last term vanishes for every $\boldsymbol\psi$ \emph{if and only if}
+$\bt_1=\bt_2$ on $\Gam$, the first interface condition in \eqref{eq:A-iface}.
+When it does, $\bt\in\Hper$ and its weak gradient is the piecewise one:
+\begin{equation}
+\nabla\bt=\nabla\bt_1\ \text{on }\Om_1,\qquad \nabla\bt=\nabla\bt_2\ \text{on }\Om_2,
+\qquad\text{with no part concentrated on }\Gam .
+\label{eq:glue-grad}
+\end{equation}
+Had the fields jumped, $\nabla\bt$ would carry an extra surface term
+$\jump{\bt}\,\bn\,\delta_\Gam$. The piecewise integrals of \eqref{eq:s1-added}
+would not see it, but the weak form on $\Om$ would, so the two would no longer
+agree. This is the only place where
+$K_\star$ and $\bt$ behave differently. The coefficient may be discontinuous; the
+corrector must not be, and continuity is exactly what permits the gluing.
+
+\emph{The merge.} With \eqref{eq:Kstar} and \eqref{eq:glue-grad} we may
+substitute on each subdomain without changing either integral:
 \begin{equation}
 \int_{\Om_1}\!\nabla v\cdot\mathbf A_1
 +\int_{\Om_2}\!\nabla v\cdot\mathbf A_2
@@ -187,9 +234,11 @@ over two disjoint sets whose union is $\Om$. Additivity of the integral gives
 \label{eq:s1-merge}
 \end{equation}
 the last equality because $\Om_1\cup\Om_2$ differs from $\Om$ only by $\Gam$,
-a set of measure zero. So $K_\star$ is not assumed or fitted; it is the name for
-``$K_1$ on one piece and $K_2$ on the other,'' and \eqref{eq:s1-merge} is the
-only thing done with it.
+a set of measure zero. So neither $K_\star$ nor $\bt$ is assumed or fitted.
+Each is the name for ``one thing on one piece and another on the other,'' and
+\eqref{eq:s1-merge} is the only thing done with them. The same additivity turns
+A's normalization into $\avg{\bt}=\mathbf 0$ and A's $\Keff$
+\eqref{eq:A-keff} into $|\Om|^{-1}\!\int_\Om K_\star(\nabla\bt+\bI)$.
 
 \paragraph{(g) Result.}
 Substituting (d), (e), (f) into \eqref{eq:s1-added}:
@@ -204,27 +253,33 @@ They were not dropped; each was absorbed somewhere.
 \emph{Flux conservation} $\jump{K(\nabla\bt+\bI)\!\cdot\!\bn}=0$ was used in
 step (e), and it is the \emph{natural} condition of \eqref{eq:weak}: run (e)
 backwards and any weak solution satisfies it automatically.
-\emph{Continuity} $\jump{\bt}=0$ is absorbed in the statement
-``$\bt\in H^1(\Om)$'': a single $H^1$ field on $\Om$ cannot jump. Had $\bt$ been
-allowed to jump, \eqref{eq:weak} would not even be well posed.
+\emph{Continuity} $\bt_1=\bt_2$ was used in step (f), to glue the two
+correctors into one $\bt\in\Hper$ via \eqref{eq:glue}. Conversely, it is
+built into \eqref{eq:weak}: a single $H^1$ field on $\Om$ cannot jump, so
+restricting any weak solution to $\Om_1$ and $\Om_2$ returns a pair
+$(\bt_1,\bt_2)$ with matching traces. Two correctors in A and one in B is
+therefore not a difference between the problems. A's pair \emph{is} B's single
+field, written in two pieces.
 \end{remark}
 
 \begin{remark}[Why one arbitrary $v$ on $\Om$ is not an extra assumption]
 It may look as though testing with a single $v$ defined on all of $\Om$ smuggles
 in something. It does not, and the step reverses: given \eqref{eq:weak}, choose
 $v$ supported strictly inside $\Om_1$. Then the integral is over $\Om_1$ only,
-where $K_\star=K_1$; undoing the integration by parts (no boundary term, since
-$v$ vanishes near $\partial\Om_1$) returns the first equation of
-\eqref{eq:A-bulk}. Symmetrically for $\Om_2$. Allowing $v$ to straddle $\Gam$
+where $K_\star=K_1$ and $\bt=\bt_1$; undoing the integration by parts (no
+boundary term, since $v$ vanishes near $\partial\Om_1$) returns the first
+equation of \eqref{eq:A-bulk}. Symmetrically for $\Om_2$. Allowing $v$ to straddle $\Gam$
 then returns the interface term, hence \eqref{eq:A-iface}. So \eqref{eq:weak} is
 \emph{equivalent} to \eqref{eq:A-bulk}--\eqref{eq:A-iface}, not weaker.
 \end{remark}
 
 \begin{remark}[Same algebra for the physical field]
 Nothing in (a)--(g) used the specific form $\nabla\bt+\bI$. Replacing it by
-$\nabla T$ throughout collapses the physical problem
-$\nabla\!\cdot\!(K\nabla T)=0$, $\jump{T}=\jump{K\nabla T\!\cdot\!\bn}=0$ into
-$\int_\Om\nabla v\cdot K_\star\nabla T=0$ identically. See \S\ref{sec:transient}.
+$\nabla T$ throughout collapses the physical problem, with its own two
+temperatures $T_1$ on $\Om_1$ and $T_2$ on $\Om_2$,
+$\nabla\!\cdot\!(K_m\nabla T_m)=0$, $T_1=T_2$ and
+$K_1\nabla T_1\!\cdot\!\bn=K_2\nabla T_2\!\cdot\!\bn$ on $\Gam$, into
+$\int_\Om\nabla v\cdot K_\star\nabla T=0$ for the glued $T$, identically. See \S\ref{sec:transient}.
 \end{remark}
 
 \section{Step 2: the coefficient is already the phase-field interpolation}
@@ -270,6 +325,21 @@ interpolation --- arithmetic, harmonic, any other --- coincides exactly on
 $\chi$. The choice can therefore matter only through the diffuse band
 (\S\ref{sec:excess}).
 
+\begin{remark}[Why the corrector needs no Step 2]
+\label{rem:no-tphi}
+$K_\star$ and $\bt$ are glued the same way in (f), but only $K_\star$ reappears
+here. There is no ``$\bt(\varphi)$'' interpolating $\bt_1$ and $\bt_2$ across
+the band, and none is needed. $K$ is \emph{data}: B has to be told what
+coefficient to use at every point, including inside the band, and the lemma
+shows its prescription $K(\varphi)$ reduces to A's on $\chi$. $\bt$ is the
+\emph{unknown}: B solves for one field on all of $\Om$, and inside the band it
+simply takes whatever values the equation produces. At finite $\varepsilon$
+the two sharp pieces $\bt_1,\bt_2$ have no separate meaning inside $\Band$, and
+nothing requires them to. After Step~1 A also has a single unknown in the same
+space $\Hper$, so the two problems differ only in their coefficient, and that
+difference is carried entirely by $\varphi-\chi$.
+\end{remark}
+
 \begin{proposition}\label{prop:exact}
 If $\varphi=\chi$, Problems A and B are the same boundary-value problem and give
 the same $\Keff$, identically.
@@ -302,7 +372,10 @@ A(K):=\be\cdot\Keff[K]\,\be=\min_{v\in\Hper}E_K[v],
 \label{eq:dirichlet}
 \end{equation}
 Write $K_1^{\phantom{.}}\!\to K(\varphi)$, $K_2^{\phantom{.}}\!\to K_\star$ with
-minimizers $v_\varepsilon,v_\star$. For \emph{any} $v$,
+minimizers $v_\varepsilon,v_\star$. Here $v_\star$ is the \emph{glued} sharp
+corrector of \eqref{eq:Kstar}; it is because gluing puts it in the same space
+$\Hper$ as $v_\varepsilon$ that each can be tested in the other's energy. For
+\emph{any} $v$,
 $E_{K(\varphi)}[v]-E_{K_\star}[v]=\avg{\delta\!K|\nabla v+\be|^2}$. Testing each
 minimizer against the other's energy gives two inequalities which combine into
 \begin{equation}
