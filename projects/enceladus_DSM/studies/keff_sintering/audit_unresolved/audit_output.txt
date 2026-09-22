@@ -26,8 +26,16 @@ B. KINETICS: the temperature sweep is confounded with alpha_c
   across the whole 20 C sweep. The sweep therefore CANNOT resolve a
   temperature effect: it was cancelled in the parameter choice.
 
-  Literature band for alpha_c (Libbrecht 2017, Braun 2024): 1e-4..1e-3.
-  These runs sit at 57x to 475x the TOP of that band.
+  Against the anchored Arrhenius alpha_c(T) (1e-1 @ -2 C, 1e-3 @ -40 C;
+  Libbrecht 2017, Braun/Fourteau/Lowe 2024; band 1e-4..1e-1):
+      T    implied   Arrhenius    ratio  in band
+    -20  5.672e-02   1.341e-02      4.2      yes
+    -25  9.351e-02   7.289e-03     12.8      yes
+    -30  1.573e-01   3.863e-03     40.7       NO
+    -35  2.703e-01   1.994e-03    135.6       NO
+    -40  4.755e-01   1.000e-03    475.5       NO
+  The literature alpha_c FALLS with temperature; the implied one RISES.
+  The sign of the T-dependence of the attachment kinetics is backwards.
 
 ==============================================================================
 C. WHAT THE k_eff TABLES ACTUALLY SHOW

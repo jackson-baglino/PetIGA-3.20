@@ -187,9 +187,16 @@ def main() -> int:
     print("  across the whole 20 C sweep. The sweep therefore CANNOT resolve a")
     print("  temperature effect: it was cancelled in the parameter choice.")
     print()
-    print(f"  Literature band for alpha_c (Libbrecht 2017, Braun 2024): 1e-4..1e-3.")
-    print(f"  These runs sit at {rows[0][2]/1e-3:.0f}x to {rows[-1][2]/1e-3:.0f}x "
-          f"the TOP of that band.")
+    print("  Against the anchored Arrhenius alpha_c(T) (1e-1 @ -2 C, 1e-3 @ -40 C;")
+    print("  Libbrecht 2017, Braun/Fourteau/Lowe 2024; band 1e-4..1e-1):")
+    from comp_eps import alpha_arrhenius                       # noqa: E402
+    print(f"  {'T':>5} {'implied':>10} {'Arrhenius':>11} {'ratio':>8} {'in band':>8}")
+    for T, _, ac, *_ in rows:
+        ar = alpha_arrhenius(T)
+        print(f"  {T:5d} {ac:10.3e} {ar:11.3e} {ac/ar:8.1f} "
+              f"{'yes' if 1e-4 <= ac <= 1e-1 else 'NO':>8}")
+    print("  The literature alpha_c FALLS with temperature; the implied one RISES.")
+    print("  The sign of the T-dependence of the attachment kinetics is backwards.")
 
     print()
     print("=" * 78)

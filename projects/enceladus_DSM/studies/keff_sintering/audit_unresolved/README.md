@@ -58,9 +58,24 @@ And that is precisely what the `k_eff` tables report: the 28-day rise spans
 product and as the growing ε violation, and it runs opposite in sign to the
 first. It is numerical, not physical.
 
-Separately, `alpha_c` of 0.057–0.48 is **57× to 475× above the top of the
-literature band** (Libbrecht 2017, Braun 2024: 1e-4 … 1e-3), and 0.48 is
-approaching the kinetic ceiling of unity.
+Separately — and this is the part that is *not* just a magnitude error — the
+literature `alpha_c` **falls** with temperature, while the implied one **rises**.
+`comp_eps.py` anchors the band (Libbrecht 2017; Braun, Fourteau & Löwe 2024) at
+`alpha_c = 1e-1` at −2 °C and `1e-3` at −40 °C, clamped to 1e-4 … 1e-1:
+
+| T [°C] | implied `alpha_c` | anchored Arrhenius | ratio | inside 1e-4…1e-1? |
+|---|---|---|---|---|
+| −20 | 5.67e-2 | 1.34e-2 |   4.2× | yes |
+| −25 | 9.35e-2 | 7.29e-3 |  12.8× | yes |
+| −30 | 1.57e-1 | 3.86e-3 |  40.7× | **no** |
+| −35 | 2.70e-1 | 1.99e-3 | 135.6× | **no** |
+| −40 | 4.76e-1 | 1.00e-3 | 475.5× | **no** |
+
+So the warm end is inside the band and only ~4× high; the cold end is 476× the
+physical value and 4.8× outside the band entirely. **The sign of the temperature
+dependence of the attachment kinetics is backwards**, which is a stronger
+statement than any calibration offset: the sweep does not merely mis-scale the
+temperature effect, it reverses the mechanism that produces it.
 
 This failure mode is already guarded in the current pipeline —
 `generate_study_opts.py:13-15` explains it, and `-eps_valid_temp` makes the
@@ -106,7 +121,7 @@ and it too is worst at the warm end of the sweep.
 | Temperature sweep | **No** | The swept variable is confounded with `alpha_c` (8.4×) and with `eps/eps_max` (1.7→13.5×). Its null result is forced by construction. |
 | Porosity sweep | **Preliminary** | Single T, single ε, single `beta_sub0` — every bias is a *common offset*. The monotone `k_eff(φ)` trend (0.894 → 0.621 at t=0) survives. |
 | Absolute `k_eff` | **No** | 4.6 elements across the band, plus the arithmetic-vs-sharp coefficient question (17.8% vs 57%). |
-| Sintering *rate* | **No** | `alpha_c` is 57–475× too large and `dt/tau_sub` is 1.5–6.4× over. |
+| Sintering *rate* | **No** | `alpha_c` is 4–476× the anchored value *with the T-dependence reversed*, and `dt/tau_sub` is 1.5–6.4× over. |
 
 **Recommendation:** treat these as a pilot that established the pipeline and the
 rough magnitude, cite nothing from them quantitatively, and regenerate the
