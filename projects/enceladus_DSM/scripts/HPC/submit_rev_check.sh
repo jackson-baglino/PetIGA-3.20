@@ -38,6 +38,20 @@
 # confound is gone. The four sit at 0.0211-0.0251, i.e. relatively cleaner than
 # the smaller domains. See studies/packing_design/README.md section 6.
 #
+#
+# SUBMITS THROUGH submit_batch.sh, NOT A LOOP OVER submit_enceladus.sh.
+# Each submit_enceladus.sh call runs `make clean && make all` inside the job,
+# so N of them race in the shared obj/. run_enceladus.sh:162-165 documents the
+# failure exactly: one job's `make clean` deletes obj/*.o while another is
+# mid-write. It is not hypothetical -- the first attempt at this pair produced
+#
+#   rm: cannot remove 'obj/monitoring.o': Stale file handle    (one job)
+#   srun: error: tasks 0-3: Bus error (core dumped)            (the other)
+#
+# the Bus error being the same cause seen from the other side: the executable
+# relinked underneath ranks that had it mapped. submit_batch.sh builds ONCE on
+# the submission host and passes SKIP_COMPILE=1 to every fanned-out job.
+#
 # USAGE
 #   ./scripts/HPC/submit_rev_check.sh [--dry-run] [-- <sbatch flags>]
 # =============================================================================
@@ -71,11 +85,13 @@ echo "  4 seeds, 724-805 grains, L = 3.2 mm, eps = 1 um, Nx = 4526"
 echo "  61.5M DOF, ~769 cores/run, 3076 core-allocations total"
 echo "  compare the ENSEMBLE mean against L/R_ave=40's 0.7570 (SEM 1.5%)"
 echo ""
+tests=""
 for s in $SEEDS; do
-    geom=$(printf "$GEOM_STEM" "$s")
-    cmd=(./scripts/HPC/submit_enceladus.sh "$geom" "$EXP" "rev64_s$s")
-    [ "${#sbatch_extra[@]}" -gt 0 ] && cmd+=("${sbatch_extra[@]}")
-    cmd+=(-- $KEFF_OPTS)
-    if [ "$dry" -eq 1 ]; then printf '  $ '; printf '%q ' "${cmd[@]}"; echo
-    else "${cmd[@]}"; fi
+    [ -n "$tests" ] && tests="${tests},"
+    tests="${tests}$(printf "$GEOM_STEM" "$s"):${EXP}"
 done
+cmd=(./scripts/HPC/submit_batch.sh --tag rev64 --tests "$tests"
+     --extra-opts "$KEFF_OPTS")
+[ "${#sbatch_extra[@]}" -gt 0 ] && cmd+=(-- "${sbatch_extra[@]}")
+if [ "$dry" -eq 1 ]; then printf '$ '; printf '%q ' "${cmd[@]}"; echo
+else "${cmd[@]}"; fi

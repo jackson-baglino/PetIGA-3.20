@@ -42,6 +42,19 @@
 # These are small (631x198 and 631x396), so they are cheap next to anything
 # else in the campaign.
 #
+# SUBMITS THROUGH submit_batch.sh, NOT A LOOP OVER submit_enceladus.sh.
+# Each submit_enceladus.sh call runs `make clean && make all` inside the job,
+# so N of them race in the shared obj/. run_enceladus.sh:162-165 documents the
+# failure exactly: one job's `make clean` deletes obj/*.o while another is
+# mid-write. It is not hypothetical -- the first attempt at this pair produced
+#
+#   rm: cannot remove 'obj/monitoring.o': Stale file handle    (one job)
+#   srun: error: tasks 0-3: Bus error (core dumped)            (the other)
+#
+# the Bus error being the same cause seen from the other side: the executable
+# relinked underneath ranks that had it mapped. submit_batch.sh builds ONCE on
+# the submission host and passes SKIP_COMPILE=1 to every fanned-out job.
+#
 # USAGE
 #   ./scripts/HPC/submit_curvature_calib.sh [--dry-run] [-- <sbatch flags>]
 # =============================================================================
@@ -67,14 +80,14 @@ if [ "$dry" -eq 0 ] && ! command -v sbatch >/dev/null 2>&1; then
 fi
 
 echo "=== 2D -> 3D curvature calibration: one geometry, two interpretations ==="
-for pair in "axisym:$AXI" "planar:$PLA"; do
-    tag="${pair%%:*}"; geom="${pair#*:}"
-    echo "  $tag  $geom"
-    cmd=(./scripts/HPC/submit_enceladus.sh "$geom" "$EXP" "curvcal_$tag")
-    [ "${#sbatch_extra[@]}" -gt 0 ] && cmd+=("${sbatch_extra[@]}")
-    if [ "$dry" -eq 1 ]; then printf '      $ '; printf '%q ' "${cmd[@]}"; echo
-    else "${cmd[@]}"; fi
-done
+echo "  axisym  $AXI"
+echo "  planar  $PLA"
+echo ""
+cmd=(./scripts/HPC/submit_batch.sh --tag curvcal
+     --tests "${AXI}:${EXP},${PLA}:${EXP}")
+[ "${#sbatch_extra[@]}" -gt 0 ] && cmd+=(-- "${sbatch_extra[@]}")
+if [ "$dry" -eq 1 ]; then printf '$ '; printf '%q ' "${cmd[@]}"; echo
+else "${cmd[@]}"; fi
 echo ""
 echo "When both finish, compare neck growth:"
 echo "  venv_enceladus/bin/python postprocess/neck_width.py <axisym_run>"
