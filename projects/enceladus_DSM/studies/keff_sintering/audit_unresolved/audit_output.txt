@@ -1,0 +1,74 @@
+==============================================================================
+A. DISCRETISATION  (identical for all nine runs -- one eps, one mesh)
+==============================================================================
+  eps                  8.7570e-07 m
+  Nx = Ny              1142   (p=1, C=0 -- LINEAR elements)
+  h = L/Nx             1.7513e-06 m
+  h/eps                2.000   vs K&P mesh rule 0.707  ->  2.83x too coarse
+  1%-99% band 9.2*eps  8.06 um = 4.6 elements   (project standard 7.5-10, and that is for p=2/C=1)
+
+==============================================================================
+B. KINETICS: the temperature sweep is confounded with alpha_c
+==============================================================================
+  beta_sub0 = 1.4e5 was HARDCODED and identical at every temperature.
+  The solver forms beta_sub = beta_sub0 / (rho_i/rho_vs(T)), so a
+  constant beta_sub0 does NOT mean a constant condensation coefficient.
+
+     T     rho_vs   alpha_c  a_c*rho_vs   eps_max  eps/max  Nx_req  coarse  tau_sub dt_med/tau
+   -20  8.478e-04 5.672e-02  4.8090e-05 5.213e-07     1.68    5427     4.8    207.8       6.42
+   -25  5.197e-04 9.351e-02  4.8592e-05 3.194e-07     2.74    8857     7.8    271.1       4.92
+   -30  3.122e-04 1.573e-01  4.9101e-05 1.918e-07     4.57   14747    12.9    380.0       3.51
+   -35  1.835e-04 2.703e-01  4.9620e-05 1.128e-07     7.77   25085    22.0    571.1       2.34
+   -40  1.055e-04 4.755e-01  5.0154e-05 6.480e-08    13.51   43651    38.2    914.2       1.46
+
+  alpha_c rises 5.672e-02 -> 4.755e-01 (8.4x) as rho_vs falls 8.0x.
+  Their product -- which sets the sublimation flux -- is constant to 4.2%
+  across the whole 20 C sweep. The sweep therefore CANNOT resolve a
+  temperature effect: it was cancelled in the parameter choice.
+
+  Literature band for alpha_c (Libbrecht 2017, Braun 2024): 1e-4..1e-3.
+  These runs sit at 57x to 475x the TOP of that band.
+
+==============================================================================
+C. WHAT THE k_eff TABLES ACTUALLY SHOW
+==============================================================================
+                                 run     k(0)   k(end)     rise
+  DSMgrains_2D_Tm-20_hum98_tf28d__20   0.8935   1.3354  +49.46%
+  DSMgrains_2D_Tm-25_hum98_tf28d__20   0.8935   1.3309  +48.95%
+  DSMgrains_2D_Tm-30_hum98_tf28d__20   0.8935   1.3271  +48.53%
+  DSMgrains_2D_Tm-35_hum98_tf28d__20   0.8935   1.3237  +48.14%
+  DSMgrains_2D_Tm-40_hum98_tf28d__20   0.8935   1.3204  +47.78%
+  DSM_phi0.24_Lx2mm_Ly2mm_seed21_Tm-   0.8935   1.3309  +48.95%
+  DSM_phi0.26_Lx2mm_Ly2mm_seed21_Tm-   0.8055   1.1950  +48.36%
+  DSM_phi0.28_Lx2mm_Ly2mm_seed21_Tm-   0.7099   1.0944  +54.15%
+  DSM_phi0.30_Lx2mm_Ly2mm_seed21_Tm-   0.6214   0.9321  +50.00%
+
+  temperature sweep: rise spans +47.78%..+49.46%  -- a spread of 1.7 points,
+  i.e. 3.5% of the mean rise.
+  The cancelled product alpha_c*rho_vs still drifts 4.2% across the sweep, and eps/eps_max
+  grows 1.7x -> 13.5x over the same range. The residual T-dependence
+  is the SAME SIZE as those two numerical drifts (and runs opposite in
+  sign to the first of them), so it cannot be attributed to physics.
+  The headline reading of this sweep -- 'k_eff evolution is nearly
+  temperature-independent' -- is what holding beta_sub0 fixed forces.
+
+  porosity sweep:    rise spans +48.36%..+54.15%  at a SINGLE T, eps, beta_sub0.
+  Every bias above is a common offset here, so the porosity TREND
+  survives even though the magnitude and rate do not.
+
+==============================================================================
+D. WHAT IS FINE
+==============================================================================
+  DSMgrains_2D_Tm-20_hum98_tf28d__2025-09-24__00 ice drift -0.062%  (1435 steps, t_final 28.00 d)
+  DSMgrains_2D_Tm-25_hum98_tf28d__2025-09-19__13 ice drift -0.036%  (1362 steps, t_final 28.00 d)
+  DSMgrains_2D_Tm-30_hum98_tf28d__2025-09-24__03 ice drift -0.021%  (1355 steps, t_final 28.00 d)
+  DSMgrains_2D_Tm-35_hum98_tf28d__2025-09-24__03 ice drift -0.012%  (1293 steps, t_final 28.01 d)
+  DSMgrains_2D_Tm-40_hum98_tf28d__2025-09-24__04 ice drift -0.007%  (1347 steps, t_final 28.00 d)
+  DSM_phi0.24_Lx2mm_Ly2mm_seed21_Tm-25_hum98_tf0 ice drift -0.036%  (1399 steps, t_final 28.00 d)
+  DSM_phi0.26_Lx2mm_Ly2mm_seed21_Tm-25_hum98_tf0 ice drift -0.040%  (1291 steps, t_final 28.00 d)
+  DSM_phi0.28_Lx2mm_Ly2mm_seed21_Tm-25_hum98_tf0 ice drift -0.045%  (1371 steps, t_final 28.00 d)
+  DSM_phi0.30_Lx2mm_Ly2mm_seed21_Tm-25_hum98_tf0 ice drift -0.050%  (1351 steps, t_final 28.01 d)
+
+  Ice loss is monotone in T and tracks rho_vs -- that is the physical
+  response to humidity 0.98, not a conservation leak.
+  L/R_ave = 44.4 at t=0, above the measured REV floor of 40.
