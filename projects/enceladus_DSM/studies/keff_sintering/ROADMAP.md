@@ -10,16 +10,50 @@ and which levers matter most — not absolute k_eff in W/m/K. That choice is
 already supported: the L/R=64 run reproduced the relative response to −0.3 sd
 while sitting +5% in absolute.
 
+## Triage (2026-09-22)
+
+The checking was hitting diminishing returns, so the remaining items were
+sorted by what skipping each actually costs. Two are not worth running.
+
+| item | verdict | why |
+|---|---|---|
+| L/R=64 seed-1 rebuild | **skip** | The decision is already made — relative rise agrees across sizes (−0.7 sd), and we claim ratios. Costs one caveat sentence on a slide. |
+| curvature at ε/4 | **run in parallel** | 2 tiny runs (Nx 2524). Gates nothing — a uniform 2D→3D rate offset cancels in every cross-condition comparison. Only needed for a timing claim and the discussion. |
+| sharp/tensorial k_eff coefficient | **do first** | Not a test, a fix: the headline reads +17.8% arithmetic vs +57.0% sharp. A few lines in `keff_cell.c` plus `-keff_replay`, no new runs. Skipping means 80 runs measure something 3× too small. |
+| resolution `R_feat/R_ave` | **decide explicitly** | The one genuinely open question, and the expensive one. See below. |
+
+### The resolution decision is the real one
+
+At the pilot's `R_feat/R_ave = 1/25`, a neck is only represented above
+`r/R = √(12ε/R) = 0.49` — half the grain radius. Much of every trajectory is
+below that floor, and the campaign's headline is the *rise from t = 0*.
+
+| `R_feat/R_ave` | ε | r/R floor | Nx | DOF | cores |
+|---|---|---|---|---|---|
+| 1/25 (pilot) | 0.96 µm | **0.49** | 2829 | 24M | 301 |
+| 1/50 | 0.48 µm | 0.35 | 5657 | 96M | 1201 |
+| 1/100 | 0.24 µm | 0.25 | 11314 | 384M | 4801 |
+
+Going to 1/50 is **4× the whole campaign**. Guessing costs either 4× compute or
+80 redone runs.
+
+**De-risk it inside the campaign instead of ahead of it.** Run the first
+condition at both 1/25 and 1/50, 3 seeds each (~4.5k core-allocations, ~19% of
+an 80-run campaign at 1/25), and compare the *relative* rise:
+
+- agrees → run everything at 1/25, having saved 4× on the other 79 runs;
+- differs → found on 6 runs instead of 80.
+
 | | what | cost | gate |
 |---|---|---|---|
-| **0** | REV ensemble + curvature calibration | 3076 + ~20 core-alloc | *running* |
-| **1** | read them → domain size, 2D caveat | — | **SLIDES 1** |
-| **2** | ε-convergence on a running sim | ~2400 core-alloc | **decides the headline number** |
+| **0** | REV ensemble + curvature calibration | done | — |
+| **1** | sharp/tensorial coefficient + replay | code change, no runs | **required** |
+| **2** | first condition at 1/25 **and** 1/50, 3 seeds each | ~4.5k core-alloc | **decides resolution** |
 | **3** | production packings | minutes, local | — |
-| **4** | main campaign, first condition | ~1/4 of Phase 5 | **SLIDES 2** |
-| **5** | main campaign, remainder | see Phase 5 | — |
-| **6** | sensitivity arms | ~12–16 runs | — |
-| **7** | analysis and writeup | — | **SLIDES 3** |
+| **4** | main campaign | see Phase 5 | **SLIDES 2** |
+| **5** | sensitivity arms | ~12–16 runs | — |
+| **6** | analysis and writeup | — | **SLIDES 3** |
+| *par* | curvature at ε/4 | 2 tiny runs | alongside, gates nothing |
 
 ---
 
