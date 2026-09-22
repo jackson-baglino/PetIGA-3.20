@@ -2,49 +2,86 @@
 # =============================================================================
 # check_batch_health.sh — did these runs actually run cleanly?
 #
-# Run on the HPC, over a directory of run folders. Greps the SLURM .e/.o files
-# and outp.txt for the failures that are silent in the results:
+#   ./scripts/HPC/check_batch_health.sh <dir> [--t-final <s>]
 #
-#   Stale file handle / make Error   two jobs compiling into the same obj/.
-#                                    run_enceladus.sh:162-165 documents it. A
-#                                    job can survive this and still have linked
-#                                    against a half-written object.
-#   Bus error / core dumped          the same race seen from the other side --
-#                                    the executable relinked underneath ranks
-#                                    that had it mapped.
-#   DIVERGED / SNES / PETSC ERROR    solver failure.
-#   PHASE GUARD TRIPPED              phi left [0,1] by more than the guard band;
-#                                    numerics, not physics.
+# COMPLETION IS THE PRIMARY SIGNAL, log greps are secondary. A run either
+# produced a full trajectory or it did not, and that is checkable directly
+# from SSA_evo.dat and k_eff.csv. Log strings are a supporting hint, and a
+# noisy one -- see below.
 #
-# A run that hit the compile race is NOT necessarily wrong, but it is not
-# trustworthy either, and the only safe response is to rerun it from a build
-# that was not being written at the time.
+# THE FIRST VERSION OF THIS SCRIPT FLAGGED EVERY RUN, including four that had
+# already been analysed in detail and were known good. Three separate bugs,
+# all worth stating because they are easy to repeat:
 #
-#   ./scripts/HPC/check_batch_health.sh /resnick/scratch/$USER/enceladus_DSM
+#   1. It searched `--include='*.o*'` for SLURM stdout. That glob also matches
+#      *.opts -- and inputs/solver.opts contains the word DIVERGED four times
+#      in a comment about SNES convergence. Every run stages a copy, so every
+#      run "failed". The SLURM pattern is *.o<digits>, not *.o*.
+#   2. It grepped for DIVERGED at all. Rejected steps are NORMAL here: the
+#      interface-CFL limiter is designed to reject and retry, so transient
+#      divergence is the machinery working. Only terminal failures count.
+#   3. It looked for SSA_evo.dat directly inside each subdirectory, but runs
+#      live one level deeper (<geom>/<timestamp>/ on scratch), so every run
+#      reported steps=0 -- including runs with 6647 steps.
+#
+# It also reported stale failures: a run directory accumulates the .e/.o of
+# every attempt, so a Bus error from a previous failed submission is still
+# there after a successful rerun. Only the NEWEST log pair is read.
+#
+# What is treated as a hard failure:
+#   Stale file handle / make: ***   two jobs compiling into the same obj/.
+#                                   run_enceladus.sh:162-165 documents it; 2+
+#                                   jobs must go through submit_batch.sh.
+#   Bus error / core dumped         the same race from the other side -- the
+#                                   executable relinked under mapped ranks.
+#   [ABORT]                         the solver's own terminal abort.
 # =============================================================================
 set -uo pipefail
-root="${1:?usage: $0 <dir of run folders>}"
-bad=0
-for d in "$root"/*/; do
-    [ -d "$d" ] || continue
-    name=$(basename "$d")
+root="${1:?usage: $0 <dir> [--t-final <s>]}"; shift || true
+tfinal=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --t-final) tfinal="$2"; shift 2 ;;
+        *) shift ;;
+    esac
+done
+
+bad=0; n=0
+# Discover by CONTENT: a directory holding SSA_evo.dat is a run, wherever it
+# sits. Name-based discovery has broken on every layout change so far.
+while IFS= read -r ssa; do
+    d=$(dirname "$ssa"); n=$((n+1))
+    name=$(realpath --relative-to="$root" "$d" 2>/dev/null || basename "$d")
+
+    steps=$(wc -l < "$ssa" | tr -d ' ')
+    keff=0; [ -f "$d/k_eff.csv" ] && keff=$(( $(wc -l < "$d/k_eff.csv") - 1 ))
+    tend=$(awk 'END{printf "%.4g", $3}' "$ssa" 2>/dev/null)
+    frac=""
+    [ -n "$tfinal" ] && frac=$(awk -v a="$tend" -v b="$tfinal" 'BEGIN{printf " (%.0f%% of t_final)", 100*a/b}')
+
+    # newest SLURM log pair only -- a run dir keeps every attempt's .e/.o
+    newest=$(ls -t "$d"/*.e[0-9]* "$d"/*.o[0-9]* 2>/dev/null | head -2)
     hits=""
-    for pat in "Stale file handle" "Bus error" "core dumped" "Error 1" \
-               "DIVERGED" "PETSC ERROR" "PHASE GUARD TRIPPED"; do
-        n=$(grep -rslF "$pat" "$d" --include='*.e*' --include='*.o*' \
-              --include='outp.txt' 2>/dev/null | wc -l | tr -d ' ')
-        [ "$n" -gt 0 ] && hits="${hits}${pat} (${n}); "
-    done
-    steps=$( [ -f "$d/SSA_evo.dat" ] && wc -l < "$d/SSA_evo.dat" | tr -d ' ' || echo 0 )
-    keff=$( [ -f "$d/k_eff.csv" ] && echo $(( $(wc -l < "$d/k_eff.csv") - 1 )) || echo 0 )
-    if [ -n "$hits" ]; then
-        printf "  FLAG  %-58s steps=%-6s keff=%-4s %s\n" "${name:0:58}" "$steps" "$keff" "$hits"
+    if [ -n "$newest" ]; then
+        for pat in "Stale file handle" "Bus error" "core dumped" "make: ***" "[ABORT]"; do
+            if grep -qlF "$pat" $newest 2>/dev/null; then hits="${hits}${pat}; "; fi
+        done
+    fi
+    # outp.txt is the run's own record, and only terminal markers count there
+    [ -f "$d/outp.txt" ] && grep -qF "[ABORT]" "$d/outp.txt" 2>/dev/null && hits="${hits}ABORT in outp; "
+
+    if [ -n "$hits" ] || [ "$steps" -lt 2 ] || [ "$keff" -lt 1 ]; then
+        printf "  FLAG  %-56s steps=%-6s keff=%-4s t=%s%s  %s\n" \
+               "${name:0:56}" "$steps" "$keff" "$tend" "$frac" "$hits"
         bad=$((bad+1))
     else
-        printf "  ok    %-58s steps=%-6s keff=%s\n" "${name:0:58}" "$steps" "$keff"
+        printf "  ok    %-56s steps=%-6s keff=%-4s t=%s%s\n" \
+               "${name:0:56}" "$steps" "$keff" "$tend" "$frac"
     fi
-done
+done < <(find "$root" -name SSA_evo.dat 2>/dev/null | sort)
+
 echo ""
-[ "$bad" -eq 0 ] && echo "  no failures found" \
-                 || echo "  $bad run(s) flagged -- rerun them through submit_batch.sh"
+[ "$n" -eq 0 ] && { echo "  no runs found under $root (looked for SSA_evo.dat)"; exit 0; }
+[ "$bad" -eq 0 ] && echo "  $n run(s), none flagged" \
+                 || echo "  $bad of $n run(s) flagged -- rerun those through submit_batch.sh"
 exit 0
