@@ -81,9 +81,20 @@ def find_runs(batch: Path) -> dict:
         m = re.search(r"seed(\d+)", d.name) or re.search(r"seed(\d+)", str(d))
         key = m.group(1) if m else d.name
         prev = seen.get(key)
+        if prev is None:
+            seen[key] = d
+            continue
         # a merged run carries MERGE_INFO.json; prefer it over a raw leg
-        if prev is None or ((d / "MERGE_INFO.json").is_file()
-                            and not (prev / "MERGE_INFO.json").is_file()):
+        merged_new = (d / "MERGE_INFO.json").is_file()
+        merged_old = (prev / "MERGE_INFO.json").is_file()
+        if merged_new != merged_old:
+            if merged_new:
+                seen[key] = d
+            continue
+        # otherwise the same seed was simply run more than once (rev64 seed 1
+        # was, on 09-18 and 09-21, and the two agree to 1.2e-8 in k_iso).
+        # Take the NEWEST rather than whichever happens to sort last.
+        if d.stat().st_mtime > prev.stat().st_mtime:
             seen[key] = d
     return dict(sorted(seen.items()))
 
