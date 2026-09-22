@@ -290,9 +290,17 @@ def main(argv=None):
     ap.add_argument("--R-feat", type=float, required=True,
                     help="smallest curvature feature to resolve [m]; sets v_n "
                          "self-consistently and dominates cost (see docstring)")
-    ap.add_argument("--alpha-c", type=float, default=1.341e-2,
-                    help="condensation coefficient; 1.341e-2 reproduces the "
-                         "committed -20 C kinetics (beta_sub0 = 5.9216e5)")
+    ap.add_argument("--alpha-c", type=float, default=1.0e-3,
+                    help="condensation coefficient, CONSTANT across the sweep. "
+                         "1.0e-3 is the campaign value (2026-09-22): the "
+                         "anchored Arrhenius alpha_c(T) is abandoned, so this "
+                         "must not vary with temperature. A temperature sweep "
+                         "run at a T-dependent alpha_c cannot separate the two "
+                         "-- that is exactly how the 2025-09 runs were lost "
+                         "(studies/keff_sintering/audit_unresolved/). The "
+                         "former default 1.341e-2 was the Arrhenius value at "
+                         "-20 C; it does NOT change the mesh (eps is set by "
+                         "R_feat alone), only the timescale.")
     ap.add_argument("--safety", type=float, default=0.5)
     ap.add_argument("--name-suffix", default="",
                     help="appended to every generated .opts stem, e.g. '_s10'. Use "
