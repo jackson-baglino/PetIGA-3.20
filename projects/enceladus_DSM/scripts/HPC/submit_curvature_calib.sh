@@ -42,6 +42,33 @@
 # These are small (631x198 and 631x396), so they are cheap next to anything
 # else in the campaign.
 #
+# RESULT OF THE FIRST PAIR (2026-09-21), and why it needs repeating at finer
+# eps. Both ran to t_final cleanly, 1428 steps each. Measured neck WIDTH:
+#
+#     t [min]      6     41    134    476    900
+#     axisym    20.7   27.3   34.2   45.7   53.1  um
+#     planar    20.1   24.6   28.6   40.8   48.4  um
+#     ratio     1.03   1.11   1.20   1.12   1.10
+#
+# Two things to take from it, one of which contradicts the prediction written
+# above:
+#
+#   * AXISYM GROWS FASTER, not slower -- by ~10-15%. The argument for planar
+#     being faster considered only the neck SINK (a 3D saddle, 1/r - 1/rho,
+#     partially cancels where planar has only -1/rho). It ignored the grain
+#     SOURCE, which is 2/R for a sphere against 1/R for a cylinder. The
+#     stronger source evidently wins here. The sign of this correction is a
+#     measurement, not a derivation, which is the whole reason for the pair.
+#
+#   * BOTH RUNS STAY BELOW THE NECK RESOLUTION FLOOR the whole time. That floor
+#     is w = 2R*sqrt(12 eps/R) = 54.9 um at eps = 0.8675 um, and the runs reach
+#     53.1 and 48.4 um. neck_width.py says so itself and skips its power-law
+#     fit. So the ~1.10-1.15 ratio is indicative, not quotable.
+#
+# Rerun at eps/4 (0.217 um, Nx = 2524) before quoting a number: that drops the
+# floor to ~27 um, which both trajectories clear before the halfway point.
+# Still a small run.
+#
 # SUBMITS THROUGH submit_batch.sh, NOT A LOOP OVER submit_enceladus.sh.
 # Each submit_enceladus.sh call runs `make clean && make all` inside the job,
 # so N of them race in the shared obj/. run_enceladus.sh:162-165 documents the
