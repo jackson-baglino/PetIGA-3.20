@@ -1,3 +1,33 @@
+## 2026-09-22 — Audit of unresolved_results; campaign handoff
+
+- Audited the nine 2025-09 `unresolved_results` runs. The code that produced
+  them printed no kinetics banner, so every kinetic number was recovered from
+  the `src/` copy each run stages.
+- Found the disqualifying bug: `beta_sub0 = 1.4e5` hardcoded at every
+  temperature makes the implied `alpha_c` rise 8.4x (0.057 -> 0.48) exactly as
+  `rho_vs` falls 8.0x. Their product — the sublimation flux — is constant to
+  4.2% across the 20 C sweep, so the sweep's "k_eff is temperature-independent"
+  result (+47.8% to +49.5%) is forced by construction. Against the anchored
+  Arrhenius the implied `alpha_c` is 4.2x high at -20 C and 476x at -40 C, with
+  the sign of the T-dependence reversed.
+- Also recorded: p=1/C=0 linear elements (confirmed from the exact sol file
+  size), h/eps = 2.00 vs the K&P rule 0.707, 4.6 elements across the 1%-99%
+  band, and dtmax set from the output cadence giving median dt 6.4x tau_sub.
+- What survives: mass (ice drift 0.007-0.062%, monotone in T), completion,
+  L/R_ave = 44.4, and the porosity sweep as a qualitative trend (single T,
+  single eps, single beta_sub0, so every bias is a common offset).
+- Corrected an error in the first pass of the audit: the alpha_c band is
+  1e-4..1e-1, not 1e-4..1e-3, so -20 and -25 C sit inside it. The 57-475x
+  figure is the ratio to the Arrhenius value at that temperature.
+- Decision: abandon the Arrhenius `alpha_c(T)`; use constant `alpha_c = 1e-3`
+  at every temperature. Confirmed this costs nothing in mesh — with
+  `--vn_feature` the K&P Eq.(45) bound equals `R_feat`, binding at every
+  `alpha_c`, so `eps = safety*R_feat` regardless.
+- Wrote `studies/keff_sintering/audit_unresolved/` (audit.py, plot_audit.py,
+  README, output, figure) and `studies/keff_sintering/NEXT_SESSION_PROMPT.md`
+  for the production-campaign session.
+
+---
 ## 2026-09-21 — Vector figure panels for the Molaro grain pair
 
 - Added `postprocess/manuscript_grainpair_figure.py`: builds the manuscript
