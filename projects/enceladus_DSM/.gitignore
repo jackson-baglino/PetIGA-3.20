@@ -56,6 +56,8 @@ studies/**/verification/raw*/*/
 # ...but the k_eff verification figures are documentation: the study README
 # embeds them, so they are tracked despite the blanket *.png rule above.
 !studies/**/verification/*.png
+# The disk-array companion ladder lives beside verification/, not in it.
+!studies/keff_sharp_limit/disk/*.png
 
 
 # Same reasoning for docs/figures: curated figures that a doc embeds, not
