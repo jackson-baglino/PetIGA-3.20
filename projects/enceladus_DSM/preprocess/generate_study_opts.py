@@ -43,6 +43,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -61,6 +62,26 @@ from comp_eps import (                                    # noqa: E402
 # right SHAPE as well as the right number: tau_sub carries both the eps and the
 # alpha_c dependence, which a flat default cannot.
 DTMAX_OVER_TAU = 1.09
+
+
+def _target_dofs_per_core(default: int = 100_000) -> int:
+    """TARGET_DOFS_PER_CORE from scripts/lib/alloc.sh, the single source of truth.
+
+    Parsed rather than imported because alloc.sh is shell. Falls back to the
+    default if the file or the assignment moves, so a refactor there degrades
+    this table's accuracy instead of breaking generation.
+    """
+    alloc = Path(__file__).resolve().parents[1] / "scripts" / "lib" / "alloc.sh"
+    try:
+        text = alloc.read_text()
+    except OSError:
+        return default
+    # Match the parameter-default assignment only. A loose search picks up the
+    # header's own usage example, `TARGET_DOFS_PER_CORE=80000 ./submit...`,
+    # which is a comment showing how to OVERRIDE the value -- not the value.
+    m = re.search(r'^\s*:\s*"\$\{TARGET_DOFS_PER_CORE:=(\d+)\}"',
+                  text, re.MULTILINE)
+    return int(m.group(1)) if m else default
 
 
 def tau_sub_of(eps: float, beta_sub0: float, d0_sub0: float) -> float:
@@ -116,10 +137,18 @@ def _eps_token(metres: float) -> str:
     micron: at R_ave = 2.5 um, eps = 0.045 um renders as "eps0.04um", which is
     both lossy and reads like a different value. eps is baked into the meaning
     of the file name, so it has to survive the formatting.
+
+    ROUND BEFORE CHOOSING THE UNIT. compute_eps returns safety*R_feat through a
+    chain of floating-point operations whose last bits depend on the
+    temperature, so the SAME 1 um came back as 1e-06 at -30/-10 C and
+    9.999999999999997e-07 at -40/-20 C. Branching on the raw value put one
+    physical eps into two units -- eps1.00um and eps1000nm -- and the name is
+    what every lookup in the run scripts matches on. The boundary is inclusive
+    so exactly 1 um keeps the nm spelling the committed geometry files use.
     """
-    um = metres * 1e6
-    if um < 1.0:
-        return f"eps{metres * 1e9:g}nm"
+    um = round(metres * 1e6, 9)
+    if um <= 1.0:
+        return f"eps{round(metres * 1e9, 6):g}nm"
     return f"eps{um:.2f}um" if um < 10 else f"eps{um:g}um"
 
 
@@ -397,9 +426,13 @@ def main(argv=None):
             p0["dtmax_note"] = (f"{args.dtmax_over_tau:g} * tau_sub "
                                 f"({tau:.4g} s); a BACKSTOP -- -dtCFL is the control")
         dof = 3 * p0["Nx"] * p0["Ny"]
-        # Keep in step with TARGET_DOFS_PER_CORE in scripts/lib/alloc.sh, which
-        # is what the submit scripts actually use (raised 50k -> 80k 2026-07-31).
-        cores = math.ceil(dof / 80000)
+        # Read TARGET_DOFS_PER_CORE out of scripts/lib/alloc.sh rather than
+        # restating it. The two drifted once already -- this table said 80000
+        # while alloc.sh had moved to 100000, so every core count printed here
+        # was 25% high (it advertised ~301 cores for the pilot, which ran on
+        # 241) and the cost estimates built on it were wrong by the same
+        # factor.
+        cores = math.ceil(dof / _target_dofs_per_core())
         total_cores += cores * len(packs)
         print(f"{T:>5g} {p0['eps']*1e6:>9.4f} {p0['Nx']:>6} {6*p0['eps']*1e6:>9.2f} "
               f"{dof:>12,} {cores:>7} {p0['binding']:>10} "
