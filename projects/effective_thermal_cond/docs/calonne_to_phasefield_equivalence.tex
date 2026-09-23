@@ -388,8 +388,9 @@ minimizer against the other's energy gives two inequalities which combine into
 Both sides are integrals over $\Band$ only. The left one uses only the corrector
 already computed, so \eqref{eq:sandwich} is an \emph{a posteriori} error bar, not
 an asymptotic claim. With the logistic profile
-$\varphi=\sigma(s/\varepsilon)$, $\sigma(u)=(1+e^{-u})^{-1}$, in the signed
-distance $s$ to $\Gam$, and $\int_0^\infty(1-\sigma)\,du=\ln2$,
+$\varphi=\ell(s/\varepsilon)$, $\ell(u)=(1+e^{-u})^{-1}$ (the logistic
+function, unrelated to the excesses $\Sigma$ of \S\ref{sec:excess}), in the signed
+distance $s$ to $\Gam$, and $\int_0^\infty(1-\ell)\,du=\ln2$,
 \begin{equation}
 \|\varphi-\chi\|_{L^1(\Om)}=2\ln\!2\;\varepsilon\,|\Gam|+\mathcal O(\varepsilon^2)
 \;\Longrightarrow\;
@@ -416,13 +417,13 @@ normal to it crosses them in series and sees an excess resistance:
 \end{equation}
 These two numbers are the only $\mathcal O(\varepsilon)$ data the band presents.
 Both are elementary for the logistic profile, whose defining property here is
-the antisymmetry $\sigma(-u)=1-\sigma(u)$.
+the antisymmetry $\ell(-u)=1-\ell(u)$.
 
 \paragraph{$\Sigma_t=0$, exactly.} $K$ is affine, so the integrand is
-$(K_1-K_2)[\sigma(u)-H(u)]$ with $H$ the unit step, and antisymmetry makes
-$\sigma-H$ an odd function:
+$(K_1-K_2)[\ell(u)-H(u)]$ with $H$ the unit step, and antisymmetry makes
+$\ell-H$ an odd function:
 \begin{equation}
-\Sigma_t=(K_1-K_2)\,\varepsilon\!\int_{-\infty}^{\infty}\!\big[\sigma(u)-H(u)\big]du=0 .
+\Sigma_t=(K_1-K_2)\,\varepsilon\!\int_{-\infty}^{\infty}\!\big[\ell(u)-H(u)\big]du=0 .
 \label{eq:sigmat}
 \end{equation}
 Not first order --- zero. The diffuse cell has \emph{exactly} the sharp cell's
@@ -431,7 +432,7 @@ The leading correction is $\mathcal O(\varepsilon^2\kappa)$ from interface
 curvature.
 
 \paragraph{$\Sigma_n\neq0$.} Here $1/K$ is convex in $\varphi$, so the band
-short-circuits a series resistance. With $p=\sigma(u)$, $du=dp/[p(1-p)]$ and
+short-circuits a series resistance. With $p=\ell(u)$, $du=dp/[p(1-p)]$ and
 partial fractions,
 \begin{equation}
 \Sigma_n=\varepsilon\!\int_0^1\!\left[\frac{1}{K_2+(K_1-K_2)p}-\frac{1}{K_\star}\right]\frac{dp}{p(1-p)}

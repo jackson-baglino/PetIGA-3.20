@@ -4,11 +4,15 @@
 %
 %  Companion to calonne_to_phasefield_equivalence.tex. Written to be lifted
 %  into a manuscript or thesis chapter: Sections 1-6 are the method, Section 7
-%  the verification, Section 8 the scope, Section 9 a drop-in Methods paragraph.
+%  the verification, Section 8 the scope, Section 9 related work, Section 10 a
+%  drop-in Methods paragraph.
 % ======================================================================
 
 \documentclass[11pt]{article}
 \usepackage{amsmath,amssymb,amsthm,booktabs}
+\usepackage{pgfplots}
+\usepgfplotslibrary{fillbetween}
+\pgfplotsset{compat=1.18}
 \usepackage[margin=1in]{geometry}
 
 \newtheorem{proposition}{Proposition}
@@ -63,11 +67,13 @@ and we choose it to cancel the first-order bias.
 Let $s$ be the signed distance to the interface $\Gam$ (the $\varphi=\tfrac12$
 level set), positive in ice, and let the profile be logistic,
 \begin{equation}
-\varphi=\sigma(s/\varepsilon),\qquad \sigma(u)=\frac{1}{1+e^{-u}},\qquad
-\sigma(-u)=1-\sigma(u).
+\varphi=\ell(s/\varepsilon),\qquad \ell(u)=\frac{1}{1+e^{-u}},\qquad
+\ell(-u)=1-\ell(u).
 \label{eq:profile}
 \end{equation}
-When $\varepsilon$ is small compared with the interface's radius of curvature
+where $\ell$ is the logistic function. It only describes the shape of the
+profile, and is unrelated to the excesses $\Sigma_t$, $\Sigma_n$ defined in
+\S3. When $\varepsilon$ is small compared with the interface's radius of curvature
 and with the spacing between interfaces, the band is locally a flat
 one-dimensional layer. Write the temperature gradient $\mathbf E=\nabla T$ and
 the flux $\mathbf q=\bK\mathbf E$. At leading order in the stretched coordinate
@@ -102,6 +108,17 @@ interface ($K_t=K_n=K$ for a scalar law). $\Sigma_t$ is an excess
 imperfect-interface (thin-interphase) limit of Hashin (2001) and Benveniste
 (2006).
 
+\emph{What the two numbers mean.} Take a patch of interface of unit area and
+follow a line straight through the band. Along the interface the sub-layers
+conduct side by side (in parallel), so the patch's conductance per unit length
+is $\int K_t\,ds$; a sharp interface would give $\int K_\star\,ds$. $\Sigma_t$ is
+the difference: the conductance the diffuse band adds, or removes if negative,
+compared with a sharp interface. Across the interface the sub-layers are stacked
+(in series), so what adds is resistance, $\int 1/K_n\,ds$, and $\Sigma_n$ is the
+resistance the band adds compared with a sharp interface. Both integrands vanish
+outside the band, so both integrals are finite. They are the conduction analogue
+of Gibbs surface excesses.
+
 \begin{proposition}\label{prop:bias}
 For a unit mean gradient along $\be$,
 \begin{equation}
@@ -131,39 +148,140 @@ closed form. A gradient along the layers has $q_n=0$, $|\mathbf E_t|=1$, and
 gives $\delta k_\parallel=\Sigma_t n_\Gam/L$.
 
 \section{Excesses of the scalar laws}
+\label{sec:excess-calc}
 
-Substituting \eqref{eq:profile}, $p=\sigma(u)$, $du=dp/[p(1-p)]$ and partial
-fractions gives closed forms (checked by quadrature):
+This section evaluates the two integrals \eqref{eq:excess} for a scalar law
+$K(\varphi)$, in four steps.
 
+\paragraph{Step 1: every excess is proportional to $\varepsilon$.} Across the
+band, the diffuse coefficient is $K(\ell(u))$ and the sharp one is $K(H(u))$,
+with $u=s/\varepsilon$ and $H$ the unit step ($H=1$ in ice, $0$ in air). This
+is Lemma~1 of the companion note: the sharp coefficient is the same law
+evaluated at the indicator. Changing variables $s=\varepsilon u$ in
+\eqref{eq:excess} gives
+\begin{equation}
+\Sigma_t=\varepsilon\int_{-\infty}^{\infty}\!\big[K(\ell(u))-K(H(u))\big]\,du,
+\qquad
+\Sigma_n=\varepsilon\int_{-\infty}^{\infty}\!\left[\frac{1}{K(\ell(u))}-\frac{1}{K(H(u))}\right]du .
+\label{eq:excess-u}
+\end{equation}
+The integrals are pure numbers set by $K_{\mathrm i}/K_{\mathrm a}$ alone. So each
+excess is $\varepsilon$ times a constant, and by \eqref{eq:bias} the bias in
+$\Keff$ is first order in $\varepsilon$ unless that constant is zero.
+
+\paragraph{Step 2: a quantity affine in $\varphi$ has zero excess.} Suppose the
+integrand is $f(\varphi)=\alpha+\beta\varphi$. Then
+$f(\ell(u))-f(H(u))=\beta\,[\ell(u)-H(u)]$, and $\ell-H$ is an \emph{odd}
+function. For $u>0$, $\ell(u)-H(u)=\ell(u)-1=-\ell(-u)$ by the antisymmetry in
+\eqref{eq:profile}, and $\ell(-u)-H(-u)=\ell(-u)$. So the positive lobe on the
+air side and the negative lobe on the ice side have equal area
+(Fig.~\ref{fig:lobes}), and
+\begin{equation}
+\int_{-\infty}^{\infty}\big[\ell(u)-H(u)\big]\,du=0
+\quad\Longrightarrow\quad
+\text{excess of }f=0 .
+\label{eq:odd}
+\end{equation}
+Physically, a diffuse band that is exactly antisymmetric about $\varphi=\tfrac12$
+adds as much ice on the air side as it removes on the ice side.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.62\textwidth,height=4.6cm,xmin=-6,xmax=6,ymin=-0.08,ymax=1.12,
+  axis lines=middle,xlabel={$u=s/\varepsilon$},ylabel={},xtick={-4,0,4},
+  ytick={0,0.5,1},samples=200,legend style={draw=none,at={(0.02,0.98)},anchor=north west,font=\small}]
+\addplot[name path=l,domain=-6:6,thick,blue]{1/(1+exp(-x))};
+\addlegendentry{$\ell(u)=\varphi$}
+\addplot[thick,black,dashed,domain=-6:0]{0};
+\addplot[thick,black,dashed,domain=0:6]{1};
+\addlegendentry{$H(u)$ (sharp)}
+\path[name path=zero] (axis cs:-6,0) -- (axis cs:0,0);
+\path[name path=one] (axis cs:0,1) -- (axis cs:6,1);
+\addplot[red!40,opacity=0.6] fill between[of=l and zero,soft clip={domain=-6:0}];
+\addplot[red!40,opacity=0.6] fill between[of=l and one,soft clip={domain=0:6}];
+\node[font=\small] at (axis cs:-2.4,0.22) {$+$};
+\node[font=\small] at (axis cs:2.4,0.78) {$-$};
+\end{axis}
+\end{tikzpicture}
+\caption{The profile $\ell(u)$ against the sharp step $H(u)$. The two shaded
+lobes, $\ell-H$ on either side of the interface, are mirror images with
+opposite sign, so any quantity affine in $\varphi$ has zero excess.}
+\label{fig:lobes}
+\end{figure}
+
+\noindent Apply this to the two laws.
+\begin{itemize}
+\item \emph{Arithmetic}, $K_{\mathrm{ar}}=K_{\mathrm a}+(K_{\mathrm i}-K_{\mathrm a})\varphi$, is affine,
+so $\Sigma_t=0$. But $1/K_{\mathrm{ar}}$ is not affine, so $\Sigma_n$ must be computed.
+\item \emph{Harmonic},
+$1/K_{\mathrm h}=\varphi/K_{\mathrm i}+(1-\varphi)/K_{\mathrm a}$, is affine,
+so $\Sigma_n=0$. But $K_{\mathrm h}$ is not affine, so $\Sigma_t$ must be
+computed.
+\end{itemize}
+
+\paragraph{Step 3: computing the nonzero excess.} Take $\Sigma_n$ for the
+arithmetic law; write $a=K_{\mathrm a}$, $b=K_{\mathrm i}$, $c=b-a$, so
+$K(p)=a+cp$. Substitute $p=\ell(u)$. Since $\ell'(u)=\ell(1-\ell)$,
+$du=dp/[p(1-p)]$, and $u\gtrless0$ becomes $p\gtrless\tfrac12$:
+\begin{equation}
+\frac{\Sigma_n}{\varepsilon}
+=\int_0^{1/2}\!\Big[\frac{1}{K(p)}-\frac1a\Big]\frac{dp}{p(1-p)}
++\int_{1/2}^{1}\!\Big[\frac{1}{K(p)}-\frac1b\Big]\frac{dp}{p(1-p)} .
+\end{equation}
+Each bracket vanishes at its own endpoint, which cancels one factor of the
+denominator:
+$\frac1{K}-\frac1a=-\frac{cp}{aK}$ and $\frac1K-\frac1b=\frac{c(1-p)}{bK}$. So
+\begin{equation}
+\frac{\Sigma_n}{\varepsilon}
+=-\frac{c}{a}\int_0^{1/2}\frac{dp}{K(p)\,(1-p)}
++\frac{c}{b}\int_{1/2}^{1}\frac{dp}{K(p)\,p} .
+\end{equation}
+Partial fractions,
+$\frac{1}{K(1-p)}=\frac1b\big[\frac{c}{K}+\frac{1}{1-p}\big]$ and
+$\frac{1}{Kp}=\frac1a\big[\frac1p-\frac{c}{K}\big]$, give elementary logarithms.
+With $K_m=K(\tfrac12)$,
+\begin{equation}
+\frac{\Sigma_n}{\varepsilon}
+=\frac{c}{ab}\Big[-\ln\frac{K_m}{a}-\ln2\;+\;\ln2-\ln\frac{b}{K_m}\Big]
+=-\frac{c}{ab}\ln\frac ba ,
+\end{equation}
+that is,
+\begin{equation}
+\Sigma_n^{\mathrm{ar}}=-\varepsilon\Big(\frac1{K_{\mathrm a}}-\frac1{K_{\mathrm i}}\Big)\ln\frac{K_{\mathrm i}}{K_{\mathrm a}} .
+\label{eq:Sn-ar}
+\end{equation}
+The harmonic law's $\Sigma_t$ is the same calculation with the roles of $K$ and
+$1/K$ exchanged (conductivity $\leftrightarrow$ resistivity), which gives
+\begin{equation}
+\Sigma_t^{\mathrm h}=-\varepsilon\,(K_{\mathrm i}-K_{\mathrm a})\ln\frac{K_{\mathrm i}}{K_{\mathrm a}} .
+\label{eq:St-h}
+\end{equation}
+Both were checked against direct quadrature of \eqref{eq:excess-u}.
+
+\paragraph{Step 4: summary and meaning.}
 \begin{center}
 \begin{tabular}{@{}lcc@{}}
 \toprule
-law & $\Sigma_t$ (excess conductance) & $\Sigma_n$ (excess resistance)\\
+law & $\Sigma_t$ (along) & $\Sigma_n$ (across)\\
 \midrule
-arithmetic, $\Kar=\Ka+(\Ki-\Ka)\varphi$
- & $0$
- & $-\varepsilon\,(\Ka^{-1}-\Ki^{-1})\ln(\Ki/\Ka)$\\[3pt]
-harmonic, $\Kh^{-1}=\varphi/\Ki+(1-\varphi)/\Ka$
- & $-\varepsilon\,(\Ki-\Ka)\ln(\Ki/\Ka)$
- & $0$\\
+arithmetic & $0$ & $-\varepsilon\,(K_{\mathrm a}^{-1}-K_{\mathrm i}^{-1})\ln(K_{\mathrm i}/K_{\mathrm a})$\\
+harmonic & $-\varepsilon\,(K_{\mathrm i}-K_{\mathrm a})\ln(K_{\mathrm i}/K_{\mathrm a})$ & $0$\\
 \bottomrule
 \end{tabular}
 \end{center}
-
-\noindent The zeros have one cause. If a quantity is \emph{affine} in
-$\varphi$, its excess is $(\text{jump})\cdot\varepsilon\int[\sigma(u)-H(u)]\,du$,
-and the integrand is odd by the antisymmetry in \eqref{eq:profile}, so the
-integral vanishes. $\Kar$ is affine, so $\Sigma_t=0$; $\Kh^{-1}$ is affine, so
-$\Sigma_n=0$. The nonzero entries come from the \emph{other} quantity, which is
-not affine: $1/\Kar$ and $\Kh$ are both convex in $\varphi$, so each lies
-below the chord joining its end values, and both excesses are negative.
-
-Physically, the arithmetic law short-circuits the series resistance, so the cell
-conducts too well across interfaces. The harmonic law blocks the parallel path,
-so it conducts too poorly along them. At $\Ki/\Ka=114.5$ the two nonzero
+Both nonzero entries are negative. For the arithmetic law that is a
+\emph{missing resistance} across the interface. Put into \eqref{eq:bias} with
+its minus sign, it makes the cell conduct too well across interfaces. For the
+harmonic law it is a \emph{missing conductance} along the interface, so the cell
+conducts too poorly along them. At $K_{\mathrm i}/K_{\mathrm a}=114.5$ the
 constants are $234.96\,\varepsilon$~m\,K\,W$^{-1}$ and
-$10.76\,\varepsilon$~W\,m$^{-1}$K$^{-1}$. No scalar law can null both, because
-that would require $K$ and $1/K$ to be affine in $\varphi$ at once.
+$10.76\,\varepsilon$~W\,m$^{-1}$K$^{-1}$.
+
+No scalar law can make both entries zero: by Step~2 that would need $K$ and
+$1/K$ to be affine in $\varphi$ at the same time, and only a constant is. A
+direction-dependent (tensor) coefficient can, since it only needs $K$ affine
+along the interface and $1/K$ affine across it. That is the next section.
 
 \section{The tensor law}
 
@@ -182,6 +300,15 @@ Then $K_t=\Kar$ and $K_n=\Kh$ in \eqref{eq:excess}, so
 \Keff^{\varepsilon}-\Keff^{\star}=O(\varepsilon^2).
 \label{eq:second}
 \end{equation}
+
+\paragraph{Interpretation: a microscopic laminate.} \eqref{eq:tensor} is not an
+ad hoc blend. It is the exact effective conductivity of a finely layered
+mixture of ice and air, with ice fraction $\varphi$, whose layers lie parallel
+to the interface (layer normal $\bn$). For such a laminate, conduction along the
+layers is the arithmetic mean and conduction across them is the harmonic mean
+(Wiener's bounds; Milton 2002, ch.~9). The tensor law therefore models each
+point of the band as a laminate oriented with the interface, which is what the
+band locally is.
 
 \paragraph{Properties.}
 \begin{enumerate}
@@ -319,6 +446,39 @@ evolution changes it only at the next order.
 homogenizing a given $\varphi$. It does not correct errors in $\varphi$ itself.
 \end{itemize}
 
+\section{Related work}
+
+The ingredients are established; their combination for this cell problem, with
+the closed-form excesses, is what this note adds.
+\begin{itemize}
+\item \emph{Laminates and mixing bounds.} Arithmetic along and harmonic across
+layers is Wiener's classical result. Milton (2002) and Torquato (2002) are the
+standard texts on homogenization, laminates and bounds on $\Keff$.
+\item \emph{Thin interphases as imperfect interfaces.} A thin layer replaced by
+a sharp interface with jump conditions, to first order in its thickness, is
+developed for conduction by Hashin (2001) and in general form by Benveniste
+(2006). Eq.~\eqref{eq:bias} is the effective-property consequence of that
+replacement.
+\item \emph{Excess quantities in thin-interface phase-field analysis.} Karma \&
+Rappel (1998), Almgren (1999), McFadden, Wheeler \& Anderson (2000) and Elder
+et al.\ (2001) show that $O(\varepsilon)$ errors of diffuse-interface models are
+integrals of the form \eqref{eq:excess}, and that interpolation functions can be
+chosen to make them vanish. McFadden et al.\ treat unequal conductivities in
+particular.
+\item \emph{Tensor (rank-one) interpolation in phase-field models.} The closest
+analogue is in phase-field elasticity. Durga, Wollants \& Moelans (2013) show
+that Voigt and Reuss interpolation of stiffness create interfacial excess
+energies. Mosler, Shchyglo \& Montazer Hojjat (2014) and Schneider et al.\
+(2015) remove them by interpolating differently along and across $\bn$, so the
+mechanical jump conditions hold inside the band. That is continuous normal
+traction and tangential strain, the elastic counterparts of continuous $q_n$
+and $\mathbf E_t$ here.
+\item \emph{Diffuse-domain methods.} Li et al.\ (2009) and Lervåg \& Lowengrub
+(2015) analyse elliptic problems posed with a smoothed indicator and show, by
+matched asymptotics, which formulations are first- or second-order accurate in
+$\varepsilon$.
+\end{itemize}
+
 \section{Suggested Methods text}
 
 \begin{quote}\small
@@ -346,27 +506,51 @@ closed-form sharp solutions for a laminate and for a square array of disks
 
 \section*{References}
 {\small
-\noindent Almgren, R.\ F.\ (1999). Second-order phase field asymptotics for
+\noindent\emph{Please verify bibliographic details before citing; they were
+compiled from memory.}\\[4pt]
+Almgren, R.\ F.\ (1999). Second-order phase field asymptotics for
 unequal conductivities. \emph{SIAM J.\ Appl.\ Math.} 59, 2086--2107.\\
 Benveniste, Y.\ (2006). A general interface model for a three-dimensional
 curved thin anisotropic interphase between two anisotropic media. \emph{J.\
 Mech.\ Phys.\ Solids} 54, 708--734.\\
+Durga, A., Wollants, P., \& Moelans, N.\ (2013). Evaluation of interfacial
+excess contributions in different phase-field models for elastically
+inhomogeneous systems. \emph{Modelling Simul.\ Mater.\ Sci.\ Eng.} 21, 055018.\\
+Elder, K.\ R., Grant, M., Provatas, N., \& Kosterlitz, J.\ M.\ (2001). Sharp
+interface limits of phase-field models. \emph{Phys.\ Rev.\ E} 64, 021604.\\
 Calonne, N., Flin, F., Morin, S., Lesaffre, B., Rolland du Roscoat, S., \&
 Geindreau, C.\ (2011). Numerical and experimental investigations of the
 effective thermal conductivity of snow. \emph{Geophys.\ Res.\ Lett.} 38,
 L23501.\\
 Hashin, Z.\ (2001). Thin interphase/imperfect interface in conduction.
 \emph{J.\ Appl.\ Phys.} 89, 2261--2267.\\
+Lervåg, K.\ Y., \& Lowengrub, J.\ (2015). Analysis of the diffuse-domain
+method for solving PDEs in complex geometries. \emph{Commun.\ Math.\ Sci.} 13,
+1473--1500.\\
+Li, X., Lowengrub, J., Rätz, A., \& Voigt, A.\ (2009). Solving PDEs in complex
+geometries: a diffuse domain approach. \emph{Commun.\ Math.\ Sci.} 7, 81--107.\\
 Kaempfer, T.\ U., \& Plapp, M.\ (2009). Phase-field modeling of dry snow
 metamorphism. \emph{Phys.\ Rev.\ E} 79, 031502.\\
 Karma, A., \& Rappel, W.-J.\ (1998). Quantitative phase-field modeling of
 dendritic growth in two and three dimensions. \emph{Phys.\ Rev.\ E} 57,
 4323--4349.\\
+McFadden, G.\ B., Wheeler, A.\ A., \& Anderson, D.\ M.\ (2000). Thin
+interface asymptotics for an energy/entropy approach to phase-field models with
+unequal conductivities. \emph{Physica D} 144, 154--168.\\
+Milton, G.\ W.\ (2002). \emph{The Theory of Composites}. Cambridge University
+Press.\\
+Mosler, J., Shchyglo, O., \& Montazer Hojjat, H.\ (2014). A novel
+homogenization method for phase field approaches based on partial rank-one
+relaxation. \emph{J.\ Mech.\ Phys.\ Solids} 68, 251--266.\\
 Perrins, W.\ T., McKenzie, D.\ R., \& McPhedran, R.\ C.\ (1979). Transport
 properties of regular arrays of cylinders. \emph{Proc.\ R.\ Soc.\ Lond.\ A}
 369, 207--225.\\
 Rayleigh, Lord (1892). On the influence of obstacles arranged in rectangular
-order upon the properties of a medium. \emph{Phil.\ Mag.} 34, 481--502.
+order upon the properties of a medium. \emph{Phil.\ Mag.} 34, 481--502.\\
+Schneider, D., Tschukin, O., Choudhury, A., Selzer, M., Böhlke, T., \&
+Nestler, B.\ (2015). Phase-field elasticity model based on mechanical jump
+conditions. \emph{Comput.\ Mech.} 55, 887--901.\\
+Torquato, S.\ (2002). \emph{Random Heterogeneous Materials}. Springer.
 }
 
 \end{document}
