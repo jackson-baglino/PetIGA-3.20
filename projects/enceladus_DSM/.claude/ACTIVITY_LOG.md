@@ -1,3 +1,16 @@
+## 2026-09-23 — k_eff writeups rebuilt on the diffuse-interface PDE; ladders final
+
+- Both ladders rerun on the fixed IC: planar slab exact (phi_bar = 0.5 to
+  1e-11, tensor k_perp to 4e-7); disk tensor error 1.21 -> 0.006% at order
+  ~2.5, phi_bar = exact diffuse value to 3e-10.
+- tensor_conductivity_law.tex rewritten self-contained: sharp Calonne problem
+  -> glued weak form -> diffuse (chi -> phi) -> first-order matched expansion
+  -> tensor law. No layer/laminate framing (user requirement). References
+  trimmed to closely related work, DOIs verified via Crossref.
+  calonne_to_phasefield_equivalence.tex brought in line.
+
+---
+
 ## 2026-09-23 — Fix periodic IC stretch; equivalence note made steady-state only
 
 - Fixed `FillIC1D`/`FillIC2D`: on a periodic axis the index->coordinate
