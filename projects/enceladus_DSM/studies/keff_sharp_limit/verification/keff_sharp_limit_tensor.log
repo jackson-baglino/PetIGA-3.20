@@ -19,11 +19,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -31,7 +31,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/iceslab/iceslab_2D_L1mm_eps20um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 2.00000000e-05 -Nx 256 -Ny 256 -keff_ksp_type cg -keff_pc_type gamg
@@ -49,7 +49,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: tensor (arith along, harmonic across)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50/k_eff_tensor.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50/k_eff_tensor.csv
   ===============================================================================
 
 
@@ -126,11 +126,11 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 Setting up initial conditions... 
 IC type: ice_slab
 --- INITIAL CONDITIONS (2D Ice Slab: ice on [0, Ly/2], air above, periodic in y: interfaces at Ly/2 AND the y=0 seam) ---
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500189   k_iso = 5.975492e-01 W/m/K   (116 its, 3.98 s)
-         k = [ 1.155429928e+00  1.457336893e-16 ]
-             [ -8.948231450e-18  3.966846074e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500000   k_iso = 5.973264e-01 W/m/K   (112 its, 3.92 s)
+         k = [ 1.154999087e+00  3.981941328e-09 ]
+             [ 3.981941099e-09  3.965369560e-02 ]
 Solution completed. 
-Setup time 4.433466e+00 sec  =  0.07 min 
+Setup time 4.375243e+00 sec  =  0.07 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -143,11 +143,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -155,30 +155,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.30_snow_T-20_h1.00_1d_sharplimit_tensor_L50/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.42_snow_T-20_h1.00_1d_sharplimit_tensor_L50/plots
 =========================================================================
 
 
@@ -202,11 +202,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -214,7 +214,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/iceslab/iceslab_2D_L1mm_eps20um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 1.56250000e-05 -Nx 328 -Ny 328 -keff_ksp_type cg -keff_pc_type gamg
@@ -232,7 +232,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: tensor (arith along, harmonic across)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64/k_eff_tensor.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64/k_eff_tensor.csv
   ===============================================================================
 
 
@@ -309,11 +309,11 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 Setting up initial conditions... 
 IC type: ice_slab
 --- INITIAL CONDITIONS (2D Ice Slab: ice on [0, Ly/2], air above, periodic in y: interfaces at Ly/2 AND the y=0 seam) ---
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500148   k_iso = 5.975004e-01 W/m/K   (123 its, 6.24 s)
-         k = [ 1.155335513e+00  -3.242466239e-16 ]
-             [ -8.414563431e-18  3.966521377e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500000   k_iso = 5.973268e-01 W/m/K   (119 its, 6.33 s)
+         k = [ 1.154999993e+00  -8.534742813e-11 ]
+             [ -8.534751467e-11  3.965368102e-02 ]
 Solution completed. 
-Setup time 6.944171e+00 sec  =  0.12 min 
+Setup time 7.033244e+00 sec  =  0.12 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -326,11 +326,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -338,30 +338,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.35_snow_T-20_h1.00_1d_sharplimit_tensor_L64/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.47_snow_T-20_h1.00_1d_sharplimit_tensor_L64/plots
 =========================================================================
 
 
@@ -385,11 +385,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -397,7 +397,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/iceslab/iceslab_2D_L1mm_eps20um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 7.81250000e-06 -Nx 656 -Ny 656 -keff_ksp_type cg -keff_pc_type gamg
@@ -415,7 +415,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: tensor (arith along, harmonic across)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128/k_eff_tensor.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128/k_eff_tensor.csv
   ===============================================================================
 
 
@@ -492,11 +492,11 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 Setting up initial conditions... 
 IC type: ice_slab
 --- INITIAL CONDITIONS (2D Ice Slab: ice on [0, Ly/2], air above, periodic in y: interfaces at Ly/2 AND the y=0 seam) ---
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500074   k_iso = 5.974137e-01 W/m/K   (129 its, 22.86 s)
-         k = [ 1.155168010e+00  -7.531451660e-17 ]
-             [ -6.992855038e-19  3.965945461e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500000   k_iso = 5.973268e-01 W/m/K   (130 its, 22.94 s)
+         k = [ 1.155000000e+00  -4.304273139e-17 ]
+             [ 1.303255194e-17  3.965368001e-02 ]
 Solution completed. 
-Setup time 2.551830e+01 sec  =  0.43 min 
+Setup time 2.559313e+01 sec  =  0.43 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -509,11 +509,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -521,30 +521,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.25.42_snow_T-20_h1.00_1d_sharplimit_tensor_L128/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.15.54_snow_T-20_h1.00_1d_sharplimit_tensor_L128/plots
 =========================================================================
 
 
@@ -568,11 +568,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -580,7 +580,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/iceslab/iceslab_2D_L1mm_eps20um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 3.90625000e-06 -Nx 1312 -Ny 1312 -keff_ksp_type cg -keff_pc_type gamg
@@ -598,7 +598,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: tensor (arith along, harmonic across)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256/k_eff_tensor.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256/k_eff_tensor.csv
   ===============================================================================
 
 
@@ -675,11 +675,11 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 Setting up initial conditions... 
 IC type: ice_slab
 --- INITIAL CONDITIONS (2D Ice Slab: ice on [0, Ly/2], air above, periodic in y: interfaces at Ly/2 AND the y=0 seam) ---
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500037   k_iso = 5.973703e-01 W/m/K   (141 its, 87.95 s)
-         k = [ 1.155084069e+00  -3.164105816e-15 ]
-             [ -1.117507175e-16  3.965656911e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500000   k_iso = 5.973268e-01 W/m/K   (141 its, 87.98 s)
+         k = [ 1.155000000e+00  -2.838762979e-15 ]
+             [ -1.048442136e-16  3.965367983e-02 ]
 Solution completed. 
-Setup time 9.841395e+01 sec  =  1.64 min 
+Setup time 9.840532e+01 sec  =  1.64 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -692,11 +692,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -704,30 +704,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.26.08_snow_T-20_h1.00_1d_sharplimit_tensor_L256/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.16.20_snow_T-20_h1.00_1d_sharplimit_tensor_L256/plots
 =========================================================================
 
 
@@ -751,11 +751,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -763,7 +763,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/iceslab/iceslab_2D_L1mm_eps20um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 1.95312500e-06 -Nx 2622 -Ny 2622 -keff_ksp_type cg -keff_pc_type gamg
@@ -781,7 +781,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: tensor (arith along, harmonic across)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512/k_eff_tensor.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512/k_eff_tensor.csv
   ===============================================================================
 
 
@@ -858,11 +858,11 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
 Setting up initial conditions... 
 IC type: ice_slab
 --- INITIAL CONDITIONS (2D Ice Slab: ice on [0, Ly/2], air above, periodic in y: interfaces at Ly/2 AND the y=0 seam) ---
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500019   k_iso = 5.973486e-01 W/m/K   (140 its, 347.67 s)
-         k = [ 1.155042114e+00  1.868513311e-15 ]
-             [ -3.011285363e-16  3.965512706e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.500000   k_iso = 5.973268e-01 W/m/K   (140 its, 347.11 s)
+         k = [ 1.155000000e+00  1.357713546e-15 ]
+             [ -3.281751488e-16  3.965367974e-02 ]
 Solution completed. 
-Setup time 3.893693e+02 sec  =  6.49 min 
+Setup time 3.889600e+02 sec  =  6.48 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -875,11 +875,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -887,29 +887,29 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-22__17.27.47_snow_T-20_h1.00_1d_sharplimit_tensor_L512/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/iceslab_2D_L1mm_eps20um_keff/2026-09-23__10.17.59_snow_T-20_h1.00_1d_sharplimit_tensor_L512/plots
 =========================================================================
 

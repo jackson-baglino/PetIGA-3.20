@@ -37,6 +37,37 @@
 diffuse-interface bias from homogenized $\Keff$}
 \end{center}
 
+\begin{abstract}
+\noindent We compute the effective thermal conductivity $\Keff$ of evolving snow
+microstructures by solving the steady-state homogenization cell problem of
+Calonne et al.\ (2011) directly on the phase field, where the ice--air
+interface is a diffuse band a few $\varepsilon$ wide rather than a sharp
+surface. Inside that band the conductivity must be interpolated, and the
+standard arithmetic mixture law lets the band's sub-layers conduct in parallel
+in every direction, although across the interface they are stacked in series;
+the band therefore short-circuits the interface's thermal resistance, with an
+error proportional to $\varepsilon$. At $K_{\mathrm i}/K_{\mathrm a}\approx115$
+this error is large: in the worst case, heat flowing across a layered cell with
+$\varepsilon=L/50$, the computed conductivity is
+$0.063$~W\,m$^{-1}$K$^{-1}$ where the exact value for the same geometry is
+$0.040$, $59\%$ too high only because the interface has a numerical width. And
+since the error scales with $\varepsilon$ times the interface area per unit
+volume, it changes as sintering reduces that area, so it distorts the time
+trend of $\Keff$, not just its level. We fix it by giving the band a tensor
+conductivity, arithmetic along the interface and harmonic across it. This is
+the exact conductivity of a fine ice--air laminate lying parallel to the
+interface, and it enforces inside the band the same two conditions a sharp
+interface imposes (temperature continuous along it, heat flux continuous
+through it), so it cancels both first-order error terms with no fitted
+parameter, while leaving the bulk phases, the sharp limit and the metamorphism
+model untouched. Against closed-form sharp solutions it reproduces a laminate's
+conductivity to $4\times10^{-7}$ at every interface width tested, where the
+arithmetic law is $3.8$--$59\%$ high, and a disk array's to $0.03\%$ at
+$\varepsilon=L/800$ with the error falling at second order in $\varepsilon$,
+while the arithmetic law's measured error matches our first-order prediction to
+within $1\%$.
+\end{abstract}
+
 \section{The problem}
 
 The effective conductivity of a periodic ice/air cell is obtained from the

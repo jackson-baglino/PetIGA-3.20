@@ -136,8 +136,8 @@ slab is divided out, leaving only the cell solver under test. Until 2026-09-23
 that error was 4e−4 at `Nx = Ny = 256`, and it was *not* spline error, as this
 README used to say. `IC_COORD_UNIFORM` stretched periodic ICs by `(N+1)/N`, and
 `φ̄ − ½ = 0.0485/N` held exactly across the whole ladder (a spline error would
-scale as `1/N²`). That is fixed in `FillIC1D`/`FillIC2D`; the remaining offset
-should be at the spline level.
+scale as `1/N²`). That is fixed in `FillIC1D`/`FillIC2D`. After the fix the
+measured `φ̄` is 0.5 to 1e−11 at every rung.
 
 ## Files
 
@@ -175,10 +175,12 @@ law; `sharp` evaluates `K(H(φ−½))` on the same mesh as a cross-check). On th
 writes `keff_sharp_limit_tensor.{csv,log,png}` and gates the fitted slope at 5%
 of the arithmetic one.
 
-**Result (2026-09-23, all gates pass).** Across `eps = L/50 … L/512` the tensor
-law's `k_11` matches the sharp harmonic mean at the measured `φ̄` to
-≤ 4e−7 relative at every rung, where the arithmetic law is 59% → 3.8% high. The
-fitted `1/k_11` slope is 0.10% of the arithmetic one.
+**Result (2026-09-23, after the IC fix, all gates pass).** Across
+`eps = L/50 … L/512` the tensor law's `k_11` matches the sharp harmonic mean to
+≤ 4e−7 relative at every rung, where the arithmetic law is 59% → 3.8% high, and
+`k_00` matches the arithmetic mean to ≤ 8e−7. The fitted `1/k_11` slope is
+1e−6 of the arithmetic one (it was 0.10% before the IC fix, when `φ̄` drifted
+with `N`).
 
 The laminate cannot exercise the tensor's off-diagonal terms (its normal is
 exactly `ŷ`). The curved-interface test that does is
