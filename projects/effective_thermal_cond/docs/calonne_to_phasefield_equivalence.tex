@@ -10,6 +10,7 @@
 \usepackage{amsmath,amssymb,amsthm,booktabs,listings}
 \lstset{language=C,basicstyle=\small\ttfamily,columns=fullflexible,frame=single}
 \usepackage[margin=1in]{geometry}
+\emergencystretch=3em
 
 \newtheorem{lemma}{Lemma}
 \newtheorem{proposition}{Proposition}
@@ -405,19 +406,32 @@ a non-affine $K$, where \eqref{eq:dK} becomes an inequality.)
 \section{The first-order error is a surface excess}
 \label{sec:excess}
 
-To first order a thin graded layer is equivalent to a sharp interface carrying
-two \emph{surface excesses} per unit area. Transport tangential to $\Gam$ crosses
-the layer's sublayers in parallel and sees an excess conductance; transport
-normal to it crosses them in series and sees an excess resistance:
+A matched asymptotic expansion of the diffuse equation \eqref{eq:B} across the
+transition, in the stretched normal coordinate $u=s/\varepsilon$, shows what the
+band does to the solution. (The expansion is written out in the companion
+writeup \verb|tensor_conductivity_law.tex|, \S4.) At leading order, the
+equation forces the temperature, and hence its tangential gradient
+$\mathbf E_t$, to be constant across the transition, and the normal flux $q_n$
+to be constant as well: exactly the quantities the sharp interface conditions
+keep continuous. Integrating the next order across the transition shows that,
+to first order in $\varepsilon$, the diffuse problem is the sharp problem with
+its interface conditions replaced by
+$\jump{T}=\Sigma_n q_n$ and $\jump{q_n}=-\nabla_\Gam\!\cdot(\Sigma_t\nabla_\Gam T)$.
+Here $q_n$ is taken along the normal pointing from phase 2 into phase 1, the
+opposite of $\bn$ in \S1, and $K_\star$ is the sharp step ($K_1$ on the phase-1
+side, $K_2$ on the phase-2 side). The excesses are
 \begin{equation}
 \Sigma_t=\int_{-\infty}^{\infty}\!\big[K(\varphi)-K_\star\big]ds,
 \qquad
 \Sigma_n=\int_{-\infty}^{\infty}\!\left[\frac{1}{K(\varphi)}-\frac{1}{K_\star}\right]ds.
 \label{eq:excess}
 \end{equation}
-These two numbers are the only $\mathcal O(\varepsilon)$ data the band presents.
-Both are elementary for the logistic profile, whose defining property here is
-the antisymmetry $\ell(-u)=1-\ell(u)$.
+Along $\Gam$ the gradient $\mathbf E_t$ is fixed, so the transition's error is
+its excess conductance $\Sigma_t$. Across $\Gam$ the flux $q_n$ is fixed, so the
+error is its excess resistance $\Sigma_n$. These two numbers are the only
+$\mathcal O(\varepsilon)$ data the transition presents. Both are elementary for
+the logistic profile, whose defining property here is the antisymmetry
+$\ell(-u)=1-\ell(u)$.
 
 \paragraph{$\Sigma_t=0$, exactly.} $K$ is affine, so the integrand is
 $(K_1-K_2)[\ell(u)-H(u)]$ with $H$ the unit step, and antisymmetry makes
@@ -427,26 +441,28 @@ $\ell-H$ an odd function:
 \label{eq:sigmat}
 \end{equation}
 Not first order --- zero. The diffuse cell has \emph{exactly} the sharp cell's
-phase fraction, so the parallel response carries no error at any $\varepsilon$.
+phase fraction, so the response along $\Gam$ carries no first-order error.
 The leading correction is $\mathcal O(\varepsilon^2\kappa)$ from interface
 curvature.
 
-\paragraph{$\Sigma_n\neq0$.} Here $1/K$ is convex in $\varphi$, so the band
-short-circuits a series resistance. With $p=\ell(u)$, $du=dp/[p(1-p)]$ and
-partial fractions,
+\paragraph{$\Sigma_n\neq0$.} Here $1/K$ is convex in $\varphi$, so inside the
+transition the arithmetic law underestimates the resistivity that heat crossing
+$\Gam$ has to overcome. With $p=\ell(u)$, $du=dp/[p(1-p)]$ and partial
+fractions,
 \begin{equation}
 \Sigma_n=\varepsilon\!\int_0^1\!\left[\frac{1}{K_2+(K_1-K_2)p}-\frac{1}{K_\star}\right]\frac{dp}{p(1-p)}
 =-\,\varepsilon\left(\frac{1}{K_2}-\frac{1}{K_1}\right)\ln\frac{K_1}{K_2}\;<\;0 .
 \label{eq:sigman}
 \end{equation}
 Negative excess resistance: the diffuse cell conducts too well normal to $\Gam$,
-first order in $\varepsilon$, with no free constants. This is the quantitative
-form of the familiar statement that an arithmetic mixture rule is right in
-parallel and wrong in series.
+first order in $\varepsilon$, with no free constants.
 
 \begin{corollary}[An interpolation with no first-order bias]
 \label{cor:tensor}
-The harmonic law $K_{\mathrm h}(\varphi)=\big(\varphi/K_1+(1-\varphi)/K_2\big)^{-1}$
+Along $\Gam$ the conductivity must average correctly at fixed $\mathbf E_t$, so
+$\Sigma_t=0$ needs $K$ affine in $\varphi$. Across $\Gam$ the resistivity must
+average correctly at fixed $q_n$, so $\Sigma_n=0$ needs $1/K$ affine. The
+harmonic law $K_{\mathrm h}(\varphi)=\big(\varphi/K_1+(1-\varphi)/K_2\big)^{-1}$
 has $1/K_{\mathrm h}$ affine in $\varphi$, so the same antisymmetry gives
 $\Sigma_n=0$ --- but then $\Sigma_t\neq0$. No scalar law nulls both. The
 tensorial law
@@ -467,23 +483,27 @@ frozen $\varphi$: its interpolation is independent of any other model, and
 choosing it does not bear on one. \S\ref{sec:steady} applies it to the
 cell problem.
 
-\section{Worked example and test: the laminate}
-\label{sec:laminate}
+\section{Worked example and test: the planar slab}
+\label{sec:slab}
 
-For layers of period $L$ with phase fraction $\bar\varphi$ and $n_\Gam$
-interfaces per period, $\Keff$ is diagonal with $k_\parallel=\avg{K}$ and
-$k_\perp=\avg{K^{-1}}^{-1}$. Equations \eqref{eq:sigmat}--\eqref{eq:sigman} give
+Take an ice slab with flat faces, ice fraction $\bar\varphi$ and $n_\Gam$ faces
+per period $L$, so that $\varphi$ depends on $y$ only. The diffuse cell problem
+\eqref{eq:B} is then one-dimensional and has an exact solution for every
+$\varepsilon$. For a gradient along the faces the corrector is zero, and
+$k_\parallel=\avg{K}$. For a gradient across them the flux $K(t'+1)$ is constant
+and $\avg{t'}=0$, so $k_\perp=\avg{K^{-1}}^{-1}$. Equations
+\eqref{eq:sigmat}--\eqref{eq:sigman} then give
 \begin{align}
 k_\parallel(\varepsilon)&=K_2+(K_1-K_2)\bar\varphi
 &&\text{exact for every }\varepsilon,
-\label{eq:lampar}\\
+\label{eq:slabpar}\\
 \avg{K^{-1}}_\varepsilon&=\frac{\bar\varphi}{K_1}+\frac{1-\bar\varphi}{K_2}
 -\frac{n_\Gam\varepsilon}{L}\left(\frac{1}{K_2}-\frac{1}{K_1}\right)\ln\frac{K_1}{K_2},
 &&k_\perp=\avg{K^{-1}}_\varepsilon^{-1}.
-\label{eq:lamperp}
+\label{eq:slabperp}
 \end{align}
-Equation \eqref{eq:lamperp} is not a truncation: its only error is tail overlap
-between neighbouring interfaces, $\mathcal O(e^{-L/4\varepsilon})$, which against
+Equation \eqref{eq:slabperp} is not a truncation: its only error is tail overlap
+between neighbouring faces, $\mathcal O(e^{-L/4\varepsilon})$, which against
 direct quadrature is $5\times10^{-5}$ relative at $\varepsilon=L/50$ and machine
 precision by $\varepsilon=L/128$.
 
@@ -504,7 +524,7 @@ sharp   & 25.2183 & 0.039654 & --- \\
 \end{tabular}
 \end{center}
 
-\paragraph{How to test it.} Equation \eqref{eq:lamperp} is \emph{linear in
+\paragraph{How to test it.} Equation \eqref{eq:slabperp} is \emph{linear in
 $\varepsilon$ in resistivity} and a hyperbola in conductivity. Fit and plot
 $1/k_\perp$ against $\varepsilon$; then the test has two predicted numbers and no
 fitted ones,
@@ -592,19 +612,19 @@ all directions, and conjugate gradients with algebraic multigrid apply as in the
 scalar case. $\mathbf K$ is evaluated at each quadrature point from $\varphi$
 and $\nabla\varphi$ there.
 
-\paragraph{Worked example: the laminate.} Here $\bn=\pm\be_y$ everywhere, so
+\paragraph{Worked example: the planar slab.} Here $\bn=\pm\be_y$ everywhere, so
 $\mathbf K=\mathrm{diag}\big(K(\varphi),K_{\mathrm h}(\varphi)\big)$ and
-\eqref{eq:steady-strong} decouples. Along the layers the corrector is zero and
+\eqref{eq:steady-strong} decouples. Along the faces the corrector is zero and
 $k_\parallel=\avg{K(\varphi)}$. Across them the flux is constant, so
 $k_\perp=\avg{1/K_{\mathrm h}(\varphi)}^{-1}$. Both averages are of functions
 affine in $\varphi$, so both equal the sharp values at every $\varepsilon$
 (up to the $\mathcal O(e^{-L/4\varepsilon})$ tail overlap of
-\S\ref{sec:laminate}):
+\S\ref{sec:slab}):
 \begin{equation}
 k_\parallel=K_2+(K_1-K_2)\bar\varphi,\qquad
 k_\perp=\Big(\frac{\bar\varphi}{K_1}+\frac{1-\bar\varphi}{K_2}\Big)^{-1}.
 \end{equation}
-Compare \eqref{eq:lamperp}: the $\varepsilon$ term is gone. Measured, the
+Compare \eqref{eq:slabperp}: the $\varepsilon$ term is gone. Measured, the
 tensor law reproduces $k_\perp$ to $4\times10^{-7}$ from $\varepsilon=L/50$ to
 $L/512$, where the scalar law is $59\%$ to $3.8\%$ high. The derivation of
 \eqref{eq:tensorK} and a curved-interface test (a disk array against Rayleigh's
@@ -664,7 +684,7 @@ laws \verb|KeffPointCond| returns $K\bI$, and the three routines reduce exactly
 to the scalar assembly.
 
 \paragraph{Verification drivers.}
-\verb|studies/keff_sharp_limit/verification/| (laminate, \verb|--interp|) and
+\verb|studies/keff_sharp_limit/verification/| (planar slab, \verb|--interp|) and
 \verb|studies/keff_sharp_limit/disk/| (disk array, both laws).
 
 
