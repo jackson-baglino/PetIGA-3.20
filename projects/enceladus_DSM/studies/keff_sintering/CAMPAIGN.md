@@ -24,7 +24,7 @@ below, and stage 2 replaces it with a measurement at other temperatures.
 | stage | what | cost | running | figure |
 |---|---|---|---|---|
 | 0 | tensor law + both ladders | done | — | ✔ committed |
-| 1 | pilot replay under tensor | ~$19 | ~$19 | ✔ |
+| 1 | pilot replay under tensor (no new simulation) | ~$19 | ~$19 | ✔ |
 | 2 | batch 1 — cold end of the T axis | ~$126 | ~$145 | ✔ |
 | 3 | −10 °C | ~$321 | ~$466 | ✔ **SLIDES** |
 | 4 | production packings | local | ~$466 | — |
@@ -44,7 +44,7 @@ band's first-order normal-flux bias.
 | ladder | arith | tensor |
 |---|---|---|
 | planar slab, `studies/keff_sharp_limit/verification/` | `k_⊥` +59.4% → +3.8% | flat at the sharp value to **4e−7** |
-| disk array (Rayleigh), `studies/keff_sharp_limit/disk/` | +18.19% → +1.93%, matching the no-free-constant dipole prediction to −1.9% | +1.212% → **+0.006%**, order **≈ 2.5** |
+| single ice cylinder (Rayleigh), `studies/keff_sharp_limit/disk/` | +18.19% → +1.93%, matching the no-free-constant dipole prediction to −1.9% | +1.212% → **+0.006%**, order **≈ 2.5** |
 
 Writeup: `effective_thermal_cond/docs/tensor_conductivity_law.tex`.
 
@@ -54,39 +54,61 @@ Writeup: `effective_thermal_cond/docs/tensor_conductivity_law.tex`.
 
 ## Stage 1 — replay the pilot · GATES EVERYTHING
 
-Neither ladder has a **contact**, and the contact is the point: the packing's
-grains are seated in exact tangency, so at `t = 0` the path between two grains
-is a single point and the arithmetic band bridges it with conducting material.
-That inflates `k_eff(0)` and suppresses the relative rise — the headline. The
-disk ladder's ~+8% at the pilot's `eps/R_ave = 0.02` is a **lower bound** on
-the packing, not an estimate.
+**Nothing is simulated here.** The four pilot trajectories finished in
+September. A replay re-opens their stored snapshots, reads `φ`, and re-solves
+the steady-state corrector problem under the tensor law. Full detail, including
+why four runs become eight jobs, is in
+[`coefficient_fix/README.md`](coefficient_fix/README.md).
+
+Neither verification ladder has a **contact**, and the contact is the point:
+the packing's grains are seated in exact tangency, so the path between two
+grains starts as a single point and the arithmetic band bridges it with
+conducting material. The single-cylinder benchmark's ~+8% at the pilot's
+`eps/R_ave = 0.02` is the isolated-interface part of that error with the
+contact effect excluded by construction — a lower bound, not an estimate.
 
 ```bash
-./scripts/HPC/submit_keff_replay.sh --dry-run --laws "tensor sharp" \
+./scripts/HPC/submit_keff_replay.sh --dry-run \
     --roots $SCRATCH/enceladus_DSM/batch_2026-09-16__13.16.11_pilot_keff \
             $SCRATCH/enceladus_DSM/packing_2D_pilot_phi0.325_Rave50um_LR40_seed*_L2mm_eps1000nm_perxy_T-20
 venv_enceladus/bin/python studies/keff_sintering/coefficient_fix/compare_laws.py <batch>
 ```
 
 Give both roots — all four seeds were resumed, and a resume leg lands in the
-single-run tree, not the batch parent. ~$35 for 2 laws × 4 seeds.
+single-run tree, not the batch parent. 8 jobs, ~$19, tensor only: each run's
+existing in-line `k_eff.csv` **is** the arith result, so there is nothing to
+buy on that side.
 
-**Read:** `tensor` vs `sharp` at `t_end`, per seed.
+**Read:** the rise from the **1-day baseline**, `arith +15.9% (sd 1.9) →
+tensor ?`. That is the correction factor, and it rescales stage 2's threshold.
 
-- **agree within ~5%** → adopt the tensor rise as the campaign headline and
-  rescale stage 2's threshold by the same factor. Continue.
-- **disagree by more than ~5%** → **stop.** Two unrelated routes to removing
-  one bias must agree; a gap is a result in its own right and no production
-  run is worth submitting until it is understood.
+- **tensor differs from arith by a factor the ladders can account for** →
+  adopt it as the campaign headline and continue.
+- **tensor moves the rise by much more than the contact argument predicts, or
+  moves it the wrong way** → **stop** and understand it before buying runs.
 
-Also read, and record in this file when known:
+Also read, and record here when known:
 
-- **the rise**, `arith +19.6% (sd 2.1) → tensor ?` — the correction factor.
-- **`k_eff(0)`.** `ROADMAP.md:260` bans `k_eff(t=0)` as a baseline *because*
-  arith pre-welded tangent grains. If tensor `k(0)` drops materially, that ban
-  is obsolete; state here which baseline the campaign uses.
-- **`ksp_its`**, against the disk ladder's ~2.5× arith. A larger rise on the
-  packing is a real cost signal for every stage below.
+- **`ksp_its`**, against the single-cylinder benchmark's ~2.5× arith. The
+  tensor operator is locally anisotropic inside the band (`K_∥/K_⊥ ≈ 29` at
+  `φ = 0.5`). A larger rise on the packing is a real cost signal for every
+  stage below.
+- **`phi_bar` identical to arith**, sample for sample. The law does not touch
+  the ice field; a difference means the wrong snapshots were read.
+
+### The baseline is t = 1 day
+
+The initial condition is an analytic clamped sum of `tanh` profiles, not an
+equilibrated phase field, so the first hours of every run are the field
+relaxing rather than sintering — and that is where the error is largest.
+Measured on pilot seed 1, `d ln SSA / d ln t` runs 0.000 → −0.075 over the
+first ~8 h and is flat at ~−0.077 after. **Nothing is read at `t = 0`.**
+
+It matters: the pilot ensemble rise is +19.6% from `t = 0` and **+15.9% from
+1 day**. Every earlier `+19.6%` in this campaign came from `t = 0` and is
+superseded. `ROADMAP.md:260`'s ban on `k_eff(t=0)` therefore stands — for this
+reason, which is about the initial condition and applies under any
+conductivity law, not only the one it was written for.
 
 > **Withdrawn here:** `PLAN.md:71-79`'s `R_feat/R_ave = 1/50` recommendation.
 > Its case was a ~33%-vs-~15% `k_eff` eps bias, which was an *arithmetic-law*
