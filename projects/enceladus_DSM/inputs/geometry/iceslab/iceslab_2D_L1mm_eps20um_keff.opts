@@ -15,14 +15,14 @@
 # fraction, which the CONTINUOUS profile makes exactly 0.5 for any eps (see the
 # long comment on FormInitialIceSlab2D in src/initial_conditions.c).
 #
-# COMPARE AGAINST THE MEASURED VOLUME FRACTION, NOT AGAINST 0.5. The discrete
-# field is a spline fit to nodal values, and its mean lands near but not on 0.5:
-# measured TOT_ICE = 5.002e-07 against an exact 5.000e-07 at Nx=Ny=256, i.e.
-# 4e-4 relative. Feeding 0.5 into the arithmetic mean would therefore predict
-# k_00 = 1.155000 while the correct discrete answer is 1.155454, and the gate
-# would flag a 4e-4 "solver error" that is really the initial condition's
-# quadrature error. So evaluate the analytic forms at the measured phi_bar,
-# which the k_eff CSV reports in its own column:
+# COMPARE AGAINST THE MEASURED VOLUME FRACTION, NOT AGAINST 0.5, so that any
+# error in how the IC represents the slab is divided out. Until 2026-09-23 the
+# measured TOT_ICE was 5.002e-07 against an exact 5.000e-07 at Nx=Ny=256 (4e-4
+# relative). That was not spline error, as this header used to say:
+# IC_COORD_UNIFORM stretched periodic ICs by (N+1)/N, giving
+# phi_bar - 1/2 = 0.0485/N exactly (now fixed in FillIC2D). Evaluate the
+# analytic forms at the measured phi_bar, which the k_eff CSV reports in its
+# own column:
 #
 #   k_parallel = phi*k_ice + (1-phi)*k_air
 #   k_perp     = 1/( phi/k_ice + (1-phi)/k_air )

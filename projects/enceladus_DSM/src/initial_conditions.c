@@ -205,7 +205,8 @@ typedef PetscReal (*IceShape2D)(PetscReal x, PetscReal y, const AppCtx *user);
 
 /* How (i,j) becomes physical (x,y). */
 typedef enum {
-    IC_COORD_UNIFORM,   /* x = Lx*i/(mx+per),      y = Ly*j/(my+per)          */
+    IC_COORD_UNIFORM,   /* x = Lx*i/(mx+per),      y = Ly*j/(my+per);  per = 0
+                         * on a periodic axis, -1 on an open one            */
     IC_COORD_WALLS,     /* x as above,             y ruled between the walls  */
     IC_COORD_GREVILLE   /* x = Lx*greville_x[i],   y ruled between the walls  */
 } ICCoordMode;
@@ -239,7 +240,14 @@ static PetscErrorCode FillIC1D(IGA iga, Vec U, AppCtx *user, IceShape1D shape)
     ierr = DMDAGetLocalInfo(da, &info);          CHKERRQ(ierr);
 
     const PetscReal Lx  = user->Lx;
-    const PetscInt  per = (user->periodic == 1) ? user->p - 1 : -1;
+    /* Index -> coordinate denominator: the number of node INTERVALS on [0, L].
+     * Open axis: mx nodes span [0, L] inclusive, so mx - 1 intervals.
+     * Periodic axis: node mx would coincide with node 0 (x = L == 0), so mx
+     * intervals. This used to be p - 1 on a periodic axis, i.e. mx + 1
+     * intervals at p = 2, which stretched every UNIFORM/WALLS IC by (N+1)/N
+     * and left a double-width gap at the seam (measured: disk area excess
+     * 2/N, laminate phi_bar - 1/2 = 0.0485/N, studies/keff_sharp_limit/). */
+    const PetscInt  per = (user->periodic == 1) ? 0 : -1;
 
     for (PetscInt i = info.xs; i < info.xs + info.xm; i++) {
         PetscReal x   = Lx * (PetscReal)i / (PetscReal)(info.mx + per);
@@ -275,7 +283,14 @@ static PetscErrorCode FillIC2D(IGA iga, Vec U, AppCtx *user,
 
     const PetscReal Lx  = user->Lx;
     const PetscReal Ly  = user->Ly;
-    const PetscInt  per = (user->periodic == 1) ? user->p - 1 : -1;
+    /* Index -> coordinate denominator: the number of node INTERVALS on [0, L].
+     * Open axis: mx nodes span [0, L] inclusive, so mx - 1 intervals.
+     * Periodic axis: node mx would coincide with node 0 (x = L == 0), so mx
+     * intervals. This used to be p - 1 on a periodic axis, i.e. mx + 1
+     * intervals at p = 2, which stretched every UNIFORM/WALLS IC by (N+1)/N
+     * and left a double-width gap at the seam (measured: disk area excess
+     * 2/N, laminate phi_bar - 1/2 = 0.0485/N, studies/keff_sharp_limit/). */
+    const PetscInt  per = (user->periodic == 1) ? 0 : -1;
 
     PetscReal *gx = NULL, *gy = NULL;
     if (mode == IC_COORD_GREVILLE) {

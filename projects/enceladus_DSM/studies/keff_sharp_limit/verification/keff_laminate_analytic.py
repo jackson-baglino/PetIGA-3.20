@@ -142,11 +142,10 @@ def phi_bar_note():
     """Why the analytic forms are evaluated at the measured phi_bar."""
     return (
         "Evaluate every prediction at the phi_bar column of the k_eff CSV, not "
-        "at the nominal 0.5. The discrete field is a spline fit to nodal values "
-        "and its mean lands near but not on 0.5 (~4e-4 relative at Nx=Ny=256). "
-        "Feeding 0.5 in would predict k_00 = 1.155000 where the correct "
-        "discrete answer is 1.155454, and the gate would flag a 4e-4 'solver "
-        "error' that is really the initial condition's quadrature error."
+        "at the nominal 0.5, so that any error in how the IC represents the "
+        "slab is divided out and only the cell solver is tested. (Before "
+        "2026-09-23 this was a 4e-4 offset at Nx=Ny=256 from IC_COORD_UNIFORM "
+        "stretching periodic ICs by (N+1)/N; now fixed.)"
     )
 
 

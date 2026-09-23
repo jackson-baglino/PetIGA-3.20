@@ -130,12 +130,14 @@ being measured with ordinary mesh convergence. A **bad slope with a good
 intercept** is the signature — the gate prints this hint when it sees that
 pattern. Check `EPS_PER_ELEM` before doubting the theory.
 
-**Evaluate predictions at the measured `φ̄`,** not the nominal 0.5. The discrete
-field is a spline fit to nodal values and its mean lands near but not on 0.5
-(~4e−4 relative at `Nx = Ny = 256`). Feeding 0.5 in predicts `k_00 = 1.155000`
-where the correct discrete answer is `1.155454`, and the gate flags a 4e−4
-"solver error" that is really the IC's quadrature error. The scripts read `φ̄`
-from the CSV column for this reason.
+**Evaluate predictions at the measured `φ̄`,** not the nominal 0.5. The scripts
+read `φ̄` from the CSV column so that any error in how the IC represents the
+slab is divided out, leaving only the cell solver under test. Until 2026-09-23
+that error was 4e−4 at `Nx = Ny = 256`, and it was *not* spline error, as this
+README used to say. `IC_COORD_UNIFORM` stretched periodic ICs by `(N+1)/N`, and
+`φ̄ − ½ = 0.0485/N` held exactly across the whole ladder (a spline error would
+scale as `1/N²`). That is fixed in `FillIC1D`/`FillIC2D`; the remaining offset
+should be at the spline level.
 
 ## Files
 

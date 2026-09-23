@@ -71,4 +71,7 @@ slope tolerance is loose on purpose. Gates 3 and 4 are the tensor-law test.
   rung, which adds `(dk/df)·f·2/N` to both laws. With that removed, the tensor
   residual falls ~6× per halving of eps (observed order ≈ 2.5): the first-order
   term is gone. The packing ICs use `IC_COORD_GREVILLE` and are not affected.
+  **Fixed on 2026-09-23** (periodic denominator `mx`, not `mx + 1`). These
+  numbers predate the fix, so rerun the ladder to replace the last column with
+  a direct measurement.
 
