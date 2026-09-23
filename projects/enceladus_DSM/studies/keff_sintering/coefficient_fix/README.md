@@ -60,15 +60,17 @@ rerun:
 # 1. on the cluster — always dry-run first, the snapshot count sets the bill
 ./scripts/HPC/submit_keff_replay.sh --dry-run --laws "tensor sharp" \
     --roots $SCRATCH/enceladus_DSM/batch_2026-09-16__13.16.11_pilot_keff \
-            $SCRATCH/enceladus_DSM/packing_2D_pilot_phi0.325_Rave50um_LR40_seed1_L2mm_eps1000nm_perxy_T-20
+            $SCRATCH/enceladus_DSM/packing_2D_pilot_phi0.325_Rave50um_LR40_seed*_L2mm_eps1000nm_perxy_T-20
 # 2. drop --dry-run to submit
 # 3. download, then:
 venv_enceladus/bin/python studies/keff_sintering/coefficient_fix/compare_laws.py <batch_dir>
 ```
 
-Give **both** roots: a run resumed after a walltime kill leaves its later
-snapshots in the single-run tree, not the batch parent, and all four pilot
-seeds were resumed. The script scans for `sol_*.dat` and submits one job per
+Give **both** roots, and note the `seed*` glob: a run resumed after a walltime
+kill leaves its later snapshots in the single-run tree `<geom>/<ts>_..._resume_job<id>/`,
+not in the batch parent, and **all four** pilot seeds were resumed. Naming one
+seed there would silently replay half of the other three. Read the `--dry-run`
+listing and check it shows eight directories, not four. The script scans for `sol_*.dat` and submits one job per
 directory it finds; `compare_laws.py` concatenates the per-leg CSVs by time.
 
 `k_eff_tensor.csv` and `k_eff_sharp.csv` are written *alongside* the original

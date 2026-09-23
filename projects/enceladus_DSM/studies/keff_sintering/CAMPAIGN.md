@@ -64,7 +64,7 @@ the packing, not an estimate.
 ```bash
 ./scripts/HPC/submit_keff_replay.sh --dry-run --laws "tensor sharp" \
     --roots $SCRATCH/enceladus_DSM/batch_2026-09-16__13.16.11_pilot_keff \
-            $SCRATCH/enceladus_DSM/packing_2D_pilot_phi0.325_Rave50um_LR40_seed1_L2mm_eps1000nm_perxy_T-20
+            $SCRATCH/enceladus_DSM/packing_2D_pilot_phi0.325_Rave50um_LR40_seed*_L2mm_eps1000nm_perxy_T-20
 venv_enceladus/bin/python studies/keff_sintering/coefficient_fix/compare_laws.py <batch>
 ```
 
