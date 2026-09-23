@@ -28,6 +28,22 @@
 # set in the opts files):
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." --extra-opts "-beta_sub0 1.4e3"
 #
+# PER-JOB options: a test spec may carry a THIRD field, geom:exp:<opts>, which
+# is appended after --extra-opts for that job only. --extra-opts goes to every
+# job, so it cannot carry anything that differs between them -- a per-run
+# -keff_replay directory being the case this was added for.
+#
+# Use --tests-file for these: one spec per line, so the opts may contain spaces
+# and colons. (--tests splits on commas, so a third field there must not.)
+#
+#   packing_2D_..._seed1_...:snow_T-20_h1.00_30d:--label tensor -keff_replay /path/seed1
+#
+# --label <name> inside that third field is consumed HERE, not passed to the
+# solver. It suffixes the job name and the output subfolder, which is what lets
+# two jobs share a geometry and an experiment -- the same run replayed under two
+# conductivity laws would otherwise both write to <geom>__<exp>/ and clobber
+# each other. Omitted, it defaults to the spec's position, j01, j02, ...
+#
 # Extra sbatch flags can be appended after --:
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." -- --time=0-04:00:00
 # =============================================================================
@@ -60,7 +76,7 @@ sbatch_extra=()
 extra_opts=()
 
 usage() {
-    sed -n '2,28p' "$0"
+    sed -n '2,44p' "$0"
     exit 1
 }
 
@@ -237,12 +253,37 @@ N_SUBMITTED=0
 N_SKIPPED=0
 submit_one() {
     local spec="$1"
-    local geom="${spec%%:*}"
-    local exp="${spec##*:}"
-    if [[ "$geom" == "$exp" || -z "$geom" || -z "$exp" ]]; then
-        echo "⚠ Invalid test spec (expected geom:exp): $spec"
+    local idx="$2"
+    # geom:exp[:per-job opts]. The third field is the REMAINDER of the line,
+    # colons included, so a -keff_replay path with a colon in it survives.
+    local geom exp perjob_str
+    IFS=':' read -r geom exp perjob_str <<< "$spec"
+    if [[ -z "$geom" || -z "$exp" ]]; then
+        echo "⚠ Invalid test spec (expected geom:exp[:opts]): $spec"
         ((N_SKIPPED++)) || true
         return
+    fi
+
+    # Split the per-job options and pull out --label, which is ours, not the
+    # solver's: it disambiguates the job name and the output subfolder when
+    # two jobs share a geometry and an experiment (e.g. the same run replayed
+    # under two conductivity laws). Without it they would both land in
+    # $BATCH_OUT_DIR/<geom>__<exp>/ and overwrite each other's staged inputs.
+    local perjob=() label=""
+    if [[ -n "${perjob_str:-}" ]]; then
+        read -ra perjob <<< "$perjob_str"
+        local keep=() i=0
+        while [[ $i -lt ${#perjob[@]} ]]; do
+            if [[ "${perjob[$i]}" == "--label" ]]; then
+                label="${perjob[$((i+1))]:-}"
+                i=$((i+2))
+            else
+                keep+=("${perjob[$i]}")
+                i=$((i+1))
+            fi
+        done
+        perjob=(${keep[@]+"${keep[@]}"})
+        [[ -z "$label" ]] && label="j$(printf '%02d' "$idx")"
     fi
 
     # Resolve through the shared helper (scripts/lib/opts.sh): .opts live in
@@ -259,28 +300,32 @@ submit_one() {
         return
     fi
 
-    local job_name="${geom}__${exp}"
+    local job_name="${geom}__${exp}${label:+__${label}}"
     local nprocs nnodes tasks_per_node total_dofs
     read -r nprocs nnodes tasks_per_node total_dofs < <(compute_alloc "$geom_file")
 
     printf "→ %-45s DoFs=%-8d nprocs=%-3d nodes=%-2d tasks/node=%d\n" \
         "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node"
+    [[ ${#perjob[@]} -gt 0 ]] && printf "    per-job opts: %s\n" "${perjob[*]}"
 
     sbatch --job-name="$job_name" \
            --nodes="$nnodes" \
            --ntasks="$nprocs" \
            --ntasks-per-node="$tasks_per_node" \
-           --export=ALL,SKIP_COMPILE=1,BATCH_OUT_DIR="$BATCH_PARENT" \
+           --export=ALL,SKIP_COMPILE=1,BATCH_OUT_DIR="$BATCH_PARENT",BATCH_JOB_LABEL="$label" \
            ${sbatch_extra[@]+"${sbatch_extra[@]}"} \
-           "$RUN_SCRIPT" "$geom" "$exp" "$tag" ${extra_opts[@]+"${extra_opts[@]}"}
+           "$RUN_SCRIPT" "$geom" "$exp" "$tag" \
+           ${extra_opts[@]+"${extra_opts[@]}"} ${perjob[@]+"${perjob[@]}"}
     ((N_SUBMITTED++)) || true
 }
 
 # ---------------------------------------------------------------------------
 # Fan out
 # ---------------------------------------------------------------------------
+spec_idx=0
 for spec in "${TESTS[@]}"; do
-    submit_one "$spec"
+    spec_idx=$((spec_idx + 1))
+    submit_one "$spec" "$spec_idx"
 done
 
 echo ""

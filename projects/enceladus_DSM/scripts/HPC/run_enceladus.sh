@@ -208,7 +208,10 @@ create_folder() {
     # into a clean `<geom>__<exp>/` subfolder of that shared parent so the
     # whole batch can be downloaded with a single rsync.
     if [[ -n "${BATCH_OUT_DIR:-}" ]]; then
-        name="${geom_name}__${exp_name}"
+        # BATCH_JOB_LABEL disambiguates two jobs that share a geometry and an
+        # experiment but differ in their per-job options (submit_batch.sh's
+        # geom:exp:opts third field). Without it they collide here.
+        name="${geom_name}__${exp_name}${BATCH_JOB_LABEL:+__${BATCH_JOB_LABEL}}"
         folder="${BATCH_OUT_DIR}/${name}"
         mkdir -p "$folder"
         echo "Output folder (batch mode): $folder"
