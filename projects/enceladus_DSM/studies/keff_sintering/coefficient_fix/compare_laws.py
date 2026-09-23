@@ -105,9 +105,28 @@ def merge_legs(parts: list) -> np.ndarray:
     return merged[np.argsort(merged["time"])]
 
 
-def rise(a: np.ndarray) -> tuple:
-    k0, kN = float(a["k_iso"][0]), float(a["k_iso"][-1])
-    return k0, kN, 100.0 * (kN / k0 - 1.0)
+# The initial condition is an analytic sum of tanh profiles, not an equilibrated
+# phase field, so the first hours of every run are the field relaxing onto its
+# equilibrium profile rather than sintering. Measured on pilot seed 1: the
+# log-log slope of SSA(t) runs 0.00 -> -0.03 -> -0.075 over the first ~8 h and
+# is flat at ~-0.077 thereafter. Anything read at t = 0 is therefore a property
+# of the initial condition, not of the model.
+BASELINE_DAYS = 1.0
+
+
+def rise(a: np.ndarray, baseline_days: float = BASELINE_DAYS) -> tuple:
+    """(k at baseline, k at t_end, % rise between them, actual baseline time).
+
+    The baseline is the first sample at or after `baseline_days`, NOT t = 0.
+    The choice moves the headline by several points -- on the pilot's arith
+    curves the ensemble rise is +19.6% from t=0, +17.7% from 0.5 d, +15.9%
+    from 1 d -- so it has to be stated, not defaulted into.
+    """
+    t = np.asarray(a["time"], dtype=float)
+    k = np.asarray(a["k_iso"], dtype=float)
+    idx = np.flatnonzero(t >= baseline_days * DAY)
+    i = int(idx[0]) if idx.size else 0
+    return float(k[i]), float(k[-1]), 100.0 * (k[-1] / k[i] - 1.0), float(t[i])
 
 
 def main() -> int:
@@ -116,6 +135,9 @@ def main() -> int:
     ap.add_argument("batch", type=Path, help="downloaded batch directory to scan")
     ap.add_argument("--out", type=Path, default=HERE)
     ap.add_argument("--dpi", type=int, default=160)
+    ap.add_argument("--baseline-days", type=float, default=BASELINE_DAYS,
+                    help="measure the rise from the first sample at or after "
+                         "this time, not from t=0 (the IC has not relaxed at t=0)")
     args = ap.parse_args()
 
     if not args.batch.is_dir():
@@ -137,30 +159,33 @@ def main() -> int:
     if present == ["arith"]:
         print("\nOnly the legacy arith law is present -- the replay has not been\n"
               "run, or its CSVs have not been downloaded. Submit it with:\n"
-              "  ./scripts/HPC/submit_keff_replay.sh --dry-run --laws \"tensor sharp\" \\\n"
-              "      --roots <cluster batch dir> [<cluster geom dir>]")
+              "  ./scripts/HPC/submit_keff_replay.sh --dry-run \\\n"
+              "      --roots <cluster batch parent> <cluster geom dir>/")
 
     # ---- table -----------------------------------------------------------
     rows = []
-    print(f"\n{'seed':>5} {'law':>8} {'k(0)':>9} {'k(end)':>9} {'rise':>9} "
-          f"{'t_end[d]':>9} {'samples':>8} {'ksp_its':>8}")
+    b = args.baseline_days
+    print(f"\nrise measured from the first sample at or after t = {b:g} d "
+          f"(NOT t=0: the IC has not relaxed there)")
+    print(f"\n{'seed':>5} {'law':>8} {'t_b[d]':>7} {'k(t_b)':>9} {'k(end)':>9} "
+          f"{'rise':>9} {'t_end[d]':>9} {'samples':>8} {'ksp_its':>8}")
     for seed in data:
         for law in present:
             a = data[seed].get(law)
             if a is None:
                 continue
-            k0, kN, r = rise(a)
+            kb, kN, r, tb = rise(a, b)
             tend = float(a["time"][-1]) / DAY
             its = float(np.median(a["ksp_its"])) if "ksp_its" in a.dtype.names else float("nan")
-            print(f"{seed:>5} {law:>8} {k0:9.4f} {kN:9.4f} {r:+8.1f}% "
+            print(f"{seed:>5} {law:>8} {tb/DAY:7.2f} {kb:9.4f} {kN:9.4f} {r:+8.1f}% "
                   f"{tend:9.2f} {len(a):8d} {its:8.0f}")
-            rows.append((seed, law, k0, kN, r, tend, len(a), its))
+            rows.append((seed, law, kb, kN, r, tend, len(a), its, tb / DAY))
 
     # ---- ensemble and the two things worth checking ----------------------
     print()
     ens = {}
     for law in present:
-        rs = [r for (_, l, _, _, r, _, _, _) in rows if l == law for r in [r]]
+        rs = [row[4] for row in rows if row[1] == law]
         if rs:
             ens[law] = (float(np.mean(rs)), float(np.std(rs, ddof=1)) if len(rs) > 1 else 0.0)
             sd, n = ens[law][1], len(rs)
@@ -186,9 +211,10 @@ def main() -> int:
     # ---- CSV -------------------------------------------------------------
     outcsv = args.out / "compare_laws.csv"
     with outcsv.open("w") as fh:
-        fh.write("seed,law,k_iso_0,k_iso_end,rise_pct,t_end_days,n_samples,ksp_its_median\n")
+        fh.write("seed,law,baseline_days,k_iso_baseline,k_iso_end,rise_pct,"
+                 "t_end_days,n_samples,ksp_its_median\n")
         for r in rows:
-            fh.write(f"{r[0]},{r[1]},{r[2]:.6e},{r[3]:.6e},{r[4]:.4f},"
+            fh.write(f"{r[0]},{r[1]},{r[8]:.4f},{r[2]:.6e},{r[3]:.6e},{r[4]:.4f},"
                      f"{r[5]:.4f},{r[6]},{r[7]:.0f}\n")
 
     # ---- figure ----------------------------------------------------------
@@ -202,15 +228,26 @@ def main() -> int:
             if a is None:
                 continue
             t = a["time"] / DAY
+            kb, _, _, tb = rise(a, b)
             axes[0].plot(t, a["k_iso"], color=COLOR.get(law, "k"), lw=1.3, alpha=0.85,
                          label=LABEL.get(law, law) if i == 0 else None)
-            axes[1].plot(t, a["k_iso"] / a["k_iso"][0], color=COLOR.get(law, "k"),
+            # Normalised to the BASELINE sample, not to t = 0. Points before it
+            # are drawn dotted: they are the initial condition relaxing onto an
+            # equilibrium profile, not sintering, and they are not part of the
+            # reported rise.
+            pre = t < tb / DAY
+            axes[1].plot(t[pre], a["k_iso"][pre] / kb, color=COLOR.get(law, "k"),
+                         lw=1.0, alpha=0.5, ls=":")
+            axes[1].plot(t[~pre], a["k_iso"][~pre] / kb, color=COLOR.get(law, "k"),
                          lw=1.3, alpha=0.85,
                          label=LABEL.get(law, law) if i == 0 else None)
     axes[0].set_ylabel(r"$k_{\mathrm{eff}}$  [W m$^{-1}$ K$^{-1}$]")
-    axes[1].set_ylabel(r"$k_{\mathrm{eff}}(t)\,/\,k_{\mathrm{eff}}(0)$")
+    axes[1].set_ylabel(rf"$k_{{\mathrm{{eff}}}}(t)\,/\,k_{{\mathrm{{eff}}}}(t_0)$,  $t_0={b:g}$ d")
     axes[1].axhline(1.0, color="0.6", lw=0.8, ls=":")
-    for ax, ttl in zip(axes, ("(a) absolute", "(b) relative to each law's own $t=0$")):
+    axes[1].axvline(b, color="0.6", lw=0.8, ls="--")
+    for ax, ttl in zip(axes, ("(a) absolute",
+                              "(b) relative to each law's own baseline "
+                              "(dotted = IC relaxation, excluded)")):
         ax.set_xlabel("time [days]")
         ax.set_title(ttl, fontsize=10)
         ax.grid(alpha=0.25, lw=0.6)
