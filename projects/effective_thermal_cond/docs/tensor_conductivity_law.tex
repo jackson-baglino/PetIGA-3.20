@@ -201,7 +201,29 @@ along and across the interface:
 \label{eq:Kgeneral}
 \end{equation}
 with $\Kt,\Kn$ equal to $\Ka$ at $\varphi=0$ and $\Ki$ at $\varphi=1$. A scalar
-law is the special case $\Kt=\Kn$. For the profile \eqref{eq:profile},
+law is the special case $\Kt=\Kn$.
+
+\paragraph{Where this form comes from.} The outer product is a projection:
+$(\bn\otimes\bn)\mathbf g=\bn(\bn\cdot\mathbf g)$ keeps the part of a vector
+$\mathbf g$ along $\bn$, and $\bI-\bn\otimes\bn$ keeps the part along the
+interface. So \eqref{eq:Kgeneral} says only that the normal part of the gradient
+is multiplied by $\Kn$ and the tangential part by $\Kt$. It is also the
+\emph{only} linear law with that property and no coupling between the two
+directions. Suppose $\bK$ had a normal--tangential entry $c$. Inside the
+transition the normal flux would be $\Kn\partial_sT+c\,\mathbf E_t$, and the
+expansion of \S\ref{sec:inner} would give the temperature jump an extra term
+$-\mathbf E_t\!\int c/\Kn\,du$, a spurious interface term beyond the two
+analysed below. With $c=0$, $\bK$ is symmetric, $\bn$ is an eigenvector with
+eigenvalue $\Kn$, and the directions along the interface are eigenvectors with
+eigenvalue $\Kt$. A symmetric tensor with that eigenstructure is exactly
+\eqref{eq:Kgeneral}. In two dimensions, with $\bn=(\cos\theta,\sin\theta)$,
+\[
+\bK=\begin{pmatrix}\Kt\sin^2\theta+\Kn\cos^2\theta & (\Kn-\Kt)\sin\theta\cos\theta\\
+(\Kn-\Kt)\sin\theta\cos\theta & \Kt\cos^2\theta+\Kn\sin^2\theta\end{pmatrix}.
+\]
+Its off-diagonal entries in $x,y$ are not a coupling. They appear only because
+the interface is not aligned with the axes, and in the interface's own frame
+$\bK=\mathrm{diag}(\Kn,\Kt)$. For the profile \eqref{eq:profile},
 $\nabla\varphi=\ell'(s/\varepsilon)\,\nabla s/\varepsilon$ is parallel to
 $\nabla s$, so $\bn$ is exactly the normal to the level sets of $\varphi$, and
 the phase field supplies it without any extra construction.
