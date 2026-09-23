@@ -3,11 +3,12 @@
 %  the effective conductivity of a two-phase composite.
 %
 %  Deliberately phase-agnostic: nothing below depends on the phases being
-%  ice and air. Requires amsmath, amssymb, amsthm, booktabs, geometry.
+%  ice and air. Requires amsmath, amssymb, amsthm, booktabs, listings, geometry.
 % ======================================================================
 
 \documentclass[11pt]{article}
-\usepackage{amsmath,amssymb,amsthm,booktabs}
+\usepackage{amsmath,amssymb,amsthm,booktabs,listings}
+\lstset{language=C,basicstyle=\small\ttfamily,columns=fullflexible,frame=single}
 \usepackage[margin=1in]{geometry}
 
 \newtheorem{lemma}{Lemma}
@@ -279,7 +280,7 @@ $\nabla T$ throughout collapses the physical problem, with its own two
 temperatures $T_1$ on $\Om_1$ and $T_2$ on $\Om_2$,
 $\nabla\!\cdot\!(K_m\nabla T_m)=0$, $T_1=T_2$ and
 $K_1\nabla T_1\!\cdot\!\bn=K_2\nabla T_2\!\cdot\!\bn$ on $\Gam$, into
-$\int_\Om\nabla v\cdot K_\star\nabla T=0$ for the glued $T$, identically. See \S\ref{sec:transient}.
+$\int_\Om\nabla v\cdot K_\star\nabla T=0$ for the glued $T$, identically.
 \end{remark}
 
 \section{Step 2: the coefficient is already the phase-field interpolation}
@@ -461,8 +462,9 @@ Lemma~\ref{lem:identity} and Proposition~\ref{prop:exact} still apply.
 
 \noindent
 This is available because the conductivity cell problem is post-processing on a
-frozen $\varphi$: its interpolation is decoupled from whatever the evolution
-model uses.
+frozen $\varphi$: its interpolation is independent of any other model, and
+choosing it does not bear on one. \S\ref{sec:steady} applies it to the
+cell problem.
 
 \section{Worked example and test: the laminate}
 \label{sec:laminate}
@@ -517,99 +519,152 @@ exactly $\bar\varphi$), and refining $\varepsilon$ at fixed mesh, which
 confounds this bias with mesh convergence. The committed driver is
 \verb|studies/keff_sharp_limit/verification/|.
 
-\section{Carrying this to the transient equation with a phase-change source}
-\label{sec:transient}
+\section{Applying the tensor law to the steady-state cell problem}
+\label{sec:steady}
 
-The evolution model solves, instead of \eqref{eq:B}, an energy balance of the form
+\paragraph{Scope.} Everything in this note concerns the \emph{steady-state}
+corrector problem that defines $\Keff$ for a frozen microstructure. It says
+nothing about the transient energy balance of the metamorphism models, which
+have their own interpolations. Nothing here justifies, or asks for, a change to
+them.
+
+\paragraph{Strong form.} Replace the scalar coefficient of \eqref{eq:B} by the
+tensor \eqref{eq:tensorK}, written $\mathbf K$ below with $K(\varphi)$ the
+arithmetic law. For each direction $m$, find cell-periodic $t_m$ with
 \begin{equation}
-\underbrace{\rho(\varphi)c(\varphi)\,\partial_t T}_{\text{storage}}
-=\underbrace{\nabla\!\cdot\!\big(K(\varphi)\nabla T\big)}_{\text{conduction}}
-+\underbrace{\rho_1 L\,\partial_t\varphi}_{\text{latent heat}} .
-\label{eq:energy}
+\nabla\!\cdot\!\Big(\mathbf K(\varphi,\nabla\varphi)\,\big(\nabla t_m+\be_m\big)\Big)=0
+\ \text{in }\Om,
+\qquad \avg{t_m}=0,
+\qquad
+\Keff\,\be_m=\avg{\mathbf K\,(\nabla t_m+\be_m)} .
+\label{eq:steady-strong}
 \end{equation}
-Three things change, and they are not equally benign.
-
-\paragraph{1. Conduction: nothing new.} The operator is the same $K(\varphi)$
-appearing in \eqref{eq:B}. Step 1 collapses the sharp two-domain heat equation
-in the same way, Lemma~\ref{lem:identity} applies unchanged, and
-\eqref{eq:sigmat}--\eqref{eq:sigman} hold verbatim. So the evolution model
-carries the \emph{same} first-order conduction bias --- too conductive normal to
-$\Gam$ --- and Corollary~\ref{cor:tensor} is the same fix.
-
-\paragraph{2. Storage: a nonzero excess, from a quadratic in $\varphi$.}
-Repeating \eqref{eq:excess} for the volumetric heat capacity $C=\rho c$, the
-excess stored enthalpy per unit interface area is
-$\Sigma_C=\int[C(\varphi)-C_\star]\,ds$. If $C$ is interpolated \emph{affinely}
-in $\varphi$ this vanishes exactly, by the same antisymmetry as
-\eqref{eq:sigmat}. But interpolating $\rho$ and $c$ \emph{separately} and
-multiplying, as \eqref{eq:energy} is written, makes $C$ \emph{quadratic}:
+With $\mathbf G=\nabla t_m+\be_m$, the local flux splits into a part along the
+interface and a part across it,
 \begin{equation}
-\rho(\varphi)c(\varphi)=\rho_2c_2+(\rho_2\Delta c+c_2\Delta\rho)\varphi
-+\Delta\rho\,\Delta c\;\varphi^2,
-\qquad \Delta\rho=\rho_1-\rho_2,\ \Delta c=c_1-c_2,
-\label{eq:Cquad}
+\mathbf K\mathbf G=K(\varphi)\,\mathbf G
++\big(K_{\mathrm h}(\varphi)-K(\varphi)\big)\,(\bn\cdot\mathbf G)\,\bn ,
+\label{eq:flux-split}
 \end{equation}
-and $\varphi^2$ is \emph{not} antisymmetric about the interface. Its excess is
-exactly computable by the substitution used for \eqref{eq:sigman}:
+so only the normal component of the gradient sees the harmonic mean. In the bulk,
+where $\varphi\in\{0,1\}$, the correction term vanishes and
+\eqref{eq:steady-strong} is the scalar problem of Proposition~\ref{prop:exact}.
+
+\paragraph{Weak form.} Multiply by a periodic test function $v$ and integrate
+by parts. Periodicity removes the boundary term exactly as in step (d):
 \begin{equation}
-\int_{-\infty}^{\infty}\!\big[\sigma(u)^2-H(u)\big]du=-1
-\qquad\Longrightarrow\qquad
-\Sigma_C=-\,\varepsilon\,\Delta\rho\,\Delta c \;\neq\;0 .
-\label{eq:SigmaC}
+\int_\Om\nabla v\cdot\mathbf K\,\nabla t_m\,d\Om
+=-\int_\Om\nabla v\cdot\mathbf K\,\be_m\,d\Om
+\qquad\forall\,v\in\Hper .
+\label{eq:steady-weak}
 \end{equation}
-The diffuse cell stores \emph{less} enthalpy than the sharp one, at first order
-in $\varepsilon$ and proportional to the interfacial area. With
-$\rho_1c_1=1.80\times10^6$ and $\rho_2c_2=1.40\times10^3$~J\,m$^{-3}$K$^{-1}$,
-$\Delta\rho\,\Delta c=8.41\times10^5$, so each interface loses the heat capacity
-of a $0.47\varepsilon$-thick slab of phase 1. On a cell with specific surface
-area $|\Gam|/|\Om|=2\times10^{4}\,\mathrm{m}^{-1}$ that is a $1.9\%$ deficit at
-$\varepsilon=1\,\mu$m and $9.3\%$ at $5\,\mu$m. \emph{The fix is free}:
-interpolate the product,
-$C(\varphi)=\rho_2c_2+(\rho_1c_1-\rho_2c_2)\varphi$, which is affine and has
-$\Sigma_C=0$ exactly. The two agree at $\varphi\in\{0,1\}$, so
-Lemma~\ref{lem:identity} is indifferent between them --- this is precisely a
-case where the interpolation is invisible to the sharp problem and matters only
-through the band.
+The bilinear form on the left does not depend on $m$; only the load does.
 
-\paragraph{3. Latent heat: the integral is exact, the placement is not.}
-In the sharp model latent heat is a \emph{surface} source on $\Gam$, entering as
-a Stefan jump condition $\jump{K\nabla T\!\cdot\!\bn}=\rho_1 L\,v_n$. The
-phase-field model spreads it over the band as the volumetric
-$\rho_1L\,\partial_t\varphi$. The total released is right:
+\paragraph{Well posed, with the same bounds.} $\mathbf K$ is symmetric, with
+eigenvalue $K(\varphi)$ on the tangent plane and $K_{\mathrm h}(\varphi)$ along
+$\bn$. Both lie in $[\min(K_1,K_2),\max(K_1,K_2)]$, so
 \begin{equation}
-\int_\Om \rho_1 L\,\partial_t\varphi\,d\Om
-=\rho_1 L\,\frac{d}{dt}\!\int_\Om\varphi\,d\Om
-=\rho_1 L\,\frac{dV_1}{dt},
-\label{eq:latent-exact}
+\min(K_1,K_2)\,|\boldsymbol\xi|^2\le\boldsymbol\xi\cdot\mathbf K\,\boldsymbol\xi
+\le\max(K_1,K_2)\,|\boldsymbol\xi|^2 .
 \end{equation}
-exactly, because $\int_\Om\varphi\,d\Om$ is the exact phase-1 volume --- the same
-$\Sigma_t=0$ antisymmetry as \eqref{eq:sigmat}. What is \emph{not} exact is
-where within the band it is deposited. Heat is injected across a layer of width
-$\mathcal O(\varepsilon)$ over which $T$ and $K$ both vary strongly (here by a
-factor $114$), so it enters at the wrong local temperature.
+By Lax--Milgram, \eqref{eq:steady-weak} has a unique solution with
+$\avg{t_m}=0$. The minimum principle \eqref{eq:dirichlet} holds with $K$
+replaced by $\mathbf K$, and so does the sandwich \eqref{eq:sandwich}. Testing
+\eqref{eq:steady-weak} for direction $i$ with $v=t_j$ gives the symmetric energy
+form
+\begin{equation}
+\be_i\cdot\Keff\,\be_j=\avg{(\nabla t_i+\be_i)\cdot\mathbf K\,(\nabla t_j+\be_j)},
+\end{equation}
+so $\Keff$ is symmetric positive definite, as it must be.
 
-\noindent
-This third item is the one that needs care, and it is outside the scope of the
-analysis above: \eqref{eq:sandwich} and \eqref{eq:excess} assume a
-\emph{frozen} $\varphi$ and \emph{no} source, which is exactly the situation of
-the $\Keff$ cell problem and exactly not the situation of \eqref{eq:energy}. A
-moving diffuse interface carrying a source is the regime of the thin-interface
-analyses of Karma \& Rappel and Almgren, whose known $\mathcal O(\varepsilon)$
-artifacts --- modified interface kinetics, solute/thermal trapping, and a
-spurious surface diffusion along $\Gam$ --- are generated by the source term
-and are most pronounced when the two phases' transport coefficients are very
-unequal, as here. Quantifying them requires a matched asymptotic expansion of
-\eqref{eq:energy}, not the equilibrium excesses of \S\ref{sec:excess}.
+\paragraph{Discrete form.} With basis functions $N_a$ and
+$t_m=\sum_b T_{m,b}N_b$, \eqref{eq:steady-weak} becomes
+\begin{equation}
+\mathsf A\,\mathsf T_m=\mathsf F_m,\qquad
+\mathsf A_{ab}=\int_\Om\nabla N_a\cdot\mathbf K\,\nabla N_b\,d\Om,\qquad
+(\mathsf F_m)_a=-\int_\Om\nabla N_a\cdot\mathbf K\,\be_m\,d\Om .
+\label{eq:discrete}
+\end{equation}
+$\mathsf A$ is symmetric positive semidefinite, with the constants as its only
+null space (removed by the mean constraint). It is assembled once and reused for
+all directions, and conjugate gradients with algebraic multigrid apply as in the
+scalar case. $\mathbf K$ is evaluated at each quadrature point from $\varphi$
+and $\nabla\varphi$ there.
 
-\begin{remark}[The practical consequence]
-A clean $\varepsilon$ ladder for $\Keff$ certifies the conduction operator and
-the geometry representation. It does \emph{not} certify the coupled model, which
-has two further $\varepsilon$-sensitivities: one cheap to remove
-(\eqref{eq:SigmaC}, by interpolating $\rho c$ instead of $\rho$ and $c$), and
-one requiring its own analysis (the latent-heat source). Conversely, item 2
-suggests its own test: the total enthalpy of a static two-phase cell should be
-$\varepsilon$-independent, which is the storage analogue of the
-$k_\parallel$ gate and is equally cheap to run.
-\end{remark}
+\paragraph{Worked example: the laminate.} Here $\bn=\pm\be_y$ everywhere, so
+$\mathbf K=\mathrm{diag}\big(K(\varphi),K_{\mathrm h}(\varphi)\big)$ and
+\eqref{eq:steady-strong} decouples. Along the layers the corrector is zero and
+$k_\parallel=\avg{K(\varphi)}$. Across them the flux is constant, so
+$k_\perp=\avg{1/K_{\mathrm h}(\varphi)}^{-1}$. Both averages are of functions
+affine in $\varphi$, so both equal the sharp values at every $\varepsilon$
+(up to the $\mathcal O(e^{-L/4\varepsilon})$ tail overlap of
+\S\ref{sec:laminate}):
+\begin{equation}
+k_\parallel=K_2+(K_1-K_2)\bar\varphi,\qquad
+k_\perp=\Big(\frac{\bar\varphi}{K_1}+\frac{1-\bar\varphi}{K_2}\Big)^{-1}.
+\end{equation}
+Compare \eqref{eq:lamperp}: the $\varepsilon$ term is gone. Measured, the
+tensor law reproduces $k_\perp$ to $4\times10^{-7}$ from $\varepsilon=L/50$ to
+$L/512$, where the scalar law is $59\%$ to $3.8\%$ high. The derivation of
+\eqref{eq:tensorK} and a curved-interface test (a disk array against Rayleigh's
+solution) are in the companion writeup
+\verb|tensor_conductivity_law.tex|.
+
+\section{Where this lives in the code}
+\label{sec:code}
+
+The cell problem is solved in-line by \verb|enceladus_dsm| (\verb|-keff 1|),
+or on saved snapshots with \verb|-keff_replay|. The law is chosen with
+\verb|-keff_interp arith|$\,|\,$\verb|tensor|$\,|\,$\verb|sharp|; the default is
+\verb|tensor| (before 2026-09-23 it was \verb|arith|). Non-default laws write
+\verb|k_eff_<law>.csv|.
+
+\paragraph{Inputs at each quadrature point}
+(\verb|src/keff_field.c|, \verb|KeffProjectIce|). The phase field and its
+gradient are evaluated on the solver mesh and stored per quadrature point:
+\verb|kc->ice[idx]| $=\varphi$ and \verb|kc->grad_ice[idx*dim+d]|
+$=\partial_d\varphi$. The gradient array is allocated only for the tensor law.
+
+\paragraph{The coefficient} (\verb|src/keff_cell.c|, \verb|KeffPointCond|),
+row-major $\mathbf K$ = \verb|K[a*dim+b]|:
+\begin{lstlisting}
+ThermalCond(kc->app, phi, &cond, NULL);           /* K(phi), arithmetic   */
+for (a = 0; a < dim; a++) K[a*dim + a] = cond;    /* K(phi) I             */
+if (kc->interp == KEFF_INTERP_TENSOR) {
+  k_harm = 1.0 / (phi/k_ice + (1.0 - phi)/k_air); /* K_h(phi)             */
+  g2 = |grad phi|^2;
+  if (g2 > 0.0)                                   /* + (K_h - K) n (x) n  */
+    for (a...) for (b...)
+      K[a*dim + b] += (k_harm - cond) * g[a]*g[b] / g2;
+}
+\end{lstlisting}
+This is \eqref{eq:tensorK} written as \eqref{eq:flux-split}:
+$K\,\bI+(K_{\mathrm h}-K)\,\bn\otimes\bn$ with
+$\bn\otimes\bn=\nabla\varphi\otimes\nabla\varphi/|\nabla\varphi|^2$, so $\bn$ is
+never formed explicitly. Where $\nabla\varphi=0$ the correction is skipped;
+that happens only in the bulk, where $K_{\mathrm h}=K$. $\varphi$ is first
+clamped to $[0,1]$ so both branches see the same admissible value.
+
+\paragraph{The three integrals of \eqref{eq:discrete} and $\Keff$.}
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+routine & integrand accumulated & equation\\
+\midrule
+\verb|KeffFormMatrix| & $\nabla N_a\cdot\mathbf K\,\nabla N_b$ & $\mathsf A_{ab}$\\
+\verb|KeffFormVector| & $-\nabla N_a\cdot(\text{column }m\text{ of }\mathbf K)$ & $(\mathsf F_m)_a$\\
+\verb|KeffScalarIntegrand| & $\big[\mathbf K(\nabla t_m+\be_m)\big]_j$ & row $m$ of $\Keff\,|\Om|$\\
+\bottomrule
+\end{tabular}
+\end{center}
+PetIGA applies the quadrature weight and Jacobian, and \verb|KeffComputeTensor|
+divides by the cell volume measured by the same quadrature. For the isotropic
+laws \verb|KeffPointCond| returns $K\bI$, and the three routines reduce exactly
+to the scalar assembly.
+
+\paragraph{Verification drivers.}
+\verb|studies/keff_sharp_limit/verification/| (laminate, \verb|--interp|) and
+\verb|studies/keff_sharp_limit/disk/| (disk array, both laws).
+
 
 \end{document}

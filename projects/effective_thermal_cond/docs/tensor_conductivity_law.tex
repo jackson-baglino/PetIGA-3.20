@@ -216,7 +216,9 @@ This parallels the thin-interface corrections of Karma \& Rappel (1998), Almgren
 from phase-field \emph{dynamics} (for example, with an anti-trapping current or
 a renormalized kinetic coefficient). Here the problem is static and has no
 source term, so the thin-interface analysis stops at the two equilibrium excesses
-\eqref{eq:excess}, and it closes in elementary form.
+\eqref{eq:excess}, and it closes in elementary form. The comparison is one of method only. The
+tensor law is a property of the steady-state homogenization, and it is not an
+argument for changing the energy balance of any metamorphism model.
 
 \section{Verification}
 
@@ -288,9 +290,10 @@ $445.5$ ($-1.0\%$). The intercept is within $0.04\%$ of Rayleigh's value. This
 confirms Prop.~\ref{prop:bias} on a curved interface with no fitted constants.
 For the tensor law the first-order coefficient is $-2.5\%$ of the arithmetic
 one, and at every rung the error is at most $0.075\times$ the arithmetic error.
-The last column removes a known offset in the benchmark's initial condition,
-which stretches the disk by $(N+1)/N$ on an $N^2$ mesh (measured area excess
-$2/N$ to four digits). With the offset removed, the tensor residual falls by
+The last column removes an offset in the benchmark's initial condition, which
+stretched the disk by $(N+1)/N$ on an $N^2$ mesh (measured area excess $2/N$ to
+four digits). It has since been fixed in the code, so a rerun measures this
+column directly. With the offset removed, the tensor residual falls by
 about $6\times$ per halving of $\varepsilon$ (observed order $\approx2.5$),
 consistent with \eqref{eq:second}.
 

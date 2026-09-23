@@ -1,3 +1,18 @@
+## 2026-09-23 — Fix periodic IC stretch; equivalence note made steady-state only
+
+- Fixed `FillIC1D`/`FillIC2D`: on a periodic axis the index->coordinate
+  denominator is mx (was mx+1 at p=2), which stretched UNIFORM/WALLS ICs by
+  (N+1)/N. Evidence: laminate phi_bar - 1/2 = 0.0485/N and disk area excess
+  2/N, exact across the ladders. Packings (GREVILLE) were never affected.
+- Corrected the laminate README/opts/analytic text that blamed that offset on
+  spline error. Disk ladder numbers predate the fix; rerun to replace them.
+- Replaced sec. 7 of the equivalence note (transient/metamorphism) with the
+  tensor law applied to the steady-state cell problem, plus a sec. 8 mapping
+  it to the code. The user's rule: k_eff results must not justify
+  metamorphism-model changes.
+
+---
+
 ## 2026-09-23 — Tensor k_eff law verified; now the default
 
 - Both ladders passed. Laminate: tensor k_11 exact to <=4e-7 at every rung
