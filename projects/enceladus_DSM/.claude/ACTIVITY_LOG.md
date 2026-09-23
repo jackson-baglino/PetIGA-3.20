@@ -1,3 +1,18 @@
+## 2026-09-23 — Tensor k_eff law verified; now the default
+
+- Both ladders passed. Laminate: tensor k_11 exact to <=4e-7 at every rung
+  (arith 59% -> 3.8% high). Disk array: arith bias matches the first-order
+  prediction (slope -1.0%, no fitted constants); tensor error <= 0.075x arith,
+  +0.026% at L/800, first-order coefficient -2.5% of arith's.
+- `-keff_interp` now defaults to `tensor`. Pilots of 2026-09-16 used arith.
+- Found: `IC_COORD_UNIFORM` on periodic meshes maps N nodes to L*i/(N+1),
+  stretching benchmark geometry by (N+1)/N (disk area excess = 2/N to four
+  digits). Affects ice_slab/single_ice/1D slab only; packings use GREVILLE.
+  Not yet fixed -- raised with the user.
+- Filled the measured results into effective_thermal_cond/docs/tensor_conductivity_law.tex.
+
+---
+
 ## 2026-09-22 — Tensor conductivity law for k_eff (-keff_interp)
 
 - Added `-keff_interp arith|tensor|sharp` to the in-line k_eff cell problem.

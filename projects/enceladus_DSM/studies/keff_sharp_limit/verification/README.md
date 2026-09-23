@@ -162,8 +162,8 @@ need not be the one used in the evolution equations.
 
 It is implemented in `KeffPointCond`
 ([`src/keff_cell.c`](../../../src/keff_cell.c)) and selected with
-`-keff_interp tensor` (default `arith`; `sharp` evaluates `K(H(φ−½))` on the
-same mesh as a cross-check). On this laminate the prediction becomes a **flat**
+`-keff_interp tensor`, the default since 2026-09-23 (`arith` restores the old
+law; `sharp` evaluates `K(H(φ−½))` on the same mesh as a cross-check). On this laminate the prediction becomes a **flat**
 `1/k_11` at the sharp intercept, because `1/K_harm` is affine in `φ`:
 
 ```bash
@@ -172,6 +172,11 @@ same mesh as a cross-check). On this laminate the prediction becomes a **flat**
 
 writes `keff_sharp_limit_tensor.{csv,log,png}` and gates the fitted slope at 5%
 of the arithmetic one.
+
+**Result (2026-09-23, all gates pass).** Across `eps = L/50 … L/512` the tensor
+law's `k_11` matches the sharp harmonic mean at the measured `φ̄` to
+≤ 4e−7 relative at every rung, where the arithmetic law is 59% → 3.8% high. The
+fitted `1/k_11` slope is 0.10% of the arithmetic one.
 
 The laminate cannot exercise the tensor's off-diagonal terms (its normal is
 exactly `ŷ`). The curved-interface test that does is

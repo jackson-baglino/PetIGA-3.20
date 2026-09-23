@@ -250,18 +250,49 @@ arithmetic $+46\%$, tensor $+6.7\%$).
 \end{enumerate}
 
 \begin{center}
-\begin{tabular}{@{}lrr@{\qquad}lrr@{}}
+\begin{tabular}{@{}lrr@{}}
 \toprule
-\multicolumn{3}{c}{laminate, $k_\perp$ bias} & \multicolumn{3}{c}{disk array, $k$ bias}\\
-$\varepsilon$ & arith.\ (pred.) & tensor (meas.) & $\varepsilon$ & arith.\ (pred.) & tensor (meas.)\\
+\multicolumn{3}{c}{laminate, $k_\perp$ bias}\\
+$\varepsilon$ & arithmetic (pred.) & tensor (meas.)\\
 \midrule
-$L/50$  & $+59.4\%$ & $4\times10^{-7}$ & $L/100$ & $+15.1\%$ & \textit{tbd}\\
-$L/128$ & $+17.0\%$ & \textit{tbd}     & $L/200$ & $+7.5\%$  & \textit{tbd}\\
-$L/256$ & $+7.9\%$  & \textit{tbd}     & $L/400$ & $+3.8\%$  & \textit{tbd}\\
-$L/512$ & $+3.8\%$  & \textit{tbd}     & $L/800$ & $+1.9\%$  & \textit{tbd}\\
+$L/50$  & $+59.4\%$ & $<4\times10^{-7}$\\
+$L/64$  & $+41.1\%$ & $<4\times10^{-7}$\\
+$L/128$ & $+17.0\%$ & $<4\times10^{-7}$\\
+$L/256$ & $+7.9\%$  & $<4\times10^{-7}$\\
+$L/512$ & $+3.8\%$  & $<4\times10^{-7}$\\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\noindent On the laminate the tensor law is exact to solver precision at every
+rung, as predicted. The fitted slope of $1/k_\perp$ is $0.10\%$ of the
+arithmetic law's.
+
+\begin{center}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\multicolumn{5}{c}{disk array, $k$ bias}\\
+$\varepsilon$ & arith.\ (pred.) & arith.\ (meas.) & tensor (meas.) & tensor, IC offset removed\\
+\midrule
+$L/100$ & $+15.07\%$ & $+18.46\%$ & $+1.377\%$ & $+1.219\%$\\
+$L/200$ & $+7.53\%$  & $+8.37\%$  & $+0.283\%$ & $+0.205\%$\\
+$L/400$ & $+3.77\%$  & $+3.99\%$  & $+0.073\%$ & $+0.034\%$\\
+$L/800$ & $+1.88\%$  & $+1.95\%$  & $+0.026\%$ & $+0.006\%$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent For the arithmetic law, a quadratic fit in $\varepsilon$ gives a
+first-order coefficient of $440.9$~W\,m$^{-2}$K$^{-1}$ against the predicted
+$445.5$ ($-1.0\%$). The intercept is within $0.04\%$ of Rayleigh's value. This
+confirms Prop.~\ref{prop:bias} on a curved interface with no fitted constants.
+For the tensor law the first-order coefficient is $-2.5\%$ of the arithmetic
+one, and at every rung the error is at most $0.075\times$ the arithmetic error.
+The last column removes a known offset in the benchmark's initial condition,
+which stretches the disk by $(N+1)/N$ on an $N^2$ mesh (measured area excess
+$2/N$ to four digits). With the offset removed, the tensor residual falls by
+about $6\times$ per halving of $\varepsilon$ (observed order $\approx2.5$),
+consistent with \eqref{eq:second}.
 
 \noindent Drivers: \verb|enceladus_DSM/studies/keff_sharp_limit/verification/|
 (\verb|--interp tensor|) and \verb|.../disk/|.

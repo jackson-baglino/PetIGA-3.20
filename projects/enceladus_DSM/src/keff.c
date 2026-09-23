@@ -217,7 +217,10 @@ PetscErrorCode KeffCreate(AppCtx *app)
   kc->pc_freeze     = PETSC_FALSE;
   kc->pc_refresh    = 20;
   kc->max_its       = 500;
-  kc->interp        = KEFF_INTERP_ARITH;
+  /* Tensor by default since 2026-09-23, when it passed the laminate and disk
+   * ladders (studies/keff_sharp_limit/). Runs before that date, including the
+   * 2026-09-16 pilots, used arith. */
+  kc->interp        = KEFF_INTERP_TENSOR;
 
   ierr = KeffParseOptions(kc); CHKERRQ(ierr);
 

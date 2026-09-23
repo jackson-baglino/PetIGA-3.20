@@ -45,6 +45,8 @@
 /* How the conductivity is interpolated across the diffuse band (-keff_interp).
  * See effective_thermal_cond/docs/calonne_to_phasefield_equivalence.tex, sec. 5.
  *
+ * Default: TENSOR (since 2026-09-23; earlier runs used ARITH).
+ *
  *   ARITH   k(phi) = phi k_i + (1-phi) k_a, isotropic. The law the evolution
  *           equations use. Exact tangential to the interface, first-order biased
  *           (too conductive) normal to it.

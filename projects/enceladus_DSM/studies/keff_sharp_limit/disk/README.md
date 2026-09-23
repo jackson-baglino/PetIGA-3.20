@@ -50,3 +50,25 @@ that is part of the `O(eps²)` residual, not an IC error to divide out.)
 
 The dipole slope ignores the neighbouring disks' higher multipoles, so gate 2's
 slope tolerance is loose on purpose. Gates 3 and 4 are the tensor-law test.
+
+## Result (2026-09-23): all gates pass
+
+| eps | arith err (pred. first order) | arith err (meas.) | tensor err (meas.) | tensor err, IC offset removed |
+|---|---|---|---|---|
+| L/100 | +15.07% | +18.46% | +1.377% | +1.219% |
+| L/200 | +7.53% | +8.37% | +0.283% | +0.205% |
+| L/400 | +3.77% | +3.99% | +0.073% | +0.034% |
+| L/800 | +1.88% | +1.95% | +0.026% | +0.006% |
+
+- **Arith:** fitted slope 440.9 vs predicted 445.5 W m⁻² K⁻¹ (−1.0%); fitted
+  intercept within 0.04% of Rayleigh. The first-order theory is confirmed on a
+  curved interface, with no fitted constants.
+- **Tensor:** fitted first-order coefficient −2.5% of arith's; intercept within
+  0.05% of Rayleigh. Error at most 0.075× arith's at every rung.
+- **The IC offset.** `IC_COORD_UNIFORM` places the periodic mesh's N nodes at
+  `L·i/(N+1)` instead of `L·i/N`, stretching the disk by `(N+1)/N`. Its measured
+  area excess over the exact diffuse disk is `2/N` to four digits at every
+  rung, which adds `(dk/df)·f·2/N` to both laws. With that removed, the tensor
+  residual falls ~6× per halving of eps (observed order ≈ 2.5): the first-order
+  term is gone. The packing ICs use `IC_COORD_GREVILLE` and are not affected.
+

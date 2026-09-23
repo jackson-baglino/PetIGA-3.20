@@ -1,0 +1,1472 @@
+
+=========================================================================
+  Enceladus DSM simulation workflow
+  Project root : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+  Geometry     : singleice_2D_L1mm_R250um_keff  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts)
+  Experiment   : snow_T-20_h1.00_1d  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts)
+  Title        : disk_arith_L100
+=========================================================================
+------------------------------------------------------------
+Grid from -Nx/-Ny/-Nz: Nx=256, Ny=256, Nz=1
+Total DoFs:     3 × Nx × Ny × Nz = 196608
+Target/core:    100000 DoFs
+Chosen NPROCS:  2  (cap: 12 logical cores)
+------------------------------------------------------------
+
+--- Compiling ---
+Project root: /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+make: Nothing to be done for `all'.
+✅ Compilation successful.
+
+--- Creating output folder ---
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
+
+--- Staging output folder ---
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/inputs/ (scratch/ excluded)
+✅ Staging complete.
+
+--- Running simulation ---
+Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladus_dsm
+Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
+Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
+Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
+Processes    : 2
+
+Extra opts   : -keff 1 -keff_only 1 -keff_interp arith -eps 1.00000000e-05 -Nx 512 -Ny 512 -keff_ksp_type cg -keff_pc_type gamg
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  -beta_sub0 override: 9.9000e+05 -> 5.9216e+05 (factor 1.67)
+  -d0_sub0 OVERRIDE: 1.0166e-09 m (physical gamma*V_m/(R*T) at -20.0 C is 1.0152e-09, factor 1.001)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 262144 unknowns x 2 directions
+    cell volume (quad): 1.000000000003e-06 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 3.17e-12]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    band interpolation: arith (isotropic)
+    mode              : -keff_only (one sample from the IC, then exit)
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/k_eff.csv
+  ===============================================================================
+
+
+════════════════════════════════════════════════════════════════════════════
+  ENCELADUS_DSM  ·  phase-field sublimation solver
+  2 MPI ranks  ·  2D  ·  792588 DoF  (3 fields: ice, T, rho_v)
+════════════════════════════════════════════════════════════════════════════
+
+── MESH & DISCRETISATION ───────────────────────────────────────────────────
+   grid           512 × 512  =  262144 elements
+   domain         x 1.0000e-03  ×  y 1.0000e-03  m
+   spacing        dx 1.9531e-06  ×  dy 1.9531e-06  m
+   basis          B-spline p = 2 (quadratic),  C = 1
+   resolution     47.1 elements across the φ = 0.01–0.99 band
+                  (band = 9.19·eps;  dx/eps = 0.195)
+
+── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────
+   eps            1.0000e-05 m        decay length, NOT the band width
+   gamma_ia       1.0900e-01 J/m²     ice-air interface energy
+   Lambda         0.0000e+00          triple-junction penalty
+
+── ENVIRONMENT ─────────────────────────────────────────────────────────────
+   T0             -20.00 °C   (253.15 K)
+   humidity       h = 1.000000      1 − h = +0.0000e+00  (flat-saturated)
+   rho_vs(T0)     8.4869e-04 kg/m³     →  h·rho_vs = 8.4869e-04 kg/m³
+   grad_T         (0.0000e+00, 0.0000e+00) °C/m
+
+── TIME STEPPING ───────────────────────────────────────────────────────────
+   t_final        8.6400e+04 s   (24.00 h)
+   dt0            1.0000e-04 s
+   adaptive       ON    NRmin 5 · NRmax 15 · factor 1.3335
+   dt range       [1.0000e-06, 2.0000e+02] s
+   interface CFL  ON    max|Δφ| per step 0.200  (≈ 1.13 elements)
+   output         every 1 accepted step
+
+── TRANSPORT & THERMOPHYSICAL PROPERTIES ───────────────────────────────────
+   D_v(T0)        1.8980e-05 m²/s    = D_v0 · (T/273.15)^1.81
+                  D_v0 = 2.1780e-05 m²/s at 273.15 K
+                  ice          air          units
+   conductivity   2.2900e+00   2.0000e-02   W/m/K
+   density        9.1900e+02   1.3410e+00   kg/m³
+   heat capacity  1.9600e+03   1.0440e+03   J/kg/K
+   lat_sub        2.8300e+06 J/kg     latent heat of sublimation
+
+── PHASE-CHANGE KINETICS ───────────────────────────────────────────────────
+   rho_ice/rho_vs 1.0829e+06                density ratio at T0
+   d0_sub0        1.0166e-09 m              K&P Eq.13  γ·a³/(k_B·T)
+   beta_sub       5.9216e+05 s/m            K&P β₀ / M&F β_sub, UNSCALED
+                                            [M&F range 2e4–2e6]
+   beta_HK        5.4685e-01 s/m            SCALED, = β₀·ρ_vs/ρ_ice
+   lambda         5.3257e+10
+   tau_sub        5.8248e+04 s
+   tau_sub terms:  kinetic 5.8248e+04 s   (-thin_iface_corr 0)
+   beta realised  =  5.9216e+05 s/m  =  1.0000 x -beta_sub0
+   mob_sub        5.7227e-11 m/s            [M&F: 4.33e-7]
+   alph_sub       9.1433e+05 1/s
+   xi_T           1.0000e+00                thermal conduction + latent heat
+   xi_v           1.0000e-03                vapour diffusion + ρ_ice source
+
+── SOLVER ──────────────────────────────────────────────────────────────────
+   VI bounds      OFF   unbounded Newton — pair with -snes_type newtonls
+   phi band       [-0.010, 1.010]        physics: excursion → rollback
+                                            at a smaller dt
+   phi guard      [-0.010, 1.050]        diverging Newton only →
+                                            SNES domain error
+
+── BOUNDARY CONDITIONS ─────────────────────────────────────────────────────
+   PERIODIC on every axis — PetIGA carries periodicity on the axis, so it
+   applies to all 3 fields at once. -flag_BC_Tfix / -flag_BC_rhovfix are
+   forced off in this mode.
+
+════════════════════════════════════════════════════════════════════════════
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.198155   k_iso = 3.502623e-02 W/m/K   (44 its, 12.10 s)
+         k = [ 3.502623431e-02  -3.486516050e-14 ]
+             [ -2.861781898e-14  3.502623431e-02 ]
+Solution completed. 
+Setup time 1.373854e+01 sec  =  0.23 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+✅ Simulation completed successfully.
+
+--- Copying source code ---
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/src
+
+=========================================================================
+  Phase-field post-processing
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
+=========================================================================
+Detected dim = 2
+⚠️  igasol.dat not found — skipping VTK conversion.
+⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots.
+
+--- Time step diagnostic ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/postprocess/plot_timestep.py", line 21, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_timestep.py exited 1
+
+--- Phase-field bounds per step ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/postprocess/plot_phi_bounds.py", line 28, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_phi_bounds.py exited 1
+
+=========================================================================
+  ⚠️  Post-processing completed with errors (exit sum 2)
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/plots
+=========================================================================
+
+⚠️  Post-processing exited with code 2
+
+=========================================================================
+  ✅ Workflow completed successfully
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/plots
+=========================================================================
+
+
+=========================================================================
+  Enceladus DSM simulation workflow
+  Project root : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+  Geometry     : singleice_2D_L1mm_R250um_keff  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts)
+  Experiment   : snow_T-20_h1.00_1d  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts)
+  Title        : disk_tensor_L100
+=========================================================================
+------------------------------------------------------------
+Grid from -Nx/-Ny/-Nz: Nx=256, Ny=256, Nz=1
+Total DoFs:     3 × Nx × Ny × Nz = 196608
+Target/core:    100000 DoFs
+Chosen NPROCS:  2  (cap: 12 logical cores)
+------------------------------------------------------------
+
+--- Compiling ---
+Project root: /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+make: Nothing to be done for `all'.
+✅ Compilation successful.
+
+--- Creating output folder ---
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
+
+--- Staging output folder ---
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/inputs/ (scratch/ excluded)
+✅ Staging complete.
+
+--- Running simulation ---
+Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladus_dsm
+Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
+Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
+Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
+Processes    : 2
+
+Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 1.00000000e-05 -Nx 512 -Ny 512 -keff_ksp_type cg -keff_pc_type gamg
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  -beta_sub0 override: 9.9000e+05 -> 5.9216e+05 (factor 1.67)
+  -d0_sub0 OVERRIDE: 1.0166e-09 m (physical gamma*V_m/(R*T) at -20.0 C is 1.0152e-09, factor 1.001)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 262144 unknowns x 2 directions
+    cell volume (quad): 1.000000000003e-06 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 3.17e-12]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    band interpolation: tensor (arith along, harmonic across)
+    mode              : -keff_only (one sample from the IC, then exit)
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/k_eff_tensor.csv
+  ===============================================================================
+
+
+════════════════════════════════════════════════════════════════════════════
+  ENCELADUS_DSM  ·  phase-field sublimation solver
+  2 MPI ranks  ·  2D  ·  792588 DoF  (3 fields: ice, T, rho_v)
+════════════════════════════════════════════════════════════════════════════
+
+── MESH & DISCRETISATION ───────────────────────────────────────────────────
+   grid           512 × 512  =  262144 elements
+   domain         x 1.0000e-03  ×  y 1.0000e-03  m
+   spacing        dx 1.9531e-06  ×  dy 1.9531e-06  m
+   basis          B-spline p = 2 (quadratic),  C = 1
+   resolution     47.1 elements across the φ = 0.01–0.99 band
+                  (band = 9.19·eps;  dx/eps = 0.195)
+
+── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────
+   eps            1.0000e-05 m        decay length, NOT the band width
+   gamma_ia       1.0900e-01 J/m²     ice-air interface energy
+   Lambda         0.0000e+00          triple-junction penalty
+
+── ENVIRONMENT ─────────────────────────────────────────────────────────────
+   T0             -20.00 °C   (253.15 K)
+   humidity       h = 1.000000      1 − h = +0.0000e+00  (flat-saturated)
+   rho_vs(T0)     8.4869e-04 kg/m³     →  h·rho_vs = 8.4869e-04 kg/m³
+   grad_T         (0.0000e+00, 0.0000e+00) °C/m
+
+── TIME STEPPING ───────────────────────────────────────────────────────────
+   t_final        8.6400e+04 s   (24.00 h)
+   dt0            1.0000e-04 s
+   adaptive       ON    NRmin 5 · NRmax 15 · factor 1.3335
+   dt range       [1.0000e-06, 2.0000e+02] s
+   interface CFL  ON    max|Δφ| per step 0.200  (≈ 1.13 elements)
+   output         every 1 accepted step
+
+── TRANSPORT & THERMOPHYSICAL PROPERTIES ───────────────────────────────────
+   D_v(T0)        1.8980e-05 m²/s    = D_v0 · (T/273.15)^1.81
+                  D_v0 = 2.1780e-05 m²/s at 273.15 K
+                  ice          air          units
+   conductivity   2.2900e+00   2.0000e-02   W/m/K
+   density        9.1900e+02   1.3410e+00   kg/m³
+   heat capacity  1.9600e+03   1.0440e+03   J/kg/K
+   lat_sub        2.8300e+06 J/kg     latent heat of sublimation
+
+── PHASE-CHANGE KINETICS ───────────────────────────────────────────────────
+   rho_ice/rho_vs 1.0829e+06                density ratio at T0
+   d0_sub0        1.0166e-09 m              K&P Eq.13  γ·a³/(k_B·T)
+   beta_sub       5.9216e+05 s/m            K&P β₀ / M&F β_sub, UNSCALED
+                                            [M&F range 2e4–2e6]
+   beta_HK        5.4685e-01 s/m            SCALED, = β₀·ρ_vs/ρ_ice
+   lambda         5.3257e+10
+   tau_sub        5.8248e+04 s
+   tau_sub terms:  kinetic 5.8248e+04 s   (-thin_iface_corr 0)
+   beta realised  =  5.9216e+05 s/m  =  1.0000 x -beta_sub0
+   mob_sub        5.7227e-11 m/s            [M&F: 4.33e-7]
+   alph_sub       9.1433e+05 1/s
+   xi_T           1.0000e+00                thermal conduction + latent heat
+   xi_v           1.0000e-03                vapour diffusion + ρ_ice source
+
+── SOLVER ──────────────────────────────────────────────────────────────────
+   VI bounds      OFF   unbounded Newton — pair with -snes_type newtonls
+   phi band       [-0.010, 1.010]        physics: excursion → rollback
+                                            at a smaller dt
+   phi guard      [-0.010, 1.050]        diverging Newton only →
+                                            SNES domain error
+
+── BOUNDARY CONDITIONS ─────────────────────────────────────────────────────
+   PERIODIC on every axis — PetIGA carries periodicity on the axis, so it
+   applies to all 3 fields at once. -flag_BC_Tfix / -flag_BC_rhovfix are
+   forced off in this mode.
+
+════════════════════════════════════════════════════════════════════════════
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.198155   k_iso = 2.997548e-02 W/m/K   (124 its, 14.21 s)
+         k = [ 2.997547832e-02  -1.005359447e-14 ]
+             [ -1.707353844e-14  2.997547832e-02 ]
+Solution completed. 
+Setup time 1.584913e+01 sec  =  0.26 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+✅ Simulation completed successfully.
+
+--- Copying source code ---
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/src
+
+=========================================================================
+  Phase-field post-processing
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
+=========================================================================
+Detected dim = 2
+⚠️  igasol.dat not found — skipping VTK conversion.
+⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots.
+
+--- Time step diagnostic ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/postprocess/plot_timestep.py", line 21, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_timestep.py exited 1
+
+--- Phase-field bounds per step ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/postprocess/plot_phi_bounds.py", line 28, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_phi_bounds.py exited 1
+
+=========================================================================
+  ⚠️  Post-processing completed with errors (exit sum 2)
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/plots
+=========================================================================
+
+⚠️  Post-processing exited with code 2
+
+=========================================================================
+  ✅ Workflow completed successfully
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/plots
+=========================================================================
+
+
+=========================================================================
+  Enceladus DSM simulation workflow
+  Project root : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+  Geometry     : singleice_2D_L1mm_R250um_keff  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts)
+  Experiment   : snow_T-20_h1.00_1d  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts)
+  Title        : disk_arith_L200
+=========================================================================
+------------------------------------------------------------
+Grid from -Nx/-Ny/-Nz: Nx=256, Ny=256, Nz=1
+Total DoFs:     3 × Nx × Ny × Nz = 196608
+Target/core:    100000 DoFs
+Chosen NPROCS:  2  (cap: 12 logical cores)
+------------------------------------------------------------
+
+--- Compiling ---
+Project root: /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+make: Nothing to be done for `all'.
+✅ Compilation successful.
+
+--- Creating output folder ---
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
+
+--- Staging output folder ---
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/inputs/ (scratch/ excluded)
+✅ Staging complete.
+
+--- Running simulation ---
+Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladus_dsm
+Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
+Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
+Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
+Processes    : 2
+
+Extra opts   : -keff 1 -keff_only 1 -keff_interp arith -eps 5.00000000e-06 -Nx 1024 -Ny 1024 -keff_ksp_type cg -keff_pc_type gamg
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  -beta_sub0 override: 9.9000e+05 -> 5.9216e+05 (factor 1.67)
+  -d0_sub0 OVERRIDE: 1.0166e-09 m (physical gamma*V_m/(R*T) at -20.0 C is 1.0152e-09, factor 1.001)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 1048576 unknowns x 2 directions
+    cell volume (quad): 1.000000000006e-06 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 5.78e-12]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    band interpolation: arith (isotropic)
+    mode              : -keff_only (one sample from the IC, then exit)
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/k_eff.csv
+  ===============================================================================
+
+
+════════════════════════════════════════════════════════════════════════════
+  ENCELADUS_DSM  ·  phase-field sublimation solver
+  2 MPI ranks  ·  2D  ·  3.16 M DoF  (3 fields: ice, T, rho_v)
+════════════════════════════════════════════════════════════════════════════
+
+── MESH & DISCRETISATION ───────────────────────────────────────────────────
+   grid           1024 × 1024  =  1.05 M elements
+   domain         x 1.0000e-03  ×  y 1.0000e-03  m
+   spacing        dx 9.7656e-07  ×  dy 9.7656e-07  m
+   basis          B-spline p = 2 (quadratic),  C = 1
+   resolution     47.1 elements across the φ = 0.01–0.99 band
+                  (band = 9.19·eps;  dx/eps = 0.195)
+
+── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────
+   eps            5.0000e-06 m        decay length, NOT the band width
+   gamma_ia       1.0900e-01 J/m²     ice-air interface energy
+   Lambda         0.0000e+00          triple-junction penalty
+
+── ENVIRONMENT ─────────────────────────────────────────────────────────────
+   T0             -20.00 °C   (253.15 K)
+   humidity       h = 1.000000      1 − h = +0.0000e+00  (flat-saturated)
+   rho_vs(T0)     8.4869e-04 kg/m³     →  h·rho_vs = 8.4869e-04 kg/m³
+   grad_T         (0.0000e+00, 0.0000e+00) °C/m
+
+── TIME STEPPING ───────────────────────────────────────────────────────────
+   t_final        8.6400e+04 s   (24.00 h)
+   dt0            1.0000e-04 s
+   adaptive       ON    NRmin 5 · NRmax 15 · factor 1.3335
+   dt range       [1.0000e-06, 2.0000e+02] s
+   interface CFL  ON    max|Δφ| per step 0.200  (≈ 1.13 elements)
+   output         every 1 accepted step
+
+── TRANSPORT & THERMOPHYSICAL PROPERTIES ───────────────────────────────────
+   D_v(T0)        1.8980e-05 m²/s    = D_v0 · (T/273.15)^1.81
+                  D_v0 = 2.1780e-05 m²/s at 273.15 K
+                  ice          air          units
+   conductivity   2.2900e+00   2.0000e-02   W/m/K
+   density        9.1900e+02   1.3410e+00   kg/m³
+   heat capacity  1.9600e+03   1.0440e+03   J/kg/K
+   lat_sub        2.8300e+06 J/kg     latent heat of sublimation
+
+── PHASE-CHANGE KINETICS ───────────────────────────────────────────────────
+   rho_ice/rho_vs 1.0829e+06                density ratio at T0
+   d0_sub0        1.0166e-09 m              K&P Eq.13  γ·a³/(k_B·T)
+   beta_sub       5.9216e+05 s/m            K&P β₀ / M&F β_sub, UNSCALED
+                                            [M&F range 2e4–2e6]
+   beta_HK        5.4685e-01 s/m            SCALED, = β₀·ρ_vs/ρ_ice
+   lambda         2.6629e+10
+   tau_sub        1.4562e+04 s
+   tau_sub terms:  kinetic 1.4562e+04 s   (-thin_iface_corr 0)
+   beta realised  =  5.9216e+05 s/m  =  1.0000 x -beta_sub0
+   mob_sub        1.1445e-10 m/s            [M&F: 4.33e-7]
+   alph_sub       1.8287e+06 1/s
+   xi_T           1.0000e+00                thermal conduction + latent heat
+   xi_v           1.0000e-03                vapour diffusion + ρ_ice source
+
+── SOLVER ──────────────────────────────────────────────────────────────────
+   VI bounds      OFF   unbounded Newton — pair with -snes_type newtonls
+   phi band       [-0.010, 1.010]        physics: excursion → rollback
+                                            at a smaller dt
+   phi guard      [-0.010, 1.050]        diverging Newton only →
+                                            SNES domain error
+
+── BOUNDARY CONDITIONS ─────────────────────────────────────────────────────
+   PERIODIC on every axis — PetIGA carries periodicity on the axis, so it
+   applies to all 3 fields at once. -flag_BC_Tfix / -flag_BC_rhovfix are
+   forced off in this mode.
+
+════════════════════════════════════════════════════════════════════════════
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196992   k_iso = 3.204230e-02 W/m/K   (49 its, 47.29 s)
+         k = [ 3.204230089e-02  -2.660957263e-14 ]
+             [ -1.043398120e-13  3.204230089e-02 ]
+Solution completed. 
+Setup time 5.370285e+01 sec  =  0.90 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+✅ Simulation completed successfully.
+
+--- Copying source code ---
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/src
+
+=========================================================================
+  Phase-field post-processing
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
+=========================================================================
+Detected dim = 2
+⚠️  igasol.dat not found — skipping VTK conversion.
+⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots.
+
+--- Time step diagnostic ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/postprocess/plot_timestep.py", line 21, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_timestep.py exited 1
+
+--- Phase-field bounds per step ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/postprocess/plot_phi_bounds.py", line 28, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_phi_bounds.py exited 1
+
+=========================================================================
+  ⚠️  Post-processing completed with errors (exit sum 2)
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/plots
+=========================================================================
+
+⚠️  Post-processing exited with code 2
+
+=========================================================================
+  ✅ Workflow completed successfully
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/plots
+=========================================================================
+
+
+=========================================================================
+  Enceladus DSM simulation workflow
+  Project root : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+  Geometry     : singleice_2D_L1mm_R250um_keff  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts)
+  Experiment   : snow_T-20_h1.00_1d  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts)
+  Title        : disk_tensor_L200
+=========================================================================
+------------------------------------------------------------
+Grid from -Nx/-Ny/-Nz: Nx=256, Ny=256, Nz=1
+Total DoFs:     3 × Nx × Ny × Nz = 196608
+Target/core:    100000 DoFs
+Chosen NPROCS:  2  (cap: 12 logical cores)
+------------------------------------------------------------
+
+--- Compiling ---
+Project root: /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+make: Nothing to be done for `all'.
+✅ Compilation successful.
+
+--- Creating output folder ---
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
+
+--- Staging output folder ---
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/inputs/ (scratch/ excluded)
+✅ Staging complete.
+
+--- Running simulation ---
+Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladus_dsm
+Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
+Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
+Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
+Processes    : 2
+
+Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 5.00000000e-06 -Nx 1024 -Ny 1024 -keff_ksp_type cg -keff_pc_type gamg
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  -beta_sub0 override: 9.9000e+05 -> 5.9216e+05 (factor 1.67)
+  -d0_sub0 OVERRIDE: 1.0166e-09 m (physical gamma*V_m/(R*T) at -20.0 C is 1.0152e-09, factor 1.001)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 1048576 unknowns x 2 directions
+    cell volume (quad): 1.000000000006e-06 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 5.78e-12]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    band interpolation: tensor (arith along, harmonic across)
+    mode              : -keff_only (one sample from the IC, then exit)
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/k_eff_tensor.csv
+  ===============================================================================
+
+
+════════════════════════════════════════════════════════════════════════════
+  ENCELADUS_DSM  ·  phase-field sublimation solver
+  2 MPI ranks  ·  2D  ·  3.16 M DoF  (3 fields: ice, T, rho_v)
+════════════════════════════════════════════════════════════════════════════
+
+── MESH & DISCRETISATION ───────────────────────────────────────────────────
+   grid           1024 × 1024  =  1.05 M elements
+   domain         x 1.0000e-03  ×  y 1.0000e-03  m
+   spacing        dx 9.7656e-07  ×  dy 9.7656e-07  m
+   basis          B-spline p = 2 (quadratic),  C = 1
+   resolution     47.1 elements across the φ = 0.01–0.99 band
+                  (band = 9.19·eps;  dx/eps = 0.195)
+
+── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────
+   eps            5.0000e-06 m        decay length, NOT the band width
+   gamma_ia       1.0900e-01 J/m²     ice-air interface energy
+   Lambda         0.0000e+00          triple-junction penalty
+
+── ENVIRONMENT ─────────────────────────────────────────────────────────────
+   T0             -20.00 °C   (253.15 K)
+   humidity       h = 1.000000      1 − h = +0.0000e+00  (flat-saturated)
+   rho_vs(T0)     8.4869e-04 kg/m³     →  h·rho_vs = 8.4869e-04 kg/m³
+   grad_T         (0.0000e+00, 0.0000e+00) °C/m
+
+── TIME STEPPING ───────────────────────────────────────────────────────────
+   t_final        8.6400e+04 s   (24.00 h)
+   dt0            1.0000e-04 s
+   adaptive       ON    NRmin 5 · NRmax 15 · factor 1.3335
+   dt range       [1.0000e-06, 2.0000e+02] s
+   interface CFL  ON    max|Δφ| per step 0.200  (≈ 1.13 elements)
+   output         every 1 accepted step
+
+── TRANSPORT & THERMOPHYSICAL PROPERTIES ───────────────────────────────────
+   D_v(T0)        1.8980e-05 m²/s    = D_v0 · (T/273.15)^1.81
+                  D_v0 = 2.1780e-05 m²/s at 273.15 K
+                  ice          air          units
+   conductivity   2.2900e+00   2.0000e-02   W/m/K
+   density        9.1900e+02   1.3410e+00   kg/m³
+   heat capacity  1.9600e+03   1.0440e+03   J/kg/K
+   lat_sub        2.8300e+06 J/kg     latent heat of sublimation
+
+── PHASE-CHANGE KINETICS ───────────────────────────────────────────────────
+   rho_ice/rho_vs 1.0829e+06                density ratio at T0
+   d0_sub0        1.0166e-09 m              K&P Eq.13  γ·a³/(k_B·T)
+   beta_sub       5.9216e+05 s/m            K&P β₀ / M&F β_sub, UNSCALED
+                                            [M&F range 2e4–2e6]
+   beta_HK        5.4685e-01 s/m            SCALED, = β₀·ρ_vs/ρ_ice
+   lambda         2.6629e+10
+   tau_sub        1.4562e+04 s
+   tau_sub terms:  kinetic 1.4562e+04 s   (-thin_iface_corr 0)
+   beta realised  =  5.9216e+05 s/m  =  1.0000 x -beta_sub0
+   mob_sub        1.1445e-10 m/s            [M&F: 4.33e-7]
+   alph_sub       1.8287e+06 1/s
+   xi_T           1.0000e+00                thermal conduction + latent heat
+   xi_v           1.0000e-03                vapour diffusion + ρ_ice source
+
+── SOLVER ──────────────────────────────────────────────────────────────────
+   VI bounds      OFF   unbounded Newton — pair with -snes_type newtonls
+   phi band       [-0.010, 1.010]        physics: excursion → rollback
+                                            at a smaller dt
+   phi guard      [-0.010, 1.050]        diverging Newton only →
+                                            SNES domain error
+
+── BOUNDARY CONDITIONS ─────────────────────────────────────────────────────
+   PERIODIC on every axis — PetIGA carries periodicity on the axis, so it
+   applies to all 3 fields at once. -flag_BC_Tfix / -flag_BC_rhovfix are
+   forced off in this mode.
+
+════════════════════════════════════════════════════════════════════════════
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196992   k_iso = 2.965217e-02 W/m/K   (129 its, 54.65 s)
+         k = [ 2.965216599e-02  1.735016494e-14 ]
+             [ 2.448015983e-14  2.965216599e-02 ]
+Solution completed. 
+Setup time 6.111886e+01 sec  =  1.02 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+✅ Simulation completed successfully.
+
+--- Copying source code ---
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/src
+
+=========================================================================
+  Phase-field post-processing
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
+=========================================================================
+Detected dim = 2
+⚠️  igasol.dat not found — skipping VTK conversion.
+⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots.
+
+--- Time step diagnostic ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/postprocess/plot_timestep.py", line 21, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_timestep.py exited 1
+
+--- Phase-field bounds per step ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/postprocess/plot_phi_bounds.py", line 28, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_phi_bounds.py exited 1
+
+=========================================================================
+  ⚠️  Post-processing completed with errors (exit sum 2)
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/plots
+=========================================================================
+
+⚠️  Post-processing exited with code 2
+
+=========================================================================
+  ✅ Workflow completed successfully
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/plots
+=========================================================================
+
+
+=========================================================================
+  Enceladus DSM simulation workflow
+  Project root : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+  Geometry     : singleice_2D_L1mm_R250um_keff  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts)
+  Experiment   : snow_T-20_h1.00_1d  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts)
+  Title        : disk_arith_L400
+=========================================================================
+------------------------------------------------------------
+Grid from -Nx/-Ny/-Nz: Nx=256, Ny=256, Nz=1
+Total DoFs:     3 × Nx × Ny × Nz = 196608
+Target/core:    100000 DoFs
+Chosen NPROCS:  2  (cap: 12 logical cores)
+------------------------------------------------------------
+
+--- Compiling ---
+Project root: /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+make: Nothing to be done for `all'.
+✅ Compilation successful.
+
+--- Creating output folder ---
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
+
+--- Staging output folder ---
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/inputs/ (scratch/ excluded)
+✅ Staging complete.
+
+--- Running simulation ---
+Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladus_dsm
+Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
+Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
+Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
+Processes    : 2
+
+Extra opts   : -keff 1 -keff_only 1 -keff_interp arith -eps 2.50000000e-06 -Nx 2048 -Ny 2048 -keff_ksp_type cg -keff_pc_type gamg
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  -beta_sub0 override: 9.9000e+05 -> 5.9216e+05 (factor 1.67)
+  -d0_sub0 OVERRIDE: 1.0166e-09 m (physical gamma*V_m/(R*T) at -20.0 C is 1.0152e-09, factor 1.001)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 4194304 unknowns x 2 directions
+    cell volume (quad): 9.999999998395e-07 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 1.60e-10]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    band interpolation: arith (isotropic)
+    mode              : -keff_only (one sample from the IC, then exit)
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/k_eff.csv
+  ===============================================================================
+
+
+════════════════════════════════════════════════════════════════════════════
+  ENCELADUS_DSM  ·  phase-field sublimation solver
+  2 MPI ranks  ·  2D  ·  12.61 M DoF  (3 fields: ice, T, rho_v)
+════════════════════════════════════════════════════════════════════════════
+
+── MESH & DISCRETISATION ───────────────────────────────────────────────────
+   grid           2048 × 2048  =  4.19 M elements
+   domain         x 1.0000e-03  ×  y 1.0000e-03  m
+   spacing        dx 4.8828e-07  ×  dy 4.8828e-07  m
+   basis          B-spline p = 2 (quadratic),  C = 1
+   resolution     47.1 elements across the φ = 0.01–0.99 band
+                  (band = 9.19·eps;  dx/eps = 0.195)
+
+── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────
+   eps            2.5000e-06 m        decay length, NOT the band width
+   gamma_ia       1.0900e-01 J/m²     ice-air interface energy
+   Lambda         0.0000e+00          triple-junction penalty
+
+── ENVIRONMENT ─────────────────────────────────────────────────────────────
+   T0             -20.00 °C   (253.15 K)
+   humidity       h = 1.000000      1 − h = +0.0000e+00  (flat-saturated)
+   rho_vs(T0)     8.4869e-04 kg/m³     →  h·rho_vs = 8.4869e-04 kg/m³
+   grad_T         (0.0000e+00, 0.0000e+00) °C/m
+
+── TIME STEPPING ───────────────────────────────────────────────────────────
+   t_final        8.6400e+04 s   (24.00 h)
+   dt0            1.0000e-04 s
+   adaptive       ON    NRmin 5 · NRmax 15 · factor 1.3335
+   dt range       [1.0000e-06, 2.0000e+02] s
+   interface CFL  ON    max|Δφ| per step 0.200  (≈ 1.13 elements)
+   output         every 1 accepted step
+
+── TRANSPORT & THERMOPHYSICAL PROPERTIES ───────────────────────────────────
+   D_v(T0)        1.8980e-05 m²/s    = D_v0 · (T/273.15)^1.81
+                  D_v0 = 2.1780e-05 m²/s at 273.15 K
+                  ice          air          units
+   conductivity   2.2900e+00   2.0000e-02   W/m/K
+   density        9.1900e+02   1.3410e+00   kg/m³
+   heat capacity  1.9600e+03   1.0440e+03   J/kg/K
+   lat_sub        2.8300e+06 J/kg     latent heat of sublimation
+
+── PHASE-CHANGE KINETICS ───────────────────────────────────────────────────
+   rho_ice/rho_vs 1.0829e+06                density ratio at T0
+   d0_sub0        1.0166e-09 m              K&P Eq.13  γ·a³/(k_B·T)
+   beta_sub       5.9216e+05 s/m            K&P β₀ / M&F β_sub, UNSCALED
+                                            [M&F range 2e4–2e6]
+   beta_HK        5.4685e-01 s/m            SCALED, = β₀·ρ_vs/ρ_ice
+   lambda         1.3314e+10
+   tau_sub        3.6405e+03 s
+   tau_sub terms:  kinetic 3.6405e+03 s   (-thin_iface_corr 0)
+   beta realised  =  5.9216e+05 s/m  =  1.0000 x -beta_sub0
+   mob_sub        2.2891e-10 m/s            [M&F: 4.33e-7]
+   alph_sub       3.6573e+06 1/s
+   xi_T           1.0000e+00                thermal conduction + latent heat
+   xi_v           1.0000e-03                vapour diffusion + ρ_ice source
+
+── SOLVER ──────────────────────────────────────────────────────────────────
+   VI bounds      OFF   unbounded Newton — pair with -snes_type newtonls
+   phi band       [-0.010, 1.010]        physics: excursion → rollback
+                                            at a smaller dt
+   phi guard      [-0.010, 1.050]        diverging Newton only →
+                                            SNES domain error
+
+── BOUNDARY CONDITIONS ─────────────────────────────────────────────────────
+   PERIODIC on every axis — PetIGA carries periodicity on the axis, so it
+   applies to all 3 fields at once. -flag_BC_Tfix / -flag_BC_rhovfix are
+   forced off in this mode.
+
+════════════════════════════════════════════════════════════════════════════
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196606   k_iso = 3.074926e-02 W/m/K   (60 its, 189.92 s)
+         k = [ 3.074926075e-02  5.941165207e-14 ]
+             [ 7.837049693e-14  3.074926075e-02 ]
+Solution completed. 
+Setup time 2.155280e+02 sec  =  3.59 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+✅ Simulation completed successfully.
+
+--- Copying source code ---
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/src
+
+=========================================================================
+  Phase-field post-processing
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
+=========================================================================
+Detected dim = 2
+⚠️  igasol.dat not found — skipping VTK conversion.
+⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots.
+
+--- Time step diagnostic ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/postprocess/plot_timestep.py", line 21, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_timestep.py exited 1
+
+--- Phase-field bounds per step ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/postprocess/plot_phi_bounds.py", line 28, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_phi_bounds.py exited 1
+
+=========================================================================
+  ⚠️  Post-processing completed with errors (exit sum 2)
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/plots
+=========================================================================
+
+⚠️  Post-processing exited with code 2
+
+=========================================================================
+  ✅ Workflow completed successfully
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/plots
+=========================================================================
+
+
+=========================================================================
+  Enceladus DSM simulation workflow
+  Project root : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+  Geometry     : singleice_2D_L1mm_R250um_keff  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts)
+  Experiment   : snow_T-20_h1.00_1d  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts)
+  Title        : disk_tensor_L400
+=========================================================================
+------------------------------------------------------------
+Grid from -Nx/-Ny/-Nz: Nx=256, Ny=256, Nz=1
+Total DoFs:     3 × Nx × Ny × Nz = 196608
+Target/core:    100000 DoFs
+Chosen NPROCS:  2  (cap: 12 logical cores)
+------------------------------------------------------------
+
+--- Compiling ---
+Project root: /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+make: Nothing to be done for `all'.
+✅ Compilation successful.
+
+--- Creating output folder ---
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
+
+--- Staging output folder ---
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/inputs/ (scratch/ excluded)
+✅ Staging complete.
+
+--- Running simulation ---
+Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladus_dsm
+Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
+Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
+Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
+Processes    : 2
+
+Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 2.50000000e-06 -Nx 2048 -Ny 2048 -keff_ksp_type cg -keff_pc_type gamg
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  -beta_sub0 override: 9.9000e+05 -> 5.9216e+05 (factor 1.67)
+  -d0_sub0 OVERRIDE: 1.0166e-09 m (physical gamma*V_m/(R*T) at -20.0 C is 1.0152e-09, factor 1.001)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 4194304 unknowns x 2 directions
+    cell volume (quad): 9.999999998395e-07 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 1.60e-10]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    band interpolation: tensor (arith along, harmonic across)
+    mode              : -keff_only (one sample from the IC, then exit)
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/k_eff_tensor.csv
+  ===============================================================================
+
+
+════════════════════════════════════════════════════════════════════════════
+  ENCELADUS_DSM  ·  phase-field sublimation solver
+  2 MPI ranks  ·  2D  ·  12.61 M DoF  (3 fields: ice, T, rho_v)
+════════════════════════════════════════════════════════════════════════════
+
+── MESH & DISCRETISATION ───────────────────────────────────────────────────
+   grid           2048 × 2048  =  4.19 M elements
+   domain         x 1.0000e-03  ×  y 1.0000e-03  m
+   spacing        dx 4.8828e-07  ×  dy 4.8828e-07  m
+   basis          B-spline p = 2 (quadratic),  C = 1
+   resolution     47.1 elements across the φ = 0.01–0.99 band
+                  (band = 9.19·eps;  dx/eps = 0.195)
+
+── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────
+   eps            2.5000e-06 m        decay length, NOT the band width
+   gamma_ia       1.0900e-01 J/m²     ice-air interface energy
+   Lambda         0.0000e+00          triple-junction penalty
+
+── ENVIRONMENT ─────────────────────────────────────────────────────────────
+   T0             -20.00 °C   (253.15 K)
+   humidity       h = 1.000000      1 − h = +0.0000e+00  (flat-saturated)
+   rho_vs(T0)     8.4869e-04 kg/m³     →  h·rho_vs = 8.4869e-04 kg/m³
+   grad_T         (0.0000e+00, 0.0000e+00) °C/m
+
+── TIME STEPPING ───────────────────────────────────────────────────────────
+   t_final        8.6400e+04 s   (24.00 h)
+   dt0            1.0000e-04 s
+   adaptive       ON    NRmin 5 · NRmax 15 · factor 1.3335
+   dt range       [1.0000e-06, 2.0000e+02] s
+   interface CFL  ON    max|Δφ| per step 0.200  (≈ 1.13 elements)
+   output         every 1 accepted step
+
+── TRANSPORT & THERMOPHYSICAL PROPERTIES ───────────────────────────────────
+   D_v(T0)        1.8980e-05 m²/s    = D_v0 · (T/273.15)^1.81
+                  D_v0 = 2.1780e-05 m²/s at 273.15 K
+                  ice          air          units
+   conductivity   2.2900e+00   2.0000e-02   W/m/K
+   density        9.1900e+02   1.3410e+00   kg/m³
+   heat capacity  1.9600e+03   1.0440e+03   J/kg/K
+   lat_sub        2.8300e+06 J/kg     latent heat of sublimation
+
+── PHASE-CHANGE KINETICS ───────────────────────────────────────────────────
+   rho_ice/rho_vs 1.0829e+06                density ratio at T0
+   d0_sub0        1.0166e-09 m              K&P Eq.13  γ·a³/(k_B·T)
+   beta_sub       5.9216e+05 s/m            K&P β₀ / M&F β_sub, UNSCALED
+                                            [M&F range 2e4–2e6]
+   beta_HK        5.4685e-01 s/m            SCALED, = β₀·ρ_vs/ρ_ice
+   lambda         1.3314e+10
+   tau_sub        3.6405e+03 s
+   tau_sub terms:  kinetic 3.6405e+03 s   (-thin_iface_corr 0)
+   beta realised  =  5.9216e+05 s/m  =  1.0000 x -beta_sub0
+   mob_sub        2.2891e-10 m/s            [M&F: 4.33e-7]
+   alph_sub       3.6573e+06 1/s
+   xi_T           1.0000e+00                thermal conduction + latent heat
+   xi_v           1.0000e-03                vapour diffusion + ρ_ice source
+
+── SOLVER ──────────────────────────────────────────────────────────────────
+   VI bounds      OFF   unbounded Newton — pair with -snes_type newtonls
+   phi band       [-0.010, 1.010]        physics: excursion → rollback
+                                            at a smaller dt
+   phi guard      [-0.010, 1.050]        diverging Newton only →
+                                            SNES domain error
+
+── BOUNDARY CONDITIONS ─────────────────────────────────────────────────────
+   PERIODIC on every axis — PetIGA carries periodicity on the axis, so it
+   applies to all 3 fields at once. -flag_BC_Tfix / -flag_BC_rhovfix are
+   forced off in this mode.
+
+════════════════════════════════════════════════════════════════════════════
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196606   k_iso = 2.959002e-02 W/m/K   (133 its, 211.71 s)
+         k = [ 2.959001973e-02  1.900517656e-16 ]
+             [ -1.869736107e-14  2.959001973e-02 ]
+Solution completed. 
+Setup time 2.372257e+02 sec  =  3.95 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+✅ Simulation completed successfully.
+
+--- Copying source code ---
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/src
+
+=========================================================================
+  Phase-field post-processing
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
+=========================================================================
+Detected dim = 2
+⚠️  igasol.dat not found — skipping VTK conversion.
+⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots.
+
+--- Time step diagnostic ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/postprocess/plot_timestep.py", line 21, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_timestep.py exited 1
+
+--- Phase-field bounds per step ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/postprocess/plot_phi_bounds.py", line 28, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_phi_bounds.py exited 1
+
+=========================================================================
+  ⚠️  Post-processing completed with errors (exit sum 2)
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/plots
+=========================================================================
+
+⚠️  Post-processing exited with code 2
+
+=========================================================================
+  ✅ Workflow completed successfully
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/plots
+=========================================================================
+
+
+=========================================================================
+  Enceladus DSM simulation workflow
+  Project root : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+  Geometry     : singleice_2D_L1mm_R250um_keff  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts)
+  Experiment   : snow_T-20_h1.00_1d  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts)
+  Title        : disk_arith_L800
+=========================================================================
+------------------------------------------------------------
+Grid from -Nx/-Ny/-Nz: Nx=256, Ny=256, Nz=1
+Total DoFs:     3 × Nx × Ny × Nz = 196608
+Target/core:    100000 DoFs
+Chosen NPROCS:  2  (cap: 12 logical cores)
+------------------------------------------------------------
+
+--- Compiling ---
+Project root: /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+make: Nothing to be done for `all'.
+✅ Compilation successful.
+
+--- Creating output folder ---
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
+
+--- Staging output folder ---
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/inputs/ (scratch/ excluded)
+✅ Staging complete.
+
+--- Running simulation ---
+Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladus_dsm
+Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
+Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
+Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
+Processes    : 2
+
+Extra opts   : -keff 1 -keff_only 1 -keff_interp arith -eps 1.25000000e-06 -Nx 4096 -Ny 4096 -keff_ksp_type cg -keff_pc_type gamg
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  -beta_sub0 override: 9.9000e+05 -> 5.9216e+05 (factor 1.67)
+  -d0_sub0 OVERRIDE: 1.0166e-09 m (physical gamma*V_m/(R*T) at -20.0 C is 1.0152e-09, factor 1.001)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 16777216 unknowns x 2 directions
+    cell volume (quad): 9.999999995362e-07 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 4.64e-10]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    band interpolation: arith (isotropic)
+    mode              : -keff_only (one sample from the IC, then exit)
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/k_eff.csv
+  ===============================================================================
+
+
+════════════════════════════════════════════════════════════════════════════
+  ENCELADUS_DSM  ·  phase-field sublimation solver
+  2 MPI ranks  ·  2D  ·  50.38 M DoF  (3 fields: ice, T, rho_v)
+════════════════════════════════════════════════════════════════════════════
+
+── MESH & DISCRETISATION ───────────────────────────────────────────────────
+   grid           4096 × 4096  =  16.78 M elements
+   domain         x 1.0000e-03  ×  y 1.0000e-03  m
+   spacing        dx 2.4414e-07  ×  dy 2.4414e-07  m
+   basis          B-spline p = 2 (quadratic),  C = 1
+   resolution     47.1 elements across the φ = 0.01–0.99 band
+                  (band = 9.19·eps;  dx/eps = 0.195)
+
+── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────
+   eps            1.2500e-06 m        decay length, NOT the band width
+   gamma_ia       1.0900e-01 J/m²     ice-air interface energy
+   Lambda         0.0000e+00          triple-junction penalty
+
+── ENVIRONMENT ─────────────────────────────────────────────────────────────
+   T0             -20.00 °C   (253.15 K)
+   humidity       h = 1.000000      1 − h = +0.0000e+00  (flat-saturated)
+   rho_vs(T0)     8.4869e-04 kg/m³     →  h·rho_vs = 8.4869e-04 kg/m³
+   grad_T         (0.0000e+00, 0.0000e+00) °C/m
+
+── TIME STEPPING ───────────────────────────────────────────────────────────
+   t_final        8.6400e+04 s   (24.00 h)
+   dt0            1.0000e-04 s
+   adaptive       ON    NRmin 5 · NRmax 15 · factor 1.3335
+   dt range       [1.0000e-06, 2.0000e+02] s
+   interface CFL  ON    max|Δφ| per step 0.200  (≈ 1.13 elements)
+   output         every 1 accepted step
+
+── TRANSPORT & THERMOPHYSICAL PROPERTIES ───────────────────────────────────
+   D_v(T0)        1.8980e-05 m²/s    = D_v0 · (T/273.15)^1.81
+                  D_v0 = 2.1780e-05 m²/s at 273.15 K
+                  ice          air          units
+   conductivity   2.2900e+00   2.0000e-02   W/m/K
+   density        9.1900e+02   1.3410e+00   kg/m³
+   heat capacity  1.9600e+03   1.0440e+03   J/kg/K
+   lat_sub        2.8300e+06 J/kg     latent heat of sublimation
+
+── PHASE-CHANGE KINETICS ───────────────────────────────────────────────────
+   rho_ice/rho_vs 1.0829e+06                density ratio at T0
+   d0_sub0        1.0166e-09 m              K&P Eq.13  γ·a³/(k_B·T)
+   beta_sub       5.9216e+05 s/m            K&P β₀ / M&F β_sub, UNSCALED
+                                            [M&F range 2e4–2e6]
+   beta_HK        5.4685e-01 s/m            SCALED, = β₀·ρ_vs/ρ_ice
+   lambda         6.6572e+09
+   tau_sub        9.1012e+02 s
+   tau_sub terms:  kinetic 9.1012e+02 s   (-thin_iface_corr 0)
+   beta realised  =  5.9216e+05 s/m  =  1.0000 x -beta_sub0
+   mob_sub        4.5782e-10 m/s            [M&F: 4.33e-7]
+   alph_sub       7.3146e+06 1/s
+   xi_T           1.0000e+00                thermal conduction + latent heat
+   xi_v           1.0000e-03                vapour diffusion + ρ_ice source
+
+── SOLVER ──────────────────────────────────────────────────────────────────
+   VI bounds      OFF   unbounded Newton — pair with -snes_type newtonls
+   phi band       [-0.010, 1.010]        physics: excursion → rollback
+                                            at a smaller dt
+   phi guard      [-0.010, 1.050]        diverging Newton only →
+                                            SNES domain error
+
+── BOUNDARY CONDITIONS ─────────────────────────────────────────────────────
+   PERIODIC on every axis — PetIGA carries periodicity on the axis, so it
+   applies to all 3 fields at once. -flag_BC_Tfix / -flag_BC_rhovfix are
+   forced off in this mode.
+
+════════════════════════════════════════════════════════════════════════════
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196462   k_iso = 3.014563e-02 W/m/K   (67 its, 768.21 s)
+         k = [ 3.014563137e-02  8.847082476e-13 ]
+             [ 9.026232115e-13  3.014563137e-02 ]
+Solution completed. 
+Setup time 8.705047e+02 sec  =  14.51 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+✅ Simulation completed successfully.
+
+--- Copying source code ---
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/src
+
+=========================================================================
+  Phase-field post-processing
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
+=========================================================================
+Detected dim = 2
+⚠️  igasol.dat not found — skipping VTK conversion.
+⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots.
+
+--- Time step diagnostic ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/postprocess/plot_timestep.py", line 21, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_timestep.py exited 1
+
+--- Phase-field bounds per step ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/postprocess/plot_phi_bounds.py", line 28, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_phi_bounds.py exited 1
+
+=========================================================================
+  ⚠️  Post-processing completed with errors (exit sum 2)
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/plots
+=========================================================================
+
+⚠️  Post-processing exited with code 2
+
+=========================================================================
+  ✅ Workflow completed successfully
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/plots
+=========================================================================
+
+
+=========================================================================
+  Enceladus DSM simulation workflow
+  Project root : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+  Geometry     : singleice_2D_L1mm_R250um_keff  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts)
+  Experiment   : snow_T-20_h1.00_1d  (/Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts)
+  Title        : disk_tensor_L800
+=========================================================================
+------------------------------------------------------------
+Grid from -Nx/-Ny/-Nz: Nx=256, Ny=256, Nz=1
+Total DoFs:     3 × Nx × Ny × Nz = 196608
+Target/core:    100000 DoFs
+Chosen NPROCS:  2  (cap: 12 logical cores)
+------------------------------------------------------------
+
+--- Compiling ---
+Project root: /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
+make: Nothing to be done for `all'.
+✅ Compilation successful.
+
+--- Creating output folder ---
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
+
+--- Staging output folder ---
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/inputs/ (scratch/ excluded)
+✅ Staging complete.
+
+--- Running simulation ---
+Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladus_dsm
+Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
+Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
+Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
+Processes    : 2
+
+Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 1.25000000e-06 -Nx 4096 -Ny 4096 -keff_ksp_type cg -keff_pc_type gamg
+OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval 
+
+  -beta_sub0 override: 9.9000e+05 -> 5.9216e+05 (factor 1.67)
+  -d0_sub0 OVERRIDE: 1.0166e-09 m (physical gamma*V_m/(R*T) at -20.0 C is 1.0152e-09, factor 1.001)
+
+  ===============================================================================
+  >>> EFFECTIVE THERMAL CONDUCTIVITY (periodic homogenization)
+  ===============================================================================
+    corrector mesh    : dim 2, scalar (dof 1), 16777216 unknowns x 2 directions
+    cell volume (quad): 9.999999995362e-07 m^2
+    cell volume (box) : 1.000000000000e-06 m^2   [rel diff 4.64e-10]
+    k_ice / k_air     : 2.29 / 0.02 W/m/K
+    band interpolation: tensor (arith along, harmonic across)
+    mode              : -keff_only (one sample from the IC, then exit)
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/k_eff_tensor.csv
+  ===============================================================================
+
+
+════════════════════════════════════════════════════════════════════════════
+  ENCELADUS_DSM  ·  phase-field sublimation solver
+  2 MPI ranks  ·  2D  ·  50.38 M DoF  (3 fields: ice, T, rho_v)
+════════════════════════════════════════════════════════════════════════════
+
+── MESH & DISCRETISATION ───────────────────────────────────────────────────
+   grid           4096 × 4096  =  16.78 M elements
+   domain         x 1.0000e-03  ×  y 1.0000e-03  m
+   spacing        dx 2.4414e-07  ×  dy 2.4414e-07  m
+   basis          B-spline p = 2 (quadratic),  C = 1
+   resolution     47.1 elements across the φ = 0.01–0.99 band
+                  (band = 9.19·eps;  dx/eps = 0.195)
+
+── PHASE-FIELD INTERFACE ───────────────────────────────────────────────────
+   eps            1.2500e-06 m        decay length, NOT the band width
+   gamma_ia       1.0900e-01 J/m²     ice-air interface energy
+   Lambda         0.0000e+00          triple-junction penalty
+
+── ENVIRONMENT ─────────────────────────────────────────────────────────────
+   T0             -20.00 °C   (253.15 K)
+   humidity       h = 1.000000      1 − h = +0.0000e+00  (flat-saturated)
+   rho_vs(T0)     8.4869e-04 kg/m³     →  h·rho_vs = 8.4869e-04 kg/m³
+   grad_T         (0.0000e+00, 0.0000e+00) °C/m
+
+── TIME STEPPING ───────────────────────────────────────────────────────────
+   t_final        8.6400e+04 s   (24.00 h)
+   dt0            1.0000e-04 s
+   adaptive       ON    NRmin 5 · NRmax 15 · factor 1.3335
+   dt range       [1.0000e-06, 2.0000e+02] s
+   interface CFL  ON    max|Δφ| per step 0.200  (≈ 1.13 elements)
+   output         every 1 accepted step
+
+── TRANSPORT & THERMOPHYSICAL PROPERTIES ───────────────────────────────────
+   D_v(T0)        1.8980e-05 m²/s    = D_v0 · (T/273.15)^1.81
+                  D_v0 = 2.1780e-05 m²/s at 273.15 K
+                  ice          air          units
+   conductivity   2.2900e+00   2.0000e-02   W/m/K
+   density        9.1900e+02   1.3410e+00   kg/m³
+   heat capacity  1.9600e+03   1.0440e+03   J/kg/K
+   lat_sub        2.8300e+06 J/kg     latent heat of sublimation
+
+── PHASE-CHANGE KINETICS ───────────────────────────────────────────────────
+   rho_ice/rho_vs 1.0829e+06                density ratio at T0
+   d0_sub0        1.0166e-09 m              K&P Eq.13  γ·a³/(k_B·T)
+   beta_sub       5.9216e+05 s/m            K&P β₀ / M&F β_sub, UNSCALED
+                                            [M&F range 2e4–2e6]
+   beta_HK        5.4685e-01 s/m            SCALED, = β₀·ρ_vs/ρ_ice
+   lambda         6.6572e+09
+   tau_sub        9.1012e+02 s
+   tau_sub terms:  kinetic 9.1012e+02 s   (-thin_iface_corr 0)
+   beta realised  =  5.9216e+05 s/m  =  1.0000 x -beta_sub0
+   mob_sub        4.5782e-10 m/s            [M&F: 4.33e-7]
+   alph_sub       7.3146e+06 1/s
+   xi_T           1.0000e+00                thermal conduction + latent heat
+   xi_v           1.0000e-03                vapour diffusion + ρ_ice source
+
+── SOLVER ──────────────────────────────────────────────────────────────────
+   VI bounds      OFF   unbounded Newton — pair with -snes_type newtonls
+   phi band       [-0.010, 1.010]        physics: excursion → rollback
+                                            at a smaller dt
+   phi guard      [-0.010, 1.050]        diverging Newton only →
+                                            SNES domain error
+
+── BOUNDARY CONDITIONS ─────────────────────────────────────────────────────
+   PERIODIC on every axis — PetIGA carries periodicity on the axis, so it
+   applies to all 3 fields at once. -flag_BC_Tfix / -flag_BC_rhovfix are
+   forced off in this mode.
+
+════════════════════════════════════════════════════════════════════════════
+
+Setting up initial conditions... 
+IC type: single_ice
+--- INITIAL CONDITIONS (2D single ice grain) ---
+  centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196462   k_iso = 2.957597e-02 W/m/K   (138 its, 851.96 s)
+         k = [ 2.957597371e-02  1.398576813e-12 ]
+             [ 1.392259510e-12  2.957597371e-02 ]
+Solution completed. 
+Setup time 9.537099e+02 sec  =  15.90 min 
+
+WARNING! There are options you set that were not used!
+WARNING! could be spelling mistake, etc!
+There are 5 unused database options. They are:
+Option left: name:-ksp_converged_reason value: ::failed source: file
+Option left: name:-ksp_gmres_restart value: 200 source: file
+Option left: name:-snes_converged_reason value: ::failed source: file
+Option left: name:-sub_pc_factor_levels value: 3 source: file
+Option left: name:-sub_pc_type value: ilu source: file
+✅ Simulation completed successfully.
+
+--- Copying source code ---
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/src
+
+=========================================================================
+  Phase-field post-processing
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
+=========================================================================
+Detected dim = 2
+⚠️  igasol.dat not found — skipping VTK conversion.
+⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots.
+
+--- Time step diagnostic ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/postprocess/plot_timestep.py", line 21, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_timestep.py exited 1
+
+--- Phase-field bounds per step ---
+  Traceback (most recent call last):
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/postprocess/plot_phi_bounds.py", line 28, in <module>
+      import numpy as np
+  ModuleNotFoundError: No module named 'numpy'
+  ⚠️  plot_phi_bounds.py exited 1
+
+=========================================================================
+  ⚠️  Post-processing completed with errors (exit sum 2)
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/plots
+=========================================================================
+
+⚠️  Post-processing exited with code 2
+
+=========================================================================
+  ✅ Workflow completed successfully
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/plots
+=========================================================================
+
