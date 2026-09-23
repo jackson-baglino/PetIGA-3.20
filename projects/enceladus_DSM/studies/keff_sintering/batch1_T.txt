@@ -1,0 +1,31 @@
+# Batch 1 of the k_eff sintering campaign: the temperature axis, cold end.
+#
+# Two temperatures x two seeds, not three temperatures x one seed. The four
+# 2026-09-16 pilot runs already fix the seed scatter at -20 C (sd 2.1 points on
+# the arith rise), so what batch 1 has to add is scatter at the COLD end --
+# that is what decides whether a temperature difference is real rather than a
+# realization difference.
+#
+# -20 C is absent on purpose: pilot seed 1-4 already ran at exactly these
+# settings (alpha_c = 1e-3, 30 d, dtmax = 1.09*tau_sub). They need a k_eff
+# replay under the tensor law, not a rerun.
+#
+# -10 C is absent on purpose too: at 2.5x the -20 C vapour density it is ~16700
+# steps, ~111 h at 241 ranks, and five 24 h restart legs -- more than the rest
+# of the axis combined. It goes in batch 2, once a trend is known to exist.
+#
+# Estimated (from the pilot's measured ~24 s/step at 241 ranks, steps scaled by
+# rho_vs): -40 C ~5.5 h/run, -30 C ~16 h/run, all single-leg, ~$126 total.
+#
+# Submit with:
+#   ./scripts/HPC/submit_batch.sh --tag keff_T_batch1 \
+#       --tests-file studies/keff_sintering/batch1_T.txt \
+#       --extra-opts "-keff 1 -keff_step0 1 -keff_t_interv 5.0e4 \
+#                     -keff_ksp_type cg -keff_pc_type gamg"
+#
+# -keff_interp is not passed: tensor has been the default since 2026-09-23.
+
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed1_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed2_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed1_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed2_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
