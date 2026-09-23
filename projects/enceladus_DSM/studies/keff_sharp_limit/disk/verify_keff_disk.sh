@@ -17,7 +17,9 @@
 # time integration, so it runs locally.
 #
 # USAGE
-#   ./verify_keff_disk.sh [--rungs "50 100 200 400"] [--dry-run]
+#   ./verify_keff_disk.sh [--rungs "100 200 400 800"] [--dry-run]
+#
+# The L/800 rung is 4096^2; drop it with --rungs "100 200 400" if memory is tight.
 #
 # Writes keff_disk.csv next to this script, then calls gate_keff_disk.py.
 # =============================================================================
@@ -38,7 +40,10 @@ R=2.5e-4
 # Resolution scales with eps, as in the laminate ladder: eps/dy held at 5.12.
 EPS_PER_ELEM=5.12
 
-RUNGS="50 100 200 400"
+# Starts at L/100, not L/50: at L/50 eps/R = 0.08 and the visible band (~9 eps)
+# spans most of the radius, so the thin-interface expansion being tested does
+# not apply there (measured arith bias +46% vs +30% first order).
+RUNGS="100 200 400 800"
 DRY_RUN=0
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -75,13 +80,16 @@ fi
 echo "step,time,k_00,k_01,k_10,k_11,phi_bar,k_iso,ksp_its,ksp_reason,wall_s,eps,Ny,interp,run_dir" > "$CSV"
 : > "$LOG"
 
+# The runner gets </dev/null below. This loop reads the schedule from a pipe
+# on stdin, and mpiexec inherits and drains stdin: without the redirect the
+# ladder silently stopped after its first rung.
 printf '%s' "$schedule" | while read -r denom eps Ny; do
     for interp in arith tensor; do
         echo "=== rung L/$denom ($interp) :  eps = $eps   Nx = Ny = $Ny ==="
         out=$("$RUNNER" "$GEOM" "$EXP" "disk_${interp}_L$denom" -- \
                 -keff 1 -keff_only 1 -keff_interp "$interp" \
                 -eps "$eps" -Nx "$Ny" -Ny "$Ny" \
-                -keff_ksp_type cg -keff_pc_type gamg 2>&1 | tee -a "$LOG")
+                -keff_ksp_type cg -keff_pc_type gamg </dev/null 2>&1 | tee -a "$LOG")
 
         run_dir=$(echo "$out" | sed -n 's/^Output folder: //p' | tail -1)
         [ -n "$run_dir" ] || { echo "could not parse output folder from run script" >&2; exit 1; }

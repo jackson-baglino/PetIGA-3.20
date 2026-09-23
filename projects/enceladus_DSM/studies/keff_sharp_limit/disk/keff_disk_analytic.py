@@ -92,7 +92,7 @@ if __name__ == "__main__":
           f"(rel {(ks - mg) / mg:.1e})")
     print(f"arith first-order slope dk/deps = {s:.2f} W/m^2/K\n")
     print(f"{'eps':>9}  {'arith pred':>11}  {'bias':>7}")
-    for d in (50, 100, 200, 400):
+    for d in (100, 200, 400, 800):
         e = L / d
         print(f"   L/{d:<4d}  {ks + s * e:11.7f}  {s * e / ks:+7.2%}")
     # Self-check: the header of the geometry file quotes these two numbers.

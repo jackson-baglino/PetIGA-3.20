@@ -123,6 +123,9 @@ fi
 echo "step,time,k_00,k_01,k_10,k_11,phi_bar,k_iso,ksp_its,ksp_reason,wall_s,eps,Ny,run_dir" > "$CSV"
 : > "$LOG"
 
+# The runner gets </dev/null below. This loop reads the schedule from a pipe
+# on stdin, and mpiexec inherits and drains stdin: without the redirect the
+# ladder silently stopped after its first rung.
 printf '%s' "$schedule" | while read -r denom eps Ny; do
     echo "=== rung L/$denom ($INTERP) :  eps = $eps   Nx = Ny = $Ny ==="
     # -keff_ksp/-keff_pc: CG+GAMG rather than the direct LU that is only
@@ -130,7 +133,7 @@ printf '%s' "$schedule" | while read -r denom eps Ny; do
     out=$("$RUNNER" "$GEOM" "$EXP" "sharplimit_${INTERP}_L$denom" -- \
             -keff 1 -keff_only 1 -keff_interp "$INTERP" \
             -eps "$eps" -Nx "$Ny" -Ny "$Ny" \
-            -keff_ksp_type cg -keff_pc_type gamg 2>&1 | tee -a "$LOG")
+            -keff_ksp_type cg -keff_pc_type gamg </dev/null 2>&1 | tee -a "$LOG")
 
     run_dir=$(echo "$out" | sed -n 's/^Output folder: //p' | tail -1)
     [ -n "$run_dir" ] || { echo "could not parse output folder from run script" >&2; exit 1; }

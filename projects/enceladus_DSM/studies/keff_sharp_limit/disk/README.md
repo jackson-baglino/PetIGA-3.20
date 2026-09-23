@@ -15,7 +15,7 @@ alone is within 1.8e−4 of that, so the reference is not the limiting error.
 - **It is where the arithmetic law is worst.** A conducting disk in an
   insulating matrix sends its flux *normal* to the interface. The first-order
   prediction (dipole field, no fitted constants, `keff_disk_analytic.py`) is a
-  +30% bias at `eps = L/50` and +3.8% at `L/400`.
+  +15% bias at `eps = L/100` and +1.9% at `L/800`.
 
 ## Running it
 
@@ -24,9 +24,14 @@ cd /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
 ./studies/keff_sharp_limit/disk/verify_keff_disk.sh
 ```
 
-Four rungs (`eps = L/50 … L/400`, `Ny = 256 … 2048`, `eps/dy = 5.12` held
+Four rungs (`eps = L/100 … L/800`, `Ny = 512 … 4096`, `eps/dy = 5.12` held
 fixed as in the laminate ladder), each run under **both** laws: 8 `-keff_only`
 solves, no time integration. `--rungs`, `--dry-run` as in the laminate driver.
+
+The ladder starts at L/100 on purpose. At L/50, `eps/R = 0.08` and the visible
+band (~9·eps) spans most of the radius, so the thin-interface expansion being
+tested does not hold: the first run measured +46% for arith against +30% first
+order, and +6.7% for tensor.
 
 Writes `keff_disk.csv`, `keff_disk.log`, `keff_disk.png` here.
 

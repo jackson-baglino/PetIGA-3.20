@@ -81,6 +81,10 @@ def check(d: dict, L: float, R: float) -> list[str]:
     if not np.allclose(a["eps"], t["eps"]):
         raise SystemExit("arith and tensor ladders do not share eps rungs")
 
+    if len(a["eps"]) < 3:
+        print(f"\nonly {len(a['eps'])} rung(s) in the CSV; the fits need >= 3")
+        failures.append("ladder incomplete")
+        return failures
     err_a = a["k"] / ks - 1.0
     err_t = t["k"] / ks - 1.0
     print(f"\nsharp reference k = {ks:.7f}   predicted arith slope {s_pred:.2f}")

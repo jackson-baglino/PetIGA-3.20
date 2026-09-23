@@ -112,7 +112,10 @@ def check(rows: list[dict], L: float, n_gamma: int, interp: str) -> list[str]:
     # The tensor law predicts slope 0, which cannot be a relative denominator;
     # measure its slope against the one the arithmetic law would produce.
     _, slope_ref = ana.resistivity_line(float(phi.mean()), L, n_gamma)
-    if len(eps) >= 2:
+    if len(eps) < 3:
+        gate("ladder complete", False,
+             f"{len(eps)} rung(s); the slope and intercept need >= 3", failures)
+    else:
         slope_f, icept_f = np.polyfit(eps, 1.0 / k11, 1)
         slope_f = -slope_f          # fit is 1/k = a*eps + b with a = -slope
         rel_s = abs(slope_f - slope_p) / slope_ref
