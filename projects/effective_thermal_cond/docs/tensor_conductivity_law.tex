@@ -62,10 +62,11 @@ through it), so it cancels both first-order error terms with no fitted
 parameter, while leaving the bulk phases, the sharp limit and the metamorphism
 model untouched. Against closed-form sharp solutions it reproduces a laminate's
 conductivity to $4\times10^{-7}$ at every interface width tested, where the
-arithmetic law is $3.8$--$59\%$ high, and a disk array's to $0.03\%$ at
-$\varepsilon=L/800$ with the error falling at second order in $\varepsilon$,
+arithmetic law is $3.8$--$59\%$ high, and a disk array's to $0.006\%$ at
+$\varepsilon=L/800$ with the error falling faster than second order in
+$\varepsilon$,
 while the arithmetic law's measured error matches our first-order prediction to
-within $1\%$.
+within $2\%$.
 \end{abstract}
 
 \section{The problem}
@@ -432,28 +433,26 @@ arithmetic law's.
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
 \multicolumn{5}{c}{disk array, $k$ bias}\\
-$\varepsilon$ & arith.\ (pred.) & arith.\ (meas.) & tensor (meas.) & tensor, IC offset removed\\
+$\varepsilon$ & arith.\ (pred.) & arith.\ (meas.) & tensor (meas.) & observed order\\
 \midrule
-$L/100$ & $+15.07\%$ & $+18.46\%$ & $+1.377\%$ & $+1.219\%$\\
-$L/200$ & $+7.53\%$  & $+8.37\%$  & $+0.283\%$ & $+0.205\%$\\
-$L/400$ & $+3.77\%$  & $+3.99\%$  & $+0.073\%$ & $+0.034\%$\\
-$L/800$ & $+1.88\%$  & $+1.95\%$  & $+0.026\%$ & $+0.006\%$\\
+$L/100$ & $+15.07\%$ & $+18.19\%$ & $+1.212\%$ & \\
+$L/200$ & $+7.53\%$  & $+8.26\%$  & $+0.204\%$ & $2.57$\\
+$L/400$ & $+3.77\%$  & $+3.95\%$  & $+0.034\%$ & $2.59$\\
+$L/800$ & $+1.88\%$  & $+1.93\%$  & $+0.006\%$ & $2.50$\\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \noindent For the arithmetic law, a quadratic fit in $\varepsilon$ gives a
-first-order coefficient of $440.9$~W\,m$^{-2}$K$^{-1}$ against the predicted
-$445.5$ ($-1.0\%$). The intercept is within $0.04\%$ of Rayleigh's value. This
+first-order coefficient of $436.9$~W\,m$^{-2}$K$^{-1}$ against the predicted
+$445.5$ ($-1.9\%$), and an intercept within $0.04\%$ of Rayleigh's value. This
 confirms Prop.~\ref{prop:bias} on a curved interface with no fitted constants.
-For the tensor law the first-order coefficient is $-2.5\%$ of the arithmetic
-one, and at every rung the error is at most $0.075\times$ the arithmetic error.
-The last column removes an offset in the benchmark's initial condition, which
-stretched the disk by $(N+1)/N$ on an $N^2$ mesh (measured area excess $2/N$ to
-four digits). It has since been fixed in the code, so a rerun measures this
-column directly. With the offset removed, the tensor residual falls by
-about $6\times$ per halving of $\varepsilon$ (observed order $\approx2.5$),
-consistent with \eqref{eq:second}.
+The tensor law's error is at most $0.067\times$ the arithmetic error at every
+rung and falls at an observed order of about $2.5$, so no first-order term
+remains, consistent with \eqref{eq:second}. The measured ice fraction matches
+the exact diffuse-disk value $f(1+\pi^2\varepsilon^2/3R^2)$ to
+$3\times10^{-10}$, so these errors come from the conductivity law and not from
+the initial condition.
 
 \noindent Drivers: \verb|enceladus_DSM/studies/keff_sharp_limit/verification/|
 (\verb|--interp tensor|) and \verb|.../disk/|.

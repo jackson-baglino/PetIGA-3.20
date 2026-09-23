@@ -51,27 +51,24 @@ that is part of the `O(eps²)` residual, not an IC error to divide out.)
 The dipole slope ignores the neighbouring disks' higher multipoles, so gate 2's
 slope tolerance is loose on purpose. Gates 3 and 4 are the tensor-law test.
 
-## Result (2026-09-23): all gates pass
+## Result (2026-09-23, after the IC fix): all gates pass
 
-| eps | arith err (pred. first order) | arith err (meas.) | tensor err (meas.) | tensor err, IC offset removed |
+| eps | arith err (pred. first order) | arith err (meas.) | tensor err (meas.) | tensor order |
 |---|---|---|---|---|
-| L/100 | +15.07% | +18.46% | +1.377% | +1.219% |
-| L/200 | +7.53% | +8.37% | +0.283% | +0.205% |
-| L/400 | +3.77% | +3.99% | +0.073% | +0.034% |
-| L/800 | +1.88% | +1.95% | +0.026% | +0.006% |
+| L/100 | +15.07% | +18.19% | +1.212% | |
+| L/200 | +7.53% | +8.26% | +0.204% | 2.57 |
+| L/400 | +3.77% | +3.95% | +0.034% | 2.59 |
+| L/800 | +1.88% | +1.93% | +0.006% | 2.50 |
 
-- **Arith:** fitted slope 440.9 vs predicted 445.5 W m⁻² K⁻¹ (−1.0%); fitted
-  intercept within 0.04% of Rayleigh. The first-order theory is confirmed on a
-  curved interface, with no fitted constants.
-- **Tensor:** fitted first-order coefficient −2.5% of arith's; intercept within
-  0.05% of Rayleigh. Error at most 0.075× arith's at every rung.
-- **The IC offset.** `IC_COORD_UNIFORM` places the periodic mesh's N nodes at
-  `L·i/(N+1)` instead of `L·i/N`, stretching the disk by `(N+1)/N`. Its measured
-  area excess over the exact diffuse disk is `2/N` to four digits at every
-  rung, which adds `(dk/df)·f·2/N` to both laws. With that removed, the tensor
-  residual falls ~6× per halving of eps (observed order ≈ 2.5): the first-order
-  term is gone. The packing ICs use `IC_COORD_GREVILLE` and are not affected.
-  **Fixed on 2026-09-23** (periodic denominator `mx`, not `mx + 1`). These
-  numbers predate the fix, so rerun the ladder to replace the last column with
-  a direct measurement.
-
+- **Arith:** fitted first-order slope 436.9 vs predicted 445.5 W m⁻² K⁻¹
+  (−1.9%); fitted intercept within 0.04% of Rayleigh. The first-order theory
+  holds on a curved interface, with no fitted constants.
+- **Tensor:** error at most 0.067× arith's at every rung, +0.006% at L/800,
+  falling at observed order ≈ 2.5. Its fitted first-order coefficient is −3.5%
+  of arith's. (The quadratic-fit intercept, +0.05%, is less accurate than the
+  finest rung itself because the data are steeper than the fit's ε² term.)
+- **IC check.** The measured `φ̄` equals the exact diffuse-disk fraction
+  `f(1 + π²ε²/3R²)` to ≤ 3e−10 at every rung, so the periodic-coordinate fix
+  (2026-09-23) is confirmed. The first run, before that fix, had a `2/N` area
+  excess; its tensor errors with that excess removed by calculation (1.219,
+  0.205, 0.034, 0.006%) agree with these direct measurements.

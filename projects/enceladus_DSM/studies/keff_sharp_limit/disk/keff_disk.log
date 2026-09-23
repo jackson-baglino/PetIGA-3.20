@@ -19,11 +19,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -31,7 +31,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp arith -eps 1.00000000e-05 -Nx 512 -Ny 512 -keff_ksp_type cg -keff_pc_type gamg
@@ -49,7 +49,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: arith (isotropic)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/k_eff.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100/k_eff.csv
   ===============================================================================
 
 
@@ -127,11 +127,11 @@ Setting up initial conditions...
 IC type: single_ice
 --- INITIAL CONDITIONS (2D single ice grain) ---
   centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.198155   k_iso = 3.502623e-02 W/m/K   (44 its, 12.10 s)
-         k = [ 3.502623431e-02  -3.486516050e-14 ]
-             [ -2.861781898e-14  3.502623431e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.197383   k_iso = 3.494530e-02 W/m/K   (44 its, 12.52 s)
+         k = [ 3.494530068e-02  -3.903361599e-14 ]
+             [ -2.364952210e-14  3.494530068e-02 ]
 Solution completed. 
-Setup time 1.373854e+01 sec  =  0.23 min 
+Setup time 1.421057e+01 sec  =  0.24 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -144,11 +144,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -156,30 +156,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.17_snow_T-20_h1.00_1d_disk_arith_L100/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.29_snow_T-20_h1.00_1d_disk_arith_L100/plots
 =========================================================================
 
 
@@ -203,11 +203,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -215,7 +215,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 1.00000000e-05 -Nx 512 -Ny 512 -keff_ksp_type cg -keff_pc_type gamg
@@ -233,7 +233,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: tensor (arith along, harmonic across)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/k_eff_tensor.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100/k_eff_tensor.csv
   ===============================================================================
 
 
@@ -311,11 +311,11 @@ Setting up initial conditions...
 IC type: single_ice
 --- INITIAL CONDITIONS (2D single ice grain) ---
   centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.198155   k_iso = 2.997548e-02 W/m/K   (124 its, 14.21 s)
-         k = [ 2.997547832e-02  -1.005359447e-14 ]
-             [ -1.707353844e-14  2.997547832e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.197383   k_iso = 2.992686e-02 W/m/K   (125 its, 14.69 s)
+         k = [ 2.992685825e-02  7.274450080e-15 ]
+             [ 3.678481221e-14  2.992685825e-02 ]
 Solution completed. 
-Setup time 1.584913e+01 sec  =  0.26 min 
+Setup time 1.664852e+01 sec  =  0.28 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -328,11 +328,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -340,30 +340,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.31_snow_T-20_h1.00_1d_disk_tensor_L100/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.24.44_snow_T-20_h1.00_1d_disk_tensor_L100/plots
 =========================================================================
 
 
@@ -387,11 +387,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -399,7 +399,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp arith -eps 5.00000000e-06 -Nx 1024 -Ny 1024 -keff_ksp_type cg -keff_pc_type gamg
@@ -417,7 +417,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: arith (isotropic)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/k_eff.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200/k_eff.csv
   ===============================================================================
 
 
@@ -495,11 +495,11 @@ Setting up initial conditions...
 IC type: single_ice
 --- INITIAL CONDITIONS (2D single ice grain) ---
   centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196992   k_iso = 3.204230e-02 W/m/K   (49 its, 47.29 s)
-         k = [ 3.204230089e-02  -2.660957263e-14 ]
-             [ -1.043398120e-13  3.204230089e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196608   k_iso = 3.201166e-02 W/m/K   (49 its, 47.75 s)
+         k = [ 3.201165708e-02  -3.009074203e-14 ]
+             [ -1.041878881e-13  3.201165708e-02 ]
 Solution completed. 
-Setup time 5.370285e+01 sec  =  0.90 min 
+Setup time 5.416847e+01 sec  =  0.90 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -512,11 +512,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -524,30 +524,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.34.48_snow_T-20_h1.00_1d_disk_arith_L200/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.01_snow_T-20_h1.00_1d_disk_arith_L200/plots
 =========================================================================
 
 
@@ -571,11 +571,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -583,7 +583,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 5.00000000e-06 -Nx 1024 -Ny 1024 -keff_ksp_type cg -keff_pc_type gamg
@@ -601,7 +601,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: tensor (arith along, harmonic across)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/k_eff_tensor.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200/k_eff_tensor.csv
   ===============================================================================
 
 
@@ -679,11 +679,11 @@ Setting up initial conditions...
 IC type: single_ice
 --- INITIAL CONDITIONS (2D single ice grain) ---
   centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196992   k_iso = 2.965217e-02 W/m/K   (129 its, 54.65 s)
-         k = [ 2.965216599e-02  1.735016494e-14 ]
-             [ 2.448015983e-14  2.965216599e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196608   k_iso = 2.962877e-02 W/m/K   (129 its, 58.47 s)
+         k = [ 2.962876531e-02  1.579182860e-14 ]
+             [ 3.261861847e-14  2.962876531e-02 ]
 Solution completed. 
-Setup time 6.111886e+01 sec  =  1.02 min 
+Setup time 6.514137e+01 sec  =  1.09 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -696,11 +696,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -708,30 +708,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.35.42_snow_T-20_h1.00_1d_disk_tensor_L200/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.25.56_snow_T-20_h1.00_1d_disk_tensor_L200/plots
 =========================================================================
 
 
@@ -755,11 +755,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -767,7 +767,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp arith -eps 2.50000000e-06 -Nx 2048 -Ny 2048 -keff_ksp_type cg -keff_pc_type gamg
@@ -785,7 +785,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: arith (isotropic)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/k_eff.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400/k_eff.csv
   ===============================================================================
 
 
@@ -863,11 +863,11 @@ Setting up initial conditions...
 IC type: single_ice
 --- INITIAL CONDITIONS (2D single ice grain) ---
   centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196606   k_iso = 3.074926e-02 W/m/K   (60 its, 189.92 s)
-         k = [ 3.074926075e-02  5.941165207e-14 ]
-             [ 7.837049693e-14  3.074926075e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196414   k_iso = 3.073592e-02 W/m/K   (60 its, 192.14 s)
+         k = [ 3.073592302e-02  7.552417075e-14 ]
+             [ 8.490202635e-14  3.073592302e-02 ]
 Solution completed. 
-Setup time 2.155280e+02 sec  =  3.59 min 
+Setup time 2.180005e+02 sec  =  3.63 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -880,11 +880,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -892,30 +892,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.36.43_snow_T-20_h1.00_1d_disk_arith_L400/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.27.01_snow_T-20_h1.00_1d_disk_arith_L400/plots
 =========================================================================
 
 
@@ -939,11 +939,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -951,7 +951,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 2.50000000e-06 -Nx 2048 -Ny 2048 -keff_ksp_type cg -keff_pc_type gamg
@@ -969,7 +969,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: tensor (arith along, harmonic across)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/k_eff_tensor.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400/k_eff_tensor.csv
   ===============================================================================
 
 
@@ -1047,11 +1047,11 @@ Setting up initial conditions...
 IC type: single_ice
 --- INITIAL CONDITIONS (2D single ice grain) ---
   centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196606   k_iso = 2.959002e-02 W/m/K   (133 its, 211.71 s)
-         k = [ 2.959001973e-02  1.900517656e-16 ]
-             [ -1.869736107e-14  2.959001973e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196414   k_iso = 2.957840e-02 W/m/K   (133 its, 212.12 s)
+         k = [ 2.957839962e-02  4.040270226e-15 ]
+             [ -1.158096032e-14  2.957839962e-02 ]
 Solution completed. 
-Setup time 2.372257e+02 sec  =  3.95 min 
+Setup time 2.375654e+02 sec  =  3.96 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1064,11 +1064,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -1076,30 +1076,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.40.19_snow_T-20_h1.00_1d_disk_tensor_L400/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.30.40_snow_T-20_h1.00_1d_disk_tensor_L400/plots
 =========================================================================
 
 
@@ -1123,11 +1123,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -1135,7 +1135,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp arith -eps 1.25000000e-06 -Nx 4096 -Ny 4096 -keff_ksp_type cg -keff_pc_type gamg
@@ -1153,7 +1153,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: arith (isotropic)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/k_eff.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800/k_eff.csv
   ===============================================================================
 
 
@@ -1231,11 +1231,11 @@ Setting up initial conditions...
 IC type: single_ice
 --- INITIAL CONDITIONS (2D single ice grain) ---
   centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196462   k_iso = 3.014563e-02 W/m/K   (67 its, 768.21 s)
-         k = [ 3.014563137e-02  8.847082476e-13 ]
-             [ 9.026232115e-13  3.014563137e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196366   k_iso = 3.013941e-02 W/m/K   (67 its, 771.39 s)
+         k = [ 3.013941110e-02  8.879085373e-13 ]
+             [ 8.968995212e-13  3.013941110e-02 ]
 Solution completed. 
-Setup time 8.705047e+02 sec  =  14.51 min 
+Setup time 8.739702e+02 sec  =  14.57 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1248,11 +1248,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -1260,30 +1260,30 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.44.17_snow_T-20_h1.00_1d_disk_arith_L800/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.34.38_snow_T-20_h1.00_1d_disk_arith_L800/plots
 =========================================================================
 
 
@@ -1307,11 +1307,11 @@ make: Nothing to be done for `all'.
 ✅ Compilation successful.
 
 --- Creating output folder ---
-Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
+Output folder: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800
 
 --- Staging output folder ---
-  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/postprocess/ (scratch/ excluded)
-  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/inputs/ (scratch/ excluded)
+  Copied postprocess/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800/postprocess/ (scratch/ excluded)
+  Copied inputs/ → /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800/inputs/ (scratch/ excluded)
 ✅ Staging complete.
 
 --- Running simulation ---
@@ -1319,7 +1319,7 @@ Executable   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/enceladu
 Solver       : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/solver.opts
 Geometry     : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/geometry/singleice/singleice_2D_L1mm_R250um_keff.opts
 Experiment   : /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/experiment/snow/snow_T-20_h1.00_1d.opts
-Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
+Output path  : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800
 Processes    : 2
 
 Extra opts   : -keff 1 -keff_only 1 -keff_interp tensor -eps 1.25000000e-06 -Nx 4096 -Ny 4096 -keff_ksp_type cg -keff_pc_type gamg
@@ -1337,7 +1337,7 @@ OUTPUT DATA ERROR: Reduce maximum time step, or increase t_interval
     k_ice / k_air     : 2.29 / 0.02 W/m/K
     band interpolation: tensor (arith along, harmonic across)
     mode              : -keff_only (one sample from the IC, then exit)
-    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/k_eff_tensor.csv
+    output            : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800/k_eff_tensor.csv
   ===============================================================================
 
 
@@ -1415,11 +1415,11 @@ Setting up initial conditions...
 IC type: single_ice
 --- INITIAL CONDITIONS (2D single ice grain) ---
   centre = (5.0000e-04, 5.0000e-04) m,  RCice = 2.5000e-04 m
-  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196462   k_iso = 2.957597e-02 W/m/K   (138 its, 851.96 s)
-         k = [ 2.957597371e-02  1.398576813e-12 ]
-             [ 1.392259510e-12  2.957597371e-02 ]
+  [keff] step 0      t = 0.000000e+00 s   phi_bar = 0.196366   k_iso = 2.957017e-02 W/m/K   (138 its, 856.28 s)
+         k = [ 2.957017115e-02  1.391842204e-12 ]
+             [ 1.385834181e-12  2.957017115e-02 ]
 Solution completed. 
-Setup time 9.537099e+02 sec  =  15.90 min 
+Setup time 9.581810e+02 sec  =  15.97 min 
 
 WARNING! There are options you set that were not used!
 WARNING! could be spelling mistake, etc!
@@ -1432,11 +1432,11 @@ Option left: name:-sub_pc_type value: ilu source: file
 ✅ Simulation completed successfully.
 
 --- Copying source code ---
-✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/src
+✅ Source code copied to /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800/src
 
 =========================================================================
   Phase-field post-processing
-  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
+  Run folder : /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800
 =========================================================================
 Detected dim = 2
 ⚠️  igasol.dat not found — skipping VTK conversion.
@@ -1444,29 +1444,29 @@ Detected dim = 2
 
 --- Time step diagnostic ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/postprocess/plot_timestep.py", line 21, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800/postprocess/plot_timestep.py", line 21, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_timestep.py exited 1
 
 --- Phase-field bounds per step ---
   Traceback (most recent call last):
-    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/postprocess/plot_phi_bounds.py", line 28, in <module>
+    File "/Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800/postprocess/plot_phi_bounds.py", line 28, in <module>
       import numpy as np
   ModuleNotFoundError: No module named 'numpy'
   ⚠️  plot_phi_bounds.py exited 1
 
 =========================================================================
   ⚠️  Post-processing completed with errors (exit sum 2)
-  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
-  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/plots
+  Results in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800
+  Figures in: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800/plots
 =========================================================================
 
 ⚠️  Post-processing exited with code 2
 
 =========================================================================
   ✅ Workflow completed successfully
-  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800
-  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-22__17.58.47_snow_T-20_h1.00_1d_disk_tensor_L800/plots
+  Results: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800
+  Figures: /Users/jacksonbaglino/SimulationResults/enceladus_DSM/scratch/singleice_2D_L1mm_R250um_keff/2026-09-23__10.49.12_snow_T-20_h1.00_1d_disk_tensor_L800/plots
 =========================================================================
 
