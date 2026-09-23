@@ -86,6 +86,17 @@ static PetscErrorCode KeffParseOptions(KeffCtx *kc)
       "Corrector iterations above this force a preconditioner rebuild and one retry", "",
       kc->max_its, &kc->max_its, NULL); CHKERRQ(ierr);
 
+  {
+    const char *names[] = {"arith", "tensor", "sharp"};
+    PetscInt    choice  = (PetscInt)kc->interp;
+    ierr = PetscOptionsEList("-keff_interp",
+        "Conductivity across the diffuse band: arith (isotropic, O(eps) bias "
+        "normal to the interface), tensor (arith along + harmonic across, "
+        "O(eps^2)), sharp (k(H(phi-1/2)), O(h) cross-check)", "",
+        names, 3, names[choice], &choice, NULL); CHKERRQ(ierr);
+    kc->interp = (KeffInterp)choice;
+  }
+
   ierr = PetscOptionsBool("-keff_debug_phibar",
       "Cross-check the phi projection: mean ice fraction on the cloned mesh vs "
       "the solver mesh", "",
@@ -206,6 +217,7 @@ PetscErrorCode KeffCreate(AppCtx *app)
   kc->pc_freeze     = PETSC_FALSE;
   kc->pc_refresh    = 20;
   kc->max_its       = 500;
+  kc->interp        = KEFF_INTERP_ARITH;
 
   ierr = KeffParseOptions(kc); CHKERRQ(ierr);
 
@@ -325,6 +337,9 @@ PetscErrorCode KeffCreate(AppCtx *app)
 
   ierr = PetscMalloc1(app->ngp, &kc->ice); CHKERRQ(ierr);
   ierr = PetscMemzero(kc->ice, sizeof(PetscReal) * app->ngp); CHKERRQ(ierr);
+  if (kc->interp == KEFF_INTERP_TENSOR) {
+    ierr = PetscCalloc1(app->ngp * kc->dim, &kc->grad_ice); CHKERRQ(ierr);
+  }
 
   /* app->keff must be visible before KeffCheckGaussLayout, which reaches back
    * through it. Set here rather than at the end of the function. */
@@ -355,14 +370,21 @@ PetscErrorCode KeffCreate(AppCtx *app)
    * read by anything that writes. */
   if (kc->csv_path[0] == '\0') {
     const char *dir = getenv("folder");
+    /* The non-default laws get their own file name. A replay writes into the
+     * run being replayed, so without this a -keff_interp tensor replay would
+     * overwrite that run's in-line arith k_eff.csv, and the two are
+     * indistinguishable by their columns. */
+    const char *name = (kc->interp == KEFF_INTERP_TENSOR) ? "k_eff_tensor.csv"
+                     : (kc->interp == KEFF_INTERP_SHARP)  ? "k_eff_sharp.csv"
+                     : "k_eff.csv";
     /* Replaying writes alongside the run being replayed, which is where anyone
      * looking for it will look -- and where $folder usually is not pointing. */
     if (kc->replay_dir[0] != '\0')
-      ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "%s/k_eff.csv", kc->replay_dir);
+      ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "%s/%s", kc->replay_dir, name);
     else if (dir)
-      ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "%s/k_eff.csv", dir);
+      ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "%s/%s", dir, name);
     else
-      ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "k_eff.csv");
+      ierr = PetscSNPrintf(kc->csv_path, sizeof(kc->csv_path), "%s", name);
     CHKERRQ(ierr);
   }
   /* First scheduled time for the time-based cadence. Starting at t_interv
@@ -392,11 +414,15 @@ PetscErrorCode KeffCreate(AppCtx *app)
       "    corrector mesh    : dim %d, scalar (dof 1), %d unknowns x %d directions\n"
       "    cell volume (quad): %.12e %s\n"
       "    cell volume (box) : %.12e %s   [rel diff %.2e]\n"
-      "    k_ice / k_air     : %g / %g W/m/K\n",
+      "    k_ice / k_air     : %g / %g W/m/K\n"
+      "    band interpolation: %s\n",
       (int)kc->dim, (int)nrows, (int)kc->dim,
       (double)kc->vol, unit, (double)box, unit,
       (double)(PetscAbsReal(kc->vol - box) / box),
-      (double)app->thcond_ice, (double)app->thcond_air); CHKERRQ(ierr);
+      (double)app->thcond_ice, (double)app->thcond_air,
+      (kc->interp == KEFF_INTERP_TENSOR) ? "tensor (arith along, harmonic across)"
+      : (kc->interp == KEFF_INTERP_SHARP) ? "sharp (k(H(phi-1/2)))"
+      : "arith (isotropic)"); CHKERRQ(ierr);
 
     if (kc->replay_dir[0] != '\0') {
       ierr = PetscPrintf(PETSC_COMM_WORLD,
@@ -527,6 +553,7 @@ PetscErrorCode KeffDestroy(AppCtx *app)
   if (kc->A)   { ierr = MatDestroy(&kc->A);   CHKERRQ(ierr); }
   if (kc->iga) { ierr = IGADestroy(&kc->iga); CHKERRQ(ierr); }
   if (kc->ice) { ierr = PetscFree(kc->ice);   CHKERRQ(ierr); }
+  if (kc->grad_ice) { ierr = PetscFree(kc->grad_ice); CHKERRQ(ierr); }
 
   ierr = PetscFree(kc); CHKERRQ(ierr);
   app->keff = NULL;

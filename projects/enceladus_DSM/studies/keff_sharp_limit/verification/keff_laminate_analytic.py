@@ -40,6 +40,15 @@ using the same nearest-interface signed-distance profile the solver builds in
 FormInitialIceSlab2D: agreement is 5e-5 relative at eps = L/50 and machine
 precision by eps = L/128 (the residual is tail overlap between neighbouring
 interfaces, O(exp(-L/4eps))).
+
+THE TENSOR LAW (-keff_interp tensor)
+------------------------------------
+Arithmetic along the interface, harmonic across it. On the laminate the normal
+is exactly the layer normal, so k_perp = 1/<1/K_harm(phi)>, and 1/K_harm is
+AFFINE in phi: <1/K_harm> = phi_bar/K_i + (1 - phi_bar)/K_a, the sharp value,
+at every eps. The predicted ladder slope is therefore ZERO, and the whole
+prediction is the flat line at the sharp intercept. Every function below takes
+interp="arith" (default) or "tensor".
 """
 
 import math
@@ -76,8 +85,18 @@ def resistivity_sharp(phi_bar, k_ice=K_ICE_DEFAULT, k_air=K_AIR_DEFAULT):
     return phi_bar / k_ice + (1.0 - phi_bar) / k_air
 
 
+INTERPS = ("arith", "tensor")
+
+
+def _slope_factor(interp):
+    """1 for the arithmetic law (Sigma_n = -eps*C), 0 for the tensor law."""
+    if interp not in INTERPS:
+        raise ValueError(f"interp must be one of {INTERPS}, got {interp!r}")
+    return 1.0 if interp == "arith" else 0.0
+
+
 def resistivity(eps, phi_bar, L, n_gamma=2,
-                k_ice=K_ICE_DEFAULT, k_air=K_AIR_DEFAULT):
+                k_ice=K_ICE_DEFAULT, k_air=K_AIR_DEFAULT, interp="arith"):
     """<1/K> for the DIFFUSE laminate at interface decay length eps.
 
     Eq. (eq:lamperp). n_gamma is the number of interfaces per period: 2 under
@@ -87,13 +106,15 @@ def resistivity(eps, phi_bar, L, n_gamma=2,
     Exact up to tail overlap between neighbouring interfaces, O(exp(-L/4eps)).
     """
     return (resistivity_sharp(phi_bar, k_ice, k_air)
-            - n_gamma * eps / L * excess_constant(k_ice, k_air))
+            - _slope_factor(interp) * n_gamma * eps / L
+            * excess_constant(k_ice, k_air))
 
 
 def k_perp(eps, phi_bar, L, n_gamma=2,
-           k_ice=K_ICE_DEFAULT, k_air=K_AIR_DEFAULT):
-    """Conductivity across the layers. Biased HIGH, first order in eps."""
-    return 1.0 / resistivity(eps, phi_bar, L, n_gamma, k_ice, k_air)
+           k_ice=K_ICE_DEFAULT, k_air=K_AIR_DEFAULT, interp="arith"):
+    """Conductivity across the layers. Biased HIGH, first order in eps, under
+    the arithmetic law; eps-exact under the tensor law."""
+    return 1.0 / resistivity(eps, phi_bar, L, n_gamma, k_ice, k_air, interp)
 
 
 def k_perp_sharp(phi_bar, k_ice=K_ICE_DEFAULT, k_air=K_AIR_DEFAULT):
@@ -102,7 +123,7 @@ def k_perp_sharp(phi_bar, k_ice=K_ICE_DEFAULT, k_air=K_AIR_DEFAULT):
 
 
 def resistivity_line(phi_bar, L, n_gamma=2,
-                     k_ice=K_ICE_DEFAULT, k_air=K_AIR_DEFAULT):
+                     k_ice=K_ICE_DEFAULT, k_air=K_AIR_DEFAULT, interp="arith"):
     """The two predicted numbers of the test, as (intercept, slope).
 
         1/k_perp(eps) = intercept - slope * eps
@@ -114,7 +135,7 @@ def resistivity_line(phi_bar, L, n_gamma=2,
     rather than eyeballing a curve.
     """
     return (resistivity_sharp(phi_bar, k_ice, k_air),
-            n_gamma / L * excess_constant(k_ice, k_air))
+            _slope_factor(interp) * n_gamma / L * excess_constant(k_ice, k_air))
 
 
 def phi_bar_note():

@@ -145,9 +145,9 @@ from the CSV column for this reason.
 | `verify_keff_sharp_limit.sh` | driver: loops `eps`, calls `run_enceladus.sh`, collects the CSV |
 | `plot_keff_sharp_limit.py` | gates + figure; exits non-zero on failure |
 
-## If the bias is too large for your error budget
+## The tensor law (`-keff_interp tensor`)
 
-Section 6 of the note gives the fix. Neither scalar interpolation can null both
+Section 5 of the note gives the fix. Neither scalar interpolation can null both
 excesses — arithmetic is exact tangentially, harmonic is exact normally. The
 tensorial law
 
@@ -158,8 +158,21 @@ K(φ) = K_arith(φ)·(I − n⊗n) + K_harm(φ)·(n⊗n),    n = ∇φ/|∇φ|
 uses each where its excess vanishes, giving `O(eps²)`. This is legitimate
 because the conductivity cell problem is pure post-processing on a frozen `φ`
 field, decoupled from the phase evolution — the interpolation used for `k_eff`
-need not be the Eq. 13 used in the evolution equations. **Not currently
-implemented**; it would be a change to `KeffPointCond` in
-[`src/keff_cell.c`](../../../src/keff_cell.c), which is the only place the
-coefficient enters the cell problem, plus a tensor-valued coefficient in the two
-form callbacks there.
+need not be the one used in the evolution equations.
+
+It is implemented in `KeffPointCond`
+([`src/keff_cell.c`](../../../src/keff_cell.c)) and selected with
+`-keff_interp tensor` (default `arith`; `sharp` evaluates `K(H(φ−½))` on the
+same mesh as a cross-check). On this laminate the prediction becomes a **flat**
+`1/k_11` at the sharp intercept, because `1/K_harm` is affine in `φ`:
+
+```bash
+./studies/keff_sharp_limit/verification/verify_keff_sharp_limit.sh --interp tensor
+```
+
+writes `keff_sharp_limit_tensor.{csv,log,png}` and gates the fitted slope at 5%
+of the arithmetic one.
+
+The laminate cannot exercise the tensor's off-diagonal terms (its normal is
+exactly `ŷ`). The curved-interface test that does is
+[`../disk/`](../disk/README.md).

@@ -39,10 +39,16 @@
 # rung is minutes, so this runs locally; it is not an HPC job.
 #
 # USAGE
-#   ./verify_keff_sharp_limit.sh [--rungs "50 64 128 256 512"] [--dry-run]
+#   ./verify_keff_sharp_limit.sh [--rungs "50 64 128 256 512"]
+#                                [--interp arith|tensor] [--dry-run]
 #
-# Writes keff_sharp_limit.csv next to this script, then calls
-# plot_keff_sharp_limit.py. Re-runnable: the CSV is rewritten from scratch.
+# --interp selects -keff_interp. Under "tensor" (arithmetic along the interface,
+# harmonic across) prediction (ii) becomes a FLAT 1/k_11 at the sharp value:
+# the first-order bias is what the tensor law exists to remove.
+#
+# Writes keff_sharp_limit.csv (keff_sharp_limit_tensor.csv under --interp
+# tensor) next to this script, then calls plot_keff_sharp_limit.py.
+# Re-runnable: the CSV is rewritten from scratch.
 # =============================================================================
 set -euo pipefail
 
@@ -53,8 +59,6 @@ PYTHON="$PROJECT_ROOT/venv_enceladus/bin/python"
 
 GEOM="iceslab_2D_L1mm_eps20um_keff"
 EXP="snow_T-20_h1.00_1d"     # -keff_only exits before integrating; conditions are inert
-CSV="$HERE/keff_sharp_limit.csv"
-LOG="$HERE/keff_sharp_limit.log"
 
 # Domain and interface count must match the geometry file and the analytic
 # module's assumptions. n_Gamma = 2 because -periodic 1 makes the y=0 seam a
@@ -66,15 +70,25 @@ N_GAMMA=2
 EPS_PER_ELEM=5.12
 
 RUNGS="50 64 128 256 512"
+INTERP="arith"
 DRY_RUN=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --rungs)   RUNGS="$2"; shift 2 ;;
+        --interp)  INTERP="$2"; shift 2 ;;
         --dry-run) DRY_RUN=1; shift ;;
-        -h|--help) sed -n '2,45p' "${BASH_SOURCE[0]}"; exit 0 ;;
+        -h|--help) sed -n '2,52p' "${BASH_SOURCE[0]}"; exit 0 ;;
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
+
+case "$INTERP" in
+    arith)  SUFFIX="" ;;
+    tensor) SUFFIX="_tensor" ;;
+    *) echo "--interp must be arith or tensor, got: $INTERP" >&2; exit 2 ;;
+esac
+CSV="$HERE/keff_sharp_limit$SUFFIX.csv"
+LOG="$HERE/keff_sharp_limit$SUFFIX.log"
 
 [ -x "$RUNNER" ] || { echo "run script not found or not executable: $RUNNER" >&2; exit 1; }
 [ -x "$PYTHON" ] || { echo "venv python not found: $PYTHON" >&2; exit 1; }
@@ -110,19 +124,19 @@ echo "step,time,k_00,k_01,k_10,k_11,phi_bar,k_iso,ksp_its,ksp_reason,wall_s,eps,
 : > "$LOG"
 
 printf '%s' "$schedule" | while read -r denom eps Ny; do
-    echo "=== rung L/$denom :  eps = $eps   Nx = Ny = $Ny ==="
+    echo "=== rung L/$denom ($INTERP) :  eps = $eps   Nx = Ny = $Ny ==="
     # -keff_ksp/-keff_pc: CG+GAMG rather than the direct LU that is only
     # comfortable up to ~256^2 (see the geometry file header).
-    out=$("$RUNNER" "$GEOM" "$EXP" "sharplimit_L$denom" -- \
-            -keff 1 -keff_only 1 \
+    out=$("$RUNNER" "$GEOM" "$EXP" "sharplimit_${INTERP}_L$denom" -- \
+            -keff 1 -keff_only 1 -keff_interp "$INTERP" \
             -eps "$eps" -Nx "$Ny" -Ny "$Ny" \
             -keff_ksp_type cg -keff_pc_type gamg 2>&1 | tee -a "$LOG")
 
     run_dir=$(echo "$out" | sed -n 's/^Output folder: //p' | tail -1)
     [ -n "$run_dir" ] || { echo "could not parse output folder from run script" >&2; exit 1; }
 
-    kcsv="$run_dir/k_eff.csv"
-    [ -f "$kcsv" ] || { echo "no k_eff.csv in $run_dir" >&2; exit 1; }
+    kcsv="$run_dir/k_eff$SUFFIX.csv"
+    [ -f "$kcsv" ] || { echo "no $(basename "$kcsv") in $run_dir" >&2; exit 1; }
 
     # -keff_only writes exactly one sample row after the header.
     row=$(tail -n +2 "$kcsv" | tail -1)
@@ -132,4 +146,4 @@ done
 
 echo ""
 echo "=== Gates 1-3: measured vs. predicted ==="
-"$PYTHON" "$HERE/plot_keff_sharp_limit.py" --csv "$CSV" --L "$L" --n-gamma "$N_GAMMA"
+"$PYTHON" "$HERE/plot_keff_sharp_limit.py" --csv "$CSV" --L "$L" --n-gamma "$N_GAMMA" --interp "$INTERP"

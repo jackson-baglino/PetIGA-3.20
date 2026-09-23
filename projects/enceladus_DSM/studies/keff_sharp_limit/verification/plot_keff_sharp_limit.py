@@ -19,6 +19,10 @@ neither fitted -- and a reader can see agreement or its absence. Plotted as
 k_perp it is a curve whose agreement can only be eyeballed, which is how a 10%
 slope error passes review.
 
+Under --interp tensor the predicted slope is ZERO (the harmonic branch makes
+<1/K> eps-exact on the laminate), and the slope gate becomes: the fitted slope
+is below TOL_SLOPE of what the arithmetic law would give.
+
 Panel (b) plots k_00 against eps on an axis scaled to the tolerance, because the
 prediction is that NOTHING happens: the tangential excess is exactly zero. On an
 auto-scaled axis a flat line's numerical noise fills the frame and looks like
@@ -67,7 +71,7 @@ def gate(name: str, ok: bool, detail: str, failures: list[str]) -> None:
         failures.append(name)
 
 
-def check(rows: list[dict], L: float, n_gamma: int) -> list[str]:
+def check(rows: list[dict], L: float, n_gamma: int, interp: str) -> list[str]:
     failures: list[str] = []
     eps = np.array([r["eps"] for r in rows])
     phi = np.array([r["phi_bar"] for r in rows])
@@ -81,7 +85,7 @@ def check(rows: list[dict], L: float, n_gamma: int) -> list[str]:
           f"{'k_11':>10} {'k_11 pred':>10} {'k11 err':>9}")
     for e, p, a, b in zip(eps, phi, k00, k11):
         kp = ana.k_parallel(p)
-        kq = ana.k_perp(e, p, L, n_gamma)
+        kq = ana.k_perp(e, p, L, n_gamma, interp=interp)
         print(f"  {e:11.4e} {p:9.6f} {a:10.6f} {kp:10.6f} "
               f"{b:10.6f} {kq:10.6f} {abs(b - kq) / kq:8.2%}")
 
@@ -97,20 +101,25 @@ def check(rows: list[dict], L: float, n_gamma: int) -> list[str]:
 
     # -- Gate 2: the normal excess, which is what the theory actually predicts.
     print("\nGate 2  perpendicular component follows the closed form (Sigma_n)")
-    pred11 = np.array([ana.k_perp(e, p, L, n_gamma) for e, p in zip(eps, phi)])
+    pred11 = np.array([ana.k_perp(e, p, L, n_gamma, interp=interp)
+                       for e, p in zip(eps, phi)])
     err11 = np.max(np.abs(k11 - pred11) / pred11)
     gate("k_11 vs closed form", err11 < TOL_PERP,
          f"max relative error {err11:.2e} (tol {TOL_PERP:.0e})", failures)
 
-    icept_p, slope_p = ana.resistivity_line(float(phi.mean()), L, n_gamma)
+    icept_p, slope_p = ana.resistivity_line(float(phi.mean()), L, n_gamma,
+                                            interp=interp)
+    # The tensor law predicts slope 0, which cannot be a relative denominator;
+    # measure its slope against the one the arithmetic law would produce.
+    _, slope_ref = ana.resistivity_line(float(phi.mean()), L, n_gamma)
     if len(eps) >= 2:
         slope_f, icept_f = np.polyfit(eps, 1.0 / k11, 1)
         slope_f = -slope_f          # fit is 1/k = a*eps + b with a = -slope
-        rel_s = abs(slope_f - slope_p) / slope_p
+        rel_s = abs(slope_f - slope_p) / slope_ref
         rel_i = abs(icept_f - icept_p) / icept_p
         gate("ladder slope", rel_s < TOL_SLOPE,
              f"fitted {slope_f:.4e} vs predicted {slope_p:.4e} "
-             f"({rel_s:.2%}, tol {TOL_SLOPE:.0%})", failures)
+             f"({rel_s:.2%} of the arith slope, tol {TOL_SLOPE:.0%})", failures)
         gate("ladder intercept", rel_i < TOL_PERP,
              f"fitted {icept_f:.4f} vs predicted {icept_p:.4f} "
              f"({rel_i:.2%}, tol {TOL_PERP:.0%})", failures)
@@ -129,13 +138,14 @@ def check(rows: list[dict], L: float, n_gamma: int) -> list[str]:
     return failures
 
 
-def figure(rows: list[dict], L: float, n_gamma: int, out: Path) -> None:
+def figure(rows: list[dict], L: float, n_gamma: int, out: Path,
+           interp: str) -> None:
     eps = np.array([r["eps"] for r in rows])
     phi = np.array([r["phi_bar"] for r in rows])
     k00 = np.array([r["k_00"] for r in rows])
     k11 = np.array([r["k_11"] for r in rows])
     phi_m = float(phi.mean())
-    icept, slope = ana.resistivity_line(phi_m, L, n_gamma)
+    icept, slope = ana.resistivity_line(phi_m, L, n_gamma, interp=interp)
 
     fig, (ax_r, ax_p) = plt.subplots(1, 2, figsize=(10.0, 4.2))
 
@@ -151,7 +161,7 @@ def figure(rows: list[dict], L: float, n_gamma: int, out: Path) -> None:
               label=r"sharp limit $\langle 1/K\rangle$")
     fs.style(ax_r, r"interface decay length  $\varepsilon$  [$\mu$m]",
              r"resistivity  $1/k_{\perp}$  [m K W$^{-1}$]",
-             "(a)  normal: the surface excess", logy=False)
+             f"(a)  normal: the surface excess ({interp} law)", logy=False)
     ax_r.set_xlim(left=0.0)
     ax_r.legend(fontsize=fs.FS_LEG, frameon=False, loc="lower left")
     ax_r.text(0.97, 0.94,
@@ -177,7 +187,8 @@ def figure(rows: list[dict], L: float, n_gamma: int, out: Path) -> None:
     ax_p.legend(fontsize=fs.FS_LEG, frameon=False, loc="lower left")
 
     fig.tight_layout()
-    fs.save(fig, out, "keff_sharp_limit", dpi=200)
+    name = "keff_sharp_limit" if interp == "arith" else f"keff_sharp_limit_{interp}"
+    fs.save(fig, out, name, dpi=200)
 
 
 def main() -> int:
@@ -187,12 +198,14 @@ def main() -> int:
     ap.add_argument("--L", type=float, default=1.0e-3, help="cell period [m]")
     ap.add_argument("--n-gamma", type=int, default=2,
                     help="interfaces per period (2 under -periodic 1)")
+    ap.add_argument("--interp", choices=ana.INTERPS, default="arith",
+                    help="the -keff_interp law the ladder was run with")
     args = ap.parse_args()
 
     rows = read_ladder(args.csv)
     print(ana.phi_bar_note())
-    failures = check(rows, args.L, args.n_gamma)
-    figure(rows, args.L, args.n_gamma, args.csv.parent)
+    failures = check(rows, args.L, args.n_gamma, args.interp)
+    figure(rows, args.L, args.n_gamma, args.csv.parent, args.interp)
 
     print()
     if failures:

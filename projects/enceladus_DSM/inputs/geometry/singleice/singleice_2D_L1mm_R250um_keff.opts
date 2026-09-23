@@ -1,0 +1,45 @@
+# =============================================================================
+# geometry/singleice/singleice_2D_L1mm_R250um_keff.opts — curved-interface benchmark
+# for k_eff homogenization (-keff). NOT a physics run.
+#
+# One ice disk of radius 250 um centred in a 1 mm periodic cell: a square array
+# of disks, ice fraction f = pi R^2 / L^2 = 0.19635. Its sharp effective
+# conductivity is known to far better than the tolerances used on it
+# (Rayleigh 1892; Perrins, McKenzie & McPhedran 1979):
+#
+#   k_00 = k_11 = 0.0295684 W/m/K      (Maxwell-Garnett alone: 0.0295632)
+#   k_01 = k_10 = 0                     (square symmetry)
+#
+# WHY THIS EXISTS ALONGSIDE THE LAMINATE. The laminate's interface normal is
+# exactly the y axis, so under -keff_interp tensor the conductivity tensor is
+# diagonal everywhere and its off-diagonal terms are never exercised. Here the
+# normal sweeps every direction, so an error in the n (x) n assembly shows up
+# directly in k_00. It is also the geometry where the arithmetic law's bias is
+# large: a conducting disk in an insulating matrix sends its flux NORMAL to the
+# interface, which is the direction the arithmetic law gets wrong. First-order
+# prediction (dipole field, no fitted constants): +30% at eps = L/50, +3.8% at
+# L/400. See studies/keff_sharp_limit/disk/keff_disk_analytic.py.
+#
+# Run the ladder through the committed driver, which scales Ny with eps:
+#
+#   ./studies/keff_sharp_limit/disk/verify_keff_disk.sh
+# =============================================================================
+
+-ic_type single_ice
+-dim 2
+
+-Lx 1.0e-3
+-Ly 1.0e-3
+-Nx 256
+-Ny 256
+
+-p 2
+-C 1
+-periodic 1                       # REQUIRED by -keff
+
+-RCice 2.5e-4
+
+-eps 2.0e-5                       # same reference point as the laminate: eps/dy = 5.12
+-eps_temp_override 1              # eps here is chosen for resolution, not from comp_eps.py
+
+-delt_t 1.0e-4

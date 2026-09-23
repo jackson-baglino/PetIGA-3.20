@@ -82,6 +82,14 @@ PetscErrorCode KeffProjectIce(AppCtx *app, Vec U)
 
         ierr = IGAPointFormValue(point, UU, &sol[0]); CHKERRQ(ierr);
         kc->ice[idx] = PetscRealPart(sol[0]);
+        /* The tensor law needs the interface normal, i.e. grad phi. Taken on
+         * the solver mesh at the same point, so it shares phi's index. */
+        if (kc->grad_ice) {
+          PetscScalar grad_sol[9];   /* [dof][dim], packed with stride dim */
+          ierr = IGAPointFormGrad(point, UU, &grad_sol[0]); CHKERRQ(ierr);
+          for (PetscInt d = 0; d < kc->dim; d++)
+            kc->grad_ice[idx * kc->dim + d] = PetscRealPart(grad_sol[d]);
+        }
         nvisited++;
       }
     }

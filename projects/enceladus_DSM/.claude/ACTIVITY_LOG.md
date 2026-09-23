@@ -1,3 +1,25 @@
+## 2026-09-22 — Tensor conductivity law for k_eff (-keff_interp)
+
+- Added `-keff_interp arith|tensor|sharp` to the in-line k_eff cell problem.
+  `tensor` = arithmetic along the interface, harmonic across it
+  (n = grad phi/|grad phi|): removes the O(eps) normal-flux bias of the
+  arithmetic law (note sec. 5 corollary). `sharp` = k(H(phi-1/2)) cross-check.
+  Default stays `arith` until the ladders pass.
+- The coefficient is now a tensor in all three form callbacks
+  (`src/keff_cell.c`); grad phi is stored per Gauss point only in tensor mode.
+- Non-arith laws write `k_eff_<law>.csv`, so a replay into a pilot run dir
+  cannot overwrite that run's in-line arith results.
+- Laminate ladder: `--interp tensor` (predicted slope 0). New curved-interface
+  ladder `studies/keff_sharp_limit/disk/` (disk array vs Rayleigh/Perrins),
+  which exercises the tensor's off-diagonal terms the laminate cannot.
+- Decided not to measure the pilot bias first: the pilots saved phi, not the
+  corrector, so it needs a re-solve anyway; a tensor replay of the pilots gives
+  it directly once the gates pass.
+- Also: corrected the equivalence note (effective_thermal_cond) to derive the
+  single corrector from Calonne's t_i/t_a pair.
+
+---
+
 ## 2026-09-22 — Audit of unresolved_results; campaign handoff
 
 - Audited the nine 2025-09 `unresolved_results` runs. The code that produced

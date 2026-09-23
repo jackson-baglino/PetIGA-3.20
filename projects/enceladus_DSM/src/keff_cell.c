@@ -24,22 +24,63 @@
  * every direction, which at Nx=Ny=2829 is the difference between ~9.6 GB and
  * ~2.4 GB, and hands the preconditioner a plain scalar Laplacian.
  *
+ * THE COEFFICIENT IS A TENSOR. Under -keff_interp tensor, K is anisotropic
+ * inside the band, so every "k * grad" below is a matrix-vector product. The
+ * isotropic laws fill K = k I and give exactly the scalar assembly. The weak
+ * form, the load and the flux average carry over unchanged with k -> K:
+ *
+ *     INT_Y grad v . K grad t_m  =  - INT_Y grad v . K e_m
+ *     k_eff[i][j] = (1/|Y|) INT_Y [ K ( grad t_i + e_i ) ]_j dV
+ *
+ * K is symmetric positive definite (its eigenvalues are k_arith and k_harm,
+ * both in [k_a, k_i]), so the operator stays SPD and CG + GAMG still apply.
+ *
  * PetIGA applies the quadrature weight and Jacobian (JW = detJac*weight) to
  * whatever the form callbacks accumulate, so no dV factor appears below.
  * ------------------------------------------------------------------------- */
 
-/* Thermal conductivity at the current quadrature point, from the projected
- * phase field. The flat index convention is documented in keff_field.c. */
-static inline PetscReal KeffPointCond(KeffCtx *kc, IGAPoint point)
+/* Conductivity tensor at the current quadrature point, from the projected phase
+ * field, row-major K[a*dim + b]. The flat index convention is documented in
+ * keff_field.c.
+ *
+ * TENSOR: K = k_arith (I - n n) + k_harm n n, n = grad phi / |grad phi|. Where
+ * grad phi vanishes n is undefined; K falls back to k_arith I. That happens in
+ * the bulk, where phi is 0 or 1 and k_arith = k_harm anyway, so the choice is
+ * immaterial there. phi is clamped to [0,1] first so that both branches, and
+ * k_harm's denominator, see the same admissible value. */
+static inline void KeffPointCond(KeffCtx *kc, IGAPoint point, PetscReal K[9])
 {
-  PetscInt    idx = point->index + point->count * point->parent->index;
-  PetscScalar cond;
-  ThermalCond(kc->app, (PetscScalar)kc->ice[idx], &cond, NULL);
-  return PetscRealPart(cond);
+  const PetscInt dim = kc->dim;
+  PetscInt       idx = point->index + point->count * point->parent->index;
+  PetscReal      phi = kc->ice[idx];
+  PetscScalar    cond;
+
+  for (PetscInt a = 0; a < dim * dim; a++) K[a] = 0.0;
+
+  if (kc->interp == KEFF_INTERP_SHARP) phi = (phi >= 0.5) ? 1.0 : 0.0;
+  if (kc->interp == KEFF_INTERP_TENSOR) phi = PetscMin(PetscMax(phi, 0.0), 1.0);
+
+  ThermalCond(kc->app, (PetscScalar)phi, &cond, NULL);
+  for (PetscInt a = 0; a < dim; a++) K[a * dim + a] = PetscRealPart(cond);
+
+  if (kc->interp == KEFF_INTERP_TENSOR) {
+    const PetscReal *g      = &kc->grad_ice[idx * dim];
+    const PetscReal  k_arith = PetscRealPart(cond);
+    const PetscReal  k_harm  = 1.0 / (phi / kc->app->thcond_ice
+                                    + (1.0 - phi) / kc->app->thcond_air);
+    PetscReal        g2 = 0.0;
+
+    for (PetscInt a = 0; a < dim; a++) g2 += g[a] * g[a];
+    if (g2 > 0.0) {
+      for (PetscInt a = 0; a < dim; a++)
+        for (PetscInt b = 0; b < dim; b++)
+          K[a * dim + b] += (k_harm - k_arith) * g[a] * g[b] / g2;
+    }
+  }
 }
 
 /* ---------------------------------------------------------------------------
- * KeffFormMatrix:  K[i][j] += k(x) * grad N_i . grad N_j
+ * KeffFormMatrix:  K[i][j] += grad N_i . K(x) grad N_j
  * ------------------------------------------------------------------------- */
 PetscErrorCode KeffFormMatrix(IGAPoint point, PetscScalar K[], void *ctx)
 {
@@ -47,45 +88,54 @@ PetscErrorCode KeffFormMatrix(IGAPoint point, PetscScalar K[], void *ctx)
   const PetscInt  nen = point->nen;
   const PetscInt  dim = point->dim;
   PetscReal     (*N1)[dim];
-  PetscReal       cond;
+  PetscReal       Kc[9];
   PetscErrorCode  ierr;
 
   PetscFunctionBegin;
   if (point->atboundary) PetscFunctionReturn(0);
 
   ierr = IGAPointGetShapeFuns(point, 1, (const PetscReal **)&N1); CHKERRQ(ierr);
-  cond = KeffPointCond(kc, point);
+  KeffPointCond(kc, point, Kc);
 
-  for (PetscInt i = 0; i < nen; i++)
-    for (PetscInt j = 0; j < nen; j++) {
+  for (PetscInt j = 0; j < nen; j++) {
+    PetscReal KgradNj[3] = {0.0, 0.0, 0.0};
+    for (PetscInt a = 0; a < dim; a++)
+      for (PetscInt b = 0; b < dim; b++) KgradNj[a] += Kc[a * dim + b] * N1[j][b];
+    for (PetscInt i = 0; i < nen; i++) {
       PetscReal g = 0.0;
-      for (PetscInt d = 0; d < dim; d++) g += N1[i][d] * N1[j][d];
-      K[i * nen + j] += cond * g;
+      for (PetscInt d = 0; d < dim; d++) g += N1[i][d] * KgradNj[d];
+      K[i * nen + j] += g;
     }
+  }
 
   PetscFunctionReturn(0);
 }
 
 /* ---------------------------------------------------------------------------
- * KeffFormVector:  F[i] += -k(x) * dN_i/dx_m   for the current direction m
+ * KeffFormVector:  F[i] += -grad N_i . K(x) e_m   for the current direction m
  * ------------------------------------------------------------------------- */
 PetscErrorCode KeffFormVector(IGAPoint point, PetscScalar F[], void *ctx)
 {
   KeffCtx        *kc  = (KeffCtx *)ctx;
   const PetscInt  nen = point->nen;
   const PetscInt  dim = point->dim;
+  const PetscInt  m   = kc->cur_dir;
   PetscReal     (*N1)[dim];
-  PetscReal       cond;
+  PetscReal       Kc[9];
   PetscErrorCode  ierr;
 
   PetscFunctionBegin;
   if (point->atboundary) PetscFunctionReturn(0);
 
   ierr = IGAPointGetShapeFuns(point, 1, (const PetscReal **)&N1); CHKERRQ(ierr);
-  cond = KeffPointCond(kc, point);
+  KeffPointCond(kc, point, Kc);
 
-  for (PetscInt i = 0; i < nen; i++)
-    F[i] += -cond * N1[i][kc->cur_dir];
+  /* K e_m is column m of K. */
+  for (PetscInt i = 0; i < nen; i++) {
+    PetscReal g = 0.0;
+    for (PetscInt d = 0; d < dim; d++) g += N1[i][d] * Kc[d * dim + m];
+    F[i] += -g;
+  }
 
   PetscFunctionReturn(0);
 }
@@ -93,7 +143,7 @@ PetscErrorCode KeffFormVector(IGAPoint point, PetscScalar F[], void *ctx)
 /* ---------------------------------------------------------------------------
  * KeffScalarIntegrand -- one row of the tensor, for direction i = kc->cur_dir:
  *
- *     S[j]   += k * ( d t_i/d x_j + delta_ij )      j = 0 .. dim-1
+ *     S[j]   += [ K ( grad t_i + e_i ) ]_j           j = 0 .. dim-1
  *     S[dim] += phi                                 (cell-mean ice, free)
  *
  * U is the corrector t_i on the scalar corrector mesh, so IGAPointFormGrad
@@ -105,7 +155,7 @@ PetscErrorCode KeffScalarIntegrand(IGAPoint point, const PetscScalar U[],
   KeffCtx        *kc  = (KeffCtx *)ctx;
   const PetscInt  dim = point->dim;
   PetscScalar     grad_t[3];
-  PetscReal       cond;
+  PetscReal       Kc[9], G[3];
   PetscInt        idx;
 
   PetscFunctionBegin;
@@ -114,11 +164,13 @@ PetscErrorCode KeffScalarIntegrand(IGAPoint point, const PetscScalar U[],
 
   IGAPointFormGrad(point, U, &grad_t[0]);
 
-  idx  = point->index + point->count * point->parent->index;
-  cond = KeffPointCond(kc, point);
+  idx = point->index + point->count * point->parent->index;
+  KeffPointCond(kc, point, Kc);
 
+  for (PetscInt b = 0; b < dim; b++)
+    G[b] = PetscRealPart(grad_t[b]) + ((b == kc->cur_dir) ? 1.0 : 0.0);
   for (PetscInt j = 0; j < dim; j++)
-    S[j] += cond * (PetscRealPart(grad_t[j]) + ((j == kc->cur_dir) ? 1.0 : 0.0));
+    for (PetscInt b = 0; b < dim; b++) S[j] += Kc[j * dim + b] * G[b];
 
   S[dim] += kc->ice[idx];
 

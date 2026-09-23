@@ -22,7 +22,8 @@
  *
  *     k_eff[i][j] = (1/|Y|) * INT_Y  k(x) * ( d t_i / d x_j  +  delta_ij ) dV
  *
- * with k(x) = ThermalCond(phi(x)) taken from the live phase field.
+ * with k(x) = ThermalCond(phi(x)) taken from the live phase field, or the
+ * tensor-valued K(phi, grad phi) under -keff_interp tensor (see KeffInterp).
  *
  * PERIODICITY IS NOT OPTIONAL. The corrector being periodic on the cell
  * boundary is what makes the cell average an effective property at all. On a
@@ -40,6 +41,23 @@
  * a textbook scalar Laplacian instead of a block system that is 3/4
  * structurally zero.
  * ------------------------------------------------------------------------- */
+
+/* How the conductivity is interpolated across the diffuse band (-keff_interp).
+ * See effective_thermal_cond/docs/calonne_to_phasefield_equivalence.tex, sec. 5.
+ *
+ *   ARITH   k(phi) = phi k_i + (1-phi) k_a, isotropic. The law the evolution
+ *           equations use. Exact tangential to the interface, first-order biased
+ *           (too conductive) normal to it.
+ *   TENSOR  arithmetic along the interface, harmonic across it:
+ *               K = k_arith (I - n n) + k_harm n n,   n = grad phi / |grad phi|
+ *           Both surface excesses vanish, so the bias is O(eps^2).
+ *   SHARP   k(H(phi - 1/2)): the sharp problem on the same mesh. The eps bias
+ *           becomes an O(h) cut-element bias; a cross-check, not a production law.
+ *
+ * All three agree wherever phi is 0 or 1, so the interpolation matters only
+ * inside the band. The evolution model is unaffected: the cell problem is
+ * post-processing on a frozen phi. */
+typedef enum { KEFF_INTERP_ARITH = 0, KEFF_INTERP_TENSOR, KEFF_INTERP_SHARP } KeffInterp;
 
 typedef struct KeffCtx {
   /* --- cadence ---------------------------------------------------------- */
@@ -76,6 +94,9 @@ typedef struct KeffCtx {
 
   /* --- microstructure ---------------------------------------------------- */
   PetscReal *ice;            /* phi at every local Gauss point; length app->ngp */
+  PetscReal *grad_ice;       /* grad phi, dim per Gauss point (same index * dim);
+                              * allocated only for KEFF_INTERP_TENSOR */
+  KeffInterp interp;         /* -keff_interp */
   PetscInt   cur_dir;        /* direction m the current form/scalar pass serves */
 
   /* --- output & bookkeeping ---------------------------------------------- */
@@ -129,11 +150,11 @@ PetscErrorCode KeffDebugPhiBar(AppCtx *app, Vec U);
 
 /* --- keff_cell.c: the cell problem ---------------------------------------- */
 
-/* Bilinear form:  K[i][j] += k(x) grad N_i . grad N_j.  Direction-independent,
+/* Bilinear form:  K[i][j] += grad N_i . K(x) grad N_j.  Direction-independent,
  * so the operator is assembled once and reused for all dim right-hand sides. */
 PetscErrorCode KeffFormMatrix(IGAPoint point, PetscScalar K[], void *ctx);
 
-/* Load for direction kc->cur_dir:  F[i] += -k(x) dN_i/dx_m. */
+/* Load for direction kc->cur_dir:  F[i] += -grad N_i . K(x) e_m. */
 PetscErrorCode KeffFormVector(IGAPoint point, PetscScalar F[], void *ctx);
 
 /* One tensor row plus the cell-mean ice fraction. */
