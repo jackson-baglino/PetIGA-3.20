@@ -24,10 +24,10 @@ below, and stage 2 replaces it with a measurement at other temperatures.
 | stage | what | cost | running | figure |
 |---|---|---|---|---|
 | 0 | tensor law + both ladders | done | — | ✔ committed |
-| 1 | pilot replay under tensor/sharp | ~$35 | ~$35 | ✔ |
-| 2 | batch 1 — cold end of the T axis | ~$126 | ~$161 | ✔ |
-| 3 | −10 °C | ~$321 | ~$482 | ✔ **SLIDES** |
-| 4 | production packings | local | ~$482 | — |
+| 1 | pilot replay under tensor | ~$19 | ~$19 | ✔ |
+| 2 | batch 1 — cold end of the T axis | ~$126 | ~$145 | ✔ |
+| 3 | −10 °C | ~$321 | ~$466 | ✔ **SLIDES** |
+| 4 | production packings | local | ~$466 | — |
 | 5 | main matrix | measured at stage 2 | — | ✔ **SLIDES** |
 | 6 | sensitivity arms | ~12 runs | — | — |
 | 7 | analysis | — | — | ✔ **SLIDES** |
@@ -88,18 +88,45 @@ Also read, and record in this file when known:
 - **`ksp_its`**, against the disk ladder's ~2.5× arith. A larger rise on the
   packing is a real cost signal for every stage below.
 
-> **Withdrawn here:** `PLAN.md:71-79` recommends `R_feat/R_ave = 1/50` over
-> 1/25 because the `k_eff` eps bias is ~33% vs ~15%. Those were *arithmetic-law*
-> numbers. At order ≈ 2.5, halving eps now buys ~5.7× on an already sub-percent
-> bias, and neck radius `r/R` is not a reported metric, so the neck-resolution
-> floor (0.49 at 1/25) limits only what could be reported. **The campaign runs
-> at 1/25** and the 1/50 de-risk batch is dropped — ~4× on everything below.
+> **Withdrawn here:** `PLAN.md:71-79`'s `R_feat/R_ave = 1/50` recommendation.
+> Its case was a ~33%-vs-~15% `k_eff` eps bias, which was an *arithmetic-law*
+> property and is gone. See "Necks are not resolved" below.
 >
 > **Also withdrawn:** `ROADMAP.md` Phase 2 / `PLAN.md` Stage 2's eps-correction
 > runs were sized to measure the `O(eps)` `k_eff` bias the tensor law nulls.
 > What survives is whether the *evolution* differs at smaller eps — which a
 > replay cannot answer and which needs one real run, not a ladder. Deferred to
 > stage 6.
+
+---
+
+## Necks are not resolved, by design
+
+**The only length-scale ratio this campaign imposes is the RVE one,
+`L/R_ave = 40`**, which is measured: seed scatter in `k_eff` falls from 12–13%
+at `L/R_ave` 10–20 to 4.3% at 40. It must hold at **`t_final`**, not `t = 0` —
+coarsening lowers it during the run.
+
+`R_feat/R_ave` is **not** a resolution requirement. It is the cost knob: it
+sets `eps = safety·R_feat`, hence `Nx`, hence the bill, and nothing else
+depends on it. The campaign uses **1/25** (`eps` = 1 µm, `Nx` = 2829, 24 M DOF,
+241 ranks) because that is what is affordable across ~80 runs.
+
+At that mesh a neck is only represented above `r/R = √(12·eps/R) = 0.49`, so
+**most of every trajectory's neck is below the floor.** That is accepted, not
+fixed: resolving necks at this domain size is not something these simulations
+can be asked for, and buying it would cost 4× the campaign for a quantity the
+manuscript does not report. `k_eff`, SSA and porosity are the reported
+quantities and none of them needs a resolved neck.
+
+**Manuscript obligation.** State the floor as a measured number and its
+consequence — necks are under-resolved, so no neck-growth exponent is claimed
+from these runs, and the sintering *rate* inherits an error of unquantified
+sign at early times. Do not present it as a caveat on `k_eff` itself; the
+conductivity is a property of the field as it stands, whatever produced it.
+
+Do not reopen this. If a later question genuinely needs neck radius, it needs
+a different, smaller-domain experiment — not a finer mesh on an 80-run matrix.
 
 ---
 
@@ -212,7 +239,8 @@ One at a time from the stage 5 centre point, 3 seeds each:
    time and seed-dependent — inherited from the packing, not made by sintering.
 3. **Per-snapshot metrics**: Euler characteristic, chord-length distributions
    (what Calonne/Torquato models are built on, so the sharpest test of 1),
-   `D_eff`, neck radius.
+   `D_eff`. **Not neck radius** — it is below its resolution floor for most of
+   every trajectory at this mesh; see "Necks are not resolved".
 4. **Lever ranking** with seed-scatter error bars — the actual deliverable.
 
 The strongest result already in hand: `k_eff` rises while the ice fraction does
