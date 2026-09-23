@@ -1,3 +1,44 @@
+## 2026-09-23 — k_eff campaign: replay tooling, temperature axis, CAMPAIGN.md
+
+- Batch submitter: a test spec may now carry a third field, `geom:exp:<opts>`,
+  applied to that job only. `--extra-opts` goes to every job, so it could not
+  express a per-run `-keff_replay` directory. `--label` inside that field is
+  consumed by the submitter and suffixes the job name and output folder, since
+  batch mode names folders `<geom>__<exp>` and two laws on one run collide.
+- `scripts/HPC/submit_keff_replay.sh`: recompute k_eff on pre-2026-09-23 runs
+  under tensor/sharp. Scans for directories holding `sol_*.dat` rather than
+  taking paths — a resumed run's later snapshots land in the single-run tree,
+  not the batch parent, and all four pilot seeds were resumed. Resolves
+  geom/exp from the staged `.opts`, not the directory name. `--dry-run` prints
+  snapshot counts and a cost estimate: ~$35 for 2 laws x 4 pilot seeds.
+- `studies/keff_sintering/coefficient_fix/`: compare_laws.py + README. The two
+  committed ladders have no CONTACT, which is where the arith law did its
+  damage (tangent grains, point contact, band bridges it), so the disk
+  ladder's ~+8% at the pilot's eps/R is a lower bound, not an estimate.
+  Reproduces the arith baseline: +19.6% rise, sd 2.1 points, n=4.
+- Two bugs in `generate_study_opts.py`. The core-count column divided by a
+  hardcoded 80000 while alloc.sh had moved to 100000 (advertised ~301 cores
+  for a pilot that ran on 241). And `_eps_token` branched on the raw eps at
+  the 1 um unit boundary, so float noise that depends on TEMPERATURE spelled
+  one physical eps as both `eps1.00um` and `eps1000nm` — and the name is what
+  the run scripts match on. Both fixed; regenerating the committed T-20
+  geometries leaves them byte-identical.
+- Generated the temperature axis: T = -40/-30/-20/-10 C x 4 pilot packings,
+  30 d, alpha_c = 1e-3 constant so beta_sub0 spans 8.4x (the 2025-09 sweep
+  held beta_sub0 fixed, which is what cancelled the temperature effect).
+  eps = 1 um and Nx = 2829 at every T under --vn_feature.
+- `CAMPAIGN.md` + `batch1_T.txt`. Batch 1 is -40 and -30 C at two seeds each,
+  not three temperatures at one seed: the pilot already fixes the scatter at
+  -20 C, so the cold-end scatter is what decides whether a T-difference is
+  real. -10 C deferred (~16700 steps, five restart legs, more than the rest of
+  the axis combined). Withdrew PLAN.md's R_feat/R_ave = 1/50 and ROADMAP.md
+  Phase 2's eps-correction runs — both were sized against the arith law.
+- Verified: laminate ladder re-run under tensor, all gates pass (k_11 to 4e-7,
+  slope 0.00% of arith's, intercept exact). The partial run overwrote the
+  committed 5-rung artifacts; restored from HEAD.
+
+---
+
 ## 2026-09-23 — k_eff writeups rebuilt on the diffuse-interface PDE; ladders final
 
 - Both ladders rerun on the fixed IC: planar slab exact (phi_bar = 0.5 to
