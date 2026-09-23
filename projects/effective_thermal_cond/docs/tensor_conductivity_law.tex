@@ -1,0 +1,338 @@
+% ======================================================================
+%  The tensor conductivity law: removing the first-order diffuse-interface
+%  bias from the homogenized effective conductivity.
+%
+%  Companion to calonne_to_phasefield_equivalence.tex. Written to be lifted
+%  into a manuscript or thesis chapter: Sections 1-6 are the method, Section 7
+%  the verification, Section 8 the scope, Section 9 a drop-in Methods paragraph.
+% ======================================================================
+
+\documentclass[11pt]{article}
+\usepackage{amsmath,amssymb,amsthm,booktabs}
+\usepackage[margin=1in]{geometry}
+
+\newtheorem{proposition}{Proposition}
+
+\newcommand{\Om}{\Omega}
+\newcommand{\Gam}{\Gamma}
+\newcommand{\bn}{\hat{\mathbf n}}
+\newcommand{\bI}{\mathbf I}
+\newcommand{\be}{\mathbf e}
+\newcommand{\bK}{\mathbf K}
+\newcommand{\Keff}{\mathbf{K}_{\mathrm{eff}}}
+\newcommand{\Ka}{K_{\mathrm a}}
+\newcommand{\Ki}{K_{\mathrm i}}
+\newcommand{\Kar}{K_{\mathrm{ar}}}
+\newcommand{\Kh}{K_{\mathrm h}}
+\newcommand{\avg}[1]{\big\langle #1 \big\rangle}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries A tensor conductivity law that removes the first-order\\[2pt]
+diffuse-interface bias from homogenized $\Keff$}
+\end{center}
+
+\section{The problem}
+
+The effective conductivity of a periodic ice/air cell is obtained from the
+corrector problem
+\begin{equation}
+\nabla\!\cdot\!\big(\bK(\nabla t_m+\be_m)\big)=0\ \text{in }\Om,\qquad
+t_m\ \text{periodic},\qquad
+\Keff\,\be_m=\avg{\bK(\nabla t_m+\be_m)} ,
+\label{eq:cell}
+\end{equation}
+for each direction $m$. With a sharp interface, $\bK=K_\star\bI$, where
+$K_\star=\Ki$ in ice and $\Ka$ in air; this is the problem of Calonne et al.\
+(2011). With a phase field $\varphi$ the coefficient must also be defined
+\emph{inside} the diffuse band, and the usual choice is the arithmetic law
+$\Kar(\varphi)=\Ka+(\Ki-\Ka)\varphi$. The two problems coincide exactly when
+$\varphi$ is the indicator function of the ice
+(companion note, Prop.~1). At finite $\varepsilon$ they differ, by an amount
+of order $\varepsilon$ that depends on the interpolation law. For
+$\Ki/\Ka=114.5$ this bias is large: $+17\%$ at $\varepsilon=L/128$ for a
+laminate loaded normal to its layers.
+
+The interpolation is invisible to the sharp problem, since every law with
+$K(0)=\Ka$, $K(1)=\Ki$ agrees on the indicator. It is therefore free to choose,
+and we choose it to cancel the first-order bias.
+
+\section{Structure of the diffuse band}
+
+Let $s$ be the signed distance to the interface $\Gam$ (the $\varphi=\tfrac12$
+level set), positive in ice, and let the profile be logistic,
+\begin{equation}
+\varphi=\sigma(s/\varepsilon),\qquad \sigma(u)=\frac{1}{1+e^{-u}},\qquad
+\sigma(-u)=1-\sigma(u).
+\label{eq:profile}
+\end{equation}
+When $\varepsilon$ is small compared with the interface's radius of curvature
+and with the spacing between interfaces, the band is locally a flat
+one-dimensional layer. Write the temperature gradient $\mathbf E=\nabla T$ and
+the flux $\mathbf q=\bK\mathbf E$. At leading order in the stretched coordinate
+$u=s/\varepsilon$, two quantities are constant across the layer:
+\begin{itemize}
+\item the \emph{tangential gradient} $\mathbf E_t$, because $\mathbf E$ is a
+gradient (curl-free), so its tangential part cannot vary over the short normal
+distance $O(\varepsilon)$;
+\item the \emph{normal flux} $q_n=\mathbf q\cdot\bn$, because
+$\nabla\!\cdot\mathbf q=0$ and the tangential flux divergence is $O(1)$ while
+$\partial_s$ is $O(\varepsilon^{-1})$.
+\end{itemize}
+These are exactly the quantities that the sharp interface conditions make
+continuous: the temperature (hence $\mathbf E_t$) and the normal flux. Inside
+the band, then, the tangential sub-layers act in \emph{parallel} and the normal
+ones in \emph{series}.
+
+\section{Surface excesses and the first-order bias}
+
+Because the band acts in parallel along $\Gam$ and in series across it, it is
+equivalent, to first order, to a sharp interface carrying two excesses per unit
+area:
+\begin{equation}
+\Sigma_t=\int_{-\infty}^{\infty}\!\big[K_t(\varphi)-K_\star\big]\,ds,
+\qquad
+\Sigma_n=\int_{-\infty}^{\infty}\!\left[\frac{1}{K_n(\varphi)}-\frac{1}{K_\star}\right]ds,
+\label{eq:excess}
+\end{equation}
+where $K_t$ and $K_n$ are the band's conductivities along and across the
+interface ($K_t=K_n=K$ for a scalar law). $\Sigma_t$ is an excess
+\emph{conductance}, $\Sigma_n$ an excess \emph{resistance}. This is the
+imperfect-interface (thin-interphase) limit of Hashin (2001) and Benveniste
+(2006).
+
+\begin{proposition}\label{prop:bias}
+For a unit mean gradient along $\be$,
+\begin{equation}
+\be\cdot\Keff^{\varepsilon}\be-\be\cdot\Keff^{\star}\be
+=\frac{1}{|\Om|}\int_\Gam\Big(\Sigma_t\,|\mathbf E_t|^2-\Sigma_n\,q_n^2\Big)\,d\Gam
++O(\varepsilon^2),
+\label{eq:bias}
+\end{equation}
+with $\mathbf E_t$ and $q_n$ taken from the \emph{sharp} solution.
+\end{proposition}
+
+\noindent\emph{Justification.} $\be\cdot\Keff\be$ is a minimum of the energy
+$\avg{\mathbf E\cdot\bK\mathbf E}$ (Dirichlet principle) and, dually, a maximum
+in terms of the flux (Thomson principle). Split the band's energy density as
+$K_tE_t^2+q_n^2/K_n$. A change in tangential conductance at fixed $\mathbf E_t$
+alters the energy by $\Sigma_t E_t^2$. A change in normal resistance at fixed
+$q_n$ alters the complementary energy by $\Sigma_n q_n^2$, which changes the
+conductance by $-\Sigma_n q_n^2$. By stationarity, the accompanying change in
+the field enters only at second order. The companion note (Eq.~21) gives a
+rigorous two-sided bound of the same quantity that does not rely on the
+expansion.
+
+\emph{Check (laminate).} For layers of period $L$ with $n_\Gam$ interfaces, a
+gradient normal to the layers has $\mathbf E_t=0$ and $q_n=k_\perp$, and
+\eqref{eq:bias} gives $\delta\avg{K^{-1}}=\Sigma_n n_\Gam/L$, exactly the
+closed form. A gradient along the layers has $q_n=0$, $|\mathbf E_t|=1$, and
+gives $\delta k_\parallel=\Sigma_t n_\Gam/L$.
+
+\section{Excesses of the scalar laws}
+
+Substituting \eqref{eq:profile}, $p=\sigma(u)$, $du=dp/[p(1-p)]$ and partial
+fractions gives closed forms (checked by quadrature):
+
+\begin{center}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+law & $\Sigma_t$ (excess conductance) & $\Sigma_n$ (excess resistance)\\
+\midrule
+arithmetic, $\Kar=\Ka+(\Ki-\Ka)\varphi$
+ & $0$
+ & $-\varepsilon\,(\Ka^{-1}-\Ki^{-1})\ln(\Ki/\Ka)$\\[3pt]
+harmonic, $\Kh^{-1}=\varphi/\Ki+(1-\varphi)/\Ka$
+ & $-\varepsilon\,(\Ki-\Ka)\ln(\Ki/\Ka)$
+ & $0$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The zeros have one cause. If a quantity is \emph{affine} in
+$\varphi$, its excess is $(\text{jump})\cdot\varepsilon\int[\sigma(u)-H(u)]\,du$,
+and the integrand is odd by the antisymmetry in \eqref{eq:profile}, so the
+integral vanishes. $\Kar$ is affine, so $\Sigma_t=0$; $\Kh^{-1}$ is affine, so
+$\Sigma_n=0$. The nonzero entries come from the \emph{other} quantity, which is
+not affine: $1/\Kar$ and $\Kh$ are both convex in $\varphi$, so each lies
+below the chord joining its end values, and both excesses are negative.
+
+Physically, the arithmetic law short-circuits the series resistance, so the cell
+conducts too well across interfaces. The harmonic law blocks the parallel path,
+so it conducts too poorly along them. At $\Ki/\Ka=114.5$ the two nonzero
+constants are $234.96\,\varepsilon$~m\,K\,W$^{-1}$ and
+$10.76\,\varepsilon$~W\,m$^{-1}$K$^{-1}$. No scalar law can null both, because
+that would require $K$ and $1/K$ to be affine in $\varphi$ at once.
+
+\section{The tensor law}
+
+Use each law in the direction where its excess vanishes:
+\begin{equation}
+\boxed{\;
+\bK(\varphi,\nabla\varphi)=\Kar(\varphi)\,\big(\bI-\bn\otimes\bn\big)
++\Kh(\varphi)\,\bn\otimes\bn,
+\qquad \bn=\frac{\nabla\varphi}{|\nabla\varphi|}.\;}
+\label{eq:tensor}
+\end{equation}
+Then $K_t=\Kar$ and $K_n=\Kh$ in \eqref{eq:excess}, so
+\begin{equation}
+\Sigma_t=\Sigma_n=0,
+\qquad
+\Keff^{\varepsilon}-\Keff^{\star}=O(\varepsilon^2).
+\label{eq:second}
+\end{equation}
+
+\paragraph{Properties.}
+\begin{enumerate}
+\item \emph{Same sharp problem.} At $\varphi\in\{0,1\}$ both branches equal
+$K_\star$, so $\bK=K_\star\bI$ in the bulk and the sharp limit is untouched
+(companion note, Lemma~1). Only the band changes.
+\item \emph{Well posed.} $\bK$ is symmetric with eigenvalues $\Kar$ (tangential)
+and $\Kh$ (normal), both in $[\Ka,\Ki]$. The cell problem remains uniformly
+elliptic with the same bounds, and its discrete operator remains symmetric
+positive definite.
+\item \emph{No free parameters.} Nothing is fitted or calibrated. The law
+follows from the two excess conditions alone and holds for any
+$\Ki/\Ka$.
+\item \emph{Undefined normal is harmless.} $\bn$ is undefined where
+$\nabla\varphi=0$, which happens in the bulk, where $\Kar=\Kh$ and $\bK$ is
+isotropic whatever $\bn$ is. We set $\bK=\Kar\bI$ there.
+\end{enumerate}
+
+\section{Why this is legitimate}
+
+The corrector problem \eqref{eq:cell} is post-processing of a \emph{frozen}
+microstructure. The phase-field evolution (vapour transport, latent heat,
+interface kinetics) is solved with its own interpolation and is unaffected. The
+two interpolations answer different questions. The evolution law sets how the
+geometry develops; the homogenization law sets how a given geometry is turned
+into $\Keff$. Only the second is changed. The same laws already give the same
+sharp problem, so the change amounts to choosing, among the band
+representations of that problem, the one with no first-order error.
+
+This parallels the thin-interface corrections of Karma \& Rappel (1998), Almgren
+(1999) and Kaempfer \& Plapp (2009), which remove $O(\varepsilon)$ artifacts
+from phase-field \emph{dynamics} (for example, with an anti-trapping current or
+a renormalized kinetic coefficient). Here the problem is static and has no
+source term, so the thin-interface analysis stops at the two equilibrium excesses
+\eqref{eq:excess}, and it closes in elementary form.
+
+\section{Verification}
+
+Two cells with sharp closed forms, run over an $\varepsilon$ ladder at fixed
+$\varepsilon/h=5.12$ (so the interface bias is not confounded with mesh
+convergence):
+
+\begin{enumerate}
+\item \emph{Laminate} ($\bar\varphi=\tfrac12$, $n_\Gam=2$). Along the layers
+$k_\parallel=\avg{\Kar}$ is exact for both laws. Across the layers
+$1/k_\perp=\avg{1/K_n}$ is linear in $\varepsilon$ with slope
+$(n_\Gam/L)\,|\Sigma_n|/\varepsilon$ for the arithmetic law, and exactly flat
+at the sharp value for the tensor law. The laminate's normal is a fixed
+coordinate axis, so this case does not exercise the off-diagonal part of
+\eqref{eq:tensor}.
+\item \emph{Disk array} (square array, $f=\pi R^2/L^2=0.196$). The sharp value
+is Rayleigh's, $k=0.0295684$~W\,m$^{-1}$K$^{-1}$ (Perrins et al.\ 1979); Maxwell-Garnett
+agrees to $1.8\times10^{-4}$. Here the normal takes every direction. Using the
+dipole field in \eqref{eq:bias} gives the arithmetic law's slope with no fitted
+constants,
+\begin{equation}
+\frac{dk}{d\varepsilon}=\frac{|\Sigma_n|}{\varepsilon}\,\frac{\pi R}{L^2}
+\left[\frac{\Ka(1+\beta)}{1-\beta f}\right]^2,\qquad
+\beta=\frac{\Ki-\Ka}{\Ki+\Ka},
+\label{eq:diskslope}
+\end{equation}
+which is $+15\%$ at $\varepsilon=L/100$ and $+1.9\%$ at $L/800$. The disk
+ladder starts at $L/100$: at $L/50$, $\varepsilon/R=0.08$ and the visible band
+spans most of the radius, outside the thin-interface regime (measured there:
+arithmetic $+46\%$, tensor $+6.7\%$).
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{@{}lrr@{\qquad}lrr@{}}
+\toprule
+\multicolumn{3}{c}{laminate, $k_\perp$ bias} & \multicolumn{3}{c}{disk array, $k$ bias}\\
+$\varepsilon$ & arith.\ (pred.) & tensor (meas.) & $\varepsilon$ & arith.\ (pred.) & tensor (meas.)\\
+\midrule
+$L/50$  & $+59.4\%$ & $4\times10^{-7}$ & $L/100$ & $+15.1\%$ & \textit{tbd}\\
+$L/128$ & $+17.0\%$ & \textit{tbd}     & $L/200$ & $+7.5\%$  & \textit{tbd}\\
+$L/256$ & $+7.9\%$  & \textit{tbd}     & $L/400$ & $+3.8\%$  & \textit{tbd}\\
+$L/512$ & $+3.8\%$  & \textit{tbd}     & $L/800$ & $+1.9\%$  & \textit{tbd}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Drivers: \verb|enceladus_DSM/studies/keff_sharp_limit/verification/|
+(\verb|--interp tensor|) and \verb|.../disk/|.
+
+\section{Scope and limitations}
+
+\begin{itemize}
+\item \emph{Residual $O(\varepsilon^2)$.} This includes curvature terms and a
+geometric one: a diffuse disk holds $\pi^3\varepsilon^2/3$ more area of ice
+than the sharp disk.
+\item \emph{Thin ligaments.} The derivation assumes the band is a flat 1D layer,
+which fails where two interfaces are closer than the band width (about
+$6$--$9\,\varepsilon$), as in young sinter necks. No interpolation law is
+justified there. This limits how well the phase field resolves the geometry,
+and it applies to the evolution model's geometry as much as to $\Keff$.
+\item \emph{Profile.} The zero excesses use the antisymmetry of the logistic
+profile. Any profile with $\varphi(-s)=1-\varphi(s)$ about the
+$\varphi=\tfrac12$ level set gives the same result; a profile distorted by the
+evolution changes it only at the next order.
+\item \emph{Geometry error is untouched.} The law removes the bias of
+homogenizing a given $\varphi$. It does not correct errors in $\varphi$ itself.
+\end{itemize}
+
+\section{Suggested Methods text}
+
+\begin{quote}\small
+The effective conductivity tensor is obtained by periodic homogenization
+(Calonne et al., 2011), solving the corrector problem on the frozen phase field
+at each sampled time. Inside the diffuse interface the conductivity must be
+interpolated. A scalar interpolation carries a first-order bias in the
+interface width $\varepsilon$: to first order the band behaves as a sharp
+interface with an excess tangential conductance $\Sigma_t$ and an excess normal
+resistance $\Sigma_n$ (Hashin, 2001; Benveniste, 2006). For the logistic
+profile, the arithmetic law gives $\Sigma_t=0$ but
+$\Sigma_n=-\varepsilon(K_a^{-1}-K_i^{-1})\ln(K_i/K_a)$, which overestimates
+conduction across interfaces by up to tens of percent at
+$K_i/K_a\approx115$. The harmonic law has the opposite defect. We therefore
+use the tensor law
+$\mathbf K=K_{\mathrm{ar}}(\varphi)(\mathbf I-\hat{\mathbf n}\otimes\hat{\mathbf n})
++K_{\mathrm h}(\varphi)\,\hat{\mathbf n}\otimes\hat{\mathbf n}$,
+$\hat{\mathbf n}=\nabla\varphi/|\nabla\varphi|$, whose excesses both vanish,
+so the error is $O(\varepsilon^2)$. It reduces to the sharp conductivities in
+each bulk phase, has no adjustable parameters, and affects only the
+homogenization step, not the phase-field evolution. We verified it against
+closed-form sharp solutions for a laminate and for a square array of disks
+(Rayleigh, 1892; Perrins et al., 1979).
+\end{quote}
+
+\section*{References}
+{\small
+\noindent Almgren, R.\ F.\ (1999). Second-order phase field asymptotics for
+unequal conductivities. \emph{SIAM J.\ Appl.\ Math.} 59, 2086--2107.\\
+Benveniste, Y.\ (2006). A general interface model for a three-dimensional
+curved thin anisotropic interphase between two anisotropic media. \emph{J.\
+Mech.\ Phys.\ Solids} 54, 708--734.\\
+Calonne, N., Flin, F., Morin, S., Lesaffre, B., Rolland du Roscoat, S., \&
+Geindreau, C.\ (2011). Numerical and experimental investigations of the
+effective thermal conductivity of snow. \emph{Geophys.\ Res.\ Lett.} 38,
+L23501.\\
+Hashin, Z.\ (2001). Thin interphase/imperfect interface in conduction.
+\emph{J.\ Appl.\ Phys.} 89, 2261--2267.\\
+Kaempfer, T.\ U., \& Plapp, M.\ (2009). Phase-field modeling of dry snow
+metamorphism. \emph{Phys.\ Rev.\ E} 79, 031502.\\
+Karma, A., \& Rappel, W.-J.\ (1998). Quantitative phase-field modeling of
+dendritic growth in two and three dimensions. \emph{Phys.\ Rev.\ E} 57,
+4323--4349.\\
+Perrins, W.\ T., McKenzie, D.\ R., \& McPhedran, R.\ C.\ (1979). Transport
+properties of regular arrays of cylinders. \emph{Proc.\ R.\ Soc.\ Lond.\ A}
+369, 207--225.\\
+Rayleigh, Lord (1892). On the influence of obstacles arranged in rectangular
+order upon the properties of a medium. \emph{Phil.\ Mag.} 34, 481--502.
+}
+
+\end{document}
