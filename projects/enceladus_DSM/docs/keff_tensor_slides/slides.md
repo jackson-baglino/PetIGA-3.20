@@ -249,7 +249,11 @@ and the resulting error in k_eff:
 Following `effective_thermal_cond/docs/tensor_conductivity_law.tex` §4–5.
 The planar version of steps 3–6 is exactly Nicoli, Plapp & Henry (2011),
 §II.B–C: their surface conductivity M_s (eq. 7) is our Σ_t, and their
-interface resistance R_s (eq. 15) is our Σ_n.
+interface resistance R_s (eq. 15) is our Σ_n. The constant-flux-across and constant-gradient-along structure in steps 2–3
+is the same one that gives the laminate formulas in Milton (2002, §9.2).
+
+*Citation footer for the slide:* Nicoli, Plapp & Henry (2011) · Karma &
+Rappel (1998) · Milton (2002), §9.2
 The method is a matched asymptotic expansion, the standard thin-interface
 analysis of phase-field models (Karma & Rappel 1998; for unequal
 conductivities, Almgren 1999; McFadden et al. 2000).
@@ -332,6 +336,9 @@ Optional third figure, the intuition: `figures/fig5c_layer_schematic.png`.
 - Both spurious terms then vanish: **Σ_t = Σ_n = 0**, and the error drops to O(ε²).
 - There are no fitted parameters. Outside the band the law reduces to the pure-phase values,
   so the sharp limit is unchanged.
+- *Citation footer for the slide:* Nicoli, Plapp & Henry (2011) *Phys. Rev. E*
+  84, 046707 · Ettrich et al. (2014) *MSMSE* 22, 085006 · Milton (2002)
+  *The Theory of Composites*, §9.2
 
 ```latex
 \mathbf{K}(\varphi,\nabla\varphi)=\underbrace{\big[K_a+(K_i-K_a)\varphi\big]}_{K_t\ \text{(arithmetic)}}\big(\mathbf I-\hat{\mathbf n}\otimes\hat{\mathbf n}\big)+\underbrace{\Big[\frac{\varphi}{K_i}+\frac{1-\varphi}{K_a}\Big]^{-1}}_{K_n\ \text{(harmonic)}}\hat{\mathbf n}\otimes\hat{\mathbf n},\qquad \hat{\mathbf n}=\frac{\nabla\varphi}{|\nabla\varphi|}
