@@ -60,6 +60,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+source "$PROJECT_ROOT/scripts/lib/provenance.sh"
 cd "$PROJECT_ROOT"
 
 GEOMETRY_DIR="$PROJECT_ROOT/inputs/geometry"
@@ -213,6 +214,7 @@ cost=$(python3 -c "print(f'{$total_samples*$SEC_PER_SAMPLE*${nprocs:-1}/3600*$RA
 
 echo ""
 echo "============================================================"
+print_repo_provenance "$PROJECT_ROOT"
 echo "  run directories : $n_runs"
 echo "  laws            : $laws"
 echo "  jobs            : $n_jobs"

@@ -63,6 +63,7 @@ SOLVER_OPTS="$INPUTS_DIR/solver.opts"
 #   scripts/HPC/run_enceladus.sh    :: compute_optimal_nprocs
 # TARGET_DOFS_PER_CORE and MAX_TASKS_PER_NODE are sourced from
 # scripts/lib/alloc.sh (single source of truth; see rationale there).
+source "$PROJECT_ROOT/scripts/lib/provenance.sh"
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 source "$PROJECT_ROOT/scripts/lib/opts.sh"
 
@@ -172,6 +173,7 @@ mkdir -p "$BATCH_PARENT"
 echo "============================================================"
 echo "  Enceladus DSM batch submission"
 echo "  Tag         : ${tag:-<none>}"
+print_repo_provenance "$PROJECT_ROOT"
 echo "  Tests       : ${#TESTS[@]}"
 echo "  Parent dir  : $BATCH_PARENT"
 echo "  Target      : ${TARGET_DOFS_PER_CORE} DoFs/core (max ${MAX_TASKS_PER_NODE}/node)"
