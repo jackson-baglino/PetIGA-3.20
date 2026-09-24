@@ -214,7 +214,12 @@ fi
 # Echoes "nprocs nnodes tasks_per_node total_dofs"
 # ---------------------------------------------------------------------------
 compute_alloc() {
-    local geom_file="$1"
+    local geom_file="$1"; shift
+    # Remaining args: the job's solver flags (--extra-opts + per-job), which
+    # are appended after the opts files and so win at solve time. The
+    # allocation must read the same values, or a per-job -Nx 4096 on a
+    # geometry file that says 256 is sized for 256.
+    local job_opts=("$@")
     local nx ny nz dof
 
     # dof from solver.opts, NOT hardcoded. This used to be a literal 4 while
@@ -232,6 +237,18 @@ compute_alloc() {
         ny=$(awk '$1=="-Ny"{print $2}' "$geom_file" | head -n1)
         nz=$(awk '$1=="-Nz"{print $2}' "$geom_file" | head -n1)
     fi
+    local i keff_only=0
+    for ((i = 0; i < ${#job_opts[@]}; i++)); do
+        case "${job_opts[$i]}" in
+            -Nx) nx="${job_opts[$((i+1))]:-$nx}" ;;
+            -Ny) ny="${job_opts[$((i+1))]:-$ny}" ;;
+            -Nz) nz="${job_opts[$((i+1))]:-$nz}" ;;
+            -keff_only) [[ "${job_opts[$((i+1))]:-1}" != 0 ]] && keff_only=1 ;;
+        esac
+    done
+    # -keff_only never builds the phase-field Jacobian: the cost is the scalar
+    # corrector solve, one unknown per node, so size on that.
+    (( keff_only )) && dof=1
     nx=${nx:-1}; ny=${ny:-1}; nz=${nz:-1}
 
     local total_dofs=$((dof * nx * ny * nz))
@@ -304,7 +321,7 @@ submit_one() {
 
     local job_name="${geom}__${exp}${label:+__${label}}"
     local nprocs nnodes tasks_per_node total_dofs
-    read -r nprocs nnodes tasks_per_node total_dofs < <(compute_alloc "$geom_file")
+    read -r nprocs nnodes tasks_per_node total_dofs < <(compute_alloc "$geom_file" ${extra_opts[@]+"${extra_opts[@]}"} ${perjob[@]+"${perjob[@]}"})
 
     printf "→ %-45s DoFs=%-8d nprocs=%-3d nodes=%-2d tasks/node=%d\n" \
         "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node"
