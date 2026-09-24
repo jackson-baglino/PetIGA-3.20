@@ -207,6 +207,21 @@ create_folder() {
     # BATCH_OUT_DIR=$SCRATCH/enceladus_DSM/batch_<ts>[_<tag>]/, and we just write
     # into a clean `<geom>__<exp>/` subfolder of that shared parent so the
     # whole batch can be downloaded with a single rsync.
+    # RESUME_INTO: continue a killed run in ITS OWN directory instead of
+    # opening a new one. A resume is the same trajectory, so its snapshots,
+    # SSA_evo.dat and k_eff.csv belong beside the first leg's, not in a second
+    # folder that later has to be merged. Per-job artifacts (.o/.e, the outp
+    # leg, the cost file) stay separate inside it -- see below.
+    if [[ -n "${RESUME_INTO:-}" ]]; then
+        if [[ ! -d "$RESUME_INTO" ]]; then
+            echo "❌ RESUME_INTO is not a directory: $RESUME_INTO" >&2
+            exit 1
+        fi
+        folder="$RESUME_INTO"
+        echo "Output folder (resume, existing): $folder"
+        return
+    fi
+
     if [[ -n "${BATCH_OUT_DIR:-}" ]]; then
         # BATCH_JOB_LABEL disambiguates two jobs that share a geometry and an
         # experiment but differ in their per-job options (submit_batch.sh's
@@ -402,6 +417,8 @@ run_simulation() {
 
     set +e
 
+    OUTP_LEG="$folder/outp_job${SLURM_JOB_ID:-local}.txt"
+
     if [[ "${SLURM_JOB_ID:-none}" != "none" ]]; then
         echo "SLURM_JOB_ID        = ${SLURM_JOB_ID}"
         echo "SLURM_NNODES        = ${SLURM_NNODES:-unknown}"
@@ -415,7 +432,7 @@ run_simulation() {
             -options_file "$EXP_OPTS"    \
             -output_path  "$folder" \
             "${EXTRA_OPTS[@]}" \
-            | tee "$folder/outp.txt"
+            | tee "$OUTP_LEG"
     else
         echo "No SLURM environment detected; running locally with mpiexec."
         echo "Using NPROCS = ${NPROCS}"
@@ -427,11 +444,24 @@ run_simulation() {
             -options_file "$EXP_OPTS"    \
             -output_path  "$folder" \
             "${EXTRA_OPTS[@]}" \
-            | tee "$folder/outp.txt"
+            | tee "$OUTP_LEG"
     fi
 
     sim_exit=${PIPESTATUS[0]}
     set -e
+
+    # outp.txt is the whole trajectory, one leg appended after another; the
+    # per-leg file keeps this job's console output on its own.
+    #
+    # NOTE FOR ANYONE PARSING outp.txt: across a resume its STEP column
+    # restarts at 0, because the solver's counter does. Do not build a
+    # step->time map from it -- use SSA_evo.dat, whose step column
+    # merge_restart_legs.py renumbers to match the snapshots. Doing it the
+    # other way scrambled the ParaView collection of the 2026-09-16 pilot;
+    # see postprocess/plot_fields.py::_load_time_map_ssa.
+    if [[ -f "$OUTP_LEG" ]]; then
+        cat "$OUTP_LEG" >> "$folder/outp.txt"
+    fi
 
     if [ "$sim_exit" -ne 0 ]; then
         echo "⚠️  Simulation exited with code $sim_exit (continuing to post-processing)"
@@ -514,9 +544,13 @@ echo "  Results: $folder"
 echo "========================================================================="
 echo ""
 
+# Cost goes to the .o file AND to its own file inside the run folder, so the
+# per-leg bill survives next to the results instead of only in a log three
+# directories away.
 hpc_cost_post_job \
     "${NPROCS:-1}" \
     "$(( $(date +%s) - JOB_START_TIME ))" \
-    "${SLURM_JOB_ID:-}"
+    "${SLURM_JOB_ID:-}" 2>&1 \
+    | tee "${folder:-.}/cost_job${SLURM_JOB_ID:-local}.txt"
 
 exit "${sim_exit:-0}"

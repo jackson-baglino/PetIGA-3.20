@@ -185,8 +185,15 @@ elif [[ -n "$title" ]]; then
     run_args+=("$title")
 fi
 
+# RESUME_INTO tells run_enceladus.sh to continue in an existing run directory
+# instead of opening a new one. sbatch defaults to --export=ALL so it would be
+# inherited anyway; naming it makes the intent visible in the submit line.
+export_flag=()
+[ -n "${RESUME_INTO:-}" ] && export_flag=(--export="ALL,RESUME_INTO=${RESUME_INTO}")
+
 sbatch \
     --job-name="${geom_name}__${exp_name}" \
+    ${export_flag[@]+"${export_flag[@]}"} \
     --nodes="${NNODES}" \
     --ntasks="${NPROCS}" \
     --ntasks-per-node="${TASKS_PER_NODE}" \

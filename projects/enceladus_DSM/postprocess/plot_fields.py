@@ -75,8 +75,49 @@ _OUTP_ROW_RE    = re.compile(r"^\s*(\d+)\s*\|(.+)$")
 _DOMAIN_NFIELDS = 8  # TIME, DT, TOT_ICE, TOT_AIR, TEMP, TOT_RHOV, I-A INTERF, TOTAL_MASS
 
 
+def _load_time_map_ssa(ssa_path: str) -> dict:
+    """Return {step_index: simulation_time_s} from SSA_evo.dat.
+
+    PREFERRED OVER outp.txt, and the difference only shows on a RESUMED run.
+    The solver restarts its step counter at 0 on a resume, so a merged
+    outp.txt -- which is leg 1's text with leg 2's appended -- contains each of
+    steps 0..N twice, with times from two different parts of the trajectory.
+    merge_restart_legs.py renumbers leg 2's snapshots to continue leg 1's
+    count, and renumbers SSA_evo.dat to match, but it cannot renumber the step
+    column inside a block of console text.
+
+    The damage that did: on the 2026-09-16 pilot, the last-wins dict gave
+    leg-1 snapshots 0..165 leg-2 TIMES, and leg-2 snapshots (renumbered to
+    6482..6646) were absent from the map entirely and fell back to the step
+    INDEX as a pseudo-time. ParaView sorts on that attribute, so a 30-day run
+    opened with its second half first and its frames interleaved by step
+    number -- the data was fine, the collection that indexed it was not.
+
+    SSA_evo.dat carries step and time as columns, is renumbered by the merge,
+    and is strictly increasing in time. Columns (monitoring.c):
+        sub_interf/eps, tot_ice, t, step, dt, tot_air, tot_rhov, tot_mass
+    """
+    time_map = {}
+    if not os.path.isfile(ssa_path):
+        return time_map
+    with open(ssa_path) as fh:
+        for line in fh:
+            f = line.split()
+            if len(f) < 4:
+                continue
+            try:
+                time_map[int(float(f[3]))] = float(f[2])
+            except ValueError:
+                continue
+    return time_map
+
+
 def _load_time_map(outp_path: str) -> dict:
-    """Return {step_index: simulation_time_s} from outp.txt."""
+    """Return {step_index: simulation_time_s} from outp.txt.
+
+    Fallback for runs without SSA_evo.dat. Unreliable across a resume -- see
+    _load_time_map_ssa.
+    """
     time_map = {}
     if not os.path.isfile(outp_path):
         return time_map
@@ -311,7 +352,14 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
         return
 
     # Build step → time mapping from outp.txt.
-    time_map = _load_time_map(os.path.join(run_dir, "outp.txt"))
+    time_map = _load_time_map_ssa(os.path.join(run_dir, "SSA_evo.dat"))
+    if time_map:
+        print(f"  Time map: {len(time_map)} steps from SSA_evo.dat")
+    else:
+        time_map = _load_time_map(os.path.join(run_dir, "outp.txt"))
+        if time_map:
+            print(f"  Time map: {len(time_map)} steps from outp.txt "
+                  "(no SSA_evo.dat; unreliable if this run was resumed)")
     if not time_map:
         print("  Warning: outp.txt not found or empty — PVD will use step "
               "index as time proxy.")

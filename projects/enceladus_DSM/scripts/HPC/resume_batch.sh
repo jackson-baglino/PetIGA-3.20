@@ -104,7 +104,15 @@ for run in "$batch"/*__*/; do
     # sbatch's it.
     #
     # Argument order matters: <geom> <exp> [tag] [sbatch flags] -- [solver flags]
-    cmd=(./scripts/HPC/submit_enceladus.sh "$geom" "$exp" "$tag")
+    # RESUME IN PLACE. A resume is the same trajectory, so it continues in the
+    # directory it is resuming -- no second folder, no later merge to stitch
+    # the halves back together. What stays per-job inside it: the SLURM .o/.e
+    # (they already carry %j), outp_job<id>.txt, and cost_job<id>.txt.
+    #
+    # The old behaviour left leg 2 in the single-run tree while leg 1 sat in
+    # the batch parent, which is why one 30-day run needed two replay jobs and
+    # a merge, and why the merged outp.txt ended up with two step-0 blocks.
+    cmd=(env "RESUME_INTO=$run" ./scripts/HPC/submit_enceladus.sh "$geom" "$exp" "$tag")
     [ "${#sbatch_extra[@]}" -gt 0 ] && cmd+=("${sbatch_extra[@]}")
     cmd+=(-- $KEFF_OPTS -initial_cond "$snap" $extra)
 
