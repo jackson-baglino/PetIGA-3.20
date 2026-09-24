@@ -1,3 +1,12 @@
+## 2026-09-24 — Advisor slides on the k_eff tensor law; disk f-sweep; prior art found
+
+- `docs/keff_tensor_slides/`: slides.md (7 slides + backup derivation, IguanaTeX-ready LaTeX, talking points, Crossref-checked references), make_figures.py (half-slide panels, no equations in figures), pilot_rewiden.py (pilot seed 1 re-widened at t = 0, 1, 30 d under arithmetic / tensor / thresholded laws, python FV solver; t = 0 arithmetic reproduces the logged 0.6266).
+- `studies/keff_sharp_limit/disk_sweep/`: 36-job HPC spec (R = 125-400 um, eps/R = 0.04/0.02/0.01, both laws) + collector with symmetry and phi_bar gates. Shows the arithmetic bias grows with f (first order +1.8% to +24% at production eps/R), i.e. it is not a constant offset.
+- `submit_batch.sh` compute_alloc now honours per-job -Nx/-Ny/-Nz and sizes -keff_only jobs on 1 DoF/node (was sizing every job from the geometry file's 256^2).
+- PRIOR ART: Nicoli, Plapp & Henry 2011 (PRE 84 046707) already derive the two diffuse-interface transport effects and the tensorial fix; Ettrich et al. 2014 apply it to heat conduction. Slides now present the tensor law as established and our contribution as the application + bias quantification + verification. tensor_conductivity_law.tex still lacks the citation.
+
+---
+
 ## 2026-09-23 — Fix the scrambled ParaView collections; resume in place
 
 - Diagnosed the out-of-order ParaView playback on the 2026-09-16 pilot. The

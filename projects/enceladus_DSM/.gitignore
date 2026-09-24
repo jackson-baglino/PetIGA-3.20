@@ -65,6 +65,11 @@ studies/**/verification/raw*/*/
 # inline, so it has to be tracked.
 !docs/figures/*.png
 
+# The advisor slides on the k_eff tensor law: slides.md embeds these, and they
+# are what goes on the slides. The downloaded papers stay local.
+!docs/keff_tensor_slides/figures/*.png
+docs/keff_tensor_slides/papers/
+
 # Same again for the Libbrecht kinetics study: these six panels ARE the
 # result -- the README and the slide deck are built around them, and they
 # are cheap to regenerate but expensive to re-derive.
