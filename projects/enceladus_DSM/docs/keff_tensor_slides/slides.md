@@ -247,6 +247,9 @@ and the resulting error in k_eff:
 ## Slide 4b (backup): How Σ_n and Σ_t are derived
 
 Following `effective_thermal_cond/docs/tensor_conductivity_law.tex` §4–5.
+The planar version of steps 3–6 is exactly Nicoli, Plapp & Henry (2011),
+§II.B–C: their surface conductivity M_s (eq. 7) is our Σ_t, and their
+interface resistance R_s (eq. 15) is our Σ_n.
 The method is a matched asymptotic expansion, the standard thin-interface
 analysis of phase-field models (Karma & Rappel 1998; for unequal
 conductivities, Almgren 1999; McFadden et al. 2000).
@@ -361,28 +364,40 @@ Why both terms vanish (1/K_n and K_t are both linear in φ):
    is exactly the short circuit of slide 4.
 2. This is not simply a sharper interface. A sharper φ would need a finer
    mesh. This law fixes the error on the **same φ and the same mesh**.
-3. **Where it comes from: the laminate intuition.** Inside the band φ varies
-   only along the normal, so locally the band *is* a stack of thin layers
-   (fig5c). A layered medium conducts with the arithmetic mean along the
-   layers and the harmonic mean across them. These are the classical parallel
-   and series (Wiener) bounds; see Milton (2002) on laminates. The tensor law
-   applies that layered result to the numerical band. The matched expansion
-   (slide 4b) is what makes this rigorous rather than just an analogy.
-4. **This is not a new idea, and we should say so.** Nicoli, Plapp & Henry
-   (2011) analysed exactly this problem for general two-phase transport in
-   diffuse-interface models. They found the same two spurious effects, a
-   surface excess current and a potential jump, and showed that both can be
-   removed together only if the coefficient becomes a tensor in the
-   interface. Ettrich et al. (2014) applied tensorial interpolation to
-   transient heat conduction. Schneider et al. (2015) did the mechanical
-   analogue for phase-field elasticity.
-5. **What is ours:**
-   - applying it to the homogenization cell problem for snow k_eff on an
-     evolving phase field;
-   - the closed-form size of the old law's bias for our tanh profile and
-     contrast, and the fact that it depends on geometry and so distorts
-     sintering trends;
-   - verification against exact solutions (slide 6).
+3. **Where it comes from: the laminate intuition, and it is exact.** Inside
+   the band φ varies only along the normal, so locally the band *is* a layered
+   (laminate) material (fig5c). For a laminate, the conductivity across the
+   layers is the harmonic mean and the conductivity along them is the
+   arithmetic mean (Milton 2002, §9.2).
+
+   Milton's reason is the same as our derivation on slide 4b. When the fields
+   vary only across the layers, the flux across them and the gradient along
+   them must both be constant. Those are exactly the two quantities our
+   expansion finds constant inside the band (4b, steps 2–3). Ettrich et al.
+   (2014) give this same series/parallel argument as the motivation for the
+   tensor law. So the laminate analogy is not loose: to leading order the
+   band is a laminate.
+4. **This is not a new idea, and we say so.** Nicoli, Plapp & Henry (2011)
+   solved this problem for steady transport through two-phase diffuse-interface
+   structures.
+   - They derived the same two spurious terms: a surface conductivity (our
+     Σ_t) and an interface resistance (our Σ_n), with the same integrals.
+   - They showed that "direct" (arithmetic) interpolation zeroes the first and
+     "inverse" (harmonic) interpolation zeroes the second.
+   - They wrote down this exact tensor law.
+   - They tested it on a disk inclusion: first-order convergence for either
+     scalar law, nearly second order for the tensor.
+
+   Ettrich et al. (2014) extended it to transient 3-D heat conduction.
+5. **What is ours** is the application and the quantification, not the law:
+   - the homogenization cell problem for snow k_eff on an evolving phase
+     field;
+   - a contrast of 115, where Nicoli et al. tested 2 and 10. The bias scales
+     like (1/K_a − 1/K_i)·ln(K_i/K_a), so it is much larger here;
+   - the closed-form first-order error in k_eff, which is geometry-dependent
+     and so distorts sintering trends;
+   - verification against Rayleigh's exact solution and the slab, plus the
+     packing check.
 6. Why it is legitimate here: the k_eff solve is **post-processing on a frozen
    φ**. It does not feed back into the phase-field evolution, so changing the
    interpolation used in it cannot change the microstructure.
@@ -491,33 +506,42 @@ Why both terms vanish (1/K_n and K_t are both linear in φ):
 
 ## References
 
-Every DOI below was checked against Crossref on 2026-09-24. "Verified content"
-marks what I confirmed from the paper itself. Everything else rests on
-metadata and the abstract only, until the PDFs in `papers/` are read.
+Every DOI below was checked against Crossref on 2026-09-24. The papers the
+slides lean on were read from the PDFs in
+`effective_thermal_cond/lamena_conductivity_papers/`.
 
 | Reference | Used for | Check |
 |---|---|---|
 | Calonne, N., Flin, F., Morin, S., Lesaffre, B., Rolland du Roscoat, S., & Geindreau, C. (2011). Numerical and experimental investigations of the effective thermal conductivity of snow. *Geophys. Res. Lett.* 38, L23501. doi:10.1029/2011GL049234 | cell problem (slide 2) | DOI verified in the earlier writeup |
 | Rayleigh, Lord (1892). On the influence of obstacles arranged in rectangular order upon the properties of a medium. *Phil. Mag.* 34, 481–502. doi:10.1080/14786449208620364 | exact disk-array solution | DOI verified in the earlier writeup |
 | Perrins, W. T., McKenzie, D. R., & McPhedran, R. C. (1979). Transport properties of regular arrays of cylinders. *Proc. R. Soc. Lond. A* 369, 207–225. doi:10.1098/rspa.1979.0160 | coefficients of the exact formula | DOI verified in the earlier writeup |
-| **Nicoli, M., Plapp, M., & Henry, H. (2011). Tensorial mobilities for accurate solution of transport problems in models with diffuse interfaces. *Phys. Rev. E* 84, 046707. doi:10.1103/PhysRevE.84.046707** | **prior art for the tensor law (slide 5)** | DOI verified today; abstract read |
-| Ettrich, J., Choudhury, A., Tschukin, O., Schoof, E., August, A., & Nestler, B. (2014). Modelling of transient heat conduction with diffuse interface methods. *Modelling Simul. Mater. Sci. Eng.* 22, 085006. doi:10.1088/0965-0393/22/8/085006 | tensorial interpolation for heat conduction | DOI verified today; abstract read |
-| Schneider, D., Tschukin, O., Choudhury, A., Selzer, M., Böhlke, T., & Nestler, B. (2015). Phase-field elasticity model based on mechanical jump conditions. *Comput. Mech.* 55, 887–901. doi:10.1007/s00466-015-1141-6 | elastic analogue | DOI verified today |
-| Durga, A., Wollants, P., & Moelans, N. (2013). Evaluation of interfacial excess contributions in different phase-field models for elastically inhomogeneous systems. *Modelling Simul. Mater. Sci. Eng.* 21, 055018. doi:10.1088/0965-0393/21/5/055018 | interfacial excess (elastic) | DOI verified today |
-| Mosler, J., Shchyglo, O., & Montazer Hojjat, H. (2014). A novel homogenization method for phase field approaches based on partial rank-one relaxation. *J. Mech. Phys. Solids* 68, 251–266. doi:10.1016/j.jmps.2014.04.002 | laminate homogenization inside the interface (elastic) | DOI verified today; content not yet read |
-| Milton, G. W. (2002). *The Theory of Composites.* Cambridge University Press. doi:10.1017/CBO9780511613357 | laminate (parallel/series) formulas | DOI verified today; chapter to be confirmed |
-| Karma, A., & Rappel, W.-J. (1998). Quantitative phase-field modeling of dendritic growth in two and three dimensions. *Phys. Rev. E* 57, 4323–4349. doi:10.1103/PhysRevE.57.4323 | thin-interface expansion (4b) | DOI verified in the earlier writeup |
-| Almgren, R. F. (1999). Second-order phase field asymptotics for unequal conductivities. *SIAM J. Appl. Math.* 59, 2086–2107. doi:10.1137/S0036139997330027 | unequal conductivities (4b) | DOI verified in the earlier writeup |
+| **Nicoli, M., Plapp, M., & Henry, H. (2011). Tensorial mobilities for accurate solution of transport problems in models with diffuse interfaces. *Phys. Rev. E* 84, 046707. doi:10.1103/PhysRevE.84.046707** | **the tensor law, the two interface terms, the disk test (slides 4b, 5)** | **read in full**: eqs. 7, 9, 15, 16, 17 and figs. 1–2 match what the slides attribute to it |
+| Ettrich, J., Choudhury, A., Tschukin, O., Schoof, E., August, A., & Nestler, B. (2014). Modelling of transient heat conduction with diffuse interface methods. *Modelling Simul. Mater. Sci. Eng.* 22, 085006. doi:10.1088/0965-0393/22/8/085006 | series/parallel motivation; extension to transient heat conduction | read §1 and §5: the series/parallel argument and the tensor matrix (their eq. 1) are there; their new content is heat capacity |
+| Milton, G. W. (2002). *The Theory of Composites.* Cambridge University Press. doi:10.1017/CBO9780511613357 | laminate formulas: harmonic across, arithmetic along | read ch. 9 §9.2 (pp. 159–162), Tartar's formula eq. 9.7 |
+| Karma, A., & Rappel, W.-J. (1998). Quantitative phase-field modeling of dendritic growth in two and three dimensions. *Phys. Rev. E* 57, 4323–4349. doi:10.1103/PhysRevE.57.4323 | thin-interface expansion (4b) | DOI verified in the earlier writeup; also cited by Nicoli et al. for this purpose |
+| Almgren, R. F. (1999). Second-order phase field asymptotics for unequal conductivities. *SIAM J. Appl. Math.* 59, 2086–2107. doi:10.1137/S0036139997330027 | unequal conductivities (4b) | DOI verified in the earlier writeup; also cited by Nicoli et al. |
 | McFadden, G. B., Wheeler, A. A., & Anderson, D. M. (2000). Thin interface asymptotics for an energy/entropy approach to phase-field models with unequal conductivities. *Physica D* 144, 154–168. doi:10.1016/S0167-2789(00)00064-6 | unequal conductivities (4b) | DOI verified in the earlier writeup |
 
-**Deliberately not cited:** Hashin and Benveniste (thin interphases), and Yang
-et al. (2022, *Scripta Mater.* 212, 114537). They model *physical*
-interface resistances, which are meant to be kept. Our band is a numerical
-artefact that we remove.
+**Read, related, and deliberately not cited** (they are about elasticity, not
+conduction, and Nicoli and Ettrich are direct matches):
+- Schneider et al. (2015, *Comput. Mech.* 55, 887–901, doi:10.1007/s00466-015-1141-6)
+  build the interface interpolation from the mechanical jump conditions:
+  continuous traction, and a displacement gradient that jumps only in the
+  normal direction.
+- Durga, Wollants & Moelans (2013, *MSMSE* 21, 055018, doi:10.1088/0965-0393/21/5/055018)
+  show that interpolation creates interfacial excess stresses and strains.
+- Mosler, Shchyglo & Montazer Hojjat (2014, *JMPS* 68, 251–266,
+  doi:10.1016/j.jmps.2014.04.002) use a rank-one (laminate) homogenization
+  inside the interface, bounded by the Voigt and Reuss models.
+
+They are good answers if someone asks whether this idea exists outside heat
+conduction. **Also not cited:** Hashin and Benveniste (thin interphases), and
+Yang et al. (2022, *Scripta Mater.* 212, 114537), because they model physical
+interface resistances, which are meant to be kept.
 
 ## Caveats to keep in mind
 
-The tensor law is established. What is specific to us is the application: the
+The tensor law is established (Nicoli et al. 2011). What is specific to us is the application: the
 snow k_eff cell problem on an evolving phase field, the size and geometry
 dependence of the old law's bias, and the verification. Before relying on the
 sweep, check `collect_sweep.py`: it must report "all checks passed". The
