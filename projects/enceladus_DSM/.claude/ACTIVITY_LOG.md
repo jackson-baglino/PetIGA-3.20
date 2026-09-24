@@ -1,3 +1,32 @@
+## 2026-09-23 — Fix the scrambled ParaView collections; resume in place
+
+- Diagnosed the out-of-order ParaView playback on the 2026-09-16 pilot. The
+  snapshots were fine; `pf.pvd` was not. `plot_fields.py` keyed its step->time
+  map on `outp.txt`, whose step column restarts at 0 on a resume, so a merged
+  `outp.txt` holds steps 0..N twice with times from two parts of the run.
+  Last-wins gave leg-1 snapshots leg-2 times, and leg-2 snapshots (renumbered
+  by the merge to 6482..6646) fell back to the step index as a pseudo-time.
+  ParaView sorts on that: the run opened at day 16.27 and closed at day 15.67.
+- Map now comes from `SSA_evo.dat` (step column renumbered by the merge, time
+  strictly increasing). Seed 1: 25/55 entries wrong -> 0/55.
+- **Rebuilt all four pilot `pf.pvd` files** via `plot_fields.py --dir <run>`
+  (existing `.vts` are skipped, only the collection is rewritten). Verified:
+  55/54/55/55 entries, 0 missing, monotone, 0.000 -> 30.01/30.02/30.01/30.01 d,
+  every timestep matching `SSA_evo.dat` to 1e-6. Backups of the old files are
+  in the session scratchpad only.
+- Science tables were never affected: `SSA_evo.dat` and `k_eff.csv` are
+  strictly increasing in time on all four seeds.
+- Resume now continues IN the directory it resumes (`RESUME_INTO`, wired
+  through `resume_batch.sh` -> `submit_enceladus.sh` -> `run_enceladus.sh`).
+  No second folder, so no later merge. Per-job artifacts stay separate inside
+  it: SLURM `.o`/`.e` already carry `%j`, console output goes to
+  `outp_job<id>.txt` and is appended to the cumulative `outp.txt`, and the
+  cost report is written to `cost_job<id>.txt` beside the results.
+- Confirmed from `$SCRATCH` that all four pilot seeds were in fact resumed
+  (the four `packing_2D_pilot_..._seed{1..4}` folders, Sep 17 11:48-13:15).
+
+---
+
 ## 2026-09-23 — k_eff campaign: replay tooling, temperature axis, CAMPAIGN.md
 
 - Batch submitter: a test spec may now carry a third field, `geom:exp:<opts>`,

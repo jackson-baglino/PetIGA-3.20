@@ -351,7 +351,7 @@ def convert(run_dir: str = ".", iga_file: str = "igasol.dat",
         print(f"No sol*.dat files found in '{run_dir}'")
         return
 
-    # Build step → time mapping from outp.txt.
+    # Build step -> time mapping. SSA_evo.dat first; see _load_time_map_ssa.
     time_map = _load_time_map_ssa(os.path.join(run_dir, "SSA_evo.dat"))
     if time_map:
         print(f"  Time map: {len(time_map)} steps from SSA_evo.dat")
