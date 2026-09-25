@@ -93,15 +93,33 @@ The test case is a single ice disk (R = 250 µm) in a 1 mm periodic cell, which
 is a square array of disks, ice fraction f = 0.196. The diffuse version is
 shown at the production resolution, ε/R = 0.02.
 
-The PDE we solve is the cell problem of Calonne et al. (2011), on the phase field:
+The exact problem is the cell problem of Calonne et al. (2011). It has one
+corrector field per phase, t_i in the ice and t_a in the air:
 
 ```latex
-\nabla\cdot\Big(\mathbf{K}(\varphi)\,\big(\nabla t_m+\mathbf{e}_m\big)\Big)=0
-\quad\text{in the periodic cell},\qquad m=1,2
+\nabla\cdot\Big(K_i\,\big(\nabla\mathbf{t}_i+\mathbf{I}\big)\Big)=\mathbf{0}\quad\text{in the ice},\qquad
+\nabla\cdot\Big(K_a\,\big(\nabla\mathbf{t}_a+\mathbf{I}\big)\Big)=\mathbf{0}\quad\text{in the air}
 ```
 
+These are joined at the interface Γ by continuous temperature and continuous
+normal heat flux:
+
 ```latex
-\mathbf{K}_{\mathrm{eff}}\,\mathbf{e}_m=\frac{1}{|\Omega|}\int_\Omega \mathbf{K}(\varphi)\,\big(\nabla t_m+\mathbf{e}_m\big)\,d\Omega
+\mathbf{t}_i=\mathbf{t}_a,\qquad K_i\,\big(\nabla\mathbf{t}_i+\mathbf{I}\big)\,\hat{\mathbf n}=K_a\,\big(\nabla\mathbf{t}_a+\mathbf{I}\big)\,\hat{\mathbf n}\qquad\text{on }\Gamma
+```
+
+The effective conductivity averages over both phases:
+
+```latex
+\mathbf{K}_{\mathrm{eff}}=\frac{1}{|\Omega|}\left[\int_{\Omega_i}K_i\,\big(\nabla\mathbf{t}_i+\mathbf{I}\big)\,d\Omega+\int_{\Omega_a}K_a\,\big(\nabla\mathbf{t}_a+\mathbf{I}\big)\,d\Omega\right]
+```
+
+On the phase field there is one domain and one corrector. The conductivity
+follows φ, and the interface conditions are built in:
+
+```latex
+\nabla\cdot\Big(\mathbf{K}(\varphi)\,\big(\nabla\mathbf{t}+\mathbf{I}\big)\Big)=\mathbf{0}\quad\text{in the periodic cell},\qquad
+\mathbf{K}_{\mathrm{eff}}=\frac{1}{|\Omega|}\int_\Omega \mathbf{K}(\varphi)\,\big(\nabla\mathbf{t}+\mathbf{I}\big)\,d\Omega
 ```
 
 The old (arithmetic) law, the same in every direction:
@@ -127,13 +145,19 @@ Perrins et al. 1979), with β = (K_i − K_a)/(K_i + K_a) and T = −1/β:
 
 1. Why a disk: it has an exact answer, and its interface points in every
    direction. The slab only tests one direction.
-2. The sharp and diffuse problems use the same PDE and the same K law. The only
-   difference is that K sees φ, a smooth ramp, instead of χ, a 0/1 step. If
+2. The two-phase problem and the phase-field problem are the same equation.
+   Replace φ by the 0/1 ice indicator χ and the single equation splits back
+   into the ice and air equations, with the interface conditions built in.
+   The only difference is that K sees φ, a smooth ramp, instead of χ, a 0/1 step. If
    the answers differ, the difference comes from how K is interpolated inside
    the ramp.
-3. The interface is thin: at ε/R = 0.02 the visible band (about 9ε, from 1%
+3. Reading the equations: t is the corrector, the temperature's periodic
+   deviation from a unit mean gradient. ∇t + I is the local temperature
+   gradient for a unit mean gradient in each direction at once, so K_eff comes
+   out as a 2×2 tensor directly.
+4. The interface is thin: at ε/R = 0.02 the visible band (about 9ε, from 1%
    to 99%) is 45 µm on a 250 µm disk. The inset zoom shows it.
-4. These are single steady-state solves (`-keff_only`). There is no time
+5. These are single steady-state solves (`-keff_only`). There is no time
    integration, and nothing evolves.
 
 ---
