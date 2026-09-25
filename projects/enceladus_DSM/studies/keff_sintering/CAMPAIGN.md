@@ -24,8 +24,8 @@ below, and stage 2 replaces it with a measurement at other temperatures.
 | stage | what | cost | running | figure |
 |---|---|---|---|---|
 | 0 | tensor law + both ladders | done | — | ✔ committed |
-| 1 | pilot replay under tensor (no new simulation) | ~$19 | ~$19 | ✔ |
-| 2 | batch 1 — cold end of the T axis | ~$126 | ~$145 | ✔ |
+| 1 | pilot replay under tensor (no new simulation) | **$43 actual** | $43 | ✔ **done** |
+| 2 | batch 1 — cold end of the T axis | ~$126 | ~$169 | ✔ **next** |
 | 3 | −10 °C | ~$321 | ~$466 | ✔ **SLIDES** |
 | 4 | production packings | local | ~$466 | — |
 | 5 | main matrix | measured at stage 2 | — | ✔ **SLIDES** |
@@ -79,22 +79,38 @@ single-run tree, not the batch parent. 8 jobs, ~$19, tensor only: each run's
 existing in-line `k_eff.csv` **is** the arith result, so there is nothing to
 buy on that side.
 
-**Read:** the rise from the **1-day baseline**, `arith +15.9% (sd 1.9) →
-tensor ?`. That is the correction factor, and it rescales stage 2's threshold.
+### RESULT (2026-09-24) — the gate passes, continue to stage 2
 
-- **tensor differs from arith by a factor the ladders can account for** →
-  adopt it as the campaign headline and continue.
-- **tensor moves the rise by much more than the contact argument predicts, or
-  moves it the wrong way** → **stop** and understand it before buying runs.
+8 jobs, stride 12, ~$5.4 each. Measured, from the 1-day baseline:
 
-Also read, and record here when known:
+| seed | arith | tensor |
+|---|---|---|
+| 1 | +13.9% | **+27.4%** |
+| 3 | +18.3% | **+31.9%** |
+| 4 | +15.0% | **+27.2%** |
+| ensemble | **+15.8%** (sd 2.3) | **+28.8%** (sd 2.6) |
 
-- **`ksp_its`**, against the single-cylinder benchmark's ~2.5× arith. The
-  tensor operator is locally anisotropic inside the band (`K_∥/K_⊥ ≈ 29` at
-  `φ = 0.5`). A larger rise on the packing is a real cost signal for every
-  stage below.
-- **`phi_bar` identical to arith**, sample for sample. The law does not touch
-  the ice field; a difference means the wrong snapshots were read.
+**The headline is ×1.83, from +15.8% to +28.8%.** Seed 2 is excluded: its
+leg-1 job lost 30 MPI ranks to `Slurmd could not connect IO` on `hpc-19-16`,
+so only its second half exists and it has no 1-day baseline.
+
+The mechanism is confirmed directly. On seed 1 `k_eff(0)` falls from **0.6312
+(arith) to 0.3695 (tensor)** — the arithmetic law was reading **+71% high** on
+tangent grains, exactly the pre-welded-contact effect. By day ~10 the two
+absolute curves cross: once necks are real, the band correction matters less.
+
+Independently corroborated by `studies/keff_sharp_limit/disk/` f-sweep: the
+arith error grows with solid fraction (+1.9% at `f`=0.05 to **+38.6%** at
+`f`=0.50, at the campaign's `eps/R`=0.02) while the tensor error stays **under
+1%** across the whole range. Two unrelated geometries, one mechanism.
+
+Costs, against what was predicted: **~100 s/sample was right** (measured
+83–110 s). `ksp_its` went 106–130 (arith) → 136–180 (tensor), **~1.4×**, not
+the ~2.5× predicted from the cylinder benchmark — so the tensor operator is
+cheaper on the packing than feared.
+
+**Consequence for stage 2:** the cold-end threshold is now against the tensor
+seed scatter, **sd 2.6 points**, not the arith 2.1.
 
 ### The baseline is t = 1 day
 
