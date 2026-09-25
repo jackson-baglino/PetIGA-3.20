@@ -37,6 +37,16 @@ Usage:
     python make_packing_movie.py <run_dir> [--out FILE.mp4] [--fps 10]
         [--stride N] [--dpi 150] [--frame-png STEP] [--sat-clip P]
         [--symmetric] [--no-keff] [--cmap NAME]
+        [--frames-dir DIR] [--no-movie]
+    python make_packing_movie.py <run_dir> --from-frames DIR [--fps 10]
+
+THE FRAMES ARE THE OUTPUT. They are written to <run_dir>/frames/ as
+frame_<step>.png and kept, and the mp4 is assembled from them; --from-frames
+rebuilds it after culling or re-ordering without re-rendering anything. Naming
+by step rather than by position makes each file its own index back into
+sol_*.dat and the k_eff rows, which is also why assembly goes through a concat
+list -- steps are not contiguous, so ffmpeg's numbered pattern would stop at
+the first gap.
 """
 from __future__ import annotations
 
@@ -45,10 +55,8 @@ import csv
 import glob
 import os
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -88,6 +96,33 @@ def load_keff(run: Path):
     return out
 
 
+def assemble(frames_dir: Path, out: Path, fps: int) -> int:
+    """Build the mp4 from whatever PNGs are in `frames_dir`, in name order.
+
+    Goes through a concat list rather than ffmpeg's %05d pattern, because the
+    frames are named by STEP and steps are not contiguous -- a numbered
+    pattern would stop at the first gap.
+    """
+    pngs = sorted(frames_dir.glob("frame_*.png"))
+    if not pngs:
+        print(f"no frame_*.png in {frames_dir}", file=sys.stderr)
+        return 1
+    lst = frames_dir / "frames.txt"
+    with lst.open("w") as fh:
+        for p in pngs:
+            fh.write(f"file '{p.name}'\nduration {1.0/fps:.6f}\n")
+        fh.write(f"file '{pngs[-1].name}'\n")   # concat drops the last duration
+    cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lst),
+           "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", str(fps),
+           "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", str(out)]
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    if r.returncode != 0:
+        print(r.stderr[-2000:], file=sys.stderr)
+        return 1
+    print(f"  {len(pngs)} frame(s) @ {fps} fps -> {out}")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -106,10 +141,26 @@ def main() -> int:
                          "the clipped range")
     ap.add_argument("--cmap", default="balance")
     ap.add_argument("--no-keff", action="store_true")
-    ap.add_argument("--keep-frames", action="store_true")
+    ap.add_argument("--frames-dir", type=Path, default=None,
+                    help="where the PNG frames are written and KEPT "
+                         "(default <run_dir>/frames/). They are the real "
+                         "output; the mp4 is assembled from them.")
+    ap.add_argument("--from-frames", type=Path, default=None,
+                    help="skip rendering and assemble the mp4 from the PNGs "
+                         "already in this directory")
+    ap.add_argument("--no-movie", action="store_true",
+                    help="write the frames and stop")
     args = ap.parse_args()
 
     run = args.run_dir.resolve()
+    frames_dir = (args.frames_dir or (run / "frames")).resolve()
+
+    # Assemble-only: the frames are the durable artifact, so rebuilding the
+    # mp4 after culling or re-ordering them must not require re-rendering.
+    if args.from_frames is not None:
+        return assemble(args.from_frames.resolve(),
+                        args.out or run / "packing_sintering.mp4", args.fps)
+
     files = sorted(glob.glob(str(run / "vtkOut" / "solV_*.vts")), key=step_of)
     if not files:
         print(f"no solV_*.vts under {run}/vtkOut", file=sys.stderr)
@@ -155,7 +206,11 @@ def main() -> int:
                                             for k, v in keff.items()))
 
     # -- pass 2: render ----------------------------------------------------
-    frames = tempfile.mkdtemp(prefix="packing_frames_")
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    # Stale PNGs from a previous, longer run would be picked up by the glob
+    # and spliced into the new movie.
+    for old in frames_dir.glob("frame_*.png"):
+        old.unlink()
     ncol = 1 if not keff else 2
     n_out = 0
     for i, (fn, t) in enumerate(zip(files, times)):
@@ -206,28 +261,17 @@ def main() -> int:
             fig.savefig(out, dpi=args.dpi, bbox_inches="tight")
             plt.close(fig)
             print(f"wrote {out}")
-            shutil.rmtree(frames, ignore_errors=True)
             return 0
-        fig.savefig(os.path.join(frames, f"f{n_out:05d}.png"), dpi=args.dpi)
+        # Named by STEP, not by position: the frame files are then their own
+        # index back into sol_*.dat and the k_eff rows.
+        fig.savefig(frames_dir / f"frame_{steps[i]:05d}.png", dpi=args.dpi)
         plt.close(fig)
         n_out += 1
 
-    out = args.out or run / "packing_sintering.mp4"
-    cmd = ["ffmpeg", "-y", "-framerate", str(args.fps),
-           "-i", os.path.join(frames, "f%05d.png"),
-           "-c:v", "libx264", "-pix_fmt", "yuv420p",
-           "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", str(out)]
-    r = subprocess.run(cmd, capture_output=True, text=True)
-    if r.returncode != 0:
-        print(r.stderr[-2000:], file=sys.stderr)
-        print(f"ffmpeg failed; frames kept in {frames}", file=sys.stderr)
-        return 1
-    if args.keep_frames:
-        print(f"  frames: {frames}")
-    else:
-        shutil.rmtree(frames, ignore_errors=True)
-    print(f"\nwrote {out}  ({n_out} frames @ {args.fps} fps)")
-    return 0
+    print(f"\n  {n_out} frame(s) -> {frames_dir}")
+    if args.no_movie:
+        return 0
+    return assemble(frames_dir, args.out or run / "packing_sintering.mp4", args.fps)
 
 
 if __name__ == "__main__":
