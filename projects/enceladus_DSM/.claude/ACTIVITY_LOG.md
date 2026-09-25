@@ -1,3 +1,36 @@
+## 2026-09-25 — Stage 1 result (x1.83), f-sweep, packing movie
+
+- **Stage 1 passes.** Pilot replay under the tensor law, 8 jobs, stride 12,
+  ~$5.4 each. From the 1-day baseline the ensemble goes **+15.8% (arith) ->
+  +28.8% (tensor)**, a **x1.83** correction, across seeds 1/3/4.
+  `k_eff(0)` on seed 1 falls 0.6312 -> 0.3695: the arithmetic law read **+71%
+  high** on tangent grains. The absolute curves cross near day 10.
+- Seed 2 excluded: its leg-1 job lost 30 ranks to `Slurmd could not connect IO`
+  on hpc-19-16, so only its second half exists and it has no 1-day baseline.
+  **That job was not a memory failure** — the ranks never launched, so the new
+  memory guard would not have caught it. A shorter `--time` is the protection.
+- Predictions settled: ~100 s/sample was right (83-110 measured); the tensor
+  iteration penalty was NOT (1.4x on the packing, against 2.5x extrapolated
+  from the cylinder benchmark).
+- **f-sweep** (user's runs): 6 radii x 3 eps/R x 2 laws. The arithmetic error
+  grows steeply with solid fraction (+1.9% at f=0.05 to **+38.6%** at f=0.50,
+  at eps/R=0.02) while the tensor error stays **under 1%**. Off-isotropy
+  <= 2.7e-9. Independent corroboration of the packing replay from unrelated
+  geometry. `studies/keff_sharp_limit/disk/analyze_fsweep.py` + fsweep.png/csv.
+- `-keff_replay` writes its CSV beside the run being replayed, so the replay
+  batch downloaded without its results. `postprocess/keff_csv_from_log.py`
+  rebuilds them from the logs; merged tensor CSVs then written into the four
+  pilot run dirs so they are self-contained.
+- `compare_laws.py` now takes several batch dirs and excludes runs whose first
+  sample lands well after the baseline.
+- **`postprocess/make_packing_movie.py`** replaces make_supersaturation_movie.py
+  and imports its colour conventions from make_neck_movie (cmocean balance +
+  centered_cmap, cmocean ice via ice_alpha_cmap, AsinhNorm, shared colourbar
+  formatter) so packing and neck frames match on a slide. Second panel tracks
+  k_eff(t) with a dot at the current frame.
+
+---
+
 ## 2026-09-25 — Slides filled with the f-sweep and the PetIGA pilot replay
 
 - Collected the disk f-sweep (36 runs) with collect_sweep.py -> keff_disk_sweep.csv; numbers match the other session's fsweep.csv. Loosened the phi_bar gate to 1e-4: the isolated-disk formula misses the tail cut at the cell edge (5.6e-5 at R = 400 um, eps/R = 0.04), not a solver error.
