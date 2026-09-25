@@ -374,6 +374,13 @@ typedef struct {
   // so the cloned corrector IGA can assert it sees the same count.
   PetscInt ngp;
 
+  // Post-setup memory guard (-mem_check, -mem_check_frac). A job that needs
+  // more memory than it reserved is not always killed: without cgroup RAM
+  // enforcement it swaps, stays in state R, and is charged for every core
+  // while making no progress. MemoryBudgetCheck measures instead of assuming.
+  PetscBool mem_check;
+  PetscReal mem_check_frac;
+
   // In-line effective thermal conductivity by periodic homogenization.
   // NULL unless -keff is set; owned by KeffCreate/KeffDestroy (see keff.h).
   // Declared as an incomplete type so enceladus_types.h stays independent of

@@ -556,3 +556,95 @@ PetscErrorCode BoundsRollbackPreStep(TS ts)
 
   PetscFunctionReturn(0);
 }
+/* ---------------------------------------------------------------------------
+ * MemoryBudgetCheck -- report per-rank memory, and refuse to continue if the
+ * job is already close to what it asked SLURM for.
+ *
+ * WHY THIS EXISTS. A job that needs more memory than it reserved does not
+ * always die. With cgroup RAM enforcement it is OOM-killed and the failure is
+ * obvious; without it the node swaps, the job stays in state R, and it holds
+ * its cores at full charge while making almost no progress. That is the
+ * expensive failure, because nothing reports it -- squeue shows a running job.
+ *
+ * So we measure instead of assuming. This is called once, after every large
+ * allocation exists and before the long loop starts. If the high-water mark is
+ * already past -mem_check_frac of the per-rank reservation, the remaining work
+ * cannot fit and the job stops now, in seconds, with the numbers in the log.
+ *
+ * The budget comes from SLURM_MEM_PER_CPU (MB per CPU, what --mem-per-cpu
+ * sets) times SLURM_CPUS_PER_TASK. Outside a batch job neither is set, so the
+ * check reports and returns -- a laptop has no reservation to exceed.
+ *
+ * PetscMemoryGetCurrentUsage is the resident set size, which is what the
+ * cgroup accounts; PetscMallocGetCurrentUsage counts only PETSc's own
+ * allocations and would miss MPI buffers and the I/O cache. Both are printed
+ * because their difference is itself diagnostic: a large gap means the memory
+ * is not in PETSc objects.
+ * ------------------------------------------------------------------------- */
+PetscErrorCode MemoryBudgetCheck(AppCtx *user, const char *stage)
+{
+    PetscErrorCode ierr;
+    PetscLogDouble rss = 0.0, mal = 0.0;
+    PetscReal      rss_max = 0.0, mal_max = 0.0, rss_sum = 0.0;
+    PetscMPIInt    size;
+    const char    *s_mem, *s_cpt;
+    PetscReal      budget_mb = 0.0;
+
+    PetscFunctionBegin;
+    if (!user->mem_check) PetscFunctionReturn(0);
+
+    ierr = MPI_Comm_size(PETSC_COMM_WORLD, &size); CHKERRQ(ierr);
+    ierr = PetscMemoryGetCurrentUsage(&rss); CHKERRQ(ierr);
+    ierr = PetscMallocGetCurrentUsage(&mal); CHKERRQ(ierr);
+
+    {
+        PetscReal r = (PetscReal)rss, m = (PetscReal)mal;
+        ierr = MPI_Allreduce(&r, &rss_max, 1, MPIU_REAL, MPIU_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+        ierr = MPI_Allreduce(&m, &mal_max, 1, MPIU_REAL, MPIU_MAX, PETSC_COMM_WORLD); CHKERRQ(ierr);
+        ierr = MPI_Allreduce(&r, &rss_sum, 1, MPIU_REAL, MPIU_SUM, PETSC_COMM_WORLD); CHKERRQ(ierr);
+    }
+
+    s_mem = getenv("SLURM_MEM_PER_CPU");
+    s_cpt = getenv("SLURM_CPUS_PER_TASK");
+    if (s_mem) {
+        budget_mb = (PetscReal)atof(s_mem) * (s_cpt ? (PetscReal)atof(s_cpt) : 1.0);
+    }
+
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+        "  ===============================================================================\n"
+        "  >>> MEMORY after %s\n"
+        "    resident, max over %d rank(s) : %8.1f MB\n"
+        "    PETSc malloc, max over ranks  : %8.1f MB\n"
+        "    resident, summed over ranks   : %8.1f GB\n",
+        stage, (int)size, (double)(rss_max / 1048576.0),
+        (double)(mal_max / 1048576.0), (double)(rss_sum / 1073741824.0)); CHKERRQ(ierr);
+
+    if (budget_mb > 0.0) {
+        const PetscReal used_mb = rss_max / 1048576.0;
+        const PetscReal frac    = used_mb / budget_mb;
+        ierr = PetscPrintf(PETSC_COMM_WORLD,
+            "    reserved per rank             : %8.1f MB   (SLURM_MEM_PER_CPU x SLURM_CPUS_PER_TASK)\n"
+            "    used / reserved               : %8.1f %%   (abort above %.0f %%)\n"
+            "  ===============================================================================\n\n",
+            (double)budget_mb, (double)(100.0 * frac),
+            (double)(100.0 * user->mem_check_frac)); CHKERRQ(ierr);
+
+        if (frac > user->mem_check_frac)
+            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_MEM,
+                "Memory budget exceeded after %s: %.1f MB resident per rank against %.1f MB "
+                "reserved (%.0f%%, limit %.0f%%). The job would spend the rest of its "
+                "walltime swapping while still being charged for %d cores. Resubmit with a "
+                "larger --mem-per-cpu (sbatch flags pass through: submit_batch.sh ... -- "
+                "--mem-per-cpu=%.0fM), or lower the resolution. Set -mem_check 0 to override, "
+                "or raise -mem_check_frac.",
+                stage, (double)used_mb, (double)budget_mb, (double)(100.0 * frac),
+                (double)(100.0 * user->mem_check_frac), (int)size,
+                (double)(2.0 * used_mb));
+    } else {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,
+            "    reserved per rank             :  unknown  (not in a SLURM job; check reports only)\n"
+            "  ===============================================================================\n\n"); CHKERRQ(ierr);
+    }
+
+    PetscFunctionReturn(0);
+}

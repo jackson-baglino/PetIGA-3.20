@@ -1157,6 +1157,13 @@ int main(int argc, char *argv[]) {
      * allocation fails fast instead of six hours into a run. */
     ierr = KeffCreate(&user); CHKERRQ(ierr);
 
+    /* Memory guard. Parsed here rather than in the big options block because
+     * it is only consulted by MemoryBudgetCheck, a few lines of lifetime. */
+    user.mem_check      = PETSC_TRUE;
+    user.mem_check_frac = 0.85;
+    ierr = PetscOptionsGetBool(NULL, NULL, "-mem_check", &user.mem_check, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(NULL, NULL, "-mem_check_frac", &user.mem_check_frac, NULL); CHKERRQ(ierr);
+
     /* Residual and Jacobian setup */
     ierr = IGASetFormIFunction(iga, Residual, &user); CHKERRQ(ierr);
     ierr = IGASetFormIJacobian(iga, Jacobian, &user); CHKERRQ(ierr);
@@ -1889,6 +1896,11 @@ int main(int argc, char *argv[]) {
     /* -keff_only: take a single k_eff sample from the initial condition and
      * stop. This is the driver for the analytic layered benchmark, which needs
      * no time integration at all -- the answer is a property of the IC. */
+    /* Everything large now exists: the IGA, the TS/SNES Jacobian, and the
+     * k_eff corrector matrix. This is the last cheap moment to discover the
+     * job does not fit. */
+    ierr = MemoryBudgetCheck(&user, "setup"); CHKERRQ(ierr);
+
     if (user.keff && user.keff->enabled && user.keff->replay_dir[0] != '\0') {
         /* -keff_replay: post-process a finished run instead of integrating.
          * U is reused as the read buffer -- it is the producer's own vector
