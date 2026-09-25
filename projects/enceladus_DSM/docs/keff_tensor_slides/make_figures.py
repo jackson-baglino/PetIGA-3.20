@@ -94,7 +94,7 @@ def legend_below(fig, ax, ncol=2, extra=1.1, **kw):
 def save(fig, name):
     OUT.mkdir(exist_ok=True)
     fig.tight_layout()
-    for ext, kw in (("png", {"dpi": 300}), ("pdf", {})):
+    for ext, kw in (("png", {"dpi": 300}), ("pdf", {"metadata": {"CreationDate": None}})):
         fig.savefig(OUT / f"{name}.{ext}", **kw)
     plt.close(fig)
     print(f"  wrote figures/{name}.png/.pdf")
@@ -542,9 +542,9 @@ HPC = Path.home() / "SimulationResults/HPC_results/enceladus_DSM/GrainPackingSin
 REPLAY_DIRS = (HPC / "batch_2026-09-16__13.16.11_pilot_keff",     # arithmetic, in-line
                HPC / "batch_2026-09-24__12.18.18_keff_replay")   # tensor, replayed
 # Seed 2's leg-1 tensor replay was lost to a node failure: no 1-day baseline.
-SEEDS = ("1", "3", "4")          # the ensemble: seeds with a day-1 tensor baseline
+ALL_SEEDS = ("1", "2", "3", "4")
 MOVIE_SEED = "2"                 # the seed shown as a movie in the talk
-SEED_LS = {"1": "-", "3": "--", "4": ":"}
+SEED_LS = {"1": "-", "2": "-", "3": "--", "4": ":"}
 DAY = 86400.0
 
 
@@ -559,8 +559,20 @@ def _replay():
             for law, parts in laws.items():
                 runs.setdefault(seed, {}).setdefault(law, []).extend(parts)
     merged = {sd: {law: cl.merge_legs(parts) for law, parts in laws.items()}
-              for sd, laws in runs.items() if sd in SEEDS + (MOVIE_SEED,)}
+              for sd, laws in runs.items() if sd in ALL_SEEDS}
     return merged, cl
+
+
+def _ensemble(runs, cl):
+    """Seeds whose BOTH laws start by the baseline, as compare_laws.py requires.
+
+    Seed 2's leg-1 tensor replay was lost to a node failure, so until it is
+    rerun its tensor curve starts at day 16 and it is left out; once a full
+    k_eff_tensor.csv exists it joins automatically."""
+    return tuple(sd for sd in ALL_SEEDS if sd in runs and
+                 all(law in runs[sd] and
+                     float(runs[sd][law]["time"][0]) <= cl.BASELINE_TOL * DAY
+                     for law in ("arith", "tensor")))
 
 
 def fig7_replay():
@@ -569,6 +581,9 @@ def fig7_replay():
         print("  skip fig7a/b: replay batch directories not found")
         return
     from matplotlib.lines import Line2D
+    SEEDS = tuple(sd for sd in _ensemble(runs, cl) if sd != MOVIE_SEED)
+    movie_in = MOVIE_SEED in _ensemble(runs, cl)
+    ens_label = ", ".join(sorted(SEEDS + ((MOVIE_SEED,) if movie_in else ())))
     styles = (("arith", C_ARI, "arithmetic law"), ("tensor", C_TEN, "tensor law"))
 
     def seed_handles(extra_movie_label):
@@ -590,10 +605,11 @@ def fig7_replay():
         ax.plot(np.asarray(a["time"]) / DAY, a["k_iso"], color=col, lw=LW + 1.5,
                 solid_capstyle="round", zorder=6)
     t2 = np.asarray(runs[MOVIE_SEED]["tensor"]["time"]) / DAY
-    ax.annotate("seed 2 tensor replay\nlost to a node failure;\nrerun pending",
-                xy=(t2[0], runs[MOVIE_SEED]["tensor"]["k_iso"][0]), xytext=(4.5, 0.47),
-                fontsize=FS_NOTE - 2, color=MUTED, va="center",
-                arrowprops=dict(arrowstyle="->", color=MUTED, lw=1.2))
+    if not movie_in:
+        ax.annotate("seed 2 tensor replay\nlost to a node failure;\nrerun pending",
+                    xy=(t2[0], runs[MOVIE_SEED]["tensor"]["k_iso"][0]), xytext=(4.5, 0.47),
+                    fontsize=FS_NOTE - 2, color=MUTED, va="center",
+                    arrowprops=dict(arrowstyle="->", color=MUTED, lw=1.2))
     ax.axvspan(0, 1, color=MUTED, alpha=0.10, lw=0)
     ax.set_xlim(0, 30)
     ax.set_xlabel("time  [days]")
@@ -601,10 +617,19 @@ def fig7_replay():
     legend_below(fig, ax, ncol=3, extra=1.2, handles=seed_handles("seed 2 (movie)"))
     save(fig, "fig7a_pilot_keff_vs_time")
 
-    # (b) rise from the 1-day baseline: ensemble of seeds 1, 3, 4; seed 2 arithmetic bold
+    # (b) rise from the 1-day baseline: the ensemble, with seed 2 bold
     fig, ax = panel()
     for law, col, lab in styles:
         rises = []
+        if movie_in:
+            a = runs[MOVIE_SEED][law]
+            kb, ke, r, tb = cl.rise(a, 1.0)
+            t = np.asarray(a["time"]) / DAY
+            m = t >= tb / DAY
+            ax.plot(t[m], 100 * (np.asarray(a["k_iso"])[m] / kb - 1), color=col,
+                    lw=LW + 1.5, zorder=6)
+            rises.append(r)
+            print(f"  seed 2 (movie) {law}: rise {r:+.1f}%")
         for sd in SEEDS:
             a = runs[sd][law]
             kb, ke, r, tb = cl.rise(a, 1.0)
@@ -617,12 +642,15 @@ def fig7_replay():
         ax.plot([], [], color=col, lw=LW, label=f"{lab}: +{mean:.1f}%  (sd {sd_:.1f})")
         print(f"  replay {law}: rises {', '.join(f'{x:+.1f}%' for x in rises)}; "
               f"mean {mean:+.1f}% sd {sd_:.1f}")
-    a = runs[MOVIE_SEED]["arith"]
-    kb, ke, r2, tb = cl.rise(a, 1.0)
-    t = np.asarray(a["time"]) / DAY
-    m = t >= tb / DAY
-    ax.plot(t[m], 100 * (np.asarray(a["k_iso"])[m] / kb - 1), color=C_ARI, lw=LW + 1.5,
-            zorder=6, label=f"seed 2 (movie), arithmetic: +{r2:.1f}%")
+    if movie_in:
+        ax.plot([], [], color=INK, lw=LW + 1.5, label="seed 2 (movie)")
+    else:
+        a = runs[MOVIE_SEED]["arith"]
+        kb, ke, r2, tb = cl.rise(a, 1.0)
+        t = np.asarray(a["time"]) / DAY
+        m = t >= tb / DAY
+        ax.plot(t[m], 100 * (np.asarray(a["k_iso"])[m] / kb - 1), color=C_ARI, lw=LW + 1.5,
+                zorder=6, label=f"seed 2 (movie), arithmetic: +{r2:.1f}%")
     ax.axhline(0, color=C_EXACT, lw=LW_THIN)
     ax.set_xlim(0, 30)
     ax.set_xlabel("time  [days]")
@@ -631,11 +659,11 @@ def fig7_replay():
     h += [Line2D([], [], color=MUTED, lw=LW - 1, ls=SEED_LS[sd], label=f"seed {sd}")
           for sd in SEEDS]
     legend_below(fig, ax, ncol=2, extra=1.5, handles=h,
-                 title="rise by day 30 (mean and sd of seeds 1, 3, 4)",
+                 title=f"rise by day 30 (mean and sd of seeds {ens_label})",
                  title_fontsize=FS_LEG - 1)
     save(fig, "fig7b_pilot_rise")
 
-    for sd in SEEDS + (MOVIE_SEED,):
+    for sd in sorted(SEEDS + (MOVIE_SEED,)):
         a, t_ = runs[sd]["arith"], runs[sd]["tensor"]
         print(f"  seed {sd}: k(0) arithmetic {a['k_iso'][0]:.4f}, tensor {t_['k_iso'][0]:.4f}"
               f"  (t0 = {a['time'][0]/DAY:.2f} / {t_['time'][0]/DAY:.2f} d)")
