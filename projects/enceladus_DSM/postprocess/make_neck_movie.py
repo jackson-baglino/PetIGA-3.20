@@ -275,6 +275,26 @@ def measure(phi, x, y, level, axisym, centers):
     return neck, xneck, centers
 
 
+
+def drop_ic(files, step_of_fn, keep_ic: bool):
+    """Start the movie at step 1, not at the initial condition.
+
+    The IC's vapour field is a uniform hum0*rho_vs, so a movie that opens on
+    it flashes from a flat field to a structured one on the next frame -- a
+    strobe on a projector. OutputMonitor always writes step 1 (t = dt), the
+    first solved state, for exactly this. If a run's step 1 is not on disk
+    (older runs, or thinned before 2026-09-25) the movie opens on its next
+    snapshot instead, and says so.
+    """
+    if keep_ic or len(files) < 2:
+        return files
+    steps = [step_of_fn(f) for f in files]
+    out = [f for f, s in zip(files, steps) if s != 0]
+    if 1 not in steps:
+        print(f"  note: no step-1 snapshot on disk; opening on step {step_of_fn(out[0])} "
+              f"instead of the IC (fetch sol_00001.dat to start at t = dt)")
+    return out
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -284,6 +304,9 @@ def main():
     ap.add_argument("--phi", type=float, default=0.5, help="contour level")
     ap.add_argument("--fps", type=int, default=12)
     ap.add_argument("--stride", type=int, default=1, help="use every Nth snapshot")
+    ap.add_argument("--keep-ic", action="store_true",
+                    help="include the initial condition (step 0) as the first frame; "
+                         "by default the movie opens on step 1, t = dt")
     ap.add_argument("--dpi", type=int, default=150)
     ap.add_argument("--zoom", type=float, default=1.6,
                     help="half-window of the zoom panel along x, in units of "
@@ -324,8 +347,8 @@ def main():
     ax_.add_argument("--no-axisym", dest="axisym", action="store_false")
     args = ap.parse_args()
 
-    files = sorted(glob.glob(str(args.run_dir / "vtkOut" / "solV_*.vts")),
-                   key=step_of)[:: args.stride]
+    files = drop_ic(sorted(glob.glob(str(args.run_dir / "vtkOut" / "solV_*.vts")),
+                           key=step_of), step_of, args.keep_ic)[:: args.stride]
     if not files:
         sys.exit(f"no solV_*.vts under {args.run_dir}/vtkOut")
 

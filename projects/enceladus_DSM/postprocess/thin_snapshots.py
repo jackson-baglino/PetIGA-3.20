@@ -19,7 +19,8 @@ redundant. This keeps:
 
   * every snapshot nearest a k_eff sample time, so -keff_replay still works
     and every table row still has a field behind it;
-  * the first and last of each leg;
+  * the first and last of each leg, and step 1 (the first solved state,
+    which movies open on);
   * the snapshot the restart was taken from, named in MERGE_INFO.json, so the
     run stays reproducible from its own join point;
   * optionally every --stride-th as a backstop.
@@ -56,6 +57,10 @@ def keepers(leg: Path, stride: int, protect: set[int]) -> tuple[set[int], str]:
         return set(), "no snapshots"
     steps = np.array([snap_step(p) for p in snaps])
     keep = {int(steps[0]), int(steps[-1])} | {s for s in protect if s in set(steps.tolist())}
+    # Step 1, the first solved state, is what movies open on (the IC's vapour
+    # field is uniform, so starting on it strobes). Never thin it away.
+    if 1 in set(steps.tolist()):
+        keep.add(1)
 
     kf = leg / "k_eff.csv"
     note = ""

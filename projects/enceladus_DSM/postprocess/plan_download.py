@@ -66,6 +66,12 @@ def main() -> int:
             want.add(int(steps[i]))
             worst = max(worst, abs(float(ssa[i, 2] - tk)))
         want |= {int(steps[0]), int(steps[-1])}
+        # Step 1 is the first SOLVED state, and what movies start from: the IC
+        # (step 0) has a uniform vapour field, so opening a movie on it flashes
+        # from flat to structured. OutputMonitor has written it unconditionally
+        # since 2026-08-13; a run older than that simply won't have the file.
+        if 1 in set(steps.tolist()):
+            want.add(1)
         if a.extra > 1:
             want |= {int(s) for s in steps[::a.extra]}
         rel = d.relative_to(a.local)
