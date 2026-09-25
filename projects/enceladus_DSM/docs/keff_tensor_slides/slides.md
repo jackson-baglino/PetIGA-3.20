@@ -503,13 +503,15 @@ Alternative panel (b), the tensor counterpart of slide 3b:
 
 **Figures (side by side):**
 
-| (a) k_eff over 30 days, both laws | (b) Rise since day 1 |
+| (a) k_eff over 30 days, both laws, per seed | (b) Rise since day 1 |
 |---|---|
 | ![](figures/fig7a_pilot_keff_vs_time.png) | ![](figures/fig7b_pilot_rise.png) |
 
 **On-slide text**
 
-- These are the stored pilot snapshots (three seeds, 30 days at −20 °C),
+- **Seed 2 (bold) is the run shown in the movie.** The other seeds are thin
+  lines with their own line style.
+- These are the stored pilot snapshots (30 days at −20 °C),
   re-evaluated with the tensor law in PetIGA. **Nothing was re-simulated.** The
   microstructure is identical; only the k_eff solve changed.
 - At t = 0 the grains just touch. There the arithmetic law reads **k = 0.63
@@ -537,9 +539,18 @@ Alternative panel (b), the tensor counterpart of slide 3b:
    the necks are real, and the two laws come closer together.
 3. The baseline is day 1, not t = 0. The first hours are the initial condition
    relaxing onto its equilibrium profile, not sintering.
-4. Seed 2 is left out. Its first-half replay job was lost to a cluster node
-   failure, so it has no day-1 value under the tensor law. It is a missing
-   run, not an outlier.
+4. **Seed 2, the movie.** Its arithmetic curve is complete: a rise of +16.4%
+   from day 1, right in the middle of the other three seeds (+13.9 to +18.3%).
+   Its tensor replay exists only from day 16.2. The first-half job died at
+   launch on a failed cluster node before computing a single sample. It is a
+   missing run, not an outlier, and a one-job rerun (about $5) will fill it
+   in. It is left out of the ensemble means.
+
+   Over the window both laws do cover (day 16.2 → 29.4), seed 2 rises +4.1%
+   under the arithmetic law and +5.2% under the tensor law. Even late in
+   sintering, the old law understates the rise. Most of the difference,
+   though, comes in the first two weeks, while the contacts are still
+   points: panel (b), seeds 1, 3 and 4.
 5. Cost: the tensor law needs about 1.4× the linear-solver iterations of the
    old law on the packing. It is a routine post-processing cost.
 6. **Limits:**
