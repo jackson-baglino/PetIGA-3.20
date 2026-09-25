@@ -29,6 +29,11 @@ sign change at zero -- and centered_cmap keeps the diverging map's promise that
 pale means neutral. `--symmetric` forces the older behaviour, which puts
 sigma = 0 at the midpoint of the BAR at the cost of range.
 
+--bare is the field and NOTHING else -- no axes, colourbar, title or margins,
+the domain edge to edge at --px pixels on its long side. The figure is sized
+from the domain's aspect so nothing is cropped and every frame comes out the
+same size, which bbox_inches="tight" would not guarantee and ffmpeg requires.
+
 A second panel tracks the run's own k_eff(t) with a dot at the current frame,
 read from whichever k_eff CSVs the run directory holds -- so a frame can be
 pointed at while saying "this is where the conductivity is".
@@ -37,7 +42,7 @@ Usage:
     python make_packing_movie.py <run_dir> [--out FILE.mp4] [--fps 10]
         [--stride N] [--dpi 150] [--frame-png STEP] [--sat-clip P]
         [--symmetric] [--no-keff] [--cmap NAME]
-        [--frames-dir DIR] [--no-movie]
+        [--frames-dir DIR] [--no-movie] [--bare [--px 1200]]
     python make_packing_movie.py <run_dir> --from-frames DIR [--fps 10]
 
 THE FRAMES ARE THE OUTPUT. They are written to <run_dir>/frames/ as
@@ -96,6 +101,16 @@ def load_keff(run: Path):
     return out
 
 
+def _decorate(fig, ax, vap, norm):
+    """Colourbar, labelled and formatted as in make_neck_movie."""
+    cb = fig.colorbar(vap, ax=ax, fraction=0.046, pad=0.03, extend="both",
+                      ticks=sigma_ticks(norm))
+    cb.set_label(r"supersaturation  $\sigma = \rho_v/\rho_{vs}-1$   "
+                 r"[$\times 10^{-4}$]", fontsize=9)
+    cb.ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _p: f"{v:.3g}"))
+    cb.ax.tick_params(labelsize=8)
+
+
 def assemble(frames_dir: Path, out: Path, fps: int) -> int:
     """Build the mp4 from whatever PNGs are in `frames_dir`, in name order.
 
@@ -141,6 +156,12 @@ def main() -> int:
                          "the clipped range")
     ap.add_argument("--cmap", default="balance")
     ap.add_argument("--no-keff", action="store_true")
+    ap.add_argument("--bare", action="store_true",
+                    help="the field and nothing else: no axes, colourbar, "
+                         "title or margins. The frame is the domain, edge to "
+                         "edge, at --px pixels on its long side.")
+    ap.add_argument("--px", type=int, default=1200,
+                    help="--bare only: pixels on the domain's long side")
     ap.add_argument("--frames-dir", type=Path, default=None,
                     help="where the PNG frames are written and KEPT "
                          "(default <run_dir>/frames/). They are the real "
@@ -200,7 +221,7 @@ def main() -> int:
     print(f"  sigma x{SIGMA_SCALE:g}: raw {raw_lo:+.4g} .. {raw_hi:+.4g}, "
           f"p{args.sat_clip:g} {lo:+.4g} .. {hi:+.4g}")
 
-    keff = {} if args.no_keff else load_keff(run)
+    keff = {} if (args.no_keff or args.bare) else load_keff(run)
     if keff:
         print("  k_eff panel: " + ", ".join(f"{k} ({len(v[0])} pts)"
                                             for k, v in keff.items()))
@@ -220,27 +241,34 @@ def main() -> int:
         sig = SIGMA_SCALE * pplib.supersaturation(fl["VaporDensity"], fl["Temperature"])
         phi = fl["IcePhase"]
 
-        fig = plt.figure(figsize=(7.0 if ncol == 1 else 11.4, 6.2))
-        gs = fig.add_gridspec(1, ncol, width_ratios=[1] if ncol == 1 else [1, 0.82])
-        ax = fig.add_subplot(gs[0, 0])
         XX, YY = X * 1e3, Y * 1e3
+        if args.bare:
+            # One axes filling the canvas exactly. The figure is sized from the
+            # DOMAIN's aspect so no padding is needed and nothing is cropped:
+            # a square domain gives a square frame, and the saved pixel size is
+            # px x px regardless of dpi.
+            ar = (YY.max() - YY.min()) / (XX.max() - XX.min())
+            fig = plt.figure(figsize=(args.px / args.dpi,
+                                      args.px * ar / args.dpi), dpi=args.dpi)
+            ax = fig.add_axes((0.0, 0.0, 1.0, 1.0))
+            ax.set_axis_off()
+            ax.set_xlim(XX.min(), XX.max())
+            ax.set_ylim(YY.min(), YY.max())
+        else:
+            fig = plt.figure(figsize=(7.0 if ncol == 1 else 11.4, 6.2))
+            gs = fig.add_gridspec(1, ncol,
+                                  width_ratios=[1] if ncol == 1 else [1, 0.82])
+            ax = fig.add_subplot(gs[0, 0])
         vap = ax.pcolormesh(XX, YY, sig, cmap=vapcm, norm=norm, shading="gouraud")
         ax.pcolormesh(XX, YY, phi, cmap=icecm, vmin=0.0, vmax=1.0, shading="gouraud")
         ax.set_aspect("equal")
-        ax.set_xlabel("x [mm]"); ax.set_ylabel("y [mm]")
-        ax.set_title(f"t = {t/DAY:6.2f} d      step {steps[i]}", fontsize=10)
-        cb = fig.colorbar(vap, ax=ax, fraction=0.046, pad=0.03, extend="both",
-                          ticks=sigma_ticks(norm))
-        # Same label and 3-sig-fig formatter as make_neck_movie, so a packing
-        # frame and a neck frame can sit on one slide without the reader
-        # having to re-learn the bar.
-        cb.set_label(r"supersaturation  $\sigma = \rho_v/\rho_{vs}-1$   "
-                     r"[$\times 10^{-4}$]", fontsize=9)
-        cb.ax.yaxis.set_major_formatter(plt.FuncFormatter(
-            lambda v, _p: f"{v:.3g}"))
-        cb.ax.tick_params(labelsize=8)
+        if not args.bare:
+            ax.set_xlabel("x [mm]"); ax.set_ylabel("y [mm]")
+        if not args.bare:
+            ax.set_title(f"t = {t/DAY:6.2f} d      step {steps[i]}", fontsize=10)
+            _decorate(fig, ax, vap, norm)
 
-        if keff:
+        if keff and not args.bare:
             axk = fig.add_subplot(gs[0, 1])
             for law, (tk, kk) in sorted(keff.items()):
                 c = "#c0392b" if law == "arith" else "#1f6fb4"
@@ -255,16 +283,22 @@ def main() -> int:
             axk.grid(alpha=0.25, lw=0.6)
             axk.legend(frameon=False, fontsize=9, loc="lower right")
 
-        fig.tight_layout()
+        if not args.bare:
+            fig.tight_layout()
         if args.frame_png is not None:
             out = args.out or run / f"frame_{steps[i]:05d}.png"
-            fig.savefig(out, dpi=args.dpi, bbox_inches="tight")
+            fig.savefig(out, dpi=args.dpi,
+                        **({} if args.bare else {"bbox_inches": "tight"}))
             plt.close(fig)
             print(f"wrote {out}")
             return 0
         # Named by STEP, not by position: the frame files are then their own
         # index back into sol_*.dat and the k_eff rows.
-        fig.savefig(frames_dir / f"frame_{steps[i]:05d}.png", dpi=args.dpi)
+        # No bbox_inches="tight" in bare mode: it would re-crop to the drawn
+        # content and the frames would not all be the same size, which ffmpeg
+        # rejects.
+        fig.savefig(frames_dir / f"frame_{steps[i]:05d}.png", dpi=args.dpi,
+                    **({} if args.bare else {"bbox_inches": "tight"}))
         plt.close(fig)
         n_out += 1
 
