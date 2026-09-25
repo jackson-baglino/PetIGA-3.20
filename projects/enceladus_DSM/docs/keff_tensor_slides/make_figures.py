@@ -543,7 +543,7 @@ REPLAY_DIRS = (HPC / "batch_2026-09-16__13.16.11_pilot_keff",     # arithmetic, 
                HPC / "batch_2026-09-24__12.18.18_keff_replay")   # tensor, replayed
 # Seed 2's leg-1 tensor replay was lost to a node failure: no 1-day baseline.
 ALL_SEEDS = ("1", "2", "3", "4")
-MOVIE_SEED = "2"                 # the seed shown as a movie in the talk
+MOVIE_SEED = "3"                 # the seed shown as a movie in the talk
 SEED_LS = {"1": "-", "2": "-", "3": "--", "4": ":"}
 DAY = 86400.0
 
@@ -606,7 +606,7 @@ def fig7_replay():
                 solid_capstyle="round", zorder=6)
     t2 = np.asarray(runs[MOVIE_SEED]["tensor"]["time"]) / DAY
     if not movie_in:
-        ax.annotate("seed 2 tensor replay\nlost to a node failure;\nrerun pending",
+        ax.annotate(f"seed {MOVIE_SEED} tensor replay\nlost to a node failure;\nrerun pending",
                     xy=(t2[0], runs[MOVIE_SEED]["tensor"]["k_iso"][0]), xytext=(4.5, 0.47),
                     fontsize=FS_NOTE - 2, color=MUTED, va="center",
                     arrowprops=dict(arrowstyle="->", color=MUTED, lw=1.2))
@@ -614,7 +614,7 @@ def fig7_replay():
     ax.set_xlim(0, 30)
     ax.set_xlabel("time  [days]")
     ax.set_ylabel(r"$k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]")
-    legend_below(fig, ax, ncol=3, extra=1.2, handles=seed_handles("seed 2 (movie)"))
+    legend_below(fig, ax, ncol=3, extra=1.2, handles=seed_handles(f"seed {MOVIE_SEED} (movie)"))
     save(fig, "fig7a_pilot_keff_vs_time")
 
     # (b) rise from the 1-day baseline: the ensemble, with seed 2 bold
@@ -629,7 +629,7 @@ def fig7_replay():
             ax.plot(t[m], 100 * (np.asarray(a["k_iso"])[m] / kb - 1), color=col,
                     lw=LW + 1.5, zorder=6)
             rises.append(r)
-            print(f"  seed 2 (movie) {law}: rise {r:+.1f}%")
+            print(f"  seed {MOVIE_SEED} (movie) {law}: rise {r:+.1f}%")
         for sd in SEEDS:
             a = runs[sd][law]
             kb, ke, r, tb = cl.rise(a, 1.0)
@@ -643,14 +643,14 @@ def fig7_replay():
         print(f"  replay {law}: rises {', '.join(f'{x:+.1f}%' for x in rises)}; "
               f"mean {mean:+.1f}% sd {sd_:.1f}")
     if movie_in:
-        ax.plot([], [], color=INK, lw=LW + 1.5, label="seed 2 (movie)")
+        ax.plot([], [], color=INK, lw=LW + 1.5, label=f"seed {MOVIE_SEED} (movie)")
     else:
         a = runs[MOVIE_SEED]["arith"]
         kb, ke, r2, tb = cl.rise(a, 1.0)
         t = np.asarray(a["time"]) / DAY
         m = t >= tb / DAY
         ax.plot(t[m], 100 * (np.asarray(a["k_iso"])[m] / kb - 1), color=C_ARI, lw=LW + 1.5,
-                zorder=6, label=f"seed 2 (movie), arithmetic: +{r2:.1f}%")
+                zorder=6, label=f"seed {MOVIE_SEED} (movie), arithmetic: +{r2:.1f}%")
     ax.axhline(0, color=C_EXACT, lw=LW_THIN)
     ax.set_xlim(0, 30)
     ax.set_xlabel("time  [days]")
@@ -667,12 +667,14 @@ def fig7_replay():
         a, t_ = runs[sd]["arith"], runs[sd]["tensor"]
         print(f"  seed {sd}: k(0) arithmetic {a['k_iso'][0]:.4f}, tensor {t_['k_iso'][0]:.4f}"
               f"  (t0 = {a['time'][0]/DAY:.2f} / {t_['time'][0]/DAY:.2f} d)")
-    # Seed 2's only like-for-like comparison: both laws over the tensor window.
+    if movie_in:
+        return
+    # A partial movie seed's only like-for-like comparison: both laws over the tensor window.
     at, tt = runs[MOVIE_SEED]["arith"], runs[MOVIE_SEED]["tensor"]
     t0, t1 = float(tt["time"][0]), float(tt["time"][-1])
     ta = np.asarray(at["time"])
     ka0 = np.interp(t0, ta, at["k_iso"]); ka1 = np.interp(t1, ta, at["k_iso"])
-    print(f"  seed 2, day {t0/DAY:.1f} -> {t1/DAY:.1f}: arithmetic {ka0:.4f} -> {ka1:.4f} "
+    print(f"  seed {MOVIE_SEED}, day {t0/DAY:.1f} -> {t1/DAY:.1f}: arithmetic {ka0:.4f} -> {ka1:.4f} "
           f"({ka1/ka0-1:+.1%}), tensor {tt['k_iso'][0]:.4f} -> {tt['k_iso'][-1]:.4f} "
           f"({tt['k_iso'][-1]/tt['k_iso'][0]-1:+.1%})")
 
