@@ -72,3 +72,52 @@ slope tolerance is loose on purpose. Gates 3 and 4 are the tensor-law test.
   (2026-09-23) is confirmed. The first run, before that fix, had a `2/N` area
   excess; its tensor errors with that excess removed by calculation (1.219,
   0.205, 0.034, 0.006%) agree with these direct measurements.
+
+---
+
+## The f-sweep: does the tensor law hold as the solid crowds?
+
+The `eps` ladder above fixes `f = 0.196`. That pins the *order* of each law's
+error but says nothing about how it behaves as the solid fraction rises — and
+the campaign's packing sits at an ice fraction of **0.675**, far denser than any
+isolated cylinder.
+
+`analyze_fsweep.py` reads a batch sweeping `R = 125…400 µm` in the 1 mm cell
+(`f = 0.049…0.503`) × `eps/R = 0.01, 0.02, 0.04` × both laws — 36 `-keff_only`
+solves, no time integration.
+
+```bash
+venv_enceladus/bin/python studies/keff_sharp_limit/disk/analyze_fsweep.py <batch_dir>
+```
+
+### Result (2026-09-24)
+
+| f | `eps/R` = 0.01 | 0.02 | 0.04 |
+|---|---|---|---|
+| | **arith / tensor** | **arith / tensor** | **arith / tensor** |
+| 0.049 | +0.93% / +0.008% | +1.91% / +0.049% | +4.02% / +0.288% |
+| 0.196 | +3.95% / +0.034% | +8.26% / +0.204% | +18.18% / +1.212% |
+| 0.385 | +9.40% / +0.086% | +20.78% / +0.512% | +52.95% / +3.022% |
+| 0.503 | +16.00% / +0.178% | +38.63% / +0.983% | +132.27% / +5.756% |
+
+**The arithmetic error is not a fixed offset — it grows steeply with `f`**,
+because the diffuse band bridges an ever larger share of the shrinking gap
+between neighbours. At `f = 0.503` and `eps/R = 0.04` it is **+132%**: the
+answer is more than twice the truth.
+
+**The tensor error does not.** Its ratio to arith is 0.009 / 0.025 / 0.06 at
+`eps/R` = 0.01 / 0.02 / 0.04 — that ratio scaling roughly linearly in `eps` is
+the second-order convergence, and it holds across the whole `f` range.
+
+**At the campaign's operating point** (`eps/R_ave = 0.02`), the tensor law is
+within **1%** even at the densest `f` tested, where the arithmetic law is
+**+39%**.
+
+Off-isotropy `|k00−k11|/k` is at most **2.7e−9** over all 36 runs, so the cell
+solver is not contributing anything to these errors.
+
+This is the independent corroboration of the packing replay: extrapolating the
+arith trend past `f = 0.5` toward the packing's 0.675 — which additionally has
+*contacts*, absent here — predicts an error well above +39%, and the replay
+measures `k_eff(0)` dropping from 0.6312 (arith) to 0.3695 (tensor), i.e. arith
+reading **+71% high**. Two unrelated geometries, the same mechanism.

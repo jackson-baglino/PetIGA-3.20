@@ -113,6 +113,10 @@ def merge_legs(parts: list) -> np.ndarray:
 # of the initial condition, not of the model.
 BASELINE_DAYS = 1.0
 
+# A run may start later than the baseline only by this factor before it is
+# treated as a partial trajectory rather than a seed.
+BASELINE_TOL = 3.0
+
 
 def rise(a: np.ndarray, baseline_days: float = BASELINE_DAYS) -> tuple:
     """(k at baseline, k at t_end, % rise between them, actual baseline time).
@@ -132,7 +136,11 @@ def rise(a: np.ndarray, baseline_days: float = BASELINE_DAYS) -> tuple:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("batch", type=Path, help="downloaded batch directory to scan")
+    ap.add_argument("batch", type=Path, nargs="+",
+                    help="batch directories to scan. Give the original runs AND the "
+                         "replay batch: -keff_replay writes its CSV next to the run "
+                         "being replayed, so the arith and tensor numbers for one seed "
+                         "normally live under different parents.")
     ap.add_argument("--out", type=Path, default=HERE)
     ap.add_argument("--dpi", type=int, default=160)
     ap.add_argument("--baseline-days", type=float, default=BASELINE_DAYS,
@@ -140,13 +148,20 @@ def main() -> int:
                          "this time, not from t=0 (the IC has not relaxed at t=0)")
     args = ap.parse_args()
 
-    if not args.batch.is_dir():
-        print(f"not a directory: {args.batch}", file=sys.stderr)
-        return 2
+    for b in args.batch:
+        if not b.is_dir():
+            print(f"not a directory: {b}", file=sys.stderr)
+            return 2
 
-    runs = collect(args.batch)
+    runs: dict = {}
+    for b in args.batch:
+        for seed, bylaw in collect(b).items():
+            for law, parts in bylaw.items():
+                runs.setdefault(seed, {}).setdefault(law, []).extend(parts)
+    runs = dict(sorted(runs.items()))
     if not runs:
-        print(f"no k_eff*.csv found under {args.batch}", file=sys.stderr)
+        print("no k_eff*.csv found under " + ", ".join(map(str, args.batch)),
+              file=sys.stderr)
         return 1
 
     data: dict = {}
@@ -177,15 +192,29 @@ def main() -> int:
             kb, kN, r, tb = rise(a, b)
             tend = float(a["time"][-1]) / DAY
             its = float(np.median(a["ksp_its"])) if "ksp_its" in a.dtype.names else float("nan")
+            # A run whose first sample lands well after the requested baseline
+            # does not have a baseline at all -- it is a partial trajectory,
+            # and its "rise" spans a different interval from every other row.
+            # Report it, mark it, and keep it out of the ensemble; averaging it
+            # in silently is how a broken job becomes a wider error bar instead
+            # of a missing seed.
+            ok = tb <= b * DAY * BASELINE_TOL
             print(f"{seed:>5} {law:>8} {tb/DAY:7.2f} {kb:9.4f} {kN:9.4f} {r:+8.1f}% "
-                  f"{tend:9.2f} {len(a):8d} {its:8.0f}")
-            rows.append((seed, law, kb, kN, r, tend, len(a), its, tb / DAY))
+                  f"{tend:9.2f} {len(a):8d} {its:8.0f}"
+                  f"{'' if ok else '   ** partial: baseline is not t=%.2g d, excluded' % b}")
+            rows.append((seed, law, kb, kN, r, tend, len(a), its, tb / DAY, ok))
 
     # ---- ensemble and the two things worth checking ----------------------
     print()
+    usable = {law: {row[0] for row in rows if row[1] == law and row[9]} for law in present}
+    common = set.intersection(*usable.values()) if usable else set()
+    if any(usable[l] != common for l in present):
+        dropped = sorted(set.union(*usable.values()) - common)
+        print(f"  ensembles restricted to seeds {sorted(common)} "
+              f"(no usable baseline under every law for: {dropped})")
     ens = {}
     for law in present:
-        rs = [row[4] for row in rows if row[1] == law]
+        rs = [row[4] for row in rows if row[1] == law and row[9] and row[0] in common]
         if rs:
             ens[law] = (float(np.mean(rs)), float(np.std(rs, ddof=1)) if len(rs) > 1 else 0.0)
             sd, n = ens[law][1], len(rs)
@@ -212,10 +241,10 @@ def main() -> int:
     outcsv = args.out / "compare_laws.csv"
     with outcsv.open("w") as fh:
         fh.write("seed,law,baseline_days,k_iso_baseline,k_iso_end,rise_pct,"
-                 "t_end_days,n_samples,ksp_its_median\n")
+                 "t_end_days,n_samples,ksp_its_median,in_ensemble\n")
         for r in rows:
             fh.write(f"{r[0]},{r[1]},{r[8]:.4f},{r[2]:.6e},{r[3]:.6e},{r[4]:.4f},"
-                     f"{r[5]:.4f},{r[6]},{r[7]:.0f}\n")
+                     f"{r[5]:.4f},{r[6]},{r[7]:.0f},{int(r[9])}\n")
 
     # ---- figure ----------------------------------------------------------
     # Panel (a) is absolute, panel (b) normalised to each curve's own t = 0.
