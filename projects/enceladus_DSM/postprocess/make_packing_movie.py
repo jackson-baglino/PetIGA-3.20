@@ -39,7 +39,7 @@ read from whichever k_eff CSVs the run directory holds -- so a frame can be
 pointed at while saying "this is where the conductivity is".
 
 Usage:
-    python make_packing_movie.py <run_dir> [--out FILE.mp4] [--fps 10] [--crf 16]
+    python make_packing_movie.py <run_dir> [--out FILE.mp4] [--fps 10] [--crf 16] [--source sol]
         [--stride N] [--dpi 150] [--frame-png STEP] [--sat-clip P]
         [--symmetric] [--no-keff] [--cmap NAME]
         [--frames-dir DIR] [--no-movie] [--bare [--px 1200]]
@@ -80,6 +80,35 @@ import pplib                                              # noqa: E402
 
 DAY = 86400.0
 WANT = ("IcePhase", "VaporDensity", "Temperature")
+SOL_DOF = {"IcePhase": 0, "Temperature": 1, "VaporDensity": 2}
+
+
+def snap_step(fn) -> int:
+    """Step number of a solV_NNNNN.vts or a sol_NNNNN.dat."""
+    return int(re.search(r"sol[V]?_(\d+)\.(?:vts|dat)$", str(fn)).group(1))
+
+
+def make_sol_reader(run: Path):
+    """A reader for the FULL-resolution sol_*.dat, shaped like read_vts's output.
+
+    WHY. plot_fields.py caps every .vts at 1200 points per axis
+    (DEFAULT_MAX_AXIS) and keeps every k-th control point to get there. On the
+    2829^2 pilot mesh that is k = 3, a 945^2 grid, 2.1 um per sample. Rendering
+    that at 1920 px only stretches it, and no encoder setting recovers what was
+    dropped before the movie began. The sol_*.dat files hold the whole 2831^2
+    control net (0.71 um), and igakit reads one in ~0.1 s, so --source sol
+    reads them directly. These are control-point values, the same quantity the
+    .vts holds, just not thinned.
+    """
+    from igakit.io import PetIGA
+    nrb = PetIGA().read(str(run / "igasol.dat"))
+    P = nrb.points                                   # (nx, ny, 3), x along axis 0
+    X, Y = P[..., 0].T, P[..., 1].T                  # (ny, nx), as read_vts returns
+
+    def read(fn, want=WANT):
+        sol = PetIGA().read_vec(str(fn), nrb)        # (nx, ny, ndof)
+        return {k: sol[..., SOL_DOF[k]].T for k in want}, X, Y
+    return read
 
 
 def load_keff(run: Path):
@@ -151,6 +180,10 @@ def main() -> int:
     ap.add_argument("run_dir", type=Path)
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--fps", type=int, default=10)
+    ap.add_argument("--source", choices=("vts", "sol"), default="vts",
+                    help="vts: vtkOut/solV_*.vts, capped at 1200 points/axis by "
+                         "plot_fields.py. sol: the full-resolution sol_*.dat "
+                         "(use this for anything shown above ~1000 px)")
     ap.add_argument("--crf", type=int, default=16,
                     help="x264 quality: lower is better, 18 and below is visually "
                          "lossless (default 16; ffmpeg's own default is 23)")
@@ -192,20 +225,26 @@ def main() -> int:
         return assemble(args.from_frames.resolve(),
                         args.out or run / "packing_sintering.mp4", args.fps, args.crf)
 
-    files = sorted(glob.glob(str(run / "vtkOut" / "solV_*.vts")), key=step_of)
+    if args.source == "sol":
+        files = sorted(glob.glob(str(run / "sol_*.dat")), key=snap_step)
+        reader = make_sol_reader(run)
+    else:
+        files = sorted(glob.glob(str(run / "vtkOut" / "solV_*.vts")), key=snap_step)
+        reader = read_vts
     if not files:
-        print(f"no solV_*.vts under {run}/vtkOut", file=sys.stderr)
+        print(f"no {'sol_*.dat' if args.source == 'sol' else 'vtkOut/solV_*.vts'} "
+              f"under {run}", file=sys.stderr)
         return 1
     files = files[::max(1, args.stride)]
     tmap = step_times(str(run))
-    steps = [step_of(f) for f in files]
+    steps = [snap_step(f) for f in files]
     times = [tmap.get(s, float(s)) for s in steps]
 
     # -- pass 1: the colour range, over every frame -----------------------
     lo = hi = None
     raw_lo = raw_hi = None
     for f in files:
-        fl, _, _ = read_vts(f, want=WANT)
+        fl, _, _ = reader(f, want=WANT)
         if "VaporDensity" not in fl or "Temperature" not in fl:
             print("  snapshots carry no vapour field; nothing to animate",
                   file=sys.stderr)
@@ -247,7 +286,7 @@ def main() -> int:
     for i, (fn, t) in enumerate(zip(files, times)):
         if args.frame_png is not None and steps[i] != args.frame_png:
             continue
-        fl, X, Y = read_vts(fn, want=WANT)
+        fl, X, Y = reader(fn, want=WANT)
         sig = SIGMA_SCALE * pplib.supersaturation(fl["VaporDensity"], fl["Temperature"])
         phi = fl["IcePhase"]
 
@@ -269,8 +308,19 @@ def main() -> int:
             gs = fig.add_gridspec(1, ncol,
                                   width_ratios=[1] if ncol == 1 else [1, 0.82])
             ax = fig.add_subplot(gs[0, 0])
-        vap = ax.pcolormesh(XX, YY, sig, cmap=vapcm, norm=norm, shading="gouraud")
-        ax.pcolormesh(XX, YY, phi, cmap=icecm, vmin=0.0, vmax=1.0, shading="gouraud")
+        if args.source == "sol":
+            # A uniform 2831^2 grid: imshow draws it exactly and resamples to
+            # the output size with antialiasing; gouraud pcolormesh over 8 M
+            # cells would take minutes per frame for the same picture.
+            h = 0.5 * (XX[0, 1] - XX[0, 0])
+            ext = (XX.min() - h, XX.max() + h, YY.min() - h, YY.max() + h)
+            kw = dict(origin="lower", extent=ext, interpolation="antialiased",
+                      interpolation_stage="rgba")
+            vap = ax.imshow(sig, cmap=vapcm, norm=norm, **kw)
+            ax.imshow(phi, cmap=icecm, vmin=0.0, vmax=1.0, **kw)
+        else:
+            vap = ax.pcolormesh(XX, YY, sig, cmap=vapcm, norm=norm, shading="gouraud")
+            ax.pcolormesh(XX, YY, phi, cmap=icecm, vmin=0.0, vmax=1.0, shading="gouraud")
         ax.set_aspect("equal")
         if not args.bare:
             ax.set_xlabel("x [mm]"); ax.set_ylabel("y [mm]")
