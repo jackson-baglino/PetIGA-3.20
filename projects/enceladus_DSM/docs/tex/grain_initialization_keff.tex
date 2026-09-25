@@ -1,0 +1,401 @@
+% =====================================================================
+% grain_initialization_keff.tex -- how the grains are initialized for the
+% large-domain runs that feed the effective-thermal-conductivity
+% upscaling (studies/keff_sintering/).
+%
+%     pdflatex grain_initialization_keff.tex
+%
+% Sources of truth, in the order the pipeline runs them:
+%   preprocess/generate_packing_gravity.py   deposition, fill, gates
+%   preprocess/packing_lib.py                metrics, relax, grains.dat
+%   preprocess/comp_eps.py                   eps and the mesh
+%   preprocess/generate_study_opts.py        the .opts matrix
+%   src/initial_conditions.c                 phi, T, rho_v at t = 0
+% If any of those change, this changes with them.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{textcomp}
+\usepackage[T1]{fontenc}
+
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+% long \code{} tokens are unbreakable; give TeX room rather than overfull boxes
+\setlength{\emergencystretch}{2em}
+
+\title{Grain initialization for the $k_{\text{eff}}$ upscaling runs}
+\author{enceladus\_DSM}
+\date{2026-09-25}
+
+\begin{document}
+\maketitle
+
+\noindent
+The large-domain runs behind \code{studies/keff\_sintering/} start from a
+\emph{constructed} granular microstructure, not from an equilibrated field
+and not from a mechanical settling simulation. Initialization happens in
+two clearly separated stages:
+
+\begin{enumerate}
+  \item \textbf{Offline (Python).} A sharp geometry --- a list of
+    non-overlapping circles $(x_k, y_k, R_k)$ --- is generated,
+    \emph{graded}, and committed to the repository as
+    \code{inputs/packings/.../grains.dat}. No phase field, no $\epsilon$,
+    no mesh is involved; this stage is temperature-independent and is
+    reused at every run temperature.
+  \item \textbf{Online (solver).} At $t=0$ the solver reads that list and
+    paints a diffuse phase field over it, together with the temperature
+    and vapour-density fields. This stage is where $\epsilon$ and the mesh
+    enter.
+\end{enumerate}
+
+\noindent
+Keeping the two apart is the design decision the rest of this note
+elaborates: the sharp geometry is fixed and auditable, and $\epsilon$ only
+sets the thickness of the diffuse skin painted around it.
+
+\section{What the packings are meant to be}
+
+Every $k_{\text{eff}}$ packing targets the same microstructure and differs
+only in box size and random seed:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+porosity $\phi$            & $0.325$                    & gated to $\pm 0.01$ \\
+mean grain radius $R_{ave}$ & $50\ \mu$m                & log-normal, $\sigma_{\ln} = 0.5$ \\
+radius clip                & $[0,\,2R_{ave}]$           & \code{--radius-clip-frac 1.0} \\
+periodicity                & both axes (\code{xy})      & the only mode with no boundary layer \\
+dimension                  & 2                          & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Two box sizes are in use, both set by the RVE ratio $L/R_{ave}$ rather than
+by a length chosen directly:
+%
+\begin{align*}
+  \textbf{pilot:} && L/R_{ave} &= 40 && L = 2.0\ \text{mm}  && \text{\code{inputs/packings/pilot\_LR40/}} \\
+  \textbf{REV:}   && L/R_{ave} &= 64 && L = 3.2\ \text{mm}  && \text{\code{inputs/packings/rev\_LR64/}}
+\end{align*}
+%
+with four seeds each, so seed scatter is measured rather than assumed.
+Periodicity in \emph{both} axes is required: under \code{-periodic 0} the
+zero-flux wall imposes a $90^\circ$ contact angle on $\phi$, so a grain
+clipped by a wall carries the wrong surface curvature and coarsens as
+though it were smaller than it is.
+
+\section{Stage 1 (offline): building the sharp packing}
+
+\code{preprocess/generate\_packing\_gravity.py}. Five steps, in order.
+
+\paragraph{1.1 Geometric drop-and-roll deposition.}
+Grains are placed one at a time into a strip of width $L$. A radius is
+drawn from the log-normal, an $x$ is drawn uniformly, and the grain is
+lowered until it first touches the floor or a settled grain; it then
+\emph{rolls downhill} around that contact until it finds a second support,
+exhausts a rolling budget, reaches the floor, or rolls past the support's
+equator (in which case it falls off and is re-dropped, up to four hops).
+
+There is no DEM, no contact law and no time integration --- this must not
+be reported as a settling simulation. What it buys is the one structural
+property that matters here: every deposited grain rests on something below
+it, so the solid matrix is connected \emph{by construction} rather than by
+luck, and no placement that overlaps a settled grain is accepted.
+
+\paragraph{1.2 Porosity by bisecting a physical knob.}
+The rolling budget \code{--roll-tol} is the porosity control:
+$0$ means lock on first touch (ballistic, $\phi \approx 0.45$--$0.50$) and
+$\pi/2$ means roll to a stable two-point seat every time (dense,
+$\phi \approx 0.16$--$0.20$). Porosity falls monotonically with the budget,
+so it is bisected \emph{per seed} onto the target. Radii are never rescaled
+to hit a porosity: rescaling would break contact tangency, which is the
+whole point (see \emph{Why additive} in \S\ref{sec:online}). The realized budgets for the eight
+packings in use run $0.94$--$1.26$ rad.
+
+Deposition always wraps in $x$ regardless of the requested output
+periodicity: the bed being modelled is wide, and a strip with free sides
+opens spurious voids at the edges and drives the interior too dense.
+
+\paragraph{1.3 The domain is a window cut from a larger bed.}
+Deposition runs in a strip taller than the domain by
+$3 R_{ave}$ above and below, and the output window is cropped from its
+interior. Both discarded layers are artifacts: the floor contact layer at
+the bottom and the loose, half-filled free surface at the top. Deposition
+stops on the \emph{minimum} of the bed surface profile, not the highest
+grain, so the crop never reaches up into that loose layer.
+
+\paragraph{1.4 Seam healing, then filling --- in that order.}
+Identifying $y=0$ with $y=L_y$ leaves grains near the seam overlapping, so
+the seam is relaxed apart first (\code{packing\_lib.relax} under the
+minimum image, with $x$ wrapped). Maximum grain displacement is recorded as
+\code{seam\_max\_shift\_m}; it is $28$--$81\ \mu$m, i.e.\ confined to grains
+at the seam.
+
+The deposited skeleton is deliberately bisected to land $0.03$ \emph{above}
+the target porosity, and the remainder is removed by inserting grains into
+the largest voids, biggest hole first. Attacking the largest inscribed
+empty circle serves two goals with one pass: porosity falls to target and
+pore heterogeneity falls with it. Each insert is capped by the largest
+circle that fits \emph{and} by the remaining area deficit, and the last one
+is shrunk to land exactly on target rather than overshoot.
+
+Filler grains are not required to rest on anything --- some float. That is
+intentional: a 2D section through a 3D packing shows unsupported grains all
+the time, and a grain connected out of plane is mechanically real even
+where the slice cannot show it. The matrix is built connected \emph{first}
+so the floaters garnish a percolating skeleton instead of constituting it,
+and \code{metadata.json} records the split (\code{n\_matrix\_grains} vs
+\code{n\_filler\_grains}: $4$--$6\%$ filler across the eight packings).
+
+\paragraph{1.5 Acceptance is a gate, not a ranking.}
+For homogenization the domain has to be a usable REV, so a packing that is
+well connected on one side and sparse on the other is worse than useless:
+it yields a number that looks fine and means nothing. The generator
+therefore \emph{refuses} to emit a packing and re-seeds (up to 24 times)
+unless all of
+%
+\begin{itemize}\itemsep2pt
+  \item the largest inscribed pore circle is below its gate,
+  \item the local density CV on a coarse grid is below $0.3475$,
+  \item the half-domain solid-fraction difference is below $22\%$ in either
+        axis,
+  \item the solid percolates in \emph{both} $x$ and $y$,
+  \item achieved porosity is within $0.01$ of target
+\end{itemize}
+%
+hold. Three of the four pilot packings needed 2--3 attempts. Packings are
+never \emph{ranked} on pore connectivity: maximising the fraction of void
+in one cluster selects for clumped grains beside one large hole, which is
+the opposite of representative.
+
+The void gate is applied per domain size, not in mean radii: the largest of
+$N$ voids grows with $N$, so a flat mean-radii threshold calibrated on the
+$L/R_{ave}=40$ box silently rejects the larger and relatively \emph{more}
+uniform $L/R_{ave}=64$ box.\footnote{Visible in the metadata: REV seed~1
+records \code{gate\_max\_void\_ratio} $=2.14 = 1.3375\times 64/40$, i.e.\
+the default rescaled to the larger box, while seeds 2--4 record the unused
+default beside void ratios above it, i.e.\ they were gated on
+\code{--max-void-per-L}. Both are the same size-independent criterion, and
+all four REV packings sit at $2.1$--$2.5\%$ of $L$ against the
+$3.3$--$3.4\%$ the accepted pilot packings reach.}
+
+\paragraph{1.6 What is written out.}
+\code{grains.dat} (an \code{Lx Ly} header then \code{x y r} rows, all in
+metres), \code{metadata.json} (every graded metric, the gates, the seed and
+attempt, and a SHA-256 of \code{grains.dat}) and \code{preview.png}.
+
+One detail in \code{grains.dat} matters more than its size suggests:
+\textbf{periodic edge images are written explicitly}. Any grain reaching
+past a periodic face is emitted a second time at its image, so centres span
+$[-R,\,L+R]$ and a grain need only be \emph{partly} inside the domain.
+Dropping the edge-straddling grains would sever exactly the conduction
+paths that leave the domain, and connectivity across the boundary is what
+$k_{\text{eff}}$ is most sensitive to --- it would bias $k_{\text{eff}}$
+low. The images also make the microstructure genuinely periodic across
+those faces, which is what the corrector problem's periodic boundary
+conditions assume. The pilot files carry $25$--$30$ images on top of
+$308$--$336$ distinct grains.
+
+\section{Stage 2 (online): the fields at $t = 0$}
+\label{sec:online}
+
+\code{src/initial\_conditions.c}, reached via \code{-ic\_type
+multi\_grains\_file} and \code{-grains\_file <path>}. The grain list is
+parsed on rank 0 and broadcast, so every rank sees byte-identical geometry;
+a ragged or zero-radius file is an error rather than a silent
+misinterpretation.
+
+\paragraph{2.1 The ice phase field: additive, clamped $\tanh$ profiles.}
+$\phi$ is the clamped \emph{sum} of the grains' individual diffuse fields
+(\code{-ic\_grain\_union 0}, the Molaro convention):
+%
+\begin{equation}
+  \phi(\mathbf{x}) \;=\;
+  \operatorname{clamp}\!\left(
+    \sum_{k}
+      \left[\tfrac12 - \tfrac12 \tanh\!\left(\frac{r_k - R_k}{2\epsilon}\right)\right],
+    \;0,\;1\right),
+  \qquad r_k = \lVert \mathbf{x} - \mathbf{c}_k \rVert .
+  \label{eq:phi}
+\end{equation}
+%
+The $\tanh$ coefficient is $1/(2\epsilon)$, i.e.\ the model's own
+equilibrium logistic profile $\phi = 1/(1+e^{-x/\epsilon})$. Initializing
+at the equilibrium width removes the early width-relaxation transient that
+a steeper initial profile would spend its first $\sim 60$ steps undoing.
+Note that $\epsilon$ is a \emph{decay length}: the visible band is
+$\approx 6\epsilon$ ($5\%$--$95\%$) to $\approx 9.2\epsilon$
+($1\%$--$99\%$), not $\epsilon$.
+
+\paragraph{2.2 Why additive, and why contact is $\epsilon$-independent.}
+Each grain's own term in \eqref{eq:phi} crosses $0.5$ at exactly
+$r_k = R_k$ --- the sharp grain surface --- \emph{for any} $\epsilon$. Since
+drop-and-roll seats every deposited grain in exact tangency on its
+supports, neighbours touch precisely where $\phi_1 = \phi_2 = 0.5$.
+Three consequences:
+%
+\begin{itemize}\itemsep2pt
+  \item contact has an $\epsilon$-independent meaning;
+  \item the radii never depend on $\epsilon$, so the same
+        \code{grains.dat} is valid at every temperature and resolution;
+  \item no neck calibration step is needed --- the sharp geometry is fixed
+        and only the skin thickness changes.
+\end{itemize}
+%
+The alternative form, $\tanh$ of the signed distance to the grains' union
+(\code{-ic\_grain\_union 1}), exists for \emph{overlapping} grains. These
+packings deliberately have none, so it is not used here.
+
+\paragraph{2.3 Temperature and vapour.}
+Every IC shares one closure: temperature is the linear background field
+$T = T_0 + \nabla T_0 \cdot (\mathbf{x} - \mathbf{L}/2)$ (the
+$k_{\text{eff}}$ campaign sets no gradient, so $T \equiv T_0$), and vapour
+density is saturated inside ice and $h_0$-scaled in air, blended by the
+ice fraction:
+%
+\begin{equation}
+  \rho_v = \rho_{vs}(T)\,\big[\,h_0\,a + (1-a)\,\big],
+  \qquad a = \max(0,\,1-\phi),
+\end{equation}
+%
+with $h_0 = 1$ (saturated) for these runs.
+
+\paragraph{2.4 Where $\phi$ is evaluated.}
+Node coordinates come from the Greville abscissae of the B-spline basis,
+with the periodic-axis node spacing using $N$ intervals rather than $N-1$
+(a periodic node at $x=L$ coincides with the one at $x=0$). Getting that
+denominator wrong stretched every IC by $(N+1)/N$ and left a double-width
+gap at the seam --- measured as a $2/N$ disc-area excess in
+\code{studies/keff\_sharp\_limit/}.
+
+\paragraph{2.5 $\epsilon$ and the mesh.}
+$\epsilon$ is not chosen by eye. \code{preprocess/comp\_eps.py} takes the
+minimum of the three Kaempfer \& Plapp (2009) sharp-interface bounds (with
+safety $s=\tfrac12$) and the geometric bound $0.05\,R_{ave}$, with the
+normal velocity in the kinetic bound derived self-consistently from a
+feature size $R_{feat} = 2\ \mu$m so that the bound cannot collapse at cold
+temperatures. At $T=-20\,^\circ$C this gives $\epsilon = 1\ \mu$m for these
+packings, with the heat bound binding. The mesh follows:
+%
+\begin{equation}
+  h = \frac{\epsilon}{\sqrt{2}}, \qquad
+  N_x = \left\lceil \frac{\sqrt{2}\,L_x}{\epsilon} \right\rceil,
+\end{equation}
+%
+i.e.\ $2829^2$ for the pilot and $4526^2$ for the REV box, i.e.\ $24$M and
+$61$M degrees of freedom at $3$ fields per node. The geometry \code{.opts}
+also carries \code{-eps\_valid\_temp}, and the solver aborts if the run
+temperature disagrees with it by more than $1\,^\circ$C --- $\epsilon$ and
+the mesh are temperature-specific even though the packing is not.
+
+\section{What was actually built}
+
+Realized values from \code{metadata.json}, all at $\phi_{target}=0.325$,
+$R_{ave}=50\ \mu$m, \code{periodic xy}:
+
+\begin{center}
+\small
+\begin{tabular}{llrrrrrrr}
+\toprule
+set & seed & grains & filler & $\phi$ & $Z$ & $Z_{band}$ & roll [rad] & rows \\
+\midrule
+pilot, $L=2.0$\,mm   & 1 & 309 & 14 & 0.3251 & 1.96 & 3.40 & 0.957 & 334 \\
+                     & 2 & 308 & 15 & 0.3251 & 1.99 & 3.49 & 0.982 & 337 \\
+                     & 3 & 336 & 21 & 0.3249 & 1.99 & 3.41 & 1.006 & 366 \\
+                     & 4 & 310 & 20 & 0.3252 & 1.92 & 3.36 & 1.080 & 336 \\
+\midrule
+REV, $L=3.2$\,mm     & 1 & 797 & 27 & 0.3248 & 1.98 & 3.57 & 1.104 & 845 \\
+                     & 2 & 805 & 32 & 0.3254 & 2.03 & 3.53 & 1.115 & 844 \\
+                     & 3 & 724 & 37 & 0.3249 & 1.93 & 3.52 & 1.264 & 758 \\
+                     & 4 & 769 & 42 & 0.3254 & 1.95 & 3.33 & 0.945 & 815 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+\code{rows} is the line count in \code{grains.dat}, i.e.\ distinct grains
+plus periodic edge images. Two coordination numbers are reported because
+they answer different questions: $Z$ counts near-exact contacts
+($\approx 2$, barely rigid), while $Z_{band}$ counts every pair closer than
+the diffuse band $9.2\epsilon$ ($\approx 3.4$, nearly isostatic).
+\textbf{$Z_{band}$ is the number that describes the simulation}, because
+the solver joins with solid every pair closer than the band. The solid
+percolates in both axes in all eight packings (largest cluster
+$75$--$96\%$ of the solid).
+
+\section{Two consequences to keep in view}
+
+\paragraph{The diffuse band closes narrow throats at $t=0$.}
+Because \eqref{eq:phi} is additive, two grains that nearly touch each
+contribute $\approx 0.5$ at the midpoint of the gap and \emph{sum} to
+$\approx 1$. At the centre of a gap $g$ the sum is
+$1 - \tanh\!\big(g/4\epsilon\big)$, so $\phi$ only falls below $0.01$ once
+%
+\begin{equation}
+  g > 4\epsilon \operatorname{artanh}(0.99) \approx 10.6\,\epsilon .
+\end{equation}
+%
+At $\epsilon = 1\ \mu$m that is $10.6\ \mu$m, against a median pore throat
+of $19.4\ \mu$m (pilot) / $15.6\ \mu$m (REV) and a $25$th percentile of
+$\approx 1.5\ \mu$m. So roughly a quarter of the throats hold no pore at
+all at $t=0$, and a channel narrower than the band conducts like solid
+however open the drawing looks. This is recorded in the header of every
+geometry \code{.opts} and is why the deliverable of the campaign is
+\emph{comparative} --- how much sintering changes $k_{\text{eff}}$ --- and
+not absolute $k_{\text{eff}}$ in W\,m$^{-1}$\,K$^{-1}$. The same effect
+puts the usable (band-eroded) pore space in hundreds of disconnected
+pockets at $t=0$, which bears on vapour transport rather than on
+conduction.
+
+\paragraph{$t=0$ is not the baseline; $t=1$\,day is.}
+Equation \eqref{eq:phi} is an analytic clamped sum, not an equilibrated
+phase field, and the grains start in exact \emph{point} tangency with no
+neck. The first hours of every run are therefore the field relaxing rather
+than the microstructure sintering, and it is precisely at $t=0$ that a band
+bridging a point contact does the most damage to $k_{\text{eff}}$: on pilot
+seed~1, $k_{\text{eff}}(0)$ reads $0.6312$ under the arithmetic
+conductivity law against $0.3695$ under the tensor law, i.e.\ the
+arithmetic law was $+71\%$ high on tangent grains. All reported changes are
+measured against the $t = 1$~day state.
+
+\section{Reproducing it}
+
+The generation commands are not committed; the following are reconstructed
+from \code{metadata.json} and produce the committed packings (the generator
+is deterministic in the seed). The flag
+\code{--no-periodic-subdir} is what puts the output at the committed path
+rather than under a \code{periodic\_xy/} level.
+
+\begin{quote}\small\ttfamily
+python3 preprocess/generate\_packing\_gravity.py \textbackslash \\
+\hspace*{2em} --Lx 2.0e-3 --porosity 0.325 --mean-r 50e-6 --sigma-ln 0.5 \textbackslash \\
+\hspace*{2em} --periodic xy --band-per-mean-r 0.184 --seed 1 \textbackslash \\
+\hspace*{2em} --no-periodic-subdir \textbackslash \\
+\hspace*{2em} --out inputs/packings/pilot\_LR40/pilot\_phi0.325\_Rave50um\_LR40\_seed1
+\end{quote}
+
+\noindent
+For the REV set, \code{--Lx 3.2e-3} and the size-independent void gate
+\code{--max-void-per-L 0.0335}. The \code{.opts} matrix on top of a packing
+comes from \code{preprocess/generate\_study\_opts.py} with
+\code{--R\_feat 2e-6}, and runs go through the run scripts
+(\code{scripts/HPC/submit\_enceladus.sh <geometry> <experiment> [tag]}),
+never the bare executable, so the staged inputs and figures exist
+afterwards.
+
+\paragraph{Seeing the initial condition the solver actually uses.}
+The generator's \code{preview.png} draws sharp discs, which is the geometry
+as specified rather than the field the run starts from. To render
+\eqref{eq:phi} itself, including a zoom far enough in to make the
+$9.2\ \mu$m band visible at the $2$\,mm domain scale (it is $0.46\%$ of the
+frame):
+
+\begin{quote}\small\ttfamily
+venv\_enceladus/bin/python studies/keff\_sintering/render\_pilot\_ic.py
+\end{quote}
+
+\end{document}

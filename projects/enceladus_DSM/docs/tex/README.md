@@ -34,10 +34,16 @@ parameters · [11] the width convention · [12] the unenforced diagnostics ·
 | `constraints_derived.tex` | M&F SI Eq. (9): $\lambda_{sub}$, $\tau_{sub}$, $M_{sub}$, $\alpha_{sub}$, the $\alpha_{sub}/M_{sub}$ identity, and the physical constants table |
 | `constraints_libbrecht.tex` | the Libbrecht $\sigma_0(T)$ chain and the numbers behind `studies/libbrecht_kinetics/` |
 | `constraints_standalone.tex` | compilable wrapper: `pdflatex constraints_standalone.tex` (run it twice for the cross-references) |
+| `grain_initialization_keff.tex` | **standalone**: how the grains are initialized for the large-domain $k_{eff}$ upscaling runs — the offline drop-and-roll packing (`generate_packing_gravity.py`) and the additive $\tanh$ phase field the solver paints over it |
 
 The first four are **fragments**: no preamble, nothing above `\paragraph`, so
 they `\input` cleanly into a beamer frame. They need `amsmath`; the standalone
 wrapper also loads `geometry`, `amssymb`, `textcomp` and `fontenc`.
+
+`grain_initialization_keff.tex` is independent of the constraint set and carries
+its own preamble (`geometry`, `amsmath`, `amssymb`, `booktabs`, `textcomp`,
+`fontenc`): `pdflatex grain_initialization_keff.tex`, twice for the
+cross-references.
 
 Cross-references run between fragments (`constraints_libbrecht.tex` cites
 `eq:bkinetic` from `constraints_eps.tex`), so include them together, or drop
