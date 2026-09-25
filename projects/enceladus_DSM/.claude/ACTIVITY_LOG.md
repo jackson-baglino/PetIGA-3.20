@@ -1,3 +1,24 @@
+## 2026-09-25 — Grain-initialization write-up for the k_eff runs
+
+- Wrote `docs/tex/grain_initialization_keff.tex` (+ compiled PDF), a standalone
+  6-page account of how the large-domain k_eff packings are initialized: the
+  offline drop-and-roll deposition, roll-budget bisection, interior-window crop,
+  seam heal, largest-void filling, the acceptance gates and re-seeding, the
+  explicit periodic edge images in `grains.dat`, then the solver side — the
+  additive clamped-tanh phase field, eps-independent tangency, the T/rho_v
+  closure, Greville evaluation, and eps/mesh sizing from comp_eps.
+- Motivation: the pipeline spans five files and nothing stated it end to end,
+  so the load-bearing details (tangency ⇒ phi=0.5 at the grain surface for any
+  eps; edge images carry the boundary-crossing conduction paths; throats
+  narrower than 10.6·eps hold no pore at t=0) were only recoverable from code.
+- Table of realized values (grains, filler count, porosity, Z, Z_band, roll
+  budget, row count) taken from the committed `metadata.json` of all eight
+  pilot_LR40 / rev_LR64 packings. Noted the inconsistent void gate across the
+  REV set: seed 1 used `--max-void-ratio 2.14`, seeds 2-4 `--max-void-per-L`.
+- Read-only otherwise; no simulations run.
+
+---
+
 ## 2026-09-25 — Stage 1 result (x1.83), f-sweep, packing movie
 
 - **Stage 1 passes.** Pilot replay under the tensor law, 8 jobs, stride 12,
