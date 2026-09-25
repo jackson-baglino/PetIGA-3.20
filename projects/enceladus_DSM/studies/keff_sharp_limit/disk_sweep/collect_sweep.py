@@ -11,7 +11,11 @@ Checks, each printed and counted, none silently skipped:
   * every manifest label has a run folder with a k_eff row;
   * k_00 = k_11 and k_01 = k_10 = 0 (square symmetry), to 1e-3;
   * phi_bar equals the exact diffuse-disk fraction f(1 + pi^2 eps^2 / 3R^2)
-    to 1e-6, i.e. the solver built the disk that was asked for.
+    to 1e-4, i.e. the solver built the disk that was asked for. The formula
+    is for an ISOLATED disk; the IC is one disk per cell, so its tanh tail is
+    cut at the cell edge. That costs O(exp(-(L/2 - R)/eps)) of the ice: 5.6e-5
+    relative at R = 400 um, eps/R = 0.04 (gap/2 = 6 eps), 7e-7 at R = 350 um,
+    eps/R = 0.04, and below 4e-8 in every other run.
 """
 
 from __future__ import annotations
@@ -67,7 +71,7 @@ def main() -> int:
         phi_bar = float(row["phi_bar"])
         if abs(k00 - k11) / k00 > 1e-3 or max(abs(k01), abs(k10)) / k00 > 1e-3:
             problems.append(f"{m['label']}: not square-symmetric ({k00:.6g}, {k11:.6g})")
-        if abs(phi_bar / phi_exact - 1.0) > 1e-6:
+        if abs(phi_bar / phi_exact - 1.0) > 1e-4:
             problems.append(f"{m['label']}: phi_bar {phi_bar:.8g} vs exact {phi_exact:.8g}")
         out.append(dict(law=m["law"], R=R, f=f, eps_over_R=float(m["eps_over_R"]),
                         eps=eps, N=int(m["N"]), k=k, k_sharp=ks, rel_err=k / ks - 1.0,

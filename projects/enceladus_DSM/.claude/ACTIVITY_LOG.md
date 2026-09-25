@@ -1,3 +1,11 @@
+## 2026-09-25 — Slides filled with the f-sweep and the PetIGA pilot replay
+
+- Collected the disk f-sweep (36 runs) with collect_sweep.py -> keff_disk_sweep.csv; numbers match the other session's fsweep.csv. Loosened the phi_bar gate to 1e-4: the isolated-disk formula misses the tail cut at the cell edge (5.6e-5 at R = 400 um, eps/R = 0.04), not a solver error.
+- make_figures.py: slides 3/6 now plot measured sweep data; slide 7 rebuilt from the PetIGA replay CSVs (seeds 1, 3, 4) via compare_laws' loaders, reproducing +15.8% (sd 2.3) -> +28.8% (sd 2.6) and k(0) 0.6312 -> 0.3695. Python re-widening panels moved to backup slide 7b.
+- slides.md: slides 3, 6, 7 rewritten with measured numbers; first-order dipole theory under-predicts the arithmetic error at high f (+24% vs +39% at f = 0.50), stated on slide 3.
+
+---
+
 ## 2026-09-24 — Advisor slides on the k_eff tensor law; disk f-sweep; prior art found
 
 - `docs/keff_tensor_slides/`: slides.md (7 slides + backup derivation, IguanaTeX-ready LaTeX, talking points, Crossref-checked references), make_figures.py (half-slide panels, no equations in figures), pilot_rewiden.py (pilot seed 1 re-widened at t = 0, 1, 30 d under arithmetic / tensor / thresholded laws, python FV solver; t = 0 arithmetic reproduces the logged 0.6266).

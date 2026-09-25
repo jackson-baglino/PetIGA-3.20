@@ -1,6 +1,6 @@
 # k_eff on a diffuse interface: finding and removing the interface bias
 
-Seven slides plus one backup slide, written for an audience outside phase-field
+Seven slides plus two backup slides (4b, 7b), written for an audience outside phase-field
 modelling.
 
 - **Figures** are in `figures/` as 300 dpi PNG and vector PDF. Each panel is
@@ -8,7 +8,7 @@ modelling.
 - **Equations** are fenced `latex` blocks. Each is one display expression with
   no custom macros, so it can be pasted straight into IguanaTeX.
 - **Rebuilding:** `make_figures.py` rebuilds every figure. `pilot_rewiden.py`
-  regenerates the packing data behind slides 1 and 7.
+  regenerates the packing data behind slides 1b and 7b; slide 7 is built from the PetIGA replay CSVs.
 - **Numbers:** every number quoted here comes from a committed CSV or script.
   The source is given next to it.
 
@@ -146,19 +146,23 @@ Perrins et al. 1979), with β = (K_i − K_a)/(K_i + K_a) and T = −1/β:
 |---|---|
 | ![](figures/fig3a_keff_vs_f_arithmetic.png) | ![](figures/fig3b_error_vs_f_arithmetic.png) |
 
-> Until the HPC sweep is collected these are the `_prediction_only` versions
-> (first-order theory, dotted). After `collect_sweep.py`, `make_figures.py`
-> writes the versions above, with the measured curves and the prediction dashed.
-
 **On-slide text**
 
-- There are six disk sizes (f = 0.05 to 0.50) at three interface widths. The bold curve is our
+- The test covers six disk sizes (f = 0.05 to 0.50) at three interface widths. The bold curve is our
   production resolution, ε/R = 0.02.
 - The arithmetic law always reads **high**.
-- At production resolution the error goes from **about +2% (f = 0.05) to about +24% (f = 0.50)**.
-  These are first-order predictions; the sweep's measured values replace them.
+- At production resolution the error grows from **+1.9% at f = 0.05 to +38.6% at
+  f = 0.50**. At twice the width it reaches +132%, more than double the true value.
 - **It is not a constant offset.** It grows with the ice fraction, so it
   changes as the microstructure evolves.
+
+Measured error against Rayleigh's exact answer, arithmetic law:
+
+| f | 0.05 | 0.10 | 0.20 | 0.28 | 0.39 | 0.50 |
+|---|---|---|---|---|---|---|
+| ε/R = 0.04 | +4.0% | +8.1% | +18.2% | +29.8% | +53.0% | +132% |
+| **ε/R = 0.02** | **+1.9%** | **+3.8%** | **+8.3%** | **+13.0%** | **+20.8%** | **+38.6%** |
+| ε/R = 0.01 | +0.9% | +1.9% | +4.0% | +6.1% | +9.4% | +16.0% |
 
 **Talking points**
 
@@ -171,14 +175,22 @@ Perrins et al. 1979), with β = (K_i − K_a)/(K_i + K_a) and T = −1/β:
    (ε = 1 µm on R_ave = 50 µm). The bold curve therefore *is* our
    production resolution applied to every disk size.
 3. Panel (b): the dashed lines are the first-order theory of slide 4, with no
-   fitted constants. At f = 0.196 the theory and the measured ladder agree to 2%
-   in slope (slide 6b).
-4. Halving ε halves the error. That is expected for a first-order error, but
-   the cost grows as 1/ε² in 2-D, and more steeply in 3-D. Refining the mesh
-   is not a practical fix.
+   fitted constants.
+   - It matches the data at low f: at f = 0.196, +7.5% predicted against +8.3%
+     measured.
+   - It *under*-predicts as the disks crowd together: at f = 0.50, +24%
+     predicted against +39% measured. The theory uses a single disk's field,
+     but neighbours squeeze the heat through the gaps, and the gaps are where
+     the band shorts the air.
+   - The pilot packing is denser still, at an ice fraction of about 0.68, so
+     this is the regime we are in.
+4. Halving ε roughly halves the error, which is what a first-order error does.
+   But the cost grows as 1/ε² in 2-D, and more steeply in 3-D. Refining the
+   mesh is not a practical fix.
 
-*Source:* `studies/keff_sharp_limit/disk_sweep/keff_disk_sweep.csv`, 36
-`-keff_only` PetIGA runs.
+*Source:* `studies/keff_sharp_limit/disk_sweep/keff_disk_sweep.csv`: 36
+`-keff_only` PetIGA runs, HPC batch `batch_2026-09-24__14.23.15_keff_disk_fsweep`,
+all collector checks passed.
 
 ---
 
@@ -419,95 +431,135 @@ Why both terms vanish (1/K_n and K_t are both linear in φ):
 |---|---|
 | ![](figures/fig6a_keff_vs_f_tensor.png) | ![](figures/fig6b_error_vs_eps_ladder.png) |
 
-> Panel (a) needs the HPC sweep. Panel (b) is ready now: it is the committed
-> disk ladder at f = 0.196, `studies/keff_sharp_limit/disk/keff_disk.csv`.
+Alternative panel (b), the tensor counterpart of slide 3b:
+`figures/fig6c_error_vs_f_tensor.png`.
 
 **On-slide text**
 
-- With the tensor law, every width falls onto the exact curve (a).
-- Error against the exact answer at f = 0.196:
+- With the tensor law, every width falls onto the exact curve at every ice fraction (a).
+- At production resolution the error is **at most +1.0%** anywhere in the sweep, against up to +39% for the arithmetic law:
 
-  | ε/R | 0.04 | 0.02 (production) | 0.01 | 0.005 |
+  | f | 0.05 | 0.20 | 0.39 | 0.50 |
   |---|---|---|---|---|
-  | arithmetic | +18.2% | **+8.3%** | +4.0% | +1.9% |
-  | tensor | +1.2% | **+0.20%** | +0.034% | +0.006% |
+  | arithmetic, ε/R = 0.02 | +1.9% | +8.3% | +20.8% | +38.6% |
+  | **tensor, ε/R = 0.02** | **+0.05%** | **+0.20%** | **+0.51%** | **+0.98%** |
 
-- The arithmetic error falls in proportion to ε and matches the theory's slope to 1.9%, with nothing fitted.
-  The tensor error falls about as ε^2.5: **no first-order term is left.**
+- The arithmetic error falls in proportion to ε, matching the theory's slope to 1.9% with nothing fitted.
+  The tensor error falls about as ε^2.5 (b): **no first-order term is left.**
 - Flat ice slab: the tensor law is exact to **4 × 10⁻⁷** at every width, where
   the arithmetic law is 3.8–59% high.
 
 **Talking points**
 
-1. At our production resolution the error on this disk drops from 8.3% to
+1. At our production resolution the error at f = 0.2 drops from 8.3% to
    0.2%, a factor of about 40. Getting 0.2% with the old law would take an
    interface about 40 times thinner, which means roughly 1600 times more
    elements in 2-D.
-2. Panel (b) shows the whole argument in one picture. The orange data sit on
+2. The improvement holds everywhere in the sweep. The tensor error is about
+   0.9%, 2.5% and 6% of the arithmetic error at ε/R = 0.01, 0.02 and 0.04, and
+   those ratios barely change with f. That is second-order convergence, and
+   crowding does not break it.
+3. Panel (b) shows the whole argument in one picture. The orange data sit on
    the dashed first-order prediction, so the theory explains the old error
    quantitatively. The blue data have a steeper slope, so the first-order
    error is gone.
-3. The disk tests the full tensor, including its off-diagonal terms, because
+4. The disk tests the full tensor, including its off-diagonal terms, because
    the normal points in every direction. The slab tests only the across
-   direction, and there it is exact to solver precision.
-4. The remaining O(ε²) comes from curvature and from the diffuse disk holding
-   slightly more ice (π²ε²/3R² relative). We did not derive its coefficient; the
-   ~2.5 order is observed.
+   direction, and there it is exact to solver precision. In the sweep,
+   k_00 = k_11 to within 3 × 10⁻⁹, so the cell solver contributes nothing to
+   these errors.
+5. The remaining O(ε²) error comes from curvature and from the diffuse disk
+   holding slightly more ice (π²ε²/3R² relative). We did not derive its
+   coefficient; the ~2.5 order is observed. Nicoli et al. (2011) also saw
+   near-quadratic convergence on their disk.
 
 ---
 
-## Slide 7: What it changes, and what it does not
+## Slide 7: What it changes on the real packing
 
 **Figures (side by side):**
 
-| (a) Pilot packing, day 1 | (b) Pilot packing, day 30 |
+| (a) k_eff over 30 days, both laws | (b) Rise since day 1 |
 |---|---|
-| ![](figures/fig7a_pilot_laws_day1.png) | ![](figures/fig7b_pilot_laws_day30.png) |
+| ![](figures/fig7a_pilot_keff_vs_time.png) | ![](figures/fig7b_pilot_rise.png) |
 
 **On-slide text**
 
-- On the real packing, the arithmetic law's k_eff climbs steeply as the interface widens. The
-  tensor law is nearly flat, and so is an independent check that thresholds the
-  geometry to a sharp interface.
-- The tensor law and the sharp check agree to within 1% (day 1: 0.5711 vs 0.5718; day 30: 0.6997 vs 0.7059), even though they are two completely
-  different routes.
-- The **rise from day 1 to day 30** on this snapshot pair:
+- These are the stored pilot snapshots (three seeds, 30 days at −20 °C),
+  re-evaluated with the tensor law in PetIGA. **Nothing was re-simulated.** The
+  microstructure is identical; only the k_eff solve changed.
+- At t = 0 the grains just touch. There the arithmetic law reads **k = 0.63
+  against 0.37: +71% too high**, because the band welds the contacts.
+- **Rise from day 1 to day 30: +15.8% (arithmetic) → +28.8% (tensor)**,
+  sd 2.3 and 2.6 points. The sintering signal is **1.8× larger** than we
+  measured.
 
-  | | arithmetic | tensor | sharp threshold |
-  |---|---|---|---|
-  | k_eff, day 1 | 0.647 | 0.571 | 0.572 |
-  | k_eff, day 30 | 0.738 | 0.700 | 0.706 |
-  | rise | **+14.1%** | **+22.5%** | **+23.5%** |
-
-  So the true rise is about 1.6× what the old law measured.
-- **The tensor law has been the default since 2026-09-23.** The four September
-  pilots used the arithmetic law. Their stored snapshots are being re-evaluated
-  (no re-simulation). The arithmetic rise from day 1 is +15.9% ± 1.9 (n = 4).
+| seed | arithmetic | tensor |
+|---|---|---|
+| 1 | +13.9% | +27.4% |
+| 3 | +18.3% | +31.9% |
+| 4 | +15.0% | +27.2% |
+| mean (sd) | **+15.8% (2.3)** | **+28.8% (2.6)** |
 
 **Talking points**
 
-1. On the day-1 panel, tripling ε moves the arithmetic k_eff by +34% and
-   the tensor k_eff by −0.5%. On day 30 the moves are +20% and +1.6%.
-2. Two independent fixes agree. The tensor law and "threshold φ at ½, then use
-   sharp K" share nothing in their construction. Their agreement is the
-   strongest evidence either is right.
-3. The packing is where the old law did its worst damage. At t ≈ 0 the grains
-   touch at single points, and the diffuse band welded those contacts with
-   conducting material. That inflates the baseline and hides part of the
-   sintering signal.
-4. These panels use a quick python finite-volume solver on the coarser output
-   grid. That solver uses only the diagonal of the tensor, and the band there
-   is only about 4 cells wide. Treat them as indicative. The PetIGA replay of
-   the four pilots under the tensor law is the real measurement and is still
-   pending.
-5. **Limits:**
+1. This is the result the whole detour was for. The campaign reports the rise
+   of k_eff during sintering. The old law understated it by almost half,
+   because its bias was largest exactly where sintering starts, at point
+   contacts, and shrank as the necks grew. That is slides 1 and 3 on the real
+   geometry.
+2. Panel (a): the curves cross around day 10. Early on, the arithmetic law is
+   too high because the band stands in for necks that do not exist yet. Later
+   the necks are real, and the two laws come closer together.
+3. The baseline is day 1, not t = 0. The first hours are the initial condition
+   relaxing onto its equilibrium profile, not sintering.
+4. Seed 2 is left out. Its first-half replay job was lost to a cluster node
+   failure, so it has no day-1 value under the tensor law. It is a missing
+   run, not an outlier.
+5. Cost: the tensor law needs about 1.4× the linear-solver iterations of the
+   old law on the packing. It is a routine post-processing cost.
+6. **Limits:**
    - This is steady state only. It is a statement about the k_eff solve, not
      about the phase-field evolution equations.
    - The residual is O(ε²).
    - Where two interfaces come within a few ε of each other, as in young
      sinter necks, the thin-band analysis no longer holds for any
-     interpolation.
+     interpolation. The day-0 number is the least certain one, and it is also
+     excluded by the day-1 baseline.
    - It does not correct errors in φ itself.
+
+*Sources:* `studies/keff_sintering/coefficient_fix/compare_laws.csv` and
+`CAMPAIGN.md` (stage 1). The figures are rebuilt from the replay CSVs in
+`HPC_results/.../batch_2026-09-24__12.18.18_keff_replay` (tensor) and
+`batch_2026-09-16__13.16.11_pilot_keff` (arithmetic), with the same leg
+merging and baseline rule as `compare_laws.py`.
+
+---
+
+## Slide 7b (backup): Two independent fixes agree on the packing
+
+**Figures (side by side):**
+
+| (a) Pilot seed 1, day 1 | (b) Pilot seed 1, day 30 |
+|---|---|
+| ![](figures/fig7c_pilot_rewiden_day1.png) | ![](figures/fig7d_pilot_rewiden_day30.png) |
+
+**On-slide text**
+
+- Re-widening the interface on one snapshot moves the arithmetic k_eff a
+  lot: +34% on day 1 and +20% on day 30 when ε is tripled. It moves the
+  tensor k_eff by −0.5% and +1.6%.
+- The tensor law agrees within 1% with a completely independent fix, which
+  thresholds φ at ½ and uses the sharp conductivities.
+
+**Talking points**
+
+1. This is a quick python check on the coarser output grid, and it uses only
+   the diagonal of the tensor. The PetIGA replay on slide 7 is the real
+   measurement. This slide is here in case someone asks, "How do you know the
+   tensor law isn't just wrong in a different way?"
+2. Its day-1 → day-30 rise, +22.5% (tensor) against +14.1% (arithmetic),
+   points the same way as the PetIGA ensemble.
 
 ---
 
@@ -551,7 +603,7 @@ interface resistances, which are meant to be kept.
 The tensor law is established (Nicoli et al. 2011). What is specific to us is the application: the
 snow k_eff cell problem on an evolving phase field, the size and geometry
 dependence of the old law's bias, and the verification. Before relying on the
-sweep, check `collect_sweep.py`: it must report "all checks passed". The
-packing-level panels (slides 1b and 7) come from a coarser python solver and
-are indicative. The PetIGA tensor replay of the pilots is the real number and
-is still pending.
+sweep, check `collect_sweep.py`: it reported "all checks passed". The
+packing-level panels on slides 1b and 7b come from a coarser python solver and
+are indicative. Slide 7 is the PetIGA replay (3 seeds; seed 2 lost to a node
+failure).

@@ -355,7 +355,7 @@ def fig_sweep(law, fade_arith=False):
     if law == "tensor":
         ax.set_ylim(-5, 50)   # same scale as slide 3 would hide nothing; keep it comparable
     ax.legend(loc="upper left", title=f"{law} law", title_fontsize=FS_LEG)
-    save(fig, f"{tag}b_error_vs_f_{law}{suffix}")
+    save(fig, f"{tag}{'b' if law == 'arithmetic' else 'c'}_error_vs_f_{law}{suffix}")
 
 
 def fig6b_ladder():
@@ -534,7 +534,84 @@ def fig7_pilot():
         ax.set_ylabel(r"$k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]")
         ax.legend(loc="upper left", title=f"pilot packing, day {t:.0f}",
                   title_fontsize=FS_LEG, fontsize=FS_LEG - 1)
-        save(fig, f"fig7{tag}_pilot_laws_day{t:.0f}")
+        save(fig, f"fig7{'cd'['ab'.index(tag)]}_pilot_rewiden_day{t:.0f}")
+
+
+# ---- slide 7: the PetIGA replay of the pilot packings -------------------------
+HPC = Path.home() / "SimulationResults/HPC_results/enceladus_DSM/GrainPackingSintering"
+REPLAY_DIRS = (HPC / "batch_2026-09-16__13.16.11_pilot_keff",     # arithmetic, in-line
+               HPC / "batch_2026-09-24__12.18.18_keff_replay")   # tensor, replayed
+# Seed 2's leg-1 tensor replay was lost to a node failure: no 1-day baseline.
+SEEDS = ("1", "3", "4")
+DAY = 86400.0
+
+
+def _replay():
+    sys.path.insert(0, str(PROJ / "studies/keff_sintering/coefficient_fix"))
+    import compare_laws as cl
+    runs: dict = {}
+    for b in REPLAY_DIRS:
+        if not b.is_dir():
+            return None, None
+        for seed, laws in cl.collect(b).items():
+            for law, parts in laws.items():
+                runs.setdefault(seed, {}).setdefault(law, []).extend(parts)
+    merged = {sd: {law: cl.merge_legs(parts) for law, parts in laws.items()}
+              for sd, laws in runs.items() if sd in SEEDS}
+    return merged, cl
+
+
+def fig7_replay():
+    runs, cl = _replay()
+    if not runs:
+        print("  skip fig7a/b: replay batch directories not found")
+        return
+    styles = (("arith", C_ARI, "arithmetic law"), ("tensor", C_TEN, "tensor law"))
+
+    # (a) absolute k_eff(t), one line per seed
+    fig, ax = panel()
+    for law, col, lab in styles:
+        for i, sd in enumerate(SEEDS):
+            a = runs[sd][law]
+            t = np.asarray(a["time"]) / DAY
+            ax.plot(t, a["k_iso"], color=col, lw=LW - 0.8, alpha=0.9,
+                    label=lab if i == 0 else None)
+    ax.axvspan(0, 1, color=MUTED, alpha=0.10, lw=0)
+    ax.annotate("first day: initial\ncondition relaxing", xy=(0.9, 0.42), xytext=(2.0, 0.42),
+                fontsize=FS_NOTE - 1, color=MUTED, va="center",
+                arrowprops=dict(arrowstyle="->", color=MUTED, lw=1.2))
+    ax.set_xlim(0, 30)
+    ax.set_xlabel("time  [days]")
+    ax.set_ylabel(r"$k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]")
+    ax.legend(loc="lower right", title="pilot packing, 3 seeds", title_fontsize=FS_LEG)
+    save(fig, "fig7a_pilot_keff_vs_time")
+
+    # (b) rise from the 1-day baseline
+    fig, ax = panel()
+    for law, col, lab in styles:
+        rises = []
+        for i, sd in enumerate(SEEDS):
+            a = runs[sd][law]
+            kb, ke, r, tb = cl.rise(a, 1.0)
+            t = np.asarray(a["time"]) / DAY
+            m = t >= tb / DAY
+            ax.plot(t[m], 100 * (np.asarray(a["k_iso"])[m] / kb - 1), color=col,
+                    lw=LW - 0.8, alpha=0.9)
+            rises.append(r)
+        mean, sd_ = np.mean(rises), np.std(rises, ddof=1)
+        ax.plot([], [], color=col, lw=LW, label=f"{lab}: +{mean:.1f}%  (sd {sd_:.1f})")
+        print(f"  replay {law}: rises {', '.join(f'{x:+.1f}%' for x in rises)}; "
+              f"mean {mean:+.1f}% sd {sd_:.1f}")
+    ax.axhline(0, color=C_EXACT, lw=LW_THIN)
+    ax.set_xlim(0, 30)
+    ax.set_xlabel("time  [days]")
+    ax.set_ylabel(r"rise of $k_\mathrm{eff}$ since day 1  [%]")
+    ax.legend(loc="upper left", title="rise at day 30, 3 seeds", title_fontsize=FS_LEG)
+    save(fig, "fig7b_pilot_rise")
+    for sd in SEEDS:
+        a, t_ = runs[sd]["arith"], runs[sd]["tensor"]
+        print(f"  seed {sd}: k(0) arithmetic {a['k_iso'][0]:.4f}, tensor {t_['k_iso'][0]:.4f}"
+              f"  (t0 = {a['time'][0]/DAY:.2f} / {t_['time'][0]/DAY:.2f} d)")
 
 
 def main():
@@ -544,7 +621,7 @@ def main():
     print("slide 4"); fig4a_resistivity_arith(); fig4b_conductivity_arith()
     print("slide 5"); fig5a_tensor_profile(); fig5b_resistivity_tensor(); fig5c_layers()
     print("slide 6"); fig_sweep("tensor", fade_arith=True); fig6b_ladder()
-    print("slide 7"); fig7_pilot()
+    print("slide 7"); fig7_replay(); fig7_pilot()
 
 
 if __name__ == "__main__":
