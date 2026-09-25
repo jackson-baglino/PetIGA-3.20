@@ -39,7 +39,7 @@ read from whichever k_eff CSVs the run directory holds -- so a frame can be
 pointed at while saying "this is where the conductivity is".
 
 Usage:
-    python make_packing_movie.py <run_dir> [--out FILE.mp4] [--fps 10]
+    python make_packing_movie.py <run_dir> [--out FILE.mp4] [--fps 10] [--crf 16]
         [--stride N] [--dpi 150] [--frame-png STEP] [--sat-clip P]
         [--symmetric] [--no-keff] [--cmap NAME]
         [--frames-dir DIR] [--no-movie] [--bare [--px 1200]]
@@ -111,12 +111,18 @@ def _decorate(fig, ax, vap, norm):
     cb.ax.tick_params(labelsize=8)
 
 
-def assemble(frames_dir: Path, out: Path, fps: int) -> int:
+def assemble(frames_dir: Path, out: Path, fps: int, crf: int = 16) -> int:
     """Build the mp4 from whatever PNGs are in `frames_dir`, in name order.
 
     Goes through a concat list rather than ffmpeg's %05d pattern, because the
     frames are named by STEP and steps are not contiguous -- a numbered
     pattern would stop at the first gap.
+
+    QUALITY. libx264's default (CRF 23) came out near 1.2 Mbit/s at 1200^2,
+    which bands and blocks the smooth supersaturation gradients -- the frames
+    are lossless PNGs, so the encoder was the only thing softening them. CRF
+    16 is visually lossless for this content. +faststart puts the index at the
+    front so PowerPoint and browsers start playing without reading the file.
     """
     pngs = sorted(frames_dir.glob("frame_*.png"))
     if not pngs:
@@ -128,7 +134,8 @@ def assemble(frames_dir: Path, out: Path, fps: int) -> int:
             fh.write(f"file '{p.name}'\nduration {1.0/fps:.6f}\n")
         fh.write(f"file '{pngs[-1].name}'\n")   # concat drops the last duration
     cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lst),
-           "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", str(fps),
+           "-c:v", "libx264", "-preset", "slow", "-crf", str(crf),
+           "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", str(fps),
            "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2", str(out)]
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
@@ -144,6 +151,9 @@ def main() -> int:
     ap.add_argument("run_dir", type=Path)
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--fps", type=int, default=10)
+    ap.add_argument("--crf", type=int, default=16,
+                    help="x264 quality: lower is better, 18 and below is visually "
+                         "lossless (default 16; ffmpeg's own default is 23)")
     ap.add_argument("--stride", type=int, default=1)
     ap.add_argument("--dpi", type=int, default=150)
     ap.add_argument("--frame-png", type=int, default=None,
@@ -180,7 +190,7 @@ def main() -> int:
     # mp4 after culling or re-ordering them must not require re-rendering.
     if args.from_frames is not None:
         return assemble(args.from_frames.resolve(),
-                        args.out or run / "packing_sintering.mp4", args.fps)
+                        args.out or run / "packing_sintering.mp4", args.fps, args.crf)
 
     files = sorted(glob.glob(str(run / "vtkOut" / "solV_*.vts")), key=step_of)
     if not files:
@@ -305,7 +315,8 @@ def main() -> int:
     print(f"\n  {n_out} frame(s) -> {frames_dir}")
     if args.no_movie:
         return 0
-    return assemble(frames_dir, args.out or run / "packing_sintering.mp4", args.fps)
+    return assemble(frames_dir, args.out or run / "packing_sintering.mp4", args.fps,
+                    args.crf)
 
 
 if __name__ == "__main__":
