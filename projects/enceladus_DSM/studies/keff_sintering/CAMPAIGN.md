@@ -17,17 +17,26 @@ separate question.
 
 Each stage names **one number**, the threshold it must clear, and what happens
 if it does not. Costs are at the tier-1 Resnick rate, $0.012/core-hour
-(`scripts/HPC/hpc_cost.sh`); cost ≈ ranks × wall-hours × rate. The pilot's
-measured **~24 s/step at 241 ranks** is the basis for every wall-clock estimate
-below, and stage 2 replaces it with a measurement at other temperatures.
+(`scripts/HPC/hpc_cost.sh`); cost ≈ ranks × wall-hours × rate.
+
+> **Cost model corrected 2026-09-25 — earlier estimates were ~15–20× high.**
+> They took the pilot's ~6 650 steps at −20 °C as the step count and scaled it
+> by ρ_vs. That count is an artefact: pilot leg 1 ran at the old flat
+> `-dtmax 200` (**97% of its steps at that cap**, not "2.4%"), and after the
+> derived `dtmax = 1.09·τ_sub` (a7dda40) arrived for leg 2, days 15–30 took
+> **165 steps**. The rev64 run, on the derived `dtmax` throughout, took
+> **371 steps in 2 h 19 min at 615 ranks, ≈ $17** for 30 days (79% of steps at
+> the cap). At 241 ranks: ~22.5 s/step, ~12 s per tensor `k_eff` sample, and
+> steps ≈ `t_final/dtmax` + ~70 early CFL-limited steps. Every 30-day run
+> fits one 24 h job — no restart legs at any temperature in −40…−10 °C.
 
 | stage | what | cost | running | figure |
 |---|---|---|---|---|
 | 0 | tensor law + both ladders | done | — | ✔ committed |
 | 1 | pilot replay under tensor (no new simulation) | **$43 actual** | $43 | ✔ **done** |
-| 2 | batch 1 — cold end of the T axis | ~$126 | ~$169 | ✔ **next** |
-| 3 | −10 °C | ~$321 | ~$466 | ✔ **SLIDES** |
-| 4 | production packings | local | ~$466 | — |
+| 2 | batch 1 — cold end of the T axis | < ~$30 | ~$73 | ✔ |
+| 3 | batch 2 — warm end, −20/−15/−10 × seeds 1,3,4 | ~$150 | ~$223 | ✔ **SLIDES** |
+| 4 | production packings | local | ~$223 | — |
 | 5 | main matrix | measured at stage 2 | — | ✔ **SLIDES** |
 | 6 | sensitivity arms | ~12 runs | — | — |
 | 7 | analysis | — | — | ✔ **SLIDES** |
@@ -168,7 +177,7 @@ a different, smaller-domain experiment — not a finer mesh on an 80-run matrix.
 
 ---
 
-## Stage 2 — batch 1, the cold end · ~$126
+## Stage 2 — batch 1, the cold end · < ~$30 (re-priced 2026-09-25)
 
 The axis the 2025-09 sweep destroyed, rebuilt with `alpha_c = 1e-3` constant
 and `beta_sub0` therefore spanning 8.4× across the axis, one `eps` and one
@@ -186,17 +195,11 @@ and `beta_sub0` therefore spanning 8.4× across the axis, one `eps` and one
 scatter at the cold end, which is what makes a temperature difference a result
 rather than a realization.
 
-| T | ρ_vs vs −20 | est. steps | est. wall @241 | legs | est. cost |
-|---|---|---|---|---|---|
-| −40 | 0.124× | ~825 | ~5.5 h | 1 | ~$16 ea |
-| −30 | 0.368× | ~2 450 | ~16 h | 1 | ~$47 ea |
-
-Note the mechanism: the pilot's realised `dt` is **median 200 s against
-`dtmax` 8526 s, only 2.4% of steps at the cap**, so the step is `-dtCFL`-limited,
-not `dtmax`-limited. Cold is expected to be cheaper because `dtCFL` tracks
-interface velocity, which scales with ρ_vs — an *expectation* until this batch
-measures it. **Record the measured s/step here; stages 3 and 5 are priced off
-it, not off the table above.**
+~~The table that stood here (~825 / ~2 450 steps, ~$16 / ~$47 each) scaled the
+pilot's dtmax-200 step count and is withdrawn — see "Cost model corrected"
+above.~~ Colder means a larger derived `dtmax`, hence fewer steps than the
+−20 °C run's ~370: each cold-end run costs less than a −20 run, ≲ $7.
+**Record the measured s/step here.**
 
 **Read:** the `k_eff` rise at −40 and −30 against the −20 ensemble, all on the
 tensor scale.
@@ -210,16 +213,41 @@ tensor scale.
 
 ---
 
-## Stage 3 — −10 °C · ~$321 · **SLIDES 1**
+## Stage 3 — batch 2, the warm end · ~$150 · **SLIDES 1**
 
-Deferred out of batch 1 because at 2.5× the −20 °C vapour density it is
-~16 700 steps, ~111 h at 241 ranks, and **five 24 h restart legs** — more than
-the rest of the axis combined. Use `scripts/HPC/resume_batch.sh` between legs;
-`merge_restart_legs.py` → `thin_snapshots.py` → `health_check.py` after, in
-that order (thinning before merging frees nothing — the snapshots are
-hardlinks).
+φ = 0.325, T ∈ {−20, −15, −10} °C, seeds 1, 3, 4, 30 d. Batch file and the
+full rationale: [`batch2_T_warm.txt`](batch2_T_warm.txt). ~~"−10 °C is ~16 700
+steps, ~111 h and five 24 h restart legs"~~ — withdrawn, same error as stage 2:
+at `dtmax` 3449 s it is ~850 steps, ~8 h, one job.
 
-Only worth submitting if stage 2 cleared. Completes the four-point axis.
+```bash
+./scripts/HPC/submit_batch.sh --tag keff_T_warm \
+    --tests-file studies/keff_sintering/batch2_T_warm.txt \
+    --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs \
+    --extra-opts "-keff 1 -keff_step0 1 -keff_freq 1 -t_out_log 150 -t_out_log_t0 60 -keff_ksp_type cg -keff_pc_type gamg"
+```
+
+| T | dtmax | est. steps | est. wall @241 (k_eff every step) | est. cost |
+|---|---|---|---|---|
+| −20 | 8526 s | ~370 | ~3.5 h | ~$10 |
+| −15 | 5376 s | ~560 | ~5.5 h | ~$16 |
+| −10 | 3449 s | ~850 | ~8 h | ~$24 |
+
+- **Output.** `k_eff` at every accepted step (`-keff_freq 1`), because the
+  deliverable plot is `k_eff` vs SSA and `SSA_evo.dat` is per step too: ~300
+  samples in the 1–30 d window at −20 °C. The old `-keff_t_interv 5e4` put only
+  ~6 samples in 1–3 d, where SSA moves most. Snapshots: `-t_out_log 150` from
+  60 s, plus step 1 (~29 GB/run). Without it `-outp 1` writes **every** step,
+  since `t_final/dtmax` < 1000 never trips the 1000-snapshot cap.
+- **Written to the group directory** (`--out-root`), not `$SCRATCH`: paper runs.
+- **−20 °C is re-run, not reused.** The pilot mixes dtmax 200 (0–15 d) and 8526
+  (15–30 d), and d ln SSA/d ln t jumps −0.087 → −0.096 exactly at the switch.
+  Seeds 1/3/4 match the pilot's valid seeds, so 0–15 d is a free dt check.
+
+**Read, first:** new −20 vs pilot, same seed, relative `k_eff` rise at 15 d.
+If they differ by more than the seed sd (2.6 points), `dtmax = 1.09·τ_sub` is
+too loose — lower `--dtmax-over-tau` and re-run before reading −15/−10.
+**Then:** `k_eff` rise vs T with seed error bars, and `k_eff` vs SSA per T.
 
 > **SLIDES 1 — "the temperature lever is real and we can resolve it"**
 > `k_eff` rise vs T with seed error bars; the audit table showing why the old

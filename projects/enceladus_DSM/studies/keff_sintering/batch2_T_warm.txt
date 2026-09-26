@@ -1,0 +1,47 @@
+# Batch 2 of the k_eff sintering campaign: the temperature axis, warm end.
+#
+# phi = 0.325, R_ave = 50 um, L/R_ave = 40 (inputs/packings/pilot_LR40/),
+# T = -20 / -15 / -10 C, seeds 1, 3, 4. alpha_c = 1e-3 constant, 30 d,
+# dtmax = 1.09*tau_sub per temperature (8526 / 5376 / 3449 s).
+#
+# -20 C IS RE-RUN, not reused from the 2026-09-16 pilot. The pilot's leg 1 ran
+# at the old flat -dtmax 200 (97% of its steps at that cap) and its leg 2 at
+# 8526, so one trajectory mixes two time discretisations -- and d ln SSA/d ln t
+# jumps from -0.087 to -0.096 exactly at the switch. Seeds 1/3/4 are the pilot's
+# valid seeds, so days 0-15 of the new -20 runs against the pilot are a free
+# dt-sensitivity check (same packing, dt cap 200 vs 8526). Stop rule: if the
+# relative k_eff rise at 15 d differs by more than the seed sd (2.6 points),
+# lower --dtmax-over-tau before trusting -15 and -10.
+#
+# Cost, from the rev64 run (the only 30-day run on the derived dtmax
+# throughout: 371 steps, 2 h 19 min at 615 ranks, ~$17), at 241 ranks,
+# ~22.5 s/step + ~12 s per k_eff sample, k_eff every step:
+#     -20 C  ~370 steps  ~3.5 h  ~$10
+#     -15 C  ~560 steps  ~5.5 h  ~$16
+#     -10 C  ~850 steps  ~8 h    ~$24
+#   ~$150 for all nine, +-50%. Every run fits one 24 h job: no restart legs.
+#
+# Output: k_eff at EVERY accepted step (-keff_freq 1), which is what makes the
+# k_eff-vs-SSA curve smooth (SSA_evo.dat is also per step). Field snapshots
+# log-spaced, 150 + step 1 (~29 GB/run): without -t_out_log, -outp 1 writes
+# every step here, because t_final/dtmax < 1000 never trips the output cap.
+#
+# Results go to the group directory, not $SCRATCH: these are paper runs.
+#
+# Submit with:
+#   ./scripts/HPC/submit_batch.sh --tag keff_T_warm \
+#       --tests-file studies/keff_sintering/batch2_T_warm.txt \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs \
+#       --extra-opts "-keff 1 -keff_step0 1 -keff_freq 1 -t_out_log 150 -t_out_log_t0 60 -keff_ksp_type cg -keff_pc_type gamg"
+#
+# -keff_interp is not passed: tensor has been the default since 2026-09-23.
+
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed1_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed3_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed4_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed1_L2mm_eps1000nm_perxy_T-15:snow_T-15_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed3_L2mm_eps1000nm_perxy_T-15:snow_T-15_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed4_L2mm_eps1000nm_perxy_T-15:snow_T-15_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed1_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed3_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_pilot_phi0.325_Rave50um_LR40_seed4_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
