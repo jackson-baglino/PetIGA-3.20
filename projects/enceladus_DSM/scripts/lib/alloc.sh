@@ -31,13 +31,19 @@
 # queue wait. 100k is still BELOW the 108k/rank that demonstrably ran ~7 s/step,
 # so it is inside measured territory rather than extrapolated.
 #
+# Lowered 100k -> 60k on 2026-09-26 (user's call): the warm-end k_eff batch
+# (24M DoF, 241 ranks at 100k) ran ~2x the predicted cost. At 60k the same mesh
+# gets 401 ranks. That only pays off if wall time falls by more than the 1.66x
+# rank increase, so compare s/step against the 241-rank batch before assuming
+# it is cheaper.
+#
 # CAUTION: per-rank memory scales with this, and 100k leaves less headroom than
 # 80k did. Runs using -keff carry a SECOND large operator (the scalar corrector
 # matrix plus its GAMG hierarchy) on top of the phase-field Jacobian and its
 # ASM/ILU(3) factor. Check peak RSS on a small run before submitting a large one
 # at this target. Do NOT combine with --half-cores on a large job: that would put
 # it at ~200k/rank, well outside the band.
-: "${TARGET_DOFS_PER_CORE:=100000}"
+: "${TARGET_DOFS_PER_CORE:=60000}"
 
 # MPI ranks per node on the Caltech Resnick cluster. 32 is the safe count
 # across the icelake|skylake|cascadelake constraint. MAX_TASKS_PER_NODE is the

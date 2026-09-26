@@ -61,6 +61,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/provenance.sh"
+source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 cd "$PROJECT_ROOT"
 
 GEOMETRY_DIR="$PROJECT_ROOT/inputs/geometry"
@@ -207,7 +208,7 @@ nprocs=$(awk -F: 'NR==1{print $1}' "$TESTS_FILE" | while read -r g; do
     f=$(find "$GEOMETRY_DIR" -name "${g}.opts" -print -quit)
     nx=$(grep -E '^[[:space:]]*-Nx[[:space:]]' "$f" | awk '{print $2}' | head -1)
     ny=$(grep -E '^[[:space:]]*-Ny[[:space:]]' "$f" | awk '{print $2}' | head -1)
-    python3 -c "import math;print(math.ceil(3*${nx:-1}*${ny:-1}/100000))"
+    python3 -c "import math;print(math.ceil(3*${nx:-1}*${ny:-1}/${TARGET_DOFS_PER_CORE}))"
 done)
 core_hours=$(python3 -c "print(f'{$total_samples*$SEC_PER_SAMPLE*${nprocs:-1}/3600:.1f}')")
 cost=$(python3 -c "print(f'{$total_samples*$SEC_PER_SAMPLE*${nprocs:-1}/3600*$RATE_PER_CORE_HOUR:.2f}')")
