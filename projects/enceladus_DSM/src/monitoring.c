@@ -312,18 +312,28 @@ PetscErrorCode OutputMonitor(TS ts, PetscInt step, PetscReal t, Vec U,
     ierr = IGAWrite(user->iga, fileiga);CHKERRQ(ierr);
   }
 
-  /* Always write step 0 (the raw initial condition) and step 1 (the first
-   * computed step). Step 0 already falls out of the schedules below, but
-   * step 1 generally does not: under time-uniform or log-spaced output the
-   * next scheduled snapshot is far away, so the first *solved* state is
-   * otherwise never on disk. That state is what movies and diagnostics
-   * should start from -- the IC's vapor field is a uniform hum0*rho_vs, so
-   * its supersaturation is a constant that carries no dynamics and skews
-   * any percentile range computed across the series. Forcing step 1 gives
-   * an "initial frame" that is a real solution, so the IC can be skipped.
-   * The schedule-advance loops below are no-ops at step 1's tiny t, so this
-   * does not consume a scheduled slot. */
-  PetscInt print = (step <= 1) ? 1 : 0;
+  /* Always write step 0 (the raw initial condition) and the first step with
+   * t >= t_out_first (default 1 s). Under time-uniform or log-spaced output
+   * the next scheduled snapshot can be far away, and movies need an opening
+   * frame that is a real solution: the IC's vapor field is a uniform
+   * hum0*rho_vs, so opening on it strobes.
+   *
+   * WHY 1 s AND NOT step 1. Step 1 (t = delt_t = 1e-4 s) was the opening
+   * frame until 2026-09-26, but the vapour field has not responded yet: on
+   * the warm-end k_eff pilot (seed 1, -20 C) its pore std/mean was 1.9e-8 at
+   * step 1 against 1.8e-5 at t = 71 s, flat from there on. It relaxes on
+   * l^2/(xi_v*D_v) = 0.02-0.3 s for 20-70 um pores (xi_v*D_v = 1.9e-8 m^2/s),
+   * so by 1 s it carries the curvature-driven structure. A time, unlike a
+   * step count, does not move with delt_t or the dt ramp. */
+  PetscInt print = (step == 0) ? 1 : 0;
+  if (!user->first_out_done && user->t_out_first > 0.0 && t >= user->t_out_first) {
+    /* Only the step that CROSSES t_out_first. A resumed leg starts past it,
+     * and its first step is not an opening frame. */
+    PetscReal t_prev;
+    ierr = TSGetPrevTime(ts, &t_prev); CHKERRQ(ierr);
+    if (step > 0 && t_prev < user->t_out_first) print = 1;
+    user->first_out_done = PETSC_TRUE;
+  }
 
   // Check if it's time to print output
   if (!print) {

@@ -19,8 +19,8 @@ redundant. This keeps:
 
   * every snapshot nearest a k_eff sample time, so -keff_replay still works
     and every table row still has a field behind it;
-  * the first and last of each leg, and step 1 (the first solved state,
-    which movies open on);
+  * the first and last of each leg, step 1, and the first snapshot at
+    t >= 1 s -- the frame movies open on (pplib.drop_ic);
   * the snapshot the restart was taken from, named in MERGE_INFO.json, so the
     run stays reproducible from its own join point;
   * optionally every --stride-th as a backstop.
@@ -57,12 +57,21 @@ def keepers(leg: Path, stride: int, protect: set[int]) -> tuple[set[int], str]:
         return set(), "no snapshots"
     steps = np.array([snap_step(p) for p in snaps])
     keep = {int(steps[0]), int(steps[-1])} | {s for s in protect if s in set(steps.tolist())}
-    # Step 1, the first solved state, is what movies open on (the IC's vapour
-    # field is uniform, so starting on it strobes). Never thin it away.
+    # The movie's opening frame (pplib.drop_ic): the first snapshot at t >= 1 s,
+    # or step 1 for runs that have nothing that early. The IC's vapour field is
+    # uniform, so starting on it strobes. Never thin either away.
     if 1 in set(steps.tolist()):
         keep.add(1)
+    ssa_t = pplib.load_ssa(str(leg))
+    if ssa_t is not None:
+        tm = dict(zip(ssa_t[:, 3].astype(int).tolist(), ssa_t[:, 2].tolist()))
+        on_disk = [int(s) for s in steps if int(s) in tm]
+        op = pplib.opening_step(on_disk, [tm[s] for s in on_disk])
+        if op is not None:
+            keep.add(op)
 
-    kf = leg / "k_eff.csv"
+    # In-line runs between 2026-09-23 and 2026-09-26 wrote k_eff_tensor.csv.
+    kf = leg / "k_eff_tensor.csv" if (leg / "k_eff_tensor.csv").is_file() else leg / "k_eff.csv"
     note = ""
     if kf.is_file():
         k = np.atleast_1d(np.genfromtxt(kf, delimiter=",", names=True))

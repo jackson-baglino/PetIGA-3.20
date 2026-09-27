@@ -74,7 +74,7 @@ import cmocean
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pplib
-from pplib import read_vts, step_of, step_times
+from pplib import read_vts, step_of, step_times, drop_ic
 from neck_width import _cross, refine_min
 
 ICE_EDGE = "#12263a"
@@ -276,26 +276,6 @@ def measure(phi, x, y, level, axisym, centers):
 
 
 
-def drop_ic(files, step_of_fn, keep_ic: bool):
-    """Start the movie at step 1, not at the initial condition.
-
-    The IC's vapour field is a uniform hum0*rho_vs, so a movie that opens on
-    it flashes from a flat field to a structured one on the next frame -- a
-    strobe on a projector. OutputMonitor always writes step 1 (t = dt), the
-    first solved state, for exactly this, and the IC is dropped only when that
-    replacement is on disk. Runs downloaded before 2026-09-25 were thinned
-    without step 1; for them the IC stays, because opening on the next stored
-    snapshot (~0.6 d later) would be a jump of its own.
-    """
-    if keep_ic or len(files) < 2:
-        return files
-    steps = [step_of_fn(f) for f in files]
-    if 1 not in steps:
-        print("  note: no step-1 snapshot on disk, so the movie keeps the IC as its "
-              "first frame (fetch sol_00001.dat to open on t = dt instead)")
-        return files
-    return [f for f, s in zip(files, steps) if s != 0]
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -307,7 +287,7 @@ def main():
     ap.add_argument("--stride", type=int, default=1, help="use every Nth snapshot")
     ap.add_argument("--keep-ic", action="store_true",
                     help="include the initial condition (step 0) as the first frame; "
-                         "by default the movie opens on step 1 (t = dt) when it is on disk")
+                         "by default the movie opens on the first snapshot at t >= 1 s (see pplib.drop_ic)")
     ap.add_argument("--dpi", type=int, default=150)
     ap.add_argument("--zoom", type=float, default=1.6,
                     help="half-window of the zoom panel along x, in units of "
@@ -349,7 +329,8 @@ def main():
     args = ap.parse_args()
 
     files = drop_ic(sorted(glob.glob(str(args.run_dir / "vtkOut" / "solV_*.vts")),
-                           key=step_of), step_of, args.keep_ic)[:: args.stride]
+                           key=step_of), step_of, args.keep_ic,
+                    step_times(args.run_dir))[:: args.stride]
     if not files:
         sys.exit(f"no solV_*.vts under {args.run_dir}/vtkOut")
 

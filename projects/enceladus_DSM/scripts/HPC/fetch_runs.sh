@@ -36,7 +36,7 @@ set -euo pipefail
 usage() { sed -n '2,32p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
 [ $# -eq 0 ] && usage 1
 
-TABLES=(--include='*/' --include='k_eff.csv' --include='SSA_evo.dat'
+TABLES=(--include='*/' --include='k_eff*.csv' --include='SSA_evo.dat'
         --include='outp.txt' --include='igasol.dat' --include='*.opts'
         --exclude='*')
 

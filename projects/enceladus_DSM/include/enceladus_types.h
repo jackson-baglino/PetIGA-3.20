@@ -213,6 +213,12 @@ typedef struct {
   PetscReal *t_out_log;      // ascending schedule, length n_out_log (PetscMalloc'd)
   PetscInt   i_out_log;      // index of the next unwritten entry
 
+  // -t_out_first: the first accepted step with t >= this is always written,
+  // so movies can open on a vapour field that has responded to the ice
+  // curvature. <= 0 disables it. OutputMonitor sets first_out_done once used.
+  PetscReal  t_out_first;
+  PetscBool  first_out_done;
+
   // Counters for active ice grains
   PetscInt NCice;  // Number of ice grains
   PetscInt n_act;  // Number of currently active ice grains

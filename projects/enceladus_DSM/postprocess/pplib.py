@@ -284,6 +284,65 @@ def step_times(path) -> dict:
     return tmap
 
 
+# Movies open on the first snapshot at t >= OPEN_T_MIN. The solver writes one
+# there (-t_out_first, default 1 s): by then the vapour field has relaxed onto
+# the ice curvature (l^2/(xi_v*D_v) = 0.02-0.3 s for 20-70 um pores). Step 1
+# (t = 1e-4 s), the opening frame until 2026-09-26, has a pore std/mean
+# 1000x below its quasi-steady value, so it still looks uniform.
+OPEN_T_MIN = 1.0
+# ...but only if that snapshot is early enough that the ice has not visibly
+# moved. Past this, opening on it would be a jump of its own.
+OPEN_T_MAX = 3600.0
+
+
+def opening_step(steps, times):
+    """The step a movie opens on: the first with OPEN_T_MIN <= t <= OPEN_T_MAX,
+    or None. `steps` and `times` are parallel, ascending sequences -- pass
+    only the steps that have (or will have) a snapshot on disk."""
+    for s, t in zip(steps, times):
+        if t > OPEN_T_MAX:
+            return None
+        if t >= OPEN_T_MIN:
+            return int(s)
+    return None
+
+
+def drop_ic(files, step_of_fn, keep_ic: bool, tmap: dict):
+    """Drop the frames before the movie's opening frame.
+
+    The IC's vapour field is a uniform hum0*rho_vs, so a movie that opens on
+    it flashes from a flat field to a structured one on the next frame -- a
+    strobe on a projector. In order of preference the movie opens on:
+
+      1. the first snapshot with OPEN_T_MIN <= t <= OPEN_T_MAX. The solver
+         writes one at ~1 s from 2026-09-26; the 2026-09-25 batch has one
+         at ~71 s (its first log-spaced snapshot). Step 0 and step 1 go.
+      2. step 1 (t = dt), for runs that have it but nothing early enough.
+      3. the IC, for runs thinned before 2026-09-25: their next snapshot is
+         ~0.6 d later, and jumping there would be worse than the strobe.
+
+    `tmap` is step -> time [s] (step_times()); steps missing from it fall
+    back to rule 2/3.
+    """
+    if keep_ic or len(files) < 2:
+        return files
+    steps = [step_of_fn(f) for f in files]
+    for i, s in enumerate(steps):
+        t = tmap.get(s)
+        if t is not None and OPEN_T_MIN <= t <= OPEN_T_MAX:
+            return files[i:]
+        if t is not None and t > OPEN_T_MAX:
+            break
+    if 1 in steps:
+        print(f"  note: no snapshot between {OPEN_T_MIN:g} s and {OPEN_T_MAX:g} s, so "
+              "the movie opens on step 1 (t = dt), where the vapour is still "
+              "nearly uniform")
+        return [f for f, s in zip(files, steps) if s != 0]
+    print("  note: no early snapshot on disk, so the movie keeps the IC as its "
+          "first frame")
+    return files
+
+
 # ---------------------------------------------------------------------------
 # Axis formatting
 # ---------------------------------------------------------------------------

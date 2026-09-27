@@ -2,7 +2,7 @@
 """Work out WHICH sol_*.dat are worth downloading, and emit an rsync list.
 
     # 1. pull the tables only (a few MB)
-    rsync -av --include='*/' --include='k_eff.csv' --include='SSA_evo.dat' \
+    rsync -av --include='*/' --include='k_eff*.csv' --include='SSA_evo.dat' \
           --include='outp.txt' --include='igasol.dat' --include='*.opts' \
           --exclude='*' <host>:<remote>/ ./local/
 
@@ -53,8 +53,11 @@ def main() -> int:
     a = ap.parse_args()
 
     lines, total = [], 0
-    for kf in sorted(a.local.glob("**/k_eff.csv")):
-        d = kf.parent
+    # k_eff_tensor.csv: in-line runs between 2026-09-23 and 2026-09-26 wrote
+    # their result under the law's name. One entry per run directory.
+    dirs = sorted({kf.parent for kf in a.local.glob("**/k_eff*.csv")})
+    for d in dirs:
+        kf = d / "k_eff_tensor.csv" if (d / "k_eff_tensor.csv").is_file() else d / "k_eff.csv"
         ssa = pplib.load_ssa(str(d))
         if ssa is None:
             print(f"  SKIP {d.name}: no SSA_evo.dat"); continue
@@ -66,12 +69,15 @@ def main() -> int:
             want.add(int(steps[i]))
             worst = max(worst, abs(float(ssa[i, 2] - tk)))
         want |= {int(steps[0]), int(steps[-1])}
-        # Step 1 is the first SOLVED state, and what movies start from: the IC
-        # (step 0) has a uniform vapour field, so opening a movie on it flashes
-        # from flat to structured. OutputMonitor has written it unconditionally
-        # since 2026-08-13; a run older than that simply won't have the file.
+        # Movies open on the first snapshot at t >= 1 s (pplib.drop_ic): the
+        # IC's vapour field is uniform, and so, nearly, is step 1's. The
+        # solver writes that frame from 2026-09-26 (-t_out_first); step 1 is
+        # kept too, for runs from before then that have nothing else early.
         if 1 in set(steps.tolist()):
             want.add(1)
+        op = pplib.opening_step(steps.tolist(), ssa[:, 2].tolist())
+        if op is not None:
+            want.add(op)
         if a.extra > 1:
             want |= {int(s) for s in steps[::a.extra]}
         rel = d.relative_to(a.local)

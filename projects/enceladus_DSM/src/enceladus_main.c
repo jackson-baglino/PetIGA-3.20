@@ -275,6 +275,8 @@ int main(int argc, char *argv[]) {
     user.t_out_log_t0 = 0.0;    /* first scheduled time; <= 0 = first accepted step's t */
     user.t_out_log    = NULL;
     user.i_out_log    = 0;
+    user.t_out_first  = 1.0;    /* -t_out_first: always write the first step with t >= 1 s */
+    user.first_out_done = PETSC_FALSE;
     if (n_out > 1) {
         user.t_interv = t_final / (n_out - 1); /* Output interval */
     } else {
@@ -650,6 +652,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-t_interv", "Output interval", "", user.t_interv, &user.t_interv, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-t_out_log", "Number of LOG-spaced snapshots (overrides -outp/-t_interv; 0 = off)", "", user.n_out_log, &user.n_out_log, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-t_out_log_t0", "First log-spaced snapshot time [s] (<= 0: use the first accepted step's t)", "", user.t_out_log_t0, &user.t_out_log_t0, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-t_out_first", "Always write the first step with t >= this [s], the movies' opening frame (<= 0: off)", "", user.t_out_first, &user.t_out_first, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-pf_output", "Enable output files", "", output, &output, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-pf_monitor", "Monitor the solution", "", monitor, &monitor, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsString("-output_path", "Output file path", "", user.output_path, user.output_path, sizeof(user.output_path), NULL); CHKERRQ(ierr);

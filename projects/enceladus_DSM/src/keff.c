@@ -373,11 +373,17 @@ PetscErrorCode KeffCreate(AppCtx *app)
    * read by anything that writes. */
   if (kc->csv_path[0] == '\0') {
     const char *dir = getenv("folder");
-    /* The non-default laws get their own file name. A replay writes into the
-     * run being replayed, so without this a -keff_interp tensor replay would
-     * overwrite that run's in-line arith k_eff.csv, and the two are
-     * indistinguishable by their columns. */
-    const char *name = (kc->interp == KEFF_INTERP_TENSOR) ? "k_eff_tensor.csv"
+    /* A REPLAY names its file after its law. It writes into the run being
+     * replayed, so without this a -keff_interp tensor replay would overwrite
+     * that run's in-line k_eff.csv, and the two are indistinguishable by their
+     * columns. An IN-LINE run always writes k_eff.csv: tensor has been the
+     * default since 2026-09-23, and suffixing it sent every new run's result
+     * to a name that fetch_runs.sh, health_check.py, merge_restart_legs.py and
+     * thin_snapshots.py do not read (the 2026-09-25 warm-end batch). Which law
+     * an in-line k_eff.csv holds is in outp.txt; runs before 2026-09-23 are
+     * arith. */
+    const char *name = (kc->replay_dir[0] == '\0')          ? "k_eff.csv"
+                     : (kc->interp == KEFF_INTERP_TENSOR) ? "k_eff_tensor.csv"
                      : (kc->interp == KEFF_INTERP_SHARP)  ? "k_eff_sharp.csv"
                      : "k_eff.csv";
     /* Replaying writes alongside the run being replayed, which is where anyone

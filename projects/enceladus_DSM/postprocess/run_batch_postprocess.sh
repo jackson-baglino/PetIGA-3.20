@@ -15,6 +15,7 @@
 # that run's own `plots/` folder:
 #   - plot_porosity.py   porosity + interface density   -> plots/porosity.png
 #   - plot_ssa.py        ice-air surface area           -> plots/ssa.png
+#   - plot_keff.py       k_eff vs time and vs SSA       -> plots/keff_{time,ssa}.png
 #   - plot_mass.py       phase mass vs time             -> plots/mass{.png,/}
 #   - plot_timestep.py   adaptive dt history            -> plots/timestep.png
 #   - plot_fields.py     VTK conversion (dim >= 2)      -> vtkOut/
@@ -122,6 +123,7 @@ for run in "$BATCH_DIR"/*/; do
     if [[ -f "$run/SSA_evo.dat" ]]; then
         step plot_porosity.py --dir "$run" --save "$plots/porosity.png"
         step plot_ssa.py      --dir "$run" --save "$plots/ssa.png"
+        step plot_keff.py     --dir "$run" --save-dir "$plots"
     fi
 
     # ── 2. phase mass ───────────────────────────────────────────────────

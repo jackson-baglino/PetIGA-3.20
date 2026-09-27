@@ -110,6 +110,9 @@ if [[ -f "$RUN_DIR/SSA_evo.dat" ]]; then
         "$POSTPROCESS_DIR/plot_porosity.py" --dir "$RUN_DIR" --save "$PLOTS/porosity.png"
     run_step "Ice-air surface area" \
         "$POSTPROCESS_DIR/plot_ssa.py" --dir "$RUN_DIR" --save "$PLOTS/ssa.png"
+    # No-op (exit 0) when the run did not pass -keff.
+    run_step "k_eff vs time and vs SSA" \
+        "$POSTPROCESS_DIR/plot_keff.py" --dir "$RUN_DIR" --save-dir "$PLOTS"
 else
     echo "⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots."
 fi

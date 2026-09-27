@@ -73,7 +73,7 @@ import cmocean
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
-from pplib import read_vts, step_of, step_times          # noqa: E402
+from pplib import read_vts, step_of, step_times, drop_ic # noqa: E402
 from make_neck_movie import (SIGMA_SCALE, ice_alpha_cmap,  # noqa: E402
                              centered_cmap, sigma_ticks)
 import pplib                                              # noqa: E402
@@ -86,27 +86,6 @@ SOL_DOF = {"IcePhase": 0, "Temperature": 1, "VaporDensity": 2}
 def snap_step(fn) -> int:
     """Step number of a solV_NNNNN.vts or a sol_NNNNN.dat."""
     return int(re.search(r"sol[V]?_(\d+)\.(?:vts|dat)$", str(fn)).group(1))
-
-
-def drop_ic(files, step_of_fn, keep_ic: bool):
-    """Start the movie at step 1, not at the initial condition.
-
-    The IC's vapour field is a uniform hum0*rho_vs, so a movie that opens on
-    it flashes from a flat field to a structured one on the next frame -- a
-    strobe on a projector. OutputMonitor always writes step 1 (t = dt), the
-    first solved state, for exactly this, and the IC is dropped only when that
-    replacement is on disk. Runs downloaded before 2026-09-25 were thinned
-    without step 1; for them the IC stays, because opening on the next stored
-    snapshot (~0.6 d later) would be a jump of its own.
-    """
-    if keep_ic or len(files) < 2:
-        return files
-    steps = [step_of_fn(f) for f in files]
-    if 1 not in steps:
-        print("  note: no step-1 snapshot on disk, so the movie keeps the IC as its "
-              "first frame (fetch sol_00001.dat to open on t = dt instead)")
-        return files
-    return [f for f, s in zip(files, steps) if s != 0]
 
 
 def make_sol_reader(run: Path):
@@ -203,7 +182,7 @@ def main() -> int:
     ap.add_argument("--fps", type=int, default=10)
     ap.add_argument("--keep-ic", action="store_true",
                     help="include the initial condition (step 0) as the first frame; "
-                         "by default the movie opens on step 1 (t = dt) when it is on disk")
+                         "by default the movie opens on the first snapshot at t >= 1 s (see pplib.drop_ic)")
     ap.add_argument("--source", choices=("vts", "sol"), default="vts",
                     help="vts: vtkOut/solV_*.vts, capped at 1200 points/axis by "
                          "plot_fields.py. sol: the full-resolution sol_*.dat "
@@ -259,8 +238,8 @@ def main() -> int:
         print(f"no {'sol_*.dat' if args.source == 'sol' else 'vtkOut/solV_*.vts'} "
               f"under {run}", file=sys.stderr)
         return 1
-    files = drop_ic(files, snap_step, args.keep_ic)[::max(1, args.stride)]
     tmap = step_times(str(run))
+    files = drop_ic(files, snap_step, args.keep_ic, tmap)[::max(1, args.stride)]
     steps = [snap_step(f) for f in files]
     times = [tmap.get(s, float(s)) for s in steps]
 

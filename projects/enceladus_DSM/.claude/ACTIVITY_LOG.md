@@ -1,3 +1,26 @@
+## 2026-09-26 — Opening frame at t >= 1 s, k_eff plots, k_eff.csv naming fix
+
+- Solver: `-t_out_first` (default 1 s) replaces the forced step-1 snapshot.
+  Step 1 (1e-4 s) had pore vapour std/mean 1.9e-8 vs 1.8e-5 at 71 s, so the
+  first movie frame still looked uniform. Only the crossing step writes, so
+  resumed legs do not add a spurious frame.
+- `pplib.drop_ic`/`opening_step` (shared by both movie scripts) pick the
+  first snapshot in [1 s, 1 h], then step 1, then the IC; thin_snapshots and
+  plan_download keep that frame.
+- Bug: since tensor became the default, in-line runs wrote k_eff_tensor.csv,
+  which fetch_runs/thin/plan_download/health_check/merge never read (thinning
+  would have kept 4 of 78 snapshots). In-line runs now write k_eff.csv again;
+  replays keep the law suffix. fetch/thin/plan_download also accept
+  k_eff_tensor.csv for the 2026-09-25 batch.
+- New `postprocess/plot_keff.py` (k_eff vs time, vs SSA; first day grey),
+  wired into run_postprocess.sh and run_batch_postprocess.sh. Plotted for
+  keff_T_warm seed 1 −20 C: k_iso +27.6% from 1 d; slope kink near 7.5 d
+  with dt flat at the cap, likely a topology event (unchecked).
+- Renamed local results folder temp_porosity_sweep -> keff_T_warm_phi0.325.
+- Allocation target 100k -> 60k DoF/core (earlier today).
+
+---
+
 ## 2026-09-25 — Warm-end batch (−20/−15/−10 °C), cost model corrected, --out-root
 
 - **Cost model was ~15–20× high.** The pilot's ~6650 steps at −20 °C came from
