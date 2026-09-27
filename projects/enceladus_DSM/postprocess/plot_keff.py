@@ -3,10 +3,26 @@
 
     python3 plot_keff.py --dir <run> [--save-dir <dir>] [--baseline-days 1]
 
-Writes two figures into <dir>/plots/ (or --save-dir):
+Writes four figures under <dir>/plots/keff/ (or --save-dir):
 
-    keff_time.png   k_xx, k_yy and k_iso = (k_xx + k_yy)/2 against time
-    keff_ssa.png    the same three against specific surface area
+    absolute/keff_time.png     k_xx, k_yy, k_iso = (k_xx + k_yy)/2 vs time [d]
+    absolute/keff_ssa.png      the same three vs SSA [1/m]
+    normalized/keff_time.png   k / k_b  vs  t / tau_sub
+    normalized/keff_ssa.png    k / k_b  vs  SSA / SSA_b
+
+NORMALIZATION. k and SSA are divided by their value at the BASELINE sample,
+the first at t >= --baseline-days (default 1 d), not at t = 0: t = 0 is the
+unrelaxed initial condition (below). Each component is divided by its own
+baseline value, so k_xx/k_xx,b, k_yy/k_yy,b and k_iso/k_iso,b all start at 1
+and the plot shows the relative rise. Pass --baseline-days 0 to normalize by
+the t = 0 values instead.
+
+Time has no initial value to divide by, so it is made dimensionless with
+tau_sub, the solver's interface-kinetic timescale (logged in outp.txt). It is
+temperature-dependent, so t/tau_sub is the natural axis for putting different
+temperatures on one plot. Whether it actually collapses them is something the
+plot shows; it is not assumed. With no tau_sub in outp.txt the normalized
+time axis falls back to t / t_b.
 
 WHICH CSV. An in-line run writes k_eff.csv. A -keff_replay writes
 k_eff_<law>.csv beside it, and between 2026-09-23 and 2026-09-26 in-line runs
@@ -30,7 +46,7 @@ which convention is used.
 THE FIRST DAY IS GREYED OUT. The initial condition is an analytic sum of tanh
 profiles, not an equilibrated phase field, so the first hours are the field
 relaxing, not sintering (CAMPAIGN.md "The baseline is t = 1 day"). Those
-samples are drawn in grey on both figures and never used as a baseline.
+samples are drawn in grey on every figure and never used as a baseline.
 """
 from __future__ import annotations
 
@@ -107,14 +123,37 @@ def load(run: Path):
             "ssa": s, "law": law, "csv": kf.name}
 
 
-def _series(ax, x, d, relax, xlabel, direct_labels=True):
+def read_tau_sub(run: Path):
+    """tau_sub [s] from outp.txt's parameter table, or None."""
+    outp = run / "outp.txt"
+    if not outp.is_file():
+        return None
+    with open(outp, errors="replace") as fh:
+        for line in fh:
+            m = re.match(r"\s*tau_sub\s+([0-9.eE+-]+)\s*s", line)
+            if m:
+                return float(m.group(1))
+    return None
+
+
+SERIES = (("kxx", C_XX, 1.6, r"$k_{xx}$"),
+          ("kyy", C_YY, 1.6, r"$k_{yy}$"),
+          ("kiso", C_ISO, 2.4, r"$k_\mathrm{iso}$"))
+
+
+def _series(ax, x, ys, relax, xlabel, ylabel, direct_labels=True):
     live = ~relax
-    for key, col, lw, lab in (("kxx", C_XX, 1.6, r"$k_{xx}$"),
-                              ("kyy", C_YY, 1.6, r"$k_{yy}$"),
-                              ("kiso", C_ISO, 2.4, r"$k_\mathrm{iso}$")):
-        y = d[key]
+    for key, col, lw, lab in SERIES:
+        y = ys[key]
         if relax.any():
-            ax.plot(x[relax], y[relax], "-", color=C_RELAX, lw=lw, zorder=1)
+            # Run the grey segment through the first live sample so the two
+            # join. Every point on it is a measured sample, matched to its
+            # SSA row by step; nothing is interpolated or extrapolated.
+            grey = relax.copy()
+            if live.any():
+                grey[int(np.argmax(live))] = True
+            ax.plot(x[grey], y[grey], "-", color=C_RELAX, lw=lw, zorder=1,
+                    label="first day, IC relaxation (measured)" if key == "kiso" else None)
         ax.plot(x[live], y[live], "-", color=col, lw=lw, label=lab, zorder=2)
         # Direct label at the right-hand end of each live curve -- only where
         # that end is the late-time end, i.e. against time. Against SSA the
@@ -124,11 +163,34 @@ def _series(ax, x, d, relax, xlabel, direct_labels=True):
                         textcoords="offset points", va="center", fontsize=12,
                         color="#333333")
     ax.set_xlabel(xlabel, fontsize=14)
-    ax.set_ylabel(r"$k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]", fontsize=14)
+    ax.set_ylabel(ylabel, fontsize=14)
     ax.tick_params(labelsize=11)
     ax.grid(True, alpha=0.25, lw=0.6)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
+
+
+def _legend(ax, loc):
+    """Legend with the k series first and the grey relaxation entry last."""
+    h, l = ax.get_legend_handles_labels()
+    order = sorted(range(len(l)), key=lambda i: "relaxation" in l[i])
+    ax.legend([h[i] for i in order], [l[i] for i in order],
+              fontsize=11, loc=loc, frameon=False)
+
+
+def _time_arrow(ax):
+    """SSA falls as the packing sinters, so time runs right-to-left."""
+    ax.annotate("", xy=(0.12, 0.93), xytext=(0.30, 0.93), xycoords="axes fraction",
+                arrowprops=dict(arrowstyle="->", color="#555555", lw=1.2))
+    ax.text(0.31, 0.93, "time", transform=ax.transAxes, va="center",
+            fontsize=11, color="#555555")
+
+
+def _save(fig, path, note):
+    fig.text(0.01, 0.005, note, fontsize=9, color="#555555")
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
 
 def main(argv=None):
@@ -136,9 +198,11 @@ def main(argv=None):
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dir", default=".", help="run directory (default: cwd)")
     p.add_argument("--save-dir", default=None,
-                   help="where the two PNGs go (default: <dir>/plots)")
+                   help="root for absolute/ and normalized/ (default: <dir>/plots/keff)")
     p.add_argument("--baseline-days", type=float, default=1.0,
-                   help="samples before this are IC relaxation and drawn grey (default 1)")
+                   help="samples before this are IC relaxation, drawn grey, and the "
+                        "first sample at or after it is the normalization baseline "
+                        "(default 1)")
     a = p.parse_args(argv)
 
     run = Path(a.dir)
@@ -147,54 +211,90 @@ def main(argv=None):
         print(f"  no k_eff CSV (or no SSA_evo.dat / -Lx -Ly) in {run}; nothing to plot")
         return 0                   # not an error: most runs do not pass -keff
 
-    out = Path(a.save_dir) if a.save_dir else run / "plots"
-    os.makedirs(out, exist_ok=True)
-    relax = d["t"] < a.baseline_days * DAY
-    tday = d["t"] / DAY
-    n_live = int((~relax).sum())
-    sub = (f"{len(d['t'])} samples ({d['csv']}, {d['law']} law); "
-           f"grey = first {a.baseline_days:g} d, IC relaxation")
+    root = Path(a.save_dir) if a.save_dir else run / "plots" / "keff"
+    out_abs, out_norm = root / "absolute", root / "normalized"
+    os.makedirs(out_abs, exist_ok=True)
+    os.makedirs(out_norm, exist_ok=True)
 
-    # --- k_eff vs time ---------------------------------------------------
+    relax = d["t"] < a.baseline_days * DAY
+    if relax.all():
+        print(f"  run ends before the {a.baseline_days:g} d baseline; "
+              "normalizing by the last sample")
+    ib = int(np.argmax(~relax)) if not relax.all() else len(relax) - 1
+    tb = d["t"][ib]
+    tday = d["t"] / DAY
+    rise = (d["kiso"][-1] / d["kiso"][ib] - 1) * 100
+    note = (f"{len(d['t'])} samples ({d['csv']}, {d['law']} law); "
+            f"grey = before {a.baseline_days:g} d, IC relaxation")
+    k_label = r"$k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]"
+    written = []
+
+    # --- absolute ------------------------------------------------------------
     fig, ax = plt.subplots(figsize=(10, 6))
     if relax.any():
         ax.axvspan(0, a.baseline_days, color="#f0f0f0", zorder=0, lw=0)
-    _series(ax, tday, d, relax, "Time [d]")
-    ax.legend(fontsize=11, loc="lower right", frameon=False)
-    i0 = int(np.argmax(~relax)) if n_live else 0
-    rise = (d["kiso"][-1] / d["kiso"][i0] - 1) * 100
+    _series(ax, tday, d, relax, "Time [d]", k_label)
+    _legend(ax, "lower right")
     ax.set_title(f"Effective thermal conductivity vs time\n"
-                 f"$k_\\mathrm{{iso}}$ {d['kiso'][i0]:.4f} → {d['kiso'][-1]:.4f} "
-                 f"({rise:+.1f}% from t = {tday[i0]:.2f} d)", fontsize=15)
-    fig.text(0.01, 0.005, sub, fontsize=9, color="#555555")
-    fig.tight_layout(rect=(0, 0.03, 1, 1))
-    f1 = out / "keff_time.png"
-    fig.savefig(f1, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+                 f"$k_\\mathrm{{iso}}$ {d['kiso'][ib]:.4f} → {d['kiso'][-1]:.4f} "
+                 f"({rise:+.1f}% from t = {tb / DAY:.2f} d)", fontsize=15)
+    _save(fig, out_abs / "keff_time.png", note)
+    written.append(out_abs / "keff_time.png")
 
-    # --- k_eff vs SSA ----------------------------------------------------
     fig, ax = plt.subplots(figsize=(10, 6))
-    _series(ax, d["ssa"], d, relax, r"SSA  [m$^{-1}$]  (interface length per cell area)",
+    _series(ax, d["ssa"], d, relax,
+            r"SSA  [m$^{-1}$]  (interface length per cell area)", k_label,
             direct_labels=False)
-    ax.legend(fontsize=11, loc="upper right", frameon=False)
-    # Time runs right-to-left here (SSA falls as the packing sinters).
-    ax.annotate("", xy=(0.12, 0.93), xytext=(0.30, 0.93), xycoords="axes fraction",
-                arrowprops=dict(arrowstyle="->", color="#555555", lw=1.2))
-    ax.text(0.31, 0.93, "time", transform=ax.transAxes, va="center",
-            fontsize=11, color="#555555")
+    _legend(ax, "upper right")
+    _time_arrow(ax)
     ax.set_title(f"Effective thermal conductivity vs specific surface area\n"
-                 f"SSA {d['ssa'][i0]:.4g} → {d['ssa'][-1]:.4g} m$^{{-1}}$ "
-                 f"from t = {tday[i0]:.2f} d", fontsize=15)
-    fig.text(0.01, 0.005, sub, fontsize=9, color="#555555")
-    fig.tight_layout(rect=(0, 0.03, 1, 1))
-    f2 = out / "keff_ssa.png"
-    fig.savefig(f2, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+                 f"SSA {d['ssa'][ib]:.4g} → {d['ssa'][-1]:.4g} m$^{{-1}}$ "
+                 f"from t = {tb / DAY:.2f} d", fontsize=15)
+    _save(fig, out_abs / "keff_ssa.png", note)
+    written.append(out_abs / "keff_ssa.png")
 
-    print(f"  k_eff: {len(d['t'])} samples from {d['csv']} ({d['law']}), "
-          f"{n_live} after {a.baseline_days:g} d; k_iso rise {rise:+.1f}%")
-    print(f"  wrote {f1}")
-    print(f"  wrote {f2}")
+    # --- normalized ----------------------------------------------------------
+    kn = {key: d[key] / d[key][ib] for key, *_ in SERIES}
+    sn = d["ssa"] / d["ssa"][ib]
+    tau = read_tau_sub(run)
+    if tau:
+        tn, t_label, t_ref = d["t"] / tau, r"$t\,/\,\tau_\mathrm{sub}$", \
+            f"$\\tau_\\mathrm{{sub}}$ = {tau:.4g} s"
+    else:
+        tn, t_label, t_ref = d["t"] / tb, r"$t\,/\,t_b$", "no tau_sub in outp.txt"
+    k_nlabel = r"$k\,/\,k_b$"
+    bnote = (f"baseline b = first sample at t >= {a.baseline_days:g} d "
+             f"(t_b = {tb / DAY:.2f} d); {t_ref}")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    if relax.any():
+        ax.axvspan(0, tn[ib], color="#f0f0f0", zorder=0, lw=0)
+    ax.axhline(1.0, color="#999999", lw=0.8, ls=":")
+    _series(ax, tn, kn, relax, t_label, k_nlabel)
+    _legend(ax, "lower right")
+    ax.set_title(f"Normalized effective thermal conductivity vs normalized time\n"
+                 f"$k_\\mathrm{{iso}}/k_b$ → {kn['kiso'][-1]:.3f}  at  "
+                 f"{t_label} = {tn[-1]:.4g}", fontsize=15)
+    _save(fig, out_norm / "keff_time.png", note + "\n" + bnote)
+    written.append(out_norm / "keff_time.png")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.axhline(1.0, color="#999999", lw=0.8, ls=":")
+    ax.axvline(1.0, color="#999999", lw=0.8, ls=":")
+    _series(ax, sn, kn, relax, r"SSA$\,/\,$SSA$_b$", k_nlabel, direct_labels=False)
+    _legend(ax, "upper right")
+    _time_arrow(ax)
+    ax.set_title(f"Normalized effective thermal conductivity vs normalized SSA\n"
+                 f"SSA/SSA$_b$ → {sn[-1]:.3f},  $k_\\mathrm{{iso}}/k_b$ → "
+                 f"{kn['kiso'][-1]:.3f}", fontsize=15)
+    _save(fig, out_norm / "keff_ssa.png", note + "\n" + bnote)
+    written.append(out_norm / "keff_ssa.png")
+
+    print(f"  k_eff: {len(d['t'])} samples from {d['csv']} ({d['law']}); baseline "
+          f"t_b = {tb / DAY:.2f} d; k_iso rise {rise:+.1f}%; "
+          f"tau_sub = {tau if tau else 'n/a'} s")
+    for w in written:
+        print(f"  wrote {w}")
     return 0
 
 

@@ -17,6 +17,11 @@
   keff_T_warm seed 1 −20 C: k_iso +27.6% from 1 d; slope kink near 7.5 d
   with dt flat at the cap, likely a topology event (unchecked).
 - Renamed local results folder temp_porosity_sweep -> keff_T_warm_phi0.325.
+- plot_keff.py now writes plots/keff/absolute/ and plots/keff/normalized/:
+  k/k_b and SSA/SSA_b with b = first sample at t >= 1 d (not t = 0, the
+  unrelaxed IC), time as t/tau_sub from outp.txt. Grey first-day segment now
+  joins the live curve and has a legend entry: it is measured data, not an
+  extrapolation (368/368 samples matched to SSA rows by step).
 - Allocation target 100k -> 60k DoF/core (earlier today).
 
 ---
