@@ -7,6 +7,9 @@ Writes four figures under <dir>/plots/keff/ (or --save-dir):
 
     absolute/keff_time.png     k_xx, k_yy, k_iso = (k_xx + k_yy)/2 vs time [d]
     absolute/keff_ssa.png      the same three vs SSA [1/m]
+    absolute/keff_offdiag_time.png
+                               k_xy and k_yx vs time, and |k_xy| relative to
+                               k_xx and k_yy -- a check that they are small
     normalized/keff_time.png   k / k_b  vs  t / tau_sub
     normalized/keff_ssa.png    k / k_b  vs  SSA / SSA_b
 
@@ -120,6 +123,7 @@ def load(run: Path):
     s = INTERFACE_FACTOR * ssa[idx, 0] / (lx * ly)
 
     return {"t": k["time"], "kxx": k["k_00"], "kyy": k["k_11"], "kiso": k["k_iso"],
+            "kxy": k["k_01"], "kyx": k["k_10"],
             "ssa": s, "law": law, "csv": kf.name}
 
 
@@ -252,6 +256,43 @@ def main(argv=None):
                  f"from t = {tb / DAY:.2f} d", fontsize=15)
     _save(fig, out_abs / "keff_ssa.png", note)
     written.append(out_abs / "keff_ssa.png")
+
+    # --- off-diagonal, absolute, vs time --------------------------------------
+    # Two panels, not one axis: k_xy is ~10x smaller than k_xx, so on a shared
+    # axis it would sit on the floor. (a) the components themselves, (b) their
+    # size relative to each diagonal entry, which is the question being asked.
+    # k_xy and k_yx should coincide -- the homogenized tensor is symmetric --
+    # so the asymmetry is printed as a check on the corrector solve.
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    for ax in (ax1, ax2):
+        if relax.any():
+            ax.axvspan(0, a.baseline_days, color="#f0f0f0", zorder=0, lw=0)
+        ax.grid(True, alpha=0.25, lw=0.6)
+        ax.tick_params(labelsize=11)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    ax1.axhline(0.0, color="#999999", lw=0.8, ls=":")
+    ax1.plot(tday, d["kxy"], "-", color=C_XX, lw=2.2, label=r"$k_{xy}$")
+    ax1.plot(tday, d["kyx"], "--", color=C_YY, lw=1.4, label=r"$k_{yx}$")
+    ax1.set_ylabel(r"$k_{xy}$, $k_{yx}$  [W m$^{-1}$ K$^{-1}$]", fontsize=13)
+    ax1.legend(fontsize=11, loc="best", frameon=False)
+    r_xx = np.abs(d["kxy"]) / d["kxx"] * 100
+    r_yy = np.abs(d["kxy"]) / d["kyy"] * 100
+    ax2.plot(tday, r_xx, "-", color=C_XX, lw=1.8, label=r"$|k_{xy}|\,/\,k_{xx}$")
+    ax2.plot(tday, r_yy, "-", color=C_YY, lw=1.8, label=r"$|k_{xy}|\,/\,k_{yy}$")
+    ax2.set_ylim(bottom=0)
+    ax2.set_ylabel("relative to diagonal  [%]", fontsize=13)
+    ax2.set_xlabel("Time [d]", fontsize=14)
+    ax2.legend(fontsize=11, loc="best", frameon=False)
+    asym = float(np.max(np.abs(d["kxy"] - d["kyx"])))
+    ax1.set_title(f"Off-diagonal conductivity vs time\n"
+                  f"max $|k_{{xy}}|/k_{{yy}}$ = {r_yy.max():.2f}%,  "
+                  f"max $|k_{{xy}} - k_{{yx}}|$ = {asym:.1e} W m$^{{-1}}$ K$^{{-1}}$",
+                  fontsize=15)
+    _save(fig, out_abs / "keff_offdiag_time.png", note)
+    written.append(out_abs / "keff_offdiag_time.png")
+    print(f"  off-diagonal: max |k_xy|/k_xx = {r_xx.max():.2f}%, "
+          f"max |k_xy|/k_yy = {r_yy.max():.2f}%, max |k_xy - k_yx| = {asym:.2e}")
 
     # --- normalized ----------------------------------------------------------
     kn = {key: d[key] / d[key][ib] for key, *_ in SERIES}
