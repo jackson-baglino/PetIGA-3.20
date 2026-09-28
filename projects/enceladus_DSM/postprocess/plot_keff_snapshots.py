@@ -488,7 +488,9 @@ def main(argv=None):
             path = out / f"{stem}.{fmt}"
             # No bbox_inches="tight": it would crop to the ink and the
             # saved width would no longer be --width-mm.
-            fig.savefig(path, dpi=a.dpi)
+            # Transparent: the page (or whoever places the figure) supplies
+            # the background. The field images themselves stay opaque.
+            fig.savefig(path, dpi=a.dpi, transparent=True)
             print(f"  wrote {path}")
         plt.close(fig)
     print(f"  reference (subscript 0) = opening frame: t_0 = {d['t'][ib]:.4g} s, step "
