@@ -1,8 +1,10 @@
 ## 2026-09-28 — Combined k_eff time + SSA snapshot figure
 
 - plot_keff_snapshots.py now also writes keff_combined_snapshots.{pdf,png}:
-  the time figure (insets on the plot) over a shorter k(SSA) panel with the
-  same lettered markers; one shared y label. 130 mm x 149 mm.
+  three panels read top to bottom -- snapshots (a)-(d), k vs time, k vs SSA
+  -- with the curves' points lettered to match; one shared y label; no
+  leaders. 130 x 145 mm. (A first version with the snapshots inset on the
+  time panel was replaced at the user's request.)
 
 ---
 

@@ -15,9 +15,9 @@ the curve, joined to it by a leader line:
     keff_time_snapshots.{pdf,png}   k_eff / k_eff,0  vs  time [d]
     keff_ssa_snapshots.{pdf,png}    k_eff / k_eff,0  vs  SSA / SSA_0
     keff_combined_snapshots.{pdf,png}
-                                    the time figure over a shorter
-                                    k_eff / k_eff,0 vs SSA / SSA_0 panel,
-                                    lettered the same, no second set of insets
+                                    three panels, top to bottom: the
+                                    snapshots, k vs time, k vs SSA; the
+                                    curves' points lettered to match
 
 The insets are ordered by where their markers fall on the x axis, so the
 leaders never cross: left to right in time on the time figure, and RIGHT to
@@ -254,11 +254,7 @@ def _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend):
     cb.outline.set_linewidth(0.5)
 
 
-SSA_H, SSA_GAP = 1.55, 0.44     # combined figure: SSA panel | gap above it
-
-
-def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a,
-          below_ssa=None):
+def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
     """One figure. `snaps` is [(fields, X, Y, t, row)] in time order.
 
     Laid out in INCHES at the final print width: the insets must be square
@@ -297,9 +293,7 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a,
     cb_h, cb_lab, cb_gap = 0.07, 0.15, 0.04     # bar | its tick labels | to axes
     strip = cb_h + cb_lab + cb_gap
     top = 0.24 if not a.no_title else 0.03
-    bot0 = 0.40
-    # Combined figure: the time panel sits on top of a k(SSA) panel.
-    bot = bot0 + (SSA_H + SSA_GAP if below_ssa is not None else 0.0)
+    bot = 0.40
     H = top + strip + axh + bot
     fig = plt.figure(figsize=(W, H))
     F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
@@ -385,29 +379,19 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a,
     _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend)
 
     if not a.no_title:
-        if below_ssa is not None:
-            title = a.title_combined or DEFAULTS["title_time"]
-        elif kind == "time":
+        if kind == "time":
             title = a.title_time or DEFAULTS["title_time"]
         else:
             title = a.title_ssa or DEFAULTS["title_ssa"]
         fig.suptitle(title, x=0.5, y=1.0 - 0.03 / H,
                      ha="center", va="top", fontsize=FS_TITLE, color=INK)
-    if below_ssa is not None:
-        _ssa_panel(fig.add_axes(F(ml, bot0, axw, SSA_H)), snaps, *below_ssa,
-                   keys, a)
-        # Both panels plot k_eff / k_eff,0, so ONE label spans them; the
-        # short SSA panel has no room for its own.
-        ax.set_ylabel("")
-        fig.text(0.04 / W, (bot0 + (bot + axh)) / 2 / H, ylabel, rotation=90,
-                 ha="left", va="center", fontsize=FS, color=INK)
     return fig
 
 
-def _ssa_panel(ax, snaps, x, ys, keys, a):
-    """The combined figure's lower panel: k(SSA) with the same lettered
-    markers and no insets or leaders -- the letters tie it to the snapshots
-    above. y spans the data only; the panel has no insets to make room for."""
+def _marked_panel(ax, kind, snaps, x, ys, keys, a):
+    """One curve panel of the combined figure: k_eff / k_eff,0 against time
+    or SSA, the snapshot instants marked with their letters. y spans the
+    data only -- there are no insets to make room for."""
     ax.patch.set_alpha(0.0)
     _curve(ax, x, ys, keys)
     yv = np.concatenate([ys[k] for k in keys])
@@ -418,17 +402,90 @@ def _ssa_panel(ax, snaps, x, ys, keys, a):
     xpad = 0.03 * (x.max() - x.min())
     ax.set_xlim(x.min() - xpad, x.max() + xpad)
     ax.plot(ax.get_xlim(), [1.0, 1.0], color="#999999", lw=0.6, ls=":", zorder=0)
-    ax.annotate("", xy=(0.40, 0.92), xytext=(0.56, 0.92), xycoords="axes fraction",
-                arrowprops=dict(arrowstyle="->", color=MUTED, lw=0.9))
-    ax.text(0.57, 0.92, "time", transform=ax.transAxes, va="center",
-            fontsize=FS_SMALL, color=MUTED)
     ymark = ys["kiso"]
     for i, (_fl, _X, _Y, _t, row) in enumerate(snaps):
         ax.plot([x[row]], [ymark[row]], "o", ms=10, mfc="white", mec=INK,
                 mew=0.9, zorder=6)
         ax.text(x[row], ymark[row], LETTERS[i], ha="center", va="center",
                 fontsize=FS_TINY, color=INK, fontweight="bold", zorder=7)
-    ax.set_xlabel(a.xlabel_ssa or DEFAULTS["xlabel_ssa"], fontsize=FS, labelpad=2)
+    if kind == "time":
+        # The curve rises left to right, so the lower right is empty.
+        ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.4,
+                  ncol=len(keys), columnspacing=1.0, handletextpad=0.5,
+                  loc="lower right")
+        ax.set_xlabel(a.xlabel_time or DEFAULTS["xlabel_time"], fontsize=FS,
+                      labelpad=2)
+    else:
+        # SSA falls as the packing sinters, so time runs right to left.
+        ax.annotate("", xy=(0.40, 0.92), xytext=(0.56, 0.92),
+                    xycoords="axes fraction",
+                    arrowprops=dict(arrowstyle="->", color=MUTED, lw=0.9))
+        ax.text(0.57, 0.92, "time", transform=ax.transAxes, va="center",
+                fontsize=FS_SMALL, color=MUTED)
+        ax.set_xlabel(a.xlabel_ssa or DEFAULTS["xlabel_ssa"], fontsize=FS,
+                      labelpad=2)
+
+
+def build_combined(snaps, xt, xs, kn, keys, norm, vapcm, icecm, sig_extend, a):
+    """Both curves in one figure, read top to bottom as a story:
+
+        colour bars
+        (a)-(d) microstructure snapshots, in time order
+        k_eff / k_eff,0  vs  time      lettered markers
+        k_eff / k_eff,0  vs  SSA/SSA_0 lettered markers
+
+    No leader lines: the letters tie each marked point to its snapshot. One
+    y label spans the two curve panels, which plot the same quantity.
+    """
+    n = len(snaps)
+    W = a.width_mm * MM
+    ml, mr = 0.50, 0.08
+    axw = W - ml - mr
+    gap = 0.06                              # between snapshots
+    s_in = (axw - (n - 1) * gap) / n
+    top = 0.24 if not a.no_title else 0.03
+    cb_h, cb_lab, cb_gap = 0.07, 0.15, 0.06   # bar | tick labels | to titles
+    t_band = 0.19                           # snapshot titles
+    g_snap = 0.16                           # snapshots -> time panel
+    ph = 1.45                               # each curve panel
+    g_x = 0.44                              # time panel's x label -> SSA panel
+    bot = 0.40
+    H = top + cb_h + cb_lab + cb_gap + t_band + s_in + g_snap + ph + g_x + ph + bot
+    fig = plt.figure(figsize=(W, H))
+    F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
+
+    y_ssa = bot
+    y_time = y_ssa + ph + g_x
+    y_snap = y_time + ph + g_snap
+    for i, (fl, X, Y, t, _row) in enumerate(snaps):
+        axi = fig.add_axes(F(ml + i * (s_in + gap), y_snap, s_in, s_in))
+        XX, YY = _field(axi, fl, X, Y, norm, vapcm, icecm)
+        if i == 0:
+            _scalebar(axi, XX, YY)
+        axi.set_title(f"({LETTERS[i]}) {t / DAY:.1f} d", fontsize=FS_SMALL,
+                      color=INK, pad=2)
+
+    _marked_panel(fig.add_axes(F(ml, y_time, axw, ph)), "time", snaps, xt, kn,
+                  keys, a)
+    _marked_panel(fig.add_axes(F(ml, y_ssa, axw, ph)), "ssa", snaps, xs, kn,
+                  keys, a)
+    fig.text(0.04 / W, (y_ssa + y_time + ph) / 2 / H,
+             a.ylabel or DEFAULTS["ylabel_norm"], rotation=90, ha="left",
+             va="center", fontsize=FS, color=INK)
+
+    y_cb = y_snap + s_in + t_band + cb_gap + cb_lab
+    lab_ice, lab_sig, sep, tail = 0.22, 0.82, 0.30, 0.14
+    w_ice = 0.30 * (axw - lab_ice - lab_sig - sep - tail)
+    w_sig = axw - lab_ice - lab_sig - sep - tail - w_ice
+    cax_ice = fig.add_axes(F(ml + lab_ice, y_cb, w_ice, cb_h))
+    cax_sig = fig.add_axes(F(ml + lab_ice + w_ice + sep + lab_sig, y_cb, w_sig, cb_h))
+    _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend)
+
+    if not a.no_title:
+        fig.suptitle(a.title_combined or DEFAULTS["title_time"], x=0.5,
+                     y=1.0 - 0.03 / H, ha="center", va="top",
+                     fontsize=FS_TITLE, color=INK)
+    return fig
 
 
 C_CLIP_LO, C_CLIP_HI = "#ffd21f", "#39d353"   # contours: below / above the bar
@@ -613,11 +670,11 @@ def main(argv=None):
             "ssa", snaps, d["ssa"] / d["ssa"][ib], kn,
             keys, norm, vapcm, icecm, sig_extend, a),
     }
-    # Both in one: the time figure over a k(SSA) panel. Always normalized --
-    # the two panels share one y quantity, and SSA is only ever normalized.
-    figs["keff_combined_snapshots"] = build(
-        "time", snaps, d["t"] / DAY, kn, keys, norm, vapcm, icecm, sig_extend,
-        a, below_ssa=(d["ssa"] / d["ssa"][ib], kn))
+    # Both in one, three panels top to bottom: snapshots, k(t), k(SSA).
+    # Always normalized -- the two curve panels share one y quantity.
+    figs["keff_combined_snapshots"] = build_combined(
+        snaps, d["t"] / DAY, d["ssa"] / d["ssa"][ib], kn, keys, norm, vapcm,
+        icecm, sig_extend, a)
     if a.clip_map:
         figs["sigma_out_of_range"] = build_clipmap(snaps, norm, vapcm, icecm,
                                                    sig_extend, a)
