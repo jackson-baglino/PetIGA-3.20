@@ -1,3 +1,14 @@
+## 2026-09-28 — Production packings for the porosity campaign
+
+- Built inputs/packings/keff_LR40/: phi 0.250/0.300/0.325/0.350/0.400 x 5,
+  unique seeds (block i: 100*i + k), all gates incl. y-seam. All 25 passed on
+  the first base seed; seams 0.78-1.10; solid percolates xy in all.
+- Contact-fabric anisotropy grows with porosity: F_xx/F_yy 1.01 (0.25) ->
+  1.14 (0.40); F_xy seed-mean ~0 at every porosity.
+- make_packings.sh + check_packings.py committed (packings_summary.csv).
+
+---
+
 ## 2026-09-28 — k_eff + microstructure snapshot manuscript figure
 
 - New postprocess/plot_keff_snapshots.py: page-width (7.2 in) figures of
