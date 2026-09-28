@@ -139,3 +139,48 @@ venv_enceladus/bin/python studies/rve_anisotropy/figures.py    # rve_anisotropy.
 - **Open, closable from existing data:** L/R = 64 has one sintered packing.
   If the 2026-09-21 rev64 seeds 2–4 (jobs 3264515–3264517) finished, their
   `k_eff.csv` + `SSA_evo.dat` would test the sintered-state RVE directly.
+
+## Follow-up (2026-09-28): fixing the seam
+
+**The proposed 3×3 superdomain was not adopted.** Copying every grain into the
+8 surrounding tiles makes the deposition periodic in y by construction. But
+gravity deposition has a direction, so the stitch doesn't disappear; it moves:
+
+- The images of the FIRST grains deposited sit at y + Ly from the start, as a
+  ceiling.
+- The LAST grains in the centre tile must fill the gap between the rising bed
+  and that fixed ceiling. Gravity cannot place them there cleanly, and the gap
+  they leave is the same contact-poor layer, at the join between the last and
+  the first layers.
+- The first layer also needs a floor, which puts a flat layer right at that
+  join.
+
+x already works this way: deposition wraps sideways, and that is why the
+x boundary shows no defect.
+
+**Adopted: a y-seam acceptance gate** (`--min-seam-contact`, default 0.76, in
+`preprocess/generate_packing_gravity.py`, measured by
+`packing_lib.seam_contact_ratio`).
+
+- **Threshold.** 0.76 is the 10th percentile of the same measure over ordinary
+  interior bands (2059 bands, 29 packings). A seam passes when it is no worse
+  connected than 9 interior bands in 10.
+- **Test.** 12 packings: φ 0.30 / 0.325 / 0.35 / 0.40 × seeds 1–3, L/R 40.
+  - 11 accepted, with seams 0.76–0.99 (previously 0.32–1.06, median 0.72).
+  - Bulk fabric is unchanged: F_xx/F_yy 1.088 ± 0.028 against 1.099 ± 0.053
+    for the earlier packings. The gate selects on the join, not the interior.
+  - Attempts per accepted packing: 2–57. Most rejections also fail the
+    pre-existing void gate; a poorly meshed seam leaves a void along the join,
+    so the two gates see the same defect.
+  - `--max-tries` raised from 24 to 128. A full attempt costs ~3.5 s at L/R 40.
+
+**Seeds are now salted with the porosity** (`_stream`).
+
+- Seeding from the number alone gave seed N the same drop positions and radii
+  at every porosity. The old porosity sweep compared one realization under
+  different rolling budgets: F_xy was positive for seeds 1–3 at every
+  φ ≥ 0.40.
+- With the salt, F_xy of the 11 test packings is −0.0001 ± 0.008 (5 of 11
+  positive).
+- Packings made before this change are not reproduced by the new code; their
+  `grains.dat` is the record. `metadata.json` now carries `rng_stream`.

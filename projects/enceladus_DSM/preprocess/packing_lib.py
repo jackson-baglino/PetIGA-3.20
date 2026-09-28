@@ -613,6 +613,45 @@ def accept_reasons(meta, max_void_ratio, max_density_cv, require_percolation=Tru
     return bad
 
 
+def seam_contact_ratio(centres, radii, Lx, Ly, band, n_lines=256):
+    """Contact density across the y seam, relative to the interior.
+
+    For n_lines horizontal lines y = c, count the contacts (gap <= band) whose
+    centre-to-centre segment crosses the line, per unit length. Return the mean
+    over lines within one mean radius of the seam y = 0 = Ly, divided by the mean
+    over all other lines. 1.0 means the seam is as well connected as the bulk.
+
+    WHY THIS EXISTS. x is periodic because deposition itself wraps sideways, so
+    the x boundary is ordinary bed. y is periodic only by construction: the
+    window's bottom is identified with its top, overlaps along that line are
+    relaxed apart, and gaps are left. Over the 29 xy packings at L/R >= 38 on
+    disk (2026-09-28, studies/rve_anisotropy/) the seam carried 0.72 of the
+    interior contact density (median; 0.32-1.06), against 1.02 for an interior
+    band of the same 2R width. A contact-poor layer is in series with vertical
+    heat flow and lowers k_yy -- by at most ~3% typical and ~9% worst at L/R 40.
+    Both axes must be periodic; returns None otherwise.
+    """
+    b = delaunay_bonds(centres, Lx, Ly, True, True)
+    if len(b) == 0:
+        return None
+    i, j = b[:, 0], b[:, 1]
+    v = centres[j] + b[:, 2:4] * np.array([Lx, Ly]) - centres[i]
+    gap = np.hypot(v[:, 0], v[:, 1]) - (radii[i] + radii[j])
+    k = gap <= band
+    y0 = centres[i[k], 1]
+    y1 = y0 + v[k, 1]
+    lo, hi = np.minimum(y0, y1), np.maximum(y0, y1)
+    lines = (np.arange(n_lines) + 0.5) * Ly / n_lines
+    cross = np.zeros(n_lines)
+    for s in (-Ly, 0.0, Ly):                      # a segment may straddle the wrap
+        cross += ((lo[None, :] < lines[:, None] + s) &
+                  (hi[None, :] > lines[:, None] + s)).sum(1)
+    R = float(np.mean(radii))
+    seam = (lines < R) | (lines > Ly - R)
+    interior = cross[~seam].mean()
+    return float(cross[seam].mean() / interior) if interior > 0 else None
+
+
 # =========================================================================
 # Output
 # =========================================================================

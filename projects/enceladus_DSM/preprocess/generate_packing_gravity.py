@@ -166,9 +166,31 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import packing_lib as pl                                          # noqa: E402
 
 
+# Diffuse band 9.2*eps at the campaign's eps = R_ave/50, in mean radii. Used for
+# the seam gate when --band-per-mean-r is not given.
+SEAM_BAND_PER_R = 9.2 / 50.0
+
+
+def _stream(seed, porosity, salt=0):
+    """The random stream for one attempt, salted with the TARGET porosity.
+
+    Seeding from the seed number alone made "seed 1" draw the same drop
+    positions and radii at every porosity, so a porosity sweep compared the
+    same realization under different rolling budgets -- correlated packings
+    rather than independent samples (the 2026-09 packing_design sweep:
+    F_xy was positive for seeds 1-3 at every phi >= 0.40, which is one draw
+    seen three times). Salting with the porosity makes seed N at phi A and seed
+    N at phi B independent, while keeping every packing reproducible from
+    (seed, porosity). Packings written before 2026-09-28 used the unsalted
+    stream and are not reproduced by this code; their grains.dat are the record.
+    """
+    return np.random.default_rng([int(seed), int(round(porosity * 1e6)), int(salt)])
+
+
 # =========================================================================
 # Drop-and-roll deposition
 # =========================================================================
+
 
 def _rest_height(x, r, cen, rad, Lx, px):
     """Highest resting position for a grain of radius r released at x.
@@ -611,7 +633,7 @@ def deposit_at_porosity(seed, a, px, py, want, verbose=True):
     strip_h = a.Ly + 2.0 * margin
 
     def attempt(rt):
-        rng = np.random.default_rng(seed)
+        rng = _stream(seed, a.porosity)
         # DEPOSITION ALWAYS WRAPS IN X, whatever the output periodicity. The
         # bed being modelled is wide and the domain is a window cut from it, so
         # a strip with free sides is a generator artifact, not a microstructure
@@ -669,7 +691,7 @@ def deposit_at_porosity(seed, a, px, py, want, verbose=True):
 
 def build_once(seed, a, px, py, verbose=True):
     """One full attempt: deposit to porosity, fill, seam-heal, grade."""
-    rng = np.random.default_rng(seed + 7919)      # fillers get their own stream
+    rng = _stream(seed, a.porosity, salt=7919)    # fillers get their own stream
     want = min(a.porosity + a.fill_margin, 0.52)
 
     cen, rad, roll_tol, skeleton_porosity, strip = deposit_at_porosity(
@@ -727,6 +749,13 @@ def build_once(seed, a, px, py, verbose=True):
         "roll_tol_rad": roll_tol,
         "skeleton_porosity": skeleton_porosity,
         "seam_max_shift_m": seam_shift,
+        # Contact density across the stitched y seam over the interior's
+        # (packing_lib.seam_contact_ratio). Measured at the band the solver
+        # joins with ice, 9.2*eps: --band-per-mean-r if given, else the
+        # campaign's eps = R_ave/50.
+        "seam_contact_ratio": (pl.seam_contact_ratio(
+            cen, rad, a.Lx, a.Ly, (a.band_per_mean_r or SEAM_BAND_PER_R) * a.mean_r)
+            if (px and py) else None),
         "mean_r_m_realized": float(rad.mean()),
         "min_r_m": float(rad.min()), "max_r_m": float(rad.max()),
     })
@@ -805,16 +834,25 @@ def main(argv=None):
                    help="reject if achieved porosity misses the target by more "
                         "than this (default 0.01). The target is the point of "
                         "the exercise, so it is gated like the rest.")
+    p.add_argument("--min-seam-contact", dest="min_seam_contact", type=float,
+                   default=0.76,
+                   help="reject a --periodic xy packing whose y seam carries less "
+                        "than this fraction of the interior contact density "
+                        "(default 0.76, the 10th percentile of interior bands; "
+                        "0 disables). See packing_lib.seam_contact_ratio")
     p.add_argument("--no-percolation-gate", dest="percolation_gate",
                    action="store_false",
                    help="do not require the solid to percolate in both axes")
-    p.add_argument("--max-tries", dest="max_tries", type=int, default=24,
-                   help="re-seed this many times before giving up (default 24). "
+    p.add_argument("--max-tries", dest="max_tries", type=int, default=128,
+                   help="re-seed this many times before giving up (default 128). "
                         "Passing the gate is a per-seed lottery and the odds "
                         "worsen with porosity: at phi 0.40 a loose bed forms "
                         "vertical chains easily but a horizontal path across "
                         "the full width often fails, and one sweep needed 14 "
-                        "attempts. An attempt costs ~0.15 s at 2 mm.")
+                        "attempts. Raised from 24 to 128 with the y-seam gate "
+                        "(2026-09-28): with the void gate, phi 0.30-0.325 "
+                        "needed up to 57 attempts in a 12-packing test. A full "
+                        "attempt (bisection + fill) costs ~3.5 s at L/R 40.")
 
     p.add_argument("--band-per-mean-r", dest="band_per_mean_r", type=float,
                    default=None,
@@ -870,6 +908,7 @@ def main(argv=None):
         print(f"  attempt {attempt + 1}/{a.max_tries} (seed {seed})", file=sys.stderr)
         cen, rad, meta = build_once(seed, a, px, py)
         meta["seed"] = seed
+        meta["rng_stream"] = [int(seed), int(round(a.porosity * 1e6))]
         meta["attempt"] = attempt + 1
         meta["porosity_achieved"] = meta["porosity_raster"]
         bad = pl.accept_reasons(meta, a.max_void_ratio, a.max_density_cv,
@@ -882,6 +921,17 @@ def main(argv=None):
         if d_phi > a.porosity_tol:
             bad.append(f"porosity {meta['porosity_achieved']:.4f} misses target "
                        f"{a.porosity:.4f} by {d_phi:.4f} > {a.porosity_tol}")
+        # THE Y SEAM GATE. See packing_lib.seam_contact_ratio for why the seam
+        # is a contact-poor layer. The threshold is the 10th percentile of the
+        # same measure over ordinary INTERIOR bands (0.76, from 2059 bands in
+        # 29 packings), so a seam passes when it is no worse connected than
+        # nine interior bands in ten -- indistinguishable from the bulk, rather
+        # than required to be better than it. Rejecting is on the join only,
+        # ~5% of the cell at L/R 40, so it does not select the bulk.
+        sr = meta.get("seam_contact_ratio")
+        if a.min_seam_contact > 0 and sr is not None and sr < a.min_seam_contact:
+            bad.append(f"y-seam contact density {sr:.2f} of interior "
+                       f"< {a.min_seam_contact:.2f}")
         if meta["half_domain_asymmetry"] > a.max_asymmetry:
             bad.append(f"half-domain asymmetry "
                        f"{meta['half_domain_asymmetry'] * 100:.1f}% "
