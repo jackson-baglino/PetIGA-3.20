@@ -45,8 +45,8 @@ figure instead; the SSA figure is always normalized on both axes.
 
 ONLY MEASURED SAMPLES. k_eff and SSA are paired by step (plot_keff.load
 drops a k_eff sample with no SSA row rather than borrowing a neighbour's),
-and the SSA figure plots the samples as points, with no line joining them.
-Snapshots are only taken at steps that have a k_eff sample, so every marker
+and every curve runs from the first measured sample to the last -- nothing
+is extrapolated past the range the simulation covered. Snapshots are only taken at steps that have a k_eff sample, so every marker
 sits on a measured value.
 
 Y AXIS. The axis runs the full height of the axes, down behind the insets,
@@ -188,17 +188,13 @@ def _scalebar(ax, XX, YY):
     t.set_bbox(dict(facecolor="white", alpha=0.75, lw=0, pad=0.8))
 
 
-def _curve(ax, x, ys, keys, points):
-    """k series. points=True draws each measured sample as a dot with no
-    joining line."""
+def _curve(ax, x, ys, keys):
+    """k series, from the first measured sample to the last."""
     lw = {"kxx": 1.0, "kyy": 1.0, "kiso": 1.8}
-    ms = {"kxx": 1.6, "kyy": 1.6, "kiso": 2.4}
     col = {"kxx": C_XX, "kyy": C_YY, "kiso": C_ISO}
     lab = {"kxx": r"$k_{xx}$", "kyy": r"$k_{yy}$", "kiso": r"$k_\mathrm{iso}$"}
     for key in keys:
-        style = dict(ls="none", marker="o", ms=ms[key], mew=0) if points \
-            else dict(ls="-", lw=lw[key])
-        ax.plot(x, ys[key], color=col[key], zorder=2, label=lab[key], **style)
+        ax.plot(x, ys[key], "-", lw=lw[key], color=col[key], zorder=2, label=lab[key])
     ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
@@ -270,7 +266,7 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
 
     ax = fig.add_axes(F(ml, bot, axw, axh))
     ax.patch.set_alpha(0.0)
-    _curve(ax, x, ys, keys, points=(kind == "ssa"))
+    _curve(ax, x, ys, keys)
 
     ax.set_ylim(ybot, ytop)
     ax.yaxis.set_major_locator(MaxNLocator(6, steps=[1, 2, 2.5, 5, 10]))
@@ -295,7 +291,7 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
     else:
         where = dict(loc="upper right", bbox_to_anchor=(1.0, 0.93))
     ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.6, ncol=len(keys),
-              markerscale=2.5 if kind == "ssa" else 1.0, columnspacing=1.2,
+              columnspacing=1.2,
               **where)
     if kind == "ssa":
         # SSA falls as the packing sinters, so time runs right to left.
