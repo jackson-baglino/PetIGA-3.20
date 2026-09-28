@@ -105,7 +105,7 @@ INK, MUTED = "#1a1a1a", "#5c5c5c"
 # (--width-mm) and saved without cropping, so nothing is rescaled on the page.
 FS_TITLE, FS, FS_SMALL, FS_TINY = 11, 10, 9, 8
 MM = 1.0 / 25.4
-DATA_MIN_IN = 1.3                   # least height [in] the curve may occupy
+DATA_MIN_IN = 1.1                   # least height [in] the curve may occupy
 
 DEFAULTS = {
     "title_time": "Effective thermal conductivity during dry-snow metamorphism",
@@ -257,12 +257,12 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
     W = a.width_mm * MM
     ml, mr = 0.50, 0.08            # y label + ticks | right edge
     axw = W - ml - mr
-    padx, pady = 0.05, 0.05        # insets <-> axes frame
-    gap = 0.08                     # between insets
+    padx, pady = 0.04, 0.04        # insets <-> axes frame
+    gap = 0.06                     # between insets
     s_in = (axw - 2 * padx - (n - 1) * gap) / n
-    t_band = 0.21                  # inset titles
-    lead = 0.30                    # inset titles -> data band, for the leaders
-    head = 0.14                    # headroom for the marker letters
+    t_band = 0.18                  # inset titles
+    lead = 0.16                    # inset titles -> data band, for the leaders
+    head = 0.09                    # headroom for the top marker
     below = pady + s_in + t_band + lead          # inset band, in inches
 
     yv = np.concatenate([ys[k] for k in keys])
@@ -277,9 +277,9 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
         ybot = ymin - (ymax - ymin) * below / band
     axh = below + band + head
     ytop = ymax + (ymax - ybot) * head / (below + band)
-    cb_h, cb_lab, cb_gap = 0.07, 0.17, 0.10     # bar | its tick labels | to axes
+    cb_h, cb_lab, cb_gap = 0.07, 0.15, 0.04     # bar | its tick labels | to axes
     strip = cb_h + cb_lab + cb_gap
-    top = 0.30 if not a.no_title else 0.05
+    top = 0.24 if not a.no_title else 0.03
     bot = 0.40
     H = top + strip + axh + bot
     fig = plt.figure(figsize=(W, H))
@@ -310,16 +310,16 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
     if kind == "time":
         where = dict(loc="lower left", bbox_to_anchor=(0.05, f0 + 0.01))
     else:
-        where = dict(loc="upper right", bbox_to_anchor=(1.0, 0.93))
+        where = dict(loc="upper right", bbox_to_anchor=(1.0, 0.90))
     ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.4, ncol=len(keys),
               columnspacing=1.0, handletextpad=0.5,
               **where)
     if kind == "ssa":
         # SSA falls as the packing sinters, so time runs right to left.
-        ax.annotate("", xy=(0.40, 0.985), xytext=(0.56, 0.985),
+        ax.annotate("", xy=(0.40, 0.955), xytext=(0.56, 0.955),
                     xycoords="axes fraction",
                     arrowprops=dict(arrowstyle="->", color=MUTED, lw=0.9))
-        ax.text(0.57, 0.985, "time", transform=ax.transAxes, va="center",
+        ax.text(0.57, 0.955, "time", transform=ax.transAxes, va="center",
                 fontsize=FS_SMALL, color=MUTED)
 
     xlabel = (a.xlabel_time or DEFAULTS["xlabel_time"]) if kind == "time" \
@@ -352,7 +352,7 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
         con = ConnectionPatch(xyA=(0.5, 1.0), coordsA=axi.transAxes,
                               xyB=(px, py), coordsB=ax.transData,
                               color="#a0a0a0", lw=0.6, ls=(0, (3, 2)),
-                              zorder=3, shrinkA=13, shrinkB=6)
+                              zorder=3, shrinkA=12, shrinkB=6)
         fig.add_artist(con)
 
     # Colour bars: phi_i then sigma, left to right across the axes' width.
@@ -368,7 +368,7 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
     if not a.no_title:
         title = (a.title_time or DEFAULTS["title_time"]) if kind == "time" \
             else (a.title_ssa or DEFAULTS["title_ssa"])
-        fig.suptitle(title, x=0.5, y=1.0 - 0.05 / H,
+        fig.suptitle(title, x=0.5, y=1.0 - 0.03 / H,
                      ha="center", va="top", fontsize=FS_TITLE, color=INK)
     return fig
 

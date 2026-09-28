@@ -4,6 +4,7 @@
   only the clipped side carries an extend triangle (percentile clip removed).
 - phi_i bar spans the full [0, 1] ice map.
 - Figures saved with a transparent background (PNG + PDF).
+- Tightened spacing (mostly vertical): 111 -> 99 mm tall at 130 mm wide.
 
 ---
 
