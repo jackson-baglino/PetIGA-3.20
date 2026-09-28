@@ -1,3 +1,16 @@
+## 2026-09-28 — Seam gate and porosity-salted seeds in the packing generator
+
+- Evaluated the user's 3x3-superdomain idea: gravity deposition is
+  directional, so y-periodicity by image-copying only moves the stitch to the
+  last/first-layer join. Not adopted.
+- Added --min-seam-contact (0.76, the interior-band 10th percentile) and
+  packing_lib.seam_contact_ratio. 12-packing test: 11 accepted, seams
+  0.76-0.99, bulk fabric unchanged. --max-tries 24 -> 128.
+- RNG now salted with target porosity (user's request): seed N is independent
+  across porosities; F_xy seed-mean now ~0.
+
+---
+
 ## 2026-09-28 — RVE and anisotropy check from existing data
 
 - New studies/rve_anisotropy/: geometry.py (contact fabric + y-seam contact
