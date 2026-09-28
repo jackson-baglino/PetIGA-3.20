@@ -1,3 +1,14 @@
+## 2026-09-28 — Snapshot figure opens on the t >= 1 s frame; full y axis
+
+- plot_keff_snapshots.py: curve and panel (a) start at the movies' opening
+  frame (pplib.opening_step: forced t = 1 s output; 71 s on this batch), and
+  everything is normalized there (k_eff,0, SSA_0). The first-day rise is drawn
+  as ordinary data, unannotated. --baseline-days / --show-relaxation removed.
+- y axis now runs the full height behind the insets (from 0 when the data
+  keeps >= 1.3 in of height), so the snapshots read as on the plot.
+
+---
+
 ## 2026-09-28 — Snapshot figure: insets under the curve, measured samples only
 
 - plot_keff_snapshots.py: snapshots now inset along the bottom of the curve's
