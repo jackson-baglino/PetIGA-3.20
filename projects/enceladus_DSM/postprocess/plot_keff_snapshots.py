@@ -220,10 +220,12 @@ def _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend):
         cax.text(-0.06, 0.5, text, transform=cax.transAxes, ha="right",
                  va="center", fontsize=FS_SMALL, color=INK)
 
-    ice_lut = ListedColormap(cmocean.cm.ice(np.linspace(0.5, 1.0, 256)))
-    cb = fig.colorbar(ScalarMappable(cmap=ice_lut, norm=plt.Normalize(0.5, 1.0)),
+    # The full [0, 1] ice map. The panels paint ice only where phi >= 0.5
+    # (below that the vapour shows through), so the dark lower half of the
+    # bar is not seen in them; it is the phase field's full range.
+    cb = fig.colorbar(ScalarMappable(cmap=cmocean.cm.ice, norm=plt.Normalize(0.0, 1.0)),
                       cax=cax_ice, orientation="horizontal",
-                      ticks=[0.5, 0.75, 1.0], format="%g")
+                      ticks=[0.0, 0.5, 1.0], format="%g")
     _label(cax_ice, r"$\phi_i$")
     cb.ax.tick_params(labelsize=FS_TINY, width=0.5, length=2, pad=1.5)
     cb.outline.set_linewidth(0.5)

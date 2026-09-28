@@ -1,3 +1,11 @@
+## 2026-09-28 — Snapshot figure colour bars: sigma centred on 0, phi_i 0-1
+
+- sigma bar now +-min(|min|, |max|) over the shown pores, so 0 is centred;
+  only the clipped side carries an extend triangle (percentile clip removed).
+- phi_i bar spans the full [0, 1] ice map.
+
+---
+
 ## 2026-09-28 — Snapshot figure built at 130 mm with print-size type
 
 - plot_keff_snapshots.py: --width-mm (default 130) replaces --width; the
