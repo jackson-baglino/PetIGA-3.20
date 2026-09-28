@@ -98,7 +98,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import AsinhNorm, ListedColormap
 from matplotlib.cm import ScalarMappable
-from matplotlib.patches import ConnectionPatch
+from matplotlib.patches import ConnectionPatch, FancyArrowPatch
 from matplotlib.ticker import MaxNLocator
 import cmocean
 
@@ -227,6 +227,61 @@ def _curve(ax, x, ys, keys):
         ax.spines[sp].set_linewidth(0.6)
 
 
+def _mark(ax, x, y, letter):
+    """A snapshot's letter on the curve, inside a white circle. The letter is
+    set exactly like the snapshot titles' "(a)" -- same size, regular weight
+    -- so the two read as the same label."""
+    ax.plot([x], [y], "o", ms=11.5, mfc="white", mec=INK, mew=0.9, zorder=6)
+    ax.text(x, y, letter, ha="center", va="center_baseline", fontsize=FS_SMALL,
+            color=INK, zorder=7)
+
+
+def _time_arrow(ax, x, y, s0=0.14, s1=0.40, off_pt=8.0, rad=0.1):
+    """A curved arrow beside the curve, pointing the way the data move as
+    time increases.
+
+    Against SSA the curve runs right to left in time, so a horizontal arrow
+    in a corner said "time goes left" but not along what. This one is laid
+    along the curve itself: its ends are the curve's points at fractions
+    s0 and s1 of its drawn ARC LENGTH (from the t = 0 end, in display space,
+    so the placement does not depend on the axis units), shifted off_pt
+    points to the curve's upper side, and bowed away from it. Samples are
+    in time order, so s0 -> s1 is the direction of increasing time.
+
+    Call it after the axis limits are final: the positions are computed in
+    display space and stored in data coordinates.
+    """
+    fig = ax.figure
+    P = ax.transData.transform(np.column_stack([x, y]))
+    seg = np.hypot(*np.diff(P, axis=0).T)
+    L = np.concatenate([[0.0], np.cumsum(seg)])
+    if L[-1] <= 0:
+        return
+    i0 = int(np.searchsorted(L, s0 * L[-1]))
+    i1 = int(np.searchsorted(L, s1 * L[-1]))
+    if i1 <= i0:
+        return
+    A, B = P[i0], P[i1]
+    d = (B - A) / np.hypot(*(B - A))
+    nrm = np.array([-d[1], d[0]])
+    if nrm[1] < 0:                    # the upper side of the curve
+        nrm = -nrm
+    off = off_pt * fig.dpi / 72.0
+    inv = ax.transData.inverted()
+    A2, B2 = inv.transform(A + nrm * off), inv.transform(B + nrm * off)
+    # rad > 0 bows the arc toward +nrm, away from the curve (checked on the
+    # rendered figure: the opposite sign bends it back across the data).
+    ax.add_patch(FancyArrowPatch(A2, B2, connectionstyle=f"arc3,rad={rad}",
+                                 arrowstyle="-|>", mutation_scale=9, lw=0.9,
+                                 color=MUTED, zorder=5, shrinkA=0, shrinkB=0))
+    # "time" just outside the arc's apex (the apex sits rad * chord off the
+    # chord's midpoint).
+    mid = 0.5 * (A + B) + nrm * (off + abs(rad) * np.hypot(*(B - A))
+                                 + 6.0 * fig.dpi / 72.0)
+    ax.text(*inv.transform(mid), "time", ha="center", va="center",
+            fontsize=FS_SMALL, color=MUTED, zorder=5)
+
+
 def _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend):
     """Two horizontal bars in a strip above the axes, each labelled on its
     left. Horizontal because at 130 mm a vertical pair beside the axes would
@@ -320,22 +375,18 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
                 zorder=0)
     # One row, where neither curve nor leader runs: under the curve at the
     # left of the time figure (leader (a) stays below the band's floor), and
-    # top right on the SSA figure, where the curve has already fallen away.
+    # under the curve at the left of the SSA figure, where it is highest --
+    # the upper right is kept for the time arrow.
     f0 = below / axh
     if kind == "time":
         where = dict(loc="lower left", bbox_to_anchor=(0.05, f0 + 0.01))
     else:
-        where = dict(loc="upper right", bbox_to_anchor=(1.0, 0.90))
+        where = dict(loc="lower left", bbox_to_anchor=(0.02, f0 + 0.01))
     ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.4, ncol=len(keys),
               columnspacing=1.0, handletextpad=0.5,
               **where)
     if kind == "ssa":
-        # SSA falls as the packing sinters, so time runs right to left.
-        ax.annotate("", xy=(0.40, 0.955), xytext=(0.56, 0.955),
-                    xycoords="axes fraction",
-                    arrowprops=dict(arrowstyle="->", color=MUTED, lw=0.9))
-        ax.text(0.57, 0.955, "time", transform=ax.transAxes, va="center",
-                fontsize=FS_SMALL, color=MUTED)
+        _time_arrow(ax, x, ys["kiso"])
 
     xlabel = (a.xlabel_time or DEFAULTS["xlabel_time"]) if kind == "time" \
         else (a.xlabel_ssa or DEFAULTS["xlabel_ssa"])
@@ -360,9 +411,7 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
         px, py = x[row], ymark[row]
         # The letter sits INSIDE the marker: beside it, it lands on k_xx or
         # k_yy, which run within a few percent of k_iso.
-        ax.plot([px], [py], "o", ms=10, mfc="white", mec=INK, mew=0.9, zorder=6)
-        ax.text(px, py, L, ha="center", va="center", fontsize=FS_TINY,
-                color=INK, fontweight="bold", zorder=7)
+        _mark(ax, px, py, L)
         # From just above the inset's title to just below the marker's letter.
         con = ConnectionPatch(xyA=(0.5, 1.0), coordsA=axi.transAxes,
                               xyB=(px, py), coordsB=ax.transData,
@@ -407,10 +456,7 @@ def _marked_panel(ax, kind, snaps, x, ys, keys, a):
     ax.set_ylabel(a.ylabel or DEFAULTS["ylabel_norm"], fontsize=FS, labelpad=3)
     ymark = ys["kiso"]
     for i, (_fl, _X, _Y, _t, row) in enumerate(snaps):
-        ax.plot([x[row]], [ymark[row]], "o", ms=10, mfc="white", mec=INK,
-                mew=0.9, zorder=6)
-        ax.text(x[row], ymark[row], LETTERS[i], ha="center", va="center",
-                fontsize=FS_TINY, color=INK, fontweight="bold", zorder=7)
+        _mark(ax, x[row], ymark[row], LETTERS[i])
     if kind == "time":
         # The curve rises left to right, so the lower right is empty.
         ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.4,
@@ -419,12 +465,7 @@ def _marked_panel(ax, kind, snaps, x, ys, keys, a):
         ax.set_xlabel(a.xlabel_time or DEFAULTS["xlabel_time"], fontsize=FS,
                       labelpad=2)
     else:
-        # SSA falls as the packing sinters, so time runs right to left.
-        ax.annotate("", xy=(0.40, 0.92), xytext=(0.56, 0.92),
-                    xycoords="axes fraction",
-                    arrowprops=dict(arrowstyle="->", color=MUTED, lw=0.9))
-        ax.text(0.57, 0.92, "time", transform=ax.transAxes, va="center",
-                fontsize=FS_SMALL, color=MUTED)
+        _time_arrow(ax, x, ys["kiso"])
         ax.set_xlabel(a.xlabel_ssa or DEFAULTS["xlabel_ssa"], fontsize=FS,
                       labelpad=2)
 

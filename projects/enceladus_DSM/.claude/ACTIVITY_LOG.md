@@ -1,3 +1,14 @@
+## 2026-09-28 — Snapshot figures: curved time arrow, matched letters
+
+- SSA curves: the horizontal corner "time" arrow replaced by a curved arrow
+  laid along the k_iso curve (placed by arc length, offset to the curve's
+  upper side, pointing the way time runs). SSA figure's legend moved to the
+  empty lower left.
+- Marker letters now set like the snapshot titles (9 pt regular, not 8 pt
+  bold), via one _mark helper.
+
+---
+
 ## 2026-09-28 — Production submit script and campaign to-do list
 
 - scripts/HPC/submit_keff_production.sh: the only submit path for manuscript
