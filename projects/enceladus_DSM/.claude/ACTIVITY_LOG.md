@@ -1,3 +1,14 @@
+## 2026-09-28 — Snapshot figure built at 130 mm with print-size type
+
+- plot_keff_snapshots.py: --width-mm (default 130) replaces --width; the
+  figure is built at final size and saved WITHOUT bbox tight so the file is
+  exactly that wide. Type: 11 title / 10 labels / 9 ticks+legend / 8 minimum.
+- Colour bars moved to a horizontal strip above the axes so the insets keep
+  ~1 in each at this width. SSA figure back to curves (user meant no
+  extrapolation, not no interpolation).
+
+---
+
 ## 2026-09-28 — Even porosity set, deposition movie, batch 3 set up
 
 - Packings rebuilt at phi 0.275/0.325/0.375/0.425/0.475 x 5 (user: evenly

@@ -2,7 +2,7 @@
 """plot_keff_snapshots.py — k_eff curve with microstructure snapshots inset.
 
     python3 plot_keff_snapshots.py --dir <run> [--times 1 10 20 30] [--steps ...]
-        [--n-snapshots 4] [--width 7.2] [--absolute] [--iso-only]
+        [--n-snapshots 4] [--width-mm 130] [--absolute] [--iso-only]
         [--title-time STR] [--title-ssa STR] [--no-title]
         [--xlabel-time STR] [--xlabel-ssa STR] [--ylabel STR]
         [--source vts|sol] [--save-dir DIR] [--formats pdf png]
@@ -94,7 +94,10 @@ WANT = ("IcePhase", "VaporDensity", "Temperature")
 SOL_DOF = {"IcePhase": 0, "Temperature": 1, "VaporDensity": 2}
 LETTERS = "abcdefgh"
 INK, MUTED = "#1a1a1a", "#5c5c5c"
-FS, FS_SMALL = 9, 8                 # page-width figure: 8-9 pt at print size
+# Type sizes are PRINT sizes: the figure is built at its final width
+# (--width-mm) and saved without cropping, so nothing is rescaled on the page.
+FS_TITLE, FS, FS_SMALL, FS_TINY = 11, 10, 9, 8
+MM = 1.0 / 25.4
 DATA_MIN_IN = 1.3                   # least height [in] the curve may occupy
 
 DEFAULTS = {
@@ -184,7 +187,7 @@ def _scalebar(ax, XX, YY):
                 zorder=5)
     txt = f"{L * 1e3:g} µm" if L < 1 else f"{L:g} mm"
     t = ax.text(x0 + L / 2, y0 + 0.025 * Lx, txt, ha="center", va="bottom",
-                fontsize=FS_SMALL - 1, color=INK, zorder=5)
+                fontsize=FS_TINY, color=INK, zorder=5)
     t.set_bbox(dict(facecolor="white", alpha=0.75, lw=0, pad=0.8))
 
 
@@ -195,7 +198,7 @@ def _curve(ax, x, ys, keys):
     lab = {"kxx": r"$k_{xx}$", "kyy": r"$k_{yy}$", "kiso": r"$k_\mathrm{iso}$"}
     for key in keys:
         ax.plot(x, ys[key], "-", lw=lw[key], color=col[key], zorder=2, label=lab[key])
-    ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3)
+    ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3, pad=2)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
     for sp in ("left", "bottom"):
@@ -203,31 +206,38 @@ def _curve(ax, x, ys, keys):
 
 
 def _colorbars(fig, cax_ice, cax_sig, norm, vapcm):
-    """Two slim bars, each titled with its symbol so no rotated label is needed."""
+    """Two horizontal bars in a strip above the axes, each labelled on its
+    left. Horizontal because at 130 mm a vertical pair beside the axes would
+    cost the insets a quarter of their width."""
+    def _label(cax, text):
+        cax.text(-0.06, 0.5, text, transform=cax.transAxes, ha="right",
+                 va="center", fontsize=FS_SMALL, color=INK)
+
     ice_lut = ListedColormap(cmocean.cm.ice(np.linspace(0.5, 1.0, 256)))
     cb = fig.colorbar(ScalarMappable(cmap=ice_lut, norm=plt.Normalize(0.5, 1.0)),
-                      cax=cax_ice, ticks=[0.5, 0.75, 1.0], format="%g")
-    cax_ice.set_title(r"$\phi_i$", fontsize=FS, pad=4)
-    cb.ax.tick_params(labelsize=FS_SMALL - 1, width=0.5, length=2)
+                      cax=cax_ice, orientation="horizontal",
+                      ticks=[0.5, 0.75, 1.0], format="%g")
+    _label(cax_ice, r"$\phi_i$")
+    cb.ax.tick_params(labelsize=FS_TINY, width=0.5, length=2, pad=1.5)
     cb.outline.set_linewidth(0.5)
 
+    # Thinned harder than the vertical bar did: horizontally each label is
+    # as wide as three or four characters, not as tall as one.
     cb = fig.colorbar(ScalarMappable(cmap=vapcm, norm=norm), cax=cax_sig,
-                      ticks=sigma_ticks(norm, min_gap=0.09), extend="both",
-                      extendfrac=0.04)
-    # Left-aligned: centred, it would run back over the ice bar's ticks.
-    cax_sig.set_title(r"$\sigma$ [$\times10^{-4}$]", fontsize=FS_SMALL, pad=4,
-                      loc="left")
-    cb.ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _p: f"{v:.2g}"))
-    cb.ax.tick_params(labelsize=FS_SMALL - 1, width=0.5, length=2)
+                      orientation="horizontal", extend="both", extendfrac=0.04,
+                      ticks=sigma_ticks(norm, min_gap=0.16))
+    _label(cax_sig, r"$\sigma$ [$\times10^{-4}$]")
+    cb.ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, _p: f"{v:.2g}"))
+    cb.ax.tick_params(labelsize=FS_TINY, width=0.5, length=2, pad=1.5)
     cb.outline.set_linewidth(0.5)
 
 
 def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
     """One figure. `snaps` is [(fields, X, Y, t, row)] in time order.
 
-    Laid out in INCHES: the insets must be square, sit in a band along the
-    bottom of the curve's own axes, and line up with the colour bars beside
-    it. The data sits in the band ABOVE the insets; the y axis runs on down
+    Laid out in INCHES at the final print width: the insets must be square
+    and sit in a band along the bottom of the curve's own axes, with the
+    colour bars in a strip above. The data sits in the band ABOVE the insets; the y axis runs on down
     behind them, so the snapshots read as drawn on the plot.
 
     The axes height follows from the y range: with y starting at 0, the
@@ -235,14 +245,14 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
     inset band has to fit in the rest.
     """
     n = len(snaps)
-    W = a.width
-    ml, mr = 0.62, 1.00            # y label | colour-bar strip
+    W = a.width_mm * MM
+    ml, mr = 0.50, 0.08            # y label + ticks | right edge
     axw = W - ml - mr
-    padx, pady = 0.06, 0.06        # insets <-> axes frame
-    gap = 0.16                     # between insets
+    padx, pady = 0.05, 0.05        # insets <-> axes frame
+    gap = 0.08                     # between insets
     s_in = (axw - 2 * padx - (n - 1) * gap) / n
-    t_band = 0.20                  # inset titles
-    lead = 0.34                    # inset titles -> data band, for the leaders
+    t_band = 0.21                  # inset titles
+    lead = 0.30                    # inset titles -> data band, for the leaders
     head = 0.14                    # headroom for the marker letters
     below = pady + s_in + t_band + lead          # inset band, in inches
 
@@ -258,9 +268,11 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
         ybot = ymin - (ymax - ymin) * below / band
     axh = below + band + head
     ytop = ymax + (ymax - ybot) * head / (below + band)
-    top = 0.34 if not a.no_title else 0.06
-    bot = 0.46
-    H = top + axh + bot
+    cb_h, cb_lab, cb_gap = 0.07, 0.17, 0.10     # bar | its tick labels | to axes
+    strip = cb_h + cb_lab + cb_gap
+    top = 0.30 if not a.no_title else 0.05
+    bot = 0.40
+    H = top + strip + axh + bot
     fig = plt.figure(figsize=(W, H))
     F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
 
@@ -290,8 +302,8 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
         where = dict(loc="lower left", bbox_to_anchor=(0.05, f0 + 0.01))
     else:
         where = dict(loc="upper right", bbox_to_anchor=(1.0, 0.93))
-    ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.6, ncol=len(keys),
-              columnspacing=1.2,
+    ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.4, ncol=len(keys),
+              columnspacing=1.0, handletextpad=0.5,
               **where)
     if kind == "ssa":
         # SSA falls as the packing sinters, so time runs right to left.
@@ -305,8 +317,8 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
         else (a.xlabel_ssa or DEFAULTS["xlabel_ssa"])
     ylabel = a.ylabel or (DEFAULTS["ylabel_norm"] if normalized
                           else DEFAULTS["ylabel_abs"])
-    ax.set_xlabel(xlabel, fontsize=FS)
-    ax.set_ylabel(ylabel, fontsize=FS)
+    ax.set_xlabel(xlabel, fontsize=FS, labelpad=2)
+    ax.set_ylabel(ylabel, fontsize=FS, labelpad=3)
 
     # Insets in the order their markers fall along x, so no leader crosses
     # another: time order on the time figure, reversed on the SSA figure.
@@ -320,30 +332,35 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
         if slot == 0:
             _scalebar(axi, XX, YY)
         L = LETTERS[i]
-        axi.set_title(f"({L})  t = {t / DAY:.1f} d", fontsize=FS, color=INK, pad=3)
+        axi.set_title(f"({L}) {t / DAY:.1f} d", fontsize=FS_SMALL, color=INK, pad=2)
         px, py = x[row], ymark[row]
         # The letter sits INSIDE the marker: beside it, it lands on k_xx or
         # k_yy, which run within a few percent of k_iso.
-        ax.plot([px], [py], "o", ms=11, mfc="white", mec=INK, mew=1.0, zorder=6)
-        ax.text(px, py, L, ha="center", va="center", fontsize=FS_SMALL - 1,
+        ax.plot([px], [py], "o", ms=10, mfc="white", mec=INK, mew=0.9, zorder=6)
+        ax.text(px, py, L, ha="center", va="center", fontsize=FS_TINY,
                 color=INK, fontweight="bold", zorder=7)
         # From just above the inset's title to just below the marker's letter.
         con = ConnectionPatch(xyA=(0.5, 1.0), coordsA=axi.transAxes,
                               xyB=(px, py), coordsB=ax.transData,
                               color="#a0a0a0", lw=0.6, ls=(0, (3, 2)),
-                              zorder=3, shrinkA=15, shrinkB=7)
+                              zorder=3, shrinkA=13, shrinkB=6)
         fig.add_artist(con)
 
-    xc = ml + axw + 0.14
-    cax_ice = fig.add_axes(F(xc, bot + pady, 0.08, s_in))
-    cax_sig = fig.add_axes(F(xc + 0.08 + 0.36, bot + pady + 0.05, 0.08, s_in - 0.10))
+    # Colour bars: phi_i then sigma, left to right across the axes' width.
+    y_cb = bot + axh + cb_gap + cb_lab
+    lab_ice, lab_sig, sep = 0.22, 0.82, 0.30      # label widths, gap between
+    tail = 0.14                   # sigma's end arrow and last tick label
+    w_ice = 0.30 * (axw - lab_ice - lab_sig - sep - tail)
+    w_sig = axw - lab_ice - lab_sig - sep - tail - w_ice
+    cax_ice = fig.add_axes(F(ml + lab_ice, y_cb, w_ice, cb_h))
+    cax_sig = fig.add_axes(F(ml + lab_ice + w_ice + sep + lab_sig, y_cb, w_sig, cb_h))
     _colorbars(fig, cax_ice, cax_sig, norm, vapcm)
 
     if not a.no_title:
         title = (a.title_time or DEFAULTS["title_time"]) if kind == "time" \
             else (a.title_ssa or DEFAULTS["title_ssa"])
-        fig.suptitle(title, x=(ml + 0.5 * axw) / W, y=1.0 - 0.06 / H,
-                     ha="center", va="top", fontsize=FS + 1.5, color=INK)
+        fig.suptitle(title, x=0.5, y=1.0 - 0.05 / H,
+                     ha="center", va="top", fontsize=FS_TITLE, color=INK)
     return fig
 
 
@@ -363,8 +380,9 @@ def main(argv=None):
     p.add_argument("--source", choices=("vts", "sol"), default="vts",
                    help="vts: vtkOut/solV_*.vts (plenty at page width); "
                         "sol: full-resolution sol_*.dat via igakit")
-    p.add_argument("--width", type=float, default=7.2,
-                   help="figure width [in]; 7.2 is a full two-column page")
+    p.add_argument("--width-mm", type=float, default=130.0,
+                   help="final printed width [mm] (default 130). The figure is "
+                        "built at this size, so the fonts are print sizes")
     p.add_argument("--absolute", action="store_true",
                    help="time figure: k_eff in W/m/K instead of k/k_0")
     p.add_argument("--iso-only", action="store_true",
@@ -455,7 +473,9 @@ def main(argv=None):
     for stem, fig in figs.items():
         for fmt in a.formats:
             path = out / f"{stem}.{fmt}"
-            fig.savefig(path, dpi=a.dpi, bbox_inches="tight", pad_inches=0.03)
+            # No bbox_inches="tight": it would crop to the ink and the
+            # saved width would no longer be --width-mm.
+            fig.savefig(path, dpi=a.dpi)
             print(f"  wrote {path}")
         plt.close(fig)
     print(f"  reference (subscript 0) = opening frame: t_0 = {d['t'][ib]:.4g} s, step "
