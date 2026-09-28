@@ -3,7 +3,7 @@
 
     python3 plot_keff_snapshots.py --dir <run> [--times 1 10 20 30] [--steps ...]
         [--n-snapshots 4] [--width-mm 130] [--absolute] [--iso-only]
-        [--title-time STR] [--title-ssa STR] [--title-combined STR] [--no-title]
+        [--title] [--title-time STR] [--title-ssa STR] [--title-combined STR]
         [--xlabel-time STR] [--xlabel-ssa STR] [--ylabel STR]
         [--source vts|sol] [--save-dir DIR] [--formats pdf png]
 
@@ -124,8 +124,10 @@ DEFAULTS = {
     "title_time": "Effective thermal conductivity during dry-snow metamorphism",
     "title_ssa": "Effective thermal conductivity vs specific surface area",
     "xlabel_time": "Time [d]",
-    "xlabel_ssa": r"Normalized specific surface area  SSA$\,/\,$SSA$_0$",
-    "ylabel_norm": r"Normalized conductivity  $k_\mathrm{eff}\,/\,k_{\mathrm{eff},0}$",
+    # Symbols only: these are manuscript figures, and the caption defines
+    # the quantities. --xlabel-* / --ylabel give longer ones for slides.
+    "xlabel_ssa": r"SSA$\,/\,$SSA$_0$",
+    "ylabel_norm": r"$k_\mathrm{eff}\,/\,k_{\mathrm{eff},0}$",
     "ylabel_abs": r"$k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]",
 }
 
@@ -292,7 +294,7 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
     ytop = ymax + (ymax - ybot) * head / (below + band)
     cb_h, cb_lab, cb_gap = 0.07, 0.15, 0.04     # bar | its tick labels | to axes
     strip = cb_h + cb_lab + cb_gap
-    top = 0.24 if not a.no_title else 0.03
+    top = 0.24 if not a.no_title else 0.05
     bot = 0.40
     H = top + strip + axh + bot
     fig = plt.figure(figsize=(W, H))
@@ -402,6 +404,7 @@ def _marked_panel(ax, kind, snaps, x, ys, keys, a):
     xpad = 0.03 * (x.max() - x.min())
     ax.set_xlim(x.min() - xpad, x.max() + xpad)
     ax.plot(ax.get_xlim(), [1.0, 1.0], color="#999999", lw=0.6, ls=":", zorder=0)
+    ax.set_ylabel(a.ylabel or DEFAULTS["ylabel_norm"], fontsize=FS, labelpad=3)
     ymark = ys["kiso"]
     for i, (_fl, _X, _Y, _t, row) in enumerate(snaps):
         ax.plot([x[row]], [ymark[row]], "o", ms=10, mfc="white", mec=INK,
@@ -434,8 +437,7 @@ def build_combined(snaps, xt, xs, kn, keys, norm, vapcm, icecm, sig_extend, a):
         k_eff / k_eff,0  vs  time      lettered markers
         k_eff / k_eff,0  vs  SSA/SSA_0 lettered markers
 
-    No leader lines: the letters tie each marked point to its snapshot. One
-    y label spans the two curve panels, which plot the same quantity.
+    No leader lines: the letters tie each marked point to its snapshot.
     """
     n = len(snaps)
     W = a.width_mm * MM
@@ -443,7 +445,7 @@ def build_combined(snaps, xt, xs, kn, keys, norm, vapcm, icecm, sig_extend, a):
     axw = W - ml - mr
     gap = 0.06                              # between snapshots
     s_in = (axw - (n - 1) * gap) / n
-    top = 0.24 if not a.no_title else 0.03
+    top = 0.24 if not a.no_title else 0.05
     cb_h, cb_lab, cb_gap = 0.07, 0.15, 0.06   # bar | tick labels | to titles
     t_band = 0.19                           # snapshot titles
     g_snap = 0.16                           # snapshots -> time panel
@@ -469,9 +471,6 @@ def build_combined(snaps, xt, xs, kn, keys, norm, vapcm, icecm, sig_extend, a):
                   keys, a)
     _marked_panel(fig.add_axes(F(ml, y_ssa, axw, ph)), "ssa", snaps, xs, kn,
                   keys, a)
-    fig.text(0.04 / W, (y_ssa + y_time + ph) / 2 / H,
-             a.ylabel or DEFAULTS["ylabel_norm"], rotation=90, ha="left",
-             va="center", fontsize=FS, color=INK)
 
     y_cb = y_snap + s_in + t_band + cb_gap + cb_lab
     lab_ice, lab_sig, sep, tail = 0.22, 0.82, 0.30, 0.14
@@ -582,7 +581,12 @@ def main(argv=None):
     p.add_argument("--title-time", default=None)
     p.add_argument("--title-ssa", default=None)
     p.add_argument("--title-combined", default=None)
-    p.add_argument("--no-title", action="store_true")
+    p.add_argument("--title", action="store_true",
+                   help="draw the default titles (off by default: manuscript "
+                        "figures carry no title). Any --title-* also turns "
+                        "titles on")
+    p.add_argument("--no-title", action="store_true",
+                   help=argparse.SUPPRESS)       # the old flag; now the default
     p.add_argument("--xlabel-time", default=None)
     p.add_argument("--xlabel-ssa", default=None)
     p.add_argument("--ylabel", default=None, help="y label for both figures")
@@ -592,6 +596,7 @@ def main(argv=None):
     p.add_argument("--formats", nargs="+", default=["pdf", "png"])
     p.add_argument("--dpi", type=int, default=400, help="PNG and raster dpi")
     a = p.parse_args(argv)
+    a.no_title = not (a.title or a.title_time or a.title_ssa or a.title_combined)
 
     run = Path(a.dir).resolve()
     d = load(run)

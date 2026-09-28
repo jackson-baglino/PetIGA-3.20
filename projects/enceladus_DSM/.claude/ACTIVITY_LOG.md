@@ -1,3 +1,11 @@
+## 2026-09-28 — Snapshot figures: no titles, symbol-only labels
+
+- Titles off by default (--title or any --title-* turns them on); axis
+  labels cut to symbols (k_eff/k_eff,0, SSA/SSA_0); each combined curve
+  panel carries its own short y label.
+
+---
+
 ## 2026-09-28 — Combined k_eff time + SSA snapshot figure
 
 - plot_keff_snapshots.py now also writes keff_combined_snapshots.{pdf,png}:
