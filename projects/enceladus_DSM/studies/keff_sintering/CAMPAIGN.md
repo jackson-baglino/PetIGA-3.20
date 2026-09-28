@@ -1,5 +1,9 @@
 # Campaign: how sintering changes k_eff
 
+> **Working to-do list: [`TODO.md`](TODO.md).** Submit every manuscript run
+> with `scripts/HPC/submit_keff_production.sh <stage file>` -- it owns all
+> options.
+
 The executable plan, with a **stop rule at every stage**. `PLAN.md` holds the
 study design and `ROADMAP.md` the earlier staging; this file supersedes both
 wherever the tensor conductivity law changed the answer, and says so each time.

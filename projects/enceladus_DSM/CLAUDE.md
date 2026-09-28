@@ -67,6 +67,15 @@ Never force-push to `main`. Feature branches are fine.
 
 ---
 
+## k_eff manuscript campaign
+
+The live to-do list is `studies/keff_sintering/TODO.md` -- read it at the
+start of any session on this effort. Manuscript runs are submitted ONLY with
+`scripts/HPC/submit_keff_production.sh <stage file>`, which owns every run
+option; stage files list runs, never options.
+
+---
+
 ## Running tests and experiments
 
 These two rules apply to **every** run — quick probes and one-off diagnostics
