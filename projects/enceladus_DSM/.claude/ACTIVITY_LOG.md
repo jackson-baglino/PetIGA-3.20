@@ -1,3 +1,16 @@
+## 2026-09-28 — Molaro -5 C arm set up; validation figure builder
+
+- No -5 C run existed for the current model, so derived one: new geometry
+  (eps 1.1465e-7 from delta_ice < 1, the -5 C grain pair 197/153 um, r = 14 um
+  start, dom2) and experiment h = 0.99674 (series-resistance estimate x1.40,
+  the correction measured at -20 C). Batch file studies/molaro_2019/batches/molaro_T-5.txt.
+- run_batch_measure.sh now picks anchor/window/data per run from -temp.
+- New postprocess/plot_molaro_validation.py: neck width vs anchored time (both
+  T), -20 C mirrored sections at Molaro t = 0 / 78 min, and a combined (a)(b)
+  figure, reusing plot_keff_snapshots.py helpers. Output studies/molaro_2019/manuscript/.
+
+---
+
 ## 2026-09-28 — Snapshot figures resized for JGR Planets (170 mm)
 
 - AGU limits: 50-170 mm wide, <= 228 mm tall, >= 8 pt text, sequential

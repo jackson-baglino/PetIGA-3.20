@@ -1,0 +1,389 @@
+#!/usr/bin/env python3
+"""plot_molaro_validation.py — manuscript figures for the Molaro (2019) comparison.
+
+    python3 plot_molaro_validation.py --run-t20 <run> [--run-t5 <run>]
+        [--steps S0 S1] [--crop-um Z0 Z1 RMAX] [--width-mm 170]
+        [--save-dir DIR] [--formats pdf png]
+
+Three page-width figures, built to match plot_keff_snapshots.py so the two
+sets read as one: the same 170 mm width, print type sizes, ink and muted
+greys, circled instant numbers, bold panel letters, cmocean `ice` over
+cmocean `balance`, horizontal colour-bar strip, no titles, transparent
+background. Its drawing helpers are IMPORTED from there, not copied, so
+the sets cannot drift apart.
+
+    molaro_neck_width.{pdf,png}       neck width vs time, model (lines) and
+                                      Molaro et al. (2019) (points with their
+                                      error bars), both temperatures
+    molaro_microstructure.{pdf,png}   the -20 C meridional section at
+                                      Molaro's t = 0 and at the end of their
+                                      record, instants 1 and 2
+    molaro_combined.{pdf,png}         (a) the sections, (b) the neck curves,
+                                      instants 1-2 marked on the -20 C model
+
+THE CLOCK. Molaro's record starts at an unknown time after contact, and our
+runs start from a chosen r = 14 um neck. So each series' t = 0 is the moment
+its neck first reaches Molaro's first measured width (32.81 um at -20 C,
+32.51 um at -5 C) -- their Fig. 12 convention, and the one
+plot_neck_vs_molaro.py and run_batch_measure.sh already use. The model's
+pre-anchor stretch (t < 0) is simulated and is drawn.
+
+THE INSTANTS. Instant 1 is the snapshot nearest the model's t* (Molaro's
+t = 0), instant 2 the one nearest t* + 78 min (their last -20 C point). Only
+snapshots with a neck_width.csv sample are eligible, so both markers sit on
+measured values; the titles give each snapshot's own anchored time.
+
+THE SECTIONS are mirrored across the symmetry axis, so the pair reads as two
+grains rather than two half-discs, and cropped to the ice with a margin
+(--crop-um overrides). Horizontal is the symmetry axis z, vertical r.
+
+SIGMA RANGE. Deliberately NOT the k_eff figures' symmetric rule. Here the
+pore spans sigma = -28.5 .. +0.3 (x1e-4): the Dirichlet wall is
+undersaturated and only the neck is supersaturated. The k_eff rule sizes the
+bar to the SMALLER extreme, which would push ~99 % of the pore off the bar.
+Instead the bar spans the data and the map is re-centred so its pale middle
+is sigma = 0 (make_neck_movie.centered_cmap) -- the same colouring as this
+run's neck movie. Both bar ends sit exactly at the data, so neither is
+extended. Shared by both snapshots.
+
+MISSING -5 C RUN. Without --run-t5 the -5 C data are drawn with no model
+curve; the figure is otherwise complete, and the note says so.
+
+OUTPUT. studies/molaro_2019/manuscript/ (or --save-dir). PDF is the
+manuscript file, PNG a preview.
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import os
+import sys
+from pathlib import Path
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.colors import AsinhNorm
+from matplotlib.lines import Line2D
+from matplotlib.ticker import MaxNLocator
+import cmocean
+
+HERE = Path(__file__).parent
+REPO = HERE.parent
+sys.path.insert(0, str(HERE))
+from pplib import step_times                                # noqa: E402
+from plot_keff import C_XX, C_YY                            # noqa: E402
+from plot_keff_snapshots import (INK, FS, FS_SMALL, MM, MAX_H_MM,  # noqa: E402
+                                 LETTERS, PANELS, make_reader, snap_step,
+                                 _field, _scalebar, _snap_title, _circled,
+                                 _colorbars)
+from make_neck_movie import (SIGMA_SCALE, ice_alpha_cmap,   # noqa: E402
+                             centered_cmap, read_experiment)
+from plot_neck_vs_molaro import read_model, anchor_time     # noqa: E402
+import pplib                                                # noqa: E402
+
+UM = 1e-6
+WANT = ("IcePhase", "VaporDensity", "Temperature")
+# One colour per TEMPERATURE, the k_eff figures' categorical pair. Line vs
+# point is model vs experiment, so colour carries only the series.
+SERIES = {
+    "T-20": dict(label="−20 °C", color=C_XX, anchor_um=32.81, window_min=78.0,
+                 data=REPO / "inputs/validation/molaro2019_fig11_T-20.csv"),
+    "T-5":  dict(label="−5 °C",  color=C_YY, anchor_um=32.51, window_min=48.0,
+                 data=REPO / "inputs/validation/molaro2019_fig11_T-5.csv"),
+}
+MAX_PX = 1800                       # raster columns per section, ~550 dpi
+
+
+# ---------------------------------------------------------------------------
+# Data
+# ---------------------------------------------------------------------------
+def load_series(key, run):
+    """Anchored model and experiment for one temperature. Times in minutes."""
+    s = dict(SERIES[key], key=key, run=run)
+    anchor = s["anchor_um"] * UM
+    td, wd, ep, em = read_experiment(s["data"])
+    s["td"] = (td - td[0]) / 60.0
+    s["wd"], s["ep"], s["em"] = wd / UM, ep / UM, em / UM
+    s["model"] = None
+    if run is not None:
+        tm, wm = read_model(run)
+        t_star = anchor_time(tm, wm, anchor)
+        if t_star is None:
+            sys.exit(f"  {run}: the model neck ({wm.min()/UM:.2f}-{wm.max()/UM:.2f} um) "
+                     f"never crosses the {s['anchor_um']} um anchor")
+        s["model"] = dict(t_s=tm, w_m=wm, t_star=t_star,
+                          t=(tm - t_star) / 60.0, w=wm / UM)
+    return s
+
+
+def pick_instants(s, steps):
+    """[(file, step, row)] for instants 1 and 2, on neck_width.csv samples."""
+    run, m = s["run"], s["model"]
+    files, _ = make_reader(run, "sol" if glob.glob(str(run / "sol_*.dat")) else "vts")
+    tmap = step_times(str(run))
+    fsteps = np.array([snap_step(f) for f in files])
+    ftimes = np.array([tmap.get(int(k), np.nan) for k in fsteps])
+    # A snapshot is eligible only if the neck was measured at its time.
+    row_of = {}
+    for i, t in enumerate(ftimes):
+        if np.isfinite(t):
+            j = int(np.argmin(np.abs(m["t_s"] - t)))
+            if abs(m["t_s"][j] - t) <= 1e-6 * max(1.0, abs(t)):
+                row_of[i] = j
+    if not row_of:
+        sys.exit(f"  {run}: no snapshot has a neck_width.csv sample")
+    cand = np.array(sorted(row_of))
+    if steps:
+        want = [int(cand[np.argmin(np.abs(fsteps[cand] - k))]) for k in steps]
+    else:
+        targets = (m["t_star"], m["t_star"] + s["window_min"] * 60.0)
+        want = [int(cand[np.argmin(np.abs(ftimes[cand] - t))]) for t in targets]
+    return [(files[i], int(fsteps[i]), row_of[i]) for i in want]
+
+
+def _mirror(fl, X, Y):
+    """Reflect across the axis r = 0 (row 0), dropping the duplicate row."""
+    m = lambda a: np.vstack([a[:0:-1], a])
+    return {k: m(v) for k, v in fl.items()}, m(X), np.vstack([-Y[:0:-1], Y])
+
+
+def read_section(run, fn, stride):
+    """Fields mirrored across the axis (rows = r, cols = z), every `stride`."""
+    _, reader = make_reader(run, "sol" if fn.endswith(".dat") else "vts")
+    fl, X, Y = _mirror(*reader(fn, want=WANT))
+    sub = lambda a: a[::stride, ::stride]
+    return {k: sub(v) for k, v in fl.items()}, sub(X), sub(Y)
+
+
+def crop(fl, X, Y, box_um):
+    z0, z1, rmax = (b * UM for b in box_um)
+    cols = (X[0] >= z0) & (X[0] <= z1)
+    rows = np.abs(Y[:, 0]) <= rmax
+    sub = lambda a: a[np.ix_(rows, cols)]
+    return {k: sub(v) for k, v in fl.items()}, sub(X), sub(Y)
+
+
+def auto_crop(fl, X, Y, margin=0.10):
+    """The ice's bounding box, grown by `margin` of its axial length."""
+    ice = fl["IcePhase"] >= 0.5
+    zs, rs = X[ice], np.abs(Y[ice])
+    pad = margin * (zs.max() - zs.min())
+    return ((zs.min() - pad) / UM, (zs.max() + pad) / UM, (rs.max() + pad) / UM)
+
+
+def load_sections(s, instants, box_um):
+    run, fn0 = s["run"], instants[0][0]
+    # Probe the grid once, for the crop and the stride.
+    _, reader = make_reader(run, "sol" if fn0.endswith(".dat") else "vts")
+    fl, X, Y = _mirror(*reader(fn0, want=("IcePhase",)))
+    if box_um is None:
+        box_um = auto_crop(fl, X, Y)
+    frac = (box_um[1] - box_um[0]) * UM / (X.max() - X.min())
+    stride = max(1, int(np.ceil(frac * X.shape[1] / MAX_PX)))
+    out = []
+    for fn, step, row in instants:
+        out.append(crop(*read_section(run, fn, stride), box_um) + (step, row))
+    return out, box_um, stride
+
+
+# ---------------------------------------------------------------------------
+# Drawing
+# ---------------------------------------------------------------------------
+def _neck_panel(ax, series, marks=()):
+    """Neck width vs anchored time: model lines, Molaro's points."""
+    ax.patch.set_alpha(0.0)
+    ax.axvline(0.0, color="#999999", lw=0.6, ls=":", zorder=0)
+    xmax, ylo, yhi, xmin = 0.0, np.inf, -np.inf, 0.0
+    for s in series:
+        c = s["color"]
+        if s["model"] is not None:
+            m = s["model"]
+            ax.plot(m["t"], m["w"], "-", lw=1.8, color=c, zorder=2)
+            xmin = min(xmin, float(m["t"][0]))
+            vis = m["t"] <= SERIES["T-20"]["window_min"] * 1.08
+            ylo, yhi = min(ylo, m["w"][vis].min()), max(yhi, m["w"][vis].max())
+        ax.errorbar(s["td"], s["wd"], yerr=[s["em"], s["ep"]], fmt="o", ms=4.2,
+                    mfc="white", mec=c, mew=0.9, ecolor=c, elinewidth=0.7,
+                    capsize=1.8, capthick=0.7, zorder=3)
+        xmax = max(xmax, float(s["td"].max()))
+        ylo = min(ylo, float((s["wd"] - s["em"]).min()))
+        yhi = max(yhi, float((s["wd"] + s["ep"]).max()))
+    for x, y, lab in marks:
+        _circled(ax, x, y, lab)
+    xpad = 0.03 * (xmax - xmin)
+    ax.set_xlim(xmin - xpad, xmax + 2 * xpad)
+    ypad = 0.08 * (yhi - ylo)
+    ax.set_ylim(ylo - ypad, yhi + ypad)
+    ax.xaxis.set_major_locator(MaxNLocator(8, steps=[1, 2, 2.5, 5, 10]))
+    ax.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
+    ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3, pad=2)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    for sp in ("left", "bottom"):
+        ax.spines[sp].set_linewidth(0.6)
+    ax.set_xlabel("Time [min]", fontsize=FS, labelpad=2)
+    ax.set_ylabel(r"$w$  [µm]", fontsize=FS, labelpad=3)
+    # Colour is the temperature, mark style the source: two short columns.
+    h = [Line2D([], [], color=s["color"], lw=1.8, label=s["label"]) for s in series]
+    h += [Line2D([], [], color=INK, lw=1.8, label="model"),
+          Line2D([], [], color=INK, ls="none", marker="o", ms=4.2, mfc="white",
+                 mew=0.9, label="Molaro et al. (2019)")]
+    ax.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=1.6,
+              ncol=2, columnspacing=1.2, handletextpad=0.5, loc="lower right")
+
+
+def _sections(fig, F, secs, x0, y0, s_w, s_h, gap, norm, vapcm, icecm, t_star):
+    for i, (fl, X, Y, step, row, t) in enumerate(secs):
+        axi = fig.add_axes(F(x0 + i * (s_w + gap), y0, s_w, s_h))
+        XX, YY = _field(axi, fl, X, Y, norm, vapcm, icecm)
+        axi.set_aspect("auto")
+        if i == 0:
+            _scalebar(axi, XX, YY)
+        tm = (t - t_star) / 60.0
+        _snap_title(axi, LETTERS[i], f"{round(tm) + 0:d} min")   # +0: no "-0"
+
+
+def _strip(fig, F, x0, y_cb, axw, norm, vapcm):
+    cb_h = 0.07
+    lab_ice, lab_sig, sep, tail = 0.22, 0.82, 0.30, 0.14
+    w_ice = 0.30 * (axw - lab_ice - lab_sig - sep - tail)
+    w_sig = axw - lab_ice - lab_sig - sep - tail - w_ice
+    cax_ice = fig.add_axes(F(x0 + lab_ice, y_cb, w_ice, cb_h))
+    cax_sig = fig.add_axes(F(x0 + lab_ice + w_ice + sep + lab_sig, y_cb, w_sig, cb_h))
+    _colorbars(fig, cax_ice, cax_sig, norm, vapcm, "neither")
+
+
+def build_neck(series, a):
+    W = a.width_mm * MM
+    ml, mr, top, bot, ph = 0.50, 0.08, 0.08, 0.40, 2.30
+    H = top + ph + bot
+    fig = plt.figure(figsize=(W, H))
+    F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
+    _neck_panel(fig.add_axes(F(ml, bot, W - ml - mr, ph)), series)
+    return fig
+
+
+def _geom(W, secs, gap):
+    ml, mr = 0.50, 0.08
+    axw = W - ml - mr
+    s_w = (axw - gap) / 2
+    fl, X, Y = secs[0][:3]
+    s_h = s_w * (Y.max() - Y.min()) / (X.max() - X.min())
+    return ml, axw, s_w, s_h
+
+
+def build_micro(secs, norm, vapcm, icecm, t_star, a):
+    W = a.width_mm * MM
+    gap = 0.12
+    ml, axw, s_w, s_h = _geom(W, secs, gap)
+    cb_h, cb_lab, cb_gap, t_band, top, bot = 0.07, 0.15, 0.06, 0.19, 0.05, 0.05
+    H = top + cb_h + cb_lab + cb_gap + t_band + s_h + bot
+    fig = plt.figure(figsize=(W, H))
+    F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
+    _sections(fig, F, secs, ml, bot, s_w, s_h, gap, norm, vapcm, icecm, t_star)
+    _strip(fig, F, ml, bot + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm)
+    return fig
+
+
+def build_combined(secs, series, marks, norm, vapcm, icecm, t_star, a):
+    """Read top to bottom: colour bars, (a) the sections at instants 1-2,
+    (b) the neck curves with the same instants marked on the -20 C model."""
+    W = a.width_mm * MM
+    gap = 0.12
+    ml, axw, s_w, s_h = _geom(W, secs, gap)
+    cb_h, cb_lab, cb_gap, t_band, top = 0.07, 0.15, 0.06, 0.19, 0.05
+    g_snap, ph, bot = 0.34, 2.30, 0.40
+    H = top + cb_h + cb_lab + cb_gap + t_band + s_h + g_snap + ph + bot
+    fig = plt.figure(figsize=(W, H))
+    F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
+    y_snap = bot + ph + g_snap
+    _sections(fig, F, secs, ml, y_snap, s_w, s_h, gap, norm, vapcm, icecm, t_star)
+    _neck_panel(fig.add_axes(F(ml, bot, axw, ph)), series, marks)
+    for lab, y_top in zip(PANELS, (y_snap + s_h + 0.5 * t_band, bot + ph + 0.14)):
+        fig.text(0.02 / W, y_top / H, f"({lab})", ha="left", va="center",
+                 fontsize=FS, fontweight="bold", color=INK)
+    _strip(fig, F, ml, y_snap + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm)
+    return fig
+
+
+# ---------------------------------------------------------------------------
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--run-t20", type=Path, required=True,
+                   help="-20 C run directory (neck_width.csv + snapshots)")
+    p.add_argument("--run-t5", type=Path, default=None,
+                   help="-5 C run directory; omitted, its data are drawn alone")
+    p.add_argument("--steps", type=int, nargs=2, default=None,
+                   help="snapshot steps for instants 1 and 2 (default: nearest "
+                        "t* and t* + 78 min)")
+    p.add_argument("--crop-um", type=float, nargs=3, default=None,
+                   metavar=("Z0", "Z1", "RMAX"),
+                   help="section window [um] (default: the ice + 10 %%)")
+    p.add_argument("--width-mm", type=float, default=170.0)
+    p.add_argument("--save-dir", type=Path, default=REPO / "studies/molaro_2019/manuscript")
+    p.add_argument("--formats", nargs="+", default=["pdf", "png"])
+    p.add_argument("--dpi", type=int, default=400)
+    a = p.parse_args(argv)
+
+    s20 = load_series("T-20", a.run_t20.resolve())
+    s5 = load_series("T-5", a.run_t5.resolve() if a.run_t5 else None)
+    series = [s20, s5]
+    for s in series:
+        m = s["model"]
+        if m is None:
+            print(f"  {s['label']}: no run given -- Molaro's points only")
+            continue
+        wend = np.interp(m["t_star"] + s["window_min"] * 60.0, m["t_s"], m["w_m"]) / UM
+        print(f"  {s['label']}: t* = {m['t_star']:.1f} s; w(t*+{s['window_min']:.0f} min)"
+              f" = {wend:.2f} um vs Molaro {s['wd'][-1]:.2f} um "
+              f"(growth {100*(wend-s['anchor_um'])/(s['wd'][-1]-s['anchor_um']):.0f} %)")
+
+    inst = pick_instants(s20, a.steps)
+    secs, box, stride = load_sections(s20, inst, a.crop_um)
+    m = s20["model"]
+    secs = [sec + (float(m["t_s"][sec[4]]),) for sec in secs]
+    marks = [(m["t"][row], m["w"][row], LETTERS[i])
+             for i, (_f, _s, row) in enumerate(inst)]
+    for i, (_f, step, row) in enumerate(inst):
+        print(f"  instant {LETTERS[i]}: step {step}, t = {m['t_s'][row]:.1f} s "
+              f"(t - t* = {m['t'][row]:+.2f} min), w = {m['w'][row]:.2f} um")
+    print(f"  section window z {box[0]:.1f}-{box[1]:.1f} um, |r| <= {box[2]:.1f} um, "
+          f"stride {stride}")
+
+    pore = np.concatenate([SIGMA_SCALE * pplib.supersaturation(
+        fl["VaporDensity"], fl["Temperature"])[fl["IcePhase"] < 0.5]
+        for fl, *_ in secs])
+    smin, smax = float(pore.min()), float(pore.max())
+    norm = AsinhNorm(linear_width=max(max(abs(smin), abs(smax)) / 300.0, 1e-12),
+                     vmin=smin, vmax=smax)
+    vapcm = centered_cmap(cmocean.cm.balance, norm)
+    icecm = ice_alpha_cmap()
+    print(f"  sigma x{SIGMA_SCALE:g} over the shown pore: {smin:+.3g} .. {smax:+.3g}")
+
+    plt.rcParams.update({"font.family": "sans-serif", "mathtext.fontset": "dejavusans",
+                         "pdf.fonttype": 42, "svg.fonttype": "none"})
+    figs = {
+        "molaro_neck_width": build_neck(series, a),
+        "molaro_microstructure": build_micro(secs, norm, vapcm, icecm, m["t_star"], a),
+        "molaro_combined": build_combined(secs, series, marks, norm, vapcm, icecm,
+                                          m["t_star"], a),
+    }
+    os.makedirs(a.save_dir, exist_ok=True)
+    for stem, fig in figs.items():
+        h_mm = fig.get_figheight() * 25.4
+        if h_mm > MAX_H_MM:
+            print(f"  WARNING: {stem} is {h_mm:.0f} mm tall, over AGU's "
+                  f"{MAX_H_MM:.0f} mm limit", file=sys.stderr)
+        for fmt in a.formats:
+            path = a.save_dir / f"{stem}.{fmt}"
+            fig.savefig(path, dpi=a.dpi, transparent=True)
+            print(f"  wrote {path}")
+        plt.close(fig)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
