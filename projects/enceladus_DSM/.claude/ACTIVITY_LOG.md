@@ -1,3 +1,16 @@
+## 2026-09-28 — k_eff + microstructure snapshot manuscript figure
+
+- New postprocess/plot_keff_snapshots.py: page-width (7.2 in) figures of
+  k_eff/k_b vs time and vs SSA/SSA_b, each under 3-4 lettered snapshot panels
+  (cmocean ice over re-centred balance sigma, helpers imported from
+  make_neck_movie so figure and movies match). Markers + leader lines tie
+  panels to the curve; leaders off on the SSA figure (time runs right to left).
+- Title/axis labels overridable; --times/--steps choose snapshots; PDF + PNG.
+- Hooked into run_postprocess.sh (after plot_keff, when vtkOut exists).
+- Test figures: keff_T_warm_phi0.325 seed1 T-20 30d run, plots/keff/snapshots/.
+
+---
+
 ## 2026-09-28 — Seam gate and porosity-salted seeds in the packing generator
 
 - Evaluated the user's 3x3-superdomain idea: gravity deposition is

@@ -113,6 +113,13 @@ if [[ -f "$RUN_DIR/SSA_evo.dat" ]]; then
     # No-op (exit 0) when the run did not pass -keff.
     run_step "k_eff vs time and vs SSA" \
         "$POSTPROCESS_DIR/plot_keff.py" --dir "$RUN_DIR" --save-dir "$PLOTS/keff"
+    # Manuscript figure: k_eff curve under 4 microstructure snapshots. Needs
+    # vtkOut/ from the VTK step above; no-op without a k_eff CSV.
+    if compgen -G "$RUN_DIR/vtkOut/solV_*.vts" >/dev/null; then
+        run_step "k_eff with microstructure snapshots" \
+            "$POSTPROCESS_DIR/plot_keff_snapshots.py" --dir "$RUN_DIR" \
+            --save-dir "$PLOTS/keff/snapshots"
+    fi
 else
     echo "⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots."
 fi
