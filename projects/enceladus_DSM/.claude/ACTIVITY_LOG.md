@@ -3,6 +3,7 @@
 - sigma bar now +-min(|min|, |max|) over the shown pores, so 0 is centred;
   only the clipped side carries an extend triangle (percentile clip removed).
 - phi_i bar spans the full [0, 1] ice map.
+- Figures saved with a transparent background (PNG + PDF).
 
 ---
 
