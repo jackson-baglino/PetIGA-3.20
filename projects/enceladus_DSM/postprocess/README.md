@@ -48,7 +48,7 @@ because it is a format conversion for ParaView, not a figure.
 | `plot_porosity.py` | `SSA_evo.dat` | porosity + interface density vs time, shared axes |
 | `plot_ssa.py` | `SSA_evo.dat`, `-grains_file` | ice-air surface area vs time |
 | `plot_mass.py` | `igasol.dat`, `sol_*.dat` | phase mass vs time, total and per phase |
-| `plot_keff_snapshots.py` | k_eff CSV, `SSA_evo.dat`, `vtkOut/solV_*.vts` | page-width k_eff/k_eff,0 vs time and vs SSA/SSA_0, 3-4 lettered microstructure insets along the bottom of the axes (`plots/keff/snapshots/`, PDF + PNG) |
+| `plot_keff_snapshots.py` | k_eff CSV, `SSA_evo.dat`, `vtkOut/solV_*.vts` | page-width k_eff/k_eff,0 vs time and vs SSA/SSA_0, 3-4 lettered microstructure insets along the bottom of the axes; plus both combined in one figure (`keff_combined_snapshots`). `--clip-map` adds a sigma out-of-range diagnostic (`plots/keff/snapshots/`, PDF + PNG) |
 | `plot_timestep.py` | `outp.txt` | adaptive time-step history |
 | `plot_fields.py` | `igasol.dat`, `sol_*.dat` | `.vts` snapshots for ParaView |
 | `plot_fields_highres.py` | same | same, supersampled |

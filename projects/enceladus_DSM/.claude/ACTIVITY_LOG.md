@@ -1,3 +1,11 @@
+## 2026-09-28 — Combined k_eff time + SSA snapshot figure
+
+- plot_keff_snapshots.py now also writes keff_combined_snapshots.{pdf,png}:
+  the time figure (insets on the plot) over a shorter k(SSA) panel with the
+  same lettered markers; one shared y label. 130 mm x 149 mm.
+
+---
+
 ## 2026-09-28 — sigma out-of-range map for the snapshot figure
 
 - plot_keff_snapshots.py --clip-map (off by default, not in the sweep):
