@@ -4,8 +4,9 @@
   laid along the k_iso curve (placed by arc length, offset to the curve's
   upper side, pointing the way time runs). SSA figure's legend moved to the
   empty lower left.
-- Marker letters now set like the snapshot titles (9 pt regular, not 8 pt
-  bold), via one _mark helper.
+- Snapshot titles now "(circled letter) t d", the same circled 8 pt bold
+  letter as the curve markers (one _circled helper); leaders start above
+  the titles. Time arrow moved to the middle of the curve.
 
 ---
 

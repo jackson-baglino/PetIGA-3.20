@@ -100,6 +100,7 @@ from matplotlib.colors import AsinhNorm, ListedColormap
 from matplotlib.cm import ScalarMappable
 from matplotlib.patches import ConnectionPatch, FancyArrowPatch
 from matplotlib.ticker import MaxNLocator
+import matplotlib.transforms as mtransforms
 import cmocean
 
 HERE = Path(__file__).parent
@@ -227,16 +228,43 @@ def _curve(ax, x, ys, keys):
         ax.spines[sp].set_linewidth(0.6)
 
 
+MARK_MS = 10.0                  # circled-letter diameter [pt]
+
+
+def _circled(ax, x, y, letter, transform=None, clip_on=True):
+    """The circled letter: white disc, dark ring, bold letter. The ONE way a
+    snapshot's letter is drawn, on the curves and over the snapshots alike."""
+    kw = {} if transform is None else {"transform": transform}
+    ax.plot([x], [y], "o", ms=MARK_MS, mfc="white", mec=INK, mew=0.9,
+            zorder=6, clip_on=clip_on, **kw)
+    ax.text(x, y, letter, ha="center", va="center", fontsize=FS_TINY,
+            color=INK, fontweight="bold", zorder=7, clip_on=clip_on, **kw)
+
+
 def _mark(ax, x, y, letter):
-    """A snapshot's letter on the curve, inside a white circle. The letter is
-    set exactly like the snapshot titles' "(a)" -- same size, regular weight
-    -- so the two read as the same label."""
-    ax.plot([x], [y], "o", ms=11.5, mfc="white", mec=INK, mew=0.9, zorder=6)
-    ax.text(x, y, letter, ha="center", va="center_baseline", fontsize=FS_SMALL,
-            color=INK, zorder=7)
+    """A snapshot's letter on the curve."""
+    _circled(ax, x, y, letter)
 
 
-def _time_arrow(ax, x, y, s0=0.14, s1=0.40, off_pt=8.0, rad=0.1):
+def _snap_title(ax, letter, label, gap_pt=3.0, lift_pt=2.0):
+    """A snapshot's title: its circled letter, then `label`, centred as a
+    group over the panel -- the same circled letter as on the curves."""
+    fig = ax.figure
+    txt = ax.annotate(label, (0.5, 1.0), xycoords="axes fraction",
+                      xytext=(0.0, 0.0), textcoords="offset points",
+                      ha="left", va="center", fontsize=FS_SMALL, color=INK,
+                      annotation_clip=False)
+    w_pt = txt.get_window_extent(fig.canvas.get_renderer()).width * 72.0 / fig.dpi
+    x0 = -0.5 * (MARK_MS + gap_pt + w_pt)
+    y = lift_pt + 0.5 * MARK_MS
+    txt.xyann = (x0 + MARK_MS + gap_pt, y)
+    _circled(ax, 0.5, 1.0, letter, clip_on=False,
+             transform=mtransforms.offset_copy(ax.transAxes, fig=fig,
+                                              x=x0 + 0.5 * MARK_MS, y=y,
+                                              units="points"))
+
+
+def _time_arrow(ax, x, y, s0=0.26, s1=0.52, off_pt=13.0, rad=0.08):
     """A curved arrow beside the curve, pointing the way the data move as
     time increases.
 
@@ -407,16 +435,19 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
         if slot == 0:
             _scalebar(axi, XX, YY)
         L = LETTERS[i]
-        axi.set_title(f"({L}) {t / DAY:.1f} d", fontsize=FS_SMALL, color=INK, pad=2)
+        _snap_title(axi, L, f"{t / DAY:.1f} d")
         px, py = x[row], ymark[row]
         # The letter sits INSIDE the marker: beside it, it lands on k_xx or
         # k_yy, which run within a few percent of k_iso.
         _mark(ax, px, py, L)
         # From just above the inset's title to just below the marker's letter.
-        con = ConnectionPatch(xyA=(0.5, 1.0), coordsA=axi.transAxes,
-                              xyB=(px, py), coordsB=ax.transData,
+        # Starts just ABOVE the title (circled letter + time, ~12 pt tall),
+        # so it never strikes through it.
+        con = ConnectionPatch(xyA=(0.5, 1.0), xyB=(px, py), coordsB=ax.transData,
+                              coordsA=mtransforms.offset_copy(
+                                  axi.transAxes, fig=fig, y=15.0, units="points"),
                               color="#a0a0a0", lw=0.6, ls=(0, (3, 2)),
-                              zorder=3, shrinkA=12, shrinkB=6)
+                              zorder=3, shrinkA=0, shrinkB=6)
         fig.add_artist(con)
 
     # Colour bars: phi_i then sigma, left to right across the axes' width.
@@ -505,8 +536,7 @@ def build_combined(snaps, xt, xs, kn, keys, norm, vapcm, icecm, sig_extend, a):
         XX, YY = _field(axi, fl, X, Y, norm, vapcm, icecm)
         if i == 0:
             _scalebar(axi, XX, YY)
-        axi.set_title(f"({LETTERS[i]}) {t / DAY:.1f} d", fontsize=FS_SMALL,
-                      color=INK, pad=2)
+        _snap_title(axi, LETTERS[i], f"{t / DAY:.1f} d")
 
     _marked_panel(fig.add_axes(F(ml, y_time, axw, ph)), "time", snaps, xt, kn,
                   keys, a)
