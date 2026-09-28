@@ -315,6 +315,9 @@ Superseded plan below kept for the record. What was actually done:
   T {−5, −10, −20, −30, −40} °C = 125 runs.
   - k_eff every 5 steps (every step at −40).
   - 50 log-spaced snapshots per run.
+  - **Submitted in five checked stages**, never whole: 3a shakedown (7 runs),
+    3b −20 °C rest (20), 3c −30/−40 (49), 3d −10 (25), 3e −5 (24). Each
+    `batch3?_*.txt` lists the check that must pass before the next.
   - ~$1.7k on the batch-2 cost basis; up to ~$2.8k at 60k DoF/core if steps
     don't speed up.
 - **The weekend runs (batch 2) are not rerun.**

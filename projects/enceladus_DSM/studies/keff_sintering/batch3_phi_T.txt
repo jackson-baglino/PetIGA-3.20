@@ -23,7 +23,14 @@
 #   there, core-hours rise up to 1.66x: ~$2.75k worst case. Longest run
 #   (-5 C) ~10.5 h at 241 ranks: inside the 24 h limit either way.
 #
-# Submit with:
+# DO NOT SUBMIT THIS FILE WHOLE. It is the index of all 125 runs. Submit in
+# stages, each checked before the next (user, 2026-09-28):
+#   batch3a_shakedown.txt  7   one packing per phi at -20, + 0.325 at -5/-40
+#   batch3b_T-20.txt      20   the rest at -20 (seed scatter, phi trend)
+#   batch3c_cold.txt      49   -30 and -40 (does every phi collapse?)
+#   batch3d_T-10.txt      25   -10
+#   batch3e_T-5.txt       24   -5, most expensive, last
+# Each file carries its own checks and submit command. Full-matrix form:
 #   ./scripts/HPC/submit_batch.sh --tag keff_phi_T \
 #       --tests-file studies/keff_sintering/batch3_phi_T.txt \
 #       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs \

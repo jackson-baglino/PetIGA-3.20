@@ -1,0 +1,31 @@
+# Batch 3b -- the other 4 packings per porosity at -20 C (20 runs, ~$180+).
+# CHECK before 3c: seed scatter of the k_iso rise per porosity (expect ~3-4%
+# at 0.325); porosity trend larger than the scatter; anisotropy k_xx/k_yy per
+# porosity vs the contact fabric (1.03 at 0.275 -> ~1.1 at 0.425).
+#
+# Submit with:
+#   ./scripts/HPC/submit_batch.sh --tag keff_b3b \
+#       --tests-file studies/keff_sintering/batch3b_T-20.txt \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs \
+#       --extra-opts "-keff 1 -keff_step0 1 -keff_freq 5 -t_out_log 50 -t_out_log_t0 60 -keff_ksp_type cg -keff_pc_type gamg"
+
+packing_2D_phi0.275_Rave50um_LR40_seed602_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed603_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed604_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed605_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed302_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed303_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed304_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed305_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed702_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed703_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed704_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed705_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed802_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed803_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed804_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed805_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed902_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed903_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed904_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed905_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d

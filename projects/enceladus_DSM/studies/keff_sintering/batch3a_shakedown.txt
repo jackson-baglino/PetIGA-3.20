@@ -1,0 +1,24 @@
+# Batch 3a -- SHAKEDOWN (7 runs, ~$60-100). Nothing else is submitted until it passes.
+# One packing per porosity at -20 C, plus the 0.325 packing at -5 and -40 C.
+# CHECK before 3b:
+#  1. all 7 reach 30 d; health_check.py clean (mass, phi bounds, k_eff KSP)
+#  2. k_eff.csv (not k_eff_tensor.csv) written, one row per 5 steps (-40: every step)
+#  3. sol_* at t >= 1 s exists (opening frame) + 50 log snapshots; ~9 GB/run
+#  4. s/step at 401 ranks vs 20 s at 241 (batch 2) -> cost per run; keep or revert 60k/core
+#  5. -5 C wall time well inside 24 h
+#  6. phi 0.475: runs stably; k_eff trend across phi sensible and monotone
+#  7. -5/-20/-40 on the 0.325 packing collapse on k(SSA) and on t/tau_sub (as in batch 2)
+#
+# Submit with:
+#   ./scripts/HPC/submit_batch.sh --tag keff_b3a \
+#       --tests-file studies/keff_sintering/batch3a_shakedown.txt \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs \
+#       --extra-opts "-keff 1 -keff_step0 1 -keff_freq 5 -t_out_log 50 -t_out_log_t0 60 -keff_ksp_type cg -keff_pc_type gamg"
+
+packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed601_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed701_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed801_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d:--label kf1 -keff_freq 1
