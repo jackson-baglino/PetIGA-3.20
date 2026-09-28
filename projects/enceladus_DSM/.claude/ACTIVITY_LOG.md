@@ -1,3 +1,20 @@
+## 2026-09-27 — Warm-end batch results: T is a time rescaling
+
+- All 9 keff_T_warm runs reached 30 d. dt check vs pilot passes (k_iso to
+  0.01% from day 5; rise 1->15 d within 0.4 points).
+- At matched SSA k_iso is T-independent to <0.5%; runs reach a given SSA
+  exactly tau_sub-ratio sooner (1.59x, 2.47x). With a common t/tau_sub
+  baseline all temperatures collapse. Model property (attachment-limited),
+  recorded in CAMPAIGN.md stage 3 with the consequence for stage 5.
+- Cost $342 vs ~$150 predicted: k_eff every step, 50-84 s/sample (rev64: 4 s;
+  cause unexplained, looks environmental). -10 C seed 1 used 23h56m of 24h.
+- New postprocess/compare_keff.py: seed-mean overlays by porosity and by
+  temperature, absolute and normalized (baseline at a common t/tau_sub), run
+  once per batch from run_batch_postprocess.sh. Per-run k_eff plots made for
+  all 9 runs.
+
+---
+
 ## 2026-09-26 — Opening frame at t >= 1 s, k_eff plots, k_eff.csv naming fix
 
 - Solver: `-t_out_first` (default 1 s) replaces the forced step-1 snapshot.

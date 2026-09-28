@@ -35,7 +35,7 @@ if it does not. Costs are at the tier-1 Resnick rate, $0.012/core-hour
 | 0 | tensor law + both ladders | done | — | ✔ committed |
 | 1 | pilot replay under tensor (no new simulation) | **$43 actual** | $43 | ✔ **done** |
 | 2 | batch 1 — cold end of the T axis | < ~$30 | ~$73 | ✔ |
-| 3 | batch 2 — warm end, −20/−15/−10 × seeds 1,3,4 | ~$150 | ~$223 | ✔ **SLIDES** |
+| 3 | batch 2 — warm end, −20/−15/−10 × seeds 1,3,4 | **$342 actual** | ~$415 | ✔ **done** |
 | 4 | production packings | local | ~$223 | — |
 | 5 | main matrix | measured at stage 2 | — | ✔ **SLIDES** |
 | 6 | sensitivity arms | ~12 runs | — | — |
@@ -213,7 +213,7 @@ tensor scale.
 
 ---
 
-## Stage 3 — batch 2, the warm end · ~$150 · **SLIDES 1**
+## Stage 3 — batch 2, the warm end · **$342 actual** · **SLIDES 1**
 
 φ = 0.325, T ∈ {−20, −15, −10} °C, seeds 1, 3, 4, 30 d. Batch file and the
 full rationale: [`batch2_T_warm.txt`](batch2_T_warm.txt). ~~"−10 °C is ~16 700
@@ -248,6 +248,51 @@ at `dtmax` 3449 s it is ~850 steps, ~8 h, one job.
 If they differ by more than the seed sd (2.6 points), `dtmax = 1.09·τ_sub` is
 too loose — lower `--dtmax-over-tau` and re-run before reading −15/−10.
 **Then:** `k_eff` rise vs T with seed error bars, and `k_eff` vs SSA per T.
+
+### RESULT (2026-09-27) — temperature is a pure time rescaling
+
+All 9 runs reached 30 d. Local copy:
+`~/SimulationResults/HPC_results/enceladus_DSM/GrainPackingSintering/keff_T_warm_phi0.325/`
+(cluster: `.../simulation_outputs/enceladus_DSM/batch_2026-09-25__18.06.50_keff_T_warm`).
+Overlays in its `compare/`, made by `postprocess/compare_keff.py`.
+
+- **dt check passes.** New −20 (dtmax 8526 throughout) vs pilot leg 1 (dtmax
+  200), same packings: k_iso agrees to 0.01% from day 5; rise 1→15 d differs
+  by 0.13–0.38 points against the 2.6-point stop threshold.
+- **At matched SSA, k_iso is the same at every T** — within 0.5% (mean
+  0.01–0.10%) for each packing, over SSA 13 200–17 900 m⁻¹. Temperature moves a
+  packing along one k(SSA) path; it does not change the path.
+- **The speed along it is exactly τ_sub(−20)/τ_sub(T)**: the time to reach a
+  given SSA is 1.59× shorter at −15 and 2.47–2.50× shorter at −10, every seed,
+  against τ_sub ratios 1.59 and 2.47. With every run normalized at the same
+  t/τ_sub (11), the k/k_b curves of all three temperatures coincide.
+- **So "k_eff rise from 1 d" is flat in T** (+30.0 / +29.7 / +30.5%, sd 2.3–3.3,
+  paired differences within ±2.1 points) **only because a fixed-time baseline
+  is a different sintering state at each T.** Absolute k_iso at 30 d is 8–10%
+  higher at −10 than at −20 for the same packing, because it got further.
+- **This is a property of the model regime, not a finding about snow.** At
+  α_c = 1e-3 the problem is attachment-limited (L* ≫ R, see
+  studies/packing_design §4), and temperature then enters only through the
+  kinetic prefactor. The collapse would break where the regime changes:
+  vapour-diffusion-limited kinetics (larger α_c or grains), or an imposed
+  temperature gradient.
+- **Anisotropy** k_xx/k_yy at 30 d: 1.092 / 1.089 / 1.079 (sd 0.08–0.11) —
+  set by the packing, not by T. k_xy ranges from −7% to +10% of k_xx by seed,
+  with random sign.
+
+**Consequence for stage 5.** Along T, the matrix buys nothing but τ_sub(T):
+any temperature's trajectory is the −20 trajectory with time rescaled. Unless
+a regime change is added on purpose, one T per porosity is enough, and the T
+axis is reported as a rate law.
+
+**Cost, measured: $342, not ~$150.** Step counts and s/step were as predicted
+(368/545/814 steps, ~20 s/step at 241 ranks). The overrun is **k_eff at every
+step**: 50–84 s per sample (median), 67–78% of wall time. The rev64 run solved
+the same corrector in 4 s at 615 ranks with the same iteration counts; the time
+per CG iteration swings 10× (0.06–0.55 s) within single runs here, so it looks
+environmental (node contention), not algorithmic — unexplained. Seed 1 at −10
+used 23 h 56 m of its 24 h limit. **For future runs: sample k_eff every ~5–10
+steps, or by SSA change, not every step.**
 
 > **SLIDES 1 — "the temperature lever is real and we can resolve it"**
 > `k_eff` rise vs T with seed error bars; the audit table showing why the old

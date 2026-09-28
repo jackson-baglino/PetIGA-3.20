@@ -16,6 +16,8 @@
 #   - plot_porosity.py   porosity + interface density   -> plots/porosity.png
 #   - plot_ssa.py        ice-air surface area           -> plots/ssa.png
 #   - plot_keff.py       k_eff vs time and vs SSA       -> plots/keff/{absolute,normalized}/
+# and once per batch:
+#   - compare_keff.py    runs overlaid by T and by phi  -> compare/by_{phi,T}/
 #   - plot_mass.py       phase mass vs time             -> plots/mass{.png,/}
 #   - plot_timestep.py   adaptive dt history            -> plots/timestep.png
 #   - plot_fields.py     VTK conversion (dim >= 2)      -> vtkOut/
@@ -151,6 +153,16 @@ for run in "$BATCH_DIR"/*/; do
         echo "  ✅ $name done"
     fi
 done
+
+# ── Batch level: overlay the runs across temperature and porosity. Skips
+#    itself (exit 0) when nothing in the batch has a k_eff CSV, and skips any
+#    group with only one value of the varied parameter. ──────────────────
+if [[ -f "$POSTPROCESS/compare_keff.py" ]]; then
+    echo ""
+    echo "▶ compare_keff.py  ->  $BATCH_DIR/compare/"
+    "$PYTHON" "$POSTPROCESS/compare_keff.py" "$BATCH_DIR" --out "$BATCH_DIR/compare" 2>&1 \
+        | sed 's/^/    /' || true
+fi
 
 echo ""
 echo "============================================================"
