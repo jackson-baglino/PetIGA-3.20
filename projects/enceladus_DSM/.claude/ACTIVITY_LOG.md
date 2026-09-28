@@ -1,3 +1,19 @@
+## 2026-09-28 — Even porosity set, deposition movie, batch 3 set up
+
+- Packings rebuilt at phi 0.275/0.325/0.375/0.425/0.475 x 5 (user: evenly
+  spaced, push toward 0.5). 0.475 built without the percolation gate (1 of 5
+  spans both axes). Old 0.25/0.30/0.35/0.40 removed.
+- Generator: optional route trace (no geometry change). New
+  postprocess/make_deposition_movie.py replays a packing's build from its
+  metadata, verified against grains.dat (max diff 5e-16 m), and renders a
+  33 s movie + 4-panel storyboard. Found: seam relax moves 86 grains > 0.1 R,
+  up to 1.2 R, reaching ~30% of L from the seam.
+  Outputs: ~/SimulationResults/HPC_results/enceladus_DSM/GrainPackingSintering/presentation/
+- Batch 3: 125 runs (5 phi x 5 T {-5,-10,-20,-30,-40} x 5 seeds), 60k/core,
+  keff every 5 steps (every step at -40), 50 snapshots. Weekend runs not rerun.
+
+---
+
 ## 2026-09-28 — Snapshot figure opens on the t >= 1 s frame; full y axis
 
 - plot_keff_snapshots.py: curve and panel (a) start at the movies' opening

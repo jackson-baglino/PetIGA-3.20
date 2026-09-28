@@ -301,6 +301,27 @@ steps, or by SSA change, not every step.**
 
 ---
 
+## Stage 4+5 (revised 2026-09-28) — packings built; batch 3 is the matrix
+
+Superseded plan below kept for the record. What was actually done:
+
+- **Packings.** `inputs/packings/keff_LR40/`: φ {0.275, 0.325, 0.375, 0.425,
+  0.475} × 5, one unique seed each, y-seam gate on, and
+  `make_packings.sh` as the record.
+  - φ = 0.475 has the percolation gate off: the ice spans both axes in 1 of 5.
+    It is kept to show where 2D stops working, not as a snow condition.
+  - The RVE and anisotropy basis is in `studies/rve_anisotropy/README.md`.
+- **Batch 3.** [`batch3_phi_T.txt`](batch3_phi_T.txt): the 25 packings ×
+  T {−5, −10, −20, −30, −40} °C = 125 runs.
+  - k_eff every 5 steps (every step at −40).
+  - 50 log-spaced snapshots per run.
+  - ~$1.7k on the batch-2 cost basis; up to ~$2.8k at 60k DoF/core if steps
+    don't speed up.
+- **The weekend runs (batch 2) are not rerun.**
+  - Their conclusions (the dt check, T as a time rescaling) are paired
+    comparisons on the same packings, and hold.
+  - They are not pooled with batch 3: those packings predate the seam gate.
+
 ## Stage 4 — production packings · local, minutes
 
 φ ∈ {0.25, 0.30, 0.35, 0.40} × 5 seeds, `L/R_ave` ≥ 40 at **`t_final`**, not
