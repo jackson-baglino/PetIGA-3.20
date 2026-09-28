@@ -23,8 +23,15 @@ PANELS. They follow make_packing_movie.py, and they import its helpers so
 the figure and the movie cannot drift apart: supersaturation
 sigma = rho_v/rho_vs(T) - 1 on cmocean `balance`, re-centred so the pale
 middle is sigma = 0, on an asinh scale; ice painted on top with cmocean
-`ice`, transparent below phi = 0.5. The sigma range is taken over the pore
-space of the SHOWN snapshots only, and shared by every panel.
+`ice`, transparent below phi = 0.5.
+
+SIGMA RANGE. Symmetric about zero, so sigma = 0 sits at the middle of the
+bar: [-v, +v] with v = min(|min sigma|, |max sigma|) over the pore space of
+the SHOWN snapshots. v is the SMALLER extreme, so that side of the bar ends
+exactly at the data (square cap) and the other side saturates (triangular
+cap = values beyond the bar, drawn in its end colour). All panels share it.
+This departs from the movies' asymmetric range on purpose: in a still figure
+the reader must be able to read sigma = 0 off the middle of the bar.
 
 THE OPENING FRAME IS t = 0. The curve and the snapshots start at the same
 frame the movies open on (pplib.opening_step): the first snapshot with
@@ -205,7 +212,7 @@ def _curve(ax, x, ys, keys):
         ax.spines[sp].set_linewidth(0.6)
 
 
-def _colorbars(fig, cax_ice, cax_sig, norm, vapcm):
+def _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend):
     """Two horizontal bars in a strip above the axes, each labelled on its
     left. Horizontal because at 130 mm a vertical pair beside the axes would
     cost the insets a quarter of their width."""
@@ -224,7 +231,7 @@ def _colorbars(fig, cax_ice, cax_sig, norm, vapcm):
     # Thinned harder than the vertical bar did: horizontally each label is
     # as wide as three or four characters, not as tall as one.
     cb = fig.colorbar(ScalarMappable(cmap=vapcm, norm=norm), cax=cax_sig,
-                      orientation="horizontal", extend="both", extendfrac=0.04,
+                      orientation="horizontal", extend=sig_extend, extendfrac=0.04,
                       ticks=sigma_ticks(norm, min_gap=0.16))
     _label(cax_sig, r"$\sigma$ [$\times10^{-4}$]")
     cb.ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, _p: f"{v:.2g}"))
@@ -232,7 +239,7 @@ def _colorbars(fig, cax_ice, cax_sig, norm, vapcm):
     cb.outline.set_linewidth(0.5)
 
 
-def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
+def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
     """One figure. `snaps` is [(fields, X, Y, t, row)] in time order.
 
     Laid out in INCHES at the final print width: the insets must be square
@@ -354,7 +361,7 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, a):
     w_sig = axw - lab_ice - lab_sig - sep - tail - w_ice
     cax_ice = fig.add_axes(F(ml + lab_ice, y_cb, w_ice, cb_h))
     cax_sig = fig.add_axes(F(ml + lab_ice + w_ice + sep + lab_sig, y_cb, w_sig, cb_h))
-    _colorbars(fig, cax_ice, cax_sig, norm, vapcm)
+    _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend)
 
     if not a.no_title:
         title = (a.title_time or DEFAULTS["title_time"]) if kind == "time" \
@@ -387,8 +394,6 @@ def main(argv=None):
                    help="time figure: k_eff in W/m/K instead of k/k_0")
     p.add_argument("--iso-only", action="store_true",
                    help="plot k_iso only, not k_xx and k_yy")
-    p.add_argument("--sat-clip", type=float, default=0.1,
-                   help="percentile clipped off each end of sigma (default 0.1)")
     p.add_argument("--title-time", default=None)
     p.add_argument("--title-ssa", default=None)
     p.add_argument("--no-title", action="store_true")
@@ -449,9 +454,15 @@ def main(argv=None):
         pore.append(s[fl["IcePhase"] < 0.5])
         print(f"  snapshot step {fsteps[i]}: t = {t / DAY:.2f} d")
     pore = np.concatenate(pore)
-    lo, hi = np.percentile(pore, [a.sat_clip, 100.0 - a.sat_clip])
-    norm = AsinhNorm(linear_width=max(max(abs(lo), abs(hi)) / 300.0, 1e-12),
-                     vmin=lo, vmax=hi)
+    smin, smax = float(pore.min()), float(pore.max())
+    v = min(abs(smin), abs(smax))
+    if v <= 0.0:                                 # one-signed field touching 0
+        v = max(abs(smin), abs(smax))
+    lo, hi = -v, v
+    sig_extend = {(True, True): "both", (True, False): "min",
+                  (False, True): "max", (False, False): "neither"}[
+                      (smin < lo, smax > hi)]
+    norm = AsinhNorm(linear_width=max(v / 300.0, 1e-12), vmin=lo, vmax=hi)
     vapcm = centered_cmap(cmocean.cm.balance, norm)
     icecm = ice_alpha_cmap()
 
@@ -465,10 +476,10 @@ def main(argv=None):
     figs = {
         "keff_time_snapshots": build(
             "time", snaps, d["t"] / DAY, d if a.absolute else kn,
-            keys, norm, vapcm, icecm, a),
+            keys, norm, vapcm, icecm, sig_extend, a),
         "keff_ssa_snapshots": build(
             "ssa", snaps, d["ssa"] / d["ssa"][ib], kn,
-            keys, norm, vapcm, icecm, a),
+            keys, norm, vapcm, icecm, sig_extend, a),
     }
     for stem, fig in figs.items():
         for fmt in a.formats:
@@ -481,7 +492,8 @@ def main(argv=None):
     print(f"  reference (subscript 0) = opening frame: t_0 = {d['t'][ib]:.4g} s, step "
           f"{d['step'][ib]}: k_xx,0 = {d['kxx'][ib]:.4g}, k_yy,0 = {d['kyy'][ib]:.4g}, "
           f"k_iso,0 = {d['kiso'][ib]:.4g} W/m/K, SSA_0 = {d['ssa'][ib]:.4g} 1/m")
-    print(f"  sigma x{SIGMA_SCALE:g} range {lo:+.3g} .. {hi:+.3g} over the shown pores")
+    print(f"  sigma x{SIGMA_SCALE:g}: data {smin:+.3g} .. {smax:+.3g} over the shown "
+          f"pores; bar +-{v:.3g} (extend={sig_extend})")
     return 0
 
 
