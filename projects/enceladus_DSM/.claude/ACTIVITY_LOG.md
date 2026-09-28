@@ -1,3 +1,17 @@
+## 2026-09-28 — Production submit script and campaign to-do list
+
+- scripts/HPC/submit_keff_production.sh: the only submit path for manuscript
+  runs; owns all options and the -40 C k_eff cadence rule; validates stage
+  files (no per-run options, campaign packings/experiments, T match); refuses
+  dirty or unpushed trees; writes PRODUCTION_MANIFEST.txt. Tested: dry run of
+  3a clean; four kinds of bad entry rejected.
+- Stage files 3a-3e now list runs only.
+- studies/keff_sintering/TODO.md: staged checks, open questions, later
+  stages, manuscript obligations, done list. Linked from CLAUDE.md and
+  CAMPAIGN.md.
+
+---
+
 ## 2026-09-28 — Snapshot figures: no titles, symbol-only labels
 
 - Titles off by default (--title or any --title-* turns them on); axis
