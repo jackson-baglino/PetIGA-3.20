@@ -66,6 +66,15 @@ SNAPSHOTS. --times (days) picks the eligible snapshot nearest each time;
 time from the opening frame to the end of the run, so (a) is the opening
 frame.
 
+CLIP MAP (--clip-map, off by default). A diagnostic, not a manuscript
+figure: the same snapshots, larger, in a 2 x 2 grid with the same colour
+bars, plus an outline around the pore space where sigma is beyond the bar
+(below -v in yellow; above +v in green, if that side clips too) and so is
+drawn in the bar's end colour. Each panel's title gives that share of its
+pore area. It outlines the region, not the sigma = -v level: small isolated
+pores are often clipped whole, and their edge is the ice.
+Written as sigma_out_of_range.{pdf,png} next to the other two.
+
 OUTPUT. <dir>/plots/keff/snapshots/ (or --save-dir). PDF is the manuscript
 file -- the curve is vector, the fields are embedded rasters -- and PNG is a
 preview. Exits 0 without writing anything when the run has no k_eff CSV.
@@ -373,6 +382,74 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
     return fig
 
 
+C_CLIP_LO, C_CLIP_HI = "#ffd21f", "#39d353"   # contours: below / above the bar
+
+
+def build_clipmap(snaps, norm, vapcm, icecm, sig_extend, a):
+    """Where sigma leaves the colour bar: 2 x 2 snapshots, same bars, with a
+    contour at each clipped limit. For pointing at, not for the manuscript."""
+    v = float(norm.vmax)
+    n = len(snaps)
+    ncol = 2 if n > 1 else 1
+    nrow = int(np.ceil(n / ncol))
+    W = a.width_mm * MM
+    m, gap, t_band = 0.06, 0.10, 0.22
+    pw = (W - 2 * m - (ncol - 1) * gap) / ncol
+    cb_h, cb_lab, cb_gap = 0.07, 0.15, 0.10
+    note = 0.22
+    H = m + note + cb_h + cb_lab + cb_gap + nrow * (t_band + pw) \
+        + (nrow - 1) * gap + m
+    fig = plt.figure(figsize=(W, H))
+    F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
+
+    lo_clip = sig_extend in ("min", "both")
+    hi_clip = sig_extend in ("max", "both")
+    for i, (fl, X, Y, t, row) in enumerate(snaps):
+        r, c = divmod(i, ncol)
+        y0 = m + (nrow - 1 - r) * (pw + t_band + gap)
+        ax = fig.add_axes(F(m + c * (pw + gap), y0, pw, pw))
+        XX, YY = _field(ax, fl, X, Y, norm, vapcm, icecm)
+        if i == 0:
+            _scalebar(ax, XX, YY)
+        sig = SIGMA_SCALE * pplib.supersaturation(fl["VaporDensity"], fl["Temperature"])
+        pore = fl["IcePhase"] < 0.5
+        # Outline the out-of-range REGION (pore AND beyond the bar), not the
+        # sigma = -v level: most clipped pixels fill small isolated pores
+        # whole, where sigma never crosses -v -- their edge is the ice. The
+        # 0.5 contour of the indicator traces both kinds of edge.
+        parts = []
+        for on, mask, col, lab in (
+                (lo_clip, pore & (sig < -v), C_CLIP_LO, "< $-v$"),
+                (hi_clip, pore & (sig > v), C_CLIP_HI, "> $+v$")):
+            if not on:
+                continue
+            if mask.any():
+                ax.contour(XX, YY, mask.astype(float), levels=[0.5], colors=col,
+                           linewidths=0.8)
+            parts.append(f"{100 * mask.sum() / pore.sum():.1f}% {lab}")
+        ax.set_title(f"({LETTERS[i]}) {t / DAY:.1f} d   " + ",  ".join(parts)
+                     + " of pore", fontsize=FS_SMALL, color=INK, pad=3)
+
+    # Same bars as the main figures, in the same strip arrangement.
+    y_cb = H - m - cb_h
+    lab_ice, lab_sig, sep, tail = 0.22, 0.82, 0.30, 0.14
+    span = W - 2 * m
+    w_ice = 0.30 * (span - lab_ice - lab_sig - sep - tail)
+    w_sig = span - lab_ice - lab_sig - sep - tail - w_ice
+    cax_ice = fig.add_axes(F(m + lab_ice, y_cb, w_ice, cb_h))
+    cax_sig = fig.add_axes(F(m + lab_ice + w_ice + sep + lab_sig, y_cb, w_sig, cb_h))
+    _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend)
+
+    txt = [f"$v$ = {v:.3g}" + r" $\times10^{-4}$ = min(|min $\sigma$|, |max $\sigma$|)"]
+    if lo_clip:
+        txt.append(r"yellow outline: pore where $\sigma < -v$")
+    if hi_clip:
+        txt.append(r"green outline: pore where $\sigma > +v$")
+    fig.text(m / W, (H - m - cb_h - cb_lab - 0.05) / H, ";   ".join(txt),
+             ha="left", va="top", fontsize=FS_TINY, color=INK)
+    return fig
+
+
 # ---------------------------------------------------------------------------
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__,
@@ -402,6 +479,9 @@ def main(argv=None):
     p.add_argument("--xlabel-time", default=None)
     p.add_argument("--xlabel-ssa", default=None)
     p.add_argument("--ylabel", default=None, help="y label for both figures")
+    p.add_argument("--clip-map", action="store_true",
+                   help="also write sigma_out_of_range.{pdf,png}: the snapshots "
+                        "with contours where sigma leaves the colour bar")
     p.add_argument("--formats", nargs="+", default=["pdf", "png"])
     p.add_argument("--dpi", type=int, default=400, help="PNG and raster dpi")
     a = p.parse_args(argv)
@@ -483,6 +563,9 @@ def main(argv=None):
             "ssa", snaps, d["ssa"] / d["ssa"][ib], kn,
             keys, norm, vapcm, icecm, sig_extend, a),
     }
+    if a.clip_map:
+        figs["sigma_out_of_range"] = build_clipmap(snaps, norm, vapcm, icecm,
+                                                   sig_extend, a)
     for stem, fig in figs.items():
         for fmt in a.formats:
             path = out / f"{stem}.{fmt}"

@@ -1,3 +1,13 @@
+## 2026-09-28 — sigma out-of-range map for the snapshot figure
+
+- plot_keff_snapshots.py --clip-map (off by default, not in the sweep):
+  sigma_out_of_range.{pdf,png}, the four snapshots 2x2 with the same colour
+  bars and a yellow outline of pore space with sigma < -v (green for > +v).
+  Outlines the region, not the -v level: the clipped pixels are mostly small
+  isolated pores clipped whole. This run: 18.7% of pore at 0 d, ~9-10% after.
+
+---
+
 ## 2026-09-28 — Snapshot figure colour bars: sigma centred on 0, phi_i 0-1
 
 - sigma bar now +-min(|min|, |max|) over the shown pores, so 0 is centred;
