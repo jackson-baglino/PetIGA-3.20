@@ -1,3 +1,12 @@
+## 2026-09-28 — Snapshot figures resized for JGR Planets (170 mm)
+
+- AGU limits: 50-170 mm wide, <= 228 mm tall, >= 8 pt text, sequential
+  lowercase panel labels. --width-mm default 130 -> 170; height checked.
+- Instants now circled numbers 1-4; combined figure gets (a)/(b)/(c) panel
+  labels; curve panels taller (170 x 172 mm).
+
+---
+
 ## 2026-09-28 — Snapshot figures: curved time arrow, matched letters
 
 - SSA curves: the horizontal corner "time" arrow replaced by a curved arrow

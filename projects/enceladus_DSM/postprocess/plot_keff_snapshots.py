@@ -2,22 +2,31 @@
 """plot_keff_snapshots.py — k_eff curve with microstructure snapshots inset.
 
     python3 plot_keff_snapshots.py --dir <run> [--times 1 10 20 30] [--steps ...]
-        [--n-snapshots 4] [--width-mm 130] [--absolute] [--iso-only]
+        [--n-snapshots 4] [--width-mm 170] [--absolute] [--iso-only]
         [--title] [--title-time STR] [--title-ssa STR] [--title-combined STR]
         [--xlabel-time STR] [--xlabel-ssa STR] [--ylabel STR]
         [--source vts|sol] [--save-dir DIR] [--formats pdf png]
 
 Two page-width manuscript figures, each one k_eff curve with 3-4
 microstructure snapshots inset along the bottom of the same axes, under the
-curve. Each snapshot is lettered, and the same letter marks its instant on
-the curve, joined to it by a leader line:
+curve. Each snapshot is numbered, and the same circled number marks its
+instant on the curve, joined to it by a leader line:
 
     keff_time_snapshots.{pdf,png}   k_eff / k_eff,0  vs  time [d]
     keff_ssa_snapshots.{pdf,png}    k_eff / k_eff,0  vs  SSA / SSA_0
     keff_combined_snapshots.{pdf,png}
-                                    three panels, top to bottom: the
-                                    snapshots, k vs time, k vs SSA; the
-                                    curves' points lettered to match
+                                    three panels, (a) the snapshots,
+                                    (b) k vs time, (c) k vs SSA; the
+                                    curves' points numbered to match
+
+INSTANTS ARE NUMBERED, PANELS ARE LETTERED. AGU asks for multi-part
+figures to carry sequential lowercase panel labels, so letters belong to
+the panels; the snapshot instants take circled numbers 1-4 so the two
+never collide in a caption ("(b) ... at instants 1-4").
+
+SIZE. AGU journals take figures 50-170 mm wide (105-170 mm for two
+columns) and at most 228 mm tall; --width-mm defaults to the full 170 mm.
+The fonts are print sizes (>= 8 pt, AGU's minimum) at that width.
 
 The insets are ordered by where their markers fall on the x axis, so the
 leaders never cross: left to right in time on the time figure, and RIGHT to
@@ -113,7 +122,9 @@ from make_neck_movie import (SIGMA_SCALE, ice_alpha_cmap,   # noqa: E402
 
 WANT = ("IcePhase", "VaporDensity", "Temperature")
 SOL_DOF = {"IcePhase": 0, "Temperature": 1, "VaporDensity": 2}
-LETTERS = "abcdefgh"
+LETTERS = "12345678"                # instant labels: circled numbers
+PANELS = "abc"                      # panel labels of the combined figure
+MAX_H_MM = 228.0                    # AGU's maximum figure height
 INK, MUTED = "#1a1a1a", "#5c5c5c"
 # Type sizes are PRINT sizes: the figure is built at its final width
 # (--width-mm) and saved without cropping, so nothing is rescaled on the page.
@@ -312,7 +323,7 @@ def _time_arrow(ax, x, y, s0=0.26, s1=0.52, off_pt=13.0, rad=0.08):
 
 def _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend):
     """Two horizontal bars in a strip above the axes, each labelled on its
-    left. Horizontal because at 130 mm a vertical pair beside the axes would
+    left. Horizontal because at page width a vertical pair beside the axes would
     cost the insets a quarter of their width."""
     def _label(cax, text):
         cax.text(-0.06, 0.5, text, transform=cax.transAxes, ha="right",
@@ -520,9 +531,9 @@ def build_combined(snaps, xt, xs, kn, keys, norm, vapcm, icecm, sig_extend, a):
     top = 0.24 if not a.no_title else 0.05
     cb_h, cb_lab, cb_gap = 0.07, 0.15, 0.06   # bar | tick labels | to titles
     t_band = 0.19                           # snapshot titles
-    g_snap = 0.16                           # snapshots -> time panel
-    ph = 1.45                               # each curve panel
-    g_x = 0.44                              # time panel's x label -> SSA panel
+    g_snap = 0.30                           # snapshots -> time panel (+ label)
+    ph = 1.75                               # each curve panel
+    g_x = 0.58                              # time x label -> SSA panel (+ label)
     bot = 0.40
     H = top + cb_h + cb_lab + cb_gap + t_band + s_in + g_snap + ph + g_x + ph + bot
     fig = plt.figure(figsize=(W, H))
@@ -542,6 +553,14 @@ def build_combined(snaps, xt, xs, kn, keys, norm, vapcm, icecm, sig_extend, a):
                   keys, a)
     _marked_panel(fig.add_axes(F(ml, y_ssa, axw, ph)), "ssa", snaps, xs, kn,
                   keys, a)
+
+    # Panel labels, flush with the figure's left edge: (a) level with the
+    # snapshot titles, (b) and (c) just ABOVE their axes, clear of the top
+    # y tick label.
+    for lab, y_top in zip(PANELS, (y_snap + s_in + 0.5 * t_band,
+                                   y_time + ph + 0.14, y_ssa + ph + 0.14)):
+        fig.text(0.02 / W, y_top / H, f"({lab})", ha="left", va="center",
+                 fontsize=FS, fontweight="bold", color=INK)
 
     y_cb = y_snap + s_in + t_band + cb_gap + cb_lab
     lab_ice, lab_sig, sep, tail = 0.22, 0.82, 0.30, 0.14
@@ -603,7 +622,7 @@ def build_clipmap(snaps, norm, vapcm, icecm, sig_extend, a):
                 ax.contour(XX, YY, mask.astype(float), levels=[0.5], colors=col,
                            linewidths=0.8)
             parts.append(f"{100 * mask.sum() / pore.sum():.1f}% {lab}")
-        ax.set_title(f"({LETTERS[i]}) {t / DAY:.1f} d   " + ",  ".join(parts)
+        ax.set_title(f"{LETTERS[i]}: {t / DAY:.1f} d   " + ",  ".join(parts)
                      + " of pore", fontsize=FS_SMALL, color=INK, pad=3)
 
     # Same bars as the main figures, in the same strip arrangement.
@@ -642,8 +661,9 @@ def main(argv=None):
     p.add_argument("--source", choices=("vts", "sol"), default="vts",
                    help="vts: vtkOut/solV_*.vts (plenty at page width); "
                         "sol: full-resolution sol_*.dat via igakit")
-    p.add_argument("--width-mm", type=float, default=130.0,
-                   help="final printed width [mm] (default 130). The figure is "
+    p.add_argument("--width-mm", type=float, default=170.0,
+                   help="final printed width [mm] (default 170, the AGU "
+                        "full-page maximum). The figure is "
                         "built at this size, so the fonts are print sizes")
     p.add_argument("--absolute", action="store_true",
                    help="time figure: k_eff in W/m/K instead of k/k_0")
@@ -755,6 +775,10 @@ def main(argv=None):
         figs["sigma_out_of_range"] = build_clipmap(snaps, norm, vapcm, icecm,
                                                    sig_extend, a)
     for stem, fig in figs.items():
+        h_mm = fig.get_figheight() * 25.4
+        if h_mm > MAX_H_MM:
+            print(f"  WARNING: {stem} is {h_mm:.0f} mm tall, over AGU's "
+                  f"{MAX_H_MM:.0f} mm limit", file=sys.stderr)
         for fmt in a.formats:
             path = out / f"{stem}.{fmt}"
             # No bbox_inches="tight": it would crop to the ink and the
