@@ -1,3 +1,20 @@
+## 2026-09-28 — RVE and anisotropy check from existing data
+
+- New studies/rve_anisotropy/: geometry.py (contact fabric + y-seam contact
+  density for all 42 packings on disk), figures.py, README with findings.
+- Horizontal fabric bias F_xx/F_yy ~1.09 at every L/R, also without a y seam:
+  it comes from the drop-and-roll rule, not domain size. k_xx/k_yy 1.10 +- 0.03
+  (4 seeds, 30 d). packing_design README's "vertical load paths" is wrong.
+- k_xy: zero seed-mean, F_xy scatter shrinks ~1/L, sign follows F_xy 5/5 -> a
+  finite-sample fluctuation. k_iso is rotation-invariant.
+- y seam is a genuine generator artifact: 0.65 of interior contact density
+  (0.33 on pilot seeds 1 and 4); bound k_yy <= 3% low typical, 9% worst at L/R 40.
+  Recommend a seam-contact gate before the porosity packings.
+- Decision: L/R = 40 adequate for k_iso/SSA; report anisotropy only as a seed
+  mean. Per user, no new simulations or solves.
+
+---
+
 ## 2026-09-27 — Warm-end batch results: T is a time rescaling
 
 - All 9 keff_T_warm runs reached 30 d. dt check vs pilot passes (k_iso to
