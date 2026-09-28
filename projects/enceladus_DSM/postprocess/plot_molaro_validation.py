@@ -20,16 +20,20 @@ the sets cannot drift apart.
                                       record, instants 1 and 2
     molaro_combined.{pdf,png}         (a) the sections, (b) the neck curves,
                                       instants 1-2 marked on the -20 C model
+    molaro_grain_shrinkage.{pdf,png}  D / D_0 of (a) the large and (b) the
+                                      small grain, both temperatures
 
 THE CLOCK. Molaro's record starts at an unknown time after contact, and our
 runs start from a chosen r = 14 um neck. So each series' t = 0 is the moment
 its neck first reaches Molaro's first measured width (32.81 um at -20 C,
 32.51 um at -5 C) -- their Fig. 12 convention, and the one
-plot_neck_vs_molaro.py and run_batch_measure.sh already use. The model's
-pre-anchor stretch (t < 0) is simulated and is drawn.
+plot_neck_vs_molaro.py and run_batch_measure.sh already use. Nothing before
+t = 0 is drawn: every model curve opens on its sample nearest t*, and the
+grain diameters are normalised by their values there (D_0).
 
-THE INSTANTS. Instant 1 is the snapshot nearest the model's t* (Molaro's
-t = 0), instant 2 the one nearest t* + 78 min (their last -20 C point). Only
+THE INSTANTS. --instants-min (default 0 78) are anchored times; each picks
+the nearest snapshot. 78 min is Molaro's last -20 C point, the end of the
+window both the neck and the shrinkage are scored over. Only
 snapshots with a neck_width.csv sample are eligible, so both markers sit on
 measured values; the titles give each snapshot's own anchored time.
 
@@ -37,26 +41,25 @@ THE SECTIONS are mirrored across the symmetry axis, so the pair reads as two
 grains rather than two half-discs, and cropped to the ice with a margin
 (--crop-um overrides). Horizontal is the symmetry axis z, vertical r.
 
-SIGMA RANGE. Deliberately NOT the k_eff figures' symmetric rule. Here the
-pore spans sigma = -28.5 .. +0.3 (x1e-4): the Dirichlet wall is
-undersaturated and only the neck is supersaturated. The k_eff rule sizes the
-bar to the SMALLER extreme, which would push ~99 % of the pore off the bar.
-Instead the bar spans the data and the map is re-centred so its pale middle
-is sigma = 0 (make_neck_movie.centered_cmap) -- the same colouring as this
-run's neck movie. Both bar ends sit exactly at the data, so neither is
-extended. Shared by both snapshots.
+SIGMA RANGE. The k_eff figures' rule: symmetric about zero so sigma = 0 is
+the bar's middle, sized to the SMALLER extreme. Here that is the neck's
++0.28 (x1e-4); the undersaturated far field (down to -27) is beyond the
+bar and drawn in its end colour (triangular cap). The printout gives the
+share of pore that clips. Shared by both snapshots.
 
 MISSING -5 C RUN. Without --run-t5 the -5 C data are drawn with no model
 curve; the figure is otherwise complete, and the note says so.
 
 OUTPUT. studies/molaro_2019/manuscript/ (or --save-dir). PDF is the
-manuscript file, PNG a preview.
+manuscript file, PNG a preview. --copy-to also copies every file into the
+manuscript's Figures/Figure<N>__<name>/ folder (Figure 2 for these).
 """
 from __future__ import annotations
 
 import argparse
 import glob
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -113,12 +116,43 @@ def load_series(key, run):
         if t_star is None:
             sys.exit(f"  {run}: the model neck ({wm.min()/UM:.2f}-{wm.max()/UM:.2f} um) "
                      f"never crosses the {s['anchor_um']} um anchor")
+        # Nothing before t = 0 is drawn. The curve opens on the sample
+        # nearest t* -- a measured value, never an interpolated one -- and
+        # that is also the sample instant 1 lands on.
+        i0 = int(np.argmin(np.abs(tm - t_star)))
+        tm, wm = tm[i0:], wm[i0:]
         s["model"] = dict(t_s=tm, w_m=wm, t_star=t_star,
-                          t=(tm - t_star) / 60.0, w=wm / UM)
+                          t=(tm - t_star) / 60.0, w=wm / UM,
+                          grains=read_grains(run, tm[0], t_star))
+    s["Dd"] = read_data_diameters(s["data"])
     return s
 
 
-def pick_instants(s, steps):
+def read_grains(run, t_open, t_star):
+    """Model grain diameters from grain_shrinkage.csv, from the opening sample
+    on, normalised by their own values there. None if the CSV is missing."""
+    f = run / "grain_shrinkage.csv"
+    if not f.is_file():
+        print(f"  {run.name}: no grain_shrinkage.csv -- run "
+              f"postprocess/grain_shrinkage.py; no model shrinkage curve")
+        return None
+    g = np.genfromtxt(f, delimiter=",", names=True)
+    keep = g["t_s"] >= t_open - 1e-9
+    t = g["t_s"][keep]
+    D_lg, D_sm = 2 * g["R_large_m"][keep], 2 * g["R_small_m"][keep]
+    return dict(t=(t - t_star) / 60.0, large=D_lg / D_lg[0], small=D_sm / D_sm[0],
+                D0=(D_lg[0] / UM, D_sm[0] / UM))
+
+
+def read_data_diameters(path):
+    """(t_min, D_large/D_large0, D_small/D_small0) from a Fig. 11 CSV."""
+    rows = [ln.split(",") for ln in open(path)
+            if ln.strip() and not ln.startswith("#")]
+    a = np.array([[float(x) for x in r[:6]] for r in rows])
+    return dict(t=a[:, 0] - a[0, 0], large=a[:, 4] / a[0, 4], small=a[:, 5] / a[0, 5])
+
+
+def pick_instants(s, steps, instants_min):
     """[(file, step, row)] for instants 1 and 2, on neck_width.csv samples."""
     run, m = s["run"], s["model"]
     files, _ = make_reader(run, "sol" if glob.glob(str(run / "sol_*.dat")) else "vts")
@@ -138,7 +172,7 @@ def pick_instants(s, steps):
     if steps:
         want = [int(cand[np.argmin(np.abs(fsteps[cand] - k))]) for k in steps]
     else:
-        targets = (m["t_star"], m["t_star"] + s["window_min"] * 60.0)
+        targets = [m["t_star"] + 60.0 * x for x in instants_min]
         want = [int(cand[np.argmin(np.abs(ftimes[cand] - t))]) for t in targets]
     return [(files[i], int(fsteps[i]), row_of[i]) for i in want]
 
@@ -245,14 +279,14 @@ def _sections(fig, F, secs, x0, y0, s_w, s_h, gap, norm, vapcm, icecm, t_star):
         _snap_title(axi, LETTERS[i], f"{round(tm) + 0:d} min")   # +0: no "-0"
 
 
-def _strip(fig, F, x0, y_cb, axw, norm, vapcm):
+def _strip(fig, F, x0, y_cb, axw, norm, vapcm, sig_extend):
     cb_h = 0.07
     lab_ice, lab_sig, sep, tail = 0.22, 0.82, 0.30, 0.14
     w_ice = 0.30 * (axw - lab_ice - lab_sig - sep - tail)
     w_sig = axw - lab_ice - lab_sig - sep - tail - w_ice
     cax_ice = fig.add_axes(F(x0 + lab_ice, y_cb, w_ice, cb_h))
     cax_sig = fig.add_axes(F(x0 + lab_ice + w_ice + sep + lab_sig, y_cb, w_sig, cb_h))
-    _colorbars(fig, cax_ice, cax_sig, norm, vapcm, "neither")
+    _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend)
 
 
 def build_neck(series, a):
@@ -283,7 +317,7 @@ def build_micro(secs, norm, vapcm, icecm, t_star, a):
     fig = plt.figure(figsize=(W, H))
     F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
     _sections(fig, F, secs, ml, bot, s_w, s_h, gap, norm, vapcm, icecm, t_star)
-    _strip(fig, F, ml, bot + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm)
+    _strip(fig, F, ml, bot + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm, a.sig_extend)
     return fig
 
 
@@ -304,7 +338,66 @@ def build_combined(secs, series, marks, norm, vapcm, icecm, t_star, a):
     for lab, y_top in zip(PANELS, (y_snap + s_h + 0.5 * t_band, bot + ph + 0.14)):
         fig.text(0.02 / W, y_top / H, f"({lab})", ha="left", va="center",
                  fontsize=FS, fontweight="bold", color=INK)
-    _strip(fig, F, ml, y_snap + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm)
+    _strip(fig, F, ml, y_snap + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm, a.sig_extend)
+    return fig
+
+
+def _shrink_panel(ax, series, which, xmax):
+    """D / D_0 of one grain: model lines, Molaro's points (no error bars --
+    their table gives none for the diameters)."""
+    ax.patch.set_alpha(0.0)
+    ax.axhline(1.0, color="#999999", lw=0.6, ls=":", zorder=0)
+    vals = []
+    for s in series:
+        c, m = s["color"], s["model"]
+        if m is not None and m["grains"] is not None:
+            g = m["grains"]
+            ax.plot(g["t"], g[which], "-", lw=1.8, color=c, zorder=2)
+            vals.append(g[which][g["t"] <= xmax])
+        d = s["Dd"]
+        ax.plot(d["t"], d[which], "o", ms=4.2, mfc="white", mec=c, mew=0.9,
+                ls="none", zorder=3)
+        vals.append(d[which])
+    v = np.concatenate(vals)
+    pad = 0.08 * (v.max() - v.min())
+    ax.set_ylim(v.min() - pad, max(v.max(), 1.0) + pad)
+    ax.set_xlim(-0.03 * xmax, 1.06 * xmax)
+    ax.xaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
+    ax.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
+    ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3, pad=2)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    for sp in ("left", "bottom"):
+        ax.spines[sp].set_linewidth(0.6)
+    ax.set_xlabel("Time [min]", fontsize=FS, labelpad=2)
+
+
+def build_shrinkage(series, a):
+    """(a) the large grain, (b) the small one, each D / D_0 against the
+    anchored clock. Colour is the temperature, as on the neck figure."""
+    W = a.width_mm * MM
+    ml, mr, gap, top, bot, ph = 0.62, 0.08, 0.62, 0.42, 0.40, 2.10
+    pw = (W - ml - mr - gap) / 2
+    H = top + ph + bot
+    fig = plt.figure(figsize=(W, H))
+    F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
+    xmax = max(float(s["Dd"]["t"].max()) for s in series)
+    for i, (which, sym) in enumerate((("large", "l"), ("small", "s"))):
+        ax = fig.add_axes(F(ml + i * (pw + gap), bot, pw, ph))
+        _shrink_panel(ax, series, which, xmax)
+        ax.set_ylabel(rf"$D_\mathrm{{{sym}}}\,/\,D_{{\mathrm{{{sym}}},0}}$",
+                      fontsize=FS, labelpad=3)
+        fig.text((ml + i * (pw + gap) - ml + 0.02) / W, (bot + ph + 0.10) / H,
+                 f"({PANELS[i]})", ha="left", va="center", fontsize=FS,
+                 fontweight="bold", color=INK)
+    # One row above both panels: inside them every corner holds data.
+    h = [Line2D([], [], color=s["color"], lw=1.8, label=s["label"]) for s in series]
+    h += [Line2D([], [], color=INK, lw=1.8, label="model"),
+          Line2D([], [], color=INK, ls="none", marker="o", ms=4.2, mfc="white",
+                 mew=0.9, label="Molaro et al. (2019)")]
+    fig.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=1.6,
+               ncol=len(h), columnspacing=1.6, handletextpad=0.5,
+               loc="center", bbox_to_anchor=(0.5, (bot + ph + top - 0.08) / H))
     return fig
 
 
@@ -317,8 +410,15 @@ def main(argv=None):
     p.add_argument("--run-t5", type=Path, default=None,
                    help="-5 C run directory; omitted, its data are drawn alone")
     p.add_argument("--steps", type=int, nargs=2, default=None,
-                   help="snapshot steps for instants 1 and 2 (default: nearest "
-                        "t* and t* + 78 min)")
+                   help="snapshot steps for instants 1 and 2, overriding "
+                        "--instants-min")
+    p.add_argument("--instants-min", type=float, nargs=2, default=[0.0, 78.0],
+                   help="anchored times [min] of instants 1 and 2; the nearest "
+                        "measured snapshot is used (default 0 78: Molaro's "
+                        "first and last -20 C points)")
+    p.add_argument("--copy-to", type=Path, default=None,
+                   help="also copy every figure here -- the manuscript's "
+                        "Figures/Figure<N>__<name>/ folder")
     p.add_argument("--crop-um", type=float, nargs=3, default=None,
                    metavar=("Z0", "Z1", "RMAX"),
                    help="section window [um] (default: the ice + 10 %%)")
@@ -341,7 +441,7 @@ def main(argv=None):
               f" = {wend:.2f} um vs Molaro {s['wd'][-1]:.2f} um "
               f"(growth {100*(wend-s['anchor_um'])/(s['wd'][-1]-s['anchor_um']):.0f} %)")
 
-    inst = pick_instants(s20, a.steps)
+    inst = pick_instants(s20, a.steps, a.instants_min)
     secs, box, stride = load_sections(s20, inst, a.crop_um)
     m = s20["model"]
     secs = [sec + (float(m["t_s"][sec[4]]),) for sec in secs]
@@ -357,12 +457,21 @@ def main(argv=None):
         fl["VaporDensity"], fl["Temperature"])[fl["IcePhase"] < 0.5]
         for fl, *_ in secs])
     smin, smax = float(pore.min()), float(pore.max())
-    norm = AsinhNorm(linear_width=max(max(abs(smin), abs(smax)) / 300.0, 1e-12),
-                     vmin=smin, vmax=smax)
+    # plot_keff_snapshots' rule: symmetric about 0, sized to the SMALLER
+    # extreme, so sigma = 0 is the bar's middle; the other end saturates.
+    v = min(abs(smin), abs(smax))
+    if v <= 0.0:
+        v = max(abs(smin), abs(smax))
+    sig_extend = {(True, True): "both", (True, False): "min",
+                  (False, True): "max", (False, False): "neither"}[(smin < -v, smax > v)]
+    norm = AsinhNorm(linear_width=max(v / 300.0, 1e-12), vmin=-v, vmax=v)
     vapcm = centered_cmap(cmocean.cm.balance, norm)
     icecm = ice_alpha_cmap()
-    print(f"  sigma x{SIGMA_SCALE:g} over the shown pore: {smin:+.3g} .. {smax:+.3g}")
+    clipped = 100.0 * np.mean((pore < -v) | (pore > v))
+    print(f"  sigma x{SIGMA_SCALE:g} over the shown pore: {smin:+.3g} .. {smax:+.3g}; "
+          f"bar +-{v:.3g} (extend={sig_extend}, {clipped:.0f} % of pore beyond it)")
 
+    a.sig_extend = sig_extend
     plt.rcParams.update({"font.family": "sans-serif", "mathtext.fontset": "dejavusans",
                          "pdf.fonttype": 42, "svg.fonttype": "none"})
     figs = {
@@ -370,6 +479,7 @@ def main(argv=None):
         "molaro_microstructure": build_micro(secs, norm, vapcm, icecm, m["t_star"], a),
         "molaro_combined": build_combined(secs, series, marks, norm, vapcm, icecm,
                                           m["t_star"], a),
+        "molaro_grain_shrinkage": build_shrinkage(series, a),
     }
     os.makedirs(a.save_dir, exist_ok=True)
     for stem, fig in figs.items():
@@ -381,7 +491,12 @@ def main(argv=None):
             path = a.save_dir / f"{stem}.{fmt}"
             fig.savefig(path, dpi=a.dpi, transparent=True)
             print(f"  wrote {path}")
+            if a.copy_to is not None:
+                a.copy_to.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(path, a.copy_to / path.name)
         plt.close(fig)
+    if a.copy_to is not None:
+        print(f"  copied to {a.copy_to}")
     return 0
 
 

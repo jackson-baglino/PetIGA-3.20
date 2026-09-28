@@ -9,6 +9,11 @@
   T), -20 C mirrored sections at Molaro t = 0 / 78 min, and a combined (a)(b)
   figure, reusing plot_keff_snapshots.py helpers. Output studies/molaro_2019/manuscript/.
 
+- Follow-up: sigma bar symmetric about 0 (k_eff rule, far field clips);
+  model curves trimmed before t = 0; --instants-min (kept 0/78 min); new
+  molaro_grain_shrinkage figure (D/D_0, large and small grain); --copy-to
+  writes the set to the manuscript's Figure2__MolaroSinteringSimulation folder.
+
 ---
 
 ## 2026-09-28 — Snapshot figures resized for JGR Planets (170 mm)
