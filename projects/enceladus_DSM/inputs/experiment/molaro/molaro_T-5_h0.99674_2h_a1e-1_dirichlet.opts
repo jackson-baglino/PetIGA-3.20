@@ -1,0 +1,56 @@
+# =============================================================================
+# Molaro T = -5 C -- UNTUNED, wall fitted to the large grain's recession
+#
+# The -5 C twin of molaro_T-20_h0.99715_2h_a1e-1_dirichlet (round-2 arm 1).
+# IDENTICAL to it except -temp and -humidity: alpha_c = 0.1, nominal D_v, no
+# kinetics scaling, Dirichlet wall, dtCFL limiter, 2 h at 60 s cadence.
+#
+# THE SERIES IS ARTEFACT-DOMINATED (docs/molaro_validation_synthesis.md sec. 5):
+# the grains net-shrink ~9 % in 48 min in a nominally saturated sealed cell,
+# and the observed neck rate is SLOWER than at -20 C although rho_vs is 3.9x
+# higher. This run is for the manuscript's two-temperature comparison, scored
+# with that caveat -- not as a second independent benchmark.
+#
+# HUMIDITY. No -5 C run exists to take a Newton step from, so this is the
+# series-resistance estimate carried over with the correction MEASURED at -20 C:
+#   estimate_vapor_bc_molaro.py at L/a = 2:
+#     -20 C  1 - h = 2.051e-03   measured need 2.875e-03   ->  x1.4018
+#     -5 C   1 - h = 2.339e-03   (large-grain slope -0.371 um/min, -8.98 %
+#                                 per 48 min extrapolated -- 3.8x the -20 C rate)
+#   (h_eq - h) = 2.339e-03 * 1.4018 = 3.279e-03
+#   h = h_eq - 3.279e-03 = 1.0000219 - 3.279e-03 = 0.99674
+# The x1.40 is geometric (same box, a_eff within 0.2 %), so it should transfer;
+# the drive is ~2 orders above ripening at both temperatures. If the measured
+# dR_large misses, take the RUNBOOK Newton step:
+#   (1-h)_next = (1-h)_now * (target) / dR_large_measured
+# over the SAME 48-min window the data span (run_batch_measure.sh).
+#
+# QUASI-STEADY MARGIN IS THINNER: eps/v_n at their first neck is 10.6 s vs
+# tau_vap = 2.38 s at dom2 (4.4x; -20 C had 17x). Still > 1, flagged by the
+# estimator as worth a look.
+#
+# Pair with: molaro_2D_L450x225um_eps0.11um_axisym_T-5pair_r14um_dom2
+# =============================================================================
+
+-t_final 7.2e+03
+-temp -5.0
+-humidity 0.99674                       # h_eq - 3.279e-03; -20 C-calibrated estimate
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet: emulates the large chamber
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step
+-dtmax 3.0e1                            # = t_interv/2; guarantees every minute
+
+-t_out_log 0                            # OFF. -t_out_log is a COUNT of
+                                        # log-spaced snapshots, not an interval.
+-outp 0                                 # cadence from t_interv, not every step
+-n_out 121                              # t_interv = 7200/120 = 60 s exactly

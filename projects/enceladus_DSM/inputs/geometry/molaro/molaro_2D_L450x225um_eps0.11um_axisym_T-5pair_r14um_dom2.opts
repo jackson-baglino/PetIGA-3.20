@@ -1,0 +1,64 @@
+# =============================================================================
+# Molaro et al. (2019) T = -5 C grain pair -- PRE-NECKED r = 14 um, dom2
+#
+# The -5 C twin of molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2.
+# Every choice follows that file's reasoning (read it first); only what the
+# temperature and the different grain pair force has changed:
+#
+#   GRAINS. The -5 C series is a DIFFERENT pair: diameters 197 / 153 um at
+#   t = 0 (inputs/validation/molaro2019_fig11_T-5.csv), so R = 98.5 / 76.5 um
+#   against 101 / 72.5 at -20 C. a_eff = 111.96 um (vs 112.17), so the same
+#   450 x 225 um box is the same L/a_eff = 2.0 arm.
+#
+#   EPS. Picked by the same binding criterion, delta_ice < 1 at alpha_c = 0.1:
+#   eps <= D_heat*beta_HK*(1/a1a2), and beta_HK(-5)/beta_HK(-20) = 0.9716, so
+#   the ceiling moves 1.1802e-07 -> 1.1467e-07. eps = 1.1465e-07 sits just
+#   under it (delta_ice = 0.9998), as the -20 file sits under its own.
+#   The eps criterion that CANNOT be carried over is the value itself -- eps is
+#   T-dependent and baked into Nx/Ny, hence -eps_valid_temp -5 below.
+#
+#   Resulting numbers:
+#     neck floor      sqrt(12 eps R_mean) = 10.97 um   (R_mean = 87.5 um)
+#     start r = 14 um is 1.28x above it; Molaro's first neck 16.26 um is 1.48x
+#     fillet at r = 14 um (large side): rho = 1.160 um = 10.1 eps (needs >= 6)
+#
+# START NECK. r = 14 um, the SAME as -20 C, so the two series are started
+# identically and both anchor forward to their first measured width
+# (32.51 um width -> r = 16.255 um here, 16.405 um at -20 C).
+#
+# GEOMETRY. Centre separation from the union IC, analytically:
+#   d = sqrt(R0^2 - r^2) + sqrt(R1^2 - r^2) = 172.7080 um
+# The pair's bounding extent is centred in Lx, as at -20 C.
+# Neck plane sits at z = c0 + sqrt(R0^2 - r^2) = 202.854 um.
+#
+# COST. 15.41M elements, 46.2M DoF -> 463 ranks @ 100k (the -20 C arm: 437).
+#
+# Measure with: python postprocess/neck_width.py <run_dir> --axisym \
+#                   --data inputs/validation/molaro2019_fig11_T-5.csv
+#               python postprocess/grain_shrinkage.py <run_dir>
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # phi=0.5 lands on the sharp union
+                                        # surface for ANY eps
+
+-ic_type multi_grains
+-dim 2
+-Lx 4.50000e-04
+-Ly 2.25000e-04
+-Lz 0
+
+-ice_grain_cx 1.276460e-04,3.003540e-04   # d = 1.727080e-04 -> neck r = 14 um
+-ice_grain_cy 0.0,0.0                   # grains on the axisymmetric axis
+-ice_grain_R  7.65e-5,9.85e-5
+-ice_grain_ax 7.65e-5,9.85e-5
+-ice_grain_ay 7.65e-5,9.85e-5
+
+-Nx 5551                                # h = eps/sqrt(2) = 8.1070e-08
+-Ny 2776                                # (15.41M elements, 46.2M DoF)
+-Nz 1
+-eps 1.1465e-07
+-eps_valid_temp -5
+
+-delt_t 1.0e-4
+-periodic 0

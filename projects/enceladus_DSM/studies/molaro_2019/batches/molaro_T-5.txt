@@ -1,0 +1,33 @@
+# Molaro 2019 T = -5 C -- the untuned arm, twin of round-2 arm 1 at -20 C.
+# 2026-09-28.
+#
+# WHY NOW. The manuscript's validation figure shows both of Molaro's series
+# against the model with ONE parameter set. The -20 C arm is
+# batch_2026-09-08__17.20.46_molaro_T-20_round2 / ..._h0.99715_2h_a1e-1_dirichlet;
+# this is the same run with only -temp and -humidity changed (plus the eps/mesh
+# and grain pair the temperature and the -5 C data force -- see the geometry
+# file header).
+#
+# The -5 C series is artefact-dominated (docs/molaro_validation_synthesis.md
+# sec. 5). This run shows that the model, fed the same physics, does NOT
+# reproduce the inversion of the rate with temperature -- that is the point.
+#
+# HUMIDITY 0.99674 is the -20 C-corrected series-resistance estimate, not a
+# measured Newton step (none exists at -5 C). Score dR_large over the data's
+# 48-min window first; if it misses the -8.98 %/48 min slope by more than ~10 %,
+# take one RUNBOOK Newton step and re-run before the figure is final.
+#
+#   ./scripts/HPC/submit_batch.sh --tag molaro_T-5 \
+#       --tests-file studies/molaro_2019/batches/molaro_T-5.txt \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs \
+#       -- --time=0-12:00:00
+#
+# -20 C arm took 3 h 24 min on 437 ranks ($17.86). This one is 463 ranks and
+# its surfaces move ~4x further, so the dtCFL limiter takes more steps: 12 h
+# is headroom, not an estimate.
+#
+# DISK: ~370 MB per snapshot x 121 = ~45 GB.
+#
+# Measure with:  bash postprocess/run_batch_measure.sh <batch_dir>
+
+molaro_2D_L450x225um_eps0.11um_axisym_T-5pair_r14um_dom2:molaro_T-5_h0.99674_2h_a1e-1_dirichlet

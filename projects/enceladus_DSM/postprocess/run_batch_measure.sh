@@ -39,7 +39,11 @@
 #   bash run_batch_measure.sh /path/to/run        # ONE run (the usual case)
 #   bash run_batch_measure.sh /path/to/batch      # a batch parent, fans out
 #   bash run_batch_measure.sh                     # from inside either
-#   ANCHOR_NECK_UM=32.81 bash run_batch_measure.sh /path/to/run
+#   ANCHOR_NECK_UM=32.81 WINDOW_MIN=78 bash run_batch_measure.sh /path/to/run
+#
+# The anchor and window default PER RUN from its -temp: -20 C scores against
+# 32.81 um / 78 min, -5 C against 32.51 um / 48 min. The column is still named
+# neck_w_at_78min_um for continuity; at -5 C it holds the 48-min value.
 # =============================================================================
 set -uo pipefail
 
@@ -61,14 +65,17 @@ fi
 PYTHON="$(command -v python3 || command -v python || true)"
 [[ -n "$PYTHON" ]] || { echo "no python on PATH" >&2; exit 1; }
 
-ANCHOR_NECK_UM="${ANCHOR_NECK_UM:-32.81}"   # Molaro's first measured width
+# Molaro's first measured width and the span of their data, PER SERIES. Picked
+# per run from its -temp below; set either variable to override every run.
+ANCHOR_NECK_UM_SET="${ANCHOR_NECK_UM:-}"
+WINDOW_MIN_SET="${WINDOW_MIN:-}"
 SUMMARY="$BATCH_DIR/summary.csv"
 
 echo "============================================================"
 echo "  Batch measurement"
 echo "  Batch dir   : $BATCH_DIR"
 echo "  postprocess : $POSTPROCESS"
-echo "  anchor neck : ${ANCHOR_NECK_UM} um"
+echo "  anchor neck : ${ANCHOR_NECK_UM_SET:-per series (-20 C 32.81 / -5 C 32.51)} um"
 echo "============================================================"
 
 n_ok=0; n_fail=0; n_skip=0
@@ -101,14 +108,29 @@ for run in "${RUNS[@]}"; do
     axisym=$(awk '$1=="-axisym"{print $2; exit}' "$run"/*.opts 2>/dev/null | head -n1)
     ax_flag=""; [[ "${axisym:-0}" == "1" ]] && ax_flag="--axisym"
 
+    # Which of Molaro's two series this run is scored against. The -5 C pair
+    # is a different pair of grains, first measured at 32.51 um and followed
+    # for 48 min; scoring it on the -20 C anchor and 78-min window would read
+    # the neck and the recession over the wrong span.
+    temp=$(awk '$1=="-temp"{print $2; exit}' "$run"/*.opts 2>/dev/null | head -n1)
+    case "${temp:-}" in
+        -5|-5.0|-5.00) series=T-5;  ANCHOR_NECK_UM="${ANCHOR_NECK_UM_SET:-32.51}"; WINDOW_MIN="${WINDOW_MIN_SET:-48}" ;;
+        *)             series=T-20; ANCHOR_NECK_UM="${ANCHOR_NECK_UM_SET:-32.81}"; WINDOW_MIN="${WINDOW_MIN_SET:-78}" ;;
+    esac
+    data_csv="$run/inputs/validation/molaro2019_fig11_${series}.csv"
+    data_flag=(); [[ -f "$data_csv" ]] && data_flag=(--data "$data_csv")
+    anchor_m=$(awk -v u="$ANCHOR_NECK_UM" 'BEGIN{printf "%.6e", u*1e-6}')
+    echo "    series $series: anchor ${ANCHOR_NECK_UM} um, window ${WINDOW_MIN} min"
+
     "$PYTHON" "$POSTPROCESS/plot_fields.py"     --dir "$run"            2>&1 | sed 's/^/    /'
-    "$PYTHON" "$POSTPROCESS/neck_width.py"      "$run" $ax_flag         2>&1 | sed 's/^/    /'
+    "$PYTHON" "$POSTPROCESS/neck_width.py"      "$run" $ax_flag ${data_flag[@]+"${data_flag[@]}"} 2>&1 | sed 's/^/    /'
     "$PYTHON" "$POSTPROCESS/grain_shrinkage.py" "$run" --no-plot        2>&1 | sed 's/^/    /'
     # plots/neck_vs_molaro.png is a CONSUMER of neck_width.csv, so re-measuring
     # without redrawing it leaves a figure that silently disagrees with the CSV
     # beside it. That is exactly how the 2026-09-09 interpolation fix appeared
     # not to have worked: the numbers had changed and the picture had not.
-    "$PYTHON" "$POSTPROCESS/plot_neck_vs_molaro.py" "$run"              2>&1 | sed 's/^/    /'
+    "$PYTHON" "$POSTPROCESS/plot_neck_vs_molaro.py" "$run" ${data_flag[@]+"${data_flag[@]}"} \
+        --anchor-width "$anchor_m"                                      2>&1 | sed 's/^/    /'
 
     if [[ ! -f "$run/neck_width.csv" ]]; then
         echo "    no neck_width.csv — arm not summarised"; ((n_fail++)); continue
@@ -116,11 +138,12 @@ for run in "${RUNS[@]}"; do
 
     # Reduce this arm to one row. Kept in python so the anchor interpolation
     # and the opts parsing are not reimplemented in awk.
-    ANCHOR_NECK_UM="$ANCHOR_NECK_UM" "$PYTHON" - "$run" "$SUMMARY" <<'PY' 2>&1 | sed 's/^/    /'
+    ANCHOR_NECK_UM="$ANCHOR_NECK_UM" WINDOW_MIN="$WINDOW_MIN" "$PYTHON" - "$run" "$SUMMARY" <<'PY' 2>&1 | sed 's/^/    /'
 import csv, os, sys, glob
 from pathlib import Path
 run, summary = Path(sys.argv[1]), Path(sys.argv[2])
 anchor = float(os.environ["ANCHOR_NECK_UM"]) * 1e-6
+window = float(os.environ["WINDOW_MIN"]) * 60.0   # their data span [s]
 
 def opt(key, default=""):
     for f in sorted(run.glob("*.opts")):
@@ -149,7 +172,7 @@ def interp_width_at(tt):
 
 t_star = interp_time_at(anchor)
 # Their 78-min span, measured from OUR clock zero-point t_star.
-w_78 = interp_width_at(t_star + 78 * 60.0) if t_star == t_star else float("nan")
+w_78 = interp_width_at(t_star + window) if t_star == t_star else float("nan")
 
 gs = run / "grain_shrinkage.csv"
 dR_lg = dR_sm = R_lg0 = R_lg1 = float("nan")
@@ -179,13 +202,13 @@ if gs.is_file():
         # the 2026-09-03 batch: arm 1 reads -2.92 % full-run (looks like a
         # bullseye) against -1.90 % over the anchored window (35 % short).
         if t_star == t_star:
-            t_end = t_star + 78 * 60.0
+            t_end = t_star + window
             R_lg0, R_lg1 = lerp(gt, gRl, t_star), lerp(gt, gRl, t_end)
             R_sm0, R_sm1 = lerp(gt, gRs, t_star), lerp(gt, gRs, t_end)
             dR_lg = 100.0 * (R_lg1 / R_lg0 - 1.0) if R_lg0 else float("nan")
             dR_sm = 100.0 * (R_sm1 / R_sm0 - 1.0) if R_sm0 else float("nan")
             if gt[-1] < t_end:
-                print(f"    ! run ends {(t_end-gt[-1])/60:.1f} min before t*+78 min;"
+                print(f"    ! run ends {(t_end-gt[-1])/60:.1f} min before t*+{window/60:.0f} min;"
                       f" dR_* are EXTRAPOLATED")
         # Kept beside it so the two windows can never be mistaken for each other.
         dR_lg_full = 100.0 * (gRl[-1] / gRl[0] - 1.0) if gRl[0] else float("nan")
@@ -212,7 +235,7 @@ row = [run.name, geom, exp_, opt("-alpha_c0"), opt("-humidity"),
        f"{dR_lg_full:.4f}", f"{dR_sm_full:.4f}", len(neck)]
 with summary.open("a", newline="") as fh:
     csv.writer(fh, lineterminator="\n").writerow(row)
-print(f"t* = {t_star:.0f} s   neck at t*+78min = {w_78*1e6:.2f} um"
+print(f"t* = {t_star:.0f} s   neck at t*+{window/60:.0f}min = {w_78*1e6:.2f} um"
       f"   dR_large = {dR_lg:+.2f} %   dR_small = {dR_sm:+.2f} %"
       f"   (full run: {dR_lg_full:+.2f} % / {dR_sm_full:+.2f} %)")
 PY
@@ -227,5 +250,7 @@ echo ""
 echo "  Molaro -20 C targets:  neck 32.81 -> 64.78 um over 78 min"
 echo "                         large grain -2.93 % (fit; the caption says -3 %)"
 echo "                         small grain: inside its own error bar, do not fit"
+echo "  Molaro  -5 C targets:  neck 32.51 -> 44.00 um over 48 min (artefact-dominated)"
+echo "                         large grain -8.98 %/48 min (fit slope, -0.371 um/min)"
 echo "============================================================"
 column -s, -t "$SUMMARY" 2>/dev/null || cat "$SUMMARY"
