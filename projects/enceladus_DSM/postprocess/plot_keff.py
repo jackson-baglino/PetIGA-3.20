@@ -112,17 +112,22 @@ def load(run: Path):
         return None
 
     # Match on STEP: the k_eff sample and the SSA row come from the same
-    # accepted step, so no interpolation is needed. Fall back to time if a
-    # step is missing (e.g. a merge renumbered one file but not the other).
+    # accepted step. A k_eff sample with no SSA row at its step is DROPPED,
+    # not paired with the nearest-in-time row: only measured pairs are shown.
     ssa_step = ssa[:, 3].astype(int)
     row_of = {s: i for i, s in enumerate(ssa_step)}
     idx = np.array([row_of.get(int(s), -1) for s in k["step"]])
-    miss = idx < 0
-    if miss.any():
-        idx[miss] = [int(np.argmin(np.abs(ssa[:, 2] - t))) for t in k["time"][miss]]
+    keep = idx >= 0
+    if not keep.all():
+        print(f"  {int((~keep).sum())} k_eff sample(s) have no SSA_evo.dat row at "
+              "their step; dropped")
+    k, idx = k[keep], idx[keep]
+    if len(k) == 0:
+        return None
     s = INTERFACE_FACTOR * ssa[idx, 0] / (lx * ly)
 
-    return {"t": k["time"], "kxx": k["k_00"], "kyy": k["k_11"], "kiso": k["k_iso"],
+    return {"t": k["time"], "step": k["step"].astype(int),
+            "kxx": k["k_00"], "kyy": k["k_11"], "kiso": k["k_iso"],
             "kxy": k["k_01"], "kyx": k["k_10"],
             "ssa": s, "law": law, "csv": kf.name}
 

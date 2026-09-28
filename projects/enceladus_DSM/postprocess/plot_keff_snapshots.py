@@ -1,41 +1,49 @@
 #!/usr/bin/env python3
-"""plot_keff_snapshots.py — k_eff curve with microstructure snapshots under it.
+"""plot_keff_snapshots.py — k_eff curve with microstructure snapshots inset.
 
     python3 plot_keff_snapshots.py --dir <run> [--times 1 10 20 30] [--steps ...]
-        [--n-snapshots 4] [--width 7.2] [--absolute] [--iso-only] [--leaders auto|on|off]
-        [--title-time STR] [--title-ssa STR] [--no-title]
+        [--n-snapshots 4] [--width 7.2] [--absolute] [--iso-only]
+        [--show-relaxation] [--title-time STR] [--title-ssa STR] [--no-title]
         [--xlabel-time STR] [--xlabel-ssa STR] [--ylabel STR]
         [--source vts|sol] [--save-dir DIR] [--formats pdf png]
 
-Two page-width manuscript figures, each a row of 3-4 microstructure panels
-above one k_eff curve. Each panel is lettered, and the same letter marks its
-instant on the curve, joined to it by a leader line:
+Two page-width manuscript figures, each one k_eff curve with 3-4
+microstructure snapshots inset along the bottom of the same axes, under the
+curve. Each snapshot is lettered, and the same letter marks its instant on
+the curve, joined to it by a leader line:
 
-    keff_time_snapshots.{pdf,png}   k_eff / k_b  vs  time [d]
-    keff_ssa_snapshots.{pdf,png}    k_eff / k_b  vs  SSA / SSA_b
+    keff_time_snapshots.{pdf,png}   k_eff / k_eff,0  vs  time [d]
+    keff_ssa_snapshots.{pdf,png}    k_eff / k_eff,0  vs  SSA / SSA_0
 
-The point is to show both things at once: k_eff rises as the packing
-sinters, and the microstructure at a few instants shows what that rise
-looks like.
+The insets are ordered by where their markers fall on the x axis, so the
+leaders never cross: left to right in time on the time figure, and RIGHT to
+left in time on the SSA figure, where SSA falls as the packing sinters.
 
 PANELS. They follow make_packing_movie.py, and they import its helpers so
 the figure and the movie cannot drift apart: supersaturation
 sigma = rho_v/rho_vs(T) - 1 on cmocean `balance`, re-centred so the pale
 middle is sigma = 0, on an asinh scale; ice painted on top with cmocean
 `ice`, transparent below phi = 0.5. The sigma range is taken over the pore
-space of the SHOWN snapshots only, and shared by every panel, so the panels
-are directly comparable.
+space of the SHOWN snapshots only, and shared by every panel.
 
-CURVE. Same data, normalization and baseline as plot_keff.py, which it
-imports: k and SSA are divided by their value at the first sample at
-t >= --baseline-days (default 1 d), and the samples before it are the IC
-relaxing, drawn grey. --absolute plots k_eff in W m^-1 K^-1 on the time
-figure instead; the SSA figure is always normalized on both axes.
+NORMALIZATION. Each quantity is divided by its own value at the REFERENCE
+sample: the first at t >= --baseline-days (default 1 d), as in plot_keff.py.
+That is what the subscript 0 means -- k_xx by k_xx,0, k_iso by k_iso,0, SSA
+by SSA_0 -- and the caption should say so. The reference time and values are
+printed for it. --absolute plots k_eff in W m^-1 K^-1 on the time figure
+instead; the SSA figure is always normalized on both axes.
 
-SNAPSHOTS. --times (days) picks the snapshot nearest each time; --steps
-names them exactly. By default --n-snapshots are spaced evenly in time from
-the baseline to the end of the run. The marker sits on the k_eff sample of
-the snapshot's own step.
+ONLY MEASURED SAMPLES. Samples before the reference (the initial condition
+relaxing) are not drawn and not annotated; that belongs in the manuscript
+text. --show-relaxation draws them in grey, unlabelled. k_eff and SSA are
+paired by step (plot_keff.load drops a k_eff sample with no SSA row rather
+than borrowing a neighbour's), and the SSA figure plots the samples as
+points, with no line joining them. Snapshots are only taken at steps that
+have a k_eff sample, so every marker sits on a measured value.
+
+SNAPSHOTS. --times (days) picks the eligible snapshot nearest each time;
+--steps names them exactly. By default --n-snapshots are spaced evenly in
+time from the reference to the end of the run.
 
 OUTPUT. <dir>/plots/keff/snapshots/ (or --save-dir). PDF is the manuscript
 file -- the curve is vector, the fields are embedded rasters -- and PNG is a
@@ -57,6 +65,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import AsinhNorm, ListedColormap
 from matplotlib.cm import ScalarMappable
 from matplotlib.patches import ConnectionPatch
+from matplotlib.ticker import MaxNLocator
 import cmocean
 
 HERE = Path(__file__).parent
@@ -77,8 +86,8 @@ DEFAULTS = {
     "title_time": "Effective thermal conductivity during dry-snow metamorphism",
     "title_ssa": "Effective thermal conductivity vs specific surface area",
     "xlabel_time": "Time [d]",
-    "xlabel_ssa": r"Normalized specific surface area  SSA$\,/\,$SSA$_b$",
-    "ylabel_norm": r"Normalized conductivity  $k_\mathrm{eff}\,/\,k_{\mathrm{eff},b}$",
+    "xlabel_ssa": r"Normalized specific surface area  SSA$\,/\,$SSA$_0$",
+    "ylabel_norm": r"Normalized conductivity  $k_\mathrm{eff}\,/\,k_{\mathrm{eff},0}$",
     "ylabel_abs": r"$k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]",
 }
 
@@ -108,25 +117,25 @@ def make_reader(run: Path, source: str):
     return sorted(files, key=snap_step), read
 
 
-def pick_snapshots(files, tmap, d, times_d, steps, n, t_base):
-    """Indices into `files` for the panels, in time order, duplicates removed."""
+def pick_snapshots(files, tmap, d, times_d, steps, n, t_ref, t_min):
+    """Indices into `files` for the panels, in time order, duplicates removed.
+
+    Only snapshots whose step has a k_eff sample at t >= t_min are eligible,
+    so every marker lands on a measured value, never a neighbour's.
+    """
     fsteps = np.array([snap_step(f) for f in files])
     ftimes = np.array([tmap.get(int(s), np.nan) for s in fsteps])
+    measured = {int(s) for s, t in zip(d["step"], d["t"]) if t >= t_min}
+    cand = np.array([i for i, s in enumerate(fsteps) if int(s) in measured])
+    if cand.size == 0:
+        return [], fsteps, ftimes
     if steps:
-        want = [int(np.argmin(np.abs(fsteps - s))) for s in steps]
+        want = [int(cand[np.argmin(np.abs(fsteps[cand] - s))]) for s in steps]
     else:
         if not times_d:
-            times_d = np.linspace(t_base / DAY, d["t"][-1] / DAY, n)
-        ok = np.isfinite(ftimes)
-        cand = np.flatnonzero(ok)
-        want = [int(cand[np.argmin(np.abs(ftimes[ok] / DAY - td))]) for td in times_d]
+            times_d = np.linspace(t_ref / DAY, d["t"][-1] / DAY, n)
+        want = [int(cand[np.argmin(np.abs(ftimes[cand] / DAY - td))]) for td in times_d]
     return sorted(set(want), key=lambda i: fsteps[i]), fsteps, ftimes
-
-
-def sample_index(d, step, t):
-    """Row of the k_eff series for this snapshot: same step, else nearest time."""
-    hit = np.flatnonzero(d["step"] == step)
-    return int(hit[0]) if hit.size else int(np.argmin(np.abs(d["t"] - t)))
 
 
 # ---------------------------------------------------------------------------
@@ -164,29 +173,22 @@ def _scalebar(ax, XX, YY):
     t.set_bbox(dict(facecolor="white", alpha=0.75, lw=0, pad=0.8))
 
 
-def _curve(ax, x, ys, relax, keys, legend_loc):
-    live = ~relax
+def _curve(ax, x, ys, shown, relax, keys, points):
+    """k series. `shown` masks the samples drawn in colour; `relax` (a subset
+    of the rest) is drawn grey and unlabelled when --show-relaxation is on.
+    points=True draws each measured sample as a dot with no joining line."""
     lw = {"kxx": 1.0, "kyy": 1.0, "kiso": 1.8}
+    ms = {"kxx": 1.6, "kyy": 1.6, "kiso": 2.4}
     col = {"kxx": C_XX, "kyy": C_YY, "kiso": C_ISO}
     lab = {"kxx": r"$k_{xx}$", "kyy": r"$k_{yy}$", "kiso": r"$k_\mathrm{iso}$"}
     for key in keys:
         y = ys[key]
+        style = dict(ls="none", marker="o", ms=ms[key], mew=0) if points \
+            else dict(ls="-", lw=lw[key])
         if relax.any():
-            # Grey segment runs through the first live sample so the two join.
-            grey = relax.copy()
-            if live.any():
-                grey[int(np.argmax(live))] = True
-            ax.plot(x[grey], y[grey], "-", color=C_RELAX, lw=lw[key], zorder=1,
-                    label="IC relaxation (first day)" if key == "kiso" else None)
-        ax.plot(x[live], y[live], "-", color=col[key], lw=lw[key], zorder=2,
-                label=lab[key])
-    # The three curves sit within a few percent of each other, so direct labels
-    # at their ends collide; a legend is the readable choice here.
-    h, l = ax.get_legend_handles_labels()
-    order = sorted(range(len(l)), key=lambda i: "relaxation" in l[i])
-    ax.legend([h[i] for i in order], [l[i] for i in order], fontsize=FS_SMALL,
-              frameon=False, loc=legend_loc, handlelength=1.6)
-    ax.grid(True, alpha=0.25, lw=0.5)
+            ax.plot(x[relax], y[relax], color=C_RELAX, zorder=1, **style)
+        ax.plot(x[shown], y[shown], color=col[key], zorder=2, label=lab[key],
+                **style)
     ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
@@ -214,92 +216,116 @@ def _colorbars(fig, cax_ice, cax_sig, norm, vapcm):
     cb.outline.set_linewidth(0.5)
 
 
-def build(kind, snaps, d, x, ys, relax, keys, norm, vapcm, icecm, a):
+def build(kind, snaps, x, ys, shown, relax, keys, norm, vapcm, icecm, a):
     """One figure. `snaps` is [(fields, X, Y, t, row)] in time order.
 
-    Laid out in INCHES, not with a gridspec: the panel row, the colour-bar
-    strip and the curve all have to line up to the same edges, and the height
-    has to follow from the square panels, which a gridspec does not give.
+    Laid out in INCHES: the insets must be square, sit in a band along the
+    bottom of the curve's own axes, and line up with the colour bars beside
+    it. The y limits are then chosen so the data fills the band ABOVE the
+    insets, and the left spine and its ticks are cut to the data range, so
+    the empty space the insets live in carries no misleading y scale.
     """
     n = len(snaps)
     W = a.width
     ml, mr = 0.62, 1.00            # y label | colour-bar strip
-    gap = 0.08                     # between panels
-    pw = (W - ml - mr - (n - 1) * gap) / n
+    axw = W - ml - mr
+    padx, pady = 0.06, 0.06        # insets <-> axes frame
+    gap = 0.16                     # between insets
+    s_in = (axw - 2 * padx - (n - 1) * gap) / n
+    t_band = 0.20                  # inset titles
+    lead = 0.34                    # inset titles -> data band, for the leaders
+    band = 1.55                    # data band height
+    head = 0.14                    # headroom for the marker letters
+    axh = pady + s_in + t_band + lead + band + head
     top = 0.34 if not a.no_title else 0.06
-    t_band = 0.24                  # panel titles
-    g_mid = 0.42                   # panels -> curve, room for the leaders
-    ch = max(1.9, 1.15 * pw)       # curve height
-    bot = 0.46                     # x label
-    H = top + t_band + pw + g_mid + ch + bot
+    bot = 0.46
+    H = top + axh + bot
     fig = plt.figure(figsize=(W, H))
     F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
 
-    y_pan = bot + ch + g_mid
-    axs = [fig.add_axes(F(ml + i * (pw + gap), y_pan, pw, pw)) for i in range(n)]
-    xc = ml + n * pw + (n - 1) * gap + 0.14
-    cax_ice = fig.add_axes(F(xc, y_pan, 0.08, pw))
-    cax_sig = fig.add_axes(F(xc + 0.08 + 0.36, y_pan + 0.05, 0.08, pw - 0.10))
-    axc = fig.add_axes(F(ml, bot, n * pw + (n - 1) * gap, ch))
-    axc.patch.set_alpha(0.0)       # so the leaders show through to the markers
+    ax = fig.add_axes(F(ml, bot, axw, axh))
+    ax.patch.set_alpha(0.0)
+    _curve(ax, x, ys, shown, relax, keys, points=(kind == "ssa"))
 
-    _curve(axc, x, ys, relax, keys,
-           legend_loc="lower right" if kind == "time" else "lower left")
-    if kind == "time" and relax.any():
-        axc.axvspan(0, a.baseline_days, color="#f2f2f2", zorder=0, lw=0)
-    if not a.absolute or kind == "ssa":
-        axc.axhline(1.0, color="#999999", lw=0.6, ls=":", zorder=0)
+    # y: the drawn data fills [f0, f1] of the axes height.
+    drawn = shown | relax
+    yv = np.concatenate([ys[k][drawn] for k in keys])
+    ymin, ymax = float(yv.min()), float(yv.max())
+    f0 = (pady + s_in + t_band + lead) / axh
+    f1 = 1.0 - head / axh
+    span = (ymax - ymin) / (f1 - f0) if ymax > ymin else 1.0
+    ax.set_ylim(ymin - f0 * span, ymin - f0 * span + span)
+    ticks = [t for t in MaxNLocator(4, steps=[1, 2, 5, 10]).tick_values(ymin, ymax)
+             if ymin - 1e-9 <= t <= ymax + 1e-9]
+    ax.set_yticks(ticks)
+    ax.spines["left"].set_bounds(min(ticks[0], ymin), max(ticks[-1], ymax))
+    xv = x[drawn]
+    xpad = 0.03 * (xv.max() - xv.min())
+    if kind == "time":
+        ax.set_xlim(0.0, xv.max() + xpad)
+    else:
+        ax.set_xlim(xv.min() - xpad, xv.max() + xpad)
+
+    normalized = not (a.absolute and kind == "time")
+    if normalized:
+        ax.plot(ax.get_xlim(), [1.0, 1.0], color="#999999", lw=0.6, ls=":",
+                zorder=0)
+    ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.6,
+              markerscale=2.5 if kind == "ssa" else 1.0,
+              loc="upper left" if kind == "time" else "upper right")
     if kind == "ssa":
         # SSA falls as the packing sinters, so time runs right to left.
-        axc.axvline(1.0, color="#999999", lw=0.6, ls=":", zorder=0)
-        axc.annotate("", xy=(0.42, 0.93), xytext=(0.58, 0.93),
-                     xycoords="axes fraction",
-                     arrowprops=dict(arrowstyle="->", color=MUTED, lw=0.9))
-        axc.text(0.59, 0.93, "time", transform=axc.transAxes, va="center",
-                 fontsize=FS_SMALL, color=MUTED)
+        ax.annotate("", xy=(0.40, 0.985), xytext=(0.56, 0.985),
+                    xycoords="axes fraction",
+                    arrowprops=dict(arrowstyle="->", color=MUTED, lw=0.9))
+        ax.text(0.57, 0.985, "time", transform=ax.transAxes, va="center",
+                fontsize=FS_SMALL, color=MUTED)
 
     xlabel = (a.xlabel_time or DEFAULTS["xlabel_time"]) if kind == "time" \
         else (a.xlabel_ssa or DEFAULTS["xlabel_ssa"])
-    ylabel = a.ylabel or (DEFAULTS["ylabel_abs"] if (a.absolute and kind == "time")
-                          else DEFAULTS["ylabel_norm"])
-    axc.set_xlabel(xlabel, fontsize=FS)
-    axc.set_ylabel(ylabel, fontsize=FS)
-    ylo, yhi = axc.get_ylim()
-    axc.set_ylim(ylo, yhi + 0.06 * (yhi - ylo))     # headroom for the letters
+    ylabel = a.ylabel or (DEFAULTS["ylabel_norm"] if normalized
+                          else DEFAULTS["ylabel_abs"])
+    ax.set_xlabel(xlabel, fontsize=FS)
+    ax.set_ylabel(ylabel, fontsize=FS)
+    # Centre the y label on the data band, not on the whole axes.
+    ax.yaxis.set_label_coords(-0.075, 0.5 * (f0 + f1))
 
-    # Leaders only where they cannot cross: against time the markers run left
-    # to right like the panels; against SSA they run the other way.
-    leaders = a.leaders == "on" or (a.leaders == "auto" and kind == "time")
+    # Insets in the order their markers fall along x, so no leader crosses
+    # another: time order on the time figure, reversed on the SSA figure.
     ymark = ys["kiso"]
-    for i, (fl, X, Y, t, row) in enumerate(snaps):
-        ax = axs[i]
-        XX, YY = _field(ax, fl, X, Y, norm, vapcm, icecm)
-        if i == 0:
-            _scalebar(ax, XX, YY)
+    order = sorted(range(n), key=lambda i: x[snaps[i][4]])
+    for slot, i in enumerate(order):
+        fl, X, Y, t, row = snaps[i]
+        axi = fig.add_axes(F(ml + padx + slot * (s_in + gap), bot + pady,
+                             s_in, s_in))
+        XX, YY = _field(axi, fl, X, Y, norm, vapcm, icecm)
+        if slot == 0:
+            _scalebar(axi, XX, YY)
         L = LETTERS[i]
-        ax.set_title(f"({L})  t = {t / DAY:.1f} d", fontsize=FS, color=INK, pad=3)
+        axi.set_title(f"({L})  t = {t / DAY:.1f} d", fontsize=FS, color=INK, pad=3)
         px, py = x[row], ymark[row]
-        axc.plot([px], [py], "o", ms=6.5, mfc="white", mec=INK, mew=1.1, zorder=6)
-        axc.annotate(L, (px, py), xytext=(0, 6), textcoords="offset points",
-                     ha="center", va="bottom", fontsize=FS_SMALL, color=INK,
-                     fontweight="bold", zorder=7)
-        if leaders:
-            # Ends just above the letter, so it points at the marker without
-            # striking through it.
-            con = ConnectionPatch(xyA=(0.5, 0.0), coordsA=ax.transAxes,
-                                  xyB=(px, py), coordsB=axc.transData,
-                                  color="#a0a0a0", lw=0.6, ls=(0, (3, 2)),
-                                  zorder=3, shrinkA=2, shrinkB=18)
-            fig.add_artist(con)
+        # The letter sits INSIDE the marker: beside it, it lands on k_xx or
+        # k_yy, which run within a few percent of k_iso.
+        ax.plot([px], [py], "o", ms=11, mfc="white", mec=INK, mew=1.0, zorder=6)
+        ax.text(px, py, L, ha="center", va="center", fontsize=FS_SMALL - 1,
+                color=INK, fontweight="bold", zorder=7)
+        # From just above the inset's title to just below the marker's letter.
+        con = ConnectionPatch(xyA=(0.5, 1.0), coordsA=axi.transAxes,
+                              xyB=(px, py), coordsB=ax.transData,
+                              color="#a0a0a0", lw=0.6, ls=(0, (3, 2)),
+                              zorder=3, shrinkA=15, shrinkB=7)
+        fig.add_artist(con)
 
+    xc = ml + axw + 0.14
+    cax_ice = fig.add_axes(F(xc, bot + pady, 0.08, s_in))
+    cax_sig = fig.add_axes(F(xc + 0.08 + 0.36, bot + pady + 0.05, 0.08, s_in - 0.10))
     _colorbars(fig, cax_ice, cax_sig, norm, vapcm)
 
     if not a.no_title:
         title = (a.title_time or DEFAULTS["title_time"]) if kind == "time" \
             else (a.title_ssa or DEFAULTS["title_ssa"])
-        fig.suptitle(title, x=(ml + 0.5 * (n * pw + (n - 1) * gap)) / W,
-                     y=1.0 - 0.06 / H, ha="center", va="top",
-                     fontsize=FS + 1.5, color=INK)
+        fig.suptitle(title, x=(ml + 0.5 * axw) / W, y=1.0 - 0.06 / H,
+                     ha="center", va="top", fontsize=FS + 1.5, color=INK)
     return fig
 
 
@@ -317,20 +343,20 @@ def main(argv=None):
     p.add_argument("--n-snapshots", type=int, default=4,
                    help="default count, evenly spaced baseline..end (default 4)")
     p.add_argument("--baseline-days", type=float, default=1.0,
-                   help="normalization baseline, as in plot_keff.py (default 1)")
+                   help="reference time [d] for the subscript-0 values; the first "
+                        "sample at or after it (default 1, as in plot_keff.py)")
     p.add_argument("--source", choices=("vts", "sol"), default="vts",
                    help="vts: vtkOut/solV_*.vts (plenty at page width); "
                         "sol: full-resolution sol_*.dat via igakit")
     p.add_argument("--width", type=float, default=7.2,
                    help="figure width [in]; 7.2 is a full two-column page")
     p.add_argument("--absolute", action="store_true",
-                   help="time figure: k_eff in W/m/K instead of k/k_b")
+                   help="time figure: k_eff in W/m/K instead of k/k_0")
     p.add_argument("--iso-only", action="store_true",
                    help="plot k_iso only, not k_xx and k_yy")
-    p.add_argument("--leaders", choices=("auto", "on", "off"), default="auto",
-                   help="dashed lines from each panel to its marker. auto: on "
-                        "the time figure only -- against SSA time runs right "
-                        "to left and the lines would cross")
+    p.add_argument("--show-relaxation", action="store_true",
+                   help="also draw the samples before the reference time, in "
+                        "grey and unlabelled (default: not drawn)")
     p.add_argument("--sat-clip", type=float, default=0.1,
                    help="percentile clipped off each end of sigma (default 0.1)")
     p.add_argument("--title-time", default=None)
@@ -348,8 +374,6 @@ def main(argv=None):
     if d is None:
         print(f"  no k_eff CSV (or no SSA_evo.dat / -Lx -Ly) in {run}; nothing to plot")
         return 0
-    kf = np.atleast_1d(np.genfromtxt(run / d["csv"], delimiter=",", names=True))
-    d["step"] = kf["step"].astype(int)
 
     files, reader = make_reader(run, a.source)
     if not files:
@@ -360,10 +384,20 @@ def main(argv=None):
     for s, t in zip(d["step"], d["t"]):          # k_eff CSV covers every step
         tmap.setdefault(int(s), float(t))
 
-    relax = d["t"] < a.baseline_days * DAY
-    ib = int(np.argmax(~relax)) if not relax.all() else len(relax) - 1
-    idx, fsteps, ftimes = pick_snapshots(files, tmap, d, a.times, a.steps,
-                                         a.n_snapshots, d["t"][ib])
+    early = d["t"] < a.baseline_days * DAY
+    if early.all():
+        print(f"  run ends before the {a.baseline_days:g} d reference time; "
+              "nothing to plot", file=sys.stderr)
+        return 1
+    ib = int(np.argmax(~early))
+    shown = ~early
+    relax = early if a.show_relaxation else np.zeros_like(early)
+    idx, fsteps, ftimes = pick_snapshots(
+        files, tmap, d, a.times, a.steps, a.n_snapshots, d["t"][ib],
+        t_min=0.0 if a.show_relaxation else d["t"][ib])
+    if not idx:
+        print("  no snapshot shares a step with a k_eff sample", file=sys.stderr)
+        return 1
     if len(idx) > len(LETTERS):
         print(f"  at most {len(LETTERS)} snapshots", file=sys.stderr)
         return 1
@@ -372,7 +406,8 @@ def main(argv=None):
     for i in idx:
         fl, X, Y = reader(files[i], want=WANT)
         t = ftimes[i] if np.isfinite(ftimes[i]) else tmap.get(int(fsteps[i]), 0.0)
-        snaps.append([fl, X, Y, t, sample_index(d, int(fsteps[i]), t)])
+        row = int(np.flatnonzero(d["step"] == fsteps[i])[0])
+        snaps.append([fl, X, Y, float(d["t"][row]), row])
         s = SIGMA_SCALE * pplib.supersaturation(fl["VaporDensity"], fl["Temperature"])
         pore.append(s[fl["IcePhase"] < 0.5])
         print(f"  snapshot step {fsteps[i]}: t = {t / DAY:.2f} d")
@@ -392,11 +427,11 @@ def main(argv=None):
                          "pdf.fonttype": 42, "svg.fonttype": "none"})
     figs = {
         "keff_time_snapshots": build(
-            "time", snaps, d, d["t"] / DAY, d if a.absolute else kn, relax, keys,
-            norm, vapcm, icecm, a),
+            "time", snaps, d["t"] / DAY, d if a.absolute else kn, shown, relax,
+            keys, norm, vapcm, icecm, a),
         "keff_ssa_snapshots": build(
-            "ssa", snaps, d, d["ssa"] / d["ssa"][ib], kn, relax, keys,
-            norm, vapcm, icecm, a),
+            "ssa", snaps, d["ssa"] / d["ssa"][ib], kn, shown, relax,
+            keys, norm, vapcm, icecm, a),
     }
     for stem, fig in figs.items():
         for fmt in a.formats:
@@ -404,6 +439,9 @@ def main(argv=None):
             fig.savefig(path, dpi=a.dpi, bbox_inches="tight", pad_inches=0.03)
             print(f"  wrote {path}")
         plt.close(fig)
+    print(f"  reference (subscript 0): t_0 = {d['t'][ib] / DAY:.3f} d, step "
+          f"{d['step'][ib]}: k_xx,0 = {d['kxx'][ib]:.4g}, k_yy,0 = {d['kyy'][ib]:.4g}, "
+          f"k_iso,0 = {d['kiso'][ib]:.4g} W/m/K, SSA_0 = {d['ssa'][ib]:.4g} 1/m")
     print(f"  sigma x{SIGMA_SCALE:g} range {lo:+.3g} .. {hi:+.3g} over the shown pores")
     return 0
 

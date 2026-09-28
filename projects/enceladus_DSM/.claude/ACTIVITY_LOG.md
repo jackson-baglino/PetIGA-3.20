@@ -1,3 +1,17 @@
+## 2026-09-28 — Snapshot figure: insets under the curve, measured samples only
+
+- plot_keff_snapshots.py: snapshots now inset along the bottom of the curve's
+  own axes, ordered by marker x (reversed in time on the SSA figure) so the
+  leaders never cross; y spine cut to the data range; letters inside markers.
+- Normalization renamed subscript 0 (was "b", which read as marker b); the
+  reference time/values are printed for the caption.
+- IC-relaxation samples no longer drawn or labelled (--show-relaxation: grey,
+  unlabelled). SSA figure plots samples as points, no joining line.
+- plot_keff.load now DROPS k_eff samples with no SSA row at the same step
+  instead of pairing them with the nearest-in-time row.
+
+---
+
 ## 2026-09-28 — Production packings for the porosity campaign
 
 - Built inputs/packings/keff_LR40/: phi 0.250/0.300/0.325/0.350/0.400 x 5,
