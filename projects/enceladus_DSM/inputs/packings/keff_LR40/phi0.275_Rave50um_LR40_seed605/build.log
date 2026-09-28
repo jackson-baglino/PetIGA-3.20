@@ -1,0 +1,116 @@
+  gates for target phi=0.275:  max_void_ratio 1.10   local_density_cv 0.273   asymmetry 22%
+Gravity-style packing: 2.000 x 2.000 mm, target phi=0.275, mean r=50.0 um, sigma_ln=0.5, periodic=xy
+  attempt 1/128 (seed 605)
+    budget bracket: phi(0.00)=0.6174  phi(1.57)=0.3076  want ~0.3050
+    roll=1.571  skeleton phi=0.3076  +14 fillers -> phi=0.2752  void=1.29  cv=0.265  asym=8%
+    rejected: largest void 1.29 mean-radii > 1.10; y-seam contact density 0.73 of interior < 0.76
+  attempt 2/128 (seed 1605)
+    budget bracket: phi(0.00)=0.5729  phi(1.57)=0.2739  want ~0.3050
+    roll=1.080  skeleton phi=0.3034  +15 fillers -> phi=0.2749  void=1.08  cv=0.226  asym=6%
+    rejected: y-seam contact density 0.73 of interior < 0.76
+  attempt 3/128 (seed 2605)
+    budget bracket: phi(0.00)=0.6152  phi(1.57)=0.2919  want ~0.3050
+    roll=1.551  skeleton phi=0.2957  +8 fillers -> phi=0.2746  void=1.26  cv=0.240  asym=11%
+    rejected: largest void 1.26 mean-radii > 1.10; y-seam contact density 0.60 of interior < 0.76
+  attempt 4/128 (seed 3605)
+    budget bracket: phi(0.00)=0.5841  phi(1.57)=0.2982  want ~0.3050
+    roll=1.362  skeleton phi=0.3024  +12 fillers -> phi=0.2750  void=1.24  cv=0.234  asym=9%
+    rejected: largest void 1.24 mean-radii > 1.10; y-seam contact density 0.67 of interior < 0.76
+  attempt 5/128 (seed 4605)
+    budget bracket: phi(0.00)=0.6198  phi(1.57)=0.2987  want ~0.3050
+    roll=1.374  skeleton phi=0.3022  +8 fillers -> phi=0.2750  void=1.33  cv=0.243  asym=5%
+    rejected: largest void 1.33 mean-radii > 1.10
+  attempt 6/128 (seed 5605)
+    budget bracket: phi(0.00)=0.5619  phi(1.57)=0.2898  want ~0.3050
+    roll=1.276  skeleton phi=0.3076  +9 fillers -> phi=0.2748  void=1.33  cv=0.261  asym=7%
+    rejected: largest void 1.33 mean-radii > 1.10
+  attempt 7/128 (seed 6605)
+    budget bracket: phi(0.00)=0.5624  phi(1.57)=0.2849  want ~0.3050
+    roll=1.473  skeleton phi=0.3010  +10 fillers -> phi=0.2748  void=1.31  cv=0.241  asym=8%
+    rejected: largest void 1.31 mean-radii > 1.10; y-seam contact density 0.63 of interior < 0.76
+  attempt 8/128 (seed 7605)
+    budget bracket: phi(0.00)=0.5983  phi(1.57)=0.2746  want ~0.3050
+    roll=1.460  skeleton phi=0.3088  +14 fillers -> phi=0.2746  void=1.14  cv=0.241  asym=3%
+    rejected: largest void 1.14 mean-radii > 1.10; y-seam contact density 0.64 of interior < 0.76
+  attempt 9/128 (seed 8605)
+    budget bracket: phi(0.00)=0.5647  phi(1.57)=0.2999  want ~0.3050
+    roll=1.374  skeleton phi=0.3059  +16 fillers -> phi=0.2749  void=1.22  cv=0.253  asym=7%
+    rejected: largest void 1.22 mean-radii > 1.10; y-seam contact density 0.63 of interior < 0.76
+  attempt 10/128 (seed 9605)
+    budget bracket: phi(0.00)=0.5577  phi(1.57)=0.2546  want ~0.3050
+    roll=1.276  skeleton phi=0.3044  +15 fillers -> phi=0.2752  void=1.11  cv=0.241  asym=5%
+    rejected: largest void 1.11 mean-radii > 1.10; y-seam contact density 0.67 of interior < 0.76
+  attempt 11/128 (seed 10605)
+    budget bracket: phi(0.00)=0.6407  phi(1.57)=0.3189  want ~0.3050
+    roll=1.571  skeleton phi=0.3189  +26 fillers -> phi=0.2751  void=1.00  cv=0.224  asym=3%
+    rejected: y-seam contact density 0.51 of interior < 0.76
+  attempt 12/128 (seed 11605)
+    budget bracket: phi(0.00)=0.5914  phi(1.57)=0.2786  want ~0.3050
+    roll=1.178  skeleton phi=0.3064  +17 fillers -> phi=0.2751  void=1.05  cv=0.232  asym=3%
+    rejected: y-seam contact density 0.67 of interior < 0.76
+  attempt 13/128 (seed 12605)
+    budget bracket: phi(0.00)=0.5759  phi(1.57)=0.2823  want ~0.3050
+    roll=1.374  skeleton phi=0.3082  +14 fillers -> phi=0.2753  void=1.14  cv=0.244  asym=1%
+    rejected: largest void 1.14 mean-radii > 1.10; y-seam contact density 0.65 of interior < 0.76
+  attempt 14/128 (seed 13605)
+    budget bracket: phi(0.00)=0.5844  phi(1.57)=0.3090  want ~0.3050
+    roll=1.571  skeleton phi=0.3090  +17 fillers -> phi=0.2747  void=1.08  cv=0.251  asym=8%
+    rejected: y-seam contact density 0.51 of interior < 0.76
+  attempt 15/128 (seed 14605)
+    budget bracket: phi(0.00)=0.6130  phi(1.57)=0.3361  want ~0.3050
+    roll=1.571  skeleton phi=0.3361  +33 fillers -> phi=0.2752  void=1.08  cv=0.234  asym=3%
+    rejected: y-seam contact density 0.54 of interior < 0.76
+  attempt 16/128 (seed 15605)
+    budget bracket: phi(0.00)=0.6027  phi(1.57)=0.2815  want ~0.3050
+    roll=1.241  skeleton phi=0.3032  +10 fillers -> phi=0.2752  void=1.24  cv=0.242  asym=2%
+    rejected: largest void 1.24 mean-radii > 1.10; y-seam contact density 0.50 of interior < 0.76
+  attempt 17/128 (seed 16605)
+    budget bracket: phi(0.00)=0.5898  phi(1.57)=0.2782  want ~0.3050
+    roll=1.264  skeleton phi=0.3056  +17 fillers -> phi=0.2747  void=1.22  cv=0.247  asym=6%
+    rejected: largest void 1.22 mean-radii > 1.10; y-seam contact density 0.39 of interior < 0.76
+  attempt 18/128 (seed 17605)
+    budget bracket: phi(0.00)=0.5977  phi(1.57)=0.3253  want ~0.3050
+    roll=1.571  skeleton phi=0.3253  +19 fillers -> phi=0.2749  void=1.10  cv=0.221  asym=6%
+    rejected: largest void 1.10 mean-radii > 1.10; y-seam contact density 0.52 of interior < 0.76
+  attempt 19/128 (seed 18605)
+    budget bracket: phi(0.00)=0.6588  phi(1.57)=0.3098  want ~0.3050
+    roll=1.571  skeleton phi=0.3098  +14 fillers -> phi=0.2749  void=1.24  cv=0.248  asym=11%
+    rejected: largest void 1.24 mean-radii > 1.10; y-seam contact density 0.57 of interior < 0.76
+  attempt 20/128 (seed 19605)
+    budget bracket: phi(0.00)=0.6249  phi(1.57)=0.2685  want ~0.3050
+    roll=1.166  skeleton phi=0.3047  +13 fillers -> phi=0.2751  void=1.14  cv=0.216  asym=4%
+    rejected: largest void 1.14 mean-radii > 1.10; y-seam contact density 0.65 of interior < 0.76
+  attempt 21/128 (seed 20605)
+    budget bracket: phi(0.00)=0.6631  phi(1.57)=0.3060  want ~0.3050
+    roll=1.571  skeleton phi=0.3060  +11 fillers -> phi=0.2749  void=1.27  cv=0.246  asym=7%
+    rejected: largest void 1.27 mean-radii > 1.10; y-seam contact density 0.57 of interior < 0.76
+  attempt 22/128 (seed 21605)
+    budget bracket: phi(0.00)=0.5847  phi(1.57)=0.2784  want ~0.3050
+    roll=1.178  skeleton phi=0.3036  +15 fillers -> phi=0.2751  void=1.13  cv=0.238  asym=3%
+    rejected: largest void 1.13 mean-radii > 1.10; y-seam contact density 0.58 of interior < 0.76
+  attempt 23/128 (seed 22605)
+    budget bracket: phi(0.00)=0.5706  phi(1.57)=0.2951  want ~0.3050
+    roll=1.374  skeleton phi=0.3056  +15 fillers -> phi=0.2751  void=1.21  cv=0.236  asym=5%
+    rejected: largest void 1.21 mean-radii > 1.10; y-seam contact density 0.53 of interior < 0.76
+  attempt 24/128 (seed 23605)
+    budget bracket: phi(0.00)=0.5508  phi(1.57)=0.2664  want ~0.3050
+    roll=0.920  skeleton phi=0.3022  +16 fillers -> phi=0.2750  void=1.00  cv=0.232  asym=3%
+    rejected: y-seam contact density 0.76 of interior < 0.76
+  attempt 25/128 (seed 24605)
+    budget bracket: phi(0.00)=0.6609  phi(1.57)=0.2996  want ~0.3050
+    roll=1.448  skeleton phi=0.3065  +15 fillers -> phi=0.2750  void=1.12  cv=0.242  asym=2%
+    rejected: largest void 1.12 mean-radii > 1.10; y-seam contact density 0.42 of interior < 0.76
+  attempt 26/128 (seed 25605)
+    budget bracket: phi(0.00)=0.6375  phi(1.57)=0.2696  want ~0.3050
+    roll=1.384  skeleton phi=0.3067  +19 fillers -> phi=0.2748  void=1.09  cv=0.240  asym=5%
+    ACCEPTED
+
+✅ /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/keff_LR40/phi0.275_Rave50um_LR40_seed605
+   porosity      0.2748 (target 0.2750)
+   grains        346  (327 matrix + 19 filler)
+   mean radius   47.14 um (requested 50.00)
+   largest void  1.09 mean radii (gate 1.10)
+   density cv    0.240 (gate 0.273)
+   coordination  2.01
+   half-domain   4.6% asymmetry (x 4.6, y 2.6; gate 22)
+   rows written  381 (35 edge images)  -> /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/keff_LR40/phi0.275_Rave50um_LR40_seed605/grains.dat

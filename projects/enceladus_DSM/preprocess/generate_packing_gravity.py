@@ -230,7 +230,7 @@ def _clearance(x, y, r, cen, rad, Lx, px, skip=-1):
     return float(gap.min())
 
 
-def _settle(x, r, cen, rad, Lx, px, roll_tol, n_steps=24, max_hops=4):
+def _settle(x, r, cen, rad, Lx, px, roll_tol, n_steps=24, max_hops=4, path=None):
     """Place one grain by dropping, then rolling downhill around its contact.
 
     Rolling stops at whichever comes first: a second contact (a stable seat),
@@ -238,10 +238,14 @@ def _settle(x, r, cen, rad, Lx, px, roll_tol, n_steps=24, max_hops=4):
     equator -- in which case the grain has fallen off and is re-dropped from
     where it left, up to `max_hops` times.
 
-    Returns (x, y).
+    Returns (x, y). If `path` is a list, the grain's route is appended to it --
+    the landing point of every drop and each accepted rolling step -- for
+    postprocess/make_deposition_movie.py. It changes nothing about the result.
     """
     for _ in range(max_hops):
         y, k = _rest_height(x, r, cen, rad, Lx, px)
+        if path is not None:
+            path.append((x, y))
         if k < 0 or roll_tol <= 0.0:
             return x, y                            # on the floor, or no rolling
 
@@ -271,6 +275,8 @@ def _settle(x, r, cen, rad, Lx, px, roll_tol, n_steps=24, max_hops=4):
             if _clearance(nx, ny, r, cen, rad, Lx, px, skip=k) < 0.0:
                 break                              # second contact: stable seat
             bx, by, rolled = nx, ny, rolled + step
+            if path is not None:
+                path.append((bx, by))
             if abs(t) >= math.pi / 2 - 1e-9:
                 fell_off = True
                 break
@@ -302,7 +308,7 @@ def surface_profile(cen, rad, Lx, px, nbins=256):
 
 
 def deposit(rng, Lx, height, mean_r, sigma_ln, clip_frac, roll_tol, px,
-            max_grains=200000, check_every=20):
+            max_grains=200000, check_every=20, trace=None):
     """Fill an Lx-wide strip until the bed covers `height` EVERYWHERE.
 
     The stop test is the MINIMUM of the surface profile, not the highest grain.
@@ -330,7 +336,10 @@ def deposit(rng, Lx, height, mean_r, sigma_ln, clip_frac, roll_tol, px,
     while len(cr) < max_grains:
         r = float(np.clip(rng.lognormal(mu, sigma_ln), lo, hi))
         x = float(rng.uniform(0.0, Lx))
-        x, y = _settle(x, r, cen, rad, Lx, px, roll_tol)
+        path = [] if trace is not None else None
+        x, y = _settle(x, r, cen, rad, Lx, px, roll_tol, path=path)
+        if trace is not None:          # (radius, route) for the deposition movie
+            trace.append((r, path))
         if px:
             x = float(np.mod(x, Lx))
         cx.append([x, y]); cr.append(r)

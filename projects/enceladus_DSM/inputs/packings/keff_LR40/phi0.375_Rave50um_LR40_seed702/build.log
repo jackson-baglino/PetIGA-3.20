@@ -1,0 +1,60 @@
+  gates for target phi=0.375:  max_void_ratio 1.57   local_density_cv 0.422   asymmetry 22%
+Gravity-style packing: 2.000 x 2.000 mm, target phi=0.375, mean r=50.0 um, sigma_ln=0.5, periodic=xy
+  attempt 1/128 (seed 702)
+    budget bracket: phi(0.00)=0.6067  phi(1.57)=0.3011  want ~0.4050
+    roll=0.920  skeleton phi=0.4063  +6 fillers -> phi=0.3750  void=2.14  cv=0.413  asym=7%
+    rejected: largest void 2.14 mean-radii > 1.57; solid does not percolate (x=False, y=True)
+  attempt 2/128 (seed 1702)
+    budget bracket: phi(0.00)=0.6324  phi(1.57)=0.2773  want ~0.4050
+    roll=1.049  skeleton phi=0.3959  +8 fillers -> phi=0.3748  void=1.91  cv=0.404  asym=8%
+    rejected: largest void 1.91 mean-radii > 1.57; solid does not percolate (x=False, y=True); y-seam contact density 0.66 of interior < 0.76
+  attempt 3/128 (seed 2702)
+    budget bracket: phi(0.00)=0.6246  phi(1.57)=0.2874  want ~0.4050
+    roll=1.068  skeleton phi=0.4043  +9 fillers -> phi=0.3750  void=1.96  cv=0.408  asym=7%
+    rejected: largest void 1.96 mean-radii > 1.57; y-seam contact density 0.32 of interior < 0.76
+  attempt 4/128 (seed 3702)
+    budget bracket: phi(0.00)=0.5806  phi(1.57)=0.2571  want ~0.4050
+    roll=0.759  skeleton phi=0.4080  +7 fillers -> phi=0.3748  void=1.69  cv=0.393  asym=13%
+    rejected: largest void 1.69 mean-radii > 1.57; y-seam contact density 0.70 of interior < 0.76
+  attempt 5/128 (seed 4702)
+    budget bracket: phi(0.00)=0.6007  phi(1.57)=0.2958  want ~0.4050
+    roll=0.933  skeleton phi=0.4033  +16 fillers -> phi=0.3750  void=1.64  cv=0.401  asym=9%
+    rejected: largest void 1.64 mean-radii > 1.57
+  attempt 6/128 (seed 5702)
+    budget bracket: phi(0.00)=0.5728  phi(1.57)=0.2679  want ~0.4050
+    roll=0.868  skeleton phi=0.4091  +26 fillers -> phi=0.3750  void=1.40  cv=0.363  asym=8%
+    rejected: y-seam contact density 0.48 of interior < 0.76
+  attempt 7/128 (seed 6702)
+    budget bracket: phi(0.00)=0.5917  phi(1.57)=0.2705  want ~0.4050
+    roll=0.680  skeleton phi=0.4025  +9 fillers -> phi=0.3748  void=1.83  cv=0.369  asym=3%
+    rejected: largest void 1.83 mean-radii > 1.57; y-seam contact density 0.72 of interior < 0.76
+  attempt 8/128 (seed 7702)
+    budget bracket: phi(0.00)=0.5677  phi(1.57)=0.2927  want ~0.4050
+    roll=0.841  skeleton phi=0.4021  +12 fillers -> phi=0.3751  void=1.66  cv=0.374  asym=9%
+    rejected: largest void 1.66 mean-radii > 1.57
+  attempt 9/128 (seed 8702)
+    budget bracket: phi(0.00)=0.5961  phi(1.57)=0.2939  want ~0.4050
+    roll=1.080  skeleton phi=0.4081  +23 fillers -> phi=0.3745  void=1.62  cv=0.397  asym=19%
+    rejected: largest void 1.62 mean-radii > 1.57; y-seam contact density 0.47 of interior < 0.76
+  attempt 10/128 (seed 9702)
+    budget bracket: phi(0.00)=0.5778  phi(1.57)=0.2808  want ~0.4050
+    roll=0.687  skeleton phi=0.4054  +9 fillers -> phi=0.3752  void=1.66  cv=0.375  asym=4%
+    rejected: largest void 1.66 mean-radii > 1.57; y-seam contact density 0.47 of interior < 0.76
+  attempt 11/128 (seed 10702)
+    budget bracket: phi(0.00)=0.6189  phi(1.57)=0.2751  want ~0.4050
+    roll=0.614  skeleton phi=0.4059  +11 fillers -> phi=0.3749  void=1.64  cv=0.361  asym=5%
+    rejected: largest void 1.64 mean-radii > 1.57; y-seam contact density 0.45 of interior < 0.76
+  attempt 12/128 (seed 11702)
+    budget bracket: phi(0.00)=0.5649  phi(1.57)=0.2725  want ~0.4050
+    roll=0.737  skeleton phi=0.3997  +16 fillers -> phi=0.3751  void=1.49  cv=0.386  asym=1%
+    ACCEPTED
+
+✅ /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/keff_LR40/phi0.375_Rave50um_LR40_seed702
+   porosity      0.3751 (target 0.3750)
+   grains        290  (274 matrix + 16 filler)
+   mean radius   47.45 um (requested 50.00)
+   largest void  1.49 mean radii (gate 1.57)
+   density cv    0.386 (gate 0.422)
+   coordination  1.95
+   half-domain   1.3% asymmetry (x 0.4, y 1.3; gate 22)
+   rows written  318 (28 edge images)  -> /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/keff_LR40/phi0.375_Rave50um_LR40_seed702/grains.dat

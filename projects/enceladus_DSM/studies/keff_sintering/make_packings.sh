@@ -5,13 +5,23 @@
 #   bash studies/keff_sintering/make_packings.sh            # all of them
 #   JOBS=4 bash studies/keff_sintering/make_packings.sh     # fewer in parallel
 #
-# phi {0.250, 0.300, 0.325, 0.350, 0.400} x 5 packings, R_ave = 50 um,
-# L = 2 mm (L/R_ave = 40), periodic xy, every gate at its default (void and CV
-# envelopes scaled with porosity, solid percolation, half-domain asymmetry,
-# y-seam contact density >= 0.76 -- see studies/rve_anisotropy/README.md).
+# phi {0.275, 0.325, 0.375, 0.425, 0.475} x 5 packings -- evenly spaced by
+# 0.05 (user, 2026-09-28; the first set at 0.250/0.300/0.350/0.400 was
+# dropped, 0.325 kept). R_ave = 50 um, L = 2 mm (L/R_ave = 40), periodic xy,
+# every gate at its default (void and CV envelopes scaled with porosity, solid
+# percolation, half-domain asymmetry, y-seam contact density >= 0.76 -- see
+# studies/rve_anisotropy/README.md).
 #
-# SEEDS ARE UNIQUE. Porosity block i (0.250 -> 1, ..., 0.400 -> 5) uses base
-# seeds 100*i + k, k = 1..5. If a base seed exhausts the generator's 128
+# EXCEPT phi 0.475: the solid percolation gate is OFF there. In 2D the solid
+# stops percolating between 0.40 and 0.45; at 0.475 a probe had the ice fail
+# to span x in 12 of 16 attempts. Forcing the gate would keep only the rare
+# connected realizations -- a biased sample of a near-threshold medium. The
+# 0.475 set is the TYPICAL microstructure instead, with percolation recorded
+# in metadata.json, and serves to show where 2D stops being a snow analogue.
+#
+# SEEDS ARE UNIQUE. Each porosity has its own block of base seeds, 100*b + k,
+# k = 1..5 (0.275 -> b=6, 0.325 -> 3, 0.375 -> 7, 0.425 -> 8, 0.475 -> 9;
+# blocks 1, 2, 4, 5 belonged to the dropped set). If a base seed exhausts the generator's 128
 # retries, the next UNUSED seed in that block is tried (100*i + 6, 7, ...), so
 # no two packings share a seed number and none is reused across porosities.
 # (The generator also salts its stream with the porosity, so they would be
@@ -20,7 +30,7 @@
 # collide with another packing's base seed because the last three digits
 # differ.
 #
-# phi 0.325 is rebuilt here even though pilot_LR40/ exists: those predate the
+# phi 0.325 was rebuilt here even though pilot_LR40/ exists: those predate the
 # seam gate (seeds 1 and 4 have seams at 0.33 and 0.36 of the interior) and the
 # porosity-salted stream, so the porosity series is built one way throughout.
 #
@@ -34,7 +44,8 @@ PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT="$PROJ/inputs/packings/keff_LR40"
 PY="$PROJ/venv_enceladus/bin/python"
 JOBS="${JOBS:-10}"
-PHIS=(0.250 0.300 0.325 0.350 0.400)
+PHIS=(0.275 0.325 0.375 0.425 0.475)
+BLOCKS=(6 3 7 8 9)
 N_PER_PHI=5
 MAX_SEEDS_PER_SLOT=20          # base seeds to try before giving up on a slot
 
@@ -45,6 +56,8 @@ mkdir -p "$OUT"
 # k, +5, ...), so parallel slots never pick the same seed.
 build_slot() {
     local phi="$1" i="$2" k="$3"
+    local extra=""
+    [[ "$phi" == "0.475" ]] && extra="--no-percolation-gate"
     local tries=0 seed=$((100 * i + k))
     while (( tries < MAX_SEEDS_PER_SLOT )); do
         local name="phi${phi}_Rave50um_LR40_seed${seed}"
@@ -56,7 +69,7 @@ build_slot() {
         if "$PY" "$PROJ/preprocess/generate_packing_gravity.py" \
                 --Lx 2e-3 --porosity "$phi" --mean-r 50e-6 --sigma-ln 0.5 \
                 --periodic xy --seed "$seed" --band-per-mean-r 0.184 \
-                --out "$dir" --no-periodic-subdir > "$dir.build.log" 2>&1 \
+                --out "$dir" --no-periodic-subdir $extra > "$dir.build.log" 2>&1 \
            && [[ -f "$dir/metadata.json" ]]; then
             mv "$dir.build.log" "$dir/build.log"
             echo "  OK      $name"; return 0
@@ -74,7 +87,7 @@ export OUT PY PROJ N_PER_PHI MAX_SEEDS_PER_SLOT
 
 for i in "${!PHIS[@]}"; do
     for k in $(seq 1 "$N_PER_PHI"); do
-        echo "${PHIS[$i]} $((i + 1)) $k"
+        echo "${PHIS[$i]} ${BLOCKS[$i]} $k"
     done
 done | xargs -P "$JOBS" -n 3 bash -c 'build_slot "$0" "$1" "$2"'
 

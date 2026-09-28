@@ -1,0 +1,32 @@
+  gates for target phi=0.375:  max_void_ratio 1.57   local_density_cv 0.422   asymmetry 22%
+Gravity-style packing: 2.000 x 2.000 mm, target phi=0.375, mean r=50.0 um, sigma_ln=0.5, periodic=xy
+  attempt 1/128 (seed 704)
+    budget bracket: phi(0.00)=0.5798  phi(1.57)=0.2678  want ~0.4050
+    roll=0.982  skeleton phi=0.4059  +14 fillers -> phi=0.3751  void=1.85  cv=0.397  asym=3%
+    rejected: largest void 1.85 mean-radii > 1.57; y-seam contact density 0.32 of interior < 0.76
+  attempt 2/128 (seed 1704)
+    budget bracket: phi(0.00)=0.6183  phi(1.57)=0.3332  want ~0.4050
+    roll=0.886  skeleton phi=0.4004  +11 fillers -> phi=0.3750  void=1.72  cv=0.401  asym=9%
+    rejected: largest void 1.72 mean-radii > 1.57; y-seam contact density 0.65 of interior < 0.76
+  attempt 3/128 (seed 2704)
+    budget bracket: phi(0.00)=0.5843  phi(1.57)=0.2984  want ~0.4050
+    roll=1.178  skeleton phi=0.4013  +17 fillers -> phi=0.3752  void=1.78  cv=0.416  asym=34%
+    rejected: largest void 1.78 mean-radii > 1.57; y-seam contact density 0.58 of interior < 0.76; half-domain asymmetry 33.8% (x 9.8, y 33.8) > 22%
+  attempt 4/128 (seed 3704)
+    budget bracket: phi(0.00)=0.6144  phi(1.57)=0.3308  want ~0.4050
+    roll=0.834  skeleton phi=0.4030  +19 fillers -> phi=0.3752  void=1.48  cv=0.383  asym=6%
+    rejected: y-seam contact density 0.50 of interior < 0.76
+  attempt 5/128 (seed 4704)
+    budget bracket: phi(0.00)=0.5871  phi(1.57)=0.2727  want ~0.4050
+    roll=0.834  skeleton phi=0.4038  +22 fillers -> phi=0.3749  void=1.39  cv=0.365  asym=4%
+    ACCEPTED
+
+✅ /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/keff_LR40/phi0.375_Rave50um_LR40_seed704
+   porosity      0.3749 (target 0.3750)
+   grains        287  (265 matrix + 22 filler)
+   mean radius   47.62 um (requested 50.00)
+   largest void  1.39 mean radii (gate 1.57)
+   density cv    0.365 (gate 0.422)
+   coordination  1.90
+   half-domain   4.5% asymmetry (x 1.4, y 4.5; gate 22)
+   rows written  315 (28 edge images)  -> /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/keff_LR40/phi0.375_Rave50um_LR40_seed704/grains.dat
