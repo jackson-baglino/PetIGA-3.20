@@ -1,6 +1,6 @@
 # Batch 3e -- the rest at -5 C (24 runs, ~$720+). Most expensive: last.
 #
-# Submit with (options and the -40 C k_eff cadence live in the script):
+# Submit with (every option, incl. the SSA-triggered k_eff cadence, lives in the script):
 #   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch3e_T-5.txt
 
 packing_2D_phi0.275_Rave50um_LR40_seed601_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d

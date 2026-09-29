@@ -13,15 +13,18 @@
 # the campaign packings, or an experiment that is not the campaign's 30-day
 # snow_T*_h1.00 family -- so a run cannot quietly differ from the others.
 #
-# THE ONE RULE THAT DEPENDS ON TEMPERATURE: k_eff cadence.
-#   -keff_freq 5 at every temperature, except -keff_freq 1 at T <= -40 C.
-# A run takes ~t_final/dtmax steps and dtmax = 1.09*tau_sub grows as it gets
-# colder: ~1200 steps at -5 C but only ~100 at -40 C. Every 5 steps is <= 0.3%
-# interpolation error after 1 d where there are enough steps
-# (studies/keff_sintering/sampling_stride.py); at -40 C it would leave ~8
-# samples after day 1, so every step is sampled there (~100 solves, ~2 h).
-# The rule is applied here, from the experiment's temperature, never by hand.
-# Runs are labelled __kf5 / __kf1 so the cadence is visible in the folder name.
+# k_eff CADENCE: THE SAME OPTION AT EVERY TEMPERATURE (since 2026-09-29).
+#   -keff_dlnssa 0.001: sample every 0.1% drop in SSA, from t = 11 tau_sub on
+#   (-keff_dlnssa_t0_tau, the baseline); every 5 steps before that (the IC
+#   relaxation); never more than 20 tau_sub between samples.
+# A step count spent samples evenly in steps, leaving visible corners where
+# k_eff bends fastest and wasting samples on the straight late curve. The SSA
+# trigger puts them along the k-SSA curve itself, and because temperature acts
+# as a time rescaling it samples every temperature at the same states -- so the
+# old "-keff_freq 1 at -40 C" rule is gone. On batch 2's every-step reference,
+# 0.1% gives 0.02% max interpolation error, 60x below the smallest real kink
+# seen (the SSA~15300 event on 3a seed 301, >= 1.3% of the plotted range).
+# Samples per run ~308 / 179 / 46 at -5 / -20 / -40 C.
 #
 # GUARDS. The repo must be committed and pushed: the batch records the commit
 # (print_repo_provenance), and a run from an uncommitted tree cannot be
@@ -47,14 +50,15 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PRODUCTION_OPTS=(
     -keff 1                    # in-line k_eff (tensor law, the default since 2026-09-23)
     -keff_step0 1              # sample the initial condition too
+    -keff_dlnssa 0.001         # sample every 0.1% drop in SSA ...
+    -keff_dlnssa_t0_tau 11.05  #   ... from t = 11 tau_sub (1 d at -20 C) on
+    -keff_freq 5               #   every 5 steps before that (IC relaxation)
+    -keff_max_gap_tau 20       #   and never more than 20 tau_sub apart
     -keff_ksp_type cg          # corrector solve: CG
     -keff_pc_type gamg         #   + algebraic multigrid
     -t_out_log 50              # 50 log-spaced field snapshots (~9 GB/run)
     -t_out_log_t0 60           #   starting at 60 s
 )                              # (the t >= 1 s opening frame is the solver default)
-KEFF_FREQ_DEFAULT=5
-KEFF_FREQ_COLD=1
-COLD_T_MAX=-40                 # T <= this -> KEFF_FREQ_COLD
 OUT_ROOT="/resnick/groups/rubyfu/jbaglino/simulation_outputs"
 PACKING_FAMILY="inputs/packings/keff_LR40/"
 EXP_PATTERN='^snow_T-?[0-9]+_h1\.00_30d$'
@@ -107,8 +111,7 @@ while IFS= read -r line; do
         echo "❌ $geom (eps_valid_temp $TG) does not match $exp (temp $T)" >&2
         errors=$((errors + 1)); continue
     fi
-    if awk -v t="$T" -v c="$COLD_T_MAX" 'BEGIN{exit !(t<=c)}'; then f=$KEFF_FREQ_COLD; else f=$KEFF_FREQ_DEFAULT; fi
-    specs+=("${geom}:${exp}:--label kf${f} -keff_freq ${f}")
+    specs+=("${geom}:${exp}")
 done < "$stage"
 
 (( errors == 0 )) || { echo "❌ $errors problem(s) in $stage -- nothing submitted" >&2; exit 1; }
@@ -129,7 +132,6 @@ echo "============================================================"
 echo "  k_eff PRODUCTION submission — $stage_name ($((${#specs[@]})) runs)"
 echo "  commit        : $head"
 echo "  options       : ${PRODUCTION_OPTS[*]}"
-echo "  k_eff cadence : -keff_freq $KEFF_FREQ_DEFAULT; $KEFF_FREQ_COLD at T <= $COLD_T_MAX C"
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 echo "  allocation    : ${TARGET_DOFS_PER_CORE} DoF/core (scripts/lib/alloc.sh)"
 echo "  output root   : $OUT_ROOT"
@@ -163,7 +165,6 @@ if [[ -n "$parent" && -d "$parent" ]]; then
         echo "commit    : $(git rev-parse HEAD)"
         echo "stage file: $stage"
         echo "options   : ${PRODUCTION_OPTS[*]}"
-        echo "cadence   : -keff_freq $KEFF_FREQ_DEFAULT; $KEFF_FREQ_COLD at T <= $COLD_T_MAX C"
         echo "alloc     : ${TARGET_DOFS_PER_CORE} DoF/core"
         echo "runs:"
         printf '  %s\n' "${specs[@]}"

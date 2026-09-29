@@ -3,7 +3,7 @@
 # at 0.325); porosity trend larger than the scatter; anisotropy k_xx/k_yy per
 # porosity vs the contact fabric (1.03 at 0.275 -> ~1.1 at 0.425).
 #
-# Submit with (options and the -40 C k_eff cadence live in the script):
+# Submit with (every option, incl. the SSA-triggered k_eff cadence, lives in the script):
 #   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch3b_T-20.txt
 
 packing_2D_phi0.275_Rave50um_LR40_seed602_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d

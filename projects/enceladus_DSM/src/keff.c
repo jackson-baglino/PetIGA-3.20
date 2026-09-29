@@ -45,6 +45,21 @@ static PetscErrorCode KeffParseOptions(KeffCtx *kc)
       "Sample k_eff every this many simulated seconds (> 0 overrides -keff_freq)", "",
       kc->t_interv, &kc->t_interv, NULL); CHKERRQ(ierr);
 
+  ierr = PetscOptionsReal("-keff_dlnssa",
+      "Sample k_eff whenever ln SSA has fallen by this much since the last sample "
+      "(e.g. 0.003 = every 0.3% of SSA change); 0 = off", "",
+      kc->dlnssa, &kc->dlnssa, NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsReal("-keff_dlnssa_t0_tau",
+      "Start the SSA trigger at this t/tau_sub; before it, -keff_freq applies "
+      "(default 11.05 = 1 d at -20 C: the IC relaxation is not sampled densely)", "",
+      kc->dlnssa_t0_tau, &kc->dlnssa_t0_tau, NULL); CHKERRQ(ierr);
+
+  ierr = PetscOptionsReal("-keff_max_gap_tau",
+      "With -keff_dlnssa: never leave more than this many tau_sub between samples "
+      "(0 = no backstop)", "",
+      kc->max_gap_tau, &kc->max_gap_tau, NULL); CHKERRQ(ierr);
+
   ierr = PetscOptionsBool("-keff_step0",
       "Always take a k_eff sample at step 0", "",
       kc->at_step0, &kc->at_step0, NULL); CHKERRQ(ierr);
@@ -212,6 +227,11 @@ PetscErrorCode KeffCreate(AppCtx *app)
   kc->freq          = 1;
   kc->t_interv      = 0.0;
   kc->at_step0      = PETSC_TRUE;
+  kc->dlnssa        = 0.0;         /* off: step/time cadence as before */
+  kc->dlnssa_t0_tau = 86400.0 / 7822.3;   /* 11.05 = 1 d at -20 C, the baseline */
+  kc->max_gap_tau   = 20.0;
+  kc->have_last     = PETSC_FALSE;
+  kc->warned_no_ssa = PETSC_FALSE;
   kc->only          = PETSC_FALSE;
   kc->replay_stride = 1;
   kc->pc_freeze     = PETSC_FALSE;
@@ -440,6 +460,13 @@ PetscErrorCode KeffCreate(AppCtx *app)
     } else if (kc->only) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,
         "    mode              : -keff_only (one sample from the IC, then exit)\n"); CHKERRQ(ierr);
+    } else if (kc->dlnssa > 0.0) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,
+        "    cadence           : every %.3g%% drop in SSA from t = %.3g tau_sub (%.4g s); "
+        "every %d step(s) before; max gap %.3g tau_sub\n",
+        (double)(100.0 * kc->dlnssa), (double)kc->dlnssa_t0_tau,
+        (double)(kc->dlnssa_t0_tau * app->tau_sub_run), (int)kc->freq,
+        (double)kc->max_gap_tau); CHKERRQ(ierr);
     } else if (kc->t_interv > 0.0) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,
         "    cadence           : every %g s of simulated time\n",

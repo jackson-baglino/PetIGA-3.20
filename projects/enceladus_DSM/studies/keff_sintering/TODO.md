@@ -42,6 +42,19 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
     the speed-up equals the τ_sub ratio to ±1.5% (−5: 3.83×; −40: 0.128×)
   - Finding: at φ 0.475 (ice percolates in y only) k_xx rises +6% against
     +26% for k_yy; k_xx/k_yy goes 0.50 → 0.37.
+- [x] **k_eff cadence → SSA trigger** (2026-09-29).
+  - The 3a curves had visible corners at every 5 steps (0.49 d = 5.4 τ_sub
+    apart). The new setting samples every 0.1% drop in SSA after 11 τ_sub,
+    every 5 steps before that, with a 20 τ_sub backstop.
+  - The same option at every temperature; the −40 rule is gone.
+  - Max error 0.02% of the plotted range, 60× below the smallest real kink
+    (the SSA ≈ 15,300 event on seed 301, ≥ 1.3%).
+  - Samples per run ~308 / 179 / 46 at −5 / −20 / −40.
+  - Code: `src/keff_sample.c` (KeffDue). `studies/keff_sintering/predict_cadence.py`
+    mirrors it and reproduced all 7 3a schedules on the old path; run
+    `--check` on the rerun.
+- [ ] **Rerun 3a** with the final options once the two tests below are done.
+  The first 3a is kept as the shakedown record, not pooled.
 - [ ] **Before 3b** (cost, not correctness), in this order:
   - [ ] **DoF/core scaling test** (~$20). 30 mid-run steps restarted from a 3a
     snapshot, at 40k/60k/100k/150k/200k DoF/core × 2 repeats. It times the

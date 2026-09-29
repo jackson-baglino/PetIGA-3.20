@@ -86,6 +86,11 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
   PetscReal tot_ice    = PetscRealPart(stats[0]);
   PetscReal sub_interf = PetscRealPart(stats[1]);
   PetscReal tot_air    = PetscRealPart(stats[2]);
+  /* For the k_eff SSA trigger (keff_sample.c: KeffDue). Any quantity
+   * proportional to the interface length works, since only its relative
+   * change is used. */
+  user->ssa_now  = sub_interf / user->eps;
+  user->ssa_step = step;
   PetscReal tot_temp   = PetscRealPart(stats[3]);
   PetscReal tot_rhov   = PetscRealPart(stats[4]);
 

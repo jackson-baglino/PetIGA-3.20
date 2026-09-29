@@ -289,6 +289,9 @@ int main(int argc, char *argv[]) {
     user.t_out_log_t0 = 0.0;    /* first scheduled time; <= 0 = first accepted step's t */
     user.t_out_log    = NULL;
     user.i_out_log    = 0;
+    user.ssa_now      = -1.0;   /* set by Monitor each accepted step */
+    user.ssa_step     = -1;
+    user.tau_sub_run  = 0.0;
     user.t_out_first  = 1.0;    /* -t_out_first: always write the first step with t >= 1 s */
     user.first_out_done = PETSC_FALSE;
     if (n_out > 1) {
@@ -1033,6 +1036,7 @@ int main(int argc, char *argv[]) {
         user.tau_therm = user.eps * lambda_sub * c_therm;
         user.tau_vap   = user.eps * lambda_sub * c_vap;
         tau_sub = user.tau_kin + user.tau_therm + user.tau_vap;
+        user.tau_sub_run = tau_sub;
     }
     user.mob_sub = 1 * user.eps / 3.0 / tau_sub; /* Mobility parameter for sublimation */
     user.alph_sub = lambda_sub / tau_sub;  /* Phase change rate parameter, eq.(9) Moure & Fu (2024) SI */

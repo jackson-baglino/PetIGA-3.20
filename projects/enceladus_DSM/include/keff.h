@@ -68,6 +68,17 @@ typedef struct KeffCtx {
   PetscReal t_interv;        /* -keff_t_interv: seconds; > 0 overrides freq */
   PetscReal t_next;          /* next scheduled sample time */
   PetscBool at_step0;        /* -keff_step0 */
+  /* SSA-triggered cadence (-keff_dlnssa > 0). Sample when ln SSA has fallen by
+   * dlnssa since the last sample, from t = dlnssa_t0_tau * tau_sub on; before
+   * that the step cadence (-keff_freq) applies. max_gap_tau (in tau_sub) is a
+   * backstop for the late, nearly flat part of a curve; 0 = none. */
+  PetscReal dlnssa;          /* -keff_dlnssa: relative SSA drop between samples */
+  PetscReal dlnssa_t0_tau;   /* -keff_dlnssa_t0_tau: trigger starts here [tau_sub] */
+  PetscReal max_gap_tau;     /* -keff_max_gap_tau: longest gap allowed [tau_sub] */
+  PetscBool have_last;       /* a sample (or the reference state) is recorded */
+  PetscReal ln_ssa_last;     /* ln SSA at the last sample */
+  PetscReal t_last;          /* time of the last sample */
+  PetscBool warned_no_ssa;
   PetscBool only;            /* -keff_only: one sample from the IC, then exit */
   char      replay_dir[PETSC_MAX_PATH_LEN];   /* -keff_replay */
   char      replay_times[PETSC_MAX_PATH_LEN]; /* -keff_replay_times */

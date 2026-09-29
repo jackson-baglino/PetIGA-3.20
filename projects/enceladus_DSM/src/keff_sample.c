@@ -73,16 +73,70 @@ static PetscErrorCode KeffCSVAppend(AppCtx *app, PetscInt step, PetscReal t,
  * t_interv, because t_next then falls permanently behind t -- the same bug
  * OutputMonitor carries a comment about.
  * ------------------------------------------------------------------------- */
-static PetscBool KeffDue(KeffCtx *kc, PetscInt step, PetscReal t)
+static PetscBool KeffDueSteps(KeffCtx *kc, PetscInt step, PetscReal t)
 {
-  if (step == 0) return kc->at_step0;
-
   if (kc->t_interv > 0.0) {
     if (t < kc->t_next) return PETSC_FALSE;
     while (kc->t_next <= t) kc->t_next += kc->t_interv;
     return PETSC_TRUE;
   }
   return (PetscBool)(kc->freq > 0 && step % kc->freq == 0);
+}
+
+/* The SSA trigger (-keff_dlnssa). WHY: sampling on a step count spends samples
+ * evenly in steps, but k_eff bends fastest early, so a fixed stride leaves
+ * visible corners there and wastes samples on the nearly straight late curve.
+ * Sampling on relative SSA change places them where the k-SSA curve -- the
+ * figure -- changes. On batch 2's every-step data (studies/keff_sintering/
+ * sampling_stride.py follow-up, 2026-09-29) a 0.3% trigger gave 0.06% max
+ * interpolation error with 90 samples at -20 C, against 0.22% for every 2
+ * steps with 164. And since temperature acts as a time rescaling, the same
+ * option samples every temperature at the same states.
+ *
+ * Before dlnssa_t0_tau*tau_sub (the IC relaxation, shown greyed and never a
+ * baseline) the step cadence applies. The reference ln SSA is the last
+ * SAMPLE, so steps between samples accumulate the drop. A restart records its
+ * first step as the reference without sampling it. */
+static PetscBool KeffDue(KeffCtx *kc, PetscInt step, PetscReal t)
+{
+  AppCtx   *app = kc->app;
+  PetscBool due;
+
+  if (kc->dlnssa <= 0.0) {
+    if (step == 0) return kc->at_step0;
+    return KeffDueSteps(kc, step, t);
+  }
+
+  const PetscBool have_ssa = (PetscBool)(app->ssa_step == step && app->ssa_now > 0.0);
+  if (!have_ssa) {
+    /* Monitor did not run this step (-pf_monitor 0): no SSA to trigger on. */
+    if (!kc->warned_no_ssa) {
+      PetscPrintf(PETSC_COMM_WORLD, "  [keff] WARNING: -keff_dlnssa needs the per-step "
+                  "SSA from Monitor (-pf_monitor 1); falling back to -keff_freq\n");
+      kc->warned_no_ssa = PETSC_TRUE;
+    }
+    if (step == 0) return kc->at_step0;
+    return KeffDueSteps(kc, step, t);
+  }
+  const PetscReal ln_ssa = PetscLogReal(app->ssa_now);
+  const PetscReal tau    = app->tau_sub_run;
+
+  if (step == 0) {
+    due = kc->at_step0;
+  } else if (!kc->have_last) {
+    /* first step after a restart: this state is the reference, not a sample */
+    kc->have_last = PETSC_TRUE; kc->ln_ssa_last = ln_ssa; kc->t_last = t;
+    return PETSC_FALSE;
+  } else if (tau <= 0.0 || t < kc->dlnssa_t0_tau * tau) {
+    due = KeffDueSteps(kc, step, t);
+  } else {
+    due = (PetscBool)((kc->ln_ssa_last - ln_ssa) >= kc->dlnssa
+                      || (kc->max_gap_tau > 0.0 && t - kc->t_last >= kc->max_gap_tau * tau));
+  }
+  if (due || step == 0) {
+    kc->have_last = PETSC_TRUE; kc->ln_ssa_last = ln_ssa; kc->t_last = t;
+  }
+  return due;
 }
 
 /* ---------------------------------------------------------------------------

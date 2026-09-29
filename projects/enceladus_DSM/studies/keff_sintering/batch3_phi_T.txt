@@ -12,9 +12,9 @@
 # CAMPAIGN.md stage 3), so the five temperatures cover a ~60x range of
 # t/tau_sub for every porosity and re-test that collapse at each one.
 #
-# k_eff every 5 steps (studies/keff_sintering/sampling_stride.py: max error
-# after 1 d <= 0.3%), except -40 C, which takes only ~100 steps and samples
-# every step (applied by scripts/HPC/submit_keff_production.sh). 50 log-spaced snapshots + the 1 s
+# k_eff on an SSA trigger: a sample every 0.1% drop in SSA after 11 tau_sub, every
+# 5 steps before (scripts/HPC/submit_keff_production.sh; changed from every 5
+# steps on 2026-09-29, whose corners were visible). 50 log-spaced snapshots + the 1 s
 # opening frame: ~9 GB/run, ~1.1 TB for the batch.
 #
 # Cost (measured basis: batch 2 at 241 ranks, ~20 s/step + k_eff/5):
@@ -31,7 +31,7 @@
 #   batch3d_T-10.txt      25   -10
 #   batch3e_T-5.txt       24   -5, most expensive, last
 # Each file carries its own checks. Submit ONLY through the production script,
-# which owns every option (incl. k_eff every step at -40 C):
+# which owns every option (incl. the SSA-triggered k_eff cadence):
 #   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch3a_shakedown.txt
 
 packing_2D_phi0.275_Rave50um_LR40_seed601_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d

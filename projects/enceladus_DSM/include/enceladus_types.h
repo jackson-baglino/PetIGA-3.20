@@ -251,6 +251,14 @@ typedef struct {
    * the requested -beta_sub0; tau_therm and tau_vap are the thin-interface
    * counter-terms and are zero unless -thin_iface_corr is set. */
   PetscReal tau_kin, tau_therm, tau_vap;
+  PetscReal tau_sub_run;     /* their sum, the tau_sub the run uses; read by the
+                              * k_eff SSA trigger, which works in units of it */
+
+  /* The interface integral of the CURRENT accepted step, set by Monitor so the
+   * k_eff monitor (registered after it) can sample on SSA change
+   * (-keff_dlnssa). ssa_step says which step it belongs to; -1 = none yet. */
+  PetscReal ssa_now;
+  PetscInt  ssa_step;
 
 
   PetscReal xi_T;
