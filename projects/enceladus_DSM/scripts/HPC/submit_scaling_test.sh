@@ -4,7 +4,7 @@
 #
 #   ./scripts/HPC/submit_scaling_test.sh --run <finished 3a run dir> [--dry-run]
 #       [--t-days 10] [--steps 30] [--keff-every 3] [--repeats 2]
-#       [--targets "40000 60000 100000 150000 200000"]
+#       [--targets "20000 40000 60000 100000 150000 200000"]
 #
 # Each job RESTARTS a finished production run from its snapshot nearest
 # --t-days (so the steps are representative mid-run steps at the capped dt,
@@ -27,8 +27,18 @@
 # best rank counts need not agree. The analysis reports both, and the cost per
 # production run they imply at each target.
 #
+# THE RANGE. PETSc's rule of thumb (>= ~10-20k unknowns per rank for good
+# parallel efficiency; ~20-100k the usual well-scaling band) is a statement
+# about WALL-TIME efficiency. The bill is ranks x wall time, and efficiency only
+# falls as ranks are added, so the cheapest point is usually at or above the
+# top of the band -- bounded by memory (12% used at 60k in 3a) and the 24 h
+# limit (-5 C took 16.6 h at 401 ranks). The targets therefore span 20k (the
+# band's floor, where strong scaling should visibly stall) to 200k. They count
+# ALL unknowns (3 fields); the k_eff solve has a third of that per rank, so it
+# spans ~7k-67k.
+#
 # Read with: venv_enceladus/bin/python studies/keff_sintering/scaling/analyze_scaling.py <dirs>
-# Cost: ~$20 for 5 targets x 2 repeats (each job ~30-40 min).
+# Cost: ~$30 for 6 targets x 2 repeats (each job ~30-40 min; 20k is 1201 ranks).
 # =============================================================================
 set -euo pipefail
 
@@ -37,7 +47,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 OUT_ROOT="/resnick/groups/rubyfu/jbaglino/simulation_outputs"
 
 run="" ; t_days=10 ; steps=30 ; every=3 ; repeats=2 ; dry=0
-targets="40000 60000 100000 150000 200000"
+targets="20000 40000 60000 100000 150000 200000"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --run) run="$2"; shift 2 ;;
