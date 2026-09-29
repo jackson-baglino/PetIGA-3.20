@@ -42,8 +42,13 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
     the speed-up equals the τ_sub ratio to ±1.5% (−5: 3.83×; −40: 0.128×)
   - Finding: at φ 0.475 (ice percolates in y only) k_xx rises +6% against
     +26% for k_yy; k_xx/k_yy goes 0.50 → 0.37.
-- [ ] **Before 3b** (cost, not correctness):
-  - [ ] allocation back to 100k DoF/core (needs Jackson's OK; chosen 2026-09-26)
+- [ ] **Before 3b** (cost, not correctness), in this order:
+  - [ ] **DoF/core scaling test** (~$20). 30 mid-run steps restarted from a 3a
+    snapshot, at 40k/60k/100k/150k/200k DoF/core × 2 repeats. It times the
+    phase-field step and the k_eff sample separately.
+    `./scripts/HPC/submit_scaling_test.sh --run <cluster path to the 3a phi0.325 T-20 run>`
+    (`--dry-run` first). Read with `studies/keff_sintering/scaling/analyze_scaling.py`.
+    Set `scripts/lib/alloc.sh` from the cheapest projected $/run.
   - [ ] k_eff solver benchmark: `solver_benchmark/` (~$10, replay only). Adopt a
     faster setting only if max |Δk|/k_iso < 1e-5; record it in the production
     script before 3b.
@@ -85,9 +90,13 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
 - [ ] **φ 0.475 connectivity at the band.** The generator's percolation test
   uses the sharp geometry, but the solver joins gaps smaller than 9.2·eps.
   Measure connectivity at the band before writing about 0.475.
-- [ ] The AGU snapshot figures (`plots/keff/snapshots/`, from `plot_keff.py`)
-  normalize by t = 0 (k_eff,0), not by the 11 τ_sub baseline everything else
-  uses. Decide which the manuscript figure shows.
+- [ ] Figures normalized by k_eff(t = 0), e.g. the AGU snapshot set, are a
+  post-processing choice (user, 2026-09-29), not a problem.
+  - k(0) is the unrelaxed analytic IC: the first ~3.7 τ_sub are relaxation,
+    worth ~+35–50% in k.
+  - Say in the caption that the normalization includes that relaxation.
+  - Before comparing porosities that way, check whether k(11 τ)/k(0) differs
+    with φ.
 - [ ] HPC support: job 3606286 (3a, −5 °C) stuck in COMPLETING on hpc-34-37
   since ~06:30 2026-09-29; billing should have stopped at job end (check `sacct`).
 - [ ] **Kink near day 7.5** in seed 1, −20 °C (batch 2): the time step is
