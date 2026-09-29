@@ -76,7 +76,6 @@ HERE = Path(__file__).parent
 REPO = HERE.parent
 sys.path.insert(0, str(HERE))
 from pplib import step_times                                # noqa: E402
-from plot_keff import C_XX, C_YY                            # noqa: E402
 from plot_keff_snapshots import (INK, FS, FS_SMALL, MM, MAX_H_MM,  # noqa: E402
                                  LETTERS, PANELS, make_reader, snap_step,
                                  _field, _scalebar, _snap_title, _circled,
@@ -88,12 +87,15 @@ import pplib                                                # noqa: E402
 
 UM = 1e-6
 WANT = ("IcePhase", "VaporDensity", "Temperature")
-# One colour per TEMPERATURE, the k_eff figures' categorical pair. Line vs
-# point is model vs experiment, so colour carries only the series.
+# One colour per TEMPERATURE, from cmocean `thermal` -- the map every
+# temperature sweep in the manuscript uses -- at 0.22 (cold, -20 C) and 0.68
+# (warm, -5 C). CVD dE >= 31.8 between them. Line vs point is model vs
+# experiment, so colour carries only the temperature.
+C_T20, C_T5 = "#49369f", "#ee7d53"
 SERIES = {
-    "T-20": dict(label="−20 °C", color=C_XX, anchor_um=32.81, window_min=78.0,
+    "T-20": dict(label="−20 °C", color=C_T20, anchor_um=32.81, window_min=78.0,
                  data=REPO / "inputs/validation/molaro2019_fig11_T-20.csv"),
-    "T-5":  dict(label="−5 °C",  color=C_YY, anchor_um=32.51, window_min=48.0,
+    "T-5":  dict(label="−5 °C",  color=C_T5, anchor_um=32.51, window_min=48.0,
                  data=REPO / "inputs/validation/molaro2019_fig11_T-5.csv"),
 }
 MAX_PX = 1800                       # raster columns per section, ~550 dpi

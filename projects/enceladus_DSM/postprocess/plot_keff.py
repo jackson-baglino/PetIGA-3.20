@@ -70,9 +70,16 @@ from pplib import load_ssa, opt_float, read_opts
 INTERFACE_FACTOR = 6.0          # int phi^2(1-phi)^2 dx = eps/6; see plot_ssa.py
 DAY = 86400.0
 
-# Okabe-Ito, same order as preprocess/figstyle.py C[0], C[1]: CVD-safe.
-C_XX, C_YY = "#0072B2", "#D55E00"
-C_ISO = "#1a1a1a"               # the headline series, in ink
+# One family, sampled from cmocean `deep` at 0.38 / 0.64 / 0.92: seafoam,
+# steel blue, deep indigo. Single-run curves take a COOL map because the
+# parameter sweeps own the others -- temperature is cmocean `thermal`,
+# porosity an amp-to-black map -- so a fixed-parameter figure never reads as
+# one point of a sweep. k_iso, the headline, is the darkest (13.4:1 on white).
+# Checked (Machado 2009 CVD, OKLab dE x100): every pair >= 17.9 under protan,
+# deutan and tritan, >= 19.7 normal; k_xx is 2.7:1 on white, so it is never
+# identified by colour alone -- the legend names it.
+C_XX, C_YY = "#55ada3", "#3e6b96"
+C_ISO = "#352949"
 C_RELAX = "#b8b8b8"             # IC-relaxation samples
 
 
