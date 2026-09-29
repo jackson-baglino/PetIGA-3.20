@@ -66,8 +66,12 @@ figure instead; the SSA figure is always normalized on both axes.
 ONLY MEASURED SAMPLES. k_eff and SSA are paired by step (plot_keff.load
 drops a k_eff sample with no SSA row rather than borrowing a neighbour's),
 and every curve runs from the first measured sample to the last -- nothing
-is extrapolated past the range the simulation covered. Snapshots are only taken at steps that have a k_eff sample, so every marker
-sits on a measured value.
+is extrapolated past the range the simulation covered. Every marker sits
+on a measured k_eff sample: the snapshot's own step when it has one, else
+the nearest sample within --pair-tol (default 2 %) of its time -- k_eff is
+sampled every N steps and snapshots are log-spaced, so after the first days
+the two rarely share a step. Each pairing's offset is printed; a snapshot
+title gives the image's own time.
 
 Y AXIS. The axis runs the full height of the axes, down behind the insets,
 so they read as drawn ON the plot. For k it starts at 0 whenever that
@@ -169,25 +173,51 @@ def make_reader(run: Path, source: str):
     return sorted(files, key=snap_step), read
 
 
-def pick_snapshots(files, tmap, d, times_d, steps, n, t_ref, t_min):
-    """Indices into `files` for the panels, in time order, duplicates removed.
+def pair_rows(fsteps, ftimes, d, tol, t_min):
+    """{file index: k_eff row} for every snapshot that has a k_eff sample on
+    its own step, or -- with tol > 0 -- the nearest sample in time within
+    tol * t of it. The marker goes on that measured sample, never on an
+    interpolated value; only the image may be a step or two away from it.
 
-    Only snapshots whose step has a k_eff sample at t >= t_min are eligible,
-    so every marker lands on a measured value, never a neighbour's.
+    Why a tolerance exists: a run that samples k_eff every N steps (the
+    campaign's kf5) and writes snapshots on a log-spaced schedule shares
+    almost no steps between the two after the first days -- on the 3a
+    shakedown, none after 3.4 d, where the nearest samples sit 2 steps away,
+    0.5-1.9 % of t."""
+    kt, ks = d["t"], d["step"].astype(int)
+    out = {}
+    for i, (s, t) in enumerate(zip(fsteps, ftimes)):
+        exact = np.flatnonzero(ks == int(s))
+        if exact.size:
+            j = int(exact[0])
+        elif tol > 0 and np.isfinite(t):
+            j = int(np.argmin(np.abs(kt - t)))
+            if abs(kt[j] - t) > tol * max(t, 0.0):
+                continue
+        else:
+            continue
+        if kt[j] >= t_min:
+            out[i] = j
+    return out
+
+
+def pick_snapshots(files, tmap, d, times_d, steps, n, t_ref, t_min, tol=0.0):
+    """Indices into `files` for the panels, in time order, duplicates removed,
+    and the k_eff row each one's marker sits on (see pair_rows).
     """
     fsteps = np.array([snap_step(f) for f in files])
     ftimes = np.array([tmap.get(int(s), np.nan) for s in fsteps])
-    measured = {int(s) for s, t in zip(d["step"], d["t"]) if t >= t_min}
-    cand = np.array([i for i, s in enumerate(fsteps) if int(s) in measured])
+    rows = pair_rows(fsteps, ftimes, d, tol, t_min)
+    cand = np.array(sorted(rows))
     if cand.size == 0:
-        return [], fsteps, ftimes
+        return [], fsteps, ftimes, rows
     if steps:
         want = [int(cand[np.argmin(np.abs(fsteps[cand] - s))]) for s in steps]
     else:
         if not times_d:
             times_d = np.linspace(t_ref / DAY, d["t"][-1] / DAY, n)
         want = [int(cand[np.argmin(np.abs(ftimes[cand] / DAY - td))]) for td in times_d]
-    return sorted(set(want), key=lambda i: fsteps[i]), fsteps, ftimes
+    return sorted(set(want), key=lambda i: fsteps[i]), fsteps, ftimes, rows
 
 
 # ---------------------------------------------------------------------------
@@ -684,6 +714,10 @@ def main(argv=None):
     p.add_argument("--clip-map", action="store_true",
                    help="also write sigma_out_of_range.{pdf,png}: the snapshots "
                         "with contours where sigma leaves the colour bar")
+    p.add_argument("--pair-tol", type=float, default=0.02,
+                   help="a snapshot with no k_eff sample on its own step pairs "
+                        "with the nearest sample within this fraction of t "
+                        "(default 0.02); 0 = same step only")
     p.add_argument("--formats", nargs="+", default=["pdf", "png"])
     p.add_argument("--dpi", type=int, default=400, help="PNG and raster dpi")
     a = p.parse_args(argv)
@@ -719,9 +753,9 @@ def main(argv=None):
     keep = d["t"] >= d["t"][ib]
     d = {k: (v[keep] if isinstance(v, np.ndarray) else v) for k, v in d.items()}
     ib = 0
-    idx, fsteps, ftimes = pick_snapshots(
+    idx, fsteps, ftimes, rows = pick_snapshots(
         files, tmap, d, a.times, a.steps, a.n_snapshots, d["t"][ib],
-        t_min=d["t"][ib])
+        t_min=d["t"][ib], tol=a.pair_tol)
     if not idx:
         print("  no snapshot shares a step with a k_eff sample", file=sys.stderr)
         return 1
@@ -733,11 +767,14 @@ def main(argv=None):
     for i in idx:
         fl, X, Y = reader(files[i], want=WANT)
         t = ftimes[i] if np.isfinite(ftimes[i]) else tmap.get(int(fsteps[i]), 0.0)
-        row = int(np.flatnonzero(d["step"] == fsteps[i])[0])
-        snaps.append([fl, X, Y, float(d["t"][row]), row])
+        row = rows[i]
+        # The title gives the IMAGE's time; the marker sits on the sample.
+        snaps.append([fl, X, Y, float(t), row])
         s = SIGMA_SCALE * pplib.supersaturation(fl["VaporDensity"], fl["Temperature"])
         pore.append(s[fl["IcePhase"] < 0.5])
-        print(f"  snapshot step {fsteps[i]}: t = {t / DAY:.2f} d")
+        off = (d["t"][row] - t) / t if t > 0 else 0.0
+        print(f"  snapshot step {fsteps[i]}: t = {t / DAY:.2f} d; marker on k_eff "
+              f"step {int(d['step'][row])} ({off:+.2%} in t)")
     pore = np.concatenate(pore)
     smin, smax = float(pore.min()), float(pore.max())
     v = min(abs(smin), abs(smax))
