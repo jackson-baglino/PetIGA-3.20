@@ -1,3 +1,20 @@
+## 2026-09-29 — SSA-triggered k_eff cadence
+
+- Implemented -keff_dlnssa / -keff_dlnssa_t0_tau / -keff_max_gap_tau
+  (src/keff_sample.c KeffDue; Monitor stores per-step SSA, AppCtx keeps
+  tau_sub_run). Clean build, no warnings.
+- Production script now passes one cadence to every run: 0.1% SSA trigger
+  after 11 tau_sub, every 5 steps before, 20 tau_sub max gap; -40 C rule and
+  kf labels removed.
+- Chosen from batch 2's every-step data: 0.1% -> 0.02% max error, 60x below
+  the smallest real kink (SSA~15300 on 3a seed 301). ~308/179/46 samples at
+  -5/-20/-40 C.
+- studies/keff_sintering/predict_cadence.py mirrors KeffDue; reproduces all 7
+  3a schedules on the old path; --check verifies the rerun.
+- Plan: scaling test -> solver benchmark -> rerun 3a -> 3b.
+
+---
+
 ## 2026-09-29 — Batch 3a shakedown analysed
 
 - All 7 runs: 30 d, health clean, k_eff.csv at the right cadence, 1 s opening
