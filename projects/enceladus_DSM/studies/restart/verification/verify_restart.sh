@@ -5,7 +5,7 @@
 # Two runs of the same small case:
 #
 #   A  uninterrupted, 0 -> t_end
-#   B  0 -> t_stop, then resumed IN ITS OWN DIRECTORY from its second-to-last
+#   B  stopped after N_STOP steps, then resumed IN ITS OWN DIRECTORY from its second-to-last
 #      snapshot -- exactly what scripts/HPC/resume_batch.sh does after a
 #      timeout, including setting aside what B wrote past that snapshot --
 #      and carried on to t_end
@@ -22,9 +22,12 @@
 # SSA_evo.dat for WRITE, so in place it overwrote sol_00000.. and truncated
 # the first leg's log. Gates 1 and 2 are what catch that.
 #
-# B stops at t_stop via -t_final, so its LAST step is cut short to land on
-# t_stop. Resuming from the second-to-last snapshot steps over that cut step,
-# which is also why resume_batch.sh does it after a real kill.
+# B is stopped by STEP COUNT (-ts_max_steps) with the same -t_final as A, the
+# way a timeout stops a job: without warning. Stopping it with a smaller
+# -t_final instead is NOT equivalent -- within two steps of max_time PETSc's
+# TSAdaptChoose halves or trims the next dt to land on it, so B's steps before
+# the resume point already differ from A's (measured on the first version of
+# this test: max rel dt diff 0.59, all of it before the resume).
 #
 # The physics here is meaningless (48x48, a few dozen steps). Only the
 # plumbing is under test.
@@ -41,7 +44,7 @@ trap 'rm -rf "$WORK"' EXIT
 COMMON=(-options_file inputs/solver.opts -dim 2 -Nx 48 -Ny 48 -Lx 1e-3 -Ly 1e-3
         -periodic 1 -ic_type ice_slab -eps 4e-5 -eps_temp_override 1
         -temp -20 -humidity 1 -delt_t 1.0e-4 -dtmax 5.0e1 -outp 1 -keff 0)
-T_STOP=3.0e2
+N_STOP=40
 T_END=5.0e2
 run() {  # dir log [extra...]
     local dir=$1 log=$2; shift 2
@@ -53,8 +56,8 @@ echo "== A: uninterrupted, to t = $T_END =="
 mkdir -p "$WORK/A" "$WORK/B"
 run "$WORK/A" "$WORK/A.log" -t_final "$T_END"
 
-echo "== B: to t = $T_STOP, then resumed in place to t = $T_END =="
-run "$WORK/B" "$WORK/B1.log" -t_final "$T_STOP"
+echo "== B: stopped after $N_STOP steps, then resumed in place to t = $T_END =="
+run "$WORK/B" "$WORK/B1.log" -t_final "$T_END" -ts_max_steps "$N_STOP"
 snap=$(ls "$WORK"/B/sol_*.dat | sort | tail -2 | head -1)
 step=$(basename "$snap" .dat | sed 's/sol_0*//')
 read -r _ _ t0 _ dt0 _ <<< "$(awk -v s="$step" '$4==s' "$WORK/B/SSA_evo.dat" | tail -1)"
