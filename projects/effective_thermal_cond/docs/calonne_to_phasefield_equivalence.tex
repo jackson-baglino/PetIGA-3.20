@@ -7,7 +7,7 @@
 % ======================================================================
 
 \documentclass[11pt]{article}
-\usepackage{amsmath,amssymb,amsthm,booktabs,listings}
+\usepackage{amsmath,amssymb,amsthm,booktabs,listings,dsfont}
 \lstset{language=C,basicstyle=\small\ttfamily,columns=fullflexible,frame=single}
 \usepackage[margin=1in]{geometry}
 \emergencystretch=3em
@@ -28,6 +28,7 @@
 \newcommand{\Hper}{H^1_{\mathrm{per}}(\Om)}
 \newcommand{\avg}[1]{\big\langle #1 \big\rangle}
 \newcommand{\Band}{B_\varepsilon}
+\newcommand{\ind}{\mathds{1}}  % indicator of \Om_1 (not \chi: that is the interface curvature in the model)
 
 \begin{document}
 
@@ -50,16 +51,16 @@ that problem, and this note shows they are the same one. Nothing below uses any
 property of the phases beyond $K_1,K_2$ being positive constants.
 
 \paragraph{Notation.}
-$\chi$ is the \emph{indicator function} of $\Om_1$: the function equal to $1$
+$\ind$ is the \emph{indicator function} of $\Om_1$: the function equal to $1$
 inside $\Om_1$ and $0$ outside,
 \begin{equation}
-\chi(\mathbf x)=\mathbf 1_{\Om_1}(\mathbf x)=
+\ind(\mathbf x)=
 \begin{cases} 1, & \mathbf x\in\Om_1,\\ 0, & \mathbf x\in\Om_2.\end{cases}
-\label{eq:chi}
+\label{eq:ind}
 \end{equation}
 $\varphi$ is the phase field: a smooth function equal to $1$ in $\Om_1$ and $0$
 in $\Om_2$, sweeping between them across a band of decay length $\varepsilon$.
-It is a smoothed $\chi$. $\avg{\cdot}=|\Om|^{-1}\!\int_\Om(\cdot)$, and
+It is a smoothed $\ind$. $\avg{\cdot}=|\Om|^{-1}\!\int_\Om(\cdot)$, and
 $\jump{\,\cdot\,}$ is the jump across $\Gam$.
 
 \paragraph{Problem A (sharp).} Find \emph{two} cell-periodic fields, $\bt_1$
@@ -175,9 +176,9 @@ This is where $K_\star$ and the single corrector $\bt$ come from. For both it is
 the same bookkeeping, with one extra check for $\bt$. Define the
 piecewise-constant coefficient and the glued corrector
 \begin{equation}
-K_\star:=K_1\chi+K_2(1-\chi),
+K_\star:=K_1\ind+K_2(1-\ind),
 \qquad
-\bt:=\bt_1\chi+\bt_2(1-\chi),
+\bt:=\bt_1\ind+\bt_2(1-\ind),
 \qquad\text{so}\qquad
 (K_\star,\bt)=
 \begin{cases}(K_1,\bt_1) & \text{on }\Om_1,\\ (K_2,\bt_2) & \text{on }\Om_2 .\end{cases}
@@ -192,7 +193,7 @@ jump, and $K_\star$ does.
 
 \emph{The corrector.} The extra check concerns the gradient. On each open
 subdomain $\nabla\bt=\nabla\bt_m$, so the \emph{piecewise} gradient of $\bt$ is
-$\chi\nabla\bt_1+(1-\chi)\nabla\bt_2$. The question is whether this is also the
+$\ind\nabla\bt_1+(1-\ind)\nabla\bt_2$. The question is whether this is also the
 gradient of $\bt$ \emph{as a function on $\Om$}, i.e.\ its weak gradient,
 which is what a weak form on $\Om$ differentiates. Test against a smooth
 periodic vector field $\boldsymbol\psi$ and integrate by parts on each
@@ -294,22 +295,22 @@ convergence theorem. No replacement is needed.
 \begin{lemma}\label{lem:identity}
 Let $K(\cdot)$ be \emph{any} function with $K(0)=K_2$ and $K(1)=K_1$. Then
 \begin{equation}
-K(\chi)=K_\star \qquad\text{pointwise on }\Om,
+K(\ind)=K_\star \qquad\text{pointwise on }\Om,
 \label{eq:identity}
 \end{equation}
 exactly --- no limit, no smallness of $\varepsilon$.
 \end{lemma}
 
 \begin{proof}
-$\chi$ takes only the values $0$ and $1$. At $\mathbf x\in\Om_1$, $\chi=1$, so
-$K(\chi)=K(1)=K_1=K_\star$. At $\mathbf x\in\Om_2$, $\chi=0$, so
-$K(\chi)=K(0)=K_2=K_\star$. Those are all the points of $\Om$.
+$\ind$ takes only the values $0$ and $1$. At $\mathbf x\in\Om_1$, $\ind=1$, so
+$K(\ind)=K(1)=K_1=K_\star$. At $\mathbf x\in\Om_2$, $\ind=0$, so
+$K(\ind)=K(0)=K_2=K_\star$. Those are all the points of $\Om$.
 \end{proof}
 
 \noindent
 For the affine $K$ of \eqref{eq:B} it is three lines:
 \begin{equation}
-K_\star \overset{\eqref{eq:Kstar}}{=} K_1\chi+K_2(1-\chi)=K_2+(K_1-K_2)\chi=K(\chi).
+K_\star \overset{\eqref{eq:Kstar}}{=} K_1\ind+K_2(1-\ind)=K_2+(K_1-K_2)\ind=K(\ind).
 \label{eq:algebra}
 \end{equation}
 
@@ -317,14 +318,14 @@ K_\star \overset{\eqref{eq:Kstar}}{=} K_1\chi+K_2(1-\chi)=K_2+(K_1-K_2)\chi=K(\c
 that agree asymptotically. They have \emph{one} law $K(\cdot)$, evaluated at two
 different arguments:
 \[
-\text{A: }K(\chi),\qquad\qquad \text{B: }K(\varphi).
+\text{A: }K(\ind),\qquad\qquad \text{B: }K(\varphi).
 \]
 So Step 2 approximates the \emph{geometry}, never the equations, and every
-difference between A and B traces to the single object $\varphi-\chi$. A second
-consequence: since $\chi$ never takes an intermediate value, the \emph{shape} of
+difference between A and B traces to the single object $\varphi-\ind$. A second
+consequence: since $\ind$ never takes an intermediate value, the \emph{shape} of
 $K$ between $0$ and $1$ is invisible to Problem A. Every admissible
 interpolation --- arithmetic, harmonic, any other --- coincides exactly on
-$\chi$. The choice can therefore matter only through the diffuse band
+$\ind$. The choice can therefore matter only through the diffuse band
 (\S\ref{sec:excess}).
 
 \begin{remark}[Why the corrector needs no Step 2]
@@ -333,23 +334,23 @@ $K_\star$ and $\bt$ are glued the same way in (f), but only $K_\star$ reappears
 here. There is no ``$\bt(\varphi)$'' interpolating $\bt_1$ and $\bt_2$ across
 the band, and none is needed. $K$ is \emph{data}: B has to be told what
 coefficient to use at every point, including inside the band, and the lemma
-shows its prescription $K(\varphi)$ reduces to A's on $\chi$. $\bt$ is the
+shows its prescription $K(\varphi)$ reduces to A's on $\ind$. $\bt$ is the
 \emph{unknown}: B solves for one field on all of $\Om$, and inside the band it
 simply takes whatever values the equation produces. At finite $\varepsilon$
 the two sharp pieces $\bt_1,\bt_2$ have no separate meaning inside $\Band$, and
 nothing requires them to. After Step~1 A also has a single unknown in the same
 space $\Hper$, so the two problems differ only in their coefficient, and that
-difference is carried entirely by $\varphi-\chi$.
+difference is carried entirely by $\varphi-\ind$.
 \end{remark}
 
 \begin{proposition}\label{prop:exact}
-If $\varphi=\chi$, Problems A and B are the same boundary-value problem and give
+If $\varphi=\ind$, Problems A and B are the same boundary-value problem and give
 the same $\Keff$, identically.
 \end{proposition}
 
 \begin{proof}
 Step 1 gives A $\Leftrightarrow$ \eqref{eq:weak}. Lemma~\ref{lem:identity} gives
-$K_\star=K(\chi)$, so \eqref{eq:weak} is the weak form of \eqref{eq:B}. The two
+$K_\star=K(\ind)$, so \eqref{eq:weak} is the weak form of \eqref{eq:B}. The two
 $\Keff$ formulas agree by \eqref{eq:s1-sub}--\eqref{eq:s1-merge} applied to the
 integrand $K(\nabla\bt+\bI)$.
 \end{proof}
@@ -357,11 +358,11 @@ integrand $K(\nabla\bt+\bI)$.
 \section{Finite $\varepsilon$: what is left over}
 \label{sec:diff}
 
-In practice $\varphi\neq\chi$, so Proposition~\ref{prop:exact} does not apply
+In practice $\varphi\neq\ind$, so Proposition~\ref{prop:exact} does not apply
 verbatim. By Lemma~\ref{lem:identity} the entire residual difference is carried
-by $\varphi-\chi$. For the affine $K$ this is exact:
+by $\varphi-\ind$. For the affine $K$ this is exact:
 \begin{equation}
-\delta\!K:=K(\varphi)-K_\star=(K_1-K_2)(\varphi-\chi),
+\delta\!K:=K(\varphi)-K_\star=(K_1-K_2)(\varphi-\ind),
 \qquad \operatorname{supp}\delta\!K=\Band:=\{0<\varphi<1\}.
 \label{eq:dK}
 \end{equation}
@@ -393,7 +394,7 @@ $\varphi=\ell(s/\varepsilon)$, $\ell(u)=(1+e^{-u})^{-1}$ (the logistic
 function, unrelated to the excesses $\Sigma$ of \S\ref{sec:excess}), in the signed
 distance $s$ to $\Gam$, and $\int_0^\infty(1-\ell)\,du=\ln2$,
 \begin{equation}
-\|\varphi-\chi\|_{L^1(\Om)}=2\ln\!2\;\varepsilon\,|\Gam|+\mathcal O(\varepsilon^2)
+\|\varphi-\ind\|_{L^1(\Om)}=2\ln\!2\;\varepsilon\,|\Gam|+\mathcal O(\varepsilon^2)
 \;\Longrightarrow\;
 \big|A_\varepsilon-A_\star\big|\le
 2\ln\!2\,(K_1-K_2)\,M^2\,\frac{|\Gam|}{|\Om|}\,\varepsilon+\mathcal O(\varepsilon^2),
