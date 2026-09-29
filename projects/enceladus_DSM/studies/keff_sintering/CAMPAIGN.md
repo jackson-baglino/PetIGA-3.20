@@ -322,6 +322,12 @@ Superseded plan below kept for the record. What was actually done:
   - **Submitted in five checked stages**, never whole: 3a shakedown (7 runs),
     3b −20 °C rest (20), 3c −30/−40 (49), 3d −10 (25), 3e −5 (24). Each
     `batch3?_*.txt` lists the check that must pass before the next.
+  - **3a result (2026-09-29): every correctness check passes; cost does not.**
+    - Collapse across −5/−20/−40: k at matched SSA to 0.06%; speed-up =
+      τ_sub ratio ±1.5%.
+    - $195 against $60–100: the k_eff solve got slower per iteration at 401
+      ranks. Revert to 100k DoF/core and benchmark the solver before 3b
+      (`solver_benchmark/`). Detail in TODO.md.
   - ~$1.7k on the batch-2 cost basis; up to ~$2.8k at 60k DoF/core if steps
     don't speed up.
 - **The weekend runs (batch 2) are not rerun.**

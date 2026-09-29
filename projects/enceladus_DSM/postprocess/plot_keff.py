@@ -13,8 +13,9 @@ Writes four figures under <dir>/plots/keff/ (or --save-dir):
     normalized/keff_time.png   k / k_b  vs  t / tau_sub
     normalized/keff_ssa.png    k / k_b  vs  SSA / SSA_b
 
-NORMALIZATION. k and SSA are divided by their value at the BASELINE sample,
-the first at t >= --baseline-days (default 1 d), not at t = 0: t = 0 is the
+NORMALIZATION. k and SSA are divided by their value AT the baseline time,
+interpolated to t = 11 tau_sub (--baseline-tau; = 1 d at -20 C, the pilot's
+reference, and the compare_keff.py convention), not at t = 0: t = 0 is the
 unrelaxed initial condition (below). Each component is divided by its own
 baseline value, so k_xx/k_xx,b, k_yy/k_yy,b and k_iso/k_iso,b all start at 1
 and the plot shows the relative rise. Pass --baseline-days 0 to normalize by
@@ -208,10 +209,13 @@ def main(argv=None):
     p.add_argument("--dir", default=".", help="run directory (default: cwd)")
     p.add_argument("--save-dir", default=None,
                    help="root for absolute/ and normalized/ (default: <dir>/plots/keff)")
-    p.add_argument("--baseline-days", type=float, default=1.0,
-                   help="samples before this are IC relaxation, drawn grey, and the "
-                        "first sample at or after it is the normalization baseline "
-                        "(default 1)")
+    p.add_argument("--baseline-tau", type=float, default=86400.0 / 7822.3,
+                   help="baseline as t/tau_sub (default 11.05 = 1 d at -20 C). "
+                        "Samples before it are IC relaxation, drawn grey; values "
+                        "interpolated to it are the normalization baseline")
+    p.add_argument("--baseline-days", type=float, default=None,
+                   help="baseline in days instead (also the fallback, 1 d, when "
+                        "outp.txt has no tau_sub)")
     a = p.parse_args(argv)
 
     run = Path(a.dir)
@@ -225,27 +229,40 @@ def main(argv=None):
     os.makedirs(out_abs, exist_ok=True)
     os.makedirs(out_norm, exist_ok=True)
 
-    relax = d["t"] < a.baseline_days * DAY
+    # Baseline in units of tau_sub when the run logs it (11 = 1 d at -20 C),
+    # so every temperature is normalized at the same stage of sintering -- the
+    # compare_keff.py convention. 1 d at -40 C is only 1.4 tau_sub, still
+    # inside the IC relaxation, and read as a +40% rise. Days is the fallback.
+    tau_b = read_tau_sub(run)
+    t_base = (a.baseline_tau * tau_b if (tau_b and a.baseline_days is None)
+              else (a.baseline_days if a.baseline_days is not None else 1.0) * DAY)
+    b_days = t_base / DAY
+    relax = d["t"] < t_base
     if relax.all():
-        print(f"  run ends before the {a.baseline_days:g} d baseline; "
+        print(f"  run ends before the {b_days:.3g} d baseline; "
               "normalizing by the last sample")
     ib = int(np.argmax(~relax)) if not relax.all() else len(relax) - 1
-    tb = d["t"][ib]
+    # The baseline is the value AT t_b, interpolated -- not the first sample
+    # past it. With k_eff every 5 steps the first sample past 1 d lands at
+    # ~1.4 d at -20 C, which understated the rise by ~3 points and disagreed
+    # with compare_keff.py (2026-09-29).
+    tb = t_base if not relax.all() else d["t"][-1]
+    base = {key: float(np.interp(tb, d["t"], d[key])) for key in ("kxx", "kyy", "kiso", "ssa")}
     tday = d["t"] / DAY
-    rise = (d["kiso"][-1] / d["kiso"][ib] - 1) * 100
+    rise = (d["kiso"][-1] / base["kiso"] - 1) * 100
     note = (f"{len(d['t'])} samples ({d['csv']}, {d['law']} law); "
-            f"grey = before {a.baseline_days:g} d, IC relaxation")
+            f"grey = before {b_days:.3g} d, IC relaxation")
     k_label = r"$k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]"
     written = []
 
     # --- absolute ------------------------------------------------------------
     fig, ax = plt.subplots(figsize=(10, 6))
     if relax.any():
-        ax.axvspan(0, a.baseline_days, color="#f0f0f0", zorder=0, lw=0)
+        ax.axvspan(0, b_days, color="#f0f0f0", zorder=0, lw=0)
     _series(ax, tday, d, relax, "Time [d]", k_label)
     _legend(ax, "lower right")
     ax.set_title(f"Effective thermal conductivity vs time\n"
-                 f"$k_\\mathrm{{iso}}$ {d['kiso'][ib]:.4f} → {d['kiso'][-1]:.4f} "
+                 f"$k_\\mathrm{{iso}}$ {base['kiso']:.4f} → {d['kiso'][-1]:.4f} "
                  f"({rise:+.1f}% from t = {tb / DAY:.2f} d)", fontsize=15)
     _save(fig, out_abs / "keff_time.png", note)
     written.append(out_abs / "keff_time.png")
@@ -257,7 +274,7 @@ def main(argv=None):
     _legend(ax, "upper right")
     _time_arrow(ax)
     ax.set_title(f"Effective thermal conductivity vs specific surface area\n"
-                 f"SSA {d['ssa'][ib]:.4g} → {d['ssa'][-1]:.4g} m$^{{-1}}$ "
+                 f"SSA {base['ssa']:.4g} → {d['ssa'][-1]:.4g} m$^{{-1}}$ "
                  f"from t = {tb / DAY:.2f} d", fontsize=15)
     _save(fig, out_abs / "keff_ssa.png", note)
     written.append(out_abs / "keff_ssa.png")
@@ -271,7 +288,7 @@ def main(argv=None):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
     for ax in (ax1, ax2):
         if relax.any():
-            ax.axvspan(0, a.baseline_days, color="#f0f0f0", zorder=0, lw=0)
+            ax.axvspan(0, b_days, color="#f0f0f0", zorder=0, lw=0)
         ax.grid(True, alpha=0.25, lw=0.6)
         ax.tick_params(labelsize=11)
         for sp in ("top", "right"):
@@ -300,8 +317,8 @@ def main(argv=None):
           f"max |k_xy|/k_yy = {r_yy.max():.2f}%, max |k_xy - k_yx| = {asym:.2e}")
 
     # --- normalized ----------------------------------------------------------
-    kn = {key: d[key] / d[key][ib] for key, *_ in SERIES}
-    sn = d["ssa"] / d["ssa"][ib]
+    kn = {key: d[key] / base[key] for key, *_ in SERIES}
+    sn = d["ssa"] / base["ssa"]
     tau = read_tau_sub(run)
     if tau:
         tn, t_label, t_ref = d["t"] / tau, r"$t\,/\,\tau_\mathrm{sub}$", \
@@ -309,12 +326,11 @@ def main(argv=None):
     else:
         tn, t_label, t_ref = d["t"] / tb, r"$t\,/\,t_b$", "no tau_sub in outp.txt"
     k_nlabel = r"$k\,/\,k_b$"
-    bnote = (f"baseline b = first sample at t >= {a.baseline_days:g} d "
-             f"(t_b = {tb / DAY:.2f} d); {t_ref}")
+    bnote = (f"baseline b = values interpolated to t_b = {tb / DAY:.2f} d; {t_ref}")
 
     fig, ax = plt.subplots(figsize=(10, 6))
     if relax.any():
-        ax.axvspan(0, tn[ib], color="#f0f0f0", zorder=0, lw=0)
+        ax.axvspan(0, (tb / tau) if tau else 1.0, color="#f0f0f0", zorder=0, lw=0)
     ax.axhline(1.0, color="#999999", lw=0.8, ls=":")
     _series(ax, tn, kn, relax, t_label, k_nlabel)
     _legend(ax, "lower right")

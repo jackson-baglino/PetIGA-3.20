@@ -1,3 +1,17 @@
+## 2026-09-29 — Batch 3a shakedown analysed
+
+- All 7 runs: 30 d, health clean, k_eff.csv at the right cadence, 1 s opening
+  frame (vapour already 97% structured), T collapse to 0.06%, k monotone in
+  phi. phi 0.475 (percolates in y only): k_xx +6% vs k_yy +26%.
+- Cost $195 vs $60-100: 401 ranks gave no step speed-up and a SLOWER k_eff
+  solve (0.85 vs 0.49 s/it). Recommend 100k DoF/core + solver benchmark
+  (studies/keff_sintering/solver_benchmark/, replay only) before 3b.
+- Fixes: health_check keyed by (phi, seed, T); compare_keff/plot_keff baseline
+  = 11 tau_sub, interpolated; run_batch_postprocess env overrides.
+- Plots made for all 7 runs + compare/ overlays + phi 0.475 packing movie.
+
+---
+
 ## 2026-09-29 — Seamless resume in place (Molaro -5 C timed out)
 
 - Found that a resume in place was destructive: the solver restarted its step

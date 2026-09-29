@@ -24,19 +24,31 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
 - **Temperatures:** T {−5, −10, −20, −30, −40} °C.
 - **Index:** `batch3_phi_T.txt` (never submitted whole).
 
-- [ ] **3a shakedown**: `batch3a_shakedown.txt`, 7 runs, ~$60–100.
-  - Submit: `./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch3a_shakedown.txt`
-  - Checks, all must pass:
-    - [ ] all 7 reach 30 d; `health_check.py` clean (mass, φ bounds, k_eff KSP)
-    - [ ] `k_eff.csv` is written (not `k_eff_tensor.csv`): one row per 5 steps,
-      and every step at −40 °C
-    - [ ] a `sol_*` at t ≥ 1 s exists (the movie opening frame), 50 log
-      snapshots, ~9 GB/run
-    - [ ] record s/step at 401 ranks against batch 2's ~20 s at 241, then
-      decide: keep 60k DoF/core or revert to 100k (`scripts/lib/alloc.sh`)
-    - [ ] −5 °C wall time comfortably inside 24 h
-    - [ ] φ 0.475 runs stably; k_eff is monotone in φ
-    - [ ] −5 / −20 / −40 on the 0.325 packing collapse on k(SSA) and on t/τ_sub
+- [x] **3a shakedown** — ran 2026-09-28 (commit f4179a9, 401 ranks), analysed
+  2026-09-29. Results: `~/SimulationResults/HPC_results/enceladus_DSM/GrainPackingSintering/keff_b3a_shakedown/`
+  (`compare/` holds the overlays). Cost **$195** (estimated $60–100).
+  - [x] all 7 reach 30 d; health clean (mass drift ≤ 5e-7, 0 KSP failures,
+    symmetry ≤ 1e-11, 0 bound trips)
+  - [x] `k_eff.csv` every 5 steps; every step at −40 °C (108 samples)
+  - [x] opening frame at t = 1.26 s; 45 snapshots, 8.1 GB/run
+  - [x] **s/step at 401 ranks is no faster** (15–28 s vs ~20 at 241), and the
+    k_eff solve is SLOWER: 0.85 s/iteration vs 0.49 at 241 ranks. So 60k
+    DoF/core costs 1.66× for nothing.
+    → **DECISION PENDING: revert `scripts/lib/alloc.sh` to 100k**
+  - [x] −5 °C used 16.6 h of 24 (≈11–13 h expected at 241 ranks)
+  - [x] φ 0.475 stable. k_iso falls monotonically with φ (0.86 → 0.31 W/m/K at
+    30 d). Rise 1→30 d: +25.9 / +25.0 / +24.7 / +22.6 / +19.7 %.
+  - [x] T collapse on the 0.325 packing: k_iso at matched SSA agrees to 0.06%;
+    the speed-up equals the τ_sub ratio to ±1.5% (−5: 3.83×; −40: 0.128×)
+  - Finding: at φ 0.475 (ice percolates in y only) k_xx rises +6% against
+    +26% for k_yy; k_xx/k_yy goes 0.50 → 0.37.
+- [ ] **Before 3b** (cost, not correctness):
+  - [ ] allocation back to 100k DoF/core (needs Jackson's OK; chosen 2026-09-26)
+  - [ ] k_eff solver benchmark: `solver_benchmark/` (~$10, replay only). Adopt a
+    faster setting only if max |Δk|/k_iso < 1e-5; record it in the production
+    script before 3b.
+  - Projected remaining cost at 3a rates: ~$4k. At 100k/core ~$2.4k; with a
+    faster solve, lower still.
 - [ ] **3b**: rest of −20 °C, `batch3b_T-20.txt`, 20 runs.
   - Check: seed scatter of the k_iso rise per φ (~3–4% expected at 0.325);
     the φ trend is larger than the scatter.
@@ -73,6 +85,11 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
 - [ ] **φ 0.475 connectivity at the band.** The generator's percolation test
   uses the sharp geometry, but the solver joins gaps smaller than 9.2·eps.
   Measure connectivity at the band before writing about 0.475.
+- [ ] The AGU snapshot figures (`plots/keff/snapshots/`, from `plot_keff.py`)
+  normalize by t = 0 (k_eff,0), not by the 11 τ_sub baseline everything else
+  uses. Decide which the manuscript figure shows.
+- [ ] HPC support: job 3606286 (3a, −5 °C) stuck in COMPLETING on hpc-34-37
+  since ~06:30 2026-09-29; billing should have stopped at job end (check `sacct`).
 - [ ] **Kink near day 7.5** in seed 1, −20 °C (batch 2): the time step is
   flat there, so it's likely a topology event. Look at the snapshots.
 - [ ] **Anisotropy direction vs real snow.** Our packings give k_xx > k_yy.
@@ -119,6 +136,14 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
   Long-range ripening is suppressed in 2D.
 
 ## Done (most recent first)
+
+- 2026-09-29 — 3a analysed. Fixed on the way:
+  - `health_check.py` keyed runs by seed, so it skipped the same packing at
+    other temperatures;
+  - `compare_keff.py` and `plot_keff.py` baselines are now 11 τ_sub, and
+    interpolated. With −40 °C present, "1 d" was 1.4 τ_sub, inside the
+    relaxation;
+  - `run_batch_postprocess.sh` takes POSTPROCESS_DIR/PYTHON overrides.
 
 - 2026-09-28 — Production submit script `scripts/HPC/submit_keff_production.sh`;
   this list.

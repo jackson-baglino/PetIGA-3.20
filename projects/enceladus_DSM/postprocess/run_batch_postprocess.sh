@@ -47,7 +47,13 @@ fi
 # (so the user can run this without the project repo). Fall back to a
 # postprocess/ in the parent of run_batch_postprocess.sh if the staged copy
 # is missing.
-if   [[ -d "$BATCH_DIR/postprocess" ]]; then
+# POSTPROCESS_DIR / PYTHON override both, for running from the repo against a
+# download that skipped the staged copy:
+#   POSTPROCESS_DIR=postprocess PYTHON=venv_enceladus/bin/python \
+#       bash postprocess/run_batch_postprocess.sh <batch>
+if   [[ -n "${POSTPROCESS_DIR:-}" ]]; then
+    POSTPROCESS="$(cd "$POSTPROCESS_DIR" && pwd)"
+elif [[ -d "$BATCH_DIR/postprocess" ]]; then
     POSTPROCESS="$BATCH_DIR/postprocess"
 elif [[ -d "$(dirname "$BATCH_DIR")/postprocess" ]]; then
     POSTPROCESS="$(dirname "$BATCH_DIR")/postprocess"
@@ -57,7 +63,7 @@ else
     exit 1
 fi
 
-PYTHON="$(command -v python3 || command -v python || true)"
+PYTHON="${PYTHON:-$(command -v python3 || command -v python || true)}"
 if [[ -z "$PYTHON" ]]; then
     echo "❌ Neither python3 nor python found on PATH."
     exit 1

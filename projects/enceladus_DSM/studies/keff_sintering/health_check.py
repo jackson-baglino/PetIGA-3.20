@@ -34,8 +34,28 @@ DAY = 86400.0
 OK, BAD = "  ok  ", " FLAG "
 
 
+def run_label(d: Path) -> str:
+    phi = re.search(r"phi([0-9.]+?)_", d.name)
+    seed = re.search(r"seed(\d+)", d.name) or re.search(r"seed(\d+)", str(d))
+    T = re.search(r"_T(-?\d+)__", d.name)
+    if phi and seed and T:
+        return f"phi{phi.group(1)} s{seed.group(1)} T{T.group(1)}"
+    return f"seed{seed.group(1)}" if seed else d.name
+
+
+def condition(label: str) -> str:
+    """The condition a run belongs to: its label without the seed."""
+    return re.sub(r"\s*s\d+", "", label) if label.startswith("phi") else "all"
+
+
 def find_runs(batch: Path) -> dict:
-    """Every run under `batch`, keyed by seed.
+    """Every run under `batch`, keyed by run label.
+
+    The label is "phi<X> s<seed> T<T>" when the directory name carries all
+    three, else "seed<N>", else the directory name. Keying on the seed alone
+    (the pilot convention, one temperature per batch) collapsed the batch-3
+    runs, where one packing runs at several temperatures, into one entry and
+    silently skipped the rest (2026-09-29).
 
     Discovery is by CONTENT -- a directory holding both k_eff.csv and
     SSA_evo.dat is a run -- rather than by directory name. The layout has
@@ -52,8 +72,7 @@ def find_runs(batch: Path) -> dict:
         d = kf.parent
         if not (d / "SSA_evo.dat").is_file():
             continue
-        m = re.search(r"seed(\d+)", d.name) or re.search(r"seed(\d+)", str(d))
-        key = m.group(1) if m else d.name
+        key = run_label(d)
         prev = seen.get(key)
         # a merged run carries MERGE_INFO.json; prefer it over a raw leg
         if prev is None or ((d / "MERGE_INFO.json").is_file()
@@ -91,7 +110,7 @@ def main() -> int:
         offmag = np.max(np.abs(k["k_01"]) / k["k_00"])
         bad_ksp = int(np.sum(k["ksp_reason"] <= 0))
         its = k["ksp_its"]
-        print(f"\n  seed {s}")
+        print(f"\n  {s}")
         # 1e-6, not 1e-9. The pilot happened to conserve to exactly 0.0, and
         # a threshold set from that flags ordinary floating-point accumulation:
         # the L/R_ave = 64 runs drift 1.5e-7 relative over 371 steps, which is
@@ -133,52 +152,53 @@ def main() -> int:
     # proxy -- it assumes the shape does not change, which sintering violates --
     # so it is a LOWER bound on the coarsening and an UPPER bound on L/R_ave.
     print("\n  coarsening (from SSA, assuming SSA ~ 1/R):")
-    print(f"  {'seed':>5} {'SSA0':>8} {'SSAend':>8} {'g=R/R0':>8} {'L/R_ave end':>12}")
+    print(f"  {'run':>22} {'SSA0':>8} {'SSAend':>8} {'g=R/R0':>8} {'L/R_ave end':>12}")
     for s, r in runs.items():
         g = r["ssa"][0] / r["ssa"][-1]
-        print(f"  {s:>5} {r['ssa'][0]:8.0f} {r['ssa'][-1]:8.0f} {g:8.3f} "
+        print(f"  {s:>22} {r['ssa'][0]:8.0f} {r['ssa'][-1]:8.0f} {g:8.3f} "
               f"{a.LR0/g:12.1f}")
 
-    # The operational REV test: scatter across independent realisations.
-    print("\n  seed-to-seed scatter in k_eff vs time"
+    # The operational REV test: scatter across independent realisations --
+    # of ONE condition. Pooling porosities or temperatures would read the
+    # difference between conditions as scatter.
+    groups = {}
+    for lab, r in runs.items():
+        groups.setdefault(condition(lab), []).append(r)
+    multi = {c: g for c, g in groups.items() if len(g) >= 2}
+    print("\n  seed-to-seed scatter in k_eff vs time, per condition"
           "  (the operational REV criterion):")
-    tgrid = np.linspace(0, min(r["k"]["time"].max() for r in runs.values()), 25)
-    print(f"  {'t[d]':>7} {'mean k_eff':>11} {'sd':>9} {'CV':>7} {'L/R_ave':>8}")
-    rows = []
-    for tt in tgrid[[0, 2, 6, 12, 18, 24]]:
-        vals = np.array([np.interp(tt, r["k"]["time"], r["k"]["k_iso"])
-                         for r in runs.values()])
-        gs = np.mean([r["ssa"][0] / np.interp(tt, r["t"], r["ssa"])
-                      for r in runs.values()])
-        cv = vals.std(ddof=1) / vals.mean()
-        rows.append((tt / DAY, vals.mean(), vals.std(ddof=1), cv, a.LR0 / gs))
-        print(f"  {tt/DAY:7.2f} {vals.mean():11.4f} {vals.std(ddof=1):9.4f} "
-              f"{cv:7.1%} {a.LR0/gs:8.1f}")
-
-    cv0, cv1 = rows[0][3], rows[-1][3]
-    print(f"\n  CV grows {cv0:.1%} -> {cv1:.1%} over the run.")
-    if cv1 > 1.5 * cv0:
-        print("   FLAG  The realisations are DIVERGING. A box that averages well")
-        print("         at t=0 averages worse once the structure has coarsened")
-        print("         into it -- exactly the L/R_ave drop above. Size the")
-        print("         production domain for t_final, not t=0.")
-    print(f"\n  with 4 seeds the standard error of the mean is "
-          f"{cv1/np.sqrt(len(runs)):.1%} at t_final;")
-    print(f"  a claimed difference between conditions must clear that.")
+    if not multi:
+        print("    (no condition has 2+ seeds in this batch -- nothing to compare)")
+    for c, g in multi.items():
+        tgrid = np.linspace(0, min(r["k"]["time"].max() for r in g), 25)
+        print(f"\n  {c}  ({len(g)} seeds)")
+        print(f"  {'t[d]':>7} {'mean k_eff':>11} {'sd':>9} {'CV':>7} {'L/R_ave':>8}")
+        rows = []
+        for tt in tgrid[[0, 2, 6, 12, 18, 24]]:
+            vals = np.array([np.interp(tt, r["k"]["time"], r["k"]["k_iso"]) for r in g])
+            gs = np.mean([r["ssa"][0] / np.interp(tt, r["t"], r["ssa"]) for r in g])
+            cv = vals.std(ddof=1) / vals.mean()
+            rows.append((tt / DAY, vals.mean(), vals.std(ddof=1), cv, a.LR0 / gs))
+            print(f"  {tt/DAY:7.2f} {vals.mean():11.4f} {vals.std(ddof=1):9.4f} "
+                  f"{cv:7.1%} {a.LR0/gs:8.1f}")
+        cv0, cv1 = rows[0][3], rows[-1][3]
+        print(f"  CV {cv0:.1%} -> {cv1:.1%} over the run; standard error of the mean "
+              f"with {len(g)} seeds {cv1/np.sqrt(len(g)):.1%} at t_final.")
+        if cv1 > 1.5 * cv0:
+            print("   FLAG  The realisations are DIVERGING: the box averages worse")
+            print("         once the structure has coarsened into it.")
 
     # early-time behaviour: is the first day physics or IC relaxation?
     print("\n  early transient (is day 1 sintering, or the IC relaxing?):")
-    for s, r in list(runs.items())[:1]:
+    for s, r in runs.items():
         m = (r["t"] > 2 * DAY)
         p = np.polyfit(np.log(r["t"][m]), np.log(r["ssa"][m]), 1)
         pred1 = np.exp(np.polyval(p, np.log(1 * DAY)))
         act1 = np.interp(1 * DAY, r["t"], r["ssa"])
-        print(f"    seed {s}: SSA ~ t^{p[0]:+.4f} fitted on t > 2 d")
-        print(f"      at t = 1 d that law predicts {pred1:.0f}, actual {act1:.0f}"
-              f"  ({act1/pred1-1:+.1%})")
-        print("      a large mismatch means the first day is the initial")
-        print("      condition equilibrating, not sintering, and should be")
-        print("      excluded from fits and from the t=0 reference.")
+        print(f"    {s:>22}: SSA ~ t^{p[0]:+.4f} (t > 2 d); at 1 d predicts "
+              f"{pred1:.0f}, actual {act1:.0f} ({act1/pred1-1:+.1%})")
+    print("      a large mismatch means the first day is the initial condition")
+    print("      equilibrating, not sintering -- excluded from fits and baselines.")
     return 0
 
 

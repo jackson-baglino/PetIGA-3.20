@@ -1,0 +1,21 @@
+# k_eff corrector solver benchmark -- replay only, NO new simulation.
+#
+# Replays every 9th of the 45 snapshots of the 3a phi 0.475 run (5 samples) under
+# each solver configuration, with -log_view. Each writes its own CSV via
+# -keff_csv, so the run's production k_eff.csv is untouched. See README.md.
+#
+# Submit (this is a diagnostic, not a manuscript run, so it goes through
+# submit_batch.sh directly):
+#   ./scripts/HPC/submit_batch.sh --tag keff_solver_bench \
+#       --tests-file studies/keff_sintering/solver_benchmark/bench.txt \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
+# and the same 'base' config at the old 100k DoF/core allocation:
+#   TARGET_DOFS_PER_CORE=100000 ./scripts/HPC/submit_batch.sh --tag keff_solver_bench_100k \
+#       --tests-file studies/keff_sintering/solver_benchmark/bench_100k.txt \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
+
+packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d:--label base -keff 1 -keff_replay /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5 -keff_replay_stride 9 -log_view -keff_csv /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5/bench_base.csv
+packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d:--label rtol7 -keff 1 -keff_replay /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5 -keff_replay_stride 9 -log_view -keff_ksp_rtol 1e-7 -keff_csv /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5/bench_rtol7.csv
+packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d:--label gamgthr -keff 1 -keff_replay /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5 -keff_replay_stride 9 -log_view -keff_ksp_rtol 1e-7 -keff_pc_gamg_threshold 0.02 -keff_csv /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5/bench_gamgthr.csv
+packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d:--label hypre -keff 1 -keff_replay /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5 -keff_replay_stride 9 -log_view -keff_ksp_rtol 1e-7 -keff_pc_type hypre -keff_pc_hypre_type boomeramg -keff_csv /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5/bench_hypre.csv
+packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d:--label freeze -keff 1 -keff_replay /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5 -keff_replay_stride 9 -log_view -keff_ksp_rtol 1e-7 -keff_pc_freeze 1 -keff_pc_refresh 10 -keff_csv /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/batch_2026-09-28__13.50.25_keff_3a_shakedown/packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d__kf5/bench_freeze.csv

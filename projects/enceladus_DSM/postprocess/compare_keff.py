@@ -30,10 +30,12 @@ initial condition relaxing (plot_keff.py). And not a fixed TIME either: on the
 times sooner (1.59x at -15 C, 2.47-2.50x at -10 C, every seed), so 1 d is
 11 tau_sub at -20 C but 27 at -10 C -- a later stage of sintering. Normalizing
 there offset the curves by the baseline, not by the physics. Every run is
-therefore normalized at the SAME t/tau_sub: --baseline-days at the slowest
-condition in the comparison (default 1 d there), i.e. at an earlier time for
-the warmer runs. The IC relaxation is the same dynamics, so it scales the same
-way. Pass --baseline-tau to set it directly.
+therefore normalized at the SAME t/tau_sub, by default 11 -- which is 1 d at
+-20 C, the reference used since the pilot. The IC relaxation is the same
+dynamics, so it scales the same way: it takes ~8 h at -20 C, i.e. ~3.7 tau_sub,
+at every temperature. (The earlier default, "1 d at the slowest condition",
+put the baseline at 1.4 tau_sub once -40 C joined -- inside the relaxation.)
+Pass --baseline-tau to change it.
 """
 from __future__ import annotations
 
@@ -56,6 +58,8 @@ from plot_keff import DAY, load, read_tau_sub          # noqa: E402
 # are ordered magnitudes (sequential), not identities. The light end is kept
 # at 0.45 so the palest curve still reads on white.
 CMAP = {"T": "Oranges", "phi": "Blues"}
+# 1 d at -20 C in units of tau_sub(-20 C) = 7822.3 s: the pilot's baseline.
+BASELINE_TAU = 86400.0 / 7822.3
 N_GRID = 400
 
 
@@ -204,11 +208,9 @@ def main(argv=None):
     p.add_argument("roots", nargs="+", type=Path)
     p.add_argument("--out", type=Path, default=None,
                    help="output directory (default: <first root>/compare)")
-    p.add_argument("--baseline-days", type=float, default=1.0,
-                   help="baseline time at the SLOWEST condition (largest tau_sub); "
-                        "other conditions use the same t/tau_sub (default 1)")
-    p.add_argument("--baseline-tau", type=float, default=None,
-                   help="baseline as t/tau_sub directly; overrides --baseline-days")
+    p.add_argument("--baseline-tau", type=float, default=BASELINE_TAU,
+                   help=f"baseline as t/tau_sub, the same for every run "
+                        f"(default {BASELINE_TAU:.2f} = 1 d at -20 C)")
     a = p.parse_args(argv)
 
     runs = discover(a.roots)
@@ -219,8 +221,7 @@ def main(argv=None):
     if any(r["tau"] is None for r in runs):
         print("  some runs have no tau_sub in outp.txt; cannot place a common baseline")
         return 1
-    base_tau = a.baseline_tau if a.baseline_tau is not None else \
-        a.baseline_days * DAY / max(r["tau"] for r in runs)
+    base_tau = a.baseline_tau
     print(f"  baseline at t/tau_sub = {base_tau:.3g} for every run")
     by = defaultdict(list)
     for r in runs:
