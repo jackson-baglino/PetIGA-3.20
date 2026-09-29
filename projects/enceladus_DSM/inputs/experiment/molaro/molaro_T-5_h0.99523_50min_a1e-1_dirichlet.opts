@@ -1,0 +1,48 @@
+# =============================================================================
+# Molaro T = -5 C -- ROUND 2: the wall from a MEASURED Newton step, 50 min only
+#
+# Same model as molaro_T-5_h0.99674_2h_a1e-1_dirichlet (and as the -20 C
+# round-2 arm 1): alpha_c = 0.1, nominal D_v, no kinetics scaling, Dirichlet
+# wall, dtCFL limiter, 60 s snapshots. Only -humidity and the run length differ.
+#
+# HUMIDITY. Round 1 (h = 0.99674, job 3607014, timed out at t = 3332 s) put the
+# large grain at -6.15 % over Molaro's 48-min window [t*, t* + 48 min],
+# t* = 39.3 s, against their -8.98 % (large-grain fit slope). 32 % short, so the
+# -20 C-calibrated estimate did not transfer. Recession is linear in the wall
+# undersaturation, so the RUNBOOK Newton step:
+#   (h_eq - h)_next = 3.279e-03 * (-8.98) / (-6.15) = 4.788e-03
+#   h = 1.0000219 - 4.788e-03 = 0.99523
+# Round 1 also gave the neck 52.42 um at t* + 48 min against their 44.00; a
+# drier wall competes with the neck for vapour, so expect it to come down.
+#
+# LENGTH. Molaro's -5 C record is 48 min long and the figure anchors it at t*,
+# so the run only has to reach t* + 48 min. Round 1 had t* = 39 s; a drier
+# wall slows the neck slightly, so t* will be a little later, but 3000 s
+# leaves room for t* up to 120 s. -n_out 51 keeps t_interv = 60 s exactly,
+# and dtmax = 30 s = t_interv/2 as before.
+#
+# Pair with: molaro_2D_L450x225um_eps0.11um_axisym_T-5pair_r14um_dom2
+# =============================================================================
+
+-t_final 3.0e+03
+-temp -5.0
+-humidity 0.99523                       # h_eq - 4.788e-03; MEASURED Newton step
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet: emulates the large chamber
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step
+-dtmax 3.0e1                            # = t_interv/2; guarantees every minute
+
+-t_out_log 0                            # OFF. -t_out_log is a COUNT of
+                                        # log-spaced snapshots, not an interval.
+-outp 0                                 # cadence from t_interv, not every step
+-n_out 51                               # t_interv = 3000/50 = 60 s exactly

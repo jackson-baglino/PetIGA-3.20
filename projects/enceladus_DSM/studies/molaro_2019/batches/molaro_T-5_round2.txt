@@ -1,0 +1,25 @@
+# Molaro 2019 T = -5 C -- ROUND 2, 2026-09-29.
+#
+# Round 1 (molaro_T-5.txt, h = 0.99674) timed out at t = 3332 s after 12 h,
+# which already covered Molaro's 48-min window (t* = 39 s). Scored there:
+# large grain -6.15 % vs their -8.98 %, neck 52.42 um vs 44.00. The shrinkage
+# miss (32 %) is outside the ~10 % we accept, so this is a FRESH run at the
+# Newton-corrected wall, not a continuation of round 1.
+#
+# Only as long as the data: t_final = 3000 s covers t* + 48 min. Round 1 took
+# 365 steps to reach 3000 s at ~1.7 min/step early and ~2.8 min/step late
+# (snapshot mtimes, steps 382-416); the drier wall recedes ~46 % faster, which
+# shortens the late CFL-limited steps. Estimate ~13 h on 463 ranks (~$75);
+# 16 h is the ceiling, and SLURM bills only what is used.
+#
+#   ./scripts/HPC/submit_batch.sh --tag molaro_T-5_round2 \
+#       --tests-file studies/molaro_2019/batches/molaro_T-5_round2.txt \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs \
+#       -- --time=0-16:00:00
+#
+# DISK: ~370 MB per snapshot x 51 = ~19 GB.
+#
+# Measure with:  bash postprocess/run_batch_measure.sh <run_dir>
+#   (scores -5 C runs against 32.51 um and the 48-min window automatically)
+
+molaro_2D_L450x225um_eps0.11um_axisym_T-5pair_r14um_dom2:molaro_T-5_h0.99523_50min_a1e-1_dirichlet
