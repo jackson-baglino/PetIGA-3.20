@@ -32,19 +32,32 @@ On a production mesh that is hours of compute to get back to where the run
 already was. Adopting the snapshot's dt makes a continuation cost what
 continuing would have cost.
 
+## Step count, output schedule and the log (2026-09-29)
+
+A resume carries on **counting steps from the snapshot's own number**
+(`TSSetStepNumber`), resumes the **output schedule** at the next time the
+uninterrupted run would have written, and **appends** to `SSA_evo.dat`
+(skipping the resumed step's row, which is already there). Before this, a
+resume restarted at step 0 and opened `SSA_evo.dat` for write -- so resuming
+in place (`RESUME_INTO`, the default in `resume_batch.sh`) overwrote the
+first leg's `sol_00000.dat`, `sol_00001.dat`, ... and truncated its log.
+
+`resume_batch.sh` moves whatever the first leg wrote past the resume point
+into `<run>/abandoned_after_step<N>_<timestamp>/` first: the continuation
+recomputes that stretch, and keeping both would give two states per step.
+
 ## Gates
+
+`verify_restart.sh` runs the case uninterrupted (A) and stopped-then-resumed
+in place (B), and requires B's directory to match A's:
 
 | gate | checks |
 |---|---|
-| clock resumed at snapshot `t` | not 0 — otherwise the two legs overlap and anything measured across the join is wrong |
-| dt resumed at snapshot `dt` | not `-delt_t` — the climb-back bug above |
-| first new step matches `t` | the continuation lands where the uninterrupted run did |
-| first new step matches `dt` | likewise |
-
-The comparison is against the run's *own* next step: leg 1 is run past the
-restart point, the snapshot is taken from the second-to-last output, and leg 2
-must reproduce leg 1's following row. Measured, it does so to all printed
-digits.
+| one row per step, same steps as A | no step-0 restart, no duplicated resume row |
+| same t and dt on every step (1e-9) | the continuation follows the same trajectory |
+| same totals (1e-6) | ice, air, vapour, mass -- U is reloaded, its time derivative is not |
+| same `sol_*.dat` names | nothing overwritten, nothing written off-cadence |
+| resumed dt is the working dt | not `-delt_t` -- the climb-back bug below |
 
 ## Restarting from a killed job
 

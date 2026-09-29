@@ -277,7 +277,19 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
       const char *dir = getenv("folder");
       if (dir) { sprintf(filedata,"%s/SSA_evo.dat",dir); }
       else     { sprintf(filedata,"SSA_evo.dat"); }
-      ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,filedata,&user->ssa_view);CHKERRQ(ierr);
+      /* A continuation APPENDS: PetscViewerASCIIOpen truncates, which on a
+       * resume in place wiped the first leg's per-step log. */
+      ierr = PetscViewerCreate(PETSC_COMM_WORLD,&user->ssa_view);CHKERRQ(ierr);
+      ierr = PetscViewerSetType(user->ssa_view,PETSCVIEWERASCII);CHKERRQ(ierr);
+      ierr = PetscViewerFileSetMode(user->ssa_view,
+                 user->ssa_append ? FILE_MODE_APPEND : FILE_MODE_WRITE);CHKERRQ(ierr);
+      ierr = PetscViewerFileSetName(user->ssa_view,filedata);CHKERRQ(ierr);
+    }
+    /* The resumed step itself is the first leg's last kept row: logging it
+     * again would put the same step in the file twice. */
+    if (step == user->ssa_skip_step) {
+      user->ssa_skip_step = -1;
+      PetscFunctionReturn(0);
     }
     ierr = PetscViewerASCIIPrintf(user->ssa_view,"%e %e %e %d %e %e %e %e\n",
                                   sub_interf/user->eps, tot_ice, t, step, dt,

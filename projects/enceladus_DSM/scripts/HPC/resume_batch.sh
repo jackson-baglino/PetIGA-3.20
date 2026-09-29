@@ -19,9 +19,20 @@
 # can be truncated. One extra step is cheap insurance. --last overrides if you
 # have checked the final file yourself.
 #
-# The clock and the time step are NOT passed: the solver reads both from the
-# snapshot's own SSA_evo.dat (see RestartStateFromLog). Anything you do pass
-# via --extra-opts still wins.
+# The clock, the time step and the STEP COUNT are NOT passed: the solver reads
+# all three from the snapshot (see RestartStateFromLog), carries on numbering
+# from it, resumes the output schedule, and appends to SSA_evo.dat. Anything
+# you do pass via --extra-opts still wins.
+#
+# EVERYTHING THE FIRST LEG WROTE AFTER THE RESUME POINT IS SET ASIDE, not
+# deleted: later sol_*.dat, and SSA_evo.dat rows past the resumed step, move
+# into <run>/abandoned_after_step<N>_<timestamp>/ (SSA_evo.dat whole, as it
+# was). The continuation recomputes that stretch, so keeping both would put
+# two states at the same step. After the resume the directory reads as one
+# uninterrupted run.
+#
+# k_eff sampling is added only to runs that were already doing it (a
+# k_eff.csv, or -keff 1 in their staged opts). A grain-pair run gets none.
 #
 # USAGE
 #   ./scripts/HPC/resume_batch.sh <batch_dir> [--last] [--dry-run] [--tag T]
@@ -94,7 +105,29 @@ for run in "$batch"/*__*/; do
     t=${tdt%% *}; dt=${tdt##* }
     echo "  $name"
     echo "      snapshot  $(basename "$snap")  of $nsnap"
-    echo "      resumes   t = ${t:-?} s   dt = ${dt:-?} s"
+    echo "      resumes   t = ${t:-?} s   dt = ${dt:-?} s   step ${step:-?}"
+
+    # Set aside what the first leg wrote past the resume point.
+    later=$(find "$run" -maxdepth 1 -name 'sol_*.dat' | sort | awk -v s="${step:-0}" \
+            '{n=$0; sub(/.*sol_0*/,"",n); sub(/\.dat$/,"",n); if (n+0 > s+0) print}')
+    nrows=$(awk -v s="${step:-0}" 'NF>=8 && $4+0 > s+0' "$run/SSA_evo.dat" 2>/dev/null | wc -l | tr -d ' ')
+    nlater=$(printf '%s' "$later" | grep -c . || true)
+    echo "      sets aside $nlater later snapshot(s), $nrows SSA_evo.dat row(s) past step $step"
+    if [ "$dry" -eq 0 ] && { [ "$nlater" -gt 0 ] || [ "$nrows" -gt 0 ]; }; then
+        aside="$run/abandoned_after_step${step}_$(date +%Y%m%d-%H%M%S)"
+        mkdir -p "$aside"
+        [ "$nlater" -gt 0 ] && printf '%s\n' "$later" | while read -r f; do mv "$f" "$aside/"; done
+        if [ -f "$run/SSA_evo.dat" ]; then
+            cp -p "$run/SSA_evo.dat" "$aside/SSA_evo.dat"
+            awk -v s="$step" 'NF<8 || $4+0 <= s+0' "$aside/SSA_evo.dat" > "$run/SSA_evo.dat"
+        fi
+        echo "      -> $aside"
+    fi
+
+    keff_opts=""
+    if [ -f "$run/k_eff.csv" ] || awk '$1=="-keff" && $2=="1"{f=1} END{exit !f}' "$run"/*.opts 2>/dev/null; then
+        keff_opts="$KEFF_OPTS"
+    fi
 
     # submit_enceladus.sh, NOT run_enceladus.sh. run_enceladus.sh is the
     # script sbatch EXECUTES; invoking it directly runs the solver on whatever
@@ -114,7 +147,7 @@ for run in "$batch"/*__*/; do
     # a merge, and why the merged outp.txt ended up with two step-0 blocks.
     cmd=(env "RESUME_INTO=$run" ./scripts/HPC/submit_enceladus.sh "$geom" "$exp" "$tag")
     [ "${#sbatch_extra[@]}" -gt 0 ] && cmd+=("${sbatch_extra[@]}")
-    cmd+=(-- $KEFF_OPTS -initial_cond "$snap" $extra)
+    cmd+=(-- $keff_opts -initial_cond "$snap" $extra)
 
     if [ "$dry" -eq 1 ]; then
         printf '      $ '; printf '%q ' "${cmd[@]}"; echo

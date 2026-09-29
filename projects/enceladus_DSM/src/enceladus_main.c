@@ -54,11 +54,18 @@ static PetscErrorCode SNESTSFormFunction_DomainErrSync(SNES snes, Vec X, Vec F, 
  * mesh. Resuming at the dt the run had reached makes a continuation cost
  * what continuing would have cost.
  *
+ * The step number comes from the filename too: the continuation carries on
+ * counting from it (TSSetStepNumber), so a resume IN PLACE writes
+ * sol_{N+1}... and appends rows N+1... to SSA_evo.dat instead of restarting
+ * at step 0 and overwriting the first leg's files. tot0[] returns the step-0
+ * totals, so the console's %-change rows stay relative to the true IC.
+ *
  * Returns PETSC_TRUE only if BOTH values were recovered; the caller keeps its
  * own defaults otherwise and says so.
  * ------------------------------------------------------------------------ */
 static PetscBool RestartStateFromLog(const char *sol_path, PetscReal *t_out,
-                                     PetscReal *dt_out)
+                                     PetscReal *dt_out, PetscInt *step_out,
+                                     PetscReal tot0[4])
 {
   char        dir[PETSC_MAX_PATH_LEN], logpath[PETSC_MAX_PATH_LEN];
   const char *base;
@@ -78,6 +85,7 @@ static PetscBool RestartStateFromLog(const char *sol_path, PetscReal *t_out,
     base = sol_path;
   }
   if (sscanf(base, "sol_%d.dat", &want) != 1) return PETSC_FALSE;
+  *step_out = (PetscInt)want;
 
   if (PetscSNPrintf(logpath, sizeof(logpath), "%s/SSA_evo.dat", dir)) return PETSC_FALSE;
   fp = fopen(logpath, "r");
@@ -88,6 +96,10 @@ static PetscBool RestartStateFromLog(const char *sol_path, PetscReal *t_out,
     int    step;
     if (sscanf(line, "%lf %lf %lf %d %lf %lf %lf %lf",
                &ssa, &ice, &t, &step, &dt, &air, &rhov, &mass) != 8) continue;
+    if (step == 0) {        /* the run's own step-0 totals, for the % rows */
+      tot0[0] = (PetscReal)ice;  tot0[1] = (PetscReal)air;
+      tot0[2] = (PetscReal)rhov; tot0[3] = (PetscReal)mass;
+    }
     if (step == want) {
       *t_out = (PetscReal)t;
       *dt_out = (PetscReal)dt;
@@ -171,6 +183,8 @@ int main(int argc, char *argv[]) {
     user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see enceladus_types.h) */
     user.ic_grain_union = PETSC_FALSE; /* multi_grains IC: additive (see enceladus_types.h) */
     user.ssa_view = NULL;              /* SSA_evo.dat viewer, opened lazily in Monitor() */
+    user.ssa_append = PETSC_FALSE;     /* restart: append to the first leg's log */
+    user.ssa_skip_step = -1;           /* restart: that step's row is already logged */
     user.decouple_phase_change = PETSC_FALSE;  /* see enceladus_types.h / assembly.c */
 
     user.phase_lo   = -0.01;   /* physics band: excursion below -> rollback */
@@ -294,6 +308,8 @@ int main(int argc, char *argv[]) {
     PetscReal dt_start = 0.0;        /* restart dt */
     PetscBool t_start_set = PETSC_FALSE, dt_start_set = PETSC_FALSE;
     PetscBool restarting = PETSC_FALSE;
+    PetscInt  step_start = 0;        /* restart step: the snapshot's own number */
+    PetscReal tot0_log[4] = {0.0, 0.0, 0.0, 0.0};
     PetscInt  max_rej = 10;                            /* Maximum number of rejected steps */
 
     /* Get simulation parameters from CLI .txt file (PETSc options) */
@@ -766,7 +782,8 @@ int main(int argc, char *argv[]) {
     restarting = (PetscBool)(user.initial_cond[0] != '\0');
     if (restarting) {
         PetscReal t_log = 0.0, dt_log = 0.0;
-        PetscBool got = RestartStateFromLog(user.initial_cond, &t_log, &dt_log);
+        PetscBool got = RestartStateFromLog(user.initial_cond, &t_log, &dt_log,
+                                            &step_start, tot0_log);
         if (got) {
             if (!t_start_set)  t_start  = t_log;
             if (!dt_start_set) dt_start = dt_log;
@@ -873,6 +890,26 @@ int main(int argc, char *argv[]) {
                     "%.3e s (overrides -outp/-t_interv)\n",
                     (int)user.n_out_log, (double)user.t_out_log[0],
                     (double)t_final);
+    }
+
+    /* A continuation resumes the OUTPUT SCHEDULE where the first leg left it,
+     * not from t = 0: otherwise its very first step is "due" (t >= t_out = 0)
+     * and writes an off-cadence snapshot, and -t_out_first fires again.
+     * Replaying the monitor's own advance rule gives the same next time the
+     * uninterrupted run would have had. The snapshot's step row is already in
+     * SSA_evo.dat, so Monitor skips it (ssa_skip_step) and APPENDS from there. */
+    if (restarting) {
+        user.t_out = 0.0;
+        if (user.t_interv > 0.0)
+            while (user.t_out <= t_start) user.t_out += user.t_interv;
+        while (user.i_out_log < user.n_out_log &&
+               user.t_out_log[user.i_out_log] <= t_start) user.i_out_log++;
+        if (user.t_out_first > 0.0 && t_start >= user.t_out_first)
+            user.first_out_done = PETSC_TRUE;
+        user.ssa_append    = PETSC_TRUE;
+        user.ssa_skip_step = step_start;
+        user.tot_ice_0  = tot0_log[0];  user.tot_air_0  = tot0_log[1];
+        user.tot_rhov_0 = tot0_log[2];  user.tot_mass_0 = tot0_log[3];
     }
 
     /* Gibbs-Thomson kinetic parameters */
@@ -1256,6 +1293,10 @@ int main(int argc, char *argv[]) {
          * physics -- see RestartStateFromLog. */
         if (t_start > 0.0)  { ierr = TSSetTime(ts, t_start);      CHKERRQ(ierr); }
         if (dt_start > 0.0) { ierr = TSSetTimeStep(ts, dt_start); CHKERRQ(ierr); }
+        /* ...and the step COUNT. Restarting it at 0 made a resume in place
+         * write sol_00000, sol_00001, ... over the first leg's snapshots, with
+         * times from a different part of the trajectory. */
+        if (step_start > 0) { ierr = TSSetStepNumber(ts, step_start); CHKERRQ(ierr); }
     }
     ierr = TSSetType(ts, TSALPHA); CHKERRQ(ierr);
     ierr = TSAlphaSetRadius(ts, 0.5); CHKERRQ(ierr);
@@ -1838,11 +1879,13 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD,
             "  RESTART from %s\n"
             "    clock resumes at t  = %.6e s (%.3f days)%s\n"
-            "    time step resumes at dt = %.6e s%s\n",
+            "    time step resumes at dt = %.6e s%s\n"
+            "    step count resumes at %d; next snapshot at t = %.6e s\n",
             user.initial_cond, (double)t_start, (double)(t_start / 86400.0),
             t_start_set ? "  [-t_start]" : "  [from SSA_evo.dat]",
             (double)dt_start,
-            dt_start_set ? "  [-dt_start]" : "  [from SSA_evo.dat]");
+            dt_start_set ? "  [-dt_start]" : "  [from SSA_evo.dat]",
+            (int)step_start, (double)user.t_out);
         ierr = IGAReadVec(iga, U, user.initial_cond); CHKERRQ(ierr);
         user.readFlag = PETSC_TRUE;
         {   /* report what was actually loaded, so a wrong file is obvious */

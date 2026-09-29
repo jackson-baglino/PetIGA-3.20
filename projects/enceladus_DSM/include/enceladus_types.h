@@ -373,6 +373,8 @@ typedef struct {
   // silently exhausted file descriptors ~step 15 -- the calls had no CHKERRQ --
   // truncating the file while outp.txt kept going). NULL until first use.
   PetscViewer ssa_view;
+  PetscBool   ssa_append;     // restart: open SSA_evo.dat for APPEND, not write
+  PetscInt    ssa_skip_step;  // restart: the resumed step, whose row is on disk
 
   // Number of quadrature points owned by this rank, sized exactly as the alph
   // and mob arrays are. Recorded here so the k_eff module can allocate its own

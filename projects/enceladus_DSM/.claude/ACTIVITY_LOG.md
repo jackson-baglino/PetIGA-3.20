@@ -1,3 +1,17 @@
+## 2026-09-29 — Seamless resume in place (Molaro -5 C timed out)
+
+- Found that a resume in place was destructive: the solver restarted its step
+  count at 0 (overwrote sol_00000.. of leg 1) and opened SSA_evo.dat for write
+  (truncated leg 1's log). Fixed: TSSetStepNumber from the snapshot, output
+  schedule resumed at the next due time, SSA_evo.dat appended (resumed row not
+  duplicated), step-0 totals restored for the % rows.
+- resume_batch.sh sets aside leg-1 output past the resume point into
+  abandoned_after_step<N>_<ts>/ and adds k_eff only to runs that had it.
+- verify_restart.sh rewritten: uninterrupted vs stopped+resumed-in-place must
+  match row by row and file by file. Not yet run (user runs it).
+
+---
+
 ## 2026-09-28 — Molaro -5 C arm set up; validation figure builder
 
 - No -5 C run existed for the current model, so derived one: new geometry
