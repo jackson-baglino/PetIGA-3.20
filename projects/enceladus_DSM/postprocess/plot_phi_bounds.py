@@ -31,6 +31,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import pplib                                              # noqa: E402
 from pplib import read_opts, opt_float, load_ssa, TIME    # noqa: E402
 
 CSV_NAME = "phi_bounds.csv"
@@ -40,13 +41,16 @@ _RE = re.compile(r"BOUNDS:\s*phi_ice\s*\[\s*([-\d.eE+]+),\s*([-\d.eE+]+)\s*\]"
 
 def read_bounds(run_dir):
     """(ice_min, ice_max, air_min, air_max) per accepted step, from outp.txt."""
-    log = os.path.join(run_dir, "outp.txt")
-    if not os.path.exists(log):
+    logs = pplib.outp_logs(run_dir)      # outp.txt, or the outp_job*.txt legs
+    if not logs:
         raise SystemExit(
-            f"no outp.txt in {run_dir} -- the BOUNDS lines come from the solver's\n"
-            "monitor, so the run needs -pf_monitor 1 and its stdout tee'd there.")
+            f"no outp.txt or outp_job*.txt in {run_dir} -- the BOUNDS lines come\n"
+            "from the solver's monitor, so the run needs -pf_monitor 1 and its\n"
+            "stdout tee'd there.")
+    log = ", ".join(os.path.basename(f) for f in logs)
     vals = [tuple(float(g) for g in m.groups())
-            for m in (_RE.search(l) for l in open(log, errors="replace")) if m]
+            for fn in logs
+            for m in (_RE.search(l) for l in open(fn, errors="replace")) if m]
     if not vals:
         raise SystemExit(
             f"no BOUNDS lines in {log}. Runs made before 2026-09-21 printed them\n"

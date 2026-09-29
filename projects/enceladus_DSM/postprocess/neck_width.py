@@ -176,7 +176,7 @@ def main():
     files = sorted(glob.glob(str(args.run_dir / "vtkOut" / "solV_*.vts")))
     if not files:
         sys.exit(f"no solV_*.vts under {args.run_dir}/vtkOut")
-    tmap = step_times(args.run_dir / "outp.txt")
+    tmap = step_times(str(args.run_dir))   # SSA_evo.dat, else the console log(s)
 
     rows = []
     centers = None

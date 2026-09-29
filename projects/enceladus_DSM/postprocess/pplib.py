@@ -16,6 +16,7 @@ directory on sys.path, so ``from pplib import rho_vs`` just works.
 from __future__ import annotations
 
 import base64
+import glob
 import os
 import re
 import struct
@@ -261,26 +262,66 @@ def step_of(fn) -> int:
     return int(re.search(r"solV_(\d+)\.vts", str(fn)).group(1))
 
 
-def step_times(path) -> dict:
-    """Map step -> time [s] from the monitor tables in outp.txt.
+def outp_logs(run_dir) -> list:
+    """The solver's console log(s) for a run, oldest first.
 
-    `path` may be the run directory or outp.txt itself. Returns {} when the
-    file is absent, so callers can fall back to SSA_evo.dat.
+    outp.txt when it exists. Otherwise the per-job legs outp_job<id>.txt that
+    run_enceladus.sh tees the solver into: outp.txt is only assembled AFTER
+    the solver returns, so a job killed at its time limit leaves just the leg.
     """
-    if os.path.isdir(path):
-        path = os.path.join(path, "outp.txt")
-    tmap: dict[int, float] = {}
-    if not os.path.isfile(path):
-        return tmap
+    p = os.path.join(str(run_dir), "outp.txt")
+    if os.path.isfile(p):
+        return [p]
+    legs = glob.glob(os.path.join(str(run_dir), "outp_job*.txt"))
+    key = lambda f: int(re.sub(r"\D", "", os.path.basename(f)) or 0)
+    return sorted(legs, key=key)
 
-    pat = re.compile(r"^\s+(\d+)\s+\|\s+([0-9.eE+-]+)\s+\|")
+
+def _ssa_step_times(path) -> dict:
+    """{step: t} from SSA_evo.dat (cols: ssa/eps, ice, t, step, dt, ...).
+    Flushed every step, so it is complete even for a killed job, and strictly
+    ordered across a resume. The LAST row for a step wins (a rollback can
+    log a step twice; the retried one is kept)."""
+    tmap: dict[int, float] = {}
     with open(path, errors="replace") as fh:
         for line in fh:
-            if line.count("|") != 8:
+            f = line.split()
+            if len(f) < 8:
                 continue
-            m = pat.match(line)
-            if m:
-                tmap[int(m.group(1))] = float(m.group(2))
+            try:
+                tmap[int(float(f[3]))] = float(f[2])
+            except ValueError:
+                continue
+    return tmap
+
+
+def step_times(path) -> dict:
+    """Map step -> time [s].
+
+    `path` may be a run directory or one log file. For a directory,
+    SSA_evo.dat is used when present -- it survives a killed job and a resume
+    -- and otherwise the monitor tables of outp.txt, or of the outp_job*.txt
+    legs when outp.txt was never assembled. Returns {} if none is found.
+    """
+    if os.path.isdir(path):
+        ssa = os.path.join(path, "SSA_evo.dat")
+        if os.path.isfile(ssa):
+            tmap = _ssa_step_times(ssa)
+            if tmap:
+                return tmap
+        files = outp_logs(path)
+    else:
+        files = [path] if os.path.isfile(path) else []
+    tmap: dict[int, float] = {}
+    pat = re.compile(r"^\s+(\d+)\s+\|\s+([0-9.eE+-]+)\s+\|")
+    for fn in files:
+        with open(fn, errors="replace") as fh:
+            for line in fh:
+                if line.count("|") != 8:
+                    continue
+                m = pat.match(line)
+                if m:
+                    tmap[int(m.group(1))] = float(m.group(2))
     return tmap
 
 
