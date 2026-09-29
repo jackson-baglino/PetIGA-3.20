@@ -7,7 +7,7 @@
 % ======================================================================
 
 \documentclass[11pt]{article}
-\usepackage{amsmath,amssymb,amsthm,booktabs,listings,dsfont}
+\usepackage{amsmath,amssymb,amsthm,booktabs,listings}
 \lstset{language=C,basicstyle=\small\ttfamily,columns=fullflexible,frame=single}
 \usepackage[margin=1in]{geometry}
 \emergencystretch=3em
@@ -28,7 +28,7 @@
 \newcommand{\Hper}{H^1_{\mathrm{per}}(\Om)}
 \newcommand{\avg}[1]{\big\langle #1 \big\rangle}
 \newcommand{\Band}{B_\varepsilon}
-\newcommand{\ind}{\mathds{1}}  % indicator of \Om_1 (not \chi: that is the interface curvature in the model)
+\newcommand{\ind}{\varphi_0}  % indicator of \Om_1 = sharp limit of \varphi (not \chi: that is the interface curvature in the model)
 
 \begin{document}
 
@@ -60,7 +60,7 @@ inside $\Om_1$ and $0$ outside,
 \end{equation}
 $\varphi$ is the phase field: a smooth function equal to $1$ in $\Om_1$ and $0$
 in $\Om_2$, sweeping between them across a band of decay length $\varepsilon$.
-It is a smoothed $\ind$. $\avg{\cdot}=|\Om|^{-1}\!\int_\Om(\cdot)$, and
+It is a smoothed $\ind$, and $\ind$ is its sharp-interface limit $\varepsilon\to0$. $\avg{\cdot}=|\Om|^{-1}\!\int_\Om(\cdot)$, and
 $\jump{\,\cdot\,}$ is the jump across $\Gam$.
 
 \paragraph{Problem A (sharp).} Find \emph{two} cell-periodic fields, $\bt_1$
