@@ -297,7 +297,9 @@ def _neck_panel(ax, series, marks=()):
     for sp in ("left", "bottom"):
         ax.spines[sp].set_linewidth(0.6)
     ax.set_xlabel("Time [min]", fontsize=FS, labelpad=2)
-    ax.set_ylabel(r"$w$  [µm]", fontsize=FS, labelpad=3)
+    # w in the LaTeX (Computer Modern) math font; the unit stays in the
+    # figure's sans. Per-label, so no other text changes.
+    ax.set_ylabel(r"$w$  [µm]", fontsize=FS, labelpad=3, math_fontfamily="cm")
     # Colour is the temperature, mark style the source: two short columns.
     h = legend_handles(series)
     ax.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=2.2,
