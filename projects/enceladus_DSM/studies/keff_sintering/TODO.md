@@ -64,19 +64,13 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
     - [ ] follow-up (~$5): bracketed `--constraint` at 241 ranks; 300k/400k
       targets.
     - [ ] set `scripts/lib/alloc.sh` (Jackson's call; 200k recommended now)
-  - [ ] ~~DoF/core scaling test~~ (done above; entry kept for the command) 30 mid-run steps restarted from a 3a
-    snapshot, at 40k/60k/100k/150k/200k DoF/core × 2 repeats. It times the
-    phase-field step and the k_eff sample separately.
-    `./scripts/HPC/submit_scaling_test.sh --run <cluster path to the 3a phi0.325 T-20 run>`
-    (`--dry-run` first). Read with `studies/keff_sintering/scaling/analyze_scaling.py`.
-    Set `scripts/lib/alloc.sh` from the cheapest projected $/run.
   - [ ] k_eff solver benchmark: `solver_benchmark/` (~$10, replay only).
     Now LOW value: at ≤ 6 nodes a sample is ~5 s, ~15 min per −20 °C run.
-    Optional. Adopt a
-    faster setting only if max |Δk|/k_iso < 1e-5; record it in the production
-    script before 3b.
-  - Projected remaining cost at 3a rates: ~$4k. At 100k/core ~$2.4k; with a
-    faster solve, lower still.
+    Optional. Adopt a faster setting only if max |Δk|/k_iso < 1e-5, and record
+    it in the production script before 3b.
+  - Projected cost of all 125 runs at 200k DoF/core with the SSA cadence:
+    roughly $0.9k. That's per-temperature $/run from `scaling/README.md`
+    (−30/−40 °C are cheaper still) × 25 runs each.
 - [ ] **3b**: rest of −20 °C, `batch3b_T-20.txt`, 20 runs.
   - Check: seed scatter of the k_iso rise per φ (~3–4% expected at 0.325);
     the φ trend is larger than the scatter.
