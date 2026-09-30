@@ -28,7 +28,7 @@
 \newcommand{\Hper}{H^1_{\mathrm{per}}(\Om)}
 \newcommand{\avg}[1]{\big\langle #1 \big\rangle}
 \newcommand{\Band}{B_\varepsilon}
-\newcommand{\ind}{\zeta}  % indicator of \Om_1 = sharp limit of \varphi (not \chi: that is the interface curvature in the model)
+\newcommand{\ind}{\zeta}  % indicator of \Om_1 = sharp limit of \phi (not \chi: that is the interface curvature in the model)
 
 \begin{document}
 
@@ -58,7 +58,7 @@ inside $\Om_1$ and $0$ outside,
 \begin{cases} 1, & \mathbf x\in\Om_1,\\ 0, & \mathbf x\in\Om_2.\end{cases}
 \label{eq:ind}
 \end{equation}
-$\varphi$ is the phase field: a smooth function equal to $1$ in $\Om_1$ and $0$
+$\phi$ is the phase field: a smooth function equal to $1$ in $\Om_1$ and $0$
 in $\Om_2$, sweeping between them across a band of decay length $\varepsilon$.
 It is a smoothed $\ind$, and $\ind$ is its sharp-interface limit $\varepsilon\to0$. $\avg{\cdot}=|\Om|^{-1}\!\int_\Om(\cdot)$, and
 $\jump{\,\cdot\,}$ is the jump across $\Gam$.
@@ -91,13 +91,13 @@ claim (\S\ref{sec:step1}(f)).
 
 \paragraph{Problem B (phase field).} Find cell-periodic $\bt$ with
 \begin{equation}
-\nabla\!\cdot\!\big(K(\varphi)(\nabla\bt+\bI)\big)=\mathbf 0 \ \text{in }\Om,
+\nabla\!\cdot\!\big(K(\phi)(\nabla\bt+\bI)\big)=\mathbf 0 \ \text{in }\Om,
 \qquad \avg{\bt}=\mathbf 0,
-\qquad K(\varphi)=K_2+(K_1-K_2)\varphi,
+\qquad K(\phi)=K_2+(K_1-K_2)\phi,
 \label{eq:B}
 \end{equation}
 \begin{equation}
-\Keff=\frac{1}{|\Om|}\int_{\Om} K(\varphi)(\nabla\bt+\bI)\,d\Om .
+\Keff=\frac{1}{|\Om|}\int_{\Om} K(\phi)(\nabla\bt+\bI)\,d\Om .
 \label{eq:B-keff}
 \end{equation}
 One domain, one equation, no interface conditions.
@@ -288,7 +288,7 @@ $\int_\Om\nabla v\cdot K_\star\nabla T=0$ for the glued $T$, identically.
 \section{Step 2: the coefficient is already the phase-field interpolation}
 \label{sec:step2}
 
-It is tempting to finish by saying ``now replace $K_\star$ by a smooth $K(\varphi)$
+It is tempting to finish by saying ``now replace $K_\star$ by a smooth $K(\phi)$
 that converges to it.'' That would be an approximation, and would need a
 convergence theorem. No replacement is needed.
 
@@ -318,10 +318,10 @@ K_\star \overset{\eqref{eq:Kstar}}{=} K_1\ind+K_2(1-\ind)=K_2+(K_1-K_2)\ind=K(\i
 that agree asymptotically. They have \emph{one} law $K(\cdot)$, evaluated at two
 different arguments:
 \[
-\text{A: }K(\ind),\qquad\qquad \text{B: }K(\varphi).
+\text{A: }K(\ind),\qquad\qquad \text{B: }K(\phi).
 \]
 So Step 2 approximates the \emph{geometry}, never the equations, and every
-difference between A and B traces to the single object $\varphi-\ind$. A second
+difference between A and B traces to the single object $\phi-\ind$. A second
 consequence: since $\ind$ never takes an intermediate value, the \emph{shape} of
 $K$ between $0$ and $1$ is invisible to Problem A. Every admissible
 interpolation --- arithmetic, harmonic, any other --- coincides exactly on
@@ -331,20 +331,20 @@ $\ind$. The choice can therefore matter only through the diffuse band
 \begin{remark}[Why the corrector needs no Step 2]
 \label{rem:no-tphi}
 $K_\star$ and $\bt$ are glued the same way in (f), but only $K_\star$ reappears
-here. There is no ``$\bt(\varphi)$'' interpolating $\bt_1$ and $\bt_2$ across
+here. There is no ``$\bt(\phi)$'' interpolating $\bt_1$ and $\bt_2$ across
 the band, and none is needed. $K$ is \emph{data}: B has to be told what
 coefficient to use at every point, including inside the band, and the lemma
-shows its prescription $K(\varphi)$ reduces to A's on $\ind$. $\bt$ is the
+shows its prescription $K(\phi)$ reduces to A's on $\ind$. $\bt$ is the
 \emph{unknown}: B solves for one field on all of $\Om$, and inside the band it
 simply takes whatever values the equation produces. At finite $\varepsilon$
 the two sharp pieces $\bt_1,\bt_2$ have no separate meaning inside $\Band$, and
 nothing requires them to. After Step~1 A also has a single unknown in the same
 space $\Hper$, so the two problems differ only in their coefficient, and that
-difference is carried entirely by $\varphi-\ind$.
+difference is carried entirely by $\phi-\ind$.
 \end{remark}
 
 \begin{proposition}\label{prop:exact}
-If $\varphi=\ind$, Problems A and B are the same boundary-value problem and give
+If $\phi=\ind$, Problems A and B are the same boundary-value problem and give
 the same $\Keff$, identically.
 \end{proposition}
 
@@ -358,12 +358,12 @@ integrand $K(\nabla\bt+\bI)$.
 \section{Finite $\varepsilon$: what is left over}
 \label{sec:diff}
 
-In practice $\varphi\neq\ind$, so Proposition~\ref{prop:exact} does not apply
+In practice $\phi\neq\ind$, so Proposition~\ref{prop:exact} does not apply
 verbatim. By Lemma~\ref{lem:identity} the entire residual difference is carried
-by $\varphi-\ind$. For the affine $K$ this is exact:
+by $\phi-\ind$. For the affine $K$ this is exact:
 \begin{equation}
-\delta\!K:=K(\varphi)-K_\star=(K_1-K_2)(\varphi-\ind),
-\qquad \operatorname{supp}\delta\!K=\Band:=\{0<\varphi<1\}.
+\delta\!K:=K(\phi)-K_\star=(K_1-K_2)(\phi-\ind),
+\qquad \operatorname{supp}\delta\!K=\Band:=\{0<\phi<1\}.
 \label{eq:dK}
 \end{equation}
 Both problems are uniformly elliptic on the same bounds, $\min(K_1,K_2)\le K\le
@@ -374,12 +374,12 @@ A(K):=\be\cdot\Keff[K]\,\be=\min_{v\in\Hper}E_K[v],
 \qquad E_K[v]:=\avg{(\nabla v+\be)\cdot K(\nabla v+\be)}.
 \label{eq:dirichlet}
 \end{equation}
-Write $K_1^{\phantom{.}}\!\to K(\varphi)$, $K_2^{\phantom{.}}\!\to K_\star$ with
+Write $K_1^{\phantom{.}}\!\to K(\phi)$, $K_2^{\phantom{.}}\!\to K_\star$ with
 minimizers $v_\varepsilon,v_\star$. Here $v_\star$ is the \emph{glued} sharp
 corrector of \eqref{eq:Kstar}; it is because gluing puts it in the same space
 $\Hper$ as $v_\varepsilon$ that each can be tested in the other's energy. For
 \emph{any} $v$,
-$E_{K(\varphi)}[v]-E_{K_\star}[v]=\avg{\delta\!K|\nabla v+\be|^2}$. Testing each
+$E_{K(\phi)}[v]-E_{K_\star}[v]=\avg{\delta\!K|\nabla v+\be|^2}$. Testing each
 minimizer against the other's energy gives two inequalities which combine into
 \begin{equation}
 \avg{\delta\!K\,|\nabla v_\varepsilon+\be|^2}
@@ -390,11 +390,11 @@ minimizer against the other's energy gives two inequalities which combine into
 Both sides are integrals over $\Band$ only. The left one uses only the corrector
 already computed, so \eqref{eq:sandwich} is an \emph{a posteriori} error bar, not
 an asymptotic claim. With the logistic profile
-$\varphi=\ell(s/\varepsilon)$, $\ell(u)=(1+e^{-u})^{-1}$ (the logistic
+$\phi=\ell(s/\varepsilon)$, $\ell(u)=(1+e^{-u})^{-1}$ (the logistic
 function, unrelated to the excesses $\Sigma$ of \S\ref{sec:excess}), in the signed
 distance $s$ to $\Gam$, and $\int_0^\infty(1-\ell)\,du=\ln2$,
 \begin{equation}
-\|\varphi-\ind\|_{L^1(\Om)}=2\ln\!2\;\varepsilon\,|\Gam|+\mathcal O(\varepsilon^2)
+\|\phi-\ind\|_{L^1(\Om)}=2\ln\!2\;\varepsilon\,|\Gam|+\mathcal O(\varepsilon^2)
 \;\Longrightarrow\;
 \big|A_\varepsilon-A_\star\big|\le
 2\ln\!2\,(K_1-K_2)\,M^2\,\frac{|\Gam|}{|\Om|}\,\varepsilon+\mathcal O(\varepsilon^2),
@@ -422,9 +422,9 @@ Here $q_n$ is taken along the normal pointing from phase 2 into phase 1, the
 opposite of $\bn$ in \S1, and $K_\star$ is the sharp step ($K_1$ on the phase-1
 side, $K_2$ on the phase-2 side). The excesses are
 \begin{equation}
-\Sigma_t=\int_{-\infty}^{\infty}\!\big[K(\varphi)-K_\star\big]ds,
+\Sigma_t=\int_{-\infty}^{\infty}\!\big[K(\phi)-K_\star\big]ds,
 \qquad
-\Sigma_n=\int_{-\infty}^{\infty}\!\left[\frac{1}{K(\varphi)}-\frac{1}{K_\star}\right]ds.
+\Sigma_n=\int_{-\infty}^{\infty}\!\left[\frac{1}{K(\phi)}-\frac{1}{K_\star}\right]ds.
 \label{eq:excess}
 \end{equation}
 Along $\Gam$ the gradient $\mathbf E_t$ is fixed, so the transition's error is
@@ -446,7 +446,7 @@ phase fraction, so the response along $\Gam$ carries no first-order error.
 The leading correction is $\mathcal O(\varepsilon^2\kappa)$ from interface
 curvature.
 
-\paragraph{$\Sigma_n\neq0$.} Here $1/K$ is convex in $\varphi$, so inside the
+\paragraph{$\Sigma_n\neq0$.} Here $1/K$ is convex in $\phi$, so inside the
 transition the arithmetic law underestimates the resistivity that heat crossing
 $\Gam$ has to overcome. With $p=\ell(u)$, $du=dp/[p(1-p)]$ and partial
 fractions,
@@ -461,16 +461,16 @@ first order in $\varepsilon$, with no free constants.
 \begin{corollary}[An interpolation with no first-order bias]
 \label{cor:tensor}
 Along $\Gam$ the conductivity must average correctly at fixed $\mathbf E_t$, so
-$\Sigma_t=0$ needs $K$ affine in $\varphi$. Across $\Gam$ the resistivity must
+$\Sigma_t=0$ needs $K$ affine in $\phi$. Across $\Gam$ the resistivity must
 average correctly at fixed $q_n$, so $\Sigma_n=0$ needs $1/K$ affine. The
-harmonic law $K_{\mathrm h}(\varphi)=\big(\varphi/K_1+(1-\varphi)/K_2\big)^{-1}$
-has $1/K_{\mathrm h}$ affine in $\varphi$, so the same antisymmetry gives
+harmonic law $K_{\mathrm h}(\phi)=\big(\phi/K_1+(1-\phi)/K_2\big)^{-1}$
+has $1/K_{\mathrm h}$ affine in $\phi$, so the same antisymmetry gives
 $\Sigma_n=0$ --- but then $\Sigma_t\neq0$. No scalar law nulls both. The
 tensorial law
 \begin{equation}
-\mathbf K(\varphi)=K(\varphi)\big(\bI-\bn\otimes\bn\big)
-+K_{\mathrm h}(\varphi)\,\bn\otimes\bn,
-\qquad \bn=\nabla\varphi/|\nabla\varphi|,
+\mathbf K(\phi)=K(\phi)\big(\bI-\bn\otimes\bn\big)
++K_{\mathrm h}(\phi)\,\bn\otimes\bn,
+\qquad \bn=\nabla\phi/|\nabla\phi|,
 \label{eq:tensorK}
 \end{equation}
 uses each where its excess vanishes, giving $\Sigma_t=\Sigma_n=0$ and
@@ -480,25 +480,25 @@ Lemma~\ref{lem:identity} and Proposition~\ref{prop:exact} still apply.
 
 \noindent
 This is available because the conductivity cell problem is post-processing on a
-frozen $\varphi$: its interpolation is independent of any other model, and
+frozen $\phi$: its interpolation is independent of any other model, and
 choosing it does not bear on one. \S\ref{sec:steady} applies it to the
 cell problem.
 
 \section{Worked example and test: the planar slab}
 \label{sec:slab}
 
-Take an ice slab with flat faces, ice fraction $\bar\varphi$ and $n_\Gam$ faces
-per period $L$, so that $\varphi$ depends on $y$ only. The diffuse cell problem
+Take an ice slab with flat faces, ice fraction $\bar\phi$ and $n_\Gam$ faces
+per period $L$, so that $\phi$ depends on $y$ only. The diffuse cell problem
 \eqref{eq:B} is then one-dimensional and has an exact solution for every
 $\varepsilon$. For a gradient along the faces the corrector is zero, and
 $k_\parallel=\avg{K}$. For a gradient across them the flux $K(t'+1)$ is constant
 and $\avg{t'}=0$, so $k_\perp=\avg{K^{-1}}^{-1}$. Equations
 \eqref{eq:sigmat}--\eqref{eq:sigman} then give
 \begin{align}
-k_\parallel(\varepsilon)&=K_2+(K_1-K_2)\bar\varphi
+k_\parallel(\varepsilon)&=K_2+(K_1-K_2)\bar\phi
 &&\text{exact for every }\varepsilon,
 \label{eq:slabpar}\\
-\avg{K^{-1}}_\varepsilon&=\frac{\bar\varphi}{K_1}+\frac{1-\bar\varphi}{K_2}
+\avg{K^{-1}}_\varepsilon&=\frac{\bar\phi}{K_1}+\frac{1-\bar\phi}{K_2}
 -\frac{n_\Gam\varepsilon}{L}\left(\frac{1}{K_2}-\frac{1}{K_1}\right)\ln\frac{K_1}{K_2},
 &&k_\perp=\avg{K^{-1}}_\varepsilon^{-1}.
 \label{eq:slabperp}
@@ -509,7 +509,7 @@ direct quadrature is $5\times10^{-5}$ relative at $\varepsilon=L/50$ and machine
 precision by $\varepsilon=L/128$.
 
 In our application $K_1/K_2=2.29/0.02=114.5$, giving
-$(K_2^{-1}-K_1^{-1})\ln(K_1/K_2)=234.959$ and, at $\bar\varphi=\tfrac12$,
+$(K_2^{-1}-K_1^{-1})\ln(K_1/K_2)=234.959$ and, at $\bar\phi=\tfrac12$,
 $n_\Gam=2$:
 
 \begin{center}
@@ -530,14 +530,14 @@ $\varepsilon$ in resistivity} and a hyperbola in conductivity. Fit and plot
 $1/k_\perp$ against $\varepsilon$; then the test has two predicted numbers and no
 fitted ones,
 \begin{equation}
-\text{intercept}=\frac{\bar\varphi}{K_1}+\frac{1-\bar\varphi}{K_2},
+\text{intercept}=\frac{\bar\phi}{K_1}+\frac{1-\bar\phi}{K_2},
 \qquad
 \text{slope}=\frac{n_\Gam}{L}\left(\frac{1}{K_2}-\frac{1}{K_1}\right)\ln\frac{K_1}{K_2}.
 \label{eq:fit}
 \end{equation}
 Two ways to get a meaningless answer: evaluating \eqref{eq:fit} at the nominal
-rather than the \emph{measured} $\bar\varphi$ (the discrete field's mean is not
-exactly $\bar\varphi$), and refining $\varepsilon$ at fixed mesh, which
+rather than the \emph{measured} $\bar\phi$ (the discrete field's mean is not
+exactly $\bar\phi$), and refining $\varepsilon$ at fixed mesh, which
 confounds this bias with mesh convergence. The committed driver is
 \verb|studies/keff_sharp_limit/verification/|.
 
@@ -551,10 +551,10 @@ have their own interpolations. Nothing here justifies, or asks for, a change to
 them.
 
 \paragraph{Strong form.} Replace the scalar coefficient of \eqref{eq:B} by the
-tensor \eqref{eq:tensorK}, written $\mathbf K$ below with $K(\varphi)$ the
+tensor \eqref{eq:tensorK}, written $\mathbf K$ below with $K(\phi)$ the
 arithmetic law. For each direction $m$, find cell-periodic $t_m$ with
 \begin{equation}
-\nabla\!\cdot\!\Big(\mathbf K(\varphi,\nabla\varphi)\,\big(\nabla t_m+\be_m\big)\Big)=0
+\nabla\!\cdot\!\Big(\mathbf K(\phi,\nabla\phi)\,\big(\nabla t_m+\be_m\big)\Big)=0
 \ \text{in }\Om,
 \qquad \avg{t_m}=0,
 \qquad
@@ -564,12 +564,12 @@ arithmetic law. For each direction $m$, find cell-periodic $t_m$ with
 With $\mathbf G=\nabla t_m+\be_m$, the local flux splits into a part along the
 interface and a part across it,
 \begin{equation}
-\mathbf K\mathbf G=K(\varphi)\,\mathbf G
-+\big(K_{\mathrm h}(\varphi)-K(\varphi)\big)\,(\bn\cdot\mathbf G)\,\bn ,
+\mathbf K\mathbf G=K(\phi)\,\mathbf G
++\big(K_{\mathrm h}(\phi)-K(\phi)\big)\,(\bn\cdot\mathbf G)\,\bn ,
 \label{eq:flux-split}
 \end{equation}
 so only the normal component of the gradient sees the harmonic mean. In the bulk,
-where $\varphi\in\{0,1\}$, the correction term vanishes and
+where $\phi\in\{0,1\}$, the correction term vanishes and
 \eqref{eq:steady-strong} is the scalar problem of Proposition~\ref{prop:exact}.
 
 \paragraph{Weak form.} Multiply by a periodic test function $v$ and integrate
@@ -583,7 +583,7 @@ by parts. Periodicity removes the boundary term exactly as in step (d):
 The bilinear form on the left does not depend on $m$; only the load does.
 
 \paragraph{Well posed, with the same bounds.} $\mathbf K$ is symmetric, with
-eigenvalue $K(\varphi)$ on the tangent plane and $K_{\mathrm h}(\varphi)$ along
+eigenvalue $K(\phi)$ on the tangent plane and $K_{\mathrm h}(\phi)$ along
 $\bn$. Both lie in $[\min(K_1,K_2),\max(K_1,K_2)]$, so
 \begin{equation}
 \min(K_1,K_2)\,|\boldsymbol\xi|^2\le\boldsymbol\xi\cdot\mathbf K\,\boldsymbol\xi
@@ -610,20 +610,20 @@ $t_m=\sum_b T_{m,b}N_b$, \eqref{eq:steady-weak} becomes
 $\mathsf A$ is symmetric positive semidefinite, with the constants as its only
 null space (removed by the mean constraint). It is assembled once and reused for
 all directions, and conjugate gradients with algebraic multigrid apply as in the
-scalar case. $\mathbf K$ is evaluated at each quadrature point from $\varphi$
-and $\nabla\varphi$ there.
+scalar case. $\mathbf K$ is evaluated at each quadrature point from $\phi$
+and $\nabla\phi$ there.
 
 \paragraph{Worked example: the planar slab.} Here $\bn=\pm\be_y$ everywhere, so
-$\mathbf K=\mathrm{diag}\big(K(\varphi),K_{\mathrm h}(\varphi)\big)$ and
+$\mathbf K=\mathrm{diag}\big(K(\phi),K_{\mathrm h}(\phi)\big)$ and
 \eqref{eq:steady-strong} decouples. Along the faces the corrector is zero and
-$k_\parallel=\avg{K(\varphi)}$. Across them the flux is constant, so
-$k_\perp=\avg{1/K_{\mathrm h}(\varphi)}^{-1}$. Both averages are of functions
-affine in $\varphi$, so both equal the sharp values at every $\varepsilon$
+$k_\parallel=\avg{K(\phi)}$. Across them the flux is constant, so
+$k_\perp=\avg{1/K_{\mathrm h}(\phi)}^{-1}$. Both averages are of functions
+affine in $\phi$, so both equal the sharp values at every $\varepsilon$
 (up to the $\mathcal O(e^{-L/4\varepsilon})$ tail overlap of
 \S\ref{sec:slab}):
 \begin{equation}
-k_\parallel=K_2+(K_1-K_2)\bar\varphi,\qquad
-k_\perp=\Big(\frac{\bar\varphi}{K_1}+\frac{1-\bar\varphi}{K_2}\Big)^{-1}.
+k_\parallel=K_2+(K_1-K_2)\bar\phi,\qquad
+k_\perp=\Big(\frac{\bar\phi}{K_1}+\frac{1-\bar\phi}{K_2}\Big)^{-1}.
 \end{equation}
 Compare \eqref{eq:slabperp}: the $\varepsilon$ term is gone. Measured, the
 tensor law reproduces $k_\perp$ to $4\times10^{-7}$ from $\varepsilon=L/50$ to
@@ -644,8 +644,8 @@ or on saved snapshots with \verb|-keff_replay|. The law is chosen with
 \paragraph{Inputs at each quadrature point}
 (\verb|src/keff_field.c|, \verb|KeffProjectIce|). The phase field and its
 gradient are evaluated on the solver mesh and stored per quadrature point:
-\verb|kc->ice[idx]| $=\varphi$ and \verb|kc->grad_ice[idx*dim+d]|
-$=\partial_d\varphi$. The gradient array is allocated only for the tensor law.
+\verb|kc->ice[idx]| $=\phi$ and \verb|kc->grad_ice[idx*dim+d]|
+$=\partial_d\phi$. The gradient array is allocated only for the tensor law.
 
 \paragraph{The coefficient} (\verb|src/keff_cell.c|, \verb|KeffPointCond|),
 row-major $\mathbf K$ = \verb|K[a*dim+b]|:
@@ -662,9 +662,9 @@ if (kc->interp == KEFF_INTERP_TENSOR) {
 \end{lstlisting}
 This is \eqref{eq:tensorK} written as \eqref{eq:flux-split}:
 $K\,\bI+(K_{\mathrm h}-K)\,\bn\otimes\bn$ with
-$\bn\otimes\bn=\nabla\varphi\otimes\nabla\varphi/|\nabla\varphi|^2$, so $\bn$ is
-never formed explicitly. Where $\nabla\varphi=0$ the correction is skipped;
-that happens only in the bulk, where $K_{\mathrm h}=K$. $\varphi$ is first
+$\bn\otimes\bn=\nabla\phi\otimes\nabla\phi/|\nabla\phi|^2$, so $\bn$ is
+never formed explicitly. Where $\nabla\phi=0$ the correction is skipped;
+that happens only in the bulk, where $K_{\mathrm h}=K$. $\phi$ is first
 clamped to $[0,1]$ so both branches see the same admissible value.
 
 \paragraph{The three integrals of \eqref{eq:discrete} and $\Keff$.}
