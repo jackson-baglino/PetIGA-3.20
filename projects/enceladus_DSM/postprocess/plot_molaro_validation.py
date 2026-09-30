@@ -87,11 +87,13 @@ import pplib                                                # noqa: E402
 
 UM = 1e-6
 WANT = ("IcePhase", "VaporDensity", "Temperature")
-# One colour per TEMPERATURE, from cmocean `thermal` -- the map every
-# temperature sweep in the manuscript uses -- at 0.22 (cold, -20 C) and 0.68
-# (warm, -5 C). CVD dE >= 31.8 between them. Line vs point is model vs
-# experiment, so colour carries only the temperature.
-C_T20, C_T5 = "#49369f", "#ee7d53"
+# One colour per TEMPERATURE, sampled from cmocean `balance` -- the map the
+# sections' sigma already uses -- at 0.25 (blue, -20 C) and 0.75 (red,
+# -5 C): cold blue, warm red, and the figure keeps one palette. 1/3 and 2/3
+# were tried and are too pale (2.6:1 on white, protan dE 10.8); at
+# 0.25/0.75 contrast is 3.9 / 4.5 : 1 and CVD dE >= 19.0.
+# Line vs point is model vs experiment, so colour carries only the temperature.
+C_T20, C_T5 = "#3888ba", "#bf573a"
 SERIES = {
     "T-20": dict(label="−20 °C", color=C_T20, anchor_um=32.81, window_min=78.0,
                  data=REPO / "inputs/validation/molaro2019_fig11_T-20.csv"),
@@ -152,7 +154,7 @@ def legend_handles(series, data_fit=False):
     h.append(Line2D([], [], color=INK, ls="none", marker="o", ms=4.2, mfc="white",
                     mew=0.9, label="data"))
     if data_fit:
-        h.append(Line2D([], [], color=INK, lw=1.0, ls=FIT_LS, label="linear fit"))
+        h.append(Line2D([], [], color=INK, lw=1.0, ls=FIT_LS, label="fit"))
     return h
 
 
