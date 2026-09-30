@@ -124,6 +124,30 @@ def read_opts(run_dir: str) -> dict:
     return opts
 
 
+# Manuscript figures: every glyph in Computer Modern, the font the LaTeX
+# (Overleaf) manuscript sets its text and maths in. cmr10 has no Unicode
+# minus, micro, degree or Greek, so labels write those in mathtext ($-$,
+# $\mu$, $^\circ$, $\phi$), and axes.formatter.use_mathtext puts tick labels
+# through the cm maths fonts (proper minus). cmr10 also has no bold weight:
+# bold labels use $\mathbf{...}$ (cmb10). Fonts are embedded as TrueType
+# (pdf.fonttype 42), which is what AGU asks of any font outside Arial /
+# Helvetica / Times / Symbol.
+MANUSCRIPT_RC = {
+    "font.family": "serif",
+    "font.serif": ["cmr10"],
+    "mathtext.fontset": "cm",
+    "axes.formatter.use_mathtext": True,
+    "axes.unicode_minus": True,
+    "pdf.fonttype": 42,
+    "svg.fonttype": "none",
+}
+
+
+def bold(s: str) -> str:
+    """Bold text that survives the cmr10 family (which has no bold face)."""
+    return r"$\mathbf{" + s.replace(" ", r"\ ") + "}$"
+
+
 # Molaro et al. (2019) Fig. 11 series: {temperature: (CSV name, first
 # measured neck WIDTH [m])}. The two series are different grain pairs, each
 # anchored at its own first width.

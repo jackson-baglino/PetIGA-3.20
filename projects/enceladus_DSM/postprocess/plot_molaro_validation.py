@@ -95,9 +95,9 @@ WANT = ("IcePhase", "VaporDensity", "Temperature")
 # Line vs point is model vs experiment, so colour carries only the temperature.
 C_T20, C_T5 = "#3888ba", "#bf573a"
 SERIES = {
-    "T-20": dict(label="−20 °C", color=C_T20, anchor_um=32.81, window_min=78.0,
+    "T-20": dict(label=r"$-20\,^{\circ}$C", color=C_T20, anchor_um=32.81, window_min=78.0,
                  data=REPO / "inputs/validation/molaro2019_fig11_T-20.csv"),
-    "T-5":  dict(label="−5 °C",  color=C_T5, anchor_um=32.51, window_min=48.0,
+    "T-5":  dict(label=r"$-5\,^{\circ}$C",  color=C_T5, anchor_um=32.51, window_min=48.0,
                  data=REPO / "inputs/validation/molaro2019_fig11_T-5.csv"),
 }
 MAX_PX = 1800                       # raster columns per section, ~550 dpi
@@ -297,9 +297,7 @@ def _neck_panel(ax, series, marks=()):
     for sp in ("left", "bottom"):
         ax.spines[sp].set_linewidth(0.6)
     ax.set_xlabel("Time [min]", fontsize=FS, labelpad=2)
-    # w in the LaTeX (Computer Modern) math font; the unit stays in the
-    # figure's sans. Per-label, so no other text changes.
-    ax.set_ylabel(r"$w$  [µm]", fontsize=FS, labelpad=3, math_fontfamily="cm")
+    ax.set_ylabel(r"$w$  [$\mu$m]", fontsize=FS, labelpad=3)
     # Colour is the temperature, mark style the source: two short columns.
     h = legend_handles(series)
     ax.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=2.2,
@@ -374,8 +372,8 @@ def build_combined(secs, series, marks, norm, vapcm, icecm, t_star, a):
     _sections(fig, F, secs, ml, y_snap, s_w, s_h, gap, norm, vapcm, icecm, t_star)
     _neck_panel(fig.add_axes(F(ml, bot, axw, ph)), series, marks)
     for lab, y_top in zip(PANELS, (y_snap + s_h + 0.5 * t_band, bot + ph + 0.14)):
-        fig.text(0.02 / W, y_top / H, f"({lab})", ha="left", va="center",
-                 fontsize=FS, fontweight="bold", color=INK)
+        fig.text(0.02 / W, y_top / H, pplib.bold(f"({lab})"), ha="left",
+                 va="center", fontsize=FS, color=INK)
     _strip(fig, F, ml, y_snap + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm, a.sig_extend)
     return fig
 
@@ -439,8 +437,8 @@ def build_shrinkage(series, a):
         ax.set_ylabel(rf"$D_\mathrm{{{sym}}}\,/\,D_{{\mathrm{{{sym}}},0}}$",
                       fontsize=FS, labelpad=3)
         fig.text((ml + i * (pw + gap) - ml + 0.02) / W, (bot + ph + 0.10) / H,
-                 f"({PANELS[i]})", ha="left", va="center", fontsize=FS,
-                 fontweight="bold", color=INK)
+                 pplib.bold(f"({PANELS[i]})"), ha="left", va="center",
+                 fontsize=FS, color=INK)
     # One row above both panels: inside them every corner holds data.
     h = legend_handles(series, data_fit=True)
     fig.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=2.2,
@@ -460,7 +458,7 @@ def main(argv=None):
     p.add_argument("--run-t5-alt", type=Path, default=None,
                    help="a second -5 C run, drawn dashed in the same colour "
                         "(the refit-wall arm)")
-    p.add_argument("--alt-label", default="model, −5 °C wall refit",
+    p.add_argument("--alt-label", default=r"model, $-5\,^{\circ}$C wall refit",
                    help="legend text for the dashed run")
     p.add_argument("--steps", type=int, nargs=2, default=None,
                    help="snapshot steps for instants 1 and 2, overriding "
@@ -527,8 +525,7 @@ def main(argv=None):
           f"bar +-{v:.3g} (extend={sig_extend}, {clipped:.0f} % of pore beyond it)")
 
     a.sig_extend = sig_extend
-    plt.rcParams.update({"font.family": "sans-serif", "mathtext.fontset": "dejavusans",
-                         "pdf.fonttype": 42, "svg.fonttype": "none"})
+    plt.rcParams.update(pplib.MANUSCRIPT_RC)
     figs = {
         "molaro_neck_width": build_neck(series, a),
         "molaro_microstructure": build_micro(secs, norm, vapcm, icecm, m["t_star"], a),

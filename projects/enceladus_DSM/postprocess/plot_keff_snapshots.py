@@ -250,7 +250,7 @@ def _scalebar(ax, XX, YY):
     for lw, c in ((3.4, "white"), (1.8, INK)):
         ax.plot([x0, x0 + L], [y0, y0], color=c, lw=lw, solid_capstyle="butt",
                 zorder=5)
-    txt = f"{L * 1e3:g} µm" if L < 1 else f"{L:g} mm"
+    txt = rf"{L * 1e3:g} $\mu$m" if L < 1 else f"{L:g} mm"
     t = ax.text(x0 + L / 2, y0 + 0.025 * Lx, txt, ha="center", va="bottom",
                 fontsize=FS_TINY, color=INK, zorder=5)
     t.set_bbox(dict(facecolor="white", alpha=0.75, lw=0, pad=0.8))
@@ -285,8 +285,8 @@ def _circled(ax, x, y, letter, transform=None, clip_on=True):
     kw = {} if transform is None else {"transform": transform}
     ax.plot([x], [y], "o", ms=MARK_MS, mfc="white", mec=INK, mew=0.9,
             zorder=6, clip_on=clip_on, **kw)
-    ax.text(x, y, letter, ha="center", va="center", fontsize=FS_TINY,
-            color=INK, fontweight="bold", zorder=7, clip_on=clip_on, **kw)
+    ax.text(x, y, pplib.bold(letter), ha="center", va="center", fontsize=FS_TINY,
+            color=INK, zorder=7, clip_on=clip_on, **kw)
 
 
 def _mark(ax, x, y, letter):
@@ -382,7 +382,8 @@ def _colorbars(fig, cax_ice, cax_sig, norm, vapcm, sig_extend):
                       orientation="horizontal", extend=sig_extend, extendfrac=0.04,
                       ticks=sigma_ticks(norm, min_gap=0.16))
     _label(cax_sig, r"$\sigma$ [$\times10^{-4}$]")
-    cb.ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, _p: f"{v:.2g}"))
+    # In mathtext, so a negative tick gets a true minus sign.
+    cb.ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda v, _p: f"${v:.2g}$"))
     cb.ax.tick_params(labelsize=FS_TINY, width=0.5, length=2, pad=1.5)
     cb.outline.set_linewidth(0.5)
 
@@ -596,8 +597,8 @@ def build_combined(snaps, xt, xs, kn, keys, norm, vapcm, icecm, sig_extend, a):
     # y tick label.
     for lab, y_top in zip(PANELS, (y_snap + s_in + 0.5 * t_band,
                                    y_time + ph + 0.14, y_ssa + ph + 0.14)):
-        fig.text(0.02 / W, y_top / H, f"({lab})", ha="left", va="center",
-                 fontsize=FS, fontweight="bold", color=INK)
+        fig.text(0.02 / W, y_top / H, pplib.bold(f"({lab})"), ha="left",
+                 va="center", fontsize=FS, color=INK)
 
     y_cb = y_snap + s_in + t_band + cb_gap + cb_lab
     lab_ice, lab_sig, sep, tail = 0.22, 0.82, 0.30, 0.14
@@ -800,8 +801,7 @@ def main(argv=None):
     out = Path(a.save_dir) if a.save_dir else run / "plots" / "keff" / "snapshots"
     os.makedirs(out, exist_ok=True)
 
-    plt.rcParams.update({"font.family": "sans-serif", "mathtext.fontset": "dejavusans",
-                         "pdf.fonttype": 42, "svg.fonttype": "none"})
+    plt.rcParams.update(pplib.MANUSCRIPT_RC)
     figs = {
         "keff_time_snapshots": build(
             "time", snaps, d["t"] / DAY, d if a.absolute else kn,
