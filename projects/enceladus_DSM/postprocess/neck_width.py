@@ -320,10 +320,8 @@ def main():
     # postprocess/ snapshot copy inside a run dir won't find it — pass
     # --data explicitly there, or it is skipped with a note.
     data_csv = args.data
-    if data_csv is None:
-        cand = Path(__file__).resolve().parent.parent / "inputs" / "validation" \
-               / "molaro2019_fig11_T-20.csv"
-        data_csv = cand if cand.exists() else None
+    if data_csv is None:        # the series matching the run's -temp
+        data_csv, _ = pplib.molaro_series(args.run_dir)
     if data_csv is not None and Path(data_csv).exists():
         dt_, dw_, ep_, em_ = [], [], [], []
         for line in open(data_csv):

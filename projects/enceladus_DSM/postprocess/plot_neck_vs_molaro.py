@@ -119,9 +119,11 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("run_dir", type=Path)
     ap.add_argument("--data", type=Path, default=None,
-                    help="validation CSV (default: the Molaro -20 C table)")
-    ap.add_argument("--anchor-width", type=float, default=DEFAULT_ANCHOR,
-                    help="neck WIDTH [m] at which both clocks are set to zero")
+                    help="validation CSV (default: the Molaro series matching "
+                         "the run's -temp)")
+    ap.add_argument("--anchor-width", type=float, default=None,
+                    help="neck WIDTH [m] at which both clocks are set to zero "
+                         "(default: that series' first width)")
     ap.add_argument("--loglog", action="store_true",
                     help="log-log axes (default: linear)")
     ap.add_argument("--full-range", action="store_true",
@@ -130,12 +132,15 @@ def main():
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
-    data_path = args.data or (Path(__file__).resolve().parent.parent
-                              / "inputs/validation/molaro2019_fig11_T-20.csv")
+    series_csv, series_anchor = pplib.molaro_series(args.run_dir)
+    data_path = args.data or series_csv
+    if data_path is None:
+        sys.exit("no Molaro validation CSV found in the run's inputs/ or the repo")
     tm, wm = read_model(args.run_dir)
     td, wd = read_experiment(data_path)
 
-    anchor = args.anchor_width
+    anchor = args.anchor_width if args.anchor_width is not None else series_anchor
+    print(f"  Molaro data: {Path(data_path).name}")
     extrapolated = False
     t_star = anchor_time(tm, wm, anchor)
     if t_star is None:
@@ -219,7 +224,8 @@ def main():
         ax.set_yscale("log")
     ax.set_xlabel("time since both curves reached the anchor width  [min]")
     ax.set_ylabel("neck width  [$\\mu$m]")
-    ax.set_title("Neck growth vs Molaro et al. (2019), $T = -20\\,^\\circ$C",
+    T_run = pplib.opt_float(pplib.read_opts(str(args.run_dir)), "-temp", -20.0)
+    ax.set_title(f"Neck growth vs Molaro et al. (2019), $T = {T_run:g}\\,^\\circ$C",
                  fontsize=11, color=C_INK)
     ax.grid(alpha=0.25, lw=0.6)
     ax.set_axisbelow(True)

@@ -273,10 +273,8 @@ def main():
 
     if not args.no_plot:
         data_path = args.data
-        if data_path is None:
-            cand = Path(__file__).resolve().parent.parent / \
-                "inputs/validation/molaro2019_fig11_T-20.csv"
-            data_path = cand if cand.is_file() else None
+        if data_path is None:   # the series matching the run's -temp
+            data_path, _ = pplib.molaro_series(run)
         data = read_validation(data_path) if data_path else None
         make_figure(rows, data, axisym, str(out).replace(".csv", ".png"))
 

@@ -104,30 +104,50 @@ MAX_PX = 1800                       # raster columns per section, ~550 dpi
 # ---------------------------------------------------------------------------
 # Data
 # ---------------------------------------------------------------------------
-def load_series(key, run):
-    """Anchored model and experiment for one temperature. Times in minutes."""
+def load_model(run, anchor_um):
+    """One run's anchored neck and grain curves. Times in minutes."""
+    tm, wm = read_model(run)
+    t_star = anchor_time(tm, wm, anchor_um * UM)
+    if t_star is None:
+        sys.exit(f"  {run}: the model neck ({wm.min()/UM:.2f}-{wm.max()/UM:.2f} um) "
+                 f"never crosses the {anchor_um} um anchor")
+    # Nothing before t = 0 is drawn. The curve opens on the sample nearest
+    # t* -- a measured value, never an interpolated one -- and that is also
+    # the sample instant 1 lands on.
+    i0 = int(np.argmin(np.abs(tm - t_star)))
+    tm, wm = tm[i0:], wm[i0:]
+    return dict(t_s=tm, w_m=wm, t_star=t_star, t=(tm - t_star) / 60.0,
+                w=wm / UM, grains=read_grains(run, tm[0], t_star))
+
+
+def load_series(key, run, alt=None):
+    """Anchored model(s) and experiment for one temperature. `alt` is a
+    second run of the same temperature, drawn dashed (ALT_LS)."""
     s = dict(SERIES[key], key=key, run=run)
-    anchor = s["anchor_um"] * UM
     td, wd, ep, em = read_experiment(s["data"])
     s["td"] = (td - td[0]) / 60.0
     s["wd"], s["ep"], s["em"] = wd / UM, ep / UM, em / UM
-    s["model"] = None
-    if run is not None:
-        tm, wm = read_model(run)
-        t_star = anchor_time(tm, wm, anchor)
-        if t_star is None:
-            sys.exit(f"  {run}: the model neck ({wm.min()/UM:.2f}-{wm.max()/UM:.2f} um) "
-                     f"never crosses the {s['anchor_um']} um anchor")
-        # Nothing before t = 0 is drawn. The curve opens on the sample
-        # nearest t* -- a measured value, never an interpolated one -- and
-        # that is also the sample instant 1 lands on.
-        i0 = int(np.argmin(np.abs(tm - t_star)))
-        tm, wm = tm[i0:], wm[i0:]
-        s["model"] = dict(t_s=tm, w_m=wm, t_star=t_star,
-                          t=(tm - t_star) / 60.0, w=wm / UM,
-                          grains=read_grains(run, tm[0], t_star))
+    s["model"] = load_model(run, s["anchor_um"]) if run is not None else None
+    s["alt"] = load_model(alt, s["anchor_um"]) if alt is not None else None
     s["Dd"] = read_data_diameters(s["data"])
     return s
+
+
+ALT_LS = (0, (4, 2.2))                   # the second run of a temperature
+
+
+def legend_handles(series):
+    """Colour = temperature; line = model, dashed = its alternative wall;
+    open circle = Molaro."""
+    h = [Line2D([], [], color=s["color"], lw=1.8, label=s["label"]) for s in series]
+    h.append(Line2D([], [], color=INK, lw=1.8, label="model"))
+    alt = [s for s in series if s["alt"] is not None]
+    if alt:
+        h.append(Line2D([], [], color=INK, lw=1.8, ls=ALT_LS,
+                        label=alt[0].get("alt_label", "model, alt. wall")))
+    h.append(Line2D([], [], color=INK, ls="none", marker="o", ms=4.2, mfc="white",
+                    mew=0.9, label="Molaro et al. (2019)"))
+    return h
 
 
 def read_grains(run, t_open, t_star):
@@ -240,6 +260,10 @@ def _neck_panel(ax, series, marks=()):
             xmin = min(xmin, float(m["t"][0]))
             vis = m["t"] <= SERIES["T-20"]["window_min"] * 1.08
             ylo, yhi = min(ylo, m["w"][vis].min()), max(yhi, m["w"][vis].max())
+        if s["alt"] is not None:
+            m2 = s["alt"]
+            ax.plot(m2["t"], m2["w"], ls=ALT_LS, lw=1.5, color=c, zorder=2,
+                    dash_capstyle="round")
         ax.errorbar(s["td"], s["wd"], yerr=[s["em"], s["ep"]], fmt="o", ms=4.2,
                     mfc="white", mec=c, mew=0.9, ecolor=c, elinewidth=0.7,
                     capsize=1.8, capthick=0.7, zorder=3)
@@ -262,11 +286,8 @@ def _neck_panel(ax, series, marks=()):
     ax.set_xlabel("Time [min]", fontsize=FS, labelpad=2)
     ax.set_ylabel(r"$w$  [µm]", fontsize=FS, labelpad=3)
     # Colour is the temperature, mark style the source: two short columns.
-    h = [Line2D([], [], color=s["color"], lw=1.8, label=s["label"]) for s in series]
-    h += [Line2D([], [], color=INK, lw=1.8, label="model"),
-          Line2D([], [], color=INK, ls="none", marker="o", ms=4.2, mfc="white",
-                 mew=0.9, label="Molaro et al. (2019)")]
-    ax.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=1.6,
+    h = legend_handles(series)
+    ax.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=2.2,
               ncol=2, columnspacing=1.2, handletextpad=0.5, loc="lower right")
 
 
@@ -356,6 +377,11 @@ def _shrink_panel(ax, series, which, xmax):
             g = m["grains"]
             ax.plot(g["t"], g[which], "-", lw=1.8, color=c, zorder=2)
             vals.append(g[which][g["t"] <= xmax])
+        if s["alt"] is not None and s["alt"]["grains"] is not None:
+            g2 = s["alt"]["grains"]
+            ax.plot(g2["t"], g2[which], ls=ALT_LS, lw=1.5, color=c, zorder=2,
+                    dash_capstyle="round")
+            vals.append(g2[which][g2["t"] <= xmax])
         d = s["Dd"]
         ax.plot(d["t"], d[which], "o", ms=4.2, mfc="white", mec=c, mew=0.9,
                 ls="none", zorder=3)
@@ -393,11 +419,8 @@ def build_shrinkage(series, a):
                  f"({PANELS[i]})", ha="left", va="center", fontsize=FS,
                  fontweight="bold", color=INK)
     # One row above both panels: inside them every corner holds data.
-    h = [Line2D([], [], color=s["color"], lw=1.8, label=s["label"]) for s in series]
-    h += [Line2D([], [], color=INK, lw=1.8, label="model"),
-          Line2D([], [], color=INK, ls="none", marker="o", ms=4.2, mfc="white",
-                 mew=0.9, label="Molaro et al. (2019)")]
-    fig.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=1.6,
+    h = legend_handles(series)
+    fig.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=2.2,
                ncol=len(h), columnspacing=1.6, handletextpad=0.5,
                loc="center", bbox_to_anchor=(0.5, (bot + ph + top - 0.08) / H))
     return fig
@@ -411,6 +434,11 @@ def main(argv=None):
                    help="-20 C run directory (neck_width.csv + snapshots)")
     p.add_argument("--run-t5", type=Path, default=None,
                    help="-5 C run directory; omitted, its data are drawn alone")
+    p.add_argument("--run-t5-alt", type=Path, default=None,
+                   help="a second -5 C run, drawn dashed in the same colour "
+                        "(the refit-wall arm)")
+    p.add_argument("--alt-label", default="model, −5 °C wall refit",
+                   help="legend text for the dashed run")
     p.add_argument("--steps", type=int, nargs=2, default=None,
                    help="snapshot steps for instants 1 and 2, overriding "
                         "--instants-min")
@@ -431,7 +459,9 @@ def main(argv=None):
     a = p.parse_args(argv)
 
     s20 = load_series("T-20", a.run_t20.resolve())
-    s5 = load_series("T-5", a.run_t5.resolve() if a.run_t5 else None)
+    s5 = load_series("T-5", a.run_t5.resolve() if a.run_t5 else None,
+                     alt=a.run_t5_alt.resolve() if a.run_t5_alt else None)
+    s5["alt_label"] = a.alt_label
     series = [s20, s5]
     for s in series:
         m = s["model"]

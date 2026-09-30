@@ -307,10 +307,12 @@ def main():
                          "symmetric bar covers a sign the data never reaches")
     ap.add_argument("--data", type=Path, default=None,
                     help="experimental neck-width CSV to overlay on the curve "
-                         "(default: the repo's Molaro Fig. 11 T=-20 table)")
-    ap.add_argument("--anchor-width", type=float, default=DEFAULT_ANCHOR_UM,
+                         "(default: the Molaro Fig. 11 series matching the "
+                         "run's -temp)")
+    ap.add_argument("--anchor-width", type=float, default=None,
                     help="neck WIDTH [um] at which the experiment's clock is "
-                         "matched to the model's (default 32.81)")
+                         "matched to the model's (default: that series' first "
+                         "width, 32.81 at -20 C, 32.51 at -5 C)")
     ap.add_argument("--no-data", dest="data_on", action="store_false",
                     help="model curve only, no experimental points")
     ap.add_argument("--sat-vmin", type=float, default=None,
@@ -334,8 +336,10 @@ def main():
     if not files:
         sys.exit(f"no solV_*.vts under {args.run_dir}/vtkOut")
 
-    data_path = args.data or (Path(__file__).resolve().parent.parent
-                              / "inputs/validation/molaro2019_fig11_T-20.csv")
+    series_csv, series_anchor = pplib.molaro_series(args.run_dir)
+    data_path = args.data or series_csv or Path("molaro_data_not_found.csv")
+    if args.anchor_width is None:
+        args.anchor_width = series_anchor * 1e6
     if args.data_on and not Path(data_path).is_file():
         print(f"  NOTE: {data_path} not found; model curve only")
         args.data_on = False

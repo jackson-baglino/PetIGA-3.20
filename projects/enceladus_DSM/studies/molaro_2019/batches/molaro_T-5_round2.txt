@@ -23,3 +23,36 @@
 #   (scores -5 C runs against 32.51 um and the 48-min window automatically)
 
 molaro_2D_L450x225um_eps0.11um_axisym_T-5pair_r14um_dom2:molaro_T-5_h0.99523_50min_a1e-1_dirichlet
+
+# ---------------------------------------------------------------------------
+# OUTCOME (2026-09-30): round 1 is the -5 C arm the manuscript uses; this
+# round is shown beside it, dashed, in Figure 2.
+#
+# Scored at Molaro's own three times (t* = 39.3 s in both rounds):
+#                     0 min   26 min   48 min
+#   D_lg/D_lg0  data  1.0000  0.9695   0.9086
+#               r1    1.0000  0.9667   0.9385    (h = 0.99674)
+#               r2    1.0000  0.9513   0.9098    (h = 0.99523, this file)
+#   D_sm/D_sm0  data  1.0000  0.9739   0.9085
+#               r1    1.0000  0.9555   0.9176
+#               r2    1.0000  0.9349   0.8792
+#   neck w [um] data  32.51   41.57    44.00
+#               r1    32.51   48.12    52.42
+#               r2    32.51   48.24    52.29
+#
+# Molaro's -5 C recession ACCELERATES: -3.05 % in the first 26 min, -6.3 %
+# in the next 22 (2.4x the rate). A fixed wall gives linear recession (rms
+# 0.004 % from a line), so no single humidity passes all three points. r2 hits
+# the 48-min large-grain point by overshooting at 26 min on both grains; r1
+# follows the first 26 min. Over the four non-trivial points (2 grains x 2
+# times) r1 is 1.8 % rms, r2 2.6 %. The acceleration is the artefact of
+# docs/molaro_validation_synthesis.md sec. 5 growing through the record (they
+# stopped at 48 min when the necks began to shrink), so the 48-min point is
+# the least trustworthy -- and the 3-point slope (-9.03 %) is dominated by it.
+#
+# r1 is also the cleaner claim: its wall is the -20 C calibration carried over
+# (series-resistance estimate x the -20 C correction), with no -5 C refit.
+# The neck does not care which: 52.4 vs 52.3 um at 48 min.
+#
+# Figure 2: --run-t5 <r1> --run-t5-alt <this run>
+#   r1 = .../GrainPairSintering/molaro_2D_L450x225um_eps0.11um_axisym_T-5pair_r14um_dom2__molaro_T-5_h0.99674_2h_a1e-1_dirichlet

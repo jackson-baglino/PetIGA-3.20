@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import base64
 import glob
+from pathlib import Path
 import os
 import re
 import struct
@@ -121,6 +122,32 @@ def read_opts(run_dir: str) -> dict:
         except OSError:
             continue
     return opts
+
+
+# Molaro et al. (2019) Fig. 11 series: {temperature: (CSV name, first
+# measured neck WIDTH [m])}. The two series are different grain pairs, each
+# anchored at its own first width.
+MOLARO_SERIES = {-20: ("molaro2019_fig11_T-20.csv", 32.81e-6),
+                 -5:  ("molaro2019_fig11_T-5.csv",  32.51e-6)}
+
+
+def molaro_series(run_dir):
+    """(validation CSV path or None, anchor width [m]) for the Molaro series
+    that matches the run's -temp, so a -5 C run is never drawn against the
+    -20 C table. Unknown temperatures fall back to -20 C, the clean benchmark.
+
+    The CSV is looked for in the run's staged inputs/ first, then in the repo
+    this script sits in (this file's parent's parent)."""
+    T = opt_float(read_opts(str(run_dir)), "-temp", -20.0)
+    key = min(MOLARO_SERIES, key=lambda k: abs(k - T))
+    if abs(key - T) > 1.0:
+        key = -20
+    name, anchor = MOLARO_SERIES[key]
+    for root in (Path(run_dir), Path(__file__).resolve().parent.parent):
+        p = root / "inputs" / "validation" / name
+        if p.is_file():
+            return p, anchor
+    return None, anchor
 
 
 def opt_float(opts: dict, key: str, default=None):
