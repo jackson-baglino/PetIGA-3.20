@@ -4,28 +4,31 @@
     python3 plot_mechanisms_figure.py --run <grain-pair run> [--step N]
         [--width-mm 85] [--save-dir DIR] [--copy-to DIR]
 
-The phi = 0.5 outline of a simulated grain pair late in sintering, mirrored
-across the symmetry axis, with the two mass-transport paths drawn on it:
+A SCHEMATIC of the two dominant sintering mechanisms, for explaining what an
+experiment would see -- not a simulation result, so nothing is filled or
+colour-mapped. It shows:
 
-    surface diffusion   an arrow laid ALONG the interface -- tangent to it,
-                        a small constant distance outside it -- running
-                        toward the neck, labelled just above
-    vapor transport     an arrow that leaves the interface along its outward
-                        normal, crosses the pore, and ends pointing into the
-                        neck
+    the sintered pair   the phi = 0.5 outline of a simulated pair late in
+                        sintering (the last snapshot of --run: the largest
+                        neck simulated), mirrored across the symmetry axis
+    the initial pair    two dashed circles, each a least-squares fit to its
+                        grain's still-circular surface (points more than
+                        --fit-exclude-deg from the neck direction)
+    surface diffusion   an arrow laid along the interface, a constant
+                        --offset-um outside it, running into the neck; its
+                        head is drawn on the line's own last segment, so it
+                        ends the line exactly
+    vapor transport     a cubic spline that leaves the small grain along its
+                        outward normal, crosses the pore and arrives in the
+                        neck heading straight in
 
-The outline is the solver's own interface, not a drawing: the last snapshot
-of --run (the largest neck simulated), read at full resolution from
-sol_*.dat, contoured at phi = 0.5. Both arrows are built from that contour --
-the surface-diffusion arc is the contour itself, offset outward; the vapour
-arrow starts on it and ends at the measured neck -- so they sit exactly on
-the interface at any size.
+Labels are horizontal. The outline is the solver's interface only because it
+is the right SHAPE; the figure is a diagram of mechanisms.
 
 Style follows plot_keff_snapshots.py / plot_molaro_validation.py: Computer
-Modern throughout (pplib.MANUSCRIPT_RC), ice in cmocean `ice`, ink and muted
-greys, colours from the cool family plot_keff.py uses. One AGU column
-(85 mm) by default. Transparent background; PDF for the manuscript, PNG
-preview, 600 dpi.
+Modern throughout (pplib.MANUSCRIPT_RC), ink and muted greys, arrow colours
+from the cool family plot_keff.py uses. One AGU column (85 mm) by default.
+Transparent background; PDF for the manuscript, PNG preview, 600 dpi.
 """
 from __future__ import annotations
 
@@ -40,10 +43,9 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyArrowPatch, Polygon
-from matplotlib.path import Path as MPath
+from matplotlib.patches import Circle, FancyArrowPatch, Polygon
 from contourpy import contour_generator
-import cmocean
+from scipy.interpolate import CubicSpline
 
 HERE = Path(__file__).parent
 REPO = HERE.parent
@@ -55,7 +57,7 @@ from plot_keff_snapshots import make_reader, snap_step, INK, FS_SMALL, MM  # noq
 UM = 1e-6
 C_SURF = C_ISO           # surface diffusion: deep indigo
 C_VAP = C_YY             # vapour transport: steel blue
-C_ICE = cmocean.cm.ice(0.93)
+C_INIT = "#8a8a8a"       # initial-condition circles, dashed
 C_AXIS = "#b0b0b0"
 
 
@@ -112,6 +114,32 @@ def point_on_contour(loop, centre, th):
     return loop[int(np.argmin(np.abs((a - th + 180) % 360 - 180)))]
 
 
+def fit_circle(pts):
+    """Algebraic least-squares circle (Kasa): (xc, yc, r)."""
+    x, y = pts[:, 0], pts[:, 1]
+    A = np.column_stack([x, y, np.ones_like(x)])
+    b = x ** 2 + y ** 2
+    c, *_ = np.linalg.lstsq(A, b, rcond=None)
+    xc, yc = c[0] / 2, c[1] / 2
+    return xc, yc, float(np.sqrt(c[2] + xc ** 2 + yc ** 2))
+
+
+def arrow(ax, pts, color, lw=1.1, head=8):
+    """A line through `pts` with its head on the last segment, so the head
+    ends the line exactly (a FancyArrowPatch on a many-vertex path puts the
+    head on a vanishing final segment and leaves the stroke running on)."""
+    pts = np.asarray(pts)
+    seg = np.hypot(*np.diff(pts, axis=0).T)
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    # the head's straight run: the last ~3 % of the arc, at least 2 points
+    k = max(1, int(np.searchsorted(s, s[-1] * 0.97)) - 1)
+    ax.plot(pts[:k + 1, 0], pts[:k + 1, 1], color=color, lw=lw,
+            solid_capstyle="round", zorder=3)
+    ax.add_patch(FancyArrowPatch(pts[k], pts[-1], arrowstyle="-|>",
+                                 mutation_scale=head, lw=lw, color=color,
+                                 shrinkA=0, shrinkB=0, zorder=3))
+
+
 def build(run: Path, a):
     loops, step = outline(run, a.step)
     (Rs, cs), (Rl, cl) = grains(run)
@@ -122,11 +150,24 @@ def build(run: Path, a):
     w = n["neck_width_m"][i] / UM
     x_neck = n["x_neck_m"][i] / UM
     print(f"  snapshot step {step}, t = {t_snap:.0f} s: neck width {w:.2f} um at "
-          f"x = {x_neck:.1f} um; grains R = {Rs:.1f} / {Rl:.1f} um")
+          f"x = {x_neck:.1f} um")
 
     big = max(loops, key=len)
-    allp = np.vstack(loops)
-    pad = 0.06 * (allp[:, 0].max() - allp[:, 0].min())
+    # Initial condition: a circle fitted to each grain's circular surface,
+    # everything within fit_exclude_deg of the neck direction left out.
+    circles = []
+    for cx, side in ((cs, -1), (cl, +1)):
+        d = big - np.array([cx, 0.0])
+        th = np.degrees(np.arctan2(d[:, 1], d[:, 0] * -side))   # 0 = away from neck
+        m = (np.abs(th) < 180.0 - a.fit_exclude_deg) & (np.sign(big[:, 0] - x_neck) == side)
+        xc, yc, r = fit_circle(big[m])
+        circles.append((xc, yc, r))
+        print(f"  initial circle: centre ({xc:.1f}, {yc:.2f}) um, r = {r:.2f} um "
+              f"(opts R = {Rs if side < 0 else Rl:.1f})")
+
+    allp = np.vstack(loops + [np.array([[xc - r, yc - r], [xc + r, yc + r]])
+                              for xc, yc, r in circles])
+    pad = 0.07 * (allp[:, 0].max() - allp[:, 0].min())
     x0, x1 = allp[:, 0].min() - pad, allp[:, 0].max() + pad
     y0, y1 = allp[:, 1].min() - pad, allp[:, 1].max() + pad
 
@@ -137,46 +178,37 @@ def build(run: Path, a):
     ax.set_xlim(x0, x1); ax.set_ylim(y0, y1); ax.set_aspect("equal")
     ax.axis("off"); ax.patch.set_alpha(0.0)
 
-    # Symmetry axis: the mirrored half is the same section, reflected.
     ax.plot([x0, x1], [0, 0], color=C_AXIS, lw=0.5, ls=(0, (6, 2, 1, 2)), zorder=0)
+    for xc, yc, r in circles:
+        ax.add_patch(Circle((xc, yc), r, fill=False, ec=C_INIT, lw=0.8,
+                            ls=(0, (3, 2.5)), zorder=1))
     for ln in loops:
-        ax.add_patch(Polygon(ln, closed=True, fc=C_ICE, ec=INK, lw=0.9, zorder=1))
+        ax.add_patch(Polygon(ln, closed=True, fill=False, ec=INK, lw=1.0, zorder=2))
 
     # --- surface diffusion: along the upper surface of the small grain ----
     sd = arc_on_contour(big, (cs, 0.0), a.sd_from, a.sd_to, a.offset_um)
-    ax.add_patch(FancyArrowPatch(path=MPath(sd), arrowstyle="-|>", mutation_scale=8,
-                                 lw=1.1, color=C_SURF, zorder=3,
-                                 shrinkA=0, shrinkB=0, capstyle="round"))
-    k = len(sd) // 2
-    tang = sd[min(k + 3, len(sd) - 1)] - sd[max(k - 3, 0)]
-    ang = np.degrees(np.arctan2(tang[1], tang[0]))
-    if ang > 90: ang -= 180
-    if ang < -90: ang += 180
-    nrm = (sd[k] - np.array([cs, 0.0])); nrm /= np.linalg.norm(nrm)
-    lab = sd[k] + nrm * a.label_gap_um
-    ax.text(*lab, "surface diffusion", rotation=ang, rotation_mode="anchor",
-            ha="center", va="bottom", fontsize=FS_SMALL, color=INK, zorder=4)
+    arrow(ax, sd, C_SURF)
+    top = sd[int(np.argmax(sd[:, 1]))]
+    ax.text(top[0], top[1] + a.label_gap_um, "surface diffusion", ha="center",
+            va="bottom", fontsize=FS_SMALL, color=INK, zorder=4)
 
-    # --- vapour transport: leaves the small grain's lower surface, ends in the
-    # lower neck. Cubic Bezier: out along the normal, back in toward the neck.
+    # --- vapour transport: a spline from the small grain's lower surface into
+    # the lower neck: leaves along the surface normal, arrives heading +y.
     p0 = point_on_contour(big, (cs, 0.0), a.vap_from)
-    n0 = (p0 - np.array([cs, 0.0])); n0 /= np.linalg.norm(n0)
+    n0 = p0 - np.array([cs, 0.0]); n0 /= np.linalg.norm(n0)
     p0 = p0 + n0 * a.offset_um
     p3 = np.array([x_neck, -0.5 * w - a.offset_um])
-    L = a.vap_reach_um
-    p1 = p0 + n0 * L
-    p2 = p3 + np.array([0.0, -L])
-    ax.add_patch(FancyArrowPatch(path=MPath([p0, p1, p2, p3],
-                                            [MPath.MOVETO, MPath.CURVE4,
-                                             MPath.CURVE4, MPath.CURVE4]),
-                                 arrowstyle="-|>", mutation_scale=8, lw=1.1,
-                                 color=C_VAP, zorder=3, shrinkA=0, shrinkB=0,
-                                 capstyle="round"))
-    # Label under the arc's lowest point, clear of both grains.
-    tt = np.linspace(0, 1, 200)[:, None]
-    bez = ((1 - tt) ** 3 * p0 + 3 * (1 - tt) ** 2 * tt * p1
-           + 3 * (1 - tt) * tt ** 2 * p2 + tt ** 3 * p3)
-    lo = bez[int(np.argmin(bez[:, 1]))]
+    mid = np.array([0.5 * (p0[0] + p3[0]), min(p0[1], p3[1]) - a.vap_reach_um])
+    P = np.array([p0, mid, p3])
+    u = np.concatenate([[0.0], np.cumsum(np.hypot(*np.diff(P, axis=0).T))])
+    L = u[-1]
+    bc = ((1, n0 * L), (1, np.array([0.0, 1.0]) * L))          # d/du end slopes
+    spl = [CubicSpline(u / L, P[:, k], bc_type=((1, bc[0][1][k]), (1, bc[1][1][k])))
+           for k in (0, 1)]
+    tt = np.linspace(0, 1, 400)
+    vap = np.column_stack([spl[0](tt), spl[1](tt)])
+    arrow(ax, vap, C_VAP)
+    lo = vap[int(np.argmin(vap[:, 1]))]
     ax.text(lo[0], lo[1] - a.label_gap_um, "vapor transport", ha="center",
             va="top", fontsize=FS_SMALL, color=INK, zorder=4)
     return fig
@@ -196,10 +228,13 @@ def main(argv=None):
                    help="surface-diffusion arc start, polar angle about the "
                         "small grain's centre [deg]")
     p.add_argument("--sd-to", type=float, default=36.0, help="... and end [deg]")
-    p.add_argument("--vap-from", type=float, default=-125.0,
+    p.add_argument("--vap-from", type=float, default=-105.0,
                    help="vapour arrow start, polar angle on the small grain [deg]")
-    p.add_argument("--vap-reach-um", type=float, default=60.0,
-                   help="how far the vapour arrow bows into the pore [um]")
+    p.add_argument("--vap-reach-um", type=float, default=14.0,
+                   help="how far below its ends the vapour arrow dips [um]")
+    p.add_argument("--fit-exclude-deg", type=float, default=70.0,
+                   help="initial-circle fit ignores points within this angle of "
+                        "the neck direction [deg]")
     p.add_argument("--offset-um", type=float, default=4.0,
                    help="gap between the arrows and the interface [um]")
     p.add_argument("--label-gap-um", type=float, default=4.0)
