@@ -1,3 +1,19 @@
+## 2026-09-30 — Scaling result, allocation 200k, convergence study set up
+
+- Scaling test analysed (studies/keff_sintering/scaling/README.md): the
+  phase-field step does not strong-scale (t = 15.6 s + 940/P core-s); the
+  k_eff solve is 15-30x slower at >= 8 nodes (communication). alloc.sh set
+  to 200k DoF/core (121 ranks). Follow-ups submitted by user: bracketed
+  constraint at 241 ranks; 300k/400k.
+- Sequential metamorphism/k_eff split judged not worth it at <= 6 nodes.
+- Convergence study (supplement): 26 UNGATED packings at L/R 20-80, opts,
+  batch_rve.txt, analyze_rve.py. First build confounded size with the void
+  gate (z jumped at the gate switch) -> rebuilt ungated.
+- Finding: the production void gate lowers coordination ~5% (3.32 vs 3.48 at
+  L/R 40); decision on regenerating production packings pending.
+
+---
+
 ## 2026-09-29 — SSA-triggered k_eff cadence
 
 - Implemented -keff_dlnssa / -keff_dlnssa_t0_tau / -keff_max_gap_tau
