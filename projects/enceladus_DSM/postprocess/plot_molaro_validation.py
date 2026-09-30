@@ -152,12 +152,11 @@ def legend_handles(series):
 
 
 def _time_axis_from_zero(ax, xmax):
-    """A little room left of t = 0, so the t = 0 points, their error bars and
-    the '0' label are drawn whole -- but the time axis LINE starts at t = 0,
-    so the margin reads as margin, not as time before the first measurement."""
-    pad = 0.025 * xmax
-    ax.set_xlim(-pad, 1.06 * xmax)
-    ax.spines["bottom"].set_bounds(0.0, 1.06 * xmax)
+    """The time axis starts AT t = 0 -- nothing precedes Molaro's first
+    measurement. The t = 0 points, their error bars and the instant markers
+    are drawn unclipped, so they sit whole on top of the y axis rather than
+    being cut by it (a padded axis read as time before t = 0)."""
+    ax.set_xlim(0.0, 1.06 * xmax)
 
 
 def read_grains(run, t_open, t_star):
@@ -274,12 +273,12 @@ def _neck_panel(ax, series, marks=()):
                     dash_capstyle="round")
         ax.errorbar(s["td"], s["wd"], yerr=[s["em"], s["ep"]], fmt="o", ms=4.2,
                     mfc="white", mec=c, mew=0.9, ecolor=c, elinewidth=0.7,
-                    capsize=1.8, capthick=0.7, zorder=3)
+                    capsize=1.8, capthick=0.7, zorder=3, clip_on=False)
         xmax = max(xmax, float(s["td"].max()))
         ylo = min(ylo, float((s["wd"] - s["em"]).min()))
         yhi = max(yhi, float((s["wd"] + s["ep"]).max()))
     for x, y, lab in marks:
-        _circled(ax, x, y, lab)
+        _circled(ax, x, y, lab, clip_on=False)
     _time_axis_from_zero(ax, xmax)
     ypad = 0.08 * (yhi - ylo)
     ax.set_ylim(ylo - ypad, yhi + ypad)
@@ -391,7 +390,7 @@ def _shrink_panel(ax, series, which, xmax):
             vals.append(g2[which][g2["t"] <= xmax])
         d = s["Dd"]
         ax.plot(d["t"], d[which], "o", ms=4.2, mfc="white", mec=c, mew=0.9,
-                ls="none", zorder=3)
+                ls="none", zorder=3, clip_on=False)
         vals.append(d[which])
     v = np.concatenate(vals)
     pad = 0.08 * (v.max() - v.min())
