@@ -382,7 +382,6 @@ def _shrink_panel(ax, series, which, xmax):
     """D / D_0 of one grain: model lines, Molaro's points (no error bars --
     their table gives none for the diameters)."""
     ax.patch.set_alpha(0.0)
-    ax.axhline(1.0, color="#999999", lw=0.6, ls=":", zorder=0)
     vals = []
     for s in series:
         c, m = s["color"], s["model"]
