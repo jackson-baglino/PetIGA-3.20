@@ -476,7 +476,8 @@ def main(argv=None):
     p.add_argument("--width-mm", type=float, default=170.0)
     p.add_argument("--save-dir", type=Path, default=REPO / "studies/molaro_2019/manuscript")
     p.add_argument("--formats", nargs="+", default=["pdf", "png"])
-    p.add_argument("--dpi", type=int, default=400)
+    p.add_argument("--dpi", type=int, default=600,
+                   help="PNG and raster dpi (default 600, the top of AGU's 300-600 ppi)")
     a = p.parse_args(argv)
 
     s20 = load_series("T-20", a.run_t20.resolve())

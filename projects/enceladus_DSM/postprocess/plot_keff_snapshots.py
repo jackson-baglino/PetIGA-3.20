@@ -727,7 +727,8 @@ def main(argv=None):
                         "with the nearest sample within this fraction of t "
                         "(default 0.02); 0 = same step only")
     p.add_argument("--formats", nargs="+", default=["pdf", "png"])
-    p.add_argument("--dpi", type=int, default=400, help="PNG and raster dpi")
+    p.add_argument("--dpi", type=int, default=600,
+                   help="PNG and raster dpi (default 600, the top of AGU's 300-600 ppi)")
     a = p.parse_args(argv)
     a.no_title = not (a.title or a.title_time or a.title_ssa or a.title_combined)
 
