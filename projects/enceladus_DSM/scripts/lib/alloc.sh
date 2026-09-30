@@ -37,13 +37,22 @@
 # rank increase, so compare s/step against the 241-rank batch before assuming
 # it is cheaper.
 #
+# Raised 60k -> 200k on 2026-09-30 from the scaling test
+# (studies/keff_sintering/scaling/README.md). The phase-field step does not
+# strong-scale on this problem -- 16-23 s/step from 121 to 1201 ranks, fitting
+# t(P) = 15.6 s + 940/P core-s -- so cost in core-seconds falls as ranks are
+# removed. The k_eff solve is 15-30x slower at >= 8 nodes (communication), so
+# small jobs are also far faster for it. 200k = 121 ranks = 4 nodes: 3-5x
+# cheaper per run than 60k, memory 21.6% of the reservation. A test at
+# 300k/400k (81/61 ranks) decides whether to go lower; the floor is memory.
+#
 # CAUTION: per-rank memory scales with this, and 100k leaves less headroom than
 # 80k did. Runs using -keff carry a SECOND large operator (the scalar corrector
 # matrix plus its GAMG hierarchy) on top of the phase-field Jacobian and its
 # ASM/ILU(3) factor. Check peak RSS on a small run before submitting a large one
 # at this target. Do NOT combine with --half-cores on a large job: that would put
 # it at ~200k/rank, well outside the band.
-: "${TARGET_DOFS_PER_CORE:=60000}"
+: "${TARGET_DOFS_PER_CORE:=200000}"
 
 # MPI ranks per node on the Caltech Resnick cluster. 32 is the safe count
 # across the icelake|skylake|cascadelake constraint. MAX_TASKS_PER_NODE is the

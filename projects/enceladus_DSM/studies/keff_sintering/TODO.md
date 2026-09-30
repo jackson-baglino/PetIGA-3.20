@@ -63,7 +63,16 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
       is the mixed node-type constraint.
     - [ ] follow-up (~$5): bracketed `--constraint` at 241 ranks; 300k/400k
       targets.
-    - [ ] set `scripts/lib/alloc.sh` (Jackson's call; 200k recommended now)
+    - [x] `scripts/lib/alloc.sh` set to 200k DoF/core (121 ranks) on
+      2026-09-30.
+    - [ ] test 2 (300k/400k): the model t(P) = 15.6 s + 940/P predicts
+      27 s/step at 81 ranks and 31 s at 61. If it holds, use the fewest ranks
+      memory allows (~61). Also read -log_view for what the 15.6 s serial part
+      of every step is.
+    - [ ] test 1 (bracketed constraint). Also check the login node's CPU
+      (`lscpu`): the build is `-march=native`, so a binary built on an Ice
+      Lake login node can SIGILL on Skylake/Cascade Lake nodes. That is the
+      probable cause of the old "job starts, nothing runs" hangs.
   - [ ] k_eff solver benchmark: `solver_benchmark/` (~$10, replay only).
     Now LOW value: at ≤ 6 nodes a sample is ~5 s, ~15 min per −20 °C run.
     Optional. Adopt a faster setting only if max |Δk|/k_iso < 1e-5, and record
