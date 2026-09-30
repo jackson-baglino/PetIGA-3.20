@@ -5,6 +5,13 @@
 #   ./scripts/HPC/submit_scaling_test.sh --run <finished 3a run dir> [--dry-run]
 #       [--t-days 10] [--steps 30] [--keff-every 3] [--repeats 2]
 #       [--targets "20000 40000 60000 100000 150000 200000"]
+#       [--tag-suffix S] [--sbatch "<extra sbatch flags>"]
+#
+# --sbatch passes flags to sbatch; they override the #SBATCH lines in
+# run_enceladus.sh. The node-type test, e.g.:
+#   --targets 100000 --tag-suffix bracket \
+#   --sbatch "--constraint=[icelake|skylake|cascadelake]"
+# (brackets = every node the SAME type; without them SLURM may mix types.)
 #
 # Each job RESTARTS a finished production run from its snapshot nearest
 # --t-days (so the steps are representative mid-run steps at the capped dt,
@@ -46,7 +53,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 OUT_ROOT="/resnick/groups/rubyfu/jbaglino/simulation_outputs"
 
-run="" ; t_days=10 ; steps=30 ; every=3 ; repeats=2 ; dry=0
+run="" ; t_days=10 ; steps=30 ; every=3 ; repeats=2 ; dry=0 ; sbx="" ; suffix=""
 targets="20000 40000 60000 100000 150000 200000"
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -57,6 +64,8 @@ while [[ $# -gt 0 ]]; do
         --repeats) repeats="$2"; shift 2 ;;
         --targets) targets="$2"; shift 2 ;;
         --dry-run) dry=1; shift ;;
+        --sbatch) sbx="$2"; shift 2 ;;
+        --tag-suffix) suffix="_$2"; shift 2 ;;
         -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
         *) echo "unknown argument: $1" >&2; exit 1 ;;
     esac
@@ -98,10 +107,11 @@ for tgt in $targets; do
         echo "${geom}:${exp}:--label r${r} ${opts}" >> "$tf"
     done
     if (( dry )); then
-        echo "--- TARGET_DOFS_PER_CORE=$tgt"; cat "$tf"; rm -f "$tf"; continue
+        echo "--- TARGET_DOFS_PER_CORE=$tgt  tag scaling_${tgt}${suffix}  sbatch: --time=0-03:00:00 $sbx"; cat "$tf"; rm -f "$tf"; continue
     fi
-    TARGET_DOFS_PER_CORE="$tgt" "$SCRIPT_DIR/submit_batch.sh" --tag "scaling_${tgt}" \
-        --tests-file "$tf" --out-root "$OUT_ROOT" -- --time=0-03:00:00
+    sbarr=(); [[ -n "$sbx" ]] && read -ra sbarr <<< "$sbx"   # read: no glob expansion of [..]
+    TARGET_DOFS_PER_CORE="$tgt" "$SCRIPT_DIR/submit_batch.sh" --tag "scaling_${tgt}${suffix}" \
+        --tests-file "$tf" --out-root "$OUT_ROOT" -- --time=0-03:00:00 ${sbarr[@]+"${sbarr[@]}"}
     rm -f "$tf"
 done
 (( dry )) && echo "(dry run: nothing submitted)"

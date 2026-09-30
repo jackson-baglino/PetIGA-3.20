@@ -9,7 +9,7 @@ max over ranks), and the k_eff time per sample (k_eff.csv wall_s, median).
 Then, per DoF/core target, the COST per step and per sample in core-seconds
 (ranks x seconds) -- the quantity the bill is made of -- and the projected
 core-hours of one production run at -20 C and -5 C from their measured step
-and sample counts (batch 3a: 368 steps / 74 samples; 1216 / 244).
+counts (3a: 368 / 1216) and the SSA-trigger sample counts (179 / 308).
 
 Writes scaling.csv and scaling.png next to this file (or --out).
 Fetch per job: SSA_evo.dat, k_eff.csv, the .o log (holds -log_view), *.opts.
@@ -29,7 +29,8 @@ import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
 RATE = 0.012                                   # $/core-hour, Resnick tier 1
-RUNS = {"-20 C": (368, 74), "-5 C": (1216, 244)}   # steps, k_eff samples (3a)
+# steps, k_eff samples per 30-day run: 3a steps, SSA-trigger cadence (predict_cadence.py)
+RUNS = {"-20 C": (368, 179), "-5 C": (1216, 308)}
 C = ["#0072B2", "#D55E00", "#009E73"]
 
 
@@ -94,32 +95,36 @@ def main():
         w = csv.DictWriter(f, fieldnames=list(out[0]))
         w.writeheader(); w.writerows(out)
 
-    R = np.array([o["ranks"] for o in out])
+    X = np.array([o["dof_per_core"] for o in out]) / 1e3      # kDoF per core
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.8))
     ax = axes[0]
-    ax.errorbar(R, [o["s_step"] for o in out], yerr=[o["s_step_sd"] for o in out], fmt="o-",
+    ax.errorbar(X, [o["s_step"] for o in out], yerr=[o["s_step_sd"] for o in out], fmt="o-",
                 color=C[0], label="phase-field step")
-    ax.errorbar(R, [o["s_sample"] for o in out], yerr=[o["s_sample_sd"] for o in out], fmt="s-",
+    ax.errorbar(X, [o["s_sample"] for o in out], yerr=[o["s_sample_sd"] for o in out], fmt="s-",
                 color=C[1], label="k_eff sample")
-    ax.set(xlabel="MPI ranks", ylabel="wall seconds", title="(a) time per step / per sample")
+    ax.set(ylabel="wall seconds", title="(a) time per step / per sample")
     ax.legend(frameon=False)
     ax = axes[1]
-    ax.plot(R, [o["core_s_step"] for o in out], "o-", color=C[0], label="phase-field step")
-    ax.plot(R, [o["core_s_sample"] for o in out], "s-", color=C[1], label="k_eff sample")
-    ax.set(xlabel="MPI ranks", ylabel="core-seconds", title="(b) cost per step / per sample")
+    ax.plot(X, [o["core_s_step"] for o in out], "o-", color=C[0], label="phase-field step")
+    ax.plot(X, [o["core_s_sample"] for o in out], "s-", color=C[1], label="k_eff sample")
+    ax.set(ylabel="core-seconds", title="(b) cost per step / per sample")
+    ax.set_yscale("log")
     ax.legend(frameon=False)
     ax = axes[2]
     for (k, _), col in zip(RUNS.items(), C):
-        ax.plot(R, [o[f"usd_{k}"] for o in out], "o-", color=col, label=k)
-    ax.set(xlabel="MPI ranks", ylabel="$ per 30-day run", title="(c) projected cost per run")
+        ax.plot(X, [o[f"usd_{k}"] for o in out], "o-", color=col, label=k)
+    ax.set(ylabel="$ per 30-day run", title="(c) projected cost per run")
+    ax.set_yscale("log")
     ax.legend(frameon=False)
     for ax in axes:
+        ax.set_xscale("log")
+        ax.set_xticks(X)
+        ax.set_xticklabels([f"{x:.0f}k\n({o['ranks']})" for x, o in zip(X, out)], fontsize=9)
+        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+        ax.set_xlabel("DoF per core  (MPI ranks)")
         ax.grid(True, alpha=0.25)
         for sp in ("top", "right"):
             ax.spines[sp].set_visible(False)
-        sec = ax.secondary_xaxis("top", functions=(lambda x: 24_009_723 / np.maximum(x, 1),
-                                                    lambda x: 24_009_723 / np.maximum(x, 1)))
-        sec.set_xlabel("DoF per core")
     fig.tight_layout()
     fig.savefig(a.out / "scaling.png", dpi=150, bbox_inches="tight")
     print(f"  wrote {a.out / 'scaling.csv'} and scaling.png")

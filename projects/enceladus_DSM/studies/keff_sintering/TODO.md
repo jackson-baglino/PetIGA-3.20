@@ -56,13 +56,23 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
 - [ ] **Rerun 3a** with the final options once the two tests below are done.
   The first 3a is kept as the shakedown record, not pooled.
 - [ ] **Before 3b** (cost, not correctness), in this order:
-  - [ ] **DoF/core scaling test** (~$20). 30 mid-run steps restarted from a 3a
+  - [x] **DoF/core scaling test**, ran 2026-09-29 (`scaling/README.md`).
+    - The fewest ranks is cheapest: 198k DoF/core (121 ranks) is 3–5×
+      cheaper than 60k.
+    - k_eff is 15–30× slower at ≥ 8 nodes, from communication; the suspect
+      is the mixed node-type constraint.
+    - [ ] follow-up (~$5): bracketed `--constraint` at 241 ranks; 300k/400k
+      targets.
+    - [ ] set `scripts/lib/alloc.sh` (Jackson's call; 200k recommended now)
+  - [ ] ~~DoF/core scaling test~~ (done above; entry kept for the command) 30 mid-run steps restarted from a 3a
     snapshot, at 40k/60k/100k/150k/200k DoF/core × 2 repeats. It times the
     phase-field step and the k_eff sample separately.
     `./scripts/HPC/submit_scaling_test.sh --run <cluster path to the 3a phi0.325 T-20 run>`
     (`--dry-run` first). Read with `studies/keff_sintering/scaling/analyze_scaling.py`.
     Set `scripts/lib/alloc.sh` from the cheapest projected $/run.
-  - [ ] k_eff solver benchmark: `solver_benchmark/` (~$10, replay only). Adopt a
+  - [ ] k_eff solver benchmark: `solver_benchmark/` (~$10, replay only).
+    Now LOW value: at ≤ 6 nodes a sample is ~5 s, ~15 min per −20 °C run.
+    Optional. Adopt a
     faster setting only if max |Δk|/k_iso < 1e-5; record it in the production
     script before 3b.
   - Projected remaining cost at 3a rates: ~$4k. At 100k/core ~$2.4k; with a
