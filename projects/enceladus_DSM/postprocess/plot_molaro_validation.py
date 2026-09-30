@@ -136,7 +136,10 @@ def load_series(key, run, alt=None):
 ALT_LS = (0, (4, 2.2))                   # the second run of a temperature
 
 
-def legend_handles(series):
+FIT_LS = (0, (3, 2))                     # least-squares line through the data
+
+
+def legend_handles(series, data_fit=False):
     """Colour = temperature; line = model, dashed = its alternative wall;
     open circle = Molaro."""
     h = [Line2D([], [], color=s["color"], lw=1.8, label=s["label"]) for s in series]
@@ -148,6 +151,8 @@ def legend_handles(series):
     # "data", not the citation: the caption names Molaro et al. (2019).
     h.append(Line2D([], [], color=INK, ls="none", marker="o", ms=4.2, mfc="white",
                     mew=0.9, label="data"))
+    if data_fit:
+        h.append(Line2D([], [], color=INK, lw=1.0, ls=FIT_LS, label="linear fit"))
     return h
 
 
@@ -391,6 +396,15 @@ def _shrink_panel(ax, series, which, xmax):
         d = s["Dd"]
         ax.plot(d["t"], d[which], "o", ms=4.2, mfc="white", mec=c, mew=0.9,
                 ls="none", zorder=3, clip_on=False)
+        # Least-squares line through the data (intercept free), over the span
+        # the data cover only: the trend the wall humidity is scored against
+        # (-2.93 %/78 min for the -20 C large grain).
+        k, b = np.polyfit(d["t"], d[which], 1)
+        tt = np.array([d["t"].min(), d["t"].max()])
+        ax.plot(tt, k * tt + b, ls=FIT_LS, lw=1.0, color=c, zorder=2.5,
+                dash_capstyle="round")
+        print(f"  {s['label']} {which} grain, data fit: {100 * k * tt[1]:+.2f} % over "
+              f"{tt[1]:.0f} min (slope {100 * k:+.4f} %/min)")
         vals.append(d[which])
     v = np.concatenate(vals)
     pad = 0.08 * (v.max() - v.min())
@@ -425,7 +439,7 @@ def build_shrinkage(series, a):
                  f"({PANELS[i]})", ha="left", va="center", fontsize=FS,
                  fontweight="bold", color=INK)
     # One row above both panels: inside them every corner holds data.
-    h = legend_handles(series)
+    h = legend_handles(series, data_fit=True)
     fig.legend(handles=h, fontsize=FS_SMALL, frameon=False, handlelength=2.2,
                ncol=len(h), columnspacing=1.6, handletextpad=0.5,
                loc="center", bbox_to_anchor=(0.5, (bot + ph + top - 0.08) / H))
