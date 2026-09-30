@@ -338,14 +338,16 @@ submit_one() {
     local nprocs nnodes tasks_per_node total_dofs
     read -r nprocs nnodes tasks_per_node total_dofs < <(compute_alloc "$geom_file" ${extra_opts[@]+"${extra_opts[@]}"} ${perjob[@]+"${perjob[@]}"})
 
-    printf "→ %-45s DoFs=%-8d nprocs=%-3d nodes=%-2d tasks/node=%d\n" \
-        "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node"
+    local mem; mem=$(mem_per_cpu "$total_dofs" "$nprocs")
+    printf "→ %-45s DoFs=%-8d nprocs=%-3d nodes=%-2d tasks/node=%d mem/cpu=%s\n" \
+        "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node" "$mem"
     [[ ${#perjob[@]} -gt 0 ]] && printf "    per-job opts: %s\n" "${perjob[*]}"
 
     sbatch --job-name="$job_name" \
            --nodes="$nnodes" \
            --ntasks="$nprocs" \
            --ntasks-per-node="$tasks_per_node" \
+           --mem-per-cpu="$mem" \
            --export=ALL,SKIP_COMPILE=1,BATCH_OUT_DIR="$BATCH_PARENT",BATCH_JOB_LABEL="$label" \
            ${sbatch_extra[@]+"${sbatch_extra[@]}"} \
            "$RUN_SCRIPT" "$geom" "$exp" "$tag" \

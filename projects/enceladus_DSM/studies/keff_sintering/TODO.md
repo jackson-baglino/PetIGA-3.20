@@ -65,6 +65,13 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
       targets.
     - [x] `scripts/lib/alloc.sh` set to 200k DoF/core (121 ranks) on
       2026-09-30.
+    - [x] Memory (2026-09-30): the flat 1G OOM-killed the 61-rank jobs, and
+      the 121-rank runs had peaked at 860 MB (84%). `scripts/lib/alloc.sh`
+      `mem_per_cpu` now sizes `--mem-per-cpu` from measured MaxRSS:
+      peak = 0.20 GB + 2.35 GB/MDoF-per-rank + 8 B × total DoF (rank 0),
+      × 1.5. That gives 2G for production, 3–4G for L/R 80. Not billed.
+      Note: the solver's "memory after setup" guard reads ~22% where the
+      real peak is 84%, so don't trust it for sizing.
     - [ ] test 2 (300k/400k): the model t(P) = 15.6 s + 940/P predicts
       27 s/step at 81 ranks and 31 s at 61. If it holds, use the fewest ranks
       memory allows (~61). Also read -log_view for what the 15.6 s serial part

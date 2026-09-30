@@ -68,6 +68,32 @@
 : "${MAX_LOCAL_CORES:=12}"
 
 # ---------------------------------------------------------------------------
+# mem_per_cpu <total_dofs> <nprocs>  ->  echoes the --mem-per-cpu to request, e.g. "2G"
+#
+# The flat 1G in run_enceladus.sh's #SBATCH header was sized for ~60k DoF per
+# core. Measured peak RSS per rank (sacct MaxRSS, 2026-09-30 scaling test,
+# L/R 40 mesh, 24.0M DoF), always on RANK 0:
+#     100k DoF/core  630 MB      149k  666 MB      198k  860 MB  (84% of 1G!)
+# and 61 ranks (394k/core) was OOM-killed at 1G. Fits, to ~10%:
+#     peak = 0.20 GB + 2.35 GB per 1M DoF on the rank + 8 B x total DoF
+# where the last term is rank 0 holding the full field vector while PETSc reads
+# or writes a snapshot through it (0.19 GB at L/R 40, 0.77 GB at L/R 80).
+# Requested = 1.5 x peak, rounded UP to whole GB, never below 1G. Memory is not
+# billed on Resnick (per-core-hour only), so the margin is free.
+# MEM_PER_CPU=<N>G overrides.
+# ---------------------------------------------------------------------------
+mem_per_cpu() {
+    local total="$1" np="$2"
+    if [[ -n "${MEM_PER_CPU:-}" ]]; then echo "$MEM_PER_CPU"; return; fi
+    awk -v N="$total" -v P="$np" 'BEGIN{
+        D = N / (P > 0 ? P : 1)
+        peak = 0.20 + 2.35e-6 * D + 8e-9 * N
+        g = int(1.5 * peak); if (g < 1.5 * peak) g++
+        if (g < 1) g = 1
+        printf "%dG\n", g }'
+}
+
+# ---------------------------------------------------------------------------
 # plan_alloc <total_ranks>  ->  echoes "<nodes> <tasks_per_node>"
 #
 # The naive plan (nodes = ceil(ranks/NTASKS_PER_NODE), tasks-per-node fixed at
