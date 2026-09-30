@@ -120,7 +120,8 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
 import pplib                                                # noqa: E402
 from pplib import read_vts, step_times, opening_step                      # noqa: E402
-from plot_keff import load, DAY, C_XX, C_YY, C_ISO           # noqa: E402
+from plot_keff import (load, DAY, C_XX, C_YY, C_ISO,           # noqa: E402
+                       LS_XX, LS_YY, LS_ISO)
 from make_neck_movie import (SIGMA_SCALE, ice_alpha_cmap,   # noqa: E402
                              centered_cmap, sigma_ticks)
 
@@ -257,11 +258,17 @@ def _scalebar(ax, XX, YY):
 
 def _curve(ax, x, ys, keys):
     """k series, from the first measured sample to the last."""
-    lw = {"kxx": 1.0, "kyy": 1.0, "kiso": 1.8}
+    # Dashed / dotted / solid, as plot_keff.py: normalized, the three often
+    # coincide, and the dash pattern keeps each visible.
+    lw = {"kxx": 1.1, "kyy": 1.3, "kiso": 1.8}
     col = {"kxx": C_XX, "kyy": C_YY, "kiso": C_ISO}
+    ls = {"kxx": LS_XX, "kyy": LS_YY, "kiso": LS_ISO}
     lab = {"kxx": r"$k_{xx}$", "kyy": r"$k_{yy}$", "kiso": r"$k_\mathrm{iso}$"}
     for key in keys:
-        ax.plot(x, ys[key], "-", lw=lw[key], color=col[key], zorder=2, label=lab[key])
+        # k_iso UNDER the others: where they coincide, the dashes show on it.
+        ax.plot(x, ys[key], ls=ls[key], lw=lw[key], color=col[key],
+                zorder={"kiso": 2, "kyy": 3, "kxx": 4}[key],
+                label=lab[key], dash_capstyle="round")
     ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3, pad=2)
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
@@ -451,7 +458,7 @@ def build(kind, snaps, x, ys, keys, norm, vapcm, icecm, sig_extend, a):
         where = dict(loc="lower left", bbox_to_anchor=(0.05, f0 + 0.01))
     else:
         where = dict(loc="lower left", bbox_to_anchor=(0.02, f0 + 0.01))
-    ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.4, ncol=len(keys),
+    ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=2.6, ncol=len(keys),
               columnspacing=1.0, handletextpad=0.5,
               **where)
     if kind == "ssa":
@@ -531,7 +538,7 @@ def _marked_panel(ax, kind, snaps, x, ys, keys, a):
         _mark(ax, x[row], ymark[row], LETTERS[i])
     if kind == "time":
         # The curve rises left to right, so the lower right is empty.
-        ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=1.4,
+        ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=2.6,
                   ncol=len(keys), columnspacing=1.0, handletextpad=0.5,
                   loc="lower right")
         ax.set_xlabel(a.xlabel_time or DEFAULTS["xlabel_time"], fontsize=FS,

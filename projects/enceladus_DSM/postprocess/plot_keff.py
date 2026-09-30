@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """plot_keff.py — effective thermal conductivity vs time and vs SSA.
 
-    python3 plot_keff.py --dir <run> [--save-dir <dir>] [--baseline-days 1]
+    python3 plot_keff.py --dir <run> [--save-dir <dir>]
 
 Writes four figures under <dir>/plots/keff/ (or --save-dir):
 
@@ -10,23 +10,32 @@ Writes four figures under <dir>/plots/keff/ (or --save-dir):
     absolute/keff_offdiag_time.png
                                k_xy and k_yx vs time, and |k_xy| relative to
                                k_xx and k_yy -- a check that they are small
-    normalized/keff_time.png   k / k_b  vs  t / tau_sub
-    normalized/keff_ssa.png    k / k_b  vs  SSA / SSA_b
+    normalized/keff_time.png   k_eff / k_eff,0  vs  t / tau_sub
+    normalized/keff_ssa.png    k_eff / k_eff,0  vs  SSA / SSA_0
 
-NORMALIZATION. k and SSA are divided by their value AT the baseline time,
-interpolated to t = 11 tau_sub (--baseline-tau; = 1 d at -20 C, the pilot's
-reference, and the compare_keff.py convention), not at t = 0: t = 0 is the
-unrelaxed initial condition (below). Each component is divided by its own
-baseline value, so k_xx/k_xx,b, k_yy/k_yy,b and k_iso/k_iso,b all start at 1
-and the plot shows the relative rise. Pass --baseline-days 0 to normalize by
-the t = 0 values instead.
+THE OPENING SAMPLE IS t = 0, the same rule as plot_keff_snapshots.py and the
+movies (pplib.opening_step): the first k_eff sample with 1 s <= t <= 1 h. By
+1 s the vapour field has relaxed onto the ice geometry; the IC itself (t = 0)
+still carries a uniform vapour field. Samples before it are not drawn, and
+nothing after it is greyed out: the fast early rise as the packing relaxes is
+data, explained in the manuscript rather than annotated on the figure.
+
+NORMALIZATION. Each quantity is divided by its own MEASURED value at that
+opening sample -- k_xx by k_xx,0, k_yy by k_yy,0, k_iso by k_iso,0, SSA by
+SSA_0 -- never by an interpolated one. (Until 2026-09-30 this divided by values
+interpolated to t = 11 tau_sub, labelled "b".) Every curve runs from the
+opening sample to the last one; nothing is extrapolated.
+
+LINES. k_xx dashed, k_yy dotted, k_iso solid, in one cool family (below):
+normalized, the three often lie on top of one another, and the dash pattern
+is what keeps all three visible.
 
 Time has no initial value to divide by, so it is made dimensionless with
 tau_sub, the solver's interface-kinetic timescale (logged in outp.txt). It is
 temperature-dependent, so t/tau_sub is the natural axis for putting different
 temperatures on one plot. Whether it actually collapses them is something the
 plot shows; it is not assumed. With no tau_sub in outp.txt the normalized
-time axis falls back to t / t_b.
+time axis falls back to days.
 
 WHICH CSV. An in-line run writes k_eff.csv. A -keff_replay writes
 k_eff_<law>.csv beside it, and between 2026-09-23 and 2026-09-26 in-line runs
@@ -46,11 +55,6 @@ studies/keff_sintering/analyze_pilot.py uses. The ice fraction is conserved
 (phi_bar is constant to seven figures in every pilot run), so SSA per unit ice
 area is this divided by a constant. The shape of k_eff(SSA) does not depend on
 which convention is used.
-
-THE FIRST DAY IS GREYED OUT. The initial condition is an analytic sum of tanh
-profiles, not an equilibrated phase field, so the first hours are the field
-relaxing, not sintering (CAMPAIGN.md "The baseline is t = 1 day"). Those
-samples are drawn in grey on every figure and never used as a baseline.
 """
 from __future__ import annotations
 
@@ -65,7 +69,7 @@ import matplotlib
 matplotlib.use("Agg")          # headless on HPC
 import matplotlib.pyplot as plt
 
-from pplib import load_ssa, opt_float, read_opts
+from pplib import load_ssa, opening_step, opt_float, read_opts
 
 INTERFACE_FACTOR = 6.0          # int phi^2(1-phi)^2 dx = eps/6; see plot_ssa.py
 DAY = 86400.0
@@ -80,7 +84,7 @@ DAY = 86400.0
 # identified by colour alone -- the legend names it.
 C_XX, C_YY = "#55ada3", "#3e6b96"
 C_ISO = "#352949"
-C_RELAX = "#b8b8b8"             # IC-relaxation samples
+LS_XX, LS_YY, LS_ISO = (0, (5, 2.5)), (0, (1, 1.8)), "-"   # dashed, dotted, solid
 
 
 def find_keff_csv(run: Path):
@@ -140,6 +144,22 @@ def load(run: Path):
             "ssa": s, "law": law, "csv": kf.name}
 
 
+def opening_index(d):
+    """Index of the opening sample: the first with 1 s <= t <= 1 h
+    (pplib.opening_step), else the first with t > 0, else 0."""
+    op = opening_step(d["step"], d["t"])
+    if op is not None:
+        return int(np.flatnonzero(d["step"] == op)[0])
+    pos = np.flatnonzero(d["t"] > 0)
+    return int(pos[0]) if pos.size else 0
+
+
+def from_opening(d):
+    """d with every sample before the opening one dropped."""
+    i0 = opening_index(d)
+    return {k: (v[i0:] if isinstance(v, np.ndarray) else v) for k, v in d.items()}
+
+
 def read_tau_sub(run: Path):
     """tau_sub [s] from outp.txt's parameter table, or None."""
     outp = run / "outp.txt"
@@ -153,30 +173,23 @@ def read_tau_sub(run: Path):
     return None
 
 
-SERIES = (("kxx", C_XX, 1.6, r"$k_{xx}$"),
-          ("kyy", C_YY, 1.6, r"$k_{yy}$"),
-          ("kiso", C_ISO, 2.4, r"$k_\mathrm{iso}$"))
+SERIES = (("kxx", C_XX, LS_XX, 1.6, r"$k_{xx}$"),
+          ("kyy", C_YY, LS_YY, 1.8, r"$k_{yy}$"),
+          ("kiso", C_ISO, LS_ISO, 2.2, r"$k_\mathrm{iso}$"))
 
 
-def _series(ax, x, ys, relax, xlabel, ylabel, direct_labels=True):
-    live = ~relax
-    for key, col, lw, lab in SERIES:
+def _series(ax, x, ys, xlabel, ylabel, direct_labels=True):
+    """Every sample from the opening one to the last, measured pairs only."""
+    for key, col, ls, lw, lab in SERIES:
         y = ys[key]
-        if relax.any():
-            # Run the grey segment through the first live sample so the two
-            # join. Every point on it is a measured sample, matched to its
-            # SSA row by step; nothing is interpolated or extrapolated.
-            grey = relax.copy()
-            if live.any():
-                grey[int(np.argmax(live))] = True
-            ax.plot(x[grey], y[grey], "-", color=C_RELAX, lw=lw, zorder=1,
-                    label="first day, IC relaxation (measured)" if key == "kiso" else None)
-        ax.plot(x[live], y[live], "-", color=col, lw=lw, label=lab, zorder=2)
-        # Direct label at the right-hand end of each live curve -- only where
-        # that end is the late-time end, i.e. against time. Against SSA the
-        # right-hand end of the live curve abuts the grey relaxation segment.
-        if live.any() and direct_labels:
-            ax.annotate(lab, (x[live][-1], y[live][-1]), xytext=(6, 0),
+        # k_iso UNDER the others: where they coincide, the dashes show on it.
+        ax.plot(x, y, color=col, ls=ls, lw=lw, label=lab,
+                zorder={"kiso": 2, "kyy": 3, "kxx": 4}[key],
+                dash_capstyle="round")
+        # Direct label at the late-time end -- against time only; against SSA
+        # the right-hand end is t = 0.
+        if direct_labels:
+            ax.annotate(lab, (x[-1], y[-1]), xytext=(6, 0),
                         textcoords="offset points", va="center", fontsize=12,
                         color="#333333")
     ax.set_xlabel(xlabel, fontsize=14)
@@ -188,11 +201,7 @@ def _series(ax, x, ys, relax, xlabel, ylabel, direct_labels=True):
 
 
 def _legend(ax, loc):
-    """Legend with the k series first and the grey relaxation entry last."""
-    h, l = ax.get_legend_handles_labels()
-    order = sorted(range(len(l)), key=lambda i: "relaxation" in l[i])
-    ax.legend([h[i] for i in order], [l[i] for i in order],
-              fontsize=11, loc=loc, frameon=False)
+    ax.legend(fontsize=11, loc=loc, frameon=False, handlelength=2.6)
 
 
 def _time_arrow(ax):
@@ -216,13 +225,6 @@ def main(argv=None):
     p.add_argument("--dir", default=".", help="run directory (default: cwd)")
     p.add_argument("--save-dir", default=None,
                    help="root for absolute/ and normalized/ (default: <dir>/plots/keff)")
-    p.add_argument("--baseline-tau", type=float, default=86400.0 / 7822.3,
-                   help="baseline as t/tau_sub (default 11.05 = 1 d at -20 C). "
-                        "Samples before it are IC relaxation, drawn grey; values "
-                        "interpolated to it are the normalization baseline")
-    p.add_argument("--baseline-days", type=float, default=None,
-                   help="baseline in days instead (also the fallback, 1 d, when "
-                        "outp.txt has no tau_sub)")
     a = p.parse_args(argv)
 
     run = Path(a.dir)
@@ -236,53 +238,35 @@ def main(argv=None):
     os.makedirs(out_abs, exist_ok=True)
     os.makedirs(out_norm, exist_ok=True)
 
-    # Baseline in units of tau_sub when the run logs it (11 = 1 d at -20 C),
-    # so every temperature is normalized at the same stage of sintering -- the
-    # compare_keff.py convention. 1 d at -40 C is only 1.4 tau_sub, still
-    # inside the IC relaxation, and read as a +40% rise. Days is the fallback.
-    tau_b = read_tau_sub(run)
-    t_base = (a.baseline_tau * tau_b if (tau_b and a.baseline_days is None)
-              else (a.baseline_days if a.baseline_days is not None else 1.0) * DAY)
-    b_days = t_base / DAY
-    relax = d["t"] < t_base
-    if relax.all():
-        print(f"  run ends before the {b_days:.3g} d baseline; "
-              "normalizing by the last sample")
-    ib = int(np.argmax(~relax)) if not relax.all() else len(relax) - 1
-    # The baseline is the value AT t_b, interpolated -- not the first sample
-    # past it. With k_eff every 5 steps the first sample past 1 d lands at
-    # ~1.4 d at -20 C, which understated the rise by ~3 points and disagreed
-    # with compare_keff.py (2026-09-29).
-    tb = t_base if not relax.all() else d["t"][-1]
-    base = {key: float(np.interp(tb, d["t"], d[key])) for key in ("kxx", "kyy", "kiso", "ssa")}
+    d = from_opening(d)
+    base = {key: float(d[key][0]) for key in ("kxx", "kyy", "kiso", "ssa")}
+    t0 = float(d["t"][0])
     tday = d["t"] / DAY
     rise = (d["kiso"][-1] / base["kiso"] - 1) * 100
     note = (f"{len(d['t'])} samples ({d['csv']}, {d['law']} law); "
-            f"grey = before {b_days:.3g} d, IC relaxation")
+            f"opening sample t_0 = {t0:.4g} s (step {d['step'][0]})")
     k_label = r"$k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]"
     written = []
 
     # --- absolute ------------------------------------------------------------
     fig, ax = plt.subplots(figsize=(10, 6))
-    if relax.any():
-        ax.axvspan(0, b_days, color="#f0f0f0", zorder=0, lw=0)
-    _series(ax, tday, d, relax, "Time [d]", k_label)
+    _series(ax, tday, d, "Time [d]", k_label)
     _legend(ax, "lower right")
     ax.set_title(f"Effective thermal conductivity vs time\n"
                  f"$k_\\mathrm{{iso}}$ {base['kiso']:.4f} → {d['kiso'][-1]:.4f} "
-                 f"({rise:+.1f}% from t = {tb / DAY:.2f} d)", fontsize=15)
+                 f"({rise:+.1f}% from t$_0$ = {t0:.4g} s)", fontsize=15)
     _save(fig, out_abs / "keff_time.png", note)
     written.append(out_abs / "keff_time.png")
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    _series(ax, d["ssa"], d, relax,
+    _series(ax, d["ssa"], d,
             r"SSA  [m$^{-1}$]  (interface length per cell area)", k_label,
             direct_labels=False)
     _legend(ax, "upper right")
     _time_arrow(ax)
     ax.set_title(f"Effective thermal conductivity vs specific surface area\n"
                  f"SSA {base['ssa']:.4g} → {d['ssa'][-1]:.4g} m$^{{-1}}$ "
-                 f"from t = {tb / DAY:.2f} d", fontsize=15)
+                 f"from t$_0$ = {t0:.4g} s", fontsize=15)
     _save(fig, out_abs / "keff_ssa.png", note)
     written.append(out_abs / "keff_ssa.png")
 
@@ -294,8 +278,6 @@ def main(argv=None):
     # so the asymmetry is printed as a check on the corrector solve.
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
     for ax in (ax1, ax2):
-        if relax.any():
-            ax.axvspan(0, b_days, color="#f0f0f0", zorder=0, lw=0)
         ax.grid(True, alpha=0.25, lw=0.6)
         ax.tick_params(labelsize=11)
         for sp in ("top", "right"):
@@ -307,8 +289,8 @@ def main(argv=None):
     ax1.legend(fontsize=11, loc="best", frameon=False)
     r_xx = np.abs(d["kxy"]) / d["kxx"] * 100
     r_yy = np.abs(d["kxy"]) / d["kyy"] * 100
-    ax2.plot(tday, r_xx, "-", color=C_XX, lw=1.8, label=r"$|k_{xy}|\,/\,k_{xx}$")
-    ax2.plot(tday, r_yy, "-", color=C_YY, lw=1.8, label=r"$|k_{xy}|\,/\,k_{yy}$")
+    ax2.plot(tday, r_xx, color=C_XX, ls=LS_XX, lw=1.8, label=r"$|k_{xy}|\,/\,k_{xx}$")
+    ax2.plot(tday, r_yy, color=C_YY, ls=LS_YY, lw=2.0, label=r"$|k_{xy}|\,/\,k_{yy}$")
     ax2.set_ylim(bottom=0)
     ax2.set_ylabel("relative to diagonal  [%]", fontsize=13)
     ax2.set_xlabel("Time [d]", fontsize=14)
@@ -331,18 +313,17 @@ def main(argv=None):
         tn, t_label, t_ref = d["t"] / tau, r"$t\,/\,\tau_\mathrm{sub}$", \
             f"$\\tau_\\mathrm{{sub}}$ = {tau:.4g} s"
     else:
-        tn, t_label, t_ref = d["t"] / tb, r"$t\,/\,t_b$", "no tau_sub in outp.txt"
-    k_nlabel = r"$k\,/\,k_b$"
-    bnote = (f"baseline b = values interpolated to t_b = {tb / DAY:.2f} d; {t_ref}")
+        tn, t_label, t_ref = tday, "Time [d]", "no tau_sub in outp.txt"
+    k_nlabel = r"$k_\mathrm{eff}\,/\,k_{\mathrm{eff},0}$"
+    bnote = f"subscript 0 = the opening sample, t_0 = {t0:.4g} s; {t_ref}"
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    if relax.any():
-        ax.axvspan(0, (tb / tau) if tau else 1.0, color="#f0f0f0", zorder=0, lw=0)
     ax.axhline(1.0, color="#999999", lw=0.8, ls=":")
-    _series(ax, tn, kn, relax, t_label, k_nlabel)
+    # No direct labels: normalized, the three curves often coincide.
+    _series(ax, tn, kn, t_label, k_nlabel, direct_labels=False)
     _legend(ax, "lower right")
     ax.set_title(f"Normalized effective thermal conductivity vs normalized time\n"
-                 f"$k_\\mathrm{{iso}}/k_b$ → {kn['kiso'][-1]:.3f}  at  "
+                 f"$k_\\mathrm{{iso}}/k_{{\\mathrm{{iso}},0}}$ → {kn['kiso'][-1]:.3f}  at  "
                  f"{t_label} = {tn[-1]:.4g}", fontsize=15)
     _save(fig, out_norm / "keff_time.png", note + "\n" + bnote)
     written.append(out_norm / "keff_time.png")
@@ -350,17 +331,17 @@ def main(argv=None):
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.axhline(1.0, color="#999999", lw=0.8, ls=":")
     ax.axvline(1.0, color="#999999", lw=0.8, ls=":")
-    _series(ax, sn, kn, relax, r"SSA$\,/\,$SSA$_b$", k_nlabel, direct_labels=False)
+    _series(ax, sn, kn, r"SSA$\,/\,$SSA$_0$", k_nlabel, direct_labels=False)
     _legend(ax, "upper right")
     _time_arrow(ax)
     ax.set_title(f"Normalized effective thermal conductivity vs normalized SSA\n"
-                 f"SSA/SSA$_b$ → {sn[-1]:.3f},  $k_\\mathrm{{iso}}/k_b$ → "
+                 f"SSA/SSA$_0$ → {sn[-1]:.3f},  $k_\\mathrm{{iso}}/k_{{\\mathrm{{iso}},0}}$ → "
                  f"{kn['kiso'][-1]:.3f}", fontsize=15)
     _save(fig, out_norm / "keff_ssa.png", note + "\n" + bnote)
     written.append(out_norm / "keff_ssa.png")
 
-    print(f"  k_eff: {len(d['t'])} samples from {d['csv']} ({d['law']}); baseline "
-          f"t_b = {tb / DAY:.2f} d; k_iso rise {rise:+.1f}%; "
+    print(f"  k_eff: {len(d['t'])} samples from {d['csv']} ({d['law']}); opening "
+          f"sample t_0 = {t0:.4g} s; k_iso rise {rise:+.1f}%; "
           f"tau_sub = {tau if tau else 'n/a'} s")
     for w in written:
         print(f"  wrote {w}")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """compare_keff.py — overlay k_eff curves across temperatures and porosities.
 
-    python3 compare_keff.py <root> [<root> ...] [--out <dir>] [--baseline-days 1]
+    python3 compare_keff.py <root> [<root> ...] [--out <dir>]
 
 Finds every run directory under the roots that holds a k_eff CSV, reads its
 porosity, temperature and seed from the directory name
@@ -12,8 +12,8 @@ porosity, temperature and seed from the directory name
 
 each with absolute/ and normalized/ versions of
 
-    keff_time.png    k_iso against time        (normalized: k/k_b vs t/tau_sub)
-    keff_ssa.png     k_iso against SSA         (normalized: k/k_b vs SSA/SSA_b)
+    keff_time.png    k_iso against time        (normalized: k/k_0 vs t/tau_sub)
+    keff_ssa.png     k_iso against SSA         (normalized: k/k_0 vs SSA/SSA_0)
 
 A group is drawn only when it holds at least two values of the varied
 parameter; the script says which groups it skipped and why.
@@ -23,19 +23,22 @@ around it is the seed min..max, so the spread between conditions can be read
 against the spread within one. The mean is taken at common times (time plots),
 and against SSA the mean k is plotted at the mean SSA of those same times --
 both coordinates averaged at matched t, so no seed's SSA axis is resampled.
+The common times run only over the span EVERY seed covers, from the latest
+opening sample to the earliest last sample: seeds are interpolated between
+their own samples, never extrapolated past either end.
 
-BASELINE, IN UNITS OF tau_sub. Not t = 0, because the first hours are the
-initial condition relaxing (plot_keff.py). And not a fixed TIME either: on the
-2026-09-25 warm-end batch a run reaches a given SSA exactly tau_sub(T)/tau_sub(-20)
-times sooner (1.59x at -15 C, 2.47-2.50x at -10 C, every seed), so 1 d is
-11 tau_sub at -20 C but 27 at -10 C -- a later stage of sintering. Normalizing
-there offset the curves by the baseline, not by the physics. Every run is
-therefore normalized at the SAME t/tau_sub, by default 11 -- which is 1 d at
--20 C, the reference used since the pilot. The IC relaxation is the same
-dynamics, so it scales the same way: it takes ~8 h at -20 C, i.e. ~3.7 tau_sub,
-at every temperature. (The earlier default, "1 d at the slowest condition",
-put the baseline at 1.4 tau_sub once -40 C joined -- inside the relaxation.)
-Pass --baseline-tau to change it.
+THE OPENING SAMPLE IS t = 0 and the normalization, as in plot_keff.py and
+plot_keff_snapshots.py: each run opens on its first k_eff sample with
+1 s <= t <= 1 h, and is divided by its own measured values there (k_0,
+SSA_0). Everything after it is drawn, the fast early relaxation included.
+(Until 2026-09-30 every run was divided by values interpolated to
+t = 11 tau_sub, labelled "b", and the earlier part was drawn faded.)
+
+COLOUR. Ordered parameters, so sequential maps sampled light -> dark with
+the value: temperature on cmocean `thermal` (0.15-0.85, so neither the
+near-black nor the pale-yellow end is used), porosity on an amp map that runs
+to black instead of white. Single-run figures use a cool map instead
+(plot_keff.py), so neither reads as the other.
 """
 from __future__ import annotations
 
@@ -52,14 +55,15 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from plot_keff import DAY, load, read_tau_sub          # noqa: E402
+from plot_keff import DAY, from_opening, load, read_tau_sub    # noqa: E402
+import cmocean                                                  # noqa: E402
+from matplotlib.colors import LinearSegmentedColormap           # noqa: E402
 
-# One hue per varied parameter, light -> dark with the parameter value: these
-# are ordered magnitudes (sequential), not identities. The light end is kept
-# at 0.45 so the palest curve still reads on white.
-CMAP = {"T": "Oranges", "phi": "Blues"}
-# 1 d at -20 C in units of tau_sub(-20 C) = 7822.3 s: the pilot's baseline.
-BASELINE_TAU = 86400.0 / 7822.3
+# Sequential, one map per varied parameter; SPAN is the stretch of it used.
+_AMP = cmocean.cm.amp
+CMAP = {"T": (cmocean.cm.thermal, (0.15, 0.85)),
+        "phi": (LinearSegmentedColormap.from_list(
+            "amp_black", ["#0b0b0b", _AMP(0.85), _AMP(0.60), _AMP(0.38)]), (0.0, 1.0))}
 N_GRID = 400
 
 
@@ -87,27 +91,27 @@ def discover(roots):
             data = load(d)
             if data is None:
                 continue
+            data = from_opening(data)
             data.update(dir=d, phi=meta[0], T=meta[1], seed=meta[2],
                         tau=read_tau_sub(d))
             runs.append(data)
     return runs
 
 
-def condition_mean(runs, baseline_tau):
-    """Seed-mean curves for one condition on a common log-spaced time grid."""
+def condition_mean(runs):
+    """Seed-mean curves for one condition on a common log-spaced time grid,
+    over the span every seed covers. Each seed is normalized by its own
+    opening sample before averaging."""
     taus = {r["tau"] for r in runs}
     tau = taus.pop() if len(taus) == 1 else None
-    baseline_s = baseline_tau * tau
+    t_start = max(r["t"][0] for r in runs)
     t_end = min(r["t"][-1] for r in runs)
-    t_first = max(r["t"][1] for r in runs)      # skip t = 0 for the log grid
-    tg = np.unique(np.concatenate([[0.0], np.geomspace(t_first, t_end, N_GRID),
-                                   [baseline_s]]))
-    tg = tg[tg <= t_end]
+    tg = np.geomspace(t_start, t_end, N_GRID)
     K = np.array([np.interp(tg, r["t"], r["kiso"]) for r in runs])
     S = np.array([np.interp(tg, r["t"], r["ssa"]) for r in runs])
-    ib = int(np.searchsorted(tg, baseline_s))
-    Kn, Sn = K / K[:, [ib]], S / S[:, [ib]]
-    return dict(t=tg, ib=ib, tau=tau, n=len(runs),
+    Kn = np.array([np.interp(tg, r["t"], r["kiso"] / r["kiso"][0]) for r in runs])
+    Sn = np.array([np.interp(tg, r["t"], r["ssa"] / r["ssa"][0]) for r in runs])
+    return dict(t=tg, tau=tau, n=len(runs),
                 k=K.mean(0), klo=K.min(0), khi=K.max(0), s=S.mean(0),
                 kn=Kn.mean(0), knlo=Kn.min(0), knhi=Kn.max(0), sn=Sn.mean(0))
 
@@ -121,23 +125,22 @@ def _style(ax, xlabel, ylabel):
         ax.spines[sp].set_visible(False)
 
 
-def _curve(ax, x, y, lo, hi, ib, color, label, band=True):
-    """Live part solid with a seed band; the relaxation part thin and faded."""
-    ax.plot(x[:ib + 1], y[:ib + 1], "-", color=color, lw=1.0, alpha=0.45)
-    ax.plot(x[ib:], y[ib:], "-", color=color, lw=2.2, label=label)
+def _curve(ax, x, y, lo, hi, color, label, band=True):
+    """The seed mean, solid, over the span every seed covers, with its band."""
+    ax.plot(x, y, "-", color=color, lw=2.2, label=label)
     if band:
-        ax.fill_between(x[ib:], lo[ib:], hi[ib:], color=color, alpha=0.15, lw=0)
+        ax.fill_between(x, lo, hi, color=color, alpha=0.15, lw=0)
 
 
-def draw_group(conds, vary, fixed_txt, out: Path, baseline_tau):
+def draw_group(conds, vary, fixed_txt, out: Path):
     """conds: {value: condition_mean dict}. vary: 'T' or 'phi'."""
     vals = sorted(conds)
-    cmap = plt.get_cmap(CMAP[vary])
-    col = {v: cmap(0.45 + 0.5 * i / max(1, len(vals) - 1)) for i, v in enumerate(vals)}
+    cmap, (a, b) = CMAP[vary]
+    col = {v: cmap(a + (b - a) * i / max(1, len(vals) - 1)) for i, v in enumerate(vals)}
     lab = (lambda v: f"T = {v} °C") if vary == "T" else (lambda v: f"φ = {v:g}")
     nseed = sorted({c["n"] for c in conds.values()})
     note = (f"line = mean over {'/'.join(map(str, nseed))} seeds, band = seed min–max; "
-            f"thin faded segment = before t = {baseline_tau:.3g} tau_sub (IC relaxation)")
+            f"t = 0 and subscript 0 = each run's opening sample (first with t >= 1 s)")
     k_lab = r"$k_\mathrm{iso}$  [W m$^{-1}$ K$^{-1}$]"
     written = []
 
@@ -153,7 +156,7 @@ def draw_group(conds, vary, fixed_txt, out: Path, baseline_tau):
     fig, ax = plt.subplots(figsize=(10, 6))
     for v in vals:
         c = conds[v]
-        _curve(ax, c["t"] / DAY, c["k"], c["klo"], c["khi"], c["ib"], col[v], lab(v))
+        _curve(ax, c["t"] / DAY, c["k"], c["klo"], c["khi"], col[v], lab(v))
     _style(ax, "Time [d]", k_lab)
     ax.legend(fontsize=11, loc="lower right", frameon=False)
     ax.set_title(f"$k_\\mathrm{{iso}}$ vs time, {fixed_txt}", fontsize=15)
@@ -163,7 +166,7 @@ def draw_group(conds, vary, fixed_txt, out: Path, baseline_tau):
     fig, ax = plt.subplots(figsize=(10, 6))
     for v in vals:
         c = conds[v]
-        _curve(ax, c["s"], c["k"], c["klo"], c["khi"], c["ib"], col[v], lab(v))
+        _curve(ax, c["s"], c["k"], c["klo"], c["khi"], col[v], lab(v))
     _style(ax, r"SSA  [m$^{-1}$]  (interface length per cell area)", k_lab)
     ax.legend(fontsize=11, loc="upper right", frameon=False)
     ax.set_title(f"$k_\\mathrm{{iso}}$ vs SSA, {fixed_txt}  (time runs right to left)",
@@ -177,28 +180,27 @@ def draw_group(conds, vary, fixed_txt, out: Path, baseline_tau):
     for v in vals:
         c = conds[v]
         x = c["t"] / c["tau"] if use_tau else c["t"] / DAY
-        _curve(ax, x, c["kn"], c["knlo"], c["knhi"], c["ib"], col[v], lab(v))
-    _style(ax, r"$t\,/\,\tau_\mathrm{sub}$" if use_tau else "Time [d]", r"$k\,/\,k_b$")
+        _curve(ax, x, c["kn"], c["knlo"], c["knhi"], col[v], lab(v))
+    _style(ax, r"$t\,/\,\tau_\mathrm{sub}$" if use_tau else "Time [d]",
+           r"$k_\mathrm{iso}\,/\,k_{\mathrm{iso},0}$")
     ax.legend(fontsize=11, loc="lower right", frameon=False)
     ax.set_title(f"Normalized $k_\\mathrm{{iso}}$ vs normalized time, {fixed_txt}",
                  fontsize=15)
     save(fig, out / "normalized" / "keff_time.png",
-         f"\nb = t = {baseline_tau:.3g} tau_sub for every run; each curve normalized "
-         f"by its own seeds' baselines" + ("" if use_tau else "; no tau_sub, time in days"))
+         "" if use_tau else "; no tau_sub, time in days")
 
-    # normalized vs SSA/SSA_b
+    # normalized vs SSA/SSA_0
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.axhline(1.0, color="#999999", lw=0.8, ls=":")
     ax.axvline(1.0, color="#999999", lw=0.8, ls=":")
     for v in vals:
         c = conds[v]
-        _curve(ax, c["sn"], c["kn"], c["knlo"], c["knhi"], c["ib"], col[v], lab(v))
-    _style(ax, r"SSA$\,/\,$SSA$_b$", r"$k\,/\,k_b$")
+        _curve(ax, c["sn"], c["kn"], c["knlo"], c["knhi"], col[v], lab(v))
+    _style(ax, r"SSA$\,/\,$SSA$_0$", r"$k_\mathrm{iso}\,/\,k_{\mathrm{iso},0}$")
     ax.legend(fontsize=11, loc="upper right", frameon=False)
     ax.set_title(f"Normalized $k_\\mathrm{{iso}}$ vs normalized SSA, {fixed_txt}",
                  fontsize=15)
-    save(fig, out / "normalized" / "keff_ssa.png",
-         f"\nb = t = {baseline_tau:.3g} tau_sub for every run")
+    save(fig, out / "normalized" / "keff_ssa.png")
     return written
 
 
@@ -208,9 +210,6 @@ def main(argv=None):
     p.add_argument("roots", nargs="+", type=Path)
     p.add_argument("--out", type=Path, default=None,
                    help="output directory (default: <first root>/compare)")
-    p.add_argument("--baseline-tau", type=float, default=BASELINE_TAU,
-                   help=f"baseline as t/tau_sub, the same for every run "
-                        f"(default {BASELINE_TAU:.2f} = 1 d at -20 C)")
     a = p.parse_args(argv)
 
     runs = discover(a.roots)
@@ -218,17 +217,12 @@ def main(argv=None):
         print("no runs with a k_eff CSV and phi/T/seed in the name; nothing to compare")
         return 0
     out = a.out or a.roots[0] / "compare"
-    if any(r["tau"] is None for r in runs):
-        print("  some runs have no tau_sub in outp.txt; cannot place a common baseline")
-        return 1
-    base_tau = a.baseline_tau
-    print(f"  baseline at t/tau_sub = {base_tau:.3g} for every run")
     by = defaultdict(list)
     for r in runs:
         by[(r["phi"], r["T"])].append(r)
     print(f"  {len(runs)} runs in {len(by)} conditions: " +
           ", ".join(f"phi {k[0]:g} T {k[1]} ({len(v)} seeds)" for k, v in sorted(by.items())))
-    conds = {k: condition_mean(v, base_tau) for k, v in by.items()}
+    conds = {k: condition_mean(v) for k, v in by.items()}
 
     written = []
     for phi in sorted({k[0] for k in conds}):
@@ -236,15 +230,13 @@ def main(argv=None):
         if len(g) < 2:
             print(f"  skip by_phi/phi{phi:g}: only one temperature")
             continue
-        written += draw_group(g, "T", f"φ = {phi:g}", out / "by_phi" / f"phi{phi:g}",
-                              base_tau)
+        written += draw_group(g, "T", f"φ = {phi:g}", out / "by_phi" / f"phi{phi:g}")
     for T in sorted({k[1] for k in conds}):
         g = {ph: c for (ph, TT), c in conds.items() if TT == T}
         if len(g) < 2:
             print(f"  skip by_T/T{T}: only one porosity")
             continue
-        written += draw_group(g, "phi", f"T = {T} °C", out / "by_T" / f"T{T}",
-                              base_tau)
+        written += draw_group(g, "phi", f"T = {T} °C", out / "by_T" / f"T{T}")
     for w in written:
         print(f"  wrote {w}")
     return 0

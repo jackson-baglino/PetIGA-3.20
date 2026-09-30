@@ -159,6 +159,17 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
 
 ## Done (most recent first)
 
+- 2026-09-30 — One normalization for every k_eff figure: `plot_keff.py`,
+  `compare_keff.py` and `plot_keff_snapshots.py` open on the first k_eff
+  sample with t >= 1 s, call it t = 0, and divide by its measured values
+  (k_eff,0, SSA_0). The 11 τ_sub interpolated baseline ("b") and the greyed
+  relaxation are gone; seed means cover only the span every seed does.
+  Opening at 1.7 s vs the snapshots' 126 s differs by 0.12 % in k_iso.
+  Colours: single runs cmocean `deep` (k_xx dashed, k_yy dotted, k_iso
+  solid), temperature `thermal`, porosity amp-to-black.
+  `coefficient_fix/compare_laws.py` keeps its own `--baseline-days` (a study
+  record, not a figure script).
+
 - 2026-09-29 — 3a analysed. Fixed on the way:
   - `health_check.py` keyed runs by seed, so it skipped the same packing at
     other temperatures;
