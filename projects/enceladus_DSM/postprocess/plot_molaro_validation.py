@@ -250,14 +250,12 @@ def load_sections(s, instants, box_um):
 def _neck_panel(ax, series, marks=()):
     """Neck width vs anchored time: model lines, Molaro's points."""
     ax.patch.set_alpha(0.0)
-    ax.axvline(0.0, color="#999999", lw=0.6, ls=":", zorder=0)
-    xmax, ylo, yhi, xmin = 0.0, np.inf, -np.inf, 0.0
+    xmax, ylo, yhi = 0.0, np.inf, -np.inf
     for s in series:
         c = s["color"]
         if s["model"] is not None:
             m = s["model"]
             ax.plot(m["t"], m["w"], "-", lw=1.8, color=c, zorder=2)
-            xmin = min(xmin, float(m["t"][0]))
             vis = m["t"] <= SERIES["T-20"]["window_min"] * 1.08
             ylo, yhi = min(ylo, m["w"][vis].min()), max(yhi, m["w"][vis].max())
         if s["alt"] is not None:
@@ -266,14 +264,15 @@ def _neck_panel(ax, series, marks=()):
                     dash_capstyle="round")
         ax.errorbar(s["td"], s["wd"], yerr=[s["em"], s["ep"]], fmt="o", ms=4.2,
                     mfc="white", mec=c, mew=0.9, ecolor=c, elinewidth=0.7,
-                    capsize=1.8, capthick=0.7, zorder=3)
+                    capsize=1.8, capthick=0.7, zorder=3, clip_on=False)
         xmax = max(xmax, float(s["td"].max()))
         ylo = min(ylo, float((s["wd"] - s["em"]).min()))
         yhi = max(yhi, float((s["wd"] + s["ep"]).max()))
     for x, y, lab in marks:
         _circled(ax, x, y, lab)
-    xpad = 0.03 * (xmax - xmin)
-    ax.set_xlim(xmin - xpad, xmax + 2 * xpad)
+    # The axis starts AT t = 0: nothing precedes Molaro's first measurement,
+    # and the t = 0 points sit on the spine (unclipped, so drawn whole).
+    ax.set_xlim(0.0, 1.06 * xmax)
     ypad = 0.08 * (yhi - ylo)
     ax.set_ylim(ylo - ypad, yhi + ypad)
     ax.xaxis.set_major_locator(MaxNLocator(8, steps=[1, 2, 2.5, 5, 10]))
@@ -384,12 +383,12 @@ def _shrink_panel(ax, series, which, xmax):
             vals.append(g2[which][g2["t"] <= xmax])
         d = s["Dd"]
         ax.plot(d["t"], d[which], "o", ms=4.2, mfc="white", mec=c, mew=0.9,
-                ls="none", zorder=3)
+                ls="none", zorder=3, clip_on=False)
         vals.append(d[which])
     v = np.concatenate(vals)
     pad = 0.08 * (v.max() - v.min())
     ax.set_ylim(v.min() - pad, max(v.max(), 1.0) + pad)
-    ax.set_xlim(-0.03 * xmax, 1.06 * xmax)
+    ax.set_xlim(0.0, 1.06 * xmax)          # starts at t = 0, as the neck figure
     ax.xaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
     ax.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
     ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3, pad=2)
