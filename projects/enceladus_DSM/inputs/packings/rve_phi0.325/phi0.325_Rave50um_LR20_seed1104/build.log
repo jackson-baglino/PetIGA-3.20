@@ -1,0 +1,52 @@
+  gates for target phi=0.325:  max_void_ratio 99.00   local_density_cv 99.000   asymmetry 9900%
+Gravity-style packing: 1.000 x 1.000 mm, target phi=0.325, mean r=50.0 um, sigma_ln=0.5, periodic=xy
+  attempt 1/128 (seed 1104)
+    budget bracket: phi(0.00)=0.6418  phi(1.57)=0.2903  want ~0.3550
+    roll=1.154  skeleton phi=0.3433  +2 fillers -> phi=0.3249  void=1.51  cv=0.298  asym=6%
+    rejected: y-seam contact density 0.71 of interior < 0.76
+  attempt 2/128 (seed 2104)
+    budget bracket: phi(0.00)=0.5000  phi(1.57)=0.2888  want ~0.3550
+    roll=0.712  skeleton phi=0.3582  +4 fillers -> phi=0.3250  void=1.23  cv=0.303  asym=13%
+    rejected: y-seam contact density 0.36 of interior < 0.76
+  attempt 3/128 (seed 3104)
+    budget bracket: phi(0.00)=0.5831  phi(1.57)=0.2644  want ~0.3550
+    roll=0.933  skeleton phi=0.3589  +2 fillers -> phi=0.3250  void=1.57  cv=0.300  asym=9%
+    rejected: solid does not percolate (x=False, y=True)
+  attempt 4/128 (seed 4104)
+    budget bracket: phi(0.00)=0.6041  phi(1.57)=0.2255  want ~0.3550
+    roll=1.276  skeleton phi=0.3564  +4 fillers -> phi=0.3249  void=1.42  cv=0.332  asym=23%
+    rejected: y-seam contact density 0.76 of interior < 0.76
+  attempt 5/128 (seed 5104)
+    budget bracket: phi(0.00)=0.5483  phi(1.57)=0.2677  want ~0.3550
+    roll=0.988  skeleton phi=0.3498  +1 fillers -> phi=0.3250  void=1.37  cv=0.314  asym=10%
+    rejected: y-seam contact density 0.53 of interior < 0.76
+  attempt 6/128 (seed 6104)
+    budget bracket: phi(0.00)=0.6312  phi(1.57)=0.2475  want ~0.3550
+    roll=0.887  skeleton phi=0.3662  +4 fillers -> phi=0.3250  void=1.37  cv=0.332  asym=8%
+    rejected: y-seam contact density 0.36 of interior < 0.76
+  attempt 7/128 (seed 7104)
+    budget bracket: phi(0.00)=0.5978  phi(1.57)=0.2812  want ~0.3550
+    roll=1.374  skeleton phi=0.3660  +6 fillers -> phi=0.3249  void=1.28  cv=0.300  asym=22%
+    rejected: solid does not percolate (x=False, y=True); y-seam contact density 0.67 of interior < 0.76
+  attempt 8/128 (seed 8104)
+    budget bracket: phi(0.00)=0.6107  phi(1.57)=0.2694  want ~0.3550
+    roll=0.982  skeleton phi=0.3526  +1 fillers -> phi=0.3250  void=1.39  cv=0.296  asym=14%
+    rejected: y-seam contact density 0.74 of interior < 0.76
+  attempt 9/128 (seed 9104)
+    budget bracket: phi(0.00)=0.6022  phi(1.57)=0.2705  want ~0.3550
+    roll=0.884  skeleton phi=0.3416  +2 fillers -> phi=0.3250  void=1.35  cv=0.310  asym=4%
+    rejected: solid does not percolate (x=False, y=True)
+  attempt 10/128 (seed 10104)
+    budget bracket: phi(0.00)=0.5591  phi(1.57)=0.2622  want ~0.3550
+    roll=1.207  skeleton phi=0.3533  +6 fillers -> phi=0.3250  void=1.10  cv=0.322  asym=10%
+    ACCEPTED
+
+✅ /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/rve_phi0.325/phi0.325_Rave50um_LR20_seed1104
+   porosity      0.3250 (target 0.3250)
+   grains        70  (64 matrix + 6 filler)
+   mean radius   50.21 um (requested 50.00)
+   largest void  1.10 mean radii (gate 99.00)
+   density cv    0.322 (gate 99.000)
+   coordination  1.89
+   half-domain   10.2% asymmetry (x 10.2, y 7.6; gate 9900)
+   rows written  86 (16 edge images)  -> /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/rve_phi0.325/phi0.325_Rave50um_LR20_seed1104/grains.dat

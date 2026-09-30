@@ -60,7 +60,9 @@ PRODUCTION_OPTS=(
     -t_out_log_t0 60           #   starting at 60 s
 )                              # (the t >= 1 s opening frame is the solver default)
 OUT_ROOT="/resnick/groups/rubyfu/jbaglino/simulation_outputs"
-PACKING_FAMILY="inputs/packings/keff_LR40/"
+# Campaign packing families: the production matrix and the domain-size
+# convergence study (supplement). Both use the same generator recipe.
+PACKING_FAMILIES=("inputs/packings/keff_LR40/" "inputs/packings/rve_phi0.325/")
 EXP_PATTERN='^snow_T-?[0-9]+_h1\.00_30d$'
 
 usage() { sed -n '2,45p' "$0"; exit "${1:-0}"; }
@@ -97,8 +99,12 @@ while IFS= read -r line; do
     efile=$(find inputs/experiment -name "${exp}.opts" -print -quit)
     if [[ -z "$gfile" ]]; then echo "❌ geometry not found: $geom" >&2; errors=$((errors+1)); continue; fi
     if [[ -z "$efile" ]]; then echo "❌ experiment not found: $exp" >&2; errors=$((errors+1)); continue; fi
-    if ! grep -q "^-grains_file ${PACKING_FAMILY}" "$gfile"; then
-        echo "❌ $geom is not a campaign packing (grains_file not under $PACKING_FAMILY)" >&2
+    fam_ok=0
+    for fam in "${PACKING_FAMILIES[@]}"; do
+        grep -q "^-grains_file ${fam}" "$gfile" && fam_ok=1
+    done
+    if (( ! fam_ok )); then
+        echo "❌ $geom is not a campaign packing (grains_file not under ${PACKING_FAMILIES[*]})" >&2
         errors=$((errors + 1)); continue
     fi
     if ! [[ "$exp" =~ $EXP_PATTERN ]]; then

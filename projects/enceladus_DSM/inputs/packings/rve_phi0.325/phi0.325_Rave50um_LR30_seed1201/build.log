@@ -1,0 +1,16 @@
+  gates for target phi=0.325:  max_void_ratio 99.00   local_density_cv 99.000   asymmetry 9900%
+Gravity-style packing: 1.500 x 1.500 mm, target phi=0.325, mean r=50.0 um, sigma_ln=0.5, periodic=xy
+  attempt 1/128 (seed 1201)
+    budget bracket: phi(0.00)=0.5583  phi(1.57)=0.2996  want ~0.3550
+    roll=1.259  skeleton phi=0.3510  +6 fillers -> phi=0.3247  void=1.67  cv=0.338  asym=8%
+    ACCEPTED
+
+✅ /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/rve_phi0.325/phi0.325_Rave50um_LR30_seed1201
+   porosity      0.3247 (target 0.3250)
+   grains        166  (160 matrix + 6 filler)
+   mean radius   49.21 um (requested 50.00)
+   largest void  1.67 mean radii (gate 99.00)
+   density cv    0.338 (gate 99.000)
+   coordination  2.12
+   half-domain   7.8% asymmetry (x 7.8, y 5.0; gate 9900)
+   rows written  188 (22 edge images)  -> /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/rve_phi0.325/phi0.325_Rave50um_LR30_seed1201/grains.dat

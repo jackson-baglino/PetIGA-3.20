@@ -1,0 +1,45 @@
+# Supplement: k_eff domain-size convergence (26 runs, ~$100).
+#
+# phi 0.325, -20 C, L/R_ave {20, 30, 40, 56, 80} x {8, 6, 5, 4, 3} seeds,
+# UNGATED packings (inputs/packings/rve_phi0.325/, make_rve_packings.sh: only
+# the y-seam and percolation gates). The production L/R 40 runs (gated,
+# seeds 301-305, from the 3a rerun and 3b) are compared against them in
+# rve_convergence/analyze_rve.py.
+#
+# CHECK: L/R 40 is close enough if its seed-mean gap to L/R 80 is inside the
+# gap's standard error at 11, 100 and 330 tau_sub; seed CV falls ~1/L.
+#
+# ALLOCATION: at 200k DoF/core L/R 56 and 80 need 9 and 16 nodes -- inside the
+# slow-k_eff regime (>= 8 nodes). Do NOT submit until scaling test 1 is read:
+# if the bracketed constraint fixes it, submit as is; if not, cap the large
+# runs at <= 6 nodes (more DoF + memory per core; memory is not billed).
+#
+# Submit with (every option lives in the script):
+#   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch_rve.txt
+
+packing_2D_phi0.325_Rave50um_LR20_seed1101_L1mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR20_seed1102_L1mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR20_seed1103_L1mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR20_seed1104_L1mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR20_seed1105_L1mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR20_seed1106_L1mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR20_seed1107_L1mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR20_seed1108_L1mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR30_seed1201_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR30_seed1202_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR30_seed1203_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR30_seed1204_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR30_seed1205_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR30_seed1206_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1501_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1502_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1503_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1504_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1505_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR56_seed1301_L2.8mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR56_seed1302_L2.8mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR56_seed1303_L2.8mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR56_seed1304_L2.8mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR80_seed1401_L4mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR80_seed1402_L4mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR80_seed1403_L4mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d

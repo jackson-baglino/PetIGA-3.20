@@ -98,6 +98,43 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
   - [ ] run `health_check.py`
   - [ ] record the measured cost here
 
+## Supplement: k_eff domain-size convergence (planned 2026-09-30)
+
+Does k_eff tend to one curve as the domain grows, and is L/R 40 close enough?
+
+- **Design:** φ 0.325, −20 °C. L/R {20, 30, 40, 56, 80} with {8, 6, 5, 4, 3}
+  seeds, all UNGATED (seam and percolation gates only). Plus the 5 gated
+  production packings at L/R 40 for comparison, from the 3a rerun and 3b.
+  Statistical-RVE test: the seed-mean curve stops moving with L and the seed
+  scatter shrinks ~1/L. (A bigger periodic cell is a new realization, so
+  there is no "same packing, larger".)
+- [x] Packings (2026-09-30): `make_rve_packings.sh` ->
+  `inputs/packings/rve_phi0.325/`, 26 built.
+  - The first build switched void gates at L/R 40 and z_band jumped at the
+    switch, so it was rebuilt with the homogeneity gates off at every size.
+- [x] Opts at −20 °C + stage file `batch_rve.txt`, which passes the
+  production script's checks.
+- [ ] **Allocation for L/R 56/80:** at 200k DoF/core they need 9 and 16
+  nodes, inside the slow-k_eff regime. Decide after scaling test 1:
+  - if the bracketed constraint fixes it, keep 200k;
+  - otherwise cap these runs at ~6 nodes with more DoF and memory per core.
+    Memory is not billed.
+- [ ] Analysis: `rve_convergence/analyze_rve.py`. L/R 40 is close enough if
+  its gap to the L/R 80 mean is inside the gap's standard error, at 11, 100
+  and 330 τ_sub.
+- ~$100 total.
+
+- [ ] **DECISION: do the production gates bias k_eff?**
+  - Ungated packings: z_band 3.47–3.53 from L/R 30 to 80, converged.
+  - Gated production L/R 40: 3.32 ± 0.07 against 3.48 ± 0.08 ungated at the
+    same size, about 5% lower. The void gate (≤ 1.34 R) keeps only
+    realizations with few large voids.
+  - A: keep the gated production set and report the bias measured by the
+    convergence study.
+  - B (recommended): rebuild `keff_LR40` with the seam and percolation gates
+    only, before the 3a rerun and 3b. Nothing production-grade has run on it
+    yet.
+
 ## Open questions and follow-ups
 
 - [ ] **k_eff solve cost.** 50–84 s per sample in batch 2, against 4 s on
@@ -134,9 +171,10 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
   predicted k_yy > k_xx; the data say the opposite.
 - [ ] `effective_thermal_cond/docs/tensor_conductivity_law.tex`: cite Nicoli,
   Plapp & Henry 2011 (prior art for the tensor law).
-- [ ] Optional: an SSA-triggered k_eff cadence (sample when SSA drops by δ),
-  giving evenly spaced points on the k–SSA curve. About 30 lines in
-  `KeffDue` (`src/keff_sample.c`). Not needed for batch 3.
+- Sequential metamorphism-then-k_eff (a separate replay job): considered
+  2026-09-30 and not worth it at ≤ 6 nodes. k_eff is then ~10% of the cost,
+  a split saves <$0.10/run, and it adds 30–55 GB of snapshots plus a second
+  queue wait. Revisit only if k_eff becomes the dominant cost again.
 
 ## Later (CAMPAIGN.md stages 6–7)
 

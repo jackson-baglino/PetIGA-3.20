@@ -1,0 +1,36 @@
+  gates for target phi=0.325:  max_void_ratio 99.00   local_density_cv 99.000   asymmetry 9900%
+Gravity-style packing: 2.000 x 2.000 mm, target phi=0.325, mean r=50.0 um, sigma_ln=0.5, periodic=xy
+  attempt 1/128 (seed 1505)
+    budget bracket: phi(0.00)=0.6442  phi(1.57)=0.2886  want ~0.3550
+    roll=1.080  skeleton phi=0.3513  +11 fillers -> phi=0.3250  void=1.45  cv=0.318  asym=3%
+    rejected: y-seam contact density 0.69 of interior < 0.76
+  attempt 2/128 (seed 2505)
+    budget bracket: phi(0.00)=0.6067  phi(1.57)=0.2733  want ~0.3550
+    roll=1.080  skeleton phi=0.3545  +11 fillers -> phi=0.3251  void=1.52  cv=0.308  asym=5%
+    rejected: y-seam contact density 0.62 of interior < 0.76
+  attempt 3/128 (seed 3505)
+    budget bracket: phi(0.00)=0.6212  phi(1.57)=0.2995  want ~0.3550
+    roll=1.080  skeleton phi=0.3566  +12 fillers -> phi=0.3248  void=1.52  cv=0.302  asym=7%
+    rejected: y-seam contact density 0.58 of interior < 0.76
+  attempt 4/128 (seed 4505)
+    budget bracket: phi(0.00)=0.5479  phi(1.57)=0.2626  want ~0.3550
+    roll=0.834  skeleton phi=0.3565  +13 fillers -> phi=0.3250  void=1.36  cv=0.294  asym=3%
+    rejected: y-seam contact density 0.45 of interior < 0.76
+  attempt 5/128 (seed 5505)
+    budget bracket: phi(0.00)=0.5674  phi(1.57)=0.2623  want ~0.3550
+    roll=0.982  skeleton phi=0.3553  +12 fillers -> phi=0.3250  void=1.35  cv=0.299  asym=6%
+    rejected: y-seam contact density 0.55 of interior < 0.76
+  attempt 6/128 (seed 6505)
+    budget bracket: phi(0.00)=0.5790  phi(1.57)=0.2594  want ~0.3550
+    roll=1.178  skeleton phi=0.3574  +11 fillers -> phi=0.3253  void=1.43  cv=0.325  asym=11%
+    ACCEPTED
+
+✅ /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/rve_phi0.325/phi0.325_Rave50um_LR40_seed1505
+   porosity      0.3253 (target 0.3250)
+   grains        308  (297 matrix + 11 filler)
+   mean radius   47.58 um (requested 50.00)
+   largest void  1.43 mean radii (gate 99.00)
+   density cv    0.325 (gate 99.000)
+   coordination  2.08
+   half-domain   11.1% asymmetry (x 5.6, y 11.1; gate 9900)
+   rows written  342 (34 edge images)  -> /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/rve_phi0.325/phi0.325_Rave50um_LR40_seed1505/grains.dat
