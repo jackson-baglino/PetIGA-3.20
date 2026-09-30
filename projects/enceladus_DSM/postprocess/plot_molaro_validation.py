@@ -145,9 +145,19 @@ def legend_handles(series):
     if alt:
         h.append(Line2D([], [], color=INK, lw=1.8, ls=ALT_LS,
                         label=alt[0].get("alt_label", "model, alt. wall")))
+    # "data", not the citation: the caption names Molaro et al. (2019).
     h.append(Line2D([], [], color=INK, ls="none", marker="o", ms=4.2, mfc="white",
-                    mew=0.9, label="Molaro et al. (2019)"))
+                    mew=0.9, label="data"))
     return h
+
+
+def _time_axis_from_zero(ax, xmax):
+    """A little room left of t = 0, so the t = 0 points, their error bars and
+    the '0' label are drawn whole -- but the time axis LINE starts at t = 0,
+    so the margin reads as margin, not as time before the first measurement."""
+    pad = 0.025 * xmax
+    ax.set_xlim(-pad, 1.06 * xmax)
+    ax.spines["bottom"].set_bounds(0.0, 1.06 * xmax)
 
 
 def read_grains(run, t_open, t_star):
@@ -264,15 +274,13 @@ def _neck_panel(ax, series, marks=()):
                     dash_capstyle="round")
         ax.errorbar(s["td"], s["wd"], yerr=[s["em"], s["ep"]], fmt="o", ms=4.2,
                     mfc="white", mec=c, mew=0.9, ecolor=c, elinewidth=0.7,
-                    capsize=1.8, capthick=0.7, zorder=3, clip_on=False)
+                    capsize=1.8, capthick=0.7, zorder=3)
         xmax = max(xmax, float(s["td"].max()))
         ylo = min(ylo, float((s["wd"] - s["em"]).min()))
         yhi = max(yhi, float((s["wd"] + s["ep"]).max()))
     for x, y, lab in marks:
         _circled(ax, x, y, lab)
-    # The axis starts AT t = 0: nothing precedes Molaro's first measurement,
-    # and the t = 0 points sit on the spine (unclipped, so drawn whole).
-    ax.set_xlim(0.0, 1.06 * xmax)
+    _time_axis_from_zero(ax, xmax)
     ypad = 0.08 * (yhi - ylo)
     ax.set_ylim(ylo - ypad, yhi + ypad)
     ax.xaxis.set_major_locator(MaxNLocator(8, steps=[1, 2, 2.5, 5, 10]))
@@ -383,12 +391,12 @@ def _shrink_panel(ax, series, which, xmax):
             vals.append(g2[which][g2["t"] <= xmax])
         d = s["Dd"]
         ax.plot(d["t"], d[which], "o", ms=4.2, mfc="white", mec=c, mew=0.9,
-                ls="none", zorder=3, clip_on=False)
+                ls="none", zorder=3)
         vals.append(d[which])
     v = np.concatenate(vals)
     pad = 0.08 * (v.max() - v.min())
     ax.set_ylim(v.min() - pad, max(v.max(), 1.0) + pad)
-    ax.set_xlim(0.0, 1.06 * xmax)          # starts at t = 0, as the neck figure
+    _time_axis_from_zero(ax, xmax)
     ax.xaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
     ax.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
     ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3, pad=2)

@@ -26,7 +26,8 @@ molaro_2D_L450x225um_eps0.11um_axisym_T-5pair_r14um_dom2:molaro_T-5_h0.99523_50m
 
 # ---------------------------------------------------------------------------
 # OUTCOME (2026-09-30): round 1 is the -5 C arm the manuscript uses; this
-# round is shown beside it, dashed, in Figure 2.
+# round is NOT shown in Figure 2 (dropped 2026-09-30; --run-t5-alt still
+# draws it dashed if wanted).
 #
 # Scored at Molaro's own three times (t* = 39.3 s in both rounds):
 #                     0 min   26 min   48 min
@@ -54,5 +55,5 @@ molaro_2D_L450x225um_eps0.11um_axisym_T-5pair_r14um_dom2:molaro_T-5_h0.99523_50m
 # (series-resistance estimate x the -20 C correction), with no -5 C refit.
 # The neck does not care which: 52.4 vs 52.3 um at 48 min.
 #
-# Figure 2: --run-t5 <r1> --run-t5-alt <this run>
+# Figure 2: --run-t5 <r1>
 #   r1 = .../GrainPairSintering/molaro_2D_L450x225um_eps0.11um_axisym_T-5pair_r14um_dom2__molaro_T-5_h0.99674_2h_a1e-1_dirichlet
