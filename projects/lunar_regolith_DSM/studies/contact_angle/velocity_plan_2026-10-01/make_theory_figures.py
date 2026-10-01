@@ -339,10 +339,19 @@ def fig_pore_channel():
     ax.text(60, 372, "regolith", fontsize=15, color="#5d564a", va="center")
     ax.text(60, -372, "regolith", fontsize=15, color="#5d564a", va="center")
     ax.text(L - 60, 0, "vapour", fontsize=15, color=MUTED, ha="right", va="center")
+
+    # boundary conditions: open end at low vapour saturation, dead end sealed
+    ax.plot([0, 0], [bot(0), top(0)], color=ORANGE, lw=3, ls=(0, (4, 2)))
+    ax.text(-130, 0, "low vapour saturation\n" + r"$\sigma_\infty < 0$", rotation=90,
+            ha="center", va="center", fontsize=15, color=ORANGE, linespacing=1.3)
+    ax.fill_betweenx([-420, 420], L, L + 60, color=REG, lw=0)
+    ax.plot([L, L], [bot(L), top(L)], color=INK, lw=2)
+    ax.text(L + 125, 0, "dead pore\nno vapour flux", rotation=90,
+            ha="center", va="center", fontsize=15, color=INK, linespacing=1.3)
     ax.plot([60, 1060], [-560, -560], color=INK, lw=3, solid_capstyle="butt")
     ax.text(560, -590, "1 mm", ha="center", va="top", fontsize=15)
 
-    ax.set_xlim(-20, L + 20)
+    ax.set_xlim(-230, L + 190)
     ax.set_ylim(-680, 680)
     ax.set_aspect("equal")
     ax.axis("off")

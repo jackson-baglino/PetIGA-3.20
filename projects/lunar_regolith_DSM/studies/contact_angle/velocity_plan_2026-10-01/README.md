@@ -238,6 +238,8 @@ Talking points
 
 - Schematic only: the wall shapes and ice placement are illustrative, not a
   simulation or a planned geometry file.
+- Boundary conditions: the left end is open to a low vapour saturation
+  (σ∞ < 0); the right end is a dead pore, i.e. no vapour flux.
 - Two kinds of ice. Lenses span both walls and sit at the throats.
   Wall-adhered ice touches one wall only and sits in the troughs, not on the
   peaks.
