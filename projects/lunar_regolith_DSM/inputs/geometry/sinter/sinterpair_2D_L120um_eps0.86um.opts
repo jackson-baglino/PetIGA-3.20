@@ -1,0 +1,44 @@
+# =============================================================================
+# geometry/sinter/sinterpair_2D_L120um_eps0.86um.opts
+#
+# SINTERING: two unequal ice grains placed tangent.
+# Built for the dtmax ladder (studies/contact_angle/velocity_plan_2026-10-01):
+# a small, cheap case whose outcome is an EVENT TIME, which is what a too-large
+# timestep gets wrong first.
+#
+# The grains touch at one point, so a neck forms and grows, and the pair then
+# coarsens until the small grain is absorbed.
+#
+#   small grain R0 = 15 um at (30, 45) um; large grain R1 = 30 um at (75, 45) um
+#   15 um of padding on every side; Lx = 120 um, Ly = 90 um
+#   sealed box (no-flux on every face), no wall term: both grains are interior
+#
+# eps = 8.5840e-07 from comp_eps.py at -20 C, alpha_c = 1e-3 (the kinetic bound
+# binds, so it is the same eps as the channel and wedge). eps/R0 = 1/17.5.
+#   h = eps/sqrt(2) -> Nx = 198, Ny = 149 (30k nodes)
+# Sized after inputs/scratch/geometry/sinter/sinter_2D_L86um_eps0.49um_test.opts
+# (the -5 C testbed), with the grains enlarged to keep them resolved at this eps.
+# =============================================================================
+-ic_type multi_grains
+-dim 2
+-Lx 1.2000e-04
+-Ly 9.0000e-05
+-Lz 0
+
+-ice_grain_cx 3.0e-5,7.5000e-05
+-ice_grain_cy 4.5e-5,4.5e-5
+-ice_grain_R  1.5e-5,3.0e-5
+-ice_grain_ax 1.5e-5,3.0e-5
+-ice_grain_ay 1.5e-5,3.0e-5
+
+-Nx 198
+-Ny 149
+-Nz 1
+-eps 8.5840e-07
+-eps_valid_temp -20.0
+
+-delt_t 1.0e-4
+-periodic 0
+
+# Placeholder ceiling; the dtmax-ladder experiment files override it.
+-dtmax 4.68e3

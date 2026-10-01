@@ -290,6 +290,20 @@ by `analyze_dtmax_ladder.py` on the per-step ice area in `SSA_evo.dat` and the
 iteration counts in `solver_evo.dat`. 40·τ_sub is the largest the six-snapshot
 output cadence allows.
 
+Three local cases, each a six-rung ladder (0.8 to 40·τ_sub), all scored by
+`analyze_dtmax_ladder.py`:
+
+| Case | Geometry | Experiment files | Scored on |
+|---|---|---|---|
+| channel growth | `channel_2D_H31um_eps0.86um` | `dtlad20_T-20_theta60_ac1e-3_dt*tau` | ice area |
+| sintering pair | `sinterpair_2D_L120um_eps0.86um` | `dtlad60_T-20_sealed_ac1e-3_dt*tau` | interface length, event time |
+| ripening pair | `ripenpair_2D_L132um_eps0.86um` | `dtlad60_T-20_sealed_ac1e-3_dt*tau` | interface length, event time |
+
+The grain pairs (15 and 30 µm radius, tangent or 12 µm apart, sealed box) end
+in the small grain disappearing. That is the regime the CFL limiter was built
+for, and the one where a large step is known to cost accuracy: on 2026-07-10 a
+12× larger `-dtmax` stayed stable and ripple-free but put extinction 32 % late.
+
 ### Solver diagnostics
 
 Every run now writes `solver_evo.dat` beside `SSA_evo.dat`:

@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-01 14:24:50
+
+
+---
+
 **Session ended:** 2026-10-01 14:19:50
 
 
@@ -57,6 +62,23 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (later) — dtmax ladder: sintering and ripening grain pairs
+
+- Two more local ladder cases, both ending in the small grain vanishing:
+  inputs/geometry/sinter/sinterpair_2D_L120um_eps0.86um (tangent grains, 15 and
+  30 um) and inputs/geometry/ripening/ripenpair_2D_L132um_eps0.86um (12 um
+  vapour gap). Sealed, -20 C, alpha_c = 1e-3, 60 days, shared experiment files
+  inputs/experiment/dtmax/dtlad60_*. Sized after the quarantined -5 C sinter
+  testbed, grains enlarged to stay resolved at eps = 0.8584 um.
+- analyze_dtmax_ladder.py now picks its metric: ice area for reservoir runs,
+  interface length for sealed ones (ice is conserved there), and reports an
+  event time t_half. Checked on synthetic ladders with known 5 % and 30 % lags.
+- Context recovered from the July log: the CFL limiter keeps a large dtmax
+  STABLE but not ACCURATE (grain extinction 32 % late at 12x dtmax). The 60 d
+  run length is a guess at the extinction time; extend if the grain survives.
+
+---
 
 ## 2026-10-01 (later) — Quarter-scale channel for local numerical tests
 
