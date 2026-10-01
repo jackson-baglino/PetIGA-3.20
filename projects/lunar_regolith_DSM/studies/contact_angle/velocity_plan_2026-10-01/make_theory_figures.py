@@ -224,6 +224,10 @@ def fig_geometry():
                     arrowprops=dict(arrowstyle="<->", color=MUTED, lw=1.2))
         ax.plot([r * um] * 2, [0, dy], color=MUTED, lw=0.8, ls=":")
         ax.text(r * um / 2, dy + 5, lab, ha="center", color=MUTED, fontsize=16)
+    xh = 362e-6                                  # local channel height H(x)
+    ax.annotate("", (xh * um, -xh * um * 0.25), (xh * um, xh * um * 0.25),
+                arrowprops=dict(arrowstyle="<->", color=MUTED, lw=1.2))
+    ax.text(xh * um + 5, -42, "H(x)", ha="left", va="center", color=MUTED)
     ax.text(R_L * um - 8, 44, r"$\sigma_\infty$", ha="right", color=ORANGE, fontsize=18)
     ax.text(R_R * um + 8, 0, r"$\sigma_\infty$", ha="left", va="center",
             color=ORANGE, fontsize=18)
