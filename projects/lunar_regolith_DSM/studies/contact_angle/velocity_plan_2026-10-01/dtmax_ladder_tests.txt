@@ -1,0 +1,8 @@
+# dtmax ladder -- how large a step do these slow interfaces actually tolerate?
+# Channel, theta = 60, alpha_c = 1e-3, sigma_inf = 0, 90 d. dtmax = 2, 5, 10 x
+# tau_sub; the 0.8 x tau_sub point is grow90_T-20_theta60_ac1e-3 in batch A.
+# Compare v_n (meniscus_velocity.py) and solver_evo.dat across the four.
+# 10 x is the largest the output cadence allows (dtmax <= 0.5 * t_final/59).
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_ac1e-3_dt2tau
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_ac1e-3_dt5tau
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_ac1e-3_dt10tau

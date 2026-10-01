@@ -261,6 +261,39 @@ measured clean. The geometry files' 1.487e3 s was τ_sub/2 at α_c = 2e-3.
 
 ---
 
+### Is `-dtmax` the right ceiling?
+
+Two different limits act on the timestep, and they guard different things.
+
+- **Interface-CFL limiter** (`-dtCFL`, `-dtCFL_dphimax 0.2`): dynamic. After
+  each step it measures the largest pointwise change in φ and rejects the
+  step if any point moved more than 0.2. It protects fast events (a lens
+  vanishing, a neck snapping) and is silent when the interface is slow.
+- **`-dtmax`**: static. The adaptive stepper grows dt whenever Newton
+  converges quickly, and with a slow interface nothing else stops it. The
+  ceiling is what bounds temporal accuracy in that regime.
+
+Some ceiling is needed, but the value is not derived. The τ_sub scaling
+dates from the summer, before the bounds rollback, the wall-term clamp and
+the CFL limiter existed, when a large dt simply broke the solve. The only
+measurement since is `dtmax_study.sh`: the contact angle moved 0.003° across
+0.05 to 0.815·τ_sub. Nothing has been tested above that, and these
+interfaces move about one element per 180 steps at 0.8·τ_sub.
+
+`dtmax_ladder_tests.txt` tests it directly: the θ = 60°, α_c = 1e-3 channel
+run at 2, 5 and 10·τ_sub (about 660, 270 and 130 steps against 1,700).
+Compare the meniscus velocity and `solver_evo.dat` against the batch A run.
+
+### Solver diagnostics
+
+Every run now writes `solver_evo.dat` beside `SSA_evo.dat`:
+`step t dt newton_its krylov_its krylov_per_newton rejections`, one row per
+step. `krylov_per_newton` is the conditioning measure (how hard each linear
+solve is); `rejections` counts step attempts thrown away. It reads counters
+the time integrator already keeps, so it adds no solver work.
+
+---
+
 ## 9. Where this is going: a mm-scale pore channel
 
 ![Pore channel with lenses and wall-adhered ice](fig5_pore_channel.png)

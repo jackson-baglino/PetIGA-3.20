@@ -373,6 +373,11 @@ typedef struct {
   // truncating the file while outp.txt kept going). NULL until first use.
   PetscViewer ssa_view;
 
+  // Persistent viewer for solver_evo.dat (Newton/Krylov iterations per step)
+  // and the running totals it differences. Opened lazily in Monitor().
+  PetscViewer solver_view;
+  PetscInt    solver_snes_prev, solver_ksp_prev, solver_rej_prev;
+
 } AppCtx;/* Field definitions for node data */
 
 #endif // NASA_TYPES_H

@@ -1,6 +1,21 @@
 
 ---
 
+**Session ended:** 2026-10-01 14:05:06
+
+
+---
+
+**Session ended:** 2026-10-01 14:03:00
+
+
+---
+
+**Session ended:** 2026-10-01 14:00:24
+
+
+---
+
 **Session ended:** 2026-10-01 13:54:08
 
 
@@ -32,6 +47,22 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (later) — Per-step Newton/Krylov logging: solver_evo.dat
+
+- Monitor() now writes solver_evo.dat beside SSA_evo.dat: step, t, dt, Newton
+  iterations, Krylov iterations, Krylov per Newton, step rejections. It
+  differences TS's own running totals (TSGetSNESIterations /
+  TSGetKSPIterations / TSGetStepRejections), so no solver work is added.
+  Compiles; not yet exercised in a run.
+- Purpose: decide from data whether non-dimensionalising or a looser -dtmax
+  is worth it before the meshes get large.
+- Added a dtmax ladder (2, 5, 10 x tau_sub on the theta = 60, alpha_c = 1e-3
+  channel run) and a README section on what -dtmax and the CFL limiter each
+  guard. The tau_sub ceiling predates the rollback/clamp/CFL machinery and has
+  never been tested above 0.815 tau_sub.
+
+---
 
 ## 2026-10-01 (late night) — dtmax = 0.8 tau_sub in the velocity-study inputs
 
