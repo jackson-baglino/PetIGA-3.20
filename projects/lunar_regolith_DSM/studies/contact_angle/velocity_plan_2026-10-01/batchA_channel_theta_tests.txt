@@ -1,0 +1,11 @@
+# Batch A -- channel, theta sweep at sigma_inf = 0. 90 days each.
+# Prediction: v_n proportional to cos(theta), zero at 90 deg.
+# theta = 60 and 120 repeat the 2026-09 wedge_bc channel pair (+/-7.5 % ice);
+# they are rerun so all five share one build. The 2026-09-14 five-angle batch
+# does NOT count: it ran with -flag_BC_Tfix 0 and was thermally throttled.
+# for scripts/HPC/submit_batch.sh --tests-file; see README.md in this folder.
+channel_2D_H125um_eps0.86um:grow90_T-20_theta30
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60
+channel_2D_H125um_eps0.86um:grow90_T-20_theta90
+channel_2D_H125um_eps0.86um:grow90_T-20_theta120
+channel_2D_H125um_eps0.86um:grow90_T-20_theta150

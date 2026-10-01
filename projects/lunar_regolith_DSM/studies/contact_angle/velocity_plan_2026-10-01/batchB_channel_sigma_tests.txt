@@ -1,0 +1,11 @@
+# Batch B -- channel, sigma_inf sweep at theta = 60. 90 days each.
+# sigma_inf = -3e-5 ... +3e-5 in steps of 1e-5; the sigma_inf = 0 point is
+# grow90_T-20_theta60 in batch A.
+# Prediction: straight line, zero crossing at sigma_inf = d0*chi = -8.1e-6.
+# for scripts/HPC/submit_batch.sh --tests-file; see README.md in this folder.
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_sigm3e-5
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_sigm2e-5
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_sigm1e-5
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_sigp1e-5
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_sigp2e-5
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_sigp3e-5

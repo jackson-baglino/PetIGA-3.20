@@ -1,3 +1,27 @@
+## 2026-10-01 (later) — Velocity-study inputs built; enceladus history carried over
+
+- Built the four batches of the contact-angle velocity study: 15 new experiment
+  files (wedgeres150 at theta 30/90/150; sigma_inf = +/-1,2,3e-5 at theta = 60
+  for both grow90 and wedgeres150) and four tests files in
+  studies/contact_angle/velocity_plan_2026-10-01/. sigma_inf is set through
+  -rhovfix_lo/hi (fractions of rho_vs), with -humidity matched. Nothing
+  submitted.
+- Batch A is NOT a repeat of the 2026-09-14 grow90 batch: that one ran with
+  -flag_BC_Tfix 0 and was thermally throttled.
+- Carried over from enceladus_DSM everything that touches this project:
+  docs/curvature_driven_growth.md, postprocess/gt_balance.py, the newer
+  plot_rhovsI.py plus plot_growth_rate.py and verify_curvature.py, and the
+  wedge GT-balance figure. Summary of the findings and what was left behind in
+  docs/enceladus_carryover.md. The key ones: GT is emergent from the Allen-Cahn
+  term, d0 is exact, beta runs 22 % high (same 1.22 found here independently),
+  and v_n is an ~88 % cancellation of two larger terms.
+- Removed 22 dead permission entries pointing at projects/sublimation_pf from
+  .claude/settings.local.json; that path was renamed away on 2026-07-27.
+- The earlier README in velocity_plan_2026-10-01 gained a section on input
+  files and submission.
+
+---
+
 ## 2026-10-01 — Theory figures and slide outline for the contact-angle velocity study
 
 - Planned four batches (channel and wedge, each swept in theta and in sigma_inf)

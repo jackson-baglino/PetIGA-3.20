@@ -159,7 +159,40 @@ Talking points
 
 ---
 
-## 7. Open points before submitting
+## 7. Input files and submission
+
+The four batches are built. One tests file per batch, in this folder:
+
+| Batch | Tests file | Runs | New input files |
+|---|---|---|---|
+| A | `batchA_channel_theta_tests.txt` | 5 | none (`grow90_T-20_theta*`) |
+| B | `batchB_channel_sigma_tests.txt` | 6 | `grow90_T-20_theta60_sig{m,p}{1,2,3}e-5` |
+| C | `batchC_wedge_theta_tests.txt` | 5 | `wedgeres150_T-20_theta{30,90,150}` |
+| D | `batchD_wedge_sigma_tests.txt` | 6 | `wedgeres150_T-20_theta60_sig{m,p}{1,2,3}e-5` |
+
+- σ∞ is set through `-rhovfix_lo/hi`, which are fractions of ρ_vs(temp0), so
+  σ∞ = rhovfix − 1. `-humidity` is set to the same value so the vapour IC
+  starts on the reservoir value.
+- The σ∞ = 0 points of B and D are the θ = 60° runs of A and C.
+- Batch A is not a repeat of the 2026-09-14 five-angle `grow90` batch. That
+  one ran with `-flag_BC_Tfix 0` and was thermally throttled (0.003 % ice
+  change). Only θ = 60° and 120° have been run with the thermal bath since.
+- Submit in stages, cheapest first, and check A before the rest:
+
+```bash
+./scripts/HPC/submit_batch.sh --tag velA_channel_theta \
+    --tests-file studies/contact_angle/velocity_plan_2026-10-01/batchA_channel_theta_tests.txt
+```
+
+- Measurement: `postprocess/meniscus_velocity.py` for the channel,
+  `postprocess/wedge_gt_velocity.py` for the wedge, and
+  `postprocess/gt_balance.py` for the σ = d0·κ + β·v_n balance on any run.
+  Background in `docs/curvature_driven_growth.md` and
+  `docs/enceladus_carryover.md`.
+
+---
+
+## 8. Open points before submitting
 
 - **Velocity is not set by θ alone.** Diffusion to the wall is as large as the
   kinetic term, so v_n also depends on the meniscus-to-wall distance. Compare
