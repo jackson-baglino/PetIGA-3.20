@@ -40,6 +40,9 @@ thresholds, open questions); this page is the history.
   HPC: `SCR/batch_2026-09-24__14.23.15_keff_disk_fsweep/` (location not verified). Local: `LOC/GPS/batch_2026-09-24__14.23.15_keff_disk_fsweep/`. Analysis: `REPO/studies/keff_sharp_limit/disk/analyze_fsweep.py`, `fsweep.png`.
   Single ice cylinders, 6 radii × 3 eps/R × 2 laws. **Finding:** the arithmetic-law error grows with solid fraction (+1.9% at f = 0.05 → +38.6% at f = 0.50), while the tensor law stays under 1%.
 
+- [x] **2026-10-01 — Grain-size scaling (no runs).** `REPO/studies/grain_size_scaling/` (script, CSV, figure, README).
+  An R_ave sweep from 0.05 to 500 µm through the campaign's sizing code. **Finding:** the mesh is scale-free (Nx = 2829 at every size, since eps = R/50 and L = 40R), and so is the cost (~$3–4 per run) while the run stays attachment-limited (R ≪ L* = 139 µm). Simulated time scales as R² (30 d → 7.6 s at 0.1 µm). Below ~1 µm the model's physics fails (Knudsen vapour transport and gas conduction, dominant surface diffusion), not its cost.
+
 ### Pilot, replay and REV checks (φ 0.325, −20 °C)
 
 - [x] **2026-09-16 — Pilot: 4 seeds, L/R 40, 30 d, arithmetic law.**
