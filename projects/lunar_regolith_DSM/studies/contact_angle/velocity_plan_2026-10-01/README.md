@@ -362,6 +362,12 @@ days 48 and 54.
 - The script's `t_half` is not useful here: half the interface-length change
   happens in the first two days of neck formation, while every rung is still
   ramping its timestep.
+- Neck width, measured as the ice height at the original contact plane
+  (13.5 µm at t = 0, 50 µm at 60 d), lags the reference by at most 0.01 µm at
+  2·τ_sub, 0.11 µm at 5, 0.39 µm at 10 and about 1.0 µm at 20 and 40
+  (0.0, 0.3, 1.1 and 2.9 % of the rise). Always behind, never ahead. A true
+  neck (a waist in the outline) exists only before day 6, i.e. before the
+  first snapshot, so the early neck-growth law is not resolved by these runs.
 - One Newton iteration per step again. Krylov iterations per solve are 22–27
   on this 88k-DoF mesh against 5–7 on the 24k-DoF channel, both on one rank.
 
