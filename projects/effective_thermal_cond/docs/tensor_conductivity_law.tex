@@ -53,7 +53,7 @@ and a matched asymptotic analysis shows that, to first order in $\varepsilon$,
 the transition acts like a sharp interface with a spurious resistance to heat
 crossing it and a spurious conductance along it; the standard arithmetic law
 removes the second but not the first, because resistivity $1/K$ is convex in
-$\varphi$. At $K_{\mathrm i}/K_{\mathrm a}\approx115$ the effect is large: for
+$\phi$. At $K_{\mathrm i}/K_{\mathrm a}\approx115$ the effect is large: for
 a planar ice slab with heat flowing across it at $\varepsilon=L/50$, the
 computed conductivity is $0.063$~W\,m$^{-1}$K$^{-1}$ against an exact $0.040$
 for the same geometry, $59\%$ too high, and because the error scales with
@@ -63,7 +63,7 @@ both terms by interpolating the conductivity arithmetically for gradients along
 the interface, where the sharp solution's temperature gradient is continuous,
 and harmonically for gradients across it, where the heat flux is continuous;
 each choice makes its spurious term vanish exactly for the tanh profile, the
-interface normal comes from $\nabla\varphi$, and the law reduces to the
+interface normal comes from $\nabla\phi$, and the law reduces to the
 pure-phase values outside the transition, so nothing is fitted and the sharp
 limit is unchanged. Against closed-form sharp solutions it reproduces a planar
 slab to $4\times10^{-7}$ at every width tested (the arithmetic law is
@@ -158,14 +158,14 @@ one unknown, and not an approximation to it.
 \section{The diffuse formulation}
 \label{sec:diffuse}
 
-The phase-field model does not provide $\chi$. It provides a smooth $\varphi$,
+The phase-field model does not provide $\chi$. It provides a smooth $\phi$,
 equal to $1$ in ice and $0$ in air, with the tanh profile
 \begin{equation}
-\varphi=\ell(s/\varepsilon)=\tfrac12\big[1+\tanh\big(s/2\varepsilon\big)\big],
+\phi=\ell(s/\varepsilon)=\tfrac12\big[1+\tanh\big(s/2\varepsilon\big)\big],
 \qquad \ell(u)=\frac{1}{1+e^{-u}},\qquad \ell(-u)=1-\ell(u),
 \label{eq:profile}
 \end{equation}
-where $s$ is the signed distance to $\Gam$ (the $\varphi=\tfrac12$ level set),
+where $s$ is the signed distance to $\Gam$ (the $\phi=\tfrac12$ level set),
 positive in ice. $\ell$ is simply this profile written in the variable
 $u=s/\varepsilon$.
 
@@ -179,28 +179,28 @@ $\chi$ only takes the values $0$ and $1$.
 
 \noindent So \eqref{eq:weak-sharp} is the equation
 $\int\nabla v\cdot K(\chi)(\nabla\bt+\bI)=0$, and the diffuse formulation is the
-same equation with $\chi$ replaced by $\varphi$:
+same equation with $\chi$ replaced by $\phi$:
 \begin{equation}
-\int_\Om\nabla v\cdot\bK(\varphi)\,(\nabla\bt+\bI)\,d\Om=0\quad\forall v\in\Hper,
-\qquad \Keff^\varepsilon=\avg{\bK(\varphi)(\nabla\bt+\bI)} .
+\int_\Om\nabla v\cdot\bK(\phi)\,(\nabla\bt+\bI)\,d\Om=0\quad\forall v\in\Hper,
+\qquad \Keff^\varepsilon=\avg{\bK(\phi)(\nabla\bt+\bI)} .
 \label{eq:weak-diffuse}
 \end{equation}
-The only approximation is geometric, $\varphi$ in place of $\chi$. The lemma
+The only approximation is geometric, $\phi$ in place of $\chi$. The lemma
 also shows that the sharp problem cannot see how $\bK$ behaves for
-$0<\varphi<1$. Every interpolation with the right end values gives the same
+$0<\phi<1$. Every interpolation with the right end values gives the same
 sharp limit. The choice matters only inside the transition, and there it sets
 the error at finite $\varepsilon$. The standard choice is the arithmetic law
-$K(\varphi)=\Ka+(\Ki-\Ka)\varphi$. The question is which interpolation makes
+$K(\phi)=\Ka+(\Ki-\Ka)\phi$. The question is which interpolation makes
 \eqref{eq:weak-diffuse} closest to \eqref{eq:weak-sharp}.
 
 To answer it we allow, from the start, a coefficient that may act differently
 along and across the interface:
 \begin{equation}
-\bK=\Kt(\varphi)\,\big(\bI-\bn\otimes\bn\big)+\Kn(\varphi)\,\bn\otimes\bn,
-\qquad \bn=\frac{\nabla\varphi}{|\nabla\varphi|},
+\bK=\Kt(\phi)\,\big(\bI-\bn\otimes\bn\big)+\Kn(\phi)\,\bn\otimes\bn,
+\qquad \bn=\frac{\nabla\phi}{|\nabla\phi|},
 \label{eq:Kgeneral}
 \end{equation}
-with $\Kt,\Kn$ equal to $\Ka$ at $\varphi=0$ and $\Ki$ at $\varphi=1$. A scalar
+with $\Kt,\Kn$ equal to $\Ka$ at $\phi=0$ and $\Ki$ at $\phi=1$. A scalar
 law is the special case $\Kt=\Kn$.
 
 \paragraph{Where this form comes from.} The outer product is a projection:
@@ -224,8 +224,8 @@ eigenvalue $\Kt$. A symmetric tensor with that eigenstructure is exactly
 Its off-diagonal entries in $x,y$ are not a coupling. They appear only because
 the interface is not aligned with the axes, and in the interface's own frame
 $\bK=\mathrm{diag}(\Kn,\Kt)$. For the profile \eqref{eq:profile},
-$\nabla\varphi=\ell'(s/\varepsilon)\,\nabla s/\varepsilon$ is parallel to
-$\nabla s$, so $\bn$ is exactly the normal to the level sets of $\varphi$, and
+$\nabla\phi=\ell'(s/\varepsilon)\,\nabla s/\varepsilon$ is parallel to
+$\nabla s$, so $\bn$ is exactly the normal to the level sets of $\phi$, and
 the phase field supplies it without any extra construction.
 
 % ----------------------------------------------------------------------
@@ -233,7 +233,7 @@ the phase field supplies it without any extra construction.
 \label{sec:inner}
 
 We analyse \eqref{eq:weak-diffuse} by matched asymptotic expansions in
-$\varepsilon$. Away from $\Gam$ (the \emph{outer} region), $\varphi$ is $0$ or
+$\varepsilon$. Away from $\Gam$ (the \emph{outer} region), $\phi$ is $0$ or
 $1$ up to exponentially small terms, and the temperature satisfies the pure-phase
 equations. Near $\Gam$ (the \emph{inner} region), use the signed distance $s$
 and coordinates $\mathbf y$ along $\Gam$, and stretch $s=\varepsilon u$. The
@@ -326,8 +326,8 @@ in \eqref{eq:jumpT}--\eqref{eq:jumpq} depend only on $\Ki$, $\Ka$ and the
 interpolation, not on $\varepsilon$ or the geometry. Unless one is zero, the
 corresponding error is first order in $\varepsilon$.
 
-\paragraph{Step 2: a quantity affine in $\varphi$ has zero excess.} If
-$f(\varphi)=\alpha+\beta\varphi$, then
+\paragraph{Step 2: a quantity affine in $\phi$ has zero excess.} If
+$f(\phi)=\alpha+\beta\phi$, then
 $f(\ell(u))-f(H(u))=\beta[\ell(u)-H(u)]$. By the antisymmetry in
 \eqref{eq:profile}, $\ell-H$ is odd: for $u>0$,
 $\ell(u)-1=-\ell(-u)$. Its integral is zero (Fig.~\ref{fig:lobes}). The
@@ -341,7 +341,7 @@ the ice side.
   axis lines=middle,xlabel={$u=s/\varepsilon$},ylabel={},xtick={-4,0,4},
   ytick={0,0.5,1},samples=200,legend style={draw=none,at={(0.02,0.98)},anchor=north west,font=\small}]
 \addplot[name path=l,domain=-6:6,thick,blue]{1/(1+exp(-x))};
-\addlegendentry{$\varphi=\ell(u)$}
+\addlegendentry{$\phi=\ell(u)$}
 \addplot[thick,black,dashed,domain=-6:0]{0};
 \addplot[thick,black,dashed,domain=0:6]{1};
 \addlegendentry{$\chi=H(u)$ (sharp)}
@@ -354,12 +354,12 @@ the ice side.
 \end{axis}
 \end{tikzpicture}
 \caption{The tanh profile against the sharp indicator. The two shaded regions,
-$\varphi-\chi$ on either side of the interface, are mirror images with opposite
-sign, so any quantity affine in $\varphi$ has zero excess.}
+$\phi-\chi$ on either side of the interface, are mirror images with opposite
+sign, so any quantity affine in $\phi$ has zero excess.}
 \label{fig:lobes}
 \end{figure}
 
-\noindent For the arithmetic law, $\Kt=\Kn=\Ka+(\Ki-\Ka)\varphi$ is affine, so
+\noindent For the arithmetic law, $\Kt=\Kn=\Ka+(\Ki-\Ka)\phi$ is affine, so
 $\Sigma_t=0$. But $1/\Kn$ is not affine, and $\Sigma_n$ must be computed.
 
 \paragraph{Step 3: computing $\Sigma_n$.} Write $a=\Ka$, $b=\Ki$, $c=b-a$, and
@@ -383,14 +383,14 @@ logarithms. With $K_m=K(\tfrac12)$, the $\ln2$ terms cancel:
 \label{eq:Sn}
 \end{equation}
 At $\Ki/\Ka=114.5$ the constant is $234.96$~m\,K\,W$^{-1}$. The excess is
-negative because $1/K$ is convex in $\varphi$: within the transition the
+negative because $1/K$ is convex in $\phi$: within the transition the
 arithmetic law underestimates resistivity, so the transition offers too little
 resistance to heat crossing $\Gam$. It acts as a thermal short across every
 interface.
 
 \paragraph{No scalar law can satisfy both conditions.} By Step 2, $\Sigma_t=0$
 calls for $K$ affine and $\Sigma_n=0$ for $1/K$ affine. Only a constant is both.
-The harmonic law $1/K=\varphi/\Ki+(1-\varphi)/\Ka$ fixes the normal condition
+The harmonic law $1/K=\phi/\Ki+(1-\phi)/\Ka$ fixes the normal condition
 and breaks the tangential one:
 $\Sigma_t^{\mathrm{harm}}=-\varepsilon(\Ki-\Ka)\ln(\Ki/\Ka)$, by the same
 calculation with $K$ and $1/K$ exchanged. Both values were checked against direct
@@ -410,9 +410,9 @@ its own function. By Step 2, the simplest choices are $\Kt$ affine and $1/\Kn$
 affine:
 \begin{equation}
 \boxed{\;
-\bK(\varphi,\nabla\varphi)=\underbrace{\big[\Ka+(\Ki-\Ka)\varphi\big]}_{\Kt}\big(\bI-\bn\otimes\bn\big)
-+\underbrace{\Big[\frac{\varphi}{\Ki}+\frac{1-\varphi}{\Ka}\Big]^{-1}}_{\Kn}\bn\otimes\bn,
-\qquad \bn=\frac{\nabla\varphi}{|\nabla\varphi|}.\;}
+\bK(\phi,\nabla\phi)=\underbrace{\big[\Ka+(\Ki-\Ka)\phi\big]}_{\Kt}\big(\bI-\bn\otimes\bn\big)
++\underbrace{\Big[\frac{\phi}{\Ki}+\frac{1-\phi}{\Ka}\Big]^{-1}}_{\Kn}\bn\otimes\bn,
+\qquad \bn=\frac{\nabla\phi}{|\nabla\phi|}.\;}
 \label{eq:tensor}
 \end{equation}
 Then $\Sigma_t=\Sigma_n=0$ identically, the effective interface conditions
@@ -435,14 +435,14 @@ $\Kt(p)+\Kt(1-p)=\Ka+\Ki$, and $\Sigma_n=0$ for any $\Kn$ with
 $1/\Kn(p)+1/\Kn(1-p)=1/\Ka+1/\Ki$. The affine choices are the simplest members
 of these families.
 \item \emph{It leaves the sharp problem untouched.} Both branches take the
-pure-phase values at $\varphi\in\{0,1\}$, so $\bK=K_\star\bI$ outside the
+pure-phase values at $\phi\in\{0,1\}$, so $\bK=K_\star\bI$ outside the
 transition and Lemma~\ref{lem:any} still holds. The sharp limit is unchanged.
 \item \emph{It is well posed with the same bounds.} $\bK$ is symmetric with
 eigenvalues $\Kt$ (along) and $\Kn$ (across), both in $[\Ka,\Ki]$. The cell
 problem stays uniformly elliptic, $\Keff^\varepsilon$ is symmetric positive
 definite, and the discrete operator stays symmetric positive definite.
-\item \emph{It has no free parameter} and uses only $\varphi$ and $\nabla\varphi$,
-which the phase field already provides. Where $\nabla\varphi=0$, $\bn$ is
+\item \emph{It has no free parameter} and uses only $\phi$ and $\nabla\phi$,
+which the phase field already provides. Where $\nabla\phi=0$, $\bn$ is
 undefined, but that happens only in the pure phases, where $\Kt=\Kn$ and $\bK$
 is isotropic whatever $\bn$ is.
 \end{enumerate}
@@ -469,19 +469,19 @@ interface, in proportion to $\varepsilon$, to the interfacial area, and to the
 square of the normal flux.
 
 \paragraph{Planar slab: the exact diffuse solution.} Take an ice slab with
-two flat faces per period $L$, and $\varphi$ a function of $y$ only. The
+two flat faces per period $L$, and $\phi$ a function of $y$ only. The
 cell problem is then one-dimensional and solvable exactly for any $\varepsilon$.
 Along the faces, $t=0$ and $k_\parallel=\avg{\Kt}$. Across them,
 $\Kn(t'+1)$ is constant and $\avg{t'}=0$, so $k_\perp=\avg{1/\Kn}^{-1}$. For
 the arithmetic law, Step 2 gives $\avg{\Kt}$ equal to its sharp value at every
 $\varepsilon$, while
 \begin{equation}
-\avg{1/\Kn}=\frac{\bar\varphi}{\Ki}+\frac{1-\bar\varphi}{\Ka}+\frac{2\,\Sigma_n}{L}
+\avg{1/\Kn}=\frac{\bar\phi}{\Ki}+\frac{1-\bar\phi}{\Ka}+\frac{2\,\Sigma_n}{L}
 \label{eq:slab}
 \end{equation}
 up to exponentially small overlap between the two faces' tails. This is exact
 in resistivity, and \eqref{eq:bias} is its linearization in $\varepsilon$. For the tensor law, $1/\Kn$ is affine and
-$k_\perp$ is exact at every $\varepsilon$. At $\bar\varphi=\tfrac12$:
+$k_\perp$ is exact at every $\varepsilon$. At $\bar\phi=\tfrac12$:
 
 \begin{center}
 \begin{tabular}{@{}lrrr@{}}
@@ -508,7 +508,7 @@ Two cells with closed-form sharp solutions, run over an $\varepsilon$ ladder at
 fixed $\varepsilon/h=5.12$, so the interface error is not confounded with mesh
 convergence.
 
-\paragraph{Planar slab} ($\bar\varphi=\tfrac12$). The normal is a fixed axis,
+\paragraph{Planar slab} ($\bar\phi=\tfrac12$). The normal is a fixed axis,
 so this case tests the normal branch of \eqref{eq:tensor} in isolation.
 
 \begin{center}
@@ -573,8 +573,8 @@ discretisation (PetIGA) in \verb|enceladus_dsm|, in-line with \verb|-keff 1|
 or on saved snapshots with \verb|-keff_replay|. The law is selected with
 \verb|-keff_interp tensor| (the default) or \verb|arith|. At each quadrature
 point, \verb|KeffPointCond| builds
-$\bK=\Kt\bI+(\Kn-\Kt)\,\nabla\varphi\otimes\nabla\varphi/|\nabla\varphi|^2$
-from the projected $\varphi$ and $\nabla\varphi$. The stiffness
+$\bK=\Kt\bI+(\Kn-\Kt)\,\nabla\phi\otimes\nabla\phi/|\nabla\phi|^2$
+from the projected $\phi$ and $\nabla\phi$. The stiffness
 $\int\nabla N_a\cdot\bK\nabla N_b$ is assembled once and shared by all
 directions. The load is $-\int\nabla N_a\cdot\bK\be_m$, and $\Keff$ is the
 quadrature average of $\bK(\nabla t_m+\be_m)$.
@@ -585,9 +585,9 @@ quadrature average of $\bK(\nabla t_m+\be_m)$.
 
 \begin{itemize}
 \item \emph{Steady state only.} Everything here concerns the homogenization
-cell problem on a frozen $\varphi$. It says nothing about, and is not an
+cell problem on a frozen $\phi$. It says nothing about, and is not an
 argument for changing, the transient equations of the phase-field model that
-produced $\varphi$.
+produced $\phi$.
 \item \emph{Residual $O(\varepsilon^2)$.} This includes curvature terms and a
 geometric one: a diffuse disk holds $\pi^3\varepsilon^2/3$ more area of ice than
 the sharp disk. The observed rate on the disk is about $2.5$. We have not
@@ -599,10 +599,10 @@ as in young sinter necks, the transitions overlap and no interpolation law is
 justified by it. This limits how well the phase field resolves the geometry, and
 it applies to the phase-field geometry as much as to $\Keff$.
 \item \emph{Profile.} The argument uses the antisymmetry of the profile about
-$\varphi=\tfrac12$. A profile distorted by the phase-field evolution changes the
+$\phi=\tfrac12$. A profile distorted by the phase-field evolution changes the
 excesses only in proportion to its departure from antisymmetry.
 \item \emph{Geometry error is untouched.} The law removes the error of
-homogenizing a given $\varphi$. It does not correct errors in $\varphi$ itself.
+homogenizing a given $\phi$. It does not correct errors in $\phi$ itself.
 \end{itemize}
 
 % ----------------------------------------------------------------------
@@ -632,7 +632,7 @@ $\mathbf E_t$ continuous here.
 The effective conductivity tensor is obtained by periodic homogenization
 (Calonne et al., 2011). The two-domain cell problem is written as a single weak
 equation with the piecewise conductivity $K_\star=K(\chi)$ of the ice indicator
-$\chi$, and solved on the phase field by replacing $\chi$ with $\varphi$. Inside
+$\chi$, and solved on the phase field by replacing $\chi$ with $\phi$. Inside
 the diffuse interface the conductivity must be interpolated. A matched
 asymptotic expansion shows that, to first order in the interface width
 $\varepsilon$, the diffuse interface acts as a sharp one with a spurious thermal
@@ -643,9 +643,9 @@ $\Sigma_n=-\varepsilon(K_a^{-1}-K_i^{-1})\ln(K_i/K_a)$, which overestimates
 conduction across interfaces by up to tens of percent at $K_i/K_a\approx115$. We
 therefore use arithmetic interpolation for gradients along the interface and
 harmonic interpolation for gradients across it,
-$\mathbf K=K_{\mathrm{ar}}(\varphi)(\mathbf I-\hat{\mathbf n}\otimes\hat{\mathbf n})
-+K_{\mathrm h}(\varphi)\,\hat{\mathbf n}\otimes\hat{\mathbf n}$ with
-$\hat{\mathbf n}=\nabla\varphi/|\nabla\varphi|$. This makes both terms vanish, so
+$\mathbf K=K_{\mathrm{ar}}(\phi)(\mathbf I-\hat{\mathbf n}\otimes\hat{\mathbf n})
++K_{\mathrm h}(\phi)\,\hat{\mathbf n}\otimes\hat{\mathbf n}$ with
+$\hat{\mathbf n}=\nabla\phi/|\nabla\phi|$. This makes both terms vanish, so
 the error is $O(\varepsilon^2)$. The law reduces to the pure-phase
 conductivities outside the interface and has no adjustable parameters. We
 verified it against closed-form sharp solutions for a planar slab and a square
