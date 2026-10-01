@@ -304,6 +304,40 @@ in the small grain disappearing. That is the regime the CFL limiter was built
 for, and the one where a large step is known to cost accuracy: on 2026-07-10 a
 12× larger `-dtmax` stayed stable and ripple-free but put extinction 32 % late.
 
+#### Result: small channel (batch_2026-10-01__14.25.24_dtmax_small)
+
+All six rungs completed, no rejections, φ within bounds. Ice grew 29 % in
+20 days at the reference.
+
+| dtmax/τ_sub | steps | growth error | half-growth time | CFL caps |
+|---|---|---|---|---|
+| 0.8 | 428 | reference | 10.07 d | 0 |
+| 2 | 210 | 0.06 % | +0.1 % | 0 |
+| 5 | 124 | 0.6 % | +1.0 % | 1 |
+| 10 | 97 | 2.8 % | +3.7 % | 2 |
+| 20 | 85 | 10 % | +10.5 % | 5 |
+| 40 | 81 | 22 % | +16.0 % | 9 |
+
+- Stability is not the limit: every rung ran clean. Accuracy is. The error
+  grows about quadratically in dt and the larger step always under-predicts
+  growth.
+- 2·τ_sub costs 0.06 % and halves the steps; 5·τ_sub costs 0.6 % for 3.5×
+  fewer. Past 10·τ_sub the error is no longer small against the effects the
+  study measures.
+- The CFL limiter starts binding near dt ≈ 4e4 s (7·τ_sub) on this geometry,
+  so the 20 and 40 rungs are partly limiter-controlled; about 60 of every
+  run's steps are the ramp up from the 1e-4 s first step.
+- **Every step takes exactly one Newton iteration, at every rung.** The φ
+  residual is ~1e-17 in SI units, far below `-snes_atol 1e-6`, so the block
+  is declared converged on entry; after the single iteration its residual has
+  fallen by only 0.54×. The scheme is in effect linearised once per step.
+  This is the known, deferred tolerance issue noted in `lunar_main.c`
+  (per-field tolerances matched to each field's scale), and it is the
+  concrete case for non-dimensionalising: not conditioning (5–7 Krylov
+  iterations per solve is already cheap) but a convergence test that means
+  something. Whether a properly converged Newton solve would hold accuracy
+  at larger dt is untested.
+
 ### Solver diagnostics
 
 Every run now writes `solver_evo.dat` beside `SSA_evo.dat`:

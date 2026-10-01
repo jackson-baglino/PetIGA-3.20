@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-01 14:30:00
+
+
+---
+
 **Session ended:** 2026-10-01 14:24:50
 
 
@@ -62,6 +67,21 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (afternoon) — dtmax ladder result on the small channel
+
+- batch_2026-10-01__14.25.24_dtmax_small, six rungs, all clean. Growth error
+  vs 0.8 tau_sub: 0.06 % at 2, 0.6 % at 5, 2.8 % at 10, 10 % at 20, 22 % at 40.
+  Roughly second order in dt; larger steps under-predict growth. Stability is
+  not the limit, accuracy is. CFL limiter binds from ~7 tau_sub on this case.
+- solver_evo.dat works. Krylov 5-7 per Newton: conditioning is fine.
+- Finding: exactly ONE Newton iteration per step at every rung. The phi
+  residual (~1e-17 SI) is below -snes_atol 1e-6 on entry, so the block passes
+  trivially and its residual drops only 0.54x. Known deferred issue (comment
+  at lunar_main.c ~1397); this, not conditioning, is the case for
+  non-dimensionalising. Results table in the velocity_plan README.
+
+---
 
 ## 2026-10-01 (later) — dtmax ladder: sintering and ripening grain pairs
 
