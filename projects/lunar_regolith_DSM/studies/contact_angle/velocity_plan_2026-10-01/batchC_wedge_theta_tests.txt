@@ -1,9 +1,0 @@
-# Batch C -- wedge, theta sweep at sigma_inf = 0. 150 days each.
-# Prediction: inner meniscus stalls at 90+alpha = 104 deg, outer at
-# 90-alpha = 76 deg. theta = 60 and 120 repeat the 2026-09-19 reservoir pair.
-# for scripts/HPC/submit_batch.sh --tests-file; see README.md in this folder.
-wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta30
-wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta60
-wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta90
-wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta120
-wedge_2D_L300um_eps0.86um_wall:wedgeres150_T-20_theta150

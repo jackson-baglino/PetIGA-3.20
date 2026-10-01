@@ -1,13 +1,13 @@
 # =============================================================================
-# experiment/contactangle/grow90_T-20_theta60_sigp3e-5.opts
+# experiment/contactangle/grow90_T-20_theta90_ac1e-3.opts
 #
 # Isothermal growth/shrinkage against a saturated vapour reservoir.
 #
 #   cos(theta) = (gamma_as - gamma_is)/gamma_ia
-#              = (0.300000 - 0.245500)/0.109000 = +0.500000  ->  theta = 60.000 deg
+#              = (0.300000 - 0.300000)/0.109000 = +0.000000  ->  theta = 90.000 deg
 #
 # Meniscus curvature this implies in the H = 125 um channel, chi = 2|cos th|/H:
-#   R_arc = 1.250e-04 m, |chi| = 8.000e+03 1/m -- concave, chi < 0 -> ice grows against a reservoir
+#   R_arc = inf m, |chi| = 9.797e-13 1/m -- flat, chi = 0 -> no net exchange
 #
 # VAPOUR RESERVOIR on the x-faces at saturation, both ends equal. This is the
 # wedge campaign's boundary condition (-flag_BC_rhovfix 1 -rhovfix_axis 0) with
@@ -31,18 +31,17 @@
 #
 # t_final = 90 days, matching the wedge campaign.
 # =============================================================================
-# --- SATURATION SWEEP (velocity_plan_2026-10-01, batch B) ---
-# Identical to grow90_T-20_theta60.opts except for the wall vapour density:
-#     sigma_inf = rhovfix - 1 = +3e-05
-# -rhovfix_lo/hi are fractions of rho_vs(temp0), so this IS the supersaturation
-# of the reservoir. The capillary term d0*chi is ~1e-5 here, so the sweep moves
-# in the fifth decimal place; anything coarser buries the curvature term.
-# -humidity is set to the same value so the vapour IC starts on the reservoir
-# value instead of relaxing to it.
+# --- ATTACHMENT COEFFICIENT alpha_c = 1e-3 (velocity_plan_2026-10-01) ---
+# LOW alpha_c: the lunar-regolith end. Cold, near-saturated pores sit at very low
+# supersaturation, where attachment is nucleation-limited and alpha_c is small.
+# 1e-3 is the bottom of the literature band (1e-3 to 1e-1) and the value the
+# enceladus campaign uses. Interface kinetics carry ~60 % of the resistance.
+# Otherwise identical to grow90_T-20_theta90.opts (alpha_c = 2e-3).
+
 -t_final 7.776e6
 
 -temp -20.0
--humidity 1.000030
+-humidity 1.00
 -grad_temp0 0.0,0.0,0.0                 # isothermal: theta is the only driver
 
 # THERMAL reservoir, every face. Without this the box is insulated and latent
@@ -59,19 +58,19 @@
 # not feed ice at the contact line.
 -flag_BC_Tfix 1
 
--beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-beta_sub0 7.9408e6                     # K&P beta0 at -20 C (alpha_c = 1e-3)
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
 # --- the substrate, as surface energies ---
 -gamma_ia 0.109
 -gamma_as 0.3
--gamma_is 0.2455000
+-gamma_is 0.3000000
 
 # --- vapour reservoir, x-faces only, both at saturation ---
 -flag_BC_rhovfix 1
 -rhovfix_axis 0
--rhovfix_lo 1.000030
--rhovfix_hi 1.000030
+-rhovfix_lo 1.000000
+-rhovfix_hi 1.000000
 
 -dtCFL 1
 -dtCFL_dphimax 0.2

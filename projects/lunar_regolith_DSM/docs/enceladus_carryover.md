@@ -51,7 +51,8 @@ gap equals the thin-interface correction
 `5·a2·ε·(1/diff_sub + 1/dif_vap)·ρ_ice/ρ_vs` exactly. This is the same 1.22
 factor `wedge_gt_velocity.py` found independently, and it is why
 `studies/contact_angle/velocity_plan_2026-10-01/` uses β_eff = 1.22·β_sub0.
-`a2` enters β only, never d0.
+`a2` enters β only, never d0. The offset is additive (8.7e5 s/m at this ε),
+not a fixed percentage: +11 % at α_c = 1e-3, +110 % at 1e-2.
 
 **3. v_n is a small residual of two large terms.** On the wedge run the
 curvature and phase-change contributions are ~1e-11 m/s each and cancel by a
@@ -74,11 +75,11 @@ ears", 36 % peak-to-trough). The macro now builds the unit normal pointwise
 and differentiates that. Curvature does **not** change sign across one
 interface. Read curvature on the φ = 0.5 contour, not as a band median.
 
-**6. β is set by α_c, and the two projects use different values.**
-β_sub ∝ 1/α_c. The contact-angle runs here use `-beta_sub0 3.9704e6`
-(α_c = 2e-3 at −20 °C). The enceladus k_eff campaign settled on a constant
-α_c = 1e-3. Velocities from the two projects are not comparable without
-rescaling β. The literature band is 1e-3 < α_c < 1e-1.
+**6. β is set by α_c.** β_sub ∝ 1/α_c. The September contact-angle runs here
+used `-beta_sub0 3.9704e6` (α_c = 2e-3 at −20 °C); the enceladus k_eff campaign
+settled on a constant α_c = 1e-3. From 2026-10-01 the velocity study runs
+every batch at α_c = 1e-3 (lunar) and 1e-2 (laboratory). The literature band
+is 1e-3 < α_c < 1e-1.
 
 **7. ParaView macro trap.** `plot_rhovsI` runs a Programmable Filter that
 star-imports over `max`/`min`/`sum` in `__main__`, which macros share. Macros

@@ -1,0 +1,88 @@
+# =============================================================================
+# experiment/contactangle/grow90_T-20_theta60_sigm1e-5_ac1e-2.opts
+#
+# Isothermal growth/shrinkage against a saturated vapour reservoir.
+#
+#   cos(theta) = (gamma_as - gamma_is)/gamma_ia
+#              = (0.300000 - 0.245500)/0.109000 = +0.500000  ->  theta = 60.000 deg
+#
+# Meniscus curvature this implies in the H = 125 um channel, chi = 2|cos th|/H:
+#   R_arc = 1.250e-04 m, |chi| = 8.000e+03 1/m -- concave, chi < 0 -> ice grows against a reservoir
+#
+# VAPOUR RESERVOIR on the x-faces at saturation, both ends equal. This is the
+# wedge campaign's boundary condition (-flag_BC_rhovfix 1 -rhovfix_axis 0) with
+# its +/-5e-6 imbalance removed, so the imposed gradient is gone and the
+# MENISCUS CURVATURE SET BY THETA is the only remaining driver.
+#
+# That is what makes growth observable. In a sealed box the ice can change by at
+# most ~1e-6 of itself; with a reservoir the equilibrium vapour density at a
+# curved interface, rho_vs(1 + d0*chi), sits below saturation when the meniscus
+# is concave and above it when convex, so:
+#     theta < 90  (chi < 0, concave) -> draws vapour in  -> ice GROWS
+#     theta = 90  (chi = 0, flat)    -> no net flux      -> ice steady
+#     theta > 90  (chi > 0, convex)  -> releases vapour  -> ice SHRINKS
+#
+# This needs BOTH reservoirs. Mass alone is not enough -- the latent heat has to
+# go somewhere too, or the temperature moves and cancels the supersaturation.
+#
+# Reservoirs are on the x-faces ONLY. Pinning vapour on the y walls would feed
+# ice directly at its contact line and corrupt the angle (lunar_main.c warns
+# about exactly this).
+#
+# t_final = 90 days, matching the wedge campaign.
+# =============================================================================
+# --- SATURATION SWEEP (velocity_plan_2026-10-01, batch B) ---
+# Identical to grow90_T-20_theta60.opts except for the wall vapour density:
+#     sigma_inf = rhovfix - 1 = -1e-05
+# -rhovfix_lo/hi are fractions of rho_vs(temp0), so this IS the supersaturation
+# of the reservoir. The capillary term d0*chi is ~1e-5 here, so the sweep moves
+# in the fifth decimal place; anything coarser buries the curvature term.
+# -humidity is set to the same value so the vapour IC starts on the reservoir
+# value instead of relaxing to it.
+# --- ATTACHMENT COEFFICIENT alpha_c = 1e-2 (velocity_plan_2026-10-01) ---
+# HIGH alpha_c: the laboratory end. beta_sub0 is 10x smaller, so vapour diffusion
+# to the wall carries ~80 % of the resistance and the run is diffusion-limited.
+# 1e-2 is the largest value the existing eps = 0.8584 um meshes support; 1e-1
+# needs eps = 0.296 um (3x finer each way) and would change v_n by only ~15 %.
+# -dtmax is cut to 0.5*tau_sub (tau_sub = 670 s here, against 2972 s at 2e-3).
+# Otherwise identical to grow90_T-20_theta60_sigm1e-5.opts (alpha_c = 2e-3).
+-dtmax 3.35e2
+
+-t_final 7.776e6
+
+-temp -20.0
+-humidity 0.999990
+-grad_temp0 0.0,0.0,0.0                 # isothermal: theta is the only driver
+
+# THERMAL reservoir, every face. Without this the box is insulated and latent
+# heat shuts the experiment off almost immediately: batch 2026-09-14 measured a
+# drift of +1.49e-4 K at theta=30 and -1.47e-4 K at theta=150, which is exactly
+# the dT needed to move rho_vs(T) by the 1.41e-5 supersaturation that was
+# driving growth. Depositing 1e-5 % of the ice releases that much heat, so the
+# driving force annihilates itself and the ice changes by ~0.003 % in 90 days
+# instead of tens of percent.
+#
+# With -grad_temp0 all zero, the solver pins T = temp0 on EVERY face (a uniform
+# isothermal bath), which is what an open pore in a large regolith body sees.
+# Unlike a vapour reservoir on the y walls, pinning T there is harmless: it does
+# not feed ice at the contact line.
+-flag_BC_Tfix 1
+
+-beta_sub0 7.9408e5                     # K&P beta0 at -20 C (alpha_c = 1e-2)
+-d0_sub0 1.0166e-9                      # physical capillary length at -20 C
+
+# --- the substrate, as surface energies ---
+-gamma_ia 0.109
+-gamma_as 0.3
+-gamma_is 0.2455000
+
+# --- vapour reservoir, x-faces only, both at saturation ---
+-flag_BC_rhovfix 1
+-rhovfix_axis 0
+-rhovfix_lo 0.999990
+-rhovfix_hi 0.999990
+
+-dtCFL 1
+-dtCFL_dphimax 0.2
+-outp 0
+-n_out 60

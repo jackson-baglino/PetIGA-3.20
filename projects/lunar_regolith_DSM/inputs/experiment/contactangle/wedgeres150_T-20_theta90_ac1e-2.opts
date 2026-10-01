@@ -1,5 +1,5 @@
 # =============================================================================
-# experiment/contactangle/wedgeres150_T-20_theta60_sigp3e-5.opts
+# experiment/contactangle/wedgeres150_T-20_theta90_ac1e-2.opts
 #
 # WEDGE, vapour + thermal reservoirs. The companion to wedge150_*, which is
 # sealed; run both to separate what the boundary condition does from what the
@@ -33,28 +33,29 @@
 # than the 90-day runs because the point here is the plateau, not the rate, and
 # the flat-90 IC makes the approach cheaper anyway.
 # =============================================================================
-# --- SATURATION SWEEP (velocity_plan_2026-10-01, batch D) ---
-# Identical to wedgeres150_T-20_theta60.opts except for the wall vapour density:
-#     sigma_inf = rhovfix - 1 = +3e-05
-# -rhovfix_lo/hi are fractions of rho_vs(temp0), so this IS the supersaturation
-# of the reservoir. The capillary term d0*chi is ~1e-5 here, so the sweep moves
-# in the fifth decimal place; anything coarser buries the curvature term.
-# -humidity is set to the same value so the vapour IC starts on the reservoir
-# value instead of relaxing to it.
+# --- ATTACHMENT COEFFICIENT alpha_c = 1e-2 (velocity_plan_2026-10-01) ---
+# HIGH alpha_c: the laboratory end. beta_sub0 is 10x smaller, so vapour diffusion
+# to the wall carries ~80 % of the resistance and the run is diffusion-limited.
+# 1e-2 is the largest value the existing eps = 0.8584 um meshes support; 1e-1
+# needs eps = 0.296 um (3x finer each way) and would change v_n by only ~15 %.
+# -dtmax is cut to 0.5*tau_sub (tau_sub = 670 s here, against 2972 s at 2e-3).
+# Otherwise identical to wedgeres150_T-20_theta90.opts (alpha_c = 2e-3).
+-dtmax 3.35e2
+
 -t_final 1.3e7
 
 -temp -20.0
--humidity 1.000030
+-humidity 1.00
 -grad_temp0 0.0,0.0,0.0
 
--beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-beta_sub0 7.9408e5                     # K&P beta0 at -20 C (alpha_c = 1e-2)
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
 # --- the substrate ---
-# gamma_ia = 0.109 (the solver default), gamma_as - gamma_is = 0.0545
-#   cos(theta) = 0.0545/0.109 = +0.5000  ->  theta = 60 deg
+# gamma_ia = 0.109 (the solver default), gamma_as - gamma_is = 0.0000000
+#   cos(theta) = 0.0000000/0.109 = +0.0000  ->  theta = 90 deg
 -gamma_as 0.300
--gamma_is 0.2455000
+-gamma_is 0.3000000
 
 # --- reservoirs: T on every face, vapour on the x-faces only ---
 # Pinning vapour on the y walls would feed ice directly at its contact line and
@@ -62,8 +63,8 @@
 -flag_BC_Tfix 1
 -flag_BC_rhovfix 1
 -rhovfix_axis 0
--rhovfix_lo 1.000030
--rhovfix_hi 1.000030
+-rhovfix_lo 1.000000
+-rhovfix_hi 1.000000
 
 -dtCFL 1
 -dtCFL_dphimax 0.2

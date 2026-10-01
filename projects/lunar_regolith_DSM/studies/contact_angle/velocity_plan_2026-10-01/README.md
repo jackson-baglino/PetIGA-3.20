@@ -28,17 +28,53 @@ Talking points
   and the diffusive resistance Z.
 - Z = K·ℓ in the channel and Z = K·r·ln(r_res/r) in the wedge, with
   K = ρ_ice/(ρ_vs·D_v) = 5.7e10 s/m² at −20 °C.
-- At ℓ = 100 µm, Z = 5.8e6 s/m against β_eff = 4.8e6 s/m. The runs are in a
-  mixed kinetic/diffusive regime, not kinetics-limited.
-- β_eff = 1.22 × the requested β_sub0. This is the thin-interface calibration
-  offset measured on the 2026-08-07 wedge batch, and it is the value used in
-  every curve here.
+- At ℓ = 100 µm the diffusive resistance is Z = 5.8e6 s/m. Whether the runs
+  are kinetics- or diffusion-limited is set by α_c (next section).
 - Sign conventions: θ is measured through the ice; χ > 0 where the ice is
   convex into the vapour; v_n > 0 is growth.
 
 ---
 
-## 2. Run matrix: four batches, four plots
+## 2. Two attachment coefficients
+
+Every batch is run twice, at a low and a high α_c. β_sub0 = 7.9408e3/α_c s/m
+at −20 °C (Hertz–Knudsen).
+
+| | α_c | β_sub0 [s/m] | kinetic share of resistance | stands for |
+|---|---|---|---|---|
+| low | 1e-3 | 7.94e6 | 0.60 | lunar regolith |
+| high | 1e-2 | 7.94e5 | 0.22 | laboratory experiments |
+
+Talking points
+
+- Low α_c is the lunar case: very cold, near-saturated pores sit at low
+  supersaturation, where attachment is nucleation-limited and α_c is small.
+  1e-3 is the bottom of the literature band (1e-3 to 1e-1) and the value the
+  enceladus campaign uses.
+- High α_c is the laboratory case, and it is diffusion-limited: the wall
+  distance, not the interface, sets the rate.
+- 1e-2 rather than 1e-1 for the high value because `comp_eps.py` returns the
+  same ε = 0.8584 µm for every α_c from 1e-4 to 1e-2, so both values reuse the
+  existing meshes. At 1e-1 the heat bound binds, ε drops to 0.296 µm and the
+  mesh is 3× finer each way, for a predicted velocity change of only ~15 %.
+- The high-α_c runs carry `-dtmax 3.35e2` (τ_sub falls to 670 s), so they take
+  about 4× the steps of the low-α_c runs.
+- Thin-interface offset: the measured interface coefficient on the August
+  wedge batch was β_sub0 plus an additive 8.7e5 s/m, i.e. +22 % at 2e-3. It
+  is not a fixed percentage: +11 % at 1e-3, +110 % at 1e-2. The curves here
+  include it; `--beta-offset 0` redraws them for a solver that removes it
+  exactly. The high-α_c batch is the sensitive test of which is right.
+- Predicted at θ = 60°, σ∞ = 0: channel 48 nm/day (α_c = 1e-3) against
+  95 nm/day (1e-2); wedge ice change over 150 days +14 % against +28 %.
+- Figures below are the α_c = 1e-3 set; the `_ac1e-2` files beside them are
+  the same panels at the high value. The shapes are identical; only the
+  velocity scale and the inner/outer slope ratio change.
+- All runs are at −20 °C. Lunar temperatures are far lower; ε and the mesh are
+  temperature-dependent, so moving T is a separate step.
+
+---
+
+## 3. Run matrix: four batches, four plots
 
 | Batch | Geometry | Swept | Held fixed | Plot |
 |---|---|---|---|---|
@@ -61,9 +97,9 @@ Talking points
 
 ---
 
-## 3. Channel: velocity follows cos θ
+## 4. Channel: velocity follows cos θ
 
-![Channel predictions](fig2_channel.png)
+![Channel predictions](fig2_channel_ac1e-3.png)
 
 ```
 χ = −2·cos θ / H
@@ -81,13 +117,13 @@ Talking points
   v_n drifts slowly in time. Integrating gives
   `β·x + K·(ℓ0·x − x²/2) = (σ∞ − d0·χ)·t`.
 - Compare runs at matched ℓ, or use the early-time velocity.
-- Curves drawn at ℓ = 101 µm, H = 125 µm.
+- Curves drawn at ℓ = 101 µm, H = 125 µm, α_c = 1e-3.
 
 ---
 
-## 4. Wedge: curvature falls as 1/r, giving an ODE
+## 5. Wedge: curvature falls as 1/r, giving an ODE
 
-![Wedge curvature and ODE](fig3_wedge_ode.png)
+![Wedge curvature and ODE](fig3_wedge_ode_ac1e-3.png)
 
 ```
 χ_inner = −(cos θ + sin α) / (r·sin α)
@@ -116,9 +152,9 @@ Talking points
 
 ---
 
-## 5. Wedge: the two menisci split about 90°
+## 6. Wedge: the two menisci split about 90°
 
-![Wedge predictions](fig4_wedge.png)
+![Wedge predictions](fig4_wedge_ac1e-3.png)
 
 Talking points
 
@@ -134,7 +170,7 @@ Talking points
 
 ---
 
-## 6. Check against the runs we already have
+## 7. Check against the runs we already have
 
 | Reservoir run, σ∞ = 0 | θ | Predicted ice change | Measured ice change |
 |---|---|---|---|
@@ -145,8 +181,9 @@ Talking points
 
 Talking points
 
-- No fitted parameters. β is the value measured on the August wedge batch;
-  everything else is an input.
+- These existing runs used α_c = 2e-3, so the check is made at that value
+  (`--alpha 2e-3`). No fitted parameters: β includes the offset measured on
+  the August wedge batch; everything else is an input.
 - The theory sits 1 to 2 points under the measurement in every case, with the
   right sign and the right channel-to-wedge ratio.
 - Predicted ice change uses centreline displacement only: 2·v·t over the
@@ -159,29 +196,30 @@ Talking points
 
 ---
 
-## 7. Input files and submission
+## 8. Input files and submission
 
-The four batches are built. One tests file per batch, in this folder:
+The four batches are built at both α_c values: 44 experiment files and eight
+tests files, `batch{A,B,C,D}_*_ac1e-3_tests.txt` and `..._ac1e-2_tests.txt`.
 
-| Batch | Tests file | Runs | New input files |
-|---|---|---|---|
-| A | `batchA_channel_theta_tests.txt` | 5 | none (`grow90_T-20_theta*`) |
-| B | `batchB_channel_sigma_tests.txt` | 6 | `grow90_T-20_theta60_sig{m,p}{1,2,3}e-5` |
-| C | `batchC_wedge_theta_tests.txt` | 5 | `wedgeres150_T-20_theta{30,90,150}` |
-| D | `batchD_wedge_sigma_tests.txt` | 6 | `wedgeres150_T-20_theta60_sig{m,p}{1,2,3}e-5` |
+| Batch | Runs per α_c | Experiment files |
+|---|---|---|
+| A | 5 | `grow90_T-20_theta{30,60,90,120,150}_ac*` |
+| B | 6 | `grow90_T-20_theta60_sig{m,p}{1,2,3}e-5_ac*` |
+| C | 5 | `wedgeres150_T-20_theta{30,60,90,120,150}_ac*` |
+| D | 6 | `wedgeres150_T-20_theta60_sig{m,p}{1,2,3}e-5_ac*` |
 
 - σ∞ is set through `-rhovfix_lo/hi`, which are fractions of ρ_vs(temp0), so
   σ∞ = rhovfix − 1. `-humidity` is set to the same value so the vapour IC
   starts on the reservoir value.
 - The σ∞ = 0 points of B and D are the θ = 60° runs of A and C.
-- Batch A is not a repeat of the 2026-09-14 five-angle `grow90` batch. That
-  one ran with `-flag_BC_Tfix 0` and was thermally throttled (0.003 % ice
-  change). Only θ = 60° and 120° have been run with the thermal bath since.
+- Nothing here repeats an earlier run: the September batches used α_c = 2e-3,
+  and the five-angle `grow90` batch of 2026-09-14 was thermally throttled
+  (`-flag_BC_Tfix 0`, 0.003 % ice change) besides.
 - Submit in stages, cheapest first, and check A before the rest:
 
 ```bash
-./scripts/HPC/submit_batch.sh --tag velA_channel_theta \
-    --tests-file studies/contact_angle/velocity_plan_2026-10-01/batchA_channel_theta_tests.txt
+./scripts/HPC/submit_batch.sh --tag velA_channel_theta_ac1e-3 \
+    --tests-file studies/contact_angle/velocity_plan_2026-10-01/batchA_channel_theta_ac1e-3_tests.txt
 ```
 
 - Measurement: `postprocess/meniscus_velocity.py` for the channel,
@@ -192,7 +230,7 @@ The four batches are built. One tests file per batch, in this folder:
 
 ---
 
-## 8. Open points before submitting
+## 9. Open points before submitting
 
 - **Velocity is not set by θ alone.** Diffusion to the wall is as large as the
   kinetic term, so v_n also depends on the meniscus-to-wall distance. Compare

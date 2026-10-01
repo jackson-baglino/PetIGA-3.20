@@ -1,3 +1,21 @@
+## 2026-10-01 (later still) — Velocity study rebuilt at two alpha_c values
+
+- Jackson: move to a smaller alpha_c for the lunar case, and repeat at a high
+  one for laboratory comparison. Chose 1e-3 (bottom of the literature band,
+  matches enceladus) and 1e-2. comp_eps.py returns eps = 0.8584 um for every
+  alpha_c in 1e-4..1e-2, so both reuse the existing meshes; 1e-1 would need
+  eps = 0.296 um for a ~15 % change in predicted velocity.
+- 44 experiment files (*_ac1e-3, *_ac1e-2) and eight tests files replace this
+  morning's never-run alpha_c = 2e-3 set. The high-alpha_c files carry
+  -dtmax 3.35e2 because tau_sub falls to 670 s.
+- make_theory_figures.py takes --alpha and --beta-offset. The thin-interface
+  offset on beta is additive (8.7e5 s/m), so it is +11 % at 1e-3 and +110 % at
+  1e-2, not a fixed 22 %.
+- The Stop hook in .claude/settings.local.json was still writing to
+  projects/sublimation_pf/.claude/ACTIVITY_LOG.md; retargeted to this project.
+
+---
+
 ## 2026-10-01 (later) — Velocity-study inputs built; enceladus history carried over
 
 - Built the four batches of the contact-angle velocity study: 15 new experiment

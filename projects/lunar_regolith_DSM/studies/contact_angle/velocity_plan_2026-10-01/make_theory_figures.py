@@ -32,13 +32,19 @@ the centreline, measured from the virtual apex)
 
 Both wedge forms reduce to the -1/r, +1/r of the apex-centred 90-degree band.
 
-BETA. The solver runs at beta_eff = 1.22 * beta_sub0 (the thin-interface
-calibration offset measured on the 2026-08-07 wedge_bc batch), so that is the
-value used here.
+BETA. beta_sub0 = 7.9408e3 / alpha_c [s/m] at -20 C (Hertz-Knudsen). The
+measured interface coefficient on the 2026-08-07 wedge_bc batch was
+beta_sub0 + a1*a2*eps*(1/D_T + 1/D_v)*rho_ice/rho_vs, an ADDITIVE offset of
+8.74e5 s/m at this eps: +22 % at alpha_c = 2e-3, +11 % at 1e-3, +110 % at 1e-2.
+--beta-offset 0 draws the curves for a solver that removes it exactly.
 
 Usage:
-    venv_lunar/bin/python3 studies/contact_angle/velocity_plan_2026-10-01/make_theory_figures.py
+    venv_lunar/bin/python3 studies/contact_angle/velocity_plan_2026-10-01/make_theory_figures.py \\
+        [--alpha 1e-3] [--beta-offset 8.74e5]
+
+Figures 2-4 are written with an _ac<alpha> suffix; figure 1 is alpha-independent.
 """
+import argparse
 import os
 import sys
 
@@ -56,7 +62,10 @@ from pplib import rho_vs                                    # noqa: E402
 # --- parameters, as the -20 C contact-angle runs set them --------------------
 T_C = -20.0
 D0 = 1.0166e-9                     # -d0_sub0 [m]
-BETA = 1.22 * 3.9704e6             # beta_eff = 1.22 * -beta_sub0 [s/m]
+BETA_HK1 = 7.9408e3                # beta_sub0 at alpha_c = 1 [s/m]
+BETA_OFFSET = 0.22 * 3.9704e6      # measured thin-interface offset [s/m]
+BETA = BETA_HK1 / 2e-3 + BETA_OFFSET   # reset from --alpha in __main__
+TAG = ""
 RHO_ICE = 919.0
 D_V = 2.178e-5 * ((T_C + 273.15) / 273.15) ** 1.81         # VaporDiffus()
 K = RHO_ICE / (float(rho_vs(T_C)) * D_V)                   # [s/m^2]
@@ -261,7 +270,7 @@ def fig_channel():
     ax.set_ylabel(r"interface velocity $v_n$ [nm/day]")
     panel(ax, "b")
     fig.tight_layout()
-    save(fig, "fig2_channel.png")
+    save(fig, "fig2_channel%s.png" % TAG)
 
 
 # --- figure 3: wedge curvature and the ODE ----------------------------------
@@ -302,7 +311,7 @@ def fig_wedge_ode():
     ax.set_ylabel("meniscus advance into vapour [µm]")
     panel(ax, "b")
     fig.tight_layout()
-    save(fig, "fig3_wedge_ode.png")
+    save(fig, "fig3_wedge_ode%s.png" % TAG)
 
 
 # --- figure 4: wedge predictions --------------------------------------------
@@ -348,10 +357,20 @@ def fig_wedge():
     ax.set_ylabel(r"growth velocity $v_n$ [nm/day]")
     panel(ax, "b")
     fig.tight_layout()
-    save(fig, "fig4_wedge.png")
+    save(fig, "fig4_wedge%s.png" % TAG)
 
 
 if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--alpha", type=float, default=1e-3, help="attachment coefficient alpha_c")
+    ap.add_argument("--beta-offset", type=float, default=BETA_OFFSET,
+                    help="additive thin-interface offset on beta [s/m]; 0 = fully corrected")
+    args = ap.parse_args()
+    BETA = BETA_HK1 / args.alpha + args.beta_offset
+    TAG = "_ac%.0e" % args.alpha
+    TAG = TAG.replace("e-0", "e-")
+    print(f"alpha_c = {args.alpha:g}: beta_sub0 = {BETA_HK1/args.alpha:.3e}, "
+          f"kinetic share of channel resistance = {BETA/(BETA + K*L_CH):.2f}")
     print(f"K = {K:.3e} s/m^2   beta_eff = {BETA:.3e} s/m   "
           f"Z_D(channel) = {K*L_CH:.3e} s/m   alpha = {np.degrees(ALPHA):.2f} deg")
     for thd in (60, 120):

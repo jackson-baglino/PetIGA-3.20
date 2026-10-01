@@ -1,0 +1,7 @@
+# batchA -- channel, theta sweep at sigma_inf = 0, 90 d, alpha_c = 1e-2.
+# for scripts/HPC/submit_batch.sh --tests-file; see README.md in this folder.
+channel_2D_H125um_eps0.86um:grow90_T-20_theta30_ac1e-2
+channel_2D_H125um_eps0.86um:grow90_T-20_theta60_ac1e-2
+channel_2D_H125um_eps0.86um:grow90_T-20_theta90_ac1e-2
+channel_2D_H125um_eps0.86um:grow90_T-20_theta120_ac1e-2
+channel_2D_H125um_eps0.86um:grow90_T-20_theta150_ac1e-2

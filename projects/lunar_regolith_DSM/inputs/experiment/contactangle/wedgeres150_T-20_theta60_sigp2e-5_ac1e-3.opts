@@ -1,5 +1,5 @@
 # =============================================================================
-# experiment/contactangle/wedgeres150_T-20_theta60_sigp2e-5.opts
+# experiment/contactangle/wedgeres150_T-20_theta60_sigp2e-5_ac1e-3.opts
 #
 # WEDGE, vapour + thermal reservoirs. The companion to wedge150_*, which is
 # sealed; run both to separate what the boundary condition does from what the
@@ -41,13 +41,20 @@
 # in the fifth decimal place; anything coarser buries the curvature term.
 # -humidity is set to the same value so the vapour IC starts on the reservoir
 # value instead of relaxing to it.
+# --- ATTACHMENT COEFFICIENT alpha_c = 1e-3 (velocity_plan_2026-10-01) ---
+# LOW alpha_c: the lunar-regolith end. Cold, near-saturated pores sit at very low
+# supersaturation, where attachment is nucleation-limited and alpha_c is small.
+# 1e-3 is the bottom of the literature band (1e-3 to 1e-1) and the value the
+# enceladus campaign uses. Interface kinetics carry ~60 % of the resistance.
+# Otherwise identical to wedgeres150_T-20_theta60_sigp2e-5.opts (alpha_c = 2e-3).
+
 -t_final 1.3e7
 
 -temp -20.0
 -humidity 1.000020
 -grad_temp0 0.0,0.0,0.0
 
--beta_sub0 3.9704e6                     # K&P beta0 at -20 C (alpha_c = 2e-3)
+-beta_sub0 7.9408e6                     # K&P beta0 at -20 C (alpha_c = 1e-3)
 -d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
 # --- the substrate ---
