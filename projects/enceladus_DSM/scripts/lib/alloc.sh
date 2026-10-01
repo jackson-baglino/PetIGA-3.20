@@ -60,6 +60,14 @@
 : "${NTASKS_PER_NODE:=32}"
 : "${MAX_TASKS_PER_NODE:=${NTASKS_PER_NODE}}"
 
+# Most nodes one job may span (2026-10-01). The k_eff corrector solve is
+# 15-30x slower at >= 8 nodes (inter-node communication; scaling test,
+# studies/keff_sintering/scaling/README.md), so a mesh whose DoF target asks
+# for more nodes is capped here and simply carries more DoF per core. Memory
+# grows with it and is sized by mem_per_cpu (not billed). Only the L/R 56/80
+# convergence runs hit it: 9 and 16 nodes at 200k/core -> 6 nodes.
+: "${MAX_NODES_PER_JOB:=6}"
+
 # Lower edge of the acceptable tasks-per-node band. Used by plan_alloc below to
 # rebalance instead of leaving a nearly-empty last node.
 : "${MIN_TASKS_PER_NODE:=28}"

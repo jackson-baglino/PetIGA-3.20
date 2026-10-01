@@ -290,6 +290,9 @@ compute_alloc() {
     local total_dofs=$((dof * nx * ny * nz))
     local nprocs=$(( (total_dofs + TARGET_DOFS_PER_CORE - 1) / TARGET_DOFS_PER_CORE ))
     (( nprocs < 1 )) && nprocs=1
+    # Node cap (scripts/lib/alloc.sh): beyond it the k_eff solve slows 15-30x.
+    local cap=$(( MAX_NODES_PER_JOB * MAX_TASKS_PER_NODE ))
+    (( MAX_NODES_PER_JOB > 0 && nprocs > cap )) && nprocs=$cap
 
     local tasks_per_node=$nprocs
     (( tasks_per_node > MAX_TASKS_PER_NODE )) && tasks_per_node=$MAX_TASKS_PER_NODE
