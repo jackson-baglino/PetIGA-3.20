@@ -43,6 +43,12 @@
 # two jobs share a geometry and an experiment -- the same run replayed under two
 # conductivity laws would otherwise both write to <geom>__<exp>/ and clobber
 # each other. Omitted, it defaults to the spec's position, j01, j02, ...
+# (only when solver options remain in the field).
+#
+# --time <limit> inside the third field is also consumed HERE: it becomes that
+# job's sbatch --time (overriding any --time after --), so one batch can mix
+# short and long runs. Realistic limits matter: the scheduler backfills a job
+# into a gap only if its limit fits, so a 3 h run asking 24 h waits longer.
 #
 # --out-root <dir> puts the batch parent under <dir>/enceladus_DSM/ instead of
 # $SCRATCH/enceladus_DSM/. Use it for runs that must survive: scratch is purged,
@@ -327,7 +333,7 @@ submit_one() {
     # two jobs share a geometry and an experiment (e.g. the same run replayed
     # under two conductivity laws). Without it they would both land in
     # $BATCH_OUT_DIR/<geom>__<exp>/ and overwrite each other's staged inputs.
-    local perjob=() label=""
+    local perjob=() label="" jtime=""
     if [[ -n "${perjob_str:-}" ]]; then
         read -ra perjob <<< "$perjob_str"
         local keep=() i=0
@@ -335,13 +341,16 @@ submit_one() {
             if [[ "${perjob[$i]}" == "--label" ]]; then
                 label="${perjob[$((i+1))]:-}"
                 i=$((i+2))
+            elif [[ "${perjob[$i]}" == "--time" ]]; then
+                jtime="${perjob[$((i+1))]:-}"
+                i=$((i+2))
             else
                 keep+=("${perjob[$i]}")
                 i=$((i+1))
             fi
         done
         perjob=(${keep[@]+"${keep[@]}"})
-        [[ -z "$label" ]] && label="j$(printf '%02d' "$idx")"
+        [[ -z "$label" && ${#perjob[@]} -gt 0 ]] && label="j$(printf '%02d' "$idx")"
     fi
 
     # Resolve through the shared helper (scripts/lib/opts.sh): .opts live in
@@ -368,8 +377,8 @@ submit_one() {
     read -r nprocs nnodes tasks_per_node total_dofs < <(compute_alloc "$geom_file" ${extra_opts[@]+"${extra_opts[@]}"} ${perjob[@]+"${perjob[@]}"})
 
     local mem; mem=$(mem_per_cpu "$total_dofs" "$nprocs")
-    printf "→ %-45s DoFs=%-8d nprocs=%-3d nodes=%-2d tasks/node=%d mem/cpu=%s\n" \
-        "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node" "$mem"
+    printf "→ %-45s DoFs=%-8d nprocs=%-3d nodes=%-2d tasks/node=%d mem/cpu=%s%s\n" \
+        "$job_name" "$total_dofs" "$nprocs" "$nnodes" "$tasks_per_node" "$mem" "${jtime:+ time=$jtime}"
     [[ ${#perjob[@]} -gt 0 ]] && printf "    per-job opts: %s\n" "${perjob[*]}"
 
     sbatch --job-name="$job_name" \
@@ -379,6 +388,7 @@ submit_one() {
            --mem-per-cpu="$mem" \
            --export=ALL,SKIP_COMPILE=1,BATCH_OUT_DIR="$BATCH_PARENT",BATCH_JOB_LABEL="$label" \
            ${sbatch_extra[@]+"${sbatch_extra[@]}"} \
+           ${jtime:+--time="$jtime"} \
            "$RUN_SCRIPT" "$geom" "$exp" "$tag" \
            ${extra_opts[@]+"${extra_opts[@]}"} ${perjob[@]+"${perjob[@]}"}
     ((N_SUBMITTED++)) || true

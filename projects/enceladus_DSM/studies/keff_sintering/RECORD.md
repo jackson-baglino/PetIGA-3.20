@@ -133,6 +133,8 @@ thresholds, open questions); this page is the history.
 
 - [x] **2026-09-28 — Production submit script and stage files.** `REPO/scripts/HPC/submit_keff_production.sh`, `REPO/studies/keff_sintering/batch3*.txt`, `batch_rve.txt`.
   One script owns every run option; stage files list runs only. It refuses an uncommitted or unpushed tree.
+- [x] **2026-10-01 — Per-run time limits.** `submit_keff_production.sh` (`time_limit_for`), `submit_batch.sh` (per-job `--time`).
+  The jobs had sat on Priority for over 24 h. **Finding:** `sshare` showed `rubyfu` at 1.5× its fair share (`LevelFS` 0.66), 98% of it this campaign's usage. Jobs now ask about 2× their predicted wall time instead of 24 h, so the scheduler can backfill them: −5 18 h, −10 12 h, −20 6 h, −30/−40 4 h, scaled up for the L/R 56/80 meshes (8 h / 16 h).
 - [x] **2026-10-01 — One campaign folder and per-stage download.** `CAMP/`; `REPO/scripts/HPC/fetch_stage.sh <stage file>` downloads a stage in one rsync.
 - [x] **2026-09-26/30 — Figure pipeline.**
   - `plot_keff.py` and `compare_keff.py` make the per-run and per-batch k_eff plots.

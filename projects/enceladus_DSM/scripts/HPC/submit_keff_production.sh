@@ -26,6 +26,18 @@
 # seen (the SSA~15300 event on 3a seed 301, >= 1.3% of the plotted range).
 # Samples per run ~308 / 179 / 46 at -5 / -20 / -40 C.
 #
+# TIME LIMITS PER RUN (2026-10-01). Each job asks for a limit sized to its
+# temperature, not a flat 24 h: the scheduler backfills a job into a gap only
+# if its limit fits, and with the account over its fair share (sshare,
+# 2026-10-01) backfill is how jobs start. Base limits at 200k DoF/core are
+# ~2x the wall time predicted from the scaling test (23.4 s/step, 5.2 s per
+# k_eff sample at 121 ranks; steps ~ t_final/dtmax + ~70):
+#     -5 C 18 h (~8.5 h)   -10 C 12 h (~5.7 h)   -20 C 6 h (~2.7 h)
+#     -30/-40 C 4 h (< 1.5 h)
+# A larger mesh is scaled by its DoF per rank relative to the target (the
+# L/R 56/80 runs are capped at MAX_NODES_PER_JOB, so they carry more), and
+# nothing asks for more than 24 h. See time_limit_for() below.
+#
 # GUARDS. The repo must be committed and pushed: the batch records the commit
 # (print_repo_provenance), and a run from an uncommitted tree cannot be
 # reproduced. The allocation target is whatever scripts/lib/alloc.sh says
@@ -76,7 +88,25 @@ PACKING_FAMILIES=("inputs/packings/keff_LR40/" "inputs/packings/rve_phi0.325/"
                   "inputs/packings/keff_LR40_gated/")
 EXP_PATTERN='^snow_T-?[0-9]+_h1\.00_30d$'
 
-usage() { sed -n '2,45p' "$0"; exit "${1:-0}"; }
+usage() { sed -n '2,57p' "$0"; exit "${1:-0}"; }
+
+# time_limit_for <T in C> <geometry opts file>  ->  "HH:MM:SS"
+time_limit_for() {
+    local T="$1" g="$2"
+    local base
+    base=$(awk -v t="$T" 'BEGIN{ if (t >= -7.5) print 18; else if (t >= -15) print 12;
+                                 else if (t >= -25) print 6; else print 4 }')
+    local nx ny dof
+    nx=$(awk '$1=="-Nx"{print $2; exit}' "$g"); ny=$(awk '$1=="-Ny"{print $2; exit}' "$g")
+    dof=$(awk '$1=="-dof"{print $2; exit}' "$PROJECT_ROOT/inputs/solver.opts"); dof=${dof:-3}
+    awk -v nx="$nx" -v ny="$ny" -v d="$dof" -v b="$base" -v tgt="$TARGET_DOFS_PER_CORE" \
+        -v cap="$((MAX_NODES_PER_JOB * MAX_TASKS_PER_NODE))" 'BEGIN{
+        N = d * nx * ny; P = int((N + tgt - 1) / tgt); if (cap > 0 && P > cap) P = cap
+        f = (N / P) / tgt; if (f < 1) f = 1
+        h = int(b * f); if (h < b * f) h++; if (h > 24) h = 24
+        printf "%02d:00:00\n", h }'
+}
+source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 
 stage="" ; dry=0
 for arg in "$@"; do
@@ -128,7 +158,7 @@ while IFS= read -r line; do
         echo "❌ $geom (eps_valid_temp $TG) does not match $exp (temp $T)" >&2
         errors=$((errors + 1)); continue
     fi
-    specs+=("${geom}:${exp}")
+    specs+=("${geom}:${exp}:--time $(time_limit_for "$T" "$gfile")")
 done < "$stage"
 
 (( errors == 0 )) || { echo "❌ $errors problem(s) in $stage -- nothing submitted" >&2; exit 1; }
@@ -149,11 +179,10 @@ echo "============================================================"
 echo "  k_eff PRODUCTION submission — $stage_name ($((${#specs[@]})) runs)"
 echo "  commit        : $head"
 echo "  options       : ${PRODUCTION_OPTS[*]}"
-source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 echo "  allocation    : ${TARGET_DOFS_PER_CORE} DoF/core (scripts/lib/alloc.sh)"
 echo "  campaign dir  : $CAMPAIGN_DIR"
 echo "============================================================"
-for s in "${specs[@]}"; do echo "  $s"; done
+for s in "${specs[@]}"; do echo "  ${s%%:--time *}   [${s##*--time }]"; done
 
 if [[ -n "$dirty" ]]; then
     echo "❌ uncommitted changes under src/ inputs/ scripts/ pre/postprocess/:" >&2
@@ -183,13 +212,14 @@ mkdir -p "$sdir"
     echo "commit    : $(git rev-parse HEAD)"
     echo "stage file: $stage"
     echo "options   : ${PRODUCTION_OPTS[*]}"
+    echo "time      : per run, from T and DoF/rank (time_limit_for); shown below"
     echo "alloc     : ${TARGET_DOFS_PER_CORE} DoF/core (+ mem_per_cpu from scripts/lib/alloc.sh)"
     echo "runs (folder name -> job id):"
     for sp in "${specs[@]}"; do
         g="${sp%%:*}"; e="${sp#*:}"; e="${e%%:*}"
         id=$(grep -A3 -F "${g}__${e}" "$log" | grep -oE "Submitted batch job [0-9]+" | head -1 | awk '{print $4}')
         refused=$(grep -F "${g}__${e} already exists" "$log" >/dev/null && echo " (EXISTS -- not resubmitted)")
-        echo "  ${g}__${e}  ${id:-none}${refused}"
+        echo "  ${g}__${e}  ${id:-none}  [${sp##*--time }]${refused}"
     done
 } > "$sdir/PRODUCTION_MANIFEST.txt"
 cp "$stage" "$sdir/"
