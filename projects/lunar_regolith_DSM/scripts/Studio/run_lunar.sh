@@ -226,7 +226,7 @@ fi
 compute_optimal_nprocs() {
     local Nx Ny Nz dof total_dofs grid_src
     # TARGET_DOFS_PER_CORE is sourced from scripts/lib/alloc.sh (see the
-    # rationale there for the ~50k target and PETSc's 20k-100k band).
+    # rationale there for the DoF/core target).
 
     dof=$(awk '$1=="-dof"{print $2}' "$SOLVER_OPTS" | head -n1)
     [[ -z "${dof:-}" ]] && dof=3   # two-phase model: ice / temperature / vapor

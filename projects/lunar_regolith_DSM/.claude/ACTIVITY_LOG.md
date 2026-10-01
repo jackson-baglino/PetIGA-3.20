@@ -1,12 +1,38 @@
 
 ---
 
+**Session ended:** 2026-10-01 13:10:09
+
+
+---
+
+**Session ended:** 2026-10-01 13:07:05
+
+
+---
+
 **Session ended:** 2026-10-01 12:38:50
 
 
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (night) — Allocation target 200k DoF/core; wall-time estimates
+
+- scripts/lib/alloc.sh: TARGET_DOFS_PER_CORE 50k -> 200k, from the enceladus
+  scaling test (cost flat 150k-400k, 3-5x cheaper than 60k on a 24M-DoF mesh).
+  Ported mem_per_cpu() with it and wired --mem-per-cpu into submit_batch.sh,
+  submit_lunar.sh and submit_regression.sh; the flat 1G would OOM near 400k.
+- On the small contact-angle meshes (382k-495k DoF) 200k means 2-3 ranks
+  instead of 8-10: same core-hours, roughly 4x the wall time. Estimated wall
+  times per batch added to the velocity_plan README. The alpha_c = 1e-2 wedge
+  runs are estimated at ~42 h even at 50k, i.e. over the 24 h limit.
+- The 24 h default in run_lunar.sh was left alone: it is too long for the
+  alpha_c = 1e-3 runs and too short for the 1e-2 ones, so the limit belongs on
+  the submit line. Already-submitted jobs can only be changed on the HPC.
+
+---
 
 ## 2026-10-01 (evening) — Schematics: H(x) on the wedge, and a mm-scale pore channel
 

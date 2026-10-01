@@ -230,6 +230,29 @@ tests files, `batch{A,B,C,D}_*_ac1e-3_tests.txt` and `..._ac1e-2_tests.txt`.
 
 ---
 
+### Wall time and time limits
+
+Estimates, not measurements. They rest on one data point (the September
+channel runs: 3.2 s/step at 8 ranks, dt at `-dtmax`) and on the enceladus
+scaling fit for how the step slows with fewer ranks. Treat them as ±50 %.
+
+| Runs | Steps | 50k DoF/core | 200k DoF/core |
+|---|---|---|---|
+| channel, α_c = 1e-3 (A, B) | 5,200 | ~5 h (8 ranks) | ~20 h (2 ranks) |
+| wedge, α_c = 1e-3 (C, D) | 8,700 | ~10 h (10 ranks) | ~30 h (3 ranks) |
+| channel, α_c = 1e-2 (A, B) | 23,200 | ~22 h | ~90 h |
+| wedge, α_c = 1e-2 (C, D) | 38,800 | ~42 h | ~130 h |
+
+- `scripts/lib/alloc.sh` now targets 200k DoF/core. On meshes this small that
+  costs about the same core-hours as 50k but roughly 4× the wall time, so
+  these batches are better submitted with `TARGET_DOFS_PER_CORE=50000`.
+- At 50k, 24 h is generous for the α_c = 1e-3 runs: `-- --time=0-10:00:00`
+  for the channel and `-- --time=0-18:00:00` for the wedge.
+- The α_c = 1e-2 runs are the opposite problem. The wedge ones do not fit in
+  24 h at any target and need a longer limit or a restart leg.
+
+---
+
 ## 9. Where this is going: a mm-scale pore channel
 
 ![Pore channel with lenses and wall-adhered ice](fig5_pore_channel.png)

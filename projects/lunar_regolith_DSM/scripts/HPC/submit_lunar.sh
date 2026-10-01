@@ -184,6 +184,7 @@ sbatch \
     --nodes="${NNODES}" \
     --ntasks="${NPROCS}" \
     --ntasks-per-node="${TASKS_PER_NODE}" \
+    --mem-per-cpu="$(mem_per_cpu "$total_dofs" "$NPROCS")" \
     "${sbatch_flags[@]}" \
     "$SCRIPT_DIR/run_lunar.sh" \
     "${run_args[@]}"

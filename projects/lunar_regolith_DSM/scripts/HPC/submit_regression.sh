@@ -111,6 +111,7 @@ submit_one() {
            --nodes="$nnodes" \
            --ntasks="$nprocs" \
            --ntasks-per-node="$tasks_per_node" \
+           --mem-per-cpu="$(mem_per_cpu "$total_dofs" "$nprocs")" \
            --export=ALL,SKIP_COMPILE=1 \
            "$RUN_SCRIPT" "$geom" "$exp" "$tag"
 }
