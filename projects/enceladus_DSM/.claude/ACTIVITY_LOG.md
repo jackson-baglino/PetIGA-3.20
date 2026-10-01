@@ -1,3 +1,13 @@
+## 2026-10-01 — Campaign record for writing (RECORD.md)
+
+- New studies/keff_sintering/RECORD.md: every finished task/run with HPC and
+  local dirs and a one-sentence result, plus the planned stages. Linked from
+  TODO.md and CLAUDE.md; to be updated whenever a task finishes.
+- Found rev64 seeds 2-4 already downloaded locally (LOC/GPS/rev64/).
+- 3a rerun submitted by user (commit d7452d5).
+
+---
+
 ## 2026-10-01 — Production packings rebuilt ungated (option B); node cap
 
 - User chose option B: `inputs/packings/keff_LR40/` rebuilt with only the

@@ -1,6 +1,8 @@
 # k_eff sintering campaign — to-do list
 
 The working list for the manuscript runs. **Read this first in a new session.**
+The history for writing -- every finished run, where its data is, what it
+showed -- is [`RECORD.md`](RECORD.md); update it whenever a task finishes.
 Tick items as they close, add the date and where the result lives, and commit.
 Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
 `studies/rve_anisotropy/README.md` (domain size and packing bias),
