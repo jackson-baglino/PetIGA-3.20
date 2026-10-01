@@ -271,6 +271,51 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
   print = 1;
 
+  /* solver_evo.dat: Newton and Krylov iterations spent on the step just taken.
+   * TS keeps running totals (rejected attempts included), so the per-step cost
+   * is the difference since the last call. Three integer reads and one short
+   * line per step -- no extra solves, norms or reductions.
+   *   step  t  dt  newton_its  krylov_its  krylov_per_newton  rejections
+   * krylov_per_newton is the conditioning diagnostic: how hard each linear
+   * solve was. rejections counts step attempts thrown away and retried. */
+  {
+    PetscInt snes_tot = 0, ksp_tot = 0, rej_tot = 0;
+    ierr = TSGetSNESIterations(ts, &snes_tot);CHKERRQ(ierr);
+    ierr = TSGetKSPIterations(ts, &ksp_tot);CHKERRQ(ierr);
+    ierr = TSGetStepRejections(ts, &rej_tot);CHKERRQ(ierr);
+    PetscInt d_snes = snes_tot - user->solver_snes_prev;
+    PetscInt d_ksp  = ksp_tot  - user->solver_ksp_prev;
+    PetscInt d_rej  = rej_tot  - user->solver_rej_prev;
+    user->solver_snes_prev = snes_tot;
+    user->solver_ksp_prev  = ksp_tot;
+    user->solver_rej_prev  = rej_tot;
+
+    if (user->solver_view == NULL) {
+      char fname[256];
+      const char *sdir = getenv("folder");
+      if (sdir) { sprintf(fname,"%s/solver_evo.dat",sdir); }
+      else      { sprintf(fname,"solver_evo.dat"); }
+      /* A continuation appends, exactly as SSA_evo.dat does. */
+      ierr = PetscViewerCreate(PETSC_COMM_WORLD,&user->solver_view);CHKERRQ(ierr);
+      ierr = PetscViewerSetType(user->solver_view,PETSCVIEWERASCII);CHKERRQ(ierr);
+      ierr = PetscViewerFileSetMode(user->solver_view,
+                 user->ssa_append ? FILE_MODE_APPEND : FILE_MODE_WRITE);CHKERRQ(ierr);
+      ierr = PetscViewerFileSetName(user->solver_view,fname);CHKERRQ(ierr);
+      if (!user->ssa_append) {
+        ierr = PetscViewerASCIIPrintf(user->solver_view,
+                   "# step t dt newton_its krylov_its krylov_per_newton rejections\n");CHKERRQ(ierr);
+      }
+    }
+    /* The resumed step is the first leg's last row; do not log it twice. */
+    if (step != user->ssa_skip_step) {
+      ierr = PetscViewerASCIIPrintf(user->solver_view,"%d %e %e %d %d %.2f %d\n",
+                                    (int)step, (double)t, (double)dt, (int)d_snes, (int)d_ksp,
+                                    d_snes > 0 ? (double)d_ksp/(double)d_snes : 0.0,
+                                    (int)d_rej);CHKERRQ(ierr);
+      ierr = PetscViewerFlush(user->solver_view);CHKERRQ(ierr);
+    }
+  }
+
   if(print==1) {
     /* Open the SSA_evo.dat viewer ONCE (first call), then reuse it and flush
      * every step. Re-opening a viewer per step previously exhausted file

@@ -1,3 +1,18 @@
+## 2026-10-01 (later) — Per-step Newton/Krylov logging: solver_evo.dat
+
+- Monitor() now writes solver_evo.dat beside SSA_evo.dat: step, t, dt, Newton
+  iterations, Krylov iterations, Krylov per Newton, step rejections. It
+  differences TS's own running totals (TSGetSNESIterations /
+  TSGetKSPIterations / TSGetStepRejections), so no solver work is added.
+  Compiles; not yet exercised in a run.
+- Purpose: decide from data whether non-dimensionalising or a looser -dtmax
+  is worth it before the meshes get large.
+- Same change made in lunar_regolith_DSM. Appends on a resume and skips the
+  resumed step, as SSA_evo.dat does. Queued jobs are unaffected until the next
+  build on the HPC.
+
+---
+
 ## 2026-10-01 — Campaign record for writing (RECORD.md)
 
 - New studies/keff_sintering/RECORD.md: every finished task/run with HPC and

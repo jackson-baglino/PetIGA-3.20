@@ -403,6 +403,11 @@ typedef struct {
   // keff.h, which includes it.
   struct KeffCtx *keff;
 
+  // Persistent viewer for solver_evo.dat (Newton/Krylov iterations per step)
+  // and the running totals it differences. Opened lazily in Monitor().
+  PetscViewer solver_view;
+  PetscInt    solver_snes_prev, solver_ksp_prev, solver_rej_prev;
+
 } AppCtx;/* Field definitions for node data */
 
 #endif // ENCELADUS_TYPES_H

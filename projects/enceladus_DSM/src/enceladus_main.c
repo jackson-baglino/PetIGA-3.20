@@ -183,6 +183,8 @@ int main(int argc, char *argv[]) {
     user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see enceladus_types.h) */
     user.ic_grain_union = PETSC_FALSE; /* multi_grains IC: additive (see enceladus_types.h) */
     user.ssa_view = NULL;              /* SSA_evo.dat viewer, opened lazily in Monitor() */
+    user.solver_view = NULL;           /* solver_evo.dat viewer, opened lazily in Monitor() */
+    user.solver_snes_prev = 0; user.solver_ksp_prev = 0; user.solver_rej_prev = 0;
     user.ssa_append = PETSC_FALSE;     /* restart: append to the first leg's log */
     user.ssa_skip_step = -1;           /* restart: that step's row is already logged */
     user.decouple_phase_change = PETSC_FALSE;  /* see enceladus_types.h / assembly.c */
@@ -1998,6 +2000,7 @@ int main(int argc, char *argv[]) {
 
     /* Cleanup Resources */
     if (user.ssa_view) { ierr = PetscViewerDestroy(&user.ssa_view); CHKERRQ(ierr); }
+    if (user.solver_view) { ierr = PetscViewerDestroy(&user.solver_view); CHKERRQ(ierr); }
     /* Before IGADestroy: the clone holds no reference to the parent, so the
      * order is not strictly required, but destroying the derived object first
      * is what survives future refactors. */
