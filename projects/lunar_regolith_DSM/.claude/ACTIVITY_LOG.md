@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-01 14:19:50
+
+
+---
+
 **Session ended:** 2026-10-01 14:12:05
 
 
@@ -52,6 +57,17 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (later) — Quarter-scale channel for local numerical tests
+
+- inputs/geometry/contactangle/channel_2D_H31um_eps0.86um.opts: the 125 um
+  channel scaled by 1/4 at the same eps and element size, 24k DoF instead of
+  382k. Curvature is 4x larger and the interface ~5.7x faster, so it is the
+  harder case for a dtmax test: a pass transfers to the big channel, a fail
+  does not necessarily.
+- dtlad20_* experiment files: the dtmax ladder at 20 days for it.
+
+---
 
 ## 2026-10-01 (later) — Local dtmax ladder set up
 
