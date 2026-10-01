@@ -309,11 +309,23 @@ steps, or by SSA change, not every step.**
 
 Superseded plan below kept for the record. What was actually done:
 
-- **Packings.** `inputs/packings/keff_LR40/`: φ {0.275, 0.325, 0.375, 0.425,
-  0.475} × 5, one unique seed each, y-seam gate on, and
-  `make_packings.sh` as the record.
-  - φ = 0.475 has the percolation gate off: the ice spans both axes in 1 of 5.
-    It is kept to show where 2D stops working, not as a snow condition.
+- **Packings (rebuilt 2026-10-01, option B).** `inputs/packings/keff_LR40/`:
+  φ {0.275, 0.325, 0.375, 0.425, 0.475} × 5, seeds 1601–2005, one unique seed
+  each, `make_packings.sh` as the record. Gates: y-seam and solid percolation
+  only; the homogeneity gates (largest void, density CV, half-domain
+  asymmetry) are off, as in the convergence set.
+  - Why: those gates test an extreme over the domain. At L/R 40 they removed
+    ordinary realizations, not bad ones: the first (gated) build had z_band
+    3.32 ± 0.07 at φ 0.325 against 3.48 ± 0.08 ungated, while ungated z_band
+    is converged from L/R 30. The rebuilt 0.325 set has z_band 3.46.
+  - The gated build is kept in `inputs/packings/keff_LR40_gated/` (seeds
+    301–905). The 3a shakedown ran on it; its five 0.325 packings run in
+    `batch_rve.txt` to measure the gate effect on k_eff.
+  - Seed-mean z_band ungated vs gated: 3.74/3.60 (0.275), 3.46/3.32 (0.325),
+    3.33/3.13 (0.375), 2.84/2.94 (0.425), 2.54/2.52 (0.475).
+  - φ = 0.475 has the percolation gate off: the ice spans both axes in 4 of 5
+    (1 of 5 in the gated build). It is kept to show where 2D stops working,
+    not as a snow condition.
   - The RVE and anisotropy basis is in `studies/rve_anisotropy/README.md`.
 - **Batch 3.** [`batch3_phi_T.txt`](batch3_phi_T.txt): the 25 packings ×
   T {−5, −10, −20, −30, −40} °C = 125 runs.

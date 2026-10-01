@@ -1,0 +1,32 @@
+  gates for target phi=0.425:  max_void_ratio 99.00   local_density_cv 99.000   asymmetry 9900%
+Gravity-style packing: 2.000 x 2.000 mm, target phi=0.425, mean r=50.0 um, sigma_ln=0.5, periodic=xy
+  attempt 1/128 (seed 1904)
+    budget bracket: phi(0.00)=0.6466  phi(1.57)=0.2732  want ~0.4550
+    roll=0.770  skeleton phi=0.4589  +14 fillers -> phi=0.4251  void=1.80  cv=0.449  asym=4%
+    rejected: y-seam contact density 0.61 of interior < 0.76
+  attempt 2/128 (seed 2904)
+    budget bracket: phi(0.00)=0.6310  phi(1.57)=0.2791  want ~0.4550
+    roll=0.724  skeleton phi=0.4549  +13 fillers -> phi=0.4250  void=1.77  cv=0.460  asym=4%
+    rejected: y-seam contact density 0.41 of interior < 0.76
+  attempt 3/128 (seed 3904)
+    budget bracket: phi(0.00)=0.5789  phi(1.57)=0.2585  want ~0.4550
+    roll=0.785  skeleton phi=0.4583  +19 fillers -> phi=0.4247  void=1.79  cv=0.447  asym=4%
+    rejected: solid does not percolate (x=True, y=False); y-seam contact density 0.38 of interior < 0.76
+  attempt 4/128 (seed 4904)
+    budget bracket: phi(0.00)=0.5739  phi(1.57)=0.2714  want ~0.4550
+    roll=0.515  skeleton phi=0.4527  +9 fillers -> phi=0.4249  void=1.95  cv=0.452  asym=6%
+    rejected: solid does not percolate (x=True, y=False); y-seam contact density 0.49 of interior < 0.76
+  attempt 5/128 (seed 5904)
+    budget bracket: phi(0.00)=0.6051  phi(1.57)=0.3106  want ~0.4550
+    roll=0.416  skeleton phi=0.4590  +14 fillers -> phi=0.4252  void=1.60  cv=0.410  asym=10%
+    ACCEPTED
+
+✅ /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/keff_LR40/phi0.425_Rave50um_LR40_seed1904
+   porosity      0.4252 (target 0.4250)
+   grains        248  (234 matrix + 14 filler)
+   mean radius   49.28 um (requested 50.00)
+   largest void  1.60 mean radii (gate 99.00)
+   density cv    0.410 (gate 99.000)
+   coordination  1.87
+   half-domain   10.4% asymmetry (x 10.4, y 1.3; gate 9900)
+   rows written  271 (23 edge images)  -> /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/inputs/packings/keff_LR40/phi0.425_Rave50um_LR40_seed1904/grains.dat

@@ -2,12 +2,13 @@
 #
 # phi {0.275, 0.325, 0.375, 0.425, 0.475} x T {-5, -10, -20, -30, -40} C x
 # 5 packings per porosity (inputs/packings/keff_LR40/, one unique seed each,
-# built by make_packings.sh with the y-seam gate) = 125 runs, 30 d each,
+# built by make_packings.sh with the y-seam and percolation gates only --
+# option B, 2026-10-01, seeds 1601-2005) = 125 runs, 30 d each,
 # alpha_c = 1e-3, dtmax = 1.09*tau_sub per temperature.
 #
 # Why these: porosities evenly spaced by 0.05 (user, 2026-09-28); 0.475 is kept
-# to show where 2D stops being a snow analogue (its solid spans both axes in 1
-# of 5 packings). Temperatures bracket the Molaro pair (-5, -20) and extend
+# to show where 2D stops being a snow analogue (percolation gate off there;
+# its solid spans both axes in 4 of 5 ungated packings, 1 of 5 gated). Temperatures bracket the Molaro pair (-5, -20) and extend
 # cold. Temperature acts as a pure time rescaling in this model (batch 2,
 # CAMPAIGN.md stage 3), so the five temperatures cover a ~60x range of
 # t/tau_sub for every porosity and re-test that collapse at each one.
@@ -17,11 +18,9 @@
 # steps on 2026-09-29, whose corners were visible). 50 log-spaced snapshots + the 1 s
 # opening frame: ~9 GB/run, ~1.1 TB for the batch.
 #
-# Cost (measured basis: batch 2 at 241 ranks, ~20 s/step + k_eff/5):
-#   -5 ~$30, -10 ~$20, -20 ~$9, -30 ~$4, -40 ~$3 per run  ->  ~$1.66k.
-#   This batch runs at 60k DoF/core (401 ranks). If steps are not faster
-#   there, core-hours rise up to 1.66x: ~$2.75k worst case. Longest run
-#   (-5 C) ~10.5 h at 241 ranks: inside the 24 h limit either way.
+# Cost (scaling test 2026-09-30/10-01, 200k DoF/core = 121 ranks, SSA cadence):
+#   -5 ~$12, -20 ~$4 per run; -10 in between, -30/-40 cheaper  ->  ~$0.9k.
+#   Longest run (-5 C) well inside the 24 h limit.
 #
 # DO NOT SUBMIT THIS FILE WHOLE. It is the index of all 125 runs. Submit in
 # stages, each checked before the next (user, 2026-09-28):
@@ -34,128 +33,128 @@
 # which owns every option (incl. the SSA-triggered k_eff cadence):
 #   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch3a_shakedown.txt
 
-packing_2D_phi0.275_Rave50um_LR40_seed601_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed602_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed603_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed604_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed605_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed302_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed303_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed304_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed305_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed701_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed702_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed703_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed704_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed705_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed801_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed802_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed803_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed804_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed805_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed902_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed903_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed904_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed905_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed601_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed602_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed603_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed604_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed605_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed302_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed303_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed304_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed305_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed701_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed702_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed703_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed704_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed705_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed801_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed802_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed803_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed804_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed805_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed902_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed903_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed904_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed905_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed601_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed602_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed603_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed604_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed605_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed302_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed303_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed304_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed305_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed701_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed702_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed703_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed704_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed705_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed801_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed802_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed803_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed804_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed805_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed902_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed903_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed904_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed905_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed601_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed602_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed603_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed604_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed605_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed302_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed303_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed304_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed305_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed701_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed702_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed703_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed704_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed705_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed801_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed802_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed803_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed804_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed805_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed902_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed903_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed904_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed905_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed601_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed602_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed603_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed604_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed605_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed302_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed303_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed304_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed305_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed701_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed702_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed703_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed704_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed705_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed801_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed802_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed803_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed804_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed805_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed902_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed903_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed904_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed905_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1601_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1602_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1603_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1604_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1605_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1702_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1703_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1704_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1705_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1801_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1802_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1803_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1804_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1805_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1901_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1902_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1903_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1904_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1905_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2001_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2002_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2003_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2004_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2005_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1601_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1602_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1603_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1604_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1605_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1702_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1703_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1704_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1705_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1801_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1802_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1803_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1804_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1805_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1901_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1902_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1903_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1904_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1905_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2001_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2002_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2003_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2004_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2005_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1601_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1602_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1603_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1604_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1605_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1702_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1703_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1704_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1705_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1801_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1802_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1803_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1804_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1805_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1902_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1903_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1904_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1905_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2001_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2002_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2003_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2004_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2005_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1601_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1602_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1603_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1604_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1605_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1702_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1703_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1704_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1705_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1801_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1802_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1803_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1804_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1805_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1901_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1902_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1903_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1904_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1905_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2001_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2002_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2003_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2004_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2005_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1601_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1602_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1603_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1604_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1605_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1702_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1703_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1704_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1705_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1801_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1802_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1803_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1804_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1805_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1901_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1902_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1903_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1904_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1905_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2001_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2002_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2003_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2004_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2005_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d

@@ -1,3 +1,19 @@
+## 2026-10-01 — Production packings rebuilt ungated (option B); node cap
+
+- User chose option B: `inputs/packings/keff_LR40/` rebuilt with only the
+  y-seam and percolation gates (homogeneity gates off, as in the convergence
+  set), seeds 1601-2005, all 25 on their base seed. z_band at phi 0.325 is
+  3.46 (gated 3.32, ungated convergence 3.48). phi 0.475 now percolates in xy
+  in 4 of 5.
+- Gated build moved to `inputs/packings/keff_LR40_gated/`; only its 5
+  phi 0.325 -20 C opts kept, run in `batch_rve.txt` to measure the gate effect.
+- 125 new opts (generator verified byte-identical on the old set); stage
+  files remapped; `batch_rve.txt` drops the rve L/R 40 seeds (production
+  1701-1705 are now the same recipe) and adds gated 301-305.
+- `MAX_NODES_PER_JOB=6` in alloc.sh, applied in submit_batch.sh.
+
+---
+
 ## 2026-09-30 — Scaling result, allocation 200k, convergence study set up
 
 - Scaling test analysed (studies/keff_sintering/scaling/README.md): the

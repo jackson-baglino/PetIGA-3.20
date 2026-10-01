@@ -41,7 +41,7 @@
 # clearance it is filling.
 
 -ic_type multi_grains_file
--grains_file inputs/packings/keff_LR40/phi0.325_Rave50um_LR40_seed302/grains.dat
+-grains_file inputs/packings/keff_LR40_gated/phi0.325_Rave50um_LR40_seed302/grains.dat
 -ic_grain_union 0                 # ADDITIVE, the Molaro convention -- see below
 
 -dim 2

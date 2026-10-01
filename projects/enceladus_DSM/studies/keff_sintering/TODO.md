@@ -32,7 +32,9 @@ Tests (scaling etc.) go one folder per test:
 ## Now: batch 3, the porosity × temperature matrix (125 runs)
 
 - **Packings:** `inputs/packings/keff_LR40/`, φ {0.275, 0.325, 0.375, 0.425,
-  0.475} × 5.
+  0.475} × 5, seeds 1601–2005, rebuilt 2026-10-01 with the seam and
+  percolation gates only (option B, below). The gated build that 3a ran on is
+  `inputs/packings/keff_LR40_gated/` (seeds 301–905).
 - **Temperatures:** T {−5, −10, −20, −30, −40} °C.
 - **Index:** `batch3_phi_T.txt` (never submitted whole).
 
@@ -65,8 +67,10 @@ Tests (scaling etc.) go one folder per test:
   - Code: `src/keff_sample.c` (KeffDue). `studies/keff_sintering/predict_cadence.py`
     mirrors it and reproduced all 7 3a schedules on the old path; run
     `--check` on the rerun.
-- [ ] **Rerun 3a** with the final options once the two tests below are done.
-  The first 3a is kept as the shakedown record, not pooled.
+- [ ] **Rerun 3a** with the final options, on the option-B packings
+  (seeds 1601/1701/1801/1901/2001). NEXT TO SUBMIT. The first 3a is kept as
+  the shakedown record, not pooled. Check it as 3a was, plus
+  `predict_cadence.py --check` on every run.
 - [ ] **Before 3b** (cost, not correctness), in this order:
   - [x] **DoF/core scaling test**, ran 2026-09-29 (`scaling/README.md`).
     - The fewest ranks is cheapest: 198k DoF/core (121 ranks) is 3–5×
@@ -122,8 +126,10 @@ Tests (scaling etc.) go one folder per test:
 Does k_eff tend to one curve as the domain grows, and is L/R 40 close enough?
 
 - **Design:** φ 0.325, −20 °C. L/R {20, 30, 40, 56, 80} with {8, 6, 5, 4, 3}
-  seeds, all UNGATED (seam and percolation gates only). Plus the 5 gated
-  production packings at L/R 40 for comparison, from the 3a rerun and 3b.
+  seeds, all UNGATED (seam and percolation gates only). The L/R 40 point is
+  the production 0.325 set (1701–1705, from the 3a rerun and 3b), now the
+  same recipe; rve seeds 1501–1505 are built but not run. Plus the 5 gated
+  pre-B packings (301–305) in `batch_rve.txt`, to measure the gate effect.
   Statistical-RVE test: the seed-mean curve stops moving with L and the seed
   scatter shrinks ~1/L. (A bigger periodic cell is a new realization, so
   there is no "same packing, larger".)
@@ -133,26 +139,26 @@ Does k_eff tend to one curve as the domain grows, and is L/R 40 close enough?
     switch, so it was rebuilt with the homogeneity gates off at every size.
 - [x] Opts at −20 °C + stage file `batch_rve.txt`, which passes the
   production script's checks.
-- [ ] **Allocation for L/R 56/80:** at 200k DoF/core they need 9 and 16
-  nodes, inside the slow-k_eff regime. Decide after scaling test 1:
-  - if the bracketed constraint fixes it, keep 200k;
-  - otherwise cap these runs at ~6 nodes with more DoF and memory per core.
-    Memory is not billed.
-- [ ] Analysis: `rve_convergence/analyze_rve.py`. L/R 40 is close enough if
-  its gap to the L/R 80 mean is inside the gap's standard error, at 11, 100
-  and 330 τ_sub.
-- ~$100 total.
+- [x] **Allocation for L/R 56/80** (2026-10-01): `MAX_NODES_PER_JOB=6` in
+  `scripts/lib/alloc.sh`, applied by `submit_batch.sh`. They run on 192
+  ranks (250k / 500k DoF/core) instead of 9 / 16 nodes.
+- [ ] Submit `batch_rve.txt` (26 runs, ~$155). Independent of batch 3; any
+  time after the 3a rerun passes.
+- [ ] Analysis: `rve_convergence/analyze_rve.py <rve stage> <3a> <3b>`. L/R 40
+  is close enough if its gap to the L/R 80 mean is inside the gap's standard
+  error, at 11, 100 and 330 τ_sub. Also report the gated-vs-ungated L/R 40
+  k_eff gap (methods: why B).
 
-- [ ] **DECISION: do the production gates bias k_eff?**
-  - Ungated packings: z_band 3.47–3.53 from L/R 30 to 80, converged.
-  - Gated production L/R 40: 3.32 ± 0.07 against 3.48 ± 0.08 ungated at the
-    same size, about 5% lower. The void gate (≤ 1.34 R) keeps only
-    realizations with few large voids.
-  - A: keep the gated production set and report the bias measured by the
-    convergence study.
-  - B (recommended): rebuild `keff_LR40` with the seam and percolation gates
-    only, before the 3a rerun and 3b. Nothing production-grade has run on it
-    yet.
+- [x] **DECISION: production gates → option B** (user, 2026-10-01).
+  - The homogeneity gates (void, density CV, half-domain asymmetry) test an
+    extreme over the domain; at L/R 40 they filtered ordinary realizations.
+    Gated z_band 3.32 ± 0.07 vs 3.48 ± 0.08 ungated at φ 0.325.
+  - `keff_LR40` rebuilt with the seam and percolation gates only (all 25 on
+    their base seed); z_band at 0.325 is now 3.46. Seed-mean z_band rose at
+    0.275/0.325/0.375 by 0.14–0.20, unchanged at 0.425/0.475. φ 0.475
+    percolates in both axes in 4 of 5 (1 of 5 gated).
+  - Stage files remapped (301→1701, 601→1601, 701→1801, 801→1901,
+    901→2001, …).
 
 ## Open questions and follow-ups
 

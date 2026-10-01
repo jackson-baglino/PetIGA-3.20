@@ -12,10 +12,10 @@
 # Submit with (every option, incl. the SSA-triggered k_eff cadence, lives in the script):
 #   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch3a_shakedown.txt
 
-packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
-packing_2D_phi0.275_Rave50um_LR40_seed601_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.375_Rave50um_LR40_seed701_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.425_Rave50um_LR40_seed801_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.475_Rave50um_LR40_seed901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1601_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1801_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2001_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d

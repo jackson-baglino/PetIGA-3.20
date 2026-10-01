@@ -1,18 +1,27 @@
-# Supplement: k_eff domain-size convergence (26 runs, ~$100).
+# Supplement: k_eff domain-size convergence (26 runs, ~$155).
 #
-# phi 0.325, -20 C, L/R_ave {20, 30, 40, 56, 80} x {8, 6, 5, 4, 3} seeds,
-# UNGATED packings (inputs/packings/rve_phi0.325/, make_rve_packings.sh: only
-# the y-seam and percolation gates). The production L/R 40 runs (gated,
-# seeds 301-305, from the 3a rerun and 3b) are compared against them in
-# rve_convergence/analyze_rve.py.
+# phi 0.325, -20 C. UNGATED ensembles (only the y-seam and percolation gates):
+#   L/R 20 / 30 / 56 / 80: 8 / 6 / 4 / 3 seeds, inputs/packings/rve_phi0.325/
+#   L/R 40: the production packings, seeds 1701-1705 (inputs/packings/keff_LR40/,
+#           same recipe since option B, 2026-10-01). They are run in the 3a
+#           rerun and 3b, so they are NOT listed here. (rve_phi0.325 also holds
+#           L/R 40 seeds 1501-1505, built before B; same recipe, not run.)
+# PLUS the five GATED L/R 40 packings, seeds 301-305
+# (inputs/packings/keff_LR40_gated/, the pre-B production build: void,
+# density-CV and asymmetry gates on). Against 1701-1705 they measure what
+# those gates did to k_eff -- the number the methods section quotes for
+# choosing B. (The 3a shakedown's 301 run used the old every-5-step cadence,
+# so 301 is rerun here with the final options.)
 #
-# CHECK: L/R 40 is close enough if its seed-mean gap to L/R 80 is inside the
-# gap's standard error at 11, 100 and 330 tau_sub; seed CV falls ~1/L.
+# CHECK (rve_convergence/analyze_rve.py, roots: this stage + 3a + 3b):
+# L/R 40 is close enough if its seed-mean gap to L/R 80 is inside the gap's
+# standard error at 11, 100 and 330 tau_sub; seed CV falls ~1/L.
 #
-# ALLOCATION: at 200k DoF/core L/R 56 and 80 need 9 and 16 nodes -- inside the
-# slow-k_eff regime (>= 8 nodes). Do NOT submit until scaling test 1 is read:
-# if the bracketed constraint fixes it, submit as is; if not, cap the large
-# runs at <= 6 nodes (more DoF + memory per core; memory is not billed).
+# ALLOCATION: capped at 6 nodes (MAX_NODES_PER_JOB, scripts/lib/alloc.sh):
+# L/R 56 and 80 run on 192 ranks (250k / 500k DoF/core, 3G / 4G per core)
+# instead of 9 and 16 nodes, where the k_eff solve is 15-30x slower.
+# Cost: 19 runs at ~$4 (L/R <= 40) + 4 x L/R 56 at ~$8 + 3 x L/R 80 at ~$16
+# (cost ~ DoF at fixed step count) = ~$155.
 #
 # Submit with (every option lives in the script):
 #   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch_rve.txt
@@ -31,11 +40,11 @@ packing_2D_phi0.325_Rave50um_LR30_seed1203_L1.5mm_eps1000nm_perxy_T-20:snow_T-20
 packing_2D_phi0.325_Rave50um_LR30_seed1204_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR30_seed1205_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR30_seed1206_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed1501_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed1502_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed1503_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed1504_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed1505_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed302_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed303_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed304_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed305_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR56_seed1301_L2.8mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR56_seed1302_L2.8mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR56_seed1303_L2.8mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d

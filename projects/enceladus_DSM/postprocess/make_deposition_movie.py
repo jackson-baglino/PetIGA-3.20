@@ -2,7 +2,7 @@
 """Show how a packing is built: gravity deposition, crop, seam heal, fill.
 
     venv_enceladus/bin/python postprocess/make_deposition_movie.py \\
-        inputs/packings/keff_LR40/phi0.325_Rave50um_LR40_seed301 [--out <dir>]
+        inputs/packings/keff_LR40/phi0.325_Rave50um_LR40_seed1701 [--out <dir>]
         [--fps 30] [--storyboard-only]
 
 Writes <out>/deposition.mp4 (1920x1080) and <out>/deposition_storyboard.png

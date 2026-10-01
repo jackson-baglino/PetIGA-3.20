@@ -5,11 +5,14 @@
         <batch dirs or run dirs ...> [--T -20] [--out <dir>]
 
 Finds every run of phi 0.325 at temperature --T whose name carries LR<N>.
-The convergence ensemble is the UNGATED rve_phi0.325 set (seed numbers >= 1100)
-at L/R 20/30/40/56/80. The production keff_LR40 packings (seeds < 1000, built
-WITH the homogeneity gates) are kept apart as "production 40" and drawn as a
-separate dashed curve and point, so what the production recipe does to k_eff
-is visible against the unfiltered ensemble at the same size. Draws:
+The convergence ensemble is UNGATED (seam + percolation gates only), seed
+numbers >= 1100: rve_phi0.325 at L/R 20/30/56/80, and at L/R 40 the
+production packings 1701-1705 (keff_LR40, the same recipe since option B,
+2026-10-01) -- so pass the 3a and 3b stage folders as roots too. The pre-B
+GATED packings (keff_LR40_gated, seeds < 1000, batch_rve.txt) are kept apart
+as "production 40" -- read: the gated build -- and drawn as a separate dashed
+curve and point, which measures what the homogeneity gates did to k_eff.
+Draws:
 
   (a) k_iso vs SSA: seed mean per L/R, band = seed min..max
   (b) k_iso vs t/tau_sub, the same
@@ -92,7 +95,7 @@ def main():
         raise SystemExit("no ungated phi 0.325 LR<N> runs (seed >= 1100) with k_eff.csv found")
     for L, g in runs.items():
         print(f"  L/R {L:3d}: {len(g)} seeds (ungated)")
-    print(f"  production L/R 40 (gated): {len(prod)} seeds")
+    print(f"  gated L/R 40 (pre-B build): {len(prod)} seeds")
     Ls = list(runs)
     cmap = plt.get_cmap("viridis")
     col = {L: cmap(0.1 + 0.8 * i / max(1, len(Ls) - 1)) for i, L in enumerate(Ls)}
@@ -115,9 +118,9 @@ def main():
         xs, K = seed_curves([{**r, "kiso": r["kiso"][live(r)], "ssa": r["ssa"][live(r)]} for r in prod],
                             lambda r: r["ssa"])
         axes[0, 0].plot(xs, K.mean(0), "--", color="#c0392b", lw=1.6,
-                        label=f"production L/R 40, gated ({len(prod)})")
+                        label=f"gated L/R 40, pre-B build ({len(prod)})")
         xs, K = seed_curves(prod, lambda r: r["t"] / r["tau"])
-        axes[0, 1].plot(xs, K.mean(0), "--", color="#c0392b", lw=1.6, label="production 40, gated")
+        axes[0, 1].plot(xs, K.mean(0), "--", color="#c0392b", lw=1.6, label="gated 40, pre-B")
 
     # (c) gap to the largest size, (d) CV at t_final
     Lref = Ls[-1]
@@ -171,7 +174,7 @@ def main():
     axes[1, 0].axvline(40, color="#c0392b", lw=0.8, ls=":")
     axes[1, 1].axvline(40, color="#c0392b", lw=0.8, ls=":")
     fig.suptitle(f"k_eff domain-size convergence, φ = 0.325, T = {a.T} °C "
-                 "(ungated ensembles; red: production L/R 40, gated)", fontsize=14)
+                 "(ungated ensembles; red: gated L/R 40, pre-B build)", fontsize=14)
     fig.tight_layout()
     a.out.mkdir(parents=True, exist_ok=True)
     fig.savefig(a.out / "rve_convergence.png", dpi=150, bbox_inches="tight")

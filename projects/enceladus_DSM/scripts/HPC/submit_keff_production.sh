@@ -69,8 +69,11 @@ PRODUCTION_OPTS=(
 OUT_ROOT="/resnick/groups/rubyfu/jbaglino/simulation_outputs"
 CAMPAIGN_DIR="$OUT_ROOT/enceladus_DSM/keff_sintering_campaign"
 # Campaign packing families: the production matrix and the domain-size
-# convergence study (supplement). Both use the same generator recipe.
-PACKING_FAMILIES=("inputs/packings/keff_LR40/" "inputs/packings/rve_phi0.325/")
+# convergence study (supplement), both one generator recipe (seam +
+# percolation gates only, option B 2026-10-01); and the pre-B GATED build,
+# run only in batch_rve.txt to measure what its homogeneity gates did.
+PACKING_FAMILIES=("inputs/packings/keff_LR40/" "inputs/packings/rve_phi0.325/"
+                  "inputs/packings/keff_LR40_gated/")
 EXP_PATTERN='^snow_T-?[0-9]+_h1\.00_30d$'
 
 usage() { sed -n '2,45p' "$0"; exit "${1:-0}"; }

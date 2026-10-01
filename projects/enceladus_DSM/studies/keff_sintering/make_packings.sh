@@ -6,33 +6,40 @@
 #   JOBS=4 bash studies/keff_sintering/make_packings.sh     # fewer in parallel
 #
 # phi {0.275, 0.325, 0.375, 0.425, 0.475} x 5 packings -- evenly spaced by
-# 0.05 (user, 2026-09-28; the first set at 0.250/0.300/0.350/0.400 was
-# dropped, 0.325 kept). R_ave = 50 um, L = 2 mm (L/R_ave = 40), periodic xy,
-# every gate at its default (void and CV envelopes scaled with porosity, solid
-# percolation, half-domain asymmetry, y-seam contact density >= 0.76 -- see
-# studies/rve_anisotropy/README.md).
+# 0.05 (user, 2026-09-28). R_ave = 50 um, L = 2 mm (L/R_ave = 40), periodic xy.
 #
-# EXCEPT phi 0.475: the solid percolation gate is OFF there. In 2D the solid
-# stops percolating between 0.40 and 0.45; at 0.475 a probe had the ice fail
-# to span x in 12 of 16 attempts. Forcing the gate would keep only the rare
-# connected realizations -- a biased sample of a near-threshold medium. The
-# 0.475 set is the TYPICAL microstructure instead, with percolation recorded
-# in metadata.json, and serves to show where 2D stops being a snow analogue.
+# GATES (option B, user 2026-10-01): only the y-seam gate (contact density
+# >= 0.76 of the interior -- it removes a generator artifact, not a
+# realization; studies/rve_anisotropy/README.md) and solid percolation. The
+# homogeneity gates -- largest void, local density CV, half-domain asymmetry
+# -- are OFF, exactly as in the convergence set (make_rve_packings.sh). Each
+# of them tests an EXTREME over the domain, and at L/R 40 they no longer
+# remove bad draws, they remove ordinary ones with one large void: the first
+# (gated) build had z_band 3.32 +- 0.07 against 3.48 +- 0.08 ungated at the
+# same size, while ungated z_band is converged from L/R 30 (3.47-3.53).
+# Ungated, every production packing is an unfiltered sample of the
+# deposition process, and the convergence study validates this recipe
+# directly. The gated build (seeds 301-905) is kept in
+# inputs/packings/keff_LR40_gated/ for provenance: the 3a shakedown ran on it,
+# and four of its 0.325 packings are run in batch_rve.txt to measure what
+# the gates did to k_eff.
+#
+# EXCEPT phi 0.475: the solid percolation gate is OFF there too. In 2D the
+# solid stops percolating between 0.40 and 0.45; at 0.475 a probe had the ice
+# fail to span x in 12 of 16 attempts. Forcing the gate would keep only the
+# rare connected realizations -- a biased sample of a near-threshold medium.
+# The 0.475 set is the TYPICAL microstructure instead, with percolation
+# recorded in metadata.json, and serves to show where 2D stops being a snow
+# analogue.
 #
 # SEEDS ARE UNIQUE. Each porosity has its own block of base seeds, 100*b + k,
-# k = 1..5 (0.275 -> b=6, 0.325 -> 3, 0.375 -> 7, 0.425 -> 8, 0.475 -> 9;
-# blocks 1, 2, 4, 5 belonged to the dropped set). If a base seed exhausts the generator's 128
-# retries, the next UNUSED seed in that block is tried (100*i + 6, 7, ...), so
-# no two packings share a seed number and none is reused across porosities.
-# (The generator also salts its stream with the porosity, so they would be
+# k = 1..5 (0.275 -> b=16, 0.325 -> 17, 0.375 -> 18, 0.425 -> 19,
+# 0.475 -> 20). Blocks 1-9 are the dropped and the gated sets, 11-15 the
+# convergence set. If a base seed exhausts the generator's 128 retries, the
+# next UNUSED seed in that block is tried (100*b + 6, 7, ...), so no two
+# packings share a seed number and none is reused across porosities. (The
+# generator also salts its stream with the porosity, so they would be
 # independent regardless; unique numbers make that obvious from the name.)
-# Within a run the generator's retries use seed + 1000*attempt, which cannot
-# collide with another packing's base seed because the last three digits
-# differ.
-#
-# phi 0.325 was rebuilt here even though pilot_LR40/ exists: those predate the
-# seam gate (seeds 1 and 4 have seams at 0.33 and 0.36 of the interior) and the
-# porosity-salted stream, so the porosity series is built one way throughout.
 #
 # Output: inputs/packings/keff_LR40/phi<X>_Rave50um_LR40_seed<N>/ with
 # grains.dat, metadata.json, preview.png; the generator log goes beside it as
@@ -45,7 +52,7 @@ OUT="$PROJ/inputs/packings/keff_LR40"
 PY="$PROJ/venv_enceladus/bin/python"
 JOBS="${JOBS:-10}"
 PHIS=(0.275 0.325 0.375 0.425 0.475)
-BLOCKS=(6 3 7 8 9)
+BLOCKS=(16 17 18 19 20)
 N_PER_PHI=5
 MAX_SEEDS_PER_SLOT=20          # base seeds to try before giving up on a slot
 
@@ -56,8 +63,8 @@ mkdir -p "$OUT"
 # k, +5, ...), so parallel slots never pick the same seed.
 build_slot() {
     local phi="$1" i="$2" k="$3"
-    local extra=""
-    [[ "$phi" == "0.475" ]] && extra="--no-percolation-gate"
+    local extra="--max-void-ratio 99 --max-density-cv 99 --max-asymmetry 99"
+    [[ "$phi" == "0.475" ]] && extra="$extra --no-percolation-gate"
     local tries=0 seed=$((100 * i + k))
     while (( tries < MAX_SEEDS_PER_SLOT )); do
         local name="phi${phi}_Rave50um_LR40_seed${seed}"
