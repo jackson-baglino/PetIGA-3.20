@@ -1,3 +1,22 @@
+
+---
+
+**Session ended:** 2026-10-01 12:38:50
+
+
+---
+
+**Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (evening) — Schematics: H(x) on the wedge, and a mm-scale pore channel
+
+- fig1 now labels the local channel height H(x) on the wedge panel.
+- New fig5_pore_channel.png: a 4 mm rough-walled pore with ice lenses at the
+  throats and wall-adhered ice pooled in the troughs. Illustrative only -- not
+  a geometry file. Described in the velocity_plan README.
+
+---
+
 ## 2026-10-01 (later still) — Velocity study rebuilt at two alpha_c values
 
 - Jackson: move to a smaller alpha_c for the lunar case, and repeat at a high

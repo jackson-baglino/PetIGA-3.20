@@ -243,6 +243,113 @@ def fig_geometry():
     save(fig, "fig1_geometry.png")
 
 
+# --- figure 5: a mm-scale pore channel holding many pieces of ice ----------
+def fig_pore_channel():
+    """Schematic only: wall shapes and ice placement are illustrative.
+
+    Two kinds of ice. LENSES span both walls and sit at the throats, where the
+    channel is narrowest. WALL-ADHERED ice touches one wall only and sits in
+    the troughs (wall pockets), not on the peaks.
+    """
+    L = 4000.0                                             # um
+    x = np.linspace(0, L, 4000)
+
+    def top(x):
+        return (210 + 85 * np.sin(2 * np.pi * x / 900 + 0.4)
+                + 45 * np.sin(2 * np.pi * x / 410 + 1.9) + 20 * np.sin(2 * np.pi * x / 170))
+
+    def bot(x):
+        return -(200 + 80 * np.sin(2 * np.pi * x / 1050 + 2.6)
+                 + 50 * np.sin(2 * np.pi * x / 360 + 0.3) + 18 * np.sin(2 * np.pi * x / 150 + 1.0))
+
+    def extrema(f, sign):
+        """Interior x where sign*f has a local maximum."""
+        y = sign * f(x)
+        i = np.where((y[1:-1] > y[:-2]) & (y[1:-1] >= y[2:]))[0] + 1
+        return x[i]
+
+    REG = "#c9c2b6"
+    fig, ax = plt.subplots(figsize=(15, 4.4))
+    ax.fill_between(x, top(x), 420, color=REG, lw=0)
+    ax.fill_between(x, bot(x), -420, color=REG, lw=0)
+
+    # lenses at the narrowest throats, kept apart from one another
+    width = lambda x: top(x) - bot(x)
+    throats = sorted(extrema(width, -1), key=width)
+    lenses = []
+    for xc in throats:
+        if 250 < xc < L - 250 and all(abs(xc - o) > 600 for o in lenses):
+            lenses.append(xc)
+        if len(lenses) == 4:
+            break
+    half = {0: 85, 1: 60, 2: 110, 3: 70}
+    for k, xc in enumerate(sorted(lenses)):
+        xa, xb = xc - half[k], xc + half[k]
+        t = np.linspace(0, 1, 40)
+        sag = lambda xm: 0.16 * width(xm) * 4 * t * (1 - t)      # concave (wetting) menisci
+        left = np.c_[xa + sag(xa), bot(xa) + t * width(xa)]
+        xs = np.linspace(xa, xb, 40)
+        right = np.c_[xb - sag(xb), bot(xb) + t * width(xb)][::-1]
+        poly = np.r_[left, np.c_[xs, top(xs)], right, np.c_[xs, bot(xs)][::-1]]
+        ax.add_patch(Polygon(poly, fc=ICE, ec="none"))
+        ax.plot(left[:, 0], left[:, 1], color=BLUE, lw=1.8)
+        ax.plot(right[:, 0], right[:, 1], color=BLUE, lw=1.8)
+
+    # wall-adhered ice in the deepest troughs that no lens occupies
+    def pockets(wall, sign, n, w):
+        out = []
+        for xc in sorted(extrema(wall, sign), key=lambda v: -sign * wall(v)):
+            if 150 < xc < L - 150 and all(abs(xc - o) > 330 for o in lenses) \
+                    and all(abs(xc - o) > 300 for o in out):
+                out.append(xc)
+            if len(out) == n:
+                break
+        for xc, d in zip(out, w):
+            # fill the pocket to a depth d below its deepest point's rim side,
+            # over the contiguous stretch of wall around xc that lies deeper
+            level = wall(xc) - sign * d
+            deep = sign * (wall(x) - level) > 0
+            i = int(np.argmin(np.abs(x - xc)))
+            lo, hi = i, i
+            while lo > 0 and deep[lo - 1]:
+                lo -= 1
+            while hi < len(x) - 1 and deep[hi + 1]:
+                hi += 1
+            xs = x[lo:hi + 1]
+            u = (xs - 0.5 * (xs[0] + xs[-1])) / (0.5 * (xs[-1] - xs[0]))
+            surf = level + sign * 0.3 * d * (1 - u ** 2)       # concave (wetting) surface
+            ax.fill_between(xs, wall(xs), surf, color=ICE, lw=0)
+            ax.plot(xs, surf, color=BLUE, lw=1.8)
+        return out
+
+    up = pockets(top, +1, 3, (60, 50, 45))
+    dn = pockets(bot, -1, 3, (60, 45, 50))
+
+    ax.plot(x, top(x), color=INK, lw=2)
+    ax.plot(x, bot(x), color=INK, lw=2)
+
+    xl = sorted(lenses)[1]
+    ax.annotate("ice lens\n(spans both walls, at a throat)", (xl, top(xl) - 20), (xl, 520),
+                ha="center", va="bottom", fontsize=15,
+                arrowprops=dict(arrowstyle="-", color=INK, lw=1))
+    xp = sorted(dn)[1]
+    ax.annotate("wall-adhered ice\n(one wall, in a trough)", (xp, bot(xp) + 12), (xp, -520),
+                ha="center", va="top", fontsize=15,
+                arrowprops=dict(arrowstyle="-", color=INK, lw=1))
+    ax.text(60, 372, "regolith", fontsize=15, color="#5d564a", va="center")
+    ax.text(60, -372, "regolith", fontsize=15, color="#5d564a", va="center")
+    ax.text(L - 60, 0, "vapour", fontsize=15, color=MUTED, ha="right", va="center")
+    ax.plot([60, 1060], [-560, -560], color=INK, lw=3, solid_capstyle="butt")
+    ax.text(560, -590, "1 mm", ha="center", va="top", fontsize=15)
+
+    ax.set_xlim(-20, L + 20)
+    ax.set_ylim(-680, 680)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.01)
+    save(fig, "fig5_pore_channel.png")
+
+
 # --- figure 2: channel -------------------------------------------------------
 def fig_channel():
     fig, axs = plt.subplots(1, 2, figsize=(15, 5.6))
@@ -383,6 +490,7 @@ if __name__ == "__main__":
               f"  v = {v*NM_DAY:+.1f} nm/day"
               f"  ice {100*2*v*90*DAY/W_CH:+.1f} % at 90 d (fixed-l estimate)")
     fig_geometry()
+    fig_pore_channel()
     fig_channel()
     fig_wedge_ode()
     fig_wedge()

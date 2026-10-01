@@ -230,7 +230,26 @@ tests files, `batch{A,B,C,D}_*_ac1e-3_tests.txt` and `..._ac1e-2_tests.txt`.
 
 ---
 
-## 9. Open points before submitting
+## 9. Where this is going: a mm-scale pore channel
+
+![Pore channel with lenses and wall-adhered ice](fig5_pore_channel.png)
+
+Talking points
+
+- Schematic only: the wall shapes and ice placement are illustrative, not a
+  simulation or a planned geometry file.
+- Two kinds of ice. Lenses span both walls and sit at the throats.
+  Wall-adhered ice touches one wall only and sits in the troughs, not on the
+  peaks.
+- Every lens meniscus is locally the wedge problem: the walls diverge or
+  converge at some local half-angle, so batches C and D are the building
+  block for this picture.
+- Wall-adhered ice is the sessile case. It has one meniscus and its curvature
+  is set by θ and the trough shape; it is not covered by the four batches.
+
+---
+
+## 10. Open points before submitting
 
 - **Velocity is not set by θ alone.** Diffusion to the wall is as large as the
   kinetic term, so v_n also depends on the meniscus-to-wall distance. Compare
