@@ -18,7 +18,7 @@
 # standard error at 11, 100 and 330 tau_sub; seed CV falls ~1/L.
 #
 # ALLOCATION: capped at 6 nodes (MAX_NODES_PER_JOB, scripts/lib/alloc.sh):
-# L/R 56 and 80 run on 192 ranks (250k / 500k DoF/core, 3G / 4G per core)
+# L/R 56 and 80 run on 192 ranks (245k / 500k DoF/core, 2G / 4G per core)
 # instead of 9 and 16 nodes, where the k_eff solve is 15-30x slower.
 # Cost: 19 runs at ~$4 (L/R <= 40) + 4 x L/R 56 at ~$8 + 3 x L/R 80 at ~$16
 # (cost ~ DoF at fixed step count) = ~$155.
