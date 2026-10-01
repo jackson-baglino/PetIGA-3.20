@@ -12,7 +12,10 @@
   +21.3/-21.8 %.
 - Z_D ~ beta at l = 100 um, so velocity is NOT a function of theta alone; and
   d0*chi ~ 1e-5, so the sigma_inf sweep must be of that order.
-- Slide deck for the postdoc published as a private artifact. No runs submitted.
+- Talking points and figure references written to
+  studies/contact_angle/velocity_plan_2026-10-01/README.md (the user builds
+  their own slides; an earlier slide-deck artifact was superseded). No runs
+  submitted.
 
 ---
 
