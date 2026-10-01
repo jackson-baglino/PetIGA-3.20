@@ -84,11 +84,11 @@ Tests (scaling etc.) go one folder per test:
       × 1.5. That gives 2G for production, 3–4G for L/R 80. Not billed.
       Note: the solver's "memory after setup" guard reads ~22% where the
       real peak is 84%, so don't trust it for sizing.
-    - [ ] test 2 (300k/400k): the model t(P) = 15.6 s + 940/P predicts
-      27 s/step at 81 ranks and 31 s at 61. If it holds, use the fewest ranks
-      memory allows (~61). Also read -log_view for what the 15.6 s serial part
-      of every step is.
-    - [ ] test 1 (bracketed constraint). Also check the login node's CPU
+    - [x] test 2 (300k/400k), 2026-10-01: cost flat to ±10% from 61 to 161
+      ranks. Kept 200k (121 ranks); 400k is the queue fallback.
+      `scaling/README.md`.
+    - [~] test 1 (bracketed constraint): cancelled after a day pending on
+      Priority; moot at ≤ 6 nodes. Also check the login node's CPU
       (`lscpu`): the build is `-march=native`, so a binary built on an Ice
       Lake login node can SIGILL on Skylake/Cascade Lake nodes. That is the
       probable cause of the old "job starts, nothing runs" hangs.

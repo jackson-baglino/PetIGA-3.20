@@ -43,7 +43,28 @@ Costs per run use the SSA-trigger cadence: 179 / 308 samples at −20 / −5 °C
 nodes): 3.4× cheaper than 60k at −20 °C and 5× cheaper at −5 °C. The −5 °C
 run takes ~8.3 h.
 
-**Follow-ups** (~$5 total):
+**Follow-up result (2026-10-01): the cost valley is flat.**
+
+| ranks | DoF/core | s/step | k_eff s/sample | $/run −20 °C | $/run −5 °C |
+|---|---|---|---|---|---|
+| 61 | 394k | 42.1 | 8.7 | 3.46 | 10.95 |
+| 81 | 296k | 38.3 (1 repeat) | 6.8 | 4.13 | 13.13 |
+| 121 | 198k | 23.4 | 5.2 | 3.85 | 12.12 |
+| 161 | 149k | 19.6 | 4.4 | 4.28 | 13.48 |
+
+- The 61/81-rank jobs needed 4 GB/core; at 1G the 61-rank ones were
+  OOM-killed (see `scripts/lib/alloc.sh` `mem_per_cpu`).
+- Refit over all eight points: t ≈ 12.7 s + 1765/P per step. The parallel
+  share is larger than the first two-point fit (15.6 s + 940/P) suggested.
+- Cost is flat to ±10% from 61 to 161 ranks. 61 ranks saves ~10% but makes
+  every run ~1.8× longer (−5 °C: ~15 h vs ~8.3 h).
+- **Kept 200k DoF/core (121 ranks, 4 nodes)**: bottom of the valley, with
+  about twice the throughput. 400k (2 nodes) is the fallback if queueing
+  becomes the bottleneck.
+- The bracketed-constraint test was cancelled after a day pending on
+  Priority. It is moot at ≤ 6 nodes; revisit only if a run must exceed 6.
+
+**Follow-ups as submitted** (~$5 total):
 - **Node-type constraint:**
   `./scripts/HPC/submit_scaling_test.sh --run <run> --targets 100000 --tag-suffix bracket --sbatch "--constraint=[icelake|skylake|cascadelake]"`
   If k_eff drops to ~5 s at 241 ranks, adopt the bracketed constraint in
