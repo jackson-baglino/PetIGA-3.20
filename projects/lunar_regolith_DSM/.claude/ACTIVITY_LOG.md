@@ -1,6 +1,16 @@
 
 ---
 
+**Session ended:** 2026-10-01 14:46:55
+
+
+---
+
+**Session ended:** 2026-10-01 14:34:12
+
+
+---
+
 **Session ended:** 2026-10-01 14:30:00
 
 
@@ -67,6 +77,18 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (afternoon) — dtmax ladder result: sintering pair
+
+- batch_2026-10-01__14.52.38_dtmax_sinter, six rungs clean. The small grain
+  IS absorbed within 60 d (ice at its old centre gone between days 48 and 54).
+  Absorption time vs 0.8 tau_sub: 0 % at 2, +0.1 % at 5, +2.1 % at 10,
+  +11.5 % at 20, +24 % at 40 (snapshot-interpolated, ~+/-2 %).
+- Agrees with the channel ladder: <= 5 tau_sub is safe, 10 costs a few
+  percent, beyond that events come late. One Newton iteration per step again;
+  Krylov/Newton 22-27 on this mesh. Ripening ladder still running.
+
+---
 
 ## 2026-10-01 (afternoon) — dtmax ladder result on the small channel
 

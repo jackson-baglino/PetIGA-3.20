@@ -338,6 +338,33 @@ All six rungs completed, no rejections, φ within bounds. Ice grew 29 % in
   something. Whether a properly converged Newton solve would hold accuracy
   at larger dt is untested.
 
+#### Result: sintering pair (batch_2026-10-01__14.52.38_dtmax_sinter)
+
+All six rungs completed, no rejections. The small grain was absorbed: a neck
+forms within about two days, the pair becomes a pear, and the small lobe is
+consumed from its outer side until nothing is left at its old centre between
+days 48 and 54.
+
+| dtmax/τ_sub | steps | max trajectory error | absorption time | CFL caps |
+|---|---|---|---|---|
+| 0.8 | 1,167 | reference | 43.0 d | 0 |
+| 2 | 505 | 0.6 % | 0 % | 0 |
+| 5 | 243 | 1.5 % | +0.1 % | 3 |
+| 10 | 158 | 2.5 % | +2.1 % | 7 |
+| 20 | 118 | 3.6 % | +11.5 % | 13 |
+| 40 | 103 | 3.6 % | +24 % | 24 |
+
+- "Absorption time" is when the ice height at the small grain's original
+  centre falls to 10 µm, interpolated between snapshots six days apart, so it
+  is good to about ±2 %. Trajectory error is on the per-step interface length.
+- Same verdict as the channel: clean to 5·τ_sub, a few percent at 10, and
+  wrong beyond. A large step makes the event LATE, as in the July stress test.
+- The script's `t_half` is not useful here: half the interface-length change
+  happens in the first two days of neck formation, while every rung is still
+  ramping its timestep.
+- One Newton iteration per step again. Krylov iterations per solve are 22–27
+  on this 88k-DoF mesh against 5–7 on the 24k-DoF channel, both on one rank.
+
 ### Solver diagnostics
 
 Every run now writes `solver_evo.dat` beside `SSA_evo.dat`:
