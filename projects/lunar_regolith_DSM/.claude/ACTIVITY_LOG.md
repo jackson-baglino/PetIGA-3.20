@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-01 14:12:05
+
+
+---
+
 **Session ended:** 2026-10-01 14:05:06
 
 
@@ -47,6 +52,16 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (later) — Local dtmax ladder set up
+
+- Six 30-day local runs of the theta = 60, alpha_c = 1e-3 channel case at
+  dtmax = 0.8 ... 40 tau_sub, plus analyze_dtmax_ladder.py, which scores each
+  rung against the finest on the per-step ice area and reports Newton/Krylov
+  cost from solver_evo.dat. Jackson expects ~90x headroom, since the interface
+  takes ~180 steps to cross one element at 0.8 tau_sub. Not yet run.
+
+---
 
 ## 2026-10-01 (later) — Per-step Newton/Krylov logging: solver_evo.dat
 

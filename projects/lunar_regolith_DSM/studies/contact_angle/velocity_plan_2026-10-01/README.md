@@ -284,6 +284,12 @@ interfaces move about one element per 180 steps at 0.8·τ_sub.
 run at 2, 5 and 10·τ_sub (about 660, 270 and 130 steps against 1,700).
 Compare the meniscus velocity and `solver_evo.dat` against the batch A run.
 
+A local version runs the same test further and faster: six 30-day runs at
+0.8, 2, 5, 10, 20 and 40·τ_sub (`dtlad30_T-20_theta60_ac1e-3_dt*tau`), scored
+by `analyze_dtmax_ladder.py` on the per-step ice area in `SSA_evo.dat` and the
+iteration counts in `solver_evo.dat`. 40·τ_sub is the largest the six-snapshot
+output cadence allows.
+
 ### Solver diagnostics
 
 Every run now writes `solver_evo.dat` beside `SSA_evo.dat`:
