@@ -233,23 +233,31 @@ tests files, `batch{A,B,C,D}_*_ac1e-3_tests.txt` and `..._ac1e-2_tests.txt`.
 ### Wall time and time limits
 
 Estimates, not measurements. They rest on one data point (the September
-channel runs: 3.2 s/step at 8 ranks, dt at `-dtmax`) and on the enceladus
-scaling fit for how the step slows with fewer ranks. Treat them as ±50 %.
+channel runs: 3.2 s/step at 8 ranks) and on the enceladus scaling fit for how
+the step slows with fewer ranks. Treat them as ±50 %.
 
-| Runs | Steps | 50k DoF/core | 200k DoF/core |
+The step count is set by `-dtmax`, not by the interface-CFL limiter: the
+limiter is on (`-dtCFL 1 -dtCFL_dphimax 0.2`) but the interface moves about
+one element in ten days, so it never binds and dt sits on the ceiling. The
+experiment files therefore set `-dtmax = 0.8·τ_sub` for their own α_c
+(4.68e3 s at 1e-3, 5.36e2 s at 1e-2), the top of the range `dtmax_study.sh`
+measured clean. The geometry files' 1.487e3 s was τ_sub/2 at α_c = 2e-3.
+
+| Runs | Steps | 200k DoF/core | 50k DoF/core |
 |---|---|---|---|
-| channel, α_c = 1e-3 (A, B) | 5,200 | ~5 h (8 ranks) | ~20 h (2 ranks) |
-| wedge, α_c = 1e-3 (C, D) | 8,700 | ~10 h (10 ranks) | ~30 h (3 ranks) |
-| channel, α_c = 1e-2 (A, B) | 23,200 | ~22 h | ~90 h |
-| wedge, α_c = 1e-2 (C, D) | 38,800 | ~42 h | ~130 h |
+| channel, α_c = 1e-3 (A, B) | 1,700 | ~7 h (2 ranks) | ~2 h (8 ranks) |
+| wedge, α_c = 1e-3 (C, D) | 2,800 | ~10 h (3 ranks) | ~3 h (10 ranks) |
+| channel, α_c = 1e-2 (A, B) | 14,500 | ~57 h | ~15 h |
+| wedge, α_c = 1e-2 (C, D) | 24,300 | ~84 h | ~26 h |
 
-- `scripts/lib/alloc.sh` now targets 200k DoF/core. On meshes this small that
-  costs about the same core-hours as 50k but roughly 4× the wall time, so
-  these batches are better submitted with `TARGET_DOFS_PER_CORE=50000`.
-- At 50k, 24 h is generous for the α_c = 1e-3 runs: `-- --time=0-10:00:00`
-  for the channel and `-- --time=0-18:00:00` for the wedge.
-- The α_c = 1e-2 runs are the opposite problem. The wedge ones do not fit in
-  24 h at any target and need a longer limit or a restart leg.
+- `scripts/lib/alloc.sh` targets 200k DoF/core. On meshes this small that
+  costs about the same core-hours as 50k but roughly 4× the wall time;
+  `TARGET_DOFS_PER_CORE=50000` on the submit line trades it back.
+- α_c = 1e-3: `-- --time=0-12:00:00` (channel) and `0-16:00:00` (wedge) at
+  200k.
+- α_c = 1e-2 runs are long at 200k and need restart legs or the 50k target.
+  The enceladus campaign runs at 1.09·τ_sub, which would cut these by a
+  further 27 %, but that ratio has not been tested here with the wall term.
 
 ---
 

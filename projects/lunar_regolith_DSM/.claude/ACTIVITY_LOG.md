@@ -1,6 +1,21 @@
 
 ---
 
+**Session ended:** 2026-10-01 13:54:08
+
+
+---
+
+**Session ended:** 2026-10-01 13:50:23
+
+
+---
+
+**Session ended:** 2026-10-01 13:46:59
+
+
+---
+
 **Session ended:** 2026-10-01 13:10:09
 
 
@@ -17,6 +32,20 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (late night) — dtmax = 0.8 tau_sub in the velocity-study inputs
+
+- Jackson asked why the runs are so long. The interface-CFL limiter is on but
+  never binds (the interface moves ~one element per 10 days), so -dtmax sets
+  the step count -- and the alpha_c = 1e-3 files inherited the geometry's
+  1.487e3 s, which is tau_sub/2 at 2e-3 but only 0.25 tau_sub at 1e-3.
+- All 44 *_ac1e-* experiment files now set -dtmax = 0.8 tau_sub for their own
+  alpha_c (4.68e3 / 5.36e2 s): 3.1x fewer steps at 1e-3, 1.6x at 1e-2. 0.8 is
+  inside dtmax_study.sh's measured-clean range (to 0.815). Enceladus uses
+  1.09 tau_sub, untested here with the wall term.
+- Wall-time table in the velocity_plan README redone.
+
+---
 
 ## 2026-10-01 (night) — Allocation target 200k DoF/core; wall-time estimates
 

@@ -38,9 +38,10 @@
 # to the wall carries ~80 % of the resistance and the run is diffusion-limited.
 # 1e-2 is the largest value the existing eps = 0.8584 um meshes support; 1e-1
 # needs eps = 0.296 um (3x finer each way) and would change v_n by only ~15 %.
-# -dtmax is cut to 0.5*tau_sub (tau_sub = 670 s here, against 2972 s at 2e-3).
+# -dtmax = 0.8*tau_sub (tau_sub = 670 s here, against 2972 s at 2e-3); 0.8 is
+# inside the range dtmax_study.sh measured clean (to 0.815).
 # Otherwise identical to wedgeres150_T-20_theta30.opts (alpha_c = 2e-3).
--dtmax 3.35e2
+-dtmax 5.36e2
 
 -t_final 1.3e7
 
