@@ -1,3 +1,21 @@
+## 2026-10-01 — Theory figures and slide outline for the contact-angle velocity study
+
+- Planned four batches (channel and wedge, each swept in theta and in sigma_inf)
+  and drew the sharp-interface predictions before any run:
+  studies/contact_angle/velocity_plan_2026-10-01/make_theory_figures.py.
+- Model: v_n = (sigma_inf - d0*chi)/(beta + Z_D), Gibbs-Thomson in series with
+  quasi-steady vapour diffusion. Channel chi = -2cos(theta)/H; wedge
+  chi = -(cos(theta) +/- sin(alpha))/(r sin(alpha)) (inner/outer), which gives
+  an ODE for each meniscus position.
+- With no fitted parameters it reproduces the existing reservoir runs to 1-2
+  points: channel +/-6.9 % vs +/-7.5 % measured, wedge +19.3/-20.4 % vs
+  +21.3/-21.8 %.
+- Z_D ~ beta at l = 100 um, so velocity is NOT a function of theta alone; and
+  d0*chi ~ 1e-5, so the sigma_inf sweep must be of that order.
+- Slide deck for the postdoc published as a private artifact. No runs submitted.
+
+---
+
 ## 2026-09-12 — Contact-angle sweep analysed: the wall term reproduces Young
 
 - 11-run HPC batch (batch_2026-09-12__08.01.14_contactangle) analysed. Results
