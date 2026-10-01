@@ -35,8 +35,15 @@
 # options, cadence rule, and the exact run list. Each run's SLURM .o also
 # carries "Extra opts : ..." (run_enceladus.sh), copied into its run folder.
 #
-# Output: /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/
-#         batch_<timestamp>_<stage>/   (group storage, not purgeable scratch)
+# Output: ONE campaign folder for every manuscript run (2026-10-01):
+#   /resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/keff_sintering_campaign/
+#       <geom>__<exp>/                    one folder per run, names unique
+#       stages/<stage>__<timestamp>/      PRODUCTION_MANIFEST.txt, the stage
+#                                         file, job ids, and submit_batch's
+#                                         inputs/src snapshot for that stage
+# A run folder that already exists is refused (submit_batch --parent-dir), so
+# resubmitting a stage cannot write over finished results. Download a stage
+# with scripts/HPC/fetch_stage.sh <stage file> (one rsync, one 2FA prompt).
 # =============================================================================
 set -euo pipefail
 
@@ -60,6 +67,7 @@ PRODUCTION_OPTS=(
     -t_out_log_t0 60           #   starting at 60 s
 )                              # (the t >= 1 s opening frame is the solver default)
 OUT_ROOT="/resnick/groups/rubyfu/jbaglino/simulation_outputs"
+CAMPAIGN_DIR="$OUT_ROOT/enceladus_DSM/keff_sintering_campaign"
 # Campaign packing families: the production matrix and the domain-size
 # convergence study (supplement). Both use the same generator recipe.
 PACKING_FAMILIES=("inputs/packings/keff_LR40/" "inputs/packings/rve_phi0.325/")
@@ -140,7 +148,7 @@ echo "  commit        : $head"
 echo "  options       : ${PRODUCTION_OPTS[*]}"
 source "$PROJECT_ROOT/scripts/lib/alloc.sh"
 echo "  allocation    : ${TARGET_DOFS_PER_CORE} DoF/core (scripts/lib/alloc.sh)"
-echo "  output root   : $OUT_ROOT"
+echo "  campaign dir  : $CAMPAIGN_DIR"
 echo "============================================================"
 for s in "${specs[@]}"; do echo "  $s"; done
 
@@ -161,21 +169,26 @@ if (( dry )); then echo "(dry run: nothing submitted)"; exit 0; fi
 tmp=$(mktemp)
 printf '%s\n' "${specs[@]}" > "$tmp"
 log=$(mktemp)
-"$SCRIPT_DIR/submit_batch.sh" --tag "$tag" --tests-file "$tmp" --out-root "$OUT_ROOT" \
-    --extra-opts "${PRODUCTION_OPTS[*]}" 2>&1 | tee "$log"
-parent=$(awk -F': ' '/Parent dir/{print $2; exit}' "$log" | sed 's/[[:space:]]*$//')
-if [[ -n "$parent" && -d "$parent" ]]; then
-    {
-        echo "k_eff production batch — $stage_name"
-        echo "submitted : $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-        echo "commit    : $(git rev-parse HEAD)"
-        echo "stage file: $stage"
-        echo "options   : ${PRODUCTION_OPTS[*]}"
-        echo "alloc     : ${TARGET_DOFS_PER_CORE} DoF/core"
-        echo "runs:"
-        printf '  %s\n' "${specs[@]}"
-    } > "$parent/PRODUCTION_MANIFEST.txt"
-    cp "$stage" "$parent/"
-    echo "  manifest  : $parent/PRODUCTION_MANIFEST.txt"
-fi
+stage_dir_name="${stage_name}__$(date +%Y-%m-%d__%H.%M.%S)"
+STAGE_DIR_NAME="$stage_dir_name" "$SCRIPT_DIR/submit_batch.sh" --tag "$tag" --tests-file "$tmp" \
+    --parent-dir "$CAMPAIGN_DIR" --extra-opts "${PRODUCTION_OPTS[*]}" 2>&1 | tee "$log"
+sdir="$CAMPAIGN_DIR/stages/$stage_dir_name"
+mkdir -p "$sdir"
+{
+    echo "k_eff production stage — $stage_name"
+    echo "submitted : $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    echo "commit    : $(git rev-parse HEAD)"
+    echo "stage file: $stage"
+    echo "options   : ${PRODUCTION_OPTS[*]}"
+    echo "alloc     : ${TARGET_DOFS_PER_CORE} DoF/core (+ mem_per_cpu from scripts/lib/alloc.sh)"
+    echo "runs (folder name -> job id):"
+    for sp in "${specs[@]}"; do
+        g="${sp%%:*}"; e="${sp#*:}"; e="${e%%:*}"
+        id=$(grep -A3 -F "${g}__${e}" "$log" | grep -oE "Submitted batch job [0-9]+" | head -1 | awk '{print $4}')
+        refused=$(grep -F "${g}__${e} already exists" "$log" >/dev/null && echo " (EXISTS -- not resubmitted)")
+        echo "  ${g}__${e}  ${id:-none}${refused}"
+    done
+} > "$sdir/PRODUCTION_MANIFEST.txt"
+cp "$stage" "$sdir/"
+echo "  manifest  : $sdir/PRODUCTION_MANIFEST.txt"
 rm -f "$tmp" "$log"

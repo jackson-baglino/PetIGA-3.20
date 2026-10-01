@@ -51,6 +51,14 @@
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." \
 #       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
 #
+# --parent-dir <path> writes every job into THIS folder (created if needed)
+# instead of a fresh batch_<timestamp>/ -- one folder for a whole campaign or
+# test series. The per-submission shared copies (inputs/, src_snapshot/,
+# postprocess/, this script) then go in <path>/stages/batch_<ts>[_<tag>]/ so
+# submissions do not overwrite each other's provenance, and a job whose run
+# folder already exists is REFUSED (an accidental resubmit must not write over
+# finished results; give a rerun its own --label instead).
+#
 # Extra sbatch flags can be appended after --:
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." -- --time=0-04:00:00
 # =============================================================================
@@ -81,6 +89,7 @@ tag=""
 tests_arg=""
 tests_file=""
 out_root=""
+parent_dir=""
 sbatch_extra=()
 extra_opts=()
 
@@ -96,6 +105,7 @@ while [[ $# -gt 0 ]]; do
         --tests-file)  tests_file="$2"; shift 2 ;;
         --extra-opts)  read -ra extra_opts <<< "$2"; shift 2 ;;
         --out-root)    out_root="$2"; shift 2 ;;
+        --parent-dir)  parent_dir="$2"; shift 2 ;;
         --)            shift; sbatch_extra=("$@"); break ;;
         -h|--help)     usage ;;
         *)             echo "Unknown argument: $1"; usage ;;
@@ -172,7 +182,10 @@ echo "✅ Build complete."
 TS=$(date +%Y-%m-%d__%H.%M.%S)
 batch_name="batch_${TS}${tag:+_$tag}"
 
-if [[ -n "$out_root" ]]; then
+if [[ -n "$parent_dir" ]]; then
+    mkdir -p "$parent_dir" || { echo "❌ cannot create --parent-dir $parent_dir"; exit 1; }
+    BATCH_PARENT="$(cd "$parent_dir" && pwd)"
+elif [[ -n "$out_root" ]]; then
     if [[ ! -d "$out_root" || ! -w "$out_root" ]]; then
         echo "❌ --out-root is not a writable directory: $out_root"
         exit 1
@@ -184,6 +197,14 @@ else
     BATCH_PARENT="$PROJECT_ROOT/scratch/$batch_name"
 fi
 mkdir -p "$BATCH_PARENT"
+# Where this submission's shared provenance goes: the batch folder itself, or
+# under stages/ when many submissions share one --parent-dir.
+if [[ -n "$parent_dir" ]]; then
+    SHARED="$BATCH_PARENT/stages/${STAGE_DIR_NAME:-$batch_name}"   # caller may name it
+else
+    SHARED="$BATCH_PARENT"
+fi
+mkdir -p "$SHARED"
 
 echo "============================================================"
 echo "  Enceladus DSM batch submission"
@@ -197,10 +218,10 @@ echo "============================================================"
 # ---------------------------------------------------------------------------
 # Stage shared assets at the batch level for reproducibility + easy download
 # ---------------------------------------------------------------------------
-mkdir -p "$BATCH_PARENT/src_snapshot"
+mkdir -p "$SHARED/src_snapshot"
 # The whole inputs/ tree, named `inputs` rather than `inputs_snapshot`, and
 # minus scratch/. Two reasons for both choices:
-#   * run_batch_measure.sh runs $BATCH_PARENT/postprocess/*.py, and those
+#   * run_batch_measure.sh runs $SHARED/postprocess/*.py, and those
 #     locate the experimental series as Path(__file__).parent.parent /
 #     "inputs/validation/...". Under the old name that lookup missed and the
 #     figures came out with no data on them.
@@ -209,19 +230,19 @@ mkdir -p "$BATCH_PARENT/src_snapshot"
 # scratch/ is 70 MB of retired files pending deletion; the rest is ~4 MB.
 # (`inputs_snapshot` is still skipped by the batch iterators, so older batches
 # keep working.)
-cp -r "$INPUTS_DIR"                    "$BATCH_PARENT/inputs"             2>/dev/null || true
-rm -rf "$BATCH_PARENT/inputs/scratch"
+cp -r "$INPUTS_DIR"                    "$SHARED/inputs"             2>/dev/null || true
+rm -rf "$SHARED/inputs/scratch"
 for ext in c h; do
-    cp "$PROJECT_ROOT/src/"*.$ext     "$BATCH_PARENT/src_snapshot/"      2>/dev/null || true
+    cp "$PROJECT_ROOT/src/"*.$ext     "$SHARED/src_snapshot/"      2>/dev/null || true
 done
-cp -r "$PROJECT_ROOT/include"          "$BATCH_PARENT/src_snapshot/"      2>/dev/null || true
-cp    "$PROJECT_ROOT/makefile"         "$BATCH_PARENT/src_snapshot/"      2>/dev/null || true
-cp    "$PROJECT_ROOT/postprocess"      -r  "$BATCH_PARENT/"               2>/dev/null || true
-cp    "${BASH_SOURCE[0]}"              "$BATCH_PARENT/submit_batch.sh"
+cp -r "$PROJECT_ROOT/include"          "$SHARED/src_snapshot/"      2>/dev/null || true
+cp    "$PROJECT_ROOT/makefile"         "$SHARED/src_snapshot/"      2>/dev/null || true
+cp    "$PROJECT_ROOT/postprocess"      -r  "$SHARED/"               2>/dev/null || true
+cp    "${BASH_SOURCE[0]}"              "$SHARED/submit_batch.sh"
 
 # Copy the local-postprocessing helper (for after the user downloads the batch)
 if [[ -f "$PROJECT_ROOT/postprocess/run_batch_postprocess.sh" ]]; then
-    cp "$PROJECT_ROOT/postprocess/run_batch_postprocess.sh" "$BATCH_PARENT/"
+    cp "$PROJECT_ROOT/postprocess/run_batch_postprocess.sh" "$SHARED/"
 fi
 
 # ---------------------------------------------------------------------------
@@ -335,6 +356,11 @@ submit_one() {
     fi
 
     local job_name="${geom}__${exp}${label:+__${label}}"
+    if [[ -n "$parent_dir" && -e "$BATCH_PARENT/$job_name" ]]; then
+        echo "❌ $job_name already exists in $BATCH_PARENT -- not resubmitted (rerun? give it a --label)"
+        ((N_SKIPPED++)) || true
+        return
+    fi
     local nprocs nnodes tasks_per_node total_dofs
     read -r nprocs nnodes tasks_per_node total_dofs < <(compute_alloc "$geom_file" ${extra_opts[@]+"${extra_opts[@]}"} ${perjob[@]+"${perjob[@]}"})
 
@@ -372,5 +398,5 @@ echo "  Skipped    : $N_SKIPPED (file-not-found or malformed)"
 echo "  Parent dir : $BATCH_PARENT"
 echo "  Check with: squeue -u \$USER"
 echo "  Once all jobs are done, download the parent dir, then run:"
-echo "    bash $BATCH_PARENT/run_batch_postprocess.sh"
+echo "    bash $SHARED/run_batch_postprocess.sh"
 echo "============================================================"

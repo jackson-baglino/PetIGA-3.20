@@ -19,8 +19,11 @@
 # steps with a k_eff sample every --keff-every, writes no field snapshots, and
 # stops. -log_view is on. Nothing here is a manuscript run.
 #
-# One submit_batch.sh call per DoF/core target, because the allocation is set
-# per submission (TARGET_DOFS_PER_CORE, scripts/lib/alloc.sh). Each call builds
+# ALL jobs of one test go into ONE folder (2026-10-01):
+#   $OUT_ROOT/enceladus_DSM/scaling_<date>[_<suffix>]/<geom>__<exp>__t<target>_r<k>/
+# so a test downloads as one unit. One submit_batch.sh call per DoF/core target
+# (the allocation is set per submission: TARGET_DOFS_PER_CORE), each pointed at
+# that folder with --parent-dir. Each call builds
 # once on the login node and its jobs skip compiling, so the calls do not race
 # in obj/. --repeats jobs per target measure the node-to-node noise (batch 2
 # saw 10x swings in the k_eff time per iteration within one run).
@@ -101,17 +104,19 @@ echo "  steps        : $steps, k_eff every $every"
 echo "  targets      : $targets  (x $repeats repeats)"
 echo "============================================================"
 
+test_dir="$OUT_ROOT/enceladus_DSM/scaling_$(date +%Y-%m-%d)${suffix}"
 for tgt in $targets; do
     tf=$(mktemp)
     for r in $(seq 1 "$repeats"); do
-        echo "${geom}:${exp}:--label r${r} ${opts}" >> "$tf"
+        echo "${geom}:${exp}:--label t$((tgt / 1000))k_r${r} ${opts}" >> "$tf"
     done
     if (( dry )); then
         echo "--- TARGET_DOFS_PER_CORE=$tgt  tag scaling_${tgt}${suffix}  sbatch: --time=0-03:00:00 $sbx"; cat "$tf"; rm -f "$tf"; continue
     fi
     sbarr=(); [[ -n "$sbx" ]] && read -ra sbarr <<< "$sbx"   # read: no glob expansion of [..]
     TARGET_DOFS_PER_CORE="$tgt" "$SCRIPT_DIR/submit_batch.sh" --tag "scaling_${tgt}${suffix}" \
-        --tests-file "$tf" --out-root "$OUT_ROOT" -- --time=0-03:00:00 ${sbarr[@]+"${sbarr[@]}"}
+        --tests-file "$tf" --parent-dir "$test_dir" -- --time=0-03:00:00 ${sbarr[@]+"${sbarr[@]}"}
     rm -f "$tf"
 done
 (( dry )) && echo "(dry run: nothing submitted)"
+echo "test folder: $test_dir"

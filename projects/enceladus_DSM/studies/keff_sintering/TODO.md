@@ -6,6 +6,18 @@ Background and reasoning: `CAMPAIGN.md` (plan and results by stage),
 `studies/rve_anisotropy/README.md` (domain size and packing bias),
 `.claude/ACTIVITY_LOG.md` (what happened, session by session).
 
+**Where the data lives (since 2026-10-01).** Every manuscript run is in ONE
+folder on the cluster:
+`.../simulation_outputs/enceladus_DSM/keff_sintering_campaign/<geom>__<exp>/`.
+Each submission leaves a record in `stages/<stage>__<timestamp>/` (manifest,
+stage file, job ids, inputs/src snapshot). An existing run folder is never
+resubmitted over. Download a stage with
+`./scripts/HPC/fetch_stage.sh <stage file>` (tables; `--full` or
+`--full-run <substr>` for snapshots). It mirrors into
+`~/SimulationResults/HPC_results/enceladus_DSM/keff_sintering_campaign/`.
+Tests (scaling etc.) go one folder per test:
+`.../enceladus_DSM/scaling_<date>[_suffix]/`.
+
 **Standing rules**
 - Every manuscript run goes through `scripts/HPC/submit_keff_production.sh`.
   That script owns every option; stage files list runs only. Never hand-type
