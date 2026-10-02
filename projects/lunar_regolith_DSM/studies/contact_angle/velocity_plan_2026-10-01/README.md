@@ -371,6 +371,47 @@ days 48 and 54.
 - One Newton iteration per step again. Krylov iterations per solve are 22–27
   on this 88k-DoF mesh against 5–7 on the 24k-DoF channel, both on one rank.
 
+#### Result: ripening pair (batch_2026-10-01__15.49.53_dtmax_ripen)
+
+All six rungs completed, no rejections, φ undershoot at most 6e-5. The small
+grain shrinks from 15 µm equivalent radius to 6.6 µm by day 24 and is gone by
+day 27 in the reference; the large one grows from 30.0 to 33.5 µm.
+
+| dtmax/τ_sub | steps | extinction time | vs reference | CFL caps |
+|---|---|---|---|---|
+| 0.8 | 1,167 | 26.56 d | reference | 0 |
+| 2 | 506 | 26.58 d | +0.1 % | 2 |
+| 5 | 247 | 26.80 d | +0.9 % | 4 |
+| 10 | 165 | 27.53 d | +3.6 % | 7 |
+| 20 | 127 | 29.85 d | +12.4 % | 11 |
+| 40 | 113 | 34.65 d | +30.5 % | 15 |
+
+- Extinction time is when the per-step interface length has completed 97 % of
+  its total drop; it is resolved to one step.
+- The limiter throttles dt to about 1e4 s around the extinction itself at
+  every rung from 10 upward, so the lateness is accumulated during the slow
+  shrinkage before it, not at the event.
+- The interface-length trajectory at 20 and 40·τ_sub departs from the
+  reference well before the grains differ (radii at day 6 agree to 0.01 µm),
+  so that integral also responds to profile shape under large steps. Radii
+  and extinction time are the trustworthy measures here.
+
+#### All three cases together
+
+| dtmax/τ_sub | channel growth | sintering absorption | ripening extinction | steps saved |
+|---|---|---|---|---|
+| 2 | 0.06 % | 0 % | +0.1 % | 2.0–2.3× |
+| 5 | 0.6 % | +0.1 % | +0.9 % | 3.5–4.8× |
+| 10 | 2.8 % | +2.1 % | +3.6 % | 4.4–7.4× |
+| 20 | 10 % | +11.5 % | +12.4 % | 5–10× |
+| 40 | 22 % | +24 % | +30.5 % | 5–11× |
+
+Three different mechanisms give the same curve: error roughly quadratic in
+dt, always in the direction of "too slow", never unstable. 2·τ_sub is free.
+5·τ_sub costs under 1 %. 10 costs 2–4 %. The returns also flatten: the ~60–100
+steps of ramp from the 1e-4 s first step are a fixed cost, so going from 5 to
+40 saves little.
+
 ### Solver diagnostics
 
 Every run now writes `solver_evo.dat` beside `SSA_evo.dat`:

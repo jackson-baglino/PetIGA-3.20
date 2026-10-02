@@ -1,6 +1,16 @@
 
 ---
 
+**Session ended:** 2026-10-01 15:57:09
+
+
+---
+
+**Session ended:** 2026-10-01 15:54:29
+
+
+---
+
 **Session ended:** 2026-10-01 14:46:55
 
 
@@ -77,6 +87,18 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-01 (evening) — dtmax ladder result: ripening pair; all three cases agree
+
+- batch_2026-10-01__15.49.53_dtmax_ripen, six rungs clean. Small grain gone at
+  26.56 d in the reference; extinction +0.1 % at 2 tau_sub, +0.9 % at 5,
+  +3.6 % at 10, +12.4 % at 20, +30.5 % at 40.
+- Channel growth, sintering absorption and ripening extinction give the same
+  curve: 2 tau_sub free, 5 under 1 %, 10 costs 2-4 %, beyond that 10-30 %
+  slow. Always stable, always late. Summary table in the velocity_plan README.
+- Inputs NOT changed yet; awaiting Jackson's choice of ceiling.
+
+---
 
 ## 2026-10-01 (afternoon) — dtmax ladder result: sintering pair
 
