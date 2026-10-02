@@ -1,6 +1,16 @@
 
 ---
 
+**Session ended:** 2026-10-02 08:17:06
+
+
+---
+
+**Session ended:** 2026-10-02 08:09:43
+
+
+---
+
 **Session ended:** 2026-10-02 08:04:44
 
 
@@ -92,6 +102,23 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-02 — Batch A (alpha_c = 1e-3) and the HPC dtmax ladder are in
+
+- Local results tidied: the mistaken nested download folder
+  HPC_results/lunar_regolith_DSM/lunar_regolith_DSM was emptied into its
+  parent. Four September batches in it were partial re-downloads (every file
+  already present and identical in the parent, checked by checksum) and were
+  deleted; seven folders were moved up.
+- batch_2026-10-01__14.15.53_velA_channel_theta_ac1e-3: all five angles ran to
+  90 d at 0.8 tau_sub. Ice change +10.79 / +5.45 / -0.11 / -5.41 / -9.86 % at
+  theta = 30 / 60 / 90 / 120 / 150. No resubmission needed at 2 tau_sub.
+- batch_2026-10-01__14.15.56_dtmax_ladder (full 125 um channel, theta = 60):
+  ice change +5.44 % at 2 tau_sub, +5.43 % at 5, +5.35 % at 10, against +5.45 %
+  at 0.8. Confirms the local ladder on the production geometry.
+- Not yet analysed: meniscus velocities and the comparison with theory.
+
+---
 
 ## 2026-10-02 — dtmax = 2 tau_sub adopted everywhere
 
