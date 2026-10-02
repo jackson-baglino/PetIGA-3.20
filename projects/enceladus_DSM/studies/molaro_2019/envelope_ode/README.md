@@ -54,8 +54,8 @@ The 32.81 µm match in step 2 is closer than the model's accuracy justifies. The
    - Even with no undersaturation at the neck, the best fit at α_c = 0.1 is 11.6 % rms, about 70 % of the observed width increase.
    - Matching needs α_c ≈ 0.3–1. Above 0.1 the gain is small, because gas diffusion caps the rate.
    - Choosing 0.1 is therefore the **tuning choice**: the largest literature value, taken to best reproduce the data. The remaining shortfall is consistent with the missing surface-diffusion share.
-2. **The data's exponent (0.20) is what saturated, diffusion-limited vapour growth gives.**
-   - The ODE reaches a ≈ 0.20 at α_c ≥ 0.1 with s = 0. No undersaturation is needed to explain the slope.
+2. **The data's exponent (0.20) is what diffusion-limited vapour growth gives with no undersaturation at the neck.**
+   - The ODE reaches a ≈ 0.20 at α_c ≥ 0.1 with s = 0 at the neck. No neck undersaturation is needed to explain the slope.
 3. **The ambient was undersaturated. The open question is how much of that reaches the neck.**
    - Both the ODE and the Fig. 2 run say the chamber was not saturated. The
      measured shrinkage implies a far-field undersaturation s_∞ ≈ 3.6e-3
