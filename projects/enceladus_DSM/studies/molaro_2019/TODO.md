@@ -30,6 +30,10 @@ prepares the commands.
     even fully saturated).
   - The data's a = 0.20 is the saturated, diffusion-limited value.
   - Predicted saturated a: ≈ 0.20 at α_c = 0.1, ≈ 0.30 at 1e-3.
+  - The ODE and the Fig. 2 run differ on how much undersaturation reaches the
+    neck (ODE best fit ≈ 0; run 1.6e-4). Both agree the ambient was
+    undersaturated (shrinkage gives s_∞ ≈ 3.6e-3). Explain both in the
+    manuscript rather than reconcile them (decided 2026-10-02).
 - [x] **Per-face boundary-condition option** (2026-10-02): `-bc_mirror x0`
   (any of x0,x1,y0,y1,z0,z1). Named faces stay natural Neumann (mirror) while
   `-flag_BC_rhovfix` / `-flag_BC_Tfix` pin the others. Unknown face names abort.
@@ -51,8 +55,13 @@ prepares the commands.
   `run_batch_measure.sh` passes it automatically when the opts carry
   `-bc_mirror x0`. `grain_shrinkage.py` still assumes two grains, so ignore
   its output for this run.
-- [ ] **Submit** (Jackson). On hold while HPC priority is penalised.
-  Budget ≲ $15.
+- [ ] **Submit the saturated Demmenie mirror run** (Jackson). **Deferred
+  until the k_eff campaign is finished** (2026-10-02): HPC time goes to k_eff
+  first, and this run waits.
+  - Single job, ~$9, budget ≲ $15. Everything is committed and ready.
+  - Command:
+    `./scripts/HPC/submit_batch.sh --tag demmenie_mirror --tests-file studies/molaro_2019/batches/demmenie_mirror_T-20.txt --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs`
+  - First check: the BC table in `outp.txt` shows x = 0 as "(mirror)".
 - [ ] **Compare the run's a against Demmenie** (0.26–0.33) and the ODE
   prediction (0.29–0.30).
 
