@@ -94,6 +94,21 @@ For Molaro's grains, the 3–4 % shrinkage calibrated the chamber humidity (h �
 
 ## 4. The simulation (relaxed arm: resolve from point 3)
 
+> **SUPERSEDED: this section was sized at α_c = 1e-3. It must be redone at α_c = 0.1 (2026-10-02).**
+>
+> The manuscript Molaro runs (Fig. 2) use **α_c = 0.1**. This was verified in the solver logs of both final runs:
+> - −20 °C: `batch_2026-09-08__17.20.46_molaro_T-20_round2`
+> - −5 °C: `..._T-5_h0.99674_2h_a1e-1_dirichlet`
+>
+> 0.1 is the top of the literature band [1e-3, 1e-1], i.e. the least attachment resistance the literature supports. The 1e-3 used below came from the `mesh_pair` side study.
+>
+> Thomas must use the same α_c. That changes everything below:
+> - eps is set by δ_ice ≤ 1 (1.18e-7 m, as for Molaro), not by the neck floor.
+> - τ_sub is ≈ 1.3 s instead of 555 s.
+> - The start should be pre-necked, not tangent.
+>
+> The "~150× slower than Molaro" figure is also the α_c = 1e-3 `mesh_pair` result. At 0.1, the manuscript run reproduces about half of Molaro's rate.
+
 ### Why "relaxed"
 
 A neck is measurable only above x/a ≥ sqrt(12·eps/a). That floor goes at 0.9× the first point to be compared, so eps = a·(0.9·u)²/12.
