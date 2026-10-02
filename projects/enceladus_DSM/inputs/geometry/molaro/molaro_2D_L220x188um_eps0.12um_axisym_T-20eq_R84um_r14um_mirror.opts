@@ -1,0 +1,63 @@
+# =============================================================================
+# Equal-grain pair at -20 C, QUARTER of the cross-section: one grain, mirror
+# plane at x = 0, axis at y = 0. Pair with
+# experiment/molaro/molaro_T-20_hsat_100h_a1e-3_dirichlet_mirror.opts
+# (studies/molaro_2019/TODO.md, "Demmenie run").
+#
+# TWO SYMMETRIES
+#   y = 0  axisymmetric axis (as in every Molaro run): the r-z plane stands for
+#          the 3D body of revolution about the line of centres.
+#   x = 0  the CONTACT PLANE of two identical grains. Every field is a mirror
+#          image across it, so its normal gradient vanishes: zero flux, the
+#          natural Neumann condition. The experiment file passes
+#          -bc_mirror x0 so the Dirichlet vapour/T walls skip this face.
+#          (Periodic would be WRONG: it glues the neck to the far wall.)
+#   The Molaro dom2 runs already used the axis, i.e. half the cross-section;
+#   the mirror halves it again -> ~half their mesh (17.9M vs 43.6M DoF).
+#
+# GRAIN. R = 84.4 um, the Molaro pair's effective radius 2*R0*R1/(R0+R1)
+# (101 / 72.5 um), so the envelope ODE (studies/molaro_2019/envelope_ode/) and
+# the Fig. 2 run apply directly. Pre-necked at r0 = 14 um exactly as the
+# Molaro finals: the grain centre sits at x = sqrt(R^2 - r0^2) = 83.2308 um,
+# so the sharp sphere crosses x = 0 on a circle of radius r0. Its mirror image
+# is the second grain; the union IC (-ic_grain_union) makes the phi = 0.5
+# contour the sharp surface.
+#
+# EPS = 1.18e-7 m -- the SAME as the Molaro -20 C final (there set by
+# delta_ice <= 1 at alpha_c = 0.1; at alpha_c = 1e-3 delta_ice is 0.010, so the
+# binding reason here is the neck floor):
+#   floor sqrt(12 eps R) = 10.93 um; start r0 = 14 um is 1.28x above it.
+#   comp_eps.py --Lx 2.2033e-4 --Ly 1.88e-4 --Rave 8.44e-5 --T0 -20
+#       --alpha 1e-3 --Dchannel ice  ->  tau_sub = 109.2 s (99.8 % kinetic)
+#
+# DOMAIN. Same air padding as Molaro dom2: 52.7 um beyond the grain's far cap
+# (Lx = 83.23 + 84.4 + 52.7 = 220.33 um) and Ly = 2.23 R = 188 um, so the
+# Dirichlet reservoir sits at the same distance in grain radii.
+#
+# Measure: python postprocess/neck_width.py <run_dir> --axisym
+#   (UNVERIFIED on a mirror domain: the neck lies ON the x = 0 face. Check the
+#   first snapshot before trusting the CSV -- studies/molaro_2019/TODO.md.)
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1
+-ic_type multi_grains
+-dim 2
+-Lx 2.20331e-04
+-Ly 1.88000e-04
+-Lz 0
+
+-ice_grain_cx 8.32308e-05               # sqrt(R^2 - r0^2): neck r0 = 14 um on x = 0
+-ice_grain_cy 0.0
+-ice_grain_R  8.44e-5
+-ice_grain_ax 8.44e-5
+-ice_grain_ay 8.44e-5
+
+-Nx 2641                                # h = eps/sqrt(2) = 8.3439e-08
+-Ny 2254                                # 5.95M nodes, 17.9M DoF
+-Nz 1
+-eps 1.1800e-07
+-eps_valid_temp -20
+
+-delt_t 1.0e-4
+-periodic 0

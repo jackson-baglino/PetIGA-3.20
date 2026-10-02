@@ -30,19 +30,27 @@ prepares the commands.
     even fully saturated).
   - The data's a = 0.20 is the saturated, diffusion-limited value.
   - Predicted saturated a: ≈ 0.20 at α_c = 0.1, ≈ 0.30 at 1e-3.
-- [ ] **Per-face boundary-condition option** in `src/enceladus_main.c`: keep
-  the x = 0 contact plane natural Neumann (mirror) while the outer walls take
-  Dirichlet ρ_v / T. Build locally and add a unit-style check.
-- [ ] **Quarter-domain geometry and opts** for the saturated
-  equal-grain Demmenie run:
-  - α_c = 1e-3, one grain, mirror at x = 0, axis at y = 0.
-  - Pre-necked start (r₀ above the resolution floor).
-  - Walls at ρ_v = ρ_vs(T)·(1 + 2d₀/R).
-  - Output every 1–2 min equivalent.
-  - The ODE predicts ~96 h simulated to reach x/R = 0.35.
-  - **Open: the temperature and grain radius.** Molaro-like (−20 °C,
-    R = 84.4 µm) or Demmenie-like (−3 °C, R = 500 µm)?
-- [ ] **Check `neck_width.py` on a mirror-domain snapshot** (the neck sits on the boundary).
+- [x] **Per-face boundary-condition option** (2026-10-02): `-bc_mirror x0`
+  (any of x0,x1,y0,y1,z0,z1). Named faces stay natural Neumann (mirror) while
+  `-flag_BC_rhovfix` / `-flag_BC_Tfix` pin the others. Unknown face names abort.
+  The BC banner labels them "(mirror)". Builds clean. **Not yet exercised by
+  a run**: check the BC table in `outp.txt` of the first job.
+- [x] **Quarter-domain geometry and opts** (2026-10-02):
+  - `inputs/geometry/molaro/molaro_2D_L220x188um_eps0.12um_axisym_T-20eq_R84um_r14um_mirror.opts`
+  - `inputs/experiment/molaro/molaro_T-20_hsat_100h_a1e-3_dirichlet_mirror.opts`
+  - Batch file: `batches/demmenie_mirror_T-20.txt`.
+  - Settings: −20 °C, R = 84.4 µm (the Molaro pair's effective radius),
+    α_c = 1e-3, walls h = 1 + 2d₀/R = 1.0000241, pre-necked r₀ = 14 µm,
+    ε = 1.18e-7 m (17.9 M DoF), t_final = 100 h, hourly output.
+  - dtmax = 5·τ_sub = 546 s keeps it at ~$9 (2·τ_sub would be ~$20; the
+    ladder puts 5·τ_sub within 1 %).
+  - Temperature and radius chosen Molaro-like rather than Demmenie-like
+    (−3 °C, 500 µm): the kinetic-limit exponent does not depend on either,
+    and this keeps the ODE and Fig. 2 run directly comparable.
+- [x] **`neck_width.py --mirror-x0`**: reads the neck from the x = 0 column.
+  `run_batch_measure.sh` passes it automatically when the opts carry
+  `-bc_mirror x0`. `grain_shrinkage.py` still assumes two grains, so ignore
+  its output for this run.
 - [ ] **Submit** (Jackson). On hold while HPC priority is penalised.
   Budget ≲ $15.
 - [ ] **Compare the run's a against Demmenie** (0.26–0.33) and the ODE

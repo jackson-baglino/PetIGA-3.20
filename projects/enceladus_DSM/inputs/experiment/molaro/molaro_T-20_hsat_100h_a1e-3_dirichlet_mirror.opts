@@ -1,0 +1,57 @@
+# =============================================================================
+# Demmenie exponent test: SATURATED, attachment-limited, equal grains, -20 C.
+# Pair with geometry/molaro/molaro_2D_L220x188um_eps0.12um_axisym_T-20eq_R84um_r14um_mirror.opts
+#
+# WHY alpha_c = 1e-3. Bottom of the literature band [1e-3, 1e-1]. It puts the
+# neck deep in the attachment-limited regime, the one Kuczynski's t^(1/3) and
+# Demmenie et al. (2025) are derived in. This is a theoretical choice, unlike
+# the Molaro runs' alpha_c = 0.1, which is a tuning choice (largest literature
+# value, to best reproduce that data).
+#
+# WHY "SATURATED" MEANS h = 1 + 2 d0/R. A grain of radius R is in equilibrium
+# with rho_vs(T)(1 + d0*kappa), and a sphere's mean-curvature sum is
+# kappa = 2/R (axisymmetry keeps the azimuthal curvature). With
+# d0 = 1.0152e-9 m and R = 84.4 um:
+#     h = 1 + 2(1.0152e-9)/(8.44e-5) = 1.0000241
+# The walls hold that value, so neither the grain nor the gas exchanges net
+# vapour with the reservoir, and the neck grows on its own curvature alone.
+# -humidity also sets the initial pore vapour, so t = 0 is in equilibrium.
+#
+# WHY t_final = 100 h. At alpha_c = 1e-3 growth is about 100x slower than in
+# the Fig. 2 runs. The envelope ODE (studies/molaro_2019/envelope_ode/,
+# validated on mesh_pair to 18 %) puts x/R = 0.20 / 0.25 / 0.30 / 0.35 at
+# 7.5 / 25 / 54 / 96 h, and predicts a = 0.29-0.30.
+#
+# WHY dtmax = 5 tau_sub (546 s), NOT 2 tau_sub. tau_sub = 109.2 s. The
+# 2026-10-02 ladder found 2 tau_sub within 0.1 % and 5 tau_sub within 1 % on
+# the same sintering curves. 2 tau_sub would cost ~$20 (1750 steps);
+# 5 tau_sub ~$9 (760 steps), inside the <= $15 budget. Set -dtmax 218 for the
+# strict rule.
+#
+# OUTPUT. Hourly snapshots (n_out = 101 -> t_interv = 3600 s): 100 samples
+# over 0.3 decades of neck size, ample for a d_free exponent fit.
+# =============================================================================
+
+-t_final 3.6e+05                        # 100 h
+
+-temp -20.0
+-humidity 1.0000241                     # 1 + 2 d0/R: saturated w.r.t. the grain
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet on the OUTER walls...
+-bc_mirror x0                           # ...but x = 0 is the contact (mirror) plane
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-3
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # as the Molaro finals: 0.85 elements/step
+-dtmax 5.46e2                           # 5 tau_sub (see header)
+-t_out_log 0
+-outp 0
+-n_out 101                              # t_interv = 3600 s
+-t_out_first 1

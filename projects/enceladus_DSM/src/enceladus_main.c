@@ -1,4 +1,5 @@
 #include "enceladus_main.h"
+#include <string.h>   /* strtok/strlen for -bc_mirror */
 
 /* SNESSetFunctionDomainError() is logically collective, but Residual()
  * (assembly.c) flags it per quadrature point — i.e. only on the rank that
@@ -181,6 +182,8 @@ int main(int argc, char *argv[]) {
     user.cfl_t_prev   = 0.0;
 
     user.axisym = PETSC_FALSE;        /* axisymmetric r-z mode (see enceladus_types.h) */
+    for (PetscInt l = 0; l < 3; l++)  /* -bc_mirror: no symmetry planes by default */
+        for (PetscInt m = 0; m < 2; m++) user.bc_mirror[l][m] = PETSC_FALSE;
     user.ic_grain_union = PETSC_FALSE; /* multi_grains IC: additive (see enceladus_types.h) */
     user.ssa_view = NULL;              /* SSA_evo.dat viewer, opened lazily in Monitor() */
     user.solver_view = NULL;           /* solver_evo.dat viewer, opened lazily in Monitor() */
@@ -733,6 +736,36 @@ int main(int argc, char *argv[]) {
 
     PetscOptionsEnd();
 
+    /* --- -bc_mirror: symmetry-plane faces --------------------------------
+     * Parsed outside the options block because it is a list of face names,
+     * not a scalar. Each named face keeps the natural (zero-flux) condition
+     * for every field even when -flag_BC_rhovfix / -flag_BC_Tfix pin the
+     * other walls. Unknown names are an error, not a silent no-op: a typo
+     * here would quietly turn a mirror plane into a vapour reservoir. */
+    {
+        char      mirror_str[64] = "";
+        PetscBool mirror_set     = PETSC_FALSE;
+        ierr = PetscOptionsGetString(NULL, NULL, "-bc_mirror", mirror_str,
+                                     sizeof(mirror_str), &mirror_set); CHKERRQ(ierr);
+        if (mirror_set && mirror_str[0]) {
+            char *tok = strtok(mirror_str, ",");
+            while (tok) {
+                while (*tok == ' ') tok++;
+                PetscInt l = -1, m = -1;
+                if (strlen(tok) == 2) {
+                    if (tok[0] == 'x') l = 0; else if (tok[0] == 'y') l = 1; else if (tok[0] == 'z') l = 2;
+                    if (tok[1] == '0') m = 0; else if (tok[1] == '1') m = 1;
+                }
+                if (l < 0 || m < 0)
+                    SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_ARG_WRONG,
+                            "-bc_mirror: unknown face '%s' (expected a comma list of "
+                            "x0,x1,y0,y1,z0,z1)", tok);
+                user.bc_mirror[l][m] = PETSC_TRUE;
+                tok = strtok(NULL, ",");
+            }
+        }
+    }
+
     /* --- Mesh/run temperature-consistency guard --------------------------
      * eps, and hence the mesh element count Nx = ceil(Lx*sqrt(2)/eps), is sized
      * by comp_eps.py through the TEMPERATURE-dependent kinetic bound. A geometry
@@ -1244,6 +1277,8 @@ int main(int argc, char *argv[]) {
                  * exact axis condition) and pin vapor only on the true
                  * outer boundaries. */
                 if (user.axisym && l == 1 && m == 0) continue;
+                /* -bc_mirror: a symmetry plane is zero-flux, never a reservoir. */
+                if (user.bc_mirror[l][m]) continue;
                 ierr = IGASetBoundaryValue(iga, l, m, 2, user.hum0 * rho0_vs); CHKERRQ(ierr);
                 bc_dirichlet[l][m][2] = PETSC_TRUE;
                 bc_value[l][m][2]     = user.hum0 * rho0_vs;
@@ -1278,6 +1313,7 @@ int main(int argc, char *argv[]) {
                 /* Axisym: skip the y=0 axis face (interior space, not a
                  * thermal reservoir) — same guard as the vapor BC above. */
                 if (user.axisym && l == 1 && m == 0) continue;
+                if (user.bc_mirror[l][m]) continue;   /* symmetry plane: insulating */
                 T_BC[l][m] = user.temp0 + (2.0 * m - 1.0) * user.grad_temp0[l] * LL[l] / 2.0;
                 ierr = IGASetBoundaryValue(iga, l, m, 1, T_BC[l][m]); CHKERRQ(ierr);
                 bc_dirichlet[l][m][1] = PETSC_TRUE;
@@ -1801,19 +1837,21 @@ int main(int argc, char *argv[]) {
             for (PetscInt m = 0; m < 2; m++) {
                 char face[32], tcol[32], vcol[32];
                 PetscBool is_axis = (PetscBool)(user.axisym && l == 1 && m == 0);
+                PetscBool is_mirr = user.bc_mirror[l][m];
                 if (m == 0) PetscSNPrintf(face, sizeof(face), "%s = 0", ax[l]);
                 else        PetscSNPrintf(face, sizeof(face), "%s = L%s", ax[l], ax[l]);
                 if (is_axis) PetscStrlcat(face, "  (axis)", sizeof(face));
+                else if (is_mirr) PetscStrlcat(face, "  (mirror)", sizeof(face));
 
                 if (bc_dirichlet[l][m][1])
                     PetscSNPrintf(tcol, sizeof(tcol), "Dirichlet %8.2f", (double)bc_value[l][m][1]);
                 else
-                    PetscSNPrintf(tcol, sizeof(tcol), "%s", is_axis ? "Neumann (symmetry)" : "Neumann (no flux)");
+                    PetscSNPrintf(tcol, sizeof(tcol), "%s", (is_axis || is_mirr) ? "Neumann (symmetry)" : "Neumann (no flux)");
 
                 if (bc_dirichlet[l][m][2])
                     PetscSNPrintf(vcol, sizeof(vcol), "Dirichlet %.4e", (double)bc_value[l][m][2]);
                 else
-                    PetscSNPrintf(vcol, sizeof(vcol), "%s", is_axis ? "Neumann (symmetry)" : "Neumann (no flux)");
+                    PetscSNPrintf(vcol, sizeof(vcol), "%s", (is_axis || is_mirr) ? "Neumann (symmetry)" : "Neumann (no flux)");
 
                 PetscPrintf(PETSC_COMM_WORLD, "   %-16s %-13s %-19s %s\n",
                             face, "Neumann", tcol, vcol);
@@ -1825,7 +1863,8 @@ int main(int argc, char *argv[]) {
          * a product of two things (-humidity and rho_vs(T0)) and the campaigns
          * that use it are sensitive to 1-h at the 1e-5 level, so spell it out
          * rather than leaving it to be reconstructed from -humidity. */
-        if (bc_dirichlet[0][0][2] || bc_dirichlet[0][1][2]) {
+        if (bc_dirichlet[0][0][2] || bc_dirichlet[0][1][2] ||
+            bc_dirichlet[1][0][2] || bc_dirichlet[1][1][2]) {
             PetscReal rvs_bc;
             RhoVS_I(&user, user.temp0, &rvs_bc, NULL);
             PetscPrintf(PETSC_COMM_WORLD,

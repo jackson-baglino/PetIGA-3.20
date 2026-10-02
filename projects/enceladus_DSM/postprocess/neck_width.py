@@ -167,6 +167,10 @@ def main():
     ap.add_argument("--data", type=Path, default=None,
                     help="experimental neck-width CSV to overlay "
                          "(default: the repo's Molaro Fig. 11 table, if found)")
+    ap.add_argument("--mirror-x0", action="store_true",
+                    help="one-grain mirror domain (-bc_mirror x0): the x = 0 face "
+                         "IS the contact plane, so the neck is the chord in the "
+                         "first column. Skips the two-grain peak search.")
     ap.add_argument("--axisym", action="store_true",
                     help="axisymmetric r-z run: the grid's y is the radius and "
                          "the axis is y = 0, so the measured chord (axis to the "
@@ -199,6 +203,12 @@ def main():
             # chord runs from the axis (y = 0, inside the grain) up to the
             # contour: it IS the local radius; physical width is its double.
             w = 2.0 * w
+
+        if args.mirror_x0:
+            # Mirror domain: the neck plane is the x = 0 face by symmetry, so
+            # no minimum search -- the first column is the neck exactly.
+            rows.append((tmap.get(step, np.nan), w[0], x[0]))
+            continue
 
         if centers is None:
             # Grain centers = the two prominent local maxima of w(x). A local

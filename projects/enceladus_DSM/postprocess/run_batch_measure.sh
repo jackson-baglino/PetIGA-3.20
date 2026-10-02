@@ -107,6 +107,9 @@ for run in "${RUNS[@]}"; do
 
     axisym=$(awk '$1=="-axisym"{print $2; exit}' "$run"/*.opts 2>/dev/null | head -n1)
     ax_flag=""; [[ "${axisym:-0}" == "1" ]] && ax_flag="--axisym"
+    # One-grain mirror domain (-bc_mirror x0): the neck is the x = 0 column.
+    mirror=$(awk '$1=="-bc_mirror"{print $2; exit}' "$run"/*.opts 2>/dev/null | head -n1)
+    [[ "${mirror:-}" == *x0* ]] && ax_flag="$ax_flag --mirror-x0"
 
     # Which of Molaro's two series this run is scored against. The -5 C pair
     # is a different pair of grains, first measured at 32.51 um and followed

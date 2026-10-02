@@ -355,6 +355,15 @@ typedef struct {
   // the axis (ice_grain_cy = 0).
   PetscBool axisym;          // -axisym (default 0 = planar)
 
+  // -bc_mirror <faces>: comma list of faces from {x0,x1,y0,y1,z0,z1} that are
+  // SYMMETRY PLANES of the problem (e.g. x0 = the contact plane of two equal
+  // grains, so only one grain is meshed). A mirror-symmetric field has zero
+  // normal gradient there, i.e. zero flux, which is the natural Neumann
+  // condition -- so these faces are excluded from -flag_BC_rhovfix and
+  // -flag_BC_Tfix, which otherwise pin every non-axis face. bc_mirror[l][m]:
+  // axis l, m = 0 (min) / 1 (max).
+  PetscBool bc_mirror[3][2];
+
   // -ic_grain_union: build the multi_grains IC from the signed distance to the
   // UNION of the grains (sdf = min_k sdf_k, phi = 0.5-0.5*tanh(0.5*sdf/eps))
   // instead of SUMMING each grain's tanh profile.

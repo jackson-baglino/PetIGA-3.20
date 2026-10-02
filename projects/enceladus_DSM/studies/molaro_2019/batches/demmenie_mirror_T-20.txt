@@ -1,0 +1,12 @@
+# Demmenie exponent test -- saturated, attachment-limited (alpha_c = 1e-3),
+# equal grains (R = 84.4 um), -20 C, one-grain mirror domain. ONE job.
+# See studies/molaro_2019/TODO.md and the two .opts headers.
+#
+#   ./scripts/HPC/submit_batch.sh --tag demmenie_mirror \
+#       --tests-file studies/molaro_2019/batches/demmenie_mirror_T-20.txt \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
+#
+# ~760 steps at dtmax = 5 tau_sub, 17.9M DoF (~90 ranks at 200k DoF/rank),
+# ~716 core-h, ~$9. Envelope-ODE prediction: a = 0.29-0.30 (Demmenie 0.26-0.33).
+# Measure: bash postprocess/run_batch_measure.sh <run_dir>   (passes --mirror-x0)
+molaro_2D_L220x188um_eps0.12um_axisym_T-20eq_R84um_r14um_mirror:molaro_T-20_hsat_100h_a1e-3_dirichlet_mirror
