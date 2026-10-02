@@ -1,3 +1,11 @@
+## 2026-10-02 — Envelope neck ODE; -bc_mirror; saturated Demmenie run prepared
+
+- studies/molaro_2019/envelope_ode/: one-equation vapour neck model calibrated on the Fig. 2 run (c = 0.275), validated on mesh_pair. The Molaro -20 C rate needs alpha_c ~0.3-1 even saturated, so 0.1 is the literature-limited tuning choice. Data a = 0.20 is the saturated diffusion-limited value.
+- Solver: new -bc_mirror <faces> keeps symmetry planes zero-flux under the Dirichlet wall flags. neck_width.py --mirror-x0 (auto in run_batch_measure.sh).
+- Prepared (not submitted) the alpha_c = 1e-3, h = 1 + 2 d0/R one-grain mirror run (~$9, predicted a ~0.30). studies/molaro_2019/TODO.md started.
+
+---
+
 ## 2026-10-02 — Thomas run withdrawn; exponent comparison instead
 
 - Confirmed the manuscript Molaro finals use alpha_c = 0.1 (solver logs); the Thomas sizing at 1e-3 was wrong. At 0.1 the 184 h window costs far over $15, so no Thomas run.
