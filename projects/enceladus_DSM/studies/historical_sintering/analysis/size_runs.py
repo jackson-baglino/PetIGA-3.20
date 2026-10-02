@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """size_runs.py -- mesh, timestep, run length and cost for replicating the
-Kingery (1960) and Thomas et al. (1994) two-sphere experiments.
+Thomas et al. (1994) two-sphere experiment.
 
 Run from enceladus_DSM/:
     python studies/historical_sintering/analysis/size_runs.py
@@ -44,8 +44,9 @@ USD_PER_CORE_H = 0.012
 
 CASES = [
     # name, T [C], R [m], first u, last u, first t [h], last t [h], floor anchor
-    ("Kingery 1960",        -17.8, 110e-6, 0.2485, 0.3329, 0.0269, 0.1384, "pt1"),
-    ("Thomas 1994",         -20.0, 120e-6, 0.0992, 0.4433, 3.3163, 190.05, "pt1"),
+    # Relaxed: resolve from point 3 (x/a = 0.181). Resolving point 1 (0.099)
+    # needs eps = 0.080 um, 24M nodes and ~30k steps (~$300-800); dropped
+    # 2026-10-02 in favour of this arm (see README).
     ("Thomas 1994 (pt3)",   -20.0, 120e-6, 0.1811, 0.4433, 20.153, 190.05, "pt3"),
 ]
 
