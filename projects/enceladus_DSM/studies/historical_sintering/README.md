@@ -13,9 +13,10 @@ commit `0dc51f16`.
 
 ![Thomas neck data](figures/thomas_neck_data.png)
 
-*Relative neck size x/a, digitised from Molaro et al. (2019) Fig. 8(c).*
-- *Filled points (3–11) are the ones the proposed run resolves. Open points (1–2) fall below its mesh floor (dashed).*
-- *The line is the `d_fixed` fit over points 3–11. It is drawn only over that range.*
+*Thomas Fig. 3, digitised from Molaro et al. (2019) Fig. 8(c).*
+- *(a) Relative neck size x/a, as published.*
+- *(b) Absolute neck width 2x = 2a·(x/a) with a = 120 µm. This is the quantity `neck_width.py --axisym` reports and our Molaro figures show. Thomas gives only "r ≈ 120 µm", so the absolute scale carries that radius uncertainty; a 10 % error in a shifts (b) by 10 % without changing the exponent.*
+- *Filled points (3–11) are the ones the proposed run resolves; open points (1–2) fall below its mesh floor (dashed). The line is the `d_fixed` fit over points 3–11, drawn only over that range.*
 
 Regenerate (from `enceladus_DSM/`):
 
