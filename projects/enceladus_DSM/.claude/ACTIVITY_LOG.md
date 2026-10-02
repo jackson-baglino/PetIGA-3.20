@@ -1,3 +1,10 @@
+## 2026-10-02 — Kingery / Thomas sintering replication plan
+
+- New `studies/historical_sintering/`: located the two-sphere experiments behind Molaro (2019) Fig. 8(b,c) in Kingery (1960) and Thomas et al. (1994), digitised the missing Kingery points, plotted both series.
+- Sized the runs (eps from the neck floor at the first data point, dtmax = 2 tau_sub): Kingery < $1; Thomas strict ~$300-800 (24M nodes, ~30k steps), relaxed at point 3 ~$5. Hobbs & Mason dropped (paywalled).
+
+---
+
 ## 2026-10-02 — 3a rerun follows dtmax = 2 tau_sub
 
 - dtmax raised to 2 tau_sub (other session, 5068ff8). Pending 3a jobs read
