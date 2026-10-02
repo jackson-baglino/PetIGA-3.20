@@ -1,2 +1,0 @@
-case,T_C,R_um,anchor,u_floor,eps_um,h_nm,Lx_um,Ly_um,Nx,Ny,nodes_M,ranks,tau_sub_s,dtmax_s,t_model_first_h,t_model_last_h,exp_window_h,model_window_h,slowdown,t_final_h,steps,wall_h@8s,usd@8s,wall_h@15s,usd@15s,wall_h@23s,usd@23s
-Thomas 1994 (pt3),-20.0,120.0,pt3,0.163,0.2657,187.8,528,144,2811,767,2.16,33,554.8,1109.7,23.39,659.3,169.897,635.9,3.7,824.2,2774,6.2,2.4,11.6,4.6,17.7,7.0

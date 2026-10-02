@@ -1,4 +1,4 @@
-# Thomas et al. (1994) two-sphere sintering: data and replication plan
+# Thomas et al. (1994) two-sphere sintering: data and exponent comparison
 
 Molaro et al. (2019) compare their Swinkels–Ashby model against three historical
 neck-growth datasets in their **Fig. 8**. This folder covers one of them, Thomas,
@@ -16,14 +16,13 @@ commit `0dc51f16`.
 *Thomas Fig. 3, digitised from Molaro et al. (2019) Fig. 8(c).*
 - *(a) Relative neck size x/a, as published.*
 - *(b) Absolute neck width 2x = 2a·(x/a) with a = 120 µm. This is the quantity `neck_width.py --axisym` reports and our Molaro figures show. Thomas gives only "r ≈ 120 µm", so the absolute scale carries that radius uncertainty; a 10 % error in a shifts (b) by 10 % without changing the exponent.*
-- *Filled points (3–11) are the ones the proposed run resolves; open points (1–2) fall below its mesh floor (dashed). The line is the `d_fixed` fit over points 3–11, drawn only over that range.*
+- *The line is the `d_fixed` fit over points 3–11, drawn only over that range. The dashed line and open/filled split mark the mesh floor of a run that was planned and then withdrawn (§4).*
 
 Regenerate (from `enceladus_DSM/`):
 
 ```bash
 python studies/historical_sintering/analysis/fit_power_law.py   # data/thomas_powerlaw_fits.csv
 python studies/historical_sintering/analysis/plot_data.py       # figures/thomas_neck_data.*
-python studies/historical_sintering/analysis/size_runs.py       # data/run_sizing.csv
 ```
 
 ---
@@ -61,11 +60,11 @@ The data were fitted to x/a = C·t^a (`analysis/fit_power_law.py`, 95 % CIs, res
 |---|---|---:|---:|---:|---:|
 | all 11 points | `d_fixed`, C·t^a | **0.356** | 0.043 | — | 0.975 |
 | all 11 points | `d_free`, C·(t+t₀)^a | 0.386 | 0.082 | 1.5 ± 5.8 | 0.984 |
-| points 3–11 (simulated window) | `d_fixed` | **0.403** | 0.044 | — | 0.985 |
+| points 3–11 (late window) | `d_fixed` | **0.403** | 0.044 | — | 0.985 |
 | points 3–11 | `d_free` | **0.329** | 0.096 | −9 ± 12 | 0.986 |
 
 - **Over the full record the data agree with Thomas's t^(1/3).** a = 0.36 ± 0.04 contains 1/3.
-- **Over the simulated window, a depends on the protocol.** With the clock as reported, a = 0.40 ± 0.04. Freeing the contact time gives 0.33 ± 0.10.
+- **Over points 3–11, a depends on the protocol.** With the clock as reported, a = 0.40 ± 0.04. Freeing the contact time gives 0.33 ± 0.10.
   - Neither experiment knows its contact time, so `d_free` is the honest number. It also has the wide CI.
   - This is the same protocol trap documented in `studies/sinter_exponent`. **Always fit the model and the data with the same form over the same x/a window.**
 - **Point-to-point local slopes are unusable on this data.** They swing from −0.05 to 0.80, because digitisation scatter dominates over these short log-intervals. Use window fits only.
@@ -92,111 +91,45 @@ For Molaro's grains, the 3–4 % shrinkage calibrated the chamber humidity (h �
 
 ---
 
-## 4. The simulation (relaxed arm: resolve from point 3)
+## 4. Decision (2026-10-02): no Thomas simulation; compare exponents instead
 
-> **SUPERSEDED: this section was sized at α_c = 1e-3. It must be redone at α_c = 0.1 (2026-10-02).**
->
-> The manuscript Molaro runs (Fig. 2) use **α_c = 0.1**. This was verified in the solver logs of both final runs:
-> - −20 °C: `batch_2026-09-08__17.20.46_molaro_T-20_round2`
-> - −5 °C: `..._T-5_h0.99674_2h_a1e-1_dirichlet`
->
-> 0.1 is the top of the literature band [1e-3, 1e-1], i.e. the least attachment resistance the literature supports. The 1e-3 used below came from the `mesh_pair` side study.
->
-> Thomas must use the same α_c. That changes everything below:
-> - eps is set by δ_ice ≤ 1 (1.18e-7 m, as for Molaro), not by the neck floor.
-> - τ_sub is ≈ 1.3 s instead of 555 s.
-> - The start should be pre-necked, not tangent.
->
-> The "~150× slower than Molaro" figure is also the α_c = 1e-3 `mesh_pair` result. At 0.1, the manuscript run reproduces about half of Molaro's rate.
+**We are not running Thomas.** Any version at the Molaro settings costs more than $15:
+- α_c = 0.1 and ε = 1.18e-7 m (from δ_ice ≤ 1) give τ_sub = 1.33 s.
+- The comparison needs ~184 h of simulated time, against Molaro's 2 h.
 
-### Why "relaxed"
+Every under-$15 variant gives up something the Molaro runs kept: a coarser ε (δ_ice ≈ 2.25), dtmax ≥ 20·τ_sub, or an untested mirror domain. The earlier sizing was done at α_c = 1e-3 and is withdrawn. `size_runs.py` and its CSV are in git history (`a4908306`).
 
-A neck is measurable only above x/a ≥ sqrt(12·eps/a). That floor goes at 0.9× the first point to be compared, so eps = a·(0.9·u)²/12.
+**The comparison uses the growth exponent a in x ~ t^a.** Each source is fitted in its own window. `d_free` is C·(t+t₀)^a with t₀ free, and is the fair form when the contact time is unknown.
 
-Resolving point 1 (x/a = 0.099) needs eps = 0.080 µm: 24 M nodes, ~30k steps and $300–800. Starting at **point 3 (x/a = 0.181)** gives an eps 3.3× larger and 11× fewer nodes and steps. It still covers 9 of 11 points over a decade of time (20 → 190 h).
+| source | conditions | window | a (`d_free`) | a (`d_fixed`) |
+|---|---|---|---:|---:|
+| **Thomas et al. (1994)** data | −20 °C, cold lab, humidity unreported | x/a 0.10–0.44, 3–190 h | 0.39 ± 0.08 (all) · 0.33 ± 0.10 (pts 3–11) | 0.36 ± 0.04 (all) · 0.40 ± 0.04 (pts 3–11) |
+| Thomas's own fit | — | — | — | **1/3** |
+| **Molaro et al. (2019)** data | −20 °C cryostage, grains shrank 3–4 % | 33 → 65 µm width, 78 min | 0.204 ± 0.053 | 0.185 ± 0.019 |
+| **our model**, Molaro −20 °C final run | α_c = 0.1, h = 0.99715 (shrinkage-calibrated) | 33.5 → 48.5 µm, 117 min after anchor | **0.139 ± 0.001** | — |
+| **our model**, Molaro −5 °C final run | α_c = 0.1, h = 0.99674 | 34.4 → 53.3 µm, 54 min after anchor | **0.147 ± 0.002** | — |
+| our model, saturated, neck resolved (`mesh_pair` fine) | α_c = 1e-3, h = 1.00, tangent start | 32.8 → 51.1 µm | 0.283 ± 0.001 | — |
+| Demmenie et al. (2025) data | −3 °C, held at ice saturation | r/R 0.09–0.35 | 0.26–0.33 | — |
+| Demmenie et al. (2025), under-saturated control | — | — | ≈ 1/7 | — |
 
-### Setup
+- **Model exponents** come from `neck_width.csv` in `~/SimulationResults/HPC_results/enceladus_DSM/GrainPairSintering/`:
+  - −20 °C: second attempt (`batch_2026-09-08__17.20.46_molaro_T-20_round2`).
+  - −5 °C: first attempt (`..._T-5_h0.99674_2h_a1e-1_dirichlet`).
+  - Each clock is anchored at Molaro's first measured width.
+- **Data exponents** come from `analysis/fit_power_law.py` and `studies/sinter_exponent/README.md`.
 
-The setup is the one validated in `studies/sinter_exponent`:
-- Two equal spheres, axisymmetric, starting from exact tangency.
-- α_c = 1e-3 held constant.
-- Physical d₀ and `--Dchannel ice`.
-- `-dtmax = 2·tau_sub`.
+**How the exponents line up:**
+- **Saturation sets the exponent, as Demmenie et al. argue.** Our model gives a ≈ 0.28–0.33 at saturation. At Molaro's shrinkage-calibrated humidity (h ≈ 0.997) it drops to a ≈ 0.14–0.15, close to Demmenie's under-saturated 1/7.
+- **The Molaro data sit between the two (0.20).** That fits a chamber that was slightly under-saturated, which their 3–4 % grain shrinkage already shows.
+- **Thomas sits at or above the saturated value (0.33–0.40).** By the same argument, their grains were at least at saturation.
+  - It is consistent with a vapour-saturated environment: the pair sits in a bed of other ice particles in a cold room, and the neck never recedes over a week.
+  - It does **not** show super-saturation. Only the clock-as-reported fit over points 3–11 (0.40 ± 0.04) exceeds 1/3; with t₀ free it is 0.33 ± 0.10.
+  - Calling it super-saturated would need evidence the paper doesn't give, such as grain growth, which Fig. 2 can't resolve (§3).
+- **Rate.** At the α_c = 0.1 used for Fig. 2, the model reproduces about half of Molaro's −20 °C neck growth. That missing half matches the surface-diffusion share SA81 predicts. The two mechanisms are co-dominant in Molaro's own mechanism breakdown (their Fig. 10), and **our model has no surface diffusion** (`project-molaro-validation`, `docs/molaro_validation_synthesis.md`).
+  - Molaro's model *does* include surface diffusion. Its weak point is the vapour term: Hertz–Knudsen with α = 1 in vacuum, ignoring gas-phase diffusion (their Appendix A).
+  - We have **no** reliable model-vs-Thomas rate ratio. The "~3.5× slower" estimate was made at α_c = 1e-3 and does not carry over to 0.1.
 
-| | value |
-|---|---|
-| T | −20 °C |
-| grain radius a | 120 µm (both grains) |
-| floor x/a | 0.163 (0.9 × 0.181) |
-| **eps** | **0.2657 µm** (h = eps/√2 = 188 nm) |
-| domain | Lx × Ly = 528 × 144 µm (4.4a × 1.2a); grain centres at x = 144 and 384 µm |
-| **mesh** | **Nx × Ny = 2811 × 767**: 2.16 M nodes, 6.5 M DoF, 33 ranks at 200k DoF/rank |
-| tau_sub → dtmax | 555 s → **1110 s** |
-| experiment duration | 3.3 → 190 h (~8 days); compared window 20 → 190 h |
-| model time to point 3 / to last point (est.) | 23 h / 660 h (27 d) |
-| model slower than experiment, over the window | **~3.7×** (Molaro's own −20 °C pair: ~150×) |
-| **t_final** | **824 h = 2.97e6 s** (1.25 × last point) |
-| **steps** | **~2,800** |
-| **wall time** (8 / 15 / 23 s per step) | **6 / 12 / 18 h**, one job with no restart legs |
-| **cost per arm** | **$2 / $5 / $7** (Tier 1, $0.012/core-h) |
-
-How the estimates were made:
-
-- **Model time.** Calibrated on the `mesh_pair` fine arm: −20 °C, α_c = 1e-3, tangent start, u = 0.194 → 0.303 in 15 → 79 h, so t ~ u^3.73. Scaled to this case by t ∝ β_sub·a²/d₀. Reaching u = 0.44 is an extrapolation, and exact-fillet slowing there makes the end time more likely an underestimate. **Treat the model times as ±2×.**
-- **Seconds per step.** The low end is the Molaro axisymmetric runs (~7 s/step at ~100k DoF/rank). The high end is the phase-field strong-scaling fit (`project_hpc_cost_model`).
-- **Steps do not depend on α_c.** Both the neck time and tau_sub scale as 1/α_c, so the step count ≈ (a/eps)²·u^3.7. A different α_c changes `t_final`, not the cost.
-
-### Why tau_sub is 555 s here
-
-With 99 % of the τ_sub bracket kinetic, `comp_eps.py`'s formula reduces to
-
-    tau_sub ≈ eps² · beta_sub / d0,     beta_sub ∝ 1/α_c
-
-so tau_sub scales with **eps²** and **1/α_c**:
-
-| run | eps | α_c | tau_sub |
-|---|---:|---:|---:|
-| this run (Thomas relaxed) | 0.266 µm | 1e-3 | 555 s |
-| `mesh_pair` fine (−20 °C) | 0.240 µm | 1e-3 | 452 s |
-| Molaro tangent set (−20 °C) | 0.240 µm | 1.34e-2 | 35.6 s |
-| Thomas strict (dropped) | 0.080 µm | 1e-3 | 50 s |
-
-Check: (2.657e-7)² × 7.941e6 / 1.0152e-9 = 552 s, against 555 s from `comp_eps.py`. The difference is the thermal and vapour terms.
-
-### Inputs to write (none created yet)
-
-Geometry, `inputs/geometry/<family>/`:
-
-```
--axisym 1  -ic_grain_union 1  -ic_type multi_grains  -dim 2
--Lx 5.28e-4  -Ly 1.44e-4  -Lz 0
--ice_grain_cx 1.44e-4,3.84e-4   -ice_grain_cy 0.0,0.0
--ice_grain_R 1.2e-4,1.2e-4  -ice_grain_ax 1.2e-4,1.2e-4  -ice_grain_ay 1.2e-4,1.2e-4
--Nx 2811  -Ny 767  -Nz 1
--eps 2.657e-7  -eps_valid_temp -20
--periodic 0
-```
-
-Experiment, `inputs/experiment/<family>/`. There is one file per arm; the arms differ only in boundary flags and humidity.
-
-```
--t_final 2.97e6  -temp -20.0  -humidity 1.00  -grad_temp0 0.0,0.0,0.0
--alpha_pointwise 1  -alpha_model 0  -alpha_c0 1.0e-3  -alpha_lo 1.0e-3  -alpha_hi 1.0e-1
--d0_sub0 1.0152e-9
--dtmax 1110  -dtCFL 1  -dtCFL_dphimax 0.2
--t_out_log 80  -t_out_first 1
-# Dirichlet arm: add -flag_BC_Tfix 1 -flag_BC_rhovfix 1
-# optional under-saturated arm: Dirichlet + -humidity 0.998
-```
-
-### Analysis
-
-```bash
-python postprocess/neck_width.py <run_dir> --axisym          # --axisym is REQUIRED
-python postprocess/fit_neck_growth.py <run>/neck_width.csv <data csv> \
-    --anchor-neck-rn 0.1811 --demmenie
-```
-
-- `neck_width.py --axisym` returns the neck **width** (2x); divide by 2a for x/a.
-- `fit_neck_growth.py` reads data series in the Molaro layout (`time_min,neck_size_um,...,lg_diam_um,sm_diam_um`). Convert the Thomas CSV first (neck = 2·(x/a)·120 µm, both diameters = 240 µm), or add a `time_h,relative_neck` branch to the loader.
-- Report the model's `d_fixed` and `d_free` exponents over x/a = 0.181–0.443, next to the table in §2.
+**Caveats.**
+- The model runs are pre-necked (r = 14 µm). The early fillet transient is absorbed by the free t₀, not removed, so the model exponents are best read as ±0.03.
+- Exponents fitted over different x/a windows are not strictly comparable: the ideal saturated slope itself sags from 0.33 to about 0.30 between x/a 0.1 and 0.35.
+- Thomas's and Molaro's points are both second-hand digitisations.
