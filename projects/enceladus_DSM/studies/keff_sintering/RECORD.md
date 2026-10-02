@@ -159,8 +159,8 @@ thresholds, open questions); this page is the history.
 
 ## In progress
 
-- [ ] **Batch 3a rerun** — submitted 2026-10-01 at commit d7452d5.
-  - **What:** 7 runs on the option-B packings: one per φ at −20 °C (seeds 1601/1701/1801/1901/2001), plus 1701 at −5 and −40 °C. Final options, 121 ranks.
+- [ ] **Batch 3a rerun** — first submitted 2026-10-01 at commit d7452d5 and cancelled while pending, because dtmax changed to 2·τ_sub on 2026-10-02. Resubmitted at the 2·τ_sub commit.
+  - **What:** 8 runs on the option-B packings: one per φ at −20 °C (seeds 1601/1701/1801/1901/2001), plus 1701 at −5 and −40 °C, plus gated seed301 at −20 °C as the paired dtmax check against the first shakedown (1.09·τ_sub, same packing). Final options, 121 ranks, per-T time limits.
   - **Data:** HPC `CAMP/<geom>__<exp>/`, record in `CAMP/stages/batch3a_shakedown__<ts>/`. Local `LOC/keff_sintering_campaign/` (`fetch_stage.sh studies/keff_sintering/batch3a_shakedown.txt`).
   - **Check:** the 3a checks, plus `predict_cadence.py --check` on every run.
   - *Result:* —

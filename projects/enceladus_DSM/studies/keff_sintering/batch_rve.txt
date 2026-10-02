@@ -1,4 +1,4 @@
-# Supplement: k_eff domain-size convergence (26 runs, ~$155).
+# Supplement: k_eff domain-size convergence (25 runs, ~$150).
 #
 # phi 0.325, -20 C. UNGATED ensembles (only the y-seam and percolation gates):
 #   L/R 20 / 30 / 56 / 80: 8 / 6 / 4 / 3 seeds, inputs/packings/rve_phi0.325/
@@ -11,7 +11,8 @@
 # density-CV and asymmetry gates on). Against 1701-1705 they measure what
 # those gates did to k_eff -- the number the methods section quotes for
 # choosing B. (The 3a shakedown's 301 run used the old every-5-step cadence,
-# so 301 is rerun here with the final options.)
+# so 301 is rerun with the final options -- in the 3a rerun, where it doubles
+# as the dtmax 2 tau_sub check; only 302-305 are listed here.)
 #
 # CHECK (rve_convergence/analyze_rve.py, roots: this stage + 3a + 3b):
 # L/R 40 is close enough if its seed-mean gap to L/R 80 is inside the gap's
@@ -20,7 +21,7 @@
 # ALLOCATION: capped at 6 nodes (MAX_NODES_PER_JOB, scripts/lib/alloc.sh):
 # L/R 56 and 80 run on 192 ranks (245k / 500k DoF/core, 2G / 4G per core)
 # instead of 9 and 16 nodes, where the k_eff solve is 15-30x slower.
-# Cost: 19 runs at ~$4 (L/R <= 40) + 4 x L/R 56 at ~$8 + 3 x L/R 80 at ~$16
+# Cost: 18 runs at ~$4 (L/R <= 40) + 4 x L/R 56 at ~$8 + 3 x L/R 80 at ~$16
 # (cost ~ DoF at fixed step count) = ~$155.
 #
 # Submit with (every option lives in the script):
@@ -40,7 +41,6 @@ packing_2D_phi0.325_Rave50um_LR30_seed1203_L1.5mm_eps1000nm_perxy_T-20:snow_T-20
 packing_2D_phi0.325_Rave50um_LR30_seed1204_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR30_seed1205_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR30_seed1206_L1.5mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
-packing_2D_phi0.325_Rave50um_LR40_seed301_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR40_seed302_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR40_seed303_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
 packing_2D_phi0.325_Rave50um_LR40_seed304_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d

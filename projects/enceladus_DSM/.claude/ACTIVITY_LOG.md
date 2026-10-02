@@ -1,3 +1,17 @@
+## 2026-10-02 — 3a rerun follows dtmax = 2 tau_sub
+
+- dtmax raised to 2 tau_sub (other session, 5068ff8). Pending 3a jobs read
+  inputs/ at start, so they would have silently run at 2 tau_sub under a
+  1.09 manifest: cancel and resubmit.
+- Sampling cost of 2 tau_sub from batch-2 every-step data (stride 2): k(SSA)
+  interpolation error 0.01-0.02% -> 0.03-0.18%, still 7x under the smallest
+  real kink; steps after 11 tau_sub ~halve, samples ~165 -> ~120 at -20 C.
+- 3a gains gated seed301 at -20 C, a paired dtmax check against the first
+  shakedown's 1.09 run (moved out of batch_rve). Time limits retuned for
+  2 tau_sub: -5 12 h, -10 8 h, -20 4 h, -30/-40 3 h.
+
+---
+
 ## 2026-10-02 — dtmax = 2 tau_sub adopted everywhere
 
 - On the three-case dtmax ladder (2 tau_sub within 0.1 % of 0.8 in growth,

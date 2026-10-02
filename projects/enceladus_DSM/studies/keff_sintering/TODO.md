@@ -70,7 +70,15 @@ Tests (scaling etc.) go one folder per test:
     mirrors it and reproduced all 7 3a schedules on the old path; run
     `--check` on the rerun.
 - [ ] **Rerun 3a** with the final options, on the option-B packings
-  (seeds 1601/1701/1801/1901/2001). NEXT TO SUBMIT. The first 3a is kept as
+  (seeds 1601/1701/1801/1901/2001). First submission (2026-10-01, commit
+  d7452d5, 1.09 tau_sub) CANCELLED while still pending: dtmax went to
+  2 tau_sub on 2026-10-02, and jobs read inputs/ at start, so they would have
+  run at 2 tau_sub under a manifest saying otherwise. Resubmit at the 2 tau_sub
+  commit. Now 8 runs: + gated seed301 at -20 C, the paired dtmax check against
+  the first shakedown's 1.09 run (pass: k_iso and SSA within 0.5% after
+  11 tau_sub). Expected sampling cost of 2 tau_sub (batch-2 data at stride 2):
+  max k(SSA) interpolation error 0.03-0.18%, still 7x under the smallest
+  real kink. The first 3a is kept as
   the shakedown record, not pooled. Check it as 3a was, plus
   `predict_cadence.py --check` on every run.
 - [ ] **Before 3b** (cost, not correctness), in this order:
