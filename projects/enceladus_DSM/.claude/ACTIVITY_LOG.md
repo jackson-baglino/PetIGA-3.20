@@ -1,3 +1,10 @@
+## 2026-10-02 — Historical sintering narrowed to Thomas (relaxed)
+
+- Dropped Kingery and the strict Thomas arm; README now specifies only the relaxed Thomas run (eps 0.266 um, 2811x767, ~2.8k steps, ~$5/arm).
+- Fitted Thomas data to t^a (analysis/fit_power_law.py); documented that Thomas gives no direct saturation data (no grain sizes, no scale bar in Fig. 2) and recommended h = 1.00 sealed + Dirichlet arms.
+
+---
+
 ## 2026-10-02 — Kingery / Thomas sintering replication plan
 
 - New `studies/historical_sintering/`: located the two-sphere experiments behind Molaro (2019) Fig. 8(b,c) in Kingery (1960) and Thomas et al. (1994), digitised the missing Kingery points, plotted both series.
