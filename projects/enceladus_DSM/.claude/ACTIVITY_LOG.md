@@ -1,3 +1,10 @@
+## 2026-10-02 — Thomas run withdrawn; exponent comparison instead
+
+- Confirmed the manuscript Molaro finals use alpha_c = 0.1 (solver logs); the Thomas sizing at 1e-3 was wrong. At 0.1 the 184 h window costs far over $15, so no Thomas run.
+- README section 4 is now an exponent table: model at calibrated Molaro humidity a = 0.139/0.147 (d_free), saturated model 0.283, Molaro data 0.20, Thomas 0.33-0.40; Demmenie saturation argument; size_runs.py removed.
+
+---
+
 ## 2026-10-02 — Historical sintering narrowed to Thomas (relaxed)
 
 - Dropped Kingery and the strict Thomas arm; README now specifies only the relaxed Thomas run (eps 0.266 um, 2811x767, ~2.8k steps, ~$5/arm).
