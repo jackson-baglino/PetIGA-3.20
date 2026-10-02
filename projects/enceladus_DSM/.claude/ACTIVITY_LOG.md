@@ -1,3 +1,15 @@
+## 2026-10-02 — dtmax = 2 tau_sub adopted everywhere
+
+- On the three-case dtmax ladder (2 tau_sub within 0.1 % of 0.8 in growth,
+  sintering and ripening), Jackson chose 2 tau_sub across both projects.
+- snow_T*_30d.opts: 1.09 -> 2 tau_sub; generate_study_opts.py DTMAX_OVER_TAU
+  1.09 -> 2.0. RECORD.md entry added with the caveats: earlier runs used
+  1.09, the ladder was not run on a packing, and the step-based early k_eff
+  cadence (-keff_freq 5) now samples about half as often in time.
+- Molaro and sinter validation experiment files left as run.
+
+---
+
 ## 2026-10-01 (later) — Per-step Newton/Krylov logging: solver_evo.dat
 
 - Monitor() now writes solver_evo.dat beside SSA_evo.dat: step, t, dt, Newton

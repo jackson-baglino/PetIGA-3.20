@@ -18,4 +18,4 @@
 # Interface-CFL limiter: cap dt so no Gauss point moves more than dphimax per step
 -dtCFL 1
 -dtCFL_dphimax 0.2
--dtmax 3449                  # 1.09 * tau_sub (3164 s); a BACKSTOP -- -dtCFL is the control
+-dtmax 6328                  # 2 * tau_sub (3164 s); was 1.09 until 2026-10-02 -- see generate_study_opts.py

@@ -61,7 +61,14 @@ from comp_eps import (                                    # noqa: E402
 # It reproduces both of that campaign's points (1.093 and 1.089), and it is the
 # right SHAPE as well as the right number: tau_sub carries both the eps and the
 # alpha_c dependence, which a flat default cannot.
-DTMAX_OVER_TAU = 1.09
+#
+# Raised 1.09 -> 2.0 on 2026-10-02. A six-rung ladder (0.8 to 40 x tau_sub) run
+# in lunar_regolith_DSM, which shares src/, on three cases -- reservoir-fed
+# growth in a channel, sintering of a tangent grain pair, and Ostwald ripening
+# to extinction -- found 2 x tau_sub within 0.1 % of 0.8 x in every measure,
+# 5 x within 1 %, 10 x 2-4 % slow and 20-40 x 10-30 % slow, always stable.
+# Tables: ../lunar_regolith_DSM/studies/contact_angle/velocity_plan_2026-10-01/README.md
+DTMAX_OVER_TAU = 2.0
 
 
 def _target_dofs_per_core(default: int = 100_000) -> int:

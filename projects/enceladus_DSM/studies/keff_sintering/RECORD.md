@@ -145,6 +145,10 @@ thresholds, open questions); this page is the history.
   - Movies open on the t ≥ 1 s frame.
   - One normalization everywhere: k_eff,0 and SSA_0 at the first sample with t ≥ 1 s.
 
+- [x] **2026-10-02 — Timestep ceiling raised from 1.09·τ_sub to 2·τ_sub.**
+  Data: `~/SimulationResults/lunar_regolith_DSM/scratch/batch_2026-10-01__{14.25.24_dtmax_small,14.52.38_dtmax_sinter,15.49.53_dtmax_ripen}` (local only). Tables: `projects/lunar_regolith_DSM/studies/contact_angle/velocity_plan_2026-10-01/README.md`.
+  A six-rung ladder (0.8–40·τ_sub) in the lunar solver (same `src/`) on channel growth, a sintering pair and a ripening pair, all at −20 °C, α_c = 1e-3. **Finding:** 2·τ_sub agrees with 0.8·τ_sub to ≤ 0.1 % in every measure; 5 is within 1 %; 10 is 2–4 % slow; 20–40 are 10–30 % slow, always stable. `snow_T*_30d.opts` and `generate_study_opts.py` now use 2·τ_sub. **Caveat:** runs finished before this date used 1.09·τ_sub; the ladder says the two are indistinguishable but it was not run on a packing. The early k_eff cadence (`-keff_freq 5`, every 5 steps) is step-based, so it samples about half as often in time before 11·τ_sub.
+
 ### Molaro 2019 grain-pair validation (manuscript Fig. 2; separate study)
 
 - [x] −20 °C round 2: local `LOC/GrainPairSintering/batch_2026-09-08__17.20.46_molaro_T-20_round2/`. −5 °C: `LOC/GrainPairSintering/batch_2026-09-29__10.01.06_molaro_T-5_round2/` and `LOC/GrainPairSintering/molaro_2D_…_T-5pair_…_h0.99674_2h_…/`. HPC: scratch, exact path not recorded. Study: `REPO/studies/molaro_2019/`, figures in `studies/molaro_2019/manuscript/`.
