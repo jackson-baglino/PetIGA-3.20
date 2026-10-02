@@ -1,0 +1,15 @@
+# Thomas, Ratke & Kochan (1994) Adv. Space Res. 14(12), (12)207, Fig. 3, two spheres r ~ 120 um, T = 253 K.
+# Digitised by J. Baglino from Molaro et al. (2019) Fig. 8(c) (source: MolaroMaterials/Fig8/Molaro2019_Fig8c.csv).
+# relative_neck = x/a = neck RADIUS / grain RADIUS (= width/diameter).
+time_h,relative_neck
+3.3163,0.0992
+5.6122,0.1512
+20.1531,0.1811
+26.7857,0.2126
+44.3878,0.2724
+54.0816,0.2748
+68.3673,0.3102
+77.5510,0.3213
+97.4490,0.3764
+163.5204,0.4433
+190.0510,0.4402
