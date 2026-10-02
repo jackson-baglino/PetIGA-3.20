@@ -45,4 +45,7 @@
 # thin-interface correction; dtmax = tau_sub/2 per the measured study in
 # studies/contact_angle/verification/dtmax_study.{sh,csv}, which found theta_inf
 # insensitive to dtmax over a 16x range.
--dtmax 1.487e3
+# 2 x tau_sub since 2026-10-02 (was tau_sub/2): the dtmax ladder in
+# studies/contact_angle/velocity_plan_2026-10-01/README.md found 2 x tau_sub
+# indistinguishable from 0.8 x in growth, sintering and ripening.
+-dtmax 5.948e+03

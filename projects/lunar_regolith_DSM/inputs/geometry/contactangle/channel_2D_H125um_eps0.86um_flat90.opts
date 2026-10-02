@@ -44,4 +44,7 @@
 -delt_t 1.0e-4
 -periodic 0
 -wall_faces y0,y1
--dtmax 1.487e3
+# 2 x tau_sub since 2026-10-02 (was tau_sub/2): the dtmax ladder in
+# studies/contact_angle/velocity_plan_2026-10-01/README.md found 2 x tau_sub
+# indistinguishable from 0.8 x in growth, sintering and ripening.
+-dtmax 5.948e+03

@@ -36,10 +36,10 @@
 # to the wall carries ~80 % of the resistance and the run is diffusion-limited.
 # 1e-2 is the largest value the existing eps = 0.8584 um meshes support; 1e-1
 # needs eps = 0.296 um (3x finer each way) and would change v_n by only ~15 %.
-# -dtmax = 0.8*tau_sub (tau_sub = 670 s here, against 2972 s at 2e-3); 0.8 is
-# inside the range dtmax_study.sh measured clean (to 0.815).
+# -dtmax = 2*tau_sub (tau_sub = 670 s here, against 2972 s at 2e-3); the
+# 2026-10-01 dtmax ladder found 2*tau_sub indistinguishable from 0.8 (<= 0.1 %).
 # Otherwise identical to grow90_T-20_theta60.opts (alpha_c = 2e-3).
--dtmax 5.36e2
+-dtmax 1.34e3
 
 -t_final 7.776e6
 

@@ -40,5 +40,5 @@
 -delt_t 1.0e-4
 -periodic 0
 
-# Placeholder ceiling; the dtmax-ladder experiment files override it.
--dtmax 4.68e3
+# Default ceiling, 2 x tau_sub at alpha_c = 1e-3; experiment files override it.
+-dtmax 1.170e+04

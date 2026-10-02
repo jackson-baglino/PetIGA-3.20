@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-02 08:04:44
+
+
+---
+
 **Session ended:** 2026-10-01 15:57:09
 
 
@@ -87,6 +92,19 @@
 ---
 
 **Session ended:** 2026-10-01 12:22:50
+
+## 2026-10-02 — dtmax = 2 tau_sub adopted everywhere
+
+- On the three-case dtmax ladder (2 tau_sub within 0.1 % of 0.8 in growth,
+  sintering and ripening), Jackson chose 2 tau_sub across both projects.
+- 44 velocity-study experiment files: 0.8 -> 2 tau_sub (1.17e4 s at alpha_c =
+  1e-3, 1.34e3 s at 1e-2). Live geometry-file defaults: tau_sub/2 -> 2 tau_sub
+  (x4). Completed-study experiment files (tgrad) left as run.
+- lunar_main.c startup guard: warning threshold 1.0 -> 5.0 tau_sub, message
+  rewritten around the ladder. Wall-time table and time limits in the
+  velocity_plan README redone.
+
+---
 
 ## 2026-10-01 (evening) — dtmax ladder result: ripening pair; all three cases agree
 

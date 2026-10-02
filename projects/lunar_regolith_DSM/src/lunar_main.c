@@ -1573,25 +1573,25 @@ int main(int argc, char *argv[]) {
          * dtmax/tau_sub from 0.051 to 0.815 and theta_inf moved 0.0028 deg,
          * with phi never leaving [0,1] and the CFL limiter never firing. The
          * 0.91 stall that originally motivated a tight threshold was the
-         * wall-term sign flip, not dt; it is fixed by the clamp. So warn only
-         * above 1.0, where a single step would exceed the entire interface
-         * relaxation time. */
+         * wall-term sign flip, not dt; it is fixed by the clamp.
+         *
+         * Threshold raised 1.0 -> 5.0 on 2026-10-02 from the dtmax ladder
+         * (velocity_plan_2026-10-01/README.md): 2 x tau_sub is the production
+         * ceiling, 5 x is the last rung within 1 %. */
         if (dtmax > 0.0 && tau_sub > 0.0) {
             const PetscReal ratio = dtmax / tau_sub;
             PetscPrintf(PETSC_COMM_WORLD,
                 "   dtmax/tau_sub = %.4f%s\n", (double)ratio,
-                (ratio > 1.0) ? "   <-- SEE WARNING BELOW" : "   (ok, <= 1.0)");
-            if (ratio > 1.0)
+                (ratio > 5.0) ? "   <-- SEE WARNING BELOW" : "   (ok, <= 5.0)");
+            if (ratio > 5.0)
                 PetscPrintf(PETSC_COMM_WORLD,
                     "\n   *** WARNING: dtmax = %.3e s is %.2f x tau_sub = %.3e s.\n"
-                    "       A step longer than the whole interface relaxation time cannot\n"
-                    "       and the solve can stall while the clock keeps advancing --\n"
-                    "       a run that LOOKS successful but whose solution stopped\n"
-                    "       changing. tau_sub scales as eps^2, so set -dtmax in the\n"
-                    "       GEOMETRY file (which owns eps), not in a shared experiment\n"
-                    "       file. Suggested: -dtmax %.2e  (tau_sub/10)\n\n",
+                    "       The 2026-10-01 dtmax ladder (growth, sintering, ripening) found\n"
+                    "       2 x tau_sub free, 5 x within 1 %%, 10 x 2-4 %% slow and 20-40 x\n"
+                    "       10-30 %% slow: the run stays stable but its dynamics lag.\n"
+                    "       Suggested: -dtmax %.2e  (2 x tau_sub)\n\n",
                     (double)dtmax, (double)ratio, (double)tau_sub,
-                    (double)(tau_sub / 10.0));
+                    (double)(2.0 * tau_sub));
         }
         {   /* Realised vs requested kinetics. beta_bare = tau_sub*d0_sub0/eps^2
              * is the coefficient the sharp-interface limit actually delivers; it

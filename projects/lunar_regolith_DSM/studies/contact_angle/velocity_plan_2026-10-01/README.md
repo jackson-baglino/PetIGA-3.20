@@ -236,28 +236,25 @@ Estimates, not measurements. They rest on one data point (the September
 channel runs: 3.2 s/step at 8 ranks) and on the enceladus scaling fit for how
 the step slows with fewer ranks. Treat them as ±50 %.
 
-The step count is set by `-dtmax`, not by the interface-CFL limiter: the
-limiter is on (`-dtCFL 1 -dtCFL_dphimax 0.2`) but the interface moves about
-one element in ten days, so it never binds and dt sits on the ceiling. The
-experiment files therefore set `-dtmax = 0.8·τ_sub` for their own α_c
-(4.68e3 s at 1e-3, 5.36e2 s at 1e-2), the top of the range `dtmax_study.sh`
-measured clean. The geometry files' 1.487e3 s was τ_sub/2 at α_c = 2e-3.
+The step count is set by `-dtmax`, not by the interface-CFL limiter, which
+rarely binds on these slow interfaces. The experiment files set
+`-dtmax = 2·τ_sub` for their own α_c (1.17e4 s at 1e-3, 1.34e3 s at 1e-2),
+the value the dtmax ladder below found indistinguishable from 0.8·τ_sub.
 
 | Runs | Steps | 200k DoF/core | 50k DoF/core |
 |---|---|---|---|
-| channel, α_c = 1e-3 (A, B) | 1,700 | ~7 h (2 ranks) | ~2 h (8 ranks) |
-| wedge, α_c = 1e-3 (C, D) | 2,800 | ~10 h (3 ranks) | ~3 h (10 ranks) |
-| channel, α_c = 1e-2 (A, B) | 14,500 | ~57 h | ~15 h |
-| wedge, α_c = 1e-2 (C, D) | 24,300 | ~84 h | ~26 h |
+| channel, α_c = 1e-3 (A, B) | 750 | ~3 h (2 ranks) | ~1 h (8 ranks) |
+| wedge, α_c = 1e-3 (C, D) | 1,200 | ~4 h (3 ranks) | ~1.5 h (10 ranks) |
+| channel, α_c = 1e-2 (A, B) | 5,900 | ~23 h | ~6 h |
+| wedge, α_c = 1e-2 (C, D) | 9,800 | ~34 h | ~11 h |
 
 - `scripts/lib/alloc.sh` targets 200k DoF/core. On meshes this small that
   costs about the same core-hours as 50k but roughly 4× the wall time;
   `TARGET_DOFS_PER_CORE=50000` on the submit line trades it back.
-- α_c = 1e-3: `-- --time=0-12:00:00` (channel) and `0-16:00:00` (wedge) at
+- α_c = 1e-3: `-- --time=0-06:00:00` (channel) and `0-08:00:00` (wedge) at
   200k.
-- α_c = 1e-2 runs are long at 200k and need restart legs or the 50k target.
-  The enceladus campaign runs at 1.09·τ_sub, which would cut these by a
-  further 27 %, but that ratio has not been tested here with the wall term.
+- α_c = 1e-2 at 200k: the channel runs sit at the 24 h mark and the wedge
+  runs exceed it, so use the 50k target or restart legs for those.
 
 ---
 
@@ -395,6 +392,10 @@ day 27 in the reference; the large one grows from 30.0 to 33.5 µm.
   reference well before the grains differ (radii at day 6 agree to 0.01 µm),
   so that integral also responds to profile shape under large steps. Radii
   and extinction time are the trustworthy measures here.
+
+**Adopted 2026-10-02: `-dtmax = 2·τ_sub` everywhere** (the velocity-study
+inputs, the geometry-file defaults, and the enceladus production inputs and
+generator). The solver's startup warning now fires above 5·τ_sub.
 
 #### All three cases together
 

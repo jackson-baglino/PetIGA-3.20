@@ -62,4 +62,7 @@
 # That sits 1.6x inside the largest value tested clean, with the CFL limiter
 # (-dtCFL_dphimax 0.2) as the dynamic guard for fast events and the stall
 # detector as the backstop.
--dtmax 1.964e+04
+# 2 x tau_sub since 2026-10-02 (was tau_sub/2): the dtmax ladder in
+# studies/contact_angle/velocity_plan_2026-10-01/README.md found 2 x tau_sub
+# indistinguishable from 0.8 x in growth, sintering and ripening.
+-dtmax 7.856e+04
