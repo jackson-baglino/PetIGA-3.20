@@ -1,3 +1,16 @@
+## 2026-10-03 — First 3a-rerun results (3 of 8)
+
+- 1601/1701 at -20, 1701 at -40: all 30 d, health clean, cadence MATCH;
+  2 tau_sub gave 232 steps (vs 368) and $2.48 per -20 run. T collapse 0.06%;
+  time ratio vs tau ratio unchanged from the 1.09 runs. Plots: per run,
+  compare/batch3a, snapshot figure for 1701 -20.
+- Fixed: production manifest never listed its runs (grep under pipefail ended
+  the script); stage file now copied too.
+- -keff_freq 5 -> 1 for 3b on: 3 samples across the first-day rise at 2 tau_sub.
+  predict_cadence.py now reads each run's cadence from its SLURM log.
+
+---
+
 ## 2026-10-02 — Envelope neck ODE; -bc_mirror; saturated Demmenie run prepared
 
 - studies/molaro_2019/envelope_ode/: one-equation vapour neck model calibrated on the Fig. 2 run (c = 0.275), validated on mesh_pair. The Molaro -20 C rate needs alpha_c ~0.3-1 even saturated, so 0.1 is the literature-limited tuning choice. Data a = 0.20 is the saturated diffusion-limited value.

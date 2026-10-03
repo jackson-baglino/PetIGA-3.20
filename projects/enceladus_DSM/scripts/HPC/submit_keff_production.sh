@@ -17,6 +17,10 @@
 #   -keff_dlnssa 0.001: sample every 0.1% drop in SSA, from t = 11 tau_sub on
 #   (-keff_dlnssa_t0_tau, the baseline); every 5 steps before that (the IC
 #   relaxation); never more than 20 tau_sub between samples.
+# -keff_freq 1 since 2026-10-03 (3b on): at dtmax = 2 tau_sub, every 5 steps
+# left 3 samples (0.11, 0.46, 1.0 d at -20 C) across the first-day rise of
+# ~40%, drawn as visible corners. Every step is ~69 samples instead of 14
+# before 11 tau_sub, about 1 cent per run. The 3a rerun used 5.
 # A step count spent samples evenly in steps, leaving visible corners where
 # k_eff bends fastest and wasting samples on the straight late curve. The SSA
 # trigger puts them along the k-SSA curve itself, and because temperature acts
@@ -73,7 +77,7 @@ PRODUCTION_OPTS=(
     -keff_step0 1              # sample the initial condition too
     -keff_dlnssa 0.001         # sample every 0.1% drop in SSA ...
     -keff_dlnssa_t0_tau 11.05  #   ... from t = 11 tau_sub (1 d at -20 C) on
-    -keff_freq 5               #   every 5 steps before that (IC relaxation)
+    -keff_freq 1               #   every step before that (IC relaxation; was 5 in 3a)
     -keff_max_gap_tau 20       #   and never more than 20 tau_sub apart
     -keff_ksp_type cg          # corrector solve: CG
     -keff_pc_type gamg         #   + algebraic multigrid
@@ -219,8 +223,11 @@ mkdir -p "$sdir"
     echo "runs (folder name -> job id):"
     for sp in "${specs[@]}"; do
         g="${sp%%:*}"; e="${sp#*:}"; e="${e%%:*}"
-        id=$(grep -A3 -F "${g}__${e}" "$log" | grep -oE "Submitted batch job [0-9]+" | head -1 | awk '{print $4}')
-        refused=$(grep -F "${g}__${e} already exists" "$log" >/dev/null && echo " (EXISTS -- not resubmitted)")
+        # "|| true": under set -euo pipefail a grep that finds nothing would
+        # end the script here -- which it did on every stage until 2026-10-03,
+        # leaving the manifest without its run list and the stage file uncopied.
+        id=$(grep -A3 -F "${g}__${e}" "$log" | grep -oE "Submitted batch job [0-9]+" | head -1 | awk '{print $4}' || true)
+        refused=$(grep -qF "${g}__${e} already exists" "$log" && echo " (EXISTS -- not resubmitted)" || true)
         echo "  ${g}__${e}  ${id:-none}  [${sp##*--time }]${refused}"
     done
 } > "$sdir/PRODUCTION_MANIFEST.txt"

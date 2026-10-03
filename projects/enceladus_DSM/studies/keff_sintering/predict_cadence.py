@@ -56,15 +56,32 @@ def main():
     ap.add_argument("--check", action="store_true",
                     help="compare with the run's k_eff.csv steps")
     a = ap.parse_args()
+    flags = {"-keff_dlnssa": "dlnssa", "-keff_dlnssa_t0_tau": "t0_tau",
+             "-keff_freq": "freq", "-keff_max_gap_tau": "max_gap_tau"}
     for d in a.runs:
+        # The run's own cadence, from the "Extra opts :" line its SLURM log
+        # carries (production runs); the command-line values otherwise. 3a
+        # ran -keff_freq 5, 3b onward -keff_freq 1, so one default cannot
+        # check both.
+        opt = {k: getattr(a, k) for k in flags.values()}
+        for log in sorted(d.glob("*.o[0-9]*")):
+            m = re.search(r"^Extra opts\s*:\s*(.*)$", log.read_text(errors="replace"), re.M)
+            if m:
+                tok = m.group(1).split()
+                for i, w in enumerate(tok[:-1]):
+                    if w in flags:
+                        opt[flags[w]] = type(opt[flags[w]])(float(tok[i + 1]))
+        dlnssa, t0_tau, freq, max_gap_tau = (opt["dlnssa"], opt["t0_tau"],
+                                             opt["freq"], opt["max_gap_tau"])
         s = np.loadtxt(d / "SSA_evo.dat")
         m = re.search(r"tau_sub\s+([0-9.eE+-]+)", (d / "outp.txt").read_text(errors="replace"))
         tau = float(m.group(1)) if m else 0.0
         sch = schedule(s[:, 3].astype(int), s[:, 2], s[:, 0], tau,
-                       a.dlnssa, a.t0_tau, a.freq, a.max_gap_tau)
+                       dlnssa, t0_tau, freq, max_gap_tau)
         ts = s[np.isin(s[:, 3].astype(int), sch), 2]
-        pre = int(np.sum(ts < a.t0_tau * tau))
-        msg = f"{d.name[:70]:70s} {len(s):5d} steps -> {len(sch):4d} samples ({pre} before t0)"
+        pre = int(np.sum(ts < t0_tau * tau))
+        msg = (f"{d.name[:70]:70s} {len(s):5d} steps -> {len(sch):4d} samples "
+               f"({pre} before t0, freq {freq})")
         if a.check:
             k = np.atleast_1d(np.genfromtxt(d / "k_eff.csv", delimiter=",", names=True))
             got = [int(x) for x in k["step"]]

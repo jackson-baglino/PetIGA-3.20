@@ -78,7 +78,12 @@ Tests (scaling etc.) go one folder per test:
   the first shakedown's 1.09 run (pass: k_iso and SSA within 0.5% after
   11 tau_sub). Expected sampling cost of 2 tau_sub (batch-2 data at stride 2):
   max k(SSA) interpolation error 0.03-0.18%, still 7x under the smallest
-  real kink. The first 3a is kept as
+  real kink.
+  - 2026-10-03: 3 of 8 back and clean (see RECORD.md). Still to read: the
+    0.375/0.425/0.475 runs at -20, 1701 at -5 (wall time), and the gated-301
+    dtmax pair.
+  - Changed for 3b: -keff_freq 5 -> 1 (first-day corners at 2 tau_sub);
+    manifest run-list bug fixed. The first 3a is kept as
   the shakedown record, not pooled. Check it as 3a was, plus
   `predict_cadence.py --check` on every run.
 - [ ] **Before 3b** (cost, not correctness), in this order:

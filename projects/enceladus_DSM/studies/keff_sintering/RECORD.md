@@ -163,7 +163,15 @@ thresholds, open questions); this page is the history.
   - **What:** 8 runs on the option-B packings: one per φ at −20 °C (seeds 1601/1701/1801/1901/2001), plus 1701 at −5 and −40 °C, plus gated seed301 at −20 °C as the paired dtmax check against the first shakedown (1.09·τ_sub, same packing). Final options, 121 ranks, per-T time limits.
   - **Data:** HPC `CAMP/<geom>__<exp>/`, record in `CAMP/stages/batch3a_shakedown__<ts>/`. Local `LOC/keff_sintering_campaign/` (`fetch_stage.sh studies/keff_sintering/batch3a_shakedown.txt`).
   - **Check:** the 3a checks, plus `predict_cadence.py --check` on every run.
-  - *Result:* —
+  - *Partial result (2026-10-03, 3 of 8: φ 0.275 and 0.325 at −20 °C, 0.325 at −40 °C; jobs 3774288, 3774289, 3774293).* Local: `LOC/keff_sintering_campaign/` (per-run `plots/keff/`, overlays in `compare/batch3a/`, snapshot figure in the 1701 −20 run's `plots/keff/snapshots/`).
+    - All reached 30 d. Health is clean, and the k_eff schedule matches the solver exactly on every run.
+    - **2·τ_sub delivered:** 232 steps at −20 °C (368 at 1.09) in 1 h 42 min for $2.48; −40 °C took 52 min for $1.27.
+    - **T collapse holds at 2·τ_sub:** k at matched SSA, −20 vs −40, agrees to 0.06%. The time ratio is 7.86 against the τ_sub ratio of 7.72, the same 1.8% offset the old 1.09 runs show (7.84). So the dtmax change moved the kinetics by < 0.3%. The direct same-packing dtmax check (gated 301) is still to come.
+    - Rise from 11 τ_sub to 30 d: +24.6% (0.275) and +25.1% (0.325), against +25.9% / +25.0% on the gated packings.
+    - Absolute k_iso at 30 d for 1701 is 5% below gated 301. 1701 has the lowest contact count of the new 0.325 set (z_band 3.22 vs 3.37), so this is one seed, not the recipe.
+    - Anisotropy varies a lot by seed: k_xx/k_yy is 1.20 on 1601 against 0.86 on the gated 601, and 1601 has k_xy ≈ 12% of k_xx. Report anisotropy only as a seed mean.
+    - **Found:** every-5-step sampling before 11 τ_sub left 3 samples across the first-day rise (corners in the k–time plots), so `-keff_freq 1` from 3b on. Also, the production manifest's run list was never written (a `grep` under `pipefail`); fixed.
+    - At −40 °C only 19 steps fall after 11 τ_sub, all sampled. That's enough, because its k(SSA) path is the −20 °C path.
 
 ## Planned
 
