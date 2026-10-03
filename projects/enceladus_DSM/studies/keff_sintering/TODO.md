@@ -83,7 +83,13 @@ Tests (scaling etc.) go one folder per test:
     0.375/0.425/0.475 runs at -20, 1701 at -5 (wall time), and the gated-301
     dtmax pair.
   - Changed for 3b: -keff_freq 5 -> 1 (first-day corners at 2 tau_sub);
-    manifest run-list bug fixed. The first 3a is kept as
+    manifest run-list bug fixed.
+  - 2026-10-03: user's call to submit 3b and batch_rve WITHOUT waiting for the
+    rest of 3a (fair-share queue waits are long; the 3 runs read were clean).
+    Risk accepted: if the gated-301 dtmax pair fails, every 2 tau_sub run
+    (3a rerun, 3b, rve; ~$170) is redone at 1.09. src changed since 3a
+    (458acdb, -bc_mirror): default off and periodic runs have no Dirichlet
+    faces, so results are unaffected. The first 3a is kept as
   the shakedown record, not pooled. Check it as 3a was, plus
   `predict_cadence.py --check` on every run.
 - [ ] **Before 3b** (cost, not correctness), in this order:
