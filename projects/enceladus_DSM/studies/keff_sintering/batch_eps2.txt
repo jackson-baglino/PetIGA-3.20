@@ -1,0 +1,26 @@
+# Sensitivity: interface width eps x2 (3 runs, < $2). The one sensitivity arm
+# kept (user, 2026-10-03; the others give the manuscript nothing).
+#
+# QUESTION. Does the k_eff TRAJECTORY depend on the diffuse-interface width?
+# The tensor-law ladders (studies/keff_sharp_limit/) showed the STATIC k_eff of
+# a frozen structure is eps-independent to < 1%; they say nothing about how
+# the structure evolves while sintering, which eps also enters (curvature,
+# throat closure by the band, necks below the r/R = sqrt(12 eps/R) floor).
+#
+# DESIGN. phi 0.325 seeds 1701-1703 at -20 C, eps = 2 um (R_feat 4 um; Nx 1415,
+# 6.0M DoF, 31 ranks) against the same packings at eps = 1 um in 3a/3b. SAME
+# experiment file, so dtmax is 15640 s in both (2 tau_sub at 1 um, 0.5 tau_sub
+# at 2 um): eps is the only difference. NOTE the k_eff trigger's t0 is in units
+# of the run's own tau_sub, which is 4x longer at 2 um (11 tau = 4 d), so
+# compare against SSA and days, not t/tau_sub.
+#
+# READ. k_iso vs SSA and vs time, paired per packing, from 1 d on. The rise is
+# eps-robust if the paired difference is well inside the seed scatter (~3
+# points); report the number either way.
+#
+# Submit with (every option lives in the script):
+#   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch_eps2.txt
+
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps2.00um_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1702_L2mm_eps2.00um_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1703_L2mm_eps2.00um_perxy_T-20:snow_T-20_h1.00_30d
