@@ -1,0 +1,6 @@
+steps: 1.09 tau run 367, 2 tau run 240
+  SSA(t)      max |diff| 0.211%   mean -0.078%   pass (limit 0.5%)
+  k_iso(t)    max |diff| 0.127%   mean +0.042%   pass (limit 0.5%)
+  k_iso(SSA)  max |diff| 0.084%   mean -0.026%   pass (limit 0.5%)
+RESULT: PASS -- 2 tau_sub is indistinguishable on a packing
+wrote /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM/studies/keff_sintering/dtmax_check/dtmax_check.png
