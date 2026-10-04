@@ -165,7 +165,7 @@ thresholds, open questions); this page is the history.
   - **What:** 8 runs on the option-B packings: one per φ at −20 °C (seeds 1601/1701/1801/1901/2001), plus 1701 at −5 and −40 °C, plus gated seed301 at −20 °C as the paired dtmax check against the first shakedown (1.09·τ_sub, same packing). Final options, 121 ranks, per-T time limits.
   - **Data:** HPC `CAMP/<geom>__<exp>/`, record in `CAMP/stages/batch3a_shakedown__<ts>/`. Local `LOC/keff_sintering_campaign/` (`fetch_stage.sh studies/keff_sintering/batch3a_shakedown.txt`).
   - **Check:** the 3a checks, plus `predict_cadence.py --check` on every run.
-  - *Result (2026-10-04, all 8):* all reached 30 d (to within the final-step quirk below); health clean; all k_eff schedules match. dtmax pair PASS (see the dtmax check entry). φ 0.475 is stable. The seed1701 −5 °C run fits the T collapse.
+  - *Result (2026-10-04, all 8):* all reached 30 d (to within the final-step quirk below); health clean; all k_eff schedules match. dtmax pair PASS (see the dtmax check entry). φ 0.475 is stable. The seed1701 −5 °C run fits the T collapse: k at matched SSA agrees to 0.04%, with a time ratio of 3.85 against the τ_sub ratio of 3.79; 4 h 43 min, $6.85. The 3a + 3b + convergence round cost $164 in total.
   - *Partial result (2026-10-03, 3 of 8: φ 0.275 and 0.325 at −20 °C, 0.325 at −40 °C; jobs 3774288, 3774289, 3774293).* Local: `LOC/keff_sintering_campaign/` (per-run `plots/keff/`, overlays in `compare/batch3a/`, snapshot figure in the 1701 −20 run's `plots/keff/snapshots/`).
     - All reached 30 d. Health is clean, and the k_eff schedule matches the solver exactly on every run.
     - **2·τ_sub delivered:** 232 steps at −20 °C (368 at 1.09) in 1 h 42 min for $2.48; −40 °C took 52 min for $1.27.

@@ -1,3 +1,17 @@
+## 2026-10-04 — 3a, 3b and the convergence study analysed
+
+- dtmax pair PASS (2 vs 1.09 tau_sub, same packing): <= 0.21% in SSA(t), 0.13% in k(t).
+- All 53 runs: tables complete, cadence MATCH, health clean (1-2 bound
+  rollbacks retried in 9 runs). -5 C collapse 0.04%. Round cost $164.
+- Convergence: rise 27.2% (L/R 40) vs 27.9% (L/R 80); absolute k within SE;
+  gate effect not significant. README in rve_convergence/.
+- 3b: rise falls with phi above 0.325; k_xx/k_yy reverses (0.64 at 0.475)
+  against the contact fabric; chord lengths isotropic (chord_anisotropy.py).
+- Found: final-step rollback ends runs up to 0.25 d early (TODO); fetch_stage
+  multi-stage; stage_summary.py; snapshot figures for the 3 full runs.
+
+---
+
 ## 2026-10-03 — First 3a-rerun results (3 of 8)
 
 - 1601/1701 at -20, 1701 at -40: all 30 d, health clean, cadence MATCH;
