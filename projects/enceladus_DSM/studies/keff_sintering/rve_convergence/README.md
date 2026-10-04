@@ -34,7 +34,20 @@ k(330 τ)/k(11 τ) − 1, seed mean ± sd (SE):
 | 80 | 3 | 27.9 ± 2.2% (1.3) |
 | gated 40 | 5 | 28.8 ± 2.3% (1.0) |
 
-L/R 40 vs 80: −0.7 ± 1.6 points. Even the L/R 30 offset in absolute k
+L/R 40 vs 80: −0.7 ± 1.6 points.
+
+## Off-diagonal k_xy: a zero-mean fluctuation that shrinks with L
+
+`kxy_vs_L.py` → `kxy_vs_L.png/.csv`. k_xy/k_iso at 30 d, ungated seeds:
+
+| L/R | 20 | 30 | 40 | 56 | 80 |
+|---|---|---|---|---|---|
+| seed mean | +0.9% | −1.1% | −1.4% | +4.0% | −2.1% |
+| RMS | 7.9% | 5.3% | 5.6% | 4.7% | 3.1% |
+
+Every mean is within about 2 standard errors of zero. The RMS falls 2.6× over a 4× change in L,
+between 1/√L and 1/L given 3–8 seeds per size. This supports reporting only the
+diagonal seed means. Even the L/R 30 offset in absolute k
 disappears in the rise. **Gate effect:** the gated packings rise +1.6 ± 1.4
 points more than the ungated ones at the same size, which is not
 significant. Option B was a methods choice and did not change the result.

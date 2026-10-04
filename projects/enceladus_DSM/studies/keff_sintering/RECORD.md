@@ -154,6 +154,9 @@ thresholds, open questions); this page is the history.
 - [x] **2026-10-04 — dtmax capped at 0.2 d for −30/−40 °C.** `REPO/preprocess/generate_study_opts.py` (`DTMAX_CAP_S`), `snow_T-30/-40_h1.00_30d.opts`.
   The 3a −40 °C k_eff(t) curve had visible corners. Two causes: k_eff every 5 steps before 11 τ_sub (= 7.7 d at −40 °C), and steps of about 1.1 d (2·τ_sub = 1.4 d). At −20 °C steps are 0.18 d. **Change:** dtmax = min(2·τ_sub, 0.2 d), which binds only at −30/−40 °C and gives them the −20 °C time resolution, for about +$1 per run. Seed1701 at −40 °C is rerun in 3c, and its 3a copy is moved to `superseded_*`.
 
+- [x] **2026-10-04 — Porosity-series figures.** `REPO/studies/keff_sintering/phi_summary.py` → `LOC/keff_sintering_campaign/compare/phi_summary/T-20/` (`phi_trends.png`, `seeds_by_phi.png`, `anisotropy_time.png`, `phi_trends.csv`).
+  **Finding:** k_iso scales as SSA^−0.80 to SSA^−0.83 for φ ≤ 0.325 after 11 τ_sub; the exponent weakens to −0.67 at φ 0.475. The anisotropy is set almost entirely by the initial packing: it shifts once during the first day, then drifts only slowly. Seed1601 (φ 0.275) is a low outlier in absolute k. Also added `rve_convergence/kxy_vs_L.py`: k_xy is a zero-mean fluctuation whose RMS falls from 7.9% at L/R 20 to 3.1% at L/R 80.
+
 ### Molaro 2019 grain-pair validation (manuscript Fig. 2; separate study)
 
 - [x] −20 °C round 2: local `LOC/GrainPairSintering/batch_2026-09-08__17.20.46_molaro_T-20_round2/`. −5 °C: `LOC/GrainPairSintering/batch_2026-09-29__10.01.06_molaro_T-5_round2/` and `LOC/GrainPairSintering/molaro_2D_…_T-5pair_…_h0.99674_2h_…/`. HPC: scratch, exact path not recorded. Study: `REPO/studies/molaro_2019/`, figures in `studies/molaro_2019/manuscript/`.
