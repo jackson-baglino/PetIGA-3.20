@@ -232,7 +232,10 @@ Does k_eff tend to one curve as the domain grows, and is L/R 40 close enough?
 
 ## Later (CAMPAIGN.md stages 6–7)
 
-- [ ] **DECISION PENDING (2026-10-03): which sensitivity arms, if any.**
+- [x] **DECIDED (user, 2026-10-04): eps ×2 only**, staged as
+  `batch_eps2.txt` (3 runs, < $2). All other arms dropped.
+- [ ] Submit and read `batch_eps2.txt`.
+- [~] (superseded) which sensitivity arms, if any.
   Criterion (user): run only what gives the manuscript data. Recommendation:
   keep eps ×2 (3 runs, < $2 total: the one reviewers will ask for, since the
   interface width is the model's main numerical choice and the tensor-law

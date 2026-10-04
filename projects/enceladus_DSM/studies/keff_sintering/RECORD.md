@@ -202,7 +202,8 @@ thresholds, open questions); this page is the history.
   - the `packing_design` README correction;
   - the Nicoli 2011 citation;
   - the t = 0 normalization caption note.
-- [ ] **Sensitivity arms** (CAMPAIGN stage 6), 3 seeds each: α_c {1e-4, 1e-2}, R_ave ×0.5/×2, σ_ln 0.2, eps ×2.
+- [ ] **Sensitivity: eps ×2 only** (`batch_eps2.txt`): φ 0.325, seeds 1701–1703, −20 °C, eps = 2 µm with the production experiment (dtmax unchanged in seconds). Asks whether the k_eff trajectory depends on the interface width. Decided 2026-10-04: α_c, R_ave and σ_ln arms dropped as giving the manuscript nothing. R_ave is pure time rescaling (grain-size study), and the α_c regime limit is stated, not run.
+  - *Result:* —
 - [ ] **Analysis** (stage 7):
   - k_eff vs SSA at fixed φ;
   - anisotropy from seed means;
