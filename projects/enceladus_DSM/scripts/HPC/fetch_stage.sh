@@ -23,6 +23,16 @@
 # stages/<stage>__*/. That is everything the k_eff analysis, the health check
 # and the cost check read (a few MB per run). --full adds the snapshots
 # (~9 GB/run at L/R 40); --full-run does that for matching runs only.
+#
+# SNAPSHOTS (default on, 2026-10-04): every run also brings the four solution
+# files its job marked in .rsync-snapshots (scripts/lib/select_snapshots.sh:
+# t = 0, t_final/3, 2 t_final/3, last) plus igasol.dat, ~0.8 GB per L/R 40
+# run, for postprocess/render_snapshots.py. --no-snapshots skips them. Runs
+# that finished before 2026-10-04 need the marker written once on the
+# login node: bash scripts/lib/select_snapshots.sh <campaign dir>/packing_*/
+# After the transfer the PNGs are rendered HERE (venv_enceladus, ~10 s per
+# run) into <run>/plots/snapshots/ for every run that has its four snapshots
+# and no PNGs yet; --no-render skips that.
 # =============================================================================
 set -euo pipefail
 
@@ -30,12 +40,14 @@ REMOTE_HOST="${REMOTE_HOST-hpc}"     # REMOTE_HOST= (empty) reads a local REMOTE
 REMOTE="${REMOTE:-/resnick/groups/rubyfu/jbaglino/simulation_outputs/enceladus_DSM/keff_sintering_campaign}"
 LOCAL="${LOCAL:-$HOME/SimulationResults/HPC_results/enceladus_DSM/keff_sintering_campaign}"
 
-stages=() ; full=0 ; dry=0 ; fullpats=()
+stages=() ; full=0 ; dry=0 ; fullpats=() ; snaps=1 ; render=1
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --full) full=1; shift ;;
         --full-run) fullpats+=("$2"); shift 2 ;;
         --dry-run|-n) dry=1; shift ;;
+        --no-snapshots) snaps=0; shift ;;
+        --no-render) render=0; shift ;;
         -h|--help) sed -n '2,28p' "$0"; exit 0 ;;
         -*) echo "unknown option: $1" >&2; exit 1 ;;
         *) stages+=("$1"); shift ;;
@@ -84,6 +96,31 @@ done
 echo "from     : $REMOTE_HOST:$REMOTE/"
 echo "to       : $LOCAL/"
 mkdir -p "$LOCAL"
-args=(-avhP --prune-empty-dirs --filter="merge $filt")
+args=(-avhP --prune-empty-dirs)
+# Per-run snapshot markers first, so their "+ sol_NNNNN.dat" lines are checked
+# before the stage filter's closing "- *".
+(( snaps )) && args+=(--filter="dir-merge .rsync-snapshots")
+args+=(--filter="merge $filt")
 (( dry )) && args+=(-n)
 rsync "${args[@]}" "${REMOTE_HOST:+$REMOTE_HOST:}$REMOTE/" "$LOCAL/"
+
+# ---- render the snapshot PNGs locally (one core, seconds per run) ----------
+if (( snaps && render && ! dry )); then
+    PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    PY="$PROJ/venv_enceladus/bin/python"
+    [[ -x "$PY" ]] || PY=python3
+    nr=0
+    for stage in "${stages[@]}"; do
+        while IFS= read -r line; do
+            line="${line%%#*}"; line="${line#"${line%%[![:space:]]*}"}"; line="${line%"${line##*[![:space:]]}"}"
+            [[ -z "$line" || "$line" != *:* ]] && continue
+            IFS=':' read -r geom exp _ <<< "$line"
+            d="$LOCAL/${geom}__${exp}"
+            [[ -f "$d/plots/snapshots/snap_4_tfinal.png" ]] && continue
+            [[ -f "$d/igasol.dat" ]] && ls "$d"/sol_*.dat >/dev/null 2>&1 || continue
+            "$PY" "$PROJ/postprocess/render_snapshots.py" --dir "$d" >/dev/null 2>&1 \
+                && nr=$((nr + 1)) || echo "⚠  snapshot render failed: ${geom}__${exp}" >&2
+        done < "$stage"
+    done
+    echo "rendered snapshot PNGs for $nr run(s) -> <run>/plots/snapshots/"
+fi

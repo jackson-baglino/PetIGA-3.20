@@ -157,6 +157,9 @@ thresholds, open questions); this page is the history.
 - [x] **2026-10-04 — Porosity-series figures.** `REPO/studies/keff_sintering/phi_summary.py` → `LOC/keff_sintering_campaign/compare/phi_summary/T-20/` (`phi_trends.png`, `seeds_by_phi.png`, `anisotropy_time.png`, `phi_trends.csv`).
   **Finding:** k_iso scales as SSA^−0.80 to SSA^−0.83 for φ ≤ 0.325 after 11 τ_sub; the exponent weakens to −0.67 at φ 0.475. The anisotropy is set almost entirely by the initial packing: it shifts once during the first day, then drifts only slowly. Seed1601 (φ 0.275) is a low outlier in absolute k. Also added `rve_convergence/kxy_vs_L.py`: k_xy is a zero-mean fluctuation whose RMS falls from 7.9% at L/R 20 to 3.1% at L/R 80.
 
+- [x] **2026-10-04 — Four snapshot PNGs for every run.** `REPO/scripts/lib/select_snapshots.sh` (each job marks t = 0, t_final/3, 2 t_final/3 and the last snapshot in `.rsync-snapshots`), `fetch_stage.sh` (downloads those four `sol_*.dat` by default; `--no-snapshots`), `REPO/postprocess/render_snapshots.py` (renders locally after the fetch into `<run>/plots/snapshots/`; `--no-render`).
+  The PNGs are about 3080 px at one pixel per element, 2–3 MB each (L/R 80: ~11 MB). The download is about 0.8 GB per L/R 40 run. Rendering on the HPC was considered: it would mean a 1-core follow-on job, since SLURM cannot release a running job's cores, or holding 121 cores for a minute in-job (3–5% of a run). Local rendering was chosen because it needs no HPC Python.
+
 ### Molaro 2019 grain-pair validation (manuscript Fig. 2; separate study)
 
 - [x] −20 °C round 2: local `LOC/GrainPairSintering/batch_2026-09-08__17.20.46_molaro_T-20_round2/`. −5 °C: `LOC/GrainPairSintering/batch_2026-09-29__10.01.06_molaro_T-5_round2/` and `LOC/GrainPairSintering/molaro_2D_…_T-5pair_…_h0.99674_2h_…/`. HPC: scratch, exact path not recorded. Study: `REPO/studies/molaro_2019/`, figures in `studies/molaro_2019/manuscript/`.

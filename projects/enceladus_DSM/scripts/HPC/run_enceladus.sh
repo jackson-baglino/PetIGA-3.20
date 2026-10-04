@@ -528,6 +528,13 @@ compute_optimal_nprocs
 run_simulation
 copy_source_code
 
+# Mark the four snapshots fetch_stage.sh downloads (t = 0, t_final/3,
+# 2 t_final/3, last) -- a second of awk, so the cores are not held for it.
+# Rendered to PNG locally by postprocess/render_snapshots.py.
+if [[ -n "${folder:-}" && -d "$folder" ]]; then
+    bash "$PROJECT_ROOT/scripts/lib/select_snapshots.sh" "$folder" || true
+fi
+
 # Post-processing is intentionally skipped on HPC.
 # All required files (igasol.dat, sol_*.dat, SSA_evo.dat, outp.txt, postprocess/)
 # are staged in $folder. After rsyncing to your local machine, run:
