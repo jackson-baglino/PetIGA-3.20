@@ -132,7 +132,7 @@ def _curve(ax, x, y, lo, hi, color, label, band=True):
         ax.fill_between(x, lo, hi, color=color, alpha=0.15, lw=0)
 
 
-def draw_group(conds, vary, fixed_txt, out: Path):
+def draw_group(conds, vary, fixed_txt, out: Path, extra_note=""):
     """conds: {value: condition_mean dict}. vary: 'T' or 'phi'."""
     vals = sorted(conds)
     cmap, (a, b) = CMAP[vary]
@@ -140,7 +140,8 @@ def draw_group(conds, vary, fixed_txt, out: Path):
     lab = (lambda v: f"T = {v} °C") if vary == "T" else (lambda v: f"φ = {v:g}")
     nseed = sorted({c["n"] for c in conds.values()})
     note = (f"line = mean over {'/'.join(map(str, nseed))} seeds, band = seed min–max; "
-            f"t = 0 and subscript 0 = each run's opening sample (first with t >= 1 s)")
+            f"t = 0 and subscript 0 = each run's opening sample (first with t >= 1 s)"
+            + extra_note)
     k_lab = r"$k_\mathrm{iso}$  [W m$^{-1}$ K$^{-1}$]"
     written = []
 
@@ -189,6 +190,18 @@ def draw_group(conds, vary, fixed_txt, out: Path):
     save(fig, out / "normalized" / "keff_time.png",
          "" if use_tau else "; no tau_sub, time in days")
 
+    # normalized vs PHYSICAL time: the same curves as the t/tau_sub figure,
+    # but on the clock -- how much faster one condition gets there
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.axhline(1.0, color="#999999", lw=0.8, ls=":")
+    for v in vals:
+        c = conds[v]
+        _curve(ax, c["t"] / DAY, c["kn"], c["knlo"], c["knhi"], col[v], lab(v))
+    _style(ax, "Time [d]", r"$k_\mathrm{iso}\,/\,k_{\mathrm{iso},0}$")
+    ax.legend(fontsize=11, loc="lower right", frameon=False)
+    ax.set_title(f"Normalized $k_\\mathrm{{iso}}$ vs time, {fixed_txt}", fontsize=15)
+    save(fig, out / "normalized" / "keff_time_days.png")
+
     # normalized vs SSA/SSA_0
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.axhline(1.0, color="#999999", lw=0.8, ls=":")
@@ -226,11 +239,23 @@ def main(argv=None):
 
     written = []
     for phi in sorted({k[0] for k in conds}):
-        g = {T: c for (ph, T), c in conds.items() if ph == phi}
-        if len(g) < 2:
+        Ts = sorted(T for (ph, T) in by if ph == phi)
+        if len(Ts) < 2:
             print(f"  skip by_phi/phi{phi:g}: only one temperature")
             continue
-        written += draw_group(g, "T", f"φ = {phi:g}", out / "by_phi" / f"phi{phi:g}")
+        # PAIRED: temperatures are compared on the packings they share. A
+        # 5-seed mean at one T against a 1-seed curve at another mixes the
+        # temperature effect with packing-to-packing scatter (~9% in k at
+        # phi 0.325), and the T effect here is a time rescaling per packing.
+        common = set.intersection(*({r["seed"] for r in by[(phi, T)]} for T in Ts))
+        if common:
+            g = {T: condition_mean([r for r in by[(phi, T)] if r["seed"] in common]) for T in Ts}
+            note = f"; PAIRED: seeds {', '.join(map(str, sorted(common)))} (common to all T)"
+        else:
+            print(f"  WARNING by_phi/phi{phi:g}: no seed common to all T; unpaired means")
+            g = {T: conds[(phi, T)] for T in Ts}
+            note = "; UNPAIRED (no seed common to all T)"
+        written += draw_group(g, "T", f"φ = {phi:g}", out / "by_phi" / f"phi{phi:g}", note)
     for T in sorted({k[1] for k in conds}):
         g = {ph: c for (ph, TT), c in conds.items() if TT == T}
         if len(g) < 2:
