@@ -165,6 +165,7 @@ thresholds, open questions); this page is the history.
   - **What:** 8 runs on the option-B packings: one per φ at −20 °C (seeds 1601/1701/1801/1901/2001), plus 1701 at −5 and −40 °C, plus gated seed301 at −20 °C as the paired dtmax check against the first shakedown (1.09·τ_sub, same packing). Final options, 121 ranks, per-T time limits.
   - **Data:** HPC `CAMP/<geom>__<exp>/`, record in `CAMP/stages/batch3a_shakedown__<ts>/`. Local `LOC/keff_sintering_campaign/` (`fetch_stage.sh studies/keff_sintering/batch3a_shakedown.txt`).
   - **Check:** the 3a checks, plus `predict_cadence.py --check` on every run.
+  - *Result (2026-10-04, all 8):* all reached 30 d (to within the final-step quirk below); health clean; all k_eff schedules match. dtmax pair PASS (see the dtmax check entry). φ 0.475 is stable. The seed1701 −5 °C run fits the T collapse.
   - *Partial result (2026-10-03, 3 of 8: φ 0.275 and 0.325 at −20 °C, 0.325 at −40 °C; jobs 3774288, 3774289, 3774293).* Local: `LOC/keff_sintering_campaign/` (per-run `plots/keff/`, overlays in `compare/batch3a/`, snapshot figure in the 1701 −20 run's `plots/keff/snapshots/`).
     - All reached 30 d. Health is clean, and the k_eff schedule matches the solver exactly on every run.
     - **2·τ_sub delivered:** 232 steps at −20 °C (368 at 1.09) in 1 h 42 min for $2.48; −40 °C took 52 min for $1.27.
@@ -177,12 +178,30 @@ thresholds, open questions); this page is the history.
 
 ## Planned
 
-- [ ] **Convergence study** `batch_rve.txt`: 26 runs, about $155.
+- [x] **Convergence study** `batch_rve.txt` — done 2026-10-04. HPC `CAMP/` (L/R 20–80 runs plus gated 302–305). Local `LOC/keff_sintering_campaign/`. Results: `REPO/studies/keff_sintering/rve_convergence/README.md`.
+  - **Finding:** the sintering rise is size-independent: 27.2 ± 1.0% at L/R 40 against 27.9 ± 1.3% at L/R 80. Absolute k_iso at L/R 40 is within the standard error of L/R 80 (+0.6 to +1.3% ± 4–5%). L/R 30 sits 13% high in absolute k, read as realization statistics; its rise is normal. The gated vs ungated packings differ by +1.6 ± 1.4 points in rise, which is not significant.
+- [ ] (original plan) **Convergence study** `batch_rve.txt`: 26 runs, about $155.
   - **What:** φ 0.325, −20 °C, ungated L/R 20/30/56/80, plus the 5 gated L/R 40 packings. The L/R 40 point is production seeds 1701–1705, from 3a and 3b.
   - **Data:** HPC `CAMP/`. Analysis: `rve_convergence/analyze_rve.py`.
   - **Question:** is L/R 40 within the standard error of L/R 80? And how much did the old gates shift k_eff?
   - *Result:* —
-- [ ] **3b**, the rest of −20 °C (`batch3b_T-20.txt`): 20 runs, about $80.
+- [x] **3b**, the rest of −20 °C — done 2026-10-04. HPC `CAMP/`, local `LOC/keff_sintering_campaign/` (per-run `plots/keff/`; overlays `compare/batch3ab/`; table `compare/summary/stage_summary.csv`; health `compare/health_check.txt`).
+  - **Findings (−20 °C, 5 seeds per φ):**
+
+    | φ | rise from day 1 to 30 d | k_xx/k_yy |
+    |---|---|---|
+    | 0.275 | 27.4 ± 2.3% | 1.02 |
+    | 0.325 | 27.2 ± 2.3% | 1.02 |
+    | 0.375 | 24.5 ± 1.6% | 0.91 |
+    | 0.425 | 21.2 ± 2.5% | 0.79 |
+    | 0.475 | 19.0 ± 3.2% | 0.64 |
+
+  - The rise falls with porosity above 0.325, by more than the seed scatter.
+  - **The anisotropy reverses** (k_yy > k_xx) above φ ≈ 0.35, against the contact fabric, and its scatter grows toward percolation. It is not explained by contact orientation or by ice chord length (`REPO/studies/rve_anisotropy/chord_anisotropy.py`, README). The amplification-near-percolation idea is open.
+  - Health: 1–2 phase-bound rollbacks (retried at half dt) in 9 runs. One run had 5.3% CFL rollbacks.
+  - **Quirk:** when the final step is rejected, the run ends up to 0.25 d early and the 30-day snapshot is lost. Data are unaffected.
+  - Full snapshots checked for φ 0.475 seed2001, φ 0.425 seed1902 and L/R 80 seed1401: snapshot figures look right; vertical ice columns at φ 0.475.
+- [ ] (original plan) **3b**, the rest of −20 °C (`batch3b_T-20.txt`): 20 runs, about $80.
   - **Question:** is the seed scatter smaller than the φ trend, and does k_xx/k_yy follow the contact fabric?
   - *Result:* —
 - [ ] **Matrix reordered (2026-10-03):** 3c–3e run seeds 1–3 of each φ; seeds 4–5 at the non-(−20 °C) temperatures moved to an optional final stage 3f. Temperature is a per-packing time rescaling, so the −20 °C column (5 seeds) carries the seed means.

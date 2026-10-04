@@ -124,7 +124,9 @@ Tests (scaling etc.) go one folder per test:
   - Projected cost of all 125 runs at 200k DoF/core with the SSA cadence:
     roughly $0.9k. That's per-temperature $/run from `scaling/README.md`
     (−30/−40 °C are cheaper still) × 25 runs each.
-- [ ] **3b**: rest of −20 °C, `batch3b_T-20.txt`, 20 runs.
+- [x] **3b** done 2026-10-04 (RECORD.md). The fabric-anisotropy check FAILED
+  as written: k_yy overtakes k_xx above φ ≈ 0.35 (open question below).
+- [x] **Convergence study** done 2026-10-04: rise size-independent (RECORD.md).
   - Check: seed scatter of the k_iso rise per φ (~3–4% expected at 0.325);
     the φ trend is larger than the scatter.
   - Check: k_xx/k_yy per φ follows the contact fabric (1.03 at 0.275 →
@@ -190,6 +192,15 @@ Does k_eff tend to one curve as the domain grows, and is L/R 40 close enough?
     901→2001, …).
 
 ## Open questions and follow-ups
+
+- [ ] **Anisotropy reversal at high φ** (2026-10-04): seed-mean k_xx/k_yy
+  1.02 → 0.64 from φ 0.275 to 0.475, against the contact fabric; not the
+  chord lengths either. Test a directional backbone measure (spanning-cluster
+  mass or max-flow along x vs y). `studies/rve_anisotropy/README.md`.
+- [ ] **Final-step rollback ends the run early** (up to 0.25 d, loses the
+  30 d snapshot): a CFL/bounds rejection of the step that crosses t_final is
+  deferred to a pre-step that never runs. Fix after the campaign (loop
+  TSSolve while a rollback is pending); data unaffected.
 
 - [ ] **k_eff solve cost.** 50–84 s per sample in batch 2, against 4 s on
   rev64 for the same solve at similar iteration counts, with 10× swings

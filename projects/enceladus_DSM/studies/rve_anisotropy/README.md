@@ -184,3 +184,28 @@ x boundary shows no defect.
   positive).
 - Packings made before this change are not reproduced by the new code; their
   `grains.dat` is the record. `metadata.json` now carries `rng_stream`.
+
+## 2026-10-04 — the anisotropy reverses at high porosity (production runs)
+
+The 25 production packings at −20 °C (3a + 3b) give seed-mean k_xx/k_yy at 30 d
+of **1.02, 1.02, 0.91, 0.79, 0.64** for φ = 0.275 … 0.475 (sd 0.13, 0.03, 0.10,
+0.16, 0.17). Above φ ≈ 0.35 the deposition direction (y) conducts better,
+although the contact fabric leans the other way (F_xx/F_yy = 1.04–1.12). The
+"k_xx > k_yy from the rolling rule" finding above holds only for φ ≤ 0.325.
+
+`chord_anisotropy.py` tested the obvious explanation: longer continuous ice
+along y. It isn't that. The mean ice chord ratio L_x/L_y is 1.006–1.016 at
+every φ (`chord_anisotropy.csv`, `.png`), essentially isotropic and slightly x-leaning.
+Per packing it correlates with k_xx/k_yy (r = 0.81 at t = 0), but mostly because
+both trend with φ. A ~1% chord change cannot carry a 36% k change.
+
+What the data do support: the reversal and its seed scatter both grow as the
+solid approaches 2D percolation (≈ 0.40–0.45), where conduction runs through a
+few backbone paths and small directional biases in connectivity are strongly
+amplified. The φ 0.475 snapshots show vertical ice columns. Sintering
+strengthens the effect: 0.71 → 0.64 at φ 0.475 from t = 0 to 30 d.
+
+**Open:** a directional-connectivity measure of the backbone, e.g. the
+spanning-cluster mass, or a max-flow along x vs y on the raster, would test the
+amplification idea directly. Until then, report the measured k_xx/k_yy per φ
+as a seed mean with its scatter, and do not attribute it to the contact fabric.
