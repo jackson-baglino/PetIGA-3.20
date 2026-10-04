@@ -129,12 +129,20 @@ Tests (scaling etc.) go one folder per test:
     the φ trend is larger than the scatter.
   - Check: k_xx/k_yy per φ follows the contact fabric (1.03 at 0.275 →
     ~1.1 at 0.425).
-- [ ] **3c**: cold end, `batch3c_cold.txt`, 49 runs (−30, −40).
+- **Reordered 2026-10-03 (user):** 3c–3e carry seeds 1–3 of each φ; seeds 4–5
+  at −5/−10/−30/−40 °C moved to `batch3f_seeds45.txt` (40 runs), last and
+  optional. Why: T is a per-packing time rescaling, so the −20 °C column
+  (5 seeds) gives the seed-mean k(SSA); 3 packings per φ test the collapse
+  and supply the time axis. Run 3f only if a φ fails the collapse or a
+  reviewer asks for 5 everywhere.
+- [ ] **3c**: cold end, `batch3c_cold.txt`, 29 runs (−30, −40; seeds 1–3).
   - Check: every φ collapses onto its −20 °C curve. If one doesn't, the
     time-rescaling result depends on φ; rethink before buying the warm end.
-- [ ] **3d**: −10 °C, `batch3d_T-10.txt`, 25 runs.
-- [ ] **3e**: −5 °C, `batch3e_T-5.txt`, 24 runs. The most expensive stage;
-  last.
+- [ ] **3d**: −10 °C, `batch3d_T-10.txt`, 15 runs (seeds 1–3).
+- [ ] **3e**: −5 °C, `batch3e_T-5.txt`, 14 runs (seeds 1–3). The most
+  expensive temperature.
+- [ ] **3f (optional)**: seeds 4–5 at −5/−10/−30/−40 °C,
+  `batch3f_seeds45.txt`, 40 runs, ~$150. See the rule above.
 - [ ] **After each stage:**
   - [ ] download the tables (see the `rsync` recipe in `ACTIVITY_LOG.md`, 2026-09-26)
   - [ ] run `postprocess/plot_keff.py` per run
@@ -224,6 +232,13 @@ Does k_eff tend to one curve as the domain grows, and is L/R 40 close enough?
 
 ## Later (CAMPAIGN.md stages 6–7)
 
+- [ ] **DECISION PENDING (2026-10-03): which sensitivity arms, if any.**
+  Criterion (user): run only what gives the manuscript data. Recommendation:
+  keep eps ×2 (3 runs, < $2 total: the one reviewers will ask for, since the
+  interface width is the model's main numerical choice and the tensor-law
+  ladders tested static k only, not the evolution); α_c 1e-2 only if the
+  paper discusses where the T collapse breaks; skip R_ave ×0.5 (pure time
+  rescaling, studies/grain_size_scaling), R_ave ×2 and σ_ln 0.2.
 - [ ] Sensitivity arms from the stage-5 centre point, 3 seeds each:
   - α_c {1e-4, 1e-3, 1e-2}: may change the kinetic regime, and with it the
     T collapse;

@@ -183,12 +183,15 @@ thresholds, open questions); this page is the history.
 - [ ] **3b**, the rest of −20 °C (`batch3b_T-20.txt`): 20 runs, about $80.
   - **Question:** is the seed scatter smaller than the φ trend, and does k_xx/k_yy follow the contact fabric?
   - *Result:* —
-- [ ] **3c**, −30 and −40 °C (`batch3c_cold.txt`): 49 runs.
+- [ ] **Matrix reordered (2026-10-03):** 3c–3e run seeds 1–3 of each φ; seeds 4–5 at the non-(−20 °C) temperatures moved to an optional final stage 3f. Temperature is a per-packing time rescaling, so the −20 °C column (5 seeds) carries the seed means.
+- [ ] **3c**, −30 and −40 °C (`batch3c_cold.txt`): 29 runs (seeds 1–3).
   - **Question:** does every φ collapse onto its −20 °C curve?
   - *Result:* —
-- [ ] **3d**, −10 °C (`batch3d_T-10.txt`): 25 runs.
+- [ ] **3d**, −10 °C (`batch3d_T-10.txt`): 15 runs (seeds 1–3).
   - *Result:* —
-- [ ] **3e**, −5 °C (`batch3e_T-5.txt`): 24 runs, the most expensive stage, run last.
+- [ ] **3e**, −5 °C (`batch3e_T-5.txt`): 14 runs (seeds 1–3), the most expensive temperature.
+  - *Result:* —
+- [ ] **3f (optional)**, seeds 4–5 at −5/−10/−30/−40 °C (`batch3f_seeds45.txt`): 40 runs. Run only if a porosity fails the collapse test or a reviewer asks for five packings in every cell.
   - *Result:* —
 - [ ] **Pre-manuscript checks** (no new simulations):
   - rev64 seeds 2–4 analysis (already local);

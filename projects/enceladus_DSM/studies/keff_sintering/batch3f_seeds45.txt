@@ -1,0 +1,52 @@
+# Batch 3f -- seeds 4-5 of every porosity at -5, -10, -30 and -40 C
+# (40 runs, ~$150 at 2 tau_sub). LAST, and OPTIONAL.
+#
+# Run it only if (a) some porosity fails the collapse test in 3c-3e, so the
+# off-(-20 C) temperatures carry information of their own and need the full
+# seed count, or (b) a reviewer asks for 5 packings in every cell. If every
+# porosity collapses, these runs would reproduce their -20 C curves with time
+# rescaled, which the -20 C column already gives with 5 seeds.
+#
+# Submit with (every option lives in the script):
+#   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch3f_seeds45.txt
+
+packing_2D_phi0.275_Rave50um_LR40_seed1604_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1605_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1704_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1705_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1804_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1805_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1904_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1905_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2004_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2005_L2mm_eps1000nm_perxy_T-30:snow_T-30_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1604_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1605_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1704_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1705_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1804_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1805_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1904_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1905_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2004_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2005_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1604_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1605_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1704_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1705_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1804_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1805_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1904_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1905_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2004_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2005_L2mm_eps1000nm_perxy_T-10:snow_T-10_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1604_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.275_Rave50um_LR40_seed1605_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1704_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1705_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1804_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1805_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1904_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1905_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2004_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2005_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d

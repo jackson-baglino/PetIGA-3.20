@@ -26,9 +26,12 @@
 # stages, each checked before the next (user, 2026-09-28):
 #   batch3a_shakedown.txt  7   one packing per phi at -20, + 0.325 at -5/-40
 #   batch3b_T-20.txt      20   the rest at -20 (seed scatter, phi trend)
-#   batch3c_cold.txt      49   -30 and -40 (does every phi collapse?)
-#   batch3d_T-10.txt      25   -10
-#   batch3e_T-5.txt       24   -5, most expensive, last
+#   batch3c_cold.txt      29   -30 and -40, seeds 1-3 (does every phi collapse?)
+#   batch3d_T-10.txt      15   -10, seeds 1-3
+#   batch3e_T-5.txt       14   -5, seeds 1-3, most expensive
+#   batch3f_seeds45.txt   40   seeds 4-5 at -5/-10/-30/-40: last, OPTIONAL
+#   (reordered 2026-10-03: T is a per-packing time rescaling, so the -20 C
+#   column carries the 5-seed k(SSA) means; 3 packings per phi test the rest)
 # Each file carries its own checks. Submit ONLY through the production script,
 # which owns every option (incl. the SSA-triggered k_eff cadence):
 #   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch3a_shakedown.txt
