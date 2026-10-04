@@ -1,6 +1,8 @@
 # Batch 3f -- seeds 4-5 of every porosity at -5, -10, -30 and -40 C
 # (40 runs, ~$150 at 2 tau_sub). LAST, and OPTIONAL.
 #
+# -30/-40 C use the 0.2 d dtmax cap (2026-10-04), as in 3c.
+#
 # Run it only if (a) some porosity fails the collapse test in 3c-3e, so the
 # off-(-20 C) temperatures carry information of their own and need the full
 # seed count, or (b) a reviewer asks for 5 packings in every cell. If every

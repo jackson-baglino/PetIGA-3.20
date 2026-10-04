@@ -151,6 +151,9 @@ thresholds, open questions); this page is the history.
 
 - [x] **2026-10-04 — dtmax check on a packing: PASS.** `REPO/studies/keff_sintering/dtmax_check/`. The gated seed301 packing at −20 °C, run at 1.09·τ_sub (first shakedown) and at 2·τ_sub (3a rerun, job 3774294). **Finding:** SSA(t) agrees to within 0.21%, k_iso(t) to 0.13% and k_iso(SSA) to 0.08%, in 240 steps instead of 367. All 2·τ_sub runs stand.
 
+- [x] **2026-10-04 — dtmax capped at 0.2 d for −30/−40 °C.** `REPO/preprocess/generate_study_opts.py` (`DTMAX_CAP_S`), `snow_T-30/-40_h1.00_30d.opts`.
+  The 3a −40 °C k_eff(t) curve had visible corners. Two causes: k_eff every 5 steps before 11 τ_sub (= 7.7 d at −40 °C), and steps of about 1.1 d (2·τ_sub = 1.4 d). At −20 °C steps are 0.18 d. **Change:** dtmax = min(2·τ_sub, 0.2 d), which binds only at −30/−40 °C and gives them the −20 °C time resolution, for about +$1 per run. Seed1701 at −40 °C is rerun in 3c, and its 3a copy is moved to `superseded_*`.
+
 ### Molaro 2019 grain-pair validation (manuscript Fig. 2; separate study)
 
 - [x] −20 °C round 2: local `LOC/GrainPairSintering/batch_2026-09-08__17.20.46_molaro_T-20_round2/`. −5 °C: `LOC/GrainPairSintering/batch_2026-09-29__10.01.06_molaro_T-5_round2/` and `LOC/GrainPairSintering/molaro_2D_…_T-5pair_…_h0.99674_2h_…/`. HPC: scratch, exact path not recorded. Study: `REPO/studies/molaro_2019/`, figures in `studies/molaro_2019/manuscript/`.

@@ -70,6 +70,16 @@ from comp_eps import (                                    # noqa: E402
 # Tables: ../lunar_regolith_DSM/studies/contact_angle/velocity_plan_2026-10-01/README.md
 DTMAX_OVER_TAU = 2.0
 
+# ... and never more than 0.2 d in SECONDS (2026-10-04). A ratio to tau_sub
+# resolves every temperature equally per tau_sub, but the cold runs cover far
+# fewer tau_sub in the same 30 d (43 at -40 C vs 331 at -20 C), so their
+# k_eff(t) curves in DAYS were drawn from steps ~1.1 d apart and showed corners
+# where -20 C (0.18 d steps) is smooth. Capping at 0.2 d gives every
+# temperature the -20 C time resolution; it binds only at -30 and -40 C
+# (2 tau_sub = 0.48 / 1.4 d), costing ~+$1 per run there. Smaller steps only
+# make the run more accurate (2 tau_sub already matched 1.09 to 0.2%).
+DTMAX_CAP_S = 0.2 * 86400.0
+
 
 def _target_dofs_per_core(default: int = 100_000) -> int:
     """TARGET_DOFS_PER_CORE from scripts/lib/alloc.sh, the single source of truth.
@@ -356,6 +366,9 @@ def main(argv=None):
                     help="Max time step [s]. DEFAULT: derived per temperature "
                          "as DTMAX_OVER_TAU * tau_sub, which is how it must be "
                          "set -- see dtmax_for().")
+    ap.add_argument("--dtmax-cap-s", dest="dtmax_cap_s", type=float, default=DTMAX_CAP_S,
+                    help="upper bound on the derived dtmax, in seconds "
+                         f"(default {DTMAX_CAP_S:g} = 0.2 d; 0 disables)")
     ap.add_argument("--dtmax-over-tau", dest="dtmax_over_tau", type=float,
                     default=DTMAX_OVER_TAU,
                     help=f"ratio used when --dtmax is not given "
@@ -432,6 +445,11 @@ def main(argv=None):
                                     args.dtmax_over_tau)
             p0["dtmax_note"] = (f"{args.dtmax_over_tau:g} * tau_sub "
                                 f"({tau:.4g} s); a BACKSTOP -- -dtCFL is the control")
+            if args.dtmax_cap_s > 0 and p0["dtmax"] > args.dtmax_cap_s:
+                p0["dtmax_note"] = (f"0.2 d CAP (2026-10-04), below {args.dtmax_over_tau:g} * "
+                                    f"tau_sub = {p0['dtmax']:.4g} s (tau_sub {tau:.4g} s) -- "
+                                    "see DTMAX_CAP_S in generate_study_opts.py")
+                p0["dtmax"] = args.dtmax_cap_s
         dof = 3 * p0["Nx"] * p0["Ny"]
         # Read TARGET_DOFS_PER_CORE out of scripts/lib/alloc.sh rather than
         # restating it. The two drifted once already -- this table said 80000

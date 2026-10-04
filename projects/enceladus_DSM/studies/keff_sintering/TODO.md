@@ -137,7 +137,10 @@ Tests (scaling etc.) go one folder per test:
   (5 seeds) gives the seed-mean k(SSA); 3 packings per φ test the collapse
   and supply the time axis. Run 3f only if a φ fails the collapse or a
   reviewer asks for 5 everywhere.
-- [ ] **3c**: cold end, `batch3c_cold.txt`, 29 runs (−30, −40; seeds 1–3).
+- [ ] **3c**: cold end, `batch3c_cold.txt`, 30 runs (−30, −40; seeds 1–3, plus
+  the seed1701 −40 rerun). dtmax capped at 0.2 d (2026-10-04, user spotted
+  corners in the 3a −40 curve). BEFORE submitting, move the 3a copy of
+  seed1701 −40 aside (command in the stage file header).
   - Check: every φ collapses onto its −20 °C curve. If one doesn't, the
     time-rescaling result depends on φ; rethink before buying the warm end.
 - [ ] **3d**: −10 °C, `batch3d_T-10.txt`, 15 runs (seeds 1–3).
