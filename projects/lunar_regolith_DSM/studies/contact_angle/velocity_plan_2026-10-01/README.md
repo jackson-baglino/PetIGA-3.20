@@ -219,8 +219,13 @@ tests files, `batch{A,B,C,D}_*_ac1e-3_tests.txt` and `..._ac1e-2_tests.txt`.
 
 ```bash
 ./scripts/HPC/submit_batch.sh --tag velA_channel_theta_ac1e-3 \
-    --tests-file studies/contact_angle/velocity_plan_2026-10-01/batchA_channel_theta_ac1e-3_tests.txt
+    --tests-file studies/contact_angle/velocity_plan_2026-10-01/batchA_channel_theta_ac1e-3_tests.txt \
+    --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
 ```
+
+- `--out-root` (added 2026-10-06) writes the batch to the group directory
+  instead of `$SCRATCH`, which is purged after two weeks. Batch A at 1e-3 and
+  the HPC dtmax ladder predate it and went to scratch; both are downloaded.
 
 - Measurement: `postprocess/meniscus_velocity.py` for the channel,
   `postprocess/wedge_gt_velocity.py` for the wedge, and
@@ -232,7 +237,14 @@ tests files, `batch{A,B,C,D}_*_ac1e-3_tests.txt` and `..._ac1e-2_tests.txt`.
 
 ### Wall time and time limits
 
-Estimates, not measurements. They rest on one data point (the September
+**Measured 2026-10-01 (channel, 382k DoF, 2 ranks):** 1,722 steps in 2 h 23 m
+at 0.8·τ_sub and 729 steps in 52 m at 2·τ_sub, i.e. 4.3–5.0 s/step and about
+10 core-s/step. The table below is roughly 3.5× too slow for the channel at
+200k DoF/core: scale it down accordingly. A channel run at α_c = 1e-2 is then
+about 7 h on 2 ranks, inside 24 h without the 50k target. The wedge is still
+unmeasured.
+
+Original estimates follow. They rest on one data point (the September
 channel runs: 3.2 s/step at 8 ranks) and on the enceladus scaling fit for how
 the step slows with fewer ranks. Treat them as ±50 %.
 

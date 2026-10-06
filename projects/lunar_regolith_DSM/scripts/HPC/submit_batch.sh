@@ -28,6 +28,13 @@
 # set in the opts files):
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." --extra-opts "-beta_sub0 1.4e3"
 #
+# --out-root <dir> puts the batch parent under <dir>/lunar_regolith_DSM/ instead
+# of $SCRATCH/lunar_regolith_DSM/. Use it for runs that must survive: scratch is
+# purged, the group directory is not. The directory must already exist -- a typo
+# here must not silently fall back to scratch.
+#   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
+#
 # Extra sbatch flags can be appended after --:
 #   ./scripts/HPC/submit_batch.sh --tag mytag --tests "..." -- --time=0-04:00:00
 # =============================================================================
@@ -58,9 +65,10 @@ tests_arg=""
 tests_file=""
 sbatch_extra=()
 extra_opts=()
+out_root=""
 
 usage() {
-    sed -n '2,28p' "$0"
+    sed -n '2,35p' "$0"
     exit 1
 }
 
@@ -70,6 +78,7 @@ while [[ $# -gt 0 ]]; do
         --tests)       tests_arg="$2"; shift 2 ;;
         --tests-file)  tests_file="$2"; shift 2 ;;
         --extra-opts)  read -ra extra_opts <<< "$2"; shift 2 ;;
+        --out-root)    out_root="$2"; shift 2 ;;
         --)            shift; sbatch_extra=("$@"); break ;;
         -h|--help)     usage ;;
         *)             echo "Unknown argument: $1"; usage ;;
@@ -140,13 +149,19 @@ fi
 echo "✅ Build complete."
 
 # ---------------------------------------------------------------------------
-# Create the shared parent batch folder (under $SCRATCH on HPC,
-# $PROJECT_ROOT/scratch as fallback for local testing).
+# Create the shared parent batch folder (under --out-root if given, else
+# $SCRATCH on HPC, else $PROJECT_ROOT/scratch for local testing).
 # ---------------------------------------------------------------------------
 TS=$(date +%Y-%m-%d__%H.%M.%S)
 batch_name="batch_${TS}${tag:+_$tag}"
 
-if [[ -d "${SCRATCH:-}" ]]; then
+if [[ -n "$out_root" ]]; then
+    if [[ ! -d "$out_root" || ! -w "$out_root" ]]; then
+        echo "❌ --out-root is not a writable directory: $out_root"
+        exit 1
+    fi
+    BATCH_PARENT="$(cd "$out_root" && pwd)/lunar_regolith_DSM/$batch_name"
+elif [[ -d "${SCRATCH:-}" ]]; then
     BATCH_PARENT="$SCRATCH/lunar_regolith_DSM/$batch_name"
 else
     BATCH_PARENT="$PROJECT_ROOT/scratch/$batch_name"

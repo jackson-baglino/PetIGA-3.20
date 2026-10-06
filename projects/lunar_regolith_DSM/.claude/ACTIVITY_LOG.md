@@ -1,3 +1,18 @@
+## 2026-10-06 (later) — --out-root for the lunar batch submitter; measured cost
+
+- scripts/HPC/submit_batch.sh takes --out-root, as on the enceladus side, so
+  campaign runs go to the group directory instead of two-week scratch.
+- velocity_plan README: submit example uses --out-root; wall-time section now
+  leads with the measured channel timing (4.3-5.0 s/step on 2 ranks), about
+  3.5x faster than the estimate table. Remaining study priced at ~600 core-h.
+
+---
+
+
+---
+
+**Session ended:** 2026-10-06 16:18:09
+
 ## 2026-10-06 — Velocity-study recap and staged submit commands
 
 - Read-only session: recapped the contact-angle velocity plan (batches A-D at
