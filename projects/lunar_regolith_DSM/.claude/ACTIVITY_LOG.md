@@ -5,6 +5,9 @@
 - velocity_plan README: submit example uses --out-root; wall-time section now
   leads with the measured channel timing (4.3-5.0 s/step on 2 ranks), about
   3.5x faster than the estimate table. Remaining study priced at ~600 core-h.
+- Batch A (alpha_c = 1e-3) analysed with meniscus_velocity.py: v_mean follows
+  cos(theta), within 1-10 % of theory; growth is faster than retreat (ell
+  drift). Mid-plane and contact-line velocities still show shape relaxation.
 
 ---
 

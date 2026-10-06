@@ -435,6 +435,36 @@ the time integrator already keeps, so it adds no solver work.
 
 ---
 
+### Result: batch A, α_c = 1e-3 (batch_2026-10-01__14.15.53_velA_channel_theta_ac1e-3)
+
+`postprocess/meniscus_velocity.py` on each run, second half of the 90 days.
+Theory is `v = 2·d0·cos θ / (H·(β + K·ℓ))` at the initial ℓ = 101 µm, with and
+without the additive 8.7e5 s/m interface offset.
+
+| θ | v_mean measured [m/s] | theory, with offset | theory, no offset | ice change |
+|---|---|---|---|---|
+| 30° | +1.064e-12 | +9.67e-13 (meas. +10 %) | +1.028e-12 (+3.5 %) | +10.79 % |
+| 60° | +6.06e-13 | +5.58e-13 (+8.6 %) | +5.94e-13 (+2.1 %) | +5.45 % |
+| 90° | −2.4e-15 | 0 | 0 | −0.11 % |
+| 120° | −5.65e-13 | −5.58e-13 (+1.3 %) | −5.94e-13 (−4.8 %) | −5.41 % |
+| 150° | −9.06e-13 | −9.67e-13 (−6.3 %) | −1.028e-12 (−11.9 %) | −9.86 % |
+
+- The cosine holds: zero at 90° to 0.2 % of the 30° value, and
+  v(30°)/v(60°) = 1.76 against √3 = 1.73.
+- Growth runs faster than retreat at mirrored angles (1.064 against 0.906,
+  0.606 against 0.565). That is the ℓ drift of section 4: a growing bridge
+  shortens its diffusion path, a retreating one lengthens it. The theory
+  column is at fixed initial ℓ, so it sits between the two.
+- v_mean is (dA/dt)/interface length. The mid-plane and contact-line
+  velocities are not usable yet: at 60° the contact line advances at
+  +1.6e-12 m/s while the mid-plane retreats at −3.0e-13 m/s, because the
+  clipped-disc IC is still relaxing to the equilibrium arc after 90 days.
+  This settles "where to measure" for the channel in favour of v_mean.
+- Not yet done: theory evaluated at the time-dependent ℓ, which is needed
+  before the offset can be judged from these runs.
+
+---
+
 ## 9. Where this is going: a mm-scale pore channel
 
 ![Pore channel with lenses and wall-adhered ice](fig5_pore_channel.png)
