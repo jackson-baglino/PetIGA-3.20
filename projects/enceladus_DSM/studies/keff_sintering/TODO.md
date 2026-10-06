@@ -190,6 +190,79 @@ Does k_eff tend to one curve as the domain grows, and is L/R 40 close enough?
   - Stage files remapped (301→1701, 601→1601, 701→1801, 801→1901,
     901→2001, …).
 
+## Manuscript argument (agreed with Jackson, 2026-10-06)
+
+Framed after Molaro et al. (2019, JGR Planets) and Choukroun et al. (2020,
+GRL); both PDFs are in `Literature/`.
+
+**Lead claims**
+1. **k is a function of microstructural state, and temperature only sets the
+   clock.** One sintering age θ = t/τ_sub(T) collapses every temperature
+   (k at matched SSA within 0.27%, 59 paired runs). The novelty is the
+   non-dimensionalization: it extrapolates to temperatures we did not run,
+   as Molaro's later figures do for neck growth.
+2. **After the transient, k grows as a weak power of age**, k ∝ θ^0.066
+   (≈ +17% per decade), nearly the same for every well-connected packing.
+   Weaker than claim 1: the porosity collapse is looser, and it is lost at
+   φ ≥ 0.425, attributed to poor connectedness, which 2D amplifies.
+3. **Level before drift**: porosity and packing set k; sintering is a slow
+   correction on top. Claimed for φ ≤ 0.375 only.
+
+**Minor (1–2 sentences each)**
+- Anisotropy is constant in time: expected for non-densifying sintering, so
+  it is a consistency check on the homogenization, not a finding.
+- Small sensors: packing scatter ±9% in absolute k at 2 mm; the change with
+  age is size-independent.
+
+**Do not claim**
+- Anything from φ > 0.40 beyond "connectivity is being lost"; those cases
+  need 3D and larger domains.
+- Absolute conductivities (2D, air-filled pores).
+- "Rise from day 1" as width-independent.
+
+**Enceladus framing**
+- Target the near subsurface (~1 m): the overlying ice seals the pore vapour,
+  which is what our closed periodic cell models, and gradients are weak
+  there (little insolation at the south pole).
+- Attachment-limited kinetics is what lets the result leave the laboratory:
+  with Knudsen transport in a vacuum pore of size d, L* = D_K·β_HK =
+  4d/(3α_c), so the regime holds for any α_c ≪ 1, at every temperature.
+
+## Analysis tasks (2026-10-06)
+
+- [ ] **α_c generality.** τ_sub ∝ 1/α_c, so α_c should only rescale the
+  clock while R ≪ L* = D_v·β_HK ∝ 1/α_c (139 µm at 1e-3; 14 µm at 1e-2).
+  Test it: seed 1701 (or 1701–1703) at −20 °C with α_c = 1e-4 (deeper in the
+  regime; ~$2 each) and 1e-2 (R > L*: where the collapse should break; ~$11
+  each). DECISION: Jackson.
+- [ ] **Surface diffusion at ~180 K: literature review before any claim.**
+  The two framing papers point the other way from "negligible when the
+  quasi-liquid layer is gone": Choukroun measured Q = 24.3 ± 3.3 kJ/mol over
+  193–243 K and attributes it to surface self-diffusion (~23 kJ/mol, Nasello
+  2007), explicitly not vapour (~51); Molaro has surface diffusion leading
+  while necks are small. Our clock has Q ≈ 48 kJ/mol. A lower Q wins at LOW
+  temperature, so the vapour route should lead when warm and lose when cold.
+  Read Nasello 2007 and the snow-sintering sources Molaro cites (Maeno &
+  Ebinuma 1983; Löwe 2011; Vetter 2010) and decide how to state it.
+- [ ] **Compare our clock with Choukroun's and Molaro's numbers.** At 180 K
+  and R = 6 µm our vapour route reaches the 30-day state in ~14 yr;
+  Choukroun gets "very consolidated" (10 MPa) in ~15 yr. At 80 K they
+  diverge (ours: never; theirs: ≥ 100 Myr to 1 MPa). Reproduce Molaro's
+  timescale-vs-T-and-grain-size figure with our τ_sub and overlay.
+- [ ] **F(θ, connectivity)**: first pass in `master_curve/` (README). Next:
+  a connectivity measure that carries to 3D; refit with 3f and 3r; SSA form.
+- [ ] **Vacuum-pore k_eff** (k_void → 0), replay on existing snapshots, run
+  locally (64 GB, 12 cores; the corrector is 8 M unknowns, a few GB).
+  - Exactly zero is singular: sweep k_void = 2e-2, 2e-3, 2e-4 W/m/K on one
+    snapshot and see whether k_eff plateaus.
+  - Unresolved necks carry all the heat in vacuum, so expect a strong
+    interface-width dependence: replay the eps 1 µm and 2 µm pairs first.
+  - Two Macs: split the snapshot list between them; do not link them by MPI.
+  - Jackson runs it; command in the 2026-10-06 session notes / to be scripted.
+- [ ] Anisotropy "reversal" = k_xx/k_yy crossing 1 with porosity (1.02 at
+  φ 0.275, 0.64 at 0.475) against a contact fabric that leans the other way.
+  Confined to φ > 0.40, so out of the paper's claims; keep as a note.
+
 ## Open questions and follow-ups
 
 - [ ] **Hangs at −30/−40 °C** (2026-10-06): 3 of 60 cold jobs stopped inside a
