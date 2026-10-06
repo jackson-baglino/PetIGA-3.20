@@ -176,7 +176,11 @@ def main():
         ax.set_xticks([]); ax.set_yticks([])
         for sp in ax.spines.values():
             sp.set_linewidth(0.6); sp.set_color(MUTED)
-        ax.text(-0.03, 1.0, pplib.bold(f"({k_})"), transform=ax.transAxes, ha="right", va="top", fontsize=FS)
+        # Figure-level text above the zoom lines, on a small white pad: the
+        # upper zoom line runs through the (b) label's position.
+        fig.text(*fig.transFigure.inverted().transform(ax.transAxes.transform((-0.03, 1.0))),
+                 pplib.bold(f"({k_})"), ha="right", va="top", fontsize=FS, zorder=20,
+                 bbox=dict(boxstyle="square,pad=0.18", fc="white", ec="none") if k_ == "b" else None)
 
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
