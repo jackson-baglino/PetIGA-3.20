@@ -55,9 +55,11 @@ prepares the commands.
   `run_batch_measure.sh` passes it automatically when the opts carry
   `-bc_mirror x0`. `grain_shrinkage.py` still assumes two grains, so ignore
   its output for this run.
-- [ ] **Submit the saturated Demmenie mirror run** (Jackson). **Deferred
-  until the k_eff campaign is finished** (2026-10-02): HPC time goes to k_eff
-  first, and this run waits.
+- [ ] **Submit the saturated Demmenie mirror run** (Jackson). Released
+  2026-10-06 (user), queued with the last k_eff stages. Re-verified that day:
+  h = 1 + 2 d0/R = 1.0000241 (d0 = 1.0152e-9 m), set by `-humidity` as BOTH
+  the initial pore vapour and the Dirichlet walls; 17.9 M DoF, 90 ranks;
+  tau_sub = 108.9 s. Add `-- --time=0-12:00:00` to the command below.
   - Single job, ~$9, budget ≲ $15. Everything is committed and ready.
   - Command:
     `./scripts/HPC/submit_batch.sh --tag demmenie_mirror --tests-file studies/molaro_2019/batches/demmenie_mirror_T-20.txt --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs`

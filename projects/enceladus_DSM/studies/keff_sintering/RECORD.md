@@ -214,14 +214,18 @@ thresholds, open questions); this page is the history.
   - **Question:** is the seed scatter smaller than the φ trend, and does k_xx/k_yy follow the contact fabric?
   - *Result:* —
 - [ ] **Matrix reordered (2026-10-03):** 3c–3e run seeds 1–3 of each φ; seeds 4–5 at the non-(−20 °C) temperatures moved to an optional final stage 3f. Temperature is a per-packing time rescaling, so the −20 °C column (5 seeds) carries the seed means.
-- [ ] **3c**, −30 and −40 °C (`batch3c_cold.txt`): 29 runs (seeds 1–3).
-  - **Question:** does every φ collapse onto its −20 °C curve?
+- [x] **3c, 3d, 3e** (seeds 1–3 at −30/−40, −10 and −5 °C) — done 2026-10-06. HPC `CAMP/`, records `CAMP/stages/batch3{c_cold,d_T-10,e_T-5}__2026-10-04__*`. Local `LOC/keff_sintering_campaign/` (overlays `compare/matrix/`; porosity figures `compare/phi_summary/T<T>/`; table `compare/summary/`; collapse `compare/collapse/`; corners `compare/kinks/`; four PNGs per run in `<run>/plots/snapshots/`). Cost: 3c $122 (about $57 of it duplicates), 3d $86, 3e $112, plus $17 in four hung jobs.
+  - **Collapse holds at every porosity** (`collapse_check.py`, 59 paired runs). At matched SSA, k differs from the −20 °C run by at most 0.27%. The speed-up matches the τ_sub ratio to within 4%, with a systematic offset (+1.4% at −5 °C to −3.5% at −40 °C) that is the same at every φ.
+  - **Rise from 11 τ_sub to 30 d** (seed means, φ 0.275 → 0.475): −40 °C 10.8 / 11.4 / 9.3 / 8.0 / 8.2%; −30 °C 17.9 / 18.6 / 16.3 / 13.8 / 14.3%; −10 °C 35.4 / 36.5 / 34.9 / 31.9 / 30.0%; −5 °C 40.6 / 42.3 / 40.9 / 38.4 / 35.7%.
+  - **Time resolution** (`kink_check.py`): the largest corner in a k_eff(t) curve is 0.1% of the plotted range at −40 °C (0.2 d cap), 0.7–1.7% at the other temperatures (in the first day, during the ×1.33 time-step ramp), and 10–13% on the six 3a runs sampled every 5 steps. Those six are redone in `batch3r_redo.txt`.
+  - **Double submission.** 3c was submitted at 09:32 and again at 10:09 on 2026-10-04. Run folders only exist once a job starts, so the second was not refused: 27 runs ran twice into one folder. 26 pairs ran one after the other (valid, the second overwrote the first). One pair overlapped by 7 min (φ 0.375 seed1801 −40 °C: one bad row).
+  - **Hangs.** Three cold jobs stopped printing inside a Newton solve about 30 steps in and sat until the 3 h limit (φ 0.375 seed1802 −30 °C; φ 0.475 seed2001 −40 °C; φ 0.425 seed1902 −40 °C, in both of its jobs, so that run has no data). A hung job flushed stale rows into its sibling's `k_eff.csv` when killed. Cause unknown; none at −20 °C or warmer in 82 jobs.
+  - **Guards added:** `submit_batch.sh` refuses a run already in the queue; the job cancels its solver step after 30 min without output (`STALLED_job<id>.txt`); `supersede_runs.sh` moves old folders aside for a redo.
+- [x] **Sensitivity: eps ×2** — done 2026-10-06 (`REPO/studies/keff_sintering/eps_sensitivity/`, $1.48). **Finding:** from day 8 on the two widths grow k at the same rate (rise 8.1 vs 8.0%, 9.4 vs 9.6%, 8.8 vs 8.7%) and absolute k_iso differs by a constant 1.5–3.6%. The rise from day 1 is 9.3 ± 2.2 points higher at 2 µm, because the early transient is width-dependent (the unresolved-neck regime; τ_sub ∝ eps²). Do not quote "rise from day 1" as eps-independent. Open: one run at eps = 0.5 µm (~$40) would show whether the 1 µm early curve is converged.
+- [ ] **3r redo** (`batch3r_redo.txt`): 9 runs, ~$26. Six 3a runs with every-5-steps early sampling, plus three damaged −40 °C runs. Queued 2026-10-06 with 3f.
   - *Result:* —
-- [ ] **3d**, −10 °C (`batch3d_T-10.txt`): 15 runs (seeds 1–3).
+- [ ] **3f**, seeds 4–5 at −5/−10/−30/−40 °C (`batch3f_seeds45.txt`): 40 runs, ~$150. The collapse held, so these are not needed for the physics; queued 2026-10-06 at the user's call, to have five packings in every cell.
   - *Result:* —
-- [ ] **3e**, −5 °C (`batch3e_T-5.txt`): 14 runs (seeds 1–3), the most expensive temperature.
-  - *Result:* —
-- [ ] **3f (optional)**, seeds 4–5 at −5/−10/−30/−40 °C (`batch3f_seeds45.txt`): 40 runs. Run only if a porosity fails the collapse test or a reviewer asks for five packings in every cell.
   - *Result:* —
 - [ ] **Pre-manuscript checks** (no new simulations):
   - rev64 seeds 2–4 analysis (already local);
@@ -232,8 +236,6 @@ thresholds, open questions); this page is the history.
   - the `packing_design` README correction;
   - the Nicoli 2011 citation;
   - the t = 0 normalization caption note.
-- [ ] **Sensitivity: eps ×2 only** (`batch_eps2.txt`): φ 0.325, seeds 1701–1703, −20 °C, eps = 2 µm with the production experiment (dtmax unchanged in seconds). Asks whether the k_eff trajectory depends on the interface width. Decided 2026-10-04: α_c, R_ave and σ_ln arms dropped as giving the manuscript nothing. R_ave is pure time rescaling (grain-size study), and the α_c regime limit is stated, not run.
-  - *Result:* —
 - [ ] **Analysis** (stage 7):
   - k_eff vs SSA at fixed φ;
   - anisotropy from seed means;

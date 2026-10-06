@@ -38,7 +38,7 @@
 # k_eff sample at 121 ranks; steps ~ t_final/dtmax + ~70) at dtmax = 2 tau_sub
 # (2026-10-02; was 1.09, which needed ~1.8x the capped steps):
 #     -5 C 12 h (~4.9 h)   -10 C 8 h (~3.3 h)   -20 C 4 h (~1.7 h)
-#     -30/-40 C 3 h (< 1 h)
+#     -30/-40 C 4 h (1.2-2.6 h measured in 3c with the 0.2 d dtmax cap)
 # Raise them if a run times out; the CFL limiter may cap more steps at 2 tau.
 # A larger mesh is scaled by its DoF per rank relative to the target (the
 # L/R 56/80 runs are capped at MAX_NODES_PER_JOB, so they carry more), and
@@ -101,7 +101,7 @@ time_limit_for() {
     local T="$1" g="$2"
     local base
     base=$(awk -v t="$T" 'BEGIN{ if (t >= -7.5) print 12; else if (t >= -15) print 8;
-                                 else if (t >= -25) print 4; else print 3 }')
+                                 else print 4 }')
     local nx ny dof
     nx=$(awk '$1=="-Nx"{print $2; exit}' "$g"); ny=$(awk '$1=="-Ny"{print $2; exit}' "$g")
     dof=$(awk '$1=="-dof"{print $2; exit}' "$PROJECT_ROOT/inputs/solver.opts"); dof=${dof:-3}

@@ -137,17 +137,13 @@ Tests (scaling etc.) go one folder per test:
   (5 seeds) gives the seed-mean k(SSA); 3 packings per φ test the collapse
   and supply the time axis. Run 3f only if a φ fails the collapse or a
   reviewer asks for 5 everywhere.
-- [ ] **3c**: cold end, `batch3c_cold.txt`, 30 runs (−30, −40; seeds 1–3, plus
-  the seed1701 −40 rerun). dtmax capped at 0.2 d (2026-10-04, user spotted
-  corners in the 3a −40 curve). BEFORE submitting, move the 3a copy of
-  seed1701 −40 aside (command in the stage file header).
-  - Check: every φ collapses onto its −20 °C curve. If one doesn't, the
-    time-rescaling result depends on φ; rethink before buying the warm end.
-- [ ] **3d**: −10 °C, `batch3d_T-10.txt`, 15 runs (seeds 1–3).
-- [ ] **3e**: −5 °C, `batch3e_T-5.txt`, 14 runs (seeds 1–3). The most
-  expensive temperature.
-- [ ] **3f (optional)**: seeds 4–5 at −5/−10/−30/−40 °C,
-  `batch3f_seeds45.txt`, 40 runs, ~$150. See the rule above.
+- [x] **3c, 3d, 3e** done 2026-10-06 (RECORD.md): collapse holds at every φ.
+- [ ] **3r redo** `batch3r_redo.txt` (9 runs) and **3f** `batch3f_seeds45.txt`
+  (40 runs): queued 2026-10-06. Before submitting 3r, move the old folders
+  aside with `scripts/HPC/supersede_runs.sh` (header of the stage file).
+  Watch φ 0.425 seed1902 at −40 °C: it hung twice.
+  - After 3r lands, clear stale 3a files from the local copies of the six
+    redone −20/−5 °C runs (old full snapshot sets with other step numbers).
 - [ ] **After each stage:**
   - [ ] download the tables (see the `rsync` recipe in `ACTIVITY_LOG.md`, 2026-09-26)
   - [ ] run `postprocess/plot_keff.py` per run
@@ -195,6 +191,21 @@ Does k_eff tend to one curve as the domain grows, and is L/R 40 close enough?
     901→2001, …).
 
 ## Open questions and follow-ups
+
+- [ ] **Hangs at −30/−40 °C** (2026-10-06): 3 of 60 cold jobs stopped inside a
+  Newton solve ~30 steps in (t ≈ 1–17 s) until the time limit; φ 0.425
+  seed1902 at −40 °C in both its jobs. BiCGStab is capped at 1000 iterations,
+  so it is not an endless linear solve. The watchdog now ends such a job in
+  30 min. If seed1902 stalls again in 3r, reproduce it at small scale.
+- [ ] **eps = 0.5 µm check** (~$40, one run on seed 1701): is the production
+  early-time curve converged? eps ×2 changed the rise from day 1 by 9 points
+  and nothing after day 8 (`eps_sensitivity/README.md`). Decide before
+  writing the "rise" numbers.
+- [ ] **Baseline for the quoted rise.** 11 τ_sub (1 d) sits inside the
+  width-dependent transient. Consider a later baseline, or state it.
+- [ ] Early-time corners of 1–2% remain on every-step runs (the ×1.33 ramp
+  gives 8 steps per decade of time). `-factor 1.1` would cut them ~10× for
+  ~35% more steps; not changed mid-campaign.
 
 - [ ] **Anisotropy reversal at high φ** (2026-10-04): seed-mean k_xx/k_yy
   1.02 → 0.64 from φ 0.275 to 0.475, against the contact fabric; not the

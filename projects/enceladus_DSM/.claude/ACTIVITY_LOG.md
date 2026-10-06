@@ -1,3 +1,22 @@
+## 2026-10-06 — 3c/3d/3e and eps x2 analysed; guards; redo + 3f + Demmenie queued
+
+- 62 new runs processed: per-run plots, cadence (111 MATCH), health, summary,
+  paired overlays (compare/matrix), porosity figures at every T, snapshot PNGs
+  for all 114 runs.
+- Collapse holds at every porosity (collapse_check.py): k at matched SSA within
+  0.27%, rate within 4% of the tau_sub ratio.
+- eps x2: late-time rate identical from day 8; rise-from-day-1 +9.3 points at
+  2 um (width-dependent early transient). eps_sensitivity/README.md.
+- kink_check.py: corners 10-13% on the six every-5-steps 3a runs, 1-2% on
+  every-step runs (the x1.33 dt ramp), 0.1% at -40 C with the cap.
+- Found: 3c was submitted twice (27 runs ran twice; one overlap); 3 cold jobs
+  hung to the time limit, one run (phi 0.425 seed 1902, -40 C) has no data.
+- Added: queue guard in submit_batch.sh, 30-min stall watchdog in the job,
+  supersede_runs.sh, batch3r_redo.txt (9 runs). Cold time limit 3 h -> 4 h.
+- Demmenie mirror run re-verified (h = 1 + 2 d0/R) and released for submission.
+
+---
+
 ## 2026-10-04 — 3a, 3b and the convergence study analysed
 
 - dtmax pair PASS (2 vs 1.09 tau_sub, same packing): <= 0.21% in SSA(t), 0.13% in k(t).
