@@ -1,3 +1,12 @@
+## 2026-10-06 — Velocity-study recap and staged submit commands
+
+- Read-only session: recapped the contact-angle velocity plan (batches A-D at
+  alpha_c = 1e-3 and 1e-2) and handed over staged HPC submit commands.
+- State: only batch A at 1e-3 has run; B, C, D at 1e-3 and all of 1e-2 remain.
+- Noted that the lunar submit_batch.sh has no --out-root, so these land on $SCRATCH.
+
+---
+
 
 ---
 
