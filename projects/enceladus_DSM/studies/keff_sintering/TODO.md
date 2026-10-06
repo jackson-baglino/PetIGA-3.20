@@ -230,6 +230,20 @@ GRL); both PDFs are in `Literature/`.
 
 ## Analysis tasks (2026-10-06)
 
+- [ ] **Manuscript figures** — plan in `MANUSCRIPT_PLAN.md`. Build now,
+  rebuild when 3f/3r land (Jackson, 2026-10-06).
+  - [x] Fig. 3 merged (snapshots + collapse): `figures/fig3_keff_collapse.py`,
+    copied to `Figure3__KeffEvolution/keff_collapse_snapshots.*`.
+  - [ ] Fig. 4 gallery, Fig. 5 state law, Fig. 6 timescale map: samples in
+    `LOC/keff_sintering_campaign/compare/figure_samples/`
+    (`figures/sample_figures.py`). Jackson to give figure numbers/folders.
+  - [ ] Fig. 5 message agreed? (k is a power law of SSA; porosity sets the
+    level). Fig. 6 waits on the surface-diffusion literature check.
+  - [ ] Methods figure: homogenization on one packing (needs one local
+    replay with `-keff_write_corrector`).
+- [ ] **Rewrite §3.2, §4, §5, key points and abstract** (plan in
+  `MANUSCRIPT_PLAN.md`).
+
 - [ ] **Surface diffusion at ~180 K: literature review before any claim.**
   The two framing papers point the other way from "negligible when the
   quasi-liquid layer is gone": Choukroun measured Q = 24.3 ± 3.3 kJ/mol over
@@ -299,11 +313,15 @@ Not staged (Jackson, 2026-10-06). Each is cheap and independent.
 
 ## Open questions and follow-ups
 
-- [ ] **Hangs at −30/−40 °C** (2026-10-06): 3 of 60 cold jobs stopped inside a
-  Newton solve ~30 steps in (t ≈ 1–17 s) until the time limit; φ 0.425
-  seed1902 at −40 °C in both its jobs. BiCGStab is capped at 1000 iterations,
-  so it is not an endless linear solve. The watchdog now ends such a job in
-  30 min. If seed1902 stalls again in 3r, reproduce it at small scale.
+- [ ] **Hangs at −30/−40 °C** — diagnosed 2026-10-06: a cluster-side fault,
+  not the packing. All four hung jobs ran 4–6× slower than healthy ones
+  BEFORE stopping (k_eff solve 11–15 s vs a median 2.7 s over 55 healthy cold
+  jobs, same iteration counts), on hpc-19-22, hpc-20-35, hpc-19-28 and
+  hpc-34-38. Seed 1902 hung twice on two different slow node sets. Same work,
+  slower per iteration, then a stall: the nodes or their interconnect.
+  Mitigation in place: the 30-min stall watchdog. φ 0.425 seed 1902 at −40 °C
+  is rerun in 3r. If hangs recur: requeue on stall, or the bracketed
+  `--constraint` (one node type per job).
 - [ ] **eps = 0.5 µm check** (~$40, one run on seed 1701): is the production
   early-time curve converged? eps ×2 changed the rise from day 1 by 9 points
   and nothing after day 8 (`eps_sensitivity/README.md`). Decide before

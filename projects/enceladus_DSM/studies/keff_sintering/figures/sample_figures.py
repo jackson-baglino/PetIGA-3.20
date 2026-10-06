@@ -11,14 +11,14 @@ labels; >= 8 pt; transparent background):
                      (a) k/k_0 vs time [d], five temperatures  -> fans out
                      (b) the same vs theta = t/tau_sub          -> one curve
                      (c) k_iso vs SSA, five temperatures        -> one path
-  figB_closure       the closure F: (a) k/k(theta=30) vs theta, every packing,
-                     with the power law; (b) the level vs porosity;
-                     (c) the growth exponent vs porosity
+  figB_closure       the state law: (a) k_eff vs SSA, each relative to its value
+                     at theta = 30, well-connected packings, with the power
+                     law; (b) the level vs porosity; (c) the exponent vs porosity
   figC_timescales    the clock extrapolated: time to reach a sintering age as a
                      function of temperature and grain radius (vapour route),
                      with Enceladus conditions and Choukroun's 180 K point
-  figD_gallery       what the porosities look like: initial and 30-day
-                     microstructure for one packing of each porosity
+  figD_gallery       what happens to the aggregates: one packing of each
+                     porosity at four instants, with qualitative colour bars
 
 Seeds are PAIRED across temperature (the packings common to every temperature).
 Writes PNG + PDF to <campaign>/compare/figure_samples/ (or --out).
@@ -34,6 +34,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, AsinhNorm
+import matplotlib.patheffects as pe
 import cmocean
 
 HERE = Path(__file__).resolve().parent
@@ -114,61 +115,72 @@ def fig_collapse(R, out, phi=0.325):
 
 
 def fig_closure(R, out, theta_ref=30.0, phi_max=0.375):
+    """The state law: k_eff against SSA, both taken relative to their values at
+    theta_ref (after the width-dependent transient). A power law with one
+    exponent for every well-connected packing; porosity sets the level."""
     phis = sorted({p for (p, T) in R})
     col = colours(phis, "phi")
     per = defaultdict(list)
     fig, ax = plt.subplots(1, 3, figsize=(W, 62 * MM))
-    fig.subplots_adjust(left=0.085, right=0.985, bottom=0.20, top=0.90, wspace=0.45)
+    fig.subplots_adjust(left=0.085, right=0.985, bottom=0.24, top=0.90, wspace=0.50)
     for (p, T), d in sorted(R.items()):
         for seed, r in d.items():
             th = r["th"]
             if th[-1] < 1.5 * theta_ref:
                 continue
-            kref = np.interp(theta_ref, th, r["kiso"])
+            kref = np.interp(theta_ref, th, r["kiso"]); sref = np.interp(theta_ref, th, r["ssa"])
             w = th >= theta_ref
-            x, y = th[w] / theta_ref, r["kiso"][w] / kref
+            x, y = r["ssa"][w] / sref, r["kiso"][w] / kref
             per[(p, seed)].append((np.log10(x), np.log10(y), kref))
-            ax[0].plot(th[w], y, color=col[p], lw=0.7, alpha=0.8 if p <= phi_max else 0.45)
-    n_by, k_by = defaultdict(list), defaultdict(list)
+            if p <= phi_max:
+                ax[0].plot(x, y, color=col[p], lw=0.8, alpha=0.85)
+    p_by, k_by = defaultdict(list), defaultdict(list)
     for (p, seed), L in per.items():
         X = np.concatenate([l[0] for l in L]); Y = np.concatenate([l[1] for l in L])
-        n_by[p].append(float(np.sum(X * Y) / np.sum(X * X)))
+        p_by[p].append(float(np.sum(X * Y) / np.sum(X * X)))
         k_by[p].append(float(np.mean([l[2] for l in L])))
     good = [p for p in phis if p <= phi_max]
-    n0 = np.mean(np.concatenate([n_by[p] for p in good]))
-    tt = np.geomspace(theta_ref, 1300, 50)
-    ax[0].plot(tt, (tt / theta_ref) ** n0, color=INK, lw=1.4, ls="--")
-    ax[0].text(0.05, 0.93, rf"$(\theta/{theta_ref:g})^{{{n0:.3f}}}$", transform=ax[0].transAxes,
-               fontsize=FS_S, va="top")
-    ax[0].set(xscale="log", yscale="log", xlabel=r"$\theta=t/\tau_\mathrm{sub}$",
-              ylabel=rf"$k_\mathrm{{eff}}(\theta)/k_\mathrm{{eff}}({theta_ref:g})$")
+    p0 = np.mean(np.concatenate([p_by[p] for p in good]))
+    xx = np.linspace(0.70, 1.0, 30)
+    ax[0].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--")
+    ax[0].text(0.05, 0.95, rf"$(\mathrm{{SSA}}/\mathrm{{SSA}}_\mathrm{{r}})^{{{p0:.2f}}}$",
+               transform=ax[0].transAxes, fontsize=FS_S, va="top", ha="left")
+    ax[0].set(xscale="log", yscale="log", xlabel=r"SSA$\,/\,$SSA$_\mathrm{r}$",
+              ylabel=r"$k_\mathrm{eff}/k_\mathrm{eff,r}$")
+    ax[0].invert_xaxis()
+    ax[0].set_xticks([1.0, 0.9, 0.8, 0.7]); ax[0].set_xticklabels(["1.0", "0.9", "0.8", "0.7"])
     ax[0].set_yticks([1.0, 1.1, 1.2, 1.3]); ax[0].set_yticklabels(["1.0", "1.1", "1.2", "1.3"])
-    ax[0].yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    for axis in (ax[0].xaxis, ax[0].yaxis):
+        axis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    for p in good:
+        ax[0].plot([], [], color=col[p], lw=1.6, label=rf"$\varphi={p:g}$")
+    ax[0].legend(frameon=False, fontsize=FS_S, loc="lower right", handlelength=1.2, labelspacing=0.2)
     cf = np.polyfit(np.concatenate([[p] * len(k_by[p]) for p in good]),
                     np.log(np.concatenate([k_by[p] for p in good]) / K_ICE), 1)
     for p in phis:
         ax[1].scatter([p] * len(k_by[p]), np.array(k_by[p]) / K_ICE, s=14, color=col[p],
                       edgecolor="white", linewidth=0.4, zorder=3)
-        ax[2].scatter([p] * len(n_by[p]), n_by[p], s=14, color=col[p], edgecolor="white",
+        ax[2].scatter([p] * len(p_by[p]), p_by[p], s=14, color=col[p], edgecolor="white",
                       linewidth=0.4, zorder=3)
-        ax[2].errorbar([p + 0.012], [np.mean(n_by[p])], yerr=[np.std(n_by[p], ddof=1)], fmt="_",
-                       color=INK, capsize=2, lw=0.9, ms=7)
     pp = np.linspace(min(phis), phi_max, 20)
     ax[1].plot(pp, np.exp(np.polyval(cf, pp)), color=INK, lw=1.2, ls="--")
-    ax[2].axhline(n0, color=INK, lw=1.0, ls="--")
+    ax[2].axhline(p0, color=INK, lw=1.0, ls="--")
     for a_ in ax[1:]:
         a_.axvspan(phi_max + 0.025, max(phis) + 0.025, color="#efefef", lw=0, zorder=0)
         a_.set_xticks(phis); a_.set_xticklabels([f"{p:g}" for p in phis], rotation=45)
         a_.set_xlim(min(phis) - 0.025, max(phis) + 0.025)
         a_.set_xlabel(r"$\varphi$")
-    ax[1].set(ylabel=rf"$k_\mathrm{{eff}}({theta_ref:g})/k_\mathrm{{ice}}$", yscale="log")
+    ax[1].set(ylabel=r"$k_\mathrm{eff,r}/k_\mathrm{ice}$", yscale="log")
     ax[1].set_yticks([0.1, 0.2, 0.3]); ax[1].set_yticklabels(["0.1", "0.2", "0.3"])
     ax[1].yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-    ax[2].set(ylabel="$n$")
-    for a_, s in zip(ax, "abc"):
-        clean(a_); panel(a_, s, dx=-0.30)
+    ax[2].set(ylabel=r"exponent $p$")
+    for a_, s_ in zip(ax, "abc"):
+        clean(a_); panel(a_, s_, dx=-0.32)
     save(fig, out, "figB_closure")
-    return n0
+    print(f"  state law: k ~ SSA^{p0:.3f} (phi <= {phi_max}); level k_r/k_ice = "
+          f"{np.exp(cf[1]):.3f} exp({cf[0]:.2f} phi); per-phi p: "
+          + ", ".join(f"{p:g}: {np.mean(p_by[p]):.2f}±{np.std(p_by[p], ddof=1):.2f}" for p in phis))
+    return p0
 
 
 def psat_ice(T):                                    # Murphy & Koop (2005), Pa
@@ -189,55 +201,94 @@ def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=
     cf_ = ax.contourf(TT, RR * 1e6, t, levels=[1e-30] + lev + [1e300],
                       colors=[cmocean.cm.matter(x) for x in np.linspace(0.05, 0.95, 7)], alpha=0.85)
     cs = ax.contour(TT, RR * 1e6, t, levels=lev, colors=INK, linewidths=0.7)
-    ax.clabel(cs, fmt=dict(zip(lev, lab)), fontsize=FS_S, inline=True)
+    # White labels with a dark outline: readable on the light AND the dark bands.
+    halo = [pe.withStroke(linewidth=1.5, foreground=INK)]
+    # one label per contour, placed where each crosses the R = 30 um line (clear of the hatching)
+    Tq = np.linspace(60, 260, 4000)
+    for L_, s_ in zip(lev, lab):
+        tq = theta_target * tau_ref * (rate(T_ref) / rate(Tq)) * (30e-6 / R_ref) ** 2
+        k = int(np.argmin(np.abs(np.log(tq / L_))))
+        if 62 < Tq[k] < 258:
+            ax.text(Tq[k], 30, s_, color="white", fontsize=FS_S, ha="center", va="center",
+                    rotation=62, path_effects=halo)
     ax.set(yscale="log", xlabel="$T$ [K]", ylabel=r"$R$ [$\mu$m]")
     ax.axhspan(0.1, 5, facecolor="none", edgecolor=INK, hatch="///", lw=0.0, alpha=0.25)
-    ax.text(62, 0.75, "plume grains", fontsize=FS_S, color=INK, va="center")
+    ax.text(63, 0.75, "plume grains", fontsize=FS_S, color="white", va="center", path_effects=halo)
     for (a0, a1, s) in ((60, 80, "surface"), (175, 185, "fractures")):
         ax.axvspan(a0, a1, color="white", alpha=0.35, lw=0)
-        ax.text((a0 + a1) / 2, 600, s, fontsize=FS_S, ha="center", va="top", rotation=90, color=INK)
+        ax.text((a0 + a1) / 2, 700, s, fontsize=FS_S, ha="center", va="top", rotation=90,
+                color="white", path_effects=halo)
     ax.plot([253.15], [50], "o", ms=5, mfc="white", mec=INK, mew=1.0)
     ax.annotate("this study", (253.15, 50), xytext=(-6, 8), textcoords="offset points",
-                ha="right", fontsize=FS_S)
+                ha="right", fontsize=FS_S, color="white", path_effects=halo)
     ax.plot([180], [6], "s", ms=5, mfc="white", mec=INK, mew=1.0)
-    ax.annotate("Choukroun et al.\n(2020): 15 yr", (180, 6), xytext=(8, -4), textcoords="offset points",
-                ha="left", va="top", fontsize=FS_S)
+    ax.annotate("Choukroun et al.\n(2020): 15 yr", (180, 6), xytext=(8, 3), textcoords="offset points",
+                ha="left", va="bottom", fontsize=FS_S, color="white", path_effects=halo)
     clean(ax)
     save(fig, out, "figC_timescales")
 
 
 def fig_gallery(camp, out, T=-20):
+    """What happens to the aggregates: five porosities (columns) at four
+    instants (rows). A picture for the reader, so the colour bars are
+    qualitative: ice, and which way the vapour is driving the surface."""
     from plot_keff_snapshots import make_reader, snap_step, _field, _scalebar, WANT, SIGMA_SCALE, \
         centered_cmap, ice_alpha_cmap
     from pplib import step_times, opening_step
+    from matplotlib.cm import ScalarMappable
     seeds = {0.275: 1602, 0.325: 1702, 0.375: 1802, 0.425: 1902, 0.475: 2002}
-    frames = {}
-    for p, s in seeds.items():
-        d = next(camp.glob(f"packing_2D_phi{p}_*seed{s}_L2mm_eps1000nm_perxy_T{T}__*"))
+    frames, times = {}, None
+    for p, s_ in seeds.items():
+        d = next(camp.glob(f"packing_2D_phi{p}_*seed{s_}_L2mm_eps1000nm_perxy_T{T}__*"))
         files, reader = make_reader(d, "sol")
         tm = step_times(str(d)); st = [snap_step(f) for f in files]
-        tt = [tm.get(x, np.nan) for x in st]
-        op = opening_step(st, tt)
-        frames[p] = [(reader(files[st.index(op)], want=WANT)), (reader(files[-1], want=WANT)), tt[-1]]
+        tt = np.array([tm.get(x, np.nan) for x in st])
+        op = opening_step(st, list(tt)); i0 = st.index(op) if op is not None else 0
+        te = max(tm.values())
+        pick = [i0] + [int(np.nanargmin(np.abs(tt - (tt[i0] + f * (te - tt[i0]))))) for f in (1 / 3, 2 / 3)] \
+            + [len(st) - 1]
+        frames[p] = [reader(files[i], want=WANT) for i in pick]
+        if times is None:
+            times = [tt[i] / DAY for i in pick]
     pore = []
     for p in frames:
-        for fl, X, Y in frames[p][:2]:
+        for fl, X, Y in frames[p]:
             sg = SIGMA_SCALE * pplib.supersaturation(fl["VaporDensity"], fl["Temperature"])
             pore.append(sg[fl["IcePhase"] < 0.5])
     pore = np.concatenate(pore); v = min(abs(pore.min()), abs(pore.max()))
     norm = AsinhNorm(linear_width=max(v / 300, 1e-12), vmin=-v, vmax=v)
     vapcm, icecm = centered_cmap(cmocean.cm.balance, norm), ice_alpha_cmap()
-    n = len(frames)
-    fig, ax = plt.subplots(2, n, figsize=(W, W * 2 / n * 1.06))
-    fig.subplots_adjust(left=0.045, right=0.995, bottom=0.01, top=0.93, wspace=0.03, hspace=0.03)
+    n, nr = len(frames), 4
+    Wmm, Lm, Rm, gap, top, bot = 170.0, 9.0, 1.0, 1.2, 5.5, 17.0
+    cell = (Wmm - Lm - Rm - (n - 1) * gap) / n
+    Hmm = top + nr * cell + (nr - 1) * gap + bot
+    fig = plt.figure(figsize=(Wmm * MM, Hmm * MM))
     for j, p in enumerate(sorted(frames)):
-        for i in range(2):
+        for i in range(nr):
+            ax = fig.add_axes([(Lm + j * (cell + gap)) / Wmm,
+                               (bot + (nr - 1 - i) * (cell + gap)) / Hmm, cell / Wmm, cell / Hmm])
             fl, X, Y = frames[p][i]
-            XX, YY = _field(ax[i, j], fl, X, Y, norm, vapcm, icecm)
-            if i == 1 and j == 0:
-                _scalebar(ax[i, j], XX, YY)
-        ax[0, j].set_title(rf"$\varphi={p:g}$", fontsize=FS, pad=3)
-    ax[0, 0].set_ylabel("$t=0$", fontsize=FS); ax[1, 0].set_ylabel("30 d", fontsize=FS)
+            XX, YY = _field(ax, fl, X, Y, norm, vapcm, icecm)
+            if i == nr - 1 and j == 0:
+                _scalebar(ax, XX, YY)
+            if i == 0:
+                ax.set_title(rf"$\varphi={p:g}$", fontsize=FS, pad=3)
+            if j == 0:
+                ax.set_ylabel("0 d" if i == 0 else f"{times[i]:.0f} d", fontsize=FS, labelpad=3)
+    # qualitative colour bars
+    cax1 = fig.add_axes([(Lm + 6) / Wmm, 10.0 / Hmm, 32 / Wmm, 2.2 / Hmm])
+    cb = fig.colorbar(ScalarMappable(cmap=cmocean.cm.ice, norm=plt.Normalize(0, 1)), cax=cax1,
+                      orientation="horizontal", ticks=[0, 1])
+    cb.ax.set_xticklabels(["air", "ice"], fontsize=FS_S); cb.outline.set_linewidth(0.5)
+    cb.ax.tick_params(length=0, pad=2)
+    cax2 = fig.add_axes([(Lm + 70) / Wmm, 10.0 / Hmm, 70 / Wmm, 2.2 / Hmm])
+    cb = fig.colorbar(ScalarMappable(cmap=vapcm, norm=norm), cax=cax2, orientation="horizontal",
+                      ticks=[-v, 0, v])
+    cb.ax.set_xticklabels(["undersaturated\n(ice sublimates)", "equilibrium",
+                           "supersaturated\n(vapour deposits)"], fontsize=FS_S)
+    cb.minorticks_off()
+    cb.outline.set_linewidth(0.5); cb.ax.tick_params(length=0, pad=2)
+    fig.text((Lm + 67) / Wmm, 11.1 / Hmm, "vapour", fontsize=FS_S, ha="right", va="center")
     save(fig, out, "figD_gallery")
 
 
@@ -262,11 +313,11 @@ def main():
         r["th"] = r["t"] / r["tau"]; r["td"] = r["t"] / DAY
         R[(float(m.group(1)), int(m.group(3)))][int(m.group(2))] = r
     fig_collapse(R, out)
-    n0 = fig_closure(R, out)
+    p0 = fig_closure(R, out)
     fig_timescales(out)
     if not a.skip_gallery:
         fig_gallery(a.root, out)
-    print(f"growth exponent n = {n0:.4f}")
+    print(f"state-law exponent p = {p0:.3f}")
 
 
 if __name__ == "__main__":
