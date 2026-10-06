@@ -5,7 +5,7 @@
         [--T -20] [--out <dir>]
 
 Uses the production packings only (L/R 40, seeds 1601-2005) at one temperature
-and writes three figures (default <campaign>/compare/phi_summary/T<T>/):
+and writes four figures (default <campaign>/compare/phi_summary/T<T>/):
 
   phi_trends.png     the porosity trends, seed mean +- sd per phi:
                      (a) k_iso at the opening sample, 11 tau_sub and the end
@@ -18,6 +18,7 @@ and writes three figures (default <campaign>/compare/phi_summary/T<T>/):
                      per porosity, so outliers and spread are visible
   anisotropy_time.png  k_xx/k_yy vs time per porosity (seed mean, band =
                      seed min..max), on common times only
+  ssa_by_phi.png     SSA, SSA/SSA_0 and k/k_0 against sintering age, by porosity
 
 Colour: porosity on the amp-to-black map compare_keff.py uses.
 Also writes phi_trends.csv.
@@ -169,6 +170,34 @@ def main():
            title=f"Anisotropy vs time, T = {a.T} °C (seed mean, band = seed min–max)")
     style(ax); ax.legend(frameon=False, ncol=5, fontsize=8, loc="lower center")
     fig.savefig(out / "anisotropy_time.png", dpi=160)
+
+    # ---- figure 4: SSA in time, by porosity ----
+    fig, ax = plt.subplots(1, 3, figsize=(15, 4.6), constrained_layout=True)
+    for p in phis:
+        g = G[p]
+        th_lo = max(r["t"][int(np.argmax(r["t"] >= 1.0))] / r["tau"] for r in g)
+        th_hi = min(r["t"][-1] / r["tau"] for r in g)
+        th = np.geomspace(max(th_lo, 1e-3), th_hi, 300)
+        def curves(key, norm):
+            out_ = []
+            for r in g:
+                i0 = int(np.argmax(r["t"] >= 1.0))
+                v = r[key] / (r[key][i0] if norm else 1.0)
+                out_.append(np.interp(th, r["t"] / r["tau"], v))
+            return np.array(out_)
+        for j, (key, norm) in enumerate((("ssa", False), ("ssa", True), ("kiso", True))):
+            V = curves(key, norm)
+            ax[j].fill_between(th, V.min(0), V.max(0), color=col[p], alpha=0.12, lw=0)
+            ax[j].plot(th, V.mean(0), color=col[p], lw=2, label=f"φ = {p}")
+    ax[0].set(ylabel=r"SSA  [m$^{-1}$]", title="(a) SSA")
+    ax[1].set(ylabel=r"SSA / SSA$_0$", title="(b) SSA, normalized")
+    ax[2].set(ylabel=r"$k_\mathrm{iso}/k_{\mathrm{iso},0}$", title="(c) k_iso, normalized, same axis")
+    for x in ax:
+        x.set_xscale("log"); x.set_xlim(1, None); style(x)
+        x.set_xlabel(r"sintering age  $\theta=t/\tau_\mathrm{sub}$")
+    ax[0].legend(frameon=False, fontsize=8)
+    fig.suptitle(f"SSA and k_iso against sintering age, T = {a.T} °C (seed mean, band = seed min–max)", fontsize=12)
+    fig.savefig(out / "ssa_by_phi.png", dpi=160)
 
     print(f"{'phi':>6} {'n':>2} {'dlnk/dlnSSA':>14}")
     m_, s_ = ms("dlnk_dlnssa")

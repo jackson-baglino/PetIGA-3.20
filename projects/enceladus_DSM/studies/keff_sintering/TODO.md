@@ -230,11 +230,6 @@ GRL); both PDFs are in `Literature/`.
 
 ## Analysis tasks (2026-10-06)
 
-- [ ] **α_c generality.** τ_sub ∝ 1/α_c, so α_c should only rescale the
-  clock while R ≪ L* = D_v·β_HK ∝ 1/α_c (139 µm at 1e-3; 14 µm at 1e-2).
-  Test it: seed 1701 (or 1701–1703) at −20 °C with α_c = 1e-4 (deeper in the
-  regime; ~$2 each) and 1e-2 (R > L*: where the collapse should break; ~$11
-  each). DECISION: Jackson.
 - [ ] **Surface diffusion at ~180 K: literature review before any claim.**
   The two framing papers point the other way from "negligible when the
   quasi-liquid layer is gone": Choukroun measured Q = 24.3 ± 3.3 kJ/mol over
@@ -262,6 +257,20 @@ GRL); both PDFs are in `Literature/`.
 - [ ] Anisotropy "reversal" = k_xx/k_yy crossing 1 with porosity (1.02 at
   φ 0.275, 0.64 at 0.475) against a contact fabric that leans the other way.
   Confined to φ > 0.40, so out of the paper's claims; keep as a note.
+
+## Optional — ready if reviewers ask, or if the write-up needs support
+
+Not staged (Jackson, 2026-10-06). Each is cheap and independent.
+
+- [ ] **α_c generality.** τ_sub ∝ 1/α_c, so α_c should only rescale the
+  clock while R ≪ L* = D_v·β_HK ∝ 1/α_c (139 µm at 1e-3; 14 µm at 1e-2).
+  Seed 1701 (or 1701–1703) at −20 °C with α_c = 1e-4 (deeper in the regime;
+  ~$2 each) and 1e-2 (R > L*: where the collapse should break; ~$11 each).
+  Needs new experiment files (`--alpha-c`) and a stage file.
+- [ ] **eps = 0.5 µm** on seed 1701 (~$40): is the production early-time
+  curve converged?
+- [ ] **A porosity below 0.275** (e.g. 0.225 × 3 seeds, −20 °C): does the
+  relative rise turn over at low porosity? At present 0.275 and 0.325 tie.
 
 ## Open questions and follow-ups
 
