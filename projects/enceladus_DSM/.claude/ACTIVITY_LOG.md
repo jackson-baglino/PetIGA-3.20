@@ -1,3 +1,19 @@
+## 2026-10-06 — Manuscript argument, first-pass closure, literature read
+
+- Read Molaro (2019) and Choukroun (2020) in Literature/. Choukroun's
+  activation energy (24 kJ/mol, surface diffusion) is half our clock's
+  (48 kJ/mol, vapour): flagged for a literature review before any claim that
+  surface diffusion is negligible at 180 K.
+- master_curve/fit_master.py: k_iso = 1.37 k_ice exp(-5.0 phi) (theta/30)^0.066
+  for phi <= 0.375; connectivity (z) does not set the rate there.
+- TODO.md: agreed claims and Enceladus framing; analysis tasks; an Optional
+  section (alpha_c, eps 0.5 um, phi 0.225); vacuum-pore k_eff parked with its
+  timing command.
+- phi_summary.py gains ssa_by_phi.png. Porosity ordering of the rise checked:
+  0.275 and 0.325 tie; the off-(-20 C) columns share three packings.
+
+---
+
 ## 2026-10-06 — 3c/3d/3e and eps x2 analysed; guards; redo + 3f + Demmenie queued
 
 - 62 new runs processed: per-run plots, cadence (111 MATCH), health, summary,

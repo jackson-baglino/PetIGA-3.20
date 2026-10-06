@@ -246,14 +246,39 @@ GRL); both PDFs are in `Literature/`.
   timescale-vs-T-and-grain-size figure with our τ_sub and overlay.
 - [ ] **F(θ, connectivity)**: first pass in `master_curve/` (README). Next:
   a connectivity measure that carries to 3D; refit with 3f and 3r; SSA form.
-- [ ] **Vacuum-pore k_eff** (k_void → 0), replay on existing snapshots, run
-  locally (64 GB, 12 cores; the corrector is 8 M unknowns, a few GB).
+- [ ] **Vacuum-pore k_eff** (k_void → 0): a second k_eff solve on the
+  snapshots we already have. **PARKED (Jackson, 2026-10-06): on the list,
+  not started.** No new sintering runs; local.
+  - Why: on Enceladus the pores are empty, so all heat crosses the necks and
+    the sensitivity to sintering should be far larger than our +17% per decade.
+  - Feasible on this Mac (64 GB, 12 cores): the corrector is 8 M unknowns, a
+    few GB. The k_eff solve is cheapest on FEW cores (530 core-s at 61 ranks,
+    630 at 121, 15–30× slower across ≥ 8 nodes), so ~1 min per snapshot with
+    air; longer as k_void falls (contrast). Split the list across the two
+    Macs; do not link them by MPI.
   - Exactly zero is singular: sweep k_void = 2e-2, 2e-3, 2e-4 W/m/K on one
     snapshot and see whether k_eff plateaus.
   - Unresolved necks carry all the heat in vacuum, so expect a strong
-    interface-width dependence: replay the eps 1 µm and 2 µm pairs first.
-  - Two Macs: split the snapshot list between them; do not link them by MPI.
-  - Jackson runs it; command in the 2026-10-06 session notes / to be scripted.
+    interface-width dependence: replay the eps 1 µm and 2 µm pairs FIRST. If
+    they disagree badly, the vacuum numbers are not publishable from these
+    meshes.
+  - First timing test (untried locally; four snapshots of seed 1701, −40 °C):
+    ```
+    R=~/SimulationResults/HPC_results/enceladus_DSM/keff_sintering_campaign/packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-40__snow_T-40_h1.00_30d
+    ./scripts/Studio/run_enceladus.sh packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-40 \
+        snow_T-40_h1.00_30d vac2e-3 -- -keff 1 -keff_replay "$R" -thcond_air 2e-3 \
+        -keff_csv "$R/k_eff_void2e-3.csv" -keff_ksp_type cg -keff_pc_type gamg
+    ```
+  - Then: script the sweep; refit F on the vacuum values.
+- [ ] **Is the rise really highest at φ 0.325?** In the day-1 → day-30 table
+  0.325 ≥ 0.275 in 4 of 5 temperatures, but those four columns are the SAME
+  three packings per porosity (T only rescales time), so it is one comparison
+  of 3 vs 3, with gaps (0.6–1.7 points) inside the seed scatter. At −20 °C
+  (5 packings) it is a tie, 27.4 vs 27.2%. Recheck with 3f. If it holds,
+  count closed pores in the snapshots (Jackson's idea: pores sealing early
+  limit sintering in dense packings). Against it so far: SSA falls FASTEST
+  at φ 0.275 (exponent −0.085 vs −0.080 at 0.475). A φ 0.225 point (Optional)
+  would show whether the rise turns over.
 - [ ] Anisotropy "reversal" = k_xx/k_yy crossing 1 with porosity (1.02 at
   φ 0.275, 0.64 at 0.475) against a contact fabric that leans the other way.
   Confined to φ > 0.40, so out of the paper's claims; keep as a note.
