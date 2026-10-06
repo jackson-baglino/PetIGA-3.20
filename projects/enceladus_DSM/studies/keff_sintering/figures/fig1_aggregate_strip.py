@@ -33,33 +33,23 @@ MM, DAY = 1 / 25.4, 86400.0
 MASTER = "packing_2D_phi0.325_Rave50um_LR40_seed1702_L2mm_eps1000nm_perxy_T-20__snow_T-20_h1.00_30d"
 
 
-def main():
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("root", type=Path)
-    ap.add_argument("--center-um", type=float, nargs=2, default=[700.0, 1450.0])
-    ap.add_argument("--window-um", type=float, default=420.0)
-    ap.add_argument("--out", type=Path, default=None)
-    ap.add_argument("--copy-to", type=Path, default=None)
-    a = ap.parse_args()
-    plt.rcParams.update(pplib.MANUSCRIPT_RC)
-    run = a.root / MASTER
+def add_strip(fig, root, center_um, window_um, W, H, y_base=1.0, left=1.0, gap=2.0):
+    """Draw the four close-ups into fig (W x H mm), their bottom edge y_base mm
+    above the figure's. Returns the cell size [mm] and the four times [s]."""
+    run = root / MASTER
     files, reader = make_reader(run, "sol")
     tm = step_times(str(run)); st = [snap_step(f) for f in files]
     tt = np.array([tm.get(s, np.nan) for s in st])
     op = opening_step(st, list(tt)); i0 = st.index(op) if op is not None else 0
     te = max(tm.values())
     pick = [i0] + [int(np.nanargmin(np.abs(tt - (tt[i0] + f * (te - tt[i0]))))) for f in (1 / 3, 2 / 3)] + [len(st) - 1]
-    cx, cy = a.center_um; h = a.window_um / 2
-    W, gap, L, top = 170.0, 2.0, 1.0, 6.0
-    cell = (W - 2 * L - 3 * gap) / 4
-    H = cell + top + 1.0
-    fig = plt.figure(figsize=(W * MM, H * MM))
+    cx, cy = center_um; h = window_um / 2
+    cell = (W - 2 * left - 3 * gap) / 4
     for j, i in enumerate(pick):
         fl, X, Y = reader(files[i], want=("IcePhase",))
         x, y = X[0, :] * 1e6, Y[:, 0] * 1e6
         mx = (x >= cx - h) & (x <= cx + h); my = (y >= cy - h) & (y <= cy + h)
-        ax = fig.add_axes([(L + j * (cell + gap)) / W, 1.0 / H, cell / W, cell / H])
+        ax = fig.add_axes([(left + j * (cell + gap)) / W, y_base / H, cell / W, cell / H])
         ax.imshow(fl["IcePhase"][np.ix_(my, mx)], origin="lower", cmap=cmocean.cm.ice, vmin=0, vmax=1,
                   extent=(x[mx][0], x[mx][-1], y[my][0], y[my][-1]), interpolation="antialiased")
         ax.set_xticks([]); ax.set_yticks([])
@@ -71,6 +61,23 @@ def main():
                     solid_capstyle="butt")
             ax.text(cx - h + 70, cy - h + 32, r"100 $\mu$m", ha="center", va="bottom", fontsize=FS_TINY,
                     color=INK, bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.85))
+    return cell, [float(tt[i]) for i in pick]
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("root", type=Path)
+    ap.add_argument("--center-um", type=float, nargs=2, default=[700.0, 1450.0])
+    ap.add_argument("--window-um", type=float, default=420.0)
+    ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--copy-to", type=Path, default=None)
+    a = ap.parse_args()
+    plt.rcParams.update(pplib.MANUSCRIPT_RC)
+    W, top = 170.0, 6.0
+    H = (W - 2 * 1.0 - 3 * 2.0) / 4 + top + 1.0
+    fig = plt.figure(figsize=(W * MM, H * MM))
+    _, times = add_strip(fig, a.root, a.center_um, a.window_um, W, H)
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
     for e in ("pdf", "png"):
@@ -78,7 +85,7 @@ def main():
         fig.savefig(f, dpi=500, transparent=True)
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True); shutil.copyfile(f, a.copy_to / f.name)
-    print(f"wrote {out}/aggregate_strip.pdf/.png ({W:.0f} x {H:.0f} mm); times [d]: {[round(tt[i] / DAY, 1) for i in pick]}")
+    print(f"wrote {out}/aggregate_strip.pdf/.png ({W:.0f} x {H:.0f} mm); times [d]: {[round(t / DAY, 1) for t in times]}")
 
 
 if __name__ == "__main__":

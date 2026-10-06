@@ -214,7 +214,7 @@ def build(run: Path, a):
     return fig
 
 
-def main(argv=None):
+def build_parser():
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--run", type=Path, required=True,
@@ -243,7 +243,11 @@ def main(argv=None):
                    help="also copy the figure here (the manuscript Figures folder)")
     p.add_argument("--formats", nargs="+", default=["pdf", "png"])
     p.add_argument("--dpi", type=int, default=600)
-    a = p.parse_args(argv)
+    return p
+
+
+def main(argv=None):
+    a = build_parser().parse_args(argv)
 
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
     fig = build(a.run.resolve(), a)
