@@ -241,7 +241,8 @@ GRL); both PDFs are in `Literature/`.
     4 steps, `<master run>/corrector/`).
   - [x] One tables file `tables/tables.tex` (material, k_eff fixed, k_eff
     temperature, grain pair), one command per table.
-  - [ ] Fig. 1: decide on the optional `setting_panel` / `aggregate_strip`.
+  - [x] Fig. 1 = (a) mechanisms + (b) `aggregate_strip` (decided 2026-10-06; no setting panel).
+  - [x] Fig. 3 variant with grain shrinkage as (c)(d): `molaro_full`.
   - [ ] Fig. 5 gallery, Fig. 6 state law, Fig. 7 timescale map: samples in
     `LOC/keff_sintering_campaign/compare/figure_samples/`
     (`figures/sample_figures.py`). Jackson to give figure numbers/folders.

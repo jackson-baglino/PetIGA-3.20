@@ -22,6 +22,8 @@ the sets cannot drift apart.
                                       instants 1-2 marked on the -20 C model
     molaro_grain_shrinkage.{pdf,png}  D / D_0 of (a) the large and (b) the
                                       small grain, both temperatures
+    molaro_full.{pdf,png}             molaro_combined with the shrinkage
+                                      under it as (c) and (d)
 
 THE CLOCK. Molaro's record starts at an unknown time after contact, and our
 runs start from a chosen r = 14 um neck. So each series' t = 0 is the moment
@@ -378,6 +380,46 @@ def build_combined(secs, series, marks, norm, vapcm, icecm, t_star, a):
     return fig
 
 
+def build_full(secs, series, marks, norm, vapcm, icecm, t_star, a):
+    """The combined figure with the grain shrinkage under it: (a) sections,
+    (b) neck curves, (c) large grain D / D_0, (d) small grain. One figure for
+    the whole comparison -- the shrinkage is what shows the model loses mass
+    at the measured rate even where the neck curves part from the data. The
+    neck panel is lower than in molaro_combined to stay under the page."""
+    W = a.width_mm * MM
+    gap = 0.12
+    ml, axw, s_w, s_h = _geom(W, secs, gap)
+    cb_h, cb_lab, cb_gap, t_band, top = 0.07, 0.15, 0.06, 0.19, 0.05
+    g_snap, ph, g_row, leg, ph2, bot = 0.34, 1.75, 0.62, 0.0, 1.55, 0.40
+    pgap, ml2 = 0.78, ml + 0.17          # room for the 4-digit tick labels
+    pw = (W - ml2 - 0.08 - pgap) / 2
+    H = top + cb_h + cb_lab + cb_gap + t_band + s_h + g_snap + ph + g_row + leg + ph2 + bot
+    fig = plt.figure(figsize=(W, H))
+    F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
+    y_neck = bot + ph2 + leg + g_row
+    y_snap = y_neck + ph + g_snap
+    _sections(fig, F, secs, ml, y_snap, s_w, s_h, gap, norm, vapcm, icecm, t_star)
+    _neck_panel(fig.add_axes(F(ml, y_neck, axw, ph)), series, marks)
+    xmax = max(float(s["Dd"]["t"].max()) for s in series)
+    for i, (which, sym) in enumerate((("large", "l"), ("small", "s"))):
+        ax = fig.add_axes(F(ml2 + i * (pw + pgap), bot, pw, ph2))
+        _shrink_panel(ax, series, which, xmax)
+        ax.set_ylabel(rf"$D_\mathrm{{{sym}}}\,/\,D_{{\mathrm{{{sym}}},0}}$",
+                      fontsize=FS, labelpad=3)
+        if i == 1:
+            ax.legend(handles=[Line2D([], [], ls=FIT_LS, lw=1.0, color=INK, dash_capstyle="round",
+                                      label="linear fit to data")], fontsize=FS_SMALL, frameon=False,
+                      handlelength=2.2, loc="lower left", borderaxespad=0.3)
+        fig.text((0.02 + i * (pw + pgap + (ml2 - 0.02) * 0)) / W + i * (ml2 - 0.72) / W, (bot + ph2 + 0.16) / H,
+                 pplib.bold("(%s)" % "cd"[i]), ha="left", va="center",
+                 fontsize=FS, color=INK)
+    for lab, y_top in zip(PANELS, (y_snap + s_h + 0.5 * t_band, y_neck + ph + 0.14)):
+        fig.text(0.02 / W, y_top / H, pplib.bold(f"({lab})"), ha="left",
+                 va="center", fontsize=FS, color=INK)
+    _strip(fig, F, ml, y_snap + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm, a.sig_extend)
+    return fig
+
+
 def _shrink_panel(ax, series, which, xmax):
     """D / D_0 of one grain: model lines, Molaro's points (no error bars --
     their table gives none for the diameters)."""
@@ -533,6 +575,7 @@ def main(argv=None):
         "molaro_combined": build_combined(secs, series, marks, norm, vapcm, icecm,
                                           m["t_star"], a),
         "molaro_grain_shrinkage": build_shrinkage(series, a),
+        "molaro_full": build_full(secs, series, marks, norm, vapcm, icecm, m["t_star"], a),
     }
     os.makedirs(a.save_dir, exist_ok=True)
     for stem, fig in figs.items():
