@@ -1,0 +1,34 @@
+# Batch 3r -- REDO of nine runs (2026-10-06, ~$26).
+#
+# (1) Six 3a runs sampled k_eff every 5 steps before 11 tau_sub, which left a
+#     10-13% corner at 0.46 d in their k_eff(t) curves (kink_check.py). Every
+#     run since 3b samples every step there and has corners of 1-2% at most.
+#     These six are the -20 C reference packings (seed 1 of each porosity) and
+#     the phi 0.325 -5 C run, so they appear in most figures:
+#       seeds 1601, 1701, 1801, 1901, 2001 at -20 C; seed 1701 at -5 C.
+#     Their k(SSA) after 11 tau_sub was already fine; only the first day changes.
+# (2) Three 3c runs at -40 C damaged by the double submission of 2026-10-04:
+#       phi 0.425 seed 1902   both jobs hung at step ~30; no data
+#       phi 0.475 seed 2001   a hung first job flushed stale rows into k_eff.csv
+#       phi 0.375 seed 1801   the two jobs overlapped by 7 min; one bad row
+#
+# BEFORE SUBMITTING, on the HPC, move the old folders aside (kept, not deleted):
+#   ./scripts/HPC/supersede_runs.sh studies/keff_sintering/batch3r_redo.txt         # list
+#   ./scripts/HPC/supersede_runs.sh studies/keff_sintering/batch3r_redo.txt --yes   # move
+#
+# WATCH phi 0.425 seed 1902 at -40 C: it hung twice. The job now cancels itself
+# after 30 min without solver output (STALLED_job<id>.txt in the run folder).
+# If it stalls again the hang is a property of that run, not of the cluster.
+#
+# Submit with (every option lives in the script):
+#   ./scripts/HPC/submit_keff_production.sh studies/keff_sintering/batch3r_redo.txt
+
+packing_2D_phi0.275_Rave50um_LR40_seed1601_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1801_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1901_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2001_L2mm_eps1000nm_perxy_T-20:snow_T-20_h1.00_30d
+packing_2D_phi0.325_Rave50um_LR40_seed1701_L2mm_eps1000nm_perxy_T-5:snow_T-5_h1.00_30d
+packing_2D_phi0.425_Rave50um_LR40_seed1902_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.475_Rave50um_LR40_seed2001_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d
+packing_2D_phi0.375_Rave50um_LR40_seed1801_L2mm_eps1000nm_perxy_T-40:snow_T-40_h1.00_30d

@@ -228,6 +228,7 @@ mkdir -p "$sdir"
         # leaving the manifest without its run list and the stage file uncopied.
         id=$(grep -A3 -F "${g}__${e}" "$log" | grep -oE "Submitted batch job [0-9]+" | head -1 | awk '{print $4}' || true)
         refused=$(grep -qF "${g}__${e} already exists" "$log" && echo " (EXISTS -- not resubmitted)" || true)
+        grep -qF "${g}__${e} is already in the queue" "$log" && refused=" (ALREADY QUEUED -- not resubmitted)"
         echo "  ${g}__${e}  ${id:-none}  [${sp##*--time }]${refused}"
     done
 } > "$sdir/PRODUCTION_MANIFEST.txt"

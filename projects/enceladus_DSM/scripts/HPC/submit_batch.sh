@@ -373,6 +373,20 @@ submit_one() {
         ((N_SKIPPED++)) || true
         return
     fi
+    # A run folder is only created when its job STARTS, so the check above
+    # cannot see a job that is still pending. On 2026-10-04 batch 3c was
+    # submitted twice 40 minutes apart: 27 runs ran twice into one folder
+    # (~$52), and a hung first job later flushed stale rows into its sibling's
+    # k_eff.csv. Refuse a run that is already queued or running under this name.
+    if [[ -n "$parent_dir" ]] && command -v squeue >/dev/null 2>&1; then
+        local queued
+        queued=$(squeue -h -u "${USER:-$(id -un)}" -n "$job_name" -o '%i %T' 2>/dev/null | head -n 1)
+        if [[ -n "$queued" ]]; then
+            echo "❌ $job_name is already in the queue (job $queued) -- not resubmitted"
+            ((N_SKIPPED++)) || true
+            return
+        fi
+    fi
     local nprocs nnodes tasks_per_node total_dofs
     read -r nprocs nnodes tasks_per_node total_dofs < <(compute_alloc "$geom_file" ${extra_opts[@]+"${extra_opts[@]}"} ${perjob[@]+"${perjob[@]}"})
 

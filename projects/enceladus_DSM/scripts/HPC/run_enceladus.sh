@@ -426,6 +426,34 @@ run_simulation() {
         echo "SLURM_CPUS_PER_TASK = ${SLURM_CPUS_PER_TASK:-unknown}"
         echo "Using NPROCS        = ${NPROCS}"
 
+        # STALL WATCHDOG (2026-10-06). Three of 60 cold-temperature jobs in
+        # batch 3c stopped printing inside a Newton solve ~30 steps in and sat
+        # there until the 3 h limit (about $4.40 each); one run hung in both
+        # of its jobs. Cause unknown. A step takes 20-70 s and a k_eff solve at
+        # most a few minutes, so a log silent for STALL_MINUTES (default 30)
+        # means a hang: cancel the solver step, leave a STALLED_job<id>.txt
+        # marker, and let the script finish (cost report, non-zero exit).
+        # STALL_MINUTES=0 disables it.
+        local stall_min="${STALL_MINUTES:-30}" watchdog_pid=""
+        if (( stall_min > 0 )); then
+            (
+                while sleep 60; do
+                    [[ -f "$OUTP_LEG" ]] || continue
+                    last=$(stat -c %Y "$OUTP_LEG" 2>/dev/null || date +%s)
+                    if (( $(date +%s) - last > stall_min * 60 )); then
+                        {
+                            echo "STALLED: no solver output for ${stall_min} min (job ${SLURM_JOB_ID})"
+                            echo "last log line: $(tail -n 1 "$OUTP_LEG" | cut -c1-200)"
+                            echo "cancelled at $(date '+%Y-%m-%d %H:%M:%S')"
+                        } | tee "$folder/STALLED_job${SLURM_JOB_ID}.txt"
+                        scancel "${SLURM_JOB_ID}.0" 2>/dev/null || pkill -TERM -P $$ srun
+                        break
+                    fi
+                done
+            ) &
+            watchdog_pid=$!
+        fi
+
         srun -n "${NPROCS}" "$EXEC" \
             -options_file "$SOLVER_OPTS" \
             -options_file "$GEOM_OPTS"   \
@@ -433,6 +461,8 @@ run_simulation() {
             -output_path  "$folder" \
             "${EXTRA_OPTS[@]}" \
             | tee "$OUTP_LEG"
+        sim_exit_srun=${PIPESTATUS[0]}
+        [[ -n "$watchdog_pid" ]] && kill "$watchdog_pid" 2>/dev/null
     else
         echo "No SLURM environment detected; running locally with mpiexec."
         echo "Using NPROCS = ${NPROCS}"
@@ -447,7 +477,8 @@ run_simulation() {
             | tee "$OUTP_LEG"
     fi
 
-    sim_exit=${PIPESTATUS[0]}
+    sim_exit=${sim_exit_srun:-${PIPESTATUS[0]}}
+    [[ -f "$folder/STALLED_job${SLURM_JOB_ID:-local}.txt" ]] && sim_exit=124
     set -e
 
     # outp.txt is the whole trajectory, one leg appended after another; the
