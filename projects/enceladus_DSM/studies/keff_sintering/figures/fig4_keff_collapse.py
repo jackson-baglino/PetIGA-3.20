@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Figure 3 (manuscript): k_eff evolution of one packing, and its temperature collapse.
+"""Figure 4 (manuscript): k_eff evolution of one packing, and its temperature collapse.
 
-    venv_enceladus/bin/python studies/keff_sintering/figures/fig3_keff_collapse.py <campaign dir>
+    venv_enceladus/bin/python studies/keff_sintering/figures/fig4_keff_collapse.py <campaign dir>
         [--seed 1702] [--phi 0.325] [--snap-T -20] [--copy-to <dir>] [--out <dir>]
 
 Merges the snapshot figure (plot_keff_snapshots.py) with the temperature

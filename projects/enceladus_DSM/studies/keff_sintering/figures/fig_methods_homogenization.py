@@ -100,10 +100,10 @@ def main():
         cor = np.squeeze(PetIGA().read_vec(str(tf), nrb)).T
         print(f"corrector read: {tf.name}, shape {cor.shape}")
 
-    W, H = 170.0, 150.0
+    W, H = 170.0, 131.0
     fig = plt.figure(figsize=(W * MM, H * MM))
-    s_ = 68.0
-    pos = {"a": (14, 78), "b": (96, 78), "c": (14, 6), "d": (96, 6)}
+    s_ = 58.0
+    pos = {"a": (10, 70), "b": (95, 70), "c": (10, 5), "d": (95, 5)}
     axs = {k: fig.add_axes([px / W, py / H, s_ / W, s_ / H]) for k, (px, py) in pos.items()}
     ext = (x.min(), x.max(), y.min(), y.max())
     icecm = cmocean.cm.ice
@@ -147,7 +147,7 @@ def main():
         im2 = axs["d"].imshow(q, origin="lower", extent=ext, cmap=cmocean.cm.thermal,
                               norm=matplotlib.colors.LogNorm(vmin=K_AIR, vmax=np.percentile(q, 99.9)),
                               interpolation="antialiased")
-        for k_, im_, lab in (("c", im, r"$t_x$ [$\mu$m]"), ("d", im2, r"$|\mathbf{q}_x|$ [W m$^{-2}$ per K m$^{-1}$]")):
+        for k_, im_, lab in (("c", im, r"$t_x$ [$\mu$m]"), ("d", im2, r"$|\mathbf{q}|\,/\,|\nabla\bar{T}|$ [W m$^{-1}$ K$^{-1}$]")):
             p_ = axs[k_].get_position()
             cax = fig.add_axes([p_.x1 + 0.008, p_.y0, 0.012, p_.height])
             cb = fig.colorbar(im_, cax=cax); cb.ax.tick_params(labelsize=FS_TINY, width=0.5, length=2)

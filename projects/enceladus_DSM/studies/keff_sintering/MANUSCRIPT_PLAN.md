@@ -5,16 +5,19 @@ Written 2026-10-06 against the draft `Literature/BaglinoJackson_DSM_manuscript_v
 3f and the redo stage land. Claims and their limits: `TODO.md`, "Manuscript
 argument". Run inventory: `RUN_TABLE.md`.
 
-## Figure plan (8 in the draft → 6 main + supplement)
+## Figure plan (8 in the draft → 7 main + supplement)
+
+Numbering fixed 2026-10-06; the manuscript folders carry these numbers.
 
 | new | content | status | replaces | section |
 |---|---|---|---|---|
-| 1 | Sintering mechanisms schematic. Suggest adding a panel for the setting: a near-subsurface plume deposit with sealed pores, which is what the periodic cell models | exists; setting panel to draw | Fig. 1 | 1 |
-| 2 | Molaro grain-pair validation; add the Demmenie-conditions exponent when that run lands | exists; Demmenie run queued | Fig. 2 | 3.1 |
-| 3 | **k_eff evolution and its temperature collapse**: (a) four snapshots of one packing; (b) k/k₀ vs days, five temperatures; (c) the same vs θ = t/τ_sub; (d) SSA/SSA₀ vs θ | **built**: `figures/fig3_keff_collapse.py` → `Figure3__KeffEvolution/keff_collapse_snapshots.*` | Figs. 3, 4, 5 | 3.2 |
-| 4 | **What happens to the aggregates**: five porosities × four instants, qualitative colour bars | built (sample): `figD_gallery` | Fig. 6 | 3.2 |
-| 5 | **The state law**: (a) k vs SSA, well-connected packings, one power law; (b) level vs porosity; (c) exponent vs porosity, grey above φ 0.40 | built (sample): `figB_closure`; message below | Figs. 7, 8 | 3.2 / 4.2 |
-| 6 | **The clock extrapolated**: time to a given sintering age vs temperature and grain radius, with Enceladus conditions and Choukroun's 180 K point | built (sample): `figC_timescales`; needs the surface-diffusion check | new | 4.3 |
+| 1 | Sintering mechanisms schematic. Two optional extra panels, built as samples: `setting_panel` (cartoon column + the periodic cell tiled 3 × 3) and `aggregate_strip` (close-up of a few dozen grains of the master run at 0/10/19/30 d) | exists; extras in `Figure1__SinteringMechanisms/`, user to decide | Fig. 1 | 1 |
+| 2 | **Homogenization method** on the master run: (a) cell, (b) zoom with mesh and φ = 0.01/0.5/0.99, (c) corrector t_x, (d) local heat flux per unit mean gradient | **built** with the corrector replay: `figures/fig_methods_homogenization.py` → `Figure2__HomogenizationMethod/` | new | 2.3 |
+| 3 | Molaro grain-pair validation; add the Demmenie-conditions exponent when that run lands | exists; Demmenie run queued | Fig. 2 | 3.1 |
+| 4 | **k_eff evolution and its temperature collapse**: (a) four snapshots of one packing; (b) k/k₀ vs days, five temperatures; (c) the same vs θ = t/τ_sub; (d) SSA/SSA₀ vs θ | **built**: `figures/fig4_keff_collapse.py` → `Figure4__KeffEvolution/keff_collapse_snapshots.*` | Figs. 3, 4, 5 | 3.2 |
+| 5 | **What happens to the aggregates**: five porosities × four instants, qualitative colour bars | built (sample): `figD_gallery` | Fig. 6 | 3.2 |
+| 6 | **The state law**: (a) k vs SSA, well-connected packings, one power law; (b) level vs porosity; (c) exponent vs porosity, grey above φ 0.40 | built (sample): `figB_closure` or `figB2_porosity`; message below | Figs. 7, 8 | 3.2 / 4.2 |
+| 7 | **The clock extrapolated**: time to a given sintering age vs temperature and grain radius, with Enceladus conditions and Choukroun's 180 K point | built (sample): `figC_timescales`; needs the surface-diffusion check | new | 4.3 |
 
 **Supplement / thesis** (all data in hand):
 - S1 domain-size convergence (`rve_convergence/`): the rise is size-independent.
@@ -25,52 +28,42 @@ argument". Run inventory: `RUN_TABLE.md`.
 - S6 packing construction: the deposition storyboard already made
   (`postprocess/make_deposition_movie.py`).
 
-**Suggested additions to the early sections**
-- **Methods figure (new, §2.3):** the homogenization on one packing. Panels: the
-  periodic cell; a zoom on one contact showing the diffuse interface and the
-  mesh; the two corrector fields. The solver can write the correctors
-  (`-keff_write_corrector`); one local replay gives the data. This would make
-  §2.3, currently equations only, concrete.
-- **Setting panel in Fig. 1** (above).
-
 ## The message of each results figure
 
-- **Fig. 3:** temperature changes how fast a deposit matures, not the path it
+- **Fig. 4:** temperature changes how fast a deposit matures, not the path it
   takes. (b) fans out, (c) and (d) do not. SSA(θ) is included because it shows
   the microstructure itself collapses; k follows from it.
-- **Fig. 4:** orientation, no analysis. Shows necks forming, pores rounding and
+- **Fig. 5:** orientation, no analysis. Shows necks forming, pores rounding and
   closing, and the loss of a connected ice network at high porosity.
-- **Fig. 5:** *conductivity is a power law of SSA with one exponent (−0.80)
+- **Fig. 6:** *conductivity is a power law of SSA with one exponent (−0.80)
   for every well-connected packing; porosity sets the level.* Built on SSA, not
   θ, because the SSA law is tight (0.1–0.2% per packing) and its exponent does
   not move with the fitting window, whereas SSA(θ) and k(θ) are only roughly
   power laws (exponents drift, −0.088 → −0.095 for SSA between θ ≥ 30 and
   θ ≥ 100). The reference state (θ = 30) only marks the end of the
   width-dependent transient.
-- **Fig. 6:** vapour sintering matures a deposit only where it is warm and the
+- **Fig. 7:** vapour sintering matures a deposit only where it is warm and the
   grains are fine. Read as a bound on the vapour route.
 
 **SSA against age is logarithmic after the relaxation** (Jackson's reading of
-Fig. 3d, confirmed 2026-10-06): SSA/SSA₀ = A − B·log₁₀θ with B = 0.133–0.136
+Fig. 4d, confirmed 2026-10-06): SSA/SSA₀ = A − B·log₁₀θ with B = 0.133–0.136
 for φ ≤ 0.375 (A = 0.95–0.98), rms 0.10–0.19% per packing for θ ≥ 30, half the
 scatter of a power law. k against θ is not logarithmic (it bends upward),
-which follows from combining this with the SSA power law of Fig. 5.
+which follows from combining this with the SSA power law of Fig. 6.
 
 **The master simulation** is φ = 0.325, seed 1702, −20 °C. Every single-run
-illustration (Fig. 3, the methods figure, the φ 0.325 column of the gallery)
+illustration (Fig. 4, the methods figure, the φ 0.325 column of the gallery)
 uses it.
 
-**Manuscript folders (2026-10-06).** `Manuscript/Figures/` now has
-Figure4__MicrostructureGallery, Figure5__KeffSSAStateLaw (two variants:
-`figB_closure`, and `figB2_porosity` with a k_eff(t)-by-porosity panel that
-pairs with the gallery), Figure6__SinteringTimescales,
-FigureM__HomogenizationMethod (number to be assigned: it sits in §2.3, so
-inserting it renumbers 2–6), and FigureS1–S5 for the supplement.
-`Manuscript/Tables/` holds `Table_keff_parameters.tex` (two tables) and
-`Table_grainpair_parameters.tex`; sources in `studies/keff_sintering/tables/`.
+**Manuscript folders (2026-10-06).** `Manuscript/Figures/` holds
+Figure1__SinteringMechanisms … Figure7__SinteringTimescales as numbered above,
+and FigureS1–S5 for the supplement. `Manuscript/Tables/tables.tex` is the one
+tables file: `\input` it in the preamble, then `\TableMaterialProperties`,
+`\TableKeffParameters`, `\TableKeffTemperature`, `\TableGrainPairParameters`
+where each table goes. Source: `studies/keff_sintering/tables/tables.tex`.
 
-Chain of the argument: Fig. 3 gives SSA = SSA(θ), one curve for all T.
-Fig. 5 gives k = k(SSA; φ). Fig. 6 turns θ into years for a given T and R.
+Chain of the argument: Fig. 4 gives SSA = SSA(θ), one curve for all T.
+Fig. 6 gives k = k(SSA; φ). Fig. 7 turns θ into years for a given T and R.
 
 ## Section by section
 
@@ -94,7 +87,7 @@ Demmenie-conditions result when it lands.
 
 **3.2 Effective thermal conductivity. Replace entirely.** Everything in the
 draft is from the old setup (1142² mesh, 98% humidity, 28 d, nested packings
-at φ 0.24–0.30). New order: set-up and run table → Fig. 3 → Fig. 4 → Fig. 5.
+at φ 0.24–0.30). New order: set-up and run table → Fig. 4 → Fig. 5 → Fig. 6.
 Also correct: the off-diagonal components are NOT orders of magnitude smaller;
 k_xy is up to ~12% of k_xx for one packing, zero in the seed mean, and shrinks
 with domain size.
@@ -104,7 +97,7 @@ with domain size.
 **4.2** "SSA as the state variable": compare with Calonne et al.; scope to
 well-connected packings; the level–porosity relation; what 2D does to
 connectivity.
-**4.3** "Implications": Fig. 6; near subsurface; Choukroun's activation energy
+**4.3** "Implications": Fig. 7; near subsurface; Choukroun's activation energy
 (24 kJ/mol) against ours (48 kJ/mol) and what that means for which mechanism
 leads where; limits (2D, air-filled pores, vapour only, unresolved necks).
 

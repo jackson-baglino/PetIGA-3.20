@@ -290,8 +290,8 @@ def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=
     ax.annotate("this study", (253.15, 50), xytext=(-7, 9), textcoords="offset points",
                 ha="right", fontsize=FS_S, color=INK, bbox=box)
     ax.plot([180], [6], "s", ms=5, mfc="white", mec=INK, mew=1.0)
-    ax.annotate("Choukroun et al. (2020):\n15 yr", (180, 6), xytext=(9, 4), textcoords="offset points",
-                ha="left", va="bottom", fontsize=FS_S, color=INK, bbox=box)
+    ax.annotate("Choukroun et al.\n(2020): 15 yr", (180, 6), xytext=(-9, -5), textcoords="offset points",
+                ha="right", va="top", fontsize=FS_S, color=INK, bbox=box, multialignment="left")
     # brackets outside the axes
     tr = ax.get_xaxis_transform()
     for a0, a1, s_ in ((60, 80, "surface"), (175, 185, "fractures")):

@@ -232,13 +232,21 @@ GRL); both PDFs are in `Literature/`.
 
 - [ ] **Manuscript figures** — plan in `MANUSCRIPT_PLAN.md`. Build now,
   rebuild when 3f/3r land (Jackson, 2026-10-06).
-  - [x] Fig. 3 merged (snapshots + collapse): `figures/fig3_keff_collapse.py`,
-    copied to `Figure3__KeffEvolution/keff_collapse_snapshots.*`.
-  - [ ] Fig. 4 gallery, Fig. 5 state law, Fig. 6 timescale map: samples in
+  - [x] Fig. 4 merged (snapshots + collapse): `figures/fig4_keff_collapse.py`,
+    copied to `Figure4__KeffEvolution/keff_collapse_snapshots.*`.
+  - [x] Figures renumbered 2026-10-06 (2 = homogenization method, 3 = Molaro,
+    4 = k_eff evolution, 5 = gallery, 6 = state law, 7 = timescales); folders
+    renamed to match.
+  - [x] Fig. 2 methods figure complete (corrector replay of the master run,
+    4 steps, `<master run>/corrector/`).
+  - [x] One tables file `tables/tables.tex` (material, k_eff fixed, k_eff
+    temperature, grain pair), one command per table.
+  - [ ] Fig. 1: decide on the optional `setting_panel` / `aggregate_strip`.
+  - [ ] Fig. 5 gallery, Fig. 6 state law, Fig. 7 timescale map: samples in
     `LOC/keff_sintering_campaign/compare/figure_samples/`
     (`figures/sample_figures.py`). Jackson to give figure numbers/folders.
-  - [ ] Fig. 5 message agreed? (k is a power law of SSA; porosity sets the
-    level). Fig. 6 waits on the surface-diffusion literature check.
+  - [ ] Fig. 6 message agreed? (k is a power law of SSA; porosity sets the
+    level). Fig. 7 waits on the surface-diffusion literature check.
   - [ ] Methods figure (§2.3), `figures/fig_methods_homogenization.py`:
     panels (a) cell and (b) neck zoom drawn; (c) corrector and (d) heat flux
     wait on ONE local replay of the master run. `-keff_write_corrector` was
@@ -248,7 +256,7 @@ GRL); both PDFs are in `Literature/`.
   - [x] Figure folders and LaTeX parameter tables created in the manuscript
     folder (list in `MANUSCRIPT_PLAN.md`). Figure numbers 4–6 are provisional;
     the methods figure's number is open.
-  - [ ] Fig. 5: choose `figB_closure` or `figB2_porosity` (adds k_eff(t) by
+  - [ ] Fig. 6: choose `figB_closure` or `figB2_porosity` (adds k_eff(t) by
     porosity, pairing with the gallery).
 - [ ] **Rewrite §3.2, §4, §5, key points and abstract** (plan in
   `MANUSCRIPT_PLAN.md`).

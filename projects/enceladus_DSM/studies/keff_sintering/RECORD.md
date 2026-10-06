@@ -160,7 +160,7 @@ thresholds, open questions); this page is the history.
 - [x] **2026-10-04 — Four snapshot PNGs for every run.** `REPO/scripts/lib/select_snapshots.sh` (each job marks t = 0, t_final/3, 2 t_final/3 and the last snapshot in `.rsync-snapshots`), `fetch_stage.sh` (downloads those four `sol_*.dat` by default; `--no-snapshots`), `REPO/postprocess/render_snapshots.py` (renders locally after the fetch into `<run>/plots/snapshots/`; `--no-render`).
   The PNGs are about 3080 px at one pixel per element, 2–3 MB each (L/R 80: ~11 MB). The download is about 0.8 GB per L/R 40 run. Rendering on the HPC was considered: it would mean a 1-core follow-on job, since SLURM cannot release a running job's cores, or holding 121 cores for a minute in-job (3–5% of a run). Local rendering was chosen because it needs no HPC Python.
 
-### Molaro 2019 grain-pair validation (manuscript Fig. 2; separate study)
+### Molaro 2019 grain-pair validation (manuscript Fig. 3; separate study)
 
 - [x] −20 °C round 2: local `LOC/GrainPairSintering/batch_2026-09-08__17.20.46_molaro_T-20_round2/`. −5 °C: `LOC/GrainPairSintering/batch_2026-09-29__10.01.06_molaro_T-5_round2/` and `LOC/GrainPairSintering/molaro_2D_…_T-5pair_…_h0.99674_2h_…/`. HPC: scratch, exact path not recorded. Study: `REPO/studies/molaro_2019/`, figures in `studies/molaro_2019/manuscript/`.
   Two grains sintering, compared with the Molaro cryostage data. **Finding:** the model reproduces the neck-growth exponent and about 50% of the rate (the vapour share); the remainder is surface diffusion, which the model doesn't include.

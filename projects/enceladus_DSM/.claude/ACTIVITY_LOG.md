@@ -1,3 +1,17 @@
+## 2026-10-06 — Figure renumbering, methods figure complete, one tables file
+
+- Manuscript figure folders renumbered to the planned order (2 homogenization
+  method, 3 Molaro, 4 k_eff evolution, 5 gallery, 6 state law, 7 timescales);
+  `fig3_keff_collapse.py` renamed `fig4_keff_collapse.py`.
+- Methods figure filled in from the user's local corrector replay of the master
+  run (first use of `-keff_write_corrector`; files read back correctly).
+- Timescale map: Choukroun label moved inside the axes.
+- Figure 1 samples: `fig1_aggregate_strip.py`, `fig1_setting.py`.
+- Tables merged into `tables/tables.tex` (one command per table) with a new
+  material-properties table; the two per-study files removed.
+
+---
+
 ## 2026-10-06 — Manuscript argument, first-pass closure, literature read
 
 - Read Molaro (2019) and Choukroun (2020) in Literature/. Choukroun's
