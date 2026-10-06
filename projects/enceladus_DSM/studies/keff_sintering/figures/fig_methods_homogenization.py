@@ -142,8 +142,24 @@ def main():
                              interpolation="antialiased")
         axs["c"].contour(x, y, phi, levels=[0.5], colors=[INK], linewidths=0.25)
         gy, gx = np.gradient(cor, y * 1e-6, x * 1e-6)
-        K = 1.0 / (phi / K_ICE + (1 - phi) / K_AIR)       # harmonic: display only
-        q = K * np.hypot(1.0 + gx, gy)
+        # The solver's tensor law (src/keff_cell.c, KeffPointCond):
+        # K = k_arith (I - n n) + k_harm n n, n = grad phi / |grad phi|,
+        # phi clamped to [0, 1]; q = K (e_x + grad t_x).
+        pc = np.clip(phi, 0.0, 1.0)
+        ka = pc * K_ICE + (1 - pc) * K_AIR
+        kh = 1.0 / (pc / K_ICE + (1 - pc) / K_AIR)
+        py_, px_ = np.gradient(pc, y * 1e-6, x * 1e-6)
+        g2 = px_ ** 2 + py_ ** 2
+        Ex, Ey = 1.0 + gx, gy
+        with np.errstate(invalid="ignore", divide="ignore"):
+            proj = np.where(g2 > 0, (px_ * Ex + py_ * Ey) / g2, 0.0)
+        qx = ka * Ex + (kh - ka) * proj * px_
+        qy = ka * Ey + (kh - ka) * proj * py_
+        q = np.hypot(qx, qy)
+        # Check: the cell average of q is the first row of k_eff. Drop the
+        # repeated periodic row and column before averaging.
+        print(f"cell average of q: ({qx[:-1, :-1].mean():.4f}, {qy[:-1, :-1].mean():.4f}) W/m/K"
+              "  -- compare k_00, k_01 of this step in corrector/k_eff_replay.csv")
         im2 = axs["d"].imshow(q, origin="lower", extent=ext, cmap=cmocean.cm.thermal,
                               norm=matplotlib.colors.LogNorm(vmin=K_AIR, vmax=np.percentile(q, 99.9)),
                               interpolation="antialiased")
