@@ -191,6 +191,33 @@ PetscErrorCode KeffSample(AppCtx *app, PetscInt step, PetscReal t, Vec U)
 
   ierr = PetscTime(&t1); CHKERRQ(ierr);
 
+  /* -keff_write_corrector: the corrector fields t_m of this sample, one file
+   * per macroscopic direction m, beside the CSV:
+   *     igakeff.dat             the scalar corrector IGA (written once)
+   *     t_vec_<step>_<m>.dat    corrector for direction m (0 = x, 1 = y, ...)
+   * Read with igakit: PetIGA().read("igakeff.dat"), then read_vec(). The
+   * local temperature for a unit macroscopic gradient e_m is x_m + t_m, and
+   * the flux is -K (e_m + grad t_m). For figures and checks; ~64 MB per
+   * direction at the campaign mesh, so it is off by default. */
+  if (kc->write_corrector) {
+    char  dir[PETSC_MAX_PATH_LEN], fn[PETSC_MAX_PATH_LEN];
+    char *slash;
+    ierr = PetscStrncpy(dir, kc->csv_path, sizeof(dir)); CHKERRQ(ierr);
+    slash = strrchr(dir, '/');
+    if (slash) *slash = '\0';
+    else { ierr = PetscStrncpy(dir, ".", sizeof(dir)); CHKERRQ(ierr); }
+    if (kc->nsamples == 0) {
+      ierr = PetscSNPrintf(fn, sizeof(fn), "%s/igakeff.dat", dir); CHKERRQ(ierr);
+      ierr = IGAWrite(kc->iga, fn); CHKERRQ(ierr);
+    }
+    for (PetscInt m = 0; m < kc->dim; m++) {
+      ierr = PetscSNPrintf(fn, sizeof(fn), "%s/t_vec_%05d_%d.dat", dir, (int)step, (int)m); CHKERRQ(ierr);
+      ierr = IGAWriteVec(kc->iga, kc->T[m], fn); CHKERRQ(ierr);
+    }
+    ierr = PetscPrintf(PETSC_COMM_WORLD, "  [keff] wrote correctors t_vec_%05d_{0..%d}.dat in %s\n",
+                       (int)step, (int)kc->dim - 1, dir); CHKERRQ(ierr);
+  }
+
   for (PetscInt d = 0; d < kc->dim; d++) k_iso += keff[d * kc->dim + d];
   k_iso /= (PetscReal)kc->dim;
 

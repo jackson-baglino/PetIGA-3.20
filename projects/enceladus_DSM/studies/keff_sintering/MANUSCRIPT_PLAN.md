@@ -50,6 +50,25 @@ argument". Run inventory: `RUN_TABLE.md`.
 - **Fig. 6:** vapour sintering matures a deposit only where it is warm and the
   grains are fine. Read as a bound on the vapour route.
 
+**SSA against age is logarithmic after the relaxation** (Jackson's reading of
+Fig. 3d, confirmed 2026-10-06): SSA/SSA₀ = A − B·log₁₀θ with B = 0.133–0.136
+for φ ≤ 0.375 (A = 0.95–0.98), rms 0.10–0.19% per packing for θ ≥ 30, half the
+scatter of a power law. k against θ is not logarithmic (it bends upward),
+which follows from combining this with the SSA power law of Fig. 5.
+
+**The master simulation** is φ = 0.325, seed 1702, −20 °C. Every single-run
+illustration (Fig. 3, the methods figure, the φ 0.325 column of the gallery)
+uses it.
+
+**Manuscript folders (2026-10-06).** `Manuscript/Figures/` now has
+Figure4__MicrostructureGallery, Figure5__KeffSSAStateLaw (two variants:
+`figB_closure`, and `figB2_porosity` with a k_eff(t)-by-porosity panel that
+pairs with the gallery), Figure6__SinteringTimescales,
+FigureM__HomogenizationMethod (number to be assigned: it sits in §2.3, so
+inserting it renumbers 2–6), and FigureS1–S5 for the supplement.
+`Manuscript/Tables/` holds `Table_keff_parameters.tex` (two tables) and
+`Table_grainpair_parameters.tex`; sources in `studies/keff_sintering/tables/`.
+
 Chain of the argument: Fig. 3 gives SSA = SSA(θ), one curve for all T.
 Fig. 5 gives k = k(SSA; φ). Fig. 6 turns θ into years for a given T and R.
 

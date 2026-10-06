@@ -14,6 +14,8 @@ labels; >= 8 pt; transparent background):
   figB_closure       the state law: (a) k_eff vs SSA, each relative to its value
                      at theta = 30, well-connected packings, with the power
                      law; (b) the level vs porosity; (c) the exponent vs porosity
+  figB2_porosity     the same with curves: (a) k_eff(t) by porosity, the gallery's
+                     instants marked; (b)-(d) as figB
   figC_timescales    the clock extrapolated: time to reach a sintering age as a
                      function of temperature and grain radius (vapour route),
                      with Enceladus conditions and Choukroun's 180 K point
@@ -183,47 +185,132 @@ def fig_closure(R, out, theta_ref=30.0, phi_max=0.375):
     return p0
 
 
+def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.0, 19.0, 30.0)):
+    """Curves to go with the gallery: (a) k_eff(t) for the five porosities (seed
+    mean, band = seed min-max) with the gallery's instants marked; (b) the
+    state law k vs SSA; (c) its level; (d) its exponent."""
+    phis = sorted({p for (p, TT) in R})
+    col = colours(phis, "phi")
+    fig, axg = plt.subplots(2, 2, figsize=(W, 120 * MM))
+    fig.subplots_adjust(left=0.10, right=0.985, bottom=0.115, top=0.955, wspace=0.34, hspace=0.42)
+    ax = axg.ravel()
+    for p in phis:
+        g = list(R[(p, T)].values())
+        x, y, lo, hi = mean_curve(g, "td", "kiso", logx=False)
+        ax[0].fill_between(x, lo, hi, color=col[p], alpha=0.15, lw=0)
+        ax[0].plot(x, y, color=col[p], lw=1.6)
+        ax[0].text(x[-1] + 0.7, y[-1], rf"${p:g}$", fontsize=FS_S, va="center", color=INK)
+    for j, tm in enumerate(marks_d):
+        ax[0].axvline(tm, color=MUTED, lw=0.6, ls=":")
+    ax[0].text(30.7, 1.0, r"$\varphi$", fontsize=FS_S, va="center")
+    ax[0].set(xlabel="$t$ [d]", ylabel=r"$k_\mathrm{eff}$ [W m$^{-1}$ K$^{-1}$]", xlim=(-1, 36))
+    ax[0].set_xticks([0, 10, 20, 30])
+    per = defaultdict(list)
+    for (p, TT), d in sorted(R.items()):
+        for seed, r in d.items():
+            th = r["th"]
+            if th[-1] < 1.5 * theta_ref:
+                continue
+            kref = np.interp(theta_ref, th, r["kiso"]); sref = np.interp(theta_ref, th, r["ssa"])
+            w = th >= theta_ref
+            x, y = r["ssa"][w] / sref, r["kiso"][w] / kref
+            per[(p, seed)].append((np.log10(x), np.log10(y), kref))
+            if p <= phi_max:
+                ax[1].plot(x, y, color=col[p], lw=0.8, alpha=0.85)
+    p_by, k_by = defaultdict(list), defaultdict(list)
+    for (p, seed), L in per.items():
+        X = np.concatenate([l[0] for l in L]); Y = np.concatenate([l[1] for l in L])
+        p_by[p].append(float(np.sum(X * Y) / np.sum(X * X))); k_by[p].append(float(np.mean([l[2] for l in L])))
+    good = [p for p in phis if p <= phi_max]
+    p0 = np.mean(np.concatenate([p_by[p] for p in good]))
+    xx = np.linspace(0.70, 1.0, 30)
+    ax[1].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--")
+    ax[1].text(0.05, 0.95, rf"$(\mathrm{{SSA}}/\mathrm{{SSA}}_\mathrm{{r}})^{{{p0:.2f}}}$",
+               transform=ax[1].transAxes, fontsize=FS_S, va="top")
+    ax[1].set(xscale="log", yscale="log", xlabel=r"SSA$\,/\,$SSA$_\mathrm{r}$",
+              ylabel=r"$k_\mathrm{eff}/k_\mathrm{eff,r}$")
+    ax[1].invert_xaxis()
+    ax[1].set_xticks([1.0, 0.9, 0.8, 0.7]); ax[1].set_xticklabels(["1.0", "0.9", "0.8", "0.7"])
+    ax[1].set_yticks([1.0, 1.1, 1.2, 1.3]); ax[1].set_yticklabels(["1.0", "1.1", "1.2", "1.3"])
+    for axis in (ax[1].xaxis, ax[1].yaxis):
+        axis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    cf = np.polyfit(np.concatenate([[p] * len(k_by[p]) for p in good]),
+                    np.log(np.concatenate([k_by[p] for p in good]) / K_ICE), 1)
+    for p in phis:
+        ax[2].scatter([p] * len(k_by[p]), np.array(k_by[p]) / K_ICE, s=16, color=col[p],
+                      edgecolor="white", linewidth=0.4, zorder=3)
+        ax[3].scatter([p] * len(p_by[p]), p_by[p], s=16, color=col[p], edgecolor="white",
+                      linewidth=0.4, zorder=3)
+    pp = np.linspace(min(phis), phi_max, 20)
+    ax[2].plot(pp, np.exp(np.polyval(cf, pp)), color=INK, lw=1.2, ls="--")
+    ax[3].axhline(p0, color=INK, lw=1.0, ls="--")
+    for a_ in ax[2:]:
+        a_.axvspan(phi_max + 0.025, max(phis) + 0.025, color="#efefef", lw=0, zorder=0)
+        a_.set_xticks(phis); a_.set_xticklabels([f"{p:g}" for p in phis])
+        a_.set_xlim(min(phis) - 0.025, max(phis) + 0.025); a_.set_xlabel(r"$\varphi$")
+    ax[2].set(ylabel=r"$k_\mathrm{eff,r}/k_\mathrm{ice}$", yscale="log")
+    ax[2].set_yticks([0.1, 0.2, 0.3]); ax[2].set_yticklabels(["0.1", "0.2", "0.3"])
+    ax[2].yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax[3].set(ylabel=r"exponent $p$")
+    for a_, s_ in zip(ax, "abcd"):
+        clean(a_); panel(a_, s_, dx=-0.20, dy=1.01)
+    save(fig, out, "figB2_porosity")
+
+
 def psat_ice(T):                                    # Murphy & Koop (2005), Pa
     return np.exp(9.550426 - 5723.265 / T + 3.53068 * np.log(T) - 0.00728332 * T)
 
 
 def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=50e-6):
     """Time to reach theta_target, tau_sub ~ R^2 sqrt(T)/rho_vs(T), anchored on the
-    campaign's tau_sub at -20 C and R = 50 um (alpha_c = 1e-3)."""
+    campaign's tau_sub at -20 C and R = 50 um (alpha_c = 1e-3).
+
+    Nothing is written ON the coloured field except two marker labels in white
+    boxes: the time classes are read from a discrete colour bar, and the
+    Enceladus ranges are brackets OUTSIDE the axes (top: temperature; right:
+    plume grain sizes), so every label is dark text on white."""
+    from matplotlib.colors import BoundaryNorm, ListedColormap
     rate = lambda T: psat_ice(T) / T / np.sqrt(T)
-    T = np.linspace(60, 260, 300); Rg = np.geomspace(0.1e-6, 1e-3, 300)
+    T = np.linspace(60, 260, 400); Rg = np.geomspace(0.1e-6, 1e-3, 400)
     TT, RR = np.meshgrid(T, Rg)
     t = theta_target * tau_ref * (rate(T_ref) / rate(TT)) * (RR / R_ref) ** 2
-    fig, ax = plt.subplots(figsize=(110 * MM, 82 * MM))
-    fig.subplots_adjust(left=0.16, right=0.97, bottom=0.16, top=0.95)
     lev = [3600.0, DAY, YEAR, 1e3 * YEAR, 1e6 * YEAR, 4.5e9 * YEAR]
     lab = ["1 h", "1 d", "1 yr", "1 kyr", "1 Myr", "4.5 Gyr"]
-    cf_ = ax.contourf(TT, RR * 1e6, t, levels=[1e-30] + lev + [1e300],
-                      colors=[cmocean.cm.matter(x) for x in np.linspace(0.05, 0.95, 7)], alpha=0.85)
-    cs = ax.contour(TT, RR * 1e6, t, levels=lev, colors=INK, linewidths=0.7)
-    # White labels with a dark outline: readable on the light AND the dark bands.
-    halo = [pe.withStroke(linewidth=1.5, foreground=INK)]
-    # one label per contour, placed where each crosses the R = 30 um line (clear of the hatching)
-    Tq = np.linspace(60, 260, 4000)
-    for L_, s_ in zip(lev, lab):
-        tq = theta_target * tau_ref * (rate(T_ref) / rate(Tq)) * (30e-6 / R_ref) ** 2
-        k = int(np.argmin(np.abs(np.log(tq / L_))))
-        if 62 < Tq[k] < 258:
-            ax.text(Tq[k], 30, s_, color="white", fontsize=FS_S, ha="center", va="center",
-                    rotation=62, path_effects=halo)
-    ax.set(yscale="log", xlabel="$T$ [K]", ylabel=r"$R$ [$\mu$m]")
-    ax.axhspan(0.1, 5, facecolor="none", edgecolor=INK, hatch="///", lw=0.0, alpha=0.25)
-    ax.text(63, 0.75, "plume grains", fontsize=FS_S, color="white", va="center", path_effects=halo)
-    for (a0, a1, s) in ((60, 80, "surface"), (175, 185, "fractures")):
-        ax.axvspan(a0, a1, color="white", alpha=0.35, lw=0)
-        ax.text((a0 + a1) / 2, 700, s, fontsize=FS_S, ha="center", va="top", rotation=90,
-                color="white", path_effects=halo)
+    cols = [cmocean.cm.matter(x) for x in np.linspace(0.04, 0.96, len(lev) + 1)]
+    idx = np.digitize(np.log10(t), np.log10(lev))            # class 0..6
+    fig = plt.figure(figsize=(120 * MM, 86 * MM))
+    ax = fig.add_axes([0.135, 0.155, 0.60, 0.70])
+    cmap = ListedColormap(cols)
+    im = ax.pcolormesh(TT, RR * 1e6, idx, cmap=cmap, norm=BoundaryNorm(np.arange(-0.5, len(lev) + 1), cmap.N),
+                       shading="auto", rasterized=True)
+    ax.contour(TT, RR * 1e6, t, levels=lev, colors="white", linewidths=0.6)
+    ax.set(yscale="log", xlabel="$T$ [K]", ylabel=r"$R$ [$\mu$m]", xlim=(60, 260), ylim=(0.1, 1e3))
+    box = dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.9)
     ax.plot([253.15], [50], "o", ms=5, mfc="white", mec=INK, mew=1.0)
-    ax.annotate("this study", (253.15, 50), xytext=(-6, 8), textcoords="offset points",
-                ha="right", fontsize=FS_S, color="white", path_effects=halo)
+    ax.annotate("this study", (253.15, 50), xytext=(-7, 9), textcoords="offset points",
+                ha="right", fontsize=FS_S, color=INK, bbox=box)
     ax.plot([180], [6], "s", ms=5, mfc="white", mec=INK, mew=1.0)
-    ax.annotate("Choukroun et al.\n(2020): 15 yr", (180, 6), xytext=(8, 3), textcoords="offset points",
-                ha="left", va="bottom", fontsize=FS_S, color="white", path_effects=halo)
+    ax.annotate("Choukroun et al. (2020):\n15 yr", (180, 6), xytext=(9, 4), textcoords="offset points",
+                ha="left", va="bottom", fontsize=FS_S, color=INK, bbox=box)
+    # brackets outside the axes
+    tr = ax.get_xaxis_transform()
+    for a0, a1, s_ in ((60, 80, "surface"), (175, 185, "fractures")):
+        ax.plot([a0, a1], [1.035, 1.035], color=INK, lw=2.2, transform=tr, clip_on=False,
+                solid_capstyle="butt")
+        ax.text((a0 + a1) / 2, 1.06, s_, transform=tr, ha="center", va="bottom", fontsize=FS_S, color=INK)
+        for x_ in (a0, a1):
+            ax.axvline(x_, color="white", lw=0.5, ls=(0, (2, 2)), alpha=0.7)
+    ty = ax.get_yaxis_transform()
+    ax.plot([1.03, 1.03], [0.1, 5], color=INK, lw=2.2, transform=ty, clip_on=False, solid_capstyle="butt")
+    ax.text(1.055, np.sqrt(0.1 * 5), "plume\ngrains", transform=ty, ha="left", va="center",
+            fontsize=FS_S, color=INK)
+    ax.axhline(5, color="white", lw=0.5, ls=(0, (2, 2)), alpha=0.7)
+    # discrete colour bar: the time classes
+    cax = fig.add_axes([0.875, 0.155, 0.028, 0.70])
+    cb = fig.colorbar(im, cax=cax, ticks=np.arange(0.5, len(lev)))
+    cb.ax.set_yticklabels(lab, fontsize=FS_S); cb.ax.tick_params(length=2, width=0.5)
+    cb.outline.set_linewidth(0.5)
+    cb.ax.set_title(r"$t$", fontsize=FS, pad=4)
     clean(ax)
     save(fig, out, "figC_timescales")
 
@@ -314,6 +401,7 @@ def main():
         R[(float(m.group(1)), int(m.group(3)))][int(m.group(2))] = r
     fig_collapse(R, out)
     p0 = fig_closure(R, out)
+    fig_porosity(R, out)
     fig_timescales(out)
     if not a.skip_gallery:
         fig_gallery(a.root, out)

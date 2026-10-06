@@ -85,7 +85,7 @@ static PetscErrorCode KeffParseOptions(KeffCtx *kc)
       kc->csv_path, kc->csv_path, sizeof(kc->csv_path), NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsBool("-keff_write_corrector",
-      "Also write the corrector fields t_vec_%05d.dat and igakeff.dat", "",
+      "Also write the corrector fields t_vec_<step>_<m>.dat and igakeff.dat beside the CSV", "",
       kc->write_corrector, &kc->write_corrector, NULL); CHKERRQ(ierr);
 
   ierr = PetscOptionsBool("-keff_pc_freeze",

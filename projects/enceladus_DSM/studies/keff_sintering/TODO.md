@@ -239,8 +239,17 @@ GRL); both PDFs are in `Literature/`.
     (`figures/sample_figures.py`). Jackson to give figure numbers/folders.
   - [ ] Fig. 5 message agreed? (k is a power law of SSA; porosity sets the
     level). Fig. 6 waits on the surface-diffusion literature check.
-  - [ ] Methods figure: homogenization on one packing (needs one local
-    replay with `-keff_write_corrector`).
+  - [ ] Methods figure (§2.3), `figures/fig_methods_homogenization.py`:
+    panels (a) cell and (b) neck zoom drawn; (c) corrector and (d) heat flux
+    wait on ONE local replay of the master run. `-keff_write_corrector` was
+    declared but never implemented; implemented 2026-10-06 (writes
+    `igakeff.dat` + `t_vec_<step>_<m>.dat` beside the CSV). Command in the
+    script header. Jackson runs it.
+  - [x] Figure folders and LaTeX parameter tables created in the manuscript
+    folder (list in `MANUSCRIPT_PLAN.md`). Figure numbers 4–6 are provisional;
+    the methods figure's number is open.
+  - [ ] Fig. 5: choose `figB_closure` or `figB2_porosity` (adds k_eff(t) by
+    porosity, pairing with the gallery).
 - [ ] **Rewrite §3.2, §4, §5, key points and abstract** (plan in
   `MANUSCRIPT_PLAN.md`).
 
