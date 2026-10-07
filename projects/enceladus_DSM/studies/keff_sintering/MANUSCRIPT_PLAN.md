@@ -19,6 +19,19 @@ Numbering fixed 2026-10-06; the manuscript folders carry these numbers.
 | 6 | **The state law**: (a) k vs SSA, well-connected packings, one power law; (b) level vs porosity; (c) exponent vs porosity, grey above φ 0.40 | built (sample): `figB_closure` or `figB2_porosity`; message below | Figs. 7, 8 | 3.2 / 4.2 |
 | 7 | **The clock extrapolated**: time to a given sintering age vs temperature and grain radius, with Enceladus conditions and Choukroun's 180 K point | built (sample): `figC_timescales`; needs the surface-diffusion check | new | 4.3 |
 
+## Table plan (2 main + 3 supporting; decided 2026-10-06)
+
+All in `tables/tables.tex`, one command each; every table fits a 6.5 in text
+block at 11 pt.
+
+| table | command | where | place it right after |
+|---|---|---|---|
+| 1 | `\\TableKeffParameters` (compact, 11 rows) | §3.2, set-up paragraph | the sentence that states the matrix: five porosities × five temperatures × five packings, 2 mm periodic cells |
+| 2 | `\\TableKeffTemperature` | §3.2, before Fig. 4 | the definition of τ_sub and θ = t/τ_sub, and the statement that 30 d spans 43 to 1256 τ_sub |
+| S1 | `\\TableMaterialProperties` | SI; cited from §2.1/2.2 | the governing equations, where the constitutive relations are named |
+| S2 | `\\TableKeffParametersFull` | SI; cited from §2.4 and Table 1's note | the numerical-method paragraph (discretization, time stepping, k_eff sampling) |
+| S3 | `\\TableGrainPairParameters` | SI; cited from §3.1 | the description of the two-grain set-up, before Fig. 3 |
+
 **Supplement / thesis** (all data in hand):
 - S1 domain-size convergence (`rve_convergence/`): the rise is size-independent.
 - S2 interface width (`eps_sensitivity/`): late rate robust, early transient not.
