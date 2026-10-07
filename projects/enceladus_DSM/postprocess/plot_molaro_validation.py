@@ -22,7 +22,7 @@ the sets cannot drift apart.
                                       instants 1-2 marked on the -20 C model
     molaro_grain_shrinkage.{pdf,png}  D / D_0 of (a) the large and (b) the
                                       small grain, both temperatures
-    molaro_full.{pdf,png}             molaro_combined with the shrinkage
+    Figure3_molaro_validation.{pdf,png}             molaro_combined with the shrinkage
                                       under it as (c) and (d)
 
 THE CLOCK. Molaro's record starts at an unknown time after contact, and our
@@ -575,7 +575,7 @@ def main(argv=None):
         "molaro_combined": build_combined(secs, series, marks, norm, vapcm, icecm,
                                           m["t_star"], a),
         "molaro_grain_shrinkage": build_shrinkage(series, a),
-        "molaro_full": build_full(secs, series, marks, norm, vapcm, icecm, m["t_star"], a),
+        "Figure3_molaro_validation": build_full(secs, series, marks, norm, vapcm, icecm, m["t_star"], a),
     }
     os.makedirs(a.save_dir, exist_ok=True)
     for stem, fig in figs.items():

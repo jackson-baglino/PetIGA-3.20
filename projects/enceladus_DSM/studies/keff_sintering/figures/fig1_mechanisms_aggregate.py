@@ -13,7 +13,7 @@ carries the R(t) label; assembled with pdflatex, PNG by mutool), or
 postprocess/plot_mechanisms_figure.py's schematic drawn by its own build()
 (--pair-run). (b) is fig1_aggregate_strip.py's
 close-up of the master run (phi 0.325, seed 1702, -20 C) at four instants.
-170 mm wide. Writes figure1_mechanisms_aggregate.{pdf,png}.
+170 mm wide. Writes Figure1_mechanisms_aggregate.{pdf,png}.
 """
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def assemble_pdf(a, out):
         r = subprocess.run(["pdflatex", "-interaction=nonstopmode", "f.tex"], cwd=td, capture_output=True, text=True)
         if not (td / "f.pdf").is_file():
             sys.exit("pdflatex failed:\n" + r.stdout[-1500:])
-        pdf = out / "figure1_mechanisms_aggregate.pdf"
+        pdf = out / "Figure1_mechanisms_aggregate.pdf"
         shutil.copyfile(td / "f.pdf", pdf)
     png = pdf.with_suffix(".png")
     subprocess.run(["mutool", "draw", "-q", "-c", "rgba", "-r", "600", "-o", str(png), str(pdf), "1"], check=True)
@@ -112,11 +112,11 @@ def main():
              ha="left", va="center")
 
     for e in ("pdf", "png"):
-        f = out / f"figure1_mechanisms_aggregate.{e}"
+        f = out / f"Figure1_mechanisms_aggregate.{e}"
         fig.savefig(f, dpi=600, transparent=True)
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True); shutil.copyfile(f, a.copy_to / f.name)
-    print(f"wrote {out}/figure1_mechanisms_aggregate.pdf/.png ({W:.0f} x {H:.0f} mm)")
+    print(f"wrote {out}/Figure1_mechanisms_aggregate.pdf/.png ({W:.0f} x {H:.0f} mm)")
 
 
 if __name__ == "__main__":

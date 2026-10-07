@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Methods figure (section 2.3): the homogenization on the master simulation.
 
-    venv_enceladus/bin/python studies/keff_sintering/figures/fig_methods_homogenization.py <campaign dir>
+    venv_enceladus/bin/python studies/keff_sintering/figures/fig_Figure2_homogenization_method.py <campaign dir>
         [--step-near-day 10] [--zoom-center-um 1000 1000] [--zoom-um 45]
         [--corrector-dir <dir>] [--copy-to <dir>]
 
@@ -25,7 +25,7 @@ those panels are drawn empty. Get them with ONE local replay (about a minute):
         -keff_csv "$R/corrector/k_eff_replay.csv" -keff_ksp_type cg -keff_pc_type gamg
     (mkdir "$R/corrector" first)
 
-Writes methods_homogenization.{pdf,png}.
+Writes Figure2_homogenization_method.{pdf,png}.
 """
 from __future__ import annotations
 
@@ -185,12 +185,12 @@ def main():
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
     for e in ("pdf", "png"):
-        f = out / f"methods_homogenization.{e}"
+        f = out / f"Figure2_homogenization_method.{e}"
         fig.savefig(f, dpi=500, transparent=True)
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(f, a.copy_to / f.name)
-    print(f"wrote {out}/methods_homogenization.pdf/.png")
+    print(f"wrote {out}/Figure2_homogenization_method.pdf/.png")
 
 
 if __name__ == "__main__":
