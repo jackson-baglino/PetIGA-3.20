@@ -138,12 +138,18 @@ Tests (scaling etc.) go one folder per test:
   and supply the time axis. Run 3f only if a φ fails the collapse or a
   reviewer asks for 5 everywhere.
 - [x] **3c, 3d, 3e** done 2026-10-06 (RECORD.md): collapse holds at every φ.
-- [ ] **3r redo** `batch3r_redo.txt` (9 runs) and **3f** `batch3f_seeds45.txt`
-  (40 runs): queued 2026-10-06. Before submitting 3r, move the old folders
+- [x] **3r redo** `batch3r_redo.txt` (9 runs) and **3f** `batch3f_seeds45.txt`
+  (40 runs): done 2026-10-07, all 49 clean; matrix complete at 125 (RECORD.md).
+  Queued 2026-10-06. Before submitting 3r, move the old folders
   aside with `scripts/HPC/supersede_runs.sh` (header of the stage file).
   Watch φ 0.425 seed1902 at −40 °C: it hung twice.
-  - After 3r lands, clear stale 3a files from the local copies of the six
-    redone −20/−5 °C runs (old full snapshot sets with other step numbers).
+  - [x] Old local copies of the nine redone runs moved to
+    `LOC/keff_sintering_campaign/superseded_before_3r/` before the fetch
+    (~30 GB; delete once nobody needs the old attempts).
+  - [ ] Manuscript figures rebuilt on the full set are in
+    `LOC/Figures2/` — the iCloud `Manuscript/Figures` folder was not writable
+    from the session (macOS permission), so it still holds the 2026-10-06
+    versions and the pre-swap numbers for Figs. 4 and 5.
 - [ ] **After each stage:**
   - [ ] download the tables (see the `rsync` recipe in `ACTIVITY_LOG.md`, 2026-09-26)
   - [ ] run `postprocess/plot_keff.py` per run

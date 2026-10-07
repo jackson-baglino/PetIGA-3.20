@@ -1,17 +1,17 @@
-theta_ref = 30; 25 packings, 70 runs; fit quality per packing (rms of k/k_ref): log law 0.96%, power law 0.74%
+theta_ref = 30; 25 packings, 100 runs; fit quality per packing (rms of k/k_ref): log law 1.24%, power law 0.92%
    phi  n   a (per decade)      n (power)    k_ref [W/m/K]  z_band
- 0.275  5   0.1695±0.0064  0.0679±0.0032    0.794±0.034    3.74
- 0.325  5   0.1691±0.0124  0.0676±0.0049    0.614±0.046    3.46
- 0.375  5   0.1594±0.0193  0.0638±0.0064    0.482±0.040    3.33
- 0.425  5   0.1473±0.0237  0.0591±0.0084    0.337±0.022    2.84
- 0.475  5   0.1305±0.0267  0.0528±0.0096    0.247±0.020    2.54
+ 0.275  5   0.1729±0.0104  0.0683±0.0038    0.794±0.033    3.74
+ 0.325  5   0.1774±0.0192  0.0698±0.0068    0.614±0.046    3.46
+ 0.375  5   0.1640±0.0160  0.0649±0.0057    0.482±0.040    3.33
+ 0.425  5   0.1536±0.0203  0.0610±0.0074    0.337±0.022    2.84
+ 0.475  5   0.1336±0.0226  0.0536±0.0084    0.247±0.020    2.54
 
-well-connected set (phi <= 0.375, 15 packings): a = 0.1660 ± 0.0136 (se 0.0035);  n = 0.0664
-  corr(a, phi): -0.31 within phi <= 0.375; -0.62 over all porosities
-  corr(a, z_band): +0.17 within phi <= 0.375; +0.52 over all porosities
+well-connected set (phi <= 0.375, 15 packings): a = 0.1714 ± 0.0156 (se 0.0040);  n = 0.0677
+  corr(a, phi): -0.24 within phi <= 0.375; -0.64 over all porosities
+  corr(a, z_band): +0.18 within phi <= 0.375; +0.55 over all porosities
   level (phi <= 0.375): k_ref/k_ice = 1.370 * exp(-5.01 * phi); packing scatter about it 6.6%
   does z_band explain the scatter at fixed phi?  corr(level residual, z_band residual) = +0.34
 
 F (first pass, valid for theta >= 30, phi <= 0.375):
-   k_iso = 1.370 k_ice exp(-5.01 phi) * [1 + 0.166 log10(theta/30)]
-   absolute k_iso predicted for every sample of every run: rms 7.4% (the packing-to-packing scatter); with each packing's own k_ref: 0.87% + 1.4%-of-a spread
+   k_iso = 1.370 k_ice exp(-5.01 phi) * [1 + 0.171 log10(theta/30)]
+   absolute k_iso predicted for every sample of every run: rms 7.0% (the packing-to-packing scatter); with each packing's own k_ref: 1.18% + 1.6%-of-a spread

@@ -55,7 +55,8 @@ prepares the commands.
   `run_batch_measure.sh` passes it automatically when the opts carry
   `-bc_mirror x0`. `grain_shrinkage.py` still assumes two grains, so ignore
   its output for this run.
-- [ ] **Submit the saturated Demmenie mirror run** (Jackson). Released
+- [x] **Submit the saturated Demmenie mirror run** (Jackson). DONE 2026-10-07: ran 100 h (job 4066835).
+  Released
   2026-10-06 (user), queued with the last k_eff stages. Re-verified that day:
   h = 1 + 2 d0/R = 1.0000241 (d0 = 1.0152e-9 m), set by `-humidity` as BOTH
   the initial pore vapour and the Dirichlet walls; 17.9 M DoF, 90 ranks;
@@ -64,8 +65,16 @@ prepares the commands.
   - Command:
     `./scripts/HPC/submit_batch.sh --tag demmenie_mirror --tests-file studies/molaro_2019/batches/demmenie_mirror_T-20.txt --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs`
   - First check: the BC table in `outp.txt` shows x = 0 as "(mirror)".
-- [ ] **Compare the run's a against Demmenie** (0.26–0.33) and the ODE
-  prediction (0.29–0.30).
+- [x] **Compare the run's a against Demmenie** (0.26–0.33) and the ODE
+  prediction (0.29–0.30). 2026-10-07: a = 0.19–0.23 by every fit form
+  (free-t0 0.19–0.20 whole record, 0.22–0.23 above 40–50 um; Kuczynski
+  m = 5.1–5.3; local slope 0.14 at 10 h rising to 0.21 at 100 h). Grain
+  radius +0.06 %, so saturation held. BELOW both targets.
+- [ ] **Explain the low exponent.** Candidates to test, none checked yet:
+  the pre-necked start (r0 = 14 um, no physical t = 0); the slope still
+  rising at 100 h (not yet asymptotic); neck/grain ratio already 0.17–0.37
+  (outside the small-neck limit the 1/3 law assumes); how the ODE prediction
+  was fitted (same form and window?).
 
 ## Deferred / dropped
 

@@ -1,26 +1,26 @@
 # k_eff campaign — what was run (for the results section)
 
 Compiled 2026-10-06 from the stage files, `inputs/packings/keff_LR40/*/metadata.json`
-and the run folders in `LOC/keff_sintering_campaign/`. Update when 3f and the
-redo stage (3r) land. History and data locations: `RECORD.md`.
+and the run folders in `LOC/keff_sintering_campaign/`; completed 2026-10-07 when
+3f and the redo stage (3r) landed. History and data locations: `RECORD.md`.
 
 ## Main matrix: porosity × temperature
 
-Number of independent packings run per cell; "3 + 2" = three finished, two
-queued (stage 3f).
+Number of independent packings run per cell. The matrix is complete: 125 runs.
 
 | porosity φ | −40 °C | −30 °C | −20 °C | −10 °C | −5 °C | total |
 |---|---|---|---|---|---|---|
-| 0.275 | 3 + 2 | 3 + 2 | 5 | 3 + 2 | 3 + 2 | 17 + 8 |
-| 0.325 | 3 + 2 | 3 + 2 | 5 | 3 + 2 | 3 + 2 | 17 + 8 |
-| 0.375 | 3 + 2 | 3 + 2 | 5 | 3 + 2 | 3 + 2 | 17 + 8 |
-| 0.425 | 2 + 2 (1 failed) | 3 + 2 | 5 | 3 + 2 | 3 + 2 | 16 + 8 |
-| 0.475 | 3 + 2 | 3 + 2 | 5 | 3 + 2 | 3 + 2 | 17 + 8 |
-| total | 14 + 10 | 15 + 10 | 25 | 15 + 10 | 15 + 10 | 84 + 40 = 124 of 125 |
+| 0.275 | 5 | 5 | 5 | 5 | 5 | 25 |
+| 0.325 | 5 | 5 | 5 | 5 | 5 | 25 |
+| 0.375 | 5 | 5 | 5 | 5 | 5 | 25 |
+| 0.425 | 5 | 5 | 5 | 5 | 5 | 25 |
+| 0.475 | 5 | 5 | 5 | 5 | 5 | 25 |
+| total | 25 | 25 | 25 | 25 | 25 | 125 |
 
-- 84 finished with data; 40 queued (3f). The missing one (φ 0.425, seed 1902,
-  −40 °C) hung twice and is in the redo stage with eight finished runs (the
-  five seed-1 runs at −20 °C, seed 1701 at −5 °C, two damaged −40 °C runs).
+- All 125 finished with data (2026-10-07). Nine of them are reruns from the redo
+  stage: φ 0.425 seed 1902 at −40 °C (hung twice before; completed cleanly), the
+  five seed-1 runs at −20 °C and seed 1701 at −5 °C (resampled every step), and
+  two −40 °C runs whose tables were damaged by a double submission.
 - The same packing is used at every temperature in its row: a row is 5
   packings, not 25. An ordering between porosities that repeats across
   temperatures is therefore one comparison, not five.
@@ -34,7 +34,7 @@ queued (stage 3f).
 | gate comparison | L/R 40, packings built with the homogeneity gates | 5 |
 | interface width | eps = 2 µm on seeds 1701–1703 | 3 |
 
-113 run folders with data: 84 matrix, 21 convergence, 5 gated, 3 interface-width.
+154 run folders with data: 125 matrix, 21 convergence, 5 gated, 3 interface-width.
 
 ## The packings (five per porosity)
 
@@ -79,8 +79,9 @@ few between packings.
 
 ## Caveats to carry into the text
 
-- Six runs (five seed-1 at −20 °C, seed 1701 at −5 °C) sampled k_eff every 5
-  steps before 11 τ_sub; redos queued.
+- Every matrix run samples k_eff at every step before 11 τ_sub (the six that did
+  not were rerun in 3r). The gated seed-301 supporting run still has the coarse
+  early sampling; it is used only for the dtmax and gate comparisons.
 - The first day or so of every curve depends on the interface width
   (`eps_sensitivity/README.md`).
 - Claims are restricted to φ ≤ 0.375 (`TODO.md`, "Manuscript argument").

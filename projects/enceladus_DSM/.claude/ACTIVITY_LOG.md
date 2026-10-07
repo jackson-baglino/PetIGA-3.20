@@ -1,3 +1,19 @@
+## 2026-10-07 — k_eff matrix complete (125 runs); Demmenie run measured
+
+- Fetched and checked stages 3r and 3f: all 49 clean, seed 1902 at -40 C ran
+  through. Rebuilt the production view, health check, stage summary, porosity
+  summaries, collapse, kink and cadence checks, state-law fit and plot matrix.
+- Results unchanged by the extra seeds: collapse within 0.27 %, exponent -0.80,
+  level 1.370 exp(-5.01 phi). Rise table now has five packings per cell.
+- Demmenie-conditions run: exponent 0.19-0.23, below the expected 0.29-0.30;
+  logged as unexplained in studies/molaro_2019/TODO.md.
+- run_postprocess.sh now picks a Python that has numpy and skips step plots
+  on k_eff replays. Figures 4 and 5 swapped (gallery first).
+- Manuscript figures rebuilt into LOC/Figures2 because the iCloud folder was
+  not writable from the session.
+
+---
+
 ## 2026-10-06 — Figure renumbering, methods figure complete, one tables file
 
 - Manuscript figure folders renumbered to the planned order (2 homogenization

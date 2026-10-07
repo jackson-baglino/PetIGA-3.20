@@ -170,6 +170,20 @@ thresholds, open questions); this page is the history.
 
 ## In progress
 
+- [x] **2026-10-07 — Stages 3r (9 redo runs) and 3f (40 runs, seeds 4–5): the matrix is complete, 125 runs.**
+  - **Data:** HPC `CAMP/<geom>__<exp>/`, records `CAMP/stages/batch3r_redo__2026-10-06__09.20.28/` and `batch3f_seeds45__2026-10-06__09.20.40/`. Local `LOC/keff_sintering_campaign/` (full snapshots for seed 1701 −20 °C and seed 1704 −10 °C); old copies of the nine redone runs in `superseded_before_3r/`. Logs of this pass: `compare/logs_2026-10-07/`.
+  - **Health:** all 49 completed; 0 failed k_eff solves in 125 runs; no NUL bytes, no stall markers; the sample schedule matches the solver on 124 of 125 (one off by one sample). φ 0.425 seed 1902 at −40 °C, which hung twice, ran through. One run (φ 0.425 seed 1905, −40 °C) ends at 29.66 d, the final-step rollback quirk.
+  - **Time resolution:** worst corner 1.5% of the plotted range on a matrix run at −20 °C (was 10–13% on the six 3a runs), 0.13% at −40 °C.
+  - **Temperature collapse, 100 paired runs:** k at matched SSA within 0.27%; rate within 4.1% of the τ_sub ratio. Unchanged from 59 pairs.
+  - **Rise day 1 → 30, five packings per cell (φ 0.275 / 0.325 / 0.375 / 0.425 / 0.475):** −40 °C 11.6 / 11.2 / 9.7 / 7.6 / 7.3%; −30 °C 19.2 / 18.8 / 16.6 / 13.8 / 12.9%; −20 °C 27.4 / 27.2 / 24.5 / 21.2 / 19.0%; −10 °C 36.9 / 38.0 / 34.2 / 31.0 / 26.7%; −5 °C 42.0 / 43.8 / 39.7 / 36.8 / 31.4%. The two lowest porosities remain tied within the packing scatter (±1–4 points) at every temperature. This replaces the 3-packing table of 2026-10-06.
+  - **State law:** k ∝ SSA^−0.80 for φ ≤ 0.375 (per φ: −0.79, −0.82, −0.78, −0.73, −0.63); level k_r/k_ice = 1.370·exp(−5.01 φ), packing scatter 6.6%. Unchanged by the two extra seeds.
+  - **Anisotropy (k_xx/k_yy at 30 d, −20 °C):** 1.02 / 1.02 / 0.91 / 0.79 / 0.64, as before.
+
+- [x] **2026-10-07 — Demmenie-conditions run (saturated, equal grains, mirror domain).** Separate study; `studies/molaro_2019/TODO.md`.
+  - **Data:** HPC `<out-root>/enceladus_DSM/batch_2026-10-06__09.21.04_demmenie_mirror/`. Local `LOC/GrainPairSintering/batch_2026-10-06__09.21.04_demmenie_mirror/` (14 GB, 102 snapshots; `measure_2026-10-07.log`).
+  - **Result:** ran the full 100 h; the BC table shows the mirror; the grain radius holds (+0.06%), so the saturation condition works. Neck width 28 → 63 µm. **Exponent 0.19–0.23 depending on fit form and window** (free-t₀ power law 0.19–0.20 over the whole record, 0.22–0.23 above 40–50 µm; Kuczynski m = 5.1–5.3; local slope rising from 0.14 at 10 h to 0.21 at 100 h). That is below Demmenie's 0.26–0.33 and below the envelope-ODE prediction of 0.29–0.30. The local slope is still rising at the end, so the run may not have reached its asymptotic regime; not yet explained.
+
+
 - [ ] **Batch 3a rerun** — first submitted 2026-10-01 at commit d7452d5 and cancelled while pending, because dtmax changed to 2·τ_sub on 2026-10-02. Resubmitted at the 2·τ_sub commit.
   - **What:** 8 runs on the option-B packings: one per φ at −20 °C (seeds 1601/1701/1801/1901/2001), plus 1701 at −5 and −40 °C, plus gated seed301 at −20 °C as the paired dtmax check against the first shakedown (1.09·τ_sub, same packing). Final options, 121 ranks, per-T time limits.
   - **Data:** HPC `CAMP/<geom>__<exp>/`, record in `CAMP/stages/batch3a_shakedown__<ts>/`. Local `LOC/keff_sintering_campaign/` (`fetch_stage.sh studies/keff_sintering/batch3a_shakedown.txt`).
