@@ -47,7 +47,6 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 
 import make_theory_figures as T    # constants, theory curvatures and the house style
 
@@ -56,10 +55,10 @@ ALPHAS = (1e-3, 1e-2)
 NM_DAY = T.NM_DAY
 DAY = T.DAY
 
-# growth = blue (ice), sublimation = orange, neutral grey at zero
-DIVERGING = LinearSegmentedColormap.from_list(
-    "sublime_grow", ["#8a3210", "#eb6834", "#f6c9b3", "#e6e9ed",
-                     "#b5d2f2", "#2a78d6", "#0f3462"])
+# Diverging with BLACK at zero (matplotlib's "berlin", reversed so growth is
+# blue and sublimation red): a stalled interface reads as dark, and the two
+# signs brighten away from it. --cmap swaps it ("managua", "vanimo", ...).
+DIVERGING = matplotlib.colormaps["berlin_r"].copy()
 DIVERGING.set_bad("#ffffff")
 C_A = {1e-3: T.BLUE, 1e-2: T.ORANGE}           # the two alpha_c series
 C_M = {"inner": T.BLUE, "outer": T.ORANGE}     # the two wedge menisci
@@ -257,7 +256,7 @@ def fig_channel_phase(runs, out):
         vmax = np.abs(Z).max()
         im = ax.pcolormesh(TH, SG * 1e5, Z, cmap=DIVERGING, vmin=-vmax, vmax=vmax,
                            shading="auto", rasterized=True)
-        ax.contour(TH, SG * 1e5, Z, levels=[0.0], colors=[T.INK], linewidths=1.6)
+        ax.contour(TH, SG * 1e5, Z, levels=[0.0], colors=["white"], linewidths=1.6)
         sel = [r for r in runs if r["geom"] == "channel" and r["ac"] == ac]
         if sel:
             ax.scatter([r["theta"] for r in sel], [r["sigma"] * 1e5 for r in sel],
@@ -272,8 +271,8 @@ def fig_channel_phase(runs, out):
         ax.set_xticks([30, 60, 90, 120, 150])
         ax.grid(False)
         ax.set_title(AC_LABEL[ac], fontsize=14, loc="left", color=T.MUTED)
-        ax.text(0.03, 0.93, "growth", transform=ax.transAxes, color="white")
-        ax.text(0.97, 0.04, "sublimation", transform=ax.transAxes, ha="right", color="white")
+        ax.text(0.03, 0.93, "growth", transform=ax.transAxes, color=T.INK)
+        ax.text(0.97, 0.04, "sublimation", transform=ax.transAxes, ha="right", color=T.INK)
         T.panel(ax, letter)
     save(fig, out, "fig_channel_phase_diagram.png")
 
@@ -345,7 +344,13 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", required=True, help="folder holding the batch_* folders")
     ap.add_argument("--out", default=None, help="output folder (default: <root>/figures)")
+    ap.add_argument("--cmap", default=None,
+                    help="diverging matplotlib colormap (default: berlin_r)")
     args = ap.parse_args()
+    if args.cmap:
+        global DIVERGING
+        DIVERGING = matplotlib.colormaps[args.cmap].copy()
+        DIVERGING.set_bad("#ffffff")
     out = args.out or os.path.join(args.root, "figures")
     os.makedirs(out, exist_ok=True)
 
