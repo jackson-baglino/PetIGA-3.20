@@ -278,8 +278,9 @@ def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=
     lab = ["1 h", "1 d", "1 yr", "1 kyr", "1 Myr", "4.5 Gyr"]
     cols = [cmocean.cm.matter(x) for x in np.linspace(0.04, 0.96, len(lev) + 1)]
     idx = np.digitize(np.log10(t), np.log10(lev))            # class 0..6
-    fig = plt.figure(figsize=(120 * MM, 86 * MM))
-    ax = fig.add_axes([0.135, 0.155, 0.60, 0.70])
+    # One AGU column: figures are 85 or 170 mm wide, nothing in between.
+    fig = plt.figure(figsize=(85 * MM, 72 * MM))
+    ax = fig.add_axes([0.175, 0.17, 0.50, 0.665])
     cmap = ListedColormap(cols)
     im = ax.pcolormesh(TT, RR * 1e6, idx, cmap=cmap, norm=BoundaryNorm(np.arange(-0.5, len(lev) + 1), cmap.N),
                        shading="auto", rasterized=True)
@@ -306,11 +307,12 @@ def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=
             fontsize=FS_S, color=INK)
     ax.axhline(5, color="white", lw=0.5, ls=(0, (2, 2)), alpha=0.7)
     # discrete colour bar: the time classes
-    cax = fig.add_axes([0.875, 0.155, 0.028, 0.70])
+    cax = fig.add_axes([0.80, 0.17, 0.035, 0.665])
     cb = fig.colorbar(im, cax=cax, ticks=np.arange(0.5, len(lev)))
     cb.ax.set_yticklabels(lab, fontsize=FS_S); cb.ax.tick_params(length=2, width=0.5)
     cb.outline.set_linewidth(0.5)
     cb.ax.set_title(r"$t$", fontsize=FS, pad=4)
+    ax.set_xticks([100, 150, 200, 250])
     clean(ax)
     save(fig, out, "Figure8_timescales")
 
