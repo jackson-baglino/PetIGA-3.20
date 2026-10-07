@@ -4,18 +4,24 @@
     venv_enceladus/bin/python studies/molaro_2019/demmenie/fig_demmenie.py <run dir>
         [--relax-tau 11] [--name Figure4_saturated_neck_growth] [--out <dir>] [--copy-to <dir>]
 
-  (a) the grain pair at the start and at the end of the run: the computed
-      quarter (one grain, half-plane) reflected across the mirror plane and
-      the symmetry axis. Ice only.
+Built to read as the companion of the Molaro figure
+(postprocess/plot_molaro_validation.py, molaro_full), and from ITS helpers, so
+the two cannot drift apart: the same colour-bar strip, ice over the
+supersaturation sigma in the pore, circled instants, panel letters, type sizes.
+
+  (a) the grain pair at the start and at the end of the run, instants 1-2:
+      the computed quarter (one grain, half-plane) reflected across the
+      mirror plane and the symmetry axis
   (b) neck width against time: the simulation (line), the free fit
       C (t + t0)^a and the one-third fit C (t + t0)^(1/3), both over the
-      samples after the relaxation period (shaded).
+      samples after the relaxation period; instants 1-2 marked
   (c) the free-fit exponent against the start of the fit window, with the
-      range Demmenie et al. (2025) measured and the 1/3 law.
+      range Demmenie et al. (2025) measured and the 1/3 law
+  (d) the grain diameter D / D_0: the saturation check, on the scale of the
+      Molaro figure's shrinkage panels
 
 Fits and numbers come from analyze_demmenie.py, so the figure and the
-diagnostic plots cannot disagree. Manuscript style: 170 mm, no titles, symbol
-labels, transparent background (pplib.MANUSCRIPT_RC).
+diagnostic plots cannot disagree.
 """
 from __future__ import annotations
 
@@ -26,26 +32,28 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import AsinhNorm, Normalize
+from matplotlib.ticker import MaxNLocator
 import cmocean
 
 HERE = Path(__file__).resolve().parent
 PROJ = HERE.parents[2]
 sys.path.insert(0, str(PROJ / "postprocess")); sys.path.insert(0, str(HERE))
 import pplib  # noqa: E402
-from plot_keff_snapshots import make_reader, snap_step, INK, MUTED, FS, FS_SMALL, FS_TINY  # noqa: E402
+import plot_molaro_validation as pmv  # noqa: E402
+from plot_keff_snapshots import (make_reader, snap_step, _field, _scalebar, _snap_title, _mark,  # noqa: E402
+                                 WANT, INK, FS, FS_SMALL, MM)
 from analyze_demmenie import analyse, _pl, _p3, DEMMENIE, HOUR  # noqa: E402
 
-MM = 1 / 25.4
-C_FREE, C_THIRD = "#2a78d6", "#d1495b"
+C_SIM, C_FREE, C_THIRD = pmv.C_T20, INK, pmv.C_T5
 
 
-def section(run, fn, stride=3):
-    """Ice field of the full pair: reflect across r = 0 and across z = 0."""
+def section(run, fn):
+    """All fields of the full pair: reflect across r = 0, then across z = 0."""
     _, reader = make_reader(run, "sol")
-    fl, X, Y = reader(fn, want=("IcePhase",))
-    p, z, r = fl["IcePhase"][::stride, ::stride], X[0, ::stride] * 1e6, Y[::stride, 0] * 1e6
-    p = np.vstack([p[:0:-1], p]); p = np.hstack([p[:, :0:-1], p])
-    return p, np.concatenate([-z[:0:-1], z]), np.concatenate([-r[:0:-1], r])
+    fl, X, Y = pmv._mirror(*reader(fn, want=WANT))
+    mz = lambda a_: np.hstack([a_[:, :0:-1], a_])
+    return {k: mz(v) for k, v in fl.items()}, np.hstack([-X[:, :0:-1], X]), mz(Y)
 
 
 def main():
@@ -53,6 +61,7 @@ def main():
     ap.add_argument("run", type=Path)
     ap.add_argument("--relax-tau", type=float, default=11.0)
     ap.add_argument("--name", default="Figure4_saturated_neck_growth")
+    ap.add_argument("--width-mm", type=float, default=170.0)
     ap.add_argument("--out", type=Path, default=PROJ / "studies/molaro_2019/manuscript")
     ap.add_argument("--copy-to", type=Path, default=None)
     a = ap.parse_args()
@@ -60,60 +69,112 @@ def main():
     A = analyse(a.run, a.relax_tau)
     t, w, tk, f, h, s = A["t"], A["w"], A["tk"], A["free"], A["third"], A["scan"]
 
+    # ---- sections: first and last snapshot, one crop and one stride ----
     files = sorted(glob.glob(str(a.run / "sol_*.dat")), key=snap_step)
-    secs = [section(a.run, files[0]), section(a.run, files[-1])]
-    zc = 1.12 * max(np.abs(z[np.any(p >= 0.5, axis=0)]).max() for p, z, r in secs)
-    rc = 1.18 * max(np.abs(r[np.any(p >= 0.5, axis=1)]).max() for p, z, r in secs)
+    raw = [section(a.run, files[0]), section(a.run, files[-1])]
+    box = pmv.auto_crop(*raw[-1])
+    box = (-max(abs(box[0]), abs(box[1])), max(abs(box[0]), abs(box[1])), box[2])
+    frac = (box[1] - box[0]) * pmv.UM / (raw[0][1].max() - raw[0][1].min())
+    stride = max(1, int(np.ceil(frac * raw[0][1].shape[1] / pmv.MAX_PX)))
+    sub = lambda a_: a_[::stride, ::stride]
+    secs = [pmv.crop({k: sub(v) for k, v in fl.items()}, sub(X), sub(Y), box) for fl, X, Y in raw]
+    pore = np.concatenate([pmv.SIGMA_SCALE * pplib.supersaturation(fl["VaporDensity"], fl["Temperature"])[fl["IcePhase"] < 0.5]
+                           for fl, _, _ in secs])
+    smin, smax = float(pore.min()), float(pore.max())
+    # The Molaro figure uses a symmetric asinh bar sized to the SMALLER extreme,
+    # which suits a field that changes sign over decades. Here the whole pore
+    # is supersaturated against a flat surface (the walls sit at 1 + 2 d0/R)
+    # and varies by a factor of four, so that rule would paint every pixel the
+    # end colour. Same colours, same zero in the middle, but a LINEAR bar a
+    # little past the far-field value, so the depletion at the neck shows.
+    if smin * smax > 0:
+        v = 1.25 * max(abs(smin), abs(smax))
+        norm = Normalize(vmin=-v, vmax=v); ext = "neither"; vapcm = cmocean.cm.balance
+    else:
+        v = min(abs(smin), abs(smax)) or max(abs(smin), abs(smax))
+        ext = {(True, True): "both", (True, False): "min", (False, True): "max", (False, False): "neither"}[(smin < -v, smax > v)]
+        norm = AsinhNorm(linear_width=max(v / 300.0, 1e-12), vmin=-v, vmax=v)
+        vapcm = pmv.centered_cmap(cmocean.cm.balance, norm)
+    icecm = pmv.ice_alpha_cmap()
+    print(f"sigma x{pmv.SIGMA_SCALE:g} in the shown pore: {smin:+.3g} .. {smax:+.3g}; bar +-{v:.3g} ({ext})")
 
-    W = 170.0
-    L, Rm, gap, top, bot = 13.0, 2.0, 4.0, 7.0, 12.0
-    sw = (W - L - Rm - gap) / 2; sh = sw * rc / zc
-    ph, row_gap = 52.0, 13.0
-    H = top + sh + row_gap + ph + bot
-    fig = plt.figure(figsize=(W * MM, H * MM))
-    F = lambda x, y, ww, hh: [x / W, y / H, ww / W, hh / H]
+    # ---- layout, in inches, as plot_molaro_validation.build_full ----
+    W = a.width_mm * MM
+    gap = 0.12
+    ml, mr = 0.50, 0.08
+    axw = W - ml - mr
+    s_w = (axw - gap) / 2
+    fl0, X0, Y0 = secs[0]
+    s_h = s_w * (Y0.max() - Y0.min()) / (X0.max() - X0.min())
+    cb_h, cb_lab, cb_gap, t_band, top = 0.07, 0.15, 0.06, 0.19, 0.05
+    g_snap, ph, g_row, ph2, bot = 0.34, 1.75, 0.62, 1.55, 0.40
+    pgap, ml2 = 0.78, ml + 0.17
+    pw = (W - ml2 - mr - pgap) / 2
+    H = top + cb_h + cb_lab + cb_gap + t_band + s_h + g_snap + ph + g_row + ph2 + bot
+    fig = plt.figure(figsize=(W, H))
+    F = lambda x0, y0, ww, hh: (x0 / W, y0 / H, ww / W, hh / H)
+    y_neck = bot + ph2 + g_row
+    y_snap = y_neck + ph + g_snap
 
-    for j, ((p, z, r), lab) in enumerate(zip(secs, ("0 h", f"{t[-1] / HOUR:.0f} h"))):
-        ax = fig.add_axes(F(L + j * (sw + gap), bot + ph + row_gap, sw, sh))
-        ax.imshow(p, origin="lower", cmap=cmocean.cm.ice, vmin=0, vmax=1, extent=(z[0], z[-1], r[0], r[-1]),
-                  interpolation="antialiased", aspect="auto")
-        ax.set(xlim=(-zc, zc), ylim=(-rc, rc)); ax.set_xticks([]); ax.set_yticks([])
-        for sp in ax.spines.values():
-            sp.set_linewidth(0.6); sp.set_color(MUTED)
-        ax.set_title(lab, fontsize=FS, pad=3)
-        if j == 0:
-            x0, y0 = -zc + 0.02 * 2 * zc, rc - 0.115 * 2 * rc   # the dark corner above the grain
-            ax.plot([x0, x0 + 50], [y0, y0], color="white", lw=2.2, solid_capstyle="butt")
-            ax.text(x0 + 25, y0 + 0.03 * 2 * rc, r"50 $\mu$m", color="white", ha="center", va="bottom", fontsize=FS_TINY)
-    fig.text(1.5 / W, (bot + ph + row_gap + sh + 3.0) / H, pplib.bold("(a)"), fontsize=FS, va="center", color=INK)
+    t_sec = [t[0], t[-1]]
+    for i, (fl, X, Y) in enumerate(secs):
+        axi = fig.add_axes(F(ml + i * (s_w + gap), y_snap, s_w, s_h))
+        XX, YY = _field(axi, fl, X, Y, norm, vapcm, icecm)
+        axi.set_aspect("auto")
+        if i == 0:
+            _scalebar(axi, XX, YY)
+        _snap_title(axi, pmv.LETTERS[i], f"{t_sec[i] / HOUR:.0f} h")
+    a.sig_extend = ext
+    pmv._strip(fig, F, ml, y_snap + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm, ext)
 
-    pgap = 17.0
-    pw = (W - L - Rm - pgap) / 2
-    ax = fig.add_axes(F(L, bot, pw, ph))
-    tt = np.linspace(tk[0], tk[-1], 400)
-    ax.axvspan(0, A["t_relax"] / HOUR, color="0.88", lw=0)
-    ax.plot(t / HOUR, w, color=INK, lw=2.0, label="simulation", zorder=3)
-    ax.plot(tt / HOUR, _pl(tt, f["C"], f["t0"], f["a"]), color=C_FREE, lw=1.3, ls=(0, (4, 2)),
-            label=rf"$C\,(t+t_0)^{{a}}$, $a={f['a']:.2f}$", zorder=4)
-    ax.plot(tt / HOUR, _p3(tt, h["C"], h["t0"]), color=C_THIRD, lw=1.3, ls=(0, (1.2, 1.6)),
-            label=r"$C\,(t+t_0)^{1/3}$", zorder=4)
-    ax.set(xlabel="$t$ [h]", ylabel=r"$w$ [$\mu$m]", xlim=(0, None))
-    ax.legend(frameon=False, fontsize=FS_SMALL, loc="lower right", handlelength=2.2, labelspacing=0.3)
-    bx = fig.add_axes(F(L + pw + pgap, bot, pw, ph))
-    bx.axhspan(*DEMMENIE, color=C_THIRD, alpha=0.16, lw=0)
-    bx.axhline(1 / 3, color=C_THIRD, lw=1.0, ls=(0, (1.2, 1.6)))
-    bx.plot(s[:, 0] / HOUR, s[:, 2], color=C_FREE, lw=2.0)
-    bx.text(0.97, 1 / 3 + 0.004, "1/3", transform=bx.get_yaxis_transform(), ha="right", va="bottom",
-            fontsize=FS_SMALL, color=INK)
-    bx.text(0.97, np.mean(DEMMENIE), "Demmenie et al. (2025)", transform=bx.get_yaxis_transform(), ha="right",
-            va="center", fontsize=FS_SMALL, color=INK)
-    bx.set(xlabel="start of fit window [h]", ylabel="$a$", ylim=(0.18, 0.36), xlim=(0, None))
-    for x, lab in ((ax, "b"), (bx, "c")):
+    def dress(ax):
+        ax.patch.set_alpha(0.0)
+        ax.tick_params(labelsize=FS_SMALL, width=0.6, length=3, pad=2)
         for sp in ("top", "right"):
-            x.spines[sp].set_visible(False)
-        x.tick_params(labelsize=FS_SMALL, width=0.6, length=3)
-        x.xaxis.label.set_size(FS); x.yaxis.label.set_size(FS); x.patch.set_alpha(0)
-        x.text(-0.17, 1.03, pplib.bold(f"({lab})"), transform=x.transAxes, fontsize=FS, va="bottom", color=INK)
+            ax.spines[sp].set_visible(False)
+        for sp in ("left", "bottom"):
+            ax.spines[sp].set_linewidth(0.6)
+
+    # (b) neck width
+    ax = fig.add_axes(F(ml, y_neck, axw, ph)); dress(ax)
+    tt = np.linspace(tk[0], tk[-1], 400)
+    ax.plot(t / HOUR, w, "-", lw=1.8, color=C_SIM, zorder=2, label="model")
+    ax.plot(tt / HOUR, _pl(tt, f["C"], f["t0"], f["a"]), color=C_FREE, lw=1.0, ls=pmv.FIT_LS, dash_capstyle="round",
+            zorder=3, label=rf"$C\,(t+t_0)^{{a}}$, $a={f['a']:.2f}$")
+    ax.plot(tt / HOUR, _p3(tt, h["C"], h["t0"]), color=C_THIRD, lw=1.5, ls=pmv.ALT_LS, dash_capstyle="round",
+            zorder=3, label=r"$C\,(t+t_0)^{1/3}$")
+    for i in (0, 1):
+        pmv._circled(ax, t_sec[i] / HOUR, float(np.interp(t_sec[i], t, w)), pmv.LETTERS[i], clip_on=False)
+    ax.set_xlim(0, t[-1] / HOUR * 1.03)
+    ax.xaxis.set_major_locator(MaxNLocator(8, steps=[1, 2, 2.5, 5, 10]))
+    ax.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
+    ax.set_xlabel("Time [h]", fontsize=FS, labelpad=2); ax.set_ylabel(r"$w$  [$\mu$m]", fontsize=FS, labelpad=3)
+    ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=2.2, handletextpad=0.5, loc="lower right")
+
+    # (c) exponent against the start of the fit window
+    cx = fig.add_axes(F(ml2, bot, pw, ph2)); dress(cx)
+    cx.axhspan(*DEMMENIE, color=C_THIRD, alpha=0.18, lw=0)
+    cx.axhline(1 / 3, color=C_THIRD, lw=1.5, ls=pmv.ALT_LS, dash_capstyle="round")
+    cx.plot(s[:, 0] / HOUR, s[:, 2], "-", lw=1.8, color=C_SIM)
+    cx.text(0.98, np.mean(DEMMENIE), "Demmenie et al. (2025)", transform=cx.get_yaxis_transform(), ha="right",
+            va="center", fontsize=FS_SMALL, color=INK)
+    cx.set_xlim(0, None); cx.set_ylim(0.19, 0.35)
+    cx.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
+    cx.set_xlabel("Start of fit window [h]", fontsize=FS, labelpad=2); cx.set_ylabel(r"$a$", fontsize=FS, labelpad=3)
+
+    # (d) grain diameter: the saturation check
+    dx = fig.add_axes(F(ml2 + pw + pgap, bot, pw, ph2)); dress(dx)
+    gt, gR = A["g"]
+    dx.plot(gt / HOUR, gR / gR[0], "-", lw=1.8, color=C_SIM)
+    dx.set_xlim(0, t[-1] / HOUR * 1.03); dx.set_ylim(0.95, 1.01)
+    dx.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
+    dx.set_xlabel("Time [h]", fontsize=FS, labelpad=2); dx.set_ylabel(r"$D\,/\,D_0$", fontsize=FS, labelpad=3)
+
+    for lab, y_top in zip("ab", (y_snap + s_h + 0.5 * t_band, y_neck + ph + 0.14)):
+        fig.text(0.02 / W, y_top / H, pplib.bold(f"({lab})"), ha="left", va="center", fontsize=FS, color=INK)
+    for i, lab in enumerate("cd"):
+        fig.text((0.02 + i * (pw + pgap + ml2 - 0.72)) / W, (bot + ph2 + 0.16) / H, pplib.bold(f"({lab})"),
+                 ha="left", va="center", fontsize=FS, color=INK)
 
     a.out.mkdir(parents=True, exist_ok=True)
     for e in ("pdf", "png"):
@@ -121,7 +182,7 @@ def main():
         fig.savefig(fn, dpi=600, transparent=True)
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True); shutil.copyfile(fn, a.copy_to / fn.name)
-    print(f"wrote {a.out}/{a.name}.pdf/.png ({W:.0f} x {H:.0f} mm); free a = {f['a']:.3f}, one-third rms {h['rms']:.2f} %")
+    print(f"wrote {a.out}/{a.name}.pdf/.png ({W / MM:.0f} x {H / MM:.0f} mm); free a = {f['a']:.3f}, one-third rms {h['rms']:.2f} %")
 
 
 if __name__ == "__main__":

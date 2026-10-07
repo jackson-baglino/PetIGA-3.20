@@ -38,5 +38,6 @@ So the model does NOT reproduce t^(1/3) here: a = 0.21-0.23, below Demmenie's
 - `analyze_demmenie.py <run>`: the fits and four diagnostic plots, into
   `<run>/plots/demmenie/`. `postprocess/run_batch_measure.sh` calls it for
   any saturated run and skips the Molaro comparison there.
-- `fig_demmenie.py <run>`: the manuscript figure,
+- `fig_demmenie.py <run>`: the manuscript figure, built from the Molaro figure's
+  helpers so the two match (colour bars, sections, instants, panels),
   `../manuscript/Figure4_saturated_neck_growth.{pdf,png}`.
