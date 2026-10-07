@@ -467,8 +467,8 @@ without the additive 8.7e5 s/m interface offset.
 
 ### Result: all four batches at both α_c (2026-10-07)
 
-43 of 44 runs analysed (the wedge θ = 150°, α_c = 1e-2 run was still running
-at download). Every run completed with no rejected steps. Local copy:
+All 44 runs analysed (the wedge θ = 150°, α_c = 1e-2 run was added on
+2026-10-07 after it finished). Every run completed with no rejected steps. Local copy:
 `~/SimulationResults/HPC_results/lunar_regolith_DSM/velocity_study_2026-10/`;
 HPC copy under `/resnick/groups/rubyfu/jbaglino/simulation_outputs/lunar_regolith_DSM/`.
 Figures and `velocity_summary.csv` are in `figures/` there, written by
@@ -517,6 +517,24 @@ series-resistance relation predicts.
   differ.
 - At α_c = 1e-2 the two wettest runs overfill: σ∞ = +2e-5 loses a meniscus
   at day 102 and σ∞ = +3e-5 fills the domain at day 129.
+
+**Velocity against time.** `fig_channel_velocity_vs_time.png` and
+`fig_wedge_velocity_vs_time_ac*.png` draw one curve per run for each batch,
+theory dashed.
+
+- Channel: every curve settles onto its theory curve within about 20 days
+  and then follows it, including the acceleration of the wet α_c = 1e-2 runs
+  as the meniscus nears the wall.
+- Wedge: in the θ sweep the curves start in reverse order and cross near day
+  35 (inner) and day 30 to 60 (outer) before fanning out toward the theory.
+  That crossing is the relaxation from the 90° band IC to each run's own
+  meniscus shape. At α_c = 1e-2 it is over by about day 60; at 1e-3 the
+  outer meniscus is still approaching at day 150.
+- Wedge θ = 150°, α_c = 1e-2: both menisci turn back toward zero after about
+  day 115. Not yet looked at.
+- All wedge curves show slope changes near days 23 and 125. They fall at the
+  same times in every run, so they are the 21-snapshot sliding fit of
+  `wedge_gt_velocity.py` running out of points at the ends, not physics.
 
 **Measured cost.** Channel 1.1 h (1e-3) and 9.5 h (1e-2) on 2 ranks; wedge
 2.0 h and 16 h on 3 ranks. About 800 core-hours, $10, for the 39 runs.

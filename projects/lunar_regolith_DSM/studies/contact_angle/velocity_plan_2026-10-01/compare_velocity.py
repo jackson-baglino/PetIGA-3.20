@@ -11,6 +11,8 @@ batch{A,B,C,D} run under --root, and writes into --out:
     fig_channel_phase_diagram.png theta x sigma_inf, coloured by v
     fig_wedge_summary.png         as the channel summary, both menisci
     fig_wedge_time_maps_ac*.png   as the channel maps, both menisci
+    fig_channel_velocity_vs_time.png   v(t) curves, one per run, per batch
+    fig_wedge_velocity_vs_time_ac*.png as above, both menisci
 
 WHAT "VELOCITY" MEANS HERE
 
@@ -322,6 +324,97 @@ def fig_wedge_time_maps(runs, out, ac):
     save(fig, out, "fig_wedge_time_maps_ac%s.png" % ("1e-3" if ac == 1e-3 else "1e-2"))
 
 
+def sweep_colors(rr, sweep):
+    """One colour per run: blue on the growth side of the sweep, red on the
+    sublimation side, grey for the neutral run (theta = 90 or sigma_inf = 0)."""
+    x = np.array([90.0 - r["theta"] if sweep == "theta" else r["sigma"] * 1e5 for r in rr])
+    s = x / max(np.abs(x).max(), 1e-30)                 # -1 .. 1, + = growth side
+    blues, reds = matplotlib.colormaps["Blues"], matplotlib.colormaps["Reds"]
+    return [T.GREY if abs(v) < 1e-9 else (blues if v > 0 else reds)(0.45 + 0.5 * abs(v))
+            for v in s]
+
+
+def velocity_curves(ax, rr, key, sweep, t_end):
+    """Measured v(t) for every run of one sweep (solid), theory dashed."""
+    labels = []
+    allv = np.concatenate([r["v"][key][r["t"] >= DAY] for r in rr]) * NM_DAY
+    pad = 0.07 * (allv.max() - allv.min())
+    ax.set_ylim(allv.min() - pad, allv.max() + pad)     # theory may run off-scale
+    for r, col in zip(rr, sweep_colors(rr, sweep)):
+        td = r["t"] / DAY
+        m = td >= 1.0
+        ax.plot(td[m], r["v_th"][key][m] * NM_DAY, color=col, lw=1.1, ls=(0, (4, 3)), zorder=2)
+        ax.plot(td[m], r["v"][key][m] * NM_DAY, color=col, lw=2.2, zorder=3)
+        name = ("%d°" % r["theta"]) if sweep == "theta" else (
+            "%+d" % round(r["sigma"] * 1e5) if r["sigma"] else "0")
+        labels.append([td[m][-1], r["v"][key][m][-1] * NM_DAY, name])
+    # direct labels at the line ends, nudged apart where two ends nearly coincide
+    lo, hi = ax.get_ylim()
+    gap = 0.052 * (hi - lo)
+    labels.sort(key=lambda q: q[1])
+    for i in range(1, len(labels)):
+        labels[i][1] = max(labels[i][1], labels[i - 1][1] + gap)
+    for x, y, name in labels:
+        ax.text(x + 0.012 * t_end, y, name, va="center", fontsize=12, color=T.MUTED,
+                clip_on=False)
+    ax.axhline(0, color=T.MUTED, lw=0.8, zorder=1)
+    ax.set_xlim(0, t_end)
+    ax.set_ylabel("velocity [nm/day]")
+    ax.text(1.012, 1.03, r"$\theta$" if sweep == "theta" else r"$\sigma_\infty$ [$10^{-5}$]",
+            transform=ax.transAxes, fontsize=12, color=T.MUTED, va="bottom")
+
+
+def line_key(fig):
+    from matplotlib.lines import Line2D
+    fig.legend(handles=[Line2D([], [], color=T.MUTED, lw=2.2, label="simulation"),
+                        Line2D([], [], color=T.MUTED, lw=1.1, ls=(0, (4, 3)), label="theory")],
+               loc="outside upper right", ncols=2, fontsize=12)
+
+
+def fig_channel_curves(runs, out):
+    """Batches A and B at both alpha_c: one v(t) curve per run."""
+    fig, axes = plt.subplots(2, 2, figsize=(14.5, 9.6), constrained_layout=True)
+    for i, ac in enumerate(ALPHAS):
+        for j, sweep in enumerate(("theta", "sigma")):
+            ax = axes[i, j]
+            rr = pick(runs, "channel", ac, sweep)
+            if not rr:
+                ax.set_axis_off()
+                continue
+            velocity_curves(ax, rr, "mean", sweep, 90.0)
+            ax.set_title("batch %s:  %s,  %s" % (
+                "AB"[j], AC_LABEL[ac],
+                r"$\sigma_\infty = 0$" if sweep == "theta" else r"$\theta = 60^\circ$"),
+                fontsize=14, loc="left", color=T.MUTED)
+            if i == 1:
+                ax.set_xlabel("time [days]")
+            T.panel(ax, "abcd"[2 * i + j])
+    line_key(fig)
+    save(fig, out, "fig_channel_velocity_vs_time.png")
+
+
+def fig_wedge_curves(runs, out, ac):
+    """Batches C and D at one alpha_c: v(t) per run, for each meniscus."""
+    fig, axes = plt.subplots(2, 2, figsize=(14.5, 9.6), constrained_layout=True)
+    for i, key in enumerate(("inner", "outer")):
+        for j, sweep in enumerate(("theta", "sigma")):
+            ax = axes[i, j]
+            rr = pick(runs, "wedge", ac, sweep)
+            if not rr:
+                ax.set_axis_off()
+                continue
+            velocity_curves(ax, rr, key, sweep, 150.0)
+            ax.set_title("batch %s:  %s meniscus,  %s" % (
+                "CD"[j], key,
+                r"$\sigma_\infty = 0$" if sweep == "theta" else r"$\theta = 60^\circ$"),
+                fontsize=14, loc="left", color=T.MUTED)
+            if i == 1:
+                ax.set_xlabel("time [days]")
+            T.panel(ax, "abcd"[2 * i + j])
+    line_key(fig)
+    save(fig, out, "fig_wedge_velocity_vs_time_ac%s.png" % ("1e-3" if ac == 1e-3 else "1e-2"))
+
+
 def write_summary(runs, out):
     path = os.path.join(out, "velocity_summary.csv")
     with open(path, "w") as fh:
@@ -369,6 +462,9 @@ def main():
     fig_wedge_summary(runs, out)
     for ac in ALPHAS:
         fig_wedge_time_maps(runs, out, ac)
+    fig_channel_curves(runs, out)
+    for ac in ALPHAS:
+        fig_wedge_curves(runs, out, ac)
 
 
 if __name__ == "__main__":
