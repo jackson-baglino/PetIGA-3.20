@@ -180,7 +180,7 @@ def main():
         # upper zoom line runs through the (b) label's position.
         fig.text(*fig.transFigure.inverted().transform(ax.transAxes.transform((-0.03, 1.0))),
                  pplib.bold(f"({k_})"), ha="right", va="top", fontsize=FS, zorder=20,
-                 bbox=dict(boxstyle="circle,pad=0.12", fc="white", ec="none", alpha=1.0) if k_ == "b" else None)
+                 bbox=dict(boxstyle="circle,pad=0.12", fc="white", ec="none", alpha=0.5) if k_ == "b" else None)
 
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
