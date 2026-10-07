@@ -531,7 +531,15 @@ theory dashed.
   meniscus shape. At α_c = 1e-2 it is over by about day 60; at 1e-3 the
   outer meniscus is still approaching at day 150.
 - Wedge θ = 150°, α_c = 1e-2: both menisci turn back toward zero after about
-  day 115. Not yet looked at.
+  day 115. The movie shows why: the non-wetting bridge has pulled in to a
+  lens, convex on both faces, and its contact patches on the walls are
+  shrinking.
+
+**Movies.** `movie_with_velocity.py --dir <run>` renders one run (ice, and
+supersaturation in the vapour) above its velocity curve with a moving
+marker. Four are in `figures/movies/`: channel θ = 30° and 150°, wedge
+θ = 150°, and wedge σ∞ = +3e-5 (the run that fills the domain), all at
+α_c = 1e-2.
 - All wedge curves show slope changes near days 23 and 125. They fall at the
   same times in every run, so they are the 21-snapshot sliding fit of
   `wedge_gt_velocity.py` running out of points at the ends, not physics.

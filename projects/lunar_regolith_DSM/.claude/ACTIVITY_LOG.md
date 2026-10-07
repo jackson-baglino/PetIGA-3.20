@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-07 10:39:02
+
+
+---
+
 **Session ended:** 2026-10-07 10:36:13
 
 
@@ -23,6 +28,9 @@
 - Later: black-centred diverging colormap (berlin_r, --cmap to swap); the
   last wedge run (theta = 150, alpha_c = 1e-2) added, 44/44; new
   velocity-against-time curve figures, one curve per run for each batch.
+- Later: movie_with_velocity.py (field movie above the velocity curve, moving
+  marker); four movies rendered. The theta = 150 wedge run turns out to be a
+  bridge dewetting into a lens.
 
 ---
 
