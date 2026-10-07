@@ -17,8 +17,8 @@ supersaturation sigma in the pore, circled instants, panel letters, type sizes.
       samples after the relaxation period; instants 1-2 marked
   (c) the free-fit exponent against the start of the fit window, with the
       range Demmenie et al. (2025) measured and the 1/3 law
-  (d) the grain diameter D / D_0: the saturation check, y bounds from this
-      run's own data by the Molaro figure's rule
+  (d) the grain diameter D / D_0: the saturation check, on the y range of the
+      Molaro figure's shrinkage panels
 
 Fits and numbers come from analyze_demmenie.py, so the figure and the
 diagnostic plots cannot disagree.
@@ -81,14 +81,15 @@ def main():
     pore = np.concatenate([pmv.SIGMA_SCALE * pplib.supersaturation(fl["VaporDensity"], fl["Temperature"])[fl["IcePhase"] < 0.5]
                            for fl, _, _ in secs])
     smin, smax = float(pore.min()), float(pore.max())
-    # The Molaro figure uses a symmetric asinh bar sized to the SMALLER extreme,
-    # which suits a field that changes sign over decades. Here the whole pore
-    # is supersaturated against a flat surface (the walls sit at 1 + 2 d0/R)
-    # and varies by a factor of four, so that rule would paint every pixel the
-    # end colour. Same colours, same zero in the middle, but a LINEAR bar a
-    # little past the far-field value, so the depletion at the neck shows.
+    # Bounds as in the Molaro figure: symmetric about zero, so sigma = 0 is the
+    # bar's middle, and sized to THIS run's data. There the size is the smaller
+    # of the two extremes; here the pore is supersaturated everywhere against
+    # a flat surface (the walls sit at 1 + 2 d0/R), so there is one extreme and
+    # the bar ends exactly on it. The mapping is linear, not asinh: the field
+    # spans a factor of four, not decades, and asinh would paint the whole
+    # pore the end colour and hide the depletion at the neck.
     if smin * smax > 0:
-        v = 1.25 * max(abs(smin), abs(smax))
+        v = max(abs(smin), abs(smax))
         norm = Normalize(vmin=-v, vmax=v); ext = "neither"; vapcm = cmocean.cm.balance
     else:
         v = min(abs(smin), abs(smax)) or max(abs(smin), abs(smax))
@@ -166,12 +167,10 @@ def main():
     dx = fig.add_axes(F(ml2 + pw + pgap, bot, pw, ph2)); dress(dx)
     gt, gR = A["g"]
     dx.plot(gt / HOUR, gR / gR[0], "-", lw=1.8, color=C_SIM)
-    # y bounds as plot_molaro_validation._shrink_panel: the data's own span,
-    # padded by 8 % of it, and always including D / D_0 = 1.
-    dv = gR / gR[0]
-    pad = 0.08 * (dv.max() - dv.min())
-    dx.set_xlim(0, t[-1] / HOUR * 1.03); dx.set_ylim(dv.min() - pad, max(dv.max(), 1.0) + pad)
-    dx.ticklabel_format(axis="y", useOffset=False)
+    # y range of the Molaro figure's shrinkage panels (grains there lose
+    # 3-9 %), NOT this run's own span: +0.06 % on a tight axis reads as a
+    # grain that grows a lot, which it does not (user, 2026-10-07).
+    dx.set_xlim(0, t[-1] / HOUR * 1.03); dx.set_ylim(0.95, 1.01)
     dx.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
     dx.set_xlabel("Time [h]", fontsize=FS, labelpad=2); dx.set_ylabel(r"$D\,/\,D_0$", fontsize=FS, labelpad=3)
 
