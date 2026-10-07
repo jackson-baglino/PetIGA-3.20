@@ -38,6 +38,25 @@ for stem, src in FIGURES:
             shutil.copyfile(f, a.dest / f.name)
         else:
             print(f"MISSING {f}")
+# Supporting-information plots, under their own names, in <dest>/supplement/.
+REPO = Path(__file__).resolve().parents[3]
+CMP = HPC / "keff_sintering_campaign/compare"
+SUPP = [REPO / "studies/keff_sintering/rve_convergence/rve_convergence.png",
+        REPO / "studies/keff_sintering/rve_convergence/kxy_vs_L.png",
+        REPO / "studies/keff_sintering/eps_sensitivity/eps_sensitivity.png",
+        REPO / "studies/keff_sintering/dtmax_check/dtmax_check.png",
+        REPO / "studies/keff_sintering/master_curve/master_curve.png",
+        CMP / "kinks/kink_check.png", CMP / "kinks/kink_examples.png",
+        CMP / "collapse/collapse_check.png",
+        SAMPLES / "figA_collapse.pdf", SAMPLES / "figA_collapse.png",
+        CMP / "phi_summary/T-20/phi_trends.png", CMP / "phi_summary/T-20/seeds_by_phi.png",
+        CMP / "phi_summary/T-20/anisotropy_time.png", CMP / "phi_summary/T-20/ssa_by_phi.png"]
+(a.dest / "supplement").mkdir(exist_ok=True)
+for f in SUPP:
+    if f.is_file():
+        shutil.copyfile(f, a.dest / "supplement" / f.name)
+    else:
+        print(f"MISSING {f}")
 print(f"{a.dest}:")
-for f in sorted(a.dest.iterdir()):
-    print(f"  {f.name:42s} {f.stat().st_size / 1e6:6.2f} MB")
+for f in sorted(x for x in a.dest.rglob("*") if x.is_file()):
+    print(f"  {str(f.relative_to(a.dest)):44s} {f.stat().st_size / 1e6:6.2f} MB  {__import__('time').strftime('%m-%d %H:%M', __import__('time').localtime(f.stat().st_mtime))}")

@@ -372,10 +372,10 @@ def fig_gallery(camp, out, T=-20):
     cb = fig.colorbar(ScalarMappable(cmap=vapcm, norm=norm), cax=cax2, orientation="horizontal",
                       ticks=[-v, 0, v])
     cb.ax.set_xticklabels(["undersaturated\n(ice sublimates)", "equilibrium",
-                           "supersaturated\n(vapour deposits)"], fontsize=FS_S)
+                           "supersaturated\n(vapor desublimates)"], fontsize=FS_S)
     cb.minorticks_off()
     cb.outline.set_linewidth(0.5); cb.ax.tick_params(length=0, pad=2)
-    fig.text((Lm + 67) / Wmm, 11.1 / Hmm, "vapour", fontsize=FS_S, ha="right", va="center")
+    fig.text((Lm + 67) / Wmm, 11.1 / Hmm, "vapor", fontsize=FS_S, ha="right", va="center")
     save(fig, out, "Figure5_gallery")
 
 
