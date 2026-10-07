@@ -493,12 +493,29 @@ series-resistance relation predicts.
 | α_c = 1e-3, θ = 30° and 150° | 1.155 and 1.083 |
 | α_c = 1e-3, σ∞ = −1e-5 (U = −10 nm/day, near the zero crossing) | 0.884 |
 
-- Fitting β in v = F/(β + K·ℓ) over the 11 channel runs gives
-  0.964·β_sub0 at α_c = 1e-3 and 1.007·β_sub0 at 1e-2. The 1e-2 fit is weak:
-  β is only 13 % of the resistance there, so 1 % in velocity is 8 % in β.
-- The additive 8.7e5 s/m offset of the August wedge batch is not present. It
-  would make these runs 6 % slow at 1e-3 and 14 % slow at 1e-2; they are
-  within 2 % at 1e-2 and 1 to 3 % fast at 1e-3.
+- **Correction (2026-10-07, later): the thin-interface offset is present,
+  and it is small.** An earlier version of this section said it was absent.
+  Each run prints its own `tau_sub terms` in `outp.txt`; the two
+  thin-interface terms add 1.7 % to τ_sub at α_c = 1e-3 and 16.8 % at 1e-2
+  (the same absolute 1.3e5 s/m on β both times), and the local
+  Gibbs–Thomson check on the θ = 90° wedge runs finds the interface obeying
+  exactly that: β_eff/β_sub0 = 1.016 and 1.16 to 1.18, i.e. v_n is 98 % and
+  85 % of the local prediction.
+- The channel hides it because β is in series with the diffusive resistance
+  K·ℓ. A 16.8 % rise in β at 1e-2 is a 2 % fall in velocity. With β taken as
+  β_sub0·(τ_sub/τ_kin) the 1e-2 channel runs at θ = 60°, 120° and 150° come
+  to 1.002 to 1.017 of theory, against 0.983 to 0.998 with β_sub0
+  (`meas_over_theory_thin` in the summary CSV).
+- At 1e-3 the runs sit 2 to 4 % ABOVE theory either way, so something other
+  than β (the flat-front approximation is the first suspect) is worth about
+  that much.
+- The 8.7e5 s/m offset quoted above from the August wedge batch is 6.8× the
+  1.3e5 s/m these runs carry. The offset scales with ε and inversely with
+  the two diffusivities; which of those differed in August has not been
+  traced.
+- Fitting β to the channel time series gives 0.96·β_sub0 at 1e-3 and
+  1.08·β_sub0 at 1e-2 (1 % in velocity is 8 % in β there, so the second is
+  loose). An earlier fit on run averages gave 1.00 at 1e-2 and was biased low.
 - θ = 90° stays at zero: −0.2 nm/day at 1e-3, 0.0 at 1e-2.
 - The two strongly curved menisci (30°, 150°) at 1e-3 run 8 to 15 % above
   the flat-front theory; at 1e-2 they agree to 1 %. Not yet explained.

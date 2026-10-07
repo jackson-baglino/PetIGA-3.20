@@ -73,15 +73,17 @@ def beta0(ac):
     return T.BETA_HK1 / ac
 
 
-def v_channel(th_deg, sig, ell, ac):
-    return (sig + 2.0 * T.D0 * np.cos(np.radians(th_deg)) / T.H) / (beta0(ac) + T.K * ell)
+def v_channel(th_deg, sig, ell, ac, beta=None):
+    b = beta0(ac) if beta is None else beta
+    return (sig + 2.0 * T.D0 * np.cos(np.radians(th_deg)) / T.H) / (b + T.K * ell)
 
 
-def v_wedge(which, th_deg, sig, r, ac):
+def v_wedge(which, th_deg, sig, r, ac, beta=None):
+    b = beta0(ac) if beta is None else beta
     c = np.cos(np.radians(th_deg))
     if which == "inner":
-        return (sig + T.D0 * (c + T.SA) / (r * T.SA)) / (beta0(ac) + T.K * r * np.log(r / T.R_L))
-    return (sig + T.D0 * (c - T.SA) / (r * T.SA)) / (beta0(ac) + T.K * r * np.log(T.R_R / r))
+        return (sig + T.D0 * (c + T.SA) / (r * T.SA)) / (b + T.K * r * np.log(r / T.R_L))
+    return (sig + T.D0 * (c - T.SA) / (r * T.SA)) / (b + T.K * r * np.log(T.R_R / r))
 
 
 # --- loading -----------------------------------------------------------------
@@ -98,6 +100,7 @@ def load(root):
         geom, th, s, n, ac = m.groups()
         sig = 0.0 if s is None else (1 if s == "p" else -1) * int(n) * 1e-5
         r = dict(geom=geom, theta=int(th), sigma=sig, ac=float(ac), dir=d)
+        r["beta"] = beta_realised(d, r["ac"])
         if geom == "channel":
             f = os.path.join(d, "SSA_evo.dat")
             if not os.path.exists(f):
@@ -108,6 +111,7 @@ def load(root):
             r["ell"] = 0.5 * (LX - A / T.H)
             r["v"] = {"mean": np.gradient(A, t) / (2.0 * T.H)}
             r["v_th"] = {"mean": v_channel(r["theta"], sig, r["ell"], r["ac"])}
+            r["v_thin"] = {"mean": v_channel(r["theta"], sig, r["ell"], r["ac"], r["beta"])}
         else:
             f = os.path.join(d, "wedge_gt_velocity.csv")
             if not os.path.exists(f):
@@ -127,8 +131,32 @@ def load(root):
                       "outer": np.gradient(c["r_right"], c["time"])}
             r["v_th"] = {k: v_wedge(k, r["theta"], sig, r["r"][k], r["ac"])
                          for k in ("inner", "outer")}
+            r["v_thin"] = {k: v_wedge(k, r["theta"], sig, r["r"][k], r["ac"], r["beta"])
+                           for k in ("inner", "outer")}
         runs.append(r)
     return runs
+
+
+TAU_TERMS = re.compile(r"tau_sub terms:\s+kinetic\s+(\S+) s \+ thermal\s+(\S+) \+ vapor\s+(\S+)")
+
+
+def beta_realised(run_dir, ac):
+    """The kinetic coefficient the discretisation delivers.
+
+    tau_sub carries two thin-interface terms on top of the kinetic one, and
+    for this one-sided model they are not subtracted back off (see
+    wedge_gt_velocity.py), so the interface obeys beta_sub0*(tau_sub/tau_kin),
+    not beta_sub0. The three terms are read from the run's own outp.txt."""
+    try:
+        with open(os.path.join(run_dir, "outp.txt"), errors="replace") as fh:
+            for line in fh:
+                m = TAU_TERMS.search(line)
+                if m:
+                    k, th, v = map(float, m.groups())
+                    return beta0(ac) * (k + th + v) / k
+    except OSError:
+        pass
+    return beta0(ac)
 
 
 def area_series(path, dt_out=0.25 * DAY):
@@ -154,8 +182,10 @@ def window(r, lo, hi):
 
 
 def avg(r, key, lo=0.5, hi=1.0, theory=False):
+    """theory: False = measured, True = beta_sub0, "thin" = realised beta."""
     w = window(r, lo, hi)
-    return float(np.mean((r["v_th"] if theory else r["v"])[key][w]))
+    src = r["v_thin"] if theory == "thin" else r["v_th"] if theory else r["v"]
+    return float(np.mean(src[key][w]))
 
 
 def pick(runs, geom, ac, sweep):
@@ -167,12 +197,18 @@ def pick(runs, geom, ac, sweep):
 
 
 def fit_beta(runs, ac):
-    """Least-squares beta in v = F/(beta + K l) over the channel runs."""
-    sel = [r for r in runs if r["geom"] == "channel" and r["ac"] == ac]
-    F = np.array([r["sigma"] + 2 * T.D0 * np.cos(np.radians(r["theta"])) / T.H for r in sel])
-    V = np.array([avg(r, "mean") for r in sel])
-    L = np.array([float(np.mean(r["ell"][window(r, 0.5, 1.0)])) for r in sel])
-    bs = np.linspace(0.2, 5.0, 48001) * beta0(ac)
+    """Least-squares beta in v(t) = F/(beta + K l(t)) over the channel runs,
+    on the second-half time series. (Fitting run averages against the
+    run-averaged l is biased low when l changes a lot during the window.)"""
+    F, V, L = [], [], []
+    for r in runs:
+        if r["geom"] != "channel" or r["ac"] != ac:
+            continue
+        w = window(r, 0.5, 1.0)
+        f = r["sigma"] + 2 * T.D0 * np.cos(np.radians(r["theta"])) / T.H
+        F.append(np.full(w.sum(), f)); V.append(r["v"]["mean"][w]); L.append(r["ell"][w])
+    F, V, L = map(np.concatenate, (F, V, L))
+    bs = np.linspace(0.2, 5.0, 4801) * beta0(ac)
     err = [np.sum((V - F / (b + T.K * L)) ** 2) for b in bs]
     return bs[int(np.argmin(err))]
 
@@ -444,15 +480,20 @@ def write_summary(runs, out):
     with open(path, "w") as fh:
         fh.write("# second half of each run; v > 0 = growth; theory uses beta_sub0 at the "
                  "measured meniscus position\n")
+        fh.write("# *_thin: theory with the kinetic coefficient the solver realises, "
+                 "beta_sub0*(tau_sub/tau_kin)\n")
         fh.write("geometry,alpha_c,theta_deg,sigma_inf,meniscus,t_end_d,"
-                 "v_meas_m_s,v_theory_m_s,v_meas_nm_day,v_theory_nm_day,meas_over_theory\n")
+                 "v_meas_m_s,v_theory_m_s,v_meas_nm_day,v_theory_nm_day,meas_over_theory,"
+                 "v_theory_thin_nm_day,meas_over_theory_thin\n")
         for r in sorted(runs, key=lambda r: (r["geom"], r["ac"], r["sigma"] != 0, r["theta"], r["sigma"])):
             for key in r["v"]:
-                vm, vt = avg(r, key), avg(r, key, theory=True)
+                vm, vt, vn = avg(r, key), avg(r, key, theory=True), avg(r, key, theory="thin")
                 ratio = vm / vt if abs(vt) > 1e-15 else float("nan")
-                fh.write("%s,%g,%d,%g,%s,%.1f,%.4e,%.4e,%.2f,%.2f,%.3f\n"
+                ratio_n = vm / vn if abs(vn) > 1e-15 else float("nan")
+                fh.write("%s,%g,%d,%g,%s,%.1f,%.4e,%.4e,%.2f,%.2f,%.3f,%.2f,%.3f\n"
                          % (r["geom"], r["ac"], r["theta"], r["sigma"], key,
-                            r["t"].max() / DAY, vm, vt, vm * NM_DAY, vt * NM_DAY, ratio))
+                            r["t"].max() / DAY, vm, vt, vm * NM_DAY, vt * NM_DAY, ratio,
+                            vn * NM_DAY, ratio_n))
     print("wrote velocity_summary.csv")
 
 
@@ -477,7 +518,9 @@ def main():
         sum(r["geom"] == "wedge" for r in runs)))
     for ac in ALPHAS:
         b = fit_beta(runs, ac)
-        print("  alpha_c = %g: fitted beta = %.3e s/m = %.3f x beta_sub0" % (ac, b, b / beta0(ac)))
+        real = [r["beta"] for r in runs if r["ac"] == ac][0]
+        print("  alpha_c = %g: fitted beta = %.3f x beta_sub0; realised by tau_sub = %.3f x"
+              % (ac, b / beta0(ac), real / beta0(ac)))
 
     write_summary(runs, out)
     fig_channel_summary(runs, out)

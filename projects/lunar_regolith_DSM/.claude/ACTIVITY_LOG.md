@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-07 11:03:35
+
+
+---
+
 **Session ended:** 2026-10-07 10:48:11
 
 
@@ -41,6 +46,11 @@
   the centreline positions instead of wedge_gt_velocity.py's 21-snapshot
   sliding fit, which had made the kinks and smeared the relaxation. Figures and
   movies regenerated; README corrected (150-degree bridge detaches at day ~137).
+- Later: corrected the claim that the thin-interface offset is absent. It is
+  present (tau_sub terms: +1.7 % at 1e-3, +16.8 % at 1e-2; local GT check gives
+  v_n = 98 % / 85 % of prediction) but diluted in the channel by the series
+  diffusive resistance. compare_velocity.py now reads each run's tau_sub terms
+  and reports the ratio against the realised beta; beta fit made time-resolved.
 
 ---
 
