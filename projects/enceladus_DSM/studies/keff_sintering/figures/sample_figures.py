@@ -19,7 +19,7 @@ labels; >= 8 pt; transparent background):
   Figure7_timescales    the clock extrapolated: time to reach a sintering age as a
                      function of temperature and grain radius (vapour route),
                      with Enceladus conditions and Choukroun's 180 K point
-  Figure5_gallery       what happens to the aggregates: one packing of each
+  Figure4_gallery       what happens to the aggregates: one packing of each
                      porosity at four instants, with qualitative colour bars
 
 Seeds are PAIRED across temperature (the packings common to every temperature).
@@ -376,7 +376,7 @@ def fig_gallery(camp, out, T=-20):
     cb.minorticks_off()
     cb.outline.set_linewidth(0.5); cb.ax.tick_params(length=0, pad=2)
     fig.text((Lm + 67) / Wmm, 11.1 / Hmm, "vapour", fontsize=FS_S, ha="right", va="center")
-    save(fig, out, "Figure5_gallery")
+    save(fig, out, "Figure4_gallery")
 
 
 def main():

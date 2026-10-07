@@ -232,8 +232,8 @@ GRL); both PDFs are in `Literature/`.
 
 - [ ] **Manuscript figures** — plan in `MANUSCRIPT_PLAN.md`. Build now,
   rebuild when 3f/3r land (Jackson, 2026-10-06).
-  - [x] Fig. 4 merged (snapshots + collapse): `figures/fig4_keff_collapse.py`,
-    copied to `Figure4__KeffEvolution/Figure4_keff_collapse.*`.
+  - [x] Fig. 5 merged (snapshots + collapse): `figures/fig5_keff_collapse.py`,
+    copied to `Figure5__KeffEvolution/Figure5_keff_collapse.*`.
   - [x] Figures renumbered 2026-10-06 (2 = homogenization method, 3 = Molaro,
     4 = k_eff evolution, 5 = gallery, 6 = state law, 7 = timescales); folders
     renamed to match.
@@ -243,7 +243,7 @@ GRL); both PDFs are in `Literature/`.
     temperature, grain pair), one command per table.
   - [x] Fig. 1 = (a) mechanisms + (b) `aggregate_strip` (decided 2026-10-06; no setting panel).
   - [x] Fig. 3 variant with grain shrinkage as (c)(d): `Figure3_molaro_validation`.
-  - [ ] Fig. 5 gallery, Fig. 6 state law, Fig. 7 timescale map: samples in
+  - [ ] Fig. 4 gallery, Fig. 6 state law, Fig. 7 timescale map: samples in
     `LOC/keff_sintering_campaign/compare/figure_samples/`
     (`figures/sample_figures.py`). Jackson to give figure numbers/folders.
   - [ ] Fig. 6 message agreed? (k is a power law of SSA; porosity sets the

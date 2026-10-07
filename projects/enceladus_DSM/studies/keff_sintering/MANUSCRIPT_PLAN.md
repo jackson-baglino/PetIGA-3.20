@@ -7,15 +7,15 @@ argument". Run inventory: `RUN_TABLE.md`.
 
 ## Figure plan (8 in the draft → 7 main + supplement)
 
-Numbering fixed 2026-10-06; the manuscript folders carry these numbers.
+Numbering fixed 2026-10-06; the manuscript folders carry these numbers. Gallery and collapse swapped the same day (user): show what the model does to the aggregates, then the temperature collapse, then the weaker porosity result. NOTE: the iCloud folders and files for 4 and 5 still carry the OLD numbers until the rename there is done (access was denied from the session).
 
 | new | content | status | replaces | section |
 |---|---|---|---|---|
 | 1 | (a) sintering mechanisms schematic; (b) `aggregate_strip`: close-up of a few dozen grains of the master run at 0/10/19/30 d. Decided 2026-10-06: one figure, two panels; the `setting_panel` sample is not used | **built**: `figures/fig1_mechanisms_aggregate.py` → `Figure1__SinteringMechanisms/Figure1_mechanisms_aggregate.*` | Fig. 1 | 1 |
 | 2 | **Homogenization method** on the master run: (a) cell, (b) zoom with mesh and φ = 0.01/0.5/0.99, (c) corrector t_x, (d) local heat flux per unit mean gradient | **built** with the corrector replay: `figures/fig_Figure2_homogenization_method.py` → `Figure2__HomogenizationMethod/` | new | 2.3 |
 | 3 | Molaro grain-pair validation: (a) sections, (b) neck width, (c)(d) grain shrinkage D/D₀ of the large and small grain (`Figure3_molaro_validation`, 170 × 181 mm; `molaro_combined` is the version without shrinkage). Note for the text: the −20 °C wall humidity was set from the measured large-grain shrinkage, so that panel is a calibration, not a test; the small grain and the −5 °C pair are the independent checks. Add the Demmenie-conditions exponent when that run lands | built: `postprocess/plot_molaro_validation.py`; Demmenie run queued | Fig. 2 | 3.1 |
-| 4 | **k_eff evolution and its temperature collapse**: (a) four snapshots of one packing; (b) k/k₀ vs days, five temperatures; (c) the same vs θ = t/τ_sub; (d) SSA/SSA₀ vs θ | **built**: `figures/fig4_keff_collapse.py` → `Figure4__KeffEvolution/Figure4_keff_collapse.*` | Figs. 3, 4, 5 | 3.2 |
-| 5 | **What happens to the aggregates**: five porosities × four instants, qualitative colour bars | built (sample): `Figure5_gallery` | Fig. 6 | 3.2 |
+| 4 | **What happens to the aggregates**: five porosities × four instants, qualitative colour bars | built (sample): `Figure4_gallery` | Fig. 6 | 3.2 |
+| 5 | **k_eff evolution and its temperature collapse**: (a) four snapshots of one packing; (b) k/k₀ vs days, five temperatures; (c) the same vs θ = t/τ_sub; (d) SSA/SSA₀ vs θ | **built**: `figures/fig5_keff_collapse.py` → `Figure5__KeffEvolution/Figure5_keff_collapse.*` | Figs. 3, 4, 5 | 3.2 |
 | 6 | **The state law**: (a) k vs SSA, well-connected packings, one power law; (b) level vs porosity; (c) exponent vs porosity, grey above φ 0.40 | built (sample): `Figure6_state_law` or `Figure6_state_law_alt`; message below | Figs. 7, 8 | 3.2 / 4.2 |
 | 7 | **The clock extrapolated**: time to a given sintering age vs temperature and grain radius, with Enceladus conditions and Choukroun's 180 K point | built (sample): `Figure7_timescales`; needs the surface-diffusion check | new | 4.3 |
 
@@ -27,7 +27,7 @@ block at 11 pt.
 | table | command | where | place it right after |
 |---|---|---|---|
 | 1 | `\TableKeffParameters` (compact, 11 rows) | §3.2, set-up paragraph | the sentence that states the matrix: five porosities × five temperatures × five packings, 2 mm periodic cells |
-| 2 | `\TableKeffTemperature` | §3.2, before Fig. 4 | the definition of τ_sub and θ = t/τ_sub, and the statement that 30 d spans 43 to 1256 τ_sub |
+| 2 | `\TableKeffTemperature` | §3.2, before Fig. 5 | the definition of τ_sub and θ = t/τ_sub, and the statement that 30 d spans 43 to 1256 τ_sub |
 | S1 | `\TableMaterialProperties` | SI; cited from §2.1/2.2 | the governing equations, where the constitutive relations are named |
 | S2 | `\TableKeffParametersFull` | SI; cited from §2.4 and Table 1's note | the numerical-method paragraph (discretization, time stepping, k_eff sampling) |
 | S3 | `\TableGrainPairParameters` | SI; cited from §3.1 | the description of the two-grain set-up, before Fig. 3 |
@@ -43,10 +43,10 @@ block at 11 pt.
 
 ## The message of each results figure
 
-- **Fig. 4:** temperature changes how fast a deposit matures, not the path it
+- **Fig. 5:** temperature changes how fast a deposit matures, not the path it
   takes. (b) fans out, (c) and (d) do not. SSA(θ) is included because it shows
   the microstructure itself collapses; k follows from it.
-- **Fig. 5:** orientation, no analysis. Shows necks forming, pores rounding and
+- **Fig. 4:** orientation, no analysis. Shows necks forming, pores rounding and
   closing, and the loss of a connected ice network at high porosity.
 - **Fig. 6:** *conductivity is a power law of SSA with one exponent (−0.80)
   for every well-connected packing; porosity sets the level.* Built on SSA, not
@@ -59,13 +59,13 @@ block at 11 pt.
   grains are fine. Read as a bound on the vapour route.
 
 **SSA against age is logarithmic after the relaxation** (Jackson's reading of
-Fig. 4d, confirmed 2026-10-06): SSA/SSA₀ = A − B·log₁₀θ with B = 0.133–0.136
+Fig. 5d, confirmed 2026-10-06): SSA/SSA₀ = A − B·log₁₀θ with B = 0.133–0.136
 for φ ≤ 0.375 (A = 0.95–0.98), rms 0.10–0.19% per packing for θ ≥ 30, half the
 scatter of a power law. k against θ is not logarithmic (it bends upward),
 which follows from combining this with the SSA power law of Fig. 6.
 
 **The master simulation** is φ = 0.325, seed 1702, −20 °C. Every single-run
-illustration (Fig. 4, the methods figure, the φ 0.325 column of the gallery)
+illustration (Fig. 5, the methods figure, the φ 0.325 column of the gallery)
 uses it.
 
 **Manuscript folders (2026-10-06).** `Manuscript/Figures/` holds
@@ -75,7 +75,7 @@ tables file: `\input` it in the preamble, then `\TableMaterialProperties`,
 `\TableKeffParameters`, `\TableKeffTemperature`, `\TableGrainPairParameters`
 where each table goes. Source: `studies/keff_sintering/tables/tables.tex`.
 
-Chain of the argument: Fig. 4 gives SSA = SSA(θ), one curve for all T.
+Chain of the argument: Fig. 5 gives SSA = SSA(θ), one curve for all T.
 Fig. 6 gives k = k(SSA; φ). Fig. 7 turns θ into years for a given T and R.
 
 ## Section by section
@@ -100,7 +100,7 @@ Demmenie-conditions result when it lands.
 
 **3.2 Effective thermal conductivity. Replace entirely.** Everything in the
 draft is from the old setup (1142² mesh, 98% humidity, 28 d, nested packings
-at φ 0.24–0.30). New order: set-up and run table → Fig. 4 → Fig. 5 → Fig. 6.
+at φ 0.24–0.30). New order: set-up and run table → Fig. 5 → Fig. 4 → Fig. 6.
 Also correct: the off-diagonal components are NOT orders of magnitude smaller;
 k_xy is up to ~12% of k_xx for one packing, zero in the seed mean, and shrinks
 with domain size.
