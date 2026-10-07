@@ -82,7 +82,7 @@ def main():
             sp.set_linewidth(0.6); sp.set_color(MUTED)
         ax.set_title(lab, fontsize=FS, pad=3)
         if j == 0:
-            x0, y0 = -zc + 0.025 * 2 * zc, rc - 0.17 * 2 * rc   # the dark corner above the grain
+            x0, y0 = -zc + 0.02 * 2 * zc, rc - 0.115 * 2 * rc   # the dark corner above the grain
             ax.plot([x0, x0 + 50], [y0, y0], color="white", lw=2.2, solid_capstyle="butt")
             ax.text(x0 + 25, y0 + 0.03 * 2 * rc, r"50 $\mu$m", color="white", ha="center", va="bottom", fontsize=FS_TINY)
     fig.text(1.5 / W, (bot + ph + row_gap + sh + 3.0) / H, pplib.bold("(a)"), fontsize=FS, va="center", color=INK)
