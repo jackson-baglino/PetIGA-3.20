@@ -11,15 +11,15 @@ labels; >= 8 pt; transparent background):
                      (a) k/k_0 vs time [d], five temperatures  -> fans out
                      (b) the same vs theta = t/tau_sub          -> one curve
                      (c) k_iso vs SSA, five temperatures        -> one path
-  Figure6_state_law       the state law: (a) k_eff vs SSA, each relative to its value
+  Figure7_state_law       the state law: (a) k_eff vs SSA, each relative to its value
                      at theta = 30, well-connected packings, with the power
                      law; (b) the level vs porosity; (c) the exponent vs porosity
-  Figure6_state_law_alt     the same with curves: (a) k_eff(t) by porosity, the gallery's
+  Figure7_state_law_alt     the same with curves: (a) k_eff(t) by porosity, the gallery's
                      instants marked; (b)-(d) as figB
-  Figure7_timescales    the clock extrapolated: time to reach a sintering age as a
+  Figure8_timescales    the clock extrapolated: time to reach a sintering age as a
                      function of temperature and grain radius (vapour route),
                      with Enceladus conditions and Choukroun's 180 K point
-  Figure4_gallery       what happens to the aggregates: one packing of each
+  Figure5_gallery       what happens to the aggregates: one packing of each
                      porosity at four instants, with qualitative colour bars
 
 Seeds are PAIRED across temperature (the packings common to every temperature).
@@ -178,7 +178,7 @@ def fig_closure(R, out, theta_ref=30.0, phi_max=0.375):
     ax[2].set(ylabel=r"exponent $p$")
     for a_, s_ in zip(ax, "abc"):
         clean(a_); panel(a_, s_, dx=-0.32)
-    save(fig, out, "Figure6_state_law")
+    save(fig, out, "Figure7_state_law")
     print(f"  state law: k ~ SSA^{p0:.3f} (phi <= {phi_max}); level k_r/k_ice = "
           f"{np.exp(cf[1]):.3f} exp({cf[0]:.2f} phi); per-phi p: "
           + ", ".join(f"{p:g}: {np.mean(p_by[p]):.2f}±{np.std(p_by[p], ddof=1):.2f}" for p in phis))
@@ -254,7 +254,7 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
     ax[3].set(ylabel=r"exponent $p$")
     for a_, s_ in zip(ax, "abcd"):
         clean(a_); panel(a_, s_, dx=-0.20, dy=1.01)
-    save(fig, out, "Figure6_state_law_alt")
+    save(fig, out, "Figure7_state_law_alt")
 
 
 def psat_ice(T):                                    # Murphy & Koop (2005), Pa
@@ -312,7 +312,7 @@ def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=
     cb.outline.set_linewidth(0.5)
     cb.ax.set_title(r"$t$", fontsize=FS, pad=4)
     clean(ax)
-    save(fig, out, "Figure7_timescales")
+    save(fig, out, "Figure8_timescales")
 
 
 def fig_gallery(camp, out, T=-20):
@@ -376,7 +376,7 @@ def fig_gallery(camp, out, T=-20):
     cb.minorticks_off()
     cb.outline.set_linewidth(0.5); cb.ax.tick_params(length=0, pad=2)
     fig.text((Lm + 67) / Wmm, 11.1 / Hmm, "vapour", fontsize=FS_S, ha="right", va="center")
-    save(fig, out, "Figure4_gallery")
+    save(fig, out, "Figure5_gallery")
 
 
 def main():

@@ -122,6 +122,12 @@ for run in "${RUNS[@]}"; do
     esac
     data_csv="$run/inputs/validation/molaro2019_fig11_${series}.csv"
     data_flag=(); [[ -f "$data_csv" ]] && data_flag=(--data "$data_csv")
+    # A SATURATED run (-humidity >= 1: the Demmenie-conditions test) is not a
+    # model of Molaro's unsaturated cryostage, so it is not drawn against that
+    # data. It is scored against t^(1/3) instead (analyze_demmenie.py below).
+    hum=$(awk '$1=="-humidity"{print $2; exit}' "$run"/*.opts 2>/dev/null | head -n1)
+    saturated=$(awk -v h="${hum:-0}" 'BEGIN{print (h+0 >= 1.0) ? 1 : 0}')
+    [[ "$saturated" == 1 ]] && data_flag=()
     anchor_m=$(awk -v u="$ANCHOR_NECK_UM" 'BEGIN{printf "%.6e", u*1e-6}')
     echo "    series $series: anchor ${ANCHOR_NECK_UM} um, window ${WINDOW_MIN} min"
 
@@ -132,8 +138,17 @@ for run in "${RUNS[@]}"; do
     # without redrawing it leaves a figure that silently disagrees with the CSV
     # beside it. That is exactly how the 2026-09-09 interpolation fix appeared
     # not to have worked: the numbers had changed and the picture had not.
+    if [[ "$saturated" == 1 ]]; then
+        dem="$POSTPROCESS/../studies/molaro_2019/demmenie/analyze_demmenie.py"
+        if [[ -f "$dem" ]]; then
+            "$PYTHON" "$dem" "$run"                                      2>&1 | sed 's/^/    /'
+        else
+            echo "    saturated run: no Molaro comparison. Run studies/molaro_2019/demmenie/analyze_demmenie.py from the repo."
+        fi
+    else
     "$PYTHON" "$POSTPROCESS/plot_neck_vs_molaro.py" "$run" ${data_flag[@]+"${data_flag[@]}"} \
         --anchor-width "$anchor_m"                                      2>&1 | sed 's/^/    /'
+    fi
 
     if [[ ! -f "$run/neck_width.csv" ]]; then
         echo "    no neck_width.csv — arm not summarised"; ((n_fail++)); continue

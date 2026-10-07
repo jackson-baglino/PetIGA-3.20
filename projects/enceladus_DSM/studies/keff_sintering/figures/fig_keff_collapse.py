@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Figure 5 (manuscript): k_eff evolution of one packing, and its temperature collapse.
+"""Figure 6 (manuscript): k_eff evolution of one packing, and its temperature collapse.
 
-    venv_enceladus/bin/python studies/keff_sintering/figures/fig5_keff_collapse.py <campaign dir>
+    venv_enceladus/bin/python studies/keff_sintering/figures/fig_keff_collapse.py <campaign dir>
         [--seed 1702] [--phi 0.325] [--snap-T -20] [--copy-to <dir>] [--out <dir>]
 
 Merges the snapshot figure (plot_keff_snapshots.py) with the temperature
@@ -16,7 +16,7 @@ collapse, on ONE packing run at five temperatures:
 
 One packing, not a seed mean, so the snapshots ARE the curve. k_eff is k_iso.
 Manuscript style: 170 mm wide, no titles, symbol labels, transparent
-background, >= 8 pt. Writes Figure5_keff_collapse.{pdf,png}; --copy-to also
+background, >= 8 pt. Writes Figure6_keff_collapse.{pdf,png}; --copy-to also
 copies them under that name (never over the Inkscape assemblies there).
 """
 from __future__ import annotations
@@ -150,12 +150,12 @@ def main():
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
     for e in ("pdf", "png"):
-        f = out / f"Figure5_keff_collapse.{e}"
+        f = out / f"Figure6_keff_collapse.{e}"
         fig.savefig(f, dpi=600, transparent=True)
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(f, a.copy_to / f.name)
-    print(f"wrote {out}/Figure5_keff_collapse.pdf/.png ({W:.0f} x {H:.0f} mm)"
+    print(f"wrote {out}/Figure6_keff_collapse.pdf/.png ({W:.0f} x {H:.0f} mm)"
           + (f"; copied to {a.copy_to}" if a.copy_to else ""))
     print("temperatures:", Ts, "| snapshot times [d]:", [round(s[3] / DAY, 2) for s in snaps])
 

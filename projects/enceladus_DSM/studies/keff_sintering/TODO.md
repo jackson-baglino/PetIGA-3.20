@@ -238,8 +238,8 @@ GRL); both PDFs are in `Literature/`.
 
 - [ ] **Manuscript figures** — plan in `MANUSCRIPT_PLAN.md`. Build now,
   rebuild when 3f/3r land (Jackson, 2026-10-06).
-  - [x] Fig. 5 merged (snapshots + collapse): `figures/fig5_keff_collapse.py`,
-    copied to `Figure5__KeffEvolution/Figure5_keff_collapse.*`.
+  - [x] Fig. 6 merged (snapshots + collapse): `figures/fig_keff_collapse.py`,
+    copied to `Figure6__KeffEvolution/Figure6_keff_collapse.*`.
   - [x] Figures renumbered 2026-10-06 (2 = homogenization method, 3 = Molaro,
     4 = k_eff evolution, 5 = gallery, 6 = state law, 7 = timescales); folders
     renamed to match.
@@ -249,11 +249,11 @@ GRL); both PDFs are in `Literature/`.
     temperature, grain pair), one command per table.
   - [x] Fig. 1 = (a) mechanisms + (b) `aggregate_strip` (decided 2026-10-06; no setting panel).
   - [x] Fig. 3 variant with grain shrinkage as (c)(d): `Figure3_molaro_validation`.
-  - [ ] Fig. 4 gallery, Fig. 6 state law, Fig. 7 timescale map: samples in
+  - [ ] Fig. 5 gallery, Fig. 7 state law, Fig. 8 timescale map: samples in
     `LOC/keff_sintering_campaign/compare/figure_samples/`
     (`figures/sample_figures.py`). Jackson to give figure numbers/folders.
-  - [ ] Fig. 6 message agreed? (k is a power law of SSA; porosity sets the
-    level). Fig. 7 waits on the surface-diffusion literature check.
+  - [ ] Fig. 7 message agreed? (k is a power law of SSA; porosity sets the
+    level). Fig. 8 waits on the surface-diffusion literature check.
   - [ ] Methods figure (§2.3), `figures/fig_Figure2_homogenization_method.py`:
     panels (a) cell and (b) neck zoom drawn; (c) corrector and (d) heat flux
     wait on ONE local replay of the master run. `-keff_write_corrector` was
@@ -263,7 +263,7 @@ GRL); both PDFs are in `Literature/`.
   - [x] Figure folders and LaTeX parameter tables created in the manuscript
     folder (list in `MANUSCRIPT_PLAN.md`). Figure numbers 4–6 are provisional;
     the methods figure's number is open.
-  - [ ] Fig. 6: choose `Figure6_state_law` or `Figure6_state_law_alt` (adds k_eff(t) by
+  - [ ] Fig. 7: choose `Figure7_state_law` or `Figure7_state_law_alt` (adds k_eff(t) by
     porosity, pairing with the gallery).
 - [ ] **Rewrite §3.2, §4, §5, key points and abstract** (plan in
   `MANUSCRIPT_PLAN.md`).
