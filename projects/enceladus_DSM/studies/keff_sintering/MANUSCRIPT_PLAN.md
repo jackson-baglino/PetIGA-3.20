@@ -100,7 +100,7 @@ Demmenie-conditions result when it lands.
 
 **3.2 Effective thermal conductivity. Replace entirely.** Everything in the
 draft is from the old setup (1142² mesh, 98% humidity, 28 d, nested packings
-at φ 0.24–0.30). New order: set-up and run table → Fig. 5 → Fig. 4 → Fig. 6.
+at φ 0.24–0.30). New order: set-up and run table → Fig. 4 → Fig. 5 → Fig. 6.
 Also correct: the off-diagonal components are NOT orders of magnitude smaller;
 k_xy is up to ~12% of k_xx for one packing, zero in the seed mean, and shrinks
 with domain size.
