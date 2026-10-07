@@ -17,8 +17,8 @@ supersaturation sigma in the pore, circled instants, panel letters, type sizes.
       samples after the relaxation period; instants 1-2 marked
   (c) the free-fit exponent against the start of the fit window, with the
       range Demmenie et al. (2025) measured and the 1/3 law
-  (d) the grain diameter D / D_0: the saturation check, on the scale of the
-      Molaro figure's shrinkage panels
+  (d) the grain diameter D / D_0: the saturation check, y bounds from this
+      run's own data by the Molaro figure's rule
 
 Fits and numbers come from analyze_demmenie.py, so the figure and the
 diagnostic plots cannot disagree.
@@ -166,7 +166,12 @@ def main():
     dx = fig.add_axes(F(ml2 + pw + pgap, bot, pw, ph2)); dress(dx)
     gt, gR = A["g"]
     dx.plot(gt / HOUR, gR / gR[0], "-", lw=1.8, color=C_SIM)
-    dx.set_xlim(0, t[-1] / HOUR * 1.03); dx.set_ylim(0.95, 1.01)
+    # y bounds as plot_molaro_validation._shrink_panel: the data's own span,
+    # padded by 8 % of it, and always including D / D_0 = 1.
+    dv = gR / gR[0]
+    pad = 0.08 * (dv.max() - dv.min())
+    dx.set_xlim(0, t[-1] / HOUR * 1.03); dx.set_ylim(dv.min() - pad, max(dv.max(), 1.0) + pad)
+    dx.ticklabel_format(axis="y", useOffset=False)
     dx.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
     dx.set_xlabel("Time [h]", fontsize=FS, labelpad=2); dx.set_ylabel(r"$D\,/\,D_0$", fontsize=FS, labelpad=3)
 
