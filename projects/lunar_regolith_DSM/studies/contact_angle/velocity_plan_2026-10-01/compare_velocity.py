@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Measured interface velocities of the velocity study against the theory.
 
-Reads the per-run CSVs that postprocess/meniscus_velocity.py (channel) and
-postprocess/wedge_gt_velocity.py (wedge) leave in each run folder, for every
+Reads SSA_evo.dat (channel) and the CSV that postprocess/wedge_gt_velocity.py
+leaves in each run folder (wedge), for every
 batch{A,B,C,D} run under --root, and writes into --out:
 
     velocity_summary.csv          one row per run (and per meniscus on the wedge)
@@ -17,13 +17,15 @@ batch{A,B,C,D} run under --root, and writes into --out:
 WHAT "VELOCITY" MEANS HERE
 
   channel  U = (dA/dt) / (2H): the rate at which the mean meniscus position
-           advances. It is the quantity the series-resistance relation
+           advances, with A(t) the ice area the solver writes to SSA_evo.dat
+           at every step. It is the quantity the series-resistance relation
            predicts (vapour flux through the channel cross-section H), and it
            is insensitive to the meniscus still relaxing from the clipped-disc
            IC to its equilibrium arc, which the mid-plane and contact-line
            velocities are not. (dA/dt)/arc-length, the mean NORMAL velocity,
            is smaller by arc/2H = 1.03 to 1.24.
-  wedge    the centreline velocity of each meniscus, from wedge_gt_velocity.py.
+  wedge    the centreline velocity of each meniscus: central differences of
+           the positions wedge_gt_velocity.py tracks, one per stored snapshot.
            The band IC is the theta = 90 shape, so at any other angle the
            centreline also carries the shape relaxation; only its late-time
            value and its slope against sigma_inf are comparable to theory.
@@ -97,14 +99,14 @@ def load(root):
         sig = 0.0 if s is None else (1 if s == "p" else -1) * int(n) * 1e-5
         r = dict(geom=geom, theta=int(th), sigma=sig, ac=float(ac), dir=d)
         if geom == "channel":
-            f = os.path.join(d, "meniscus_velocity.csv")
+            f = os.path.join(d, "SSA_evo.dat")
             if not os.path.exists(f):
                 print("  missing", f)
                 continue
-            c = np.genfromtxt(f, delimiter=",", skip_header=4, names=True)
-            r["t"] = c["time_s"]
-            r["ell"] = 0.5 * (LX - c["area_m2"] / T.H)
-            r["v"] = {"mean": c["dA_dt_m2_s"] / (2.0 * T.H)}
+            t, A = area_series(f)
+            r["t"] = t
+            r["ell"] = 0.5 * (LX - A / T.H)
+            r["v"] = {"mean": np.gradient(A, t) / (2.0 * T.H)}
             r["v_th"] = {"mean": v_channel(r["theta"], sig, r["ell"], r["ac"])}
         else:
             f = os.path.join(d, "wedge_gt_velocity.csv")
@@ -116,11 +118,33 @@ def load(root):
             c = c[ok]
             r["t"] = c["time"]
             r["r"] = {"inner": c["r_left"], "outer": c["r_right"]}
-            r["v"] = {"inner": c["vn_left_meas"], "outer": c["vn_right_meas"]}
+            # Plain central differences of the centreline positions. The CSV's
+            # own vn_*_meas is a 21-snapshot sliding fit: it smears every
+            # feature over +/-25 days and goes one-sided inside 25 days of
+            # either end, which puts kinks in the curve where nothing happens
+            # in the run. Growth moves the inner meniscus to SMALLER r.
+            r["v"] = {"inner": -np.gradient(c["r_left"], c["time"]),
+                      "outer": np.gradient(c["r_right"], c["time"])}
             r["v_th"] = {k: v_wedge(k, r["theta"], sig, r["r"][k], r["ac"])
                          for k in ("inner", "outer")}
         runs.append(r)
     return runs
+
+
+def area_series(path, dt_out=0.25 * DAY):
+    """Ice area A(t) from SSA_evo.dat (column 2, written every solver step),
+    resampled to a uniform dt_out.
+
+    The file carries seven significant digits, so differencing consecutive
+    steps is quantisation noise (a few nm/day at alpha_c = 1e-2). On the
+    quarter-day grid the central difference spans half a day and the noise
+    falls below 0.1 nm/day, while still resolving the run ~6x finer than the
+    stored snapshots."""
+    d = np.loadtxt(path, usecols=(1, 2))
+    t, i = np.unique(d[:, 1], return_index=True)
+    tg = np.arange(0.0, t[-1] + 0.5 * dt_out, dt_out)
+    tg = tg[tg <= t[-1]]
+    return tg, np.interp(tg, t, d[i, 0])
 
 
 def window(r, lo, hi):

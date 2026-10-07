@@ -506,8 +506,9 @@ series-resistance relation predicts.
 **Wedge.** Centreline velocity of each meniscus.
 
 - θ = 90° (the IC shape) agrees to 0.1 to 4.5 % on both menisci at both α_c.
-- α_c = 1e-2: all other runs within 7 %, except the inner meniscus at 30°
-  (+15 %).
+- α_c = 1e-2: the outer meniscus is within 6 % of theory; the inner one runs
+  7 to 9 % above it (18 % at 30°). θ = 150° is the exception (0.55 and 0.83):
+  the bridge detaches from the walls inside the averaging window.
 - α_c = 1e-3: the inner meniscus is within 6 % for θ ≤ 90° and σ∞ ≥ 0, but
   the outer meniscus is far off away from 90° (measured/theory 0.11 to 0.69
   in the θ sweep). The time maps show its velocity still drifting at
@@ -522,18 +523,37 @@ series-resistance relation predicts.
 `fig_wedge_velocity_vs_time_ac*.png` draw one curve per run for each batch,
 theory dashed.
 
+How the curves are built (changed 2026-10-07, after the first version put
+kinks at days 23 and 125 that matched nothing in the movies):
+
+- Channel: A(t) is the ice area the solver writes to `SSA_evo.dat` at every
+  step, resampled to a quarter-day grid and differenced centrally, so each
+  point spans half a day. The earlier version differenced the 61 snapshot
+  areas (1.5 days apart). The second-half averages moved by under 0.2 %
+  except on the two fastest runs (+0.6 and +1.3 %).
+- Wedge: central differences of the centreline positions, snapshot to
+  snapshot. The earlier version used the `vn_*_meas` column of
+  `wedge_gt_velocity.py`, a 21-snapshot sliding fit that smears every
+  feature over ±25 days and goes one-sided near both ends. That fit was the
+  source of the kinks and it also delayed and flattened the relaxation.
+
+What they show:
+
 - Channel: every curve settles onto its theory curve within about 20 days
   and then follows it, including the acceleration of the wet α_c = 1e-2 runs
-  as the meniscus nears the wall.
-- Wedge: in the θ sweep the curves start in reverse order and cross near day
-  35 (inner) and day 30 to 60 (outer) before fanning out toward the theory.
-  That crossing is the relaxation from the 90° band IC to each run's own
-  meniscus shape. At α_c = 1e-2 it is over by about day 60; at 1e-3 the
-  outer meniscus is still approaching at day 150.
-- Wedge θ = 150°, α_c = 1e-2: both menisci turn back toward zero after about
-  day 115. The movie shows why: the non-wetting bridge has pulled in to a
-  lens, convex on both faces, and its contact patches on the walls are
-  shrinking.
+  as the meniscus nears the wall. The curves never cross.
+- Wedge θ sweep: the curves start in reverse order, far from theory (±600
+  nm/day on the inner meniscus at α_c = 1e-2), and cross near day 12 (inner)
+  and day 25 (outer). That is the relaxation from the 90° band IC to each
+  run's own meniscus shape. At α_c = 1e-2 the inner meniscus is on its theory
+  curve by about day 30 and the outer by about day 80.
+- Wedge σ∞ sweep at α_c = 1e-2: after the first 20 days the curves follow
+  the theory, including the runaway of the +2e-5 and +3e-5 runs as the inner
+  meniscus reaches the wall.
+- Wedge θ = 150°, α_c = 1e-2: flat until day 135, then both velocities jump
+  within about 8 days. The movie shows the non-wetting bridge pulling in to
+  a lens and detaching from both walls at that time; by day 140 it is a
+  free ellipse.
 
 **Movies.** `movie_with_velocity.py --dir <run>` renders one run (ice, and
 supersaturation in the vapour) above its velocity curve with a moving

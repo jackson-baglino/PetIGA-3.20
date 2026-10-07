@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-07 10:48:11
+
+
+---
+
 **Session ended:** 2026-10-07 10:39:02
 
 
@@ -31,6 +36,11 @@
 - Later: movie_with_velocity.py (field movie above the velocity curve, moving
   marker); four movies rendered. The theta = 150 wedge run turns out to be a
   bridge dewetting into a lens.
+- Later: curves rebuilt after Jackson saw kinks that matched no movie frame.
+  Channel now from per-step SSA_evo.dat area; wedge from plain differences of
+  the centreline positions instead of wedge_gt_velocity.py's 21-snapshot
+  sliding fit, which had made the kinks and smeared the relaxation. Figures and
+  movies regenerated; README corrected (150-degree bridge detaches at day ~137).
 
 ---
 
