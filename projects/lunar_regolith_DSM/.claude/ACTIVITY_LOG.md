@@ -1,3 +1,33 @@
+## 2026-10-07 — Velocity study: results organised, post-processed, compared with theory
+
+- Local results folder sorted into velocity_study_2026-10/, contact_angle_2026-09/
+  and tgrad_2026-07/ (moves only, nothing deleted; three empty aborted
+  submissions kept under velocity_study_2026-10/aborted_submissions/).
+- meniscus_velocity.py / wedge_gt_velocity.py run on all 43 downloaded runs.
+- New studies/contact_angle/velocity_plan_2026-10-01/compare_velocity.py: summary
+  CSV, velocity against theta and sigma_inf, time maps, and the theta x sigma_inf
+  phase diagram, for channel and wedge at both alpha_c.
+- Result recorded in the plan README: channel velocities match the theory at
+  beta_sub0 with no offset to 1-3 %; wedge clean only at theta = 90 or
+  alpha_c = 1e-2.
+
+---
+
+
+---
+
+**Session ended:** 2026-10-07 10:17:49
+
+
+---
+
+**Session ended:** 2026-10-06 16:53:21
+
+
+---
+
+**Session ended:** 2026-10-06 16:48:31
+
 ## 2026-10-06 (later) — --out-root for the lunar batch submitter; measured cost
 
 - scripts/HPC/submit_batch.sh takes --out-root, as on the enceladus side, so

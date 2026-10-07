@@ -465,6 +465,68 @@ without the additive 8.7e5 s/m interface offset.
 
 ---
 
+### Result: all four batches at both α_c (2026-10-07)
+
+43 of 44 runs analysed (the wedge θ = 150°, α_c = 1e-2 run was still running
+at download). Every run completed with no rejected steps. Local copy:
+`~/SimulationResults/HPC_results/lunar_regolith_DSM/velocity_study_2026-10/`;
+HPC copy under `/resnick/groups/rubyfu/jbaglino/simulation_outputs/lunar_regolith_DSM/`.
+Figures and `velocity_summary.csv` are in `figures/` there, written by
+`compare_velocity.py` in this folder:
+
+```bash
+python3 compare_velocity.py --root ~/SimulationResults/HPC_results/lunar_regolith_DSM/velocity_study_2026-10
+```
+
+Velocities are second-half averages. Theory uses β = β_sub0 with **no
+offset**, evaluated at each run's measured meniscus position.
+
+**Channel.** The velocity is U = (dA/dt)/(2H), the advance rate of the mean
+meniscus position. It replaces v_mean = (dA/dt)/arc of the batch A table
+above, which is smaller by arc/2H = 1.03 to 1.24 and is not what the
+series-resistance relation predicts.
+
+| | measured / theory |
+|---|---|
+| α_c = 1e-2, all 10 moving runs | 0.982 to 1.012 |
+| α_c = 1e-3, θ = 60° and 120°, all σ∞ with \|U\| > 50 nm/day | 0.986 to 1.034 |
+| α_c = 1e-3, θ = 30° and 150° | 1.155 and 1.083 |
+| α_c = 1e-3, σ∞ = −1e-5 (U = −10 nm/day, near the zero crossing) | 0.884 |
+
+- Fitting β in v = F/(β + K·ℓ) over the 11 channel runs gives
+  0.964·β_sub0 at α_c = 1e-3 and 1.007·β_sub0 at 1e-2. The 1e-2 fit is weak:
+  β is only 13 % of the resistance there, so 1 % in velocity is 8 % in β.
+- The additive 8.7e5 s/m offset of the August wedge batch is not present. It
+  would make these runs 6 % slow at 1e-3 and 14 % slow at 1e-2; they are
+  within 2 % at 1e-2 and 1 to 3 % fast at 1e-3.
+- θ = 90° stays at zero: −0.2 nm/day at 1e-3, 0.0 at 1e-2.
+- The two strongly curved menisci (30°, 150°) at 1e-3 run 8 to 15 % above
+  the flat-front theory; at 1e-2 they agree to 1 %. Not yet explained.
+
+**Wedge.** Centreline velocity of each meniscus.
+
+- θ = 90° (the IC shape) agrees to 0.1 to 4.5 % on both menisci at both α_c.
+- α_c = 1e-2: all other runs within 7 %, except the inner meniscus at 30°
+  (+15 %).
+- α_c = 1e-3: the inner meniscus is within 6 % for θ ≤ 90° and σ∞ ≥ 0, but
+  the outer meniscus is far off away from 90° (measured/theory 0.11 to 0.69
+  in the θ sweep). The time maps show its velocity still drifting at
+  150 days: the band IC is the 90° shape and at the slow α_c the centreline
+  is still carrying the shape relaxation.
+- The slopes against σ∞ agree with theory at both α_c; the offsets are what
+  differ.
+- At α_c = 1e-2 the two wettest runs overfill: σ∞ = +2e-5 loses a meniscus
+  at day 102 and σ∞ = +3e-5 fills the domain at day 129.
+
+**Measured cost.** Channel 1.1 h (1e-3) and 9.5 h (1e-2) on 2 ranks; wedge
+2.0 h and 16 h on 3 ranks. About 800 core-hours, $10, for the 39 runs.
+
+**Phase diagram.** `fig_channel_phase_diagram.png` shows the theory field in
+(θ, σ∞) with the simulations as points. Simulations exist only along the
+cross θ = 60° and σ∞ = 0; filling the plane needs a θ × σ∞ grid of runs.
+
+---
+
 ## 9. Where this is going: a mm-scale pore channel
 
 ![Pore channel with lenses and wall-adhered ice](fig5_pore_channel.png)
