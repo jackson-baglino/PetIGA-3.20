@@ -41,10 +41,38 @@ echo "========================================================================="
 # ---------------------------------------------------------------------------
 # Detect Python
 # ---------------------------------------------------------------------------
-PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "")
+# The first interpreter that can import numpy and matplotlib wins. A bare
+# `python3` is tried LAST: outside an activated venv it is the system or
+# Homebrew Python, which has neither (2026-10-06: every plot of a local run
+# died with "No module named 'numpy'"). $ENCELADUS_PYTHON overrides the search.
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON=""
+for cand in "${ENCELADUS_PYTHON:-}" \
+            "${VIRTUAL_ENV:+$VIRTUAL_ENV/bin/python}" \
+            "$SELF_DIR/../venv_enceladus/bin/python" \
+            "${PETIGA_DIR:+$PETIGA_DIR/projects/enceladus_DSM/venv_enceladus/bin/python}" \
+            "$HOME/PetIGA-3.20/projects/enceladus_DSM/venv_enceladus/bin/python" \
+            "$(command -v python3 2>/dev/null || true)" \
+            "$(command -v python 2>/dev/null || true)"; do
+    [[ -n "$cand" && -x "$cand" ]] || continue
+    if "$cand" -c "import numpy, matplotlib" 2>/dev/null; then PYTHON="$cand"; break; fi
+done
 if [[ -z "$PYTHON" ]]; then
-    echo "❌ python3 not found — cannot run post-processing."
+    echo "❌ no Python with numpy and matplotlib found — cannot run post-processing."
+    echo "   Activate the project environment first:  source venv_enceladus/bin/activate"
+    echo "   or point at one:  ENCELADUS_PYTHON=/path/to/python bash $0 <run>"
     exit 1
+fi
+echo "  Python     : $PYTHON"
+
+# A k_eff REPLAY run (-keff_replay) re-solves the cell problem on stored
+# snapshots: it takes no time steps, so there is nothing for the step
+# diagnostics below to read. Its results are the CSV named in outp.txt.
+IS_REPLAY=0
+if [[ -f "$RUN_DIR/outp.txt" ]] && grep -q "mode  *: REPLAY of" "$RUN_DIR/outp.txt"; then
+    IS_REPLAY=1
+    echo "  k_eff replay run — no time stepping; step diagnostics skipped."
+    grep -m1 "^ *output  *:" "$RUN_DIR/outp.txt" | sed 's/^ */  k_eff /'
 fi
 
 # ---------------------------------------------------------------------------
@@ -98,7 +126,7 @@ if [[ "$dim" != "1" ]]; then
         mkdir -p "$RUN_DIR/vtkOut"
         run_step "VTK conversion" "$POSTPROCESS_DIR/plot_fields.py" --dir "$RUN_DIR"
     else
-        echo "⚠️  igasol.dat not found — skipping VTK conversion."
+        [[ $IS_REPLAY -eq 1 ]] || echo "⚠️  igasol.dat not found — skipping VTK conversion."
     fi
 fi
 
@@ -121,13 +149,13 @@ if [[ -f "$RUN_DIR/SSA_evo.dat" ]]; then
             --save-dir "$PLOTS/keff/snapshots"
     fi
 else
-    echo "⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots."
+    [[ $IS_REPLAY -eq 1 ]] || echo "⚠️  SSA_evo.dat not found — skipping porosity and surface-area plots."
 fi
 
 # ---------------------------------------------------------------------------
 # Time step diagnostic (outp.txt)
 # ---------------------------------------------------------------------------
-if [[ -f "$RUN_DIR/outp.txt" ]]; then
+if [[ -f "$RUN_DIR/outp.txt" && $IS_REPLAY -eq 0 ]]; then
     run_step "Time step diagnostic" \
         "$POSTPROCESS_DIR/plot_timestep.py" --dir "$RUN_DIR" --save "$PLOTS/timestep.png"
 fi
@@ -151,9 +179,11 @@ fi
 # wrong way. Reads the solver's own per-step BOUNDS line, so it needs
 # -pf_monitor 1 and nothing else.
 # ---------------------------------------------------------------------------
+if [[ $IS_REPLAY -eq 0 ]]; then
 run_step "Phase-field bounds per step" \
     "$POSTPROCESS_DIR/plot_phi_bounds.py" --dir "$RUN_DIR" \
     --save "$PLOTS/phi_bounds.png"
+fi
 
 
 # ---------------------------------------------------------------------------
