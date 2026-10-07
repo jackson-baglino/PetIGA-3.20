@@ -15,10 +15,9 @@ supersaturation sigma in the pore, circled instants, panel letters, type sizes.
   (b) neck width against time: the simulation (line), the free fit
       C (t + t0)^a and the one-third fit C (t + t0)^(1/3), both over the
       samples after the relaxation period; instants 1-2 marked
-  (c) the free-fit exponent against the start of the fit window, with the
-      range Demmenie et al. (2025) measured and the 1/3 law
-  (d) the grain diameter D / D_0: the saturation check, on the y range of the
-      Molaro figure's shrinkage panels
+The exponent's dependence on the fit window and the grain-size check were
+panels (c) and (d) until 2026-10-07; they are diagnostic plots now
+(analyze_demmenie.py: exponent_window.png, grain_radius.png).
 
 Fits and numbers come from analyze_demmenie.py, so the figure and the
 diagnostic plots cannot disagree.
@@ -108,13 +107,11 @@ def main():
     fl0, X0, Y0 = secs[0]
     s_h = s_w * (Y0.max() - Y0.min()) / (X0.max() - X0.min())
     cb_h, cb_lab, cb_gap, t_band, top = 0.07, 0.15, 0.06, 0.19, 0.05
-    g_snap, ph, g_row, ph2, bot = 0.34, 1.75, 0.62, 1.55, 0.40
-    pgap, ml2 = 0.78, ml + 0.17
-    pw = (W - ml2 - mr - pgap) / 2
-    H = top + cb_h + cb_lab + cb_gap + t_band + s_h + g_snap + ph + g_row + ph2 + bot
+    g_snap, ph, bot = 0.34, 2.30, 0.40          # as plot_molaro_validation.build_combined
+    H = top + cb_h + cb_lab + cb_gap + t_band + s_h + g_snap + ph + bot
     fig = plt.figure(figsize=(W, H))
     F = lambda x0, y0, ww, hh: (x0 / W, y0 / H, ww / W, hh / H)
-    y_neck = bot + ph2 + g_row
+    y_neck = bot
     y_snap = y_neck + ph + g_snap
 
     t_sec = [t[0], t[-1]]
@@ -152,34 +149,8 @@ def main():
     ax.set_xlabel("Time [h]", fontsize=FS, labelpad=2); ax.set_ylabel(r"$w$  [$\mu$m]", fontsize=FS, labelpad=3)
     ax.legend(fontsize=FS_SMALL, frameon=False, handlelength=2.2, handletextpad=0.5, loc="lower right")
 
-    # (c) exponent against the start of the fit window
-    cx = fig.add_axes(F(ml2, bot, pw, ph2)); dress(cx)
-    cx.axhspan(*DEMMENIE, color=C_THIRD, alpha=0.18, lw=0)
-    cx.axhline(1 / 3, color=C_THIRD, lw=1.5, ls=pmv.ALT_LS, dash_capstyle="round")
-    cx.plot(s[:, 0] / HOUR, s[:, 2], "-", lw=1.8, color=C_SIM)
-    cx.text(0.98, np.mean(DEMMENIE), "Demmenie et al. (2025)", transform=cx.get_yaxis_transform(), ha="right",
-            va="center", fontsize=FS_SMALL, color=INK)
-    cx.set_xlim(0, None); cx.set_ylim(0.19, 0.35)
-    cx.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
-    cx.set_xlabel("Start of fit window [h]", fontsize=FS, labelpad=2); cx.set_ylabel(r"$a$", fontsize=FS, labelpad=3)
-
-    # (d) grain diameter: the saturation check
-    dx = fig.add_axes(F(ml2 + pw + pgap, bot, pw, ph2)); dress(dx)
-    gt, gR = A["g"]
-    dx.plot(gt / HOUR, gR / gR[0], "-", lw=1.8, color=C_SIM)
-    # y range of the Molaro figure's shrinkage panels (grains there lose
-    # 3-9 %), NOT this run's own span: +0.06 % on a tight axis reads as a
-    # grain that grows a lot, which it does not (user, 2026-10-07).
-    dx.set_xlim(0, t[-1] / HOUR * 1.03); dx.set_ylim(0.95, 1.01)
-    dx.yaxis.set_major_locator(MaxNLocator(5, steps=[1, 2, 2.5, 5, 10]))
-    dx.set_xlabel("Time [h]", fontsize=FS, labelpad=2); dx.set_ylabel(r"$D\,/\,D_0$", fontsize=FS, labelpad=3)
-
     for lab, y_top in zip("ab", (y_snap + s_h + 0.5 * t_band, y_neck + ph + 0.14)):
         fig.text(0.02 / W, y_top / H, pplib.bold(f"({lab})"), ha="left", va="center", fontsize=FS, color=INK)
-    for i, lab in enumerate("cd"):
-        fig.text((0.02 + i * (pw + pgap + ml2 - 0.72)) / W, (bot + ph2 + 0.16) / H, pplib.bold(f"({lab})"),
-                 ha="left", va="center", fontsize=FS, color=INK)
-
     a.out.mkdir(parents=True, exist_ok=True)
     for e in ("pdf", "png"):
         fn = a.out / f"{a.name}.{e}"
