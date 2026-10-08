@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-07 19:51:45
+
+
+---
+
 **Session ended:** 2026-10-07 19:43:25
 
 ## 2026-10-07 — Vapor-transport reading list written to the Literature folder
@@ -18,6 +23,9 @@
   PINNs trained on 2D data. Advised against that (2D data lacks the 3D pore
   connectivity that is the missing physics) and proposed a 3D pore-network
   model whose throat-scale rules come from axisymmetric/2D phase-field runs.
+- Appended Part 2 to the reading list: 16 pore-network, freeze-drying and
+  hybrid resolved-solver-to-network references (DOIs verified on Crossref),
+  plus the user's newly added Warning et al. 2015 freeze-drying paper.
 
 ---
 
