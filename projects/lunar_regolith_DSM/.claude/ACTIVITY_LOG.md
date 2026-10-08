@@ -1,3 +1,21 @@
+## 2026-10-07 — Vapor-transport reading list written to the Literature folder
+
+- Wrote vapor_transport_reading_list.txt in the iCloud Literature folder: 18
+  references (14 with DOIs verified against Crossref, 4 already in the folder)
+  supporting a redesign of the vapor-transport law for the rarefied
+  (high-Knudsen) regime, with a short primer on the Knudsen number. Paper
+  summaries are from memory and flagged as such; two items listed as
+  unverified.
+- Discussed direction with the user: 3D as a prerequisite for upscaling
+  claims, sintering-to-strength, and the borehole "cryosuck" extraction case.
+  No code changed.
+
+---
+
+---
+
+**Session ended:** 2026-10-07 19:01:44
+
 ## 2026-10-07 — Brainstorm round 2: model extensions from the icy-regolith literature
 
 - Read the 12 papers in the iCloud Literature folder (abstracts plus targeted
