@@ -1,3 +1,20 @@
+## 2026-10-07 — Brainstorm round 2: model extensions from the icy-regolith literature
+
+- Read the 12 papers in the iCloud Literature folder (abstracts plus targeted
+  passages; text extracted with mutool into the session scratchpad).
+- Noted the main model gap for the lunar application: vapor transport uses
+  D_v = 2.178e-5 m^2/s (vapor in air, 1 atm) and runs sit at -20 C, whereas
+  lunar pores hold no background gas and are free-molecular below ~250 K.
+- Proposed thesis-scale extensions: rarefied/ballistic vapor transport,
+  morphology-dependent closures for PSR and extraction models, sintering to
+  strength, heated-extraction regime with vapor advection. No code changed.
+
+---
+
+---
+
+**Session ended:** 2026-10-07 18:38:07
+
 ## 2026-10-07 — Brainstorm: AM/ME/CE 295 capstone built on this project
 
 - Read the AM/ME/CE 295 syllabus (AI agents for scientific discovery) and
