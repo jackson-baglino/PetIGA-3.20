@@ -20,7 +20,7 @@ and writes four figures (default <campaign>/compare/phi_summary/T<T>/):
                      seed min..max), on common times only
   ssa_by_phi.png     SSA, SSA/SSA_0 and k/k_0 against sintering age, by porosity
 
-Colour: porosity on the amp-to-black map compare_keff.py uses.
+Colour: porosity on the map compare_keff.py defines (black, then viridis blue to lime).
 Also writes phi_trends.csv.
 """
 from __future__ import annotations
