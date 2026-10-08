@@ -97,24 +97,68 @@ extrapolated, not a tabulated property.
 There is \textbf{no grain-size data} in the figure. The vertical axis is the
 variable $R$ in Eq.~\eqref{eq:map}; only $R = 50~\mu$m was simulated.
 
-The $R^{2}$ comes from the discretization rule of the campaign: the interface
-parameter is tied to the grain size, $\varepsilon = \bar R/50$, and the domain
-to $L = 40\,\bar R$, so the mesh is the same at any $\bar R$. In
-Eq.~\eqref{eq:tau}, $\taus \propto \varepsilon^{2} = (R/50)^{2}$. Written with
-the grain radius,
-\begin{equation}
-  \taus = \frac{1}{2500}\,\tau_R, \qquad
-  \tau_R \equiv \frac{R^{2}\beta_{\mathrm{sub}}}{d_0},
-\end{equation}
-and $\tau_R$ is a physical time: the attachment-limited time for
-curvature-driven transfer over a grain radius. The numerical parameter
-$\varepsilon$ has dropped out, which is why the map can be drawn against $R$.
+\paragraph{The $R^{2}$ law must not be argued from $\varepsilon \propto R$.}
+The campaign sets $\varepsilon = \bar R/50$. That is a numerical choice (it
+fixes the mesh at any grain size), and $\taus = \varepsilon^{2}\beta_{\mathrm{sub}}/d_0$
+is the relaxation time of the diffuse interface, not a physical time. Reading
+``$\taus \propto \varepsilon^{2} \propto R^{2}$'' as the grain-size law would
+make the physics follow from a discretization rule. It does not, and the
+interface-width runs show it directly: on three packings at fixed
+$R = 50~\mu$m, doubling $\varepsilon$ (so $\taus$ goes from 7822 to
+31\,289~s, a factor 4.00) leaves the kinetics \emph{in physical time}
+unchanged after the early transient. From day 8 to day 30, $k_{\mathrm{eff}}$
+rises 8.1, 9.4 and 8.8\% at $\varepsilon = 1~\mu$m and 8.0, 9.6 and 8.7\% at
+$2~\mu$m, and SSA falls 10.2--11.2\% against 10.1--10.3\%. If the rate
+followed $1/\taus$ the coarser runs would be four times slower; they are not.
+So at fixed $R$ the physical rate is independent of $\varepsilon$, as it
+should be for a phase-field model near its sharp-interface limit, and $\taus$
+by itself carries no grain-size information.
 
-This scaling is an \emph{argument, not a result} of ours: if the geometry is
-the same in units of $R$ and attachment kinetics is the only rate-limiting
-step, the evolution in units of $\tau_R$ is the same. It has not been tested
-by running a second grain size. It does agree with the grain-size dependence
-in Molaro et al.\ (2019); see Section~\ref{sec:lit}.
+\paragraph{Where $R^{2}$ does come from: the sharp-interface law.} In the
+limit the model is built to reproduce (Kaempfer \& Plapp, 2009), the interface
+moves with normal velocity
+\begin{equation}
+  \beta_{\mathrm{sub}}\,v_n \;=\; u \;-\; d_0\,\kappa ,
+  \label{eq:sharp}
+\end{equation}
+with $u$ the dimensionless supersaturation at the interface and $\kappa$ the
+curvature. When attachment limits the rate, $u$ is uniform over the pore and
+set by conservation of mass, so $v_n = (d_0/\beta_{\mathrm{sub}})\,(\bar\kappa
+- \kappa)$: motion by curvature at fixed volume. Measuring lengths in $R$
+($\kappa \sim 1/R$, $v_n \sim R/t$) gives the only time scale in the problem,
+\begin{equation}
+  \tau_R \;\equiv\; \frac{R^{2}\,\beta_{\mathrm{sub}}}{d_0} ,
+\end{equation}
+and no $\varepsilon$ appears. Two packings that differ only by a uniform
+change of scale therefore evolve identically in $t/\tau_R$. This is the
+grain-size law of the map. Because the campaign happens to use
+$\varepsilon = R/50$, the two times are related by
+$\taus = \tau_R/2500$, and that is the \emph{only} reason the map can be
+written with $\taus$; the physical statement is $t \propto \tau_R$.
+
+\paragraph{What this rests on.}
+\begin{itemize}
+\item \emph{$\varepsilon$-converged kinetics.} Tested once, towards a coarser
+  interface ($\times 2$, three packings): late-time rates agree as above;
+  absolute $k_{\mathrm{eff}}$ differs by 1--3\% and the first day or so is
+  $\varepsilon$-dependent. Not tested towards a finer interface
+  ($\varepsilon = 0.5~\mu$m is an optional run in \texttt{TODO.md}).
+\item \emph{Attachment-limited transfer.} Equation~\eqref{eq:sharp} with
+  uniform $u$ needs $R \ll L^{*}$ (Section~\ref{sec:limits}); otherwise vapor
+  diffusion adds a second time scale and the law steepens towards $R^{3}$.
+\item \emph{Geometric similarity:} the same packing, scaled.
+\item \emph{No run at a second grain size.} The law is derived, not measured,
+  by us. It agrees with the grain-size dependence in Molaro et al.\ (2019);
+  see Section~\ref{sec:lit}.
+\end{itemize}
+
+\paragraph{Consequence for the sintering age.} $\theta = t/\taus$ is defined
+with an $\varepsilon$-dependent time. It is a valid clock across temperature
+because every run uses the same $\varepsilon$ and $\beta_{\mathrm{sub}}/d_0$
+carries the temperature. It is not transferable as a number: the same
+microstructural state that sits at $\theta = 331$ here sits at $\theta = 83$
+in the $\varepsilon = 2~\mu$m runs. The $\varepsilon$-free age is
+$t/\tau_R = \theta/2500$.
 
 \section{Why time scales with $\taus$ at all}
 

@@ -277,6 +277,17 @@ GRL); both PDFs are in `Literature/`.
   temperature, so the vapour route should lead when warm and lose when cold.
   Read Nasello 2007 and the snow-sintering sources Molaro cites (Maeno &
   Ebinuma 1983; Löwe 2011; Vetter 2010) and decide how to state it.
+- [ ] **Decide the manuscript's clock: τ_sub (ε-dependent) or τ_R = R̄²β_sub/d₀.**
+  Raised by the user 2026-10-08. ε = R̄/50 is a discretization choice and
+  τ_sub = ε²β_sub/d₀ is the diffuse interface's relaxation time. The eps ×2
+  runs show the physical late-time rate does NOT follow τ_sub: τ_sub ×4.00,
+  yet k_eff rises 8.1/9.4/8.8 % (ε 1 µm) vs 8.0/9.6/8.7 % (2 µm) from day 8
+  to 30. So θ = t/τ_sub is a good clock across temperature at fixed ε, but its
+  numbers (θ_r = 30, θ = 331, "11 τ_sub") are tied to ε = 1 µm; the same state
+  is θ = 83 at ε = 2 µm. The ε-free age is t/τ_R = θ/2500, from the
+  sharp-interface law β v_n = u − d₀κ. Options: restate figures in t/τ_R, or
+  keep θ and say once that τ_sub = τ_R/2500 here. Derivation:
+  `timescale_map/timescale_map_derivation.pdf`, Section 3.
 - [ ] **Figure 8 (timescale map): decide keep / reframe / replace by a table.**
   Derivation and sources: `timescale_map/timescale_map_derivation.pdf`
   (numbers from `timescale_map/check_timescale_map.py`). Open items found
