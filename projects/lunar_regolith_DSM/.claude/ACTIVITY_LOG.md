@@ -1,6 +1,21 @@
 
 ---
 
+**Session ended:** 2026-10-07 14:04:36
+
+
+---
+
+**Session ended:** 2026-10-07 14:03:25
+
+
+---
+
+**Session ended:** 2026-10-07 11:28:27
+
+
+---
+
 **Session ended:** 2026-10-07 11:03:35
 
 
@@ -51,6 +66,11 @@
   v_n = 98 % / 85 % of prediction) but diluted in the channel by the series
   diffusive resistance. compare_velocity.py now reads each run's tau_sub terms
   and reports the ratio against the realised beta; beta fit made time-resolved.
+- Later: open boundary for phi. Vapour-reservoir faces that are not regolith
+  now keep the consistent boundary flux term, so ice passes through instead of
+  meeting a 90-degree wall (-phi_open_bc, default 1). Compiles; not yet run.
+  Two local test inputs added (openbc60_*). assembly.c comments cut to a
+  minimum (565 -> 409 lines).
 
 ---
 

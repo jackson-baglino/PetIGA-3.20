@@ -590,6 +590,27 @@ cross θ = 60° and σ∞ = 0; filling the plane needs a θ × σ∞ grid of run
 
 ---
 
+### Open boundary for the ice field (2026-10-07)
+
+All runs above had a wall on every face as far as φ is concerned: the
+prescribed θ on the top and bottom (`-wall_faces y0,y1`) and the natural
+condition ∂φ/∂n = 0 on the two vapour-reservoir faces, which is a 90°
+wall. A meniscus reaching a reservoir face therefore met a wall there.
+
+The solver now treats every vapour-reservoir face that is not regolith as
+open: nothing is imposed on φ, so the ice passes through as if the channel
+continued. In the weak form this keeps the boundary term of the integration
+by parts, `−∫ N·3Mε·(∇φ·n) dΓ`, with ∇φ·n taken from the solution, instead
+of dropping it. `-phi_open_bc 0` restores the old behaviour. The printed
+boundary table shows `open  (ice passes)` on those faces.
+
+Not yet run. Local test pair on the small channel (σ∞ = +3e-5, 60 days, the
+bridge grows out through both ends): `openbc60_T-20_theta60_sigp3e-5_ac1e-3`
+and the same with `_closed`. Once ice has crossed an open face, the ice area
+in `SSA_evo.dat` no longer measures growth.
+
+---
+
 ## 9. Where this is going: a mm-scale pore channel
 
 ![Pore channel with lenses and wall-adhered ice](fig5_pore_channel.png)
