@@ -1,5 +1,9 @@
 # Manuscript plan — figures and sections (k_eff part)
 
+**The working outline is `manuscript_outline.tex` (and `.pdf`), written 2026-10-08:**
+sections, subsections, paragraph themes, and where each figure and table goes.
+This file keeps the reasoning and history behind it.
+
 Written 2026-10-06 against the draft `Literature/BaglinoJackson_DSM_manuscript_v2.1.pdf`
 (34 pp., 8 figures). Figures are built now on the data in hand and rebuilt when
 3f and the redo stage land. Claims and their limits: `TODO.md`, "Manuscript
