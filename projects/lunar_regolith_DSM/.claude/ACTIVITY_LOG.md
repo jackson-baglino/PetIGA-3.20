@@ -14,6 +14,10 @@
 - Discussed direction with the user: 3D as a prerequisite for upscaling
   claims, sintering-to-strength, and the borehole "cryosuck" extraction case.
   No code changed.
+- User judged 3D intractable in the phase-field framework and asked about
+  PINNs trained on 2D data. Advised against that (2D data lacks the 3D pore
+  connectivity that is the missing physics) and proposed a 3D pore-network
+  model whose throat-scale rules come from axisymmetric/2D phase-field runs.
 
 ---
 
