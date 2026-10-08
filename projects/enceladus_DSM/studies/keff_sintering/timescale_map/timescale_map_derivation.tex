@@ -1,0 +1,238 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,booktabs}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parskip}{0.5em}\setlength{\parindent}{0pt}
+\newcommand{\degC}{\,^{\circ}\mathrm{C}}
+\newcommand{\taus}{\tau_{\mathrm{sub}}}
+\newcommand{\rvs}{\rho_{vs}}
+\title{The sintering-timescale map (Figure 8): what goes into it}
+\author{enceladus\_DSM, \texttt{studies/keff\_sintering/timescale\_map/}}
+\date{2026-10-08}
+\begin{document}
+\maketitle
+
+\section*{Summary}
+
+Figure 8 is \textbf{not simulation output}. It is one closed-form expression,
+\begin{equation}
+  t(T,R) \;=\; \theta^{*}\,\taus(T,R),
+  \label{eq:map}
+\end{equation}
+evaluated on a grid of temperature $T$ and grain radius $R$. One number comes
+from the campaign, the anchor $\taus = 7822.3$~s at $-20\degC$ and
+$R = 50~\mu$m; one result of the campaign justifies the form, the temperature
+collapse; everything else is the model's definition of $\taus$ and a
+saturation-pressure formula. Only one grain size and temperatures from
+$-40$ to $-5\degC$ were simulated, so every other point of the map is an
+extrapolation. Section~\ref{sec:limits} lists what that extrapolation assumes.
+Every number below is recomputed by \texttt{check\_timescale\_map.py} in this
+folder (output in \texttt{check\_timescale\_map.txt}).
+
+\section{The phase-change time scale}
+
+The model defines (solver banner; Table~S1 of the manuscript tables)
+\begin{align}
+  \taus &= \frac{\varepsilon^{2}\,\beta_{\mathrm{sub}}}{d_0}, &
+  \beta_{\mathrm{sub}} &= \frac{\rho_{\mathrm{ice}}}{\rvs(T)}\,
+      \frac{1}{\alpha_c}\sqrt{\frac{2\pi m}{k_B T}}, &
+  d_0 &= \frac{\gamma\,a^{3}}{k_B T},\quad a^{3} = \frac{m}{\rho_{\mathrm{ice}}} ,
+\end{align}
+with $\varepsilon$ the interface parameter, $\alpha_c$ the condensation
+coefficient, $m$ the mass of a water molecule, $\gamma$ the ice--air
+interfacial energy and $\rvs$ the saturation vapor density over ice.
+Substituting,
+\begin{equation}
+  \boxed{\;\taus \;=\; \frac{\varepsilon^{2}\,\rho_{\mathrm{ice}}^{2}}
+        {\alpha_c\,\gamma\,m}\;\frac{\sqrt{2\pi m k_B T}}{\rvs(T)}\;}
+  \label{eq:tau}
+\end{equation}
+With the solver's own $\rvs$, Eq.~\eqref{eq:tau} reproduces the solver's
+$\taus$ at all five simulated temperatures to within 0.03\%
+(60\,389 against 60\,390~s at $-40\degC$; 7822 against 7822~s at $-20\degC$).
+
+\section{Temperature dependence}
+
+For water vapor as an ideal gas, $\rvs = p_{\mathrm{sat}}(T)\,m/(k_B T)$, so
+Eq.~\eqref{eq:tau} gives
+\begin{equation}
+  \taus \;\propto\; \varepsilon^{2}\,\frac{T^{3/2}}{p_{\mathrm{sat}}(T)} .
+  \label{eq:Tdep}
+\end{equation}
+The map uses the Murphy and Koop (2005) expression for the saturation pressure
+over ice,
+\[
+  \ln p_{\mathrm{sat}}[\mathrm{Pa}] = 9.550426 - \frac{5723.265}{T}
+      + 3.53068\,\ln T - 0.00728332\,T .
+\]
+\emph{To verify before citing:} the coefficients were entered from memory of
+that paper, and as recalled the fit is stated for $T > 110$~K; the map extends
+to 60~K.
+
+\paragraph{Effective activation energy.} From Eq.~\eqref{eq:Tdep},
+$E = Q_{\mathrm{sub}} - \tfrac32 R_g T$. With the formula above
+$Q_{\mathrm{sub}} = 51.1$~kJ\,mol$^{-1}$ and $E = 48.0$~kJ\,mol$^{-1}$ at
+253~K ($50.9$ and $48.7$ at 180~K). This is the ``about 48~kJ\,mol$^{-1}$''
+quoted for the vapor route.
+
+\paragraph{The map and the solver do not use the same $\rvs(T)$.} The solver
+takes
+\[ \rvs = 0.62\,\rho_{\mathrm{air}}\,\frac{P_{vs}}{P_{\mathrm{atm}}-P_{vs}} \]
+with the ASHRAE polynomial for $P_{vs}$ and a \emph{fixed} air density
+$\rho_{\mathrm{air}} = 1.341$~kg\,m$^{-3}$, which lacks the $1/T$ of the ideal
+gas law. The two agree at $-10\degC$ and drift apart on either side
+(Table~\ref{tab:compare}). The map is anchored at $-20\degC$, so inside the
+simulated range it differs from the solver's $\taus$ by $-8\%$ to $+6\%$. The
+ideal-gas form is the physically correct one; the difference is small next to
+the many orders of magnitude the map spans, but the map is \emph{not} the
+solver's clock evaluated elsewhere.
+
+\begin{table}[h]\centering
+\caption{The map's $\taus$ against the solver's, at $R = 50~\mu$m
+($\varepsilon = 1~\mu$m).}\label{tab:compare}
+\begin{tabular}{rcccc}\toprule
+$T$ & $\rvs$ ratio (map/solver) & $\taus$ map (s) & $\taus$ solver (s) & difference\\\midrule
+$-40\degC$ & 1.131 & 55\,579 & 60\,390 & $-8.0\%$\\
+$-30\degC$ & 1.085 & 20\,001 & 20\,840 & $-4.0\%$\\
+$-20\degC$ & 1.041 & 7\,822 & 7\,822 & anchor\\
+$-10\degC$ & 1.000 & 3\,294 & 3\,164 & $+4.1\%$\\
+$-5\degC$ & 0.980 & 2\,192 & 2\,063 & $+6.2\%$\\\bottomrule
+\end{tabular}\end{table}
+
+\section{Grain-size dependence}
+
+There is \textbf{no grain-size data} in the figure. The vertical axis is the
+variable $R$ in Eq.~\eqref{eq:map}; only $R = 50~\mu$m was simulated.
+
+The $R^{2}$ comes from the discretization rule of the campaign: the interface
+parameter is tied to the grain size, $\varepsilon = \bar R/50$, and the domain
+to $L = 40\,\bar R$, so the mesh is the same at any $\bar R$. In
+Eq.~\eqref{eq:tau}, $\taus \propto \varepsilon^{2} = (R/50)^{2}$. Written with
+the grain radius,
+\begin{equation}
+  \taus = \frac{1}{2500}\,\tau_R, \qquad
+  \tau_R \equiv \frac{R^{2}\beta_{\mathrm{sub}}}{d_0},
+\end{equation}
+and $\tau_R$ is a physical time: the attachment-limited time for
+curvature-driven transfer over a grain radius. The numerical parameter
+$\varepsilon$ has dropped out, which is why the map can be drawn against $R$.
+
+This scaling is an \emph{argument, not a result}: if the geometry is the same
+in units of $R$ and attachment kinetics is the only rate-limiting step, the
+evolution in units of $\tau_R$ is the same. It has not been tested by running
+a second grain size.
+
+\section{Why time scales with $\taus$ at all}
+
+Equation~\eqref{eq:map} assumes the microstructure is a function of the
+sintering age $\theta = t/\taus$ alone. Across temperature this is the
+campaign's main result (Figure~6): for each of the 25 packings, runs at five
+temperatures give the same $k_{\mathrm{eff}}$ at matched SSA to within 0.27\%
+(100 pairs; median 0.07\%), and the time needed to reach a given state follows
+the ratio of $\taus$ to within 4.1\%. So within $-40$ to $-5\degC$ the
+statement ``time to a given state $\propto \taus$'' is measured, to 4\%.
+
+\section{The target age $\theta^{*}$}
+
+$\theta^{*} = 331$ is the age the $-20\degC$ runs reach in 30~days:
+$30~\mathrm{d}/7822.3~\mathrm{s} = 331.4$. It has no other significance; any
+age gives the same map shifted by a constant factor. In the results, at
+$\theta = 331$ the 15 well-connected packings (porosity $\le 0.375$) have
+\[
+  k_{\mathrm{eff}}/k_{\mathrm{eff},r} = 1.171 \pm 0.015, \qquad
+  \mathrm{SSA}/\mathrm{SSA}_r = 0.819 \pm 0.007
+\]
+relative to the reference age $\theta_r = 30$ (mean and standard deviation over
+packings). The map is therefore ``time for $k_{\mathrm{eff}}$ to rise 17\% and
+SSA to fall 18\% from their values at $\theta_r$''.
+
+\section{The formula as plotted}
+
+\begin{equation}
+  t(T,R) = \theta^{*}\,\taus^{\mathrm{ref}}\;
+     \frac{T^{3/2}/p_{\mathrm{sat}}(T)}{T_{\mathrm{ref}}^{3/2}/p_{\mathrm{sat}}(T_{\mathrm{ref}})}
+     \left(\frac{R}{R_{\mathrm{ref}}}\right)^{2},
+\end{equation}
+with $\theta^{*}=331$, $\taus^{\mathrm{ref}}=7822.3$~s,
+$T_{\mathrm{ref}}=253.15$~K and $R_{\mathrm{ref}}=50~\mu$m.
+It is evaluated for $60 \le T \le 260$~K and
+$0.1~\mu\mathrm{m} \le R \le 1$~mm and binned at 1~h, 1~d, 1~yr, 1~kyr, 1~Myr
+and 4.5~Gyr (\texttt{fig\_timescales} in \texttt{figures/sample\_figures.py}).
+
+\begin{table}[h]\centering
+\caption{Values of the map. Only the first row, last column, is a simulated
+condition.}\label{tab:values}
+\begin{tabular}{rcccc}\toprule
+$T$ (K) & $R = 1~\mu$m & $5~\mu$m & $6~\mu$m & $50~\mu$m\\\midrule
+253.15 & 17 min & 7.2 h & 10.4 h & 30 d\\
+220 & 9.1 h & 9.4 d & 13.6 d & 2.6 yr\\
+200 & 5.3 d & 134 d & 192 d & 37 yr\\
+180 & 137 d & 9.4 yr & 13.6 yr & 941 yr\\
+150 & 253 yr & 6.3 kyr & 9.1 kyr & 633 kyr\\
+120 & 4.4 Myr & 111 Myr & 160 Myr & 11 Gyr\\
+110 & 377 Myr & 9.4 Gyr & 13.6 Gyr & $>$ age of the Solar System\\
+80 & \multicolumn{4}{c}{$> 10^{17}$ yr at every grain size}\\\bottomrule
+\end{tabular}\end{table}
+
+\section{The annotations and their sources}
+
+\begin{table}[h]\centering
+\begin{tabular}{p{0.27\textwidth}p{0.20\textwidth}p{0.43\textwidth}}\toprule
+Annotation & Value & Source\\\midrule
+``this study'' & 253.15 K, 50 $\mu$m & the campaign\\
+Choukroun et al.\ (2020) & 180 K, 6 $\mu$m, 15 yr & their paper (read for this study): 12~$\mu$m diameter grains; about 15~yr to a strength of 10~MPa at
+ 180~K\\
+``plume grains'' bracket & 0.1--5 $\mu$m & \textbf{none}: entered from general
+ recollection of the Enceladus literature\\
+``surface'' bracket & 60--80 K & \textbf{none}: same\\
+``fractures'' bracket & 175--185 K & \textbf{none}: same\\\bottomrule
+\end{tabular}\end{table}
+
+The three unsourced brackets need a reference each or should be removed.
+
+\section{What the extrapolation assumes}\label{sec:limits}
+
+\begin{enumerate}
+\item \textbf{Temperature range.} Simulated: 233--268~K. Plotted: 60--260~K.
+  The collapse is measured over 35~K and applied over 200~K.
+\item \textbf{One grain size.} The $R^{2}$ law is a scaling argument (Section~3).
+\item \textbf{Attachment-limited transfer everywhere.} The crossover length
+  between attachment and diffusion control is $L^{*} = D_v\,\beta_{HK}$,
+  $\beta_{HK} = \alpha_c^{-1}\sqrt{2\pi m/(k_B T)}$: 139~$\mu$m at 253~K and
+  89~$\mu$m at 180~K for air at 1~atm and $\alpha_c = 10^{-3}$. The $R^{2}$ law
+  needs $R \ll L^{*}$. The simulated $R = 50~\mu$m is already at $R/L^{*} =
+  0.36$, and the upper third of the map ($R > 100~\mu$m) is beyond it; there
+  diffusion slows growth and the map \emph{under}estimates the time.
+\item \textbf{Constant $\alpha_c = 10^{-3}$} at all temperatures. Its value
+  near 100~K is not known to us.
+\item \textbf{Air-filled pores at 1~atm.} The pore gas enters through $D_v$
+  and $L^{*}$. Near the surface of Enceladus the pores are close to vacuum.
+\item \textbf{Vapor route only.} Surface diffusion is absent from the model.
+  Molaro et al.\ (2019) and Choukroun et al.\ (2020) both attribute cold
+  sintering to it, the latter with $Q = 24.3 \pm 3.3$~kJ\,mol$^{-1}$, half of
+  our 48. A missing mechanism can only make sintering faster, so the map is an
+  \emph{upper bound on the time} taken by the vapor route alone.
+\item \textbf{The saturation-pressure fit} is used below its stated range
+  (to be verified, Section~2).
+\item \textbf{The age--state relation} (SSA linear in $\log\theta$) is itself
+  an intermediate-time approximation; the map extrapolates the clock, not
+  that relation.
+\end{enumerate}
+
+\paragraph{The Choukroun point.} The map gives 13.6~yr at 180~K and
+$R = 6~\mu$m; Choukroun et al.\ give about 15~yr. These are not the same
+quantity. Theirs is the time to a strength of 10~MPa by a mechanism they
+identify as surface diffusion; ours is the time to an arbitrary sintering age
+by vapor transport. The closeness of the two numbers is not evidence that the
+model reproduces their experiment.
+
+\section{Reproducing it}
+
+\begin{verbatim}
+cd studies/keff_sintering
+python timescale_map/check_timescale_map.py <campaign dir>
+python figures/sample_figures.py <campaign dir> --skip-gallery
+# the second writes Figure8_timescales; use venv_enceladus/bin/python
+\end{verbatim}
+
+\end{document}

@@ -277,6 +277,20 @@ GRL); both PDFs are in `Literature/`.
   temperature, so the vapour route should lead when warm and lose when cold.
   Read Nasello 2007 and the snow-sintering sources Molaro cites (Maeno &
   Ebinuma 1983; Löwe 2011; Vetter 2010) and decide how to state it.
+- [ ] **Figure 8 (timescale map): decide keep / reframe / replace by a table.**
+  Derivation and sources: `timescale_map/timescale_map_derivation.pdf`
+  (numbers from `timescale_map/check_timescale_map.py`). Open items found
+  while writing it up (2026-10-08):
+  - the "plume grains", "surface" and "fractures" brackets have NO cited
+    source; cite or remove;
+  - the map uses Murphy–Koop p_sat with ideal-gas ρ_vs, the solver uses the
+    ASHRAE polynomial with a FIXED air density (no 1/T), so the map's τ_sub
+    differs from the solver's by −8 % (−40 °C) to +6 % (−5 °C); verify the
+    Murphy–Koop coefficients and range (recalled as T > 110 K);
+  - R² scaling is an argument, never run at a second grain size, and needs
+    R ≪ L* = D_v β_HK (139 µm at 253 K; R = 50 µm is already 0.36 L*);
+  - the Choukroun marker compares different end states (their 10 MPa vs our
+    θ = 331); 13.6 yr vs 15 yr is not agreement.
 - [ ] **Compare our clock with Choukroun's and Molaro's numbers.** At 180 K
   and R = 6 µm our vapour route reaches the 30-day state in ~14 yr;
   Choukroun gets "very consolidated" (10 MPa) in ~15 yr. At 80 K they
