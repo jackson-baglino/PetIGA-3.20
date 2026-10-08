@@ -14,7 +14,10 @@ collapse, on ONE packing run at five temperatures:
   (c) the same curves against sintering age theta = t / tau_sub: one curve
   (d) SSA / SSA_0 against theta: the microstructure itself collapses
 
-One packing, not a seed mean, so the snapshots ARE the curve. k_eff is k_iso.
+One packing, not a seed mean, so the snapshots ARE the curve. --other-seeds
+adds the other packings of the porosity to (c) and (d) as thin grey lines (each
+one its own bundle of five collapsed temperatures) and writes <name>_alt: the
+collapse within a packing next to the scatter between packings. k_eff is k_iso.
 Manuscript style: 170 mm wide, no titles, symbol labels, transparent
 background, >= 8 pt. Writes Figure6_keff_collapse.{pdf,png}; --copy-to also
 copies them under that name (never over the Inkscape assemblies there).
@@ -54,24 +57,38 @@ def main():
     ap.add_argument("--seed", type=int, default=1702)
     ap.add_argument("--snap-T", dest="snap_T", type=int, default=-20)
     ap.add_argument("--width-mm", type=float, default=170.0)
+    ap.add_argument("--other-seeds", action="store_true",
+                    help="also draw the other packings of this porosity in (c) and (d), thin and grey: "
+                         "each is its own bundle of collapsed temperatures. Writes <name>_alt.")
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--copy-to", type=Path, default=None)
     a = ap.parse_args()
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
 
-    runs = {}
-    for d in sorted(a.root.glob(f"packing_2D_phi{a.phi}_Rave50um_LR40_seed{a.seed}_L2mm_eps1000nm_perxy_T*__*")):
-        T = int(re.search(r"_T(-?\d+)__", d.name).group(1))
-        r = load(d)
-        if r is None:
-            continue
-        i0 = int(np.argmax(r["t"] >= 1.0))
-        r.update(dir=d, tau=read_tau_sub(d), i0=i0)
-        for k in ("t", "kiso", "ssa", "step"):
-            r[k] = r[k][i0:]
-        r["kn"] = r["kiso"] / r["kiso"][0]; r["sn"] = r["ssa"] / r["ssa"][0]
-        r["th"] = r["t"] / r["tau"]
-        runs[T] = r
+    def load_seed(seed):
+        out = {}
+        for d in sorted(a.root.glob(f"packing_2D_phi{a.phi}_Rave50um_LR40_seed{seed}_L2mm_eps1000nm_perxy_T*__*")):
+            T = int(re.search(r"_T(-?\d+)__", d.name).group(1))
+            r = load(d)
+            if r is None:
+                continue
+            i0 = int(np.argmax(r["t"] >= 1.0))
+            r.update(dir=d, tau=read_tau_sub(d), i0=i0)
+            for k in ("t", "kiso", "ssa", "step"):
+                r[k] = r[k][i0:]
+            r["kn"] = r["kiso"] / r["kiso"][0]; r["sn"] = r["ssa"] / r["ssa"][0]
+            r["th"] = r["t"] / r["tau"]
+            out[T] = r
+        return out
+
+    runs = load_seed(a.seed)
+    others = {}
+    if a.other_seeds:
+        seeds = sorted({int(re.search(r"_seed(\d+)_", d.name).group(1))
+                        for d in a.root.glob(f"packing_2D_phi{a.phi}_Rave50um_LR40_seed*_L2mm_eps1000nm_perxy_T*__*")})
+        # production packings only (seeds >= 1000); the gated build (301-305) ran at -20 C alone
+        others = {sd: load_seed(sd) for sd in seeds if sd != a.seed and sd >= 1000}
+        print("other packings drawn in (c), (d):", sorted(others))
     Ts = sorted(runs)
     cm, (c0, c1) = CMAP["T"]
     col = {T: cm(c0 + (c1 - c0) * i / max(1, len(Ts) - 1)) for i, T in enumerate(Ts)}
@@ -125,6 +142,10 @@ def main():
 
     cw = (W - L - Rm - 2 * 15.0) / 3
     axs = [fig.add_axes([fx(L + j * (cw + 15.0)), fy(bot), fx(cw), fy(cur_h)]) for j in range(3)]
+    for sd, rr in others.items():                       # behind the master packing
+        for T, r in rr.items():
+            axs[1].plot(r["th"], r["kn"], color="0.62", lw=0.7, zorder=1)
+            axs[2].plot(r["th"], r["sn"], color="0.62", lw=0.7, zorder=1)
     for T in Ts:
         r = runs[T]
         lab = rf"${T}\,^\circ$C"
@@ -149,13 +170,14 @@ def main():
 
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
+    stem = "Figure6_keff_collapse_alt" if a.other_seeds else "Figure6_keff_collapse"
     for e in ("pdf", "png"):
-        f = out / f"Figure6_keff_collapse.{e}"
+        f = out / f"{stem}.{e}"
         fig.savefig(f, dpi=600, transparent=True)
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(f, a.copy_to / f.name)
-    print(f"wrote {out}/Figure6_keff_collapse.pdf/.png ({W:.0f} x {H:.0f} mm)"
+    print(f"wrote {out}/{stem}.pdf/.png ({W:.0f} x {H:.0f} mm)"
           + (f"; copied to {a.copy_to}" if a.copy_to else ""))
     print("temperatures:", Ts, "| snapshot times [d]:", [round(s[3] / DAY, 2) for s in snaps])
 
