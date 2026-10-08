@@ -1,3 +1,26 @@
+## 2026-10-08 — 3D micro-cell sizing and learning-method references
+
+- Estimated the cost of a 3D phase-field micro-cell by extrapolating the
+  measured 2D production run (71 elements per grain radius, 24M DOF): a
+  0.4 mm cube at regolith grain sizes is L/R ~ 8-11, about 1e9 DOF, out of
+  reach; L/R ~ 3 is comparable in DOF to the 2D production run and L/R ~ 5
+  about 5x larger. Estimates only: no 3D run has been timed.
+- Appended Part 3 to the iCloud reading list: 16 references on statistical
+  volume elements, multi-fidelity learning, phase-field surrogates, learned
+  closures and PINNs (DOIs verified on Crossref); two conference papers
+  listed as unverified. No code changed.
+
+---
+
+---
+
+**Session ended:** 2026-10-08 06:31:51
+
+
+---
+
+**Session ended:** 2026-10-07 20:09:36
+
 
 ---
 
