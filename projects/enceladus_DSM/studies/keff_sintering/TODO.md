@@ -288,7 +288,10 @@ GRL); both PDFs are in `Literature/`.
   sharp-interface law β v_n = u − d₀κ. Options: restate figures in t/τ_R, or
   keep θ and say once that τ_sub = τ_R/2500 here. Derivation:
   `timescale_map/timescale_map_derivation.pdf`, Section 3.
-- [ ] **Figure 8 (timescale map): decide keep / reframe / replace by a table.**
+- [x] **Figure 8 (timescale map): DROPPED 2026-10-08 (user).** Replaced by a few
+  sentences in the discussion; no Enceladus timescales in years. The paper is
+  reframed around laboratory-observable sintering (MANUSCRIPT_PLAN.md,
+  "Framing"). Notes kept for the record:
   Derivation and sources: `timescale_map/timescale_map_derivation.pdf`
   (numbers from `timescale_map/check_timescale_map.py`). Open items found
   while writing it up (2026-10-08):

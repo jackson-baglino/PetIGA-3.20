@@ -23,7 +23,6 @@ FIGURES = [                                   # (stem, source folder)
     ("Figure5_gallery", SAMPLES),
     ("Figure6_keff_collapse", SAMPLES),
     ("Figure7_state_law", SAMPLES),
-    ("Figure8_timescales", SAMPLES),
 ]
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

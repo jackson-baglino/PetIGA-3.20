@@ -5,7 +5,48 @@ Written 2026-10-06 against the draft `Literature/BaglinoJackson_DSM_manuscript_v
 3f and the redo stage land. Claims and their limits: `TODO.md`, "Manuscript
 argument". Run inventory: `RUN_TABLE.md`.
 
-## Figure plan (8 in the draft → 8 main + supplement)
+## Framing (changed 2026-10-08, user)
+
+The paper is reframed around **what can be observed in the laboratory**: how
+sintering by vapor transport changes the microstructure and the bulk
+conductivity of an ice aggregate under conditions a cold room reaches, as the
+ground on which to understand Enceladus. More theoretical in tone, tied to
+terrestrial observation; Enceladus is the motivation and the closing
+implication, not the setting of the calculations.
+
+Why the data fit this framing better than the earlier one:
+- The runs ARE laboratory conditions: −40 to −5 °C, air at 1 atm, sealed
+  (periodic) pores, 50 µm grains, 30 days.
+- Nothing has to be extrapolated. Every claim sits inside the simulated range.
+- The model's mechanism (vapor transport with sublimation and desublimation)
+  is the one expected to matter most at these temperatures.
+
+What the paper can offer a laboratory, each stated as a testable prediction:
+1. **Temperature only rescales time**, with an activation energy of about
+   50 kJ/mol for the vapor route (233–268 K). Choukroun et al. (2020) measure
+   24 kJ/mol for strengthening at 193–243 K. The two ranges overlap at
+   233–243 K, so the activation energy is a discriminator between mechanisms
+   that an experiment can apply.
+2. **k_eff is a function of SSA**, exponent −0.80 for well-connected packings,
+   with porosity setting the level. Both quantities are measurable (SSA by gas
+   adsorption or tomography, k_eff by a probe or a flux plate).
+3. **SSA falls linearly in log time** after an initial transient, about 0.13
+   per decade: the form reported for isothermal snow (to verify: Legagneux et
+   al.).
+4. **Two-grain neck growth**: what the vapor route alone gives against Molaro
+   et al. (2019) and under Demmenie et al. (2025) conditions, and where it
+   falls short.
+
+Consequences for the plan:
+- Introduction: lead with the laboratory problem; Enceladus as motivation.
+- Figure 1(b) and the gallery already read as laboratory microstructures.
+- Discussion 4.3 "Implications": what a laboratory should measure to test
+  1–3, then what that would tell us about plume deposits. No timescales in
+  years for Enceladus temperatures.
+- Still true: two-dimensional, so no absolute k_eff; claims for φ ≤ 0.375; the
+  clock is stated at fixed ε (open item in `TODO.md`).
+
+## Figure plan (8 in the draft → 7 main + supplement)
 
 Figures 6 and 7 share one normalization since 2026-10-08: each run's value at the reference age θ_r = 30 (subscript r), not the opening frame. Figure 7 is the four-panel version (k_eff(t) by porosity + state law), chosen by the user 2026-10-08; the three-panel `figB_closure` is no longer a manuscript figure.
 Numbering: fixed 2026-10-06, then the Demmenie figure inserted as 4 on 2026-10-07 (everything after it moved up one). All main-text figures are collected flat in `LOC/ManuscriptFigures/` by `figures/collect_manuscript_figures.py`.
@@ -21,7 +62,7 @@ Original note: numbering fixed 2026-10-06; the manuscript folders carry these nu
 | 6 | **k_eff evolution and its temperature collapse**: (a) four snapshots of one packing; (b) k/k₀ vs days, five temperatures; (c) the same vs θ = t/τ_sub; (d) SSA/SSA₀ vs θ | **built**: `figures/fig_keff_collapse.py` → `Figure6__KeffEvolution/Figure6_keff_collapse.*` | Figs. 3, 4, 5 | 3.2 |
 |   | *Alternate (`Figure6_keff_collapse_alt`, `fig_keff_collapse.py --other-seeds`)*: the other four packings of φ 0.325 in (c) and (d) as thin grey lines, each its own bundle of five collapsed temperatures. Number for the text: k_eff at matched SSA agrees across temperature within 0.27% over all 100 pairs (median 0.07%; 0.17% at φ 0.325; 0.24% for φ ≤ 0.375) | built 2026-10-08; NOT used: the user keeps the original without grey lines (2026-10-08) | | |
 | 7 | **The state law**: (a) k vs SSA, well-connected packings, one power law; (b) level vs porosity; (c) exponent vs porosity, grey above φ 0.40 | built (sample): `Figure7_state_law` or `Figure7_state_law_alt`; message below | Figs. 7, 8 | 3.2 / 4.2 |
-| 8 | **The clock extrapolated**: time to a given sintering age vs temperature and grain radius, with Enceladus conditions and Choukroun's 180 K point | built (sample): `Figure8_timescales`; needs the surface-diffusion check | new | 4.3 |
+| — | ~~The clock extrapolated (timescale map)~~ **Dropped 2026-10-08 (user).** One simulated point; a 210 K extrapolation; a grain-size axis that was never run and had been argued from ε ∝ R; a missing mechanism at the temperatures it was aimed at. Record: `timescale_map/timescale_map_derivation.pdf`. Replaced by two or three sentences in the discussion | dropped | — | — |
 
 ## Table plan (2 main + 3 supporting; decided 2026-10-06)
 

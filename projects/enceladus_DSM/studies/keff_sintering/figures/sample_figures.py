@@ -16,7 +16,7 @@ labels; >= 8 pt; transparent background):
                      law; (b) the level vs porosity; (c) the exponent vs porosity
   Figure7_state_law     the same with curves: (a) k_eff(t) by porosity, the gallery's
                      instants marked; (b)-(d) as figB
-  Figure8_timescales    the clock extrapolated: time to reach a sintering age as a
+  figC_timescales       (NOT in the manuscript since 2026-10-08) the clock extrapolated: time to reach a sintering age as a
                      function of temperature and grain radius (vapour route),
                      with Enceladus conditions and Choukroun's 180 K point
   Figure5_gallery       what happens to the aggregates: one packing of each
@@ -329,7 +329,7 @@ def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=
     cb.ax.set_title(r"$t$", fontsize=FS, pad=4)
     ax.set_xticks([100, 150, 200, 250])
     clean(ax)
-    save(fig, out, "Figure8_timescales")
+    save(fig, out, "figC_timescales")        # dropped from the manuscript 2026-10-08
 
 
 def fig_gallery(camp, out, T=-20):
