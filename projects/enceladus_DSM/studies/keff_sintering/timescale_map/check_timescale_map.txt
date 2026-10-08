@@ -5,16 +5,16 @@
    T =   -10 C: closed form     3164 s, solver     3164 s (+0.01 %)
    T =    -5 C: closed form     2064 s, solver     2063 s (+0.03 %)
 
-2. The map's temperature scaling (Murphy-Koop p_sat, ideal gas) against the solver's (ASHRAE, fixed air density):
-   T =   -40 C: rho_vs ratio 1.131; tau_sub map   55579 s, solver   60390 s (-8.0 %)
-   T =   -30 C: rho_vs ratio 1.085; tau_sub map   20001 s, solver   20840 s (-4.0 %)
-   T =   -20 C: rho_vs ratio 1.041; tau_sub map    7822 s, solver    7822 s (+0.0 %)
-   T =   -10 C: rho_vs ratio 1.000; tau_sub map    3294 s, solver    3164 s (+4.1 %)
-   T =    -5 C: rho_vs ratio 0.980; tau_sub map    2192 s, solver    2063 s (+6.2 %)
+2. The map's tau_sub = tau_ref * [sqrt(T)/rho_vs(T)] / [sqrt(T_ref)/rho_vs(T_ref)] against the solver's:
+   T =   -40 C: map   60389 s, solver   60390 s (-0.00 %)
+   T =   -30 C: map   20835 s, solver   20840 s (-0.03 %)
+   T =   -20 C: map    7822 s, solver    7822 s (+0.00 %)
+   T =   -10 C: map    3164 s, solver    3164 s (+0.00 %)
+   T =    -5 C: map    2063 s, solver    2063 s (+0.02 %)
 
-3. Effective activation energy of 1/tau_sub, E = Q_sub - (3/2) R T:
-   T = 253.15 K: Q_sub = 51.1 kJ/mol, E = 48.0 kJ/mol
-   T = 180.00 K: Q_sub = 50.9 kJ/mol, E = 48.7 kJ/mol
+3. Effective activation energy of 1/tau_sub, E = -R d ln[rho_vs/sqrt(T)] / d(1/T):
+   T = 253.15 K: E = 50.1 kJ/mol
+   T = 180.00 K: E = 50.2 kJ/mol
 
 4. Crossover length L* = D_v beta_HK (air at 1 atm, alpha_c = 1e-3):
    T = 253.15 K: D_v = 1.898e-05 m2/s, beta_HK = 7.333 s/m, L* = 139 um
@@ -22,14 +22,23 @@
 
 5. Time to theta = 331 (= 30 d / tau_sub at -20 C = 331.4):
    T =  253.2 K: R = 1 um: 1.04e+03 s | R = 5 um: 7.19 h | R = 6 um: 10.4 h | R = 50 um: 30 d
-   T =  220.0 K: R = 1 um: 9.06 h | R = 5 um: 9.44 d | R = 6 um: 13.6 d | R = 50 um: 2.59 yr
-   T =  200.0 K: R = 1 um: 5.34 d | R = 5 um: 134 d | R = 6 um: 192 d | R = 50 um: 36.6 yr
-   T =  180.0 K: R = 1 um: 137 d | R = 5 um: 9.41 yr | R = 6 um: 13.6 yr | R = 50 um: 941 yr
-   T =  150.0 K: R = 1 um: 253 yr | R = 5 um: 6.33 kyr | R = 6 um: 9.11 kyr | R = 50 um: 633 kyr
-   T =  120.0 K: R = 1 um: 4.44 Myr | R = 5 um: 111 Myr | R = 6 um: 160 Myr | R = 50 um: 11.1 Gyr
-   T =  110.0 K: R = 1 um: 377 Myr | R = 5 um: 9.42 Gyr | R = 6 um: 13.6 Gyr | R = 50 um: 942 Gyr
-   T =   80.0 K: R = 1 um: 1.72e+08 Gyr | R = 5 um: 4.3e+09 Gyr | R = 6 um: 6.19e+09 Gyr | R = 50 um: 4.3e+11 Gyr
-   T =   60.0 K: R = 1 um: 6.06e+18 Gyr | R = 5 um: 1.52e+20 Gyr | R = 6 um: 2.18e+20 Gyr | R = 50 um: 1.52e+22 Gyr
+   T =  220.0 K: R = 1 um: 10.4 h | R = 5 um: 10.9 d | R = 6 um: 15.7 d | R = 50 um: 2.98 yr
+   T =  200.0 K: R = 1 um: 6.77 d | R = 5 um: 169 d | R = 6 um: 244 d | R = 50 um: 46.3 yr
+   T =  180.0 K: R = 1 um: 194 d | R = 5 um: 13.2 yr | R = 6 um: 19.1 yr | R = 50 um: 1.32 kyr
+   T =  150.0 K: R = 1 um: 428 yr | R = 5 um: 10.7 kyr | R = 6 um: 15.4 kyr | R = 50 um: 1.07 Myr
+   T =  120.0 K: R = 1 um: 9.41 Myr | R = 5 um: 235 Myr | R = 6 um: 339 Myr | R = 50 um: 23.5 Gyr
+   T =  110.0 K: R = 1 um: 873 Myr | R = 5 um: 21.8 Gyr | R = 6 um: 31.4 Gyr | R = 50 um: 2.18e+03 Gyr
+   T =   80.0 K: R = 1 um: 5.69e+08 Gyr | R = 5 um: 1.42e+10 Gyr | R = 6 um: 2.05e+10 Gyr | R = 50 um: 1.42e+12 Gyr
+   T =   50.0 K: R = 1 um: 1.06e+28 Gyr | R = 5 um: 2.64e+29 Gyr | R = 6 um: 3.81e+29 Gyr | R = 50 um: 2.64e+31 Gyr
 
-6. At theta = 331, 15 packings with porosity <= 0.375 (-10 C runs):
+6. Grain-size dependence in Molaro et al. (2019), Table 6 (tau = f T^g, tau in years):
+   T = 130 K: d ln tau / d ln R = 2.27, 2.02, 2.01, 2.00  (1-10, 10-30, 30-50, 50-100 um)
+   T = 150 K: d ln tau / d ln R = 2.03, 1.99, 2.01, 2.00  (1-10, 10-30, 30-50, 50-100 um)
+   T = 180 K: d ln tau / d ln R = 1.74, 1.95, 2.01, 2.00  (1-10, 10-30, 30-50, 50-100 um)
+   Molaro's stage-1 timescale against this map (theta = 331), at 180 K:
+   R =   1 um: Molaro 2.3 d; this map 194 d
+   R =  10 um: Molaro 126 d; this map 53 yr
+   R =  50 um: Molaro 8.17 yr; this map 1.32 kyr
+
+7. At theta = 331, 15 packings with porosity <= 0.375 (-10 C runs):
    k_eff / k_eff,r = 1.171 +- 0.015;  SSA / SSA_r = 0.819 +- 0.007

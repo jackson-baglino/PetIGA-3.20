@@ -257,21 +257,35 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
     save(fig, out, "Figure7_state_law")
 
 
-def psat_ice(T):                                    # Murphy & Koop (2005), Pa
-    return np.exp(9.550426 - 5723.265 / T + 3.53068 * np.log(T) - 0.00728332 * T)
+def rho_vs_ice(T):
+    """The MODEL's saturation vapor density over ice [kg/m3] at T [K]:
+    preprocess/comp_eps.rho_vs_sat, the expression the solver uses."""
+    sys.path.insert(0, str(PROJ / "preprocess"))
+    from comp_eps import rho_vs_sat
+    return np.vectorize(lambda t: rho_vs_sat(float(t) - 273.15))(T)
 
 
 def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=50e-6):
     """Time to reach theta_target, tau_sub ~ R^2 sqrt(T)/rho_vs(T), anchored on the
-    campaign's tau_sub at -20 C and R = 50 um (alpha_c = 1e-3).
+    campaign's tau_sub at -20 C and R = 50 um (alpha_c = 1e-3). rho_vs is the
+    model's own (no saturation pressure enters: the model has none), so at the
+    five simulated temperatures the map IS the solver's tau_sub.
+
+    Annotations, all from the papers in Literature/ (checked 2026-10-08;
+    studies/keff_sintering/timescale_map/): plume grains 0.1-5 um radius
+    (Choukroun et al. 2020, after Kempf et al. 2010 and Southworth et al. 2019);
+    surface 50-80 K (south polar mean below 50 K, equatorial noon above 80 K;
+    Howett et al. 2010 in Choukroun; ~80 K maximum in Molaro et al. 2019);
+    Tiger Stripes up to ~180 K (Spencer & Nimmo 2013 in Choukroun); Choukroun's
+    samples 12 um mean diameter, ~15 yr to 10 MPa at 180 K.
 
     Nothing is written ON the coloured field except two marker labels in white
     boxes: the time classes are read from a discrete colour bar, and the
     Enceladus ranges are brackets OUTSIDE the axes (top: temperature; right:
     plume grain sizes), so every label is dark text on white."""
     from matplotlib.colors import BoundaryNorm, ListedColormap
-    rate = lambda T: psat_ice(T) / T / np.sqrt(T)
-    T = np.linspace(60, 260, 400); Rg = np.geomspace(0.1e-6, 1e-3, 400)
+    rate = lambda T: rho_vs_ice(T) / np.sqrt(T)
+    T = np.linspace(50, 260, 420); Rg = np.geomspace(0.1e-6, 1e-3, 400)
     TT, RR = np.meshgrid(T, Rg)
     t = theta_target * tau_ref * (rate(T_ref) / rate(TT)) * (RR / R_ref) ** 2
     lev = [3600.0, DAY, YEAR, 1e3 * YEAR, 1e6 * YEAR, 4.5e9 * YEAR]
@@ -285,7 +299,7 @@ def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=
     im = ax.pcolormesh(TT, RR * 1e6, idx, cmap=cmap, norm=BoundaryNorm(np.arange(-0.5, len(lev) + 1), cmap.N),
                        shading="auto", rasterized=True)
     ax.contour(TT, RR * 1e6, t, levels=lev, colors="white", linewidths=0.6)
-    ax.set(yscale="log", xlabel="$T$ [K]", ylabel=r"$R$ [$\mu$m]", xlim=(60, 260), ylim=(0.1, 1e3))
+    ax.set(yscale="log", xlabel="$T$ [K]", ylabel=r"$R$ [$\mu$m]", xlim=(50, 260), ylim=(0.1, 1e3))
     box = dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.9)
     ax.plot([253.15], [50], "o", ms=5, mfc="white", mec=INK, mew=1.0)
     ax.annotate("this study", (253.15, 50), xytext=(-7, 9), textcoords="offset points",
@@ -295,12 +309,13 @@ def fig_timescales(out, theta_target=331.0, tau_ref=7822.3, T_ref=253.15, R_ref=
                 ha="right", va="top", fontsize=FS_S, color=INK, bbox=box, multialignment="left")
     # brackets outside the axes
     tr = ax.get_xaxis_transform()
-    for a0, a1, s_ in ((60, 80, "surface"), (175, 185, "fractures")):
-        ax.plot([a0, a1], [1.035, 1.035], color=INK, lw=2.2, transform=tr, clip_on=False,
-                solid_capstyle="butt")
-        ax.text((a0 + a1) / 2, 1.06, s_, transform=tr, ha="center", va="bottom", fontsize=FS_S, color=INK)
-        for x_ in (a0, a1):
-            ax.axvline(x_, color="white", lw=0.5, ls=(0, (2, 2)), alpha=0.7)
+    ax.plot([50, 80], [1.035, 1.035], color=INK, lw=2.2, transform=tr, clip_on=False, solid_capstyle="butt")
+    ax.text(65, 1.06, "surface", transform=tr, ha="center", va="bottom", fontsize=FS_S, color=INK)
+    ax.axvline(80, color="white", lw=0.5, ls=(0, (2, 2)), alpha=0.7)
+    # the Tiger Stripes are one temperature ("up to ~180 K"), not a range: a tick
+    ax.plot([180, 180], [1.0, 1.05], color=INK, lw=2.2, transform=tr, clip_on=False, solid_capstyle="butt")
+    ax.text(180, 1.06, "Tiger Stripes", transform=tr, ha="center", va="bottom", fontsize=FS_S, color=INK)
+    ax.axvline(180, color="white", lw=0.5, ls=(0, (2, 2)), alpha=0.7)
     ty = ax.get_yaxis_transform()
     ax.plot([1.03, 1.03], [0.1, 5], color=INK, lw=2.2, transform=ty, clip_on=False, solid_capstyle="butt")
     ax.text(1.055, np.sqrt(0.1 * 5), "plume\ngrains", transform=ty, ha="left", va="center",

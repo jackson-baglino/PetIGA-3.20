@@ -5,7 +5,7 @@
 \setlength{\parskip}{0.5em}\setlength{\parindent}{0pt}
 \newcommand{\degC}{\,^{\circ}\mathrm{C}}
 \newcommand{\taus}{\tau_{\mathrm{sub}}}
-\newcommand{\rvs}{\rho_{vs}}
+\newcommand{\rvs}{\rho_{vs}^{I}}
 \title{The sintering-timescale map (Figure 8): what goes into it}
 \author{enceladus\_DSM, \texttt{studies/keff\_sintering/timescale\_map/}}
 \date{2026-10-08}
@@ -22,16 +22,17 @@ Figure 8 is \textbf{not simulation output}. It is one closed-form expression,
 evaluated on a grid of temperature $T$ and grain radius $R$. One number comes
 from the campaign, the anchor $\taus = 7822.3$~s at $-20\degC$ and
 $R = 50~\mu$m; one result of the campaign justifies the form, the temperature
-collapse; everything else is the model's definition of $\taus$ and a
-saturation-pressure formula. Only one grain size and temperatures from
+collapse; everything else is the model's own definition of $\taus$, written
+in the quantities the model uses. Only one grain size and temperatures from
 $-40$ to $-5\degC$ were simulated, so every other point of the map is an
-extrapolation. Section~\ref{sec:limits} lists what that extrapolation assumes.
-Every number below is recomputed by \texttt{check\_timescale\_map.py} in this
-folder (output in \texttt{check\_timescale\_map.txt}).
+extrapolation. Section~\ref{sec:lit} checks the annotations against the two
+framing papers and Section~\ref{sec:limits} lists what the extrapolation
+assumes. Every number below is recomputed by \texttt{check\_timescale\_map.py}
+in this folder (output in \texttt{check\_timescale\_map.txt}).
 
 \section{The phase-change time scale}
 
-The model defines (solver banner; Table~S1 of the manuscript tables)
+The model defines (solver banner; material-properties table of the manuscript)
 \begin{align}
   \taus &= \frac{\varepsilon^{2}\,\beta_{\mathrm{sub}}}{d_0}, &
   \beta_{\mathrm{sub}} &= \frac{\rho_{\mathrm{ice}}}{\rvs(T)}\,
@@ -47,57 +48,49 @@ Substituting,
         {\alpha_c\,\gamma\,m}\;\frac{\sqrt{2\pi m k_B T}}{\rvs(T)}\;}
   \label{eq:tau}
 \end{equation}
-With the solver's own $\rvs$, Eq.~\eqref{eq:tau} reproduces the solver's
-$\taus$ at all five simulated temperatures to within 0.03\%
-(60\,389 against 60\,390~s at $-40\degC$; 7822 against 7822~s at $-20\degC$).
+Equation~\eqref{eq:tau} reproduces the solver's $\taus$ at all five simulated
+temperatures to within 0.03\% (60\,389 against 60\,390~s at $-40\degC$; 7822
+against 7822~s at $-20\degC$).
 
 \section{Temperature dependence}
 
-For water vapor as an ideal gas, $\rvs = p_{\mathrm{sat}}(T)\,m/(k_B T)$, so
-Eq.~\eqref{eq:tau} gives
+In Eq.~\eqref{eq:tau} the temperature enters only as
 \begin{equation}
-  \taus \;\propto\; \varepsilon^{2}\,\frac{T^{3/2}}{p_{\mathrm{sat}}(T)} .
+  \taus \;\propto\; \varepsilon^{2}\,\frac{\sqrt{T}}{\rvs(T)} ,
   \label{eq:Tdep}
 \end{equation}
-The map uses the Murphy and Koop (2005) expression for the saturation pressure
-over ice,
-\[
-  \ln p_{\mathrm{sat}}[\mathrm{Pa}] = 9.550426 - \frac{5723.265}{T}
-      + 3.53068\,\ln T - 0.00728332\,T .
-\]
-\emph{To verify before citing:} the coefficients were entered from memory of
-that paper, and as recalled the fit is stated for $T > 110$~K; the map extends
-to 60~K.
-
-\paragraph{Effective activation energy.} From Eq.~\eqref{eq:Tdep},
-$E = Q_{\mathrm{sub}} - \tfrac32 R_g T$. With the formula above
-$Q_{\mathrm{sub}} = 51.1$~kJ\,mol$^{-1}$ and $E = 48.0$~kJ\,mol$^{-1}$ at
-253~K ($50.9$ and $48.7$ at 180~K). This is the ``about 48~kJ\,mol$^{-1}$''
-quoted for the vapor route.
-
-\paragraph{The map and the solver do not use the same $\rvs(T)$.} The solver
-takes
-\[ \rvs = 0.62\,\rho_{\mathrm{air}}\,\frac{P_{vs}}{P_{\mathrm{atm}}-P_{vs}} \]
-with the ASHRAE polynomial for $P_{vs}$ and a \emph{fixed} air density
-$\rho_{\mathrm{air}} = 1.341$~kg\,m$^{-3}$, which lacks the $1/T$ of the ideal
-gas law. The two agree at $-10\degC$ and drift apart on either side
-(Table~\ref{tab:compare}). The map is anchored at $-20\degC$, so inside the
-simulated range it differs from the solver's $\taus$ by $-8\%$ to $+6\%$. The
-ideal-gas form is the physically correct one; the difference is small next to
-the many orders of magnitude the map spans, but the map is \emph{not} the
-solver's clock evaluated elsewhere.
+and the map evaluates exactly this, with $\rvs(T)$ the model's own function
+(\texttt{rho\_vs\_sat} in \texttt{preprocess/comp\_eps.py}, the expression the
+solver uses). No saturation pressure appears: the model has no pressure
+variable, and none is needed. At the five simulated temperatures the map's
+$\taus$ therefore equals the solver's (Table~\ref{tab:compare}); away from
+them it is the same function evaluated at other temperatures.
 
 \begin{table}[h]\centering
 \caption{The map's $\taus$ against the solver's, at $R = 50~\mu$m
 ($\varepsilon = 1~\mu$m).}\label{tab:compare}
-\begin{tabular}{rcccc}\toprule
-$T$ & $\rvs$ ratio (map/solver) & $\taus$ map (s) & $\taus$ solver (s) & difference\\\midrule
-$-40\degC$ & 1.131 & 55\,579 & 60\,390 & $-8.0\%$\\
-$-30\degC$ & 1.085 & 20\,001 & 20\,840 & $-4.0\%$\\
-$-20\degC$ & 1.041 & 7\,822 & 7\,822 & anchor\\
-$-10\degC$ & 1.000 & 3\,294 & 3\,164 & $+4.1\%$\\
-$-5\degC$ & 0.980 & 2\,192 & 2\,063 & $+6.2\%$\\\bottomrule
+\begin{tabular}{rccc}\toprule
+$T$ & $\taus$ map (s) & $\taus$ solver (s) & difference\\\midrule
+$-40\degC$ & 60\,389 & 60\,390 & $0.00\%$\\
+$-30\degC$ & 20\,835 & 20\,840 & $-0.03\%$\\
+$-20\degC$ & 7\,822 & 7\,822 & anchor\\
+$-10\degC$ & 3\,164 & 3\,164 & $0.00\%$\\
+$-5\degC$ & 2\,063 & 2\,063 & $+0.02\%$\\\bottomrule
 \end{tabular}\end{table}
+
+\paragraph{Effective activation energy.}
+$E = -R_g\,\mathrm{d}\ln[\rvs/\sqrt{T}]/\mathrm{d}(1/T) = 50.1$~kJ\,mol$^{-1}$
+at 253~K and $50.2$ at 180~K. The same number follows from the solver's values
+alone: $\ln(60\,390/2063)$ over the simulated range gives $50.1$~kJ\,mol$^{-1}$.
+\emph{This corrects the ``about 48~kJ\,mol$^{-1}$'' quoted earlier in the
+project notes}, which came from an ideal-gas form of $\rvs$ and not from the
+model's.
+
+\paragraph{Range of $\rvs(T)$.} The model's $\rvs$ rests on a polynomial fit
+for the saturation state over ice. As recalled, such fits are stated for about
+$-100$ to $0\degC$ (\emph{to verify}); the map uses the function down to 50~K.
+It stays smooth and monotonic there, but below roughly 173~K it is the fit
+extrapolated, not a tabulated property.
 
 \section{Grain-size dependence}
 
@@ -117,10 +110,11 @@ and $\tau_R$ is a physical time: the attachment-limited time for
 curvature-driven transfer over a grain radius. The numerical parameter
 $\varepsilon$ has dropped out, which is why the map can be drawn against $R$.
 
-This scaling is an \emph{argument, not a result}: if the geometry is the same
-in units of $R$ and attachment kinetics is the only rate-limiting step, the
-evolution in units of $\tau_R$ is the same. It has not been tested by running
-a second grain size.
+This scaling is an \emph{argument, not a result} of ours: if the geometry is
+the same in units of $R$ and attachment kinetics is the only rate-limiting
+step, the evolution in units of $\tau_R$ is the same. It has not been tested
+by running a second grain size. It does agree with the grain-size dependence
+in Molaro et al.\ (2019); see Section~\ref{sec:lit}.
 
 \section{Why time scales with $\taus$ at all}
 
@@ -150,12 +144,12 @@ SSA to fall 18\% from their values at $\theta_r$''.
 
 \begin{equation}
   t(T,R) = \theta^{*}\,\taus^{\mathrm{ref}}\;
-     \frac{T^{3/2}/p_{\mathrm{sat}}(T)}{T_{\mathrm{ref}}^{3/2}/p_{\mathrm{sat}}(T_{\mathrm{ref}})}
+     \frac{\sqrt{T}\,/\,\rvs(T)}{\sqrt{T_{\mathrm{ref}}}\,/\,\rvs(T_{\mathrm{ref}})}
      \left(\frac{R}{R_{\mathrm{ref}}}\right)^{2},
 \end{equation}
 with $\theta^{*}=331$, $\taus^{\mathrm{ref}}=7822.3$~s,
 $T_{\mathrm{ref}}=253.15$~K and $R_{\mathrm{ref}}=50~\mu$m.
-It is evaluated for $60 \le T \le 260$~K and
+It is evaluated for $50 \le T \le 260$~K and
 $0.1~\mu\mathrm{m} \le R \le 1$~mm and binned at 1~h, 1~d, 1~yr, 1~kyr, 1~Myr
 and 4.5~Gyr (\texttt{fig\_timescales} in \texttt{figures/sample\_figures.py}).
 
@@ -165,37 +159,82 @@ condition.}\label{tab:values}
 \begin{tabular}{rcccc}\toprule
 $T$ (K) & $R = 1~\mu$m & $5~\mu$m & $6~\mu$m & $50~\mu$m\\\midrule
 253.15 & 17 min & 7.2 h & 10.4 h & 30 d\\
-220 & 9.1 h & 9.4 d & 13.6 d & 2.6 yr\\
-200 & 5.3 d & 134 d & 192 d & 37 yr\\
-180 & 137 d & 9.4 yr & 13.6 yr & 941 yr\\
-150 & 253 yr & 6.3 kyr & 9.1 kyr & 633 kyr\\
-120 & 4.4 Myr & 111 Myr & 160 Myr & 11 Gyr\\
-110 & 377 Myr & 9.4 Gyr & 13.6 Gyr & $>$ age of the Solar System\\
+220 & 10.4 h & 10.9 d & 15.7 d & 3.0 yr\\
+200 & 6.8 d & 169 d & 244 d & 46 yr\\
+180 & 194 d & 13.2 yr & 19.1 yr & 1.3 kyr\\
+150 & 428 yr & 10.7 kyr & 15.4 kyr & 1.1 Myr\\
+120 & 9.4 Myr & 235 Myr & 339 Myr & 23.5 Gyr\\
+110 & 873 Myr & 21.8 Gyr & 31.4 Gyr & $>$ age of the Solar System\\
 80 & \multicolumn{4}{c}{$> 10^{17}$ yr at every grain size}\\\bottomrule
 \end{tabular}\end{table}
 
-\section{The annotations and their sources}
+\section{The annotations, checked against the literature folder}\label{sec:lit}
+
+All four annotations are supported by the two framing papers in
+\texttt{Literature/}. One bracket was wrong and is corrected in the figure.
 
 \begin{table}[h]\centering
-\begin{tabular}{p{0.27\textwidth}p{0.20\textwidth}p{0.43\textwidth}}\toprule
-Annotation & Value & Source\\\midrule
-``this study'' & 253.15 K, 50 $\mu$m & the campaign\\
-Choukroun et al.\ (2020) & 180 K, 6 $\mu$m, 15 yr & their paper (read for this study): 12~$\mu$m diameter grains; about 15~yr to a strength of 10~MPa at
- 180~K\\
-``plume grains'' bracket & 0.1--5 $\mu$m & \textbf{none}: entered from general
- recollection of the Enceladus literature\\
-``surface'' bracket & 60--80 K & \textbf{none}: same\\
-``fractures'' bracket & 175--185 K & \textbf{none}: same\\\bottomrule
+\begin{tabular}{p{0.20\textwidth}p{0.17\textwidth}p{0.55\textwidth}}\toprule
+Annotation & Value plotted & What the papers say\\\midrule
+``plume grains'' & $R$ = 0.1--5 $\mu$m &
+ Choukroun et al.\ (2020), Sect.~1: ``Particles with radii 0.1--5~$\mu$m are
+ expected to dominate the plume deposits'' (citing Kempf et al., 2010;
+ Southworth et al., 2019); mean radius $3.1 \pm 0.5~\mu$m (Ingersoll \& Ewald,
+ 2011). Molaro et al.\ (2019), Sect.~5.3: plume fallout of 0.25--2.5~$\mu$m
+ radius (Kempf et al., 2010). \textbf{Confirmed.}\\
+``surface'' & 50--80 K \emph{(was 60--80)} &
+ Choukroun, Sect.~5: ``south polar terrain mean temperatures can be colder
+ than 50~K, while noontime equatorial temperatures can reach over 80~K''
+ (Howett et al., 2010). Molaro, Sect.~5.4: maximum equatorial surface
+ temperature of about 80~K (Howett et al., 2010). \textbf{Lower end corrected
+ to 50~K.}\\
+``Tiger Stripes'' & 180 K \emph{(was a 175--185 K bracket labelled
+ ``fractures'')} &
+ Choukroun, Sect.~5: ``temperatures up to 180~K have been estimated''
+ (Spencer \& Nimmo, 2013). A single value, so it is now a tick, not a
+ range.\\
+Choukroun marker & 180 K, $R = 6~\mu$m, 15 yr &
+ Choukroun, Sect.~2: ``12~$\mu$m mean diameter particles'', porosity
+ $51.5 \pm 1.6\%$, sealed, 193--243~K; Sect.~5: about 10~MPa ``in $\sim$15
+ years'' near the Tiger Stripes. \textbf{Confirmed.}\\\bottomrule
 \end{tabular}\end{table}
 
-The three unsourced brackets need a reference each or should be removed.
+\paragraph{What Choukroun et al.\ say about grain size.} Not a measurement:
+they used one grain size. Their statement (Sect.~5, reason 4 for
+extrapolating) is that ``the effect of temperature on sintering rates strongly
+dominates over that of grain size (Molaro et al., 2019), such that a 1 to 2
+order of magnitude difference in the mean grain size between our samples and
+actual fresh plume deposits \ldots\ is not anticipated to alter the
+conclusions of this study.'' The map agrees on which variable dominates
+(temperature moves the time by more than 30 orders of magnitude across the
+plot, grain size by 8), but under an $R^{2}$ law one to two orders of magnitude
+in grain size is two to four orders of magnitude in time, which is not
+negligible for a stated timescale.
+
+\paragraph{What Molaro et al.\ give for grain size.} Their Table~6 fits the
+stage-1 sintering timescale as $\tau = f\,T^{g}$ for radii from 0.1 to
+100~$\mu$m. From those fits, the local exponent
+$\mathrm{d}\ln\tau/\mathrm{d}\ln R$ is 2.00 between 50 and 100~$\mu$m, 2.01
+between 30 and 50, 1.95--2.02 between 10 and 30, and 1.7--2.3 between 1 and
+10~$\mu$m, at 130--180~K. Their model, which includes surface diffusion and is
+independent of ours, therefore also gives $\tau \propto R^{2}$ above about
+10~$\mu$m. This is the best available support for the map's grain-size axis.
+
+\paragraph{Their timescales against the map.} At 180~K Molaro's fit gives
+2.3~d, 126~d and 8.2~yr for $R$ = 1, 10 and 50~$\mu$m; the map gives 194~d,
+53~yr and 1.3~kyr. The two are not the same quantity (theirs is completion of
+stage~1 with all mechanisms; ours is a 17\% rise in $k_{\mathrm{eff}}$ by vapor
+transport), but the direction is informative: their full model is about 100
+times faster than our vapor-only clock at this temperature, as expected if
+surface diffusion carries cold sintering.
 
 \section{What the extrapolation assumes}\label{sec:limits}
 
 \begin{enumerate}
-\item \textbf{Temperature range.} Simulated: 233--268~K. Plotted: 60--260~K.
-  The collapse is measured over 35~K and applied over 200~K.
-\item \textbf{One grain size.} The $R^{2}$ law is a scaling argument (Section~3).
+\item \textbf{Temperature range.} Simulated: 233--268~K. Plotted: 50--260~K.
+  The collapse is measured over 35~K and applied over 210~K.
+\item \textbf{One grain size.} The $R^{2}$ law is a scaling argument,
+  supported by Molaro's Table~6 but not by a run of ours.
 \item \textbf{Attachment-limited transfer everywhere.} The crossover length
   between attachment and diffusion control is $L^{*} = D_v\,\beta_{HK}$,
   $\beta_{HK} = \alpha_c^{-1}\sqrt{2\pi m/(k_B T)}$: 139~$\mu$m at 253~K and
@@ -206,20 +245,21 @@ The three unsourced brackets need a reference each or should be removed.
 \item \textbf{Constant $\alpha_c = 10^{-3}$} at all temperatures. Its value
   near 100~K is not known to us.
 \item \textbf{Air-filled pores at 1~atm.} The pore gas enters through $D_v$
-  and $L^{*}$. Near the surface of Enceladus the pores are close to vacuum.
+  and $L^{*}$. Near the surface of Enceladus the pores are close to vacuum;
+  Choukroun et al.\ make the same point about their sealed samples.
 \item \textbf{Vapor route only.} Surface diffusion is absent from the model.
-  Molaro et al.\ (2019) and Choukroun et al.\ (2020) both attribute cold
-  sintering to it, the latter with $Q = 24.3 \pm 3.3$~kJ\,mol$^{-1}$, half of
-  our 48. A missing mechanism can only make sintering faster, so the map is an
-  \emph{upper bound on the time} taken by the vapor route alone.
-\item \textbf{The saturation-pressure fit} is used below its stated range
-  (to be verified, Section~2).
+  Molaro et al.\ and Choukroun et al.\ both attribute cold sintering to it,
+  the latter with $Q = 24.3 \pm 3.3$~kJ\,mol$^{-1}$ against our 50, and
+  against the $\sim$51~kJ\,mol$^{-1}$ they quote for vapor diffusion. A
+  missing mechanism can only make sintering faster, so the map is an
+  \emph{upper bound on the time}: the time the vapor route alone would take.
+\item \textbf{$\rvs(T)$ below its fitted range} (Section~2).
 \item \textbf{The age--state relation} (SSA linear in $\log\theta$) is itself
   an intermediate-time approximation; the map extrapolates the clock, not
   that relation.
 \end{enumerate}
 
-\paragraph{The Choukroun point.} The map gives 13.6~yr at 180~K and
+\paragraph{The Choukroun point.} The map gives 19~yr at 180~K and
 $R = 6~\mu$m; Choukroun et al.\ give about 15~yr. These are not the same
 quantity. Theirs is the time to a strength of 10~MPa by a mechanism they
 identify as surface diffusion; ours is the time to an arbitrary sintering age

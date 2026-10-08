@@ -273,7 +273,7 @@ GRL); both PDFs are in `Literature/`.
   quasi-liquid layer is gone": Choukroun measured Q = 24.3 ± 3.3 kJ/mol over
   193–243 K and attributes it to surface self-diffusion (~23 kJ/mol, Nasello
   2007), explicitly not vapour (~51); Molaro has surface diffusion leading
-  while necks are small. Our clock has Q ≈ 48 kJ/mol. A lower Q wins at LOW
+  while necks are small. Our clock has Q ≈ 50 kJ/mol (corrected 2026-10-08 from 48). A lower Q wins at LOW
   temperature, so the vapour route should lead when warm and lose when cold.
   Read Nasello 2007 and the snow-sintering sources Molaro cites (Maeno &
   Ebinuma 1983; Löwe 2011; Vetter 2010) and decide how to state it.
@@ -281,12 +281,17 @@ GRL); both PDFs are in `Literature/`.
   Derivation and sources: `timescale_map/timescale_map_derivation.pdf`
   (numbers from `timescale_map/check_timescale_map.py`). Open items found
   while writing it up (2026-10-08):
-  - the "plume grains", "surface" and "fractures" brackets have NO cited
-    source; cite or remove;
-  - the map uses Murphy–Koop p_sat with ideal-gas ρ_vs, the solver uses the
-    ASHRAE polynomial with a FIXED air density (no 1/T), so the map's τ_sub
-    differs from the solver's by −8 % (−40 °C) to +6 % (−5 °C); verify the
-    Murphy–Koop coefficients and range (recalled as T > 110 K);
+  - [x] annotations checked against Literature/ (2026-10-08): plume grains
+    0.1–5 µm and the Choukroun marker confirmed; surface corrected to 50–80 K;
+    "fractures 175–185 K" replaced by a Tiger Stripes tick at 180 K. Primary
+    sources to cite: Kempf 2010, Southworth 2019, Howett 2010, Spencer &
+    Nimmo 2013 (all via Choukroun 2020);
+  - [x] the map now uses the model's own ρ_vs (τ_sub ∝ √T/ρ_vs), so it equals
+    the solver's τ_sub at the simulated temperatures; no pressure formula.
+    The clock's activation energy is 50 kJ/mol (the "48" in older notes came
+    from an ideal-gas ρ_vs);
+  - Molaro's Table 6 gives τ ∝ R² above ~10 µm, independent support for the
+    grain-size axis; their timescales at 180 K are ~100× shorter than ours;
   - R² scaling is an argument, never run at a second grain size, and needs
     R ≪ L* = D_v β_HK (139 µm at 253 K; R = 50 µm is already 0.36 L*);
   - the Choukroun marker compares different end states (their 10 MPa vs our

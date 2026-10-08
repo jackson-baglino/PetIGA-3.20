@@ -115,7 +115,7 @@ with domain size.
 well-connected packings; the level–porosity relation; what 2D does to
 connectivity.
 **4.3** "Implications": Fig. 8; near subsurface; Choukroun's activation energy
-(24 kJ/mol) against ours (48 kJ/mol) and what that means for which mechanism
+(24 kJ/mol) against ours (50 kJ/mol) and what that means for which mechanism
 leads where; limits (2D, air-filled pores, vapour only, unresolved necks).
 
 **5 Conclusion.** Rewrite around the three claims.
