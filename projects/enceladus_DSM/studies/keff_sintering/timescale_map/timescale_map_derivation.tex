@@ -59,9 +59,9 @@ In Eq.~\eqref{eq:tau} the temperature enters only as
   \taus \;\propto\; \varepsilon^{2}\,\frac{\sqrt{T}}{\rvs(T)} ,
   \label{eq:Tdep}
 \end{equation}
-and the map evaluates exactly this, with $\rvs(T)$ the model's own function
-(\texttt{rho\_vs\_sat} in \texttt{preprocess/comp\_eps.py}, the expression the
-solver uses). No saturation pressure appears: the model has no pressure
+and the map evaluates exactly this, with $\rvs(T)$ the model's own function,
+the expression the solver uses (\texttt{rho\_vs\_sat} in
+\texttt{comp\_eps.py}). No saturation pressure appears: the model has no pressure
 variable, and none is needed. At the five simulated temperatures the map's
 $\taus$ therefore equals the solver's (Table~\ref{tab:compare}); away from
 them it is the same function evaluated at other temperatures.
