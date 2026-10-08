@@ -1,3 +1,17 @@
+## 2026-10-07 — Brainstorm: AM/ME/CE 295 capstone built on this project
+
+- Read the AM/ME/CE 295 syllabus (AI agents for scientific discovery) and
+  brainstormed capstone directions that extend this project: agent-driven
+  velocity-map campaign with surrogate/Bayesian run selection, surface-diffusion
+  term via checked code generation, k_eff operator surrogate, literature RAG,
+  and a domain-trap reliability audit. No code changed.
+
+---
+
+---
+
+**Session ended:** 2026-10-07 17:35:16
+
 
 ---
 
