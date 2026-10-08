@@ -57,6 +57,11 @@ def main():
     ap.add_argument("--seed", type=int, default=1702)
     ap.add_argument("--snap-T", dest="snap_T", type=int, default=-20)
     ap.add_argument("--width-mm", type=float, default=170.0)
+    ap.add_argument("--norm", choices=("ref", "opening"), default="ref",
+                    help="what the curves are divided by: 'ref' = each run's value at the reference age "
+                         "--theta-ref (as the state-law figure; past the width-dependent transient), "
+                         "'opening' = its value at the opening frame (the earlier convention)")
+    ap.add_argument("--theta-ref", type=float, default=30.0)
     ap.add_argument("--other-seeds", action="store_true",
                     help="also draw the other packings of this porosity in (c) and (d), thin and grey: "
                          "each is its own bundle of collapsed temperatures. Writes <name>_alt.")
@@ -76,8 +81,15 @@ def main():
             r.update(dir=d, tau=read_tau_sub(d), i0=i0)
             for k in ("t", "kiso", "ssa", "step"):
                 r[k] = r[k][i0:]
-            r["kn"] = r["kiso"] / r["kiso"][0]; r["sn"] = r["ssa"] / r["ssa"][0]
             r["th"] = r["t"] / r["tau"]
+            if a.norm == "ref":
+                if r["th"][-1] < a.theta_ref:
+                    print(f"  {d.name[:60]}: ends at theta = {r['th'][-1]:.0f} < theta_ref; skipped")
+                    continue
+                k_n, s_n = (float(np.interp(a.theta_ref, r["th"], r[q])) for q in ("kiso", "ssa"))
+            else:
+                k_n, s_n = r["kiso"][0], r["ssa"][0]
+            r["kn"] = r["kiso"] / k_n; r["sn"] = r["ssa"] / s_n
             out[T] = r
         return out
 
@@ -154,9 +166,16 @@ def main():
         axs[2].plot(r["th"], r["sn"], color=col[T], lw=1.5)
     for j, (_, _, _, t) in enumerate(snaps):
         _mark(axs[0], t / DAY, float(np.interp(t, S["t"], S["kn"])), str(j + 1))
-    axs[0].set(xlabel="$t$ [d]", ylabel=r"$k_\mathrm{eff}\,/\,k_{\mathrm{eff},0}$")
-    axs[1].set(xlabel=r"$\theta=t/\tau_\mathrm{sub}$", ylabel=r"$k_\mathrm{eff}\,/\,k_{\mathrm{eff},0}$", xscale="log")
-    axs[2].set(xlabel=r"$\theta=t/\tau_\mathrm{sub}$", ylabel=r"SSA$\,/\,$SSA$_0$", xscale="log")
+    sub = "r" if a.norm == "ref" else "0"
+    yk = rf"$k_\mathrm{{eff}}\,/\,k_{{\mathrm{{eff}},\mathrm{{{sub}}}}}$" if sub == "r" else r"$k_\mathrm{eff}\,/\,k_{\mathrm{eff},0}$"
+    axs[0].set(xlabel="$t$ [d]", ylabel=yk)
+    axs[1].set(xlabel=r"$\theta=t/\tau_\mathrm{sub}$", ylabel=yk, xscale="log")
+    axs[2].set(xlabel=r"$\theta=t/\tau_\mathrm{sub}$", ylabel=rf"SSA$\,/\,$SSA$_\mathrm{{{sub}}}$", xscale="log")
+    if a.norm == "ref":                                 # where every curve is 1 by construction
+        for x in axs[1:]:
+            x.axvline(a.theta_ref, color="0.55", lw=0.6, ls=":", zorder=0)
+            x.text(a.theta_ref, 1.0, r"$\theta_\mathrm{r}$", transform=x.get_xaxis_transform(), ha="center",
+                   va="bottom", fontsize=FS_TINY, color=INK)
     for x in axs[1:]:
         x.set_xlim(1, None)
     axs[0].legend(frameon=False, fontsize=FS_TINY, loc="lower right", handlelength=1.3,

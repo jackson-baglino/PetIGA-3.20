@@ -7,7 +7,7 @@ argument". Run inventory: `RUN_TABLE.md`.
 
 ## Figure plan (8 in the draft → 8 main + supplement)
 
-Figure 7 is the four-panel version (k_eff(t) by porosity + state law), chosen by the user 2026-10-08; the three-panel `figB_closure` is no longer a manuscript figure.
+Figures 6 and 7 share one normalization since 2026-10-08: each run's value at the reference age θ_r = 30 (subscript r), not the opening frame. Figure 7 is the four-panel version (k_eff(t) by porosity + state law), chosen by the user 2026-10-08; the three-panel `figB_closure` is no longer a manuscript figure.
 Numbering: fixed 2026-10-06, then the Demmenie figure inserted as 4 on 2026-10-07 (everything after it moved up one). All main-text figures are collected flat in `LOC/ManuscriptFigures/` by `figures/collect_manuscript_figures.py`.
 Original note: numbering fixed 2026-10-06; the manuscript folders carry these numbers. Gallery and collapse swapped the same day (user): show what the model does to the aggregates, then the temperature collapse, then the weaker porosity result. NOTE: the iCloud folders and files for 4 and 5 still carry the OLD numbers until the rename there is done (access was denied from the session).
 

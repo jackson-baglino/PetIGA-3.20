@@ -144,9 +144,9 @@ def fig_closure(R, out, theta_ref=30.0, phi_max=0.375):
     good = [p for p in phis if p <= phi_max]
     p0 = np.mean(np.concatenate([p_by[p] for p in good]))
     xx = np.linspace(0.70, 1.0, 30)
-    ax[0].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--")
-    ax[0].text(0.05, 0.95, rf"$(\mathrm{{SSA}}/\mathrm{{SSA}}_\mathrm{{r}})^{{{p0:.2f}}}$",
-               transform=ax[0].transAxes, fontsize=FS_S, va="top", ha="left")
+    ax[0].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--",
+               label=rf"$(\mathrm{{SSA}}/\mathrm{{SSA}}_\mathrm{{r}})^{{{p0:.2f}}}$")
+    ax[0].legend(frameon=False, fontsize=FS_S, loc="upper left", handlelength=2.2, borderaxespad=0.6)
     ax[0].set(xscale="log", yscale="log", xlabel=r"SSA$\,/\,$SSA$_\mathrm{r}$",
               ylabel=r"$k_\mathrm{eff}/k_\mathrm{eff,r}$")
     ax[0].invert_xaxis()
@@ -224,9 +224,9 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
     good = [p for p in phis if p <= phi_max]
     p0 = np.mean(np.concatenate([p_by[p] for p in good]))
     xx = np.linspace(0.70, 1.0, 30)
-    ax[1].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--")
-    ax[1].text(0.05, 0.95, rf"$(\mathrm{{SSA}}/\mathrm{{SSA}}_\mathrm{{r}})^{{{p0:.2f}}}$",
-               transform=ax[1].transAxes, fontsize=FS_S, va="top")
+    ax[1].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--",
+               label=rf"$(\mathrm{{SSA}}/\mathrm{{SSA}}_\mathrm{{r}})^{{{p0:.2f}}}$")
+    ax[1].legend(frameon=False, fontsize=FS_S, loc="upper left", handlelength=2.2, borderaxespad=0.6)
     ax[1].set(xscale="log", yscale="log", xlabel=r"SSA$\,/\,$SSA$_\mathrm{r}$",
               ylabel=r"$k_\mathrm{eff}/k_\mathrm{eff,r}$")
     ax[1].invert_xaxis()
