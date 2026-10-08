@@ -747,6 +747,8 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsReal("-gamma_as", "Air-regolith interface energy [J/m^2]", "", gamma_as, &gamma_as, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsReal("-contact_angle_deg", "DEBUG: set theta directly, bypassing Young's equation", "", contact_angle_deg, &contact_angle_deg, &contact_angle_set); CHKERRQ(ierr);
     ierr = PetscOptionsString("-wall_faces", "Domain faces that are regolith, e.g. \"y0,y1\" (default: none)", "", wall_faces, wall_faces, sizeof(wall_faces), NULL); CHKERRQ(ierr);
+    user.phi_open_bc = PETSC_TRUE;
+    ierr = PetscOptionsBool("-phi_open_bc", "Let ice pass through vapor-reservoir faces that are not regolith (0: dphi/dn = 0 there, as before 2026-10-07)", "", user.phi_open_bc, &user.phi_open_bc, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsInt("-stall_limit", "Abort if ||U|| is bit-identical for this many consecutive steps (0 disables)", "", user.stall_limit, &user.stall_limit, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-test_wall_measure", "DEBUG: assemble the wall term on a uniform phi=1/2 field, check its surface measure, and exit", "", test_wall_measure, &test_wall_measure, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-test_wall_jacobian", "DEBUG: check the analytic Jacobian against finite differences on the initial condition, and exit", "", test_wall_jacobian, &test_wall_jacobian, NULL); CHKERRQ(ierr);
@@ -1297,6 +1299,17 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* A vapor-reservoir face is an open end of the pore, not a wall: let the
+     * ice pass through it (FACE_OPEN in assembly.c). */
+    ierr = PetscMemzero(user.open_face, sizeof(user.open_face)); CHKERRQ(ierr);
+    for (PetscInt l = 0; l < dim; l++) {
+        for (PetscInt m = 0; m < 2; m++) {
+            if (!user.phi_open_bc || !bc_dirichlet[l][m][2] || user.wall_face[l][m]) continue;
+            user.open_face[l][m] = PETSC_TRUE;
+            ierr = IGASetBoundaryForm(iga, l, m, PETSC_TRUE); CHKERRQ(ierr);
+        }
+    }
+
     // Set temperature BCs
     if (flag_BC_Tfix) {
         PetscReal T_BC[3][2] = {{0}};
@@ -1686,6 +1699,8 @@ int main(int argc, char *argv[]) {
                                       "regolith  theta=%.1f°",
                                       (double)(PetscAcosReal(user.costhet)
                                                * 180.0 / PETSC_PI));
+                    else if (user.open_face[l][m])
+                        PetscSNPrintf(cell[0], sizeof(cell[0]), "open  (ice passes)");
                     else
                         PetscSNPrintf(cell[0], sizeof(cell[0]), "Neumann  dphi/dn=0");
                     for (PetscInt d = 1; d < 3; d++) {
@@ -1712,7 +1727,9 @@ int main(int argc, char *argv[]) {
                     "\n   phi_i is never pinned (no Dirichlet path exists for it). On a\n"
                     "   face marked \"regolith\" above, its NATURAL condition is the wall\n"
                     "   free-energy term  dphi/dn = cos(theta)*phi(1-phi)/eps  rather than\n"
-                    "   zero; every other face keeps dphi/dn = 0 (a 90° contact angle).\n");
+                    "   zero. A face marked \"open\" imposes nothing on phi_i: the ice\n"
+                    "   passes through it. Any other face keeps dphi/dn = 0 (a 90°\n"
+                    "   contact angle).\n");
                 PetscPrintf(PETSC_COMM_WORLD,
                     "   gamma_ia = %.4e   gamma_is = %.4e   gamma_as = %.4e  J/m²\n",
                     (double)user.gamma_ia, (double)user.gamma_is,

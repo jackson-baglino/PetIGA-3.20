@@ -1,110 +1,18 @@
 #include "assembly.h"
 #include "material_properties.h"
 
-/* =========================================================================
- * Weak-form residuals for the 2-phase (ice / T / vapor) system.
- * phi_a = 1 - phi_i is algebraic; no sediment DOF.
- *
- * Notation: phi = phi_i,  M = mob_sub.
- *
- * f1(phi) = phi*(1-phi)*(1-2*phi)   [d/dphi of the double well (1/2)*phi^2*(1-phi)^2]
- * loc(phi) = phi^2*(1-phi)^2         [phase-change localization at interface]
- *
- * Allen-Cahn (ice):
- *   R_ice = N*phi_t  +  3*M*eps * grad_N.grad_phi  +  (3*M/eps)*f1 * N
- *         - (alph_sub/rho_ice) * loc * (rhov - rho_vs) * N
- *
- * Temperature:
- *   R_tem = rho*cp * N*T_t  +  k * grad_N.grad_T  -  rho_ice*L * phi_t * N
- *
- * Vapor (M&F 2024 eq. 26, temporal scaling):
- *   (1/xi_v) * d(phi_a*rhov)/dt = div(D_v*phi_a*grad_rhov) + rho_ice*phi_a_t
- * Multiplying through by xi_v and expanding the storage product gives
- *   R_vap = phi_a_eff * N*rhov_t  -  rhov * phi_t * N
- *         + xi_v*D_v*phi_a_eff * grad_N.grad_rhov
- *         + xi_v*rho_ice * phi_t * N
- *   where phi_a_eff = max(1-phi, air_lim)
- *   xi_v scales diffusion AND the rho_ice mass-exchange source TOGETHER:
- *   in the quasi-steady limit xi_v cancels between them, so the vapor field
- *   and interface velocity stay physical while the fast diffusion timescale
- *   is slowed by 1/xi_v (allows large dt). The -rhov*phi_t part belongs to
- *   the storage term and stays unscaled. The apparent ice->vapor mass
- *   "loss" of (1-xi_v)*Delta_m_vapor is ~rho_v/rho_i ~ 1e-6 relative —
- *   the approximation M&F accept for the temporal scaling.
- * ========================================================================= */
+/* Weak form of the 2-phase (ice / T / vapor) system. DOFs: 0 = phi (ice),
+ * 1 = T, 2 = rhov. phi_a = 1 - phi. Derivations: docs/. */
 
-/* f1(phi) = phi*(1-phi)*(1-2*phi)  and  df1/dphi = 1 - 6*phi + 6*phi^2
- *
- * NOTE THE NORMALISATION: this is d/dphi of (1/2)*phi^2*(1-phi)^2, NOT of
- * phi^2*(1-phi)^2 (which would be twice this). The half-normalised well is
- * deliberate and must not be "corrected": it is what makes the equilibrium
- * profile of eps^2 phi'' = f1(phi) come out as
- *
- *     phi(x) = 0.5*(1 + tanh(x/(2*eps)))
- *
- * i.e. interface-thickness parameter W = eps exactly. That is the Karma-Plapp
- * convention the matched asymptotics assume, and it is the W that
- * lambda_sub = a1*eps/d0_sub in <project>_main.c is calibrated against.
- * Doubling f1 would shrink the real profile to W = eps/sqrt(2) while the
- * Gibbs-Thomson and kinetic calibration kept using eps, throwing d0 and beta
- * off by sqrt(2). Verified against run data: measured W/eps = 1.015. */
+/* d/dphi of the half-normalised well (1/2)*phi^2*(1-phi)^2, which makes the
+ * interface width parameter equal eps. Do not double it. */
 static void DoubleWellDeriv(PetscReal phi, PetscReal *f1, PetscReal *df1)
 {
     if (f1)  *f1  = phi * (1.0 - phi) * (1.0 - 2.0 * phi);
     if (df1) *df1 = 1.0 - 6.0 * phi + 6.0 * phi * phi;
 }
 
-/* =========================================================================
- * Wall free energy: prescribed contact angle at a regolith boundary.
- *
- * The substrate is not a phase field here -- it IS the domain wall. Its
- * physics enters as a surface integral added to the free-energy functional,
- *
- *     F_wall = int_Gamma f_w(phi) dGamma
- *     f_w(phi) = gamma_as + (gamma_is - gamma_as)*h(phi)
- *              = gamma_as - gamma_ia*cos(theta)*h(phi)
- *
- * with the standard interpolation h(phi) = phi^2*(3-2*phi), so that
- * f_w(0) = gamma_as (wall|vapor) and f_w(1) = gamma_is (wall|ice), and
- * Young's equation gamma_ia*cos(theta) = gamma_as - gamma_is fixes theta.
- * h'(0) = h'(1) = 0, so the wall term is inert in both bulk phases and acts
- * only where the ice-vapor interface actually meets the wall -- it cannot
- * shift the bulk equilibria.
- *
- * Varying F_wall supplies the natural BC  dphi/dn = cos(theta)*phi(1-phi)/eps,
- * i.e. m.n = cos(theta) with m the interface normal into the ice and n the
- * outward wall normal: the contact angle measured through the ice.
- *
- * SCALING -- why neither eps nor gamma appears below.
- * The interior form is the gradient flow  dphi/dt = -(3M/eps) dFt/dphi  of the
- * DIMENSIONLESS functional Ft = int [ (eps^2/2)|grad phi|^2 + W(phi) ] with
- * W = (1/2)phi^2(1-phi)^2 (see DoubleWellDeriv above). Ft carries an
- * interfacial excess of exactly eps/6 per unit area, so physical energy is
- * (6*gamma_ia/eps)*Ft and the wall term enters Ft as ft_w = (eps/6/gamma_ia)*f_w.
- * The constant gamma_as drops out under variation and gamma_ia cancels against
- * the normalisation:
- *
- *     d ft_w / dphi = -(eps/6)*cos(theta)*h'(phi) = -eps*cos(theta)*phi*(1-phi)
- *
- * Multiplying by the residual's (3M/eps) prefactor cancels eps as well:
- *
- *     R_bnd[a][0] = -3*M*cos(theta)*phi*(1-phi)*N0[a]
- *
- * So the wall term depends only on M, cos(theta) and phi. cos(theta) is the
- * entire physical content -- do NOT "restore" a gamma or an eps here.
- *
- * Cross-check: demo/Metamorph.c writes this same boundary term as
- * -N0[a]*3*eps*mob*|grad phi|*costhet. On the equilibrium profile
- * |grad phi| = phi(1-phi)/eps, so the two agree identically -- but the h(phi)
- * form needs no 1/|grad phi| regularisation (Metamorph clamps |grad phi| to
- * 1e-5 to avoid a divide-by-zero) and its Jacobian is an exact mass-matrix
- * block rather than a normalised-gradient derivative.
- *
- * Sign: cos(theta) = +1 sheets ice flat onto the wall (theta = 0 deg);
- * cos(theta) = -1 balls it up to a point contact (theta = 180 deg).
- * ========================================================================= */
-
-/* h(phi) = phi^2*(3-2*phi), h'(phi) = 6*phi*(1-phi), h''(phi) = 6*(1-2*phi). */
+/* Wall energy interpolant h = phi^2*(3-2*phi) and its derivatives. */
 static void WallH(PetscReal phi, PetscReal *h, PetscReal *dh, PetscReal *d2h)
 {
     if (h)   *h   = phi * phi * (3.0 - 2.0 * phi);
@@ -112,22 +20,23 @@ static void WallH(PetscReal phi, PetscReal *h, PetscReal *dh, PetscReal *d2h)
     if (d2h) *d2h = 6.0 * (1.0 - 2.0 * phi);
 }
 
-/* Is this boundary quadrature point on a face flagged as regolith? */
-static PetscBool WallPointActive(IGAPoint pnt, const AppCtx *user)
+typedef enum { FACE_NATURAL, FACE_WALL, FACE_OPEN } FaceKind;
+
+/* What the phi equation does on this boundary point's face:
+ *   FACE_WALL    regolith, dphi/dn = cos(theta)*phi*(1-phi)/eps
+ *   FACE_OPEN    ice passes through; nothing is imposed on phi
+ *   FACE_NATURAL dphi/dn = 0 */
+static FaceKind FaceKindAt(IGAPoint pnt, const AppCtx *user)
 {
     PetscInt axis = -1, side = -1;
-    if (!user->wall_any) return PETSC_FALSE;
-    if (user->costhet == 0.0) return PETSC_FALSE;   /* theta = 90 deg: exact no-op */
     IGAPointAtBoundary(pnt, &axis, &side);
-    if (axis < 0 || axis > 2 || side < 0 || side > 1) return PETSC_FALSE;
-    return user->wall_face[axis][side];
+    if (axis < 0 || axis > 2 || side < 0 || side > 1) return FACE_NATURAL;
+    if (user->wall_face[axis][side]) return (user->costhet != 0.0) ? FACE_WALL : FACE_NATURAL;
+    if (user->open_face[axis][side]) return FACE_OPEN;
+    return FACE_NATURAL;
 }
 
-/* Axisymmetric r-weight, shared by the interior and boundary forms so the two
- * cannot drift apart. dV = 2*pi*r dr dz; the constant 2*pi cancels in R = 0.
- * The azimuthal curvature mode is generated by this weight via the r-weighted
- * integration by parts (docs/axisymmetric_plan.md section 1b).
- * NOTE: -axisym combined with a wetting wall is untested. */
+/* Axisymmetric weight r (the 2*pi cancels in R = 0). */
 static PetscReal AxisymWeight(IGAPoint pnt, const AppCtx *user)
 {
     PetscReal xphys[3] = {0.0, 0.0, 0.0};
@@ -137,9 +46,6 @@ static PetscReal AxisymWeight(IGAPoint pnt, const AppCtx *user)
 }
 
 
-/* =========================================================================
- * Residual
- * ========================================================================= */
 PetscErrorCode Residual_A1(IGAPoint pnt,
                            PetscReal shift, const PetscScalar *V,
                            PetscReal t, const PetscScalar *U,
@@ -153,54 +59,14 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscReal lat_sub = user->lat_sub;
     PetscReal air_lim = user->air_lim;
 
-    /* Wall (regolith) faces carry the prescribed-contact-angle surface term;
-     * every other face keeps the natural Neumann dphi/dn = 0 it always had.
-     * PetIGA visits an element once per enabled boundary face and once for its
-     * interior, summing both into the same element vector, so this branch adds
-     * to -- rather than replaces -- the volume form. Re is the per-point work
-     * vector and IGAPointGetWorkVec has already zeroed it. */
+    /* Boundary faces: these terms add to the volume form. */
     if (pnt->atboundary) {
-        if (!WallPointActive(pnt, user)) return 0;
+        FaceKind kind = FaceKindAt(pnt, user);
+        if (kind == FACE_NATURAL) return 0;
 
         PetscScalar sol_b[3];
         IGAPointFormValue(pnt, U, &sol_b[0]);
         PetscReal phi_b = PetscRealPart(sol_b[0]);
-
-        /* CLAMP phi to [0,1] before evaluating h'. This is not cosmetic -- an
-         * unclamped h' makes the wall term UNSTABLE outside the physical range.
-         *
-         * h'(phi) = 6*phi*(1-phi) changes sign for phi < 0 (and phi > 1), so
-         * the wall residual -3*M*cos(theta)*h'/6*N flips sign there too, and
-         * since R = N*phi_t + ... = 0, a sign-flipped wall term drives phi
-         * FURTHER out of range: a runaway.
-         *
-         * And NOTHING opposes it. The bulk terms evaluate the double well and
-         * the localiser at the CLAMPED phi_c, so for phi < 0 both f1 and loc
-         * are identically zero -- there is no restoring force outside [0,1] by
-         * construction. An unclamped wall term is therefore the only thing
-         * acting out there, and it acts in the wrong direction.
-         *
-         * That is exactly how the eps = 0.75 um run of batch 2026-09-12 died.
-         * phi undershot to -0.05 ON THE WALL ROWS (interior only reached
-         * -0.02), crossed -phase_lo, and the interior branch's domain guard
-         * then zeroed the whole residual, so SNES "converged" at iteration 0
-         * forever while the clock ran on to t_final and the run reported
-         * success. The coarser resolutions never got there (|phi_min| < 5e-7).
-         *
-         * Clamped, h' is identically 0 outside [0,1]: the wall energy stops
-         * pushing and the bulk term restores the field, which is the correct
-         * physical behaviour -- h'(0) = h'(1) = 0 says the wall term is inert
-         * in the pure phases, and that should not stop being true just because
-         * a trial iterate stepped slightly past them.
-         *
-         * The Jacobian below clamps identically and zeroes its derivative
-         * outside the range, so the two stay exactly consistent. */
-        PetscReal phi_w = phi_b;
-        if (phi_w < 0.0) phi_w = 0.0;
-        if (phi_w > 1.0) phi_w = 1.0;
-
-        PetscReal dh;
-        WallH(phi_w, NULL, &dh, NULL);
 
         PetscReal mob_b;
         Mobility(user, phi_b, &mob_b);
@@ -210,10 +76,27 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
 
         PetscScalar (*Rb)[3] = (PetscScalar (*)[3])Re;
         PetscReal rwb = AxisymWeight(pnt, user);
+        PetscReal flux;   /* 3*M*eps * dphi/dn */
 
-        /* -(3M/eps)*eps*cos(theta)*h'(phi)/6*N = -3*M*cos(theta)*phi(1-phi)*N */
+        if (kind == FACE_WALL) {
+            /* phi is clamped so the wall term is inert outside [0,1]; unclamped
+             * it changes sign there and drives phi further out of range. */
+            PetscReal phi_w = PetscMin(PetscMax(phi_b, 0.0), 1.0);
+            PetscReal dh;
+            WallH(phi_w, NULL, &dh, NULL);
+            flux = 3.0 * mob_b * user->costhet * (dh / 6.0);
+        } else {
+            /* Open face: keep the boundary term of the integration by parts
+             * with dphi/dn taken from the solution itself. */
+            PetscScalar grad_b[3][dim];
+            IGAPointFormGrad(pnt, U, &grad_b[0][0]);
+            PetscReal dphi_dn = 0.0;
+            for (l = 0; l < dim; l++) dphi_dn += PetscRealPart(grad_b[0][l]) * pnt->normal[l];
+            flux = 3.0 * mob_b * eps * dphi_dn;
+        }
+
         for (PetscInt a = 0; a < pnt->nen; a++) {
-            Rb[a][0] = -rwb * 3.0 * mob_b * user->costhet * (dh / 6.0) * N0b[a];
+            Rb[a][0] = -rwb * flux * N0b[a];
             Rb[a][1] = 0.0;
             Rb[a][2] = 0.0;
         }
@@ -237,8 +120,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     }
     PetscScalar phi_a = 1.0 - phi;
 
-    /* SNES domain-error catch: if a trial Newton iterate has phi out of the
-     * configured bounds, signal an invalid state so the line search backs off. */
+    /* Out-of-bounds trial iterate: tell SNES so the line search backs off. */
     {
         PetscReal lo = user->phase_lo, hi = user->phase_hi;
         if (PetscRealPart(phi)   < lo || PetscRealPart(phi)   > hi ||
@@ -248,7 +130,6 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
         }
     }
 
-    /* Clamped copies for material-property evaluation (avoids negative inputs). */
     PetscReal phi_c  = PetscRealPart(phi);
     PetscReal phi_ac = PetscRealPart(phi_a);
     if (phi_c  < 0.0) phi_c  = 0.0;
@@ -256,7 +137,6 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     if (phi_ac < 0.0) phi_ac = 0.0;
     if (phi_ac > 1.0) phi_ac = 1.0;
 
-    /* Material properties. */
     PetscReal thcond, cp, rho, dif_vap, mob_sub;
     ThermalCond(user, phi_c,  &thcond,  NULL);
     HeatCap    (user, phi_c,  &cp,      NULL);
@@ -264,11 +144,9 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     VaporDiffus(user, tem,    &dif_vap, NULL);
     Mobility   (user, phi_c,  &mob_sub);
 
-    /* Flat-interface saturation vapor density. */
     PetscReal rho_vs;
     RhoVS_I(user, PetscRealPart(tem), &rho_vs, NULL);
 
-    /* Double-well derivative and localization. */
     PetscReal f1;
     DoubleWellDeriv(phi_c, &f1, NULL);
     PetscReal loc     = phi_c * phi_c * phi_ac * phi_ac;
@@ -281,11 +159,6 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
     PetscScalar (*R)[3] = (PetscScalar (*)[3])Re;
     PetscInt a, nen = pnt->nen;
 
-    /* Axisymmetric r-z mode: weight the integrand by the quadrature point's
-     * radial coordinate (dV = 2*pi*r dr dz; the constant 2*pi cancels in
-     * R = 0). The azimuthal curvature mode is generated by this weight via
-     * the r-weighted integration by parts — the |grad phi|^2 term itself is
-     * untouched (docs/axisymmetric_plan.md section 1b). */
     PetscReal rw = AxisymWeight(pnt, user);
 
     for (a = 0; a < nen; a++) {
@@ -298,11 +171,7 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
             gN_grhov += N1[a][l] * PetscRealPart(grad_rhov[l]);
         }
 
-        /* -decouple_phase_change 1: zero every phase-change coupling — the
-         * sublimation source in R_ice AND the ice_t-driven sources in
-         * R_tem (latent heat) / R_vap (mass exchange) — leaving pure
-         * Allen-Cahn curvature relaxation with passive heat/vapor
-         * diffusion. Demo/diagnostic mode. */
+        /* -decouple_phase_change 1 zeroes every phase-change coupling. */
         const PetscReal pc = user->decouple_phase_change ? 0.0 : 1.0;
 
         R[a][0] = rw * ( N0[a] * phi_t
@@ -311,22 +180,20 @@ PetscErrorCode Residual_A1(IGAPoint pnt,
                 - pc * (user->alph_sub / rho_ice) * loc
                   * (PetscRealPart(rhov) - rho_vs) * N0[a] );
 
-        R[a][1] = rw * ( rho * cp * N0[a] * tem_t                       /* storage */
-                + user->xi_T * thcond * gN_gtem                        /* conduction */
-                - pc * user->xi_T * rho_ice * lat_sub * phi_t * N0[a] ); /* latent heat */
+        R[a][1] = rw * ( rho * cp * N0[a] * tem_t
+                + user->xi_T * thcond * gN_gtem
+                - pc * user->xi_T * rho_ice * lat_sub * phi_t * N0[a] );
 
-        R[a][2] = rw * ( phi_aef * N0[a] * rhov_t                      /* vapor storage */
-                + user->xi_v * dif_vap * phi_aef * gN_grhov            /* vapor diffusion (xi_v-scaled) */
+        /* xi_v scales vapor diffusion and the mass-exchange source together. */
+        R[a][2] = rw * ( phi_aef * N0[a] * rhov_t
+                + user->xi_v * dif_vap * phi_aef * gN_grhov
                 + pc * (user->xi_v * rho_ice - PetscRealPart(rhov))
-                  * phi_t * N0[a] );                                    /* xi_v*source - storage cross-term */
+                  * phi_t * N0[a] );
     }
     return 0;
 }
 
 
-/* =========================================================================
- * Residual dispatcher
- * ========================================================================= */
 PetscErrorCode Residual(IGAPoint pnt,
                         PetscReal shift, const PetscScalar *V,
                         PetscReal t, const PetscScalar *U,
@@ -336,10 +203,7 @@ PetscErrorCode Residual(IGAPoint pnt,
 }
 
 
-/* =========================================================================
- * Jacobian.  J[a][i][b][j] = dR[a][i]/du[b][j] + shift * dR[a][i]/du_t[b][j]
- * DOF layout: 0=phi(ice), 1=T, 2=rhov.
- * ========================================================================= */
+/* J[a][i][b][j] = dR[a][i]/du[b][j] + shift * dR[a][i]/du_t[b][j] */
 static PetscErrorCode Jacobian_A1(IGAPoint pnt,
                                   PetscReal shift, const PetscScalar *V,
                                   PetscReal t, const PetscScalar *U,
@@ -353,42 +217,43 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscReal lat_sub = user->lat_sub;
     PetscReal air_lim = user->air_lim;
 
-    /* Exact Jacobian of the wall term in Residual_A1's boundary branch:
-     *   d/dphi [ -3*M*cos(theta)*phi*(1-phi) ] = -3*M*cos(theta)*(1-2*phi)
-     * i.e. -3*M*cos(theta)*h''(phi)/6. No shift term: the wall energy has no
-     * phi_t dependence. */
     if (pnt->atboundary) {
-        if (!WallPointActive(pnt, user)) return 0;
+        FaceKind kind = FaceKindAt(pnt, user);
+        if (kind == FACE_NATURAL) return 0;
 
         PetscScalar sol_b[3];
         IGAPointFormValue(pnt, U, &sol_b[0]);
         PetscReal phi_b = PetscRealPart(sol_b[0]);
 
-        /* Same clamp as the residual, and dh'/dphi = 0 outside [0,1] because
-         * the clamped phi does not respond there -- that chain-rule factor is
-         * what keeps this an EXACT Jacobian of the clamped residual. */
-        PetscReal phi_w = phi_b;
-        if (phi_w < 0.0) phi_w = 0.0;
-        if (phi_w > 1.0) phi_w = 1.0;
-        const PetscReal dclamp = (phi_b > 0.0 && phi_b < 1.0) ? 1.0 : 0.0;
-
-        PetscReal d2h;
-        WallH(phi_w, NULL, NULL, &d2h);
-
         PetscReal mob_b;
         Mobility(user, phi_b, &mob_b);
 
-        const PetscReal *N0b;
+        const PetscReal *N0b, (*N1b)[dim];
         IGAPointGetShapeFuns(pnt, 0, (const PetscReal**)&N0b);
+        IGAPointGetShapeFuns(pnt, 1, (const PetscReal**)&N1b);
 
         PetscInt nen_b = pnt->nen;
         PetscScalar (*Jb)[3][nen_b][3] = (PetscScalar (*)[3][nen_b][3])Je;
         PetscReal rwb = AxisymWeight(pnt, user);
 
-        for (PetscInt a = 0; a < nen_b; a++)
-            for (PetscInt b = 0; b < nen_b; b++)
-                Jb[a][0][b][0] += -rwb * 3.0 * mob_b * user->costhet
-                                * (d2h / 6.0) * dclamp * N0b[a] * N0b[b];
+        if (kind == FACE_WALL) {
+            /* Same clamp as the residual; zero derivative outside [0,1]. */
+            PetscReal phi_w = PetscMin(PetscMax(phi_b, 0.0), 1.0);
+            const PetscReal dclamp = (phi_b > 0.0 && phi_b < 1.0) ? 1.0 : 0.0;
+            PetscReal d2h;
+            WallH(phi_w, NULL, NULL, &d2h);
+            for (PetscInt a = 0; a < nen_b; a++)
+                for (PetscInt b = 0; b < nen_b; b++)
+                    Jb[a][0][b][0] += -rwb * 3.0 * mob_b * user->costhet
+                                    * (d2h / 6.0) * dclamp * N0b[a] * N0b[b];
+        } else {
+            for (PetscInt a = 0; a < nen_b; a++)
+                for (PetscInt b = 0; b < nen_b; b++) {
+                    PetscReal dNb_dn = 0.0;
+                    for (l = 0; l < dim; l++) dNb_dn += N1b[b][l] * pnt->normal[l];
+                    Jb[a][0][b][0] += -rwb * 3.0 * mob_b * eps * N0b[a] * dNb_dn;
+                }
+        }
         return 0;
     }
 
@@ -407,7 +272,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     }
     PetscScalar phi_a = 1.0 - phi;
 
-    /* Clamped copies for material-property evaluation. */
     PetscReal phi_c  = PetscRealPart(phi);
     PetscReal phi_ac = PetscRealPart(phi_a);
     if (phi_c  < 0.0) phi_c  = 0.0;
@@ -415,7 +279,6 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     if (phi_ac < 0.0) phi_ac = 0.0;
     if (phi_ac > 1.0) phi_ac = 1.0;
 
-    /* Material properties and their derivatives. */
     PetscReal thcond, cp, rho, dif_vap, mob_sub;
     ThermalCond(user, phi_c,  &thcond,  NULL);
     HeatCap    (user, phi_c,  &cp,      NULL);
@@ -427,19 +290,15 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     ThermalCond(user, phi_c, NULL, &dthcond_dphi);
     VaporDiffus(user, tem,   NULL, &d_dif_vap);
 
-    /* Flat-interface saturation vapor density and its T-derivative. */
     PetscReal rho_vs, d_rho_vs;
     RhoVS_I(user, PetscRealPart(tem), &rho_vs, &d_rho_vs);
 
-    /* Double-well derivative and its phi-derivative. */
     PetscReal df1;
     DoubleWellDeriv(phi_c, NULL, &df1);
 
-    /* Localization loc = phi^2*(1-phi)^2 and dloc/dphi. */
     PetscReal loc      = phi_c * phi_c * phi_ac * phi_ac;
     PetscReal dloc_dph = 2.0 * phi_c * phi_ac * (phi_ac - phi_c);
 
-    /* phi_a floor for vapor storage/diffusion. */
     PetscBool phi_a_above_lim = (phi_ac > air_lim) ? PETSC_TRUE : PETSC_FALSE;
     PetscReal phi_aef = phi_a_above_lim ? phi_ac : air_lim;
 
@@ -450,11 +309,8 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
     PetscInt a, b, nen = pnt->nen;
     PetscScalar (*J)[3][nen][3] = (PetscScalar (*)[3][nen][3])Je;
 
-    /* Axisymmetric r-weight — must match Residual exactly (see comment
-     * there); applied to every block below. */
     PetscReal rw = AxisymWeight(pnt, user);
 
-    /* Must mirror the pc factor in Residual (see comment there). */
     const PetscReal pc = user->decouple_phase_change ? 0.0 : 1.0;
 
     for (a = 0; a < nen; a++) {
@@ -470,41 +326,38 @@ static PetscErrorCode Jacobian_A1(IGAPoint pnt,
             PetscReal gNagNb = 0.0;
             for (l = 0; l < dim; l++) gNagNb += N1[a][l] * N1[b][l];
 
-            /* ============ R_ice / phi ============ */
+            /* R_ice / phi */
             J[a][0][b][0] += rw * ( shift * NaNb
                            + 3.0 * mob_sub * eps * gNagNb
                            + (3.0 * mob_sub / eps) * df1 * NaNb
                            - pc * (user->alph_sub / rho_ice) * dloc_dph
                              * (PetscRealPart(rhov) - rho_vs) * NaNb );
 
-            /* ============ R_ice / T ============ */
+            /* R_ice / T */
             J[a][0][b][1] += rw * pc * ( (user->alph_sub / rho_ice) * loc * d_rho_vs * NaNb );
 
-            /* ============ R_ice / rhov ============ */
+            /* R_ice / rhov */
             J[a][0][b][2] -= rw * pc * ( (user->alph_sub / rho_ice) * loc * NaNb );
 
-            /* ============ R_tem / phi ============ */
+            /* R_tem / phi */
             J[a][1][b][0] += rw * ( user->xi_T * dthcond_dphi * gNa_gtem * N0[b]
                            - pc * user->xi_T * rho_ice * lat_sub * shift * NaNb );
 
-            /* ============ R_tem / T ============ */
+            /* R_tem / T */
             J[a][1][b][1] += rw * ( shift * rho * cp * NaNb
                            + user->xi_T * thcond * gNagNb );
 
-            /* ============ R_vap / phi ============ */
+            /* R_vap / phi */
             if (phi_a_above_lim) {
                 J[a][2][b][0] += rw * ( -NaNb * PetscRealPart(rhov_t)
                                - user->xi_v * dif_vap * N0[b] * gNa_grhov );
             }
-            /* Exact Jacobian of the xi_v-scaled residual: the source coefficient
-             * in R[a][2] is (xi_v*rho_ice - rhov), so the vap/ice coupling is
-             * O(xi_v*rho_ice) ~ 1 instead of O(rho_ice) ~ 1e3 — well-conditioned. */
             J[a][2][b][0] += rw * pc * ( (user->xi_v * rho_ice - PetscRealPart(rhov)) * shift * NaNb );
 
-            /* ============ R_vap / T ============ */
+            /* R_vap / T */
             J[a][2][b][1] += rw * ( user->xi_v * d_dif_vap * phi_aef * gNa_grhov * N0[b] );
 
-            /* ============ R_vap / rhov ============ */
+            /* R_vap / rhov */
             J[a][2][b][2] += rw * ( phi_aef * shift * NaNb
                            + user->xi_v * dif_vap * phi_aef * gNagNb
                            - PetscRealPart(phi_t) * NaNb );
@@ -523,14 +376,7 @@ PetscErrorCode Jacobian(IGAPoint pnt,
 }
 
 
-/* =========================================================================
- * Per-element scalar integrals for the monitor table.
- *   S[0] = phi_i (ice volume fraction)
- *   S[1] = phi_i^2 * phi_a^2  (ice-air interface measure)
- *   S[2] = phi_a (air volume fraction)
- *   S[3] = T
- *   S[4] = rhov * phi_a
- * ========================================================================= */
+/* Monitor integrals: phi, phi^2*phi_a^2, phi_a, T, rhov*phi_a. */
 PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
                            PetscScalar *S, void *ctx)
 {
@@ -545,9 +391,7 @@ PetscErrorCode Integration(IGAPoint pnt, const PetscScalar *U, PetscInt n,
     PetscReal rhov = PetscRealPart(sol[2]);
     PetscReal phi_a = 1.0 - phi;
 
-    /* Axisymmetric: include the FULL 2*pi*r measure so the reported
-     * integrals are true 3D volumes (TOT_ICE in m^3, etc.) and mass
-     * conservation checks remain meaningful. */
+    /* Axisymmetric: full 2*pi*r measure, so the integrals are 3D volumes. */
     PetscReal rw = 1.0;
     if (user && user->axisym) {
         PetscReal xphys[3] = {0.0, 0.0, 0.0};
