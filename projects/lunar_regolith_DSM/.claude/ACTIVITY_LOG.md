@@ -1,3 +1,13 @@
+
+---
+
+**Session ended:** 2026-10-08 07:18:09
+
+
+---
+
+**Session ended:** 2026-10-08 06:51:04
+
 ## 2026-10-08 — 3D micro-cell sizing and learning-method references
 
 - Estimated the cost of a 3D phase-field micro-cell by extrapolating the
@@ -9,6 +19,11 @@
   volume elements, multi-fidelity learning, phase-field surrogates, learned
   closures and PINNs (DOIs verified on Crossref); two conference papers
   listed as unverified. No code changed.
+- Corrected an error in that estimate: the production runs sit at
+  R_ave/eps = 50 (eps = 0.5 * R_feat, R_feat = R_ave/25), not 25. The user's
+  point holds: eps is set by kinetics, so at fixed L and mesh a smaller
+  R_ave raises L/R for free, down to a resolution floor on R_min/eps that
+  depends on what is reported (bulk statistics, throats, or necks).
 
 ---
 
