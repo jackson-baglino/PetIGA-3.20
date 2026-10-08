@@ -7,6 +7,7 @@ argument". Run inventory: `RUN_TABLE.md`.
 
 ## Figure plan (8 in the draft → 8 main + supplement)
 
+Figure 7 is the four-panel version (k_eff(t) by porosity + state law), chosen by the user 2026-10-08; the three-panel `figB_closure` is no longer a manuscript figure.
 Numbering: fixed 2026-10-06, then the Demmenie figure inserted as 4 on 2026-10-07 (everything after it moved up one). All main-text figures are collected flat in `LOC/ManuscriptFigures/` by `figures/collect_manuscript_figures.py`.
 Original note: numbering fixed 2026-10-06; the manuscript folders carry these numbers. Gallery and collapse swapped the same day (user): show what the model does to the aggregates, then the temperature collapse, then the weaker porosity result. NOTE: the iCloud folders and files for 4 and 5 still carry the OLD numbers until the rename there is done (access was denied from the session).
 
@@ -18,7 +19,7 @@ Original note: numbering fixed 2026-10-06; the manuscript folders carry these nu
 | 4 | **Neck growth at saturation against t^(1/3)** (Demmenie conditions): laid out as the companion of Fig. 3: (a) the pair at 0 and 100 h, ice over the supersaturation, instants 1–2; (b) neck width with the free and the one-third fit. Two panels only (user, 2026-10-07); the exponent-vs-window and grain-size plots are diagnostics in the run folder. Result to state plainly: a = 0.21 after relaxation (0.21–0.23 by window), below 0.26–0.33 | **built**: `studies/molaro_2019/demmenie/fig_demmenie.py` → `Figure4_saturated_neck_growth.*` | new | 3.1 |
 | 5 | **What happens to the aggregates**: five porosities × four instants, qualitative colour bars | built (sample): `Figure5_gallery` | Fig. 7 | 3.2 |
 | 6 | **k_eff evolution and its temperature collapse**: (a) four snapshots of one packing; (b) k/k₀ vs days, five temperatures; (c) the same vs θ = t/τ_sub; (d) SSA/SSA₀ vs θ | **built**: `figures/fig_keff_collapse.py` → `Figure6__KeffEvolution/Figure6_keff_collapse.*` | Figs. 3, 4, 5 | 3.2 |
-|   | *Alternate (`Figure6_keff_collapse_alt`, `fig_keff_collapse.py --other-seeds`)*: the other four packings of φ 0.325 in (c) and (d) as thin grey lines, each its own bundle of five collapsed temperatures. Number for the text: k_eff at matched SSA agrees across temperature within 0.27% over all 100 pairs (median 0.07%; 0.17% at φ 0.325; 0.24% for φ ≤ 0.375) | built 2026-10-08; user to choose | | |
+|   | *Alternate (`Figure6_keff_collapse_alt`, `fig_keff_collapse.py --other-seeds`)*: the other four packings of φ 0.325 in (c) and (d) as thin grey lines, each its own bundle of five collapsed temperatures. Number for the text: k_eff at matched SSA agrees across temperature within 0.27% over all 100 pairs (median 0.07%; 0.17% at φ 0.325; 0.24% for φ ≤ 0.375) | built 2026-10-08; NOT used: the user keeps the original without grey lines (2026-10-08) | | |
 | 7 | **The state law**: (a) k vs SSA, well-connected packings, one power law; (b) level vs porosity; (c) exponent vs porosity, grey above φ 0.40 | built (sample): `Figure7_state_law` or `Figure7_state_law_alt`; message below | Figs. 7, 8 | 3.2 / 4.2 |
 | 8 | **The clock extrapolated**: time to a given sintering age vs temperature and grain radius, with Enceladus conditions and Choukroun's 180 K point | built (sample): `Figure8_timescales`; needs the surface-diffusion check | new | 4.3 |
 

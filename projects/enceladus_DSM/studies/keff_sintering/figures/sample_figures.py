@@ -14,7 +14,7 @@ labels; >= 8 pt; transparent background):
   Figure7_state_law       the state law: (a) k_eff vs SSA, each relative to its value
                      at theta = 30, well-connected packings, with the power
                      law; (b) the level vs porosity; (c) the exponent vs porosity
-  Figure7_state_law_alt     the same with curves: (a) k_eff(t) by porosity, the gallery's
+  Figure7_state_law     the same with curves: (a) k_eff(t) by porosity, the gallery's
                      instants marked; (b)-(d) as figB
   Figure8_timescales    the clock extrapolated: time to reach a sintering age as a
                      function of temperature and grain radius (vapour route),
@@ -178,7 +178,7 @@ def fig_closure(R, out, theta_ref=30.0, phi_max=0.375):
     ax[2].set(ylabel=r"exponent $p$")
     for a_, s_ in zip(ax, "abc"):
         clean(a_); panel(a_, s_, dx=-0.32)
-    save(fig, out, "Figure7_state_law")
+    save(fig, out, "figB_closure")                 # not in the manuscript since 2026-10-08
     print(f"  state law: k ~ SSA^{p0:.3f} (phi <= {phi_max}); level k_r/k_ice = "
           f"{np.exp(cf[1]):.3f} exp({cf[0]:.2f} phi); per-phi p: "
           + ", ".join(f"{p:g}: {np.mean(p_by[p]):.2f}±{np.std(p_by[p], ddof=1):.2f}" for p in phis))
@@ -254,7 +254,7 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
     ax[3].set(ylabel=r"exponent $p$")
     for a_, s_ in zip(ax, "abcd"):
         clean(a_); panel(a_, s_, dx=-0.20, dy=1.01)
-    save(fig, out, "Figure7_state_law_alt")
+    save(fig, out, "Figure7_state_law")
 
 
 def psat_ice(T):                                    # Murphy & Koop (2005), Pa

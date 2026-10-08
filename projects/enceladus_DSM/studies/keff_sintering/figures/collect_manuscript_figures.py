@@ -22,9 +22,7 @@ FIGURES = [                                   # (stem, source folder)
     ("Figure4_saturated_neck_growth", MOLARO),
     ("Figure5_gallery", SAMPLES),
     ("Figure6_keff_collapse", SAMPLES),
-    ("Figure6_keff_collapse_alt", SAMPLES),
     ("Figure7_state_law", SAMPLES),
-    ("Figure7_state_law_alt", SAMPLES),
     ("Figure8_timescales", SAMPLES),
 ]
 
