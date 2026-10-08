@@ -37,6 +37,22 @@ What the paper can offer a laboratory, each stated as a testable prediction:
    et al. (2019) and under Demmenie et al. (2025) conditions, and where it
    falls short.
 
+Which laboratory work to compare with (user, 2026-10-08): NOT natural snow.
+Fresh snow is angular and far more porous than these packings, and snow at
+depth densifies under overburden, a mode this model does not have. The
+analogues are sintered ice-sphere and ice-powder samples without load
+(Choukroun et al. 2020; the grain pairs of Molaro et al. 2019 and Demmenie et
+al. 2025). From the snow literature only functional forms may carry over
+(e.g. SSA against log time in isothermal experiments), never magnitudes.
+
+Demmenie comparison, open point (2026-10-08): the user reads the low exponent
+(0.21 against 0.26–0.33) as the signature of mechanisms the model lacks at
+−3 °C. Caution recorded here: mechanisms acting in parallel add RATES; a
+missing surface-diffusion term (exponent 1/7) cannot raise an exponent, only
+a mechanism with a steeper law (e.g. viscous flow of a quasi-liquid layer)
+could. Also the same model gave 0.283 on the tangent-start `mesh_pair` run.
+Settle before writing the claim.
+
 Consequences for the plan:
 - Introduction: lead with the laboratory problem; Enceladus as motivation.
 - Figure 1(b) and the gallery already read as laboratory microstructures.
