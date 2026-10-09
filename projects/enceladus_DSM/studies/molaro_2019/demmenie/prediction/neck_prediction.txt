@@ -1,0 +1,26 @@
+run: molaro_2D_L220x188um_eps0.12um_axisym_T-20eq_R84um_r14um_mirror__molar
+  beta_realised / beta_requested = 1.0000  (1.0000 = no thin-interface inflation)
+  d0 = 1.0152e-09 m, beta_sub = 7.9410e+06 s/m, k_D = 5.7054e+10 s/m2, c = 0.275
+  diffusion / attachment resistance, c rho k_D / beta_sub: 0.004 at w = 33.5 um, 0.019 at w = 63.2 um
+
+  neck width at the end of the run (100 h), from the first sample after relaxation:
+    run                        63.16 um
+    attachment + diffusion     60.60 um
+    attachment only            60.77 um
+    diffusion only            122.93 um
+
+  exponent a of C (t + t0)^a over the samples after relaxation:
+    run                       0.212
+    attachment + diffusion    0.293
+    attachment only           0.294
+    diffusion only            0.152
+
+  vapor route at Demmenie's conditions (-3 C, tangent start, 2.5 h; c as above):
+    R = 0.5 mm, alpha_c = 0.001: a = 0.328; diffusion/attachment resistance at 2.5 h = 0.00154
+    R = 0.5 mm, alpha_c = 0.01: a = 0.319; diffusion/attachment resistance at 2.5 h = 0.0712
+    R = 0.5 mm, alpha_c = 0.1: a = 0.252; diffusion/attachment resistance at 2.5 h = 2.06
+    R = 0.5 mm, alpha_c = 1: a = 0.194; diffusion/attachment resistance at 2.5 h = 25.7
+    R = 1 mm, alpha_c = 0.001: a = 0.330; diffusion/attachment resistance at 2.5 h = 0.00122
+    R = 1 mm, alpha_c = 0.01: a = 0.323; diffusion/attachment resistance at 2.5 h = 0.056
+    R = 1 mm, alpha_c = 0.1: a = 0.263; diffusion/attachment resistance at 2.5 h = 1.7
+    R = 1 mm, alpha_c = 1: a = 0.200; diffusion/attachment resistance at 2.5 h = 21.8

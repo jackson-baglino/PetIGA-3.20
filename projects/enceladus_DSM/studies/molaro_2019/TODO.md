@@ -70,6 +70,28 @@ prepares the commands.
   (free-t0 0.19–0.20 whole record, 0.22–0.23 above 40–50 um; Kuczynski
   m = 5.1–5.3; local slope 0.14 at 10 h rising to 0.21 at 100 h). Grain
   radius +0.06 %, so saturation held. BELOW both targets.
+- [x] **Gibbs–Thomson prediction for this run (2026-10-09).**
+  `demmenie/predict_neck_growth.py` → `demmenie/prediction/neck_prediction.png`.
+  The neck ODE (σ = d0κ + βv_n, c = 0.275 from the envelope study, not
+  refitted) gives 60.6 µm at 100 h against the run's 63.2 µm, and a = 0.29
+  against the run's 0.21. The run is strongly attachment-limited (diffusion /
+  attachment resistance 0.004–0.02), so the "mixed regime" idea is OUT. The
+  difference is early: the run's neck velocity is ~2.5× the prediction at
+  w = 35 µm and converges to it above ~55 µm. At 35 µm the fillet radius is
+  only ~2 interface bands (6 at 63 µm): a finite-ε effect is the leading
+  candidate. Thin-interface term: OFF in this run (β_realised/β_requested =
+  1.000). At Demmenie's own conditions (−3 °C, mm spheres, 2.5 h) the vapor
+  route alone gives a = 0.32–0.33 for α_c ≤ 0.01, 0.25–0.26 at 0.1, 0.19–0.20
+  at 1: their measured range is reachable by vapor transport alone.
+- [ ] **The −20 °C Molaro run (2026-09-08) predates the thin-interface fix
+  (5ecdd236, 2026-09-09):** its τ_sub is 1.3403 s against 1.0891 s kinetic-only,
+  so β_realised = 1.23 × requested (effective α_c ≈ 0.081). The −5 °C run
+  (2026-09-29) is at 1.000. Manuscript Fig. 3 therefore mixes the two. Rerun
+  −20 °C with the current solver, or state it; Table S3's τ_sub = 1.34 s is the
+  inflated value.
+- [ ] **ε-refinement of the saturated pair** (finer ε, same set-up): does the
+  early excess shrink and the exponent rise toward 0.29? Also the one check
+  the gt_deficit note leaves open.
 - [ ] **Explain the low exponent.** Candidates to test, none checked yet:
   the pre-necked start (r0 = 14 um, no physical t = 0); the slope still
   rising at 100 h (not yet asymptotic); neck/grain ratio already 0.17–0.37
