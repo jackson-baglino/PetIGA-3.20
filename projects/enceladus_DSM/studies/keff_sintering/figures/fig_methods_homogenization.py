@@ -60,6 +60,13 @@ def main():
     ap.add_argument("--corrector-dir", type=Path, default=None)
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--copy-to", type=Path, default=None)
+    ap.add_argument("--panel", choices=("a", "b", "c", "d"), nargs="+", default=[],
+                    help="also write these panels' IMAGES alone, as "
+                         "Figure2_panel_<x>.pdf/.png: the full figure cropped to "
+                         "the panel's axes, so it is the identical picture (no "
+                         "letter, no colour bar)")
+    ap.add_argument("--panel-colorbar", action="store_true",
+                    help="keep the colour bar and its label in --panel crops of (c), (d)")
     a = ap.parse_args()
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
     run = a.root / MASTER
@@ -92,6 +99,7 @@ def main():
     print(f"zoom centre ({cx:.0f}, {cy:.0f}) um, window {a.zoom_um:g} um")
 
     cor = None
+    caxs = {}                     # colour-bar axes of (c), (d), for --panel crops
     cdir = a.corrector_dir or run / "corrector"
     tf = cdir / f"t_vec_{st[i]:05d}_0.dat"
     if (cdir / "igakeff.dat").is_file() and tf.is_file():
@@ -168,6 +176,7 @@ def main():
             cax = fig.add_axes([p_.x1 + 0.008, p_.y0, 0.012, p_.height])
             cb = fig.colorbar(im_, cax=cax); cb.ax.tick_params(labelsize=FS_TINY, width=0.5, length=2)
             cb.set_label(lab, fontsize=FS_SMALL); cb.outline.set_linewidth(0.5)
+            caxs[k_] = cax
     else:
         for k_, txt in (("c", r"corrector $t_x$"), ("d", r"heat flux $|\mathbf{q}_x|$")):
             axs[k_].text(0.5, 0.5, txt + "\n(needs the corrector replay;\nsee this script's header)",
@@ -191,6 +200,31 @@ def main():
             a.copy_to.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(f, a.copy_to / f.name)
     print(f"wrote {out}/Figure2_homogenization_method.pdf/.png")
+
+    # One panel's image alone: the same figure, cropped to that panel's axes.
+    from matplotlib.transforms import Bbox
+    fig.canvas.draw()
+    for k_ in a.panel:
+        if k_ in "cd" and cor is None:
+            print(f"panel ({k_}) needs the corrector fields; skipped")
+            continue
+        ax = axs[k_]
+        bb = ax.get_window_extent()
+        if a.panel_colorbar and k_ in caxs:
+            bb = Bbox.union([bb, caxs[k_].get_tightbbox()])
+        else:
+            for sp in ax.spines.values():       # the frame would be cut in half
+                sp.set_visible(False)
+        bb_in = bb.transformed(fig.dpi_scale_trans.inverted())
+        for e in ("pdf", "png"):
+            f = out / f"Figure2_panel_{k_}.{e}"
+            fig.savefig(f, dpi=600, transparent=True, bbox_inches=bb_in)
+            if a.copy_to:
+                shutil.copyfile(f, a.copy_to / f.name)
+        for sp in ax.spines.values():
+            sp.set_visible(True)
+        print(f"wrote {out}/Figure2_panel_{k_}.pdf/.png  "
+              f"({bb_in.width * 25.4:.1f} x {bb_in.height * 25.4:.1f} mm)")
 
 
 if __name__ == "__main__":
