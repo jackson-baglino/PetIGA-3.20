@@ -614,14 +614,6 @@ int main(int argc, char *argv[]) {
 
     /* --- Boundary conditions & physics flags ----------------------------- */
     ierr = PetscOptionsInt("-periodic", "Periodic boundary condition flag", "", user.periodic, &user.periodic, NULL); CHKERRQ(ierr);
-    user.thin_iface_corr = PETSC_FALSE;
-    ierr = PetscOptionsBool("-thin_iface_corr",
-             "Include the Karma thin-interface counter-terms in tau_sub. Default 0: "
-             "for a one-sided vapour diffusivity the O(eps) kinetic contribution they "
-             "compensate is identically zero, so including them inflates the realised "
-             "beta above -beta_sub0 (1.22x at the -20 C wedge parameters). See "
-             "docs/gt_deficit/",
-             "", user.thin_iface_corr, &user.thin_iface_corr, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_Tfix",    "Fix temperature at boundaries",                    "", flag_BC_Tfix,    &flag_BC_Tfix,    NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_BC_rhovfix", "Fix vapor density at boundaries",                  "", flag_BC_rhovfix, &flag_BC_rhovfix, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsBool("-flag_Tdep",       "Temperature-dependent Gibbs-Thomson parameters",   "", user.flag_Tdep,  &user.flag_Tdep,  NULL); CHKERRQ(ierr);
@@ -1038,35 +1030,32 @@ int main(int argc, char *argv[]) {
      * (material_properties.c calls VaporDiffus). user.dif_vap is D_v0 at
      * 273.15 K; using it raw made these scalars disagree with the pointwise
      * path by 13% in the a2*eps/D_v term at -20 C. */
-    /* Thin-interface counter-terms, OFF by default (-thin_iface_corr).
+    /* Thin-interface counter-terms: ALWAYS included.
      *
-     * These inflate tau_sub by the spurious O(eps) kinetic contribution that the
-     * sharp-interface asymptotics are expected to subtract back off, so that the
-     * realised kinetic coefficient equals the requested -beta_sub0. For this
-     * model that contribution is zero: the vapour diffusivity is one-sided
-     * (D_v*phi_a), which makes the inner deviation of sigma identically null, so
-     * nothing is subtracted and the inflation survives as an error in beta --
-     * 1.22x at the -20 C wedge parameters, 1.49x at the Molaro ones. Measured
-     * over a 40x sweep in -beta_sub0, beta_fit/beta_bare = 1.0009 +/- 0.0007.
+     *   tau_sub = eps^2*beta/d0  +  a1*a2*(eps^3/d0)*(1/D_therm + 1/D_v)
      *
-     * -thin_iface_corr 1 restores the terms in their historical form, for
-     * comparison against earlier runs. (In lunar this is not bit-for-bit: D_v is
-     * now taken at temp0 rather than at 0 C, which moves tau_sub by 0.7%.) It is
-     * not a corrected form: the
-     * thermal term additionally omits the Clausius-Clapeyron factor by which
-     * temperature acts on sigma, and is over-weighted by 11-1300x as a result.
-     * Since the physically correct correction for this model is ~0, a "fixed"
-     * ON branch would be indistinguishable from OFF and is not provided.
+     * This is the form of Kaempfer & Plapp (2009) and Moure & Fu (2024), and the
+     * one this model is meant to run. There is NO switch for it (removed
+     * 2026-10-09, user decision): a -thin_iface_corr flag existed from
+     * 2026-09-09 and defaulted to off here, the k_eff campaign and two of the
+     * three grain-pair runs were made that way by mistake, and a switch nobody
+     * intends to use is only a way to repeat that. lunar_regolith_DSM has had
+     * the terms on by default since 2026-09-13.
      *
-     * See docs/gt_deficit/. */
+     * Known and accepted consequence (docs/gt_deficit/ in lunar): the realised
+     * kinetic coefficient is beta_sub0 + Delta, Delta = a1*a2*eps*(1/D_therm +
+     * 1/D_v)*rho_ice/rho_vs, additive and proportional to eps -- about 2 % of
+     * beta at alpha_c = 1e-3 and eps = 1 um, about 22 % at alpha_c = 0.1 and
+     * eps = 0.12 um. The run header prints both.
+     *
+     * Runs made while the terms were off: an "off" run at alpha_c is exactly an
+     * "on" run at alpha_c / (1 - Delta/beta); the k_eff campaign (off, 1e-3) is
+     * on at 1.020e-3. studies/keff_sintering/thin_interface_audit.py. */
     {
         PetscScalar dv_T0;
         VaporDiffus(&user, (PetscScalar)user.temp0, &dv_T0, NULL);
-        PetscReal c_vap = 0.0, c_therm = 0.0;
-        if (user.thin_iface_corr) {
-            c_therm = a2 * user.eps / user.diff_sub;
-            c_vap   = a2 * user.eps / PetscRealPart(dv_T0);
-        }
+        const PetscReal c_therm = a2 * user.eps / user.diff_sub;
+        const PetscReal c_vap   = a2 * user.eps / PetscRealPart(dv_T0);
         user.tau_kin   = user.eps * lambda_sub * (beta_sub / a1);
         user.tau_therm = user.eps * lambda_sub * c_therm;
         user.tau_vap   = user.eps * lambda_sub * c_vap;
@@ -1757,16 +1746,11 @@ int main(int argc, char *argv[]) {
              * absent, which is the default. See docs/gt_deficit/. */
             PetscReal b_bare = tau_sub * user.d0_sub0 / (user.eps * user.eps);
             PetscPrintf(PETSC_COMM_WORLD,
-                "   tau_sub terms:  kinetic %.4e s", user.tau_kin);
-            if (user.thin_iface_corr)
-                PetscPrintf(PETSC_COMM_WORLD, " + thermal %.4e + vapor %.4e",
-                            user.tau_therm, user.tau_vap);
-            PetscPrintf(PETSC_COMM_WORLD, "   (-thin_iface_corr %d)\n",
-                        (int)user.thin_iface_corr);
+                "   tau_sub terms:  kinetic %.4e s + thermal %.4e + vapor %.4e   (thin-interface terms always on)\n",
+                user.tau_kin, user.tau_therm, user.tau_vap);
             PetscPrintf(PETSC_COMM_WORLD,
-                "   beta realised  =  %.4e s/m  =  %.4f x -beta_sub0%s\n",
-                b_bare, b_bare / user.beta_sub0,
-                user.thin_iface_corr ? "   <-- NOT the beta you requested" : "");
+                "   beta realised  =  %.4e s/m  =  %.4f x -beta_sub0   (requested + thin-interface term)\n",
+                b_bare, b_bare / user.beta_sub0);
         }
 
         PetscPrintf(PETSC_COMM_WORLD, "   mob_sub        %.4e m/s            [M&F: 4.33e-7]\n", user.mob_sub);

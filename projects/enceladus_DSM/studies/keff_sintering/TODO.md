@@ -306,8 +306,17 @@ GRL); both PDFs are in `Literature/`.
     −20 °C pair (on at 0.1). Rerun with `-thin_iface_corr 1` (~12 h, ~$70) or
     keep and state it: the neck ODE puts the change in neck growth at −2 to
     −4 %. USER TO DECIDE. Table S3 carries a [REVISIT] note until then.
-  - NOT done, needs the user's go-ahead: switching the enceladus solver default
-    to on (lunar's has been on since 2026-09-13).
+  - [x] 2026-10-09 (user): the `-thin_iface_corr` switch is REMOVED from the
+    enceladus solver; the terms are always included. lunar still has the
+    switch (default on) and was not touched.
+  - **Consequence for reproducing the campaign:** the experiment files
+    (`inputs/experiment/snow/snow_T*_h1.00_30d.opts`) still carry β_sub0 for
+    α_c = 1e-3. With the terms now always on, resubmitting a stage file would
+    run α_c = 1e-3 WITH the term, which is not the campaign (that is 1.020e-3
+    with it). The β_sub0 values and `generate_study_opts.py --alpha-c` need
+    changing before any campaign run is repeated. NOT changed; user to decide.
+  - [ ] Rerun the Molaro −5 °C pair with the term (user, 2026-10-09).
+  - [x] α_c = 1.020e-3 written into the tables, outline, plan and run table.
 - [ ] **Decide the manuscript's clock: τ_sub (ε-dependent) or τ_R = R̄²β_sub/d₀.**
   Raised by the user 2026-10-08. ε = R̄/50 is a discretization choice and
   τ_sub = ε²β_sub/d₀ is the diffuse interface's relaxation time. The eps ×2

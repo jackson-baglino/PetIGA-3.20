@@ -59,7 +59,7 @@ interior) and solid connectivity (off at φ 0.475).
 | interface parameter eps | 1 µm (visible 1–99 % band ≈ 9.2 µm) |
 | mesh | 2829 × 2829 elements (p = 2, C¹); 24.0 M unknowns (ice phase, temperature, vapour) |
 | run length | 30 days |
-| condensation coefficient α_c | 1e-3, constant |
+| condensation coefficient α_c | 1.020e-3, constant, with the thin-interface term in τ_sub (the runs were made as 1e-3 without the term, the same calculation; `thin_interface_audit.py`) |
 | humidity | 1.00 (saturated), isothermal, no imposed temperature gradient |
 | conductivities | k_ice = 2.29, k_air = 0.02 W/m/K; tensor conductivity law |
 | k_eff sampling | every step before 11 τ_sub, then every 0.1 % drop in SSA (≤ 20 τ_sub apart) |

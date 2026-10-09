@@ -148,7 +148,7 @@ Fig. 7 gives k = k(SSA; φ). Fig. 8 turns θ into years for a given T and R.
 **Key points / abstract.** Rewrite. The draft's first key point (an empirical
 temperature dependence of the kinetic parameters, "without retuning") is no
 longer what the model does: α_c is constant (0.1 in the Molaro runs, a stated
-tuning choice; 1e-3 in the packings). The second ("SSA … for both varying
+tuning choice; 1.020e-3 in the packings, with the thin-interface term). The second ("SSA … for both varying
 temperatures and varying porosities") must be narrowed: exact across
 temperature; across porosity only the exponent, and only for φ ≤ 0.375.
 
