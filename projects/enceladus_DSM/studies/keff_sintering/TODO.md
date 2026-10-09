@@ -294,9 +294,20 @@ GRL); both PDFs are in `Literature/`.
     model without an anti-trapping current. enceladus was never brought in
     line. The user wants the correction ON (stability with the contact-angle
     model; precedent in Kaempfer & Plapp and Moure & Fu).
-  - To decide (no runs for now, user 2026-10-09): set the enceladus default to
-    ON to match lunar; state in the paper which runs used what; Figure 3 mixes
-    ON (−20 °C) and OFF (−5 °C).
+  - **DECIDED 2026-10-09 (user): the model is with the correction ON.** The 125
+    aggregate runs are kept and relabelled: off at α_c = 1e-3 is the same
+    calculation as on at **α_c = 1.020e-3** (exactly: the term enters only
+    through τ_sub; 1.0199–1.0200e-3 across the five temperatures). τ_sub and
+    every result are unchanged. `tables/tables.tex` updated (α_c, β_sub, new Δβ
+    row and formula). The "1.019" quoted first was an estimate with an inferred
+    thermal diffusivity; 1.020 uses the solver's own (D_T = 7.78e-6 m²/s).
+  - Saturated pair: off at 1e-3 = on at 1.002e-3; no rerun.
+  - Molaro −5 °C pair: off at 0.1 = on at 0.129, so it does not match the
+    −20 °C pair (on at 0.1). Rerun with `-thin_iface_corr 1` (~12 h, ~$70) or
+    keep and state it: the neck ODE puts the change in neck growth at −2 to
+    −4 %. USER TO DECIDE. Table S3 carries a [REVISIT] note until then.
+  - NOT done, needs the user's go-ahead: switching the enceladus solver default
+    to on (lunar's has been on since 2026-09-13).
 - [ ] **Decide the manuscript's clock: τ_sub (ε-dependent) or τ_R = R̄²β_sub/d₀.**
   Raised by the user 2026-10-08. ε = R̄/50 is a discretization choice and
   τ_sub = ε²β_sub/d₀ is the diffuse interface's relaxation time. The eps ×2
