@@ -277,6 +277,26 @@ GRL); both PDFs are in `Literature/`.
   temperature, so the vapour route should lead when warm and lose when cold.
   Read Nasello 2007 and the snow-sintering sources Molaro cites (Maeno &
   Ebinuma 1983; Löwe 2011; Vetter 2010) and decide how to state it.
+- [ ] **THIN-INTERFACE CORRECTION: the manuscript runs are not consistent, and
+  the project default disagrees with the user's intent (found 2026-10-09).**
+  Audit: `thin_interface_audit.py` → `thin_interface_audit.txt`.
+  - 125 aggregate runs: **OFF** in all (banner `-thin_iface_corr 0`). ON would
+    add 1.9 % to τ_sub at every temperature, so the collapse, the state law and
+    every dimensionless result are unaffected; only the clock shifts by 1.9 %.
+  - Molaro pair −20 °C (2026-09-08): **ON** (pre-flag code), β realised 1.23 ×
+    requested, effective α_c 0.081.
+  - Molaro pair −5 °C (2026-09-29): **OFF**; ON would add 21.5 %.
+  - Saturated pair (2026-10-06): **OFF**; ON would add 0.2 %, so the exponent
+    result there does not depend on this.
+  - History: enceladus removed the terms 2026-09-09 (5ecdd236, default 0);
+    lunar switched its default back to 1 on 2026-09-13 (f7cdfbe5) because the
+    OFF argument does not bound the spurious surface diffusion of a one-sided
+    model without an anti-trapping current. enceladus was never brought in
+    line. The user wants the correction ON (stability with the contact-angle
+    model; precedent in Kaempfer & Plapp and Moure & Fu).
+  - To decide (no runs for now, user 2026-10-09): set the enceladus default to
+    ON to match lunar; state in the paper which runs used what; Figure 3 mixes
+    ON (−20 °C) and OFF (−5 °C).
 - [ ] **Decide the manuscript's clock: τ_sub (ε-dependent) or τ_R = R̄²β_sub/d₀.**
   Raised by the user 2026-10-08. ε = R̄/50 is a discretization choice and
   τ_sub = ε²β_sub/d₀ is the diffuse interface's relaxation time. The eps ×2

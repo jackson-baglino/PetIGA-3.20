@@ -86,9 +86,11 @@ prepares the commands.
 - [ ] **The −20 °C Molaro run (2026-09-08) predates the thin-interface fix
   (5ecdd236, 2026-09-09):** its τ_sub is 1.3403 s against 1.0891 s kinetic-only,
   so β_realised = 1.23 × requested (effective α_c ≈ 0.081). The −5 °C run
-  (2026-09-29) is at 1.000. Manuscript Fig. 3 therefore mixes the two. Rerun
-  −20 °C with the current solver, or state it; Table S3's τ_sub = 1.34 s is the
-  inflated value.
+  (2026-09-29) is at 1.000. Manuscript Fig. 3 therefore mixes the two. Table S3's τ_sub = 1.34 s includes the correction.
+  NOTE (user, 2026-10-09): the correction is meant to be ON, so the −20 °C run
+  is the one that follows the intended model and the −5 °C and saturated runs
+  are the ones without it. Full audit:
+  `studies/keff_sintering/thin_interface_audit.txt`. No reruns for now.
 - [ ] **ε-refinement of the saturated pair** (finer ε, same set-up): does the
   early excess shrink and the exponent rise toward 0.29? Also the one check
   the gt_deficit note leaves open.

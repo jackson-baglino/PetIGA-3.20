@@ -1,0 +1,13 @@
+run                                   tau d0/(eps^2 beta)  banner flag   correction  ON would add
+Molaro pair, -20 C (run 2026-09-08)        1.2306        not printed   ON          22.2 %
+Molaro pair, -5 C (run 2026-09-29)         1.0000        not printed   OFF         21.5 %
+saturated pair (run 2026-10-06)            1.0000        not printed   OFF          0.2 %
+
+aggregate runs audited: 125
+  banner flag: {'0': 125}
+  tau d0/(eps^2 beta): 0.99998 to 1.00004  -> correction OFF in all
+  T =  -40.0 C: ON would add 1.89 % to tau_sub (25 runs)
+  T =  -30.0 C: ON would add 1.89 % to tau_sub (25 runs)
+  T =  -20.0 C: ON would add 1.88 % to tau_sub (25 runs)
+  T =  -10.0 C: ON would add 1.88 % to tau_sub (25 runs)
+  T =   -5.0 C: ON would add 1.88 % to tau_sub (25 runs)
