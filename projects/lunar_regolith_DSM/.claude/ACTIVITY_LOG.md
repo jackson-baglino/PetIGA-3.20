@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-09 17:36:07
+
+
+---
+
 **Session ended:** 2026-10-09 17:31:51
 
 
@@ -30,6 +35,11 @@
   (input generation from a plain-language request, failed-run diagnosis and
   resubmission, uncertainty-driven run selection) and added a matching
   section plus a scripted-baseline comparison to the points file.
+- Drafted a full research proposal for the advisor as a Word document
+  (Proposal_pore_to_borehole_DRAFT.docx, iCloud research project folder):
+  five aims, approach, validation targets, compute plan, risks, timeline,
+  open decisions, a section separating measured values from estimates, and
+  26 references with Crossref-verified DOIs.
 
 ---
 
