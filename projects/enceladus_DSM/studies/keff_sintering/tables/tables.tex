@@ -12,8 +12,9 @@
 %       \TableMaterialProperties      % Table~\ref{tab:material_properties}
 %       \TableKeffParametersFull      % Table~\ref{tab:keff_parameters_full}
 %       \TableGrainPairParameters     % Table~\ref{tab:grainpair_parameters}
-% Tables are numbered in the order the commands are used. Every table fits a
-% 6.5 in text block at 11 pt (checked 2026-10-06). The compact table's note
+% Tables are numbered in the order the commands are used. Each sets itself
+% compactly (\TableCompact below: single-spaced, \footnotesize) and floats
+% [htbp], so it no longer takes a page in the double-spaced draft class. The compact table's note
 % writes "Table~S\ref{...}": drop the S if those tables stay in the main text.
 % AGU table format; no packages beyond the AGU template.
 %
@@ -29,40 +30,41 @@
 % To add a table: \newcommand{\TableName}{ <the table environment> }.
 % =============================================================================
 
+% ---- Compact setting, used inside every table ----
+% The AGU draft class double-spaces everything, tables included, which is what
+% made each table fill a page. Inside the table only: single spacing, a smaller
+% font and tighter columns. No packages needed. To loosen all tables at once,
+% change this one macro (e.g. \small for \footnotesize).
+\newcommand{\TableCompact}{%
+  \renewcommand{\baselinestretch}{1}\footnotesize
+  \setlength{\tabcolsep}{5pt}\renewcommand{\arraystretch}{1.05}}
+
 % ---- Material properties and constitutive relations (all simulations) ----
 \newcommand{\TableMaterialProperties}{%
-\begin{table}
+\begin{table}[htbp]
 \caption{Material Properties and Constitutive Relations Used in All Simulations$^{a}$}
-\centering
+\centering\TableCompact
 \begin{tabular}{l l l l}
 \hline
  Symbol & Description & Value & Unit \\
 \hline
- \multicolumn{4}{l}{\textit{Ice}} \\
- $\rho_{\mathrm{ice}}$ & density & 919 & kg\,m$^{-3}$ \\
- $k_{\mathrm{ice}}$ & thermal conductivity & 2.29 & W\,m$^{-1}$\,K$^{-1}$ \\
- $c_{p,\mathrm{ice}}$ & specific heat capacity & 1960 & J\,kg$^{-1}$\,K$^{-1}$ \\
+ $\rho_{\mathrm{ice}}$, $\rho_{\mathrm{air}}$ & density & 919, 1.341 & kg\,m$^{-3}$ \\
+ $k_{\mathrm{ice}}$, $k_{\mathrm{air}}$ & thermal conductivity & 2.29, 0.02 & W\,m$^{-1}$\,K$^{-1}$ \\
+ $c_{p,\mathrm{ice}}$, $c_{p,\mathrm{air}}$ & specific heat capacity & 1960, 1044 & J\,kg$^{-1}$\,K$^{-1}$ \\
  $L_{\mathrm{sub}}$ & latent heat of sublimation & $2.83 \times 10^{6}$ & J\,kg$^{-1}$ \\
  $\gamma_{ia}$ & ice--air interfacial energy & 0.109 & J\,m$^{-2}$ \\
  $m$ & mass of a water molecule & $2.9915 \times 10^{-26}$ & kg \\
- $a^{3}$ & molecular volume, $m/\rho_{\mathrm{ice}}$ & $3.255 \times 10^{-29}$ & m$^{3}$ \\
- \multicolumn{4}{l}{\textit{Pore gas (air and water vapor)}} \\
- $\rho_{\mathrm{air}}$ & density & 1.341 & kg\,m$^{-3}$ \\
- $k_{\mathrm{air}}$ & thermal conductivity & 0.02 & W\,m$^{-1}$\,K$^{-1}$ \\
- $c_{p,\mathrm{air}}$ & specific heat capacity & 1044 & J\,kg$^{-1}$\,K$^{-1}$ \\
  $D_{v0}$ & vapor diffusivity at 273.15 K & $2.178 \times 10^{-5}$ & m$^{2}$\,s$^{-1}$ \\
  $P_{\mathrm{atm}}$ & total pressure & 101325 & Pa \\
- \multicolumn{4}{l}{\textit{Constants}} \\
- $k_B$ & Boltzmann constant & $1.380649 \times 10^{-23}$ & J\,K$^{-1}$ \\
- \multicolumn{4}{l}{\textit{Constitutive relations}} \\
+\hline
  $D_v$ & vapor diffusivity & $D_{v0}\,(T/273.15\ \mathrm{K})^{1.81}$ & m$^{2}$\,s$^{-1}$ \\
  $\rho_{vs}^{I}$ & saturation vapor density over ice$^{b}$ & $0.62\,\rho_{\mathrm{air}}\,P_{vs}/(P_{\mathrm{atm}} - P_{vs})$ & kg\,m$^{-3}$ \\
- $d_0$ & capillary length & $\gamma_{ia}\,a^{3}/(k_B T)$ & m \\
+ $d_0$ & capillary length & $\gamma_{ia}\,m/(\rho_{\mathrm{ice}}\,k_B T)$ & m \\
  $\beta_{\mathrm{sub}}$ & kinetic coefficient & $(\rho_{\mathrm{ice}}/\rho_{vs}^{I})\,\alpha_c^{-1}\sqrt{2\pi m/(k_B T)}$ & s\,m$^{-1}$ \\
  $\Delta\beta$ & thin-interface term$^{c}$ & $a_1 a_2\,\varepsilon\,(D_T^{-1} + D_v^{-1})\,\rho_{\mathrm{ice}}/\rho_{vs}^{I}$ & s\,m$^{-1}$ \\
  $\tau_{\mathrm{sub}}$ & phase-change time scale & $\varepsilon^{2}(\beta_{\mathrm{sub}} + \Delta\beta)/d_0$ & s \\
 \hline
-\multicolumn{4}{l}{$^{a}$Values at the simulated temperatures: Tables~\ref{tab:keff_temperature} and \ref{tab:grainpair_parameters}.} \\
+\multicolumn{4}{l}{$^{a}$Values at the simulated temperatures: Tables~\ref{tab:keff_temperature} and \ref{tab:grainpair_parameters}. $k_B$: Boltzmann constant.} \\
 \multicolumn{4}{l}{$^{b}$$P_{vs}(T)$: saturation vapor pressure over ice (ASHRAE polynomial).} \\
 \multicolumn{4}{l}{$^{c}$$a_1 = 5$, $a_2 = 0.1581$; $D_T = 7.78 \times 10^{-6}$~m$^{2}$\,s$^{-1}$, the mean thermal diffusivity of ice and air.}
 \end{tabular}
@@ -72,9 +74,9 @@
 
 % ---- k_eff packing simulations: the main-text table (compact) ----
 \newcommand{\TableKeffParameters}{%
-\begin{table}
+\begin{table}[htbp]
 \caption{Parameters of the Effective Thermal Conductivity Simulations$^{a}$}
-\centering
+\centering\TableCompact
 \begin{tabular}{l l l l}
 \hline
  Symbol & Description & Value & Unit \\
@@ -101,9 +103,9 @@
 
 % ---- k_eff packing simulations: complete list (Supporting Information) ----
 \newcommand{\TableKeffParametersFull}{%
-\begin{table}
+\begin{table}[htbp]
 \caption{Complete Parameters of the Effective Thermal Conductivity Simulations$^{a}$}
-\centering
+\centering\TableCompact
 \begin{tabular}{l l l l}
 \hline
  Symbol & Description & Value & Unit \\
@@ -153,9 +155,9 @@
 
 % ---- k_eff packing simulations: temperature-dependent quantities ----
 \newcommand{\TableKeffTemperature}{%
-\begin{table}
+\begin{table}[htbp]
 \caption{Temperature-Dependent Quantities in the Effective Thermal Conductivity Simulations$^{a}$}
-\centering
+\centering\TableCompact
 \begin{tabular}{l l c c c c c}
 \hline
  Quantity & Unit & $-40\,^\circ$C & $-30\,^\circ$C & $-20\,^\circ$C & $-10\,^\circ$C & $-5\,^\circ$C \\
@@ -170,12 +172,7 @@
  $t_f/\tau_{\mathrm{sub}}$ & -- & 43 & 124 & 331 & 819 & 1256 \\
  $\Delta t_{\max}$ & s & 17280 & 17280 & 15640 & 6328 & 4126 \\
 \hline
-\multicolumn{7}{l}{$^{a}$$\rho_{vs}^{I}$: saturation vapor density over ice; $D_v$: vapor diffusivity;} \\
-\multicolumn{7}{l}{\hphantom{$^{a}$}$d_0$: capillary length; $\alpha_c$: condensation coefficient;} \\
-\multicolumn{7}{l}{\hphantom{$^{a}$}$\beta_{\mathrm{sub}} \propto 1/\alpha_c$: kinetic coefficient; $\Delta\beta$: thin-interface term;} \\
-\multicolumn{7}{l}{\hphantom{$^{a}$}$\tau_{\mathrm{sub}} = \varepsilon^2 (\beta_{\mathrm{sub}} + \Delta\beta)/d_0$: phase-change time scale;} \\
-\multicolumn{7}{l}{\hphantom{$^{a}$}$\Delta t_{\max} = \min(2\,\tau_{\mathrm{sub}},\ 0.2\ \mathrm{d})$: largest time step.} \\
-\multicolumn{7}{l}{\hphantom{$^{a}$}The same five packings per porosity are run at every temperature.}
+\multicolumn{7}{@{}p{0.72\textwidth}@{}}{\raggedright $^{a}$$\rho_{vs}^{I}$: saturation vapor density over ice; $D_v$: vapor diffusivity; $d_0$: capillary length; $\alpha_c$: condensation coefficient; $\beta_{\mathrm{sub}} \propto 1/\alpha_c$: kinetic coefficient; $\Delta\beta$: thin-interface term; $\tau_{\mathrm{sub}} = \varepsilon^2 (\beta_{\mathrm{sub}} + \Delta\beta)/d_0$: phase-change time scale; $\Delta t_{\max} = \min(2\,\tau_{\mathrm{sub}},\ 0.2\ \mathrm{d})$: largest time step. The same five packings per porosity are run at every temperature.}
 \end{tabular}
 \label{tab:keff_temperature}
 \end{table}
@@ -185,9 +182,9 @@
 % -20 C: batch_2026-09-08__17.20.46_molaro_T-20_round2.  -5 C: the rerun with the
 % thin-interface term, batch_2026-10-09__08.51.38_molaro_T-5_corr_on (2026-10-10).
 \newcommand{\TableGrainPairParameters}{%
-\begin{table}
+\begin{table}[htbp]
 \caption{Parameters of the Two-Grain Sintering Simulations$^{a}$}
-\centering
+\centering\TableCompact
 \begin{tabular}{l l c c l}
 \hline
  Symbol & Description & $-20\,^\circ$C & $-5\,^\circ$C & Unit \\
