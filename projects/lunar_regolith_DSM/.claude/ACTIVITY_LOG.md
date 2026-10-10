@@ -1,6 +1,16 @@
 
 ---
 
+**Session ended:** 2026-10-09 17:31:51
+
+
+---
+
+**Session ended:** 2026-10-09 17:29:16
+
+
+---
+
 **Session ended:** 2026-10-09 17:21:27
 
 ## 2026-10-09 — Talking points for the AM/ME/CE 295 project proposal
@@ -16,6 +26,10 @@
   pair at dtmax = 2 tau_sub took 755 s on one core, so the committed tier
   (2D/axisymmetric pairs + Gaussian-process surrogate) is laptop-only; only
   the 3D-cell tier needs the cluster.
+- Revised the proposal paragraph to stress where the agent is useful
+  (input generation from a plain-language request, failed-run diagnosis and
+  resubmission, uncertainty-driven run selection) and added a matching
+  section plus a scripted-baseline comparison to the points file.
 
 ---
 
