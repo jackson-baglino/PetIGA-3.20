@@ -1,3 +1,8 @@
+
+---
+
+**Session ended:** 2026-10-09 17:21:27
+
 ## 2026-10-09 — Talking points for the AM/ME/CE 295 project proposal
 
 - Drafted the points for the course project proposal (due Oct 30) as a
@@ -5,6 +10,12 @@
   with deterministic checks and a learned neck-rule surrogate), a target
   (small 3D cells and throat rules) and a stretch (3D pore network with
   rarefied transport and a borehole demonstration). No code changed.
+- Saved the points and a 5-sentence proposal paragraph to
+  project_proposal_points.txt in the iCloud ME295 folder.
+- Sized HPC dependence from a measured local run: the 2026-10-01 sintering
+  pair at dtmax = 2 tau_sub took 755 s on one core, so the committed tier
+  (2D/axisymmetric pairs + Gaussian-process surrogate) is laptop-only; only
+  the 3D-cell tier needs the cluster.
 
 ---
 
