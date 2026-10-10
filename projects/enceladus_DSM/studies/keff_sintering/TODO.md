@@ -315,7 +315,16 @@ GRL); both PDFs are in `Literature/`.
     run α_c = 1e-3 WITH the term, which is not the campaign (that is 1.020e-3
     with it). The β_sub0 values and `generate_study_opts.py --alpha-c` need
     changing before any campaign run is repeated. NOT changed; user to decide.
-  - [ ] Rerun the Molaro −5 °C pair with the term (user, 2026-10-09).
+  - [x] Molaro −5 °C pair rerun with the term (2026-10-09/10, job 4283491, 192
+    ranks, 16 h limit, reached 68 min; `LOC/GrainPairSintering/batch_2026-10-09__08.51.38_molaro_T-5_corr_on/`).
+    τ_sub 0.332 s (1.224 × kinetic-only). Against the run without the term:
+    neck at t*+48 min 52.09 vs 52.42 µm (growth −1.7 %), grain shrinkage
+    identical (large −6.15 %, small −8.23 %), t* 40.5 vs 39.3 s. Conclusions at
+    −5 °C unchanged. 128 s per solve, three times the scaling-fit estimate; the
+    fit does not transfer to the pair problem. Cost 3,072 core-h.
+  - [ ] Put the new run into Figure 3 and Table S3 (remove the [REVISIT] note):
+    waiting for the user's go-ahead. The new folder has `outp_job4283491.txt`
+    but no `outp.txt` (the job hit the time limit before the copy).
   - [x] α_c = 1.020e-3 written into the tables, outline, plan and run table.
 - [ ] **Decide the manuscript's clock: τ_sub (ε-dependent) or τ_R = R̄²β_sub/d₀.**
   Raised by the user 2026-10-08. ε = R̄/50 is a discretization choice and
