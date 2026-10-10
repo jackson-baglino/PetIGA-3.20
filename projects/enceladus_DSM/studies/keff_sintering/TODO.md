@@ -322,10 +322,11 @@ GRL); both PDFs are in `Literature/`.
     identical (large −6.15 %, small −8.23 %), t* 40.5 vs 39.3 s. Conclusions at
     −5 °C unchanged. 128 s per solve, three times the scaling-fit estimate; the
     fit does not transfer to the pair problem. Cost 3,072 core-h.
-  - [ ] Put the new run into Figure 3 and Table S3 (remove the [REVISIT] note):
-    waiting for the user's go-ahead. The new folder has `outp_job4283491.txt`
-    but no `outp.txt` (the job hit the time limit before the copy).
-  - [x] α_c = 1.020e-3 written into the tables, outline, plan and run table.
+  - [x] 2026-10-10: Figure 3 rebuilt with the new −5 °C run (curve now to 67 min,
+    neck 52.09 µm at t*+48 min, 170 % of Molaro's growth); Table S3 −5 °C column
+    filled (τ_sub 0.332 s, Δβ 4.43e3 s/m), [REVISIT] note removed; `outp.txt`
+    copied from the job log in the run folder. All three pair runs and the
+    125 aggregate runs are now described by one model, with the term.
 - [ ] **Decide the manuscript's clock: τ_sub (ε-dependent) or τ_R = R̄²β_sub/d₀.**
   Raised by the user 2026-10-08. ε = R̄/50 is a discretization choice and
   τ_sub = ε²β_sub/d₀ is the diffuse interface's relaxation time. The eps ×2
