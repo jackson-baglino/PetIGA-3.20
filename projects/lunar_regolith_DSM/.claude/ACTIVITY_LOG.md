@@ -1,3 +1,17 @@
+## 2026-10-09 — Talking points for the AM/ME/CE 295 project proposal
+
+- Drafted the points for the course project proposal (due Oct 30) as a
+  three-tier plan: a committed baseline (agent-run 2D/axisymmetric campaign
+  with deterministic checks and a learned neck-rule surrogate), a target
+  (small 3D cells and throat rules) and a stretch (3D pore network with
+  rarefied transport and a borehole demonstration). No code changed.
+
+---
+
+---
+
+**Session ended:** 2026-10-08 07:24:02
+
 
 ---
 
