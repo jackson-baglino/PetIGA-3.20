@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect every main-text figure into ONE flat folder, for upload to Overleaf.
+"""Collect every main-text figure, and tables.tex, into ONE flat folder, for upload to Overleaf.
 
     python3 studies/keff_sintering/figures/collect_manuscript_figures.py [--dest <dir>]
 
@@ -56,6 +56,14 @@ for f in SUPP:
         shutil.copyfile(f, a.dest / "supplement" / f.name)
     else:
         print(f"MISSING {f}")
+# The tables file rides along, so one folder holds everything the manuscript
+# takes in. The repo copy (studies/keff_sintering/tables/tables.tex) is the
+# source; edit that one, never the copy.
+TABLES = REPO / "studies/keff_sintering/tables/tables.tex"
+if TABLES.is_file():
+    shutil.copyfile(TABLES, a.dest / TABLES.name)
+else:
+    print(f"MISSING {TABLES}")
 print(f"{a.dest}:")
 for f in sorted(x for x in a.dest.rglob("*") if x.is_file()):
     print(f"  {str(f.relative_to(a.dest)):44s} {f.stat().st_size / 1e6:6.2f} MB  {__import__('time').strftime('%m-%d %H:%M', __import__('time').localtime(f.stat().st_mtime))}")
