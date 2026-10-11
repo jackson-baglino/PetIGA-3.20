@@ -1,6 +1,6 @@
 \documentclass[11pt]{article}
 \usepackage[letterpaper,margin=1in]{geometry}
-\usepackage{amsmath,enumitem,xcolor,booktabs,longtable,array}
+\usepackage{amsmath,enumitem,xcolor,booktabs,longtable,array,verbatim}
 \usepackage[hidelinks]{hyperref}
 \setlength{\parskip}{0.35em}\setlength{\parindent}{0pt}
 \setlist{itemsep=0.1em,topsep=0.2em,leftmargin=1.6em}
@@ -39,7 +39,9 @@ $-40$ to $-5\,^{\circ}$C, air at 1~atm, sealed pores, 50~$\mu$m grains,
 
 \textbf{How to read this.} Read against
 \texttt{Literature/BaglinoJackson\_DSM\_manuscript.pdf} (27 pages, 657
-numbered lines). Paragraphs are identified by the draft's line numbers
+numbered lines) and the Overleaf project in
+\texttt{Literature/BaglinoJackson\_DSM\_manuscript.zip}, which was compiled
+for the build check below. Paragraphs are identified by the draft's line numbers
 (L\,first--last). \Have covered; \Miss not there; \Stale there but no longer
 matches the model or results; \Wrong a statement that is wrong as written;
 \Cut can go, or shrink, without loss. Boxes mark where a figure or table
@@ -75,6 +77,118 @@ is in the text.
 \textbf{Most in need of work, in order:} (1) Discussion and Conclusion;
 (2) the numbers in Section~3; (3) Section~2.2 and the two missing Methods
 subsections; (4) the saturated-pair paragraph.
+
+
+\section*{Section titles}
+
+Descriptive headings in place of ``Methods'' and ``Results''; the Results
+become two sections. The rest of this outline uses the new titles.
+
+\begin{center}\small\begin{tabular}{p{0.44\linewidth}p{0.50\linewidth}}\toprule
+Draft & Suggested\\\midrule
+1 Introduction & 1 Introduction\\
+2 Methods & 2 Modeling Approach\\
+2.1 Phase-Field Model For Dry Snow Metamorphism & 2.1 Phase-Field Model of Dry Snow Metamorphism\\
+2.2 Gibbs-Thomson Condition & 2.2 Interface Kinetics and the Sintering Time Scale\\
+2.3 Homogenizing for Effective Thermal Conductivity & 2.3 Effective Thermal Conductivity by Homogenization\\
+-- & 2.4 Numerical Implementation\\
+-- & 2.5 Simulation Design: Grain Pairs and Aggregates\\
+3 Results & --\\
+3.1 Phase-Field Model Validation & 3 Neck Growth Between Two Ice Grains\\
+ & 3.1 Comparison With Unsaturated Experiments\\
+ & 3.2 Growth at Saturation\\
+3.2 Aggregate Sintering and Effective Thermal Conductivity & 4 Thermal Conductivity of Sintering Aggregates\\
+ & 4.1 Microstructural Evolution\\
+ & 4.2 Temperature Rescales Time\\
+ & 4.3 Conductivity as a Function of Specific Surface Area\\
+4 Discussion & 5 Discussion\\
+4.1 What vapor transport alone reproduces & 5.1 What Vapor Transport Alone Reproduces\\
+4.2 SSA is a universal predictor of $\mathbf{K}_{\mathrm{eff}}$ & 5.2 Temperature as a Rescaling of Time\\
+ & 5.3 Specific Surface Area as the State Variable\\
+ & 5.4 What a Laboratory Could Measure\\
+ & 5.5 Implications for Plume Deposits on Enceladus\\
+ & 5.6 Limitations\\
+5 Conclusion & 6 Conclusions\\\bottomrule
+\end{tabular}\end{center}
+
+``SSA is a universal predictor'' claims more than the result: the power law
+holds for $\varphi \le 0.375$ and porosity sets the level.
+
+\section*{Build check (LaTeX warnings)}
+
+The Overleaf project compiles here. As uploaded: \textbf{561 overfull-box
+warnings}, 144 underfull, 19 undefined citation keys, 8 undefined
+references. With the changes below, tested on a copy: \textbf{0 overfull, 0
+underfull, 0 undefined citations}; the undefined references remain because
+their targets do not exist.
+
+\begin{enumerate}
+\item \textbf{554 of the overfull warnings: every line of body text.} The
+  class sets ragged-right text with a 24~pt margin and only 2~em of slack
+  (\texttt{agujournal2019.cls}, lines 113--115). TeX cannot break
+  paragraphs within that slack, gives up, and lets each line run into the
+  margin. Immediately after \verb|\begin{document}|:
+\begin{verbatim}
+\setlength{\RaggedRightRightskip}{0pt plus 4em}\RaggedRight
+\hbadness=10000 \vbadness=10000
+\end{verbatim}
+  The first line removes the overfull warnings and leaves the page count
+  where it is (37 pages against 38). The second hides the underfull
+  warnings, which come from figure captions and page breaks and are
+  harmless. Keeping the class's 24~pt margin (\texttt{24pt plus 4em}) also
+  works and costs two pages.
+\item \textbf{The other 7: the figures.} Each is included at 170~mm; the
+  text block is 5.5~in (139.7~mm), so each sticks out 86~pt to the right.
+  To keep the true size and center it on the text block:
+\begin{verbatim}
+\makebox[\textwidth][c]{\includegraphics[width=170mm]{...}}
+\end{verbatim}
+  or use \verb|width=\textwidth| in the draft and supply the 170~mm files
+  at submission.
+\item \textbf{Table~2 is taller than the page} by 168~pt (``Float too
+  large'', input line 413). The shorter
+  \texttt{\char`\\TableKeffParameters} fits.
+\item \textbf{19 undefined citation keys}, all in Sections 4--5. The text
+  uses an older key style; every one has an entry in the \texttt{.bib}
+  under a new key. Find and replace:
+
+  {\footnotesize\begin{tabular}{@{}ll@{}}
+  \texttt{bouvet\_snow\_2022} & \texttt{bouvetSnowEquiTemperatureMetamorphism2022}\\
+  \texttt{braun\_rigorous\_2024} & \texttt{braunRigorousApproachSpecific2024}\\
+  \texttt{byrne\_radar\_2024} & \texttt{byrneRadarAttenuationSubsurface2024}\\
+  \texttt{calonne\_numerical\_2011} & \texttt{calonneNumericalExperimentalInvestigations2011}\\
+  \texttt{calonne\_study\_2014} & \texttt{calonneStudyTemperatureGradient2014}\\
+  \texttt{calonne\_thermal\_2019} & \texttt{calonneThermalConductivitySnow2019}\\
+  \texttt{fourteau\_impact\_2021} & \texttt{fourteauImpactWaterVapor2021}\\
+  \texttt{gallet\_measurement\_2009} & \texttt{galletMeasurementSpecificSurface2009}\\
+  \texttt{granger\_orientation\_2021} & \texttt{grangerOrientationSelectiveGrain2021}\\
+  \texttt{jaumann\_distribution\_2008} & \texttt{jaumannDistributionIcyParticles2008}\\
+  \texttt{kaempfer\_phase-field\_2009} & \texttt{kaempferPhasefieldModelingDry2009}\\
+  \texttt{libbrecht\_measurements\_2013} & \texttt{libbrechtMeasurementsSurfaceAttachment2013}\\
+  \texttt{libbrecht\_physical\_2017} & \texttt{libbrechtPhysicalDynamicsIce2017}\\
+  \texttt{matzl\_measuring\_2006} & \texttt{matzlMeasuringSpecificSurface2006}\\
+  \texttt{molaro\_microstructural\_2019} & \texttt{molaroMicrostructuralEvolutionWater2019}\\
+  \texttt{proksch\_density\_2015} & \texttt{prokschDensitySpecificSurface2015}\\
+  \texttt{schneebeli\_tomography\_2004} & \texttt{schneebeliTomographyTemperatureGradient2004}\\
+  \texttt{spencer\_enceladus\_2009} & \texttt{spencerEnceladusActiveCryovolcanic2009}\\
+  \texttt{spencer\_enceladus\_2013} & \texttt{spencerEnceladusActiveIce2013}\\
+  \end{tabular}}
+
+  Check \texttt{fourteau\_impact\_2021}: the \texttt{.bib} also has
+  \texttt{fourteauMacroscopicWaterVapor2021}.
+\item \textbf{8 undefined references.} \texttt{tab:keff\_temperature}
+  (three times; the temperature table is not in the draft).
+  \texttt{Sec: Phase-Field Model} (source line 375; the label is
+  \texttt{sec:Phase-FieldModel}). In the Discussion, to figures and sections
+  that no longer exist (source lines 490--505):\\
+  \texttt{subsec:Methods--TDepKinetics}, \texttt{subsec:Results--TwoGrain},\\
+  \texttt{fig:VaryingT\_Keff\_vs\_time}, \texttt{fig:VaryingT\_Keff\_vs\_SSA},\\
+  \texttt{fig:VaryingPorosties\_Contour}, \texttt{fig:Single\_Keff\_vs\_SSA}.
+\item \textbf{Unused files in the project.} \texttt{Figure8\_timescales.pdf}
+  (dropped); \texttt{Figure7\_state\_law\_allphi.pdf};
+  \texttt{agujournaltemplate.tex}; \texttt{si\_template\_2019.tex} (needed
+  later for the supplement).
+\end{enumerate}
 
 \section*{Where to cut}
 
@@ -124,8 +238,8 @@ Discussion opening (L400--410) & 11 & 0\\
   (L382); ``25 microstructures'' (L405) is right, ``four microstructures''
   (L539) is not.
 \item \textbf{Broken references.} ``??'' at L264, L450, L462, L519, L527,
-  L530, L538 and in the notes of Tables 1 and 2; about 20 citations print
-  as ``?'' in Section~4; ``table table 3'', ``section section 4.1'',
+  L530, L538 and in the notes of Tables 1 and 2; 19 citation keys are undefined, so
+  about 30 citations print as ``?'' in Section~4 (see the build check); ``table table 3'', ``section section 4.1'',
   ``figure figure 6''.
 \item \textbf{Words.} ``deposits on the neck'' (L103): desublimates.
   ``inhabit extraterrestrial life'' (L84). ``without less of generality''
@@ -193,13 +307,15 @@ paragraph, with what could be trimmed in place:
   porosity'' is wider than the result.
 \end{enumerate}
 
-\section{Methods}
+\section{Modeling Approach}
+\textit{Draft: 2 Methods.}
+
 
 \Para{Opening}{181--188}. \Cut The free-energy derivation and the coupling
 are restated in the first lines of 2.1. Keep the lineage (Kaempfer \& Plapp;
 Moure \& Fu) and the sentence that this is an application of the model.
 
-\subsection{Phase-field model for dry snow metamorphism}
+\subsection{Phase-Field Model of Dry Snow Metamorphism}
 \begin{enumerate}
 \item \Para{What a phase field is}{190--197}. \Cut Textbook; one sentence.
 \item \Para{Unknowns}{198--204}. \Have $\phi_a$ is air, not water vapor.
@@ -225,7 +341,8 @@ Moure \& Fu) and the sentence that this is an application of the model.
   text never mentions the last two.}
 \end{enumerate}
 
-\subsection{Interface kinetics and the Gibbs--Thomson condition}
+\subsection{Interface Kinetics and the Sintering Time Scale}
+\textit{Draft: 2.2 Gibbs-Thomson Condition.}
 \begin{enumerate}
 \item \Para{The condition and $\alpha_c$}{230--241}. \Have Eqs.~(6) and (7),
   now correct. $d_0$ is defined only in Table~1.
@@ -250,7 +367,7 @@ Moure \& Fu) and the sentence that this is an application of the model.
   that run ends at $\theta = 43$.}
 \end{enumerate}
 
-\subsection{Homogenization for the effective thermal conductivity}
+\subsection{Effective Thermal Conductivity by Homogenization}
 \begin{enumerate}
 \item \Para{Two scales and the microscale problem}{243--252}. \Have
   ``without less of generality''.
@@ -274,7 +391,7 @@ Moure \& Fu) and the sentence that this is an application of the model.
   ``red''; the lines are orange. Add that only the $x$ problem is shown.}
 \end{enumerate}
 
-\subsection{Numerical implementation}
+\subsection{Numerical Implementation}
 \begin{itemize}
 \item \Miss The whole subsection, one paragraph: quadratic $C^{1}$ splines,
   time stepping and the step cap, sampling of $\mathbf{K}_{\mathrm{eff}}$.
@@ -287,7 +404,8 @@ Moure \& Fu) and the sentence that this is an application of the model.
   complete one can go to the supplement.}
 \end{itemize}
 
-\subsection{Aggregates: packings, boundary conditions, simulation matrix}
+\subsection{Simulation Design: Grain Pairs and Aggregates}
+\textbf{Aggregates.}
 \begin{itemize}
 \item \Stale Now inside Section~3.2 (L345--353). Move here.
 \item \Have Drop-and-roll deposition. \Miss Five packings per porosity,
@@ -300,7 +418,7 @@ Moure \& Fu) and the sentence that this is an application of the model.
   $-20\,^{\circ}$C.
 \end{itemize}
 
-\subsection{Two-grain set-up}
+\textbf{Grain pairs.}
 \begin{itemize}
 \item \Stale Now inside Section~3.1 (L315--327). The geometry, the
   axisymmetric formulation and the boundary conditions are Methods.
@@ -311,7 +429,7 @@ Moure \& Fu) and the sentence that this is an application of the model.
   data.}
 \end{itemize}
 
-\section{Results}
+\section*{Results: split into Sections 3 and 4}
 
 \Para{Opening}{292--307}. \Cut \Stale Third statement of the plan. If kept,
 three sentences. \Wrong ``independent of the mean temperature as well as the
@@ -319,12 +437,13 @@ initial porosity'' (L302--303). Demmenie is described as theory only; they
 measured the exponent too. The two-dimensional restriction belongs in the
 Methods.
 
-\subsection{Two-grain sintering}
-\Stale Title ``Phase-Field Model Validation'': the model gives 41\% of the
-measured growth at one temperature and 170\% at the other. ``Comparison with
-two-grain experiments'' claims no more than is shown.
+\section{Neck Growth Between Two Ice Grains}
+\textit{Draft: 3.1 Phase-Field Model Validation.} \Stale ``Validation''
+claims more than is shown: the model gives 41\% of the measured growth at one
+temperature and 170\% at the other.
 
-\textbf{Unsaturated pair (Molaro et al., 2019).}
+\subsection{Comparison With Unsaturated Experiments}
+\textit{Molaro et al.\ (2019).}
 \begin{enumerate}
 \item \Para{Why this experiment}{309--314}. \Have
 \item \Para{Set-up}{315--327}. \Stale Move to the Methods; keep here only the
@@ -340,7 +459,8 @@ two-grain experiments'' claims no more than is shown.
   \Miss What the colors in (a) show ($\sigma$).
 \Place{Figure 3}{\Have placed. \Stale Caption stops at (b).}
 \end{enumerate}
-\textbf{Saturated pair (conditions of Demmenie et al., 2025).}
+\subsection{Growth at Saturation}
+\textit{Conditions of Demmenie et al.\ (2025).}
 \begin{enumerate}
 \item \New{The paragraph} (L339--340 is ``Insert paragraph''). \Miss Why a
   second comparison: at saturation the grains do not shrink, so neck growth
@@ -358,7 +478,10 @@ two-grain experiments'' claims no more than is shown.
   size or $\alpha_c$, and no fitting window.}
 \end{enumerate}
 
-\subsection{Aggregates}
+\section{Thermal Conductivity of Sintering Aggregates}
+\textit{Draft: 3.2 Aggregate Sintering and Effective Thermal Conductivity.}
+
+\subsection{Microstructural Evolution}
 \begin{enumerate}
 \item \Para{Set-up and the gallery}{342--360}. \Stale Two paragraphs in one.
   The set-up (L345--353) goes to the Methods. \Wrong ``We initially consider a
@@ -372,6 +495,10 @@ two-grain experiments'' claims no more than is shown.
   one packing; it is zero in the mean.
   \Miss Anisotropy: state $k_{xx}/k_{yy}$, including 0.79 and 0.64 at the two
   highest porosities.
+\end{enumerate}
+\subsection{Temperature Rescales Time}
+\begin{enumerate}
+\setcounter{enumi}{2}
 \item \Para{Temperature sets the clock}{371--379}. \Have panels (b)--(d) in
   words. \Miss Panel (a) is not mentioned.
   \Miss \textbf{The result as a number}: for every packing,
@@ -388,6 +515,10 @@ two-grain experiments'' claims no more than is shown.
 \Place{Figure 6}{\Have placed. \Stale Caption says $|\sigma| \le 0.31$; the
   bar reads 0.34. The symbol $\theta_r$ on panels (c), (d) is not defined in
   the caption.}
+\end{enumerate}
+\subsection{Conductivity as a Function of Specific Surface Area}
+\begin{enumerate}
+\setcounter{enumi}{3}
 \item \Para{Porosity}{380--398}. \Have Structure is right: (a), why two
   porosities are set aside, (b), (c), (d).
   \Wrong ``3 packings for each porosity'' (L382): five packings at each of
@@ -463,7 +594,7 @@ decades''.
 \textbf{Suggested construction}, about twelve paragraphs. Each says what it
 argues and what in the draft can be reused.
 
-\subsection{What vapor transport alone reproduces}
+\subsection{What Vapor Transport Alone Reproduces}
 \begin{enumerate}
 \item \textbf{The unsaturated pair.} With $\alpha_c$ at the top of its
   range, the vapor route gives 41\% of the measured growth at
@@ -478,7 +609,7 @@ argues and what in the draft can be reused.
   conductivity as a function of SSA does not.
 \end{enumerate}
 
-\subsection{Temperature as a rescaling of time}
+\subsection{Temperature as a Rescaling of Time}
 \begin{enumerate}
 \setcounter{enumi}{3}
 \item \textbf{Why the collapse holds.} One route, a constant $\alpha_c$,
@@ -492,7 +623,7 @@ argues and what in the draft can be reused.
   another route in their samples.
 \end{enumerate}
 
-\subsection{Specific surface area as the state variable}
+\subsection{Specific Surface Area as the State Variable}
 \begin{enumerate}
 \setcounter{enumi}{5}
 \item \textbf{Density is not enough.} Reuse L498--517 (Calonne 2011, 2014),
@@ -507,7 +638,7 @@ argues and what in the draft can be reused.
   checked against a source.}
 \end{enumerate}
 
-\subsection{What a laboratory could measure}
+\subsection{What a Laboratory Could Measure}
 \begin{enumerate}
 \setcounter{enumi}{8}
 \item Three tests on unloaded ice-sphere samples: superposition of curves at
@@ -515,7 +646,7 @@ argues and what in the draft can be reused.
   against SSA; SSA against log time. Reuse L550--556 on how SSA is measured.
 \end{enumerate}
 
-\subsection{Implications for plume deposits on Enceladus}
+\subsection{Implications for Plume Deposits on Enceladus}
 \begin{enumerate}
 \setcounter{enumi}{9}
 \item Qualitative only. Reuse L568--590 without ``decades'' and L601--617
