@@ -1,3 +1,13 @@
+
+---
+
+**Session ended:** 2026-10-11 16:01:32
+
+
+---
+
+**Session ended:** 2026-10-11 15:52:53
+
 ## 2026-10-11 — Proposal references added to the reading list
 
 - Appended Part 4 to the iCloud reading list: the 26 references cited in the
@@ -8,6 +18,9 @@
 - Noted that the mean-free-path estimates used earlier assume a 4.6e-10 m
   molecular diameter; Warning et al. use 3e-10 m, which makes them ~2.4x
   larger. The free-molecular conclusion is unchanged. No code changed.
+- User chose Rabbani & Babaei 2019 for the assignment instead; marked its
+  reading-list entry with the saved PDF's location. Wrote a three-paragraph
+  project description (goals and ambitious directions) in chat.
 
 ---
 
