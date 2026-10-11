@@ -239,10 +239,15 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
               ylabel=r"$k_\mathrm{eff}/k_\mathrm{eff,r}$")
     # SSA increases to the right, as on every other axis in the paper, so a run
     # is traversed right to left; the arrow says so (user, 2026-10-11).
-    ax[1].annotate("", xy=(0.14, 0.42), xytext=(0.42, 0.12), xycoords="axes fraction",
-                   arrowprops=dict(arrowstyle="-|>", color=INK, lw=0.9, shrinkA=0, shrinkB=0))
-    ax[1].text(0.25, 0.22, "time", transform=ax[1].transAxes, fontsize=FS_S, color=INK,
-               ha="right", va="top")
+    # Its ends lie on a copy of the fitted line shifted down clear of the
+    # curves, so the chord is parallel to the fit; the bow is cosmetic.
+    xa, c_off, grey = np.array([0.84, 0.74]), 0.88, "0.45"
+    ya = c_off * xa ** p0
+    ax[1].annotate("", xy=(xa[1], ya[1]), xytext=(xa[0], ya[0]), xycoords="data",
+                   arrowprops=dict(arrowstyle="-|>", color=grey, lw=0.9, shrinkA=0, shrinkB=0,
+                                   connectionstyle="arc3,rad=-0.12"))
+    xm = np.sqrt(xa[0] * xa[1])
+    ax[1].text(xm, 0.965 * c_off * xm ** p0, "time", fontsize=FS_S, color=grey, ha="right", va="top")
     ax[1].set_xticks([0.7, 0.8, 0.9, 1.0]); ax[1].set_xticklabels(["0.7", "0.8", "0.9", "1.0"])
     ax[1].set_yticks([1.0, 1.1, 1.2, 1.3]); ax[1].set_yticklabels(["1.0", "1.1", "1.2", "1.3"])
     for axis in (ax[1].xaxis, ax[1].yaxis):
