@@ -259,7 +259,9 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
                       edgecolor="white", linewidth=0.4, zorder=3)
         ax[3].scatter([p] * len(p_by[p]), p_by[p], s=16, color=col[p], edgecolor="white",
                       linewidth=0.4, zorder=3)
-    pp = np.linspace(min(phis), phi_max, 20)
+    # Drawn across every porosity, like the line in (d), though both are fitted
+    # to phi <= phi_max only; the grey band marks where they are not fitted.
+    pp = np.linspace(min(phis) - 0.025, max(phis) + 0.025, 40)
     ax[2].plot(pp, np.exp(np.polyval(cf, pp)), color=INK, lw=1.2, ls="--")
     ax[3].axhline(p0, color=INK, lw=1.0, ls="--")
     for a_ in ax[2:]:

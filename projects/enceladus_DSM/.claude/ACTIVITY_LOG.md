@@ -3,6 +3,7 @@
 - Figure 7 had black for porosity 0.275 and black dashed for the fitted power law; the user asked that they differ, then that no two blues be used either.
 - `CMAP["phi"]` in `postprocess/compare_keff.py` is now blue, vermilion, green, purple, olive yellow (0.275 to 0.475); black is kept for fitted and reference lines. Smallest pairwise OKLab distance among the six: 18.7 normal vision, 10.3 deuteranope, 12.2 protanope.
 - Figure 7(b): the SSA axis no longer runs backwards (SSA increases to the right, as elsewhere); a grey, slightly bowed arrow parallel to the fitted line marks the direction of increasing time. The user chose between this and plotting 1 - SSA/SSA_r; the second would have meant changing the other SSA axes too.
+- Figure 7(c): the fitted level line now spans every porosity, as the line in (d) does; it is still fitted to porosity <= 0.375 only, and the two highest porosities fall below it.
 - Rebuilt `Figure7_state_law` and `Figure7_state_law_allphi` and the other porosity-coloured working plots; ManuscriptFigures folder refreshed.
 
 ---
