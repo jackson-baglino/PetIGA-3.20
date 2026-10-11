@@ -10,7 +10,7 @@ and in the porosity gallery. Any single-run k_eff illustration uses it.
 
   (a) the periodic cell (ice phase field) with the zoom window marked
   (b) the zoom: the diffuse interface on the mesh -- element edges, the
-      phi = 0.5 contour, and the phi = 0.01 / 0.99 contours bounding the band
+      phi = 0.5 contour, and the phi = 0.05 / 0.95 contours bounding the band
   (c) the corrector t_x for a unit macroscopic gradient along x
   (d) the local heat flux magnitude |K (e_x + grad t_x)|, which shows the
       conduction paths through the necks
@@ -136,7 +136,8 @@ def main():
         ax.axvline(g - dx / 2, color="white", lw=0.12, alpha=0.5)
     for g in yz[::1]:
         ax.axhline(g - dx / 2, color="white", lw=0.12, alpha=0.5)
-    ax.contour(xz, yz, pz, levels=[0.01, 0.99], colors=["#D55E00"], linewidths=0.8, linestyles="--")
+    # 5 % and 95 %: the band the caption quotes (5.9 eps, 8.3 elements here)
+    ax.contour(xz, yz, pz, levels=[0.05, 0.95], colors=["#D55E00"], linewidths=0.8, linestyles="--")
     ax.contour(xz, yz, pz, levels=[0.5], colors=["#D55E00"], linewidths=1.2)
     ax.set_xlim(cx - h, cx + h); ax.set_ylim(cy - h, cy + h)
     ax.plot([cx - h + 4, cx - h + 14], [cy - h + 4, cy - h + 4], color=INK, lw=2.2, solid_capstyle="butt", zorder=6)
