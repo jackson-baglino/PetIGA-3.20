@@ -61,16 +61,14 @@ from matplotlib.colors import LinearSegmentedColormap           # noqa: E402
 
 # One map per varied parameter; SPAN is the stretch of it used.
 #   T    sequential, cmocean thermal.
-#   phi  ordered dark -> light but with a hue step at every level: black, then
-#        viridis blue / teal / green / lime. The earlier black-to-red ramp
-#        (one hue) left neighbouring porosities too alike to tell apart where
-#        their curves overlap -- the state-law panel (user, 2026-10-08). No
-#        purple or orange, so it cannot be mistaken for the temperature map.
-import matplotlib as _mpl                                       # noqa: E402
-_VIR = _mpl.colormaps["viridis"]
+#   phi  five DISTINCT hues, not a ramp: black, blue, orange, green, pink (the
+#        Okabe-Ito colour-blind-safe set). Two ramps were tried first (black to
+#        red, then black to viridis); in both, neighbouring porosities could
+#        not be told apart where their curves overlap in the state-law panel
+#        (user, 2026-10-08 and 2026-10-11). Order is carried by the labels.
 CMAP = {"T": (cmocean.cm.thermal, (0.15, 0.85)),
         "phi": (LinearSegmentedColormap.from_list(
-            "black_viridis", ["#0b0b0b", _VIR(0.30), _VIR(0.50), _VIR(0.70), _VIR(0.86)]), (0.0, 1.0))}
+            "phi_distinct", ["#000000", "#0072B2", "#E69F00", "#009E73", "#CC79A7"]), (0.0, 1.0))}
 N_GRID = 400
 
 

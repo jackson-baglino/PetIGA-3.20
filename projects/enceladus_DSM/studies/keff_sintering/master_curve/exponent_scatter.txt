@@ -1,0 +1,21 @@
+1. Domain size (phi 0.325, -20 C, ungated packings)
+   L/R   n   exponent mean    sd     level k_r/k_ice   sd/mean
+    20   8     -0.810      0.053      0.277         11.1 %
+    30   6     -0.785      0.029      0.300          7.6 %
+    40   5     -0.819      0.048      0.268          7.4 %
+    56   4     -0.899      0.082      0.278          4.8 %
+    80   3     -0.826      0.061      0.266          4.5 %
+   scatter of the exponent ~ (L/R)^+0.36
+   scatter of the level    ~ (L/R)^-0.67
+
+2. Connectivity (25 production packings, -10 C runs)
+   phi    exponent        eta = k_r/k_HS    min/max k     z_band
+   0.275  -0.79 ± 0.03    0.60 ± 0.03      0.91 ± 0.06   3.74
+   0.325  -0.82 ± 0.05    0.52 ± 0.04      0.97 ± 0.03   3.46
+   0.375  -0.78 ± 0.09    0.46 ± 0.04      0.90 ± 0.04   3.33
+   0.425  -0.73 ± 0.09    0.36 ± 0.02      0.80 ± 0.12   2.84
+   0.475  -0.63 ± 0.09    0.30 ± 0.02      0.66 ± 0.18   2.54
+   all 25 packings    corr(exponent, .) raw / at fixed porosity:  eta -0.72 / -0.77   min/max k -0.46 / +0.13   z_band -0.54 / +0.23
+      exponent = +0.61 -1.62 eta -1.72 phi;  rms residual 0.056  (sd of the exponent 0.093; about porosity means 0.066)
+   phi <= 0.375 (15)  corr(exponent, .) raw / at fixed porosity:  eta -0.37 / -0.74   min/max k -0.29 / -0.14   z_band +0.02 / +0.09
+      exponent = +0.34 -1.16 eta -1.60 phi;  rms residual 0.042  (sd of the exponent 0.058; about porosity means 0.055)
