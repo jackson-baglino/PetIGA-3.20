@@ -185,10 +185,15 @@ def fig_closure(R, out, theta_ref=30.0, phi_max=0.375):
     return p0
 
 
-def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.0, 19.0, 30.0)):
+def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.0, 19.0, 30.0), all_phi=False):
     """Curves to go with the gallery: (a) k_eff(t) for the five porosities (seed
     mean, band = seed min-max) with the gallery's instants marked; (b) the
-    state law k vs SSA; (c) its level; (d) its exponent."""
+    state law k vs SSA; (c) its level; (d) its exponent.
+
+    Panel (b) draws the packings whose exponent is FARTHEST from the common one
+    first, so the lines near the centre of the fan (the densest packings) end
+    up on top and stay visible. all_phi=True draws every porosity in (b), not
+    only those up to phi_max, and writes Figure7_state_law_allphi."""
     phis = sorted({p for (p, TT) in R})
     col = colours(phis, "phi")
     fig, axg = plt.subplots(2, 2, figsize=(W, 120 * MM))
@@ -215,16 +220,19 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
             w = th >= theta_ref
             x, y = r["ssa"][w] / sref, r["kiso"][w] / kref
             per[(p, seed)].append((np.log10(x), np.log10(y), kref))
-            if p <= phi_max:
-                ax[1].plot(x, y, color=col[p], lw=0.8, alpha=0.85)
-    p_by, k_by = defaultdict(list), defaultdict(list)
+    p_by, k_by, p_of = defaultdict(list), defaultdict(list), {}
     for (p, seed), L in per.items():
         X = np.concatenate([l[0] for l in L]); Y = np.concatenate([l[1] for l in L])
-        p_by[p].append(float(np.sum(X * Y) / np.sum(X * X))); k_by[p].append(float(np.mean([l[2] for l in L])))
+        p_of[(p, seed)] = float(np.sum(X * Y) / np.sum(X * X))
+        p_by[p].append(p_of[(p, seed)]); k_by[p].append(float(np.mean([l[2] for l in L])))
     good = [p for p in phis if p <= phi_max]
     p0 = np.mean(np.concatenate([p_by[p] for p in good]))
+    shown = [k for k in per if all_phi or k[0] <= phi_max]
+    for z_, k in enumerate(sorted(shown, key=lambda k: -abs(p_of[k] - p0))):   # widest of the fan first
+        for lx, ly, _ in per[k]:
+            ax[1].plot(10 ** lx, 10 ** ly, color=col[k[0]], lw=0.8, alpha=0.9, zorder=2 + 0.01 * z_)
     xx = np.linspace(0.70, 1.0, 30)
-    ax[1].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--",
+    ax[1].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--", zorder=5,
                label=rf"$(\mathrm{{SSA}}/\mathrm{{SSA}}_\mathrm{{r}})^{{{p0:.2f}}}$")
     ax[1].legend(frameon=False, fontsize=FS_S, loc="upper left", handlelength=2.2, borderaxespad=0.6)
     ax[1].set(xscale="log", yscale="log", xlabel=r"SSA$\,/\,$SSA$_\mathrm{r}$",
@@ -254,7 +262,7 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
     ax[3].set(ylabel=r"exponent $p$")
     for a_, s_ in zip(ax, "abcd"):
         clean(a_); panel(a_, s_, dx=-0.20, dy=1.01)
-    save(fig, out, "Figure7_state_law")
+    save(fig, out, "Figure7_state_law_allphi" if all_phi else "Figure7_state_law")
 
 
 def rho_vs_ice(T):
@@ -419,6 +427,7 @@ def main():
     fig_collapse(R, out)
     p0 = fig_closure(R, out)
     fig_porosity(R, out)
+    fig_porosity(R, out, all_phi=True)
     fig_timescales(out)
     if not a.skip_gallery:
         fig_gallery(a.root, out)

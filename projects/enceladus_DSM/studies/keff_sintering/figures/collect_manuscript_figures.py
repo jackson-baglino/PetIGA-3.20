@@ -23,6 +23,7 @@ FIGURES = [                                   # (stem, source folder)
     ("Figure5_gallery", SAMPLES),
     ("Figure6_keff_collapse", SAMPLES),
     ("Figure7_state_law", SAMPLES),
+    ("Figure7_state_law_allphi", SAMPLES),     # variation: every porosity in panel (b)
 ]
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
