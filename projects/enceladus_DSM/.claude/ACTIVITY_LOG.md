@@ -1,3 +1,11 @@
+## 2026-10-11 — Outline rechecked against the 27-page draft
+
+- `studies/keff_sintering/manuscript_outline.tex/.pdf` rewritten against the draft the user added on 2026-10-11: every paragraph listed by the draft's line numbers, with what is in place, missing, wrong, or can be cut; where each figure and table goes; a cut list for the first half (about 45 lines and four equations); results the data support that the text leaves out; a twelve-paragraph plan for the Discussion.
+- `collect_manuscript_figures.py` now also copies `tables.tex` into the ManuscriptFigures folder, so one folder holds everything the manuscript takes in (the iCloud copy of the tables dated from 6 October).
+- Figure 7 caption drafted for the user; time arrow in (b) restyled; fitted line in (c) extended across all porosities.
+
+---
+
 ## 2026-10-11 — Porosity colours: six distinct hues with the fitted line
 
 - Figure 7 had black for porosity 0.275 and black dashed for the fitted power law; the user asked that they differ, then that no two blues be used either.
