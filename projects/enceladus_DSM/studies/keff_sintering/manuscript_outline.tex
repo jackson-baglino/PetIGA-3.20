@@ -145,9 +145,12 @@ their targets do not exist.
 \end{verbatim}
   or use \verb|width=\textwidth| in the draft and supply the 170~mm files
   at submission.
-\item \textbf{Table~2 is taller than the page} by 168~pt (``Float too
-  large'', input line 413). The shorter
-  \texttt{\char`\\TableKeffParameters} fits.
+\item \textbf{Table~2 was taller than the page} by 168~pt (``Float too
+  large''). Cause: in draft mode the class gives \verb|\footnotesize| a
+  20~pt line spacing, so the tables stayed double-spaced. Fixed in
+  \texttt{tables.tex} (2026-10-11): the tables set their size with
+  \verb|\fontsize{8}{10}|. Table~2 now takes half a page. Re-upload
+  \texttt{tables.tex}; nothing changes in the manuscript source.
 \item \textbf{19 undefined citation keys}, all in Sections 4--5. The text
   uses an older key style; every one has an entry in the \texttt{.bib}
   under a new key. Find and replace:

@@ -2,6 +2,7 @@
 
 - `studies/keff_sintering/manuscript_outline.tex/.pdf` rewritten against the draft the user added on 2026-10-11: every paragraph listed by the draft's line numbers, with what is in place, missing, wrong, or can be cut; where each figure and table goes; a cut list for the first half (about 45 lines and four equations); results the data support that the text leaves out; a twelve-paragraph plan for the Discussion.
 - Compiled the Overleaf project from `Literature/BaglinoJackson_DSM_manuscript.zip`: 561 overfull warnings traced to the AGU class's ragged-right setting (24 pt margin, 2 em of slack) and to seven figures 170 mm wide in a 139.7 mm text block; fix verified on a copy (0 overfull). 19 undefined citation keys mapped to the keys in the .bib. Findings, the fix and the new descriptive section titles are in the outline. Loose `manuscript_draft_v2.*` files in `Literature/` removed at the user's request (identical to the zip).
+- `tables.tex`: `\TableCompact` now sets its size with `\fontsize{8}{10}`; the AGU class's draft-mode `\footnotesize` forces a 20 pt line spacing, which had left every table double-spaced and Table 2 taller than the page. Checked by compiling the Overleaf project: Table 2 takes half a page.
 - `collect_manuscript_figures.py` now also copies `tables.tex` into the ManuscriptFigures folder, so one folder holds everything the manuscript takes in (the iCloud copy of the tables dated from 6 October).
 - Figure 7 caption drafted for the user; time arrow in (b) restyled; fitted line in (c) extended across all porosities.
 

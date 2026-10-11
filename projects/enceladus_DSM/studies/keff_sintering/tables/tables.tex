@@ -33,10 +33,14 @@
 % ---- Compact setting, used inside every table ----
 % The AGU draft class double-spaces everything, tables included, which is what
 % made each table fill a page. Inside the table only: single spacing, a smaller
-% font and tighter columns. No packages needed. To loosen all tables at once,
-% change this one macro (e.g. \small for \footnotesize).
+% font and tighter columns. No packages needed.
+% The size is set with \fontsize, NOT \footnotesize: in draft mode the class
+% redefines \footnotesize (and \small) with a 20 pt line spacing that
+% \baselinestretch cannot undo, so \footnotesize left the tables double-spaced
+% and the complete parameter table 168 pt taller than the page.
+% To loosen all tables at once, change the two numbers (size, line spacing).
 \newcommand{\TableCompact}{%
-  \renewcommand{\baselinestretch}{1}\footnotesize
+  \renewcommand{\baselinestretch}{1}\fontsize{8}{10}\selectfont
   \setlength{\tabcolsep}{5pt}\renewcommand{\arraystretch}{1.05}}
 
 % ---- Material properties and constitutive relations (all simulations) ----
