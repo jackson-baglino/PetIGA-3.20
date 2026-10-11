@@ -234,11 +234,16 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
     xx = np.linspace(0.70, 1.0, 30)
     ax[1].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--", zorder=5,
                label=rf"$(\mathrm{{SSA}}/\mathrm{{SSA}}_\mathrm{{r}})^{{{p0:.2f}}}$")
-    ax[1].legend(frameon=False, fontsize=FS_S, loc="upper left", handlelength=2.2, borderaxespad=0.6)
+    ax[1].legend(frameon=False, fontsize=FS_S, loc="upper right", handlelength=2.2, borderaxespad=0.6)
     ax[1].set(xscale="log", yscale="log", xlabel=r"SSA$\,/\,$SSA$_\mathrm{r}$",
               ylabel=r"$k_\mathrm{eff}/k_\mathrm{eff,r}$")
-    ax[1].invert_xaxis()
-    ax[1].set_xticks([1.0, 0.9, 0.8, 0.7]); ax[1].set_xticklabels(["1.0", "0.9", "0.8", "0.7"])
+    # SSA increases to the right, as on every other axis in the paper, so a run
+    # is traversed right to left; the arrow says so (user, 2026-10-11).
+    ax[1].annotate("", xy=(0.14, 0.42), xytext=(0.42, 0.12), xycoords="axes fraction",
+                   arrowprops=dict(arrowstyle="-|>", color=INK, lw=0.9, shrinkA=0, shrinkB=0))
+    ax[1].text(0.25, 0.22, "time", transform=ax[1].transAxes, fontsize=FS_S, color=INK,
+               ha="right", va="top")
+    ax[1].set_xticks([0.7, 0.8, 0.9, 1.0]); ax[1].set_xticklabels(["0.7", "0.8", "0.9", "1.0"])
     ax[1].set_yticks([1.0, 1.1, 1.2, 1.3]); ax[1].set_yticklabels(["1.0", "1.1", "1.2", "1.3"])
     for axis in (ax[1].xaxis, ax[1].yaxis):
         axis.set_minor_formatter(matplotlib.ticker.NullFormatter())
