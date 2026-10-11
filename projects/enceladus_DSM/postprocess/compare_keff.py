@@ -61,14 +61,18 @@ from matplotlib.colors import LinearSegmentedColormap           # noqa: E402
 
 # One map per varied parameter; SPAN is the stretch of it used.
 #   T    sequential, cmocean thermal.
-#   phi  five DISTINCT hues, not a ramp: black, blue, orange, green, pink (the
-#        Okabe-Ito colour-blind-safe set). Two ramps were tried first (black to
+#   phi  five DISTINCT hues, not a ramp: blue, vermilion, green, purple,
+#        olive yellow. No black and no second blue: black is kept for fitted
+#        and reference lines, which share panels with these curves, so the
+#        six must all differ (user, 2026-10-11). Smallest pairwise OKLab
+#        distance among the six: 18.7 normal vision, 10.3 deuteranope,
+#        12.2 protanope. Two ramps were tried first (black to
 #        red, then black to viridis); in both, neighbouring porosities could
 #        not be told apart where their curves overlap in the state-law panel
 #        (user, 2026-10-08 and 2026-10-11). Order is carried by the labels.
 CMAP = {"T": (cmocean.cm.thermal, (0.15, 0.85)),
         "phi": (LinearSegmentedColormap.from_list(
-            "phi_distinct", ["#000000", "#0072B2", "#E69F00", "#009E73", "#CC79A7"]), (0.0, 1.0))}
+            "phi_distinct", ["#0072B2", "#D55E00", "#009E73", "#AA3377", "#CCBB44"]), (0.0, 1.0))}
 N_GRID = 400
 
 

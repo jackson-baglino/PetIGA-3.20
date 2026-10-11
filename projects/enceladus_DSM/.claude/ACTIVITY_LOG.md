@@ -1,3 +1,11 @@
+## 2026-10-11 — Porosity colours: six distinct hues with the fitted line
+
+- Figure 7 had black for porosity 0.275 and black dashed for the fitted power law; the user asked that they differ, then that no two blues be used either.
+- `CMAP["phi"]` in `postprocess/compare_keff.py` is now blue, vermilion, green, purple, olive yellow (0.275 to 0.475); black is kept for fitted and reference lines. Smallest pairwise OKLab distance among the six: 18.7 normal vision, 10.3 deuteranope, 12.2 protanope.
+- Rebuilt `Figure7_state_law` and `Figure7_state_law_allphi` and the other porosity-coloured working plots; ManuscriptFigures folder refreshed.
+
+---
+
 ## 2026-10-07 — k_eff matrix complete (125 runs); Demmenie run measured
 
 - Fetched and checked stages 3r and 3f: all 49 clean, seed 1902 at -40 C ran
