@@ -1,3 +1,20 @@
+## 2026-10-11 — Proposal references added to the reading list
+
+- Appended Part 4 to the iCloud reading list: the 26 references cited in the
+  draft proposal, numbered as in the document, with DOIs; five are new to
+  the list (Ricardo 2023 and 2026, Moure & Fu 2024, Gertsch 2006, Liu 2023).
+- Suggested Warning et al. 2015 (Section 2.4, low-pressure transport in
+  porous media) for this week's ME 295 paper-reading assignment.
+- Noted that the mean-free-path estimates used earlier assume a 4.6e-10 m
+  molecular diameter; Warning et al. use 3e-10 m, which makes them ~2.4x
+  larger. The free-molecular conclusion is unchanged. No code changed.
+
+---
+
+---
+
+**Session ended:** 2026-10-09 17:48:36
+
 
 ---
 
