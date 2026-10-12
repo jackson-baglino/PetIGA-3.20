@@ -8,6 +8,8 @@
 - The clock is tau_sub (user decision); tau_R is dropped from the outline.
 - Percolation test on the 25 production packings (`studies/keff_sintering/percolation/`): the ice spans the periodic cell in both directions in every packing from 10 d on; the pore never does. The draft's sentence that the ice is disconnected horizontally at high porosity does not hold; outline corrected.
 - `studies/molaro_2019/demmenie/interface_width_estimate.py`: the saturated run's excess over the Gibbs-Thomson prediction scales with band/fillet; removing it would give an exponent of 0.27 at eps/2 and 0.29 at eps/4. An estimate from one run, not a test.
+- High-porosity diagnosis (`studies/keff_sintering/percolation/directional_exponents.py`, `weakest_section.py`): the power law holds along the deposition direction to porosity 0.425 (p -0.79 to -0.86) and fails across it (-0.70, -0.60, -0.48 from 0.375 on); k_xx/k_yy falls 1.02 to 0.66. The departure in Figure 7(d) is anisotropy of the packing, not a broken ice network.
+- Saturated pair, exponent by start time: 0.215 (2 h) to 0.236 (71 h) against a predicted 0.29; the velocity matches by 71 h but the exponent is not recovered within the run. The eps/2 estimate of 0.27 is an upper estimate.
 - One correction to the saturated-pair paragraph flagged: alpha_c = 1e-3 makes growth attachment-limited, not vapor-transport-limited.
 
 ---

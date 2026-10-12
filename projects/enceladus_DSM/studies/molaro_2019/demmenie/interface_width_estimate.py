@@ -65,6 +65,18 @@ def main():
         ww = integrate(e)
         L.append(f"  {lab:22s} final w {ww[-1]:.2f} um   a = {ad.fit_free(t, ww)['a']:.3f}")
     L.append(f"  {'the run itself':22s} final w {w[-1]:.2f} um   a = {ad.fit_free(t, w)['a']:.3f}")
+    # ---- does the exponent recover within the run? windows from t_i to the end ----
+    wp = 2e6 * P.grow(x[0], t, R, th, ALPHA)                        # sharp prediction
+    we = integrate(EPS)                                             # prediction with the fitted excess
+    L += ["", "exponent of C (t + t0)^a fitted from the given time to the end of the run:",
+          "  start    w [um]   w/eps   fillet [bands]   velocity ratio   run     prediction   prediction + excess"]
+    for h in (2, 6, 16, 31, 51, 71):
+        i = int(np.argmin(np.abs(t / 3600 - h)))
+        L.append(f"  {h:3d} h    {w[i]:5.1f}    {w[i] * 1e-6 / EPS:4.0f}       {rho[i] / (BAND * EPS):4.1f}            {ratio[i]:4.2f}        "
+                 f"{ad.fit_free(t[i:], w[i:])['a']:.3f}     {ad.fit_free(t[i:], wp[i:])['a']:.3f}          {ad.fit_free(t[i:], we[i:])['a']:.3f}")
+    L += ["", "The velocity reaches the prediction (within 3 %) by 71 h, but the exponent does not: it",
+          "rises from 0.215 to 0.236 against a predicted 0.29. The fitted excess is too optimistic late",
+          "in the run (0.264 against 0.236), so the eps/2 and eps/4 values above are upper estimates."]
     txt = "\n".join(L)
     print(txt)
     (HERE / "prediction").mkdir(exist_ok=True)

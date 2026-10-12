@@ -15,3 +15,16 @@ prediction integrated with that excess, fitted as C (t + t0)^a over the same sam
   eps / 4                final w 60.70 um   a = 0.289
   sharp limit            final w 60.60 um   a = 0.293
   the run itself         final w 63.16 um   a = 0.212
+
+exponent of C (t + t0)^a fitted from the given time to the end of the run:
+  start    w [um]   w/eps   fillet [bands]   velocity ratio   run     prediction   prediction + excess
+    2 h     35.1     293        2.1            2.54        0.215     0.292          0.222
+    6 h     39.2     327        2.7            1.72        0.221     0.292          0.232
+   16 h     44.9     374        3.7            1.36        0.227     0.290          0.245
+   31 h     50.1     418        4.8            1.18        0.231     0.288          0.254
+   51 h     55.0     459        6.0            1.08        0.234     0.287          0.260
+   71 h     58.8     490        7.1            1.02        0.236     0.286          0.264
+
+The velocity reaches the prediction (within 3 %) by 71 h, but the exponent does not: it
+rises from 0.215 to 0.236 against a predicted 0.29. The fitted excess is too optimistic late
+in the run (0.264 against 0.236), so the eps/2 and eps/4 values above are upper estimates.

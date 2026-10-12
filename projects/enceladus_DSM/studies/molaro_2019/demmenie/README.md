@@ -41,7 +41,13 @@ prediction is a clean function of (diffuse band)/(neck fillet radius):
 and 1.0 from 7 bands on. Integrating the prediction with that excess
 reproduces the run (a = 0.217 against 0.212; final width 63.35 against
 63.16 um) and gives a = 0.27 at eps/2, 0.29 at eps/4, 0.293 in the sharp
-limit. An estimate, not a test: in one run band/fillet falls monotonically
+limit. These are UPPER estimates: fitted from later and later start times the
+run's exponent only rises from 0.215 (2 h) to 0.236 (71 h), while the
+prediction with the fitted excess gives 0.264 there and the sharp prediction
+0.286. The velocity reaches the prediction by 71 h (ratio 1.02) but the
+exponent has not, so the run does not show the predicted exponent being
+recovered within 100 h (table in `prediction/interface_width_estimate.txt`).
+An estimate, not a test: in one run band/fillet falls monotonically
 with neck size, so an early excess of any origin (e.g. the initial neck shape
 relaxing) would fit as well. Only a run at eps/2 separates them.
 

@@ -1,0 +1,18 @@
+Exponent p of k ~ SSA^p after theta = 30, per packing (temperatures pooled); mean +- sd over the five packings.
+
+phi      k_xx            k_yy            (k_xx+k_yy)/2     k_xx/k_yy at theta = 30    corr(p_xx - p_yy, k_xx/k_yy)
+0.275   -0.79 +- 0.02   -0.79 +- 0.04   -0.79 +- 0.03      1.02 +- 0.13             -0.46
+0.325   -0.80 +- 0.07   -0.84 +- 0.05   -0.82 +- 0.05      1.03 +- 0.03             +0.52
+0.375   -0.70 +- 0.10   -0.86 +- 0.11   -0.78 +- 0.09      0.93 +- 0.09             -0.37
+0.425   -0.60 +- 0.12   -0.83 +- 0.13   -0.73 +- 0.09      0.82 +- 0.15             -0.43
+0.475   -0.48 +- 0.11   -0.73 +- 0.08   -0.63 +- 0.09      0.66 +- 0.18             +0.54
+
+all 25 packings: corr(p_xx - p_yy, k_xx/k_yy) = -0.56
+                 corr(p of the weaker direction, min/max k) = -0.62
+                 exponent of the STRONGER direction: -0.79 +- 0.09
+                 exponent of the WEAKER direction:   -0.69 +- 0.16
+   phi 0.275: stronger -0.80 +- 0.02   weaker -0.79 +- 0.04
+   phi 0.325: stronger -0.80 +- 0.07   weaker -0.84 +- 0.05
+   phi 0.375: stronger -0.83 +- 0.09   weaker -0.72 +- 0.15
+   phi 0.425: stronger -0.82 +- 0.13   weaker -0.61 +- 0.14
+   phi 0.475: stronger -0.73 +- 0.08   weaker -0.48 +- 0.11

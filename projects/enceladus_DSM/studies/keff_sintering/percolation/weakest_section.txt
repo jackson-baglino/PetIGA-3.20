@@ -1,0 +1,9 @@
+30 d, -20 C, five packings per porosity. Conduction in x crosses vertical cuts; in y, horizontal cuts.
+Mean over packings (smallest of the five in brackets).
+
+phi     x: least ice on a cut   fewest bridges on any cut   mean bridges | y: least ice   fewest bridges   mean bridges | k_xx/k_yy, each packing
+0.275      0.52 (0.48)             3.6 (2)                 8.7     |   0.53 (0.48)      2.4 (1)          8.3     | 1.20  0.93  1.10  1.01  0.86
+0.325      0.44 (0.38)             3.8 (3)                 8.4     |   0.42 (0.38)      3.2 (3)          7.9     | 1.07  1.01  1.01  1.04  0.99
+0.375      0.36 (0.32)             3.6 (3)                 8.0     |   0.41 (0.35)      3.0 (2)          7.5     | 0.89  0.84  1.06  0.93  0.80
+0.425      0.32 (0.25)             3.8 (2)                 7.6     |   0.38 (0.34)      3.6 (3)          7.3     | 0.78  0.81  1.04  0.58  0.75
+0.475      0.30 (0.28)             3.2 (3)                 7.0     |   0.32 (0.31)      3.8 (3)          6.9     | 0.60  0.41  0.90  0.64  0.63
