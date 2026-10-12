@@ -10,23 +10,19 @@
 \definecolor{miss}{RGB}{176,58,46}
 \definecolor{stale}{RGB}{160,100,0}
 \definecolor{cut}{RGB}{110,60,150}
-% where a figure or table goes, on its own line
 \newcommand{\Place}[2]{\par\smallskip\noindent\fbox{\parbox{0.97\linewidth}{%
   \textcolor{place}{\textbf{#1}}\quad #2}}\par\smallskip}
-% a decision still to be made
 \newcommand{\Open}[1]{\textcolor{open}{\textit{Open: #1}}}
-% status against the draft
-\newcommand{\Have}{\textcolor{have}{\textbf{[in draft]}}\ }
-\newcommand{\Miss}{\textcolor{miss}{\textbf{[missing]}}\ }
-\newcommand{\Stale}{\textcolor{stale}{\textbf{[revise]}}\ }
-\newcommand{\Wrong}{\textcolor{miss}{\textbf{[incorrect]}}\ }
-\newcommand{\Cut}{\textcolor{cut}{\textbf{[cut]}}\ }
-% a paragraph of the draft, by its line numbers
+\newcommand{\Have}{\textcolor{have}{\textbf{[written]}}\ }
+\newcommand{\Miss}{\textcolor{miss}{\textbf{[to write]}}\ }
+\newcommand{\Stale}{\textcolor{stale}{\textbf{[fix]}}\ }
+\newcommand{\Cut}{\textcolor{cut}{\textbf{[trim]}}\ }
+\newcommand{\Note}{\textcolor{open}{\textbf{[from the notes]}}\ }
 \newcommand{\Para}[2]{\textbf{#1} \textnormal{\small(L#2)}}
 \newcommand{\New}[1]{\textbf{#1} \textnormal{\small(new)}}
-\title{Manuscript outline, checked against the draft of 2026-10-11}
+\title{Manuscript outline: what each paragraph should contain}
 \author{enceladus\_DSM \quad \texttt{studies/keff\_sintering/manuscript\_outline.tex}}
-\date{2026-10-11}
+\date{2026-10-12, against the draft of the same date}
 \begin{document}
 \maketitle
 
@@ -37,48 +33,74 @@ and the closing implication. Every claim stays inside the simulated range:
 $-40$ to $-5\,^{\circ}$C, air at 1~atm, sealed pores, 50~$\mu$m grains,
 30~days, two dimensions.
 
-\textbf{How to read this.} Read against
-\texttt{Literature/BaglinoJackson\_DSM\_manuscript.pdf} (27 pages, 657
-numbered lines) and the Overleaf project in
-\texttt{Literature/BaglinoJackson\_DSM\_manuscript.zip}, which was compiled
-for the build check below. Paragraphs are identified by the draft's line numbers
-(L\,first--last). \Have covered; \Miss not there; \Stale there but no longer
-matches the model or results; \Wrong a statement that is wrong as written;
-\Cut can go, or shrink, without loss. Boxes mark where a figure or table
-goes. Themes are prompts, not text.
+\textbf{How to read this.} This is a plan of content: each numbered item is
+one paragraph and lists what it should say, with the numbers. Line numbers
+(L\,first--last) are those of the draft of 2026-10-12 in
+\texttt{Literature/} (36 pages, 669 lines). \Have the paragraph exists and says this; \Miss it
+does not exist yet; \Stale one specific thing in it is wrong; \Cut it can be
+shorter. Boxes mark where a figure or table goes.
+
+\textbf{Sections 4 and 5 of the draft are treated as notes.} They were
+written for an earlier model and an earlier set of results. Nothing they say
+about results is carried over. They are used only as a source of points
+about the literature, marked \Note, each to be checked against its source.
+
+\section*{Decisions already made, which this plan follows}
+
+Collected from the work of 2026-09-08 to 2026-10-12: the session log, the
+campaign record and the manuscript plan.
+\begin{itemize}
+\item \textbf{Framing} (10-08, 10-10). Laboratory-observable sintering by
+  vapor transport, inside the dry-snow-metamorphism story. The Introduction
+  and title stay as written; scope caveats go in the Methods. No timescales
+  for Enceladus temperatures; the timescale map is dropped. Advisor's
+  comments still to come.
+\item \textbf{Comparisons} (10-08). Not natural snow (angular, more porous,
+  loaded). The analogues are unloaded ice-sphere and ice-powder samples:
+  Molaro et al., Demmenie et al., Choukroun et al. From the snow literature
+  only functional forms carry over, never magnitudes.
+\item \textbf{Kinetics} (09-22, 10-09). $\alpha_c$ constant in temperature;
+  the thin-interface term always on; aggregates stated as $\alpha_c = 1.020
+  \times 10^{-3}$. No further simulations for this paper.
+\item \textbf{Two-grain argument} (09-09, 10-02). Rests on what the vapor
+  route does and does not reproduce, and on exponents; no Thomas or Kingery
+  runs. Molaro's conventions: neck \emph{width}, time anchored on the first
+  measurement. The $-20\,^{\circ}$C series is the benchmark.
+\item \textbf{Conductivity} (09-23). Tensor law in the interface; the cell
+  problem is a steady problem on a frozen microstructure and says nothing
+  about the transient model. Two dimensions only, so no absolute
+  $k_{\mathrm{eff}}$ is claimed.
+\item \textbf{Clock and normalization} (10-08). Curves normalized at
+  $\theta_r = 30$. The first day depends on the interface parameter, so a
+  ``rise from day 1'' is never quoted as a property of the ice.
+\item \textbf{Notation} (09-28 to 09-30). $\phi$ phase field, $\varphi$
+  porosity, $\zeta$ indicator, $\chi$ curvature; subscripts ``ice'' and
+  ``air'', not $i$ and $a$; no index notation; a single dot for every
+  contraction; the vector $\mathbf{t}$ named as in Auriault et al.
+\item \textbf{Citations} (09-23). Only work whose setting matches ours;
+  every DOI checked against Crossref.
+\item \textbf{Words.} Desublimation (``deposition'' is plume fallout);
+  ``vapor''; $\varepsilon$ is the interface parameter, not the interface
+  width.
+\end{itemize}
 
 \section*{Where the draft stands}
 
-\begin{center}\begin{tabular}{p{0.30\linewidth}p{0.62\linewidth}}\toprule
+\begin{center}\begin{tabular}{p{0.34\linewidth}p{0.58\linewidth}}\toprule
 Section & State\\\midrule
-Key points & one placeholder\\
-Abstract, plain-language summary & marked ``needs to be updated''; both still
- claim ``without retuning'' and a collapse across porosity\\
-1 Introduction & complete; kept as drafted. Three paragraphs repeat each
- other and one sets up a model the paper no longer has\\
-2.1 Phase-field model & nearly complete; kinetic parameters undefined\\
-2.2 Gibbs--Thomson & Eq.~(7) now correct; still two equations and no clock\\
-2.3 Homogenization & complete; the derivation can be halved; SSA is never
- defined\\
-Numerical method; set-up of the aggregates & \textbf{no section}\\
-3.1 Two-grain sintering & Molaro part written, no numbers;
- saturated-pair paragraph still a placeholder\\
-3.2 Aggregates & Figure~7 text is new and much closer; the quantitative
- statements are still absent\\
-4 Discussion, 5 Conclusion & unchanged: written for the earlier model\\\bottomrule
+Key points, Abstract, Summary & to write (placeholders)\\
+1 Introduction & written; small fixes and trims\\
+2.1--2.3 Model, kinetics, homogenization & written; four definitions to add\\
+2.4, 2.5 Numerics, simulation design & to write (material exists in Section 3)\\
+3 Grain pairs & written, both pairs; numbers and one correction to add\\
+4 Aggregates & written; numbers to add, one paragraph to correct\\
+5 Discussion & to write; plan below\\
+6 Conclusions & to write\\\bottomrule
 \end{tabular}\end{center}
 
-\textbf{Fixed since the last check:} Eq.~(7) has $1/\alpha_c$; $T_0 =
-273.15$~K; Table~1 carries $\Delta\beta$ and the right $\tau_{\mathrm{sub}}$;
-Figure~2 caption names the 0.05 and 0.95 contours; Figure~6 caption
-normalizes at $\theta = 30$; Figure~7 has a full caption; the 0.3\% statement
-is in the text.
-
-\textbf{Most in need of work, in order:} (1) Discussion and Conclusion;
-(2) the numbers in Section~3; (3) Section~2.2 and the two missing Methods
-subsections; (4) the saturated-pair paragraph.
-
-
+\textbf{New in this draft:} the temperature table (Table~2) is in and the
+table notes resolve; the saturated-pair paragraph is written (L339--353); the
+Discussion has a new paragraph on the Molaro comparison (L436--453).
 \section*{Section titles}
 
 Descriptive headings in place of ``Methods'' and ``Results''; the Results
@@ -116,7 +138,7 @@ holds for $\varphi \le 0.375$ and porosity sets the level.
 
 \section*{Build check (LaTeX warnings)}
 
-The Overleaf project compiles here. As uploaded: \textbf{561 overfull-box
+From the Overleaf project uploaded on 2026-10-11 (the newer draft came as a PDF only). As uploaded: \textbf{561 overfull-box
 warnings}, 144 underfull, 19 undefined citation keys, 8 undefined
 references. With the changes below, tested on a copy: \textbf{0 overfull, 0
 underfull, 0 undefined citations}; the undefined references remain because
@@ -179,306 +201,271 @@ their targets do not exist.
 
   Check \texttt{fourteau\_impact\_2021}: the \texttt{.bib} also has
   \texttt{fourteauMacroscopicWaterVapor2021}.
-\item \textbf{8 undefined references.} \texttt{tab:keff\_temperature}
-  (three times; the temperature table is not in the draft).
-  \texttt{Sec: Phase-Field Model} (source line 375; the label is
-  \texttt{sec:Phase-FieldModel}). In the Discussion, to figures and sections
-  that no longer exist (source lines 490--505):\\
-  \texttt{subsec:Methods--TDepKinetics}, \texttt{subsec:Results--TwoGrain},\\
-  \texttt{fig:VaryingT\_Keff\_vs\_time}, \texttt{fig:VaryingT\_Keff\_vs\_SSA},\\
-  \texttt{fig:VaryingPorosties\_Contour}, \texttt{fig:Single\_Keff\_vs\_SSA}.
+\item \textbf{Undefined references.} The table notes are resolved in the
+  new draft. Left: six in the old Discussion, to figures and sections that
+  no longer exist; they go when that text is replaced.
 \item \textbf{Unused files in the project.} \texttt{Figure8\_timescales.pdf}
   (dropped); \texttt{Figure7\_state\_law\_allphi.pdf};
   \texttt{agujournaltemplate.tex}; \texttt{si\_template\_2019.tex} (needed
   later for the supplement).
 \end{enumerate}
 
-\section*{Where to cut}
-
-The first half (to the end of Section~2) is 235 numbered lines of text plus
-17 numbered equations. About 45 lines and four equations can go with no loss
-of content. The same three things are each said three times:
-
-\begin{center}\begin{tabular}{p{0.34\linewidth}p{0.58\linewidth}}\toprule
-Said three times & Where\\\midrule
-What the paper does, in order & end of Introduction (L166--179); Results
- opening (L292--307); Discussion opening (L400--410). Keep the first.\\
-Wilson--Frenkel, $\alpha_c$, $\sigma_0(T)$, Libbrecht & Introduction
- (L116--133); Discussion (L441--452 and L453--468). Keep one short version.\\
-Bouvet and Braun tune $\alpha_c$ & Introduction twice (L149--153, L161--165);
- Discussion at length (L469--491). Keep the long one in the Discussion.\\\bottomrule
-\end{tabular}\end{center}
-
-\begin{center}\begin{tabular}{p{0.52\linewidth}p{0.16\linewidth}p{0.20\linewidth}}\toprule
-Cut & Lines now & Lines after\\\midrule
-Introduction, kinetics paragraph (L116--133) & 18 & 6\\
-Introduction, repeated sentences (L62--65, L98--100, L134--137, L161--165) & 14 & 3\\
-Methods opening (L181--188) & 8 & 3\\
-2.1 first paragraph, what a phase field is (L190--197) & 8 & 2\\
-2.3 weak-form derivation, Eqs.~(12)--(14) (L260--275) & 16 + 4 eqs & 4\\
-Results opening (L292--307) & 16 & 3\\
-3.2 homogenization restated (L363--367) & 5 & 1\\
-Discussion opening (L400--410) & 11 & 0\\
-4.1 model history (L412--424) & 13 & 0\\\bottomrule
-\end{tabular}\end{center}
-
-\section*{Wrong or inconsistent throughout}
-\begin{itemize}
-\item \textbf{Notation.} $K_{\mathrm{eff}}$ in the text, $k_{\mathrm{eff}}$
-  in Figures 6--7, the tables and Section~3.2 from L383; $K_{\mathrm{ice}}$
-  against $k_{\mathrm{ice}}$; $\rho_i$ against $\rho_{\mathrm{ice}}$;
-  $\rho_a, P_a$ (Eq.~2) against $\rho_{\mathrm{air}}, P_{\mathrm{atm}}$
-  (Table~1); $\phi_a$ called ``water vapor'' (L200), it is the air phase;
-  $\phi$, $\phi_i$ and $\boldsymbol\phi$ used interchangeably in Section~2.3.
-\item \textbf{Temperature.} The text has $T$ in $^{\circ}$C with $T + T_0$
-  (Eqs.~3, 5); Table~1 writes $D_{v0}(T/273.15)^{1.81}$ and $k_BT$, which need
-  kelvin. Pick one.
-\item \textbf{$\varepsilon$} is called ``the interface width'' (L208); Table~2
-  calls it the interface parameter and gives the band as $9.2\,\varepsilon$.
-  Use the table's wording.
-\item \textbf{Durations and counts.} ``28-day'' (L171), 30 everywhere else;
-  mesh ``$2829 \times 2928$'' (L349); ``3 packings for each porosity''
-  (L382); ``25 microstructures'' (L405) is right, ``four microstructures''
-  (L539) is not.
-\item \textbf{Broken references.} ``??'' at L264, L450, L462, L519, L527,
-  L530, L538 and in the notes of Tables 1 and 2; 19 citation keys are undefined, so
-  about 30 citations print as ``?'' in Section~4 (see the build check); ``table table 3'', ``section section 4.1'',
-  ``figure figure 6''.
-\item \textbf{Words.} ``deposits on the neck'' (L103): desublimates.
-  ``inhabit extraterrestrial life'' (L84). ``without less of generality''
-  (L248): periodicity is an assumption, not a convenience. ``Allen--Kahn''
-  (L209). ``tonsorial'' (L289). ``effect'' for ``affect'' throughout.
-\end{itemize}
 
 \section*{Front matter}
 \begin{itemize}
-\item \textbf{Title.} Kept; drop ``Version 2''.
-\item \Miss \textbf{Key points} (three, each $\le 140$ characters). (i) For a
-  given packing, temperature only rescales time. (ii) Conductivity follows
-  specific surface area by one power law in well-connected packings; porosity
-  sets the level. (iii) Vapor transport alone gives part of the neck growth
-  measured in the laboratory.
-\item \Stale \textbf{Abstract} (L9--31). Sentences 1--5 are background; keep
-  two. Remove: ``temperature gradients'' as a driver (the runs are
-  isothermal); ``without retuning''; ``temperature dependence \ldots\
-  measured in experiments''; collapse ``for both varying temperatures and
-  varying porosities''. Order: setting (2 sentences); model and what it
-  carries (1); pairs, with 41\% and the exponent (2); aggregates, with the
-  three numbers 0.27\%, $-0.80$ and the porosity range (3); what it means (1).
-\item \Stale \textbf{Plain Language Summary} (L32--55). Remove the tuning
-  story (L48--51) and ``regardless of temperature or initial porosity''.
+\item \textbf{Title.} As is, without ``Version 2''.
+\item \Miss \textbf{Key points} (three, each at most 140 characters).
+  \begin{enumerate}
+  \item For a given ice-grain packing, temperature from $-40$ to
+    $-5\,^{\circ}$C only rescales the time over which sintering raises
+    conductivity.
+  \item Effective conductivity follows specific surface area by one power
+    law in well-connected packings; porosity sets its level.
+  \item Vapor transport alone reproduces part of the neck growth measured
+    between ice grains in the laboratory.
+  \end{enumerate}
+\item \Miss \textbf{Abstract} (at most 250 words). Sentence by sentence:
+  \begin{enumerate}
+  \item Setting: porous ice on icy bodies and on Earth; its conductivity
+    depends on microstructure, which sintering changes.
+  \item Gap: how conductivity evolves as grains sinter without compaction,
+    and what temperature and porosity do to it.
+  \item Method: a phase-field model of sublimation and desublimation with
+    vapor and heat transport; conductivity by periodic homogenization.
+  \item Grain pairs: against Molaro et al., the vapor route gives 41\% of
+    the measured neck growth at $-20\,^{\circ}$C; at saturation the neck
+    grows as $t^{0.21}$.
+  \item Aggregates: 125 simulations, five porosities, five temperatures,
+    30 days.
+  \item Result 1: for a given packing, conductivity against specific
+    surface area is the same at every temperature within 0.3\%; temperature
+    sets the rate.
+  \item Result 2: for porosity up to 0.375, conductivity scales as
+    SSA$^{-0.80}$; porosity sets the level.
+  \item Meaning: SSA, which can be measured, tracks the conductivity of a
+    sintering deposit; what a laboratory test would look like.
+  \end{enumerate}
+\item \Miss \textbf{Plain Language Summary} (at most 200 words). The first
+  half of the draft's summary (L33--43) can stay. Then: what was simulated;
+  temperature changes how fast, not what happens; surface area tells you the
+  conductivity; why it matters for plume deposits.
 \end{itemize}
 
 \section{Introduction}
 
-Kept as drafted (decision 2026-10-10); no reordering proposed. Paragraph by
-paragraph, with what could be trimmed in place:
+Kept as drafted; no reordering. Each paragraph and what it carries:
 \begin{enumerate}
-\item \Para{What dry snow metamorphism is}{56--67}. \Have \Cut The ice-cream,
-  snow and avalanche examples (L62--65) return in the next paragraph; keep
-  them in one.
-\item \Para{Why it matters on Earth}{68--80}. \Have
-\item \Para{Icy bodies and Enceladus}{81--100}. \Have \Cut The last sentence
-  (L98--100) is circular: a better understanding of bulk properties aids a
-  better understanding of bulk properties.
-\Place{Figure 1}{\Have placed. \Stale The caption, and the copy of the figure
-  in the draft, still say ``neck of radius $R(t)$''; the label was changed to
-  $w(t)$, and the Results use $w$ as the neck \emph{width}.}
-\item \Para{Sintering as part of metamorphism}{101--115}. \Have
-  ``deposits'' $\to$ desublimates. Demmenie is cited here; say in one clause
-  that it is used later.
-\item \Para{Attachment kinetics}{116--133}. \Stale \Cut The longest paragraph
-  of the Introduction builds toward a temperature-dependent $\alpha_c$ through
-  $\sigma_0(T)$. The model holds $\alpha_c$ constant, so the reader is set up
-  for something the paper does not do. Keep: the definition of supersaturation,
-  the Wilson--Frenkel law, that $\alpha_c$ is uncertain over two decades. End
-  on the choice made here: $\alpha_c$ held constant within each study.
-  \Wrong L125--127 says the barrier puts the kinetics ``well below the vapor
-  transport limited regime''; it means growth is limited by attachment, not
-  by transport.
-\item \Para{Metamorphism beyond a pair; earlier models}{134--153}. \Have
-  \Cut L134--137 restates paragraph 4. Bouvet is 2022 here and 2023 at L162.
-\item \Para{What is not known}{154--165}. \Stale \Cut L161--165 repeats
-  L149--153. L160--161 claims no model predicts evolution ``for varying
-  temperatures and varying vapor saturation''; this paper does not close
-  that gap, so do not open it. The gap the paper does address is L157--159:
-  bulk properties without compaction, and the roles of temperature and
-  porosity.
-\item \Para{What follows}{166--179}. \Stale ``28-day''; ``is dependent of'';
-  the stray fragment L178--179; ``validate model'' (compare); the saturated
-  pair is not announced; the promise of independence from ``initial
-  porosity'' is wider than the result.
+\item \Para{What dry snow metamorphism is}{57--68}. \Have Definition;
+  everyday examples; that it changes bulk properties. \Cut The examples
+  return in paragraph~2; keep them in one.
+\item \Para{Why it matters on Earth}{69--81}. \Have Avalanches, firn,
+  conductivity of snowpacks.
+\item \Para{Icy bodies and Enceladus}{82--101}. \Have Plume, grain size,
+  where sintering is expected, strength changes. \Cut Last sentence
+  (L99--101) is circular. \Stale ``inhabit'' $\to$ harbor.
+\item \Para{Sintering as part of metamorphism}{102--116}. \Have Neck
+  growth, the two routes, earlier work, Molaro, Choukroun. \Stale
+  ``deposits'' $\to$ desublimates. Add one clause: Demmenie et al.\ is the
+  second comparison used here.
+\Place{Figure 1}{\Have placed. \Stale Caption and figure say ``neck of radius
+  $R(t)$''; the paper uses the neck width $w$.}
+\item \Para{Attachment kinetics}{117--134}. \Have Supersaturation; the
+  Wilson--Frenkel law; $\alpha_c$. \Cut \Stale Shorten to those three, then
+  end on: $\alpha_c$ is uncertain over two decades ($10^{-3}$--$10^{-1}$) and
+  is held constant within each study here. As drafted the paragraph builds
+  toward a temperature-dependent $\alpha_c$ through $\sigma_0(T)$, which the
+  model does not have.
+\item \Para{Metamorphism beyond a pair; earlier models}{135--154}. \Have
+  Kaempfer \& Plapp; Bouvet; Braun; that they tune $\alpha_c$. \Cut The first
+  three sentences repeat paragraph~4.
+\item \Para{What is not known}{155--166}. \Have Bulk properties without
+  compaction; the roles of temperature and porosity. \Cut \Stale Drop the
+  claim that no model handles varying temperature and saturation (this paper
+  does not close that gap) and the second telling of Bouvet and Braun.
+\item \Para{What follows}{167--180}. \Have Order of the paper. \Stale
+  30-day, not 28; ``independent of''; delete the fragment at the end; add
+  the saturated pair; say ``compare with'', not ``validate''; the predictor
+  is independent of temperature, and of porosity only in its exponent.
 \end{enumerate}
 
 \section{Modeling Approach}
 \textit{Draft: 2 Methods.}
 
-
-\Para{Opening}{181--188}. \Cut The free-energy derivation and the coupling
-are restated in the first lines of 2.1. Keep the lineage (Kaempfer \& Plapp;
-Moure \& Fu) and the sentence that this is an application of the model.
+\Para{Opening}{182--189}. \Have \Cut Lineage (Kaempfer \& Plapp; Moure \& Fu)
+and that this is an application of the model. Three sentences.
 
 \subsection{Phase-Field Model of Dry Snow Metamorphism}
 \begin{enumerate}
-\item \Para{What a phase field is}{190--197}. \Cut Textbook; one sentence.
-\item \Para{Unknowns}{198--204}. \Have $\phi_a$ is air, not water vapor.
-\item \New{Scope.} \Miss Of dry snow metamorphism the model carries sintering
-  by vapor transport only. Not in it: surface diffusion, densification,
-  overburden. Define ``desublimation''. Why the laboratory analogues are
-  unloaded ice-sphere samples and not natural snow.
-\item \Para{Eq.~(1) and the phase equation}{205--211}. \Have
-  \Miss $M_{\mathrm{sub}}$ and $\alpha_{\mathrm{sub}}$ are named but never
-  given: state them in terms of $\tau_{\mathrm{sub}}$ and $\varepsilon$, or
-  point to Moure \& Fu. \Miss The temporal scaling $\xi_T$, $\xi_v$ is in
-  Tables 2 and 3 and nowhere in the equations.
-\item \Para{Saturation vapor density, Eqs.~(2)--(3)}{212--216}. \Stale Check
-  Eq.~(3) against the source: the last term reads $k_5 + \ln(T + T_0)$ and is
-  probably $k_5\ln(T + T_0)$. The text cites Flatau and Wexler; the note to
-  Table~1 says ASHRAE.
-\item \Para{Energy equation and mixture rules}{217--223}. \Have
-\item \Para{Vapor equation and diffusivity}{224--229}. \Have \Cut $T_0$ is
-  defined at L215 and again at L228.
-\Place{Table 1}{\Have Material properties, current version. \Stale Its note
-  reads ``Tables ?? and 3''. It defines $\beta_{\mathrm{sub}}$, $\Delta\beta$
-  and $\tau_{\mathrm{sub}}$ one page before the text introduces them, and the
-  text never mentions the last two.}
+\item \Para{Unknowns}{191--205}. \Have Two paragraphs; the first (what a
+  phase field is) can be one sentence. Fields $\phi_i$, $\phi_a$ (air), $T$,
+  $\rho_v$.
+\item \New{Scope.} \Miss Three or four sentences. Of dry snow metamorphism
+  the model carries sintering by vapor transport: sublimation,
+  diffusion through the pore, desublimation. Not in it: surface
+  diffusion, grain-boundary processes, densification, overburden. Define
+  desublimation. The laboratory analogues are therefore unloaded ice-sphere
+  samples, not natural snow.
+\item \Para{Phase equation}{206--212}. \Have The two terms of Eq.~(1a).
+  \Miss Add: $M_{\mathrm{sub}}$ and $\alpha_{\mathrm{sub}}$ in terms of
+  $\tau_{\mathrm{sub}}$ and $\varepsilon$ (or a pointer to Moure \& Fu);
+  $\varepsilon$ named the interface parameter, with the visible band
+  $9.2\,\varepsilon$.
+\item \Para{Saturation vapor density}{213--217}. \Have \Stale Check the last
+  term of Eq.~(3) against the source ($k_5\ln(T + T_0)$?). One attribution:
+  the text cites Flatau and Wexler, Table~1 says ASHRAE.
+\item \Para{Energy equation}{218--224}. \Have Mixture rules; constant
+  properties.
+\item \Para{Vapor equation}{225--231}. \Have Diffusivity. \Miss Add one
+  sentence on the temporal scaling $\xi_T$, $\xi_v$ that Tables 3 and 4 list.
+\Place{Table 1}{\Have Material properties. Cited at L230.}
 \end{enumerate}
 
 \subsection{Interface Kinetics and the Sintering Time Scale}
 \textit{Draft: 2.2 Gibbs-Thomson Condition.}
 \begin{enumerate}
-\item \Para{The condition and $\alpha_c$}{230--241}. \Have Eqs.~(6) and (7),
-  now correct. $d_0$ is defined only in Table~1.
-\item \New{The thin-interface limit.} \Miss L234--235 says the model
-  reproduces Eq.~(6) ``under the conditions outlined by Kaempfer \& Plapp''.
-  Those conditions are where $\Delta\beta$ comes from: the realized
-  coefficient is $\beta_{\mathrm{sub}} + \Delta\beta$. Two or three sentences.
-\item \New{The clock.} \Miss $\tau_{\mathrm{sub}} =
-  \varepsilon^{2}(\beta_{\mathrm{sub}} + \Delta\beta)/d_0$ and the sintering
-  age $\theta = t/\tau_{\mathrm{sub}}$, defined here. At present $\theta$
-  first appears at L377 as ``the characteristic relaxation time of the
-  phase-field equation''. State that $\varepsilon$ is the same in every
-  aggregate run. \Open{state the clock as $\tau_{\mathrm{sub}}$ at fixed
+\item \Para{The interface condition}{232--242}. \Have Eqs.~(6), (7).
+  \Miss Add $d_0 = \gamma m/(\rho_{\mathrm{ice}} k_B T)$ in the text.
+\item \New{The thin-interface limit.} \Miss The model recovers Eq.~(6) with
+  a kinetic coefficient $\beta_{\mathrm{sub}} + \Delta\beta$, where
+  $\Delta\beta = a_1 a_2\,\varepsilon\,(D_T^{-1} + D_v^{-1})\,
+  \rho_{\mathrm{ice}}/\rho_{vs}^{I}$ (Kaempfer \& Plapp, 2009; Moure \& Fu,
+  2024). It is 2\% of $\beta_{\mathrm{sub}}$ in the aggregates and 23\% in
+  the Molaro pairs.
+\item \New{The time scale.} \Miss $\tau_{\mathrm{sub}} =
+  \varepsilon^{2}(\beta_{\mathrm{sub}} + \Delta\beta)/d_0$; the sintering age
+  $\theta = t/\tau_{\mathrm{sub}}$. $\varepsilon$ is the same in every
+  aggregate run, so $\theta$ compares temperatures on one clock. The
+  30-day runs end at $\theta = 43$ ($-40\,^{\circ}$C) to 1256
+  ($-5\,^{\circ}$C). \Open{state the clock as $\tau_{\mathrm{sub}}$ at fixed
   $\varepsilon$, or as $\tau_R = \bar R^{2}\beta_{\mathrm{sub}}/d_0$.}
-\item \New{The values used.} \Miss $\alpha_c = 1.020 \times 10^{-3}$
-  (aggregates), $0.1$ (Molaro pairs), $1.002 \times 10^{-3}$ (saturated pair),
-  held constant in temperature, each with its $\beta_{\mathrm{sub}}$.
-\Place{Table (temperature)}{\Miss \texttt{\char`\\TableKeffTemperature}:
-  $\beta_{\mathrm{sub}}$, $\Delta\beta$, $\tau_{\mathrm{sub}}$ and the final
-  age at each temperature. Tables 1 and 2 both point to it (``Table ??'').
-  It is also what explains why $-40\,^{\circ}$C is absent from Figure~7(b):
-  that run ends at $\theta = 43$.}
+\item \New{The values used.} \Miss $\alpha_c$ is constant in temperature
+  within each study: $1.020 \times 10^{-3}$ (aggregates), $0.1$ (Molaro
+  pairs), $1.002 \times 10^{-3}$ (saturated pair). Why constant: a
+  temperature-dependent $\alpha_c$ would make a temperature sweep
+  uninterpretable.
+\Place{Table 2}{\Have Temperature-dependent quantities. \Stale Not cited in
+  the text; cite it in paragraph~3.}
 \end{enumerate}
 
 \subsection{Effective Thermal Conductivity by Homogenization}
 \begin{enumerate}
-\item \Para{Two scales and the microscale problem}{243--252}. \Have
-  ``without less of generality''.
-\item \Para{Macroscale law, $\mathbf{K}_{\mathrm{eff}}$, cell
-  problem}{253--262}. \Have \Stale The sentence at L257 breaks off
-  (``referred to as co''). \Wrong Eq.~(11d) has $\mathbf{t}$ where it needs
-  $\nabla\mathbf{t}$. \Cut L260--262 says the equations are coupled to their
-  own boundary conditions.
-\item \Para{Weak form and the single-domain problem}{263--275}. \Cut
-  Eqs.~(12a)--(14) can become one sentence: summing the weak forms over the
-  two subdomains, the interface terms cancel and Eq.~(15) follows. Saves
-  four equations.
-\item \Para{Diffuse form and the tensor law}{276--290}. \Have
-  \Miss $\mathbf{K}_{\mathrm{eff}}$ is defined for the sharp problem only
-  (Eq.~10); give the diffuse form, the one actually evaluated.
-\item \New{What is reported.} \Miss The scalar $k_{\mathrm{eff}} =
-  (k_{xx} + k_{yy})/2$ is defined only in the caption of Figure~6.
-  \textbf{SSA is never defined}: say how it is measured from $\phi$ and in
-  what units, since half the results are plotted against it.
-\Place{Figure 2}{\Have placed. \Stale Not cited in the text. Caption says
-  ``red''; the lines are orange. Add that only the $x$ problem is shown.}
+\item \Para{Two scales and the microscale problem}{244--254}. \Have
+  \Stale Periodicity is an assumption (``without loss of generality'' is not
+  true of it).
+\item \Para{Macroscale law and cell problem}{255--263}. \Have \Stale Finish
+  the broken sentence (``referred to as co\ldots''); Eq.~(11d) needs
+  $\nabla\mathbf{t}$.
+\item \Para{Single-domain form}{264--276}. \Have \Cut Eqs.~(12)--(14) can be
+  one sentence leading to Eq.~(15).
+\item \Para{Diffuse form and the tensor law}{277--291}. \Have Eq.~(16), (17);
+  why the tensor law (first-order error removed). \Miss Add two sentences.
+  Credit: Nicoli, Plapp \& Henry (2011) define the law and show the
+  cancellation for a planar interface at contrasts of 2 and 10; here it is
+  applied to the cell problem at a contrast of 115 and verified on laminate
+  and disk-array cases (supplement). Why it matters here: with a scalar law
+  the bias reaches tens of percent and grows with $\varepsilon\,$SSA, so it
+  would drift as the aggregate sinters. State that the cell problem is solved
+  on frozen snapshots of $\phi$.
+\item \New{What is reported.} \Miss Three definitions:
+  $\mathbf{K}_{\mathrm{eff}}$ in the diffuse form, the one evaluated;
+  $k_{\mathrm{eff}} = (k_{xx} + k_{yy})/2$; and SSA, how it is measured from
+  $\phi$ and its units. SSA is used throughout Section~4 and is defined
+  nowhere.
+\Place{Figure 2}{\Have placed. \Stale Not cited in the text. Caption:
+  ``red'' lines are orange; add that only the $x$ problem is shown.}
 \end{enumerate}
 
 \subsection{Numerical Implementation}
-\begin{itemize}
-\item \Miss The whole subsection, one paragraph: quadratic $C^{1}$ splines,
-  time stepping and the step cap, sampling of $\mathbf{K}_{\mathrm{eff}}$.
-\item \Miss One sentence each, with a pointer to the supplement: domain size
-  (Fig.~S1), interface parameter (Fig.~S2), time step and sampling (Fig.~S3).
-  The second matters for the Results: the first day depends on $\varepsilon$.
-\Place{Table 2}{\Have The complete parameter table is in the main text, but
-  \Stale it is cited nowhere. \Cut It takes most of a page. The shorter
-  \texttt{\char`\\TableKeffParameters} holds what a reader needs; the
-  complete one can go to the supplement.}
-\end{itemize}
+\begin{enumerate}
+\item \New{Discretization and time stepping.} \Miss Quadratic $C^{1}$
+  splines; element size $\varepsilon/\sqrt2$; adaptive step capped at
+  $2\,\tau_{\mathrm{sub}}$; conductivity sampled every step for
+  $\theta < 11$, then at every 0.1\% drop in SSA.
+\item \New{Checks.} \Miss One sentence each, pointing to the supplement:
+  domain size (Fig.~S1); interface parameter (Fig.~S2), including that the
+  first day depends on $\varepsilon$ and later rates do not; time step and
+  sampling (Fig.~S3).
+\Place{Table 3}{\Have Complete parameters. \Stale Not cited in the text.
+  \Open{keep it here, or the short version here and this one in the
+  supplement.}}
+\end{enumerate}
 
 \subsection{Simulation Design: Grain Pairs and Aggregates}
-\textbf{Aggregates.}
-\begin{itemize}
-\item \Stale Now inside Section~3.2 (L345--353). Move here.
-\item \Have Drop-and-roll deposition. \Miss Five packings per porosity,
-  independent across porosity; the same packings at every temperature; grain
-  size distribution.
-\item \Miss Why periodic boundaries: scale separation, no wall physics to
-  invent, a closed system driven by curvature alone.
-\item \Miss Two dimensions, and why (now L303--304, in the Results opening).
-\item \Miss The simulation used for single-run figures: $\varphi = 0.325$,
-  $-20\,^{\circ}$C.
-\end{itemize}
-
-\textbf{Grain pairs.}
-\begin{itemize}
-\item \Stale Now inside Section~3.1 (L315--327). The geometry, the
-  axisymmetric formulation and the boundary conditions are Methods.
-\Place{Table 3}{\Have placed. \Miss No column for the saturated pair: its
-  grain radius (84.4~$\mu$m), $\alpha_c$, temperature and 100~h duration are
-  stated nowhere. \Stale ``Simulated time 2~h'' at $-5\,^{\circ}$C: the run
-  with the thin-interface term reached 68~min, which covers the 48~min of
-  data.}
-\end{itemize}
-
-\section*{Results: split into Sections 3 and 4}
-
-\Para{Opening}{292--307}. \Cut \Stale Third statement of the plan. If kept,
-three sentences. \Wrong ``independent of the mean temperature as well as the
-initial porosity'' (L302--303). Demmenie is described as theory only; they
-measured the exponent too. The two-dimensional restriction belongs in the
-Methods.
+\begin{enumerate}
+\item \New{Grain pairs.} \Miss (material now at L315--327 and L339--347).
+  Axisymmetric about the line of centers; the two Molaro geometries and the
+  equal-grain pair ($R = 84.4~\mu$m, initial neck width 28~$\mu$m,
+  $-20\,^{\circ}$C, 100~h); fixed temperature and humidity at the outer
+  boundary; how the neck width $w$ is measured.
+\Place{Table 4}{\Have Two-grain parameters. \Miss Add a column for the
+  saturated pair. \Stale Simulated time at $-5\,^{\circ}$C is 68~min.}
+\item \New{Aggregates.} \Miss (material now at L357--366). 2~mm square,
+  periodic in both directions; circular grains, log-normal radii with mean
+  50~$\mu$m, placed by drop-and-roll deposition; five porosities, five
+  independent packings each, the same packings at all five temperatures: 125
+  runs of 30 days; uniform temperature, vapor initially at saturation.
+  Domain size: $L/\bar R = 40$, at the 1--2~mm representative volume of
+  Calonne et al.\ (2011). Packings are accepted only if contacts across the
+  periodic seam are as dense as in the interior; seeds are independent
+  across porosity (details in the supplement).
+\item \New{Why periodic, why two dimensions.} \Miss Periodic: the domain
+  stands for the interior of a deposit, no wall physics has to be invented,
+  and the system is closed, so curvature alone drives transport. Two
+  dimensions: cost; three-dimensional effects are discussed in Section~5.6.
+\end{enumerate}
 
 \section{Neck Growth Between Two Ice Grains}
-\textit{Draft: 3.1 Phase-Field Model Validation.} \Stale ``Validation''
-claims more than is shown: the model gives 41\% of the measured growth at one
-temperature and 170\% at the other.
+\textit{Draft: 3 Results (opening) and 3.1 Phase-Field Model Validation.}
+
+\Para{Section opening}{293--308}. \Cut Two sentences: what the two
+comparisons are for. The rest repeats the Introduction.
 
 \subsection{Comparison With Unsaturated Experiments}
-\textit{Molaro et al.\ (2019).}
 \begin{enumerate}
-\item \Para{Why this experiment}{309--314}. \Have
-\item \Para{Set-up}{315--327}. \Stale Move to the Methods; keep here only the
-  humidity inference and the choice of $\alpha_c$. \Wrong ``The only free
-  parameter in our model is $\beta_{\mathrm{sub}}$'' (L322--323): the
-  humidity is fitted too. Give $\alpha_c = 0.1$ as a number. ``(cite other
-  works as well)''.
-\item \Para{Figure 3}{328--338}. \Have panels (a), (b).
-  \Miss The numbers: 41\% of the measured neck growth at $-20\,^{\circ}$C
-  over 78~min; 170\% at $-5\,^{\circ}$C over 48~min (52.1 against
-  44.0~$\mu$m). \Miss Panels (c) and (d): at $-20\,^{\circ}$C the shrinkage
-  is what the humidity was fitted to, so it is a calibration and not a test.
-  \Miss What the colors in (a) show ($\sigma$).
-\Place{Figure 3}{\Have placed. \Stale Caption stops at (b).}
+\item \Para{Why these experiments}{309--314}. \Have
+\item \Para{What is fitted and what is not}{315--327}. \Have in part.
+  Include: the chamber humidity is not reported, so it is inferred at each
+  temperature from the measured shrinkage of the large grain (0.99715 at
+  $-20\,^{\circ}$C; 0.99674 at $-5\,^{\circ}$C); $\alpha_c = 0.1$, the top of
+  the literature range, chosen as the fastest plausible vapor route.
+  \Stale ``The only free parameter is $\beta_{\mathrm{sub}}$'': the humidity
+  is fitted too.
+\item \Para{Result}{328--338}. \Have panels (a), (b) in words. \Miss Add:
+  at $-20\,^{\circ}$C the model gives 41\% of the measured neck growth over
+  78~min; at $-5\,^{\circ}$C it gives 170\% over 48~min (52.1 against
+  44.0~$\mu$m); the authors' caveat on the $-5\,^{\circ}$C series; panels
+  (c), (d), with the statement that the shrinkage is what the humidity was
+  fitted to and so is not a test. Use Molaro's conventions (neck width, time
+  from the first measurement) and say so.
+\Place{Figure 3}{\Have placed. \Stale Caption stops at (b); say what the
+  colors in (a) show.}
 \end{enumerate}
+
 \subsection{Growth at Saturation}
-\textit{Conditions of Demmenie et al.\ (2025).}
 \begin{enumerate}
-\item \New{The paragraph} (L339--340 is ``Insert paragraph''). \Miss Why a
-  second comparison: at saturation the grains do not shrink, so neck growth
-  by vapor transport is isolated. Equal grains of 84.4~$\mu$m at
-  $-20\,^{\circ}$C for 100~h; grain radius changes by $+0.06\%$; neck width
-  28 to 63~$\mu$m; exponent 0.21 after the relaxation (0.21--0.23 depending
-  on the window), against 0.26--0.33 measured and 1/3 in theory.
-\item \Open{how to read the low exponent. Two readings are on the table.
-  (i)~Yours: mechanisms absent from the model. (ii)~Mine: the run is faster
-  than the Gibbs--Thomson prediction early, where the neck fillet is about
-  two interface bands across, and that flattens the fitted slope; the
-  prediction for this run gives 0.29 and the final width to 4\%. The paragraph
-  can report the number without choosing.}
-\Place{Figure 4}{\Have placed. \Stale Not cited in the text. Caption gives no temperature, grain
-  size or $\alpha_c$, and no fitting window.}
+\item \Para{Set-up and result}{339--353}. \Have Grain size, temperature,
+  duration, how the saturation is set, the fit window, exponent 0.21.
+  \Miss Add: why this run (at saturation the grains do not shrink, radius
+  $+0.06\%$, so neck growth is isolated); the neck goes from 28 to
+  63~$\mu$m; Demmenie et al.\ measure 0.26--0.33 at saturation and about
+  1/7 when undersaturated; the fitted exponent rises from 0.21 to 0.23 as
+  the window starts later. For contrast, the same fit to the two
+  unsaturated runs of Section~3.1 gives 0.14 and 0.15, so the model does
+  reproduce the drop in exponent away from saturation. \Open{refit those two
+  on the final runs before quoting; the values are from 2026-10-02.}
+  \Stale L343--344 says $\alpha_c = 10^{-3}$ puts growth in ``a
+  vapor-limited regime \ldots\ governed by vapor transport''. It is the
+  reverse: at this $\alpha_c$ growth is limited by attachment (gas diffusion
+  adds 0.4--2\% to the resistance). That is also the regime the $t^{1/3}$ law
+  describes, so the comparison stands.
+\item \Open{whether to interpret the low exponent here or in Section~5.1.
+  Two readings: (i)~yours, mechanisms absent from the model; (ii)~mine, the
+  run is faster than the Gibbs--Thomson prediction while the neck fillet is
+  about two interface bands across, which flattens the fit; the prediction
+  itself gives 0.29 and the final width to 4\%
+  (\texttt{studies/molaro\_2019/demmenie/prediction/}).}
+\Place{Figure 4}{\Have placed. \Stale Caption: add temperature, grain size
+  and the fit window (1--100~h).}
 \end{enumerate}
 
 \section{Thermal Conductivity of Sintering Aggregates}
@@ -486,212 +473,286 @@ temperature and 170\% at the other.
 
 \subsection{Microstructural Evolution}
 \begin{enumerate}
-\item \Para{Set-up and the gallery}{342--360}. \Stale Two paragraphs in one.
-  The set-up (L345--353) goes to the Methods. \Wrong ``We initially consider a
-  single 2D microstructure'' (L350) after stating 125 runs. The gallery
-  description (L354--360) is fine. \Miss What the colors show: where ice
-  sublimates and where vapor desublimates.
+\item \Para{The gallery}{355--372}. \Have in the second half (L366--372):
+  point contacts become necks, small grains and sharp features disappear, the
+  pore space rounds. \Miss Add what the colors show: vapor is undersaturated
+  over convex ice, which sublimates, and supersaturated in necks and
+  concavities, where it desublimates. Move the set-up (first half) to
+  Section~2.5.
 \Place{Figure 5}{\Have placed, with caption.}
-\item \Para{Computing the conductivity}{361--370}. \Cut L363--367 repeats
-  Section~2.3. \Wrong ``off diagonal components are at least one order of
-  magnitude lower'' (L368--370): $k_{xy}$ reaches about 12\% of $k_{xx}$ on
-  one packing; it is zero in the mean.
-  \Miss Anisotropy: state $k_{xx}/k_{yy}$, including 0.79 and 0.64 at the two
-  highest porosities.
+\item \Para{The conductivity tensor}{373--382}. \Have \Cut One sentence on
+  how it is obtained (Section~2.3). Include: $k_{xy}$ is zero in the mean
+  over packings and up to 12\% of $k_{xx}$ on a single one; $k_{xx}/k_{yy}$
+  is near 1 for $\varphi \le 0.375$ and 0.79 and 0.64 at $\varphi = 0.425$
+  and 0.475; the scalar $k_{\mathrm{eff}}$ is used from here on.
 \end{enumerate}
+
 \subsection{Temperature Rescales Time}
 \begin{enumerate}
 \setcounter{enumi}{2}
-\item \Para{Temperature sets the clock}{371--379}. \Have panels (b)--(d) in
-  words. \Miss Panel (a) is not mentioned.
-  \Miss \textbf{The result as a number}: for every packing,
-  $k_{\mathrm{eff}}$ at matched SSA agrees across the five temperatures
-  within 0.27\% (median 0.07\%); the rate follows $\tau_{\mathrm{sub}}$
-  within 4\%.
-  \Miss How much the conductivity changes: from day 1 to day 30 it rises by
-  7--12\% at $-40\,^{\circ}$C and by 31--44\% at $-5\,^{\circ}$C (the table by
-  porosity and temperature).
-  \Stale ``the trend is linear'' (L379): linear in $\log\theta$, about 0.13
-  per decade.
-  \Miss Why the curves are normalized at $\theta_r = 30$ and not at $t = 0$:
-  the first day depends on the interface parameter.
-\Place{Figure 6}{\Have placed. \Stale Caption says $|\sigma| \le 0.31$; the
-  bar reads 0.34. The symbol $\theta_r$ on panels (c), (d) is not defined in
-  the caption.}
+\item \Para{Figure 6, one packing at five temperatures}{383--391}. \Have
+  panels (b)--(d) in words. \Miss Add, in this order:
+  \begin{itemize}
+  \item Panel (a): the packing ($\varphi = 0.325$) at four instants.
+  \item In time, warmer runs change faster. To give a size, use numbers
+    that do not depend on the interface parameter: between $\theta_r = 30$
+    and $\theta = 331$, $k_{\mathrm{eff}}$ rises by a factor $1.171 \pm
+    0.015$ and SSA falls to $0.819 \pm 0.007$ of its value, for every
+    packing with $\varphi \le 0.375$. The rise from day~1 (7--12\% at
+    $-40\,^{\circ}$C, 31--44\% at $-5\,^{\circ}$C) may be quoted only as
+    specific to $\varepsilon = 1~\mu$m: doubling $\varepsilon$ changes it by
+    9 points and leaves the later rate unchanged.
+  \item Against $\theta$ the five curves fall on one: rates follow
+    $\tau_{\mathrm{sub}}$ within 4\%.
+  \item Against SSA they agree within 0.27\% for every one of the 25
+    packings (median 0.07\%). This is the result; state it as a sentence.
+  \item SSA falls linearly in $\log\theta$, about 0.13 per decade, after
+    the relaxation period: the form reported for isothermal snow
+    (Legagneux et al.; to verify before citing).
+  \item Why curves are normalized at $\theta_r = 30$ and not at $t = 0$:
+    the first day depends on the interface parameter (Fig.~S2).
+  \end{itemize}
+\Place{Figure 6}{\Have placed. \Stale Caption: $|\sigma| \le 0.34$; define
+  $\theta_r$.}
 \end{enumerate}
+
 \subsection{Conductivity as a Function of Specific Surface Area}
 \begin{enumerate}
 \setcounter{enumi}{3}
-\item \Para{Porosity}{380--398}. \Have Structure is right: (a), why two
-  porosities are set aside, (b), (c), (d).
-  \Wrong ``3 packings for each porosity'' (L382): five packings at each of
-  three porosities. \Wrong ``We show the time evolution of $k_{\mathrm{eff}}$
-  for each of the simulations'' (L383): panel (a) is $-20\,^{\circ}$C only,
-  the mean of five packings.
-  \Wrong ``the ice matrix remains disconnected in the horizontal direction''
-  (L385--387): not shown. What is shown: a weaker and more scattered exponent,
-  and $k_{xx}/k_{yy}$ of 0.79 and 0.64.
-  \Stale L390--391 breaks off (``scientifically their connectivity as'').
-  \Wrong ``The linear trend'' in (c) (L393): the axis is logarithmic; the fit
-  is exponential in porosity.
-  \Miss Why four temperatures and not five: the $-40\,^{\circ}$C runs end at
-  $\theta = 43$, too soon after the reference age.
-  \Miss The numbers. Exponent $-0.80$; per porosity $-0.79$, $-0.82$,
-  $-0.78$, then $-0.73$ and $-0.63$. Level $k_{\mathrm{eff},r}/k_{\mathrm{ice}}
-  = 1.37\exp(-5.01\,\varphi)$, 6.6\% scatter between packings. At 30~d the
-  conductivity differs by a factor of about 3.3 across porosity.
-  \Miss That the dashed lines in (c), (d) are fitted to $\varphi \le 0.375$.
-\Place{Figure 7}{\Have placed. \Stale Caption for (a): ``a single seed'' with
-  ``seed scatter'' (it is the mean of five packings and their range). Caption
-  does not mention the arrow or the gray band.}
+\item \Para{Figure 7, porosity}{392--410}. \Have the order (a), (b), (c),
+  (d) and the 0.3\% statement. Include:
+  \begin{itemize}
+  \item (a) At $-20\,^{\circ}$C, mean of five packings and their range, for
+    each porosity. At 30~d the conductivity differs by a factor of about
+    3.3 between $\varphi = 0.275$ and 0.475.
+  \item (b) Fifteen packings ($\varphi \le 0.375$, five each) at four
+    temperatures, 60 curves. $-40\,^{\circ}$C is absent because those runs
+    end at $\theta = 43$, too soon after the reference age. All follow
+    $k_{\mathrm{eff}}/k_{\mathrm{eff},r} = (\mathrm{SSA}/\mathrm{SSA}_r)^{p}$
+    with $p = -0.80$; by porosity $-0.79$, $-0.82$, $-0.78$.
+  \item (c) The level: $k_{\mathrm{eff},r}/k_{\mathrm{ice}} =
+    1.37\exp(-5.01\,\varphi)$ for $\varphi \le 0.375$, with 6.6\% scatter
+    between packings. Exponential in porosity, not linear.
+  \item (d) Exponent of each packing. For $\varphi = 0.425$ and 0.475 it is
+    weaker ($-0.73$, $-0.63$) and more scattered, and those packings are
+    anisotropic; they are shown and not fitted.
+  \item What it amounts to: SSA gives the relative change in conductivity;
+    porosity gives the level; neither alone gives both.
+  \item One closed form, if wanted: $k_{\mathrm{eff}} = 1.37\,
+    k_{\mathrm{ice}}\,e^{-5.0\varphi}\,(\theta/30)^{0.066}$ for $\varphi
+    \le 0.375$ (fit of 2026-10-06).
+  \end{itemize}
+  \Stale Two statements to correct: ``3 packings for each porosity''
+  (five); the unfinished sentence on connectivity. The statement that the
+  ice ``remains disconnected in the horizontal direction'' needs its
+  evidence beside it: $k_{xx}/k_{yy}$ of 0.79 and 0.64 on these packings, and
+  the percolation test of 2026-09-15 on an earlier set (the ice stops
+  spanning horizontally by $\varphi = 0.45$ and both ways by 0.50;
+  \texttt{studies/packing\_design/}). \Open{repeat that test on the
+  production packings (minutes, no simulation) so the sentence rests on the
+  runs in the paper.}
+\Place{Figure 7}{\Have placed. \Stale Caption for (a): mean of five packings
+  and their range, not ``a single seed''. Add the arrow and the gray band. A
+  full caption was drafted on 2026-10-11.}
+\item \New{Optional paragraph: what the scatter is.} \Miss The scatter in
+  the exponent does not fall with domain size while the scatter in the level
+  does (11\% to 4.5\%), so the first belongs to the packing and the second
+  to sampling. \Open{include here, in Section~5.3, or leave out.}
 \end{enumerate}
-
-\textbf{Left out of the Results that the data support:}
-\begin{itemize}
-\item One number that sums up the collapse: at $\theta = 331$,
-  $k_{\mathrm{eff}}/k_{\mathrm{eff},r} = 1.171 \pm 0.015$ and
-  $\mathrm{SSA}/\mathrm{SSA}_r = 0.819 \pm 0.007$ over the packings with
-  $\varphi \le 0.375$.
-\item The temperature dependence of the clock as an activation energy, about
-  50~kJ\,mol$^{-1}$.
-\item That the scatter in the exponent does not shrink with domain size while
-  the scatter in the level does (11\% to 4.5\%), so the first is a property
-  of the packing and the second of sampling.
-\item That the exponent of a packing follows how efficiently it conducts
-  (correlation $-0.77$ with $k_{\mathrm{eff},r}$ over the upper bound at its
-  porosity). \Open{whether to show this; it is the only quantitative support
-  for ``connectivity explains the fan''.}
-\end{itemize}
 
 \section{Discussion}
 
-\textbf{State of the draft.} Unchanged since the last check. The opening
-(L400--410) is the third summary of the plan. Section~4.1 (L412--491) argues
-that $\beta_{\mathrm{sub}}(T)$ follows Libbrecht's $\sigma_0(T)$, that the
-model was tuned once and that $-5\,^{\circ}$C is ``a genuine prediction'';
-with a constant $\alpha_c$ none of this holds. Section~4.2 (L492--626) claims
-a collapse across porosity, isotropy and sintering ``on the order of
-decades''.
+\textit{Draft: 4 Discussion, treated as notes.} Thirteen paragraphs. For
+each: the argument, the numbers that carry it, and what the notes offer
+about the literature.
 
-\textbf{Statements to remove wherever they survive.}
-\begin{itemize}
-\item \Wrong L428--440: mobility fitted; coefficient ``determined a priori''
-  from single-crystal measurements; ``genuine prediction''.
-\item \Wrong L448--449: Wilson--Frenkel described as the diffusion-limited
-  law. It is the attachment-limited one.
-\item \Wrong L456--468: $\sigma_0(T)$ gives $\beta_{\mathrm{sub}}$ its
-  temperature dependence; ``successful parameterization''.
-\item \Wrong L525: ``our systems remain isotropic''.
-\item \Wrong L532--536: the collapse is expected because SSA is ``the only
-  changing parameter''. Conductivity depends on the whole geometry; the
-  collapse across temperature holds because one packing follows one
-  geometric path at every temperature.
-\item \Wrong L541--545: curves at different porosity ``collapse towards a
-  master curve''; packings ``converge towards similar configurations''.
-\item \Stale L538--539: an author note left in the text.
-\item \Wrong L582: ``on the order of decades''. L599: conductivity ``will
-  start near 0.0''. L623: ``the temperatures for which our model was
-  calibrated''.
-\end{itemize}
-
-\textbf{Suggested construction}, about twelve paragraphs. Each says what it
-argues and what in the draft can be reused.
+\Para{Section opening}{412--421}. \Cut Not needed; the subsections carry it.
 
 \subsection{What Vapor Transport Alone Reproduces}
 \begin{enumerate}
-\item \textbf{The unsaturated pair.} With $\alpha_c$ at the top of its
-  range, the vapor route gives 41\% of the measured growth at
-  $-20\,^{\circ}$C; the rest needs another route. At $-5\,^{\circ}$C it
-  gives more than was measured, and the authors doubt that data set. The two
-  cannot both be closed by one $\alpha_c$.
-\item \textbf{The saturated pair.} The exponent, against Demmenie's and
-  against 1/3. \Open{which reading, as in Section~3.1.}
-\item \textbf{$\alpha_c$ is an effective parameter.} Reuse L469--491, the
-  survey of Bouvet and Braun, shortened by half. What it means for the
-  aggregates: their rates carry the uncertainty of $\alpha_c$; the
-  conductivity as a function of SSA does not.
+\item \Para{The unsaturated pair}{436--453}. \Have This is the one
+  paragraph already written for the current results. It says: humidity
+  inferred from shrinkage, $\alpha_c = 0.1$, under at $-20\,^{\circ}$C and
+  over at $-5\,^{\circ}$C, the authors' caveat, surface diffusion absent.
+  Add:
+  \begin{itemize}
+  \item The numbers, 41\% and 170\%.
+  \item That 41\% is not a matter of tuning. With $\alpha_c$ at the top of
+    its range the neck is insensitive to the chamber humidity, and with the
+    vapor diffusivity raised 30 or 100 times the model still reaches only
+    75\% of the measured growth once the grain shrinkage is matched; the two
+    cases land 0.01~$\mu$m apart (tests of 2026-09-09). The vapor route has a
+    ceiling below the measurement.
+  \item What fills the gap. Swinkels \& Ashby's sintering model, which
+    Molaro et al.\ use, has surface diffusion contributing on the order of
+    the vapor route at these conditions; this model has none.
+  \item A caution on the comparison itself: Molaro et al.\ present their
+    own model's agreement as order-of-magnitude, and its vapor term assumes
+    $\alpha_c = 1$ with no gas diffusion.
+  \item Why $-5\,^{\circ}$C is set aside: the authors' doubts about that
+    series (illumination and gradient-driven sublimation, stronger near
+    melting).
+  \end{itemize}
+\item \New{The saturated pair, and exponents.} \Miss The comparison of
+  exponents decided on 2026-10-02, as one small table or one sentence:
+  this model at saturation 0.21--0.23; this model at Molaro's humidity
+  0.14--0.15; Demmenie et al.\ 0.26--0.33 at saturation and about 1/7
+  undersaturated; Molaro's data about 0.20; theory 1/3. What it supports:
+  the exponent is set by the saturation state, as Demmenie et al.\ argue,
+  and the model follows that trend while sitting below the measurements.
+  State that the run is attachment-limited and that the grain size held.
+  \Open{the reading of the shortfall, as in Section~3.2. Also to settle: an
+  earlier saturated run from a tangent start gave 0.28; say which run the
+  paper quotes and why.}
+\item \New{$\alpha_c$ as an effective parameter.} \Miss The rates in this
+  paper scale with $1/\alpha_c$; the relation between conductivity and SSA
+  does not depend on it. \Note Bouvet et al.\ fit $\alpha_c =
+  (9.8 \pm 0.7) \times 10^{-4}$ to tomography at $-2\,^{\circ}$C
+  (L482--490); Braun et al.\ find $10^{-3}$--$10^{-1}$, changing as surfaces
+  facet, and call it an effective, surface-averaged value (L490--503);
+  Kaempfer \& Plapp's validation by bubble migration (L422--435).
 \end{enumerate}
 
 \subsection{Temperature as a Rescaling of Time}
 \begin{enumerate}
 \setcounter{enumi}{3}
-\item \textbf{Why the collapse holds.} One route, a constant $\alpha_c$,
-  transfer limited by attachment: temperature enters through
-  $\tau_{\mathrm{sub}}$ alone. In this model it is close to a consequence of
-  the construction; say so.
-\item \textbf{What would break it.} A temperature-dependent $\alpha_c$; a
-  second route with a different activation energy; a temperature gradient.
-  The clock's activation energy, about 50~kJ\,mol$^{-1}$, against
-  $24.3 \pm 3.3$ from Choukroun et al.: the difference is itself evidence of
-  another route in their samples.
+\item \New{Why the curves superpose.} \Miss One transport route, a constant
+  $\alpha_c$, transfer limited by attachment: temperature enters only
+  through $\tau_{\mathrm{sub}}$, mostly through $\rho_{vs}^{I}(T)$. Say
+  plainly that in this model the superposition is close to a consequence of
+  the construction; the numerical result is how well it holds (0.27\%, 4\%)
+  with heat and vapor transport both active.
+\item \New{What would break it, and the activation energy.} \Miss The
+  clock's temperature dependence is an activation energy of about
+  50~kJ\,mol$^{-1}$, that of the saturation vapor density. \Note Choukroun
+  et al.\ measure $24.3 \pm 3.3$~kJ\,mol$^{-1}$ for strength gain and
+  attribute it to surface self-diffusion (L613--620), at 193--243~K; the two
+  temperature ranges overlap at 233--243~K. The difference is consistent
+  with a second route in their samples, and an activation energy is
+  something a laboratory can measure to tell the routes apart. A temperature-dependent
+  $\alpha_c$, a second route, or a temperature gradient would each break the
+  superposition, which makes it a test.
 \end{enumerate}
 
 \subsection{Specific Surface Area as the State Variable}
 \begin{enumerate}
 \setcounter{enumi}{5}
-\item \textbf{Density is not enough.} Reuse L498--517 (Calonne 2011, 2014),
-  cut to half: conductivity changes at constant density there and here.
-\item \textbf{The power law and its limit.} One exponent for $\varphi \le
-  0.375$; porosity sets the level. Above that the exponent weakens and
-  scatters, and the packings are anisotropic.
-\item \textbf{Why packings fan out.} Connectivity, not sampling: the scatter
-  in the exponent does not fall with domain size. The two-dimensional point:
-  discs at these porosities are close to the limit of a connected packing.
-  \Open{the percolation and packing thresholds for this argument are not yet
-  checked against a source.}
+\item \New{Density is not enough.} \Miss In these runs porosity is fixed and
+  conductivity rises by up to 44\%. \Note Calonne et al.\ (2011): tensor from
+  30 tomographic images, a regression on density, scatter attributed to
+  anisotropy (L507--517). Calonne et al.\ (2014): under a temperature
+  gradient conductivity changes at constant density, with SSA and anisotropy
+  (L517--529). Half the length of the notes.
+\item \New{The power law and where it stops.} \Miss $p = -0.80$ for
+  $\varphi \le 0.375$; the level from porosity; above 0.375 the exponent
+  weakens and the packings are anisotropic. No claim that packings of
+  different porosity converge.
+\item \New{Why packings differ.} \Miss Packings of one porosity differ in
+  how well the ice is connected, and the exponent follows that (correlation
+  $-0.77$ with conduction efficiency), not coordination number or
+  anisotropy. In two dimensions ice and pore cannot both span the domain:
+  of 15 test packings at porosity 0.30--0.50 none percolated in both phases
+  and both directions, and raising porosity loses the ice network first
+  (2026-09-15). This is why the law is stated for $\varphi \le 0.375$, and
+  why absolute values are not compared with three-dimensional measurements.
+  \Open{literature thresholds for discs are not yet checked against a
+  source; whether to show the efficiency; the Euler-characteristic series
+  (tested on three runs) is available if a direct measure is wanted.}
 \end{enumerate}
 
 \subsection{What a Laboratory Could Measure}
 \begin{enumerate}
 \setcounter{enumi}{8}
-\item Three tests on unloaded ice-sphere samples: superposition of curves at
-  different temperatures and its activation energy; $k_{\mathrm{eff}}$
-  against SSA; SSA against log time. Reuse L550--556 on how SSA is measured.
+\item \New{Three tests.} \Miss On unloaded ice-sphere samples held
+  isothermally: (i)~curves at different temperatures superpose under a time
+  shift, and the shift gives an activation energy; (ii)~conductivity against
+  SSA is one curve; (iii)~SSA falls linearly in log time. \Note SSA is
+  measured by near-infrared reflectance, gas adsorption and tomography
+  (L562--568; Gallet, Matzl, Proksch).
 \end{enumerate}
 
 \subsection{Implications for Plume Deposits on Enceladus}
 \begin{enumerate}
 \setcounter{enumi}{9}
-\item Qualitative only. Reuse L568--590 without ``decades'' and L601--617
-  (Choukroun), cut by a third: as deposits sinter, SSA falls and conductivity
-  rises together, and SSA is the quantity to track.
-\item Reuse L591--600 (radar attenuation) without the starting value. State
-  the two gaps to the moon: temperature (the runs stop at $-40\,^{\circ}$C)
-  and grain size (50~$\mu$m against micron-sized). No extrapolation.
+\item \New{What carries over.} \Miss Qualitative: as a deposit sinters, SSA
+  falls and conductivity rises together, without densification. \Note Tiger
+  Stripe temperatures up to about 180~K (Spencer); grain size increasing
+  toward the fractures in VIMS data (Jaumann; L580--602); Molaro et al.\ on
+  the dependence of sintering on temperature and grain size.
+\item \New{Why it matters, and the gap.} \Miss \Note A low-conductivity
+  surface layer changes subsurface temperatures and radar attenuation
+  (Byrne; L603--612); Choukroun et al.\ on strength gain and fallout rates
+  of 0.01--1~mm\,yr$^{-1}$ (L613--629). Then the gap, stated plainly: the
+  runs stop at $-40\,^{\circ}$C and use 50~$\mu$m grains in air; the moon is
+  far colder, the grains are micron-sized, and there is no air. No
+  timescales are given.
 \end{enumerate}
 
 \subsection{Limitations}
 \begin{enumerate}
 \setcounter{enumi}{11}
-\item Two dimensions; air-filled sealed pores at 1~atm; one grain size; the
-  vapor route only; the first day depends on the interface parameter; the
-  power law holds for $\varphi \le 0.375$. Reuse L557--567: conduction only;
-  constant $k_{\mathrm{ice}}$, $k_{\mathrm{air}}$.
+\item \New{Model.} \Miss Vapor route only; constant $\alpha_c$; air-filled,
+  sealed pores at 1~atm; conduction only and constant $k_{\mathrm{ice}}$,
+  $k_{\mathrm{air}}$. \Note Fourteau et al.\ on the contribution of vapor
+  transport to apparent conductivity under a gradient (L569--575; check the
+  figure quoted); Calonne et al.\ (2019) on temperature-dependent
+  conductivities (L575--579).
+\item \New{Numerics and geometry.} \Miss Two dimensions, so relative
+  changes are claimed and absolute conductivities are not; one grain size
+  distribution; the first day depends on the interface parameter; pore
+  throats narrower than the diffuse band (9.2~$\mu$m) are not resolved,
+  which raises $k_{\mathrm{eff}}$ most at low porosity; the power law is
+  established for $\varphi \le 0.375$; rates scale with $1/\alpha_c$, whose
+  value is uncertain over two decades.
 \end{enumerate}
 
+\textbf{In the notes and not to be carried over:} $\beta_{\mathrm{sub}}(T)$
+from Libbrecht's $\sigma_0(T)$, a single tuning and a ``genuine prediction''
+at $-5\,^{\circ}$C (L454--481); isotropy, and a collapse across porosity
+(L530--561); sintering ``on the order of decades'' (L596) and conductivity
+starting ``near 0.0'' (L611).
+
 \section{Conclusions}
-\begin{itemize}
-\item \Stale L628--643 claims ``the first pore-scale numerical model that is
-  able to replicate the temperature dependent kinetics'' and a single tuning;
-  L647 refers to Libbrecht's data range, which the model no longer uses.
-\item Two paragraphs: the three results, each with its range of validity;
-  then the experiment and the model extension that would test them (a second
-  transport route; three dimensions).
-\end{itemize}
+\textit{Draft: 5 Conclusion, treated as notes.}
+\begin{enumerate}
+\item \New{What was done and found.} \Miss One sentence of method, then the
+  three results with their ranges: temperature rescales time ($-40$ to
+  $-5\,^{\circ}$C, within 0.3\%); conductivity follows SSA$^{-0.80}$ with the
+  level set by porosity ($\varphi \le 0.375$); vapor transport gives 41\% of
+  measured neck growth at $-20\,^{\circ}$C.
+\item \New{What comes next.} \Miss The laboratory test of Section~5.4; a
+  second transport route in the model; three dimensions; colder
+  temperatures and smaller grains.
+\end{enumerate}
 
 \section*{Open Research; Acknowledgments}
 \Miss Code and data availability; run inventory (\texttt{RUN\_TABLE.md}).
-Acknowledgments heading is empty (L658).
+Acknowledgments.
 
 \section*{Supporting Information}
 \begin{itemize}
-\item \textbf{Tables.} S1 complete simulation parameters (if moved out of the
-  main text); S2 two-grain parameters, with the saturated pair.
 \item \textbf{Figures.} S1 domain-size convergence; S2 interface parameter;
   S3 time step and sampling; S4 temperature collapse for all packings; S5
   porosity trends, SSA by porosity, anisotropy in time.
-\item \textbf{Text.} Packing construction; the weak-form derivation, if cut
-  from Section~2.3; run table.
+\item \textbf{Tables, text.} Complete parameters, if moved; packing
+  construction; the weak-form derivation, if trimmed; run table.
+\end{itemize}
+
+\section*{Smaller corrections throughout}
+\begin{itemize}
+\item \textbf{Notation}, to the conventions listed at the top. Subscripts
+  ``ice'' and ``air'' everywhere ($\rho_{\mathrm{ice}}$, not $\rho_i$;
+  $\phi_{\mathrm{ice}}$, $\phi_{\mathrm{air}}$); $\mathbf{K}_{\mathrm{eff}}$
+  for the tensor and $k_{\mathrm{eff}}$ for its scalar mean, each used
+  consistently; $k_{\mathrm{ice}}$, $k_{\mathrm{air}}$ as in the tables;
+  $\rho_{\mathrm{air}}, P_{\mathrm{atm}}$ in Eq.~(2). $\phi_{\mathrm{air}}$
+  is air, not water vapor.
+\item \textbf{Temperature.} Celsius with $T + T_0$ in Eqs.~(3), (5); kelvin
+  in Table~1. One convention.
+\item \textbf{Numbers.} 30 days (L172 says 28); mesh $2829 \times 2829$
+  (L362).
+\item \textbf{Words.} ``Allen--Kahn''; ``tonsorial''; ``effect'' for
+  ``affect''; ``table table'', ``figure figure'', ``section section''.
 \end{itemize}
 
 \end{document}

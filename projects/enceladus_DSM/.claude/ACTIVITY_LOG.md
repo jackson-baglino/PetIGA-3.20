@@ -1,3 +1,12 @@
+## 2026-10-12 — Outline rewritten as a content plan
+
+- `studies/keff_sintering/manuscript_outline.tex/.pdf` now says what each paragraph should contain, with the numbers, instead of listing differences from the draft (user request). Checked against the draft of 2026-10-12: temperature table and saturated-pair paragraph are in.
+- The draft's Discussion and Conclusion are treated as notes written for the earlier model: only literature points are drawn from them, each marked to verify; none of their statements about results is carried over.
+- Decisions and findings from the sessions of 2026-09-08 to 2026-10-12 are folded in: the 75 % ceiling of the vapor route against Molaro, the exponent comparison, the 2D percolation test, the tensor-law credit and verification, the eps-dependence of the first day, notation and citation rules.
+- One correction to the saturated-pair paragraph flagged: alpha_c = 1e-3 makes growth attachment-limited, not vapor-transport-limited.
+
+---
+
 ## 2026-10-11 — Outline rechecked against the 27-page draft
 
 - `studies/keff_sintering/manuscript_outline.tex/.pdf` rewritten against the draft the user added on 2026-10-11: every paragraph listed by the draft's line numbers, with what is in place, missing, wrong, or can be cut; where each figure and table goes; a cut list for the first half (about 45 lines and four equations); results the data support that the text leaves out; a twelve-paragraph plan for the Discussion.
