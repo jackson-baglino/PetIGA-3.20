@@ -751,13 +751,36 @@ about the literature.
 \begin{enumerate}
 \setcounter{enumi}{3}
 \item \New{Why the curves superpose.} \Miss
-  \Msg{Explain the temperature result honestly: with a single transport route, temperature can only rescale time, so the collapse is expected, and the simulations show how precisely it holds.}
-  One transport route, a constant
-  $\alpha_c$, transfer limited by attachment: temperature enters only
-  through $\tau_{\mathrm{sub}}$, mostly through $\rho_{vs}^{I}(T)$. Say
-  plainly that in this model the superposition is close to a consequence of
-  the construction; the numerical result is how well it holds (0.27\%, 4\%)
-  with heat and vapor transport both active.
+  \Msg{Explain the temperature result as a similarity argument: written in dimensionless form, the model's temperature dependence goes almost entirely into one time scale, so temperature can only rescale time; the simulations show how precisely.}
+  Three steps (worked out 2026-10-12):
+  \begin{itemize}
+  \item Scale lengths by the grain radius $\bar R$, supersaturation by
+    $d_0/\bar R$, and time by $\tau = \bar R^{2}\beta_{\mathrm{sub}}/d_0$
+    (proportional to $\tau_{\mathrm{sub}}$). The interface condition becomes
+    parameter-free. The saturation vapor density, with its 31-fold change
+    from $-40$ to $-5\,^{\circ}$C, the capillary length and $\sqrt T$ are all
+    inside $\tau$.
+  \item One temperature-dependent group is left, from the balance between
+    vapor diffusing to a surface and ice attaching to it: $\bar R/L^{*}$ with
+    \[
+    L^{*} = \frac{D_v(T)}{\alpha_c}\sqrt{\frac{2\pi m}{k_B T}} .
+    \]
+    The saturation vapor density cancels in $L^{*}$; what remains is the
+    vapor diffusivity. $L^{*}$ is 122~$\mu$m at $-40\,^{\circ}$C and
+    147~$\mu$m at $-5\,^{\circ}$C: it changes by 20\% where $\tau$ changes
+    by a factor of 29.
+  \item So both temperature-dependent properties are accounted for: the
+    saturation vapor density sets the clock, and the diffusivity is a weak
+    remaining correction. That correction is the likely source of the 4\%
+    by which rates depart from $\tau_{\mathrm{sub}}$, while the path in
+    conductivity against SSA is unaffected to 0.27\%. (Its size is
+    consistent; that it is the cause has not been tested.)
+  \end{itemize}
+  Say plainly that with one sintering mechanism this is close to a
+  consequence of the construction; the numerical result is how well it
+  holds with heat and vapor transport both active. Do not say gas diffusion
+  is negligible: $\bar R/L^{*} \approx 0.4$, so it contributes; what is
+  small is its \emph{change} with temperature.
   \Cite{none needed; if one, Kaempfer \& Plapp 2009 for the attachment-limited limit.}
 \item \New{What would break it, and the activation energy.} \Miss
   \Msg{The collapse is therefore a signature of a single route. Its temperature dependence differs from the one measured for strength gain, which points to a second route in real samples and gives experimenters something to measure.}
