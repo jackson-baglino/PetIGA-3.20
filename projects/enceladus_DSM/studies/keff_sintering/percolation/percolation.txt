@@ -1,0 +1,42 @@
+Packings (of 5 per porosity) in which a phase wraps the periodic cell; phi = 0.5 threshold, stride 2.
+
+T = -5 C, snapshot 1 (t = 30.0 d, t/tau_sub = 1256)
+  porosity   ice x  ice y  ice both   pore x  pore y  pore both   ice in wrapping cluster
+  0.275      5/5    5/5    5/5        0/5     0/5     0/5         0.99
+  0.325      5/5    5/5    5/5        0/5     0/5     0/5         0.98
+  0.375      5/5    5/5    5/5        0/5     0/5     0/5         0.98
+  0.425      5/5    5/5    5/5        0/5     0/5     0/5         0.94
+  0.475      5/5    5/5    5/5        0/5     0/5     0/5         0.96
+
+T = -20 C, snapshot 1 (t = 0.0 d, t/tau_sub = 0)
+  porosity   ice x  ice y  ice both   pore x  pore y  pore both   ice in wrapping cluster
+  0.275      5/5    5/5    5/5        0/5     0/5     0/5         0.97
+  0.325      5/5    5/5    5/5        0/5     0/5     0/5         0.96
+  0.375      5/5    5/5    5/5        0/5     0/5     0/5         0.96
+  0.425      5/5    5/5    5/5        0/5     0/5     0/5         0.92
+  0.475      4/5    5/5    4/5        0/5     1/5     0/5         0.94
+
+T = -20 C, snapshot 2 (t = 10.2 d, t/tau_sub = 113)
+  porosity   ice x  ice y  ice both   pore x  pore y  pore both   ice in wrapping cluster
+  0.275      5/5    5/5    5/5        0/5     0/5     0/5         0.98
+  0.325      5/5    5/5    5/5        0/5     0/5     0/5         0.97
+  0.375      5/5    5/5    5/5        0/5     0/5     0/5         0.97
+  0.425      5/5    5/5    5/5        0/5     0/5     0/5         0.93
+  0.475      5/5    5/5    5/5        0/5     0/5     0/5         0.95
+
+T = -20 C, snapshot 3 (t = 19.5 d, t/tau_sub = 215)
+  porosity   ice x  ice y  ice both   pore x  pore y  pore both   ice in wrapping cluster
+  0.275      5/5    5/5    5/5        0/5     0/5     0/5         0.98
+  0.325      5/5    5/5    5/5        0/5     0/5     0/5         0.97
+  0.375      5/5    5/5    5/5        0/5     0/5     0/5         0.97
+  0.425      5/5    5/5    5/5        0/5     0/5     0/5         0.93
+  0.475      5/5    5/5    5/5        0/5     0/5     0/5         0.95
+
+T = -20 C, snapshot 4 (t = 30.0 d, t/tau_sub = 332)
+  porosity   ice x  ice y  ice both   pore x  pore y  pore both   ice in wrapping cluster
+  0.275      5/5    5/5    5/5        0/5     0/5     0/5         0.98
+  0.325      5/5    5/5    5/5        0/5     0/5     0/5         0.97
+  0.375      5/5    5/5    5/5        0/5     0/5     0/5         0.97
+  0.425      5/5    5/5    5/5        0/5     0/5     0/5         0.93
+  0.475      5/5    5/5    5/5        0/5     0/5     0/5         0.95
+

@@ -1,0 +1,17 @@
+run velocity / Gibbs-Thomson prediction along the run:
+  t   2.0 h   w  35.1 um   fillet  2.31 um =  2.1 bands   ratio 2.54
+  t   6.1 h   w  39.2 um   fillet  2.97 um =  2.7 bands   ratio 1.72
+  t  16.1 h   w  44.9 um   fillet  4.06 um =  3.7 bands   ratio 1.36
+  t  31.0 h   w  50.1 um   fillet  5.29 um =  4.8 bands   ratio 1.18
+  t  51.0 h   w  55.0 um   fillet  6.66 um =  6.0 bands   ratio 1.08
+  t  71.0 h   w  58.8 um   fillet  7.86 um =  7.1 bands   ratio 1.02
+  t  96.1 h   w  62.6 um   fillet  9.24 um =  8.4 bands   ratio 0.97
+
+fit: ratio = 1 + 11.38 (band/fillet)^2.74   (rms 0.035)
+
+prediction integrated with that excess, fitted as C (t + t0)^a over the same samples:
+  eps as run (0.12 um)   final w 63.35 um   a = 0.217
+  eps / 2                final w 61.21 um   a = 0.271
+  eps / 4                final w 60.70 um   a = 0.289
+  sharp limit            final w 60.60 um   a = 0.293
+  the run itself         final w 63.16 um   a = 0.212

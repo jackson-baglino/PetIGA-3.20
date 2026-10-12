@@ -479,7 +479,11 @@ comparisons are for. The rest repeats the Introduction.
   run is faster than the Gibbs--Thomson prediction while the neck fillet is
   about two interface bands across, which flattens the fit; the prediction
   itself gives 0.29 and the final width to 4\%
-  (\texttt{studies/molaro\_2019/demmenie/prediction/}).}
+  (\texttt{studies/molaro\_2019/demmenie/prediction/}). An estimate made on
+  2026-10-12 supports (ii) without proving it: the run's excess over the
+  prediction is a clean function of band over fillet radius, and removing it
+  gives 0.27 at $\varepsilon/2$ and 0.29 at $\varepsilon/4$. Only a run at
+  $\varepsilon/2$ would settle it.}
 \Place{Figure 4}{\Have placed. \Stale Caption: add temperature, grain size
   and the fit window (1--100~h).}
 \end{enumerate}
@@ -559,15 +563,16 @@ comparisons are for. The rest repeats the Introduction.
     k_{\mathrm{ice}}\,e^{-5.0\varphi}\,(\theta/30)^{0.066}$ for $\varphi
     \le 0.375$ (fit of 2026-10-06).
   \end{itemize}
-  \Stale Two statements to correct: ``3 packings for each porosity''
-  (five); the unfinished sentence on connectivity. The statement that the
-  ice ``remains disconnected in the horizontal direction'' needs its
-  evidence beside it: $k_{xx}/k_{yy}$ of 0.79 and 0.64 on these packings, and
-  the percolation test of 2026-09-15 on an earlier set (the ice stops
-  spanning horizontally by $\varphi = 0.45$ and both ways by 0.50;
-  \texttt{studies/packing\_design/}). \Open{repeat that test on the
-  production packings (minutes, no simulation) so the sentence rests on the
-  runs in the paper.}
+  \Stale Three statements to correct: ``3 packings for each porosity''
+  (five); the unfinished sentence on connectivity; and the statement that
+  the ice ``remains disconnected in the horizontal direction''. The last is
+  not true of these packings: a percolation test on all 25 (2026-10-12,
+  \texttt{studies/keff\_sintering/percolation/}) finds the ice connected
+  across the periodic cell in both directions in every packing from 10~d on,
+  with 92--99\% of the ice in the spanning cluster. Say instead: at $\varphi
+  = 0.425$ and 0.475 the ice network still spans but conducts unequally in
+  the two directions ($k_{xx}/k_{yy} = 0.79$ and 0.64) and the exponent is
+  weaker and scattered, so these packings are shown and not fitted.
 \Place{Figure 7}{\Have placed. \Stale Caption for (a): mean of five packings
   and their range, not ``a single seed''. Add the arrow and the gray band. A
   full caption was drafted on 2026-10-11.}
@@ -675,11 +680,13 @@ about the literature.
 \item \New{Why packings differ.} \Miss Packings of one porosity differ in
   how well the ice is connected, and the exponent follows that (correlation
   $-0.77$ with conduction efficiency), not coordination number or
-  anisotropy. In two dimensions ice and pore cannot both span the domain:
-  of 15 test packings at porosity 0.30--0.50 none percolated in both phases
-  and both directions, and raising porosity loses the ice network first
-  (2026-09-15). This is why the law is stated for $\varphi \le 0.375$, and
-  why absolute values are not compared with three-dimensional measurements.
+  anisotropy. In these packings the ice always spans the cell and the pore
+  never does (percolation test, 2026-10-12): the pore space is a set of
+  closed pockets, which is what ``sealed pores'' means here, and in two
+  dimensions only one phase can span. What differs between packings is the
+  quality of the ice network, not whether it exists. Absolute values are
+  therefore not compared with three-dimensional measurements, where both
+  phases are connected.
   \Open{literature thresholds for discs are not yet checked against a
   source; whether to show the efficiency; the Euler-characteristic series
   (tested on three runs) is available if a direct measure is wanted.}

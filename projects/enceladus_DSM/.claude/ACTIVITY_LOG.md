@@ -6,6 +6,8 @@
 - Suggested citations added under each paragraph, with the key in the user's .bib; most come from the old Discussion. Matched by title only, so each is marked to check against the paper.
 - `studies/molaro_2019/exponents/`: the two final Molaro runs refitted like the saturated run (after 11 tau_sub): a = 0.135 at -20 C and 0.147 at -5 C; Molaro's -20 C data 0.23 +- 0.03; their -5 C series (3 points) has no exponent. Confirmed from the staged options that both runs use the nominal vapor diffusivity.
 - The clock is tau_sub (user decision); tau_R is dropped from the outline.
+- Percolation test on the 25 production packings (`studies/keff_sintering/percolation/`): the ice spans the periodic cell in both directions in every packing from 10 d on; the pore never does. The draft's sentence that the ice is disconnected horizontally at high porosity does not hold; outline corrected.
+- `studies/molaro_2019/demmenie/interface_width_estimate.py`: the saturated run's excess over the Gibbs-Thomson prediction scales with band/fillet; removing it would give an exponent of 0.27 at eps/2 and 0.29 at eps/4. An estimate from one run, not a test.
 - One correction to the saturated-pair paragraph flagged: alpha_c = 1e-3 makes growth attachment-limited, not vapor-transport-limited.
 
 ---

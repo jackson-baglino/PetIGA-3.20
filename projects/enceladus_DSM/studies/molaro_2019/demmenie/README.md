@@ -33,6 +33,18 @@ So the model does NOT reproduce t^(1/3) here: a = 0.21-0.23, below Demmenie's
 0.26-0.33 and below the envelope-ODE prediction of 0.29-0.30
 (`../envelope_ode/README.md`). The cause is open; see `../TODO.md`.
 
+## Interface-width estimate (2026-10-12)
+
+`interface_width_estimate.py`. The run's velocity over the Gibbs-Thomson
+prediction is a clean function of (diffuse band)/(neck fillet radius):
+1 + 11.4 (band/fillet)^2.7, rms 0.035. It is 2.5 at 2 bands, 1.2 at 5 bands
+and 1.0 from 7 bands on. Integrating the prediction with that excess
+reproduces the run (a = 0.217 against 0.212; final width 63.35 against
+63.16 um) and gives a = 0.27 at eps/2, 0.29 at eps/4, 0.293 in the sharp
+limit. An estimate, not a test: in one run band/fillet falls monotonically
+with neck size, so an early excess of any origin (e.g. the initial neck shape
+relaxing) would fit as well. Only a run at eps/2 separates them.
+
 ## Files
 
 - `analyze_demmenie.py <run>`: the fits and four diagnostic plots, into
