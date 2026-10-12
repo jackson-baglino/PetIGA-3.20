@@ -8,7 +8,7 @@ samples after the relaxation period (11 tau_sub), exactly as
 | | exponent a | by fit window |
 |---|---|---|
 | model, -20 C (h = 0.99715) | 0.135 +- 0.001 | 0.135-0.147 |
-| model, -5 C (h = 0.99674) | 0.147 +- 0.001 | 0.135-0.151 |
+| model, -5 C (h = 0.99674) | 0.147 +- 0.001 | 0.151 falling to 0.107 for windows starting after 40 min |
 | model, saturated pair (-20 C) | 0.212 +- 0.001 | 0.212-0.234 |
 | Molaro's data, -20 C (9 points) | 0.23 +- 0.03 | |
 | Molaro's data, -5 C (3 points) | not determined | |
@@ -23,6 +23,10 @@ samples after the relaxation period (11 tau_sub), exactly as
 - Both unsaturated model runs sit at about 1/7, the exponent Demmenie et al.
   (2025) report for undersaturated conditions, and the saturated run is
   higher: the model follows the saturation trend.
+
+- At -5 C the exponent falls as the window starts later (0.15 to 0.11): the
+  grains are shrinking fastest there, which slows the neck. The red line in
+  that panel of `exponents.png` is the three-point fit and means nothing.
 
 Files: `exponents.txt` (full numbers), `exponents.png` (exponent against the
 start of the fit window).
