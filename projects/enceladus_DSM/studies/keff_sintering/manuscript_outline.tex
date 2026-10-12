@@ -18,6 +18,7 @@
 \newcommand{\Stale}{\textcolor{stale}{\textbf{[fix]}}\ }
 \newcommand{\Cut}{\textcolor{cut}{\textbf{[trim]}}\ }
 \newcommand{\Note}{\textcolor{open}{\textbf{[from the notes]}}\ }
+\newcommand{\Cite}[1]{\par{\footnotesize\raggedright\textcolor{have}{\textbf{Cite:}} #1\par}}
 \newcommand{\Para}[2]{\textbf{#1} \textnormal{\small(L#2)}}
 \newcommand{\New}[1]{\textbf{#1} \textnormal{\small(new)}}
 \title{Manuscript outline: what each paragraph should contain}
@@ -44,6 +45,10 @@ shorter. Boxes mark where a figure or table goes.
 written for an earlier model and an earlier set of results. Nothing they say
 about results is carried over. They are used only as a source of points
 about the literature, marked \Note, each to be checked against its source.
+
+\textbf{Suggested citations} follow each paragraph, with the key in your
+\texttt{.bib}. Most are the ones the old Discussion used. I have matched them
+by title only; check each claim against the paper before it goes in.
 
 \section*{Decisions already made, which this plan follows}
 
@@ -331,6 +336,7 @@ and that this is an application of the model. Three sentences.
   \rho_{\mathrm{ice}}/\rho_{vs}^{I}$ (Kaempfer \& Plapp, 2009; Moure \& Fu,
   2024). It is 2\% of $\beta_{\mathrm{sub}}$ in the aggregates and 23\% in
   the Molaro pairs.
+  \Cite{Kaempfer \& Plapp 2009 \texttt{kaempferPhasefieldModelingDry2009}; Moure \& Fu 2024 \texttt{mourePhaseFieldModelWet2024}.}
 \item \New{The time scale.} \Miss $\tau_{\mathrm{sub}} =
   \varepsilon^{2}(\beta_{\mathrm{sub}} + \Delta\beta)/d_0$; the sintering age
   $\theta = t/\tau_{\mathrm{sub}}$. $\varepsilon$ is the same in every
@@ -343,6 +349,7 @@ and that this is an application of the model. Three sentences.
   pairs), $1.002 \times 10^{-3}$ (saturated pair). Why constant: a
   temperature-dependent $\alpha_c$ would make a temperature sweep
   uninterpretable.
+  \Cite{range of $\alpha_c$: Braun et al.\ 2024 \texttt{braunRigorousApproachSpecific2024}; Bouvet et al.\ 2022 \texttt{bouvetSnowEquiTemperatureMetamorphism2022}; Libbrecht 2017 \texttt{libbrechtPhysicalDynamicsIce2017}.}
 \Place{Table 2}{\Have Temperature-dependent quantities. \Stale Not cited in
   the text; cite it in paragraph~3.}
 \end{enumerate}
@@ -366,11 +373,13 @@ and that this is an application of the model. Three sentences.
   the bias reaches tens of percent and grows with $\varepsilon\,$SSA, so it
   would drift as the aggregate sinters. State that the cell problem is solved
   on frozen snapshots of $\phi$.
+  \Cite{Nicoli, Plapp \& Henry 2011 \texttt{nicoli\_tensorial\_2011}; Auriault 1991 \texttt{auriaultHeterogeneousMediumEquivalent1991}; Calonne et al.\ 2011 \texttt{calonneNumericalExperimentalInvestigations2011}.}
 \item \New{What is reported.} \Miss Three definitions:
   $\mathbf{K}_{\mathrm{eff}}$ in the diffuse form, the one evaluated;
   $k_{\mathrm{eff}} = (k_{xx} + k_{yy})/2$; and SSA, how it is measured from
   $\phi$ and its units. SSA is used throughout Section~4 and is defined
   nowhere.
+  \Cite{for computing SSA from a field, possibly Flin et al.\ 2014 \texttt{flinComputationsSpecificSurface2014} (check that the method matches).}
 \Place{Figure 2}{\Have placed. \Stale Not cited in the text. Caption:
   ``red'' lines are orange; add that only the $x$ problem is shown.}
 \end{enumerate}
@@ -408,6 +417,7 @@ and that this is an application of the model. Three sentences.
   Calonne et al.\ (2011). Packings are accepted only if contacts across the
   periodic seam are as dense as in the interior; seeds are independent
   across porosity (details in the supplement).
+  \Cite{representative volume: Calonne et al.\ 2011 \texttt{calonneNumericalExperimentalInvestigations2011}.}
 \item \New{Why periodic, why two dimensions.} \Miss Periodic: the domain
   stands for the interior of a deposit, no wall physics has to be invented,
   and the system is closed, so curvature alone drives transport. Two
@@ -437,6 +447,7 @@ comparisons are for. The rest repeats the Introduction.
   (c), (d), with the statement that the shrinkage is what the humidity was
   fitted to and so is not a test. Use Molaro's conventions (neck width, time
   from the first measurement) and say so.
+  \Cite{Molaro et al.\ 2019 \texttt{molaroMicrostructuralEvolutionWater2019}.}
 \Place{Figure 3}{\Have placed. \Stale Caption stops at (b); say what the
   colors in (a) show.}
 \end{enumerate}
@@ -453,6 +464,7 @@ comparisons are for. The rest repeats the Introduction.
   unsaturated runs of Section~3.1 gives 0.14 and 0.15, so the model does
   reproduce the drop in exponent away from saturation. \Open{refit those two
   on the final runs before quoting; the values are from 2026-10-02.}
+  \Cite{Demmenie et al.\ 2025 \texttt{demmenieIceSinteringSublimation2025}.}
   \Stale L343--344 says $\alpha_c = 10^{-3}$ puts growth in ``a
   vapor-limited regime \ldots\ governed by vapor transport''. It is the
   reverse: at this $\alpha_c$ growth is limited by attachment (gas diffusion
@@ -509,6 +521,7 @@ comparisons are for. The rest repeats the Introduction.
   \item SSA falls linearly in $\log\theta$, about 0.13 per decade, after
     the relaxation period: the form reported for isothermal snow
     (Legagneux et al.; to verify before citing).
+  \Cite{Legagneux \& Domin\'e 2005 \texttt{legagneuxMeanFieldModel2005}; Taillandier et al.\ 2007 \texttt{taillandierRateDecreaseSpecific2007}. Both are in your \texttt{.bib}; for the functional form only.}
   \item Why curves are normalized at $\theta_r = 30$ and not at $t = 0$:
     the first day depends on the interface parameter (Fig.~S2).
   \end{itemize}
@@ -593,6 +606,7 @@ about the literature.
     series (illumination and gradient-driven sublimation, stronger near
     melting).
   \end{itemize}
+  \Cite{Molaro et al.\ 2019 \texttt{molaroMicrostructuralEvolutionWater2019}; Swinkels \& Ashby 1981 \texttt{swinkelsSecondReportSintering1981}; possibly Gundlach et al.\ 2018 \texttt{gundlachSinteringSublimationMicrometresized2018} on sintering of micrometre ice grains (in your \texttt{.bib}; check relevance).}
 \item \New{The saturated pair, and exponents.} \Miss The comparison of
   exponents decided on 2026-10-02, as one small table or one sentence:
   this model at saturation 0.21--0.23; this model at Molaro's humidity
@@ -604,6 +618,7 @@ about the literature.
   \Open{the reading of the shortfall, as in Section~3.2. Also to settle: an
   earlier saturated run from a tangent start gave 0.28; say which run the
   paper quotes and why.}
+  \Cite{Demmenie et al.\ 2025 \texttt{demmenieIceSinteringSublimation2025}; Molaro et al.\ 2019 \texttt{molaroMicrostructuralEvolutionWater2019}.}
 \item \New{$\alpha_c$ as an effective parameter.} \Miss The rates in this
   paper scale with $1/\alpha_c$; the relation between conductivity and SSA
   does not depend on it. \Note Bouvet et al.\ fit $\alpha_c =
@@ -611,6 +626,7 @@ about the literature.
   (L482--490); Braun et al.\ find $10^{-3}$--$10^{-1}$, changing as surfaces
   facet, and call it an effective, surface-averaged value (L490--503);
   Kaempfer \& Plapp's validation by bubble migration (L422--435).
+  \Cite{Bouvet et al.\ 2022 \texttt{bouvetSnowEquiTemperatureMetamorphism2022}; Braun et al.\ 2024 \texttt{braunRigorousApproachSpecific2024}; Kaempfer \& Plapp 2009 \texttt{kaempferPhasefieldModelingDry2009}; Granger et al.\ 2021 \texttt{grangerOrientationSelectiveGrain2021} for faceting under a gradient. The notes also cite Libbrecht 2013, 2017 \texttt{libbrechtMeasurementsSurfaceAttachment2013}, \texttt{libbrechtPhysicalDynamicsIce2017} for $\sigma_0(T)$: usable only as background on why $\alpha_c$ is uncertain.}
 \end{enumerate}
 
 \subsection{Temperature as a Rescaling of Time}
@@ -622,6 +638,7 @@ about the literature.
   plainly that in this model the superposition is close to a consequence of
   the construction; the numerical result is how well it holds (0.27\%, 4\%)
   with heat and vapor transport both active.
+  \Cite{none needed; if one, Kaempfer \& Plapp 2009 for the attachment-limited limit.}
 \item \New{What would break it, and the activation energy.} \Miss The
   clock's temperature dependence is an activation energy of about
   50~kJ\,mol$^{-1}$, that of the saturation vapor density. \Note Choukroun
@@ -632,21 +649,24 @@ about the literature.
   something a laboratory can measure to tell the routes apart. A temperature-dependent
   $\alpha_c$, a second route, or a temperature gradient would each break the
   superposition, which makes it a test.
+  \Cite{Choukroun et al.\ 2020 \texttt{choukroun\_strength\_2020}.}
 \end{enumerate}
 
 \subsection{Specific Surface Area as the State Variable}
 \begin{enumerate}
 \setcounter{enumi}{5}
 \item \New{Density is not enough.} \Miss In these runs porosity is fixed and
-  conductivity rises by up to 44\%. \Note Calonne et al.\ (2011): tensor from
+  conductivity still rises, by 17\% between $\theta = 30$ and 331. \Note Calonne et al.\ (2011): tensor from
   30 tomographic images, a regression on density, scatter attributed to
   anisotropy (L507--517). Calonne et al.\ (2014): under a temperature
   gradient conductivity changes at constant density, with SSA and anisotropy
   (L517--529). Half the length of the notes.
+  \Cite{Calonne et al.\ 2011 \texttt{calonneNumericalExperimentalInvestigations2011}; Calonne et al.\ 2014 \texttt{calonneStudyTemperatureGradient2014}; Schneebeli \& Sokratov 2004 \texttt{schneebeliTomographyTemperatureGradient2004} (the notes cite it for the same behavior under a gradient).}
 \item \New{The power law and where it stops.} \Miss $p = -0.80$ for
   $\varphi \le 0.375$; the level from porosity; above 0.375 the exponent
   weakens and the packings are anisotropic. No claim that packings of
   different porosity converge.
+  \Cite{Calonne et al.\ 2011, 2019 \texttt{calonneNumericalExperimentalInvestigations2011}, \texttt{calonneThermalConductivitySnow2019} for conductivity against density, as the contrast.}
 \item \New{Why packings differ.} \Miss Packings of one porosity differ in
   how well the ice is connected, and the exponent follows that (correlation
   $-0.77$ with conduction efficiency), not coordination number or
@@ -669,6 +689,7 @@ about the literature.
   SSA is one curve; (iii)~SSA falls linearly in log time. \Note SSA is
   measured by near-infrared reflectance, gas adsorption and tomography
   (L562--568; Gallet, Matzl, Proksch).
+  \Cite{Gallet et al.\ 2009 \texttt{galletMeasurementSpecificSurface2009}; Matzl \& Schneebeli 2006 \texttt{matzlMeasuringSpecificSurface2006}; Proksch et al.\ 2015 \texttt{prokschDensitySpecificSurface2015}; for isothermal SSA decay in the laboratory, Legagneux \& Domin\'e 2005, Taillandier et al.\ 2007, Kaempfer \& Schneebeli 2007 \texttt{kaempferObservationIsothermalMetamorphism2007}, L\"owe et al.\ 2011 \texttt{loweInterfacialStructuralRelaxations2011} (forms only).}
 \end{enumerate}
 
 \subsection{Implications for Plume Deposits on Enceladus}
@@ -679,6 +700,7 @@ about the literature.
   Stripe temperatures up to about 180~K (Spencer); grain size increasing
   toward the fractures in VIMS data (Jaumann; L580--602); Molaro et al.\ on
   the dependence of sintering on temperature and grain size.
+  \Cite{Spencer et al.\ 2009 \texttt{spencerEnceladusActiveCryovolcanic2009}; Spencer \& Nimmo 2013 \texttt{spencerEnceladusActiveIce2013}; Jaumann et al.\ 2008 \texttt{jaumannDistributionIcyParticles2008}; Molaro et al.\ 2019; Choukroun et al.\ 2020.}
 \item \New{Why it matters, and the gap.} \Miss \Note A low-conductivity
   surface layer changes subsurface temperatures and radar attenuation
   (Byrne; L603--612); Choukroun et al.\ on strength gain and fallout rates
@@ -686,6 +708,7 @@ about the literature.
   runs stop at $-40\,^{\circ}$C and use 50~$\mu$m grains in air; the moon is
   far colder, the grains are micron-sized, and there is no air. No
   timescales are given.
+  \Cite{Byrne et al.\ 2024 \texttt{byrneRadarAttenuationSubsurface2024} (a preprint DOI in the \texttt{.bib}; check whether it is published); Choukroun et al.\ 2020; possibly Ferrari et al.\ 2021 \texttt{ferrariThermalEmissionSaturns2021} on thermal emission of Saturn's icy moons (in your \texttt{.bib}; check relevance).}
 \end{enumerate}
 
 \subsection{Limitations}
@@ -697,6 +720,7 @@ about the literature.
   transport to apparent conductivity under a gradient (L569--575; check the
   figure quoted); Calonne et al.\ (2019) on temperature-dependent
   conductivities (L575--579).
+  \Cite{Fourteau et al.\ 2021 --- your \texttt{.bib} has two, \texttt{fourteauImpactWaterVapor2021} and \texttt{fourteauMacroscopicWaterVapor2021}; the point about apparent conductivity is the first. Calonne et al.\ 2019 \texttt{calonneThermalConductivitySnow2019}.}
 \item \New{Numerics and geometry.} \Miss Two dimensions, so relative
   changes are claimed and absolute conductivities are not; one grain size
   distribution; the first day depends on the interface parameter; pore
@@ -704,6 +728,7 @@ about the literature.
   which raises $k_{\mathrm{eff}}$ most at low porosity; the power law is
   established for $\varphi \le 0.375$; rates scale with $1/\alpha_c$, whose
   value is uncertain over two decades.
+  \Cite{none needed beyond those above.}
 \end{enumerate}
 
 \textbf{In the notes and not to be carried over:} $\beta_{\mathrm{sub}}(T)$
@@ -737,6 +762,20 @@ Acknowledgments.
 \item \textbf{Tables, text.} Complete parameters, if moved; packing
   construction; the weak-form derivation, if trimmed; run table.
 \end{itemize}
+
+\section*{Citations: what the .bib lacks}
+Suggested above and present in the \texttt{.bib}: all of them. Mentioned in
+this plan and \emph{not} in the \texttt{.bib}:
+\begin{itemize}
+\item Auriault, Boutin \& Geindreau (2009), the book whose naming of
+  $\mathbf{t}$ the paper follows (doi:10.1002/9780470612033).
+\item Ettrich et al.\ (2014), the tensor law applied to heat conduction;
+  only if a second reference for the law is wanted.
+\item A source for packing and percolation thresholds of discs, if
+  Section~5.3 states them.
+\end{itemize}
+Two keys are still in the old style in the \texttt{.bib} itself:
+\texttt{choukroun\_strength\_2020} and \texttt{nicoli\_tensorial\_2011}.
 
 \section*{Smaller corrections throughout}
 \begin{itemize}
