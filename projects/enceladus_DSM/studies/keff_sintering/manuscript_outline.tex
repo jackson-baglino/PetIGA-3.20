@@ -75,8 +75,8 @@ campaign record and the manuscript plan.
   problem is a steady problem on a frozen microstructure and says nothing
   about the transient model. Two dimensions only, so no absolute
   $k_{\mathrm{eff}}$ is claimed.
-\item \textbf{Clock and normalization} (10-08). Curves normalized at
-  $\theta_r = 30$. The first day depends on the interface parameter, so a
+\item \textbf{Clock and normalization} (10-08, 10-12). The clock is
+  $\tau_{\mathrm{sub}}$; curves are normalized at $\theta_r = 30$. The first day depends on the interface parameter, so a
   ``rise from day 1'' is never quoted as a property of the ice.
 \item \textbf{Notation} (09-28 to 09-30). $\phi$ phase field, $\varphi$
   porosity, $\zeta$ indicator, $\chi$ curvature; subscripts ``ice'' and
@@ -342,8 +342,11 @@ and that this is an application of the model. Three sentences.
   $\theta = t/\tau_{\mathrm{sub}}$. $\varepsilon$ is the same in every
   aggregate run, so $\theta$ compares temperatures on one clock. The
   30-day runs end at $\theta = 43$ ($-40\,^{\circ}$C) to 1256
-  ($-5\,^{\circ}$C). \Open{state the clock as $\tau_{\mathrm{sub}}$ at fixed
-  $\varepsilon$, or as $\tau_R = \bar R^{2}\beta_{\mathrm{sub}}/d_0$.}
+  ($-5\,^{\circ}$C). The clock is $\tau_{\mathrm{sub}}$ (decided
+  2026-10-12). One sentence to keep it honest: $\tau_{\mathrm{sub}}$ contains
+  $\varepsilon$, so the values of $\theta$ quoted are for $\varepsilon =
+  1~\mu$m; ratios of $\tau_{\mathrm{sub}}$ between temperatures do not
+  depend on it.
 \item \New{The values used.} \Miss $\alpha_c$ is constant in temperature
   within each study: $1.020 \times 10^{-3}$ (aggregates), $0.1$ (Molaro
   pairs), $1.002 \times 10^{-3}$ (saturated pair). Why constant: a
@@ -461,9 +464,10 @@ comparisons are for. The rest repeats the Introduction.
   63~$\mu$m; Demmenie et al.\ measure 0.26--0.33 at saturation and about
   1/7 when undersaturated; the fitted exponent rises from 0.21 to 0.23 as
   the window starts later. For contrast, the same fit to the two
-  unsaturated runs of Section~3.1 gives 0.14 and 0.15, so the model does
-  reproduce the drop in exponent away from saturation. \Open{refit those two
-  on the final runs before quoting; the values are from 2026-10-02.}
+  unsaturated runs of Section~3.1 gives 0.135 ($-20\,^{\circ}$C) and 0.147
+  ($-5\,^{\circ}$C), close to 1/7, so the model does reproduce the drop in
+  exponent away from saturation (refitted 2026-10-12 on the final runs, after
+  the relaxation period; \texttt{studies/molaro\_2019/exponents/}).
   \Cite{Demmenie et al.\ 2025 \texttt{demmenieIceSinteringSublimation2025}.}
   \Stale L343--344 says $\alpha_c = 10^{-3}$ puts growth in ``a
   vapor-limited regime \ldots\ governed by vapor transport''. It is the
@@ -610,8 +614,9 @@ about the literature.
 \item \New{The saturated pair, and exponents.} \Miss The comparison of
   exponents decided on 2026-10-02, as one small table or one sentence:
   this model at saturation 0.21--0.23; this model at Molaro's humidity
-  0.14--0.15; Demmenie et al.\ 0.26--0.33 at saturation and about 1/7
-  undersaturated; Molaro's data about 0.20; theory 1/3. What it supports:
+  0.135 and 0.147; Demmenie et al.\ 0.26--0.33 at saturation and about 1/7
+  undersaturated; Molaro's $-20\,^{\circ}$C data $0.23 \pm 0.03$ (their
+  $-5\,^{\circ}$C series has three points and no exponent); theory 1/3. What it supports:
   the exponent is set by the saturation state, as Demmenie et al.\ argue,
   and the model follows that trend while sitting below the measurements.
   State that the run is attachment-limited and that the grain size held.

@@ -4,6 +4,8 @@
 - The draft's Discussion and Conclusion are treated as notes written for the earlier model: only literature points are drawn from them, each marked to verify; none of their statements about results is carried over.
 - Decisions and findings from the sessions of 2026-09-08 to 2026-10-12 are folded in: the 75 % ceiling of the vapor route against Molaro, the exponent comparison, the 2D percolation test, the tensor-law credit and verification, the eps-dependence of the first day, notation and citation rules.
 - Suggested citations added under each paragraph, with the key in the user's .bib; most come from the old Discussion. Matched by title only, so each is marked to check against the paper.
+- `studies/molaro_2019/exponents/`: the two final Molaro runs refitted like the saturated run (after 11 tau_sub): a = 0.135 at -20 C and 0.147 at -5 C; Molaro's -20 C data 0.23 +- 0.03; their -5 C series (3 points) has no exponent. Confirmed from the staged options that both runs use the nominal vapor diffusivity.
+- The clock is tau_sub (user decision); tau_R is dropped from the outline.
 - One correction to the saturated-pair paragraph flagged: alpha_c = 1e-3 makes growth attachment-limited, not vapor-transport-limited.
 
 ---

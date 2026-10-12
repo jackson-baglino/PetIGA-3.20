@@ -1,0 +1,24 @@
+-20 C:  tau_sub = 1.340 s; relaxation period = 11 tau_sub = 14.7 s
+  samples: 122 in all, 120 after relaxation, 77 in the experiment's window
+  model reaches Molaro's first width (32.81 um) at t* = 2.2 min; run ends at 120 min
+  model, whole run after relaxation (1.08-120 min):  a = 0.135 +- 0.001  (t0 = 5.1 min, rms 0.25 %)
+  model, experiment's window (t* to t* + 78 min):      a = 0.135 +- 0.001  (t0 = 5.6 min, rms 0.11 %)
+  Molaro's measurements (9 points, 78 min):          a = 0.229 +- 0.030  (t0 = 3.4 min, rms 3.33 %)
+  model exponent against the start of the fit window (window runs to the end of the run):
+    from    1.1 min (w = 31.7 um):  a = 0.135
+    from   10.1 min (w = 36.6 um):  a = 0.144
+    from   24.3 min (w = 39.8 um):  a = 0.147
+    from   48.3 min (w = 43.1 um):  a = 0.147
+
+-5 C:  tau_sub = 0.332 s; relaxation period = 11 tau_sub = 3.7 s
+  samples: 70 in all, 68 after relaxation, 48 in the experiment's window
+  model reaches Molaro's first width (32.51 um) at t* = 1.0 min; run ends at 68 min
+  model, whole run after relaxation (1.04-68 min):  a = 0.147 +- 0.001  (t0 = 2.1 min, rms 0.17 %)
+  model, experiment's window (t* to t* + 48 min):      a = 0.147 +- 0.001  (t0 = 2.1 min, rms 0.20 %)
+  Molaro's measurements (3 points, 48 min):          a = 0.099 +- inf  (t0 = 2.3 min, rms 0.00 %)
+  model exponent against the start of the fit window (window runs to the end of the run):
+    from    1.0 min (w = 34.2 um):  a = 0.147
+    from    5.1 min (w = 39.2 um):  a = 0.151
+    from   11.2 min (w = 42.7 um):  a = 0.147
+    from   22.1 min (w = 46.6 um):  a = 0.135
+
