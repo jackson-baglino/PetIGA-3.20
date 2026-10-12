@@ -729,7 +729,17 @@ about the literature.
   \Msg{The uncertain coefficient changes how fast things happen in the model, not the relation between conductivity and microstructure, so the main result does not rest on it.}
   The rates in this
   paper scale with $1/\alpha_c$; the relation between conductivity and SSA
-  does not depend on it. \Note Bouvet et al.\ fit $\alpha_c =
+  does not depend on it. Show the dependence (requested 2026-10-12):
+  \[
+  \tau_{\mathrm{sub}} = \frac{\varepsilon^{2}}{d_0}\left(\beta_{\mathrm{sub}} + \Delta\beta\right),
+  \qquad
+  \beta_{\mathrm{sub}} = \frac{1}{\alpha_c}\,\frac{\rho_{\mathrm{ice}}}{\rho_{vs}^{I}(T)}\sqrt{\frac{2\pi m}{k_B T}} ,
+  \]
+  with $\Delta\beta$ independent of $\alpha_c$. So $\tau_{\mathrm{sub}} \propto
+  1/\alpha_c$ as long as $\beta_{\mathrm{sub}} \gg \Delta\beta$, which holds
+  in the aggregates ($\Delta\beta/\beta_{\mathrm{sub}} = 0.02$): a tenfold
+  larger $\alpha_c$ would make every aggregate curve run ten times faster
+  and leave it unchanged against $\theta$ or SSA. \Note Bouvet et al.\ fit $\alpha_c =
   (9.8 \pm 0.7) \times 10^{-4}$ to tomography at $-2\,^{\circ}$C
   (L482--490); Braun et al.\ find $10^{-3}$--$10^{-1}$, changing as surfaces
   facet, and call it an effective, surface-averaged value (L490--503);
