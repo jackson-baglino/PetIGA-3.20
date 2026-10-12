@@ -14,7 +14,7 @@ pore.
 
 - **The ice wraps in both directions in every packing at every porosity**, from
   10 d on, and at 30 d at -5 C. At t = 0 the one exception is porosity 0.475,
-  seed 2005, which does not wrap in x until the first necks form (it does by
+  seed 2002, which does not wrap in x until the first necks form (it does by
   10 d). 92-99 % of the ice belongs to the wrapping cluster.
 - **The pore never wraps** in both directions, at any porosity or time (one
   packing in one direction at t = 0). The pore space is a set of closed
