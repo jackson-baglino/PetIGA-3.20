@@ -33,6 +33,19 @@ snapshot's time. Option 2 follows the manuscript's state law (Figure 7a):
 k_eff and SSA relative to their values at sintering age theta = t/tau_sub =
 30, one exponent fitted through the origin in log-log per packing, averaged.
 
+Further options, each in its own sub-folder of --out (see FOLDER):
+
+  option3_heat_flow        the local heat flux for a gradient along x at four
+                           instants of the -20 C run, each labelled with its
+                           conductivity; with and without the ice row
+  option4_sintering_clock  five temperatures against time, against sintering
+                           age t/tau, and the factor between their clocks
+                           (simulated temperatures only -- no extrapolation)
+  option5_porosity         one packing per porosity after 30 days, k_eff(t)
+                           by porosity (seed mean, band = seed range), and
+                           k_eff at 30 days against porosity
+  option6_validation       two-grain neck growth against Molaro et al. (2019)
+
 Colour bars: ice phase field (cmocean ice) and vapour supersaturation
 (cmocean balance, pale = saturated, symmetric about zero, shared by every
 panel shown).
@@ -47,6 +60,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.patches, matplotlib.ticker, matplotlib.colors  # noqa: E401
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import AsinhNorm
 import cmocean
@@ -66,6 +80,16 @@ PAT = re.compile(r"phi([\d.]+)_Rave50um_LR40_seed(\d+)_L2mm_eps1000nm_perxy_T(-?
 INK, MUTED, GREY = "#1a1a1a", "#5c5c5c", "#a3a3a3"
 C_WARM, C_COLD = "#E8532B", "#1E88E5"        # bold: the warm and the cold run
 FS, FS_S, FS_T = 15, 13, 12                  # labels | ticks, legends | small (poster captions are 16 pt Arial)
+# Output sub-folder of each figure kind: one folder per option.
+FOLDER = {
+    "option1_stacked": "option1_ssa_collapse", "option1_compact": "option1_ssa_collapse",
+    "grid_only": "option1_ssa_collapse", "curves_ssa": "option1_ssa_collapse",
+    "option2_compact": "option2_state_law", "curves_law": "option2_state_law",
+    "heat_flow_row": "option3_heat_flow", "heat_flow_with_microstructure": "option3_heat_flow",
+    "sintering_clock": "option4_sintering_clock",
+    "porosity": "option5_porosity",
+    "validation_molaro": "option6_validation",
+}
 POSTER_RC = {
     "font.family": "sans-serif", "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
     "mathtext.fontset": "custom", "mathtext.rm": "Arial", "mathtext.it": "Arial:italic",
@@ -301,6 +325,248 @@ def panel_law(ax, R, runs_hl, hot, cold, phi_sel, short=False):
 
 
 # ---------------------------------------------------------------------------
+# further options: heat flow, sintering clock, porosity, validation
+# ---------------------------------------------------------------------------
+K_ICE, K_AIR = 2.29, 0.02
+C_RUN = C_COLD                         # single-run figures: the -20 C master run
+
+
+def heat_flux(run_dir, step):
+    """(|q| per unit mean gradient [W/m/K], phi, x_um, y_um) for a unit
+    macroscopic gradient along x, from the corrector the solver wrote
+    (-keff_write_corrector). Same tensor law as the solver, as in
+    fig_methods_homogenization.py."""
+    from igakit.io import PetIGA
+    files, reader = make_reader(run_dir, "sol")
+    fn = [f for f in files if snap_step(f) == step][0]
+    fl, X, Y = reader(fn, want=("IcePhase",))
+    phi = fl["IcePhase"]; x = X[0] * 1e6; y = Y[:, 0] * 1e6
+    cdir = run_dir / "corrector"
+    nrb = PetIGA().read(str(cdir / "igakeff.dat"))
+    cor = np.squeeze(PetIGA().read_vec(str(cdir / f"t_vec_{step:05d}_0.dat"), nrb)).T
+    gy, gx = np.gradient(cor, y * 1e-6, x * 1e-6)
+    pc = np.clip(phi, 0.0, 1.0)
+    ka = pc * K_ICE + (1 - pc) * K_AIR
+    kh = 1.0 / (pc / K_ICE + (1 - pc) / K_AIR)
+    py_, px_ = np.gradient(pc, y * 1e-6, x * 1e-6)
+    g2 = px_ ** 2 + py_ ** 2
+    Ex, Ey = 1.0 + gx, gy
+    with np.errstate(invalid="ignore", divide="ignore"):
+        proj = np.where(g2 > 0, (px_ * Ex + py_ * Ey) / g2, 0.0)
+    qx = ka * Ex + (kh - ka) * proj * px_
+    qy = ka * Ey + (kh - ka) * proj * py_
+    return np.hypot(qx, qy), phi, x, y
+
+
+def build_heat_flow(R, a, with_micro):
+    """Where the heat goes: the local flux for a temperature gradient along x,
+    at four instants of the master run (-20 C). Each panel carries the
+    conductivity of that instant (k_xx of the same solve)."""
+    run = R[(a.phi, -20)][a.seed]
+    rd = run["dir"]
+    rep_ = np.genfromtxt(rd / "corrector" / "k_eff_replay.csv", delimiter=",", names=True)
+    steps = [int(v) for v in np.atleast_1d(rep_["step"])]
+    st = a.stride
+    Q = [heat_flux(rd, s_) for s_ in steps]
+    vmax = float(np.percentile(np.concatenate([q[0][::8, ::8].ravel() for q in Q]), 99.9))
+    norm = matplotlib.colors.LogNorm(vmin=K_AIR, vmax=vmax)
+    n = len(steps); W = a.width_in; gap, cbw = 0.09, 1.15
+    s = (W - 0.10 - 0.34 - cbw - (n - 1) * gap) / n
+    top, bot = 0.42, 0.50
+    H = top + (2 * s + gap if with_micro else s) + bot
+    fig = plt.figure(figsize=(W, H)); F = lambda x, y, w, h: (x / W, y / H, w / W, h / H)
+    y_flux = bot
+    for i, ((q, phi, x, y), step) in enumerate(zip(Q, steps)):
+        t_d = float(rep_["time"][i]) / DAY
+        ext = (x.min(), x.max(), y.min(), y.max())
+        x0 = 0.10 + 0.34 + i * (s + gap)
+        if with_micro:
+            axm = fig.add_axes(F(x0, y_flux + s + gap, s, s))
+            axm.imshow(phi[::st, ::st], origin="lower", extent=ext, cmap=cmocean.cm.ice,
+                       vmin=0, vmax=1, interpolation="antialiased")
+        ax = fig.add_axes(F(x0, y_flux, s, s))
+        im = ax.imshow(q[::st, ::st], origin="lower", extent=ext, cmap=cmocean.cm.thermal,
+                       norm=norm, interpolation="antialiased")
+        for ax_ in ([axm, ax] if with_micro else [ax]):
+            ax_.set_xticks([]); ax_.set_yticks([])
+            for sp in ax_.spines.values():
+                sp.set_linewidth(3.2); sp.set_color(C_RUN)
+        (axm if with_micro else ax).set_title(
+            f"{i + 1}   " + ("start" if t_d < 0.01 else f"{t_d:.0f} days"), fontsize=FS, color=INK, pad=6)
+        ax.text(0.5, 0.035, rf"$k_\mathrm{{eff}}$ = {float(rep_['k_00'][i]):.2f} W m$^{{-1}}$ K$^{{-1}}$",
+                transform=ax.transAxes, ha="center", va="bottom", fontsize=FS_T, color=INK,
+                bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.88))
+        if i == 0:
+            x_a, y_a = x.min() + 0.07 * np.ptp(x), y.max() - 0.09 * np.ptp(y)
+            for lw, c in ((6.0, "white"), (3.2, INK)):
+                ax.plot([x_a, x_a + 500], [y_a, y_a], color=c, lw=lw, solid_capstyle="butt")
+            ax.text(x_a + 250, y_a - 0.035 * np.ptp(y), "0.5 mm", ha="center", va="top",
+                    fontsize=FS_T, color=INK,
+                    bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85))
+    if with_micro:
+        fig.text(*F(0.10 + 0.11, y_flux + 1.5 * s + gap, 0, 0)[:2], "ice", rotation=90, ha="center",
+                 va="center", fontsize=FS, fontweight="bold", color=C_RUN)
+    fig.text(*F(0.10 + 0.11, y_flux + 0.5 * s, 0, 0)[:2], "heat flow", rotation=90, ha="center",
+             va="center", fontsize=FS, fontweight="bold", color=C_RUN)
+    cax = fig.add_axes(F(0.10 + 0.34 + n * s + (n - 1) * gap + 0.22, y_flux + 0.03 * s, 0.16, 0.94 * s))
+    cb = fig.colorbar(im, cax=cax); cb.ax.tick_params(labelsize=FS_S, width=0.8, length=3)
+    cb.set_label(r"heat flux / gradient  [W m$^{-1}$ K$^{-1}$]", fontsize=FS_T)
+    cb.outline.set_linewidth(0.8)
+    # the imposed gradient
+    xa = 0.10 + 0.34
+    fig.patches.append(matplotlib.patches.FancyArrowPatch(
+        (xa / W, 0.20 / H), ((xa + 1.5) / W, 0.20 / H), transform=fig.transFigure,
+        arrowstyle="-|>", mutation_scale=16, lw=1.6, color=MUTED))
+    fig.text((xa + 1.62) / W, 0.20 / H,
+             f"imposed temperature gradient   ·   −20 °C   ·   porosity {a.phi:g}   ·   2 mm × 2 mm periodic cell",
+             fontsize=FS_T, color=MUTED, ha="left", va="center")
+    return fig, (W, H)
+
+
+def build_clock(R, a):
+    """Temperature sets the clock: the same curves against time, against
+    sintering age t/tau, and the factor between the clocks."""
+    runs = {T: R[(a.phi, T)][a.seed] for (p, T) in R if p == a.phi and a.seed in R[(p, T)]}
+    Ts = sorted(runs)
+    cm, (c0, c1) = CMAP["T"]
+    col = {T: cm(c0 + (c1 - c0) * i / max(1, len(Ts) - 1)) for i, T in enumerate(Ts)}
+    W, ph, bot, top = a.width_in, 2.75, 0.70, 0.22
+    H = top + ph + bot
+    fig = plt.figure(figsize=(W, H)); F = lambda x, y, w, h: (x / W, y / H, w / W, h / H)
+    l, mid, r_ = 0.95, 1.05, 0.25
+    pw = (W - l - 2 * mid - r_ - 0.75) / 3
+    ax1 = fig.add_axes(F(l, bot, pw, ph))
+    ax2 = fig.add_axes(F(l + pw + 0.75 + mid, bot, pw, ph))
+    ax3 = fig.add_axes(F(l + 2 * pw + 0.75 + 2 * mid, bot, pw, ph))
+    for T in Ts:
+        r = runs[T]
+        ax1.plot(r["td"], r["kn"], color=col[T], lw=2.6)
+        ax1.annotate(tlabel(T), (r["td"][-1], r["kn"][-1]), xytext=(6, 0), textcoords="offset points",
+                     color=col[T], fontsize=FS_T, fontweight="bold", va="center", annotation_clip=False)
+        w = r["th"] >= 1.0
+        ax2.plot(r["th"][w], r["kn"][w], color=col[T], lw=2.6)
+    ax1.set_xlim(0, 30.3); ax1.set_xticks([0, 10, 20, 30])
+    ax1.set_xlabel("time  [days]", fontsize=FS); ax1.set_ylabel(K_LABEL[False], fontsize=FS)
+    ax2.set_xscale("log"); ax2.set_xlabel(r"sintering age  $t\,/\,\tau(T)$", fontsize=FS)
+    ax2.set_ylabel(K_LABEL[True], fontsize=FS)
+    ref = max(Ts)                                  # the warmest run sets the unit
+    fac = [runs[T]["tau"] / runs[ref]["tau"] for T in Ts]
+    ax3.plot(Ts, fac, color=GREY, lw=1.6, zorder=2)
+    for T, f in zip(Ts, fac):
+        ax3.plot([T], [f], "o", ms=11, color=col[T], mec="white", mew=1.0, zorder=3)
+        ax3.annotate(f"{f:.0f}×" if f >= 10 else f"{f:.1f}×", (T, f), xytext=(9, 4),
+                     textcoords="offset points", fontsize=FS_T, color=INK)
+    ax3.set_yscale("log"); ax3.set_xticks(Ts); ax3.set_xticklabels([tlabel(T).replace(" °C", "") for T in Ts])
+    ax3.set_xlim(min(Ts) - 4, max(Ts) + 7)
+    ax3.set_xlabel("temperature  [°C]", fontsize=FS)
+    ax3.set_ylabel(f"days to match 1 day at {tlabel(ref)}", fontsize=FS)
+    ax3.set_yticks([1, 3, 10, 30]); ax3.set_yticklabels(["1", "3", "10", "30"])
+    ax3.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    for ax in (ax1, ax2, ax3):
+        clean(ax)
+    ax3.tick_params(axis="x", labelsize=FS_T - 1)   # -10 and -5 sit close together
+    print("  clock factors: " + ", ".join(f"{tlabel(T)} {f:.2f}x" for T, f in zip(Ts, fac)))
+    return fig, (W, H)
+
+
+def build_porosity(R, a, T=-20):
+    """Porosity sets the level: one packing per porosity after 30 days, and
+    the conductivity of all five packings per porosity."""
+    phis = sorted({p for (p, T_) in R if T_ == T})
+    cm, (c0, c1) = CMAP["phi"]
+    col = {p: cm(c0 + (c1 - c0) * i / max(1, len(phis) - 1)) for i, p in enumerate(phis)}
+    n = len(phis); W = a.width_in; gap = 0.09
+    s = (W - 0.20 - (n - 1) * gap) / n
+    top, mid, ph, bot = 0.42, 0.80, 2.55, 0.70
+    H = top + s + mid + ph + bot
+    fig = plt.figure(figsize=(W, H)); F = lambda x, y, w, h: (x / W, y / H, w / W, h / H)
+    y_s = bot + ph + mid
+    for i, p in enumerate(phis):
+        seeds = sorted(R[(p, T)])
+        seed = a.seed if a.seed in seeds else seeds[0]
+        run = R[(p, T)][seed]
+        fl, X, Y, t, row = snapshots(run, (30.0,), a.stride)[0]
+        ax = fig.add_axes(F(0.10 + i * (s + gap), y_s, s, s))
+        ax.imshow(fl["IcePhase"], origin="lower", cmap=cmocean.cm.ice, vmin=0, vmax=1,
+                  extent=(X.min() * 1e3, X.max() * 1e3, Y.min() * 1e3, Y.max() * 1e3),
+                  interpolation="antialiased")
+        ax.set_xticks([]); ax.set_yticks([])
+        for sp in ax.spines.values():
+            sp.set_linewidth(3.2); sp.set_color(col[p])
+        ax.set_title(f"porosity {p:g}", fontsize=FS, color=INK, pad=6)
+        ax.text(0.5, 0.035, rf"$k_\mathrm{{eff}}$ = {run['kiso'][-1]:.2f} W m$^{{-1}}$ K$^{{-1}}$",
+                transform=ax.transAxes, ha="center", va="bottom", fontsize=FS_T, color=INK,
+                bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.88))
+        if i == 0:
+            for lw, c in ((6.0, "white"), (3.2, INK)):
+                ax.plot([0.14, 0.64], [1.83, 1.83], color=c, lw=lw, solid_capstyle="butt")
+            ax.text(0.39, 1.77, "0.5 mm", ha="center", va="top", fontsize=FS_T, color=INK,
+                    bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85))
+    fig.text(0.10 / W, (y_s - 0.24) / H,
+             f"after 30 days at {tlabel(T)}   ·   2 mm × 2 mm periodic cells   ·   ice light, air dark",
+             fontsize=FS_T, color=MUTED, ha="left", va="center")
+    l, midp, r_ = 0.95, 1.45, 0.30
+    pw = (W - l - midp - r_) / 2
+    ax1 = fig.add_axes(F(l, bot, pw, ph)); ax2 = fig.add_axes(F(l + pw + midp, bot, pw, ph))
+    for p in phis:
+        g = list(R[(p, T)].values())
+        td = np.linspace(max(r["td"][0] for r in g), min(r["td"][-1] for r in g), 300)
+        K = np.array([np.interp(td, r["td"], r["kiso"]) for r in g])
+        ax1.fill_between(td, K.min(0), K.max(0), color=col[p], alpha=0.22, lw=0)
+        ax1.plot(td, K.mean(0), color=col[p], lw=2.6)
+        ax1.annotate(f"{p:g}", (td[-1], K.mean(0)[-1]), xytext=(6, 0), textcoords="offset points",
+                     color=col[p], fontsize=FS_T, fontweight="bold", va="center", annotation_clip=False)
+        kend = [r["kiso"][-1] for r in g]
+        ax2.plot([p] * len(kend), kend, "o", ms=9, color=col[p], mec="white", mew=0.9, zorder=3)
+    means = [np.mean([r["kiso"][-1] for r in R[(p, T)].values()]) for p in phis]
+    ax2.plot(phis, means, color=GREY, lw=1.6, zorder=2)
+    ax1.set_xlim(0, 30.3); ax1.set_xticks([0, 10, 20, 30])
+    ax1.set_xlabel("time  [days]", fontsize=FS)
+    ax1.set_ylabel(r"conductivity  $k_\mathrm{eff}$  [W m$^{-1}$ K$^{-1}$]", fontsize=FS)
+    ax1.set_ylim(0, None)
+    ax2.set_xticks(phis); ax2.set_xticklabels([f"{p:g}" for p in phis])
+    ax2.set_xlabel("porosity", fontsize=FS)
+    ax2.set_ylabel(r"$k_\mathrm{eff}$ after 30 days  [W m$^{-1}$ K$^{-1}$]", fontsize=FS)
+    ax2.set_ylim(0, None)
+    for ax in (ax1, ax2):
+        clean(ax)
+    return fig, (W, H)
+
+
+def build_validation(a):
+    """The model against the laboratory: neck growth between two ice grains,
+    Molaro et al. (2019), -20 C."""
+    from plot_molaro_validation import load_series
+    from plot_mechanisms_figure import outline
+    run = a.molaro_run.resolve()
+    s = load_series("T-20", run)
+    m = s["model"]
+    W, H = a.validation_width_in, 3.7
+    fig = plt.figure(figsize=(W, H)); F = lambda x, y, w, h: (x / W, y / H, w / W, h / H)
+    ax = fig.add_axes(F(0.95, 0.70, W - 0.95 - 0.25, H - 0.70 - 0.20))
+    ax.plot(m["t"], m["w"], color=C_RUN, lw=3.2, zorder=3, label="model (vapor transport)")
+    ax.errorbar(s["td"], s["wd"], yerr=[s["em"], s["ep"]], fmt="o", ms=8, mfc="white", mec=INK,
+                mew=1.6, ecolor=INK, elinewidth=1.2, capsize=3, capthick=1.2, zorder=4,
+                label="experiment, Molaro et al. (2019)", clip_on=False)
+    ax.set_xlim(0, 82); ax.set_ylim(16, 70)       # room below the curve for the inset
+    ax.set_xlabel("time  [min]", fontsize=FS); ax.set_ylabel("neck width  [µm]", fontsize=FS)
+    ax.legend(fontsize=FS_T, frameon=False, loc="upper left", handlelength=1.8)
+    clean(ax)
+    # the grain pair, outline only, in the empty lower right
+    loops, step = outline(run, a.molaro_step)
+    allp = np.vstack(loops)
+    ins = ax.inset_axes([0.56, 0.02, 0.42, 0.30])
+    for ln in loops:
+        ins.add_patch(matplotlib.patches.Polygon(ln, closed=True, fc="#dfeef3", ec=INK, lw=1.2))
+    ins.set_xlim(allp[:, 0].min() - 8, allp[:, 0].max() + 8)
+    ins.set_ylim(allp[:, 1].min() - 8, allp[:, 1].max() + 8)
+    ins.set_aspect("equal"); ins.axis("off")
+    ins.text(0.5, 1.02, "two ice grains, −20 °C", transform=ins.transAxes, ha="center", va="bottom",
+             fontsize=FS_T, color=MUTED)
+    return fig, (W, H)
+
+
+# ---------------------------------------------------------------------------
 # figures
 # ---------------------------------------------------------------------------
 def build(kind, R, a, hot, cold):
@@ -396,23 +662,44 @@ def main():
                     help="warm,cold temperature pairs to build")
     ap.add_argument("--curves-width-in", type=float, default=8.3,
                     help="width of the curves-only pieces [in] (last year's plot slot)")
-    ap.add_argument("--kinds", nargs="+",
-                    default=["option1_stacked", "option1_compact", "option2_compact",
-                             "grid_only", "curves_ssa", "curves_law"])
+    ap.add_argument("--kinds", nargs="+", default=list(FOLDER),
+                    help="which figures to build (default: all)")
+    ap.add_argument("--molaro-run", type=Path, default=Path.home() / (
+        "SimulationResults/HPC_results/enceladus_DSM/GrainPairSintering/"
+        "batch_2026-09-08__17.20.46_molaro_T-20_round2/"
+        "molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_r14um_dom2__molaro_T-20_h0.99715_2h_a1e-1_dirichlet"),
+        help="the -20 C two-grain run, for the validation figure")
+    ap.add_argument("--molaro-step", type=int, default=236, help="outline snapshot (t* + 78 min)")
+    ap.add_argument("--validation-width-in", type=float, default=5.6)
     ap.add_argument("--dpi", type=int, default=300)
     a = ap.parse_args()
     plt.rcParams.update(POSTER_RC)
     R = load_campaign(a.root)
-    a.out.mkdir(parents=True, exist_ok=True)
-    for pair in a.pairs:
-        hot, cold = (int(v) for v in pair.split(","))
-        for kind in a.kinds:
-            fig, (Wf, Hf) = build(kind, R, a, hot, cold)
-            name = f"{kind}_T{hot}_T{cold}"
-            for e in ("png", "pdf"):
-                fig.savefig(a.out / f"{name}.{e}", dpi=a.dpi)
-            plt.close(fig)
-            print(f"  wrote {name}.png/.pdf   {Wf:.2f} x {Hf:.2f} in")
+
+    def save(fig, size, kind, name):
+        d = a.out / FOLDER[kind]
+        d.mkdir(parents=True, exist_ok=True)
+        for e in ("png", "pdf"):
+            fig.savefig(d / f"{name}.{e}", dpi=a.dpi)
+        plt.close(fig)
+        print(f"  wrote {FOLDER[kind]}/{name}.png/.pdf   {size[0]:.2f} x {size[1]:.2f} in")
+
+    single = {
+        "heat_flow_row": lambda: build_heat_flow(R, a, False),
+        "heat_flow_with_microstructure": lambda: build_heat_flow(R, a, True),
+        "sintering_clock": lambda: build_clock(R, a),
+        "porosity": lambda: build_porosity(R, a),
+        "validation_molaro": lambda: build_validation(a),
+    }
+    for kind in a.kinds:
+        if kind in single:
+            fig, size = single[kind]()
+            save(fig, size, kind, kind)
+            continue
+        for pair in a.pairs:
+            hot, cold = (int(v) for v in pair.split(","))
+            fig, size = build(kind, R, a, hot, cold)
+            save(fig, size, kind, f"{kind}_T{hot}_T{cold}")
 
 
 if __name__ == "__main__":
