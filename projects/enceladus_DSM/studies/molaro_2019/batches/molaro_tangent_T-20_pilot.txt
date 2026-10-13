@@ -1,0 +1,22 @@
+# PILOT for the Molaro -20 C pair from tangent contact: the first 10 simulated
+# minutes only, to see whether a void is trapped at the neck before paying for
+# the full run. ONE job.
+#
+#   ./scripts/HPC/submit_batch.sh --tag molaro_tangent_pilot \
+#       --tests-file studies/molaro_2019/batches/molaro_tangent_T-20_pilot.txt \
+#       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
+#
+# WHY 10 MINUTES. In the August tangent runs the void opened at a neck radius
+# of about 5 um, within the first three minutes. The one-equation neck model
+# puts this neck at 11 um radius (the resolution floor) after about 5 min and
+# at 16.4 um (Molaro's first width) after about 17 min. Ten minutes covers the
+# whole unresolved stage.
+#
+# Same geometry and experiment file as molaro_tangent_T-20.txt; -t_final and
+# -n_out are overridden (a snapshot every 30 s). About 225 steps at
+# dtmax = 2 tau_sub: roughly 1.5 h on 192 ranks, $3-4.
+#
+# WHAT TO LOOK FOR: phi along the axis at the neck in each snapshot. A pocket
+# of phi < 0.9 enclosed by ice is the artifact; a neck that is solid ice from
+# the axis outward is clean.
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_tangent_dom2:molaro_T-20_h0.99715_2h_a1e-1_dirichlet_dt2tau:--label pilot10min --time 0-06:00:00 -t_final 600 -n_out 21
