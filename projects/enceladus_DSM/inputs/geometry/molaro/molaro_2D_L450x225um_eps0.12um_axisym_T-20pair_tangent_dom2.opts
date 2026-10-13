@@ -1,0 +1,56 @@
+# =============================================================================
+# Molaro et al. (2019) T = -20 C grain pair -- TANGENT start, dom2, at the
+# eps of the manuscript run. Pair with the SAME experiment file as that run,
+# experiment/molaro/molaro_T-20_h0.99715_2h_a1e-1_dirichlet.opts
+# (batch: studies/molaro_2019/batches/molaro_tangent_T-20.txt).
+#
+# WHY. The manuscript run (..._T-20pair_r14um_dom2) starts from two
+# overlapping spheres with a neck of radius 14 um: a sharp notch, and centres
+# 2.3 um closer than touching grains. A neck grown by vapor transport has
+# neither. The comparison with Molaro's data starts 2.2 min after that start
+# (about 100 tau_sub), inside the period in which the saturated pre-necked run
+# grew faster than the Gibbs-Thomson law. This run lets the neck form by
+# itself, so that at Molaro's first width (32.81 um) its shape is the model's
+# own. Everything else is IDENTICAL: grains, eps, mesh, domain, walls, and
+# (through the shared experiment file) humidity, alpha_c and time stepping.
+#
+# KNOWN RISK -- READ BEFORE TRUSTING THE RESULT. Tangent starts at
+# alpha_c = 0.1 were abandoned on 2026-08-19 (see the header of
+# ..._T-20pair_r14um_dom2.opts): at eps = 2.59e-7 a void opened at a neck
+# radius of about 5 um, was sealed over by ice, and persisted. The neck must
+# cross r = 0 -> 11 um, all of it below this mesh's resolution floor
+# sqrt(12 eps R) = 11.08 um. eps is 2.2x smaller here, which may or may not
+# be enough. CHECK THE FIRST SNAPSHOTS for a trapped pocket at the neck
+# before using the neck curve. Minute-by-minute snapshots are written.
+#
+# TIMING. The one-equation neck model puts the neck at 32.81 um about 17 min
+# after contact; Molaro's series then runs 78 min: 95 min of the 120 simulated.
+#
+# GEOMETRY. Centres 173.5 um apart = R0 + R1, exactly tangent (same centres
+# as ..._eps0.26um_axisym_T-20pair_tangent_dom2.opts).
+#
+# Measure with: bash postprocess/run_batch_measure.sh <run_dir>
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1                       # zero neck at tangency
+-ic_type multi_grains
+-dim 2
+-Lx 4.50000e-04
+-Ly 2.25000e-04
+-Lz 0
+
+-ice_grain_cx 1.24000e-04,2.97500e-04   # d = 1.735e-4 = R0+R1, EXACTLY TANGENT
+-ice_grain_cy 0.0,0.0                   # grains on the axisymmetric axis
+-ice_grain_R  7.25e-5,1.01e-4
+-ice_grain_ax 7.25e-5,1.01e-4
+-ice_grain_ay 7.25e-5,1.01e-4
+
+-Nx 5394                                # h = eps/sqrt(2) = 8.3439e-08
+-Ny 2697                                # (14.55M elements, 43.7M DoF)
+-Nz 1
+-eps 1.1800e-07
+-eps_valid_temp -20
+
+-delt_t 1.0e-4
+-periodic 0
