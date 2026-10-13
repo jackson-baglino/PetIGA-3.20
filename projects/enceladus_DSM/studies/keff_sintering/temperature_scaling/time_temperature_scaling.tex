@@ -36,7 +36,7 @@ T^{1.81}$, $d_0$ and $\beta$.
 \chi = \frac{\chi'}{\Rbar},\qquad
 \frac{\rho_v - \rvs}{\rvs} = \frac{d_0}{\Rbar}\,u,\qquad
 v_n = \frac{d_0}{\Rbar\,\beta}\,v',\qquad
-t = \tau\,t',\quad \tau \equiv \frac{\Rbar^{2}\beta}{d_0} .
+t = \tau_{\Rbar}\,t',\quad \tau_{\Rbar} \equiv \frac{\Rbar^{2}\beta}{d_0} .
 \label{eq:scales}
 \end{equation}
 Supersaturation is measured in units of the equilibrium value for a grain of
@@ -48,8 +48,8 @@ to the capillary term, and time in units of $\Rbar$ divided by that velocity.
 $\partial\rho_v/\partial n = \rvs\,(d_0/\Rbar^{2})\,\partial u/\partial n'$,
 so $v' = \left[D_v\,\beta\,\rvs/(\rho_\ice\Rbar)\right]\partial u/\partial n'$.
 In Eq.~\eqref{eq:diff} both sides carry $\rvs d_0/\Rbar$, leaving
-$(\Rbar^{2}/D_v\tau)\,\partial u/\partial t' = \nabla'^{2}u$ with
-$\Rbar^{2}/(D_v\tau) = d_0/(D_v\beta) \sim 10^{-11}$. The result is
+$(\Rbar^{2}/D_v\tau_{\Rbar})\,\partial u/\partial t' = \nabla'^{2}u$ with
+$\Rbar^{2}/(D_v\tau_{\Rbar}) = d_0/(D_v\beta) \sim 10^{-11}$. The result is
 \begin{equation}
 \boxed{\;\nabla'^{2}u = 0 \ \text{ in the pore;}\qquad
 u = \chi' + v',\quad v' = \Lambda\,\pd{u}{n'} \ \text{ on } \Gamma'\;}
@@ -65,18 +65,18 @@ parameter, $\Lambda$, the ratio of attachment to diffusive resistance over a
 distance $\Rbar$.
 
 \textbf{Scaling relation.} For a given initial geometry, the surface evolves
-as a function of $t/\tau$ and $\Lambda$ only. Hence any quantity $Q$ fixed
+as a function of $t/\tau_{\Rbar}$ and $\Lambda$ only. Hence any quantity $Q$ fixed
 by the geometry (specific surface area, neck width,
 $k_{\mathrm{eff}}/k_\ice$) satisfies
 \begin{equation}
-\boxed{\;Q(t;\,T) = \widehat Q\!\left(\frac{t}{\tau(T)};\ \Lambda(T)\right),\qquad
-\tau(T) = \frac{(1+\delta)\,\Rbar^{2}\rho_\ice^{2}}{\alpha_c\,\gamma}\;\frac{1}{\rvs(T)}\sqrt{\frac{2\pi k_B T}{m}}\;}
+\boxed{\;Q(t;\,T) = \widehat Q\!\left(\frac{t}{\tau_{\Rbar}(T)};\ \Lambda(T)\right),\qquad
+\tau_{\Rbar}(T) = \frac{(1+\delta)\,\Rbar^{2}\rho_\ice^{2}}{\alpha_c\,\gamma}\;\frac{1}{\rvs(T)}\sqrt{\frac{2\pi k_B T}{m}}\;}
 \label{eq:result}
 \end{equation}
-where $\tau$ follows from Eqs.~\eqref{eq:scales} and~\eqref{eq:coef}. Between
+where $\tau_{\Rbar}$ follows from Eqs.~\eqref{eq:scales} and~\eqref{eq:coef}. Between
 two temperatures the time scales are in the ratio
 \begin{equation}
-a_T \equiv \frac{\tau(T)}{\tau(T_{\mathrm{ref}})} = \sqrt{\frac{T}{T_{\mathrm{ref}}}}\;\frac{\rvs(T_{\mathrm{ref}})}{\rvs(T)} ,
+a_T \equiv \frac{\tau_{\Rbar}(T)}{\tau_{\Rbar}(T_{\mathrm{ref}})} = \sqrt{\frac{T}{T_{\mathrm{ref}}}}\;\frac{\rvs(T_{\mathrm{ref}})}{\rvs(T)} ,
 \label{eq:aT}
 \end{equation}
 independent of $\Rbar$, $\alpha_c$ and $\gamma$. With $\rvs \propto
@@ -86,7 +86,7 @@ L_{\mathrm{sub}}M_w - \tfrac12 R_gT \approx 50$~kJ\,mol$^{-1}$.
 \begin{center}\begin{tabular}{lrrrrr}\toprule
  & $-40\,^{\circ}$C & $-30\,^{\circ}$C & $-20\,^{\circ}$C & $-10\,^{\circ}$C & $-5\,^{\circ}$C\\\midrule
 $\rvs$ [$10^{-4}$ kg\,m$^{-3}$] & 1.055 & 3.123 & 8.487 & 21.39 & 33.11\\
-$\tau$ [d] & 1747 & 603 & 226 & 91.5 & 59.7\\
+$\tau_{\Rbar}$ [d] & 1747 & 603 & 226 & 91.5 & 59.7\\
 $a_T$ ($T_{\mathrm{ref}} = -20\,^{\circ}$C) & 7.72 & 2.66 & 1 & 0.404 & 0.264\\
 $L^{*}$ [$\mu$m] & 125 & 132 & 139 & 146 & 150\\
 $\Lambda$ & 2.50 & 2.64 & 2.78 & 2.93 & 3.00\\\bottomrule
@@ -94,7 +94,7 @@ $\Lambda$ & 2.50 & 2.64 & 2.78 & 2.93 & 3.00\\\bottomrule
 {\small $\Rbar = 50~\mu$m, $\alpha_c = 1.020\times10^{-3}$, $\varepsilon = 1~\mu$m.}
 \end{center}
 
-From $-40$ to $-5\,^{\circ}$C, $\tau$ changes by a factor of 29 while
+From $-40$ to $-5\,^{\circ}$C, $\tau_{\Rbar}$ changes by a factor of 29 while
 $\Lambda \propto D_v/\sqrt T \propto T^{1.31}$ changes by 20\%. Neglecting
 that weak dependence,
 \begin{equation}
@@ -105,10 +105,14 @@ between two such quantities gives a relation, such as $k_{\mathrm{eff}}$
 against SSA, that contains no time scale and depends on temperature only
 through $\Lambda$.
 
-\textbf{Relation to $\tau_{\mathrm{sub}}$.} $\tau_{\mathrm{sub}} =
-\varepsilon^{2}\beta/d_0 = (\varepsilon/\Rbar)^{2}\tau$. With
+\textbf{Two time scales.} Both have the form $\ell^{2}\beta/d_0$, the time for
+a surface of curvature $1/\ell$ to move a distance $\ell$. $\tau_{\Rbar}$
+($\ell = \Rbar$) is the grain-scale sintering time; $\tau_{\mathrm{sub}}$
+($\ell = \varepsilon$) is the relaxation time of the diffuse interface, the
+parameter the model is written with. $\tau_{\mathrm{sub}} =
+\varepsilon^{2}\beta/d_0 = (\varepsilon/\Rbar)^{2}\tau_{\Rbar}$. With
 $\varepsilon/\Rbar = 1/50$ in every run, $\theta = t/\tau_{\mathrm{sub}} =
-2500\,t/\tau$ and $\tau_{\mathrm{sub}}(T)/\tau_{\mathrm{sub}}(T_{\mathrm{ref}})
+2500\,t/\tau_{\Rbar}$ and $\tau_{\mathrm{sub}}(T)/\tau_{\mathrm{sub}}(T_{\mathrm{ref}})
 = a_T$.
 
 \textbf{Neglected, with sizes over this range.} Vapor storage,

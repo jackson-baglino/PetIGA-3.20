@@ -54,14 +54,14 @@ $T_m$. Choose
 \begin{equation}
 \begin{gathered}
 \mathbf x = R\,\mathbf x',\qquad
-t = \tau\,t',\quad \tau \equiv \frac{R^{2}\beta}{d_0},\\
+t = \tau_{R}\,t',\quad \tau_{R} \equiv \frac{R^{2}\beta}{d_0},\\
 \rho_v = \rvs(T_m)\Big(1 + \frac{d_0}{R}\,u\Big),\qquad
 T = T_m + \Theta\,\vartheta,\quad \Theta \equiv \frac{\rho_\ice L_{\mathrm{sub}}\,d_0}{k_\ice\,\beta} .
 \end{gathered}
 \label{eq:scales}
 \end{equation}
 $d_0/R$ is the equilibrium supersaturation of a surface of radius $R$;
-$\tau$ is the time for such a surface to move a distance $R$ at the velocity
+$\tau_{R}$ is the time for such a surface to move a distance $R$ at the velocity
 $V = d_0/(R\beta)$ the Gibbs--Thomson law gives it; $\Theta$ is the
 temperature rise that conducts away the latent heat released at that
 velocity ($\Theta = \rho_\ice L_{\mathrm{sub}} V R/k_\ice$).
@@ -70,7 +70,7 @@ velocity ($\Theta = \rho_\ice L_{\mathrm{sub}} V R/k_\ice$).
 = \mathrm d\ln\rvs/\mathrm dT$. Then $(\rho_v - \rvs)/\rho_\ice =
 (\rvs/\rho_\ice)(d_0/R)\,(u - G_T\vartheta)$ with $G_T \equiv s\Theta R/d_0$,
 and $\lambda_{\mathrm{sub}}(\rvs/\rho_\ice)(d_0/R) = a_1\varepsilon/R$. With
-$\tau_{\mathrm{sub}}/\tau = (\varepsilon/R)^{2}$ and $\eh \equiv
+$\tau_{\mathrm{sub}}/\tau_{R} = (\varepsilon/R)^{2}$ and $\eh \equiv
 \varepsilon/R$, Eq.~\eqref{eq:pf} becomes
 \begin{equation}
 \eh^{2}\,\pd{\phi}{t'} = \eh^{2}\nabla'^{2}\phi - \phi(1-\phi)(1-2\phi)
@@ -85,10 +85,10 @@ and dividing by $D_v\rvs d_0/R^{3}$:
 \end{equation}
 \[
 \Lambda \equiv \frac{L^{*}}{R},\quad L^{*} \equiv \frac{D_v\beta\rvs}{\rho_\ice} = \frac{(1+\delta)D_v}{\alpha_c}\sqrt{\frac{2\pi m}{k_BT}},\qquad
-P \equiv \frac{R^{2}}{D_v\tau} = \frac{d_0}{D_v\beta},\qquad
+P \equiv \frac{R^{2}}{D_v\tau_{R}} = \frac{d_0}{D_v\beta},\qquad
 m_v \equiv \frac{\rvs}{\xi_v\rho_\ice} .
 \]
-(The source coefficient is $\rho_\ice R^{3}/(\tau D_v\rvs d_0) = \rho_\ice
+(The source coefficient is $\rho_\ice R^{3}/(\tau_{R} D_v\rvs d_0) = \rho_\ice
 R/(\beta D_v\rvs) = 1/\Lambda$; the $m_v$ term is the $-\rho_v\partial_t\phi$
 part of the storage term.)
 
@@ -96,7 +96,7 @@ part of the storage term.)
 $\hat c = \rho c_p/(\rho c_p)_\ice$, $\hat K = K/k_\ice$ and $D_T =
 k_\ice/(\rho c_p)_\ice$:
 \begin{equation}
-Pe_T\,\hat c\,\pd{\vartheta}{t'} = \nabla'\cdot(\hat K\nabla'\vartheta) + \pd{\phi}{t'} ,\qquad Pe_T \equiv \frac{R^{2}}{D_T\tau} .
+Pe_T\,\hat c\,\pd{\vartheta}{t'} = \nabla'\cdot(\hat K\nabla'\vartheta) + \pd{\phi}{t'} ,\qquad Pe_T \equiv \frac{R^{2}}{D_T\tau_{R}} .
 \label{eq:nd-heat}
 \end{equation}
 \emph{Wall.} $\partial\phi/\partial n' = \cos\theta\,\phi(1-\phi)/\eh$.
@@ -119,12 +119,12 @@ $\theta$; $k_\air/k_\ice$; $\hat c_\air$ & contact angle; property ratios & -- &
 
 \textbf{What the scaled model says.}
 \begin{itemize}
-\item \emph{All of the strong temperature dependence is in $\tau$.} With
+\item \emph{All of the strong temperature dependence is in $\tau_{R}$.} With
   Eq.~\eqref{eq:params},
   \[
-  \tau = \frac{(1+\delta)\,R^{2}\rho_\ice^{2}}{\alpha_c\,\gamma}\,\frac{1}{\rvs(T)}\sqrt{\frac{2\pi k_BT}{m}} ,
+  \tau_{R} = \frac{(1+\delta)\,R^{2}\rho_\ice^{2}}{\alpha_c\,\gamma}\,\frac{1}{\rvs(T)}\sqrt{\frac{2\pi k_BT}{m}} ,
   \]
-  so $\tau \propto \sqrt T/\rvs(T)$: an activation energy of
+  so $\tau_{R} \propto \sqrt T/\rvs(T)$: an activation energy of
   $L_{\mathrm{sub}}M_w - \tfrac12R_gT \approx 50$~kJ\,mol$^{-1}$. $\rvs$ cancels in $L^{*}$, which
   retains only $D_v/\sqrt T \propto T^{1.31}$.
 \item \emph{The phase-field equation~\eqref{eq:nd-pf} has no physical
@@ -134,9 +134,9 @@ $\theta$; $k_\air/k_\ice$; $\hat c_\air$ & contact angle; property ratios & -- &
   $v' = \Lambda\,\partial u/\partial n'$ there.
 \item \emph{With the small groups dropped}, the physics is $\nabla'^{2}u =
   0$ in the pore with $u - \Lambda\,\partial u/\partial n' = \chi'$ on the
-  ice, in the time $t/\tau$: one parameter, $\Lambda$, plus $\theta$ and the
+  ice, in the time $t/\tau_{R}$: one parameter, $\Lambda$, plus $\theta$ and the
   geometry. Hence the time--temperature scaling $Q(t;T) = \widehat
-  Q(t/\tau(T);\Lambda(T))$ for any geometric quantity $Q$.
+  Q(t/\tau_{R}(T);\Lambda(T))$ for any geometric quantity $Q$.
 \end{itemize}
 
 \section{Change 1: Knudsen (free-molecular) vapor transport}
@@ -162,7 +162,7 @@ mean free path / pore size $\gg 1$).
 \end{enumerate}
 
 \textbf{Effect on the scaling.} Only $\Lambda$ and the temperature law of
-$\tau$ change. Inserting $D_K$ in $L^{*}$, the thermal speed cancels:
+$\tau_{R}$ change. Inserting $D_K$ in $L^{*}$, the thermal speed cancels:
 \begin{equation}
 L^{*}_K = (1+\delta)\,\frac{d_p}{3}\sqrt{\frac{8k_BT}{\pi m}}\cdot\frac{1}{\alpha_c}\sqrt{\frac{2\pi m}{k_BT}}
  = (1+\delta)\,\frac{4\,d_p}{3\,\alpha_c} ,
@@ -173,7 +173,7 @@ L^{*}_K = (1+\delta)\,\frac{d_p}{3}\sqrt{\frac{8k_BT}{\pi m}}\cdot\frac{1}{\alph
 \begin{itemize}
 \item $\Lambda_K$ does not depend on temperature. For constant $\alpha_c$
   the time--temperature scaling becomes exact (to the order of the small
-  groups), with $\tau \propto T^{3/2}/P_{vs}(T)$, i.e.\ $E_a =
+  groups), with $\tau_{R} \propto T^{3/2}/P_{vs}(T)$, i.e.\ $E_a =
   L_{\mathrm{sub}}M_w - \tfrac32R_gT$.
 \item $\Lambda_K$ is large unless $\alpha_c$ is near one: $\Lambda_K \approx
   1300\,d_p/R$ at $\alpha_c = 10^{-3}$. Inside a pore the vapor is then
@@ -240,23 +240,23 @@ neither vapor nor latent heat.
 \begin{equation}
 v' = (u - \chi') + S\,\nabla_s'^{2}\chi' ,
 \qquad
-S \equiv \frac{B\,\beta}{d_0\,R^{2}} = \frac{\tau}{\tau_s},\quad \tau_s \equiv \frac{R^{4}}{B} .
+S \equiv \frac{B\,\beta}{d_0\,R^{2}} = \frac{\tau_{R}}{\tau_s},\quad \tau_s \equiv \frac{R^{4}}{B} .
 \end{equation}
 \begin{itemize}
 \item A new group, $S$, the ratio of the two routes' rates. The reduced
   problem has two parameters, $(\Lambda, S)$.
 \item $S$ depends strongly on temperature. $B \propto D_s/T$ carries the
-  activation energy of surface diffusion, $E_s$, and $\tau$ carries about
+  activation energy of surface diffusion, $E_s$, and $\tau_{R}$ carries about
   50~kJ\,mol$^{-1}$, so $S \propto \exp[(E_v - E_s)/R_gT]$. With $E_s
   \approx 24$~kJ\,mol$^{-1}$ (the value Choukroun et al., 2020, attribute to
   surface diffusion), $S$ grows by a factor of about 6 from $-5$ to
   $-40\,^{\circ}$C and keeps growing as it gets colder.
-\item $S \propto 1/R^{2}$: the time scales follow $\tau \propto R^{2}$ and
+\item $S \propto 1/R^{2}$: the time scales follow $\tau_{R} \propto R^{2}$ and
   $\tau_s \propto R^{4}$ (Herring, 1950), so surface diffusion wins for
   small grains.
 \item Time--temperature superposition no longer holds in general: $Q(t;T) =
-  \widehat Q(t/\tau;\Lambda,S(T))$. It survives in the two limits, $S \ll 1$
-  (clock $\tau$, about 50~kJ\,mol$^{-1}$) and $S \gg 1$ (clock $\tau_s$,
+  \widehat Q(t/\tau_{R};\Lambda,S(T))$. It survives in the two limits, $S \ll 1$
+  (clock $\tau_{R}$, about 50~kJ\,mol$^{-1}$) and $S \gg 1$ (clock $\tau_s$,
   $E_s$), with a crossover where $S(R,T) = 1$. Cold, fine-grained deposits
   are on the surface-diffusion side.
 \item Neck growth laws differ ($w \sim t^{1/3}$ for attachment-limited
@@ -269,7 +269,7 @@ S \equiv \frac{B\,\beta}{d_0\,R^{2}} = \frac{\tau}{\tau_s},\quad \tau_s \equiv \
 \item \emph{The coefficient.} $D_s\delta_s$ for ice is uncertain by orders of
   magnitude and its temperature dependence is not settled, especially near
   melting where a disordered surface layer forms. $S$ inherits that
-  uncertainty, on top of that of $\alpha_c$ in $\tau$.
+  uncertainty, on top of that of $\alpha_c$ in $\tau_{R}$.
 \item \emph{The sharp-interface limit.} Degenerate-mobility Cahn--Hilliard
   terms do not automatically reduce to pure surface diffusion; the choice of
   $g(\phi)$ and a correction to $\mu$ matter (Gugenberger et al., 2008).
@@ -291,7 +291,7 @@ S \equiv \frac{B\,\beta}{d_0\,R^{2}} = \frac{\tau}{\tau_s},\quad \tau_s \equiv \
 \begin{center}\footnotesize\begin{tabular}{p{0.17\linewidth}p{0.22\linewidth}p{0.24\linewidth}p{0.25\linewidth}}\toprule
  & Present model & Knudsen transport & With surface diffusion\\\midrule
 Groups & $\Lambda(T)$ & $\Lambda_K$, constant in $T$ & $\Lambda$, $S(T)$\\
-Clock & $\tau \propto \sqrt T/\rvs$ & $\tau \propto T^{3/2}/P_{vs}$ & $\tau$ and $\tau_s = R^{4}/B$\\
+Clock & $\tau_{R} \propto \sqrt T/\rvs$ & $\tau_{R} \propto T^{3/2}/P_{vs}$ & $\tau_{R}$ and $\tau_s = R^{4}/B$\\
 Time--temperature scaling & holds; weak residual through $D_v$ & exact for constant $\alpha_c$ & only for $S \ll 1$ or $S \gg 1$\\
 Grain-size scaling & $R^{2}$ & $R^{2}$ & $R^{2}$ to $R^{4}$\\
 Main difficulty & $\alpha_c$ & non-local transport in resolved pores; $d_p$ & $D_s\delta_s$; calibration; stiffness\\\bottomrule
