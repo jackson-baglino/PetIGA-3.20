@@ -1,0 +1,51 @@
+# =============================================================================
+# Demmenie exponent test from TANGENT CONTACT: saturated, attachment-limited,
+# equal grains, -20 C. Pair with
+# geometry/molaro/molaro_2D_L222x188um_eps0.12um_axisym_T-20eq_R84um_tangent_mirror.opts
+#
+# Same physics and numerics as molaro_T-20_hsat_100h_a1e-3_dirichlet_mirror.opts
+# (the pre-necked run of 2026-10-06), so the two differ only in the initial
+# condition. Three lines differ, each for a stated reason:
+#
+#   -alpha_c0 1.0023e-03. The earlier run had alpha_c = 1e-3 WITHOUT the
+#       thin-interface term (tau_sub = 108.92 s). The solver now always
+#       includes that term (dbeta = 1.830e+04 s/m at this eps). This value
+#       makes beta_sub + dbeta equal the earlier run's beta (7.9410e6 s/m), so
+#       tau_sub and the interface kinetics are the same in both runs. It is
+#       the "1.002e-3" of the manuscript's two-grain table.
+#   -t_final 150 h. From tangent contact the neck needs about 16 h to reach
+#       the width at which the earlier run's fit started, then 100 h to cover
+#       the same range (Gibbs-Thomson prediction); 150 h leaves margin.
+#   -n_out 151. Hourly snapshots, as before.
+#
+# -dtmax stays 5 tau_sub (546 s), as in the earlier run, for the same reason
+# (within 1 % of 2 tau_sub on the 2026-10-02 ladder) and so that the time
+# stepping is not a second difference between the two. The first hours are
+# limited by -dtCFL_dphimax, not by dtmax. Set -dtmax 218 for the strict rule.
+#
+# Saturation: h = 1 + 2 d0/R = 1.0000241, as before (see that file's header).
+# =============================================================================
+
+-t_final 5.4e+05                        # 150 h
+
+-temp -20.0
+-humidity 1.0000241                     # 1 + 2 d0/R: saturated w.r.t. the grain
+-grad_temp0 0.0,0.0,0.0
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet on the OUTER walls...
+-bc_mirror x0                           # ...but x = 0 is the contact (mirror) plane
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0023e-03
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # as the Molaro finals: 0.85 elements/step
+-dtmax 5.46e2                           # 5 tau_sub (see header)
+-t_out_log 0
+-outp 0
+-n_out 151                              # t_interv = 3600 s
+-t_out_first 1

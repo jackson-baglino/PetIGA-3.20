@@ -1,3 +1,12 @@
+## 2026-10-13 (evening) — Tangent-start saturated run prepared (not submitted)
+
+- New inputs for a second Demmenie-conditions run that starts from grains just touching: `inputs/geometry/molaro/molaro_2D_L222x188um_eps0.12um_axisym_T-20eq_R84um_tangent_mirror.opts`, `inputs/experiment/molaro/molaro_T-20_hsat_150h_a1e-3_dirichlet_mirror.opts`, batch `studies/molaro_2019/batches/demmenie_tangent_T-20.txt`. Identical to the 2026-10-06 run except the initial condition, 150 h instead of 100, and alpha_c0 = 1.0023e-3 so that beta_sub + dbeta (term now always on) equals the earlier run's beta.
+- Why: the pre-necked run's exponent depends on the assumed contact time (0.21 with a free fit, 0.28 with the 16 h the Gibbs-Thomson law gives). Expectation from the August tangent run: about 0.28 over the resolved window.
+- 24 h limit requested (estimate 6-8 h, $7-9). The user submits.
+- Earlier today: alpha_c sensitivity from the one-equation neck model (0.8 buys 41 -> 51-75 % at -20 C, lowers the saturated exponent to 0.16, worsens -5 C); latent heat ruled out from the run's temperature field.
+
+---
+
 ## 2026-10-13 (later) — Surface diffusion in Molaro's model, checked properly
 
 - `studies/molaro_2019/sa81_mechanisms/`: Molaro's surface-diffusion and vapor terms implemented as printed. At their -20 C necks surface diffusion is below 1 % of their vapor term; their vapor term (alpha = 1, no gas diffusion) alone gives the measured rate. Surface diffusion dominates only below a neck radius of about 4 um. Figure 10 reproduced in shape only: the vapor current matches, the surface current is about 100x theirs early.

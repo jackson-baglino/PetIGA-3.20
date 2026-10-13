@@ -1,0 +1,52 @@
+# =============================================================================
+# Equal-grain pair at -20 C starting from TANGENT CONTACT, quarter of the
+# cross-section: one grain, mirror plane at x = 0, axis at y = 0. Pair with
+# experiment/molaro/molaro_T-20_hsat_150h_a1e-3_dirichlet_mirror.opts
+# (batch: studies/molaro_2019/batches/demmenie_tangent_T-20.txt).
+#
+# WHY. The first saturated run (..._R84um_r14um_mirror, 2026-10-06) started
+# from a neck already 28 um wide. Its fitted exponent (0.21) depends on how
+# long that neck "had been growing": a free fit takes 4.8 h, the
+# Gibbs-Thomson prediction says 16 h, and with 16 h the same data give 0.28
+# (studies/molaro_2019/demmenie/README.md). Starting from grains that just
+# touch gives the clock a physical zero. Everything else is IDENTICAL to that
+# run: grain radius, eps, mesh spacing, air padding, wall distance.
+#
+# GEOMETRY. R = 84.4 um, centre at x = R, so the sharp sphere touches the
+# mirror plane x = 0 at one point; its image is the second grain. With
+# -ic_grain_union the phi = 0.5 contour is the sharp surface.
+#
+# RESOLUTION. eps = 1.18e-7 m. Neck floor sqrt(12 eps R) = 10.93 um radius,
+# i.e. 21.9 um WIDTH: below that the neck is set by the diffuse band, not by
+# physics, and those samples are NOT to be fitted. The Gibbs-Thomson
+# prediction reaches that width after about 3 h and 33.5 um (the first fitted
+# width of the earlier run) after about 16 h.
+#
+# DOMAIN. Lx = 2R + 52.7 um of air beyond the far cap = 221.53 um at the
+# same h = eps/sqrt(2); Ly = 188 um as before.
+#
+# Measure: bash postprocess/run_batch_measure.sh <run_dir>   (passes --mirror-x0)
+# =============================================================================
+
+-axisym 1
+-ic_grain_union 1
+-ic_type multi_grains
+-dim 2
+-Lx 2.21529e-04
+-Ly 1.88000e-04
+-Lz 0
+
+-ice_grain_cx 8.44000e-05               # = R: tangent to the mirror plane x = 0
+-ice_grain_cy 0.0
+-ice_grain_R  8.44e-5
+-ice_grain_ax 8.44e-5
+-ice_grain_ay 8.44e-5
+
+-Nx 2655                                # h = eps/sqrt(2) = 8.3439e-08
+-Ny 2254                                # 5.99M nodes, 18.0M DoF
+-Nz 1
+-eps 1.1800e-07
+-eps_valid_temp -20
+
+-delt_t 1.0e-4
+-periodic 0
