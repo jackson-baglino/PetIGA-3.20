@@ -4,6 +4,7 @@
 - User ran the replay locally on seed 1701 at -20 C (44 snapshots); movie saved to the 2026-JPLPRD conference folder.
 - First movie was 1920x1080 but each field panel was only 708 px (field drawn at half resolution), so it looked soft. Defaults are now 3840x2160 and stride 1: panels are 1416 px. Rebuilt the movie.
 
+- Poster figures: where the same numbered instant of the warm and cold runs falls on one point (instant 1), the marker ring is now half red, half blue (`pair_markers` in `poster_jpl_2026.py`); rebuilt the option 1 and option 2 figures.
 ---
 
 ## 2026-10-13 — JPL poster day test figures

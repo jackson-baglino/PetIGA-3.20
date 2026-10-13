@@ -62,6 +62,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches, matplotlib.ticker, matplotlib.colors  # noqa: E401
 from matplotlib.cm import ScalarMappable
+from matplotlib.path import Path as MPath
 from matplotlib.colors import AsinhNorm
 import cmocean
 
@@ -179,10 +180,30 @@ def state_law(R, theta_ref=30.0, phi_max=0.375):
 # ---------------------------------------------------------------------------
 # drawing
 # ---------------------------------------------------------------------------
-def num_marker(ax, x, y, n, color, ms=15):
-    ax.plot([x], [y], "o", ms=ms, mfc="white", mec=color, mew=2.0, zorder=6, clip_on=False)
+def num_marker(ax, x, y, n, color, ms=15, color2=None):
+    """Numbered ring. With color2 the ring is split: left half color, right half color2."""
+    ax.plot([x], [y], "o", ms=ms, mfc="white", mec="none" if color2 else color, mew=2.0, zorder=6,
+            clip_on=False)
+    if color2:
+        for (a0, a1), c in (((90, 270), color), ((-90, 90), color2)):
+            ax.plot([x], [y], marker=MPath.arc(a0, a1), ms=ms, mfc="none", mec=c, mew=2.0, zorder=6,
+                    clip_on=False, ls="none")
     ax.text(x, y, str(n), ha="center", va="center", fontsize=FS_T - 1, fontweight="bold",
             color=INK, zorder=7, clip_on=False)
+
+
+def pair_markers(ax, runs, hot, cold, marks, xkey, xtol, ytol=0.005):
+    """Numbered instants of the two highlighted runs. Where instant n of the warm
+    run and of the cold run fall on the same point (within xtol, ytol in data
+    units) it is drawn once, ringed half in each colour."""
+    rh, rc = runs[hot], runs[cold]
+    for n, (ih, ic) in enumerate(zip(marks[hot], marks[cold]), 1):
+        ph, pc = (rh[xkey][ih], rh["kn"][ih]), (rc[xkey][ic], rc["kn"][ic])
+        if abs(ph[0] - pc[0]) <= xtol and abs(ph[1] - pc[1]) <= ytol:
+            num_marker(ax, 0.5 * (ph[0] + pc[0]), 0.5 * (ph[1] + pc[1]), n, C_WARM, color2=C_COLD)
+        else:
+            num_marker(ax, *ph, n, C_WARM)
+            num_marker(ax, *pc, n, C_COLD)
 
 
 def clean(ax):
@@ -257,8 +278,7 @@ def panel_time(ax, runs, hot, cold, marks, short=False):
         r = runs[T]
         ax.plot(r["td"], r["kn"], color=col, lw=3.2, zorder=4)
         end_label(r, T, col, True, 14)                  # clear of the end marker
-        for n, row in enumerate(marks[T], 1):
-            num_marker(ax, r["td"][row], r["kn"][row], n, col)
+    pair_markers(ax, runs, hot, cold, marks, "td", xtol=0.15)
     # the axis stops at the data; the labels sit in the margin to its right
     ax.set_xlim(0, 30.3); ax.set_xticks([0, 10, 20, 30])
     ax.set_xlabel("time  [days]", fontsize=FS)
@@ -273,12 +293,7 @@ def panel_ssa(ax, runs, hot, cold, marks, short=False):
             ax.plot(r["sn"], r["kn"], color=GREY, lw=1.4, zorder=2)
     ax.plot(runs[hot]["sn"], runs[hot]["kn"], color=C_WARM, lw=5.0, zorder=3, solid_capstyle="round")
     ax.plot(runs[cold]["sn"], runs[cold]["kn"], color=C_COLD, lw=2.2, zorder=4, solid_capstyle="round")
-    for T, col, up in ((hot, C_WARM, False), (cold, C_COLD, True)):
-        r = runs[T]
-        for n, row in enumerate(marks[T], 1):
-            if n == 1 and T == cold:
-                continue                      # the shared start is marked once
-            num_marker(ax, r["sn"][row], r["kn"][row], n, col)
+    pair_markers(ax, runs, hot, cold, marks, "sn", xtol=0.005)
     ax.invert_xaxis()
     ax.set_xlabel(r"specific surface area  SSA$\,/\,$SSA$_0$", fontsize=FS)
     ax.set_ylabel(K_LABEL[short], fontsize=FS)
