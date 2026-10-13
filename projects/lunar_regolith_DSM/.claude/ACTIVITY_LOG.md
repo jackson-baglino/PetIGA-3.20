@@ -1,3 +1,18 @@
+## 2026-10-13 — Read Shi, Shan & Yang (2023) on frozen sand molds
+
+- Read-only: Int. J. Heat Mass Transfer 215, 124499, for what it says about the
+  ice-sand contact angle. It gives no measured or assumed angle; it treats the
+  ice-WATER front (gamma_iw = 0.033 N/m, Young-Laplace with full wetting implied)
+  and a Fluent "wetted wall" with no stated value. Not a source for theta in the
+  ice-vapour-regolith model.
+
+---
+
+
+---
+
+**Session ended:** 2026-10-11 16:06:49
+
 
 ---
 
