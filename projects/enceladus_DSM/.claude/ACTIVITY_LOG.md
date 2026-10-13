@@ -10,6 +10,7 @@
 - `studies/molaro_2019/demmenie/interface_width_estimate.py`: the saturated run's excess over the Gibbs-Thomson prediction scales with band/fillet; removing it would give an exponent of 0.27 at eps/2 and 0.29 at eps/4. An estimate from one run, not a test.
 - High-porosity diagnosis (`studies/keff_sintering/percolation/directional_exponents.py`, `weakest_section.py`): the power law holds along the deposition direction to porosity 0.425 (p -0.79 to -0.86) and fails across it (-0.70, -0.60, -0.48 from 0.375 on); k_xx/k_yy falls 1.02 to 0.66. The departure in Figure 7(d) is anisotropy of the packing, not a broken ice network.
 - Saturated pair, exponent by start time: 0.215 (2 h) to 0.236 (71 h) against a predicted 0.29; the velocity matches by 71 h but the exponent is not recovered within the run. The eps/2 estimate of 0.27 is an upper estimate.
+- `studies/keff_sintering/temperature_scaling/`: the isothermal model written in dimensionless form. Time scale tau = R^2 beta/d0 carries rho_vs (29x from -40 to -5 C); the one group left, L*/R with L* = D_v sqrt(2 pi m/kB T)/alpha_c, changes 20 %. Neglected groups sized (vapor storage 1e-8, latent heat 2.5e-3 at most). `check_groups.py` reproduces tau_sub = 7822 s at -20 C. `gt_velocity/`: working plot of the Gibbs-Thomson velocity against temperature.
 - One correction to the saturated-pair paragraph flagged: alpha_c = 1e-3 makes growth attachment-limited, not vapor-transport-limited.
 
 ---
