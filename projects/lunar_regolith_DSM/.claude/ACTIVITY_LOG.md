@@ -1,3 +1,29 @@
+## 2026-10-13 (later) — Literature search: ice contact angle on minerals
+
+- Read-only web search for ice-vapour-mineral contact angles. Only source of
+  numbers found: deposition-nucleation contact angles fitted with classical
+  nucleation theory (Eastwood 2008: quartz/calcite 25-27 deg, kaolinite/muscovite
+  6-12 deg; Mars-analog work: m = cos(theta) 0.97 down to 0.84 below 180 K).
+  Abstracts and search summaries only; full papers not read. No direct
+  measurement and nothing on lunar simulant found.
+
+---
+
+
+---
+
+**Session ended:** 2026-10-13 12:03:35
+
+
+---
+
+**Session ended:** 2026-10-13 11:58:58
+
+
+---
+
+**Session ended:** 2026-10-13 11:49:52
+
 ## 2026-10-13 — Read Shi, Shan & Yang (2023) on frozen sand molds
 
 - Read-only: Int. J. Heat Mass Transfer 215, 124499, for what it says about the
