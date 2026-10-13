@@ -1,3 +1,16 @@
+## 2026-10-13 — JPL poster day test figures
+
+- New studies/keff_sintering/figures/poster_jpl_2026.py: candidate figures for
+  the 11.38 x 12.81 in modelling box (Arial, poster sizes, words on the axes).
+  Two temperatures of the same packing (seed 1702, phi 0.325) boxed in bold
+  colours that match their curves; k_eff/k_0 vs time (fans out) and vs
+  SSA/SSA_0 (one curve); option 2 swaps in the state law (k ~ SSA^-0.80,
+  15 packings). Stacked, compact and piece layouts, pairs -5/-20 and -5/-40.
+- Output: iCloud Conferences/2026-JPLPRD/test_figures/ (24 files + README).
+- fig_methods_homogenization.py --panel: one panel's image on its own.
+
+---
+
 ## 2026-10-12 — Outline rewritten as a content plan
 
 - `studies/keff_sintering/manuscript_outline.tex/.pdf` now says what each paragraph should contain, with the numbers, instead of listing differences from the draft (user request). Checked against the draft of 2026-10-12: temperature table and saturated-pair paragraph are in.
