@@ -1,0 +1,12 @@
+k_ice = 2.29, k_air = 0.02 W/m/K.  k_geo/k_ice = exp(-4.74 phi).
+Simulated k_eff: mean over packings (and temperatures where the age is reached), W/m/K; ratio to the geometric mean in brackets.
+
+phi     k_geo   harmonic  HS lower(2D)  HS upper(2D)  arithmetic |  opening        theta = 30     theta = 331    theta = 1256
+0.275   0.622   0.071     0.119         1.316         1.666      |  0.502 (0.81)   0.794 (1.28)   0.933 (1.50)   1.039 (1.67)  
+0.325   0.491   0.060     0.099         1.181         1.552      |  0.385 (0.79)   0.614 (1.25)   0.723 (1.47)   0.818 (1.67)  
+0.375   0.387   0.053     0.084         1.057         1.439      |  0.318 (0.82)   0.482 (1.25)   0.562 (1.45)   0.631 (1.63)  
+0.425   0.305   0.047     0.072         0.941         1.325      |  0.241 (0.79)   0.337 (1.10)   0.387 (1.27)   0.437 (1.43)  
+0.475   0.241   0.042     0.063         0.832         1.212      |  0.190 (0.79)   0.247 (1.03)   0.280 (1.16)   0.309 (1.28)  
+theta = 30: fit k_eff/k_ice = 1.80 exp(-5.87 phi) over all five porosities;  1.36 exp(-4.99 phi) over phi <= 0.375;  geometric mean: 1.00 exp(-4.74 phi)
+theta = 331: fit k_eff/k_ice = 2.24 exp(-6.06 phi) over all five porosities;  1.65 exp(-5.08 phi) over phi <= 0.375;  geometric mean: 1.00 exp(-4.74 phi)
+theta = 1256: fit k_eff/k_ice = 2.54 exp(-6.10 phi) over all five porosities;  1.80 exp(-4.99 phi) over phi <= 0.375;  geometric mean: 1.00 exp(-4.74 phi)
