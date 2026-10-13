@@ -1,3 +1,11 @@
+## 2026-10-13 — Heat-flow movie for the JPL poster day
+
+- Added `postprocess/make_heatflow_movie.py`: ice | heat flow per unit gradient, with a k_eff timeline; needs the corrector fields from a k_eff replay (`-keff_write_corrector 1`).
+- User ran the replay locally on seed 1701 at -20 C (44 snapshots); movie saved to the 2026-JPLPRD conference folder.
+- First movie was 1920x1080 but each field panel was only 708 px (field drawn at half resolution), so it looked soft. Defaults are now 3840x2160 and stride 1: panels are 1416 px. Rebuilt the movie.
+
+---
+
 ## 2026-10-13 — JPL poster day test figures
 
 - New studies/keff_sintering/figures/poster_jpl_2026.py: candidate figures for

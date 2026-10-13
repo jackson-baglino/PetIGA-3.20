@@ -2,7 +2,7 @@
 """make_heatflow_movie.py — animate where the heat goes as a packing sinters.
 
     python make_heatflow_movie.py <run_dir> [--corrector-dir DIR] [--out FILE.mp4]
-        [--fps 6] [--hold-last 2.0] [--px 1920] [--stride 2] [--frame-png STEP]
+        [--fps 6] [--hold-last 2.0] [--px 3840] [--stride 1] [--frame-png STEP]
 
 Each frame: the ice (left), the local heat flux for a unit temperature
 gradient along x (right, log scale, one colour scale for the whole movie),
@@ -107,8 +107,10 @@ def main():
     ap.add_argument("--t-min-hours", type=float, default=0.5,
                     help="skip snapshots earlier than this, except the opening frame "
                          "(default 0.5 h: the log-spaced early snapshots show no change)")
-    ap.add_argument("--px", type=int, default=1920, help="frame width in pixels")
-    ap.add_argument("--stride", type=int, default=2, help="field down-sampling for drawing")
+    ap.add_argument("--px", type=int, default=3840,
+                    help="frame width in pixels (default 3840 = 4K: each panel is then 1416 px, half the "
+                         "2831-node field; at 1920 the panels are only 708 px and the grains look soft)")
+    ap.add_argument("--stride", type=int, default=1, help="field down-sampling for drawing")
     ap.add_argument("--crf", type=int, default=16)
     ap.add_argument("--frame-png", type=int, default=None,
                     help="render only this step to a PNG (preview) and exit")
