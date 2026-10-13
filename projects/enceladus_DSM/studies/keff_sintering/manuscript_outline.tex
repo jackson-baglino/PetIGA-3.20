@@ -350,6 +350,12 @@ the numerical method; what the section covers.
   the text cites Flatau and Wexler, Table~1 says ASHRAE.
 \item \Para{Energy equation}{218--224}. \Have
   \Msg{Heat is conducted and released or absorbed at the interface.}
+  \Stale Eq.~(1b) prints the latent-heat term with the mixture density,
+  $-\rho(\boldsymbol\phi)L_{\mathrm{sub}}\,\partial\phi_a/\partial t$. The solver uses
+  $\rho_{\mathrm{ice}}L_{\mathrm{sub}}\,\partial\phi_{\mathrm{ice}}/\partial t$
+  (\texttt{src/assembly.c}), which is the correct one: the heat released is
+  that of the ice formed. Change the equation to match (found 2026-10-13).
+ 
   Mixture rules; constant
   properties.
 \item \Para{Vapor equation}{225--231}. \Have
