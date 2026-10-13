@@ -1,3 +1,17 @@
+
+---
+
+**Session ended:** 2026-10-13 12:15:15
+
+## 2026-10-13 — Scaling analysis of the model; Knudsen transport and surface diffusion
+
+- `docs/scaling_analysis/scaling_analysis.tex/.pdf` (5 pages): the three model equations made dimensionless in full. The phase-field equation is left with only eps/R and a1; the vapor equation with Lambda = L*/R (L* = D_v beta rho_vs/rho_ice), a storage group and a vapor-mass group; the heat equation with Pe_T and the coupling G_T. All strong temperature dependence is in tau = R^2 beta/d0.
+- Knudsen transport: D_K = d_p vbar/3 makes L* = 4 d_p/(3 alpha_c), independent of temperature; transport matters only over paths of order L* (about 7 cm at alpha_c = 1e-3). Main difficulty: free-molecular transport inside a resolved pore is non-local, and d_p is not a field of the model.
+- Surface diffusion: adds v_n = B lap_s(chi) and the group S = B beta/(d0 R^2) = tau/tau_s, which varies exponentially with temperature and as 1/R^2, so time-temperature superposition holds only in the two limits. Main difficulties: D_s delta_s for ice, the sharp-interface limit of the fourth-order term, redoing the thin-interface calibration.
+- References checked against Crossref.
+
+---
+
 ## 2026-10-13 (later) — Literature search: ice contact angle on minerals
 
 - Read-only web search for ice-vapour-mineral contact angles. Only source of

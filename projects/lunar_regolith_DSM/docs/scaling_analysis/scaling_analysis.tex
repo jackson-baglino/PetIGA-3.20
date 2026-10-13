@@ -1,0 +1,308 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,enumitem}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parskip}{0.45em}\setlength{\parindent}{0pt}
+\setlist{itemsep=0.1em,topsep=0.15em}
+\newcommand{\ice}{\mathrm{ice}}
+\newcommand{\air}{\mathrm{air}}
+\newcommand{\rvs}{\rho_{vs}}
+\newcommand{\eh}{\hat\varepsilon}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\title{\vspace{-2.5em}Scaling analysis of the phase-field sublimation model,\\ and how Knudsen transport and surface diffusion would change it\vspace{-0.6em}}
+\author{\small lunar\_regolith\_DSM \quad \texttt{docs/scaling\_analysis/scaling\_analysis.tex}}
+\date{\vspace{-1em}\small 2026-10-13}
+\begin{document}
+\maketitle
+
+\section{The model}
+
+Unknowns: ice phase field $\phi$ (air fraction $1-\phi$), temperature $T$,
+vapor density $\rho_v$. As implemented (\texttt{src/assembly.c},
+\texttt{Residual\_A1}),
+\begin{align}
+\tau_{\mathrm{sub}}\,\pd{\phi}{t} &= \varepsilon^{2}\nabla^{2}\phi - \phi(1-\phi)(1-2\phi)
+   + \lambda_{\mathrm{sub}}\,\phi^{2}(1-\phi)^{2}\,\frac{\rho_v - \rvs(T)}{\rho_\ice} , \label{eq:pf}\\
+\rho c_p\,\pd{T}{t} &= \nabla\cdot(K\nabla T) + \rho_\ice L_{\mathrm{sub}}\,\pd{\phi}{t} , \label{eq:heat}\\
+\frac{1}{\xi_v}\,\pd{}{t}\big[(1-\phi)\rho_v\big] &= \nabla\cdot\big[(1-\phi)\,D_v\nabla\rho_v\big] - \rho_\ice\,\pd{\phi}{t} . \label{eq:vap}
+\end{align}
+Equation~\eqref{eq:pf} is the solver's $\partial_t\phi = -3M[\varepsilon^{-1}
+\phi(1-\phi)(1-2\phi) - \varepsilon\nabla^{2}\phi] + \alpha_{\mathrm{sub}}
+\phi^{2}(1-\phi)^{2}(\rho_v-\rvs)/\rho_\ice$ with $M =
+\varepsilon/(3\tau_{\mathrm{sub}})$ and $\alpha_{\mathrm{sub}} =
+\lambda_{\mathrm{sub}}/\tau_{\mathrm{sub}}$. On a regolith wall, $\partial\phi/\partial n =
+\cos\theta\,\phi(1-\phi)/\varepsilon$. The parameters are set from physical
+ones:
+\begin{equation}
+\begin{gathered}
+\lambda_{\mathrm{sub}} = \frac{a_1\varepsilon\,\rho_\ice}{d_0\,\rvs},\qquad
+\tau_{\mathrm{sub}} = \frac{\varepsilon^{2}\beta}{d_0},\qquad
+d_0 = \frac{\gamma m}{\rho_\ice k_B T},\\
+\beta = \frac{1+\delta}{\alpha_c}\frac{\rho_\ice}{\rvs}\sqrt{\frac{2\pi m}{k_B T}},\qquad
+\delta = a_1a_2\,\varepsilon\,\alpha_c\Big(\frac{1}{D_T}+\frac{1}{D_v}\Big)\sqrt{\frac{k_BT}{2\pi m}} ,
+\end{gathered}
+\label{eq:params}
+\end{equation}
+$a_1 = 5$, $a_2 = 0.1581$. At present $D_v$ is the diffusivity of vapor in
+air at 1~atm and $\rvs$ the saturation density of vapor in air.
+
+\section{Nondimensionalization}
+
+Let $R$ be the length that characterizes the geometry (grain radius or pore
+width) and $T_m$ the mean temperature; coefficients below are evaluated at
+$T_m$. Choose
+\begin{equation}
+\begin{gathered}
+\mathbf x = R\,\mathbf x',\qquad
+t = \tau\,t',\quad \tau \equiv \frac{R^{2}\beta}{d_0},\\
+\rho_v = \rvs(T_m)\Big(1 + \frac{d_0}{R}\,u\Big),\qquad
+T = T_m + \Theta\,\vartheta,\quad \Theta \equiv \frac{\rho_\ice L_{\mathrm{sub}}\,d_0}{k_\ice\,\beta} .
+\end{gathered}
+\label{eq:scales}
+\end{equation}
+$d_0/R$ is the equilibrium supersaturation of a surface of radius $R$;
+$\tau$ is the time for such a surface to move a distance $R$ at the velocity
+$V = d_0/(R\beta)$ the Gibbs--Thomson law gives it; $\Theta$ is the
+temperature rise that conducts away the latent heat released at that
+velocity ($\Theta = \rho_\ice L_{\mathrm{sub}} V R/k_\ice$).
+
+\emph{Phase field.} Write $\rvs(T) = \rvs(T_m)(1 + s\Theta\vartheta)$ with $s
+= \mathrm d\ln\rvs/\mathrm dT$. Then $(\rho_v - \rvs)/\rho_\ice =
+(\rvs/\rho_\ice)(d_0/R)\,(u - G_T\vartheta)$ with $G_T \equiv s\Theta R/d_0$,
+and $\lambda_{\mathrm{sub}}(\rvs/\rho_\ice)(d_0/R) = a_1\varepsilon/R$. With
+$\tau_{\mathrm{sub}}/\tau = (\varepsilon/R)^{2}$ and $\eh \equiv
+\varepsilon/R$, Eq.~\eqref{eq:pf} becomes
+\begin{equation}
+\eh^{2}\,\pd{\phi}{t'} = \eh^{2}\nabla'^{2}\phi - \phi(1-\phi)(1-2\phi)
+ + a_1\,\eh\,\phi^{2}(1-\phi)^{2}\,\big(u - G_T\,\vartheta\big) .
+\label{eq:nd-pf}
+\end{equation}
+\emph{Vapor.} Expanding the left side of Eq.~\eqref{eq:vap}, substituting,
+and dividing by $D_v\rvs d_0/R^{3}$:
+\begin{equation}
+\frac{P}{\xi_v}\,(1-\phi)\,\pd{u}{t'} = \nabla'\cdot\big[(1-\phi)\nabla' u\big] - \frac{1 - m_v}{\Lambda}\,\pd{\phi}{t'} ,
+\label{eq:nd-vap}
+\end{equation}
+\[
+\Lambda \equiv \frac{L^{*}}{R},\quad L^{*} \equiv \frac{D_v\beta\rvs}{\rho_\ice} = \frac{(1+\delta)D_v}{\alpha_c}\sqrt{\frac{2\pi m}{k_BT}},\qquad
+P \equiv \frac{R^{2}}{D_v\tau} = \frac{d_0}{D_v\beta},\qquad
+m_v \equiv \frac{\rvs}{\xi_v\rho_\ice} .
+\]
+(The source coefficient is $\rho_\ice R^{3}/(\tau D_v\rvs d_0) = \rho_\ice
+R/(\beta D_v\rvs) = 1/\Lambda$; the $m_v$ term is the $-\rho_v\partial_t\phi$
+part of the storage term.)
+
+\emph{Heat.} Dividing Eq.~\eqref{eq:heat} by $k_\ice\Theta/R^{2}$, with
+$\hat c = \rho c_p/(\rho c_p)_\ice$, $\hat K = K/k_\ice$ and $D_T =
+k_\ice/(\rho c_p)_\ice$:
+\begin{equation}
+Pe_T\,\hat c\,\pd{\vartheta}{t'} = \nabla'\cdot(\hat K\nabla'\vartheta) + \pd{\phi}{t'} ,\qquad Pe_T \equiv \frac{R^{2}}{D_T\tau} .
+\label{eq:nd-heat}
+\end{equation}
+\emph{Wall.} $\partial\phi/\partial n' = \cos\theta\,\phi(1-\phi)/\eh$.
+
+\textbf{Groups.} Equations~\eqref{eq:nd-pf}--\eqref{eq:nd-heat} contain:
+
+\begin{center}\footnotesize\setlength{\tabcolsep}{4pt}\begin{tabular}{llll}\toprule
+Group & Meaning & $T$-dependence & Example$^{a}$\\\midrule
+$\eh = \varepsilon/R$ & interface thickness (numerical) & -- & 0.02\\
+$\Lambda = L^{*}/R$ & attachment against gas-diffusion resistance & $D_v/\sqrt T$ & 2.8\\
+$G_T$ & latent heat shifting the local saturation & $\rvs/T^{2}$ & $7\times10^{-4}$\\
+$P/\xi_v$ & vapor storage (quasi-steadiness) & $\rvs$ & $7\times10^{-9}$\\
+$m_v$ & vapor mass in the surface balance & $\rvs$ & $9\times10^{-4}$\\
+$Pe_T$ & heat storage & $\rvs$ & $1\times10^{-10}$\\
+$\theta$; $k_\air/k_\ice$; $\hat c_\air$ & contact angle; property ratios & -- & --\\\bottomrule
+\end{tabular}\\[0.3ex]
+{\footnotesize $^{a}$Air at 1~atm, $-20\,^{\circ}$C, $R = 50~\mu$m, $\varepsilon = 1~\mu$m, $\alpha_c = 10^{-3}$
+(\texttt{enceladus\_DSM/studies/keff\_sintering/temperature\_scaling/check\_groups.py}).}
+\end{center}
+
+\textbf{What the scaled model says.}
+\begin{itemize}
+\item \emph{All of the strong temperature dependence is in $\tau$.} With
+  Eq.~\eqref{eq:params},
+  \[
+  \tau = \frac{(1+\delta)\,R^{2}\rho_\ice^{2}}{\alpha_c\,\gamma}\,\frac{1}{\rvs(T)}\sqrt{\frac{2\pi k_BT}{m}} ,
+  \]
+  so $\tau \propto \sqrt T/\rvs(T)$: an activation energy of
+  $L_{\mathrm{sub}}M_w - \tfrac12R_gT \approx 50$~kJ\,mol$^{-1}$. $\rvs$ cancels in $L^{*}$, which
+  retains only $D_v/\sqrt T \propto T^{1.31}$.
+\item \emph{The phase-field equation~\eqref{eq:nd-pf} has no physical
+  parameter}: only $\eh$ and the constant $a_1$. This is the calibration
+  doing its job. As $\eh \to 0$ it enforces $u = \chi' + v'$ on the surface
+  (curvature $\chi'$, normal velocity $v'$), and Eq.~\eqref{eq:nd-vap} gives
+  $v' = \Lambda\,\partial u/\partial n'$ there.
+\item \emph{With the small groups dropped}, the physics is $\nabla'^{2}u =
+  0$ in the pore with $u - \Lambda\,\partial u/\partial n' = \chi'$ on the
+  ice, in the time $t/\tau$: one parameter, $\Lambda$, plus $\theta$ and the
+  geometry. Hence the time--temperature scaling $Q(t;T) = \widehat
+  Q(t/\tau(T);\Lambda(T))$ for any geometric quantity $Q$.
+\end{itemize}
+
+\section{Change 1: Knudsen (free-molecular) vapor transport}
+
+\textbf{Why.} In air at 1~atm the mean free path is about 0.07~$\mu$m, far
+below the pore size, and Fickian diffusion holds. In vacuum the only gas is
+the vapor itself; at the vapor pressure of ice below 200~K the mean free path
+is centimetres or more, so molecules cross a pore without colliding ($Kn =$
+mean free path / pore size $\gg 1$).
+
+\textbf{What changes in the model.}
+\begin{enumerate}
+\item \emph{Diffusivity.} $D_v(T)$ is replaced by the Knudsen value for a
+  pore of width $d_p$, $D_K = \tfrac13 d_p\,\bar v$ with $\bar v =
+  \sqrt{8k_BT/(\pi m)}$ (Pollard \& Present, 1948). It depends on the local
+  pore size, not on pressure; a transition form is $1/D = 1/D_v + 1/D_K$.
+\item \emph{Saturation.} $\rvs$ becomes that of pure vapor, $\rvs =
+  P_{vs}(T)\,m/(k_BT)$, in place of the mixing-ratio form in air.
+\item \emph{Heat.} No gas conduction: $k_\air \to 0$ in the pore (radiation
+  aside). The $1/D_v$ in $\delta$ becomes $1/D_K$.
+\item The attachment law is unchanged: Hertz--Knudsen is already kinetic
+  theory.
+\end{enumerate}
+
+\textbf{Effect on the scaling.} Only $\Lambda$ and the temperature law of
+$\tau$ change. Inserting $D_K$ in $L^{*}$, the thermal speed cancels:
+\begin{equation}
+L^{*}_K = (1+\delta)\,\frac{d_p}{3}\sqrt{\frac{8k_BT}{\pi m}}\cdot\frac{1}{\alpha_c}\sqrt{\frac{2\pi m}{k_BT}}
+ = (1+\delta)\,\frac{4\,d_p}{3\,\alpha_c} ,
+\qquad
+\Lambda_K = (1+\delta)\,\frac{4}{3\alpha_c}\,\frac{d_p}{R} .
+\label{eq:LK}
+\end{equation}
+\begin{itemize}
+\item $\Lambda_K$ does not depend on temperature. For constant $\alpha_c$
+  the time--temperature scaling becomes exact (to the order of the small
+  groups), with $\tau \propto T^{3/2}/P_{vs}(T)$, i.e.\ $E_a =
+  L_{\mathrm{sub}}M_w - \tfrac32R_gT$.
+\item $\Lambda_K$ is large unless $\alpha_c$ is near one: $\Lambda_K \approx
+  1300\,d_p/R$ at $\alpha_c = 10^{-3}$. Inside a pore the vapor is then
+  uniform and transport is irrelevant; only attachment limits the rate.
+\item Transport returns over long paths. Across a layer of thickness $H$ the
+  diffusive resistance equals the attachment resistance when $H \sim L^{*}_K
+  = 4d_p/(3\alpha_c)$: about 7~cm for $d_p = 50~\mu$m at $\alpha_c =
+  10^{-3}$, and 70~$\mu$m at $\alpha_c = 1$. Loss of ice to space through a
+  regolith layer is therefore the case where Knudsen transport matters.
+\end{itemize}
+
+\textbf{Difficulties.}
+\begin{itemize}
+\item \emph{A diffusion equation is not valid inside a resolved pore.}
+  Knudsen diffusion describes transport over lengths much greater than the
+  pore size. Within one pore, molecules fly from surface to surface in
+  straight lines; the flux at a point depends on what it can see (as in
+  radiative exchange), which is non-local. A pore-resolving phase-field
+  model with $D_K$ inserted is a closure, not the physics. It is harmless
+  when $\Lambda_K \gg 1$, because the field is uniform anyway, and
+  unreliable when $\Lambda_K \lesssim 1$.
+\item \emph{$d_p$ is not a field the model has.} It must be supplied: a
+  constant, or a local pore width computed from $\phi$ (a distance
+  function), which changes as the ice moves.
+\item \emph{$\alpha_c$ now controls everything}, including whether transport
+  matters at all, and it is the least known parameter.
+\item \emph{Magnitudes.} $\rvs$ falls by many orders of magnitude at lunar
+  temperatures; the solver should carry $u$, not $\rho_v$. With no gas
+  conduction, heat leaves only through ice and grain contacts (and
+  radiation), so $G_T$ should be re-evaluated with the conductivity of the
+  actual path.
+\end{itemize}
+
+\section{Change 2: surface diffusion}
+
+\textbf{What it adds.} Molecules migrate along the ice surface from high to
+low chemical potential. In the sharp-interface description this adds to the
+normal velocity (Mullins, 1957)
+\begin{equation}
+v_n = \underbrace{\frac{\sigma - d_0\chi}{\beta}}_{\text{vapor route}} \;+\; B\,\nabla_s^{2}\chi ,
+\qquad B = \frac{D_s\,\delta_s\,\gamma\,\Omega}{k_BT} ,
+\label{eq:mullins}
+\end{equation}
+with $\nabla_s^{2}$ the surface Laplacian, $D_s$ the surface diffusivity,
+$\delta_s$ the thickness of the mobile layer and $\Omega$ the molecular
+volume. It conserves ice (it moves it, without exchange with the vapor).
+
+\textbf{What changes in the model.} A conserved, fourth-order term is added
+to Eq.~\eqref{eq:pf}:
+\begin{equation}
+\tau_{\mathrm{sub}}\pd{\phi}{t} = \big[\text{right side of Eq.~\eqref{eq:pf}}\big]
+ + \tau_{\mathrm{sub}}\nabla\cdot\big[M_s\,g(\phi)\,\nabla\mu\big],
+\qquad \mu = \frac{1}{\varepsilon}\phi(1-\phi)(1-2\phi) - \varepsilon\nabla^{2}\phi ,
+\end{equation}
+with a mobility $g(\phi)$ that vanishes in both bulk phases (for instance
+$\phi^{2}(1-\phi)^{2}$) and $M_s$ calibrated so that the sharp-interface limit
+gives $B$ (R\"atz et al., 2006; Gugenberger et al., 2008). Equations
+\eqref{eq:heat} and~\eqref{eq:vap} must use only the non-conserved part of
+$\partial\phi/\partial t$ as their source, since surface diffusion exchanges
+neither vapor nor latent heat.
+
+\textbf{Effect on the scaling.} Scaling Eq.~\eqref{eq:mullins} as before
+($\nabla_s^{2}\chi = \nabla_s'^{2}\chi'/R^{3}$, $v_n = Vv'$):
+\begin{equation}
+v' = (u - \chi') + S\,\nabla_s'^{2}\chi' ,
+\qquad
+S \equiv \frac{B\,\beta}{d_0\,R^{2}} = \frac{\tau}{\tau_s},\quad \tau_s \equiv \frac{R^{4}}{B} .
+\end{equation}
+\begin{itemize}
+\item A new group, $S$, the ratio of the two routes' rates. The reduced
+  problem has two parameters, $(\Lambda, S)$.
+\item $S$ depends strongly on temperature. $B \propto D_s/T$ carries the
+  activation energy of surface diffusion, $E_s$, and $\tau$ carries about
+  50~kJ\,mol$^{-1}$, so $S \propto \exp[(E_v - E_s)/R_gT]$. With $E_s
+  \approx 24$~kJ\,mol$^{-1}$ (the value Choukroun et al., 2020, attribute to
+  surface diffusion), $S$ grows by a factor of about 6 from $-5$ to
+  $-40\,^{\circ}$C and keeps growing as it gets colder.
+\item $S \propto 1/R^{2}$: the time scales follow $\tau \propto R^{2}$ and
+  $\tau_s \propto R^{4}$ (Herring, 1950), so surface diffusion wins for
+  small grains.
+\item Time--temperature superposition no longer holds in general: $Q(t;T) =
+  \widehat Q(t/\tau;\Lambda,S(T))$. It survives in the two limits, $S \ll 1$
+  (clock $\tau$, about 50~kJ\,mol$^{-1}$) and $S \gg 1$ (clock $\tau_s$,
+  $E_s$), with a crossover where $S(R,T) = 1$. Cold, fine-grained deposits
+  are on the surface-diffusion side.
+\item Neck growth laws differ ($w \sim t^{1/3}$ for attachment-limited
+  vapor transport, $t^{1/7}$ for surface diffusion), so the exponent also
+  changes across the crossover.
+\end{itemize}
+
+\textbf{Difficulties.}
+\begin{itemize}
+\item \emph{The coefficient.} $D_s\delta_s$ for ice is uncertain by orders of
+  magnitude and its temperature dependence is not settled, especially near
+  melting where a disordered surface layer forms. $S$ inherits that
+  uncertainty, on top of that of $\alpha_c$ in $\tau$.
+\item \emph{The sharp-interface limit.} Degenerate-mobility Cahn--Hilliard
+  terms do not automatically reduce to pure surface diffusion; the choice of
+  $g(\phi)$ and a correction to $\mu$ matter (Gugenberger et al., 2008).
+  Combining the term with the existing non-conserved dynamics also
+  invalidates the present thin-interface calibration ($a_1$, $a_2$,
+  $\delta$), which would have to be redone.
+\item \emph{Numerics.} The term is fourth order. The quadratic $C^{1}$
+  splines already in use can represent it, but it is stiff (time step
+  limits scale as $\varepsilon^{4}$ for explicit treatment; the implicit
+  system is harder to solve), and $\nabla_s^{2}\chi$ is sensitive to how well
+  the neck is resolved, which is already the weak point of these runs.
+\item \emph{Validation.} With two uncertain coefficients, a neck-growth
+  curve alone cannot separate the routes. Their different dependence on
+  temperature, grain size and saturation is what can.
+\end{itemize}
+
+\section{Summary}
+
+\begin{center}\footnotesize\begin{tabular}{p{0.17\linewidth}p{0.22\linewidth}p{0.24\linewidth}p{0.25\linewidth}}\toprule
+ & Present model & Knudsen transport & With surface diffusion\\\midrule
+Groups & $\Lambda(T)$ & $\Lambda_K$, constant in $T$ & $\Lambda$, $S(T)$\\
+Clock & $\tau \propto \sqrt T/\rvs$ & $\tau \propto T^{3/2}/P_{vs}$ & $\tau$ and $\tau_s = R^{4}/B$\\
+Time--temperature scaling & holds; weak residual through $D_v$ & exact for constant $\alpha_c$ & only for $S \ll 1$ or $S \gg 1$\\
+Grain-size scaling & $R^{2}$ & $R^{2}$ & $R^{2}$ to $R^{4}$\\
+Main difficulty & $\alpha_c$ & non-local transport in resolved pores; $d_p$ & $D_s\delta_s$; calibration; stiffness\\\bottomrule
+\end{tabular}\end{center}
+
+{\small\raggedright\textbf{References} (DOIs checked against Crossref, 2026-10-13).
+Mullins, W. W. (1957), \emph{J. Appl. Phys.} 28, 333, doi:10.1063/1.1722742.
+Herring, C. (1950), \emph{J. Appl. Phys.} 21, 301, doi:10.1063/1.1699658.
+Pollard, W. G. \& Present, R. D. (1948), \emph{Phys. Rev.} 73, 762, doi:10.1103/PhysRev.73.762.
+R\"atz, A., Ribalta, A. \& Voigt, A. (2006), \emph{J. Comput. Phys.} 214, 187, doi:10.1016/j.jcp.2005.09.013.
+Gugenberger, C., Spatschek, R. \& Kassner, K. (2008), \emph{Phys. Rev. E} 78, 016703, doi:10.1103/PhysRevE.78.016703.
+Kaempfer \& Plapp (2009), Moure \& Fu (2024) and Choukroun et al.\ (2020) as in the project bibliography.\par}
+
+\end{document}
