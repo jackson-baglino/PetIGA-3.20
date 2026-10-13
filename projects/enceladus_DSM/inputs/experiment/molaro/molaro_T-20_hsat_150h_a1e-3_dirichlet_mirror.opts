@@ -3,9 +3,8 @@
 # equal grains, -20 C. Pair with
 # geometry/molaro/molaro_2D_L222x188um_eps0.12um_axisym_T-20eq_R84um_tangent_mirror.opts
 #
-# Same physics and numerics as molaro_T-20_hsat_100h_a1e-3_dirichlet_mirror.opts
-# (the pre-necked run of 2026-10-06), so the two differ only in the initial
-# condition. Three lines differ, each for a stated reason:
+# Same physics as molaro_T-20_hsat_100h_a1e-3_dirichlet_mirror.opts (the
+# pre-necked run of 2026-10-06). Four lines differ, each for a stated reason:
 #
 #   -alpha_c0 1.0023e-03. The earlier run had alpha_c = 1e-3 WITHOUT the
 #       thin-interface term (tau_sub = 108.92 s). The solver now always
@@ -18,10 +17,11 @@
 #       the same range (Gibbs-Thomson prediction); 150 h leaves margin.
 #   -n_out 151. Hourly snapshots, as before.
 #
-# -dtmax stays 5 tau_sub (546 s), as in the earlier run, for the same reason
-# (within 1 % of 2 tau_sub on the 2026-10-02 ladder) and so that the time
-# stepping is not a second difference between the two. The first hours are
-# limited by -dtCFL_dphimax, not by dtmax. Set -dtmax 218 for the strict rule.
+# -dtmax = 2 tau_sub (217.8 s), the project rule (user, 2026-10-13: it matters
+# most for a run that starts with practically no neck). The earlier
+# pre-necked run used 5 tau_sub, which the 2026-10-02 ladder found within 1 %
+# of 2 tau_sub, so the two runs remain comparable. The first hours are limited
+# by -dtCFL_dphimax, not by dtmax.
 #
 # Saturation: h = 1 + 2 d0/R = 1.0000241, as before (see that file's header).
 # =============================================================================
@@ -44,7 +44,7 @@
 
 -dtCFL 1
 -dtCFL_dphimax 0.15                     # as the Molaro finals: 0.85 elements/step
--dtmax 5.46e2                           # 5 tau_sub (see header)
+-dtmax 2.178e2                          # 2 tau_sub (tau_sub = 108.92 s)
 -t_out_log 0
 -outp 0
 -n_out 151                              # t_interv = 3600 s

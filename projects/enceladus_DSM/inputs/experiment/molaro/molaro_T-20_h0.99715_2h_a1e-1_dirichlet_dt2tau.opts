@@ -1,0 +1,40 @@
+# =============================================================================
+# Molaro T = -20 C at the manuscript run's conditions, with dtmax = 2 tau_sub.
+#
+# A copy of molaro_T-20_h0.99715_2h_a1e-1_dirichlet.opts (h = 0.99715,
+# alpha_c = 0.1, nominal D_v; see that file's header for where the humidity
+# comes from) with ONE line changed: -dtmax 2.68 s in place of 30 s.
+#
+# WHY. tau_sub = 1.3403 s here, so the manuscript run's 30 s cap is
+# 22 tau_sub. The project rule is 2 tau_sub (larger steps were found 2-30 %
+# slow on the aggregates), and it matters most for a run that starts from
+# tangent contact (user, 2026-10-13). Written for
+# geometry/molaro/molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_tangent_dom2.opts.
+#
+# NOTE FOR THE COMPARISON. The manuscript run therefore differs from this one
+# in TWO ways, the initial condition and the time step. Separating them needs
+# the pre-necked geometry run with this file as well.
+# =============================================================================
+
+-t_final 7.2e+03
+-temp -20.0
+-humidity 0.99715                       # h_eq - 2.875e-03; MEASURED Newton step
+-grad_temp0 0.0,0.0,0.0
+
+-flag_BC_Tfix 1
+-flag_BC_rhovfix 1                      # Dirichlet: emulates the large chamber
+
+-alpha_pointwise 1
+-alpha_model 0
+-alpha_c0 1.0e-1
+-alpha_lo 1.0e-3
+-alpha_hi 1.0e-1
+
+-dtCFL 1
+-dtCFL_dphimax 0.15                     # 0.85 elements/step
+-dtmax 2.68                             # 2 tau_sub (tau_sub = 1.3403 s)
+
+-t_out_log 0                            # OFF. -t_out_log is a COUNT of
+                                        # log-spaced snapshots, not an interval.
+-outp 0                                 # cadence from t_interv, not every step
+-n_out 121                              # t_interv = 7200/120 = 60 s exactly

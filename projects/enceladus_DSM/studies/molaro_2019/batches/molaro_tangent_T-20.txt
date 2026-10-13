@@ -1,15 +1,16 @@
-# Molaro -20 C pair from TANGENT CONTACT. ONE job. Same experiment file as the
-# manuscript run (h = 0.99715, alpha_c = 0.1, dtmax = 30 s), so the only
-# difference is the initial condition. See the geometry file's header,
-# including the KNOWN RISK of a trapped void at the neck.
+# Molaro -20 C pair from TANGENT CONTACT, dtmax = 2 tau_sub. ONE job.
+# Conditions of the manuscript run (h = 0.99715, alpha_c = 0.1). It differs
+# from that run in the initial condition AND in the time-step cap (2.68 s in
+# place of 30 s). See the geometry file's header, including the KNOWN RISK of
+# a trapped void at the neck.
 #
 #   ./scripts/HPC/submit_batch.sh --tag molaro_tangent \
 #       --tests-file studies/molaro_2019/batches/molaro_tangent_T-20.txt \
 #       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
 #
-# Cost. The manuscript run took 316 steps in 1 h 40 min on 437 ranks (about
-# 730 core-h, $9). This one needs more small steps at the start, so expect
-# 350-450 steps: about $10-15 if each step costs what it did there, up to $40
-# if it costs what the -5 C rerun's did (156 s per step on 192 ranks).
-# 24 h limit; scripts/HPC/resume_batch.sh continues the run if it is hit.
-molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_tangent_dom2:molaro_T-20_h0.99715_2h_a1e-1_dirichlet:--time 1-00:00:00
+# Cost. 120 simulated minutes at 2.68 s is about 2700 steps, 43.7M DoF
+# (192 ranks). Core-seconds per step per million DoF in earlier pair runs:
+# 100 at 5 tau_sub, 190 at 22 tau_sub, 650 at 49 tau_sub. Taking 100:
+# about 23 s per step, 17 h, 3300 core-h, $35-40. 48 h limit;
+# scripts/HPC/resume_batch.sh continues the run if it is hit.
+molaro_2D_L450x225um_eps0.12um_axisym_T-20pair_tangent_dom2:molaro_T-20_h0.99715_2h_a1e-1_dirichlet_dt2tau:--time 2-00:00:00

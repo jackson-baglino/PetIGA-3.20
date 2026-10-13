@@ -7,10 +7,10 @@
 #       --tests-file studies/molaro_2019/batches/demmenie_tangent_T-20.txt \
 #       --out-root /resnick/groups/rubyfu/jbaglino/simulation_outputs
 #
-# Estimate: about 1000 steps at dtmax = 5 tau_sub plus the CFL-limited start,
-# 18.0M DoF (~90 ranks). The pre-necked run took 736 steps in 4 h 07 min
-# ($4.45), so 6-8 h and $7-9 is the expectation. The limit below is 24 h
-# because the last estimate of this kind was low by a factor of three; if it
-# is still hit, scripts/HPC/resume_batch.sh continues the run in place.
+# Estimate: 150 h at dtmax = 2 tau_sub (217.8 s) is about 2500 steps plus the
+# CFL-limited start, 18.0M DoF (~90 ranks). The pre-necked run took 20 s per
+# step at 5 tau_sub (736 steps, 4 h 07 min, $4.45), so about 14 h and $15 is
+# the expectation. The limit below is 36 h; if it is still hit,
+# scripts/HPC/resume_batch.sh continues the run in place.
 # Measure: bash postprocess/run_batch_measure.sh <run_dir>   (passes --mirror-x0)
-molaro_2D_L222x188um_eps0.12um_axisym_T-20eq_R84um_tangent_mirror:molaro_T-20_hsat_150h_a1e-3_dirichlet_mirror:--time 1-00:00:00
+molaro_2D_L222x188um_eps0.12um_axisym_T-20eq_R84um_tangent_mirror:molaro_T-20_hsat_150h_a1e-3_dirichlet_mirror:--time 1-12:00:00
