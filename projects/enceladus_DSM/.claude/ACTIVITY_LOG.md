@@ -1,3 +1,11 @@
+## 2026-10-13 (later) — Surface diffusion in Molaro's model, checked properly
+
+- `studies/molaro_2019/sa81_mechanisms/`: Molaro's surface-diffusion and vapor terms implemented as printed. At their -20 C necks surface diffusion is below 1 % of their vapor term; their vapor term (alpha = 1, no gas diffusion) alone gives the measured rate. Surface diffusion dominates only below a neck radius of about 4 um. Figure 10 reproduced in shape only: the vapor current matches, the surface current is about 100x theirs early.
+- Outline, Discussion 5.1: the shortfall is no longer attributed to surface diffusion; candidates listed without choosing.
+- `studies/keff_sintering/mixing_laws/`: geometric-mean rule against the simulated k_eff (porosity dependence matches for phi <= 0.375, level does not).
+
+---
+
 ## 2026-10-13 — Formal write-up of the time-temperature scaling relation
 
 - `studies/keff_sintering/temperature_scaling/time_temperature_scaling.tex/.pdf` (2 pages; a 9-page first version was cut at the user's request, it is in git history at ee431727): the sharp-interface problem, scales, substitution, and Q(t; T) = Q^(t/tau(T); Lambda(T)), tau = (1+delta) R^2 rho_ice^2 sqrt(2 pi kB T/m) / (alpha_c gamma rho_vs), shift factor a_T = sqrt(T/T_ref) rho_vs(T_ref)/rho_vs(T), activation energy L_sub M_w - R T/2 = 50 kJ/mol. Replaces the shorter note of 10-12.

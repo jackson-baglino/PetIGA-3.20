@@ -685,7 +685,7 @@ about the literature.
 \subsection{What Vapor Transport Alone Reproduces}
 \begin{enumerate}
 \item \Para{The unsaturated pair}{436--453}. \Have
-  \Msg{The shortfall against Molaro et al.\ is not a tuning problem: vapor transport cannot supply all of the measured growth, so another route is acting in the experiment.}
+  \Msg{The shortfall against Molaro et al.\ is not a tuning problem within our model: vapor transport through air cannot supply all of the measured growth. What supplies the rest is open; it is not surface diffusion by Molaro's own equations.}
   This is the one
   paragraph already written for the current results. It says: humidity
   inferred from shrinkage, $\alpha_c = 0.1$, under at $-20\,^{\circ}$C and
@@ -699,9 +699,18 @@ about the literature.
     75\% of the measured growth once the grain shrinkage is matched; the two
     cases land 0.01~$\mu$m apart (tests of 2026-09-09). The vapor route has a
     ceiling below the measurement.
-  \item What fills the gap. Swinkels \& Ashby's sintering model, which
-    Molaro et al.\ use, has surface diffusion contributing on the order of
-    the vapor route at these conditions; this model has none.
+  \item What fills the gap: not established. \textbf{Do not attribute it to
+    surface diffusion.} Evaluating Molaro's own equations at the necks they
+    measured (2026-10-13, \texttt{studies/molaro\_2019/sa81\_mechanisms/}),
+    surface diffusion is below 1\% of their vapor term; it dominates in their
+    model only for necks smaller than about 4~$\mu$m. Their model matches
+    the data through its vapor term alone, which assumes $\alpha_c = 1$ and
+    no gas diffusion. Say that the experiment grows the neck faster than
+    vapor transport through air at $\alpha_c \le 0.1$ allows, and name the
+    candidates without choosing: transport faster than diffusion in still
+    air (gradients or convection in the stage), an effective $\alpha_c$ above
+    the literature range, surface diffusion with a coefficient far above
+    published values.
   \item A caution on the comparison itself: Molaro et al.\ present their
     own model's agreement as order-of-magnitude, and its vapor term assumes
     $\alpha_c = 1$ with no gas diffusion.
