@@ -2,6 +2,7 @@
 
 - `studies/molaro_2019/sa81_mechanisms/`: Molaro's surface-diffusion and vapor terms implemented as printed. At their -20 C necks surface diffusion is below 1 % of their vapor term; their vapor term (alpha = 1, no gas diffusion) alone gives the measured rate. Surface diffusion dominates only below a neck radius of about 4 um. Figure 10 reproduced in shape only: the vapor current matches, the surface current is about 100x theirs early.
 - Outline, Discussion 5.1: the shortfall is no longer attributed to surface diffusion; candidates listed without choosing.
+- Outline reworked around the two separate mismatches (user request): the -20 C rate is a matter of vapor supply, the saturated exponent a matter of resolving a small neck with a diffuse interface (Gibbs-Thomson prediction 0.29 for the same run). New appendix with the equations, parameters and tables of both calculations. The two time scales tau_sub (interface relaxation, length eps) and tau_R (grain-scale, length R) are distinguished explicitly in Section 2.2.
 - `studies/keff_sintering/mixing_laws/`: geometric-mean rule against the simulated k_eff (porosity dependence matches for phi <= 0.375, level does not).
 
 ---
