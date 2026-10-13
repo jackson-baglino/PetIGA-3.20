@@ -1,3 +1,11 @@
+## 2026-10-13 — Formal write-up of the time-temperature scaling relation
+
+- `studies/keff_sintering/temperature_scaling/time_temperature_scaling.tex/.pdf` (9 pages): from the model equations through the sharp-interface problem, the choice of scales and the substitution step by step, to Q(t; T) = Q^(t/tau(T); Lambda(T)), tau = (1+delta) R^2 rho_ice^2 sqrt(2 pi kB T/m) / (alpha_c gamma rho_vs), shift factor a_T = sqrt(T/T_ref) rho_vs(T_ref)/rho_vs(T), activation energy L_sub M_w - R T/2 = 50 kJ/mol. Replaces the shorter note of 10-12.
+- `check_groups.py` evaluates every scale and group and asserts the closed form of tau and the tau_sub of Table 2.
+- Found while checking: with xi_v = 1e-3 the vapor mass in the interface balance is rho_vs/(xi_v rho_ice), up to 4e-3, not 1e-6; still negligible, now listed.
+
+---
+
 ## 2026-10-13 — Heat-flow movie for the JPL poster day
 
 - Added `postprocess/make_heatflow_movie.py`: ice | heat flow per unit gradient, with a k_eff timeline; needs the corrector fields from a k_eff replay (`-keff_write_corrector 1`).

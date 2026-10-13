@@ -1,0 +1,534 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,enumitem}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parskip}{0.5em}\setlength{\parindent}{0pt}
+\setlist{itemsep=0.15em,topsep=0.2em}
+\numberwithin{equation}{section}
+\newcommand{\ice}{\mathrm{ice}}
+\newcommand{\air}{\mathrm{air}}
+\newcommand{\Rbar}{\bar R}
+\newcommand{\rvs}{\rho_{vs}^{I}}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\title{A time--temperature scaling relation for isothermal sintering by vapor transport}
+\author{enceladus\_DSM \quad \texttt{studies/keff\_sintering/temperature\_scaling/}}
+\date{2026-10-13}
+\begin{document}
+\maketitle
+
+\section{Statement of the result}
+
+Consider an aggregate of ice grains of characteristic radius $\Rbar$ in air,
+held at a uniform temperature $T$ with no imposed gradient, evolving by
+sublimation, vapor diffusion and desublimation as described by the
+phase-field model of the manuscript. Let $Q$ be any quantity determined by
+the geometry of the ice (specific surface area, a neck width, the effective
+conductivity divided by that of ice). Then
+\begin{equation}
+\boxed{\;Q(t;\,T) = \widehat Q\!\left(\frac{t}{\tau(T)};\ \Lambda(T)\right),\qquad
+\tau(T) = \frac{\Rbar^{2}\,\beta(T)}{d_0(T)},\qquad
+\Lambda(T) = \frac{L^{*}(T)}{\Rbar}\;}
+\label{eq:result}
+\end{equation}
+where $\widehat Q$ depends on the initial geometry but not otherwise on
+temperature. The time scale $\tau$ contains the saturation vapor density and
+changes by a factor of 29 between $-40$ and $-5\,^{\circ}$C; the group
+$\Lambda$ contains the vapor diffusivity and changes by 20\%. To the extent
+that this weak dependence can be ignored,
+\begin{equation}
+Q(t;\,T) = Q\!\left(\frac{t}{a_T};\ T_{\mathrm{ref}}\right),
+\qquad
+a_T = \frac{\tau(T)}{\tau(T_{\mathrm{ref}})}
+    \simeq \sqrt{\frac{T}{T_{\mathrm{ref}}}}\;\frac{\rvs(T_{\mathrm{ref}})}{\rvs(T)} ,
+\label{eq:shift}
+\end{equation}
+that is, a change of temperature is a change of the unit of time. Sections
+2--7 derive this; Section~8 states it with its numbers; Section~9 gives the
+conditions under which it holds.
+
+Temperatures in formulas are absolute. Symbols follow the manuscript: $\phi$
+for the phase field, $\chi$ for curvature, subscripts ``ice'' and ``air''.
+
+\section{The model}
+
+The unknowns are the phase fields $\phi_\ice$ and $\phi_\air = 1 - \phi_\ice$,
+the temperature $T$ and the vapor density $\rho_v$. The governing equations
+(manuscript Eq.~1) are
+\begin{align}
+\pd{\phi_\ice}{t} &= -3 M_{\mathrm{sub}}\left[\frac{1}{\varepsilon}\,\phi_\ice(1-\phi_\ice)(1-2\phi_\ice) - \varepsilon\nabla^{2}\phi_\ice\right]
+ + \alpha_{\mathrm{sub}}\,\phi_\ice^{2}\phi_\air^{2}\,\frac{\rho_v - \rvs(T)}{\rho_\ice} , \label{eq:pf}\\[0.5ex]
+\rho c_p\,\pd{T}{t} &= \nabla\cdot\left(K\nabla T\right) - \rho\,L_{\mathrm{sub}}\,\pd{\phi_\air}{t} , \label{eq:heat}\\[0.5ex]
+\frac{1}{\xi_v}\,\pd{(\phi_\air\rho_v)}{t} &= \nabla\cdot\left(\phi_\air D_v\nabla\rho_v\right) + \rho_\ice\,\pd{\phi_\air}{t} . \label{eq:vap}
+\end{align}
+Equation~\eqref{eq:vap} is written as the solver implements it
+(\texttt{src/assembly.c}): the factor $\xi_v = 10^{-3}$ multiplies the
+diffusion and source terms together. With $\xi_v = 1$ it is manuscript
+Eq.~(1c).
+
+The kinetic parameters of Eq.~\eqref{eq:pf} are set from physical ones
+(\texttt{src/material\_properties.c}, following Moure \& Fu, 2024):
+\begin{equation}
+\lambda_{\mathrm{sub}} = \frac{a_1\,\varepsilon\,\rho_\ice}{d_0\,\rvs},\qquad
+\tau_{\mathrm{sub}} = \frac{\varepsilon^{2}\left(\beta_{\mathrm{sub}} + \Delta\beta\right)}{d_0},\qquad
+M_{\mathrm{sub}} = \frac{\varepsilon}{3\,\tau_{\mathrm{sub}}},\qquad
+\alpha_{\mathrm{sub}} = \frac{\lambda_{\mathrm{sub}}}{\tau_{\mathrm{sub}}} ,
+\label{eq:pfparams}
+\end{equation}
+with $a_1 = 5$. The physical inputs are
+\begin{align}
+d_0 &= \frac{\gamma\,m}{\rho_\ice\,k_B T} && \text{capillary length,} \label{eq:d0}\\
+\beta_{\mathrm{sub}} &= \frac{1}{\alpha_c}\,\frac{\rho_\ice}{\rvs(T)}\sqrt{\frac{2\pi m}{k_B T}} && \text{kinetic coefficient,} \label{eq:beta}\\
+\Delta\beta &= a_1 a_2\,\varepsilon\left(\frac{1}{D_T} + \frac{1}{D_v(T)}\right)\frac{\rho_\ice}{\rvs(T)} && \text{thin-interface term, } a_2 = 0.1581, \label{eq:dbeta}\\
+D_v &= D_{v0}\left(\frac{T}{T_0}\right)^{1.81} && \text{vapor diffusivity,} \label{eq:Dv}
+\end{align}
+and $\rvs(T)$, the saturation vapor density over flat ice (manuscript
+Eqs.~2--3). The condensation coefficient $\alpha_c$ is a constant.
+
+\textbf{Temperature enters through} $\rvs(T)$, $D_v(T)$, $d_0 \propto 1/T$
+and the explicit $\sqrt{T}$ in $\beta_{\mathrm{sub}}$. Densities, heat
+capacities and conductivities are constants in the model.
+
+\section{Assumptions}
+
+\begin{enumerate}[label=A\arabic*.]
+\item \textbf{Isothermal setting.} The mean temperature is uniform and
+  constant, and there is no imposed gradient. Write $T = T_m + \vartheta$
+  with $\vartheta$ the departure caused by latent heat. (Its size is found in
+  Section~6; it is not assumed to vanish.)
+\item \textbf{Sharp-interface limit.} The interface parameter is small
+  compared with the radii of curvature, $\varepsilon \ll \Rbar$, so the
+  phase-field equation~\eqref{eq:pf} may be replaced by its sharp-interface
+  limit.
+\item \textbf{Constant $\alpha_c$.} The condensation coefficient does not
+  depend on temperature or supersaturation.
+\end{enumerate}
+Three further simplifications are \emph{not} assumed. They are obtained in
+Section~6 by showing that the corresponding dimensionless groups are small.
+
+\section{The sharp-interface problem}
+
+Let $\Gamma(t)$ be the ice surface, $\mathbf n$ its unit normal pointing from
+the ice into the pore, and $v_n$ its velocity along $\mathbf n$, so that
+$v_n > 0$ when ice grows.
+
+\subsection{Vapor in the pore}
+In the pore $\phi_\air = 1$ and $\partial\phi_\air/\partial t = 0$, and at
+uniform temperature $D_v$ is uniform. Equation~\eqref{eq:vap} becomes
+\begin{equation}
+\frac{1}{\xi_v}\,\pd{\rho_v}{t} = D_v\,\nabla^{2}\rho_v \qquad\text{in the pore.}
+\label{eq:s-diff}
+\end{equation}
+In the ice $\phi_\air = 0$ and Eq.~\eqref{eq:vap} is empty.
+
+\subsection{Mass balance at the surface}
+Take a coordinate $n$ along $\mathbf n$ with the surface at $n = s(t)$,
+$\mathrm ds/\mathrm dt = v_n$. Across the surface $\phi_\air$ steps from 0 to
+1, $\phi_\air = H(n - s(t))$ with $H$ the unit step, so
+\[
+\pd{\phi_\air}{t} = -v_n\,\delta(n - s),\qquad
+\pd{(\phi_\air\rho_v)}{t} = -v_n\,\rho_v\,\delta(n - s) + \phi_\air\,\pd{\rho_v}{t} .
+\]
+Integrate Eq.~\eqref{eq:vap} over $n$ from $s - \eta$ to $s + \eta$ and let
+$\eta \to 0$. The bounded term $\phi_\air\,\partial\rho_v/\partial t$
+contributes nothing. The flux term gives $\phi_\air D_v\,
+\partial\rho_v/\partial n$ evaluated on the pore side (it vanishes on the ice
+side, where $\phi_\air = 0$). Hence
+\[
+-\frac{1}{\xi_v}\,v_n\,\rho_v = D_v\,\pd{\rho_v}{n}\bigg|_{\Gamma} - \rho_\ice\,v_n ,
+\]
+that is,
+\begin{equation}
+D_v\,\pd{\rho_v}{n}\bigg|_{\Gamma} = \left(\rho_\ice - \frac{\rho_v}{\xi_v}\right) v_n .
+\label{eq:s-mass}
+\end{equation}
+This is conservation of water at the surface: ice that grows ($v_n > 0$) is
+supplied by vapor diffusing toward it, so $\rho_v$ increases with distance
+from a growing surface.
+
+\subsection{Kinetics at the surface}
+The matched-asymptotic analysis of Eq.~\eqref{eq:pf} for $\varepsilon \ll
+\Rbar$ (Kaempfer \& Plapp, 2009; Moure \& Fu, 2024), with the parameters of
+Eq.~\eqref{eq:pfparams}, gives the Gibbs--Thomson condition
+\begin{equation}
+\frac{\rho_v - \rvs(T_\Gamma)}{\rvs(T_\Gamma)} = d_0\,\chi + \beta\,v_n
+\quad\text{on } \Gamma,
+\qquad
+\beta \equiv \beta_{\mathrm{sub}} + \Delta\beta = \beta_{\mathrm{sub}}\,(1 + \delta) ,
+\label{eq:s-gt}
+\end{equation}
+where $\chi$ is the curvature of the surface (positive for a convex grain),
+$T_\Gamma$ the local surface temperature, and
+\begin{equation}
+\delta \equiv \frac{\Delta\beta}{\beta_{\mathrm{sub}}}
+ = a_1 a_2\,\varepsilon\,\alpha_c\left(\frac{1}{D_T} + \frac{1}{D_v}\right)\sqrt{\frac{k_B T}{2\pi m}} .
+\label{eq:delta}
+\end{equation}
+This step is quoted, not derived here: it is the property the model is
+constructed to have, and the cited papers give the analysis.
+The factor $\rho_\ice/\rvs$ is common to $\beta_{\mathrm{sub}}$ and
+$\Delta\beta$ and cancels in $\delta$.
+
+\subsection{Heat}
+Away from the surface Eq.~\eqref{eq:heat} is conduction in each phase,
+\begin{equation}
+\rho_j c_{p,j}\,\pd{\vartheta}{t} = k_j\,\nabla^{2}\vartheta,\qquad j \in \{\ice,\ \air\} .
+\label{eq:s-heat}
+\end{equation}
+Integrating Eq.~\eqref{eq:heat} across the surface in the same way as in
+Section~4.2, with $\partial\phi_\air/\partial t = -v_n\,\delta(n-s)$ and the density
+of the phase that forms, $\rho_\ice$ (Eq.~\ref{eq:heat} weights this term with
+the mixture density; the difference is immaterial here because the group
+it feeds, $G_T$ below, is negligible),
+\begin{equation}
+k_\ice\,\pd{\vartheta}{n}\bigg|_{\ice} - k_\air\,\pd{\vartheta}{n}\bigg|_{\air} = \rho_\ice\,L_{\mathrm{sub}}\,v_n ,
+\label{eq:s-stefanT}
+\end{equation}
+with $\vartheta$ continuous. Growth releases latent heat, which is conducted
+away into both phases.
+
+\subsection{Coupling of heat to the kinetics}
+The surface temperature enters Eq.~\eqref{eq:s-gt} through $\rvs(T_\Gamma)$.
+With $T_\Gamma = T_m + \vartheta$ and $|\vartheta| \ll T_m$,
+\[
+\rvs(T_m + \vartheta) = \rvs(T_m)\left[1 + s\,\vartheta + O(\vartheta^{2})\right],
+\qquad
+s \equiv \frac{\mathrm d\ln\rvs}{\mathrm dT}\bigg|_{T_m} \simeq \frac{L_{\mathrm{sub}}\,m}{k_B T_m^{2}} ,
+\]
+the last form being the Clausius--Clapeyron relation ($s = 0.096$~K$^{-1}$ at
+$-20\,^{\circ}$C). Define the supersaturation relative to flat ice at the
+mean temperature,
+\begin{equation}
+\sigma \equiv \frac{\rho_v - \rvs(T_m)}{\rvs(T_m)} .
+\label{eq:sigma}
+\end{equation}
+Then, to first order in the small quantities $\sigma$ and $s\vartheta$,
+\[
+\frac{\rho_v - \rvs(T_\Gamma)}{\rvs(T_\Gamma)}
+= \frac{1 + \sigma}{1 + s\vartheta} - 1 = \sigma - s\,\vartheta ,
+\]
+and Eq.~\eqref{eq:s-gt} becomes
+\begin{equation}
+\sigma = d_0\,\chi + \beta\,v_n + s\,\vartheta \qquad\text{on } \Gamma,
+\label{eq:s-gt2}
+\end{equation}
+with $d_0$ and $\beta$ evaluated at $T_m$. From here on $\rvs$, $d_0$,
+$\beta$, $D_v$ denote values at $T_m$, and $T$ is written for $T_m$.
+
+\subsection{Summary of the dimensional problem}
+Unknowns: $\rho_v$ (equivalently $\sigma$) in the pore, $\vartheta$
+everywhere, and the surface $\Gamma(t)$. Equations:
+\eqref{eq:s-diff}, \eqref{eq:s-mass}, \eqref{eq:s-gt2}, \eqref{eq:s-heat},
+\eqref{eq:s-stefanT}, with periodic boundaries.
+
+\section{Scales and dimensionless variables}
+
+Choose
+\begin{equation}
+\begin{aligned}
+\mathbf x &= \Rbar\,\mathbf x' , &
+\chi &= \frac{\chi'}{\Rbar} , &
+\sigma &= \frac{d_0}{\Rbar}\,u , \\
+v_n &= V\,v' ,\quad V \equiv \frac{d_0}{\Rbar\,\beta} , &
+t &= \tau\,t' ,\quad \tau \equiv \frac{\Rbar}{V} = \frac{\Rbar^{2}\beta}{d_0} , &
+\vartheta &= \Theta\,\vartheta' ,\quad \Theta \equiv \frac{\rho_\ice L_{\mathrm{sub}} V \Rbar}{k_\ice} .
+\end{aligned}
+\label{eq:scales}
+\end{equation}
+The reasons:
+\begin{itemize}
+\item $\Rbar$ is the only length in the geometry.
+\item $d_0/\Rbar$ is the supersaturation at which a grain of radius $\Rbar$
+  is in equilibrium (Eq.~\ref{eq:s-gt2} with $v_n = 0$, $\vartheta = 0$,
+  $\chi = 1/\Rbar$), so $u$ is of order one.
+\item $V$ is the velocity that the kinetic term $\beta v_n$ needs for it to
+  be as large as the capillary term $d_0/\Rbar$.
+\item $\tau$ is the time for a surface moving at $V$ to travel $\Rbar$.
+\item $\Theta$ is the temperature difference that conducts the latent heat
+  released at velocity $V$ across a distance $\Rbar$ of ice.
+\end{itemize}
+Derivatives transform as
+\[
+\nabla = \frac{1}{\Rbar}\nabla' ,\qquad
+\pd{}{n} = \frac{1}{\Rbar}\pd{}{n'} ,\qquad
+\pd{}{t} = \frac{1}{\tau}\pd{}{t'} ,
+\]
+and from Eq.~\eqref{eq:sigma}, $\rho_v = \rvs\left(1 + \dfrac{d_0}{\Rbar}u\right)$,
+so that $\nabla\rho_v = \rvs\,\dfrac{d_0}{\Rbar^{2}}\,\nabla' u$ and
+$\partial\rho_v/\partial t = \rvs\,\dfrac{d_0}{\Rbar\,\tau}\,\partial u/\partial t'$.
+
+\section{Nondimensionalization}
+
+\subsection{Kinetics}
+Substituting~\eqref{eq:scales} in Eq.~\eqref{eq:s-gt2}:
+\[
+\frac{d_0}{\Rbar}\,u = d_0\,\frac{\chi'}{\Rbar} + \beta\,\frac{d_0}{\Rbar\,\beta}\,v' + s\,\Theta\,\vartheta' .
+\]
+Dividing by $d_0/\Rbar$,
+\begin{equation}
+u = \chi' + v' + G_T\,\vartheta' ,
+\qquad
+G_T \equiv \frac{s\,\Theta\,\Rbar}{d_0}
+ = \frac{s\,\rho_\ice L_{\mathrm{sub}}\,\Rbar}{k_\ice\,\beta} ,
+\label{eq:nd-gt}
+\end{equation}
+where $\Theta\Rbar/d_0 = \rho_\ice L_{\mathrm{sub}} V \Rbar^{2}/(k_\ice d_0)
+= \rho_\ice L_{\mathrm{sub}}\Rbar/(k_\ice\beta)$ by the definition of $V$.
+
+\subsection{Mass balance}
+The left side of Eq.~\eqref{eq:s-mass} is $D_v\,\rvs\,(d_0/\Rbar^{2})\,
+\partial u/\partial n'$. On the right, $\rho_v = \rvs(1 + O(d_0/\Rbar))$,
+so
+\[
+D_v\,\rvs\,\frac{d_0}{\Rbar^{2}}\,\pd{u}{n'} = \rho_\ice\left(1 - \frac{\rvs}{\xi_v\,\rho_\ice}\right) V\,v' .
+\]
+Solving for $v'$ and inserting $V = d_0/(\Rbar\beta)$,
+\[
+v' = \frac{D_v\,\rvs\,d_0}{\rho_\ice\,\Rbar^{2}}\cdot\frac{\Rbar\,\beta}{d_0}\cdot\frac{1}{1 - m_v}\,\pd{u}{n'}
+   = \frac{D_v\,\beta\,\rvs}{\rho_\ice\,\Rbar}\cdot\frac{1}{1 - m_v}\,\pd{u}{n'} ,
+\qquad
+m_v \equiv \frac{\rvs}{\xi_v\,\rho_\ice} .
+\]
+Define the length
+\begin{equation}
+L^{*} \equiv \frac{D_v\,\beta\,\rvs}{\rho_\ice}
+ = (1 + \delta)\,\frac{D_v(T)}{\alpha_c}\sqrt{\frac{2\pi m}{k_B T}} ,
+\label{eq:Lstar}
+\end{equation}
+the second form following from Eqs.~\eqref{eq:beta} and~\eqref{eq:s-gt}:
+$\beta\,\rvs/\rho_\ice = (1+\delta)\,\alpha_c^{-1}\sqrt{2\pi m/(k_B T)}$.
+\textbf{The saturation vapor density cancels in $L^{*}$.} With $\Lambda
+\equiv L^{*}/\Rbar$,
+\begin{equation}
+v' = \frac{\Lambda}{1 - m_v}\,\pd{u}{n'} \qquad\text{on } \Gamma .
+\label{eq:nd-mass}
+\end{equation}
+
+\subsection{Vapor diffusion}
+Substituting in Eq.~\eqref{eq:s-diff}, both sides carry $\rvs\,d_0/\Rbar$:
+\[
+\frac{1}{\xi_v}\,\rvs\,\frac{d_0}{\Rbar\,\tau}\,\pd{u}{t'} = D_v\,\rvs\,\frac{d_0}{\Rbar^{3}}\,\nabla'^{2}u
+\quad\Longrightarrow\quad
+\frac{P}{\xi_v}\,\pd{u}{t'} = \nabla'^{2}u ,
+\qquad
+P \equiv \frac{\Rbar^{2}}{D_v\,\tau} = \frac{d_0}{D_v\,\beta} .
+\]
+$P$ is the time for vapor to diffuse a distance $\Rbar$ divided by the time
+for the geometry to change.
+
+\subsection{Heat}
+Equation~\eqref{eq:s-heat} becomes $(\Rbar^{2}/(D_{T,j}\,\tau))\,
+\partial\vartheta'/\partial t' = \nabla'^{2}\vartheta'$ with $D_{T,j} =
+k_j/(\rho_j c_{p,j})$, and Eq.~\eqref{eq:s-stefanT}, divided by
+$k_\ice\Theta/\Rbar = \rho_\ice L_{\mathrm{sub}} V$,
+\[
+\pd{\vartheta'}{n'}\bigg|_{\ice} - \frac{k_\air}{k_\ice}\,\pd{\vartheta'}{n'}\bigg|_{\air} = v' .
+\]
+So $\vartheta'$ is of order one, and it enters the kinetics only through the
+term $G_T\,\vartheta'$ of Eq.~\eqref{eq:nd-gt}.
+
+\subsection{Sizes of the groups}
+Evaluated for the aggregate runs ($\Rbar = 50~\mu$m, $\varepsilon = 1~\mu$m,
+$\alpha_c = 1.020\times10^{-3}$) by \texttt{check\_groups.py}:
+
+\begin{center}\small\setlength{\tabcolsep}{4pt}\begin{tabular}{llrrrrr}\toprule
+Group & Meaning & $-40\,^{\circ}$C & $-30\,^{\circ}$C & $-20\,^{\circ}$C & $-10\,^{\circ}$C & $-5\,^{\circ}$C\\\midrule
+$\Lambda = L^{*}/\Rbar$ & attachment against diffusion & 2.50 & 2.64 & 2.78 & 2.93 & 3.00\\
+$\delta$ & thin-interface term & 0.0200 & 0.0200 & 0.0199 & 0.0199 & 0.0199\\
+$G_T$ & latent heat on saturation & $1\times10^{-4}$ & $3\times10^{-4}$ & $7\times10^{-4}$ & $2\times10^{-3}$ & $2\times10^{-3}$\\
+$m_v = \rvs/(\xi_v\rho_\ice)$ & vapor mass in the balance & $1\times10^{-4}$ & $3\times10^{-4}$ & $9\times10^{-4}$ & $2\times10^{-3}$ & $4\times10^{-3}$\\
+$P/\xi_v$ & vapor storage & $1\times10^{-9}$ & $3\times10^{-9}$ & $7\times10^{-9}$ & $2\times10^{-8}$ & $2\times10^{-8}$\\
+$\Rbar^{2}/(D_T\tau)$ & heat storage & \multicolumn{5}{c}{$10^{-12}$ to $10^{-10}$}\\\bottomrule
+\end{tabular}\end{center}
+
+$G_T$, $m_v$, $P/\xi_v$ and the heat-storage group are all below
+$4\times10^{-3}$. Setting them to zero:
+\begin{itemize}
+\item $P/\xi_v \to 0$: the vapor field is quasi-steady, $\nabla'^{2}u = 0$.
+\item $m_v \to 0$: the mass balance is $v' = \Lambda\,\partial u/\partial n'$.
+\item $G_T \to 0$: the heat problem decouples from the kinetics, and the
+  evolution is that of an isothermal system. (The scale $\Theta$ is
+  $2\times10^{-8}$ to $6\times10^{-7}$~K.)
+\end{itemize}
+$\delta$ is not small compared with these, but it is the same at every
+temperature to three digits, so it rescales $\beta$ by a constant and has
+already been absorbed in $\tau$ and $L^{*}$.
+
+\section{The reduced problem}
+
+\begin{equation}
+\boxed{\;
+\begin{aligned}
+\nabla'^{2}u &= 0 && \text{in the pore,}\\
+u &= \chi' + v' && \text{on } \Gamma' ,\\
+v' &= \Lambda\,\pd{u}{n'} && \text{on } \Gamma' ,
+\end{aligned}
+\;}
+\label{eq:reduced}
+\end{equation}
+with periodic boundaries, the surface $\Gamma'$ moving at normal velocity
+$v'$ in the time $t' = t/\tau$. Eliminating $v'$, the two surface conditions
+are the single condition $u - \Lambda\,\partial u/\partial n' = \chi'$.
+
+Problem~\eqref{eq:reduced} contains one parameter, $\Lambda$. Given the
+initial geometry in units of $\Rbar$, its solution $\Gamma'(t')$ is a
+function of $t'$ and $\Lambda$ only.
+
+\textbf{Meaning of $\Lambda$.} A vapor molecule travelling a distance $\ell$
+between two surfaces meets a diffusive resistance proportional to $\ell$ and
+an attachment resistance proportional to $L^{*}$. For $\Lambda \to \infty$
+the field $u$ is uniform, $v' = \bar u - \chi'$ with $\bar u$ fixed by
+conservation of ice ($\oint v'\,\mathrm d\Gamma' = 0$), and the problem has
+no parameter at all. For $\Lambda \to 0$, $u = \chi'$ on the surface and
+diffusion alone limits the rate. The aggregates have $\Lambda \approx 2.5$
+to 3: attachment is the larger resistance for transport between neighboring
+surfaces, and diffusion is not negligible.
+
+\section{The time--temperature scaling relation}
+
+\subsection{Statement}
+Because Problem~\eqref{eq:reduced} determines $\Gamma'$ as a function of
+$t/\tau$ and $\Lambda$, any geometric quantity $Q$, made dimensionless with
+$\Rbar$, satisfies Eq.~\eqref{eq:result}:
+\[
+Q(t;\,T) = \widehat Q\!\left(\frac{t}{\tau(T)};\ \Lambda(T)\right).
+\]
+This applies to the specific surface area (as $\mathrm{SSA}\cdot\Rbar$), to
+neck widths, and to $k_{\mathrm{eff}}/k_\ice$, which for fixed
+$k_\air/k_\ice$ is a functional of the geometry alone.
+
+\subsection{The time scale}
+From Eqs.~\eqref{eq:scales}, \eqref{eq:d0}, \eqref{eq:beta}
+and~\eqref{eq:s-gt},
+\[
+\tau = \frac{\Rbar^{2}\beta}{d_0}
+= \Rbar^{2}\cdot\frac{1+\delta}{\alpha_c}\,\frac{\rho_\ice}{\rvs}\sqrt{\frac{2\pi m}{k_B T}}\cdot\frac{\rho_\ice\,k_B T}{\gamma\,m} ,
+\]
+and since $\dfrac{k_B T}{m}\sqrt{\dfrac{2\pi m}{k_B T}} = \sqrt{\dfrac{2\pi k_B T}{m}}$,
+\begin{equation}
+\boxed{\;\tau(T) = (1+\delta)\,\frac{\Rbar^{2}\,\rho_\ice^{2}}{\alpha_c\,\gamma}\;\frac{1}{\rvs(T)}\sqrt{\frac{2\pi k_B T}{m}}\;}
+\label{eq:tau}
+\end{equation}
+The temperature dependence is $\tau \propto \sqrt{T}/\rvs(T)$.
+
+\subsection{The shift factor}
+Relative to a reference temperature,
+\begin{equation}
+a_T \equiv \frac{\tau(T)}{\tau(T_{\mathrm{ref}})}
+ = \sqrt{\frac{T}{T_{\mathrm{ref}}}}\;\frac{\rvs(T_{\mathrm{ref}})}{\rvs(T)} ,
+\label{eq:aT}
+\end{equation}
+the factor $(1+\delta)$ cancelling to $10^{-4}$. It does not depend on
+$\Rbar$, $\alpha_c$, $\gamma$ or $\varepsilon$.
+
+\begin{center}\begin{tabular}{lrrrrr}\toprule
+ & $-40\,^{\circ}$C & $-30\,^{\circ}$C & $-20\,^{\circ}$C & $-10\,^{\circ}$C & $-5\,^{\circ}$C\\\midrule
+$\rvs$ [$10^{-4}$ kg\,m$^{-3}$] & 1.055 & 3.123 & 8.487 & 21.39 & 33.11\\
+$V$ [$\mu$m\,d$^{-1}$] & 0.029 & 0.083 & 0.221 & 0.546 & 0.838\\
+$\tau$ [d] & 1747 & 603 & 226 & 91.5 & 59.7\\
+$a_T$ ($T_{\mathrm{ref}} = -20\,^{\circ}$C) & 7.72 & 2.66 & 1 & 0.404 & 0.264\\
+$L^{*}$ [$\mu$m] & 125.0 & 132.0 & 139.2 & 146.4 & 150.1\\
+$\Lambda$ & 2.50 & 2.64 & 2.78 & 2.93 & 3.00\\\bottomrule
+\end{tabular}\end{center}
+
+Between $-40$ and $-5\,^{\circ}$C, $\tau$ changes by a factor of 29.3: a
+factor of 31.4 from $\rvs$ and 0.93 from $\sqrt T$.
+
+\subsection{Activation energy}
+In the model $\rvs$ is proportional to the saturation vapor pressure (for
+$P_{vs} \ll P_{\mathrm{atm}}$), which obeys the Clausius--Clapeyron relation,
+so $\rvs \propto \exp(-L_{\mathrm{sub}} M_w/(R_g T))$ with $M_w$ the molar
+mass and $R_g$ the gas constant. Then, from Eq.~\eqref{eq:tau},
+\begin{equation}
+E_a \equiv R_g\,\frac{\mathrm d\ln\tau}{\mathrm d(1/T)} = L_{\mathrm{sub}}\,M_w - \tfrac12 R_g T \approx 50~\mathrm{kJ\,mol^{-1}} .
+\label{eq:Ea}
+\end{equation}
+The formula gives 49.9 at $-20\,^{\circ}$C; a fit of $\ln\tau$ against $1/T$
+over the five temperatures gives 50.1.
+
+\subsection{The residual dependence}
+From Eq.~\eqref{eq:Lstar} and~\eqref{eq:Dv}, $L^{*} \propto D_v/\sqrt T
+\propto T^{1.31}$, so $\Lambda$ changes by $(268.15/233.15)^{1.31} = 1.20$
+across the range. This is the only way the vapor diffusivity enters. If the
+solution of Problem~\eqref{eq:reduced} is insensitive to a 20\% change in
+$\Lambda$ about $\Lambda \approx 2.8$, Eq.~\eqref{eq:result} reduces to
+Eq.~\eqref{eq:shift}: curves at different temperatures coincide when plotted
+against $t/a_T$. In the limit $\Lambda \to \infty$ the coincidence is exact.
+
+\subsection{A consequence that does not involve time}
+Eliminating $t/\tau$ between two geometric quantities $Q_1$ and $Q_2$ of the
+same run gives a relation $Q_1 = F(Q_2;\,\Lambda)$ that does not contain
+$\tau$ at all. Temperature enters it only through $\Lambda$. This is why
+$k_{\mathrm{eff}}$ plotted against SSA for one packing is the same at every
+temperature, and why that comparison can be tighter than the comparison of
+rates.
+
+\subsection{Relation to the clock used in the manuscript}
+From Eq.~\eqref{eq:pfparams},
+\begin{equation}
+\tau_{\mathrm{sub}} = \frac{\varepsilon^{2}\beta}{d_0} = \left(\frac{\varepsilon}{\Rbar}\right)^{2}\tau ,
+\qquad
+\theta \equiv \frac{t}{\tau_{\mathrm{sub}}} = \left(\frac{\Rbar}{\varepsilon}\right)^{2}\frac{t}{\tau} .
+\end{equation}
+With $\varepsilon/\Rbar = 1/50$ in every aggregate run, $\theta = 2500\,
+t/\tau$, so collapse against $\theta$ and collapse against $t/\tau$ are the
+same statement, and $\tau_{\mathrm{sub}}(T)/\tau_{\mathrm{sub}}(T_{\mathrm{ref}})
+= a_T$. Check: $226.3~\mathrm{d}/2500 = 7822$~s, the value of
+$\tau_{\mathrm{sub}}$ at $-20\,^{\circ}$C in manuscript Table~2; the other
+four temperatures agree to 0.03\%.
+
+\section{Conditions of validity}
+
+The relation rests on A1--A3 and on the smallness of the groups of
+Section~6.5. It fails, or needs amending, when:
+\begin{itemize}
+\item \textbf{$\alpha_c$ depends on temperature.} Then $\tau$ acquires that
+  dependence and so does $\Lambda$ (Eq.~\ref{eq:Lstar}); the first changes
+  $a_T$, the second breaks the collapse if $\alpha_c$ changes much.
+\item \textbf{A second transport mechanism acts}, such as surface
+  diffusion. It adds a term to the surface velocity with its own time scale
+  and temperature dependence; the ratio of the two time scales is a new
+  group that varies with temperature.
+\item \textbf{A temperature gradient is imposed.} $\rvs$ then varies in
+  space at order $s\,\Rbar\,|\nabla T|\,\Rbar/d_0$ in units of $u$, which
+  exceeds one for gradients above about $4$~K\,m$^{-1}$ at these sizes. The
+  isothermal problem no longer applies.
+\item \textbf{$\Lambda$ is of order one or less and varies more}: larger
+  grains, a larger $\alpha_c$, or a wider temperature range. The diffusivity
+  then matters in full. For the Molaro pairs ($\alpha_c = 0.1$, $\Rbar
+  \approx 87~\mu$m) $\Lambda \approx 0.02$.
+\item \textbf{The interface is not thin}, $\varepsilon/\Rbar$ not small
+  compared with the local radius of curvature. The departure from the
+  sharp-interface problem is the same at every temperature if
+  $\varepsilon/\Rbar$ is fixed, so it changes $\widehat Q$ but not the
+  collapse.
+\end{itemize}
+
+\section{Comparison with the simulations}
+
+The 125 aggregate runs (five packings at each of five porosities, each at
+five temperatures) test the relation with the full diffuse-interface model:
+\begin{itemize}
+\item Rates follow $\tau_{\mathrm{sub}}$ to within 4\%: a packing reaches a
+  given SSA at times in the ratio $a_T$.
+\item $k_{\mathrm{eff}}$ at matched SSA agrees across the five temperatures
+  to within 0.27\% for every packing (median 0.07\%), the time-free
+  consequence of Section~8.6.
+\end{itemize}
+A 20\% change in $\Lambda$ is of the right size to account for the 4\%; that
+it is the cause has not been tested. The analysis shows that the collapse is
+a property of the model for any starting geometry, and the simulations show
+how closely the diffuse-interface implementation follows it.
+
+\appendix
+\section{Constants used}
+$\rho_\ice = 919$~kg\,m$^{-3}$; $k_\ice = 2.29$, $k_\air =
+0.02$~W\,m$^{-1}$\,K$^{-1}$; $L_{\mathrm{sub}} = 2.83\times10^{6}$~J\,kg$^{-1}$;
+$\gamma = 0.109$~J\,m$^{-2}$; $m = 2.9915\times10^{-26}$~kg; $D_{v0} =
+2.178\times10^{-5}$~m$^{2}$\,s$^{-1}$ at $T_0 = 273.15$~K; $D_T =
+7.78\times10^{-6}$~m$^{2}$\,s$^{-1}$; $a_1 = 5$, $a_2 = 0.1581$; $\xi_v =
+10^{-3}$. Every number in this note is produced by \texttt{check\_groups.py},
+which also asserts that the closed form~\eqref{eq:tau} equals
+$\Rbar^{2}\beta/d_0$ and that $(\varepsilon/\Rbar)^{2}\tau$ reproduces
+manuscript Table~2.
+
+\end{document}
