@@ -24,7 +24,7 @@
 \newcommand{\New}[1]{\textbf{#1} \textnormal{\small(new)}}
 \title{Manuscript outline: what each paragraph should contain}
 \author{enceladus\_DSM \quad \texttt{studies/keff\_sintering/manuscript\_outline.tex}}
-\date{2026-10-12, against the draft of the same date}
+\date{2026-10-13, against the Overleaf project uploaded that day}
 \begin{document}
 \maketitle
 
@@ -37,15 +37,15 @@ $-40$ to $-5\,^{\circ}$C, air at 1~atm, sealed pores, 50~$\mu$m grains,
 
 \textbf{How to read this.} This is a plan of content: each numbered item is
 one paragraph and lists what it should say, with the numbers. Line numbers
-(L\,first--last) are those of the draft of 2026-10-12 in
-\texttt{Literature/} (36 pages, 669 lines). \Have the paragraph exists and says this; \Miss it
+(L\,first--last) are those of the current source compiled here (32 pages;
+the body ends at L508). \Have the paragraph exists and says this; \Miss it
 does not exist yet; \Stale one specific thing in it is wrong; \Cut it can be
 shorter. Boxes mark where a figure or table goes.
 
-\textbf{Sections 4 and 5 of the draft are treated as notes.} They were
-written for an earlier model and an earlier set of results. Nothing they say
-about results is carried over. They are used only as a source of points
-about the literature, marked \Note, each to be checked against its source.
+\textbf{The old Discussion is gone from the source.} Its literature points
+are kept here, marked \Note. Their line numbers refer to the PDF of
+2026-10-12 in \texttt{Literature/}, which still contains that text. Each
+point is to be checked against its source before use.
 
 \textbf{Suggested citations} follow each paragraph, with the key in your
 \texttt{.bib}. Most are the ones the old Discussion used. I have matched them
@@ -72,9 +72,10 @@ campaign record and the manuscript plan.
   vapor route does and does not reproduce, and on exponents; no Thomas or
   Kingery runs. The two mismatches have different causes and neither is
   attributed to missing surface diffusion (Appendix, this outline): the rate
-  at $-20\,^{\circ}$C is a matter of how fast vapor can be supplied; the
-  exponent at saturation is a matter of resolving a small neck with a
-  diffuse interface. Molaro's conventions: neck \emph{width}, time anchored on the first
+  at $-20\,^{\circ}$C is a matter of how fast vapor can be supplied, in an
+  experiment whose driving force is a few millikelvin-equivalent; the
+  exponent at saturation is, on present evidence, an artifact of starting
+  from a pre-made neck (to be confirmed by the tangent-start run). Molaro's conventions: neck \emph{width}, time anchored on the first
   measurement. The $-20\,^{\circ}$C series is the benchmark.
 \item \textbf{Conductivity} (09-23). Tensor law in the interface; the cell
   problem is a steady problem on a frozen microstructure and says nothing
@@ -99,127 +100,96 @@ campaign record and the manuscript plan.
 \begin{center}\begin{tabular}{p{0.34\linewidth}p{0.58\linewidth}}\toprule
 Section & State\\\midrule
 Key points, Abstract, Summary & to write (placeholders)\\
-1 Introduction & written; small fixes and trims\\
+1 Introduction & written; small fixes and trims remain\\
 2.1--2.3 Model, kinetics, homogenization & written; four definitions to add\\
-2.4, 2.5 Numerics, simulation design & to write (material exists in Section 3)\\
-3 Grain pairs & written, both pairs; numbers and one correction to add\\
+2.4, 2.5 Numerics, simulation design & headings only\\
+3 Grain pairs & written; numbers to add, one sentence wrong\\
 4 Aggregates & written; numbers to add, one paragraph to correct\\
-5 Discussion & to write; plan below\\
-6 Conclusions & to write\\\bottomrule
+5.1 What vapor transport reproduces & three paragraphs drafted; the first two need revising for what was found on 10-13\\
+5.2 Temperature as a rescaling of time & one paragraph begun\\
+5.3--5.6, 6 Conclusion & headings only\\
+Appendices A, B & headings only; content is in the Appendix of this outline\\\bottomrule
 \end{tabular}\end{center}
 
-\textbf{New in this draft:} the temperature table (Table~2) is in and the
-table notes resolve; the saturated-pair paragraph is written (L339--353); the
-Discussion has a new paragraph on the Molaro comparison (L436--453).
+\textbf{Done since the last check:} the section structure of this outline is
+adopted; the line-breaking fix and \verb|width=\textwidth| figures are in, and
+the project compiles with no overfull boxes, no undefined citations and no
+undefined references; the temperature table is placed; the Figure~3 caption
+covers panels (c), (d); Figure~1 says $w(t)$; ``30-day''; ``harbor''.
+
+\section*{Work list, in order}
+\begin{enumerate}
+\item \textbf{Correct Section~5.1 as drafted} (L442--493). Two sentences
+  attribute the shortfall to surface diffusion, which Appendix~A rules out;
+  ``by 41\% and 170\%'' misstates the numbers; one sentence is unfinished.
+  Details under Section~5.1 below.
+\item \textbf{Correct Section~3.2} (L346--347): $\alpha_c = 10^{-3}$ is the
+  attachment-limited regime, not a vapor-limited one.
+\item \textbf{Wait for the tangent-start saturated run} before finalizing
+  what Sections 3.2, 5.1 and Appendix~B say about the exponent (``Runs
+  pending'' below).
+\item \textbf{Write Sections 2.4 and 2.5}; move the set-up text out of
+  Sections 3 and 4 into them.
+\item \textbf{Add the numbers to Section~4} and correct the high-porosity
+  paragraph (L398--416).
+\item \textbf{Finish 5.2; write 5.3--5.6, the Conclusion, Appendices A and
+  B.} Plans below; the two-page scaling note
+  (\texttt{temperature\_scaling/}) is the source for 5.2.
+\item \textbf{Front matter:} key points, abstract, plain-language summary.
+\item \textbf{Small corrections} (last section of this outline).
+\end{enumerate}
+
+\section*{Runs pending}
+\begin{itemize}
+\item \textbf{Saturated pair from tangent contact} (submitted 2026-10-13;
+  batch file \texttt{demmenie\_tangent\_T-20}). Same grains, interface
+  parameter and kinetics as the run in Figure~4; the grains start just
+  touching. It decides between two readings of the low exponent: the
+  pre-made neck (its shape, and the unknown time it ``had been growing'')
+  or the interface width. Test: at equal neck widths, compare each run's
+  growth rate with the Gibbs--Thomson value. Expected exponent about 0.28.
+\item \textbf{Molaro $-20\,^{\circ}$C from tangent contact} (prepared, not
+  submitted). A 10-minute pilot (batch file
+  \texttt{molaro\_tangent\_T-20\_pilot}) checks first for a trapped void at
+  the neck, the artifact that led to the pre-made neck in August.
+\item Until the first is in, write the exponent passages as marked
+  ``provisional'' below.
+\end{itemize}
+
 \section*{Section titles}
-
-Descriptive headings in place of ``Methods'' and ``Results''; the Results
-become two sections. The rest of this outline uses the new titles.
-
-\begin{center}\small\begin{tabular}{p{0.44\linewidth}p{0.50\linewidth}}\toprule
-Draft & Suggested\\\midrule
-1 Introduction & 1 Introduction\\
-2 Methods & 2 Modeling Approach\\
-2.1 Phase-Field Model For Dry Snow Metamorphism & 2.1 Phase-Field Model of Dry Snow Metamorphism\\
-2.2 Gibbs-Thomson Condition & 2.2 Interface Kinetics and the Sintering Time Scale\\
-2.3 Homogenizing for Effective Thermal Conductivity & 2.3 Effective Thermal Conductivity by Homogenization\\
--- & 2.4 Numerical Implementation\\
--- & 2.5 Simulation Design: Grain Pairs and Aggregates\\
-3 Results & --\\
-3.1 Phase-Field Model Validation & 3 Neck Growth Between Two Ice Grains\\
- & 3.1 Comparison With Unsaturated Experiments\\
- & 3.2 Growth at Saturation\\
-3.2 Aggregate Sintering and Effective Thermal Conductivity & 4 Thermal Conductivity of Sintering Aggregates\\
- & 4.1 Microstructural Evolution\\
- & 4.2 Temperature Rescales Time\\
- & 4.3 Conductivity as a Function of Specific Surface Area\\
-4 Discussion & 5 Discussion\\
-4.1 What vapor transport alone reproduces & 5.1 What Vapor Transport Alone Reproduces\\
-4.2 SSA is a universal predictor of $\mathbf{K}_{\mathrm{eff}}$ & 5.2 Temperature as a Rescaling of Time\\
- & 5.3 Specific Surface Area as the State Variable\\
- & 5.4 What a Laboratory Could Measure\\
- & 5.5 Implications for Plume Deposits on Enceladus\\
- & 5.6 Limitations\\
-5 Conclusion & 6 Conclusions\\\bottomrule
-\end{tabular}\end{center}
-
-``SSA is a universal predictor'' claims more than the result: the power law
-holds for $\varphi \le 0.375$ and porosity sets the level.
+The descriptive headings are adopted in the draft. Still to change: ``2
+Methods'' (suggested: Modeling Approach), ``2.2 Gibbs-Thomson Condition''
+(Interface Kinetics and the Sintering Time Scale), ``2.3 Homogenizing for
+Effective Thermal Conductivity'' (Effective Thermal Conductivity by
+Homogenization), and capitals in ``5.1 What vapor transport alone
+reproduces''. All optional.
 
 \section*{Build check (LaTeX warnings)}
 
-From the Overleaf project uploaded on 2026-10-11 (the newer draft came as a PDF only). As uploaded: \textbf{561 overfull-box
-warnings}, 144 underfull, 19 undefined citation keys, 8 undefined
-references. With the changes below, tested on a copy: \textbf{0 overfull, 0
-underfull, 0 undefined citations}; the undefined references remain because
-their targets do not exist.
-
+The project uploaded on 2026-10-13 compiles here in 32 pages with
+\textbf{no overfull or underfull boxes, no undefined citations, no undefined
+references}, and BibTeX reports no warnings. What remains:
 \begin{enumerate}
-\item \textbf{554 of the overfull warnings: every line of body text.} The
-  class sets ragged-right text with a 24~pt margin and only 2~em of slack
-  (\texttt{agujournal2019.cls}, lines 113--115). TeX cannot break
-  paragraphs within that slack, gives up, and lets each line run into the
-  margin. Immediately after \verb|\begin{document}|:
+\item \textbf{Two font warnings} (``Font shape \ldots\ in size
+  $\langle10.5\rangle$ not available''). The class sets section headings at
+  10.5~pt, a size Computer Modern does not have, so LaTeX substitutes
+  10.95~pt. Harmless. To remove them, put this on the line \emph{before}
+  \verb|\documentclass| (tested: zero warnings):
 \begin{verbatim}
-\setlength{\RaggedRightRightskip}{0pt plus 4em}\RaggedRight
-\hbadness=10000 \vbadness=10000
+\RequirePackage{fix-cm}
 \end{verbatim}
-  The first line removes the overfull warnings and leaves the page count
-  where it is (37 pages against 38). The second hides the underfull
-  warnings, which come from figure captions and page breaks and are
-  harmless. Keeping the class's 24~pt margin (\texttt{24pt plus 4em}) also
-  works and costs two pages.
-\item \textbf{The other 7: the figures.} Each is included at 170~mm; the
-  text block is 5.5~in (139.7~mm), so each sticks out 86~pt to the right.
-  To keep the true size and center it on the text block:
-\begin{verbatim}
-\makebox[\textwidth][c]{\includegraphics[width=170mm]{...}}
-\end{verbatim}
-  or use \verb|width=\textwidth| in the draft and supply the 170~mm files
-  at submission.
-\item \textbf{Table~2 was taller than the page} by 168~pt (``Float too
-  large''). Cause: in draft mode the class gives \verb|\footnotesize| a
-  20~pt line spacing, so the tables stayed double-spaced. Fixed in
-  \texttt{tables.tex} (2026-10-11): the tables set their size with
-  \verb|\fontsize{8}{10}|. Table~2 now takes half a page. Re-upload
-  \texttt{tables.tex}; nothing changes in the manuscript source.
-\item \textbf{19 undefined citation keys}, all in Sections 4--5. The text
-  uses an older key style; every one has an entry in the \texttt{.bib}
-  under a new key. Find and replace:
-
-  {\footnotesize\begin{tabular}{@{}ll@{}}
-  \texttt{bouvet\_snow\_2022} & \texttt{bouvetSnowEquiTemperatureMetamorphism2022}\\
-  \texttt{braun\_rigorous\_2024} & \texttt{braunRigorousApproachSpecific2024}\\
-  \texttt{byrne\_radar\_2024} & \texttt{byrneRadarAttenuationSubsurface2024}\\
-  \texttt{calonne\_numerical\_2011} & \texttt{calonneNumericalExperimentalInvestigations2011}\\
-  \texttt{calonne\_study\_2014} & \texttt{calonneStudyTemperatureGradient2014}\\
-  \texttt{calonne\_thermal\_2019} & \texttt{calonneThermalConductivitySnow2019}\\
-  \texttt{fourteau\_impact\_2021} & \texttt{fourteauImpactWaterVapor2021}\\
-  \texttt{gallet\_measurement\_2009} & \texttt{galletMeasurementSpecificSurface2009}\\
-  \texttt{granger\_orientation\_2021} & \texttt{grangerOrientationSelectiveGrain2021}\\
-  \texttt{jaumann\_distribution\_2008} & \texttt{jaumannDistributionIcyParticles2008}\\
-  \texttt{kaempfer\_phase-field\_2009} & \texttt{kaempferPhasefieldModelingDry2009}\\
-  \texttt{libbrecht\_measurements\_2013} & \texttt{libbrechtMeasurementsSurfaceAttachment2013}\\
-  \texttt{libbrecht\_physical\_2017} & \texttt{libbrechtPhysicalDynamicsIce2017}\\
-  \texttt{matzl\_measuring\_2006} & \texttt{matzlMeasuringSpecificSurface2006}\\
-  \texttt{molaro\_microstructural\_2019} & \texttt{molaroMicrostructuralEvolutionWater2019}\\
-  \texttt{proksch\_density\_2015} & \texttt{prokschDensitySpecificSurface2015}\\
-  \texttt{schneebeli\_tomography\_2004} & \texttt{schneebeliTomographyTemperatureGradient2004}\\
-  \texttt{spencer\_enceladus\_2009} & \texttt{spencerEnceladusActiveCryovolcanic2009}\\
-  \texttt{spencer\_enceladus\_2013} & \texttt{spencerEnceladusActiveIce2013}\\
-  \end{tabular}}
-
-  Check \texttt{fourteau\_impact\_2021}: the \texttt{.bib} also has
-  \texttt{fourteauMacroscopicWaterVapor2021}.
-\item \textbf{Undefined references.} The table notes are resolved in the
-  new draft. Left: six in the old Discussion, to figures and sections that
-  no longer exist; they go when that text is replaced.
-\item \textbf{Unused files in the project.} \texttt{Figure8\_timescales.pdf}
-  (dropped); \texttt{Figure7\_state\_law\_allphi.pdf};
-  \texttt{agujournaltemplate.tex}; \texttt{si\_template\_2019.tex} (needed
-  later for the supplement).
+\item \textbf{``Label(s) may have changed. Rerun''} appears after any edit
+  that moves a label and goes away on the next compile. Overleaf reruns
+  automatically; if it persists there, recompile from scratch (the
+  ``Recompile'' menu, ``Clear cached files'').
+\item \textbf{Not cited in the text} (no warning, but AGU requires it):
+  Table~2 (temperature-dependent quantities), Table~3 (complete
+  parameters), Figure~2.
+\item \textbf{Unused files} in the project: the Figure~8 timescale map,
+  the all-porosity variant of Figure~7, and the AGU template file.
 \end{enumerate}
-
+If Overleaf shows warnings other than these, paste them: its compiler
+settings can differ from the build here.
 
 \section*{Front matter}
 \begin{itemize}
@@ -505,19 +475,18 @@ the numerical method; what the section covers.
 \end{enumerate}
 
 \section{Neck Growth Between Two Ice Grains}
-\textit{Draft: 3 Results (opening) and 3.1 Phase-Field Model Validation.}
 
-\Para{Section opening}{293--308}. \Cut Two sentences: before using the model
+\Para{Section opening}{295--310}. \Cut Two sentences: before using the model
 on aggregates, we ask how much of measured neck growth it reproduces, with
 one experiment away from saturation and one at saturation. The rest of the
 drafted opening repeats the Introduction.
 
 \subsection{Comparison With Unsaturated Experiments}
 \begin{enumerate}
-\item \Para{Why these experiments}{309--314}. \Have
+\item \Para{Why these experiments}{311--316}. \Have
   \Msg{They are the cleanest published measurements of neck growth between two ice grains at these sizes and temperatures.}
  
-\item \Para{What is fitted and what is not}{315--327}. \Have in part.
+\item \Para{What is fitted and what is not}{317--329}. \Have in part.
   \Msg{One quantity is inferred from the data (the humidity, from grain shrinkage) and one is chosen (the condensation coefficient, at its upper limit); nothing is tuned to the neck.}
  
   Include: the chamber humidity is not reported, so it is inferred at each
@@ -526,7 +495,7 @@ drafted opening repeats the Introduction.
   the literature range, chosen as the fastest plausible vapor route.
   \Stale ``The only free parameter is $\beta_{\mathrm{sub}}$'': the humidity
   is fitted too.
-\item \Para{Result}{328--338}. \Have panels (a), (b) in words.
+\item \Para{Result}{330--340}. \Have panels (a), (b) in words.
   \Msg{Vapor transport alone gives less than half of the measured neck growth at $-20\,^{\circ}$C; the $-5\,^{\circ}$C comparison is not reliable.}
   \Miss Add:
   at $-20\,^{\circ}$C the model gives 41\% of the measured neck growth over
@@ -545,7 +514,7 @@ drafted opening repeats the Introduction.
 
 \subsection{Growth at Saturation}
 \begin{enumerate}
-\item \Para{Set-up and result}{339--353}. \Have
+\item \Para{Set-up and result}{342--356}. \Have
   \Msg{With the grains held at constant size, the neck grows as a power law in time with an exponent of about 0.2, below the measured and theoretical values; away from saturation the exponent drops, as observed.}
   Grain size, temperature,
   duration, how the saturation is set, the fit window, exponent 0.21.
@@ -561,43 +530,48 @@ drafted opening repeats the Introduction.
   \texttt{studies/molaro\_2019/exponents/}). Only $-20\,^{\circ}$C is
   quoted: the $-5\,^{\circ}$C series is set aside (decided 2026-10-12).
   \Cite{Demmenie et al.\ 2025 \texttt{demmenieIceSinteringSublimation2025}.}
-  \Stale L343--344 says $\alpha_c = 10^{-3}$ puts growth in ``a
+  \Stale L346--347 still says $\alpha_c = 10^{-3}$ puts growth in ``a
   vapor-limited regime \ldots\ governed by vapor transport''. It is the
   reverse: at this $\alpha_c$ growth is limited by attachment (gas diffusion
   adds 0.4--2\% to the resistance). That is also the regime the $t^{1/3}$ law
   describes, so the comparison stands.
-\item \New{Why the exponent is low.} \Miss
-  \Msg{The sharp-interface law that the model is built to obey predicts 0.29 for this very run. The run gives 0.21 because for its first tens of hours the neck is only a few interface widths across and grows too fast, which flattens the fitted curve. It is a resolution effect, not missing physics.}
-  State the evidence in this order (numbers and method in the Appendix of
-  this outline):
+\item \New{Why the exponent is low.} \Miss \textbf{Provisional until the tangent-start run is in.}
+  \Msg{The sharp-interface law that the model is built to obey predicts 0.29 for this very run. The run gives 0.21 because it starts from a neck that was put in by hand: its shape is not the shape sintering produces, and the fit has to guess how long it had been growing. It is an artifact of the starting condition, not missing physics.}
+  The evidence, in this order (numbers and method in Appendix~B of this
+  outline):
   \begin{itemize}
   \item The Gibbs--Thomson prediction for this geometry and these parameters
     gives an exponent of 0.29 and the final neck width to 4\%.
-  \item The run's neck velocity divided by that prediction is 2.5 when the
-    neck fillet is 2 interface bands across, 1.2 at 5 bands and 1.0 at 7
-    bands: the excess follows the ratio of interface width to fillet radius.
-  \item The exponent fitted from later and later start times rises (0.215
-    from 2~h, 0.236 from 71~h).
-  \item The run starts from a neck already 28~$\mu$m wide, so the fit must
-    guess how long that neck ``had been growing''. The free fit takes 4.8~h;
-    the prediction says 16~h, and with that value the same data give 0.28.
-    An earlier run of this model from grains just touching gave 0.283.
+  \item The starting neck is two overlapping spheres: a sharp notch, with
+    the centers 2.3~$\mu$m closer than touching grains. A neck grown by
+    vapor transport has a rounded fillet and no approach of the centers.
+  \item The run grows faster than the prediction at first (2.5 times at
+    2~h) and settles onto it (1.0 by 71~h).
+  \item The fit must assume how long the neck had been growing. A free fit
+    takes 4.8~h and gives 0.21; the prediction says 16~h, and with that the
+    same data give 0.28.
+  \item A run of this model from grains just touching gives the clock a
+    physical zero. \emph{Fill in from the pending run.} (The August run of
+    that kind, at twice the interface width, gave 0.283 and showed no
+    early excess, which is why the starting neck, and not the interface
+    width, is the leading explanation.)
   \end{itemize}
-  State the limit of the claim: within 100~h the velocity reaches the
-  prediction but the fitted exponent does not (0.236 against 0.29), and the
-  test that would settle it, a run at half the interface width, was not
-  done. \Open{how firmly to word this. ``Consistent with'' is supported;
-  ``caused by'' is not yet.}
+  State the limit of the claim: within 100~h the growth rate reaches the
+  prediction but the fitted exponent does not (0.236 against 0.29).
+  \Open{if the pending run still shows the early excess at equal neck
+  widths, the explanation is the interface width instead, and this
+  paragraph and Section~5.1 change accordingly. The convergence claim
+  ``as $\varepsilon \to 0$'' is not available without a run at smaller
+  $\varepsilon$.}
 \Place{Figure 4}{\Have placed. \Stale Caption: add temperature, grain size
   and the fit window (1--100~h).}
 \end{enumerate}
 
 \section{Thermal Conductivity of Sintering Aggregates}
-\textit{Draft: 3.2 Aggregate Sintering and Effective Thermal Conductivity.}
 
 \subsection{Microstructural Evolution}
 \begin{enumerate}
-\item \Para{The gallery}{355--372}. \Have
+\item \Para{The gallery}{359--377}. \Have
   \Msg{Show the reader what sintering does: contacts become necks, sharp features round off, and the grains do not move.}
   Already there: in the second half (L366--372):
   point contacts become necks, small grains and sharp features disappear, the
@@ -606,7 +580,7 @@ drafted opening repeats the Introduction.
   concavities, where it desublimates. Move the set-up (first half) to
   Section~2.5.
 \Place{Figure 5}{\Have placed, with caption.}
-\item \Para{The conductivity tensor}{373--382}. \Have
+\item \Para{The conductivity tensor}{378--387}. \Have
   \Msg{The packings are close to isotropic at low porosity and not at high porosity, which matters later.}
   \Cut One sentence on
   how it is obtained (Section~2.3). Include: $k_{xy}$ is zero in the mean
@@ -619,7 +593,7 @@ drafted opening repeats the Introduction.
 \subsection{Temperature Rescales Time}
 \begin{enumerate}
 \setcounter{enumi}{2}
-\item \Para{Figure 6, one packing at five temperatures}{383--391}. \Have
+\item \Para{Figure 6, one packing at five temperatures}{388--397}. \Have
   \Msg{Temperature changes how fast a packing sinters and nothing else: plotted against age or against surface area, the five temperatures are one curve.}
  
   panels (b)--(d) in words. \Miss Add, in this order:
@@ -651,7 +625,7 @@ drafted opening repeats the Introduction.
 \subsection{Conductivity as a Function of Specific Surface Area}
 \begin{enumerate}
 \setcounter{enumi}{3}
-\item \Para{Figure 7, porosity}{392--410}. \Have
+\item \Para{Figure 7, porosity}{398--416}. \Have
   \Msg{Across packings, surface area gives the relative change in conductivity through one power law, and porosity sets the level; this holds up to a porosity of 0.375.}
   Already there: the order (a), (b), (c),
   (d) and the 0.3\% statement. Include:
@@ -706,21 +680,34 @@ drafted opening repeats the Introduction.
 
 \section{Discussion}
 
-\textit{Draft: 4 Discussion, treated as notes.} Thirteen paragraphs. For
-each: the argument, the numbers that carry it, and what the notes offer
-about the literature.
+Thirteen paragraphs. For each: the argument, the numbers that carry it,
+and what the old notes offer about the literature. Paragraphs 1--3 and the
+start of 4 are drafted.
 
-\Para{Section opening}{412--421}. \Cut Not needed; the subsections carry it.
+\Para{Section opening and model history}{418--440}. \Cut Two paragraphs: a
+recap of the paper, and the lineage of the model. Neither is needed here; the
+lineage is in the Methods opening.
 
 \subsection{What Vapor Transport Alone Reproduces}
 \begin{enumerate}
-\item \Para{The unsaturated pair}{436--453}. \Have
-  \Msg{The shortfall against Molaro et al.\ is not a tuning problem within our model: vapor transport through air cannot supply all of the measured growth. What supplies the rest is open; it is not surface diffusion by Molaro's own equations.}
-  This is the one
-  paragraph already written for the current results. It says: humidity
-  inferred from shrinkage, $\alpha_c = 0.1$, under at $-20\,^{\circ}$C and
-  over at $-5\,^{\circ}$C, the authors' caveat, surface diffusion absent.
-  Add:
+\item \Para{The unsaturated pair}{442--468}. \Have in part; \Stale four things.
+  \Msg{The model gives 41\% of the measured neck growth at $-20\,^{\circ}$C, and that is not a tuning problem. It is not surface diffusion either. The driving force for neck growth in this experiment is equivalent to a few millikelvin, in a chamber undersaturated by many times that, so the comparison cannot be closer than a factor of two or so.}
+  The drafted paragraph has the set-up, the two directions of the mismatch,
+  the authors' caveat and the ceiling of 75\%. To correct:
+  \begin{itemize}
+  \item ``underpredicts \ldots\ overpredicts \ldots\ by 41\% and 170\%''.
+    The model gives 41\% \emph{of} the measured growth at $-20\,^{\circ}$C
+    (it underpredicts by 59\%) and 170\% of it at $-5\,^{\circ}$C.
+  \item The two sentences ``It does not account for surface diffusion, which
+    is expected [to] contribute significantly'' appear twice and should go:
+    by Molaro's own equations surface diffusion is below 1\% of vapor
+    transport at these neck sizes (Appendix~A).
+  \item The sentence beginning ``Furthermore, our model also underestimates''
+    is repeated.
+  \item ``This result was expected'': it was not; say what the comparison
+    can and cannot test instead (next items).
+  \end{itemize}
+  To add:
   \begin{itemize}
   \item The numbers, 41\% and 170\%.
   \item That 41\% is not a matter of tuning. With $\alpha_c$ at the top of
@@ -729,6 +716,25 @@ about the literature.
     75\% of the measured growth once the grain shrinkage is matched; the two
     cases land 0.01~$\mu$m apart (tests of 2026-09-09). The vapor route has a
     ceiling below the measurement.
+  \item How small the driving force is. In relative vapor density the
+    capillary driving force at the neck falls from $4.8\times10^{-4}$ to
+    $9\times10^{-5}$ over the series, the equivalent of 4.9 to 1.0~mK. The
+    chamber's undersaturation, known from the grain shrinkage, is
+    $2.85\times10^{-3}$: 6 to 31 times larger.
+  \item What that makes the result sensitive to, without choosing among
+    them: (i)~how much of the ambient undersaturation reaches the neck (in
+    our run about 6\%; with none, the same model gives 66\% of the growth
+    and an exponent of 0.23, Molaro's value); (ii)~temperature differences
+    of millikelvin between neck and grain surface, or 0.03~K\,mm$^{-1}$
+    across the pair, which the stage would not have resolved;
+    (iii)~$\alpha_c$ above 0.1 for droplets quenched in liquid nitrogen
+    (at 0.8 the one-equation model gives 51--75\%). Air motion cannot act at
+    the neck itself (P\'eclet number $10^{-3}$ over a 2~$\mu$m fillet); it
+    can only change the ambient humidity.
+  \item Latent heat is not a candidate: in the run the neck is 0.002~mK
+    warmer than the grain surface.
+  \item Why the saturated experiment is the better test: it removes the
+    undersaturation, the largest of these.
   \item What fills the gap: not established. \textbf{Do not attribute it to
     surface diffusion.} Evaluating Molaro's own equations at the necks they
     measured (2026-10-13; Appendix~A of this outline),
@@ -749,35 +755,35 @@ about the literature.
     melting).
   \end{itemize}
   \Cite{Molaro et al.\ 2019 \texttt{molaroMicrostructuralEvolutionWater2019}; Swinkels \& Ashby 1981 \texttt{swinkelsSecondReportSintering1981}; possibly Gundlach et al.\ 2018 \texttt{gundlachSinteringSublimationMicrometresized2018} on sintering of micrometre ice grains (in your \texttt{.bib}; check relevance).}
-\item \New{The saturated pair, and exponents.} \Miss
-  \Msg{The model reproduces how the growth exponent depends on saturation. Where its exponent falls short of the measured one, the cause is the diffuse interface on a small neck, not a missing mechanism: the sharp-interface law for the same run gives 0.29.}
+\item \Para{The saturated pair, and exponents}{469--484}. \Have in part; \textbf{provisional until the tangent-start run is in.}
+  \Msg{The model reproduces how the growth exponent depends on saturation. Where its exponent falls short of the measured one, the cause is the neck the run was started from, not a missing mechanism: the sharp-interface law for the same run gives 0.29.}
+  The drafted paragraph has the 1/3 law, the fitted 0.21 rising to 0.236,
+  and the $-20\,^{\circ}$C exponent of 0.135 against 1/7. To correct and add:
   \begin{itemize}
+  \item The first sentence is unfinished (``growing under as .'').
+  \item ``We additionally compare our measured interface velocity \ldots''
+    states no result. Give it: 2.5 times the Gibbs--Thomson value at 2~h,
+    1.0 by 71~h; the prediction's exponent is 0.29.
+  \item ``lower than measured values'' needs its reason: the evidence of
+    Section~3.2 in two sentences.
   \item The comparison of exponents, as one small table or one sentence:
-    this model at saturation 0.21--0.23 (phase field) and 0.29
-    (Gibbs--Thomson prediction for the same run); this model at Molaro's
-    humidity, $-20\,^{\circ}$C, 0.135; Demmenie et al.\ 0.26--0.33 at
-    saturation and about 1/7 undersaturated; Molaro's $-20\,^{\circ}$C data
-    $0.23 \pm 0.03$; theory 1/3. No exponent is quoted at $-5\,^{\circ}$C.
-  \item What it supports: the exponent is set by the saturation state, as
-    Demmenie et al.\ argue, and the model follows that trend.
-  \item Why the phase-field value at saturation is low: the evidence of
-    Section~3.2, in two sentences. A diffuse interface cannot represent a
-    fillet a few interface widths in radius; it fills it too fast.
-  \item Why not surface diffusion. Two reasons. Mechanisms acting in
-    parallel add their rates, and surface diffusion alone gives $t^{1/7}$,
-    so adding it could not raise an exponent toward 1/3. And by Molaro's
-    own equations it is below 1\% of vapor transport at necks of tens of
-    micrometres (Appendix).
-  \item The consequence for the aggregates, stated plainly: their necks are
-    also under-resolved early, which is why the first day depends on
-    $\varepsilon$ and why curves are normalized at $\theta_r = 30$.
+    this model at saturation 0.21--0.24 (phase field, from a pre-made
+    neck), \emph{[value from the pending run]} (from contact), and 0.29
+    (Gibbs--Thomson prediction); this model at Molaro's humidity,
+    $-20\,^{\circ}$C, 0.135; Demmenie et al.\ 0.26--0.33 at saturation and
+    about 1/7 undersaturated; Molaro's $-20\,^{\circ}$C data $0.23 \pm
+    0.03$; theory 1/3. No exponent is quoted at $-5\,^{\circ}$C.
+  \item Why not surface diffusion. Mechanisms acting in parallel add their
+    rates, and surface diffusion alone gives $t^{1/7}$, so adding it could
+    not raise an exponent toward 1/3; and by Molaro's own equations it is
+    below 1\% of vapor transport at necks of tens of micrometres.
+  \item The Molaro runs start from the same pre-made neck, and their
+    comparison begins 2.2~min (about 100~$\tau_{\mathrm{sub}}$) after the
+    start, inside the period in which the saturated run was still fast.
+    Say so; it biases their exponent low.
   \end{itemize}
-  \Open{which saturated run the paper quotes: the 100~h run from a
-  pre-formed neck (0.21), or also the earlier run from tangent contact
-  (0.283), which predates later solver changes and whose raw output is not
-  on this machine.}
   \Cite{Demmenie et al.\ 2025 \texttt{demmenieIceSinteringSublimation2025}; Molaro et al.\ 2019 \texttt{molaroMicrostructuralEvolutionWater2019}.}
-\item \New{$\alpha_c$ as an effective parameter.} \Miss
+\item \Para{$\alpha_c$ as an effective parameter}{485--493}. \Have in part.
   \Msg{The uncertain coefficient changes how fast things happen in the model, not the relation between conductivity and microstructure, so the main result does not rest on it.}
   The rates in this
   paper scale with $1/\alpha_c$; the relation between conductivity and SSA
@@ -791,7 +797,22 @@ about the literature.
   1/\alpha_c$ as long as $\beta_{\mathrm{sub}} \gg \Delta\beta$, which holds
   in the aggregates ($\Delta\beta/\beta_{\mathrm{sub}} = 0.02$): a tenfold
   larger $\alpha_c$ would make every aggregate curve run ten times faster
-  and leave it unchanged against $\theta$ or SSA. \Note Bouvet et al.\ fit $\alpha_c =
+  and leave it unchanged against $\theta$ or SSA.
+  \Stale The draft gives $\Delta\beta/\beta_{\mathrm{sub}} = 0.02$ for both
+  the aggregates and the saturated pair. It is 0.02 for the aggregates,
+  0.002 for the saturated pair and 0.23 for the Molaro pairs, where the
+  proportionality is only approximate.
+  \Stale The sentence on Bouvet et al.\ rescaling time through $\alpha_c$
+  cites \texttt{bouvetHeterogeneousGrainGrowth2023}; check that this is the
+  paper that does it (the fit of $\alpha_c$ to tomography is Bouvet et al.,
+  2022).
+  \Miss Add what $\alpha_c$ does to the two grain-pair comparisons, since
+  they pull in opposite directions: Molaro's rate wants a large value
+  (41\% at 0.1, 51--75\% at 0.8), while the $t^{1/3}$ law is the
+  attachment-limited one and the sharp-interface exponent falls with
+  $\alpha_c$ (0.29 at $10^{-3}$, 0.25 at $10^{-2}$, 0.18 at 0.1). One value
+  cannot serve both, which is the case for calling it an effective,
+  sample-dependent parameter. \Note Bouvet et al.\ fit $\alpha_c =
   (9.8 \pm 0.7) \times 10^{-4}$ to tomography at $-2\,^{\circ}$C
   (L482--490); Braun et al.\ find $10^{-3}$--$10^{-1}$, changing as surfaces
   facet, and call it an effective, surface-averaged value (L490--503);
@@ -802,7 +823,8 @@ about the literature.
 \subsection{Temperature as a Rescaling of Time}
 \begin{enumerate}
 \setcounter{enumi}{3}
-\item \New{Why the curves superpose.} \Miss
+\item \Para{Why the curves superpose}{495--503}. \Have begun; the paragraph breaks off (``Since we have already'').
+  \Stale ``$\beta_{\mathrm{sub}}$, which is a free variable'': it is set by $\alpha_c$, which is chosen.
   \Msg{Explain the temperature result as a similarity argument: written in dimensionless form, the model's temperature dependence goes almost entirely into one time scale, so temperature can only rescale time; the simulations show how precisely.}
   Three steps (worked out 2026-10-12; full derivation with every step and
   the sizes of what is neglected in
@@ -943,10 +965,12 @@ about the literature.
   \Msg{What the simulations cannot resolve or represent.}
   Two dimensions, so relative
   changes are claimed and absolute conductivities are not; one grain size
-  distribution; the first day depends on the interface parameter, because a
-  neck whose fillet is narrower than about 7 interface bands grows faster
-  than the Gibbs--Thomson law (Section~3.2), so exponents fitted over that
-  range are biased low; pore
+  distribution; the first day depends on the interface parameter, and the
+  grain-pair runs start from a neck put in by hand, which grows faster than
+  the Gibbs--Thomson law for the first two thousand
+  $\tau_{\mathrm{sub}}$ or so (Section~3.2), so exponents fitted there are
+  biased low; the Molaro runs use time steps of 22 and 49
+  $\tau_{\mathrm{sub}}$, outside the range the time-step study covered; pore
   throats narrower than the diffuse band (9.2~$\mu$m) are not resolved,
   which raises $k_{\mathrm{eff}}$ most at low porosity; the power law is
   established for $\varphi \le 0.375$; rates scale with $1/\alpha_c$, whose
@@ -961,7 +985,6 @@ at $-5\,^{\circ}$C (L454--481); isotropy, and a collapse across porosity
 starting ``near 0.0'' (L611).
 
 \section{Conclusions}
-\textit{Draft: 5 Conclusion, treated as notes.}
 \begin{enumerate}
 \item \New{What was done and found.} \Miss
   \Msg{Three results, each with the range over which it was shown.}
@@ -1092,13 +1115,32 @@ rms misfit & 0.28\% & 0.78\% & 1.33\% & 1.73\% & 2.31\%\\\bottomrule
 The prediction takes 16~h to grow a neck to the run's first fitted width.
 
 \textbf{What it shows and what it does not.} The rate converges on the
-sharp-interface law as the neck becomes resolved, and the early excess
-accounts for most of the difference in exponent. It does not show the
-predicted exponent being reached (0.236 at the end against 0.29), and an
-early excess caused by the starting shape of the neck would look the same.
-A run at $\varepsilon/2$ would separate the two. Scripts and output:
+sharp-interface law, and the early excess accounts for most of the
+difference in exponent. Two causes fit these numbers equally: the interface
+being too wide for a small fillet, or the pre-made neck relaxing from its
+imposed shape. The August run from tangent contact, at twice this interface
+width, showed no excess and gave 0.283, which points to the pre-made neck.
+The pending run from contact at this interface width tests it directly.
+Neither shows the predicted exponent being reached within 100~h from a
+pre-made neck (0.236 at the end against 0.29). Scripts and output:
 \texttt{studies/molaro\_2019/demmenie/} (\texttt{predict\_neck\_growth.py},
 \texttt{interface\_width\_estimate.py}).
+
+\subsection*{C. What the appendices of the manuscript should hold}
+The draft now has two appendix headings with these titles. Suggested
+content, each under a page:
+\begin{itemize}
+\item \emph{Appendix A, Surface diffusion against vapor transport:} the two
+  rate equations and the curvature relations, the parameter list, the
+  four-row table, and the two sentences on what was and was not reproduced
+  of Molaro's Figure~10.
+\item \emph{Appendix B, The saturated pair against the Gibbs--Thomson law:}
+  the neck law, the run-against-prediction table, the contact-time table,
+  and the result of the tangent-start run.
+\item The time--temperature scaling (two pages,
+  \texttt{temperature\_scaling/time\_temperature\_scaling.pdf}) is a
+  candidate third appendix, or supporting information, for Section~5.2.
+\end{itemize}
 
 \section*{Citations: what the .bib lacks}
 Suggested above and present in the \texttt{.bib}: all of them. Mentioned in
@@ -1115,6 +1157,7 @@ Two keys are still in the old style in the \texttt{.bib} itself:
 \texttt{choukroun\_strength\_2020} and \texttt{nicoli\_tensorial\_2011}.
 
 \section*{Smaller corrections throughout}
+Checked against the source of 2026-10-13; everything listed is still there.
 \begin{itemize}
 \item \textbf{Notation}, to the conventions listed at the top. Subscripts
   ``ice'' and ``air'' everywhere ($\rho_{\mathrm{ice}}$, not $\rho_i$;
@@ -1122,13 +1165,27 @@ Two keys are still in the old style in the \texttt{.bib} itself:
   for the tensor and $k_{\mathrm{eff}}$ for its scalar mean, each used
   consistently; $k_{\mathrm{ice}}$, $k_{\mathrm{air}}$ as in the tables;
   $\rho_{\mathrm{air}}, P_{\mathrm{atm}}$ in Eq.~(2). $\phi_{\mathrm{air}}$
-  is air, not water vapor.
+  is air, not water vapor (L200).
+\item \textbf{Eq.~(1b).} Latent-heat term with $\rho_{\mathrm{ice}}$, as the
+  solver has it, not the mixture density.
 \item \textbf{Temperature.} Celsius with $T + T_0$ in Eqs.~(3), (5); kelvin
   in Table~1. One convention.
-\item \textbf{Numbers.} 30 days (L172 says 28); mesh $2829 \times 2829$
-  (L362).
-\item \textbf{Words.} ``Allen--Kahn''; ``tonsorial''; ``effect'' for
-  ``affect''; ``table table'', ``figure figure'', ``section section''.
+\item \textbf{Numbers.} Mesh $2829 \times 2829$ (the text has 2928);
+  ``3 packings for each porosity'' (five); Figure~6 caption $|\sigma| \le
+  0.34$ (it says 0.31); $\alpha_c$ written $1.002 \times 10^{-3}$, not
+  ``1.002e-03''.
+\item \textbf{Statements.} ``The only free parameter''; off-diagonal terms
+  ``at least one order of magnitude lower''; the ice ``disconnected in the
+  horizontal direction''; ``linear trend'' in Figure~7(c); ``a single seed''
+  in the Figure~7 caption; ``without less of generality''; ``validate
+  model''; ``is dependent of'' and the stray fragment ending the
+  Introduction; ``(cite other works as well)''.
+\item \textbf{Words.} ``Allen-Kahn''; ``tonsorial''; ``referred to as co'';
+  ``deposits on the neck'' (desublimates); ``interface width'' for
+  $\varepsilon$; ``neck of radius $w(t)$'' in the Figure~1 caption ($w$ is
+  the width); ``red'' contour lines in the Figure~2 caption (orange);
+  ``filed'', ``the the'' in the Figure~3 and 4 captions; ``effect'' for
+  ``affect''; ``Version~2'' in the title.
 \end{itemize}
 
 \end{document}

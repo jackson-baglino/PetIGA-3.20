@@ -1,3 +1,11 @@
+## 2026-10-13 (night) — New Overleaf upload checked; outline brought up to date
+
+- Compiled the project uploaded at 16:58: no overfull boxes, no undefined citations or references. Only two harmless font warnings remain (10.5 pt headings); `\RequirePackage{fix-cm}` before `\documentclass` removes them (tested).
+- The draft has adopted the outline's section structure; 2.4, 2.5, 5.3-5.6, the Conclusion and two appendices are headings only; 5.1 has three drafted paragraphs and 5.2 one begun. The old Discussion notes are gone from the source.
+- `studies/keff_sintering/manuscript_outline.tex/.pdf`: status and line numbers updated; a work list in order; a "runs pending" section; Section 5.1 plans rewritten against the drafted text (two sentences still attribute the shortfall to surface diffusion; "by 41 % and 170 %" misstates the numbers; delta-beta ratios); the low exponent now attributed provisionally to the pre-made neck, pending the tangent-start run; the Molaro comparison framed by the size of its driving force; what the two manuscript appendices should hold.
+
+---
+
 ## 2026-10-13 (evening) — Tangent-start saturated run prepared (not submitted)
 
 - New inputs for a second Demmenie-conditions run that starts from grains just touching: `inputs/geometry/molaro/molaro_2D_L222x188um_eps0.12um_axisym_T-20eq_R84um_tangent_mirror.opts`, `inputs/experiment/molaro/molaro_T-20_hsat_150h_a1e-3_dirichlet_mirror.opts`, batch `studies/molaro_2019/batches/demmenie_tangent_T-20.txt`. Identical to the 2026-10-06 run except the initial condition, 150 h instead of 100, and alpha_c0 = 1.0023e-3 so that beta_sub + dbeta (term now always on) equals the earlier run's beta.
