@@ -16,10 +16,11 @@ close-up of the master run (phi 0.325, seed 1702, -20 C) at four instants.
 170 mm wide. Writes Figure1_mechanisms_aggregate.{pdf,png}.
 
 HAND-EDITED SINCE 2026-10-13: the user removed the "Surface Diffusion" label and
-its arrow directly in the assembled Figure1_mechanisms_aggregate.pdf; the PNG
+its arrow, and (2026-10-14) relabelled R(t) as w(t), directly in the assembled
+Figure1_mechanisms_aggregate.pdf; the PNG
 was re-rendered from that PDF (mutool draw -c rgba -r 600) and both were copied
 to figure_samples/, which collect_manuscript_figures.py reads. The Inkscape
-panel (a) PDF named above still carries the label, so rebuilding with
+panel (a) PDF named above still carries both old labels, so rebuilding with
 --panel-a-pdf brings it back unless that schematic is edited first.
 """
 from __future__ import annotations
