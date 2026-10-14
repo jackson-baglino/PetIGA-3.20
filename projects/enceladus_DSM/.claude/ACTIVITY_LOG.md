@@ -1,3 +1,11 @@
+## 2026-10-13 (late) — Paragraph-by-paragraph review of the manuscript in the outline
+
+- Read every paragraph of the 2026-10-13 source for correctness, wording and length. The outline now has a numbered entry per paragraph (subject, lines, one-line overview) with tagged bullets: [correct], [wording], [trim], [add]. Covers the front matter through Section 5.2, paragraph 4; later paragraphs are not drafted and keep the content-plan form.
+- New correctness points found in this pass: the latent-heat sentence has sublimation and desublimation reversed; K_eff is described as obtained by integrating the PDE; the relaxation period is called "the first day" at every temperature; "Wilson-Frenkel" is probably Hertz-Knudsen; Libbrecht (2017) is a review; "sealed cryostage" and "78 minutes" against Molaro's own text; the Section 3 opening still announces Section 4; porosity listed among properties changed by metamorphism.
+- Corrected an earlier statement of mine in the outline: alpha_c is not a pure time rescaling. It sets tau_sub and also Lambda = L*/R, so a larger alpha_c brings gas diffusion in and changes the path.
+
+---
+
 ## 2026-10-13 (night) — New Overleaf upload checked; outline brought up to date
 
 - Compiled the project uploaded at 16:58: no overfull boxes, no undefined citations or references. Only two harmless font warnings remain (10.5 pt headings); `\RequirePackage{fix-cm}` before `\documentclass` removes them (tested).
