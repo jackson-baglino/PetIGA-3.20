@@ -94,3 +94,9 @@ docs/tex/*.synctex.gz
 # can see.
 !studies/packing_design/*.png
 !studies/keff_sintering/*.png
+
+# Literature library (PDFs not redistributed)
+Literature/**/*.pdf
+Literature/**/*.html
+Literature/manuscript/
+Literature/*.zip
