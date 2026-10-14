@@ -423,14 +423,19 @@ law and the Introduction does not yet review any conductivity work.
 \Place{Figure 1}{\Have placed. Caption: see ``Figure captions'' after Section~6.}
 \Pg{Attachment kinetics}{L108--124}{Supersaturation, the Hertz--Knudsen law, and the condensation coefficient.}
   \begin{itemize}
-  \item \tC ``Libbrecht (2017) led an experiment in near vacuum'': still the
-    review. The measurements are Libbrecht \& Rickerby (2013),
-    \texttt{libbrechtMeasurements\allowbreak SurfaceAttachment2013}. ``in near vacuum
-    \ldots\ within a vacuum'': once.
+  \item \tC ``Libbrecht (2017) led an experiment in near vacuum'': the 2017
+    paper is a review. The measurements are Libbrecht \& Rickerby (2013),
+    \texttt{libbrechtMeasurements\allowbreak SurfaceAttachment2013}
+    (checked 10-14): faceted crystals on a substrate at reduced pressure
+    (below 0.025~atm), $-40$ to $-2\,^{\circ}$C, on both the basal and the
+    prism facets, not the basal plane alone; the data fit $\alpha =
+    A\exp(-\sigma_0/\sigma_{\mathrm{surf}})$. ``in near vacuum \ldots\ within
+    a vacuum'': once.
   \item \tC ``Other studies have bounded the condensation coefficient
-    $\alpha_c \in [10^{-3}, 10^{-1}]$'': needs citations. \Note Kaempfer \&
-    Plapp (2009) and Libbrecht \& Rickerby (2013) used this range; Braun et
-    al.\ (2024) back out values across it. Missing space before ``Fully''.
+    $\alpha_c \in [10^{-3}, 10^{-1}]$'': needs citations. Braun et al.\
+    (2024) call it ``the commonly found range'', citing Libbrecht \&
+    Rickerby (2013), and note that Kaempfer \& Plapp (2009) use it; their
+    own fitted values fall inside it (checked 10-14). Missing space before ``Fully''.
   \item \tC ``Vapor molecules do not always nucleate on icy surfaces due to
     their hexagonal crystallographic structure'': nucleation is of new
     molecular layers on facets, not of molecules. ``On a faceted surface a
@@ -458,37 +463,45 @@ law and the Introduction does not yet review any conductivity work.
     helps paragraph~8.
   \end{itemize}
 \Pg{Metamorphism beyond a pair; earlier models}{L125--141}{From a grain pair to an aggregate, and the models that exist.}
+  Checked 10-14 against Braun et al.\ (2024), Libbrecht (2017) and
+  Libbrecht \& Rickerby (2013) in \texttt{Literature/}.
   \begin{itemize}
+  \item \tC \textbf{Braun et al.\ (2024)}: ``modeled the steady state
+    thermal and vapor diffusion equations to predict the rates of ice
+    growth'' is right but leaves out what makes the paper relevant. They
+    solve steady heat and vapor diffusion on $\mu$CT images of snow under a
+    temperature gradient (two series, $-8.1$ and $-7.6\,^{\circ}$C), and
+    feed the growth rates into an exact equation for the evolution of SSA.
+    Suggested: ``Braun et al.\ (2024) solved the steady heat and vapor
+    diffusion equations on $\mu$CT images of snow under a temperature
+    gradient, and used the resulting growth rates to predict the evolution
+    of SSA.''
+  \item \tC ``In both these works, it was required to tune the condensation
+    coefficient \ldots\ for a given temperature'': ``both'' follows three
+    models, and ``for a given temperature'' understates Braun et al. They
+    fit $\alpha$ by matching the measured SSA; the best values were
+    $10^{-1}$, then $10^{-1.5}$ after a transition, in one series and
+    $10^{-2.25}$ in the other, at nearly the same temperature. They
+    attribute the change to facets appearing, and call the result ``an
+    effective kinetic coefficient''. Suggested: ``Bouvet et al.\ and Braun
+    et al.\ both fitted $\alpha_c$ to $\mu$CT measurements of SSA; Braun et
+    al.\ found that it differed between two experiments at nearly the same
+    temperature and changed within one as facets formed, and treat it as an
+    effective parameter.'' This is the evidence for the paper's own use of
+    an effective $\alpha_c$.
+  \item \tC \textbf{Libbrecht (2017)} is cited as work on DSM and as an
+    experiment parameterizing growth with temperature and saturation. It is
+    a review of ice crystal growth (snow crystals in clouds, growth from
+    liquid and vapor), not metamorphism; drop it from the DSM list. For the
+    kinetics sentence cite the measurements, Libbrecht \& Rickerby (2013),
+    with the review if wanted.
   \item \tC \textbf{Moure \& Fu (2024) is a wet-snow model} (``A Phase-Field
-    Model for Wet Snow Metamorphism''). Here it is cited among efforts on
-    DSM, and paragraph~8 calls it a model ``that simulates DSM''. Say this
-    paper uses its two-phase (ice--air) form, as Section~5 already does
-    (``the two-phase equivalent'').
-  \item \tC ``In both these works, it was required to tune'': three models
-    precede it. Name them: ``Bouvet et al.\ and Braun et al.\ both tuned
-    \ldots''.
-  \item \tA The numbers that make the point. \Note Bouvet et al.\ (2022)
-    fitted $\alpha_c = (9.8 \pm 0.7)\times10^{-4}$ to an experiment at
-    $-2\,^{\circ}$C; Braun et al.\ (2024) found values from $10^{-3}$ to
-    $10^{-1}$ that change as surfaces facet. This is the evidence that
-    $\alpha_c$ is an effective, setting-dependent parameter.
-  \item \tA Isothermal metamorphism has been observed directly: Kaempfer \&
-    Schneebeli (2007) and Löwe et al.\ (2011) followed SSA falling with time
-    at constant temperature in tomography
-    (\texttt{kaempferObservationIsothermalMetamorphism2007}; Löwe is already
-    cited here). They are the closest experimental analogues to the
-    aggregate runs; one sentence saying so. Check the claims against the
-    papers.
+    Model for Wet Snow Metamorphism''); this paper uses its two-phase
+    (ice--air) form. Say so, as Section~5 already does.
   \item \tG ``all stages DSM'': ``all stages of DSM''. ``in hopes better
     predict'': ``to better predict''. ``were the first to attempt to use'':
-    ``were the first to use''. ``the icy porous media will eventually begin
-    to undergo'': ``icy porous media eventually densify''. ``steady state''
-    (adjective): ``steady-state''.
-  \item \tT ``This is a problem with complex dynamics \ldots\ alike'' and
-    ``Numerous models have been used \ldots'' carry no information; the
-    named models that follow make the point.
-  \item \tT Libbrecht (2017) in the list of DSM studies: it is crystal
-    growth, not metamorphism, and is cited in paragraph~5 already.
+    ``were the first to use''. ``steady state'' (adjective):
+    ``steady-state''.
   \end{itemize}
 \Pg{What is not known}{L142--149}{The gap the paper addresses.}
   \begin{itemize}
