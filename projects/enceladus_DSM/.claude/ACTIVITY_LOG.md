@@ -1,3 +1,11 @@
+## 2026-10-14 — Second review of the Introduction; figure captions reviewed
+
+- Reviewed the 2026-10-14 Overleaf upload (only the Introduction changed; later line numbers moved up by 16, and the outline's references were shifted to match). Rewrote the eight Introduction entries from a fresh read, adding [add] bullets for material discussed earlier but missing from the draft: snow-conductivity literature (Calonne 2011/2014, Schneebeli & Sokratov 2004), why SSA (Matzl, Gallet, Proksch), why conductivity matters on Enceladus (Byrne 2024; Choukroun fallout rates), classical neck-growth exponents, what Molaro and Demmenie measured, isothermal-metamorphism observations (Kaempfer & Schneebeli 2007, Löwe 2011), the temperature-rescaling result and the scope statement.
+- New correctness points: Moure & Fu (2024) is a wet-snow model, cited as a DSM model; Choukroun et al. cited for vapor dominance though they relate their activation energy to surface diffusion; the closing claim "weakly dependent on porosity" undersells a threefold change in level.
+- Added a "Figure captions" section after Section 6 checked against the rendered figures: Figure 1 art labels R(t) while the caption says w(t); sigma scales are relative to flat ice and clipped (Molaro far field is 100x off-scale; Figure 4 pore red because the far field is the grains' Gibbs-Thomson value 2.4e-5); Figure 6 caption 0.31 vs colorbar 0.34e-4; Figure 7(b) shows only phi <= 0.375; phi_i vs phi; which run each image shows.
+
+---
+
 ## 2026-10-13 (late) — Paragraph-by-paragraph review of the manuscript in the outline
 
 - Read every paragraph of the 2026-10-13 source for correctness, wording and length. The outline now has a numbered entry per paragraph (subject, lines, one-line overview) with tagged bullets: [correct], [wording], [trim], [add]. Covers the front matter through Section 5.2, paragraph 4; later paragraphs are not drafted and keep the content-plan form.
