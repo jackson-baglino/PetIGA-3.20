@@ -50,6 +50,7 @@
 - First movie was 1920x1080 but each field panel was only 708 px (field drawn at half resolution), so it looked soft. Defaults are now 3840x2160 and stride 1: panels are 1416 px. Rebuilt the movie.
 
 - Poster figures: where the same numbered instant of the warm and cold runs falls on one point (instant 1), the marker ring is now half red, half blue (`pair_markers` in `poster_jpl_2026.py`); rebuilt the option 1 and option 2 figures.
+- Figure 1: user removed the surface diffusion label and arrow in the assembled PDF; re-rendered the PNG from it at 600 dpi and copied both to `figure_samples/` (the collector's source) and `Figures2/Figure1__SinteringMechanisms/`. The Inkscape panel (a) source still has the label.
 ---
 
 ## 2026-10-13 — JPL poster day test figures
