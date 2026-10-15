@@ -33,6 +33,27 @@ So the model does NOT reproduce t^(1/3) here: a = 0.21-0.23, below Demmenie's
 0.26-0.33 and below the envelope-ODE prediction of 0.29-0.30
 (`../envelope_ode/README.md`). The cause is open; see `../TODO.md`.
 
+## Tangent-start run (2026-10-15) — Figure 4 now uses it
+
+Same conditions, started from grains just touching, 150 h (batch
+`../batches/demmenie_tangent_T-20.txt`, job 4474214, 9.6 h on 90 ranks, $10.37).
+Data: `HPC_results/enceladus_DSM/batch_2026-10-13__16.03.36_demmenie_tangent/`.
+No enclosed air pocket in any of 152 snapshots (mirror plane and axis excluded
+from the boundary test); grain radius +0.08 %.
+
+| fit (after 11 tau_sub) | exponent | rms |
+|---|---|---|
+| free | a = 0.289 (t0 = 0.60 h) | 0.17 % |
+| one-third | 1/3 fixed (t0 = 4.3 h) | 2.6 % |
+| Kuczynski | m = 3.45, 1/m = 0.290 | 0.17 % |
+
+Free exponent from later window starts: 0.289 (1 h), 0.285 (13 h), 0.281
+(32 h), 0.279 (63 h), 0.277 (88 h). The neck reaches 61.2 um.
+
+So, started from tangent contact, the model sits inside Demmenie's 0.26-0.33 and
+on the envelope-ODE 0.29-0.30. The 0.21-0.23 of the pre-necked run came from its
+initial condition, not from the interface width or the transport physics.
+
 ## Interface-width estimate (2026-10-12)
 
 `interface_width_estimate.py`. The run's velocity over the Gibbs-Thomson
