@@ -80,6 +80,7 @@ DAY = 86400.0
 PAT = re.compile(r"phi([\d.]+)_Rave50um_LR40_seed(\d+)_L2mm_eps1000nm_perxy_T(-?\d+)__")
 INK, MUTED, GREY = "#1a1a1a", "#5c5c5c", "#a3a3a3"
 C_WARM, C_COLD = "#E8532B", "#1E88E5"        # bold: the warm and the cold run
+C_SEED_A, C_SEED_B = "#7B3FA0", "#1B9E77"    # two packings at one temperature: not warm/cold hues
 FS, FS_S, FS_T = 15, 13, 12                  # labels | ticks, legends | small (poster captions are 16 pt Arial)
 # Output sub-folder of each figure kind: one folder per option.
 FOLDER = {
@@ -192,18 +193,19 @@ def num_marker(ax, x, y, n, color, ms=15, color2=None):
             color=INK, zorder=7, clip_on=False)
 
 
-def pair_markers(ax, runs, hot, cold, marks, xkey, xtol, ytol=0.005):
+def pair_markers(ax, runs, hot, cold, marks, xkey, xtol, ytol=0.005, hl=None):
     """Numbered instants of the two highlighted runs. Where instant n of the warm
     run and of the cold run fall on the same point (within xtol, ytol in data
     units) it is drawn once, ringed half in each colour."""
     rh, rc = runs[hot], runs[cold]
+    cw, cc = (hl[hot][1], hl[cold][1]) if hl else (C_WARM, C_COLD)
     for n, (ih, ic) in enumerate(zip(marks[hot], marks[cold]), 1):
         ph, pc = (rh[xkey][ih], rh["kn"][ih]), (rc[xkey][ic], rc["kn"][ic])
         if abs(ph[0] - pc[0]) <= xtol and abs(ph[1] - pc[1]) <= ytol:
-            num_marker(ax, 0.5 * (ph[0] + pc[0]), 0.5 * (ph[1] + pc[1]), n, C_WARM, color2=C_COLD)
+            num_marker(ax, 0.5 * (ph[0] + pc[0]), 0.5 * (ph[1] + pc[1]), n, cw, color2=cc)
         else:
-            num_marker(ax, *ph, n, C_WARM)
-            num_marker(ax, *pc, n, C_COLD)
+            num_marker(ax, *ph, n, cw)
+            num_marker(ax, *pc, n, cc)
 
 
 def clean(ax):
@@ -262,10 +264,14 @@ K_LABEL = {True: r"$k_\mathrm{eff}\,/\,k_\mathrm{eff,0}$",
            False: r"conductivity  $k_\mathrm{eff}\,/\,k_\mathrm{eff,0}$"}
 
 
-def panel_time(ax, runs, hot, cold, marks, short=False):
-    """k_eff/k_0 against time: the temperatures fan out."""
+def panel_time(ax, runs, hot, cold, marks, short=False, hl=None):
+    """k_eff/k_0 against time: the temperatures fan out. hl = {key: (label, colour)}
+    replaces the temperature labels and colours (seed mode); the grey curves are
+    then left unlabelled."""
     def end_label(r, T, col, bold, dx):
-        ax.annotate(tlabel(T), (r["td"][-1], r["kn"][-1]), xytext=(dx, 0),
+        if hl and T not in hl:
+            return
+        ax.annotate(hl[T][0] if hl else tlabel(T), (r["td"][-1], r["kn"][-1]), xytext=(dx, 0),
                     textcoords="offset points", color=col, va="center", ha="left",
                     fontsize=FS_S if bold else FS_T, fontweight="bold" if bold else "normal",
                     annotation_clip=False)
@@ -274,11 +280,11 @@ def panel_time(ax, runs, hot, cold, marks, short=False):
             continue
         ax.plot(r["td"], r["kn"], color=GREY, lw=1.4, zorder=2)
         end_label(r, T, MUTED, False, 6)
-    for T, col in ((hot, C_WARM), (cold, C_COLD)):
+    for T, col in ((hot, hl[hot][1] if hl else C_WARM), (cold, hl[cold][1] if hl else C_COLD)):
         r = runs[T]
         ax.plot(r["td"], r["kn"], color=col, lw=3.2, zorder=4)
         end_label(r, T, col, True, 14)                  # clear of the end marker
-    pair_markers(ax, runs, hot, cold, marks, "td", xtol=0.15)
+    pair_markers(ax, runs, hot, cold, marks, "td", xtol=0.15, hl=hl)
     # the axis stops at the data; the labels sit in the margin to its right
     ax.set_xlim(0, 30.3); ax.set_xticks([0, 10, 20, 30])
     ax.set_xlabel("time  [days]", fontsize=FS)
@@ -286,14 +292,15 @@ def panel_time(ax, runs, hot, cold, marks, short=False):
     clean(ax)
 
 
-def panel_ssa(ax, runs, hot, cold, marks, short=False):
+def panel_ssa(ax, runs, hot, cold, marks, short=False, hl=None):
     """The same curves against SSA/SSA_0: one path, travelled at different speeds."""
     for T, r in sorted(runs.items()):
         if T not in (hot, cold):
             ax.plot(r["sn"], r["kn"], color=GREY, lw=1.4, zorder=2)
-    ax.plot(runs[hot]["sn"], runs[hot]["kn"], color=C_WARM, lw=5.0, zorder=3, solid_capstyle="round")
-    ax.plot(runs[cold]["sn"], runs[cold]["kn"], color=C_COLD, lw=2.2, zorder=4, solid_capstyle="round")
-    pair_markers(ax, runs, hot, cold, marks, "sn", xtol=0.005)
+    cw, cc = (hl[hot][1], hl[cold][1]) if hl else (C_WARM, C_COLD)
+    ax.plot(runs[hot]["sn"], runs[hot]["kn"], color=cw, lw=5.0, zorder=3, solid_capstyle="round")
+    ax.plot(runs[cold]["sn"], runs[cold]["kn"], color=cc, lw=2.2, zorder=4, solid_capstyle="round")
+    pair_markers(ax, runs, hot, cold, marks, "sn", xtol=0.005, hl=hl)
     ax.invert_xaxis()
     ax.set_xlabel(r"specific surface area  SSA$\,/\,$SSA$_0$", fontsize=FS)
     ax.set_ylabel(K_LABEL[short], fontsize=FS)
@@ -584,8 +591,15 @@ def build_validation(a):
 # ---------------------------------------------------------------------------
 # figures
 # ---------------------------------------------------------------------------
-def build(kind, R, a, hot, cold):
-    runs = {T: R[(a.phi, T)][a.seed] for (p, T) in R if p == a.phi and a.seed in R[(p, T)]}
+def build(kind, R, a, hot, cold, seed_T=None):
+    """hot, cold: two temperatures of packing --seed; or, with seed_T, two SEEDS
+    of porosity --phi at temperature seed_T (the other seeds drawn grey)."""
+    if seed_T is None:
+        runs = {T: R[(a.phi, T)][a.seed] for (p, T) in R if p == a.phi and a.seed in R[(p, T)]}
+        hl = None
+    else:
+        runs = dict(R[(a.phi, seed_T)])
+        hl = {hot: ("A", C_SEED_A), cold: ("B", C_SEED_B)}
     compact = "compact" in kind
     days = (0.0, 10.0, 30.0) if compact else (0.0, 10.0, 19.4, 30.0)
     S = {T: snapshots(runs[T], days, a.stride) for T in (hot, cold)}
@@ -593,12 +607,16 @@ def build(kind, R, a, hot, cold):
     W = a.width_in
     note = (f"identical packings at the start  ·  2 mm × 2 mm periodic cell  ·  "
             f"porosity {a.phi:g}  ·  mean grain radius 50 µm")
+    if hl:
+        note = (f"two different packings at {tlabel(seed_T)} (grey: {len(runs) - 2} more)  ·  "
+                f"2 mm × 2 mm periodic cell  ·  porosity {a.phi:g}  ·  mean grain radius 50 µm")
     second = panel_law if "option2" in kind or "law" in kind else panel_ssa
 
     def grid(fig, F, x0, y_top, s, gap):
         norm, ext = sigma_norm(S.values())
         vapcm, icecm = centered_cmap(cmocean.cm.balance, norm), ice_alpha_cmap()
-        rows = [(tlabel(hot), C_WARM, S[hot]), (tlabel(cold), C_COLD, S[cold])]
+        rows = ([(f"packing {hl[k][0]}", hl[k][1], S[k]) for k in (hot, cold)] if hl else
+                [(tlabel(hot), C_WARM, S[hot]), (tlabel(cold), C_COLD, S[cold])])
         y_bot, bw = snap_grid(fig, F, x0, y_top, s, gap, rows, norm, vapcm, icecm)
         return y_bot, bw, norm, vapcm, ext
 
@@ -606,7 +624,7 @@ def build(kind, R, a, hot, cold):
         if second is panel_law:
             panel_law(ax, R, a.seed, hot, cold, a.phi, short)
         else:
-            panel_ssa(ax, runs, hot, cold, marks, short)
+            panel_ssa(ax, runs, hot, cold, marks, short, hl=hl)
 
     if kind.startswith("curves"):                   # the two plots alone, side by side
         Wc, ph, bot, top = a.curves_width_in, 2.55, 0.68, 0.22
@@ -614,7 +632,7 @@ def build(kind, R, a, hot, cold):
         fig = plt.figure(figsize=(Wc, H)); F = lambda x, y, w, h: (x / Wc, y / H, w / Wc, h / H)
         l, mid, r_ = 0.95, 1.75, 0.42              # mid: end labels + next y label
         pw = (Wc - l - mid - r_) / 2
-        panel_time(fig.add_axes(F(l, bot, pw, ph)), runs, hot, cold, marks)
+        panel_time(fig.add_axes(F(l, bot, pw, ph)), runs, hot, cold, marks, hl=hl)
         second_panel(fig.add_axes(F(l + pw + mid, bot, pw, ph)), False)
         return fig, (Wc, H)
 
@@ -637,7 +655,7 @@ def build(kind, R, a, hot, cold):
                  ha="left", va="center")
         if kind == "option1_stacked":
             pw = (W - l - mid - r_) / 2
-            panel_time(fig.add_axes(F(l, bot, pw, ph)), runs, hot, cold, marks)
+            panel_time(fig.add_axes(F(l, bot, pw, ph)), runs, hot, cold, marks, hl=hl)
             second_panel(fig.add_axes(F(l + pw + mid, bot, pw, ph)), False)
         return fig, (W, H)
 
@@ -657,7 +675,7 @@ def build(kind, R, a, hot, cold):
     pw = W - xl - 0.78                              # 0.78: the curve-end labels
     b0, g_ = 0.66, 0.78
     ph = (H - b0 - g_ - 0.16) / 2
-    panel_time(fig.add_axes(F(xl, b0 + ph + g_, pw, ph)), runs, hot, cold, marks, short=True)
+    panel_time(fig.add_axes(F(xl, b0 + ph + g_, pw, ph)), runs, hot, cold, marks, short=True, hl=hl)
     second_panel(fig.add_axes(F(xl, b0, pw, ph)), True)
     return fig, (W, H)
 
@@ -673,8 +691,11 @@ def main():
                     help="figure width [in]; the poster box is 11.38 in wide")
     ap.add_argument("--compact-snap-in", type=float, default=1.72)
     ap.add_argument("--stride", type=int, default=2, help="field down-sampling")
-    ap.add_argument("--pairs", nargs="+", default=["-5,-20", "-5,-40"],
+    ap.add_argument("--pairs", nargs="*", default=["-5,-20", "-5,-40"],
                     help="warm,cold temperature pairs to build")
+    ap.add_argument("--seed-pairs", nargs="*", default=["1702,1701"],
+                    help="option 1 only: seedA,seedB pairs of porosity --phi at --seed-T")
+    ap.add_argument("--seed-T", type=int, default=-20)
     ap.add_argument("--curves-width-in", type=float, default=8.3,
                     help="width of the curves-only pieces [in] (last year's plot slot)")
     ap.add_argument("--kinds", nargs="+", default=list(FOLDER),
@@ -715,6 +736,12 @@ def main():
             hot, cold = (int(v) for v in pair.split(","))
             fig, size = build(kind, R, a, hot, cold)
             save(fig, size, kind, f"{kind}_T{hot}_T{cold}")
+        if FOLDER[kind] != "option1_ssa_collapse":
+            continue
+        for pair in a.seed_pairs:                   # same porosity, two packings
+            sa, sb = (int(v) for v in pair.split(","))
+            fig, size = build(kind, R, a, sa, sb, seed_T=a.seed_T)
+            save(fig, size, kind, f"{kind}_seed{sa}_seed{sb}_T{a.seed_T}")
 
 
 if __name__ == "__main__":
