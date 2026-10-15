@@ -11,6 +11,7 @@
 - Saturated (Demmenie-conditions) pair from tangent contact, 150 h: a = 0.289 free, 1/m = 0.290 Kuczynski, 0.289 -> 0.277 with later window starts; no trapped pocket; grain radius +0.08 %. Inside Demmenie 0.26-0.33; the pre-necked 0.21 was the initial condition. Recorded in studies/molaro_2019/demmenie/README.md.
 - Figure 4 regenerated from this run with fig_demmenie.py (unchanged script) and copied to ManuscriptFigures/.
 - Molaro -20 C tangent pilot (10 min): an enclosed air pocket forms at r = 3.3 um by t = 60 s, then deepens (min phi 0.26 -> 0.09) and drifts toward the axis (r = 1.2 um at 600 s). This is the 2026-08-19 artifact again, at half the eps. Neck width 19.9 um at 600 s (below the 22.2 um floor; Molaro's first width 32.8 um not reached). Cost 5.2 h / $12 for 257 steps (73 s/step, ~100 KSP its/step), 3.5x the estimate: the full 120-min run would be ~60 h / ~$140 and exceed its 48 h limit. Full run NOT submitted.
+- JPL poster option 1: new two-seed variant (porosity 0.325, -20 C, seeds 1702 vs 1701, other 3 seeds grey) via poster_jpl_2026.py --seed-pairs; written to the iCloud test_figures/option1_ssa_collapse/ as *_seed1702_seed1701_T-20.
 
 ---
 
