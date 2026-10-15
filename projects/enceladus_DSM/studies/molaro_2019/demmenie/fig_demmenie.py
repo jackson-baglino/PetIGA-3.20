@@ -19,6 +19,10 @@ The exponent's dependence on the fit window and the grain-size check were
 panels (c) and (d) until 2026-10-07; they are diagnostic plots now
 (analyze_demmenie.py: exponent_window.png, grain_radius.png).
 
+--v2 (advisor meeting 2026-10-15) writes <name>_v2: "simulation" for "model",
+the one-third curve labelled as the theory, and an I-bar marking w(t) on each
+section whose neck is open (none on the tangent-start 0 h one, where w = 0).
+
 Fits and numbers come from analyze_demmenie.py, so the figure and the
 diagnostic plots cannot disagree.
 """
@@ -63,6 +67,7 @@ def main():
     ap.add_argument("--width-mm", type=float, default=170.0)
     ap.add_argument("--out", type=Path, default=PROJ / "studies/molaro_2019/manuscript")
     ap.add_argument("--copy-to", type=Path, default=None)
+    ap.add_argument("--v2", action="store_true", help="the 2026-10-15 labels (see above)")
     a = ap.parse_args()
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
     A = analyse(a.run, a.relax_tau)
@@ -122,6 +127,11 @@ def main():
         if i == 0:
             _scalebar(axi, XX, YY)
         _snap_title(axi, pmv.LETTERS[i], f"{t_sec[i] / HOUR:.0f} h")
+        if a.v2:
+            z_mm, w_mm = pmv.neck_at(a.run, t_sec[i])
+            if w_mm > 0.02 * (Y0.max() - Y0.min()) * 1e3:      # a visible neck only
+                pmv.neck_bar(axi, z_mm, w_mm)
+                print(f"w(t) bar on instant {i + 1}: w = {1e3 * w_mm:.2f} um")
     a.sig_extend = ext
     pmv._strip(fig, F, ml, y_snap + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm, ext)
 
@@ -136,11 +146,11 @@ def main():
     # (b) neck width
     ax = fig.add_axes(F(ml, y_neck, axw, ph)); dress(ax)
     tt = np.linspace(tk[0], tk[-1], 400)
-    ax.plot(t / HOUR, w, "-", lw=1.8, color=C_SIM, zorder=2, label="model")
+    ax.plot(t / HOUR, w, "-", lw=1.8, color=C_SIM, zorder=2, label="simulation" if a.v2 else "model")
     ax.plot(tt / HOUR, _pl(tt, f["C"], f["t0"], f["a"]), color=C_FREE, lw=1.0, ls=pmv.FIT_LS, dash_capstyle="round",
             zorder=3, label=rf"$C\,(t+t_0)^{{a}}$, $a={f['a']:.2f}$")
     ax.plot(tt / HOUR, _p3(tt, h["C"], h["t0"]), color=C_THIRD, lw=1.5, ls=pmv.ALT_LS, dash_capstyle="round",
-            zorder=3, label=r"$C\,(t+t_0)^{1/3}$")
+            zorder=3, label=(r"theory, $C\,(t+t_0)^{1/3}$" if a.v2 else r"$C\,(t+t_0)^{1/3}$"))
     for i in (0, 1):
         pmv._circled(ax, t_sec[i] / HOUR, float(np.interp(t_sec[i], t, w)), pmv.LETTERS[i], clip_on=False)
     ax.set_xlim(0, t[-1] / HOUR * 1.03)
@@ -153,11 +163,11 @@ def main():
         fig.text(0.02 / W, y_top / H, pplib.bold(f"({lab})"), ha="left", va="center", fontsize=FS, color=INK)
     a.out.mkdir(parents=True, exist_ok=True)
     for e in ("pdf", "png"):
-        fn = a.out / f"{a.name}.{e}"
+        fn = a.out / f"{a.name}{'_v2' if a.v2 else ''}.{e}"
         fig.savefig(fn, dpi=600, transparent=True)
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True); shutil.copyfile(fn, a.copy_to / fn.name)
-    print(f"wrote {a.out}/{a.name}.pdf/.png ({W / MM:.0f} x {H / MM:.0f} mm); free a = {f['a']:.3f}, one-third rms {h['rms']:.2f} %")
+    print(f"wrote {a.out}/{a.name}{'_v2' if a.v2 else ''}.pdf/.png ({W / MM:.0f} x {H / MM:.0f} mm); free a = {f['a']:.3f}, one-third rms {h['rms']:.2f} %")
 
 
 if __name__ == "__main__":

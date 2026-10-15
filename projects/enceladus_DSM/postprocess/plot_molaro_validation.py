@@ -52,6 +52,12 @@ share of pore that clips. Shared by both snapshots.
 MISSING -5 C RUN. Without --run-t5 the -5 C data are drawn with no model
 curve; the figure is otherwise complete, and the note says so.
 
+V2 (--v2, advisor meeting 2026-10-15). Writes Figure3_molaro_validation_v2
+only: "simulation" for "model", "Data from Molaro et al. (2019)" for "data",
+an I-bar marking w(t) across the neck on each section (from neck_width.csv's
+width and position at that instant), and the sigma map cropped to the middle
+of `balance` (V2_CROP) so the clipped far field is a mid blue, not navy.
+
 OUTPUT. studies/molaro_2019/manuscript/ (or --save-dir). PDF is the
 manuscript file, PNG a preview. --copy-to also copies every file into the
 manuscript's Figures/Figure<N>__<name>/ folder (Figure 2 for these).
@@ -103,6 +109,33 @@ SERIES = {
                  data=REPO / "inputs/validation/molaro2019_fig11_T-5.csv"),
 }
 MAX_PX = 1800                       # raster columns per section, ~550 dpi
+V2_CROP = (0.18, 0.82)              # the part of balance the v2 sigma map uses
+SIM_LABEL, DATA_LABEL = "model", "data"     # main() sets the v2 wording
+
+
+def cropped_balance(lo=V2_CROP[0], hi=V2_CROP[1], n=512):
+    """cmocean balance without its darkest ends: still blue < 0 < red with
+    white at the middle, but the extremes are mid-tones."""
+    from matplotlib.colors import ListedColormap
+    return ListedColormap(cmocean.cm.balance(np.linspace(lo, hi, n)), name="balance_mid")
+
+
+def neck_bar(ax, z_mm, w_mm, label=r"$w(t)$"):
+    """An I-bar across the neck: the width w drawn as a measurement. z_mm is
+    the neck plane on the section's horizontal axis, w_mm the full width,
+    centred on the symmetry axis r = 0."""
+    ax.annotate("", xy=(z_mm, w_mm / 2), xytext=(z_mm, -w_mm / 2), xycoords="data",
+                arrowprops=dict(arrowstyle="|-|, widthA=0.25, widthB=0.25", color=INK, lw=0.9,
+                                shrinkA=0, shrinkB=0), zorder=6)
+    ax.annotate(label, xy=(z_mm, 0.0), xytext=(4, 0), textcoords="offset points",
+                ha="left", va="center", fontsize=FS_SMALL, color=INK, zorder=6)
+
+
+def neck_at(run, t_s):
+    """(z_neck, w) [mm] from neck_width.csv at the sample nearest t_s."""
+    g = np.genfromtxt(run / "neck_width.csv", delimiter=",", names=True)
+    i = int(np.argmin(np.abs(g["t_s"] - t_s)))
+    return 1e3 * float(g["x_neck_m"][i]), 1e3 * float(g["neck_width_m"][i])
 
 
 # ---------------------------------------------------------------------------
@@ -147,14 +180,14 @@ def legend_handles(series, data_fit=False):
     """Colour = temperature; line = model, dashed = its alternative wall;
     open circle = Molaro."""
     h = [Line2D([], [], color=s["color"], lw=1.8, label=s["label"]) for s in series]
-    h.append(Line2D([], [], color=INK, lw=1.8, label="model"))
+    h.append(Line2D([], [], color=INK, lw=1.8, label=SIM_LABEL))
     alt = [s for s in series if s["alt"] is not None]
     if alt:
         h.append(Line2D([], [], color=INK, lw=1.8, ls=ALT_LS,
                         label=alt[0].get("alt_label", "model, alt. wall")))
     # "data", not the citation: the caption names Molaro et al. (2019).
     h.append(Line2D([], [], color=INK, ls="none", marker="o", ms=4.2, mfc="white",
-                    mew=0.9, label="data"))
+                    mew=0.9, label=DATA_LABEL))
     if data_fit:
         h.append(Line2D([], [], color=INK, lw=1.0, ls=FIT_LS, label="fit"))
     return h
@@ -306,13 +339,15 @@ def _neck_panel(ax, series, marks=()):
               ncol=2, columnspacing=1.2, handletextpad=0.5, loc="lower right")
 
 
-def _sections(fig, F, secs, x0, y0, s_w, s_h, gap, norm, vapcm, icecm, t_star):
+def _sections(fig, F, secs, x0, y0, s_w, s_h, gap, norm, vapcm, icecm, t_star, bars=None):
     for i, (fl, X, Y, step, row, t) in enumerate(secs):
         axi = fig.add_axes(F(x0 + i * (s_w + gap), y0, s_w, s_h))
         XX, YY = _field(axi, fl, X, Y, norm, vapcm, icecm)
         axi.set_aspect("auto")
         if i == 0:
             _scalebar(axi, XX, YY)
+        if bars:
+            neck_bar(axi, *bars[i])
         tm = (t - t_star) / 60.0
         _snap_title(axi, LETTERS[i], f"{round(tm) + 0:d} min")   # +0: no "-0"
 
@@ -398,7 +433,8 @@ def build_full(secs, series, marks, norm, vapcm, icecm, t_star, a):
     F = lambda x0, y0, w, h: (x0 / W, y0 / H, w / W, h / H)
     y_neck = bot + ph2 + leg + g_row
     y_snap = y_neck + ph + g_snap
-    _sections(fig, F, secs, ml, y_snap, s_w, s_h, gap, norm, vapcm, icecm, t_star)
+    _sections(fig, F, secs, ml, y_snap, s_w, s_h, gap, norm, vapcm, icecm, t_star,
+              bars=getattr(a, "bars", None))
     _neck_panel(fig.add_axes(F(ml, y_neck, axw, ph)), series, marks)
     xmax = max(float(s["Dd"]["t"].max()) for s in series)
     for i, (which, sym) in enumerate((("large", "l"), ("small", "s"))):
@@ -516,6 +552,8 @@ def main(argv=None):
                    metavar=("Z0", "Z1", "RMAX"),
                    help="section window [um] (default: the ice + 10 %%)")
     p.add_argument("--width-mm", type=float, default=170.0)
+    p.add_argument("--v2", action="store_true",
+                   help="write Figure3_molaro_validation_v2 only (see V2 above)")
     p.add_argument("--save-dir", type=Path, default=REPO / "studies/molaro_2019/manuscript")
     p.add_argument("--formats", nargs="+", default=["pdf", "png"])
     p.add_argument("--dpi", type=int, default=600,
@@ -561,7 +599,7 @@ def main(argv=None):
     sig_extend = {(True, True): "both", (True, False): "min",
                   (False, True): "max", (False, False): "neither"}[(smin < -v, smax > v)]
     norm = AsinhNorm(linear_width=max(v / 300.0, 1e-12), vmin=-v, vmax=v)
-    vapcm = centered_cmap(cmocean.cm.balance, norm)
+    vapcm = centered_cmap(cropped_balance() if a.v2 else cmocean.cm.balance, norm)
     icecm = ice_alpha_cmap()
     clipped = 100.0 * np.mean((pore < -v) | (pore > v))
     print(f"  sigma x{SIGMA_SCALE:g} over the shown pore: {smin:+.3g} .. {smax:+.3g}; "
@@ -569,14 +607,23 @@ def main(argv=None):
 
     a.sig_extend = sig_extend
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
-    figs = {
-        "molaro_neck_width": build_neck(series, a),
-        "molaro_microstructure": build_micro(secs, norm, vapcm, icecm, m["t_star"], a),
-        "molaro_combined": build_combined(secs, series, marks, norm, vapcm, icecm,
-                                          m["t_star"], a),
-        "molaro_grain_shrinkage": build_shrinkage(series, a),
-        "Figure3_molaro_validation": build_full(secs, series, marks, norm, vapcm, icecm, m["t_star"], a),
-    }
+    if a.v2:
+        global SIM_LABEL, DATA_LABEL
+        SIM_LABEL, DATA_LABEL = "simulation", "Data from Molaro et al. (2019)"
+        a.bars = [neck_at(s20["run"], sec[5]) for sec in secs]
+        for (z, w), sec in zip(a.bars, secs):
+            print(f"  w(t) bar at t = {sec[5]:.1f} s: z = {1e3 * z:.1f} um, w = {1e3 * w:.2f} um")
+        figs = {"Figure3_molaro_validation_v2":
+                build_full(secs, series, marks, norm, vapcm, icecm, m["t_star"], a)}
+    else:
+        figs = {
+            "molaro_neck_width": build_neck(series, a),
+            "molaro_microstructure": build_micro(secs, norm, vapcm, icecm, m["t_star"], a),
+            "molaro_combined": build_combined(secs, series, marks, norm, vapcm, icecm,
+                                              m["t_star"], a),
+            "molaro_grain_shrinkage": build_shrinkage(series, a),
+            "Figure3_molaro_validation": build_full(secs, series, marks, norm, vapcm, icecm, m["t_star"], a),
+        }
     os.makedirs(a.save_dir, exist_ok=True)
     for stem, fig in figs.items():
         h_mm = fig.get_figheight() * 25.4

@@ -22,6 +22,9 @@ labels; >= 8 pt; transparent background):
   Figure5_gallery       what happens to the aggregates: one packing of each
                      porosity at four instants, with qualitative colour bars
 
+--v2 (advisor meeting 2026-10-15) builds only Figure7_state_law{,_allphi}_v2:
+panel (b) draws each run's measured samples as dots, a scatter plot, not lines.
+
 Seeds are PAIRED across temperature (the packings common to every temperature).
 Writes PNG + PDF to <campaign>/compare/figure_samples/ (or --out).
 """
@@ -185,7 +188,8 @@ def fig_closure(R, out, theta_ref=30.0, phi_max=0.375):
     return p0
 
 
-def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.0, 19.0, 30.0), all_phi=False):
+def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.0, 19.0, 30.0), all_phi=False,
+                 v2=False):
     """Curves to go with the gallery: (a) k_eff(t) for the five porosities (seed
     mean, band = seed min-max) with the gallery's instants marked; (b) the
     state law k vs SSA; (c) its level; (d) its exponent.
@@ -230,7 +234,15 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
     shown = [k for k in per if all_phi or k[0] <= phi_max]
     for z_, k in enumerate(sorted(shown, key=lambda k: -abs(p_of[k] - p0))):   # widest of the fan first
         for lx, ly, _ in per[k]:
-            ax[1].plot(10 ** lx, 10 ** ly, color=col[k[0]], lw=0.8, alpha=0.9, zorder=2 + 0.01 * z_)
+            if v2:
+                # A scatter plot: every sample would merge back into a line,
+                # so 15 MEASURED samples per run, the nearest to an even
+                # spacing in log SSA (none interpolated).
+                j = np.unique([int(np.argmin(np.abs(lx - g))) for g in np.linspace(lx.min(), lx.max(), 15)])
+                ax[1].plot(10 ** lx[j], 10 ** ly[j], ls="none", marker="o", ms=2.6, mew=0.3, mec="white",
+                           color=col[k[0]], alpha=0.9, zorder=2 + 0.01 * z_)
+            else:
+                ax[1].plot(10 ** lx, 10 ** ly, color=col[k[0]], lw=0.8, alpha=0.9, zorder=2 + 0.01 * z_)
     xx = np.linspace(0.70, 1.0, 30)
     ax[1].plot(xx, xx ** p0, color=INK, lw=1.3, ls="--", zorder=5,
                label=rf"$(\mathrm{{SSA}}/\mathrm{{SSA}}_\mathrm{{r}})^{{{p0:.2f}}}$")
@@ -274,7 +286,7 @@ def fig_porosity(R, out, T=-20, theta_ref=30.0, phi_max=0.375, marks_d=(0.0, 10.
     ax[3].set(ylabel=r"exponent $p$")
     for a_, s_ in zip(ax, "abcd"):
         clean(a_); panel(a_, s_, dx=-0.20, dy=1.01)
-    save(fig, out, "Figure7_state_law_allphi" if all_phi else "Figure7_state_law")
+    save(fig, out, ("Figure7_state_law_allphi" if all_phi else "Figure7_state_law") + ("_v2" if v2 else ""))
 
 
 def rho_vs_ice(T):
@@ -422,6 +434,7 @@ def main():
     ap.add_argument("root", type=Path)
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--skip-gallery", action="store_true")
+    ap.add_argument("--v2", action="store_true", help="only Figure7_state_law{,_allphi}_v2")
     a = ap.parse_args()
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
@@ -436,6 +449,10 @@ def main():
         r["i0"] = int(np.argmax(r["t"] >= 1.0))
         r["th"] = r["t"] / r["tau"]; r["td"] = r["t"] / DAY
         R[(float(m.group(1)), int(m.group(3)))][int(m.group(2))] = r
+    if a.v2:
+        fig_porosity(R, out, v2=True)
+        fig_porosity(R, out, all_phi=True, v2=True)
+        return
     fig_collapse(R, out)
     p0 = fig_closure(R, out)
     fig_porosity(R, out)

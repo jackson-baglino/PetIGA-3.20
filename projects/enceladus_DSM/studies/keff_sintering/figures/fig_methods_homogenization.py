@@ -26,6 +26,11 @@ those panels are drawn empty. Get them with ONE local replay (about a minute):
     (mkdir "$R/corrector" first)
 
 Writes Figure2_homogenization_method.{pdf,png}.
+
+--v2 (advisor meeting 2026-10-15) writes Figure2_homogenization_method_v2
+instead: the (b) scale bar at the bottom RIGHT, in the ice, and in (c) the
+temperature field T(x,y) = x + t_x of the same unit gradient, whose flux is
+(d), in place of the corrector alone, with isotherms over it.
 """
 from __future__ import annotations
 
@@ -65,6 +70,8 @@ def main():
                          "Figure2_panel_<x>.pdf/.png: the full figure cropped to "
                          "the panel's axes, so it is the identical picture (no "
                          "letter, no colour bar)")
+    ap.add_argument("--v2", action="store_true",
+                    help="the 2026-10-15 version: (b) scale bar bottom right, (c) = T(x,y)")
     ap.add_argument("--panel-colorbar", action="store_true",
                     help="keep the colour bar and its label in --panel crops of (c), (d)")
     a = ap.parse_args()
@@ -140,16 +147,30 @@ def main():
     ax.contour(xz, yz, pz, levels=[0.05, 0.95], colors=["#D55E00"], linewidths=0.8, linestyles="--")
     ax.contour(xz, yz, pz, levels=[0.5], colors=["#D55E00"], linewidths=1.2)
     ax.set_xlim(cx - h, cx + h); ax.set_ylim(cy - h, cy + h)
-    ax.plot([cx - h + 4, cx - h + 14], [cy - h + 4, cy - h + 4], color=INK, lw=2.2, solid_capstyle="butt", zorder=6)
-    ax.text(cx - h + 9, cy - h + 5.6, r"10 $\mu$m", color=INK, ha="center", va="bottom", fontsize=FS_TINY, zorder=6,
+    xb = cx + h - 14 if a.v2 else cx - h + 4          # v2: bottom right, in the ice
+    ax.plot([xb, xb + 10], [cy - h + 4, cy - h + 4], color=INK, lw=2.2, solid_capstyle="butt", zorder=6)
+    ax.text(xb + 5, cy - h + 5.6, r"10 $\mu$m", color=INK, ha="center", va="bottom", fontsize=FS_TINY, zorder=6,
             bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.85))
 
     if cor is not None:
         tx = cor * 1e6                                    # m -> um, for a unit gradient
-        v = np.percentile(np.abs(tx), 99.5)
-        im = axs["c"].imshow(tx, origin="lower", extent=ext, cmap=cmocean.cm.balance, vmin=-v, vmax=v,
-                             interpolation="antialiased")
-        axs["c"].contour(x, y, phi, levels=[0.5], colors=[INK], linewidths=0.25)
+        if a.v2:
+            # The temperature whose flux is (d): T = x + t_x for a unit
+            # macroscopic gradient along x, scaled by the cell's drop
+            # |grad T| L so it runs ~0 -> 1 across the cell. Isotherms crowd
+            # in the air and spread in the ice.
+            L = x.max() - x.min()
+            Tn = (x[None, :] - x.min() + tx) / L
+            im = axs["c"].imshow(Tn, origin="lower", extent=ext, cmap="coolwarm", vmin=0.0, vmax=1.0,
+                                 interpolation="antialiased")
+            axs["c"].contour(x, y, Tn, levels=np.linspace(0.05, 0.95, 19), colors=[INK],
+                             linewidths=0.35, linestyles="-")
+            axs["c"].contour(x, y, phi, levels=[0.5], colors=["white"], linewidths=0.3)
+        else:
+            v = np.percentile(np.abs(tx), 99.5)
+            im = axs["c"].imshow(tx, origin="lower", extent=ext, cmap=cmocean.cm.balance, vmin=-v, vmax=v,
+                                 interpolation="antialiased")
+            axs["c"].contour(x, y, phi, levels=[0.5], colors=[INK], linewidths=0.25)
         gy, gx = np.gradient(cor, y * 1e-6, x * 1e-6)
         # The solver's tensor law (src/keff_cell.c, KeffPointCond):
         # K = k_arith (I - n n) + k_harm n n, n = grad phi / |grad phi|,
@@ -172,7 +193,8 @@ def main():
         im2 = axs["d"].imshow(q, origin="lower", extent=ext, cmap=cmocean.cm.thermal,
                               norm=matplotlib.colors.LogNorm(vmin=K_AIR, vmax=np.percentile(q, 99.9)),
                               interpolation="antialiased")
-        for k_, im_, lab in (("c", im, r"$t_x$ [$\mu$m]"), ("d", im2, r"$|\mathbf{q}|\,/\,|\nabla\bar{T}|$ [W m$^{-1}$ K$^{-1}$]")):
+        lab_c = r"$T\,/\,(|\nabla\bar{T}|\,L)$" if a.v2 else r"$t_x$ [$\mu$m]"
+        for k_, im_, lab in (("c", im, lab_c), ("d", im2, r"$|\mathbf{q}|\,/\,|\nabla\bar{T}|$ [W m$^{-1}$ K$^{-1}$]")):
             p_ = axs[k_].get_position()
             cax = fig.add_axes([p_.x1 + 0.008, p_.y0, 0.012, p_.height])
             cb = fig.colorbar(im_, cax=cax); cb.ax.tick_params(labelsize=FS_TINY, width=0.5, length=2)
@@ -194,13 +216,14 @@ def main():
 
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
+    stem = "Figure2_homogenization_method" + ("_v2" if a.v2 else "")
     for e in ("pdf", "png"):
-        f = out / f"Figure2_homogenization_method.{e}"
+        f = out / f"{stem}.{e}"
         fig.savefig(f, dpi=500, transparent=True)
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(f, a.copy_to / f.name)
-    print(f"wrote {out}/Figure2_homogenization_method.pdf/.png")
+    print(f"wrote {out}/{stem}.pdf/.png")
 
     # One panel's image alone: the same figure, cropped to that panel's axes.
     from matplotlib.transforms import Bbox

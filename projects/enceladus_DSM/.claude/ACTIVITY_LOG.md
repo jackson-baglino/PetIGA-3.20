@@ -1,3 +1,14 @@
+## 2026-10-15 — Advisor-meeting figure edits as _v2 copies
+
+- Every edit writes a separate *_v2 file. The originals are untouched. All copies are collected into ManuscriptFigures/.
+- Fig 1: new fig1_v2_edit.py edits the hand-edited PDF through Inkscape's SVG. The w(t) arrow is now an I-bar across the full neck (w is the full waist width). Blue molecule dots follow the vapor arrow and gather at the neck. The arrow is 3.7 pt shorter so it clears the bar.
+- Fig 2 (--v2): the (b) scale bar is now bottom right, in the ice. Panel (c) shows T = x + t_x scaled by |grad T| L, with isotherms, in place of t_x.
+- Fig 3 Molaro (--v2): legend says "simulation" and "Data from Molaro et al. (2019)". I-bars mark w(t) on both sections, from neck_width.csv. The sigma map is balance cropped to 0.18-0.82, so the clipped far field is mid blue, not navy. Built with the -5 C corr_on run, which matches the current figure.
+- Fig 4 saturated (--v2): legend says "simulation" and "theory, C(t+t0)^1/3". An I-bar marks w(t) at 150 h only, because w = 0 at 0 h.
+- Fig 7 (--v2): panel (b) is now a scatter plot of 15 measured samples per run, evenly spaced in log SSA. The user chose (b) over (c), whose points are already dots.
+
+---
+
 ## 2026-10-15 — Outline re-synced to the current draft
 
 - The merged outline had kept the 10-14 bullets for the Introduction and Section 2.1; rewrote them against the 10-15 (second upload) draft: done items marked, only open items kept, literature evidence and suggested text moved into the body, top section cut to a ranked index.
