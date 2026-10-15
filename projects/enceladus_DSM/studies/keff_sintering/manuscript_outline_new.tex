@@ -169,8 +169,9 @@ campaign record and the manuscript plan.
   attributed to missing surface diffusion (Appendix, this outline): the rate
   at $-20\,^{\circ}$C is a matter of how fast vapor can be supplied, in an
   experiment whose driving force is a few millikelvin-equivalent; the
-  low exponent at saturation was an artifact of starting from a pre-made
-  neck, confirmed by the tangent-start run on 10-15 ($a = 0.289$). Molaro's conventions: neck \emph{width}, time anchored on the first
+  exponent at saturation now matches: from grains just touching the model
+  gives 0.29, inside Demmenie's 0.26--0.33 and on the sharp-interface law
+  (10-15); the earlier 0.21 came from a pre-made starting neck. Molaro's conventions: neck \emph{width}, time anchored on the first
   measurement. The $-20\,^{\circ}$C series is the benchmark.
 \item \textbf{Conductivity} (09-23). Tensor law in the interface; the cell
   problem is a steady problem on a frozen microstructure and says nothing
@@ -198,7 +199,7 @@ Key points, Abstract, Summary & to write (placeholders)\\
 1 Introduction & third draft (10-15): new \P4 on Enceladus conductivity; open: the gap against Bouvet et al.\ (2022), the exponent sources, $\alpha_c$ regime, why SSA\\
 2.1--2.3 Model, kinetics, homogenization & written; kelvin throughout since 10-15; scaling appendix empty; Eqs.~(2), (11d) to fix\\
 2.4, 2.5 Numerics, simulation design & headings only\\
-3 Grain pairs & written; numbers to add, one sentence wrong\\
+3 Grain pairs & written; 3.2 to rewrite for the tangent-start run ($a = 0.29$, Figure~4 rebuilt 10-15)\\
 4 Aggregates & written; numbers to add, one paragraph to correct\\
 5.1 What vapor transport reproduces & three paragraphs drafted; the first two need revising for what was found on 10-13\\
 5.2 Temperature as a rescaling of time & one paragraph begun\\
@@ -228,7 +229,7 @@ class. The entries below list only what is still open.
   limited'') and Section~3.2 (tex L455, ``vapor-limited''): $\alpha_c =
   10^{-3}$ is attachment-limited (F2).
 \item \textbf{Rewrite Sections 3.2, 5.1 and Appendix~B for the tangent-start
-  run}, now in Figure~4: the draft text (tex L455--461, L502) still describes
+  run} (plans and suggested text under each), now in Figure~4: the draft text (tex L455--461, L502) still describes
   the pre-necked run (a 28~$\mu$m starting neck, exponent 0.21). \Have \textbf{Tangent-start result (10-15)}: free exponent $a = 0.289$
 (Kuczynski $1/m = 0.290$; 0.277 from later window starts), inside Demmenie's
 0.26--0.33 and on the sharp-interface 0.29; no trapped pocket; neck to
@@ -305,8 +306,8 @@ settings can differ from the build here.
     conductivity.
   \item \tA Effective conductivity follows specific surface area by one power
     law in well-connected packings; porosity sets its level.
-  \item \tA Vapor transport alone reproduces part of the neck growth measured
-    between ice grains in the laboratory.
+  \item \tA At saturation, vapor transport alone gives the neck-growth
+    exponent measured between ice spheres (0.29 against 0.26--0.33).
   \end{itemize}
 \Pg{Abstract}{L9--31, marked ``needs to be updated''}{Background, method, the two-grain test, the aggregate result.}
   \begin{itemize}
@@ -322,7 +323,8 @@ settings can differ from the build here.
   \item \tT The first five sentences are background; keep two.
   \item \tA Sentence by sentence: setting; gap (conductivity as grains sinter
     without compaction); method; grain pairs (41\% at $-20\,^{\circ}$C;
-    exponent at saturation); aggregates (125 runs); result~1 (same
+    exponent 0.29 at saturation, within the measured 0.26--0.33);
+    aggregates (125 runs); result~1 (same
     conductivity against SSA at every temperature within 0.3\%); result~2
     (SSA$^{-0.80}$ for $\varphi \le 0.375$, level set by porosity); meaning.
     At most 250 words (it is 254 now).
@@ -630,6 +632,10 @@ literature-check findings (F$n$, top of this document) merged in place.
     outlined by Auriault (1991)'': ``a homogenization method
     \citep{auriaultHeterogeneousMediumEquivalent1991} adapted to the diffuse
     interface''.
+  \item \tA \textbf{Announce the two-grain results} in one sentence: vapor
+    transport alone gives 41\% of the neck growth Molaro et al.\ measured at
+    $-20\,^{\circ}$C, and the exponent Demmenie et al.\ measured at
+    saturation (0.29 against 0.26--0.33).
   \item \tA \textbf{The temperature result is not announced}: temperature
     from $-40$ to $-5\,^{\circ}$C only rescales time (Section~5.2). One
     clause.
@@ -924,7 +930,7 @@ literature-check findings (F$n$, top of this document) merged in place.
     evolution'' (to the); ``microstructures SSA'' (microstructure's).
   \item \tT Two sentences: before using the model on aggregates, we ask how
     much of measured neck growth it reproduces, with one experiment away
-    from saturation and one at saturation.
+    from saturation (the rate) and one at saturation (the exponent).
   \end{itemize}
 \end{enumerate}
 
@@ -976,49 +982,77 @@ literature-check findings (F$n$, top of this document) merged in place.
 
 \subsection{Growth at Saturation}
 \begin{enumerate}
-\Pg{Set-up and result}{L326--340}{The saturated equal-grain run and its fitted exponent.}
+\Pg{Set-up and result}{tex L454--456; \textbf{reframed 10-15} for the tangent-start run}{Two grains brought into contact in saturated air: the model gives the measured exponent.}
   \begin{itemize}
+  \item \tA \textbf{Framing.} Section~3.2 is now the positive test of the
+    two-grain comparison. At saturation the grains neither grow nor shrink
+    (radius $+0.08\%$ over 150~h), so the neck is the only thing that grows,
+    and the model gives the exponent Demmenie et al.\ measured and the
+    sharp-interface law predicts. Section~3.1 (Molaro et al.) remains the
+    test of the \emph{rate}; Section~3.2 is the test of the \emph{exponent}.
+  \item \tA \textbf{Set-up, as run.} Two grains, $R = 84.4~\mu$m, just
+    touching at $t = 0$; $-20\,^{\circ}$C; $\alpha_c = 1.002\times10^{-3}$;
+    vapor saturated over the grains' own curvature, $\rho_v =
+    \rho_{vs}^{I}(1 + 2d_0/R)$; 3-D axisymmetric; 150~h.
+  \item \tA \textbf{Result.} Fitting $w = C(t+t_0)^{a}$ after the relaxation
+    period (20~min, $11\,\tau_{\mathrm{sub}}$) gives $a = 0.289$ ($t_0 =
+    0.6$~h, rms 0.17\%); the Kuczynski form gives $1/m = 0.290$; fixing
+    $a = 1/3$ raises the rms to 2.6\%. Starting the fit later: 0.289 (1~h),
+    0.285 (13~h), 0.281 (32~h), 0.279 (63~h), 0.277 (88~h). The neck reaches
+    61.2~$\mu$m ($w/2R = 0.36$).
+  \item \tA \textbf{What it is compared with.} Demmenie et al.\ measured
+    0.26--0.33 at saturation (p.3), on spheres at $-3\,^{\circ}$C: the
+    exponent is compared, not the rate. The sharp-interface law integrated
+    for this geometry and $\alpha_c$ gives 0.29 (Appendix~B); $1/3$ is its
+    limit for small necks, and the neck here is not small.
   \item \tC \Chk{F2} ``a vapor-limited regime \ldots\ governed by vapor
     transport'' (tex L455): the reverse; Bouvet et al.\ (2024, p.5) put the
-    attachment--diffusion transition near $10^{-3}$ for 0.1~mm grains. At $\alpha_c = 10^{-3}$ growth is limited by attachment
-    (gas diffusion adds 0.4--2\% to the resistance), which is the regime
-    the $t^{1/3}$ law describes.
-  \item \tC ``two ice grains briefly brought into contact'': the run starts
-    from a neck 28~$\mu$m wide.
+    attachment--diffusion transition near $10^{-3}$ for 0.1~mm grains. At
+    $\alpha_c = 10^{-3}$ growth is limited by attachment (gas diffusion adds
+    0.4--2\% to the resistance), which is the regime the $t^{1/3}$ law
+    describes.
+  \item \tC Numbers in the draft that describe the earlier run: $t = 100$~h
+    $\to$ 150~h; fit window $[20~\mathrm{min}, 100~\mathrm{h}]$ $\to$ $[20~\mathrm{min},
+    150~\mathrm{h}]$; $a = 0.21$ $\to$ 0.29; ``briefly brought into
+    contact'' $\to$ ``just touching''.
   \item \tC ``The red dashed curve is the theoretical fit'': it is the best
-    fit with the exponent fixed at 1/3.
+    fit with the exponent fixed at $1/3$.
   \item \tG ``in attempts to compare'' (to compare); ``allowed for the to
     sinter''; ``an condensation''; ``$1.002e-03$'' ($1.002\times10^{-3}$);
     ``Similarly to''.
-  \item \tA Why this run: at saturation the grains do not shrink (radius
-    $+0.06\%$), so neck growth is isolated. Neck from 28 to 63~$\mu$m.
-  \item \tA Demmenie et al.\ measure 0.26--0.33 at saturation and about 1/7
-    when undersaturated. The fitted exponent rises from 0.21 to 0.24 as
-    the window starts later. The unsaturated $-20\,^{\circ}$C run gives
-    0.135 (our fit to Molaro's data: $0.23 \pm 0.03$; they report none). No exponent at $-5\,^{\circ}$C.
+  \Snippet{We performed one further simulation to compare the exponent of
+    neck growth with that measured by
+    \citet{demmenieIceSinteringSublimation2025}. Two ice grains of radius
+    $R = 84.4~\mu$m, initially just touching, sinter at $T=-20^\circ$C for
+    150 hours in vapor saturated over the grains' own curvature, so that the
+    grains neither grow nor shrink and only the neck evolves. We use
+    $\alphaC = 1.002\times10^{-3}$, for which growth is limited by attachment
+    at the ice surface. After the initial relaxation period, the neck width
+    follows $w = C(t+t_0)^{a}$ with $a = 0.29$
+    (\cref{fig:Figure4_saturated_neck_growth}), and the exponent changes by
+    less than 0.02 as the start of the fit is moved from 1 to 88 hours. This
+    lies within the range $0.26$--$0.33$ that
+    \citet{demmenieIceSinteringSublimation2025} measured at saturation, and
+    matches the value 0.29 that the sharp-interface law gives for this
+    geometry (Appendix~B); the small-neck limit of that law, $a = 1/3$, fits
+    our data less well.}
   \end{itemize}
   \Cite{Demmenie et al.\ 2025 \texttt{demmenieIceSinteringSublimation2025}.}
-\Pg{Why the exponent is low}{to write; \textbf{resolved 10-15}: see the tangent-start result}{The sharp-interface law gives 0.29 for this run; the 0.21 comes from the neck it was started from.}
+\Pg{The starting neck}{to write; one or two sentences here, the rest in Appendix~B}{Why the run starts from touching grains.}
   \begin{itemize}
-  \item \tA The Gibbs--Thomson prediction for this geometry and these
-    parameters: exponent 0.29, final neck width within 4\%.
-  \item \tA The starting neck is two overlapping spheres: a sharp notch,
-    with the centers 2.3~$\mu$m closer than touching grains.
-  \item \tA The run grows faster than the prediction at first (2.5 times at
-    2~h) and settles onto it (1.0 by 71~h).
-  \item \tA The fit must assume how long the neck had been growing: a free
-    fit takes 4.8~h and gives 0.21; the prediction says 16~h, and with
-    that the same data give 0.28.
-  \item \tA The run from grains just touching: \emph{fill in from the
-    pending run}. (The August run of that kind, at twice the interface
-    width, gave 0.283 with no early excess.)
-  \item \tA The limit of the claim: within 100~h the rate reaches the
-    prediction but the fitted exponent does not (0.236 against 0.29).
+  \item \tA An earlier run started from a pre-made neck (two overlapping
+    spheres, a 28~$\mu$m neck) and gave $a = 0.21$--0.24 under the same
+    conditions. The low exponent came from that initial condition: a fit
+    must assume how long a pre-made neck had been growing, and the free fit
+    picks 4.8~h where the prediction says 16~h. Report it in Appendix~B as
+    a caution on initial conditions, not in the main text.
   \end{itemize}
-  \Open{if the pending run still shows the early excess at equal neck
-  widths, the cause is the interface width instead. A claim of convergence
-  as $\varepsilon \to 0$ is not available without a run at smaller
-  $\varepsilon$.}
+  \Open{the Molaro runs (Section~3.1) still start from a pre-made neck,
+  because a tangent start traps an air pocket at the neck at that
+  resolution (pilot of 10-15). Decide how Sections~3.1 and 5.1 qualify the
+  0.135 exponent at $-20\,^{\circ}$C, which may carry the same bias, and
+  whether the 41\% rate comparison, anchored on Molaro's first measurement,
+  is affected.}
 \Place{Figure 4}{\Have placed. Caption: see ``Figure captions'' after Section~6.}
 \end{enumerate}
 
@@ -1214,41 +1248,53 @@ Paragraphs 1--3 of Section~5.1 and the start of Section~5.2 are drafted.
     undersaturation.
   \end{itemize}
   \Cite{Molaro et al.\ 2019 \texttt{molaroMicrostructuralEvolutionWater2019}; Swinkels \& Ashby 1981 \texttt{swinkelsSecondReportSintering1981}.}
-\Pg{The saturated pair, and exponents}{tex L502; tangent-start run now in (exponent 0.289)}{The model follows the saturation trend in the exponent; where it falls short, the cause is the starting neck.}
+\Pg{The saturated pair, and exponents}{tex L502; \textbf{reframed 10-15}}{The model reproduces how the exponent depends on saturation; the unsaturated value carries the starting-neck caveat.}
   \begin{itemize}
+  \item \tA \textbf{Framing.} The model reproduces the dependence of the
+    exponent on saturation that Demmenie et al.\ observed: 0.29 at
+    saturation (theirs 0.26--0.33) and 0.135 in the undersaturated
+    $-20\,^{\circ}$C case (theirs about $1/7$ when the ice sublimated). The
+    draft's ``they are lower than measured values'' no longer holds at
+    saturation.
   \item \tC ``As two spherical ice grains sinter in an environment with a
     saturated water vapor field, the growth is expected to be kinetics
     limited'': saturation does not make growth attachment-limited; a small
     $\alpha_c$ does. The $t^{1/3}$ law assumes it.
+  \item \tC Numbers: ``$a = 0.21$ across the entire simulation \ldots\ as
+    high as $a = 0.236$'' describe the pre-necked run: $a = 0.29$, 0.277 to
+    0.289 as the window moves.
   \item \tC \Chk{F4} ``a much better match for the theorized scaling \ldots\
     $t^{1/7}$'' (tex L502): $1/7$ is not a theory of unsaturated sintering.
     It is the classical surface-diffusion exponent (Kingery 1960, Table~I)
     and the value Demmenie et al.\ measured when ``we deliberately set the
     humidity too low and let the ice sublimate'' (p.3). Our model reaches it
-    with vapor transport alone.
-  \Snippet{This is close to the exponent of about $1/7$ that
-    \citet{demmenieIceSinteringSublimation2025} measured when the humidity
-    was too low and the ice sublimated. The same value is the classical
-    exponent for surface diffusion \citep{kingery_regelation_1960}, which our
-    model does not contain; here it arises from vapor transport alone.}
-  \item \tC ``they are lower than measured values'': give the pairs, 0.21
-    against 0.26--0.33 at saturation and 0.135 against $0.23 \pm 0.03$ at
-    $-20\,^{\circ}$C.
+    with vapor transport alone. Add that this run starts from a pre-made
+    neck (Section~3.2, open item).
+  \item \tA ``We additionally compare our measured interface velocity
+    \ldots'' states no result. The numbers in Appendix~B (2.5 times the
+    Gibbs--Thomson value at 2~h, 1.0 by 71~h) are for the pre-necked run;
+    \textbf{recompute them for the tangent-start run}
+    (\texttt{interface\_width\_estimate.py}) or drop the sentence.
+  \item \tA Why not surface diffusion: mechanisms in parallel add their
+    rates, and surface diffusion alone gives $t^{1/7}$, so it could not
+    raise an exponent; at saturation none is needed.
   \item \tG The first sentence is unfinished (``growing under as .'');
     ``where observe''; ``we had considered''; ``$1.002e-03$''; ``preform''
     (perform); two sentences in a row begin ``We additionally'' and
     ``Additionally''.
-  \item \tA ``We additionally compare our measured interface velocity
-    \ldots'' states no result: 2.5 times the Gibbs--Thomson value at 2~h,
-    1.0 by 71~h; the prediction's exponent is 0.29.
-  \item \tA The reason for the shortfall, from Section~3.2, in two
-    sentences. The Molaro runs start from the same pre-made neck and their
-    comparison begins about 100~$\tau_{\mathrm{sub}}$ after the start.
-  \item \tA Why not surface diffusion: mechanisms in parallel add their
-    rates, and surface diffusion alone gives $t^{1/7}$, so adding it could
-    not raise an exponent toward 1/3.
+  \Snippet{At saturation, the grains neither grow nor shrink and the neck
+    width follows $w \propto t^{0.29}$ (Section~3.2), within the range that
+    \citet{demmenieIceSinteringSublimation2025} measured, $0.26$--$0.33$. In
+    the undersaturated case at $T=-20^\circ$C, where the grains sublimate,
+    we measure $a = 0.135$, close to the exponent of about $1/7$ that
+    \citet{demmenieIceSinteringSublimation2025} measured when the humidity
+    was too low and the ice sublimated. The same value is the classical
+    exponent for surface diffusion \citep{kingery_regelation_1960}, which our
+    model does not contain; here it arises from vapor transport alone. Our
+    model therefore reproduces how the exponent depends on the saturation of
+    the vapor.}
   \end{itemize}
-  \Cite{Demmenie et al.\ 2025 \texttt{demmenieIceSinteringSublimation2025}; Molaro et al.\ 2019 \texttt{molaroMicrostructuralEvolutionWater2019}.}
+  \Cite{Demmenie et al.\ 2025 \texttt{demmenieIceSinteringSublimation2025}; Molaro et al.\ 2019 \texttt{molaroMicrostructuralEvolutionWater2019}; Kingery 1960 \texttt{kingery\_regelation\_1960}.}
 \Pg{$\alpha_c$ as an effective parameter}{L469--477}{What the uncertain coefficient does and does not change.}
   \begin{itemize}
   \item \tC ``do not change how the microstructure evolves, just the rate'':
@@ -1552,30 +1598,22 @@ Four points apply to several figures:
     geometry \ldots'': belongs in Section~3.1; the caption only needs the
     conditions.
   \end{itemize}
-\Pg{Figure 4, the saturated pair}{L(Section 3.2)}{(a) the pair at 0 and 100 h, (b) neck width with two power laws.}
+\Pg{Figure 4, the saturated pair}{L(Section 3.2); \textbf{rebuilt 10-15} from the tangent-start run}{(a) the pair at 0 and 150~h, (b) neck width with the fitted law ($a = 0.29$) and the $1/3$ law.}
   \begin{itemize}
+  \item \tC The caption describes the old figure: 100~h $\to$ 150~h; the
+    $t = 0$ frame now shows two grains just touching.
   \item \tA \textbf{Why the pore is red.} $\sigma$ is relative to flat ice,
     and Section~3.2 sets the far field to the Gibbs--Thomson value of the
-    grains, $2d_0/R \approx 2.4\times10^{-5}$ for $R = 84~\mu$m, which is
-    the top of the scale. Say this; a reader expects a saturated pore to be
-    white.
-  \item \tA \textbf{The starting neck.} The $t = 0$ frame shows overlapping
-    grains with a neck of 28~$\mu$m. Say so; Section~3.2 and Appendix~B
-    rest on it. \Have Figure~4 now shows the tangent-start run (10-15): the
-    $t=0$ frame is two grains just touching; update the caption.
-  \item \tC \textbf{The $t^{1/3}$ curve} is called ``the power law
-    corresponding to the theorized sublimation/desublimation neck growth'':
-    cite Demmenie et al.\ (2025), as Section~3.2 does (and a classical
-    source, Introduction paragraph~4). Appendix~B finds 0.29 for
-    the sharp-interface law at this grain size and $\alpha_c$; if the text
-    compares with 0.29, the figure should show that curve, or both. The
-    tangent-start run gives 0.289, so the comparison is now with both.
-  \item \tA The legend writes $C(t+t_0)^{a}$; say what $t_0$ is (fitted)
-    and the fit window (20~min to 100~h, as Section~3.2 says); temperature $-20\,^{\circ}$C, $R = 84~\mu$m,
-    $\alpha_c = 10^{-3}$; the numbered circles mark the frames in (a).
+    grains, $2d_0/R \approx 2.4\times10^{-5}$ for $R = 84~\mu$m, the top of
+    the scale. Say this; a reader expects a saturated pore to be white.
+  \item \tA The legend: $C(t+t_0)^{a}$, $a = 0.29$, and $C(t+t_0)^{1/3}$.
+    Say both are fitted ($t_0$ free), over 20~min to 150~h; temperature
+    $-20\,^{\circ}$C, $R = 84.4~\mu$m, $\alpha_c = 10^{-3}$; the numbered
+    circles mark the frames in (a). Cite Demmenie et al.\ for the measured
+    range and Appendix~B for the 0.29 prediction.
   \item \tG ``An isolated ice grain pair shown undergoing sintering shown'':
     ``Two equal ice grains sintering in saturated air, at $t = 0$ (left)
-    and 100~h (right)''. ``filed'', ``the the''.
+    and 150~h (right)''. ``filed'', ``the the''.
   \end{itemize}
 \Pg{Figure 5, the gallery}{L(Section 4.1)}{One packing at each of five porosities, at four times, at $-20\,^{\circ}$C.}
   \begin{itemize}
@@ -1707,7 +1745,11 @@ A one-equation neck model fitted to the same data wants $\alpha_c \approx
 
 \subsection*{B. The saturated pair against the Gibbs--Thomson law}
 
-\textbf{Question.} Is the exponent of 0.21 physics or resolution?
+\textbf{Result (10-15).} From grains just touching, the run gives $a =
+0.289$, on the prediction below (0.29). The tables that follow are for the
+earlier \emph{pre-necked} run, kept as the record of why the initial
+condition matters. \textbf{Question it answered:} was that run's 0.21
+physics or resolution? Neither: it was the starting neck.
 
 \textbf{Prediction.} For a neck of radius $x$ between grains of radius $R$,
 with fillet radius $\rho = x^{2}/(2(R-x))$, fed from the grain surface
@@ -1752,8 +1794,9 @@ imposed shape. The August run from tangent contact, at twice this interface
 width, showed no excess and gave 0.283, which points to the pre-made neck.
 The run from contact at this interface width (10-15) settles it:
 $a = 0.289$, so the low exponent came from the pre-made neck.
-Neither shows the predicted exponent being reached within 100~h from a
-pre-made neck (0.236 at the end against 0.29). Scripts and output:
+From a pre-made neck the exponent does not reach the prediction within
+100~h (0.236 at the end against 0.29); from contact it does at once. Still
+to do: the velocity-over-prediction table for the tangent-start run. Scripts and output:
 \texttt{studies/molaro\_2019/demmenie/} (\texttt{predict\_neck\_growth.py},
 \texttt{interface\_width\_estimate.py}).
 
@@ -1767,7 +1810,9 @@ content, each under a page:
   of Molaro's Figure~10.
 \item \emph{Appendix B, The saturated pair against the Gibbs--Thomson law:}
   the neck law, the run-against-prediction table, the contact-time table,
-  and the result of the tangent-start run.
+  led by the tangent-start run against the prediction (0.289 against
+  0.29), then one paragraph and the contact-time table showing what a
+  pre-made neck does to a fitted exponent.
 \item The time--temperature scaling (two pages, in
   \texttt{temperature\_scaling/}) is a
   candidate third appendix, or supporting information, for Section~5.2.
