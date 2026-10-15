@@ -38,3 +38,17 @@ Root: /Users/jacksonbaglino/PetIGA-3.20/projects/enceladus_DSM
    `pdflatex -interaction=nonstopmode -halt-on-error -output-directory <scratch> studies/keff_sintering/manuscript_outline_new_X.tex`.
    Fix any errors. Do not leave build files in the repo.
 4. Report back in ≤ 300 words: verdict counts, your top 10, and any claims you could not check.
+
+## Addendum: suggested manuscript snippets (user request, 2026-10-15)
+Where a finding calls for new or revised manuscript text, include a ready-to-paste snippet of draft prose,
+**written in the author's voice**. Match the current draft's style:
+- first-person plural ("we");
+- plain, direct sentences, with `\citet`/`\citep` citations;
+- the same notation and macros;
+- no filler or hedging stacks.
+
+Learn the voice from the current draft's Introduction and Methods before you write. In the outline, put each snippet in
+`\Snippet{...}`, defined as
+`\newcommand{\Snippet}[1]{\par\smallskip{\small\textit{Suggested text:} #1}\par\smallskip}`, directly under the paragraph it belongs to.
+Tag it with `% [REVIEW-X #id]`. Every factual statement and citation in a snippet must be backed by evidence in your claims table.
+Snippets are for the important points only: corrections, missing context and key citations. Do not rewrite paragraphs wholesale.
