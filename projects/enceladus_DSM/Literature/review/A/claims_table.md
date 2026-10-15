@@ -124,3 +124,77 @@ Counts by verdict (rows): supported 44 (incl. scoped/resolved/uncited-supported)
 - Byrne bib DOI must be 10.1029/2024JE008615.
 - Old-style keys `choukroun_strength_2020`, `nicoli_tensorial_2011` (outline already notes).
 - Draft L418 "tonsorial" → "tensorial" (also Ettrich's typo — do not copy).
+
+---
+
+# Phase 2 — remap to the current draft (2026-10-15)
+
+Current draft = `Literature/manuscript/k_eff-ice-sintering-paper/manuscript_draft_v2.tex` (source lines, D-L). Offsets from the 10-14 draft: +1 to old L259, Intro P4 is new (L263), old P4 → P5 (L266), +3 from old L268 on. `Tables/tables.tex` unchanged. Status: **resolved** = the draft now follows the fix; **open** = text unchanged, phase-1 verdict stands; **updated** = text changed, new verdict given.
+
+| id | new location | status / verdict now |
+|---|---|---|
+| A01 | D-L254 | open — still uncited (Colbeck 1980) |
+| A02 | D-L257 | open — Colbeck 1998 still cited for depth hoar/avalanches (wrong-citation) |
+| A03 | D-L257 | updated — now "how heat moves ... and the temperature profile" (Calonne 2011, 2019): supported (calonne2019 p.2); `\citet` should be `\citep` |
+| A04 | O-L294–300 | open (outline only) |
+| A05 | D-L260 | open — "numerous jets" (spitale2007 p.695: eight sources) |
+| A06 | D-L260 | supported |
+| A07 | D-L260 | open — partially ("percent level NaCl") |
+| A08 | D-L260 | open — partially |
+| A09 | D-L263 | resolved — Choukroun alone, "poorly consolidated": supported (choukroun2020 p.7) |
+| A10 | D-L263 | open — partially ("up to 180 K") |
+| A11 | D-L263 | supported ("about 15 years"; "with" → "within") |
+| A12 | D-L263 | supported ("strength grows linear in time", choukroun2020 p.4) |
+| A13 | D-L263 | updated — now in draft; supported, add "for compact ice" (southworth2019 p.35) |
+| A14 | D-L263 | updated — now in draft; supported (byrne2024 p.2–3, 9); bib entry is the ESS Open Archive preprint (10.22541/au.171386353.34274580/v2), published DOI on PDF p.1 is 10.1029/2024JE008615 |
+| A15 | D-L263 | open — "Sintering that strengthens ... thermal conductivity" uncited; cite molaro2019 p.264 |
+| A16 | — | outline only |
+| A17 | D-L266 | open — vapour dominance uncited; cite Maeno & Ebinuma 1983 (in .bib) |
+| A18 | D-L266 | updated → A86 |
+| A19 | D-L271 | resolved — caption vapour-only (typo "fo") |
+| A20 | D-L266 | resolved — snow-metamorphism examples removed; replaced by exponent sentence (A85) |
+| A21 | D-L266 | open — "first proposed by Swinkels & Ashby (1981)" |
+| A22 | D-L266 | updated → A85 |
+| A23 | D-L266 | supported — "neck widths of isolated grain pairs" (molaro2019 App. B5, p.272) |
+| A24 | D-L276 | resolved — L&R 2013, both basal and prism |
+| A25 | O-L427–433 | open (outline "0.025 atm" → bar) |
+| A26 | D-L276 | updated → A87 |
+| A27 | D-L276 | updated → A88 |
+| A28 | D-L276 | open — Hertz–Knudsen uncited (libbrecht2017 p.275) |
+| A29 | D-L279 | resolved — Libbrecht 2017 and Moure dropped from DSM list |
+| A30 | D-L279 | updated — L&R 2013 added: supported for L&R; Colbeck 1983 is theory, not experiment (partially) |
+| A31–A34 | D-L279, D-L282 | as phase 1 |
+| A33 | D-L279 | updated — Braun now "on μCT data of snow with a temperature gradient ... predict how SSA evolves" and "differed between two experiments at nearly the same temperatures and changed ... as facets formed": supported (braun2024 p.12–13) |
+| A35 | D-L282 | updated → A89 |
+| A36 | O-L554–558 | open (outline); draft now carries a version of it → A90 |
+| A37 | D-L285 | open — "updated phase-field model introduced by Moure" |
+| A38 | D-L285, D-L293 | open — Auriault 1991 still credited for the conduction law; L293 now adds Calonne 2011/2014/2019 (supported) |
+| A39 | D-L317 | resolved — Eq. 3 is now Wexler 1977 Eq. 54 with T in K; but see A91 |
+| A40 | D-L319 | open — k_j still referred to Moure (SI, not in library) |
+| A41 | T1 note b | open — "ASHRAE polynomial" |
+| A42 | D-L335 | supported — D_v ∝ (T/T_0)^1.81, T in K |
+| A43–A44 | T1 | open (tables unchanged) |
+| A45–A46 | D-L342–349 | as phase 1 |
+| A47 | D-L356 | open — "without less of generality" |
+| A48 | D-L365–378 | supported |
+| A49 | D-L379 | open — Eq. 11d still (t + I), not (∇t + I) |
+| A50–A52 | outline / D-L407–421 | as phase 1; D-L421 "tonsorial" still |
+| A53–A84 | outline / D-L437+ (+3) | as phase 1; draft text unchanged |
+
+## Phase 2 — new rows (new or changed text)
+
+| id | location | claim (short) | cited keys | verdict | evidence | suggested fix |
+|---|---|---|---|---|---|---|
+| A85 | D-L266 | "$w \propto t^n$ ... $n$ identifies the dominating mechanism. For vapor transport n = 1/3; 1/5, 1/7 for volume and surface diffusion" | Hobbs_and_Mason, kingery_regelation_1960, thomas_crushing_1994, demmenie2025 | partially (wrong-citation for Hobbs & Mason; not-checkable, missing PDF) | blackford2007 p.16 (R369): "Hobbs and Mason's modified model gave values of n = 5 and m = 3 for vapour transport; these are the same values as Kucynzski determined for volume diffusion"; kingery1960 Table I (p.4) and demmenie2025 Table 1 (rendered p.2): 1/3, 1/5, 1/7 ✓; thomas1994 measures t^1/3 at −20 °C but its own table gives 1/4–1/5 for surface diffusion; maeno1983 p.4 (J. p.4106): "the determination of a dominant mechanism solely on the basis of observed values of p and q is misleading because the sintering rate is usually the sum of contributions from several mechanisms" | Cite Maeno & Ebinuma 1983, Kingery 1960, Demmenie 2025 for the set; Thomas 1994 for the measured 1/3 only; drop Hobbs & Mason here; "n identifies" → "n is often used to infer". Remove duplicate bib entry `noauthor_sintering_nodate` (= Hobbs & Mason 1964, no author). |
+| A86 | D-L266 | "Other modes ... limited effects for grains larger than a few microns or operate over planetary timescales" | molaro2019 | partially | molaro2019 App. B2 p.272 (rendered): "For 1-μm grains at 250 K, neglecting surface diffusion only increased τ25 and τ50 by 13% and 1% ... At 200 K ... ~200% and ~3,700% increase"; "Grains 100 μm in radius showed no significant effects"; p.244 surface diffusion "primarily dominant at temperatures below −15 °C when neck sizes are small" | Tie the claim to temperature: "at the temperatures of this study"; keep Molaro alone. |
+| A87 | D-L276 | α_c ∈ [1e-3, 1e-1] | kaempferPlapp2009, libbrechtRickerby2013, braun2024 | partially | braun2024 p.12: "commonly found range of 10^−3 < α < 10^−1 (Libbrecht and Rickerby, 2013), which is also used by Kaempfer and Plapp (2009)"; L&R 2013 report σ0 and A, not this range (phase-1 A26) | "Values of 10^-3–10^-1 are commonly used (Kaempfer & Plapp 2009; Braun et al. 2024)"; "bounded" → "used". |
+| A88 | D-L276 | "In the thin layer nucleation view, an Arrhenius function ... α_c = exp(−σ0/σ_surf)" | (L&R 2013 in sentence before) | partially (wording) | libbrechtRickerby2013 p.6 conclusion (1): α = A exp(−σ0/σ) from layer nucleation; the form is in 1/σ, not 1/T, so "Arrhenius" is wrong | "In the layer-nucleation picture α_c = exp(−σ0/σ_surf)". |
+| A89 | D-L282 | "How isothermal metamorphism influences the macroscopic properties in the absence of compaction is still unquantified" | — | partially | bouvet2022 p.15: k_eff computed through isothermal ETM, 0.078 → 0.081 W m^-1 K^-1, "not visible"; mergny2024 Eq. 29 (bond-radius conduction model) | Narrow: not followed from point contacts across temperature and porosity; cite Bouvet 2022 as the nearest case. |
+| A90 | D-L282 | "Calonne (2011) used μCT of 30 snow samples ... Under a temperature gradient a reduction in surface area did not necessarily correspond to an increase in thermal conductivity." | calonne2011 | partially (30 samples supported; second sentence mis-attributed) | calonne2011 p.4 "The correlation coefficient for the 30 samples is 0.985" ✓; the gradient result is calonne2014 p.9 SSA "decreases continuously ... from 27.7 to 13.4 m² kg−1" with k falling over 0–73 h, p.16 "destruction of connections between grains"; schneebeli2004 p.3664 k rose ~60% at constant density | Cite Calonne 2014 for the second sentence and say what happened (two stages, anisotropy 0.90 → 1.34, p.12). |
+| A91 | D-L313–319 | Eq. 4 uses P_a; text says P_atm; "where T_0 = 273.15 K" follows Eq. 3, which no longer contains T_0 | — | contradicted (typo) | wexler1977 Eq. 54 (rendered p.11): ln p = Σ K_j T^{j−1} + K_5 ln T, T in K, no T_0 | Rename P_a → P_atm in Eq. 4; move T_0 to Eq. 9; give k_j from Wexler 1977 Table 2. |
+| A92 | D-L263 | `\citet` used for parenthetical citations (×3); "preformed", "with about 15 years", "expected be" | — | typo | — | `\citep`; "performed", "within", "expected to be". |
+| A93 | D-L266, D-L271, D-L279 | typos: "moves tends be", "tend s", "an adapted model sintering model", "fo", "x-ray compute microtomography" | — | typo | — | "mass is redistributed mainly by", "tends", "an adapted sintering model", "of", "computed". |
+| A94 | D-L527 | new appendix "Model Scaling Parameters" is a heading only; label `sec:Appendix_SclaingParameters` | — | not-checkable (empty) | — | Fill with M_sub, α_sub, β_sub, Δβ, τ_sub from T1 notes; fix label spelling. |
+| A95 | D-L285 | "relation between k and SSA is independent of temperature; for φ ≤ 0.375 ... power-law with the same exponent" | — | supported (internal) | outline O-L571–576 (−0.80 for φ ≤ 0.375; level falls ~3× across φ) | Say the level still depends on porosity. |
+
+Phase-2 counts (new rows A85–A95): supported 1, partially 6, contradicted 1, typo 2, not-checkable 1. Remap: 9 rows resolved (A09, A19, A20, A24, A29, A39 (main), A03, A33, A23 confirmed), the rest open.

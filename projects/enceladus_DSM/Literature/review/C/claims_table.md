@@ -129,3 +129,67 @@ Verdict counts: supported 35 · partially 37 · unsupported 2 · wrong-citation 
 - Old-style keys: choukroun_strength_2020, nicoli_tensorial_2011, spitale_association_2007, postberg_sodium_2009, postberg_macromolecular_2018, kingery_regelation_1960, thomas_crushing_1994.
 - Moure & Fu (2024) print "T0 = 273.15 °C" (should be K) — do not copy.
 - Grain-pair Table: r0 = 14 µm vs Molaro's first neck width 32.8 µm (radius 16.4 µm) — check (C52).
+
+---
+
+# Phase 2 — re-mapped to the current draft (2026-10-15)
+
+Draft = `Literature/manuscript/k_eff-ice-sintering-paper/manuscript_draft_v2.tex` (source lines, "L"). Intro paragraphs: 1 L254, 2 L257, 3b L260, **4 L263 (new)**, 5 L266, 6 L276, 7 L279, 8 L282, 9 L285. Everything after the Introduction moved by **+3 lines** (old L290 → L293, old L497 → L500, …). Outline ids "O…" keep the outline's line numbers (outline unchanged).
+
+## Status of phase-1 rows in the current draft
+
+| id | new location | status now | note |
+|---|---|---|---|
+| C1, C2 | L257 | unchanged: wrong-citation (Colbeck 1998) / partially | — |
+| C3 | L257 | **supported** now (permafrost gone; Calonne 2019 added) | calonne2019 p.2/13079 heat transfer and thermal regime; `\citet` must be `\citep` |
+| C4–C6 | L260 | unchanged (C4 supported; C5, C6 partially) | — |
+| C7 | L263 (para 4) | partially ("sintering" vs Choukroun's "strengthening") | see C61 |
+| C8, C12 | — | **resolved** (Molaro and Choukroun dropped from those sentences) | — |
+| C9, C10 | L263 | unchanged (C9 partially, C10 supported) | typo "with about 15 years" |
+| C11 | L266 | partially → see C66 | — |
+| C13, C14 | L266 | **resolved** (example list removed); the sentence is now uncited | low priority |
+| C15 | L266 | unchanged, partially ("first proposed by") | — |
+| C17 | L276 | **resolved**: now libbrechtMeasurementsSurfaceAttachment2013, basal and prism | supported |
+| C18 | L276 | partially (now cited; L&R 2013 does not state the range) | see C72 |
+| C19 | L276 | **resolved**: layer nucleation on facets | libbrecht2013 p.4 |
+| C20 | L276 | partially → see C71 | — |
+| C21, C22 | L279 | **resolved** (Libbrecht 2017 out of DSM list) | — |
+| C23 | L279 | partially (Colbeck 1983 is theory; L&R 2013 now added, good) | — |
+| C26, C27 | L279 | **resolved**, supported (Braun wording now matches braun2024) | typo "x-ray compute microtomography" |
+| C28 | L282 | unchanged, partially | — |
+| C29 | L282 | **still contradicted**, now narrowed to "isothermal" → see C75 | — |
+| C30, C32 | L285 | unchanged, partially | — |
+| C34 | L317 | **resolved**: `k_5 ln T`, T in K, matches wexler1977 Eq. 54 / kaempfer2009 Eq. 2 | orphan "where T_0 = 273.15 K" (Typos) |
+| C35, C36 | L318, Table 1 note b | unchanged (Moure & Fu SI not in library; "ASHRAE") | — |
+| C37–C60 | +3 lines (e.g. C55–C57 → L500–L502, C59 → L504) | unchanged | — |
+| Fig. 1 caption (outline O1425ff) | L274 | **resolved**: caption is vapor-only | new inconsistency C68 |
+
+## New rows (current draft)
+
+| id | location | claim (short) | cited keys | verdict | evidence | suggested fix |
+|---|---|---|---|---|---|---|
+| C61 | L263 | Choukroun: aggregate strength grows linearly in time; little to no sintering → poorly consolidated | choukroun2020 | partially | choukroun2020 p.3 linear strength vs time; p.7 "little to no strengthening", "poorly consolidated" | "little to no strengthening is expected"; typo "preformed" → "performed"; "grows linearly" |
+| C62 | L263 | Plume deposition greatest near the stripes, 0.01–1.0 mm/yr | kempf2010, southworth2019 | partially | kempf2010 p.10/455 (rendered): "0.5 mm per year in the immediate vicinity of the jet sources"; southworth2019 Fig. 1 colour bar to ~1 mm/yr, no numeric range; the range is choukroun2020 p.7: "on order of 0.01 to 1 mm/yr (Kempf et al., 2010; Southworth et al., 2019)" | Add Choukroun 2020; `\citet` → `\citep`; "expected be" → "expected to be"; `$0.01$--$1$` not `\text{---}` |
+| C63 | L263 | Fresh deposits bury grains as they sinter | none | supported (needs cite) | choukroun2020 p.7: "competition between strengthening of existing plume deposits and covering by new fresh and loose particles" | Cite Choukroun 2020 |
+| C64 | L263 | Byrne varied k 0.001–0.1 W/m/K; sets shell temperature and radar depth | byrne2024 | supported | byrne2024 p.2–3, abstract | Bib DOI is a preprint (10.22541/au.171386353.34274580/v2); journal DOI 10.1029/2024JE008615 (PDF p.1) |
+| C65 | L266 | In a laboratory setting mass moves mainly by vapor diffusion | none | supported (needs cite) | thomas1994 p.4/(12)210 (rendered): two ~120 µm spheres at −20 °C, x/r ∝ t^{1/3}, "the sublimation and recondensation process predominate"; Hobbs & Mason abstract (bib): vapor transport, "volume or surface diffusion would be slower by almost four orders of magnitude" | Cite Hobbs & Mason 1964 and Thomas et al. 1994; fix "moves tends be" |
+| C66 | L266 | Other modes limited "for grains larger than a few microns or operate over planetary timescales" | molaro2019 | partially / second clause contradicted | molaro2019 p.30/272: "For 1‐μm grains at 250 K, neglecting surface diffusion only increased τ25 and τ50 by 13% and 1%"; "At 200 K … ~200% and ~3,700% increase"; "vapor diffusion mechanism has a stronger temperature dependence than surface diffusion"; recommends "always including the surface diffusion term … in planetary applications" | "At laboratory temperatures (about 250 K) the other routes matter only for grains of a micrometre or less; surface diffusion gains weight at colder temperatures (Molaro)". Drop "operate over planetary timescales" |
+| C67 | L266 | n = 1/3 for vapor; 1/5, 1/7 for volume and surface diffusion | Hobbs_and_Mason, kingery1960, thomas1994, demmenie2025 | partially | kingery1960 Table I p.3/834 (rendered): x³ evaporation–condensation, x⁵ volume, x⁷ surface; demmenie2025 Table 1 p.2/2105 same; thomas1994 p.3/(12)209: "n = 3 for vapour transport, 4 < n ≤ 5 for surface diffusion"; Hobbs & Mason (missing PDF): their vapor-through-air model gives "n = 5 and m = 3 for vapour transport; these are the same values as Kucynzski determined for volume diffusion" (blackford2007 p.16/R369, rendered); maeno1983 Table I p.2: H&M measured q = 4.2–6.2 | 1/3 is the attachment-limited (Hertz–Knudsen) vapor law; when diffusion through air limits supply vapor transport also gives 1/5 (Hobbs & Mason). Reword; cite H&M for the 1/5 vapor result, Kingery/Demmenie for the table. Matters for reading our 0.21–0.24 (saturated) and 0.135 |
+| C68 | L266 vs L274 | "$w$ is the neck width" vs Fig. 1 caption "a neck of radius $w(t)$" | — | contradicted (internal) | draft L266, L274 | Caption: "neck of width $w(t)$"; typo "fo" |
+| C69 | L266 | Molaro measured neck widths of grain pairs at various times | molaro2019 | supported | molaro2019 p.15–16/257–258, Table B1 | "an adapted model sintering model" → "a sintering model from metallurgy (Swinkels & Ashby, 1981)" |
+| C70 | L276 | α_c = 10⁻¹ "to maximize ice growth" or 10⁻³ "to force a diffusion limited growth regime" | none | contradicted | Draft L502: "an attachment limited regime corresponding to α_c=1.002e-03"; bouvet2024 p.5: α_T = D_v/(l w_kc) ≈ 3×10⁻⁴, "between 10⁻³ for small grains (∼0.1 mm) and 10⁻⁵ for very large grains"; below α_T sublimation–deposition limits; libbrecht2013 p.2: diffusion limits in air, α_diff ≈ 0.15/(p R_µm) | Lowering α_c moves growth toward the attachment-limited regime, not the diffusion-limited one; for 50 µm grains 10⁻³ sits near the transition (outline Λ ≈ 2.8). Say which study uses which value |
+| C71 | L276 | "thin layer nucleation view, an Arrhenius function … α = exp(−σ0/σ); both σ0 and σ_surf depend on temperature" | none | partially | libbrecht2013 p.4: "α(σsurf) = A exp(−σ0/σsurf), consistent with a polynucleation model"; σ0 varies with T (Fig. 5, p.5); A < 1 for prism above −10 °C | "layer-nucleation (polynucleation) model"; drop "Arrhenius" (the exponent is in σ, not T); σ_surf is the local supersaturation, σ0 depends on T; cite L&R 2013 |
+| C72 | L276 | α_c ∈ [10⁻³, 10⁻¹] | kaempfer2009, libbrecht2013, braun2024 | partially | kaempfer2009 Table I p.4 (rendered): "10⁻³ < α < 10⁻¹"; braun2024 p.~13: "commonly found range … (Libbrecht and Rickerby, 2013)"; libbrecht2013 states no range (α → 1 at σ ≫ σ0) | Keep K&P and Braun; L&R 2013 optional |
+| C73 | L282 | Calonne 2011: µCT, 30 samples, conductivity by homogenization | calonne2011 | supported | calonne2011 p.3 | — |
+| C74 | L282 | Under a TG a reduction in SSA did not necessarily raise conductivity | none (reads as Calonne 2011) | wrong-citation (by placement) | calonne2014 Table 1 (rendered): SSA 27.7 → 13.4 m²/kg at constant density, conductivity fell then rose; schneebeli2004 p.9/3663 SSA fell only in low-density snow; Calonne 2011 has no TG time series | Cite Calonne et al. 2014 (and Schneebeli & Sokratov 2004) on this sentence |
+| C75 | L282 | "How isothermal metamorphism influences the macroscopic properties in the absence of compaction is still unquantified" | none | contradicted | bouvet2022 p.12 (Sect. 3.2.2): keff during isothermal (equi-temperature) metamorphism at nearly constant density, I17 0.078 → 0.081, Grad3 0.37 → 0.42 W m⁻¹ K⁻¹; "changes are rather small with time" | State the gap as granular ice packings sintering from point contacts (vs natural snow), the k–SSA relation, and its temperature and porosity dependence; name Bouvet 2022 |
+| C76 | L293 | Homogenization from Auriault 1991, applied by Calonne 2011, 2014, 2019 | auriault1991, calonne2011/2014/2019 | supported | calonne2014 p.6: "boundary value problems arising from the homogenization process (Auriault et al., 2009 …)"; calonne2019 p.4/13081 same | Add Auriault et al. 2009 (book; what Calonne cite) |
+
+Verdict counts, phase 2 (95 phase-1 rows as they now stand, resolved rows counted as supported, + 16 new rows C61–C76): supported 50 · partially 40 · unsupported 1 · wrong-citation 4 · contradicted 13 · not-checkable 3 (total 111). Resolved by the redraft: C8, C12, C14, C17, C19, C22, C27, C34; C3 now supported; C18 now cited (partially).
+
+## Typos / bib problems (new in this draft)
+- T0 (para 4–5 typos): L257 `\citet{calonne…2011, calonne…2019}` → `\citep`; L263 two `\citet` → `\citep` (15 years; Kempf/Southworth); "preformed"; "grows linear"; "with about 15 years"; "expected be greatest"; `0.01 \text{---} 1.0` → `0.01$--$1`. L266 "In a laboratory setting moves tends be redistributed"; "Neck growth tend s"; "an adapted model sintering model"; L274 "fo". L279 "x-ray compute microtomography" → "X-ray computed microtomography".
+- T1: L313 Eq. (2) still writes $P_a$; text now $P_\text{atm}$. L319 "where $T_0 = 273.15$ K" follows Eq. (3), which no longer contains $T_0$: move to Eq. (5). Tables 2–4 use $T_0$ for the run temperature in °C: rename.
+- T2: L300 unknowns now "air" and kelvin (resolved; outline bullets done).
+- T3: L311 points $M_\text{sub}$, $\alpha_\text{sub}$ to Appendix "Model Scaling Parameters" (L527), an empty heading; label typo `Sclaing`. L321 latent heat "released and absorbed during sublimation and desublimation, respectively" still reversed.
+- T4: Bib: `Hobbs_and_Mason` and `noauthor_sintering_nodate` are the same paper (DOI 10.1080/14786436408229184); delete the stub. Byrne 2024 DOI is the Authorea preprint's; journal DOI 10.1029/2024JE008615 (PDF p.1). Old-style keys now also `Hobbs_and_Mason`. Auriault et al. 2009 book still missing (Calonne 2014 p.6, 2019 p.4 cite it for the method).
