@@ -1,3 +1,11 @@
+## 2026-10-15 — Outline re-synced to the current draft
+
+- The merged outline had kept the 10-14 bullets for the Introduction and Section 2.1; rewrote them against the 10-15 (second upload) draft: done items marked, only open items kept, literature evidence and suggested text moved into the body, top section cut to a ranked index.
+- Updated status table, work list, build check (draft compiles clean, 25 pp) and .bib notes; recorded the tangent-start run (a = 0.289) and flagged Sections 3.2/5.1/Appendix B for rewriting.
+- Added Literature/review/tools/outline_stale_check.py (flags bullets whose quoted draft text is gone).
+
+---
+
 ## 2026-10-15 — Tangent-start runs processed; Figure 4 rebuilt
 
 - Saturated (Demmenie-conditions) pair from tangent contact, 150 h: a = 0.289 free, 1/m = 0.290 Kuczynski, 0.289 -> 0.277 with later window starts; no trapped pocket; grain radius +0.08 %. Inside Demmenie 0.26-0.33; the pre-necked 0.21 was the initial condition. Recorded in studies/molaro_2019/demmenie/README.md.
