@@ -1,3 +1,13 @@
+## 2026-10-15 — Literature library + multi-agent fact-check (paused); token audit
+
+- Built Literature/papers (111 PDFs from the Zotero export) with MANIFEST.md and page-marked text copies; PDFs/text gitignored.
+- Collection check (review/CHECK_COLLECTION.md): replaced the wrong Libbrecht & Rickerby 2013 attachment; text layer drops minus signs, mu and x in many PDFs; bib fixes listed (Byrne DOI, Flin venue, page ranges).
+- Three reviewers read the library and drafted claims tables (A, C) before reading was stopped on request; no outline_new files or cross-check yet.
+- Token audit (review/TOKEN_AUDIT.md): reviewers used 97% of ~272M tokens; long-lived readers at ~400k context/call and triplicate reading are the bottlenecks; stub notes for uncited papers are not full reads.
+- Next: get the user's updated manuscript before any outline update; redesign as per-paper extractors + three verdict-only reviewers.
+
+---
+
 ## 2026-10-14 — Second review of the Introduction; figure captions reviewed
 
 - Reviewed the 2026-10-14 Overleaf upload (only the Introduction changed; later line numbers moved up by 16, and the outline's references were shifted to match). Rewrote the eight Introduction entries from a fresh read, adding [add] bullets for material discussed earlier but missing from the draft: snow-conductivity literature (Calonne 2011/2014, Schneebeli & Sokratov 2004), why SSA (Matzl, Gallet, Proksch), why conductivity matters on Enceladus (Byrne 2024; Choukroun fallout rates), classical neck-growth exponents, what Molaro and Demmenie measured, isothermal-metamorphism observations (Kaempfer & Schneebeli 2007, Löwe 2011), the temperature-rescaling result and the scope statement.
