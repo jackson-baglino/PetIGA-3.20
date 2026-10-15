@@ -41,7 +41,7 @@
 \providecommand{\cref}[1]{\texttt{\detokenize{#1}}}
 \providecommand{\alphaC}{\alpha_c}
 \title{Manuscript outline: what each paragraph should contain}
-\author{enceladus\_DSM \quad \texttt{studies/keff\_sintering/manuscript\_outline.tex}}
+\author{enceladus\_DSM \quad \texttt{studies/keff\_sintering/manuscript\_outline\_new.tex}}
 \date{2026-10-14, against the Overleaf project uploaded that day; literature check added 2026-10-15 against the 10-15 draft}
 \begin{document}
 \maketitle
@@ -54,9 +54,16 @@
 \section*{\add{Literature check of the 10-15 draft, in order of importance}}
 \add{Each item gives what is wrong, the evidence (paper, PDF page, a short
 quote), the fix, and where useful a \emph{suggested text} in the draft's
-voice. Items \textbf{F1}--\textbf{F8} change what the paper claims;
-\textbf{F9}--\textbf{F12} are citation and bookkeeping fixes. The same
-labels are marked \Chk{F$n$} at the matching paragraph further down.}
+voice. \textbf{F1}--\textbf{F5} change what the paper claims or how it
+justifies a choice, and should be settled first. \textbf{F6}--\textbf{F9}
+correct numbers, citations and equations in place. \textbf{F10}--\textbf{F12}
+are bookkeeping. The same labels are marked \Chk{F$n$} at the matching
+paragraph further down, and older bullets they supersede are marked there.}
+\par\add{\textbf{In one line each:} (F1)~the gap must be stated against
+Bouvet et al.\ (2022); (F2)~$\alpha_c=10^{-3}$ is attachment-limited, not
+diffusion-limited; (F3)~surface diffusion does not explain the $-20\,^\circ$C
+shortfall; (F4)~the exponent sources and the 1/3--1/5--1/7 reading need
+fixing; (F5)~the 2~mm domain cannot rest on Calonne et al.\ (2011).}
 
 \begin{enumerate}[label=\textbf{F\arabic*},leftmargin=2.2em]
 
@@ -723,7 +730,7 @@ law and the Introduction does not yet review any conductivity work.
     literature proper is missing: see the next bullet.
   \item \tA \textbf{Classical sintering and its exponents} (discussed 10-02,
     10-09; ``exponents only''). Neck growth follows $w \propto t^{n}$, and
-    $n$ identifies the route: $1/3$ for evaporation--condensation, smaller
+    $n$ identifies the route \add{[superseded by F4: the exponent alone does not identify the route, and Hobbs \& Mason give $1/5$ for vapor transport through air]}: $1/3$ for evaporation--condensation, smaller
     exponents ($1/5$, $1/7$) for volume and surface diffusion (Kuczynski, 1949; Kingery \&
     Berg, 1955; for ice, Hobbs \& Mason, 1964). The paper uses exactly this
     in Section~3.2, and Figure~4 plots a $t^{1/3}$ curve, which Section~3.2
@@ -842,7 +849,10 @@ law and the Introduction does not yet review any conductivity work.
     Schneebeli \& Sokratov (2004) and Calonne et al.\ (2014) followed
     conductivity at constant density under a temperature gradient (both in
     the \texttt{.bib}). What is not quantified is the isothermal case:
-    sintering alone, at fixed porosity.
+    sintering alone, at fixed porosity. \add{[Revised by F1: Bouvet et al.\
+    (2022) quantified isothermal metamorphism of snow, and the change was
+    small and followed density. The gap is sintering from point contacts at
+    fixed porosity, conductivity against SSA, temperature and porosity.]}
   \item \tC The last sentence (more work needed on kinetics, temperature and
     humidity) ends the gap paragraph on a gap this paper does not close.
     End instead on the paper's gap: how conductivity follows the
@@ -1184,8 +1194,8 @@ law and the Introduction does not yet review any conductivity work.
   \item \tA Five porosities, five independent packings each, the same
     packings at all five temperatures: 125 runs of 30 days; uniform
     temperature, vapor initially at saturation.
-  \item \tA Domain size $L/\bar R = 40$, at the 1--2~mm representative volume
-    of Calonne et al.\ (2011). Packings are accepted only if contacts
+  \item \tA Domain size $L/\bar R = 40$, \del{at the 1--2~mm representative volume
+    of Calonne et al.\ (2011).} \add{from our domain-size test (F5); Calonne et al.\ (2011) give 2.5--5.5~mm for natural snow.} Packings are accepted only if contacts
     across the periodic seam are as dense as in the interior.
   \end{itemize}
   \Cite{representative volume: Calonne et al.\ 2011 \texttt{calonneNumericalExperimentalInvestigations2011}.}
@@ -1539,7 +1549,7 @@ Paragraphs 1--3 of Section~5.1 and the start of Section~5.2 are drafted.
     aggregates and the saturated pair: it is 0.02, 0.002, and 0.23 for
     the Molaro pairs.
   \item \tC The sentence on Bouvet et al.\ rescaling time through $\alpha_c$
-    cites the 2023 paper; check that it is the one (the fit of $\alpha_c$
+    cites the 2023 paper; \del{check that it is the one} \add{it is not (F7): cite Bouvet et al.\ (2022)} (the fit of $\alpha_c$
     to tomography is Bouvet et al., 2022).
   \item \tG ``The kinetic attachment parameter, and thus condensation
     coefficient, do not''; ``$\mu$m-CT'' ($\mu$CT).
