@@ -26,6 +26,9 @@ FIGURES = [                                   # (stem, source folder)
     ("Figure7_state_law_allphi", SAMPLES),     # variation: every porosity in panel (b)
     # v2: the advisor-meeting edits of 2026-10-15, beside the originals
     ("Figure1_mechanisms_aggregate_v2", SAMPLES),   # fig1_v2_edit.py
+    ("Figure1_mechanisms_aggregate_v2_dotsA", SAMPLES),  # --dots 16 0.95
+    ("Figure1_mechanisms_aggregate_v2_dotsB", SAMPLES),  # --dots 24 0.75
+    ("Figure1_mechanisms_aggregate_v2_dotsC", SAMPLES),  # --dots 34 0.6
     ("Figure2_homogenization_method_v2", SAMPLES),  # fig_methods_homogenization.py --v2
     ("Figure3_molaro_validation_v2", MOLARO),       # plot_molaro_validation.py --v2
     ("Figure4_saturated_neck_growth_v2", MOLARO),   # fig_demmenie.py --v2

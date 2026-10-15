@@ -1,6 +1,7 @@
 ## 2026-10-15 — Advisor-meeting figure edits as _v2 copies
 
 - Every edit writes a separate *_v2 file. The originals are untouched. All copies are collected into ManuscriptFigures/.
+- Fig 1 dot variants (--dots N R --suffix): A 16 dots at r 0.95 pt, B 24 at 0.75, C 34 at 0.6, each with about N/3 deposited in the pore just under the neck. The w(t) I-bar shows the full width, which matches Molaro (neck size = width; relative size = width / grain diameter).
 - Fig 1: new fig1_v2_edit.py edits the hand-edited PDF through Inkscape's SVG. The w(t) arrow is now an I-bar across the full neck (w is the full waist width). Blue molecule dots follow the vapor arrow and gather at the neck. The arrow is 3.7 pt shorter so it clears the bar.
 - Fig 2 (--v2): the (b) scale bar is now bottom right, in the ice. Panel (c) shows T = x + t_x scaled by |grad T| L, with isotherms, in place of t_x.
 - Fig 3 Molaro (--v2): legend says "simulation" and "Data from Molaro et al. (2019)". I-bars mark w(t) on both sections, from neck_width.csv. The sigma map is balance cropped to 0.18-0.82, so the clipped far field is mid blue, not navy. Built with the -5 C corr_on run, which matches the current figure.
