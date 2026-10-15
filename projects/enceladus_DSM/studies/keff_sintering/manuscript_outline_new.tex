@@ -103,7 +103,8 @@ labels are marked \Chk{F$n$} at the matching paragraph further down.}
   growth regime''} (Intro \P6, tex L276). It is the other way round: a
   smaller $\alpha_c$ slows attachment and moves growth toward attachment
   control. Bouvet et al.\ (2024, p.5) place the transition at ``$10^{-3}$ for
-  small grains ($\sim$0.1~mm)'', which is the size of our grains, and the draft
+  small grains ($\sim$0.1~mm)'', about the diameter of our grains
+  ($\bar R = 50~\mu$m), and the draft
   itself calls $\alpha_c = 1.002\times10^{-3}$ ``an attachment limited regime''
   in Section~3.2 (tex L502).}
   \Snippet{In this study we hold $\alphaC$ constant. We use $\alphaC=10^{-1}$,
@@ -167,7 +168,8 @@ labels are marked \Chk{F$n$} at the matching paragraph further down.}
   \item \add{Section~3.2 (tex L502): $t^{1/7}$ is not ``the theorized scaling
     for unsaturated sintering''. It is the classical surface-diffusion
     exponent (Kingery 1960, Table~I), and the value Demmenie et al.\
-    measured under undersaturation. Our model reaches it with vapor
+    measured when ``we deliberately set the humidity too low and let the
+    ice sublimate'' (p.3). Our model reaches it with vapor
     transport alone.}
   \end{itemize}
   \Snippet{In laboratory experiments, mass reaches the neck mainly by vapor
@@ -187,12 +189,13 @@ labels are marked \Chk{F$n$} at the matching paragraph further down.}
     \citep{maenoPressureSinteringIce1983}. \citet{kingery_regelation_1960}
     measured $n \approx 1/7$ and attributed it to surface diffusion, whereas
     \citet{demmenieIceSinteringSublimation2025} measured $n$ between 0.26
-    and 0.33 at saturation and close to $1/7$ when the vapor was
-    undersaturated, and attributed Kingery's value to undersaturation.}
+    and 0.33 at saturation and close to $1/7$ when the humidity was too low and the ice
+    sublimated, and attributed Kingery's value to an underestimated
+    humidity.}
   \Snippet{(Section~3.2, replacing ``a much better match for the theorized
     scaling for unsaturated sintering'') This is close to the exponent of
     about $1/7$ that \citet{demmenieIceSinteringSublimation2025} measured
-    when the vapor was undersaturated. The same value is the classical
+    when the humidity was too low and the ice sublimated. The same value is the classical
     exponent for surface diffusion \citep{kingery_regelation_1960}, which our
     model does not contain; here it arises from vapor transport alone.}
 
@@ -286,12 +289,16 @@ labels are marked \Chk{F$n$} at the matching paragraph further down.}
   (Moure \& Fu list them only in their Supporting Information), and drop
   ``ASHRAE'' from Table~1's note. The new appendix ``Model Scaling
   Parameters'' (tex L527) is an empty heading, and its label is spelled
-  \texttt{Sclaing}.}
+  \texttt{Sclaing}. Eq.~(11d), the flux condition of the cell problem
+  (tex L379), reads $K_{\mathrm{ice}}(\mathbf{t}_{\mathrm{ice}}+\mathbf{I})$:
+  the gradient is missing, $K_{\mathrm{ice}}(\nabla\mathbf{t}_{\mathrm{ice}}
+  +\mathbf{I})$, as in Eqs.~(11a, b) and in Calonne et al.\ (2014, p.6).}
 
 \item \add{\textbf{Smaller citation fixes.}}
   \begin{itemize}
   \item \add{\P2: Colbeck (1998) is cited for depth hoar and avalanches; it
-    treats bond growth in isothermal snow. Keep Fukuzawa \& Akitaya and
+    is a theory of bond growth (p.2: ``The basic shape of bonds in snow is
+    dictated by the geometrical requirements of grain-boundary grooves''). Keep Fukuzawa \& Akitaya and
     Schweizer et al.\ \P2 also needs \texttt{\textbackslash citep} for
     Calonne et al.\ (2011, 2019).}
   \item \add{\P3: percent-level salt is in a minority of grains: ``About 6\%
@@ -299,7 +306,7 @@ labels are marked \Chk{F$n$} at the matching paragraph further down.}
     al.\ 2009, p.1). Write ``some grains carry percent-level sodium
     salts''.}
   \item \add{\P5: Molaro et al.\ applied Swinkels \& Ashby's model without
-    modification. Theirs is a ``second report'', so ``first proposed by'' should go:
+    modification (p.5: ``No modifications have been made to SA81''). Theirs is a ``second report'', so ``first proposed by'' should go:
     ``applied the sintering model of \citet{swinkelsSecondReportSintering1981},
     developed for metals''. $w$ is ``the neck width'' here but ``a neck of
     radius $w(t)$'' in the Figure~1 caption; use width throughout.
@@ -308,7 +315,7 @@ labels are marked \Chk{F$n$} at the matching paragraph further down.}
     exponents 0.26--0.33 at saturation; p.3).}
   \item \add{\P7: ``Many experiments attempt to parameterize'' cites Colbeck
     (1983), a theory paper; cite Libbrecht \& Rickerby (2013). Braun's phrase
-    is ``effective condensation coefficient''.}
+    is ``effective condensation coefficient'' (p.13).}
   \item \add{\P8: ``centered around the snow community'' cites Flin et al.\
     (2003, 2004), who report microstructure, not bulk properties; cite
     Calonne et al.\ (2011, 2014).}
@@ -332,7 +339,8 @@ labels are marked \Chk{F$n$} at the matching paragraph further down.}
   tex L263, L479, L500), ``moves tends be redistributed'', ``Neck growth
   tend s'', ``an adapted model sintering model'', ``fo'' (Fig.~1 caption),
   ``x-ray compute microtomography'', ``our model own accounts'', ``expected
-  contribute'', ``we preform these same measurements''.}
+  contribute'', ``we preform these same measurements'', ``here on earth''
+  (tex L282), ``surface saturation'' (tex L276, supersaturation).}
 
 \end{enumerate}
 
