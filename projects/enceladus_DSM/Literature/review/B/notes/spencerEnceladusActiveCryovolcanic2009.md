@@ -1,0 +1,19 @@
+# spencerEnceladusActiveCryovolcanic2009 — Spencer et al. (2009), in Saturn from Cassini-Huygens, ch. 21, pp. 683–724
+
+**Summary.** Book-chapter review of Cassini Enceladus results to 2009: interior/tidal heating, geology, surface composition and processes (VIMS grain sizes, thermal inertia), plume observations (ISS, CIRS, UVIS, INMS, CDA, VIMS) and plume models, habitability.
+
+**Findings relevant to the manuscript**
+- Tiger-stripe temperatures, abstract p.1 (683): tiger stripes "radiate heat at temperatures up to at least 167 K"; p.25 (707): CIRS spectra "indicate places on the surface as warm as 167 K"; "a temperature of at least 180K could be inferred for the gas source" (from UVIS flux + CIRS), source widths 50 m at 180 K. Abramov & Spencer fracture temperatures ~225 K (p.31, 713).
+- Grain size vs terrain, p.21 (703): "The heavily cratered terrains exhibit a mean particle size of 15 ± 5 µm ... fractured and ridged terrain ... about 30 ± 10 µm. The tectonically deformed regions exhibit particles ranging from 40 µm to about 120 µm with the largest ones (about 2% reaching values of about 0.2 mm) located close to the center of the south polar tiger stripes." (Jaumann et al. 2008).
+- Cause of coarse grains near the stripes, p.21: "Possible causes ... include preferential fallout of larger, slower, plume grains near their sources ... or sintering and growth of grains resulting from deposition of plume gases or from the enhanced temperatures near the tiger stripes."
+- p.29 (711): surface deposit spectra complicated by "radiation damage, sintering, loss of volatiles, and change in crystal size".
+- Thermal inertia, p.23 (705): "very low average thermal inertia of 15 W m−2 s−1/2 K−1 ... with increasing thermal inertia towards the active south pole ... A highly unconsolidated particulate surface at least a few centimeters deep is implied. Equatorial temperatures reach a peak of about 75 K at noon and drop to 50–60 K at night."
+- Most plume particles fall back (p.24, 706: scale height 30 km; mean speed 60 m/s < escape 235 m/s); much of the surface coated by plume fallout (p.22, 704).
+- Plume particle radii ~1 µm (p.30, 712); a few percent of E-ring grains salt-rich (p.29).
+
+**Claims supported / qualified**
+- Outline §5.5 (L1328–1333) "Tiger Stripe temperatures up to about 180 K (Spencer); grain size increasing toward the fractures in VIMS data (Jaumann)": grain-size part **supported** (p.21). Temperature: Spencer 2009 gives surface ≥167 K measured, ≥180 K inferred for the vapor source — "up to about 180 K" is not what either Spencer source says; use "at least 180 K" (Spencer & Nimmo 2013) or "at least 167 K measured" (Spencer et al. 2009).
+- Outline 3b "deposits remain poorly consolidated": consistent with thermal inertia 15 SI implying "highly unconsolidated particulate surface" (p.23); and thermal inertia increasing toward the south pole (p.23) is consistent with — but does not demonstrate — consolidation where warmer.
+- **Important qualifier for §5.5:** Spencer et al. explicitly list sintering/grain growth from enhanced temperatures as one candidate cause of larger grains near the tiger stripes (p.21). This is a closely matching citation for "sintering is expected to be most advanced near the tiger stripes", and it must be stated as one of two candidate explanations (the other being preferential fallout of larger grains).
+
+**Candidate additions.** §5.5: "Near the tiger stripes, VIMS grain sizes reach 40–120 µm (a few up to 0.2 mm) compared with 15 µm on cratered terrain; preferential fallout of large grains and sintering at the elevated temperatures have both been proposed (Jaumann et al. 2008; Spencer et al. 2009)." Also: Enceladus' low thermal inertia (15 SI) and its increase toward the south pole (Spencer et al. 2009, p.23) as observational context for a conductivity that changes with sintering — qualitative only.

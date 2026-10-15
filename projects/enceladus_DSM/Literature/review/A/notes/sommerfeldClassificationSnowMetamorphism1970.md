@@ -1,0 +1,2 @@
+# sommerfeldClassificationSnowMetamorphism1970 — Sommerfeld & LaChapelle 1970, J. Glaciol. 9(55):3–17 (uncited)
+Abstract read: classification by process: (I) mechanical damage, (II) vapour transport at constant temperature due to surface-energy differences, (III) along a thermal gradient, (IV) firnification. Optional classic citation for 'equi-temperature vs temperature-gradient metamorphism' in Intro definition of DSM.

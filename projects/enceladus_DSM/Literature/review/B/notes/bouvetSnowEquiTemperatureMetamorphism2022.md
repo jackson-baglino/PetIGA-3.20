@@ -1,0 +1,22 @@
+# bouvetSnowEquiTemperatureMetamorphism2022 — Bouvet, Calonne, Flin & Geindreau (2022), JAMES 14, e2022MS002998, doi:10.1029/2022MS002998 (HAL copy insu-03863738; PDF p.N = printed p.(N−1) of 18)
+
+**Summary.** The Bretin et al. (2019) phase-field mean-curvature-flow model (kinetics-limited sublimation–deposition with no vapour diffusion, volume-conserving, no settling) is run on 3-D µCT snow images. α is calibrated by fitting SSA to the 84-day −2 °C series of Flin et al. 2004, and evaluated against an independent −2 °C series (Hagenmuller 2019). The calibrated model is then run on four samples (I17 DF/RG; TG2, Grad3, 7G9m FC/DH), and k_eff, D_eff and K are computed by homogenization (GeoDict) on the simulated images.
+
+**Findings relevant to the manuscript**
+- p.2 abstract: α = (9.8 ± 0.7)×10⁻⁴ from SSA fits at −2 °C. "Relating the numerical time, as defined in the model, to the real physical time involves the condensation coefficient α".
+- p.5: "the interface growth velocity, thus the ETM rate, depends linearly on the condensation coefficient α" (v_n = −2d0·α·v_kin·C).
+- p.7: "As the condensation coefficient is strongly temperature dependent ... the calibrated model can only be used to simulate ETM at this temperature."
+- p.16 (printed 15): α "is in the lower range of the values in the literature"; ETM involves "low supersaturations, typically of the order of 0.1%–0.01%, which results in low α values" (citing Libbrecht & Rickerby Fig. 6).
+- p.8: transport properties computed by homogenization (Auriault et al. 2009) with periodic boundaries.
+- **p.15 (printed 14), Fig. 9, rendered:** relative change of mean k_eff over the ETM runs: I17 τ = 3 %, TG2 35 %, 7G9m 18 %, Grad3 13 %. Text: "For the thermal conductivity, the density changes seem to drive most of the evolution and the impact of the microstructural changes is not visible in our ETM simulation. The microstructural impact is however observed in the case of a TGM experiment in Calonne, Flin, et al. (2014) where thermal conductivity increases with time at constant density."
+- p.15–16: density rises 1–3 % (4–10 kg/m³) in their runs, which they call artefacts of binarization. The model does not simulate settling.
+- p.6: no gravity, so "floating" grains appear; input images are restricted accordingly.
+
+**Claims supported / qualified**
+- Draft L279 and outline L509–513 ("How metamorphism influences the macroscopic properties in the absence of compaction is still unquantified"; "What is not quantified is the isothermal case: sintering alone, at fixed porosity"): **partially contradicted / must be qualified**. Bouvet 2022 already computed k_eff on phase-field-simulated isothermal metamorphism of real snow at near-constant density, and reported increases of 3–35 % that they attributed mainly to density artefacts. The gap must be restated, for example: "Bouvet et al. (2022) computed k_eff on phase-field-simulated isothermal metamorphism of snow but attributed its change to small density artefacts. How conductivity follows microstructure during sintering at fixed porosity, across temperature and porosity, remains unquantified." Our result (+17 % at fixed porosity) differs from their reading, and this must be discussed.
+- Draft L279 (Bouvet 2022 as snow-community literature on DSM and macroscopic properties): **supported**, and it is the most closely matching prior work. It belongs in the gap paragraph with its result, not only in a citation list.
+- Draft L276 (Bouvet "used a phase-field model to predict microstructural evolution for dry snow under equitemperature conditions"): **supported**. Add: kinetics-limited mean-curvature flow (no vapour diffusion), and transport properties computed.
+- Outline L1215 (α_c = (9.8 ± 0.7)×10⁻⁴ fitted to tomography at −2 °C): **supported**.
+- Draft L501 / outline L1203–1205 (α rescales time; cites Bouvet 2023): for the rescaling, the right citation is Bouvet 2022 (p.2 abstract, p.5). The rescaling is exact there because their model is purely kinetics-limited, with velocity linear in α and no diffusion. In our model, with vapour diffusion, it is exact only in the attachment-limited limit (compare Legagneux 2005 [47]).
+
+**Candidate additions.** (1) Cite Bouvet 2022 with its Fig. 9 result in the "What is known" and gap paragraphs, and contrast in the Discussion. (2) The p.16 point that low supersaturation in ETM gives low α supports α_c = 1e-3 for our runs.

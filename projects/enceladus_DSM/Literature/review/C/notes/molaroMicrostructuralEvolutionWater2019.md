@@ -1,0 +1,37 @@
+# molaroMicrostructuralEvolutionWater2019 — Molaro, Choukroun, Phillips, et al., JGR Planets 124, 243–277 (2019)
+DOI (PDF header): 10.1029/2018JE005773. Read in full (34 PDF pp; reference list skimmed). Key numbers verified on rendered pages 15, 24, 31.
+
+## Summary
+Implements the Swinkels & Ashby (1981, "SA81") sintering-diagram model for ice (six diffusion mechanisms, Stage 1 neck growth, Stage 2/3 densification), compares Stage 1 to historical grain-pair data (Hobbs & Mason 1964, Kingery 1960, Thomas 1994; Fig. 8), reports new grain-pair experiments (Peltier cryostage, −20 and −5 °C, grains ~73–101 µm radius) and bulk aggregate experiments (~10 µm sprayed grains, −20 and −80 °C, 10 weeks), and applies the model to icy satellites (Europa, Enceladus, Triton).
+
+## Findings relevant to the manuscript
+- Grain-pair set-up: "The vacuum ports of the stage were capped in order to seal the chamber ... The clearance between the slide and cover is ~1 mm. Though this area does not seal off from the rest of the chamber, both the cap and the plate are thermoelectrically cooled" (p.15/257). Slide coated with ice "to help saturate the atmosphere above it, except for its center" (p.15/257). So the *chamber* was sealed; the slide gap is open to the chamber.
+- −20 °C pair: radii 101 and 73 µm, shrinking 3% and 4%; neck "grew from 33 to 65 µm" — text says "after 57 min" (p.15/257; Fig. 11 caption p.17/259). Table B1 (p.31/273, rendered) gives the full series: t = 0, 2, 5, 9, 18, 29, 40, 57, 78 min; neck 32.81 → 60.54 µm at 57 min → 64.78 µm at 78 min; diameters 202/145 µm at t=0. So the 65 µm in the text is the 78-min value: Molaro's text and Table B1 are inconsistent; the draft's "78 minute period" is supported by Table B1, Fig. 12 (100-min axis).
+- −5 °C pair: radii 99 and 78 µm, shrinking 9%; neck 32 → 44 µm (Table B1: 32.51, 41.57, 44.00 µm at 0, 26, 48 min) (p.15/257; p.31/273).
+- Time anchoring: "we anchored the first measurement to the time at which the model shows the same neck size" (p.16/258). Results: "The grains at −20 °C show a good match to the model ... The grains at −5 °C show a slower sintering rate than predicted" (p.16/258). No power-law exponent reported anywhere.
+- Uncertainty: neck from five measurements, min/max; radii ±1 µm; −5 °C has larger uncertainty from "fogging ... and a very high humidity that day. If the saturation ice ... did not fully saturate the atmosphere above the slide, the higher ambient humidity could have also influenced sintering rates" (p.31/273). Humidity in the chamber was not measured.
+- Some necks "showed no growth at all" (p.16/258); no densification observed (p.16/258).
+- Historical comparison: Fig. 8 — Hobbs & Mason best match, Kingery slower than model predicts (model slower), Thomas faster (p.14/256). Conclusion: "agrees within approximately 1 order of magnitude" (p.26/268).
+- Vapor term (Appendix A, p.27–29/269–271): Hertz–Knudsen with "α = 1"; "ignores gas‐gas diffusion rates"; "ignores the presence of an atmosphere, even though the density of the background environment has been shown to have a significant effect on sintering rates (Hobbs & Mason, 1964)" (p.29/271).
+- Surface diffusion (Appendix B2, p.29–30/271–272): "surface diffusion dominates over vapor diffusion during the early stages" (Fig. 10, 25 µm grains); "Grains 100 μm in radius showed no significant effects from neglecting surface diffusion on any timescales". Supports the outline Appendix A conclusion (surface diffusion negligible at the −20 °C pair scale).
+- Table 5 (p.15/257, rendered): Ω = 1.181×10⁻²⁹ m³; Δo = 917; γs = 0.06 J/m²; δb,δs = 9.04×10⁻¹⁰ m; Dob = 8.4×10⁻⁴ m²/s (0.03–10⁻¹²); Qb = 4.9 kJ/mol; Dos = 1.4×10⁻⁸ (1.4×10⁻⁸–1.35×10⁻¹³) m²/s; Qs = 23.156 kJ/mol; Po = 5.5×10⁹ Pa; Pv per Murphy & Koop. All values in outline Appendix A match. Note γs = 0.06 differs from the draft's γ_sv = 0.109 (Libbrecht).
+- Enceladus (Sect. 5.4, p.24/266, rendered): "Enceladus has a maximum equatorial surface temperature of ~80 K ... For a 0.1‐μm grain deposited by plume fallout, the sintering timescale at this temperature is ~10³ years"; with 2% NaCl ~10² yr. "This effect is small for larger grains". Table 6 power law (p.22/264): τ = f T^g; evaluated at 80 K gives ~10¹⁰ yr for 1 µm and ~10¹³ yr for 10 µm (my arithmetic from f, g), i.e. µm-size grains essentially do not complete neck growth at 80 K. Power law not recommended above 205 K.
+- Plume fallout grains "0.25–2.5‐μm radius" citing Kempf 2010 (p.24/266).
+- Thermal conductivity: "As neck growth occurs, the surface area of solid‐to‐solid contact ... will increase, causing an increase in the thermal conductivity of the aggregate ... thermal behavior of icy surfaces is not only a function of density and grain size ... but also of age" (p.23/265). Closely matches the paper's motivation.
+- Bulk experiments: grain growth 7 → 38 µm in 2 weeks at −20 °C with no density change (p.18/260) — mass redistribution without densification.
+- Abstract/intro: sintering "through surface and volume diffusion"; Stage 1 of ice dominated by surface and vapor diffusion (Fig. 10).
+
+## Claims supported / contradicted / qualified
+- Draft L439 "over a 78 minute period": supported by Table B1 (p.31/273) — cite Table B1, not "fig. 11" (Fig. 11 shows 57 min). Outline L902 flag can be resolved.
+- Draft L439 "within a sealed cryostage": supported for the chamber ("capped in order to seal the chamber", p.15/257); qualify that the slide area is open to the chamber and the grains sublimated. Outline L907 ("their text says the sample area was not sealed off") is accurate only about the slide/cover gap, not the chamber.
+- Draft L437 "relatively well-controlled": partially — humidity not measured, very high ambient humidity on the −5 °C day (p.31/273).
+- Draft L262 "Other modes of diffusion tend to have limited effects or operate over planetary timescales (Molaro; Choukroun)": partially for Molaro (vapor dominates for ~100 µm grains; surface diffusion dominates early for small grains, p.30/272); Choukroun contradicts (see their notes).
+- Draft L259 "little to no sintering ... unconsolidated (Choukroun; Molaro)": partially. Molaro's Table 6 implies ≥10¹⁰ yr for ≥1 µm grains at 80 K (supports for micron grains); but 0.1 µm grains ~10³ yr (p.24/266). Outline L347–350 is right that the 10³ yr figure undercuts the sentence for 0.1 µm grains, but for the µm-size plume grains the sentence is consistent with Molaro.
+- Outline L405–415 ("What Molaro measured"): supported (sealed, Peltier, −20/−5 °C, anchoring, good match at −20, slower at −5, no exponent).
+- Outline L925–927 / L1155: "Their own model matches through its vapor term, which assumes α_c = 1 and no gas diffusion": supported (p.29/271). They present agreement as order of magnitude (p.26/268): supported.
+- Outline Appendix A parameters: supported (Table 5, p.15/257).
+- Outline L1468 "error bars are Molaro's stated uncertainty (check)": Table B1 gives neck-size min/max over five measurements (e.g. +2.3/−2.4 µm at t=0) and relative-neck uncertainties (p.31/273).
+
+## Candidate additions
+- Introduction (thermal conductivity motivation): Molaro p.23/265 explicitly predicts that neck growth raises aggregate thermal conductivity and that thermal inertia then depends on age — closely matches the paper's thesis.
+- Section 3.1: cite "Table B1" as the data source; state Molaro's text gives 57 min for Fig. 11 while Table B1 runs to 78 min.

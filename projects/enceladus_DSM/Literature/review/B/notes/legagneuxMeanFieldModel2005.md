@@ -1,0 +1,20 @@
+# legagneuxMeanFieldModel2005 — Legagneux & Domine (2005), JGR 110, F04011
+
+**Summary.** Mean-field Ostwald-ripening model of isothermal dry-snow metamorphism: snow as a distribution of disconnected spheres in spherical air cavities; vapor diffusion (Fick) in series with Hertz–Knudsen attachment (condensation coefficient α, set to 1); Kelvin-law driving; no necks/concavities. Validated against µCT curvature distributions of Flin et al. (2004) at −2 °C; sensitivity to initial DRC, temperature (233–271 K), density (0.01–0.4) and α (10⁻⁵–1).
+
+**Findings relevant to the manuscript** (numbers checked on the rendered page 10; text layer drops minus signs, e.g. "2°C" is −2 °C)
+- Temperature only shifts time, PDF p.9–10 [44]: "The effect of temperature T is visible in log‐log coordinates as a translation of the curve along the time axis (Figure 10). This means that the value of n is constant and equal to 3 and that τ decreases with T ... exponential ... since Pav depends on Psat, and since Psat has an exponential T dependence."
+- Condensation coefficient, p.10 [47] (rendered): "No effect is detectable for values of α between 10⁻² and 1 and the slope of the asymptotic curve corresponds to n = 3 ... The parameter n finally stabilizes at 2 for α values below 10⁻⁴ while τ increases ... For intermediate values of α, diffusion and surface kinetics both contribute"; Fig. 12 caption: "The slope is 1/3 for high values of alpha and 1/2 for low values of alpha."
+- Conclusion p.10 [49]: with α = 1, "diffusion is rate limiting ... Other processes (Maeno and Ebinuma, 1983) such as matter transport by surface or volume diffusion can also be neglected in this treatment of the sintering of seasonal snow."
+- Necks cannot be represented, p.3 [23]; model mass overestimated → SSA underestimated by factor 3–4 (p.10 [41]).
+- Empirical log law SSA = B − A ln(t + Δt) (Legagneux et al. 2003) restated p.2 [6] and p.7 Eq. (13); steady-state LSW law not reached for > 10⁶ days (p.7 [34]).
+- Density effect is a power law in τ, weaker than temperature (p.10 [45]).
+
+**Claims supported / qualified**
+- Outline L1050 cite box (SSA against log time in isothermal snow; functional form only): **supported** via the empirical law restated here (p.2, Eq. 13) — but the model itself gives power-law asymptotics (n = 3 or 2); cite Legagneux et al. (2003)/Taillandier et al. (2007) for the log law, and this paper for the mechanism.
+- **Outline §5.2 "Temperature rescales time" (L1226–1254): closely matching precedent.** Legagneux & Domine's vapor-transport model already shows temperature acting as a pure translation along the time axis through P_sat(T) (p.9–10 [44]). The manuscript should cite this when stating that with one vapor route the collapse is "close to a consequence of the construction" (outline L1247–1248). Not a loose analogy: same mechanism (Kelvin-driven vapor transport, isothermal), same conclusion.
+- Outline L1191–1199 (α_c sets time scale and the attachment/diffusion balance; smaller α only rescales time, larger brings diffusion in): **consistent** with p.10 [47] (crossover between α ≈ 10⁻² and 10⁻⁴; for very small α "a slight change in α has clearly a strong impact on the rate"). Note the direction: in their geometry α = 10⁻³ is in the mixed regime, consistent with outline Λ ≈ 2.8.
+- Draft L501 ("The kinetic attachment parameter ... do not change how the microstructure evolves, just the rate"): **contradicted in general** by Legagneux p.10 [47] — α changes the exponent n (3 → 2) across the crossover; outline correction (L1191–1199) supported.
+- Outline §5.1 surface diffusion: Legagneux conclude surface/volume diffusion can be neglected for seasonal-snow sintering (p.10) — opposite in emphasis to Löwe et al. (2011) at −19 °C; both are interpretations of coarsening, not neck growth.
+
+**Candidate additions.** (1) Cite Legagneux & Domine (2005, [44]) in §5.2 as the earlier model result that temperature acts only as a time translation for vapor-driven isothermal metamorphism. (2) Cite [47]/Fig. 12 in §5.1 ¶3 for α_c controlling both rate and regime.

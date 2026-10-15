@@ -1,0 +1,20 @@
+# loweInterfacialStructuralRelaxations2011 — Löwe, Spiegel & Schneebeli (2011), J. Glaciol. 57(203), 499–510
+
+**Summary.** Laboratory dendritic new snow (sieved, ~172 kg/m³, φi = 0.188) sealed in sample holders and stored isothermally at −3.7, −9.5, −18.6 °C for ~1 year; µCT (10 µm voxels, 5.2 mm cubes) at ~3-week intervals. Anisotropic two-point correlation function, interfacial correlation lengths, first zero-crossing, ice thickness, inverse SSA; growth exponents interpreted via LSW/phase-ordering theory.
+
+**Findings relevant to the manuscript**
+- Exponents, p.9–10 (507–508): at −3 °C, l_ssa and l_th grow ∝ t^{1/z} with "1/z = 0.33"; at −19 °C "lth and lssa follow an evolution which is close to 1/z = 1/4"; "A dynamic exponent z = 4 is, in general, characteristic for surface diffusion". Abstract: "our data suggest a crossover between T = −9 and −19 °C from evaporation/condensation to surface diffusion as the dominant transport mechanism."
+- Caveat, p.10: "the low exponents obtained for low temperatures might also be a consequence of more pronounced transients at low temperatures ... experiments are required which disable the evaporation/condensation mechanism".
+- LSW mapping, p.3 & p.10: "z = 3 for Cahn–Hilliard (conserved) and z = 2 for Allen–Cahn (nonconserved) dynamics. These two cases correspond precisely to ... transport limited by surface kinetics and diffusion in the gas phase"; "If instead the evaporation/condensation dynamics were limited by surface kinetics we would find z = 2"; "The kinetics-limited case requires a small condensation coefficient".
+- Representative volume, p.3 (501): cube of 5.2 mm "twice as large as the representative volume of 1–2 mm for the considered properties (Kaempfer and others, 2005)".
+- SSA describes only the smallest scales, p.11 (509): "the specific surface area only describes spatial correlations of snow on the smallest scales. This appears to be insufficient"; anisotropy from gravity appears at larger scales (first zero-crossing), while interfacial scales stay isotropic.
+- Density rises slowly (sealed, Fig. 3); "It is widely believed that evaporation/condensation of vapor is the dominant process of mass transport" (p.1).
+
+**Claims supported / qualified**
+- Draft L276 (Löwe in list of DSM work): supported (isothermal metamorphism study).
+- Outline L1320 (isothermal SSA decay in the laboratory, forms only): **supported**, but note the functional form here is a power law l_ssa ∝ t^{1/3} (−3 °C) or t^{1/4} (−19 °C), not the logarithmic form of Taillandier/Legagneux; the manuscript's "SSA linear in log θ" should not cite Löwe for the log form.
+- **Qualifier for the surface-diffusion argument (outline Appendix A, §5.1):** Löwe et al. interpret the t^{1/4} SSA coarsening at −19 °C as a possible sign of surface diffusion (with a transient caveat), and Molaro et al. (p.2) cite this for "surface diffusion ... dominant at temperatures below −15 °C when neck sizes are small". The manuscript's claim that surface diffusion is negligible for the Molaro −20 °C pair rests on its own calculation with Molaro's rate equations; it should acknowledge this contrary interpretation of coarsening data (different geometry: dendritic snow vs grain pair, coarsening vs neck growth).
+- Outline L852–853 (REV 1–2 mm of Calonne et al. 2011): Löwe p.3 gives the same 1–2 mm citing Kaempfer et al. (2005) — corroborating.
+- Outline L1077–1079 (anisotropy along deposition direction at high porosity): Löwe find gravity-induced anisotropy at large scales while small scales stay isotropic — loosely analogous only (natural snow); do not cite as support.
+
+**Candidate additions.** In §5.1 (why not surface diffusion), add one sentence: "Löwe et al. (2011) interpreted a t^{1/4} coarsening of snow at −19 °C as possibly surface-diffusion controlled, while noting transients could also explain it; for the grain pair here, Molaro et al.'s own rate equations put surface diffusion below 1 % (Appendix A)." This acknowledges the closest contrary evidence.

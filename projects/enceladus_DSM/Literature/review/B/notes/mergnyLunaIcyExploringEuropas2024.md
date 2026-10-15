@@ -1,0 +1,10 @@
+# mergnyLunaIcyExploringEuropas2024 — Mergny, Schmidt, Keane et al. (2024), Planet. Sci. J. 5:216, doi:10.3847/PSJ/ad6d6d (printed)
+
+**Summary.** LunaIcy: a grain–bond sintering model (vapour transport grain → pore → bond, building on Swinkels & Ashby and Molaro) coupled two-way to the MultIHeaTS heat solver over 1 Myr of Europa's orbit. Porosity is held constant at thermal depths, and **conductivity depends on bond and grain radii**. Not cited in the manuscript.
+
+**Findings relevant**
+- p.8 (Eq. 29), Sect. 3: "sintering drastically changes the thermal conductivity of ice. As bond growth occurs, the surface area of solid to solid increases, leading to an increase in conductivity. Expressions found in the literature place significant importance on the effect of the bond radius on the effective conductivity (Adams et al. 2001; Lehning et al. 2002; Gundlach et al. 2018)". They use **k(φ, r_b, r_g) = k0(T)·(1 − φ)·r_b/r_g** with k0 = 567/T.
+- p.2: "In the conditions of low temperatures found on icy moons, the dominant mechanism is diffusion by vapor transport between the grain and bond surfaces via the pore space (Kossacki 1994; Blackford 2007; Gundlach 2018; Molaro 2019)."
+- Abstract: effective sintering where daily T briefly exceeds 115 K; regions sinter within the crust age. Conclusion: "a two-way coupling between sintering and heat transfer".
+
+**Relevance (important).** This is the closest planetary precedent for coupling sintering and conductivity. The bond-ratio law k ∝ (1 − φ)·r_b/r_g is an assumed parameterization, which our homogenized k_eff can test directly. Suggested Discussion addition: "Planetary sintering models now feed bond growth back into conductivity through assumed laws such as k ∝ (1 − φ)·r_b/r_g (Mergny et al. 2024); our homogenized k_eff gives that relation from microstructure, for ice in air at lab temperatures." State it without Europa timescales, to respect the no-extrapolation framing. It also fits the outline's "Why SSA / density is not enough" paragraph as the planetary use case.

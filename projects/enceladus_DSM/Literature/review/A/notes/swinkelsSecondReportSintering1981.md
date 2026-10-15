@@ -1,0 +1,4 @@
+# swinkelsSecondReportSintering1981 — Swinkels & Ashby 1981, Acta Metall. 29:259–281 (doi 10.1016/0001-6160(81)90154-1)
+Read (equations/Table 2 sections closely; metal-specific diagrams and data skimmed — no ice content).
+- Sintering-mechanism diagrams; six mechanisms (Table 1): 1 surface diff., 2 lattice from surface, 3 vapour transport (non-densifying); 4 boundary, 5 lattice from boundary, 6 dislocations (densifying). New: coupling of boundary and surface diffusion (K1, K2, d1, d2), stage criteria, rearrangement. Validated on metals/ceramics; no water ice.
+Claims: draft L262 "Molaro ... adapting a sintering model originally used in metallurgy first proposed by Swinkels" — PARTIAL: Swinkels & Ashby 1981 is the "second report"; the first was Ashby 1974. Say "the sintering-diagram model of Swinkels & Ashby (1981)". Outline Appendix A equations follow Molaro Table 3 (= SA81 Table 2 for spheres; Molaro note on wires-vs-spheres factor). Outline L1161 citation fine.
