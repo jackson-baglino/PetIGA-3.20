@@ -1,3 +1,13 @@
+## 2026-10-15 — Merged literature check of the 10-15 draft (manuscript_outline_new.tex)
+
+- Unzipped the 10-15 manuscript into Literature/manuscript (previous draft kept, gitignored, for diffing).
+- Reviewers A/B/C each wrote manuscript_outline_new_{A,B,C}.tex from their notes (fresh short-lived agents, ~140-210k tokens each vs 75-100M in phase 1).
+- Three coordinator comparison passes produced studies/keff_sintering/manuscript_outline_new.tex: ranked findings F1-F12 with page evidence and voice-matched suggested text; every quote re-verified against the PDFs.
+- Key findings: gap must be stated against Bouvet 2022; alpha_c=1e-3 is attachment- not diffusion-limited; surface diffusion does not explain the -20 C shortfall; exponent sources wrong (Hobbs & Mason give 1/5); Calonne 2011 REV is 2.5-5.5 mm; Eq. (11d) missing a gradient.
+- Corrected the REV memory note (it carried the 1-2 mm claim).
+
+---
+
 ## 2026-10-15 — Literature library + multi-agent fact-check (paused); token audit
 
 - Built Literature/papers (111 PDFs from the Zotero export) with MANIFEST.md and page-marked text copies; PDFs/text gitignored.
