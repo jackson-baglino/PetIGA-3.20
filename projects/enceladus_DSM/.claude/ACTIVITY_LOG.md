@@ -3,6 +3,7 @@
 - Section 3.2 + Appendix B: attachment- vs gas-diffusion-limited neck growth (x^3 vs x^5), Kingery/Blackford/Hobbs & Mason sources; Bouvet 2024 grain-scale vs neck-scale reconciliation.
 - Discussion 5.1: the argument condensed to a two-sentence snippet for the manuscript (user request).
 - Intro 5: Demmenie bullet rewritten; fresh-snow claim declined (neither study used snow; our aggregates are discs) and replaced by a rounded-grain scope item (Kaempfer & Schneebeli 2007).
+- Table 1: added M_sub = eps/(3 tau_sub) and alpha_sub = a1 eps rho_ice/(d0 rho_vs tau_sub), taken from the solver; Eq. (1a) used both undefined.
 
 ---
 
