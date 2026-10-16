@@ -466,10 +466,25 @@ literature-check findings (F$n$, top of this document) merged in place.
   \item \tA \textbf{What Molaro et al.\ measured} is still thin: neck growth
     between grain pairs in a sealed cryostage at $-20$ and $-5\,^{\circ}$C.
     They report no exponent; $0.23\pm0.03$ is our fit to their points.
-  \item \tA \textbf{Demmenie et al.} appear only as a key, though Section~3.2
-    compares with them: two ice spheres at $-3\,^{\circ}$C, exponents
-    0.26--0.33 at saturation (p.3), and ``$\sim$1/7'' when ``we deliberately
-    set the humidity too low and let the ice sublimate'' (p.3).
+  \item \tA \textbf{Describe Demmenie et al.'s experiment in one sentence.} In
+    \P5 they are only one key in a list of four citations, but Section~3.2
+    tests the model against their numbers, so the reader needs to know what
+    they measured: two ice spheres brought into contact in a box held at
+    ice saturation, at $-3\,^{\circ}$C, with exponents 0.26--0.33 (p.3), and
+    ``$\sim$1/7'' when ``we deliberately set the humidity too low and let the
+    ice sublimate'' (p.3).
+  \item \tA \textbf{Scope: rounded grains, not fresh snow} (discussed 10-16).
+    Molaro et al.\ (spheres sprayed into liquid nitrogen, p.15), Demmenie et
+    al.\ (ice spheres) and our aggregates (discs in point contact) all start
+    from rounded grains. None of them is snow, fresh or aged, so they cannot
+    be said to use ``snow that has already metamorphosed''. What can be
+    said: fresh snow first rounds, and that stage is fast; Kaempfer \&
+    Schneebeli (2007) saw ``the transition from the dendritic form of the
+    fresh snow at time zero to rounded grains a month later'' (p.5), the
+    first phase of ``a two-stage process'' (p.1). Sphere experiments and our
+    model describe the second stage, sintering of rounded grains. Our
+    results do not cover the first stage, so they cannot claim it. Put this
+    in Section~2.1 (Scope) and Section~5.6.
   \item \tG ``an adapted model sintering model originally used in metallurgy
     first proposed by'': Molaro et al.\ made ``No modifications'' to it (p.5),
     and Swinkels \& Ashby's is a ``second report''; ``applied the sintering
@@ -1005,6 +1020,58 @@ literature-check findings (F$n$, top of this document) merged in place.
     exponent is compared, not the rate. The sharp-interface law integrated
     for this geometry and $\alpha_c$ gives 0.29 (Appendix~B); $1/3$ is its
     limit for small necks, and the neck here is not small.
+  \item \tA \textbf{Why a small $\alpha_c$ gives $t^{1/3}$, and a large one
+    $t^{1/5}$} (the reader will ask; derivation in Appendix~B). Both are
+    vapor transport; they differ in which step limits it. Vapor leaves the
+    convex grain surface and arrives at the concave neck, driven by the
+    curvature of the neck fillet, $\Delta\sigma \approx d_0/\rho$, with fillet
+    radius $\rho \approx x^2/2R$. It passes two resistances in series:
+    attachment at the ice surface, $\beta_{\mathrm{sub}} \propto 1/\alpha_c$,
+    which does not depend on size, and diffusion through the air over a
+    length of order $\rho$, which grows with the neck.
+    \begin{itemize}
+    \item Attachment-limited (small $\alpha_c$): $v_n \approx
+      d_0/(\beta_{\mathrm{sub}}\rho) \propto R/x^2$, so $x^2\,dx \propto dt$,
+      $x^3 \propto t$, $w \propto t^{1/3}$.
+    \item Diffusion-limited (large $\alpha_c$): $v_n \propto
+      d_0/(k_D\rho\cdot\rho) \propto R^2/x^4$, so $x^5 \propto t$, $w \propto
+      t^{1/5}$.
+    \end{itemize}
+    A resistance that grows as the neck grows slows the neck faster, hence
+    the smaller exponent. The classical $1/3$ (Kingery 1960, Table~I:
+    ``Evaporation condensation, $(x/r)^3 = B(T)t/r^2$'') assumes the gas
+    imposes no resistance: Kuczynski's model ``assumed the mean free path
+    \ldots\ of water molecules at atmospheric pressure in air to be large
+    compared with the neck radius'' (Blackford 2007, p.16). In air it is not
+    ($\sim$0.1~$\mu$m), so Hobbs \& Mason put in diffusion through air and got
+    $n = 5$ (same page). A small $\alpha_c$ makes attachment so slow that the
+    gas resistance becomes negligible even in air, which restores the
+    condition the $1/3$ law assumes. Here gas diffusion is 0.4--2\% of the
+    resistance at $\alpha_c = 10^{-3}$; our neck ODE gives $a \approx 0.20$
+    at $\alpha_c = 0.1$ and 0.29--0.30 at $10^{-3}$
+    (\texttt{studies/molaro\_2019/envelope\_ode/}), and the run gives 0.289.
+    It is below $1/3$ because the neck is not small ($x/R$ up to 0.36: the
+    $2/R$ term and the exact fillet slow it).
+  \item \tA \textbf{Grain scale against neck scale} (so this does not
+    contradict Intro \P6). Bouvet et al.\ (2024, p.5) place the transition
+    near $\alpha_c = 10^{-3}$ for 0.1~mm grains, with the diffusion length
+    set by the grain size. At the neck the diffusion length is the fillet
+    radius, a few $\mu$m, so the neck stays attachment-limited up to larger
+    $\alpha_c$ than whole-grain growth does. In the aggregates the exchange
+    is between grains, and the two resistances are comparable ($\Lambda
+    \approx 2.8$).
+  \Snippet{The exponent of $1/3$ holds when attachment at the ice surface
+    limits growth, not when diffusion of vapor through the air does. The
+    neck grows because its concave surface, of radius of curvature $\rho
+    \approx x^2/2R$, has a lower equilibrium vapor density than the convex
+    grains. If attachment limits growth, the neck advances at a rate
+    proportional to $1/\rho$, which gives $x^3 \propto t$
+    \citep{kingery_regelation_1960}. If instead vapor must diffuse through
+    the air over a distance comparable to $\rho$, the rate falls as
+    $1/\rho^2$ and $x^5 \propto t$, as \citet{Hobbs_and_Mason} found for ice
+    in air \citep{blackfordSinteringMicrostructureIce2007}. We use $\alphaC =
+    10^{-3}$ so that attachment is slow enough for diffusion through the air
+    to contribute less than 2\% of the resistance to growth at the neck.}
   \item \tC \Chk{F2} ``a vapor-limited regime \ldots\ governed by vapor
     transport'' (tex L455): the reverse; Bouvet et al.\ (2024, p.5) put the
     attachment--diffusion transition near $10^{-3}$ for 0.1~mm grains. At
@@ -1478,11 +1545,12 @@ Paragraphs 1--3 of Section~5.1 and the start of Section~5.2 are drafted.
   \Msg{What the simulations cannot resolve or represent.}
   Two dimensions, so relative
   changes are claimed and absolute conductivities are not; one grain size
-  distribution; the first day depends on the interface parameter, and the
-  grain-pair runs start from a neck put in by hand, which grows faster than
-  the Gibbs--Thomson law for the first two thousand
-  $\tau_{\mathrm{sub}}$ or so (Section~3.2), so exponents fitted there are
-  biased low; the Molaro runs use time steps of 22 and 49
+  distribution; rounded grains (discs) in point contact, so the rounding
+  of fresh, dendritic snow, the fast first stage of isothermal
+  metamorphism (Kaempfer \& Schneebeli 2007, p.1, p.5), is outside the
+  model; the first day depends on the interface parameter; the Molaro
+  runs start from a neck put in by hand, which biased the fitted exponent
+  low in the saturated case (0.21 against 0.29 from contact; Appendix~B); the Molaro runs use time steps of 22 and 49
   $\tau_{\mathrm{sub}}$, outside the range the time-step study covered; pore
   throats narrower than the diffuse band (9.2~$\mu$m) are not resolved,
   which raises $k_{\mathrm{eff}}$ most at low porosity; the power law is
@@ -1759,6 +1827,12 @@ v_n = \frac{d_0\left(\dfrac1\rho - \dfrac1x + \dfrac2R\right)}{\beta_{\mathrm{su
 \frac{\mathrm dx}{\mathrm dt} = \frac{\pi}{2}\,v_n,\qquad k_D = \frac{\rho_{\mathrm{ice}}}{D_v\,\rho_{vs}^{I}} .
 \]
 Attachment alone gives $x^{3} \propto t$; diffusion alone $x^{5} \propto t$.
+Why: with attachment limiting, $v_n \approx d_0/(\beta_{\mathrm{sub}}\rho)$
+and $\rho \approx x^2/2R$, so $dx/dt \propto R/x^2$; with diffusion
+limiting, the extra factor $1/(c\rho k_D)$ gives $dx/dt \propto R^2/x^4$.
+The gas resistance grows with the neck; the attachment resistance does not.
+This is Kingery's evaporation--condensation law ($n=3$) against Hobbs \&
+Mason's diffusion through air ($n=5$; Blackford 2007, p.16).
 $R = 84.4~\mu$m, $-20\,^{\circ}$C, $\alpha_c = 10^{-3}$; $c = 0.275$ from the
 Molaro run, not refitted. Here gas diffusion is 0.4--2\% of the resistance.
 Integrated from the run's first sample after relaxation, it gives a final
