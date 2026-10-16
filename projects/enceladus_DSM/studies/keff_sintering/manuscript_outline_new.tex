@@ -788,61 +788,22 @@ literature-check findings (F$n$, top of this document) merged in place.
   \end{itemize}
 \Pg{The thin-interface limit}{to write}{What ``under the conditions outlined by Kaempfer \& Plapp'' means.}
   \begin{itemize}
-  \item \tC \textbf{Checked 10-16 (user asked whether the correction needs
-    isothermal conditions).} The literature condition is not isothermality.
-    \begin{itemize}
-    \item The thin-interface correction $\beta' = a_1(\tau/W\lambda - a_2
-      W/D)$ (Kaempfer \& Plapp 2009, Eq.~39, p.8, from Karma \& Rappel) is
-      derived for \emph{one} diffusing field with ``the diffusion
-      coefficient $D$ \ldots\ constant and equal in both phases'' (p.8),
-      ``the standard symmetric model (with equal diffusivity in both
-      phases)'' (Karma 2001, p.1). In that model the field is the
-      temperature, so it is not an isothermal result.
-    \item Our model has two coupled fields, and vapor diffuses only in the
-      air (one-sided). For asymmetric diffusion a finite $W$ ``magnifies
-      several nonequilibrium effects at the interface'' (a jump across it,
-      interface stretching, surface diffusion; p.8), removed only with an
-      antitrapping current. The thermosolutal version (Ramirez et al., their
-      Eq.~41) has a coefficient $a_3$ that ``depends on the local interface
-      temperature''.
-    \item Kaempfer \& Plapp did not derive the thin-interface limit for
-      their snow model: ``A simpler way \ldots\ is to observe that from
-      simple dimensional arguments, the thin-interface corrections \ldots\
-      must scale as $W/\alpha_T$ and $W/D_v$'' (p.8). They require these to
-      be small, Eqs.~(42)--(43), so the \emph{sharp}-interface limit holds,
-      plus $W \ll 1/\mathcal{K}$ and $\tau v_n/W \ll 1$ (p.9); ``a proper
-      thin-interface limit will have to be developed'' (p.9). Moure \& Fu
-      (2024, p.6): the asymptotic analyses ``do not readily apply'' with
-      asymmetric diffusivities; antitrapping solutions exist ``only with
-      symmetric diffusivities''; they impose $\varepsilon < D\beta'$,
-      Eqs.~(27)--(29).
-    \end{itemize}
-    So $\Delta\beta = a_1 a_2\,\varepsilon\,(D_T^{-1} + D_v^{-1})\,
-    \rho_{\mathrm{ice}}/\rho_{vs}^{I}$ is an \emph{estimate} built from that
-    dimensional scaling with the symmetric-model $a_2$, not a derived limit
-    of our equations. Where isothermality helps: with no imposed gradient
-    $T$ varies only through latent heat, so the thermal part of the
-    correction and the temperature dependence of $a_3$ hardly enter; the
-    one-sided vapor part remains. Our own check: the lunar velocity study
-    matched series theory to 1--3\% with the term on.
-    \textbf{For the draft:} where the correction is 2\% (aggregates) or
-    0.2\% (saturated pair), we are in Kaempfer \& Plapp's sharp-interface
-    regime and the form of $\Delta\beta$ hardly matters; at 23\% (Molaro
-    pairs) it does, and the text should say so.
-  \Snippet{Our model reproduces Eq.~(6) in the sharp-interface limit, which
-    requires the interface parameter to be small compared with the radius
-    of curvature and with the lengths $D_v\beta_{\mathrm{sub}}\rho_{vs}^{I}/\rho_{\mathrm{ice}}$
-    and $D_T\beta_{\mathrm{sub}}\rho_{vs}^{I}/\rho_{\mathrm{ice}}$
-    \citep{kaempferPhasefieldModelingDry2009, mourePhaseFieldModelWet2024}.
-    For a finite interface we add to $\beta_{\mathrm{sub}}$ the correction
-    $\Delta\beta$ (\cref{tab:material_properties}), whose scaling follows
-    \citet{kaempferPhasefieldModelingDry2009}; it has not been derived for
-    a model with one-sided vapor diffusion, so we treat it as an estimate.
-    It is 2\% of $\beta_{\mathrm{sub}}$ in the aggregate simulations and
-    23\% in the simulations of the experiments of
-    \citet{molaroMicrostructuralEvolutionWater2019}.}
+  \item \tA The model recovers Eq.~(6) with a kinetic coefficient
+    $\beta_{\mathrm{sub}} + \Delta\beta$, $\Delta\beta = a_1 a_2\,
+    \varepsilon\,(D_T^{-1} + D_v^{-1})\,\rho_{\mathrm{ice}}/\rho_{vs}^{I}$.
   \item \tA Its size: 2\% of $\beta_{\mathrm{sub}}$ in the aggregates, 0.2\%
     in the saturated pair, 23\% in the Molaro pairs.
+  \item \tA \textbf{Note (user, 10-16).} The text will say the model
+    reproduces Eq.~(6) ``under certain parameter regimes'', as Moure \& Fu
+    (2024, p.5) do, and may list the conditions in an appendix. They are
+    Kaempfer \& Plapp's (2009, pp.8--9): $W \ll D_v\beta'$ and $W \ll
+    (\kappa/C)\beta'$ (Eq.~43), $W \ll d_0/(\beta_0 v_n)$ (Eq.~45), and $W
+    \ll 1/\mathcal{K}$. These are the four bounds \texttt{preprocess/comp\_eps.py}
+    applies to $\varepsilon$ ([B-VAPOR], [B-HEAT], [B-KINETIC], [B-CURV]).
+    Literature check: they are not isothermal conditions. Kaempfer \& Plapp
+    obtain the $\Delta\beta$ scaling by dimensional argument rather than a
+    derivation for one-sided vapor diffusion (p.8), so the appendix should
+    present $\Delta\beta$ as an estimate.
   \end{itemize}
   \Cite{Kaempfer \& Plapp 2009 \texttt{kaempferPhasefieldModelingDry2009}; Moure \& Fu 2024 \texttt{mourePhaseFieldModelWet2024}.}
 \Pg{The time scale}{to write here; now at L469--477 in the Discussion}{Defines $\tau_{\mathrm{sub}}$ and the sintering age $\theta$.}
