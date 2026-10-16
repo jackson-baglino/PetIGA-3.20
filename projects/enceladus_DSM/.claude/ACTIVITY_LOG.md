@@ -5,6 +5,7 @@
 - Intro 5: Demmenie bullet rewritten; fresh-snow claim declined (neither study used snow; our aggregates are discs) and replaced by a rounded-grain scope item (Kaempfer & Schneebeli 2007).
 - Table 1: added M_sub = eps/(3 tau_sub) and alpha_sub = a1 eps rho_ice/(d0 rho_vs tau_sub), taken from the solver; Eq. (1a) used both undefined.
 - Table 1 note b: P_vs is Wexler (1977) Eq. 54 (verified on the PDF; solver k_j are his Table 2 values rounded, +0.05% in P_vs); ASHRAE attribution removed, the six k_j listed.
+- Temperature back to deg C (user: easier for results). Table 1 and outline use T in deg C and T_K = T + 273.15 only in Wexler, D_v, beta_sub and d0; drops T_0 = 273.15 K, which clashed with T_0 as run temperature in Tables 2-4.
 
 ---
 
