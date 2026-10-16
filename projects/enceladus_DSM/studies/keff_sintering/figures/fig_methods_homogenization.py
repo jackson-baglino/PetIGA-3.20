@@ -33,6 +33,9 @@ temperature field T(x,y) = x + t_x of the same unit gradient, whose flux is
 (d), in place of the corrector alone, with isotherms over it.
 --v3 (2026-10-16) is v2 without the isotherms (too busy at this size) and with
 RdYlBu_r for T: it reads as temperature and is far from (d)'s `thermal`.
+--v4 MAP (2026-10-16): v3 with a SEQUENTIAL map for T in [0, 1], which needs
+no diverging map: "amp" (cmocean, one hue, white -> red) or "bluered" (two
+colours, blue -> red, no white middle). Writes ..._v4_<MAP>.
 """
 from __future__ import annotations
 
@@ -75,9 +78,12 @@ def main():
     ap.add_argument("--v2", action="store_true",
                     help="the 2026-10-15 version: (b) scale bar bottom right, (c) = T(x,y)")
     ap.add_argument("--v3", action="store_true", help="v2, (c) without isotherms, in RdYlBu_r")
+    ap.add_argument("--v4", choices=("amp", "bluered"), default=None,
+                    help="v3 with a sequential map for (c)")
     ap.add_argument("--panel-colorbar", action="store_true",
                     help="keep the colour bar and its label in --panel crops of (c), (d)")
     a = ap.parse_args()
+    a.v3 = a.v3 or a.v4 is not None
     a.v2 = a.v2 or a.v3
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
     run = a.root / MASTER
@@ -165,7 +171,12 @@ def main():
             # in the air and spread in the ice.
             L = x.max() - x.min()
             Tn = (x[None, :] - x.min() + tx) / L
-            im = axs["c"].imshow(Tn, origin="lower", extent=ext, cmap="RdYlBu_r" if a.v3 else "coolwarm",
+            tcm = "RdYlBu_r" if a.v3 else "coolwarm"
+            if a.v4 == "amp":
+                tcm = cmocean.cm.amp
+            elif a.v4 == "bluered":
+                tcm = matplotlib.colors.LinearSegmentedColormap.from_list("bluered", ["#2f5aa8", "#c0392b"])
+            im = axs["c"].imshow(Tn, origin="lower", extent=ext, cmap=tcm,
                                  vmin=0.0, vmax=1.0, interpolation="antialiased")
             if not a.v3:
                 axs["c"].contour(x, y, Tn, levels=np.linspace(0.05, 0.95, 19), colors=[INK],
@@ -222,7 +233,7 @@ def main():
 
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
-    stem = "Figure2_homogenization_method" + ("_v3" if a.v3 else "_v2" if a.v2 else "")
+    stem = "Figure2_homogenization_method" + (f"_v4_{a.v4}" if a.v4 else "_v3" if a.v3 else "_v2" if a.v2 else "")
     for e in ("pdf", "png"):
         f = out / f"{stem}.{e}"
         fig.savefig(f, dpi=500, transparent=True)

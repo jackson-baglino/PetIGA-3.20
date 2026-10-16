@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-"""Collect every main-text figure, and tables.tex, into ONE flat folder, for upload to Overleaf.
+"""Collect every main-text figure, and tables.tex, for upload to Overleaf: ONE
+subfolder per figure iteration, each holding ALL of Figures 1-7.
 
     python3 studies/keff_sintering/figures/collect_manuscript_figures.py [--dest <dir>]
 
-Copies the current FigureN_<name>.pdf/.png from where each script writes it
-(the campaign's compare/figure_samples/ and studies/molaro_2019/manuscript/)
-into <dest> (default ~/SimulationResults/HPC_results/enceladus_DSM/ManuscriptFigures).
-It rebuilds nothing: run the figure scripts first. Files in <dest> that are
-not in the list below are left alone; a missing source is reported.
+Each iteration folder <dest>/<iteration>/ gets the figures current at that
+iteration under their CANONICAL names (FigureN_<name>.pdf/.png, no _vN
+suffix), so the folder alone says which version they are and Overleaf paths
+never change. Alternatives that were offered alongside keep their own names.
+NOTES.txt in each folder says what changed. Sources are where each script
+writes (the campaign's compare/figure_samples/ and studies/molaro_2019/manuscript/);
+nothing is rebuilt -- run the figure scripts first. tables.tex and
+supplement/ stay at the top of <dest>. Loose FigureN files left at the top by
+the old flat layout are removed (they are copies; the sources stay).
 """
 import argparse, shutil
 from pathlib import Path
@@ -15,43 +20,60 @@ from pathlib import Path
 HPC = Path.home() / "SimulationResults/HPC_results/enceladus_DSM"
 SAMPLES = HPC / "keff_sintering_campaign/compare/figure_samples"
 MOLARO = Path(__file__).resolve().parents[3] / "studies/molaro_2019/manuscript"
-FIGURES = [                                   # (stem, source folder)
-    ("Figure1_mechanisms_aggregate", SAMPLES),
-    ("Figure2_homogenization_method", SAMPLES),
-    ("Figure3_molaro_validation", MOLARO),
-    ("Figure4_saturated_neck_growth", MOLARO),
-    ("Figure5_gallery", SAMPLES),
-    ("Figure6_keff_collapse", SAMPLES),
-    ("Figure7_state_law", SAMPLES),
-    ("Figure7_state_law_allphi", SAMPLES),     # variation: every porosity in panel (b)
-    # v2: the advisor-meeting edits of 2026-10-15, beside the originals
-    ("Figure1_mechanisms_aggregate_v2", SAMPLES),   # fig1_v2_edit.py
-    ("Figure1_mechanisms_aggregate_v2_dotsA", SAMPLES),  # --dots 16 0.95
-    ("Figure1_mechanisms_aggregate_v2_dotsB", SAMPLES),  # --dots 24 0.75
-    ("Figure1_mechanisms_aggregate_v2_dotsC", SAMPLES),  # --dots 34 0.6
-    ("Figure2_homogenization_method_v2", SAMPLES),  # fig_methods_homogenization.py --v2
-    ("Figure3_molaro_validation_v2", MOLARO),       # plot_molaro_validation.py --v2
-    ("Figure4_saturated_neck_growth_v2", MOLARO),   # fig_demmenie.py --v2
-    ("Figure7_state_law_v2", SAMPLES),              # sample_figures.py --v2
-    ("Figure7_state_law_allphi_v2", SAMPLES),
-    # v3: 2026-10-16 follow-ups
-    ("Figure1_mechanisms_aggregate_v3a", SAMPLES),  # fig1_v2_edit.py --pathway 9 8 0.7 --gray-outline
-    ("Figure1_mechanisms_aggregate_v3b", SAMPLES),  # --pathway 12 10 0.55 --gray-outline
-    ("Figure2_homogenization_method_v3", SAMPLES),  # --v3
-    ("Figure3_molaro_validation_v3", MOLARO),       # --v3
-]
+CANON = [("Figure1_mechanisms_aggregate", SAMPLES), ("Figure2_homogenization_method", SAMPLES),
+         ("Figure3_molaro_validation", MOLARO), ("Figure4_saturated_neck_growth", MOLARO),
+         ("Figure5_gallery", SAMPLES), ("Figure6_keff_collapse", SAMPLES),
+         ("Figure7_state_law", SAMPLES), ("Figure7_state_law_allphi", SAMPLES)]
+# iteration -> (suffix of the version used per canonical stem ("" = original),
+#               extra alternatives kept under their own names, notes)
+ITERATIONS = {
+    "v1_2026-10-15_original": ({}, [], "The figures before the 2026-10-15 advisor meeting."),
+    "v2_2026-10-15": (
+        {"Figure1_mechanisms_aggregate": "_v2", "Figure2_homogenization_method": "_v2",
+         "Figure3_molaro_validation": "_v2", "Figure4_saturated_neck_growth": "_v2",
+         "Figure7_state_law": "_v2", "Figure7_state_law_allphi": "_v2"},
+        ["Figure1_mechanisms_aggregate_v2_dotsA", "Figure1_mechanisms_aggregate_v2_dotsB",
+         "Figure1_mechanisms_aggregate_v2_dotsC"],
+        "Advisor meeting: Fig 1 molecules + w(t) I-bar; Fig 2 scale bar in ice, (c) = T(x,y); "
+        "Figs 3-4 'simulation', 'theory', 'Data from Molaro et al.', w(t) I-bars, lighter sigma map "
+        "(Fig 3); Fig 7(b) as a scatter. dotsA/B/C: denser, smaller molecules."),
+    "v3_2026-10-16": (
+        {"Figure1_mechanisms_aggregate": "_v3a", "Figure2_homogenization_method": "_v3",
+         "Figure3_molaro_validation": "_v3", "Figure4_saturated_neck_growth": "_v2",
+         "Figure7_state_law": "_v2", "Figure7_state_law_allphi": "_v2"},
+        ["Figure1_mechanisms_aggregate_v3b"],
+        "Fig 1 molecule band from the grain surface to the neck, grey outline (v3b: more, smaller); "
+        "Fig 2(c) no isotherms, RdYlBu_r; Fig 3 original balance map with sigma below the bar grey."),
+    "v4_2026-10-16": (
+        {"Figure1_mechanisms_aggregate": "_v4", "Figure2_homogenization_method": "_v4_bluered",
+         "Figure3_molaro_validation": "_v4", "Figure4_saturated_neck_growth": "_v2",
+         "Figure7_state_law": "_v2", "Figure7_state_law_allphi": "_v2"},
+        ["Figure2_homogenization_method_v4_amp", "Figure3_molaro_validation_v4_fullrange"],
+        "Fig 1 molecules on the arrow's trajectory, crowded where they leave the grain and reattach "
+        "at the neck; Fig 2(c) sequential two-colour map (alternative: _v4_amp, one hue); Fig 3 back "
+        "to the original sigma map, v2 labels kept (proposal: _v4_fullrange, sigma bar over the pore's "
+        "full range)."),
+}
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument("--dest", type=Path, default=HPC / "ManuscriptFigures")
 a = ap.parse_args()
 a.dest.mkdir(parents=True, exist_ok=True)
-for stem, src in FIGURES:
-    for ext in ("pdf", "png"):
-        f = src / f"{stem}.{ext}"
-        if f.is_file():
-            shutil.copyfile(f, a.dest / f.name)
-        else:
-            print(f"MISSING {f}")
+for it, (use, extras, notes) in ITERATIONS.items():
+    d = a.dest / it
+    d.mkdir(exist_ok=True)
+    jobs = [(f"{stem}{use.get(stem, '')}", src, stem) for stem, src in CANON]
+    jobs += [(x, next(src for stem, src in CANON if x.startswith(stem)), x) for x in extras]
+    for name, src, out in jobs:
+        for ext in ("pdf", "png"):
+            f = src / f"{name}.{ext}"
+            if f.is_file():
+                shutil.copyfile(f, d / f"{out}.{ext}")
+            else:
+                print(f"MISSING {f}")
+    (d / "NOTES.txt").write_text(notes + "\n")
+for f in a.dest.glob("Figure*.*"):          # the old flat layout
+    f.unlink()
 # Supporting-information plots, under their own names, in <dest>/supplement/.
 REPO = Path(__file__).resolve().parents[3]
 CMP = HPC / "keff_sintering_campaign/compare"

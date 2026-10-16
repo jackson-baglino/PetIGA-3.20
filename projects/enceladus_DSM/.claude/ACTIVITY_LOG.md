@@ -1,3 +1,12 @@
+## 2026-10-16 — Figure round v4; ManuscriptFigures split into per-iteration folders
+
+- Fig 1 v4: fig1_v2_edit.py --arrow-band S K R. Molecules ride on the arrow's own trajectory (shifted sideways, mostly to the grain side because the label sits under the arrow) and are blended to start on the grain surface and end on the neck. They crowd where they leave and where they reattach. Built with 10 streams x 14 at r 0.7 pt (53 molecules), grey outline.
+- Fig 2 v4: (c) T field on a sequential map, since T is in [0, 1]. bluered (two colours, the canonical choice) and amp (one hue) are both built.
+- Fig 3 Molaro v4: back to the original balance map and its clipping, with v2 labels and I-bars. Proposal _v4_fullrange: an asinh sigma bar over the pore's own min .. max (-26.8 .. +0.28), which shows the far field's undersaturation gradient as well as the neck.
+- collect_manuscript_figures.py now writes one folder per iteration (v1_2026-10-15_original, v2_2026-10-15, v3_2026-10-16, v4_2026-10-16). Each holds all of Figs 1-7 under canonical names, plus the offered alternatives and a NOTES.txt. The loose top-level copies were removed.
+
+---
+
 ## 2026-10-16 — Figure follow-ups as _v3 copies
 
 - Fig 1 v3a / v3b: fig1_v2_edit.py --pathway S K R draws a band of molecules. S streams leave the small grain's lower surface, cross the pore, and land on the neck, with K molecules on each (9x8 at r 0.7 pt, 12x10 at r 0.55). --gray-outline draws the grain outline grey, so the black w(t) I-bar stands out.

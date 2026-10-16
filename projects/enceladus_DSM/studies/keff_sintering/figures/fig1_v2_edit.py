@@ -24,6 +24,13 @@ S streams, each a cubic from a point on the small grain's lower surface,
 out into the air, and up onto the neck, with K molecules on each, radius R
 pt, plus about S/2 deposited on the neck. --gray-outline draws the grain
 outline in grey so the black I-bar stands out against it.
+
+v4 (user, 2026-10-16): --arrow-band S K R puts the molecules ON the arrow's
+trajectory: S streams, each the arrow's own curve shifted sideways (most to
+the grain side, where there is room above the label), blended so each starts
+on the small grain's surface and ends on the neck's. K molecules per stream,
+crowded at both ends -- leaving the surface, reattaching at the neck -- with
+a sparser trail through the air, plus molecules sitting on both surfaces.
 """
 from __future__ import annotations
 
@@ -138,7 +145,61 @@ def pathway_dots(n_streams, per, r, outline, seed=7):
     return np.array(out)
 
 
-def overlay(dots=None, outline=None, pathway=None):
+def arrow_band_dots(n_streams, per, r, outline, seed=11):
+    """Molecules along the arrow: leave the surface, cross, reattach."""
+    from matplotlib.path import Path as MPath
+    rng = np.random.default_rng(seed)
+    ice = MPath(outline)
+    c, R0 = np.array(C_SMALL), 48.05
+    p0, p3 = np.array(P0), np.array(P3)
+    a0 = np.arctan2(p0[1] - c[1], p0[0] - c[0])            # the arrow's departure angle
+    # Arrival: the neck's lower surface near the axis, outward = into the cusp.
+    o = outline[(outline[:, 1] > 95.0) & (outline[:, 1] < 108.0) & (np.abs(outline[:, 0] - X_AX) < 13.0)]
+    o = o[np.argsort(o[:, 0])]
+    d = np.gradient(o, axis=0)
+    nn = np.c_[-d[:, 1], d[:, 0]] / np.hypot(d[:, 0], d[:, 1])[:, None]
+    nn *= np.sign(np.sum(nn * (np.array([X_AX, 125.0]) - o), axis=1))[:, None]
+
+    def on_neck(x, lift):
+        k = int(np.argmin(np.abs(o[:, 0] - x)))
+        return o[k] + lift * nn[k]
+
+    def on_grain(a, lift):
+        return c + (R0 + lift) * np.array([np.cos(a), np.sin(a)])
+
+    side = np.linspace(-5.0, 3.0, n_streams)                 # + = below the arrow
+    da = np.deg2rad(np.linspace(9.0, -7.0, n_streams))       # spread of departures
+    dx = np.linspace(-4.5, 4.5, n_streams)                   # spread of arrivals
+    pts = []
+    for k in range(n_streams):
+        S, E = on_grain(a0 + da[k], r + 0.4), on_neck(X_AX + dx[k], r + 0.4)
+        # crowded at both ends: leaving and reattaching, exaggerated
+        u = rng.uniform(0, 1, per)
+        t = np.where(u < 0.28, rng.uniform(0.0, 0.16, per),
+                     np.where(u < 0.56, rng.uniform(0.84, 1.0, per), rng.uniform(0.16, 0.84, per)))
+        pt, nrm = bezier(np.clip(t, 0.01, 1.0))
+        blend = (1 - t)[:, None] ** 2 * (S - p0) + t[:, None] ** 2 * (E - p3)
+        q = pt + blend + (side[k] * np.sin(np.pi * t))[:, None] * nrm + rng.normal(0, 0.45, (per, 2))
+        pts.append(q)
+    q = np.vstack(pts)
+    arrow = bezier(np.linspace(0.01, 1, 400))[0]
+    dist = lambda P, Q: np.min(np.hypot(*(P[:, None, :] - Q[None, :, :]).transpose(2, 0, 1)), axis=1)
+    keep = ~ice.contains_points(q) & (dist(q, outline) > r + 0.25) & (dist(q, arrow) > r + 0.8)
+    x0, y0, x1, y1 = TEXT_BOX
+    keep &= ~((q[:, 0] > x0) & (q[:, 0] < x1) & (q[:, 1] > y0 - r))
+    out = []
+    for p_ in q[keep]:
+        if all(np.hypot(*(p_ - p2)) > 2.5 * r for p2 in out):
+            out.append(p_)
+    # Sitting on the surfaces: just left (grain) and just arrived (neck).
+    for a in a0 + np.deg2rad(np.linspace(-10.0, 12.0, 5)):
+        out.append(on_grain(a, r + 0.15))
+    for x in np.r_[np.linspace(X_AX - 7.0, X_AX - 2.6, 3), np.linspace(X_AX + 2.6, X_AX + 7.0, 3)]:
+        out.append(on_neck(x, r + 0.15))
+    return np.array(out)
+
+
+def overlay(dots=None, outline=None, pathway=None, band=None):
     """SVG for the I-bar and the molecules."""
     cap, lw = 2.6, 1.0
     g = [f'<g id="v2_ibar" stroke="#000000" stroke-width="{lw}" stroke-linecap="butt" fill="none">',
@@ -158,6 +219,9 @@ def overlay(dots=None, outline=None, pathway=None):
         xy, rad = spread_dots(int(dots[0]), dots[1], outline), dots[1]
     if pathway is not None:
         xy, rad = pathway_dots(int(pathway[0]), int(pathway[1]), pathway[2], outline), pathway[2]
+    if band is not None:
+        xy, rad = arrow_band_dots(int(band[0]), int(band[1]), band[2], outline), band[2]
+        print(f"{len(xy)} molecules")
     g.append(f'<g id="v2_molecules" fill="{MOL}" stroke="none">')
     g += [f'<circle cx="{x:.3f}" cy="{y:.3f}" r="{rad:g}"/>' for x, y in xy]
     g.append("</g>")
@@ -170,6 +234,7 @@ def main():
     ap.add_argument("--out", type=Path, default=SAMPLES)
     ap.add_argument("--dots", type=float, nargs=2, default=None, metavar=("N", "R"))
     ap.add_argument("--pathway", type=float, nargs=3, default=None, metavar=("S", "K", "R"))
+    ap.add_argument("--arrow-band", type=float, nargs=3, default=None, metavar=("S", "K", "R"))
     ap.add_argument("--gray-outline", action="store_true")
     ap.add_argument("--name", default="Figure1_mechanisms_aggregate_v2")
     ap.add_argument("--suffix", default="")
@@ -199,7 +264,7 @@ def main():
         outline = np.array([float(v) for v in re.findall(r"-?\d+\.?\d*", d)]).reshape(-1, 2)
         if a.gray_outline:
             s = s[:i] + s[i:j].replace('stroke="rgb(0%, 0%, 0%)"', 'stroke="rgb(55%, 55%, 55%)"') + s[j:]
-        s = s.replace("</svg>", overlay(a.dots, outline, a.pathway) + "\n</svg>")
+        s = s.replace("</svg>", overlay(a.dots, outline, a.pathway, a.arrow_band) + "\n</svg>")
         svg.write_text(s)
         pdf = a.out / f"{a.name}{a.suffix}.pdf"
         subprocess.run([INKSCAPE, str(svg), "--export-type=pdf", f"--export-filename={pdf}"],

@@ -62,6 +62,13 @@ V3 (--v3, 2026-10-16). v2's labels and I-bars, the ORIGINAL balance map, and
 sigma below the bar's lower bound drawn grey (UNDER_GREY), so the clipped far
 field is marked as off-scale instead of taking the bar's end colour.
 
+V4 (--v4, 2026-10-16). v2's labels and I-bars with the original balance map
+and its original clipping: the user's choice after seeing v2 and v3.
+--sig-full (a PROPOSAL, with --v4): the sigma bar spans the shown pore's own
+min .. max instead of +- the smaller extreme. The asinh norm keeps sigma = 0
+white, so the far field's undersaturation gradient shows in blue as well as
+the neck's supersaturation in red. Writes ..._v4_fullrange.
+
 OUTPUT. studies/molaro_2019/manuscript/ (or --save-dir). PDF is the
 manuscript file, PNG a preview. --copy-to also copies every file into the
 manuscript's Figures/Figure<N>__<name>/ folder (Figure 2 for these).
@@ -559,6 +566,10 @@ def main(argv=None):
     p.add_argument("--width-mm", type=float, default=170.0)
     p.add_argument("--v2", action="store_true",
                    help="write Figure3_molaro_validation_v2 only (see V2 above)")
+    p.add_argument("--v4", action="store_true",
+                   help="write Figure3_molaro_validation_v4 only (see V4 above)")
+    p.add_argument("--sig-full", action="store_true",
+                   help="with --v4: sigma bar over the pore's full range (proposal)")
     p.add_argument("--v3", action="store_true",
                    help="write Figure3_molaro_validation_v3 only (see V3 above)")
     p.add_argument("--save-dir", type=Path, default=REPO / "studies/molaro_2019/manuscript")
@@ -606,6 +617,11 @@ def main(argv=None):
     sig_extend = {(True, True): "both", (True, False): "min",
                   (False, True): "max", (False, False): "neither"}[(smin < -v, smax > v)]
     norm = AsinhNorm(linear_width=max(v / 300.0, 1e-12), vmin=-v, vmax=v)
+    if a.v4 and a.sig_full:
+        # both extremes on the bar; the asinh linear width at the small end
+        # keeps the neck's +0.28 visible next to the far field's -27
+        norm = AsinhNorm(linear_width=max(0.3 * smax, 1e-12), vmin=smin, vmax=smax)
+        sig_extend, v = "neither", max(abs(smin), abs(smax))
     vapcm = centered_cmap(cropped_balance() if a.v2 and not a.v3 else cmocean.cm.balance, norm)
     if a.v3:
         vapcm = vapcm.copy()
@@ -617,13 +633,15 @@ def main(argv=None):
 
     a.sig_extend = sig_extend
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
-    if a.v2 or a.v3:
+    if a.v2 or a.v3 or a.v4:
         global SIM_LABEL, DATA_LABEL
         SIM_LABEL, DATA_LABEL = "simulation", "Data from Molaro et al. (2019)"
         a.bars = [neck_at(s20["run"], sec[5]) for sec in secs]
         for (z, w), sec in zip(a.bars, secs):
             print(f"  w(t) bar at t = {sec[5]:.1f} s: z = {1e3 * z:.1f} um, w = {1e3 * w:.2f} um")
-        figs = {"Figure3_molaro_validation_v3" if a.v3 else "Figure3_molaro_validation_v2":
+        stem = ("Figure3_molaro_validation_v4" + ("_fullrange" if a.sig_full else "") if a.v4
+                else "Figure3_molaro_validation_v3" if a.v3 else "Figure3_molaro_validation_v2")
+        figs = {stem:
                 build_full(secs, series, marks, norm, vapcm, icecm, m["t_star"], a)}
     else:
         figs = {
