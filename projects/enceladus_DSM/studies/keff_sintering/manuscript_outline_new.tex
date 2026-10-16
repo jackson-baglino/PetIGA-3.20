@@ -791,8 +791,9 @@ literature-check findings (F$n$, top of this document) merged in place.
   \item \tA The model recovers Eq.~(6) with a kinetic coefficient
     $\beta_{\mathrm{sub}} + \Delta\beta$, $\Delta\beta = a_1 a_2\,
     \varepsilon\,(D_T^{-1} + D_v^{-1})\,\rho_{\mathrm{ice}}/\rho_{vs}^{I}$.
-  \item \tA Its size: 2\% of $\beta_{\mathrm{sub}}$ in the aggregates, 0.2\%
-    in the saturated pair, 23\% in the Molaro pairs.
+  \item \tA Its size (2\% aggregates, 0.2\% saturated pair, 23\% Molaro
+    pairs) goes in the Discussion, not here (user, 10-16): Section~5.1,
+    ``The unsaturated pair''.
   \item \tA \textbf{Note (user, 10-16).} The text will say the model
     reproduces Eq.~(6) ``under certain parameter regimes'', as Moure \& Fu
     (2024, p.5) do, and may list the conditions in an appendix. They are
@@ -1331,6 +1332,37 @@ Paragraphs 1--3 of Section~5.1 and the start of Section~5.2 are drafted.
     (iii)~$\alpha_c$ above 0.1 for droplets quenched in liquid nitrogen.
   \item \tA Latent heat is not a candidate: in the run the neck is 0.002~mK
     warmer than the grain surface.
+  \item \tA \textbf{The thin-interface term (user, 10-16: put its size
+    here, and use it for the $-20\,^\circ$C shortfall).} At $\alpha_c =
+    0.1$, $\Delta\beta/\beta_{\mathrm{sub}} = 0.23$ at $-20\,^\circ$C
+    ($1.831\times10^{4}$ against $7.941\times10^{4}$~s\,m$^{-1}$, Table~4),
+    against 0.02 in the aggregates and 0.002 in the saturated pair. The
+    realized attachment is that of $\alpha_c \approx 0.081$, not 0.1, so it
+    belongs in the explanation. \textbf{But it is a small part of it:}
+    \begin{itemize}
+    \item At most it would raise the rate by 23\%, and only if attachment
+      alone limited growth. At $\alpha_c = 0.1$ gas diffusion carries much
+      of the resistance at the neck (``above 0.1 the gain is small, because
+      gas diffusion caps the rate'', \texttt{studies/molaro\_2019/envelope\_ode/}).
+    \item The neck ODE over 78~min from the 14~$\mu$m start, with and
+      without $\Delta\beta$ ($c = 0.275$): removing it adds 4.5\% to the
+      neck growth with the fitted undersaturation, 5.5\% without it. That
+      takes 41\% to about 43\% of the measured growth; the gap is 59
+      points. (Estimate: $c$ was calibrated on our run, which already
+      included $\Delta\beta$.)
+    \item The $-5\,^\circ$C pair has the same ratio (0.22) and overpredicts
+      (170\%), so the term cannot explain why $-20\,^\circ$C falls short.
+    \end{itemize}
+    Say it in one sentence, as one reason the effective $\alpha_c$ sits
+    below the nominal value, and keep the other candidates (above) as the
+    main ones. A run at $\alpha_c = 0.123$ would realize 0.1 if you want
+    the nominal value exactly.
+  \Snippet{At $\alphaC = 0.1$ the thin-interface correction is 23\% of
+    $\beta_{\mathrm{sub}}$, compared with 2\% in the aggregate simulations,
+    so our grain pairs attach vapor as if $\alphaC$ were about 0.08. This
+    slows neck growth by about 5\%, because at this $\alphaC$ diffusion of
+    vapor through the air carries much of the resistance at the neck; it
+    accounts for only a small part of the shortfall at $-20\,^\circ$C.}
   \item \tA Molaro's own model matches through a vapor term with $\alpha_c =
     1$ and no gas diffusion, and they present its agreement as
     order-of-magnitude.
