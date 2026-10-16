@@ -2,7 +2,7 @@
 
 - Fig 3 Molaro: the full-range sigma bar is final. New --trim-to-data stops every simulation curve on the sample nearest its series' last data point (78 / 48 min) in the neck and shrinkage panels.
 - Fig 4 saturated, final (fig_demmenie.py --v4 --sig-amp --sig-gamma 3): sigma on cmocean amp from 0 (white) to the max, with explicit ticks 0, 0.1, 0.15, 0.2, max. The user wants sigma = 0 always visible on the bar, so the earlier min..max versions (balance gamma 3, _v4_lin) were dropped from the v5 folder.
-- Fig 1 v5: --band-side -5 7 puts molecules on both sides of the arrow, and --label-shift -28 0.5 moves "Vapor Transport" left, just under the arrow (14 streams x 14). The first shift, -42, put it too far from the arrow.
+- Fig 1 v5: --band-side -5 7 puts molecules on both sides of the arrow, and --label-shift 2.3 0.8 puts "Vapor Transport" just under the arrow's lowest point, ending about 3 pt short of the vertical axis (label x 149.1-214.3 before the shift; axis at 219.6). Shifts of -42 and -28 were tried first; the user wanted it at the arrow's apex.
 - Fig 2: the v4 two-colour map is final. Fig 7: the all-phi variant dropped.
 - Collector: new v5_2026-10-16 folder. Existing iteration folders are never rewritten (the user prunes them) unless --rebuild is given. An "omit" key drops a figure from a round.
 
