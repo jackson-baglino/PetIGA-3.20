@@ -34,6 +34,11 @@ FIGURES = [                                   # (stem, source folder)
     ("Figure4_saturated_neck_growth_v2", MOLARO),   # fig_demmenie.py --v2
     ("Figure7_state_law_v2", SAMPLES),              # sample_figures.py --v2
     ("Figure7_state_law_allphi_v2", SAMPLES),
+    # v3: 2026-10-16 follow-ups
+    ("Figure1_mechanisms_aggregate_v3a", SAMPLES),  # fig1_v2_edit.py --pathway 9 8 0.7 --gray-outline
+    ("Figure1_mechanisms_aggregate_v3b", SAMPLES),  # --pathway 12 10 0.55 --gray-outline
+    ("Figure2_homogenization_method_v3", SAMPLES),  # --v3
+    ("Figure3_molaro_validation_v3", MOLARO),       # --v3
 ]
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

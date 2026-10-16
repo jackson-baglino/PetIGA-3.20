@@ -1,3 +1,11 @@
+## 2026-10-16 — Figure follow-ups as _v3 copies
+
+- Fig 1 v3a / v3b: fig1_v2_edit.py --pathway S K R draws a band of molecules. S streams leave the small grain's lower surface, cross the pore, and land on the neck, with K molecules on each (9x8 at r 0.7 pt, 12x10 at r 0.55). --gray-outline draws the grain outline grey, so the black w(t) I-bar stands out.
+- Fig 2 v3: panel (c) T field without the isotherms (too busy), in RdYlBu_r, which reads as temperature and looks unlike (d)'s thermal map.
+- Fig 3 Molaro v3: v2 labels and I-bars, the original balance map, and sigma below the bar's lower bound (-0.28e-4) drawn grey (#9a9a9a), including the colorbar triangle. The user preferred the original map to v2's cropped one.
+
+---
+
 ## 2026-10-15 — Advisor-meeting figure edits as _v2 copies
 
 - Every edit writes a separate *_v2 file. The originals are untouched. All copies are collected into ManuscriptFigures/.

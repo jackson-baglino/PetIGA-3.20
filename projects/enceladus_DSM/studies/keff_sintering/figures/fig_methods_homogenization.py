@@ -31,6 +31,8 @@ Writes Figure2_homogenization_method.{pdf,png}.
 instead: the (b) scale bar at the bottom RIGHT, in the ice, and in (c) the
 temperature field T(x,y) = x + t_x of the same unit gradient, whose flux is
 (d), in place of the corrector alone, with isotherms over it.
+--v3 (2026-10-16) is v2 without the isotherms (too busy at this size) and with
+RdYlBu_r for T: it reads as temperature and is far from (d)'s `thermal`.
 """
 from __future__ import annotations
 
@@ -72,9 +74,11 @@ def main():
                          "letter, no colour bar)")
     ap.add_argument("--v2", action="store_true",
                     help="the 2026-10-15 version: (b) scale bar bottom right, (c) = T(x,y)")
+    ap.add_argument("--v3", action="store_true", help="v2, (c) without isotherms, in RdYlBu_r")
     ap.add_argument("--panel-colorbar", action="store_true",
                     help="keep the colour bar and its label in --panel crops of (c), (d)")
     a = ap.parse_args()
+    a.v2 = a.v2 or a.v3
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
     run = a.root / MASTER
     files, reader = make_reader(run, "sol")
@@ -161,11 +165,13 @@ def main():
             # in the air and spread in the ice.
             L = x.max() - x.min()
             Tn = (x[None, :] - x.min() + tx) / L
-            im = axs["c"].imshow(Tn, origin="lower", extent=ext, cmap="coolwarm", vmin=0.0, vmax=1.0,
-                                 interpolation="antialiased")
-            axs["c"].contour(x, y, Tn, levels=np.linspace(0.05, 0.95, 19), colors=[INK],
-                             linewidths=0.35, linestyles="-")
-            axs["c"].contour(x, y, phi, levels=[0.5], colors=["white"], linewidths=0.3)
+            im = axs["c"].imshow(Tn, origin="lower", extent=ext, cmap="RdYlBu_r" if a.v3 else "coolwarm",
+                                 vmin=0.0, vmax=1.0, interpolation="antialiased")
+            if not a.v3:
+                axs["c"].contour(x, y, Tn, levels=np.linspace(0.05, 0.95, 19), colors=[INK],
+                                 linewidths=0.35, linestyles="-")
+            axs["c"].contour(x, y, phi, levels=[0.5], colors=[INK if a.v3 else "white"],
+                             linewidths=0.25 if a.v3 else 0.3)
         else:
             v = np.percentile(np.abs(tx), 99.5)
             im = axs["c"].imshow(tx, origin="lower", extent=ext, cmap=cmocean.cm.balance, vmin=-v, vmax=v,
@@ -216,7 +222,7 @@ def main():
 
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
-    stem = "Figure2_homogenization_method" + ("_v2" if a.v2 else "")
+    stem = "Figure2_homogenization_method" + ("_v3" if a.v3 else "_v2" if a.v2 else "")
     for e in ("pdf", "png"):
         f = out / f"{stem}.{e}"
         fig.savefig(f, dpi=500, transparent=True)
