@@ -57,14 +57,14 @@ ITERATIONS = {
         "full range)."),
     "v5_2026-10-16": (
         {"Figure1_mechanisms_aggregate": "_v5", "Figure2_homogenization_method": "_v4_bluered",
-         "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4",
+         "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4_amp",
          "Figure7_state_law": "_v2", "omit": ["Figure7_state_law_allphi"]},
-        ["Figure4_saturated_neck_growth_v4_lin"],
+        [],
         "Finalised: Fig 2 (two-colour T map) and Fig 3 (full-range sigma bar). Fig 1 molecules on both "
         "sides of the arrow, 'Vapor Transport' moved left to make room. Fig 3 simulation curves stop at "
-        "each series' last data point. Fig 4 sigma bar over the pore's own range with a gamma = 3 power "
-        "norm (pale = the pore's minimum, not saturation; the far field is genuinely flat) -- _v4_lin is "
-        "the linear version. Fig 7 without the all-phi variant."),
+        "each series' last data point. Fig 4 sigma on cmocean amp from sigma = 0 (white, always on the "
+        "bar) to the max, gamma = 3 power norm so the depletion halo at the neck shows (the far field is "
+        "flat). Fig 7 without the all-phi variant."),
 }
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

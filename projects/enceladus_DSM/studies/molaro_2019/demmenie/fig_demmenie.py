@@ -25,7 +25,9 @@ supersaturated everywhere, so the bar runs over the pore's min .. max on the
 red half of the map. Half the pore sits within 0.1 % of the max (the far
 field is genuinely flat), so --sig-gamma 3 (the manuscript choice) stretches
 the top of the range and the depletion halo round the neck shows; pale is
-the pore's minimum, NOT saturation as in the Molaro figure. _v4_lin is the
+the pore's minimum, NOT saturation as in the Molaro figure. --sig-amp (the
+user's choice, 2026-10-16): cmocean amp from sigma = 0 (white) to the max,
+so saturation is always on the bar; with --sig-gamma 3 the halo still shows. _v4_lin is the
 linear alternative (--sig-gamma 1 --suffix _lin).
 --v2 (advisor meeting 2026-10-15) writes <name>_v2: "simulation" for "model",
 the one-third curve labelled as the theory, and an I-bar marking w(t) on each
@@ -79,6 +81,8 @@ def main():
     ap.add_argument("--v4", action="store_true", help="v2 + sigma bar over 0 .. max (see above)")
     ap.add_argument("--sig-gamma", type=float, default=1.0,
                     help="with --v4: PowerNorm exponent for the sigma bar (1 = linear)")
+    ap.add_argument("--sig-amp", action="store_true",
+                    help="with --v4: cmocean amp, bar from sigma = 0 (white) to the max")
     ap.add_argument("--suffix", default="")
     a = ap.parse_args()
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
@@ -108,9 +112,10 @@ def main():
         a.v2 = True
     if a.v4 and smin >= 0:
         from matplotlib.colors import PowerNorm
-        norm = (PowerNorm(gamma=a.sig_gamma, vmin=smin, vmax=smax) if a.sig_gamma != 1.0
-                else Normalize(vmin=smin, vmax=smax)); ext = "neither"
-        vapcm = pmv.centered_cmap(cmocean.cm.balance, norm)    # vmin = 0: the red half, pale at 0
+        lo = 0.0 if a.sig_amp else smin          # amp: sigma = 0 always on the bar, white
+        norm = (PowerNorm(gamma=a.sig_gamma, vmin=lo, vmax=smax) if a.sig_gamma != 1.0
+                else Normalize(vmin=lo, vmax=smax)); ext = "neither"
+        vapcm = cmocean.cm.amp if a.sig_amp else pmv.centered_cmap(cmocean.cm.balance, norm)
         v = smax
     elif smin * smax > 0:
         v = max(abs(smin), abs(smax))
@@ -155,6 +160,13 @@ def main():
                 print(f"w(t) bar on instant {i + 1}: w = {1e3 * w_mm:.2f} um")
     a.sig_extend = ext
     pmv._strip(fig, F, ml, y_snap + s_h + t_band + cb_gap + cb_lab, axw, norm, vapcm, ext)
+    if a.v4 and a.sig_amp:
+        # sigma_ticks thins by position on the bar, and the gamma stretch
+        # crowds 0 .. 0.1 into its first few percent, leaving only the ends.
+        cax_sig = fig.axes[-1]                       # _strip adds the sigma bar last
+        tk = [x for x in (0.0, 0.1, 0.15, 0.2) if x < 0.97 * smax] + [smax]
+        cax_sig.set_xticks(tk)
+        cax_sig.set_xticklabels([f"${x:.2g}$" for x in tk])
 
     def dress(ax):
         ax.patch.set_alpha(0.0)

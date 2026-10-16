@@ -1,7 +1,7 @@
 ## 2026-10-16 — Figure round v5 (Figs 2 and 3 finalised)
 
 - Fig 3 Molaro: the full-range sigma bar is final. New --trim-to-data stops every simulation curve on the sample nearest its series' last data point (78 / 48 min) in the neck and shrinkage panels.
-- Fig 4 saturated: fig_demmenie.py --v4. The sigma bar runs over the pore's own range (+0.075 .. +0.241). Half the pore sits within 0.1 % of the max, so --sig-gamma 3 (PowerNorm) is used to show the depletion halo round the neck. _v4_lin is kept as the linear alternative. Pale is the pore minimum here, not saturation.
+- Fig 4 saturated, final (fig_demmenie.py --v4 --sig-amp --sig-gamma 3): sigma on cmocean amp from 0 (white) to the max, with explicit ticks 0, 0.1, 0.15, 0.2, max. The user wants sigma = 0 always visible on the bar, so the earlier min..max versions (balance gamma 3, _v4_lin) were dropped from the v5 folder.
 - Fig 1 v5: --band-side -5 7 puts molecules on both sides of the arrow, and --label-shift -28 0.5 moves "Vapor Transport" left, just under the arrow (14 streams x 14). The first shift, -42, put it too far from the arrow.
 - Fig 2: the v4 two-colour map is final. Fig 7: the all-phi variant dropped.
 - Collector: new v5_2026-10-16 folder. Existing iteration folders are never rewritten (the user prunes them) unless --rebuild is given. An "omit" key drops a figure from a round.
