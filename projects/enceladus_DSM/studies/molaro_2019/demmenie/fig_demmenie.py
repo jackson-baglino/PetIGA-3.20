@@ -19,6 +19,14 @@ The exponent's dependence on the fit window and the grain-size check were
 panels (c) and (d) until 2026-10-07; they are diagnostic plots now
 (analyze_demmenie.py: exponent_window.png, grain_radius.png).
 
+--v4 (2026-10-16) writes <name>_v4: v2's labels with the sigma bar over the
+data's own range, as the Molaro figure's full-range version. The pore here is
+supersaturated everywhere, so the bar runs over the pore's min .. max on the
+red half of the map. Half the pore sits within 0.1 % of the max (the far
+field is genuinely flat), so --sig-gamma 3 (the manuscript choice) stretches
+the top of the range and the depletion halo round the neck shows; pale is
+the pore's minimum, NOT saturation as in the Molaro figure. _v4_lin is the
+linear alternative (--sig-gamma 1 --suffix _lin).
 --v2 (advisor meeting 2026-10-15) writes <name>_v2: "simulation" for "model",
 the one-third curve labelled as the theory, and an I-bar marking w(t) on each
 section whose neck is open (none on the tangent-start 0 h one, where w = 0).
@@ -68,6 +76,10 @@ def main():
     ap.add_argument("--out", type=Path, default=PROJ / "studies/molaro_2019/manuscript")
     ap.add_argument("--copy-to", type=Path, default=None)
     ap.add_argument("--v2", action="store_true", help="the 2026-10-15 labels (see above)")
+    ap.add_argument("--v4", action="store_true", help="v2 + sigma bar over 0 .. max (see above)")
+    ap.add_argument("--sig-gamma", type=float, default=1.0,
+                    help="with --v4: PowerNorm exponent for the sigma bar (1 = linear)")
+    ap.add_argument("--suffix", default="")
     a = ap.parse_args()
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
     A = analyse(a.run, a.relax_tau)
@@ -92,7 +104,15 @@ def main():
     # the bar ends exactly on it. The mapping is linear, not asinh: the field
     # spans a factor of four, not decades, and asinh would paint the whole
     # pore the end colour and hide the depletion at the neck.
-    if smin * smax > 0:
+    if a.v4:
+        a.v2 = True
+    if a.v4 and smin >= 0:
+        from matplotlib.colors import PowerNorm
+        norm = (PowerNorm(gamma=a.sig_gamma, vmin=smin, vmax=smax) if a.sig_gamma != 1.0
+                else Normalize(vmin=smin, vmax=smax)); ext = "neither"
+        vapcm = pmv.centered_cmap(cmocean.cm.balance, norm)    # vmin = 0: the red half, pale at 0
+        v = smax
+    elif smin * smax > 0:
         v = max(abs(smin), abs(smax))
         norm = Normalize(vmin=-v, vmax=v); ext = "neither"; vapcm = cmocean.cm.balance
     else:
@@ -101,7 +121,8 @@ def main():
         norm = AsinhNorm(linear_width=max(v / 300.0, 1e-12), vmin=-v, vmax=v)
         vapcm = pmv.centered_cmap(cmocean.cm.balance, norm)
     icecm = pmv.ice_alpha_cmap()
-    print(f"sigma x{pmv.SIGMA_SCALE:g} in the shown pore: {smin:+.3g} .. {smax:+.3g}; bar +-{v:.3g} ({ext})")
+    print(f"sigma x{pmv.SIGMA_SCALE:g} in the shown pore: {smin:+.3g} .. {smax:+.3g}; bar +-{v:.3g} ({ext}); "
+          f"quantiles 1/10/50/90 %: " + " ".join(f"{q:.4g}" for q in np.percentile(pore, [1, 10, 50, 90])))
 
     # ---- layout, in inches, as plot_molaro_validation.build_full ----
     W = a.width_mm * MM
@@ -163,11 +184,11 @@ def main():
         fig.text(0.02 / W, y_top / H, pplib.bold(f"({lab})"), ha="left", va="center", fontsize=FS, color=INK)
     a.out.mkdir(parents=True, exist_ok=True)
     for e in ("pdf", "png"):
-        fn = a.out / f"{a.name}{'_v2' if a.v2 else ''}.{e}"
+        fn = a.out / f"{a.name}{'_v4' if a.v4 else '_v2' if a.v2 else ''}{a.suffix}.{e}"
         fig.savefig(fn, dpi=600, transparent=True)
         if a.copy_to:
             a.copy_to.mkdir(parents=True, exist_ok=True); shutil.copyfile(fn, a.copy_to / fn.name)
-    print(f"wrote {a.out}/{a.name}{'_v2' if a.v2 else ''}.pdf/.png ({W / MM:.0f} x {H / MM:.0f} mm); free a = {f['a']:.3f}, one-third rms {h['rms']:.2f} %")
+    print(f"wrote {a.out}/{a.name}{'_v4' if a.v4 else '_v2' if a.v2 else ''}{a.suffix}.pdf/.png ({W / MM:.0f} x {H / MM:.0f} mm); free a = {f['a']:.3f}, one-third rms {h['rms']:.2f} %")
 
 
 if __name__ == "__main__":

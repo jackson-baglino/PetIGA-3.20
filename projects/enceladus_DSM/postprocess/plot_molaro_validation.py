@@ -69,6 +69,11 @@ min .. max instead of +- the smaller extreme. The asinh norm keeps sigma = 0
 white, so the far field's undersaturation gradient shows in blue as well as
 the neck's supersaturation in red. Writes ..._v4_fullrange.
 
+--trim-to-data (2026-10-16, with --v4): every simulation curve stops at its
+series' last data point (78 min at -20 C, 48 min at -5 C), on the simulation
+sample nearest that time -- no interpolated end point. Neck and shrinkage
+panels alike.
+
 OUTPUT. studies/molaro_2019/manuscript/ (or --save-dir). PDF is the
 manuscript file, PNG a preview. --copy-to also copies every file into the
 manuscript's Figures/Figure<N>__<name>/ folder (Figure 2 for these).
@@ -310,6 +315,17 @@ def load_sections(s, instants, box_um):
 # ---------------------------------------------------------------------------
 # Drawing
 # ---------------------------------------------------------------------------
+TRIM_TO_DATA = False                 # main() sets it from --trim-to-data
+
+
+def _trim(t, *ys, t_end):
+    """Up to and including the sample nearest t_end (TRIM_TO_DATA only)."""
+    if not TRIM_TO_DATA:
+        return (t,) + ys
+    k = int(np.argmin(np.abs(t - t_end))) + 1
+    return (t[:k],) + tuple(y[:k] for y in ys)
+
+
 def _neck_panel(ax, series, marks=()):
     """Neck width vs anchored time: model lines, Molaro's points."""
     ax.patch.set_alpha(0.0)
@@ -318,12 +334,12 @@ def _neck_panel(ax, series, marks=()):
         c = s["color"]
         if s["model"] is not None:
             m = s["model"]
-            ax.plot(m["t"], m["w"], "-", lw=1.8, color=c, zorder=2)
+            ax.plot(*_trim(m["t"], m["w"], t_end=s["td"].max()), "-", lw=1.8, color=c, zorder=2)
             vis = m["t"] <= SERIES["T-20"]["window_min"] * 1.08
             ylo, yhi = min(ylo, m["w"][vis].min()), max(yhi, m["w"][vis].max())
         if s["alt"] is not None:
             m2 = s["alt"]
-            ax.plot(m2["t"], m2["w"], ls=ALT_LS, lw=1.5, color=c, zorder=2,
+            ax.plot(*_trim(m2["t"], m2["w"], t_end=s["td"].max()), ls=ALT_LS, lw=1.5, color=c, zorder=2,
                     dash_capstyle="round")
         ax.errorbar(s["td"], s["wd"], yerr=[s["em"], s["ep"]], fmt="o", ms=4.2,
                     mfc="white", mec=c, mew=0.9, ecolor=c, elinewidth=0.7,
@@ -477,11 +493,11 @@ def _shrink_panel(ax, series, which, xmax):
         c, m = s["color"], s["model"]
         if m is not None and m["grains"] is not None:
             g = m["grains"]
-            ax.plot(g["t"], g[which], "-", lw=1.8, color=c, zorder=2)
+            ax.plot(*_trim(g["t"], g[which], t_end=s["Dd"]["t"].max()), "-", lw=1.8, color=c, zorder=2)
             vals.append(g[which][g["t"] <= xmax])
         if s["alt"] is not None and s["alt"]["grains"] is not None:
             g2 = s["alt"]["grains"]
-            ax.plot(g2["t"], g2[which], ls=ALT_LS, lw=1.5, color=c, zorder=2,
+            ax.plot(*_trim(g2["t"], g2[which], t_end=s["Dd"]["t"].max()), ls=ALT_LS, lw=1.5, color=c, zorder=2,
                     dash_capstyle="round")
             vals.append(g2[which][g2["t"] <= xmax])
         d = s["Dd"]
@@ -568,6 +584,8 @@ def main(argv=None):
                    help="write Figure3_molaro_validation_v2 only (see V2 above)")
     p.add_argument("--v4", action="store_true",
                    help="write Figure3_molaro_validation_v4 only (see V4 above)")
+    p.add_argument("--trim-to-data", action="store_true",
+                   help="stop each simulation curve at its series' last data point")
     p.add_argument("--sig-full", action="store_true",
                    help="with --v4: sigma bar over the pore's full range (proposal)")
     p.add_argument("--v3", action="store_true",
@@ -577,6 +595,8 @@ def main(argv=None):
     p.add_argument("--dpi", type=int, default=600,
                    help="PNG and raster dpi (default 600, the top of AGU's 300-600 ppi)")
     a = p.parse_args(argv)
+    global TRIM_TO_DATA
+    TRIM_TO_DATA = a.trim_to_data
 
     s20 = load_series("T-20", a.run_t20.resolve())
     s5 = load_series("T-5", a.run_t5.resolve() if a.run_t5 else None,
@@ -639,7 +659,7 @@ def main(argv=None):
         a.bars = [neck_at(s20["run"], sec[5]) for sec in secs]
         for (z, w), sec in zip(a.bars, secs):
             print(f"  w(t) bar at t = {sec[5]:.1f} s: z = {1e3 * z:.1f} um, w = {1e3 * w:.2f} um")
-        stem = ("Figure3_molaro_validation_v4" + ("_fullrange" if a.sig_full else "") if a.v4
+        stem = ("Figure3_molaro_validation_v4" + ("_fullrange" if a.sig_full else "") + ("_trim" if a.trim_to_data else "") if a.v4
                 else "Figure3_molaro_validation_v3" if a.v3 else "Figure3_molaro_validation_v2")
         figs = {stem:
                 build_full(secs, series, marks, norm, vapcm, icecm, m["t_star"], a)}

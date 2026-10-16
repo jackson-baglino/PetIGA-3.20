@@ -1,3 +1,13 @@
+## 2026-10-16 — Figure round v5 (Figs 2 and 3 finalised)
+
+- Fig 3 Molaro: the full-range sigma bar is final. New --trim-to-data stops every simulation curve on the sample nearest its series' last data point (78 / 48 min) in the neck and shrinkage panels.
+- Fig 4 saturated: fig_demmenie.py --v4. The sigma bar runs over the pore's own range (+0.075 .. +0.241). Half the pore sits within 0.1 % of the max, so --sig-gamma 3 (PowerNorm) is used to show the depletion halo round the neck. _v4_lin is kept as the linear alternative. Pale is the pore minimum here, not saturation.
+- Fig 1 v5: --band-side -5 7 puts molecules on both sides of the arrow, and --label-shift -42 2 moves "Vapor Transport" left to make room (14 streams x 14, 78 molecules).
+- Fig 2: the v4 two-colour map is final. Fig 7: the all-phi variant dropped.
+- Collector: new v5_2026-10-16 folder. Existing iteration folders are never rewritten (the user prunes them) unless --rebuild is given. An "omit" key drops a figure from a round.
+
+---
+
 ## 2026-10-16 — Figure round v4; ManuscriptFigures split into per-iteration folders
 
 - Fig 1 v4: fig1_v2_edit.py --arrow-band S K R. Molecules ride on the arrow's own trajectory (shifted sideways, mostly to the grain side because the label sits under the arrow) and are blended to start on the grain surface and end on the neck. They crowd where they leave and where they reattach. Built with 10 streams x 14 at r 0.7 pt (53 molecules), grey outline.

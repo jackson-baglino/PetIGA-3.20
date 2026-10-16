@@ -11,7 +11,9 @@ never change. Alternatives that were offered alongside keep their own names.
 NOTES.txt in each folder says what changed. Sources are where each script
 writes (the campaign's compare/figure_samples/ and studies/molaro_2019/manuscript/);
 nothing is rebuilt -- run the figure scripts first. tables.tex and
-supplement/ stay at the top of <dest>. Loose FigureN files left at the top by
+supplement/ stay at the top of <dest>. An iteration folder that already exists
+is NEVER rewritten (the user prunes them by hand) unless named in --rebuild.
+"omit" drops a canonical figure from a round (e.g. the all-phi Figure 7). Loose FigureN files left at the top by
 the old flat layout are removed (they are copies; the sources stay).
 """
 import argparse, shutil
@@ -53,16 +55,29 @@ ITERATIONS = {
         "at the neck; Fig 2(c) sequential two-colour map (alternative: _v4_amp, one hue); Fig 3 back "
         "to the original sigma map, v2 labels kept (proposal: _v4_fullrange, sigma bar over the pore's "
         "full range)."),
+    "v5_2026-10-16": (
+        {"Figure1_mechanisms_aggregate": "_v5", "Figure2_homogenization_method": "_v4_bluered",
+         "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4",
+         "Figure7_state_law": "_v2", "omit": ["Figure7_state_law_allphi"]},
+        ["Figure4_saturated_neck_growth_v4_lin"],
+        "Finalised: Fig 2 (two-colour T map) and Fig 3 (full-range sigma bar). Fig 1 molecules on both "
+        "sides of the arrow, 'Vapor Transport' moved left to make room. Fig 3 simulation curves stop at "
+        "each series' last data point. Fig 4 sigma bar over the pore's own range with a gamma = 3 power "
+        "norm (pale = the pore's minimum, not saturation; the far field is genuinely flat) -- _v4_lin is "
+        "the linear version. Fig 7 without the all-phi variant."),
 }
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument("--dest", type=Path, default=HPC / "ManuscriptFigures")
+ap.add_argument("--rebuild", nargs="*", default=[], help="iteration folders to rewrite even if present")
 a = ap.parse_args()
 a.dest.mkdir(parents=True, exist_ok=True)
 for it, (use, extras, notes) in ITERATIONS.items():
     d = a.dest / it
+    if d.is_dir() and it not in a.rebuild:
+        continue
     d.mkdir(exist_ok=True)
-    jobs = [(f"{stem}{use.get(stem, '')}", src, stem) for stem, src in CANON]
+    jobs = [(f"{stem}{use.get(stem, '')}", src, stem) for stem, src in CANON if stem not in use.get("omit", [])]
     jobs += [(x, next(src for stem, src in CANON if x.startswith(stem)), x) for x in extras]
     for name, src, out in jobs:
         for ext in ("pdf", "png"):

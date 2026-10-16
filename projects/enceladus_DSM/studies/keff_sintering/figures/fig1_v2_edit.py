@@ -31,6 +31,11 @@ the grain side, where there is room above the label), blended so each starts
 on the small grain's surface and ends on the neck's. K molecules per stream,
 crowded at both ends -- leaving the surface, reattaching at the neck -- with
 a sparser trail through the air, plus molecules sitting on both surfaces.
+
+v5 (user, 2026-10-16): molecules on BOTH sides of the arrow (--band-side
+-5 5, + = below it), with "Vapor Transport" moved out from under the arrow by
+--label-shift DX DY [pt] to make room (its glyphs are the <use> elements on the
+baseline y = 146.67).
 """
 from __future__ import annotations
 
@@ -83,7 +88,9 @@ def spread_dots(n, r, outline, seed=3):
 
 
 C_SMALL = (169.70, 75.36)          # small grain's centre (bottom at y = 123.4, axis y = 75.36)
-TEXT_BOX = (146.0, 137.0, 222.0, 150.0)   # "Vapor Transport", kept clear
+TEXT_BOX = (146.0, 137.0, 222.0, 150.0)   # "Vapor Transport", kept clear (main() shifts it)
+BAND_SIDE = (-5.0, 3.0)                   # arrow-band offsets [pt], + = below the arrow
+LABEL_Y = "146.666949"                    # the label's baseline in the SVG
 
 
 def _cubic(p0, p1, p2, p3, t):
@@ -167,7 +174,7 @@ def arrow_band_dots(n_streams, per, r, outline, seed=11):
     def on_grain(a, lift):
         return c + (R0 + lift) * np.array([np.cos(a), np.sin(a)])
 
-    side = np.linspace(-5.0, 3.0, n_streams)                 # + = below the arrow
+    side = np.linspace(*BAND_SIDE, n_streams)                # + = below the arrow
     da = np.deg2rad(np.linspace(9.0, -7.0, n_streams))       # spread of departures
     dx = np.linspace(-4.5, 4.5, n_streams)                   # spread of arrivals
     pts = []
@@ -236,6 +243,8 @@ def main():
     ap.add_argument("--pathway", type=float, nargs=3, default=None, metavar=("S", "K", "R"))
     ap.add_argument("--arrow-band", type=float, nargs=3, default=None, metavar=("S", "K", "R"))
     ap.add_argument("--gray-outline", action="store_true")
+    ap.add_argument("--band-side", type=float, nargs=2, default=None, metavar=("LO", "HI"))
+    ap.add_argument("--label-shift", type=float, nargs=2, default=None, metavar=("DX", "DY"))
     ap.add_argument("--name", default="Figure1_mechanisms_aggregate_v2")
     ap.add_argument("--suffix", default="")
     a = ap.parse_args()
@@ -264,6 +273,17 @@ def main():
         outline = np.array([float(v) for v in re.findall(r"-?\d+\.?\d*", d)]).reshape(-1, 2)
         if a.gray_outline:
             s = s[:i] + s[i:j].replace('stroke="rgb(0%, 0%, 0%)"', 'stroke="rgb(55%, 55%, 55%)"') + s[j:]
+        global TEXT_BOX, BAND_SIDE
+        if a.band_side:
+            BAND_SIDE = tuple(a.band_side)
+        if a.label_shift:
+            dx_, dy_ = a.label_shift
+            n_ = s.count(f'y="{LABEL_Y}"')
+            assert n_ == 15, f"expected the 15 glyphs of 'Vapor Transport', found {n_}"
+            s = re.sub(rf'x="([-\d.]+)"(\s+)y="{LABEL_Y}"',
+                       lambda m_: f'x="{float(m_.group(1)) + dx_:.6f}"{m_.group(2)}y="{float(LABEL_Y) + dy_:.6f}"', s)
+            x0, y0, x1, y1 = TEXT_BOX
+            TEXT_BOX = (x0 + dx_, y0 + dy_, x1 + dx_, y1 + dy_)
         s = s.replace("</svg>", overlay(a.dots, outline, a.pathway, a.arrow_band) + "\n</svg>")
         svg.write_text(s)
         pdf = a.out / f"{a.name}{a.suffix}.pdf"
