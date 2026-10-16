@@ -197,7 +197,7 @@ campaign record and the manuscript plan.
 Section & State\\\midrule
 Key points, Abstract, Summary & to write (placeholders)\\
 1 Introduction & third draft (10-15): new \P4 on Enceladus conductivity; open: the gap against Bouvet et al.\ (2022), the exponent sources, $\alpha_c$ regime, why SSA\\
-2.1--2.3 Model, kinetics, homogenization & written; \textbf{$T$ back to $^\circ$C (10-16)}, absolute $T_{\mathrm{K}}$ where needed; scaling appendix empty; Eqs.~(2), (11d) to fix\\
+2.1--2.3 Model, kinetics, homogenization & written; \textbf{$T$ back to $^\circ$C (10-16)}, $T + T_0$ where kelvin is needed; scaling appendix empty; Eqs.~(2), (11d) to fix\\
 2.4, 2.5 Numerics, simulation design & headings only\\
 3 Grain pairs & written; 3.2 to rewrite for the tangent-start run ($a = 0.29$, Figure~4 rebuilt 10-15)\\
 4 Aggregates & written; numbers to add, one paragraph to correct\\
@@ -695,13 +695,13 @@ literature-check findings (F$n$, top of this document) merged in place.
   \item \tC \textbf{Temperature in $^\circ$C (user, 10-16).} $T$ is in
     $^\circ$C, which is how every result is reported; the solver works the
     same way (\texttt{RhoVS\_I}: \texttt{temK = tem + 273.15}). Introduce the
-    absolute temperature $T_{\mathrm{K}} = T + 273.15$ once, here, and use it
+    absolute temperature $T + T_0$ ($T_0 = 273.15$~K) once, here, and use it
     only where a formula needs kelvin: Eq.~(3) (Wexler), Eq.~(5) ($D_v$),
-    Eq.~(7) ($\beta_{\mathrm{sub}}$, $k_B T_{\mathrm{K}}$) and $d_0$. The
+    Eq.~(7) ($\beta_{\mathrm{sub}}$, $k_B (T + T_0)$) and $d_0$. The
     conservation equations (1b), (1c) and (11) involve only $\partial T$ and
     $\nabla T$, so they are unchanged. Table~1 [written] 10-16.
   \Snippet{The temperature $T$ is expressed in degrees Celsius; where a
-    relation requires the absolute temperature we write $T_{\mathrm{K}} = T +
+    relation requires the absolute temperature we write $T + T_0$, with $T_0 =
     273.15$~K.}
   \item \tG ``derived from the free energy potential and allows'': ``that
     allows''.
@@ -740,9 +740,9 @@ literature-check findings (F$n$, top of this document) merged in place.
     Kaempfer \& Plapp (2009); ``over ice''; ``are''.
   \item \tC \Chk{F9} Eq.~(2) still writes $P_a$; the text says
     $P_{\mathrm{atm}}$. ``where $T_0 = 273.15$~K'' follows Eq.~(3), which
-    does not contain $T_0$: delete it. With $T$ in $^\circ$C, Eq.~(3) reads
-    $P_{vs}^{I} = \exp\big(\sum_{j=0}^{4} k_j T_{\mathrm{K}}^{\,j-1} + k_5 \ln
-    T_{\mathrm{K}}\big)$.
+    does not contain $T_0$ yet. With $T$ in $^\circ$C, Eq.~(3) reads
+    $P_{vs}^{I} = \exp\big(\sum_{j=0}^{4} k_j (T + T_0)^{j-1} + k_5 \ln
+    (T + T_0)\big)$, and the sentence then defines $T_0$ (snippet below).
   \item \tC \Chk{F9} \textbf{Table [written] 10-16:} Eq.~(3) is Wexler
     (1977), Eq.~54 (p.11), coefficients $K_j$ in his Table~2 (p.9); the
     solver's $k_j$ are these rounded to four figures ($+0.04$ to $+0.05$\% in
@@ -750,7 +750,7 @@ literature-check findings (F$n$, top of this document) merged in place.
     note b now cites Wexler Eq.~54 and lists the six values; ``ASHRAE'' is
     gone (ASHRAE uses Hyland \& Wexler 1983, a different fit).
     \textbf{Open (text):} the sentence after Eq.~(3).
-  \Snippet{where $T_{\mathrm{K}}$ is in kelvin and $P_{vs}^{I}$ in pascals
+  \Snippet{where $T_0 = 273.15$~K and $P_{vs}^{I}$ in pascals
     \citep{wexlerVaporPressureFormulation1977}; the coefficients $k_j$ are
     listed in \cref{tab:material_properties}.}
   \end{itemize}
@@ -763,10 +763,10 @@ literature-check findings (F$n$, top of this document) merged in place.
   \end{itemize}
 \Pg{Vapor equation}{tex L331--335}{Eq.~(1c) and the diffusivity.}
   \begin{itemize}
-  \item \tC With $T$ in $^\circ$C, Eq.~(5) becomes $D_v = D_{v0}\,(T_{\mathrm{K}}/273.15~\mathrm{K})^{1.81}$,
-    with $D_{v0}$ the diffusivity at 0\,$^\circ$C. This drops $T_0 = 273.15$~K,
-    which also clears the clash with Tables~2--4, where $T_0$ is the run
-    temperature in $^{\circ}$C.
+  \item \tC With $T$ in $^\circ$C, Eq.~(5) becomes $D_v = D_{v0}\,\big((T + T_0)/T_0\big)^{1.81}$,
+    with $D_{v0}$ the diffusivity at 0\,$^\circ$C. Tables~2--4 used $T_0$ for
+    the run temperature in $^{\circ}$C; since 10-16 they write $T$, so $T_0$
+    is only 273.15~K.
   \item \tG ``The rest of the thermophysical properties are shown in'':
     ``Material properties are listed in''.
   \item \tA Massman (1998) for $D_v(T)$, as Moure \& Fu do; not in the
@@ -1952,8 +1952,8 @@ everywhere:
   text has $K_{\mathrm{ice}}$); $\rho_{\mathrm{air}}$, $P_{\mathrm{atm}}$ in
   Eq.~(2); $\phi$ against $\phi_i$ for the same field in Section~2.3.
 \item \textbf{Temperature.} $T$ in $^\circ$C (user, 10-16), with
-  $T_{\mathrm{K}} = T + 273.15$ only in Eqs.~(3), (5), (7) and $d_0$;
-  $T_0$ then means only the run temperature (Section~2.1).
+  $T + T_0$ ($T_0 = 273.15$~K) only in Eqs.~(3), (5), (7) and $d_0$;
+  $T_0 = 273.15$~K only; the tables give the run temperature as $T$.
 \item \textbf{$\varepsilon$} is the interface parameter, not the interface
   width: fixed in Section~2.1 (``controls the width''); one ``interface
   width'' remains (Section~2.3).
