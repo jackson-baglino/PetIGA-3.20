@@ -7,6 +7,7 @@
 - Table 1 note b: P_vs is Wexler (1977) Eq. 54 (verified on the PDF; solver k_j are his Table 2 values rounded, +0.05% in P_vs); ASHRAE attribution removed, the six k_j listed.
 - Temperature back to deg C (user: easier for results). Table 1 and outline use T in deg C and T_K = T + 273.15 only in Wexler, D_v, beta_sub and d0; drops T_0 = 273.15 K, which clashed with T_0 as run temperature in Tables 2-4.
 - User writes T + T_0 (T_0 = 273.15 K), not T_K: Table 1 and outline switched; run temperature in Tables 2-4 renamed T_0 -> T so T_0 has one meaning.
+- Thin-interface check (user asked if Delta-beta needs isothermal conditions): no; Karma-Rappel/K&P Eq. 39 needs one field with equal diffusivity in both phases. K&P never derived it for snow (dimensional scaling only, p.8-9); Moure & Fu p.6 agree. Outline entry + snippet: Delta-beta is an estimate; matters only for the Molaro pairs (23%).
 
 ---
 
