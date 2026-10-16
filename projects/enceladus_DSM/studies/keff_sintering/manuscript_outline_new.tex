@@ -818,6 +818,43 @@ literature-check findings (F$n$, top of this document) merged in place.
     \tau_{\bar R}/2500$ in every aggregate run.
   \item \tA The 30-day runs end at $\theta = 43$ ($-40\,^{\circ}$C) to 1256
     ($-5\,^{\circ}$C). Cite Table~2 here.
+  \item \tA \textbf{Example paragraph (10-16).} One paragraph after
+    Eq.~(7) can replace three entries: ``The thin-interface limit'', ``The
+    time scale'' and ``The values used''. The size of $\Delta\beta$ stays
+    out of it (it goes in Section~5.1).
+  \Snippet{Our model reproduces \cref{eq:GibbsThomson} under certain
+    parameter regimes \citep{kaempferPhasefieldModelingDry2009,
+    mourePhaseFieldModelWet2024}, which require $\varepsilon$ to be small
+    compared with the radius of curvature of the ice and with the
+    diffusion and kinetic length scales of the problem
+    (\cref{sec:Appendix_SclaingParameters}). For a finite $\varepsilon$, the
+    interface moves with the kinetic coefficient $\beta_{\mathrm{sub}} +
+    \Delta\beta$, where $\Delta\beta$ is the thin-interface correction
+    (\cref{tab:material_properties}). This sets the characteristic time of
+    sublimation in our model,
+    \[ \tau_{\mathrm{sub}} = \frac{\varepsilon^{2}}{d_0}\left(\beta_{\mathrm{sub}} + \Delta\beta\right), \]
+    the time over which the diffuse interface relaxes. A grain of mean
+    radius $\bar R$ changes shape over the time $\bar R^{2}(\beta_{\mathrm{sub}}
+    + \Delta\beta)/d_0$, which is $(\bar R/\varepsilon)^{2} = 2500$ times
+    $\tau_{\mathrm{sub}}$ in every aggregate simulation. We therefore
+    report time as $\theta = t/\tau_{\mathrm{sub}}$: our 30-day simulations
+    end at $\theta = 43$ at $-40\,^\circ$C and at $\theta = 1256$ at
+    $-5\,^\circ$C (\cref{tab:keff_temperature}). Since
+    $\beta_{\mathrm{sub}} \propto 1/\alphaC$ (\cref{eq:Beta_sub}), the
+    condensation coefficient sets this time scale. We hold $\alphaC$
+    constant with temperature: $1.020\times10^{-3}$ in the aggregate
+    simulations, $1.002\times10^{-3}$ in the saturated grain pair, and 0.1
+    in the grain pairs of \citet{molaroMicrostructuralEvolutionWater2019},
+    the upper end of the range reported in the literature
+    \citep{libbrechtPhysicalDynamicsIce2017,
+    bouvetSnowEquiTemperatureMetamorphism2022,
+    braunRigorousApproachSpecific2024}. A temperature-dependent $\alphaC$
+    would change the kinetics and the temperature together, and the effect
+    of temperature alone could no longer be read from our simulations.}
+  \item \tA Check before pasting: the label of Eq.~(7) (written here as
+    \texttt{eq:Beta\_sub}); the appendix label keeps the draft's spelling
+    \texttt{Sclaing} until you fix it; Eq.~($\tau_{\mathrm{sub}}$) then
+    leaves Section~5.1 (tex L507), and that paragraph refers back to it.
   \end{itemize}
 \Pg{The values used}{to write}{The condensation coefficients and why they are constant.}
   \begin{itemize}
