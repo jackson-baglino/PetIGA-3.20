@@ -1,3 +1,11 @@
+## 2026-10-16 — Outline: why small alpha_c gives t^(1/3); scope is rounded grains
+
+- Section 3.2 + Appendix B: attachment- vs gas-diffusion-limited neck growth (x^3 vs x^5), Kingery/Blackford/Hobbs & Mason sources; Bouvet 2024 grain-scale vs neck-scale reconciliation.
+- Discussion 5.1: the argument condensed to a two-sentence snippet for the manuscript (user request).
+- Intro 5: Demmenie bullet rewritten; fresh-snow claim declined (neither study used snow; our aggregates are discs) and replaced by a rounded-grain scope item (Kaempfer & Schneebeli 2007).
+
+---
+
 ## 2026-10-16 — Figure round v5 (Figs 2 and 3 finalised)
 
 - Fig 3 Molaro: the full-range sigma bar is final. New --trim-to-data stops every simulation curve on the sample nearest its series' last data point (78 / 48 min) in the neck and shrinkage panels.
