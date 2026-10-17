@@ -16,11 +16,18 @@ TOPICS = {
 ap = argparse.ArgumentParser()
 ap.add_argument("--db", required=True)
 ap.add_argument("--out", required=True)
+ap.add_argument("--pins", help="JSON list of {doi, topic, why}: papers the user requires; listed first")
 a = ap.parse_args()
 con = sqlite3.connect(a.db)
 rows = con.execute("SELECT id, doi, title, year, pdf_paths, record_path, record_quality, status FROM papers").fetchall()
 out = ["# Wave 1 shortlist (keyword triage on titles; for human approval)\n",
        "Flags: PDF = file on disk; NOTE = existing note from the earlier review (stub = under 700 bytes, treat as title-level); `?doi` = DOI did not resolve.\n"]
+if a.pins:
+    out.append("\n## PINNED by the user\n")
+    for pin in json.load(open(a.pins)):
+        r = con.execute("SELECT title, year, pdf_paths, record_path FROM papers WHERE id=?", (pin["doi"].lower(),)).fetchone()
+        have = ("PDF " if r and json.loads(r[2]) else "") + ("RECORD " if r and r[3] else "")
+        out.append(f"- [{pin['topic']}] {(r[0] if r and r[0] else pin['doi'])[:90]} ({r[1] if r else '?'}) | {pin['doi']} | {have.strip() or 'not in registry'}\n    why: {pin['why']}")
 for topic, rx in TOPICS.items():
     pat = re.compile(rx, re.I)
     hit = [r for r in rows if pat.search((r[2] or "") + " " + (r[0] or ""))]
