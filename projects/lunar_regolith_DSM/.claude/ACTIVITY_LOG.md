@@ -1,8 +1,15 @@
+
+---
+
+**Session ended:** 2026-10-17 09:37:16
+
 ## 2026-10-17 — ME295 project planning drafts (no solver changes)
 
 - Read ME295 syllabus, project/lab/weekly guidelines, Lecture 5 and the Oct 9 proposal notes.
 - Drafted planning docs in ~/ME295/projects/lunar-cryosuction-agents/ (charter, GitHub/migration, agent persistence and design, lit-review workflow, math task plans, CLAUDE.md). Nothing pushed, no repo created.
 - Flagged course date conflicts, and claims in the planning prompt to adjust (Fickian direction, p=2/C1, free entropy, air-pocket cause).
+- Follow-up (same day): added account status line (~/.claude/statusline-account.sh, user settings); read lectures 1-5; reconstructed the last three-phase formulation from git (Effort-2 tag only, not on main); wrote lab report 1, advisor and HPC-admin proposal drafts, lit-review directions, agent-workflow doc; piloted 3 one-paper extraction workers and checked their key quotes against the PDFs.
+- Found: repo jackson-baglino/PetIGA-3.20 is public; the code's vapor diffusivity is already one-sided and the thin-interface term is a 3-12 % rescale of tau_sub, with no anti-trapping current (lunar_main.c:1042-1090).
 
 ---
 
