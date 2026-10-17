@@ -1,0 +1,85 @@
+{
+  "name": "mesh_params",
+  "description": "Compute the diffuse-interface parameter eps, the element counts and the derived phase-field parameters for the lunar_regolith_DSM solver from the simulation parameters. Units are in the argument names (m, degrees C, m/s). Give exactly one of alpha_c (condensation coefficient) or sigma_surf. Returns eps_m, mesh (h, nx, ny, nz), resolution (elements across the 5-95 % and 1-99 % bands), eps bounds with the binding one, derived tau_sub/lam_sub/M_sub, and a list of checks with status ok/note/warn/fail. Never hand-tune eps: use this tool. Does not write files.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "domain_x_m": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "Domain length in x [m]"
+      },
+      "domain_y_m": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Domain length in y [m]; 0 = unused"
+      },
+      "domain_z_m": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Domain length in z [m]; 0 = unused"
+      },
+      "grain_radius_m": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "Smallest curvature radius to resolve [m]"
+      },
+      "temperature_c": {
+        "type": "number",
+        "description": "Mean temperature [degrees C], between -150 and 0"
+      },
+      "alpha_c": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 1,
+        "description": "Condensation coefficient [-]"
+      },
+      "sigma_surf": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "Characteristic supersaturation [-]; alternative to alpha_c"
+      },
+      "front_velocity_m_per_s": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "Normal front velocity v_n [m/s] for KP Eq. 45"
+      },
+      "feature_radius_m": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "If given, v_n = d0/(beta_sub*feature_radius_m) overrides the velocity"
+      },
+      "safety": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 1,
+        "description": "eps = safety * min(bounds)"
+      },
+      "thermal_channel": {
+        "type": "string",
+        "enum": [
+          "mean",
+          "ice"
+        ],
+        "description": "Heat-channel diffusivity: mean = D*_ia (solver), ice = k_i/C_i"
+      },
+      "xi_v": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "Time-scaling factor; enables the KP Eq. 48 check"
+      },
+      "dimension": {
+        "type": "integer",
+        "enum": [
+          1,
+          2,
+          3
+        ],
+        "description": "Problem dimension; inferred if omitted"
+      }
+    },
+    "required": [
+      "domain_x_m"
+    ]
+  }
+}
