@@ -1,3 +1,161 @@
+## 2026-10-17 — ME295 project planning drafts (no solver changes)
+
+- Read ME295 syllabus, project/lab/weekly guidelines, Lecture 5 and the Oct 9 proposal notes.
+- Drafted planning docs in ~/ME295/projects/lunar-cryosuction-agents/ (charter, GitHub/migration, agent persistence and design, lit-review workflow, math task plans, CLAUDE.md). Nothing pushed, no repo created.
+- Flagged course date conflicts, and claims in the planning prompt to adjust (Fickian direction, p=2/C1, free entropy, air-pocket cause).
+
+---
+
+
+---
+
+**Session ended:** 2026-10-17 09:33:25
+
+
+---
+
+**Session ended:** 2026-10-16 17:16:50
+
+
+---
+
+**Session ended:** 2026-10-16 17:14:51
+
+
+---
+
+**Session ended:** 2026-10-16 16:27:57
+
+
+---
+
+**Session ended:** 2026-10-16 16:15:06
+
+
+---
+
+**Session ended:** 2026-10-16 16:10:04
+
+
+---
+
+**Session ended:** 2026-10-16 16:06:16
+
+
+---
+
+**Session ended:** 2026-10-16 15:45:48
+
+
+---
+
+**Session ended:** 2026-10-16 15:43:54
+
+
+---
+
+**Session ended:** 2026-10-16 15:42:23
+
+
+---
+
+**Session ended:** 2026-10-16 15:34:28
+
+
+---
+
+**Session ended:** 2026-10-16 15:19:40
+
+
+---
+
+**Session ended:** 2026-10-16 14:46:15
+
+
+---
+
+**Session ended:** 2026-10-16 13:03:39
+
+
+---
+
+**Session ended:** 2026-10-15 08:53:54
+
+
+---
+
+**Session ended:** 2026-10-15 08:51:18
+
+
+---
+
+**Session ended:** 2026-10-15 07:21:54
+
+
+---
+
+**Session ended:** 2026-10-15 07:06:37
+
+
+---
+
+**Session ended:** 2026-10-15 07:04:28
+
+
+---
+
+**Session ended:** 2026-10-15 06:58:44
+
+
+---
+
+**Session ended:** 2026-10-15 06:58:16
+
+
+---
+
+**Session ended:** 2026-10-15 06:55:17
+
+
+---
+
+**Session ended:** 2026-10-15 06:43:12
+
+
+---
+
+**Session ended:** 2026-10-15 01:41:05
+
+
+---
+
+**Session ended:** 2026-10-14 20:41:26
+
+
+---
+
+**Session ended:** 2026-10-14 16:20:07
+
+
+---
+
+**Session ended:** 2026-10-14 16:13:30
+
+
+---
+
+**Session ended:** 2026-10-14 16:02:53
+
+
+---
+
+**Session ended:** 2026-10-14 15:58:15
+
+
+---
+
+**Session ended:** 2026-10-14 15:54:58
+
 
 ---
 
