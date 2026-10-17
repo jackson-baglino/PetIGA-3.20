@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-17 13:33:17
+
+
+---
+
 **Session ended:** 2026-10-17 12:22:51
 
 
@@ -27,6 +32,9 @@
 - Later same day: tag v2.0-research-baseline + branch/worktree `stable` (~/PetIGA-3.20-stable); diagnostic worktree ~/PetIGA-3.20-diag on feat/diag-air-film (unpushed): 25 local tests (author raised the cap to 100). Findings: Effort-2 failure is the unconstrained derived air phi_a (independent of Lambda and of Delta-beta); initial condition embeds a full ice disc across the bottom wall; a node-wise bound phi_i <= 1 - phi_s removes it (1 h runs in < 3.5 min, no film). Doc: Planning/08_air_film_diagnostics.md.
 - Project directory tidy-up on branch chore/tidy-project-dir (worktree ~/PetIGA-3.20-tidy, 6 commits, unmerged): tracked files 499 -> 284; removed dead test/, built PDFs, superseded docs, the four scratch quarantine dirs, igakit data; rewrote NOTES.md/TESTS.md; CLAUDE.md now says to recover old inputs from tag v2.0-research-baseline.
 - Wave 1 shortlist: Ji and Karma 2026 (PRE 113, 035503) pinned as the recent Karma anti-trapping paper; Planning/09 compares four review-agent designs and ADK vs Claude Agent SDK. ~/ME295 synced into the iCloud ME295 folder (not deleted).
+- Session 3 (same day): ~/ME295 deleted after verified sync to iCloud; venv_lunar kept (used by scripts). Tidy branch (worktree ~/PetIGA-3.20-tidy, 9 commits): hard-coded result paths -> $SIM_RESULTS_BASE, duplicate scripts/plot_fields.py and 2500-line verify_wall_bc.log removed, line-number refs replaced by symbol names, stale comments/help string fixed, CLAUDE.md eps paragraph corrected.
+- Agent worktree ~/PetIGA-3.20-agent (branch agent/lit-pipeline, 3 commits, unpushed): agentic/tools/mesh_params (typed, JSON in/out, golden-tested redesign of comp_eps.py; preprocess/comp_eps.py is a shim), agentic/lit pipeline (5 agents in .claude/agents, headless workers ~1k tokens overhead, verification, cross-tier claim check, triage, OA fetch, wave runner), pilot on Ji and Karma 2026 (Sonnet vs Opus). Wave 1 manifest (28 papers) awaits approval; no full wave run.
+- Diagnostics (feat/diag-air-film, unmerged by user's decision): 29 tests. Bounded 2D runs complete 1 day with no film at Lambda 1/10/100 (saturated), no film in driven runs so far; bound's bias measured (1D <= 3.5e-3, 2D L2 2.7e-3) but contact angle with/without bound untested. Docs: Planning/08, 10, 11, 12.
 ---
 
 
