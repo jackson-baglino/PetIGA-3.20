@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-17 11:32:03
+
+
+---
+
 **Session ended:** 2026-10-17 09:37:16
 
 ## 2026-10-17 — ME295 project planning drafts (no solver changes)
@@ -11,6 +16,9 @@
 - Follow-up (same day): added account status line (~/.claude/statusline-account.sh, user settings); read lectures 1-5; reconstructed the last three-phase formulation from git (Effort-2 tag only, not on main); wrote lab report 1, advisor and HPC-admin proposal drafts, lit-review directions, agent-workflow doc; piloted 3 one-paper extraction workers and checked their key quotes against the PDFs.
 - Found: repo jackson-baglino/PetIGA-3.20 is public; the code's vapor diffusivity is already one-sided and the thin-interface term is a 3-12 % rescale of tau_sub, with no anti-trapping current (lunar_main.c:1042-1090).
 
+- Layout decided: code in $PETIGA_DIR, drafts/proposals/lit records in iCloud (Research/Projects/lunar_regolith_DSM/{Planning,Proposals,Review}, Courses/.../ME295/Project); nothing but solver/processing code (and later agentic/) goes to GitHub. Added git-excluded symlinks research/ and course/, CLAUDE.local.md, additionalDirectories in settings.local.json.
+- Branch agent/lit-pipeline (b807a189, unpushed): build_registry.py, fetch_metadata.py, discover.py, shortlist.py. Registry: 493 papers incl. 159 OpenAlex candidates; Wave 1 shortlist/discovery memos written for approval.
+- Corrected framing: Delta-beta is the two-sided correction applied to a one-sided diffusivity (author's point, confirmed by code comments); noted that the constant a2 has three inconsistent values (0.158 in code, ~0 per comments, ~0.018 from a quick unverified evaluation of sublimation_asymptotics.tex).
 ---
 
 
