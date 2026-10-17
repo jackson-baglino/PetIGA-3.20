@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-17 12:22:51
+
+
+---
+
 **Session ended:** 2026-10-17 11:32:03
 
 
@@ -19,6 +24,9 @@
 - Layout decided: code in $PETIGA_DIR, drafts/proposals/lit records in iCloud (Research/Projects/lunar_regolith_DSM/{Planning,Proposals,Review}, Courses/.../ME295/Project); nothing but solver/processing code (and later agentic/) goes to GitHub. Added git-excluded symlinks research/ and course/, CLAUDE.local.md, additionalDirectories in settings.local.json.
 - Branch agent/lit-pipeline (b807a189, unpushed): build_registry.py, fetch_metadata.py, discover.py, shortlist.py. Registry: 493 papers incl. 159 OpenAlex candidates; Wave 1 shortlist/discovery memos written for approval.
 - Corrected framing: Delta-beta is the two-sided correction applied to a one-sided diffusivity (author's point, confirmed by code comments); noted that the constant a2 has three inconsistent values (0.158 in code, ~0 per comments, ~0.018 from a quick unverified evaluation of sublimation_asymptotics.tex).
+- Later same day: tag v2.0-research-baseline + branch/worktree `stable` (~/PetIGA-3.20-stable); diagnostic worktree ~/PetIGA-3.20-diag on feat/diag-air-film (unpushed): 25 local tests (author raised the cap to 100). Findings: Effort-2 failure is the unconstrained derived air phi_a (independent of Lambda and of Delta-beta); initial condition embeds a full ice disc across the bottom wall; a node-wise bound phi_i <= 1 - phi_s removes it (1 h runs in < 3.5 min, no film). Doc: Planning/08_air_film_diagnostics.md.
+- Project directory tidy-up on branch chore/tidy-project-dir (worktree ~/PetIGA-3.20-tidy, 6 commits, unmerged): tracked files 499 -> 284; removed dead test/, built PDFs, superseded docs, the four scratch quarantine dirs, igakit data; rewrote NOTES.md/TESTS.md; CLAUDE.md now says to recover old inputs from tag v2.0-research-baseline.
+- Wave 1 shortlist: Ji and Karma 2026 (PRE 113, 035503) pinned as the recent Karma anti-trapping paper; Planning/09 compares four review-agent designs and ADK vs Claude Agent SDK. ~/ME295 synced into the iCloud ME295 folder (not deleted).
 ---
 
 
