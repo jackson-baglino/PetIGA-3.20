@@ -923,6 +923,54 @@ literature-check findings (F$n$, top of this document) merged in place.
     percent and grows with $\varepsilon\,$SSA, so it would drift as the
     aggregate sinters.
   \item \tA The cell problem is solved on frozen snapshots of $\phi$.
+  \item \tA \textbf{Example paragraphs (10-16): credit and what is new.}
+    Checked against Nicoli et al.\ (2011). Theirs: the two effects and the
+    tensor (abstract, p.1); the law is their Eq.~17, with $M_\parallel$ the
+    direct (Eq.~9) and $1/M_\perp$ the inverse (Eq.~16) interpolation; the
+    cancellation shown for a planar interface (pp.2--3); numerical tests of
+    one disk ($M_2/M_1 = 1/2$) and two half-disks ($M_2/M_1 = 0.1$) in a
+    square with Dirichlet and no-flux boundaries, a fixed $\phi$, and
+    convergence ``almost quadratic in $\varepsilon$'' (p.4). They do not
+    treat homogenization or an effective conductivity. Ours: the law in the
+    periodic cell problem, a contrast of 115, $\phi$ taken from the
+    metamorphism model, and the verification. Numbers below:
+    \texttt{studies/keff\_sharp\_limit/} (RECORD.md, 2026-09-22/23).
+  \Snippet{The phase-field problem is the sharp problem
+    \cref{eq:weak_sharp_interface} with $K_\star$ and $\mathbf{t}_\star$
+    replaced by a conductivity $\mathbf{K}(\phi,\nabla\phi)$ and a corrector
+    $\mathbf{t}(\phi)$ defined throughout the cell. A diffuse interface of
+    finite width does not behave as a sharp one: it adds an excess
+    conductance along the interface and an excess resistance across it,
+    both of order $\varepsilon$ \citep{nicoli_tensorial_2011}. A scalar
+    conductivity can remove one of these, but not both; an arithmetic
+    mean removes the excess conductance and a harmonic mean removes the
+    excess resistance.
+    \citet{nicoli_tensorial_2011} showed that both are removed if the
+    conductivity is allowed to become a tensor in the interface, arithmetic
+    along it and harmonic across it, and we adopt their law:
+    [Eqs.~(16a, b) as in the draft].
+    In the bulk, $K_\parallel = K_\perp = K_\star$ and $\mathbf{K}$ reduces
+    to $K_\star\mathbf{I}$. The diffuse form of the cell problem is then
+    [Eq.~(17) as in the draft],
+    where the interface conditions are satisfied by construction.}
+  \Snippet{\citet{nicoli_tensorial_2011} derived this law for transport
+    across a planar interface and tested it on single inclusions at
+    conductivity ratios of 2 and 10. We apply it to the periodic cell problem
+    of homogenization, at the ratio $K_{\mathrm{ice}}/K_{\mathrm{air}} =
+    115$, on microstructures produced by the metamorphism model itself, so
+    that $\mathbf{K}_{\mathrm{eff}}$ is computed on the same phase field
+    without segmenting it. At this contrast the choice matters. For a
+    periodic array of ice disks the arithmetic law overestimates
+    $\mathbf{K}_{\mathrm{eff}}$ by 1.9\% at an ice fraction of 0.05 and by
+    39\% at 0.50, while the tensor law stays within 1\% (Supporting
+    Information). Because the error of a scalar law scales with
+    $\varepsilon$ times the specific surface area, it would also change as
+    the aggregate sinters, and so bias the trends we report.}
+  \item \tA Check before pasting: the disk-array numbers are for single
+    cylinders, 6 radii, 3 values of $\varepsilon/R$ (RECORD.md L41); the
+    Supporting Information section does not exist yet. Ettrich et al.\
+    (2014) applied the law to heat conduction; cite only if it is added to
+    the \texttt{.bib} (not in the library).
   \end{itemize}
   \Cite{Nicoli, Plapp \& Henry 2011 \texttt{nicoli\_tensorial\_2011}; Auriault 1991 \texttt{auriaultHeterogeneousMediumEquivalent1991}; Calonne et al.\ 2011 \texttt{calonneNumericalExperimentalInvestigations2011}.}
 \Pg{What is reported}{to write}{Defines the quantities the results plot.}
