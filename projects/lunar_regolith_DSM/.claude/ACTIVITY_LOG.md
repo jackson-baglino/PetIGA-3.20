@@ -1,6 +1,16 @@
 
 ---
 
+**Session ended:** 2026-10-18 09:43:02
+
+
+---
+
+**Session ended:** 2026-10-17 17:37:04
+
+
+---
+
 **Session ended:** 2026-10-17 15:55:59
 
 
@@ -43,6 +53,7 @@
 - Session 4: course repo github.com/citgitfr/BaglinoJackson_IceSedimentInteractions set up (private; 108+ commits under the user's name): export_course.sh on staging branch export/course-src (worktree ~/PetIGA-3.20-export = main + tidy + agent branches) keeps an allowlist (src, include, scripts, preprocess, postprocess, inputs w/o meshes, TESTS.md, agentic, .claude/agents) with history, strips data/pdf/log/png, adds a course README, syncs by merge (never force). No notes, docs, studies, drafts or coursework exported. -vi_bounds removed on the tidy branch (unused since 2026-06).
 - Wave 1 literature run (28 papers, 355 claims independently checked: 319 supported, 36 partial, 0 unsupported; 15 records flagged for review at the 0.90 gate) -> research/Review/memos/wave1_report.md. a2 = 0.1581: not printed in K&P or M&F main text (M&F SI not in library); check against Karma-Rappel suggests it is the right size; code-comment claim of 'identically null' probably wrong. fetch_oa now tries all legal open routes (27/43 DOIs); ingest_pdfs files papers the user downloads through Caltech/Cornell access.
 - Grain pair with sediment cores (user's worst-bubble configuration) added to the diagnostic branch (sed_core_pair): bounded runs clean to 1 h, unbounded drifts negative (-0.008 at 30 s); day-long and driven runs in progress.
+- Session 5 (2026-10-18): course repo now also carries planning/, proposals/, literature-review/ (records, memos, waves, REVIEW_SHEET) and course/ as snapshots (export_course.sh; PDFs, extracted text, instructor material excluded; home paths scrubbed); README states it is a synchronized export. Image-check agent built and run on 29 records (475 items: 326 confirmed, 148 corrected of which 100 were empty-equation transcriptions, 1 unreadable); review sheet = 95 items. Moure-Fu SI read: a2 = 0.1581 is the equal-diffusivity thermal constant; complete formula reproduces Karma-Rappel 0.6267 and gives 0.15667 for [0,1]; one-sided vapor channel correction is exactly 0 (Planning/13). Bubble reproduced in the grain pair with sediment cores (bounded and unbounded); curvature mismatch mechanism derived (Planning/08). 4-hour fine-output runs T37-T40 still running on the diag worktree.
 ---
 
 
