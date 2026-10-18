@@ -10,6 +10,7 @@
 - compact_four porosity palette: purple replaced by five tints of the poster's own header navy (#253761, sampled from poster.png), so it matches the poster and stays apart from the bright -20 C blue.
 - four_with_grid (11.38 x 7.96 in): six microstructures (2 temperatures x 3 instants, transposed so they stand tall) at the left, the four plots at the right. State-law dots now copy manuscript Fig 7 exactly (15 measured samples per run, even in log SSA; packings drawn from the farthest exponent to the nearest; fit last). figure_placement_box.pptx has all five figures at the box position.
 - New poster figure curves_four (option7_four_plots, 11.38 x 8.10 in): k_eff vs time and vs SSA for -5/-20 C, plus the SSA law as manuscript Fig 7(b) dots (coloured by porosity, widest spread drawn first, fit last) and Fig 7(c) level vs porosity. Level fit reproduces 1.370 exp(-5.01 phi); exponent -0.798.
+- Slide deck draft from the manuscript: 14 slides built on the group-update theme (JPL/Caltech layouts, Aptos) as BaglinoJackson_GroupUpdate_manuscript_draft.pptx in GroupUpdates/2026-10-19 (the user's own deck untouched). Cropped manuscript panels in slide_figures/ with crops.py and build_deck.py; speaker notes list sources and open checks. Saved the poster caption/bullets as 2026-JPLPRD/poster_figure_caption_and_bullets.md.
 - Installed LibreOffice (brew cask, auto-update/cleanup disabled) to render decks; checked it converts the group-update deck. Outline for the 10-19 group update given in the reply; deck not modified.
 
 ---
