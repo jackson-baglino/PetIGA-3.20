@@ -39,6 +39,8 @@ def main():
         block = []
         ic = ver.get("image_check")
         for c in (ic or {}).get("corrections", []):
+            if c["was"].startswith("(empty"):      # extractor left it empty: a transcription, not a disagreement
+                continue
             block.append(f"- [ ] **IMAGE CORRECTION** p. {c['page']} {c['id']}: extractor `{c['was'][:90]}` -> page shows `{c['now'][:140]}` ({c['note']})")
         for u in (ic or {}).get("unreadable", []):
             block.append(f"- [ ] **UNREADABLE** p. {u['page']} {u['id']}: {u['note']}")
