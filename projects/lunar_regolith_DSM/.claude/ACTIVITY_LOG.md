@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-17 15:55:59
+
+
+---
+
 **Session ended:** 2026-10-17 13:33:17
 
 
@@ -35,6 +40,9 @@
 - Session 3 (same day): ~/ME295 deleted after verified sync to iCloud; venv_lunar kept (used by scripts). Tidy branch (worktree ~/PetIGA-3.20-tidy, 9 commits): hard-coded result paths -> $SIM_RESULTS_BASE, duplicate scripts/plot_fields.py and 2500-line verify_wall_bc.log removed, line-number refs replaced by symbol names, stale comments/help string fixed, CLAUDE.md eps paragraph corrected.
 - Agent worktree ~/PetIGA-3.20-agent (branch agent/lit-pipeline, 3 commits, unpushed): agentic/tools/mesh_params (typed, JSON in/out, golden-tested redesign of comp_eps.py; preprocess/comp_eps.py is a shim), agentic/lit pipeline (5 agents in .claude/agents, headless workers ~1k tokens overhead, verification, cross-tier claim check, triage, OA fetch, wave runner), pilot on Ji and Karma 2026 (Sonnet vs Opus). Wave 1 manifest (28 papers) awaits approval; no full wave run.
 - Diagnostics (feat/diag-air-film, unmerged by user's decision): 29 tests. Bounded 2D runs complete 1 day with no film at Lambda 1/10/100 (saturated), no film in driven runs so far; bound's bias measured (1D <= 3.5e-3, 2D L2 2.7e-3) but contact angle with/without bound untested. Docs: Planning/08, 10, 11, 12.
+- Session 4: course repo github.com/citgitfr/BaglinoJackson_IceSedimentInteractions set up (private; 108+ commits under the user's name): export_course.sh on staging branch export/course-src (worktree ~/PetIGA-3.20-export = main + tidy + agent branches) keeps an allowlist (src, include, scripts, preprocess, postprocess, inputs w/o meshes, TESTS.md, agentic, .claude/agents) with history, strips data/pdf/log/png, adds a course README, syncs by merge (never force). No notes, docs, studies, drafts or coursework exported. -vi_bounds removed on the tidy branch (unused since 2026-06).
+- Wave 1 literature run (28 papers, 355 claims independently checked: 319 supported, 36 partial, 0 unsupported; 15 records flagged for review at the 0.90 gate) -> research/Review/memos/wave1_report.md. a2 = 0.1581: not printed in K&P or M&F main text (M&F SI not in library); check against Karma-Rappel suggests it is the right size; code-comment claim of 'identically null' probably wrong. fetch_oa now tries all legal open routes (27/43 DOIs); ingest_pdfs files papers the user downloads through Caltech/Cornell access.
+- Grain pair with sediment cores (user's worst-bubble configuration) added to the diagnostic branch (sed_core_pair): bounded runs clean to 1 h, unbounded drifts negative (-0.008 at 30 s); day-long and driven runs in progress.
 ---
 
 
