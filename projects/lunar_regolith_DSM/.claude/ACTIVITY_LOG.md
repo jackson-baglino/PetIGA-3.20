@@ -1,6 +1,16 @@
 
 ---
 
+**Session ended:** 2026-10-18 14:47:11
+
+
+---
+
+**Session ended:** 2026-10-18 14:30:00
+
+
+---
+
 **Session ended:** 2026-10-18 14:05:39
 
 ## 2026-10-18 (later) — Math lane built and exercised
@@ -10,6 +20,7 @@
 - Known-answer runs: a1=5, Karma-Rappel a2=47/75 (published 0.6267), beta-elimination equation (matches user's); first one-sided thermal-channel pass (c2): vapor eps/D term zero, equal-conductivity limit 47/60; unequal-conductivity terms still open.
 - Fixed three checker bugs found by the tests (vacuous numeric pass, pi name clash, Derivative of sums).
 - One-sided correction staged sub-tasks (c2a heat jump, c2a2 flux correction, c2b kinetic law) derived by the lane, replicated by Opus, and validated against exact travelling-wave solutions (heat_jump.py, front_bvp.py); results in Planning doc 16; solver not changed.
+- Harmonic-K variant (c2h) derived and checked; lunar sizing script (sizing_lunar.py): speed-proportional thermal term ~1e-7 K (negligible), gradient term 3-18 % of curvature force at 20-50 K/m with linear K, ~6x smaller with harmonic K (idea from the enceladus k_eff tensor law). Planning docs 16 (updated) and 17 (bubble-fix status) written.
 
 ---
 
