@@ -1,9 +1,15 @@
+
+---
+
+**Session ended:** 2026-10-18 14:05:39
+
 ## 2026-10-18 (later) — Math lane built and exercised
 
 - Formulation redo: wrote Planning docs 14 (formulation, test ladder) and 15 (agent catalog); user's final ice equation (Approach 2, with the Lambda triple term) re-derived independently by the lane and matches.
 - Branch agent/math-lane (worktree ~/PetIGA-3.20-math, not merged): sympy_check (safe parser, derivation checks, 9 known-answer tests), math agents (Sonnet spec/deriver/scribe, Opus adversary), driver run_lane.py with trusted @definitions, final-tie rule, blind Opus replicate, seeded-error test.
 - Known-answer runs: a1=5, Karma-Rappel a2=47/75 (published 0.6267), beta-elimination equation (matches user's); first one-sided thermal-channel pass (c2): vapor eps/D term zero, equal-conductivity limit 47/60; unequal-conductivity terms still open.
 - Fixed three checker bugs found by the tests (vacuous numeric pass, pi name clash, Derivative of sums).
+- One-sided correction staged sub-tasks (c2a heat jump, c2a2 flux correction, c2b kinetic law) derived by the lane, replicated by Opus, and validated against exact travelling-wave solutions (heat_jump.py, front_bvp.py); results in Planning doc 16; solver not changed.
 
 ---
 
