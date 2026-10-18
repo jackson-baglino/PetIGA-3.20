@@ -8,6 +8,13 @@
 #define CU(x) ((x)*(x)*(x))
 
 /* Field definitions for node data */
+/* Capillary length d0 = gamma * a^3 / (k_B T), a^3 = m_H2O / rho_ice  [Kaempfer and Plapp 2009, Eq. 13].
+ * Same macro and constants as enceladus_DSM so the two projects compute d0 identically. */
+#define M_H2O_KG   2.9915e-26   /* mass of one water molecule [kg] = 18.0153/N_A */
+#define K_BOLTZ    1.380649e-23 /* Boltzmann constant [J/K] */
+#define D0_CAPILLARY(gamma, rho_ice, T_K) \
+    ((gamma) * (M_H2O_KG / (rho_ice)) / (K_BOLTZ * (T_K)))
+
 typedef struct {
   PetscScalar ice, tem, rhov;
 } Field;

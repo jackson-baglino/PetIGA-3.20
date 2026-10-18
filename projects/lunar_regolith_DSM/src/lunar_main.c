@@ -167,7 +167,11 @@ int main(int argc, char *argv[]) {
     user.xi_T = 1.0;    /* thermal: scales conduction + latent heat in R_tem  */
     user.xi_v = 1e-3;   /* vapor:   scales diffusion + rho_ice source in R_vap */
 
-    user.d0_sub0    = 1e-7; // 9.6e-10;   /* capillary length d0 = gamma*Vm/(R*T) at -5°C [m] */
+    /* Placeholder only: d0_sub0 is recomputed below from K&P Eq. 13, d0 = gamma*a^3/(k_B*T), at temp0
+     * (about 1.0e-9 m at -20 C). It used to default to 1e-7, ~100x the physical value, taken from Moure
+     * and Fu, who inflated d0 for their wet-snow runs; that skews the kinetics and must not be a default.
+     * -d0_sub0 still overrides, announced on stdout. */
+    user.d0_sub0    = 1.0e-9;
     user.beta_sub0  = 9.9e5;     /* beta0 = (1/alpha_c)*sqrt(2pi*m/kT)/(rho_vs/rho_i)
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
 
@@ -1018,15 +1022,21 @@ int main(int argc, char *argv[]) {
         }
     }
     {
+        /* K&P Eq. 13: d0 = gamma*a^3/(k_B*T), a^3 = m_H2O/rho_ice, at temp0, with the BULK ice-air energy
+         * (the wall's gamma_ia may be perturbed separately for sensitivity tests). Computed per run because it
+         * depends on temperature. -d0_sub0 overrides for deliberate experiments. */
+        PetscReal d0_phys = D0_CAPILLARY(user.gamma_ia_bulk, user.rho_ice, user.temp0 + 273.15);
         PetscReal  d0_sub0_cli = -1.0;
         PetscBool  set_d0      = PETSC_FALSE;
         ierr = PetscOptionsGetReal(NULL, NULL, "-d0_sub0",
                                    &d0_sub0_cli, &set_d0); CHKERRQ(ierr);
         if (set_d0 && d0_sub0_cli > 0.0) {
-            PetscPrintf(PETSC_COMM_WORLD,
-                        "  -d0_sub0 override: %.4e -> %.4e (factor %.2f)\n",
-                        user.d0_sub0, d0_sub0_cli, d0_sub0_cli / user.d0_sub0);
             user.d0_sub0 = d0_sub0_cli;
+            PetscPrintf(PETSC_COMM_WORLD,
+                        "  -d0_sub0 OVERRIDE: %.4e m (K&P gamma*a^3/(k_B*T) at %.1f C is %.4e, factor %.3f)\n",
+                        (double)user.d0_sub0, (double)user.temp0, (double)d0_phys, (double)(user.d0_sub0 / d0_phys));
+        } else {
+            user.d0_sub0 = d0_phys;
         }
     }
 
@@ -1563,7 +1573,7 @@ int main(int argc, char *argv[]) {
     /* --- Phase-change kinetics -------------------------------------------- */
     PetscPrintf(PETSC_COMM_WORLD, "\n PHASE-CHANGE KINETICS\n");
     PetscPrintf(PETSC_COMM_WORLD, "   rho_ice/rho_vs   = %.4e   (density ratio at T0)\n", rho_rhovs);
-    PetscPrintf(PETSC_COMM_WORLD, "   d0_sub0          = %.4e m   (capillary length; M&F use 1e-7)\n",
+    PetscPrintf(PETSC_COMM_WORLD, "   d0_sub0          = %.4e m   (capillary length, K&P Eq. 13 at T0)\n",
                 user.d0_sub0);
     PetscPrintf(PETSC_COMM_WORLD, "   beta_sub (K&P β₀, M&F β_sub, UNSCALED) = %.4e s/m"
                 "   [M&F range: 2e4–2e6]\n", user.beta_sub0);
