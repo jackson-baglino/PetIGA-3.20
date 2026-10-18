@@ -87,7 +87,7 @@ FOLDER = {
     "option1_stacked": "option1_ssa_collapse", "option1_compact": "option1_ssa_collapse",
     "grid_only": "option1_ssa_collapse", "curves_ssa": "option1_ssa_collapse",
     "option2_compact": "option2_state_law", "curves_law": "option2_state_law",
-    "curves_four": "option7_four_plots",
+    "curves_four": "option7_four_plots", "four_with_grid": "option7_four_plots",
     "heat_flow_row": "option3_heat_flow", "heat_flow_with_microstructure": "option3_heat_flow",
     "sintering_clock": "option4_sintering_clock",
     "porosity": "option5_porosity",
@@ -247,13 +247,44 @@ def snap_grid(fig, F, x0, y_top, s, gap, rows, norm, vapcm, icecm, with_titles=T
     return y_top - len(rows) * s - (len(rows) - 1) * gap, lab_w + n * s + (n - 1) * gap
 
 
-def colorbars(fig, cax_ice, cax_sig, norm, vapcm, ext, orientation):
+def snap_grid_T(fig, F, x0, y_top, s, gap, cols, norm, vapcm, icecm, lab_w=0.50):
+    """Transposed snap_grid: one COLUMN per run (cols = [(label, colour, snaps)]), one ROW per
+    instant, so six microstructures stand tall and narrow beside the plots.
+    Returns (bottom y, width)."""
+    n = len(cols[0][2])
+    for c_i, (label, col, snaps) in enumerate(cols):
+        x = x0 + lab_w + c_i * (s + gap)
+        fig.text(*F(x + 0.5 * s, y_top + 0.20, 0, 0)[:2], label, ha="center", va="center",
+                 fontsize=FS, fontweight="bold", color=col)
+        for r_i, (fl, X, Y, t, _row) in enumerate(snaps):
+            y = y_top - (r_i + 1) * s - r_i * gap
+            ax = fig.add_axes(F(x, y, s, s))
+            _field(ax, fl, X, Y, norm, vapcm, icecm)
+            for sp in ax.spines.values():
+                sp.set_linewidth(3.2); sp.set_color(col)
+            if c_i == 0:
+                d = t / DAY
+                fig.text(*F(x0 + 0.5 * lab_w - 0.04, y + 0.5 * s, 0, 0)[:2],
+                         f"{r_i + 1}   " + ("start" if d < 0.01 else f"{d:.0f} days"), rotation=90,
+                         ha="center", va="center", fontsize=FS_S, color=INK)
+            if r_i == n - 1 and c_i == 0:                   # 0.5 mm scale bar
+                x_ = X[0] * 1e3
+                L0, x_a = 0.5, x_.min() + 0.07 * (x_.max() - x_.min())
+                y_a = (Y[:, 0] * 1e3).min() + 0.08 * (x_.max() - x_.min())
+                for lw, c in ((6.0, "white"), (3.2, INK)):
+                    ax.plot([x_a, x_a + L0], [y_a, y_a], color=c, lw=lw, solid_capstyle="butt", zorder=5)
+                ax.text(x_a + L0 / 2, y_a + 0.05, "0.5 mm", ha="center", va="bottom", fontsize=FS_T - 1,
+                        color=INK, zorder=5, bbox=dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.85))
+    return y_top - n * s - (n - 1) * gap, lab_w + len(cols) * s + (len(cols) - 1) * gap
+
+
+def colorbars(fig, cax_ice, cax_sig, norm, vapcm, ext, orientation, min_gap=0.22):
     cb = fig.colorbar(ScalarMappable(cmap=cmocean.cm.ice, norm=plt.Normalize(0, 1)), cax=cax_ice,
                       orientation=orientation, ticks=[0, 0.5, 1])
     cb.set_ticklabels(["air", "", "ice"]); cb.ax.tick_params(labelsize=FS_S, width=0.8, length=3)
     cb.set_label("phase", fontsize=FS_S); cb.outline.set_linewidth(0.8)
     cb = fig.colorbar(ScalarMappable(cmap=vapcm, norm=norm), cax=cax_sig, orientation=orientation,
-                      extend=ext, extendfrac=0.05, ticks=sigma_ticks(norm, min_gap=0.22))
+                      extend=ext, extendfrac=0.05, ticks=sigma_ticks(norm, min_gap=min_gap))
     fmt = plt.FuncFormatter(lambda v, _p: f"{v:.2g}".replace("-", "−"))
     (cb.ax.xaxis if orientation == "horizontal" else cb.ax.yaxis).set_major_formatter(fmt)
     cb.ax.tick_params(labelsize=FS_S, width=0.8, length=3)
@@ -352,37 +383,41 @@ PHI_COL = {0.275: "#0072B2", 0.325: "#D55E00", 0.375: "#009E73", 0.425: "#CC79A7
 
 
 def panel_law_dots(ax, curves, p0, short=False):
-    """State law as in manuscript Figure 7(b): every saved sample a dot, colour = porosity.
-    Porosities are drawn widest spread first (at the back) so the narrower ones stay
-    visible in front of them, and the fit goes on last."""
+    """State law as in manuscript Figure 7(b) (sample_figures.py --v2): 15 measured samples
+    per run, the nearest to an even spacing in log SSA, none interpolated. Packings
+    whose exponent is farthest from the common one are drawn first, so the central
+    ones end up on top and stay visible; the fit goes on last."""
     phis = sorted({c[0] for c in curves})
-    spread = {}
-    for ph in phis:
-        res = np.concatenate([np.log10(c[4]) - p0 * np.log10(c[3]) for c in curves if c[0] == ph])
-        spread[ph] = float(np.std(res))
-    order = sorted(phis, key=lambda q: -spread[q])      # widest first
-    for z, ph in enumerate(order):
-        sel = [c for c in curves if c[0] == ph]
-        idx = lambda n: np.unique(np.linspace(0, n - 1, min(n, 70)).astype(int))   # ~70 dots per run
-        x = np.concatenate([c[3][idx(len(c[3]))] for c in sel])
-        y = np.concatenate([c[4][idx(len(c[4]))] for c in sel])
-        ax.plot(x, y, "o", ms=4.2, mfc=PHI_COL[ph], mec="white", mew=0.3, ls="none",
-                zorder=2 + z, rasterized=True)
+    per = defaultdict(list)                                  # (phi, seed) -> runs of all temperatures
+    for c in curves:
+        per[(c[0], c[2])].append((np.log10(c[3]), np.log10(c[4])))
+    p_of = {}
+    for k, L in per.items():
+        X = np.concatenate([l[0] for l in L]); Y = np.concatenate([l[1] for l in L])
+        p_of[k] = float(np.sum(X * Y) / np.sum(X * X))
+    for z, k in enumerate(sorted(per, key=lambda k: -abs(p_of[k] - p0))):   # widest of the fan first
+        for lx, ly in per[k]:
+            j = np.unique([int(np.argmin(np.abs(lx - g))) for g in np.linspace(lx.min(), lx.max(), 15)])
+            ax.plot(10 ** lx[j], 10 ** ly[j], "o", ms=5.0, mfc=PHI_COL[k[0]], mec="white", mew=0.4,
+                    ls="none", alpha=0.9, zorder=2 + 0.01 * z)
     xx = np.linspace(min(c[3].min() for c in curves), 1.0, 50)
     ax.plot(xx, xx ** p0, color=INK, lw=3.0, ls=(0, (5, 2.5)), zorder=20)
     ax.invert_xaxis()
-    ax.set_xlabel(r"specific surface area  SSA$\,/\,$SSA$_\mathrm{r}$", fontsize=FS)
+    ax.set_xlabel(r"specific surface area  SSA$\,/\,$SSA$_\mathrm{r}$" if not short else
+                  r"SSA$\,/\,$SSA$_\mathrm{r}$", fontsize=FS)
     ax.set_ylabel(r"$k_\mathrm{eff}\,/\,k_\mathrm{eff,r}$" if short else
                   r"conductivity  $k_\mathrm{eff}\,/\,k_\mathrm{eff,r}$", fontsize=FS)
-    h = [plt.Line2D([], [], marker="o", ls="none", ms=7, mfc=PHI_COL[q], mec="white",
-                    label=f"porosity {q:g}") for q in phis]
+    h = [plt.Line2D([], [], marker="o", ls="none", ms=7, mfc=PHI_COL[q], mec="white", label=f"{q:g}")
+         for q in phis]
     h.append(plt.Line2D([], [], color=INK, lw=3.0, ls=(0, (5, 2.5)),
                         label=rf"$\mathrm{{SSA}}^{{{p0:.2f}}}$".replace("-", "−")))
-    ax.legend(handles=h, fontsize=FS_T, frameon=False, loc="upper left", handletextpad=0.4,
-              labelspacing=0.25, borderaxespad=0.0)
+    ax.legend(handles=h, title="porosity", title_fontsize=FS_T, fontsize=FS_T, frameon=False,
+              loc="upper left", handletextpad=0.4, labelspacing=0.25, borderaxespad=0.0,
+              alignment="left")
     clean(ax)
-    print("  spread (std of log10 k residual), widest drawn first: "
-          + ", ".join(f"{q:g}: {spread[q]:.4f}" for q in order))
+    dev = sorted(((abs(v - p0), k) for k, v in p_of.items()), reverse=True)
+    print(f"  dots: 15 samples/run; drawn from the packing farthest from p0 = {p0:.3f} "
+          f"(|dp| = {dev[0][0]:.3f}, phi {dev[0][1][0]:g}) to the nearest ({dev[-1][0]:.3f})")
 
 
 def level_points(R, theta_ref=30.0):
@@ -396,7 +431,7 @@ def level_points(R, theta_ref=30.0):
     return [(ph, sd, float(np.mean(v))) for (ph, sd), v in sorted(per.items())]
 
 
-def panel_level(ax, pts, phi_fit=0.375):
+def panel_level(ax, pts, phi_fit=0.375, short=False):
     """Manuscript Figure 7(c): the reference conductivity against porosity."""
     phis = sorted({q[0] for q in pts})
     fx = np.array([q[0] for q in pts if q[0] <= phi_fit]); fy = np.log([q[2] for q in pts if q[0] <= phi_fit])
@@ -408,12 +443,14 @@ def panel_level(ax, pts, phi_fit=0.375):
     xx = np.linspace(phis[0] - 0.03, phis[-1] + 0.03, 20)
     ax.plot(xx, np.exp(lna + b * xx), color=INK, lw=3.0, ls=(0, (5, 2.5)), zorder=5)
     ax.set_yscale("log"); ax.set_xlim(xx[0], xx[-1])
-    ax.set_xticks(phis); ax.set_xticklabels([f"{q:g}" for q in phis], fontsize=FS_S)
+    tk = phis[::2] if short else phis
+    ax.set_xticks(tk); ax.set_xticklabels([f"{q:g}" for q in tk], fontsize=FS_S)
     ax.set_yticks([0.1, 0.2, 0.3]); ax.set_yticklabels(["0.1", "0.2", "0.3"])
     ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     ax.set_xlabel("porosity", fontsize=FS)
     ax.set_ylabel(r"$k_\mathrm{eff,r}\,/\,k_\mathrm{ice}$", fontsize=FS)
-    ax.text(0.97, 0.95, "fit: porosity ≤ 0.375\n(grey: not fitted)", transform=ax.transAxes, ha="right",
+    ax.text(0.97, 0.95, "fit: φ ≤ 0.375\n(grey: not fitted)" if short else
+            "fit: porosity ≤ 0.375\n(grey: not fitted)", transform=ax.transAxes, ha="right",
             va="top", fontsize=FS_T, color=MUTED)
     clean(ax)
     print(f"  level fit (phi <= {phi_fit}): k_r/k_ice = {np.exp(lna):.3f} exp({b:.2f} phi)")
@@ -673,7 +710,7 @@ def build(kind, R, a, hot, cold, seed_T=None):
     else:
         runs = dict(R[(a.phi, seed_T)])
         hl = {hot: ("A", C_SEED_A), cold: ("B", C_SEED_B)}
-    compact = "compact" in kind
+    compact = "compact" in kind or kind == "four_with_grid"
     days = (0.0, 10.0, 30.0) if compact else (0.0, 10.0, 19.4, 30.0)
     S = {T: snapshots(runs[T], days, a.stride) for T in (hot, cold)}
     marks = {T: [s_[4] for s_ in S[T]] for T in S}
@@ -698,6 +735,38 @@ def build(kind, R, a, hot, cold, seed_T=None):
             panel_law(ax, R, a.seed, hot, cold, a.phi, short)
         else:
             panel_ssa(ax, runs, hot, cold, marks, short, hl=hl)
+
+    if kind == "four_with_grid":                    # six microstructures at the left, four plots at the right
+        s, gap, top, bar_h = a.grid_snap_in, 0.08, 0.50, 1.30
+        W4 = a.width_in
+        H = top + 3 * s + 2 * gap + bar_h
+        fig = plt.figure(figsize=(W4, H)); F = lambda x, y, w, h: (x / W4, y / H, w / W4, h / H)
+        norm, ext = sigma_norm(S.values())
+        vapcm, icecm = centered_cmap(cmocean.cm.balance, norm), ice_alpha_cmap()
+        cols = [(tlabel(k), c, S[k]) for k, c in ((hot, C_WARM), (cold, C_COLD))]
+        y_bot, gw = snap_grid_T(fig, F, 0.06, H - top, s, gap, cols, norm, vapcm, icecm)
+        x_b = 0.06 + 0.50
+        colorbars(fig, fig.add_axes(F(x_b + 0.05, y_bot - 0.42, 0.95, 0.13)),
+                  fig.add_axes(F(x_b + 1.85, y_bot - 0.42, gw - 0.50 - 1.90, 0.13)),
+                  norm, vapcm, ext, "horizontal", min_gap=0.40)
+        x0p = 0.06 + gw + 0.15
+        l, mid, r_ = 1.05, 1.20, 0.22
+        pw = (W4 - x0p - l - mid - r_) / 2
+        gp, bt = 0.95, 0.80
+        ph = (H - 0.25 - bt - gp) / 2
+        y_top = bt + ph + gp
+        ax_t = fig.add_axes(F(x0p + l, y_top, pw, ph))
+        panel_time(ax_t, runs, hot, cold, marks, short=True, hl=hl)
+        ax_s = fig.add_axes(F(x0p + l + pw + mid, y_top, pw, ph))
+        panel_ssa(ax_s, runs, hot, cold, marks, short=True, hl=hl)
+        ax_s.set_xlabel(r"SSA$\,/\,$SSA$_0$", fontsize=FS)
+        ax_s.set_ylim(ax_t.get_ylim()); ax_s.set_ylabel(""); ax_s.tick_params(labelleft=False)
+        ax_s.spines["left"].set_visible(True)
+        curves, p0, sd, n = state_law(R)
+        print(f"  state law: exponent {p0:.3f} +- {sd:.3f} over {n} packings, {len(curves)} runs")
+        panel_law_dots(fig.add_axes(F(x0p + l, bt, pw, ph)), curves, p0, short=True)
+        panel_level(fig.add_axes(F(x0p + l + pw + mid, bt, pw, ph)), level_points(R), short=True)
+        return fig, (W4, H)
 
     if kind == "curves_four":                       # 2 x 2 plots: the two curves, then the SSA law
         W4, ph, rgap, top = a.width_in, a.plot_h, 1.05, 0.25
@@ -799,6 +868,8 @@ def main():
     ap.add_argument("--dpi", type=int, default=300)
     ap.add_argument("--font-scale", type=float, default=1.0,
                     help="multiply every type size (poster body text is 18 pt: use 1.2)")
+    ap.add_argument("--grid-snap-in", type=float, default=2.0,
+                    help="four_with_grid: side of each microstructure [in]")
     ap.add_argument("--plot-h", type=float, default=2.75,
                     help="height of the two plots in the stacked figure [in]")
     a = ap.parse_args()
