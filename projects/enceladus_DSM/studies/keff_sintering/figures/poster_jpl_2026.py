@@ -88,6 +88,7 @@ FOLDER = {
     "grid_only": "option1_ssa_collapse", "curves_ssa": "option1_ssa_collapse",
     "option2_compact": "option2_state_law", "curves_law": "option2_state_law",
     "curves_four": "option7_four_plots", "four_with_grid": "option7_four_plots",
+    "compact_four": "option7_four_plots",
     "heat_flow_row": "option3_heat_flow", "heat_flow_with_microstructure": "option3_heat_flow",
     "sintering_clock": "option4_sintering_clock",
     "porosity": "option5_porosity",
@@ -299,29 +300,43 @@ K_LABEL = {True: r"$k_\mathrm{eff}\,/\,k_\mathrm{eff,0}$",
 def panel_time(ax, runs, hot, cold, marks, short=False, hl=None):
     """k_eff/k_0 against time: the temperatures fan out. hl = {key: (label, colour)}
     replaces the temperature labels and colours (seed mode); the grey curves are
-    then left unlabelled."""
+    then left unlabelled. The curve-end labels are spread apart vertically so that
+    none overlap, however close the curves end."""
+    labels = []                                          # (y_data, text, colour, bold, dx)
     def end_label(r, T, col, bold, dx):
         if hl and T not in hl:
             return
-        ax.annotate(hl[T][0] if hl else tlabel(T), (r["td"][-1], r["kn"][-1]), xytext=(dx, 0),
-                    textcoords="offset points", color=col, va="center", ha="left",
-                    fontsize=FS_S if bold else FS_T, fontweight="bold" if bold else "normal",
-                    annotation_clip=False)
+        labels.append((r["kn"][-1], hl[T][0] if hl else tlabel(T), col, bold, dx))
     for T, r in sorted(runs.items()):
         if T in (hot, cold):
             continue
         ax.plot(r["td"], r["kn"], color=GREY, lw=1.4, zorder=2)
-        end_label(r, T, MUTED, False, 6)
+        end_label(r, T, MUTED, False, 12)
     for T, col in ((hot, hl[hot][1] if hl else C_WARM), (cold, hl[cold][1] if hl else C_COLD)):
         r = runs[T]
         ax.plot(r["td"], r["kn"], color=col, lw=3.2, zorder=4)
-        end_label(r, T, col, True, 14)                  # clear of the end marker
+        end_label(r, T, col, True, 16)                  # clear of the end marker
     pair_markers(ax, runs, hot, cold, marks, "td", xtol=0.15, hl=hl)
     # the axis stops at the data; the labels sit in the margin to its right
     ax.set_xlim(0, 30.3); ax.set_xticks([0, 10, 20, 30])
     ax.set_xlabel("time  [days]", fontsize=FS)
     ax.set_ylabel(K_LABEL[short], fontsize=FS)
     clean(ax)
+    ax.relim(); ax.autoscale_view(scalex=False)
+    x_end = max(r["td"][-1] for r in runs.values())
+    dpi = ax.figure.dpi
+    y_pt = np.array([ax.transData.transform((x_end, y))[1] * 72.0 / dpi for y, *_ in labels])
+    order = np.argsort(y_pt)
+    gap = 1.15 * max(FS_S, FS_T)                         # label height [pt]
+    new = y_pt[order].copy()
+    for i in range(1, len(new)):                         # push up, then re-centre on the originals
+        new[i] = max(new[i], new[i - 1] + gap)
+    new -= np.mean(new - y_pt[order])
+    shift = np.empty(len(labels)); shift[order] = new - y_pt[order]
+    for (y, txt, col, bold, dx), sh in zip(labels, shift):
+        ax.annotate(txt, (x_end, y), xytext=(dx, sh), textcoords="offset points", color=col,
+                    va="center", ha="left", fontsize=FS_S if bold else FS_T,
+                    fontweight="bold" if bold else "normal", annotation_clip=False)
 
 
 def panel_ssa(ax, runs, hot, cold, marks, short=False, hl=None):
@@ -382,7 +397,7 @@ def panel_law(ax, R, runs_hl, hot, cold, phi_sel, short=False):
 PHI_COL = {0.275: "#0072B2", 0.325: "#D55E00", 0.375: "#009E73", 0.425: "#CC79A7", 0.475: "#E6C229"}
 
 
-def panel_law_dots(ax, curves, p0, short=False):
+def panel_law_dots(ax, curves, p0, short=False, legend=True):
     """State law as in manuscript Figure 7(b) (sample_figures.py --v2): 15 measured samples
     per run, the nearest to an even spacing in log SSA, none interpolated. Packings
     whose exponent is farthest from the common one are drawn first, so the central
@@ -411,9 +426,10 @@ def panel_law_dots(ax, curves, p0, short=False):
          for q in phis]
     h.append(plt.Line2D([], [], color=INK, lw=3.0, ls=(0, (5, 2.5)),
                         label=rf"$\mathrm{{SSA}}^{{{p0:.2f}}}$".replace("-", "−")))
-    ax.legend(handles=h, title="porosity", title_fontsize=FS_T, fontsize=FS_T, frameon=False,
-              loc="upper left", handletextpad=0.4, labelspacing=0.25, borderaxespad=0.0,
-              alignment="left")
+    if legend:
+      ax.legend(handles=h, title="porosity", title_fontsize=FS_T, fontsize=FS_T, frameon=False,
+                loc="lower right" if short else "upper left", handletextpad=0.4, labelspacing=0.25,
+                borderaxespad=0.0, alignment="left")
     clean(ax)
     dev = sorted(((abs(v - p0), k) for k, v in p_of.items()), reverse=True)
     print(f"  dots: 15 samples/run; drawn from the packing farthest from p0 = {p0:.3f} "
@@ -431,7 +447,7 @@ def level_points(R, theta_ref=30.0):
     return [(ph, sd, float(np.mean(v))) for (ph, sd), v in sorted(per.items())]
 
 
-def panel_level(ax, pts, phi_fit=0.375, short=False):
+def panel_level(ax, pts, phi_fit=0.375, short=False, note=True):
     """Manuscript Figure 7(c): the reference conductivity against porosity."""
     phis = sorted({q[0] for q in pts})
     fx = np.array([q[0] for q in pts if q[0] <= phi_fit]); fy = np.log([q[2] for q in pts if q[0] <= phi_fit])
@@ -449,9 +465,10 @@ def panel_level(ax, pts, phi_fit=0.375, short=False):
     ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     ax.set_xlabel("porosity", fontsize=FS)
     ax.set_ylabel(r"$k_\mathrm{eff,r}\,/\,k_\mathrm{ice}$", fontsize=FS)
-    ax.text(0.97, 0.95, "fit: φ ≤ 0.375\n(grey: not fitted)" if short else
-            "fit: porosity ≤ 0.375\n(grey: not fitted)", transform=ax.transAxes, ha="right",
-            va="top", fontsize=FS_T, color=MUTED)
+    if note:
+        ax.text(0.97, 0.95, "fit: φ ≤ 0.375\n(grey: not fitted)" if short else
+                "fit: porosity ≤ 0.375\n(grey: not fitted)", transform=ax.transAxes, ha="right",
+                va="top", fontsize=FS_T, color=MUTED)
     clean(ax)
     print(f"  level fit (phi <= {phi_fit}): k_r/k_ice = {np.exp(lna):.3f} exp({b:.2f} phi)")
 
@@ -735,6 +752,50 @@ def build(kind, R, a, hot, cold, seed_T=None):
             panel_law(ax, R, a.seed, hot, cold, a.phi, short)
         else:
             panel_ssa(ax, runs, hot, cold, marks, short, hl=hl)
+
+    if kind == "compact_four":                      # option1_compact's grid at the left, then a 2 x 2 block of
+        gap, s = 0.08, a.compact_snap_in            # SQUARE plots: (time, SSA) | (SSA law, level)
+        W4, top = a.width_in, 0.40
+        bw = 0.34 + 3 * s + 2 * gap                  # grid width incl. row labels
+        x0p = 0.08 + bw + 0.20
+        l, mid, r_ = 1.00 * a.font_scale, 1.80 * a.font_scale, 0.15
+        pw = (W4 - x0p - l - mid - r_) / 2           # side of every square plot
+        gp, bt = 0.95, 0.80
+        H = max(top + 2 * s + gap + 1.42, 0.25 + 2 * pw + gp + bt)
+        fig = plt.figure(figsize=(W4, H)); F = lambda x, y, w, h: (x / W4, y / H, w / W4, h / H)
+        norm, ext = sigma_norm(S.values())
+        vapcm, icecm = centered_cmap(cmocean.cm.balance, norm), ice_alpha_cmap()
+        rows = ([(f"packing {hl[k][0]}", hl[k][1], S[k]) for k in (hot, cold)] if hl else
+                [(tlabel(hot), C_WARM, S[hot]), (tlabel(cold), C_COLD, S[cold])])
+        y_bot, bw_, _n, _v, _e = None, None, None, None, None
+        y_bot, bw_ = snap_grid(fig, F, 0.08, H - top, s, gap, rows, norm, vapcm, icecm)
+        x_s = 0.08 + 0.34
+        colorbars(fig, fig.add_axes(F(x_s + 0.05, y_bot - 0.30, 0.9, 0.13)),
+                  fig.add_axes(F(x_s + 1.45, y_bot - 0.30, bw_ - 0.34 - 1.55, 0.13)),
+                  norm, vapcm, ext, "horizontal", min_gap=0.40)
+        y_top = bt + pw + gp
+        ax_t = fig.add_axes(F(x0p + l, y_top, pw, pw))
+        panel_time(ax_t, runs, hot, cold, marks, short=True, hl=hl)
+        ax_s = fig.add_axes(F(x0p + l, bt, pw, pw))
+        panel_ssa(ax_s, runs, hot, cold, marks, short=True, hl=hl)
+        ax_s.set_xlabel(r"SSA$\,/\,$SSA$_0$", fontsize=FS)
+        curves, p0, sd, n = state_law(R)
+        print(f"  state law: exponent {p0:.3f} +- {sd:.3f} over {n} packings, {len(curves)} runs")
+        panel_law_dots(fig.add_axes(F(x0p + l + pw + mid, y_top, pw, pw)), curves, p0, short=True,
+                       legend=False)
+        panel_level(fig.add_axes(F(x0p + l + pw + mid, bt, pw, pw)), level_points(R), short=True,
+                    note=False)
+        # one key for both right-hand plots, in the free space under the colour bars
+        phis_all = sorted(PHI_COL)
+        h = [plt.Line2D([], [], marker="o", ls="none", ms=8, mfc=PHI_COL[q], mec="white", label=f"{q:g}")
+             for q in phis_all]
+        h.append(plt.Line2D([], [], color=INK, lw=3.0, ls=(0, (5, 2.5)),
+                            label=rf"fit: $\mathrm{{SSA}}^{{{p0:.2f}}}$ and $k_\mathrm{{eff,r}}(\varphi\leq0.375)$"
+                            .replace("-", "−")))
+        fig.legend(handles=h, title="porosity of the packing (grey band: not fitted)", title_fontsize=FS_T,
+                   fontsize=FS_T, frameon=False, loc="lower left", bbox_to_anchor=F(0.08 + 0.34, 0.05, 0, 0)[:2],
+                   ncol=3, columnspacing=1.0, handletextpad=0.3, labelspacing=0.3, alignment="left")
+        return fig, (W4, H)
 
     if kind == "four_with_grid":                    # six microstructures at the left, four plots at the right
         s, gap, top, bar_h = a.grid_snap_in, 0.08, 0.50, 1.30
