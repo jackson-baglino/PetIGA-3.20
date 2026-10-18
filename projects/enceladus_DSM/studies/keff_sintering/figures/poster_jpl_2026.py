@@ -87,6 +87,7 @@ FOLDER = {
     "option1_stacked": "option1_ssa_collapse", "option1_compact": "option1_ssa_collapse",
     "grid_only": "option1_ssa_collapse", "curves_ssa": "option1_ssa_collapse",
     "option2_compact": "option2_state_law", "curves_law": "option2_state_law",
+    "curves_four": "option7_four_plots",
     "heat_flow_row": "option3_heat_flow", "heat_flow_with_microstructure": "option3_heat_flow",
     "sintering_clock": "option4_sintering_clock",
     "porosity": "option5_porosity",
@@ -344,6 +345,78 @@ def panel_law(ax, R, runs_hl, hot, cold, phi_sel, short=False):
     clean(ax)
     print(f"  state law: exponent {p0:.3f} +- {sd:.3f} over {n} packings, {len(curves)} runs")
     return p0, sd
+
+
+# Manuscript Figure 7 palette (Okabe-Ito), one colour per porosity
+PHI_COL = {0.275: "#0072B2", 0.325: "#D55E00", 0.375: "#009E73", 0.425: "#CC79A7", 0.475: "#E6C229"}
+
+
+def panel_law_dots(ax, curves, p0, short=False):
+    """State law as in manuscript Figure 7(b): every saved sample a dot, colour = porosity.
+    Porosities are drawn widest spread first (at the back) so the narrower ones stay
+    visible in front of them, and the fit goes on last."""
+    phis = sorted({c[0] for c in curves})
+    spread = {}
+    for ph in phis:
+        res = np.concatenate([np.log10(c[4]) - p0 * np.log10(c[3]) for c in curves if c[0] == ph])
+        spread[ph] = float(np.std(res))
+    order = sorted(phis, key=lambda q: -spread[q])      # widest first
+    for z, ph in enumerate(order):
+        sel = [c for c in curves if c[0] == ph]
+        idx = lambda n: np.unique(np.linspace(0, n - 1, min(n, 70)).astype(int))   # ~70 dots per run
+        x = np.concatenate([c[3][idx(len(c[3]))] for c in sel])
+        y = np.concatenate([c[4][idx(len(c[4]))] for c in sel])
+        ax.plot(x, y, "o", ms=4.2, mfc=PHI_COL[ph], mec="white", mew=0.3, ls="none",
+                zorder=2 + z, rasterized=True)
+    xx = np.linspace(min(c[3].min() for c in curves), 1.0, 50)
+    ax.plot(xx, xx ** p0, color=INK, lw=3.0, ls=(0, (5, 2.5)), zorder=20)
+    ax.invert_xaxis()
+    ax.set_xlabel(r"specific surface area  SSA$\,/\,$SSA$_\mathrm{r}$", fontsize=FS)
+    ax.set_ylabel(r"$k_\mathrm{eff}\,/\,k_\mathrm{eff,r}$" if short else
+                  r"conductivity  $k_\mathrm{eff}\,/\,k_\mathrm{eff,r}$", fontsize=FS)
+    h = [plt.Line2D([], [], marker="o", ls="none", ms=7, mfc=PHI_COL[q], mec="white",
+                    label=f"porosity {q:g}") for q in phis]
+    h.append(plt.Line2D([], [], color=INK, lw=3.0, ls=(0, (5, 2.5)),
+                        label=rf"$\mathrm{{SSA}}^{{{p0:.2f}}}$".replace("-", "−")))
+    ax.legend(handles=h, fontsize=FS_T, frameon=False, loc="upper left", handletextpad=0.4,
+              labelspacing=0.25, borderaxespad=0.0)
+    clean(ax)
+    print("  spread (std of log10 k residual), widest drawn first: "
+          + ", ".join(f"{q:g}: {spread[q]:.4f}" for q in order))
+
+
+def level_points(R, theta_ref=30.0):
+    """[(phi, seed, k_eff,r / k_ice)] one per packing (temperatures averaged), all porosities."""
+    per = defaultdict(list)
+    for (ph, T), d in sorted(R.items()):
+        for seed, r in d.items():
+            if r["th"][-1] < 1.5 * theta_ref:
+                continue
+            per[(ph, seed)].append(np.interp(theta_ref, r["th"], r["kiso"]) / K_ICE)
+    return [(ph, sd, float(np.mean(v))) for (ph, sd), v in sorted(per.items())]
+
+
+def panel_level(ax, pts, phi_fit=0.375):
+    """Manuscript Figure 7(c): the reference conductivity against porosity."""
+    phis = sorted({q[0] for q in pts})
+    fx = np.array([q[0] for q in pts if q[0] <= phi_fit]); fy = np.log([q[2] for q in pts if q[0] <= phi_fit])
+    b, lna = np.polyfit(fx, fy, 1)
+    ax.axvspan(phi_fit + 0.025, phis[-1] + 0.03, color="#efefef", lw=0, zorder=0)
+    for ph in phis:
+        y = [q[2] for q in pts if q[0] == ph]
+        ax.plot([ph] * len(y), y, "o", ms=8, mfc=PHI_COL[ph], mec="white", mew=0.8, ls="none", zorder=3)
+    xx = np.linspace(phis[0] - 0.03, phis[-1] + 0.03, 20)
+    ax.plot(xx, np.exp(lna + b * xx), color=INK, lw=3.0, ls=(0, (5, 2.5)), zorder=5)
+    ax.set_yscale("log"); ax.set_xlim(xx[0], xx[-1])
+    ax.set_xticks(phis); ax.set_xticklabels([f"{q:g}" for q in phis], fontsize=FS_S)
+    ax.set_yticks([0.1, 0.2, 0.3]); ax.set_yticklabels(["0.1", "0.2", "0.3"])
+    ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax.set_xlabel("porosity", fontsize=FS)
+    ax.set_ylabel(r"$k_\mathrm{eff,r}\,/\,k_\mathrm{ice}$", fontsize=FS)
+    ax.text(0.97, 0.95, "fit: porosity ≤ 0.375\n(grey: not fitted)", transform=ax.transAxes, ha="right",
+            va="top", fontsize=FS_T, color=MUTED)
+    clean(ax)
+    print(f"  level fit (phi <= {phi_fit}): k_r/k_ice = {np.exp(lna):.3f} exp({b:.2f} phi)")
 
 
 # ---------------------------------------------------------------------------
@@ -625,6 +698,22 @@ def build(kind, R, a, hot, cold, seed_T=None):
             panel_law(ax, R, a.seed, hot, cold, a.phi, short)
         else:
             panel_ssa(ax, runs, hot, cold, marks, short, hl=hl)
+
+    if kind == "curves_four":                       # 2 x 2 plots: the two curves, then the SSA law
+        W4, ph, rgap, top = a.width_in, a.plot_h, 1.05, 0.25
+        bot = 0.80
+        H = top + 2 * ph + rgap + bot
+        fig = plt.figure(figsize=(W4, H)); F = lambda x, y, w, h: (x / W4, y / H, w / W4, h / H)
+        l, mid, r_ = 1.15, 1.95, 0.30
+        pw = (W4 - l - mid - r_) / 2
+        y_top = bot + ph + rgap
+        panel_time(fig.add_axes(F(l, y_top, pw, ph)), runs, hot, cold, marks, hl=hl)
+        panel_ssa(fig.add_axes(F(l + pw + mid, y_top, pw, ph)), runs, hot, cold, marks, hl=hl)
+        curves, p0, sd, n = state_law(R)
+        print(f"  state law: exponent {p0:.3f} +- {sd:.3f} over {n} packings, {len(curves)} runs")
+        panel_law_dots(fig.add_axes(F(l, bot, pw, ph)), curves, p0)
+        panel_level(fig.add_axes(F(l + pw + mid, bot, pw, ph)), level_points(R))
+        return fig, (W4, H)
 
     if kind.startswith("curves"):                   # the two plots alone, side by side
         Wc, ph, bot, top = a.curves_width_in, 2.55, 0.68, 0.22
