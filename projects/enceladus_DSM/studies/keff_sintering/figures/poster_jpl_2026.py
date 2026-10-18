@@ -393,8 +393,16 @@ def panel_law(ax, R, runs_hl, hot, cold, phi_sel, short=False):
     return p0, sd
 
 
-# Manuscript Figure 7 palette (Okabe-Ito), one colour per porosity
-PHI_COL = {0.275: "#0072B2", 0.325: "#D55E00", 0.375: "#009E73", 0.425: "#CC79A7", 0.475: "#E6C229"}
+# One hue (purple), dark to light with porosity: unlike the manuscript's Okabe-Ito palette it
+# cannot be confused with the orange / blue of the warm and cold runs in the same figure.
+PHI_COL = dict(zip((0.275, 0.325, 0.375, 0.425, 0.475),
+                   ("#2A0B55", "#582A98", "#8A5DC0", "#AE87D3", "#C8AAE2")))
+
+
+def letter(ax, txt, dx=0.0, dy=0.04):
+    """Panel letter above the top-left corner of an axes."""
+    ax.text(dx, 1 + dy, txt, transform=ax.transAxes, ha="left", va="bottom", fontsize=FS + 1,
+            fontweight="bold", color=INK)
 
 
 def panel_law_dots(ax, curves, p0, short=False, legend=True):
@@ -761,7 +769,7 @@ def build(kind, R, a, hot, cold, seed_T=None):
         l, mid, r_ = 1.00 * a.font_scale, 1.80 * a.font_scale, 0.15
         pw = (W4 - x0p - l - mid - r_) / 2           # side of every square plot
         gp, bt = 0.95, 0.80
-        H = max(top + 2 * s + gap + 1.42, 0.25 + 2 * pw + gp + bt)
+        H = max(top + 2 * s + gap + 1.42, 0.40 + 2 * pw + gp + bt)
         fig = plt.figure(figsize=(W4, H)); F = lambda x, y, w, h: (x / W4, y / H, w / W4, h / H)
         norm, ext = sigma_norm(S.values())
         vapcm, icecm = centered_cmap(cmocean.cm.balance, norm), ice_alpha_cmap()
@@ -769,22 +777,24 @@ def build(kind, R, a, hot, cold, seed_T=None):
                 [(tlabel(hot), C_WARM, S[hot]), (tlabel(cold), C_COLD, S[cold])])
         y_bot, bw_, _n, _v, _e = None, None, None, None, None
         y_bot, bw_ = snap_grid(fig, F, 0.08, H - top, s, gap, rows, norm, vapcm, icecm)
+        fig.text(*F(0.02, H - 0.17, 0, 0)[:2], "(a)", ha="left", va="center", fontsize=FS + 1,
+                 fontweight="bold", color=INK)
         x_s = 0.08 + 0.34
         colorbars(fig, fig.add_axes(F(x_s + 0.05, y_bot - 0.30, 0.9, 0.13)),
                   fig.add_axes(F(x_s + 1.45, y_bot - 0.30, bw_ - 0.34 - 1.55, 0.13)),
                   norm, vapcm, ext, "horizontal", min_gap=0.40)
         y_top = bt + pw + gp
         ax_t = fig.add_axes(F(x0p + l, y_top, pw, pw))
-        panel_time(ax_t, runs, hot, cold, marks, short=True, hl=hl)
+        panel_time(ax_t, runs, hot, cold, marks, short=True, hl=hl); letter(ax_t, "(b)", dx=-0.62)
         ax_s = fig.add_axes(F(x0p + l, bt, pw, pw))
-        panel_ssa(ax_s, runs, hot, cold, marks, short=True, hl=hl)
+        panel_ssa(ax_s, runs, hot, cold, marks, short=True, hl=hl); letter(ax_s, "(c)", dx=-0.62)
         ax_s.set_xlabel(r"SSA$\,/\,$SSA$_0$", fontsize=FS)
         curves, p0, sd, n = state_law(R)
         print(f"  state law: exponent {p0:.3f} +- {sd:.3f} over {n} packings, {len(curves)} runs")
-        panel_law_dots(fig.add_axes(F(x0p + l + pw + mid, y_top, pw, pw)), curves, p0, short=True,
-                       legend=False)
-        panel_level(fig.add_axes(F(x0p + l + pw + mid, bt, pw, pw)), level_points(R), short=True,
-                    note=False)
+        ax_d = fig.add_axes(F(x0p + l + pw + mid, y_top, pw, pw))
+        panel_law_dots(ax_d, curves, p0, short=True, legend=False); letter(ax_d, "(d)", dx=-0.62)
+        ax_e = fig.add_axes(F(x0p + l + pw + mid, bt, pw, pw))
+        panel_level(ax_e, level_points(R), short=True, note=False); letter(ax_e, "(e)", dx=-0.62)
         # one key for both right-hand plots, in the free space under the colour bars
         phis_all = sorted(PHI_COL)
         h = [plt.Line2D([], [], marker="o", ls="none", ms=8, mfc=PHI_COL[q], mec="white", label=f"{q:g}")
@@ -792,7 +802,7 @@ def build(kind, R, a, hot, cold, seed_T=None):
         h.append(plt.Line2D([], [], color=INK, lw=3.0, ls=(0, (5, 2.5)),
                             label=rf"fit: $\mathrm{{SSA}}^{{{p0:.2f}}}$ and $k_\mathrm{{eff,r}}(\varphi\leq0.375)$"
                             .replace("-", "−")))
-        fig.legend(handles=h, title="porosity of the packing (grey band: not fitted)", title_fontsize=FS_T,
+        fig.legend(handles=h, title="porosity of the packing in (d), (e)  (grey band: not fitted)", title_fontsize=FS_T,
                    fontsize=FS_T, frameon=False, loc="lower left", bbox_to_anchor=F(0.08 + 0.34, 0.05, 0, 0)[:2],
                    ncol=3, columnspacing=1.0, handletextpad=0.3, labelspacing=0.3, alignment="left")
         return fig, (W4, H)
