@@ -1,6 +1,21 @@
 
 ---
 
+**Session ended:** 2026-10-18 09:58:30
+
+
+---
+
+**Session ended:** 2026-10-18 09:53:15
+
+
+---
+
+**Session ended:** 2026-10-18 09:47:52
+
+
+---
+
 **Session ended:** 2026-10-18 09:43:02
 
 
@@ -54,6 +69,7 @@
 - Wave 1 literature run (28 papers, 355 claims independently checked: 319 supported, 36 partial, 0 unsupported; 15 records flagged for review at the 0.90 gate) -> research/Review/memos/wave1_report.md. a2 = 0.1581: not printed in K&P or M&F main text (M&F SI not in library); check against Karma-Rappel suggests it is the right size; code-comment claim of 'identically null' probably wrong. fetch_oa now tries all legal open routes (27/43 DOIs); ingest_pdfs files papers the user downloads through Caltech/Cornell access.
 - Grain pair with sediment cores (user's worst-bubble configuration) added to the diagnostic branch (sed_core_pair): bounded runs clean to 1 h, unbounded drifts negative (-0.008 at 30 s); day-long and driven runs in progress.
 - Session 5 (2026-10-18): course repo now also carries planning/, proposals/, literature-review/ (records, memos, waves, REVIEW_SHEET) and course/ as snapshots (export_course.sh; PDFs, extracted text, instructor material excluded; home paths scrubbed); README states it is a synchronized export. Image-check agent built and run on 29 records (475 items: 326 confirmed, 148 corrected of which 100 were empty-equation transcriptions, 1 unreadable); review sheet = 95 items. Moure-Fu SI read: a2 = 0.1581 is the equal-diffusivity thermal constant; complete formula reproduces Karma-Rappel 0.6267 and gives 0.15667 for [0,1]; one-sided vapor channel correction is exactly 0 (Planning/13). Bubble reproduced in the grain pair with sediment cores (bounded and unbounded); curvature mismatch mechanism derived (Planning/08). 4-hour fine-output runs T37-T40 still running on the diag worktree.
+- Session 5 correction: the grain-pair 'bubble' was RETRACTED. It was the grain's far side retreating past my 6-eps test depth (sintering: far side -1.7 to -2.8 um, contact side +1.3 to +1.9 um); no air enclosed by ice in 9 runs. Real findings kept: negative-air overshoot at curved ice-sediment contacts (curvature mechanism, 1/R scaling); sintering rate not converged in dt (dtmax 200 s = 87 tau_sub gives 40-60 % faster rates than 2 tau_sub; rank count alone changes it 14 %). air_lim 1e-3/1e-2 did not matter. The remembered bubble is not reproduced in the Effort-2 kernel; next test is the old configuration on the archive/spurious-ice-sed-air-penalty tag.
 ---
 
 
