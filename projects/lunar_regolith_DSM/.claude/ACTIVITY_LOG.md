@@ -1,3 +1,47 @@
+## 2026-10-18 (later) — Math lane built and exercised
+
+- Formulation redo: wrote Planning docs 14 (formulation, test ladder) and 15 (agent catalog); user's final ice equation (Approach 2, with the Lambda triple term) re-derived independently by the lane and matches.
+- Branch agent/math-lane (worktree ~/PetIGA-3.20-math, not merged): sympy_check (safe parser, derivation checks, 9 known-answer tests), math agents (Sonnet spec/deriver/scribe, Opus adversary), driver run_lane.py with trusted @definitions, final-tie rule, blind Opus replicate, seeded-error test.
+- Known-answer runs: a1=5, Karma-Rappel a2=47/75 (published 0.6267), beta-elimination equation (matches user's); first one-sided thermal-channel pass (c2): vapor eps/D term zero, equal-conductivity limit 47/60; unequal-conductivity terms still open.
+- Fixed three checker bugs found by the tests (vacuous numeric pass, pi name clash, Derivative of sums).
+
+---
+
+
+---
+
+**Session ended:** 2026-10-18 13:29:24
+
+
+---
+
+**Session ended:** 2026-10-18 13:18:23
+
+
+---
+
+**Session ended:** 2026-10-18 13:16:08
+
+
+---
+
+**Session ended:** 2026-10-18 12:47:05
+
+
+---
+
+**Session ended:** 2026-10-18 12:33:30
+
+
+---
+
+**Session ended:** 2026-10-18 12:23:30
+
+
+---
+
+**Session ended:** 2026-10-18 11:45:24
+
 
 ---
 
