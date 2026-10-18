@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import os
 import re
 import urllib.parse
 import urllib.request
@@ -47,7 +48,7 @@ def locate(quote: str, page: int, pages_norm: dict[int, str]) -> tuple[str, int 
 def check_doi(doi: str, title: str) -> dict:
     try:
         url = "https://api.crossref.org/works/" + urllib.parse.quote(doi)
-        req = urllib.request.Request(url, headers={"User-Agent": "lit-verify/0.1 (mailto:jbaglino@caltech.edu)"})
+        req = urllib.request.Request(url, headers={"User-Agent": "lit-verify/0.1" + (f" (mailto:{os.environ['LIT_CONTACT_EMAIL']})" if os.environ.get("LIT_CONTACT_EMAIL") else "")})
         m = json.load(urllib.request.urlopen(req, timeout=20))["message"]
         t = (m.get("title") or [""])[0]
         sim = difflib.SequenceMatcher(None, norm(t), norm(title)).ratio()
