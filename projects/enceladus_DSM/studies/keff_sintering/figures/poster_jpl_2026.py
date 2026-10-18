@@ -672,7 +672,7 @@ def build(kind, R, a, hot, cold, seed_T=None):
     fig.text(*F(x_s, 0.22, 0, 0)[:2], note.replace("  ·  porosity", "\nporosity"), fontsize=FS_T - 1,
              color=MUTED, ha="left", va="center", linespacing=1.3)
     xl = 0.08 + bw + 0.92
-    pw = W - xl - 0.78                              # 0.78: the curve-end labels
+    pw = W - xl - (0.78 * a.font_scale + 0.2)       # room for the curve-end labels
     b0, g_ = 0.66, 0.78
     ph = (H - b0 - g_ - 0.16) / 2
     panel_time(fig.add_axes(F(xl, b0 + ph + g_, pw, ph)), runs, hot, cold, marks, short=True, hl=hl)
