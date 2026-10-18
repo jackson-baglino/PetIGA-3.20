@@ -1,6 +1,11 @@
 
 ---
 
+**Session ended:** 2026-10-18 10:51:57
+
+
+---
+
 **Session ended:** 2026-10-18 09:58:30
 
 
@@ -70,6 +75,7 @@
 - Grain pair with sediment cores (user's worst-bubble configuration) added to the diagnostic branch (sed_core_pair): bounded runs clean to 1 h, unbounded drifts negative (-0.008 at 30 s); day-long and driven runs in progress.
 - Session 5 (2026-10-18): course repo now also carries planning/, proposals/, literature-review/ (records, memos, waves, REVIEW_SHEET) and course/ as snapshots (export_course.sh; PDFs, extracted text, instructor material excluded; home paths scrubbed); README states it is a synchronized export. Image-check agent built and run on 29 records (475 items: 326 confirmed, 148 corrected of which 100 were empty-equation transcriptions, 1 unreadable); review sheet = 95 items. Moure-Fu SI read: a2 = 0.1581 is the equal-diffusivity thermal constant; complete formula reproduces Karma-Rappel 0.6267 and gives 0.15667 for [0,1]; one-sided vapor channel correction is exactly 0 (Planning/13). Bubble reproduced in the grain pair with sediment cores (bounded and unbounded); curvature mismatch mechanism derived (Planning/08). 4-hour fine-output runs T37-T40 still running on the diag worktree.
 - Session 5 correction: the grain-pair 'bubble' was RETRACTED. It was the grain's far side retreating past my 6-eps test depth (sintering: far side -1.7 to -2.8 um, contact side +1.3 to +1.9 um); no air enclosed by ice in 9 runs. Real findings kept: negative-air overshoot at curved ice-sediment contacts (curvature mechanism, 1/R scaling); sintering rate not converged in dt (dtmax 200 s = 87 tau_sub gives 40-60 % faster rates than 2 tau_sub; rank count alone changes it 14 %). air_lim 1e-3/1e-2 did not matter. The remembered bubble is not reproduced in the Effort-2 kernel; next test is the old configuration on the archive/spurious-ice-sed-air-penalty tag.
+- Session 6 (2026-10-18): agent branch merged into main locally (agentic/ and .claude/agents now in the working directory); proposals folder dropped from the course repo (synced, 0bbb680); review scratch folder + daily launchd cleanup (14 days, KEEP file) + ParaView converter (to_vtk.py, XML .vtr + .pvd, verified in pvpython) + figures.py; snapshots show the 'bubble' was sintering. Moure-Fu SI read (a2). Solver alpha_c = 8.0e-3 (beta_sub0 9.9e5), tau_sub 2.3 s, dtmax 200 s = 87 tau; d0_sub0 1e-7 m vs physical 9.8e-10 in mesh_params (to reconcile). dt-convergence runs T47-T49 (dtmax 2.3/1.15/0.575 s) running on the diag worktree.
 ---
 
 
