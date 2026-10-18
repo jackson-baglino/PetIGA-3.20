@@ -1,0 +1,6 @@
+[
+ {"doi": "10.1103/6jb2-wthl", "topic": "R1", "why": "Ji and Karma 2026, Phys. Rev. E 113, 035503: thin-interface model with anti-trapping for ice-water (freeze casting); the user's recollection of the recent Karma one-sided + anti-trapping paper. PDF in Literature/6jb2-wthl.pdf (identity checked from page 1)."},
+ {"doi": "10.1021/acs.jpcc.4c06637", "topic": "R5", "why": "Johnson et al. 2025, J. Phys. Chem. C: icy lunar regolith simulants (required by the user). Record already written."},
+ {"doi": "10.1103/physreve.79.031502", "topic": "R1", "why": "Kaempfer and Plapp 2009 (model origin). Record already written."},
+ {"doi": "10.1021/acs.cgd.4c00539", "topic": "R3", "why": "Moure and Fu 2024 (non-variational three-phase model). Record already written."}
+]

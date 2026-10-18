@@ -1,0 +1,28 @@
+{
+ "R1": [
+  "Does the model use one-sided or two-sided diffusion (is a diffusion coefficient zero in one phase)?",
+  "Is an anti-trapping current used or analysed? State its form if given.",
+  "Which thin-interface correction (kinetic coefficient, interface stretching, surface diffusion, chemical-potential jump) is derived, and for which diffusion setup?",
+  "What expansion order and which small parameter does the matched-asymptotic analysis use?",
+  "What conditions on eps (interface width) relative to physical lengths does the analysis require?"],
+ "R2": [
+  "Which vapor transport law is used (Fickian, Knudsen diffusion, free-molecular/view-factor, kinetic theory)? Give the effective diffusivity or flux expression.",
+  "What Knudsen number or mean free path is reported, and for which pore size, temperature and pressure?",
+  "Is a Hertz-Knudsen or condensation/sticking coefficient used? What value and what temperature dependence?",
+  "Does the paper compare transport laws, and which overestimates or underestimates flux?"],
+ "R3": [
+  "Is the model derived from a free energy, a grand potential or an entropy functional? Write the functional or say it is not given.",
+  "Does the paper state that a variational formulation fails or is undesirable, and why?",
+  "How is the sum constraint on phases or the non-negativity of a derived phase handled?",
+  "Is non-negative entropy production or a Lyapunov property shown?"],
+ "R4": [
+  "Is a contact angle or surface-energy ratio measured or prescribed? Give values, materials and temperatures.",
+  "How are triple junctions or a third phase handled in the phase-field model (potential terms, penalties, bounds)?",
+  "Are spurious third-phase layers at a binary interface reported, and how are they suppressed?"],
+ "R5": [
+  "What microstructure, grain size, porosity or ice fraction is reported for icy regolith or simulants?",
+  "What temperatures, vapor pressures or gradients define the lunar conditions studied?",
+  "Is a sintering, sublimation or neck-growth timescale given?"],
+ "R6": ["Is surface diffusion on ice treated? Give coefficients, activation energies and temperature range."],
+ "R7": ["Which surrogate or ML method is used, with how many simulations, and what accuracy on held-out cases?"]
+}

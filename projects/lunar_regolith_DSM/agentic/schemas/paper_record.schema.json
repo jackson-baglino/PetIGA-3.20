@@ -1,0 +1,232 @@
+{
+  "title": "Paper record returned by the paper-extractor worker",
+  "type": "object",
+  "required": [
+    "reasoning",
+    "paper",
+    "problem",
+    "pages_read",
+    "claims",
+    "probes",
+    "equations",
+    "numbers",
+    "relevance_to_us",
+    "confidence"
+  ],
+  "properties": {
+    "reasoning": {
+      "type": "string",
+      "maxLength": 700,
+      "description": "At most 80 words, written first: how the paper is organised and where the answers to the probes are."
+    },
+    "paper": {
+      "type": "object",
+      "required": [
+        "title",
+        "year"
+      ],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "year": {
+          "type": "integer"
+        },
+        "venue": {
+          "type": "string"
+        },
+        "doi": {
+          "type": "string"
+        }
+      }
+    },
+    "problem": {
+      "type": "string"
+    },
+    "pages_read": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "description": "Every page number of the supplied text that you read."
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "claim",
+          "page",
+          "quote",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "claim": {
+            "type": "string"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "quote": {
+            "type": "string",
+            "description": "Verbatim, contiguous, at most 25 words, copied from the supplied text of that page."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "fact",
+              "number",
+              "equation",
+              "method",
+              "limitation",
+              "result"
+            ]
+          }
+        }
+      }
+    },
+    "probes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "qid",
+          "question",
+          "answer",
+          "status"
+        ],
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "supported",
+              "contradicted",
+              "not_stated",
+              "unclear"
+            ]
+          },
+          "page": {
+            "type": "integer"
+          },
+          "quote": {
+            "type": "string"
+          },
+          "qid": {
+            "type": "string",
+            "description": "The probe id given in the prompt, e.g. P3."
+          }
+        }
+      }
+    },
+    "equations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "page",
+          "role",
+          "text_layer_ok"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "latex": {
+            "type": "string"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "role": {
+            "type": "string"
+          },
+          "text_layer_ok": {
+            "type": "boolean",
+            "description": "false if the supplied text for this equation is garbled, so it must be checked on the page image."
+          }
+        }
+      }
+    },
+    "numbers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "quantity",
+          "value",
+          "unit",
+          "page"
+        ],
+        "properties": {
+          "quantity": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "quote": {
+            "type": "string"
+          },
+          "text_layer_ok": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validity": {
+      "type": "string"
+    },
+    "key_results": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "relevance_to_us": {
+      "type": "string"
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    }
+  }
+}
