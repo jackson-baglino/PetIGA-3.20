@@ -31,13 +31,17 @@ def parse_agent(name: str) -> dict:
 
 
 def call_claude(agent: str, user_text: str, *, model: str | None = None, schema: dict | None = None,
-                label: str = "", timeout: int = 1800) -> tuple[object, dict]:
+                label: str = "", timeout: int = 1800, tools: str = "", add_dirs: list | None = None) -> tuple[object, dict]:
     """Run one headless worker. Returns (parsed_output, usage_dict). Raises RuntimeError on failure."""
     a = parse_agent(agent)
     m = model or a["model"]
     CLEAN_CWD.mkdir(parents=True, exist_ok=True)
-    cmd = ["claude", "-p", "--model", m, "--output-format", "json", "--no-session-persistence", "--tools", "",
+    cmd = ["claude", "-p", "--model", m, "--output-format", "json", "--no-session-persistence", "--tools", tools,
            "--strict-mcp-config", "--setting-sources", "", "--disable-slash-commands", "--system-prompt", a["system"]]
+    if tools:                                    # e.g. "Read" for the image checker: only that tool, only these directories
+        cmd += ["--allowed-tools", tools, "--permission-mode", "dontAsk"]
+        for d in add_dirs or []:
+            cmd += ["--add-dir", str(d)]
     if schema is not None:
         cmd += ["--json-schema", json.dumps(schema)]
     t0 = time.time()

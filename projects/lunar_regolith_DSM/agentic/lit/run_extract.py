@@ -60,15 +60,26 @@ def md_record(slug, rec, ver):
                  f"{mark.get(cv[c['id']]['status'], cv[c['id']]['status'])}")
     L += ["", "## Equations"]
     for e in rec["equations"]:
-        L.append(f"- {e['label']} (p. {e['page']}, {e['role']}){' [IMAGE CHECK]' if not e['text_layer_ok'] else ''}: {e.get('latex', '')}")
+        st = e.get("image_status")
+        tag = f" [IMAGE: {st}]" if st else (" [IMAGE CHECK PENDING]" if not e["text_layer_ok"] else "")
+        L.append(f"- {e['label']} (p. {e['page']}, {e['role']}){tag}: {e.get('latex_image') or e.get('latex', '')}")
     L += ["", "## Numbers"]
     for n in rec["numbers"]:
-        L.append(f"- {n['quantity']}: {n['value']} {n['unit']} (p. {n['page']}){' [IMAGE CHECK]' if not n.get('text_layer_ok', True) else ''}")
+        st = n.get("image_status")
+        tag = f" [IMAGE: {st}]" if st else (" [IMAGE CHECK PENDING]" if not n.get("text_layer_ok", True) else "")
+        val = n.get("value_image") or f"{n['value']} {n['unit']}"
+        L.append(f"- {n['quantity']}: {val} (p. {n['page']}){tag}")
     for k, t in (("Assumptions", "assumptions"), ("Key results", "key_results"), ("Open questions", "open_questions")):
         if rec.get(t):
             L += ["", f"## {k}"] + [f"- {x}" for x in rec[t]]
-    L += ["", "## Relevance to us", rec["relevance_to_us"], "", f"## Image-check queue ({len(ver['image_queue'])})"]
-    L += [f"- p. {q['page']}: {q['what']}" for q in ver["image_queue"]]
+    L += ["", "## Relevance to us", rec["relevance_to_us"], ""]
+    ic = ver.get("image_check")
+    if ic:
+        L += [f"## Image check ({ic['model']}): {ic['counts']}"]
+        L += [f"- CORRECTED p. {c['page']} {c['id']}: was `{c['was'][:80]}` now `{c['now'][:120]}` ({c['note']})" for c in ic["corrections"]]
+        L += [f"- UNREADABLE p. {u['page']} {u['id']}: {u['note']}" for u in ic["unreadable"]]
+    else:
+        L += [f"## Image-check queue ({len(ver['image_queue'])}), not yet checked"] + [f"- p. {q['page']}: {q['what']}" for q in ver["image_queue"]]
     return "\n".join(L) + "\n"
 
 
