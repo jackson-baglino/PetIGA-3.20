@@ -643,7 +643,7 @@ def build(kind, R, a, hot, cold, seed_T=None):
         if kind == "grid_only":
             lower = 0.42
         else:
-            l, mid, r_, ph, bot = 0.95, 1.75, 0.20, 2.75, 0.68
+            l, mid, r_, ph, bot = 1.05, 1.95, 0.20, a.plot_h, 0.80
             lower = 0.42 + 0.45 + ph + bot
         H = top + 2 * s + gap + lower
         fig = plt.figure(figsize=(W, H)); F = lambda x, y, w, h: (x / W, y / H, w / W, h / H)
@@ -708,7 +708,13 @@ def main():
     ap.add_argument("--molaro-step", type=int, default=236, help="outline snapshot (t* + 78 min)")
     ap.add_argument("--validation-width-in", type=float, default=5.6)
     ap.add_argument("--dpi", type=int, default=300)
+    ap.add_argument("--font-scale", type=float, default=1.0,
+                    help="multiply every type size (poster body text is 18 pt: use 1.2)")
+    ap.add_argument("--plot-h", type=float, default=2.75,
+                    help="height of the two plots in the stacked figure [in]")
     a = ap.parse_args()
+    global FS, FS_S, FS_T
+    FS, FS_S, FS_T = (round(v * a.font_scale, 1) for v in (FS, FS_S, FS_T))
     plt.rcParams.update(POSTER_RC)
     R = load_campaign(a.root)
 

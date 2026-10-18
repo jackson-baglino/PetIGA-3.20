@@ -1,3 +1,12 @@
+## 2026-10-18 — JPL poster figure resized to the 11.38 x 13.4 in box
+
+- Test figures were 11.0 in wide and 3-9 in tall with 12-15 pt type, small against the box and the 18 pt body text.
+- poster_jpl_2026.py: new --font-scale (type sizes) and --plot-h (height of the two plots in option1_stacked).
+- Built option1_stacked_T-5_T-20 at 11.38 x 10.44 in (--width-in 11.38 --font-scale 1.25 --plot-h 3.7) into iCloud 2026-JPLPRD/test_figures_box_11.38x13.4/; about 3 in left for caption and bullets.
+- Drafted caption and bullets from the 10-15 manuscript (in the reply, not in a file).
+
+---
+
 ## 2026-10-16 — Outline: why small alpha_c gives t^(1/3); scope is rounded grains
 
 - Section 3.2 + Appendix B: attachment- vs gas-diffusion-limited neck growth (x^3 vs x^5), Kingery/Blackford/Hobbs & Mason sources; Bouvet 2024 grain-scale vs neck-scale reconciliation.
