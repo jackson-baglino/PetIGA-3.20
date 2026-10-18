@@ -393,10 +393,11 @@ def panel_law(ax, R, runs_hl, hot, cold, phi_sel, short=False):
     return p0, sd
 
 
-# One hue (purple), dark to light with porosity: unlike the manuscript's Okabe-Ito palette it
-# cannot be confused with the orange / blue of the warm and cold runs in the same figure.
+# One hue, dark to light with porosity: tints of the poster's own header navy (#253761), so it
+# matches the poster and stays apart from the saturated blue / orange of the cold and warm runs.
+# Poster-only; the manuscript keeps its Okabe-Ito palette.
 PHI_COL = dict(zip((0.275, 0.325, 0.375, 0.425, 0.475),
-                   ("#2A0B55", "#582A98", "#8A5DC0", "#AE87D3", "#C8AAE2")))
+                   ("#253761", "#46619F", "#7A90C0", "#A9B7D8", "#CDD6EA")))
 
 
 def letter(ax, txt, dx=0.0, dy=0.04):
