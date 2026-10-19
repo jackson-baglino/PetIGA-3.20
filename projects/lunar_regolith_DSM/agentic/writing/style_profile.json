@@ -1,0 +1,12 @@
+{
+ "sentences": 273,
+ "words": 6307,
+ "mean_sentence_words": 23.1,
+ "median_sentence_words": 21,
+ "p90_sentence_words": 34,
+ "share_over_35_words": 0.07,
+ "we_per_100_sentences": 40.7,
+ "I_per_100_sentences": 3.3,
+ "passive_per_100_sentences": 18.7,
+ "mean_paragraph_words": 134.2
+}
