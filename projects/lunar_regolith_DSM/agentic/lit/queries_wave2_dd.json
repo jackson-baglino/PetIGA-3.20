@@ -1,0 +1,18 @@
+{
+ "R8": [
+  "diffuse domain method solving PDEs in complex geometries phase field",
+  "smoothed boundary method phase-field complex geometries boundary conditions",
+  "diffuse domain approach Allen-Cahn Cahn-Hilliard boundary conditions on complex domains",
+  "phase-field contact angle on diffuse solid surface wall free energy smoothed boundary",
+  "diffuse domain method wetting moving contact line two-phase flow complex geometry",
+  "phase-field model solidification or sintering in porous medium fixed solid grains diffuse boundary",
+  "convergence analysis diffuse domain method matched asymptotic boundary condition Robin Neumann",
+  "ice sublimation deposition phase-field porous medium solid grains pore space"
+ ],
+ "R4": [
+  "multi-phase-field ghost phase third phase interface artifact suppression",
+  "phase-field three phase Young's law triple junction contact angle inert solid obstacle",
+  "multiphase field spurious third phase at two-phase interface Folch Plapp",
+  "phase field heterogeneous nucleation solid substrate contact angle ice"
+ ]
+}

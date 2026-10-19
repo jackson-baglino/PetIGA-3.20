@@ -20,6 +20,7 @@ KEYS = {
     "R2": r"knudsen|free.?molecular|rarefied|vapou?r (transport|diffusion|migration)|sublimation|cold trap|diffusion",
     "R3": r"grand.?potential|free.?entropy|variational|thermodynamically consistent|multi.?phase.?field",
     "R4": r"contact angle|wetting|nucleation|surface energy|triple|three.?phase",
+    "R8": r"diffuse.?domain|smoothed.?boundary|diffuse.?solid|complex geometr|embedded boundary|immersed boundary|ghost phase|pore.?space",
 }
 
 
