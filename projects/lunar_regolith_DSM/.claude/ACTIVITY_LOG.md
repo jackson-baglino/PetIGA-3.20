@@ -1,4 +1,6 @@
 
+- Library and librarian agents: research/Library (curator-only writes, hashed and versioned files; reference desk as the only read path with policy table and access log; auditor), agents librarian-reference/curator/auditor, project deny rules for Edit/Read on the library, tool registry (agentic/tools/REGISTRY.md), agentic/WORKFLOWS.md catalogue of all 18 agents. Wave 3 literature search: 36 queries, 795 new candidates triaged, shortlist of 96 awaiting approval. Lab report 1 updated (11 pt, references, background).
+
 ---
 
 **Session ended:** 2026-10-19 14:26:35
