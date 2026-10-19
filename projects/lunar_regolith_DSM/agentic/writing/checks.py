@@ -49,7 +49,8 @@ def check(draft: str, facts: dict, profile: dict | None = None, *, max_words: in
         text = render(draft, {**facts, **{b: {"value": "X"} for b in bad_ids}})
     except KeyError:
         text = draft
-    body = re.sub(r"(?m)^#+ .*$", "", text)
+    text_main = text.split("## References")[0]
+    body = re.sub(r"(?m)^(#+ .*|\|.*|<<<PAGEBREAK>>>)$", "", text_main)
     words = len(body.split())
     if words > max_words:
         P.append({"kind": "too_long", "text": f"{words} words; budget {max_words} (about {max_words / WORDS_PER_PAGE:.1f} pages)", "where": "document"})

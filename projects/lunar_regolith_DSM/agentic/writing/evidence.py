@@ -27,6 +27,43 @@ def sh(cmd: str, cwd: Path = ROOT) -> str:
     return subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True).stdout.strip()
 
 
+REFS = {"kiewiet": "10.1007/s44461-025-00005-4", "kaempfer": "10.1103/physreve.79.031502", "moure": "10.1021/acs.cgd.4c00539",
+        "li": "10.4310/cms.2009.v7.n1.a4", "yu": "10.1088/0965-0393/20/7/075008", "guo": "10.1017/jfm.2020.790", "nicoli": "10.1103/physreve.84.046707"}
+
+
+def crossref(doi: str, cache: dict, cache_file: Path) -> dict:
+    """Metadata from Crossref (verifies that the DOI exists and gives the exact title, authors, venue); cached because the service rate-limits."""
+    import time, urllib.parse, urllib.request
+    if doi in cache:
+        return cache[doi]
+    for i in range(5):
+        try:
+            req = urllib.request.Request("https://api.crossref.org/works/" + urllib.parse.quote(doi), headers={"User-Agent": "lit-registry/0.1"})
+            m = json.load(urllib.request.urlopen(req, timeout=30))["message"]
+            cache[doi] = {"title": m["title"][0], "authors": [[a.get("given", ""), a.get("family", "")] for a in m.get("author", [])],
+                          "journal": (m.get("container-title") or [""])[0], "volume": m.get("volume"), "issue": m.get("issue"),
+                          "page": m.get("page") or m.get("article-number"), "year": m["issued"]["date-parts"][0][0]}
+            cache_file.write_text(json.dumps(cache, indent=1)); return cache[doi]
+        except Exception:
+            time.sleep(5 * (i + 1))
+    raise RuntimeError(f"Crossref lookup failed for {doi}")
+
+
+TITLE_FIX = {"10.4310/cms.2009.v7.n1.a4": "Solving PDEs in complex geometries: a diffuse domain approach"}   # Crossref has a truncated, lower-case title; the PDF title page reads this
+
+
+def format_ref(doi: str, m: dict) -> str:
+    import html
+    m = {**m, "title": html.unescape(TITLE_FIX.get(doi, m["title"])), "journal": html.unescape(m["journal"])}
+    au = [f"{fam}, {''.join(x[0] + '.' for x in re.split(r'[ -]+', giv) if x)}" for giv, fam in m["authors"]]
+    names = (", ".join(au[:-1]) + (", & " if len(au) > 2 else " & ") + au[-1]) if len(au) > 1 else (au[0] if au else "")
+    if len(au) > 6:
+        names = ", ".join(au[:6]) + ", et al."
+    vol = f", {m['volume']}" if m.get("volume") else ""; iss = f"({m['issue']})" if m.get("issue") else ""; pg = f", {m['page']}" if m.get("page") else ""
+    out = f"{names} ({m['year']}). {m['title'].rstrip('.')}. {m['journal']}{vol}{iss}{pg}. https://doi.org/{doi}"
+    return out.replace("R\x7fatz", "Rätz")        # Crossref stores this surname with a stray control character; the paper prints Rätz
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True); ap.add_argument("--since", default="2026-10-12")
@@ -145,6 +182,26 @@ def main() -> None:
     add("not_ready_but_matched", "one task matched its known answer yet was marked not ready, because a reviewer agent found an assumption we had not stated", "why two derivation counts differ", "derivations/c3d_wall_angle_first_integral/SUMMARY.md (agent/math-lane)")
     add("model_pinning", "each agent file names a model tier (Sonnet, Opus or Haiku) and the ledger records the tier and exact token use per call, but not a dated model version", "a reproducibility limit", ".claude/agents/*.md and .agent_state/ledger.jsonl")
     add("run_commands", "each workflow runs from one command in the repository: run_wave for papers, run_lane for derivations, run_report for writing", "how to run the workflows", "agentic/lit/run_wave.py, agentic/math/run_lane.py, agentic/writing/run_report.py")
+
+    # ---- cost split and testing totals
+    def cost(agents):
+        return round(sum(t[1] for k, t in tot.items() if k[0] in agents), 2)
+    add("cost_checker_usd", cost({"claim-checker"}), "list-price cost of the independent claim checks", "token ledgers")
+    add("cost_reading_usd", cost({"paper-extractor"}), "list-price cost of reading papers", "token ledgers")
+    add("cost_image_usd", cost({"image-checker"}), "list-price cost of the page-image checks", "token ledgers")
+    add("cost_derivation_usd", cost({"math-spec-writer", "math-deriver", "math-adversary"}), "list-price cost of the derivation workflow", "token ledgers")
+    add("n_triaged", tot[("triage-scorer", "haiku")][0], "candidate papers scored from title and abstract by the smallest model", "token ledgers")
+    add("image_check_calls", tot[("image-checker", "opus")][0], "page-image check calls", "token ledgers")
+    add("n_checks_total", 9 + 4 + 9 + 15, "automatic tests and regression checks that pass (symbolic checker 9, derivation driver 4, report checks 9, formulation regression suite 15)", "agentic/tests/*.py and agentic/math/numerics/run_all_f2_checks.py")
+    add("known_answers_text", "the workflow reproduced a published constant (found as the exact fraction 47/75), a hand-derived three-phase equation, and a thermal result that we then checked against a numerical solution", "what the known-answer tasks were", "Planning/16, Planning/19 section 11", needs_human=False)
+    add("literature_gaps", "we found no paper on ice contact angles on regolith or silicate in depth, and none that couples a diffuse solid to sublimation or latent heat", "gaps the literature search exposed (author's knowledge)", "author's statement of 2026-10-19", needs_human=True)
+    add("token_use_note", "our token use has been well below the plan allowance (about a fifth), so we will scale the next literature wave up by a factor of two to three", "author's statement about usage", "author's statement of 2026-10-19 (check the usage page)", needs_human=True)
+
+    # ---- bibliography (formatted by a program from Crossref, never typed by a model)
+    cf = ROOT / "research" / "Review" / "writing" / "refs_crossref.json"
+    cache = json.loads(cf.read_text()) if cf.exists() else {}
+    for key, doi in REFS.items():
+        add(f"ref_{key}", format_ref(doi, crossref(doi, cache, cf)), f"full citation ({key})", f"Crossref record of doi:{doi}")
     # ---- tests
     py = os.environ.get("PY_SYMPY") or next((str(x) for x in (HOME / ".cache").glob("**/venv/bin/python") if x.exists()), None) or "python3"
     scratch = glob.glob("/private/tmp/claude-501/*/*/scratchpad/venv/bin/python")

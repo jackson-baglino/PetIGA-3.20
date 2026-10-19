@@ -14,3 +14,5 @@ facts (evidence.py, no model) -> outline (Sonnet) -> draft with {F:id} placehold
 Run: `python -m agentic.writing.run_report --brief B --guideline G --facts F --profile P --samples S --out-dir D`.
 Tests: `python agentic/tests/test_writing_checks.py`.
 Lessons from the first runs: revision rounds can make a draft longer and worse, so the driver keeps the best-scoring version; pasting sentence-like facts into placeholders garbles the prose, so those facts are paraphrased and tagged `<!-- F:id -->`; a thin ledger makes the drafter leave many author placeholders, so the ledger must hold what the report needs.
+
+Rendering: the Word file is built directly (11 pt Times New Roman, 1 inch margins, tables, page break before References) because converting HTML with the macOS tool scaled the fonts up to 14.5 pt. Citations are formatted by a program from Crossref metadata (`ref_*` facts), never typed by a model.

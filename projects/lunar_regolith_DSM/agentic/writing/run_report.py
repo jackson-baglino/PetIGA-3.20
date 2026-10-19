@@ -39,7 +39,7 @@ def ledger_view(facts: dict) -> list[dict]:
     """kind 'placeholder': a number, date or link, written as {F:id}.  kind 'paraphrase': a sentence-like fact, to be put in the author's own words and tagged <!-- F:id --> after it."""
     out = []
     for k, f in facts.items():
-        v = f["value"]; ph = isinstance(v, (int, float)) or (isinstance(v, str) and len(v) <= 40)
+        v = f["value"]; ph = isinstance(v, (int, float)) or (isinstance(v, str) and (len(v) <= 40 or k.startswith("ref_")))
         out.append({"id": k, "kind": "placeholder" if ph else "paraphrase", "text": f["text"], "value": v, "source": f["source"], "author_must_confirm": f["needs_human"]})
     return out
 

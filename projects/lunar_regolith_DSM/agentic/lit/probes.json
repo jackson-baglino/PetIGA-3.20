@@ -41,5 +41,21 @@
   "How is a contact angle or wall energy imposed on the diffuse solid, and is Young's law checked numerically (angles and materials)?",
   "How is degeneracy handled where the domain weight vanishes (inside the solid): floors, regularization, conditioning, solver choices?",
   "Is the method coupled to a phase-change, Allen-Cahn or Cahn-Hilliard phase-field model, and are violations of the phase constraint or spurious phases near the wall reported and suppressed?"
+ ],
+ "R9": [
+  "Is a fixed or diffuse solid (grain, wall, obstacle) coupled to a phase-change process (solidification, sublimation, evaporation, melting) in a phase-field or diffuse-interface model? Describe the coupling.",
+  "How are latent heat, vapor or solute transport and the interface kinetics treated next to the solid (boundary conditions, weights, floors), and is mass or energy conservation checked?",
+  "Is the interface motion near the solid compared with a sharp-interface solution or experiment (contact angle, front speed, Gibbs-Thomson shift)? Give the numbers.",
+  "Are artifacts near the solid reported (films, pinning, spurious phases, interface drifting into the solid) and how are they handled?"
+ ],
+ "R10": [
+  "How is thermal (or other transport) conductivity interpolated across a diffuse interface or contact (arithmetic, harmonic, tensorial, other) and what error in the interface width does each give?",
+  "Is the accuracy of the effective property or flux checked against an exact or sharp-interface solution (layered media, spheres, contacts)? Give the numbers.",
+  "How are point contacts or thin necks between grains treated when the diffuse width is comparable to the neck?"
+ ],
+ "R11": [
+  "Which formulation family is used (multi-phase-field with inert particles, grand potential, obstacle or variational-inequality bounds, immersed boundary or volume penalization, sharp-wall boundary condition) and how does it keep the phase fractions admissible (sum constraint, bounds)?",
+  "How is the contact angle or wall energy imposed, and is Young's law checked (angles, materials)?",
+  "What failure modes or limits of the formulation are reported (ghost phases, bounds violations, stiffness, conditioning, mesh requirements)?"
  ]
 }

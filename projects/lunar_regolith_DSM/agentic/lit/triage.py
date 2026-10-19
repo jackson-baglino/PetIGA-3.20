@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from agentic.lit import common
 
 SCHEMA = {"type": "object", "required": ["scores", "best_topic", "reason", "needs_full_read"], "properties": {
-    "scores": {"type": "object", "properties": {f"R{i}": {"type": "integer", "minimum": 0, "maximum": 3} for i in range(1, 9)}, "required": [f"R{i}" for i in range(1, 9)]},
+    "scores": {"type": "object", "properties": {f"R{i}": {"type": "integer", "minimum": 0, "maximum": 3} for i in range(1, 12)}, "required": [f"R{i}" for i in range(1, 12)]},
     "best_topic": {"type": "string"}, "reason": {"type": "string"}, "needs_full_read": {"type": "boolean"}}}
 
 

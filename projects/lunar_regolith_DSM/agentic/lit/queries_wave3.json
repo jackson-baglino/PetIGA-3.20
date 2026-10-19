@@ -1,0 +1,50 @@
+{
+ "R4": [
+  "ice contact angle on silicate mineral surface measured",
+  "wetting of ice on mineral substrates contact angle deposition sublimation",
+  "water ice wetting angle regolith simulant grain surface",
+  "ice nucleation contact angle versus equilibrium wetting angle of ice on mineral surfaces",
+  "interfacial energy ice silicate substrate measurement",
+  "heterogeneous ice growth on solid substrates Young angle vapor deposition",
+  "ice-vapor-solid contact line vapor deposition on mineral grains experiment",
+  "premelting ice on silica or quartz surface quasi-liquid layer wetting"
+ ],
+ "R9": [
+  "phase-field model solidification with fixed solid obstacles or substrate latent heat contact angle",
+  "phase-field sublimation ice grains porous medium solid particles",
+  "diffuse interface model evaporation condensation porous solid substrate latent heat",
+  "smoothed boundary method solidification dendrite complex geometry heat conduction latent heat",
+  "phase-field model freeze-thaw porous media solid grains ice growth pore",
+  "Stefan problem diffuse domain approach moving interface phase change complex geometry",
+  "phase-field sintering of particles vapor transport sublimation neck growth",
+  "phase-field model ice lens frost heave porous medium solid skeleton"
+ ],
+ "R10": [
+  "tensorial mobilities accurate transport diffuse interface phase-field",
+  "thermal conductivity interpolation across diffuse interface phase-field harmonic arithmetic",
+  "effective thermal conductivity phase-field sintering ice grains contacts diffuse interface",
+  "diffuse interface error contact between particles neck conduction phase-field",
+  "anisotropic interpolation transport coefficient normal tangential diffuse interface",
+  "homogenization effective conductivity packed grains contact resistance thin neck"
+ ],
+ "R11": [
+  "multi-phase-field model inert particle obstacle pinning ghost phases avoided",
+  "grand potential multiphase field model solid substrate wetting",
+  "obstacle potential phase-field bounds variational inequality three phase contact",
+  "immersed boundary phase field solidification complex geometry contact angle",
+  "volume penalization phase field contact line complex geometry",
+  "phase-field wetting boundary condition versus diffuse solid comparison accuracy",
+  "three-phase Allen-Cahn contact angle Young law triple junction Lagrange multiplier elimination",
+  "Folch Plapp multiphase field third phase suppression binary interface"
+ ],
+ "R2": [
+  "Knudsen diffusion water vapor porous media low pressure ice sublimation pore scale",
+  "free molecular flow sublimation lunar regolith pore network",
+  "rarefied gas diffusion porous regolith permeability Knudsen number water vapor",
+  "Hertz-Knudsen sublimation coefficient ice measured low temperature"
+ ],
+ "R8": [
+  "diffuse domain method Stefan problem moving boundary phase change",
+  "smoothed boundary method wetting contact angle phase field complex geometry convergence"
+ ]
+}
