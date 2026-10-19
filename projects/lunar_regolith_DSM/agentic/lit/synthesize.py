@@ -14,16 +14,14 @@ from pathlib import Path
 from agentic.lit import common
 
 
-def record_block(slug: str) -> str:
-    rec = common.REVIEW / "records"
-    md = (rec / f"{slug}.md").read_text()
-    v = json.loads((rec / f"{slug}.verification.json").read_text())
-    ck = v.get("checker") or {}
-    flags = [f"- {cid}: {d['verdict']}. {d.get('problem', '')}" for cid, d in (ck.get("verdicts") or {}).items() if d["verdict"] != "supported"]
+def record_block(slug: str, purpose: str = "gate memo") -> str:
+    """Read the record through the library reference desk (logged, hash-verified); the synthesizer never touches the files."""
+    from agentic.library.desk import Desk
+    r = Desk().ask("topic-synthesizer", purpose, "record", paper_id=slug)
+    flags = [f"- {f['claim_id']}: {f['verdict']}. {f.get('note', '')}" for f in r["flags"]]
     head = f"\n\n######## RECORD {slug} ########\n"
-    tail = ("\nINDEPENDENT CHECKER (Opus, saw only claim + quote + page): supported rate "
-            f"{ck.get('supported_rate')}; claims it flagged (use the quote's own words for these, not the claim's):\n" + ("\n".join(flags) if flags else "- none"))
-    return head + md + tail
+    tail = ("\nINDEPENDENT CHECKER (saw only claim + quote + page); claims it flagged (use the quote's own words for these, not the claim's):\n" + ("\n".join(flags) if flags else "- none"))
+    return head + r["text"] + tail
 
 
 def main() -> None:

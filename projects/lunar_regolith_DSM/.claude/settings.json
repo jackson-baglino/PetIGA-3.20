@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(//Users/jacksonbaglino/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Library/**)",
+      "Read(//Users/jacksonbaglino/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Library/**)",
+      "Edit(//Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/research/Library/**)",
+      "Read(//Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM/research/Library/**)",
+      "Edit(./research/Library/**)",
+      "Read(./research/Library/**)"
+    ]
+  }
+}

@@ -1,0 +1,132 @@
+[
+ {
+  "id": "mesh_params",
+  "kind": "program",
+  "what": "Sizes the interface width eps and the mesh from domain, temperature and kinetics (replaces preprocess/comp_eps.py).",
+  "command": "python -m agentic.tools.mesh_params --Lx 6e-4 --Ly 6e-4 --T0 -20 --alpha 1e-3",
+  "inputs": "numbers in, JSON out",
+  "writes": "none (pure)",
+  "callers": "drivers, test-planning agents, human",
+  "tests": "agentic/tests/test_mesh_params.py"
+ },
+ {
+  "id": "sympy_check",
+  "kind": "program",
+  "what": "Recomputes every claim of a derivation exactly (equalities, derivatives, integrals, ODE residuals, Euler-Lagrange, limits); safe parser; reports which steps are only retyped algebra.",
+  "command": "python -m agentic.tools.sympy_check derivation.json  (on branch agent/math-lane: agentic/tools/sympy_check)",
+  "inputs": "derivation JSON",
+  "writes": "none",
+  "callers": "math driver, human",
+  "tests": "agentic/tests/test_sympy_check.py (9)"
+ },
+ {
+  "id": "run_lane",
+  "kind": "pipeline",
+  "what": "Math workflow driver: spec -> derive -> symbolic check -> adversary -> optional blind replicate -> human gate.",
+  "command": "python -m agentic.math.run_lane --task T.json [--replicate]",
+  "inputs": "task JSON",
+  "writes": "derivations/<task>/ in the workspace",
+  "callers": "human",
+  "tests": "agentic/tests/test_math_driver.py (4)"
+ },
+ {
+  "id": "seed_test",
+  "kind": "program",
+  "what": "Plants known errors in a correct derivation and records which layer catches each.",
+  "command": "python -m agentic.math.seed_test / seed_c3b",
+  "inputs": "derivation + spec",
+  "writes": "stdout",
+  "callers": "human",
+  "tests": "-"
+ },
+ {
+  "id": "f2 numerics suite",
+  "kind": "program",
+  "what": "Toy and exact numerical checks of the pore-space formulation, plus a regression runner.",
+  "command": "python agentic/math/numerics/run_all_f2_checks.py",
+  "inputs": "none",
+  "writes": "stdout",
+  "callers": "human",
+  "tests": "15 checks"
+ },
+ {
+  "id": "discover / triage / fetch_oa",
+  "kind": "pipeline",
+  "what": "Literature search (OpenAlex), abstract scoring by the smallest model, open-access PDF fetch.",
+  "command": "python -m agentic.lit.discover | triage | fetch_oa",
+  "inputs": "query sets, DOI lists",
+  "writes": "workspace registry, PDFs in Literature/*_incoming",
+  "callers": "human, driver",
+  "tests": "-"
+ },
+ {
+  "id": "prepare_text / run_extract / verify_record",
+  "kind": "pipeline",
+  "what": "Page-marked text, one worker per paper, quote matching against the page.",
+  "command": "python -m agentic.lit.run_wave --manifest M.json",
+  "inputs": "reading list",
+  "writes": "workspace records",
+  "callers": "human approves the list",
+  "tests": "verification files"
+ },
+ {
+  "id": "check_claims / check_images / consistency",
+  "kind": "pipeline",
+  "what": "Independent claim check (Opus), page-image check of equations, agreement between two readings.",
+  "command": "python -m agentic.lit.check_claims | check_images | consistency",
+  "inputs": "records",
+  "writes": "verification files",
+  "callers": "driver",
+  "tests": "-"
+ },
+ {
+  "id": "synthesize / audit_memo",
+  "kind": "pipeline",
+  "what": "Gate memo from verified records; citation audit of a memo. Both read the library through the desk.",
+  "command": "python -m agentic.lit.synthesize | audit_memo",
+  "inputs": "library via desk",
+  "writes": "memos in the workspace",
+  "callers": "human",
+  "tests": "-"
+ },
+ {
+  "id": "library.migrate / publish",
+  "kind": "program (curator)",
+  "what": "Publishes records, texts, memos, searches and candidates into the library (hashed, versioned, read-only).",
+  "command": "python -m agentic.library.migrate",
+  "inputs": "workspace files",
+  "writes": "library (the only writer)",
+  "callers": "human, curator",
+  "tests": "agentic/tests/test_library.py"
+ },
+ {
+  "id": "library.desk",
+  "kind": "program (reference desk)",
+  "what": "The only way agents read the library; policy table, purpose required, hash-checked, logged.",
+  "command": "python -m agentic.library.desk ask --as <who> --why '...' <kind> k=v",
+  "inputs": "request",
+  "writes": "access log in the library (append only)",
+  "callers": "every agent and human",
+  "tests": "agentic/tests/test_library.py"
+ },
+ {
+  "id": "library.verify / audit",
+  "kind": "program",
+  "what": "Integrity check of every file; plain-language audit by the auditor agent.",
+  "command": "python -m agentic.library.verify | audit",
+  "inputs": "library (read-only)",
+  "writes": "report outside the library",
+  "callers": "human",
+  "tests": "agentic/tests/test_library.py"
+ },
+ {
+  "id": "writing.evidence / style / checks / render / run_report",
+  "kind": "pipeline",
+  "what": "Fact ledger with sources, style profile, deterministic report checks, Word and PDF renderer, writing driver.",
+  "command": "python -m agentic.writing.run_report ...",
+  "inputs": "facts, brief, guideline",
+  "writes": "report files in the workspace",
+  "callers": "human",
+  "tests": "agentic/tests/test_writing_checks.py (10)"
+ }
+]

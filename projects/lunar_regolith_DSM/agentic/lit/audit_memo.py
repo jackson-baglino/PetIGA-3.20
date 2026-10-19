@@ -44,27 +44,21 @@ def main() -> None:
         cs = parse_cites(line)
         if cs:
             units.append((n, line.strip(), cs))
-    cache = {}
-
-    def rec_info(slug):
-        if slug not in cache:
-            d = json.loads((rd / f"{slug}.json").read_text())
-            pages = split_pages((common.STATE / "text" / f"{slug}.txt").read_text())
-            cache[slug] = (d, pages)
-        return cache[slug]
+    from agentic.library.desk import Desk
+    desk = Desk()
 
     def one(u):
         n, line, cs = u
         parts, missing = [], []
         for slug, p in cs[:5]:
             try:
-                d, pages = rec_info(slug)
-            except FileNotFoundError:
-                missing.append(f"{slug} (record not found)"); continue
-            if p not in pages:
+                page_text = desk.ask("claim-checker", f"audit memo {a.memo}", "page", paper_id=slug, page=p)["text"]
+                qs = [c["quote"] for c in desk.ask("claim-checker", f"audit memo {a.memo}", "claims", paper_id=slug, page=p)["claims"]]
+            except (FileNotFoundError, KeyError):
+                missing.append(f"{slug} (not in the library)"); continue
+            if not page_text:
                 missing.append(f"{slug} p.{p} (page not in text)"); continue
-            qs = [c["quote"] for c in d["claims"] if c["page"] == p] + [e.get("latex", "") for e in d.get("equations", []) if e.get("page") == p]
-            parts.append(f"--- {slug} PAGE {p} ---\nRECORD'S OWN QUOTES/EQUATIONS ON THIS PAGE:\n" + "\n".join("* " + q for q in qs if q) + f"\nPAGE TEXT:\n{pages[p][:9000]}")
+            parts.append(f"--- {slug} PAGE {p} ---\nRECORD'S OWN QUOTES ON THIS PAGE:\n" + "\n".join("* " + q for q in qs if q) + f"\nPAGE TEXT:\n{page_text[:9000]}")
         if not parts:
             return n, line, {"verdict": "cannot_tell", "quote_found_on_page": False, "problem": "no cited page could be loaded: " + "; ".join(missing)}, missing
         prompt = (f"CLAIM (a sentence from a literature-review memo; judge only the factual content, ignore INFERENCE-labelled parts and project-context labels): {re.sub(r'INFERENCE.*', '', line)[:1500]}\n\n"
