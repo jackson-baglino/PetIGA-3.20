@@ -1,4 +1,11 @@
 
+- F2 (pore-space, 90 degrees, conservative form) approved; math-lane tasks c3a (structure) and c3b (channel drift) derived and replicated; toy comparison f1_vs_f2.py (F1 overshoot 0.18/R_s, F2 none); implementation plan written (Planning doc 18), no C changes.
+
+---
+
+**Session ended:** 2026-10-18 19:17:28
+
+
 - Literature wave 2 (diffuse-domain / smoothed-boundary / wetting / inert-domain, topic R8): 153 new candidates triaged, 22 papers read in full (20 open access + 2 from Zotero), image-checked, R8 gate memo written (Review/memos/gate_R8_diffuse_domain.md); verdict conditional GO for F2 at 90 degrees. Agent state migrated to main (.agent_state), synthesize.py driver added, triage and manifest extended to topic R8. Poulsen & Voorhees pending (library request).
 
 ---
