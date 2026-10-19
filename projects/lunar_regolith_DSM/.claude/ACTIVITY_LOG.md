@@ -1,4 +1,11 @@
 
+- F2 derivation repeated in full by hand (Planning doc 19) with the full check suite: sympy recomputation, lane tasks c3a-c3d with Opus replicates and adversary, energy-balance cross-route, seeded-error test, units, Jacobian vs finite differences, grid/floor refinements, toy numerics and figure in review_scratch. The adversary corrected my wall-angle argument (transversality forces C = 0 for any floor). Lane c3d is flagged not ready (final-expression naming mismatch plus the corrected flaw).
+
+---
+
+**Session ended:** 2026-10-18 19:44:24
+
+
 - F2 (pore-space, 90 degrees, conservative form) approved; math-lane tasks c3a (structure) and c3b (channel drift) derived and replicated; toy comparison f1_vs_f2.py (F1 overshoot 0.18/R_s, F2 none); implementation plan written (Planning doc 18), no C changes.
 
 ---
