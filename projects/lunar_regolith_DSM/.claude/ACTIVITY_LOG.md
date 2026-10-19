@@ -1,4 +1,11 @@
 
+- F2 six-iteration audit (Planning docs 20, 18 section 7-8, 19 update): citation audit of the R8 memo (154 lines; errata appended), numerical tests of diffuse-domain Neumann recovery, curved-wall contact angle, tapered 2D channel, concave-wall positive film in F1, interface in the wall band, floor sweeps; two rounds of three fresh red-team reviews (32 + 25 objections) with resolutions; regression suite run_all_f2_checks.py (15/15). Corrections of my own earlier statements: band drift is an artifact not physics; psi = 1 in grains replaced by normal-constant extension; F1 proposition restated with a shooting test; wall-angle argument conditions (free contact point, weighted forcing).
+
+---
+
+**Session ended:** 2026-10-18 21:37:02
+
+
 - F2 derivation repeated in full by hand (Planning doc 19) with the full check suite: sympy recomputation, lane tasks c3a-c3d with Opus replicates and adversary, energy-balance cross-route, seeded-error test, units, Jacobian vs finite differences, grid/floor refinements, toy numerics and figure in review_scratch. The adversary corrected my wall-angle argument (transversality forces C = 0 for any floor). Lane c3d is flagged not ready (final-expression naming mismatch plus the corrected flaw).
 
 ---
