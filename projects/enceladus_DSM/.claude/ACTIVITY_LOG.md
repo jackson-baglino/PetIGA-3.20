@@ -1,3 +1,10 @@
+## 2026-10-20 — K_eff of the diffuse form; manuscript files untracked
+
+- Outline: new entry defining K_eff for the diffuse cell problem (the draft defines it only in sharp two-subdomain form, Eq. 10): steps, direction-by-direction form matching keff_cell.c, symmetry and Voigt/Reuss bounds, notation fixes, snippet. Example paragraphs for the time-scale paragraph and the Nicoli tensor-law credit added on 10-16.
+- .gitignore: outlines, MANUSCRIPT_PLAN.md, tables.tex and studies/**/manuscript/ untracked (user); files kept locally, figure/table scripts still tracked.
+
+---
+
 ## 2026-10-18 — JPL poster figure resized to the 11.38 x 13.4 in box
 
 - Test figures were 11.0 in wide and 3-9 in tall with 12-15 pt type, small against the box and the 18 pt body text.
