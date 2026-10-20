@@ -973,10 +973,79 @@ literature-check findings (F$n$, top of this document) merged in place.
     the \texttt{.bib} (not in the library).
   \end{itemize}
   \Cite{Nicoli, Plapp \& Henry 2011 \texttt{nicoli\_tensorial\_2011}; Auriault 1991 \texttt{auriaultHeterogeneousMediumEquivalent1991}; Calonne et al.\ 2011 \texttt{calonneNumericalExperimentalInvestigations2011}.}
+\Pg{$\mathbf{K}_{\mathrm{eff}}$ of the diffuse form}{\add{new, 10-16}; after Eq.~(17)}{The step the draft skips: how $\mathbf{K}_{\mathrm{eff}}$ is computed once the corrector solves the diffuse problem.}
+  \begin{itemize}
+  \item \tC \textbf{What is missing.} Eq.~(10) defines
+    $\mathbf{K}_{\mathrm{eff}}$ only in the two-subdomain sharp form. The
+    derivation carries the cell problem through Eqs.~(12)--(17) to the
+    diffuse form, but never carries $\mathbf{K}_{\mathrm{eff}}$ with it, so
+    the quantity every figure plots is not defined in the paper.
+  \item \tA \textbf{Steps}, in the same order as for the cell problem:
+    \begin{enumerate}
+    \item Single-domain sharp form. With $\zeta$ and $K_\star$ (Eq.~13),
+      Eq.~(10) is $\mathbf{K}_{\mathrm{eff}} = |\Omega|^{-1}\int_\Omega
+      K_\star(\nabla\mathbf{t}_\star + \mathbf{I})\,d\Omega$.
+    \item Diffuse form. Replace $K_\star$ by $\mathbf{K}(\phi,\nabla\phi)$
+      and $\mathbf{t}_\star$ by the solution $\mathbf{t}$ of Eq.~(17):
+      $\mathbf{K}_{\mathrm{eff}} = |\Omega|^{-1}\int_\Omega
+      \mathbf{K}(\phi,\nabla\phi)(\nabla\mathbf{t} + \mathbf{I})\,d\Omega$.
+      Because $\mathbf{K}$ is a tensor in the interface, it must stay to the
+      left of $(\nabla\mathbf{t} + \mathbf{I})$; it no longer commutes as a
+      scalar does.
+    \item Direction by direction, which is what the code does
+      (\texttt{src/keff\_cell.c}, \texttt{KeffScalarIntegrand}): for each
+      direction $\mathbf{e}$, one corrector $t_{\mathbf{e}}$ solves
+      $\nabla\cdot[\mathbf{K}(\nabla t_{\mathbf{e}} + \mathbf{e})] = 0$,
+      and $\mathbf{K}_{\mathrm{eff}}\mathbf{e}$ is the cell average of the
+      flux $\mathbf{K}(\nabla t_{\mathbf{e}} + \mathbf{e})$. This avoids
+      the index convention of $\nabla\mathbf{t}$, which the draft leaves
+      undefined (and the notation list rules out index notation).
+    \item The zero-mean condition (Eq.~17b) fixes $\mathbf{t}$ but does not
+      enter $\mathbf{K}_{\mathrm{eff}}$, which depends only on
+      $\nabla\mathbf{t}$.
+    \item As $\varepsilon \to 0$ this tends to Eq.~(10); with the tensor law
+      the first-order error in $\varepsilon$ vanishes (previous entry).
+    \end{enumerate}
+  \item \tA \textbf{Two properties worth one sentence}, both from testing
+    the weak form with $v = t_{\mathbf{e}'}$: $\mathbf{e}'\cdot
+    \mathbf{K}_{\mathrm{eff}}\mathbf{e} = |\Omega|^{-1}\int_\Omega
+    (\nabla t_{\mathbf{e}'} + \mathbf{e}')\cdot\mathbf{K}(\nabla
+    t_{\mathbf{e}} + \mathbf{e})\,d\Omega$. So $\mathbf{K}_{\mathrm{eff}}$
+    is symmetric and positive definite, and it lies between the cell
+    averages $\langle\mathbf{K}^{-1}\rangle^{-1}$ and $\langle\mathbf{K}\rangle$
+    (the Reuss and Voigt bounds). Both are checks a reader can apply; the
+    symmetry is also a check on the solver (the off-diagonal terms we
+    compute independently should agree).
+  \item \tA \textbf{Notation fixes that follow.} $\mathbf{t}(\phi)$
+    (tex L416) is not a function of $\phi$: it is one corrector field,
+    continuous over the whole cell, solved on a given $\phi$. Write
+    $\mathbf{t}$. Since $\mathbf{t}$ is continuous across $\Gamma$
+    (Eq.~11c), $\mathbf{t}_\star$ (Eq.~14) is just $\mathbf{t}$ and can go.
+    The scalar we plot, $k_{\mathrm{eff}} = (k_{xx} + k_{yy})/2$, the mean
+    of the diagonal of $\mathbf{K}_{\mathrm{eff}}$, belongs here, not only
+    in the Figure~6 caption.
+  \Snippet{Following the same steps, the effective conductivity of
+    \cref{eq:...Keff} becomes, in single-domain form, the cell average of
+    $K_\star(\nabla\mathbf{t} + \mathbf{I})$, and in the diffuse form
+    \[ \mathbf{K}_{\mathrm{eff}} = \frac{1}{|\Omega|}\int_\Omega
+       \mathbf{K}(\phi,\nabla\phi)\,\big(\nabla\mathbf{t} +
+       \mathbf{I}\big)\,d\Omega, \]
+    where $\mathbf{t}$ solves \cref{eq:DiffuseInterfaceBVP}. In practice we
+    solve \cref{eq:diffuse_pde} once for each direction $\mathbf{e}$ of
+    the cell, and $\mathbf{K}_{\mathrm{eff}}\mathbf{e}$ is the average heat
+    flux $\mathbf{K}(\nabla t_{\mathbf{e}} + \mathbf{e})$ over the cell.
+    $\mathbf{K}_{\mathrm{eff}}$ is symmetric and positive definite, and
+    tends to \cref{eq:...Keff} as $\varepsilon \to 0$. We report the scalar
+    $k_{\mathrm{eff}} = (k_{xx} + k_{yy})/2$.}
+  \item \tA Check before pasting: Eq.~(10) has no label in the draft
+    (written \texttt{eq:...Keff} above); the symmetry of our computed
+    off-diagonal terms has not been checked in this session. Look at a
+    \texttt{k\_eff\_tensor.csv} for $k_{xy}$ against $k_{yx}$.
+  \end{itemize}
 \Pg{What is reported}{to write}{Defines the quantities the results plot.}
   \begin{itemize}
   \item \tA $\mathbf{K}_{\mathrm{eff}}$ in the diffuse form, the one
-    evaluated (Eq.~10 is the sharp form only).
+    evaluated (Eq.~10 is the sharp form only): now its own entry, above.
   \item \tA The scalar $k_{\mathrm{eff}} = (k_{xx} + k_{yy})/2$, now defined
     only in the Figure~6 caption.
   \item \tA SSA: how it is measured from $\phi$, and its units. It is used
