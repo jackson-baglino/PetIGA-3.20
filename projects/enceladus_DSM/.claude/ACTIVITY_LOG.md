@@ -1,3 +1,13 @@
+## 2026-10-20 (night) — Outline re-synced to the 10-20 manuscript, Sections 3 onward
+
+- Unzipped Literature/BaglinoJackson_DSM_manuscript.zip (10-20) to scratch and diffed it against the 10-15 draft. From Section 3 on the real changes are few: Section 3 opening rewritten, aggregate announcement moved to a new Section 4 opening, tau_sub equation moved into 2.2, Table 3 placed after 2.3, headings 2.4/2.5 removed, Appendix C ("Model Scaling Parameters") added empty. Sections 3.1, 3.2, 4.x and all of 5 are word for word the 10-15 text.
+- manuscript_outline_new.tex (untracked, backup in scratchpad): status table, "done in 10-20" paragraph, work list items 4-5; Section 3 opening bullets marked written/rewritten; new Section 4 opening paragraph with corrections; Limitations bullet on the pre-made Molaro neck; build-check and recurring-corrections lists (Table 2, Figure 2 now cited; Table 3 and Appendix C not).
+- Key flag: the 10-20 zip already holds the new Figure 4, but Section 3.2 text and caption still say 100 h, a = 0.21, t = 0 frame. Added Section 3.2 bullets for the 1 h opening (first-hour check: (1.6/150.6)^0.289 = 0.27 = 16.8/61.2), the fit-window = drawn-curve point, "theory" being a fixed-exponent fit, and caption bullets for Figs 3 (full-range sigma bar, curves stop at last data) and 4 (amp bar, blue below-0 arrow).
+- Appendix: proposal that Appendix C and Section 5.2 share one scaling argument (open question for the user).
+- Not touched: Sections 1-2 and caption bullets for Figs 1, 2, 5-7 beyond the general sigma-scale bullet.
+
+---
+
 ## 2026-10-20 (evening) — Newest ManuscriptFigures folder is the live one
 
 - collect_manuscript_figures.py: the last ITERATIONS entry (now v6_2026-10-20) is rewritten in place on every run; older ones stay frozen. v6 now holds the Fig 4 that opens at 1 h (PDF, PNG, NOTES). Removed the redundant v7 entry (its folder is left for the user to prune).
