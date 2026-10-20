@@ -103,3 +103,10 @@ Literature/*.zip
 Literature/text/
 Literature/manuscript_2026-10-14/
 Literature/manuscript_2026-10-15/
+
+# Manuscript documents and figures (user, 2026-10-20): kept locally, not tracked.
+# The scripts that build them stay tracked.
+studies/keff_sintering/manuscript_outline*
+studies/keff_sintering/MANUSCRIPT_PLAN.md
+studies/keff_sintering/tables/tables.tex
+studies/**/manuscript/
