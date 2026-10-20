@@ -1,3 +1,11 @@
+## 2026-10-20 (later) — Figure 4 opens on the first resolved sample (v7)
+
+- Samples 0 (t = 0) and 1 (1.3 s) are not drawn: the next output is at 1.04 h, so the line across that gap was not a measurement. The curve and instant 1 now start at sample 2 (1 h, w = 16.8 um); real time kept on the axis so the fit's t0 is unchanged. New `fig_demmenie.py --start-sample N`.
+- That snapshot has 3,050 of 17.5 M pore cells slightly below sigma = 0 (min -0.66e-4, in the neck crevice), which had broken the amp bar. Bar stays 0..max, with a blue "below 0" extension (--sig-amp with smin < 0).
+- Built Figure4_saturated_neck_growth_v4_amp_fit_s2 (a = 0.289 unchanged); iteration v7_2026-10-20 in ManuscriptFigures.
+
+---
+
 ## 2026-10-20 — Figure 4 fitted lines restored (v6)
 
 - Bug: in fig_demmenie.py the --sig-amp colorbar tick list reused the name `tk`, which is also the fit window, so the two fit curves were drawn over 0-0.24 s and never appeared (legend entries only). Renamed to `sig_ticks`.

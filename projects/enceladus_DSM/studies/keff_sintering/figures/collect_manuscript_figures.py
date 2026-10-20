@@ -73,6 +73,15 @@ ITERATIONS = {
         "Fig 4 fitted lines restored: the free power law (a = 0.29) and the one-third theory curve were "
         "missing from v5 (a tick-list variable overwrote the fit window in fig_demmenie.py). Nothing else "
         "changed from v5."),
+    "v7_2026-10-20": (
+        {"Figure1_mechanisms_aggregate": "_v5", "Figure2_homogenization_method": "_v4_bluered",
+         "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4_amp_fit_s2",
+         "Figure7_state_law": "_v2", "omit": ["Figure7_state_law_allphi"]},
+        [],
+        "Fig 4 opens on the first resolved sample (1 h, w = 16.8 um): the first two output samples (0 and "
+        "1.3 s) are not drawn, since the 1 h gap to the next one is unresolved and a line across it is not "
+        "a measurement. Instant 1 is that snapshot (it already has a neck). Its few crevice cells below "
+        "sigma = 0 show in blue under a 'below 0' arrow on the sigma bar. Fits unchanged (a = 0.289)."),
 }
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

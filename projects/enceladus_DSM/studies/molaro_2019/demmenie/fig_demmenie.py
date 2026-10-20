@@ -84,6 +84,9 @@ def main():
     ap.add_argument("--sig-amp", action="store_true",
                     help="with --v4: cmocean amp, bar from sigma = 0 (white) to the max")
     ap.add_argument("--suffix", default="")
+    ap.add_argument("--start-sample", type=int, default=0,
+                    help="open curve and instant 1 on this sample; earlier ones span a gap the output "
+                         "does not resolve (here 0 and 1, then 1.04 h), so they are not drawn")
     a = ap.parse_args()
     plt.rcParams.update(pplib.MANUSCRIPT_RC)
     A = analyse(a.run, a.relax_tau)
@@ -91,7 +94,8 @@ def main():
 
     # ---- sections: first and last snapshot, one crop and one stride ----
     files = sorted(glob.glob(str(a.run / "sol_*.dat")), key=snap_step)
-    raw = [section(a.run, files[0]), section(a.run, files[-1])]
+    i0 = a.start_sample
+    raw = [section(a.run, files[i0]), section(a.run, files[-1])]
     box = pmv.auto_crop(*raw[-1])
     box = (-max(abs(box[0]), abs(box[1])), max(abs(box[0]), abs(box[1])), box[2])
     frac = (box[1] - box[0]) * pmv.UM / (raw[0][1].max() - raw[0][1].min())
@@ -110,12 +114,16 @@ def main():
     # pore the end colour and hide the depletion at the neck.
     if a.v4:
         a.v2 = True
-    if a.v4 and smin >= 0:
+    if a.v4 and (smin >= 0 or a.sig_amp):
         from matplotlib.colors import PowerNorm
         lo = 0.0 if a.sig_amp else smin          # amp: sigma = 0 always on the bar, white
         norm = (PowerNorm(gamma=a.sig_gamma, vmin=lo, vmax=smax) if a.sig_gamma != 1.0
                 else Normalize(vmin=lo, vmax=smax)); ext = "neither"
         vapcm = cmocean.cm.amp if a.sig_amp else pmv.centered_cmap(cmocean.cm.balance, norm)
+        if a.sig_amp and smin < 0:
+            # a few crevice cells fall below sigma = 0 (the instant opens after a neck exists):
+            # extend the bar downward in blue rather than paint them white, which reads as 0
+            ext = "min"; vapcm = vapcm.copy(); vapcm.set_under(cmocean.cm.balance(0.1))
         v = smax
     elif smin * smax > 0:
         v = max(abs(smin), abs(smax))
@@ -145,7 +153,7 @@ def main():
     y_neck = bot
     y_snap = y_neck + ph + g_snap
 
-    t_sec = [t[0], t[-1]]
+    t_sec = [t[i0], t[-1]]
     for i, (fl, X, Y) in enumerate(secs):
         axi = fig.add_axes(F(ml + i * (s_w + gap), y_snap, s_w, s_h))
         XX, YY = _field(axi, fl, X, Y, norm, vapcm, icecm)
@@ -179,7 +187,7 @@ def main():
     # (b) neck width
     ax = fig.add_axes(F(ml, y_neck, axw, ph)); dress(ax)
     tt = np.linspace(tk[0], tk[-1], 400)
-    ax.plot(t / HOUR, w, "-", lw=1.8, color=C_SIM, zorder=2, label="simulation" if a.v2 else "model")
+    ax.plot(t[i0:] / HOUR, w[i0:], "-", lw=1.8, color=C_SIM, zorder=2, label="simulation" if a.v2 else "model")
     ax.plot(tt / HOUR, _pl(tt, f["C"], f["t0"], f["a"]), color=C_FREE, lw=1.0, ls=pmv.FIT_LS, dash_capstyle="round",
             zorder=3, label=rf"$C\,(t+t_0)^{{a}}$, $a={f['a']:.2f}$")
     ax.plot(tt / HOUR, _p3(tt, h["C"], h["t0"]), color=C_THIRD, lw=1.5, ls=pmv.ALT_LS, dash_capstyle="round",
