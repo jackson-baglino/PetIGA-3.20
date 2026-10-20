@@ -65,6 +65,14 @@ ITERATIONS = {
         "each series' last data point. Fig 4 sigma on cmocean amp from sigma = 0 (white, always on the "
         "bar) to the max, gamma = 3 power norm so the depletion halo at the neck shows (the far field is "
         "flat). Fig 7 without the all-phi variant."),
+    "v6_2026-10-20": (
+        {"Figure1_mechanisms_aggregate": "_v5", "Figure2_homogenization_method": "_v4_bluered",
+         "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4_amp_fit",
+         "Figure7_state_law": "_v2", "omit": ["Figure7_state_law_allphi"]},
+        [],
+        "Fig 4 fitted lines restored: the free power law (a = 0.29) and the one-third theory curve were "
+        "missing from v5 (a tick-list variable overwrote the fit window in fig_demmenie.py). Nothing else "
+        "changed from v5."),
 }
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

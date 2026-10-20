@@ -164,9 +164,9 @@ def main():
         # sigma_ticks thins by position on the bar, and the gamma stretch
         # crowds 0 .. 0.1 into its first few percent, leaving only the ends.
         cax_sig = fig.axes[-1]                       # _strip adds the sigma bar last
-        tk = [x for x in (0.0, 0.1, 0.15, 0.2) if x < 0.97 * smax] + [smax]
-        cax_sig.set_xticks(tk)
-        cax_sig.set_xticklabels([f"${x:.2g}$" for x in tk])
+        sig_ticks = [x for x in (0.0, 0.1, 0.15, 0.2) if x < 0.97 * smax] + [smax]   # not tk: that is the fit window
+        cax_sig.set_xticks(sig_ticks)
+        cax_sig.set_xticklabels([f"${x:.2g}$" for x in sig_ticks])
 
     def dress(ax):
         ax.patch.set_alpha(0.0)

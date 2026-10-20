@@ -1,3 +1,11 @@
+## 2026-10-20 — Figure 4 fitted lines restored (v6)
+
+- Bug: in fig_demmenie.py the --sig-amp colorbar tick list reused the name `tk`, which is also the fit window, so the two fit curves were drawn over 0-0.24 s and never appeared (legend entries only). Renamed to `sig_ticks`.
+- Rebuilt as Figure4_saturated_neck_growth_v4_amp_fit (free a = 0.289, one-third rms 2.57 %); panel (a) and colour bars unchanged from v5.
+- collect_manuscript_figures.py: new iteration v6_2026-10-20 (= v5 with the new Fig 4), written to HPC_results/.../ManuscriptFigures/v6_2026-10-20/.
+
+---
+
 ## 2026-10-20 — K_eff of the diffuse form; manuscript files untracked
 
 - Outline: new entry defining K_eff for the diffuse cell problem (the draft defines it only in sharp two-subdomain form, Eq. 10): steps, direction-by-direction form matching keff_cell.c, symmetry and Voigt/Reuss bounds, notation fixes, snippet. Example paragraphs for the time-scale paragraph and the Nicoli tensor-law credit added on 10-16.
