@@ -1,3 +1,10 @@
+## 2026-10-20 (evening) — Newest ManuscriptFigures folder is the live one
+
+- collect_manuscript_figures.py: the last ITERATIONS entry (now v6_2026-10-20) is rewritten in place on every run; older ones stay frozen. v6 now holds the Fig 4 that opens at 1 h (PDF, PNG, NOTES). Removed the redundant v7 entry (its folder is left for the user to prune).
+- Rule: after changing any manuscript figure, rebuild its script and rerun the collector; a new version = new ITERATIONS entry + new folder.
+
+---
+
 ## 2026-10-20 (later) — Figure 4 opens on the first resolved sample (v7)
 
 - Samples 0 (t = 0) and 1 (1.3 s) are not drawn: the next output is at 1.04 h, so the line across that gap was not a measurement. The curve and instant 1 now start at sample 2 (1 h, w = 16.8 um); real time kept on the axis so the fit's t0 is unchanged. New `fig_demmenie.py --start-sample N`.

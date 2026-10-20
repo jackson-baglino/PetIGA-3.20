@@ -12,7 +12,10 @@ NOTES.txt in each folder says what changed. Sources are where each script
 writes (the campaign's compare/figure_samples/ and studies/molaro_2019/manuscript/);
 nothing is rebuilt -- run the figure scripts first. tables.tex and
 supplement/ stay at the top of <dest>. An iteration folder that already exists
-is NEVER rewritten (the user prunes them by hand) unless named in --rebuild.
+is NEVER rewritten (the user prunes them by hand) unless named in --rebuild --
+EXCEPT the newest one (last in ITERATIONS), the CURRENT folder: it holds the latest of every
+figure and is refreshed in place on every run (user, 2026-10-20). A new version = a new
+ITERATIONS entry, which freezes the previous folder.
 "omit" drops a canonical figure from a round (e.g. the all-phi Figure 7). Loose FigureN files left at the top by
 the old flat layout are removed (they are copies; the sources stay).
 """
@@ -67,21 +70,12 @@ ITERATIONS = {
         "flat). Fig 7 without the all-phi variant."),
     "v6_2026-10-20": (
         {"Figure1_mechanisms_aggregate": "_v5", "Figure2_homogenization_method": "_v4_bluered",
-         "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4_amp_fit",
+         "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4_amp_fit_s2",
          "Figure7_state_law": "_v2", "omit": ["Figure7_state_law_allphi"]},
         [],
         "Fig 4 fitted lines restored: the free power law (a = 0.29) and the one-third theory curve were "
         "missing from v5 (a tick-list variable overwrote the fit window in fig_demmenie.py). Nothing else "
         "changed from v5."),
-    "v7_2026-10-20": (
-        {"Figure1_mechanisms_aggregate": "_v5", "Figure2_homogenization_method": "_v4_bluered",
-         "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4_amp_fit_s2",
-         "Figure7_state_law": "_v2", "omit": ["Figure7_state_law_allphi"]},
-        [],
-        "Fig 4 opens on the first resolved sample (1 h, w = 16.8 um): the first two output samples (0 and "
-        "1.3 s) are not drawn, since the 1 h gap to the next one is unresolved and a line across it is not "
-        "a measurement. Instant 1 is that snapshot (it already has a neck). Its few crevice cells below "
-        "sigma = 0 show in blue under a 'below 0' arrow on the sigma bar. Fits unchanged (a = 0.289)."),
 }
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -91,7 +85,7 @@ a = ap.parse_args()
 a.dest.mkdir(parents=True, exist_ok=True)
 for it, (use, extras, notes) in ITERATIONS.items():
     d = a.dest / it
-    if d.is_dir() and it not in a.rebuild:
+    if d.is_dir() and it not in a.rebuild and it != list(ITERATIONS)[-1]:
         continue
     d.mkdir(exist_ok=True)
     jobs = [(f"{stem}{use.get(stem, '')}", src, stem) for stem, src in CANON if stem not in use.get("omit", [])]
