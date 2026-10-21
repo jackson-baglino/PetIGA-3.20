@@ -3,6 +3,7 @@
 - New draft (zip of 10-21) installed in Literature/manuscript/; the previous one kept as manuscript_2026-10-16/ (gitignore now covers Literature/manuscript_*/).
 - Outline Section 3 opening: alpha_c values belong in the opening only; 3.1 and 3.2 repeat them, and 3.2's "vapor-limited" sentence now contradicts the opening (F2). The 1/3 law is Kingery's, not Demmenie's (Demmenie p.3 quoted); snippet for the opening. Section 2.2 note: wrong appendix ref, Delta-beta table ref, mixed limits, d0 typo.
 - The draft's Tables/tables.tex is the intermediate T_K version, not the final T + T_0 one.
+- Checked: Molaro data are their Table B1 (0-78 min; our CSV matches), Fig 11 only images 0/57 min; alpha_c range sources K&P 2009 p.6, Braun 2024 p.12, Bouvet 2022 p.7; grain-pair BCs Dirichlet T and rho_v on outer walls, natural on axis and mirror plane, aggregates periodic. All added to outline with snippets.
 
 ---
 
