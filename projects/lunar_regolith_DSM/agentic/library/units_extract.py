@@ -46,7 +46,7 @@ def main() -> int:
     by_page: dict[int, list] = {}
     for it in items:
         by_page.setdefault(it["page"], []).append(it)
-    imgdir = (out / "pages").resolve(); imgdir.mkdir(exist_ok=True)
+    imgdir = (out / "pages" / a.id).resolve(); imgdir.mkdir(parents=True, exist_ok=True)   # one folder per paper: page numbers repeat across papers
     for pg, its in sorted(by_page.items()):
         png = imgdir / f"p{pg}.png"
         if not png.exists():
