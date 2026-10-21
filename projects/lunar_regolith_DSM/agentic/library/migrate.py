@@ -42,6 +42,7 @@ def main() -> None:
         md = Path(f[:-5] + ".md").read_text() if Path(f[:-5] + ".md").exists() else None
         doi = ((rec.get("paper") or {}).get("doi") or ver.get("doi") or "").lower()
         if a.dry_run: n_papers += 1; continue
+        if cur.exists(stem): continue                      # published papers are frozen; migrate only adds new ones
         cur.publish_paper(stem, rec, ver, md, STATE / "text" / f"{stem}.txt", pdfs.get(doi), wave=waves.get(stem, "pilot"), topics=topics.get(stem, ""),
                           status="flagged" if (ver.get("checker") or {}).get("flagged") else "extracted")
         n_papers += 1

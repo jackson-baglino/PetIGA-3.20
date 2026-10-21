@@ -57,6 +57,13 @@ class Library:
         return con
 
 
+class Frozen(PermissionError):
+    """Raised when something tries to change information that has already been checked and published."""
+
+
+FROZEN_STATUSES = {"extracted", "flagged", "checked"}     # published after the intake checks: immutable unless a human supersedes it with a reason
+
+
 class Curator(Library):
     """Write side. The only code path that changes the library; every change is hashed, versioned, made read-only and logged as an event."""
 
@@ -109,7 +116,25 @@ class Curator(Library):
         con.execute("INSERT INTO events VALUES (?,?,?,?,?)", (now(), self.actor, "publish", rel, f"kind={kind} version={version}"))
         return version
 
-    def publish_paper(self, slug: str, record: dict, verification: dict, record_md: str | None, text_path: Path | None, pdf_path: str | None, *, wave: str = "", topics: str = "", status: str = "extracted") -> None:
+    def exists(self, slug: str) -> bool:
+        if not self.catalog.exists():
+            return False
+        con = self.ro()
+        try:
+            return con.execute("SELECT 1 FROM papers WHERE id=?", (slug,)).fetchone() is not None
+        finally:
+            con.close()
+
+    def publish_paper(self, slug: str, record: dict, verification: dict, record_md: str | None, text_path: Path | None, pdf_path: str | None, *, wave: str = "", topics: str = "", status: str = "extracted",
+                      supersede_reason: str | None = None, human_approved: bool = False) -> None:
+        """Publish a checked record.  A paper that is already published is frozen: it can only be replaced by a new version when a human has approved it and a reason is given."""
+        if self.exists(slug):
+            con0 = self.ro(); old = con0.execute("SELECT status FROM papers WHERE id=?", (slug,)).fetchone()["status"]; con0.close()
+            if old in FROZEN_STATUSES and not (supersede_reason and human_approved):
+                raise Frozen(f"{slug} is already published (status {old}); changing it needs supersede_reason and human_approved=True")
+            if supersede_reason:
+                with self.rw() as c2:
+                    c2.execute("INSERT INTO events VALUES (?,?,?,?,?)", (now(), self.actor, "supersede", slug, supersede_reason))
         paper = record.get("paper") or {}
         ck = verification.get("checker") or {}; m = verification.get("metrics") or {}
         with self.rw() as con:

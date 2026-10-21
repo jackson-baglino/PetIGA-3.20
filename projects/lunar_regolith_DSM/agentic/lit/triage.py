@@ -35,12 +35,24 @@ def main():
     print(f"triaging {len(rows)} candidates")
 
     def one(r):
+        for attempt in range(4):                       # a worker can fail now and then (rate limits); retry, and never let one failure stop the run
+            try:
+                return one_try(r)
+            except Exception as e:  # noqa: BLE001
+                import time; time.sleep(4 * (attempt + 1))
+        return r[0], None
+
+    def one_try(r):
         pid, title, year, au, venue, ab = r
         out, u = common.call_claude("triage-scorer", f"TITLE: {title}\nAUTHORS: {au}\nYEAR: {year}\nVENUE: {venue}\nABSTRACT: {ab}", schema=SCHEMA, label=f"triage:{pid[:30]}")
         return pid, out
 
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
-        for pid, out in ex.map(one, rows):
+        for k, (pid, out) in enumerate(ex.map(one, rows)):
+            if out is None:
+                continue
+            if k % 100 == 99:
+                con.commit()
             con.execute("INSERT OR REPLACE INTO triage VALUES (?,?,?,?,?)", (pid, json.dumps(out["scores"]), out["best_topic"], out["reason"], int(out["needs_full_read"])))
     con.commit()
     ranked = con.execute("""SELECT p.id, p.title, p.year, t.scores, t.best_topic, t.reason, m.authors FROM triage t JOIN papers p ON p.id=t.id LEFT JOIN meta m ON m.id=p.id""").fetchall()

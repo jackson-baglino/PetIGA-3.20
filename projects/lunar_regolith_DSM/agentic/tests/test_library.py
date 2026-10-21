@@ -53,10 +53,15 @@ def test_page_read_and_tamper_detection():
     try: d.ask("claim-checker", "check", "page", paper_id="test_2020_x", page=1); raise AssertionError("tampered file must be refused")
     except RuntimeError: pass
 
-def test_versions_kept():
+def test_published_paper_is_frozen_and_versions_kept():
+    from agentic.library.store import Frozen
     d = build()
     cur = Curator(TMP, actor="test"); REC2 = dict(REC, claims=REC["claims"][:1])
-    cur.publish_paper("test_2020_x", REC2, VER, None, None, None)
+    try: cur.publish_paper("test_2020_x", REC2, VER, None, None, None); raise AssertionError("must be frozen")
+    except Frozen: pass
+    try: cur.publish_paper("test_2020_x", REC2, VER, None, None, None, supersede_reason="typo", human_approved=False); raise AssertionError("needs human approval")
+    except Frozen: pass
+    cur.publish_paper("test_2020_x", REC2, VER, None, None, None, supersede_reason="fix", human_approved=True)
     assert (TMP / "history/papers/test_2020_x/record.json.v1").exists()
 
 if __name__ == "__main__":
