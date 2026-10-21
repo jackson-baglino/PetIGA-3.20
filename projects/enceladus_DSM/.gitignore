@@ -101,8 +101,7 @@ Literature/**/*.html
 Literature/manuscript/
 Literature/*.zip
 Literature/text/
-Literature/manuscript_2026-10-14/
-Literature/manuscript_2026-10-15/
+Literature/manuscript_*/
 
 # Manuscript documents and figures (user, 2026-10-20): kept locally, not tracked.
 # The scripts that build them stay tracked.

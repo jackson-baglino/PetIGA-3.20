@@ -1,3 +1,11 @@
+## 2026-10-21 — Outline re-synced to the 10-21 Section 3
+
+- New draft (zip of 10-21) installed in Literature/manuscript/; the previous one kept as manuscript_2026-10-16/ (gitignore now covers Literature/manuscript_*/).
+- Outline Section 3 opening: alpha_c values belong in the opening only; 3.1 and 3.2 repeat them, and 3.2's "vapor-limited" sentence now contradicts the opening (F2). The 1/3 law is Kingery's, not Demmenie's (Demmenie p.3 quoted); snippet for the opening. Section 2.2 note: wrong appendix ref, Delta-beta table ref, mixed limits, d0 typo.
+- The draft's Tables/tables.tex is the intermediate T_K version, not the final T + T_0 one.
+
+---
+
 ## 2026-10-20 (night) — Outline re-synced to the 10-20 manuscript, Sections 3 onward
 
 - Unzipped Literature/BaglinoJackson_DSM_manuscript.zip (10-20) to scratch and diffed it against the 10-15 draft. From Section 3 on the real changes are few: Section 3 opening rewritten, aggregate announcement moved to a new Section 4 opening, tau_sub equation moved into 2.2, Table 3 placed after 2.3, headings 2.4/2.5 removed, Appendix C ("Model Scaling Parameters") added empty. Sections 3.1, 3.2, 4.x and all of 5 are word for word the 10-15 text.
