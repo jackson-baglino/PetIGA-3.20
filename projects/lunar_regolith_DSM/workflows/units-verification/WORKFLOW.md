@@ -27,10 +27,11 @@ Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `s
 | U0 | Supply sources | user | — | PDFs of the three sources in `Literature/` | S0 finds each by DOI | — |
 | S0 | Locate sources | `locate_sources.py` | `units.md` source ids, `Literature/` | `manifest.json`: path, sha256, DOI per source | first-page text names the paper; files whose rendered pages are identical count as one source | missing or ambiguous source → stop, ask user |
 | S1 | Render pages | `render_pages.py` (`mutool draw -r 200`) | manifest; cited page per row, plus the page before and after | `pages/<source>_p<N>.png`, hashes | file exists, hash recorded | render failure → stop |
+| S1b | Marker reading | `marker_extract.py` (Marker 1.10.2, forced OCR, no LLM) | every page of each source | `marker/<source>_p<N>.md`: page as Markdown with LaTeX math; a symbol → page index | Markdown written for every page | Marker failure on a page → that page has no Marker reading; logged |
 | C0 | Calibrate (once, before S2 on real rows) | S2 → S3 → S4 on a copy of 8 rows with planted errors | 8 altered rows | calibration report | S3 flags 8/8; S4 rejects ≥ 7/8 planted units | below threshold → stop, revise prompts |
 | S2 | Blind read | `morty-unit-reader` | one page image + the symbol names expected on it (no units, no values) | `reads/<page>.json` per symbol: printed form, meaning, value as printed, unit as printed, where on the page, or not found | JSON schema; every requested symbol answered | schema failure → re-ask once, then log |
-| S3 | Compare | `compare_units.py` | table row, blind read | AGREE / DISAGREE / NOT_FOUND per row | units parsed to dimension vector and scale (J m⁻³ K⁻¹ ≡ J/(m³ K); °C difference ≡ K); NOT_FOUND re-read on neighbour pages | — |
-| S4 | Adjudicate | `beth-unit-checker` | for each DISAGREE/NOT_FOUND row: page image, table row, blind read | verdict: table right / read right / both wrong (with correction) / cannot tell, plus location on the page | verdict schema; a correction must re-pass S3 | "cannot tell" → user |
+| S3 | Compare | `compare_units.py` | table row, blind read, Marker reading | AGREE / DISAGREE / NOT_FOUND per row | units parsed to dimension vector and scale (J m⁻³ K⁻¹ ≡ J/(m³ K); °C difference ≡ K); AGREE only if the table, the blind read and Marker all agree; NOT_FOUND re-read on the page Marker's index points to | — |
+| S4 | Adjudicate | `beth-unit-checker` | for each DISAGREE/NOT_FOUND row: page image, table row, blind read, Marker reading | verdict: table right / read right / both wrong (with correction) / cannot tell, plus location on the page | verdict schema; a correction must re-pass S3 | "cannot tell" → user |
 | U1 | Inspect | user | every row from S4 + a random 10 % (6 rows) of AGREE rows, each with its page crop | approve or correct | — | user decides |
 | S5 | Apply | `apply_verdicts.py` | verdicts, user decisions | updated `units.md`, run manifest | every row has a status; header removed only if none unresolved | — |
 
@@ -55,7 +56,7 @@ model:        claude-opus-5-5
 tools:        Read (page image)
 skills:       none
 MCP servers:  none
-reads:        page PNG, the table row, the blind read
+reads:        page PNG, the table row, the blind read, the Marker reading
 writes:       {symbol, verdict, unit, value, meaning, location, reason}
 may not:      fix rows it was not given; answer from memory of the paper
 context:      fresh per disputed row
@@ -70,13 +71,17 @@ Read only) from a driver script; the exact invocation is fixed at build time.
 |---|---|---|---|
 | source files | DOI on first page, sha256 | deterministic | one file per source |
 | blind reads | schema; S3 unit comparison | deterministic | parses; dimensions and scale equal |
+| Marker reading | a second, independent instrument (OCR model, not Claude) | deterministic given its pinned version | agrees with the blind read and the table |
 | disputed rows | `beth-unit-checker` | independent agent (different model, sees the image) | verdict with a location |
 | the whole pipeline | planted errors (C0): 8 rows with a flipped exponent sign, a wrong prefix, a swapped unit, a wrong page | measured | S3 8/8; S4 ≥ 7/8 |
 | reader stability | read 5 pages twice | measured | report the disagreement count |
 | final table | user inspection of all disputed + 10 % of agreed rows | human | user approves |
 
 The reader is blind to the claimed answer, so agreement with the table is
-evidence rather than echo. Comparison is a script, so the same reads always
+evidence rather than echo. Marker is a different kind of instrument (a
+local OCR model), so the blind read and Marker do not share a model's
+blind spots. Tested on Kaempfer & Plapp p. 4: it recovered every value the
+text layer mangles (1.8 × 10⁶ J m⁻³ K⁻¹, 2.178 × 10⁻⁵ m² s⁻¹, …). Comparison is a script, so the same reads always
 give the same verdicts.
 
 ## 5. Human decision points
@@ -91,7 +96,8 @@ give the same verdicts.
 
 - `manifest.json`: git commit, Claude Code version, model IDs, sha256 of the
   agent files, every PDF and every page PNG, check verdicts.
-- `reads/*.json`, `verdicts.json`, `calibration.json`: committed.
+- `reads/*.json`, `marker/*.md`, `verdicts.json`, `calibration.json`: committed.
+- Environment: `requirements-workflows.txt` / `.lock` (`venv_workflows`).
 - `runs.db`: one row per agent call (stage, agent, model, input hash, output
   path, verdict, time); local.
 - `transcript.jsonl`: local.
@@ -105,7 +111,8 @@ Read schema (one object per symbol):
 |---|---|
 | Text layer drops exponents and minus signs | agents get images only |
 | Reader anchors on the claimed unit | blind read (no units or values given) |
-| Wrong page in the table | neighbour pages rendered; NOT_FOUND re-read |
+| Wrong page in the table | Marker's symbol → page index; NOT_FOUND re-read on that page |
+| Marker misreads Greek letters or subscripts | S3 compares units, not symbol strings; S4 sees the image |
 | Subscripts and Greek letters misread | S3 compares dimensions, not strings; S4 sees the image |
 | "Verified" rows that were never re-checked | every row passes through S2–S3 again |
 | Two agents share a blind spot | S4 uses a different model; user inspects a random sample |

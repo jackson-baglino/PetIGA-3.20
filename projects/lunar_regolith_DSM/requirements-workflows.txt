@@ -1,0 +1,31 @@
+# ---------------------------------------------------------------------------
+# Agentic workflows (workflows/, scripts/flowchart/): everything needed to run
+# them, separate from requirements.txt.
+#
+#   requirements.txt            solver pre/post-processing; pinned to match the
+#                               HPC (Python 3.11, numpy/scipy held back).
+#   requirements-workflows.txt  this file: the workflow tools. They pull in
+#                               PyTorch and ~90 packages the HPC never needs,
+#                               so they live in their own environment.
+#   requirements-workflows.lock exact versions of every package, for an
+#                               identical environment (pip freeze, 2026-10-22).
+#
+# Set up (macOS, Homebrew python@3.11):
+#   python3.11 -m venv venv_workflows
+#   venv_workflows/bin/pip install -r requirements-workflows.lock
+#
+# Non-Python tools the workflows call (versions used, 2026-10-22):
+#   Claude Code   2.1.308       the agent harness; model IDs are pinned per agent
+#   Graphviz      14.0.0        `neato`, used by scripts/flowchart/render_flowchart.py
+#   MuPDF         1.24.9        `mutool draw`, page images for the agents
+#   Google Chrome (any recent)  headless screenshots for flowchart review
+#
+# Marker is held below 2.0: Marker 2 does its OCR through a separate
+# llama.cpp `llama-server` binary. 1.10.2 runs entirely in PyTorch.
+# Never run Marker with --use_llm: it sends page content to an external API.
+# Marker's model weights have their own licence (free for research use).
+# ---------------------------------------------------------------------------
+
+marker-pdf==1.10.2          # PDF page -> Markdown with LaTeX math (local OCR)
+surya-ocr==0.17.1           # Marker's OCR and layout models
+torch==2.14.1               # Marker's runtime

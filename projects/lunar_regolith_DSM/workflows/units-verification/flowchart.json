@@ -1,7 +1,7 @@
 {
   "title": "units-verification",
   "summary": [
-    "Checks every row of memory/semantic/units.md (62 symbols from Kaempfer & Plapp 2009 and Moure & Fu 2024 with its SI) against images of the cited pages. A Sonnet agent reads each page blind, without seeing the table's answer; a script compares its reading with the table; an Opus agent judges only the rows that disagree; the user inspects every disputed row and a random sample of agreed ones.",
+    "Checks every row of memory/semantic/units.md (62 symbols from Kaempfer & Plapp 2009 and Moure & Fu 2024 with its SI) against images of the cited pages. Marker (a local OCR model) and a Sonnet agent each read the pages independently, the agent without seeing the table's answer; a script compares both readings with the table; an Opus agent judges only the rows that disagree; the user inspects every disputed row and a random sample of agreed ones.",
     "The pipeline is first run on eight rows with planted errors, and the real run starts only if it catches them. Agents see page images only, never the PDF text layer, which drops exponents and minus signs."
   ],
   "status": "Design for review, 2026-10-22. Nothing is built yet. Details: WORKFLOW.md.",
@@ -75,6 +75,26 @@
       "job": "One image per page, with its SHA-256 in the manifest."
     },
     {
+      "id": "S1b",
+      "lane": "script",
+      "row": 1.5,
+      "kind": "script",
+      "title": "S1b marker_extract.py",
+      "job": "Converts every page to Markdown with LaTeX math using Marker, a local OCR model.",
+      "details": [
+        "Forced OCR, no LLM; independent of the Sonnet reader",
+        "Also indexes which page defines each symbol"
+      ]
+    },
+    {
+      "id": "MK",
+      "lane": "record",
+      "row": 1.5,
+      "kind": "record",
+      "title": "marker/<source>_p<N>.md",
+      "job": "Marker's reading of each page, and the symbol-to-page index."
+    },
+    {
       "id": "C0",
       "lane": "script",
       "row": 2,
@@ -125,10 +145,10 @@
       "row": 4,
       "kind": "script",
       "title": "S3 compare_units.py",
-      "job": "Compares the table's unit with the blind reading by dimension and scale.",
+      "job": "Compares the table's unit with the blind reading and with Marker's, by dimension and scale.",
       "details": [
         "J/(m^3 K) equals J m^-3 K^-1; a degC difference equals K",
-        "Outcome per row: AGREE, DISAGREE or NOT_FOUND"
+        "AGREE only if all three agree; otherwise DISAGREE or NOT_FOUND"
       ]
     },
     {
@@ -143,7 +163,7 @@
       ],
       "job": "Decides each disputed row from the page image and states where on the page the answer is.",
       "details": [
-        "Gets the page image, the table row and the blind reading",
+        "Gets the page image, the table row, the blind reading and Marker's",
         "Verdict: table right, reading right, both wrong (with fix) or cannot tell",
         "Fresh context per row; a fix must pass S3 again"
       ]
@@ -209,11 +229,6 @@
       "kind": "data"
     },
     {
-      "from": "S1",
-      "to": "C0",
-      "kind": "flow"
-    },
-    {
       "from": "C0",
       "to": "CR",
       "kind": "data"
@@ -238,7 +253,7 @@
       "from": "S3",
       "to": "S2",
       "kind": "loop",
-      "label": "NOT_FOUND: read neighbour pages"
+      "label": "NOT_FOUND: re-read Marker's page"
     },
     {
       "from": "S3",
@@ -272,6 +287,21 @@
       "from": "S5",
       "to": "T",
       "kind": "data"
+    },
+    {
+      "from": "S1",
+      "to": "S1b",
+      "kind": "flow"
+    },
+    {
+      "from": "S1b",
+      "to": "MK",
+      "kind": "data"
+    },
+    {
+      "from": "S1b",
+      "to": "C0",
+      "kind": "flow"
     }
   ]
 }

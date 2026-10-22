@@ -64,6 +64,19 @@ make            # optimized; produces ./lunar_regolith_dsm
 make debug      # -g3 -O0
 ```
 
+## Workflow tools
+
+The agentic workflows (`workflows/`) need their own environment, kept apart
+from the solver's because Marker pulls in PyTorch:
+
+```bash
+python3.11 -m venv venv_workflows
+venv_workflows/bin/pip install -r requirements-workflows.lock
+```
+
+`requirements-workflows.txt` lists the non-Python tools too (Claude Code,
+Graphviz, MuPDF, Chrome).
+
 ## Run
 
 Never invoke the binary by hand — use the run script, which assembles the three

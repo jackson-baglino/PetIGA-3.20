@@ -66,8 +66,10 @@ more HPC jobs go through `scripts/HPC/submit_batch.sh`.
   verdicts) and its transcript. Follow `workflows/TEMPLATE.md` §6.
 - Numbers come from scripts and tools, not from model output. Scripts take
   their inputs as arguments or files and print what they used.
-- Python dependencies are pinned in `requirements.txt`; do not bump numpy or
-  scipy (the HPC caps Python at 3.11).
+- Python dependencies are pinned in `requirements.txt` (pre/post-processing,
+  `venv_lunar`; do not bump numpy or scipy, the HPC caps Python at 3.11) and
+  in `requirements-workflows.txt` / `.lock` (workflow tools such as Marker,
+  `venv_workflows`). Never mix the two environments.
 
 ## Agent names
 
