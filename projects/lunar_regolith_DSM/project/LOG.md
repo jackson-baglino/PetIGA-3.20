@@ -2,6 +2,22 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-10-22 (2) — d0 computed once; settings, library DOIs, units, memory split
+
+- Done: d0 computed once at start-up (K&P Eq. 13) and used everywhere;
+  -d0_sub0 removed from the solver and 106 opts files (b927b982). Simulation
+  rule loosened to at most one run without instructions. settings.local.json
+  pruned 197 → 21 rules, global settings copied in, committed. Removed a
+  malformed rule from the repo-root settings.local.json (startup warning).
+  library/references.bib: 85 DOIs, all resolve via doi.org; one title
+  mismatch (wheeler_2010). Units table cleaned and flagged unreliable.
+  Lunar auto-memory split into its own folder with a sectioned index.
+  Contact-angle status corrected (static angle only).
+- Remaining: decide how the course repo is synced (separate history);
+  prune the repo-root settings.local.json; align comp_eps d0 with the
+  solver (-0.14 %)?; units verification workflow; docs-synthesis pilot design.
+- Bottlenecks: the course repo's history is unrelated to this repo's.
+
 ## 2026-10-22 — Project memory, permissions, skills, guides; branches cleaned
 
 - Done: merged feat/d0-kaempfer-plapp (d0 from K&P Eq. 13), verified it
