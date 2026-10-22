@@ -87,6 +87,12 @@ def _db(rdir):
     return con
 
 
+def _abs(path, clean):
+    """A Read path as absolute: a relative path is relative to the clean folder (the session's working folder)."""
+    p = Path(str(path))
+    return str(p if p.is_absolute() else Path(clean) / p)
+
+
 def _audit(events, agent, clean, image_names):
     """Problems with what the session did: wrong model, a tool other than Read, a Read of another file."""
     problems, result, model = [], None, None
@@ -100,7 +106,7 @@ def _audit(events, agent, clean, image_names):
                     continue
                 if c.get("name") not in agent["tools"]:
                     problems.append(f"used tool {c.get('name')}")
-                elif c["name"] == "Read" and str(c.get("input", {}).get("file_path")) not in allowed:
+                elif c["name"] == "Read" and _abs(c.get("input", {}).get("file_path"), clean) not in allowed:
                     problems.append(f"read {c.get('input', {}).get('file_path')}")
         if e.get("type") == "result":
             result = e

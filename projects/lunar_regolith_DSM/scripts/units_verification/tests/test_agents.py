@@ -60,6 +60,10 @@ class Audit(unittest.TestCase):
         agent = {"model": "claude-sonnet-5-5", "tools": ["Read"]}
         ok = self.events([("Read", {"file_path": "/tmp/c/page.png"}), ("StructuredOutput", {})])
         self.assertEqual(agents._audit(ok, agent, "/tmp/c", ["page.png"])[0], [])
+        rel_ok = self.events([("Read", {"file_path": "page.png"})])
+        self.assertEqual(agents._audit(rel_ok, agent, "/tmp/c", ["page.png"])[0], [])
+        rel_bad = self.events([("Read", {"file_path": "../units.md"})])
+        self.assertTrue(agents._audit(rel_bad, agent, "/tmp/c", ["page.png"])[0])
         probs = agents._audit(self.events([("Read", {"file_path": "/x/units.md"})]), agent, "/tmp/c", ["page.png"])[0]
         self.assertTrue(any("read /x/units.md" in p for p in probs))
         probs = agents._audit(self.events([("Bash", {})]), agent, "/tmp/c", ["page.png"])[0]
