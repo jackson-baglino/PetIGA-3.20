@@ -1,0 +1,210 @@
+{
+  "criteria": {
+    "S3_unit_page": "8/8",
+    "S4_unit_page": "8/8",
+    "S4m_meaning": "2/2"
+  },
+  "pass": true,
+  "control_false_alarms": 1,
+  "plants": [
+    {
+      "symbol": "beta",
+      "kind": "flipped exponent sign",
+      "field": "unit",
+      "original": "s m^-1",
+      "planted": "s m^1",
+      "s3": "DISAGREE",
+      "s3_reasons": [
+        "unit: table m s vs read s m^-1",
+        "marker: unit after the symbol is ['s m^-1', 's m^-1', 's m^-1']"
+      ],
+      "s4": "read_right",
+      "s4_unit": "s m^-1",
+      "s4_page": 4,
+      "s4_consistency": "consistent",
+      "caught_s3": true,
+      "caught_s4": true
+    },
+    {
+      "symbol": "L_sg",
+      "kind": "flipped exponent sign",
+      "field": "unit",
+      "original": "J m^-3",
+      "planted": "J m^3",
+      "s3": "DISAGREE",
+      "s3_reasons": [
+        "unit: table m^5 kg s^-2 vs read kg m^-1 s^-2",
+        "marker: unit after the symbol is ['J m^-3']"
+      ],
+      "s4": "read_right",
+      "s4_unit": "J m^-3",
+      "s4_page": 4,
+      "s4_consistency": "consistent",
+      "caught_s3": true,
+      "caught_s4": true
+    },
+    {
+      "symbol": "a",
+      "kind": "wrong prefix",
+      "field": "unit",
+      "original": "m",
+      "planted": "mm",
+      "s3": "DISAGREE",
+      "s3_reasons": [
+        "unit: table 0.001 m vs read m",
+        "marker: unit after the symbol is ['m']"
+      ],
+      "s4": "read_right",
+      "s4_unit": "m",
+      "s4_page": 4,
+      "s4_consistency": "consistent",
+      "caught_s3": true,
+      "caught_s4": true
+    },
+    {
+      "symbol": "gamma_ia",
+      "kind": "wrong prefix",
+      "field": "unit",
+      "original": "N m^-1",
+      "planted": "mN m^-1",
+      "s3": "DISAGREE",
+      "s3_reasons": [
+        "unit: table 0.001 kg s^-2 vs read kg s^-2",
+        "marker: unit after the symbol is ['N/m']"
+      ],
+      "s4": "read_right",
+      "s4_unit": "N/m",
+      "s4_page": 9,
+      "s4_consistency": "consistent",
+      "caught_s3": true,
+      "caught_s4": true
+    },
+    {
+      "symbol": "kappa_i",
+      "kind": "swapped unit",
+      "field": "unit",
+      "original": "W m^-1 K^-1",
+      "planted": "J m^-1 K^-1",
+      "s3": "DISAGREE",
+      "s3_reasons": [
+        "unit: table m kg K^-1 s^-2 vs read m kg K^-1 s^-3",
+        "marker: unit after the symbol is ['W m^-1 K^-1']"
+      ],
+      "s4": "read_right",
+      "s4_unit": "W m^-1 K^-1",
+      "s4_page": 4,
+      "s4_consistency": "consistent",
+      "caught_s3": true,
+      "caught_s4": true
+    },
+    {
+      "symbol": "c_p_i",
+      "kind": "swapped unit",
+      "field": "unit",
+      "original": "J kg^-1 K^-1",
+      "planted": "J m^-3 K^-1",
+      "s3": "DISAGREE",
+      "s3_reasons": [
+        "unit: table kg m^-1 K^-1 s^-2 vs read m^2 K^-1 s^-2",
+        "marker: unit after the symbol is ['J/(Kg °C)']"
+      ],
+      "s4": "read_right",
+      "s4_unit": "J/(Kg °C)",
+      "s4_page": 9,
+      "s4_consistency": "consistent",
+      "caught_s3": true,
+      "caught_s4": true
+    },
+    {
+      "symbol": "k",
+      "kind": "wrong page",
+      "field": "page",
+      "original": 4,
+      "planted": 13,
+      "s3": "DISAGREE",
+      "s3_reasons": [
+        "page: found on p4, not on the cited p13"
+      ],
+      "s4": "read_right",
+      "s4_unit": "J K^-1",
+      "s4_page": 4,
+      "s4_consistency": "consistent",
+      "caught_s3": true,
+      "caught_s4": true
+    },
+    {
+      "symbol": "K_w",
+      "kind": "wrong page",
+      "field": "page",
+      "original": 9,
+      "planted": 7,
+      "s3": "DISAGREE",
+      "s3_reasons": [
+        "page: found on p9, not on the cited p7"
+      ],
+      "s4": "read_right",
+      "s4_unit": "W/(m °C)",
+      "s4_page": 9,
+      "s4_consistency": "consistent",
+      "caught_s3": true,
+      "caught_s4": true
+    },
+    {
+      "symbol": "rho_i",
+      "kind": "swapped meaning",
+      "field": "meaning",
+      "original": "density of ice (printed as ρi) — meaning inferred from the subscript",
+      "planted": "density of dry air (printed as ρi)",
+      "s3": "AGREE",
+      "s3_reasons": [],
+      "s4m": "table_wrong",
+      "s4m_wording": "density of ice, (dry) air",
+      "caught_s4m": true
+    },
+    {
+      "symbol": "kappa_a",
+      "kind": "swapped meaning",
+      "field": "meaning",
+      "original": "heat conductivity of dry air (printed as κa) — meaning inferred from the subscript",
+      "planted": "heat conductivity of ice (printed as κa)",
+      "s3": "AGREE",
+      "s3_reasons": [],
+      "s4m": "table_wrong",
+      "s4m_wording": "heat conductivity of ice, (dry) air",
+      "caught_s4m": true
+    }
+  ],
+  "controls": [
+    {
+      "symbol": "gamma",
+      "s3": "AGREE",
+      "s4": null,
+      "s4m": "matches",
+      "false_alarms": []
+    },
+    {
+      "symbol": "h",
+      "s3": "AGREE",
+      "s4": null,
+      "s4m": "matches",
+      "false_alarms": []
+    },
+    {
+      "symbol": "u_j",
+      "s3": "AGREE",
+      "s4": null,
+      "s4m": "cannot_tell",
+      "false_alarms": [
+        "S4m cannot_tell: The page gives only typical dimensionless values of u_j and says it is related to v_{n,j}; it never calls u_j a phase-change factor multiplying α_jφ_l²φ_m², so the table's meaning cannot be confirmed here."
+      ]
+    },
+    {
+      "symbol": "Lambda",
+      "s3": "AGREE",
+      "s4": null,
+      "s4m": "matches",
+      "false_alarms": []
+    }
+  ],
+  "read_failures": []
+}

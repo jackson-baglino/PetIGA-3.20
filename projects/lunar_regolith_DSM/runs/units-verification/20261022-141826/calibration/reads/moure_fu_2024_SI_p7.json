@@ -1,0 +1,43 @@
+{
+  "page": "moure_fu_2024_SI_p7",
+  "reads": [
+    {
+      "symbol": "K_w",
+      "found": false,
+      "printed_as": null,
+      "meaning": null,
+      "value_as_printed": null,
+      "unit_as_printed": null,
+      "location": null
+    },
+    {
+      "symbol": "u_j",
+      "found": true,
+      "printed_as": "u_j",
+      "meaning": "typical values of u_j estimated based on T and ρ_v distributions; related to v_{n,j}",
+      "value_as_printed": "∼ 10^-3 (solidification), ∼ 10^-8 (sublimation), ∼ 10^-8 (evaporation)",
+      "unit_as_printed": "(-)",
+      "location": "Table S1, row \"u_j (-)\"; also text line 112"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "K_w",
+        "u_j"
+      ],
+      "page_png_sha256": "22527ac606f8bfd3f066fb2ba6c7ce99baf8f479a4074dc0901bbf680564a1db",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "d2cac988ab9219c2838099839818a98411fbe20fafae6a4caeff7728bb70f6a8",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-141826/calibration/transcripts/C0-S2/moure_fu_2024_SI_p7_4dd572a7_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

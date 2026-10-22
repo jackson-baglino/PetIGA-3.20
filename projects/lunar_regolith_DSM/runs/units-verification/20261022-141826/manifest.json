@@ -69,9 +69,12 @@
         "kaempfer_plapp_2009_p12.png": "731b6250807aaab783059ecb9d0c6f06b875fe141bc0788f387ff8a943687252",
         "kaempfer_plapp_2009_p13.png": "3504b56694f256a94e46a74c090bb31366a54495dde198a89d7b5f73d34f8d30",
         "kaempfer_plapp_2009_p14.png": "beb16ad3ff1c618bee49bb1b28d89991b6322ba05b78ea8ba0833dd38f3f0959",
+        "kaempfer_plapp_2009_p15.png": "d9f59f9a53afb974ae52f42904b4929e069031ed238a8288cd2ac2d5ef575b4e",
         "kaempfer_plapp_2009_p3.png": "81a7e26759d5f0d5f51e874aa3270efda1320fd1215d2d9da0361ec74ee4fe37",
         "kaempfer_plapp_2009_p4.png": "419b2c53ae7333f96e1fb77753c361e4b0b133b78644103cfe40b671d63c1f0c",
         "kaempfer_plapp_2009_p5.png": "6a408707bcf5917c943ea0047825151779c478a0eb246c1c58044ebf633d5c66",
+        "kaempfer_plapp_2009_p6.png": "b8a5810fe17e9e11bf12b132fd85bafa012e8b778005ba78fcc71670907b831c",
+        "kaempfer_plapp_2009_p7.png": "7e1715c00ffdf3c698c41cbf7750cb0c1ad11ab6861f0ee72e70e882f90c1d54",
         "kaempfer_plapp_2009_p8.png": "397d030250b688204996e5a303a1744df5a84285a432f1807c6bd8b90552715d",
         "kaempfer_plapp_2009_p9.png": "d845e11d2c1099a2e8d9a0fbbc702a2ceb0b60caf107f40750fedc02ab6e74c3",
         "moure_fu_2024_SI_p10.png": "8d1d8c5b7c216d22726ddf99a0d720058a68dec338cd3c25854d2e33bf2b8721",
@@ -86,10 +89,14 @@
         "moure_fu_2024_p6.png": "88261dc268367e6d9fb71d5ac6e1298b33544627d9cb7a74a473b1ff832e3cd9",
         "moure_fu_2024_p7.png": "16151bf0da45ffdc0444f4455fee16cb4d68591e79e680dd70419e982dcfe134"
       },
-      "added": [],
+      "added": [
+        "kaempfer_plapp_2009:15",
+        "kaempfer_plapp_2009:6",
+        "kaempfer_plapp_2009:7"
+      ],
       "verdict": "pass",
       "git": {
-        "commit": "56b85e35841403c0e766ae8a169445767e2ca528",
+        "commit": "736ed821ba847d2cbbc2ced59512ba6331efeeda",
         "definitions_modified": []
       },
       "allow_dirty": false,
@@ -97,7 +104,7 @@
         "claude_code": "2.1.308 (Claude Code)",
         "mutool": "mutool version 1.24.9"
       },
-      "finished": "2026-10-22T14:18:34-07:00"
+      "finished": "2026-10-22T14:59:35-07:00"
     },
     "S1b": {
       "flags": [
@@ -217,6 +224,31 @@
         "mutool": "mutool version 1.24.9"
       },
       "finished": "2026-10-22T14:32:53-07:00"
+    },
+    "C0": {
+      "agents": {
+        "morty-unit-reader": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+        "beth-unit-checker": "e561ca915f1418eb7bba74dc6a161b0bbc90ad867fbec462f69891ea04adcd11"
+      },
+      "table_sha256": "3d3d977a766801ef5a189b6f7e4d74329a01f1da253c14502482e14b264d413a",
+      "planted_table_sha256": "95bb5a64be42c82c8bda5464bf6e0d3675b3ad77175ffc50a8c62ab0f27c4f32",
+      "criteria": {
+        "S3_unit_page": "8/8",
+        "S4_unit_page": "8/8",
+        "S4m_meaning": "2/2"
+      },
+      "control_false_alarms": 1,
+      "verdict": "pass",
+      "git": {
+        "commit": "736ed821ba847d2cbbc2ced59512ba6331efeeda",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T15:02:01-07:00"
     }
   }
 }

@@ -1,0 +1,80 @@
+{
+  "plants": [
+    {
+      "symbol": "beta",
+      "kind": "flipped exponent sign",
+      "field": "unit",
+      "original": "s m^-1",
+      "planted": "s m^1"
+    },
+    {
+      "symbol": "L_sg",
+      "kind": "flipped exponent sign",
+      "field": "unit",
+      "original": "J m^-3",
+      "planted": "J m^3"
+    },
+    {
+      "symbol": "a",
+      "kind": "wrong prefix",
+      "field": "unit",
+      "original": "m",
+      "planted": "mm"
+    },
+    {
+      "symbol": "gamma_ia",
+      "kind": "wrong prefix",
+      "field": "unit",
+      "original": "N m^-1",
+      "planted": "mN m^-1"
+    },
+    {
+      "symbol": "kappa_i",
+      "kind": "swapped unit",
+      "field": "unit",
+      "original": "W m^-1 K^-1",
+      "planted": "J m^-1 K^-1"
+    },
+    {
+      "symbol": "c_p_i",
+      "kind": "swapped unit",
+      "field": "unit",
+      "original": "J kg^-1 K^-1",
+      "planted": "J m^-3 K^-1"
+    },
+    {
+      "symbol": "k",
+      "kind": "wrong page",
+      "field": "page",
+      "original": 4,
+      "planted": 13
+    },
+    {
+      "symbol": "K_w",
+      "kind": "wrong page",
+      "field": "page",
+      "original": 9,
+      "planted": 7
+    },
+    {
+      "symbol": "rho_i",
+      "kind": "swapped meaning",
+      "field": "meaning",
+      "original": "density of ice (printed as ρi) — meaning inferred from the subscript",
+      "planted": "density of dry air (printed as ρi)"
+    },
+    {
+      "symbol": "kappa_a",
+      "kind": "swapped meaning",
+      "field": "meaning",
+      "original": "heat conductivity of dry air (printed as κa) — meaning inferred from the subscript",
+      "planted": "heat conductivity of ice (printed as κa)"
+    }
+  ],
+  "controls": [
+    "gamma",
+    "h",
+    "u_j",
+    "Lambda"
+  ]
+}

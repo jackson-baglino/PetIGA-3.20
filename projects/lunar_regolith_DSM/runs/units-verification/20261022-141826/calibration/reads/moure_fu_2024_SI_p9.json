@@ -1,0 +1,79 @@
+{
+  "page": "moure_fu_2024_SI_p9",
+  "reads": [
+    {
+      "symbol": "gamma_ia",
+      "found": true,
+      "printed_as": "σ_ia",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "0.109",
+      "unit_as_printed": "N/m",
+      "location": "Table S3, row 4 (after σ_iw)"
+    },
+    {
+      "symbol": "c_p_i",
+      "found": true,
+      "printed_as": "c_{p,i}",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "1.96 × 10^3",
+      "unit_as_printed": "J/(Kg °C)",
+      "location": "Table S3, row \"c_{p,i}\" (second of the c_p rows)"
+    },
+    {
+      "symbol": "Lambda",
+      "found": true,
+      "printed_as": "Λ",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "1",
+      "unit_as_printed": "N/m",
+      "location": "Table S3, row 2 (after ε)"
+    },
+    {
+      "symbol": "K_w",
+      "found": true,
+      "printed_as": "K_w",
+      "meaning": "Parameter in Table S3 (no description given; thermal conductivity implied by units)",
+      "value_as_printed": "0.554",
+      "unit_as_printed": "W/(m °C)",
+      "location": "Table S3, row \"K_w\" (after K_i, before L_sol)"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "gamma_ia",
+        "c_p_i",
+        "Lambda"
+      ],
+      "page_png_sha256": "5d19674185d05f09a84b5f7fd0b5bf35a38b8844eaa01ecc91fcea0bdb3c3969",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "6e8de5f612de76febf25e28319390c360eedb47084bbdd9bdb6274e1a8561e69",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-141826/calibration/transcripts/C0-S2/moure_fu_2024_SI_p9_94a11d2f_try1.jsonl"
+        }
+      ]
+    },
+    {
+      "symbols": [
+        "K_w"
+      ],
+      "page_png_sha256": "5d19674185d05f09a84b5f7fd0b5bf35a38b8844eaa01ecc91fcea0bdb3c3969",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "f26e8b396a0f644df49f46dfe289acb5dec6c78ead11c9bfa948cb995efd1a93",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-141826/calibration/transcripts/C0-S2/moure_fu_2024_SI_p9_e5e4823d_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}
