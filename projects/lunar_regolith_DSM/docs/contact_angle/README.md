@@ -84,6 +84,10 @@ a dynamic angle, not Young's angle, because `σ = d0·χ + β·v_n`
 
 ## Open items and inconsistencies
 
+- **Not fully validated.** The term recovers the static (Young) angle, but
+  the implementation does not apply something like a free-flow boundary
+  condition at the moving contact line (user, 2026-10-22). To be discussed
+  before the dynamic results above are relied on.
 - `studies/contact_angle/README.md` says `-gamma_ia` defaults to `-Sigma_i`.
   That is stale: Σ_k were removed on 2026-09-17, and the code default is
   `-gamma_ia_bulk` (`src/lunar_main.c`).
