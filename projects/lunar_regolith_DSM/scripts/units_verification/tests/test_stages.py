@@ -25,12 +25,16 @@ TABLE = """# t
 | `beta` | kinetic coefficient (printed as β) | s m^-1 | src_a | 4 | q | v |
 | `x_s` | humidity ratio (printed as xs) | 1 (dimensionless) | src_a | 4 | q | v |
 | `L` | pore size (printed as L) | m | src_a | 9 | q | v |
+| `xi_v` | vapor time-scale factor (printed as ξv) | 1 (dimensionless) | src_a | 4 | q | v |
+| `alpha_j` | phase-change coefficient (printed as αj) | s^-1 | src_a | 4 | q | v |
 """
 MARKER_P4 = r"""| Symbol | Meaning | Value | Ref |
 |---|---|---|---|
 | $C_i, C_a$ | heat capacity of ice, air per volume | $1.8 \times 10^{6}$ , $1.4 \times 10^{3}$ J m <sup>-3</sup> K <sup>-1</sup> | [30] |
 | β | interface kinetic coefficient | in simulations $\beta = 5.5 \times 10^5 \text{ s m}^{-1}$ | |
 | $x_s$ | humidity ratio | kg/kg | |
+| $\xi_v$ | $10^{-3}$ | (-) |
+| $\alpha_j (1/s)$ | $7.96 \times 10^{4}$ |
 """
 MARKER_P9 = "We take an estimated pore size of $L = 10^{-4}$ m.\n"
 
@@ -56,7 +60,7 @@ class TableReading(unittest.TestCase):
             p = Path(tmp) / "units.md"
             p.write_text(TABLE)
             rows = uvlib.read_table(p)
-            self.assertEqual([r["symbol"] for r in rows], ["M0", "Ci", "beta", "x_s", "L"])
+            self.assertEqual([r["symbol"] for r in rows], ["M0", "Ci", "beta", "x_s", "L", "xi_v", "alpha_j"])
             self.assertEqual(rows[2]["printed"], "β")
             self.assertIsNone(rows[0]["page"])
             p.write_text(TABLE + TABLE.splitlines()[-1] + "\n")
@@ -136,8 +140,12 @@ class Compare(unittest.TestCase):
         self.assertTrue(any(x.startswith("read_unit_unparsed") for x in r["reasons"]))
 
     def test_marker_only_mode(self):
-        r = compare_units.compare_row(self.rows["Ci"], {}, self.mdir, self.index, marker_only=True)
-        self.assertEqual(r["verdict"], "MARKER_AGREES", r["reasons"])
+        for sym in ("Ci", "xi_v", "alpha_j"):   # xi_v: "(-)" a cell later; alpha_j: "(1/s)"
+            with self.subTest(sym=sym):
+                r = compare_units.compare_row(self.rows[sym], {}, self.mdir, self.index, marker_only=True)
+                self.assertEqual(r["verdict"], "MARKER_AGREES", r["reasons"])
+        r = compare_units.compare_row(dict(self.rows["xi_v"], unit="m"), {}, self.mdir, self.index, marker_only=True)
+        self.assertEqual(r["verdict"], "MARKER_DIFFERS")
 
 
 class MarkerSplit(unittest.TestCase):

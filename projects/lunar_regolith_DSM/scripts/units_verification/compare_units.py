@@ -31,7 +31,9 @@ import unitparse as up
 import uvlib
 
 WINDOW = 300  # characters after a symbol that may hold its unit, within the same line (table row or paragraph)
-DIMENSIONLESS_MARK = re.compile(r"^\s*[:=]?\s*\(\s*(?:-|1|dimensionless)\s*\)|^\s*\(?\s*kg\s*/\s*kg", re.I)
+# A dimensionless unit is printed as "(-)", "(1)", "(dimensionless)" or "kg/kg"; it counts if no other unit
+# comes before it after the symbol (in a table it may sit a cell or two later).
+DIMENSIONLESS_MARK = re.compile(r"\(\s*(?:-|1|dimensionless)\s*\)|\bkg\s*/\s*kg\b", re.I)
 
 
 def printed_forms(row, read=None):
@@ -58,7 +60,9 @@ def marker_check(flat, forms, table_unit, read_numbers):
         win = flat.text[end:(nl if nl >= 0 else len(flat.text))][:WINDOW]
         runs = up.unit_runs(win)
         nums += up.parse_numbers(win)
-        if table_unit is not None and table_unit.dims == up.ONE.dims and DIMENSIONLESS_MARK.search(win):
+        mark = DIMENSIONLESS_MARK.search(win)
+        if (table_unit is not None and table_unit.dims == up.ONE.dims and mark
+                and (not runs or runs[0][3] is None or runs[0][3].dims == up.ONE.dims or mark.start() <= runs[0][0])):
             out["units_seen"].append("(dimensionless mark)")
             out["unit_match"] = True
             continue

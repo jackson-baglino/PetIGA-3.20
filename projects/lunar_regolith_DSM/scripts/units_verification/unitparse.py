@@ -349,7 +349,7 @@ def unit_runs(text):
                 is_atom = True
             except UnitError:
                 pass
-        if is_atom or tok in "/()" or (tok == "1" and cur == [] and text[m.end():m.end() + 1] == "/"):
+        if is_atom or tok in "/()" or (tok == "1" and all(t[2] == "(" for t in cur) and text[m.end():m.end() + 1] == "/"):
             if tok == "1" or tok in "/()":
                 cur.append((m.start(), m.end(), tok, False))
             else:
