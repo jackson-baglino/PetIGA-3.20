@@ -8,8 +8,8 @@ Layout is deterministic: each node sits on a grid (its lane is the column, its
 places edge labels away from nodes. The agent writing the spec never places
 coordinates. After rendering, the script lints the SVG for label/node,
 label/edge and label/label overlaps and prints a JSON report; exit status 1
-if anything overlaps. --png also writes a screenshot (headless Chrome) for
-visual review.
+if anything overlaps. --png also writes a screenshot (headless Chrome) to the
+system temporary folder for visual review; it is never saved in the repo.
 
 Spec (see scripts/flowchart/README.md for the full schema):
   {"title", "summary", "lanes": [{"id","label"}],
@@ -289,7 +289,8 @@ def main(argv):
     if warnings:
         report["graphviz_warnings"] = warnings
     if "--png" in argv:
-        png = spec_path.with_suffix(".png")
+        import tempfile
+        png = Path(tempfile.gettempdir()) / f"flowchart_{spec_path.parent.name}.png"
         chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
         h = int(total * 1.34) + 900
         subprocess.run([chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars",

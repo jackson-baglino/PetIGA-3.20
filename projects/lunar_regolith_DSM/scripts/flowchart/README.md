@@ -1,7 +1,7 @@
 # Workflow flowcharts
 
 `render_flowchart.py` turns `workflows/<name>/flowchart.json` into
-`flowchart.html` (and, with `--png`, a screenshot for review). Layout and
+`flowchart.html` (and, with `--png`, a screenshot in the system temporary folder for review; screenshots are not saved in the repo). Layout and
 routing are done by the script and Graphviz, not by hand, so every chart has
 the same structure and arrows always end on their target.
 

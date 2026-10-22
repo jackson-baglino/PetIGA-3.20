@@ -81,7 +81,7 @@ give the same verdicts.
 
 ## 5. Human decision points
 
-- **U0:** supply the missing PDFs and pick one SI copy (see §8).
+- **U0:** confirm which file is each source when S0 cannot decide (see §8).
 - **U1:** each disputed row and the agreed sample, shown with the page crop,
   the table row and the read side by side.
 
@@ -112,8 +112,11 @@ Read schema (one object per symbol):
 
 ## 8. Open decisions for the user
 
-1. **Sources:** add Kaempfer & Plapp (2009), Phys. Rev. E 79, 031502, and the
-   main Moure & Fu (2024) paper to `Literature/`; neither was found there.
+1. **Sources:** resolved 2026-10-22. Kaempfer & Plapp (2009,
+   10.1103/PhysRevE.79.031502) and Moure & Fu (2024, 10.1021/acs.cgd.4c00539)
+   were copied from the user's Zotero library into `Literature/` as
+   `kaempfer_plapp_2009.pdf` and `moure_fu_2024.pdf`; the DOI on each first
+   page matches.
    (Resolved: the SI's two copies render pixel-identically on all 12 pages;
    `cg4c00539_si_001.pdf` was re-saved by macOS Preview on 2026-10-18, which
    changed only its file metadata. The version of record is the untouched
