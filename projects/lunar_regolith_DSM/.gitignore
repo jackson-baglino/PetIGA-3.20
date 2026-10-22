@@ -59,3 +59,15 @@ _neck_csv/
 *.toc
 *.bbl
 *.blg
+
+# Paper library (full texts of published papers; never committed)
+/library/
+
+# Claude Code: personal settings and the local session-ID log
+.claude/settings.local.json
+.claude/sessions.tsv
+.claude/ACTIVITY_LOG.md
+
+# Workflow runs: manifests are committed; bulk traces and run databases stay local
+runs/**/transcript*.jsonl
+runs/**/runs.db

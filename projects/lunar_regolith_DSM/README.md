@@ -7,12 +7,10 @@ field, temperature, and water-vapor density.
 **Application:** ice in **lunar regolith** — sublimation and redistribution of
 ice within a regolith pore domain.
 
-This project and its sibling `enceladus_DSM` share the same solver. They were
-split on 2026-07-27 from a single codebase (`sublimation_pf`, formerly
-`permafrost`) so that two papers can evolve independently; `src/assembly.c`,
-`src/material_properties.c`, and `src/snes_convergence.c` are byte-identical
-between them and should stay that way unless a change is genuinely
-application-specific.
+This project and its sibling `enceladus_DSM` were split on 2026-07-27 from a
+single codebase (`sublimation_pf`, formerly `permafrost`) so that two papers
+can evolve independently. Their solvers have since diverged; only
+`src/snes_convergence.c` is still identical.
 
 ## Physics (two-phase)
 
@@ -37,16 +35,21 @@ lunar_regolith_DSM/
 │  ├─ solver.opts            # numerical/model defaults (-dof 3, xi_v, xi_T, bounds, ...)
 │  ├─ geometry/<name>.opts   # mesh, domain, IC (-ic_type), eps, delt_t
 │  └─ experiment/<name>.opts # -t_final, -temp, -humidity, -grad_temp0, cadence
-├─ preprocess/       # comp_eps.py (parameter engine), build_geometry_*.py, ...
+├─ preprocess/       # comp_eps.py -> mesh_params/ (eps and mesh engine, tests in tests/),
+│                    #   build_geometry_*.py
 ├─ postprocess/      # plot_mass.py, make_movie.py, neck_width.py, ...
 ├─ scripts/
 │  ├─ Studio/        # local runners (run_lunar.sh, run_batch_tests.sh)
 │  ├─ HPC/           # SLURM submit/run scripts
 │  ├─ lib/alloc.sh   # single source of truth for allocation constants
 │  └─ check_ic_types.sh   # guard: validates every .opts -ic_type vs the solver
-├─ studies/
-│  └─ icy_regolith/  # implicit pore domain (ice in a regolith pore network)
-└─ docs/             # design/analysis notes (HISTORICAL — see per-file banners)
+├─ studies/          # study folders (e.g. contact_angle/) with their run lists and results
+├─ docs/             # design/analysis notes (see per-file banners; contact_angle/ is current)
+├─ memory/           # committed project memory: MEMORY.md, USER.md, semantic/ (see memory/README.md)
+├─ workflows/        # agentic workflow designs (TEMPLATE.md; one folder per workflow)
+├─ project/          # course project: PILLARS.md, LOG.md, guides/
+├─ .claude/          # settings.json (pinned model, permissions, hooks), skills/, agents/
+└─ PERMISSIONS.md    # what agents may and may not do, and what enforces it
 ```
 
 ## Build
