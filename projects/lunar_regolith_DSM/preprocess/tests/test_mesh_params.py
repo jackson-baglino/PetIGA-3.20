@@ -17,7 +17,7 @@ def close(a, b, rel=1e-12):
 
 
 class GoldenAgainstOldScript(unittest.TestCase):
-    """The redesigned tool must reproduce the numbers of preprocess/comp_eps.py (frozen 2026-10-17)."""
+    """Regression against the golden numbers (old comp_eps.py, 2026-10-17; regenerated 2026-10-22 for the solver d0)."""
 
     def test_cases(self):
         for case in GOLDEN["cases"]:

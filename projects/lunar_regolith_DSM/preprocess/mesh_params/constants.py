@@ -25,10 +25,8 @@ class Constants:
     rho_air_kg_per_m3: float = 1.341
     bb: float = 0.62                    # ASHRAE humidity-ratio coefficient
     gamma_iv_j_per_m2: float = 0.109    # ice-vapor surface energy (Kaempfer and Plapp 2009, Table I)
-    vm_ice_m3_per_mol: float = 1.963e-5
     m_h2o_d0_kg: float = 2.9915e-26     # water molecule mass in the solver's d0 (NASA_types.h M_H2O_KG)
     k_b_d0_j_per_k: float = 1.380649e-23  # Boltzmann constant in the solver's d0 (NASA_types.h K_BOLTZ)
-    r_gas_j_per_mol_k: float = 8.314
     a1: float = 5.0                     # Moure and Fu SI footnote 1 (phi in [0,1] double well)
     a2: float = 0.1581                  # idem; a Karma-Rappel-type constant for the TWO-SIDED problem
     ashrae_kj: tuple = (-0.5865e4, 0.2224e2, 0.1375e-1, -0.3403e-4, 0.2697e-7, 0.6918)

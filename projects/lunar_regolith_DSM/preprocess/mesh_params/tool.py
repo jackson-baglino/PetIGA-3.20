@@ -141,12 +141,6 @@ def compute_mesh_params(inp: MeshParamsInput) -> dict:
     checks.append(Check("thin_interface_ratio", "ok" if min_ratio >= 0.9 else "note", min_ratio, 0.9,
                         "beta_eff/beta_target >= 0.9" if min_ratio >= 0.9 else
                         "beta_eff/beta_target < 0.9. This is expected with safety = 0.5 (about 0.605); the 0.9 reading is about 4x tighter in eps"))
-    d0_solver = P.capillary_length_solver_m(T)
-    mism = abs(d0_solver - d0) / d0
-    checks.append(Check("d0_matches_solver", "ok" if mism <= 1e-3 else "note", mism, 1e-3,
-                        "d0 agrees with the solver's D0_CAPILLARY" if mism <= 1e-3 else
-                        f"the solver's d0 (gamma*a^3/(k_B*T), rho_ice = {C.rho_ice_kg_per_m3:g}) is {100*(d0_solver/d0-1):+.2f} % "
-                        "vs this tool's gamma*Vm/(R*T); eps here uses the tool's value"))
     checks.append(Check("thin_interface_two_sided_constants", "note", C.a2, None,
                         "a1, a2 are the Moure-Fu constants derived by analogy to the TWO-SIDED Karma-Rappel analysis; the solver's vapor "
                         "diffusivity is one-sided and has no anti-trapping current (see NOTES.md). tau_sub and beta_ratio are therefore "
