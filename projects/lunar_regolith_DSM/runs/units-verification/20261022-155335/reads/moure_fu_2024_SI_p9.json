@@ -1,0 +1,193 @@
+{
+  "page": "moure_fu_2024_SI_p9",
+  "reads": [
+    {
+      "symbol": "D_v0",
+      "found": true,
+      "printed_as": "D_v0",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "2.178 × 10^-5",
+      "unit_as_printed": "m^2/s",
+      "location": "Table S3, row \"D_v0\""
+    },
+    {
+      "symbol": "K_a",
+      "found": true,
+      "printed_as": "K_a",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "0.02",
+      "unit_as_printed": "W/(m °C)",
+      "location": "Table S3, row \"K_a\""
+    },
+    {
+      "symbol": "K_i",
+      "found": true,
+      "printed_as": "K_i",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "2.29",
+      "unit_as_printed": "W/(m °C)",
+      "location": "Table S3, row \"K_i\""
+    },
+    {
+      "symbol": "K_w",
+      "found": true,
+      "printed_as": "K_w",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "0.554",
+      "unit_as_printed": "W/(m °C)",
+      "location": "Table S3, row \"K_w\""
+    },
+    {
+      "symbol": "L_sol",
+      "found": true,
+      "printed_as": "L_sol",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "3.34 × 10^5",
+      "unit_as_printed": "J/Kg",
+      "location": "Table S3, row \"L_sol\""
+    },
+    {
+      "symbol": "L_sub",
+      "found": true,
+      "printed_as": "L_sub",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "2.83 × 10^6",
+      "unit_as_printed": "J/Kg",
+      "location": "Table S3, row \"L_sub\""
+    },
+    {
+      "symbol": "Lambda",
+      "found": true,
+      "printed_as": "Λ",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "1",
+      "unit_as_printed": "N/m",
+      "location": "Table S3, row \"Λ\""
+    },
+    {
+      "symbol": "alpha_nucl",
+      "found": true,
+      "printed_as": "α_nucl",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "5 × 10^6",
+      "unit_as_printed": "1/m",
+      "location": "Table S3, row \"α_nucl\""
+    },
+    {
+      "symbol": "c_p_a",
+      "found": true,
+      "printed_as": "c_{p,a}",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "1.044 × 10^3",
+      "unit_as_printed": "J/(Kg °C)",
+      "location": "Table S3, row \"c_{p,a}\""
+    },
+    {
+      "symbol": "c_p_i",
+      "found": true,
+      "printed_as": "c_{p,i}",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "1.96 × 10^3",
+      "unit_as_printed": "J/(Kg °C)",
+      "location": "Table S3, row \"c_{p,i}\""
+    },
+    {
+      "symbol": "c_p_w",
+      "found": true,
+      "printed_as": "c_{p,w}",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "4.2 × 10^3",
+      "unit_as_printed": "J/(Kg °C)",
+      "location": "Table S3, row \"c_{p,w}\""
+    },
+    {
+      "symbol": "gamma_ia",
+      "found": true,
+      "printed_as": "σ_ia",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "0.109",
+      "unit_as_printed": "N/m",
+      "location": "Table S3, row \"σ_ia\""
+    },
+    {
+      "symbol": "gamma_iw",
+      "found": true,
+      "printed_as": "σ_iw",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "0.033",
+      "unit_as_printed": "N/m",
+      "location": "Table S3, row \"σ_iw\""
+    },
+    {
+      "symbol": "gamma_wa",
+      "found": true,
+      "printed_as": "σ_wa",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "0.076",
+      "unit_as_printed": "N/m",
+      "location": "Table S3, row \"σ_wa\""
+    },
+    {
+      "symbol": "rho_w",
+      "found": true,
+      "printed_as": "ρ_w",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "1000",
+      "unit_as_printed": "Kg/m^3",
+      "location": "Table S3, row \"ρ_w\""
+    },
+    {
+      "symbol": "xi_T",
+      "found": true,
+      "printed_as": "ξ_T",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "see Eq. (13)",
+      "unit_as_printed": "(-)",
+      "location": "Table S3, last row"
+    },
+    {
+      "symbol": "xi_v",
+      "found": true,
+      "printed_as": "ξ_v",
+      "meaning": "Parameter listed in Table S3 (no description given)",
+      "value_as_printed": "10^-3",
+      "unit_as_printed": "(-)",
+      "location": "Table S3, second to last row"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "D_v0",
+        "K_a",
+        "K_i",
+        "K_w",
+        "L_sol",
+        "L_sub",
+        "Lambda",
+        "alpha_nucl",
+        "c_p_a",
+        "c_p_i",
+        "c_p_w",
+        "gamma_ia",
+        "gamma_iw",
+        "gamma_wa",
+        "rho_w",
+        "xi_T",
+        "xi_v"
+      ],
+      "page_png_sha256": "5d19674185d05f09a84b5f7fd0b5bf35a38b8844eaa01ecc91fcea0bdb3c3969",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "bade155d92e848c596916a7a2c5e9429fabc1cee12f6c17610a63ebf50c5dec8",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-155335/transcripts/S2/moure_fu_2024_SI_p9_12008462_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

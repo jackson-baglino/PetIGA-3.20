@@ -1,0 +1,733 @@
+{
+  "Ca": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "Ca",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5,
+      7,
+      8,
+      9
+    ],
+    "related_pages": {}
+  },
+  "Ci": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "Ci",
+    "cited_page": 4,
+    "pages": [
+      3,
+      4,
+      5,
+      7,
+      8,
+      9
+    ],
+    "related_pages": {}
+  },
+  "D_STP": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "DSTP",
+    "cited_page": 4,
+    "pages": [],
+    "related_pages": {}
+  },
+  "D_v": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "Dv",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      11
+    ],
+    "related_pages": {}
+  },
+  "L_sg": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "Lsg",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5,
+      7
+    ],
+    "related_pages": {}
+  },
+  "Pa": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "Pa",
+    "cited_page": 4,
+    "pages": [
+      3,
+      4,
+      5
+    ],
+    "related_pages": {}
+  },
+  "R_da": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "Rda",
+    "cited_page": 4,
+    "pages": [
+      3,
+      4
+    ],
+    "related_pages": {}
+  },
+  "R_v": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "Rv",
+    "cited_page": 4,
+    "pages": [
+      3,
+      4
+    ],
+    "related_pages": {}
+  },
+  "T0": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "T0",
+    "cited_page": 4,
+    "pages": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      11,
+      13
+    ],
+    "related_pages": {}
+  },
+  "T_STP": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "TSTP",
+    "cited_page": 4,
+    "pages": [],
+    "related_pages": {}
+  },
+  "a": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "a",
+    "cited_page": 4,
+    "pages": [
+      3,
+      4,
+      5,
+      6,
+      10
+    ],
+    "related_pages": {}
+  },
+  "beta": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "β",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      10,
+      11,
+      15
+    ],
+    "related_pages": {}
+  },
+  "d0": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "d0",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5,
+      6,
+      8,
+      9,
+      10,
+      11,
+      15
+    ],
+    "related_pages": {}
+  },
+  "gamma": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "γ",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5,
+      6
+    ],
+    "related_pages": {}
+  },
+  "k": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "k",
+    "cited_page": 4,
+    "pages": [
+      4
+    ],
+    "related_pages": {}
+  },
+  "kappa_a": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "κa",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5,
+      7,
+      8,
+      9,
+      11
+    ],
+    "related_pages": {}
+  },
+  "kappa_i": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "κi",
+    "cited_page": 4,
+    "pages": [
+      3,
+      4,
+      5,
+      7,
+      8,
+      9,
+      11
+    ],
+    "related_pages": {}
+  },
+  "m": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "m",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5,
+      6,
+      9,
+      11,
+      12
+    ],
+    "related_pages": {}
+  },
+  "rho_a": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "ρa",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5
+    ],
+    "related_pages": {}
+  },
+  "rho_i": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "ρi",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5,
+      6,
+      7,
+      9,
+      10,
+      11
+    ],
+    "related_pages": {}
+  },
+  "rho_v": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "ρv",
+    "cited_page": 4,
+    "pages": [
+      5,
+      6,
+      7,
+      9,
+      11
+    ],
+    "related_pages": {}
+  },
+  "v_n": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "vn",
+    "cited_page": 4,
+    "pages": [
+      5,
+      6,
+      8,
+      9,
+      11,
+      12
+    ],
+    "related_pages": {}
+  },
+  "x_s": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "xs",
+    "cited_page": 4,
+    "pages": [
+      3,
+      5
+    ],
+    "related_pages": {}
+  },
+  "L": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "L",
+    "cited_page": 9,
+    "pages": [
+      9,
+      11
+    ],
+    "related_pages": {}
+  },
+  "W": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "W",
+    "cited_page": 9,
+    "pages": [
+      4,
+      7,
+      8,
+      9,
+      11,
+      12,
+      13,
+      14
+    ],
+    "related_pages": {}
+  },
+  "t_D": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "tD",
+    "cited_page": 9,
+    "pages": [
+      4,
+      9,
+      10
+    ],
+    "related_pages": {}
+  },
+  "t_n": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "tn",
+    "cited_page": 9,
+    "pages": [
+      4,
+      9,
+      10
+    ],
+    "related_pages": {}
+  },
+  "Deltat": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "Δt",
+    "cited_page": 11,
+    "pages": [
+      11
+    ],
+    "related_pages": {}
+  },
+  "T_cold": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "T_cold",
+    "cited_page": 11,
+    "pages": [
+      11
+    ],
+    "related_pages": {}
+  },
+  "T_hot": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "T_hot",
+    "cited_page": 11,
+    "pages": [
+      11
+    ],
+    "related_pages": {}
+  },
+  "t": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "t",
+    "cited_page": 12,
+    "pages": [
+      4,
+      5,
+      7,
+      11
+    ],
+    "related_pages": {}
+  },
+  "h": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "h",
+    "cited_page": 13,
+    "pages": [
+      13
+    ],
+    "related_pages": {}
+  },
+  "P": {
+    "source": "moure_fu_2024",
+    "printed": "P",
+    "cited_page": 3,
+    "pages": [],
+    "related_pages": {}
+  },
+  "eps": {
+    "source": "moure_fu_2024",
+    "printed": "ε",
+    "cited_page": 6,
+    "pages": [
+      3,
+      5,
+      6,
+      8,
+      11,
+      12
+    ],
+    "related_pages": {}
+  },
+  "M_j": {
+    "source": "moure_fu_2024_SI",
+    "printed": "Mj",
+    "cited_page": 7,
+    "pages": [
+      6,
+      7,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": []
+    }
+  },
+  "alpha_j": {
+    "source": "moure_fu_2024_SI",
+    "printed": "αj",
+    "cited_page": 7,
+    "pages": [
+      6,
+      7,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": []
+    }
+  },
+  "beta_sol": {
+    "source": "moure_fu_2024_SI",
+    "printed": "βsol",
+    "cited_page": 7,
+    "pages": [
+      2,
+      3
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        5,
+        6
+      ]
+    }
+  },
+  "d_j": {
+    "source": "moure_fu_2024_SI",
+    "printed": "dj",
+    "cited_page": 7,
+    "pages": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": []
+    }
+  },
+  "u_j": {
+    "source": "moure_fu_2024_SI",
+    "printed": "uj",
+    "cited_page": 7,
+    "pages": [
+      6,
+      7
+    ],
+    "related_pages": {
+      "moure_fu_2024": []
+    }
+  },
+  "v_n_j": {
+    "source": "moure_fu_2024_SI",
+    "printed": "vn,j",
+    "cited_page": 7,
+    "pages": [
+      5,
+      6,
+      7
+    ],
+    "related_pages": {
+      "moure_fu_2024": []
+    }
+  },
+  "chi": {
+    "source": "moure_fu_2024_SI",
+    "printed": "χ",
+    "cited_page": 8,
+    "pages": [
+      2,
+      6,
+      7,
+      8
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        5
+      ]
+    }
+  },
+  "D_v0": {
+    "source": "moure_fu_2024_SI",
+    "printed": "Dv0",
+    "cited_page": 9,
+    "pages": [
+      4,
+      5,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        4
+      ]
+    }
+  },
+  "K_a": {
+    "source": "moure_fu_2024_SI",
+    "printed": "Ka",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": []
+    }
+  },
+  "K_i": {
+    "source": "moure_fu_2024_SI",
+    "printed": "Ki",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": []
+    }
+  },
+  "K_w": {
+    "source": "moure_fu_2024_SI",
+    "printed": "Kw",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": []
+    }
+  },
+  "L_sol": {
+    "source": "moure_fu_2024_SI",
+    "printed": "Lsol",
+    "cited_page": 9,
+    "pages": [
+      2,
+      4,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3,
+        5
+      ]
+    }
+  },
+  "L_sub": {
+    "source": "moure_fu_2024_SI",
+    "printed": "Lsub",
+    "cited_page": 9,
+    "pages": [
+      3,
+      4,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3,
+        5,
+        8
+      ]
+    }
+  },
+  "Lambda": {
+    "source": "moure_fu_2024_SI",
+    "printed": "Λ",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3,
+        5
+      ]
+    }
+  },
+  "alpha_nucl": {
+    "source": "moure_fu_2024_SI",
+    "printed": "αnucl",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3,
+        5
+      ]
+    }
+  },
+  "c_p_a": {
+    "source": "moure_fu_2024_SI",
+    "printed": "cp,a",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        6
+      ]
+    }
+  },
+  "c_p_i": {
+    "source": "moure_fu_2024_SI",
+    "printed": "cp,i",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": []
+    }
+  },
+  "c_p_w": {
+    "source": "moure_fu_2024_SI",
+    "printed": "cp,w",
+    "cited_page": 9,
+    "pages": [
+      2,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3,
+        5,
+        6
+      ]
+    }
+  },
+  "gamma_ia": {
+    "source": "moure_fu_2024_SI",
+    "printed": "σia",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3
+      ]
+    }
+  },
+  "gamma_iw": {
+    "source": "moure_fu_2024_SI",
+    "printed": "σiw",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3
+      ]
+    }
+  },
+  "gamma_wa": {
+    "source": "moure_fu_2024_SI",
+    "printed": "σwa",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3
+      ]
+    }
+  },
+  "rho_w": {
+    "source": "moure_fu_2024_SI",
+    "printed": "ρw",
+    "cited_page": 9,
+    "pages": [
+      4,
+      7,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3,
+        4,
+        5
+      ]
+    }
+  },
+  "xi_T": {
+    "source": "moure_fu_2024_SI",
+    "printed": "ξT",
+    "cited_page": 9,
+    "pages": [
+      6,
+      8,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        5,
+        7
+      ]
+    }
+  },
+  "xi_v": {
+    "source": "moure_fu_2024_SI",
+    "printed": "ξv",
+    "cited_page": 9,
+    "pages": [
+      6,
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        5
+      ]
+    }
+  }
+}

@@ -1,0 +1,617 @@
+{
+  "workflow": "units-verification",
+  "run_id": "20261022-155335",
+  "created": "2026-10-22T15:53:40-07:00",
+  "stages": {
+    "S0": {
+      "inputs": {
+        "literature": "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Literature",
+        "sources_spec": "workflows/units-verification/sources.json",
+        "sources_spec_sha256": "01467267abcc8bd16c87c0cb83d5a48b61fb7c1f8f30ae546d412b2041e26555",
+        "table": "memory/semantic/units.md",
+        "table_sha256": "3d3d977a766801ef5a189b6f7e4d74329a01f1da253c14502482e14b264d413a"
+      },
+      "pdfs_scanned": 291,
+      "unreadable_pdfs": [],
+      "sources": {
+        "kaempfer_plapp_2009": {
+          "path": "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Literature/kaempfer_plapp_2009.pdf",
+          "sha256": "2141892c2e9cbf862ed22420ba4cf6f4ef91872c216b2ce57c678b9c701130b0",
+          "pages": 17,
+          "doi": "10.1103/PhysRevE.79.031502",
+          "title": "Phase-field modeling of dry snow metamorphism",
+          "title_on_page1": true,
+          "identical_copies": []
+        },
+        "moure_fu_2024": {
+          "path": "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Literature/moure_fu_2024.pdf",
+          "sha256": "61268456ef25098b31e1ab89bd364f95c4fd042846d22dea8121fdec95ff6bab",
+          "pages": 14,
+          "doi": "10.1021/acs.cgd.4c00539",
+          "title": "A Phase-Field Model for Wet Snow Metamorphism",
+          "title_on_page1": true,
+          "identical_copies": []
+        },
+        "moure_fu_2024_SI": {
+          "path": "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Literature/MoureFu2024_SI/moure_fu_2024_SI.pdf",
+          "sha256": "8f2a8ed7301ce50b9ae2734d66ff5bcd3383b84e82cb9743a82542749a867c43",
+          "pages": 12,
+          "doi": null,
+          "title": "Supporting Information: A phase-field model for wet snow metamorphism",
+          "title_on_page1": true,
+          "identical_copies": [
+            {
+              "path": "~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Literature/cg4c00539_si_001.pdf",
+              "sha256": "52e1ce83a4787b24439bc2b950cfbda019bf3e9bae3727ba132858c560183f9b"
+            }
+          ]
+        }
+      },
+      "problems": [],
+      "verdict": "pass",
+      "git": {
+        "commit": "0b84a845f59f3b6be5cc6e0561fd0bf1cccace03",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T15:53:40-07:00"
+    },
+    "S1": {
+      "dpi": 200,
+      "renderer": "mutool draw",
+      "pages": {
+        "kaempfer_plapp_2009_p10.png": "e1f3cb9fa602ea04e7293dafba548efd8de213a91b3f3d6322af906bc9dd9cb3",
+        "kaempfer_plapp_2009_p11.png": "9b4acd48ed61f34c60030dcc21589826ff67117c395e08100e467fb704e8fb6a",
+        "kaempfer_plapp_2009_p12.png": "731b6250807aaab783059ecb9d0c6f06b875fe141bc0788f387ff8a943687252",
+        "kaempfer_plapp_2009_p13.png": "3504b56694f256a94e46a74c090bb31366a54495dde198a89d7b5f73d34f8d30",
+        "kaempfer_plapp_2009_p14.png": "beb16ad3ff1c618bee49bb1b28d89991b6322ba05b78ea8ba0833dd38f3f0959",
+        "kaempfer_plapp_2009_p3.png": "81a7e26759d5f0d5f51e874aa3270efda1320fd1215d2d9da0361ec74ee4fe37",
+        "kaempfer_plapp_2009_p4.png": "419b2c53ae7333f96e1fb77753c361e4b0b133b78644103cfe40b671d63c1f0c",
+        "kaempfer_plapp_2009_p5.png": "6a408707bcf5917c943ea0047825151779c478a0eb246c1c58044ebf633d5c66",
+        "kaempfer_plapp_2009_p6.png": "b8a5810fe17e9e11bf12b132fd85bafa012e8b778005ba78fcc71670907b831c",
+        "kaempfer_plapp_2009_p7.png": "7e1715c00ffdf3c698c41cbf7750cb0c1ad11ab6861f0ee72e70e882f90c1d54",
+        "kaempfer_plapp_2009_p8.png": "397d030250b688204996e5a303a1744df5a84285a432f1807c6bd8b90552715d",
+        "kaempfer_plapp_2009_p9.png": "d845e11d2c1099a2e8d9a0fbbc702a2ceb0b60caf107f40750fedc02ab6e74c3",
+        "moure_fu_2024_SI_p10.png": "8d1d8c5b7c216d22726ddf99a0d720058a68dec338cd3c25854d2e33bf2b8721",
+        "moure_fu_2024_SI_p2.png": "87c8f3110b80a0ea0f5aadcbfab0eb83e48d77a31c2ab1998f4af30e1fe29a7a",
+        "moure_fu_2024_SI_p3.png": "7e3db6ea49214bdf2efd0eda2f0500d66e37ff314f08df2a3bfc4a7809f10945",
+        "moure_fu_2024_SI_p4.png": "d256ee33fa2f92b94aa7c3fa4f569b6f1d0a7a9cac5b1ab7a6cb93480541969d",
+        "moure_fu_2024_SI_p5.png": "35645c07f533b33dbbcfe6d9d30f60a8f803a7800f244828edd7bd36bbcf75f5",
+        "moure_fu_2024_SI_p6.png": "c81fd8ee569ddcb78a715361c6806ec69872a14c49dbfde48ee91da811d2e174",
+        "moure_fu_2024_SI_p7.png": "22527ac606f8bfd3f066fb2ba6c7ce99baf8f479a4074dc0901bbf680564a1db",
+        "moure_fu_2024_SI_p8.png": "23ded40c9f1a1d3aa95713bfebbd9dc2bbfa0c11b98ac665212627dc7354044c",
+        "moure_fu_2024_SI_p9.png": "5d19674185d05f09a84b5f7fd0b5bf35a38b8844eaa01ecc91fcea0bdb3c3969",
+        "moure_fu_2024_p2.png": "ee8a06c1686652ef88c13f041ada0af4c4d1160d0a8e34ffd296a331c74fb6af",
+        "moure_fu_2024_p3.png": "7469612d4716799cd56c204b7a7f3806ac773b65937a07b062a522d88bc208a3",
+        "moure_fu_2024_p4.png": "c98beabd62d13cf9c78ef93b78970a5bda351bc5ec129d327929b267098a7f1d",
+        "moure_fu_2024_p5.png": "fdc029f261eb75d864213eca5026912493c6a552870dda5c42bfb57d29f98e8e",
+        "moure_fu_2024_p6.png": "88261dc268367e6d9fb71d5ac6e1298b33544627d9cb7a74a473b1ff832e3cd9",
+        "moure_fu_2024_p7.png": "16151bf0da45ffdc0444f4455fee16cb4d68591e79e680dd70419e982dcfe134",
+        "moure_fu_2024_p8.png": "047eae51fb19cfdcea7902717a90d686f9adc61fae913fac87395df3edb69c5a"
+      },
+      "added": [
+        "kaempfer_plapp_2009:6",
+        "kaempfer_plapp_2009:7",
+        "moure_fu_2024:8",
+        "moure_fu_2024_SI:2",
+        "moure_fu_2024_SI:3",
+        "moure_fu_2024_SI:4",
+        "moure_fu_2024_SI:5"
+      ],
+      "verdict": "pass",
+      "git": {
+        "commit": "22cc8879c26efc3a299900b0cd1a23e75a7d8506",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T16:14:09-07:00"
+    },
+    "S1b": {
+      "flags": [
+        "--force_ocr",
+        "--paginate_output",
+        "--disable_image_extraction",
+        "--output_format",
+        "markdown",
+        "--disable_tqdm"
+      ],
+      "versions": {
+        "marker-pdf": "1.10.2",
+        "surya-ocr": "0.17.1",
+        "torch": "2.14.1",
+        "model_cache": [
+          "layout/2025_09_23",
+          "ocr_error_detection/2025_02_18",
+          "table_recognition/2025_02_18",
+          "text_detection/2025_05_07",
+          "text_recognition/2025_09_23"
+        ]
+      },
+      "pages": {
+        "kaempfer_plapp_2009_p1.md": "5a634439cdd86f539cb988e48bb4864755026371f9e7b21d222f5aec3e4e2c69",
+        "kaempfer_plapp_2009_p10.md": "c5913a57f4cf52f9d8ea9b011d74ee73bffde226c5d7248f2d197ec796b01420",
+        "kaempfer_plapp_2009_p11.md": "a671962fe946fd56b37ca863bf5202c11cd8c688f1463614a12c703e94206cb7",
+        "kaempfer_plapp_2009_p12.md": "c1cf8d66c756c8f4335301dfedfd25f52eb9b852f20bf4228222d6125802d086",
+        "kaempfer_plapp_2009_p13.md": "bf4409515f8841f945e44f6350725b66fc033085446af1f8ed97b49349290ef1",
+        "kaempfer_plapp_2009_p14.md": "715c70a6748f3f057824249b3b331df0639822ffc05da2be582b1bad2e66ae36",
+        "kaempfer_plapp_2009_p15.md": "3d98981fa3556aee67a0864d6d967dcff99e91de3f2d401f1150053d121709bf",
+        "kaempfer_plapp_2009_p16.md": "0a9e13a6a35e71911c045bf8047b774be93839723901dfc9c4a07f32ad2bc707",
+        "kaempfer_plapp_2009_p17.md": "da330f5c7824b34b23de844cf634f7f44468436480be00f1013970bab96a9619",
+        "kaempfer_plapp_2009_p2.md": "91e9d2edbecd37809d350de3ba8244f0d931e6866bfdbc0297240920e109997e",
+        "kaempfer_plapp_2009_p3.md": "337f7ea576ff22d57cc44d6196a395fd4ec2fd857042534e66198044c15717d0",
+        "kaempfer_plapp_2009_p4.md": "b188bf7456b13b45fcc5ad40438e61608f23393a72a7fd53c722eb7ebd99df07",
+        "kaempfer_plapp_2009_p5.md": "8cfea9e29972e5d27699a7a9742edcac3010c90fefbb6119b546769c1e2a9de9",
+        "kaempfer_plapp_2009_p6.md": "2afabb78c5e6211060cc014d7601c655bcee42c6a3472857d05b73ab3484e3c3",
+        "kaempfer_plapp_2009_p7.md": "fa3a6a021ce1e566a9602ed9c14ba46754ae271986a51a0b1178b81714c3aa15",
+        "kaempfer_plapp_2009_p8.md": "5871dd25376da8e4a4da52cf94d019997550b5a2fbc40e2bf307c1e64f5201fc",
+        "kaempfer_plapp_2009_p9.md": "6af15531f132e1efd545e4049cd12a0b902aa0922c78fb9a9f7a27e03d97338d",
+        "moure_fu_2024_SI_p1.md": "595d12cbb988b3cf396d3de4129441a2cf2e7d760a8b8a399ff6cb8d46bce23c",
+        "moure_fu_2024_SI_p10.md": "43091a99948c727eb375c20171178e27ef4880992b5292a9ce534a53f4dfcd7b",
+        "moure_fu_2024_SI_p11.md": "2799e2d27b21850488223b72f104a986ad4c37079820e1df69ec7b8d0594e74c",
+        "moure_fu_2024_SI_p12.md": "a9c28b15563dbd49c6b11d529366b174660b07c686dd7712f00a0dccfc3ea545",
+        "moure_fu_2024_SI_p2.md": "85a545e1457f2f6548bbc4a56b4dc7adbb5c503f929d8429053f35e0057daf9e",
+        "moure_fu_2024_SI_p3.md": "bc5ea96d1355b5490901a15f47aacb7c395f7c493caa3e9da69c911f0ad0f5fb",
+        "moure_fu_2024_SI_p4.md": "b7dc8bb9e0844f596eafc9a0e93c8dde17a1d0e228b70b79692c4f082f14ccf0",
+        "moure_fu_2024_SI_p5.md": "625e8cc114d27623c03f2ecdd6903e87c056f5784eca6f97ebfd59456c63b288",
+        "moure_fu_2024_SI_p6.md": "7c1a005e4a6b9c30c76072faaa8bf6e9ca75c7b955a2545e074aa902d2cf3330",
+        "moure_fu_2024_SI_p7.md": "6e3461f46b522dbe4564c0351e53da63d710e19f647c65b18b4a82522f5e1859",
+        "moure_fu_2024_SI_p8.md": "3a9ff6ff73d992d2d06b36ddfce117244477d371ecc88169623f82f663086fa1",
+        "moure_fu_2024_SI_p9.md": "62060bbacb729c1bd5e4bb16f8789ce67d11746f9a6496a66366b91bb4cbed56",
+        "moure_fu_2024_p1.md": "6385a23233110769705ced2dd727dbc1b864c552c9425c8dff29cd0a8bbca4ec",
+        "moure_fu_2024_p10.md": "797c4b35fea7531f35b98e6745fec173f5582c24a56f96f9e14860e7fd7f7d94",
+        "moure_fu_2024_p11.md": "04dfd314821200b9e3cfccf2278837ff35f2387dd9abc957b46efbcdf99cd158",
+        "moure_fu_2024_p12.md": "bbf91a3b4f52da0d74dc9d25cc96811c262f6899a8380fd34fd0fdc47d80088b",
+        "moure_fu_2024_p13.md": "4e783080f5c9885a8c95006d75d01e891458b501abbe4c204cba7a1247530c6e",
+        "moure_fu_2024_p14.md": "7d6ca23ce234b8a3a0aebf4ead4fdaa9ddaab7a447b22e1a5bb72b7d2b96336c",
+        "moure_fu_2024_p2.md": "501b3c76f64d0c3ac9ef9ef31d9e5de32b5d330a773f139dcd1a0ae40e503931",
+        "moure_fu_2024_p3.md": "7c816633a6d32e4bb0c2751edeec031b2ebf3441af67264d5f904b4133a8f18e",
+        "moure_fu_2024_p4.md": "e4ef6cc84eac37b32241bf8fa688fcd5af75515288d7bcde945b730a98d1f00c",
+        "moure_fu_2024_p5.md": "32f0b09ab0032afbffb2563b43e3ea9563dad3675d98ab2462c55ed91aca0832",
+        "moure_fu_2024_p6.md": "1ad69e21bf331c294cf3da17254d62a9a98f8d8ccab3c6b49ab798ee8c6823c7",
+        "moure_fu_2024_p7.md": "1f41d00ab5328c76f045012de0c2729b8743985f6e9109503c1e8f568f5c6af0",
+        "moure_fu_2024_p8.md": "e9f08370369d7ad84cdda29d821eb293437a73b79e0ac3fd2422a19dd6c10068",
+        "moure_fu_2024_p9.md": "adfdd531ce0c5a325ffb4b9c51e9dbd57bb85c95880727c83566d71d25a90db7"
+      },
+      "failed_pages": {
+        "kaempfer_plapp_2009": [],
+        "moure_fu_2024": [],
+        "moure_fu_2024_SI": []
+      },
+      "seconds": {
+        "kaempfer_plapp_2009": 377.5,
+        "moure_fu_2024": 312.0,
+        "moure_fu_2024_SI": 124.7
+      },
+      "index": "marker_index.json",
+      "index_sha256": "c1cafdb02b9da1e517580f38e9b3dee22e27b9499fcf3107d445a948ae471dc1",
+      "symbols_located": 55,
+      "symbols_on_cited_page": 50,
+      "symbols": 58,
+      "verdict": "pass",
+      "git": {
+        "commit": "0b84a845f59f3b6be5cc6e0561fd0bf1cccace03",
+        "definitions_modified": [
+          "M projects/lunar_regolith_DSM/scripts/units_verification/read_pages.py",
+          " M projects/lunar_regolith_DSM/scripts/units_verification/tests/test_agents.py",
+          " M projects/lunar_regolith_DSM/workflows/units-verification/WORKFLOW.md",
+          "?? projects/lunar_regolith_DSM/scripts/units_verification/inspect_set.py",
+          "?? projects/lunar_regolith_DSM/scripts/units_verification/reader_stability.py"
+        ]
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T16:07:18-07:00"
+    },
+    "S2": {
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "table": "memory/semantic/units.md",
+      "table_sha256": "3d3d977a766801ef5a189b6f7e4d74329a01f1da253c14502482e14b264d413a",
+      "pages": [
+        {
+          "page": "kaempfer_plapp_2009_p4",
+          "symbols": [
+            "Ca",
+            "Ci",
+            "D_STP",
+            "D_v",
+            "L_sg",
+            "Pa",
+            "R_da",
+            "R_v",
+            "T0",
+            "T_STP",
+            "a",
+            "beta",
+            "d0",
+            "gamma",
+            "k",
+            "kappa_a",
+            "kappa_i",
+            "m",
+            "rho_a",
+            "rho_i",
+            "rho_v",
+            "v_n",
+            "x_s"
+          ],
+          "file": "kaempfer_plapp_2009_p4.json",
+          "file_sha256": "8752c68e1462d111c0b82151ec2b735393ce82bab48e5ae1f3bfb8062a465b39",
+          "called": true
+        },
+        {
+          "page": "kaempfer_plapp_2009_p9",
+          "symbols": [
+            "L",
+            "W",
+            "t_D",
+            "t_n"
+          ],
+          "file": "kaempfer_plapp_2009_p9.json",
+          "file_sha256": "62dd976082b080593de6b34d3f5455489c1aadc370059341e2cb9236a87fc3de",
+          "called": true
+        },
+        {
+          "page": "kaempfer_plapp_2009_p11",
+          "symbols": [
+            "Deltat",
+            "T_cold",
+            "T_hot"
+          ],
+          "file": "kaempfer_plapp_2009_p11.json",
+          "file_sha256": "fb74b06cc6e2d57b99f9419541aea9244d2e8307464cf0af9232a5f0cc736cb4",
+          "called": true
+        },
+        {
+          "page": "kaempfer_plapp_2009_p12",
+          "symbols": [
+            "t"
+          ],
+          "file": "kaempfer_plapp_2009_p12.json",
+          "file_sha256": "8c1bece65ba1beba425edfd0b42da6dcc232f3f555ed1d87a9bb4b70d911916e",
+          "called": true
+        },
+        {
+          "page": "kaempfer_plapp_2009_p13",
+          "symbols": [
+            "h"
+          ],
+          "file": "kaempfer_plapp_2009_p13.json",
+          "file_sha256": "9d7bad441ec7f9db0f9f77715da98f13c0f6692f1b2d2160e48b23c9000a9e88",
+          "called": true
+        },
+        {
+          "page": "moure_fu_2024_p3",
+          "symbols": [
+            "P"
+          ],
+          "file": "moure_fu_2024_p3.json",
+          "file_sha256": "e7927c51028c7f0915f8df8eb01c82deb6ad7f1a30198fb0396e651214d6248e",
+          "called": true
+        },
+        {
+          "page": "moure_fu_2024_p6",
+          "symbols": [
+            "eps"
+          ],
+          "file": "moure_fu_2024_p6.json",
+          "file_sha256": "4e2fdfd65c730177ddd69cfadd480c8eee71328fd270c942a8f0b1a5c6291b6e",
+          "called": true
+        },
+        {
+          "page": "moure_fu_2024_SI_p7",
+          "symbols": [
+            "M_j",
+            "alpha_j",
+            "beta_sol",
+            "d_j",
+            "u_j",
+            "v_n_j"
+          ],
+          "file": "moure_fu_2024_SI_p7.json",
+          "file_sha256": "d3deeb59bd058e6662427942ee00eb8e15b86a7f18e58dc627b2f130dc3f481d",
+          "called": true
+        },
+        {
+          "page": "moure_fu_2024_SI_p8",
+          "symbols": [
+            "chi"
+          ],
+          "file": "moure_fu_2024_SI_p8.json",
+          "file_sha256": "4974aed02d4269b444c8259563d18fd31e843dfa2f1472311ddd5057187b30d4",
+          "called": true
+        },
+        {
+          "page": "moure_fu_2024_SI_p9",
+          "symbols": [
+            "D_v0",
+            "K_a",
+            "K_i",
+            "K_w",
+            "L_sol",
+            "L_sub",
+            "Lambda",
+            "alpha_nucl",
+            "c_p_a",
+            "c_p_i",
+            "c_p_w",
+            "gamma_ia",
+            "gamma_iw",
+            "gamma_wa",
+            "rho_w",
+            "xi_T",
+            "xi_v"
+          ],
+          "file": "moure_fu_2024_SI_p9.json",
+          "file_sha256": "18960c15f76610640bc8e5c64f6119cd3d44da434e9553f5424c4bf4d8b5ccdd",
+          "called": true
+        },
+        {
+          "page": "moure_fu_2024_SI_p2",
+          "symbols": [
+            "beta_sol"
+          ],
+          "file": "moure_fu_2024_SI_p2.json",
+          "file_sha256": "06961b1a31c06caa540bdb07285655c724dea0a123c41f747ac73f206a859a39",
+          "called": true
+        },
+        {
+          "page": "moure_fu_2024_SI_p3",
+          "symbols": [
+            "beta_sol"
+          ],
+          "file": "moure_fu_2024_SI_p3.json",
+          "file_sha256": "afb45bca33a83eab3b94765a42ab1db844a03ad98d439c491c16c7cdb1e0372d",
+          "called": true
+        }
+      ],
+      "failed": [],
+      "verdict": "pass",
+      "git": {
+        "commit": "22cc8879c26efc3a299900b0cd1a23e75a7d8506",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T16:09:00-07:00"
+    },
+    "S3": {
+      "inputs": {
+        "table": "memory/semantic/units.md",
+        "table_sha256": "3d3d977a766801ef5a189b6f7e4d74329a01f1da253c14502482e14b264d413a",
+        "marker_index_sha256": "c1cafdb02b9da1e517580f38e9b3dee22e27b9499fcf3107d445a948ae471dc1",
+        "reads": {
+          "kaempfer_plapp_2009_p11.json": "fb74b06cc6e2d57b99f9419541aea9244d2e8307464cf0af9232a5f0cc736cb4",
+          "kaempfer_plapp_2009_p12.json": "8c1bece65ba1beba425edfd0b42da6dcc232f3f555ed1d87a9bb4b70d911916e",
+          "kaempfer_plapp_2009_p13.json": "9d7bad441ec7f9db0f9f77715da98f13c0f6692f1b2d2160e48b23c9000a9e88",
+          "kaempfer_plapp_2009_p4.json": "8752c68e1462d111c0b82151ec2b735393ce82bab48e5ae1f3bfb8062a465b39",
+          "kaempfer_plapp_2009_p9.json": "62dd976082b080593de6b34d3f5455489c1aadc370059341e2cb9236a87fc3de",
+          "moure_fu_2024_SI_p2.json": "06961b1a31c06caa540bdb07285655c724dea0a123c41f747ac73f206a859a39",
+          "moure_fu_2024_SI_p3.json": "afb45bca33a83eab3b94765a42ab1db844a03ad98d439c491c16c7cdb1e0372d",
+          "moure_fu_2024_SI_p7.json": "d3deeb59bd058e6662427942ee00eb8e15b86a7f18e58dc627b2f130dc3f481d",
+          "moure_fu_2024_SI_p8.json": "4974aed02d4269b444c8259563d18fd31e843dfa2f1472311ddd5057187b30d4",
+          "moure_fu_2024_SI_p9.json": "18960c15f76610640bc8e5c64f6119cd3d44da434e9553f5424c4bf4d8b5ccdd",
+          "moure_fu_2024_p3.json": "e7927c51028c7f0915f8df8eb01c82deb6ad7f1a30198fb0396e651214d6248e",
+          "moure_fu_2024_p6.json": "4e2fdfd65c730177ddd69cfadd480c8eee71328fd270c942a8f0b1a5c6291b6e"
+        }
+      },
+      "output": "compare.json",
+      "output_sha256": "91698eee1a19c2f517ae86a980577a1ae8bc51eff1a898eee29f4836f0f300ba",
+      "marker_only": false,
+      "counts": {
+        "AGREE": 47,
+        "DISAGREE": 10,
+        "NOT_FOUND": 1
+      },
+      "verdict": "pass",
+      "git": {
+        "commit": "22cc8879c26efc3a299900b0cd1a23e75a7d8506",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T16:09:01-07:00"
+    },
+    "S4": {
+      "agent": "beth-unit-checker",
+      "model": "claude-opus-5-5",
+      "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+      "compare_sha256": "91698eee1a19c2f517ae86a980577a1ae8bc51eff1a898eee29f4836f0f300ba",
+      "counts": {
+        "read_right": 1,
+        "table_right": 9,
+        "both_wrong": 1
+      },
+      "verdict": "pass",
+      "git": {
+        "commit": "22cc8879c26efc3a299900b0cd1a23e75a7d8506",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T16:10:54-07:00"
+    },
+    "S4m": {
+      "agent": "beth-unit-checker",
+      "model": "claude-opus-5-5",
+      "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+      "compare_sha256": "91698eee1a19c2f517ae86a980577a1ae8bc51eff1a898eee29f4836f0f300ba",
+      "counts": {
+        "matches": 50,
+        "table_wrong": 2,
+        "cannot_tell": 6
+      },
+      "verdict": "pass",
+      "git": {
+        "commit": "22cc8879c26efc3a299900b0cd1a23e75a7d8506",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T16:15:45-07:00"
+    },
+    "S2-repeat": {
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "table": "memory/semantic/units.md",
+      "table_sha256": "3d3d977a766801ef5a189b6f7e4d74329a01f1da253c14502482e14b264d413a",
+      "pages": [
+        {
+          "page": "kaempfer_plapp_2009_p4",
+          "symbols": [
+            "Ca",
+            "Ci",
+            "D_STP",
+            "D_v",
+            "L_sg",
+            "Pa",
+            "R_da",
+            "R_v",
+            "T0",
+            "T_STP",
+            "a",
+            "beta",
+            "d0",
+            "gamma",
+            "k",
+            "kappa_a",
+            "kappa_i",
+            "m",
+            "rho_a",
+            "rho_i",
+            "rho_v",
+            "v_n",
+            "x_s"
+          ],
+          "file": "kaempfer_plapp_2009_p4.json",
+          "file_sha256": "82e4480b324cbeaa403f0cb059bb15d8935730e0d221a83f6908cb8c85b72b0d",
+          "called": true
+        },
+        {
+          "page": "kaempfer_plapp_2009_p9",
+          "symbols": [
+            "L",
+            "W",
+            "t_D",
+            "t_n"
+          ],
+          "file": "kaempfer_plapp_2009_p9.json",
+          "file_sha256": "cc31b66ebdb20d212ee50340ff331e45d261c40149c7fde75cc2bf034b8bcbcf",
+          "called": true
+        },
+        {
+          "page": "kaempfer_plapp_2009_p11",
+          "symbols": [
+            "Deltat",
+            "T_cold",
+            "T_hot"
+          ],
+          "file": "kaempfer_plapp_2009_p11.json",
+          "file_sha256": "7e0b7ddf48a39b872ff9d4762b0e795a8aa22e9d70a9732d0965491ffc2f45dc",
+          "called": true
+        },
+        {
+          "page": "kaempfer_plapp_2009_p12",
+          "symbols": [
+            "t"
+          ],
+          "file": "kaempfer_plapp_2009_p12.json",
+          "file_sha256": "13283b05783d90bf769facb9b32005bc6f73ea16cebe41a245bbe619e461cbed",
+          "called": true
+        },
+        {
+          "page": "kaempfer_plapp_2009_p13",
+          "symbols": [
+            "h"
+          ],
+          "file": "kaempfer_plapp_2009_p13.json",
+          "file_sha256": "27c1bf637f3ec5b3e9e283c994259fe92489e31ad364d0c35dcc18e661c5e411",
+          "called": true
+        }
+      ],
+      "failed": [],
+      "verdict": "pass",
+      "git": {
+        "commit": "22cc8879c26efc3a299900b0cd1a23e75a7d8506",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T16:16:24-07:00"
+    },
+    "stability": {
+      "pages": [
+        "kaempfer_plapp_2009_p11",
+        "kaempfer_plapp_2009_p12",
+        "kaempfer_plapp_2009_p13",
+        "kaempfer_plapp_2009_p4",
+        "kaempfer_plapp_2009_p9"
+      ],
+      "symbols": 32,
+      "disagreements": 2,
+      "output_sha256": "1975c84efe0ca00d77301463229cc4ac5cdf2d81fa645bee41ef8d63e0f876a1",
+      "verdict": "reported",
+      "git": {
+        "commit": "22cc8879c26efc3a299900b0cd1a23e75a7d8506",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T16:16:24-07:00"
+    },
+    "U1": {
+      "seed": 257380064996709,
+      "fraction": 0.1,
+      "disputed": 18,
+      "sampled": [
+        "R_v",
+        "L",
+        "u_j",
+        "alpha_nucl"
+      ],
+      "output_sha256": "ec09bb4590f66758aba5f9359cfd7ac8bc3d1955c7fd56d2540c696c3594bee1",
+      "verdict": "awaiting user",
+      "git": {
+        "commit": "22cc8879c26efc3a299900b0cd1a23e75a7d8506",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T16:16:24-07:00"
+    }
+  }
+}

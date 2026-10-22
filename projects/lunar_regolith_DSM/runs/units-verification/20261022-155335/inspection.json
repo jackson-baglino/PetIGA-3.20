@@ -1,0 +1,1279 @@
+{
+  "run_id": "20261022-155335",
+  "fraction": 0.1,
+  "seed": 257380064996709,
+  "disputed": 18,
+  "agreed": 40,
+  "sampled": 4,
+  "rows": [
+    {
+      "symbol": "D_STP",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "DSTP",
+        "meaning": "water vapor diffusion coefficient in air at standard pressure and temperature (printed as DSTP)",
+        "unit": "m^2 s^-1",
+        "source": "kaempfer_plapp_2009",
+        "page": 4
+      },
+      "blind_read": {
+        "printed_as": "D_v^STP",
+        "meaning": "water vapor diffusion coefficient in the air, at standard pressure and temperature",
+        "value_as_printed": "2.178 × 10^-5",
+        "unit_as_printed": "m^2 s^-1",
+        "location": "Table I, row \"D_v, D_v^STP\"",
+        "page": 4
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "printed: table 'DSTP' vs read 'D_v^STP'"
+        ]
+      },
+      "S4": {
+        "symbol": "D_STP",
+        "verdict": "read_right",
+        "printed_as": "D_v^STP",
+        "unit": "m^2 s^-1",
+        "value": "2.178 × 10^-5",
+        "meaning": "water vapor diffusion coefficient in the air, at standard pressure and temperature",
+        "page": 4,
+        "location": "Table I, row \"D_v, D_v^STP\", first column",
+        "reason": "Table I prints the symbol as D_v^STP, with subscript v and superscript STP. It does not print \"DSTP\". The unit m^2 s^-1 and page 4 match the table.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "printed: table 'DSTP' vs read 'D_v^STP'"
+        ],
+        "images": [
+          4
+        ]
+      },
+      "S4m": {
+        "symbol": "D_STP",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "D_v^STP",
+        "page_wording": "water vapor diffusion coefficient in the air, at standard pressure and temperature",
+        "location": "Table I, row \"D_v, D_v^STP\"",
+        "reason": "Same quantity; the page prints it with a v subscript and STP superscript, which is only a notation difference.",
+        "page": 4,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          4
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "T0",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "T0",
+        "meaning": "reference temperature (printed as T0)",
+        "unit": "K",
+        "source": "kaempfer_plapp_2009",
+        "page": 4
+      },
+      "blind_read": {
+        "printed_as": "T_0",
+        "meaning": "reference temperature at which constants were evaluated",
+        "value_as_printed": "−10 °C, respectively, 263 K",
+        "unit_as_printed": "°C, K",
+        "location": "Table I caption",
+        "page": 4
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "read_unit_unparsed: cannot read unit at ', K' in '°C, K'"
+        ]
+      },
+      "S4": {
+        "symbol": "T0",
+        "verdict": "table_right",
+        "printed_as": "T_0",
+        "unit": "K",
+        "value": "−10 °C, respectively, 263 K",
+        "meaning": "reference temperature at which the constants used for the phase-field computations were evaluated",
+        "page": 4,
+        "location": "Table I caption, page 4 (top): \"evaluated at a reference temperature of T_0=−10 °C, respectively, 263 K\"",
+        "reason": "The Table I caption on page 4 gives T_0 as both −10 °C and 263 K. The table's unit K, its symbol T0 and page 4 all match this. The dispute only arose because the blind read listed two units (\"°C, K\"), so it is not an error in the table.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "read_unit_unparsed: cannot read unit at ', K' in '°C, K'"
+        ],
+        "images": [
+          4,
+          3,
+          5
+        ]
+      },
+      "S4m": {
+        "symbol": "T0",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "T_0",
+        "page_wording": "constants ... were evaluated at a reference temperature of T_0=−10 °C",
+        "location": "Table I caption",
+        "reason": "The caption defines T_0 as the reference temperature.",
+        "page": 4,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          4
+        ],
+        [
+          "kaempfer_plapp_2009",
+          3
+        ],
+        [
+          "kaempfer_plapp_2009",
+          5
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "rho_v",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "ρv",
+        "meaning": "water vapor concentration (density) (printed as ρv)",
+        "unit": "kg m^-3",
+        "source": "kaempfer_plapp_2009",
+        "page": 4
+      },
+      "blind_read": {
+        "printed_as": "ρ_v",
+        "meaning": "water (vapor) concentration",
+        "value_as_printed": null,
+        "unit_as_printed": "kg m^-3",
+        "location": "Table I, row \"ρ_v\"",
+        "page": 4
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "marker: symbol not found on p4"
+        ]
+      },
+      "S4": {
+        "symbol": "rho_v",
+        "verdict": "table_right",
+        "printed_as": "ρ_v",
+        "unit": "kg m^-3",
+        "value": null,
+        "meaning": "water (vapor) concentration",
+        "page": 4,
+        "location": "Table I, row \"ρ_v\", between rows \"ρ_i, ρ_a\" and \"ρ_vs\" near the bottom of the table",
+        "reason": "Table I on page 4 prints ρ_v as \"water (vapor) concentration\" with the unit kg m^-3 and no number, which matches the table and the blind read. Marker missed the symbol on page 4, but page 5 also calls ρ_v the vapor density in the pore space.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "marker: symbol not found on p4"
+        ],
+        "images": [
+          4,
+          5,
+          6
+        ]
+      },
+      "S4m": {
+        "symbol": "rho_v",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "ρ_v",
+        "page_wording": "water (vapor) concentration",
+        "location": "Table I, row \"ρ_v\"",
+        "reason": "Same quantity, a mass concentration in kg m^-3.",
+        "page": 4,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          4
+        ],
+        [
+          "kaempfer_plapp_2009",
+          5
+        ],
+        [
+          "kaempfer_plapp_2009",
+          6
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "v_n",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "vn",
+        "meaning": "normal interface velocity (printed as vn)",
+        "unit": "m s^-1",
+        "source": "kaempfer_plapp_2009",
+        "page": 4
+      },
+      "blind_read": {
+        "printed_as": "v_n",
+        "meaning": "normal interface velocity",
+        "value_as_printed": "~10^-9",
+        "unit_as_printed": "m s^-1",
+        "location": "Table I, row \"v_n\"",
+        "page": 4
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "marker: symbol not found on p4",
+          "marker: printed value not found near the symbol"
+        ]
+      },
+      "S4": {
+        "symbol": "v_n",
+        "verdict": "table_right",
+        "printed_as": "v_n",
+        "unit": "m s^-1",
+        "value": "~10^-9",
+        "meaning": "normal interface velocity",
+        "page": 4,
+        "location": "Table I, row \"v_n\", Value, unit column",
+        "reason": "Table I on page 4 prints v_n with the description \"normal interface velocity\" and the value \"~10^-9 m s^-1\". This matches the table's unit and page and agrees with the blind read. Marker's misses are OCR errors.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "marker: symbol not found on p4",
+          "marker: printed value not found near the symbol"
+        ],
+        "images": [
+          4,
+          5,
+          6
+        ]
+      },
+      "S4m": {
+        "symbol": "v_n",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "v_n",
+        "page_wording": "normal interface velocity",
+        "location": "Table I, row \"v_n\"",
+        "reason": "Same wording as the page.",
+        "page": 4,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          4
+        ],
+        [
+          "kaempfer_plapp_2009",
+          5
+        ],
+        [
+          "kaempfer_plapp_2009",
+          6
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "x_s",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "xs",
+        "meaning": "specific humidity ratio of air at saturation (printed as xs)",
+        "unit": "1 (dimensionless)",
+        "source": "kaempfer_plapp_2009",
+        "page": 4
+      },
+      "blind_read": {
+        "printed_as": "x_s",
+        "meaning": "specific humidity ratio of air at saturation",
+        "value_as_printed": null,
+        "unit_as_printed": "kg/kg",
+        "location": "Table I, row \"x_s\"",
+        "page": 4
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "marker: symbol not found on p4"
+        ]
+      },
+      "S4": {
+        "symbol": "x_s",
+        "verdict": "table_right",
+        "printed_as": "x_s",
+        "unit": "kg/kg",
+        "value": null,
+        "meaning": "specific humidity ratio of air at saturation",
+        "page": 4,
+        "location": "Table I, row \"x_s\" (between v_n and C_i, C_a), \"Value, unit\" column",
+        "reason": "Page 4, Table I prints x_s, \"specific humidity ratio of air at saturation\", with unit kg/kg and no numerical value. kg/kg is dimensionless, so the table's \"1 (dimensionless)\" differs only in notation. The symbol, meaning and page match; the dispute comes from Marker failing to find the symbol on page 4.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "marker: symbol not found on p4"
+        ],
+        "images": [
+          4,
+          3,
+          5
+        ]
+      },
+      "S4m": {
+        "symbol": "x_s",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "x_s",
+        "page_wording": "specific humidity ratio of air at saturation",
+        "location": "Table I, row \"x_s\"",
+        "reason": "Same wording as the page.",
+        "page": 4,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          4
+        ],
+        [
+          "kaempfer_plapp_2009",
+          3
+        ],
+        [
+          "kaempfer_plapp_2009",
+          5
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "t_n",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "tn",
+        "meaning": "characteristic interface migration time (printed as tn)",
+        "unit": "s",
+        "source": "kaempfer_plapp_2009",
+        "page": 9
+      },
+      "blind_read": {
+        "printed_as": "t_n",
+        "meaning": "characteristic interface migration time",
+        "value_as_printed": "L/v_n ≅ 3 × 10^5",
+        "unit_as_printed": "s",
+        "location": "right column, section D, paragraph 1, lines 16-17",
+        "page": 9
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "marker: printed value not found near the symbol"
+        ]
+      },
+      "S4": {
+        "symbol": "t_n",
+        "verdict": "table_right",
+        "printed_as": "t_n",
+        "unit": "s",
+        "value": "L/v_n ≅ 3 × 10^5",
+        "meaning": "characteristic interface migration time",
+        "page": 9,
+        "location": "Page 9, right column, Sec. D \"Temporal scaling of the problem\", end of first paragraph just above Eq. (47)",
+        "reason": "Page 9 prints \"a characteristic interface migration time of t_n=L/v_n≅3×10^5 s\", so the table's symbol, unit (s) and page are all correct. The Marker excerpt just stopped before this sentence, and Table I on page 4 gives the same quantity as ~10^5 s.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "marker: printed value not found near the symbol"
+        ],
+        "images": [
+          9,
+          10,
+          4
+        ]
+      },
+      "S4m": {
+        "symbol": "t_n",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "t_n",
+        "page_wording": "a characteristic interface migration time of t_n=L/v_n",
+        "location": "Right column, Sec. D, first paragraph, just before Eq. (47)",
+        "reason": "The page uses the same wording as the table.",
+        "page": 9,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          9
+        ],
+        [
+          "kaempfer_plapp_2009",
+          10
+        ],
+        [
+          "kaempfer_plapp_2009",
+          4
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "T_cold",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "T_cold",
+        "meaning": "colder boundary temperature (the paper prints T0 and T7; which symbol is which is not established) (printed as T_cold) — meaning inferred from the subscript",
+        "unit": "K",
+        "source": "kaempfer_plapp_2009",
+        "page": 11
+      },
+      "blind_read": {
+        "printed_as": "T_cold",
+        "meaning": "temperature imposed at boundary T_7 to induce a temperature gradient",
+        "value_as_printed": null,
+        "unit_as_printed": null,
+        "location": "left column, paragraph 1 below Fig. 3 (T_7 = T_cold); also Fig. 3 label",
+        "page": 11
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "read_unit_unparsed: no unit",
+          "marker: unit after the symbol is none"
+        ]
+      },
+      "S4": {
+        "symbol": "T_cold",
+        "verdict": "table_right",
+        "printed_as": "T_cold",
+        "unit": "K",
+        "value": "260 K (via T_7 = T_cold)",
+        "meaning": "Temperature imposed at the right boundary x_7 = L (T_7 = T_cold) to induce a temperature gradient",
+        "page": 11,
+        "location": "Left column, first paragraph below Fig. 3 (\"T_0=T_hot and T_7=T_cold\"); Fig. 3 right-side label; right column, paragraph before Eq. (54) (\"T_7=260 K\")",
+        "reason": "The page defines T_7 = T_cold, and the right column gives T_7 = 260 K, so the table's unit K is supported. The blind read's \"no unit\" applies only where T_cold first appears. The page does settle which symbol is which (T_0 = T_hot, T_7 = T_cold), so the table's note that this \"is not established\" is incorrect, although the unit, symbol and page are right.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "read_unit_unparsed: no unit",
+          "marker: unit after the symbol is none"
+        ],
+        "images": [
+          11
+        ]
+      },
+      "S4m": {
+        "symbol": "T_cold",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "T_cold",
+        "page_wording": "we impose temperatures T0=T_hot and T7=T_cold at the boundaries to induce a temperature gradient",
+        "location": "Left column, paragraph just above '1. Pseudoanalytical solution'; also the right edge of Fig. 3 and right column (T7=260 K)",
+        "reason": "T_cold is the colder boundary temperature, as the table says. The page does settle which is which (T7=T_cold=260 K at x7=L), so the table's caveat is unnecessary, but the quantity is the same.",
+        "page": 11,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          11
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "T_hot",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "T_hot",
+        "meaning": "warmer boundary temperature (the paper prints T0 and T7; which symbol is which is not established) (printed as T_hot) — meaning inferred from the subscript",
+        "unit": "K",
+        "source": "kaempfer_plapp_2009",
+        "page": 11
+      },
+      "blind_read": {
+        "printed_as": "T_hot",
+        "meaning": "temperature imposed at boundary T_0 to induce a temperature gradient",
+        "value_as_printed": null,
+        "unit_as_printed": null,
+        "location": "left column, paragraph 1 below Fig. 3 (T_0 = T_hot); also Fig. 3 label",
+        "page": 11
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "read_unit_unparsed: no unit",
+          "marker: unit after the symbol is none"
+        ]
+      },
+      "S4": {
+        "symbol": "T_hot",
+        "verdict": "table_right",
+        "printed_as": "T_hot",
+        "unit": "K",
+        "value": "261 K (via T_0 = T_hot, T_0 = 261 K)",
+        "meaning": "temperature imposed at the x_0 = 0 boundary (T_0 = T_hot) to induce a temperature gradient",
+        "page": 11,
+        "location": "Left column, first paragraph below Fig. 3 (\"T_0=T_hot and T_7=T_cold\"); right column, paragraph above Eq. (54) (\"T_0=261 K, T_7=260 K\"); also the label on the left side of Fig. 3",
+        "reason": "The table's unit is right. T_hot has no unit right next to it, but the page sets T_0 = T_hot and later gives T_0 = 261 K, so its unit is K. The page also settles which symbol is which: T_0 is T_hot and T_7 is T_cold, so the table's note that this \"is not established\" is wrong.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "read_unit_unparsed: no unit",
+          "marker: unit after the symbol is none"
+        ],
+        "images": [
+          11
+        ]
+      },
+      "S4m": {
+        "symbol": "T_hot",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "T_hot",
+        "page_wording": "we impose temperatures T0=T_hot and T7=T_cold at the boundaries to induce a temperature gradient",
+        "location": "Left column, paragraph just above '1. Pseudoanalytical solution'; also the left edge of Fig. 3 and right column (T0=261 K)",
+        "reason": "T_hot is the warmer boundary temperature, as the table says. The page establishes T0=T_hot=261 K at x0=0, so the table's caveat is unnecessary, but the quantity is the same.",
+        "page": 11,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          11
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "t",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "t",
+        "meaning": "time (printed as t)",
+        "unit": "s",
+        "source": "kaempfer_plapp_2009",
+        "page": 12
+      },
+      "blind_read": {
+        "printed_as": "t",
+        "meaning": "time; solution taken at t=300 s as initial condition (Fig. 5 x-axis 'time [s]')",
+        "value_as_printed": "300",
+        "unit_as_printed": "s",
+        "location": "left column, paragraph 3, line 7 ('taken at t=300 s'); also Fig. 5 x-axis label 'time [s]'",
+        "page": 12
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "marker: symbol not found on p12",
+          "marker: printed value not found near the symbol"
+        ]
+      },
+      "S4": {
+        "symbol": "t",
+        "verdict": "table_right",
+        "printed_as": "t",
+        "unit": "s",
+        "value": "300",
+        "meaning": "time; the solution taken at t=300 s is used as the initial condition for the scaled runs",
+        "page": 12,
+        "location": "Page 12, left column, paragraph beginning \"To test the time-scaling procedure\", line 7: \"(taken at t=300 s)\"; also the Fig. 5 x-axis label \"time [s]\"",
+        "reason": "Page 12 prints \"t=300 s\" in the left column, and the Fig. 5 x-axis is labelled \"time [s]\". This confirms that the symbol t is time in seconds. The blind read agrees with the table, so Marker simply missed it.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "marker: symbol not found on p12",
+          "marker: printed value not found near the symbol"
+        ],
+        "images": [
+          12,
+          11,
+          7
+        ]
+      },
+      "S4m": {
+        "symbol": "t",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "t",
+        "page_wording": "We then used this solution (taken at t=300 s) as initial condition",
+        "location": "Left column, paragraph beginning 'To test the time-scaling procedure', line ~6; also Fig. 5 x-axis 'time [s]'",
+        "reason": "On this page t is used as the simulation time in seconds, which matches the table's meaning of time.",
+        "page": 12,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          12
+        ],
+        [
+          "kaempfer_plapp_2009",
+          11
+        ],
+        [
+          "kaempfer_plapp_2009",
+          7
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "P",
+      "in_set_because": "S3 NOT_FOUND; S4m table_wrong",
+      "table": {
+        "printed": "P",
+        "meaning": "atmospheric pressure (printed as P)",
+        "unit": "Pa",
+        "source": "moure_fu_2024",
+        "page": 3
+      },
+      "blind_read": null,
+      "S3": {
+        "verdict": "NOT_FOUND",
+        "reasons": [
+          "reader did not find it on p3; Marker finds it on no other page"
+        ]
+      },
+      "S4": {
+        "symbol": "P",
+        "verdict": "both_wrong",
+        "printed_as": "P_a",
+        "unit": "Pa",
+        "value": null,
+        "meaning": "the atmospheric pressure",
+        "page": 3,
+        "location": "Right column, in Eq. 7 and the text just below it: \"P_a is the atmospheric pressure (units: Pa)\"",
+        "reason": "The page defines atmospheric pressure with units of Pa, so the table's meaning and unit are right. But the page prints the symbol as P_a with subscript a, not bare P, so the table's printed symbol is wrong. The blind read was also wrong to report that the symbol is absent.",
+        "consistency": "consistent",
+        "s3_verdict": "NOT_FOUND",
+        "s3_reasons": [
+          "reader did not find it on p3; Marker finds it on no other page"
+        ],
+        "images": [
+          3
+        ]
+      },
+      "S4m": {
+        "symbol": "P",
+        "meaning_verdict": "table_wrong",
+        "printed_as_on_page": "P_a",
+        "page_wording": "P_a is the atmospheric pressure (units: Pa)",
+        "location": "Right column, text just below eq 7",
+        "reason": "The meaning (atmospheric pressure) matches, but the page prints the symbol as P_a with subscript a, not P as the table says.",
+        "page": 3,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "moure_fu_2024",
+          3
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "M_j",
+      "in_set_because": "S4m cannot_tell",
+      "table": {
+        "printed": "Mj",
+        "meaning": "phase-field mobility (printed as Mj)",
+        "unit": "m s^-1",
+        "source": "moure_fu_2024_SI",
+        "page": 7
+      },
+      "blind_read": {
+        "printed_as": "M_j",
+        "meaning": "Parameter value considered in this work (Gibbs-Thomson parameters table, bottom rows)",
+        "value_as_printed": "2.12 × 10^-5 (Solidification), 4.33 × 10^-7 (Sublimation), 1.34 × 10^-6 (Evaporation)",
+        "unit_as_printed": "m/s",
+        "location": "Table S1, bottom block, row \"M_j (m/s)\"",
+        "page": 7
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "M_j",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "M_j",
+        "page_wording": "relations between the Gibbs-Thomson parameters (β_j, d_j) and our model parameters (M_j, α_j) (for j = {sol, sub, eva})",
+        "location": "moure_fu_2024_SI_p6.png, Section 2.2, lines 95-96; values with unit m/s in cited.png, Table S1, row \"M_j (m/s)\"",
+        "reason": "The pages call M_j only a phase-change model parameter (unit m/s, linked to β_j and d_j), and none of them calls it a 'mobility', so the table's 'phase-field mobility' can be neither confirmed nor ruled out; its defining equation is probably in the main paper.",
+        "page": 7,
+        "pass_": 2,
+        "pages_shown": [
+          "moure_fu_2024_SI_p6",
+          "moure_fu_2024_SI_p9"
+        ]
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          7
+        ],
+        [
+          "moure_fu_2024_SI",
+          6
+        ],
+        [
+          "moure_fu_2024_SI",
+          9
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "beta_sol",
+      "in_set_because": "S3 DISAGREE",
+      "table": {
+        "printed": "βsol",
+        "meaning": "kinetic attachment coefficient, solidification (printed as βsol)",
+        "unit": "s m^-1",
+        "source": "moure_fu_2024_SI",
+        "page": 7
+      },
+      "blind_read": {
+        "printed_as": "β_sol",
+        "meaning": "is the kinetic attachment coefficient",
+        "value_as_printed": null,
+        "unit_as_printed": null,
+        "location": "Section 1.1, line 22 (after Eq. 3); also Eq. (4), fourth relation",
+        "page": 2
+      },
+      "S3": {
+        "verdict": "DISAGREE",
+        "reasons": [
+          "page: found on p2, not on the cited p7",
+          "read_unit_unparsed: no unit",
+          "marker: unit after the symbol is none"
+        ]
+      },
+      "S4": {
+        "symbol": "beta_sol",
+        "verdict": "table_right",
+        "printed_as": "β_j (j = solidification); β_sol on p2",
+        "unit": "s/m",
+        "value": "125",
+        "meaning": "kinetic attachment coefficient (Gibbs-Thomson parameter) for solidification",
+        "page": 7,
+        "location": "Table S1 (page 7), row \"β_j (s/m)\" under \"Parameter values considered in this work\", Solidification column; defined on page 2, line 22 after Eq. (3)",
+        "reason": "The unit s/m and the value 125 appear only on page 7: Table S1 lists β_j (s/m), and its Solidification column gives the value. Page 2 defines β_sol as the kinetic attachment coefficient but prints no unit, so the table's unit and cited page are correct and the blind read's \"no unit\" comes from looking only at page 2.",
+        "consistency": "consistent",
+        "s3_verdict": "DISAGREE",
+        "s3_reasons": [
+          "page: found on p2, not on the cited p7",
+          "read_unit_unparsed: no unit",
+          "marker: unit after the symbol is none"
+        ],
+        "images": [
+          7,
+          2,
+          3
+        ]
+      },
+      "S4m": {
+        "symbol": "beta_sol",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "β_sol",
+        "page_wording": "β_sol is the kinetic attachment coefficient (Gibbs-Thomson condition for the ice-liquid water interface)",
+        "location": "moure_fu_2024_SI_p2.png, lines 21-22 below Eq. (3); also moure_fu_2024_p5.png, left column below Eq. (18)",
+        "reason": "Both pages define β_sol as the kinetic attachment coefficient in the solidification (ice-water) Gibbs-Thomson condition, which is the table's meaning.",
+        "page": 7,
+        "pass_": 2,
+        "pages_shown": [
+          "moure_fu_2024_p5",
+          "moure_fu_2024_p6",
+          "moure_fu_2024_SI_p2"
+        ]
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          7
+        ],
+        [
+          "moure_fu_2024_SI",
+          2
+        ],
+        [
+          "moure_fu_2024_SI",
+          3
+        ],
+        [
+          "moure_fu_2024",
+          5
+        ],
+        [
+          "moure_fu_2024",
+          6
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "D_v0",
+      "in_set_because": "S4m table_wrong",
+      "table": {
+        "printed": "Dv0",
+        "meaning": "vapor diffusivity in air (printed as Dv0)",
+        "unit": "m^2 s^-1",
+        "source": "moure_fu_2024_SI",
+        "page": 9
+      },
+      "blind_read": {
+        "printed_as": "D_v0",
+        "meaning": "Parameter listed in Table S3 (no description given)",
+        "value_as_printed": "2.178 × 10^-5",
+        "unit_as_printed": "m^2/s",
+        "location": "Table S3, row \"D_v0\"",
+        "page": 9
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "D_v0",
+        "meaning_verdict": "table_wrong",
+        "printed_as_on_page": "D_v0",
+        "page_wording": "D_v0 is the vapor diffusion coefficient at the freezing point",
+        "location": "moure_fu_2024_p4.png, left column, sentence just below Eq. (15)",
+        "reason": "The page defines D_v0 as the reference vapor diffusion coefficient at the freezing point (T0 = 273.15), used to scale D_v(T) in Eq. (15). The table says only \"vapor diffusivity in air\" and leaves out the freezing-point reference, so it reads as the temperature-dependent D_v(T).",
+        "page": 9,
+        "pass_": 2,
+        "pages_shown": [
+          "moure_fu_2024_p4",
+          "moure_fu_2024_SI_p4",
+          "moure_fu_2024_SI_p5"
+        ]
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          9
+        ],
+        [
+          "moure_fu_2024",
+          4
+        ],
+        [
+          "moure_fu_2024_SI",
+          4
+        ],
+        [
+          "moure_fu_2024_SI",
+          5
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "K_a",
+      "in_set_because": "S4m cannot_tell",
+      "table": {
+        "printed": "Ka",
+        "meaning": "thermal conductivity of air (printed as Ka)",
+        "unit": "W m^-1 K^-1",
+        "source": "moure_fu_2024_SI",
+        "page": 9
+      },
+      "blind_read": {
+        "printed_as": "K_a",
+        "meaning": "Parameter listed in Table S3 (no description given)",
+        "value_as_printed": "0.02",
+        "unit_as_printed": "W/(m °C)",
+        "location": "Table S3, row \"K_a\"",
+        "page": 9
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "K_a",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "K_a",
+        "page_wording": null,
+        "location": "Table S3, row \"K_a\" (0.02 W/(m °C))",
+        "reason": "Table S3 lists only the symbol, value and unit; the page does not describe it.",
+        "page": 9,
+        "pass_": 1,
+        "pass2": "no other page where Marker finds the symbol"
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          9
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "K_i",
+      "in_set_because": "S4m cannot_tell",
+      "table": {
+        "printed": "Ki",
+        "meaning": "thermal conductivity of ice (printed as Ki)",
+        "unit": "W m^-1 K^-1",
+        "source": "moure_fu_2024_SI",
+        "page": 9
+      },
+      "blind_read": {
+        "printed_as": "K_i",
+        "meaning": "Parameter listed in Table S3 (no description given)",
+        "value_as_printed": "2.29",
+        "unit_as_printed": "W/(m °C)",
+        "location": "Table S3, row \"K_i\"",
+        "page": 9
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "K_i",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "K_i",
+        "page_wording": null,
+        "location": "Table S3, row \"K_i\" (2.29 W/(m °C))",
+        "reason": "Table S3 lists only the symbol, value and unit; the page does not describe it.",
+        "page": 9,
+        "pass_": 1,
+        "pass2": "no other page where Marker finds the symbol"
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          9
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "K_w",
+      "in_set_because": "S4m cannot_tell",
+      "table": {
+        "printed": "Kw",
+        "meaning": "thermal conductivity of water (printed as Kw)",
+        "unit": "W m^-1 K^-1",
+        "source": "moure_fu_2024_SI",
+        "page": 9
+      },
+      "blind_read": {
+        "printed_as": "K_w",
+        "meaning": "Parameter listed in Table S3 (no description given)",
+        "value_as_printed": "0.554",
+        "unit_as_printed": "W/(m °C)",
+        "location": "Table S3, row \"K_w\"",
+        "page": 9
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "K_w",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "K_w",
+        "page_wording": null,
+        "location": "Table S3, row \"K_w\" (0.554 W/(m °C))",
+        "reason": "Table S3 lists only the symbol, value and unit; the page does not describe it.",
+        "page": 9,
+        "pass_": 1,
+        "pass2": "no other page where Marker finds the symbol"
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          9
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "c_p_a",
+      "in_set_because": "S4m cannot_tell",
+      "table": {
+        "printed": "cp,a",
+        "meaning": "specific heat of air (printed as cp,a)",
+        "unit": "J kg^-1 K^-1",
+        "source": "moure_fu_2024_SI",
+        "page": 9
+      },
+      "blind_read": {
+        "printed_as": "c_{p,a}",
+        "meaning": "Parameter listed in Table S3 (no description given)",
+        "value_as_printed": "1.044 × 10^3",
+        "unit_as_printed": "J/(Kg °C)",
+        "location": "Table S3, row \"c_{p,a}\"",
+        "page": 9
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "c_p_a",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "c_{p,a}",
+        "page_wording": null,
+        "location": "cited.png (SI p.9), Table S3, row c_{p,a} (1.044 × 10^3, J/(Kg °C)); moure_fu_2024_p6.png, Eq. (28), denominator ρ_a c_{p,a}",
+        "reason": "Neither page defines c_{p,a} in words: Table S3 gives only a value and units of J/(Kg °C), and Eq. (28) on p6 uses it with ρ_a and K_a for the air–ice interface. That fits 'specific heat of air', but no definition is printed.",
+        "page": 9,
+        "pass_": 2,
+        "pages_shown": [
+          "moure_fu_2024_p6"
+        ]
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          9
+        ],
+        [
+          "moure_fu_2024",
+          6
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "c_p_i",
+      "in_set_because": "S4m cannot_tell",
+      "table": {
+        "printed": "cp,i",
+        "meaning": "specific heat of ice (printed as cp,i)",
+        "unit": "J kg^-1 K^-1",
+        "source": "moure_fu_2024_SI",
+        "page": 9
+      },
+      "blind_read": {
+        "printed_as": "c_{p,i}",
+        "meaning": "Parameter listed in Table S3 (no description given)",
+        "value_as_printed": "1.96 × 10^3",
+        "unit_as_printed": "J/(Kg °C)",
+        "location": "Table S3, row \"c_{p,i}\"",
+        "page": 9
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "c_p_i",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "c_{p,i}",
+        "page_wording": null,
+        "location": "Table S3, row \"c_p,i\" (1.96 × 10^3 J/(Kg °C))",
+        "reason": "Table S3 lists only the symbol, value and unit; the page does not describe it.",
+        "page": 9,
+        "pass_": 1,
+        "pass2": "no other page where Marker finds the symbol"
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          9
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "R_v",
+      "in_set_because": "random sample of agreed rows",
+      "table": {
+        "printed": "Rv",
+        "meaning": "individual gas constant of water vapor (printed as Rv) — meaning inferred from the subscript",
+        "unit": "J kg^-1 K^-1",
+        "source": "kaempfer_plapp_2009",
+        "page": 4
+      },
+      "blind_read": {
+        "printed_as": "R_v",
+        "meaning": "individual gas constants of dry air and water vapor",
+        "value_as_printed": "461.5",
+        "unit_as_printed": "J Kg^-1 K^-1",
+        "location": "Table I, row \"R_da, R_v\"",
+        "page": 4
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "R_v",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "R_v",
+        "page_wording": "individual gas constants of dry air and water vapor",
+        "location": "Table I, row \"R_da, R_v\"",
+        "reason": "R_v is the water-vapor gas constant, which is what the table says.",
+        "page": 4,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          4
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "L",
+      "in_set_because": "random sample of agreed rows",
+      "table": {
+        "printed": "L",
+        "meaning": "estimated pore size (printed as L)",
+        "unit": "m",
+        "source": "kaempfer_plapp_2009",
+        "page": 9
+      },
+      "blind_read": {
+        "printed_as": "L",
+        "meaning": "estimated pore size",
+        "value_as_printed": "10^-4",
+        "unit_as_printed": "m",
+        "location": "right column, section D, paragraph 1, line 4",
+        "page": 9
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "L",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "L",
+        "page_wording": "for an estimated pore size of L=10^-4 m",
+        "location": "Right column, Sec. D, first paragraph",
+        "reason": "The page defines L as the estimated pore size, which is what the table says.",
+        "page": 9,
+        "pass_": 1
+      },
+      "pages": [
+        [
+          "kaempfer_plapp_2009",
+          9
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "u_j",
+      "in_set_because": "random sample of agreed rows",
+      "table": {
+        "printed": "uj",
+        "meaning": "phase-change factor multiplying αjφl²φm² (printed as uj)",
+        "unit": "1 (dimensionless)",
+        "source": "moure_fu_2024_SI",
+        "page": 7
+      },
+      "blind_read": {
+        "printed_as": "u_j",
+        "meaning": "typical values of u_j and v_n,j based on T and ρ_v distributions",
+        "value_as_printed": "~ 10^-3 (Solidification), ~ 10^-8 (Sublimation), ~ 10^-8 (Evaporation)",
+        "unit_as_printed": "(-)",
+        "location": "Table S1, row \"u_j (-)\"; text line 112",
+        "page": 7
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "u_j",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "u_j",
+        "page_wording": "u_j is the phase-change factor that multiplies the terms α_j φ_l^2 φ_m^2 in the phase-field equations",
+        "location": "moure_fu_2024_SI_p6.png, lines 100-101, below Eq. (12)",
+        "reason": "Page 6 defines u_j as the phase-change factor multiplying α_j φ_l² φ_m², which is what the table says; Table S1 on the cited page 7 lists it as dimensionless (-).",
+        "page": 7,
+        "pass_": 2,
+        "pages_shown": [
+          "moure_fu_2024_SI_p6"
+        ]
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          7
+        ],
+        [
+          "moure_fu_2024_SI",
+          6
+        ]
+      ],
+      "user_decision": null
+    },
+    {
+      "symbol": "alpha_nucl",
+      "in_set_because": "random sample of agreed rows",
+      "table": {
+        "printed": "αnucl",
+        "meaning": "nucleation coefficient (printed as αnucl)",
+        "unit": "m^-1",
+        "source": "moure_fu_2024_SI",
+        "page": 9
+      },
+      "blind_read": {
+        "printed_as": "α_nucl",
+        "meaning": "Parameter listed in Table S3 (no description given)",
+        "value_as_printed": "5 × 10^6",
+        "unit_as_printed": "1/m",
+        "location": "Table S3, row \"α_nucl\"",
+        "page": 9
+      },
+      "S3": {
+        "verdict": "AGREE",
+        "reasons": []
+      },
+      "S4": null,
+      "S4m": {
+        "symbol": "alpha_nucl",
+        "meaning_verdict": "matches",
+        "printed_as_on_page": "α_nucl",
+        "page_wording": "α_nucl is a parameter controlling the strength of nucleation",
+        "location": "moure_fu_2024_p3.png, right column, text just below eq 10; the value 5 × 10^6 1/m is given in Table S3 of cited.png",
+        "reason": "The main paper defines α_nucl as the parameter that sets the strength of the nucleation term θ_nucl in eq 10, so the table's \"nucleation coefficient\" names the same quantity.",
+        "page": 9,
+        "pass_": 2,
+        "pages_shown": [
+          "moure_fu_2024_p3",
+          "moure_fu_2024_p5"
+        ]
+      },
+      "pages": [
+        [
+          "moure_fu_2024_SI",
+          9
+        ],
+        [
+          "moure_fu_2024",
+          3
+        ],
+        [
+          "moure_fu_2024",
+          5
+        ]
+      ],
+      "user_decision": null
+    }
+  ]
+}

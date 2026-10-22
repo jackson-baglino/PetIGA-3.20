@@ -1,0 +1,33 @@
+{
+  "page": "moure_fu_2024_SI_p3",
+  "reads": [
+    {
+      "symbol": "beta_sol",
+      "found": true,
+      "printed_as": "β_sol",
+      "meaning": "Appears in condition ε < β_sol D*_iw ≈ 10^-5 m for phase-field model to recover sharp-interface solution; not defined in words",
+      "value_as_printed": null,
+      "unit_as_printed": null,
+      "location": "line 33, ε < β_sol D*_iw ≈ 10^-5 m"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "beta_sol"
+      ],
+      "page_png_sha256": "7e3db6ea49214bdf2efd0eda2f0500d66e37ff314f08df2a3bfc4a7809f10945",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "a19fbb8094def0123ec462ca739618e11db00c5e0e2ef0a23322d85e5f206bd9",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-155335/transcripts/S2/moure_fu_2024_SI_p3_f0229662_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

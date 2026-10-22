@@ -1,0 +1,63 @@
+{
+  "page": "kaempfer_plapp_2009_p9",
+  "reads": [
+    {
+      "symbol": "L",
+      "found": true,
+      "printed_as": "L",
+      "meaning": "estimated pore size",
+      "value_as_printed": "10^-4",
+      "unit_as_printed": "m",
+      "location": "right column, section D, paragraph 1, line 4"
+    },
+    {
+      "symbol": "W",
+      "found": true,
+      "printed_as": "W",
+      "meaning": "interface width; needs to remain small compared to any local radius of curvature",
+      "value_as_printed": "≪ 5 × 10^-7 m to ≪ 5 × 10^-5 m",
+      "unit_as_printed": "m",
+      "location": "left column, Eq. (44) (also Eq. (46): ≪ 10^-6 m to ≪ 10^-4 m)"
+    },
+    {
+      "symbol": "t_D",
+      "found": true,
+      "printed_as": "t_D",
+      "meaning": "water vapor diffusion time across the pore",
+      "value_as_printed": "L^2/D_v ≅ 5 × 10^-4",
+      "unit_as_printed": "s",
+      "location": "right column, section D, paragraph 1, lines 4-6"
+    },
+    {
+      "symbol": "t_n",
+      "found": true,
+      "printed_as": "t_n",
+      "meaning": "characteristic interface migration time",
+      "value_as_printed": "L/v_n ≅ 3 × 10^5",
+      "unit_as_printed": "s",
+      "location": "right column, section D, paragraph 1, lines 16-17"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "L",
+        "W",
+        "t_D",
+        "t_n"
+      ],
+      "page_png_sha256": "d845e11d2c1099a2e8d9a0fbbc702a2ceb0b60caf107f40750fedc02ab6e74c3",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "639c5f4dfd196eaa3e251dfdce74815517e18abd2c4f835ed5f57a3d93984ebf",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-155335/transcripts/S2/kaempfer_plapp_2009_p9_197cc351_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

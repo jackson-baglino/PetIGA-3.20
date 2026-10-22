@@ -1,0 +1,83 @@
+{
+  "page": "moure_fu_2024_SI_p7",
+  "reads": [
+    {
+      "symbol": "M_j",
+      "found": true,
+      "printed_as": "M_j",
+      "meaning": "Parameter value considered in this work (Gibbs-Thomson parameters table, bottom rows)",
+      "value_as_printed": "2.12 × 10^-5 (Solidification), 4.33 × 10^-7 (Sublimation), 1.34 × 10^-6 (Evaporation)",
+      "unit_as_printed": "m/s",
+      "location": "Table S1, bottom block, row \"M_j (m/s)\""
+    },
+    {
+      "symbol": "alpha_j",
+      "found": true,
+      "printed_as": "α_j",
+      "meaning": "Parameter value considered in this work (Table S1 bottom rows)",
+      "value_as_printed": "7.96 × 10^4 (Solidification), 1.3 × 10^7 (Sublimation), 6.69 × 10^7 (Evaporation)",
+      "unit_as_printed": "1/s",
+      "location": "Table S1, last row \"α_j (1/s)\""
+    },
+    {
+      "symbol": "beta_sol",
+      "found": false,
+      "printed_as": null,
+      "meaning": null,
+      "value_as_printed": null,
+      "unit_as_printed": null,
+      "location": null
+    },
+    {
+      "symbol": "d_j",
+      "found": true,
+      "printed_as": "d_j",
+      "meaning": "Gibbs-Thomson parameters β_j and d_j, estimated from the literature",
+      "value_as_printed": "Literature: ~ 5 × 10^-10 (Solidification), ~ 10^-9 (Sublimation), ~ 5 × 10^-10 (Evaporation); this work: 4 × 10^-9, 10^-7, 6 × 10^-8",
+      "unit_as_printed": "m",
+      "location": "Table S1, rows \"d_j (m)\" (upper and bottom blocks); text line 109"
+    },
+    {
+      "symbol": "u_j",
+      "found": true,
+      "printed_as": "u_j",
+      "meaning": "typical values of u_j and v_n,j based on T and ρ_v distributions",
+      "value_as_printed": "~ 10^-3 (Solidification), ~ 10^-8 (Sublimation), ~ 10^-8 (Evaporation)",
+      "unit_as_printed": "(-)",
+      "location": "Table S1, row \"u_j (-)\"; text line 112"
+    },
+    {
+      "symbol": "v_n_j",
+      "found": true,
+      "printed_as": "v_{n,j}",
+      "meaning": "typical values based on T and ρ_v distributions during different phase transitions",
+      "value_as_printed": "~ (10^-4, 10^-5) (Solidification), ~ (10^-7, 10^-9) (Sublimation), ~ (10^-6, 10^-8) (Evaporation)",
+      "unit_as_printed": "m/s",
+      "location": "Table S1, row \"v_{n,j} (m/s)\"; text line 112"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "M_j",
+        "alpha_j",
+        "beta_sol",
+        "d_j",
+        "u_j",
+        "v_n_j"
+      ],
+      "page_png_sha256": "22527ac606f8bfd3f066fb2ba6c7ce99baf8f479a4074dc0901bbf680564a1db",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "9ac594dcf596d12560515f646327b373683b1a87605d55cc47b3b4c459c28f1e",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-155335/transcripts/S2/moure_fu_2024_SI_p7_4bdb47aa_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

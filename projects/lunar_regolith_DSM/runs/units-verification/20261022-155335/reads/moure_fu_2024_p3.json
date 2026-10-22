@@ -1,0 +1,33 @@
+{
+  "page": "moure_fu_2024_p3",
+  "reads": [
+    {
+      "symbol": "P",
+      "found": false,
+      "printed_as": null,
+      "meaning": null,
+      "value_as_printed": null,
+      "unit_as_printed": null,
+      "location": null
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "P"
+      ],
+      "page_png_sha256": "7469612d4716799cd56c204b7a7f3806ac773b65937a07b062a522d88bc208a3",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "2a66a270fff205b869ebfe35605b9422f8729767c0005bf476b5bcc63c4652a5",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-155335/transcripts/S2/moure_fu_2024_p3_5c62e091_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

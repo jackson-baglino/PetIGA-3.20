@@ -1,0 +1,33 @@
+{
+  "page": "moure_fu_2024_SI_p8",
+  "reads": [
+    {
+      "symbol": "chi",
+      "found": true,
+      "printed_as": "χ",
+      "meaning": "typical ice curvatures",
+      "value_as_printed": "∼ 10^4",
+      "unit_as_printed": "m^-1",
+      "location": "first paragraph, line 117 (also line 123)"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "chi"
+      ],
+      "page_png_sha256": "23ded40c9f1a1d3aa95713bfebbd9dc2bbfa0c11b98ac665212627dc7354044c",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "db691e23ca19db195b9e8487ec745b642cb4c3c78eb25f3ae7b7515e901a4b69",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-155335/transcripts/S2/moure_fu_2024_SI_p8_dffe602c_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "page": "moure_fu_2024_p6",
+  "reads": [
+    {
+      "symbol": "eps",
+      "found": true,
+      "printed_as": "ε",
+      "meaning": "represents the diffusive interface width at phase–phase boundaries",
+      "value_as_printed": "< 10^-6 (simulation choice); most restrictive condition ε < 10^-8",
+      "unit_as_printed": "m",
+      "location": "right column, paragraph below Eqs. 27–29, lines 1-2 and lines 6-10; Eqs. 27–29"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "eps"
+      ],
+      "page_png_sha256": "88261dc268367e6d9fb71d5ac6e1298b33544627d9cb7a74a473b1ff832e3cd9",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "95c0064ed292d493f61ec74d5bc7e7bd99f9e4f6da169b9005e5ffcd0b8c7210",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-155335/transcripts/S2/moure_fu_2024_p6_c769ea32_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}
