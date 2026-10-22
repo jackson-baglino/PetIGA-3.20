@@ -1,0 +1,1435 @@
+{
+  "table": "memory/semantic/units.md",
+  "table_sha256": "819196878301368f8b204e9d178abbb2a11e1e6fc7b6afa1ab94146bc79b0bf8",
+  "counts": {
+    "MARKER_AGREES": 48,
+    "MARKER_DIFFERS": 12
+  },
+  "rows": [
+    {
+      "symbol": "Ca",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J m^-3 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-1 K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J m ^-3 K ^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          30.0,
+          47.0,
+          1400.0,
+          1800000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "Ci",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J m^-3 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-1 K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J m ^-3 K ^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          30.0,
+          47.0,
+          1400.0,
+          1800000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "D_STP",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "m^2 s^-1",
+      "reasons": [
+        "marker: symbol not found on p4"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "m^2 s^-1",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "D_v",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "m^2 s^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 s^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 3,
+        "units_seen": [
+          "m^2 s^-1",
+          "m^2 s^-1",
+          "m^2 s^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          2.178e-05,
+          25.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "L_sg",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J m^-3",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J m^-3"
+        ],
+        "unit_match": true,
+        "numbers": [
+          26.0,
+          2600000000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "Pa",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "Pa",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 2,
+        "units_seen": [
+          "Pa"
+        ],
+        "unit_match": true,
+        "numbers": [
+          101325.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "R_da",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J kg^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J Kg ^-1 K ^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          286.9,
+          461.5
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "R_v",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J kg^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J Kg ^-1 K ^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          286.9,
+          461.5
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "T0",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "K",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "K",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "°C"
+        ],
+        "unit_match": true,
+        "numbers": [
+          -10.0,
+          263.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "T_STP",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "K",
+      "reasons": [
+        "marker: symbol not found on p4"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "K",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "a",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "m",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          3.19e-10,
+          30.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "beta",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "s m^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "s m^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 3,
+        "units_seen": [
+          "s m^-1",
+          "s m^-1",
+          "s m^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          30000.0,
+          550000.0,
+          3000000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "d0",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "m",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.3e-09
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "gamma",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J m^-2",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J m^-2"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.10900000000000001,
+          26.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "k",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 kg K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J K^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.3799999999999998e-23
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "kappa_a",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "W m^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m kg K^-1 s^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "W m^-1 K^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.02,
+          2.29,
+          47.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "kappa_i",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "W m^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m kg K^-1 s^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "W m^-1 K^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.02,
+          2.29,
+          47.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "m",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "kg",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg",
+      "marker": {
+        "located": true,
+        "occurrences": 12,
+        "units_seen": [
+          "kg",
+          "s^-1",
+          "s^-1",
+          "s^-1",
+          "K^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.018,
+          2.99,
+          20.0,
+          25.0,
+          26.0,
+          30.0,
+          47.0,
+          6.019999999999999e+23
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "rho_a",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "kg m^-3",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "kg m ^-3"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.341,
+          47.0,
+          918.9
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "rho_i",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "kg m^-3",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "kg m ^-3"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.341,
+          47.0,
+          918.9
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "rho_v",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "kg m^-3",
+      "reasons": [
+        "marker: symbol not found on p4"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-3",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "v_n",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "m s^-1",
+      "reasons": [
+        "marker: symbol not found on p4"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "m s^-1",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "x_s",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "1 (dimensionless)",
+      "reasons": [
+        "marker: symbol not found on p4"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "1",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "L",
+      "source": "kaempfer_plapp_2009",
+      "page": 9,
+      "table_unit": "m",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m",
+      "marker": {
+        "located": true,
+        "occurrences": 5,
+        "units_seen": [
+          "m",
+          "s",
+          "s",
+          "s",
+          "s"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.5e-10,
+          0.0001,
+          0.0005,
+          0.0006000000000000001,
+          0.008,
+          100.0,
+          260.0,
+          100000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "W",
+      "source": "kaempfer_plapp_2009",
+      "page": 9,
+      "table_unit": "m",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m",
+      "marker": {
+        "located": true,
+        "occurrences": 8,
+        "units_seen": [
+          "m",
+          "m",
+          "1/K",
+          "W",
+          "m",
+          "m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          5e-07,
+          1e-06,
+          5e-05,
+          0.0001,
+          1.0,
+          37.0,
+          38.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "t_D",
+      "source": "kaempfer_plapp_2009",
+      "page": 9,
+      "table_unit": "s",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "s",
+      "marker": {
+        "located": true,
+        "occurrences": 3,
+        "units_seen": [
+          "s",
+          "s"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.5e-10,
+          1.5000000000000002e-09,
+          0.0005,
+          0.008,
+          100.0,
+          260.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "t_n",
+      "source": "kaempfer_plapp_2009",
+      "page": 9,
+      "table_unit": "s",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "s",
+      "marker": {
+        "located": true,
+        "occurrences": 2,
+        "units_seen": [
+          "s"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.5000000000000002e-09,
+          100000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "Deltat",
+      "source": "kaempfer_plapp_2009",
+      "page": 11,
+      "table_unit": "s",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "s",
+      "marker": {
+        "located": true,
+        "occurrences": 3,
+        "units_seen": [
+          "s",
+          "s",
+          "s"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1e-05,
+          5e-05,
+          64000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "T_cold",
+      "source": "kaempfer_plapp_2009",
+      "page": 11,
+      "table_unit": "K",
+      "reasons": [
+        "marker: unit after the symbol is none"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "K",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "T_hot",
+      "source": "kaempfer_plapp_2009",
+      "page": 11,
+      "table_unit": "K",
+      "reasons": [
+        "marker: unit after the symbol is none"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "K",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "j_T",
+      "source": "kaempfer_plapp_2009",
+      "page": 11,
+      "table_unit": "W m^-2",
+      "reasons": [
+        "marker: symbol not found on p11"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "kg s^-3",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "j_v",
+      "source": "kaempfer_plapp_2009",
+      "page": 12,
+      "table_unit": "kg m^-2 s^-1",
+      "reasons": [
+        "marker: symbol not found on p12"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "kg s^-1 m^-2",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "t",
+      "source": "kaempfer_plapp_2009",
+      "page": 12,
+      "table_unit": "s",
+      "reasons": [
+        "marker: symbol not found on p12"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "s",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "h",
+      "source": "kaempfer_plapp_2009",
+      "page": 13,
+      "table_unit": "m",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m",
+      "marker": {
+        "located": true,
+        "occurrences": 2,
+        "units_seen": [
+          "m",
+          "m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          5e-07,
+          5e-05,
+          6.0,
+          2872.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "P",
+      "source": "moure_fu_2024",
+      "page": 3,
+      "table_unit": "Pa",
+      "reasons": [
+        "marker: symbol not found on p3"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-1 s^-2",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "eps",
+      "source": "moure_fu_2024",
+      "page": 6,
+      "table_unit": "m",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m",
+      "marker": {
+        "located": true,
+        "occurrences": 8,
+        "units_seen": [
+          "m",
+          "m",
+          "m",
+          "m",
+          "m",
+          "m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1e-08,
+          1e-07,
+          1e-06,
+          1e-05
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "M_j",
+      "source": "moure_fu_2024_SI",
+      "page": 7,
+      "table_unit": "m s^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m s^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 2,
+        "units_seen": [
+          "(m/s)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          4.3299999999999997e-07,
+          1.34e-06,
+          2.1200000000000004e-05
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "alpha_j",
+      "source": "moure_fu_2024_SI",
+      "page": 7,
+      "table_unit": "s^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "s^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 2,
+        "units_seen": [
+          "(1/s)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.0,
+          79600.0,
+          13000000.0,
+          66900000.00000001
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "beta_sol",
+      "source": "moure_fu_2024_SI",
+      "page": 7,
+      "table_unit": "s m^-1",
+      "reasons": [
+        "marker: symbol not found on p7"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "s m^-1",
+      "marker": {
+        "located": false,
+        "occurrences": 0,
+        "units_seen": [],
+        "unit_match": false,
+        "numbers": [],
+        "value_match": null
+      },
+      "verdict": "MARKER_DIFFERS"
+    },
+    {
+      "symbol": "d_j",
+      "source": "moure_fu_2024_SI",
+      "page": 7,
+      "table_unit": "m",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m",
+      "marker": {
+        "located": true,
+        "occurrences": 5,
+        "units_seen": [
+          "(m)",
+          "(m)",
+          "W"
+        ],
+        "unit_match": true,
+        "numbers": [
+          5e-10,
+          1e-09,
+          4e-09,
+          6.000000000000001e-08,
+          1e-07,
+          4.9999999999999996e-06,
+          4.0,
+          6.0,
+          8.0,
+          9.0,
+          10.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "u_j",
+      "source": "moure_fu_2024_SI",
+      "page": 7,
+      "table_unit": "1 (dimensionless)",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "1",
+      "marker": {
+        "located": true,
+        "occurrences": 3,
+        "units_seen": [
+          "(dimensionless mark)",
+          "W"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.0,
+          1e-08,
+          4.9999999999999996e-06,
+          0.001,
+          1.0,
+          4.0,
+          9.0,
+          10.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "v_n_j",
+      "source": "moure_fu_2024_SI",
+      "page": 7,
+      "table_unit": "m s^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m s^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 3,
+        "units_seen": [
+          "(m/s)",
+          "W"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.0,
+          1e-09,
+          1e-08,
+          1e-07,
+          1e-06,
+          4.9999999999999996e-06,
+          1e-05,
+          0.0001,
+          1.0,
+          4.0,
+          9.0,
+          10.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "chi",
+      "source": "moure_fu_2024_SI",
+      "page": 8,
+      "table_unit": "m^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 2,
+        "units_seen": [
+          "m^-1",
+          "m^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1e-08,
+          1e-06,
+          3.0,
+          12.0,
+          123.0,
+          124.0,
+          125.0,
+          10000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "D_v0",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "m^2 s^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 s^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "m^2/s"
+        ],
+        "unit_match": true,
+        "numbers": [
+          2.178e-05
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "K_a",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "W m^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m kg K^-1 s^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "W/(m °C)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.02
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "K_i",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "W m^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m kg K^-1 s^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "W/(m °C)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          2.29
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "K_w",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "W m^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m kg K^-1 s^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "W/(m°C)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.554
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "L_sol",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "J kg^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J/Kg"
+        ],
+        "unit_match": true,
+        "numbers": [
+          334000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "L_sub",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "J kg^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J/Kg"
+        ],
+        "unit_match": true,
+        "numbers": [
+          2830000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "Lambda",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "N m^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "N/m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "alpha_nucl",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "m^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "1/m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.0,
+          5000000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "c_p_a",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "J kg^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J/(Kg °C)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1044.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "c_p_i",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "J kg^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J/(Kg °C)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1960.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "c_p_w",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "J kg^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J/(Kg °C)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          4200.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "gamma_ia",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "N m^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "N/m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.109
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "gamma_iw",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "N m^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "N/m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.033
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "gamma_wa",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "N m^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "N/m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.076
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "rho_w",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "kg m^-3",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "Kg/m^3"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1000.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "xi_T",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "1 (dimensionless)",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "1",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "(dimensionless mark)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          13.0
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    },
+    {
+      "symbol": "xi_v",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "1 (dimensionless)",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "1",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "(dimensionless mark)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.001
+        ],
+        "value_match": null
+      },
+      "verdict": "MARKER_AGREES"
+    }
+  ]
+}
