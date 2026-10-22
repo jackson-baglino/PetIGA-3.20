@@ -30,13 +30,14 @@ def beta_hk_s_per_m(temperature_c: float, alpha_c: float) -> float:
 
 
 def capillary_length_m(temperature_c: float) -> float:
-    """d0 = gamma Vm / (R T) (KP Eq. 13)."""
+    """d0 = gamma Vm / (R T) (KP Eq. 13). This tool's d0; sizes eps."""
     return C.gamma_iv_j_per_m2 * C.vm_ice_m3_per_mol / (C.r_gas_j_per_mol_k * (temperature_c + 273.15))
 
 
-def capillary_length_code_m(temperature_c: float) -> float:
-    """d0 exactly as hard-coded in monitoring.c: 2.548e-7 / T_K."""
-    return 2.548e-7 / (temperature_c + 273.15)
+def capillary_length_solver_m(temperature_c: float) -> float:
+    """d0 as the solver computes it once at temp0: D0_CAPILLARY = gamma a^3/(k_B T), a^3 = m_H2O/rho_ice."""
+    a3 = C.m_h2o_d0_kg / C.rho_ice_kg_per_m3
+    return C.gamma_iv_j_per_m2 * a3 / (C.k_b_d0_j_per_k * (temperature_c + 273.15))
 
 
 def sigma0(temperature_c: float) -> float:

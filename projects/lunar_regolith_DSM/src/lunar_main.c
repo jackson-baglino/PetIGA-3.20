@@ -167,11 +167,9 @@ int main(int argc, char *argv[]) {
     user.xi_T = 1.0;    /* thermal: scales conduction + latent heat in R_tem  */
     user.xi_v = 1e-3;   /* vapor:   scales diffusion + rho_ice source in R_vap */
 
-    /* Placeholder only: d0_sub0 is recomputed below from K&P Eq. 13, d0 = gamma*a^3/(k_B*T), at temp0
-     * (about 1.0e-9 m at -20 C). It used to default to 1e-7, ~100x the physical value, taken from Moure
-     * and Fu, who inflated d0 for their wet-snow runs; that skews the kinetics and must not be a default.
-     * -d0_sub0 still overrides, announced on stdout. */
-    user.d0_sub0    = 1.0e-9;
+    /* Set below from K&P Eq. 13 at temp0 (about 1.0e-9 m at -20 C); not an input. It used to default to
+     * 1e-7, ~100x the physical value, taken from Moure and Fu's wet-snow runs. */
+    user.d0_sub0    = 0.0;
     user.beta_sub0  = 9.9e5;     /* beta0 = (1/alpha_c)*sqrt(2pi*m/kT)/(rho_vs/rho_i)
                                   * at alpha_c=2e-3 (Libbrecht 2017), T=-5°C [s/m] */
 
@@ -1021,24 +1019,10 @@ int main(int argc, char *argv[]) {
             user.beta_sub0 = beta_sub0_cli;
         }
     }
-    {
-        /* K&P Eq. 13: d0 = gamma*a^3/(k_B*T), a^3 = m_H2O/rho_ice, at temp0, with the BULK ice-air energy
-         * (the wall's gamma_ia may be perturbed separately for sensitivity tests). Computed per run because it
-         * depends on temperature. -d0_sub0 overrides for deliberate experiments. */
-        PetscReal d0_phys = D0_CAPILLARY(user.gamma_ia_bulk, user.rho_ice, user.temp0 + 273.15);
-        PetscReal  d0_sub0_cli = -1.0;
-        PetscBool  set_d0      = PETSC_FALSE;
-        ierr = PetscOptionsGetReal(NULL, NULL, "-d0_sub0",
-                                   &d0_sub0_cli, &set_d0); CHKERRQ(ierr);
-        if (set_d0 && d0_sub0_cli > 0.0) {
-            user.d0_sub0 = d0_sub0_cli;
-            PetscPrintf(PETSC_COMM_WORLD,
-                        "  -d0_sub0 OVERRIDE: %.4e m (K&P gamma*a^3/(k_B*T) at %.1f C is %.4e, factor %.3f)\n",
-                        (double)user.d0_sub0, (double)user.temp0, (double)d0_phys, (double)(user.d0_sub0 / d0_phys));
-        } else {
-            user.d0_sub0 = d0_phys;
-        }
-    }
+    /* K&P Eq. 13: d0 = gamma*a^3/(k_B*T), a^3 = m_H2O/rho_ice, with the BULK ice-air energy (the wall's
+     * gamma_ia may be perturbed separately for sensitivity tests). Computed once, at temp0, and used for the
+     * whole run, including monitoring.c; it is not an input. */
+    user.d0_sub0 = D0_CAPILLARY(user.gamma_ia_bulk, user.rho_ice, user.temp0 + 273.15);
 
     PetscReal a1 = 5.0, a2 = 0.1581; /* Constants for GT relation */
     PetscReal d0_sub;                /* Capillary length parameter */

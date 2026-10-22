@@ -50,7 +50,6 @@
 -grad_temp0 0.0,0.0,0.0
 
 -beta_sub0 7.9408e5                     # K&P beta0 at -20 C (alpha_c = 1e-2)
--d0_sub0 1.0166e-9                      # physical capillary length at -20 C
 
 # --- the substrate ---
 # gamma_ia = 0.109 (the solver default), gamma_as - gamma_is = 0.0943968

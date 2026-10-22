@@ -350,6 +350,15 @@ def analyse(run_dir, source="igasol", stride=1, sigma_win=(4.0, 10.0),
     eps = opt_float(opts, "-eps")
     Ly = opt_float(opts, "-Ly")
     d0 = opt_float(opts, "-d0_sub0")
+    if d0 is None:
+        # Since 2026-10-22 d0 is computed by the solver (K&P Eq. 13 at temp0)
+        # and is not an option; read the value it printed in its banner.
+        outp = os.path.join(run_dir, "outp.txt")
+        if os.path.isfile(outp):
+            with open(outp) as fh:
+                m = re.search(r"d0_sub0\s*=\s*([0-9.eE+-]+)\s*m", fh.read())
+            if m:
+                d0 = float(m.group(1))
     beta = opt_float(opts, "-beta_sub0")
     T0 = opt_float(opts, "-temp")
     rho_air = opt_float(opts, "-rho_air", 1.341)

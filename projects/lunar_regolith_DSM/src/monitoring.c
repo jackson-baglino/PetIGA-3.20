@@ -44,13 +44,9 @@ PetscErrorCode Monitor(TS ts,PetscInt step,PetscReal t,Vec U,void *mctx)
 
             if(alp*v_kin<1.0e-30) bet0 = 1.0e30;
             else bet0 = 1.0/(alp*v_kin);
-            /* Capillary length from the model's own surface energy (K&P
-             * Eq. 13): d0 = gamma_ia*V_m/(R*T). gamma_ia = user->gamma_ia_bulk (the
-             * -gamma_ia_bulk opts parameter, default 0.109 J/m^2), V_m = 1.963e-5
-             * m^3/mol, R = 8.314 J/mol/K — the same constants comp_eps.py
-             * uses, so preprocessing and runtime agree. Replaces the stale
-             * hardcoded 2.548e-7/T_K (~1% low, and blind to -gamma_ia_bulk). */
-            d0 = user->gamma_ia_bulk * 1.963e-5 / 8.314 / (solS[1]+273.15);
+            /* Capillary length: the single value computed at start-up from K&P
+             * Eq. 13 at temp0 (lunar_main.c), used for the whole run. */
+            d0 = user->d0_sub0;
 
             if(bet0>bet_max) bet_max = bet0;
             if(bet0<bet_min) bet_min = bet0;

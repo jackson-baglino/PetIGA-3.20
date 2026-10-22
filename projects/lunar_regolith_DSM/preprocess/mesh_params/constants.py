@@ -26,6 +26,8 @@ class Constants:
     bb: float = 0.62                    # ASHRAE humidity-ratio coefficient
     gamma_iv_j_per_m2: float = 0.109    # ice-vapor surface energy (Kaempfer and Plapp 2009, Table I)
     vm_ice_m3_per_mol: float = 1.963e-5
+    m_h2o_d0_kg: float = 2.9915e-26     # water molecule mass in the solver's d0 (NASA_types.h M_H2O_KG)
+    k_b_d0_j_per_k: float = 1.380649e-23  # Boltzmann constant in the solver's d0 (NASA_types.h K_BOLTZ)
     r_gas_j_per_mol_k: float = 8.314
     a1: float = 5.0                     # Moure and Fu SI footnote 1 (phi in [0,1] double well)
     a2: float = 0.1581                  # idem; a Karma-Rappel-type constant for the TWO-SIDED problem
@@ -48,8 +50,10 @@ C_SOURCE_LINKS = [
     ("bb", 0.62, "src/material_properties.c", "bb = 0.62"),
     ("a1", 5.0, "src/lunar_main.c", "a1 = 5.0"),
     ("a2", 0.1581, "src/lunar_main.c", "a2 = 0.1581"),
+    ("m_h2o_d0_kg", 2.9915e-26, "include/NASA_types.h", "M_H2O_KG   2.9915e-26"),
+    ("k_b_d0_j_per_k", 1.380649e-23, "include/NASA_types.h", "K_BOLTZ    1.380649e-23"),
+    ("gamma_iv_j_per_m2", 0.109, "src/lunar_main.c", "gamma_ia_bulk = 0.109"),
 ]
 KNOWN_DIFFERENCES = {
     "m_h2o_kg": "monitoring.c uses 3.0e-26 kg in the Hertz-Knudsen kinetic term (0.3 % above this value)",
-    "gamma_iv_j_per_m2": "monitoring.c hard-codes d0 = 2.548e-7/T_K, about 1 % below gamma*Vm/(R*T) with this gamma",
 }

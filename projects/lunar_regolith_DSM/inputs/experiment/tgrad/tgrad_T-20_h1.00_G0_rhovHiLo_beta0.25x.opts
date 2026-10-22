@@ -40,7 +40,6 @@
 -rhovfix_hi 0.999995                     # rho_v at x=Lx / rho_vs
 
 -beta_sub0 1.4804e+05                   # 0.25x reference; predicted ratio 1.0000
--d0_sub0 1.0166e-9                        # physical capillary length at -20 C
 
 -dtmax 1.173e+02                        # 1.093 * tau_sub (107.3 s)
 -dtCFL 1

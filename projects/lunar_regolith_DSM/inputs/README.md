@@ -170,8 +170,10 @@ subdirectories for you. `campaign/name` also works if you want to be explicit.
 
 ### If a file has no `_a<alpha_c>` token, check before trusting its physics
 
-`-beta_sub0` and `-d0_sub0` default to **-5 C-era values** (`9.9e5`, `1e-7`).
-A file that sets neither runs those defaults whatever `-temp` says. That is
+`-beta_sub0` defaults to a **-5 C-era value** (`9.9e5`). A file that does not
+set it runs that default whatever `-temp` says. (d0 is no longer an option:
+since 2026-10-22 the solver computes it from Kaempfer & Plapp Eq. 13 at
+`-temp`.) That is
 fine for smoke tests and timestep probes, and wrong for physics you intend to
 believe. Those files now carry an explicit warning header naming the sibling
 to use instead.
