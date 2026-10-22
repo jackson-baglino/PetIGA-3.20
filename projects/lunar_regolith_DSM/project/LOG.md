@@ -2,6 +2,32 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-10-22 (4) — Units workflow designed; flowchart agent; Marker; wrap-up
+
+- Session: db191e62-cff4-48e1-a6d2-099d62fee556 (started before the
+  SessionStart hook existed; ID from the transcript file name)
+- Done: remaining hard-coded d0 values replaced by the shared function.
+  Units-verification workflow designed (workflows/units-verification/:
+  WORKFLOW.md, flowchart.json/.html). Flowchart renderer with overlap lint
+  (scripts/flowchart/) and the morty-flowchart agent (approved). Sources
+  for the units workflow copied from Zotero into Literature/; the two
+  Moure & Fu SI copies shown to be the same document (one re-saved by
+  Preview). Marker 1.10.2 added (stage S1b) in venv_workflows;
+  requirements-workflows.txt/.lock. Old remote branch deleted; wheeler_2010
+  DOI confirmed by the user.
+- Remaining:
+  - Build the units-verification workflow in stages (S0/S1/S1b/S3 scripts
+    with tests → agents + C0 calibration → real run + U1 inspection). User
+    answers WORKFLOW.md §8 in the next prompt.
+  - User decisions still open: delete the duplicate SI
+    (Literature/cg4c00539_si_001.pdf)?; prune the repo-root
+    PetIGA-3.20/.claude/settings.local.json as proposed?; regenerate the
+    wedge/two-throat geometries (their EPS = 8.5840e-7 used the old d0,
+    0.14 % large)?
+  - Discuss the contact-angle free-flow condition (user, later).
+  - Docs synthesis: deferred by the user (not a project priority).
+- Bottlenecks: none.
+
 ## 2026-10-22 (3) — comp_eps d0 aligned; course repository mirrored
 
 - Done: comp_eps.py computes d0 exactly as the solver (−0.14 %; golden
