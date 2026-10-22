@@ -1,0 +1,486 @@
+{
+  "table": "calibration_optionA/units_planted.md",
+  "rows": [
+    {
+      "symbol": "beta",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "s m^1",
+      "reasons": [
+        "unit: table m s vs read s m^-1",
+        "marker: unit after the symbol is ['s m^-1', 's m^-1', 's m^-1']"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "m s",
+      "read": {
+        "printed_as": "β",
+        "meaning": "interface kinetic coefficient",
+        "value_as_printed": "3 × 10^4 < β < 3 × 10^6, in simulations β = 5.5 × 10^5",
+        "unit_as_printed": "s m^-1",
+        "location": "Table I, row \"β\"",
+        "page": 4
+      },
+      "read_unit_si": "s m^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 3,
+        "units_seen": [
+          "s m^-1",
+          "s m^-1",
+          "s m^-1"
+        ],
+        "unit_match": false,
+        "numbers": [
+          30000.0,
+          550000.0,
+          3000000.0
+        ],
+        "value_match": true
+      },
+      "verdict": "DISAGREE"
+    },
+    {
+      "symbol": "L_sg",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J m^3",
+      "reasons": [
+        "unit: table m^5 kg s^-2 vs read kg m^-1 s^-2",
+        "marker: unit after the symbol is ['J m^-3']"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "m^5 kg s^-2",
+      "read": {
+        "printed_as": "L_sg",
+        "meaning": "latent heat of sublimation of ice per volume",
+        "value_as_printed": "2.60 × 10^9",
+        "unit_as_printed": "J m^-3",
+        "location": "Table I, row \"L_sg\"",
+        "page": 4
+      },
+      "read_unit_si": "kg m^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J m^-3"
+        ],
+        "unit_match": false,
+        "numbers": [
+          26.0,
+          2600000000.0
+        ],
+        "value_match": true
+      },
+      "verdict": "DISAGREE"
+    },
+    {
+      "symbol": "a",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "mm",
+      "reasons": [
+        "unit: table 0.001 m vs read m",
+        "marker: unit after the symbol is ['m']"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "0.001 m",
+      "read": {
+        "printed_as": "a",
+        "meaning": "mean intermolecular spacing in ice",
+        "value_as_printed": "3.19 × 10^-10",
+        "unit_as_printed": "m",
+        "location": "Table I, first row \"a\"",
+        "page": 4
+      },
+      "read_unit_si": "m",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "m"
+        ],
+        "unit_match": false,
+        "numbers": [
+          3.19e-10,
+          30.0
+        ],
+        "value_match": true
+      },
+      "verdict": "DISAGREE"
+    },
+    {
+      "symbol": "gamma_ia",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "mN m^-1",
+      "reasons": [
+        "unit: table 0.001 kg s^-2 vs read kg s^-2",
+        "marker: unit after the symbol is ['N/m']"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "0.001 kg s^-2",
+      "read": {
+        "printed_as": "σ_ia",
+        "meaning": "Parameter listed in Table S3 (no description given beyond symbol)",
+        "value_as_printed": "0.109",
+        "unit_as_printed": "N/m",
+        "location": "Table S3, row 4 (σ_ia)",
+        "page": 9
+      },
+      "read_unit_si": "kg s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "N/m"
+        ],
+        "unit_match": false,
+        "numbers": [
+          0.109
+        ],
+        "value_match": true
+      },
+      "verdict": "DISAGREE"
+    },
+    {
+      "symbol": "kappa_i",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J m^-1 K^-1",
+      "reasons": [
+        "unit: table m kg K^-1 s^-2 vs read m kg K^-1 s^-3",
+        "marker: unit after the symbol is ['W m^-1 K^-1']"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "m kg K^-1 s^-2",
+      "read": {
+        "printed_as": "κ_i",
+        "meaning": "heat conductivity of ice, (dry) air",
+        "value_as_printed": "2.29",
+        "unit_as_printed": "W m^-1 K^-1",
+        "location": "Table I, row \"κ_i, κ_a\"",
+        "page": 4
+      },
+      "read_unit_si": "m kg K^-1 s^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "W m^-1 K^-1"
+        ],
+        "unit_match": false,
+        "numbers": [
+          0.02,
+          2.29,
+          47.0
+        ],
+        "value_match": true
+      },
+      "verdict": "DISAGREE"
+    },
+    {
+      "symbol": "c_p_i",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "J m^-3 K^-1",
+      "reasons": [
+        "unit: table kg m^-1 K^-1 s^-2 vs read m^2 K^-1 s^-2",
+        "marker: unit after the symbol is ['J/(Kg °C)']"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-1 K^-1 s^-2",
+      "read": {
+        "printed_as": "c_{p,i}",
+        "meaning": "Parameter listed in Table S3 (no description given beyond symbol)",
+        "value_as_printed": "1.96 × 10^3",
+        "unit_as_printed": "J/(Kg °C)",
+        "location": "Table S3, row c_{p,i}",
+        "page": 9
+      },
+      "read_unit_si": "m^2 K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J/(Kg °C)"
+        ],
+        "unit_match": false,
+        "numbers": [
+          1960.0
+        ],
+        "value_match": true
+      },
+      "verdict": "DISAGREE"
+    },
+    {
+      "symbol": "k",
+      "source": "kaempfer_plapp_2009",
+      "page": 13,
+      "table_unit": "J K^-1",
+      "reasons": [
+        "page: found on p4, not on the cited p13"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "m^2 kg K^-1 s^-2",
+      "read": {
+        "printed_as": "k",
+        "meaning": "Boltzmann's constant",
+        "value_as_printed": "1.38 × 10^-23",
+        "unit_as_printed": "J K^-1",
+        "location": "Table I, row \"k\" (third row)",
+        "page": 4
+      },
+      "read_unit_si": "m^2 kg K^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J K^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.3799999999999998e-23
+        ],
+        "value_match": true
+      },
+      "verdict": "DISAGREE"
+    },
+    {
+      "symbol": "K_w",
+      "source": "moure_fu_2024_SI",
+      "page": 7,
+      "table_unit": "W m^-1 K^-1",
+      "reasons": [
+        "page: found on p9, not on the cited p7"
+      ],
+      "reread_pages": [],
+      "table_unit_si": "m kg K^-1 s^-3",
+      "read": {
+        "printed_as": "K_w",
+        "meaning": "Parameter listed in Table S3 (no description given beyond name)",
+        "value_as_printed": "0.554",
+        "unit_as_printed": "W/(m °C)",
+        "location": "Table S3, row \"K_w\" (after K_i, before L_sol)",
+        "page": 9
+      },
+      "read_unit_si": "m kg K^-1 s^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "W/(m°C)"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.554
+        ],
+        "value_match": true
+      },
+      "verdict": "DISAGREE"
+    },
+    {
+      "symbol": "rho_i",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "kg m^-3",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-3",
+      "read": {
+        "printed_as": "ρ_i",
+        "meaning": "density of ice, (dry) air",
+        "value_as_printed": "918.9",
+        "unit_as_printed": "kg m^-3",
+        "location": "Table I, row \"ρ_i, ρ_a\"",
+        "page": 4
+      },
+      "read_unit_si": "kg m^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "kg m ^-3"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.341,
+          47.0,
+          918.9
+        ],
+        "value_match": true
+      },
+      "verdict": "AGREE"
+    },
+    {
+      "symbol": "kappa_a",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "W m^-1 K^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m kg K^-1 s^-3",
+      "read": {
+        "printed_as": "κ_a",
+        "meaning": "heat conductivity of ice, (dry) air",
+        "value_as_printed": "0.02",
+        "unit_as_printed": "W m^-1 K^-1",
+        "location": "Table I, row \"κ_i, κ_a\"",
+        "page": 4
+      },
+      "read_unit_si": "m kg K^-1 s^-3",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "W m^-1 K^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.02,
+          2.29,
+          47.0
+        ],
+        "value_match": true
+      },
+      "verdict": "AGREE"
+    },
+    {
+      "symbol": "gamma",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "J m^-2",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg s^-2",
+      "read": {
+        "printed_as": "γ",
+        "meaning": "interfacial free energy of ice",
+        "value_as_printed": "1.09 × 10^-1",
+        "unit_as_printed": "J m^-2",
+        "location": "Table I, row \"γ\"",
+        "page": 4
+      },
+      "read_unit_si": "kg s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "J m^-2"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.10900000000000001,
+          26.0
+        ],
+        "value_match": true
+      },
+      "verdict": "AGREE"
+    },
+    {
+      "symbol": "h",
+      "source": "kaempfer_plapp_2009",
+      "page": 13,
+      "table_unit": "m",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m",
+      "read": {
+        "printed_as": "h",
+        "meaning": "spatial resolution in the region of the bubble, coarsening gradually at the boundaries",
+        "value_as_printed": "5 × 10^-7 (in region of the bubble); 5 × 10^-5 (at the boundaries)",
+        "unit_as_printed": "m",
+        "location": "left column, paragraph 1, lines 4-7",
+        "page": 13
+      },
+      "read_unit_si": "m",
+      "marker": {
+        "located": true,
+        "occurrences": 2,
+        "units_seen": [
+          "m",
+          "m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          5e-07,
+          5e-05,
+          6.0,
+          2872.0
+        ],
+        "value_match": true
+      },
+      "verdict": "AGREE"
+    },
+    {
+      "symbol": "u_j",
+      "source": "moure_fu_2024_SI",
+      "page": 7,
+      "table_unit": "1 (dimensionless)",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "1",
+      "read": {
+        "printed_as": "u_j",
+        "meaning": "typical values estimated based on T and ρ_v distributions during phase transitions; Index j stands for solidification, sublimation, evaporation",
+        "value_as_printed": "∼ 10^-3 (solidification), ∼ 10^-8 (sublimation), ∼ 10^-8 (evaporation)",
+        "unit_as_printed": "(-)",
+        "location": "Table S1, row \"u_j (-)\"; also text lines 112 and 114",
+        "page": 7
+      },
+      "read_unit_si": "1",
+      "marker": {
+        "located": true,
+        "occurrences": 3,
+        "units_seen": [
+          "(dimensionless mark)",
+          "W"
+        ],
+        "unit_match": true,
+        "numbers": [
+          0.0,
+          1e-08,
+          4.9999999999999996e-06,
+          0.001,
+          1.0,
+          4.0,
+          9.0,
+          10.0
+        ],
+        "value_match": true
+      },
+      "verdict": "AGREE"
+    },
+    {
+      "symbol": "Lambda",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "N m^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg s^-2",
+      "read": {
+        "printed_as": "Λ",
+        "meaning": "Parameter listed in Table S3 (no description given beyond symbol)",
+        "value_as_printed": "1",
+        "unit_as_printed": "N/m",
+        "location": "Table S3, row 2 (Λ)",
+        "page": 9
+      },
+      "read_unit_si": "kg s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "N/m"
+        ],
+        "unit_match": true,
+        "numbers": [
+          1.0
+        ],
+        "value_match": true
+      },
+      "verdict": "AGREE"
+    }
+  ]
+}

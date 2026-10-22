@@ -249,6 +249,31 @@
         "mutool": "mutool version 1.24.9"
       },
       "finished": "2026-10-22T15:02:01-07:00"
+    },
+    "C0_optionA": {
+      "agents": {
+        "morty-unit-reader": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+        "beth-unit-checker": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b"
+      },
+      "table_sha256": "3d3d977a766801ef5a189b6f7e4d74329a01f1da253c14502482e14b264d413a",
+      "planted_table_sha256": "95bb5a64be42c82c8bda5464bf6e0d3675b3ad77175ffc50a8c62ab0f27c4f32",
+      "criteria": {
+        "S3_unit_page": "8/8",
+        "S4_unit_page": "8/8",
+        "S4m_meaning": "2/2"
+      },
+      "control_false_alarms": 0,
+      "verdict": "pass",
+      "git": {
+        "commit": "5b5fcd844f7fd58b5432c0e2a132acdc3cdcfdb2",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T15:15:59-07:00"
     }
   }
 }
