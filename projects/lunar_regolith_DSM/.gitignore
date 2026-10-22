@@ -74,3 +74,11 @@ _neck_csv/
 # Workflow runs: manifests are committed; bulk traces and run databases stay local
 runs/**/transcript*.jsonl
 runs/**/runs.db
+
+# Workflow runs (runs/<workflow>/<run_id>/): page images and Marker page text are paper material, and
+# runs.db / transcripts are local logs. Their sha256 hashes are committed in each run's manifest.json.
+runs/*/*/pages/
+runs/*/*/marker/
+runs/*/*/crops/
+runs/*/*/runs.db
+runs/*/*/transcript*.jsonl

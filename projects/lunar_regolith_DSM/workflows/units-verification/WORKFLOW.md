@@ -1,6 +1,7 @@
 # WORKFLOW: units-verification
 
-Status: **design, for review** (2026-10-22). Nothing is built yet.
+Status: **being built in stages** (approved 2026-10-22). Stage 1 (S0, S1, S1b, S3 with tests) built;
+stage 2 (agents, C0) and stage 3 (real run, U1) not yet.
 Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `scripts/flowchart/render_flowchart.py`.
 
 ## 1. Purpose
@@ -94,13 +95,33 @@ give the same verdicts.
 
 `runs/units-verification/<run_id>/`:
 
-- `manifest.json`: git commit, Claude Code version, model IDs, sha256 of the
-  agent files, every PDF and every page PNG, check verdicts.
-- `reads/*.json`, `marker/*.md`, `verdicts.json`, `calibration.json`: committed.
+- `manifest.json`: one entry per stage, each with its git commit, tool
+  versions (Claude Code, mutool, Marker, surya, torch, model-cache folders),
+  input hashes and verdict; sha256 of the agent files, every PDF, every page
+  PNG and every Marker page. Committed.
+- `marker_index.json`, `compare*.json`, `reads/*.json`, `verdicts.json`,
+  `calibration.json`: committed (short extracted facts, not page text).
+- `pages/*.png`, `marker/*.md`, `crops/`: **not committed**. They are page
+  images and page text of the papers, which CLAUDE.md keeps out of git; the
+  manifest's hashes let anyone with the PDFs check a re-render is identical.
+  (Changed from the design, which committed `marker/*.md`.)
 - Environment: `requirements-workflows.txt` / `.lock` (`venv_workflows`).
 - `runs.db`: one row per agent call (stage, agent, model, input hash, output
   path, verdict, time); local.
 - `transcript.jsonl`: local.
+
+Scripts live in `scripts/units_verification/`; each refuses to run while the
+workflow's definitions (this folder, the scripts, `.claude/agents/`) have
+uncommitted changes, and prints the inputs it used. Run from the project root:
+
+```bash
+P=venv_workflows/bin/python; S=scripts/units_verification; R=<run_id>
+$P $S/locate_sources.py --run-id $R        # S0
+$P $S/render_pages.py   --run-id $R        # S1   (--add SOURCE:PAGE for re-reads)
+$P $S/marker_extract.py --run-id $R        # S1b  (about 6 min per source on CPU)
+$P $S/compare_units.py  --run-id $R        # S3   (--marker-only: Marker side alone)
+$P -m unittest discover -s $S/tests        # tests
+```
 
 Read schema (one object per symbol):
 `{symbol, found, printed_as, meaning, value_as_printed, unit_as_printed, location}`.
@@ -116,6 +137,7 @@ Read schema (one object per symbol):
 | Subscripts and Greek letters misread | S3 compares dimensions, not strings; S4 sees the image |
 | "Verified" rows that were never re-checked | every row passes through S2–S3 again |
 | Two agents share a blind spot | S4 uses a different model; user inspects a random sample |
+| Wrong meaning on a row whose unit agrees | not compared by S3 (no deterministic check); only the U1 random sample |
 
 ## 8. Open decisions for the user
 
@@ -128,9 +150,9 @@ Read schema (one object per symbol):
    `cg4c00539_si_001.pdf` was re-saved by macOS Preview on 2026-10-18, which
    changed only its file metadata. The version of record is the untouched
    `MoureFu2024_SI/moure_fu_2024_SI.pdf`.)
-2. **Value column:** also record the printed value (read from the image)? Recommended.
-3. **Scope:** literature symbols only, or also the solver's own parameters
-   (units from `lunar_main.c` option help text)? Recommended: literature
-   first, solver parameters as a second pass with a code-reading checker.
-4. **Models:** Sonnet reader and Opus adjudicator, as above?
-5. **Sample size** for U1: 10 % of agreed rows?
+2. **Value column:** resolved 2026-10-22: record the printed value too.
+   S3 checks the read value against Marker (the table has no value column yet).
+3. **Scope:** resolved 2026-10-22: literature symbols only (60 rows); the
+   solver's parameters (`M0`, `alpha`) are out of this pass.
+4. **Models:** resolved 2026-10-22: Sonnet reader, Opus adjudicator.
+5. **Sample size** for U1: resolved 2026-10-22: 10 % of agreed rows.
