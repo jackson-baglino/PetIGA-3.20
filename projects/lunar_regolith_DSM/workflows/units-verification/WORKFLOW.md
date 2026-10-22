@@ -1,7 +1,8 @@
 # WORKFLOW: units-verification
 
 Status: **being built in stages** (approved 2026-10-22). Stage 1 (S0, S1, S1b, S3 with tests) built;
-stage 2 (agents, C0) and stage 3 (real run, U1) not yet.
+stage 2 (agents, S2, S4, S4m, C0) built on `feat/units-agents`, awaiting the user's approval of the agents;
+stage 3 (real run, U1, S5) not yet.
 Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `scripts/flowchart/render_flowchart.py`.
 
 ## 1. Purpose
@@ -68,8 +69,17 @@ may not:      fix rows it was not given; answer from memory of the paper
 context:      fresh per disputed row (S4); fresh per page (S4m)
 ```
 
-Each agent call runs headless (`claude -p`, `--permission-mode dontAsk`,
-Read only) from a driver script; the exact invocation is fixed at build time.
+Each agent call runs headless from `scripts/units_verification/agents.py`,
+in a fresh empty folder outside the project that holds only the page images
+(so no CLAUDE.md, memory or units table is in reach):
+`claude -p <task> --model <pinned> --tools Read --permission-mode dontAsk
+--setting-sources "" --strict-mcp-config --no-session-persistence
+--disable-slash-commands --system-prompt <agent body> --output-format
+stream-json --verbose --json-schema <schema>`. In dontAsk mode the harness
+refuses a Read outside that folder (tested 2026-10-22). Every transcript is
+audited by script: the session model must be the pinned one and every tool
+call a Read of a given image; the output is validated against the schema;
+one retry, then the failure is logged.
 
 ## 4. Checks
 
@@ -125,7 +135,10 @@ P=venv_workflows/bin/python; S=scripts/units_verification; R=<run_id>
 $P $S/locate_sources.py --run-id $R        # S0
 $P $S/render_pages.py   --run-id $R        # S1   (--add SOURCE:PAGE for re-reads)
 $P $S/marker_extract.py --run-id $R        # S1b  (about 6 min per source on CPU)
+$P $S/calibrate.py      --run-id $R        # C0   (needs S0, S1, S1b)
+$P $S/read_pages.py     --run-id $R        # S2   (--rereads after S3; --repeat 5 --out-dir reads_repeat)
 $P $S/compare_units.py  --run-id $R        # S3   (--marker-only: Marker side alone)
+$P $S/check_rows.py     --run-id $R --task S4    # S4, then --task S4m
 $P -m unittest discover -s $S/tests        # tests
 ```
 
