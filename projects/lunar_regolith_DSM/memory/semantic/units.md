@@ -13,6 +13,9 @@ What was fixed on 2026-10-22, without the papers:
 - Five pairs had one merged meaning ("density of ice, dry air" for both ρ_i
   and ρ_a). Each is split by its subscript and marked as inferred.
 - `M0` and `alpha` were checked against the solver code.
+- `j_T` and `j_v` (heat and vapour fluxes that Kaempfer and Plapp computed in
+  post-processing for a figure, not model parameters) were removed at the
+  user's request.
 
 Known problems still open:
 
@@ -59,8 +62,6 @@ Known problems still open:
 | `Deltat` | time step (printed as Δt) | s | kaempfer_plapp_2009 | 11 | t = 5  10−5 s | image-checked (Opus) against the page image |
 | `T_cold` | colder boundary temperature (the paper prints T0 and T7; which symbol is which is not established) (printed as T_cold) — meaning inferred from the subscript | K | kaempfer_plapp_2009 | 11 | T0=261 K, T7=260 K | image-checked (Opus) against the page image |
 | `T_hot` | warmer boundary temperature (the paper prints T0 and T7; which symbol is which is not established) (printed as T_hot) — meaning inferred from the subscript | K | kaempfer_plapp_2009 | 11 | T0=261 K, T7=260 K | image-checked (Opus) against the page image |
-| `j_T` | heat flux (printed as jT) | W m^-2 | kaempfer_plapp_2009 | 11 | =19.091Wm−2 | image-checked (Opus) against the page image |
-| `j_v` | water vapor mass flux (printed as jv) | kg m^-2 s^-1 | kaempfer_plapp_2009 | 12 | j [10−6kgm−2s−1] v | image-checked (Opus) against the page image |
 | `t` | time (printed as t) | s | kaempfer_plapp_2009 | 12 | time [s] | image-checked (Opus) against the page image |
 | `h` | spatial grid resolution (printed as h) | m | kaempfer_plapp_2009 | 13 | resolution h = 5  10−7 m | image-checked (Opus) against the page image |
 | `P` | atmospheric pressure (printed as P) | Pa | moure_fu_2024 | 3 | P is the atmospheric pressure (units: Pa) | image-checked (Opus) against the page image |

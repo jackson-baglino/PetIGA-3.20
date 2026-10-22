@@ -122,6 +122,15 @@ class Symbols(unittest.TestCase):
         self.assertTrue(up.symbol_regex("β").search("β = 5"))
         self.assertFalse(up.symbol_regex("Dv").search("D_v0"))
 
+    def test_printed_key(self):
+        self.assertEqual(up.printed_key("ρ_i"), up.printed_key("ρi"))
+        self.assertEqual(up.printed_key(r"\rho_{i}"), "ρi")
+        self.assertEqual(up.printed_key("v_{n,j}"), up.printed_key("vn,j"))
+        self.assertEqual(up.printed_key("ϵ"), up.printed_key("ε"))
+        self.assertNotEqual(up.printed_key("ρ_v"), up.printed_key("ρ_vs"))
+        self.assertNotEqual(up.printed_key("D_STP"), up.printed_key("D_v^STP"))
+        self.assertEqual(up.printed_key(None), "")
+
     def test_short_symbols_count_only_in_math_or_the_symbol_column(self):
         flat = up.flatten_markdown("a is the spacing, and $a$ = 3 m\n| a | spacing | 3 m |\n")
         hits = up.find_symbol(flat, "a")

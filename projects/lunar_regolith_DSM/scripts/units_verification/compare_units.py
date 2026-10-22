@@ -4,14 +4,15 @@
     python scripts/units_verification/compare_units.py --run-id <id> [--marker-only]
 
 Per literature row of the units table:
-  AGREE      the table's unit equals the blind read's unit (same dimensions and scale), and Marker's text on
-             that page shows the symbol followed by the same unit (and the read's printed value, if any)
+  AGREE      the table's unit equals the blind read's unit (same dimensions and scale), the table's printed
+             symbol equals the read's (ρi == ρ_i; ρv != ρ_vs), and Marker's text on that page shows the symbol
+             followed by the same unit (and the read's printed value, if any)
   DISAGREE   anything else; the reasons say which part failed
   NOT_FOUND  the reader did not find the symbol on the cited page; reread_pages lists the pages where
              Marker's index finds it (S2 re-reads them, then S3 runs again)
   MISSING    no read exists for the row (a pipeline error, not a verdict on the row)
 Units are compared as dimension vectors and scale (unitparse.py): J m^-3 K^-1 == J/(m3 K), °C difference == K.
-Meanings are not compared here (no deterministic check exists); S4 and the user's sample see them.
+Meanings are not compared here (no deterministic check exists); S4's meaning review sees every row.
 
 Reads are runs/units-verification/<id>/reads/<source>_p<N>.json:
   {"page": "<source>_p<N>", "reads": [{symbol, found, printed_as, meaning, value_as_printed, unit_as_printed,
@@ -140,6 +141,9 @@ def compare_row(row, reads, mdir, index, marker_only=False):
             res["reasons"].append(f"read_unit_unparsed: {r_err}")
         elif t_unit is not None and not up.same_unit(t_unit, r_unit):
             res["reasons"].append(f"unit: table {t_unit.canonical()} vs read {r_unit.canonical()}")
+        t_key, r_key = up.printed_key(row["printed"]), up.printed_key(read.get("printed_as"))
+        if t_key != r_key:
+            res["reasons"].append(f"printed: table {row['printed']!r} vs read {read.get('printed_as')!r}")
 
     flat = marker_flat(mdir, src, read_page)
     read_numbers = up.parse_numbers(read.get("value_as_printed")) if read else []

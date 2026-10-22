@@ -39,7 +39,11 @@ MARKER_P4 = r"""| Symbol | Meaning | Value | Ref |
 MARKER_P9 = "We take an estimated pore size of $L = 10^{-4}$ m.\n"
 
 
+PRINTED = {"Ci": "C_i", "beta": "β", "x_s": "x_s", "L": "L", "xi_v": "ξ_v", "alpha_j": "α_j"}
+
+
 def read(symbol, found=True, unit=None, value=None, printed=None):
+    printed = PRINTED.get(symbol) if printed is None else printed
     return {"symbol": symbol, "found": found, "printed_as": printed, "meaning": "m", "value_as_printed": value,
             "unit_as_printed": unit, "location": "Table I"}
 
@@ -49,8 +53,8 @@ class TableReading(unittest.TestCase):
     def test_real_table(self):
         rows = uvlib.read_table()
         lit = uvlib.literature_rows(rows)
-        self.assertEqual(len(rows), 62)
-        self.assertEqual(len(lit), 60)
+        self.assertEqual(len(rows), 60)
+        self.assertEqual(len(lit), 58)
         self.assertTrue(all(r["page"] for r in lit))
         self.assertTrue(all(r["printed"] for r in lit))
         self.assertEqual({r["source"] for r in lit}, set(uvlib.LITERATURE_SOURCES))
@@ -125,6 +129,15 @@ class Compare(unittest.TestCase):
                          reads={("src_a", 4): {"Ci": read("Ci", unit="J m^-3", value="1.8 × 10⁶")}})
         self.assertEqual(r["verdict"], "DISAGREE")
         self.assertTrue(any(x.startswith("marker: unit") for x in r["reasons"]))
+
+    def test_printed_symbol_differs(self):
+        """Same unit, different symbol (the table's rho_v where the page prints rho_vs) must not AGREE."""
+        reads = {("src_a", 4): {"Ci": read("Ci", unit="J m^-3 K^-1", value="1.8 × 10⁶", printed="C_ia")}}
+        r = self.verdict("Ci", reads=reads)
+        self.assertEqual(r["verdict"], "DISAGREE")
+        self.assertTrue(any(x.startswith("printed:") for x in r["reasons"]))
+        reads = {("src_a", 4): {"Ci": read("Ci", unit="J m^-3 K^-1", value="1.8 × 10⁶", printed=r"$C_{\rm i}$")}}
+        self.assertEqual(self.verdict("Ci", reads=reads)["verdict"], "AGREE")
 
     def test_value_not_in_marker(self):
         reads = {("src_a", 4): {"Ci": read("Ci", unit="J m^-3 K^-1", value="1.8 × 10⁻⁶")}}

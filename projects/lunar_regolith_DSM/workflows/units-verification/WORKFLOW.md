@@ -6,9 +6,11 @@ Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `s
 
 ## 1. Purpose
 
-- **Question.** Is each row of `memory/semantic/units.md` (62 symbols from
-  Kaempfer & Plapp 2009, Moure & Fu 2024 and its SI) correct: the unit, the
-  meaning, the page, and the printed value where there is one?
+- **Question.** Is each row of `memory/semantic/units.md` (58 literature symbols
+  from Kaempfer & Plapp 2009, Moure & Fu 2024 and its SI) correct: the unit,
+  the printed symbol, the meaning, the page, and the printed value where there
+  is one? (`j_T` and `j_v` were removed on 2026-10-22: post-processing fluxes,
+  not model parameters.)
 - **Finished output.** `units.md` with every row either `verified` (page
   image, run ID, date) or `disputed` with the reason, and the UNRELIABLE
   header removed only when no row is unresolved.
@@ -29,11 +31,12 @@ Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `s
 | S0 | Locate sources | `locate_sources.py` | `units.md` source ids, `Literature/` | `manifest.json`: path, sha256, DOI per source | first-page text names the paper; files whose rendered pages are identical count as one source | missing or ambiguous source → stop, ask user |
 | S1 | Render pages | `render_pages.py` (`mutool draw -r 200`) | manifest; cited page per row, plus the page before and after | `pages/<source>_p<N>.png`, hashes | file exists, hash recorded | render failure → stop |
 | S1b | Marker reading | `marker_extract.py` (Marker 1.10.2, forced OCR, no LLM) | every page of each source | `marker/<source>_p<N>.md`: page as Markdown with LaTeX math; a symbol → page index | Markdown written for every page | Marker failure on a page → that page has no Marker reading; logged |
-| C0 | Calibrate (once, before S2 on real rows) | S2 → S3 → S4 on a copy of 8 rows with planted errors | 8 altered rows | calibration report | S3 flags 8/8; S4 rejects ≥ 7/8 planted units | below threshold → stop, revise prompts |
+| C0 | Calibrate (once, before S2 on real rows) | S2 → S3 → S4 → S4m on a copy of the table with 10 planted errors and 4 untouched control rows | altered rows | `calibration.json` | S3 flags 8/8 unit and page errors; S4 rejects ≥ 7/8; S4m catches 2/2 meaning errors; false alarms on the controls reported | below threshold → stop, revise prompts |
 | S2 | Blind read | `morty-unit-reader` | one page image + the symbol names expected on it (no units, no values) | `reads/<page>.json` per symbol: printed form, meaning, value as printed, unit as printed, where on the page, or not found | JSON schema; every requested symbol answered | schema failure → re-ask once, then log |
-| S3 | Compare | `compare_units.py` | table row, blind read, Marker reading | AGREE / DISAGREE / NOT_FOUND per row | units parsed to dimension vector and scale (J m⁻³ K⁻¹ ≡ J/(m³ K); °C difference ≡ K); AGREE only if the table, the blind read and Marker all agree; NOT_FOUND re-read on the page Marker's index points to | — |
+| S3 | Compare | `compare_units.py` | table row, blind read, Marker reading | AGREE / DISAGREE / NOT_FOUND per row | units parsed to dimension vector and scale (J m⁻³ K⁻¹ ≡ J/(m³ K); °C difference ≡ K); printed symbols compared after dropping sub/superscript marks (ρi ≡ ρ_i; ρv ≠ ρ_vs); AGREE only if the table, the blind read and Marker all agree; NOT_FOUND re-read on the page Marker's index points to | — |
 | S4 | Adjudicate | `beth-unit-checker` | for each DISAGREE/NOT_FOUND row: page image, table row, blind read, Marker reading | verdict: table right / read right / both wrong (with correction) / cannot tell, plus location on the page | verdict schema; a correction must re-pass S3 | "cannot tell" → user |
-| U1 | Inspect | user | every row from S4 + a random 10 % (6 rows) of AGREE rows, each with its page crop | approve or correct | — | user decides |
+| S4m | Meaning review | `beth-unit-checker` | per page: the page image and, for every row cited on it, the table's printed symbol and meaning and the blind read's meaning | per row: meaning matches / table wrong (with the page's wording) / cannot tell, plus location | verdict schema | anything but "matches" → the row is disputed and goes to U1 |
+| U1 | Inspect | user | every row from S4 or S4m + a random 10 % of AGREE rows (rounded up), each with its page crop | approve or correct | — | user decides |
 | S5 | Apply | `apply_verdicts.py` | verdicts, user decisions | updated `units.md`, run manifest | every row has a status; header removed only if none unresolved | — |
 
 ## 3. Agents
@@ -57,10 +60,12 @@ model:        claude-opus-5-5
 tools:        Read (page image)
 skills:       none
 MCP servers:  none
-reads:        page PNG, the table row, the blind read, the Marker reading
-writes:       {symbol, verdict, unit, value, meaning, location, reason}
+reads:        S4: page PNG, the table row, the blind read, the Marker reading
+              S4m: page PNG, each row's printed symbol and meaning (table and read)
+writes:       S4: {symbol, verdict, unit, value, meaning, location, reason}
+              S4m: per row {symbol, meaning_verdict, page_wording, location, reason}
 may not:      fix rows it was not given; answer from memory of the paper
-context:      fresh per disputed row
+context:      fresh per disputed row (S4); fresh per page (S4m)
 ```
 
 Each agent call runs headless (`claude -p`, `--permission-mode dontAsk`,
@@ -74,7 +79,8 @@ Read only) from a driver script; the exact invocation is fixed at build time.
 | blind reads | schema; S3 unit comparison | deterministic | parses; dimensions and scale equal |
 | Marker reading | a second, independent instrument (OCR model, not Claude) | deterministic given its pinned version | agrees with the blind read and the table |
 | disputed rows | `beth-unit-checker` | independent agent (different model, sees the image) | verdict with a location |
-| the whole pipeline | planted errors (C0): 8 rows with a flipped exponent sign, a wrong prefix, a swapped unit, a wrong page | measured | S3 8/8; S4 ≥ 7/8 |
+| meanings, every row | `beth-unit-checker` (S4m) | independent agent | verdict with a location |
+| the whole pipeline | planted errors (C0): 8 rows with a flipped exponent sign, a wrong prefix, a swapped unit, a wrong page; 2 rows with a swapped meaning; 4 untouched controls | measured | S3 8/8; S4 ≥ 7/8; S4m 2/2; control false alarms reported |
 | reader stability | read 5 pages twice | measured | report the disagreement count |
 | final table | user inspection of all disputed + 10 % of agreed rows | human | user approves |
 
@@ -101,10 +107,10 @@ give the same verdicts.
   PNG and every Marker page. Committed.
 - `marker_index.json`, `compare*.json`, `reads/*.json`, `verdicts.json`,
   `calibration.json`: committed (short extracted facts, not page text).
-- `pages/*.png`, `marker/*.md`, `crops/`: **not committed**. They are page
-  images and page text of the papers, which CLAUDE.md keeps out of git; the
-  manifest's hashes let anyone with the PDFs check a re-render is identical.
-  (Changed from the design, which committed `marker/*.md`.)
+- `pages/*.png`, `marker/*.md`, `crops/`: **not committed** (user decision,
+  2026-10-22). They are page images and page text of the papers. The run is
+  reproducible from the DOIs and PDF hashes in the manifest: anyone with the
+  papers re-renders the pages and re-runs Marker and checks the hashes.
 - Environment: `requirements-workflows.txt` / `.lock` (`venv_workflows`).
 - `runs.db`: one row per agent call (stage, agent, model, input hash, output
   path, verdict, time); local.
@@ -137,7 +143,7 @@ Read schema (one object per symbol):
 | Subscripts and Greek letters misread | S3 compares dimensions, not strings; S4 sees the image |
 | "Verified" rows that were never re-checked | every row passes through S2–S3 again |
 | Two agents share a blind spot | S4 uses a different model; user inspects a random sample |
-| Wrong meaning on a row whose unit agrees | not compared by S3 (no deterministic check); only the U1 random sample |
+| Wrong meaning on a row whose unit agrees | S4m reviews every row's meaning against the image; S3 compares printed symbols |
 
 ## 8. Open decisions for the user
 
@@ -152,7 +158,7 @@ Read schema (one object per symbol):
    `MoureFu2024_SI/moure_fu_2024_SI.pdf`.)
 2. **Value column:** resolved 2026-10-22: record the printed value too.
    S3 checks the read value against Marker (the table has no value column yet).
-3. **Scope:** resolved 2026-10-22: literature symbols only (60 rows); the
+3. **Scope:** resolved 2026-10-22: literature symbols only (58 rows after removing j_T and j_v); the
    solver's parameters (`M0`, `alpha`) are out of this pass.
 4. **Models:** resolved 2026-10-22: Sonnet reader, Opus adjudicator.
 5. **Sample size** for U1: resolved 2026-10-22: 10 % of agreed rows.

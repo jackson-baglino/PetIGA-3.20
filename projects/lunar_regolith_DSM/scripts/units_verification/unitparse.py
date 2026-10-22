@@ -251,6 +251,20 @@ def symbol_regex(printed):
     return re.compile(rf"(?<![{_LETTER}_\\]){''.join(parts)}{tail}")
 
 
+GREEK_VARIANTS = str.maketrans({"ϵ": "ε", "ϑ": "θ", "ϕ": "φ", "ϱ": "ρ", "µ": "μ"})
+
+
+def printed_key(printed):
+    """Comparable form of a printed symbol: 'ρ_i', 'ρi' and r'\rho_{i}' give 'ρi'; 'D_v^STP' gives 'DvSTP'.
+
+    Sub- and superscript marks, braces, commas and spaces are dropped; the glyphs and their order are kept.
+    """
+    if not printed:
+        return ""
+    s = flatten(printed).translate(GREEK_VARIANTS)
+    return re.sub(r"[\s_^{},$]", "", s)
+
+
 def needs_math(printed):
     """Short ASCII symbols ('a', 'k', 'Ci') are ordinary words or units in prose; only count them in math."""
     glyphs = [c for c in printed if c not in "_ {},"]
