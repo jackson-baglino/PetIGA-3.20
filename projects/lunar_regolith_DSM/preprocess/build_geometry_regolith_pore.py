@@ -88,7 +88,7 @@ Lx = (N_BUMPS - 1) * (2 * R_MED * (1 - 0.26))
 # — binding constraint is the T-dependent kinetic bound, so it is grain-size
 # independent here (all strategies pass eps/R_ave < 5%). Verified: reproduces
 # the validated ripening_2D_L1.01mm_eps0.86um_2sided reference run exactly, and pairs with the
-# base_T-20_h1.00_30d_a1.34e-2 experiment's beta_sub0=5.9216e5 / d0_sub0=1.0166e-9.
+# base_T-20_h1.00_30d_a1.34e-2 experiment's beta_sub0=5.9216e5 (d0 is computed by the solver).
 # RECOMPUTE for any other run temperature:
 #   python3 preprocess/comp_eps.py --Lx {Lx} --Ly {Ly} --Rave <R_smallest_ice> \
 #           --T0 <degC> --alpha <alpha_c>

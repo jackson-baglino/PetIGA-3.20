@@ -113,9 +113,11 @@ EPS = 8.5840e-7
 P, C = 2, 1
 
 # Driving-force reference: the two-grain ripening pair (50 um vs 150 um) that
-# showed clear change in ~30 days. d0 is the capillary length the -20 C
-# experiments set via -d0_sub0.
-D0 = 1.0166e-9
+# showed clear change in ~30 days. d0 is the capillary length at T0_C, computed
+# exactly as the solver does (Kaempfer & Plapp Eq. 13; see preprocess/mesh_params).
+sys.path.insert(0, str(ROOT))
+from preprocess.mesh_params.physics import capillary_length_m  # noqa: E402
+D0 = capillary_length_m(T0_C)
 RIPENING_REF = D0 * (1.0 / 5.0e-5 - 1.0 / 1.5e-4)
 
 # Keep the band clear of the Dirichlet-T end walls, and leave it somewhere to go.

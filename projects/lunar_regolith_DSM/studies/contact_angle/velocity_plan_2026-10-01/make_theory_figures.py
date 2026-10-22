@@ -61,7 +61,9 @@ from pplib import rho_vs                                    # noqa: E402
 
 # --- parameters, as the -20 C contact-angle runs set them --------------------
 T_C = -20.0
-D0 = 1.0166e-9                     # -d0_sub0 [m]
+sys.path.insert(0, os.path.join(HERE, "..", "..", ".."))
+from preprocess.mesh_params.physics import capillary_length_m  # noqa: E402
+D0 = capillary_length_m(T_C)       # capillary length [m], as the solver computes it
 BETA_HK1 = 7.9408e3                # beta_sub0 at alpha_c = 1 [s/m]
 BETA_OFFSET = 0.22 * 3.9704e6      # measured thin-interface offset [s/m]
 BETA = BETA_HK1 / 2e-3 + BETA_OFFSET   # reset from --alpha in __main__

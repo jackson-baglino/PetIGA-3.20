@@ -118,7 +118,9 @@ MIN_SPAN_BANDS = 4.0        # assert span >= this many 9.2*eps interface widths
 T0_C, ALPHA_C, EPS = -20.0, 1.341e-2, 8.5840e-7
 P, C = 2, 1
 
-D0 = 1.0166e-9           # capillary length at -20 C (matches -d0_sub0)
+sys.path.insert(0, str(ROOT))
+from preprocess.mesh_params.physics import capillary_length_m  # noqa: E402
+D0 = capillary_length_m(T0_C)   # capillary length at T0_C, as the solver computes it
 LAT, RV, TK = 2.83e6, 461.5, 253.15   # for the thermal-drive comparison
 
 
