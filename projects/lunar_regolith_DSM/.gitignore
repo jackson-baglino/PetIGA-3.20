@@ -49,3 +49,13 @@ test/*.log
 
 # Cached neck measurements (regenerable by plot_neck_convergence.py)
 _neck_csv/
+
+# LaTeX build artefacts (keep only .tex sources and the final .pdf)
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.out
+*.toc
+*.bbl
+*.blg
