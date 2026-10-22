@@ -60,11 +60,14 @@ _neck_csv/
 *.bbl
 *.blg
 
-# Paper library (full texts of published papers; never committed)
-/library/
+# Paper library: only the DOI list is committed; papers, texts and records stay local
+/library/*
+!/library/references.bib
 
-# Claude Code: personal settings and the local session-ID log
-.claude/settings.local.json
+# Claude Code: personal settings are committed for course transparency
+# (the global ~/.config/git/ignore excludes them, so re-include here);
+# the session-ID log and the old Stop-hook log stay local
+!.claude/settings.local.json
 .claude/sessions.tsv
 .claude/ACTIVITY_LOG.md
 

@@ -12,6 +12,10 @@ single codebase (`sublimation_pf`, formerly `permafrost`) so that two papers
 can evolve independently. Their solvers have since diverged; only
 `src/snes_convergence.c` is still identical.
 
+Agent names follow the model that runs them: `rick-*` Claude Fable, `beth-*`
+Claude Opus, `morty-*` Claude Sonnet, `jerry-*` Claude Haiku; the exact model
+ID is in each agent's file under `.claude/agents/`.
+
 ## Physics (two-phase)
 
 Three degrees of freedom per node — ice φ, temperature T, vapor density ρ_v

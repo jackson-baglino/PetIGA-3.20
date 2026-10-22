@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git worktree list*)",
+      "Bash(make)",
+      "Bash(make *)",
+      "Bash(venv_lunar/bin/python preprocess/*)",
+      "Bash(venv_lunar/bin/python postprocess/*)",
+      "Bash(venv_lunar/bin/python -m unittest *)",
+      "Bash(ls *)",
+      "Bash(wc *)",
+      "Bash(grep *)",
+      "Bash(mutool draw *)",
+      "Read(~/SimulationResults/**)",
+      "WebFetch(domain:doi.org)",
+      "WebFetch(domain:api.crossref.org)",
+      "WebFetch(domain:code.claude.com)"
+    ],
+    "additionalDirectories": [
+      "/Users/jacksonbaglino/Library/Mobile Documents/com~apple~CloudDocs/Documents/Courses/Fall2026/ME295",
+      "/Users/jacksonbaglino/Library/Mobile Documents/com~apple~CloudDocs/Documents/Research/Projects/lunar_regolith_DSM/Literature"
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline-account.sh"
+  },
+  "enabledPlugins": {
+    "clangd-lsp@claude-plugins-official": true
+  },
+  "effortLevel": "high",
+  "tui": "fullscreen",
+  "agentPushNotifEnabled": true,
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None configured",
+      "**Cloud provider(s)**: None configured",
+      "**Repository visibility**: not queryable here via gh; remote is github.com/jackson-baglino/PetIGA-3.20 — assume private unless shown otherwise",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: None configured",
+      "**Default / protected branches**: main (default); no branch protection rules or rulesets listed via gh for jackson-baglino/PetIGA-3.20",
+      "**CI/CD deploy targets**: None configured",
+      "**Network posture**: None configured",
+      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine with open internet",
+      "**Source control**: The trusted repo (jackson-baglino/PetIGA-3.20, this checkout's origin remote) only — no additional orgs configured",
+      "**Trusted internal domains**: None configured",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: None configured",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: any file or store holding personal data, confidential business data, credentials, regulated data, or similarly sensitive material; preserve exact handles when known and share only with audiences cleared at the [named+specifics] bar",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment (hyphen/underscore/dot-delimited)",
+      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development (PETSc/PetIGA phase-field solver for lunar regolith ice sublimation, C + Python)",
+      "**Trusted repo**: /Users/jacksonbaglino/PetIGA-3.20/projects/lunar_regolith_DSM (this working directory) and its origin remote github.com/jackson-baglino/PetIGA-3.20 — visibility not confirmed, treat as private by default so confidential material is OK here but secrets/personal/regulated data are never cleared in regardless of visibility",
+      "**Org-specific CLIs**: None configured",
+      "routine under inputs/scratch/, preprocess/scratch/, postprocess/scratch/, studies/scratch/ prefixes: per CLAUDE.md these are a pending-deletion quarantine area for this repo, not an archive — treat contents as gone unless pulled back into the live tree"
+    ]
+  }
+}

@@ -22,7 +22,7 @@ One row per stage. Each stage ends in a file that something can check.
 One block per agent. The definition lives in `.claude/agents/<name>.md`.
 
 ```
-name:         <kebab-case>
+name:         <rick|beth|morty|jerry>-<purpose>   (Fable|Opus|Sonnet|Haiku; must match model)
 model:        <full model ID, pinned>
 tools:        <minimal list>
 skills:       <list or none>
