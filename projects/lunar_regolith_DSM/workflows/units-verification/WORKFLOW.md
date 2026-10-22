@@ -1,7 +1,7 @@
 # WORKFLOW: units-verification
 
 Status: **design, for review** (2026-10-22). Nothing is built yet.
-Flowchart: `flowchart.html` in this folder.
+Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `scripts/flowchart/render_flowchart.py`.
 
 ## 1. Purpose
 
@@ -25,7 +25,7 @@ Flowchart: `flowchart.html` in this folder.
 | # | Stage | Agent or script | Input | Output | Check | Stop / escalate |
 |---|---|---|---|---|---|---|
 | U0 | Supply sources | user | — | PDFs of the three sources in `Literature/` | S0 finds each by DOI | — |
-| S0 | Locate sources | `locate_sources.py` | `units.md` source ids, `Literature/` | `manifest.json`: path, sha256, DOI per source | first-page text names the paper; exactly one file per source | missing or ambiguous file → stop, ask user |
+| S0 | Locate sources | `locate_sources.py` | `units.md` source ids, `Literature/` | `manifest.json`: path, sha256, DOI per source | first-page text names the paper; files whose rendered pages are identical count as one source | missing or ambiguous source → stop, ask user |
 | S1 | Render pages | `render_pages.py` (`mutool draw -r 200`) | manifest; cited page per row, plus the page before and after | `pages/<source>_p<N>.png`, hashes | file exists, hash recorded | render failure → stop |
 | C0 | Calibrate (once, before S2 on real rows) | S2 → S3 → S4 on a copy of 8 rows with planted errors | 8 altered rows | calibration report | S3 flags 8/8; S4 rejects ≥ 7/8 planted units | below threshold → stop, revise prompts |
 | S2 | Blind read | `morty-unit-reader` | one page image + the symbol names expected on it (no units, no values) | `reads/<page>.json` per symbol: printed form, meaning, value as printed, unit as printed, where on the page, or not found | JSON schema; every requested symbol answered | schema failure → re-ask once, then log |
@@ -114,9 +114,10 @@ Read schema (one object per symbol):
 
 1. **Sources:** add Kaempfer & Plapp (2009), Phys. Rev. E 79, 031502, and the
    main Moure & Fu (2024) paper to `Literature/`; neither was found there.
-   The SI exists twice (`cg4c00539_si_001.pdf` and
-   `MoureFu2024_SI/moure_fu_2024_SI.pdf`) with different hashes: which is
-   the version of record?
+   (Resolved: the SI's two copies render pixel-identically on all 12 pages;
+   `cg4c00539_si_001.pdf` was re-saved by macOS Preview on 2026-10-18, which
+   changed only its file metadata. The version of record is the untouched
+   `MoureFu2024_SI/moure_fu_2024_SI.pdf`.)
 2. **Value column:** also record the printed value (read from the image)? Recommended.
 3. **Scope:** literature symbols only, or also the solver's own parameters
    (units from `lunar_main.c` option help text)? Recommended: literature

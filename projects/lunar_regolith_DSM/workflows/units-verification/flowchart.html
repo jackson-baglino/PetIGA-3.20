@@ -1,190 +1,302 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Workflow: units-verification (design)</title>
+<html lang="en"><head><meta charset="utf-8"><title>units-verification</title>
 <style>
-  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; margin: 24px; color: #1d1d1f; background: #fff; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  p.sub { margin: 0 0 16px; color: #555; font-size: 13px; }
-  svg text { font-family: inherit; }
-  .lane { font-size: 13px; font-weight: 600; fill: #444; }
-  .t { font-size: 12.5px; fill: #1d1d1f; }
-  .tb { font-size: 13px; font-weight: 700; fill: #1d1d1f; }
-  .small { font-size: 11px; fill: #555; }
-  .edge { font-size: 11px; fill: #444; font-style: italic; }
-  table { border-collapse: collapse; font-size: 12.5px; margin-top: 18px; }
-  td, th { border: 1px solid #ccc; padding: 4px 8px; text-align: left; vertical-align: top; }
-  th { background: #f4f4f4; }
-</style>
-</head>
-<body>
-<h1>units-verification: design for review</h1>
-<p class="sub">Verifies every row of <code>memory/semantic/units.md</code> against the page images. Status: design, 2026-10-22. Details: <code>WORKFLOW.md</code>.</p>
-
-<svg width="1240" height="1060" viewBox="0 0 1240 1060" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
-    </marker>
-    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/>
-    </marker>
-  </defs>
-
-  <!-- swimlanes -->
-  <rect x="10"  y="10" width="250" height="1040" fill="#fdf6ec" stroke="#e6d3b3"/>
-  <rect x="270" y="10" width="310" height="1040" fill="#eef4fb" stroke="#c6d8ee"/>
-  <rect x="590" y="10" width="330" height="1040" fill="#f1f7ee" stroke="#cfe3c6"/>
-  <rect x="930" y="10" width="300" height="1040" fill="#f5f5f5" stroke="#dcdcdc"/>
-  <text class="lane" x="135" y="34" text-anchor="middle">User (decisions)</text>
-  <text class="lane" x="425" y="34" text-anchor="middle">Scripts (deterministic)</text>
-  <text class="lane" x="755" y="34" text-anchor="middle">Agents (headless, Read only)</text>
-  <text class="lane" x="1080" y="34" text-anchor="middle">Records</text>
-
-  <!-- U0 -->
-  <rect x="30" y="60" width="210" height="96" rx="8" fill="#fff" stroke="#c98a2b" stroke-width="1.5"/>
-  <text class="tb" x="42" y="82">U0 Supply sources</text>
-  <text class="t" x="42" y="102">Add K&amp;P 2009 and Moure &amp; Fu</text>
-  <text class="t" x="42" y="118">2024 PDFs to Literature/;</text>
-  <text class="t" x="42" y="134">pick one SI copy</text>
-
-  <!-- S0 -->
-  <rect x="290" y="60" width="270" height="96" rx="8" fill="#fff" stroke="#2b6cb0" stroke-width="1.5"/>
-  <text class="tb" x="302" y="82">S0 locate_sources.py</text>
-  <text class="t" x="302" y="102">find each source by DOI on page 1;</text>
-  <text class="t" x="302" y="118">record path + sha256</text>
-  <text class="small" x="302" y="140">gate: exactly one file per source</text>
-
-  <!-- manifest -->
-  <rect x="950" y="66" width="260" height="56" rx="6" fill="#fff" stroke="#888"/>
-  <text class="t" x="962" y="88">manifest.json</text>
-  <text class="small" x="962" y="106">sources, hashes, commit, model IDs</text>
-
-  <!-- S1 -->
-  <rect x="290" y="200" width="270" height="86" rx="8" fill="#fff" stroke="#2b6cb0" stroke-width="1.5"/>
-  <text class="tb" x="302" y="222">S1 render_pages.py</text>
-  <text class="t" x="302" y="242">mutool draw -r 200: cited page</text>
-  <text class="t" x="302" y="258">plus the pages before and after</text>
-  <text class="small" x="302" y="276">images only; text layer never used</text>
-
-  <rect x="950" y="212" width="260" height="56" rx="6" fill="#fff" stroke="#888"/>
-  <text class="t" x="962" y="234">pages/&lt;source&gt;_p&lt;N&gt;.png</text>
-  <text class="small" x="962" y="252">sha256 of every image</text>
-
-  <!-- C0 calibration -->
-  <rect x="610" y="232" width="290" height="84" rx="8" fill="#fff" stroke="#6b8e23" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text class="tb" x="622" y="252">C0 Calibration (once, first)</text>
-  <text class="t" x="622" y="270">8 rows with planted errors run</text>
-  <text class="t" x="622" y="286">through S2 → S3 → S4</text>
-  <text class="small" x="622" y="306">pass: S3 flags 8/8, S4 rejects ≥ 7/8</text>
-
-  <!-- S2 -->
-  <rect x="610" y="340" width="290" height="112" rx="8" fill="#fff" stroke="#2f855a" stroke-width="1.5"/>
-  <text class="tb" x="622" y="362">S2 morty-unit-reader</text>
-  <text class="small" x="622" y="378">claude-sonnet-5-5 · fresh context per page</text>
-  <text class="t" x="622" y="398">gets: one page image + symbol names</text>
-  <text class="t" x="622" y="414">NOT the table's units or values</text>
-  <text class="t" x="622" y="430">returns: printed form, meaning,</text>
-  <text class="t" x="622" y="446">value, unit, location (or not found)</text>
-
-  <rect x="950" y="360" width="260" height="70" rx="6" fill="#fff" stroke="#888"/>
-  <text class="t" x="962" y="382">reads/&lt;page&gt;.json</text>
-  <text class="t" x="962" y="400">runs.db (one row per agent call)</text>
-  <text class="small" x="962" y="418">stage, model, input hash, output</text>
-
-  <!-- S3 -->
-  <rect x="290" y="490" width="270" height="112" rx="8" fill="#fff" stroke="#2b6cb0" stroke-width="1.5"/>
-  <text class="tb" x="302" y="512">S3 compare_units.py</text>
-  <text class="t" x="302" y="532">parse both units → dimension</text>
-  <text class="t" x="302" y="548">vector + scale (J/(m³K) ≡ J m⁻³K⁻¹)</text>
-  <text class="t" x="302" y="564">outcome per row:</text>
-  <text class="t" x="302" y="582">AGREE · DISAGREE · NOT_FOUND</text>
-
-  <!-- S4 -->
-  <rect x="610" y="640" width="290" height="112" rx="8" fill="#fff" stroke="#2f855a" stroke-width="1.5"/>
-  <text class="tb" x="622" y="662">S4 beth-unit-checker</text>
-  <text class="small" x="622" y="678">claude-opus-5-5 · fresh context per row</text>
-  <text class="t" x="622" y="698">gets: page image, table row, read</text>
-  <text class="t" x="622" y="714">verdict: table right / read right /</text>
-  <text class="t" x="622" y="730">both wrong (+ fix) / cannot tell</text>
-  <text class="small" x="622" y="746">a fix must re-pass S3</text>
-
-  <rect x="950" y="660" width="260" height="56" rx="6" fill="#fff" stroke="#888"/>
-  <text class="t" x="962" y="682">verdicts.json</text>
-  <text class="small" x="962" y="700">with location on the page</text>
-
-  <!-- U1 -->
-  <rect x="30" y="790" width="210" height="112" rx="8" fill="#fff" stroke="#c98a2b" stroke-width="1.5"/>
-  <text class="tb" x="42" y="812">U1 Inspect</text>
-  <text class="t" x="42" y="832">every disputed row +</text>
-  <text class="t" x="42" y="848">random 10 % of AGREE rows,</text>
-  <text class="t" x="42" y="864">page crop beside table row</text>
-  <text class="t" x="42" y="880">and read; approve or correct</text>
-
-  <!-- S5 -->
-  <rect x="290" y="930" width="270" height="96" rx="8" fill="#fff" stroke="#2b6cb0" stroke-width="1.5"/>
-  <text class="tb" x="302" y="952">S5 apply_verdicts.py</text>
-  <text class="t" x="302" y="972">status per row: verified / disputed</text>
-  <text class="t" x="302" y="988">remove UNRELIABLE header only</text>
-  <text class="t" x="302" y="1004">when no row is unresolved</text>
-
-  <rect x="950" y="942" width="260" height="70" rx="6" fill="#fff" stroke="#888"/>
-  <text class="t" x="962" y="964">memory/semantic/units.md</text>
-  <text class="t" x="962" y="982">manifest.json (final verdicts)</text>
-  <text class="small" x="962" y="1000">committed; runs.db + transcript local</text>
-
-  <!-- edges -->
-  <line x1="240" y1="108" x2="288" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#a)"/>
-  <line x1="560" y1="94" x2="948" y2="94" stroke="#555" stroke-width="1.2" marker-end="url(#a)"/>
-  <path d="M 425 156 L 425 198" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
-  <!-- S0 missing -> U0 (stop) -->
-  <path d="M 330 156 C 330 176, 200 176, 160 158" stroke="#b3261e" stroke-width="1.4" fill="none" marker-end="url(#r)"/>
-  <text class="edge" x="186" y="186" fill="#b3261e">missing / ambiguous → stop</text>
-  <line x1="560" y1="218" x2="948" y2="218" stroke="#555" stroke-width="1.2" marker-end="url(#a)"/>
-  <!-- S1 -> C0 -> S2 -->
-  <path d="M 560 262 L 608 270" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
-  <path d="M 755 316 L 755 338" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
-  <text class="edge" x="762" y="332">calibration passed</text>
-  <path d="M 900 274 C 925 274, 925 160, 1080 124" stroke="#6b8e23" stroke-width="1.1" fill="none" stroke-dasharray="4 3" marker-end="url(#a)"/>
-  <text class="edge" x="910" y="186">calibration.json</text>
-  <!-- S2 -> records, S2 -> S3 -->
-  <line x1="900" y1="396" x2="948" y2="396" stroke="#555" stroke-width="1.2" marker-end="url(#a)"/>
-  <path d="M 680 452 C 680 480, 560 470, 540 488" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
-  <!-- S3 NOT_FOUND -> S2 neighbour pages -->
-  <path d="M 560 520 C 600 520, 600 420, 608 420" stroke="#b07a00" stroke-width="1.3" fill="none" marker-end="url(#a)"/>
-  <text class="edge" x="440" y="440">NOT_FOUND: read</text>
-  <text class="edge" x="440" y="454">neighbour pages</text>
-  <!-- S3 DISAGREE -> S4 -->
-  <path d="M 560 580 C 620 600, 640 620, 660 638" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
-  <text class="edge" x="745" y="624">DISAGREE / still not found</text>
-  <!-- S3 AGREE sample -> U1 -->
-  <path d="M 290 590 C 200 640, 150 720, 140 788" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
-  <text class="edge" x="150" y="680">AGREE: random 10 %</text>
-  <!-- S3 AGREE rest -> S5 -->
-  <path d="M 425 602 L 425 928" stroke="#555" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#a)"/>
-  <text class="edge" x="432" y="910">AGREE (all rows)</text>
-  <!-- S4 -> records, S4 -> U1 -->
-  <line x1="900" y1="688" x2="948" y2="688" stroke="#555" stroke-width="1.2" marker-end="url(#a)"/>
-  <path d="M 610 720 C 450 760, 300 800, 242 830" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
-  <text class="edge" x="300" y="782">every verdict incl. "cannot tell"</text>
-  <!-- S4 fix -> S3 recheck -->
-  <path d="M 700 640 C 700 616, 590 600, 562 596" stroke="#b07a00" stroke-width="1.2" fill="none" marker-end="url(#a)"/>
-  <!-- U1 -> S5 -->
-  <path d="M 240 880 C 270 920, 270 960, 288 970" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#a)"/>
-  <text class="edge" x="244" y="930">decisions</text>
-  <!-- S5 -> units.md -->
-  <line x1="560" y1="976" x2="948" y2="976" stroke="#555" stroke-width="1.2" marker-end="url(#a)"/>
+body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; margin: 24px; color: #1d1d1f; max-width: 1380px; }
+h1 { font-size: 20px; margin: 0 0 8px; } h2 { font-size: 15px; margin: 22px 0 6px; }
+p { font-size: 14px; line-height: 1.45; margin: 0 0 8px; max-width: 900px; }
+table { border-collapse: collapse; font-size: 12.5px; } td, th { border: 1px solid #ddd; padding: 4px 8px; text-align: left; vertical-align: top; }
+th { background: #f4f4f4; } .sw { display: inline-block; width: 22px; height: 12px; border: 2px solid; border-radius: 3px; }
+.ln { display: inline-block; width: 26px; height: 3px; vertical-align: middle; }
+.meta { color: #666; font-size: 12px; }
+</style></head><body>
+<h1>units-verification</h1>
+<p>Checks every row of memory/semantic/units.md (62 symbols from Kaempfer &amp; Plapp 2009 and Moure &amp; Fu 2024 with its SI) against images of the cited pages. A Sonnet agent reads each page blind, without seeing the table's answer; a script compares its reading with the table; an Opus agent judges only the rows that disagree; the user inspects every disputed row and a random sample of agreed ones.</p><p>The pipeline is first run on eight rows with planted errors, and the real run starts only if it catches them. Agents see page images only, never the PDF text layer, which drops exponents and minus signs.</p>
+<p class="meta">Design for review, 2026-10-22. Nothing is built yet. Details: WORKFLOW.md.</p>
+<svg width="1321pt" height="1463pt"
+ viewBox="0.00 0.00 1321.00 1463.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(0 1462.72)">
+<title>G</title>
+<polygon fill="white" stroke="none" points="0,0 0,-1462.72 1320.72,-1462.72 1320.72,0 0,0"/>
+<rect x="6.0" y="-1462.0" width="318.0" height="1462.0" fill="#fdf6ec" stroke="#dddddd"/>
+<text x="165.0" y="-1436.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">User</text>
+<rect x="336.0" y="-1462.0" width="318.0" height="1462.0" fill="#eef4fb" stroke="#dddddd"/>
+<text x="495.0" y="-1436.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">Scripts</text>
+<rect x="666.0" y="-1462.0" width="318.0" height="1462.0" fill="#f1f7ee" stroke="#dddddd"/>
+<text x="825.0" y="-1436.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">Agents</text>
+<rect x="996.0" y="-1462.0" width="318.0" height="1462.0" fill="#f5f5f5" stroke="#dddddd"/>
+<text x="1155.0" y="-1436.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">Records</text>
+<!-- U0&#45;&gt;S0 -->
+<g id="edge1" class="edge">
+<title>U0&#45;&gt;S0</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M311.06,-1338C311.06,-1338 339.69,-1338 339.69,-1338"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="339.69,-1340.8 347.69,-1338 339.69,-1335.2 339.69,-1340.8"/>
+</g>
+<!-- S0&#45;&gt;M -->
+<g id="edge2" class="edge">
+<title>S0&#45;&gt;M</title>
+<path fill="none" stroke="#8a8a8a" d="M641.02,-1338C641.02,-1338 1000.28,-1338 1000.28,-1338"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-1340.8 1008.28,-1338 1000.28,-1335.2 1000.28,-1340.8"/>
+</g>
+<!-- S0&#45;&gt;S1 -->
+<g id="edge3" class="edge">
+<title>S0&#45;&gt;S1</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M495.36,-1285.89C495.36,-1285.89 495.36,-1217.91 495.36,-1217.91"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="498.16,-1217.91 495.36,-1209.91 492.56,-1217.91 498.16,-1217.91"/>
+</g>
+<!-- S1&#45;&gt;P -->
+<g id="edge4" class="edge">
+<title>S1&#45;&gt;P</title>
+<path fill="none" stroke="#8a8a8a" d="M641.02,-1175C641.02,-1175 1000.28,-1175 1000.28,-1175"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-1177.8 1008.28,-1175 1000.28,-1172.2 1000.28,-1177.8"/>
+</g>
+<!-- S1&#45;&gt;C0 -->
+<g id="edge5" class="edge">
+<title>S1&#45;&gt;C0</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M495.36,-1142.77C495.36,-1142.77 495.36,-1074.91 495.36,-1074.91"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="498.16,-1074.91 495.36,-1066.91 492.56,-1074.91 498.16,-1074.91"/>
+</g>
+<!-- C0&#45;&gt;CR -->
+<g id="edge6" class="edge">
+<title>C0&#45;&gt;CR</title>
+<path fill="none" stroke="#8a8a8a" d="M641.02,-1012C641.02,-1012 1000.28,-1012 1000.28,-1012"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-1014.8 1008.28,-1012 1000.28,-1009.2 1000.28,-1014.8"/>
+</g>
+<!-- C0&#45;&gt;S2 -->
+<g id="edge7" class="edge">
+<title>C0&#45;&gt;S2</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M641.06,-974C729.47,-974 825.36,-974 825.36,-974 825.36,-974 825.36,-889.87 825.36,-889.87"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-889.87 825.36,-881.87 822.56,-889.87 828.16,-889.87"/>
+<text xml:space="preserve" text-anchor="middle" x="735.9" y="-975.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">calibration passed</text>
+</g>
+<!-- S2&#45;&gt;R -->
+<g id="edge8" class="edge">
+<title>S2&#45;&gt;R</title>
+<path fill="none" stroke="#8a8a8a" d="M971.06,-814C971.06,-814 1000.3,-814 1000.3,-814"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.3,-816.8 1008.3,-814 1000.3,-811.2 1000.3,-816.8"/>
+</g>
+<!-- S2&#45;&gt;S3 -->
+<g id="edge9" class="edge">
+<title>S2&#45;&gt;S3</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-748.71C825.36,-700 825.36,-642 825.36,-642 825.36,-642 651.18,-642 651.18,-642"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651.18,-639.2 643.18,-642 651.18,-644.8 651.18,-639.2"/>
+</g>
+<!-- S3&#45;&gt;S2 -->
+<g id="edge10" class="edge">
+<title>S3&#45;&gt;S2</title>
+<path fill="none" stroke="#b07a00" stroke-width="1.3" d="M640.96,-616C756.2,-616 897.86,-616 897.86,-616 897.86,-616 897.86,-738.62 897.86,-738.62"/>
+<polygon fill="#b07a00" stroke="#b07a00" stroke-width="1.3" points="895.06,-738.62 897.86,-746.62 900.66,-738.62 895.06,-738.62"/>
+<text xml:space="preserve" text-anchor="middle" x="750.09" y="-617.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#b07a00">NOT_FOUND: read neighbour pages</text>
+</g>
+<!-- S3&#45;&gt;S4 -->
+<g id="edge11" class="edge">
+<title>S3&#45;&gt;S4</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M641.04,-590C699.3,-590 752.86,-590 752.86,-590 752.86,-590 752.86,-493.88 752.86,-493.88"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="755.66,-493.88 752.86,-485.88 750.06,-493.88 755.66,-493.88"/>
+<text xml:space="preserve" text-anchor="middle" x="718.76" y="-591.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">DISAGREE</text>
+</g>
+<!-- S3&#45;&gt;U1 -->
+<g id="edge14" class="edge">
+<title>S3&#45;&gt;U1</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M447.02,-564.03C447.02,-460.62 447.02,-240 447.02,-240 447.02,-240 320.85,-240 320.85,-240"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="320.85,-237.2 312.85,-240 320.85,-242.8 320.85,-237.2"/>
+<text xml:space="preserve" text-anchor="middle" x="397.52" y="-340.68" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">AGREE: random 10 %</text>
+</g>
+<!-- S4&#45;&gt;V -->
+<g id="edge12" class="edge">
+<title>S4&#45;&gt;V</title>
+<path fill="none" stroke="#8a8a8a" d="M971.06,-411C971.06,-411 1000.3,-411 1000.3,-411"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.3,-413.8 1008.3,-411 1000.3,-408.2 1000.3,-413.8"/>
+</g>
+<!-- S4&#45;&gt;U1 -->
+<g id="edge13" class="edge">
+<title>S4&#45;&gt;U1</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-339.01C825.36,-284.83 825.36,-220 825.36,-220 825.36,-220 321.14,-220 321.14,-220"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="321.14,-217.2 313.14,-220 321.14,-222.8 321.14,-217.2"/>
+<text xml:space="preserve" text-anchor="middle" x="604.63" y="-221.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">every verdict</text>
+</g>
+<!-- U1&#45;&gt;S5 -->
+<g id="edge15" class="edge">
+<title>U1&#45;&gt;S5</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M311.09,-201C417.67,-201 543.7,-201 543.7,-201 543.7,-201 543.7,-113.63 543.7,-113.63"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="546.5,-113.63 543.7,-105.63 540.9,-113.63 546.5,-113.63"/>
+</g>
+<!-- S5&#45;&gt;T -->
+<g id="edge16" class="edge">
+<title>S5&#45;&gt;T</title>
+<path fill="none" stroke="#8a8a8a" d="M641.02,-64C641.02,-64 1000.28,-64 1000.28,-64"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-66.8 1008.28,-64 1000.28,-61.2 1000.28,-66.8"/>
+</g>
+<!-- __c1 -->
+<!-- __c2 -->
+<!-- U0 -->
+<g id="node3" class="node">
+<title>U0</title>
+<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-1376.93C298.37,-1376.93 32.35,-1376.93 32.35,-1376.93 26.35,-1376.93 20.35,-1370.93 20.35,-1364.93 20.35,-1364.93 20.35,-1311.79 20.35,-1311.79 20.35,-1305.79 26.35,-1299.79 32.35,-1299.79 32.35,-1299.79 298.37,-1299.79 298.37,-1299.79 304.37,-1299.79 310.37,-1305.79 310.37,-1311.79 310.37,-1311.79 310.37,-1364.93 310.37,-1364.93 310.37,-1370.93 304.37,-1376.93 298.37,-1376.93"/>
+<text xml:space="preserve" text-anchor="start" x="51.73" y="-1362.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U0 Supply sources</text>
+<text xml:space="preserve" text-anchor="start" x="51.73" y="-1348.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Add the missing source PDFs to Literature/ and</text>
+<text xml:space="preserve" text-anchor="start" x="51.73" y="-1334.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">confirm which file is each source.</text>
+<text xml:space="preserve" text-anchor="start" x="51.73" y="-1320.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Missing today: Kaempfer &amp; Plapp 2009, Moure</text>
+<text xml:space="preserve" text-anchor="start" x="51.73" y="-1306.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;&amp; Fu 2024 main paper</text>
+</g>
+<!-- S0 -->
+<g id="node4" class="node">
+<title>S0</title>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-1390.18C628.37,-1390.18 362.35,-1390.18 362.35,-1390.18 356.35,-1390.18 350.35,-1384.18 350.35,-1378.18 350.35,-1378.18 350.35,-1298.54 350.35,-1298.54 350.35,-1292.54 356.35,-1286.54 362.35,-1286.54 362.35,-1286.54 628.37,-1286.54 628.37,-1286.54 634.37,-1286.54 640.37,-1292.54 640.37,-1298.54 640.37,-1298.54 640.37,-1378.18 640.37,-1378.18 640.37,-1384.18 634.37,-1390.18 628.37,-1390.18"/>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-1375.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">S0 locate_sources.py</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-1361.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Finds each source PDF by the DOI on its first</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-1347.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">page and records its path and hash.</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-1333.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Files whose rendered pages are identical</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-1320.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;count as one source</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-1306.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Missing or ambiguous source: stop and ask</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-1293.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;the user (U0)</text>
+</g>
+<!-- M -->
+<g id="node5" class="node">
+<title>M</title>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1363.68 1010.35,-1363.68 1010.35,-1313.04 1300.37,-1313.04 1300.37,-1357.68 1294.37,-1363.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1363.68 1294.37,-1357.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-1357.68 1294.37,-1357.68"/>
+<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1348.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">manifest.json</text>
+<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1334.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Run record: sources, file hashes, git commit,</text>
+<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1320.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Claude Code version, model IDs.</text>
+</g>
+<!-- S1 -->
+<g id="node6" class="node">
+<title>S1</title>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-1207.3C628.37,-1207.3 362.35,-1207.3 362.35,-1207.3 356.35,-1207.3 350.35,-1201.3 350.35,-1195.3 350.35,-1195.3 350.35,-1155.41 350.35,-1155.41 350.35,-1149.41 356.35,-1143.41 362.35,-1143.41 362.35,-1143.41 628.37,-1143.41 628.37,-1143.41 634.37,-1143.41 640.37,-1149.41 640.37,-1155.41 640.37,-1155.41 640.37,-1195.3 640.37,-1195.3 640.37,-1201.3 634.37,-1207.3 628.37,-1207.3"/>
+<text xml:space="preserve" text-anchor="start" x="379.86" y="-1192.53" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">S1 render_pages.py</text>
+<text xml:space="preserve" text-anchor="start" x="379.86" y="-1178.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Renders each cited page and its two neighbours</text>
+<text xml:space="preserve" text-anchor="start" x="379.86" y="-1164.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">to PNG at 200 dpi with mutool.</text>
+<text xml:space="preserve" text-anchor="start" x="379.86" y="-1150.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Images only; the text layer is never used</text>
+</g>
+<!-- P -->
+<g id="node7" class="node">
+<title>P</title>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1200.68 1010.35,-1200.68 1010.35,-1150.04 1300.37,-1150.04 1300.37,-1194.68 1294.37,-1200.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1200.68 1294.37,-1194.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-1194.68 1294.37,-1194.68"/>
+<text xml:space="preserve" text-anchor="start" x="1048.11" y="-1185.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">pages/&lt;source&gt;_p&lt;N&gt;.png</text>
+<text xml:space="preserve" text-anchor="start" x="1048.11" y="-1171.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">One image per page, with its SHA&#45;256 in the</text>
+<text xml:space="preserve" text-anchor="start" x="1048.11" y="-1157.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">manifest.</text>
+</g>
+<!-- C0 -->
+<g id="node8" class="node">
+<title>C0</title>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-1064.18C628.37,-1064.18 362.35,-1064.18 362.35,-1064.18 356.35,-1064.18 350.35,-1058.18 350.35,-1052.18 350.35,-1052.18 350.35,-972.54 350.35,-972.54 350.35,-966.54 356.35,-960.54 362.35,-960.54 362.35,-960.54 628.37,-960.54 628.37,-960.54 634.37,-960.54 640.37,-966.54 640.37,-972.54 640.37,-972.54 640.37,-1052.18 640.37,-1052.18 640.37,-1058.18 634.37,-1064.18 628.37,-1064.18"/>
+<text xml:space="preserve" text-anchor="start" x="395.99" y="-1049.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">C0 calibrate.py (runs once, first)</text>
+<text xml:space="preserve" text-anchor="start" x="395.99" y="-1035.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Runs S2 to S4 on eight rows with planted</text>
+<text xml:space="preserve" text-anchor="start" x="395.99" y="-1021.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">errors and checks they are caught.</text>
+<text xml:space="preserve" text-anchor="start" x="395.99" y="-1007.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Planted: flipped exponent sign, wrong</text>
+<text xml:space="preserve" text-anchor="start" x="395.99" y="-994.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;prefix, swapped unit, wrong page</text>
+<text xml:space="preserve" text-anchor="start" x="395.99" y="-980.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Pass: S3 flags 8/8 and S4 rejects at least</text>
+<text xml:space="preserve" text-anchor="start" x="395.99" y="-967.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;7/8</text>
+</g>
+<!-- CR -->
+<g id="node9" class="node">
+<title>CR</title>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1037.68 1010.35,-1037.68 1010.35,-987.04 1300.37,-987.04 1300.37,-1031.68 1294.37,-1037.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1037.68 1294.37,-1031.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-1031.68 1294.37,-1031.68"/>
+<text xml:space="preserve" text-anchor="start" x="1044.36" y="-1022.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">calibration.json</text>
+<text xml:space="preserve" text-anchor="start" x="1044.36" y="-1008.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Planted errors and whether each stage caught</text>
+<text xml:space="preserve" text-anchor="start" x="1044.36" y="-994.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">them.</text>
+</g>
+<!-- S2 -->
+<g id="node10" class="node">
+<title>S2</title>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-879.43C958.37,-879.43 692.35,-879.43 692.35,-879.43 686.35,-879.43 680.35,-873.43 680.35,-867.43 680.35,-867.43 680.35,-761.29 680.35,-761.29 680.35,-755.29 686.35,-749.29 692.35,-749.29 692.35,-749.29 958.37,-749.29 958.37,-749.29 964.37,-749.29 970.37,-755.29 970.37,-761.29 970.37,-761.29 970.37,-867.43 970.37,-867.43 970.37,-873.43 964.37,-879.43 958.37,-879.43"/>
+<text xml:space="preserve" text-anchor="start" x="706.49" y="-864.66" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">S2 morty&#45;unit&#45;reader</text>
+<text xml:space="preserve" text-anchor="start" x="706.49" y="-850.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: Read</text>
+<text xml:space="preserve" text-anchor="start" x="706.49" y="-837.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Reads one page image and transcribes how each</text>
+<text xml:space="preserve" text-anchor="start" x="706.49" y="-823.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">requested symbol is defined there.</text>
+<text xml:space="preserve" text-anchor="start" x="706.49" y="-809.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Given only the symbol names, never the</text>
+<text xml:space="preserve" text-anchor="start" x="706.49" y="-796.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;table&#39;s units or values</text>
+<text xml:space="preserve" text-anchor="start" x="706.49" y="-782.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Returns printed form, meaning, value, unit</text>
+<text xml:space="preserve" text-anchor="start" x="706.49" y="-769.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;and location, or not found</text>
+<text xml:space="preserve" text-anchor="start" x="706.49" y="-756.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh context per page</text>
+</g>
+<!-- R -->
+<g id="node11" class="node">
+<title>R</title>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-839.68 1010.35,-839.68 1010.35,-789.04 1300.37,-789.04 1300.37,-833.68 1294.37,-839.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-839.68 1294.37,-833.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-833.68 1294.37,-833.68"/>
+<text xml:space="preserve" text-anchor="start" x="1045.11" y="-824.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">reads/&lt;page&gt;.json, runs.db</text>
+<text xml:space="preserve" text-anchor="start" x="1045.11" y="-810.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">The blind readings, and one database row per</text>
+<text xml:space="preserve" text-anchor="start" x="1045.11" y="-796.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">agent call.</text>
+</g>
+<!-- S3 -->
+<g id="node12" class="node">
+<title>S3</title>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-668.18C628.37,-668.18 362.35,-668.18 362.35,-668.18 356.35,-668.18 350.35,-662.18 350.35,-656.18 350.35,-656.18 350.35,-576.54 350.35,-576.54 350.35,-570.54 356.35,-564.54 362.35,-564.54 362.35,-564.54 628.37,-564.54 628.37,-564.54 634.37,-564.54 640.37,-570.54 640.37,-576.54 640.37,-576.54 640.37,-656.18 640.37,-656.18 640.37,-662.18 634.37,-668.18 628.37,-668.18"/>
+<text xml:space="preserve" text-anchor="start" x="399.36" y="-653.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">S3 compare_units.py</text>
+<text xml:space="preserve" text-anchor="start" x="399.36" y="-639.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Compares the table&#39;s unit with the blind</text>
+<text xml:space="preserve" text-anchor="start" x="399.36" y="-625.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">reading by dimension and scale.</text>
+<text xml:space="preserve" text-anchor="start" x="399.36" y="-611.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• J/(m^3 K) equals J m^&#45;3 K^&#45;1; a degC</text>
+<text xml:space="preserve" text-anchor="start" x="399.36" y="-598.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;difference equals K</text>
+<text xml:space="preserve" text-anchor="start" x="399.36" y="-584.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Outcome per row: AGREE, DISAGREE or</text>
+<text xml:space="preserve" text-anchor="start" x="399.36" y="-571.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;NOT_FOUND</text>
+</g>
+<!-- S4 -->
+<g id="node13" class="node">
+<title>S4</title>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-483.05C958.37,-483.05 692.35,-483.05 692.35,-483.05 686.35,-483.05 680.35,-477.05 680.35,-471.05 680.35,-471.05 680.35,-351.66 680.35,-351.66 680.35,-345.66 686.35,-339.66 692.35,-339.66 692.35,-339.66 958.37,-339.66 958.37,-339.66 964.37,-339.66 970.37,-345.66 970.37,-351.66 970.37,-351.66 970.37,-471.05 970.37,-471.05 970.37,-477.05 964.37,-483.05 958.37,-483.05"/>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-468.28" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">S4 beth&#45;unit&#45;checker</text>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-454.23" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;opus&#45;5&#45;5 · tools: Read</text>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-441.03" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Decides each disputed row from the page image</text>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-427.03" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">and states where on the page the answer is.</text>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-412.98" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Gets the page image, the table row and the</text>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-399.73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;blind reading</text>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-386.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Verdict: table right, reading right, both</text>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-373.23" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;wrong (with fix) or cannot tell</text>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-359.98" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh context per row; a fix must pass S3</text>
+<text xml:space="preserve" text-anchor="start" x="709.49" y="-346.73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;again</text>
+</g>
+<!-- V -->
+<g id="node14" class="node">
+<title>V</title>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-436.68 1010.35,-436.68 1010.35,-386.04 1300.37,-386.04 1300.37,-430.68 1294.37,-436.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-436.68 1294.37,-430.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-430.68 1294.37,-430.68"/>
+<text xml:space="preserve" text-anchor="start" x="1067.24" y="-421.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">verdicts.json</text>
+<text xml:space="preserve" text-anchor="start" x="1067.24" y="-407.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">One verdict per disputed row, with its</text>
+<text xml:space="preserve" text-anchor="start" x="1067.24" y="-393.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">location on the page.</text>
+</g>
+<!-- U1 -->
+<g id="node15" class="node">
+<title>U1</title>
+<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-258.93C298.37,-258.93 32.35,-258.93 32.35,-258.93 26.35,-258.93 20.35,-252.93 20.35,-246.93 20.35,-246.93 20.35,-193.79 20.35,-193.79 20.35,-187.79 26.35,-181.79 32.35,-181.79 32.35,-181.79 298.37,-181.79 298.37,-181.79 304.37,-181.79 310.37,-187.79 310.37,-193.79 310.37,-193.79 310.37,-246.93 310.37,-246.93 310.37,-252.93 304.37,-258.93 298.37,-258.93"/>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-244.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U1 Inspect</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-230.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Approve or correct every disputed row and a</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-216.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">random 10 % of the agreed rows.</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-202.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Each shown with its page crop beside the</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-188.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;table row and the reading</text>
+</g>
+<!-- S5 -->
+<g id="node16" class="node">
+<title>S5</title>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-102.93C628.37,-102.93 362.35,-102.93 362.35,-102.93 356.35,-102.93 350.35,-96.93 350.35,-90.93 350.35,-90.93 350.35,-37.79 350.35,-37.79 350.35,-31.79 356.35,-25.79 362.35,-25.79 362.35,-25.79 628.37,-25.79 628.37,-25.79 634.37,-25.79 640.37,-31.79 640.37,-37.79 640.37,-37.79 640.37,-90.93 640.37,-90.93 640.37,-96.93 634.37,-102.93 628.37,-102.93"/>
+<text xml:space="preserve" text-anchor="start" x="385.49" y="-88.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">S5 apply_verdicts.py</text>
+<text xml:space="preserve" text-anchor="start" x="385.49" y="-74.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Writes each row&#39;s final status into units.md</text>
+<text xml:space="preserve" text-anchor="start" x="385.49" y="-60.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">and closes the run record.</text>
+<text xml:space="preserve" text-anchor="start" x="385.49" y="-46.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• The UNRELIABLE header is removed only when</text>
+<text xml:space="preserve" text-anchor="start" x="385.49" y="-32.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;no row is unresolved</text>
+</g>
+<!-- T -->
+<g id="node17" class="node">
+<title>T</title>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-89.68 1010.35,-89.68 1010.35,-39.04 1300.37,-39.04 1300.37,-83.68 1294.37,-89.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-89.68 1294.37,-83.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-83.68 1294.37,-83.68"/>
+<text xml:space="preserve" text-anchor="start" x="1056.74" y="-74.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">memory/semantic/units.md</text>
+<text xml:space="preserve" text-anchor="start" x="1056.74" y="-60.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">The verified table, committed with the run</text>
+<text xml:space="preserve" text-anchor="start" x="1056.74" y="-46.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">manifest.</text>
+</g>
+</g>
 </svg>
 
-<table>
-  <tr><th>Legend</th><th></th></tr>
-  <tr><td>Orange box</td><td>user decision point</td></tr>
-  <tr><td>Blue box</td><td>deterministic script: same input, same output</td></tr>
-  <tr><td>Green box</td><td>agent, headless, Read only; dashed = one-time calibration</td></tr>
-  <tr><td>Grey box</td><td>record written by the stage</td></tr>
-  <tr><td>Red arrow</td><td>stop and ask the user</td></tr>
-  <tr><td>Amber arrow</td><td>loop back for a re-check (each at most once)</td></tr>
-</table>
-</body>
-</html>
+<h2>Legend</h2>
+<table><tr><td><span class="sw" style="border-color:#c98a2b"></span></td><td>user decision point</td></tr><tr><td><span class="sw" style="border-color:#2b6cb0"></span></td><td>deterministic script: same input, same output</td></tr><tr><td><span class="sw" style="border-color:#2f855a"></span></td><td>agent (model and tools listed in the box)</td></tr><tr><td><span class="sw" style="border-color:#7a7a7a"></span></td><td>record written by a stage</td></tr><tr><td><span class="ln" style="background:#4a4a4a"></span></td><td>main flow</td></tr><tr><td><span class="ln" style="background:#8a8a8a"></span></td><td>writes a record</td></tr><tr><td><span class="ln" style="background:#b07a00"></span></td><td>loop back for a re-check</td></tr></table>
+<h2>Agents and scripts</h2>
+<table><tr><th>Stage</th><th>Kind</th><th>Model</th><th>Tools</th><th>Job</th></tr><tr><td>S0 locate_sources.py</td><td>script</td><td>—</td><td>—</td><td>Finds each source PDF by the DOI on its first page and records its path and hash.</td></tr><tr><td>S1 render_pages.py</td><td>script</td><td>—</td><td>—</td><td>Renders each cited page and its two neighbours to PNG at 200 dpi with mutool.</td></tr><tr><td>C0 calibrate.py (runs once, first)</td><td>script</td><td>—</td><td>—</td><td>Runs S2 to S4 on eight rows with planted errors and checks they are caught.</td></tr><tr><td>S2 morty-unit-reader</td><td>agent</td><td>claude-sonnet-5-5</td><td>Read</td><td>Reads one page image and transcribes how each requested symbol is defined there.</td></tr><tr><td>S3 compare_units.py</td><td>script</td><td>—</td><td>—</td><td>Compares the table's unit with the blind reading by dimension and scale.</td></tr><tr><td>S4 beth-unit-checker</td><td>agent</td><td>claude-opus-5-5</td><td>Read</td><td>Decides each disputed row from the page image and states where on the page the answer is.</td></tr><tr><td>S5 apply_verdicts.py</td><td>script</td><td>—</td><td>—</td><td>Writes each row's final status into units.md and closes the run record.</td></tr></table>
+</body></html>

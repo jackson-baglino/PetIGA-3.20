@@ -1,0 +1,277 @@
+{
+  "title": "units-verification",
+  "summary": [
+    "Checks every row of memory/semantic/units.md (62 symbols from Kaempfer & Plapp 2009 and Moure & Fu 2024 with its SI) against images of the cited pages. A Sonnet agent reads each page blind, without seeing the table's answer; a script compares its reading with the table; an Opus agent judges only the rows that disagree; the user inspects every disputed row and a random sample of agreed ones.",
+    "The pipeline is first run on eight rows with planted errors, and the real run starts only if it catches them. Agents see page images only, never the PDF text layer, which drops exponents and minus signs."
+  ],
+  "status": "Design for review, 2026-10-22. Nothing is built yet. Details: WORKFLOW.md.",
+  "lanes": [
+    {
+      "id": "user",
+      "label": "User"
+    },
+    {
+      "id": "script",
+      "label": "Scripts"
+    },
+    {
+      "id": "agent",
+      "label": "Agents"
+    },
+    {
+      "id": "record",
+      "label": "Records"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "U0",
+      "lane": "user",
+      "row": 0,
+      "kind": "user",
+      "title": "U0 Supply sources",
+      "job": "Add the missing source PDFs to Literature/ and confirm which file is each source.",
+      "details": [
+        "Missing today: Kaempfer & Plapp 2009, Moure & Fu 2024 main paper"
+      ]
+    },
+    {
+      "id": "S0",
+      "lane": "script",
+      "row": 0,
+      "kind": "script",
+      "title": "S0 locate_sources.py",
+      "job": "Finds each source PDF by the DOI on its first page and records its path and hash.",
+      "details": [
+        "Files whose rendered pages are identical count as one source",
+        "Missing or ambiguous source: stop and ask the user (U0)"
+      ]
+    },
+    {
+      "id": "M",
+      "lane": "record",
+      "row": 0,
+      "kind": "record",
+      "title": "manifest.json",
+      "job": "Run record: sources, file hashes, git commit, Claude Code version, model IDs."
+    },
+    {
+      "id": "S1",
+      "lane": "script",
+      "row": 1,
+      "kind": "script",
+      "title": "S1 render_pages.py",
+      "job": "Renders each cited page and its two neighbours to PNG at 200 dpi with mutool.",
+      "details": [
+        "Images only; the text layer is never used"
+      ]
+    },
+    {
+      "id": "P",
+      "lane": "record",
+      "row": 1,
+      "kind": "record",
+      "title": "pages/<source>_p<N>.png",
+      "job": "One image per page, with its SHA-256 in the manifest."
+    },
+    {
+      "id": "C0",
+      "lane": "script",
+      "row": 2,
+      "kind": "script",
+      "title": "C0 calibrate.py (runs once, first)",
+      "job": "Runs S2 to S4 on eight rows with planted errors and checks they are caught.",
+      "details": [
+        "Planted: flipped exponent sign, wrong prefix, swapped unit, wrong page",
+        "Pass: S3 flags 8/8 and S4 rejects at least 7/8"
+      ]
+    },
+    {
+      "id": "CR",
+      "lane": "record",
+      "row": 2,
+      "kind": "record",
+      "title": "calibration.json",
+      "job": "Planted errors and whether each stage caught them."
+    },
+    {
+      "id": "S2",
+      "lane": "agent",
+      "row": 3,
+      "kind": "agent",
+      "title": "S2 morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "tools": [
+        "Read"
+      ],
+      "job": "Reads one page image and transcribes how each requested symbol is defined there.",
+      "details": [
+        "Given only the symbol names, never the table's units or values",
+        "Returns printed form, meaning, value, unit and location, or not found",
+        "Fresh context per page"
+      ]
+    },
+    {
+      "id": "R",
+      "lane": "record",
+      "row": 3,
+      "kind": "record",
+      "title": "reads/<page>.json, runs.db",
+      "job": "The blind readings, and one database row per agent call."
+    },
+    {
+      "id": "S3",
+      "lane": "script",
+      "row": 4,
+      "kind": "script",
+      "title": "S3 compare_units.py",
+      "job": "Compares the table's unit with the blind reading by dimension and scale.",
+      "details": [
+        "J/(m^3 K) equals J m^-3 K^-1; a degC difference equals K",
+        "Outcome per row: AGREE, DISAGREE or NOT_FOUND"
+      ]
+    },
+    {
+      "id": "S4",
+      "lane": "agent",
+      "row": 5,
+      "kind": "agent",
+      "title": "S4 beth-unit-checker",
+      "model": "claude-opus-5-5",
+      "tools": [
+        "Read"
+      ],
+      "job": "Decides each disputed row from the page image and states where on the page the answer is.",
+      "details": [
+        "Gets the page image, the table row and the blind reading",
+        "Verdict: table right, reading right, both wrong (with fix) or cannot tell",
+        "Fresh context per row; a fix must pass S3 again"
+      ]
+    },
+    {
+      "id": "V",
+      "lane": "record",
+      "row": 5,
+      "kind": "record",
+      "title": "verdicts.json",
+      "job": "One verdict per disputed row, with its location on the page."
+    },
+    {
+      "id": "U1",
+      "lane": "user",
+      "row": 6,
+      "kind": "user",
+      "title": "U1 Inspect",
+      "job": "Approve or correct every disputed row and a random 10 % of the agreed rows.",
+      "details": [
+        "Each shown with its page crop beside the table row and the reading"
+      ]
+    },
+    {
+      "id": "S5",
+      "lane": "script",
+      "row": 7,
+      "kind": "script",
+      "title": "S5 apply_verdicts.py",
+      "job": "Writes each row's final status into units.md and closes the run record.",
+      "details": [
+        "The UNRELIABLE header is removed only when no row is unresolved"
+      ]
+    },
+    {
+      "id": "T",
+      "lane": "record",
+      "row": 7,
+      "kind": "record",
+      "title": "memory/semantic/units.md",
+      "job": "The verified table, committed with the run manifest."
+    }
+  ],
+  "edges": [
+    {
+      "from": "U0",
+      "to": "S0",
+      "kind": "flow"
+    },
+    {
+      "from": "S0",
+      "to": "M",
+      "kind": "data"
+    },
+    {
+      "from": "S0",
+      "to": "S1",
+      "kind": "flow"
+    },
+    {
+      "from": "S1",
+      "to": "P",
+      "kind": "data"
+    },
+    {
+      "from": "S1",
+      "to": "C0",
+      "kind": "flow"
+    },
+    {
+      "from": "C0",
+      "to": "CR",
+      "kind": "data"
+    },
+    {
+      "from": "C0",
+      "to": "S2",
+      "kind": "flow",
+      "label": "calibration passed"
+    },
+    {
+      "from": "S2",
+      "to": "R",
+      "kind": "data"
+    },
+    {
+      "from": "S2",
+      "to": "S3",
+      "kind": "flow"
+    },
+    {
+      "from": "S3",
+      "to": "S2",
+      "kind": "loop",
+      "label": "NOT_FOUND: read neighbour pages"
+    },
+    {
+      "from": "S3",
+      "to": "S4",
+      "kind": "flow",
+      "label": "DISAGREE"
+    },
+    {
+      "from": "S4",
+      "to": "V",
+      "kind": "data"
+    },
+    {
+      "from": "S4",
+      "to": "U1",
+      "kind": "flow",
+      "label": "every verdict"
+    },
+    {
+      "from": "S3",
+      "to": "U1",
+      "kind": "flow",
+      "label": "AGREE: random 10 %"
+    },
+    {
+      "from": "U1",
+      "to": "S5",
+      "kind": "flow"
+    },
+    {
+      "from": "S5",
+      "to": "T",
+      "kind": "data"
+    }
+  ]
+}
