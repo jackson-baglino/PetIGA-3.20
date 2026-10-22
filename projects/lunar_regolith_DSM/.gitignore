@@ -80,6 +80,7 @@ runs/**/runs.db
 runs/**/pages
 runs/**/marker
 runs/**/crops/
+runs/**/inspection/
 runs/**/runs.db
 runs/**/transcripts/
 runs/**/transcript*.jsonl

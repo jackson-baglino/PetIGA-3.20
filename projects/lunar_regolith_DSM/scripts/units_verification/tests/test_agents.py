@@ -162,3 +162,30 @@ class Calibration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Stability(unittest.TestCase):
+
+    def test_differences(self):
+        import reader_stability as rs
+        a = {"found": True, "printed_as": "ρ_i", "unit_as_printed": "kg m^-3", "value_as_printed": "918.9"}
+        self.assertEqual(rs.differences(a, dict(a, printed_as="ρi", unit_as_printed="kg/m^3")), [])
+        self.assertEqual(rs.differences(a, dict(a, unit_as_printed="kg m^3")), ["unit"])
+        self.assertEqual(rs.differences(a, dict(a, value_as_printed="918.0")), ["value"])
+        self.assertEqual(rs.differences(a, dict(a, found=False)), ["found"])
+        self.assertEqual(rs.differences({"found": False}, {"found": False}), [])
+
+
+class InspectionSet(unittest.TestCase):
+
+    def test_select(self):
+        import inspect_set
+        comp = [{"symbol": f"s{i}", "verdict": "AGREE"} for i in range(20)] + [{"symbol": "d", "verdict": "DISAGREE"}]
+        s4m = {c["symbol"]: {"meaning_verdict": "matches"} for c in comp}
+        s4m["s3"] = {"meaning_verdict": "table_wrong"}
+        disputed, sample = inspect_set.select(comp, {"d": {"verdict": "read_right", "consistency": "consistent"}},
+                                              s4m, 0.10, 7)
+        self.assertEqual([d for d, _ in disputed], ["s3", "d"])
+        self.assertEqual(len(sample), 2)                         # ceil(0.1 x 19)
+        self.assertEqual(sample, inspect_set.select(comp, {}, s4m, 0.10, 7)[1])   # same seed, same draw
+        self.assertTrue(set(sample).isdisjoint({"s3", "d"}))

@@ -140,6 +140,9 @@ $P $S/calibrate.py      --run-id $R        # C0   (needs S0, S1, S1b)
 $P $S/read_pages.py     --run-id $R        # S2   (--rereads after S3; --repeat 5 --out-dir reads_repeat)
 $P $S/compare_units.py  --run-id $R        # S3   (--marker-only: Marker side alone)
 $P $S/check_rows.py     --run-id $R --task S4    # S4, then --task S4m
+$P $S/read_pages.py     --run-id $R --repeat 5 --out-dir reads_repeat --stage S2-repeat
+$P $S/reader_stability.py --run-id $R      # reader stability: 5 pages read twice
+$P $S/inspect_set.py    --run-id $R        # U1: inspection.json + local inspection/index.html
 $P -m unittest discover -s $S/tests        # tests
 ```
 

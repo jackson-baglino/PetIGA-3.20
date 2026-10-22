@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 
 import agents
+import render_pages
 import uvlib
 
 AGENT = "morty-unit-reader"
@@ -123,6 +124,10 @@ def main(argv=None):
             groups = {k: v for k, v in groups.items() if k in keep}
         if a.repeat:
             groups = dict(sorted(groups.items())[:a.repeat])
+        missing = [f"{s_}:{p_}" for s_, p_ in groups if not (rdir / "pages" / f"{s_}_p{p_}.png").exists()]
+        if missing:
+            render_pages.main(["--run-id", a.run_id, *sum((["--add", m] for m in missing), [])]
+                              + (["--allow-dirty"] if a.allow_dirty else []))
         done, failed = run_groups(rdir, a.stage, groups, a.out_dir)
     except uvlib.StageError as e:
         print(f"STOP: {e}", file=sys.stderr)
