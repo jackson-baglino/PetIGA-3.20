@@ -35,8 +35,9 @@ build and run details are in `README.md`; project goals in
 
 ## Hard limits
 
-- Never launch a simulation or submit an HPC job. Prepare the exact command and
-  hand it to the user.
+- Never launch more than one simulation without specific instructions to do
+  so. An HPC submission counts as all the runs it contains. For anything
+  more, prepare the exact command and hand it to the user.
 - Never change solver physics or defaults unless asked. New physics goes behind
   a runtime option on a `feat/*` branch.
 - Never force-push `main`; never use `--no-verify`; never commit secrets,
@@ -67,6 +68,14 @@ more HPC jobs go through `scripts/HPC/submit_batch.sh`.
   their inputs as arguments or files and print what they used.
 - Python dependencies are pinned in `requirements.txt`; do not bump numpy or
   scipy (the HPC caps Python at 3.11).
+
+## Agent names
+
+An agent's name is `<character>-<purpose>`, where the character is set by its
+model family and the purpose is one or two words: Fable → `rick`, Opus →
+`beth`, Sonnet → `morty`, Haiku → `jerry` (for example `morty-reader`,
+`beth-checker`). The prefix must match the `model` field. Changing an
+agent's model means a new name, so old run logs still say which model ran.
 
 ## Sessions and housekeeping
 
