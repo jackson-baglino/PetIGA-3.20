@@ -2,6 +2,20 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-10-22 (3) — comp_eps d0 aligned; course repository mirrored
+
+- Done: comp_eps.py computes d0 exactly as the solver (−0.14 %; golden
+  values regenerated). Course repository now mirrors this project:
+  old export history kept as tag archive/2026-10-18-export, main replaced
+  by the subtree-split history (one approved force-push),
+  feat/diag-air-film pushed (split from projects/sublimation_pf).
+  scripts/sync_course.sh mirrors main and feat/* from now on.
+- Remaining: user checks wheeler_2010 in library/references.bib; decide on
+  the visibility of jackson-baglino/PetIGA-3.20 (personal repos cannot be
+  "internal"); prune the repo-root settings.local.json; units verification
+  workflow; docs-synthesis pilot design.
+- Bottlenecks: none.
+
 ## 2026-10-22 (2) — d0 computed once; settings, library DOIs, units, memory split
 
 - Done: d0 computed once at start-up (K&P Eq. 13) and used everywhere;

@@ -100,6 +100,10 @@ docs). A one-parameter opts tweak usually does not need its own commit.
   or fewer, then a body explaining why.
 - `main` is the working branch. New physics goes on `feat/*`. Old work is
   under `archive/*` tags.
+- Two remotes: `origin` (jackson-baglino/PetIGA-3.20, the whole repository)
+  and `course` (the course repository, this project only). After pushing
+  `origin`, mirror `main` and `feat/*` to the course repository with
+  `scripts/sync_course.sh`. Never push `archive/*` refs there.
 
 ## Code style
 
