@@ -1,5 +1,5 @@
 {
-  "_note": "Read by locate_sources.py (S0). A file is a candidate for a source when its page-1 text contains the DOI (or, for a source without a DOI on page 1, the title). 'prefer' names the version of record when several files render pixel-identically (WORKFLOW.md §8.1).",
+  "_note": "Read by locate_sources.py (S0). A file is a candidate for a source when its page-1 text contains the DOI (or, for a source without a DOI on page 1, the title). 'prefer' names the version of record when several files render pixel-identically (WORKFLOW.md §8.1). 'related' lists sources whose pages may define this source's symbols (the SI's symbols are defined in the main paper); S1b indexes them too, for the S4m second pass.",
   "kaempfer_plapp_2009": {
     "doi": "10.1103/PhysRevE.79.031502",
     "title": "Phase-field modeling of dry snow metamorphism"
@@ -11,6 +11,9 @@
   "moure_fu_2024_SI": {
     "doi": null,
     "title": "Supporting Information: A phase-field model for wet snow metamorphism",
-    "prefer": "MoureFu2024_SI/moure_fu_2024_SI.pdf"
+    "prefer": "MoureFu2024_SI/moure_fu_2024_SI.pdf",
+    "related": [
+      "moure_fu_2024"
+    ]
   }
 }

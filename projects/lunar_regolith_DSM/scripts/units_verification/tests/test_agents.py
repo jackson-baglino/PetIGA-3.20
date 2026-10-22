@@ -102,6 +102,20 @@ class S4Consistency(unittest.TestCase):
         self.assertEqual(check_rows.judge_s4({"verdict": "cannot_tell", "unit": None}, c, t), "consistent")
 
 
+class DefinitionPages(unittest.TestCase):
+
+    def test_related_first_then_own_earliest_without_cited(self):
+        entry = {"pages": [9, 2, 6], "related_pages": {"paper": [5, 3]}}
+        self.assertEqual(check_rows.definition_pages("si", 9, entry), [("paper", 3), ("paper", 5), ("si", 2)])
+        self.assertEqual(check_rows.definition_pages("si", 9, {"pages": [9]}), [])
+
+    def test_index_has_related_pages_for_si_rows(self):
+        import marker_extract
+        rel = marker_extract.related_sources()
+        self.assertEqual(rel["moure_fu_2024_SI"], ["moure_fu_2024"])
+        self.assertEqual(rel["kaempfer_plapp_2009"], [])
+
+
 class Calibration(unittest.TestCase):
 
     def test_planted_table_round_trips(self):

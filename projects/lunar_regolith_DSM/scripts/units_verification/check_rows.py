@@ -9,7 +9,8 @@ pages where Marker's index finds it), the table's claim, the blind read, Marker'
 S3's reasons. Its answer is then checked by script: the unit it reports must parse, and must equal the table's
 unit for "table_right" and the read's for "read_right"; otherwise the verdict is marked inconsistent.
 S4m gives the checker one page and, for each row cited on it, the table's and the read's printed symbol and
-meaning. Anything but "matches" makes the row disputed.
+meaning (pass 1); a row it cannot settle there is asked again with up to 3 pages where Marker finds the symbol,
+the main paper first for SI rows (pass 2). Anything but "matches" after pass 2 makes the row disputed.
 Writes verdicts.json (keys S4 and S4m, one entry per symbol) and the manifest entry.
 """
 import argparse
@@ -136,37 +137,83 @@ def run_s4(rdir, rows, comp, index, stage="S4", run_id=None):
     return out
 
 
-def run_s4m(rdir, rows, comp, stage="S4m"):
+def definition_pages(c_source, cited, entry, limit=3):
+    """[(source, page)] where the symbol may be defined: related sources first (the SI's symbols are defined in the
+    main paper), then the row's own source, earliest pages first, never the cited page; at most `limit`."""
+    out = []
+    for src, pages in entry.get("related_pages", {}).items():
+        out += [(src, p) for p in sorted(pages)]
+    out += [(c_source, p) for p in sorted(entry.get("pages", [])) if p != cited]
+    return out[:limit]
+
+
+def _ensure_rendered(rdir, wanted, run_id):
+    missing = [f"{s}:{p}" for s, p in wanted if not (rdir / "pages" / f"{s}_p{p}.png").exists()]
+    if missing and run_id:
+        render_pages.main(["--run-id", run_id, *sum((["--add", m] for m in missing), [])])
+    return [(s, p) for s, p in wanted if (rdir / "pages" / f"{s}_p{p}.png").exists()]
+
+
+def _s4m_call(rdir, stage, label, task, images, want):
+    def check(o):
+        got = sorted(x["symbol"] for x in o["rows"])
+        return [] if got == sorted(want) else [f"answered {got}, asked {sorted(want)}"]
+    return agents.call_agent(rdir, stage, AGENT, label, task, images, S4M_SCHEMA, check=check)
+
+
+def run_s4m(rdir, rows, comp, index, stage="S4m", run_id=None):
+    """Pass 1: one call per cited page, every row on it. Pass 2: one call per row that pass 1 could not settle,
+    with the cited page and up to 3 pages where Marker finds the symbol (definition_pages)."""
     by_sym = {c["symbol"]: c for c in comp["rows"]}
     groups = {}
     for r in rows:
         groups.setdefault((r["source"], r["page"]), []).append(r)
+
+    def item(r):
+        rd = by_sym.get(r["symbol"], {}).get("read") or {}
+        return {"symbol": r["symbol"], "table_printed_as": r["printed"], "table_meaning": r["meaning"],
+                "read_printed_as": rd.get("printed_as"), "read_meaning": rd.get("meaning")}
     out = {}
     for (src, pg), grp in sorted(groups.items()):
         img = rdir / "pages" / f"{src}_p{pg}.png"
-        items = []
-        for r in grp:
-            rd = by_sym.get(r["symbol"], {}).get("read") or {}
-            items.append({"symbol": r["symbol"], "table_printed_as": r["printed"], "table_meaning": r["meaning"],
-                          "read_printed_as": rd.get("printed_as"), "read_meaning": rd.get("meaning")})
-        task = ("Task S4m: review meanings on one page.\nPage image: page.png.\nRows cited on this page:\n"
-                + json.dumps(items, ensure_ascii=False, indent=1))
-        want = sorted(r["symbol"] for r in grp)
-
-        def check(o, want=want):
-            got = sorted(x["symbol"] for x in o["rows"])
-            return [] if got == want else [f"answered {got}, asked {want}"]
+        task = ("Task S4m (pass 1): review meanings on one page.\nPage image: page.png.\nRows cited on this page:\n"
+                + json.dumps([item(r) for r in grp], ensure_ascii=False, indent=1))
         try:
-            res, info = agents.call_agent(rdir, stage, AGENT, f"{src}_p{pg}", task, {"page.png": img}, S4M_SCHEMA,
-                                          check=check)
+            res, info = _s4m_call(rdir, stage, f"{src}_p{pg}", task, {"page.png": img}, [r["symbol"] for r in grp])
             for x in res["rows"]:
-                out[x["symbol"]] = dict(x, page=pg, call=info)
+                out[x["symbol"]] = dict(x, page=pg, pass_=1, call=info)
         except agents.AgentError as e:
             for r in grp:
-                out[r["symbol"]] = {"symbol": r["symbol"], "meaning_verdict": "call_failed",
+                out[r["symbol"]] = {"symbol": r["symbol"], "meaning_verdict": "call_failed", "pass_": 1,
                                     "error": json.loads(str(e))}
-        print(f"  S4m {src} p{pg}: " + ", ".join(f"{r['symbol']}={out[r['symbol']]['meaning_verdict']}"
-                                                for r in grp), flush=True)
+        print(f"  S4m pass 1 {src} p{pg}: " + ", ".join(f"{r['symbol']}={out[r['symbol']]['meaning_verdict']}"
+                                                       for r in grp), flush=True)
+    for r in rows:
+        if out[r["symbol"]]["meaning_verdict"] != "cannot_tell":
+            continue
+        extra = _ensure_rendered(rdir, definition_pages(r["source"], r["page"], index.get(r["symbol"], {})), run_id)
+        if not extra:
+            out[r["symbol"]]["pass2"] = "no other page where Marker finds the symbol"
+            continue
+        images = {"cited.png": rdir / "pages" / f"{r['source']}_p{r['page']}.png"}
+        names = [f"cited.png ({r['source']}, page {r['page']}, the page the table cites)"]
+        for s_, p_ in extra:
+            images[f"{s_}_p{p_}.png"] = rdir / "pages" / f"{s_}_p{p_}.png"
+            names.append(f"{s_}_p{p_}.png ({s_}, page {p_})")
+        task = ("Task S4m (pass 2): the cited page alone did not settle this row's meaning. Look for where the "
+                "symbol is defined on the other pages; give the page's wording, and in `location` name the image "
+                "and the place on it.\nPage images: " + "; ".join(names) + ".\nRow:\n"
+                + json.dumps([item(r)], ensure_ascii=False, indent=1))
+        first = out[r["symbol"]]
+        try:
+            res, info = _s4m_call(rdir, stage, f"{r['symbol']}_pass2", task, images, [r["symbol"]])
+            out[r["symbol"]] = dict(res["rows"][0], page=r["page"], pass_=2, pages_shown=[f"{s_}_p{p_}" for s_, p_ in
+                                                                                       extra], call=info,
+                                    pass1=first)
+        except agents.AgentError as e:
+            first["pass2"] = {"error": json.loads(str(e))}
+        print(f"  S4m pass 2 {r['symbol']}: {out[r['symbol']]['meaning_verdict']} "
+              f"(pages {[f'{s_} p{p_}' for s_, p_ in extra]})", flush=True)
     return out
 
 
@@ -187,7 +234,8 @@ def main(argv=None):
         if a.task == "S4" and pending:
             raise uvlib.StageError(f"re-reads still pending for {pending}; run read_pages.py --rereads, then S3")
         index = json.loads((rdir / "marker_index.json").read_text())
-        res = run_s4(rdir, rows, comp, index, run_id=a.run_id) if a.task == "S4" else run_s4m(rdir, rows, comp)
+        res = run_s4(rdir, rows, comp, index, run_id=a.run_id) if a.task == "S4" else \
+            run_s4m(rdir, rows, comp, index, run_id=a.run_id)
     except uvlib.StageError as e:
         print(f"STOP: {e}", file=sys.stderr)
         return 2

@@ -36,7 +36,7 @@ Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `s
 | S2 | Blind read | `morty-unit-reader` | one page image + the symbol names expected on it (no units, no values) | `reads/<page>.json` per symbol: printed form, meaning, value as printed, unit as printed, where on the page, or not found | JSON schema; every requested symbol answered | schema failure → re-ask once, then log |
 | S3 | Compare | `compare_units.py` | table row, blind read, Marker reading | AGREE / DISAGREE / NOT_FOUND per row | units parsed to dimension vector and scale (J m⁻³ K⁻¹ ≡ J/(m³ K); °C difference ≡ K); printed symbols compared after dropping sub/superscript marks (ρi ≡ ρ_i; ρv ≠ ρ_vs); AGREE only if the table, the blind read and Marker all agree; NOT_FOUND re-read on the page Marker's index points to | — |
 | S4 | Adjudicate | `beth-unit-checker` | for each DISAGREE/NOT_FOUND row: page image, table row, blind read, Marker reading | verdict: table right / read right / both wrong (with correction) / cannot tell, plus location on the page | verdict schema; a correction must re-pass S3 | "cannot tell" → user |
-| S4m | Meaning review | `beth-unit-checker` | per page: the page image and, for every row cited on it, the table's printed symbol and meaning and the blind read's meaning | per row: meaning matches / table wrong (with the page's wording) / cannot tell, plus location | verdict schema | anything but "matches" → the row is disputed and goes to U1 |
+| S4m | Meaning review (after S3, on every row, independent of S4) | `beth-unit-checker` | pass 1, per page: the page image and, for every row cited on it, the table's printed symbol and meaning and the blind read's meaning; pass 2, per row that pass 1 could not settle ("cannot tell"): the cited page plus up to 3 pages where Marker finds the symbol, earliest first, including the main paper for SI rows (where the SI's symbols are defined) | per row: meaning matches / table wrong (with the page's wording and the page it is defined on) / cannot tell, plus location | verdict schema | a pass-1 "cannot tell" goes to pass 2 (or straight to U1 if Marker finds the symbol on no other page); anything but "matches" after that → the row is disputed and goes to U1 |
 | U1 | Inspect | user | every row from S4 or S4m + a random 10 % of AGREE rows (rounded up), each with its page crop | approve or correct | — | user decides |
 | S5 | Apply | `apply_verdicts.py` | verdicts, user decisions | updated `units.md`, run manifest | every row has a status; header removed only if none unresolved | — |
 
@@ -63,10 +63,11 @@ skills:       none
 MCP servers:  none
 reads:        S4: page PNG, the table row, the blind read, the Marker reading
               S4m: page PNG, each row's printed symbol and meaning (table and read)
+                   (pass 2: also the pages where the symbol is defined)
 writes:       S4: {symbol, verdict, unit, value, meaning, location, reason}
               S4m: per row {symbol, meaning_verdict, page_wording, location, reason}
 may not:      fix rows it was not given; answer from memory of the paper
-context:      fresh per disputed row (S4); fresh per page (S4m)
+context:      fresh per disputed row (S4); fresh per page (S4m pass 1) or per row (pass 2)
 ```
 
 Each agent call runs headless from `scripts/units_verification/agents.py`,
@@ -152,8 +153,7 @@ Read schema (one object per symbol):
 | Text layer drops exponents and minus signs | agents get images only |
 | Reader anchors on the claimed unit | blind read (no units or values given) |
 | Wrong page in the table | Marker's symbol → page index; NOT_FOUND re-read on that page |
-| Marker misreads Greek letters or subscripts | S3 compares units, not symbol strings; S4 sees the image |
-| Subscripts and Greek letters misread | S3 compares dimensions, not strings; S4 sees the image |
+| Marker or the reader misreads Greek letters or subscripts | units are compared as dimensions, not strings; printed symbols after normalisation; S4 and S4m see the image |
 | "Verified" rows that were never re-checked | every row passes through S2–S3 again |
 | Two agents share a blind spot | S4 uses a different model; user inspects a random sample |
 | Wrong meaning on a row whose unit agrees | S4m reviews every row's meaning against the image; S3 compares printed symbols |

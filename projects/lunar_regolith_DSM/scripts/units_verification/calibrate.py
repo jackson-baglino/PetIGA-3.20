@@ -110,10 +110,12 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--table", type=Path, default=uvlib.UNITS_MD)
+    ap.add_argument("--tag", default="", help="a later calibration of the same run: calibration_<tag>/, C0_<tag>")
     ap.add_argument("--allow-dirty", action="store_true", help="development only: run with uncommitted definitions")
     a = ap.parse_args(argv)
     rdir = uvlib.run_dir(a.run_id)
-    cdir = rdir / "calibration"
+    suffix = f"_{a.tag}" if a.tag else ""
+    cdir = rdir / ("calibration" + (f"_{a.tag}" if a.tag else ""))
     print(f"C0 calibrate: run={uvlib.rel(rdir)} table={uvlib.rel(a.table)} plants={len(PLANTS)} "
           f"controls={len(CONTROLS)}")
     try:
@@ -133,7 +135,7 @@ def main(argv=None):
             if not (cdir / name).exists():
                 os.symlink(Path("..") / name, cdir / name)
         rows = uvlib.read_table(cdir / "units_planted.md")
-        index = marker_extract.build_index(rows, cdir / "marker", n_pages)
+        index = marker_extract.build_index(rows, cdir / "marker", n_pages, marker_extract.related_sources())
         uvlib.write_json(cdir / "marker_index.json", index)
         need = sorted({(r["source"], p) for r in rows for p in [r["page"]] + index[r["symbol"]]["pages"]})
         missing = [f"{s}:{p}" for s, p in need if not (rdir / "pages" / f"{s}_p{p}.png").exists()]
@@ -147,7 +149,7 @@ def main(argv=None):
         def s3():
             reads = compare_units.load_reads(cdir)
             res = [compare_units.compare_row(r, reads, cdir / "marker", index) for r in rows]
-            uvlib.write_json(cdir / "compare.json", {"table": "calibration/units_planted.md", "rows": res})
+            uvlib.write_json(cdir / "compare.json", {"table": f"{cdir.name}/units_planted.md", "rows": res})
             return {"rows": res}
         comp = s3()
         print("C0-S2: re-reads", flush=True)
@@ -155,17 +157,17 @@ def main(argv=None):
         comp = s3()
         print("C0-S3: " + ", ".join(f"{c['symbol']}={c['verdict']}" for c in comp["rows"]), flush=True)
         print("C0-S4: adjudication", flush=True)
-        s4 = check_rows.run_s4(cdir, rows, comp, index, stage="C0-S4")
+        s4 = check_rows.run_s4(cdir, rows, comp, index, stage="C0-S4", run_id=a.run_id)
         print("C0-S4m: meaning review", flush=True)
-        s4m = check_rows.run_s4m(cdir, rows, comp, stage="C0-S4m")
+        s4m = check_rows.run_s4m(cdir, rows, comp, index, stage="C0-S4m", run_id=a.run_id)
         uvlib.write_json(cdir / "verdicts.json", {"S4": s4, "S4m": s4m})
     except uvlib.StageError as e:
         print(f"STOP: {e}", file=sys.stderr)
         return 2
     result = score(plants, comp, s4, s4m)
     result.update({"read_failures": failed + failed2})
-    uvlib.write_json(rdir / "calibration.json", result)
-    uvlib.update_manifest(rdir, "C0", {
+    uvlib.write_json(rdir / f"calibration{suffix}.json", result)
+    uvlib.update_manifest(rdir, f"C0{suffix}", {
         "agents": {n: agents.load_agent(n)["sha256"] for n in ("morty-unit-reader", "beth-unit-checker")},
         "table_sha256": uvlib.sha256(a.table), "planted_table_sha256": uvlib.sha256(cdir / "units_planted.md"),
         "criteria": result["criteria"], "control_false_alarms": result["control_false_alarms"],

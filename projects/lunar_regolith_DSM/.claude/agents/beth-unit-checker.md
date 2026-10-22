@@ -52,6 +52,13 @@ and the blind read's printed symbol and meaning. For each row decide:
 Fill `page_wording` with the page's own words (at most 20 words), `location`,
 and `reason` (one sentence; say what differs when it is not `matches`).
 
+**Pass 2.** If the task says pass 2, you get one row that the cited page alone
+could not settle, with the cited page and up to three more pages where the
+symbol appears (for the Supporting Information, pages of the main paper, where
+its symbols are defined). Judge the meaning from where the symbol is defined,
+and name that image and place in `location`. Use `cannot_tell` only if none of
+the pages defines it.
+
 ## Rules
 
 - Judge only the rows you are given; do not propose other changes.

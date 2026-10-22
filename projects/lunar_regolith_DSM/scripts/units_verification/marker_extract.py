@@ -12,6 +12,7 @@ Page Markdown is paper text and is not committed; its sha256 is, in manifest.jso
 """
 import argparse
 import importlib.metadata
+import json
 import re
 import sys
 import tempfile
@@ -62,17 +63,36 @@ def run_marker(pdf, n_pages, outdir, source):
     return hashes, failed, seconds
 
 
-def build_index(rows, mdir, n_pages):
-    """{symbol: {source, printed, cited_page, pages}}: pages whose Marker text contains the printed symbol."""
+def related_sources(spec_file=uvlib.WORKFLOW_DIR / "sources.json"):
+    """{source: [sources whose pages may define its symbols]} from the workflow's sources.json."""
+    spec = json.loads(Path(spec_file).read_text())
+    return {k: v.get("related", []) for k, v in spec.items() if not k.startswith("_")}
+
+
+def symbol_pages(mdir, source, n, printed):
+    hits = []
+    for p in range(1, n + 1):
+        f = mdir / f"{source}_p{p}.md"
+        if f.exists() and unitparse.find_symbol(unitparse.flatten_markdown(f.read_text()), printed):
+            hits.append(p)
+    return hits
+
+
+def build_index(rows, mdir, n_pages, related=None):
+    """{symbol: {source, printed, cited_page, pages, related_pages}}: pages whose Marker text has the printed symbol.
+
+    related_pages: {other source: pages} for the sources listed as related to the row's source (S4m pass 2).
+    """
+    related = related or {}
     index = {}
     for r in rows:
-        hits = []
+        pages, rel_pages = [], {}
         if r["printed"]:
-            for p in range(1, n_pages[r["source"]] + 1):
-                f = mdir / f"{r['source']}_p{p}.md"
-                if f.exists() and unitparse.find_symbol(unitparse.flatten_markdown(f.read_text()), r["printed"]):
-                    hits.append(p)
-        index[r["symbol"]] = {"source": r["source"], "printed": r["printed"], "cited_page": r["page"], "pages": hits}
+            pages = symbol_pages(mdir, r["source"], n_pages[r["source"]], r["printed"])
+            rel_pages = {o: symbol_pages(mdir, o, n_pages[o], r["printed"])
+                         for o in related.get(r["source"], []) if o in n_pages}
+        index[r["symbol"]] = {"source": r["source"], "printed": r["printed"], "cited_page": r["page"],
+                              "pages": pages, "related_pages": rel_pages}
     return index
 
 
@@ -109,7 +129,7 @@ def main(argv=None):
             record["failed_pages"][src], record["seconds"][src] = failed, seconds
             print(f"  {src}: {len(hashes)} pages read, failed pages {failed or 'none'}, {seconds} s")
         rows = uvlib.literature_rows(uvlib.read_table(a.table))
-        index = build_index(rows, mdir, {s: v["pages"] for s, v in sources.items()})
+        index = build_index(rows, mdir, {s: v["pages"] for s, v in sources.items()}, related_sources())
         uvlib.write_json(rdir / "marker_index.json", index)
     except uvlib.StageError as e:
         print(f"STOP: {e}", file=sys.stderr)

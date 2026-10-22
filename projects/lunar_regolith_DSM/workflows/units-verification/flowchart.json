@@ -1,10 +1,10 @@
 {
   "title": "units-verification",
   "summary": [
-    "Checks every row of memory/semantic/units.md (62 symbols from Kaempfer & Plapp 2009 and Moure & Fu 2024 with its SI) against images of the cited pages. Marker (a local OCR model) and a Sonnet agent each read the pages independently, the agent without seeing the table's answer; a script compares both readings with the table; an Opus agent judges only the rows that disagree; the user inspects every disputed row and a random sample of agreed ones.",
-    "The pipeline is first run on eight rows with planted errors, and the real run starts only if it catches them. Agents see page images only, never the PDF text layer, which drops exponents and minus signs."
+    "Checks every row of memory/semantic/units.md (58 symbols from Kaempfer & Plapp 2009 and Moure & Fu 2024 with its SI) against images of the cited pages: unit, printed symbol, meaning, page and printed value. Marker (a local OCR model) and a Sonnet agent each read the pages independently, the agent without seeing the table's answer; a script compares both readings with the table; an Opus agent judges the rows that disagree and reviews every row's meaning. Agents run headless in a clean folder holding only page images, and a script audits each transcript.",
+    "The pipeline is first run on ten rows with planted errors and four untouched controls, and the real run starts only if it catches them. The user inspects every row the Opus agent flagged plus a random 10 % of the agreed rows. Page images and Marker text are not committed; they are reproducible from the DOIs and PDF hashes in the manifest."
   ],
-  "status": "Design for review, 2026-10-22. Nothing is built yet. Details: WORKFLOW.md.",
+  "status": "Stages 1 and 2 built; agents awaiting approval; real run, U1 and S5 not yet. 2026-10-22. Details: WORKFLOW.md.",
   "lanes": [
     {
       "id": "user",
@@ -53,7 +53,7 @@
       "row": 0,
       "kind": "record",
       "title": "manifest.json",
-      "job": "Run record: sources, file hashes, git commit, Claude Code version, model IDs."
+      "job": "Run record: sources, hashes of PDFs, pages and agent files, git commit, tool versions, model IDs."
     },
     {
       "id": "S1",
@@ -72,7 +72,7 @@
       "row": 1,
       "kind": "record",
       "title": "pages/<source>_p<N>.png",
-      "job": "One image per page, with its SHA-256 in the manifest."
+      "job": "One image per page, with its SHA-256 in the manifest; not committed, re-rendered from the DOIs and hashes."
     },
     {
       "id": "S1b",
@@ -92,7 +92,7 @@
       "row": 1.5,
       "kind": "record",
       "title": "marker/<source>_p<N>.md",
-      "job": "Marker's reading of each page, and the symbol-to-page index."
+      "job": "Marker's reading of each page and the symbol-to-page index; page text is not committed."
     },
     {
       "id": "C0",
@@ -100,10 +100,11 @@
       "row": 2,
       "kind": "script",
       "title": "C0 calibrate.py (runs once, first)",
-      "job": "Runs S2 to S4 on eight rows with planted errors and checks they are caught.",
+      "job": "Runs S2 to S4m on ten rows with planted errors and four untouched controls and checks they are caught.",
       "details": [
-        "Planted: flipped exponent sign, wrong prefix, swapped unit, wrong page",
-        "Pass: S3 flags 8/8 and S4 rejects at least 7/8"
+        "Planted: 8 unit or page errors (flipped exponent sign, wrong prefix, swapped unit, wrong page) and 2 swapped meanings",
+        "Pass: S3 flags 8/8, S4 rejects at least 7/8, S4m catches 2/2",
+        "False alarms on the 4 controls are reported"
       ]
     },
     {
@@ -128,7 +129,8 @@
       "details": [
         "Given only the symbol names, never the table's units or values",
         "Returns printed form, meaning, value, unit and location, or not found",
-        "Fresh context per page"
+        "Fresh context per page",
+        "Runs headless in a clean folder with only the page image; transcript audited for the pinned model and Read-only use"
       ]
     },
     {
@@ -145,10 +147,11 @@
       "row": 4,
       "kind": "script",
       "title": "S3 compare_units.py",
-      "job": "Compares the table's unit with the blind reading and with Marker's, by dimension and scale.",
+      "job": "Compares the table's unit and printed symbol with the blind reading and with Marker's, by dimension and scale.",
       "details": [
         "J/(m^3 K) equals J m^-3 K^-1; a degC difference equals K",
-        "AGREE only if all three agree; otherwise DISAGREE or NOT_FOUND"
+        "Printed symbols compared without sub/superscript marks: ρi equals ρ_i; ρv differs from ρ_vs",
+        "AGREE only if the table, the blind read and Marker all agree; otherwise DISAGREE or NOT_FOUND"
       ]
     },
     {
@@ -161,11 +164,12 @@
       "tools": [
         "Read"
       ],
-      "job": "Decides each disputed row from the page image and states where on the page the answer is.",
+      "job": "Decides each DISAGREE or NOT_FOUND row from the page image and states where on the page the answer is.",
       "details": [
         "Gets the page image, the table row, the blind reading and Marker's",
         "Verdict: table right, reading right, both wrong (with fix) or cannot tell",
-        "Fresh context per row; a fix must pass S3 again"
+        "Fresh context per row; a fix must pass S3 again; cannot tell goes to the user",
+        "Same headless clean-folder run and transcript audit as S2"
       ]
     },
     {
@@ -174,15 +178,33 @@
       "row": 5,
       "kind": "record",
       "title": "verdicts.json",
-      "job": "One verdict per disputed row, with its location on the page."
+      "job": "One verdict per S4 or S4m row, with its location on the page."
+    },
+    {
+      "id": "S4m",
+      "lane": "agent",
+      "row": 6,
+      "kind": "agent",
+      "title": "S4m beth-unit-checker (meaning review)",
+      "model": "claude-opus-5-5",
+      "tools": [
+        "Read"
+      ],
+      "job": "Reviews whether each row's meaning matches the quantity the cited page defines for its symbol.",
+      "details": [
+        "Pass 1, per page: page image, and per row the table's symbol and meaning and the blind read's meaning",
+        "Pass 2, per row pass 1 could not settle: cited page plus up to 3 pages where Marker finds the symbol, earliest first, including the main paper for SI rows",
+        "Verdict: matches, table wrong (page's wording and page) or cannot tell, with location",
+        "Anything but matches after pass 2: row is disputed and goes to U1"
+      ]
     },
     {
       "id": "U1",
       "lane": "user",
-      "row": 6,
+      "row": 7,
       "kind": "user",
       "title": "U1 Inspect",
-      "job": "Approve or correct every disputed row and a random 10 % of the agreed rows.",
+      "job": "Approve or correct every row from S4 or S4m, and a random 10 % of the agreed rows (rounded up).",
       "details": [
         "Each shown with its page crop beside the table row and the reading"
       ]
@@ -190,7 +212,7 @@
     {
       "id": "S5",
       "lane": "script",
-      "row": 7,
+      "row": 8,
       "kind": "script",
       "title": "S5 apply_verdicts.py",
       "job": "Writes each row's final status into units.md and closes the run record.",
@@ -201,7 +223,7 @@
     {
       "id": "T",
       "lane": "record",
-      "row": 7,
+      "row": 8,
       "kind": "record",
       "title": "memory/semantic/units.md",
       "job": "The verified table, committed with the run manifest."
@@ -253,7 +275,7 @@
       "from": "S3",
       "to": "S2",
       "kind": "loop",
-      "label": "NOT_FOUND: re-read Marker's page"
+      "label": "NOT_FOUND: re-read"
     },
     {
       "from": "S3",
@@ -265,12 +287,6 @@
       "from": "S4",
       "to": "V",
       "kind": "data"
-    },
-    {
-      "from": "S4",
-      "to": "U1",
-      "kind": "flow",
-      "label": "every verdict"
     },
     {
       "from": "S3",
@@ -302,6 +318,29 @@
       "from": "S1b",
       "to": "C0",
       "kind": "flow"
+    },
+    {
+      "from": "S3",
+      "to": "S4m",
+      "kind": "flow",
+      "label": "every row"
+    },
+    {
+      "from": "S4m",
+      "to": "V",
+      "kind": "data"
+    },
+    {
+      "from": "S4",
+      "to": "U1",
+      "kind": "flow",
+      "label": "every verdict"
+    },
+    {
+      "from": "S4m",
+      "to": "U1",
+      "kind": "flow",
+      "label": "not matches"
     }
   ]
 }
