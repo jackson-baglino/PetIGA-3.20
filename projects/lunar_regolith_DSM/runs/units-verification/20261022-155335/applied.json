@@ -1,0 +1,387 @@
+{
+  "rows": [
+    {
+      "basis": "out of scope (not a literature row)",
+      "symbol": "M0",
+      "status": "unchanged",
+      "new_symbol": "M0"
+    },
+    {
+      "basis": "out of scope (not a literature row)",
+      "symbol": "alpha",
+      "status": "unchanged",
+      "new_symbol": "alpha"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "Ca",
+      "status": "verified",
+      "new_symbol": "Ca"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "Ci",
+      "status": "verified",
+      "new_symbol": "Ci"
+    },
+    {
+      "basis": "re-check agrees",
+      "edit": {
+        "symbol": "D_v_STP",
+        "meaning": "water vapor diffusion coefficient in air at standard pressure and temperature; the same parameter as D_v0 of Moure and Fu (printed as D_v^STP)"
+      },
+      "symbol": "D_STP",
+      "status": "verified",
+      "new_symbol": "D_v_STP"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "D_v",
+      "status": "verified",
+      "new_symbol": "D_v"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "L_sg",
+      "status": "verified",
+      "new_symbol": "L_sg"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "Pa",
+      "status": "verified",
+      "new_symbol": "Pa"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "R_da",
+      "status": "verified",
+      "new_symbol": "R_da"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "R_v",
+      "status": "verified",
+      "new_symbol": "R_v"
+    },
+    {
+      "basis": "re-check agrees",
+      "edit": {
+        "meaning": "reference temperature converting °C to K, T_K = T_C + T_0 (printed as T0)",
+        "source": "moure_fu_2024",
+        "page": 3
+      },
+      "symbol": "T0",
+      "status": "verified",
+      "new_symbol": "T0"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "T_STP",
+      "status": "verified",
+      "new_symbol": "T_STP"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "a",
+      "status": "verified",
+      "new_symbol": "a"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "beta",
+      "status": "verified",
+      "new_symbol": "beta"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "d0",
+      "status": "verified",
+      "new_symbol": "d0"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "gamma",
+      "status": "verified",
+      "new_symbol": "gamma"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "k",
+      "status": "verified",
+      "new_symbol": "k"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "kappa_a",
+      "status": "verified",
+      "new_symbol": "kappa_a"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "kappa_i",
+      "status": "verified",
+      "new_symbol": "kappa_i"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "m",
+      "status": "verified",
+      "new_symbol": "m"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "rho_a",
+      "status": "verified",
+      "new_symbol": "rho_a"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "rho_i",
+      "status": "verified",
+      "new_symbol": "rho_i"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "rho_v",
+      "status": "verified",
+      "new_symbol": "rho_v"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "v_n",
+      "status": "verified",
+      "new_symbol": "v_n"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "x_s",
+      "status": "verified",
+      "new_symbol": "x_s"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "L",
+      "status": "verified",
+      "new_symbol": "L"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "W",
+      "status": "verified",
+      "new_symbol": "W"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "t_D",
+      "status": "verified",
+      "new_symbol": "t_D"
+    },
+    {
+      "basis": "user (U1): Not used in the Moure and Fu form of the model that this project uses.",
+      "symbol": "t_n",
+      "status": "dropped",
+      "new_symbol": null
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "Deltat",
+      "status": "verified",
+      "new_symbol": "Deltat"
+    },
+    {
+      "basis": "user (U1): A boundary temperature for one K&P simulation, not a model parameter.",
+      "symbol": "T_cold",
+      "status": "dropped",
+      "new_symbol": null
+    },
+    {
+      "basis": "user (U1): A boundary temperature for one K&P simulation, not a model parameter.",
+      "symbol": "T_hot",
+      "status": "dropped",
+      "new_symbol": null
+    },
+    {
+      "basis": "user approved",
+      "symbol": "t",
+      "status": "verified",
+      "new_symbol": "t"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "h",
+      "status": "verified",
+      "new_symbol": "h"
+    },
+    {
+      "basis": "re-check agrees",
+      "edit": {
+        "symbol": "P_a",
+        "meaning": "atmospheric pressure (printed as Pa)",
+        "source": "moure_fu_2024_SI",
+        "page": 9
+      },
+      "symbol": "P",
+      "status": "verified",
+      "new_symbol": "P_a"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "eps",
+      "status": "verified",
+      "new_symbol": "eps"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "M_j",
+      "status": "verified",
+      "new_symbol": "M_j"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "alpha_j",
+      "status": "verified",
+      "new_symbol": "alpha_j"
+    },
+    {
+      "basis": "user (U1): Kinetic attachment coefficient for solidification; not in this project's dry-snow model.",
+      "symbol": "beta_sol",
+      "status": "dropped",
+      "new_symbol": null
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "d_j",
+      "status": "verified",
+      "new_symbol": "d_j"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "u_j",
+      "status": "verified",
+      "new_symbol": "u_j"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "v_n_j",
+      "status": "verified",
+      "new_symbol": "v_n_j"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "chi",
+      "status": "verified",
+      "new_symbol": "chi"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "D_v0",
+      "status": "verified",
+      "new_symbol": "D_v0"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "K_a",
+      "status": "verified",
+      "new_symbol": "K_a"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "K_i",
+      "status": "verified",
+      "new_symbol": "K_i"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "K_w",
+      "status": "verified",
+      "new_symbol": "K_w"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "L_sol",
+      "status": "verified",
+      "new_symbol": "L_sol"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "L_sub",
+      "status": "verified",
+      "new_symbol": "L_sub"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "Lambda",
+      "status": "verified",
+      "new_symbol": "Lambda"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "alpha_nucl",
+      "status": "verified",
+      "new_symbol": "alpha_nucl"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "c_p_a",
+      "status": "verified",
+      "new_symbol": "c_p_a"
+    },
+    {
+      "basis": "user approved",
+      "symbol": "c_p_i",
+      "status": "verified",
+      "new_symbol": "c_p_i"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "c_p_w",
+      "status": "verified",
+      "new_symbol": "c_p_w"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "gamma_ia",
+      "status": "verified",
+      "new_symbol": "gamma_ia"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "gamma_iw",
+      "status": "verified",
+      "new_symbol": "gamma_iw"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "gamma_wa",
+      "status": "verified",
+      "new_symbol": "gamma_wa"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "rho_w",
+      "status": "verified",
+      "new_symbol": "rho_w"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "xi_T",
+      "status": "verified",
+      "new_symbol": "xi_T"
+    },
+    {
+      "basis": "S3 AGREE and S4m matches",
+      "symbol": "xi_v",
+      "status": "verified",
+      "new_symbol": "xi_v"
+    }
+  ],
+  "verified": 54,
+  "unresolved": [],
+  "dropped": [
+    "t_n",
+    "T_cold",
+    "T_hot",
+    "beta_sol"
+  ]
+}

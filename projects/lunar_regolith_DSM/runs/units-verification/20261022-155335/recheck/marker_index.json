@@ -1,0 +1,35 @@
+{
+  "D_v_STP": {
+    "source": "kaempfer_plapp_2009",
+    "printed": "D_v^STP",
+    "cited_page": 4,
+    "pages": [
+      4,
+      5
+    ],
+    "related_pages": {}
+  },
+  "T0": {
+    "source": "moure_fu_2024",
+    "printed": "T0",
+    "cited_page": 3,
+    "pages": [
+      3,
+      4
+    ],
+    "related_pages": {}
+  },
+  "P_a": {
+    "source": "moure_fu_2024_SI",
+    "printed": "Pa",
+    "cited_page": 9,
+    "pages": [
+      9
+    ],
+    "related_pages": {
+      "moure_fu_2024": [
+        3
+      ]
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "S4": {},
+  "S4m": {
+    "D_v_STP": {
+      "symbol": "D_v_STP",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "D_v^STP",
+      "page_wording": "water vapor diffusion coefficient in the air, at standard pressure and temperature",
+      "location": "Table I, row \"D_v, D_v^STP\", Description column",
+      "reason": "The page defines D_v^STP as the water vapor diffusion coefficient in air at standard pressure and temperature (2.178×10^-5 m^2 s^-1), which is what the table says; this page does not mention the cross-reference to Moure and Fu.",
+      "page": 4,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "202cc824d6c269ef2b675ed755e384f4d8ce10f946ac6a8ebbd617b88ebaaccd",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-155335/recheck/transcripts/S5-S4m/kaempfer_plapp_2009_p4_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "T0": {
+      "symbol": "T0",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "T_0",
+      "page_wording": "respectively, where T_0 = 273.15 °C, and the values of the parameters k_j and g_j are listed in Table S2",
+      "location": "Right column, text just below Eq. 9; T_0 appears as (T + T_0) in Eqs. 8 and 9",
+      "reason": "The page defines T_0 = 273.15 as the offset added to T in the vapor pressure fits, so it matches the table's °C-to-K reference temperature, although the page does not say outright that it converts °C to K.",
+      "page": 3,
+      "pass_": 1,
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "aed70cc39a9bceca047367672822b48a3c9135757b26f9e94db29b9288a42199",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-155335/recheck/transcripts/S5-S4m/moure_fu_2024_p3_try1.jsonl"
+          }
+        ]
+      }
+    },
+    "P_a": {
+      "symbol": "P_a",
+      "meaning_verdict": "matches",
+      "printed_as_on_page": "P_a",
+      "page_wording": "P_a is the atmospheric pressure (units: Pa)",
+      "location": "moure_fu_2024_p3.png (main paper p. 7810), right column, text just below Eq. (7); also cited.png Table S3, row P_a = 101325 Pa",
+      "reason": "The main paper defines P_a as the atmospheric pressure, which is the table's meaning. \"Pa\" is just P_a with the subscript lost, so this is a notation difference only.",
+      "page": 9,
+      "pass_": 2,
+      "pages_shown": [
+        "moure_fu_2024_p3"
+      ],
+      "call": {
+        "agent": "beth-unit-checker",
+        "model": "claude-opus-5-5",
+        "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+        "input_sha256": "5a7b4935c040b707d8c07cbcda9a0c4fad046f09fb966bcd2ca95df3216d0438",
+        "attempts": [
+          {
+            "attempt": 1,
+            "problems": [],
+            "transcript": "runs/units-verification/20261022-155335/recheck/transcripts/S5-S4m/P_a_pass2_try1.jsonl"
+          }
+        ]
+      },
+      "pass1": {
+        "symbol": "P_a",
+        "meaning_verdict": "cannot_tell",
+        "printed_as_on_page": "P_a",
+        "page_wording": "P_a, 101325, Pa (no description given)",
+        "location": "Table S3, row \"P_a\" (7th row), between T_melt and α_nucl",
+        "reason": "The page lists only P_a = 101325 Pa without saying what it is; the value suggests standard atmospheric pressure, but the page never defines it, so a page where P_a is defined is needed.",
+        "page": 9,
+        "pass_": 1,
+        "call": {
+          "agent": "beth-unit-checker",
+          "model": "claude-opus-5-5",
+          "agent_sha256": "9ca47ae6721e46ab168b1a790bbca138548c71bea2e779f8a77add093b260b5b",
+          "input_sha256": "37344e84d82e32147f85f0f9fab6ca763e581da68544a8431a0787fe37d92d1f",
+          "attempts": [
+            {
+              "attempt": 1,
+              "problems": [],
+              "transcript": "runs/units-verification/20261022-155335/recheck/transcripts/S5-S4m/moure_fu_2024_SI_p9_try1.jsonl"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

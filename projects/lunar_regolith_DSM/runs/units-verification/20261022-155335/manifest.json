@@ -612,6 +612,61 @@
         "mutool": "mutool version 1.24.9"
       },
       "finished": "2026-10-22T16:16:24-07:00"
+    },
+    "S5": {
+      "out": "memory/semantic/units.md",
+      "out_sha256": "f31059e0386ff42906a3a7fcbf315246528460246e1c99d0bcda85e412832eb9",
+      "verified": 54,
+      "unresolved": [],
+      "dropped": [
+        "t_n",
+        "T_cold",
+        "T_hot",
+        "beta_sol"
+      ],
+      "recheck_used": true,
+      "verdict": "complete",
+      "git": {
+        "commit": "2b9ed0524197ddfd32f9f635fd57d629a37e8ebd",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T17:07:05-07:00"
+    },
+    "S5-recheck": {
+      "rows": [
+        "D_v_STP",
+        "T0",
+        "P_a"
+      ],
+      "table_sha256": "a9416f8a2a916a3c8d2e503cd030f39d862b78ccc5a5b442ebe1bc22e9abe17b",
+      "s3": {
+        "D_v_STP": "AGREE",
+        "T0": "AGREE",
+        "P_a": "AGREE"
+      },
+      "s4": {},
+      "s4m": {
+        "D_v_STP": "matches",
+        "T0": "matches",
+        "P_a": "matches"
+      },
+      "read_failures": [],
+      "verdict": "pass",
+      "git": {
+        "commit": "2b9ed0524197ddfd32f9f635fd57d629a37e8ebd",
+        "definitions_modified": []
+      },
+      "allow_dirty": false,
+      "tools": {
+        "claude_code": "2.1.308 (Claude Code)",
+        "mutool": "mutool version 1.24.9"
+      },
+      "finished": "2026-10-22T17:07:05-07:00"
     }
   }
 }

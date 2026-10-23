@@ -1,0 +1,33 @@
+{
+  "page": "kaempfer_plapp_2009_p4",
+  "reads": [
+    {
+      "symbol": "D_v_STP",
+      "found": true,
+      "printed_as": "D_v^STP",
+      "meaning": "water vapor diffusion coefficient in the air, at standard pressure and temperature",
+      "value_as_printed": "2.178 × 10^-5",
+      "unit_as_printed": "m^2 s^-1",
+      "location": "Table I, row \"D_v, D_v^STP\""
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "D_v_STP"
+      ],
+      "page_png_sha256": "419b2c53ae7333f96e1fb77753c361e4b0b133b78644103cfe40b671d63c1f0c",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "c4bf18e2027371541e10664fa77d80904a1ec6375fee7fc5abd9d7df02ebfe5a",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-155335/recheck/transcripts/S5-S2/kaempfer_plapp_2009_p4_59aa5afa_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

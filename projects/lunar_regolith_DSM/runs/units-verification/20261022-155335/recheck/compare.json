@@ -1,0 +1,99 @@
+{
+  "table": "memory/semantic/units.md",
+  "rows": [
+    {
+      "symbol": "D_v_STP",
+      "source": "kaempfer_plapp_2009",
+      "page": 4,
+      "table_unit": "m^2 s^-1",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "m^2 s^-1",
+      "read": {
+        "printed_as": "D_v^STP",
+        "meaning": "water vapor diffusion coefficient in the air, at standard pressure and temperature",
+        "value_as_printed": "2.178 × 10^-5",
+        "unit_as_printed": "m^2 s^-1",
+        "location": "Table I, row \"D_v, D_v^STP\"",
+        "page": 4
+      },
+      "read_unit_si": "m^2 s^-1",
+      "marker": {
+        "located": true,
+        "occurrences": 2,
+        "units_seen": [
+          "m^2 s^-1"
+        ],
+        "unit_match": true,
+        "numbers": [
+          2.178e-05,
+          25.0
+        ],
+        "value_match": true
+      },
+      "verdict": "AGREE"
+    },
+    {
+      "symbol": "T0",
+      "source": "moure_fu_2024",
+      "page": 3,
+      "table_unit": "K",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "K",
+      "read": {
+        "printed_as": "T_0",
+        "meaning": "constant in saturated vapor pressure equations 8 and 9 (no name given)",
+        "value_as_printed": "273.15",
+        "unit_as_printed": "°C",
+        "location": "right column, paragraph after eq 9, line 1 (\"respectively, where T_0 = 273.15 °C\")",
+        "page": 3
+      },
+      "read_unit_si": "K",
+      "marker": {
+        "located": true,
+        "occurrences": 5,
+        "units_seen": [
+          "°C"
+        ],
+        "unit_match": true,
+        "numbers": [
+          273.15
+        ],
+        "value_match": true
+      },
+      "verdict": "AGREE"
+    },
+    {
+      "symbol": "P_a",
+      "source": "moure_fu_2024_SI",
+      "page": 9,
+      "table_unit": "Pa",
+      "reasons": [],
+      "reread_pages": [],
+      "table_unit_si": "kg m^-1 s^-2",
+      "read": {
+        "printed_as": "P_a",
+        "meaning": "Parameter listed in Table S3 (no description given on the page)",
+        "value_as_printed": "101325",
+        "unit_as_printed": "Pa",
+        "location": "Table S3, row \"P_a\" (7th row, after T_melt)",
+        "page": 9
+      },
+      "read_unit_si": "kg m^-1 s^-2",
+      "marker": {
+        "located": true,
+        "occurrences": 1,
+        "units_seen": [
+          "Pa"
+        ],
+        "unit_match": true,
+        "numbers": [
+          101325.0
+        ],
+        "value_match": true
+      },
+      "verdict": "AGREE"
+    }
+  ]
+}

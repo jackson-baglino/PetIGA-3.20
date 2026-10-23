@@ -1,0 +1,33 @@
+{
+  "page": "moure_fu_2024_SI_p9",
+  "reads": [
+    {
+      "symbol": "P_a",
+      "found": true,
+      "printed_as": "P_a",
+      "meaning": "Parameter listed in Table S3 (no description given on the page)",
+      "value_as_printed": "101325",
+      "unit_as_printed": "Pa",
+      "location": "Table S3, row \"P_a\" (7th row, after T_melt)"
+    }
+  ],
+  "calls": [
+    {
+      "symbols": [
+        "P_a"
+      ],
+      "page_png_sha256": "5d19674185d05f09a84b5f7fd0b5bf35a38b8844eaa01ecc91fcea0bdb3c3969",
+      "agent": "morty-unit-reader",
+      "model": "claude-sonnet-5-5",
+      "agent_sha256": "081ca7388cab9064b9ad09fbe518c9efe153e0a44985fe8e6bb9480e02863a61",
+      "input_sha256": "b23dab3deb67f16e59a858fa505ffe348f990bd2b96da80a8f6e709d352cafa7",
+      "attempts": [
+        {
+          "attempt": 1,
+          "problems": [],
+          "transcript": "runs/units-verification/20261022-155335/recheck/transcripts/S5-S2/moure_fu_2024_SI_p9_e8242936_try1.jsonl"
+        }
+      ]
+    }
+  ]
+}

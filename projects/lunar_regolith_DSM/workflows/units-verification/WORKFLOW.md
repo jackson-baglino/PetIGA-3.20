@@ -1,8 +1,7 @@
 # WORKFLOW: units-verification
 
-Status: **being built in stages** (approved 2026-10-22). Stage 1 (S0, S1, S1b, S3 with tests) built;
-stage 2 (agents, S2, S4, S4m, C0) built on `feat/units-agents`, awaiting the user's approval of the agents;
-stage 3 (real run, U1, S5) not yet.
+Status: **built and run** (2026-10-22). Run `20261022-155335`: 54 literature rows verified, 0 unresolved;
+`memory/semantic/units.md` updated by S5. Calibration (C0) in run `20261022-141826`.
 Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `scripts/flowchart/render_flowchart.py`.
 
 ## 1. Purpose
@@ -143,6 +142,10 @@ $P $S/check_rows.py     --run-id $R --task S4    # S4, then --task S4m
 $P $S/read_pages.py     --run-id $R --repeat 5 --out-dir reads_repeat --stage S2-repeat
 $P $S/reader_stability.py --run-id $R      # reader stability: 5 pages read twice
 $P $S/inspect_set.py    --run-id $R        # U1: inspection.json + local inspection/index.html
+# U1: the user's decisions go into inspection.json (user_decision: approve | drop | edit)
+$P $S/apply_verdicts.py --run-id $R        # S5: units.md; corrected rows stay pending
+$P $S/recheck.py        --run-id $R        # S5: corrected rows through S2-S4m again
+$P $S/apply_verdicts.py --run-id $R        # S5: final statuses
 $P -m unittest discover -s $S/tests        # tests
 ```
 
