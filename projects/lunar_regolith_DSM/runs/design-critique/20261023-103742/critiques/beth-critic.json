@@ -1,0 +1,291 @@
+{
+  "findings": [
+    {
+      "id": "F1",
+      "area": "checks",
+      "where": "§3 E1, E3, E4; §5 'equations | reader LaTeX vs Marker LaTeX; image when they differ'",
+      "severity": "critical",
+      "problem": "The reader, the quote check and the equation check all rely on the same Marker OCR text, and the page image is only consulted when reader and Marker disagree, so a Marker misreading that the reader copies is never compared with the image.",
+      "failure_scenario": "Marker OCRs Eq. (12) with a dropped minus sign or with ∂φ_s for ∂φ_i. The reader has the Marker page in context and copies its LaTeX. E3 finds reader and Marker in agreement, so no equation disagreement goes to E4. E4's input lists only 'equation disagreements', so the equation is not checked against the image. The same applies to a quote containing a Marker OCR error: E3 matches it against the same wrong text. The equation is published as verified, and U3's 60-claim sample is unlikely to include it.",
+      "fix": "Have E4 check every claim that has an equation or a number against the page image, whether or not reader and Marker agree. Alternatively, make the reader transcribe equations from the image without the Marker page and keep Marker for E3 only.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F2",
+      "area": "checks",
+      "where": "§5 'claims | beth-checker … independent agent (different model)'; §5 'rick-checker (third model family)'; §10 'different model family'; §11 'a different model family from the Opus session'",
+      "severity": "major",
+      "problem": "Reader (Sonnet), checker (Opus) and memo checker (Fable) are all Anthropic Claude models, so the 'different model family' independence the design relies on does not exist.",
+      "failure_scenario": "Models trained on similar data tend to misread the same notation, accept the same plausible over-generalisations and recall the same well-known results. A Sonnet reader's overstatement of a famous result such as Kaempfer & Plapp's is judged 'supported' by Opus for the same reason the reader wrote it. §10 lists 'different model family' as the defence against shared blind spots, so this risk is effectively uncovered apart from U3. The same applies to the two §11 critics.",
+      "fix": "Describe these as different Claude models, not different families. Either add a checker from another vendor for E4 on a sample, or rely on and enlarge the human sample and say it is the only truly independent check.",
+      "confidence": "high",
+      "source": "https://www.deeplearning.ai/the-batch/fable-holds-the-top-spot-for-now"
+    },
+    {
+      "id": "F3",
+      "area": "checks",
+      "where": "§6 'Claim fields … basis (derived / numerically tested / … / asserted)'; §6 Ranking 'each can be verified against the paper'; §7 claim verdict schema",
+      "severity": "critical",
+      "problem": "The basis, questions, tags and kind fields are recorded as fact and used for filtering and retrieval, but no stage checks them: the E4 verdict schema covers only the claim text and page.",
+      "failure_scenario": "A paper restates a result from an earlier paper as background. The reader records basis = 'numerically tested'. E3 finds the quote and E4 judges the text 'supported'. The claim is published with the wrong basis, and the memo then presents a result that was only cited as independently validated. Nothing checks this.",
+      "fix": "Add basis (and kind) to the E4 task and verdict schema as fields the checker confirms or corrects. Also cover them in C0 (plant a wrong basis) and in U3.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F4",
+      "area": "checks",
+      "where": "§3 A2 'Check the copy (every copy that is not the publisher's version) … whether the published version has errata'",
+      "severity": "critical",
+      "problem": "Retraction and correction status is checked only for non-publisher copies, so claims from a retracted or corrected publisher PDF can be published as verified.",
+      "failure_scenario": "A publisher PDF in the user's Literature/ folder belongs to a paper that was later retracted, or has an erratum correcting an equation. A2 is skipped because the copy is the version of record. E3 and E4 confirm the claims against the (wrong) PDF and the claims are published as verified. Crossref's update-to field, which now includes Retraction Watch data, would have flagged it.",
+      "fix": "Query Crossref update-to (retractions, corrections, errata) for every DOI at D3 or A1, record the result on the card, and re-query at L2 audit time.",
+      "confidence": "high",
+      "source": "https://www.crossref.org/documentation/retrieve-metadata/retraction-watch/"
+    },
+    {
+      "id": "F5",
+      "area": "checks",
+      "where": "§3 Y1 'the claims the reference desk returns for each'; §4 morty-librarian (Sonnet, 'may not paraphrase')",
+      "severity": "major",
+      "problem": "An LLM agent chooses which claims the synthesizer sees, but nothing checks that choice for completeness or verbatim fidelity, and it is not reproducible.",
+      "failure_scenario": "The librarian's search for Q2 misses the claims tagged 'obstacle potential' that contradict the memo's main conclusion, or truncates a record. The synthesizer writes a one-sided memo. Y2 passes because every cited ID exists. Y3 passes because it sees only the cited claims. A re-run returns a different claim set.",
+      "fix": "Have the driver call library_query.py directly with deterministic filters (question ID, tags through the alias map) and record the query and the returned ID list in the manifest. Drop the agent from this path.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F6",
+      "area": "checks",
+      "where": "§3 Y3 'contradictions between papers the memo missed; gaps'; §4 rick-checker reads 'one memo and the claims it cites'",
+      "severity": "major",
+      "problem": "Y3 is asked to find contradictions the memo missed, but it sees only the claims the memo cites, so it cannot detect an omitted contradicting claim.",
+      "failure_scenario": "The library holds a verified claim that the diffuse-domain approach fails when the stationary phase fraction approaches 0. The memo does not cite it. Y3 cannot see it and reports no missed contradiction, and the acceptance test treats the memo as checked.",
+      "fix": "Give Y3 the full claim set for the question (the same deterministic retrieval as Y1), not only the cited claims. Otherwise remove 'missed contradictions' from the pass criteria.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F7",
+      "area": "robustness",
+      "where": "§8 'Re-running a wave on the same PDFs must reach the same verified claims and verdicts, though not the same wording'",
+      "severity": "major",
+      "problem": "The reproducibility criterion cannot be measured: LLM extraction is not deterministic, claim IDs are assigned in order, and no procedure or tolerance is defined for matching claims across runs.",
+      "failure_scenario": "A third party re-runs a wave and gets 31 claims where the original had 28, with different c-numbers and partly different verdicts. Nothing defines whether this reproduces the recorded result, and transcripts stay local.",
+      "fix": "Define reproducibility as (a) deterministic stages giving identical hashes and (b) re-checking the recorded claims from the committed manifest, giving the same verdict at a stated agreement rate. Drop the requirement that re-extraction gives the same claims.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F8",
+      "area": "checks",
+      "where": "§3 E3 'A vs B: claims found by only one reader' (check_extraction.py, a script)",
+      "severity": "major",
+      "problem": "No deterministic method is given for matching differently worded claims from readers A and B, so the 'one-reader-only' set and the omission rate cannot be computed by a script as written.",
+      "failure_scenario": "Reader A writes 'the DDM converges at first order in ε' and reader B writes 'the error is O(ε)'. A string-based script treats them as different claims: both go to E4 as one-reader-only, the omission rate is inflated, and both are published as duplicates. If the script matches by page and quote overlap instead, two different claims quoting the same sentence are merged and one is lost.",
+      "fix": "Specify the matching rule (for example same page and overlapping quote span, then an LLM or human adjudication of the remaining cases), and say how A and B are merged into one claim set before L1.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F9",
+      "area": "checks",
+      "where": "§3 E4 'claim task: per page'; §3 E4 input 'each claim with its page image'",
+      "severity": "major",
+      "problem": "The checker sees only the cited page, so a claim that drops a condition stated on another page (assumptions in §2, limits in the conclusion) can be judged 'supported'.",
+      "failure_scenario": "The reader quotes 'the method recovers the sharp-interface limit' from p. 7. The paper states on p. 3 that this holds only for constant mobility and a planar interface. The checker sees only p. 7 and marks the claim supported. C0's planted errors are all single-page edits, so they do not test this.",
+      "fix": "Give E4 the paper's abstract, assumptions section and conclusions, or the reader's nothing_relevant/section map, alongside the cited page, and add a planted 'dropped condition' error to C0.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F10",
+      "area": "checks",
+      "where": "§5 U3 sample size 'spread over claim kinds … the error rate of passed claims is below 3/n'",
+      "severity": "major",
+      "problem": "The rule-of-three bound holds for a simple random sample, but the design stratifies by claim kind and gives no estimator for when errors are found.",
+      "failure_scenario": "Kinds are sampled equally (for example 10 equations out of 60) while equations make up 40 % of passed claims, or the reverse. The '<4.9 %' bound is then not a statement about all passed claims. If one error is found, §5 gives no bound (Clopper-Pearson for 1/60 is about 8.9 %). A tier-S wave may have fewer than 60 passed claims in total.",
+      "fix": "Use simple random sampling, or proportional allocation with weights. State the exact binomial (Clopper-Pearson) bound for k > 0 errors, and inspect every claim when a wave has ≤ 60.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F11",
+      "area": "checks",
+      "where": "§5 C0 'Pass: E3 + E4 catch every fabricated quote and wrong page, and ≥ 90 % of the rest'; table row 'pipeline | C0 calibration | measured | below'",
+      "severity": "major",
+      "problem": "C0 uses about six error types from a single paper, so '≥ 90 %' cannot be measured meaningfully (one miss in six is 83 %), and the planted errors are made by the same model family that has to detect them.",
+      "failure_scenario": "Five of six planted errors are caught, the 90 % threshold cannot be met or is rounded, and the authors either loosen it or pass a pipeline whose real detection rate has a 95 % CI of about 36–99 %. Synthetic hedge flips are easier to spot than real subtle overstatements, so the calibration overstates detection.",
+      "fix": "Plant at least 30–50 errors across 3 or more papers, include errors written by the user, report the detection rate with its CI, and fix the table cell 'below'.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F12",
+      "area": "checks",
+      "where": "§3 E3 'quote match after normalisation'; §5 'quotes | found on the cited page'",
+      "severity": "major",
+      "problem": "No minimum length or uniqueness is required for a quote, so a short or generic quote passes E3 regardless of whether it supports the claim.",
+      "failure_scenario": "The reader quotes 'the interface remains stable' for a claim that the method is unconditionally stable. The phrase appears on the page, so E3 passes, and only E4's judgement remains. E3 is presented as a deterministic check of fabrication but checks very little here.",
+      "fix": "Require a minimum quote length (for example ≥ 8 words, or the full sentence) and flag quotes that occur more than once in the paper.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F13",
+      "area": "assumptions",
+      "where": "§3 SC1 inputs 'title, abstract, venue, year'",
+      "severity": "major",
+      "problem": "The design assumes abstracts are available for screening, but OpenAlex lacks abstracts for many closed-access Elsevier and Springer Nature papers, and Crossref often has none either.",
+      "failure_scenario": "Core numerical-methods papers in Elsevier journals (J. Comput. Phys., Acta Mater.) reach SC1 with no abstract and are excluded on the title alone. U1 sees only 10 % of exclusions, and C0 tests only seeds, which presumably have abstracts.",
+      "fix": "Record whether each candidate has an abstract. Send candidates without one to 'context' or to U1 in full rather than excluding them, or fetch abstracts from Semantic Scholar or arXiv.",
+      "confidence": "medium",
+      "source": "https://aarontay.substack.com/p/the-petrol-tank-for-ai-discovery"
+    },
+    {
+      "id": "F14",
+      "area": "checks",
+      "where": "§3 SC1 'jerry-screener ×2, independent'; §5 'vote (independent agents)'",
+      "severity": "minor",
+      "problem": "Two calls of the same Haiku model with the same prompt and input give highly correlated errors, so agreement between them adds little independent evidence.",
+      "failure_scenario": "Both screeners exclude a relevant 'smoothed boundary method' paper because the brief says 'diffuse domain'. They agree, so SC3 never sees it, and the user has a 10 % chance of seeing it at U1.",
+      "fix": "Use different models or prompt framings for the two screeners, or a single screener with a recall-biased rule: exclude only on an explicit exclusion criterion.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F15",
+      "area": "assumptions",
+      "where": "§3 'OpenAlex includes Unpaywall's data and needs no email address'; §3 D1",
+      "severity": "major",
+      "problem": "OpenAlex moved to API keys with usage-based credits in 2026, so keyless access is credit-limited and D1/A1 may stop mid-run.",
+      "failure_scenario": "A tier-L wave uses up the keyless daily budget partway through. Under D1's 'API fails → logged, wave continues without it' rule, the candidate set is silently truncated and the review proceeds on a partial search.",
+      "fix": "Use a free API key stored outside the repo, log credits used, and treat quota or HTTP 429 errors as 'pause and resume' rather than 'continue without'.",
+      "confidence": "medium",
+      "source": "https://blog.openalex.org/author/jason"
+    },
+    {
+      "id": "F16",
+      "area": "robustness",
+      "where": "§3 D1 'an API fails → logged, wave continues without it'",
+      "severity": "major",
+      "problem": "A failed or partial search source is skipped for the wave with no retry or later backfill, so the candidate set depends on transient outages without anyone being told.",
+      "failure_scenario": "Semantic Scholar returns 503 for half the queries. The wave runs, U1 sees counts but no warning that coverage differs from the brief, and the gap list in the memo omits the missed literature.",
+      "fix": "Mark the wave 'discovery incomplete', show it at U1, and re-run the failed queries before U1 or in the next wave.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F17",
+      "area": "robustness",
+      "where": "§3 L1 curator.py; L2 'any mismatch → stop, report to the user'",
+      "severity": "major",
+      "problem": "No atomicity or recovery is defined for a publish that fails halfway, and the audit's only response is to stop.",
+      "failure_scenario": "curator.py writes 40 claim files, crashes before appending the events or making the files read-only, and leaves orphan files. L2 reports a mismatch and stops, and no defined path repairs the state or resumes the publish.",
+      "fix": "Stage the publish in a temporary directory, append the event last as the commit marker, and give the curator a 'recover' mode that removes or completes staged items without an event.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F18",
+      "area": "robustness",
+      "where": "§3 P1 'marker/<paper>_p<N>.md (Marker, forced OCR, LaTeX math)'; §8 'tool versions (Marker, mutool)'",
+      "severity": "minor",
+      "problem": "Marker output depends on its OCR model weights and options, which change between releases (2.0 rebuilt the pipeline and selective OCR), and the Marker text is not committed, so E3 results cannot be re-derived.",
+      "failure_scenario": "A third party installs a newer Marker or different Surya weights. The Marker text differs, quotes or equations that passed E3 now fail or vice versa, and the recorded verdicts cannot be reproduced.",
+      "fix": "Pin Marker and Surya versions and model-weight hashes in the manifest, record the flags, and keep the Marker text hashes, which the design already plans.",
+      "confidence": "medium",
+      "source": "https://github.com/datalab-to/marker/releases"
+    },
+    {
+      "id": "F19",
+      "area": "checks",
+      "where": "§2 tier M/L 'context: card'; §6 card.v1.json",
+      "severity": "minor",
+      "problem": "Context papers get only a paper card, and no check covers the card's content.",
+      "failure_scenario": "A context paper's card summarises its method wrongly. The card goes into the library and views/ unverified, and a later memo or user relies on it.",
+      "fix": "Restrict cards to bibliographic fields, or run E3/E4 on any substantive statement in a card.",
+      "confidence": "low",
+      "source": null
+    },
+    {
+      "id": "F20",
+      "area": "checks",
+      "where": "§3 Y2 'every number in the sentence appears in a cited claim'",
+      "severity": "minor",
+      "problem": "String-matching numbers cannot tell whether a number belongs to the same quantity, and it fails on derived or converted values.",
+      "failure_scenario": "The memo says 'error drops to 0.3 % for ε = 0.01'. The claim contains 0.3 for a different quantity and 0.01 elsewhere. Y2 passes. Conversely, '1/2' against '0.5' fails and loops back to Y1.",
+      "fix": "Have Y2 require that each number occurs in the quote of a cited claim, and let Y3 check that it is attached to the same quantity.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F21",
+      "area": "robustness",
+      "where": "§6 IDs 'paper_id = first author, year, short hash of the DOI'; §5 'claims re-checked … if the published version arrives later'",
+      "severity": "minor",
+      "problem": "IDs depend on a DOI, which theses, reports and arXiv-only papers may lack and which changes from preprint to journal, and no trigger is defined for the re-check when the published version arrives.",
+      "failure_scenario": "An arXiv preprint is read under the arXiv DOI and the journal version is later acquired under a new DOI. Two paper records exist with no link between them, and the preprint's claims are never re-checked.",
+      "fix": "Use a stable internal ID with a DOI and alias list on the card, and have A1 match new acquisitions against existing preprint records to trigger the re-check.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F22",
+      "area": "checks",
+      "where": "§3 D3 'unresolvable → dropped and logged'",
+      "severity": "minor",
+      "problem": "Legitimate items from the repositories §3 itself lists (NTRS reports, OSTI reports, theses) may have no Crossref or OpenAlex record and would be dropped as if invented.",
+      "failure_scenario": "A NASA technical report on regolith ice is cited by the scout. It has no Crossref DOI and a poor OpenAlex record, so it is dropped and appears only in a log.",
+      "fix": "Also resolve against arXiv, NTRS, OSTI and ADS, and show unresolved items at U1 instead of dropping them.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F23",
+      "area": "efficiency",
+      "where": "§3 U1 '10 % random sample of excluded ones'",
+      "severity": "minor",
+      "problem": "The user's U1 workload grows linearly with the number of candidates, and the sample is not designed to give an error bound.",
+      "failure_scenario": "A tier-L query set yields 3,000 excluded candidates, so the user must review 300 abstracts per wave, and the result still says nothing quantified about missed relevant papers.",
+      "fix": "Use a fixed-size random sample of exclusions (for example n = 60, as at U3) with a stated bound.",
+      "confidence": "medium",
+      "source": null
+    }
+  ],
+  "unclear": [
+    {
+      "where": "§1 Acceptance test vs §3 Y3",
+      "issue": "The acceptance test requires that 'a checker from a different model finds no unsupported statement', but Y3 says 'anything but supported → Y1 revises once, then U4 sees it'. It is unclear whether a memo with residual unsupported statements can be closed."
+    },
+    {
+      "where": "§3 Y1 / Y2",
+      "issue": "Y1 marks inference as 'INFERENCE', while Y2 requires every sentence to cite ≥ 1 verified claim. It is unclear whether inference sentences must cite claims and how Y3 judges them."
+    },
+    {
+      "where": "§5 table, last row",
+      "issue": "'pipeline | C0 calibration | measured | below': the pass criterion is the word 'below', which is presumably meant to refer to the C0 thresholds."
+    },
+    {
+      "where": "§3 E4 / §4 beth-checker",
+      "issue": "E4 input says 'each claim with its page image … never the reader's reasoning', but §4 says the checker also reads 'the Marker page'. It is unclear whether the checker gets Marker text, which affects independence (F1)."
+    },
+    {
+      "where": "§3 E3 / §6 Claim fields 'page'",
+      "issue": "It is not stated whether 'page' is the PDF page index (p<N> files) or the printed page number. The two differ for most journal PDFs and preprints, which affects E3 and the citations users see."
+    },
+    {
+      "where": "§4 beth-checker 'context: fresh per item (claim task: per page, all claims on that page)'",
+      "issue": "'Fresh per item' contradicts batching all claims on a page. Batching also lets the checker see other claims, which is in tension with 'may not see … other claims' verdicts'."
+    },
+    {
+      "where": "§9 decision 3",
+      "issue": "The fallback 'Opus checker in a fresh context' for Y3 would make Y1 and Y3 the same model, contradicting §5 'third model family'. It is unclear whether the acceptance test still holds under the fallback."
+    },
+    {
+      "where": "§3 C0 'once per new agent or prompt version' vs §5 'after any prompt or model change'",
+      "issue": "It is unclear whether a Claude Code version change or a schema change also triggers recalibration."
+    }
+  ]
+}
