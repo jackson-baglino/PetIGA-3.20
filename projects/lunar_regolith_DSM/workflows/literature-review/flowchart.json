@@ -1,10 +1,10 @@
 {
   "title": "literature-review",
   "summary": [
-    "A reusable literature-review workflow for reviews of any size. The user writes a brief (questions, criteria, tier); scripts search Crossref, OpenAlex, Semantic Scholar and arXiv, follow citations, and resolve every candidate so no invented reference survives; two Haiku screeners judge each abstract independently and an Opus checker settles disagreements. Scripts fetch open-access PDFs (Literature/, OpenAlex, arXiv, repositories) and check each is the paper asked for; a preprint or repository copy is compared with the published record; the user supplies any paper not found.",
-    "A fresh Sonnet reader per paper extracts claims with verbatim quotes, pages and equations from page images and Marker text; core papers are read twice independently. A script checks every quote and equation against the page; an Opus checker, blind to the reader's reasoning, judges every claim on the page image. A script (the curator) is the only writer to the library and refuses anything unchecked; nothing is ever deleted. Memos cite claim IDs only, are checked by script and by a Fable checker, a tag report after each wave proposes merges and new tags, and the user decides whether to close, expand or retract the review and which tag changes to accept. A calibration run with planted errors gates the first real wave."
+    "A reusable literature-review workflow for reviews of any size. The user writes a brief (questions, criteria, tier); scripts search Crossref, OpenAlex, Semantic Scholar and arXiv, follow citations, resolve every candidate and record retractions; two Haiku screeners with different framings judge each abstract and may exclude only on a named criterion; an Opus checker settles disagreements. Scripts fetch open-access PDFs, check each is the paper asked for, and compare preprints with the published record.",
+    "A fresh Sonnet reader per paper extracts claims; core papers are read twice and the reads merged by rule. A script checks every quote; an Opus checker, given page images only, confirms each claim's text, quote, equations, numbers, kind and basis. The user reads the core papers with their claims (guided reading) and audits 60 random other claims. A script (the curator) is the only writer to the library; nothing is ever deleted. Memos are written from every verified claim for a question and checked by script and by a fresh Opus checker that sees the same claims. All agents are Claude models, so the scripts and the user are the independent checks."
   ],
-  "status": "Draft design for review, 2026-10-23, revision 2 (user decisions applied). Nothing built. Details and open decisions: WORKFLOW.md.",
+  "status": "Draft design, revision 3 (critique round 1 applied; guided reading added), 2026-10-23. Nothing built. Details: WORKFLOW.md.",
   "lanes": [
     {
       "id": "user",
@@ -52,8 +52,9 @@
       "title": "D1 discover.py",
       "job": "Runs the brief's queries on Crossref, OpenAlex, Semantic Scholar and arXiv and follows references and citations of seeds.",
       "details": [
-        "Every query logged: API, date, result count",
-        "An API failure is logged; the wave continues"
+        "OpenAlex key from the macOS Keychain",
+        "429 or outage: back off and resume",
+        "Still failing: wave marked discovery incomplete"
       ]
     },
     {
@@ -86,10 +87,10 @@
       "row": 2,
       "kind": "script",
       "title": "D3 resolve.py",
-      "job": "Resolves every candidate in Crossref or OpenAlex and removes duplicates by DOI and title.",
+      "job": "Resolves every candidate (Crossref, OpenAlex, arXiv, ADS, NTRS, OSTI), removes duplicates and records retractions and corrections.",
       "details": [
-        "Unresolvable citation: dropped and logged",
-        "Catches invented references"
+        "Unresolved: kept and shown at U1, not dropped",
+        "Records whether an abstract exists"
       ]
     },
     {
@@ -106,12 +107,11 @@
       "row": 3,
       "kind": "script",
       "title": "C0 calibrate.py (once per prompt or model change)",
-      "job": "Runs screening and E1 to E4 on planted errors, a gold recall set and off-topic abstracts before any real wave.",
+      "job": "Measures the checks on 40+ planted errors over 3+ papers (10+ written by the user), controls, a gold recall set and off-topic abstracts.",
       "details": [
         "Gates SC1 and E1: no real wave until it passes",
-        "Pass: all fabricated quotes and wrong pages caught, 90 % of other errors",
-        "Gold set: E1 finds 90 %, E1 + E2 find all",
-        "Fails: stop and revise prompts"
+        "Pass: every fake quote and wrong page caught, detection 90 % with its lower bound",
+        "Re-run after any agent, prompt, schema or model change"
       ]
     },
     {
@@ -119,13 +119,13 @@
       "lane": "agent",
       "row": 3,
       "kind": "agent",
-      "title": "SC1 jerry-screener x2 (tier M, L)",
+      "title": "SC1 jerry-screener x2, two framings (tier M, L)",
       "model": "claude-haiku-5-5",
       "tools": [],
-      "job": "Two independent screeners judge each title and abstract: core, context or exclude, with the deciding criterion.",
+      "job": "Two screeners with different framings judge each abstract: core, context or exclude; exclude needs a named exclusion criterion.",
       "details": [
         "Neither sees the other's decision",
-        "Fresh per batch of 10"
+        "No abstract: never excluded, goes to U1"
       ]
     },
     {
@@ -158,8 +158,9 @@
       "row": 5,
       "kind": "user",
       "title": "U1 Approve shortlist",
-      "job": "Reviews every core and context paper, 10 % of excluded ones, and the queries with their counts.",
+      "job": "Reviews every core and context paper, 60 random exclusions, unresolved and no-abstract items, and query counts.",
       "details": [
+        "Sees any discovery-incomplete warning",
         "Adds or removes papers"
       ]
     },
@@ -180,7 +181,7 @@
       "job": "Finds each paper in Literature/, then as open access (OpenAlex, arXiv, Semantic Scholar, repositories), and checks its first page.",
       "details": [
         "Each download in its own new folder",
-        "Wrong paper: not acquired, logged",
+        "Links a new version to the paper already read; its claims are re-checked",
         "Not found: listed in fetch_list.md",
         "No institutional access; no Sci-Hub"
       ]
@@ -212,8 +213,8 @@
       "title": "P1 prepare.py",
       "job": "Renders page images, runs Marker (OCR to Markdown with LaTeX) and crops figures with captions.",
       "details": [
-        "Text layer never used",
-        "A failed page cannot be cited"
+        "Marker, Surya, weights and flags pinned",
+        "Maps PDF page index to printed page"
       ]
     },
     {
@@ -234,10 +235,10 @@
       "tools": [
         "Read"
       ],
-      "job": "Reads one paper and writes its card and claims: text, kind, verbatim quote, page, equation, figure, questions, tags, basis.",
+      "job": "Reads one paper and writes its claims (text, kind, basis, quote, pages, equation, conditions, tags) and a section map.",
       "details": [
         "Fresh per paper; no web",
-        "Tags only from vocab.yaml; new ones proposed",
+        "Statements only as claims; cards are bibliographic",
         "Instructions found in a paper are flagged, not followed"
       ]
     },
@@ -255,10 +256,10 @@
       "row": 9,
       "kind": "script",
       "title": "E3 check_extraction.py",
-      "job": "Finds each quote on its cited page, compares equations with Marker, checks page coverage and diffs read A against read B.",
+      "job": "Checks each quote's length, presence on its page and uniqueness, checks page coverage, and merges reads A and B by rule.",
       "details": [
-        "Equations: normalised strings, SymPy where both parse",
-        "Claims found by one reader only go to E4"
+        "Quote: 8+ words or a whole sentence",
+        "Same claim: same page and kind, quotes overlap by half"
       ]
     },
     {
@@ -271,9 +272,10 @@
       "tools": [
         "Read"
       ],
-      "job": "Judges every claim on its page image: supported, overstated, unsupported or wrong page; settles equation disagreements.",
+      "job": "On page images only, confirms each claim's text, quote, every equation symbol and number, kind and basis, and dropped conditions.",
       "details": [
-        "Never sees the reader's reasoning",
+        "Also sees abstract, model and conclusions pages",
+        "Never sees Marker text or the reader's reasoning",
         "Fresh per page"
       ]
     },
@@ -301,15 +303,15 @@
       ]
     },
     {
-      "id": "U3",
+      "id": "U3a",
       "lane": "user",
       "row": 12,
       "kind": "user",
-      "title": "U3 Inspect",
-      "job": "Inspects every disputed claim and equation, and 60 random passed claims beside their page crops.",
+      "title": "U3a Guided reading (core papers)",
+      "job": "Reads each core paper's key pages in order, opens each page's claims after reading it, marks them, and notes missed statements.",
       "details": [
-        "No error in 60: passed-claim error rate below 4.9 % (95 %)",
-        "Sample size 60 per wave (user decision)"
+        "Every claim on a read page is checked",
+        "Missed statements: human measure of reader recall"
       ]
     },
     {
@@ -320,8 +322,8 @@
       "title": "L1 curator.py (only writer)",
       "job": "Publishes items that have a citation, a quote match and a passing verdict or user decision; refuses all others.",
       "details": [
-        "Hashes files, sets them read-only, logs an event",
-        "Corrections are new versions; nothing is deleted",
+        "Stages files; the event, appended last, is the commit",
+        "Crash: curator.py recover",
         "Retraction only by the user, with a reason"
       ]
     },
@@ -342,9 +344,9 @@
       "row": 14,
       "kind": "script",
       "title": "L2 audit.py",
-      "job": "Re-hashes every library file and rebuilds the catalog from the files to compare.",
+      "job": "Re-hashes every library file, rebuilds the catalog to compare, and re-queries Crossref for new retractions.",
       "details": [
-        "Any mismatch: stop and report to the user"
+        "Mismatch: stop and report; recover first"
       ]
     },
     {
@@ -357,9 +359,9 @@
       "tools": [
         "Bash (library_query.py only)"
       ],
-      "job": "Answers requests about the library with records quoted verbatim, through a read-only, logged query script.",
+      "job": "Answers the user's ad hoc questions with records quoted verbatim, through a read-only, logged query script.",
       "details": [
-        "Every request states its purpose",
+        "Feeds no stage of a wave",
         "Cannot write or delete"
       ]
     },
@@ -371,10 +373,10 @@
       "title": "Y1 beth-synthesizer",
       "model": "claude-opus-5-5",
       "tools": [],
-      "job": "Writes one memo per question from verified claims, citing claim IDs and marking its own inference.",
+      "job": "Writes one memo per question from every verified claim for it, retrieved by fixed query, citing claim IDs.",
       "details": [
-        "Fresh per question",
-        "Lists what the literature does not answer"
+        "INFERENCE cites the claims it is drawn from",
+        "Query and returned IDs in the manifest"
       ]
     },
     {
@@ -383,7 +385,7 @@
       "row": 15.5,
       "kind": "script",
       "title": "Y2 check_citations.py",
-      "job": "Checks each memo sentence cites a verified claim and every number in it appears in a cited claim.",
+      "job": "Checks each memo sentence cites a verified claim and every number occurs in a cited claim's quote.",
       "details": [
         "Failures go back to Y1 with the list"
       ]
@@ -393,13 +395,13 @@
       "lane": "agent",
       "row": 16,
       "kind": "agent",
-      "title": "Y3 rick-checker",
-      "model": "claude-fable-5-1",
+      "title": "Y3 beth-memo-checker",
+      "model": "claude-opus-5-5",
       "tools": [],
-      "job": "Checks each memo statement against the cited claims, and lists missed contradictions and gaps.",
+      "job": "Checks each statement against the same full claim set, and lists omitted or contradicting claims and gaps.",
       "details": [
-        "Different model family from the synthesizer",
-        "Unsupported: Y1 revises once, then the user sees it"
+        "Fresh Opus context; Fable not available",
+        "Unsupported: Y1 revises once, then U4"
       ]
     },
     {
@@ -416,7 +418,7 @@
       "row": 18,
       "kind": "user",
       "title": "U4 Decide",
-      "job": "Reads memos, checker report, gaps and tag proposals; closes, expands or retracts the review; accepts or rejects tag changes.",
+      "job": "Reads memos, checker report, gaps and tag proposals; accepts or marks remaining statements; closes, expands or retracts the review.",
       "details": [
         "Pillar 1: memo ends with model options"
       ]
@@ -454,6 +456,18 @@
       "details": [
         "Proposals only; the user accepts each at U4",
         "Accepted: new vocab.yaml version with alias map"
+      ]
+    },
+    {
+      "id": "U3b",
+      "lane": "user",
+      "row": 12.5,
+      "kind": "user",
+      "title": "U3b Random audit",
+      "job": "Checks 60 random passed claims not covered by guided reading, plus every disputed claim.",
+      "details": [
+        "No error in 60: rate below 4.9 % (95 %)",
+        "An error: that kind re-checked before L1"
       ]
     }
   ],
@@ -584,12 +598,7 @@
     },
     {
       "from": "E4",
-      "to": "U3",
-      "kind": "flow"
-    },
-    {
-      "from": "U3",
-      "to": "L1",
+      "to": "U3a",
       "kind": "flow"
     },
     {
@@ -601,18 +610,6 @@
       "from": "L1",
       "to": "L2",
       "kind": "flow"
-    },
-    {
-      "from": "LB",
-      "to": "LR",
-      "kind": "flow",
-      "label": "read only"
-    },
-    {
-      "from": "LR",
-      "to": "Y1",
-      "kind": "flow",
-      "label": "verified claims"
     },
     {
       "from": "Y1",
@@ -671,6 +668,28 @@
       "from": "T2",
       "to": "U4",
       "kind": "flow"
+    },
+    {
+      "from": "U3a",
+      "to": "U3b",
+      "kind": "flow"
+    },
+    {
+      "from": "U3b",
+      "to": "L1",
+      "kind": "flow"
+    },
+    {
+      "from": "LB",
+      "to": "LR",
+      "kind": "flow",
+      "label": "read only"
+    },
+    {
+      "from": "L2",
+      "to": "Y1",
+      "kind": "flow",
+      "label": "fixed query"
     }
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: beth-critic
-description: Independent critic of a workflow design (WORKFLOW.md). Reads only the design it is given, checks factual assumptions on the web, and reports problems with concrete failure scenarios. Run headless, in a clean folder, by the design-critique driver; its twin rick-critic gets the same instructions on another model.
+description: Independent critic of a workflow design (WORKFLOW.md). Reads only the design it is given, checks factual assumptions on the web, and reports problems with concrete failure scenarios. Run headless, in a clean folder, by the design-critique driver.
 model: claude-opus-5-5
 tools: Read, WebSearch
 ---
