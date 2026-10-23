@@ -29,7 +29,7 @@ clone.
   plan mode, or `claude --permission-mode plan`. Ctrl+G edits the plan.
 - **Give Claude a check it can run** (a test, a script) and ask for its output
   as evidence.
-- **Context:** `/context` shows usage; `/compact <focus>` summarises;
+- **Context:** `/context` shows usage; `/compact <focus>` summarizes;
   `/clear` starts fresh (run `wrap-up` first); `/btw` asks a side question
   without adding it to the history.
 - **Undo:** Esc Esc or `/rewind`. Commit often; git is the real undo.

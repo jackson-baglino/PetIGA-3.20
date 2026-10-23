@@ -55,7 +55,7 @@ Each run writes `runs/<name>/<run_id>/`:
 - `runs.db` (SQLite): one row per agent call (stage, agent, model, input
   hash, output path, verdict, timestamp), so a run can be resumed and audited.
 
-Re-running a stage with the same inputs must reach the same verified
+Rerunning a stage with the same inputs must reach the same verified
 conclusions, though not identical wording.
 
 ## 7. Risks and failure modes

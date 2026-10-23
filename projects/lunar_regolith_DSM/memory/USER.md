@@ -5,7 +5,7 @@
 
 - Be factually correct above all; we are scientists and engineers, not answer-finders.  (2026-10-21 · active · user)
 - Design every workflow with the user before building it: agents, models, tools, skills, checks, reproducibility, MCPs, and a detailed HTML flowchart.  (2026-10-21 · active · user)
-- Write a report file only when asked. Documents are concise but complete, and filed in an organised folder.  (2026-10-21 · active · user)
+- Write a report file only when asked. Documents are concise but complete, and filed in an organized folder.  (2026-10-21 · active · user)
 - Explain in plain language, defining terms; give the reason, not only the result.  (2026-10-21 · active · user)
 - The user launches all simulations and HPC jobs; Claude prepares the command.  (2026-10-21 · superseded 2026-10-22 · user)
 - Claude may launch at most one simulation without specific instructions; anything more, the user launches or explicitly asks for. Expect this to loosen further.  (2026-10-22 · active · user)

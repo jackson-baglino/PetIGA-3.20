@@ -1,7 +1,7 @@
 # Reproducibility
 
 The course grades reproducibility at 20 %: another student must be able to
-install and run the system. For an LLM workflow, reproducible means a re-run
+install and run the system. For an LLM workflow, reproducible means a rerun
 reaches the same verified conclusions and passes the same checks. It does not
 mean identical wording; models are not deterministic, and current Claude
 models do not accept a temperature setting.

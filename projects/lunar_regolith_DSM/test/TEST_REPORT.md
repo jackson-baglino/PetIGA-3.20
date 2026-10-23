@@ -15,7 +15,7 @@
 | T06 | Sublimation Kinetics | **✅ PASS** | Δ(tot_ice) = -10.38 nm  (must be < 0); mean rate = -4.91e-07 |
 | T07 | Bergeron Process | **✅ PASS** | tot_rhov(t=0): no-gradient=4.2890e-08, bergeron=5.4460e-08   |
 | T08 | Flat Interface Stability | **✅ PASS** | max |Δtot_ice| / tot_ice(0) = 0.00e+00  (threshold 0.5 %) |
-| T09 | Vapour Saturation at t=0 | **✅ PASS** | tot_rhov(0) = 4.005e-08 kg/m;  expected ≈ 4.005e-08 kg/m;  e |
+| T09 | Vapor Saturation at t=0 | **✅ PASS** | tot_rhov(0) = 4.005e-08 kg/m;  expected ≈ 4.005e-08 kg/m;  e |
 | T10 | Interface Density Evolution | **✅ PASS** | Σ/ε: initial=1.718e-01,  final=1.718e-01,  rel Δ=1.56e-04  ( |
 | T11 | Sublimation Rate Deceleration | **✅ PASS** | Δtot_ice=-15.9 nm; rate_early=-1.66e-06 m/s; rate_late=-7.67 |
 | T12 | Deposition at Supersaturation | **✅ PASS** | Δ(tot_ice) = 10.39 nm  (must be > 0); mean deposition rate = |
@@ -94,7 +94,7 @@
 ### T06 — Sublimation Kinetics
 
 **Category:** Dry snow metamorphism  
-**Purpose:** Under undersaturated vapour (hum=0.5), ice sublimates and tot_ice decreases.  
+**Purpose:** Under undersaturated vapor (hum=0.5), ice sublimates and tot_ice decreases.  
 **Pass criterion:** tot_ice decreases monotonically  
 **Result:** **✅ PASS**  
 **Detail:** Δ(tot_ice) = -10.38 nm  (must be < 0); mean rate = -4.91e-07 m/s
@@ -127,7 +127,7 @@
 
 ---
 
-### T09 — Vapour Saturation at t=0
+### T09 — Vapor Saturation at t=0
 
 **Category:** Dry snow metamorphism  
 **Purpose:** Initial rhov = hum × rho_vs(T) × vol_air within 2 %.  
@@ -154,7 +154,7 @@
 ### T11 — Sublimation Rate Deceleration
 
 **Category:** Dry snow metamorphism  
-**Purpose:** In a finite domain, sublimation decelerates as vapour builds up toward saturation.  
+**Purpose:** In a finite domain, sublimation decelerates as vapor builds up toward saturation.  
 **Pass criterion:** Δtot_ice < 0; rate_early > rate_late  
 **Result:** **✅ PASS**  
 **Detail:** Δtot_ice=-15.9 nm; rate_early=-1.66e-06 m/s; rate_late=-7.67e-08 m/s; decelerates=True
@@ -166,7 +166,7 @@
 ### T12 — Deposition at Supersaturation
 
 **Category:** Dry snow metamorphism  
-**Purpose:** Under supersaturated vapour (hum=1.5), ice grows via deposition.  
+**Purpose:** Under supersaturated vapor (hum=1.5), ice grows via deposition.  
 **Pass criterion:** tot_ice increases (Δtot_ice > 0)  
 **Result:** **✅ PASS**  
 **Detail:** Δ(tot_ice) = 10.39 nm  (must be > 0); mean deposition rate = 4.91e-07 m/s
@@ -178,7 +178,7 @@
 ### T13 — Temperature Field Consistency
 
 **Category:** Model correctness  
-**Purpose:** Domain-averaged temperature at t=0 equals temp0 within 1% (T field correctly initialised).  
+**Purpose:** Domain-averaged temperature at t=0 equals temp0 within 1% (T field correctly initialized).  
 **Pass criterion:** |T_avg(0) − T₀| / |T₀| < 1%  AND  ice sublimated  
 **Result:** **✅ PASS**  
 **Detail:** ∫T dx = -2.00000e-03 °C·m;  T_avg(0) = -20.0000°C  (expect -20.0°C, err=0.000%);  ice sublimated: True
@@ -244,16 +244,16 @@ monitor table printed to stdout (parsed via regex) and from `SSA_evo.dat`
 (4-column ASCII file written every output step).
 
 ### Dry snow metamorphism tests (T06–T13, T16)
-The non-variational Allen-Cahn formulation couples three physical
+The nonvariational Allen-Cahn formulation couples three physical
 mechanisms:
 1. **Curvature-driven interface motion** — Allen-Cahn bulk free energy
-   minimisation drives diffuse interfaces toward lower curvature.
+   minimization drives diffuse interfaces toward lower curvature.
 2. **Sublimation/deposition kinetics** — the source term
-   `−α·φ_i²·φ_a²·(ρ_v − ρ_vs(T))/ρ_ice` converts ice ↔ vapour
-   whenever the local vapour density deviates from saturation.
+   `−α·φ_i²·φ_a²·(ρ_v − ρ_vs(T))/ρ_ice` converts ice ↔ vapor
+   whenever the local vapor density deviates from saturation.
 3. **Bergeron (temperature-gradient) process** — a macroscopic
-   temperature gradient creates a vapour density gradient (d ρ_vs/dT ≠ 0)
-   that drives net vapour flux from warm to cold, causing sublimation at
+   temperature gradient creates a vapor density gradient (d ρ_vs/dT ≠ 0)
+   that drives net vapor flux from warm to cold, causing sublimation at
    the warm end and deposition at the cold end.
 
 Extended tests (T11–T13, T16) use a 1000-step sublimation run to verify

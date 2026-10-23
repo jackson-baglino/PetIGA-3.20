@@ -61,4 +61,4 @@ would exceed the entire interface relaxation time.
 One geometry, one angle, one temperature, and a relaxation that is smooth
 throughout. A case with a genuine fast event — grain collapse, neck pinch-off —
 will be limited by the CFL limiter rather than by dtmax, which is the intended
-division of labour. Re-run this study if the campaign changes character.
+division of labor. Rerun this study if the campaign changes character.

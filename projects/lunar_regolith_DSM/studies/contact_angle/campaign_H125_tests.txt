@@ -15,7 +15,7 @@ channel_2D_H125um_eps0.86um:relax90_T-20_theta150
 # --- B. reservoir channel: GROWTH vs SHRINKAGE, 90 days ---------------------
 # Saturated reservoir on the x-faces, both ends equal, so the meniscus curvature
 # set by theta is the only driver. Expect concave (theta<90) to grow, convex
-# (theta>90) to shrink, theta=90 steady. A SEALED box cannot show this: vapour
+# (theta>90) to shrink, theta=90 steady. A SEALED box cannot show this: vapor
 # holds ~1e-6 of the water there.
 channel_2D_H125um_eps0.86um:grow90_T-20_theta30
 channel_2D_H125um_eps0.86um:grow90_T-20_theta60

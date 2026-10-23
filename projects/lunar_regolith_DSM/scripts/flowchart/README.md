@@ -44,7 +44,7 @@ report). Exit 2: the spec is invalid (errors listed). Requires Graphviz
 - `kind` (node): `user`, `script`, `agent`, `record`. Agents must have `model`
   (full ID) and `tools`; every node has a one-sentence `job`.
 - `kind` (edge): `flow` (main path), `data` (writes a record), `stop` (stop and
-  ask the user), `loop` (re-check).
+  ask the user), `loop` (recheck).
 - `row` orders the stages top to bottom; nodes in one row line up. One node per
   lane per row.
 

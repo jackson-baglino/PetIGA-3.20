@@ -61,7 +61,7 @@ more physically appropriate.
 
 The ice-mineral interfacial energy depends on mineral composition. Lunar
 regolith is dominated by plagioclase feldspar, pyroxene, ilmenite, and
-agglutinates; the nearest terrestrial analogues are silicate glasses.
+agglutinates; the nearest terrestrial analogs are silicate glasses.
 
 | Value | Material | Method | Reference |
 |-------|----------|--------|-----------|
@@ -73,7 +73,7 @@ agglutinates; the nearest terrestrial analogues are silicate glasses.
 **Current model value:** `γ_is = 0.020 J/m²`.  
 A better estimate for lunar silicates would be **0.030–0.057 J/m²**; the
 lower end of this range yields a contact angle consistent with ice being
-highly non-wetting on dry lunar regolith.
+highly nonwetting on dry lunar regolith.
 
 ### 1.3 Regolith–Vapor (Sediment–Air) Surface Energy (γ_sv)
 
@@ -281,7 +281,7 @@ Res.* **89**, 3997–4008 (1984). (γ_sv for silica surfaces)
 [9] Momber, A. W. Quantifying the erosion of rock by high-velocity water jets.
 *Wear* **338-339**, 122–130 (2015). (mineral surface energy estimates)
 
-[10] Murphy, D. M. & Koop, T. Review of the vapour pressures of ice and
+[10] Murphy, D. M. & Koop, T. Review of the vapor pressures of ice and
 supercooled water for atmospheric applications. *Q. J. R. Meteorol. Soc.*
 **131**, 1539–1565 (2005). (saturation vapor pressure of ice, wide T range)
 

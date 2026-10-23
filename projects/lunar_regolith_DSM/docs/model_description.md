@@ -21,7 +21,7 @@
 > (2026-07-21). Treat the equations here as a record of what was believed at
 > the time, not as the current implementation. The triple-well material is the
 > reference for Effort 2 (`studies/icy_regolith/explicit_sediment_phase/`),
-> where it will be re-derived from the beta-eliminated equations.
+> where it will be rederived from the beta-eliminated equations.
 
 > **Purpose:** Reference document for manuscript preparation.  
 > **Code:** `PetIGA-3.20/projects/sublimation_pf/`  
@@ -54,7 +54,7 @@ The bulk free energy follows the **Kim–Steinbach three-phase model** (Kim et a
 
 $$\Psi(\phi_i, \phi_s, \phi_a) = \sum_{k \in \{i,s,a\}} \eta_k \phi_k^2(1-\phi_k)^2 + \Lambda\,\phi_i^2\phi_s^2\phi_a^2$$
 
-The first sum provides individual double-well potentials for each phase; the triple-junction interaction term $\Lambda\phi_i^2\phi_s^2\phi_a^2$ penalises configurations where all three phases coexist simultaneously, confining triple lines to a narrow region near grain boundaries.
+The first sum provides individual double-well potentials for each phase; the triple-junction interaction term $\Lambda\phi_i^2\phi_s^2\phi_a^2$ penalizes configurations where all three phases coexist simultaneously, confining triple lines to a narrow region near grain boundaries.
 
 The **bulk driving force functions** entering the Allen-Cahn equations are defined as:
 
@@ -81,7 +81,7 @@ with default values γ_iv = 0.109, γ_is = 0.033, γ_sv = 0.056 J m⁻². The pa
 
 ### 3.1 Ice Phase — Allen-Cahn Equation
 
-The ice phase evolves by a **non-conserved Allen-Cahn** equation:
+The ice phase evolves by a **nonconserved Allen-Cahn** equation:
 
 $$\frac{\partial\phi_i}{\partial t} = M\left[\varepsilon^2\nabla^2\phi_i - \frac{1}{\varepsilon}\frac{\partial\Psi^{\mathrm{eff}}}{\partial\phi_i}\right] + S_{\mathrm{sub}}$$
 
@@ -140,10 +140,10 @@ $$V_{\mathrm{src}} \;=\; -\,\rho_{\mathrm{ice}}\,S_{\mathrm{sub}} \;=\; -\,\alph
 
 (the $\rho_{\mathrm{ice}}$ factor cancels the $1/\rho_{\mathrm{ice}}$ in $S_{\mathrm{sub}}$). This is driven by the **phase-change** term only, not by $\partial\phi_i/\partial t$. The reasons:
 - **Allen-Cahn curvature motion is mass-neutral.** $\partial\phi_i/\partial t$ contains both real phase change ($S_{\mathrm{sub}}$) *and* AC curvature relaxation of the diffuse interface. The latter is a numerical artifact of the gradient flow, not physical mass exchange. Coupling it to vapor — as the earlier $V_{\mathrm{src}} = -2\rho_{\mathrm{ice}}\phi_a\,\partial\phi_i/\partial t$ form did — launders AC "mass loss" into spurious vapor (a measured ~0.6 % `TOTAL_MASS` drift during the initial AC relaxation burst).
-- **Pairing with $S_{\mathrm{sub}}$ conserves the physical exchange exactly.** $R^i$ carries $-S_{\mathrm{sub}}$ and $R^v$ carries $-V_{\mathrm{src}} = +\rho_{\mathrm{ice}}S_{\mathrm{sub}}$, so every gram of ice that sublimates becomes exactly one gram of vapor, pointwise, at every quadrature point. The $\phi_i^2\phi_a^2$ localiser zeroes the source at ice-sed boundaries ($\phi_a=0$) and in bulk.
+- **Pairing with $S_{\mathrm{sub}}$ conserves the physical exchange exactly.** $R^i$ carries $-S_{\mathrm{sub}}$ and $R^v$ carries $-V_{\mathrm{src}} = +\rho_{\mathrm{ice}}S_{\mathrm{sub}}$, so every gram of ice that sublimates becomes exactly one gram of vapor, pointwise, at every quadrature point. The $\phi_i^2\phi_a^2$ localizer zeroes the source at ice-sed boundaries ($\phi_a=0$) and in bulk.
 - **$\xi_v$ must scale $V_{\mathrm{src}}$ together with diffusion** (CORRECTED 2026-07-08; the earlier claim here that the source must stay unscaled was wrong). M&F 2024 eq. 26 writes the vapor equation as $(1/\xi_v)\,\partial(\phi_a\rho_v)/\partial t = \nabla\cdot(\phi_a D_v \nabla\rho_v) + \rho_i\,\partial\phi_a/\partial t$ — i.e. $\xi_v$ multiplies the *entire* right-hand side, diffusion **and** mass-exchange source. In the quasi-steady limit $\xi_v$ cancels between the two, so the vapor field and interface velocity remain physical while the fast diffusion timescale is slowed by $1/\xi_v$ (this is the whole point of the temporal scaling: large dt). Scaling only diffusion breaks that cancellation by $1/\xi_v$ (1000× at $\xi_v=10^{-3}$): the interface releases vapor at the full physical rate into a field that can only transport it at $\xi_v$ times the physical rate, producing supersaturation spikes, oscillation of the shrinking grain, and Newton failure. The conservation cost of scaling the source is an apparent ice→vapor transfer deficit of $(1-\xi_v)\times$ the vapor-mass change — but total vapor mass is $\sim\rho_v/\rho_i \sim 10^{-6}$ of ice mass, the "noticeable errors" M&F explicitly deem negligible. A raw ice+vapor `TOTAL_MASS` monitor will show this bookkeeping drift by construction; the correct conservation diagnostics under temporal scaling are a $\xi_v=1$ reference run or comparing ice-mass change against the $\xi_v$-scaled source integral.
 
-The earlier $2\phi_a\,\partial\phi_i/\partial t$ form was introduced to *conserve* the AC mass change (branch log §26→ later iterations); it is now retired because that AC mass change is non-physical and should not be conserved by manufacturing vapor. The right levers to limit AC mass drift are reducing the mobility $M$ (`-mob_sub`) and enabling Gibbs-Thomson (§4), not coupling AC motion to vapor (branch log §28).
+The earlier $2\phi_a\,\partial\phi_i/\partial t$ form was introduced to *conserve* the AC mass change (branch log §26→ later iterations); it is now retired because that AC mass change is nonphysical and should not be conserved by manufacturing vapor. The right levers to limit AC mass drift are reducing the mobility $M$ (`-mob_sub`) and enabling Gibbs-Thomson (§4), not coupling AC motion to vapor (branch log §28).
 
 **Effective diffusivity (penalty-weighted linear combination).** The vapor diffusivity transitions smoothly between full physical $D_v$ in air and a reduced "penalised" value in *solid phases* (ice or sediment):
 
@@ -165,7 +165,7 @@ where $h_0$ is the initial humidity (`-humidity`) and $\rho_{vs}(T)$ is the flat
 
 **Air fraction limit.** $\phi_a^{\mathrm{eff}} = \max(\phi_a, \phi_a^{\mathrm{lim}})$ with $\phi_a^{\mathrm{lim}} = 10^{-6}$ prevents numerical singularity in pure solid where $\phi_a \to 0$.
 
-**Current recommendation: both penalties OFF.** Once the §3.3 latent-heat pairing fix, the §3.4 mass-conserving $V_{\mathrm{src}}$, the §3.4 constant-anchor $\rho_v^{\mathrm{eq}}$, and the §3.4 diffusivity-penalty direction (penalty on **solid**, not on air) were all in place, the two penalties had nothing physical left to do. Diagnostic runs on `2D_separated_grains` at T = −20 °C, 30 days show that setting $k_{\mathrm{pen}} = 0$ and $\alpha_{\mathrm{pen}} = 1$ gives **cleaner** behaviour than any prior configuration with the penalties active (branch log §27). The penalty infrastructure is retained in the source code (zero cost when $k_{\mathrm{pen}}=0$) for clean revertability and as the natural place to plug a future physical surface-kinetics term.
+**Current recommendation: both penalties OFF.** Once the §3.3 latent-heat pairing fix, the §3.4 mass-conserving $V_{\mathrm{src}}$, the §3.4 constant-anchor $\rho_v^{\mathrm{eq}}$, and the §3.4 diffusivity-penalty direction (penalty on **solid**, not on air) were all in place, the two penalties had nothing physical left to do. Diagnostic runs on `2D_separated_grains` at T = −20 °C, 30 days show that setting $k_{\mathrm{pen}} = 0$ and $\alpha_{\mathrm{pen}} = 1$ gives **cleaner** behavior than any prior configuration with the penalties active (branch log §27). The penalty infrastructure is retained in the source code (zero cost when $k_{\mathrm{pen}}=0$) for clean revertability and as the natural place to plug a future physical surface-kinetics term.
 
 ---
 
@@ -175,7 +175,7 @@ The **Allen-Cahn equation for ice** includes a phase-change source term:
 
 $$S_{\mathrm{sub}} \;=\; \frac{\alpha_{\mathrm{sub}}\,\phi_i^2\,\phi_a^2}{\rho_{\mathrm{ice}}}\,\bigl(\rho_v - \rho_{vs}^{\mathrm{eff}}\bigr)$$
 
-where $\rho_{vs}^{\mathrm{eff}}$ is the Gibbs-Thomson-corrected equilibrium vapor density (below). This term localises the phase change to ice-air interfaces through the $\phi_i^2\phi_a^2$ factor, which peaks at the interface midpoint (where both $\phi_i$ and $\phi_a$ are non-zero) and **vanishes identically at ice-sed boundaries** (where $\phi_a = 0$). It drives:
+where $\rho_{vs}^{\mathrm{eff}}$ is the Gibbs-Thomson-corrected equilibrium vapor density (below). This term localizes the phase change to ice-air interfaces through the $\phi_i^2\phi_a^2$ factor, which peaks at the interface midpoint (where both $\phi_i$ and $\phi_a$ are nonzero) and **vanishes identically at ice-sed boundaries** (where $\phi_a = 0$). It drives:
 - **Sublimation** when $\rho_v < \rho_{vs}^{\mathrm{eff}}$: ice decreases, $\phi_a$ increases.
 - **Condensation** when $\rho_v > \rho_{vs}^{\mathrm{eff}}$: ice grows, $\phi_a$ decreases.
 
@@ -304,12 +304,12 @@ Available initial-condition types:
 
 ### 9.1 Isogeometric Analysis (IGA)
 
-The spatial discretisation uses **Isogeometric Analysis (IGA)** via the PetIGA library (Dalcin et al. 2016). IGA uses B-spline basis functions that provide:
+The spatial discretization uses **Isogeometric Analysis (IGA)** via the PetIGA library (Dalcin et al. 2016). IGA uses B-spline basis functions that provide:
 - **C¹ continuity** between elements (with polynomial order p = 2 and continuity C = 1).
 - Smooth representation of field variables through the diffuse interface, important for accurate evaluation of interface gradients.
 - Exact geometry representation.
 
-The domain [0, Lx] × [0, Ly] (or 1D/3D variants) is discretised with N_x × N_y uniform elements. The basis functions N_A(ξ) are B-splines of degree p = 2 with C¹ global continuity, yielding (N + p) basis functions per direction.
+The domain [0, Lx] × [0, Ly] (or 1D/3D variants) is discretized with N_x × N_y uniform elements. The basis functions N_A(ξ) are B-splines of degree p = 2 with C¹ global continuity, yielding (N + p) basis functions per direction.
 
 The element connectivity and shape function evaluation are handled by PetIGA. The physical-space element stiffness matrices are assembled from reference-space integrals via the Gauss quadrature rule with (p+1)² = 9 quadrature points per 2D element.
 
@@ -393,9 +393,9 @@ Each Newton iteration requires solving the 4 × 4 block linear system J δU = �
   - ksp_max_it = 500
   - ksp_gmres_restart = 200 (restart Krylov basis after 200 iterations)
   
-  GMRES is the correct choice for this system: the Jacobian is asymmetric due to the off-diagonal coupling between DOFs (sublimation links ice to vapor; latent heat links ice to temperature). CG or MINRES would fail on a non-symmetric system.
+  GMRES is the correct choice for this system: the Jacobian is asymmetric due to the off-diagonal coupling between DOFs (sublimation links ice to vapor; latent heat links ice to temperature). CG or MINRES would fail on a nonsymmetric system.
 
-- **Preconditioner:** Additive Schwarz Method (ASM) with ILU(2) sub-block factorisation
+- **Preconditioner:** Additive Schwarz Method (ASM) with ILU(2) subblock factorization
   - pc_type = asm, pc_asm_overlap = 1
   - sub_pc_type = ilu, sub_pc_factor_levels = 2
   
@@ -417,7 +417,7 @@ The time step is adapted based on the number of Newton iterations required in th
 | Newton iters > NRmax = 15 | Decrease dt by factor 1/f; reject and retry |
 | Rejected steps > max_rej = 25 | Abort simulation |
 
-**Why NRmin = 5 (not the more common 3).** With the relaxed `xi_v = xi_T = 1.0` setting and `snes_atol = 10⁻⁴`, SNES converges in exactly **3** iterations on essentially every accepted step in the steady-cruise regime. With the more common `NRmin = 2`, the condition "Newton iters < NRmin" was never satisfied, so dt never grew above the initial value (~0.01 s). Setting `NRmin = 5` lets 3-iter convergence trigger dt-growth, which unlocks the dt → 10⁴ s adaptive ramp needed for multi-day integrations. This was the single largest performance unlock during the §27 stability-fix campaign.
+**Why NRmin = 5 (not the more common 3).** With the relaxed `xi_v = xi_T = 1.0` setting and `snes_atol = 10⁻⁴`, SNES converges in exactly **3** iterations on essentially every accepted step in the steady-cruise regime. With the more common `NRmin = 2`, the condition "Newton iters < NRmin" was never satisfied, so dt never grew above the initial value (~0.01 s). Setting `NRmin = 5` lets 3-iter convergence trigger dt-growth, which unlocks the dt → 10⁴ s adaptive ramp needed for multiday integrations. This was the single largest performance unlock during the §27 stability-fix campaign.
 
 The time step is hard-capped at `dtmax = 10⁴ s` (~ 2.8 hours), and the adaptive scheme produces naturally log-spaced snapshots when output is set to every step (`-outp 1`).
 
@@ -451,7 +451,7 @@ Scalar time-series output is written to `SSA_evo.dat`, including:
 | φ_s² φ_a² integral | Sediment-air interface area |
 | φ_s² φ_i² integral | Ice-sediment contact area |
 
-Full solution fields (φ_i, T, ρ_v, φ_s, φ_a) are written as binary PetIGA `sol_*.dat` files and can be converted to VTK format for ParaView visualisation.
+Full solution fields (φ_i, T, ρ_v, φ_s, φ_a) are written as binary PetIGA `sol_*.dat` files and can be converted to VTK format for ParaView visualization.
 
 ---
 
@@ -695,7 +695,7 @@ The current code breaks this cascade at **every link**:
 - The analytical Jacobian eliminates FD errors → Newton converges quadratically.
 - k_pen = 10⁵ instead of 10⁹ → condition number 10⁴× lower.
 - h₀ = 0.95 → driving forces 10× smaller throughout.
-- n_relax = 1 → no pre-relaxation that creates vapor-field inconsistency.
+- n_relax = 1 → no prerelaxation that creates vapor-field inconsistency.
 
 ---
 
@@ -880,7 +880,7 @@ $$
 Integrating $V_{\mathrm{src}}$ over the diffuse interface, $\phi_a$ varies
 from 0 to 1 across a band of width $\sim\varepsilon$ while
 $\partial\phi_i/\partial t$ is concentrated in that band, and the factor 2
-normalises the integral $\int_0^1 2\phi_a\,d\phi_a = 1$, giving
+normalizes the integral $\int_0^1 2\phi_a\,d\phi_a = 1$, giving
 $\int V_{\mathrm{src}}\,d\Omega = -\rho_{\mathrm{ice}}\,\frac{d}{dt}\!\int\phi_i\,d\Omega$
 to leading order in $\varepsilon$. This is the diffuse-interface form of the
 Stefan condition and closes the mass balance exactly.

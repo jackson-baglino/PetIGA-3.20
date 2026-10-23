@@ -304,7 +304,7 @@ marked retracted, by the user, with a reason (§6).
 | screens | two screeners with different framings, compared | two agent calls (same model) | agree, or adjudicated |
 | screens | U1: random sample of 60 exclusions | human, measured | no relevant paper in the sample; otherwise rescreen |
 | PDFs | first-page DOI or title vs shortlist | deterministic | match |
-| non-publisher copies | A2: title, authors, abstract vs the published record; copy kind on every claim; recheck when a newer version arrives | deterministic + user | match, or user accepts the listed differences |
+| nonpublisher copies | A2: title, authors, abstract vs the published record; copy kind on every claim; recheck when a newer version arrives | deterministic + user | match, or user accepts the listed differences |
 | quotes | ≥ 8 words or a whole sentence; found on the cited page in the Marker text (OCR, not the page itself); unique in the paper | deterministic | all three |
 | claims | `beth-checker` on the page images: text, quote, equation symbols, numbers, kind, basis, questions, dropped conditions | agent (different Claude model, different input) | all confirmed |
 | verdicts | 30 random claims per wave rechecked by a fresh E4 run | repeated process, measured | agreement ≥ 90 %; below → E4 rerun on the wave and C0 rerun |
@@ -564,7 +564,7 @@ Resolved 2026-10-23:
 1. **Practice-round library:** frozen read-only as `library_practice/`
    (commit `8b3fbffa`); its DOIs and PDFs are seeds only.
 2. **Access:** open sources only, with the A2 copy check on every
-   non-publisher copy. No institutional library access for now; no Sci-Hub.
+   nonpublisher copy. No institutional library access for now; no Sci-Hub.
 3. **Models:** Opus for the checker, synthesizer and memo checker; Fable is
    not available on the account.
 4. **Second reader (E2):** core papers only.

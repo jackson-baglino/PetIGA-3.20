@@ -9,7 +9,7 @@ enabled, so every wall was natural Neumann `dphi/dn = 0`. The solver's own
 banner said as much — *"dphi/dn = 0 for the phase field (a 90° contact angle
 where ice meets the wall)"*.
 
-A 90° wall is an accident of omission, not a modelling choice. Ice meeting
+A 90° wall is an accident of omission, not a modeling choice. Ice meeting
 regolith has a real contact angle set by the three surface energies, and until
 it can be prescribed, every wall-bounded geometry here — pore channels, wedges,
 the icy-regolith work — runs the wrong substrate physics.
@@ -22,7 +22,7 @@ A wall free-energy surface integral,
 F_wall = ∫_Γ f_w(φ) dΓ,   f_w(φ) = γ_as − γ_ia cos θ · h(φ),   h(φ) = φ²(3−2φ)
 ```
 
-so `f_w(0) = γ_as` (wall|vapour) and `f_w(1) = γ_is` (wall|ice), with Young's
+so `f_w(0) = γ_as` (wall|vapor) and `f_w(1) = γ_is` (wall|ice), with Young's
 equation `γ_ia cos θ = γ_as − γ_is` fixing θ. Because `h'(0) = h'(1) = 0` the
 term is inert in both bulk phases and acts only where the interface meets the
 wall, so it cannot shift the bulk equilibria.
@@ -35,7 +35,7 @@ wall normal.
 
 This surprised us enough to be worth recording. The interior form is the
 gradient flow of a *dimensionless* functional whose interfacial excess is
-exactly `ε/6` per unit area, so `γ_ia` cancels against that normalisation, and
+exactly `ε/6` per unit area, so `γ_ia` cancels against that normalization, and
 the residual's `(3M/ε)` prefactor cancels the remaining ε:
 
 ```
@@ -44,7 +44,7 @@ R_bnd[a][0] = −3·M·cos θ·φ(1−φ)·N0[a]
 
 `cos θ` is the entire physical content. `demo/Metamorph.c` writes the same term
 as `−3·ε·mob·|∇φ|·cos θ`, which agrees identically because `|∇φ| = φ(1−φ)/ε` on
-the equilibrium profile — but the `h(φ)` form needs no `1/|∇φ|` regularisation
+the equilibrium profile — but the `h(φ)` form needs no `1/|∇φ|` regularization
 (Metamorph clamps it at 1e-5) and its Jacobian is an exact mass-matrix block.
 The full derivation is above `WallH()` in `src/assembly.c`.
 
@@ -54,7 +54,7 @@ Surface energies are the input; the solver derives θ and prints it.
 
 ```
 -wall_faces y0,y1        # which domain faces are regolith
--gamma_ia 0.109          # ice-vapour   (default: -Sigma_i)
+-gamma_ia 0.109          # ice-vapor    (default: -Sigma_i)
 -gamma_as 0.300          # air-regolith
 -gamma_is 0.2455         # ice-regolith  ->  theta = 60 deg
 ```
@@ -97,7 +97,7 @@ zero, not merely small. It is, at 2e-28.
 
 ### Measurement gate — `verification/verify_contact_angle_measure.py`  ✅ passing
 
-Synthesises bridges whose angle is known in closed form (the model's own tanh
+Synthesizes bridges whose angle is known in closed form (the model's own tanh
 profile in the *exact* signed distance to a circular arc) and pushes them
 through the production `measure()` rather than a reimplementation. All eleven
 angles from 15° to 165° come back exact to 0.000°.
@@ -179,7 +179,7 @@ decreasing with ε/R.
 
 ## Known caveats
 
-`docs/gt_deficit/` records a 1.22× gap between requested and realised β, from
+`docs/gt_deficit/` records a 1.22× gap between requested and realized β, from
 `tau_sub`'s thin-interface corrections being added and never subtracted back.
 It affects interface *kinetics*, not the equilibrium angle, so it should not
 contaminate these results — but it is the first thing to suspect if θ comes out

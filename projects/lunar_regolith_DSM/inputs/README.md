@@ -21,7 +21,7 @@ three files and adds `-output_path`.
 
 Only `solver.opts` and this README live at the top of `inputs/`. Every geometry
 file, experiment file and mesh from earlier work sits in `inputs/scratch/`,
-keeping its original sub-directory layout (`inputs/scratch/geometry/wedge/…`,
+keeping its original subdirectory layout (`inputs/scratch/geometry/wedge/…`,
 `inputs/scratch/experiment/tgrad/…`).
 
 **Before writing a new input file, look for one that already does the job:**
@@ -39,7 +39,7 @@ git mv inputs/scratch/geometry/wedge/<name>.opts inputs/geometry/wedge/<name>.op
 The run scripts do this search for you: when a geometry or experiment name
 misses, they check `inputs/scratch/` and print the exact `git mv` to run.
 
-Keep the same sub-directory scheme on both sides — geometry under
+Keep the same subdirectory scheme on both sides — geometry under
 `geometry/<family>/`, experiments under `experiment/<family>/`. `scratch/` is a
 quarantine, not an archive: it will be cleared out wholesale, so anything worth
 keeping needs to be pulled back into the live tree before then.
@@ -83,7 +83,7 @@ across every `.opts` file.
 | `two_ice_grains_boundary` | `FormInitialTwoIceGrainsBoundary2D` |
 | `ice_slab` | `FormInitialIceSlab2D` |
 | `single_ice` | `FormInitialSingleIceGrain2D` (1D: `…1D`) |
-| `multi_grains` | `FormInitialMultiGrains2D` — the multi-grain / igakit workhorse |
+| `multi_grains` | `FormInitialMultiGrains2D` — the multigrain / igakit workhorse |
 
 In 1D, any `-ic_type` other than `single_ice` falls through to
 `FormInitialCondition1D` (centered slab / flat interface).

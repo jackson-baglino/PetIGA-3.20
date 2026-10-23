@@ -50,7 +50,7 @@ Depositing **1e-5 %** of the ice releases enough heat to warm the box by
 1.5e-4 K, which moves ρ_vs by exactly the 1.4e-5 supersaturation that was
 driving it. The driving force annihilates itself almost immediately.
 
-Confirmed independently: the vapour throughout the domain — including at the
+Confirmed independently: the vapor throughout the domain — including at the
 "reservoir" faces — sits at `ρ_vs(1 + d0·χ)`, i.e. the whole field has
 equilibrated to the meniscus rather than to the imposed boundary value.
 
@@ -59,9 +59,9 @@ convex wants to shrink, 90° does nothing. It is throttled, not absent.
 
 **Fix applied**: `-flag_BC_Tfix 1` added to the `grow90_*` experiment files.
 With `-grad_temp0` all zero the solver pins T = temp0 on every face, giving a
-thermal bath alongside the vapour reservoir. Growth needs *both* reservoirs:
+thermal bath alongside the vapor reservoir. Growth needs *both* reservoirs:
 mass has to come from somewhere and latent heat has to go somewhere. Pinning T
-on the y-walls is harmless, unlike pinning vapour there — regolith is a thermal
+on the y-walls is harmless, unlike pinning vapor there — regolith is a thermal
 bath, and it does not feed ice at the contact line.
 
 ## 3. Convergence — ⚠️ both groups short
@@ -82,5 +82,5 @@ droplet **321 d** (2.77e7 s, ~16.5 h/run).
 ## 4. Housekeeping
 
 The batch's own postprocessing did not produce `contact_angle.csv` for any run,
-although the gate and the script were both staged correctly. Re-run locally
+although the gate and the script were both staged correctly. Rerun locally
 without trouble. Worth checking why before the next batch.

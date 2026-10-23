@@ -41,7 +41,7 @@ solving `F(x) = 0` directly, it solves the equivalent VI
 $$x_l \le x \le x_u, \qquad (x - x_l)^T F(x) \ge 0, \qquad (x_u - x)^T F(x) \ge 0$$
 
 so that any DOF sitting exactly at its lower (upper) bound is only allowed to
-have a non-negative (non-positive) residual component — i.e. the solver
+have a nonnegative (nonpositive) residual component — i.e. the solver
 treats a DOF clamped at a bound as a complementarity condition, not as a
 violated equation. This is solved with PETSc's semismooth Newton method
 (`-snes_type vinewtonssls` in `inputs/solver.opts`), which is the practical
@@ -56,7 +56,7 @@ This is sufficient because the field value at any point in the domain is
 $$\phi_i(\mathbf{x}) = \sum_k N_k(\mathbf{x})\, c_k$$
 
 a **convex combination** of nearby control-point values c_k (B-spline basis
-functions are non-negative and sum to 1 — the partition-of-unity property).
+functions are nonnegative and sum to 1 — the partition-of-unity property).
 A convex combination of numbers in `[a, b]` is itself in `[a, b]`, so bounding
 every c_k to `[a, b]` automatically bounds φ_i(**x**) to `[a, b]` everywhere,
 including between control points. No extra pointwise constraint is needed.
@@ -127,7 +127,7 @@ interacts badly with strict `[0, 1]` bounds:
 This is a genuine per-DOF-tolerance-design problem (each field's natural
 residual scale needs its own calibrated `atol`, not a single shared value) —
 not something fixable by changing the bound alone. It is tracked as a
-post-conference follow-up.
+postconference follow-up.
 
 ### The practical workaround
 
@@ -164,7 +164,7 @@ to get visibly-evolving, presentable results. The real fix — per-DOF-block
 
 - Ice phase field is bound-constrained directly on its control points via a
   **variational-inequality semismooth Newton solve**
-  (`-snes_type vinewtonssls`), not by post-hoc clipping.
+  (`-snes_type vinewtonssls`), not by post hoc clipping.
 - Bounding the DOFs is sufficient to bound the field everywhere, because
   B-spline basis functions form a convex partition of unity.
 - The production bound is `[-0.01, 1.01]` rather than the physically exact

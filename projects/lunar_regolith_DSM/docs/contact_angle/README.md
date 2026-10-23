@@ -16,7 +16,7 @@ F_wall = ∮_Γ f_w(φ) dΓ,   f_w(φ) = γ_as + (γ_is − γ_as)·h(φ),   h(�
 ```
 
 `h'(0) = h'(1) = 0`, so the term is inert in both bulk phases and acts only
-where the ice–vapour interface meets the wall. Its first variation gives the
+where the ice–vapor interface meets the wall. Its first variation gives the
 natural condition
 
 ```
@@ -75,7 +75,7 @@ no boundary form is enabled, and `γ_is = γ_as` gives θ = 90°.
 
 All angle results are against a 2° acceptance criterion.
 
-Two physical lessons came out of the campaigns. Growth needs both a vapour
+Two physical lessons came out of the campaigns. Growth needs both a vapor
 reservoir and a thermal bath. With an insulated box (`-flag_BC_Tfix 0`) the
 latent heat of a 1e-5 % deposit warms the domain enough to cancel the driving
 supersaturation (`campaign_2026-09-14/`, group B). And a moving interface holds

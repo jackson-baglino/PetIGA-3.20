@@ -25,7 +25,7 @@ inapplicable thin-interface correction}\\
 $\tsub$, the phase-field relaxation time, carried two Karma thin-interface counter-terms
 intended to cancel a spurious contribution generated at finite interface width. For this
 model that contribution is zero, because vapor diffuses only in the pore, so nothing
-cancelled and the realized kinetic coefficient came out as $\bsub+\Delta$ instead of
+canceled and the realized kinetic coefficient came out as $\bsub+\Delta$ instead of
 $\bsub$. At $-20\,^\circ$C with $\epsilon=8.58\times10^{-7}$\,m the excess $\Delta$ was
 $22\,\%$, and because $\Delta$ is proportional to $\epsilon$ the realized kinetics
 depended on the mesh. The defect was found by fitting the Gibbs--Thomson relation
@@ -189,7 +189,7 @@ the constant of integration being fixed by the absence of flux into the ice. The
 $\phi_a$ cancels, and the surviving constant is exactly the outer Stefan gradient. The
 inner solution is therefore the outer solution continued through the interface,
 $\delta\sigma\equiv0$, and $I$ vanishes for any weight. With a symmetric $D$ the $\phi_a$
-does not cancel, $\delta\sigma$ is non-zero and even in $\eta$, and $I$ survives; this is
+does not cancel, $\delta\sigma$ is nonzero and even in $\eta$, and $I$ survives; this is
 the case Karma \& Rappel treat.
 
 Two remarks. First, the thermal counter-term fails for an unrelated reason:
@@ -198,7 +198,7 @@ temperature reaches $\sigma$ only through $\rho_{vs}(T)$ and so carries a
 Clausius--Clapeyron factor. The correct coefficient,
 $(\mathrm{d}\rho_{vs}/\mathrm{d}T)L_{\rm sub}/k$, is smaller by a factor of $11$ to
 $1300$. Second, the argument above bounds only the terms proportional to $\vn$. A
-one-sided model without an anti-trapping current can also produce a spurious surface
+one-sided model without an antitrapping current can also produce a spurious surface
 diffusion, which is a different operator and is not observable in this measurement; see
 \S\ref{sec:open}.
 
@@ -238,7 +238,7 @@ Eq.~\eqref{eq:tauone} gives $\tsub=429.2$\,s and Eq.~\eqref{eq:tausym} gives $52
 \includegraphics[width=\textwidth]{fig_inner.pdf}
 \caption{\small Left: the weight $g(\phi_0)\,\partial_\eta\phi_0$ in Eq.~\eqref{eq:I} is
 even in $\eta$. Right: with symmetric $D$ the inner deviation $\delta\sigma$ is even and
-non-zero and the counter-term survives; with the one-sided $D_v\phi_a$ it vanishes
+nonzero and the counter-term survives; with the one-sided $D_v\phi_a$ it vanishes
 identically, so no counter-term can arise.}
 \end{figure}
 
@@ -256,7 +256,7 @@ header.
 Removing the terms is equivalent to supplying $\bsub-\Delta$ in their presence, but is
 preferable: it is applied once rather than in every run configuration, cannot be
 invalidated by a later change of $\epsilon$ or $T$, and remains defined when
-$\Delta>\bsub$, where no pre-compensation exists. Rescaling $\bsub$ by the observed ratio
+$\Delta>\bsub$, where no precompensation exists. Rescaling $\bsub$ by the observed ratio
 would not work at all, since that ratio is $\bsub/(\bsub+\Delta)$ and varies from $0.32$
 to $0.95$ over the range tested.
 
@@ -324,7 +324,7 @@ factor of $20.7$ at $-60\,^\circ$C.
 depend on the absolute rate. Quantities that do depend on it, such as times to a given
 state or absolute growth rates, are displaced by $\bsub/(\bsub+\Delta)$ for the
 $(\epsilon,T,\alpha_c)$ of the run in question, and any earlier conclusion resting on one
-should be re-checked. \code{preprocess/comp\_eps.py} sizes $\epsilon$ using $\bsub$; with
+should be rechecked. \code{preprocess/comp\_eps.py} sizes $\epsilon$ using $\bsub$; with
 the counter-terms gone that relation is no longer implicit.
 
 \section{Outstanding}\label{sec:open}
@@ -338,7 +338,7 @@ $\tsub$ would instead have moved it to $0.9023$. Until this runs, the claim that
 gives the correct sharp-interface limit rests on the derivation of \S4 rather than on
 measurement.
 
-\textbf{Spurious surface diffusion.} A one-sided model without an anti-trapping current
+\textbf{Spurious surface diffusion.} A one-sided model without an antitrapping current
 can generate an effective surface diffusion at $O(\epsilon)$. It would appear nowhere in
 the source, and nothing here bounds it, because it is a tangential operator invisible to a
 centerline $\vn$ measurement. The surface excess of the diffusivity weight,
@@ -346,7 +346,7 @@ $\int[(1-\phi_0)-\Theta(-\eta)]\mathrm{d}\eta$, vanishes exactly by the same ant
 as $I$, which suggests it is suppressed, but that is an indication rather than a
 calculation. Settling it means either the one-sided asymptotics for this model, mapping
 onto Echebarria, Folch, Karma \& Plapp (Phys.\ Rev.\ E \textbf{70}, 061604, 2004), or
-adding the anti-trapping current of Karma (Phys.\ Rev.\ Lett.\ \textbf{87}, 115701, 2001).
+adding the antitrapping current of Karma (Phys.\ Rev.\ Lett.\ \textbf{87}, 115701, 2001).
 Neither is urgent, since the effects such a current cancels scale as $\epsilon \vn/D_v$,
 here $2.7\times10^{-14}$. It matters specifically because the model contains no
 surface-diffusion term by construction, while the Molaro analysis separately invokes

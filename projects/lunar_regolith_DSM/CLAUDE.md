@@ -1,7 +1,7 @@
 # CLAUDE.md — lunar_regolith_DSM
 
 Phase-field model (C, PETSc 3.20 / PetIGA) of sublimation-driven ice
-metamorphism in lunar regolith, plus Python pre- and post-processing. Layout,
+metamorphism in lunar regolith, plus Python pre- and postprocessing. Layout,
 build and run details are in `README.md`; project goals in
 `project/PILLARS.md`; permissions in `PERMISSIONS.md`; memory design in
 `memory/README.md`.

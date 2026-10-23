@@ -37,14 +37,14 @@ menisci × two walls) agree to ±0.006°.
 
 ## Two things it established
 
-**Relaxation is vapour-diffusion limited and slow.** τ = 14.4 days, so reading
+**Relaxation is vapor-diffusion limited and slow.** τ = 14.4 days, so reading
 the angle directly needs ~65 days of simulated time (4.5 τ). The experiment
 files were resized from 30 to 65 days accordingly, and `contact_angle.py` now
 reports θ_inf so a short run still yields the equilibrium.
 
 **θ moves the wrong way for the first ~2 days** — 131.8° → 133.8° before turning
 around. That is the Gibbs-Thomson transient: the grain is convex, so its
-equilibrium vapour density exceeds the flat value, and it shrinks until the
+equilibrium vapor density exceeds the flat value, and it shrinks until the
 sealed box saturates. A shrinking bridge at fixed contact points has a larger
 apparent angle. This is why `extrapolate()` discards the first 40% of the
 trajectory before fitting.

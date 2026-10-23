@@ -16,10 +16,10 @@ free-energy term enforcing 60° and 120°, under both boundary-condition types.
 The two BC types do exactly what was predicted of them, and the split is clean:
 
 **Sealed recovers Young's angle to within 0.05°** on a curvilinear mesh, and the
-ice volume does not move — a sealed box holds ~1e-6 of its water as vapour, so
+ice volume does not move — a sealed box holds ~1e-6 of its water as vapor, so
 only the shape relaxes.
 
-**The reservoir grows the wetting case by 21.3 % and shrinks the non-wetting
+**The reservoir grows the wetting case by 21.3 % and shrinks the nonwetting
 case by 21.8 %**, near-symmetric, at the cost of ~1° of angle error at 60°. That
 is about 3× the ±7.5 % the flat channel produced under the same BCs, which is
 the taper doing its job: in a flat channel θ fixes the meniscus curvature
@@ -33,7 +33,7 @@ error. A reservoir keeps the interface moving, and a moving interface satisfies
 σ = d₀χ + βv_n rather than d₀χ alone, so the shape it holds is not the
 equilibrium shape. These are **dynamic contact angles** θ_d, as opposed to the
 **equilibrium (Young) angle** θ_e; the offset is a velocity-dependent, kinetic
-deviation — the direct analogue of kinetic undercooling in solidification. It is
+deviation — the direct analog of kinetic undercooling in solidification. It is
 not contact-angle *hysteresis*, which means something else (advancing vs
 receding angles from surface heterogeneity or pinning).
 
@@ -49,7 +49,7 @@ The 60° bridge is strongly asymmetric — one meniscus tightly curved
 (R = 5.8e-5 m) against one nearly flat (R = 2.8e-4 m) — where the 120° bridge is
 more balanced. Its mean curvature is **1.33× higher**, and its most-curved
 meniscus **1.65× more curved**. Higher curvature means a stronger
-non-equilibrium driving force, hence a larger kinetic deviation.
+nonequilibrium driving force, hence a larger kinetic deviation.
 
 That accounts for the *direction* and for 60° being the worse case. It does not
 by itself account for the size: a 1.33× curvature ratio against a 6.9× deviation
@@ -92,7 +92,7 @@ shortcut, and it had never been exercised.
 - φ probes use an exact inverse map, available because the patch is ruled:
   x depends on u alone, and v = (y − y_bot)/(y_top − y_bot).
 
-Verified backward-compatible: the flat-channel sealed run re-measures to
+Verified backward-compatible: the flat-channel sealed run remeasures to
 60.074 / 60.004, identical to before the change, and all 11 synthetic angles
 still return exact.
 

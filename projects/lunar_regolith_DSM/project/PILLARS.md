@@ -10,7 +10,7 @@ will be added when the user presents it.
 ## Purpose
 
 Use a designed, documented agentic workflow to answer a research question from
-the user's own work: modelling the interaction of ice, water vapour (air) and
+the user's own work: modeling the interaction of ice, water vapor (air) and
 regolith/sediment. The course grades the workflow and its evidence
 (reproducibility 20 %, technical depth 30 %, results 25 %), so how each result
 was obtained matters as much as the result.
@@ -22,14 +22,14 @@ reach an answer.
 ## Two campaigns
 
 **Campaign A: new model development.** This is the agentic course project,
-organised as the pillars below.
+organized as the pillars below.
 
 **Campaign B: production science on the current code.** The solver on `main`
 runs well and has no known problems. It is used, in parallel with Campaign A,
 to run simulations on related scientific questions. It is also the fallback if
 the new method does not work out. Campaign B does not wait on Campaign A.
 
-## Pilot — Synthesise `docs/`
+## Pilot — Synthesize `docs/`
 
 A small first workflow: read the existing design documents, check their
 claims against the code, and write one concise, verified description of the
@@ -51,7 +51,7 @@ The largest and hardest pillar. Steps, in order:
 
 1. Choose among the model options from Pillar 1, in discussion with the user.
 2. Derive the governing equations.
-3. Derive the weak form and the discretisation.
+3. Derive the weak form and the discretization.
 4. Implement in the solver (behind runtime options, on a `feat/*` branch).
 5. Verify and test.
 

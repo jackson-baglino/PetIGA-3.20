@@ -9,19 +9,19 @@
 
 ## 1. Model Overview
 
-The solver implements a non-variational Allen-Cahn phase-field model for dry
+The solver implements a nonvariational Allen-Cahn phase-field model for dry
 snow metamorphism.  The state vector has four degrees of freedom per node:
 
 | DOF | Symbol | Description |
 |-----|--------|-------------|
 | 0 | φ\_i | Ice order parameter (0 = no ice, 1 = pure ice) |
 | 1 | T | Temperature (°C) |
-| 2 | ρ\_v | Water-vapour mass density (kg/m³) |
+| 2 | ρ\_v | Water-vapor mass density (kg/m³) |
 | 3 | φ\_s | Sediment/soil order parameter |
 
 The ice Allen-Cahn equation drives φ\_i toward 0 or 1 through a double-well
 potential, with an extra kinetic source that couples ice phase change to the
-local vapour field:
+local vapor field:
 
 ```
 ∂φ_i/∂t = M_i [ ε²∇²φ_i − f'(φ_i) ] − α·φ_i²·φ_a²·(ρ_v − ρ_vs(T)) / ρ_ice
@@ -31,7 +31,7 @@ where φ\_a = 1 − φ\_i − φ\_s is the air order parameter, f is the
 Ginzburg-Landau double-well, ε is the interface width parameter, M\_i is the
 ice mobility, and α is the condensation coefficient.
 
-Vapour transport satisfies a diffusion equation with the same phase-change
+Vapor transport satisfies a diffusion equation with the same phase-change
 source (opposite sign), and temperature satisfies a heat equation coupled to
 the latent heat of phase change.
 
@@ -43,7 +43,7 @@ Kaempfer & Plapp (2009) upper bounds at T₀ = −20 °C:
 | Bound | Value | Source |
 |-------|-------|--------|
 | ε\_heat = (K\_i/C\_i)·(ρ\_vs/ρ\_ice)·β₀ | 9.33 × 10⁻⁷ m | Heat diffusion |
-| ε\_vapor = D\_v·(ρ\_vs/ρ\_ice)·β₀ | 8.63 × 10⁻⁷ m | Vapour diffusion |
+| ε\_vapor = D\_v·(ρ\_vs/ρ\_ice)·β₀ | 8.63 × 10⁻⁷ m | Vapor diffusion |
 | ε\_geom = R\_ave | 3.00 × 10⁻⁵ m | Grain geometry |
 
 `ε_max = min(ε_heat, ε_vapor, ε_geom) = 9.33 × 10⁻⁷ m`
@@ -57,7 +57,7 @@ resolution.
 
 ## 2. Simulation Setup
 
-All tests use a 1D domain (dim = 1) with the IGA discretisation:
+All tests use a 1D domain (dim = 1) with the IGA discretization:
 
 | Parameter | Value |
 |-----------|-------|
@@ -99,7 +99,7 @@ degenerate initial conditions.
 
 **Pass criteria:**
 - Exit code = 0
-- `SSA_evo.dat` exists and is non-empty
+- `SSA_evo.dat` exists and is nonempty
 - No NaN values in the `tot_ice` column
 
 **Result: ✅ PASS**
@@ -146,11 +146,11 @@ analytically expected slab volumes.
 | sum | 1.000 × 10⁻⁴ m | 1.00 × 10⁻⁴ m | < 0.01 % |
 
 **Analysis.**  The ~0.65 % overshoot in ice and sediment (with a corresponding
-undershoot in air) is attributable to the tanh profile having non-zero tails
+undershoot in air) is attributable to the tanh profile having nonzero tails
 outside the nominal slab boundary.  The diffuse interface width (2√2·ε ≈ 2.64
 µm) contributes a small excess integral above the sharp-interface prediction.
 Importantly the sum is conserved to better than 0.01 %, confirming that the
-initialisation does not create or destroy phase material.
+initialization does not create or destroy phase material.
 
 ---
 
@@ -209,9 +209,9 @@ monitor computation.
 | tot\_air | 4.97 × 10⁻⁵ m |
 
 **Analysis.**  All three phase integrals remain strictly positive throughout
-the run, and actually decrease only by sub-nanometre amounts (the system is
+the run, and actually decrease only by subnanometer amounts (the system is
 near thermodynamic equilibrium).  The minimum values are essentially the
-initial values, consistent with T01–T02 showing near-static behaviour in 20
+initial values, consistent with T01–T02 showing near-static behavior in 20
 steps at hum = 0.95.
 
 ---
@@ -243,7 +243,7 @@ time step, or a physics inconsistency.
 that the initial condition is close to a quasi-static state and the Jacobian
 is well-conditioned for the chosen ε, Δt, and mesh.  The solver uses
 backtracking line search (`snes_linesearch_type bt`), which helps maintain
-convergence when the Newton step is over-corrective.  The ILU(1) block-Jacobi
+convergence when the Newton step is overcorrective.  The ILU(1) block-Jacobi
 preconditioner provides adequate preconditioning for the stiffness matrix at
 this resolution.
 
@@ -253,11 +253,11 @@ this resolution.
 
 **Opts file:** `test_T05_sublimation.opts`  
 **Simulation:** 200 steps, t ∈ [0, 2 × 10⁻² s], humidity = 0.5, flag\_tIC = 0  
-**Category:** Dry snow metamorphism — ice-vapour phase change
+**Category:** Dry snow metamorphism — ice-vapor phase change
 
 **Purpose.**  Under strongly undersaturated conditions (hum = 0.5, meaning
 ρ\_v = 0.5·ρ\_vs), the phase-change source term is negative (ρ\_v < ρ\_vs),
-so ice should sublimate into the vapour phase and the integrated ice volume
+so ice should sublimate into the vapor phase and the integrated ice volume
 should decrease over time.
 
 The kinetic source for ice sublimation is:
@@ -300,17 +300,17 @@ for these model parameters at −20 °C.
 
 **Opts files:** `test_T06_flat_stable.opts` (no gradient) vs. `test_T07_bergeron.opts` (gradient)  
 **Simulations:** 100 steps each, t ∈ [0, 1 × 10⁻² s], humidity = 1.0, flag\_tIC = 2  
-**Category:** Dry snow metamorphism — temperature-gradient-driven vapour transport
+**Category:** Dry snow metamorphism — temperature-gradient-driven vapor transport
 
 **Background.**  The Bergeron (or temperature-gradient metamorphism) process
 is the dominant mechanism in cold, dry snow subjected to a temperature
-gradient.  When a gradient ∇T is imposed, the saturation vapour density
-ρ\_vs(T) varies spatially because dρ\_vs/dT > 0.  If the vapour is
-initialised at local saturation everywhere (ρ\_v(x, 0) = h·ρ\_vs(T(x))), the
-domain-averaged vapour content is higher in the warm region and lower in the
+gradient.  When a gradient ∇T is imposed, the saturation vapor density
+ρ\_vs(T) varies spatially because dρ\_vs/dT > 0.  If the vapor is
+initialized at local saturation everywhere (ρ\_v(x, 0) = h·ρ\_vs(T(x))), the
+domain-averaged vapor content is higher in the warm region and lower in the
 cold region.
 
-**Test design.**  The metric is the domain-averaged vapour density at t = 0:
+**Test design.**  The metric is the domain-averaged vapor density at t = 0:
 
 ```
 tot_rhov = ∫ ρ_v · φ_a  dx
@@ -327,7 +327,7 @@ For the Bergeron case with ∇T = 10⁵ K/m and L\_x = 10⁻⁴ m (so ΔT = 10 K
 - Domain-averaged ρ\_vs is higher → tot\_rhov is larger
 
 The pass criterion is tot\_rhov\_berg(0) > 1.10 × tot\_rhov\_flat(0), i.e.
-at least 10 % higher initial vapour content in the Bergeron case.
+at least 10 % higher initial vapor content in the Bergeron case.
 
 **Result: ✅ PASS**
 
@@ -336,8 +336,8 @@ at least 10 % higher initial vapour content in the Bergeron case.
 | tot\_rhov(t=0) | 4.2890 × 10⁻⁸ kg/m | 5.4460 × 10⁻⁸ kg/m | 1.270 |
 | Threshold ratio | — | — | > 1.10 |
 
-**Analysis.**  The measured ratio of 1.27 (27 % higher vapour in the Bergeron
-case) is consistent with the analytical prediction.  The Python pre-calculation
+**Analysis.**  The measured ratio of 1.27 (27 % higher vapor in the Bergeron
+case) is consistent with the analytical prediction.  The Python precalculation
 using the ASHRAE saturation polynomial (same formula as the C code) predicted:
 
 ```
@@ -354,7 +354,7 @@ less than 0.5·L\_x.
 timescale of hours to days in real snow, corresponding to ~10⁴–10⁶ time steps
 at Δt = 10⁻⁴ s.  Over the 100-step test window (10⁻² s) the expected ice
 change is ~9.6 × 10⁻¹² m, far below the 4-significant-figure monitor
-resolution.  The initial vapour ratio is therefore the physically correct and
+resolution.  The initial vapor ratio is therefore the physically correct and
 practically measurable proxy for the Bergeron signal.
 
 ---
@@ -390,12 +390,12 @@ evaluates to zero because ρ\_v = ρ\_vs everywhere in the air domain.
 
 The exact-zero result also confirms that the flat-interface IC (`flag_tIC = 2`)
 is consistent with the model's equilibrium state — the interface width and
-shape produced by the tanh initialisation are already close to the steady-state
+shape produced by the tanh initialization are already close to the steady-state
 Allen-Cahn profile at this ε.
 
 ---
 
-### T09 — Vapour Saturation at t=0
+### T09 — Vapor Saturation at t=0
 
 **Opts file:** `test_T01_quick_slab.opts` (shared with T01)  
 **Simulation:** same as T01, humidity = 0.95  
@@ -407,8 +407,8 @@ the monitor quantity `tot_rhov` is:
 tot_rhov = ∫ ρ_v · φ_a  dx  ≈  ρ_v · vol_air
 ```
 This test checks that the monitor is reporting the correct integral, i.e.
-that the Python post-processing formula `hum × ρ_vs(T₀) × vol_air` matches
-what the model actually initialised.  A discrepancy would expose a mismatch
+that the Python postprocessing formula `hum × ρ_vs(T₀) × vol_air` matches
+what the model actually initialized.  A discrepancy would expose a mismatch
 between the C `RhoVS_I()` function and the Python `rho_vs()` function.
 
 **Pass criterion:** |tot\_rhov(0) − h · ρ\_vs(T₀) · vol\_air| / expected < 2 %.
@@ -423,7 +423,7 @@ between the C `RhoVS_I()` function and the Python `rho_vs()` function.
 
 **Analysis.**  The 0.01 % agreement is essentially numerical precision, well
 within the 2 % tolerance.  This confirms that both the C code and the Python
-post-processing use the identical ASHRAE saturation-pressure polynomial and
+postprocessing use the identical ASHRAE saturation-pressure polynomial and
 produce consistent saturation densities at −20 °C (ρ\_vs ≈ 8.43 × 10⁻⁴ kg/m³).
 
 Historical note: this test was previously failing with a ~4 % error because
@@ -439,14 +439,14 @@ the error dropped to 0.01 %.
 **Simulation:** same as T01  
 **Category:** Dry snow metamorphism — Allen-Cahn dynamics
 
-**Purpose.**  The Allen-Cahn bulk free-energy minimisation drives diffuse
+**Purpose.**  The Allen-Cahn bulk free-energy minimization drives diffuse
 interfaces to evolve.  Even at near-saturation conditions (h = 0.95) the
-curvature-driven interface motion and the small vapour deficit produce a
+curvature-driven interface motion and the small vapor deficit produce a
 measurable change in the dimensionless interface density Σ/ε over time.
 
 The interface density is written to `SSA_evo.dat` as `sub_interf / ε` and
 approximates the ice-air interface area per unit volume (in 1D, the inverse
-of the local curvature radius, normalised by ε).
+of the local curvature radius, normalized by ε).
 
 **Pass criterion:** |Σ/ε(t\_final) − Σ/ε(0)| / Σ/ε(0) > 10⁻⁴.
 
@@ -476,12 +476,12 @@ more steps and track coarsening rates, which is the subject of future tests.
 
 **Opts file:** `test_T11_sublim_rate.opts`  
 **Simulation:** 1000 steps, t ∈ [0, 1 × 10⁻¹ s], humidity = 0.5, flag\_tIC = 0  
-**Category:** Dry snow metamorphism — finite-domain vapour dynamics  
+**Category:** Dry snow metamorphism — finite-domain vapor dynamics  
 **Shared run:** also used for T13 and T16
 
 **Purpose.**  In an open (infinite) system, sublimation proceeds at a constant
-rate because the vapour deficit (ρ\_vs − ρ\_v) is maintained.  In a finite
-closed domain, vapour accumulates as ice sublimates, progressively reducing
+rate because the vapor deficit (ρ\_vs − ρ\_v) is maintained.  In a finite
+closed domain, vapor accumulates as ice sublimates, progressively reducing
 the driving force.  This test verifies that the model captures this
 finite-domain effect: the sublimation rate measured in the first third of the
 run should be significantly larger than in the last third.
@@ -500,11 +500,11 @@ run should be significantly larger than in the last third.
 | Deceleration factor | ~21× |
 
 **Analysis.**  The sublimation rate decreases by a factor of ~21 over 0.1 s.
-This is physically consistent: at t = 0 the vapour deficit is 50 % of ρ\_vs;
+This is physically consistent: at t = 0 the vapor deficit is 50 % of ρ\_vs;
 by t = 0.1 s, the accumulated sublimation (15.9 nm) raises ρ\_v toward ρ\_vs.
 Using the domain dimensions: Δρ\_v = ρ\_ice × Δtot\_ice / vol\_air ≈ 919 ×
 15.9 × 10⁻⁹ / 5 × 10⁻⁵ = 2.9 × 10⁻⁴ kg/m³.  Since the initial deficit was
-0.5 × ρ\_vs ≈ 4.4 × 10⁻⁴ kg/m³, the accumulated vapour has closed about
+0.5 × ρ\_vs ≈ 4.4 × 10⁻⁴ kg/m³, the accumulated vapor has closed about
 66 % of the deficit — explaining the large rate reduction.
 
 The total sublimated mass (15.9 nm) is notably less than the naive linear
@@ -539,7 +539,7 @@ magnitude to the sublimation rate in T06 (−4.91 × 10⁻⁷ m/s).  This perfec
 symmetry is expected: the driving force at hum = 1.5 is
 (ρ\_v − ρ\_vs) = +0.5·ρ\_vs, which has the same magnitude as at hum = 0.5
 where (ρ\_v − ρ\_vs) = −0.5·ρ\_vs.  The equality confirms that the
-phase-change kinetics are symmetric with respect to the sign of the vapour
+phase-change kinetics are symmetric with respect to the sign of the vapor
 departure from saturation — a necessary property for thermodynamic
 consistency.
 
@@ -549,13 +549,13 @@ consistency.
 
 **Opts file:** `test_T11_sublim_rate.opts` (shared with T11, T16)  
 **Simulation:** 1000 steps, t ∈ [0, 1 × 10⁻¹ s], humidity = 0.5  
-**Category:** Model correctness — temperature initialisation
+**Category:** Model correctness — temperature initialization
 
 **Purpose.**  Verify that the monitor's `temp` column (which stores the
 integral ∫T dx [°C·m]) is consistent with the initial condition.  The
 domain-averaged temperature T\_avg = ∫T dx / L\_x must equal the specified
 `-temp` parameter (−20 °C) to within 1 %.  This catches any normalization
-errors, unit mismatches, or initialisation bugs in the temperature field.
+errors, unit mismatches, or initialization bugs in the temperature field.
 
 **Note on latent heat.**  The latent heat source term is present in the
 temperature equation (`R_tem += xi_T * rho * lat_sub * N0[a] * air_t`)
@@ -576,7 +576,7 @@ driving (e.g., hum = 0 or very long runs) would be needed to quantify it.
 
 **Analysis.**  The temperature integral is exactly −2.000 × 10⁻³ °C·m =
 −20 °C × 10⁻⁴ m = T₀ × L\_x, confirming that the uniform temperature
-initialisation is exact in the IGA basis.  The ice sublimation proceeds
+initialization is exact in the IGA basis.  The ice sublimation proceeds
 normally, showing the phase-change equation is active throughout the run.
 
 ---
@@ -587,7 +587,7 @@ normally, showing the phase-change equation is active throughout the run.
 **Simulation:** 1000 steps, t ∈ [0, 1 × 10⁻¹ s], humidity = 0.5  
 **Category:** Dry snow metamorphism — conservation law verification
 
-**Purpose.**  The phase-field equations couple the ice and vapour fields
+**Purpose.**  The phase-field equations couple the ice and vapor fields
 through the phase-change source.  In a closed domain with no-flux boundary
 conditions, the total water mass:
 
@@ -694,37 +694,37 @@ T06 (hum = 0.5, sublimation) gives Δtot\_ice = −10.39 nm at rate −4.91 ×
 +4.91 × 10⁻⁷ m/s.  The rates are equal in magnitude to 3 significant figures,
 confirming kinetic symmetry.
 
-### 4.4 Finite-domain vapour depletion (T11)
+### 4.4 Finite-domain vapor depletion (T11)
 
 T11 reveals that the effective sublimation rate drops from −1.66 × 10⁻⁶ m/s
 (early) to −7.67 × 10⁻⁸ m/s (late) — a 21× deceleration.  Over 0.1 s, only
 15.9 nm is lost (vs. 51.9 nm expected from a constant-rate extrapolation of
-T06).  This confirms that the domain is genuinely finite: the vapour
+T06).  This confirms that the domain is genuinely finite: the vapor
 accumulates and progressively quenches the sublimation.  This is an important
 physical result for any simulation of sublimation in enclosed snow pores.
 
 ### 4.5 Mass conservation (T16)
 
 The total water mass ρ\_ice × tot\_ice + tot\_rhov drifts by only 0.066 %
-over 1000 steps.  This validates the coupling between the ice and vapour
+over 1000 steps.  This validates the coupling between the ice and vapor
 equations: every unit of ice sublimated is balanced by a commensurate
-increase in vapour density, and the IGA quadrature is accurate enough to
+increase in vapor density, and the IGA quadrature is accurate enough to
 track this to better than 0.1 %.
 
 ### 4.6 Bergeron and flat-interface equilibrium (T07–T08, T17)
 
-The T07/T08 pair isolates the vapour-density effect of a temperature gradient;
+The T07/T08 pair isolates the vapor-density effect of a temperature gradient;
 T08 (no gradient, h = 1) and T17 (flag\_BC\_Tfix = 1, grad\_T = 10⁴ K/m, h = 1)
-both show zero phase change, confirming that the Bergeron vapour difference is
+both show zero phase change, confirming that the Bergeron vapor difference is
 purely an initial-condition effect and not a numerical artifact.  T17
 additionally verifies that the Dirichlet temperature BC is correctly enforced
 in the IGA assembly.
 
-### 4.7 Vapour model consistency (T09 and T13)
+### 4.7 Vapor model consistency (T09 and T13)
 
 T09 shows 0.01 % agreement between the Python and C saturation formulae.
 T13 shows that ∫T dx / L\_x = −20.0000 °C exactly, confirming that both the
-vapour and temperature fields are initialized to machine precision against the
+vapor and temperature fields are initialized to machine precision against the
 analytical values.
 
 ---
@@ -772,8 +772,8 @@ and T11/T13/T16 share another.
    rate in T06/T11 is physically plausible but has not been cross-checked
    against the analytical sharp-interface rate for this kinetic coefficient.
 
-4. **Bergeron flux direction unverified.**  T07 validates the initial vapour
-   field but does not verify that the net vapour flux subsequently moves
+4. **Bergeron flux direction unverified.**  T07 validates the initial vapor
+   field but does not verify that the net vapor flux subsequently moves
    toward the cold ice surface.  Spatial output from a VTK dump would be
    needed.
 
@@ -781,10 +781,10 @@ and T11/T13/T16 share another.
 
 | ID | Description | What it tests |
 |----|-------------|---------------|
-| T14 | 2D multi-grain run (existing IC infrastructure) | Curvature-driven coarsening in 2D |
+| T14 | 2D multigrain run (existing IC infrastructure) | Curvature-driven coarsening in 2D |
 | T15 | Analytical sublimation rate | Rate from kinetic coefficient vs. sharp-interface theory |
 | T18 | Latent heat ΔT with hum = 0 (max driving) | Quantitative energy balance |
-| T19 | Bergeron vapour flux direction (spatial output) | Net flux sign toward cold interface |
+| T19 | Bergeron vapor flux direction (spatial output) | Net flux sign toward cold interface |
 | T20 | Long-time interface coarsening (Σ ~ t⁻¹/³) | Allen-Cahn coarsening law in 2D |
 
 ---
@@ -794,6 +794,6 @@ and T11/T13/T16 share another.
 - Kaempfer, T. U. & Plapp, M. (2009). Phase-field modeling of dry snow
   metamorphism. *Phys. Rev. E* **79**, 031502.
   doi:10.1103/PhysRevE.79.031502
-- ASHRAE Handbook — Fundamentals (2009). Saturation vapour pressure over ice.
+- ASHRAE Handbook — Fundamentals (2009). Saturation vapor pressure over ice.
 - PETSc/TAO documentation: `SNESSetConvergenceTest`, `KSPSolve`.
 - PetIGA documentation: IGA B-spline assembly for PETSc.

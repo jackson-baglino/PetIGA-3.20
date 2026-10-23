@@ -13,7 +13,7 @@ A model in a loop with tools, defined by five things:
 5. **Stop condition**: done, failed with a reason, or a cap on turns.
 
 Building one means writing those five and testing on 10–20 real cases before
-it is trusted. Change one thing at a time and re-run the same cases.
+it is trusted. Change one thing at a time and rerun the same cases.
 
 Frontmatter fields used here: `name`, `description` (when to use it),
 `tools`, `model` (full ID), and optionally `skills`, `mcpServers`,
@@ -23,14 +23,14 @@ Only its final message returns.
 
 ## Where agents do well, and where they fail
 
-Good at: transforming material they are given (extracting, summarising,
+Good at: transforming material they are given (extracting, summarizing,
 translating notation, drafting code that will be reviewed) when "done" is
 clear and a tool does the arithmetic.
 
 | Failure | Fix |
 |---|---|
 | Recalls citations, constants or numbers from memory | Retrieve the source; require page and verbatim quote |
-| Multi-step arithmetic or algebra | A script or CAS (SymPy) does it; the agent sets it up |
+| Multistep arithmetic or algebra | A script or CAS (SymPy) does it; the agent sets it up |
 | Checks its own work ("are you sure?" lowers accuracy) | A different instrument checks |
 | Drifts on long, open-ended runs | Short jobs with an artifact and a stop condition |
 | Locks onto an early wrong diagnosis | Pass only the latest verdict forward, not the history |
@@ -50,8 +50,8 @@ If not, split it, and cut where a check fits between the pieces. Examples:
 one paper per extractor run; one derivation step per run with a CAS check;
 one source file per code reviewer. Effort scales with difficulty:
 fact-finding is one agent with a few tool calls; comparing options is two to
-four agents; broad research takes many (Anthropic, multi-agent research
-system). Multi-agent runs cost several times the tokens of one agent, so they
+four agents; broad research takes many (Anthropic, multiagent research
+system). Multiagent runs cost several times the tokens of one agent, so they
 are reserved for tasks that need them.
 
 ## Orchestrating
@@ -60,11 +60,11 @@ The five standard patterns (Anthropic, *Building effective agents*):
 
 | Pattern | Shape | Use here |
 |---|---|---|
-| Prompt chaining | fixed sequence, a check between steps | derivation → weak form → discretisation |
+| Prompt chaining | fixed sequence, a check between steps | derivation → weak form → discretization |
 | Routing | classify, then send to a specialist | triage papers by topic |
-| Parallelisation | independent pieces at once, or the same task several times | one extractor per paper; candidate formulations |
+| Parallelization | independent pieces at once, or the same task several times | one extractor per paper; candidate formulations |
 | Orchestrator–workers | a lead plans and delegates, workers return artifacts | the literature review |
-| Evaluator–optimiser | a producer and a checker loop, with a cap | code until the tests pass, max 3 rounds, then a person decides |
+| Evaluator–optimizer | a producer and a checker loop, with a cap | code until the tests pass, max 3 rounds, then a person decides |
 
 Most dependable systems are workflows: fixed control flow with model calls at
 set points. The orchestrator routes and records; it does not do the science.
@@ -77,7 +77,7 @@ one open-ended agent:
 3. A fresh-context red team attacks each.
 4. The user chooses.
 5. Derive step by step; CAS checks each step.
-6. Weak form and discretisation, checked symbolically.
+6. Weak form and discretization, checked symbolically.
 7. Implement behind a runtime option.
 8. Verify with deterministic numerical tests: manufactured solutions with
    observed convergence rates, energy decay, mass conservation, and limits

@@ -57,7 +57,7 @@ file under about 200 lines; every line costs context in every session.
 |---|---|---|
 | `/rewind` (Esc Esc) | Claude's file edits and the conversation, before each prompt | undo a wrong turn. Does not track Bash `mv`/`rm`, subagent edits or external changes; git commits are the real safety net |
 | `claude --resume <id>`, `--continue` | the whole session | reopen a closed session (IDs are in `.claude/sessions.tsv`) |
-| `runs.db` (SQLite) | workflow state after every step | resume, replay and audit a multi-agent run |
+| `runs.db` (SQLite) | workflow state after every step | resume, replay and audit a multiagent run |
 
 ### runs.db
 

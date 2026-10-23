@@ -37,7 +37,7 @@ eps sweep exonerated discretization).
   y ≡ r (radial). The symmetry axis is the y = 0 boundary.
 - **Grains:** centered ON the axis (`-ice_grain_cy 0,0`). A circle in the
   (z,r) plane centered on the axis IS a sphere: the in-plane distance
-  `sqrt((z−cz)² + r²)` equals the 3D distance. The existing multi-grain IC
+  `sqrt((z−cz)² + r²)` equals the 3D distance. The existing multigrain IC
   therefore produces exact spheres with no changes to its math.
 - **The 2π factor** is dropped from the residual/Jacobian (a global constant
   scaling of R = 0 changes nothing) but INCLUDED in the monitor integrals so
@@ -101,7 +101,7 @@ azimuthal term is Curvature() (explicit kappa from grad/Hessian for d0_GT)
    checks then remain meaningful. `Sigma0/flag_Tdep` branch: same weight if
    ever re-enabled (touch now, costs nothing). Interface-CFL limiter:
    untouched (pointwise |dphi|, geometry-agnostic).
-5. **`src/initial_conditions.c`** — relax the multi-grain validation that
+5. **`src/initial_conditions.c`** — relax the multigrain validation that
    currently rejects grains poking outside the domain in y (on-axis grains
    have cy = 0 and legitimately "extend" to r < 0; the field for r>=0 is all
    that exists). Guard: only when `-axisym 1`.

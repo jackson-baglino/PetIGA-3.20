@@ -9,7 +9,7 @@ Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `s
 - **Question.** Is each row of `memory/semantic/units.md` (58 literature symbols
   from Kaempfer & Plapp 2009, Moure & Fu 2024 and its SI) correct: the unit,
   the printed symbol, the meaning, the page, and the printed value where there
-  is one? (`j_T` and `j_v` were removed on 2026-10-22: post-processing fluxes,
+  is one? (`j_T` and `j_v` were removed on 2026-10-22: postprocessing fluxes,
   not model parameters.)
 - **Finished output.** `units.md` with every row either `verified` (page
   image, run ID, date) or `disputed` with the reason, and the UNRELIABLE
@@ -33,7 +33,7 @@ Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by `s
 | S1b | Marker reading | `marker_extract.py` (Marker 1.10.2, forced OCR, no LLM) | every page of each source | `marker/<source>_p<N>.md`: page as Markdown with LaTeX math; a symbol → page index | Markdown written for every page | Marker failure on a page → that page has no Marker reading; logged |
 | C0 | Calibrate (once, before S2 on real rows) | S2 → S3 → S4 → S4m on a copy of the table with 10 planted errors and 4 untouched control rows | altered rows | `calibration.json` | S3 flags 8/8 unit and page errors; S4 rejects ≥ 7/8; S4m catches 2/2 meaning errors; false alarms on the controls reported | below threshold → stop, revise prompts |
 | S2 | Blind read | `morty-unit-reader` | one page image + the symbol names expected on it (no units, no values) | `reads/<page>.json` per symbol: printed form, meaning, value as printed, unit as printed, where on the page, or not found | JSON schema; every requested symbol answered | schema failure → re-ask once, then log |
-| S3 | Compare | `compare_units.py` | table row, blind read, Marker reading | AGREE / DISAGREE / NOT_FOUND per row | units parsed to dimension vector and scale (J m⁻³ K⁻¹ ≡ J/(m³ K); °C difference ≡ K); printed symbols compared after dropping sub/superscript marks (ρi ≡ ρ_i; ρv ≠ ρ_vs); AGREE only if the table, the blind read and Marker all agree; NOT_FOUND re-read on the page Marker's index points to | — |
+| S3 | Compare | `compare_units.py` | table row, blind read, Marker reading | AGREE / DISAGREE / NOT_FOUND per row | units parsed to dimension vector and scale (J m⁻³ K⁻¹ ≡ J/(m³ K); °C difference ≡ K); printed symbols compared after dropping sub/superscript marks (ρi ≡ ρ_i; ρv ≠ ρ_vs); AGREE only if the table, the blind read and Marker all agree; NOT_FOUND reread on the page Marker's index points to | — |
 | S4 | Adjudicate | `beth-unit-checker` | for each DISAGREE/NOT_FOUND row: page image, table row, blind read, Marker reading | verdict: table right / read right / both wrong (with correction) / cannot tell, plus location on the page | verdict schema; a correction must re-pass S3 | "cannot tell" → user |
 | S4m | Meaning review (after S3, on every row, independent of S4) | `beth-unit-checker` | pass 1, per page: the page image and, for every row cited on it, the table's printed symbol and meaning and the blind read's meaning; pass 2, per row that pass 1 could not settle ("cannot tell"): the cited page plus up to 3 pages where Marker finds the symbol, earliest first, including the main paper for SI rows (where the SI's symbols are defined) | per row: meaning matches / table wrong (with the page's wording and the page it is defined on) / cannot tell, plus location | verdict schema | a pass-1 "cannot tell" goes to pass 2 (or straight to U1 if Marker finds the symbol on no other page); anything but "matches" after that → the row is disputed and goes to U1 |
 | U1 | Inspect | user | every row from S4 or S4m + a random 10 % of AGREE rows (rounded up), each with its page crop | approve or correct | — | user decides |
@@ -120,7 +120,7 @@ give the same verdicts.
 - `pages/*.png`, `marker/*.md`, `crops/`: **not committed** (user decision,
   2026-10-22). They are page images and page text of the papers. The run is
   reproducible from the DOIs and PDF hashes in the manifest: anyone with the
-  papers re-renders the pages and re-runs Marker and checks the hashes.
+  papers rerenders the pages and reruns Marker and checks the hashes.
 - Environment: `requirements-workflows.txt` / `.lock` (`venv_workflows`).
 - `runs.db`: one row per agent call (stage, agent, model, input hash, output
   path, verdict, time); local.
@@ -158,9 +158,9 @@ Read schema (one object per symbol):
 |---|---|
 | Text layer drops exponents and minus signs | agents get images only |
 | Reader anchors on the claimed unit | blind read (no units or values given) |
-| Wrong page in the table | Marker's symbol → page index; NOT_FOUND re-read on that page |
-| Marker or the reader misreads Greek letters or subscripts | units are compared as dimensions, not strings; printed symbols after normalisation; S4 and S4m see the image |
-| "Verified" rows that were never re-checked | every row passes through S2–S3 again |
+| Wrong page in the table | Marker's symbol → page index; NOT_FOUND reread on that page |
+| Marker or the reader misreads Greek letters or subscripts | units are compared as dimensions, not strings; printed symbols after normalization; S4 and S4m see the image |
+| "Verified" rows that were never rechecked | every row passes through S2–S3 again |
 | Two agents share a blind spot | S4 uses a different model; user inspects a random sample |
 | Wrong meaning on a row whose unit agrees | S4m reviews every row's meaning against the image; S3 compares printed symbols |
 
@@ -172,7 +172,7 @@ Read schema (one object per symbol):
    `kaempfer_plapp_2009.pdf` and `moure_fu_2024.pdf`; the DOI on each first
    page matches.
    (Resolved: the SI's two copies render pixel-identically on all 12 pages;
-   `cg4c00539_si_001.pdf` was re-saved by macOS Preview on 2026-10-18, which
+   `cg4c00539_si_001.pdf` was resaved by macOS Preview on 2026-10-18, which
    changed only its file metadata. The version of record is the untouched
    `MoureFu2024_SI/moure_fu_2024_SI.pdf`.)
 2. **Value column:** resolved 2026-10-22: record the printed value too.

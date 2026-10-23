@@ -27,7 +27,7 @@ allowed-tools: Bash(venv_lunar/bin/python preprocess/comp_eps.py *)
 <when to use it, the exact commands, what to report, what it may not do>
 ```
 
-Useful frontmatter: `allowed-tools` (pre-approves exactly these commands),
+Useful frontmatter: `allowed-tools` (preapproves exactly these commands),
 `disable-model-invocation: true` (only the user can call it), `context: fork`
 (runs in a subagent), `paths` (activates only for matching files). Keep
 `SKILL.md` under 500 lines; move detail into sibling files.

@@ -34,7 +34,7 @@ derived below, and neither requires a unit conversion.}}\end{center}
 
 \section{The free energy}
 
-Let $\phi$ be the ice fraction, $\phi=1$ ice and $\phi=0$ vapour, and let
+Let $\phi$ be the ice fraction, $\phi=1$ ice and $\phi=0$ vapor, and let
 $\Gamma\subseteq\partial\Omega$ be the part of the boundary representing
 regolith. Write the whole free energy physically, in energy units throughout:
 \begin{equation}
@@ -54,11 +54,11 @@ f_w(\phi) \;=\; \sas\bigl(1-h(\phi)\bigr) + \sis\,h(\phi)
 Both terms of \eqref{eq:F} are energies --- in 2D, J per unit depth --- so they
 add with no conversion between them. This is worth stating because it is easy to
 reach for one: the form of $\mathcal{F}_{\text{bulk}}$ implemented in the code
-(\S\ref{sec:code}) is non-dimensionalised and is \emph{not} an energy, and mixing
+(\S\ref{sec:code}) is nondimensionalized and is \emph{not} an energy, and mixing
 that form with a physical $f_w$ does require a conversion. Writing both
 physically, as here, avoids the question entirely.
 
-The bulk coefficients in \eqref{eq:F} are fixed by requiring that the ice--vapour
+The bulk coefficients in \eqref{eq:F} are fixed by requiring that the ice--vapor
 interface carry surface energy $\sia$. For the equilibrium profile
 \begin{equation}
 \phi(x)=\tfrac12\Bigl(1+\tanh\tfrac{x}{2\eps}\Bigr),
@@ -79,8 +79,8 @@ Euler--Lagrange equation), and
 $\eps$ sets the interface width without changing its energy.
 
 Two properties of $h$ matter. $h(0)=0,\ h(1)=1$ give $f_w(0)=\sas$ (wall against
-vapour) and $f_w(1)=\sis$ (wall against ice). And $h'(0)=h'(1)=0$ makes the wall
-term inert in both bulk phases: it acts only where the ice--vapour interface
+vapor) and $f_w(1)=\sis$ (wall against ice). And $h'(0)=h'(1)=0$ makes the wall
+term inert in both bulk phases: it acts only where the ice--vapor interface
 meets the wall, and cannot shift the bulk equilibria. A linear interpolant would
 violate the second property and bias $\phi$ all along $\Gamma$.
 
@@ -123,11 +123,11 @@ where
 f_1(\phi)\;=\;\tfrac12\,\frac{d}{d\phi}\bigl[\phi^{2}(1-\phi)^{2}\bigr]
 \;=\;\phi(1-\phi)(1-2\phi)
 \end{equation}
-is the half-normalised double-well derivative the code uses --- the
-normalisation that makes \eqref{eq:profile} have width exactly $\eps$.
+is the half-normalized double-well derivative the code uses --- the
+normalization that makes \eqref{eq:profile} have width exactly $\eps$.
 
 Equation \eqref{eq:var} \emph{is} the weak form: the volume integral is never
-integrated by parts in the Galerkin discretisation, and the boundary integral
+integrated by parts in the Galerkin discretization, and the boundary integral
 enters alongside it directly. That is the whole mechanism --- the wall term is a
 surface integral in the residual, nothing more.
 
@@ -258,7 +258,7 @@ $h'(\phi)=6\phi(1-\phi)$ changes sign for $\phi<0$ and $\phi>1$. So does
 $\phi$ \emph{further} out of range: a runaway.
 
 Nothing in the bulk opposes it. The interior form evaluates $f_1$ and the
-localiser at the clamped $\phi_c\in[0,1]$, so for $\phi<0$ both are identically
+localizer at the clamped $\phi_c\in[0,1]$, so for $\phi<0$ both are identically
 zero --- there is no restoring force outside the range by construction. An
 unclamped wall term is then the only term acting there, and it acts outward.
 

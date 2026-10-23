@@ -56,7 +56,7 @@ Their Appendix A opens: vapor transport is "one of the TWO dominant
 diffusion mechanisms driving neck growth in ice (Figure 10)" — the other
 is surface diffusion (V1), absent from our model. A vapor-only model
 reproducing ~half the observed rate is the expected vapor SHARE if the two
-mechanisms are co-dominant at homologous T = 0.93. This is the natural
+mechanisms are codominant at homologous T = 0.93. This is the natural
 future-work item: a surface-mobility term in the phase-field model.
 
 ## 5. The temperature inversion is an experimental artifact
@@ -87,7 +87,7 @@ A first-principles phase-field model of vapor-route sintering reproduces
 the observed growth exponent and ~50% of the measured -20 C neck growth
 rate with all parameters physically constrained; the remainder is
 quantitatively consistent with the surface-diffusion contribution that the
-SA81 framework identifies as co-dominant; and the apparent temperature
+SA81 framework identifies as codominant; and the apparent temperature
 inversion in the data is explained by the experiment's own sublimation
 artifact rather than sintering physics. Future work: (a) surface-diffusion
 mobility in the phase-field model; (b) gradient-metamorphism runs with the

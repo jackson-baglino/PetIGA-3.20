@@ -11,7 +11,7 @@
 # Boundary conditions are byte-identical to the wedge campaign's rhov_eq_eq
 # case (batch 2026-08-07 wedge_bc):
 #     -flag_BC_Tfix 1                 T = -20 C pinned on EVERY face
-#     -flag_BC_rhovfix 1              vapour Dirichlet...
+#     -flag_BC_rhovfix 1              vapor Dirichlet...
 #     -rhovfix_axis 0                 ...on the x-faces only
 #     -rhovfix_lo/hi 1.000000         both ends at saturation
 #     -grad_temp0 0,0,0               isothermal

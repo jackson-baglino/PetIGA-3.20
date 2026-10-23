@@ -8,7 +8,7 @@
 #
 # This arm halves eps to 4.2920e-07 (989 x 659, four times the cells, ~1.96M
 # DoFs) and predicts the SAME ratio. The old tau_sub would instead have moved it
-# from 0.8220 to 0.9023, because the realised kinetic coefficient carried an
+# from 0.8220 to 0.9023, because the realized kinetic coefficient carried an
 # eps-dependent term. A converged sharp-interface limit cannot do that, so this
 # is the test that references none of our own derivation.
 #

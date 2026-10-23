@@ -1,6 +1,6 @@
 # beta_sub0 ladder — does the wedge Gibbs-Thomson deficit come from tau_sub?
 #
-# Four arms, identical geometry and vapour BCs, differing ONLY in -beta_sub0
+# Four arms, identical geometry and vapor BCs, differing ONLY in -beta_sub0
 # (and in -t_final/-dtmax, set so all four run the same 3406 steps and move the
 # menisci the same ~2 control-point spacings).  Submit with:
 #

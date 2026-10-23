@@ -1,4 +1,4 @@
-# Post-processing
+# Postprocessing
 
 ```bash
 pip install numpy matplotlib scipy igakit
@@ -13,7 +13,7 @@ these work headless on HPC.
 ## Running it
 
 The whole sweep is one script, and it is what the run drivers call — so a local
-run, an HPC run and a re-run of a downloaded folder all produce the same thing:
+run, an HPC run and a rerun of a downloaded folder all produce the same thing:
 
 ```bash
 bash postprocess/run_postprocess.sh <run_folder>      # one run
@@ -21,7 +21,7 @@ bash run_batch_postprocess.sh <batch_folder>          # every run in a batch
 ```
 
 `run_postprocess.sh` and a copy of this directory are staged into every run
-folder, so a downloaded result can be re-processed with no source tree present.
+folder, so a downloaded result can be reprocessed with no source tree present.
 
 ## Where output goes
 
@@ -85,11 +85,11 @@ wrong and both change the answer by tens of percent:
 - It uses the **unscaled** `-d0_sub0` / `-beta_sub0`. The run header also
   prints `beta_sub (SCALED = beta0*rho_vs/rho_ice = beta_HK)`; that is the
   Hertz-Knudsen coefficient and pairs with an absolute density difference, not
-  with a `sigma`-normalised one. Confusing them is an error of `rho_ice/rho_vs`,
+  with a `sigma`-normalized one. Confusing them is an error of `rho_ice/rho_vs`,
   about 1e6.
 - `sigma` and `d0*chi` agree to roughly 10 %, so `v_n` is their residual and a
   1 % error in `sigma` is a ~10 % error in `v_n`. `sigma` is therefore read by
-  extrapolating the vapour-side profile back to the `phi=0.5` crossing, not by
+  extrapolating the vapor-side profile back to the `phi=0.5` crossing, not by
   sampling at a fixed standoff. The script prints how far the prediction moves
   under the alternative readings — read that line before trusting the ratio.
 
@@ -106,7 +106,7 @@ beta_bare = tau_sub*d0_sub0/eps^2 = beta_sub0 + a1*a2*eps*(1/diff_sub + 1/dif_va
 thin-interface terms so the asymptotics can subtract them back off and land on
 `beta_sub0`. The measurement says the subtraction never happens — the interface
 responds to the uncorrected coefficient. At `eps = 8.58e-7 m`, `T = -20 C` the
-two terms are 13.1 % (thermal) and 4.7 % (vapour) of `tau_sub`'s bracket, hence
+two terms are 13.1 % (thermal) and 4.7 % (vapor) of `tau_sub`'s bracket, hence
 `beta_bare/beta_sub0 = 1.217` and a ratio of `0.822`. `wedge_gt_velocity.py`
 prints `beta_eff/beta_bare` and draws `beta_sub0/beta_bare` on the ratio panel:
 when the measurement sits on that line, the shortfall is calibration, not physics.
@@ -128,7 +128,7 @@ on it, so other geometries skip silently.
 
 ### `pplib.py`
 
-Import from here rather than re-deriving; every one of these previously existed
+Import from here rather than rederiving; every one of these previously existed
 as two to five copy-pasted variants that had drifted apart.
 
 - `load_ssa`, and the column constants `SSA ICE TIME STEP DT AIR RHOV MASS`

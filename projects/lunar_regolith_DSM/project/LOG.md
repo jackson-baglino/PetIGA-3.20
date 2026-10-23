@@ -11,7 +11,7 @@ Newest first. One entry per session: done, remaining, bottlenecks.
   morty-unit-reader and beth-unit-checker (approved, merged, pushed), S4
   adjudication, S4m meaning review with a second pass on definition pages,
   C0 calibration (passed twice: 8/8, 8/8, 2/2; 0/4 false alarms on the
-  final design), reader stability, U1 inspection set, S5 apply + re-check.
+  final design), reader stability, U1 inspection set, S5 apply + recheck.
   Run 20261022-155335: user decided 22 rows; units.md now 54 verified
   literature rows, value column, UNRELIABLE header removed. Dropped j_T,
   j_v, t_n, T_cold, T_hot, beta_sol. Page images and Marker text stay
@@ -30,7 +30,7 @@ Newest first. One entry per session: done, remaining, bottlenecks.
   WORKFLOW.md, flowchart.json/.html). Flowchart renderer with overlap lint
   (scripts/flowchart/) and the morty-flowchart agent (approved). Sources
   for the units workflow copied from Zotero into Literature/; the two
-  Moure & Fu SI copies shown to be the same document (one re-saved by
+  Moure & Fu SI copies shown to be the same document (one resaved by
   Preview). Marker 1.10.2 added (stage S1b) in venv_workflows;
   requirements-workflows.txt/.lock. Old remote branch deleted; wheeler_2010
   DOI confirmed by the user.

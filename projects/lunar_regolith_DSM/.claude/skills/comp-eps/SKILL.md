@@ -27,7 +27,7 @@ Copy these from the script output verbatim:
 1. `eps` and `h`, and which bound is binding.
 2. `Nx, Ny[, Nz]`, total elements and DOFs.
 3. **Elements across the 5–95 % band.** This is the resolution figure. The
-   1–99 % count may be given after it, labelled as such.
+   1–99 % count may be given after it, labeled as such.
 4. Every `[NOTE]` and any check that is not `[OK]`.
 5. The `solver options` line.
 

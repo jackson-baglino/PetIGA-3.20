@@ -23,7 +23,7 @@
 # Marker is held below 2.0: Marker 2 does its OCR through a separate
 # llama.cpp `llama-server` binary. 1.10.2 runs entirely in PyTorch.
 # Never run Marker with --use_llm: it sends page content to an external API.
-# Marker's model weights have their own licence (free for research use).
+# Marker's model weights have their own license (free for research use).
 # ---------------------------------------------------------------------------
 
 marker-pdf==1.10.2          # PDF page -> Markdown with LaTeX math (local OCR)

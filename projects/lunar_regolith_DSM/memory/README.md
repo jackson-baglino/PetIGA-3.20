@@ -5,7 +5,7 @@ lifetime follows. This table is the project's memory design (Lab Report 2).
 
 | Kind | What | Where it lives | Keyed by | Lifetime |
 |---|---|---|---|---|
-| Working | task, constraints, recent tool output | the session's context window; constraints re-stated from files each session | session ID | the session |
+| Working | task, constraints, recent tool output | the session's context window; constraints restated from files each session | session ID | the session |
 | Episodic | what was done, failed attempts, decisions | `project/LOG.md`; per workflow run, `runs/<workflow>/runs.db` (SQLite) and the run's transcript | date, session ID, run ID | the project |
 | Semantic | facts others established: units, constants, papers | `memory/semantic/` (e.g. `units.md`); papers in `library/` (not committed) | symbol, paper, page | permanent |
 | Procedural | how to do things | `CLAUDE.md`, `.claude/agents/`, `.claude/skills/`, `workflows/`, scripts; all in git | git commit | permanent |

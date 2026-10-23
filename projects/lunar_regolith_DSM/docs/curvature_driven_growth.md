@@ -1,6 +1,6 @@
 # Where curvature drives interface motion in this model
 
-> **Status: current.** Describes the 2-phase (ice / T / vapour) solver as
+> **Status: current.** Describes the 2-phase (ice / T / vapor) solver as
 > implemented in `src/assembly.c` today. `src/` is byte-identical between
 > `enceladus_DSM` and `lunar_regolith_DSM` apart from the main file, so this
 > applies to both. Unlike `docs/model_description.md`, nothing here is
@@ -12,7 +12,7 @@
 
 ## The question this answers
 
-Plot the vapour field across a growing interface and you find it
+Plot the vapor field across a growing interface and you find it
 **undersaturated**: $\rho_v < \rho_{vs}(T)$. But the only explicit phase-change
 term in the ice equation is
 
@@ -58,7 +58,7 @@ $$f_1(\phi) \;=\; \phi(1-\phi)(1-2\phi) \;=\; \frac{\mathrm{d}}{\mathrm{d}\phi}\
 
 **Two independent things move the interface.** The phase-change term is the one
 everybody looks at. The Allen–Cahn term is the one that answers the question,
-and it contains no vapour at all.
+and it contains no vapor at all.
 
 The factor of $\tfrac12$ in $W$ matters and is deliberate — see the note at
 `assembly.c:36`. It is what makes the interface thickness parameter come out as
@@ -202,7 +202,7 @@ Substituting into the governing equation with §4's result:
 $$f'v_n \;=\; -3M\varepsilon f'\kappa \;+\; \frac{\alpha_\mathrm{sub}}{\rho_\mathrm{ice}}\,\mathrm{loc}(f)\,(\rho_v-\rho_{vs}).$$
 
 Now multiply by $f'$ and integrate across the band. $(\rho_v-\rho_{vs})$ comes
-out of the integral because the band is thin compared with the vapour diffusion
+out of the integral because the band is thin compared with the vapor diffusion
 length, so $\rho_v$ is effectively constant across it — the standard
 inner-region approximation:
 
@@ -227,7 +227,7 @@ $$\boxed{\;v_n \;=\; -3M\varepsilon\,\kappa \;+\; \frac{\varepsilon\,\alpha_\mat
 Read it directly:
 
 - **$\kappa<0$ (concave ice — a pore wall, a neck) $\Rightarrow$ $v_n>0$: the
-  ice grows**, with no vapour driving force at all.
+  ice grows**, with no vapor driving force at all.
 - **$\kappa>0$ (convex ice — a grain) $\Rightarrow$ $v_n<0$: it shrinks.**
 - Supersaturation adds to growth in the obvious way.
 
@@ -238,7 +238,7 @@ That first term is classical motion by mean curvature, and it is the answer to
 
 ## 7. The Gibbs–Thomson condition falls out
 
-Rearrange for the vapour density instead of the velocity. Divide by $\rho_{vs}$
+Rearrange for the vapor density instead of the velocity. Divide by $\rho_{vs}$
 and define the relative supersaturation $s \equiv (\rho_v-\rho_{vs})/\rho_{vs}$:
 
 $$\boxed{\;s \;=\; d_0\,\kappa \;+\; \beta\,v_n\;}$$
@@ -251,7 +251,7 @@ Setting $v_n=0$ gives the equilibrium statement
 
 $$\rho_v^\mathrm{eq} = \rho_{vs}(T)\,\bigl(1 + d_0\kappa\bigr),$$
 
-i.e. a concave surface has a *depressed* equilibrium vapour density and a convex
+i.e. a concave surface has a *depressed* equilibrium vapor density and a convex
 one an elevated one — exactly the classical result.
 
 ### This matches the code's own calibration exactly
@@ -337,9 +337,9 @@ Programmable Filter that `scripts/paraview_macros/plot_rhovsI.py` builds.
 Run: `lunar_regolith_DSM/batch_2026-08-07__07.26.38_wedge_bc/2D_wedge_band_90deg__Tgrad_T-20_G0_90d_rhov_eq_eq`,
 5702 contour points pooled over 8 timesteps.
 
-**Left panel.** Measured supersaturation against $d_0\kappa$, coloured by time.
+**Left panel.** Measured supersaturation against $d_0\kappa$, colored by time.
 The grey line is $s = d_0\kappa$, the equilibrium prediction — no fit, no free
-parameter. At $t=0$ (dark points) the vapour is initialized uniform, so $s=0$
+parameter. At $t=0$ (dark points) the vapor is initialized uniform, so $s=0$
 while $\kappa$ is already set by the initial geometry: the interface starts
 *far* from Gibbs–Thomson equilibrium. It then **relaxes onto the line**. That
 relaxation is the evidence the condition is emergent rather than imposed —
@@ -377,7 +377,7 @@ For the concave (growing) surface of the wedge:
 | measured $s$ | $-4.71\times10^{-6}$ |
 | residual $=\beta v_n$ | $+3.4\times10^{-7}$ |
 
-The vapour *is* undersaturated relative to a **flat** ice surface — that reading
+The vapor *is* undersaturated relative to a **flat** ice surface — that reading
 was correct. But the relevant comparison is against the **local** equilibrium,
 which curvature has depressed to $-5.05\times10^{-6}$. Measured against that,
 $\rho_v$ is *super*saturated by $+3.4\times10^{-7}$, and the ice grows.
@@ -427,7 +427,7 @@ observation look contradictory.
   measured $\kappa$ itself carries ~3.5% error (see
   `scripts/paraview_macros/verify_curvature.py`), which propagates straight into
   $d_0\kappa$.
-- **The $\xi_v$ temporal scaling** slows vapour diffusion by $10^{3}$ here. It
+- **The $\xi_v$ temporal scaling** slows vapor diffusion by $10^{3}$ here. It
   cancels between diffusion and source in the quasi-steady limit, but it does
   change how fast $\rho_v$ relaxes onto the Gibbs–Thomson value — which is why
   the $t=0$ transient in §8 is visible at all.
@@ -443,10 +443,10 @@ observation look contradictory.
 | $\varepsilon$ | interface decay length [m] | `-eps` |
 | $d_0$ | capillary length, $15M\rho_\mathrm{ice}/(\alpha_\mathrm{sub}\rho_{vs})$ | `-d0_sub0` |
 | $\beta$ | kinetic coefficient, $5\rho_\mathrm{ice}/(\varepsilon\alpha_\mathrm{sub}\rho_{vs})$ | `-beta_sub0` |
-| $\kappa$ | $-\nabla\!\cdot\!\mathbf{n}$, positive on convex ice | post-processing only |
+| $\kappa$ | $-\nabla\!\cdot\!\mathbf{n}$, positive on convex ice | postprocessing only |
 
 Code: `src/assembly.c:179` (residual), `src/assembly.c:36` (well
-normalisation), `src/lunar_main.c:1029` (`a1`, $\lambda$, $d_0$).
+normalization), `src/lunar_main.c:1029` (`a1`, $\lambda$, $d_0$).
 Tools: `postprocess/gt_balance.py`,
 `scripts/paraview_macros/plot_rhovsI.py`,
 `scripts/paraview_macros/verify_curvature.py`.

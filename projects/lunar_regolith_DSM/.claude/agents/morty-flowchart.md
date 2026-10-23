@@ -50,7 +50,7 @@ out, routes the arrows and checks the result. Read
 1. Write the spec. 2. Render. 3. If the exit status is not 0, fix what the
 JSON report lists and render again. 4. Read the screenshot at the report's `png` path and check: every
 arrow ends on its target, no text crosses a line, nothing is cramped, the
-summary matches the chart. Fix and re-render if not. Stop after five rounds.
+summary matches the chart. Fix and rerender if not. Stop after five rounds.
 
 ## Report
 

@@ -24,7 +24,7 @@ References to `enceladus_main.c` in the copied files were retargeted to
 `lunar_main.c`. The lunar `plot_rhovsI.py` was the 2-commit ancestor of the
 enceladus one, so nothing lunar-specific was lost by replacing it.
 
-Not copied, because they do not touch this project: the k_eff homogenisation
+Not copied, because they do not touch this project: the k_eff homogenization
 campaign, the Molaro and sintering-exponent studies, the packing generator,
 and the manuscript figure tooling.
 
@@ -66,10 +66,10 @@ surface, but *super*saturated by +3.4e-7 against its own depressed
 equilibrium. This is the picture behind the zero crossings at σ∞ = d0·χ in
 batches B and D.
 
-**5. Curvature must be computed as −div(n), normalising first (2026-08-12).**
+**5. Curvature must be computed as −div(n), normalizing first (2026-08-12).**
 Two earlier forms were wrong in ways that looked like physics: a Tikhonov
-regularisation left a residue ∝ φ'' that flipped sign across φ = 0.5 and
-reached −1e5 /m against a real 4.5e3; and differencing discretised second
+regularization left a residue ∝ φ'' that flipped sign across φ = 0.5 and
+reached −1e5 /m against a real 4.5e3; and differencing discretized second
 derivatives amplified error by `|1 − 2φ|/(ε·κ)` at the band edges ("bunny
 ears", 36 % peak-to-trough). The macro now builds the unit normal pointwise
 and differentiates that. Curvature does **not** change sign across one

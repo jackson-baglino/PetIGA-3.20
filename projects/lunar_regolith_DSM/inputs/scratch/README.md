@@ -1,7 +1,7 @@
 # inputs/scratch — quarantine, not an archive
 
 Every geometry file, experiment file, packing and mesh that is not currently in
-use, kept in its original sub-directory layout so it can be moved back
+use, kept in its original subdirectory layout so it can be moved back
 unchanged.
 
 **Before writing a new input file, search here first:**

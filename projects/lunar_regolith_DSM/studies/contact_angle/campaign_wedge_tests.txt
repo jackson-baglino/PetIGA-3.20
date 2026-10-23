@@ -19,7 +19,7 @@
 #                  flat channel). Ice can REDISTRIBUTE along the taper at
 #                  constant mass but cannot grow or shrink on net.
 #
-#   wedgeres150_*  reservoirs: T pinned on every face, vapour at saturation on
+#   wedgeres150_*  reservoirs: T pinned on every face, vapor at saturation on
 #                  the x-faces. Identical to the 2026-08-07 wedge_bc campaign's
 #                  rhov_eq_eq case, so these are directly comparable to it.
 #                  Permits net growth/shrinkage, at the cost of ~1 deg of angle

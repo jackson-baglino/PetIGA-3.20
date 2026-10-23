@@ -60,7 +60,7 @@ is not a measurement at all:
   *reported success*. Nothing in the solver's exit status flags this.
 
 Note `tot_ice` in `SSA_evo.dat` is constant to all printed digits in **every**
-run including healthy ones — the vapour holds ~1e-6 of the total water, so ice
+run including healthy ones — the vapor holds ~1e-6 of the total water, so ice
 volume cannot change within `%e` precision. It is not a freeze diagnostic. The
 snapshot-fingerprint count is.
 

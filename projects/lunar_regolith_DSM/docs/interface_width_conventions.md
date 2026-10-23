@@ -100,7 +100,7 @@ one way:
    per Karma width. If a mesh-convergence study shows more accuracy is
    needed, reduce h (e.g. eps/2 or eps/(2√2)); the 1%–99% count then rises
    (18, 26, ...) as an automatic consequence. Refining h changes nothing
-   about the width in meters — it only re-tiles the same interface.
+   about the width in meters — it only retiles the same interface.
 4. **The IC reproduces the equilibrium profile**:
    `phi = 1/(1 + exp(-(R - d)/eps))` = `0.5 - 0.5·tanh(0.5·(d - R)/eps)`.
    Any other steepness just adds a one-time relaxation transient (the model
@@ -114,7 +114,7 @@ one way:
   unscaled `user->eps` breaks the Kaempfer–Plapp asymptotic mapping — the
   effective capillary length and kinetic coefficient silently shift ~25%,
   corrupting the physical d0 calibration. If a narrower interface is ever
-  genuinely required, change eps itself (opts) and re-run `comp_eps.py` so
+  genuinely required, change eps itself (opts) and rerun `comp_eps.py` so
   mesh and kinetics move together.
 - **Stale IC steepness** (fixed 2026-07-09): the grain ICs long carried
   `tc = 1/(√2·0.75·eps)` — 1.89× steeper than equilibrium, a leftover of the

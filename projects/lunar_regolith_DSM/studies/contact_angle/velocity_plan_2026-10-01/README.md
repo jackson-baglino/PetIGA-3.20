@@ -21,7 +21,7 @@ v_n = (σ∞ − d0·χ) / (β + Z)
 Talking points
 
 - Gibbs–Thomson at the interface, `σ_i = d0·χ + β·v_n`, in series with
-  quasi-steady vapour diffusion to the fixed-σ∞ walls,
+  quasi-steady vapor diffusion to the fixed-σ∞ walls,
   `ρ_ice·v_n = D_v·ρ_vs·(σ∞ − σ_i)/length`. Eliminating σ_i gives the relation
   above.
 - The contact angle enters only through the curvature χ. The geometry sets χ
@@ -31,7 +31,7 @@ Talking points
 - At ℓ = 100 µm the diffusive resistance is Z = 5.8e6 s/m. Whether the runs
   are kinetics- or diffusion-limited is set by α_c (next section).
 - Sign conventions: θ is measured through the ice; χ > 0 where the ice is
-  convex into the vapour; v_n > 0 is growth.
+  convex into the vapor; v_n > 0 is growth.
 
 ---
 
@@ -85,7 +85,7 @@ Talking points
 
 Talking points
 
-- All runs at −20 °C, temperature pinned on every face, vapour density fixed on
+- All runs at −20 °C, temperature pinned on every face, vapor density fixed on
   the left and right walls, wetting walls top and bottom.
 - Existing geometries: the 125 µm channel and the 300 µm wedge with wall slopes
   ±0.25 (half-angle α = 14.0°).
@@ -209,7 +209,7 @@ tests files, `batch{A,B,C,D}_*_ac1e-3_tests.txt` and `..._ac1e-2_tests.txt`.
 | D | 6 | `wedgeres150_T-20_theta60_sig{m,p}{1,2,3}e-5_ac*` |
 
 - σ∞ is set through `-rhovfix_lo/hi`, which are fractions of ρ_vs(temp0), so
-  σ∞ = rhovfix − 1. `-humidity` is set to the same value so the vapour IC
+  σ∞ = rhovfix − 1. `-humidity` is set to the same value so the vapor IC
   starts on the reservoir value.
 - The σ∞ = 0 points of B and D are the θ = 60° runs of A and C.
 - Nothing here repeats an earlier run: the September batches used α_c = 2e-3,
@@ -339,10 +339,10 @@ All six rungs completed, no rejections, φ within bounds. Ice grew 29 % in
 - **Every step takes exactly one Newton iteration, at every rung.** The φ
   residual is ~1e-17 in SI units, far below `-snes_atol 1e-6`, so the block
   is declared converged on entry; after the single iteration its residual has
-  fallen by only 0.54×. The scheme is in effect linearised once per step.
+  fallen by only 0.54×. The scheme is in effect linearized once per step.
   This is the known, deferred tolerance issue noted in `lunar_main.c`
   (per-field tolerances matched to each field's scale), and it is the
-  concrete case for non-dimensionalising: not conditioning (5–7 Krylov
+  concrete case for nondimensionalizing: not conditioning (5–7 Krylov
   iterations per solve is already cheap) but a convergence test that means
   something. Whether a properly converged Newton solve would hold accuracy
   at larger dt is untested.
@@ -351,7 +351,7 @@ All six rungs completed, no rejections, φ within bounds. Ice grew 29 % in
 
 All six rungs completed, no rejections. The small grain was absorbed: a neck
 forms within about two days, the pair becomes a pear, and the small lobe is
-consumed from its outer side until nothing is left at its old centre between
+consumed from its outer side until nothing is left at its old center between
 days 48 and 54.
 
 | dtmax/τ_sub | steps | max trajectory error | absorption time | CFL caps |
@@ -364,7 +364,7 @@ days 48 and 54.
 | 40 | 103 | 3.6 % | +24 % | 24 |
 
 - "Absorption time" is when the ice height at the small grain's original
-  centre falls to 10 µm, interpolated between snapshots six days apart, so it
+  center falls to 10 µm, interpolated between snapshots six days apart, so it
   is good to about ±2 %. Trajectory error is on the per-step interface length.
 - Same verdict as the channel: clean to 5·τ_sub, a few percent at 10, and
   wrong beyond. A large step makes the event LATE, as in the July stress test.
@@ -459,7 +459,7 @@ without the additive 8.7e5 s/m interface offset.
   velocities are not usable yet: at 60° the contact line advances at
   +1.6e-12 m/s while the mid-plane retreats at −3.0e-13 m/s, because the
   clipped-disc IC is still relaxing to the equilibrium arc after 90 days.
-  This settles "where to measure" for the channel in favour of v_mean.
+  This settles "where to measure" for the channel in favor of v_mean.
 - Not yet done: theory evaluated at the time-dependent ℓ, which is needed
   before the offset can be judged from these runs.
 
@@ -467,7 +467,7 @@ without the additive 8.7e5 s/m interface offset.
 
 ### Result: all four batches at both α_c (2026-10-07)
 
-All 44 runs analysed (the wedge θ = 150°, α_c = 1e-2 run was added on
+All 44 runs analyzed (the wedge θ = 150°, α_c = 1e-2 run was added on
 2026-10-07 after it finished). Every run completed with no rejected steps. Local copy:
 `~/SimulationResults/HPC_results/lunar_regolith_DSM/velocity_study_2026-10/`;
 HPC copy under `/resnick/groups/rubyfu/jbaglino/simulation_outputs/lunar_regolith_DSM/`.
@@ -568,12 +568,12 @@ What they show:
   the theory, including the runaway of the +2e-5 and +3e-5 runs as the inner
   meniscus reaches the wall.
 - Wedge θ = 150°, α_c = 1e-2: flat until day 135, then both velocities jump
-  within about 8 days. The movie shows the non-wetting bridge pulling in to
+  within about 8 days. The movie shows the nonwetting bridge pulling in to
   a lens and detaching from both walls at that time; by day 140 it is a
   free ellipse.
 
 **Movies.** `movie_with_velocity.py --dir <run>` renders one run (ice, and
-supersaturation in the vapour) above its velocity curve with a moving
+supersaturation in the vapor) above its velocity curve with a moving
 marker. Four are in `figures/movies/`: channel θ = 30° and 150°, wedge
 θ = 150°, and wedge σ∞ = +3e-5 (the run that fills the domain), all at
 α_c = 1e-2.
@@ -594,14 +594,14 @@ cross θ = 60° and σ∞ = 0; filling the plane needs a θ × σ∞ grid of run
 
 All runs above had a wall on every face as far as φ is concerned: the
 prescribed θ on the top and bottom (`-wall_faces y0,y1`) and the natural
-condition ∂φ/∂n = 0 on the two vapour-reservoir faces, which is a 90°
+condition ∂φ/∂n = 0 on the two vapor-reservoir faces, which is a 90°
 wall. A meniscus reaching a reservoir face therefore met a wall there.
 
-The solver now treats every vapour-reservoir face that is not regolith as
+The solver now treats every vapor-reservoir face that is not regolith as
 open: nothing is imposed on φ, so the ice passes through as if the channel
 continued. In the weak form this keeps the boundary term of the integration
 by parts, `−∫ N·3Mε·(∇φ·n) dΓ`, with ∇φ·n taken from the solution, instead
-of dropping it. `-phi_open_bc 0` restores the old behaviour. The printed
+of dropping it. `-phi_open_bc 0` restores the old behavior. The printed
 boundary table shows `open  (ice passes)` on those faces.
 
 Not yet run. Local test pair on the small channel (σ∞ = +3e-5, 60 days, the
@@ -619,8 +619,8 @@ Talking points
 
 - Schematic only: the wall shapes and ice placement are illustrative, not a
   simulation or a planned geometry file.
-- Boundary conditions: the left end is open to a low vapour saturation
-  (σ∞ < 0); the right end is a dead pore, i.e. no vapour flux.
+- Boundary conditions: the left end is open to a low vapor saturation
+  (σ∞ < 0); the right end is a dead pore, i.e. no vapor flux.
 - Two kinds of ice. Lenses span both walls and sit at the throats.
   Wall-adhered ice touches one wall only and sits in the troughs, not on the
   peaks.
@@ -640,7 +640,7 @@ Talking points
 - **Dynamic contact angle.** A moving interface sat about 1° off Young's angle
   at 60° in the reservoir runs. Plot against the measured angle as well as the
   prescribed one.
-- **Radial-diffusion approximation.** The wedge resistance assumes vapour
+- **Radial-diffusion approximation.** The wedge resistance assumes vapor
   diffuses radially from an arc-shaped wall. The real walls are straight, and
   the meniscus is not an arc about the apex unless θ = 90°.
 - **Sweep ranges.** Which angles, which σ∞ values, and which fixed θ for the

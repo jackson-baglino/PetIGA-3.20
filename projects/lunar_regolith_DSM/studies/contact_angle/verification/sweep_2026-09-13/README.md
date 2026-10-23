@@ -90,7 +90,7 @@ Three options, in order of cost:
 1. **Drop it.** The channel result stands on its own: five angles within
    0.127°, a converging ε ladder, and four independent estimates per snapshot.
    Confinement would have to conspire across all five angles to fake that.
-2. **Shrink the box.** Relaxation is vapour-diffusion-limited over the domain,
+2. **Shrink the box.** Relaxation is vapor-diffusion-limited over the domain,
    and the sessile box is 3× taller than the channel (300 vs 100 µm). Reducing
    Ly to ~2R should cut τ substantially at the cost of some ceiling influence —
    cheaper than a 450-day run and probably decisive enough.
