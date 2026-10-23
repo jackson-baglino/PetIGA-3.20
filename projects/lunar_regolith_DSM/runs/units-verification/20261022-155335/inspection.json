@@ -150,9 +150,10 @@
         "edit": {
           "meaning": "reference temperature converting °C to K, T_K = T_C + T_0 (printed as T0)",
           "source": "moure_fu_2024",
-          "page": 3
+          "page": 3,
+          "unit": "°C"
         },
-        "note": "T_0 is overloaded. Use Moure and Fu's T_0, which converts °C to K (T_K = T_C + T_0); the K&P T_0 is a simulation's initial condition.",
+        "note": "T_0 is overloaded. Use Moure and Fu's T_0, which converts °C to K (T_K = T_C + T_0); the K&P T_0 is a simulation's initial condition. Unit written as °C because T is in °C (°C and K differ only in where zero is).",
         "decided": "2026-10-22",
         "by": "user"
       }
