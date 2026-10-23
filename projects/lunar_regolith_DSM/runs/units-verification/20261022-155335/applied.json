@@ -69,7 +69,8 @@
       "edit": {
         "meaning": "reference temperature converting °C to K, T_K = T_C + T_0 (printed as T0)",
         "source": "moure_fu_2024",
-        "page": 3
+        "page": 3,
+        "unit": "°C"
       },
       "symbol": "T0",
       "status": "verified",

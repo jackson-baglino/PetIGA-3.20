@@ -615,7 +615,7 @@
     },
     "S5": {
       "out": "memory/semantic/units.md",
-      "out_sha256": "f31059e0386ff42906a3a7fcbf315246528460246e1c99d0bcda85e412832eb9",
+      "out_sha256": "963a28c7325ab19188606d859c5694c9259f1baffd38a76e476e55fe02edb48f",
       "verified": 54,
       "unresolved": [],
       "dropped": [
@@ -627,7 +627,7 @@
       "recheck_used": true,
       "verdict": "complete",
       "git": {
-        "commit": "2b9ed0524197ddfd32f9f635fd57d629a37e8ebd",
+        "commit": "d07d4cfcab4a404ab5f3a05dd0bb63eb3b0da443",
         "definitions_modified": []
       },
       "allow_dirty": false,
@@ -635,7 +635,7 @@
         "claude_code": "2.1.308 (Claude Code)",
         "mutool": "mutool version 1.24.9"
       },
-      "finished": "2026-10-22T17:07:05-07:00"
+      "finished": "2026-10-22T17:31:00-07:00"
     },
     "S5-recheck": {
       "rows": [
