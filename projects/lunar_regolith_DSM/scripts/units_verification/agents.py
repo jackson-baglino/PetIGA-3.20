@@ -119,8 +119,11 @@ def _audit(events, agent, clean, image_names):
     return problems, result
 
 
-def call_agent(rdir, stage, agent_name, label, task, images, schema, check=None, retries=1):
+def call_agent(rdir, stage, agent_name, label, task, images, schema, check=None, retries=1, allow=()):
     """Run one agent task. images: {name in the clean folder: source path}. check(output) -> extra problems.
+
+    allow: tools to pre-approve with --allowedTools. dontAsk mode refuses any tool needing permission, such as
+    WebSearch (tested 2026-10-23); Read inside the clean folder needs none.
 
     Returns (output, info). Raises AgentError when every attempt failed; info lists the problems.
     """
@@ -141,6 +144,8 @@ def call_agent(rdir, stage, agent_name, label, task, images, schema, check=None,
                    "--permission-mode", "dontAsk", "--setting-sources", "", "--strict-mcp-config",
                    "--no-session-persistence", "--disable-slash-commands", "--system-prompt", agent["system_prompt"],
                    "--output-format", "stream-json", "--verbose", "--json-schema", json.dumps(schema)]
+            if allow:
+                cmd += ["--allowedTools", ",".join(allow)]
             try:
                 p = subprocess.run(cmd, cwd=clean, capture_output=True, text=True, timeout=TIMEOUT_S)
                 out_text, err_text = p.stdout, p.stderr

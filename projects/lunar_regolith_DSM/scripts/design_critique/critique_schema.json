@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings", "unclear"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "area", "where", "severity", "problem", "failure_scenario", "fix", "confidence", "source"],
+        "properties": {
+          "id": {"type": "string"},
+          "area": {"type": "string", "enum": ["checks", "efficiency", "robustness", "assumptions"]},
+          "where": {"type": "string"},
+          "severity": {"type": "string", "enum": ["critical", "major", "minor"]},
+          "problem": {"type": "string"},
+          "failure_scenario": {"type": "string"},
+          "fix": {"type": "string"},
+          "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+          "source": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "unclear": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["where", "issue"],
+        "properties": {
+          "where": {"type": "string"},
+          "issue": {"type": "string"}
+        }
+      }
+    }
+  }
+}
