@@ -1,9 +1,10 @@
 # WORKFLOW: literature-review
 
-Status: **draft design, not approved** (2026-10-23, revision 4: the accepted
+Status: **approved for building** (2026-10-23, revision 5: the accepted
 findings of design critiques `runs/design-critique/20261023-103742/` and
-`20261023-111440/` applied, with the user's guided reading in U3). Nothing is
-built.
+`20261023-111440/` applied, with the user's guided reading in U3, page tiles
+for equations and numbers, and the sandbox adopted). Nothing is built yet;
+the tests in §12 come first.
 Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by
 `scripts/flowchart/render_flowchart.py`. Decisions are in §9.
 
@@ -12,7 +13,7 @@ Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by
 - **Question.** A general, reusable workflow for literature reviews of any
   size. Each review answers a set of questions written down before the search
   starts (the *brief*). The first review (Pillar 1): numerical methods for
-  multi-phase systems in which some phases are stationary and others evolve,
+  multiphase systems in which some phases are stationary and others evolve,
   starting from diffuse-interface and diffuse-domain methods; the motivating
   failure is the spurious air film that appears where the evolving ice field
   relaxes against a stationary sediment field and φ_i + φ_s ≠ 1 in the band.
@@ -40,7 +41,7 @@ Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by
     the memo (U4).
 - **Baseline.** The practice-round library (85 papers, 2,532 claims, 66 papers
   still "flagged"), built with one reader and one checker per paper and no
-  calibration, now frozen as `library_practice/`. Re-checking a random sample
+  calibration, now frozen as `library_practice/`. Rechecking a random sample
   of its claims through E3–E4 measures what this design adds.
 
 ## 2. Scope, scale and waves
@@ -69,34 +70,50 @@ waves only after it is checked.
 | # | Stage | Agent or script | Input | Output | Check | Stop / escalate |
 |---|---|---|---|---|---|---|
 | U0 | Brief | user, with the main session | the user's goal, seed papers | `reviews/<review>/brief.vN.json`: questions Q1…Qn, inclusion and exclusion criteria, tier, seeds, queries, limits | user approves | — |
-| D1 | Search and chain | `discover.py` | brief | `candidates.json`; every request and raw response saved with its hash and date | every query logged with API, date, result count; the wave's OpenAlex cost estimated before it runs and `X-RateLimit-Remaining` read on every response; filter and ID queries preferred over search | the Keychain key cannot be read → stop (no fall-back to keyless calls); HTTP 429 or 5xx → back off and resume; a source still failing → the wave is marked *discovery incomplete* with the failed queries, shown at U1, and the queries are re-run before U1 or in the next wave |
+| D1 | Search and chain | `discover.py` | brief | `candidates.json`; every request and raw response saved with its hash and date | every query logged with API, date, result count; the wave's OpenAlex cost estimated before it runs and `X-RateLimit-Remaining` read on every response; filter and ID queries preferred over search | the Keychain key cannot be read → stop (no fallback to keyless calls); HTTP 429 or 5xx → back off and resume; a source still failing → the wave is marked *discovery incomplete* with the failed queries, shown at U1, and the queries are rerun before U1 or in the next wave |
 | D2 | Scout (tier M, L) | `morty-scout` | brief questions and criteria | citations only (title, authors, year, DOI if known) | resolved in D3 | — |
 | D3 | Resolve | `resolve.py` | candidates + scout citations | `candidates.json`: one entry per work, merged by DOI, OpenAlex work ID, Crossref `relation` (has-preprint / is-preprint-of), then title plus first author; abstract present or not; retraction and correction status from the work's Crossref `updated-by` field and `filter=updates:<DOI>` | resolves in Crossref or OpenAlex, else arXiv, NASA ADS, NTRS or OSTI, with a matching title (similarity defined in §5) | unresolved → kept, marked *unresolved*, shown at U1 (not dropped: reports and theses often lack Crossref records) |
 | C0 | Calibrate (before the first real wave; again after any trigger in §5) | `calibrate.py` | planted-error, control, gold-recall and screening sets (§5) | `calibration.json` | thresholds in §5 | below threshold → stop, revise prompts |
 | SC1 | Screen (tier M, L) | `jerry-screener` ×2, two framings | title, abstract, venue, year; the brief's criteria | per candidate: core / context / exclude, the exclusion criterion that applies (required for exclude), the questions it bears on | schema; exclude is valid only with a named exclusion criterion and no question it bears on | no abstract (after trying Semantic Scholar and arXiv) → never excluded; goes to U1 marked *no abstract* |
 | SC2 | Compare screens | `compare_screens.py` | the two screens | agreed list; disagreements | script | — |
 | SC3 | Adjudicate screens | `beth-checker` (task: screen) | each disagreement, both reasons, the abstract | one decision with reason | schema | "cannot tell" → U1 |
-| U1 | Approve shortlist | user | every core and context paper; a simple random sample of 60 excluded candidates (all, if 60 or fewer); unresolved and no-abstract candidates; queries with counts; any *discovery incomplete* warning | approved shortlist | the sample bounds the share of excluded candidates the user would have included (§5) | user adds or removes papers; a relevant paper found in the exclusion sample → screening prompts revised, C0 screening re-run, the wave re-screened |
+| U1 | Approve shortlist | user | every core and context paper; a simple random sample of 60 excluded candidates (all, if 60 or fewer); unresolved and no-abstract candidates; queries with counts; any *discovery incomplete* warning | approved shortlist | the sample bounds the share of excluded candidates the user would have included (§5) | user adds or removes papers; a relevant paper found in the exclusion sample → screening prompts revised, C0 screening rerun, the wave rescreened |
 | A1 | Acquire | `acquire.py` | shortlist | PDFs in `Literature/incoming/<review>/`, each in its own new folder; `acquired.json` with path, sha256, source and copy kind | identity: the DOI or title on the first page matches the shortlist entry; a new copy of a work already in the library (for example the journal version of a preprint) is linked to it | no match → not acquired, logged; a newer version of a read paper → its claims go back through E3 and E4 against the new copy |
 | A2 | Check the copy (every copy that is not the publisher's version) | `check_copy.py` | acquired PDF, published metadata | copy kind (version of record / accepted manuscript / preprint vN / thesis); title, author and abstract comparison with the published record | title and authors match; abstract similarity reported; differences listed on the paper card | title or authors differ → U2 decides |
-| U2 | Supply missing papers | user | `fetch_list.md` (title, DOI, what was tried); A2 differences | any copy the user already has (Zotero) dropped into the incoming folder, or "unavailable"; accept or reject a copy that A2 flagged | A1 and A2 re-run | user marks a paper unavailable |
-| P1 | Prepare | `prepare.py` | acquired PDFs | `pages/<paper>_p<N>.png` (200 dpi, mutool); `marker/<paper>_p<N>.md` (Marker, forced OCR, LaTeX math); figure crops with captions; a map from PDF page index to printed page number; hashes | every page has an image and a Marker page | failure on a page → logged; that page cannot be cited |
-| E1 | Read | `morty-reader`, fresh per paper (per section for papers over ~40 pages; a script merges the section maps) | brief questions (versioned IDs, `Q2@v1`), tag vocabulary, the paper's Marker pages and page images | `reads/<paper>.A.json`: claims (schema in §7), each condition with its page, and a section map (abstract, assumptions/model, method, results, conclusions → pages) | schema; one output per paper (or section) | failure → rules below the table |
+| U2 | Supply missing papers | user | `fetch_list.md` (title, DOI, what was tried); A2 differences | any copy the user already has (Zotero) dropped into the incoming folder, or "unavailable"; accept or reject a copy that A2 flagged | A1 and A2 rerun | user marks a paper unavailable |
+| P1 | Prepare | `prepare.py` | acquired PDFs | `pages/<paper>_p<N>.png` (full page, 300 dpi, mutool); `tiles/<paper>_p<N>_t<K>.png` (the page cut into tiles at 300 dpi, rule below the table); `marker/<paper>_p<N>.md` (Marker, forced OCR, LaTeX math); figure crops with captions; a map from PDF page index to printed page number; hashes | every page has an image, its tiles and a Marker page; every tile within the model's image limits; the tiles together cover the whole text area | failure on a page → logged; that page cannot be cited |
+| E1 | Read | `morty-reader`, fresh per paper (per section for papers over ~40 pages; a script merges the section maps) | brief questions (versioned IDs, `Q2@v1`), tag vocabulary, the paper's Marker pages, full page images (for layout and context) and tiles (for every equation, number and symbol it transcribes) | `reads/<paper>.A.json`: claims (schema in §7), each condition with its page, and a section map (abstract, assumptions/model, method, results, conclusions → pages) | schema; one output per paper (or section) | failure → rules below the table |
 | E2 | Second read (core papers) | `morty-reader`, fresh, same input | as E1 | `reads/<paper>.B.json` | used by E3 | — |
-| E3 | Check extraction | `check_extraction.py` | reads, Marker pages | per claim: quote length, quote found on the cited page, quote unique in the paper; per paper: page coverage; A and B merged into one claim set (two passes, §5) | quote ≥ 8 words or a whole sentence; match after normalisation (whitespace, ligatures, hyphenation); a quote corrected by E4 from the image passes if it is within a set edit distance of a span of the Marker page, and both strings are recorded | quote too short, not found, or not unique → the claim goes to E4 marked; coverage gap → E4 |
-| E4 | Check claims | `beth-checker` (task: claim), per page | all claims citing one page; that page's image (and figure crops); the images of the paper's abstract, assumptions/model, method and conclusions pages from the section map, and of every page a claim lists a condition on; the brief's questions. Never Marker text, never the reader's reasoning | per claim: text supported / overstated (with corrected wording) / unsupported / not on the cited page; quote on the page as written; every symbol of every equation and every number as printed (corrected LaTeX if not); kind, basis and questions confirmed or corrected; conditions stated on the pages it sees that the claim drops | schema; a correction must re-pass E3 | anything but fully confirmed → E5 |
+| E3 | Check extraction | `check_extraction.py` | reads, Marker pages | per claim: quote length, quote found on the cited page, quote unique in the paper; per paper: page coverage; A and B merged into one claim set (two passes, §5) | quote ≥ 8 words or a whole sentence; match after normalization (whitespace, ligatures, hyphenation); a quote corrected by E4 from the image passes if it is within a set edit distance of a span of the Marker page, and both strings are recorded | quote too short, not found, or not unique → the claim goes to E4 marked; coverage gap → E4 |
+| E4 | Check claims | `beth-checker` (task: claim), per page | all claims citing one page; that page's full image and its tiles (every equation, number and quote is checked on the tile that contains it), and figure crops; the images of the paper's abstract, assumptions/model, method and conclusions pages from the section map, and of every page a claim lists a condition on; the brief's questions. Never Marker text, never the reader's reasoning | per claim: text supported / overstated (with corrected wording) / unsupported / not on the cited page; quote on the page as written; every symbol of every equation and every number as printed (corrected LaTeX if not); kind, basis and questions confirmed or corrected; conditions stated on the pages it sees that the claim drops | schema; a correction must pass E3 again | anything but fully confirmed → E5 |
 | E5 | Revise (at most 2 rounds) | `morty-reader`, fresh | the claim, the checker's reasons, the cited page and condition pages with their Marker text; for "not on the cited page", the whole paper | revised claim → E3, then a fresh E4 that does not see the revision history | as E3, E4 | still failing after 2 rounds → U3 as *disputed* |
 | U3a | Guided reading (core papers) | user, with `reading_view.py` | per core paper, a local HTML page: the paper's page images in order (abstract, assumptions/model, method, every page with a claim, conclusions; the rest one click away); each page's claims hidden until the user has read the page and opens them; each quote highlighted on the image where its position is known | per claim: right / wrong (with correction) / unsure; *missed*: statements the user judges important that no claim records, with page | every claim on a read page is checked (a census, not a sample); missed statements give a human measure of reader recall | wrong or unsure → E5, then back to the user; missed statements become user-authored claims and go through E3 and E4 like any other |
-| U3b | Random audit | user, with the same page view | a simple random sample of 60 passed claims not checked in U3a (all, if 60 or fewer); every disputed claim, in addition to the 60 | right / wrong (with correction) | pass: no error in the 60 (error rate below 4.9 %, §5) | an error → E4's prompt revised with the errors found, C0 re-run including them, that kind of claim re-checked for the wave, then a fresh sample of 60 (user decision 2026-10-23) |
+| U3b | Random audit | user, with the same page view | a simple random sample of 60 passed claims not checked in U3a (all, if 60 or fewer); every disputed claim, in addition to the 60 | right / wrong (with correction) | pass: no error in the 60 (error rate below 4.9 %, §5) | an error → E4's prompt revised with the errors found, C0 rerun including them, that kind of claim rechecked for the wave, then a fresh sample of 60 (user decision 2026-10-23) |
 | L1 | Publish | `curator.py` (the only writer) | items with passing verdicts or a user decision | library records, catalog rows, events (§6) | refuses any item without a citation, a quote match and a verdict; writes to a staging folder, then moves the files, sets them read-only and appends the event last (the event is the commit) | refusal → logged, item stays in the run folder, refusal count shown at U4; a crash → `curator.py recover` completes or removes staged items that have no event. After each publish: a compressed snapshot of the library to the backup folder (§6), its hash in the event log |
-| L2 | Audit | `audit.py` | the whole library | audit report | re-hash every file; rebuild the catalog from the files and compare; re-query `updated-by` for every DOI; re-run `check_citations.py` on every memo; check the latest backup snapshot exists and matches its hash | a mismatch → stop and report, with `recover` as the first remedy; a new retraction or correction → its paper and claims flagged, user told; a memo citing a superseded or retracted claim version → back to Y1 |
-| Y1 | Synthesise (when the user asks at U4, or when a review closes) | `beth-synthesizer` | the brief's question; every verified claim for that question, retrieved by `library_query.py` with fixed filters (question ID; tags through the alias map); above a set token limit, split by sub-question or tag facet and synthesised in parts | `memos/<review>/Qk.vN.md`: statements citing claim versions (`[id@v1]`); inference marked INFERENCE and citing the claims it is drawn from; open questions | Y2, Y3; a script checks that every claim of the set was given to some part | — |
+| L2 | Audit | `audit.py` | the whole library | audit report | rehash every file; rebuild the catalog from the files and compare; requery `updated-by` for every DOI; rerun `check_citations.py` on every memo; check the latest backup snapshot exists and matches its hash | a mismatch → stop and report, with `recover` as the first remedy; a new retraction or correction → its paper and claims flagged, user told; a memo citing a superseded or retracted claim version → back to Y1 |
+| Y1 | Synthesize (when the user asks at U4, or when a review closes) | `beth-synthesizer` | the brief's question; every verified claim for that question, retrieved by `library_query.py` with fixed filters (question ID; tags through the alias map); above a set token limit, split by subquestion or tag facet and synthesized in parts | `memos/<review>/Qk.vN.md`: statements citing claim versions (`[id@v1]`); inference marked INFERENCE and citing the claims it is drawn from; open questions | Y2, Y3; a script checks that every claim of the set was given to some part | — |
 | Y2 | Check citations | `check_citations.py` | memo, library | per sentence: cites ≥ 1 claim; every ID exists and is verified; every number occurs in the quote of a cited claim | script | failure → back to Y1 with the list |
 | Y3 | Check memo | `beth-memo-checker` | memo; the same full claim set Y1 received (not only the cited claims), in the same parts; plus claims found by a second, broader retrieval (full text and tags) that are not in the set | per statement: supported / overstated / unsupported; numbers attached to the right quantity; whether each INFERENCE follows from its claims; relevant claims the memo omits, especially contradicting ones; claims from the broader retrieval that bear on the question (their `questions[]` is then corrected through E4); gaps | schema | anything but supported → Y1 revises once; what remains goes to U4 |
 | T1 | Tag report (after every wave) | `tag_report.py` | library, `vocab.yaml`, provisional tags | per tag: count, papers; pairs of tags with similar names or mostly the same claims; unused tags | script | — |
 | T2 | Propose tag changes | `morty-tagger` | the tag report, each tag's definition and 5 example claims | proposals: merge (A into B), split, rename, deprecate, promote a provisional tag, each with a reason | schema | — |
-| R1 | Re-tag for a new or changed question | `morty-reader` (task: retag), then `beth-checker` | every existing claim's text and quote, the new or changed question | proposed `questions[]` additions, confirmed by E4's question check | recorded in the manifest | runs whenever a brief version adds or changes a question, before Y1 for that question |
+| R1 | Retag for a new or changed question | `morty-reader` (task: retag), then `beth-checker` | every existing claim's text and quote, the new or changed question | proposed `questions[]` additions, confirmed by E4's question check | recorded in the manifest | runs whenever a brief version adds or changes a question, before Y1 for that question |
 | U4 | Decide | user | memos, the Y3 report, the gap list, the tag proposals, refusal counts | close the review, or expand / retract it (new brief version, next wave); accept or mark each remaining unsupported memo statement; accept or reject each tag proposal | accepted tag changes are written by `curator.py` as a new `vocab.yaml` version with an alias map | — |
+
+**Page tiles (P1).** A full page sent to the model is scaled down before
+the model sees it: Opus 5.5 and Sonnet 5.5 work on 28 × 28 pixel patches,
+with at most 2,576 px on the long edge and 4,784 patches per image (Claude
+docs, "Vision", read 2026-10-23). A US letter page therefore reaches the
+model at about 199 dpi and an A4 page at about 196 dpi, whatever resolution
+it was rendered at (computed 2026-10-23). At that resolution 10 pt body text
+is about 12 px high, but 7 pt subscripts are about 9 px and 5 pt
+second-level scripts about 6 px, where symbol swaps (φ_i for φ_s, a lost
+prime or hat) are most likely. Tiles keep the full 300 dpi: each page is cut
+into pieces about half a column high (a half page for single-column
+layouts), split at gaps between Marker's text blocks where possible and
+otherwise with a 1 inch overlap, so no equation or line is cut in two. Each
+tile stays within the image limits (a 3.4 × 5.5 inch tile at 300 dpi is
+1020 × 1650 px, 2,183 patches). This roughly doubles the image tokens per
+page. Test T-res (§12) measures the gain.
 
 **When an agent call fails** (any stage). The driver checks that every input
 item has exactly one valid output; a partial output counts as a failure. A
@@ -135,7 +152,7 @@ empty folder outside the project holding only the files it is given, with
 `--setting-sources "" --strict-mcp-config --no-session-persistence
 --disable-slash-commands --permission-mode dontAsk --json-schema <schema>`,
 as in units-verification. Tools that need permission (WebSearch) are
-pre-approved with `--allowedTools`; dontAsk refuses them otherwise (tested
+preapproved with `--allowedTools`; dontAsk refuses them otherwise (tested
 2026-10-23). A Read outside the agent's folder is refused in dontAsk mode
 (tested 2026-10-22 and again 2026-10-23 with an absolute path into the
 project). A script audits each transcript: the model must be the pinned one,
@@ -248,7 +265,7 @@ context:      fresh per request
 **How independent the checks are.** Every agent here is a Claude model.
 Sonnet, Haiku and Opus are different models but share a vendor, much of
 their training data and their methods, so they can share blind spots: a
-plausible over-generalisation that one writes, another may accept. The
+plausible overgeneralization that one writes, another may accept. The
 agent checks are still useful, mainly because the checker works from a
 different input (the page image, without Marker text or the reader's
 reasoning), but they are not independent in the sense two laboratories are.
@@ -285,25 +302,25 @@ marked retracted, by the user, with a reason (§6).
 | candidates | retraction and correction status from the work's Crossref `updated-by` field and `filter=updates:<DOI>` (D3, again at L2); tested on the retracted 10.1021/am300292v | deterministic | recorded; a retraction is shown at U1 |
 | discovery | every query answered | deterministic | otherwise *discovery incomplete* at U1 |
 | screens | two screeners with different framings, compared | two agent calls (same model) | agree, or adjudicated |
-| screens | U1: random sample of 60 exclusions | human, measured | no relevant paper in the sample; otherwise re-screen |
+| screens | U1: random sample of 60 exclusions | human, measured | no relevant paper in the sample; otherwise rescreen |
 | PDFs | first-page DOI or title vs shortlist | deterministic | match |
-| non-publisher copies | A2: title, authors, abstract vs the published record; copy kind on every claim; re-check when a newer version arrives | deterministic + user | match, or user accepts the listed differences |
+| non-publisher copies | A2: title, authors, abstract vs the published record; copy kind on every claim; recheck when a newer version arrives | deterministic + user | match, or user accepts the listed differences |
 | quotes | ≥ 8 words or a whole sentence; found on the cited page in the Marker text (OCR, not the page itself); unique in the paper | deterministic | all three |
 | claims | `beth-checker` on the page images: text, quote, equation symbols, numbers, kind, basis, questions, dropped conditions | agent (different Claude model, different input) | all confirmed |
-| verdicts | 30 random claims per wave re-checked by a fresh E4 run | repeated process, measured | agreement ≥ 90 %; below → E4 re-run on the wave and C0 re-run |
+| verdicts | 30 random claims per wave rechecked by a fresh E4 run | repeated process, measured | agreement ≥ 90 %; below → E4 rerun on the wave and C0 rerun |
 | recall | E1 vs E2 on core papers | repeated process | omission rate per reader reported |
 | recall | U3a *missed* statements | human | reported per paper |
 | core claims | U3a guided reading | human, census | every claim on a read page checked |
 | other passed claims | U3b random sample of 60 | human, measured | no error in the 60 |
-| memos | each sentence cites current, verified claim versions; each number occurs in a cited quote (rules below); re-run at every L2 | deterministic | 100 % |
+| memos | each sentence cites current, verified claim versions; each number occurs in a cited quote (rules below); rerun at every L2 | deterministic | 100 % |
 | memos | `beth-memo-checker` with the full claim set and a broader retrieval | agent (same model as the synthesizer, fresh context) | no unsupported statement left, or each accepted by the user |
 | backup | latest snapshot present and matching its hash (L2) | deterministic | match |
-| library | re-hash; rebuild catalog from files and compare; Crossref status | deterministic | no mismatch |
+| library | rehash; rebuild catalog from files and compare; Crossref status | deterministic | no mismatch |
 | pipeline | C0 | measured | below |
 
 **Merging reader A and reader B (E3).** Two claims are the same claim when
 they cite the same page, have the same kind, and their quotes overlap by at
-least half of the shorter quote's words after normalisation. A matched pair
+least half of the shorter quote's words after normalization. A matched pair
 becomes one claim; E4 sees both wordings and confirms the one the page
 supports (if both, A's wording, with B's kept as a variant). Two claims that
 quote the same sentence but differ in kind stay separate. Every unmatched
@@ -314,12 +331,12 @@ text similarity; likely duplicates go to E4, which merges them or keeps both.
 Omission rates are reported before and after this pass.
 
 **Title similarity (D3).** `difflib.SequenceMatcher` ratio of the two
-titles after normalisation (Unicode NFKC, lower case, punctuation removed,
+titles after normalization (Unicode NFKC, lower case, punctuation removed,
 whitespace collapsed); ≥ 0.9 counts as a match, together with the first
 author's surname.
 
 **Numbers in memos (Y2).** Numbers are extracted from the memo sentence and
-from the cited claims' quotes and equation LaTeX, normalised (`1e-3` =
+from the cited claims' quotes and equation LaTeX, normalized (`1e-3` =
 `10^{-3}` = `0.001`; percentages to fractions; thousands separators
 removed), and must match within the precision printed. Exempt: claim IDs,
 question IDs, years, equation and figure numbers, and the citation brackets.
@@ -422,12 +439,12 @@ library/
   (checker, model, run ID; user verdict from U3 if any), version. Memos cite
   a claim with its version, `[id@v1]`.
 - **Tags.** Facets from `vocab.yaml`, for example *method* (diffuse domain,
-  smoothed boundary, multi-phase field, grand potential, obstacle potential,
+  smoothed boundary, multiphase field, grand potential, obstacle potential,
   immersed boundary, level set), *phase handling* (stationary phase, evolving
   phase, sum constraint, Lagrange multiplier), *physics* (sublimation,
-  vapour diffusion, latent heat, contact angle, wetting, cryosuction),
+  vapor diffusion, latent heat, contact angle, wetting, cryosuction),
   *boundary condition* (Neumann, Dirichlet, Robin, flux), *numerics*
-  (discretisation, time stepping, asymptotics), *material and setting* (ice,
+  (discretization, time stepping, asymptotics), *material and setting* (ice,
   snow, lunar regolith, martian regolith, volatiles, alloy). This is the
   starting list; it changes as below.
 - **Tags grow with the reviews.** A reader uses vocabulary tags and may
@@ -458,17 +475,17 @@ library/
   prompt. The sandbox also blocks network access for Bash commands except to
   listed domains, so the discovery and acquisition scripts' hosts must be
   listed (`sandbox.network.allowedDomains`). From the Claude Code docs
-  (sandboxing, settings reference), read 2026-10-23; to be tested at build
-  time (§9).
+  (sandboxing, settings reference), read 2026-10-23. Adopted (user decision
+  2026-10-23); set up and tested at build time (§12, T-sandbox).
 - **Backup.** After every publish, `curator.py` writes a compressed
   snapshot of the library (everything except figure crops, which can be
-  re-made from the PDFs) to
+  remade from the PDFs) to
   `~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Courses/Fall2026/ME295/library_backups/`
   (user decision 2026-10-23), named by date and time, and records its hash
   in the event log. Snapshots are never overwritten. iCloud syncs deletions,
   so a deleted snapshot is gone everywhere; L2 checks that the latest one
   exists and matches its hash (forcing a download first if iCloud has moved
-  it off the disk, `brctl download`; to be tested at build time).
+  it off the disk, `brctl download`; §12, T-backup).
 - **What is committed.** `vocab.yaml`, briefs, `references.bib`, the event
   log, run manifests (hashes, verdicts, query filters and returned claim
   IDs) and the search snapshots (gzip; bibliographic metadata). Not
@@ -478,7 +495,7 @@ library/
   hashes.
 
 **Ranking.** No relevance score. A numeric score from a model is not
-calibrated, tends to favour well-written abstracts and famous papers, and
+calibrated, tends to favor well-written abstracts and famous papers, and
 once stored it biases every later step that sorts by it. Instead the library
 records facts that can be checked: the screening tier with the criterion that
 decided it (core / context), which questions a claim bears on, and the
@@ -531,11 +548,11 @@ Each wave writes `runs/literature-review/<review>/<run_id>/`:
    neural models) is tested for this at build time, on one machine twice and
    on a second machine if one is available; the manifest records the
    hardware backend and inference settings. The stored Marker pages and their
-   hashes are the reference for E3, which is re-derived from them, not from a
+   hashes are the reference for E3, which is rederived from them, not from a
    new P1 run.
-2. Re-checking the recorded claims of a wave (E3 and E4 on the same pages)
+2. Rechecking the recorded claims of a wave (E3 and E4 on the same pages)
    gives the same verdicts at an agreement rate that is measured: each wave
-   re-checks a random 30 of its claims in a fresh run; it passes at 90 %
+   rechecks a random 30 of its claims in a fresh run; it passes at 90 %
    agreement or more.
 3. Re-extraction is not expected to give the same claims or wording; E1 vs
    E2 measures how far two reads differ.
@@ -562,15 +579,18 @@ Resolved 2026-10-23:
    folder; U3b passes only with no error in 60; the larger calibration sets
    are tried and revisited if too costly. No third round: the calibration
    (C0) tests the checks on real papers.
+10. **Page tiles:** adopted for reading and checking equations, numbers and
+    symbols (§3, P1).
+11. **Sandbox:** adopted for `library/`; set up and tested at build time.
+12. **Design approved** for building (revision 5).
 
 Open:
 
-10. **Sandbox** for `library/`: to be tested at build time, then decided.
-11. **First brief:** questions, criteria and seeds for Pillar 1, written with
+13. **First brief:** questions, criteria and seeds for Pillar 1, written with
     the user at U0.
-12. **Calibration sets from the user:** at least 10 planted errors, about 30
-    gold statements in 2–3 papers, 10–20 borderline abstracts.
-13. **Approval** of this revision, then the build.
+14. **Calibration sets from the user:** at least 10 planted errors, about 30
+    gold statements in 2–3 papers, 10–20 borderline abstracts, and the
+    equation transcriptions for T-res (§12).
 
 ## 10. Risks and failure modes
 
@@ -579,18 +599,19 @@ Open:
 | Invented reference | D3: must resolve in a bibliographic source; unresolved items shown at U1 |
 | Real report or thesis without a Crossref record | D3 resolves via arXiv, ADS, NTRS, OSTI; never dropped silently |
 | Retracted or corrected paper | Crossref `updated-by` and `filter=updates:` at D3 and at every L2 audit |
-| Memo cites a claim later corrected or retracted | versioned citations; Y2 re-run at every L2 |
-| Question added after papers were read | versioned question IDs; R1 re-tag pass |
+| Memo cites a claim later corrected or retracted | versioned citations; Y2 rerun at every L2 |
+| Question added after papers were read | versioned question IDs; R1 retag pass |
 | Claim tagged to the wrong question, so left out of a memo | E4 confirms questions; Y3's broader retrieval |
 | Claim set too large for one context | token limit; split synthesis; coverage script |
 | Agent returns part of its output, or a run stops halfway | one output per input item checked; retry then user; resume redoes unchecked calls |
 | Library lost with the laptop | snapshot after every publish in the course folder; hash checked at L2 |
-| Search silently truncated (quota, outage) | cost estimate and remaining budget read; back-off and resume; *discovery incomplete* shown at U1; failed queries re-run |
+| Search silently truncated (quota, outage) | cost estimate and remaining budget read; backoff and resume; *discovery incomplete* shown at U1; failed queries rerun |
 | Preprint and journal version both read in one wave | D3 merges by OpenAlex work ID and Crossref relation |
 | Relevant paper excluded at screening | exclusion needs a named criterion; no abstract → never excluded; U1 random sample of 60 exclusions |
 | Wrong PDF (another paper, a preprint version, the SI) | A1 identity check; card records the copy |
-| Preprint differs from the published paper | A2 copy check; copy kind on every claim; re-check when a newer version arrives |
+| Preprint differs from the published paper | A2 copy check; copy kind on every claim; recheck when a newer version arrives |
 | Text layer drops signs, exponents, subscripts | readers and checkers get page images and Marker text, never the text layer |
+| Small symbols misread on a page the model has scaled down | equations, numbers and quotes read and checked on 300 dpi tiles; T-res measures it |
 | Marker misreads an equation and the reader copies it | E4 checks every equation symbol and number on the image, without Marker text; planted in C0 |
 | Fabricated, paraphrased or too-generic quote | E3: length, presence and uniqueness |
 | Claim stronger than the paper, or missing a condition stated elsewhere | E4 with the abstract, model and conclusions pages; C0 |
@@ -616,7 +637,7 @@ Open:
 - **Round 2** (run `20261023-111440`): a fresh `beth-critic` reviewed
   revision 3 with no knowledge of round 1: 22 findings and 9 unclear points;
   21 accepted, F10 rejected after a test; applied in revision 4. Its findings
-  were narrower than round 1's (behaviour over time and at scale rather than
+  were narrower than round 1's (behavior over time and at scale rather than
   missing checks), and no third round is planned.
 - **What a critic sees.** Only a copy of this file, in a fresh empty folder,
   run headless (`claude -p`, `--setting-sources ""`, no CLAUDE.md, memory or
@@ -636,3 +657,18 @@ Open:
 - **Record.** `runs/design-critique/<run_id>/`: manifest (git commit and hash
   of this file, model IDs, prompt hashes), the critique, the triage table,
   local transcripts. Committed except transcripts.
+
+## 12. Tests at build time
+
+Each runs before the stage it concerns is used on real papers, and its
+result is recorded in the build log with the date.
+
+| Test | What it checks | Pass |
+|---|---|---|
+| T-res | Reading resolution. 3–4 equation-dense pages from papers the user knows; the user transcribes their equations and key numbers. `morty-reader` transcribes them twice, from full pages and from tiles; both are compared with the user's transcription symbol by symbol (normalized LaTeX). This also measures whatever the Read tool does to images, which the API docs do not cover | tiles: no symbol errors; the full-page error count is reported |
+| T-det | P1 determinism: same machine twice; a second machine if available | identical hashes, or the differences listed |
+| T-retract | Crossref `updated-by` and `filter=updates:` on 10.1021/am300292v | the retraction is found |
+| T-key | the OpenAlex key is read from the Keychain in a headless run; a failed read stops D1 | as stated |
+| T-sandbox | with the sandbox on, a Bash write to `library/` is refused; `curator.py` runs through `excludedCommands`; the discovery hosts are reachable | all three |
+| T-settings | `--settings <file>` with deny rules applies to headless agents; the librarian cannot write to `library/` | write refused |
+| T-backup | a snapshot is written to the course folder and `brctl download` plus a hash check works on it | hash matches |

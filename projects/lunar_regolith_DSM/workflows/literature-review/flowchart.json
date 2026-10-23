@@ -2,9 +2,9 @@
   "title": "literature-review",
   "summary": [
     "A reusable literature-review workflow for reviews of any size. The user writes a brief (questions, criteria, tier); scripts search Crossref, OpenAlex, Semantic Scholar and arXiv, follow citations, resolve every candidate and record retractions; two Haiku screeners with different framings judge each abstract and may exclude only on a named criterion; an Opus checker settles disagreements. Scripts fetch open-access PDFs, check each is the paper asked for, and compare preprints with the published record.",
-    "A fresh Sonnet reader per paper extracts claims; core papers are read twice and the reads merged by rule. A script checks every quote; an Opus checker, given page images only, confirms each claim's text, quote, equations, numbers, kind and basis. The user reads the core papers with their claims (guided reading) and audits 60 random other claims. A script (the curator) is the only writer to the library; nothing is ever deleted. Memos are written from every verified claim for a question and checked by script and by a fresh Opus checker that sees the same claims. All agents are Claude models, so the scripts and the user are the independent checks."
+    "A fresh Sonnet reader per paper extracts claims; core papers are read twice and the reads merged by rule. A script checks every quote; an Opus checker, given page images and 300 dpi tiles only (no OCR text), confirms each claim's text, quote, equations, numbers, kind and basis. The user reads the core papers with their claims (guided reading) and audits 60 random other claims. A script (the curator) is the only writer to the library; nothing is ever deleted. Memos are written from every verified claim for a question and checked by script and by a fresh Opus checker that sees the same claims. All agents are Claude models, so the scripts and the user are the independent checks."
   ],
-  "status": "Draft design, revision 4 (critique rounds 1 and 2 applied), 2026-10-23. Nothing built. Details: WORKFLOW.md.",
+  "status": "Revision 5, approved for building, 2026-10-23. Build-time tests (WORKFLOW.md §12) come first.",
   "lanes": [
     {
       "id": "user",
@@ -112,7 +112,7 @@
       "details": [
         "Gates SC1 and E1: no real wave until it passes",
         "Every fake quote, wrong page, sign error caught; 3 of 4 of each other kind; 90 % overall",
-        "Re-run after agent, prompt, model, tool or U3b changes"
+        "Rerun after agent, prompt, model, tool or U3b changes"
       ]
     },
     {
@@ -182,7 +182,7 @@
       "job": "Finds each paper in Literature/, then as open access (OpenAlex, arXiv, Semantic Scholar, repositories), and checks its first page.",
       "details": [
         "Each download in its own new folder",
-        "Links a new version to the paper already read; its claims are re-checked",
+        "Links a new version to the paper already read; its claims are rechecked",
         "Not found: listed in fetch_list.md",
         "No institutional access; no Sci-Hub"
       ]
@@ -203,7 +203,7 @@
       "title": "U2 Supply missing papers",
       "job": "Supplies any listed paper they already have, or marks it unavailable; accepts or rejects copies A2 flagged.",
       "details": [
-        "A1 and A2 re-run on what the user adds"
+        "A1 and A2 rerun on what the user adds"
       ]
     },
     {
@@ -212,8 +212,9 @@
       "row": 7,
       "kind": "script",
       "title": "P1 prepare.py",
-      "job": "Renders page images, runs Marker (OCR to Markdown with LaTeX) and crops figures with captions.",
+      "job": "Renders full pages and 300 dpi tiles, runs Marker (OCR to Markdown with LaTeX) and crops figures with captions.",
       "details": [
+        "Tiles keep small symbols legible: full pages reach the model at about 200 dpi",
         "Marker, Surya, weights and flags pinned",
         "Maps PDF page index to printed page"
       ]
@@ -238,8 +239,8 @@
       ],
       "job": "Reads one paper and writes its claims (text, kind, basis, quote, pages, equation, conditions, tags) and a section map.",
       "details": [
+        "Equations, numbers and symbols read from the tiles",
         "Fresh per paper; no web",
-        "Statements only as claims; cards are bibliographic",
         "Instructions found in a paper are flagged, not followed"
       ]
     },
@@ -275,9 +276,9 @@
       ],
       "job": "On page images only, confirms each claim's text, quote, every equation symbol and number, kind, basis and questions, and dropped conditions.",
       "details": [
-        "Sees abstract, model, method, conclusions and condition pages",
-        "Never sees Marker text or the reader's reasoning",
-        "Fresh per page; 30 claims re-checked per wave, 90 % agreement"
+        "Checks each equation, number and quote on its tile",
+        "Also sees abstract, model, method, conclusions and condition pages",
+        "Never sees Marker text or the reader's reasoning; fresh per page"
       ]
     },
     {
@@ -324,8 +325,8 @@
       "job": "Publishes items that have a citation, a quote match and a passing verdict or user decision; refuses all others.",
       "details": [
         "Stages files; the event, appended last, is the commit",
-        "Crash: curator.py recover",
-        "Snapshot to the course-folder backup after each publish",
+        "Sandbox blocks any other write to library/",
+        "Snapshot to the course folder after each publish",
         "Retraction only by the user, with a reason"
       ]
     },
@@ -346,7 +347,7 @@
       "row": 14,
       "kind": "script",
       "title": "L2 audit.py",
-      "job": "Re-hashes the library, rebuilds the catalog, re-queries retractions, re-checks every memo's citations and the latest backup.",
+      "job": "Rehashes the library, rebuilds the catalog, requeries retractions, rechecks every memo's citations and the latest backup.",
       "details": [
         "Memo citing a superseded claim: back to Y1",
         "Mismatch: stop and report; recover first"
@@ -436,7 +437,7 @@
       "details": [
         "Copy kind recorded on every claim read from it",
         "Title or authors differ: user decides at U2",
-        "Published version later: claims re-checked"
+        "Published version later: claims rechecked"
       ]
     },
     {
@@ -470,7 +471,7 @@
       "job": "Checks 60 random passed claims not covered by guided reading, plus every disputed claim.",
       "details": [
         "Pass: no error in 60 (rate below 4.9 %, 95 %)",
-        "Error: E4 prompt fixed, C0 re-run, kind re-checked, fresh 60"
+        "Error: E4 prompt fixed, C0 rerun, kind rechecked, fresh 60"
       ]
     },
     {
@@ -621,7 +622,7 @@
       "from": "E5",
       "to": "E3",
       "kind": "loop",
-      "label": "re-check"
+      "label": "recheck"
     },
     {
       "from": "E4",
@@ -674,7 +675,7 @@
       "from": "U2",
       "to": "A1",
       "kind": "loop",
-      "label": "re-check"
+      "label": "recheck"
     },
     {
       "from": "A2",
