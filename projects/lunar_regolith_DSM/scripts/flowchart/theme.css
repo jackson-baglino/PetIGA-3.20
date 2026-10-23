@@ -13,17 +13,17 @@
 :root {
   /* surfaces */
   --bg: #19181a;
-  --surface: #221f22;
-  --node-fill: #2d2a2e;
-  --lane-bg: #221f22;
-  --lane-border: #403e41;
+  --surface: #1e1c1f;
+  --node-fill: #3b383c;
+  --lane-bg: #2d2a2e;
+  --lane-border: #4a474b;
   --border: #3a383b;
   --shadow: 0 8px 24px -6px #00000066;
 
   /* text */
   --text: #fcfcfa;
   --text-2: #c1c0c0;
-  --text-muted: #939293;
+  --text-muted: #aaa9aa;
 
   /* node kinds */
   --kind-user: #ffd866;
@@ -33,7 +33,7 @@
 
   /* edge kinds */
   --edge-flow: #c1c0c0;
-  --edge-data: #727072;
+  --edge-data: #858386;
   --edge-stop: #ff6188;
   --edge-loop: #fc9867;
 
