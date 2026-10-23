@@ -5,7 +5,10 @@
 # details that would make it wrong if they changed (number and unit, symbol, conditions,
 # whether the result is the paper's own or cited from another paper).
 #
-# page:      the page number printed on the page
+# page:      the page number printed on the page. If the fact spans pages, a list with the
+#            main page first: [5, 6] for a derivation or table that runs over two pages;
+#            [12, 5] for a fact on p. 12 whose condition is stated on p. 5 (put the
+#            condition in the statement). A reader's claim matches if it cites any listed page.
 # location:  table, figure, equation or section if there is one ("Table I", "Eq. 12", "Fig. 3")
 # kind:      method | equation | result | assumption | limitation | parameter
 # statement: the fact, in your words
