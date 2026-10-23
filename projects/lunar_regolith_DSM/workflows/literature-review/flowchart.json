@@ -4,7 +4,7 @@
     "A reusable literature-review workflow for reviews of any size. The user writes a brief (questions, criteria, tier); scripts search Crossref, OpenAlex, Semantic Scholar and arXiv, follow citations, resolve every candidate and record retractions; two Haiku screeners with different framings judge each abstract and may exclude only on a named criterion; an Opus checker settles disagreements. Scripts fetch open-access PDFs, check each is the paper asked for, and compare preprints with the published record.",
     "A fresh Sonnet reader per paper extracts claims; core papers are read twice and the reads merged by rule. A script checks every quote; an Opus checker, given page images only, confirms each claim's text, quote, equations, numbers, kind and basis. The user reads the core papers with their claims (guided reading) and audits 60 random other claims. A script (the curator) is the only writer to the library; nothing is ever deleted. Memos are written from every verified claim for a question and checked by script and by a fresh Opus checker that sees the same claims. All agents are Claude models, so the scripts and the user are the independent checks."
   ],
-  "status": "Draft design, revision 3 (critique round 1 applied; guided reading added), 2026-10-23. Nothing built. Details: WORKFLOW.md.",
+  "status": "Draft design, revision 4 (critique rounds 1 and 2 applied), 2026-10-23. Nothing built. Details: WORKFLOW.md.",
   "lanes": [
     {
       "id": "user",
@@ -52,9 +52,9 @@
       "title": "D1 discover.py",
       "job": "Runs the brief's queries on Crossref, OpenAlex, Semantic Scholar and arXiv and follows references and citations of seeds.",
       "details": [
-        "OpenAlex key from the macOS Keychain",
-        "429 or outage: back off and resume",
-        "Still failing: wave marked discovery incomplete"
+        "OpenAlex key from the macOS Keychain; stop if unreadable",
+        "Cost estimated first; remaining budget read",
+        "429 or outage: back off and resume; else discovery incomplete"
       ]
     },
     {
@@ -87,9 +87,10 @@
       "row": 2,
       "kind": "script",
       "title": "D3 resolve.py",
-      "job": "Resolves every candidate (Crossref, OpenAlex, arXiv, ADS, NTRS, OSTI), removes duplicates and records retractions and corrections.",
+      "job": "Resolves every candidate, merges versions of one work, and records retractions and corrections from Crossref updated-by.",
       "details": [
         "Unresolved: kept and shown at U1, not dropped",
+        "Preprint and journal version merged",
         "Records whether an abstract exists"
       ]
     },
@@ -110,8 +111,8 @@
       "job": "Measures the checks on 40+ planted errors over 3+ papers (10+ written by the user), controls, a gold recall set and off-topic abstracts.",
       "details": [
         "Gates SC1 and E1: no real wave until it passes",
-        "Pass: every fake quote and wrong page caught, detection 90 % with its lower bound",
-        "Re-run after any agent, prompt, schema or model change"
+        "Every fake quote, wrong page, sign error caught; 3 of 4 of each other kind; 90 % overall",
+        "Re-run after agent, prompt, model, tool or U3b changes"
       ]
     },
     {
@@ -272,11 +273,11 @@
       "tools": [
         "Read"
       ],
-      "job": "On page images only, confirms each claim's text, quote, every equation symbol and number, kind and basis, and dropped conditions.",
+      "job": "On page images only, confirms each claim's text, quote, every equation symbol and number, kind, basis and questions, and dropped conditions.",
       "details": [
-        "Also sees abstract, model and conclusions pages",
+        "Sees abstract, model, method, conclusions and condition pages",
         "Never sees Marker text or the reader's reasoning",
-        "Fresh per page"
+        "Fresh per page; 30 claims re-checked per wave, 90 % agreement"
       ]
     },
     {
@@ -324,6 +325,7 @@
       "details": [
         "Stages files; the event, appended last, is the commit",
         "Crash: curator.py recover",
+        "Snapshot to the course-folder backup after each publish",
         "Retraction only by the user, with a reason"
       ]
     },
@@ -344,8 +346,9 @@
       "row": 14,
       "kind": "script",
       "title": "L2 audit.py",
-      "job": "Re-hashes every library file, rebuilds the catalog to compare, and re-queries Crossref for new retractions.",
+      "job": "Re-hashes the library, rebuilds the catalog, re-queries retractions, re-checks every memo's citations and the latest backup.",
       "details": [
+        "Memo citing a superseded claim: back to Y1",
         "Mismatch: stop and report; recover first"
       ]
     },
@@ -370,13 +373,13 @@
       "lane": "agent",
       "row": 15,
       "kind": "agent",
-      "title": "Y1 beth-synthesizer",
+      "title": "Y1 beth-synthesizer (on request at U4, or at close)",
       "model": "claude-opus-5-5",
       "tools": [],
-      "job": "Writes one memo per question from every verified claim for it, retrieved by fixed query, citing claim IDs.",
+      "job": "Writes one memo per question from every verified claim for it, by fixed query, citing claim versions; splits large sets.",
       "details": [
         "INFERENCE cites the claims it is drawn from",
-        "Query and returned IDs in the manifest"
+        "Script checks every claim reached some part"
       ]
     },
     {
@@ -398,7 +401,7 @@
       "title": "Y3 beth-memo-checker",
       "model": "claude-opus-5-5",
       "tools": [],
-      "job": "Checks each statement against the same full claim set, and lists omitted or contradicting claims and gaps.",
+      "job": "Checks each statement against the same claim set plus a broader retrieval, and lists omitted or contradicting claims.",
       "details": [
         "Fresh Opus context; Fable not available",
         "Unsupported: Y1 revises once, then U4"
@@ -466,8 +469,32 @@
       "title": "U3b Random audit",
       "job": "Checks 60 random passed claims not covered by guided reading, plus every disputed claim.",
       "details": [
-        "No error in 60: rate below 4.9 % (95 %)",
-        "An error: that kind re-checked before L1"
+        "Pass: no error in 60 (rate below 4.9 %, 95 %)",
+        "Error: E4 prompt fixed, C0 re-run, kind re-checked, fresh 60"
+      ]
+    },
+    {
+      "id": "BK",
+      "lane": "record",
+      "row": 14,
+      "kind": "record",
+      "title": "ME295/library_backups/",
+      "job": "Compressed library snapshots in the iCloud course folder, never overwritten; each hash in the event log."
+    },
+    {
+      "id": "R1",
+      "lane": "agent",
+      "row": 14.6,
+      "kind": "agent",
+      "title": "R1 morty-reader (task: retag; when a question is added or changed)",
+      "model": "claude-sonnet-5-5",
+      "tools": [
+        "Read"
+      ],
+      "job": "Proposes which existing claims bear on a new or changed question; beth-checker confirms each.",
+      "details": [
+        "Question IDs are versioned (Q2@v1)",
+        "Recorded in the manifest"
       ]
     }
   ],
@@ -684,6 +711,22 @@
       "to": "LR",
       "kind": "flow",
       "label": "read only"
+    },
+    {
+      "from": "L1",
+      "to": "BK",
+      "kind": "data"
+    },
+    {
+      "from": "L2",
+      "to": "R1",
+      "kind": "flow",
+      "label": "new question"
+    },
+    {
+      "from": "R1",
+      "to": "Y1",
+      "kind": "flow"
     },
     {
       "from": "L2",
