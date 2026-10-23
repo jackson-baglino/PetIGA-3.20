@@ -1,0 +1,152 @@
+/* Workflow page theme: the one place that sets colors, type and spacing for
+   every workflows/<name>/flowchart.html. render_flowchart.py inlines this file
+   (so each page is self-contained) and reads the --kind-*, --edge-*, --node-*,
+   --lane-* and --text-* values below for the chart itself.
+
+   Look: the layout conventions of openclaw.ai (dark ink surfaces, small
+   uppercase monospace labels, rounded cards, faint borders, soft shadows) on
+   the Monokai Pro palette (VS Code theme): base #2d2a2e / #221f22 / #19181a,
+   accents yellow #ffd866, cyan #78dce8, green #a9dc76, purple #ab9df2,
+   red #ff6188, orange #fc9867. Values were read from the openclaw.ai
+   stylesheets on 2026-10-23. */
+
+:root {
+  /* surfaces */
+  --bg: #19181a;
+  --surface: #221f22;
+  --node-fill: #2d2a2e;
+  --lane-bg: #221f22;
+  --lane-border: #403e41;
+  --border: #3a383b;
+  --shadow: 0 8px 24px -6px #00000066;
+
+  /* text */
+  --text: #fcfcfa;
+  --text-2: #c1c0c0;
+  --text-muted: #939293;
+
+  /* node kinds */
+  --kind-user: #ffd866;
+  --kind-script: #78dce8;
+  --kind-agent: #a9dc76;
+  --kind-record: #ab9df2;
+
+  /* edge kinds */
+  --edge-flow: #c1c0c0;
+  --edge-data: #727072;
+  --edge-stop: #ff6188;
+  --edge-loop: #fc9867;
+
+  /* accent for headings and badges */
+  --accent: #ff6188;
+
+  /* type */
+  --font-body: "Switzer", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --radius: 8px;
+  --radius-lg: 14px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.page { max-width: var(--page-width, 1400px); margin: 0 auto; padding: 48px 32px 64px; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 10px;
+}
+
+h1 { font-size: 34px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 650; margin: 0 0 18px; }
+h2 {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin: 40px 0 14px;
+}
+
+p { font-size: 15px; line-height: 1.6; color: var(--text-2); margin: 0 0 12px; max-width: 920px; }
+
+.badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  margin: 6px 0 28px;
+  background: var(--surface);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  overflow-x: auto;
+}
+.card svg { display: block; margin: 0 auto; }
+
+/* chart text */
+svg text { font-family: Helvetica, Arial, sans-serif; }
+svg .lane-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+svg .elabel {
+  font-size: 10px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--lane-bg);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+/* legend chips */
+.legend { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+.sw { width: 18px; height: 12px; border: 2px solid; border-radius: 3px; background: var(--node-fill); }
+.ln { width: 24px; height: 3px; border-radius: 2px; }
+
+/* table of agents and scripts */
+table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px;
+        background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+        overflow: hidden; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+th { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+     color: var(--text-muted); font-weight: 500; background: var(--node-fill); }
+td { color: var(--text-2); }
+td.stage { color: var(--text); font-weight: 600; }
+.mono { font-family: var(--font-mono); font-size: 12px; }
+.kind { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+footer { margin-top: 40px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }

@@ -7,7 +7,16 @@ the same structure and arrows always end on their target.
 
 ```bash
 venv_lunar/bin/python scripts/flowchart/render_flowchart.py workflows/<name>/flowchart.json --png
+venv_lunar/bin/python scripts/flowchart/render_flowchart.py --all          # every workflows/*/flowchart.json
+venv_lunar/bin/python -m unittest scripts/flowchart/test_render_flowchart.py
 ```
+
+**Theme.** `theme.css` is the one place that sets colors, type and spacing for
+every workflow page: the openclaw.ai layout conventions on the Monokai Pro
+palette. The renderer inlines it into each page (pages stay self-contained)
+and takes the chart colors from its `--kind-*`, `--edge-*`, `--node-*`,
+`--lane-*` and `--text-*` values. To change the look of all pages, edit
+`theme.css` and run `--all`.
 
 Exit 0: clean. Exit 1: the lint found overlapping text (listed in the JSON
 report). Exit 2: the spec is invalid (errors listed). Requires Graphviz
@@ -45,8 +54,12 @@ report). Exit 2: the spec is invalid (errors listed). Requires Graphviz
   longer than 160 characters.
 - No pair of opposite edges between two nodes in the same row (they would draw
   on top of each other). Put the return path in a node detail instead.
-- Lint after rendering: no edge label over a node, over another edge or over
-  another label.
+- Edge labels are placed by the renderer, not by Graphviz: each is measured
+  with the Helvetica metrics and put at the first spot beside its edge that
+  clears every node, edge, arrowhead, lane title and earlier label.
+- Lint after rendering: no edge label over a node, over any edge (its own
+  included), over another label or over a lane title, and no edge through a
+  node that is not one of its ends. Segments are tested exactly, not sampled.
 
 ## Conventions
 
