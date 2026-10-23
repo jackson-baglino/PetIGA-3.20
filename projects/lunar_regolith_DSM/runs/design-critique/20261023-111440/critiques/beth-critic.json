@@ -1,0 +1,284 @@
+{
+  "findings": [
+    {
+      "id": "F1",
+      "area": "assumptions",
+      "where": "§3 D3 and L2; §5 \"retraction and correction status from Crossref `update-to` (D3, again at L2)\"; §10 \"Crossref `update-to` at D3 and at every L2 audit\"",
+      "severity": "critical",
+      "problem": "In Crossref, `update-to` sits on the retraction or correction notice and points back to the original. The original article's own record carries the link in `updated-by`. A lookup of each paper's DOI that reads `update-to` will usually find nothing.",
+      "failure_scenario": "A shortlisted 2012 paper is retracted in 2027 and Crossref (or Retraction Watch) deposits a notice whose `update-to` points to the paper's DOI. D3 and later L2 query the paper's DOI, read its `update-to` (empty), record 'no update', and its claims stay verified and keep being cited in memos. No other check looks at retraction status.",
+      "fix": "For each DOI, read `updated-by` (all sources, including `retraction-watch`), and also query `filter=updates:<DOI>`. Test this at build time on a known retracted DOI, such as the 10.1021/am300292v example Crossref gives, and add it to C0.",
+      "confidence": "medium",
+      "source": "https://community.crossref.org/t/deprecating-retraction-watch-annotations-in-the-labs-api/15884 ; https://crossref.org/documentation/retrieve-metadata/retraction-watch/"
+    },
+    {
+      "id": "F2",
+      "area": "robustness",
+      "where": "§6 \"Not committed: PDFs, page images, Marker text, claims, quotes, figure crops and memos\"; §9.5 \"Memos: not committed; kept in the library\"",
+      "severity": "critical",
+      "problem": "The library's facts (claims, quotes, verdicts in claim files) and the memos used for modelling exist only on one local disk. No backup is described, so neither a third party nor the user after a disk loss can recover or re-check what a memo's claim IDs referred to.",
+      "failure_scenario": "A model choice cites memo Q2.v3 → claim kaempfer_2009_k3f9.c007. The laptop's disk fails, or a reviewer clones the repository. The repository holds only hashes and IDs in events.jsonl and manifests. The claim text, quote and verdict cannot be recovered, and L2's re-hash cannot run.",
+      "fix": "Commit claim JSON and memos: they are the project's own work with short quotes, so the copyright reason for not committing PDFs does not apply to them. Failing that, require an off-machine backup or archive (for example a private Zenodo or institutional store) with its hash recorded in the event log, and check it at L2.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F3",
+      "area": "checks",
+      "where": "§3 Y1 \"every verified claim for that question, retrieved … with fixed filters (question ID …)\"; E4 output list (text, quote, equation, numbers, kind, basis, conditions; not questions[] or tags)",
+      "severity": "major",
+      "problem": "A claim's `questions[]` and tags decide whether Y1 and Y3 ever see it, but they are set by the reader and checked by no one. Y3 receives the same filtered set, so it cannot report claims the filter left out.",
+      "failure_scenario": "The reader tags a contradicting result (e.g. 'DDM loses mass conservation when ε is not small') only with Q1, though it bears on Q3. The Q3 memo leaves it out. Y3's omission check sees only the Q3 set, so it passes, and the one-sided memo reaches U4. §10's claim that 'Y3 sees the same set and lists omissions' covers this only for claims inside the set.",
+      "fix": "Have E4 confirm or correct `questions[]` against the brief. For Y3, add a second retrieval by full-text and tag search (alias map) for each question that is not limited to question ID, and report the claims it finds that the question-ID set lacks.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F4",
+      "area": "checks",
+      "where": "§2 \"Between waves the user can expand the scope (new questions…)\"; §3 E1 reads \"brief questions\"; Y1 retrieval by question ID",
+      "severity": "major",
+      "problem": "Papers read in earlier waves were read only against the questions in force then, and nothing re-reads or re-tags them when a later brief adds or redefines a question. Memos for new questions therefore silently leave out the earliest, often most central, papers.",
+      "failure_scenario": "brief.v2 adds Q5 ('how is φ_i+φ_s=1 enforced?'). The wave-1 core papers, which deal with exactly this, carry no Q5 tag. Y1 retrieves only wave-2 claims, Y2 and Y3 pass, and the Q5 gap list wrongly says the literature does not answer parts of Q5. A redefined Q2 also retrieves claims tagged under its old meaning.",
+      "fix": "Give question IDs versioned identities (e.g. Q2@v1). When a question is added or changed, run a re-tag pass (an agent checked by E4, or the user) over existing claims and record it in the manifest, or mark such memos as 'earlier waves not re-read for Qk'.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F5",
+      "area": "checks",
+      "where": "§3 L2 \"a new retraction or correction → its paper and claims flagged, user told\"; A1 \"a newer version of a read paper → its claims go back through E3 and E4\"; §6 \"A correction is a new version\"",
+      "severity": "major",
+      "problem": "When a claim is corrected, re-versioned, retracted or disputed after a memo cites it, nothing re-runs Y2 or Y3 or flags the memo. Memos keep presenting the old statement as supported.",
+      "failure_scenario": "Memo Q1.v2 cites c012. The journal version then arrives, and on re-check c012 is overstated and becomes c012.v2 with narrower wording. Y2 ran once, at memo time, so the memo still carries the strong statement and nothing tells the user it rests on superseded text.",
+      "fix": "Store claim versions in memo citations, for example `[id@v1]`. Have L2 re-run `check_citations.py` on every memo, fail any memo that cites a non-current or retracted claim version, and send it back to Y1.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F6",
+      "area": "checks",
+      "where": "§5 C0 \"Pass: every fabricated quote and wrong page is caught, and the detection rate is at least 90 %\"",
+      "severity": "major",
+      "problem": "The 90 % threshold is pooled over about 10 error kinds with about 4 plants each. The checker can pass while missing most errors of one kind, such as dropped conditions, wrong basis or a hedge made certain. A 78.6 % lower bound is reported but gates nothing.",
+      "failure_scenario": "40 plants, 4 per kind. The checker misses 3 of 4 'hedge made certain' and 1 'wrong basis' and catches everything else: 36/40 = 90 %, C0 passes. In production, 'suggests' → 'shows' overstatements pass E4 at about 75 % and are then caught only if they land in the U3a pages or the 60-claim U3b sample.",
+      "fix": "Set a minimum per kind (for example at least 3 of 4 per kind, and all of the sign and exponent errors), or plant enough of each kind to gate on it. Gate on the lower bound, not the point estimate, and set a maximum false-alarm rate on the controls.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F7",
+      "area": "checks",
+      "where": "§5 \"other passed claims | U3b random sample | human, measured | bound reported per wave\"; U1 \"bound on wrongly excluded candidates reported\"; U3b \"an error → that kind of claim is re-checked for the wave\"",
+      "severity": "major",
+      "problem": "Neither human sample has an acceptance threshold; both bounds are only reported. The remedy for an error found in U3b is to re-check with the same E4 checker that passed it.",
+      "failure_scenario": "A wave has 500 claims not read in U3a. U3b finds k=2 wrong in 60, so the bound is 10.1 %, consistent with about 50 wrong claims. The wave publishes. The re-check of 'that kind' goes back through E4, which has the same blind spot that let the 2 errors through, and they pass again.",
+      "fix": "State a pass threshold per wave (for example a 95 % upper bound ≤ 5 %, i.e. k=0 at n=60, otherwise extend the sample). Make the remedy a human or rule-based re-check, or E4 with a changed prompt that is re-calibrated on the errors U3b found.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F8",
+      "area": "checks",
+      "where": "§3 E3 \"found on the cited page\" in Marker text; E4 \"quote on the page as written … a correction must re-pass E3\"; §1 acceptance \"quote found on its cited page by script\"",
+      "severity": "major",
+      "problem": "The script's ground truth for quotes is Marker's OCR, not the page. A correct quote that E4 reads off the image fails E3 wherever Marker misread the text, so true claims are pushed to 'disputed'.",
+      "failure_scenario": "Marker OCRs 'φ_i + φ_s = 1' in a sentence as 'ϕi + ϕs - 1'. The reader quotes Marker's text and E3 passes. E4 flags the quote as not as written and gives the image wording. That correction must re-pass E3 against Marker and fails, twice, so the claim becomes disputed and costs user time, or the user accepts the corrupted quote. The acceptance test certifies a match against OCR output, not the paper.",
+      "fix": "Let a quote correction from E4 pass E3 by fuzzy match within an edit distance to the Marker span, recording both strings, or by match against a second, independent text source such as the PDF text layer used only for this check. State in §1 that the script's match is against OCR.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F9",
+      "area": "checks",
+      "where": "§3 E4 input \"that page's image; the images of the paper's abstract, assumptions/model and conclusions pages\"; output \"conditions stated elsewhere in the paper that the claim drops\"",
+      "severity": "major",
+      "problem": "The checker can find only dropped conditions that sit on the cited page or the three section pages. Conditions in the method or results sections, appendices, figure captions on other pages, or later remarks are invisible to it.",
+      "failure_scenario": "A claim on p.7 ('the DDM converges at second order') drops 'for ε ∝ h', stated on p.5 in the method section. E4 sees p.7, the abstract, the model and the conclusions, and returns 'supported'. If C0 plants its dropped-condition errors on model or conclusions pages, C0 passes while this kind of error goes through in production.",
+      "fix": "Have the reader record in `conditions[]` the page of each condition. Give E4 those pages too, plus the method pages from the section map. In C0, plant dropped conditions on pages outside the abstract, model and conclusions pages.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F10",
+      "area": "robustness",
+      "where": "§4 agent runs \"in a fresh empty folder … holding only the files it is given\"; \"A script audits each transcript: … every tool call must be one the agent is allowed\"; E4 \"Never Marker text\"",
+      "severity": "major",
+      "problem": "Read is not confined to the agent's folder: it accepts absolute paths. The transcript audit checks only tool names, not paths. The checker's main claimed source of independence (it never sees Marker text or the reader's output) is therefore not enforced.",
+      "failure_scenario": "The beth-checker, unsure of a subscript, reads `<project>/runs/.../marker/<paper>_p7.md` or `reads/<paper>.A.json` by absolute path. It is allowed to use Read, so the audit passes. It then confirms the Marker misreading the reader copied, which defeats the 'Marker misreads an equation' control in §10.",
+      "fix": "Make the audit check every Read path against the agent's folder. Pass a `--settings` file with deny rules such as `Read(/Users/**)` and an allow rule for the folder (flag settings load even with `--setting-sources \"\"`), or run agents as a user or in a sandbox that cannot see the project.",
+      "confidence": "medium",
+      "source": "https://www.mintlify.com/jackdog668/claude-code/configuration/settings"
+    },
+    {
+      "id": "F11",
+      "area": "robustness",
+      "where": "§3 Y1/Y3 \"every verified claim for that question\"; §4 beth-synthesizer \"the driver hands it the claims as text\"",
+      "severity": "major",
+      "problem": "Y1 and Y3 each take the whole claim set for a question, with quotes, in one context. There is no chunking or limit, so for M and L reviews the input will exceed the context window or degrade attention, and the cost of every revision grows with the library.",
+      "failure_scenario": "Following the baseline rate (about 30 claims per paper), an L review of 100 papers gives about 1,000 claims for a broad question, at roughly 200+ tokens each with quote and LaTeX: 200k+ tokens to the synthesizer and again to the checker, re-sent on each revision. The call fails or truncates, or the model skims, and Y3's 'omitted claims' check becomes unreliable just where it matters.",
+      "fix": "Set a per-call token limit. Above it, split by sub-question or tag facet with a map-reduce synthesis, give Y3 the same chunks, and use a script to check that every claim in the set was presented to some chunk.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F12",
+      "area": "robustness",
+      "where": "§3 failure handling: only E1 has \"schema failure → retry once, then logged\"; §8 \"runs.db … so a wave can be resumed\"",
+      "severity": "major",
+      "problem": "For E4, E5, SC1, SC3, Y1, Y3 and T2, nothing says what happens on malformed output, timeout or a crash halfway. Resume semantics are not defined: whether to skip or redo, or how to handle a page whose claims partly have verdicts.",
+      "failure_scenario": "E4 for page 12 returns verdicts for 4 of 6 claims, or a rate-limit error ends the run mid-wave. On resume, runs.db shows the page's call as done (input hash matches), so the 2 claims without verdicts are never checked. The curator refuses them silently ('refusal → logged'), and the paper's coverage drops without anyone being told.",
+      "fix": "Have each driver validate that every input item has exactly one output, and treat a partial result as a failure. Mark a call done only after this check. Add one retry and then escalation to the user for every agent stage. Have L1 report the number of refusals per wave at U4.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F13",
+      "area": "assumptions",
+      "where": "§8 \"Deterministic stages (D3 on the saved search, P1 with the pinned tools, E3 …) give identical output hashes from the same inputs\"",
+      "severity": "major",
+      "problem": "P1's Marker/Surya OCR is a neural model; current Marker runs a Surya VLM through a local inference server with concurrency that scales automatically. Bit-identical output across machines, GPU or MPS versus CPU, or runs is not assured, and E3's verdicts depend on that text.",
+      "failure_scenario": "A third party re-runs P1 with the same versions and weight hashes on a CUDA machine. A few pages differ by a character or an equation token, so the hashes differ and some E3 quote matches flip. The 'reproducible' claim in §8 fails, and recorded E3 passes cannot be re-derived.",
+      "fix": "Test P1 determinism at build time (same machine twice, and a second machine). Record the hardware backend and inference settings (batch, concurrency, decoding) in the manifest. Treat the committed Marker text hashes as the reference and re-derive E3 from the stored Marker pages, not from a re-run of P1.",
+      "confidence": "low",
+      "source": "https://pypi.org/project/marker-pdf/"
+    },
+    {
+      "id": "F14",
+      "area": "checks",
+      "where": "§3 Y2 \"every number occurs in the quote of a cited claim\"; §5 memos \"100 %\"",
+      "severity": "minor",
+      "problem": "How numbers are extracted and matched is not specified, so the 100 % criterion cannot be measured as written: numbers in LaTeX equations, figure-read values, words ('three'), notation such as 1e-3 versus 10^{-3}, units, and incidental numbers like 'Q1', years or equation numbers.",
+      "failure_scenario": "A memo says 'error 0.1 %'. The cited quote has '10^{-3}', so Y2 fails a correct statement. Or the memo says '2 orders' while the quote has '2D', so Y2 passes on an unrelated digit match. Either result is recorded as 100 %.",
+      "fix": "Define the number extractor and normalisation (including the claim's `equation.latex` and figure values), what is exempt (citations, IDs, years, equation numbers), and test cases for `check_citations.py`.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F15",
+      "area": "checks",
+      "where": "§5 \"Two claims are the same claim when they cite the same page, have the same kind, and their quotes overlap by at least half\"",
+      "severity": "minor",
+      "problem": "When the two readers record the same statement with different quotes or a different kind, the result is two published duplicate claims and inflated omission rates. A memo can then cite them as two pieces of evidence.",
+      "failure_scenario": "Reader A quotes the theorem sentence and reader B the sentence after it, both on p.4, about the same convergence result. Both pass E3 and E4 and are published. Y1 cites both as support, and each reader's omission rate counts the other's claim as one it missed.",
+      "fix": "Add a second matching pass, by text similarity of claim statements on the same page, that flags likely duplicates for E4 to merge. Report omission rates both before and after this pass.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F16",
+      "area": "checks",
+      "where": "§5 C0 \"Screening: the seed papers mixed with 20 off-topic abstracts. Pass: no seed excluded\"; §5 screens \"two agent calls (same model)\"",
+      "severity": "minor",
+      "problem": "The screening calibration contains no borderline cases: seeds are relevant by construction and the off-topic abstracts are easy. It cannot measure the shared-blind-spot failure of two Haiku screeners agreeing to exclude a relevant paper whose relevance is indirect.",
+      "failure_scenario": "An astrophysics paper on porous-media sublimation with a usable diffuse-domain treatment is excluded by both screeners as 'not phase-field'. Agreed excludes skip SC3 and are checked only through the 60-item U1 sample. C0 screening passed trivially.",
+      "fix": "Add 10–20 user-chosen borderline relevant abstracts, from adjacent fields or with unusual terminology, to the C0 screening set, and set a recall threshold on them. Or send agreed excludes with low-confidence reasons to SC3.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F17",
+      "area": "robustness",
+      "where": "§5 \"again after any change to an agent file, prompt, schema, model ID, or the Claude Code major version\"; §10 \"Tool update changes results | … recalibration triggers\"",
+      "severity": "minor",
+      "problem": "Recalibration is not triggered by changes to Marker, Surya, the weights or mutool, which change what readers and E3 see, nor by Claude Code minor versions, which can change system prompts and tool behaviour.",
+      "failure_scenario": "Marker is upgraded and math OCR changes. E3 match rates and reader behaviour shift, but C0 is not re-run because no listed trigger fired, despite §10's claim.",
+      "fix": "Add changes to P1 tool versions or weight hashes, and any Claude Code version change (or a cheap smoke subset of C0 on every version), to the trigger list.",
+      "confidence": "high",
+      "source": null
+    },
+    {
+      "id": "F18",
+      "area": "assumptions",
+      "where": "§3 \"Without a key OpenAlex allows a tenth of the free key's daily budget and answers HTTP 429 when it is spent\"",
+      "severity": "minor",
+      "problem": "OpenAlex's current sources disagree: they give keyless allowances of $0.10/day or $0.01/day, and one source says a key is now required for nearly all requests. Costs also differ by request type (list pages 10 credits, semantic search 1,000, ID lookups free), so the budget for a wave is not a simple request count.",
+      "failure_scenario": "D1 runs semantic or paged list queries for an L review and the $1/day keyed budget runs out partway through. Every later query gets a 429, the wave is marked discovery incomplete, and it is re-run the next day. If the key cannot be read from Keychain in a headless run, keyless calls may fail almost at once.",
+      "fix": "Have D1 read X-RateLimit-Remaining and estimate a wave's credit cost before running. Prefer free ID lookups and filter queries over semantic search. Fail fast if the Keychain read fails, rather than falling back to keyless calls.",
+      "confidence": "low",
+      "source": "https://developers.openalex.org/api-reference/authentication"
+    },
+    {
+      "id": "F19",
+      "area": "robustness",
+      "where": "§6 Protection \"The Claude Code sandbox (`sandbox.filesystem.denyWrite`) blocks that … for every Bash command\"; §4 \"`--setting-sources \"\"`\"",
+      "severity": "minor",
+      "problem": "With `--setting-sources \"\"`, project settings files are not loaded. The project deny rules and sandbox config that §6 relies on therefore do not apply to the headless agents, including morty-librarian, which has Bash.",
+      "failure_scenario": "morty-librarian's allowed Bash prefix is matched by `python library_query.py … ; chmod u+w …` or a crafted argument. No project deny or sandbox rule is active in its session, so only on-disk file modes and L2's later detection protect the library.",
+      "fix": "Pass the deny rules and sandbox config explicitly with `--settings <file>` on every agent call, and test that a write to library/ from the librarian session is blocked.",
+      "confidence": "medium",
+      "source": "https://www.mintlify.com/jackdog668/claude-code/configuration/settings"
+    },
+    {
+      "id": "F20",
+      "area": "checks",
+      "where": "§8 \"each wave re-checks a random 30 of its claims in a fresh run and reports the rate\"",
+      "severity": "minor",
+      "problem": "The agreement rate for E4 re-runs is measured on 30 claims with no threshold or action. A low agreement rate, meaning E4 verdicts are partly noise, does not stop publication.",
+      "failure_scenario": "The re-check agrees on 24 of 30 (80 %, lower bound about 64 %). The wave publishes anyway, although a fifth of 'confirmed' verdicts would flip on a re-run.",
+      "fix": "Set a minimum agreement (for example ≥ 90 % with its bound reported) and say what happens below it: re-run E4 on the wave, or re-calibrate.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F21",
+      "area": "efficiency",
+      "where": "§3 D3 \"deduplicated by DOI, then by normalised title\"",
+      "severity": "minor",
+      "problem": "A preprint and its journal version usually have different DOIs (arXiv 10.48550 versus the publisher's) and often slightly different titles. Both can be shortlisted and read in full in the same wave, and the A1 'linked to it' rule applies only to works already in the library.",
+      "failure_scenario": "An arXiv v2 and its J. Comput. Phys. version both go through E1, E2, E4 and U3a in one wave: double cost and duplicate claims under two paper_ids.",
+      "fix": "In D3, merge using OpenAlex work IDs and the Crossref `relation` field (is-preprint-of / has-preprint), plus fuzzy title and author match, before screening.",
+      "confidence": "medium",
+      "source": null
+    },
+    {
+      "id": "F22",
+      "area": "checks",
+      "where": "§5 \"Gold recall set: the user names 10 to 15 statements in one seed paper … Pass: E1 finds at least 90 %\"",
+      "severity": "minor",
+      "problem": "Reader recall is calibrated on one paper the user knows well, possibly one already in the frozen practice library, with 10–15 items, so the test has little statistical power or generality.",
+      "failure_scenario": "E1 finds 9/10 on Kaempfer & Plapp 2009 (lower bound about 61 %) and passes. On long reports or theses, read per section, recall is much lower, and only U3a, on core papers, would show it.",
+      "fix": "Use at least 2–3 papers of different types (journal article, long report, thesis), with about 30 gold statements in total, and report the bound.",
+      "confidence": "medium",
+      "source": null
+    }
+  ],
+  "unclear": [
+    {
+      "where": "§4 jerry-screener framing B and §3 SC1",
+      "issue": "Framing B asks 'which questions does this bear on, if any', but 'exclude requires a named exclusion criterion' and 'exclude without a named criterion is invalid'. It is not stated how framing B is supposed to produce a valid exclude."
+    },
+    {
+      "where": "§3 U3a \"missed statements become user-authored claims through E3\" vs §1 acceptance \"the checker has confirmed its text, quote, equation…\"",
+      "issue": "Claims the user writes skip E4, but the acceptance test requires checker confirmation for every published claim. Which rule applies?"
+    },
+    {
+      "where": "§5 \"when U3a covers every claim of a wave, U3b is empty\" vs §3 U3b input \"every disputed claim\"",
+      "issue": "Disputed claims are part of U3b's input, so U3b is not empty in that case. It is also unclear whether disputed claims count toward the 60 or are added to them."
+    },
+    {
+      "where": "§3 E4 \"wrong page (with the right page)\"",
+      "issue": "The checker sees only the cited page and three section pages, so it is unclear how it can name the correct page in general."
+    },
+    {
+      "where": "§4 morty-reader \"fresh per section for papers over ~40 pages\"",
+      "issue": "It is not stated how per-section reads produce one section map, how the abstract, model and conclusions pages are chosen for E4, or how claims that span sections are handled."
+    },
+    {
+      "where": "§5 D3 \"title similarity ≥ 0.9\"",
+      "issue": "The similarity measure (token Jaccard, Levenshtein ratio, other) and the normalisation are not specified, so the threshold is not reproducible."
+    },
+    {
+      "where": "§3 stage order (Y1–Y3 after L1; T1/T2; U4)",
+      "issue": "It is not stated whether memos are rebuilt every wave or only when a review closes, nor whether Y1 retrieves claims only after U3b and L1 for the current wave."
+    },
+    {
+      "where": "§3 E5 input \"the claim, the checker's reasons, the page\"",
+      "issue": "It is unclear whether the reviser also gets the other pages (for dropped conditions or a corrected page) and the Marker text, and whether the re-check in E4 is a fresh checker that sees the revision history."
+    },
+    {
+      "where": "§8 \"`search/` … Committed if small; otherwise hashed in the manifest\"",
+      "issue": "'Small' is not defined. If the raw responses are only hashed and kept locally, the candidate set cannot be reproduced by a third party, which contradicts 'the snapshot is what makes the candidate set reproducible'."
+    }
+  ]
+}
