@@ -30,11 +30,11 @@ The user's decision is the last column.
 |---|---|---|---|---|---|
 | F1 | crit | Reader copies Marker's misread equation; E3 agrees; image never consulted | A | E4 checks every equation, number and quote of every claim against the image; the checker gets the image only, never Marker text | |
 | F3 | crit | basis, kind, tags, questions never checked | A | Add basis and kind to the E4 verdict; plant wrong-basis errors in C0; show them at U3 | |
-| F4 | crit | Retractions and errata checked only for non-publisher copies | A | Query Crossref `update-to` for every DOI at D3; record on the card; re-query at L2 | |
+| F4 | crit | Retractions and errata checked only for non-publisher copies | A | Query Crossref `update-to` for every DOI at D3; record on the card; requery at L2 | |
 | F2 | maj | Sonnet, Opus and Fable are all Claude: not "different families" | M | Reword to "different Claude models"; state that the U3 sample is the only fully independent check; another vendor's checker is a separate decision | D |
 | F5 | maj | Librarian agent chooses the synthesizer's claims, unchecked, not reproducible | A | Y1 and Y3 get claims from `library_query.py` with fixed filters; query and returned IDs in the manifest; librarian agent only answers ad hoc questions | |
 | F6 | maj | Y3 sees only cited claims, so cannot find omitted contradictions | A | Y3 gets the full claim set for the question | |
-| F7 | maj | "Same claims on re-run" is not measurable | A | Reproducibility = identical hashes for deterministic stages + re-checking recorded claims gives the same verdicts at a stated agreement rate | |
+| F7 | maj | "Same claims on rerun" is not measurable | A | Reproducibility = identical hashes for deterministic stages + rechecking recorded claims gives the same verdicts at a stated agreement rate | |
 | F8 | maj | No rule for matching reader A's and B's claims | A | Match by page and overlapping quote span; unmatched claims go to E4 as candidates; merged set defined before L1 | |
 | F9 | maj | Checker sees only the cited page; conditions stated elsewhere are lost | A | E4 also gets the abstract, assumptions and conclusions pages; C0 plants "dropped condition" errors | |
 | F10 | maj | Stratified U3 sample breaks the 3/n bound; no bound for k > 0 | A | Simple random sample of 60; Clopper-Pearson bound for any k; inspect all when a wave has ≤ 60 passed claims | |
@@ -42,13 +42,13 @@ The user's decision is the last column.
 | F12 | maj | Short or generic quotes pass E3 | A | Quote ≥ 8 words or a full sentence; flag quotes that occur more than once in the paper | |
 | F13 | maj | Many closed-access papers have no abstract in OpenAlex | A | Record abstract presence; never exclude a candidate without one; fetch from Semantic Scholar or arXiv, else show at U1 | |
 | F15 | maj | OpenAlex keyless budget is small; 429 truncates D1 | A | Free OpenAlex key stored outside the repository (needs an account); 429 → pause and resume | D (account) |
-| F16 | maj | Failed API → wave continues silently | A | Mark the wave "discovery incomplete", show at U1, re-run failed queries | |
+| F16 | maj | Failed API → wave continues silently | A | Mark the wave "discovery incomplete", show at U1, rerun failed queries | |
 | F17 | maj | Curator crash leaves half a publish | A | Stage in a temporary folder; event appended last as the commit marker; `recover` mode | |
 | F14 | min | Two Haiku screeners share errors | M | Keep two, with different framings; exclude only on an explicit exclusion criterion | |
 | F18 | min | Marker output depends on version and weights | A | Pin Marker, Surya and weight hashes and flags in the manifest (as units-verification) | |
 | F19 | min | Context-paper cards unchecked | A | Cards hold bibliographic fields only; any statement becomes a claim and is checked | |
 | F20 | min | Y2 number matching is string-based | A | Number must occur in a cited claim's quote; Y3 checks it is the same quantity | |
-| F21 | min | IDs tied to DOIs; preprint → journal not linked | A | Stable internal ID with DOI aliases; A1 links a new version to its preprint and triggers the re-check | |
+| F21 | min | IDs tied to DOIs; preprint → journal not linked | A | Stable internal ID with DOI aliases; A1 links a new version to its preprint and triggers the recheck | |
 | F22 | min | Reports and theses without Crossref records dropped as invented | A | Also resolve via arXiv, NTRS, OSTI, ADS; unresolved items shown at U1, not dropped | |
 | F23 | min | U1 10 % of exclusions grows with candidates | A | Fixed random sample of 60 exclusions | |
 
