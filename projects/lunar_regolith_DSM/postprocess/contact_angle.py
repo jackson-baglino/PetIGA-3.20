@@ -333,7 +333,7 @@ def measure(X, Y, phi, eps, walls, bounds, exclude_eps, level=0.5):
 def extrapolate(t, th):
     """Equilibrium angle from theta(t) = theta_inf + A*exp(-t/tau).
 
-    Relaxation here is vapour-diffusion limited and slow: the pilot run
+    Relaxation here is vapor-diffusion limited and slow: the pilot run
     measured tau = 14.4 days, so reaching the true equilibrium takes months of
     simulated time. It is also an extremely clean single exponential -- residual
     RMS 0.003 degrees over the last 40% of that run -- which makes the
@@ -358,7 +358,7 @@ def extrapolate(t, th):
         return None
 
     # Drop the early transient: the grain first shrinks under Gibbs-Thomson
-    # until the sealed box's vapour saturates, and theta briefly moves the wrong
+    # until the sealed box's vapor saturates, and theta briefly moves the wrong
     # way. Fitting through that biases tau badly.
     sel = t > 0.4 * t.max()
     if sel.sum() < 6:

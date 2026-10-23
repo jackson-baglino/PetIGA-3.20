@@ -3,7 +3,7 @@
 #
 # WEDGE, sealed: no-flux on everything.
 #
-# Sealed rather than the previous wedge campaign's vapour reservoir, for two
+# Sealed rather than the previous wedge campaign's vapor reservoir, for two
 # reasons. The reservoir overshoots the angle -- it never reaches steady state,
 # so the meniscus carries a Gibbs-Thomson supersaturation and sits off the Young
 # shape (measured -1.019 deg at theta=60, against +0.004 sealed). And the wedge
@@ -17,7 +17,7 @@
 # -flag_BC_rhovfix 1 -rhovfix_axis 0 -rhovfix_lo/hi 1.000000.
 #
 # The reasoning, and it is worth stating because it is the opposite of the
-# grow90_* runs: those impose a saturated vapour reservoir, so the bridge never
+# grow90_* runs: those impose a saturated vapor reservoir, so the bridge never
 # stops exchanging mass and never reaches a true steady state. Its meniscus
 # carries a Gibbs-Thomson supersaturation d0*chi to sustain that flux, and a
 # moving interface satisfies sigma = d0*chi + beta*v_n rather than d0*chi alone
@@ -28,7 +28,7 @@
 #
 # With no flux anywhere the system relaxes to a genuine equilibrium: v_n -> 0,
 # the supersaturation goes to zero, and the meniscus takes the shape Young's
-# equation predicts. Total water is conserved, and since vapour holds ~1e-6 of
+# equation predicts. Total water is conserved, and since vapor holds ~1e-6 of
 # it the ice volume is effectively fixed -- only the SHAPE relaxes, which is
 # exactly what this run is for.
 #

@@ -4,7 +4,7 @@
 # DTMAX LADDER, sealed two-grain cases: -dtmax = 0.8 x tau_sub
 # (tau_sub = 5850 s at -20 C, alpha_c = 1e-3). Pair with
 #   sinterpair_2D_L120um_eps0.86um   (sintering, then absorption)
-#   ripenpair_2D_L132um_eps0.86um    (Ostwald ripening through the vapour)
+#   ripenpair_2D_L132um_eps0.86um    (Ostwald ripening through the vapor)
 #
 # 60 days, sealed and isothermal: total ice is conserved, so the rungs are
 # compared on the interface length written every step to SSA_evo.dat, and on

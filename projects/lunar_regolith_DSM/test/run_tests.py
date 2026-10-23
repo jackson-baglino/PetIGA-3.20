@@ -35,7 +35,7 @@ STAMP = datetime.datetime.now().strftime("%Y-%m-%d__%H.%M.%S")
 
 # ── Physics constants ─────────────────────────────────────────────────────────
 def rho_vs(T_C):
-    """Saturated vapour density [kg/m³] — matches RhoVS_I() in material_properties.c."""
+    """Saturated vapor density [kg/m³] — matches RhoVS_I() in material_properties.c."""
     T    = T_C + 273.15
     K0, K1, K2 = -0.5865e4, 0.2224e2, 0.1375e-1
     K3, K4, K5 =  -0.3403e-4, 0.2697e-7, 0.6918
@@ -338,7 +338,7 @@ def T07_bergeron(r_no_grad, r_grad):
         if len(mon["t"]) > 0:
             ax.plot(mon["t"] * 1e3, mon["tot_rhov"], "-", color=col, label=lbl)
     ax.set_xlabel("t  [ms]"); ax.set_ylabel(r"$\int\rho_v$  [kg/m]")
-    ax.set_title("T07 – Bergeron: domain-averaged vapour density"); ax.legend(); ax.grid(True, ls=":")
+    ax.set_title("T07 – Bergeron: domain-averaged vapor density"); ax.legend(); ax.grid(True, ls=":")
     fp = _savefig(fig, "T07_bergeron")
     return passed, detail, fp
 
@@ -373,7 +373,7 @@ def T08_flat_interface_stability(r):
 
 
 def T09_vapor_saturation(r):
-    """T09 – Vapour equilibrium: tot_rhov at t=0 within 2 % of hum*rho_vs*vol_air."""
+    """T09 – Vapor equilibrium: tot_rhov at t=0 within 2 % of hum*rho_vs*vol_air."""
     Lx  = 1e-4
     hum = 0.95
     mon = _parse_monitor(r["stdout"])
@@ -395,7 +395,7 @@ def T09_vapor_saturation(r):
     ax.plot(t_ms, mon["tot_rhov"] * 1e6, "m-o", ms=4, label="Measured")
     ax.axhline(rhov_exp * 1e6, ls="--", color="gray", label="Expected at t=0")
     ax.set_xlabel("t  [ms]"); ax.set_ylabel(r"$\int\rho_v\phi_a\,dx$  [µg/m²]")
-    ax.set_title("T09 – Vapour saturation at t=0"); ax.legend(); ax.grid(True, ls=":")
+    ax.set_title("T09 – Vapor saturation at t=0"); ax.legend(); ax.grid(True, ls=":")
     fp = _savefig(fig, "T09_vapor_saturation")
     return passed, detail, fp
 
@@ -425,7 +425,7 @@ def T10_interface_evolution(r):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def T11_sublimation_steady(r):
-    """T11 – Sublimation decelerates as the finite domain vapour approaches saturation."""
+    """T11 – Sublimation decelerates as the finite domain vapor approaches saturation."""
     ssa = r["ssa"]
     if ssa is None or len(ssa["tot_ice"]) < 10:
         return False, "insufficient SSA data", None
@@ -434,7 +434,7 @@ def T11_sublimation_steady(r):
     t     = ssa["t"]
     delta = ice[-1] - ice[0]
 
-    # Rate in first third vs last third (expect early > late due to vapour build-up)
+    # Rate in first third vs last third (expect early > late due to vapor build-up)
     n      = len(ice)
     cut    = n // 3
     dt_e   = t[cut] - t[0]
@@ -741,11 +741,11 @@ def write_report(rows: list[dict]):
             1. **Curvature-driven interface motion** — Allen-Cahn bulk free energy
                minimisation drives diffuse interfaces toward lower curvature.
             2. **Sublimation/deposition kinetics** — the source term
-               `−α·φ_i²·φ_a²·(ρ_v − ρ_vs(T))/ρ_ice` converts ice ↔ vapour
-               whenever the local vapour density deviates from saturation.
+               `−α·φ_i²·φ_a²·(ρ_v − ρ_vs(T))/ρ_ice` converts ice ↔ vapor
+               whenever the local vapor density deviates from saturation.
             3. **Bergeron (temperature-gradient) process** — a macroscopic
-               temperature gradient creates a vapour density gradient (d ρ_vs/dT ≠ 0)
-               that drives net vapour flux from warm to cold, causing sublimation at
+               temperature gradient creates a vapor density gradient (d ρ_vs/dT ≠ 0)
+               that drives net vapor flux from warm to cold, causing sublimation at
                the warm end and deposition at the cold end.
 
             Extended tests (T11–T13, T16) use a 1000-step sublimation run to verify
@@ -857,7 +857,7 @@ def main():
     if r_subl and (not only or "T06" in only):
         p, d, fp = T06_sublimation(r_subl)
         add("T06","Sublimation Kinetics","Dry snow metamorphism",
-            "Under undersaturated vapour (hum=0.5), ice sublimates and tot_ice decreases.",
+            "Under undersaturated vapor (hum=0.5), ice sublimates and tot_ice decreases.",
             "tot_ice decreases monotonically",
             p, d, fp)
 
@@ -880,7 +880,7 @@ def main():
     # T09
     if r_quick and (not only or "T09" in only):
         p, d, fp = T09_vapor_saturation(r_quick)
-        add("T09","Vapour Saturation at t=0","Dry snow metamorphism",
+        add("T09","Vapor Saturation at t=0","Dry snow metamorphism",
             "Initial rhov = hum × rho_vs(T) × vol_air within 2 %.",
             "|tot_rhov(0) − hum·ρ_vs·vol_air| / expected < 2 %",
             p, d, fp)
@@ -897,7 +897,7 @@ def main():
     if r_subl_long and (not only or "T11" in only):
         p, d, fp = T11_sublimation_steady(r_subl_long)
         add("T11","Sublimation Rate Deceleration","Dry snow metamorphism",
-            "In a finite domain, sublimation decelerates as vapour builds up toward saturation.",
+            "In a finite domain, sublimation decelerates as vapor builds up toward saturation.",
             "Δtot_ice < 0; rate_early > rate_late",
             p, d, fp)
 
@@ -905,7 +905,7 @@ def main():
     if r_depo and (not only or "T12" in only):
         p, d, fp = T12_deposition(r_depo)
         add("T12","Deposition at Supersaturation","Dry snow metamorphism",
-            "Under supersaturated vapour (hum=1.5), ice grows via deposition.",
+            "Under supersaturated vapor (hum=1.5), ice grows via deposition.",
             "tot_ice increases (Δtot_ice > 0)",
             p, d, fp)
 

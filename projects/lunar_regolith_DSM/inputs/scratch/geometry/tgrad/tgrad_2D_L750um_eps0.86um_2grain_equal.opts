@@ -4,7 +4,7 @@
 # Pair with experiment/Tgrad_T-20_G50_3d.opts (dT/dx = -50 K/m, left warm).
 #
 # TEST 1 — well-separated equal pair. Supersedes the prior two-grain run where
-# the surface-to-surface gap was only 0.5 R and distorted the vapour pathway.
+# the surface-to-surface gap was only 0.5 R and distorted the vapor pathway.
 # Here the grains are HALF the size (50 um) and moved to Lx/4 & 3Lx/4, giving a
 # 5.5 R gap. Expectation: the warm (left) grain sublimates and redeposits on the
 # cold (right) grain (total ice conserved) — any asymmetry is unambiguously the

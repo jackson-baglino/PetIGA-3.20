@@ -8,7 +8,7 @@
 # redistribute between them, and which throat wins? The network version of the
 # wedge result (a single deposit migrated -18.75 um/yr toward the narrow end).
 #
-# PAIR WITH A CLOSED (Neumann-vapour) EXPERIMENT — tgrad_T-20_h1.00_90d_G0 for the
+# PAIR WITH A CLOSED (Neumann-vapor) EXPERIMENT — tgrad_T-20_h1.00_90d_G0 for the
 # isothermal case, tgrad_T-20_h1.00_90d_G0.3 for the gradient. Do NOT add
 # -flag_BC_rhovfix here: each bridge plugs its throat, so the domain is three
 # pockets, and the MIDDLE one already connects the two bridges' inner menisci.
@@ -43,7 +43,7 @@
 #   throat 1  d0*kappa +6.381e-06   ice area 1.8268e-08 m^2
 #
 # PREDICTION: throat 0 (the NARROW one) is the SOURCE, throat 1 the SINK.
-# Both menisci are CONVEX, so higher curvature means HIGHER equilibrium vapour
+# Both menisci are CONVEX, so higher curvature means HIGHER equilibrium vapor
 # density: the tighter throat holds its ice at higher kappa and loses it. This is
 # Ostwald ripening with aperture playing the role of grain size -- NOT the
 # capillary-condensation sign, which would need theta < 90 and an hourglass

@@ -7,9 +7,9 @@
 #
 # SAME BOX as the channel (375 x 125 um), deliberately. The previous droplet
 # case used 300 x 300 um for R_d = 75 um, which was far larger than it needed
-# to be: relaxation here is vapour-diffusion limited over the DOMAIN, so the
+# to be: relaxation here is vapor-diffusion limited over the DOMAIN, so the
 # oversized box gave tau = 76-101 days and the runs never converged. This box
-# holds every angle with room to spare and ~2x less vapour to equilibrate.
+# holds every angle with room to spare and ~2x less vapor to equilibrate.
 #
 # R_d = 50 um. Area-conserving cap geometry across the sweep:
 #     theta = 30  -> contact width 208 um, height 28 um

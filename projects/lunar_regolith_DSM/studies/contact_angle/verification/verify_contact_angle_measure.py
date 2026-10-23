@@ -44,7 +44,7 @@ def arc(theta_deg, x_contact, side):
 
     The arc meets BOTH walls at theta_deg and crosses y = 0 and y = H at
     x = x_contact. Its centre sits on the midplane, so cos(theta) = (H/2)/R
-    fixes R = H/(2|cos theta|); whether the centre lies on the vapour side
+    fixes R = H/(2|cos theta|); whether the centre lies on the vapor side
     (wetting, concave) or the ice side (non-wetting, convex) is what carries
     the sign of cos(theta).
 
@@ -64,7 +64,7 @@ def arc(theta_deg, x_contact, side):
 
     R = H / (2.0 * abs(c))
     half = np.sqrt(max(R * R - 0.25 * H * H, 0.0))
-    # c > 0 (wetting): centre on the vapour side, arc concave, s = -side.
+    # c > 0 (wetting): centre on the vapor side, arc concave, s = -side.
     # c < 0: centre on the ice side, arc convex, s = +side.
     s = -side if c > 0.0 else side
     xc = x_contact - s * half

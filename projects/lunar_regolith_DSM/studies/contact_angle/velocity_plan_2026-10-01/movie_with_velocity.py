@@ -2,7 +2,7 @@
 """Movie of one velocity-study run with its interface velocity underneath.
 
 Top panel: the domain at each snapshot. Ice is drawn with the cmocean "ice"
-map; the vapour is coloured by supersaturation sigma = (rho_v - rho_vs)/rho_vs
+map; the vapor is coloured by supersaturation sigma = (rho_v - rho_vs)/rho_vs
 on the diverging cmocean "balance" map, symmetric about zero with one range for
 the whole movie. These are the conventions of postprocess/make_movie.py.
 
@@ -99,7 +99,7 @@ def main():
     X, Y = frames[0][1], frames[0][2]
     t_end = max(r["t"].max() / DAY, frames[-1][0])      # a meniscus may vanish early
 
-    # one supersaturation range for the whole movie, from the vapour only
+    # one supersaturation range for the whole movie, from the vapor only
     vap = np.concatenate([np.abs(f[4][f[3] < 0.05]).ravel() for f in frames
                           if (f[3] < 0.05).any()])
     smax = float(np.percentile(vap, 99.5)) or 1e-6

@@ -7,7 +7,7 @@ snapshot — the ice-weighted centroid's distance from the wedge apex, r_c(t):
 
     FALLING r_c  -> the ice migrates toward the NARROW end, as predicted from
                     the meniscus curvatures (inner face concave, kappa=-1/r1;
-                    outer convex, kappa=+1/r2; so the inner face is the vapour
+                    outer convex, kappa=+1/r2; so the inner face is the vapor
                     sink).
     FLAT r_c     -> no migration. Before calling it a null, check the total ice
                     is also flat: ice that is simply evaporating uniformly
@@ -167,9 +167,9 @@ def main():
         c = float((X * w).sum() / m) if m > 0 else np.nan
         rc.append(float((rho * w).sum() / m) if m > 0 else np.nan)
         xc.append(c)
-        # Vapour on each side of the deposit. A deposit that spans the channel
-        # is a vapour BARRIER: phi_aef = max(1-phi, air_lim) with air_lim=1e-6
-        # (src/assembly.c), so ice suppresses vapour diffusion by 1e6. The two
+        # Vapor on each side of the deposit. A deposit that spans the channel
+        # is a vapor BARRIER: phi_aef = max(1-phi, air_lim) with air_lim=1e-6
+        # (src/assembly.c), so ice suppresses vapor diffusion by 1e6. The two
         # sides then equilibrate SEPARATELY with their own meniscus and sit at
         # different densities they cannot equalise -- which halts migration no
         # matter how large the curvature difference is. Tracking the split is
@@ -211,7 +211,7 @@ def main():
                 print(f"\n-> RELAXED AND STOPPED. r_c moved {dr * 1e6:+.3f} um early on "
                       "(shape relaxation) and\n   then went flat; the late drift is "
                       "indistinguishable from zero. This is NOT slow\n   migration -- "
-                      "see the vapour split below for why it halted.")
+                      "see the vapor split below for why it halted.")
             elif slope < 0:
                 print("\n-> MIGRATING toward the NARROW end, as predicted.")
             else:
@@ -223,7 +223,7 @@ def main():
                   "losing mass rather than translating." % dm)
 
         # The seal check -- why a null is a null. Only meaningful under NEUMANN
-        # vapour BCs: with Dirichlet reservoirs at the open ends each face has
+        # vapor BCs: with Dirichlet reservoirs at the open ends each face has
         # its own supply path, so a split across the deposit is just the
         # curvature difference being sustained against a through-flux, not
         # evidence of a blockage. Reporting "SEALING" on a run that plainly
@@ -234,12 +234,12 @@ def main():
             if re.search(r"^-flag_BC_rhovfix\s+1", txt, re.M):
                 reservoirs = True
         split = (rv_hi[-1] - rv_lo[-1]) / rv_lo[-1]
-        print(f"\nVapour across the deposit (final): low-x {rv_lo[-1]:.6e}, "
+        print(f"\nVapor across the deposit (final): low-x {rv_lo[-1]:.6e}, "
               f"high-x {rv_hi[-1]:.6e}")
         print(f"  fractional split (high-low)/low = {split:+.3e}  "
               f"(started {(rv_hi[0] - rv_lo[0]) / rv_lo[0]:+.3e})")
         if reservoirs:
-            print("  vapour BC: Dirichlet reservoirs (-flag_BC_rhovfix 1) -- each "
+            print("  vapor BC: Dirichlet reservoirs (-flag_BC_rhovfix 1) -- each "
                   "face has its own")
             print("  supply path, so this split is the curvature difference held "
                   "against a")
@@ -248,15 +248,15 @@ def main():
         elif abs(split) > 1e-7:
             print("  -> THE DEPOSIT IS SEALING THE CHANNEL. The two sides have "
                   "equilibrated separately")
-            print("     with their own menisci and cannot exchange vapour: ice "
-                  "suppresses vapour")
+            print("     with their own menisci and cannot exchange vapor: ice "
+                  "suppresses vapor")
             print("     diffusion by 1e6 (air_lim, src/assembly.c). The curvature "
                   "difference is")
             print("     REAL -- this split is its direct measurement -- but it can "
                   "do no work, so")
             print("     migration halts. Compare the split against "
                   "d0*(1/r1 + 1/r2) to confirm.")
-            print("     A migrating deposit needs a vapour path AROUND it.")
+            print("     A migrating deposit needs a vapor path AROUND it.")
 
     if args.save_csv:
         with open(args.save_csv, "w") as fh:

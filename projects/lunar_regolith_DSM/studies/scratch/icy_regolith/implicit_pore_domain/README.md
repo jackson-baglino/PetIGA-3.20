@@ -3,7 +3,7 @@
 **Question.** How does ice adhere to and metamorphose within lunar-regolith pore
 space, as a function of pore geometry? Here the regolith is modelled
 *implicitly* — it is the deformed top/bottom boundary of the domain, not a
-simulated field. Ice / vapour / temperature evolve in the pore space between the
+simulated field. Ice / vapor / temperature evolve in the pore space between the
 regolith walls (3 DOF, no solver changes). Interior regolith grains are not
 representable in a single tensor-product patch; that is the explicit approach
 (`../explicit_sediment_phase/`, Effort 2).
@@ -130,7 +130,7 @@ at the model's natural 90° (Neumann) contact angle, **both menisci are
 apex-centred arcs whose radius of curvature is their distance from the apex.**
 The inner meniscus has the ice on the *outside* of its circle, so it is
 **concave** (κ = −1/r₁); the outer is **convex** (κ = +1/r₂). The concave face
-has the lower equilibrium vapour density, so vapour flows inward.
+has the lower equilibrium vapor density, so vapor flows inward.
 
 The counterintuitive part is that the narrow end has the *larger* |κ|. That is
 true, but κ carries a sign, and the sign is what sets which way material goes.

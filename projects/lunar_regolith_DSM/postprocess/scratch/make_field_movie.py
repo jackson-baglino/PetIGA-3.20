@@ -23,7 +23,7 @@ only their colour arrays are updated each frame.
 
 VAPOR IS NEARLY FLAT: in a saturated cell VaporDensity varies only in its ~5th
 significant digit (e.g. 8.4868e-4..8.4873e-4). The colour range is therefore
-auto-scaled to robust percentiles of the vapour in the AIR region, sampled
+auto-scaled to robust percentiles of the vapor in the AIR region, sampled
 GLOBALLY across the run so the scale is fixed and comparable frame-to-frame.
 Override with --vmin-vapor/--vmax-vapor. The colourbar prints the true values.
 
@@ -129,7 +129,7 @@ def main():
     # Static mesh: read coordinates once from the first snapshot.
     _, X, Y = read_vts(files[0])
 
-    # Vapour colour range: the TRUE global min and max of VaporDensity within
+    # Vapor colour range: the TRUE global min and max of VaporDensity within
     # the AIR phase (phi < 0.5), over EVERY frame -- a single fixed scale for
     # the whole run. Requires a full pre-pass over all snapshots (each is read
     # again during rendering); --vmin-vapor/--vmax-vapor skip the pre-pass.
@@ -171,7 +171,7 @@ def main():
     f0, _, _ = read_vts(files[0])
     phi0 = f0["IcePhase"]; vap0 = f0["VaporDensity"]
 
-    # Base: vapour over the WHOLE domain, gouraud (smooth). Guarantees coverage.
+    # Base: vapor over the WHOLE domain, gouraud (smooth). Guarantees coverage.
     base = ax.pcolormesh(X, Y, vap0, cmap=cmocean.cm.amp,
                          vmin=vmin, vmax=vmax, shading="gouraud", rasterized=True)
     # Ice on top: gouraud with the alpha-cutoff cmap (transparent below 0.5).

@@ -1,13 +1,13 @@
 # =============================================================================
 # geometry/ripening/ripenpair_2D_L132um_eps0.86um.opts
 #
-# OSTWALD RIPENING: two unequal ice grains separated by a 12 um vapour gap.
+# OSTWALD RIPENING: two unequal ice grains separated by a 12 um vapor gap.
 # Built for the dtmax ladder (studies/contact_angle/velocity_plan_2026-10-01):
 # a small, cheap case whose outcome is an EVENT TIME, which is what a too-large
 # timestep gets wrong first.
 #
 # The grains never touch (the gap is 14 eps, clear of both diffuse bands), so the
-# only path between them is through the vapour: the small grain sublimates, the
+# only path between them is through the vapor: the small grain sublimates, the
 # large one grows, and the small one eventually vanishes.
 #
 #   small grain R0 = 15 um at (30, 45) um; large grain R1 = 30 um at (87, 45) um

@@ -1,7 +1,7 @@
 # =============================================================================
 # experiment/contactangle/wedgeres150_T-20_theta120_ac1e-3.opts
 #
-# WEDGE, vapour + thermal reservoirs. The companion to wedge150_*, which is
+# WEDGE, vapor + thermal reservoirs. The companion to wedge150_*, which is
 # sealed; run both to separate what the boundary condition does from what the
 # contact angle does.
 #
@@ -27,7 +27,7 @@
 # a moving interface satisfies sigma = d0*chi + beta*v_n rather than d0*chi
 # alone. In the flat channel that cost -1.019 deg at theta=60 against +0.004
 # sealed. What the reservoir buys in exchange is NET growth or shrinkage, which
-# a sealed box cannot show at all -- vapour there holds ~1e-6 of the water.
+# a sealed box cannot show at all -- vapor there holds ~1e-6 of the water.
 #
 # t_final = 150 days ~ 6 tau at the wedge-scale channel's tau = 24-34 d. Longer
 # than the 90-day runs because the point here is the plateau, not the rate, and
@@ -59,8 +59,8 @@
 -gamma_as 0.300
 -gamma_is 0.3545000
 
-# --- reservoirs: T on every face, vapour on the x-faces only ---
-# Pinning vapour on the y walls would feed ice directly at its contact line and
+# --- reservoirs: T on every face, vapor on the x-faces only ---
+# Pinning vapor on the y walls would feed ice directly at its contact line and
 # corrupt the angle; pinning T there is harmless, regolith being a thermal bath.
 -flag_BC_Tfix 1
 -flag_BC_rhovfix 1

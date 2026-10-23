@@ -55,7 +55,7 @@ run() { "$EXEC" "$@" >>"$LOG" 2>&1; }
 
 [[ -x "$EXEC" ]] || { echo "missing $EXEC -- run 'make' first" >&2; exit 2; }
 
-# A disc clipped by BOTH walls: R = 0.75*Ly > Ly/2. The ice-vapour interface
+# A disc clipped by BOTH walls: R = 0.75*Ly > Ly/2. The ice-vapor interface
 # must actually cross a wall face or G2 is vacuous (the wall term is ~0 where
 # h'(phi) ~ 0, i.e. in either bulk phase).
 GEOM=(-options_file "$ROOT/inputs/solver.opts" -periodic 0 -pf_output 0 -pf_monitor 0

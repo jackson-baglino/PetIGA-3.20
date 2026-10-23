@@ -16,10 +16,10 @@
 # ----------
 # Across the full domain (Lx = 7.5e-4 m):        dT = 1.5e-2 K
 # Between the two grain centres (dx = 2.5e-4 m):  dT = 5.0e-3 K
-# The warm (left) grain then has the higher rho_vs(T); vapour diffuses to the
+# The warm (left) grain then has the higher rho_vs(T); vapor diffuses to the
 # cold (right) grain and deposits. HYPOTHESIS: left grain shrinks, right grows.
 #
-# NOTE: at -20 C the vapour density is low and this dT is small, so the signal
+# NOTE: at -20 C the vapor density is low and this dT is small, so the signal
 # over 30 days is expected to be SUBTLE. This is the weakest gradient in the
 # sweep; compare against G50/G100 and the G0 control.
 # =============================================================================

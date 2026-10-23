@@ -25,8 +25,8 @@
 #
 # PREDICTION: the ice migrates toward the NARROW (left) end. Once relaxed to
 # the 90-degree contact angle its inner meniscus is concave (kappa = -1/r1) and
-# its outer convex (+1/r2), so the inner face has the lower equilibrium vapour
-# density and vapour flows inward. Sustained driving force
+# its outer convex (+1/r2), so the inner face has the lower equilibrium vapor
+# density and vapor flows inward. Sustained driving force
 # d0*(1/r1 - 1/r2) = 1.694e-06, i.e. 0.13x the 50/150 um ripening
 # pair that showed clear change in ~30 days. Expect modest but measurable
 # displacement over 90 days, not a dramatic one. If it is too slow, steepen the

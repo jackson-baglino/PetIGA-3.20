@@ -14,8 +14,8 @@ Each bridge is bounded by two menisci that meet both walls at 90 degrees, the
 model's natural (Neumann) contact angle. Because the wall bump is convex INTO
 the channel, those menisci come out CONCAVE -- the waisted hourglass shape of a
 real capillary bridge -- so kappa < 0. The narrower throat holds its ice at
-MORE negative kappa, hence at LOWER equilibrium vapour density by Gibbs-Thomson,
-which makes it the vapour SINK. Ice therefore collects in the tighter throat,
+MORE negative kappa, hence at LOWER equilibrium vapor density by Gibbs-Thomson,
+which makes it the vapor SINK. Ice therefore collects in the tighter throat,
 the same sign as capillary condensation filling small pores first.
 
 NOTE THE CONTRAST WITH THE WEDGE, which is easy to get backwards. In the wedge
@@ -329,7 +329,7 @@ def main():
     src = 0 if report[0]["kappa"] > report[1]["kappa"] else 1
     drive = D0 * abs(report[0]["kappa"] - report[1]["kappa"])
     print(f"\n  DRIVE |d0*dkappa| = {drive:.3e}")
-    print(f"  Convex menisci -> HIGHER curvature = HIGHER equilibrium vapour density,")
+    print(f"  Convex menisci -> HIGHER curvature = HIGHER equilibrium vapor density,")
     print(f"  so throat {src} (gap {report[src]['gap']:.1e}, "
           f"{'NARROW' if report[src]['gap'] < report[1-src]['gap'] else 'WIDE'}) is the "
           f"SOURCE and throat {1-src} is the SINK.")
@@ -373,7 +373,7 @@ def main():
 # redistribute between them, and which throat wins? The network version of the
 # wedge result (a single deposit migrated -18.75 um/yr toward the narrow end).
 #
-# PAIR WITH A CLOSED (Neumann-vapour) EXPERIMENT — tgrad_T-20_h1.00_90d_G0 for the
+# PAIR WITH A CLOSED (Neumann-vapor) EXPERIMENT — tgrad_T-20_h1.00_90d_G0 for the
 # isothermal case, tgrad_T-20_h1.00_90d_G0.3 for the gradient. Do NOT add
 # -flag_BC_rhovfix here: each bridge plugs its throat, so the domain is three
 # pockets, and the MIDDLE one already connects the two bridges' inner menisci.
@@ -408,7 +408,7 @@ def main():
 #   throat 1  d0*kappa {D0*report[1]['kappa']:+.3e}   ice area {report[1]['area']:.4e} m^2
 #
 # PREDICTION: throat {src} (the {'NARROW' if report[src]['gap'] < report[1-src]['gap'] else 'WIDE'} one) is the SOURCE, throat {1-src} the SINK.
-# Both menisci are CONVEX, so higher curvature means HIGHER equilibrium vapour
+# Both menisci are CONVEX, so higher curvature means HIGHER equilibrium vapor
 # density: the tighter throat holds its ice at higher kappa and loses it. This is
 # Ostwald ripening with aperture playing the role of grain size -- NOT the
 # capillary-condensation sign, which would need theta < 90 and an hourglass

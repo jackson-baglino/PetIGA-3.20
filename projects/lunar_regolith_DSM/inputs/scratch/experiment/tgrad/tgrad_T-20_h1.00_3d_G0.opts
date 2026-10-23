@@ -7,7 +7,7 @@
 # --------------------------------------------------------------
 # The 90-day runs showed the warm-left grain fully transfers to the cold-right
 # grain FAST: 1.71 d at 20 K/m, 0.52 d at 50 K/m (total ice conserved to
-# ~1e-4% — it is pure warm->cold vapour transfer, not loss). 3 days captures
+# ~1e-4% — it is pure warm->cold vapor transfer, not loss). 3 days captures
 # the slowest case (G20) with margin and the settled single-grain end-state.
 #
 # TIME-based output: -outp 0 + -n_out 100 -> t_interv = t_final/99 ≈ 2618 s, so

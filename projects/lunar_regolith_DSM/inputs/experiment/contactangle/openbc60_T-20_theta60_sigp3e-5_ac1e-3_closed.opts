@@ -23,7 +23,7 @@
 #
 # With -grad_temp0 all zero, the solver pins T = temp0 on EVERY face (a uniform
 # isothermal bath), which is what an open pore in a large regolith body sees.
-# Unlike a vapour reservoir on the y walls, pinning T there is harmless: it does
+# Unlike a vapor reservoir on the y walls, pinning T there is harmless: it does
 # not feed ice at the contact line.
 -flag_BC_Tfix 1
 
@@ -34,7 +34,7 @@
 -gamma_as 0.3
 -gamma_is 0.2455000
 
-# --- vapour reservoir, x-faces only, both at saturation ---
+# --- vapor reservoir, x-faces only, both at saturation ---
 -flag_BC_rhovfix 1
 -rhovfix_axis 0
 -rhovfix_lo 1.000030

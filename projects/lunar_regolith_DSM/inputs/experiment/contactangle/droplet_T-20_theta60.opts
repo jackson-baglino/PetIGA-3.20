@@ -14,7 +14,7 @@
 # two walls are influencing the answer.
 #
 # t_final = 174 days. The previous droplet runs used 65 days against tau = 76-101
-# days and never converged; this box is ~2x smaller in vapour volume with a
+# days and never converged; this box is ~2x smaller in vapor volume with a
 # smaller drop, so tau should fall well below that, but the run is sized long
 # rather than risk a third non-result. contact_angle.py reports theta_inf from a
 # free exponential fit, so an over-long run costs time, not correctness.

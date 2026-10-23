@@ -15,7 +15,7 @@
 # rejects R >= min(Lx,Ly)/2 outright, so the grain goes in through
 # multi_grains with a one-element array instead.
 #
-# Lx = 3*Ly leaves vapour room either side of the bridge, so the menisci relax
+# Lx = 3*Ly leaves vapor room either side of the bridge, so the menisci relax
 # without feeling the x boundaries.
 #
 # eps from preprocess/comp_eps.py (never hand-tuned):

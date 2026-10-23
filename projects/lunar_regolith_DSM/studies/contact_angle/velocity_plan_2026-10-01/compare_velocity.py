@@ -19,7 +19,7 @@ WHAT "VELOCITY" MEANS HERE
   channel  U = (dA/dt) / (2H): the rate at which the mean meniscus position
            advances, with A(t) the ice area the solver writes to SSA_evo.dat
            at every step. It is the quantity the series-resistance relation
-           predicts (vapour flux through the channel cross-section H), and it
+           predicts (vapor flux through the channel cross-section H), and it
            is insensitive to the meniscus still relaxing from the clipped-disc
            IC to its equilibrium arc, which the mid-plane and contact-line
            velocities are not. (dA/dt)/arc-length, the mean NORMAL velocity,

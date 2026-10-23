@@ -21,10 +21,10 @@ Every other point on the arc would need all three.
 
 CONVENTIONS (from src/lunar_main.c:822-833 and src/assembly.c:166-180)
 
-  * phi = 1 in ice, 0 in vapour.  Outward normal n = -grad(phi)/|grad(phi)|,
+  * phi = 1 in ice, 0 in vapor.  Outward normal n = -grad(phi)/|grad(phi)|,
     so v_n > 0 means GROWTH (deposition) on both faces.
   * chi is the SUM of principal curvatures, positive where the ice is convex
-    into the vapour.  In 2-D planar that is +1/R.  On the centreline the left
+    into the vapor.  In 2-D planar that is +1/R.  On the centreline the left
     (inner) meniscus is concave, chi = -1/r_L; the right (outer) one is
     convex, chi = +1/r_R; r = x_interface - apex_x.
   * d0_sub0 and beta_sub0 are the UNSCALED option values.  The run header
@@ -48,7 +48,7 @@ The deficit is a constant FACTOR, not a friction -- it is identical on fronts
 whose speeds differ 60x -- which is what rules out grid pinning.
 
 SIGMA AT THE INTERFACE.  sigma is read by fitting a line to sigma(x) on the
-VAPOUR side, over [lo, hi] * eps out from the crossing, and evaluating that
+VAPOR side, over [lo, hi] * eps out from the crossing, and evaluating that
 fit AT the crossing.  This matters more than it looks: sigma and d0*chi agree
 to ~10%, so v_n is their small residual and a 1% error in sigma is a ~10%
 error in v_n.  Sampling sigma at a fixed standoff without extrapolating (the
@@ -134,7 +134,7 @@ def read_opts_ordered(run_dir):
     (lines 74-76), so the experiment file is the one that wins.  The run folder
     is named "<geometry>__<experiment>", which is enough to recover that order.
 
-    Only the vapour-BC flags are actually set twice; every physics flag this
+    Only the vapor-BC flags are actually set twice; every physics flag this
     script reads lives in exactly one file, so read_opts would do for those.
     """
     if not os.path.isdir(run_dir):
@@ -189,9 +189,9 @@ def on_centreline(A, j, w):
 
 
 def sigma_at_interface(x, sigma, x_iface, sign_out, eps, win):
-    """sigma extrapolated to the interface from the vapour side.
+    """sigma extrapolated to the interface from the vapor side.
 
-    `sign_out` is +1 when vapour lies at larger x, -1 when it lies at smaller x.
+    `sign_out` is +1 when vapor lies at larger x, -1 when it lies at smaller x.
     Fits sigma(x) over [win[0], win[1]] * eps out from x_iface and returns the
     fit's value at x_iface, so the diffuse band itself contributes nothing.
     """
@@ -298,7 +298,7 @@ def beta_bare(opts, eps, d0, rho_air):
         beta_bare = a1*tau_sub/(lambda_sub*eps) = tau_sub*d0_sub0/eps^2
 
     which is beta_sub0 + a1*a2*eps*(1/diff_sub + 1/dif_vap)*rho_ice/rho_vs.
-    Returns (beta_bare, share_thermal, share_vapour) with the two corrections
+    Returns (beta_bare, share_thermal, share_vapor) with the two corrections
     as fractions of the bracket -- i.e. of how much of the deficit each owns.
     Returns (None, ...) if a material constant is missing.
     """
@@ -483,7 +483,7 @@ def analyse(run_dir, source="igasol", stride=1, sigma_win=(4.0, 10.0),
     meta = dict(run_dir=run_dir, source=source, eps=eps, Ly=Ly, d0=d0, beta=beta,
                 left_is_inner=lii,
                 interface=interface,
-                beta_bare=b_bare, share_thermal=sh_T, share_vapour=sh_v,
+                beta_bare=b_bare, share_thermal=sh_T, share_vapor=sh_v,
                 T0=T0, rho_air=rho_air, apex_x=apex_x, apex_y=apex_y,
                 n_snapshots=len(rows), sigma_win=sigma_win, curv_frac=curv_frac,
                 vn_win=vn_win,
@@ -530,7 +530,7 @@ def summarise(data, meta, skip):
     print(f"  eps           : {meta['eps']:.4e} m      T0 = {meta['T0']:.2f} C")
     print(f"  d0_sub0       : {d0:.4e} m       beta_sub0 = {beta:.4e} s/m  (UNSCALED)")
     print(f"  interface     : {meta['interface']} locator")
-    print(f"  vapour BC     : -flag_BC_rhovfix {flag}, rhovfix_lo {lo}, rhovfix_hi {hi}")
+    print(f"  vapor BC     : -flag_BC_rhovfix {flag}, rhovfix_lo {lo}, rhovfix_hi {hi}")
     print("-" * 74)
     lab_l = "LEFT (inner, concave)" if meta["left_is_inner"] else "LEFT (outer, convex)"
     lab_r = "RIGHT (outer, convex)" if meta["left_is_inner"] else "RIGHT (inner, concave)"
@@ -568,7 +568,7 @@ def summarise(data, meta, skip):
         print("    = the coefficient this discretisation delivers if the two a2")
         print("      thin-interface terms in tau_sub are never subtracted back off.")
         print(f"    Their share of tau_sub's bracket: {100 * meta['share_thermal']:.1f} % thermal "
-              f"(a2*eps/diff_sub), {100 * meta['share_vapour']:.1f} % vapour (a2*eps/dif_vap).")
+              f"(a2*eps/diff_sub), {100 * meta['share_vapor']:.1f} % vapor (a2*eps/dif_vap).")
         row("beta_eff/beta_bare", beta_eff_l / bb, beta_eff_r / bb, "{:+.4f}")
         print("    If those two read ~1.00, the deficit above is NOT physics: the solver")
         print("    is hitting beta_bare, and beta_sub0 is not the kinetics you got.")
@@ -683,7 +683,7 @@ def main(argv=None):
                         "at its equilibrium profile (default: 5)")
     p.add_argument("--sigma-window", type=float, nargs=2, default=(4.0, 10.0),
                    metavar=("LO", "HI"),
-                   help="vapour-side fit window for sigma, in multiples of eps "
+                   help="vapor-side fit window for sigma, in multiples of eps "
                         "(default: 4 10)")
     p.add_argument("--curv-window", type=float, default=0.2,
                    help="half-height of the circle-fit window as a fraction of the "

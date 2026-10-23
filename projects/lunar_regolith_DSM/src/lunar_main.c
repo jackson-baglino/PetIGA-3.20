@@ -688,7 +688,7 @@ int main(int argc, char *argv[]) {
     user.thin_iface_corr = PETSC_TRUE;   /* ON by default since 2026-09-13 */
     ierr = PetscOptionsBool("-thin_iface_corr",
              "Include the Karma thin-interface counter-terms in tau_sub. Default 0: "
-             "for a one-sided vapour diffusivity the O(eps) kinetic contribution they "
+             "for a one-sided vapor diffusivity the O(eps) kinetic contribution they "
              "compensate is identically zero, so including them inflates the realised "
              "beta above -beta_sub0 (1.22x at the -20 C wedge parameters). See "
              "docs/gt_deficit/",
@@ -1067,7 +1067,7 @@ int main(int argc, char *argv[]) {
      * These inflate tau_sub by the spurious O(eps) kinetic contribution that the
      * sharp-interface asymptotics are expected to subtract back off, so that the
      * realised kinetic coefficient equals the requested -beta_sub0. For this
-     * model that contribution is zero: the vapour diffusivity is one-sided
+     * model that contribution is zero: the vapor diffusivity is one-sided
      * (D_v*phi_a), which makes the inner deviation of sigma identically null, so
      * nothing is subtracted and the inflation survives as an error in beta --
      * 1.22x at the -20 C wedge parameters, 1.49x at the Molaro ones. Measured

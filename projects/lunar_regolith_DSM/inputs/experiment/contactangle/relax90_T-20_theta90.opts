@@ -10,8 +10,8 @@
 #   R_arc = inf m, |chi| = 9.797e-13 1/m -- flat, chi = 0 -> no net exchange
 #
 # SEALED box (-flag_BC_rhovfix 0, the solver default). Total water is conserved
-# between ice and vapour, so the bridge settles to an equilibrium SHAPE. Note
-# that vapour holds only ~1e-6 of the water here, so the ice volume cannot
+# between ice and vapor, so the bridge settles to an equilibrium SHAPE. Note
+# that vapor holds only ~1e-6 of the water here, so the ice volume cannot
 # change measurably -- this run measures the equilibrium ANGLE, not growth.
 #
 # t_final = 90 days, matching the wedge campaign for comparability.

@@ -22,7 +22,7 @@
 # the two isothermal runs should be mirror images -- a symmetry check that the
 # effect is geometric and not a numerical bias.
 #
-# Vapour stays NEUMANN (no -flag_BC_rhovfix). Each plug seals its throat, so the
+# Vapor stays NEUMANN (no -flag_BC_rhovfix). Each plug seals its throat, so the
 # domain is three pockets, but the MIDDLE one already connects the two plugs'
 # facing menisci. That is the transport path, it needs no reservoir, and keeping
 # the system closed makes total ice conservation a working correctness gate.

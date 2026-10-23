@@ -173,7 +173,7 @@ def make_figure(path, kappa, s_meas, d0, beta, consts, t, tags):
     ax.set_xlabel("$d_0\\,\\kappa$   (Gibbs-Thomson equilibrium)")
     ax.set_ylabel("measured $(\\rho_v-\\rho_{vs})/\\rho_{vs}$")
     ax.set_title("Supersaturation relaxes onto $s = d_0\\kappa$")
-    ax.annotate("t = 0: vapour still uniform,\nnot yet at equilibrium",
+    ax.annotate("t = 0: vapor still uniform,\nnot yet at equilibrium",
                 xy=(0.03, 0.55), xycoords="axes fraction", fontsize=7.5,
                 color="0.35")
     ax.legend(frameon=False, fontsize=8, loc="upper left")
@@ -256,7 +256,7 @@ def main():
     print("    measured s       %+.4e .. %+.4e" % (s_meas.min(), s_meas.max()))
     print("    residual s-d0k   %+.4e .. %+.4e" % (resid.min(), resid.max()))
     print()
-    # Split early from late. At t = 0 the vapour field is initialized uniform,
+    # Split early from late. At t = 0 the vapor field is initialized uniform,
     # so s = 0 while kappa is already set by the initial geometry -- the
     # interface starts FAR from Gibbs-Thomson equilibrium and relaxes onto it.
     # That relaxation is the evidence the condition is emergent rather than
@@ -268,7 +268,7 @@ def main():
     print("  median |residual| / |d0*kappa|")
     print("    at t = %-10.4g s (first sampled) : %.3f" % (t_lo, float(np.median(ratio[early]))))
     print("    at t = %-10.4g s (last sampled)  : %.3f" % (t_hi, float(np.median(ratio[late]))))
-    print("    -> the vapour field starts uniform (s = 0, so the residual is the")
+    print("    -> the vapor field starts uniform (s = 0, so the residual is the")
     print("       whole of d0*kappa) and relaxes ONTO the Gibbs-Thomson line.")
     print("       Once relaxed the interface sits within %.0f%% of equilibrium;"
           % (100 * float(np.median(ratio[late]))))

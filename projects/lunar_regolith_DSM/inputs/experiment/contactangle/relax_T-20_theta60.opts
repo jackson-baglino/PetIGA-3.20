@@ -15,17 +15,17 @@
 # interface energy; it is the value this solver
 # already implies: inverting monitoring.c's d0 = gamma_ia*V_m/(R*T) at the physical
 # d0_sub0 = 1.0166e-9 m and -20 C returns exactly that. gamma_as = 0.3 J/m^2
-# is a plausible regolith-vapour value; only the DIFFERENCE gamma_as - gamma_is
+# is a plausible regolith-vapor value; only the DIFFERENCE gamma_as - gamma_is
 # enters the wall term, so the pair is what matters, not either alone.
 #
 # Phase change is ON. -decouple_phase_change would give faster, cleaner
 # curvature relaxation, but with the sublimation source zeroed the ice has no
 # transport mechanism at all and the model is no longer the thing being
-# validated. Relaxation here is vapour-diffusion limited.
+# validated. Relaxation here is vapor-diffusion limited.
 #
 # Sealed box (-flag_BC_rhovfix 0, the solver default): total water is conserved
-# between ice and vapour, so the bridge settles to an equilibrium shape instead
-# of evaporating away. Do NOT pin vapour on the wall faces -- lunar_main.c
+# between ice and vapor, so the bridge settles to an equilibrium shape instead
+# of evaporating away. Do NOT pin vapor on the wall faces -- lunar_main.c
 # warns that doing so feeds ice at the contact line and corrupts the angle.
 #
 # -dtmax is deliberately NOT set here. It has to scale with eps (tau_sub goes
@@ -38,9 +38,9 @@
 #   studies/contact_angle/verification/ records tau = 14.4 days for the approach
 #   theta(t) = theta_inf + A*exp(-t/tau) on the eps3.00um channel. 65 days is
 #   4.5*tau, which lands within ~1 deg of equilibrium. Relaxation is
-#   vapour-diffusion limited and genuinely this slow; the first ~2 days run the
+#   vapor-diffusion limited and genuinely this slow; the first ~2 days run the
 #   other way while the grain shrinks under Gibbs-Thomson until the sealed box's
-#   vapour saturates.
+#   vapor saturates.
 #
 # Even so, contact_angle.py reports theta_inf from a free three-parameter fit,
 # so the equilibrium angle is recovered even if a run stops short -- the

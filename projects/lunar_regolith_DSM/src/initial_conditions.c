@@ -7,7 +7,7 @@
  *
  * Every initial condition does the same six things: create the node DM, walk
  * the local DOF box, turn (i,j) into physical (x,y), evaluate a phase field,
- * clamp it to [0,1], and write ice/temperature/vapour. Only the fourth step
+ * clamp it to [0,1], and write ice/temperature/vapor. Only the fourth step
  * differs between ICs.
  *
  * So that scaffolding lives once, in FillIC1D() / FillIC2D(), and each IC
@@ -214,7 +214,7 @@ typedef enum {
 } ICCoordMode;
 
 /* The closure every IC shares: temperature is the linear background field and
- * vapour is saturated inside ice, hum0-scaled in air, blended by ice fraction. */
+ * vapor is saturated inside ice, hum0-scaled in air, blended by ice fraction. */
 static void SetNodeFields(Field *f, PetscReal ice, PetscReal tem, AppCtx *user)
 {
     PetscScalar rho_vs;
@@ -667,8 +667,8 @@ static PetscReal WedgeBandField(PetscReal x, PetscReal y, const AppCtx *user)
  * channel.
  *
  * Sign consequence worth stating: convex menisci mean the TIGHTER throat holds
- * its ice at HIGHER curvature, hence higher equilibrium vapour density, making
- * it the vapour SOURCE. */
+ * its ice at HIGHER curvature, hence higher equilibrium vapor density, making
+ * it the vapor SOURCE. */
 static PetscReal BridgeField(PetscReal x, PetscReal y, const AppCtx *user)
 {
     const PetscReal tc  = PhaseSlope(user);

@@ -1,10 +1,10 @@
 # =============================================================================
 # experiment/contactangle/sealed150_T-20_theta60.opts
 #
-# SEALED: no-flux on everything. No vapour reservoir, no thermal reservoir.
+# SEALED: no-flux on everything. No vapor reservoir, no thermal reservoir.
 #
 # The reasoning, and it is worth stating because it is the opposite of the
-# grow90_* runs: those impose a saturated vapour reservoir, so the bridge never
+# grow90_* runs: those impose a saturated vapor reservoir, so the bridge never
 # stops exchanging mass and never reaches a true steady state. Its meniscus
 # carries a Gibbs-Thomson supersaturation d0*chi to sustain that flux, and a
 # moving interface satisfies sigma = d0*chi + beta*v_n rather than d0*chi alone
@@ -15,7 +15,7 @@
 #
 # With no flux anywhere the system relaxes to a genuine equilibrium: v_n -> 0,
 # the supersaturation goes to zero, and the meniscus takes the shape Young's
-# equation predicts. Total water is conserved, and since vapour holds ~1e-6 of
+# equation predicts. Total water is conserved, and since vapor holds ~1e-6 of
 # it the ice volume is effectively fixed -- only the SHAPE relaxes, which is
 # exactly what this run is for.
 #

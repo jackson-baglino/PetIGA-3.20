@@ -34,7 +34,7 @@
 -grad_temp0 0.0,0.0,0.0                  # isothermal: geometry and the BCs are the only drivers
 
 -flag_BC_Tfix 1                          # pin wall temperatures (uniform)
--flag_BC_rhovfix 1                       # vapour reservoirs...
+-flag_BC_rhovfix 1                       # vapor reservoirs...
 -rhovfix_axis 0                          # ...on the x-faces ONLY (open pore ends)
 -rhovfix_lo 1.000005                     # rho_v at x=0  / rho_vs
 -rhovfix_hi 0.999995                     # rho_v at x=Lx / rho_vs

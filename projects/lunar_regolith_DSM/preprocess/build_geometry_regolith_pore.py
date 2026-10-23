@@ -4,7 +4,7 @@ lined with lunar-regolith grains, for the icy-lunar-regolith study
 (studies/icy_regolith/implicit_pore_domain/, Effort 1).
 
 The regolith is modelled *implicitly*: it is not a simulated field but the
-deformed top and bottom boundaries of the (single-patch) domain. Ice, vapour,
+deformed top and bottom boundaries of the (single-patch) domain. Ice, vapor,
 and temperature evolve in the pore space between the walls. Interior regolith
 grains are not representable in a single tensor-product patch — that is Effort 2
 (explicit sediment phase).

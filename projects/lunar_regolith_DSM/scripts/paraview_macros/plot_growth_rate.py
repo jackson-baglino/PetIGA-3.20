@@ -140,7 +140,7 @@ sigma  = np.asarray(inp.PointData[SUPERSAT_NAME], dtype=np.float64)
 rho_vs = np.asarray(inp.PointData[RHOVS_NAME],    dtype=np.float64)
 
 # (rho_v - rho_vs) rebuilt from the dimensionless supersaturation, so this
-# macro stays agnostic about the vapour array's name.
+# macro stays agnostic about the vapor array's name.
 drho = sigma * rho_vs
 
 v_curv = -3.0 * MOB_SUB * EPS * kappa

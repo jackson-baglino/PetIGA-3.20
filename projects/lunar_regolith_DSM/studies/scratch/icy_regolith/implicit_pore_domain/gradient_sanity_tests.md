@@ -30,7 +30,7 @@ gradient-driven metamorphism tests that precede the implicit regolith-pore runs.
 - The icy-regolith study needs a **clean temperature-gradient baseline** before
   we add pore-wall geometry.
 - Our prior two-grain runs placed grains **too close** (surface-to-surface gap
-  ≈ 0.5 R), which **distorted the vapour transport pathway** between them.
+  ≈ 0.5 R), which **distorted the vapor transport pathway** between them.
 - Fix: **shrink grains to 50 µm** and **space them well apart** (and off the
   vertical walls), so what we measure is physics, not proximity artifacts.
 
@@ -46,7 +46,7 @@ gradient-driven metamorphism tests that precede the implicit regolith-pore runs.
 Two drivers of ice redistribution, made to **compete** or **reinforce**:
 
 - **Temperature-gradient metamorphism** — warm ice has higher equilibrium
-  vapour pressure → **warm grain sublimates, cold grain grows**.
+  vapor pressure → **warm grain sublimates, cold grain grows**.
 - **Ostwald ripening (curvature)** — **large grains grow, small grains shrink**.
 
 Fixed setup for the whole series:
@@ -85,7 +85,7 @@ Runs on HPC as one batch → `batch_<timestamp>_Tgrad_sanity/`.
 **Test 1 · well-separated equal pair** (Lx = 0.75 mm)
 - Two 50 µm grains at Lx/4 & 3Lx/4 (5.5 R apart).
 - *Expect:* warm (left) grain sublimates → redeposits on the cold (right) grain.
-  Confirms the **separation fix** removed the vapour-pathway artifact.
+  Confirms the **separation fix** removed the vapor-pathway artifact.
 
 ---
 
@@ -139,7 +139,7 @@ Three grains, equally spaced (0.2 / 0.5 / 0.8 Lx), 1.125 mm domain.
 - Calibrate `t_final` from tests 0/1 (well-separated grains transfer slower than
   the old close-packed pair — 3 days may not reach the end-state).
 - Carry the **validated gradient** into the **implicit regolith-pore geometry**
-  (deformed walls = regolith), then add ice–regolith / vapour–regolith wall BCs.
+  (deformed walls = regolith), then add ice–regolith / vapor–regolith wall BCs.
 
 ---
 

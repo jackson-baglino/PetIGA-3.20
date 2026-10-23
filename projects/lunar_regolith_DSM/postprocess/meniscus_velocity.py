@@ -9,7 +9,7 @@ no projection, no curvature bookkeeping. That is the same trick
 wedge_gt_velocity.py uses on the wedge centreline, and the reason both scripts
 measure on a line rather than over the whole arc.
 
-Sign convention: v_n > 0 means the interface advances INTO THE VAPOUR, i.e. the
+Sign convention: v_n > 0 means the interface advances INTO THE VAPOR, i.e. the
 ice grows. The left meniscus moving to smaller x and the right meniscus moving
 to larger x therefore both count as positive.
 
@@ -86,7 +86,7 @@ def measure(x1d, y1d, phi, eps, H):
                 shrinkage for a growing bridge.
       mean   -- dA/dt divided by the total interface length. This is the
                 honest single number: the mean normal velocity of the whole
-                ice-vapour interface, sign-consistent with growth by
+                ice-vapor interface, sign-consistent with growth by
                 construction.
 
     Once the shape has equilibrated all three converge, because the interface
@@ -112,7 +112,7 @@ def measure(x1d, y1d, phi, eps, H):
         return None
 
     # ice area, and the length of the two menisci (the phi=0.5 contour,
-    # excluding the wall segments -- those are ice/regolith, not ice/vapour)
+    # excluding the wall segments -- those are ice/regolith, not ice/vapor)
     area = np.trapezoid(np.trapezoid(phi, y1d, axis=1), x1d)
     XL, XR = [], []
     for j in range(ny):
@@ -166,7 +166,7 @@ def main():
     xwl= np.array([r["x_wall_l"] for r in rows]); xwr=np.array([r["x_wall_r"] for r in rows])
     xml= np.array([r["x_mid_l"] for r in rows]);  xmr=np.array([r["x_mid_r"] for r in rows])
 
-    # v_n > 0 = advancing into the vapour. Left menisci move to smaller x.
+    # v_n > 0 = advancing into the vapor. Left menisci move to smaller x.
     v_wall = 0.5 * (-np.gradient(xwl, t) + np.gradient(xwr, t))
     v_mid  = 0.5 * (-np.gradient(xml, t) + np.gradient(xmr, t))
     dA     = np.gradient(A, t)
@@ -174,7 +174,7 @@ def main():
 
     out = os.path.join(args.dir[-1], CSV_NAME)
     with open(out, "w") as fh:
-        fh.write("# v_n > 0 = interface advances into the vapour (ice grows)\n")
+        fh.write("# v_n > 0 = interface advances into the vapor (ice grows)\n")
         fh.write("# H = %.6e m, eps = %.6e m\n" % (H, eps))
         fh.write("# v_mean = (dA/dt)/L_interface is the honest growth velocity;\n")
         fh.write("# v_wall and v_mid are local and differ while the shape relaxes.\n")

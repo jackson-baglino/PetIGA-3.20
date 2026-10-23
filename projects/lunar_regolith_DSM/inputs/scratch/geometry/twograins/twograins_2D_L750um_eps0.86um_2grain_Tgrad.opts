@@ -17,14 +17,14 @@
 #   R = 1.0e-4 m each  (Molaro-grain scale: their pairs are R ~ 72–101 um)
 #   surface-to-surface gap = Lx/3 − 2R = 5.0e-5 m (0.5 R) — well separated,
 #     no initial neck (interface width ~9.2*eps ≈ 7.9 um << gap)
-#   side/top pad: 1.5e-4 m left & right margins; 2.0e-4 m vapour headroom
+#   side/top pad: 1.5e-4 m left & right margins; 2.0e-4 m vapor headroom
 #     above the grain tops (y = R = 1.0e-4)
 #
 # WHY EQUAL GRAINS + d0_GT = 0 IS A CLEAN GRADIENT TEST
 # ----------------------------------------------------
 # With Gibbs-Thomson curvature off (d0_GT = 0 in the experiment file, the
 # project baseline), two EQUAL grains at EQUAL temperature have identical
-# equilibrium vapour pressure and no driver for mass transfer — so the
+# equilibrium vapor pressure and no driver for mass transfer — so the
 # zero-gradient control stays static. Under a horizontal T-gradient rho_vs(T)
 # differs across the pair (warm > cold), driving sublimation off the warm
 # (left) grain and deposition onto the cold (right) grain. Any asymmetry is

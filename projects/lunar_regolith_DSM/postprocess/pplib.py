@@ -186,7 +186,7 @@ RHO_AIR_DEFAULT = 1.341          # -rho_air default in enceladus_main.c
 
 
 def rho_vs(T_C, rho_air: float = RHO_AIR_DEFAULT):
-    """Saturation vapour density over ice [kg/m^3] at T_C [deg C].
+    """Saturation vapor density over ice [kg/m^3] at T_C [deg C].
 
     This mirrors the solver's RhoVS_I exactly.
 

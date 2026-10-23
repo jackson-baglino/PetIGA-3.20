@@ -15,11 +15,11 @@ that apex is perpendicular to every ray from it -- so at the model's natural
 apex-centred arcs whose radius of curvature is simply their distance from the
 apex. The inner meniscus has the ice on the OUTSIDE of its circle, so it is
 concave (kappa = -1/r1); the outer one is convex (kappa = +1/r2). The concave
-face has the lower equilibrium vapour density, so vapour flows inward and the
+face has the lower equilibrium vapor density, so vapor flows inward and the
 band walks toward the apex.
 
 The energy accounting agrees, independently of any flux argument. At 90 degrees
-Young's equation gives gamma_wall-ice = gamma_wall-vapour, so sliding the band
+Young's equation gives gamma_wall-ice = gamma_wall-vapor, so sliding the band
 along the wall costs no wall energy and only the two menisci count:
 
     interfacial length  L = 2*alpha*(r1 + r2)
@@ -456,8 +456,8 @@ def main():
 {ice_note}
 # PREDICTION: the ice migrates toward the NARROW (left) end. Once relaxed to
 # the 90-degree contact angle its inner meniscus is concave (kappa = -1/r1) and
-# its outer convex (+1/r2), so the inner face has the lower equilibrium vapour
-# density and vapour flows inward. Sustained driving force
+# its outer convex (+1/r2), so the inner face has the lower equilibrium vapor
+# density and vapor flows inward. Sustained driving force
 # d0*(1/r1 - 1/r2) = {drive:.3e}, i.e. {drive/RIPENING_REF:.2f}x the 50/150 um ripening
 # pair that showed clear change in ~30 days. Expect modest but measurable
 # displacement over 90 days, not a dramatic one. If it is too slow, steepen the

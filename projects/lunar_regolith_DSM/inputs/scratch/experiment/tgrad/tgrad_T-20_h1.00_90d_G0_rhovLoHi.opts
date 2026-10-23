@@ -1,6 +1,6 @@
 # =============================================================================
 # experiment/tgrad/tgrad_T-20_h1.00_90d_G0_rhovLoHi.opts — 90 days at -20 C, NO temperature
-# gradient, with the pore's open ends held at PRESCRIBED vapour densities.
+# gradient, with the pore's open ends held at PRESCRIBED vapor densities.
 #
 #   rho_v(x=0)  = 0.999995 * rho_vs(T)   (BELOW saturation)
 #   rho_v(x=Lx) = 1.000005 * rho_vs(T)   (ABOVE saturation)
@@ -19,7 +19,7 @@
 # -rhovfix_axis 0 pins ONLY the x-faces. The default (-1) would put a reservoir
 # on the solid channel walls, feeding the ice at its contact line.
 #
-# MASS IS NOT CONSERVED -- vapour crosses the x-faces by construction, so
+# MASS IS NOT CONSERVED -- vapor crosses the x-faces by construction, so
 # postprocess/plot_mass.py's conservation gate does NOT apply. Read
 # postprocess/track_wedge_band.py's late-half drift in r_c instead.
 #
@@ -35,7 +35,7 @@
 -grad_temp0 0.0,0.0,0.0                  # isothermal: geometry and the BCs are the only drivers
 
 -flag_BC_Tfix 1                          # pin wall temperatures (uniform)
--flag_BC_rhovfix 1                       # vapour reservoirs...
+-flag_BC_rhovfix 1                       # vapor reservoirs...
 -rhovfix_axis 0                          # ...on the x-faces ONLY (open pore ends)
 -rhovfix_lo 0.999995                     # rho_v at x=0  / rho_vs
 -rhovfix_hi 1.000005                     # rho_v at x=Lx / rho_vs

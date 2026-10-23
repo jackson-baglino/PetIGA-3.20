@@ -12,7 +12,7 @@ Interface condition (the one wedge_gt_velocity.py verified on the solver):
 
     sigma_i = d0 * chi + beta * v_n                               (Gibbs-Thomson)
 
-Quasi-steady vapour diffusion between the meniscus and a fixed-sigma wall,
+Quasi-steady vapor diffusion between the meniscus and a fixed-sigma wall,
 with the mass balance rho_ice * v_n = D_v * rho_vs * d(sigma)/dn, adds a
 diffusive resistance in series with the kinetic one:
 
@@ -22,7 +22,7 @@ diffusive resistance in series with the kinetic one:
     wedge:    Z_D = K * r * ln(r_res/r)   radial diffusion about the apex
     K = rho_ice / (rho_vs * D_v)
 
-CURVATURE  (chi > 0 where the ice is convex into the vapour; theta is measured
+CURVATURE  (chi > 0 where the ice is convex into the vapor; theta is measured
 through the ice; alpha is the wedge half-angle; r is the meniscus position on
 the centreline, measured from the virtual apex)
 
@@ -340,15 +340,15 @@ def fig_pore_channel():
                 arrowprops=dict(arrowstyle="-", color=INK, lw=1))
     ax.text(60, 372, "regolith", fontsize=15, color="#5d564a", va="center")
     ax.text(60, -372, "regolith", fontsize=15, color="#5d564a", va="center")
-    ax.text(L - 60, 0, "vapour", fontsize=15, color=MUTED, ha="right", va="center")
+    ax.text(L - 60, 0, "vapor", fontsize=15, color=MUTED, ha="right", va="center")
 
-    # boundary conditions: open end at low vapour saturation, dead end sealed
+    # boundary conditions: open end at low vapor saturation, dead end sealed
     ax.plot([0, 0], [bot(0), top(0)], color=ORANGE, lw=3, ls=(0, (4, 2)))
-    ax.text(-130, 0, "low vapour saturation\n" + r"$\sigma_\infty < 0$", rotation=90,
+    ax.text(-130, 0, "low vapor saturation\n" + r"$\sigma_\infty < 0$", rotation=90,
             ha="center", va="center", fontsize=15, color=ORANGE, linespacing=1.3)
     ax.fill_betweenx([-420, 420], L, L + 60, color=REG, lw=0)
     ax.plot([L, L], [bot(L), top(L)], color=INK, lw=2)
-    ax.text(L + 125, 0, "dead pore\nno vapour flux", rotation=90,
+    ax.text(L + 125, 0, "dead pore\nno vapor flux", rotation=90,
             ha="center", va="center", fontsize=15, color=INK, linespacing=1.3)
     ax.plot([60, 1060], [-560, -560], color=INK, lw=3, solid_capstyle="butt")
     ax.text(560, -590, "1 mm", ha="center", va="top", fontsize=15)
@@ -430,7 +430,7 @@ def fig_wedge_ode():
     ax.set_xlim(0, 198)
     ax.set_xticks([0, 30, 60, 90, 120, 150])
     ax.set_xlabel("time [days]")
-    ax.set_ylabel("meniscus advance into vapour [µm]")
+    ax.set_ylabel("meniscus advance into vapor [µm]")
     panel(ax, "b")
     fig.tight_layout()
     save(fig, "fig3_wedge_ode%s.png" % TAG)
