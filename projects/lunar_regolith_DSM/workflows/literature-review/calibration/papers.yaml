@@ -1,6 +1,7 @@
 # Calibration papers. DOIs checked on OpenAlex, volume and pages on Crossref, 2026-10-23; files located on disk the same day.
-# The two Molaro copies carry the same DOI and page count but different file hashes;
-# which one is used is settled at build time by comparing their rendered pages.
+# Molaro: the two enceladus_DSM copies render identically except for the Wiley download stamp
+# in the right margin (2026-10-06 vs 2024-04-23), checked page by page 2026-10-23; the 2026 download
+# was copied to Literature/molaro_2019.pdf. Blackford copied to Literature/blackford_2007.pdf the same day.
 
 - id: kaempfer_plapp_2009
   citation: "Kaempfer, T. U. and Plapp, M. (2009). Phase-field modeling of dry snow metamorphism. Phys. Rev. E 79, 031502."
@@ -11,14 +12,14 @@
 - id: molaro_2019
   citation: "Molaro, J. L. et al. (2019). The microstructural evolution of water ice in the solar system through sintering. J. Geophys. Res. Planets 124(2), 243-277 (online 2018-12-26)."
   doi: 10.1029/2018JE005773
-  file: enceladus_DSM/Literature/papers/molaroMicrostructuralEvolutionWater2019.pdf   # also enceladus_DSM/Literature/JGR Planets - 2018 - Molaro - ....pdf
+  file: Research/Projects/lunar_regolith_DSM/Literature/molaro_2019.pdf   # sha256 0ef28cb88701...
   arxiv: 1901.04633   # PDF only, no LaTeX source
   roles: [gold_statements, planted_errors]
 
 - id: blackford_2007
   citation: "Blackford, J. R. (2007). Sintering and microstructure of ice: a review. J. Phys. D: Appl. Phys. 40(21), R355-R385."
   doi: 10.1088/0022-3727/40/21/R02
-  file: enceladus_DSM/Literature/papers/blackfordSinteringMicrostructureIce2007.pdf
+  file: Research/Projects/lunar_regolith_DSM/Literature/blackford_2007.pdf   # sha256 f0708784608e...
   roles: [gold_statements]
 
 - id: moure_fu_2024
