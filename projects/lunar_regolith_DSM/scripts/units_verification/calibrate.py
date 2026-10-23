@@ -53,7 +53,7 @@ def planted_table(real_rows, header):
     lines = [header]
     for r in rows:
         lines.append("| " + " | ".join([f"`{r['symbol']}`", r["meaning"], r["unit"], r["source"],
-                                        str(r["page"]), r["quote"], r["verified"]]) + " |")
+                                        str(r["page"]), r.get("quote", ""), r["verified"]]) + " |")
     return "\n".join(lines) + "\n", plants
 
 

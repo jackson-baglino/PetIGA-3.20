@@ -22,7 +22,7 @@ LITERATURE = Path.home() / ("Library/Mobile Documents/com~apple~CloudDocs/Docume
                             "lunar_regolith_DSM/Literature")
 # Paths whose committed state defines the workflow; a real run refuses if any is modified.
 DEFINITION_PATHS = ["workflows/units-verification", "scripts/units_verification", ".claude/agents"]
-COLUMNS = ("symbol", "meaning", "unit", "source", "page", "quote", "verified")
+REQUIRED_COLUMNS = ("symbol", "meaning", "unit", "source", "page", "verified")
 LITERATURE_SOURCES = ("kaempfer_plapp_2009", "moure_fu_2024", "moure_fu_2024_SI")
 
 
@@ -30,16 +30,32 @@ class StageError(RuntimeError):
     """A stage stops: the message says why and what the user should do."""
 
 
+def _column_names(header_line):
+    """'| symbol | quote (text layer) | value (printed) |' -> ['symbol', 'quote', 'value']: first word, lower case."""
+    return [c.strip().split(" ")[0].lower() for c in header_line.strip().strip("|").split("|")]
+
+
 def read_table(path=UNITS_MD):
-    """Rows of the units table as dicts (COLUMNS); `printed` is the form after '(printed as ...)', if any."""
-    rows = []
+    """Rows of the units table as dicts keyed by the header's column names (first word of each).
+
+    `page` becomes an int or None; `printed` is the form after '(printed as ...)' in the meaning, if any.
+    """
+    rows, names = [], None
     for line in Path(path).read_text().splitlines():
+        if line.startswith("| symbol |"):
+            names = _column_names(line)
+            missing = [c for c in REQUIRED_COLUMNS if c not in names]
+            if missing:
+                raise StageError(f"units table: header lacks {missing}")
+            continue
         if not line.startswith("| `"):
             continue
+        if names is None:
+            raise StageError("units table: a row comes before the header")
         cells = [c.strip() for c in line.strip().strip("|").split(" | ")]
-        if len(cells) != len(COLUMNS):
-            raise StageError(f"units table: expected {len(COLUMNS)} cells, got {len(cells)}: {line[:80]}")
-        row = dict(zip(COLUMNS, cells))
+        if len(cells) != len(names):
+            raise StageError(f"units table: expected {len(names)} cells, got {len(cells)}: {line[:80]}")
+        row = dict(zip(names, cells))
         row["symbol"] = row["symbol"].strip("`")
         row["page"] = int(row["page"]) if row["page"] else None
         m = re.search(r"\(printed as ([^)]+)\)", row["meaning"])
@@ -50,6 +66,17 @@ def read_table(path=UNITS_MD):
     if dup:
         raise StageError(f"units table: duplicate symbols {dup}")
     return rows
+
+
+def table_lines(rows, columns, headers):
+    """Markdown lines of a units table: header, rule, one line per row (symbol in backticks)."""
+    out = ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
+    for r in rows:
+        cells = [f"`{r['symbol']}`" if c == "symbol" else ("" if r.get(c) is None else str(r[c])) for c in columns]
+        if any("|" in x for x in cells):
+            raise StageError(f"{r['symbol']}: a cell contains '|'")
+        out.append("| " + " | ".join(cells) + " |")
+    return out
 
 
 def literature_rows(rows):

@@ -65,7 +65,16 @@
           4
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "edit",
+        "edit": {
+          "symbol": "D_v_STP",
+          "meaning": "water vapor diffusion coefficient in air at standard pressure and temperature; the same parameter as D_v0 of Moure and Fu (printed as D_v^STP)"
+        },
+        "note": "K&P print D_v^STP; it is the same parameter as Moure and Fu's D_v0. Values and units found are correct.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "T0",
@@ -136,7 +145,17 @@
           5
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "edit",
+        "edit": {
+          "meaning": "reference temperature converting °C to K, T_K = T_C + T_0 (printed as T0)",
+          "source": "moure_fu_2024",
+          "page": 3
+        },
+        "note": "T_0 is overloaded. Use Moure and Fu's T_0, which converts °C to K (T_K = T_C + T_0); the K&P T_0 is a simulation's initial condition.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "rho_v",
@@ -207,7 +226,12 @@
           6
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "Vapor density, a model unknown, so no value is expected; the unit is correct.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "v_n",
@@ -280,7 +304,12 @@
           6
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "Correct unit; ~10^-9 is fine: it results from the time-dependent phase-field solution.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "x_s",
@@ -351,7 +380,12 @@
           5
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "Specific humidity ratio, dimensionless (kg/kg); correct.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "t_n",
@@ -422,7 +456,12 @@
           4
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "drop",
+        "note": "Not used in the Moure and Fu form of the model that this project uses.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "T_cold",
@@ -485,7 +524,12 @@
           11
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "drop",
+        "note": "A boundary temperature for one K&P simulation, not a model parameter.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "T_hot",
@@ -548,7 +592,12 @@
           11
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "drop",
+        "note": "A boundary temperature for one K&P simulation, not a model parameter.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "t",
@@ -621,7 +670,12 @@
           7
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "Time of the problem; t = 300 s only sets the time of K&P's figure.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "P",
@@ -675,7 +729,18 @@
           3
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "edit",
+        "edit": {
+          "symbol": "P_a",
+          "meaning": "atmospheric pressure (printed as Pa)",
+          "source": "moure_fu_2024_SI",
+          "page": 9
+        },
+        "note": "Moure and Fu write P_a for atmospheric pressure; its value, P_a = 101325, is in SI Table S3.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "M_j",
@@ -728,7 +793,12 @@
           9
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "M_j is the mobility, defined in Eq. (16) of Moure and Fu; the SI defines M_sol, M_sub and M_eva, listed as the M_j values in Table S1.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "beta_sol",
@@ -816,7 +886,12 @@
           6
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "drop",
+        "note": "Kinetic attachment coefficient for solidification; not in this project's dry-snow model.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "D_v0",
@@ -874,7 +949,12 @@
           5
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "The blind read is correct; the S4m difference (at the freezing point) is minimal and can be ignored here.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "K_a",
@@ -916,7 +996,12 @@
           9
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "The blind read is correct.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "K_i",
@@ -958,7 +1043,12 @@
           9
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "The blind read is correct.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "K_w",
@@ -1000,7 +1090,12 @@
           9
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "The blind read is correct.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "c_p_a",
@@ -1048,7 +1143,12 @@
           6
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "The blind read is correct.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "c_p_i",
@@ -1090,7 +1190,12 @@
           9
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "The blind read is correct.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "R_v",
@@ -1131,7 +1236,12 @@
           4
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "The blind read is correct.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "L",
@@ -1172,7 +1282,12 @@
           9
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "Correct. The value is chosen by the user; in practice of order mm (not stated in the papers).",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "u_j",
@@ -1220,7 +1335,12 @@
           6
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "Correct; not used in this project.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     },
     {
       "symbol": "alpha_nucl",
@@ -1273,7 +1393,12 @@
           5
         ]
       ],
-      "user_decision": null
+      "user_decision": {
+        "action": "approve",
+        "note": "Correct; not used in this project.",
+        "decided": "2026-10-22",
+        "by": "user"
+      }
     }
   ]
 }

@@ -120,7 +120,8 @@ class Calibration(unittest.TestCase):
 
     def test_planted_table_round_trips(self):
         real = uvlib.literature_rows(uvlib.read_table())
-        text, plants = calibrate.planted_table(real, "| h |\n|---|")
+        text, plants = calibrate.planted_table(
+            real, "| symbol | meaning | unit | source | page | quote (text layer) | verified |\n|---|---|---|---|---|---|---|")
         self.assertEqual(len(plants), 10)
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
@@ -189,3 +190,45 @@ class InspectionSet(unittest.TestCase):
         self.assertEqual(len(sample), 2)                         # ceil(0.1 x 19)
         self.assertEqual(sample, inspect_set.select(comp, {}, s4m, 0.10, 7)[1])   # same seed, same draw
         self.assertTrue(set(sample).isdisjoint({"s3", "d"}))
+
+
+class ApplyVerdicts(unittest.TestCase):
+
+    def setUp(self):
+        import apply_verdicts
+        self.av = apply_verdicts
+        self.row = {"symbol": "Ci", "meaning": "heat capacity of ice (printed as Ci) — meaning inferred from the subscript",
+                    "unit": "J m^-3 K^-1", "source": "kaempfer_plapp_2009", "page": 4, "verified": "old",
+                    "printed": "Ci"}
+        self.comp = {"Ci": {"verdict": "AGREE", "reasons": [], "read": {"value_as_printed": "1.8 × 10^6"}}}
+        self.s4m = {"Ci": {"meaning_verdict": "matches"}}
+
+    def test_auto_verified_and_inferred_note_removed(self):
+        new, st, _ = self.av.decide(self.row, self.comp, self.s4m, None, None, "R", "2026-10-22")
+        self.assertEqual(st, "verified")
+        self.assertEqual(new["value"], "1.8 × 10^6")
+        self.assertNotIn("inferred", new["meaning"])
+
+    def test_disputed_without_decision_is_unresolved(self):
+        comp = {"Ci": dict(self.comp["Ci"], verdict="DISAGREE")}
+        self.assertEqual(self.av.decide(self.row, comp, self.s4m, None, None, "R", "d")[1], "unresolved")
+
+    def test_drop_approve_edit(self):
+        self.assertEqual(self.av.decide(self.row, self.comp, self.s4m, {"action": "drop"}, None, "R", "d")[1],
+                         "dropped")
+        self.assertEqual(self.av.decide(self.row, self.comp, self.s4m, {"action": "approve", "note": "ok"},
+                                        None, "R", "d")[1], "verified")
+        edit = {"action": "edit", "edit": {"symbol": "C_i", "page": 5}, "note": "n"}
+        new, st, _ = self.av.decide(self.row, self.comp, self.s4m, edit, None, "R", "d")
+        self.assertEqual((new["symbol"], new["page"], st), ("C_i", 5, "unresolved"))
+        self.assertIn("re-check pending", new["verified"])
+        rc = {"compare": {"C_i": {"verdict": "AGREE", "reasons": [], "read": {"value_as_printed": "1.8"}}},
+              "S4": {}, "S4m": {"C_i": {"meaning_verdict": "matches"}}}
+        self.assertEqual(self.av.decide(self.row, self.comp, self.s4m, edit, rc, "R", "d")[1], "verified")
+        rc["S4m"]["C_i"]["meaning_verdict"] = "table_wrong"
+        self.assertEqual(self.av.decide(self.row, self.comp, self.s4m, edit, rc, "R", "d")[1], "unresolved")
+
+    def test_solver_rows_untouched(self):
+        row = dict(self.row, symbol="M0", source="dimensional-analysis", verified="code")
+        new, st, _ = self.av.decide(row, {}, {}, None, None, "R", "d")
+        self.assertEqual((st, new["verified"]), ("unchanged", "code"))
