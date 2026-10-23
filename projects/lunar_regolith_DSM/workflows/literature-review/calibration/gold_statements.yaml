@@ -1,0 +1,16 @@
+# Gold statements: things any good reading of the paper must record.
+# About 12 for kaempfer_plapp_2009, 10 for molaro_2019, 8 for blackford_2007.
+# page: the page number printed on the page. statement: your own words.
+# kind: method | equation | result | assumption | limitation | parameter
+#
+# Example (illustration only, not a statement from any of these papers):
+# - paper: kaempfer_plapp_2009
+#   page: 4
+#   kind: parameter
+#   statement: The interface kinetic coefficient used in the simulations is printed with its value and unit.
+
+statements:
+  - paper:
+    page:
+    kind:
+    statement:

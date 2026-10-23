@@ -1,0 +1,27 @@
+# T-res pages: equation-dense pages whose equations and key numbers are known exactly.
+# Moure & Fu 2024: pages of the arXiv v1 PDF, equations taken from the authors' LaTeX source
+#   by script (source: latex); the user spot-checks them.
+# Kaempfer & Plapp 2009: one or two journal pages transcribed by the user (source: user).
+# page_pdf: page index in the PDF file (1 = first page). latex: as printed, in LaTeX.
+#
+# Example format:
+# - paper: kaempfer_plapp_2009
+#   page_pdf: 3
+#   source: user
+#   items:
+#     - label: Eq. (5)
+#       latex: '\partial_t \phi = ...'
+#     - label: value in text, right column
+#       latex: '2.178 \times 10^{-5}\,\mathrm{m^2\,s^{-1}}'
+
+pages:
+  - paper: moure_fu_2024
+    page_pdf:
+    source: latex
+    items: []   # filled by script from the arXiv source, then spot-checked by the user
+  - paper: kaempfer_plapp_2009
+    page_pdf:
+    source: user
+    items:
+      - label:
+        latex:

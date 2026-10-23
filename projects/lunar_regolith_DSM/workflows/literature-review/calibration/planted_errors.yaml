@@ -1,0 +1,25 @@
+# Planted errors written by the user (at least 10). Aim at the hard kinds: a condition
+# stated on another page dropped, a cited result passed off as the paper's own, a widened
+# scope, a plausible subscript or sign swap.
+# kind: fabricated_quote | wrong_page | equation_sign_or_exponent | equation_symbol_swap |
+#       number_wrong_quantity | hedge_made_certain | wrong_basis | wrong_kind |
+#       wrong_question | dropped_condition | scope_widened | wrong_attribution | wrong_figure
+# condition_page: for dropped_condition, the page where the dropped condition is stated.
+#
+# Example (illustration only, invented):
+# - paper: molaro_2019
+#   page: 12
+#   kind: dropped_condition
+#   condition_page: 5
+#   correct_claim: Neck growth follows the stated power law in the simulated temperature range, for the grain size used.
+#   planted_claim: Neck growth follows the stated power law.
+#   note: The range and grain size are stated in the methods, not on page 12.
+
+errors:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:

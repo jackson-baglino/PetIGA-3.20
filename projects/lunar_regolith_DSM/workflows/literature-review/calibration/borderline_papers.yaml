@@ -1,0 +1,14 @@
+# Borderline papers (10–20): relevant to the first review (numerical methods for systems in
+# which some phases are stationary and others evolve), but easy for a screener to exclude:
+# adjacent fields, unusual terms, or relevance that is not in the abstract.
+# A script fetches each abstract from the DOI. expected: core | context
+#
+# Example format (DOI is a placeholder):
+# - doi: 10.xxxx/xxxxx
+#   expected: context
+#   why: Porous-media sublimation in planetary science; uses a diffuse wall but never says "phase field".
+
+papers:
+  - doi:
+    expected:
+    why:
