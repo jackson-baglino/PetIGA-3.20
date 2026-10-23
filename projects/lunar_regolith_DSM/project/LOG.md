@@ -2,6 +2,25 @@
 
 Newest first. One entry per session: done, remaining, bottlenecks.
 
+## 2026-10-22 (5) — Units-verification workflow built and run; units.md verified
+
+- Session: cd3a2de5-fd76-4f3c-8357-c1b9d1164930
+- Done: built the workflow in three reviewed stages
+  (scripts/units_verification/, 48 tests): S0 locate, S1 render, S1b Marker,
+  S3 compare (units as dimensions; printed symbols), agents
+  morty-unit-reader and beth-unit-checker (approved, merged, pushed), S4
+  adjudication, S4m meaning review with a second pass on definition pages,
+  C0 calibration (passed twice: 8/8, 8/8, 2/2; 0/4 false alarms on the
+  final design), reader stability, U1 inspection set, S5 apply + re-check.
+  Run 20261022-155335: user decided 22 rows; units.md now 54 verified
+  literature rows, value column, UNRELIABLE header removed. Dropped j_T,
+  j_v, t_n, T_cold, T_hot, beta_sol. Page images and Marker text stay
+  local; DOIs and hashes make the run reproducible.
+- Remaining: push the commits since the merge (asked); optional second
+  pass for the solver's own parameters (M0, alpha) with a code-reading
+  checker.
+- Bottlenecks: none. Lesson: cp is aliased to cp -i; use `command cp -f`.
+
 ## 2026-10-22 (4) — Units workflow designed; flowchart agent; Marker; wrap-up
 
 - Session: db191e62-cff4-48e1-a6d2-099d62fee556 (started before the
