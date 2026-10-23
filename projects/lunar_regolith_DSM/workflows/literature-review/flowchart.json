@@ -1,10 +1,10 @@
 {
   "title": "literature-review",
   "summary": [
-    "A reusable literature-review workflow for reviews of any size. The user writes a brief (questions, criteria, tier); scripts search Crossref, OpenAlex, Semantic Scholar and arXiv, follow citations, and resolve every candidate so no invented reference survives; two Haiku screeners judge each abstract independently and an Opus checker settles disagreements. Scripts fetch open-access PDFs and check each is the paper asked for; the user downloads paywalled ones through the library.",
-    "A fresh Sonnet reader per paper extracts claims with verbatim quotes, pages and equations from page images and Marker text; core papers are read twice independently. A script checks every quote and equation against the page; an Opus checker, blind to the reader's reasoning, judges every claim on the page image. A script (the curator) is the only writer to the library and refuses anything unchecked; nothing is ever deleted. Memos cite claim IDs only, are checked by script and by a Fable checker, and the user decides whether to close, expand or retract the review. A calibration run with planted errors gates the first real wave."
+    "A reusable literature-review workflow for reviews of any size. The user writes a brief (questions, criteria, tier); scripts search Crossref, OpenAlex, Semantic Scholar and arXiv, follow citations, and resolve every candidate so no invented reference survives; two Haiku screeners judge each abstract independently and an Opus checker settles disagreements. Scripts fetch open-access PDFs (Literature/, OpenAlex, arXiv, repositories) and check each is the paper asked for; a preprint or repository copy is compared with the published record; the user supplies any paper not found.",
+    "A fresh Sonnet reader per paper extracts claims with verbatim quotes, pages and equations from page images and Marker text; core papers are read twice independently. A script checks every quote and equation against the page; an Opus checker, blind to the reader's reasoning, judges every claim on the page image. A script (the curator) is the only writer to the library and refuses anything unchecked; nothing is ever deleted. Memos cite claim IDs only, are checked by script and by a Fable checker, a tag report after each wave proposes merges and new tags, and the user decides whether to close, expand or retract the review and which tag changes to accept. A calibration run with planted errors gates the first real wave."
   ],
-  "status": "Draft design for review, 2026-10-23. Nothing built. Details and open decisions: WORKFLOW.md.",
+  "status": "Draft design for review, 2026-10-23, revision 2 (user decisions applied). Nothing built. Details and open decisions: WORKFLOW.md.",
   "lanes": [
     {
       "id": "user",
@@ -177,11 +177,12 @@
       "row": 6,
       "kind": "script",
       "title": "A1 acquire.py",
-      "job": "Finds each paper in Literature/ or as open access and checks the DOI or title on its first page.",
+      "job": "Finds each paper in Literature/, then as open access (OpenAlex, arXiv, Semantic Scholar, repositories), and checks its first page.",
       "details": [
         "Each download in its own new folder",
         "Wrong paper: not acquired, logged",
-        "Paywalled: listed in fetch_list.md"
+        "Not found: listed in fetch_list.md",
+        "No institutional access; no Sci-Hub"
       ]
     },
     {
@@ -197,10 +198,10 @@
       "lane": "user",
       "row": 6.5,
       "kind": "user",
-      "title": "U2 Fetch paywalled papers",
-      "job": "Downloads the fetch list through Zotero and the library proxy into the incoming folder.",
+      "title": "U2 Supply missing papers",
+      "job": "Supplies any listed paper they already have, or marks it unavailable; accepts or rejects copies A2 flagged.",
       "details": [
-        "Marks a paper unavailable if needed"
+        "A1 and A2 re-run on what the user adds"
       ]
     },
     {
@@ -305,9 +306,10 @@
       "row": 12,
       "kind": "user",
       "title": "U3 Inspect",
-      "job": "Inspects every disputed claim and equation and a random 10 % of passed claims beside their page crops.",
+      "job": "Inspects every disputed claim and equation, and 60 random passed claims beside their page crops.",
       "details": [
-        "Approves, corrects or drops each"
+        "No error in 60: passed-claim error rate below 4.9 % (95 %)",
+        "Sample size still to be decided"
       ]
     },
     {
@@ -411,12 +413,47 @@
     {
       "id": "U4",
       "lane": "user",
-      "row": 17,
+      "row": 18,
       "kind": "user",
       "title": "U4 Decide",
-      "job": "Reads the memos, the checker report and the gaps; closes the review or expands or retracts it.",
+      "job": "Reads memos, checker report, gaps and tag proposals; closes, expands or retracts the review; accepts or rejects tag changes.",
       "details": [
         "Pillar 1: memo ends with model options"
+      ]
+    },
+    {
+      "id": "A2",
+      "lane": "script",
+      "row": 6.6,
+      "kind": "script",
+      "title": "A2 check_copy.py (non-publisher copies)",
+      "job": "Compares a preprint or repository copy with the published record: title, authors, abstract, errata.",
+      "details": [
+        "Copy kind recorded on every claim read from it",
+        "Title or authors differ: user decides at U2",
+        "Published version later: claims re-checked"
+      ]
+    },
+    {
+      "id": "T1",
+      "lane": "script",
+      "row": 17,
+      "kind": "script",
+      "title": "T1 tag_report.py (after every wave)",
+      "job": "Counts tag use and lists tags with similar names or mostly the same claims, unused tags and provisional tags."
+    },
+    {
+      "id": "T2",
+      "lane": "agent",
+      "row": 17.5,
+      "kind": "agent",
+      "title": "T2 morty-tagger",
+      "model": "claude-sonnet-5-5",
+      "tools": [],
+      "job": "Proposes tag merges, splits, renames, deprecations and promotions, each with a reason.",
+      "details": [
+        "Proposals only; the user accepts each at U4",
+        "Accepted: new vocab.yaml version with alias map"
       ]
     }
   ],
@@ -502,23 +539,6 @@
       "from": "A1",
       "to": "RP",
       "kind": "data"
-    },
-    {
-      "from": "A1",
-      "to": "U2",
-      "kind": "stop",
-      "label": "paywalled"
-    },
-    {
-      "from": "U2",
-      "to": "A1",
-      "kind": "loop",
-      "label": "re-check identity"
-    },
-    {
-      "from": "A1",
-      "to": "P1",
-      "kind": "flow"
     },
     {
       "from": "P1",
@@ -610,15 +630,47 @@
       "kind": "data"
     },
     {
-      "from": "Y3",
-      "to": "U4",
-      "kind": "flow"
-    },
-    {
       "from": "U4",
       "to": "U0",
       "kind": "loop",
       "label": "expand or retract"
+    },
+    {
+      "from": "A1",
+      "to": "A2",
+      "kind": "flow"
+    },
+    {
+      "from": "A2",
+      "to": "U2",
+      "kind": "stop",
+      "label": "not found or differs"
+    },
+    {
+      "from": "U2",
+      "to": "A1",
+      "kind": "loop",
+      "label": "re-check"
+    },
+    {
+      "from": "A2",
+      "to": "P1",
+      "kind": "flow"
+    },
+    {
+      "from": "Y3",
+      "to": "T1",
+      "kind": "flow"
+    },
+    {
+      "from": "T1",
+      "to": "T2",
+      "kind": "flow"
+    },
+    {
+      "from": "T2",
+      "to": "U4",
+      "kind": "flow"
     }
   ]
 }

@@ -10,636 +10,693 @@ th { background: #f4f4f4; } .sw { display: inline-block; width: 22px; height: 12
 .meta { color: #666; font-size: 12px; }
 </style></head><body>
 <h1>literature-review</h1>
-<p>A reusable literature-review workflow for reviews of any size. The user writes a brief (questions, criteria, tier); scripts search Crossref, OpenAlex, Semantic Scholar and arXiv, follow citations, and resolve every candidate so no invented reference survives; two Haiku screeners judge each abstract independently and an Opus checker settles disagreements. Scripts fetch open-access PDFs and check each is the paper asked for; the user downloads paywalled ones through the library.</p><p>A fresh Sonnet reader per paper extracts claims with verbatim quotes, pages and equations from page images and Marker text; core papers are read twice independently. A script checks every quote and equation against the page; an Opus checker, blind to the reader's reasoning, judges every claim on the page image. A script (the curator) is the only writer to the library and refuses anything unchecked; nothing is ever deleted. Memos cite claim IDs only, are checked by script and by a Fable checker, and the user decides whether to close, expand or retract the review. A calibration run with planted errors gates the first real wave.</p>
-<p class="meta">Draft design for review, 2026-10-23. Nothing built. Details and open decisions: WORKFLOW.md.</p>
-<svg width="1321pt" height="3615pt"
- viewBox="0.00 0.00 1321.00 3615.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(0 3614.72)">
+<p>A reusable literature-review workflow for reviews of any size. The user writes a brief (questions, criteria, tier); scripts search Crossref, OpenAlex, Semantic Scholar and arXiv, follow citations, and resolve every candidate so no invented reference survives; two Haiku screeners judge each abstract independently and an Opus checker settles disagreements. Scripts fetch open-access PDFs (Literature/, OpenAlex, arXiv, repositories) and check each is the paper asked for; a preprint or repository copy is compared with the published record; the user supplies any paper not found.</p><p>A fresh Sonnet reader per paper extracts claims with verbatim quotes, pages and equations from page images and Marker text; core papers are read twice independently. A script checks every quote and equation against the page; an Opus checker, blind to the reader's reasoning, judges every claim on the page image. A script (the curator) is the only writer to the library and refuses anything unchecked; nothing is ever deleted. Memos cite claim IDs only, are checked by script and by a Fable checker, a tag report after each wave proposes merges and new tags, and the user decides whether to close, expand or retract the review and which tag changes to accept. A calibration run with planted errors gates the first real wave.</p>
+<p class="meta">Draft design for review, 2026-10-23, revision 2 (user decisions applied). Nothing built. Details and open decisions: WORKFLOW.md.</p>
+<svg width="1321pt" height="4209pt"
+ viewBox="0.00 0.00 1321.00 4209.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(0 4208.72)">
 <title>G</title>
-<polygon fill="white" stroke="none" points="0,0 0,-3614.72 1320.72,-3614.72 1320.72,0 0,0"/>
-<rect x="6.0" y="-3614.0" width="318.0" height="3614.0" fill="#fdf6ec" stroke="#dddddd"/>
-<text x="165.0" y="-3588.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">User</text>
-<rect x="336.0" y="-3614.0" width="318.0" height="3614.0" fill="#eef4fb" stroke="#dddddd"/>
-<text x="495.0" y="-3588.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">Scripts</text>
-<rect x="666.0" y="-3614.0" width="318.0" height="3614.0" fill="#f1f7ee" stroke="#dddddd"/>
-<text x="825.0" y="-3588.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">Agents</text>
-<rect x="996.0" y="-3614.0" width="318.0" height="3614.0" fill="#f5f5f5" stroke="#dddddd"/>
-<text x="1155.0" y="-3588.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">Records</text>
+<polygon fill="white" stroke="none" points="0,0 0,-4208.72 1320.72,-4208.72 1320.72,0 0,0"/>
+<rect x="6.0" y="-4208.0" width="318.0" height="4208.0" fill="#fdf6ec" stroke="#dddddd"/>
+<text x="165.0" y="-4182.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">User</text>
+<rect x="336.0" y="-4208.0" width="318.0" height="4208.0" fill="#eef4fb" stroke="#dddddd"/>
+<text x="495.0" y="-4182.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">Scripts</text>
+<rect x="666.0" y="-4208.0" width="318.0" height="4208.0" fill="#f1f7ee" stroke="#dddddd"/>
+<text x="825.0" y="-4182.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">Agents</text>
+<rect x="996.0" y="-4208.0" width="318.0" height="4208.0" fill="#f5f5f5" stroke="#dddddd"/>
+<text x="1155.0" y="-4182.0" text-anchor="middle" font-family="Helvetica" font-size="13" font-weight="bold" fill="#444">Records</text>
 <!-- U0&#45;&gt;RB -->
 <g id="edge1" class="edge">
 <title>U0&#45;&gt;RB</title>
-<path fill="none" stroke="#8a8a8a" d="M310.91,-3490C310.91,-3490 1000.21,-3490 1000.21,-3490"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.21,-3492.8 1008.21,-3490 1000.21,-3487.2 1000.21,-3492.8"/>
+<path fill="none" stroke="#8a8a8a" d="M310.91,-4084C310.91,-4084 1000.21,-4084 1000.21,-4084"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.21,-4086.8 1008.21,-4084 1000.21,-4081.2 1000.21,-4086.8"/>
 </g>
 <!-- U0&#45;&gt;D1 -->
 <g id="edge2" class="edge">
 <title>U0&#45;&gt;D1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M310.73,-3452C379.6,-3452 447.02,-3452 447.02,-3452 447.02,-3452 447.02,-3362.56 447.02,-3362.56"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="449.82,-3362.56 447.02,-3354.56 444.22,-3362.56 449.82,-3362.56"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M310.73,-4046C379.6,-4046 447.02,-4046 447.02,-4046 447.02,-4046 447.02,-3956.56 447.02,-3956.56"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="449.82,-3956.56 447.02,-3948.56 444.22,-3956.56 449.82,-3956.56"/>
 </g>
 <!-- U0&#45;&gt;D2 -->
 <g id="edge3" class="edge">
 <title>U0&#45;&gt;D2</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M311.02,-3458C505.38,-3458 825.36,-3458 825.36,-3458 825.36,-3458 825.36,-3369.09 825.36,-3369.09"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-3369.09 825.36,-3361.09 822.56,-3369.09 828.16,-3369.09"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M311.02,-4052C505.38,-4052 825.36,-4052 825.36,-4052 825.36,-4052 825.36,-3963.09 825.36,-3963.09"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-3963.09 825.36,-3955.09 822.56,-3963.09 828.16,-3963.09"/>
 </g>
 <!-- D1&#45;&gt;RS -->
 <g id="edge4" class="edge">
 <title>D1&#45;&gt;RS</title>
-<path fill="none" stroke="#8a8a8a" d="M543.7,-3352.45C543.7,-3375.27 543.7,-3398 543.7,-3398 543.7,-3398 1155.36,-3398 1155.36,-3398 1155.36,-3398 1155.36,-3341.89 1155.36,-3341.89"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1158.16,-3341.89 1155.36,-3333.89 1152.56,-3341.89 1158.16,-3341.89"/>
+<path fill="none" stroke="#8a8a8a" d="M543.7,-3946.45C543.7,-3969.27 543.7,-3992 543.7,-3992 543.7,-3992 1155.36,-3992 1155.36,-3992 1155.36,-3992 1155.36,-3935.89 1155.36,-3935.89"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1158.16,-3935.89 1155.36,-3927.89 1152.56,-3935.89 1158.16,-3935.89"/>
 </g>
 <!-- D1&#45;&gt;D3 -->
 <g id="edge5" class="edge">
 <title>D1&#45;&gt;D3</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M495.36,-3260.32C495.36,-3260.32 495.36,-3185.6 495.36,-3185.6"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="498.16,-3185.6 495.36,-3177.6 492.56,-3185.6 498.16,-3185.6"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M495.36,-3854.32C495.36,-3854.32 495.36,-3779.6 495.36,-3779.6"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="498.16,-3779.6 495.36,-3771.6 492.56,-3779.6 498.16,-3779.6"/>
 </g>
 <!-- D2&#45;&gt;D3 -->
 <g id="edge6" class="edge">
 <title>D2&#45;&gt;D3</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M873.7,-3253.72C873.7,-3213.53 873.7,-3165 873.7,-3165 873.7,-3165 651.21,-3165 651.21,-3165"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651.21,-3162.2 643.21,-3165 651.21,-3167.8 651.21,-3162.2"/>
-<text xml:space="preserve" text-anchor="middle" x="788.44" y="-3166.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">citations</text>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M873.7,-3847.72C873.7,-3807.53 873.7,-3759 873.7,-3759 873.7,-3759 651.21,-3759 651.21,-3759"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651.21,-3756.2 643.21,-3759 651.21,-3761.8 651.21,-3756.2"/>
+<text xml:space="preserve" text-anchor="middle" x="788.44" y="-3760.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">citations</text>
 </g>
 <!-- D3&#45;&gt;RC -->
 <g id="edge7" class="edge">
 <title>D3&#45;&gt;RC</title>
-<path fill="none" stroke="#8a8a8a" d="M641.02,-3129C641.02,-3129 1000.28,-3129 1000.28,-3129"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-3131.8 1008.28,-3129 1000.28,-3126.2 1000.28,-3131.8"/>
+<path fill="none" stroke="#8a8a8a" d="M641.02,-3723C641.02,-3723 1000.28,-3723 1000.28,-3723"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-3725.8 1008.28,-3723 1000.28,-3720.2 1000.28,-3725.8"/>
 </g>
 <!-- D3&#45;&gt;SC1 -->
 <g id="edge8" class="edge">
 <title>D3&#45;&gt;SC1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M640.73,-3094C709.6,-3094 777.02,-3094 777.02,-3094 777.02,-3094 777.02,-2994.28 777.02,-2994.28"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="779.82,-2994.28 777.02,-2986.28 774.22,-2994.28 779.82,-2994.28"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M640.73,-3688C709.6,-3688 777.02,-3688 777.02,-3688 777.02,-3688 777.02,-3588.28 777.02,-3588.28"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="779.82,-3588.28 777.02,-3580.28 774.22,-3588.28 779.82,-3588.28"/>
 </g>
 <!-- C0&#45;&gt;SC1 -->
 <g id="edge9" class="edge">
 <title>C0&#45;&gt;SC1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M641.06,-2914C641.06,-2914 669.69,-2914 669.69,-2914"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="669.69,-2916.8 677.69,-2914 669.69,-2911.2 669.69,-2916.8"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M641.06,-3508C641.06,-3508 669.69,-3508 669.69,-3508"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="669.69,-3510.8 677.69,-3508 669.69,-3505.2 669.69,-3510.8"/>
 </g>
 <!-- SC1&#45;&gt;SC2 -->
 <g id="edge10" class="edge">
 <title>SC1&#45;&gt;SC2</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M679.75,-2949C668.62,-2949 661.6,-2949 661.6,-2949 661.6,-2949 661.6,-2742 661.6,-2742 661.6,-2742 651,-2742 651,-2742"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651,-2739.2 643,-2742 651,-2744.8 651,-2739.2"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M679.75,-3543C668.62,-3543 661.6,-3543 661.6,-3543 661.6,-3543 661.6,-3336 661.6,-3336 661.6,-3336 651,-3336 651,-3336"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651,-3333.2 643,-3336 651,-3338.8 651,-3333.2"/>
 </g>
 <!-- SC2&#45;&gt;SC3 -->
 <g id="edge11" class="edge">
 <title>SC2&#45;&gt;SC3</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M641.06,-2725C641.06,-2725 669.69,-2725 669.69,-2725"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="669.69,-2727.8 677.69,-2725 669.69,-2722.2 669.69,-2727.8"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M641.06,-3319C641.06,-3319 669.69,-3319 669.69,-3319"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="669.69,-3321.8 677.69,-3319 669.69,-3316.2 669.69,-3321.8"/>
 </g>
 <!-- SC2&#45;&gt;U1 -->
 <g id="edge12" class="edge">
 <title>SC2&#45;&gt;U1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M543.7,-2707.38C543.7,-2669.88 543.7,-2605 543.7,-2605 543.7,-2605 321.21,-2605 321.21,-2605"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="321.21,-2602.2 313.21,-2605 321.21,-2607.8 321.21,-2602.2"/>
-<text xml:space="preserve" text-anchor="middle" x="471.65" y="-2606.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">agree</text>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M543.7,-3301.38C543.7,-3263.88 543.7,-3199 543.7,-3199 543.7,-3199 321.21,-3199 321.21,-3199"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="321.21,-3196.2 313.21,-3199 321.21,-3201.8 321.21,-3196.2"/>
+<text xml:space="preserve" text-anchor="middle" x="471.65" y="-3200.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">agree</text>
 </g>
 <!-- SC3&#45;&gt;U1 -->
 <g id="edge13" class="edge">
 <title>SC3&#45;&gt;U1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-2687.47C825.36,-2648.89 825.36,-2600 825.36,-2600 825.36,-2600 321.14,-2600 321.14,-2600"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="321.14,-2597.2 313.14,-2600 321.14,-2602.8 321.14,-2597.2"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-3281.47C825.36,-3242.89 825.36,-3194 825.36,-3194 825.36,-3194 321.14,-3194 321.14,-3194"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="321.14,-3191.2 313.14,-3194 321.14,-3196.8 321.14,-3191.2"/>
 </g>
 <!-- U1&#45;&gt;RL -->
 <g id="edge14" class="edge">
 <title>U1&#45;&gt;RL</title>
-<path fill="none" stroke="#8a8a8a" d="M310.91,-2570C310.91,-2570 1000.21,-2570 1000.21,-2570"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.21,-2572.8 1008.21,-2570 1000.21,-2567.2 1000.21,-2572.8"/>
+<path fill="none" stroke="#8a8a8a" d="M310.91,-3164C310.91,-3164 1000.21,-3164 1000.21,-3164"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.21,-3166.8 1008.21,-3164 1000.21,-3161.2 1000.21,-3166.8"/>
 </g>
 <!-- U1&#45;&gt;A1 -->
 <g id="edge15" class="edge">
 <title>U1&#45;&gt;A1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M310.73,-2538C379.6,-2538 447.02,-2538 447.02,-2538 447.02,-2538 447.02,-2463.3 447.02,-2463.3"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="449.82,-2463.3 447.02,-2455.3 444.22,-2463.3 449.82,-2463.3"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M310.73,-3132C379.6,-3132 447.02,-3132 447.02,-3132 447.02,-3132 447.02,-3056.73 447.02,-3056.73"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="449.82,-3056.73 447.02,-3048.73 444.22,-3056.73 449.82,-3056.73"/>
 </g>
 <!-- A1&#45;&gt;RP -->
 <g id="edge16" class="edge">
 <title>A1&#45;&gt;RP</title>
-<path fill="none" stroke="#8a8a8a" d="M641.02,-2400C641.02,-2400 1000.28,-2400 1000.28,-2400"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-2402.8 1008.28,-2400 1000.28,-2397.2 1000.28,-2402.8"/>
+<path fill="none" stroke="#8a8a8a" d="M641.02,-2987C641.02,-2987 1000.28,-2987 1000.28,-2987"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-2989.8 1008.28,-2987 1000.28,-2984.2 1000.28,-2989.8"/>
 </g>
-<!-- A1&#45;&gt;U2 -->
-<g id="edge17" class="edge">
-<title>A1&#45;&gt;U2</title>
-<path fill="none" stroke="#b3261e" stroke-width="1.4" d="M422.86,-2347.5C422.86,-2303.49 422.86,-2248 422.86,-2248 422.86,-2248 321.16,-2248 321.16,-2248"/>
-<polygon fill="#b3261e" stroke="#b3261e" stroke-width="1.4" points="321.16,-2245.2 313.16,-2248 321.16,-2250.8 321.16,-2245.2"/>
-<text xml:space="preserve" text-anchor="middle" x="400.01" y="-2249.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#b3261e">paywalled</text>
-</g>
-<!-- A1&#45;&gt;P1 -->
-<g id="edge19" class="edge">
-<title>A1&#45;&gt;P1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M567.86,-2347.68C567.86,-2347.68 567.86,-2137.75 567.86,-2137.75"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="570.66,-2137.75 567.86,-2129.75 565.06,-2137.75 570.66,-2137.75"/>
+<!-- A1&#45;&gt;A2 -->
+<g id="edge35" class="edge">
+<title>A1&#45;&gt;A2</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M567.86,-2928.11C567.86,-2928.11 567.86,-2702.92 567.86,-2702.92"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="570.66,-2702.92 567.86,-2694.92 565.06,-2702.92 570.66,-2702.92"/>
 </g>
 <!-- U2&#45;&gt;A1 -->
-<g id="edge18" class="edge">
+<g id="edge37" class="edge">
 <title>U2&#45;&gt;A1</title>
-<path fill="none" stroke="#b07a00" stroke-width="1.3" d="M311.06,-2227C399.47,-2227 495.36,-2227 495.36,-2227 495.36,-2227 495.36,-2337.91 495.36,-2337.91"/>
-<polygon fill="#b07a00" stroke="#b07a00" stroke-width="1.3" points="492.56,-2337.91 495.36,-2345.91 498.16,-2337.91 492.56,-2337.91"/>
-<text xml:space="preserve" text-anchor="middle" x="422.67" y="-2228.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#b07a00">re&#45;check identity</text>
+<path fill="none" stroke="#b07a00" stroke-width="1.3" d="M311.06,-2823C399.47,-2823 495.36,-2823 495.36,-2823 495.36,-2823 495.36,-2918.05 495.36,-2918.05"/>
+<polygon fill="#b07a00" stroke="#b07a00" stroke-width="1.3" points="492.56,-2918.05 495.36,-2926.05 498.16,-2918.05 492.56,-2918.05"/>
+<text xml:space="preserve" text-anchor="middle" x="431.99" y="-2824.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#b07a00">re&#45;check</text>
 </g>
 <!-- P1&#45;&gt;RG -->
-<g id="edge20" class="edge">
+<g id="edge17" class="edge">
 <title>P1&#45;&gt;RG</title>
-<path fill="none" stroke="#8a8a8a" d="M641.02,-2081C641.02,-2081 1000.28,-2081 1000.28,-2081"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-2083.8 1008.28,-2081 1000.28,-2078.2 1000.28,-2083.8"/>
+<path fill="none" stroke="#8a8a8a" d="M641.02,-2449C641.02,-2449 1000.28,-2449 1000.28,-2449"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-2451.8 1008.28,-2449 1000.28,-2446.2 1000.28,-2451.8"/>
 </g>
 <!-- P1&#45;&gt;E1 -->
-<g id="edge21" class="edge">
+<g id="edge18" class="edge">
 <title>P1&#45;&gt;E1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M640.79,-2046C658.77,-2046 670.97,-2046 670.97,-2046 670.97,-2046 670.97,-1966.48 670.97,-1966.48"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="673.77,-1966.48 670.97,-1958.48 668.17,-1966.48 673.77,-1966.48"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M640.79,-2414C658.77,-2414 670.97,-2414 670.97,-2414 670.97,-2414 670.97,-2334.48 670.97,-2334.48"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="673.77,-2334.48 670.97,-2326.48 668.17,-2334.48 673.77,-2334.48"/>
 </g>
 <!-- E1&#45;&gt;RR -->
-<g id="edge22" class="edge">
+<g id="edge19" class="edge">
 <title>E1&#45;&gt;RR</title>
-<path fill="none" stroke="#8a8a8a" d="M999.06,-1890C999.06,-1890 1000.24,-1890 1000.24,-1890"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.24,-1892.8 1008.24,-1890 1000.23,-1887.2 1000.24,-1892.8"/>
+<path fill="none" stroke="#8a8a8a" d="M999.06,-2258C999.06,-2258 1000.24,-2258 1000.24,-2258"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.24,-2260.8 1008.24,-2258 1000.23,-2255.2 1000.24,-2260.8"/>
 </g>
 <!-- E1&#45;&gt;E3 -->
-<g id="edge23" class="edge">
+<g id="edge20" class="edge">
 <title>E1&#45;&gt;E3</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M666.29,-1824.22C666.29,-1772.75 666.29,-1710 666.29,-1710 666.29,-1710 651.18,-1710 651.18,-1710"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651.18,-1707.2 643.18,-1710 651.18,-1712.8 651.18,-1707.2"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M666.29,-2192.22C666.29,-2140.75 666.29,-2078 666.29,-2078 666.29,-2078 651.18,-2078 651.18,-2078"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651.18,-2075.2 643.18,-2078 651.18,-2080.8 651.18,-2075.2"/>
 </g>
 <!-- E3&#45;&gt;E4 -->
-<g id="edge24" class="edge">
+<g id="edge21" class="edge">
 <title>E3&#45;&gt;E4</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M641.06,-1675C729.47,-1675 825.36,-1675 825.36,-1675 825.36,-1675 825.36,-1571.2 825.36,-1571.2"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-1571.2 825.36,-1563.2 822.56,-1571.2 828.16,-1571.2"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M641.06,-2043C729.47,-2043 825.36,-2043 825.36,-2043 825.36,-2043 825.36,-1939.2 825.36,-1939.2"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-1939.2 825.36,-1931.2 822.56,-1939.2 828.16,-1939.2"/>
 </g>
 <!-- E4&#45;&gt;RV -->
-<g id="edge25" class="edge">
+<g id="edge22" class="edge">
 <title>E4&#45;&gt;RV</title>
-<path fill="none" stroke="#8a8a8a" d="M971.06,-1508C971.06,-1508 1000.3,-1508 1000.3,-1508"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.3,-1510.8 1008.3,-1508 1000.3,-1505.2 1000.3,-1510.8"/>
+<path fill="none" stroke="#8a8a8a" d="M971.06,-1876C971.06,-1876 1000.3,-1876 1000.3,-1876"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.3,-1878.8 1008.3,-1876 1000.3,-1873.2 1000.3,-1878.8"/>
 </g>
 <!-- E4&#45;&gt;E5 -->
-<g id="edge26" class="edge">
+<g id="edge23" class="edge">
 <title>E4&#45;&gt;E5</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-1455.73C825.36,-1455.73 825.36,-1387.6 825.36,-1387.6"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-1387.6 825.36,-1379.6 822.56,-1387.6 828.16,-1387.6"/>
-<text xml:space="preserve" text-anchor="middle" x="795.74" y="-1423.42" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">not supported</text>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-1823.73C825.36,-1823.73 825.36,-1755.6 825.36,-1755.6"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-1755.6 825.36,-1747.6 822.56,-1755.6 828.16,-1755.6"/>
+<text xml:space="preserve" text-anchor="middle" x="795.74" y="-1791.42" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">not supported</text>
 </g>
 <!-- E4&#45;&gt;U3 -->
-<g id="edge28" class="edge">
+<g id="edge25" class="edge">
 <title>E4&#45;&gt;U3</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M679.7,-1508C485.34,-1508 165.36,-1508 165.36,-1508 165.36,-1508 165.36,-1218.1 165.36,-1218.1"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="168.16,-1218.1 165.36,-1210.1 162.56,-1218.1 168.16,-1218.1"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M679.7,-1876C485.34,-1876 165.36,-1876 165.36,-1876 165.36,-1876 165.36,-1585.42 165.36,-1585.42"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="168.16,-1585.42 165.36,-1577.42 162.56,-1585.42 168.16,-1585.42"/>
 </g>
 <!-- E5&#45;&gt;E3 -->
-<g id="edge27" class="edge">
+<g id="edge24" class="edge">
 <title>E5&#45;&gt;E3</title>
-<path fill="none" stroke="#b07a00" stroke-width="1.3" d="M679.63,-1331C573.05,-1331 447.02,-1331 447.02,-1331 447.02,-1331 447.02,-1629.46 447.02,-1629.46"/>
-<polygon fill="#b07a00" stroke="#b07a00" stroke-width="1.3" points="444.22,-1629.46 447.02,-1637.46 449.82,-1629.46 444.22,-1629.46"/>
-<text xml:space="preserve" text-anchor="middle" x="428.27" y="-1365.68" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#b07a00">re&#45;check</text>
+<path fill="none" stroke="#b07a00" stroke-width="1.3" d="M679.63,-1699C573.05,-1699 447.02,-1699 447.02,-1699 447.02,-1699 447.02,-1997.46 447.02,-1997.46"/>
+<polygon fill="#b07a00" stroke="#b07a00" stroke-width="1.3" points="444.22,-1997.46 447.02,-2005.46 449.82,-1997.46 444.22,-1997.46"/>
+<text xml:space="preserve" text-anchor="middle" x="428.27" y="-1733.68" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#b07a00">re&#45;check</text>
 </g>
 <!-- U3&#45;&gt;L1 -->
-<g id="edge29" class="edge">
+<g id="edge26" class="edge">
 <title>U3&#45;&gt;L1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M311.09,-1168C417.67,-1168 543.7,-1168 543.7,-1168 543.7,-1168 543.7,-1060.52 543.7,-1060.52"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="546.5,-1060.52 543.7,-1052.52 540.9,-1060.52 546.5,-1060.52"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M311.09,-1522C417.67,-1522 543.7,-1522 543.7,-1522 543.7,-1522 543.7,-1400.56 543.7,-1400.56"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="546.5,-1400.56 543.7,-1392.56 540.9,-1400.57 546.5,-1400.56"/>
 </g>
 <!-- L1&#45;&gt;LB -->
-<g id="edge30" class="edge">
+<g id="edge27" class="edge">
 <title>L1&#45;&gt;LB</title>
-<path fill="none" stroke="#8a8a8a" d="M641.02,-1000C641.02,-1000 1000.28,-1000 1000.28,-1000"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-1002.8 1008.28,-1000 1000.28,-997.2 1000.28,-1002.8"/>
+<path fill="none" stroke="#8a8a8a" d="M641.02,-1340C641.02,-1340 1000.28,-1340 1000.28,-1340"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.28,-1342.8 1008.28,-1340 1000.28,-1337.2 1000.28,-1342.8"/>
 </g>
 <!-- L1&#45;&gt;L2 -->
-<g id="edge31" class="edge">
+<g id="edge28" class="edge">
 <title>L1&#45;&gt;L2</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M495.36,-918.37C495.36,-918.37 495.36,-822.05 495.36,-822.05"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="498.16,-822.05 495.36,-814.05 492.56,-822.05 498.16,-822.05"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M495.36,-1258.37C495.36,-1258.37 495.36,-1162.05 495.36,-1162.05"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="498.16,-1162.05 495.36,-1154.05 492.56,-1162.05 498.16,-1162.05"/>
 </g>
 <!-- LB&#45;&gt;LR -->
-<g id="edge32" class="edge">
+<g id="edge29" class="edge">
 <title>LB&#45;&gt;LR</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M1009.66,-969C921.25,-969 825.36,-969 825.36,-969 825.36,-969 825.36,-848.96 825.36,-848.96"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-848.96 825.36,-840.96 822.56,-848.96 828.16,-848.96"/>
-<text xml:space="preserve" text-anchor="middle" x="837.61" y="-970.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">read only</text>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M1009.66,-1309C921.25,-1309 825.36,-1309 825.36,-1309 825.36,-1309 825.36,-1188.96 825.36,-1188.96"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-1188.96 825.36,-1180.96 822.56,-1188.96 828.16,-1188.96"/>
+<text xml:space="preserve" text-anchor="middle" x="837.61" y="-1310.75" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">read only</text>
 </g>
 <!-- LR&#45;&gt;Y1 -->
-<g id="edge33" class="edge">
+<g id="edge30" class="edge">
 <title>LR&#45;&gt;Y1</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-719.97C825.36,-719.97 825.36,-651.35 825.36,-651.35"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-651.35 825.36,-643.35 822.56,-651.35 828.16,-651.35"/>
-<text xml:space="preserve" text-anchor="middle" x="793.86" y="-687.41" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">verified claims</text>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-1059.97C825.36,-1059.97 825.36,-991.35 825.36,-991.35"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="828.16,-991.35 825.36,-983.35 822.56,-991.35 828.16,-991.35"/>
+<text xml:space="preserve" text-anchor="middle" x="793.86" y="-1027.41" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4a4a4a">verified claims</text>
 </g>
 <!-- Y1&#45;&gt;Y2 -->
-<g id="edge34" class="edge">
+<g id="edge31" class="edge">
 <title>Y1&#45;&gt;Y2</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M873.7,-535.52C873.7,-489.81 873.7,-431 873.7,-431 873.7,-431 651.21,-431 651.21,-431"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651.21,-428.2 643.21,-431 651.21,-433.8 651.21,-428.2"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M873.7,-875.52C873.7,-829.81 873.7,-771 873.7,-771 873.7,-771 651.21,-771 651.21,-771"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651.21,-768.2 643.21,-771 651.21,-773.8 651.21,-768.2"/>
 </g>
 <!-- Y2&#45;&gt;Y3 -->
-<g id="edge35" class="edge">
+<g id="edge32" class="edge">
 <title>Y2&#45;&gt;Y3</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M640.73,-405C709.6,-405 777.02,-405 777.02,-405 777.02,-405 777.02,-311.02 777.02,-311.02"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="779.82,-311.02 777.02,-303.02 774.22,-311.02 779.82,-311.02"/>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M640.73,-745C709.6,-745 777.02,-745 777.02,-745 777.02,-745 777.02,-651.02 777.02,-651.02"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="779.82,-651.02 777.02,-643.02 774.22,-651.02 779.82,-651.02"/>
 </g>
 <!-- Y3&#45;&gt;RM -->
-<g id="edge36" class="edge">
+<g id="edge33" class="edge">
 <title>Y3&#45;&gt;RM</title>
-<path fill="none" stroke="#8a8a8a" d="M971.06,-241C971.06,-241 1000.3,-241 1000.3,-241"/>
-<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.3,-243.8 1008.3,-241 1000.3,-238.2 1000.3,-243.8"/>
+<path fill="none" stroke="#8a8a8a" d="M971.06,-581C971.06,-581 1000.3,-581 1000.3,-581"/>
+<polygon fill="#8a8a8a" stroke="#8a8a8a" points="1000.3,-583.8 1008.3,-581 1000.3,-578.2 1000.3,-583.8"/>
 </g>
-<!-- Y3&#45;&gt;U4 -->
-<g id="edge37" class="edge">
-<title>Y3&#45;&gt;U4</title>
-<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-182.02C825.36,-134.94 825.36,-77 825.36,-77 825.36,-77 321.14,-77 321.14,-77"/>
-<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="321.14,-74.2 313.14,-77 321.14,-79.8 321.14,-74.2"/>
+<!-- Y3&#45;&gt;T1 -->
+<g id="edge39" class="edge">
+<title>Y3&#45;&gt;T1</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M873.7,-522.02C873.7,-476.71 873.7,-422 873.7,-422 873.7,-422 651.21,-422 651.21,-422"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="651.21,-419.2 643.21,-422 651.21,-424.8 651.21,-419.2"/>
 </g>
 <!-- U4&#45;&gt;U0 -->
-<g id="edge38" class="edge">
+<g id="edge34" class="edge">
 <title>U4&#45;&gt;U0</title>
-<path fill="none" stroke="#b07a00" stroke-width="1.3" d="M311.11,-51C322.88,-51 330.36,-51 330.36,-51 330.36,-51 330.36,-3445 330.36,-3445 330.36,-3445 321.08,-3445 321.08,-3445"/>
-<polygon fill="#b07a00" stroke="#b07a00" stroke-width="1.3" points="321.08,-3442.2 313.08,-3445 321.08,-3447.8 321.08,-3442.2"/>
-<text xml:space="preserve" text-anchor="middle" x="293.61" y="-1744.77" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#b07a00">expand or retract</text>
+<path fill="none" stroke="#b07a00" stroke-width="1.3" d="M311.11,-51C322.88,-51 330.36,-51 330.36,-51 330.36,-51 330.36,-4039 330.36,-4039 330.36,-4039 321.08,-4039 321.08,-4039"/>
+<polygon fill="#b07a00" stroke="#b07a00" stroke-width="1.3" points="321.08,-4036.2 313.08,-4039 321.08,-4041.8 321.08,-4036.2"/>
+<text xml:space="preserve" text-anchor="middle" x="293.61" y="-2041.77" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#b07a00">expand or retract</text>
+</g>
+<!-- A2&#45;&gt;U2 -->
+<g id="edge36" class="edge">
+<title>A2&#45;&gt;U2</title>
+<path fill="none" stroke="#b3261e" stroke-width="1.4" d="M422.86,-2692.9C422.86,-2739.69 422.86,-2797 422.86,-2797 422.86,-2797 321.16,-2797 321.16,-2797"/>
+<polygon fill="#b3261e" stroke="#b3261e" stroke-width="1.4" points="321.16,-2794.2 313.16,-2797 321.16,-2799.8 321.16,-2794.2"/>
+<text xml:space="preserve" text-anchor="middle" x="381.98" y="-2797.55" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#b3261e">not found or differs</text>
+</g>
+<!-- A2&#45;&gt;P1 -->
+<g id="edge38" class="edge">
+<title>A2&#45;&gt;P1</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M495.36,-2573.87C495.36,-2573.87 495.36,-2505.64 495.36,-2505.64"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="498.16,-2505.64 495.36,-2497.64 492.56,-2505.64 498.16,-2505.64"/>
+</g>
+<!-- T1&#45;&gt;T2 -->
+<g id="edge40" class="edge">
+<title>T1&#45;&gt;T2</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M640.73,-401C709.6,-401 777.02,-401 777.02,-401 777.02,-401 777.02,-310.92 777.02,-310.92"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="779.82,-310.92 777.02,-302.92 774.22,-310.92 779.82,-310.92"/>
+</g>
+<!-- T2&#45;&gt;U4 -->
+<g id="edge41" class="edge">
+<title>T2&#45;&gt;U4</title>
+<path fill="none" stroke="#4a4a4a" stroke-width="1.4" d="M825.36,-182.02C825.36,-134.94 825.36,-77 825.36,-77 825.36,-77 321.14,-77 321.14,-77"/>
+<polygon fill="#4a4a4a" stroke="#4a4a4a" stroke-width="1.4" points="321.14,-74.2 313.14,-77 321.14,-79.8 321.14,-74.2"/>
 </g>
 <!-- __c1 -->
 <!-- __c2 -->
 <!-- U0 -->
 <g id="node3" class="node">
 <title>U0</title>
-<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-3542.56C298.37,-3542.56 32.35,-3542.56 32.35,-3542.56 26.35,-3542.56 20.35,-3536.56 20.35,-3530.56 20.35,-3530.56 20.35,-3450.16 20.35,-3450.16 20.35,-3444.16 26.35,-3438.16 32.35,-3438.16 32.35,-3438.16 298.37,-3438.16 298.37,-3438.16 304.37,-3438.16 310.37,-3444.16 310.37,-3450.16 310.37,-3450.16 310.37,-3530.56 310.37,-3530.56 310.37,-3536.56 304.37,-3542.56 298.37,-3542.56"/>
-<text xml:space="preserve" text-anchor="start" x="58.86" y="-3527.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U0 Brief</text>
-<text xml:space="preserve" text-anchor="start" x="58.86" y="-3513.79" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Writes the questions, inclusion and exclusion</text>
-<text xml:space="preserve" text-anchor="start" x="58.86" y="-3499.79" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">criteria, tier (S, M, L), seed papers and</text>
-<text xml:space="preserve" text-anchor="start" x="58.86" y="-3485.79" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">queries with the main session.</text>
-<text xml:space="preserve" text-anchor="start" x="58.86" y="-3471.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Versioned: each wave records its brief</text>
-<text xml:space="preserve" text-anchor="start" x="58.86" y="-3458.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;version</text>
-<text xml:space="preserve" text-anchor="start" x="58.86" y="-3445.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Tier S skips discovery and screening</text>
+<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-4136.56C298.37,-4136.56 32.35,-4136.56 32.35,-4136.56 26.35,-4136.56 20.35,-4130.56 20.35,-4124.56 20.35,-4124.56 20.35,-4044.16 20.35,-4044.16 20.35,-4038.16 26.35,-4032.16 32.35,-4032.16 32.35,-4032.16 298.37,-4032.16 298.37,-4032.16 304.37,-4032.16 310.37,-4038.16 310.37,-4044.16 310.37,-4044.16 310.37,-4124.56 310.37,-4124.56 310.37,-4130.56 304.37,-4136.56 298.37,-4136.56"/>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-4121.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U0 Brief</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-4107.79" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Writes the questions, inclusion and exclusion</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-4093.79" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">criteria, tier (S, M, L), seed papers and</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-4079.79" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">queries with the main session.</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-4065.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Versioned: each wave records its brief</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-4052.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;version</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-4039.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Tier S skips discovery and screening</text>
 </g>
 <!-- RB -->
 <g id="node4" class="node">
 <title>RB</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3515.68 1010.35,-3515.68 1010.35,-3465.04 1300.37,-3465.04 1300.37,-3509.68 1294.37,-3515.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3515.68 1294.37,-3509.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-3509.68 1294.37,-3509.68"/>
-<text xml:space="preserve" text-anchor="start" x="1052.61" y="-3500.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">brief.vN.json</text>
-<text xml:space="preserve" text-anchor="start" x="1052.61" y="-3486.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">The review&#39;s questions, criteria, tier, seeds,</text>
-<text xml:space="preserve" text-anchor="start" x="1052.61" y="-3472.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">queries and limits.</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-4109.68 1010.35,-4109.68 1010.35,-4059.04 1300.37,-4059.04 1300.37,-4103.68 1294.37,-4109.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-4109.68 1294.37,-4103.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-4103.68 1294.37,-4103.68"/>
+<text xml:space="preserve" text-anchor="start" x="1052.61" y="-4094.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">brief.vN.json</text>
+<text xml:space="preserve" text-anchor="start" x="1052.61" y="-4080.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">The review&#39;s questions, criteria, tier, seeds,</text>
+<text xml:space="preserve" text-anchor="start" x="1052.61" y="-4066.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">queries and limits.</text>
 </g>
 <!-- D1 -->
 <g id="node5" class="node">
 <title>D1</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-3351.93C628.37,-3351.93 362.35,-3351.93 362.35,-3351.93 356.35,-3351.93 350.35,-3345.93 350.35,-3339.93 350.35,-3339.93 350.35,-3272.79 350.35,-3272.79 350.35,-3266.79 356.35,-3260.79 362.35,-3260.79 362.35,-3260.79 628.37,-3260.79 628.37,-3260.79 634.37,-3260.79 640.37,-3266.79 640.37,-3272.79 640.37,-3272.79 640.37,-3339.93 640.37,-3339.93 640.37,-3345.93 634.37,-3351.93 628.37,-3351.93"/>
-<text xml:space="preserve" text-anchor="start" x="391.49" y="-3337.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">D1 discover.py</text>
-<text xml:space="preserve" text-anchor="start" x="391.49" y="-3323.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Runs the brief&#39;s queries on Crossref,</text>
-<text xml:space="preserve" text-anchor="start" x="391.49" y="-3309.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">OpenAlex, Semantic Scholar and arXiv and</text>
-<text xml:space="preserve" text-anchor="start" x="391.49" y="-3295.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">follows references and citations of seeds.</text>
-<text xml:space="preserve" text-anchor="start" x="391.49" y="-3281.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Every query logged: API, date, result count</text>
-<text xml:space="preserve" text-anchor="start" x="391.49" y="-3267.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• An API failure is logged; the wave continues</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-3945.93C628.37,-3945.93 362.35,-3945.93 362.35,-3945.93 356.35,-3945.93 350.35,-3939.93 350.35,-3933.93 350.35,-3933.93 350.35,-3866.79 350.35,-3866.79 350.35,-3860.79 356.35,-3854.79 362.35,-3854.79 362.35,-3854.79 628.37,-3854.79 628.37,-3854.79 634.37,-3854.79 640.37,-3860.79 640.37,-3866.79 640.37,-3866.79 640.37,-3933.93 640.37,-3933.93 640.37,-3939.93 634.37,-3945.93 628.37,-3945.93"/>
+<text xml:space="preserve" text-anchor="start" x="391.49" y="-3931.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">D1 discover.py</text>
+<text xml:space="preserve" text-anchor="start" x="391.49" y="-3917.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Runs the brief&#39;s queries on Crossref,</text>
+<text xml:space="preserve" text-anchor="start" x="391.49" y="-3903.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">OpenAlex, Semantic Scholar and arXiv and</text>
+<text xml:space="preserve" text-anchor="start" x="391.49" y="-3889.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">follows references and citations of seeds.</text>
+<text xml:space="preserve" text-anchor="start" x="391.49" y="-3875.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Every query logged: API, date, result count</text>
+<text xml:space="preserve" text-anchor="start" x="391.49" y="-3861.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• An API failure is logged; the wave continues</text>
 </g>
 <!-- D2 -->
 <g id="node6" class="node">
 <title>D2</title>
-<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-3358.56C958.37,-3358.56 692.35,-3358.56 692.35,-3358.56 686.35,-3358.56 680.35,-3352.56 680.35,-3346.56 680.35,-3346.56 680.35,-3266.16 680.35,-3266.16 680.35,-3260.16 686.35,-3254.16 692.35,-3254.16 692.35,-3254.16 958.37,-3254.16 958.37,-3254.16 964.37,-3254.16 970.37,-3260.16 970.37,-3266.16 970.37,-3266.16 970.37,-3346.56 970.37,-3346.56 970.37,-3352.56 964.37,-3358.56 958.37,-3358.56"/>
-<text xml:space="preserve" text-anchor="start" x="724.49" y="-3343.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">D2 morty&#45;scout (tier M, L)</text>
-<text xml:space="preserve" text-anchor="start" x="724.49" y="-3329.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: WebSearch</text>
-<text xml:space="preserve" text-anchor="start" x="724.49" y="-3316.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Searches the web for work the APIs miss</text>
-<text xml:space="preserve" text-anchor="start" x="724.49" y="-3302.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">(theses, recent preprints, other terms) and</text>
-<text xml:space="preserve" text-anchor="start" x="724.49" y="-3288.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">returns citations only.</text>
-<text xml:space="preserve" text-anchor="start" x="724.49" y="-3274.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Cannot fetch or write</text>
-<text xml:space="preserve" text-anchor="start" x="724.49" y="-3261.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per question</text>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-3952.56C958.37,-3952.56 692.35,-3952.56 692.35,-3952.56 686.35,-3952.56 680.35,-3946.56 680.35,-3940.56 680.35,-3940.56 680.35,-3860.16 680.35,-3860.16 680.35,-3854.16 686.35,-3848.16 692.35,-3848.16 692.35,-3848.16 958.37,-3848.16 958.37,-3848.16 964.37,-3848.16 970.37,-3854.16 970.37,-3860.16 970.37,-3860.16 970.37,-3940.56 970.37,-3940.56 970.37,-3946.56 964.37,-3952.56 958.37,-3952.56"/>
+<text xml:space="preserve" text-anchor="start" x="724.49" y="-3937.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">D2 morty&#45;scout (tier M, L)</text>
+<text xml:space="preserve" text-anchor="start" x="724.49" y="-3923.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: WebSearch</text>
+<text xml:space="preserve" text-anchor="start" x="724.49" y="-3910.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Searches the web for work the APIs miss</text>
+<text xml:space="preserve" text-anchor="start" x="724.49" y="-3896.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">(theses, recent preprints, other terms) and</text>
+<text xml:space="preserve" text-anchor="start" x="724.49" y="-3882.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">returns citations only.</text>
+<text xml:space="preserve" text-anchor="start" x="724.49" y="-3868.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Cannot fetch or write</text>
+<text xml:space="preserve" text-anchor="start" x="724.49" y="-3855.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per question</text>
 </g>
 <!-- RS -->
 <g id="node7" class="node">
 <title>RS</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3331.68 1010.35,-3331.68 1010.35,-3281.04 1300.37,-3281.04 1300.37,-3325.68 1294.37,-3331.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3331.68 1294.37,-3325.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-3325.68 1294.37,-3325.68"/>
-<text xml:space="preserve" text-anchor="start" x="1043.99" y="-3316.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">search/ snapshots</text>
-<text xml:space="preserve" text-anchor="start" x="1043.99" y="-3302.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Raw API responses with hashes and dates, so</text>
-<text xml:space="preserve" text-anchor="start" x="1043.99" y="-3288.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">the candidate set can be reproduced.</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3925.68 1010.35,-3925.68 1010.35,-3875.04 1300.37,-3875.04 1300.37,-3919.68 1294.37,-3925.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3925.68 1294.37,-3919.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-3919.68 1294.37,-3919.68"/>
+<text xml:space="preserve" text-anchor="start" x="1043.99" y="-3910.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">search/ snapshots</text>
+<text xml:space="preserve" text-anchor="start" x="1043.99" y="-3896.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Raw API responses with hashes and dates, so</text>
+<text xml:space="preserve" text-anchor="start" x="1043.99" y="-3882.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">the candidate set can be reproduced.</text>
 </g>
 <!-- D3 -->
 <g id="node8" class="node">
 <title>D3</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-3174.93C628.37,-3174.93 362.35,-3174.93 362.35,-3174.93 356.35,-3174.93 350.35,-3168.93 350.35,-3162.93 350.35,-3162.93 350.35,-3095.79 350.35,-3095.79 350.35,-3089.79 356.35,-3083.79 362.35,-3083.79 362.35,-3083.79 628.37,-3083.79 628.37,-3083.79 634.37,-3083.79 640.37,-3089.79 640.37,-3095.79 640.37,-3095.79 640.37,-3162.93 640.37,-3162.93 640.37,-3168.93 634.37,-3174.93 628.37,-3174.93"/>
-<text xml:space="preserve" text-anchor="start" x="384.74" y="-3160.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">D3 resolve.py</text>
-<text xml:space="preserve" text-anchor="start" x="384.74" y="-3146.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Resolves every candidate in Crossref or</text>
-<text xml:space="preserve" text-anchor="start" x="384.74" y="-3132.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">OpenAlex and removes duplicates by DOI and</text>
-<text xml:space="preserve" text-anchor="start" x="384.74" y="-3118.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">title.</text>
-<text xml:space="preserve" text-anchor="start" x="384.74" y="-3104.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Unresolvable citation: dropped and logged</text>
-<text xml:space="preserve" text-anchor="start" x="384.74" y="-3090.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Catches invented references</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-3768.93C628.37,-3768.93 362.35,-3768.93 362.35,-3768.93 356.35,-3768.93 350.35,-3762.93 350.35,-3756.93 350.35,-3756.93 350.35,-3689.79 350.35,-3689.79 350.35,-3683.79 356.35,-3677.79 362.35,-3677.79 362.35,-3677.79 628.37,-3677.79 628.37,-3677.79 634.37,-3677.79 640.37,-3683.79 640.37,-3689.79 640.37,-3689.79 640.37,-3756.93 640.37,-3756.93 640.37,-3762.93 634.37,-3768.93 628.37,-3768.93"/>
+<text xml:space="preserve" text-anchor="start" x="384.74" y="-3754.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">D3 resolve.py</text>
+<text xml:space="preserve" text-anchor="start" x="384.74" y="-3740.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Resolves every candidate in Crossref or</text>
+<text xml:space="preserve" text-anchor="start" x="384.74" y="-3726.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">OpenAlex and removes duplicates by DOI and</text>
+<text xml:space="preserve" text-anchor="start" x="384.74" y="-3712.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">title.</text>
+<text xml:space="preserve" text-anchor="start" x="384.74" y="-3698.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Unresolvable citation: dropped and logged</text>
+<text xml:space="preserve" text-anchor="start" x="384.74" y="-3684.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Catches invented references</text>
 </g>
 <!-- RC -->
 <g id="node9" class="node">
 <title>RC</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3154.68 1010.35,-3154.68 1010.35,-3104.04 1300.37,-3104.04 1300.37,-3148.68 1294.37,-3154.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3154.68 1294.37,-3148.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-3148.68 1294.37,-3148.68"/>
-<text xml:space="preserve" text-anchor="start" x="1061.24" y="-3139.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">candidates.json</text>
-<text xml:space="preserve" text-anchor="start" x="1061.24" y="-3125.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Deduplicated candidates with DOI, title,</text>
-<text xml:space="preserve" text-anchor="start" x="1061.24" y="-3111.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">abstract and where each was found.</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3748.68 1010.35,-3748.68 1010.35,-3698.04 1300.37,-3698.04 1300.37,-3742.68 1294.37,-3748.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3748.68 1294.37,-3742.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-3742.68 1294.37,-3742.68"/>
+<text xml:space="preserve" text-anchor="start" x="1061.24" y="-3733.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">candidates.json</text>
+<text xml:space="preserve" text-anchor="start" x="1061.24" y="-3719.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Deduplicated candidates with DOI, title,</text>
+<text xml:space="preserve" text-anchor="start" x="1061.24" y="-3705.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">abstract and where each was found.</text>
 </g>
 <!-- C0 -->
 <g id="node10" class="node">
 <title>C0</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-3003.43C628.37,-3003.43 362.35,-3003.43 362.35,-3003.43 356.35,-3003.43 350.35,-2997.43 350.35,-2991.43 350.35,-2991.43 350.35,-2871.29 350.35,-2871.29 350.35,-2865.29 356.35,-2859.29 362.35,-2859.29 362.35,-2859.29 628.37,-2859.29 628.37,-2859.29 634.37,-2859.29 640.37,-2865.29 640.37,-2871.29 640.37,-2871.29 640.37,-2991.43 640.37,-2991.43 640.37,-2997.43 634.37,-3003.43 628.37,-3003.43"/>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2988.66" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">C0 calibrate.py (once per prompt or model change)</text>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2974.66" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Runs screening and E1 to E4 on planted errors,</text>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2960.66" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">a gold recall set and off&#45;topic abstracts</text>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2946.66" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">before any real wave.</text>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2932.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Gates SC1 and E1: no real wave until it</text>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2919.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;passes</text>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2906.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Pass: all fabricated quotes and wrong pages</text>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2892.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;caught, 90 % of other errors</text>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2879.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Gold set: E1 finds 90 %, E1 + E2 find all</text>
-<text xml:space="preserve" text-anchor="start" x="362.24" y="-2866.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fails: stop and revise prompts</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-3597.43C628.37,-3597.43 362.35,-3597.43 362.35,-3597.43 356.35,-3597.43 350.35,-3591.43 350.35,-3585.43 350.35,-3585.43 350.35,-3465.29 350.35,-3465.29 350.35,-3459.29 356.35,-3453.29 362.35,-3453.29 362.35,-3453.29 628.37,-3453.29 628.37,-3453.29 634.37,-3453.29 640.37,-3459.29 640.37,-3465.29 640.37,-3465.29 640.37,-3585.43 640.37,-3585.43 640.37,-3591.43 634.37,-3597.43 628.37,-3597.43"/>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3582.66" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">C0 calibrate.py (once per prompt or model change)</text>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3568.66" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Runs screening and E1 to E4 on planted errors,</text>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3554.66" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">a gold recall set and off&#45;topic abstracts</text>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3540.66" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">before any real wave.</text>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3526.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Gates SC1 and E1: no real wave until it</text>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3513.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;passes</text>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3500.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Pass: all fabricated quotes and wrong pages</text>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3486.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;caught, 90 % of other errors</text>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3473.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Gold set: E1 finds 90 %, E1 + E2 find all</text>
+<text xml:space="preserve" text-anchor="start" x="362.24" y="-3460.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fails: stop and revise prompts</text>
 </g>
 <!-- SC1 -->
 <g id="node11" class="node">
 <title>SC1</title>
-<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-2983.56C958.37,-2983.56 692.35,-2983.56 692.35,-2983.56 686.35,-2983.56 680.35,-2977.56 680.35,-2971.56 680.35,-2971.56 680.35,-2891.17 680.35,-2891.17 680.35,-2885.17 686.35,-2879.17 692.35,-2879.17 692.35,-2879.17 958.37,-2879.17 958.37,-2879.17 964.37,-2879.17 970.37,-2885.17 970.37,-2891.17 970.37,-2891.17 970.37,-2971.56 970.37,-2971.56 970.37,-2977.56 964.37,-2983.56 958.37,-2983.56"/>
-<text xml:space="preserve" text-anchor="start" x="710.99" y="-2968.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">SC1 jerry&#45;screener x2 (tier M, L)</text>
-<text xml:space="preserve" text-anchor="start" x="710.99" y="-2954.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;haiku&#45;5&#45;5 · tools: none</text>
-<text xml:space="preserve" text-anchor="start" x="710.99" y="-2941.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Two independent screeners judge each title and</text>
-<text xml:space="preserve" text-anchor="start" x="710.99" y="-2927.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">abstract: core, context or exclude, with the</text>
-<text xml:space="preserve" text-anchor="start" x="710.99" y="-2913.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">deciding criterion.</text>
-<text xml:space="preserve" text-anchor="start" x="710.99" y="-2899.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Neither sees the other&#39;s decision</text>
-<text xml:space="preserve" text-anchor="start" x="710.99" y="-2886.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per batch of 10</text>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-3577.56C958.37,-3577.56 692.35,-3577.56 692.35,-3577.56 686.35,-3577.56 680.35,-3571.56 680.35,-3565.56 680.35,-3565.56 680.35,-3485.17 680.35,-3485.17 680.35,-3479.17 686.35,-3473.17 692.35,-3473.17 692.35,-3473.17 958.37,-3473.17 958.37,-3473.17 964.37,-3473.17 970.37,-3479.17 970.37,-3485.17 970.37,-3485.17 970.37,-3565.56 970.37,-3565.56 970.37,-3571.56 964.37,-3577.56 958.37,-3577.56"/>
+<text xml:space="preserve" text-anchor="start" x="710.99" y="-3562.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">SC1 jerry&#45;screener x2 (tier M, L)</text>
+<text xml:space="preserve" text-anchor="start" x="710.99" y="-3548.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;haiku&#45;5&#45;5 · tools: none</text>
+<text xml:space="preserve" text-anchor="start" x="710.99" y="-3535.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Two independent screeners judge each title and</text>
+<text xml:space="preserve" text-anchor="start" x="710.99" y="-3521.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">abstract: core, context or exclude, with the</text>
+<text xml:space="preserve" text-anchor="start" x="710.99" y="-3507.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">deciding criterion.</text>
+<text xml:space="preserve" text-anchor="start" x="710.99" y="-3493.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Neither sees the other&#39;s decision</text>
+<text xml:space="preserve" text-anchor="start" x="710.99" y="-3480.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per batch of 10</text>
 </g>
 <!-- SC2 -->
 <g id="node12" class="node">
 <title>SC2</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-2758.68C628.37,-2758.68 362.35,-2758.68 362.35,-2758.68 356.35,-2758.68 350.35,-2752.68 350.35,-2746.68 350.35,-2746.68 350.35,-2720.04 350.35,-2720.04 350.35,-2714.04 356.35,-2708.04 362.35,-2708.04 362.35,-2708.04 628.37,-2708.04 628.37,-2708.04 634.37,-2708.04 640.37,-2714.04 640.37,-2720.04 640.37,-2720.04 640.37,-2746.68 640.37,-2746.68 640.37,-2752.68 634.37,-2758.68 628.37,-2758.68"/>
-<text xml:space="preserve" text-anchor="start" x="400.86" y="-2743.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">SC2 compare_screens.py</text>
-<text xml:space="preserve" text-anchor="start" x="400.86" y="-2729.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Compares the two screens and lists the</text>
-<text xml:space="preserve" text-anchor="start" x="400.86" y="-2715.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">disagreements.</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-3352.68C628.37,-3352.68 362.35,-3352.68 362.35,-3352.68 356.35,-3352.68 350.35,-3346.68 350.35,-3340.68 350.35,-3340.68 350.35,-3314.04 350.35,-3314.04 350.35,-3308.04 356.35,-3302.04 362.35,-3302.04 362.35,-3302.04 628.37,-3302.04 628.37,-3302.04 634.37,-3302.04 640.37,-3308.04 640.37,-3314.04 640.37,-3314.04 640.37,-3340.68 640.37,-3340.68 640.37,-3346.68 634.37,-3352.68 628.37,-3352.68"/>
+<text xml:space="preserve" text-anchor="start" x="400.86" y="-3337.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">SC2 compare_screens.py</text>
+<text xml:space="preserve" text-anchor="start" x="400.86" y="-3323.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Compares the two screens and lists the</text>
+<text xml:space="preserve" text-anchor="start" x="400.86" y="-3309.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">disagreements.</text>
 </g>
 <!-- SC3 -->
 <g id="node13" class="node">
 <title>SC3</title>
-<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-2778.56C958.37,-2778.56 692.35,-2778.56 692.35,-2778.56 686.35,-2778.56 680.35,-2772.56 680.35,-2766.56 680.35,-2766.56 680.35,-2700.17 680.35,-2700.17 680.35,-2694.17 686.35,-2688.17 692.35,-2688.17 692.35,-2688.17 958.37,-2688.17 958.37,-2688.17 964.37,-2688.17 970.37,-2694.17 970.37,-2700.17 970.37,-2700.17 970.37,-2766.56 970.37,-2766.56 970.37,-2772.56 964.37,-2778.56 958.37,-2778.56"/>
-<text xml:space="preserve" text-anchor="start" x="716.61" y="-2763.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">SC3 beth&#45;checker (task: screen)</text>
-<text xml:space="preserve" text-anchor="start" x="716.61" y="-2749.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;opus&#45;5&#45;5 · tools: Read</text>
-<text xml:space="preserve" text-anchor="start" x="716.61" y="-2736.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Decides each disagreement from the abstract</text>
-<text xml:space="preserve" text-anchor="start" x="716.61" y="-2722.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">and both reasons.</text>
-<text xml:space="preserve" text-anchor="start" x="716.61" y="-2708.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Gets only the disagreements</text>
-<text xml:space="preserve" text-anchor="start" x="716.61" y="-2695.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Cannot tell: goes to the user at U1</text>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-3372.56C958.37,-3372.56 692.35,-3372.56 692.35,-3372.56 686.35,-3372.56 680.35,-3366.56 680.35,-3360.56 680.35,-3360.56 680.35,-3294.17 680.35,-3294.17 680.35,-3288.17 686.35,-3282.17 692.35,-3282.17 692.35,-3282.17 958.37,-3282.17 958.37,-3282.17 964.37,-3282.17 970.37,-3288.17 970.37,-3294.17 970.37,-3294.17 970.37,-3360.56 970.37,-3360.56 970.37,-3366.56 964.37,-3372.56 958.37,-3372.56"/>
+<text xml:space="preserve" text-anchor="start" x="716.61" y="-3357.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">SC3 beth&#45;checker (task: screen)</text>
+<text xml:space="preserve" text-anchor="start" x="716.61" y="-3343.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;opus&#45;5&#45;5 · tools: Read</text>
+<text xml:space="preserve" text-anchor="start" x="716.61" y="-3330.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Decides each disagreement from the abstract</text>
+<text xml:space="preserve" text-anchor="start" x="716.61" y="-3316.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">and both reasons.</text>
+<text xml:space="preserve" text-anchor="start" x="716.61" y="-3302.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Gets only the disagreements</text>
+<text xml:space="preserve" text-anchor="start" x="716.61" y="-3289.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Cannot tell: goes to the user at U1</text>
 </g>
 <!-- U1 -->
 <g id="node14" class="node">
 <title>U1</title>
-<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-2609.31C298.37,-2609.31 32.35,-2609.31 32.35,-2609.31 26.35,-2609.31 20.35,-2603.31 20.35,-2597.31 20.35,-2597.31 20.35,-2543.41 20.35,-2543.41 20.35,-2537.41 26.35,-2531.41 32.35,-2531.41 32.35,-2531.41 298.37,-2531.41 298.37,-2531.41 304.37,-2531.41 310.37,-2537.41 310.37,-2543.41 310.37,-2543.41 310.37,-2597.31 310.37,-2597.31 310.37,-2603.31 304.37,-2609.31 298.37,-2609.31"/>
-<text xml:space="preserve" text-anchor="start" x="52.48" y="-2594.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U1 Approve shortlist</text>
-<text xml:space="preserve" text-anchor="start" x="52.48" y="-2580.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Reviews every core and context paper, 10 % of</text>
-<text xml:space="preserve" text-anchor="start" x="52.48" y="-2566.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">excluded ones, and the queries with their</text>
-<text xml:space="preserve" text-anchor="start" x="52.48" y="-2552.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">counts.</text>
-<text xml:space="preserve" text-anchor="start" x="52.48" y="-2538.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Adds or removes papers</text>
+<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-3203.31C298.37,-3203.31 32.35,-3203.31 32.35,-3203.31 26.35,-3203.31 20.35,-3197.31 20.35,-3191.31 20.35,-3191.31 20.35,-3137.41 20.35,-3137.41 20.35,-3131.41 26.35,-3125.41 32.35,-3125.41 32.35,-3125.41 298.37,-3125.41 298.37,-3125.41 304.37,-3125.41 310.37,-3131.41 310.37,-3137.41 310.37,-3137.41 310.37,-3191.31 310.37,-3191.31 310.37,-3197.31 304.37,-3203.31 298.37,-3203.31"/>
+<text xml:space="preserve" text-anchor="start" x="52.48" y="-3188.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U1 Approve shortlist</text>
+<text xml:space="preserve" text-anchor="start" x="52.48" y="-3174.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Reviews every core and context paper, 10 % of</text>
+<text xml:space="preserve" text-anchor="start" x="52.48" y="-3160.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">excluded ones, and the queries with their</text>
+<text xml:space="preserve" text-anchor="start" x="52.48" y="-3146.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">counts.</text>
+<text xml:space="preserve" text-anchor="start" x="52.48" y="-3132.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Adds or removes papers</text>
 </g>
 <!-- RL -->
 <g id="node15" class="node">
 <title>RL</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2595.68 1010.35,-2595.68 1010.35,-2545.04 1300.37,-2545.04 1300.37,-2589.68 1294.37,-2595.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2595.68 1294.37,-2589.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-2589.68 1294.37,-2589.68"/>
-<text xml:space="preserve" text-anchor="start" x="1049.99" y="-2580.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">shortlist.json</text>
-<text xml:space="preserve" text-anchor="start" x="1049.99" y="-2566.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Approved papers with tier and the questions</text>
-<text xml:space="preserve" text-anchor="start" x="1049.99" y="-2552.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">each bears on; no relevance score.</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3189.68 1010.35,-3189.68 1010.35,-3139.04 1300.37,-3139.04 1300.37,-3183.68 1294.37,-3189.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3189.68 1294.37,-3183.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-3183.68 1294.37,-3183.68"/>
+<text xml:space="preserve" text-anchor="start" x="1049.99" y="-3174.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">shortlist.json</text>
+<text xml:space="preserve" text-anchor="start" x="1049.99" y="-3160.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Approved papers with tier and the questions</text>
+<text xml:space="preserve" text-anchor="start" x="1049.99" y="-3146.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">each bears on; no relevance score.</text>
 </g>
 <!-- A1 -->
 <g id="node16" class="node">
 <title>A1</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-2452.56C628.37,-2452.56 362.35,-2452.56 362.35,-2452.56 356.35,-2452.56 350.35,-2446.56 350.35,-2440.56 350.35,-2440.56 350.35,-2360.17 350.35,-2360.17 350.35,-2354.17 356.35,-2348.17 362.35,-2348.17 362.35,-2348.17 628.37,-2348.17 628.37,-2348.17 634.37,-2348.17 640.37,-2354.17 640.37,-2360.17 640.37,-2360.17 640.37,-2440.56 640.37,-2440.56 640.37,-2446.56 634.37,-2452.56 628.37,-2452.56"/>
-<text xml:space="preserve" text-anchor="start" x="395.24" y="-2437.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">A1 acquire.py</text>
-<text xml:space="preserve" text-anchor="start" x="395.24" y="-2423.79" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Finds each paper in Literature/ or as open</text>
-<text xml:space="preserve" text-anchor="start" x="395.24" y="-2409.79" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">access and checks the DOI or title on its</text>
-<text xml:space="preserve" text-anchor="start" x="395.24" y="-2395.79" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">first page.</text>
-<text xml:space="preserve" text-anchor="start" x="395.24" y="-2381.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Each download in its own new folder</text>
-<text xml:space="preserve" text-anchor="start" x="395.24" y="-2368.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Wrong paper: not acquired, logged</text>
-<text xml:space="preserve" text-anchor="start" x="395.24" y="-2355.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Paywalled: listed in fetch_list.md</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-3046.18C628.37,-3046.18 362.35,-3046.18 362.35,-3046.18 356.35,-3046.18 350.35,-3040.18 350.35,-3034.18 350.35,-3034.18 350.35,-2940.54 350.35,-2940.54 350.35,-2934.54 356.35,-2928.54 362.35,-2928.54 362.35,-2928.54 628.37,-2928.54 628.37,-2928.54 634.37,-2928.54 640.37,-2934.54 640.37,-2940.54 640.37,-2940.54 640.37,-3034.18 640.37,-3034.18 640.37,-3040.18 634.37,-3046.18 628.37,-3046.18"/>
+<text xml:space="preserve" text-anchor="start" x="388.11" y="-3031.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">A1 acquire.py</text>
+<text xml:space="preserve" text-anchor="start" x="388.11" y="-3017.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Finds each paper in Literature/, then as open</text>
+<text xml:space="preserve" text-anchor="start" x="388.11" y="-3003.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">access (OpenAlex, arXiv, Semantic Scholar,</text>
+<text xml:space="preserve" text-anchor="start" x="388.11" y="-2989.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">repositories), and checks its first page.</text>
+<text xml:space="preserve" text-anchor="start" x="388.11" y="-2975.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Each download in its own new folder</text>
+<text xml:space="preserve" text-anchor="start" x="388.11" y="-2962.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Wrong paper: not acquired, logged</text>
+<text xml:space="preserve" text-anchor="start" x="388.11" y="-2948.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Not found: listed in fetch_list.md</text>
+<text xml:space="preserve" text-anchor="start" x="388.11" y="-2935.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• No institutional access; no Sci&#45;Hub</text>
 </g>
 <!-- RP -->
 <g id="node17" class="node">
 <title>RP</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2425.68 1010.35,-2425.68 1010.35,-2375.04 1300.37,-2375.04 1300.37,-2419.68 1294.37,-2425.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2425.68 1294.37,-2419.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-2419.68 1294.37,-2419.68"/>
-<text xml:space="preserve" text-anchor="start" x="1055.24" y="-2410.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Literature/incoming/&lt;review&gt;/</text>
-<text xml:space="preserve" text-anchor="start" x="1055.24" y="-2396.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Acquired PDFs with path and SHA&#45;256 in</text>
-<text xml:space="preserve" text-anchor="start" x="1055.24" y="-2382.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">acquired.json.</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3012.68 1010.35,-3012.68 1010.35,-2962.04 1300.37,-2962.04 1300.37,-3006.68 1294.37,-3012.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-3012.68 1294.37,-3006.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-3006.68 1294.37,-3006.68"/>
+<text xml:space="preserve" text-anchor="start" x="1055.24" y="-2997.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Literature/incoming/&lt;review&gt;/</text>
+<text xml:space="preserve" text-anchor="start" x="1055.24" y="-2983.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Acquired PDFs with path and SHA&#45;256 in</text>
+<text xml:space="preserve" text-anchor="start" x="1055.24" y="-2969.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">acquired.json.</text>
 </g>
 <!-- U2 -->
 <g id="node18" class="node">
 <title>U2</title>
-<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-2269.3C298.37,-2269.3 32.35,-2269.3 32.35,-2269.3 26.35,-2269.3 20.35,-2263.3 20.35,-2257.3 20.35,-2257.3 20.35,-2217.41 20.35,-2217.41 20.35,-2211.41 26.35,-2205.41 32.35,-2205.41 32.35,-2205.41 298.37,-2205.41 298.37,-2205.41 304.37,-2205.41 310.37,-2211.41 310.37,-2217.41 310.37,-2217.41 310.37,-2257.3 310.37,-2257.3 310.37,-2263.3 304.37,-2269.3 298.37,-2269.3"/>
-<text xml:space="preserve" text-anchor="start" x="60.73" y="-2254.53" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U2 Fetch paywalled papers</text>
-<text xml:space="preserve" text-anchor="start" x="60.73" y="-2240.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Downloads the fetch list through Zotero and</text>
-<text xml:space="preserve" text-anchor="start" x="60.73" y="-2226.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">the library proxy into the incoming folder.</text>
-<text xml:space="preserve" text-anchor="start" x="60.73" y="-2212.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Marks a paper unavailable if needed</text>
+<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-2849.31C298.37,-2849.31 32.35,-2849.31 32.35,-2849.31 26.35,-2849.31 20.35,-2843.31 20.35,-2837.31 20.35,-2837.31 20.35,-2783.41 20.35,-2783.41 20.35,-2777.41 26.35,-2771.41 32.35,-2771.41 32.35,-2771.41 298.37,-2771.41 298.37,-2771.41 304.37,-2771.41 310.37,-2777.41 310.37,-2783.41 310.37,-2783.41 310.37,-2837.31 310.37,-2837.31 310.37,-2843.31 304.37,-2849.31 298.37,-2849.31"/>
+<text xml:space="preserve" text-anchor="start" x="59.98" y="-2834.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U2 Supply missing papers</text>
+<text xml:space="preserve" text-anchor="start" x="59.98" y="-2820.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Supplies any listed paper they already have,</text>
+<text xml:space="preserve" text-anchor="start" x="59.98" y="-2806.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">or marks it unavailable; accepts or rejects</text>
+<text xml:space="preserve" text-anchor="start" x="59.98" y="-2792.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">copies A2 flagged.</text>
+<text xml:space="preserve" text-anchor="start" x="59.98" y="-2778.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• A1 and A2 re&#45;run on what the user adds</text>
 </g>
 <!-- P1 -->
 <g id="node19" class="node">
 <title>P1</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-2126.93C628.37,-2126.93 362.35,-2126.93 362.35,-2126.93 356.35,-2126.93 350.35,-2120.93 350.35,-2114.93 350.35,-2114.93 350.35,-2047.79 350.35,-2047.79 350.35,-2041.79 356.35,-2035.79 362.35,-2035.79 362.35,-2035.79 628.37,-2035.79 628.37,-2035.79 634.37,-2035.79 640.37,-2041.79 640.37,-2047.79 640.37,-2047.79 640.37,-2114.93 640.37,-2114.93 640.37,-2120.93 634.37,-2126.93 628.37,-2126.93"/>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-2112.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">P1 prepare.py</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-2098.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Renders page images, runs Marker (OCR to</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-2084.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Markdown with LaTeX) and crops figures with</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-2070.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">captions.</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-2056.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Text layer never used</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-2042.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• A failed page cannot be cited</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-2494.93C628.37,-2494.93 362.35,-2494.93 362.35,-2494.93 356.35,-2494.93 350.35,-2488.93 350.35,-2482.93 350.35,-2482.93 350.35,-2415.79 350.35,-2415.79 350.35,-2409.79 356.35,-2403.79 362.35,-2403.79 362.35,-2403.79 628.37,-2403.79 628.37,-2403.79 634.37,-2403.79 640.37,-2409.79 640.37,-2415.79 640.37,-2415.79 640.37,-2482.93 640.37,-2482.93 640.37,-2488.93 634.37,-2494.93 628.37,-2494.93"/>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2480.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">P1 prepare.py</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2466.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Renders page images, runs Marker (OCR to</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2452.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Markdown with LaTeX) and crops figures with</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2438.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">captions.</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2424.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Text layer never used</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2410.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• A failed page cannot be cited</text>
 </g>
 <!-- RG -->
 <g id="node20" class="node">
 <title>RG</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2106.68 1010.35,-2106.68 1010.35,-2056.04 1300.37,-2056.04 1300.37,-2100.68 1294.37,-2106.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2106.68 1294.37,-2100.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-2100.68 1294.37,-2100.68"/>
-<text xml:space="preserve" text-anchor="start" x="1042.11" y="-2091.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">pages/, marker/, figures/</text>
-<text xml:space="preserve" text-anchor="start" x="1042.11" y="-2077.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Page PNGs, Marker pages and figure crops, all</text>
-<text xml:space="preserve" text-anchor="start" x="1042.11" y="-2063.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">hashed; local only (copyright).</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2474.68 1010.35,-2474.68 1010.35,-2424.04 1300.37,-2424.04 1300.37,-2468.68 1294.37,-2474.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2474.68 1294.37,-2468.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-2468.68 1294.37,-2468.68"/>
+<text xml:space="preserve" text-anchor="start" x="1042.11" y="-2459.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">pages/, marker/, figures/</text>
+<text xml:space="preserve" text-anchor="start" x="1042.11" y="-2445.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Page PNGs, Marker pages and figure crops, all</text>
+<text xml:space="preserve" text-anchor="start" x="1042.11" y="-2431.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">hashed; local only (copyright).</text>
 </g>
 <!-- E1 -->
 <g id="node21" class="node">
 <title>E1</title>
-<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M986.5,-1955.8C986.5,-1955.8 664.22,-1955.8 664.22,-1955.8 658.22,-1955.8 652.22,-1949.8 652.22,-1943.8 652.22,-1943.8 652.22,-1836.91 652.22,-1836.91 652.22,-1830.91 658.22,-1824.91 664.22,-1824.91 664.22,-1824.91 986.5,-1824.91 986.5,-1824.91 992.5,-1824.91 998.5,-1830.91 998.5,-1836.91 998.5,-1836.91 998.5,-1943.8 998.5,-1943.8 998.5,-1949.8 992.5,-1955.8 986.5,-1955.8"/>
-<text xml:space="preserve" text-anchor="start" x="661.86" y="-1941.03" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">E1 morty&#45;reader (E2: second independent read of core papers)</text>
-<text xml:space="preserve" text-anchor="start" x="661.86" y="-1926.98" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: Read</text>
-<text xml:space="preserve" text-anchor="start" x="661.86" y="-1913.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Reads one paper and writes its card and</text>
-<text xml:space="preserve" text-anchor="start" x="661.86" y="-1899.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">claims: text, kind, verbatim quote, page,</text>
-<text xml:space="preserve" text-anchor="start" x="661.86" y="-1885.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">equation, figure, questions, tags, basis.</text>
-<text xml:space="preserve" text-anchor="start" x="661.86" y="-1871.73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per paper; no web</text>
-<text xml:space="preserve" text-anchor="start" x="661.86" y="-1858.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Tags only from vocab.yaml; new ones proposed</text>
-<text xml:space="preserve" text-anchor="start" x="661.86" y="-1845.23" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Instructions found in a paper are flagged,</text>
-<text xml:space="preserve" text-anchor="start" x="661.86" y="-1831.98" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;not followed</text>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M986.5,-2323.8C986.5,-2323.8 664.22,-2323.8 664.22,-2323.8 658.22,-2323.8 652.22,-2317.8 652.22,-2311.8 652.22,-2311.8 652.22,-2204.91 652.22,-2204.91 652.22,-2198.91 658.22,-2192.91 664.22,-2192.91 664.22,-2192.91 986.5,-2192.91 986.5,-2192.91 992.5,-2192.91 998.5,-2198.91 998.5,-2204.91 998.5,-2204.91 998.5,-2311.8 998.5,-2311.8 998.5,-2317.8 992.5,-2323.8 986.5,-2323.8"/>
+<text xml:space="preserve" text-anchor="start" x="661.86" y="-2309.03" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">E1 morty&#45;reader (E2: second independent read of core papers)</text>
+<text xml:space="preserve" text-anchor="start" x="661.86" y="-2294.98" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: Read</text>
+<text xml:space="preserve" text-anchor="start" x="661.86" y="-2281.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Reads one paper and writes its card and</text>
+<text xml:space="preserve" text-anchor="start" x="661.86" y="-2267.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">claims: text, kind, verbatim quote, page,</text>
+<text xml:space="preserve" text-anchor="start" x="661.86" y="-2253.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">equation, figure, questions, tags, basis.</text>
+<text xml:space="preserve" text-anchor="start" x="661.86" y="-2239.73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per paper; no web</text>
+<text xml:space="preserve" text-anchor="start" x="661.86" y="-2226.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Tags only from vocab.yaml; new ones proposed</text>
+<text xml:space="preserve" text-anchor="start" x="661.86" y="-2213.23" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Instructions found in a paper are flagged,</text>
+<text xml:space="preserve" text-anchor="start" x="661.86" y="-2199.98" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;not followed</text>
 </g>
 <!-- RR -->
 <g id="node22" class="node">
 <title>RR</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1915.68 1010.35,-1915.68 1010.35,-1865.04 1300.37,-1865.04 1300.37,-1909.68 1294.37,-1915.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1915.68 1294.37,-1909.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-1909.68 1294.37,-1909.68"/>
-<text xml:space="preserve" text-anchor="start" x="1050.36" y="-1900.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">reads/&lt;paper&gt;.A.json, .B.json</text>
-<text xml:space="preserve" text-anchor="start" x="1050.36" y="-1886.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">The reader&#39;s paper card and claims, one file</text>
-<text xml:space="preserve" text-anchor="start" x="1050.36" y="-1872.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">per read.</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2283.68 1010.35,-2283.68 1010.35,-2233.04 1300.37,-2233.04 1300.37,-2277.68 1294.37,-2283.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-2283.68 1294.37,-2277.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-2277.68 1294.37,-2277.68"/>
+<text xml:space="preserve" text-anchor="start" x="1050.36" y="-2268.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">reads/&lt;paper&gt;.A.json, .B.json</text>
+<text xml:space="preserve" text-anchor="start" x="1050.36" y="-2254.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">The reader&#39;s paper card and claims, one file</text>
+<text xml:space="preserve" text-anchor="start" x="1050.36" y="-2240.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">per read.</text>
 </g>
 <!-- E3 -->
 <g id="node23" class="node">
 <title>E3</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-1744.55C628.37,-1744.55 362.35,-1744.55 362.35,-1744.55 356.35,-1744.55 350.35,-1738.55 350.35,-1732.55 350.35,-1732.55 350.35,-1652.16 350.35,-1652.16 350.35,-1646.16 356.35,-1640.16 362.35,-1640.16 362.35,-1640.16 628.37,-1640.16 628.37,-1640.16 634.37,-1640.16 640.37,-1646.16 640.37,-1652.16 640.37,-1652.16 640.37,-1732.55 640.37,-1732.55 640.37,-1738.55 634.37,-1744.55 628.37,-1744.55"/>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-1729.78" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">E3 check_extraction.py</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-1715.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Finds each quote on its cited page, compares</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-1701.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">equations with Marker, checks page coverage</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-1687.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">and diffs read A against read B.</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-1673.73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Equations: normalised strings, SymPy where</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-1660.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;both parse</text>
-<text xml:space="preserve" text-anchor="start" x="386.24" y="-1647.23" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Claims found by one reader only go to E4</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-2112.55C628.37,-2112.55 362.35,-2112.55 362.35,-2112.55 356.35,-2112.55 350.35,-2106.55 350.35,-2100.55 350.35,-2100.55 350.35,-2020.16 350.35,-2020.16 350.35,-2014.16 356.35,-2008.16 362.35,-2008.16 362.35,-2008.16 628.37,-2008.16 628.37,-2008.16 634.37,-2008.16 640.37,-2014.16 640.37,-2020.16 640.37,-2020.16 640.37,-2100.55 640.37,-2100.55 640.37,-2106.55 634.37,-2112.55 628.37,-2112.55"/>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2097.78" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">E3 check_extraction.py</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2083.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Finds each quote on its cited page, compares</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2069.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">equations with Marker, checks page coverage</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2055.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">and diffs read A against read B.</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2041.73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Equations: normalised strings, SymPy where</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2028.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;both parse</text>
+<text xml:space="preserve" text-anchor="start" x="386.24" y="-2015.23" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Claims found by one reader only go to E4</text>
 </g>
 <!-- E4 -->
 <g id="node24" class="node">
 <title>E4</title>
-<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-1560.55C958.37,-1560.55 692.35,-1560.55 692.35,-1560.55 686.35,-1560.55 680.35,-1554.55 680.35,-1548.55 680.35,-1548.55 680.35,-1468.16 680.35,-1468.16 680.35,-1462.16 686.35,-1456.16 692.35,-1456.16 692.35,-1456.16 958.37,-1456.16 958.37,-1456.16 964.37,-1456.16 970.37,-1462.16 970.37,-1468.16 970.37,-1468.16 970.37,-1548.55 970.37,-1548.55 970.37,-1554.55 964.37,-1560.55 958.37,-1560.55"/>
-<text xml:space="preserve" text-anchor="start" x="717.36" y="-1545.78" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">E4 beth&#45;checker (task: claim)</text>
-<text xml:space="preserve" text-anchor="start" x="717.36" y="-1531.73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;opus&#45;5&#45;5 · tools: Read</text>
-<text xml:space="preserve" text-anchor="start" x="717.36" y="-1518.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Judges every claim on its page image:</text>
-<text xml:space="preserve" text-anchor="start" x="717.36" y="-1504.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">supported, overstated, unsupported or wrong</text>
-<text xml:space="preserve" text-anchor="start" x="717.36" y="-1490.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">page; settles equation disagreements.</text>
-<text xml:space="preserve" text-anchor="start" x="717.36" y="-1476.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Never sees the reader&#39;s reasoning</text>
-<text xml:space="preserve" text-anchor="start" x="717.36" y="-1463.23" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per page</text>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-1928.56C958.37,-1928.56 692.35,-1928.56 692.35,-1928.56 686.35,-1928.56 680.35,-1922.56 680.35,-1916.56 680.35,-1916.56 680.35,-1836.17 680.35,-1836.17 680.35,-1830.17 686.35,-1824.17 692.35,-1824.17 692.35,-1824.17 958.37,-1824.17 958.37,-1824.17 964.37,-1824.17 970.37,-1830.17 970.37,-1836.17 970.37,-1836.17 970.37,-1916.56 970.37,-1916.56 970.37,-1922.56 964.37,-1928.56 958.37,-1928.56"/>
+<text xml:space="preserve" text-anchor="start" x="717.36" y="-1913.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">E4 beth&#45;checker (task: claim)</text>
+<text xml:space="preserve" text-anchor="start" x="717.36" y="-1899.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;opus&#45;5&#45;5 · tools: Read</text>
+<text xml:space="preserve" text-anchor="start" x="717.36" y="-1886.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Judges every claim on its page image:</text>
+<text xml:space="preserve" text-anchor="start" x="717.36" y="-1872.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">supported, overstated, unsupported or wrong</text>
+<text xml:space="preserve" text-anchor="start" x="717.36" y="-1858.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">page; settles equation disagreements.</text>
+<text xml:space="preserve" text-anchor="start" x="717.36" y="-1844.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Never sees the reader&#39;s reasoning</text>
+<text xml:space="preserve" text-anchor="start" x="717.36" y="-1831.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per page</text>
 </g>
 <!-- RV -->
 <g id="node25" class="node">
 <title>RV</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1533.68 1010.35,-1533.68 1010.35,-1483.04 1300.37,-1483.04 1300.37,-1527.68 1294.37,-1533.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1533.68 1294.37,-1527.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-1527.68 1294.37,-1527.68"/>
-<text xml:space="preserve" text-anchor="start" x="1051.86" y="-1518.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">verdicts.json</text>
-<text xml:space="preserve" text-anchor="start" x="1051.86" y="-1504.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Verdict per claim and equation with location</text>
-<text xml:space="preserve" text-anchor="start" x="1051.86" y="-1490.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">on the page and reason.</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1901.68 1010.35,-1901.68 1010.35,-1851.04 1300.37,-1851.04 1300.37,-1895.68 1294.37,-1901.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1901.68 1294.37,-1895.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-1895.68 1294.37,-1895.68"/>
+<text xml:space="preserve" text-anchor="start" x="1051.86" y="-1886.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">verdicts.json</text>
+<text xml:space="preserve" text-anchor="start" x="1051.86" y="-1872.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Verdict per claim and equation with location</text>
+<text xml:space="preserve" text-anchor="start" x="1051.86" y="-1858.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">on the page and reason.</text>
 </g>
 <!-- E5 -->
 <g id="node26" class="node">
 <title>E5</title>
-<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-1376.93C958.37,-1376.93 692.35,-1376.93 692.35,-1376.93 686.35,-1376.93 680.35,-1370.93 680.35,-1364.93 680.35,-1364.93 680.35,-1297.79 680.35,-1297.79 680.35,-1291.79 686.35,-1285.79 692.35,-1285.79 692.35,-1285.79 958.37,-1285.79 958.37,-1285.79 964.37,-1285.79 970.37,-1291.79 970.37,-1297.79 970.37,-1297.79 970.37,-1364.93 970.37,-1364.93 970.37,-1370.93 964.37,-1376.93 958.37,-1376.93"/>
-<text xml:space="preserve" text-anchor="start" x="714.74" y="-1362.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">E5 morty&#45;reader (revise, at most 2 rounds)</text>
-<text xml:space="preserve" text-anchor="start" x="714.74" y="-1348.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: Read</text>
-<text xml:space="preserve" text-anchor="start" x="714.74" y="-1334.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Rewrites a failed claim from the page and the</text>
-<text xml:space="preserve" text-anchor="start" x="714.74" y="-1320.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">checker&#39;s reason; the rewrite is checked</text>
-<text xml:space="preserve" text-anchor="start" x="714.74" y="-1306.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">again.</text>
-<text xml:space="preserve" text-anchor="start" x="714.74" y="-1292.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Still failing after 2 rounds: goes to U3</text>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-1744.93C958.37,-1744.93 692.35,-1744.93 692.35,-1744.93 686.35,-1744.93 680.35,-1738.93 680.35,-1732.93 680.35,-1732.93 680.35,-1665.79 680.35,-1665.79 680.35,-1659.79 686.35,-1653.79 692.35,-1653.79 692.35,-1653.79 958.37,-1653.79 958.37,-1653.79 964.37,-1653.79 970.37,-1659.79 970.37,-1665.79 970.37,-1665.79 970.37,-1732.93 970.37,-1732.93 970.37,-1738.93 964.37,-1744.93 958.37,-1744.93"/>
+<text xml:space="preserve" text-anchor="start" x="714.74" y="-1730.16" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">E5 morty&#45;reader (revise, at most 2 rounds)</text>
+<text xml:space="preserve" text-anchor="start" x="714.74" y="-1716.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: Read</text>
+<text xml:space="preserve" text-anchor="start" x="714.74" y="-1702.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Rewrites a failed claim from the page and the</text>
+<text xml:space="preserve" text-anchor="start" x="714.74" y="-1688.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">checker&#39;s reason; the rewrite is checked</text>
+<text xml:space="preserve" text-anchor="start" x="714.74" y="-1674.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">again.</text>
+<text xml:space="preserve" text-anchor="start" x="714.74" y="-1660.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Still failing after 2 rounds: goes to U3</text>
 </g>
 <!-- U3 -->
 <g id="node27" class="node">
 <title>U3</title>
-<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-1207.3C298.37,-1207.3 32.35,-1207.3 32.35,-1207.3 26.35,-1207.3 20.35,-1201.3 20.35,-1195.3 20.35,-1195.3 20.35,-1141.41 20.35,-1141.41 20.35,-1135.41 26.35,-1129.41 32.35,-1129.41 32.35,-1129.41 298.37,-1129.41 298.37,-1129.41 304.37,-1129.41 310.37,-1135.41 310.37,-1141.41 310.37,-1141.41 310.37,-1195.3 310.37,-1195.3 310.37,-1201.3 304.37,-1207.3 298.37,-1207.3"/>
-<text xml:space="preserve" text-anchor="start" x="52.11" y="-1192.53" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U3 Inspect</text>
-<text xml:space="preserve" text-anchor="start" x="52.11" y="-1178.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Inspects every disputed claim and equation and</text>
-<text xml:space="preserve" text-anchor="start" x="52.11" y="-1164.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">a random 10 % of passed claims beside their</text>
-<text xml:space="preserve" text-anchor="start" x="52.11" y="-1150.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">page crops.</text>
-<text xml:space="preserve" text-anchor="start" x="52.11" y="-1136.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Approves, corrects or drops each</text>
+<path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-1574.55C298.37,-1574.55 32.35,-1574.55 32.35,-1574.55 26.35,-1574.55 20.35,-1568.55 20.35,-1562.55 20.35,-1562.55 20.35,-1482.16 20.35,-1482.16 20.35,-1476.16 26.35,-1470.16 32.35,-1470.16 32.35,-1470.16 298.37,-1470.16 298.37,-1470.16 304.37,-1470.16 310.37,-1476.16 310.37,-1482.16 310.37,-1482.16 310.37,-1562.55 310.37,-1562.55 310.37,-1568.55 304.37,-1574.55 298.37,-1574.55"/>
+<text xml:space="preserve" text-anchor="start" x="50.98" y="-1559.78" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U3 Inspect</text>
+<text xml:space="preserve" text-anchor="start" x="50.98" y="-1545.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Inspects every disputed claim and equation,</text>
+<text xml:space="preserve" text-anchor="start" x="50.98" y="-1531.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">and 60 random passed claims beside their page</text>
+<text xml:space="preserve" text-anchor="start" x="50.98" y="-1517.78" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">crops.</text>
+<text xml:space="preserve" text-anchor="start" x="50.98" y="-1503.73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• No error in 60: passed&#45;claim error rate</text>
+<text xml:space="preserve" text-anchor="start" x="50.98" y="-1490.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;below 4.9 % (95 %)</text>
+<text xml:space="preserve" text-anchor="start" x="50.98" y="-1477.23" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Sample size still to be decided</text>
 </g>
 <!-- L1 -->
 <g id="node28" class="node">
 <title>L1</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-1049.81C628.37,-1049.81 362.35,-1049.81 362.35,-1049.81 356.35,-1049.81 350.35,-1043.81 350.35,-1037.81 350.35,-1037.81 350.35,-930.91 350.35,-930.91 350.35,-924.91 356.35,-918.91 362.35,-918.91 362.35,-918.91 628.37,-918.91 628.37,-918.91 634.37,-918.91 640.37,-924.91 640.37,-930.91 640.37,-930.91 640.37,-1037.81 640.37,-1037.81 640.37,-1043.81 634.37,-1049.81 628.37,-1049.81"/>
-<text xml:space="preserve" text-anchor="start" x="387.74" y="-1035.04" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">L1 curator.py (only writer)</text>
-<text xml:space="preserve" text-anchor="start" x="387.74" y="-1021.04" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Publishes items that have a citation, a quote</text>
-<text xml:space="preserve" text-anchor="start" x="387.74" y="-1007.03" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">match and a passing verdict or user decision;</text>
-<text xml:space="preserve" text-anchor="start" x="387.74" y="-993.03" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">refuses all others.</text>
-<text xml:space="preserve" text-anchor="start" x="387.74" y="-978.99" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Hashes files, sets them read&#45;only, logs an</text>
-<text xml:space="preserve" text-anchor="start" x="387.74" y="-965.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;event</text>
-<text xml:space="preserve" text-anchor="start" x="387.74" y="-952.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Corrections are new versions; nothing is</text>
-<text xml:space="preserve" text-anchor="start" x="387.74" y="-939.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;deleted</text>
-<text xml:space="preserve" text-anchor="start" x="387.74" y="-925.99" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Retraction only by the user, with a reason</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-1389.8C628.37,-1389.8 362.35,-1389.8 362.35,-1389.8 356.35,-1389.8 350.35,-1383.8 350.35,-1377.8 350.35,-1377.8 350.35,-1270.91 350.35,-1270.91 350.35,-1264.91 356.35,-1258.91 362.35,-1258.91 362.35,-1258.91 628.37,-1258.91 628.37,-1258.91 634.37,-1258.91 640.37,-1264.91 640.37,-1270.91 640.37,-1270.91 640.37,-1377.8 640.37,-1377.8 640.37,-1383.8 634.37,-1389.8 628.37,-1389.8"/>
+<text xml:space="preserve" text-anchor="start" x="387.74" y="-1375.03" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">L1 curator.py (only writer)</text>
+<text xml:space="preserve" text-anchor="start" x="387.74" y="-1361.03" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Publishes items that have a citation, a quote</text>
+<text xml:space="preserve" text-anchor="start" x="387.74" y="-1347.03" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">match and a passing verdict or user decision;</text>
+<text xml:space="preserve" text-anchor="start" x="387.74" y="-1333.03" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">refuses all others.</text>
+<text xml:space="preserve" text-anchor="start" x="387.74" y="-1318.98" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Hashes files, sets them read&#45;only, logs an</text>
+<text xml:space="preserve" text-anchor="start" x="387.74" y="-1305.73" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;event</text>
+<text xml:space="preserve" text-anchor="start" x="387.74" y="-1292.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Corrections are new versions; nothing is</text>
+<text xml:space="preserve" text-anchor="start" x="387.74" y="-1279.23" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;deleted</text>
+<text xml:space="preserve" text-anchor="start" x="387.74" y="-1265.98" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Retraction only by the user, with a reason</text>
 </g>
 <!-- LB -->
 <g id="node29" class="node">
 <title>LB</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1030.31 1010.35,-1030.31 1010.35,-938.41 1300.37,-938.41 1300.37,-1024.31 1294.37,-1030.31"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1030.31 1294.37,-1024.31"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-1024.31 1294.37,-1024.31"/>
-<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1015.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">library/</text>
-<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1001.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Paper cards and claims as versioned JSON</text>
-<text xml:space="preserve" text-anchor="start" x="1049.24" y="-987.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">files, tags from vocab.yaml, events log;</text>
-<text xml:space="preserve" text-anchor="start" x="1049.24" y="-973.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">catalog.sqlite is an index rebuilt from the</text>
-<text xml:space="preserve" text-anchor="start" x="1049.24" y="-959.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">files.</text>
-<text xml:space="preserve" text-anchor="start" x="1049.24" y="-945.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• views/: one Markdown page per tag and review</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1370.3 1010.35,-1370.3 1010.35,-1278.41 1300.37,-1278.41 1300.37,-1364.3 1294.37,-1370.3"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-1370.3 1294.37,-1364.3"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-1364.3 1294.37,-1364.3"/>
+<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1355.53" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">library/</text>
+<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1341.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Paper cards and claims as versioned JSON</text>
+<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1327.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">files, tags from vocab.yaml, events log;</text>
+<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1313.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">catalog.sqlite is an index rebuilt from the</text>
+<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1299.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">files.</text>
+<text xml:space="preserve" text-anchor="start" x="1049.24" y="-1285.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• views/: one Markdown page per tag and review</text>
 </g>
 <!-- L2 -->
 <g id="node30" class="node">
 <title>L2</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-811.31C628.37,-811.31 362.35,-811.31 362.35,-811.31 356.35,-811.31 350.35,-805.31 350.35,-799.31 350.35,-799.31 350.35,-759.42 350.35,-759.42 350.35,-753.42 356.35,-747.42 362.35,-747.42 362.35,-747.42 628.37,-747.42 628.37,-747.42 634.37,-747.42 640.37,-753.42 640.37,-759.42 640.37,-759.42 640.37,-799.31 640.37,-799.31 640.37,-805.31 634.37,-811.31 628.37,-811.31"/>
-<text xml:space="preserve" text-anchor="start" x="390.36" y="-796.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">L2 audit.py</text>
-<text xml:space="preserve" text-anchor="start" x="390.36" y="-782.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Re&#45;hashes every library file and rebuilds the</text>
-<text xml:space="preserve" text-anchor="start" x="390.36" y="-768.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">catalog from the files to compare.</text>
-<text xml:space="preserve" text-anchor="start" x="390.36" y="-754.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Any mismatch: stop and report to the user</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-1151.31C628.37,-1151.31 362.35,-1151.31 362.35,-1151.31 356.35,-1151.31 350.35,-1145.31 350.35,-1139.31 350.35,-1139.31 350.35,-1099.42 350.35,-1099.42 350.35,-1093.42 356.35,-1087.42 362.35,-1087.42 362.35,-1087.42 628.37,-1087.42 628.37,-1087.42 634.37,-1087.42 640.37,-1093.42 640.37,-1099.42 640.37,-1099.42 640.37,-1139.31 640.37,-1139.31 640.37,-1145.31 634.37,-1151.31 628.37,-1151.31"/>
+<text xml:space="preserve" text-anchor="start" x="390.36" y="-1136.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">L2 audit.py</text>
+<text xml:space="preserve" text-anchor="start" x="390.36" y="-1122.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Re&#45;hashes every library file and rebuilds the</text>
+<text xml:space="preserve" text-anchor="start" x="390.36" y="-1108.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">catalog from the files to compare.</text>
+<text xml:space="preserve" text-anchor="start" x="390.36" y="-1094.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Any mismatch: stop and report to the user</text>
 </g>
 <!-- LR -->
 <g id="node31" class="node">
 <title>LR</title>
-<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-838.18C958.37,-838.18 692.35,-838.18 692.35,-838.18 686.35,-838.18 680.35,-832.18 680.35,-826.18 680.35,-826.18 680.35,-732.54 680.35,-732.54 680.35,-726.54 686.35,-720.54 692.35,-720.54 692.35,-720.54 958.37,-720.54 958.37,-720.54 964.37,-720.54 970.37,-726.54 970.37,-732.54 970.37,-732.54 970.37,-826.18 970.37,-826.18 970.37,-832.18 964.37,-838.18 958.37,-838.18"/>
-<text xml:space="preserve" text-anchor="start" x="715.86" y="-823.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">morty&#45;librarian (reference desk)</text>
-<text xml:space="preserve" text-anchor="start" x="715.86" y="-809.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: Bash</text>
-<text xml:space="preserve" text-anchor="start" x="715.86" y="-796.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">(library_query.py only)</text>
-<text xml:space="preserve" text-anchor="start" x="715.86" y="-782.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Answers requests about the library with</text>
-<text xml:space="preserve" text-anchor="start" x="715.86" y="-768.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">records quoted verbatim, through a read&#45;only,</text>
-<text xml:space="preserve" text-anchor="start" x="715.86" y="-754.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">logged query script.</text>
-<text xml:space="preserve" text-anchor="start" x="715.86" y="-740.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Every request states its purpose</text>
-<text xml:space="preserve" text-anchor="start" x="715.86" y="-727.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Cannot write or delete</text>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-1178.18C958.37,-1178.18 692.35,-1178.18 692.35,-1178.18 686.35,-1178.18 680.35,-1172.18 680.35,-1166.18 680.35,-1166.18 680.35,-1072.54 680.35,-1072.54 680.35,-1066.54 686.35,-1060.54 692.35,-1060.54 692.35,-1060.54 958.37,-1060.54 958.37,-1060.54 964.37,-1060.54 970.37,-1066.54 970.37,-1072.54 970.37,-1072.54 970.37,-1166.18 970.37,-1166.18 970.37,-1172.18 964.37,-1178.18 958.37,-1178.18"/>
+<text xml:space="preserve" text-anchor="start" x="715.86" y="-1163.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">morty&#45;librarian (reference desk)</text>
+<text xml:space="preserve" text-anchor="start" x="715.86" y="-1149.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: Bash</text>
+<text xml:space="preserve" text-anchor="start" x="715.86" y="-1136.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">(library_query.py only)</text>
+<text xml:space="preserve" text-anchor="start" x="715.86" y="-1122.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Answers requests about the library with</text>
+<text xml:space="preserve" text-anchor="start" x="715.86" y="-1108.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">records quoted verbatim, through a read&#45;only,</text>
+<text xml:space="preserve" text-anchor="start" x="715.86" y="-1094.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">logged query script.</text>
+<text xml:space="preserve" text-anchor="start" x="715.86" y="-1080.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Every request states its purpose</text>
+<text xml:space="preserve" text-anchor="start" x="715.86" y="-1067.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Cannot write or delete</text>
 </g>
 <!-- Y1 -->
 <g id="node32" class="node">
 <title>Y1</title>
-<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-640.56C958.37,-640.56 692.35,-640.56 692.35,-640.56 686.35,-640.56 680.35,-634.56 680.35,-628.56 680.35,-628.56 680.35,-548.16 680.35,-548.16 680.35,-542.16 686.35,-536.16 692.35,-536.16 692.35,-536.16 958.37,-536.16 958.37,-536.16 964.37,-536.16 970.37,-542.16 970.37,-548.16 970.37,-548.16 970.37,-628.56 970.37,-628.56 970.37,-634.56 964.37,-640.56 958.37,-640.56"/>
-<text xml:space="preserve" text-anchor="start" x="720.74" y="-625.78" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Y1 beth&#45;synthesizer</text>
-<text xml:space="preserve" text-anchor="start" x="720.74" y="-611.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;opus&#45;5&#45;5 · tools: none</text>
-<text xml:space="preserve" text-anchor="start" x="720.74" y="-598.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Writes one memo per question from verified</text>
-<text xml:space="preserve" text-anchor="start" x="720.74" y="-584.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">claims, citing claim IDs and marking its own</text>
-<text xml:space="preserve" text-anchor="start" x="720.74" y="-570.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">inference.</text>
-<text xml:space="preserve" text-anchor="start" x="720.74" y="-556.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per question</text>
-<text xml:space="preserve" text-anchor="start" x="720.74" y="-543.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Lists what the literature does not answer</text>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-980.56C958.37,-980.56 692.35,-980.56 692.35,-980.56 686.35,-980.56 680.35,-974.56 680.35,-968.56 680.35,-968.56 680.35,-888.17 680.35,-888.17 680.35,-882.17 686.35,-876.17 692.35,-876.17 692.35,-876.17 958.37,-876.17 958.37,-876.17 964.37,-876.17 970.37,-882.17 970.37,-888.17 970.37,-888.17 970.37,-968.56 970.37,-968.56 970.37,-974.56 964.37,-980.56 958.37,-980.56"/>
+<text xml:space="preserve" text-anchor="start" x="720.74" y="-965.79" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Y1 beth&#45;synthesizer</text>
+<text xml:space="preserve" text-anchor="start" x="720.74" y="-951.74" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;opus&#45;5&#45;5 · tools: none</text>
+<text xml:space="preserve" text-anchor="start" x="720.74" y="-938.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Writes one memo per question from verified</text>
+<text xml:space="preserve" text-anchor="start" x="720.74" y="-924.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">claims, citing claim IDs and marking its own</text>
+<text xml:space="preserve" text-anchor="start" x="720.74" y="-910.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">inference.</text>
+<text xml:space="preserve" text-anchor="start" x="720.74" y="-896.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Fresh per question</text>
+<text xml:space="preserve" text-anchor="start" x="720.74" y="-883.24" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Lists what the literature does not answer</text>
 </g>
 <!-- Y2 -->
 <g id="node33" class="node">
 <title>Y2</title>
-<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-457.3C628.37,-457.3 362.35,-457.3 362.35,-457.3 356.35,-457.3 350.35,-451.3 350.35,-445.3 350.35,-445.3 350.35,-391.41 350.35,-391.41 350.35,-385.41 356.35,-379.41 362.35,-379.41 362.35,-379.41 628.37,-379.41 628.37,-379.41 634.37,-379.41 640.37,-385.41 640.37,-391.41 640.37,-391.41 640.37,-445.3 640.37,-445.3 640.37,-451.3 634.37,-457.3 628.37,-457.3"/>
-<text xml:space="preserve" text-anchor="start" x="388.86" y="-442.53" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Y2 check_citations.py</text>
-<text xml:space="preserve" text-anchor="start" x="388.86" y="-428.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Checks each memo sentence cites a verified</text>
-<text xml:space="preserve" text-anchor="start" x="388.86" y="-414.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">claim and every number in it appears in a</text>
-<text xml:space="preserve" text-anchor="start" x="388.86" y="-400.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">cited claim.</text>
-<text xml:space="preserve" text-anchor="start" x="388.86" y="-386.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Failures go back to Y1 with the list</text>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-797.31C628.37,-797.31 362.35,-797.31 362.35,-797.31 356.35,-797.31 350.35,-791.31 350.35,-785.31 350.35,-785.31 350.35,-731.42 350.35,-731.42 350.35,-725.42 356.35,-719.42 362.35,-719.42 362.35,-719.42 628.37,-719.42 628.37,-719.42 634.37,-719.42 640.37,-725.42 640.37,-731.42 640.37,-731.42 640.37,-785.31 640.37,-785.31 640.37,-791.31 634.37,-797.31 628.37,-797.31"/>
+<text xml:space="preserve" text-anchor="start" x="388.86" y="-782.54" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Y2 check_citations.py</text>
+<text xml:space="preserve" text-anchor="start" x="388.86" y="-768.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Checks each memo sentence cites a verified</text>
+<text xml:space="preserve" text-anchor="start" x="388.86" y="-754.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">claim and every number in it appears in a</text>
+<text xml:space="preserve" text-anchor="start" x="388.86" y="-740.54" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">cited claim.</text>
+<text xml:space="preserve" text-anchor="start" x="388.86" y="-726.49" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Failures go back to Y1 with the list</text>
 </g>
 <!-- Y3 -->
 <g id="node34" class="node">
 <title>Y3</title>
-<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-300.18C958.37,-300.18 692.35,-300.18 692.35,-300.18 686.35,-300.18 680.35,-294.18 680.35,-288.18 680.35,-288.18 680.35,-194.54 680.35,-194.54 680.35,-188.54 686.35,-182.54 692.35,-182.54 692.35,-182.54 958.37,-182.54 958.37,-182.54 964.37,-182.54 970.37,-188.54 970.37,-194.54 970.37,-194.54 970.37,-288.18 970.37,-288.18 970.37,-294.18 964.37,-300.18 958.37,-300.18"/>
-<text xml:space="preserve" text-anchor="start" x="712.11" y="-285.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Y3 rick&#45;checker</text>
-<text xml:space="preserve" text-anchor="start" x="712.11" y="-271.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;fable&#45;5&#45;1 · tools: none</text>
-<text xml:space="preserve" text-anchor="start" x="712.11" y="-258.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Checks each memo statement against the cited</text>
-<text xml:space="preserve" text-anchor="start" x="712.11" y="-244.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">claims, and lists missed contradictions and</text>
-<text xml:space="preserve" text-anchor="start" x="712.11" y="-230.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">gaps.</text>
-<text xml:space="preserve" text-anchor="start" x="712.11" y="-216.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Different model family from the synthesizer</text>
-<text xml:space="preserve" text-anchor="start" x="712.11" y="-202.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Unsupported: Y1 revises once, then the user</text>
-<text xml:space="preserve" text-anchor="start" x="712.11" y="-189.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;sees it</text>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-640.18C958.37,-640.18 692.35,-640.18 692.35,-640.18 686.35,-640.18 680.35,-634.18 680.35,-628.18 680.35,-628.18 680.35,-534.54 680.35,-534.54 680.35,-528.54 686.35,-522.54 692.35,-522.54 692.35,-522.54 958.37,-522.54 958.37,-522.54 964.37,-522.54 970.37,-528.54 970.37,-534.54 970.37,-534.54 970.37,-628.18 970.37,-628.18 970.37,-634.18 964.37,-640.18 958.37,-640.18"/>
+<text xml:space="preserve" text-anchor="start" x="712.11" y="-625.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Y3 rick&#45;checker</text>
+<text xml:space="preserve" text-anchor="start" x="712.11" y="-611.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;fable&#45;5&#45;1 · tools: none</text>
+<text xml:space="preserve" text-anchor="start" x="712.11" y="-598.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Checks each memo statement against the cited</text>
+<text xml:space="preserve" text-anchor="start" x="712.11" y="-584.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">claims, and lists missed contradictions and</text>
+<text xml:space="preserve" text-anchor="start" x="712.11" y="-570.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">gaps.</text>
+<text xml:space="preserve" text-anchor="start" x="712.11" y="-556.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Different model family from the synthesizer</text>
+<text xml:space="preserve" text-anchor="start" x="712.11" y="-542.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Unsupported: Y1 revises once, then the user</text>
+<text xml:space="preserve" text-anchor="start" x="712.11" y="-529.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;sees it</text>
 </g>
 <!-- RM -->
 <g id="node35" class="node">
 <title>RM</title>
-<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-266.68 1010.35,-266.68 1010.35,-216.04 1300.37,-216.04 1300.37,-260.68 1294.37,-266.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-266.68 1294.37,-260.68"/>
-<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-260.68 1294.37,-260.68"/>
-<text xml:space="preserve" text-anchor="start" x="1040.61" y="-251.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">memos/&lt;review&gt;/Qk.vN.md</text>
-<text xml:space="preserve" text-anchor="start" x="1040.61" y="-237.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Checked memo per question, published through</text>
-<text xml:space="preserve" text-anchor="start" x="1040.61" y="-223.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">the curator.</text>
+<polygon fill="white" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-606.68 1010.35,-606.68 1010.35,-556.04 1300.37,-556.04 1300.37,-600.68 1294.37,-606.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1294.37,-606.68 1294.37,-600.68"/>
+<polyline fill="none" stroke="#7a7a7a" stroke-width="1.5" points="1300.37,-600.68 1294.37,-600.68"/>
+<text xml:space="preserve" text-anchor="start" x="1040.61" y="-591.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">memos/&lt;review&gt;/Qk.vN.md</text>
+<text xml:space="preserve" text-anchor="start" x="1040.61" y="-577.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Checked memo per question, published through</text>
+<text xml:space="preserve" text-anchor="start" x="1040.61" y="-563.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">the curator.</text>
 </g>
 <!-- U4 -->
 <g id="node36" class="node">
 <title>U4</title>
 <path fill="white" stroke="#c98a2b" stroke-width="1.5" d="M298.37,-103.31C298.37,-103.31 32.35,-103.31 32.35,-103.31 26.35,-103.31 20.35,-97.31 20.35,-91.31 20.35,-91.31 20.35,-37.41 20.35,-37.41 20.35,-31.41 26.35,-25.41 32.35,-25.41 32.35,-25.41 298.37,-25.41 298.37,-25.41 304.37,-25.41 310.37,-31.41 310.37,-37.41 310.37,-37.41 310.37,-91.31 310.37,-91.31 310.37,-97.31 304.37,-103.31 298.37,-103.31"/>
-<text xml:space="preserve" text-anchor="start" x="55.48" y="-88.53" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U4 Decide</text>
-<text xml:space="preserve" text-anchor="start" x="55.48" y="-74.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Reads the memos, the checker report and the</text>
-<text xml:space="preserve" text-anchor="start" x="55.48" y="-60.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">gaps; closes the review or expands or retracts</text>
-<text xml:space="preserve" text-anchor="start" x="55.48" y="-46.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">it.</text>
-<text xml:space="preserve" text-anchor="start" x="55.48" y="-32.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Pillar 1: memo ends with model options</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-88.53" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">U4 Decide</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-74.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Reads memos, checker report, gaps and tag</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-60.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">proposals; closes, expands or retracts the</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-46.53" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">review; accepts or rejects tag changes.</text>
+<text xml:space="preserve" text-anchor="start" x="58.86" y="-32.48" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Pillar 1: memo ends with model options</text>
+</g>
+<!-- A2 -->
+<g id="node37" class="node">
+<title>A2</title>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-2692.18C628.37,-2692.18 362.35,-2692.18 362.35,-2692.18 356.35,-2692.18 350.35,-2686.18 350.35,-2680.18 350.35,-2680.18 350.35,-2586.54 350.35,-2586.54 350.35,-2580.54 356.35,-2574.54 362.35,-2574.54 362.35,-2574.54 628.37,-2574.54 628.37,-2574.54 634.37,-2574.54 640.37,-2580.54 640.37,-2586.54 640.37,-2586.54 640.37,-2680.18 640.37,-2680.18 640.37,-2686.18 634.37,-2692.18 628.37,-2692.18"/>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-2677.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">A2 check_copy.py (non&#45;publisher copies)</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-2663.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Compares a preprint or repository copy with</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-2649.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">the published record: title, authors,</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-2635.41" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">abstract, errata.</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-2621.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Copy kind recorded on every claim read from</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-2608.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;it</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-2594.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Title or authors differ: user decides at U2</text>
+<text xml:space="preserve" text-anchor="start" x="386.99" y="-2581.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Published version later: claims re&#45;checked</text>
+</g>
+<!-- T1 -->
+<g id="node38" class="node">
+<title>T1</title>
+<path fill="white" stroke="#2b6cb0" stroke-width="1.5" d="M628.37,-443.68C628.37,-443.68 362.35,-443.68 362.35,-443.68 356.35,-443.68 350.35,-437.68 350.35,-431.68 350.35,-431.68 350.35,-391.04 350.35,-391.04 350.35,-385.04 356.35,-379.04 362.35,-379.04 362.35,-379.04 628.37,-379.04 628.37,-379.04 634.37,-379.04 640.37,-385.04 640.37,-391.04 640.37,-391.04 640.37,-431.68 640.37,-431.68 640.37,-437.68 634.37,-443.68 628.37,-443.68"/>
+<text xml:space="preserve" text-anchor="start" x="383.61" y="-428.91" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">T1 tag_report.py (after every wave)</text>
+<text xml:space="preserve" text-anchor="start" x="383.61" y="-414.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Counts tag use and lists tags with similar</text>
+<text xml:space="preserve" text-anchor="start" x="383.61" y="-400.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">names or mostly the same claims, unused tags</text>
+<text xml:space="preserve" text-anchor="start" x="383.61" y="-386.91" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">and provisional tags.</text>
+</g>
+<!-- T2 -->
+<g id="node39" class="node">
+<title>T2</title>
+<path fill="white" stroke="#2f855a" stroke-width="1.5" d="M958.37,-300.18C958.37,-300.18 692.35,-300.18 692.35,-300.18 686.35,-300.18 680.35,-294.18 680.35,-288.18 680.35,-288.18 680.35,-194.54 680.35,-194.54 680.35,-188.54 686.35,-182.54 692.35,-182.54 692.35,-182.54 958.37,-182.54 958.37,-182.54 964.37,-182.54 970.37,-188.54 970.37,-194.54 970.37,-194.54 970.37,-288.18 970.37,-288.18 970.37,-294.18 964.37,-300.18 958.37,-300.18"/>
+<text xml:space="preserve" text-anchor="start" x="723.74" y="-285.41" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">T2 morty&#45;tagger</text>
+<text xml:space="preserve" text-anchor="start" x="723.74" y="-271.36" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#2f5d3a">claude&#45;sonnet&#45;5&#45;5 · tools: none</text>
+<text xml:space="preserve" text-anchor="start" x="723.74" y="-258.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">Proposes tag merges, splits, renames,</text>
+<text xml:space="preserve" text-anchor="start" x="723.74" y="-244.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">deprecations and promotions, each with a</text>
+<text xml:space="preserve" text-anchor="start" x="723.74" y="-230.16" font-family="Helvetica,sans-Serif" font-style="italic" font-size="11.00">reason.</text>
+<text xml:space="preserve" text-anchor="start" x="723.74" y="-216.11" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Proposals only; the user accepts each at U4</text>
+<text xml:space="preserve" text-anchor="start" x="723.74" y="-202.86" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444">• Accepted: new vocab.yaml version with alias</text>
+<text xml:space="preserve" text-anchor="start" x="723.74" y="-189.61" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#444444"> &#160;map</text>
 </g>
 </g>
 </svg>
@@ -647,5 +704,5 @@ th { background: #f4f4f4; } .sw { display: inline-block; width: 22px; height: 12
 <h2>Legend</h2>
 <table><tr><td><span class="sw" style="border-color:#c98a2b"></span></td><td>user decision point</td></tr><tr><td><span class="sw" style="border-color:#2b6cb0"></span></td><td>deterministic script: same input, same output</td></tr><tr><td><span class="sw" style="border-color:#2f855a"></span></td><td>agent (model and tools listed in the box)</td></tr><tr><td><span class="sw" style="border-color:#7a7a7a"></span></td><td>record written by a stage</td></tr><tr><td><span class="ln" style="background:#4a4a4a"></span></td><td>main flow</td></tr><tr><td><span class="ln" style="background:#8a8a8a"></span></td><td>writes a record</td></tr><tr><td><span class="ln" style="background:#b3261e"></span></td><td>stop and ask the user</td></tr><tr><td><span class="ln" style="background:#b07a00"></span></td><td>loop back for a re-check</td></tr></table>
 <h2>Agents and scripts</h2>
-<table><tr><th>Stage</th><th>Kind</th><th>Model</th><th>Tools</th><th>Job</th></tr><tr><td>D1 discover.py</td><td>script</td><td>—</td><td>—</td><td>Runs the brief's queries on Crossref, OpenAlex, Semantic Scholar and arXiv and follows references and citations of seeds.</td></tr><tr><td>D2 morty-scout (tier M, L)</td><td>agent</td><td>claude-sonnet-5-5</td><td>WebSearch</td><td>Searches the web for work the APIs miss (theses, recent preprints, other terms) and returns citations only.</td></tr><tr><td>D3 resolve.py</td><td>script</td><td>—</td><td>—</td><td>Resolves every candidate in Crossref or OpenAlex and removes duplicates by DOI and title.</td></tr><tr><td>C0 calibrate.py (once per prompt or model change)</td><td>script</td><td>—</td><td>—</td><td>Runs screening and E1 to E4 on planted errors, a gold recall set and off-topic abstracts before any real wave.</td></tr><tr><td>SC1 jerry-screener x2 (tier M, L)</td><td>agent</td><td>claude-haiku-5-5</td><td>—</td><td>Two independent screeners judge each title and abstract: core, context or exclude, with the deciding criterion.</td></tr><tr><td>SC2 compare_screens.py</td><td>script</td><td>—</td><td>—</td><td>Compares the two screens and lists the disagreements.</td></tr><tr><td>SC3 beth-checker (task: screen)</td><td>agent</td><td>claude-opus-5-5</td><td>Read</td><td>Decides each disagreement from the abstract and both reasons.</td></tr><tr><td>A1 acquire.py</td><td>script</td><td>—</td><td>—</td><td>Finds each paper in Literature/ or as open access and checks the DOI or title on its first page.</td></tr><tr><td>P1 prepare.py</td><td>script</td><td>—</td><td>—</td><td>Renders page images, runs Marker (OCR to Markdown with LaTeX) and crops figures with captions.</td></tr><tr><td>E1 morty-reader (E2: second independent read of core papers)</td><td>agent</td><td>claude-sonnet-5-5</td><td>Read</td><td>Reads one paper and writes its card and claims: text, kind, verbatim quote, page, equation, figure, questions, tags, basis.</td></tr><tr><td>E3 check_extraction.py</td><td>script</td><td>—</td><td>—</td><td>Finds each quote on its cited page, compares equations with Marker, checks page coverage and diffs read A against read B.</td></tr><tr><td>E4 beth-checker (task: claim)</td><td>agent</td><td>claude-opus-5-5</td><td>Read</td><td>Judges every claim on its page image: supported, overstated, unsupported or wrong page; settles equation disagreements.</td></tr><tr><td>E5 morty-reader (revise, at most 2 rounds)</td><td>agent</td><td>claude-sonnet-5-5</td><td>Read</td><td>Rewrites a failed claim from the page and the checker's reason; the rewrite is checked again.</td></tr><tr><td>L1 curator.py (only writer)</td><td>script</td><td>—</td><td>—</td><td>Publishes items that have a citation, a quote match and a passing verdict or user decision; refuses all others.</td></tr><tr><td>L2 audit.py</td><td>script</td><td>—</td><td>—</td><td>Re-hashes every library file and rebuilds the catalog from the files to compare.</td></tr><tr><td>morty-librarian (reference desk)</td><td>agent</td><td>claude-sonnet-5-5</td><td>Bash (library_query.py only)</td><td>Answers requests about the library with records quoted verbatim, through a read-only, logged query script.</td></tr><tr><td>Y1 beth-synthesizer</td><td>agent</td><td>claude-opus-5-5</td><td>—</td><td>Writes one memo per question from verified claims, citing claim IDs and marking its own inference.</td></tr><tr><td>Y2 check_citations.py</td><td>script</td><td>—</td><td>—</td><td>Checks each memo sentence cites a verified claim and every number in it appears in a cited claim.</td></tr><tr><td>Y3 rick-checker</td><td>agent</td><td>claude-fable-5-1</td><td>—</td><td>Checks each memo statement against the cited claims, and lists missed contradictions and gaps.</td></tr></table>
+<table><tr><th>Stage</th><th>Kind</th><th>Model</th><th>Tools</th><th>Job</th></tr><tr><td>D1 discover.py</td><td>script</td><td>—</td><td>—</td><td>Runs the brief's queries on Crossref, OpenAlex, Semantic Scholar and arXiv and follows references and citations of seeds.</td></tr><tr><td>D2 morty-scout (tier M, L)</td><td>agent</td><td>claude-sonnet-5-5</td><td>WebSearch</td><td>Searches the web for work the APIs miss (theses, recent preprints, other terms) and returns citations only.</td></tr><tr><td>D3 resolve.py</td><td>script</td><td>—</td><td>—</td><td>Resolves every candidate in Crossref or OpenAlex and removes duplicates by DOI and title.</td></tr><tr><td>C0 calibrate.py (once per prompt or model change)</td><td>script</td><td>—</td><td>—</td><td>Runs screening and E1 to E4 on planted errors, a gold recall set and off-topic abstracts before any real wave.</td></tr><tr><td>SC1 jerry-screener x2 (tier M, L)</td><td>agent</td><td>claude-haiku-5-5</td><td>—</td><td>Two independent screeners judge each title and abstract: core, context or exclude, with the deciding criterion.</td></tr><tr><td>SC2 compare_screens.py</td><td>script</td><td>—</td><td>—</td><td>Compares the two screens and lists the disagreements.</td></tr><tr><td>SC3 beth-checker (task: screen)</td><td>agent</td><td>claude-opus-5-5</td><td>Read</td><td>Decides each disagreement from the abstract and both reasons.</td></tr><tr><td>A1 acquire.py</td><td>script</td><td>—</td><td>—</td><td>Finds each paper in Literature/, then as open access (OpenAlex, arXiv, Semantic Scholar, repositories), and checks its first page.</td></tr><tr><td>P1 prepare.py</td><td>script</td><td>—</td><td>—</td><td>Renders page images, runs Marker (OCR to Markdown with LaTeX) and crops figures with captions.</td></tr><tr><td>E1 morty-reader (E2: second independent read of core papers)</td><td>agent</td><td>claude-sonnet-5-5</td><td>Read</td><td>Reads one paper and writes its card and claims: text, kind, verbatim quote, page, equation, figure, questions, tags, basis.</td></tr><tr><td>E3 check_extraction.py</td><td>script</td><td>—</td><td>—</td><td>Finds each quote on its cited page, compares equations with Marker, checks page coverage and diffs read A against read B.</td></tr><tr><td>E4 beth-checker (task: claim)</td><td>agent</td><td>claude-opus-5-5</td><td>Read</td><td>Judges every claim on its page image: supported, overstated, unsupported or wrong page; settles equation disagreements.</td></tr><tr><td>E5 morty-reader (revise, at most 2 rounds)</td><td>agent</td><td>claude-sonnet-5-5</td><td>Read</td><td>Rewrites a failed claim from the page and the checker's reason; the rewrite is checked again.</td></tr><tr><td>L1 curator.py (only writer)</td><td>script</td><td>—</td><td>—</td><td>Publishes items that have a citation, a quote match and a passing verdict or user decision; refuses all others.</td></tr><tr><td>L2 audit.py</td><td>script</td><td>—</td><td>—</td><td>Re-hashes every library file and rebuilds the catalog from the files to compare.</td></tr><tr><td>morty-librarian (reference desk)</td><td>agent</td><td>claude-sonnet-5-5</td><td>Bash (library_query.py only)</td><td>Answers requests about the library with records quoted verbatim, through a read-only, logged query script.</td></tr><tr><td>Y1 beth-synthesizer</td><td>agent</td><td>claude-opus-5-5</td><td>—</td><td>Writes one memo per question from verified claims, citing claim IDs and marking its own inference.</td></tr><tr><td>Y2 check_citations.py</td><td>script</td><td>—</td><td>—</td><td>Checks each memo sentence cites a verified claim and every number in it appears in a cited claim.</td></tr><tr><td>Y3 rick-checker</td><td>agent</td><td>claude-fable-5-1</td><td>—</td><td>Checks each memo statement against the cited claims, and lists missed contradictions and gaps.</td></tr><tr><td>A2 check_copy.py (non-publisher copies)</td><td>script</td><td>—</td><td>—</td><td>Compares a preprint or repository copy with the published record: title, authors, abstract, errata.</td></tr><tr><td>T1 tag_report.py (after every wave)</td><td>script</td><td>—</td><td>—</td><td>Counts tag use and lists tags with similar names or mostly the same claims, unused tags and provisional tags.</td></tr><tr><td>T2 morty-tagger</td><td>agent</td><td>claude-sonnet-5-5</td><td>—</td><td>Proposes tag merges, splits, renames, deprecations and promotions, each with a reason.</td></tr></table>
 </body></html>
