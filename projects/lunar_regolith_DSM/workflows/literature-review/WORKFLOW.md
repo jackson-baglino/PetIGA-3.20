@@ -362,10 +362,17 @@ C0 if it fails.
   controls are falsely flagged. The overall rate is reported with its
   one-sided 95 % Clopper-Pearson lower bound (for 36 of 40 caught, 78.6 %;
   for 40 of 40, 92.8 %).
-- *Gold recall set*: about 30 statements, named by the user, in 2 or 3
-  papers of different kinds (a journal article such as Kaempfer & Plapp 2009,
-  a long report, a thesis) that any reading must find. Pass: E1 finds at
-  least 90 %; E1 and E2 together find all; the lower bound is reported.
+- *Gold recall set*: about 30 statements, named by the user, in 3 papers of
+  different kinds (Kaempfer & Plapp 2009, a journal article; Molaro et al.
+  2019, a long journal article; Blackford 2007, a review; user's choice
+  2026-10-23) that any reading must find. Pass: E1 finds at least 90 %; E1
+  and E2 together find all; the lower bound is reported. The user writes each
+  statement in their own words (no quotes needed), one fact each, with page
+  and location. A value (symbol, number, unit) is matched to the reader's
+  claims by script, units compared by dimension as in units-verification. A
+  prose statement is matched by `beth-checker`, which names the claim it
+  matched; the user reviews every statement judged missed and a random
+  sample of those judged found.
 - *Screening*: the seed papers, 10 to 20 borderline relevant abstracts
   chosen by the user (adjacent fields, unusual terms), and 20 off-topic
   abstracts. Pass: no seed and at most one borderline abstract excluded.

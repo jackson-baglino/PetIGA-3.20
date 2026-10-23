@@ -1,16 +1,36 @@
 # Gold statements: things any good reading of the paper must record.
 # About 12 for kaempfer_plapp_2009, 10 for molaro_2019, 8 for blackford_2007.
-# page: the page number printed on the page. statement: your own words.
-# kind: method | equation | result | assumption | limitation | parameter
 #
-# Example (illustration only, not a statement from any of these papers):
+# Write in your own words; exact quotes are not needed. One fact per statement, with the
+# details that would make it wrong if they changed (number and unit, symbol, conditions,
+# whether the result is the paper's own or cited from another paper).
+#
+# page:      the page number printed on the page
+# location:  table, figure, equation or section if there is one ("Table I", "Eq. 12", "Fig. 3")
+# kind:      method | equation | result | assumption | limitation | parameter
+# statement: the fact, in your words
+# For a value (kind: parameter, or a numerical result), also fill symbol, value and unit:
+# a script then matches it exactly (unit compared by dimension, so J/(m^3 K) = J m^-3 K^-1).
+# Prose statements are matched by an Opus judge; you review every statement it marks as
+# missed and a sample of the ones it marks as found.
+#
+# Example (value, unit and page from the verified units table, memory/semantic/units.md;
+# location from the blind reads of run 20261022-155335):
 # - paper: kaempfer_plapp_2009
 #   page: 4
+#   location: Table I
 #   kind: parameter
-#   statement: The interface kinetic coefficient used in the simulations is printed with its value and unit.
+#   statement: Table I gives the heat capacity per volume of ice.
+#   symbol: C_i
+#   value: 1.8e6
+#   unit: J m^-3 K^-1
 
 statements:
   - paper:
     page:
+    location:
     kind:
     statement:
+    symbol:
+    value:
+    unit:
