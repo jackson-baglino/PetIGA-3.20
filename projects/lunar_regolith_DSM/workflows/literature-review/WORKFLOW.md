@@ -245,7 +245,7 @@ spread over claim kinds, so that the result is a statement about all passed
 claims of the wave. If the user finds no error in n sampled claims, the
 error rate of passed claims is below 3/n with 95 % confidence (the "rule of
 three"; exact bound 1 − 0.05^(1/n)). With n = 60 the bound is 4.9 %; with
-n = 30 it is 9.5 %. Proposal: n = 60 per wave (about an hour at one minute
+n = 30 it is 9.5 %. Set: n = 60 per wave (user decision 2026-10-23) (about an hour at one minute
 per claim), whatever the wave's size, because the bound depends on n, not
 on the fraction. Equations that a Pillar 2 derivation uses are inspected in
 full when they are used, in Pillar 2, not here.
@@ -338,11 +338,11 @@ library/
   domains, so the discovery and acquisition scripts' hosts must be listed
   (`sandbox.network.allowedDomains`). From the Claude Code docs
   (sandboxing, settings reference), read 2026-10-23; to be tested at build
-  time (§9, decision 8).
+  time (§9, decision 7).
 - **What is committed.** `vocab.yaml`, briefs, `references.bib`, the event
   log and run manifests (hashes, verdicts). Not committed: PDFs, page images,
-  Marker text, quotes and figure crops (publisher copyright). Memos are
-  committed (user decision 2026-10-23); see §9 for the claims they cite.
+  Marker text, quotes and figure crops (publisher copyright). Memos stay
+  local with the library (user decision 2026-10-23).
 
 **Ranking.** No relevance score. A numeric score from a model is not
 calibrated, tends to favour well-written abstracts and famous papers, and
@@ -398,20 +398,17 @@ Resolved 2026-10-23:
 3. **Models:** as §4; `rick-checker` (Fable) for memos, falling back to an
    Opus checker in a fresh context if token use becomes a problem.
 4. **Second reader (E2):** core papers only.
-5. **Memos:** committed.
+5. **Memos:** not committed; kept in the library.
+6. **U3 sample size:** n = 60 per wave (§5).
 
 Open:
 
-6. **U3 sample size:** n = 60 per wave (§5) or another number.
-7. **Claims behind committed memos.** A memo in git cites claim IDs whose
-   records are local. Proposal: also commit a claims export without quotes
-   (claim text, DOI, page, copy kind, verdict), so a reader of the
-   repository can follow every citation to a page of a paper.
-8. **Sandbox** for `library/` (explained in the session; to be tested at
+7. **Sandbox** for `library/` (explained in the session; to be tested at
    build time).
-9. **First brief:** questions, criteria and seeds for Pillar 1, written with
+8. **First brief:** questions, criteria and seeds for Pillar 1, written with
    the user at U0.
-10. **Independent critique** of this design before building (§11).
+9. **Independent critique** of this design before building (§11); critic
+   agents written 2026-10-23, awaiting the user's review.
 
 ## 10. Risks and failure modes
 

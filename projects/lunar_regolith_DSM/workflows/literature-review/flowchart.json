@@ -309,7 +309,7 @@
       "job": "Inspects every disputed claim and equation, and 60 random passed claims beside their page crops.",
       "details": [
         "No error in 60: passed-claim error rate below 4.9 % (95 %)",
-        "Sample size still to be decided"
+        "Sample size 60 per wave (user decision)"
       ]
     },
     {
