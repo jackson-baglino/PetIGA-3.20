@@ -53,8 +53,8 @@ class TableReading(unittest.TestCase):
     def test_real_table(self):
         rows = uvlib.read_table()
         lit = uvlib.literature_rows(rows)
-        self.assertEqual(len(rows), 60)
-        self.assertEqual(len(lit), 58)
+        self.assertEqual(len(rows), 56)    # t_n, T_cold, T_hot, beta_sol removed in a460c1ec
+        self.assertEqual(len(lit), 54)
         self.assertTrue(all(r["page"] for r in lit))
         self.assertTrue(all(r["printed"] for r in lit))
         self.assertEqual({r["source"] for r in lit}, set(uvlib.LITERATURE_SOURCES))
