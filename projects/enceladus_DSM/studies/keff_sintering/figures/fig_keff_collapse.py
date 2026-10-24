@@ -2,7 +2,7 @@
 """Figure 6 (manuscript): k_eff evolution of one packing, and its temperature collapse.
 
     venv_enceladus/bin/python studies/keff_sintering/figures/fig_keff_collapse.py <campaign dir>
-        [--seed 1702] [--phi 0.325] [--snap-T -20] [--copy-to <dir>] [--out <dir>]
+        [--seed 1702] [--phi 0.325] [--snap-T -20] [--c-vs ssa|theta] [--copy-to <dir>] [--out <dir>]
 
 Merges the snapshot figure (plot_keff_snapshots.py) with the temperature
 collapse, on ONE packing run at five temperatures:
@@ -11,8 +11,10 @@ collapse, on ONE packing run at five temperatures:
       ~t_final/3, ~2 t_final/3, last), numbered 1-4
   (b) k_eff / k_eff,0 against time [d], one curve per temperature; the numbered
       instants sit on the --snap-T curve
-  (c) the same curves against sintering age theta = t / tau_sub: one curve
-  (d) SSA / SSA_0 against theta: the microstructure itself collapses
+  (c) the same curves against SSA / SSA_r: one curve, k_eff as a function of the
+      microstructure (default since 2026-10-24, written as <name>_v2); --c-vs
+      theta gives the original panel, against sintering age theta = t / tau_sub
+  (d) SSA / SSA_r against theta: the microstructure itself collapses
 
 One packing, not a seed mean, so the snapshots ARE the curve. --other-seeds
 adds the other packings of the porosity to (c) and (d) as thin grey lines (each
@@ -62,6 +64,9 @@ def main():
                          "--theta-ref (as the state-law figure; past the width-dependent transient), "
                          "'opening' = its value at the opening frame (the earlier convention)")
     ap.add_argument("--theta-ref", type=float, default=30.0)
+    ap.add_argument("--c-vs", dest="c_vs", choices=("ssa", "theta"), default="ssa",
+                    help="abscissa of panel (c): 'ssa' = SSA / SSA_r (writes <name>_v2), "
+                         "'theta' = sintering age t / tau_sub (the original figure)")
     ap.add_argument("--other-seeds", action="store_true",
                     help="also draw the other packings of this porosity in (c) and (d), thin and grey: "
                          "each is its own bundle of collapsed temperatures. Writes <name>_alt.")
@@ -156,27 +161,32 @@ def main():
     axs = [fig.add_axes([fx(L + j * (cw + 15.0)), fy(bot), fx(cw), fy(cur_h)]) for j in range(3)]
     for sd, rr in others.items():                       # behind the master packing
         for T, r in rr.items():
-            axs[1].plot(r["th"], r["kn"], color="0.62", lw=0.7, zorder=1)
+            axs[1].plot(r["sn"] if a.c_vs == "ssa" else r["th"], r["kn"], color="0.62", lw=0.7, zorder=1)
             axs[2].plot(r["th"], r["sn"], color="0.62", lw=0.7, zorder=1)
     for T in Ts:
         r = runs[T]
         lab = rf"${T}\,^\circ$C"
         axs[0].plot(r["t"] / DAY, r["kn"], color=col[T], lw=1.5, label=lab)
-        axs[1].plot(r["th"], r["kn"], color=col[T], lw=1.5)
+        axs[1].plot(r["sn"] if a.c_vs == "ssa" else r["th"], r["kn"], color=col[T], lw=1.5)
         axs[2].plot(r["th"], r["sn"], color=col[T], lw=1.5)
     for j, (_, _, _, t) in enumerate(snaps):
         _mark(axs[0], t / DAY, float(np.interp(t, S["t"], S["kn"])), str(j + 1))
     sub = "r" if a.norm == "ref" else "0"
     yk = rf"$k_\mathrm{{eff}}\,/\,k_{{\mathrm{{eff}},\mathrm{{{sub}}}}}$" if sub == "r" else r"$k_\mathrm{eff}\,/\,k_{\mathrm{eff},0}$"
     axs[0].set(xlabel="$t$ [d]", ylabel=yk)
-    axs[1].set(xlabel=r"$\theta=t/\tau_\mathrm{sub}$", ylabel=yk, xscale="log")
-    axs[2].set(xlabel=r"$\theta=t/\tau_\mathrm{sub}$", ylabel=rf"SSA$\,/\,$SSA$_\mathrm{{{sub}}}$", xscale="log")
+    xs = rf"SSA$\,/\,$SSA$_\mathrm{{{sub}}}$"
+    if a.c_vs == "ssa":
+        axs[1].set(xlabel=xs, ylabel=yk)
+    else:
+        axs[1].set(xlabel=r"$\theta=t/\tau_\mathrm{sub}$", ylabel=yk, xscale="log")
+    axs[2].set(xlabel=r"$\theta=t/\tau_\mathrm{sub}$", ylabel=xs, xscale="log")
     if a.norm == "ref":                                 # where every curve is 1 by construction
-        for x in axs[1:]:
-            x.axvline(a.theta_ref, color="0.55", lw=0.6, ls=":", zorder=0)
-            x.text(a.theta_ref, 1.0, r"$\theta_\mathrm{r}$", transform=x.get_xaxis_transform(), ha="center",
-                   va="bottom", fontsize=FS_TINY, color=INK)
-    for x in axs[1:]:
+        for x in axs[1:]:                               # in (c) vs SSA, theta_r sits at SSA / SSA_r = 1
+            x.axvline(1.0 if x is axs[1] and a.c_vs == "ssa" else a.theta_ref,
+                      color="0.55", lw=0.6, ls=":", zorder=0)
+            x.text(1.0 if x is axs[1] and a.c_vs == "ssa" else a.theta_ref, 1.0, r"$\theta_\mathrm{r}$",
+                   transform=x.get_xaxis_transform(), ha="center", va="bottom", fontsize=FS_TINY, color=INK)
+    for x in (axs[1:] if a.c_vs == "theta" else axs[2:]):
         x.set_xlim(1, None)
     axs[0].legend(frameon=False, fontsize=FS_TINY, loc="lower right", handlelength=1.3,
                   labelspacing=0.2, borderaxespad=0.2)
@@ -190,6 +200,8 @@ def main():
     out = a.out or a.root / "compare" / "figure_samples"
     out.mkdir(parents=True, exist_ok=True)
     stem = "Figure6_keff_collapse_alt" if a.other_seeds else "Figure6_keff_collapse"
+    if a.c_vs == "ssa":
+        stem += "_v2"
     for e in ("pdf", "png"):
         f = out / f"{stem}.{e}"
         fig.savefig(f, dpi=600, transparent=True)

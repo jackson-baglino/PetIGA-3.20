@@ -1,3 +1,10 @@
+## 2026-10-24 — Figure 6(c) against SSA
+
+- `fig_keff_collapse.py`: panel (c) now plots k_eff/k_eff,r against SSA/SSA_r instead of theta (new `--c-vs ssa|theta`, default ssa); writes `Figure6_keff_collapse_v2`, the original stays. The dotted theta_r line in (c) sits at SSA/SSA_r = 1.
+- Collector: the live v6 folder now takes Figure 6 `_v2`; folder refreshed.
+
+---
+
 ## 2026-10-21 — Outline re-synced to the 10-21 Section 3
 
 - New draft (zip of 10-21) installed in Literature/manuscript/; the previous one kept as manuscript_2026-10-16/ (gitignore now covers Literature/manuscript_*/).

@@ -71,11 +71,11 @@ ITERATIONS = {
     "v6_2026-10-20": (
         {"Figure1_mechanisms_aggregate": "_v5", "Figure2_homogenization_method": "_v4_bluered",
          "Figure3_molaro_validation": "_v4_fullrange_trim", "Figure4_saturated_neck_growth": "_v4_amp_fit_s2",
-         "Figure7_state_law": "_v2", "omit": ["Figure7_state_law_allphi"]},
+         "Figure6_keff_collapse": "_v2", "Figure7_state_law": "_v2", "omit": ["Figure7_state_law_allphi"]},
         [],
         "Fig 4 fitted lines restored: the free power law (a = 0.29) and the one-third theory curve were "
         "missing from v5 (a tick-list variable overwrote the fit window in fig_demmenie.py). Nothing else "
-        "changed from v5."),
+        "changed from v5. 2026-10-24: Fig 6(c) plots k_eff/k_eff,r against SSA/SSA_r instead of theta."),
 }
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
