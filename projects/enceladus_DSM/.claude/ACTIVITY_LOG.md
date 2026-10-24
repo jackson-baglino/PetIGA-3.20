@@ -1,3 +1,12 @@
+## 2026-10-24 — Outline: Discussion, Conclusion and appendices per paragraph
+
+- New draft (zip of 10-24, Literature/BaglinoJackson_DSM_manuscript (1).zip) diffed against 10-21: Sections 3-4 rewritten, Discussion only two typo fixes, Conclusion and appendices still empty.
+- manuscript_outline_new.tex (untracked; backup in the session scratchpad): Discussion, Conclusion and a new Appendices section rebuilt as one entry per paragraph (message, a few points with the draft corrections, citations, example paragraph), at the user's request.
+- Numbers recomputed from the campaign tables: k_eff rise 16-17.5% from theta 30 to ~330 at phi <= 0.375 (SSA -18%); SSA/SSA_r linear in ln theta (R^2 >= 0.988, all 100 runs); k_eff,r/k_ice = 1.370 exp(-5.01 phi); state-law scatter 0.3% rms per packing, 1.1% about the common exponent; -40 C runs not in the fit.
+- Corrections found: Lambda (not D_v) changes 20% from -40 to -5 C (D_v 29%); anisotropy explanation in the outline conflicts with RECORD.md; Bouvet et al. 2022 (isothermal k_eff follows density) must be addressed; Kaempfer & Plapp validated against hole migration, not bubbles.
+
+---
+
 ## 2026-10-24 — Figure 6(c) against SSA
 
 - `fig_keff_collapse.py`: panel (c) now plots k_eff/k_eff,r against SSA/SSA_r instead of theta (new `--c-vs ssa|theta`, default ssa); writes `Figure6_keff_collapse_v2`, the original stays. The dotted theta_r line in (c) sits at SSA/SSA_r = 1.
