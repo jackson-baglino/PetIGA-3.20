@@ -267,3 +267,5 @@ thresholds, open questions); this page is the history.
 
 - **Batch 1** (`batch1_T.txt`, cold end on the pilot packings): no results recorded anywhere, so treated as never run. It was superseded by the batch 3 matrix on the gated and then option-B packings.
 - **R_feat/R_ave = 1/50 and the eps-correction runs** (PLAN/ROADMAP): withdrawn, because they were sized against the arithmetic-law bias.
+
+- 2026-10-25 — End of the early transient (`relaxation_end/`, from the eps 1/2 um pairs in `keff_sintering_campaign/`). **Finding:** widths disagree by 9.4 points in the rise to 30 d from a 1 d baseline (theta 11), 1.8 at theta 30, 0 from 8 d; theta 11 was only '1 d at -20 C', not a measured end of relaxation.
