@@ -1,3 +1,9 @@
+## 2026-10-26 — Manuscript review workflow designed
+
+- Wrote workflows/manuscript-review/WORKFLOW.md (revision 1) and its flowchart, following the lunar workflow template: citation fact check, citation practice, terminology, repetition, then American English copyedit; clean-room agents; nothing built yet.
+
+---
+
 ## 2026-10-24 — Outline: Discussion, Conclusion and appendices per paragraph
 
 - New draft (zip of 10-24, Literature/BaglinoJackson_DSM_manuscript (1).zip) diffed against 10-21: Sections 3-4 rewritten, Discussion only two typo fixes, Conclusion and appendices still empty.
