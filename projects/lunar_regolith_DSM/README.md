@@ -46,6 +46,7 @@ lunar_regolith_DSM/
 │  ├─ Studio/        # local runners (run_lunar.sh, run_batch_tests.sh)
 │  ├─ HPC/           # SLURM submit/run scripts
 │  ├─ lib/alloc.sh   # single source of truth for allocation constants
+│  ├─ transcripts/   # short_transcript.py: prompts + final replies of a session (course assignments)
 │  └─ check_ic_types.sh   # guard: validates every .opts -ic_type vs the solver
 ├─ studies/          # study folders (e.g. contact_angle/) with their run lists and results
 ├─ docs/             # design/analysis notes (see per-file banners; contact_angle/ is current)

@@ -19,6 +19,7 @@
 #   Graphviz      14.0.0        `neato`, used by scripts/flowchart/render_flowchart.py
 #   MuPDF         1.24.9        `mutool draw`, page images for the agents
 #   Google Chrome (any recent)  headless screenshots for flowchart review
+#   LibreOffice   26.8.0.3      `soffice`, .docx output of scripts/transcripts/short_transcript.py
 #
 # Marker is held below 2.0: Marker 2 does its OCR through a separate
 # llama.cpp `llama-server` binary. 1.10.2 runs entirely in PyTorch.
@@ -29,3 +30,4 @@
 marker-pdf==1.10.2          # PDF page -> Markdown with LaTeX math (local OCR)
 surya-ocr==0.17.1           # Marker's OCR and layout models
 torch==2.14.1               # Marker's runtime
+markdown2==2.5.5            # scripts/transcripts/short_transcript.py (Markdown replies -> HTML)
