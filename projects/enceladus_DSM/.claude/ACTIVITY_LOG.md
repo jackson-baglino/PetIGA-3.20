@@ -1,6 +1,7 @@
 ## 2026-10-26 — Manuscript review workflow designed
 
 - Wrote workflows/manuscript-review/WORKFLOW.md (revision 1) and its flowchart, following the lunar workflow template: citation fact check, citation practice, terminology, repetition, then American English copyedit; clean-room agents; nothing built yet.
+- Revision 2: cut agent roles from 10 to 7 (removed the attribution paraphraser, merged the term grouper into the term judge, dropped the copy checker and the second copyeditor pass); stages renumbered.
 
 ---
 

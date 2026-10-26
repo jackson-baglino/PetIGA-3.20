@@ -4,7 +4,7 @@
     "Reviews the main text of the Enceladus k_eff manuscript in two rounds, using only the manuscript, the papers it cites and published style authorities: no memory, notes, outline or earlier reviews reach any agent. Round 1 checks content: every citation instance is checked against the cited paper's pages, citation practice is summarized (Molaro et al. 2019 first), terms are compared with the field's usage, and repetition is condensed. Round 2 checks spelling and grammar in American English on the revised text.",
     "Readers (Sonnet) find; checkers (Opus) judge from page images without the readers' reasoning; scripts check quotes, preserved numbers and citations, and compilation. A planted-error calibration gates the run. The user decides every finding at U2 and U3, and the original files are never overwritten."
   ],
-  "status": "Revision 1, design for review, 2026-10-26. Nothing built; open decisions in WORKFLOW.md §9.",
+  "status": "Revision 2 (7 agent roles), design for review, 2026-10-26. Nothing built; open decisions in WORKFLOW.md §9.",
   "lanes": [
     {
       "id": "user",
@@ -141,22 +141,8 @@
       "lane": "agent",
       "row": 5,
       "kind": "agent",
-      "title": "F1 morty-attribution",
-      "job": "States in one sentence what each citation instance attributes to the cited work, and its kind.",
-      "details": [
-        "Fresh per paragraph",
-        "Never judges truth; F4 never sees its statement"
-      ],
-      "model": "claude-sonnet-5-5",
-      "tools": []
-    },
-    {
-      "id": "F2",
-      "lane": "agent",
-      "row": 6,
-      "kind": "agent",
-      "title": "F2 morty-evidence-finder",
-      "job": "Reads one cited paper and finds the passages that support each statement citing it, with caveats.",
+      "title": "F1 morty-evidence-finder",
+      "job": "Reads one cited paper and finds the passages that support each manuscript sentence citing it, with caveats.",
       "details": [
         "Fresh per paper",
         "Flags passages that credit another work (secondary citation)",
@@ -168,27 +154,27 @@
       ]
     },
     {
-      "id": "F3",
+      "id": "F2",
       "lane": "script",
-      "row": 7,
+      "row": 6,
       "kind": "script",
-      "title": "F3 check_quotes.py",
+      "title": "F2 check_quotes.py",
       "job": "Checks every quote is 8+ words, found on its page in the Marker text and unique in the paper.",
       "details": [
-        "Failure: F4 told, with the page images"
+        "Failure: F3 told, with the page images"
       ]
     },
     {
-      "id": "F4",
+      "id": "F3",
       "lane": "agent",
-      "row": 8,
+      "row": 7,
       "kind": "agent",
-      "title": "F4 beth-citation-checker",
+      "title": "F3 beth-citation-checker",
       "job": "Judges the manuscript sentence itself against the evidence pages as images: supported, partly, not supported or background only.",
       "details": [
         "Fresh per citation instance",
         "Compares every number and unit",
-        "No Marker text, no F1 or F2 reasoning",
+        "No Marker text, no F1 reasoning",
         "Proposes a minimal corrected sentence"
       ],
       "model": "claude-opus-5-5",
@@ -199,18 +185,18 @@
     {
       "id": "RV",
       "lane": "record",
-      "row": 8,
+      "row": 7,
       "kind": "record",
       "title": "verdicts.json",
       "job": "One verdict per citation instance, with the quote, page and reason."
     },
     {
-      "id": "F5",
+      "id": "F4",
       "lane": "agent",
-      "row": 9,
+      "row": 8,
       "kind": "agent",
-      "title": "F5 beth-citation-checker (full read)",
-      "job": "Searches the whole paper again when F2 found nothing.",
+      "title": "F4 beth-citation-checker (full read)",
+      "job": "Searches the whole paper again when F1 found nothing.",
       "details": [
         "Still not found: U2 as not supported",
         "search_corpus.py lists other cited papers that state it"
@@ -223,7 +209,7 @@
     {
       "id": "P1",
       "lane": "script",
-      "row": 10,
+      "row": 9,
       "kind": "script",
       "title": "P1 citation_stats.py",
       "job": "Counts each work's citations by section, share, sole citations, consecutive runs and repeats within a paragraph."
@@ -231,14 +217,14 @@
     {
       "id": "P2",
       "lane": "agent",
-      "row": 10,
+      "row": 9,
       "kind": "agent",
       "title": "P2 beth-citation-advisor",
       "job": "Recommends keep, drop as repeat, cite the primary source, or add a cocitation for each use of heavily cited works.",
       "details": [
         "Molaro et al. (2019) first",
         "Primary sources only if named in the cited paper",
-        "New citations must pass F2 to F4"
+        "New citations must pass F1 to F3"
       ],
       "model": "claude-opus-5-5",
       "tools": []
@@ -246,7 +232,7 @@
     {
       "id": "RG",
       "lane": "record",
-      "row": 10,
+      "row": 9,
       "kind": "record",
       "title": "citation_guidance.md",
       "job": "Per-instance recommendations and a summary per heavily cited work."
@@ -254,45 +240,32 @@
     {
       "id": "T1",
       "lane": "script",
-      "row": 11,
+      "row": 10,
       "kind": "script",
       "title": "T1 term_inventory.py",
       "job": "Finds variant forms by rule: hyphenation, capitals, British spellings, acronyms, symbols and units."
     },
     {
       "id": "T2",
-      "lane": "agent",
-      "row": 11,
-      "kind": "agent",
-      "title": "T2 morty-term-grouper",
-      "job": "Groups variants the rules cannot link, such as SSA and specific surface area.",
-      "details": [
-        "Does not recommend a form"
-      ],
-      "model": "claude-sonnet-5-5",
-      "tools": []
-    },
-    {
-      "id": "T3",
       "lane": "script",
-      "row": 12,
+      "row": 11,
       "kind": "script",
-      "title": "T3 corpus_usage.py",
-      "job": "Counts each variant in the text of every cited paper, by journal and year.",
+      "title": "T2 corpus_usage.py",
+      "job": "Counts each term form in the text of every cited paper, by journal and year.",
       "details": [
         "Measures the field's usage, not the manuscript's"
       ]
     },
     {
-      "id": "T4",
+      "id": "T3",
       "lane": "agent",
-      "row": 12,
+      "row": 11,
       "kind": "agent",
-      "title": "T4 beth-term-judge",
-      "job": "Recommends the standard form for each concept from corpus counts and saved style authorities.",
+      "title": "T3 beth-term-judge",
+      "job": "Groups term variants into concepts and recommends a standard form from corpus counts and saved style authorities.",
       "details": [
         "AGU style guide, Fierz 2009, IUPAC, SI brochure",
-        "Quoted rules checked by script",
+        "Quoted rules checked; counts filled in by script",
         "No evidence: labeled preference only"
       ],
       "model": "claude-opus-5-5",
@@ -303,7 +276,7 @@
     {
       "id": "RT",
       "lane": "record",
-      "row": 12,
+      "row": 11,
       "kind": "record",
       "title": "style_sheet.md",
       "job": "Adopted terms, spellings and hyphenation, each with its evidence."
@@ -311,7 +284,7 @@
     {
       "id": "R1",
       "lane": "script",
-      "row": 13,
+      "row": 12,
       "kind": "script",
       "title": "R1 repetition.py",
       "job": "Finds overlapping sentences and paragraphs, repeated phrases and filler phrases."
@@ -319,7 +292,7 @@
     {
       "id": "R2",
       "lane": "agent",
-      "row": 13,
+      "row": 12,
       "kind": "agent",
       "title": "R2 beth-concision-editor",
       "job": "Proposes deletions, merges and shortenings for one section, naming where each deleted fact remains.",
@@ -332,7 +305,7 @@
     {
       "id": "R3",
       "lane": "script",
-      "row": 14,
+      "row": 13,
       "kind": "script",
       "title": "R3 check_rewrites.py",
       "job": "Checks every citation key, number, unit, label and equation survives each rewrite.",
@@ -343,7 +316,7 @@
     {
       "id": "R4",
       "lane": "agent",
-      "row": 14,
+      "row": 13,
       "kind": "agent",
       "title": "R4 beth-meaning-checker",
       "job": "Compares original and rewrite only: same meaning, information lost or meaning changed.",
@@ -356,19 +329,19 @@
     {
       "id": "U2",
       "lane": "user",
-      "row": 15,
+      "row": 14,
       "kind": "user",
       "title": "U2 Decide round 1",
       "job": "Accepts, rejects or edits each content finding in review.html, with page images for citations.",
       "details": [
         "All non-supported verdicts; supported: census or 60 sample",
-        "Sample error: F4 revised, C0 and F4 rerun"
+        "Sample error: F3 revised, C0 and F3 rerun"
       ]
     },
     {
       "id": "RR",
       "lane": "record",
-      "row": 15,
+      "row": 14,
       "kind": "record",
       "title": "review.html",
       "job": "Every finding with original, suggestion, evidence, verdict and a decision control."
@@ -376,19 +349,19 @@
     {
       "id": "X1",
       "lane": "script",
-      "row": 16,
+      "row": 15,
       "kind": "script",
       "title": "X1 apply_edits.py",
       "job": "Applies the accepted round 1 changes to a copy, compiles it and makes a latexdiff PDF.",
       "details": [
-        "Changed citing sentences go back through F3 and F4",
+        "Changed citing sentences go back through F2 and F3",
         "Overlaps shown to the user"
       ]
     },
     {
       "id": "R1v",
       "lane": "record",
-      "row": 16,
+      "row": 15,
       "kind": "record",
       "title": "manuscript v1",
       "job": "Revised .tex copy and latexdiff v0 to v1. The original is never overwritten."
@@ -396,7 +369,7 @@
     {
       "id": "L1",
       "lane": "script",
-      "row": 17,
+      "row": 16,
       "kind": "script",
       "title": "L1 spellcheck.py",
       "job": "Flags hunspell en_US misses, British forms and words spelled two ways, and applies the style sheet."
@@ -404,12 +377,12 @@
     {
       "id": "L2",
       "lane": "agent",
-      "row": 17,
+      "row": 16,
       "kind": "agent",
-      "title": "L2 morty-copyeditor x2",
-      "job": "Two passes with different framings (sentence, paragraph) propose spelling, grammar and punctuation edits.",
+      "title": "L2 morty-copyeditor",
+      "job": "Proposes spelling, grammar and punctuation edits for one section, given the L1 flags.",
       "details": [
-        "Fresh per section and framing",
+        "Fresh per section",
         "No style rewriting"
       ],
       "model": "claude-sonnet-5-5",
@@ -418,36 +391,23 @@
     {
       "id": "L3",
       "lane": "script",
-      "row": 18,
+      "row": 17,
       "kind": "script",
       "title": "L3 check_edits.py",
       "job": "Checks each edit's original span exists and leaves math, keys, labels and numbers untouched."
     },
     {
-      "id": "L4",
-      "lane": "agent",
-      "row": 18,
-      "kind": "agent",
-      "title": "L4 beth-copy-checker",
-      "job": "Labels each edit a real error, preference only, or wrong.",
-      "details": [
-        "Wrong: dropped"
-      ],
-      "model": "claude-opus-5-5",
-      "tools": []
-    },
-    {
       "id": "U3",
       "lane": "user",
-      "row": 19,
+      "row": 18,
       "kind": "user",
       "title": "U3 Decide round 2",
-      "job": "Accepts or rejects copyedits, grouped by rule so one rule can be accepted at once."
+      "job": "Accepts or rejects every copyedit that passed L3, grouped by rule so one rule can be accepted at once."
     },
     {
       "id": "X2",
       "lane": "script",
-      "row": 20,
+      "row": 19,
       "kind": "script",
       "title": "X2 apply_edits.py",
       "job": "Applies round 2, compiles, and writes the final latexdiff PDFs and report."
@@ -455,7 +415,7 @@
     {
       "id": "RF",
       "lane": "record",
-      "row": 20,
+      "row": 19,
       "kind": "record",
       "title": "manuscript v2 + report",
       "job": "Final .tex copy, latexdiff v0 to v2, decisions, manifest."
@@ -530,22 +490,17 @@
     },
     {
       "from": "F3",
-      "to": "F4",
-      "kind": "flow"
-    },
-    {
-      "from": "F4",
       "to": "RV",
       "kind": "data"
     },
     {
-      "from": "F2",
-      "to": "F5",
+      "from": "F1",
+      "to": "F4",
       "kind": "flow",
       "label": "not found"
     },
     {
-      "from": "F4",
+      "from": "F3",
       "to": "P2",
       "kind": "flow"
     },
@@ -581,11 +536,6 @@
     },
     {
       "from": "T3",
-      "to": "T4",
-      "kind": "flow"
-    },
-    {
-      "from": "T4",
       "to": "RT",
       "kind": "data"
     },
@@ -610,7 +560,7 @@
       "kind": "flow"
     },
     {
-      "from": "F5",
+      "from": "F4",
       "to": "U2",
       "kind": "flow"
     },
@@ -651,7 +601,7 @@
     },
     {
       "from": "X1",
-      "to": "F3",
+      "to": "F2",
       "kind": "loop",
       "label": "changed citing sentences"
     },
@@ -672,11 +622,6 @@
     },
     {
       "from": "L3",
-      "to": "L4",
-      "kind": "flow"
-    },
-    {
-      "from": "L4",
       "to": "U3",
       "kind": "flow"
     },

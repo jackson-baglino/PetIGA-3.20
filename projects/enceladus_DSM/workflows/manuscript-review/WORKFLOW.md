@@ -1,6 +1,7 @@
 # WORKFLOW: manuscript-review
 
-Status: **design for review** (revision 1, 2026-10-26). Nothing is built.
+Status: **design for review** (revision 2, 2026-10-26: reduced from 10
+agent roles to 7, §4). Nothing is built.
 Flowchart: `flowchart.html` in this folder, rendered from `flowchart.json` by
 `lunar_regolith_DSM/scripts/flowchart/render_flowchart.py`. Open decisions
 are in §9.
@@ -77,28 +78,25 @@ e.g. `s3.2.4`) assigned by M1 and to its `.tex` file and line.
 | U1 | Supply missing papers | user | `fetch_list.md` | PDFs dropped in the incoming folder, or "unavailable" | M3 reruns | unavailable → every citation of that work is reported as *not checked* |
 | M4 | Prepare pages | `prepare.py` | acquired PDFs | page images (300 dpi), page tiles for equations and numbers, Marker text per page, printed page numbers | every page has an image, tiles and Marker text | page failure → logged; that page cannot be cited as evidence |
 | C0 | Calibrate (before the real run; again after any prompt, schema or model change) | `calibrate.py` | `calibration/planted.yaml`: a copy of the manuscript with planted errors (§5) | `calibration.json` | thresholds in §5 | below threshold → stop, revise prompts |
-| F1 | State each attribution | `morty-attribution` | one paragraph at a time: its sentences with their citations | per citation instance: what the sentence says this work shows, in one plain statement; its kind (number, result, method, definition, observation, background, example after "e.g."); and, for a sentence citing several works, which part each one carries | schema; a script checks every citation instance has exactly one entry | ambiguous split → the instance is marked and F4 judges it on the whole sentence |
-| F2 | Find the evidence | `morty-evidence-finder`, fresh per cited work | all F1 statements that cite this work; the paper's Marker text and page images | per statement: up to 3 supporting passages (verbatim quote, page, location); conditions or caveats stated anywhere in the paper; whether the passage itself credits another work (secondary citation); or *not found* with the sections searched | schema | — |
-| F3 | Check quotes | `check_quotes.py` | F2 output, Marker pages | each quote ≥ 8 words or a whole sentence, found on its page after normalization, unique in the paper | script | failure → F4 marked, with the page images |
-| F4 | Verify | `beth-citation-checker`, fresh per citation instance | the manuscript sentence and its paragraph (LaTeX and plain text); the evidence pages as images and tiles; the paper's abstract and conclusions pages. Not F1's statement, not F2's reasoning | verdict: *supported* / *partly supported* (overstated, number or unit wrong, condition dropped, hedge removed) / *not supported* / *background only* (the work is relevant but does not state this); every number and unit compared; a minimal corrected sentence when not supported | schema; a corrected sentence goes through F3 and a fresh F4 | anything but *supported* → U2 |
-| F5 | Search again (F2 *not found*) | `beth-citation-checker` (task: full read) | the whole paper as page images | as F4, with the passage found or a confirmed *not found* | as F3, F4 | still not found → U2 as *not supported*; `search_corpus.py` lists other cited papers whose Marker text matches the statement, so U2 can show where the fact may actually come from |
+| F1 | Find the evidence | `morty-evidence-finder`, fresh per cited work | every manuscript sentence citing this work, with its paragraph; the paper's Marker text and page images | per citation instance: up to 3 supporting passages (verbatim quote, page, location); conditions or caveats stated anywhere in the paper; whether the passage itself credits another work (secondary citation); or *not found* with the sections searched | schema | — |
+| F2 | Check quotes | `check_quotes.py` | F1 output, Marker pages | each quote ≥ 8 words or a whole sentence, found on its page after normalization, unique in the paper | script | failure → F3 marked, with the page images |
+| F3 | Verify | `beth-citation-checker`, fresh per citation instance | the manuscript sentence and its paragraph (LaTeX and plain text); the evidence pages as images and tiles; the paper's abstract and conclusions pages. Not F1's reasoning | verdict: *supported* / *partly supported* (overstated, number or unit wrong, condition dropped, hedge removed) / *not supported* / *background only* (the work is relevant but does not state this); every number and unit compared; a minimal corrected sentence when not supported | schema; a corrected sentence goes through F2 and a fresh F3 | anything but *supported* → U2 |
+| F4 | Search again (F1 *not found*) | `beth-citation-checker` (task: full read) | the whole paper as page images | as F3, with the passage found or a confirmed *not found* | as F2, F3 | still not found → U2 as *not supported*; `search_corpus.py` lists other cited papers whose Marker text matches the statement, so U2 can show where the fact may actually come from |
 | P1 | Citation statistics | `citation_stats.py` | `citations.jsonl`, `bib.json` | per work: instances, sections, share of all instances, sentences where it is the only citation, runs of consecutive sentences, repeats within a paragraph; distribution by year; self-citations | script | — |
-| P2 | Citation guidance | `beth-citation-advisor` | P1 output; every sentence citing the three most cited works and any work above 5 % of instances; their F4 verdicts and F2 secondary-citation flags; the bibliography | `citation_guidance.md`: per instance, keep / drop as a repeat in the same paragraph / cite the primary source instead (only works named in the cited paper's own reference list, with the passage) / add a cocitation; a summary for each heavily cited work | script: every suggested primary source resolves in Crossref and is named on a page of the cited paper | a new citation enters the manuscript only after it passes F2–F4 against its own PDF |
+| P2 | Citation guidance | `beth-citation-advisor` | P1 output; every sentence citing the three most cited works and any work above 5 % of instances; their F3 verdicts and F1 secondary-citation flags; the bibliography | `citation_guidance.md`: per instance, keep / drop as a repeat in the same paragraph / cite the primary source instead (only works named in the cited paper's own reference list, with the passage) / add a cocitation; a summary for each heavily cited work | script: every suggested primary source resolves in Crossref and is named on a page of the cited paper | a new citation enters the manuscript only after it passes F1–F3 against its own PDF |
 | T1 | Term inventory | `term_inventory.py` | `sentences.jsonl` | variant groups found by rule: hyphenated / open / closed forms (phase field, phase-field), capitalization, British and American spellings, acronyms (defined, defined twice, used before definition, never reused), symbols and where each is defined, unit formatting | script | — |
-| T2 | Group concepts | `morty-term-grouper` | the inventory and the sentences that use each variant | concept groups the rules cannot find (SSA and specific surface area; sintering and bonding; neck and bond), each with its uses | schema | — |
-| T3 | Field usage | `corpus_usage.py` | concept groups; Marker text of every cited paper | per variant: count in the cited literature, by journal and year | script | — |
-| T4 | Recommend a standard | `beth-term-judge` | concept groups, T3 counts, and saved copies of the style authorities: AGU Grammar and Style Guide, Fierz et al. (2009) snow classification, IUPAC Gold Book, ISO 80000 / SI brochure for units and symbols | per group: the recommended form, each usage with its replacement, and the evidence (corpus count and quoted rule with its source) | script: each quoted rule found in the saved source; the recommended form occurs in the corpus or the rule | no evidence → recommendation marked *preference only* |
+| T2 | Field usage | `corpus_usage.py` | T1 inventory and every phrase of 1–4 words used 3 or more times in the manuscript; Marker text of every cited paper | per form: count in the cited literature, by journal and year | script | — |
+| T3 | Group and recommend | `beth-term-judge` | T1 inventory with the sentences using each form, T2 counts, and saved copies of the style authorities: AGU Grammar and Style Guide, Fierz et al. (2009) snow classification, IUPAC Gold Book, ISO 80000 / SI brochure for units and symbols | concept groups, including those the rules cannot find (SSA and specific surface area; sintering and bonding); per group: the recommended form, each usage with its replacement, the quoted rule with its source | script: each quoted rule found in the saved source; corpus counts for every form in a group filled in by script (the judge never states a count) | no evidence → recommendation marked *preference only* |
 | R1 | Find repetition | `repetition.py` | `sentences.jsonl` | pairs of sentences and paragraphs that overlap (shared word sequences of 5 or more words, TF-IDF similarity), repeated phrases, filler phrases from a fixed list | script | — |
 | R2 | Condense | `beth-concision-editor`, fresh per section | the whole manuscript (for context), one section to edit, R1 pairs touching it | proposals: delete (with the sentence ID where the fact remains), merge, or shorten; each with the rewritten LaTeX and the words saved | schema | — |
 | R3 | Check rewrites | `check_rewrites.py` | proposals, `macros.json` | every citation key, number, unit, label and math expression of the original survives in the rewrite or in the sentence named as keeping the fact | script | failure → back to R2 once, then dropped and listed |
 | R4 | Check meaning | `beth-meaning-checker`, fresh per proposal | original passage and rewrite only | same meaning / information lost (what) / meaning changed (how) | schema | anything but *same meaning* → dropped, listed for U2 |
-| U2 | Decide round 1 | user, with `review.html` | every M2 problem; every F verdict other than *supported* with the page image; a random sample of *supported* verdicts (§5); the citation guidance; term recommendations; condensing proposals | accept / reject / edit each | each decision recorded | an error in the sample → F4 prompt revised, C0 rerun, F4 rerun on all instances |
-| X1 | Apply round 1 | `apply_edits.py` | v0, accepted decisions | v1 `.tex`; `latexdiff` PDF v0→v1 | `latexmk` compiles; no change outside accepted spans; any citing sentence that changed goes through F3–F4 again | overlapping accepted edits → shown to the user, applied in the order facts, terms, concision |
+| U2 | Decide round 1 | user, with `review.html` | every M2 problem; every F verdict other than *supported* with the page image; a random sample of *supported* verdicts (§5); the citation guidance; term recommendations; condensing proposals | accept / reject / edit each | each decision recorded | an error in the sample → F3 prompt revised, C0 rerun, F3 rerun on all instances |
+| X1 | Apply round 1 | `apply_edits.py` | v0, accepted decisions | v1 `.tex`; `latexdiff` PDF v0→v1 | `latexmk` compiles; no change outside accepted spans; any citing sentence that changed goes through F2–F3 again | overlapping accepted edits → shown to the user, applied in the order facts, terms, concision |
 | L1 | Spelling rules | `spellcheck.py` | v1 sentences | hunspell (en_US) misses; British forms from a fixed list (vapour, modelling, behaviour, centre, grey, -ise / -yse verbs, -our nouns); words spelled two ways in the manuscript; the round 1 style sheet applied | script | — |
-| L2 | Copyedit | `morty-copyeditor` ×2, fresh per section; two framings: A sentence by sentence, B paragraph by paragraph | one section of v1, the style sheet | proposed edits: sentence ID, exact original span, replacement, kind (spelling, grammar, punctuation, article, agreement, tense, American usage), rule | schema; the two lists merged by span | — |
+| L2 | Copyedit | `morty-copyeditor`, fresh per section | one section of v1, the style sheet, the L1 flags for that section | proposed edits: sentence ID, exact original span, replacement, kind (spelling, grammar, punctuation, article, agreement, tense, American usage), rule | schema | — |
 | L3 | Check edits | `check_edits.py` | L1 + L2 edits | the original span exists; math, citation keys, labels and numbers untouched; duplicates merged | script | failure → dropped, listed |
-| L4 | Confirm edits | `beth-copy-checker`, fresh per section | each edit with its sentence, the rule it claims | real error / preference only / wrong; preference-only edits are kept but labeled | schema | *wrong* → dropped |
-| U3 | Decide round 2 | user, with `review.html` | every confirmed edit, grouped by kind so a rule can be accepted at once | accept / reject | recorded | — |
+| U3 | Decide round 2 | user, with `review.html` | every L1 and L2 edit that passed L3, grouped by kind so a rule can be accepted at once | accept / reject | recorded | — |
 | X2 | Apply round 2 | `apply_edits.py` | v1, decisions | v2 `.tex`, `latexdiff` PDFs v1→v2 and v0→v2, final report | `latexmk` compiles; same span checks as X1 | — |
 
 **When an agent call fails** (any stage). The driver checks that every input
@@ -107,10 +105,10 @@ failed call is retried once, then shown to the user. A call is recorded as
 done in `runs.db` only after this check, so a resumed run redoes any call
 that did not pass it.
 
-**Why the attribution (F1) and the verification (F4) are split.** The
-checker must judge the manuscript's sentence, not a paraphrase of it. F1's
-statement only guides F2's search; F4 never sees it, so an F1 paraphrase
-that softens the claim cannot make an overstated sentence pass.
+**Why no agent paraphrases the citing sentences.** Both the finder (F1)
+and the checker (F3) work from the manuscript's own sentence. A paraphrase
+step would add a place where a claim can be softened before it is checked,
+and nothing would check the paraphrase.
 
 **Why the evidence finder works per paper.** A cited work is read once for
 all the sentences that cite it, so one context holds the whole paper and
@@ -130,21 +128,12 @@ is allowed, and every Read is of a file the driver gave the agent. Agent
 definitions live in `enceladus_DSM/.claude/agents/`.
 
 ```
-name:         morty-attribution
-model:        claude-sonnet-5-5
-tools:        none (the driver passes the paragraph as text)
-reads:        one paragraph with its citations
-writes:       per citation instance {instance_id, statement, kind, part_of_sentence}
-may not:      judge whether the claim is true; see any paper
-context:      fresh per paragraph
-```
-
-```
 name:         morty-evidence-finder
 model:        claude-sonnet-5-5
 tools:        Read (the paper's Marker pages and page images in its folder)
-reads:        one cited paper; every F1 statement that cites it
-writes:       per statement {passages: [{quote, page_pdf, page_printed,
+reads:        one cited paper; every manuscript sentence citing it, with its
+              paragraph
+writes:       per citation instance {passages: [{quote, page_pdf, page_printed,
               location}], conditions: [{text, page_pdf}], secondary_source?,
               not_found_sections?}
 may not:      use the PDF text layer; answer from memory of the paper; follow
@@ -163,7 +152,7 @@ writes:       {instance_id, verdict, problems: [overstated | number | unit |
               condition_dropped | hedge_removed | wrong_work], numbers: [{in
               manuscript, in paper, page}], quote_used, page, corrected_sentence?,
               reason}
-may not:      see Marker text, F1 statements or F2 reasoning; judge other
+may not:      see Marker text or F1 reasoning; judge other
               instances
 context:      fresh per citation instance (verify), per paper (full read)
 ```
@@ -173,7 +162,7 @@ name:         beth-citation-advisor
 model:        claude-opus-5-5
 tools:        none
 reads:        P1 statistics; the sentences citing heavily cited works with their
-              F4 verdicts and F2 secondary-citation flags; the bibliography
+              F3 verdicts and F1 secondary-citation flags; the bibliography
 writes:       citation_guidance.md and per-instance JSON {instance_id,
               recommendation, primary_source?, page_in_cited_paper?, reason}
 may not:      propose a work not in the bibliography unless the cited paper
@@ -182,22 +171,14 @@ context:      fresh
 ```
 
 ```
-name:         morty-term-grouper
-model:        claude-sonnet-5-5
-tools:        none
-reads:        the T1 inventory and the sentences using each variant
-writes:       concept groups {concept, variants: [{form, sentence_ids}]}
-may not:      recommend a form (T4 does that)
-context:      fresh
-```
-
-```
 name:         beth-term-judge
 model:        claude-opus-5-5
-tools:        Read (the saved style sources and T3 counts in its folder)
-reads:        concept groups, T3 counts, saved style authorities
-writes:       per group {recommended, replacements: [{sentence_id, from, to}],
-              evidence: [{source, quote | corpus_count}], preference_only}
+tools:        Read (the saved style sources and T2 counts in its folder)
+reads:        T1 inventory with the sentences using each form, T2 counts,
+              saved style authorities
+writes:       per group {concept, forms: [{form, sentence_ids}], recommended,
+              replacements: [{sentence_id, from, to}], evidence: [{source,
+              quote}], preference_only}
 may not:      browse the web (the sources are fetched and saved by a script,
               so the evidence can be rechecked); favor the manuscript's
               majority form over the field's usage
@@ -230,21 +211,34 @@ context:      fresh per proposal
 name:         morty-copyeditor
 model:        claude-sonnet-5-5
 tools:        none
-reads:        one section of v1, the style sheet, one framing (A or B)
+reads:        one section of v1, the style sheet, the L1 flags for it
 writes:       edits {sentence_id, original_span, replacement, kind, rule}
 may not:      rewrite for style; change meaning, math, citations or labels
-context:      fresh per section and framing
-```
-
-```
-name:         beth-copy-checker
-model:        claude-opus-5-5
-tools:        none
-reads:        the edits for one section with their sentences
-writes:       per edit {verdict: error | preference | wrong, reason}
-may not:      propose new edits
 context:      fresh per section
 ```
+
+**Why 7 agent roles.** Each role is a new place for errors, so a role is
+kept only if it does something a script cannot and its output is checked by
+a script, an independent agent or the user before it changes the
+manuscript. Revision 1 had 10 roles. Three were removed: an attribution
+agent that paraphrased each citing sentence for the finder (an unchecked
+paraphrase step; the finder now reads the sentences), a term grouper
+(merged into the term judge; the user sees every group), and a copy checker
+(the user reviews every copyedit, and L3 blocks edits to math, citations and
+labels). The second copyeditor pass was also dropped, because the L1
+scripts catch the mechanical errors it was meant to find. Running one role
+many times (the citation checker once per citation instance) adds calls,
+not new kinds of error.
+
+| Role | Model | Task | Checked by |
+|---|---|---|---|
+| `morty-evidence-finder` | Sonnet | find passages in each cited paper | F2 script, F3 |
+| `beth-citation-checker` | Opus | judge each citation from page images | U2 (all non-supported, and the supported per §9) |
+| `beth-citation-advisor` | Opus | citation practice guidance | script (sources resolve), U2 |
+| `beth-term-judge` | Opus | group terms, recommend standards | script (quoted rules, counts), U2 |
+| `beth-concision-editor` | Opus | condense repetition | R3 script, R4 |
+| `beth-meaning-checker` | Opus | check each rewrite keeps its meaning | U2 |
+| `morty-copyeditor` | Sonnet | spelling, grammar, punctuation | L3 script, U3 |
 
 **How independent the checks are.** All agents are Claude models, so they
 can share blind spots. The checks that are independent of the models are the
@@ -256,15 +250,15 @@ user (U2, U3 and the planted errors the user writes for C0).
 | Output | Check | Kind | Pass criterion |
 |---|---|---|---|
 | bibliography | Crossref resolution and metadata comparison (M2) | deterministic | match, or shown at U2 |
-| evidence quotes | length, presence on the page, uniqueness (F3) | deterministic | all three |
-| citation verdicts | `beth-citation-checker` from page images, without the finder's reasoning (F4) | agent, different input | *supported*, else U2 |
-| *not found* evidence | second search of the whole paper by a different model (F5) | agent | found, or U2 |
+| evidence quotes | length, presence on the page, uniqueness (F2) | deterministic | all three |
+| citation verdicts | `beth-citation-checker` from page images, without the finder's reasoning (F3) | agent, different input | *supported*, else U2 |
+| *not found* evidence | second search of the whole paper by a different model (F4) | agent | found, or U2 |
 | supported verdicts | U2 random sample | human, measured | no error in the sample |
-| verdict stability | 30 random instances rechecked by a fresh F4 run | repeated process | ≥ 90 % agreement |
+| verdict stability | 30 random instances rechecked by a fresh F3 run | repeated process | ≥ 90 % agreement |
 | term recommendations | quoted rule found in the saved source; corpus counts by script | deterministic | evidence present, else *preference only* |
 | rewrites | keys, numbers, math and labels preserved (R3, L3) | deterministic | 100 % |
 | rewrites | `beth-meaning-checker` sees only original and rewrite (R4) | agent | *same meaning* |
-| copyedits | `beth-copy-checker` (L4); two copyeditor framings for recall | agent | *error* or labeled *preference* |
+| copyedits | spans and protected content (L3); the user sees every edit (U3) | deterministic + user | all pass L3 |
 | revised `.tex` | compiles; diff only inside accepted spans (X1, X2) | deterministic | both |
 | pipeline | C0 on planted errors | measured | below |
 
@@ -305,9 +299,9 @@ Each run writes `enceladus_DSM/runs/manuscript-review/<run_id>/`:
 - `transcripts/`: one stream-JSON per agent call. Local.
 - The manuscript, PDFs, page images and Marker text are not committed.
 
-Deterministic stages (M1–M4 on the same inputs, F3, P1, T1, T3, R1, R3, L1,
+Deterministic stages (M1–M4 on the same inputs, F2, P1, T1, T2, R1, R3, L1,
 L3, X1, X2) give identical outputs. Agent stages are expected to reach the
-same verdicts, not the same wording; the F4 recheck measures this.
+same verdicts, not the same wording; the F3 recheck measures this.
 
 ## 7. Risks and failure modes
 
@@ -316,14 +310,14 @@ same verdicts, not the same wording; the F4 recheck measures this.
 | Earlier notes or memory leak into the review | headless agents with `--setting-sources ""` in empty folders; transcript audit |
 | Bibliography entry points to the wrong paper | M2 metadata comparison; M3 first-page identity check |
 | Retracted or corrected cited paper | M2 Crossref `updated-by` |
-| Checker accepts a paraphrase that is softer than the sentence | F4 sees the manuscript sentence itself, never F1's statement |
-| Fabricated or misread quote | F3 script; F4 on page images and tiles |
-| Number on the right page but the wrong quantity | F4 compares every number with its unit and quantity; planted in C0 |
-| Fact taken from a review that took it from another paper | F2 secondary-citation flag; P2 guidance |
-| Fact cited to one work but stated in another cited work | F5 corpus search shown at U2 |
+| Checker accepts a paraphrase that is softer than the sentence | no paraphrase step; F3 sees the manuscript sentence itself |
+| Fabricated or misread quote | F2 script; F3 on page images and tiles |
+| Number on the right page but the wrong quantity | F3 compares every number with its unit and quantity; planted in C0 |
+| Fact taken from a review that took it from another paper | F1 secondary-citation flag; P2 guidance |
+| Fact cited to one work but stated in another cited work | F4 corpus search shown at U2 |
 | Rewrite drops a fact or a citation | R3 script; R4 meaning check |
-| Copyedit changes meaning or an equation | L3 script; L4 |
-| Term recommendation reflects model taste, not the field | T3 corpus counts; quoted rules from saved sources; *preference only* label |
+| Copyedit changes meaning or an equation | L3 script; U3 |
+| Term recommendation reflects model taste, not the field | T2 corpus counts filled in by script; quoted rules from saved sources; *preference only* label |
 | Two accepted edits overlap | X1 / X2 detect and show the user |
 | Instructions hidden in a paper | agents have no web or write tools; schema-only outputs; flags reported |
 
@@ -355,7 +349,7 @@ Open:
    full census of about 200 instances. Recommended: census, because factual
    correctness is the main goal and the number is small.
 5. **Planted errors for C0.** At least 10 written by you.
-6. **Style authorities for T4.** AGU Grammar and Style Guide, Fierz et al.
+6. **Style authorities for T3.** AGU Grammar and Style Guide, Fierz et al.
    (2009), IUPAC Gold Book, SI brochure. Add any you prefer.
 7. **Shared scripts.** `acquire.py` and `prepare.py` are the same as A1 and
    P1 in the lunar literature-review design, which is not built yet. Build
