@@ -28,3 +28,12 @@
   file: Research/Projects/lunar_regolith_DSM/Literature/moure_fu_2024.pdf
   arxiv: 2407.21213   # v1 includes the authors' LaTeX source
   roles: [tres]
+
+# Li et al.: DOI, volume and pages checked on Crossref and OpenAlex 2026-10-26 (not retracted; Crossref garbles
+# the umlaut in Raetz). Publisher PDF from intlpress.com, 27 pages = pp. 81-107, title page checked the same day.
+- id: li_2009
+  citation: "Li, X., Lowengrub, J., Rätz, A. and Voigt, A. (2009). Solving PDEs in complex geometries: a diffuse domain approach. Commun. Math. Sci. 7(1), 81-107."
+  doi: 10.4310/cms.2009.v7.n1.a4
+  file: Research/Projects/lunar_regolith_DSM/Literature/li_2009.pdf   # sha256 6c8ca5bbb242...
+  pmcid: PMC3097555   # NIH author manuscript, not downloaded; cite pages from the journal PDF
+  roles: []   # user to set
