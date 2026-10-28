@@ -2,7 +2,7 @@
  "title": "literature-review",
  "summary": [
   "A reusable literature-review workflow built around a library with branches (numerical methods, sublimation physics, sintering, planetary setting, properties), each seeded with papers the user chooses. Seeds steer discovery (citation chaining), screening (a scripted baseline ranks candidates by similarity to the seeds) and calibration. Scripts search Crossref, OpenAlex, Semantic Scholar and arXiv and resolve every candidate; two Haiku screeners judge abstracts, combined by a fixed rule (any include is kept) and measured against the baseline; an on-demand scout challenges novelty claims and memo gaps using search terms the user approves.",
-  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images, and its own corrections are checked again; Codex, isolated as a separate user, reads important values blind. The user reads core papers and audits 60 random claims. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions; during a wave the main session runs in a review mode with no way out and no untrusted text; the sandbox fails closed; a private archive in the course folder keeps everything a recheck needs."
+  "Papers are prepared from the best source (LaTeX or XML before Marker), with 300 dpi tiles, structured tables and a full-text passage index searched by keyword and by meaning. A Sonnet reader extracts claims and symbols; scripts check quotes, table cells and units (dimensional analysis); an Opus checker confirms each claim from page images, and its own corrections are checked again; the checker transcribes values blind first; Codex, isolated as a separate user, reads the values memos rely on blind. The user reads core papers and audits the claims memos rely on plus 60 random others. A script is the only library writer. Agents write nothing and hold explicit, enforced permissions; whenever it works with library files, the main session runs in a review mode with no way out and reads only an allow-list; the sandbox fails closed; a content-addressed archive in the course folder keeps everything a recheck needs."
  ],
  "status": "Revision 7, for review, 2026-10-27 (critique round 3 applied; revision 5 was approved 2026-10-23). Build-time tests (WORKFLOW.md §12) come first.",
  "lanes": [
@@ -263,9 +263,9 @@
    "tools": [
     "Read"
    ],
-   "job": "On page images only, confirms each claim's text, quote, every equation symbol and number, kind, basis and questions, and dropped conditions.",
+   "job": "Transcribes each equation and value blind first, then confirms each claim's text, quote, symbols, numbers, kind, basis and conditions on images.",
    "details": [
-    "Checks each equation, number and quote on its tile",
+    "Step 1 blind: sees only the quantity name and position",
     "Its own corrections go back through E3, E3b, X1 and a fresh E4",
     "Never sees Marker text or the reader's reasoning"
    ]
@@ -337,7 +337,7 @@
    "row": 14,
    "kind": "script",
    "title": "L2 audit.py",
-   "job": "Rehashes the library, compares canonical dumps of catalog and index, requeries retractions, rechecks memos, checks backup and archive.",
+   "job": "Rehashes the library, compares canonical dumps of catalog and index, requeries retractions, rechecks memos, checks the archive.",
    "details": [
     "Memo citing a superseded claim: back to Y1",
     "Mismatch: stop and report; recover first"
@@ -364,9 +364,10 @@
    "row": 15.5,
    "kind": "script",
    "title": "Y2 check_citations.py",
-   "job": "Checks each memo sentence cites a verified claim and every number occurs in a cited claim's quote.",
+   "job": "Checks each memo sentence cites a verified claim, and each tagged number matches that claim's value, unit and quantity.",
    "details": [
-    "Failures go back to Y1 with the list"
+    "Failures go back to Y1 with the list",
+    "Claims on papers flagged as retracted fail until the user rules"
    ]
   },
   {
@@ -377,7 +378,7 @@
    "title": "Y3 beth-memo-checker (+ Codex, model-critical)",
    "model": "claude-opus-5-5",
    "tools": [],
-   "job": "Checks each statement against the same claims plus a passage search, listing omitted or contradicting claims and passages.",
+   "job": "Call 1 judges support on the cited claims only; call 2 lists omitted or contradicting claims and passages.",
    "details": [
     "A relevant passage with no claim goes back to E1",
     "Gaps: API and passage queries, then a challenge; worded as not found by queries"
@@ -421,10 +422,10 @@
    "row": 12.5,
    "kind": "user",
    "title": "U3b Random audit",
-   "job": "Checks 60 random passed claims not seen in guided reading, every disputed claim, and every disputed important claim.",
+   "job": "Checks every claim model-critical memo statements cite, 60 random other passed claims, and every disputed claim.",
    "details": [
-    "Pass: no error in 60 of the wave's claims (bound 4.9 %)",
-    "After an error: recheck, fresh 60 from rechecked claims, combined bound"
+    "Pass: no error in either stratum; bound per stratum",
+    "After an error: recheck, fresh sample from rechecked claims, combined bound"
    ]
   },
   {
@@ -432,8 +433,8 @@
    "lane": "record",
    "row": 14,
    "kind": "record",
-   "title": "ME295/library_backups/, library_archive/",
-   "job": "Library snapshots after each publish, and a dated archive of page images, text and transcripts per wave; hashes checked; never in git."
+   "title": "ME295/library_archive/ (content-addressed)",
+   "job": "Every file stored once under its hash, with a dated manifest per publish and wave; hashes checked by L2; never in git."
   },
   {
    "id": "R1",
@@ -519,15 +520,16 @@
    "lane": "agent",
    "row": 10.5,
    "kind": "agent",
-   "title": "X1 summer-reader (Codex; important claims)",
+   "title": "X1 summer-reader (Codex; claims memos rely on)",
    "model": "Codex, pinned at build",
    "tools": [
-    "file read in its folder"
+    "none; tiles attached with -i"
    ],
-   "job": "Given a tile and the name of a quantity or equation, never the claimed value, transcribes it; a script compares three reads.",
+   "job": "Given a tile and a quantity or equation name, never the value, transcribes it; a script compares reader, blind checker and X1.",
    "details": [
-    "Separate macOS user; web search off; exec log audited",
-    "Disagreement goes to the user"
+    "Scope: memo-cited, model-critical, random 20 % of other important claims",
+    "Separate macOS user; web search off; no shell commands",
+    "Content disagreement to the user; formatting only to E4"
    ]
   }
  ],

@@ -12,6 +12,32 @@ our own mistake.
 
 ## Pivots and redos
 
+### 2026-10-28 — Fourth critique: our statistics and our security had holes
+- **What happened:** round 4 found 19 major findings, among them:
+  - **Calibration:** the branch calibration could never pass (10 of 10
+    caught gives a 74 % lower bound, below the 85 % rule). The pooled score
+    mostly measured the scripts, not the checker. The held-out set was
+    reused after each prompt fix, and errors the checker found were fed back
+    to inflate its own score.
+  - **Review mode:** it blocked reads by deny-list and missed many folders
+    holding paper or API text. It also applied only during waves, so the
+    reference desk handed passages to a session with web access.
+  - **Independence:** the checker was shown the reader's transcription, so
+    the reader, the checker and Codex agreeing could still rest on one
+    Marker misread.
+- **Pivot:** revision 8. Gates are split by what they measure, and each
+  held-out set is used once. Review mode works by allow-list whenever a
+  session touches library files, and the desk writes to the reading view.
+  The checker transcribes blind first. One finding (image limits) was
+  refuted against the docs, and checking it turned up a limit we had missed
+  (more than 20 images caps each at 2,000 px).
+- **Lesson:**
+  - Compute what a pass rule can actually reach before adopting it.
+  - Allow-lists, not deny-lists, for what a privileged session may read.
+  - A checker shown the answer tends to confirm it.
+- **Evidence:** `runs/design-critique/20261028-061227/triage.md`; WORKFLOW.md
+  revision 8.
+
 ### 2026-10-28 — The library still stored only a description of each paper
 - **What happened:** revision 6 added a full-text index, but the text itself
   stayed in P1's run folder and the archive. The library record of a paper
@@ -212,7 +238,7 @@ our own mistake.
 - **Units verification.** The first workflow built under the new rules ran
   end to end. It produced 54 verified rows, and its calibration passed twice
   (`project/LOG.md`, 2026-10-22 (5)).
-- **Design first, critique before code.** Three critique rounds found 70
+- **Design first, critique before code.** Four critique rounds found 95
   findings before any literature-review code existed, so none of them cost a
   rebuild.
 - **Deterministic checks catch real errors.** Examples are the Crossref
