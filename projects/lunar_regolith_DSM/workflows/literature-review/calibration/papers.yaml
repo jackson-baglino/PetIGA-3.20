@@ -7,19 +7,22 @@
   citation: "Kaempfer, T. U. and Plapp, M. (2009). Phase-field modeling of dry snow metamorphism. Phys. Rev. E 79, 031502."
   doi: 10.1103/PhysRevE.79.031502
   file: Research/Projects/lunar_regolith_DSM/Literature/kaempfer_plapp_2009.pdf
-  roles: [gold_statements, planted_errors, tres]
+  branches: [B1, B2]
+  roles: [gold_statements, planted_errors, tres, tret]
 
 - id: molaro_2019
   citation: "Molaro, J. L. et al. (2019). The microstructural evolution of water ice in the solar system through sintering. J. Geophys. Res. Planets 124(2), 243-277 (online 2018-12-26)."
   doi: 10.1029/2018JE005773
   file: Research/Projects/lunar_regolith_DSM/Literature/molaro_2019.pdf   # sha256 0ef28cb88701...
   arxiv: 1901.04633   # PDF only, no LaTeX source
+  branches: [B3]
   roles: [gold_statements, planted_errors]
 
 - id: blackford_2007
   citation: "Blackford, J. R. (2007). Sintering and microstructure of ice: a review. J. Phys. D: Appl. Phys. 40(21), R355-R385."
   doi: 10.1088/0022-3727/40/21/R02
   file: Research/Projects/lunar_regolith_DSM/Literature/blackford_2007.pdf   # sha256 f0708784608e...
+  branches: [B3]
   roles: [gold_statements]
 
 - id: moure_fu_2024
@@ -27,7 +30,8 @@
   doi: 10.1021/acs.cgd.4c00539
   file: Research/Projects/lunar_regolith_DSM/Literature/moure_fu_2024.pdf
   arxiv: 2407.21213   # v1 includes the authors' LaTeX source
-  roles: [tres]
+  branches: [B1]
+  roles: [tres, tret]
 
 # Li et al.: DOI, volume and pages checked on Crossref and OpenAlex 2026-10-26 (not retracted; Crossref garbles
 # the umlaut in Raetz). Publisher PDF from intlpress.com, 27 pages = pp. 81-107, title page checked the same day.
@@ -36,4 +40,5 @@
   doi: 10.4310/cms.2009.v7.n1.a4
   file: Research/Projects/lunar_regolith_DSM/Literature/li_2009.pdf   # sha256 6c8ca5bbb242...
   pmcid: PMC3097555   # NIH author manuscript, not downloaded; cite pages from the journal PDF
-  roles: []   # user to set
+  branches: [B1]
+  roles: []   # user to set: gold_statements (10 slots ready), planted_errors, tret?

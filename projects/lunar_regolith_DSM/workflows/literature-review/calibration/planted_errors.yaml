@@ -1,10 +1,23 @@
-# Planted errors written by the user (at least 10). Aim at the hard kinds: a condition
-# stated on another page dropped, a cited result passed off as the paper's own, a widened
-# scope, a plausible subscript or sign swap.
-# kind: fabricated_quote | wrong_page | equation_sign_or_exponent | equation_symbol_swap |
-#       number_wrong_quantity | hedge_made_certain | wrong_basis | wrong_kind |
-#       wrong_question | dropped_condition | scope_widened | wrong_attribution | wrong_figure
-# condition_page: for dropped_condition, the page where the dropped condition is stated.
+# Planted errors written by you: at least 10, for the CORE calibration (WORKFLOW.md §5).
+# Yours are all held out: they score the checks and are never used to tune prompts. They
+# are also the control that tells us whether the Codex-drafted plants are realistic, so
+# aim at the hard kinds: a condition stated on another page dropped, a cited result passed
+# off as the paper's own, a widened scope, a plausible subscript, sign or unit swap.
+# Use the papers you know best: kaempfer_plapp_2009 and molaro_2019.
+#
+# Fields
+#   paper:           id from papers.yaml
+#   page:            page number PRINTED on the page the claim cites
+#   kind:            fabricated_quote | wrong_page | equation_sign_or_exponent |
+#                    equation_symbol_swap | number_wrong_quantity | wrong_unit |
+#                    wrong_table_cell | hedge_made_certain | wrong_basis | wrong_kind |
+#                    wrong_question | dropped_condition | scope_widened |
+#                    wrong_attribution | wrong_figure
+#   condition_page:  for dropped_condition only: the page where the dropped condition is stated
+#   correct_claim:   the true statement, in your words
+#   planted_claim:   your altered version: wrong in exactly one way
+#   note:            why it is wrong, so the check can be scored
+# Quote any text containing a colon followed by a space with single quotes ('...').
 #
 # Example (illustration only, invented):
 # - paper: molaro_2019
@@ -16,6 +29,83 @@
 #   note: The range and grain size are stated in the methods, not on page 12.
 
 errors:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
+  - paper:
+    page:
+    kind:
+    condition_page:
+    correct_claim:
+    planted_claim:
+    note:
   - paper:
     page:
     kind:

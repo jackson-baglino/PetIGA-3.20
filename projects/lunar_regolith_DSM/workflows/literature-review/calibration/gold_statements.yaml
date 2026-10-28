@@ -1,24 +1,27 @@
-# Gold statements: things any good reading of the paper must record.
-# About 12 for kaempfer_plapp_2009, 10 for molaro_2019, 8 for blackford_2007.
+# Gold statements: facts any good reading of the paper must record (WORKFLOW.md §5,
+# C0 branch part). They also serve as search-test questions (T-ret, tret_questions.yaml).
+# Write in your own words, one fact per statement, with the details that would make it
+# wrong if they changed: number and unit, symbol, conditions, and whether the result is
+# the paper's own or cited from another paper. No copied sentences.
 #
-# Write in your own words; exact quotes are not needed. One fact per statement, with the
-# details that would make it wrong if they changed (number and unit, symbol, conditions,
-# whether the result is the paper's own or cited from another paper).
+# Fields
+#   paper:     the paper's id from papers.yaml (already filled in each slot)
+#   page:      the page number PRINTED on the page. If the fact spans pages, a list with
+#              the main page first: [5, 6] for a derivation over two pages; [12, 5] for a
+#              fact on p. 12 whose condition is on p. 5 (put the condition in the statement).
+#   location:  table, figure, equation or section if there is one ("Table I", "Eq. 12")
+#   kind:      method | equation | result | assumption | limitation | parameter
+#   statement: the fact, in your words. LaTeX in $...$ is fine. If the text contains a colon
+#              followed by a space, wrap the whole statement in single quotes ('...'),
+#              and write an apostrophe inside it as two ('').
+#   symbol, value, unit: only for a value (kind parameter, or a numerical result). A script
+#              matches these exactly; units are compared by dimension (J/(m^3 K) = J m^-3 K^-1).
+#              Leave them empty otherwise.
+# Prose statements are matched to the readers' claims by an Opus judge; you review every
+# statement it marks as missed and a sample of those it marks as found.
+# Leave a slot you do not need empty, or delete it. Add slots by copying one.
 #
-# page:      the page number printed on the page. If the fact spans pages, a list with the
-#            main page first: [5, 6] for a derivation or table that runs over two pages;
-#            [12, 5] for a fact on p. 12 whose condition is stated on p. 5 (put the
-#            condition in the statement). A reader's claim matches if it cites any listed page.
-# location:  table, figure, equation or section if there is one ("Table I", "Eq. 12", "Fig. 3")
-# kind:      method | equation | result | assumption | limitation | parameter
-# statement: the fact, in your words
-# For a value (kind: parameter, or a numerical result), also fill symbol, value and unit:
-# a script then matches it exactly (unit compared by dimension, so J/(m^3 K) = J m^-3 K^-1).
-# Prose statements are matched by an Opus judge; you review every statement it marks as
-# missed and a sample of the ones it marks as found.
-#
-# Example (value, unit and page from the verified units table, memory/semantic/units.md;
-# location from the blind reads of run 20261022-155335):
+# Example (value, unit and page from the verified units table, memory/semantic/units.md):
 # - paper: kaempfer_plapp_2009
 #   page: 4
 #   location: Table I
@@ -29,7 +32,9 @@
 #   unit: J m^-3 K^-1
 
 statements:
-  - paper:
+
+  # ---- kaempfer_plapp_2009 (branch B1, numerical methods): 12 slots ----
+  - paper: kaempfer_plapp_2009
     page:
     location:
     kind:
@@ -37,3 +42,290 @@ statements:
     symbol:
     value:
     unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: kaempfer_plapp_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+
+  # ---- li_2009 (branch B1, the diffuse domain approach; this week's homework paper): 10 slots ----
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: li_2009
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+
+  # ---- molaro_2019 (branch B3, sintering): your 10 statements ----
+  # Changed by Claude on 2026-10-27, mechanically only: paper id molro_2019 -> molaro_2019,
+  # and spelling (relativ, redsitribution, reporduce, they authors, dimaeter). Your meaning
+  # is unchanged. Two notes for you, marked CHECK below.
+  - paper: molaro_2019
+    page: 244
+    location: Fig. 1
+    kind: result
+    statement: Figure 1 shows both surface diffusion and vapor transport.
+  - paper: molaro_2019
+    page: 246
+    kind: parameter
+    statement: $\Delta/\Delta_0$ is the relative density used in the SA81 model.
+  - paper: molaro_2019
+    page: 246
+    kind: parameter
+    statement: $\dot{n}$ is the rate of normal displacement to the surface in the SA81 model.
+  - paper: molaro_2019
+    page: 249
+    # CHECK: this describes how the model is organized; "method" may fit better than "equation".
+    kind: equation
+    statement: 'The SA81 model is split into three categories of growth mechanisms: nondensifying mechanisms, densifying mechanisms, and redistribution mechanisms.'
+  - paper: molaro_2019
+    page: 256
+    kind: result
+    # CHECK: "the experiments that the authors did not perform" is hard to match. Do you mean
+    # experiments by other groups (which ones)? Name them so the judge can tell.
+    statement: The SA81 model did not reproduce the growth rates observed in the experiments that the authors did not perform.
+  - paper: molaro_2019
+    page: 258
+    kind: result
+    statement: For an average grain size of 50 microns at a temperature around $-55^\circ$C, vapor transport is the dominating mechanism after 10 minutes.
+  - paper: molaro_2019
+    page: 260
+    kind: result
+    statement: Sintering within aggregates of ice grains led to an overall increase in average grain diameter.
+  - paper: molaro_2019
+    page: 266
+    kind: result
+    statement: Grains deposited on the surface of Enceladus of an average diameter of 100 nanometers and temperatures of about $-193^\circ$C will sinter within ~1,000 years.
+  - paper: molaro_2019
+    page: 267
+    kind: result
+    statement: According to the scaling law shown as equation (31), large grains are expected to sinter on time scales on the order of $10^{90}$ years.
+  - paper: molaro_2019
+    page: 260
+    kind: result
+    statement: The neck width for the warmer $T=-5^\circ$C grain pair sintering experiment grew slower than for the colder $T=-20^\circ$C case.
+
+  # ---- blackford_2007 (branch B3, sintering; a review): 8 slots ----
+  - paper: blackford_2007
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: blackford_2007
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: blackford_2007
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: blackford_2007
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: blackford_2007
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: blackford_2007
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: blackford_2007
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+  - paper: blackford_2007
+    page:
+    location:
+    kind:
+    statement:
+    symbol:
+    value:
+    unit:
+
+  # ---- optional: moure_fu_2024 (branch B1), if you know it well enough. Copy slots here. ----

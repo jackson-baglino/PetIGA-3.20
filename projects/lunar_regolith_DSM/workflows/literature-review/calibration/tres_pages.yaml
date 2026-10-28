@@ -1,27 +1,80 @@
-# T-res pages: equation-dense pages whose equations and key numbers are known exactly.
-# Moure & Fu 2024: pages of the arXiv v1 PDF, equations taken from the authors' LaTeX source
-#   by script (source: latex); the user spot-checks them.
-# Kaempfer & Plapp 2009: one or two journal pages transcribed by the user (source: user).
-# page_pdf: page index in the PDF file (1 = first page). latex: as printed, in LaTeX.
+# T-res pages (WORKFLOW.md §12): equation-dense pages whose equations and key numbers are
+# known exactly, to measure reading from full pages against reading from 300 dpi tiles.
 #
-# Example format:
-# - paper: kaempfer_plapp_2009
-#   page_pdf: 3
-#   source: user
-#   items:
-#     - label: Eq. (5)
-#       latex: '\partial_t \phi = ...'
-#     - label: value in text, right column
-#       latex: '2.178 \times 10^{-5}\,\mathrm{m^2\,s^{-1}}'
+# Moure & Fu 2024: pick 2 or 3 equation-dense pages of the arXiv v1 PDF (2407.21213v1) and
+#   give their PDF page numbers. A script fills the items from the authors' LaTeX source;
+#   you only spot-check them.
+# Kaempfer & Plapp 2009: pick 1 or 2 equation-dense journal pages and transcribe every
+#   displayed equation and every number with a unit on them, exactly as printed.
+#
+# page_pdf: page index in the PDF file (1 = first page), not the printed number.
+# latex:    as printed, in LaTeX; single quotes around it, an apostrophe written as ''.
+# label:    the equation number, or where a number sits ("text, right column, line 4").
+#
+# Example:
+#   - label: Eq. (5)
+#     latex: '\partial_t \phi = ...'
+#   - label: text, right column
+#     latex: '2.178 \times 10^{-5}\,\mathrm{m^2\,s^{-1}}'
 
 pages:
   - paper: moure_fu_2024
-    page_pdf:
+    page_pdf: []     # 2 or 3 page numbers, e.g. [4, 5, 9]
     source: latex
-    items: []   # filled by script from the arXiv source, then spot-checked by the user
+    items: []        # filled by script from the arXiv source
   - paper: kaempfer_plapp_2009
     page_pdf:
     source: user
     items:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+  - paper: kaempfer_plapp_2009
+    page_pdf:
+    source: user
+    items:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
+      - label:
+        latex:
       - label:
         latex:

@@ -1,0 +1,147 @@
+# Search-test questions for branch B1 (T-ret, WORKFLOW.md §12; also the 25 questions of
+# the course's Lab 5, Part D). They measure whether the passage index finds the passage
+# that answers a question, comparing keyword, embedding and combined (hybrid) search.
+#
+# Write the questions FIRST, the way you would actually ask them, before looking at any
+# search result: questions written while reading the chunks make the search look better
+# than it is. Then give the paper and the printed page where the answer is.
+# Only papers in the B1 library count: the B1 seeds once chosen, and kaempfer_plapp_2009
+# and moure_fu_2024. Your gold statements on those papers also count, so you may need
+# fewer here.
+#
+# kind:
+#   exact        names an exact identifier: a symbol, a value, a named equation or table
+#                ("What is the heat capacity of ice in Kaempfer & Plapp's Table I?")
+#   paraphrase   wording the paper does not use ("How fast does the ice surface move when
+#                the vapor is supersaturated?")
+#   absent       a question the B1 papers cannot answer; the right result is an abstain.
+#                Leave paper, page and answer empty.
+# answer: the answer in a few words, checked by you against the page.
+# The chunk ID is filled in later with library_query.py chunk --show; leave it out.
+
+questions:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: exact
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: paraphrase
+    question:
+    paper:
+    page:
+    answer:
+  - kind: absent
+    question:
+    paper:
+    page:
+    answer:
+  - kind: absent
+    question:
+    paper:
+    page:
+    answer:
+  - kind: absent
+    question:
+    paper:
+    page:
+    answer:
+  - kind: absent
+    question:
+    paper:
+    page:
+    answer:
+  - kind: absent
+    question:
+    paper:
+    page:
+    answer:
